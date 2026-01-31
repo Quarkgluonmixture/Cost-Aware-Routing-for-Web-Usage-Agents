@@ -1,0 +1,28 @@
+model:
+  path: "/mnt/d/(Gluons)/hf_models/Qwen3-VL-4B-Instruct"
+  quantization: "4bit"
+  device: "cuda"
+  max_new_tokens: 512
+  temperature: 0.1
+  top_p: 0.9
+
+env:
+  type: "vwa" # visualwebarena
+  viewport_width: 1280
+  viewport_height: 720
+  timeout_ms: 5000
+  headless: true
+  dry_run: true # Set to false when VWA is fully installed
+
+agent:
+  image_max_size: 1024 # Resize image to this max dimension to save VRAM
+  use_dom: false # Initial policy: vision only
+  max_steps: 20
+
+logging:
+  log_dir: "logs"
+  save_images: true
+
+cost:
+  input_cost_per_1k: 0.0 # Local model
+  output_cost_per_1k: 0.0 # Local model
