@@ -47,11 +47,19 @@ class Qwen3VLAgent:
         self.system_prompt = self._get_system_prompt()
 
     def _get_system_prompt(self) -> str:
-        return """You are a precise web navigation agent. 
+        return """You are a precise web navigation agent.
 Output ONLY valid JSON. No markdown blocks, no explanations.
 
+Core Rules:
+1) Do NOT answer or finish immediately. First gather evidence by scrolling or inspecting visible results.
+2) If the answer is not visible, you MUST scroll down or navigate to search/category pages.
+3) Avoid repeating the same click coordinate. If an action seems ineffective, scroll instead.
+4) Only use "finish" after confirming the target item is present or absent.
+5) Prefer clicking search bars, category filters, or product listings instead of empty background.
+6) If you are stuck, use scroll or back; do not repeat identical clicks.
+
 Action Schema:
-1. Click: {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"} 
+1. Click: {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}
    - x, y are floats 0.0-1.0.
 2. Type: {"action_type": "type", "text": "string"}
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
@@ -60,14 +68,20 @@ Action Schema:
 6. Forward: {"action_type": "forward"}
 7. Finish: {"action_type": "finish", "answer": "optional string"}
 
-If unsure, verify the screen content.
+If unsure, verify the screen content by scrolling and exploring.
 """
 
-    def step(self, instruction: str, obs: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def step(self, instruction: str, obs: Any) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Takes instruction and observation, returns action dict and metadata.
         """
-        image = obs["image"]
+        image = obs.image
+        obs_text = ""
+        if hasattr(obs, "text") and obs.text:
+            obs_text = obs.text
+            max_chars = self.config.get("agent", {}).get("max_obs_chars", 8000)
+            if len(obs_text) > max_chars:
+                obs_text = obs_text[:max_chars] + "\n[TRUNCATED]"
         
         # Resize if necessary
         max_size = self.config.get("agent", {}).get("image_max_size", 1024)
@@ -84,7 +98,13 @@ If unsure, verify the screen content.
                         "type": "image",
                         "image": image,
                     },
-                    {"type": "text", "text": f"Task: {instruction}\nSystem: {self.system_prompt}"},
+                    {
+                        "type": "text",
+                        "text": (
+                            f"Task: {instruction}\nSystem: {self.system_prompt}\n"
+                            f"Accessibility Tree:\n{obs_text}"
+                        ),
+                    },
                 ],
             }
         ]
@@ -105,7 +125,7 @@ If unsure, verify the screen content.
 
         # Generate
         gen_kwargs = {
-            "max_new_tokens": self.config.get("model", {}).get("max_new_tokens", 128),
+            "max_new_tokens": self.config.get("model", {}).get("max_new_tokens", 256),
             "temperature": self.config.get("model", {}).get("temperature", 0.1),
             "top_p": self.config.get("model", {}).get("top_p", 0.9),
             "do_sample": True
@@ -134,6 +154,7 @@ If unsure, verify the screen content.
 
     def _parse_and_validate(self, text: str) -> Tuple[Dict[str, Any], bool, str]:
         text = text.strip()
+        lower_text = text.lower()
         
         # 1. Try direct JSON parse
         try:
@@ -152,6 +173,19 @@ If unsure, verify the screen content.
                 pass
         
         # 3. Fallback
+        if "scroll" in lower_text:
+            return {
+                "action_type": "scroll",
+                "delta": [0, 0.8],
+                "coordinate_type": "normalized",
+            }, False, "keyword_scroll"
+        if "back" in lower_text:
+            return {"action_type": "back"}, False, "keyword_back"
+        if "finish" in lower_text or "stop" in lower_text:
+            return {"action_type": "finish", "answer": ""}, False, "keyword_finish"
+        if "wait" in lower_text:
+            return {"action_type": "wait"}, False, "keyword_wait"
+
         logger.warning(f"Failed to parse action from: {text}")
         return {"action_type": "wait"}, False, "parse_failed"
 
@@ -162,9 +196,9 @@ If unsure, verify the screen content.
         
         # Ensure coordinate exists for click
         if action["action_type"] == "click":
-            if "coordinate" not in action:
+            if "coordinate" not in action and "element_id" not in action:
                 return {"action_type": "wait"}
-            if "coordinate_type" not in action:
+            if "coordinate" in action and "coordinate_type" not in action:
                 action["coordinate_type"] = "normalized" # Default
                 
         return action

@@ -12,3 +12,4 @@ results_summary.csv
 .DS_Store
 episode_*.jsonl
 visualization/
+results/

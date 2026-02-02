@@ -12,6 +12,10 @@ task:
   # Optional: specific task IDs to run. If omitted, runs all in the file (subject to sharding)
   task_ids: [0, 1, 2, 3, 4] 
 
+env:
+  # Override default to use real VWA env (not dummy black screen)
+  dry_run: false
+
 run:
   seed: 42
   num_shards: 1
@@ -23,3 +27,4 @@ run:
 
 agent:
   mode: "always_vision" # Options: always_vision, dom_only, router_v0
+  max_steps: 30

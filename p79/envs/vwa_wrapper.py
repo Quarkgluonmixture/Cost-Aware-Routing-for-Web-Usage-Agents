@@ -86,8 +86,6 @@ class VWAWrapper:
         self._lazy_init()
         assert self._env is not None
 
-        action_str = self._json_to_id_action_str(action_json)
-
         from browser_env import (
             create_id_based_action,
             create_mouse_click_action,
@@ -104,8 +102,13 @@ class VWAWrapper:
 
         if action_type == "click" and "coordinate" in action_json:
             coord = action_json["coordinate"]
-            # Assuming normalized coordinates [0-1]
-            action = create_mouse_click_action(left=coord[0], top=coord[1])
+            # Accept either normalized [0-1] or pixel coordinates
+            left = float(coord[0])
+            top = float(coord[1])
+            if left > 1.0 or top > 1.0:
+                left = left / float(self.viewport_width)
+                top = top / float(self.viewport_height)
+            action = create_mouse_click_action(left=left, top=top)
         elif action_type == "scroll" and "delta" in action_json:
             dy = action_json["delta"][1]
             direction = "down" if dy > 0 else "up"
@@ -128,6 +131,8 @@ class VWAWrapper:
             action = create_id_based_action(action_str)
 
         obs, reward, terminated, truncated, info = self._env.step(action)
+        if action_type in ("finish", "stop"):
+            terminated = True
         info["raw_action"] = action  # Expose the raw VWA action for trajectory recording
         p79_obs = self._to_p79_obs(obs, info)
         return p79_obs, float(reward), bool(terminated), bool(truncated), info

@@ -72,7 +72,8 @@ def load_config(config_path: str) -> Dict[str, Any]:
                     else:
                         base[k] = v
                 return base
-            
+
+            # Merge into base_config, then apply update
             config = merge(base_config, config)
         
         del config["defaults"]
@@ -176,6 +177,10 @@ def run_episode(
     
     start_time = time.time()
     
+    repeat_action_count = 0
+    last_action_type: Optional[str] = None
+    last_click_coord: Optional[tuple[float, float]] = None
+
     for step_idx in range(max_steps):
         step_start = time.time()
         
@@ -189,6 +194,37 @@ def run_episode(
             action_json = {"action_type": "wait"}
             meta = {}
         
+        # Simple no-progress guardrails
+        action_type = (action_json.get("action_type") or "").lower().strip()
+        if action_type == last_action_type:
+            repeat_action_count += 1
+        else:
+            repeat_action_count = 0
+
+        # Detect repeated center clicks (0.5, 0.5)
+        if action_type == "click" and "coordinate" in action_json:
+            coord = action_json.get("coordinate")
+            if isinstance(coord, (list, tuple)) and len(coord) == 2:
+                coord_tuple = (float(coord[0]), float(coord[1]))
+                if last_click_coord == coord_tuple:
+                    repeat_action_count += 1
+                last_click_coord = coord_tuple
+        elif action_type == "click" and "coordinate" not in action_json:
+            # Potential element_id based click; treat repeated clicks as no-progress
+            repeat_action_count += 1
+
+        # If agent is stuck (repeating action or clicking same spot), force a scroll down
+        if repeat_action_count >= 3:
+            action_json = {
+                "action_type": "scroll",
+                "delta": [0, 0.8],
+                "coordinate_type": "normalized"
+            }
+            action_type = "scroll"
+            repeat_action_count = 0
+
+        last_action_type = action_type
+
         # Env Step
         next_obs, reward, terminated, truncated, next_info = env.step(action_json)
         
@@ -317,12 +353,8 @@ def main():
     logger.info(f"Starting Run {run_id}. Tasks: {len(tasks_to_run)} (Shard {shard_id}/{num_shards})")
     
     # Initialize Env & Agent
-    # We re-use the env instance across episodes to save startup time, 
+    # We re-use the env instance across episodes to save startup time,
     # but VWA wrapper handles lazy init/reset.
-    # Agent is re-instantiated or reset? 
-    # Qwen3VLAgent is stateful (history), so we should re-instantiate or provide a reset method.
-    # Looking at Qwen3VLAgent, it maintains history. We should probably re-init it or add reset.
-    # For now, let's re-init to be safe.
     
     env_cfg = cfg["env"]
     wrapper = VWAWrapper(
@@ -333,6 +365,18 @@ def main():
         viewport_height=env_cfg.get("viewport_height", 720),
         dry_run=env_cfg.get("dry_run", False)
     )
+
+    # Initialize Agent ONCE to avoid OOM
+    agent_cfg = cfg["agent"]
+    if args.mock_agent:
+        class MockAgent:
+            def step(self, instruction, obs):
+                return {"action_type": "wait"}, {"mock": True}
+        agent = MockAgent()
+        logger.info("Using MockAgent")
+    else:
+        logger.info("Initializing Agent...")
+        agent = Qwen3VLAgent(cfg)
     
     try:
         for task in tasks_to_run:
@@ -348,17 +392,6 @@ def main():
             
             # Prepare Config
             task_config_path = prepare_task_config(task, output_dir)
-            
-            # Agent Init
-            agent_cfg = cfg["agent"]
-            if args.mock_agent:
-                class MockAgent:
-                    def step(self, instruction, obs):
-                        return {"action_type": "wait"}, {"mock": True}
-                agent = MockAgent()
-                logger.info("Using MockAgent")
-            else:
-                agent = Qwen3VLAgent(cfg)
             
             # Get Intent
             with open(task_config_path, "r") as f:
