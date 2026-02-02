@@ -66,7 +66,9 @@ class VWAWrapper:
 
     def reset(self, config_file: str) -> Tuple[P79Observation, Dict[str, Any]]:
         if self.dry_run:
-            return P79Observation(text="[DRY_RUN]"), {"dry_run": True}
+            # Return dummy black image for dry run to satisfy agent
+            dummy_img = Image.new('RGB', (self.viewport_width, self.viewport_height), color='black')
+            return P79Observation(text="[DRY_RUN]", image=dummy_img), {"dry_run": True}
 
         self._lazy_init()
         assert self._env is not None
@@ -78,7 +80,8 @@ class VWAWrapper:
 
     def step(self, action_json: Dict[str, Any]) -> Tuple[P79Observation, float, bool, bool, Dict[str, Any]]:
         if self.dry_run:
-            return P79Observation(text="[DRY_RUN]"), 0.0, False, False, {"dry_run": True}
+            dummy_img = Image.new('RGB', (self.viewport_width, self.viewport_height), color='black')
+            return P79Observation(text="[DRY_RUN]", image=dummy_img), 0.0, False, False, {"dry_run": True}
 
         self._lazy_init()
         assert self._env is not None
@@ -125,6 +128,7 @@ class VWAWrapper:
             action = create_id_based_action(action_str)
 
         obs, reward, terminated, truncated, info = self._env.step(action)
+        info["raw_action"] = action  # Expose the raw VWA action for trajectory recording
         p79_obs = self._to_p79_obs(obs, info)
         return p79_obs, float(reward), bool(terminated), bool(truncated), info
 

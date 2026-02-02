@@ -1,0 +1,25 @@
+# Inherit from default.yaml defaults
+defaults:
+  - configs/default.yaml
+
+experiment:
+  name: "shopping_small_test"
+  description: "Small batch run on shopping tasks to verify pipeline"
+  
+task:
+  dataset: "visualwebarena"
+  config_file: "external/visualwebarena/config_files/vwa/test_shopping.raw.json"
+  # Optional: specific task IDs to run. If omitted, runs all in the file (subject to sharding)
+  task_ids: [0, 1, 2, 3, 4] 
+
+run:
+  seed: 42
+  num_shards: 1
+  shard_id: 0
+  resume: true
+  max_retries: 1
+  episode_timeout_s: 600
+  output_dir: "results/shopping_small"
+
+agent:
+  mode: "always_vision" # Options: always_vision, dom_only, router_v0

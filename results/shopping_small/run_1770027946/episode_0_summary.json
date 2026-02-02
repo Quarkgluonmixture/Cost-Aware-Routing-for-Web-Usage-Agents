@@ -1,0 +1,7 @@
+{
+  "task_id": 0,
+  "success": false,
+  "score": 0.0,
+  "error": "'Qwen3VLAgent' object has no attribute 'act'",
+  "run_id": "run_1770027946"
+}
