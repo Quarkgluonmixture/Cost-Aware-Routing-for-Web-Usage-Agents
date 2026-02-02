@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 import os
+import numpy as np
+from PIL import Image
 
 @dataclass
 class P79Observation:
@@ -178,7 +180,11 @@ class VWAWrapper:
         image = None
         for k in ("image", "screenshot", "pixel", "rgb"):
             if isinstance(obs, dict) and k in obs:
-                image = obs[k]
+                raw_img = obs[k]
+                if isinstance(raw_img, np.ndarray):
+                    image = Image.fromarray(raw_img)
+                else:
+                    image = raw_img
                 break
 
         url = None

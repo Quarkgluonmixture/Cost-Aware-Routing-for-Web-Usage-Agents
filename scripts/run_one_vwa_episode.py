@@ -14,7 +14,6 @@ from qwen_vl_utils import process_vision_info
 # Import from our codebase
 from p79.envs.vwa_wrapper import VWAWrapper, P79Observation
 from p79.agents.qwen3vl_agent import Qwen3VLAgent
-from p79.utils.config import Config
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -72,11 +71,34 @@ def run_episode(
     
     # Pre-process task config (placeholder replacement)
     # This matches the smoke test logic
-    if "start_url" in task_config:
-        # Check environment variables for placeholders
-        # VWA usually uses env vars, but if they are missing/dummy, we might need manual fix
-        # p79/envs/vwa_wrapper.py now sets defaults to example.com if missing
-        pass 
+    # Replace placeholders with environment variables
+    placeholders = {
+        "__SHOPPING__": os.environ.get("SHOPPING", "http://localhost:7770"),
+        "__REDDIT__": os.environ.get("REDDIT", "http://localhost:9999"),
+        "__WIKIPEDIA__": os.environ.get("WIKIPEDIA", "http://localhost:8888"),
+        "__CLASSIFIEDS__": os.environ.get("CLASSIFIEDS", "http://localhost:9980"),
+        "__HOMEPAGE__": os.environ.get("HOMEPAGE", "http://localhost:4399"),
+        "__WIKI__": os.environ.get("WIKIPEDIA", "http://localhost:8888") # Sometimes it's WIKI
+    }
+    
+    def replace_placeholders(obj):
+        if isinstance(obj, str):
+            for k, v in placeholders.items():
+                if k in obj:
+                    obj = obj.replace(k, v)
+            return obj
+        elif isinstance(obj, dict):
+            return {k: replace_placeholders(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [replace_placeholders(v) for v in obj]
+        return obj
+
+    # Inject default start_url if missing (for sample tasks)
+    if "start_url" not in task_config:
+        logger.warning("No start_url in task config. Defaulting to __SHOPPING__")
+        task_config["start_url"] = "__SHOPPING__"
+
+    task_config = replace_placeholders(task_config)
 
     with open(temp_config_path, "w") as f:
         json.dump(task_config, f)
@@ -89,6 +111,17 @@ def run_episode(
 
     instruction = task_config.get("intent", "Browse the web.")
     logger.info(f"Task Instruction: {instruction}")
+    
+    # Wait for page to fully load/render
+    time.sleep(2)
+
+    # Visualization setup
+    vis_dir = f"visualization/episode_{task_config.get('task_id', 'unknown')}"
+    if os.path.exists(vis_dir):
+        import shutil
+        shutil.rmtree(vis_dir)
+    os.makedirs(vis_dir, exist_ok=True)
+    logger.info(f"Saving visualization to {vis_dir}")
 
     history: List[Dict[str, Any]] = []
     total_tokens = 0
@@ -102,6 +135,13 @@ def run_episode(
         for step_idx in range(max_steps):
             logger.info(f"--- Step {step_idx} ---")
             
+            # Save screenshot
+            if obs.image:
+                try:
+                    obs.image.save(os.path.join(vis_dir, f"step_{step_idx}.png"))
+                except Exception as e:
+                    logger.error(f"Failed to save screenshot: {e}")
+
             # 2. Prepare Input
             # Resize image if needed (Agent helper does this, but we are doing raw generation)
             # We reuse agent.processor and agent.model
@@ -202,6 +242,9 @@ def run_episode(
                     "gen_tokens": gen_tokens
                 }
                 log_file.write(json.dumps(step_log) + "\n")
+                
+                # Save final screenshot (if needed, though stop action usually doesn't yield new obs unless we step one more time, but we break here)
+                # If we want the final state after stop, we might need to grab it from somewhere else or just rely on previous step.
                 break
                 
             obs, reward, terminated, truncated, info = env.step(final_action)
@@ -238,12 +281,15 @@ def main():
     parser.add_argument("--task_config", type=str, required=True, help="Path to raw tasks json")
     parser.add_argument("--task_id", type=int, default=0, help="Index of task to run")
     parser.add_argument("--model_path", type=str, default="/mnt/d/(Gluons)/hf_models/Qwen3-VL-4B-Instruct")
-    parser.add_argument("--headless", action="store_true", default=True)
+    parser.add_argument("--no-headless", action="store_true", help="Run in visible mode (headless=False)")
     args = parser.parse_args()
 
     # 1. Load Task Config
     with open(args.task_config, "r") as f:
-        tasks = json.load(f)
+        if args.task_config.endswith(".jsonl"):
+            tasks = [json.loads(line) for line in f if line.strip()]
+        else:
+            tasks = json.load(f)
     
     if args.task_id >= len(tasks):
         raise ValueError(f"Task ID {args.task_id} out of range (0-{len(tasks)-1})")
@@ -265,7 +311,7 @@ def main():
     # 3. Init Env
     logger.info("Initializing VWA Environment...")
     env = VWAWrapper(
-        headless=args.headless,
+        headless=not args.no_headless,
         observation_type="accessibility_tree",
         dry_run=False
     )

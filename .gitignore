@@ -10,3 +10,5 @@ wandb/
 results_summary.csv
 *.png
 .DS_Store
+episode_*.jsonl
+visualization/
