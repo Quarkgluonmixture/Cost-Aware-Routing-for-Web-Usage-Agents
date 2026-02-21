@@ -1,6 +1,6 @@
 model:
-  path: "/mnt/d/(Gluons)/hf_models/Qwen3-VL-4B-Instruct"
-  quantization: "4bit"
+  path: "Qwen/Qwen3-VL-4B-Instruct"
+  quantization: "none"
   device: "cuda"
   max_new_tokens: 512
   temperature: 0.1

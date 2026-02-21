@@ -152,75 +152,15 @@ def run_episode(
             # Truncate obs text if too long to fit context?
             # Qwen2-VL has large context, but let's be safe or just pass it.
             
-            prompt_text = f"System: {SYSTEM_PROMPT}\n\nTask: {instruction}\n\nAccessibility Tree:\n{obs.text}"
+            # 3. Inference via agent.step
+            action, meta = agent_wrapper.step(instruction, obs)
             
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "image", "image": obs.image},
-                        {"type": "text", "text": prompt_text},
-                    ],
-                }
-            ]
-            
-            # 3. Inference
-            text_inputs = agent_wrapper.processor.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
-            )
-            image_inputs, video_inputs = process_vision_info(messages)
-            inputs = agent_wrapper.processor(
-                text=[text_inputs],
-                images=image_inputs,
-                videos=video_inputs,
-                padding=True,
-                return_tensors="pt",
-            )
-            inputs = inputs.to(agent_wrapper.model.device)
-            
-            input_tokens = inputs.input_ids.shape[1]
-            
-            gen_kwargs = {
-                "max_new_tokens": 128,
-                "temperature": 0.1,
-                "top_p": 0.9,
-                "do_sample": True
-            }
-            
-            generated_ids = agent_wrapper.model.generate(**inputs, **gen_kwargs)
-            generated_ids_trimmed = [
-                out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-            ]
-            output_text = agent_wrapper.processor.batch_decode(
-                generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
-            )[0]
-            
-            gen_tokens = len(generated_ids_trimmed[0])
+            input_tokens = meta.get("input_tokens", 0)
+            gen_tokens = meta.get("output_tokens", 0)
             total_tokens += (input_tokens + gen_tokens)
             
-            logger.info(f"Raw Output: {output_text}")
-            
-            # 4. Parse & Validate
-            action = {"action_type": "wait"}
-            try:
-                # Try JSON parse
-                clean_text = output_text.strip()
-                # Remove markdown code blocks if present
-                if clean_text.startswith("```json"):
-                    clean_text = clean_text[7:]
-                if clean_text.endswith("```"):
-                    clean_text = clean_text[:-3]
-                clean_text = clean_text.strip()
-                
-                action = json.loads(clean_text)
-            except Exception:
-                # Regex fallback
-                match = re.search(r"\{.*\}", output_text, re.DOTALL)
-                if match:
-                    try:
-                        action = json.loads(match.group(0))
-                    except:
-                        pass
+            logger.info(f"Raw Output: {meta.get('raw_output', '')}")
+            logger.info(f"Parsed Action: {action}")
             
             # Validate ID
             final_action = validate_action(action, obs.text)

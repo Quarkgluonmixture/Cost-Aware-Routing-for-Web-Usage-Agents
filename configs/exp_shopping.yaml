@@ -3,14 +3,13 @@ defaults:
   - configs/default.yaml
 
 experiment:
-  name: "shopping_small_test"
-  description: "Small batch run on shopping tasks to verify pipeline"
+  name: "shopping_vwa_full"
+  description: "Full VWA shopping tasks from test_shopping.raw.json"
   
 task:
   dataset: "visualwebarena"
   config_file: "external/visualwebarena/config_files/vwa/test_shopping.raw.json"
   # Optional: specific task IDs to run. If omitted, runs all in the file (subject to sharding)
-  task_ids: [0, 1, 2, 3, 4] 
 
 env:
   # Override default to use real VWA env (not dummy black screen)
@@ -23,8 +22,11 @@ run:
   resume: true
   max_retries: 1
   episode_timeout_s: 600
-  output_dir: "results/shopping_small"
+  output_dir: "results/shopping"
 
 agent:
   mode: "always_vision" # Options: always_vision, dom_only, router_v0
-  max_steps: 30
+  max_steps: 40
+
+model:
+  api_name: "qwen3-vl-plus-2025-12-19"

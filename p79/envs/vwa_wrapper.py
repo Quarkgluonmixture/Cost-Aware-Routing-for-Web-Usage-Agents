@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 import os
+import re
 import numpy as np
 from PIL import Image
 
@@ -93,22 +94,44 @@ class VWAWrapper:
             create_stop_action,
             create_go_back_action,
             create_go_forward_action,
+            create_page_focus_action,
             create_keyboard_type_action,
-            create_none_action
+            create_none_action,
+            create_playwright_action
         )
 
         action_type = (action_json.get("action_type") or "").lower().strip()
         action = None
 
         if action_type == "click" and "coordinate" in action_json:
-            coord = action_json["coordinate"]
-            # Accept either normalized [0-1] or pixel coordinates
-            left = float(coord[0])
-            top = float(coord[1])
-            if left > 1.0 or top > 1.0:
-                left = left / float(self.viewport_width)
-                top = top / float(self.viewport_height)
-            action = create_mouse_click_action(left=left, top=top)
+            coord = action_json.get("coordinate")
+            if not (
+                isinstance(coord, (list, tuple))
+                and len(coord) == 2
+                and coord[0] is not None
+                and coord[1] is not None
+            ):
+                coord = None
+            if coord is not None:
+                # Accept either normalized [0-1] or pixel coordinates
+                left = float(coord[0])
+                top = float(coord[1])
+                if left > 1.0 or top > 1.0:
+                    left = left / float(self.viewport_width)
+                    top = top / float(self.viewport_height)
+                # Avoid 0.0 which triggers VWA create_mouse_click_action validation
+                eps = 1e-6
+                if left <= 0.0:
+                    left = eps
+                elif left >= 1.0:
+                    left = 1.0 - eps
+                if top <= 0.0:
+                    top = eps
+                elif top >= 1.0:
+                    top = 1.0 - eps
+                action = create_mouse_click_action(left=left, top=top)
+            else:
+                action = None
         elif action_type == "scroll" and "delta" in action_json:
             dy = action_json["delta"][1]
             direction = "down" if dy > 0 else "up"
@@ -116,19 +139,46 @@ class VWAWrapper:
         elif action_type == "type" and "text" in action_json and "element_id" not in action_json:
             # Type without ID -> keyboard type
             action = create_keyboard_type_action(action_json["text"])
+        elif action_type == "type" and "text" in action_json and "element_id" in action_json:
+            # Treat invalid/zero element_id as keyboard typing fallback
+            try:
+                element_id = int(action_json.get("element_id"))
+            except (TypeError, ValueError):
+                element_id = None
+            if element_id is not None and element_id <= 0:
+                action = create_keyboard_type_action(action_json["text"])
         elif action_type == "back":
             action = create_go_back_action()
         elif action_type == "forward":
             action = create_go_forward_action()
+        elif action_type in ("tab", "tab_focus", "page_focus"):
+            page_number = action_json.get("page_number")
+            if page_number is None:
+                page_number = action_json.get("tab_index")
+            if page_number is None:
+                thought = action_json.get("thought", "")
+                match = re.search(r"tab\s*(\d+)", thought, re.IGNORECASE)
+                if match:
+                    page_number = int(match.group(1))
+            if page_number is None:
+                action = create_none_action()
+            else:
+                action = create_page_focus_action(page_number=int(page_number))
         elif action_type in ("finish", "stop"):
             action = create_stop_action(action_json.get("answer", ""))
         elif action_type == "wait":
             action = create_none_action()
 
+        if action is None and action_type == "click" and "element_id" not in action_json:
+            action = create_none_action()
+
         if action is None:
-            # Fallback to ID based
-            action_str = self._json_to_id_action_str(action_json)
-            action = create_id_based_action(action_str)
+            # Fallback to action_str or ID based
+            if "action_str" in action_json:
+                action = create_playwright_action(str(action_json["action_str"]))
+            else:
+                action_str = self._json_to_id_action_str(action_json)
+                action = create_id_based_action(action_str)
 
         obs, reward, terminated, truncated, info = self._env.step(action)
         if action_type in ("finish", "stop"):
@@ -158,6 +208,9 @@ class VWAWrapper:
             text = a.get("text", "")
             if eid is None:
                 raise ValueError(f"type requires element_id, got: {a}")
+            # VWA id-based parser cannot handle literal newlines inside text
+            if isinstance(text, str):
+                text = text.replace("\n", " ").replace("\r", " ")
             # 注意：文本里如果有 ']' 等符号，后续可以做转义；先跑通再说
             return f"type [{int(eid)}] [{text}]"
 

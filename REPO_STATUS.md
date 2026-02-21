@@ -42,12 +42,23 @@ The current state represents a functional "vertical slice":
 - [x] **Official Evaluation**: Integrated VisualWebArena's native evaluation harness.
     - `scripts/eval_vwa_runs.py` computes true Success Rate (SR) using DOM/URL matching rules from VWA.
     - Patched `p79/envs/vwa_wrapper.py` to record raw actions required by the evaluator.
-- [x] **Configuration**: Created `configs/exp_shopping_small.yaml` for a controlled baseline experiment (Shopping tasks 0-19).
+- [x] **Configuration**: Created `configs/exp_shopping.yaml` for the full shopping experiment.
     - Updated to force `env.dry_run: false` and increase max steps for real environment runs.
 
 ### Recent Debug Runs
-- **latest_run_1770063000**: Completed 5 tasks with full environment load and evaluation; SR 0.00%, average steps 30. Task 3 failed with `list index out of range`.
-- **debug_1770036200**: Full 5-task run; SR 0.00%, average steps 30. Task 3 failed with `list index out of range`.
+- **run_1770141068** (Latest Feasible):
+    - **Status**: Completed 40 steps without crashing or giving up.
+    - **Behavior**: Successfully navigated categories ("Home & Kitchen" -> "Home Decor") when search failed.
+    - **SR**: 0.00% (Task 0 "Red Blanket"). Agent failed to find the specific item despite extensive browsing, likely due to environment limitations (search returning irrelevant items) or navigation complexity.
+    - **Fixes Verified**:
+        1. **Persistence**: Agent no longer quits immediately (fixed early `stop` action).
+        2. **Search**: Search queries now correctly include `\n` to trigger submission.
+        3. **Strategy**: Agent switches to category browsing when search results are poor.
+        4. **Robustness**: JSON parsing handles literal newlines gracefully.
+- **debug_1770031600** (Analyzed):
+    - **Status**: Failed (SR 0.00%).
+    - **Issue**: Agent quit immediately (Step 0/1) due to inability to find item on homepage and lack of persistence.
+    - **Resolution**: Fixed by updating system prompt and enforcing reasoning.
 
 ### Environment Setup
 - [x] **Docker Integration**: Verified and fixed Docker execution permissions in WSL.
@@ -104,21 +115,21 @@ source scripts/vwa_env.sh
 
 ### Run Batch Experiment (Recommended)
 ```bash
-# Run 20 shopping tasks (defined in configs/exp_shopping_small.yaml)
-python scripts/run_vwa_batch.py --config configs/exp_shopping_small.yaml
+# Run shopping tasks (defined in configs/exp_shopping.yaml)
+python scripts/run_vwa_batch.py --config configs/exp_shopping.yaml
 
 # Resume an interrupted run
-python scripts/run_vwa_batch.py --config configs/exp_shopping_small.yaml --resume results/shopping_small/run_TIMESTAMP
+python scripts/run_vwa_batch.py --config configs/exp_shopping.yaml --resume results/shopping/run_TIMESTAMP
 
 # Test pipeline without loading model (Mock Agent)
 # Note: Evaluation will fail or return 0% as mock agent performs random actions
-python scripts/run_vwa_batch.py --config configs/exp_shopping_small.yaml --mock_agent
+python scripts/run_vwa_batch.py --config configs/exp_shopping.yaml --mock_agent
 ```
 
 ### Evaluate Results
 The batch runner performs inline evaluation. To re-evaluate or aggregate offline:
 ```bash
-python scripts/eval_vwa_runs.py --result_dir results/shopping_small/<TIMESTAMP_RUNID>
+python scripts/eval_vwa_runs.py --result_dir results/shopping/<TIMESTAMP_RUNID>
 ```
 
 ### Run Single Task (Debug)
