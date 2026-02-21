@@ -15,52 +15,57 @@ echo "VWA directory: $VWA_DIR"
 echo "Environment directory: $ENV_DIR"
 
 # Check if required files exist
-check_required_files() {
+check_and_setup_files() {
     echo ""
     echo "Checking required files..."
+    MISSING_FILES=false
+
+    # Check for VWA directory
+    if [ ! -d "$VWA_DIR" ] || [ -z "$(ls -A $VWA_DIR 2>/dev/null)" ]; then
+        echo "  [MISSING] VisualWebArena repository"
+        MISSING_FILES=true
+    fi
 
     # Check for shopping image
-    if ! docker images | grep -q "shopping"; then
-        echo "  [MISSING] Shopping Docker image (shopping_final_0712.tar)"
-        echo "    Download from: https://drive.google.com/file/d/1gxXalk9O0p9eu1YkIJcmZta1nvvyAJpA/view?usp=sharing"
+    if ! docker images | grep -q "shopping_final_0712"; then
+        echo "  [MISSING] Shopping Docker image"
         MISSING_FILES=true
-    else
-        echo "  [OK] Shopping Docker image found"
     fi
 
     # Check for forum image
-    if ! docker images | grep -q "postmill"; then
-        echo "  [MISSING] Forum Docker image (postmill-populated-exposed-withimg.tar)"
-        echo "    Download from: https://drive.google.com/file/d/17Qpp1iu_mPqzgO_73Z9BnFjHrzmX9DGf/view?usp=sharing"
+    if ! docker images | grep -q "postmill-populated-exposed-withimg"; then
+        echo "  [MISSING] Forum Docker image"
         MISSING_FILES=true
-    else
-        echo "  [OK] Forum Docker image found"
     fi
 
     # Check for Wikipedia zim file
     if [ ! -f "$ENV_DIR/data/wikipedia_en_all_maxi_2022-05.zim" ]; then
         echo "  [MISSING] Wikipedia zim file"
-        echo "    Download from: https://drive.google.com/file/d/1Um4QLxi_bGv5bP6kt83Ke0lNjuV9Tm0P/view?usp=sharing"
-        echo "    Place in: $ENV_DIR/data/"
         MISSING_FILES=true
-    else
-        echo "  [OK] Wikipedia zim file found"
     fi
 
     # Check for classifieds
     if [ ! -d "$ENV_DIR/classifieds_docker_compose" ]; then
         echo "  [MISSING] Classifieds Docker Compose directory"
-        echo "    Download from: https://drive.google.com/file/d/1m79lp84yXfqdTBHr6IS7_1KkL4sDSemR/view"
-        echo "    Extract to: $ENV_DIR/"
         MISSING_FILES=true
-    else
-        echo "  [OK] Classifieds directory found"
     fi
 
     if [ "$MISSING_FILES" = true ]; then
         echo ""
-        echo "ERROR: Some required files are missing. Please download them first."
-        exit 1
+        echo "Some required files are missing."
+        read -p "Do you want to run the setup script to download them? [Y/n] " ans
+        if [[ $ans =~ ^[Nn]$ ]]; then
+            echo "Cannot proceed without required files. Exiting."
+            exit 1
+        else
+            echo "Running setup script..."
+            bash "$PROJECT_DIR/scripts/setup_vwa.sh"
+            
+            # Re-check is good practice, but setup script should fail if it couldn't download.
+            # We trust setup script for now.
+        fi
+    else
+        echo "All required files found."
     fi
 }
 
@@ -161,7 +166,7 @@ start_homepage() {
 }
 
 # Main execution
-check_required_files
+check_and_setup_files
 
 # Ask which sites to start
 echo ""
