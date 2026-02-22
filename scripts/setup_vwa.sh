@@ -92,7 +92,7 @@ mkdir -p "$DATA_DIR"
 
 echo "Checking and downloading large files..."
 
-# Helper function to download if not exists
+# Helper function to download if not exists using Python API
 download_if_missing() {
     local repo_id=$1
     local filename=$2
@@ -105,8 +105,8 @@ download_if_missing() {
     fi
 
     echo "Downloading $description..."
-    # Download to current dir then move/load
-    huggingface-cli download "$repo_id" "$filename" --repo-type dataset --local-dir . --local-dir-use-symlinks False
+    # Download to current dir then move/load using Python API
+    python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='$repo_id', filename='$filename', repo_type='dataset', local_dir='.')"
     
     if [[ "$filename" == *.tar ]]; then
         # If it's a tar for docker load, we load it then delete
@@ -130,7 +130,7 @@ download_if_missing() {
 # Shopping Image
 if ! docker images | grep -q "shopping_final_0712"; then
     echo "Downloading Shopping Docker image..."
-    huggingface-cli download webarena/Shopping shopping_final_0712.tar --repo-type dataset --local-dir . --local-dir-use-symlinks False
+    python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Shopping', filename='shopping_final_0712.tar', repo_type='dataset', local_dir='.')"
     docker load < shopping_final_0712.tar
     rm shopping_final_0712.tar
 else
@@ -140,7 +140,7 @@ fi
 # Forum Image
 if ! docker images | grep -q "postmill-populated-exposed-withimg"; then
     echo "Downloading Forum Docker image..."
-    huggingface-cli download webarena/Reddit postmill-populated-exposed-withimg.tar --repo-type dataset --local-dir . --local-dir-use-symlinks False
+    python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Reddit', filename='postmill-populated-exposed-withimg.tar', repo_type='dataset', local_dir='.')"
     docker load < postmill-populated-exposed-withimg.tar
     rm postmill-populated-exposed-withimg.tar
 else
@@ -151,7 +151,7 @@ fi
 WIKI_FILE="$DATA_DIR/wikipedia_en_all_maxi_2022-05.zim"
 if [ ! -f "$WIKI_FILE" ]; then
     echo "Downloading Wikipedia ZIM file..."
-    huggingface-cli download webarena/Wikipedia wikipedia_en_all_maxi_2022-05.zim --repo-type dataset --local-dir . --local-dir-use-symlinks False
+    python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Wikipedia', filename='wikipedia_en_all_maxi_2022-05.zim', repo_type='dataset', local_dir='.')"
     mv wikipedia_en_all_maxi_2022-05.zim "$WIKI_FILE"
 else
     echo "Wikipedia ZIM file exists."
@@ -161,7 +161,7 @@ fi
 CLASSIFIEDS_DIR="$ENV_DIR/classifieds_docker_compose"
 if [ ! -d "$CLASSIFIEDS_DIR" ]; then
     echo "Downloading Classifieds..."
-    huggingface-cli download webarena/Classifieds classifieds.tar.gz --repo-type dataset --local-dir . --local-dir-use-symlinks False
+    python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Classifieds', filename='classifieds.tar.gz', repo_type='dataset', local_dir='.')"
     tar -xzf classifieds.tar.gz -C "$ENV_DIR"
     rm classifieds.tar.gz
 else
