@@ -1,76 +1,81 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Setup script for SageMaker / Cloud environment
-# This ensures all dependencies and data are ready
+# This ensures all dependencies and data are ready.
 
 echo "=== SageMaker Setup ==="
 
-# 1. Install gdown for alternative download method
-echo "Installing gdown..."
-pip install gdown
-
-# 2. Download Docker Images
-# Use environment variable DOCKER_DOWNLOAD_METHOD to choose download method
-# Options: "docker_pull" (default) or "gdown"
 DOCKER_DOWNLOAD_METHOD="${DOCKER_DOWNLOAD_METHOD:-docker_pull}"
+TARGET_DATASET="${TARGET_DATASET:-all}"  # all|shopping|reddit|wikipedia|classifieds
+FORCE_PYTHON_SETUP="${FORCE_PYTHON_SETUP:-0}"
+SETUP_MARKER=".sagemaker_python_setup_done"
 
 echo "Using download method: $DOCKER_DOWNLOAD_METHOD"
+echo "Target dataset: $TARGET_DATASET"
 
-# Shopping Image
-if ! docker images | grep -q "shopping_final_0712"; then
-    echo "Shopping image not found locally."
+need_dataset() {
+    local name="$1"
+    if [ "$TARGET_DATASET" = "all" ] || [ "$TARGET_DATASET" = "$name" ]; then
+        return 0
+    fi
+    return 1
+}
+
+pull_or_load_image() {
+    local image_name="$1"
+    local gdown_id="$2"
+    local tar_name="$3"
+
+    if docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^${image_name}:latest$"; then
+        echo "Image already exists: ${image_name}:latest"
+        return
+    fi
+
     if [ "$DOCKER_DOWNLOAD_METHOD" = "docker_pull" ]; then
-        echo "Downloading Shopping Docker image via docker pull..."
-        docker pull webarenaimages/shopping_final_0712
+        echo "Pulling image: $image_name"
+        docker pull "$image_name"
     elif [ "$DOCKER_DOWNLOAD_METHOD" = "gdown" ]; then
-        echo "Downloading Shopping Docker image via gdown..."
-        gdown --id <GDRIVE_ID_SHOPPING> -O shopping_final_0712.tar
-        docker load < shopping_final_0712.tar
-        rm shopping_final_0712.tar
+        if [ -z "$gdown_id" ]; then
+            echo "Missing gdown id for image: $image_name"
+            exit 1
+        fi
+        if ! command -v gdown >/dev/null 2>&1; then
+            echo "Installing gdown..."
+            pip install gdown
+        fi
+        echo "Downloading image tar via gdown: $image_name"
+        gdown --id "$gdown_id" -O "$tar_name"
+        docker load < "$tar_name"
+        rm -f "$tar_name"
     else
         echo "Unknown download method: $DOCKER_DOWNLOAD_METHOD"
         exit 1
     fi
-else
-    echo "Shopping image exists."
+}
+
+# Download only required Docker images for the selected dataset.
+if need_dataset shopping; then
+    pull_or_load_image "webarenaimages/shopping_final_0712" "${GDRIVE_ID_SHOPPING:-}" "shopping_final_0712.tar"
 fi
 
-# Forum Image
-if ! docker images | grep -q "postmill-populated-exposed-withimg"; then
-    echo "Forum image not found locally."
-    if [ "$DOCKER_DOWNLOAD_METHOD" = "docker_pull" ]; then
-        echo "Downloading Forum Docker image via docker pull..."
-        docker pull webarenaimages/postmill-populated-exposed-withimg
-    elif [ "$DOCKER_DOWNLOAD_METHOD" = "gdown" ]; then
-        echo "Downloading Forum Docker image via gdown..."
-        gdown --id <GDRIVE_ID_FORUM> -O postmill-populated-exposed-withimg.tar
-        docker load < postmill-populated-exposed-withimg.tar
-        rm postmill-populated-exposed-withimg.tar
-    else
-        echo "Unknown download method: $DOCKER_DOWNLOAD_METHOD"
-        exit 1
-    fi
-else
-    echo "Forum image exists."
+if need_dataset reddit || need_dataset wikipedia; then
+    pull_or_load_image "webarenaimages/postmill-populated-exposed-withimg" "${GDRIVE_ID_FORUM:-}" "postmill-populated-exposed-withimg.tar"
 fi
 
-# 3. Source the robust setup script (handles repo cloning and data download)
-# Skip Docker image downloads in setup_vwa.sh since we've already handled them
-SKIP_DOCKER_IMAGES=1 bash scripts/setup_vwa.sh
+# setup_vwa.sh handles repo clone + dataset files (wiki/classifieds).
+SETUP_VWA_TARGET_DATASET="$TARGET_DATASET" SKIP_DOCKER_IMAGES=1 bash scripts/setup_vwa.sh
 
-# 4. Install Python Dependencies
-echo "Installing Python dependencies..."
-pip install -r external/visualwebarena/requirements.txt
-
-# Install specific requirements for Qwen3-VL and other agents
-# Force upgrade specific packages to avoid conflicts
-# Note: bitsandbytes is only needed for quantized models (4bit/8bit)
-# For non-quantized models, we only need transformers, accelerate, and qwen_vl_utils
-pip install -U transformers accelerate qwen_vl_utils
-
-# 5. Install Playwright browsers
-echo "Installing Playwright browsers..."
-playwright install --with-deps chromium
+# Install Python dependencies once unless explicitly forced.
+if [ ! -f "$SETUP_MARKER" ] || [ "$FORCE_PYTHON_SETUP" = "1" ]; then
+    echo "Installing Python dependencies..."
+    pip install -r external/visualwebarena/requirements.txt
+    pip install -U transformers accelerate qwen_vl_utils
+    echo "Installing Playwright browsers..."
+    playwright install --with-deps chromium
+    date > "$SETUP_MARKER"
+else
+    echo "Python dependencies already installed (marker: $SETUP_MARKER)."
+fi
 
 echo "SageMaker setup complete."

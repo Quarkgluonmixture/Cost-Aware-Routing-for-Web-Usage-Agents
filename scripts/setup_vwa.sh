@@ -89,8 +89,18 @@ fi
 ENV_DIR="$VWA_DIR/environment_docker"
 DATA_DIR="$ENV_DIR/data"
 mkdir -p "$DATA_DIR"
+TARGET_DATASET="${SETUP_VWA_TARGET_DATASET:-all}"
 
 echo "Checking and downloading large files..."
+echo "Target dataset for setup_vwa.sh: $TARGET_DATASET"
+
+need_dataset() {
+    local name="$1"
+    if [ "$TARGET_DATASET" = "all" ] || [ "$TARGET_DATASET" = "$name" ]; then
+        return 0
+    fi
+    return 1
+}
 
 # Skip Docker image downloads if SKIP_DOCKER_IMAGES is set
 # This allows sagemaker_setup.sh to handle Docker images separately
@@ -133,14 +143,18 @@ download_if_missing() {
     fi
 }
 
-# Shopping Image
-if ! docker images | grep -q "shopping_final_0712"; then
-    echo "Downloading Shopping Docker image..."
-    python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Shopping', filename='shopping_final_0712.tar', repo_type='dataset', local_dir='.')"
-    docker load < shopping_final_0712.tar
-    rm shopping_final_0712.tar
+if need_dataset shopping; then
+    # Shopping Image
+    if ! docker images | grep -q "shopping_final_0712"; then
+        echo "Downloading Shopping Docker image..."
+        python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Shopping', filename='shopping_final_0712.tar', repo_type='dataset', local_dir='.')"
+        docker load < shopping_final_0712.tar
+        rm shopping_final_0712.tar
+    else
+        echo "Shopping image exists."
+    fi
 else
-    echo "Shopping image exists."
+    echo "Skipping Shopping image download for target dataset: $TARGET_DATASET"
 fi
 fi  # End of SKIP_DOCKER_IMAGES check
 
@@ -148,6 +162,7 @@ fi  # End of SKIP_DOCKER_IMAGES check
 if [ "${SKIP_DOCKER_IMAGES:-0}" = "1" ]; then
     echo "SKIP_DOCKER_IMAGES is set. Skipping Forum image download."
 else
+if need_dataset reddit || need_dataset wikipedia; then
 if ! docker images | grep -q "postmill-populated-exposed-withimg"; then
     echo "Downloading Forum Docker image..."
     python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Reddit', filename='postmill-populated-exposed-withimg.tar', repo_type='dataset', local_dir='.')"
@@ -156,10 +171,14 @@ if ! docker images | grep -q "postmill-populated-exposed-withimg"; then
 else
     echo "Forum image exists."
 fi
+else
+echo "Skipping Forum image download for target dataset: $TARGET_DATASET"
+fi
 fi  # End of SKIP_DOCKER_IMAGES check
 
 # Wikipedia ZIM
 WIKI_FILE="$DATA_DIR/wikipedia_en_all_maxi_2022-05.zim"
+if need_dataset wikipedia; then
 if [ ! -f "$WIKI_FILE" ]; then
     echo "Downloading Wikipedia ZIM file..."
     python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Wikipedia', filename='wikipedia_en_all_maxi_2022-05.zim', repo_type='dataset', local_dir='.')"
@@ -167,9 +186,13 @@ if [ ! -f "$WIKI_FILE" ]; then
 else
     echo "Wikipedia ZIM file exists."
 fi
+else
+echo "Skipping Wikipedia data download for target dataset: $TARGET_DATASET"
+fi
 
 # Classifieds
 CLASSIFIEDS_DIR="$ENV_DIR/classifieds_docker_compose"
+if need_dataset classifieds; then
 if [ ! -d "$CLASSIFIEDS_DIR" ]; then
     echo "Downloading Classifieds..."
     python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Classifieds', filename='classifieds.tar.gz', repo_type='dataset', local_dir='.')"
@@ -177,6 +200,9 @@ if [ ! -d "$CLASSIFIEDS_DIR" ]; then
     rm classifieds.tar.gz
 else
     echo "Classifieds directory exists."
+fi
+else
+echo "Skipping Classifieds data download for target dataset: $TARGET_DATASET"
 fi
 
 echo "Setup complete."
