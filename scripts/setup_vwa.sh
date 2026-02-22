@@ -51,16 +51,14 @@ if ! docker images | grep -q "shopping_final_0712"; then
     # For now, providing the command the user can run manually if automation fails is safest, 
     # but I'll try to install gdown if possible or just print the critical info if missing.
     
-    if pip show gdown > /dev/null; then
-        gdown "https://drive.google.com/uc?id=1gxXalk9O0p9eu1YkIJcmZta1nvvyAJpA" -O shopping_final_0712.tar
+    if ! docker images | grep -q "shopping_final_0712"; then
+        echo "Downloading Shopping Docker image..."
+        # Using Hugging Face as a more reliable mirror than Google Drive
+        wget "https://huggingface.co/datasets/webarena/Shopping/resolve/main/shopping_final_0712.tar?download=true" -O shopping_final_0712.tar
         docker load < shopping_final_0712.tar
         rm shopping_final_0712.tar
     else
-        echo "WARNING: 'gdown' not installed. Installing it to download large files..."
-        pip install gdown
-        gdown "https://drive.google.com/uc?id=1gxXalk9O0p9eu1YkIJcmZta1nvvyAJpA" -O shopping_final_0712.tar
-        docker load < shopping_final_0712.tar
-        rm shopping_final_0712.tar
+        echo "Shopping image exists."
     fi
 else
     echo "Shopping image exists."
@@ -69,7 +67,7 @@ fi
 # Forum Image
 if ! docker images | grep -q "postmill-populated-exposed-withimg"; then
     echo "Downloading Forum Docker image..."
-    gdown "https://drive.google.com/uc?id=17Qpp1iu_mPqzgO_73Z9BnFjHrzmX9DGf" -O postmill-populated-exposed-withimg.tar
+    wget "https://huggingface.co/datasets/webarena/Reddit/resolve/main/postmill-populated-exposed-withimg.tar?download=true" -O postmill-populated-exposed-withimg.tar
     docker load < postmill-populated-exposed-withimg.tar
     rm postmill-populated-exposed-withimg.tar
 else
@@ -80,7 +78,7 @@ fi
 WIKI_FILE="$DATA_DIR/wikipedia_en_all_maxi_2022-05.zim"
 if [ ! -f "$WIKI_FILE" ]; then
     echo "Downloading Wikipedia ZIM file..."
-    gdown "https://drive.google.com/uc?id=1Um4QLxi_bGv5bP6kt83Ke0lNjuV9Tm0P" -O "$WIKI_FILE"
+    wget "https://huggingface.co/datasets/webarena/Wikipedia/resolve/main/wikipedia_en_all_maxi_2022-05.zim?download=true" -O "$WIKI_FILE"
 else
     echo "Wikipedia ZIM file exists."
 fi
@@ -89,7 +87,7 @@ fi
 CLASSIFIEDS_DIR="$ENV_DIR/classifieds_docker_compose"
 if [ ! -d "$CLASSIFIEDS_DIR" ]; then
     echo "Downloading Classifieds..."
-    gdown "https://drive.google.com/uc?id=1m79lp84yXfqdTBHr6IS7_1KkL4sDSemR" -O classifieds.tar.gz
+    wget "https://huggingface.co/datasets/webarena/Classifieds/resolve/main/classifieds.tar.gz?download=true" -O classifieds.tar.gz
     tar -xzf classifieds.tar.gz -C "$ENV_DIR"
     rm classifieds.tar.gz
 else
