@@ -16,7 +16,6 @@ LOG_DIR="${LOG_DIR:-logs/sagemaker}"
 
 # Force Docker + cache paths onto SageMaker volume (47GB disk).
 SAGEMAKER_ROOT="${SAGEMAKER_ROOT:-/home/ec2-user/SageMaker}"
-DOCKER_DATA_ROOT="${DOCKER_DATA_ROOT:-$SAGEMAKER_ROOT/docker_data}"
 export HF_HOME="${HF_HOME:-$SAGEMAKER_ROOT/hf_cache}"
 export PIP_CACHE_DIR="${PIP_CACHE_DIR:-$SAGEMAKER_ROOT/pip_cache}"
 export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$HF_HOME/transformers}"
@@ -24,15 +23,6 @@ export HF_HUB_CACHE="${HF_HUB_CACHE:-$HF_HOME/hub}"
 export TMPDIR="${TMPDIR:-$SAGEMAKER_ROOT/tmp}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$SAGEMAKER_ROOT/.cache}"
 mkdir -p "$HF_HOME" "$PIP_CACHE_DIR" "$TRANSFORMERS_CACHE" "$HF_HUB_CACHE" "$TMPDIR" "$XDG_CACHE_HOME" "$LOG_DIR"
-
-setup_docker_data_root() {
-    echo "=== Configure Docker data-root ==="
-    sudo systemctl stop docker
-    sudo mkdir -p "$DOCKER_DATA_ROOT"
-    echo "{\"data-root\": \"$DOCKER_DATA_ROOT\"}" | sudo tee /etc/docker/daemon.json >/dev/null
-    sudo systemctl start docker
-    echo "Docker data-root: $DOCKER_DATA_ROOT"
-}
 
 dataset_from_config() {
     local cfg="$1"
@@ -98,7 +88,6 @@ run_single_config() {
     return $rc
 }
 
-setup_docker_data_root
 echo "HF_HOME=$HF_HOME"
 echo "PIP_CACHE_DIR=$PIP_CACHE_DIR"
 echo "TMPDIR=$TMPDIR"
@@ -111,7 +100,6 @@ else
     configs=(
         "configs/exp_shopping.yaml"
         "configs/exp_reddit.yaml"
-        "configs/exp_wikipedia.yaml"
         "configs/exp_classifieds.yaml"
     )
 fi
