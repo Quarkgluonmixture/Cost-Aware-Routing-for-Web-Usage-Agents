@@ -92,6 +92,12 @@ mkdir -p "$DATA_DIR"
 
 echo "Checking and downloading large files..."
 
+# Skip Docker image downloads if SKIP_DOCKER_IMAGES is set
+# This allows sagemaker_setup.sh to handle Docker images separately
+if [ "${SKIP_DOCKER_IMAGES:-0}" = "1" ]; then
+    echo "SKIP_DOCKER_IMAGES is set. Skipping Docker image downloads."
+else
+
 # Helper function to download if not exists using Python API
 download_if_missing() {
     local repo_id=$1
@@ -136,8 +142,12 @@ if ! docker images | grep -q "shopping_final_0712"; then
 else
     echo "Shopping image exists."
 fi
+fi  # End of SKIP_DOCKER_IMAGES check
 
 # Forum Image
+if [ "${SKIP_DOCKER_IMAGES:-0}" = "1" ]; then
+    echo "SKIP_DOCKER_IMAGES is set. Skipping Forum image download."
+else
 if ! docker images | grep -q "postmill-populated-exposed-withimg"; then
     echo "Downloading Forum Docker image..."
     python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Reddit', filename='postmill-populated-exposed-withimg.tar', repo_type='dataset', local_dir='.')"
@@ -146,6 +156,7 @@ if ! docker images | grep -q "postmill-populated-exposed-withimg"; then
 else
     echo "Forum image exists."
 fi
+fi  # End of SKIP_DOCKER_IMAGES check
 
 # Wikipedia ZIM
 WIKI_FILE="$DATA_DIR/wikipedia_en_all_maxi_2022-05.zim"
