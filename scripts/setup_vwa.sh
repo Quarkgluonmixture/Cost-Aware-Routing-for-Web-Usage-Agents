@@ -28,7 +28,12 @@ fi
 # 2. Check Hugging Face Login
 echo "Checking Hugging Face authentication..."
 if ! command -v huggingface-cli &> /dev/null; then
-    echo "Error: huggingface-cli not found. Please install it (pip install huggingface_hub[cli])."
+    echo "huggingface-cli not found. Installing huggingface_hub[cli]..."
+    pip install -q "huggingface_hub[cli]"
+fi
+
+if ! command -v huggingface-cli &> /dev/null; then
+    echo "Error: Failed to install huggingface-cli. Please install manually."
     exit 1
 fi
 
