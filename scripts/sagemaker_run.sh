@@ -7,6 +7,7 @@ set -e
 #   DOCKER_DOWNLOAD_METHOD=docker_pull bash scripts/sagemaker_run.sh
 #   DOCKER_DOWNLOAD_METHOD=gdown bash scripts/sagemaker_run.sh
 #   CONFIG_FILE=configs/exp_shopping.yaml bash scripts/sagemaker_run.sh  # Run single dataset
+#   SKIP_SUMMARY=1 bash scripts/sagemaker_run.sh  # Skip automatic result summary
 
 echo "=== SageMaker Run ==="
 
@@ -19,6 +20,7 @@ bash scripts/sagemaker_setup.sh
 # You can override config values using env vars or by modifying the yaml
 # Default: run all 4 datasets (shopping, reddit, wikipedia, classifieds)
 CONFIG_FILE="${CONFIG_FILE:-}"
+SKIP_SUMMARY="${SKIP_SUMMARY:-0}"
 
 # 3. Run VWA
 # If CONFIG_FILE is set, run a single dataset
@@ -46,4 +48,14 @@ else
     python scripts/run_vwa_batch.py --config configs/exp_classifieds.yaml
 fi
 
+# 4. Summarize Results
+if [ "$SKIP_SUMMARY" = "0" ]; then
+    echo ""
+    echo "=== Summarizing Results ==="
+    python scripts/summarize_results.py --results_dir results --output_dir results_summary
+else
+    echo "Skipping result summary (SKIP_SUMMARY=1)"
+fi
+
+echo ""
 echo "Experiment completed."
