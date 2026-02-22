@@ -27,33 +27,52 @@ fi
 
 # 2. Check Hugging Face Login
 echo "Checking Hugging Face authentication..."
-if ! command -v huggingface-cli &> /dev/null; then
-    echo "huggingface-cli not found. Installing huggingface_hub..."
-    pip install -q "huggingface_hub"
-fi
 
-if ! command -v huggingface-cli &> /dev/null; then
-    echo "Error: Failed to install huggingface-cli. Please install manually."
-    exit 1
-fi
-
-# Check if user is logged in by looking for the token or running whoami
-# whoami is safer but might require internet.
-if ! huggingface-cli whoami &> /dev/null; then
-    echo "================================================================"
-    echo "ERROR: You are not logged in to Hugging Face."
-    echo "The WebArena datasets require authentication."
-    echo ""
-    echo "Please follow these steps:"
-    echo "1. Create a Hugging Face account at https://huggingface.co/join"
-    echo "2. Generate an Access Token (Read permissions) at https://huggingface.co/settings/tokens"
-    echo "3. Run the following command in your terminal and paste your token:"
-    echo "   huggingface-cli login"
-    echo "4. IMPORTANT: Visit https://huggingface.co/datasets/webarena/Shopping and accept the terms/conditions if required."
-    echo "================================================================"
-    exit 1
+# Check for token file first (works even if huggingface-cli command is not available)
+HF_TOKEN_FILE="$HOME/.huggingface/token"
+if [ -f "$HF_TOKEN_FILE" ]; then
+    echo "Hugging Face token file found at $HF_TOKEN_FILE"
+    echo "Authentication check passed."
 else
-    echo "Logged in to Hugging Face."
+    # Try huggingface-cli as fallback
+    if ! command -v huggingface-cli &> /dev/null; then
+        echo "huggingface-cli not found. Installing huggingface_hub..."
+        pip install -q "huggingface_hub"
+    fi
+
+    if ! command -v huggingface-cli &> /dev/null; then
+        echo "================================================================"
+        echo "ERROR: Hugging Face authentication required but not configured."
+        echo "The WebArena datasets require authentication."
+        echo ""
+        echo "Please follow these steps:"
+        echo "1. Create a Hugging Face account at https://huggingface.co/join"
+        echo "2. Generate an Access Token (Read permissions) at https://huggingface.co/settings/tokens"
+        echo "3. Create the token file manually:"
+        echo "   mkdir -p ~/.huggingface"
+        echo "   echo 'YOUR_TOKEN_HERE' > ~/.huggingface/token"
+        echo "4. IMPORTANT: Visit https://huggingface.co/datasets/webarena/Shopping and accept the terms/conditions if required."
+        echo "================================================================"
+        exit 1
+    fi
+
+    # Check if user is logged in by running whoami
+    if ! huggingface-cli whoami &> /dev/null; then
+        echo "================================================================"
+        echo "ERROR: You are not logged in to Hugging Face."
+        echo "The WebArena datasets require authentication."
+        echo ""
+        echo "Please follow these steps:"
+        echo "1. Create a Hugging Face account at https://huggingface.co/join"
+        echo "2. Generate an Access Token (Read permissions) at https://huggingface.co/settings/tokens"
+        echo "3. Run the following command in your terminal and paste your token:"
+        echo "   huggingface-cli login"
+        echo "4. IMPORTANT: Visit https://huggingface.co/datasets/webarena/Shopping and accept the terms/conditions if required."
+        echo "================================================================"
+        exit 1
+    else
+        echo "Logged in to Hugging Face."
+    fi
 fi
 
 # 3. Clone VisualWebArena if missing
