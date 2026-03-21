@@ -3,16 +3,20 @@ set -euo pipefail
 
 # SageMaker Run Script
 # Usage:
-#   bash scripts/sagemaker_run.sh
-#   CONFIG_FILE=configs/exp_shopping.yaml bash scripts/sagemaker_run.sh
-#   SKIP_SUMMARY=1 bash scripts/sagemaker_run.sh
-#   DOCKER_DOWNLOAD_METHOD=gdown bash scripts/sagemaker_run.sh
+#   bash scripts/cloud/sagemaker_run.sh
+#   CONFIG_FILE=legacy/configs/exp_shopping.yaml bash scripts/cloud/sagemaker_run.sh
+#   SKIP_SUMMARY=1 bash scripts/cloud/sagemaker_run.sh
+#   DOCKER_DOWNLOAD_METHOD=gdown bash scripts/cloud/sagemaker_run.sh
 
 echo "=== SageMaker Run ==="
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+cd "${REPO_DIR}"
+
 CONFIG_FILE="${CONFIG_FILE:-}"
 SKIP_SUMMARY="${SKIP_SUMMARY:-0}"
-LOG_DIR="${LOG_DIR:-logs/sagemaker}"
+LOG_DIR="${LOG_DIR:-${REPO_DIR}/logs/sagemaker}"
 
 # Force Docker + cache paths onto SageMaker volume (47GB disk).
 SAGEMAKER_ROOT="${SAGEMAKER_ROOT:-/home/ec2-user/SageMaker}"
@@ -40,7 +44,7 @@ dataset_from_config() {
 
 cleanup_after_dataset() {
     local dataset="$1"
-    local env_dir="external/visualwebarena/environment_docker"
+    local env_dir="${REPO_DIR}/external/visualwebarena/environment_docker"
     echo "=== Destroy environment for dataset: $dataset ==="
 
     local container_ids
@@ -63,8 +67,8 @@ cleanup_after_dataset() {
     esac
 
     # Remove transient artifacts.
-    rm -rf external/visualwebarena/.cache
-    rm -f ./*.tar ./*.tar.gz
+    rm -rf "${REPO_DIR}/external/visualwebarena/.cache"
+    rm -f "${REPO_DIR}/"*.tar "${REPO_DIR}/"*.tar.gz 2>/dev/null || true
 }
 
 run_single_config() {
@@ -77,10 +81,14 @@ run_single_config() {
 
     echo ""
     echo "=== Running dataset: $dataset ($cfg) ==="
-    TARGET_DATASET="$dataset" bash scripts/sagemaker_setup.sh
+    TARGET_DATASET="$dataset" bash "${REPO_DIR}/scripts/cloud/sagemaker_setup.sh"
 
     set +e
-    python scripts/run_vwa_batch.py --config "$cfg" 2>&1 | tee "$log_file"
+    if command -v python3 >/dev/null 2>&1; then
+        python3 "${REPO_DIR}/scripts/run_experiment.py" --config "$cfg" 2>&1 | tee "$log_file"
+    else
+        python "${REPO_DIR}/scripts/run_experiment.py" --config "$cfg" 2>&1 | tee "$log_file"
+    fi
     rc=${PIPESTATUS[0]}
     set -e
 
@@ -98,9 +106,9 @@ if [ -n "$CONFIG_FILE" ]; then
     configs=("$CONFIG_FILE")
 else
     configs=(
-        "configs/exp_shopping.yaml"
-        "configs/exp_reddit.yaml"
-        "configs/exp_classifieds.yaml"
+        "legacy/configs/exp_shopping.yaml"
+        "legacy/configs/exp_reddit.yaml"
+        "legacy/configs/exp_classifieds.yaml"
     )
 fi
 
@@ -111,8 +119,8 @@ done
 
 if [ "$SKIP_SUMMARY" = "0" ]; then
     echo ""
-    echo "=== Summarizing Results ==="
-    python scripts/summarize_results.py --results_dir results --output_dir results_summary
+    echo "Unified v2 analyzer uses single-run input: scripts/analyze_experiment.py --run_dir <RUN_DIR>"
+    echo "Skipping legacy multi-run summary step."
 else
     echo "Skipping result summary (SKIP_SUMMARY=1)"
 fi

@@ -1,208 +1,266 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Setup script for VisualWebArena dependencies and data
-# Usage: source scripts/setup_vwa.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+VWA_DIR="${PROJECT_DIR}/external/visualwebarena"
+ENV_DIR="${VWA_DIR}/environment_docker"
+DATA_DIR="${ENV_DIR}/data"
 
-echo "=== VisualWebArena Setup ==="
-
-# 1. Conda Activation
-# Try to find conda and activate the environment if not already active
-if [[ -z "$CONDA_DEFAULT_ENV" ]]; then
-    echo "Conda environment not active."
-    # Common locations for conda
-    if [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
-        source "$HOME/anaconda3/etc/profile.d/conda.sh"
-    elif [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
-        source "$HOME/miniconda3/etc/profile.d/conda.sh"
-    elif [ -f "/opt/conda/etc/profile.d/conda.sh" ]; then
-        source "/opt/conda/etc/profile.d/conda.sh"
-    fi
-    
-    # Try activating the environment (adjust name if needed, assuming 'p79_ai' based on lock file)
-    conda activate p79_ai 2>/dev/null || echo "Warning: Could not activate 'p79_ai' environment. Proceeding with current environment."
-else
-    echo "Conda environment '$CONDA_DEFAULT_ENV' is active."
-fi
-
-# 2. Check Hugging Face Login
-echo "Checking Hugging Face authentication..."
-
-# Check for token file first (works even if huggingface-cli command is not available)
-HF_TOKEN_FILE="$HOME/.huggingface/token"
-if [ -f "$HF_TOKEN_FILE" ]; then
-    echo "Hugging Face token file found at $HF_TOKEN_FILE"
-    echo "Authentication check passed."
-else
-    # Try huggingface-cli as fallback
-    if ! command -v huggingface-cli &> /dev/null; then
-        echo "huggingface-cli not found. Installing huggingface_hub..."
-        pip install -q "huggingface_hub"
-    fi
-
-    if ! command -v huggingface-cli &> /dev/null; then
-        echo "================================================================"
-        echo "ERROR: Hugging Face authentication required but not configured."
-        echo "The WebArena datasets require authentication."
-        echo ""
-        echo "Please follow these steps:"
-        echo "1. Create a Hugging Face account at https://huggingface.co/join"
-        echo "2. Generate an Access Token (Read permissions) at https://huggingface.co/settings/tokens"
-        echo "3. Create the token file manually:"
-        echo "   mkdir -p ~/.huggingface"
-        echo "   echo 'YOUR_TOKEN_HERE' > ~/.huggingface/token"
-        echo "4. IMPORTANT: Visit https://huggingface.co/datasets/webarena/Shopping and accept the terms/conditions if required."
-        echo "================================================================"
-        exit 1
-    fi
-
-    # Check if user is logged in by running whoami
-    if ! huggingface-cli whoami &> /dev/null; then
-        echo "================================================================"
-        echo "ERROR: You are not logged in to Hugging Face."
-        echo "The WebArena datasets require authentication."
-        echo ""
-        echo "Please follow these steps:"
-        echo "1. Create a Hugging Face account at https://huggingface.co/join"
-        echo "2. Generate an Access Token (Read permissions) at https://huggingface.co/settings/tokens"
-        echo "3. Run the following command in your terminal and paste your token:"
-        echo "   huggingface-cli login"
-        echo "4. IMPORTANT: Visit https://huggingface.co/datasets/webarena/Shopping and accept the terms/conditions if required."
-        echo "================================================================"
-        exit 1
-    else
-        echo "Logged in to Hugging Face."
-    fi
-fi
-
-# 3. Clone VisualWebArena if missing
-VWA_DIR="external/visualwebarena"
-if [ ! -d "$VWA_DIR" ]; then
-    echo "Cloning VisualWebArena..."
-    git clone https://github.com/web-arena-x/visualwebarena.git "$VWA_DIR"
-else
-    echo "VisualWebArena directory exists."
-fi
-
-# 4. Download Large Files for Docker Environment
-# We use huggingface-cli download which handles authentication automatically
-ENV_DIR="$VWA_DIR/environment_docker"
-DATA_DIR="$ENV_DIR/data"
-mkdir -p "$DATA_DIR"
 TARGET_DATASET="${SETUP_VWA_TARGET_DATASET:-all}"
+SKIP_DOCKER_IMAGES="${SKIP_DOCKER_IMAGES:-0}"
+SKIP_HF_CHECK=0
+SKIP_CONDA_ACTIVATE=0
+PYTHON_BIN=""
 
-echo "Checking and downloading large files..."
-echo "Target dataset for setup_vwa.sh: $TARGET_DATASET"
+usage() {
+  cat <<USAGE
+Usage: bash scripts/setup_vwa.sh [options]
 
-need_dataset() {
-    local name="$1"
-    if [ "$TARGET_DATASET" = "all" ] || [ "$TARGET_DATASET" = "$name" ]; then
-        return 0
-    fi
-    return 1
+Options:
+  --target-dataset <list>   all|shopping|reddit|wikipedia|classifieds or comma list
+  --skip-docker-images      Skip docker image downloads (dataset files only)
+  --skip-hf-check           Skip Hugging Face credential check
+  --skip-conda-activate     Do not attempt conda activation
+  --python <path>           Explicit python interpreter
+  -h, --help                Show this help
+
+Examples:
+  bash scripts/setup_vwa.sh
+  bash scripts/setup_vwa.sh --target-dataset shopping,reddit
+  bash scripts/setup_vwa.sh --target-dataset wikipedia --skip-docker-images
+USAGE
 }
 
-# Skip Docker image downloads if SKIP_DOCKER_IMAGES is set
-# This allows sagemaker_setup.sh to handle Docker images separately
-if [ "${SKIP_DOCKER_IMAGES:-0}" = "1" ]; then
-    echo "SKIP_DOCKER_IMAGES is set. Skipping Docker image downloads."
-else
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --target-dataset)
+      TARGET_DATASET="${2:-all}"
+      shift 2
+      ;;
+    --skip-docker-images)
+      SKIP_DOCKER_IMAGES=1
+      shift
+      ;;
+    --skip-hf-check)
+      SKIP_HF_CHECK=1
+      shift
+      ;;
+    --skip-conda-activate)
+      SKIP_CONDA_ACTIVATE=1
+      shift
+      ;;
+    --python)
+      PYTHON_BIN="${2:-}"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage
+      exit 2
+      ;;
+  esac
+done
 
-# Helper function to download if not exists using Python API
-download_if_missing() {
-    local repo_id=$1
-    local filename=$2
-    local output_path=$3
-    local description=$4
-    
-    if [ -f "$output_path" ]; then
-        echo "$description exists at $output_path."
-        return
-    fi
+if [[ -z "${PYTHON_BIN}" ]]; then
+  if [[ -x "${PROJECT_DIR}/.venv/bin/python" ]]; then
+    PYTHON_BIN="${PROJECT_DIR}/.venv/bin/python"
+  elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="$(command -v python3)"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="$(command -v python)"
+  else
+    echo "No Python interpreter found (.venv/bin/python, python3, python)." >&2
+    exit 127
+  fi
+fi
 
-    echo "Downloading $description..."
-    # Download to current dir then move/load using Python API
-    python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='$repo_id', filename='$filename', repo_type='dataset', local_dir='.')"
-    
-    if [[ "$filename" == *.tar ]]; then
-        # If it's a tar for docker load, we load it then delete
-        if [[ "$description" == *"Docker image"* ]]; then
-             echo "Loading Docker image from $filename..."
-             docker load < "$filename"
-             rm "$filename"
-        fi
-    elif [[ "$filename" == *.tar.gz ]]; then
-        # Extract if needed (for classifieds)
-        if [[ "$description" == "Classifieds" ]]; then
-            tar -xzf "$filename" -C "$ENV_DIR"
-            rm "$filename"
-        fi
-    else
-        # Just move to target
-        mv "$filename" "$output_path"
+if [[ ! -x "${PYTHON_BIN}" ]]; then
+  echo "Python interpreter is not executable: ${PYTHON_BIN}" >&2
+  exit 127
+fi
+
+contains_dataset() {
+  local needle="$1"
+  if [[ "${TARGET_DATASET}" == "all" ]]; then
+    return 0
+  fi
+
+  local normalized="${TARGET_DATASET// /}"
+  IFS=',' read -r -a selected <<< "${normalized}"
+  for item in "${selected[@]}"; do
+    if [[ "${item}" == "${needle}" ]]; then
+      return 0
     fi
+  done
+  return 1
 }
 
-if need_dataset shopping; then
-    # Shopping Image
-    if ! docker images | grep -q "shopping_final_0712"; then
-        echo "Downloading Shopping Docker image..."
-        python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Shopping', filename='shopping_final_0712.tar', repo_type='dataset', local_dir='.')"
-        docker load < shopping_final_0712.tar
-        rm shopping_final_0712.tar
-    else
-        echo "Shopping image exists."
-    fi
-else
-    echo "Skipping Shopping image download for target dataset: $TARGET_DATASET"
-fi
-fi  # End of SKIP_DOCKER_IMAGES check
+ensure_conda() {
+  if (( SKIP_CONDA_ACTIVATE == 1 )); then
+    return 0
+  fi
 
-# Forum Image
-if [ "${SKIP_DOCKER_IMAGES:-0}" = "1" ]; then
-    echo "SKIP_DOCKER_IMAGES is set. Skipping Forum image download."
-else
-if need_dataset reddit || need_dataset wikipedia; then
-if ! docker images | grep -q "postmill-populated-exposed-withimg"; then
-    echo "Downloading Forum Docker image..."
-    python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Reddit', filename='postmill-populated-exposed-withimg.tar', repo_type='dataset', local_dir='.')"
-    docker load < postmill-populated-exposed-withimg.tar
-    rm postmill-populated-exposed-withimg.tar
-else
-    echo "Forum image exists."
-fi
-else
-echo "Skipping Forum image download for target dataset: $TARGET_DATASET"
-fi
-fi  # End of SKIP_DOCKER_IMAGES check
+  if [[ -n "${CONDA_DEFAULT_ENV:-}" ]]; then
+    echo "Conda environment active: ${CONDA_DEFAULT_ENV}"
+    return 0
+  fi
 
-# Wikipedia ZIM
-WIKI_FILE="$DATA_DIR/wikipedia_en_all_maxi_2022-05.zim"
-if need_dataset wikipedia; then
-if [ ! -f "$WIKI_FILE" ]; then
-    echo "Downloading Wikipedia ZIM file..."
-    python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Wikipedia', filename='wikipedia_en_all_maxi_2022-05.zim', repo_type='dataset', local_dir='.')"
-    mv wikipedia_en_all_maxi_2022-05.zim "$WIKI_FILE"
-else
-    echo "Wikipedia ZIM file exists."
-fi
-else
-echo "Skipping Wikipedia data download for target dataset: $TARGET_DATASET"
-fi
+  if [[ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$HOME/anaconda3/etc/profile.d/conda.sh"
+  elif [[ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "$HOME/miniconda3/etc/profile.d/conda.sh"
+  elif [[ -f "/opt/conda/etc/profile.d/conda.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "/opt/conda/etc/profile.d/conda.sh"
+  fi
 
-# Classifieds
-CLASSIFIEDS_DIR="$ENV_DIR/classifieds_docker_compose"
-if need_dataset classifieds; then
-if [ ! -d "$CLASSIFIEDS_DIR" ]; then
-    echo "Downloading Classifieds..."
-    python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='webarena/Classifieds', filename='classifieds.tar.gz', repo_type='dataset', local_dir='.')"
-    tar -xzf classifieds.tar.gz -C "$ENV_DIR"
-    rm classifieds.tar.gz
-else
-    echo "Classifieds directory exists."
-fi
-else
-echo "Skipping Classifieds data download for target dataset: $TARGET_DATASET"
-fi
+  if command -v conda >/dev/null 2>&1; then
+    conda activate p79_ai >/dev/null 2>&1 || true
+  fi
+}
 
-echo "Setup complete."
+check_hf_auth() {
+  if (( SKIP_HF_CHECK == 1 )); then
+    echo "Skipping Hugging Face auth check (--skip-hf-check)."
+    return 0
+  fi
+
+  local token_file="$HOME/.huggingface/token"
+  if [[ -f "${token_file}" ]]; then
+    echo "Hugging Face token detected at ${token_file}"
+    return 0
+  fi
+
+  if ! command -v huggingface-cli >/dev/null 2>&1; then
+    echo "huggingface-cli not found and ~/.huggingface/token missing." >&2
+    echo "Install huggingface_hub and login, or provide ~/.huggingface/token." >&2
+    exit 1
+  fi
+
+  if ! huggingface-cli whoami >/dev/null 2>&1; then
+    echo "Hugging Face authentication check failed (not logged in)." >&2
+    echo "Run: huggingface-cli login" >&2
+    exit 1
+  fi
+
+  echo "Hugging Face authentication check passed."
+}
+
+clone_vwa_if_missing() {
+  if [[ -d "${VWA_DIR}" ]] && [[ -n "$(ls -A "${VWA_DIR}" 2>/dev/null || true)" ]]; then
+    echo "VisualWebArena already present: ${VWA_DIR}"
+    return 0
+  fi
+
+  echo "Cloning VisualWebArena..."
+  git clone https://github.com/web-arena-x/visualwebarena.git "${VWA_DIR}"
+}
+
+python_hf_download() {
+  local repo_id="$1"
+  local filename="$2"
+  "${PYTHON_BIN}" - <<PY
+from huggingface_hub import hf_hub_download
+hf_hub_download(repo_id='${repo_id}', filename='${filename}', repo_type='dataset', local_dir='.')
+PY
+}
+
+download_shopping_image() {
+  if ! contains_dataset "shopping"; then
+    return 0
+  fi
+  if (( SKIP_DOCKER_IMAGES == 1 )); then
+    echo "Skipping shopping image (SKIP_DOCKER_IMAGES=1)."
+    return 0
+  fi
+  if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^shopping_final_0712:latest$'; then
+    echo "Shopping image already exists."
+    return 0
+  fi
+
+  echo "Downloading shopping image..."
+  python_hf_download "webarena/Shopping" "shopping_final_0712.tar"
+  docker load < shopping_final_0712.tar
+  rm -f shopping_final_0712.tar
+}
+
+download_forum_image() {
+  if ! contains_dataset "reddit" && ! contains_dataset "wikipedia"; then
+    return 0
+  fi
+  if (( SKIP_DOCKER_IMAGES == 1 )); then
+    echo "Skipping forum image (SKIP_DOCKER_IMAGES=1)."
+    return 0
+  fi
+  if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^postmill-populated-exposed-withimg:latest$'; then
+    echo "Forum image already exists."
+    return 0
+  fi
+
+  echo "Downloading forum image..."
+  python_hf_download "webarena/Reddit" "postmill-populated-exposed-withimg.tar"
+  docker load < postmill-populated-exposed-withimg.tar
+  rm -f postmill-populated-exposed-withimg.tar
+}
+
+download_wikipedia_data() {
+  if ! contains_dataset "wikipedia"; then
+    return 0
+  fi
+  mkdir -p "${DATA_DIR}"
+  local wiki_file="${DATA_DIR}/wikipedia_en_all_maxi_2022-05.zim"
+  if [[ -f "${wiki_file}" ]]; then
+    echo "Wikipedia ZIM already exists."
+    return 0
+  fi
+
+  echo "Downloading Wikipedia ZIM..."
+  python_hf_download "webarena/Wikipedia" "wikipedia_en_all_maxi_2022-05.zim"
+  mv wikipedia_en_all_maxi_2022-05.zim "${wiki_file}"
+}
+
+download_classifieds_data() {
+  if ! contains_dataset "classifieds"; then
+    return 0
+  fi
+  local classifieds_dir="${ENV_DIR}/classifieds_docker_compose"
+  if [[ -d "${classifieds_dir}" ]]; then
+    echo "Classifieds data already exists."
+    return 0
+  fi
+
+  echo "Downloading classifieds dataset..."
+  python_hf_download "webarena/Classifieds" "classifieds.tar.gz"
+  tar -xzf classifieds.tar.gz -C "${ENV_DIR}"
+  rm -f classifieds.tar.gz
+}
+
+main() {
+  echo "=== VisualWebArena Setup ==="
+  echo "project_dir=${PROJECT_DIR}"
+  echo "target_dataset=${TARGET_DATASET}"
+  echo "skip_docker_images=${SKIP_DOCKER_IMAGES}"
+  echo "python=${PYTHON_BIN}"
+
+  ensure_conda
+  check_hf_auth
+  clone_vwa_if_missing
+
+  mkdir -p "${DATA_DIR}"
+
+  download_shopping_image
+  download_forum_image
+  download_wikipedia_data
+  download_classifieds_data
+
+  echo "Setup complete."
+}
+
+main "$@"

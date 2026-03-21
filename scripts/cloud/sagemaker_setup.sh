@@ -6,6 +6,10 @@ set -euo pipefail
 
 echo "=== SageMaker Setup ==="
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+cd "${REPO_DIR}"
+
 DOCKER_DOWNLOAD_METHOD="${DOCKER_DOWNLOAD_METHOD:-docker_pull}"
 TARGET_DATASET="${TARGET_DATASET:-all}"  # all|shopping|reddit|wikipedia|classifieds
 FORCE_PYTHON_SETUP="${FORCE_PYTHON_SETUP:-0}"
@@ -64,7 +68,7 @@ if need_dataset reddit || need_dataset wikipedia; then
 fi
 
 # setup_vwa.sh handles repo clone + dataset files (wiki/classifieds).
-SETUP_VWA_TARGET_DATASET="$TARGET_DATASET" SKIP_DOCKER_IMAGES=1 bash scripts/setup_vwa.sh
+SETUP_VWA_TARGET_DATASET="$TARGET_DATASET" SKIP_DOCKER_IMAGES=1 bash "${REPO_DIR}/scripts/setup_vwa.sh"
 
 # Install Python dependencies once unless explicitly forced.
 if [ ! -f "$SETUP_MARKER" ] || [ "$FORCE_PYTHON_SETUP" = "1" ]; then
