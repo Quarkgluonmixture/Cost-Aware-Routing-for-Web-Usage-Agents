@@ -13,3 +13,8 @@ results_summary.csv
 episode_*.jsonl
 visualization/
 results/
+.auth/
+.autostart/
+temp_task_*.json
+temp_smoke_config.json
+external_code/

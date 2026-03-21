@@ -1,16 +1,17 @@
+# DEPRECATED: legacy pre-v2 config kept for reference only.
 # Inherit from default.yaml defaults
 defaults:
-  - configs/default.yaml
+  - legacy/configs/default.yaml
 
 experiment:
-  name: "reddit_vwa_full"
-  description: "Full VWA Reddit tasks from test_reddit.raw.json"
+  name: "wikipedia_vwa_full"
+  description: "VWA tasks that include Wikipedia (from test_reddit.raw.json)"
 
 task:
   dataset: "visualwebarena"
   config_file: "external/visualwebarena/config_files/vwa/test_reddit.raw.json"
+  # Tasks filtered by sites containing "wikipedia"
   # Optional: specific task IDs to run. If omitted, runs all in the file (subject to sharding)
-  # task_ids: []
 
 env:
   # Override default to use real VWA env (not dummy black screen)
@@ -23,7 +24,7 @@ run:
   resume: true
   max_retries: 1
   episode_timeout_s: 600
-  output_dir: "results/reddit"
+  output_dir: "results/wikipedia"
 
 agent:
   mode: "always_vision" # Options: always_vision, dom_only, router_v0

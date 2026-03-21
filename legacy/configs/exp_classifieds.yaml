@@ -1,15 +1,17 @@
+# DEPRECATED: legacy pre-v2 config kept for reference only.
 # Inherit from default.yaml defaults
 defaults:
-  - configs/default.yaml
+  - legacy/configs/default.yaml
 
 experiment:
-  name: "shopping_vwa_full"
-  description: "Full VWA shopping tasks from test_shopping.raw.json"
-  
+  name: "classifieds_vwa_full"
+  description: "Full VWA classifieds tasks from test_classifieds.raw.json"
+
 task:
   dataset: "visualwebarena"
-  config_file: "external/visualwebarena/config_files/vwa/test_shopping.raw.json"
+  config_file: "external/visualwebarena/config_files/vwa/test_classifieds.raw.json"
   # Optional: specific task IDs to run. If omitted, runs all in the file (subject to sharding)
+  # task_ids: []
 
 env:
   # Override default to use real VWA env (not dummy black screen)
@@ -22,7 +24,7 @@ run:
   resume: true
   max_retries: 1
   episode_timeout_s: 600
-  output_dir: "results/shopping"
+  output_dir: "results/classifieds"
 
 agent:
   mode: "always_vision" # Options: always_vision, dom_only, router_v0
