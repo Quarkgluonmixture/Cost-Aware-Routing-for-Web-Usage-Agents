@@ -1,169 +1,103 @@
-# Project 79 (P79): Cost-Aware Routing for Web Usage Agents
+# P79: Cost-Aware Routing for Web Usage Agents
 
-## Executive Summary
-A reproducible research codebase for cost-aware routing in web usage agents, built on VisualWebArena (VWA) and optimized for WSL2 plus consumer GPUs such as RTX 4060 8GB. The current focus is a working vertical slice web agent loop (observe → infer → act → env.step) with local Qwen3-VL-4B in 4-bit quantization, plus logging and evaluation hooks to scale into batch experiments.
+## 目标
+本仓库对齐 `P79_experimental_scope_rq_variables.md`，用于构建可复现、可扩展、可核算开销的 WebAgent 实验系统，直接支持：
 
-Repo: https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents
+- RQ1: SoM / observation mode / router 的实验筛选
+- RQ2: best-fixed vs routed 的净收益评估（含 router overhead）
+- RQ3: M1-M4 单模块消融与可解释性分析
 
-## Current Status
-- [x] Environment
-- [x] Agent
+当前主线默认覆盖 VisualWebArena 四站点：`shopping` / `reddit` / `wikipedia` / `classifieds`。
 
-## Screenshot
-The following screenshot is captured from the locally hosted Shopping site during a live run.
+## 快速开始
+### 1) 安装
+最小运行依赖：
 
-![VWA Shopping Screenshot](assets/vwa_run_screenshot.png)
-
-## 1) What this project is about
-Web agents are expensive because they operate over long horizons and large contexts (DOM or AXTree plus screenshots). This project studies routing decisions that reduce cost, latency, and energy proxies while maintaining task success.
-
-We target web-specific routing:
-- Representation routing: when to rely on cheap text (AXTree or DOM) versus expensive screenshots and VLM inference.
-- Module routing: use small local modules (extractors or rerankers) to compress context before invoking a stronger reasoner.
-- Overhead-aware evaluation: report Net Saving = savings minus router overhead.
-
-## 2) Repository structure
-```
-p79/
-  agents/            # Qwen3-VL agent wrapper + strict JSON actions
-  envs/              # VWAWrapper (VisualWebArena integration)
-  logging/           # JSONL step logger + episode summary
-  policies/          # router baselines (placeholder → implement)
-  utils/             # parsing, validation, metrics helpers
-configs/
-  default.yaml       # model/env/logging defaults
-scripts/
-  vwa_env.sh         # env vars for local VWA sites
-  run_one_vwa_episode.py
-  run_vwa_batch.py
-  summarize_results.py
-external/
-  visualwebarena/    # VWA repo (installed editable)
-```
-
-## 3) Environment setup (WSL2 + Conda)
-### 3.1 Create environment
-```bash
-conda create -n p79_ai python=3.10 -y
-conda activate p79_ai
-```
-
-### 3.2 Install this repo
 ```bash
 pip install -e .
 ```
 
-### 3.3 Recommended cache paths (external SSD)
+全功能（分析+测试）：
+
 ```bash
-export HF_HOME="/mnt/d/(Gluons)/hf_cache"
-export TRANSFORMERS_CACHE="$HF_HOME/transformers"
-export HF_HUB_CACHE="$HF_HOME/hub"
+pip install -e ".[analysis,dev]"
 ```
 
-## 4) Model weights (Qwen3-VL-4B)
-Local weights path:
-```
-/mnt/d/(Gluons)/hf_models/Qwen3-VL-4B-Instruct
-```
+### 2) 启动 VWA 环境（通用）
+先检查环境：
 
-Set in configs/default.yaml:
-```yaml
-model:
-  path: "/mnt/d/(Gluons)/hf_models/Qwen3-VL-4B-Instruct"
-  quantization: "4bit"
-  device: "cuda"
-```
-
-Quick sanity check:
 ```bash
-python - <<'PY'
-from transformers import AutoConfig
-path="/mnt/d/(Gluons)/hf_models/Qwen3-VL-4B-Instruct"
-cfg=AutoConfig.from_pretrained(path, trust_remote_code=True)
-print("OK:", cfg.model_type, cfg.architectures)
-PY
+bash scripts/preflight_v2.sh
 ```
 
-## 5) VisualWebArena setup
-### 5.1 Start local VWA sites (Docker)
-Follow VWA instructions to start the containers (Shopping, Reddit, Wikipedia, Classifieds, Homepage). Once running, endpoints look like:
-```
-http://localhost:7770  # shopping
-http://localhost:9999  # classifieds
-```
+按需拉取并启动 VWA Docker：
 
-### 5.2 Set environment variables
 ```bash
+bash scripts/setup_vwa.sh --target-dataset all
+bash scripts/start_vwa_docker.sh --sites all
 source scripts/vwa_env.sh
 ```
 
-### 5.3 Auth states (.auth)
+说明：`scripts/start_vwa_docker.sh` / `scripts/setup_vwa.sh` 都支持非交互参数化运行。
+
+### 3) 准备认证文件（本地）
+`.auth/` 已停止跟踪，不随 git 提交。请在本机自行生成或复制到仓库根目录 `.auth/`。
+
+## Phase 命令
+统一入口仅保留：
+
+- `scripts/run_experiment.py`
+- `scripts/analyze_experiment.py`
+
+运行 Phase 1/2/3：
+
 ```bash
-cp -r external/visualwebarena/.auth .
+python3 scripts/run_experiment.py --config configs/exp_v2_phase1.yaml
+python3 scripts/run_experiment.py --config configs/exp_v2_phase2.yaml
+python3 scripts/run_experiment.py --config configs/exp_v2_phase3.yaml
 ```
 
-## 6) Run a single VWA episode (Cookbook loop)
-```bash
-conda activate p79_ai
-source scripts/vwa_env.sh
-export CC=$(which x86_64-conda-linux-gnu-gcc)
+分析单次运行目录：
 
-python scripts/run_one_vwa_episode.py \
-  --task_config external/visualwebarena/config_files/vwa/test_shopping.raw.json \
-  --task_id 0 \
-  --headless
+```bash
+python3 scripts/analyze_experiment.py --run_dir results/visualwebarena/phase2/<RUN_ID>
 ```
 
-Outputs:
-- episode_0.jsonl (step-level logs)
-- step screenshots under visualization/ (if enabled)
+## 结果目录
+统一目录层级：
 
-## 7) Logging and metrics
-Each episode produces JSONL lines containing:
-- step index, instruction, AXTree text
-- screenshot, action, raw_action (if enabled)
-- reward, done, latency_ms, tokens
-
-Planned research metrics:
-- success rate
-- P95 latency
-- token or cost proxy
-- Net Saving (baseline cost minus routed cost minus routing overhead)
-- optional energy proxy
-
-## 8) Batch experiments (next step)
-Planned interface:
-```bash
-python scripts/run_batch.py \
-  --suite test_shopping \
-  --max_tasks 50 \
-  --policy baseline_strong \
-  --out_dir logs/exp1
+```text
+results/<benchmark>/<phase>/<run_id>/<condition_id>/
 ```
 
-Policies to implement in p79/policies:
-- always_small
-- always_strong
-- threshold_router
-- cascade_router
-- module_router
+关键产物（按 phase 自动输出）包括：
 
-## 9) Troubleshooting
-### A) VWA install downgrades transformers
-```bash
-pip install -e external/visualwebarena --no-deps
-```
+- `phase1_representation_screening.csv/png`
+- `phase2_pareto_metrics.csv/png`
+- `phase2_net_saving_decomposition.csv/json`
+- `phase3_module_ablation.csv/png`
+- `phase3_module_gain_vs_base.csv`
+- `trigger_distribution.csv/png`
+- `state_change_reason_distribution.csv/png`
+- `checklist_progress_curve.csv/png`
+- `checklist_failure_distribution.csv/png`
+- `benchmark_noise_report.csv`
 
-### B) WSL triton or bitsandbytes compile errors
-```bash
-export CC=$(which x86_64-conda-linux-gnu-gcc)
-```
+## 常见问题
+1. 为什么 `preflight_v2.sh` 报缺少环境变量？
+   先执行 `source scripts/vwa_env.sh`，并确认本机 `.auth/` 已就绪。
 
-### C) Auth or site variables missing
-```bash
-source scripts/vwa_env.sh
-ls .auth
-```
+2. 为什么分析命令报错缺少 pandas/matplotlib？
+   安装扩展依赖：`pip install -e ".[analysis]"`。
 
-## 10) Citation and related work
-This project builds on cost-aware routing methods (FrugalGPT, RouteLLM, AutoMix) and web agent benchmarks (WebArena, VisualWebArena).
+3. 为什么不再推荐旧脚本/旧配置？
+   v2 主线只维护统一实验入口。旧批跑配置和脚本已移到 `legacy/` 或 `scripts/dev|cloud|dgx/`。
+
+4. DGX 本机特化怎么跑？
+   DGX 特化不作为通用默认，请看：
+   - `DGX_SPARK_MACHINE_QUIRKS.md`
+   - `scripts/dgx/`
+
+## 额外文档
+- 可选字段语义：`docs/STEP_SCHEMA_V2_OPTIONAL_FIELDS.md`
+- 第三方代码引用：`docs/THIRD_PARTY_CODE.md`

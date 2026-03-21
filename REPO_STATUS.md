@@ -1,140 +1,73 @@
-# Repository Status Report
+# Repository Status
 
-**Last Updated:** 2026-02-02
-**Project:** Cost-Aware Routing for Web Usage Agents (p79)
+**Last Updated:** 2026-03-21  
+**Project:** Cost-Aware Routing for Web Usage Agents (P79)
 
-## 1. Executive Summary
+## P79 对齐完成度面板
+以 `P79_experimental_scope_rq_variables.md` 为基线，当前状态（估算）：
 
-This repository hosts a local web agent framework designed to interact with the **VisualWebArena (VWA)** benchmark. It leverages the **Qwen3-VL-4B** multimodal model to perceive web pages (screenshots and accessibility trees) and execute actions (click, type, scroll).
+1. 实验内核与变量层级（Phase1/2/3, SoM, router, M1-M4）：**90%**
+2. RQ2/RQ3 开销核算与可解释性：**82%**
+3. 日志与分析闭环（trigger/reason/checklist）：**85%**
+4. 安装依赖、Docker 实践、一键运行：**75%**
+5. 文档与发布就绪度：**80%**
 
-The current state represents a functional "vertical slice":
-- **Environment**: Fully containerized local VWA sites (Shopping, Reddit, etc.) are running.
-- **Agent**: A Qwen3-VL based agent is implemented and integrated.
-- **Pipeline**: The end-to-end execution loop (observation -> inference -> action -> environment step) is verified and operational.
+## 当前主线（v2）
+### 已完成
+- 统一实验入口：`run-experiment` / `analyze-experiment`（CLI + scripts wrapper）。
+- 条件矩阵自动生成：
+  - Phase1: 2x2 SoM/observation screening
+  - Phase2: `phase2_fixed_best` vs `phase2_routed`
+  - Phase3: `phase3_none/m1/m2/m3/m4` 单模块消融
+- SoM 接入与降级策略：无 bbox 时降级文本 SoM，记录 `degraded_som=true`。
+- Router 开销拆账：decision/dom parse/screenshot/extra model/retry。
+- 成本口径修复：
+  - `total_model_cost_usd`
+  - `total_router_overhead_cost_usd`
+  - `total_cost_usd = model + overhead`
+  - Phase2 `NetSaving` 计算避免 double-count overhead。
+- Step schema v2 + 可解释字段：`page_change_reasons`、`text_similarity`、`checklist`、`state_digest`。
+- 错误分类标准化：`parse_error` / `invalid_action` / `no_progress` / `env_error` / `benchmark_noise`。
+- 分析产物增强：
+  - `phase1_representation_screening.csv/png`
+  - `phase2_pareto_metrics.csv/png`
+  - `phase2_net_saving_decomposition.csv/json`
+  - `phase3_module_ablation.csv/png`
+  - `phase3_module_gain_vs_base.csv`
+  - `trigger_distribution.csv/png`
+  - `state_change_reason_distribution.csv/png`
+  - `checklist_progress_curve.csv/png`
+  - `checklist_failure_distribution.csv/png`
+  - `benchmark_noise_report.csv`
 
-## 2. Functional Capabilities
+### 结构精简（Balanced）
+- 主入口保留：
+  - `scripts/run_experiment.py`
+  - `scripts/analyze_experiment.py`
+- 脚本分层归档：
+  - `scripts/dev/`
+  - `scripts/cloud/`
+  - `scripts/dgx/`
+- legacy 配置迁移：`legacy/configs/exp_*.yaml`（已标注 deprecated）。
+- `.auth/` 停止跟踪，改为本地准备。
 
-### A. Environment & Simulation
-- **Local Hosting**: All VWA target websites (Classifieds, Shopping, Reddit, Wikipedia, Homepage) are hosted locally via Docker, ensuring reproducibility and zero external network dependency for the simulation.
-- **Headless Browser**: Uses Playwright (via `webarena` wrapper) to interact with websites headlessly, suitable for batch evaluation.
-- **State Management**: Automatic authentication and state restoration using pre-generated cookies (in `.auth/`).
+## 仍待完成（剩余 gap）
+1. 端到端真实环境验收
+- 需要在完整 VWA + Playwright + auth 条件下跑通 Phase1/2/3 全矩阵并留档。
 
-### B. Agent Architecture
-- **Model**: Qwen3-VL-4B-Instruct, loaded with 4-bit quantization to fit consumer-grade GPUs (e.g., RTX 4060 8GB).
-- **Multimodal Input**: Processes high-resolution screenshots and text-based Accessibility Trees (AXTree) simultaneously.
-- **Action Generation**: Outputs structured JSON actions (e.g., `{"action_type": "click", "element_id": 42}`).
-- **Robustness**: Includes fallback mechanisms for parsing invalid JSON and validating element IDs against the accessibility tree.
+2. 测试环境完善
+- 当前环境缺少 `pytest`，尚未在本机执行自动化测试回归。
 
-### C. Execution Pipeline
-- **Batch Runner**: `scripts/run_vwa_batch.py` handles massive parallel evaluation with sharding, auto-resume, and inline evaluation.
-- **Single Episode Runner**: `scripts/run_one_vwa_episode.py` allows running specific tasks by ID from raw configuration files.
-- **Dynamic Configuration**: Automatically replaces placeholders (e.g., `__SHOPPING__`) in task configs with active local URLs.
-- **Logging**: detailed execution logs (steps, actions, observations, rewards) are saved in JSONL format (e.g., `episode_0.jsonl`).
+3. 运行手册进一步固化
+- 可继续补充多机型部署细节（仅通用内容放 README，机器特化仍放 DGX 文档）。
 
-## 3. Completed Work (Changelog)
+## 运行建议
+1. 安装依赖：
+   - 最小：`pip install -e .`
+   - 全功能：`pip install -e ".[analysis,dev]"`
+2. 预检查：`bash scripts/preflight_v2.sh`
+3. 实验运行：`python3 scripts/run_experiment.py --config configs/exp_v2_phase*.yaml`
+4. 分析：`python3 scripts/analyze_experiment.py --run_dir <run_dir>`
 
-### Experiment Infrastructure
-- [x] **Batch Pipeline**: Implemented `scripts/run_vwa_batch.py` for stable, reproducible experiments.
-    - Supports task sharding (for parallel execution).
-    - Auto-resumes from last checkpoint.
-    - Logs detailed run metadata (prompt version, seeds, etc.).
-    - **Optimization**: Fixed OOM issues by ensuring model is loaded only once per process.
-- [x] **Official Evaluation**: Integrated VisualWebArena's native evaluation harness.
-    - `scripts/eval_vwa_runs.py` computes true Success Rate (SR) using DOM/URL matching rules from VWA.
-    - Patched `p79/envs/vwa_wrapper.py` to record raw actions required by the evaluator.
-- [x] **Configuration**: Created `configs/exp_shopping.yaml` for the full shopping experiment.
-    - Updated to force `env.dry_run: false` and increase max steps for real environment runs.
-
-### Recent Debug Runs
-- **run_1770141068** (Latest Feasible):
-    - **Status**: Completed 40 steps without crashing or giving up.
-    - **Behavior**: Successfully navigated categories ("Home & Kitchen" -> "Home Decor") when search failed.
-    - **SR**: 0.00% (Task 0 "Red Blanket"). Agent failed to find the specific item despite extensive browsing, likely due to environment limitations (search returning irrelevant items) or navigation complexity.
-    - **Fixes Verified**:
-        1. **Persistence**: Agent no longer quits immediately (fixed early `stop` action).
-        2. **Search**: Search queries now correctly include `\n` to trigger submission.
-        3. **Strategy**: Agent switches to category browsing when search results are poor.
-        4. **Robustness**: JSON parsing handles literal newlines gracefully.
-- **debug_1770031600** (Analyzed):
-    - **Status**: Failed (SR 0.00%).
-    - **Issue**: Agent quit immediately (Step 0/1) due to inability to find item on homepage and lack of persistence.
-    - **Resolution**: Fixed by updating system prompt and enforcing reasoning.
-
-### Environment Setup
-- [x] **Docker Integration**: Verified and fixed Docker execution permissions in WSL.
-- [x] **VWA Deployment**: Deployed and health-checked all 5 VWA websites.
-- [x] **Configuration**: Created `scripts/vwa_env.sh` for centralized environment variable management.
-- [x] **Data Preparation**: Generated authentication states (`.auth/`) required for Shopping and Reddit tasks.
-
-### Codebase Improvements
-- [x] **Dependency Resolution**:
-    - Installed system-level dependencies (`gcc`, `g++`) via conda to support `triton`/`bitsandbytes`.
-    - Resolved complex Python dependency conflicts by upgrading `torch`, `torchvision`, `transformers`, and `accelerate` to versions compatible with Qwen2-VL.
-    - Installed `webarena` and `p79` packages in editable mode.
-- [x] **Bug Fixes**:
-    - **Agent Logic**: Fixed `TypeError` in agent step function by correctly accessing observation objects.
-    - **Image Handling**: Patched `p79/envs/vwa_wrapper.py` to convert numpy arrays from Playwright to PIL images, fixing a crash in `qwen_vl_utils`.
-    - **Click Normalization**: Added pixel-to-normalized coordinate conversion for mouse clicks.
-    - **Config Loading**: Fixed import errors in `run_one_vwa_episode.py` and removed dependencies on missing `Config` class.
-    - **URL Handling**: Implemented dynamic URL placeholder replacement to support raw VWA task configs.
-    - **Prompting**: Strengthened system prompt to encourage scroll/search before finishing.
-    - **Guardrails**: Added no-progress detection to force scroll when actions repeat.
-
-## 4. Pending / Placeholder Items
-- **Router Policy**: The `p79/policies/router.py` exists but contains placeholder logic. The "Cost-Aware Routing" feature (dynamically selecting between models based on complexity/cost) is not yet implemented.
-
-## 5. Visualization & Debugging
-
-To inspect the agent's behavior, you have three options:
-
-### A. Screenshot Playback (Recommended)
-Every run automatically saves step-by-step screenshots to the `visualization/` directory.
-- **Location**: `visualization/episode_{task_id}/step_{step_idx}.png`
-- **Usage**: Open these images in VS Code to visually verify what the agent saw at each step.
-
-### B. Execution Logs
-The execution trace is saved to a JSONL file (e.g., `episode_0.jsonl`).
-- **Content**: Contains the full Accessibility Tree, Action JSON, and execution logs for each step.
-- **Usage**: Parse this file to analyze decision making or token usage.
-
-### C. Live Browser View
-If running in a desktop environment (or with X11 forwarding), you can watch the browser in real-time:
-```bash
-python scripts/run_one_vwa_episode.py ... --no-headless
-```
-
-## 6. Usage Quickstart
-
-### Setup
-```bash
-conda activate p79_ai
-export CC=$(which x86_64-conda-linux-gnu-gcc)
-cp -r external/visualwebarena/.auth . 
-source scripts/vwa_env.sh
-```
-
-### Run Batch Experiment (Recommended)
-```bash
-# Run shopping tasks (defined in configs/exp_shopping.yaml)
-python scripts/run_vwa_batch.py --config configs/exp_shopping.yaml
-
-# Resume an interrupted run
-python scripts/run_vwa_batch.py --config configs/exp_shopping.yaml --resume results/shopping/run_TIMESTAMP
-
-# Test pipeline without loading model (Mock Agent)
-# Note: Evaluation will fail or return 0% as mock agent performs random actions
-python scripts/run_vwa_batch.py --config configs/exp_shopping.yaml --mock_agent
-```
-
-### Evaluate Results
-The batch runner performs inline evaluation. To re-evaluate or aggregate offline:
-```bash
-python scripts/eval_vwa_runs.py --result_dir results/shopping/<TIMESTAMP_RUNID>
-```
-
-### Run Single Task (Debug)
-```bash
-python scripts/run_one_vwa_episode.py \
-  --task_config external/visualwebarena/config_files/vwa/test_shopping.raw.json \
-  --task_id 0
-```
+## 机器特化说明
+`DGX_SPARK_MACHINE_QUIRKS.md` 仅用于本机特化，不作为通用默认流程。
