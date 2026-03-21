@@ -3,7 +3,11 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["p79"]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["p79*"]
 
 [project]
 name = "p79"
@@ -21,11 +25,20 @@ dependencies = [
     "pillow",
     "numpy",
     "pyyaml",
+    "scipy",
+    "einops",
+    "openai>=1.0.0",
+]
+
+[project.optional-dependencies]
+analysis = [
     "pandas",
     "matplotlib",
-    "scipy",
-    "einops"
+]
+dev = [
+    "pytest>=7.0.0",
 ]
 
 [project.scripts]
-run_episode = "scripts.run_episode:main"
+run-experiment = "p79.cli.run_experiment:main"
+analyze-experiment = "p79.cli.analyze_experiment:main"

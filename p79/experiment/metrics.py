@@ -1,0 +1,160 @@
+from __future__ import annotations
+
+import statistics
+from collections import Counter
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+
+
+def compute_token_cost(
+    input_tokens: Optional[int],
+    output_tokens: Optional[int],
+    cost_cfg: Dict[str, Any],
+) -> Dict[str, float]:
+    input_t = float(input_tokens or 0)
+    output_t = float(output_tokens or 0)
+    in_rate = float(cost_cfg.get("input_cost_per_1k", 0.0))
+    out_rate = float(cost_cfg.get("output_cost_per_1k", 0.0))
+
+    input_cost = input_t / 1000.0 * in_rate
+    output_cost = output_t / 1000.0 * out_rate
+    total_cost = input_cost + output_cost
+    return {
+        "input": input_cost,
+        "output": output_cost,
+        "total": total_cost,
+    }
+
+
+def compute_router_overhead_cost(router_overhead_ms: float, router_cfg: Dict[str, Any]) -> float:
+    rate = float(router_cfg.get("overhead_cost_per_ms", 0.0))
+    return float(router_overhead_ms) * rate
+
+
+def compute_energy_step(metrics_cfg: Dict[str, Any]) -> Dict[str, Optional[float]]:
+    energy_cfg = metrics_cfg.get("energy", {})
+    if not energy_cfg.get("enabled", False):
+        return {"kwh": None, "co2e_kg": None}
+
+    kwh = energy_cfg.get("kwh_per_step")
+    co2_per_kwh = energy_cfg.get("co2e_kg_per_kwh")
+    if kwh is None:
+        return {"kwh": None, "co2e_kg": None}
+    co2 = None if co2_per_kwh is None else float(kwh) * float(co2_per_kwh)
+    return {"kwh": float(kwh), "co2e_kg": co2}
+
+
+def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional[str]]:
+    if not error_message:
+        return False, None
+
+    msg = error_message.lower()
+    if any(k in msg for k in ("captcha", "anti-bot", "blocked", "forbidden", "access denied")):
+        return True, "anti_bot_or_blocked"
+    if any(k in msg for k in ("geo-restricted", "not available in your region", "location")):
+        return True, "geo_restricted"
+    return False, None
+
+
+def p95(values: List[float]) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    idx = int(round(0.95 * (len(ordered) - 1)))
+    return float(ordered[idx])
+
+
+def net_saving(cost_baseline_total: float, cost_routed_model: float, cost_router_overhead: float) -> float:
+    """
+    Net saving for routed condition.
+
+    Baseline is compared against routed total cost reconstructed from:
+    routed_total = routed_model + routed_router_overhead
+    """
+    return float(cost_baseline_total) - (float(cost_routed_model) + float(cost_router_overhead))
+
+
+def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    if not episode_summaries:
+        return {
+            "episodes": 0,
+            "success_rate": 0.0,
+            "avg_steps": 0.0,
+            "p95_step_latency_ms": 0.0,
+            "avg_total_model_cost_usd": 0.0,
+            "avg_total_cost_usd": 0.0,
+            "avg_router_overhead_cost_usd": 0.0,
+            "avg_total_energy_kwh": None,
+            "avg_total_co2e_kg": None,
+            "avg_retries": 0.0,
+            "avg_no_op_rate": 0.0,
+            "avg_page_unchanged_rate": 0.0,
+            "avg_escalation_count": 0.0,
+            "trigger_distribution": {},
+            "state_change_reason_distribution": {},
+            "avg_checklist_completion_rate": None,
+            "checklist_failure_episode_rate": None,
+            "benchmark_noise_rate": 0.0,
+        }
+
+    success_rate = sum(1 for x in episode_summaries if x.get("success")) / len(episode_summaries)
+    step_latencies = [float(x.get("p95_step_latency_ms", 0.0)) for x in episode_summaries]
+
+    def _avg(key: str) -> float:
+        return float(statistics.mean([float(x.get(key, 0.0)) for x in episode_summaries]))
+
+    energy_vals = [x.get("total_energy_kwh") for x in episode_summaries if x.get("total_energy_kwh") is not None]
+    co2_vals = [x.get("total_co2e_kg") for x in episode_summaries if x.get("total_co2e_kg") is not None]
+    checklist_completion_vals = [
+        float(x.get("checklist_completion_rate"))
+        for x in episode_summaries
+        if x.get("checklist_completion_rate") is not None
+    ]
+    checklist_failed_flags = [
+        1 if int(x.get("checklist_failed_items", 0) or 0) > 0 else 0
+        for x in episode_summaries
+        if x.get("checklist_failed_items") is not None
+    ]
+    trigger_counter: Counter = Counter()
+    reason_counter: Counter = Counter()
+    benchmark_noise_flags: List[int] = []
+    for ep in episode_summaries:
+        trigger_dist = ep.get("trigger_distribution", {}) or {}
+        if isinstance(trigger_dist, dict):
+            for k, v in trigger_dist.items():
+                try:
+                    trigger_counter[str(k)] += int(v)
+                except Exception:
+                    continue
+        dist = ep.get("state_change_reason_distribution", {}) or {}
+        if isinstance(dist, dict):
+            for k, v in dist.items():
+                try:
+                    reason_counter[str(k)] += int(v)
+                except Exception:
+                    continue
+        benchmark_noise_flags.append(1 if bool(ep.get("benchmark_noise", False)) else 0)
+
+    return {
+        "episodes": len(episode_summaries),
+        "success_rate": success_rate,
+        "avg_steps": _avg("steps"),
+        "p95_step_latency_ms": p95(step_latencies),
+        "avg_total_model_cost_usd": _avg("total_model_cost_usd"),
+        "avg_total_cost_usd": _avg("total_cost_usd"),
+        "avg_router_overhead_cost_usd": _avg("total_router_overhead_cost_usd"),
+        "avg_total_energy_kwh": (float(statistics.mean(energy_vals)) if energy_vals else None),
+        "avg_total_co2e_kg": (float(statistics.mean(co2_vals)) if co2_vals else None),
+        "avg_retries": _avg("retries"),
+        "avg_no_op_rate": _avg("no_op_rate"),
+        "avg_page_unchanged_rate": _avg("page_unchanged_rate"),
+        "avg_escalation_count": _avg("escalation_count"),
+        "trigger_distribution": dict(trigger_counter),
+        "state_change_reason_distribution": dict(reason_counter),
+        "avg_checklist_completion_rate": (
+            float(statistics.mean(checklist_completion_vals)) if checklist_completion_vals else None
+        ),
+        "checklist_failure_episode_rate": (
+            float(statistics.mean(checklist_failed_flags)) if checklist_failed_flags else None
+        ),
+        "benchmark_noise_rate": float(statistics.mean(benchmark_noise_flags)),
+    }

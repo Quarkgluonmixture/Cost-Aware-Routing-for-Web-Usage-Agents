@@ -4,7 +4,10 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 import os
 import re
-import numpy as np
+try:
+    import numpy as np
+except Exception:  # pragma: no cover - optional runtime dependency
+    np = None
 from PIL import Image
 
 @dataclass
@@ -243,7 +246,7 @@ class VWAWrapper:
         for k in ("image", "screenshot", "pixel", "rgb"):
             if isinstance(obs, dict) and k in obs:
                 raw_img = obs[k]
-                if isinstance(raw_img, np.ndarray):
+                if np is not None and isinstance(raw_img, np.ndarray):
                     image = Image.fromarray(raw_img)
                 else:
                     image = raw_img

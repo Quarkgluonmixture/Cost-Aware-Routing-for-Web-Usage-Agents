@@ -1,0 +1,93 @@
+from __future__ import annotations
+
+import json
+import re
+from typing import Any, Dict, Optional, Tuple
+
+ALLOWED_ACTION_TYPES = {
+    "click",
+    "type",
+    "scroll",
+    "wait",
+    "back",
+    "forward",
+    "finish",
+    "stop",
+    "tab_focus",
+}
+
+
+def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
+    text = (text or "").strip()
+    lowered = text.lower()
+
+    try:
+        parsed = json.loads(text)
+        return validate_action(parsed), True, None
+    except json.JSONDecodeError:
+        pass
+
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if match:
+        try:
+            parsed = json.loads(match.group(0))
+            return validate_action(parsed), True, "repaired_regex"
+        except json.JSONDecodeError:
+            pass
+
+    if "scroll" in lowered:
+        return {"action_type": "scroll", "delta": [0, 0.8], "coordinate_type": "normalized"}, False, "keyword_scroll"
+    if "back" in lowered:
+        return {"action_type": "back"}, False, "keyword_back"
+    if "finish" in lowered or "stop" in lowered:
+        return {"action_type": "finish", "answer": ""}, False, "keyword_finish"
+
+    return {"action_type": "wait"}, False, "parse_failed"
+
+
+def validate_action(action: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(action, dict):
+        return {"action_type": "wait"}
+
+    action_type = str(action.get("action_type", "wait")).lower().strip()
+    if action_type == "stop":
+        action_type = "finish"
+    if action_type not in ALLOWED_ACTION_TYPES:
+        return {"action_type": "wait"}
+
+    action["action_type"] = action_type
+
+    if action_type == "click":
+        coord = action.get("coordinate")
+        if coord is None and "element_id" not in action:
+            return {"action_type": "wait"}
+        if coord is not None and "coordinate_type" not in action:
+            action["coordinate_type"] = "normalized"
+
+    if action_type == "type":
+        action["text"] = str(action.get("text", ""))
+
+    return action
+
+
+def first_element_id_by_keyword(obs_text: str, keywords: Tuple[str, ...]) -> Optional[int]:
+    for line in (obs_text or "").splitlines():
+        lower = line.lower()
+        if not any(k in lower for k in keywords):
+            continue
+        match = re.search(r"\[(\d+)\]", line)
+        if match:
+            return int(match.group(1))
+    return None
+
+
+def extract_candidate_query(instruction: str) -> str:
+    quoted = re.findall(r"['\"]([^'\"]+)['\"]", instruction or "")
+    if quoted:
+        return quoted[0].strip()
+
+    instruction = (instruction or "").strip()
+    for prefix in ("find", "search for", "look for", "buy", "add"):
+        if instruction.lower().startswith(prefix):
+            return instruction[len(prefix):].strip(" .")
+    return instruction[:80].strip()

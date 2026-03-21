@@ -1,0 +1,99 @@
+experiment:
+  name: "p79_unified_experiment"
+  benchmark: "visualwebarena"
+  seed: 42
+  output_root: "results"
+
+task:
+  include_sites: ["shopping", "reddit", "wikipedia", "classifieds"]
+  max_tasks_per_site: null
+  task_ids: {}
+  site_configs:
+    shopping: "external/visualwebarena/config_files/vwa/test_shopping.raw.json"
+    reddit: "external/visualwebarena/config_files/vwa/test_reddit.raw.json"
+    wikipedia: "external/visualwebarena/config_files/vwa/test_wikipedia.raw.json"
+    classifieds: "external/visualwebarena/config_files/vwa/test_classifieds.raw.json"
+
+env:
+  type: "vwa"
+  headless: true
+  observation_type: "accessibility_tree"
+  dry_run: false
+  viewport_width: 1280
+  viewport_height: 720
+
+runtime:
+  max_steps: 40
+  resume: true
+
+variables:
+  primary:
+    som: [false, true]
+    observation_mode: ["dom_only", "hybrid"]
+    router: [false, true]
+  secondary:
+    modules: ["none", "m1", "m2", "m3", "m4"]
+
+router:
+  cheap_default_mode: "dom_only"
+  thresholds:
+    dom_size_threshold: 12000
+    unchanged_steps_trigger: 2
+    no_progress_steps_trigger: 2
+    retry_limit: 1
+  checklist_trigger:
+    enabled: false
+    stalled_steps_trigger: 2
+    failed_item_trigger: true
+  overhead_cost_per_ms: 0.0
+  extra_model_call_cost_usd: 0.0
+  retry_cost_usd: 0.0
+
+metrics:
+  cost:
+    input_cost_per_1k: 0.0
+    output_cost_per_1k: 0.0
+  energy:
+    enabled: false
+    kwh_per_step: null
+    co2e_kg_per_kwh: null
+    hardware_profile: "m2"
+    region: "world"
+    use_psutil: true
+    fixed_power_watts: null
+
+checklist:
+  enabled: false
+  inject_into_prompt: true
+  max_items: 4
+
+state_change:
+  similarity_threshold: 0.95
+
+backends:
+  default_backend: "local_4b"
+  local_4b:
+    type: "local_qwen"
+    path: "Qwen/Qwen3-VL-4B-Instruct"
+    quantization: "4bit"
+    device: "cuda"
+    max_new_tokens: 512
+    temperature: 0.1
+    top_p: 0.9
+    dom_mode: "heuristic"
+    mock_mode: false
+  api_strong:
+    type: "api_qwen"
+    api_name: "qwen3-vl-plus-2025-12-19"
+    temperature: 0.1
+    top_p: 0.9
+    max_new_tokens: 512
+    max_image_payload_bytes: 5242880
+    dom_mode: "heuristic"
+    mock_mode: false
+
+baselines:
+  run_b0: false
+  b0_backend: "api_strong"
+  b0_som: true
+  b0_observation_mode: "hybrid"

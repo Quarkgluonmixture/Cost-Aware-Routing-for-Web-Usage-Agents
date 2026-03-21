@@ -1,5 +1,3 @@
-import base64
-import io
 import json
 import logging
 import os
@@ -8,6 +6,8 @@ from typing import Any, Dict, Optional, Tuple
 
 from PIL import Image
 from openai import OpenAI
+
+from p79.backends.image_utils import DEFAULT_MAX_IMAGE_PAYLOAD_BYTES, encode_image_data_url
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ CRITICAL:
             new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
             image = image.resize(new_size, Image.Resampling.LANCZOS)
 
-        image_b64 = self._image_to_data_url(image)
+        image_payload = self._image_to_data_url(image)
 
         messages = [
             {
@@ -107,7 +107,7 @@ CRITICAL:
                     },
                     {
                         "type": "image_url",
-                        "image_url": {"url": image_b64},
+                        "image_url": {"url": image_payload["data_url"]},
                     },
                 ],
             }
@@ -139,15 +139,16 @@ CRITICAL:
             "failure_reason": fail_reason,
             "input_tokens": getattr(usage, "prompt_tokens", None),
             "output_tokens": getattr(usage, "completion_tokens", None),
+            "image_payload_bytes": image_payload.get("payload_bytes"),
+            "image_quality": image_payload.get("quality"),
+            "image_compressed": image_payload.get("compressed"),
         }
 
         return action, meta
 
-    def _image_to_data_url(self, image: Image.Image) -> str:
-        buffer = io.BytesIO()
-        image.save(buffer, format="PNG")
-        b64 = base64.b64encode(buffer.getvalue()).decode("ascii")
-        return f"data:image/png;base64,{b64}"
+    def _image_to_data_url(self, image: Image.Image) -> Dict[str, Any]:
+        max_payload = self.config.get("agent", {}).get("max_image_payload_bytes", DEFAULT_MAX_IMAGE_PAYLOAD_BYTES)
+        return encode_image_data_url(image=image, max_payload_bytes=int(max_payload))
 
     def _parse_and_validate(self, text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
         text = text.strip()

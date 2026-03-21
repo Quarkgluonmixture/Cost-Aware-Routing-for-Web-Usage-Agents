@@ -1,0 +1,12 @@
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase3"
+
+variables:
+  phase3:
+    base_condition:
+      som_on: true
+      observation_mode: "dom_only"
+      router_on: true

@@ -1,0 +1,13 @@
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase2"
+
+variables:
+  phase2:
+    # Option A: set this to a completed phase1 run dir to auto-pick best fixed condition
+    # best_from_phase1_run_dir: "results/visualwebarena/phase1/run_xxx"
+    fixed_condition:
+      som_on: true
+      observation_mode: "hybrid"
