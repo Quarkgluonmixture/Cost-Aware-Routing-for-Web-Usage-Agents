@@ -93,7 +93,7 @@ check_prerequisites() {
     fi
   fi
 
-  if contains_site "reddit" || contains_site "wikipedia"; then
+  if contains_site "reddit"; then
     if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^postmill-populated-exposed-withimg:latest$'; then
       echo "[MISSING] postmill-populated-exposed-withimg:latest image" >&2
       missing=1

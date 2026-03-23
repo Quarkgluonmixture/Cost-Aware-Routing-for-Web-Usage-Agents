@@ -43,6 +43,33 @@ source scripts/vwa_env.sh
 ### 3) 准备认证文件（本地）
 `.auth/` 已停止跟踪，不随 git 提交。请在本机自行生成或复制到仓库根目录 `.auth/`。
 
+### 4) 离线迁移到另一台 DGX（不重新下载 Docker 资产）
+在源机器（例如 Windows）导出以下四个文件到目标机器的 `/home/jiaming/imports/`：
+
+- `shopping_final_0712.tar`
+- `postmill-populated-exposed-withimg.tar`
+- `wikipedia_en_all_maxi_2022-05.zim`
+- `classifieds_docker_compose.tar.gz`
+
+在目标 DGX 运行：
+
+```bash
+cd /home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents
+bash scripts/import_vwa_assets.sh --imports-dir /home/jiaming/imports --sites all --hostname localhost
+```
+
+如果只想先检查导入文件是否齐全：
+
+```bash
+bash scripts/import_vwa_assets.sh --imports-dir /home/jiaming/imports --check-only
+```
+
+这会自动完成：
+- `docker load` 两个镜像 tar
+- 复制 Wikipedia `.zim` 到 `external/visualwebarena/environment_docker/data/`
+- 解压 `classifieds_docker_compose.tar.gz` 到 `external/visualwebarena/environment_docker/`
+- 启动四站并执行 `preflight_v2.sh`
+
 ## Phase 命令
 统一入口仅保留：
 

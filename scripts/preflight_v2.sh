@@ -7,6 +7,39 @@ PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 STRICT_PORTS="${STRICT_PORTS:-1}"
 EXIT_CODE=0
 
+usage() {
+  cat <<USAGE
+Usage: bash scripts/preflight_v2.sh [options]
+
+Options:
+  --strict-ports       Treat unreachable site ports as FAIL (default)
+  --no-strict-ports    Treat unreachable site ports as WARN
+  -h, --help           Show this help
+USAGE
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --strict-ports)
+      STRICT_PORTS=1
+      shift
+      ;;
+    --no-strict-ports)
+      STRICT_PORTS=0
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage
+      exit 2
+      ;;
+  esac
+done
+
 print_check() {
   local level="$1"
   local msg="$2"
