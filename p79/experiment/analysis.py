@@ -4,7 +4,22 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
-from p79.experiment.metrics import net_saving
+from p79.experiment.metrics import net_saving, net_saving_latency, net_saving_energy
+
+
+def _compute_pareto_front(points: List[Dict[str, float]], maximize: str, minimize: str) -> List[int]:
+    """Return indices of Pareto-optimal points (maximize one axis, minimize another)."""
+    indexed = list(enumerate(points))
+    indexed.sort(key=lambda x: (-x[1].get(maximize, 0.0), x[1].get(minimize, 0.0)))
+    pareto_indices: List[int] = []
+    best_min = float("inf")
+    for idx, pt in indexed:
+        val = pt.get(minimize, float("inf"))
+        if val <= best_min:
+            pareto_indices.append(idx)
+            best_min = val
+    pareto_indices.sort(key=lambda i: points[i].get(minimize, 0.0))
+    return pareto_indices
 
 
 def _collect_episode_summaries(run_dir: Path) -> List[Dict[str, Any]]:
@@ -412,10 +427,22 @@ def _plot_phase2(cond_df, output_dir: Path) -> None:
     ].copy()
     plot_df.to_csv(output_dir / "phase2_pareto_metrics.csv", index=False)
 
+    # Pareto front: success vs cost
+    pareto_points = [
+        {"success_rate": float(r["success_rate"]), "avg_total_cost_usd": float(r["avg_total_cost_usd"])}
+        for _, r in plot_df.iterrows()
+    ]
+    pareto_idx = _compute_pareto_front(pareto_points, maximize="success_rate", minimize="avg_total_cost_usd")
+
     fig, ax = plt.subplots(figsize=(7, 5))
-    ax.scatter(plot_df["avg_total_cost_usd"], plot_df["success_rate"], s=80)
+    ax.scatter(plot_df["avg_total_cost_usd"], plot_df["success_rate"], s=80, zorder=3)
     for _, row in plot_df.iterrows():
         ax.annotate(row["condition_id"], (row["avg_total_cost_usd"], row["success_rate"]))
+    if len(pareto_idx) >= 2:
+        pf_x = [float(plot_df.iloc[i]["avg_total_cost_usd"]) for i in pareto_idx]
+        pf_y = [float(plot_df.iloc[i]["success_rate"]) for i in pareto_idx]
+        ax.plot(pf_x, pf_y, "r--", linewidth=1.5, label="Pareto front", zorder=2)
+        ax.legend()
     ax.set_xlabel("Average Total Cost (USD)")
     ax.set_ylabel("Success Rate")
     ax.set_title("Phase2 Pareto: Success vs Cost")
@@ -424,6 +451,59 @@ def _plot_phase2(cond_df, output_dir: Path) -> None:
     fig.savefig(output_dir / "phase2_pareto_metrics.png")
     fig.savefig(output_dir / "phase2_pareto.png")
     plt.close(fig)
+
+    # Pareto: success vs latency
+    if "p95_step_latency_ms" in work_df.columns:
+        lat_df = work_df[["condition_id", "success_rate", "p95_step_latency_ms"]].copy()
+        fig, ax = plt.subplots(figsize=(7, 5))
+        ax.scatter(lat_df["p95_step_latency_ms"], lat_df["success_rate"], s=80, zorder=3)
+        for _, row in lat_df.iterrows():
+            ax.annotate(row["condition_id"], (row["p95_step_latency_ms"], row["success_rate"]))
+        lat_points = [
+            {"success_rate": float(r["success_rate"]), "p95_step_latency_ms": float(r["p95_step_latency_ms"])}
+            for _, r in lat_df.iterrows()
+        ]
+        lat_pareto = _compute_pareto_front(lat_points, maximize="success_rate", minimize="p95_step_latency_ms")
+        if len(lat_pareto) >= 2:
+            pf_x = [float(lat_df.iloc[i]["p95_step_latency_ms"]) for i in lat_pareto]
+            pf_y = [float(lat_df.iloc[i]["success_rate"]) for i in lat_pareto]
+            ax.plot(pf_x, pf_y, "r--", linewidth=1.5, label="Pareto front")
+            ax.legend()
+        ax.set_xlabel("P95 Step Latency (ms)")
+        ax.set_ylabel("Success Rate")
+        ax.set_title("Phase2 Pareto: Success vs Latency")
+        ax.grid(alpha=0.3)
+        fig.tight_layout()
+        fig.savefig(output_dir / "phase2_pareto_latency.png")
+        plt.close(fig)
+
+    # Pareto: success vs energy
+    if "avg_total_energy_kwh" in work_df.columns and work_df["avg_total_energy_kwh"].notna().any():
+        eng_df = work_df[work_df["avg_total_energy_kwh"].notna()][
+            ["condition_id", "success_rate", "avg_total_energy_kwh"]
+        ].copy()
+        if not eng_df.empty:
+            fig, ax = plt.subplots(figsize=(7, 5))
+            ax.scatter(eng_df["avg_total_energy_kwh"], eng_df["success_rate"], s=80, zorder=3)
+            for _, row in eng_df.iterrows():
+                ax.annotate(row["condition_id"], (row["avg_total_energy_kwh"], row["success_rate"]))
+            eng_points = [
+                {"success_rate": float(r["success_rate"]), "avg_total_energy_kwh": float(r["avg_total_energy_kwh"])}
+                for _, r in eng_df.iterrows()
+            ]
+            eng_pareto = _compute_pareto_front(eng_points, maximize="success_rate", minimize="avg_total_energy_kwh")
+            if len(eng_pareto) >= 2:
+                pf_x = [float(eng_df.iloc[i]["avg_total_energy_kwh"]) for i in eng_pareto]
+                pf_y = [float(eng_df.iloc[i]["success_rate"]) for i in eng_pareto]
+                ax.plot(pf_x, pf_y, "r--", linewidth=1.5, label="Pareto front")
+                ax.legend()
+            ax.set_xlabel("Avg Total Energy (kWh)")
+            ax.set_ylabel("Success Rate")
+            ax.set_title("Phase2 Pareto: Success vs Energy")
+            ax.grid(alpha=0.3)
+            fig.tight_layout()
+            fig.savefig(output_dir / "phase2_pareto_energy.png")
+            plt.close(fig)
 
     fixed = plot_df[plot_df["condition_id"] == "phase2_fixed_best"]
     routed = plot_df[plot_df["condition_id"] == "phase2_routed"]
@@ -456,6 +536,33 @@ def _plot_phase2(cond_df, output_dir: Path) -> None:
             ]
         )
         decomp.to_csv(output_dir / "phase2_net_saving_decomposition.csv", index=False)
+
+        # Latency net saving
+        fixed_latency = float(fixed.iloc[0].get("p95_step_latency_ms", 0.0)) if "p95_step_latency_ms" in fixed.columns else 0.0
+        routed_latency = float(routed.iloc[0].get("p95_step_latency_ms", 0.0)) if "p95_step_latency_ms" in routed.columns else 0.0
+        routed_overhead_ms = float(routed.iloc[0].get("avg_router_overhead_ms", 0.0)) if "avg_router_overhead_ms" in work_df.columns else 0.0
+        latency_ns = net_saving_latency(fixed_latency, routed_latency, routed_overhead_ms)
+        latency_payload = {
+            "baseline_p95_latency_ms": fixed_latency,
+            "routed_p95_latency_ms": routed_latency,
+            "router_overhead_ms": routed_overhead_ms,
+            "net_saving_latency_ms": latency_ns,
+        }
+        with open(output_dir / "phase2_net_saving_latency.json", "w", encoding="utf-8") as f:
+            json.dump(latency_payload, f, indent=2, ensure_ascii=False)
+
+        # Energy net saving
+        fixed_energy = fixed.iloc[0].get("avg_total_energy_kwh") if "avg_total_energy_kwh" in fixed.columns else None
+        routed_energy = routed.iloc[0].get("avg_total_energy_kwh") if "avg_total_energy_kwh" in routed.columns else None
+        if fixed_energy is not None and routed_energy is not None:
+            energy_ns = net_saving_energy(float(fixed_energy), float(routed_energy), None)
+            energy_payload = {
+                "baseline_energy_kwh": float(fixed_energy),
+                "routed_energy_kwh": float(routed_energy),
+                "net_saving_energy_kwh": energy_ns,
+            }
+            with open(output_dir / "phase2_net_saving_energy.json", "w", encoding="utf-8") as f:
+                json.dump(energy_payload, f, indent=2, ensure_ascii=False)
 
 
 def _plot_phase3(cond_df, output_dir: Path) -> None:

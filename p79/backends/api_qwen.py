@@ -14,7 +14,7 @@ class ApiQwenBackend:
         self.backend_id = backend_id
         self.config = config
         self.mock_mode = bool(config.get("mock_mode", False))
-        self.dom_mode = config.get("dom_mode", "heuristic")
+        self.dom_mode = config.get("dom_mode", "llm")
         self._heuristic = HeuristicDomBackend()
         self._agent = None
 
@@ -38,7 +38,7 @@ class ApiQwenBackend:
             self._agent = QwenApiAgent(agent_cfg)
 
     def step(self, instruction: str, obs: Any, context: BackendStepContext) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        if context.observation_mode == "dom_only" and self.dom_mode == "heuristic":
+        if context.observation_mode == "dom_only" and self.dom_mode == "heuristic_only":
             return self._heuristic.step(instruction, obs, context)
 
         if self.mock_mode:
@@ -64,9 +64,18 @@ class ApiQwenBackend:
 
         stage_prefix = ""
         if context.stage == "planner":
-            stage_prefix = "[Stage: planner] Summarize high-level intent first. "
+            stage_prefix = (
+                "[Stage: planner] Based on the task and interaction history, "
+                "identify the immediate sub-goal for this step. Output ONLY a "
+                "short sub-goal description (one sentence), not an action.\n\n"
+            )
         elif context.stage == "grounder":
-            stage_prefix = "[Stage: grounder] Produce concrete action JSON now. "
+            sub_goal = context.planner_sub_goal or ""
+            stage_prefix = (
+                f"[Stage: grounder] Sub-goal: {sub_goal}\n"
+                "Based on the sub-goal above and the current page state, "
+                "produce a concrete action JSON.\n\n"
+            )
 
         prompt = f"{stage_prefix}{instruction}"
         start = time.time()

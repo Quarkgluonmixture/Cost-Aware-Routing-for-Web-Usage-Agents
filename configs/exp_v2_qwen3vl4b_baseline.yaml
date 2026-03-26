@@ -24,7 +24,7 @@ backends:
     max_new_tokens: 512
     temperature: 0.1
     top_p: 0.9
-    dom_mode: "heuristic"
+    dom_mode: "llm"
     mock_mode: false
 
 baselines:

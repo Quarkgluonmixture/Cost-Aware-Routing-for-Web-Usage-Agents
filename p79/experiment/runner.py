@@ -42,12 +42,20 @@ from p79.experiment.types import (
 logger = logging.getLogger(__name__)
 
 
+def _parse_seeds(seed_value: Any) -> List[int]:
+    """Accept seed as int or list of ints."""
+    if isinstance(seed_value, (list, tuple)):
+        return [int(s) for s in seed_value]
+    return [int(seed_value)]
+
+
 class ExperimentRunner:
     def __init__(self, cfg: Dict[str, Any]):
         self.cfg = cfg
         self.output_root = resolve_output_root(cfg)
         self.phase = str(cfg["experiment"]["phase"]).lower()
-        self.seed = int(cfg["experiment"]["seed"])
+        self.seeds = _parse_seeds(cfg["experiment"]["seed"])
+        self.seed = self.seeds[0]
         self.max_steps = int(cfg.get("runtime", {}).get("max_steps", 40))
         self.resume = bool(cfg.get("runtime", {}).get("resume", True))
 
@@ -125,82 +133,92 @@ class ExperimentRunner:
         run_condition_metrics: List[Dict[str, Any]] = []
 
         for condition in self.conditions:
-            condition_dir = self.output_root / condition.condition_id
-            condition_dir.mkdir(parents=True, exist_ok=True)
-            condition_logger = LoggerV2(condition_dir)
-            condition_logger.write_condition_meta(condition.as_dict())
+            for current_seed in self.seeds:
+                self.seed = current_seed
+                seed_suffix = f"_seed{current_seed}" if len(self.seeds) > 1 else ""
+                effective_cid = f"{condition.condition_id}{seed_suffix}"
 
-            episode_summaries: List[Dict[str, Any]] = []
-            backend = self._get_backend(condition.backend_id)
+                condition_dir = self.output_root / effective_cid
+                condition_dir.mkdir(parents=True, exist_ok=True)
+                condition_logger = LoggerV2(condition_dir)
+                cond_meta = condition.as_dict()
+                cond_meta["condition_id"] = effective_cid
+                cond_meta["seed"] = current_seed
+                condition_logger.write_condition_meta(cond_meta)
 
-            for task in self.tasks:
-                summary_file = condition_logger.summary_path(task.site, task.task_id)
-                if self.resume and summary_file.exists():
-                    with open(summary_file, "r", encoding="utf-8") as f:
-                        episode_summaries.append(json.load(f))
-                    continue
+                episode_summaries: List[Dict[str, Any]] = []
+                backend = self._get_backend(condition.backend_id)
 
-                logger.info(
-                    "Running condition=%s backend=%s site=%s task=%s",
-                    condition.condition_id,
-                    condition.backend_id,
-                    task.site,
-                    task.task_id,
+                for task in self.tasks:
+                    summary_file = condition_logger.summary_path(task.site, task.task_id)
+                    if self.resume and summary_file.exists():
+                        with open(summary_file, "r", encoding="utf-8") as f:
+                            episode_summaries.append(json.load(f))
+                        continue
+
+                    logger.info(
+                        "Running condition=%s seed=%d backend=%s site=%s task=%s",
+                        effective_cid,
+                        current_seed,
+                        condition.backend_id,
+                        task.site,
+                        task.task_id,
+                    )
+
+                    try:
+                        summary = self._run_episode(condition, task, backend, condition_logger, condition_dir)
+                    except Exception as exc:
+                        noise, noise_cat = detect_benchmark_noise(str(exc))
+                        summary = EpisodeSummaryV2(
+                            schema_version=SCHEMA_VERSION_V2,
+                            run_id=self.cfg["experiment"]["run_id"],
+                            condition_id=effective_cid,
+                            benchmark=task.benchmark,
+                            benchmark_site=task.site,
+                            task_id=task.task_id,
+                            seed=self.seed,
+                            success=False,
+                            score=0.0,
+                            steps=0,
+                            retries=0,
+                            no_op_rate=0.0,
+                            page_unchanged_rate=0.0,
+                            total_latency_ms=0.0,
+                            p95_step_latency_ms=0.0,
+                            total_tokens=0,
+                            total_model_cost_usd=0.0,
+                            total_cost_usd=0.0,
+                            total_router_overhead_cost_usd=0.0,
+                            total_router_overhead_ms=0.0,
+                            total_energy_kwh=None,
+                            total_co2e_kg=None,
+                            escalation_count=0,
+                            trigger_distribution={},
+                            benchmark_noise=noise,
+                            benchmark_noise_category=noise_cat,
+                            artifacts_dir=str(condition_dir),
+                            error=str(exc),
+                        ).as_dict()
+
+                    condition_logger.write_episode_summary(task.site, task.task_id, summary)
+                    episode_summaries.append(summary)
+
+                aggregate = aggregate_condition_metrics(episode_summaries)
+                aggregate.update(
+                    {
+                        "condition_id": effective_cid,
+                        "seed": current_seed,
+                        "phase": condition.phase,
+                        "backend_id": condition.backend_id,
+                        "som_on": condition.som_on,
+                        "observation_mode": condition.observation_mode,
+                        "router_on": condition.router_on,
+                        "module_flags": condition.modules.as_dict(),
+                    }
                 )
 
-                try:
-                    summary = self._run_episode(condition, task, backend, condition_logger, condition_dir)
-                except Exception as exc:
-                    noise, noise_cat = detect_benchmark_noise(str(exc))
-                    summary = EpisodeSummaryV2(
-                        schema_version=SCHEMA_VERSION_V2,
-                        run_id=self.cfg["experiment"]["run_id"],
-                        condition_id=condition.condition_id,
-                        benchmark=task.benchmark,
-                        benchmark_site=task.site,
-                        task_id=task.task_id,
-                        seed=self.seed,
-                        success=False,
-                        score=0.0,
-                        steps=0,
-                        retries=0,
-                        no_op_rate=0.0,
-                        page_unchanged_rate=0.0,
-                        total_latency_ms=0.0,
-                        p95_step_latency_ms=0.0,
-                        total_tokens=0,
-                        total_model_cost_usd=0.0,
-                        total_cost_usd=0.0,
-                        total_router_overhead_cost_usd=0.0,
-                        total_router_overhead_ms=0.0,
-                        total_energy_kwh=None,
-                        total_co2e_kg=None,
-                        escalation_count=0,
-                        trigger_distribution={},
-                        benchmark_noise=noise,
-                        benchmark_noise_category=noise_cat,
-                        artifacts_dir=str(condition_dir),
-                        error=str(exc),
-                    ).as_dict()
-
-                condition_logger.write_episode_summary(task.site, task.task_id, summary)
-                episode_summaries.append(summary)
-
-            aggregate = aggregate_condition_metrics(episode_summaries)
-            aggregate.update(
-                {
-                    "condition_id": condition.condition_id,
-                    "phase": condition.phase,
-                    "backend_id": condition.backend_id,
-                    "som_on": condition.som_on,
-                    "observation_mode": condition.observation_mode,
-                    "router_on": condition.router_on,
-                    "module_flags": condition.modules.as_dict(),
-                }
-            )
-
-            condition_logger.write_condition_summary(aggregate)
-            run_condition_metrics.append(aggregate)
+                condition_logger.write_condition_summary(aggregate)
+                run_condition_metrics.append(aggregate)
 
         assumptions = {
             "som_fallback": "degrade_to_text_som_with_flag",
@@ -346,7 +364,10 @@ class ExperimentRunner:
             if condition.router_on and decision_mode == "hybrid":
                 escalation_count += 1
 
+            screenshot_prep_start = time.time()
             obs_for_backend = self._clone_observation_for_mode(obs, som_result.som_text, decision_mode)
+            if condition.router_on and decision_mode == "hybrid" and condition.observation_mode == "dom_only":
+                overhead["extra_screenshot_ms"] = (time.time() - screenshot_prep_start) * 1000.0
             instruction = task.intent
             if checklist_manager and bool(self.checklist_cfg.get("inject_into_prompt", True)):
                 instruction = f"{task.intent}\n\n{checklist_manager.format_for_prompt()}"
@@ -361,6 +382,7 @@ class ExperimentRunner:
             )
 
             planner_meta = {}
+            planner_sub_goal: Optional[str] = None
             if condition.modules.m4_two_stage_generation_grounding:
                 planner_context = BackendStepContext(
                     observation_mode=decision_mode,
@@ -370,12 +392,18 @@ class ExperimentRunner:
                     history=step_records[-8:],
                     module_flags=condition.modules.as_dict(),
                 )
-                _, planner_meta = backend.step(instruction, obs_for_backend, planner_context)
+                planner_action, planner_meta = backend.step(instruction, obs_for_backend, planner_context)
                 overhead["extra_model_calls"] += float(planner_meta.get("model_calls", 1))
+                planner_sub_goal = (
+                    planner_action.get("thought")
+                    or planner_meta.get("raw_text")
+                    or str(planner_action)
+                )
 
             backend_start = time.time()
             call_stage = "grounder" if condition.modules.m4_two_stage_generation_grounding else "single"
             context.stage = call_stage
+            context.planner_sub_goal = planner_sub_goal
             action, meta = backend.step(instruction, obs_for_backend, context)
             backend_latency_ms = (time.time() - backend_start) * 1000.0
 
@@ -407,7 +435,7 @@ class ExperimentRunner:
                 retry_limit=retry_limit,
                 module_flags=condition.modules.as_dict(),
             ):
-                retry_action = m3_retry_action()
+                retry_action = m3_retry_action(failed_action=action, obs_text=obs.text or "")
                 retry_obs, retry_reward, retry_term, retry_trunc, retry_info = self.environment.step(retry_action)
                 retry_count += 1
                 retry_total += 1

@@ -19,6 +19,10 @@ HARDWARE_PROFILES = {
     "rtx_4090": {"idle": 30.0, "load": 400.0},
     "a100": {"idle": 50.0, "load": 300.0},
     "h100": {"idle": 60.0, "load": 500.0},
+    # DGX Spark (GH200 Grace Hopper): ~900W GPU TDP + ~150W Grace CPU
+    "dgx_spark": {"idle": 120.0, "load": 1050.0},
+    # GB200 / Blackwell-based DGX
+    "gb200": {"idle": 150.0, "load": 1200.0},
 }
 
 

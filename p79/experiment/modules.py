@@ -62,10 +62,49 @@ def should_trigger_m3_retry(
     return True
 
 
-def m3_retry_action() -> Dict[str, Any]:
-    return {
-        "action_type": "scroll",
-        "delta": [0, 0.8],
-        "coordinate_type": "normalized",
-        "thought": "M3 retry policy: force one corrective scroll.",
-    }
+def m3_retry_action(
+    failed_action: Optional[Dict[str, Any]] = None,
+    obs_text: str = "",
+) -> Dict[str, Any]:
+    """Choose a retry action based on the type of failure."""
+    failed_type = str((failed_action or {}).get("action_type", "")).lower()
+
+    if failed_type == "click":
+        # Click failed — scroll to reveal the target element
+        return {
+            "action_type": "scroll",
+            "delta": [0, 0.5],
+            "coordinate_type": "normalized",
+            "thought": "M3 retry: click failed, scroll down to reveal target.",
+        }
+    elif failed_type == "type":
+        # Type failed — try clicking the input field first
+        eid = first_element_id_by_keyword(obs_text, ("textbox", "input", "search", "edit"))
+        if eid is not None:
+            return {
+                "action_type": "click",
+                "element_id": eid,
+                "thought": "M3 retry: type failed, click input field to focus.",
+            }
+        return {
+            "action_type": "scroll",
+            "delta": [0, 0.3],
+            "coordinate_type": "normalized",
+            "thought": "M3 retry: type failed, no input found, scroll to reveal.",
+        }
+    elif failed_type in ("go_back", "goto"):
+        # Navigation failed — wait briefly via a no-op scroll
+        return {
+            "action_type": "scroll",
+            "delta": [0, 0.0],
+            "coordinate_type": "normalized",
+            "thought": "M3 retry: navigation failed, minimal scroll as wait.",
+        }
+    else:
+        # Default: scroll to gather more context
+        return {
+            "action_type": "scroll",
+            "delta": [0, 0.8],
+            "coordinate_type": "normalized",
+            "thought": "M3 retry: force one corrective scroll.",
+        }

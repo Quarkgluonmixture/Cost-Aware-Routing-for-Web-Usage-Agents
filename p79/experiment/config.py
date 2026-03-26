@@ -150,7 +150,7 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
             "max_new_tokens": 512,
             "temperature": 0.1,
             "top_p": 0.9,
-            "dom_mode": "heuristic",
+            "dom_mode": "llm",
             "mock_mode": True,
         }
     backends.setdefault("default_backend", next(iter([k for k in backends.keys() if k != "default_backend"]), "local_4b"))

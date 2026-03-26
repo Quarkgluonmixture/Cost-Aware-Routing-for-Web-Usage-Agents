@@ -52,6 +52,22 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
         return True, "anti_bot_or_blocked"
     if any(k in msg for k in ("geo-restricted", "not available in your region", "location")):
         return True, "geo_restricted"
+    if any(k in msg for k in ("timeout", "timed out", "deadline exceeded")):
+        return True, "timeout"
+    if any(k in msg for k in (
+        "playwright", "browser has been closed", "target closed",
+        "page closed", "context closed", "frame was detached",
+    )):
+        return True, "playwright_error"
+    if any(k in msg for k in (
+        "econnrefused", "econnreset", "epipe", "connection reset",
+        "connection refused", "network error", "fetch failed",
+    )):
+        return True, "connection_error"
+    if any(k in msg for k in ("docker", "container", "service unavailable", "502", "503")):
+        return True, "docker_service_error"
+    if any(k in msg for k in ("navigation failed", "net::err_")):
+        return True, "navigation_error"
     return False, None
 
 
@@ -71,6 +87,23 @@ def net_saving(cost_baseline_total: float, cost_routed_model: float, cost_router
     routed_total = routed_model + routed_router_overhead
     """
     return float(cost_baseline_total) - (float(cost_routed_model) + float(cost_router_overhead))
+
+
+def net_saving_latency(
+    latency_baseline_ms: float, latency_routed_ms: float, router_overhead_ms: float
+) -> float:
+    return float(latency_baseline_ms) - (float(latency_routed_ms) + float(router_overhead_ms))
+
+
+def net_saving_energy(
+    energy_baseline_kwh: Optional[float],
+    energy_routed_kwh: Optional[float],
+    router_overhead_energy_kwh: Optional[float],
+) -> Optional[float]:
+    if energy_baseline_kwh is None or energy_routed_kwh is None:
+        return None
+    overhead = float(router_overhead_energy_kwh or 0.0)
+    return float(energy_baseline_kwh) - (float(energy_routed_kwh) + overhead)
 
 
 def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict[str, Any]:

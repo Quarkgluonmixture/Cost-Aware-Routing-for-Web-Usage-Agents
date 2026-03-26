@@ -10,6 +10,7 @@ class BackendStepContext:
     som_enabled: bool
     som_text: str
     stage: str = "single"
+    planner_sub_goal: Optional[str] = None
     history: List[Dict[str, Any]] = field(default_factory=list)
     module_flags: Dict[str, bool] = field(default_factory=dict)
 

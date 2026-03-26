@@ -1,6 +1,7 @@
 experiment:
   name: "p79_unified_experiment"
   benchmark: "visualwebarena"
+  # Single seed or list for multi-seed runs: [42, 123, 456]
   seed: 42
   output_root: "results"
 
@@ -45,19 +46,29 @@ router:
     enabled: false
     stalled_steps_trigger: 2
     failed_item_trigger: true
-  overhead_cost_per_ms: 0.0
-  extra_model_call_cost_usd: 0.0
-  retry_cost_usd: 0.0
+  # Router overhead: GPU amortized cost per ms (~$0.11e-6/ms for RTX 4090)
+  overhead_cost_per_ms: 0.00000011
+  # Extra model call cost: average cost of one local 4B inference (~$0.002)
+  extra_model_call_cost_usd: 0.002
+  # Retry cost: one env step + heuristic action (~$0.0005)
+  retry_cost_usd: 0.0005
 
 metrics:
   cost:
-    input_cost_per_1k: 0.0
-    output_cost_per_1k: 0.0
+    # Local 4B model: estimated from GPU-hour amortization
+    # RTX 4090 ~$0.40/hr, ~60 tok/s → ~$0.0018/1k tokens
+    # Adjust per actual hardware; set to 0.0 to disable monetary cost tracking
+    input_cost_per_1k: 0.0018
+    output_cost_per_1k: 0.0036
+  cost_api:
+    # Qwen3-VL-Plus API pricing (per 1k tokens, USD)
+    input_cost_per_1k: 0.0015
+    output_cost_per_1k: 0.002
   energy:
-    enabled: false
+    enabled: true
     kwh_per_step: null
     co2e_kg_per_kwh: null
-    hardware_profile: "m2"
+    hardware_profile: "rtx_4090"
     region: "world"
     use_psutil: true
     fixed_power_watts: null
@@ -80,7 +91,7 @@ backends:
     max_new_tokens: 512
     temperature: 0.1
     top_p: 0.9
-    dom_mode: "heuristic"
+    dom_mode: "llm"
     mock_mode: false
   api_strong:
     type: "api_qwen"
@@ -89,7 +100,7 @@ backends:
     top_p: 0.9
     max_new_tokens: 512
     max_image_payload_bytes: 5242880
-    dom_mode: "heuristic"
+    dom_mode: "llm"
     mock_mode: false
 
 baselines:

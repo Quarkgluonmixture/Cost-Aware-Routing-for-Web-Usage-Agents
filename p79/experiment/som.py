@@ -99,6 +99,7 @@ def apply_som(
 
     if image is not None and bbox_map:
         try:
+            image = image.copy()
             draw = ImageDraw.Draw(image)
             width, height = image.size
             for mark in text_marks:
