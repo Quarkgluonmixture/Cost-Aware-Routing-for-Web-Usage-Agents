@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 STRICT_PORTS="${STRICT_PORTS:-1}"
+SITE_MODE="${SITE_MODE:-auto}"
+CHECK_DOCKER="${CHECK_DOCKER:-auto}"
 EXIT_CODE=0
 
 usage() {
@@ -14,6 +16,11 @@ Usage: bash scripts/preflight_v2.sh [options]
 Options:
   --strict-ports       Treat unreachable site ports as FAIL (default)
   --no-strict-ports    Treat unreachable site ports as WARN
+  --site-mode <mode>   auto|local|remote (default: auto)
+  --remote-sites       Equivalent to --site-mode remote
+  --local-sites        Equivalent to --site-mode local
+  --skip-docker        Skip docker daemon check
+  --check-docker       Force docker daemon check
   -h, --help           Show this help
 USAGE
 }
@@ -28,6 +35,26 @@ while [[ $# -gt 0 ]]; do
       STRICT_PORTS=0
       shift
       ;;
+    --site-mode)
+      SITE_MODE="${2:-auto}"
+      shift 2
+      ;;
+    --remote-sites)
+      SITE_MODE="remote"
+      shift
+      ;;
+    --local-sites)
+      SITE_MODE="local"
+      shift
+      ;;
+    --skip-docker)
+      CHECK_DOCKER="never"
+      shift
+      ;;
+    --check-docker)
+      CHECK_DOCKER="always"
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -39,6 +66,16 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ "${SITE_MODE}" != "auto" ]] && [[ "${SITE_MODE}" != "local" ]] && [[ "${SITE_MODE}" != "remote" ]]; then
+  echo "Invalid --site-mode value: ${SITE_MODE} (expected: auto|local|remote)" >&2
+  exit 2
+fi
+
+if [[ "${CHECK_DOCKER}" != "auto" ]] && [[ "${CHECK_DOCKER}" != "always" ]] && [[ "${CHECK_DOCKER}" != "never" ]]; then
+  echo "Invalid docker check mode: ${CHECK_DOCKER} (expected: auto|always|never)" >&2
+  exit 2
+fi
 
 print_check() {
   local level="$1"
@@ -118,18 +155,68 @@ check_docker() {
   fi
 }
 
-check_site_ports() {
+extract_url_host() {
+  local url="$1"
+  local no_scheme="${url#*://}"
+  local host_port="${no_scheme%%/*}"
+  local host
+  if [[ "${host_port}" == \[*\]* ]]; then
+    host="${host_port#\[}"
+    host="${host%%\]*}"
+  else
+    host="${host_port%%:*}"
+  fi
+  echo "${host}"
+}
+
+is_local_host() {
+  local host="$1"
+  [[ "${host}" == "localhost" || "${host}" == "127.0.0.1" || "${host}" == "::1" ]]
+}
+
+resolve_site_mode() {
+  if [[ "${SITE_MODE}" != "auto" ]]; then
+    RESOLVED_SITE_MODE="${SITE_MODE}"
+    return
+  fi
+
+  local endpoints=("${SHOPPING:-}" "${REDDIT:-}" "${WIKIPEDIA:-}" "${CLASSIFIEDS:-}" "${HOMEPAGE:-}")
+  local all_local=1
+  local url
+  for url in "${endpoints[@]}"; do
+    if [[ -z "${url}" ]]; then
+      continue
+    fi
+    if ! is_local_host "$(extract_url_host "${url}")"; then
+      all_local=0
+      break
+    fi
+  done
+
+  if (( all_local == 1 )); then
+    RESOLVED_SITE_MODE="local"
+  else
+    RESOLVED_SITE_MODE="remote"
+  fi
+}
+
+check_site_endpoints() {
   local endpoints=(
-    "shopping:http://localhost:7770"
-    "reddit:http://localhost:9999"
-    "wikipedia:http://localhost:8888"
-    "classifieds:http://localhost:9980"
-    "homepage:http://localhost:4399"
+    "shopping:${SHOPPING:-}"
+    "reddit:${REDDIT:-}"
+    "wikipedia:${WIKIPEDIA:-}"
+    "classifieds:${CLASSIFIEDS:-}"
+    "homepage:${HOMEPAGE:-}"
   )
 
   for item in "${endpoints[@]}"; do
     local name="${item%%:*}"
     local url="${item#*:}"
+
+    if [[ -z "${url}" ]]; then
+      fail "${name} endpoint is empty"
+      continue
+    fi
 
     if curl -fsS --max-time 3 "${url}" >/dev/null 2>&1; then
       pass "${name} endpoint reachable (${url})"
@@ -177,8 +264,16 @@ main() {
 
   check_python
   check_env_vars
-  check_docker
-  check_site_ports
+  resolve_site_mode
+  pass "Site mode resolved as: ${RESOLVED_SITE_MODE}"
+
+  if [[ "${CHECK_DOCKER}" == "always" ]] || { [[ "${CHECK_DOCKER}" == "auto" ]] && [[ "${RESOLVED_SITE_MODE}" == "local" ]]; }; then
+    check_docker
+  else
+    warn "Skipping docker daemon check (mode=${CHECK_DOCKER}, site_mode=${RESOLVED_SITE_MODE})"
+  fi
+
+  check_site_endpoints
   check_python_modules
 
   if (( EXIT_CODE == 0 )); then

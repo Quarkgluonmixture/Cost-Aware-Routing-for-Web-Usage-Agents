@@ -40,6 +40,38 @@ source scripts/vwa_env.sh
 
 说明：`scripts/start_vwa_docker.sh` / `scripts/setup_vwa.sh` 都支持非交互参数化运行。
 
+### 2.1) DGX 远程站点模式（WSL 起站，DGX 只跑实验）
+若四站运行在另一台机器（例如你的 WSL2 笔记本），DGX 不应使用 `localhost:*`。
+
+在 DGX 仓库中创建远程环境变量文件：
+
+```bash
+cp scripts/vwa_env_remote.sh.example scripts/vwa_env_remote.sh
+# 编辑 VWA_REMOTE_HOST 或直接把 URL 改成可达地址
+```
+
+加载并检查远程站点：
+
+```bash
+source scripts/vwa_env_remote.sh
+bash scripts/preflight_v2.sh --site-mode remote --skip-docker
+```
+
+再生成 VWA 测试配置和登录态：
+
+```bash
+cd external/visualwebarena
+python scripts/generate_test_data.py
+bash prepare.sh
+cd ../..
+```
+
+最后运行实验（DGX）：
+
+```bash
+bash scripts/dgx/run_qwen3vl4b_baseline.sh
+```
+
 ### 3) 准备认证文件（本地）
 `.auth/` 已停止跟踪，不随 git 提交。请在本机自行生成或复制到仓库根目录 `.auth/`。
 
@@ -112,7 +144,7 @@ results/<benchmark>/<phase>/<run_id>/<condition_id>/
 
 ## 常见问题
 1. 为什么 `preflight_v2.sh` 报缺少环境变量？
-   先执行 `source scripts/vwa_env.sh`，并确认本机 `.auth/` 已就绪。
+   先执行 `source scripts/vwa_env.sh`（远程模式用 `source scripts/vwa_env_remote.sh`），并确认 `.auth/` 已就绪。
 
 2. 为什么分析命令报错缺少 pandas/matplotlib？
    安装扩展依赖：`pip install -e ".[analysis]"`。

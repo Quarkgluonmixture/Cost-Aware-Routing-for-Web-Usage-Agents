@@ -19,7 +19,18 @@ if command -v conda >/dev/null 2>&1; then
 fi
 
 # Best-effort VWA environment loading.
-if [[ -f "${REPO_DIR}/scripts/vwa_env.sh" ]]; then
+if [[ -n "${VWA_ENV_FILE:-}" ]]; then
+  if [[ -f "${VWA_ENV_FILE}" ]]; then
+    # shellcheck disable=SC1090
+    source "${VWA_ENV_FILE}" || true
+  else
+    echo "VWA_ENV_FILE does not exist: ${VWA_ENV_FILE}" >&2
+  fi
+elif [[ -f "${REPO_DIR}/scripts/vwa_env_remote.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "${REPO_DIR}/scripts/vwa_env_remote.sh" || true
+elif [[ -f "${REPO_DIR}/scripts/vwa_env.sh" ]]; then
+  # shellcheck disable=SC1091
   source "${REPO_DIR}/scripts/vwa_env.sh" || true
 fi
 
