@@ -1,6 +1,7 @@
 import json
 import re
 import logging
+import time
 import torch
 from PIL import Image
 from typing import Dict, Any, List, Optional, Tuple
@@ -10,21 +11,63 @@ from p79.utils.torch_cuda_workarounds import apply_nvrtc_prod_fallback_if_needed
 
 logger = logging.getLogger(__name__)
 
+
+def _wait_for_vram(min_free_gb: float, poll_interval: int = 30, timeout: int = 0) -> None:
+    """Block until at least *min_free_gb* GPU memory is available.
+
+    Args:
+        min_free_gb: Minimum free VRAM in GB before proceeding.
+        poll_interval: Seconds between checks.
+        timeout: Max seconds to wait (0 = unlimited).
+    """
+    if not torch.cuda.is_available():
+        return
+    start = time.time()
+    while True:
+        free, total = torch.cuda.mem_get_info(0)
+        free_gb = free / (1024 ** 3)
+        total_gb = total / (1024 ** 3)
+        if free_gb >= min_free_gb:
+            logger.info(
+                "VRAM check passed: %.1f GB free / %.1f GB total (need %.1f GB)",
+                free_gb, total_gb, min_free_gb,
+            )
+            return
+        elapsed = time.time() - start
+        if timeout > 0 and elapsed >= timeout:
+            raise RuntimeError(
+                f"VRAM wait timeout after {elapsed:.0f}s: "
+                f"{free_gb:.1f} GB free < {min_free_gb:.1f} GB required"
+            )
+        logger.warning(
+            "Waiting for VRAM: %.1f GB free / %.1f GB total (need %.1f GB). "
+            "Retrying in %ds... (elapsed %.0fs)",
+            free_gb, total_gb, min_free_gb, poll_interval, elapsed,
+        )
+        time.sleep(poll_interval)
+
+
 class Qwen3VLAgent:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.model_path = config.get("model", {}).get("path", "Qwen/Qwen3-VL-4B-Instruct")
         self.device = config.get("model", {}).get("device", "cuda")
-        self.quantization = config.get("model", {}).get("quantization", "4bit")
+        self.quantization = config.get("model", {}).get("quantization", "none")
 
         # DGX Spark GB10 (sm_121) can hit NVRTC arch errors with some torch builds.
         # This installs a targeted fallback for prod reductions when needed.
         apply_nvrtc_prod_fallback_if_needed()
-        
+
+        # Wait for sufficient VRAM before loading model
+        min_free_gb = float(config.get("model", {}).get("min_free_vram_gb", 0))
+        if min_free_gb > 0:
+            _wait_for_vram(min_free_gb)
+
         logger.info(f"Loading model from {self.model_path} with quantization={self.quantization}")
-        
+
         # Load Model
         quantization_config = None
+        model_dtype = torch.bfloat16
         if self.quantization == "4bit":
             from transformers import BitsAndBytesConfig
             quantization_config = BitsAndBytesConfig(
@@ -32,17 +75,19 @@ class Qwen3VLAgent:
                 bnb_4bit_compute_dtype=torch.float16,
                 bnb_4bit_quant_type="nf4"
             )
+            model_dtype = "auto"
         elif self.quantization == "8bit":
             from transformers import BitsAndBytesConfig
             quantization_config = BitsAndBytesConfig(load_in_8bit=True)
-            
+            model_dtype = "auto"
+
         try:
             self.model = Qwen3VLForConditionalGeneration.from_pretrained(
                 self.model_path,
-                torch_dtype="auto",
+                torch_dtype=model_dtype,
                 device_map="auto",
                 quantization_config=quantization_config,
-                trust_remote_code=True # Often needed for new models
+                trust_remote_code=True,
             )
             self.processor = AutoProcessor.from_pretrained(self.model_path, trust_remote_code=True)
         except Exception as e:

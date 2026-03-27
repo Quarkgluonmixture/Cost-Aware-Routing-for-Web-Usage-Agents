@@ -19,13 +19,14 @@ backends:
   local_4b:
     type: "local_qwen"
     path: "Qwen/Qwen3-VL-4B-Instruct"
-    quantization: "4bit"
+    quantization: "none"
     device: "cuda"
     max_new_tokens: 512
     temperature: 0.1
     top_p: 0.9
     dom_mode: "llm"
     mock_mode: false
+    min_free_vram_gb: 12
 
 baselines:
   run_b0: false

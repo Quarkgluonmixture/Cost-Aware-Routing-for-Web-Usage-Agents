@@ -34,13 +34,31 @@ def _extract_modal_state(text: str) -> bool:
     return any(k in low for k in ("dialog", "modal", "popup", "overlay", "aria-modal"))
 
 
+def _extract_title_from_html(html: str) -> str:
+    """Extract <title> from HTML content."""
+    if not html:
+        return ""
+    m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    return m.group(1).strip() if m else ""
+
+
 def build_page_state(obs: P79Observation, info: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     text = _safe_str(getattr(obs, "text", ""))
     info = info or {}
 
+    # VWA stores url/content inside info["page"] (DetachedPage dataclass)
+    page_obj = info.get("page")
+    page_url = ""
+    page_title = ""
+    if page_obj is not None:
+        if hasattr(page_obj, "url"):
+            page_url = _safe_str(page_obj.url)
+        if hasattr(page_obj, "content"):
+            page_title = _extract_title_from_html(_safe_str(page_obj.content))
+
     state = {
-        "url": _safe_str(info.get("url") or info.get("current_url") or getattr(obs, "url", "")),
-        "title": _safe_str(info.get("title") or info.get("page_title") or ""),
+        "url": _safe_str(info.get("url") or info.get("current_url") or getattr(obs, "url", "")) or page_url,
+        "title": _safe_str(info.get("title") or info.get("page_title") or "") or page_title,
         "visible_text": text[:2000],
         "interactive_elements_count": _extract_interactive_count(text),
         "form_fields_count": _extract_form_fields_count(text),

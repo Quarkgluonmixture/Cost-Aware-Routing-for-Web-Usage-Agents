@@ -24,11 +24,12 @@ class LocalQwenBackend:
             agent_cfg = {
                 "model": {
                     "path": config.get("path", "Qwen/Qwen3-VL-4B-Instruct"),
-                    "quantization": config.get("quantization", "4bit"),
+                    "quantization": config.get("quantization", "none"),
                     "device": config.get("device", "cuda"),
                     "max_new_tokens": config.get("max_new_tokens", 512),
                     "temperature": config.get("temperature", 0.1),
                     "top_p": config.get("top_p", 0.9),
+                    "min_free_vram_gb": config.get("min_free_vram_gb", 0),
                 },
                 "agent": {
                     "image_max_size": config.get("image_max_size", 1024),

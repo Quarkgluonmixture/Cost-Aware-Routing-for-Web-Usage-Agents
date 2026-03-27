@@ -1,0 +1,4 @@
+[submodule "external/visualwebarena"]
+	path = external/visualwebarena
+	url = https://github.com/web-arena-x/visualwebarena.git
+	ignore = dirty

@@ -49,6 +49,44 @@ def _parse_seeds(seed_value: Any) -> List[int]:
     return [int(seed_value)]
 
 
+def _action_signature(action: Dict[str, Any]) -> str:
+    """Compact fingerprint of an action for cycle detection (strict: includes element_id)."""
+    atype = str(action.get("action_type", "")).lower()
+    eid = action.get("element_id", "")
+    text = str(action.get("text", ""))[:60]
+    coord = action.get("coordinate", "")
+    delta = action.get("delta", "")
+    return f"{atype}|eid={eid}|t={text}|c={coord}|d={delta}"
+
+
+def _action_signature_soft(action: Dict[str, Any]) -> str:
+    """Loose fingerprint ignoring element_id/coordinate (catches semantic loops
+    where the same search query or click-type is repeated on re-rendered pages)."""
+    atype = str(action.get("action_type", "")).lower()
+    text = str(action.get("text", ""))[:60]
+    delta = action.get("delta", "")
+    return f"{atype}|t={text}|d={delta}"
+
+
+def _detect_action_cycle(signatures: List[str], min_cycle: int = 1, max_cycle: int = 4,
+                         min_reps: int = 3) -> int:
+    """Return cycle length if the tail of *signatures* is a repeating cycle, else 0.
+
+    Requires at least *min_reps* full repetitions of the cycle to trigger.
+    E.g. [A,B,A,B,A,B] → cycle_len=2.  [A,A,A] → cycle_len=1.
+    """
+    n = len(signatures)
+    for clen in range(min_cycle, max_cycle + 1):
+        window = clen * min_reps
+        if n < window:
+            continue
+        tail = signatures[-window:]
+        pattern = tail[:clen]
+        if all(tail[i] == pattern[i % clen] for i in range(window)):
+            return clen
+    return 0
+
+
 class ExperimentRunner:
     def __init__(self, cfg: Dict[str, Any]):
         self.cfg = cfg
@@ -340,6 +378,8 @@ class ExperimentRunner:
 
         retry_total = 0
         escalation_count = 0
+        action_signatures: List[str] = []
+        action_signatures_soft: List[str] = []
 
         checklist_manager: Optional[ChecklistManagerLite] = None
         if bool(self.checklist_cfg.get("enabled", False)):
@@ -589,6 +629,21 @@ class ExperimentRunner:
             prev_page_changed = page_changed
 
             if terminated or truncated:
+                break
+
+            # --- cycle detection (early stop, does not alter agent behaviour) ---
+            action_signatures.append(_action_signature(action))
+            action_signatures_soft.append(_action_signature_soft(action))
+            cycle_len = _detect_action_cycle(action_signatures)
+            # Soft check uses higher reps threshold to reduce false positives
+            soft_cycle_len = _detect_action_cycle(action_signatures_soft, min_reps=3)
+            if cycle_len > 0 or soft_cycle_len > 0:
+                detected = cycle_len if cycle_len > 0 else soft_cycle_len
+                mode = "strict" if cycle_len > 0 else "soft"
+                logger.warning(
+                    "Action cycle detected (%s, len=%d, reps>=3) at step %d for task %s/%d — early stop.",
+                    mode, detected, step_idx, task.site, task.task_id,
+                )
                 break
 
         eval_result = self.evaluator.evaluate(trajectory=trajectory, config_file=task.config_file, env=self.environment)

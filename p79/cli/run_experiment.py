@@ -6,6 +6,7 @@ import time
 
 from p79.experiment.config import load_experiment_config
 from p79.experiment.runner import ExperimentRunner
+from p79.utils.asyncio_workarounds import install_asyncio_target_closed_warning_filter
 
 
 def main() -> None:
@@ -17,6 +18,7 @@ def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    install_asyncio_target_closed_warning_filter()
 
     cfg = load_experiment_config(args.config)
     if args.run_id:

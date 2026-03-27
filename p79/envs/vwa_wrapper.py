@@ -279,5 +279,10 @@ class VWAWrapper:
         url = None
         if isinstance(info, dict):
             url = info.get("url") or info.get("current_url")
+            # VWA stores url inside info["page"].url (DetachedPage dataclass)
+            if not url:
+                page_obj = info.get("page")
+                if page_obj is not None and hasattr(page_obj, "url"):
+                    url = page_obj.url or None
 
         return P79Observation(text=text, image=image, url=url, raw=obs)
