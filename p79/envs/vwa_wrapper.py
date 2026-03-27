@@ -111,7 +111,14 @@ class VWAWrapper:
         action_type = (action_json.get("action_type") or "").lower().strip()
         action = None
 
-        if action_type == "click" and "coordinate" in action_json:
+        if action_type == "click" and "element_id" in action_json:
+            # Prefer element_id click (id-based action via AXTree node)
+            try:
+                eid = int(action_json["element_id"])
+                action = create_id_based_action(f"click [{eid}]")
+            except (TypeError, ValueError):
+                action = None
+        elif action_type == "click" and "coordinate" in action_json:
             coord = action_json.get("coordinate")
             if not (
                 isinstance(coord, (list, tuple))
@@ -121,23 +128,30 @@ class VWAWrapper:
             ):
                 coord = None
             if coord is not None:
-                # Accept either normalized [0-1] or pixel coordinates
                 left = float(coord[0])
                 top = float(coord[1])
-                if left > 1.0 or top > 1.0:
-                    left = left / float(self.viewport_width)
-                    top = top / float(self.viewport_height)
-                # Avoid 0.0 which triggers VWA create_mouse_click_action validation
-                eps = 1e-6
-                if left <= 0.0:
-                    left = eps
-                elif left >= 1.0:
-                    left = 1.0 - eps
-                if top <= 0.0:
-                    top = eps
-                elif top >= 1.0:
-                    top = 1.0 - eps
-                action = create_mouse_click_action(left=left, top=top)
+                # Heuristic: if both values are integers and both > 1,
+                # the model likely output AXTree element IDs in the
+                # coordinate field. Use the first value as element_id.
+                if (left > 1.0 and top > 1.0
+                        and left == int(left) and top == int(top)):
+                    action = create_id_based_action(f"click [{int(left)}]")
+                else:
+                    # Accept either normalized [0-1] or pixel coordinates
+                    if left > 1.0 or top > 1.0:
+                        left = left / float(self.viewport_width)
+                        top = top / float(self.viewport_height)
+                    # Avoid 0.0 which triggers VWA create_mouse_click_action validation
+                    eps = 1e-6
+                    if left <= 0.0:
+                        left = eps
+                    elif left >= 1.0:
+                        left = 1.0 - eps
+                    if top <= 0.0:
+                        top = eps
+                    elif top >= 1.0:
+                        top = 1.0 - eps
+                    action = create_mouse_click_action(left=left, top=top)
             else:
                 action = None
         elif action_type == "scroll" and "delta" in action_json:

@@ -51,8 +51,10 @@ Response Format (JSON):
 }
 
 Action Schema:
-1. Click: {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}
-   - x, y are floats 0.0-1.0.
+1. Click: {"action_type": "click", "element_id": N}
+   - N is the numeric ID from the Accessibility Tree (e.g., [175] link 'Comments' -> element_id: 175).
+   - This is the PREFERRED way to click. Use element IDs from the Accessibility Tree.
+   - Alternative (only if no element ID): {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"} with x, y as floats 0.0-1.0.
 2. Type: {"action_type": "type", "text": "string", "element_id": int (optional)}
    - To submit a search or form, append "\\n" to the text (e.g., "red blanket\\n").
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
