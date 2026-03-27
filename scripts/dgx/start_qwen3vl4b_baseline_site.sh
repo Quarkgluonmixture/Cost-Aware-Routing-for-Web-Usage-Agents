@@ -11,7 +11,7 @@ SITE_HEALTH_TIMEOUT="${BASELINE_SITE_HEALTH_TIMEOUT:-6}"
 
 usage() {
   cat <<USAGE
-Usage: $(basename "$0") [--site <shopping|reddit|wikipedia|classifieds>] [--max-steps <N>]
+Usage: $(basename "$0") [--site <shopping|reddit|classifieds>] [--max-steps <N>]
 
 Environment overrides:
   BASELINE_SITE        default site (default: shopping)
@@ -21,7 +21,6 @@ Environment overrides:
   BASELINE_PREFER_LOCAL_SHOPPING prefer localhost shopping endpoint for --site shopping (default: 0)
   BASELINE_SHOPPING_URL explicit shopping endpoint override for --site shopping
   BASELINE_REDDIT_URL explicit reddit endpoint override for --site reddit
-  BASELINE_WIKIPEDIA_URL explicit wikipedia endpoint override for --site wikipedia
   BASELINE_CLASSIFIEDS_URL explicit classifieds endpoint override for --site classifieds
   BASELINE_REQUIRE_SITE_UP fail fast when selected site endpoint is unreachable/502 (default: 1)
   BASELINE_SITE_HEALTH_TIMEOUT curl timeout seconds for site health check (default: 6)
@@ -52,7 +51,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "${SITE}" in
-  shopping|reddit|wikipedia|classifieds) ;;
+  shopping|reddit|classifieds) ;;
   *)
     echo "Unsupported --site: ${SITE}" >&2
     exit 2
@@ -108,7 +107,6 @@ site_env_var_for() {
   case "${1:-}" in
     shopping) printf "SHOPPING\n" ;;
     reddit) printf "REDDIT\n" ;;
-    wikipedia) printf "WIKIPEDIA\n" ;;
     classifieds) printf "CLASSIFIEDS\n" ;;
     *)
       return 1
@@ -283,8 +281,9 @@ cp "${BASE_CONFIG}" "${TMP_CONFIG}"
 sed -i -E "s/include_sites:[[:space:]]*\[[^]]*\]/include_sites: [\"${SITE}\"]/" "${TMP_CONFIG}"
 sed -i -E "s/name:[[:space:]]*\"qwen3vl4b_baseline_phase2\"/name: \"qwen3vl4b_baseline_phase2_${SITE}\"/" "${TMP_CONFIG}"
 
-STAMP="$(date +%F_%H%M%S)"
-DEFAULT_LOG="${REPO_DIR}/logs/baseline_qwen3vl4b_${SITE}_${STAMP}.log"
+STAMP="$(date +%Y%m%d_%H%M%S)"
+RUN_ID="run_${SITE}_${STAMP}"
+DEFAULT_LOG="${REPO_DIR}/logs/baseline_qwen3vl4b_${SITE}_${RUN_ID}.log"
 LOG_PATH="${BASELINE_LOG_PATH:-${DEFAULT_LOG}}"
 
 if [[ "${BASELINE_DRY_RUN:-0}" == "1" ]]; then
@@ -292,6 +291,7 @@ if [[ "${BASELINE_DRY_RUN:-0}" == "1" ]]; then
   echo "site=${SITE}"
   echo "config=${TMP_CONFIG}"
   echo "max_steps=${MAX_STEPS}"
+  echo "run_id=${RUN_ID}"
   echo "endpoint_var=${SITE_ENV_VAR}"
   echo "endpoint=${SITE_ENDPOINT}"
   echo "log=${LOG_PATH}"
@@ -301,11 +301,18 @@ fi
 nohup "${PYTHON_BIN}" scripts/run_experiment.py \
   --config "${TMP_CONFIG}" \
   --max_steps "${MAX_STEPS}" \
+  --run_id "${RUN_ID}" \
+  --log_path "${LOG_PATH}" \
   > "${LOG_PATH}" 2>&1 < /dev/null &
 PID=$!
 
+# Create latest symlink for easy log access.
+ln -sfn "$(basename "${LOG_PATH}")" "${REPO_DIR}/logs/latest_${SITE}.log"
+
 echo "site=${SITE}"
+echo "run_id=${RUN_ID}"
 echo "pid=${PID}"
 echo "config=${TMP_CONFIG}"
 echo "log=${LOG_PATH}"
+echo "latest_log=logs/latest_${SITE}.log"
 echo "watch: tail -f ${LOG_PATH}"

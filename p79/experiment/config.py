@@ -125,7 +125,11 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     experiment.setdefault("phase", "phase1")
     experiment.setdefault("seed", 42)
     experiment.setdefault("output_root", "results")
-    experiment.setdefault("run_id", f"run_{int(time.time())}")
+    sites = cfg.get("task", {}).get("include_sites", [])
+    if len(sites) == 1:
+        experiment.setdefault("run_id", f"run_{sites[0]}_{int(time.time())}")
+    else:
+        experiment.setdefault("run_id", f"run_{int(time.time())}")
 
     env_cfg = cfg.setdefault("env", {})
     env_cfg.setdefault("type", "vwa")

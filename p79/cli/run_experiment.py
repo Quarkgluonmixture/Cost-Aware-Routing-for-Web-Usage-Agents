@@ -15,6 +15,7 @@ def main() -> None:
     parser.add_argument("--run_id", default=None, help="Optional run ID override")
     parser.add_argument("--phase", default=None, choices=["phase1", "phase2", "phase3"], help="Optional phase override")
     parser.add_argument("--max_steps", type=int, default=None, help="Optional max step override")
+    parser.add_argument("--log_path", default=None, help="Path to the log file for this run (stored in run_meta.json)")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -25,6 +26,9 @@ def main() -> None:
         cfg["experiment"]["run_id"] = args.run_id
     else:
         cfg["experiment"]["run_id"] = cfg["experiment"].get("run_id", f"run_{int(time.time())}")
+
+    if args.log_path:
+        cfg["experiment"]["log_path"] = args.log_path
 
     if args.phase:
         cfg["experiment"]["phase"] = args.phase

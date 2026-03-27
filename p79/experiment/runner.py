@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import shutil
 import time
 from collections import Counter
 from pathlib import Path
@@ -125,12 +126,56 @@ class ExperimentRunner:
             "schema_version": SCHEMA_VERSION_V2,
             "run_id": self.cfg["experiment"]["run_id"],
             "timestamp": time.time(),
+            "log_path": self.cfg["experiment"].get("log_path"),
             "config": self.cfg,
             "conditions": [c.as_dict() for c in self.conditions],
             "task_count": len(self.tasks),
         }
         with open(self.output_root / "run_meta.json", "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2, ensure_ascii=False)
+
+    def _cleanup_stale_runs(self) -> None:
+        """Remove run dirs with 0 episode summaries that are older than 1 hour."""
+        parent = self.output_root.parent  # e.g. results/{benchmark}/{phase}/
+        if not parent.is_dir():
+            return
+        one_hour_ago = time.time() - 3600
+        for run_dir in parent.iterdir():
+            if not run_dir.is_dir() or run_dir == self.output_root:
+                continue
+            if run_dir.is_symlink():
+                continue
+            try:
+                mtime = run_dir.stat().st_mtime
+            except OSError:
+                continue
+            if mtime > one_hour_ago:
+                continue
+            # Check for any episode summary files.
+            summaries = list(run_dir.glob("**/episode_summary_*.json"))
+            if summaries:
+                continue
+            logger.info("Cleaning stale run dir (0 episodes, age>1h): %s", run_dir)
+            try:
+                shutil.rmtree(run_dir)
+            except OSError as exc:
+                logger.warning("Failed to remove stale run dir %s: %s", run_dir, exc)
+
+    def _create_latest_symlink(self) -> None:
+        """Create a latest_{site} symlink in the phase directory pointing to this run."""
+        sites = self.cfg.get("task", {}).get("include_sites", [])
+        if len(sites) == 1:
+            site = sites[0]
+        else:
+            site = None
+        link_name = f"latest_{site}" if site else "latest"
+        latest_link = self.output_root.parent / link_name
+        try:
+            latest_link.unlink(missing_ok=True)
+            latest_link.symlink_to(self.output_root.name)
+            logger.info("Created symlink %s -> %s", latest_link, self.output_root.name)
+        except OSError as exc:
+            logger.warning("Failed to create latest symlink %s: %s", latest_link, exc)
 
     @staticmethod
     def _normalize_error_category(
@@ -166,6 +211,7 @@ class ExperimentRunner:
         return None
 
     def run(self) -> Path:
+        self._cleanup_stale_runs()
         self._write_run_meta()
 
         run_condition_metrics: List[Dict[str, Any]] = []
@@ -323,6 +369,7 @@ class ExperimentRunner:
         with open(self.output_root / "run_summary_v2.json", "w", encoding="utf-8") as f:
             json.dump(run_summary, f, indent=2, ensure_ascii=False)
 
+        self._create_latest_symlink()
         self.environment.close()
         return self.output_root
 
