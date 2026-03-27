@@ -380,6 +380,7 @@ class ExperimentRunner:
         escalation_count = 0
         action_signatures: List[str] = []
         action_signatures_soft: List[str] = []
+        cycle_early_stop = False
 
         checklist_manager: Optional[ChecklistManagerLite] = None
         if bool(self.checklist_cfg.get("enabled", False)):
@@ -644,12 +645,21 @@ class ExperimentRunner:
                     "Action cycle detected (%s, len=%d, reps>=3) at step %d for task %s/%d — early stop.",
                     mode, detected, step_idx, task.site, task.task_id,
                 )
+                cycle_early_stop = True
                 break
 
         eval_result = self.evaluator.evaluate(trajectory=trajectory, config_file=task.config_file, env=self.environment)
         score = float(eval_result.score)
 
-        if score == 0.0 and step_records and step_records[-1].get("reward", 0.0) > 0:
+        # Override only when the agent issued a finish/stop and VWA reward
+        # agrees — never override after cycle early-stop (agent did not finish).
+        if (
+            score == 0.0
+            and step_records
+            and step_records[-1].get("reward", 0.0) > 0
+            and not cycle_early_stop
+            and step_records[-1].get("action_type", "") in ("finish", "stop")
+        ):
             score = 1.0
 
         success = bool(score >= 1.0)
