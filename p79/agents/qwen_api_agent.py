@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import re
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from PIL import Image
 from openai import OpenAI
@@ -77,7 +77,34 @@ CRITICAL:
 - Avoid repeating the same search query or action. If something doesn't work, change your strategy.
 """
 
-    def step(self, instruction: str, obs: Any) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    @staticmethod
+    def _format_history(history: List[Dict[str, Any]]) -> str:
+        if not history:
+            return ""
+        lines = []
+        for rec in history:
+            act = rec.get("action", {})
+            atype = act.get("action_type", "?")
+            detail = ""
+            if atype == "click":
+                coord = act.get("coordinate", "?")
+                detail = f" {coord}"
+            elif atype == "type":
+                detail = f' "{act.get("text", "")}"'
+            elif atype == "scroll":
+                detail = f' delta={act.get("delta", "?")}'
+            success = rec.get("action_success", None)
+            changed = rec.get("page_changed", None)
+            if success is False or changed is False:
+                result = "FAILED (page unchanged)"
+            elif changed:
+                result = "OK (page changed)"
+            else:
+                result = "OK"
+            lines.append(f"  Step {rec.get('step_idx', '?')}: {atype}{detail} -> {result}")
+        return "Previous actions:\n" + "\n".join(lines) + "\n"
+
+    def step(self, instruction: str, obs: Any, history: Optional[List[Dict[str, Any]]] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         image = obs.image
         obs_text = ""
         if hasattr(obs, "text") and obs.text:
@@ -85,6 +112,8 @@ CRITICAL:
             max_chars = self.config.get("agent", {}).get("max_obs_chars", 8000)
             if len(obs_text) > max_chars:
                 obs_text = obs_text[:max_chars] + "\n[TRUNCATED]"
+
+        history_text = self._format_history(history or [])
 
         max_size = self.config.get("agent", {}).get("image_max_size", 1024)
         if max(image.size) > max_size:
@@ -102,6 +131,7 @@ CRITICAL:
                         "type": "text",
                         "text": (
                             f"Task: {instruction}\nSystem: {self.system_prompt}\n"
+                            f"{history_text}"
                             f"Accessibility Tree:\n{obs_text}"
                         ),
                     },
