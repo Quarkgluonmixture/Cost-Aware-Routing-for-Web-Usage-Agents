@@ -55,11 +55,14 @@ Action Schema:
    - N is the numeric ID from the Accessibility Tree (e.g., [175] link 'Comments' -> element_id: 175).
    - This is the PREFERRED way to click. Use element IDs from the Accessibility Tree.
    - Alternative (only if no element ID): {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"} with x, y as floats 0.0-1.0.
-2. Type: {"action_type": "type", "text": "string", "element_id": int (optional)}
+2. Type: {"action_type": "type", "text": "string", "element_id": N}
+   - ALWAYS specify element_id to target the correct input field (e.g., search box [397], text field [132]).
    - To submit a search or form, append "\\n" to the text (e.g., "red blanket\\n").
+   - Without element_id, text goes to whatever is focused, which is often WRONG.
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
 4. Wait: {"action_type": "wait"}
 5. Back: {"action_type": "back"}
+   - WARNING: Do NOT use "back" if you are on the first page (homepage). Going back from the first page leads to a blank page (about:blank) and you will be stuck.
 6. Forward: {"action_type": "forward"}
 7. Finish: {"action_type": "finish", "answer": "optional string"}
 8. Tab focus: {"action_type": "tab_focus", "page_number": int}
@@ -71,12 +74,13 @@ Tab Rule:
 CRITICAL:
 - You MUST include a "thought" field to explain your reasoning.
 - DO NOT use "finish" to report failure. "finish" is ONLY for success or after EXHAUSTIVE search (at least 3 different search queries/attempts).
-- If you are in the wrong category, click "back" or use the search bar.
+- If you are in the wrong category, use the search bar or click a navigation link. Avoid "back" unless you are sure it won't lead to about:blank.
 - PREFER clicking on Categories (e.g., "Home & Kitchen" -> "Blankets & Throws") over searching if search results are poor.
 - If search returns unrelated items (e.g. seafood instead of blankets), STOP searching immediately. Navigate via Categories.
 - Do NOT output literal newlines inside JSON strings. Use \\n for newline.
 - If search results appear, CLICK on the most promising item to verify details (price, color). Do not just stare at the list.
 - Avoid repeating the same search query or action. If something doesn't work, change your strategy.
+- ALWAYS use element_id from the Accessibility Tree for click and type actions. Do NOT guess coordinates or type blindly.
 """
 
     @staticmethod
