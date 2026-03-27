@@ -6,6 +6,7 @@ from PIL import Image
 from typing import Dict, Any, Optional, Tuple
 from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
+from p79.utils.torch_cuda_workarounds import apply_nvrtc_prod_fallback_if_needed
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,10 @@ class Qwen3VLAgent:
         self.model_path = config.get("model", {}).get("path", "Qwen/Qwen3-VL-4B-Instruct")
         self.device = config.get("model", {}).get("device", "cuda")
         self.quantization = config.get("model", {}).get("quantization", "4bit")
+
+        # DGX Spark GB10 (sm_121) can hit NVRTC arch errors with some torch builds.
+        # This installs a targeted fallback for prod reductions when needed.
+        apply_nvrtc_prod_fallback_if_needed()
         
         logger.info(f"Loading model from {self.model_path} with quantization={self.quantization}")
         

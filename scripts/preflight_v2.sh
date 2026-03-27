@@ -7,6 +7,8 @@ PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 STRICT_PORTS="${STRICT_PORTS:-1}"
 SITE_MODE="${SITE_MODE:-auto}"
 CHECK_DOCKER="${CHECK_DOCKER:-auto}"
+REQUIRE_CUDA="${REQUIRE_CUDA:-0}"
+ALLOW_MISSING_EVALUATOR="${ALLOW_MISSING_EVALUATOR:-0}"
 EXIT_CODE=0
 
 usage() {
@@ -21,6 +23,9 @@ Options:
   --local-sites        Equivalent to --site-mode local
   --skip-docker        Skip docker daemon check
   --check-docker       Force docker daemon check
+  --require-cuda       Fail if torch CUDA runtime is unavailable
+  --allow-missing-evaluator
+                      Downgrade evaluator import failures to WARN
   -h, --help           Show this help
 USAGE
 }
@@ -53,6 +58,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --check-docker)
       CHECK_DOCKER="always"
+      shift
+      ;;
+    --require-cuda)
+      REQUIRE_CUDA=1
+      shift
+      ;;
+    --allow-missing-evaluator)
+      ALLOW_MISSING_EVALUATOR=1
       shift
       ;;
     -h|--help)
@@ -258,6 +271,99 @@ PY
   pass "Python modules available: playwright, browser_env, p79"
 }
 
+check_playwright_browser() {
+  if [[ -z "${PYTHON_BIN:-}" ]]; then
+    fail "Skipping Playwright browser check because no Python was found"
+    return
+  fi
+
+  local py_output
+  if ! py_output="$(${PYTHON_BIN} - <<'PY' 2>&1
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    browser.close()
+print("ok")
+PY
+)"; then
+    fail "Playwright Chromium runtime check failed (${py_output})"
+    return
+  fi
+
+  pass "Playwright Chromium runtime is available"
+}
+
+check_torch_cuda() {
+  if [[ -z "${PYTHON_BIN:-}" ]]; then
+    fail "Skipping torch CUDA check because no Python was found"
+    return
+  fi
+
+  local py_output
+  if ! py_output="$(${PYTHON_BIN} - <<'PY' 2>&1
+import importlib
+
+try:
+    torch = importlib.import_module("torch")
+except Exception as exc:
+    print(f"import_error:{exc}")
+    raise SystemExit(2)
+
+cuda_built = bool(getattr(torch.backends.cuda, "is_built", lambda: False)())
+cuda_available = bool(torch.cuda.is_available())
+cuda_version = getattr(torch.version, "cuda", None)
+print(f"built={cuda_built};available={cuda_available};version={cuda_version};torch={torch.__version__}")
+if not cuda_available:
+    raise SystemExit(3)
+PY
+)"; then
+    if [[ "${REQUIRE_CUDA}" == "1" ]]; then
+      fail "Torch CUDA runtime check failed (${py_output})"
+    else
+      warn "Torch CUDA runtime unavailable (${py_output})"
+    fi
+    return
+  fi
+
+  pass "Torch CUDA runtime is available (${py_output})"
+}
+
+check_vwa_evaluator_import() {
+  if [[ -z "${PYTHON_BIN:-}" ]]; then
+    fail "Skipping evaluator import check because no Python was found"
+    return
+  fi
+
+  local py_output
+  if ! py_output="$(${PYTHON_BIN} - <<'PY' 2>&1
+import os
+import sys
+
+cwd = os.getcwd()
+candidate = os.path.join(cwd, "external", "visualwebarena")
+if os.path.isdir(candidate):
+    sys.path.append(candidate)
+
+# VisualWebArena provider imports may read OPENAI_API_KEY at module import time.
+# Use a harmless placeholder for import-time checks.
+os.environ.setdefault("OPENAI_API_KEY", "DUMMY_P79_PRECHECK")
+
+from evaluation_harness import evaluator_router  # noqa: F401
+print("ok")
+PY
+)"; then
+    if [[ "${ALLOW_MISSING_EVALUATOR}" == "1" ]]; then
+      warn "VWA evaluator import failed (${py_output})"
+    else
+      fail "VWA evaluator import failed (${py_output})"
+    fi
+    return
+  fi
+
+  pass "VWA evaluator import is available"
+}
+
 main() {
   echo "=== P79 Preflight v2 ==="
   echo "project_dir=${PROJECT_DIR}"
@@ -275,6 +381,9 @@ main() {
 
   check_site_endpoints
   check_python_modules
+  check_playwright_browser
+  check_torch_cuda
+  check_vwa_evaluator_import
 
   if (( EXIT_CODE == 0 )); then
     echo "Preflight completed successfully."

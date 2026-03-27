@@ -168,6 +168,14 @@ class ExperimentRunner:
                     try:
                         summary = self._run_episode(condition, task, backend, condition_logger, condition_dir)
                     except Exception as exc:
+                        logger.warning(
+                            "Episode failed at condition=%s seed=%d site=%s task=%s: %s",
+                            effective_cid,
+                            current_seed,
+                            task.site,
+                            task.task_id,
+                            exc,
+                        )
                         noise, noise_cat = detect_benchmark_noise(str(exc))
                         summary = EpisodeSummaryV2(
                             schema_version=SCHEMA_VERSION_V2,

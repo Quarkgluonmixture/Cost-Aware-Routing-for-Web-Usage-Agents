@@ -77,7 +77,12 @@ class VWAWrapper:
         self._lazy_init()
         assert self._env is not None
 
-        obs, info = self._env.reset(options={"config_file": config_file})
+        try:
+            obs, info = self._env.reset(options={"config_file": config_file})
+        except Exception:
+            # Keep wrapper recoverable across episodes after init/reset failures.
+            self.close()
+            raise
 
         p79_obs = self._to_p79_obs(obs, info)
         return p79_obs, info
@@ -183,7 +188,12 @@ class VWAWrapper:
                 action_str = self._json_to_id_action_str(action_json)
                 action = create_id_based_action(action_str)
 
-        obs, reward, terminated, truncated, info = self._env.step(action)
+        try:
+            obs, reward, terminated, truncated, info = self._env.step(action)
+        except Exception:
+            # Reset underlying resources so next episode can re-initialize cleanly.
+            self.close()
+            raise
         if action_type in ("finish", "stop"):
             terminated = True
         info["raw_action"] = action  # Expose the raw VWA action for trajectory recording

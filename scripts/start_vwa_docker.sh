@@ -73,6 +73,28 @@ contains_site() {
   return 1
 }
 
+find_running_container() {
+  local name
+  for name in "$@"; do
+    if docker ps --format '{{.Names}}' | grep -q "^${name}$"; then
+      echo "${name}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+find_existing_container() {
+  local name
+  for name in "$@"; do
+    if docker ps -a --format '{{.Names}}' | grep -q "^${name}$"; then
+      echo "${name}"
+      return 0
+    fi
+  done
+  return 1
+}
+
 check_prerequisites() {
   local missing=0
 
@@ -139,40 +161,63 @@ check_prerequisites() {
 
 start_shopping() {
   echo "[START] shopping (http://${HOSTNAME_VALUE}:7770)"
-  if docker ps --format '{{.Names}}' | grep -q '^shopping$'; then
-    echo "shopping already running"
-    return
+  local container_name=""
+  container_name="$(find_running_container vwa-shopping shopping || true)"
+  if [[ -n "${container_name}" ]]; then
+    echo "${container_name} already running; reconfiguring base URL"
+  else
+    container_name="$(find_existing_container vwa-shopping shopping || true)"
+    if [[ -n "${container_name}" ]]; then
+      docker start "${container_name}" >/dev/null 2>&1
+    else
+      container_name="vwa-shopping"
+      docker run --name "${container_name}" -p 7770:80 -d shopping_final_0712 >/dev/null
+    fi
+    sleep 10
   fi
-  docker start shopping >/dev/null 2>&1 || docker run --name shopping -p 7770:80 -d shopping_final_0712 >/dev/null
-  sleep 10
-  docker exec shopping /var/www/magento2/bin/magento setup:store-config:set --base-url="http://${HOSTNAME_VALUE}:7770" >/dev/null 2>&1 || true
-  docker exec shopping mysql -u magentouser -pMyPassword magentodb -e "UPDATE core_config_data SET value='http://${HOSTNAME_VALUE}:7770/' WHERE path='web/secure/base_url';" >/dev/null 2>&1 || true
-  docker exec shopping /var/www/magento2/bin/magento cache:flush >/dev/null 2>&1 || true
+  docker exec "${container_name}" /var/www/magento2/bin/magento setup:store-config:set --base-url="http://${HOSTNAME_VALUE}:7770" >/dev/null 2>&1 || true
+  docker exec "${container_name}" mysql -u magentouser -pMyPassword magentodb -e "UPDATE core_config_data SET value='http://${HOSTNAME_VALUE}:7770/' WHERE path IN ('web/unsecure/base_url', 'web/secure/base_url');" >/dev/null 2>&1 || true
+  docker exec "${container_name}" /var/www/magento2/bin/magento cache:flush >/dev/null 2>&1 || true
 }
 
 start_reddit() {
   echo "[START] reddit/forum (http://${HOSTNAME_VALUE}:9999)"
-  if docker ps --format '{{.Names}}' | grep -q '^forum$'; then
-    echo "forum already running"
-    return
+  local container_name=""
+  container_name="$(find_running_container vwa-reddit forum || true)"
+  if [[ -n "${container_name}" ]]; then
+    echo "${container_name} already running"
+  else
+    container_name="$(find_existing_container vwa-reddit forum || true)"
+    if [[ -n "${container_name}" ]]; then
+      docker start "${container_name}" >/dev/null 2>&1
+    else
+      docker run --name vwa-reddit -p 9999:80 -d postmill-populated-exposed-withimg >/dev/null
+    fi
   fi
-  docker start forum >/dev/null 2>&1 || docker run --name forum -p 9999:80 -d postmill-populated-exposed-withimg >/dev/null
 }
 
 start_wikipedia() {
   echo "[START] wikipedia (http://${HOSTNAME_VALUE}:8888)"
-  if docker ps --format '{{.Names}}' | grep -q '^wikipedia$'; then
-    echo "wikipedia already running"
-    return
+  local container_name=""
+  container_name="$(find_running_container vwa-wikipedia wikipedia || true)"
+  if [[ -n "${container_name}" ]]; then
+    echo "${container_name} already running"
+  else
+    container_name="$(find_existing_container vwa-wikipedia wikipedia || true)"
+    if [[ -n "${container_name}" ]]; then
+      docker start "${container_name}" >/dev/null 2>&1
+    else
+      docker run -d --name vwa-wikipedia --volume="${ENV_DIR}/data/:/data" -p 8888:80 ghcr.io/kiwix/kiwix-serve:3.3.0 wikipedia_en_all_maxi_2022-05.zim >/dev/null
+    fi
   fi
-  docker run -d --name wikipedia --volume="${ENV_DIR}/data/:/data" -p 8888:80 ghcr.io/kiwix/kiwix-serve:3.3.0 wikipedia_en_all_maxi_2022-05.zim >/dev/null
 }
 
 start_classifieds() {
   echo "[START] classifieds (http://${HOSTNAME_VALUE}:9980)"
+  local classifieds_running=0
   if docker ps --format '{{.Names}}' | grep -q '^classifieds$'; then
-    echo "classifieds already running"
-    return
+    classifieds_running=1
+    echo "classifieds already running; reconfiguring compose hostname"
   fi
 
   local compose_dir="${ENV_DIR}/classifieds_docker_compose"
@@ -182,14 +227,18 @@ start_classifieds() {
   fi
 
   sed -i "s|<your-server-hostname>|${HOSTNAME_VALUE}|g" "${compose_dir}/docker-compose.yml"
+  sed -i -E "s|CLASSIFIEDS=http://[^:]+:9980/|CLASSIFIEDS=http://${HOSTNAME_VALUE}:9980/|g" "${compose_dir}/docker-compose.yml"
   (cd "${compose_dir}" && docker compose up --build -d)
-  sleep 15
-  docker exec classifieds_db mysql -u root -ppassword osclass -e 'source docker-entrypoint-initdb.d/osclass_craigslist.sql' >/dev/null 2>&1 || true
+  if (( classifieds_running == 0 )); then
+    sleep 15
+    docker exec classifieds_db mysql -u root -ppassword osclass -e 'source docker-entrypoint-initdb.d/osclass_craigslist.sql' >/dev/null 2>&1 || true
+  fi
 }
 
 start_homepage() {
   echo "[START] homepage (http://${HOSTNAME_VALUE}:4399)"
   perl -pi -e "s|<your-server-hostname>|${HOSTNAME_VALUE}|g" "${ENV_DIR}/webarena-homepage/templates/index.html"
+  perl -pi -e "s|localhost:9980|${HOSTNAME_VALUE}:9980|g; s|localhost:7770|${HOSTNAME_VALUE}:7770|g; s|localhost:9999|${HOSTNAME_VALUE}:9999|g; s|localhost:8888|${HOSTNAME_VALUE}:8888|g" "${ENV_DIR}/webarena-homepage/templates/index.html"
 
   if pgrep -f 'flask run.*4399' >/dev/null 2>&1; then
     echo "homepage already running"

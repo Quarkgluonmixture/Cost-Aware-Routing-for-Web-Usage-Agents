@@ -5,6 +5,8 @@ dist/
 build/
 logs/
 .env
+.venv/
+venv/
 .vscode/
 wandb/
 results_summary.csv
@@ -18,3 +20,4 @@ results/
 temp_task_*.json
 temp_smoke_config.json
 external_code/
+scripts/vwa_env_remote.sh

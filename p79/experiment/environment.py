@@ -66,6 +66,10 @@ class VwaEvaluator:
             if os.path.isdir(candidate):
                 sys.path.append(candidate)
 
+            # VisualWebArena may import OpenAI provider modules during evaluator
+            # initialization even for non-LLM eval types. Keep import recoverable.
+            os.environ.setdefault("OPENAI_API_KEY", "DUMMY_P79_NON_LLM_EVAL")
+
             from evaluation_harness import evaluator_router  # type: ignore
 
             self._available = True

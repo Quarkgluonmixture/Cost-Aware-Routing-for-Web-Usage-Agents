@@ -1,99 +1,70 @@
 # Repository Status
 
-**Last Updated:** 2026-03-26
+**Last Updated:** 2026-03-27  
 **Project:** Cost-Aware Routing for Web Usage Agents (P79)
 
-## P79 对齐完成度面板
-以 `P79_experimental_scope_rq_variables.md` 为基线，当前状态（估算）：
+## P79 对齐完成度（当前估计）
+1. 实验内核与变量层级（Phase1/2/3、SoM、router、M1-M4）：**95%**
+2. 开销核算与可解释分析闭环（RQ2/RQ3）：**92%**
+3. 日志/分析产物（schema v2 + phase 报告）：**94%**
+4. 一键运行与跨机实践（WSL 起站、DGX 跑实验）：**85%**
+5. 文档/仓库发布就绪：**88%**
 
-1. 实验内核与变量层级（Phase1/2/3, SoM, router, M1-M4）：**95%**
-2. RQ2/RQ3 开销核算与可解释性：**93%**
-3. 日志与分析闭环（trigger/reason/checklist/Pareto）：**95%**
-4. 安装依赖、Docker 实践、一键运行：**75%**
-5. 文档与发布就绪度：**85%**
+## 本轮关键变更（2026-03-27）
 
-## 当前主线（v2）
-### 已完成
-- 统一实验入口：`run-experiment` / `analyze-experiment`（CLI + scripts wrapper）。
-- 条件矩阵自动生成：
-  - Phase1: 2x2 SoM/observation screening
-  - Phase2: `phase2_fixed_best` vs `phase2_routed`
-  - Phase3: `phase3_none/m1/m2/m3/m4` 单模块消融
-- SoM 接入与降级策略：无 bbox 时降级文本 SoM，记录 `degraded_som=true`。
-- SoM 绘制不再污染原始 observation（在副本上绘制）。
-- Router 开销拆账：decision/dom parse/screenshot/extra model/retry。
-- Router 升级到 hybrid 时实际计量 `extra_screenshot_ms` 开销。
-- 成本口径修复：
-  - `total_model_cost_usd`
-  - `total_router_overhead_cost_usd`
-  - `total_cost_usd = model + overhead`
-  - Phase2 `NetSaving` 计算避免 double-count overhead。
-  - **新增：** latency net saving 分解 (`phase2_net_saving_latency.json`)
-  - **新增：** energy net saving 分解 (`phase2_net_saving_energy.json`)
-- **成本参数已填入实际估计值**（本地 GPU 摊销 + API 定价 + overhead 费率）。
-- Step schema v2 + 可解释字段：`page_change_reasons`、`text_similarity`、`checklist`、`state_digest`。
-- 错误分类标准化：`parse_error` / `invalid_action` / `no_progress` / `env_error` / `benchmark_noise`。
-- **benchmark noise 检测扩展**：增加 timeout、Playwright error、connection error、Docker service error、navigation error 类别。
-- 分析产物增强：
-  - `phase1_representation_screening.csv/png`
-  - `phase2_pareto_metrics.csv/png` — **含 Pareto front 标注**
-  - `phase2_pareto_latency.png` — success vs latency Pareto
-  - `phase2_pareto_energy.png` — success vs energy Pareto
-  - `phase2_net_saving_decomposition.csv/json`
-  - `phase2_net_saving_latency.json`
-  - `phase2_net_saving_energy.json`
-  - `phase3_module_ablation.csv/png`
-  - `phase3_module_gain_vs_base.csv`
-  - `trigger_distribution.csv/png`
-  - `state_change_reason_distribution.csv/png`
-  - `checklist_progress_curve.csv/png`
-  - `checklist_failure_distribution.csv/png`
-  - `benchmark_noise_report.csv`
+### 运行稳定性（DGX）
+- 新增 GB10 NVRTC 兼容层，自动兜底 `torch.prod` 触发的
+  `invalid value for --gpu-architecture`。
+  - 文件：`p79/utils/torch_cuda_workarounds.py`
+  - 接入点：`p79/agents/qwen3vl_agent.py`
+- VWA wrapper 在 `reset/step` 异常后主动 `close()`，避免后续 episode 被脏状态污染。
+  - 文件：`p79/envs/vwa_wrapper.py`
+- episode 失败日志增强，定位失败任务更快。
+  - 文件：`p79/experiment/runner.py`
 
-### 本轮修复（2026-03-26）
+### 脚本与预检查
+- `scripts/dgx/run_qwen3vl4b_baseline.sh`
+  - 自动创建 `logs/`
+  - 打印内部日志路径
+  - 若不存在 `p79_ai` conda 环境，不再刷报错
+  - 默认注入占位 `OPENAI_API_KEY`（仅用于非 LLM eval 的导入链）
+- `scripts/preflight_v2.sh`
+  - 支持 `--help`、`--no-strict-ports`、`--require-cuda`、`--allow-missing-evaluator`
+  - 增加 Playwright runtime 检查、Torch CUDA 检查、VWA evaluator import 检查
+  - evaluator 导入检查时自动注入占位 key，避免无关失败
 
-| 修复 | 文件 | 说明 |
-|------|------|------|
-| dom_only 不再绕过 LLM | `backends/local_qwen.py`, `api_qwen.py` | dom_only 现在仍走 LLM 推理（text-only），heuristic 仅在显式 `dom_mode: "heuristic_only"` 时使用 |
-| 成本参数实际化 | `configs/exp_v2_base.yaml` | 填入 GPU 摊销估计、API 定价、overhead 费率 |
-| SoM 绘制副本 | `experiment/som.py` | 在 `image.copy()` 上绘制，不再污染原始 obs |
-| M4 真正的两阶段分离 | `backends/*.py`, `runner.py`, `base.py` | planner 输出 sub-goal → 传递给 grounder；新增 `planner_sub_goal` 字段 |
-| Pareto front 计算 | `experiment/analysis.py` | 非支配解识别 + 三轴 Pareto 图（cost/latency/energy） |
-| 能源追踪默认开启 | `energy_tracker.py`, base config | 新增 `dgx_spark` / `gb200` 硬件 profile，默认启用 |
-| 多维 net saving | `metrics.py`, `analysis.py` | 新增 `net_saving_latency()` / `net_saving_energy()` |
-| screenshot overhead 计量 | `runner.py` | router 升级时实际计时 image prep |
-| M3 智能重试 | `modules.py` | 根据失败的 action type 选择不同重试策略 |
-| 多 seed 支持 | `runner.py` | `seed` 可为列表，自动扩展 condition×seed |
-| noise 检测扩展 | `metrics.py` | 7 类噪声模式（原 2 类） |
+### VWA 远程站点联动（WSL -> DGX）
+- `scripts/start_vwa_docker.sh` 增强：
+  - 容器名兼容：`shopping`/`vwa-shopping`、`forum`/`vwa-reddit`、`wikipedia`/`vwa-wikipedia`
+  - 即使容器已在运行，也会重写 shopping base_url（避免 302 回 `localhost`）
+  - classifieds compose 中 `CLASSIFIEDS=` 会按 `--hostname` 重写
+  - homepage 模板中的 `localhost:*` 链接会按 `--hostname` 重写
 
-### 结构精简（Balanced）
-- 主入口保留：
-  - `scripts/run_experiment.py`
-  - `scripts/analyze_experiment.py`
-- 脚本分层归档：
-  - `scripts/dev/`
-  - `scripts/cloud/`
-  - `scripts/dgx/`
-- legacy 配置迁移：`legacy/configs/exp_*.yaml`（已标注 deprecated）。
-- `.auth/` 停止跟踪，改为本地准备。
+### 文档与忽略规则
+- `DGX_SPARK_MACHINE_QUIRKS.md` 更新：
+  - CPU-only torch 识别与修复
+  - GB10 NVRTC 问题与 fallback
+  - 远程站点 `localhost` 重定向问题
+  - homepage `:4399` 端口代理注意事项
+- `.gitignore` 更新：
+  - `venv/`、`.venv/`
+  - `scripts/vwa_env_remote.sh`（主机本地私有配置）
 
-## 仍待完成（剩余 gap）
-1. 端到端真实环境验收
-   - 需要在完整 VWA + Playwright + auth 条件下跑通 Phase1/2/3 全矩阵并留档。
+## 当前运行现状（与你本次联调一致）
+1. 远程四站核心链路：
+   - shopping/reddit/wikipedia/classifieds：DGX 可达
+2. shopping 重定向：
+   - 已从 `Location: http://localhost:7770/...` 修复为对外可用地址
+3. homepage:
+   - 仍可能因 Windows/WSL 端口代理导致 DGX 不可达（preflight 为 WARN）
+4. baseline：
+   - 建议前台先确认首个 task 进入执行，再切后台长跑
 
-2. 多 seed 统计显著性
-   - 框架已支持 `seed: [42, 123, 456]`，分析侧可进一步输出 mean +/- std。
+## 仍待完成项
+1. homepage `4399` 远程可达性固化为稳定 PASS（减少 run 间歇性波动）
+2. Phase1/2/3 在远程站点模式下做一次完整可复现实验留档
+3. 多 seed 统计汇总（mean/std/置信区间）纳入默认分析报告
 
-3. 运行手册进一步固化
-   - 可继续补充多机型部署细节（仅通用内容放 README，机器特化仍放 DGX 文档）。
-
-## 运行建议
-1. 安装依赖：
-   - 最小：`pip install -e .`
-   - 全功能：`pip install -e ".[analysis,dev]"`
-2. 预检查：`bash scripts/preflight_v2.sh`
-3. 实验运行：`python3 scripts/run_experiment.py --config configs/exp_v2_phase*.yaml`
-4. 分析：`python3 scripts/analyze_experiment.py --run_dir <run_dir>`
-
-## 机器特化说明
-`DGX_SPARK_MACHINE_QUIRKS.md` 仅用于本机特化，不作为通用默认流程。
+## 说明
+- `DGX_SPARK_MACHINE_QUIRKS.md` 是机器特化文档，不作为通用默认流程。
+- `scripts/vwa_env_remote.sh` 是本机私有配置文件，不纳入版本管理。

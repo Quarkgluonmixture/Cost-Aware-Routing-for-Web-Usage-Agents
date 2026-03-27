@@ -4,6 +4,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 CONFIG_PATH="${REPO_DIR}/configs/exp_v2_qwen3vl4b_baseline.yaml"
+LOG_DIR="${REPO_DIR}/logs"
+mkdir -p "${LOG_DIR}"
+LOG_PATH_DEFAULT="${LOG_DIR}/baseline_qwen3vl4b_$(date +%F_%H%M%S).log"
+LOG_PATH="${BASELINE_LOG_PATH:-${LOG_PATH_DEFAULT}}"
 
 cd "${REPO_DIR}"
 
@@ -15,7 +19,9 @@ export PYTORCH_NVML_BASED_CUDA_CHECK=1
 # Best-effort conda activation for a reproducible env.
 if command -v conda >/dev/null 2>&1; then
   eval "$(conda shell.bash hook)" || true
-  conda activate p79_ai || true
+  if conda env list 2>/dev/null | awk '{print $1}' | grep -qx "p79_ai"; then
+    conda activate p79_ai || true
+  fi
 fi
 
 # Best-effort VWA environment loading.
@@ -34,6 +40,10 @@ elif [[ -f "${REPO_DIR}/scripts/vwa_env.sh" ]]; then
   source "${REPO_DIR}/scripts/vwa_env.sh" || true
 fi
 
+# VisualWebArena may import OpenAI provider modules during evaluator setup even
+# when current tasks do not require LLM-based judging.
+export OPENAI_API_KEY="${OPENAI_API_KEY:-DUMMY_P79_NON_LLM_EVAL}"
+
 if command -v x86_64-conda-linux-gnu-gcc >/dev/null 2>&1; then
   export CC
   CC="$(command -v x86_64-conda-linux-gnu-gcc)"
@@ -50,4 +60,10 @@ else
   exit 127
 fi
 
-exec "${PYTHON_BIN}" scripts/run_experiment.py --config "${CONFIG_PATH}"
+echo "[baseline] log file: ${LOG_PATH}" >&2
+
+set +e
+"${PYTHON_BIN}" scripts/run_experiment.py --config "${CONFIG_PATH}" 2>&1 | tee -a "${LOG_PATH}"
+rc=${PIPESTATUS[0]}
+set -e
+exit "${rc}"
