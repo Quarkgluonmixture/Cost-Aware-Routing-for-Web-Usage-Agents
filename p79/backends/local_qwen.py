@@ -3,8 +3,6 @@ from __future__ import annotations
 import time
 from typing import Any, Dict, Tuple
 
-from PIL import Image
-
 from p79.backends.base import BackendStepContext
 from p79.backends.heuristic import HeuristicDomBackend
 
@@ -39,7 +37,7 @@ class LocalQwenBackend:
             self._agent = Qwen3VLAgent(agent_cfg)
 
     def step(self, instruction: str, obs: Any, context: BackendStepContext) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        if context.observation_mode == "dom_only" and self.dom_mode == "heuristic_only":
+        if context.observation_mode == "dom" and self.dom_mode == "heuristic_only":
             return self._heuristic.step(instruction, obs, context)
 
         if self.mock_mode:
@@ -61,9 +59,6 @@ class LocalQwenBackend:
 
         assert self._agent is not None
 
-        if context.observation_mode == "dom_only" and getattr(obs, "image", None) is None:
-            obs.image = Image.new("RGB", (32, 32), color="black")
-
         stage_prefix = ""
         if context.stage == "planner":
             stage_prefix = (
@@ -81,7 +76,7 @@ class LocalQwenBackend:
 
         prompt = f"{stage_prefix}{instruction}"
         start = time.time()
-        action, meta = self._agent.step(prompt, obs, history=context.history)
+        action, meta = self._agent.step(prompt, obs, history=context.history, observation_mode=context.observation_mode)
         infer_ms = (time.time() - start) * 1000.0
 
         meta = dict(meta)

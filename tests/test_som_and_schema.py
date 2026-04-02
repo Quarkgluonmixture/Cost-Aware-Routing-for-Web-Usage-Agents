@@ -29,7 +29,7 @@ def test_step_schema_validation_required_fields():
         "seed": 42,
         "step_idx": 0,
         "som": {},
-        "observation_mode": "dom_only",
+        "observation_mode": "dom",
         "router": {},
         "module_flags": {},
         "action_type": "wait",

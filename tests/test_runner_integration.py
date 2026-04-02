@@ -61,12 +61,12 @@ def test_runner_and_analysis_end_to_end_with_mock_env(tmp_path):
         },
         "variables": {
             "primary": {
-                "som": [False, True],
-                "observation_mode": ["dom_only", "hybrid"],
+                "observation_mode": ["dom", "som", "vision"],
             }
         },
         "router": {
-            "cheap_default_mode": "dom_only",
+            "cheap_default_mode": "dom",
+            "rich_escalation_mode": "som",
             "thresholds": {
                 "dom_size_threshold": 12000,
                 "unchanged_steps_trigger": 2,
@@ -110,8 +110,7 @@ def test_runner_and_analysis_end_to_end_with_mock_env(tmp_path):
         "baselines": {
             "run_b0": True,
             "b0_backend": "api_strong",
-            "b0_som": True,
-            "b0_observation_mode": "hybrid",
+            "b0_observation_mode": "som",
         },
     }
 
@@ -124,7 +123,7 @@ def test_runner_and_analysis_end_to_end_with_mock_env(tmp_path):
     with open(run_summary_path, "r", encoding="utf-8") as f:
         run_summary = json.load(f)
 
-    assert run_summary["total_conditions"] == 5
+    assert run_summary["total_conditions"] == 4  # 3 phase1 modes + 1 b0
     assert run_summary["total_episodes"] > 0
 
     step_logs = list(run_dir.glob("*/episodes/*_steps_v2.jsonl"))

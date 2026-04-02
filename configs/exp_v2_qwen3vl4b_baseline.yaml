@@ -10,6 +10,7 @@ task:
 
 variables:
   phase2:
+    run_routed: false
     fixed_condition:
       som_on: false
       observation_mode: "hybrid"

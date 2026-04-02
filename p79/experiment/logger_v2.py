@@ -12,6 +12,7 @@ class LoggerV2:
         self.episodes_dir.mkdir(parents=True, exist_ok=True)
 
     def write_condition_meta(self, meta: Dict[str, Any]) -> None:
+        self.condition_dir.mkdir(parents=True, exist_ok=True)
         with open(self.condition_dir / "condition_meta.json", "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
 
@@ -23,11 +24,13 @@ class LoggerV2:
 
     def write_step(self, site: str, task_id: int, record: Dict[str, Any]) -> None:
         path = self.step_log_path(site, task_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
     def write_episode_summary(self, site: str, task_id: int, summary: Dict[str, Any]) -> None:
         path = self.summary_path(site, task_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2, ensure_ascii=False)
 
@@ -35,5 +38,6 @@ class LoggerV2:
         return self.condition_dir / "condition_summary_v2.json"
 
     def write_condition_summary(self, payload: Dict[str, Any]) -> None:
+        self.condition_dir.mkdir(parents=True, exist_ok=True)
         with open(self.condition_summary_path(), "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2, ensure_ascii=False)

@@ -67,6 +67,10 @@ def validate_action(action: Dict[str, Any]) -> Dict[str, Any]:
     if action_type == "type":
         action["text"] = str(action.get("text", ""))
 
+    if action_type in ("finish", "stop"):
+        answer = action.get("answer", "")
+        action["answer"] = "" if answer is None else str(answer)
+
     return action
 
 

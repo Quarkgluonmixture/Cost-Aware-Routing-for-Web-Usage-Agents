@@ -377,29 +377,31 @@ def analyze_run(run_dir: str) -> Path:
 def _plot_phase1(cond_df, output_dir: Path) -> None:
     import matplotlib.pyplot as plt  # type: ignore
 
-    # Representation screening table
-    table = cond_df[
-        ["condition_id", "som_on", "observation_mode", "success_rate", "avg_total_cost_usd", "p95_step_latency_ms"]
-    ]
+    # Representation screening table (3-mode: dom / som / vision)
+    cols = ["condition_id", "observation_mode", "success_rate", "avg_total_cost_usd", "p95_step_latency_ms"]
+    available = [c for c in cols if c in cond_df.columns]
+    table = cond_df[available]
     table.to_csv(output_dir / "phase1_representation_screening.csv", index=False)
 
-    pivot = table.pivot_table(
-        index="som_on",
-        columns="observation_mode",
-        values="success_rate",
-        aggfunc="mean",
-    )
+    if "observation_mode" not in cond_df.columns or "success_rate" not in cond_df.columns:
+        return
+
+    mode_order = [m for m in ["dom", "som", "vision"] if m in cond_df["observation_mode"].values]
+    success = [
+        float(cond_df.loc[cond_df["observation_mode"] == m, "success_rate"].mean())
+        for m in mode_order
+    ]
+
     fig, ax = plt.subplots(figsize=(6, 4))
-    im = ax.imshow(pivot.values, cmap="Blues", vmin=0.0, vmax=1.0)
-    ax.set_xticks(range(len(pivot.columns)))
-    ax.set_xticklabels([str(c) for c in pivot.columns])
-    ax.set_yticks(range(len(pivot.index)))
-    ax.set_yticklabels([f"SoM={v}" for v in pivot.index])
-    ax.set_title("Phase1 Success Screening")
-    fig.colorbar(im, ax=ax)
+    bars = ax.bar(mode_order, success, color=["#4C72B0", "#DD8452", "#55A868"])
+    ax.set_ylim(0.0, 1.0)
+    ax.set_ylabel("Success Rate")
+    ax.set_title("Phase 1 Representation Screening (dom / som / vision)")
+    for bar, val in zip(bars, success):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01, f"{val:.2f}", ha="center", va="bottom")
     fig.tight_layout()
     fig.savefig(output_dir / "phase1_representation_screening.png")
-    fig.savefig(output_dir / "phase1_success_heatmap.png")
+    fig.savefig(output_dir / "phase1_success_heatmap.png")  # kept for compat
     plt.close(fig)
 
 

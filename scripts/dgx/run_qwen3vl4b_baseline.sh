@@ -3,12 +3,18 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-CONFIG_PATH="${REPO_DIR}/configs/exp_v2_qwen3vl4b_baseline.yaml"
+CONFIG_PATH="${BASELINE_CONFIG:-${REPO_DIR}/configs/exp_v2_qwen3vl4b_baseline.yaml}"
 LOG_DIR="${REPO_DIR}/logs"
 mkdir -p "${LOG_DIR}"
 LOG_PATH_DEFAULT="${LOG_DIR}/baseline_qwen3vl4b_$(date +%F_%H%M%S).log"
 LOG_PATH="${BASELINE_LOG_PATH:-${LOG_PATH_DEFAULT}}"
 SITE_HEALTH_TIMEOUT="${BASELINE_SITE_HEALTH_TIMEOUT:-6}"
+RUN_ID=""
+if [[ -n "${BASELINE_RUN_ID:-}" ]]; then
+  RUN_ID="${BASELINE_RUN_ID}"
+elif [[ -n "${BASELINE_RUN_ID_PREFIX:-}" ]]; then
+  RUN_ID="${BASELINE_RUN_ID_PREFIX}_$(date +%Y%m%d_%H%M%S)"
+fi
 
 site_env_var_for() {
   case "${1:-}" in
@@ -232,9 +238,16 @@ else
 fi
 
 echo "[baseline] log file: ${LOG_PATH}" >&2
+if [[ -n "${RUN_ID}" ]]; then
+  echo "[baseline] run_id: ${RUN_ID}" >&2
+fi
 
 set +e
-"${PYTHON_BIN}" scripts/run_experiment.py --config "${CONFIG_PATH}" 2>&1 | tee -a "${LOG_PATH}"
+cmd=("${PYTHON_BIN}" scripts/run_experiment.py --config "${CONFIG_PATH}" --log_path "${LOG_PATH}")
+if [[ -n "${RUN_ID}" ]]; then
+  cmd+=(--run_id "${RUN_ID}")
+fi
+"${cmd[@]}" 2>&1 | tee -a "${LOG_PATH}"
 rc=${PIPESTATUS[0]}
 set -e
 exit "${rc}"

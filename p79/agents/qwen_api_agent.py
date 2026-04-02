@@ -1,12 +1,11 @@
-import json
 import logging
 import os
-import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from PIL import Image
 from openai import OpenAI
 
+from p79.backends.action_utils import parse_action_text
 from p79.backends.image_utils import DEFAULT_MAX_IMAGE_PAYLOAD_BYTES, encode_image_data_url
 
 logger = logging.getLogger(__name__)
@@ -120,34 +119,32 @@ CRITICAL:
                 obs_text = obs_text[:max_chars] + "\n[TRUNCATED]"
 
         history_text = self._format_history(history or [])
-
-        max_size = self.config.get("agent", {}).get("image_max_size", 1024)
-        if max(image.size) > max_size:
-            ratio = max_size / max(image.size)
-            new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
-            image = image.resize(new_size, Image.Resampling.LANCZOS)
-
-        image_payload = self._image_to_data_url(image)
-
-        messages = [
+        content = [
             {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": (
-                            f"Task: {instruction}\nSystem: {self.system_prompt}\n"
-                            f"{history_text}"
-                            f"Accessibility Tree:\n{obs_text}"
-                        ),
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": image_payload["data_url"]},
-                    },
-                ],
+                "type": "text",
+                "text": (
+                    f"Task: {instruction}\nSystem: {self.system_prompt}\n"
+                    f"{history_text}"
+                    f"Accessibility Tree:\n{obs_text}"
+                ),
             }
         ]
+        image_payload = None
+        if image is not None:
+            max_size = self.config.get("agent", {}).get("image_max_size", 1024)
+            if max(image.size) > max_size:
+                ratio = max_size / max(image.size)
+                new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
+                image = image.resize(new_size, Image.Resampling.LANCZOS)
+            image_payload = self._image_to_data_url(image)
+            content.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": image_payload["data_url"]},
+                }
+            )
+
+        messages = [{"role": "user", "content": content}]
 
         gen_cfg = self.config.get("model", {})
         response = self.client.chat.completions.create(
@@ -159,7 +156,7 @@ CRITICAL:
         )
 
         output_text = response.choices[0].message.content or ""
-        action, valid, fail_reason = self._parse_and_validate(output_text)
+        action, valid, fail_reason = parse_action_text(output_text)
 
         if action.get("action_type") == "type":
             text = action.get("text", "")
@@ -175,9 +172,9 @@ CRITICAL:
             "failure_reason": fail_reason,
             "input_tokens": getattr(usage, "prompt_tokens", None),
             "output_tokens": getattr(usage, "completion_tokens", None),
-            "image_payload_bytes": image_payload.get("payload_bytes"),
-            "image_quality": image_payload.get("quality"),
-            "image_compressed": image_payload.get("compressed"),
+            "image_payload_bytes": image_payload.get("payload_bytes") if image_payload else None,
+            "image_quality": image_payload.get("quality") if image_payload else None,
+            "image_compressed": image_payload.get("compressed") if image_payload else None,
         }
 
         return action, meta
@@ -185,47 +182,3 @@ CRITICAL:
     def _image_to_data_url(self, image: Image.Image) -> Dict[str, Any]:
         max_payload = self.config.get("agent", {}).get("max_image_payload_bytes", DEFAULT_MAX_IMAGE_PAYLOAD_BYTES)
         return encode_image_data_url(image=image, max_payload_bytes=int(max_payload))
-
-    def _parse_and_validate(self, text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
-        text = text.strip()
-        lower_text = text.lower()
-
-        try:
-            action = json.loads(text)
-            return self._validate_schema(action), True, None
-        except json.JSONDecodeError:
-            pass
-
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        if match:
-            try:
-                action = json.loads(match.group(0))
-                return self._validate_schema(action), True, "repaired_regex"
-            except json.JSONDecodeError:
-                pass
-
-        if "scroll" in lower_text:
-            return {
-                "action_type": "scroll",
-                "delta": [0, 0.8],
-                "coordinate_type": "normalized",
-            }, False, "keyword_scroll"
-        if "back" in lower_text:
-            return {"action_type": "back"}, False, "keyword_back"
-        if "finish" in lower_text or "stop" in lower_text:
-            return {"action_type": "finish", "answer": ""}, False, "keyword_finish"
-        if "wait" in lower_text:
-            return {"action_type": "wait"}, False, "keyword_wait"
-
-        logger.warning("Failed to parse action from model output.")
-        return {"action_type": "wait"}, False, "parse_failed"
-
-    def _validate_schema(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        if "action_type" not in action:
-            return {"action_type": "wait"}
-        if action["action_type"] == "click":
-            if "coordinate" not in action and "element_id" not in action:
-                return {"action_type": "wait"}
-            if "coordinate" in action and "coordinate_type" not in action:
-                action["coordinate_type"] = "normalized"
-        return action

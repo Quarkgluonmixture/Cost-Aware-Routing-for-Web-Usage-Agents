@@ -54,7 +54,9 @@ def _load_best_condition_from_phase1(path: Path) -> Optional[Tuple[bool, str, st
         reverse=True,
     )
     top = ranked[0]
-    return bool(top.get("som_on", False)), str(top.get("observation_mode", "hybrid")), str(top.get("condition_id", "phase1_best"))
+    obs_mode = str(top.get("observation_mode", "som"))
+    som_on = obs_mode == "som"
+    return som_on, obs_mode, str(top.get("condition_id", "phase1_best"))
 
 
 def _default_backend_id(cfg: Dict[str, Any]) -> str:
@@ -76,27 +78,31 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
     conditions: List[ConditionSpec] = []
 
     if phase == "phase1":
-        som_values = [bool(x) for x in primary.get("som", [False, True])]
-        obs_values = [str(x) for x in primary.get("observation_mode", ["dom_only", "hybrid"])]
+        # Flat 3-mode design: dom / som / vision.
+        # "som" implies SOM_MARKS + marked image; "vision" implies raw screenshot only.
+        # som_on is derived (True only when mode == "som").
+        obs_values = [str(x) for x in primary.get("observation_mode", ["dom", "som", "vision"])]
 
-        for som_on in som_values:
-            for obs_mode in obs_values:
-                cid = f"phase1_som_{int(som_on)}_{obs_mode}_router_0"
-                conditions.append(
-                    ConditionSpec(
-                        condition_id=cid,
-                        phase="phase1",
-                        backend_id=backend_id,
-                        som_on=som_on,
-                        observation_mode=obs_mode,
-                        router_on=False,
-                        modules=ModuleFlags(),
-                        label=f"Phase1 SoM={'ON' if som_on else 'OFF'} Obs={obs_mode}",
-                    )
+        for obs_mode in obs_values:
+            som_on = obs_mode == "som"
+            cid = f"phase1_{obs_mode}_router_0"
+            conditions.append(
+                ConditionSpec(
+                    condition_id=cid,
+                    phase="phase1",
+                    backend_id=backend_id,
+                    som_on=som_on,
+                    observation_mode=obs_mode,
+                    router_on=False,
+                    modules=ModuleFlags(),
+                    label=f"Phase1 {obs_mode.upper()} mode",
                 )
+            )
 
     elif phase == "phase2":
         phase2_cfg = cfg.get("variables", {}).get("phase2", {})
+        run_fixed_best = bool(phase2_cfg.get("run_fixed_best", True))
+        run_routed = bool(phase2_cfg.get("run_routed", True))
         best_hint = phase2_cfg.get("best_from_phase1_run_dir")
         best = None
         if best_hint:
@@ -104,8 +110,8 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
 
         if best is None:
             fixed_hint = phase2_cfg.get("fixed_condition", {})
-            som_on = bool(fixed_hint.get("som_on", primary.get("som", [False])[0]))
-            obs_mode = str(fixed_hint.get("observation_mode", primary.get("observation_mode", ["hybrid"])[0]))
+            obs_mode = str(fixed_hint.get("observation_mode", primary.get("observation_mode", ["som"])[0]))
+            som_on = obs_mode == "som"
             source_condition_id = "manual_phase2_fixed"
         else:
             som_on, obs_mode, source_condition_id = best
@@ -113,44 +119,49 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
         fixed_id = "phase2_fixed_best"
         routed_id = "phase2_routed"
 
-        conditions.append(
-            ConditionSpec(
-                condition_id=fixed_id,
-                phase="phase2",
-                backend_id=backend_id,
-                som_on=som_on,
-                observation_mode=obs_mode,
-                router_on=False,
-                modules=ModuleFlags(),
-                label="Phase2 fixed best representation",
-                metadata={"source_condition_id": source_condition_id},
+        if run_fixed_best:
+            conditions.append(
+                ConditionSpec(
+                    condition_id=fixed_id,
+                    phase="phase2",
+                    backend_id=backend_id,
+                    som_on=som_on,
+                    observation_mode=obs_mode,
+                    router_on=False,
+                    modules=ModuleFlags(),
+                    label="Phase2 fixed best representation",
+                    metadata={"source_condition_id": source_condition_id},
+                )
             )
-        )
 
-        conditions.append(
-            ConditionSpec(
-                condition_id=routed_id,
-                phase="phase2",
-                backend_id=backend_id,
-                som_on=som_on,
-                observation_mode=str(cfg.get("router", {}).get("cheap_default_mode", "dom_only")),
-                router_on=True,
-                modules=ModuleFlags(),
-                label="Phase2 routed (rule-based)",
-                metadata={
-                    "source_condition_id": source_condition_id,
-                    "fixed_reference": fixed_id,
-                    "base_observation_mode": obs_mode,
-                },
+        if run_routed:
+            conditions.append(
+                ConditionSpec(
+                    condition_id=routed_id,
+                    phase="phase2",
+                    backend_id=backend_id,
+                    som_on=som_on,
+                    observation_mode=str(cfg.get("router", {}).get("cheap_default_mode", "dom")),
+                    router_on=True,
+                    modules=ModuleFlags(),
+                    label="Phase2 routed (rule-based)",
+                    metadata={
+                        "source_condition_id": source_condition_id,
+                        "fixed_reference": fixed_id,
+                        "base_observation_mode": obs_mode,
+                    },
+                )
             )
-        )
+
+        if not conditions:
+            raise ValueError("phase2 has no enabled conditions; set run_fixed_best and/or run_routed to true")
 
     elif phase == "phase3":
         phase3_cfg = cfg.get("variables", {}).get("phase3", {})
         base = phase3_cfg.get("base_condition", {})
 
-        base_som = bool(base.get("som_on", True))
-        base_obs = str(base.get("observation_mode", "dom_only"))
+        base_obs = str(base.get("observation_mode", "dom"))
+        base_som = base_obs == "som"
         base_router = bool(base.get("router_on", True))
 
         module_order = ["none", "m1", "m2", "m3", "m4"]
@@ -181,8 +192,8 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
                 condition_id="b0_strong_upper_bound",
                 phase=phase,
                 backend_id=str(b0_backend),
-                som_on=bool(baselines.get("b0_som", True)),
-                observation_mode=str(baselines.get("b0_observation_mode", "hybrid")),
+                observation_mode=str(baselines.get("b0_observation_mode", "som")),
+                som_on=str(baselines.get("b0_observation_mode", "som")) == "som",
                 router_on=False,
                 modules=ModuleFlags(),
                 label="B0 strong upper bound",

@@ -21,3 +21,7 @@ temp_task_*.json
 temp_smoke_config.json
 external_code/
 scripts/vwa_env_remote.sh
+.claude/
+.cache/
+.pytest_cache/
+external_code/

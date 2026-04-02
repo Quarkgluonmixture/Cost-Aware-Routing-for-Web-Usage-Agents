@@ -1,0 +1,56 @@
+# Diagnostic config — NOT a main baseline.
+# Used for targeted investigation with diagnostic_controls (anti_repeat,
+# no_early_finish, query_sanitization) enabled on a small task subset.
+# Do not include in main experiment comparisons.
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "diagnostic_not_for_main_baseline"
+
+task:
+  include_sites: ["shopping", "reddit"]
+  task_ids:
+    shopping: [0, 2, 3, 4, 5, 10, 108, 116, 186, 187, 188, 200]
+    reddit: [0, 4, 10, 25, 35, 50]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    som: [false]
+    observation_mode: ["dom_only"]
+
+backends:
+  default_backend: "local_4b"
+  local_4b:
+    type: "local_qwen"
+    path: "Qwen/Qwen3-VL-4B-Instruct"
+    quantization: "none"
+    device: "cuda"
+    max_new_tokens: 256
+    dom_mode: "llm"
+    mock_mode: false
+
+baselines:
+  run_b0: false
+
+diagnostic_controls:
+  enabled: true
+  anti_repeat:
+    enabled: true
+    window: 3
+    min_repeat_hits: 2
+  no_early_finish:
+    enabled: true
+    min_exploration_steps: 5
+    min_page_changes: 2
+    min_search_attempts: 2
+  query_sanitization:
+    enabled: true
+    max_words: 4
+    suspicious_word_threshold: 6

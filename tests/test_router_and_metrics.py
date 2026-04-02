@@ -5,7 +5,7 @@ from p79.experiment.router import RouterState, RuleBasedRouter
 def test_router_escalates_on_failure_signal():
     cfg = {
         "router": {
-            "cheap_default_mode": "dom_only",
+            "cheap_default_mode": "dom",
             "thresholds": {
                 "dom_size_threshold": 12000,
                 "unchanged_steps_trigger": 2,
@@ -18,24 +18,24 @@ def test_router_escalates_on_failure_signal():
 
     decision, triggers, _, state = router.decide(
         router_enabled=True,
-        preferred_mode="hybrid",
+        preferred_mode="som",
         obs_text="short text",
         state=state,
         prev_action_success=None,
         prev_page_changed=None,
     )
-    assert decision == "dom_only"
+    assert decision == "dom"
     assert triggers == []
 
     decision2, triggers2, _, _ = router.decide(
         router_enabled=True,
-        preferred_mode="hybrid",
+        preferred_mode="som",
         obs_text="short text",
         state=state,
         prev_action_success=False,
         prev_page_changed=False,
     )
-    assert decision2 == "hybrid"
+    assert decision2 == "som"
     assert "action_failed" in triggers2
 
 
@@ -46,7 +46,7 @@ def test_net_saving_formula():
 def test_router_escalates_on_checklist_stall_when_enabled():
     cfg = {
         "router": {
-            "cheap_default_mode": "dom_only",
+            "cheap_default_mode": "dom",
             "thresholds": {
                 "dom_size_threshold": 12000,
                 "unchanged_steps_trigger": 2,
@@ -64,26 +64,26 @@ def test_router_escalates_on_checklist_stall_when_enabled():
 
     decision1, triggers1, _, state = router.decide(
         router_enabled=True,
-        preferred_mode="hybrid",
+        preferred_mode="som",
         obs_text="short text",
         state=state,
         prev_action_success=True,
         prev_page_changed=True,
         checklist_status={"total": 3, "completed": 0, "failed": 0},
     )
-    assert decision1 == "dom_only"
+    assert decision1 == "dom"
     assert "checklist_progress_stalled" not in triggers1
 
     decision2, triggers2, _, _ = router.decide(
         router_enabled=True,
-        preferred_mode="hybrid",
+        preferred_mode="som",
         obs_text="short text",
         state=state,
         prev_action_success=True,
         prev_page_changed=True,
         checklist_status={"total": 3, "completed": 0, "failed": 0},
     )
-    assert decision2 == "hybrid"
+    assert decision2 == "som"
     assert "checklist_progress_stalled" in triggers2
 
 

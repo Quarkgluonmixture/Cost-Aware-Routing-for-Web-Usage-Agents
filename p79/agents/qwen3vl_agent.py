@@ -1,5 +1,3 @@
-import json
-import re
 import logging
 import time
 import torch
@@ -8,6 +6,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
 from p79.utils.torch_cuda_workarounds import apply_nvrtc_prod_fallback_if_needed
+from p79.backends.action_utils import parse_action_text
 
 logger = logging.getLogger(__name__)
 
@@ -94,23 +93,37 @@ class Qwen3VLAgent:
             logger.error(f"Failed to load model: {e}")
             raise e
 
-        self.system_prompt = self._get_system_prompt()
+        # Prompts are selected per observation mode at inference time.
+        self._system_prompts = {
+            "dom": self._make_dom_prompt(),
+            "som": self._make_som_prompt(),
+            "vision": self._make_vision_prompt(),
+        }
+        # Default (backward compat / unknown mode)
+        self.system_prompt = self._system_prompts["dom"]
 
-    def _get_system_prompt(self) -> str:
+    # ------------------------------------------------------------------
+    # Mode-specific system prompts
+    # ------------------------------------------------------------------
+
+    def _make_dom_prompt(self) -> str:
         return """You are a precise web navigation agent.
 Output ONLY valid JSON. No markdown blocks, no explanations.
 
+You receive the full Accessibility Tree of the current page.
+Use element IDs from the Accessibility Tree to interact with elements.
+
 Core Rules:
 1) Do NOT answer or finish immediately. You MUST navigate to find the item.
-2) If the target category (e.g., "Blankets & Throws") is not visible, look for a parent category (e.g., "Home & Kitchen") or use the search bar.
+2) If the target category is not visible, look for a parent category or use the search bar.
 3) NEVER give up early. If you don't see the item, SEARCH for it using the search bar.
-4) Only use "finish" when you have successfully completed the task (e.g., found the item, placed order) or if you have searched everywhere and are 100% sure it's missing.
+4) Only use "finish" when you have successfully completed the task or after EXHAUSTIVE search.
 5) If you are on the homepage, DO NOT go back. Start by searching or clicking a category.
 6) If you are stuck, use scroll or try a different category/search.
 
 Response Format (JSON):
 {
-  "thought": "Brief reasoning about what to do next. Why are you choosing this action? What is your plan?",
+  "thought": "Brief reasoning about what to do next.",
   "action_type": "click" | "type" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
   ... (other action parameters) ...
 }
@@ -118,34 +131,109 @@ Response Format (JSON):
 Action Schema:
 1. Click: {"action_type": "click", "element_id": N}
    - N is the numeric ID from the Accessibility Tree (e.g., [175] link 'Comments' -> element_id: 175).
-   - This is the PREFERRED way to click. Use element IDs from the Accessibility Tree.
-   - Alternative (only if no element ID): {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"} with x, y as floats 0.0-1.0.
+   - ALWAYS prefer element_id. Only use coordinate as last resort.
 2. Type: {"action_type": "type", "text": "string", "element_id": N}
-   - ALWAYS specify element_id to target the correct input field (e.g., search box [397], text field [132]).
-   - To submit a search or form, append "\\n" to the text (e.g., "red blanket\\n").
-   - Without element_id, text goes to whatever is focused, which is often WRONG.
+   - ALWAYS specify element_id to target the correct input field.
+   - To submit, append "\\n" to the text.
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
 4. Wait: {"action_type": "wait"}
-5. Back: {"action_type": "back"}
-   - WARNING: Do NOT use "back" if you are on the first page (homepage). Going back from the first page leads to a blank page (about:blank) and you will be stuck.
+5. Back: {"action_type": "back"} — WARNING: Do NOT use on the first/homepage.
 6. Forward: {"action_type": "forward"}
 7. Finish: {"action_type": "finish", "answer": "optional string"}
 8. Tab focus: {"action_type": "tab_focus", "page_number": int}
 
-Tab Rule:
-- If the Accessibility Tree lists tabs like "Tab 0" / "Tab 1", use tab_focus to switch to the tab that matches the site you need (e.g., Wikipedia). Do NOT click random coordinates to switch tabs.
-- If the task says "Wikipedia site in the second tab", immediately use {"action_type":"tab_focus","page_number":1} before any clicks.
+CRITICAL:
+- You MUST include a "thought" field.
+- ALWAYS use element_id for click and type. Do NOT guess coordinates.
+- Do NOT output literal newlines inside JSON strings. Use \\n.
+- Avoid repeating the same action. Change strategy if stuck.
+"""
+
+    def _make_som_prompt(self) -> str:
+        return """You are a precise web navigation agent.
+Output ONLY valid JSON. No markdown blocks, no explanations.
+
+You receive:
+  1. A [SOM_MARKS] list: flat index of interactive elements, each with [id=N] and a short description.
+  2. A screenshot with bounding boxes drawn over those same elements, labeled with their IDs.
+
+Use the element IDs from [SOM_MARKS] to interact. Use the screenshot to understand spatial layout and locate elements not in the list.
+
+Core Rules:
+1) Do NOT answer or finish immediately. You MUST navigate to find the item.
+2) Prefer element_id for clicks and typing. Use coordinate only when the target is visible in the image but has no ID in [SOM_MARKS].
+3) NEVER give up early. If you don't see the item, SEARCH for it using the search bar.
+4) Only use "finish" when you have successfully completed the task or after EXHAUSTIVE search.
+5) If you are on the homepage, DO NOT go back. Start by searching or clicking a category.
+6) If you are stuck, scroll or try a different approach.
+
+Response Format (JSON):
+{
+  "thought": "Brief reasoning about what to do next.",
+  "action_type": "click" | "type" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
+  ... (other action parameters) ...
+}
+
+Action Schema:
+1. Click by element_id (preferred): {"action_type": "click", "element_id": N}
+   - N is from [SOM_MARKS], e.g. [id=175] link 'Comments' -> element_id: 175.
+2. Click by coordinate (fallback): {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}
+   - x, y are floats 0.0–1.0. Use only when no element_id is available.
+3. Type: {"action_type": "type", "text": "string", "element_id": N}
+   - Prefer element_id. To submit, append "\\n" to the text.
+4. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
+5. Wait: {"action_type": "wait"}
+6. Back: {"action_type": "back"} — WARNING: Do NOT use on the first/homepage.
+7. Forward: {"action_type": "forward"}
+8. Finish: {"action_type": "finish", "answer": "optional string"}
+9. Tab focus: {"action_type": "tab_focus", "page_number": int}
 
 CRITICAL:
-- You MUST include a "thought" field to explain your reasoning.
-- DO NOT use "finish" to report failure. "finish" is ONLY for success or after EXHAUSTIVE search (at least 3 different search queries/attempts).
-- If you are in the wrong category, use the search bar or click a navigation link. Avoid "back" unless you are sure it won't lead to about:blank.
-- PREFER clicking on Categories (e.g., "Home & Kitchen" -> "Blankets & Throws") over searching if search results are poor.
-- If search returns unrelated items (e.g. seafood instead of blankets), STOP searching immediately. Navigate via Categories.
-- Do NOT output literal newlines inside JSON strings. Use \\n for newline.
-- If search results appear, CLICK on the most promising item to verify details (price, color). Do not just stare at the list.
-- Avoid repeating the same search query or action. If something doesn't work, change your strategy.
-- ALWAYS use element_id from the Accessibility Tree for click and type actions. Do NOT guess coordinates or type blindly.
+- You MUST include a "thought" field.
+- Prefer element_id over coordinate when the element appears in [SOM_MARKS].
+- Do NOT output literal newlines inside JSON strings. Use \\n.
+- Avoid repeating the same action. Change strategy if stuck.
+"""
+
+    def _make_vision_prompt(self) -> str:
+        return """You are a precise web navigation agent.
+Output ONLY valid JSON. No markdown blocks, no explanations.
+
+You receive only a raw screenshot of the current page. No element IDs are available.
+Use normalized coordinates (x, y as floats 0.0–1.0, origin top-left) to interact.
+
+Core Rules:
+1) Do NOT answer or finish immediately. You MUST navigate to find the item.
+2) Use coordinates to click visible elements. Estimate the center of the target element.
+3) NEVER give up early. Scroll to find content not visible, then search if needed.
+4) Only use "finish" when you have successfully completed the task or after EXHAUSTIVE search.
+5) If you are on the homepage, DO NOT go back. Start by searching or clicking a category.
+6) If you are stuck, scroll or try a different approach.
+
+Response Format (JSON):
+{
+  "thought": "Brief reasoning about what to do next.",
+  "action_type": "click" | "type" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
+  ... (other action parameters) ...
+}
+
+Action Schema:
+1. Click: {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}
+   - x, y are floats 0.0–1.0. Estimate the center of the target element in the screenshot.
+2. Type: {"action_type": "type", "text": "string"}
+   - First click the input field, then type. To submit, append "\\n" to the text.
+3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
+4. Wait: {"action_type": "wait"}
+5. Back: {"action_type": "back"} — WARNING: Do NOT use on the first/homepage.
+6. Forward: {"action_type": "forward"}
+7. Finish: {"action_type": "finish", "answer": "optional string"}
+8. Tab focus: {"action_type": "tab_focus", "page_number": int}
+
+CRITICAL:
+- You MUST include a "thought" field.
+- DO NOT use element_id — there are no element IDs in this mode.
+- Do NOT output literal newlines inside JSON strings. Use \\n.
+- Avoid repeating the same action. Change strategy if stuck.
 """
 
     @staticmethod
@@ -158,16 +246,20 @@ CRITICAL:
             atype = act.get("action_type", "?")
             detail = ""
             if atype == "click":
-                coord = act.get("coordinate", "?")
-                detail = f" {coord}"
+                if "element_id" in act:
+                    detail = f" [id={act['element_id']}]"
+                elif "coordinate" in act:
+                    detail = f" coord={act['coordinate']}"
+                else:
+                    detail = " ?"
             elif atype == "type":
                 detail = f' "{act.get("text", "")}"'
             elif atype == "scroll":
                 detail = f' delta={act.get("delta", "?")}'
             success = rec.get("action_success", None)
             changed = rec.get("page_changed", None)
-            if success is False or changed is False:
-                result = "FAILED (page unchanged)"
+            if success is False:
+                result = "FAILED"
             elif changed:
                 result = "OK (page changed)"
             else:
@@ -175,9 +267,18 @@ CRITICAL:
             lines.append(f"  Step {rec.get('step_idx', '?')}: {atype}{detail} -> {result}")
         return "Previous actions:\n" + "\n".join(lines) + "\n"
 
-    def step(self, instruction: str, obs: Any, history: Optional[List[Dict[str, Any]]] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        """
-        Takes instruction and observation, returns action dict and metadata.
+    def step(
+        self,
+        instruction: str,
+        obs: Any,
+        history: Optional[List[Dict[str, Any]]] = None,
+        observation_mode: str = "dom",
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """Takes instruction and observation, returns action dict and metadata.
+
+        Args:
+            observation_mode: One of "dom", "som", "vision". Selects the
+                appropriate system prompt and text label.
         """
         image = obs.image
         obs_text = ""
@@ -187,55 +288,64 @@ CRITICAL:
             if len(obs_text) > max_chars:
                 obs_text = obs_text[:max_chars] + "\n[TRUNCATED]"
 
+        system_prompt = self._system_prompts.get(observation_mode, self._system_prompts["dom"])
+
+        # Label the text section according to mode
+        if observation_mode == "vision":
+            obs_section = ""  # no text — screenshot only
+        elif observation_mode == "som":
+            obs_section = f"Element Index (SOM_MARKS):\n{obs_text}" if obs_text else ""
+        else:
+            obs_section = f"Accessibility Tree:\n{obs_text}"
+
         history_text = self._format_history(history or [])
-
-        # Resize if necessary
-        max_size = self.config.get("agent", {}).get("image_max_size", 1024)
-        if max(image.size) > max_size:
-            ratio = max_size / max(image.size)
-            new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
-            image = image.resize(new_size, Image.Resampling.LANCZOS)
-
-        messages = [
+        content = [
             {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image",
-                        "image": image,
-                    },
-                    {
-                        "type": "text",
-                        "text": (
-                            f"Task: {instruction}\nSystem: {self.system_prompt}\n"
-                            f"{history_text}"
-                            f"Accessibility Tree:\n{obs_text}"
-                        ),
-                    },
-                ],
+                "type": "text",
+                "text": (
+                    f"Task: {instruction}\nSystem: {system_prompt}\n"
+                    f"{history_text}"
+                    f"{obs_section}"
+                ),
             }
         ]
+
+        if image is not None:
+            # Resize if necessary
+            max_size = self.config.get("agent", {}).get("image_max_size", 1024)
+            if max(image.size) > max_size:
+                ratio = max_size / max(image.size)
+                new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
+                image = image.resize(new_size, Image.Resampling.LANCZOS)
+            content.insert(0, {"type": "image", "image": image})
+
+        messages = [{"role": "user", "content": content}]
 
         # Prepare for inference
         text = self.processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )
-        image_inputs, video_inputs = process_vision_info(messages)
-        inputs = self.processor(
-            text=[text],
-            images=image_inputs,
-            videos=video_inputs,
-            padding=True,
-            return_tensors="pt",
-        )
+        if image is not None:
+            image_inputs, video_inputs = process_vision_info(messages)
+            inputs = self.processor(
+                text=[text],
+                images=image_inputs,
+                videos=video_inputs,
+                padding=True,
+                return_tensors="pt",
+            )
+        else:
+            inputs = self.processor(
+                text=[text],
+                padding=True,
+                return_tensors="pt",
+            )
         inputs = inputs.to(self.model.device)
 
         # Generate
         gen_kwargs = {
             "max_new_tokens": self.config.get("model", {}).get("max_new_tokens", 256),
-            "temperature": self.config.get("model", {}).get("temperature", 0.1),
-            "top_p": self.config.get("model", {}).get("top_p", 0.9),
-            "do_sample": True
+            "do_sample": False,
         }
         
         generated_ids = self.model.generate(**inputs, **gen_kwargs)
@@ -247,7 +357,7 @@ CRITICAL:
         )[0]
 
         # Parse
-        action, valid, fail_reason = self._parse_and_validate(output_text)
+        action, valid, fail_reason = parse_action_text(output_text)
         
         # Enforce newline for search queries if missing
         if action.get("action_type") == "type":
@@ -267,54 +377,3 @@ CRITICAL:
         }
         
         return action, meta
-
-    def _parse_and_validate(self, text: str) -> Tuple[Dict[str, Any], bool, str]:
-        text = text.strip()
-        lower_text = text.lower()
-        
-        # 1. Try direct JSON parse
-        try:
-            action = json.loads(text)
-            return self._validate_schema(action), True, None
-        except json.JSONDecodeError:
-            pass
-            
-        # 2. Try regex extraction
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        if match:
-            try:
-                action = json.loads(match.group(0))
-                return self._validate_schema(action), True, "repaired_regex"
-            except json.JSONDecodeError:
-                pass
-        
-        # 3. Fallback
-        if "scroll" in lower_text:
-            return {
-                "action_type": "scroll",
-                "delta": [0, 0.8],
-                "coordinate_type": "normalized",
-            }, False, "keyword_scroll"
-        if "back" in lower_text:
-            return {"action_type": "back"}, False, "keyword_back"
-        if "finish" in lower_text or "stop" in lower_text:
-            return {"action_type": "finish", "answer": ""}, False, "keyword_finish"
-        if "wait" in lower_text:
-            return {"action_type": "wait"}, False, "keyword_wait"
-
-        logger.warning(f"Failed to parse action from: {text}")
-        return {"action_type": "wait"}, False, "parse_failed"
-
-    def _validate_schema(self, action: Dict[str, Any]) -> Dict[str, Any]:
-        # Basic schema validation
-        if "action_type" not in action:
-            return {"action_type": "wait"} # Invalid schema
-        
-        # Ensure coordinate exists for click
-        if action["action_type"] == "click":
-            if "coordinate" not in action and "element_id" not in action:
-                return {"action_type": "wait"}
-            if "coordinate" in action and "coordinate_type" not in action:
-                action["coordinate_type"] = "normalized" # Default
-                
-        return action

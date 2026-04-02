@@ -19,7 +19,8 @@ class RuleBasedRouter:
         thresholds = router_cfg.get("thresholds", {})
         checklist_cfg = router_cfg.get("checklist_trigger", {})
 
-        self.cheap_default_mode = str(router_cfg.get("cheap_default_mode", "dom_only"))
+        self.cheap_default_mode = str(router_cfg.get("cheap_default_mode", "dom"))
+        self.rich_escalation_mode = str(router_cfg.get("rich_escalation_mode", "som"))
         self.dom_size_threshold = int(thresholds.get("dom_size_threshold", 12000))
         self.unchanged_steps_trigger = int(thresholds.get("unchanged_steps_trigger", 2))
         self.no_progress_steps_trigger = int(thresholds.get("no_progress_steps_trigger", 2))
@@ -89,7 +90,7 @@ class RuleBasedRouter:
         if not router_enabled:
             decision = preferred_mode
         else:
-            decision = "hybrid" if triggers else self.cheap_default_mode
+            decision = self.rich_escalation_mode if triggers else self.cheap_default_mode
 
         router_decision_ms = (time.time() - start) * 1000.0
         overhead = {

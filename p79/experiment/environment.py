@@ -114,6 +114,7 @@ def create_environment(env_cfg: Dict[str, Any]):
         observation_type=str(env_cfg.get("observation_type", "accessibility_tree")),
         viewport_width=int(env_cfg.get("viewport_width", 1280)),
         viewport_height=int(env_cfg.get("viewport_height", 720)),
+        sleep_after_execution=float(env_cfg.get("sleep_after_execution", 0.5)),
         dry_run=bool(env_cfg.get("dry_run", False)),
     )
 

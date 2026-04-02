@@ -6,13 +6,14 @@ experiment:
   output_root: "results"
 
 task:
-  include_sites: ["shopping", "reddit", "wikipedia", "classifieds"]
+  # VWA has 3 standalone site task sets; wikipedia tasks are cross-site
+  # references embedded in reddit/shopping configs (no separate raw.json).
+  include_sites: ["shopping", "reddit", "classifieds"]
   max_tasks_per_site: null
   task_ids: {}
   site_configs:
     shopping: "external/visualwebarena/config_files/vwa/test_shopping.raw.json"
     reddit: "external/visualwebarena/config_files/vwa/test_reddit.raw.json"
-    wikipedia: "external/visualwebarena/config_files/vwa/test_wikipedia.raw.json"
     classifieds: "external/visualwebarena/config_files/vwa/test_classifieds.raw.json"
 
 env:
@@ -22,6 +23,10 @@ env:
   dry_run: false
   viewport_width: 1280
   viewport_height: 720
+  # Post-action settle time before observation capture (seconds).
+  # Ensures AXTree and screenshot are from the same stable page state.
+  # Increase for vision/som modes if screenshots appear truncated.
+  sleep_after_execution: 0.5
 
 runtime:
   max_steps: 40
@@ -29,14 +34,15 @@ runtime:
 
 variables:
   primary:
-    som: [false, true]
-    observation_mode: ["dom_only", "hybrid"]
+    # Three flat observation modes — som_on is derived (true only for "som").
+    observation_mode: ["dom", "som", "vision"]
     router: [false, true]
   secondary:
     modules: ["none", "m1", "m2", "m3", "m4"]
 
 router:
-  cheap_default_mode: "dom_only"
+  cheap_default_mode: "dom"
+  rich_escalation_mode: "som"
   thresholds:
     dom_size_threshold: 12000
     unchanged_steps_trigger: 2
@@ -68,10 +74,14 @@ metrics:
     enabled: true
     kwh_per_step: null
     co2e_kg_per_kwh: null
-    hardware_profile: "rtx_4090"
+    hardware_profile: "dgx_spark"
     region: "world"
     use_psutil: true
     fixed_power_watts: null
+    use_pynvml: true
+    sample_interval_s: 0.5
+    track_model_load: false
+    model_load_amortize_over: 0
 
 checklist:
   enabled: false
@@ -86,7 +96,7 @@ backends:
   local_4b:
     type: "local_qwen"
     path: "Qwen/Qwen3-VL-4B-Instruct"
-    quantization: "4bit"
+    quantization: "none"
     device: "cuda"
     max_new_tokens: 512
     temperature: 0.1
@@ -106,5 +116,4 @@ backends:
 baselines:
   run_b0: false
   b0_backend: "api_strong"
-  b0_som: true
-  b0_observation_mode: "hybrid"
+  b0_observation_mode: "som"

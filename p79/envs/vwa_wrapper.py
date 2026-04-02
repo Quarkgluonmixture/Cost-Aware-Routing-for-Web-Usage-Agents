@@ -16,6 +16,9 @@ class P79Observation:
     image: Optional[Any] = None   # 可能是 PIL / np / base64 / path，先 Any
     url: Optional[str] = None
     raw: Optional[Dict[str, Any]] = None
+    # VWA obs_nodes_info: maps str(element_id) -> {"union_bound": [x,y,w,h], ...}
+    # Populated from info["observation_metadata"]["text"]["obs_nodes_info"] by _to_p79_obs.
+    obs_nodes_info: Optional[Dict[str, Any]] = None
 
 class VWAWrapper:
     """
@@ -32,6 +35,7 @@ class VWAWrapper:
         current_viewport_only: bool = True,
         viewport_width: int = 1280,
         viewport_height: int = 720,
+        sleep_after_execution: float = 0.5,
         dry_run: bool = False,
     ) -> None:
         self.headless = headless
@@ -39,6 +43,7 @@ class VWAWrapper:
         self.current_viewport_only = current_viewport_only
         self.viewport_width = viewport_width
         self.viewport_height = viewport_height
+        self.sleep_after_execution = sleep_after_execution
         self.dry_run = dry_run
 
         self._env = None  # lazy init
@@ -66,6 +71,7 @@ class VWAWrapper:
             observation_type=self.observation_type,
             current_viewport_only=self.current_viewport_only,
             viewport_size={"width": self.viewport_width, "height": self.viewport_height},
+            sleep_after_execution=self.sleep_after_execution,
         )
 
     def reset(self, config_file: str) -> Tuple[P79Observation, Dict[str, Any]]:
@@ -130,28 +136,22 @@ class VWAWrapper:
             if coord is not None:
                 left = float(coord[0])
                 top = float(coord[1])
-                # Heuristic: if both values are integers and both > 1,
-                # the model likely output AXTree element IDs in the
-                # coordinate field. Use the first value as element_id.
-                if (left > 1.0 and top > 1.0
-                        and left == int(left) and top == int(top)):
-                    action = create_id_based_action(f"click [{int(left)}]")
-                else:
-                    # Accept either normalized [0-1] or pixel coordinates
-                    if left > 1.0 or top > 1.0:
-                        left = left / float(self.viewport_width)
-                        top = top / float(self.viewport_height)
-                    # Avoid 0.0 which triggers VWA create_mouse_click_action validation
-                    eps = 1e-6
-                    if left <= 0.0:
-                        left = eps
-                    elif left >= 1.0:
-                        left = 1.0 - eps
-                    if top <= 0.0:
-                        top = eps
-                    elif top >= 1.0:
-                        top = 1.0 - eps
-                    action = create_mouse_click_action(left=left, top=top)
+                # Accept either normalized [0-1] or pixel coordinates.
+                # Coordinate clicks are always treated as mouse clicks.
+                if left > 1.0 or top > 1.0:
+                    left = left / float(self.viewport_width)
+                    top = top / float(self.viewport_height)
+                # Avoid 0.0 which triggers VWA create_mouse_click_action validation
+                eps = 1e-6
+                if left <= 0.0:
+                    left = eps
+                elif left >= 1.0:
+                    left = 1.0 - eps
+                if top <= 0.0:
+                    top = eps
+                elif top >= 1.0:
+                    top = 1.0 - eps
+                action = create_mouse_click_action(left=left, top=top)
             else:
                 action = None
         elif action_type == "scroll" and "delta" in action_json:
@@ -167,7 +167,7 @@ class VWAWrapper:
                 element_id = int(action_json.get("element_id"))
             except (TypeError, ValueError):
                 element_id = None
-            if element_id is not None and element_id <= 0:
+            if element_id is None or element_id <= 0:
                 action = create_keyboard_type_action(action_json["text"])
         elif action_type == "back":
             action = create_go_back_action()
@@ -187,7 +187,8 @@ class VWAWrapper:
             else:
                 action = create_page_focus_action(page_number=int(page_number))
         elif action_type in ("finish", "stop"):
-            action = create_stop_action(action_json.get("answer", ""))
+            answer = action_json.get("answer", "")
+            action = create_stop_action("" if answer is None else str(answer))
         elif action_type == "wait":
             action = create_none_action()
 
@@ -285,4 +286,17 @@ class VWAWrapper:
                 if page_obj is not None and hasattr(page_obj, "url"):
                     url = page_obj.url or None
 
-        return P79Observation(text=text, image=image, url=url, raw=obs)
+        # Extract per-element bounding boxes from VWA observation metadata.
+        # info["observation_metadata"]["text"]["obs_nodes_info"] maps str(element_id)
+        # to {"union_bound": [x, y, width, height], ...} in pixel coordinates.
+        obs_nodes_info: Optional[Dict[str, Any]] = None
+        try:
+            obs_nodes_info = (
+                info.get("observation_metadata", {})
+                    .get("text", {})
+                    .get("obs_nodes_info")
+            ) or None
+        except Exception:
+            pass
+
+        return P79Observation(text=text, image=image, url=url, raw=obs, obs_nodes_info=obs_nodes_info)

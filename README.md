@@ -142,6 +142,35 @@ results/<benchmark>/<phase>/<run_id>/<condition_id>/
 - `checklist_failure_distribution.csv/png`
 - `benchmark_noise_report.csv`
 
+## 日志清理
+
+定期清理日志和临时文件以节省磁盘空间：
+
+```bash
+# 清理所有日志（使用默认配置：30天、1GB、100个文件）
+python scripts/cleanup_logs.py
+
+# 只显示将要删除的内容（不实际删除）
+python scripts/cleanup_logs.py --dry-run
+
+# 自定义清理策略
+python scripts/cleanup_logs.py --max-age 7 --max-size 500 --max-count 50
+
+# 只清理日志目录
+python scripts/cleanup_logs.py --dir logs
+
+# 只清理实验结果目录
+python scripts/cleanup_logs.py --dir results
+
+# 显示磁盘使用情况
+python scripts/cleanup_logs.py --usage-only
+```
+
+清理策略包括：
+- 按年龄清理：删除超过指定天数的日志文件
+- 按数量清理：保留最新的 N 个日志文件
+- 按总大小清理：当日志目录总大小超过限制时，删除最旧的文件
+
 ## 常见问题
 1. 为什么 `preflight_v2.sh` 报缺少环境变量？
    先执行 `source scripts/vwa_env.sh`（远程模式用 `source scripts/vwa_env_remote.sh`），并确认 `.auth/` 已就绪。

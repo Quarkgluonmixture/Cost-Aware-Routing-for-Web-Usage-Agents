@@ -3,7 +3,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-BASE_CONFIG="${REPO_DIR}/configs/exp_v2_qwen3vl4b_baseline.yaml"
+BASE_CONFIG="${BASELINE_CONFIG:-${REPO_DIR}/configs/exp_v2_qwen3vl4b_baseline.yaml}"
+if [[ "${BASE_CONFIG}" != /* ]]; then
+  BASE_CONFIG="${REPO_DIR}/${BASE_CONFIG}"
+fi
 
 SITE="${BASELINE_SITE:-shopping}"
 MAX_STEPS="${BASELINE_MAX_STEPS:-20}"
@@ -14,8 +17,12 @@ usage() {
 Usage: $(basename "$0") [--site <shopping|reddit|classifieds>] [--max-steps <N>]
 
 Environment overrides:
+  BASELINE_CONFIG      config file path (default: configs/exp_v2_qwen3vl4b_baseline.yaml)
+  BASELINE_DETACH_METHOD process launch method: setsid|nohup (default: setsid)
   BASELINE_SITE        default site (default: shopping)
   BASELINE_MAX_STEPS   default max steps (default: 20)
+  BASELINE_RUN_ID_PREFIX run_id prefix (default: run_<site>)
+  BASELINE_LOG_PREFIX  log filename prefix (default: baseline_qwen3vl4b_<site>)
   BASELINE_LOG_PATH    explicit log path (default: logs/baseline_qwen3vl4b_<site>_<timestamp>.log)
   BASELINE_FIX_SHOPPING_BASEURL  auto-fix shopping Magento base_url before run (default: 1)
   BASELINE_PREFER_LOCAL_SHOPPING prefer localhost shopping endpoint for --site shopping (default: 0)
@@ -280,10 +287,13 @@ TMP_CONFIG="/tmp/exp_v2_qwen3vl4b_${SITE}.yaml"
 cp "${BASE_CONFIG}" "${TMP_CONFIG}"
 sed -i -E "s/include_sites:[[:space:]]*\[[^]]*\]/include_sites: [\"${SITE}\"]/" "${TMP_CONFIG}"
 sed -i -E "s/name:[[:space:]]*\"qwen3vl4b_baseline_phase2\"/name: \"qwen3vl4b_baseline_phase2_${SITE}\"/" "${TMP_CONFIG}"
+sed -i -E "s/name:[[:space:]]*\"qwen3vl4b_B1_baseline_phase1\"/name: \"qwen3vl4b_B1_baseline_phase1_${SITE}\"/" "${TMP_CONFIG}"
 
 STAMP="$(date +%Y%m%d_%H%M%S)"
-RUN_ID="run_${SITE}_${STAMP}"
-DEFAULT_LOG="${REPO_DIR}/logs/baseline_qwen3vl4b_${SITE}_${RUN_ID}.log"
+RUN_ID_PREFIX="${BASELINE_RUN_ID_PREFIX:-run_${SITE}}"
+RUN_ID="${RUN_ID_PREFIX}_${STAMP}"
+LOG_PREFIX="${BASELINE_LOG_PREFIX:-baseline_qwen3vl4b_${SITE}}"
+DEFAULT_LOG="${REPO_DIR}/logs/${LOG_PREFIX}_${RUN_ID}.log"
 LOG_PATH="${BASELINE_LOG_PATH:-${DEFAULT_LOG}}"
 
 if [[ "${BASELINE_DRY_RUN:-0}" == "1" ]]; then
@@ -298,13 +308,23 @@ if [[ "${BASELINE_DRY_RUN:-0}" == "1" ]]; then
   exit 0
 fi
 
-nohup "${PYTHON_BIN}" scripts/run_experiment.py \
-  --config "${TMP_CONFIG}" \
-  --max_steps "${MAX_STEPS}" \
-  --run_id "${RUN_ID}" \
-  --log_path "${LOG_PATH}" \
-  > "${LOG_PATH}" 2>&1 < /dev/null &
-PID=$!
+if [[ "${BASELINE_DETACH_METHOD:-setsid}" == "setsid" ]] && command -v setsid >/dev/null 2>&1; then
+  setsid "${PYTHON_BIN}" scripts/run_experiment.py \
+    --config "${TMP_CONFIG}" \
+    --max_steps "${MAX_STEPS}" \
+    --run_id "${RUN_ID}" \
+    --log_path "${LOG_PATH}" \
+    > "${LOG_PATH}" 2>&1 < /dev/null &
+  PID=$!
+else
+  nohup "${PYTHON_BIN}" scripts/run_experiment.py \
+    --config "${TMP_CONFIG}" \
+    --max_steps "${MAX_STEPS}" \
+    --run_id "${RUN_ID}" \
+    --log_path "${LOG_PATH}" \
+    > "${LOG_PATH}" 2>&1 < /dev/null &
+  PID=$!
+fi
 
 # Create latest symlink for easy log access.
 ln -sfn "$(basename "${LOG_PATH}")" "${REPO_DIR}/logs/latest_${SITE}.log"

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import re
 import shutil
 import time
 from collections import Counter
@@ -10,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from p79.backends.base import BackendStepContext
 from p79.backends.factory import create_backend
-from p79.backends.action_utils import validate_action
+from p79.backends.action_utils import extract_candidate_query, first_element_id_by_keyword, validate_action
 from p79.envs.vwa_wrapper import P79Observation
 from p79.experiment.checklist_module import ChecklistManagerLite
 from p79.experiment.conditions import generate_conditions
@@ -25,10 +27,11 @@ from p79.experiment.metrics import (
     detect_benchmark_noise,
     net_saving,
     p95,
+    select_token_cost_cfg,
 )
 from p79.experiment.modules import apply_secondary_modules, m3_retry_action, should_trigger_m3_retry
 from p79.experiment.router import RouterState, RuleBasedRouter
-from p79.experiment.som import apply_som
+from p79.experiment.som import apply_som, prepare_observation_for_mode
 from p79.experiment.state_change import build_page_state, detect_page_state_change
 from p79.experiment.tasks import load_tasks
 from p79.experiment.types import (
@@ -88,6 +91,183 @@ def _detect_action_cycle(signatures: List[str], min_cycle: int = 1, max_cycle: i
     return 0
 
 
+# ---------------------------------------------------------------------------
+# Diagnostic control helpers
+# These functions are only active when `diagnostic_controls` is explicitly set
+# in the experiment config (diagnostic_controls.enabled: true).  They are
+# NOT enabled by default and must NOT be used in main baseline conditions.
+# ---------------------------------------------------------------------------
+
+
+def _sanitize_query_text(raw_query: str, max_words: int = 4, suspicious_word_threshold: int = 6) -> str:
+    query = re.sub(r"\s+", " ", (raw_query or "").strip())
+    if not query:
+        return query
+
+    suspicious = (
+        ">" in query
+        or "|" in query
+        or "/" in query
+        or query.count("&") >= 2
+        or len(query.split()) >= max(1, suspicious_word_threshold)
+    )
+    if not suspicious:
+        return query
+
+    parts = [p.strip() for p in re.split(r"\s*(?:>|/|\|)\s*", query) if p.strip()]
+    candidate = parts[-1] if parts else query
+    candidate = re.sub(r"\([^)]*\)", " ", candidate)
+    if "&" in candidate:
+        left = candidate.split("&", 1)[0].strip()
+        if left:
+            candidate = left
+    candidate = re.sub(r"[^A-Za-z0-9\-\s]", " ", candidate)
+    candidate = re.sub(r"\s+", " ", candidate).strip()
+
+    words = [w for w in candidate.split() if w]
+    if len(words) > max(1, max_words):
+        words = words[: max(1, max_words)]
+    candidate = " ".join(words).strip()
+
+    if len(candidate) < 2:
+        return query
+    return candidate
+
+
+def _query_sanitization_control(action: Dict[str, Any], cfg: Dict[str, Any]) -> Tuple[Dict[str, Any], Optional[str]]:
+    if str(action.get("action_type", "")).lower() != "type":
+        return action, None
+
+    text = str(action.get("text", ""))
+    had_newline = text.endswith("\n")
+    core = text[:-1] if had_newline else text
+
+    cleaned = _sanitize_query_text(
+        raw_query=core,
+        max_words=int(cfg.get("max_words", 4)),
+        suspicious_word_threshold=int(cfg.get("suspicious_word_threshold", 6)),
+    )
+    if not cleaned or cleaned == core:
+        return action, None
+
+    patched = dict(action)
+    patched["text"] = cleaned + ("\n" if had_newline else "")
+    return patched, f"query_sanitized:{core}->{cleaned}"
+
+
+def _repeat_hits_same_target(
+    step_records: List[Dict[str, Any]],
+    action: Dict[str, Any],
+    window: int,
+) -> int:
+    atype = str(action.get("action_type", "")).lower()
+    target_eid = action.get("element_id")
+    if atype not in ("click", "type") or target_eid is None or not step_records:
+        return 0
+
+    hits = 0
+    for rec in step_records[-max(1, window):]:
+        if str(rec.get("action_type", "")).lower() != atype:
+            continue
+        prev_action = rec.get("action", {}) or {}
+        if prev_action.get("element_id") != target_eid:
+            continue
+        if bool(rec.get("page_changed", True)):
+            continue
+        hits += 1
+    return hits
+
+
+def _build_exploration_fallback_action(
+    obs_text: str,
+    instruction: str,
+    query_cfg: Dict[str, Any],
+) -> Dict[str, Any]:
+    input_id = first_element_id_by_keyword(obs_text, ("textbox", "input", "search", "edit"))
+    query = _sanitize_query_text(
+        raw_query=extract_candidate_query(instruction),
+        max_words=int(query_cfg.get("max_words", 4)),
+        suspicious_word_threshold=int(query_cfg.get("suspicious_word_threshold", 6)),
+    )
+    if input_id is not None and query:
+        return {
+            "action_type": "type",
+            "element_id": int(input_id),
+            "text": f"{query}\n",
+            "thought": "Diagnostic control: break loop with reformulated search.",
+        }
+
+    return {
+        "action_type": "scroll",
+        "delta": [0, 0.8],
+        "coordinate_type": "normalized",
+        "thought": "Diagnostic control: break loop with forced exploration scroll.",
+    }
+
+
+def _anti_repeat_control(
+    action: Dict[str, Any],
+    step_records: List[Dict[str, Any]],
+    obs_text: str,
+    instruction: str,
+    cfg: Dict[str, Any],
+    query_cfg: Dict[str, Any],
+) -> Tuple[Dict[str, Any], Optional[str]]:
+    if str(action.get("action_type", "")).lower() not in ("click", "type"):
+        return action, None
+
+    window = int(cfg.get("window", 3))
+    min_repeat_hits = int(cfg.get("min_repeat_hits", 2))
+    hits = _repeat_hits_same_target(step_records, action, window=window)
+    if hits < max(1, min_repeat_hits):
+        return action, None
+
+    fallback = _build_exploration_fallback_action(obs_text, instruction, query_cfg=query_cfg)
+    return fallback, f"anti_repeat_blocked:hits={hits}"
+
+
+def _no_early_finish_control(
+    action: Dict[str, Any],
+    step_records: List[Dict[str, Any]],
+    obs_text: str,
+    instruction: str,
+    cfg: Dict[str, Any],
+    query_cfg: Dict[str, Any],
+) -> Tuple[Dict[str, Any], Optional[str]]:
+    atype = str(action.get("action_type", "")).lower()
+    if atype not in ("finish", "stop"):
+        return action, None
+
+    min_exploration_steps = int(cfg.get("min_exploration_steps", 5))
+    min_page_changes = int(cfg.get("min_page_changes", 2))
+    min_search_attempts = int(cfg.get("min_search_attempts", 2))
+
+    explored_steps = len(step_records)
+    page_change_count = sum(1 for s in step_records if bool(s.get("page_changed", False)))
+    search_attempts = sum(
+        1
+        for s in step_records
+        if str(s.get("action_type", "")).lower() == "type"
+        and bool(str((s.get("action", {}) or {}).get("text", "")).strip())
+    )
+
+    if (
+        explored_steps >= min_exploration_steps
+        and page_change_count >= min_page_changes
+        and search_attempts >= min_search_attempts
+    ):
+        return action, None
+
+    fallback = _build_exploration_fallback_action(obs_text, instruction, query_cfg=query_cfg)
+    reason = (
+        f"no_early_finish_blocked:"
+        f"steps={explored_steps}/{min_exploration_steps},"
+        f"page_changes={page_change_count}/{min_page_changes},"
+        f"search={search_attempts}/{min_search_attempts}"
+    )
+    return fallback, reason
+
+
 class ExperimentRunner:
     def __init__(self, cfg: Dict[str, Any]):
         self.cfg = cfg
@@ -107,6 +287,7 @@ class ExperimentRunner:
         self.checklist_cfg = cfg.get("checklist", {})
         self.state_change_cfg = cfg.get("state_change", {})
         self.energy_tracker = LightweightEnergyTracker(cfg.get("metrics", {}).get("energy", {}))
+        self.diagnostic_controls = cfg.get("diagnostic_controls", {}) or {}
 
         self._backends: Dict[str, Any] = {}
 
@@ -135,7 +316,32 @@ class ExperimentRunner:
             json.dump(payload, f, indent=2, ensure_ascii=False)
 
     def _cleanup_stale_runs(self) -> None:
-        """Remove run dirs with 0 episode summaries that are older than 1 hour."""
+        """Conservative cleanup for clearly-aborted, empty run dirs only.
+
+        Safety rules:
+        - Never touch dirs containing run metadata/progress artifacts.
+        - Use latest mtime in the whole run tree (not just top-level dir).
+        - Allow opt-out via P79_DISABLE_STALE_CLEANUP=1.
+        """
+        if str(os.getenv("P79_DISABLE_STALE_CLEANUP", "")).strip().lower() in {"1", "true", "yes", "on"}:
+            logger.info("Skipping stale run cleanup (P79_DISABLE_STALE_CLEANUP is enabled).")
+            return
+
+        def _latest_tree_mtime(path: Path) -> float:
+            latest = 0.0
+            try:
+                latest = path.stat().st_mtime
+            except OSError:
+                return latest
+            for child in path.rglob("*"):
+                try:
+                    child_mtime = child.stat().st_mtime
+                except OSError:
+                    continue
+                if child_mtime > latest:
+                    latest = child_mtime
+            return latest
+
         parent = self.output_root.parent  # e.g. results/{benchmark}/{phase}/
         if not parent.is_dir():
             return
@@ -145,17 +351,27 @@ class ExperimentRunner:
                 continue
             if run_dir.is_symlink():
                 continue
+            latest_mtime = _latest_tree_mtime(run_dir)
+            if latest_mtime > one_hour_ago:
+                continue
+
+            has_run_meta = (run_dir / "run_meta.json").exists()
+            has_progress = (
+                next(run_dir.glob("**/*_summary_v2.json"), None) is not None
+                or next(run_dir.glob("**/*_steps_v2.jsonl"), None) is not None
+                or next(run_dir.glob("**/condition_meta.json"), None) is not None
+            )
+            if has_run_meta or has_progress:
+                continue
+
             try:
-                mtime = run_dir.stat().st_mtime
+                file_count = sum(1 for _ in run_dir.rglob("*") if _.is_file())
             except OSError:
                 continue
-            if mtime > one_hour_ago:
+            # Only remove tiny/empty trees to avoid deleting meaningful runs.
+            if file_count > 5:
                 continue
-            # Check for any episode summary files.
-            summaries = list(run_dir.glob("**/episode_summary_*.json"))
-            if summaries:
-                continue
-            logger.info("Cleaning stale run dir (0 episodes, age>1h): %s", run_dir)
+            logger.info("Cleaning stale empty run dir (files=%d, age>1h): %s", file_count, run_dir)
             try:
                 shutil.rmtree(run_dir)
             except OSError as exc:
@@ -302,7 +518,7 @@ class ExperimentRunner:
                         "seed": current_seed,
                         "phase": condition.phase,
                         "backend_id": condition.backend_id,
-                        "som_on": condition.som_on,
+                        "som_on": condition.som_on,  # derived: observation_mode == "som"
                         "observation_mode": condition.observation_mode,
                         "router_on": condition.router_on,
                         "module_flags": condition.modules.as_dict(),
@@ -371,11 +587,27 @@ class ExperimentRunner:
 
         self._create_latest_symlink()
         self.environment.close()
+        self.energy_tracker.close()
         return self.output_root
 
-    def _clone_observation_for_mode(self, obs: P79Observation, observation_text: str, mode: str) -> P79Observation:
-        image = obs.image if mode == "hybrid" else None
-        return P79Observation(text=observation_text, image=image, url=obs.url, raw=obs.raw)
+    def _clone_observation_for_mode(
+        self,
+        obs: P79Observation,
+        mode: str,
+        obs_prep: Any,  # SomResult from prepare_observation_for_mode
+    ) -> P79Observation:
+        """Build a P79Observation appropriate for the given observation mode.
+
+        dom:    Full AXTree text, no image.
+        som:    SOM_MARKS compressed text + marked image.
+        vision: Empty text + raw screenshot.
+        """
+        return P79Observation(
+            text=obs_prep.som_text,
+            image=obs_prep.marked_image,
+            url=obs.url,
+            raw=obs.raw,
+        )
 
     def _save_artifacts(self, episode_dir: Path, step_idx: int, obs: P79Observation) -> Dict[str, Optional[str]]:
         step_dir = episode_dir / f"step_{step_idx:03d}"
@@ -443,13 +675,16 @@ class ExperimentRunner:
             step_start = time.time()
 
             artifacts = self._save_artifacts(episode_dir, step_idx, obs)
-            som_result = apply_som(obs, condition.som_on, episode_dir, step_idx)
-            artifacts["som_image"] = som_result.marked_image_path
+
+            # Use the preferred mode to compute router's size signal; on escalation
+            # we re-prepare below with the actual decided mode.
+            _size_probe = prepare_observation_for_mode(obs, condition.observation_mode, episode_dir, step_idx)
+            router_obs_text = _size_probe.som_text if condition.observation_mode != "vision" else (obs.text or "")
 
             decision_mode, triggers, overhead, router_state = self.router.decide(
                 router_enabled=condition.router_on,
                 preferred_mode=condition.observation_mode,
-                obs_text=som_result.som_text,
+                obs_text=router_obs_text,
                 state=router_state,
                 prev_action_success=prev_action_success,
                 prev_page_changed=prev_page_changed,
@@ -457,12 +692,14 @@ class ExperimentRunner:
             )
             trigger_distribution.update(triggers)
 
-            if condition.router_on and decision_mode == "hybrid":
+            if condition.router_on and decision_mode != condition.observation_mode:
                 escalation_count += 1
 
             screenshot_prep_start = time.time()
-            obs_for_backend = self._clone_observation_for_mode(obs, som_result.som_text, decision_mode)
-            if condition.router_on and decision_mode == "hybrid" and condition.observation_mode == "dom_only":
+            obs_prep = prepare_observation_for_mode(obs, decision_mode, episode_dir, step_idx)
+            artifacts["som_image"] = obs_prep.marked_image_path
+            obs_for_backend = self._clone_observation_for_mode(obs, decision_mode, obs_prep)
+            if condition.router_on and decision_mode != condition.observation_mode:
                 overhead["extra_screenshot_ms"] = (time.time() - screenshot_prep_start) * 1000.0
             instruction = task.intent
             if checklist_manager and bool(self.checklist_cfg.get("inject_into_prompt", True)):
@@ -470,8 +707,8 @@ class ExperimentRunner:
 
             context = BackendStepContext(
                 observation_mode=decision_mode,
-                som_enabled=condition.som_on,
-                som_text=som_result.som_text,
+                som_enabled=(decision_mode == "som"),
+                som_text=obs_prep.som_text,
                 stage="single",
                 history=step_records[-8:],
                 module_flags=condition.modules.as_dict(),
@@ -482,8 +719,8 @@ class ExperimentRunner:
             if condition.modules.m4_two_stage_generation_grounding:
                 planner_context = BackendStepContext(
                     observation_mode=decision_mode,
-                    som_enabled=condition.som_on,
-                    som_text=som_result.som_text,
+                    som_enabled=(decision_mode == "som"),
+                    som_text=obs_prep.som_text,
                     stage="planner",
                     history=step_records[-8:],
                     module_flags=condition.modules.as_dict(),
@@ -505,6 +742,53 @@ class ExperimentRunner:
 
             action = validate_action(action)
             action = apply_secondary_modules(action, obs.text or "", condition.modules.as_dict())
+            # Guard: DOM captured mid-navigation (busy: 1) — any LLM action on a
+            # half-loaded page is unreliable.  Override to wait so the next step
+            # sees the fully-rendered DOM before making a decision.
+            if "busy: 1" in (obs.text or ""):
+                action = {"action_type": "wait"}
+            if bool(self.diagnostic_controls.get("enabled", False)):
+                diag_notes: List[str] = []
+                query_cfg = self.diagnostic_controls.get("query_sanitization", {}) or {}
+                anti_repeat_cfg = self.diagnostic_controls.get("anti_repeat", {}) or {}
+                no_early_finish_cfg = self.diagnostic_controls.get("no_early_finish", {}) or {}
+
+                if bool(query_cfg.get("enabled", False)):
+                    action, note = _query_sanitization_control(action, query_cfg)
+                    if note:
+                        diag_notes.append(note)
+                if bool(anti_repeat_cfg.get("enabled", False)):
+                    action, note = _anti_repeat_control(
+                        action=action,
+                        step_records=step_records,
+                        obs_text=obs.text or "",
+                        instruction=task.intent,
+                        cfg=anti_repeat_cfg,
+                        query_cfg=query_cfg,
+                    )
+                    if note:
+                        diag_notes.append(note)
+                if bool(no_early_finish_cfg.get("enabled", False)):
+                    action, note = _no_early_finish_control(
+                        action=action,
+                        step_records=step_records,
+                        obs_text=obs.text or "",
+                        instruction=task.intent,
+                        cfg=no_early_finish_cfg,
+                        query_cfg=query_cfg,
+                    )
+                    if note:
+                        diag_notes.append(note)
+                action = validate_action(action)
+                if diag_notes:
+                    logger.info(
+                        "Diagnostic controls applied site=%s task=%s step=%d notes=%s action=%s",
+                        task.site,
+                        task.task_id,
+                        step_idx,
+                        ";".join(diag_notes),
+                        action,
+                    )
             state_before = build_page_state(obs, current_info)
 
             env_step_start = time.time()
@@ -559,9 +843,13 @@ class ExperimentRunner:
                     action_success = True
 
             safe_next_info = next_info if isinstance(next_info, dict) else {}
+            is_stop_action = str(action.get("action_type", "")).lower() in ("finish", "stop", "done")
             if "raw_action" in safe_next_info:
                 trajectory.append(safe_next_info["raw_action"])
-            trajectory.append({"observation": getattr(next_obs, "raw", None), "info": safe_next_info})
+            # VWA evaluator expects trajectory to end with the stop action (not a trailing
+            # observation).  Only append the post-step observation for non-terminal actions.
+            if not is_stop_action:
+                trajectory.append({"observation": getattr(next_obs, "raw", None), "info": safe_next_info})
 
             input_tokens = int(meta.get("input_tokens") or 0)
             output_tokens = int(meta.get("output_tokens") or 0)
@@ -570,7 +858,10 @@ class ExperimentRunner:
             token_cost = compute_token_cost(
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
-                cost_cfg=self.cfg.get("metrics", {}).get("cost", {}),
+                cost_cfg=select_token_cost_cfg(
+                    metrics_cfg=self.cfg.get("metrics", {}),
+                    backend_type=self.cfg.get("backends", {}).get(condition.backend_id, {}).get("type"),
+                ),
             )
             router_cfg = self.cfg.get("router", {})
             router_overhead_ms = (
@@ -619,9 +910,9 @@ class ExperimentRunner:
                 seed=self.seed,
                 step_idx=step_idx,
                 som={
-                    "enabled": condition.som_on,
-                    "degraded_som": bool(som_result.degraded_som),
-                    "mark_count": som_result.mark_count,
+                    "enabled": (decision_mode == "som"),
+                    "degraded_som": bool(obs_prep.degraded_som),
+                    "mark_count": obs_prep.mark_count,
                 },
                 observation_mode=decision_mode,
                 router={
@@ -681,16 +972,23 @@ class ExperimentRunner:
 
             # --- cycle detection (early stop, does not alter agent behaviour) ---
             action_signatures.append(_action_signature(action))
-            action_signatures_soft.append(_action_signature_soft(action))
+            # Only accumulate soft signatures when the page didn't change,
+            # otherwise reset — clicking different elements that each cause
+            # real navigation is not a cycle.
+            if not page_changed:
+                action_signatures_soft.append(_action_signature_soft(action))
+            else:
+                action_signatures_soft.clear()
             cycle_len = _detect_action_cycle(action_signatures)
             # Soft check uses higher reps threshold to reduce false positives
-            soft_cycle_len = _detect_action_cycle(action_signatures_soft, min_reps=3)
+            soft_cycle_len = _detect_action_cycle(action_signatures_soft, min_reps=4)
             if cycle_len > 0 or soft_cycle_len > 0:
                 detected = cycle_len if cycle_len > 0 else soft_cycle_len
                 mode = "strict" if cycle_len > 0 else "soft"
+                min_r = 3 if cycle_len > 0 else 4
                 logger.warning(
-                    "Action cycle detected (%s, len=%d, reps>=3) at step %d for task %s/%d — early stop.",
-                    mode, detected, step_idx, task.site, task.task_id,
+                    "Action cycle detected (%s, len=%d, reps>=%d) at step %d for task %s/%d — early stop.",
+                    mode, detected, min_r, step_idx, task.site, task.task_id,
                 )
                 cycle_early_stop = True
                 break

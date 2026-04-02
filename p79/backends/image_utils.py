@@ -10,6 +10,12 @@ from PIL import Image
 # Adapted from external_code/image.py (Aiden Yiliu Li, Apache-2.0)
 DEFAULT_MAX_IMAGE_PAYLOAD_BYTES = 5 * 1024 * 1024
 
+# (quality, scale) presets tried in order; first that fits within max_payload_bytes wins.
+COMPRESSION_PRESETS = [
+    (85, 1.0), (70, 1.0), (55, 0.9), (40, 0.8),
+    (30, 0.7), (25, 0.6), (20, 0.5), (20, 0.4),
+]
+
 
 def _normalize_image(image: Image.Image) -> Image.Image:
     if image.mode in ("RGBA", "LA", "P"):
@@ -39,43 +45,34 @@ def encode_image_data_url(
     min_quality: int = 20,
 ) -> Dict[str, Any]:
     normalized = _normalize_image(image)
+    last_img = normalized
 
-    for quality in range(quality_start, min_quality - 1, -10):
-        b64 = _encode_jpeg_base64(normalized, quality=quality)
+    for quality, scale in COMPRESSION_PRESETS:
+        if scale < 1.0:
+            w = max(1, int(normalized.width * scale))
+            h = max(1, int(normalized.height * scale))
+            img = normalized.resize((w, h), Image.Resampling.LANCZOS)
+        else:
+            img = normalized
+        b64 = _encode_jpeg_base64(img, quality=quality)
+        last_img = img
         if len(b64.encode("utf-8")) <= max_payload_bytes:
             return {
                 "data_url": f"data:image/jpeg;base64,{b64}",
                 "payload_bytes": len(b64.encode("utf-8")),
                 "quality": quality,
-                "compressed": quality < quality_start,
-                "width": normalized.width,
-                "height": normalized.height,
+                "compressed": quality < quality_start or scale < 1.0,
+                "width": img.width,
+                "height": img.height,
             }
-
-    current = normalized
-    scale = 0.9
-    while scale >= 0.3:
-        target_size = (max(1, int(normalized.width * scale)), max(1, int(normalized.height * scale)))
-        current = normalized.resize(target_size, Image.Resampling.LANCZOS)
-        b64 = _encode_jpeg_base64(current, quality=70)
-        if len(b64.encode("utf-8")) <= max_payload_bytes:
-            return {
-                "data_url": f"data:image/jpeg;base64,{b64}",
-                "payload_bytes": len(b64.encode("utf-8")),
-                "quality": 70,
-                "compressed": True,
-                "width": current.width,
-                "height": current.height,
-            }
-        scale -= 0.1
 
     # Last-resort payload, even if above target limit.
-    b64 = _encode_jpeg_base64(current, quality=min_quality)
+    b64 = _encode_jpeg_base64(last_img, quality=min_quality)
     return {
         "data_url": f"data:image/jpeg;base64,{b64}",
         "payload_bytes": len(b64.encode("utf-8")),
         "quality": min_quality,
         "compressed": True,
-        "width": current.width,
-        "height": current.height,
+        "width": last_img.width,
+        "height": last_img.height,
     }

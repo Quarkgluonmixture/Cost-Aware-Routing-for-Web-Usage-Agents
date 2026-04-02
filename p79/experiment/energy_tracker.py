@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import threading
+import time
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     import psutil  # type: ignore
-except Exception:  # pragma: no cover - optional runtime dependency
+except Exception:  # pragma: no cover
     psutil = None
 
 
-# Adapted from external_code/tracker.py + data_source.py (Aiden Yiliu Li, Apache-2.0)
+# ---------------------------------------------------------------------------
+# Hardware TDP profiles (fallback when real measurement is unavailable)
+# Adapted from external_code/tracker.py (Aiden Yiliu Li, Apache-2.0)
+# ---------------------------------------------------------------------------
 HARDWARE_PROFILES = {
     "m2": {"idle": 5.0, "load": 22.0},
     "m2_max": {"idle": 10.0, "load": 50.0},
@@ -19,23 +24,171 @@ HARDWARE_PROFILES = {
     "rtx_4090": {"idle": 30.0, "load": 400.0},
     "a100": {"idle": 50.0, "load": 300.0},
     "h100": {"idle": 60.0, "load": 500.0},
-    # DGX Spark (GH200 Grace Hopper): ~900W GPU TDP + ~150W Grace CPU
-    "dgx_spark": {"idle": 120.0, "load": 1050.0},
+    # DGX Spark (GB10 Grace Blackwell): ~300W GPU TDP + ~65W Grace CPU
+    "dgx_spark": {"idle": 40.0, "load": 365.0},
     # GB200 / Blackwell-based DGX
     "gb200": {"idle": 150.0, "load": 1200.0},
 }
 
 
-REGION_INTENSITY_G_PER_KWH = {
+# ---------------------------------------------------------------------------
+# Regional carbon intensity (gCO2/kWh)
+# Primary sources: IEA 2023, ElectricityMaps static data
+# Adapted from external_code/electricity_maps.py + data_source.py
+# ---------------------------------------------------------------------------
+REGION_INTENSITY_G_PER_KWH: Dict[str, float] = {
+    # World average (IEA 2023)
     "world": 475.0,
-    "us-east-1": 367.0,
-    "us-west-2": 367.0,
-    "eu-west-1": 296.0,
-    "eu-central-1": 385.0,
-    "ap-south-1": 632.0,
+    # United States
+    "usa": 367.0, "us": 367.0,
+    "us-east-1": 367.0, "us-east-2": 367.0,
+    "us-west-1": 200.0, "us-west-2": 200.0,
+    # Europe
+    "eu-west-1": 296.0,   # Ireland
+    "eu-west-2": 257.0,   # UK
+    "eu-west-3": 85.0,    # France (nuclear-heavy)
+    "eu-central-1": 385.0,  # Germany
+    "eu-north-1": 41.0,   # Sweden
+    "eu-south-1": 390.0,  # Italy
+    "germany": 385.0, "france": 85.0, "uk": 257.0,
+    "sweden": 41.0, "norway": 29.0, "ireland": 296.0,
+    "netherlands": 380.0, "spain": 195.0, "poland": 773.0,
+    # Asia-Pacific
+    "ap-northeast-1": 462.0,  # Japan
+    "ap-northeast-2": 415.0,  # South Korea
+    "ap-south-1": 632.0,      # India
+    "ap-southeast-1": 408.0,  # Singapore
+    "ap-southeast-2": 510.0,  # Australia
+    "japan": 462.0, "south_korea": 415.0, "india": 632.0,
+    "china": 531.0, "singapore": 408.0, "australia": 510.0,
+    "taiwan": 509.0, "hong_kong": 531.0,
+    # Americas
+    "sa-east-1": 85.0,    # Brazil
+    "ca-central-1": 110.0,  # Canada
+    "brazil": 85.0, "canada": 110.0,
+    "mexico": 436.0, "argentina": 310.0,
+    # Middle East / Africa
+    "me-south-1": 513.0,  # Bahrain
+    "af-south-1": 928.0,  # South Africa
+    "south_africa": 928.0, "uae": 513.0,
 }
 
 
+# ---------------------------------------------------------------------------
+# NVIDIAPowerReader — real GPU power via pynvml
+# Adapted from external_code/tracker.py (Aiden Yiliu Li, Apache-2.0)
+# ---------------------------------------------------------------------------
+class NVIDIAPowerReader:
+    """Read NVIDIA GPU instantaneous power draw via pynvml.
+
+    Gracefully unavailable if pynvml is not installed or no GPU is present.
+    Uses device index 0 (single-GPU assumption for DGX Spark GB10).
+    """
+
+    def __init__(self) -> None:
+        self.available = False
+        self._pynvml = None
+        self._handle = None
+        self._nvml_initialized = False
+        try:
+            import pynvml  # type: ignore
+
+            pynvml.nvmlInit()
+            self._nvml_initialized = True
+            self._pynvml = pynvml
+            if pynvml.nvmlDeviceGetCount() > 0:
+                self._handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+                self.available = True
+        except Exception:
+            pass
+
+    def get_power(self) -> Optional[float]:
+        """Return current GPU power draw in Watts, or None on failure."""
+        if not self.available or self._pynvml is None:
+            return None
+        try:
+            mw = self._pynvml.nvmlDeviceGetPowerUsage(self._handle)
+            return float(mw) / 1000.0  # milliwatts → Watts
+        except Exception:
+            return None
+
+    def get_gpu_info(self) -> Optional[Dict[str, Any]]:
+        """Return GPU name and total memory (MB), or None on failure."""
+        if not self.available or self._pynvml is None:
+            return None
+        try:
+            name = self._pynvml.nvmlDeviceGetName(self._handle)
+            if isinstance(name, bytes):
+                name = name.decode("utf-8")
+            mem = self._pynvml.nvmlDeviceGetMemoryInfo(self._handle)
+            return {"name": name, "memory_total_mb": float(mem.total) / (1024 * 1024)}
+        except Exception:
+            return None
+
+    def shutdown(self) -> None:
+        if self._nvml_initialized and self._pynvml is not None:
+            try:
+                self._pynvml.nvmlShutdown()
+            except Exception:
+                pass
+            self._nvml_initialized = False
+
+
+# ---------------------------------------------------------------------------
+# RAPLReader — CPU package power via Linux powercap interface
+# Adapted from external_code/tracker.py (Aiden Yiliu Li, Apache-2.0)
+# No-op on aarch64 / non-Intel-AMD platforms (path simply won't exist).
+# ---------------------------------------------------------------------------
+class RAPLReader:
+    """Read CPU power via Linux RAPL (Intel/AMD only).
+
+    Returns None on all non-Linux / aarch64 platforms.
+    """
+
+    _RAPL_ROOT = "/sys/class/powercap/intel-rapl"
+
+    def __init__(self) -> None:
+        import os
+
+        self.available = False
+        self._energy_file: Optional[str] = None
+        self._last_energy: Optional[int] = None
+        self._last_ts: Optional[float] = None
+        try:
+            if not os.path.exists(self._RAPL_ROOT):
+                return
+            pkg0 = f"{self._RAPL_ROOT}/intel-rapl:0/energy_uj"
+            if os.path.exists(pkg0):
+                self._energy_file = pkg0
+                self.available = True
+        except Exception:
+            pass
+
+    def get_power(self) -> Optional[float]:
+        """Return instantaneous CPU package power in Watts, or None."""
+        if not self.available or self._energy_file is None:
+            return None
+        try:
+            with open(self._energy_file, "r") as f:
+                energy_uj = int(f.read().strip())
+            now = time.monotonic()
+            if self._last_energy is not None and self._last_ts is not None:
+                dt = now - self._last_ts
+                if dt > 0:
+                    power = (energy_uj - self._last_energy) / 1e6 / dt  # µJ → J → W
+                    self._last_energy = energy_uj
+                    self._last_ts = now
+                    return float(power)
+            self._last_energy = energy_uj
+            self._last_ts = now
+            return None
+        except Exception:
+            return None
+
+
+# ---------------------------------------------------------------------------
+# EnergyEstimate — step-level result
+# ---------------------------------------------------------------------------
 @dataclass
 class EnergyEstimate:
     kwh: Optional[float]
@@ -43,7 +196,7 @@ class EnergyEstimate:
     power_watts: Optional[float]
     source: str
 
-    def as_dict(self) -> Dict[str, Optional[float] | str]:
+    def as_dict(self) -> Dict[str, Any]:
         return {
             "kwh": self.kwh,
             "co2e_kg": self.co2e_kg,
@@ -52,12 +205,32 @@ class EnergyEstimate:
         }
 
 
+# ---------------------------------------------------------------------------
+# LightweightEnergyTracker
+# ---------------------------------------------------------------------------
 class LightweightEnergyTracker:
-    def __init__(self, energy_cfg: Dict[str, Any]):
+    """Tracks energy per step.
+
+    Measurement priority:
+      1. Real GPU power via pynvml + background sampling (source="pynvml")
+      2. psutil CPU% × hardware profile TDP (source="psutil_profile")
+      3. Profile TDP × 0.6 utilisation (source="profile_fallback")
+      4. Fixed watts from config (source="fixed_power")
+      5. kwh_per_step constant (source="kwh_per_step")
+
+    Config keys (all optional, safe defaults):
+      enabled, kwh_per_step, co2e_kg_per_kwh, hardware_profile, region,
+      use_psutil, fixed_power_watts,
+      use_pynvml (bool, default True),
+      sample_interval_s (float, default 0.5),
+      track_model_load (bool, default False),
+      model_load_amortize_over (int, default 0 = auto).
+    """
+
+    def __init__(self, energy_cfg: Dict[str, Any]) -> None:
         self.enabled = bool(energy_cfg.get("enabled", False))
         self.kwh_per_step = energy_cfg.get("kwh_per_step")
         self.co2e_kg_per_kwh = energy_cfg.get("co2e_kg_per_kwh")
-
         self.fixed_power_watts = energy_cfg.get("fixed_power_watts")
         self.hardware_profile = str(energy_cfg.get("hardware_profile", "m2"))
         self.use_psutil = bool(energy_cfg.get("use_psutil", True))
@@ -65,12 +238,88 @@ class LightweightEnergyTracker:
 
         intensity_g = energy_cfg.get("carbon_intensity_g_per_kwh")
         if intensity_g is None:
-            intensity_g = REGION_INTENSITY_G_PER_KWH.get(self.region, REGION_INTENSITY_G_PER_KWH["world"])
+            intensity_g = REGION_INTENSITY_G_PER_KWH.get(
+                self.region, REGION_INTENSITY_G_PER_KWH["world"]
+            )
         self.carbon_intensity_g_per_kwh = float(intensity_g)
+
+        # pynvml / sampling config
+        self._use_pynvml = bool(energy_cfg.get("use_pynvml", True))
+        self._sample_interval = float(energy_cfg.get("sample_interval_s", 0.5))
+        self._track_model_load = bool(energy_cfg.get("track_model_load", False))
+        self._model_load_amortize_over = int(energy_cfg.get("model_load_amortize_over", 0))
+
+        # sampling state
+        self._nvidia_reader: Optional[NVIDIAPowerReader] = None
+        self._rapl_reader: Optional[RAPLReader] = None
+        self._power_samples: List[Tuple[float, float]] = []  # (monotonic_ts, watts)
+        self._sample_lock = threading.Lock()
+        self._sample_thread: Optional[threading.Thread] = None
+        self._sampling_active = False
+
+        # model load amortization
+        self._model_load_kwh_amortized: Optional[float] = None
+        self._model_load_co2_amortized: Optional[float] = None
+
+        if self.enabled and self._use_pynvml:
+            self._nvidia_reader = NVIDIAPowerReader()
+            self._rapl_reader = RAPLReader()
+            if self._nvidia_reader.available:
+                self._start_sampling()
+
+    # ------------------------------------------------------------------
+    # Background sampling
+    # ------------------------------------------------------------------
+
+    def _start_sampling(self) -> None:
+        self._sampling_active = True
+        self._sample_thread = threading.Thread(
+            target=self._sampling_loop,
+            daemon=True,
+            name="p79-energy-sampler",
+        )
+        self._sample_thread.start()
+
+    def _sampling_loop(self) -> None:
+        while self._sampling_active:
+            t = time.monotonic()
+            gpu_w = self._nvidia_reader.get_power() if self._nvidia_reader else None
+            if gpu_w is not None:
+                rapl_w = self._rapl_reader.get_power() if self._rapl_reader else None
+                total_w = gpu_w + (rapl_w or 0.0)
+                with self._sample_lock:
+                    self._power_samples.append((t, total_w))
+                    # Prune samples older than 5 minutes to cap memory
+                    cutoff = t - 300.0
+                    self._power_samples = [
+                        (ts, w) for ts, w in self._power_samples if ts >= cutoff
+                    ]
+            time.sleep(self._sample_interval)
+
+    def _average_measured_power(self, duration_seconds: float) -> Optional[float]:
+        """Average sampled power over the last `duration_seconds + 1s` window.
+
+        Returns None if no samples fall in the window (e.g. first step before
+        thread has fired), in which case the caller falls back to profile estimation.
+        """
+        cutoff = time.monotonic() - max(duration_seconds, 0.0) - 1.0
+        with self._sample_lock:
+            recent = [w for ts, w in self._power_samples if ts >= cutoff]
+        if not recent:
+            return None
+        return sum(recent) / len(recent)
+
+    # ------------------------------------------------------------------
+    # Profile-based fallback
+    # ------------------------------------------------------------------
 
     def _estimate_power_watts(self) -> EnergyEstimate:
         if self.fixed_power_watts is not None:
-            return EnergyEstimate(kwh=None, co2e_kg=None, power_watts=float(self.fixed_power_watts), source="fixed_power")
+            return EnergyEstimate(
+                kwh=None, co2e_kg=None,
+                power_watts=float(self.fixed_power_watts),
+                source="fixed_power",
+            )
 
         profile = HARDWARE_PROFILES.get(self.hardware_profile, HARDWARE_PROFILES["m2"])
         idle = float(profile["idle"])
@@ -81,17 +330,27 @@ class LightweightEnergyTracker:
                 cpu_percent = float(psutil.cpu_percent(interval=0.0))
                 util = max(0.0, min(cpu_percent / 100.0, 1.0))
                 power = idle + (load - idle) * util
-                return EnergyEstimate(kwh=None, co2e_kg=None, power_watts=power, source="psutil_profile")
+                return EnergyEstimate(
+                    kwh=None, co2e_kg=None, power_watts=power, source="psutil_profile"
+                )
             except Exception:
                 pass
 
-        # Fallback: assume medium utilization.
         power = idle + (load - idle) * 0.6
-        return EnergyEstimate(kwh=None, co2e_kg=None, power_watts=power, source="profile_fallback")
+        return EnergyEstimate(
+            kwh=None, co2e_kg=None, power_watts=power, source="profile_fallback"
+        )
 
-    def estimate_step(self, duration_seconds: float) -> Dict[str, Optional[float] | str]:
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def estimate_step(self, duration_seconds: float) -> Dict[str, Any]:
+        """Return energy estimate for one step of `duration_seconds` seconds."""
         if not self.enabled:
-            return EnergyEstimate(kwh=None, co2e_kg=None, power_watts=None, source="disabled").as_dict()
+            return EnergyEstimate(
+                kwh=None, co2e_kg=None, power_watts=None, source="disabled"
+            ).as_dict()
 
         if self.kwh_per_step is not None:
             kwh = float(self.kwh_per_step)
@@ -100,10 +359,20 @@ class LightweightEnergyTracker:
                 if self.co2e_kg_per_kwh is not None
                 else float(kwh) * self.carbon_intensity_g_per_kwh / 1000.0
             )
-            return EnergyEstimate(kwh=kwh, co2e_kg=co2, power_watts=None, source="kwh_per_step").as_dict()
+            return EnergyEstimate(
+                kwh=kwh, co2e_kg=co2, power_watts=None, source="kwh_per_step"
+            ).as_dict()
 
-        power_est = self._estimate_power_watts()
-        power_watts = float(power_est.power_watts or 0.0)
+        # Try real measurement first; fall back to profile estimation.
+        measured_watts = self._average_measured_power(duration_seconds)
+        if measured_watts is not None:
+            power_watts = measured_watts
+            source = "pynvml"
+        else:
+            power_est = self._estimate_power_watts()
+            power_watts = float(power_est.power_watts or 0.0)
+            source = power_est.source
+
         duration_hours = max(float(duration_seconds), 0.0) / 3600.0
         kwh = power_watts * duration_hours / 1000.0
         co2 = (
@@ -112,4 +381,80 @@ class LightweightEnergyTracker:
             else kwh * self.carbon_intensity_g_per_kwh / 1000.0
         )
 
-        return EnergyEstimate(kwh=kwh, co2e_kg=co2, power_watts=power_watts, source=power_est.source).as_dict()
+        return EnergyEstimate(
+            kwh=kwh, co2e_kg=co2, power_watts=power_watts, source=source
+        ).as_dict()
+
+    def record_model_load(
+        self,
+        duration_seconds: float,
+        amortize_over: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Record energy consumed during model loading and store amortized cost.
+
+        Args:
+            duration_seconds: Wall time of model load.
+            amortize_over: Number of inference steps to amortize over.
+                Defaults to config value, then 1 if both are 0.
+
+        Returns:
+            Dict with total and amortized kWh/CO2 figures.
+        """
+        if not self.enabled:
+            return {"source": "disabled"}
+
+        n = amortize_over if amortize_over is not None else self._model_load_amortize_over
+        n = max(1, n)
+
+        measured_watts = self._average_measured_power(duration_seconds)
+        if measured_watts is not None:
+            power_watts = measured_watts
+            source = "pynvml"
+        else:
+            power_est = self._estimate_power_watts()
+            power_watts = float(power_est.power_watts or 0.0)
+            source = power_est.source
+
+        kwh_total = power_watts * max(duration_seconds, 0.0) / 3600.0 / 1000.0
+        kwh_amortized = kwh_total / n
+        co2_amortized = kwh_amortized * self.carbon_intensity_g_per_kwh / 1000.0
+
+        self._model_load_kwh_amortized = kwh_amortized
+        self._model_load_co2_amortized = co2_amortized
+
+        return {
+            "kwh_total": kwh_total,
+            "kwh_amortized": kwh_amortized,
+            "co2e_kg_amortized": co2_amortized,
+            "power_watts": power_watts,
+            "amortize_over": n,
+            "source": source,
+        }
+
+    @property
+    def gpu_info(self) -> Optional[Dict[str, Any]]:
+        """Return GPU name/memory info if pynvml is available."""
+        if self._nvidia_reader is not None:
+            return self._nvidia_reader.get_gpu_info()
+        return None
+
+    @property
+    def measurement_source(self) -> str:
+        """Report which measurement source is active."""
+        if self._nvidia_reader is not None and self._nvidia_reader.available:
+            return "pynvml"
+        if self.fixed_power_watts is not None:
+            return "fixed_power"
+        if self.use_psutil and psutil is not None:
+            return "psutil_profile"
+        return "profile_fallback"
+
+    def close(self) -> None:
+        """Stop background sampling thread and release NVML resources."""
+        self._sampling_active = False
+        if self._sample_thread is not None:
+            self._sample_thread.join(timeout=2.0)
+            self._sample_thread = None
+        if self._nvidia_reader is not None:
+            self._nvidia_reader.shutdown()
+            self._nvidia_reader = None

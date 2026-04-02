@@ -19,8 +19,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     },
     "variables": {
         "primary": {
-            "som": [False, True],
-            "observation_mode": ["dom_only", "hybrid"],
+            "observation_mode": ["dom", "som", "vision"],
             "router": [False, True],
         },
         "secondary": {
@@ -32,7 +31,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         },
     },
     "router": {
-        "cheap_default_mode": "dom_only",
+        "cheap_default_mode": "dom",
+        "rich_escalation_mode": "som",
         "thresholds": {
             "dom_size_threshold": 12000,
             "unchanged_steps_trigger": 2,
@@ -59,6 +59,10 @@ DEFAULT_CONFIG: Dict[str, Any] = {
             "region": "world",
             "use_psutil": True,
             "fixed_power_watts": None,
+            "use_pynvml": True,
+            "sample_interval_s": 0.5,
+            "track_model_load": False,
+            "model_load_amortize_over": 0,
         },
     },
     "checklist": {
@@ -162,15 +166,15 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     cfg.setdefault("baselines", {})
     cfg["baselines"].setdefault("run_b0", False)
     cfg["baselines"].setdefault("b0_backend", "api_strong")
-    cfg["baselines"].setdefault("b0_som", True)
-    cfg["baselines"].setdefault("b0_observation_mode", "hybrid")
+    cfg["baselines"].setdefault("b0_observation_mode", "som")
 
     thresholds = cfg.setdefault("router", {}).setdefault("thresholds", {})
     thresholds.setdefault("dom_size_threshold", 12000)
     thresholds.setdefault("unchanged_steps_trigger", 2)
     thresholds.setdefault("no_progress_steps_trigger", 2)
     thresholds.setdefault("retry_limit", 1)
-    cfg["router"].setdefault("cheap_default_mode", "dom_only")
+    cfg["router"].setdefault("cheap_default_mode", "dom")
+    cfg["router"].setdefault("rich_escalation_mode", "som")
     cfg["router"].setdefault("overhead_cost_per_ms", 0.0)
     cfg["router"].setdefault("extra_model_call_cost_usd", 0.0)
     cfg["router"].setdefault("retry_cost_usd", 0.0)
@@ -196,6 +200,10 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     cfg["metrics"]["energy"].setdefault("region", "world")
     cfg["metrics"]["energy"].setdefault("use_psutil", True)
     cfg["metrics"]["energy"].setdefault("fixed_power_watts", None)
+    cfg["metrics"]["energy"].setdefault("use_pynvml", True)
+    cfg["metrics"]["energy"].setdefault("sample_interval_s", 0.5)
+    cfg["metrics"]["energy"].setdefault("track_model_load", False)
+    cfg["metrics"]["energy"].setdefault("model_load_amortize_over", 0)
 
     return cfg
 

@@ -25,6 +25,19 @@ def compute_token_cost(
     }
 
 
+def select_token_cost_cfg(metrics_cfg: Dict[str, Any], backend_type: Optional[str]) -> Dict[str, Any]:
+    """Select token pricing config by backend type.
+
+    - API backends (type starts with "api_") use metrics.cost_api when available.
+    - Other backends use metrics.cost.
+    """
+    backend_type_norm = str(backend_type or "").lower().strip()
+    prefer_api = backend_type_norm.startswith("api_")
+    if prefer_api and isinstance(metrics_cfg.get("cost_api"), dict):
+        return metrics_cfg.get("cost_api", {})
+    return metrics_cfg.get("cost", {})
+
+
 def compute_router_overhead_cost(router_overhead_ms: float, router_cfg: Dict[str, Any]) -> float:
     rate = float(router_cfg.get("overhead_cost_per_ms", 0.0))
     return float(router_overhead_ms) * rate
@@ -79,6 +92,10 @@ def p95(values: List[float]) -> float:
     return float(ordered[idx])
 
 
+def _net_saving(baseline: float, routed: float, overhead: float) -> float:
+    return float(baseline) - (float(routed) + float(overhead))
+
+
 def net_saving(cost_baseline_total: float, cost_routed_model: float, cost_router_overhead: float) -> float:
     """
     Net saving for routed condition.
@@ -86,13 +103,13 @@ def net_saving(cost_baseline_total: float, cost_routed_model: float, cost_router
     Baseline is compared against routed total cost reconstructed from:
     routed_total = routed_model + routed_router_overhead
     """
-    return float(cost_baseline_total) - (float(cost_routed_model) + float(cost_router_overhead))
+    return _net_saving(cost_baseline_total, cost_routed_model, cost_router_overhead)
 
 
 def net_saving_latency(
     latency_baseline_ms: float, latency_routed_ms: float, router_overhead_ms: float
 ) -> float:
-    return float(latency_baseline_ms) - (float(latency_routed_ms) + float(router_overhead_ms))
+    return _net_saving(latency_baseline_ms, latency_routed_ms, router_overhead_ms)
 
 
 def net_saving_energy(
@@ -103,7 +120,20 @@ def net_saving_energy(
     if energy_baseline_kwh is None or energy_routed_kwh is None:
         return None
     overhead = float(router_overhead_energy_kwh or 0.0)
-    return float(energy_baseline_kwh) - (float(energy_routed_kwh) + overhead)
+    return _net_saving(energy_baseline_kwh, energy_routed_kwh, overhead)
+
+
+def compute_wasted_energy(episode_summaries: List[Dict[str, Any]]) -> Optional[float]:
+    """Total kWh spent on unsuccessful episodes (failed or hit max_steps).
+
+    Returns None if no energy data is present in any failed episode.
+    """
+    vals = [
+        float(x["total_energy_kwh"])
+        for x in episode_summaries
+        if not x.get("success") and x.get("total_energy_kwh") is not None
+    ]
+    return float(sum(vals)) if vals else None
 
 
 def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -127,6 +157,7 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             "avg_checklist_completion_rate": None,
             "checklist_failure_episode_rate": None,
             "benchmark_noise_rate": 0.0,
+            "wasted_energy_kwh": None,
         }
 
     success_rate = sum(1 for x in episode_summaries if x.get("success")) / len(episode_summaries)
@@ -190,4 +221,5 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             float(statistics.mean(checklist_failed_flags)) if checklist_failed_flags else None
         ),
         "benchmark_noise_rate": float(statistics.mean(benchmark_noise_flags)),
+        "wasted_energy_kwh": compute_wasted_energy(episode_summaries),
     }

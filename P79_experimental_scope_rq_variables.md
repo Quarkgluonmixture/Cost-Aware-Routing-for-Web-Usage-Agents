@@ -88,16 +88,21 @@ where:
 - **\(f_t\)** = failure or uncertainty signals (page unchanged, selector not found, repeated no-progress behaviour).
 
 ### 4.2 Action space
-The router action is a choice of representation / modality combination:
+
+The full representation space is the Cartesian product of two orthogonal factors:
+
+| Factor | Levels | Varied by |
+|---|---|---|
+| **SoM overlay** | OFF / ON | Fixed per experimental condition (top-level variable A1) |
+| **Observation channel** | DOM-only / Hybrid (DOM + screenshot) | Switched dynamically by the router (variable B1) |
+
+Because SoM is a **between-condition** factor fixed before each run, it is not part of the router's action space. The router operates **within** a given SoM setting and selects only the observation channel:
+
 \[
-a_t \in \mathcal{A}
+a_t \in \mathcal{A} = \{\texttt{dom\_only},\; \texttt{hybrid}\}
 \]
-with:
-- **DOM only**
-- **SoM + DOM**
-- **DOM + Vision**
-- **SoM + DOM + Vision**
-- (optionally) these can be augmented with history-derived signals where needed.
+
+This yields a compact two-action routing problem per SoM condition, avoiding the combinatorial blow-up of a four-action space while still allowing Phase 1 to evaluate all four representation cells (SoM × observation) as fixed policies.
 
 ### 4.3 Policy
 The router policy is:
@@ -105,13 +110,13 @@ The router policy is:
 a_t = \pi(s_t)
 \]
 
-This framework makes the baselines special cases of one common policy family:
-- **Fixed policy**: always select the same representation action.
-- **Heuristic / threshold router**: select action based on page complexity, uncertainty, or progress signals.
-- **Fallback router**: start with a cheaper action, then escalate to richer modalities when failure occurs.
+Within this framework, every experimental condition is a special case of the same policy family:
+- **Fixed policy** \(\pi_{\text{fix}}\): always select the same observation channel (e.g., always DOM-only). The four Phase 1 cells are four such fixed policies.
+- **Heuristic / threshold router** \(\pi_{\text{rule}}\): select observation channel based on page complexity, uncertainty, or progress signals derived from \(s_t\).
+- **Fallback router** \(\pi_{\text{fall}}\): default to the cheaper channel (DOM-only) and escalate to Hybrid when failure signals exceed a threshold.
 
 ### Why this matters
-This lets the dissertation compare routing baselines **within a common formal framework**, rather than as unrelated engineering tricks.
+This lets the dissertation compare all conditions — including fixed baselines — **within a common formal framework**, rather than treating routing as an unrelated engineering trick. The SoM factor is analysed as an exogenous moderator: Phase 1 tests whether SoM shifts the success–efficiency frontier, while Phase 2 tests whether routing improves the trade-off **conditional on** the chosen SoM setting.
 
 ---
 
@@ -228,7 +233,38 @@ Purpose:
 3. M3 Failure trigger + one retry
 4. M4 Two-stage Action Generation / Grounding
 
-**Rule:** each module is tested against the same base condition; do not enable all modules together in the early stage.
+**Rule:** each module is tested against the same base condition; do not enable all modules together in the early stage. No interaction effects (e.g., M1+M3) are tested in the early stage; if time allows, at most one cumulative bundle is evaluated.
+
+---
+
+### Statistical design and power considerations
+
+#### Sample sizes
+VisualWebArena provides approximately 910 tasks across three standalone sites (shopping ~250, reddit ~230, classifieds ~450) plus cross-site Wikipedia references embedded in reddit/shopping configs. Each task is run once per condition per seed. With the Phase 1 2×2 grid this yields ~910 episodes per condition.
+
+#### Seed strategy
+The primary analysis uses a single seed (seed = 42). If Phase 1 success rates are close between conditions (e.g., within 3 pp), a confirmation run with two additional seeds (123, 456) is triggered to assess stability. Multi-seed runs are not the default because each seed triplicates wall-clock time on a single-GPU setup.
+
+#### Expected effect sizes and detection limits
+With a 4B local model, expected per-task success rates are in the range 5–15%. For a two-condition comparison at \(n \approx 910\) tasks with baseline success \(p_0 = 0.10\):
+- a **5 pp** absolute difference (0.10 → 0.15) is detectable at 80% power, \(\alpha = 0.05\) (two-sided), via a two-proportion z-test or McNemar's test on paired tasks.
+- a **3 pp** difference (0.10 → 0.13) is borderline; it requires multi-seed pooling or per-site stratification to reach significance.
+- differences below 2 pp are unlikely to be reliably detected and will be reported as directional trends only.
+
+#### Primary statistical tests
+| Comparison | Test | Rationale |
+|---|---|---|
+| Success rate between conditions (same tasks) | McNemar's exact test | Paired binary outcomes on identical task set |
+| Success rate confidence intervals | Bootstrap 95% CI (10 000 resamples) | Non-parametric, no distributional assumption |
+| Cost / latency between conditions | Wilcoxon signed-rank test | Paired continuous, non-normal (heavy right tail) |
+| Per-site heterogeneity | Cochran–Mantel–Haenszel or stratified bootstrap | Controls for site as a blocking factor |
+
+#### Contingency: low baseline success
+If Phase 1 reveals that the 4B model achieves < 3% success across all four conditions, the following mitigations apply in order:
+1. **Per-site reporting**: report sites separately; classifieds (~450 tasks) has the most power.
+2. **Softer outcome metric**: supplement binary success with a graded progress score (e.g., fraction of sub-goals achieved or steps-before-failure), which has higher variance utilisation.
+3. **Scope reduction**: restrict the routing study to the highest-performing site(s) only, and note the limitation.
+4. **Stronger base model**: replace or supplement the 4B baseline with the API model (Qwen3-VL-Plus) as the primary agent, using the 4B model as the cheap tier in the router.
 
 ---
 
@@ -238,7 +274,7 @@ Purpose:
 A strong API model or strong VLM baseline, to confirm solvability and upper-bound performance.
 
 ### B1 — Small-only baseline
-Qwen3-VL-4B (4-bit), fixed policy.
+Qwen3-VL-4B , fixed policy.
 
 ### B2 — Fixed best representation
 Best non-routed representation configuration from Phase 1.
