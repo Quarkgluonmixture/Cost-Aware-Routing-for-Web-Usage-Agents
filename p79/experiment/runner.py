@@ -993,6 +993,24 @@ class ExperimentRunner:
                 cycle_early_stop = True
                 break
 
+        # VWA evaluator expects trajectory to end with an Action dict having "answer" key.
+        # When the agent never stopped (max-steps / cycle), trajectory ends with an obs dict
+        # which lacks "answer", causing KeyError: 'answer'.  Append a fake stop action.
+        if not trajectory or not isinstance(trajectory[-1], dict) or "answer" not in trajectory[-1]:
+            try:
+                from browser_env.actions import create_stop_action  # type: ignore
+                trajectory.append(create_stop_action(""))
+            except Exception:
+                import numpy as np
+                trajectory.append({
+                    "action_type": 6,  # ActionTypes.STOP
+                    "coords": np.zeros(2, dtype=np.float32),
+                    "element_role": 0, "element_name": "", "text": [],
+                    "page_number": 0, "url": "", "nth": 0,
+                    "pw_code": "", "element_id": "", "key_comb": "",
+                    "direction": "", "answer": "", "raw_prediction": "",
+                })
+
         eval_result = self.evaluator.evaluate(trajectory=trajectory, config_file=task.config_file, env=self.environment)
         score = float(eval_result.score)
 

@@ -1,6 +1,6 @@
 # DGX Spark Machine Quirks (Local Only)
 
-Last updated: 2026-03-27
+Last updated: 2026-04-02
 
 > This file is **host-specific** and is **not** the default setup path for this repository.
 > General users should follow `README.md` only.
@@ -91,6 +91,40 @@ Expected: no `Location: http://localhost:7770/...`.
 - If DGX cannot reach homepage but WSL local `127.0.0.1:4399` returns 200:
   - re-create Windows `netsh interface portproxy` mapping
   - ensure inbound firewall allows TCP 4399
+
+8. DGX Spark already includes NVIDIA Container Runtime (usually no extra install needed)
+- If Docker reports `runtime not found`, first verify runtime registration instead of reinstalling:
+```bash
+docker info | grep -iE 'Runtimes|Default Runtime'
+```
+- Permission issue (`permission denied` on Docker socket):
+```bash
+id
+getent group docker
+```
+  Ask the machine owner/admin to add your user to the `docker` group if needed.
+- CUDA mismatch checks (`nvidia-smi` works on host but fails in container, or vice versa):
+```bash
+nvidia-smi
+docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
+```
+  If container CUDA stack and host driver are incompatible, align image/toolkit versions with host constraints.
+
+9. NGC CLI must be ARM64 on DGX Spark
+- DGX Spark is `aarch64`, so use the ARM64 NGC CLI package only.
+- Quick architecture check:
+```bash
+uname -m
+```
+Expected: `aarch64`.
+
+10. UMA memory display in `nvidia-smi` is different from discrete-GPU systems
+- On UMA platforms, memory figures in `nvidia-smi` can look unusual compared with standalone dGPU expectations; this is expected behavior.
+- For debugging memory-reclaim observation bias, you can force cache drop:
+```bash
+sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'
+```
+  This requires `sudo`; if you are not the machine owner, confirm with the owner/admin first.
 
 ## DGX-only scripts
 Use scripts under `scripts/dgx/`:

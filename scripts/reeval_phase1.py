@@ -1,19 +1,21 @@
 """
-Offline re-evaluation for phase1 tasks that failed with evaluator_error:'answer'.
+Offline re-evaluation for phase1 tasks that failed with evaluator_error.
 
-The bug was: runner appended a trailing observation after the stop action, so
-trajectory[-1] was an observation dict instead of the VWA stop Action, causing
-StringEvaluator to raise KeyError('answer').
+Covers two failure modes:
+  1. evaluator_error:'answer'  — trajectory ended without a stop action (KeyError)
+  2. evaluator_error:401       — OpenAI API key was missing/dummy (LLM eval failed)
 
-This script re-evaluates affected tasks using data already stored in the JSONL logs:
+Data sources from JSONL logs:
   - agent answer  → last step's action.answer
   - final URL     → last step's state_digest.url_after
   - reference     → task config file
 
-Supports: string_match (exact_match / must_include / must_exclude / one_of / fuzzy_N/A)
+Supports: string_match (exact_match / must_include / must_exclude / one_of)
+          string_match with fuzzy_match — uses llm_ua_match if real OPENAI_API_KEY
           url_match (EXACT / GOLD in PRED)
-Skips:    fuzzy_match (non-N/A) and ua_match — require LLM calls
-          program_html / page_image_query — require live browser
+Skips:    program_html / page_image_query — require live browser
+
+OpenAI key: loaded from .auth/openai_key (relative to project root) if present.
 
 Usage:
     python scripts/reeval_phase1.py [--dry-run] [--phase-dir PATH]
@@ -23,8 +25,31 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
+import sys
 from pathlib import Path
+
+# ── Load real OpenAI key from .auth/openai_key before anything else ───────────
+_ROOT = Path(__file__).parent.parent
+_KEY_FILE = _ROOT / ".auth" / "openai_key"
+if _KEY_FILE.is_file():
+    _loaded = _KEY_FILE.read_text().strip()
+    if _loaded:
+        os.environ.setdefault("OPENAI_API_KEY", _loaded)
+
+# ── Optionally load VWA's llm_ua_match for fuzzy_match evaluation ─────────────
+_VWA_PATH = _ROOT / "external/visualwebarena"
+if str(_VWA_PATH) not in sys.path and _VWA_PATH.is_dir():
+    sys.path.insert(0, str(_VWA_PATH))
+
+_llm_ua_match = None
+_has_real_key = os.environ.get("OPENAI_API_KEY", "").startswith("sk-")
+if _has_real_key:
+    try:
+        from evaluation_harness.helper_functions import llm_ua_match as _llm_ua_match  # type: ignore
+    except Exception:
+        pass
 
 try:
     from nltk.tokenize import word_tokenize
@@ -32,7 +57,7 @@ except ImportError:
     def word_tokenize(s):  # type: ignore[misc]
         return s.split()
 
-VWA_CONFIGS_ROOT = Path(__file__).parent.parent / "external/visualwebarena/config_files/vwa"
+VWA_CONFIGS_ROOT = _ROOT / "external/visualwebarena/config_files/vwa"
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -92,11 +117,18 @@ def eval_string_match(pred_answer: str, eval_cfg: dict) -> tuple[float, str | No
             found = any(clean_answer(v) in pred for v in value)
             score *= float(found)
         elif approach == "fuzzy_match":
-            if value == "N/A":
-                # exact match for N/A tasks (no LLM needed)
+            if _llm_ua_match is not None:
+                try:
+                    intent = ref_answers.get("_intent", "")  # injected by caller
+                    llm_score = _llm_ua_match(pred=pred, reference=value, question=intent)
+                    score *= float(llm_score)
+                except Exception as e:
+                    return 0.0, f"llm_ua_match_error:{e}"
+            elif value == "N/A":
+                # No real key — use exact match as conservative fallback for N/A
                 score *= exact_match(ref=value, pred=pred)
             else:
-                return 0.0, f"fuzzy_match_requires_llm"
+                return 0.0, "fuzzy_match_requires_llm"
         elif approach == "required_values":
             # numeric — best effort
             try:
@@ -167,7 +199,8 @@ def reeval_summary(summary_path: Path, dry_run: bool) -> dict:
     """Returns a result dict describing what happened."""
     summary = json.loads(summary_path.read_text())
 
-    if not (summary.get("error") or "").startswith("evaluator_error"):
+    err = summary.get("error") or ""
+    if not err.startswith("evaluator_error"):
         return {"path": str(summary_path), "status": "skipped_no_error"}
 
     site = summary.get("benchmark_site", "")
@@ -202,15 +235,18 @@ def reeval_summary(summary_path: Path, dry_run: bool) -> dict:
     combined_score = 1.0
     skip_reason = None
 
+    eval_cfg_with_intent = dict(task_cfg["eval"])
+    eval_cfg_with_intent.setdefault("_intent", task_cfg.get("intent", ""))
+
     for eval_type in eval_types:
         if eval_type == "string_match":
-            s, reason = eval_string_match(pred_answer, task_cfg["eval"])
+            s, reason = eval_string_match(pred_answer, eval_cfg_with_intent)
             combined_score *= s
             if reason:
                 skip_reason = reason
                 break
         elif eval_type == "url_match":
-            s, reason = eval_url_match(final_url, task_cfg["eval"])
+            s, reason = eval_url_match(final_url, eval_cfg_with_intent)
             combined_score *= s
             if reason:
                 skip_reason = reason
@@ -263,6 +299,11 @@ def main():
 
     base = Path(__file__).parent.parent
     phase_dir = Path(args.phase_dir) if args.phase_dir else base / "results/visualwebarena/phase1"
+
+    if _has_real_key:
+        print(f"OpenAI key: loaded ({'llm_ua_match available' if _llm_ua_match else 'import failed'})")
+    else:
+        print("OpenAI key: not found — fuzzy_match will use exact_match fallback for N/A tasks")
 
     summaries = sorted(phase_dir.glob("**/episodes/*summary_v2.json"))
     print(f"Found {len(summaries)} summary files in {phase_dir}")
