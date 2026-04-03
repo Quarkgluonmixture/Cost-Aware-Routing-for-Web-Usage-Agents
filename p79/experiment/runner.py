@@ -795,6 +795,7 @@ class ExperimentRunner:
             next_obs, reward, terminated, truncated, next_info = self.environment.step(action)
             env_step_ms = (time.time() - env_step_start) * 1000.0
 
+            action_type_lower = str(action.get("action_type", "")).lower()
             state_after = build_page_state(next_obs, next_info)
             action_success, page_change_reasons, text_similarity = detect_page_state_change(
                 state_before=state_before,
@@ -803,18 +804,33 @@ class ExperimentRunner:
                 similarity_threshold=similarity_threshold,
             )
             page_changed = bool(page_change_reasons)
-            if reward > 0 or terminated:
+            # Do not use reward as action-success evidence: evaluator rewards can be noisy
+            # and may mask real no-progress execution failures.
+            if terminated and action_type_lower in ("finish", "stop", "done"):
                 action_success = True
 
             retry_count = 0
             retry_limit = int(self.cfg.get("router", {}).get("thresholds", {}).get("retry_limit", 1))
-            if should_trigger_m3_retry(
+            trigger_m3_retry = should_trigger_m3_retry(
                 action_success=action_success,
                 page_changed=page_changed,
                 retry_count=retry_count,
                 retry_limit=retry_limit,
                 module_flags=condition.modules.as_dict(),
-            ):
+            )
+            # Baseline robustness: if click/type made no progress, run one internal retry
+            # even when optional M3 module is disabled.
+            baseline_retry_on_no_progress = bool(
+                self.cfg.get("runtime", {}).get("baseline_retry_on_no_progress", True)
+            )
+            trigger_baseline_retry = (
+                baseline_retry_on_no_progress
+                and (not trigger_m3_retry)
+                and (not page_changed)
+                and action_type_lower in ("click", "type")
+                and retry_count < retry_limit
+            )
+            if trigger_m3_retry or trigger_baseline_retry:
                 retry_action = m3_retry_action(failed_action=action, obs_text=obs.text or "")
                 retry_obs, retry_reward, retry_term, retry_trunc, retry_info = self.environment.step(retry_action)
                 retry_count += 1
@@ -828,19 +844,31 @@ class ExperimentRunner:
                     action_type=str(retry_action.get("action_type", "")).upper(),
                     similarity_threshold=similarity_threshold,
                 )
-                if retry_success or retry_reward > 0 or retry_term:
-                    next_obs, reward, terminated, truncated, next_info = (
-                        retry_obs,
-                        retry_reward,
-                        retry_term,
-                        retry_trunc,
-                        retry_info,
+                retry_action_type = str(retry_action.get("action_type", "")).lower()
+                retry_success = bool(
+                    retry_success or (retry_term and retry_action_type in ("finish", "stop", "done"))
+                )
+
+                # Retry step is executed in the real environment, so always adopt
+                # post-retry state to keep wrapper state and recorded observation aligned.
+                next_obs, reward, terminated, truncated, next_info = (
+                    retry_obs,
+                    retry_reward,
+                    retry_term,
+                    retry_trunc,
+                    retry_info,
+                )
+                state_after = retry_state_after
+                text_similarity = retry_similarity
+                page_changed = bool(retry_reasons)
+                action_success = retry_success
+                if retry_reasons:
+                    retry_tag = (
+                        "m3_retry_applied" if trigger_m3_retry else "baseline_no_progress_retry_applied"
                     )
-                    state_after = retry_state_after
-                    page_change_reasons = list(dict.fromkeys(list(retry_reasons) + ["m3_retry_applied"]))
-                    text_similarity = retry_similarity
-                    page_changed = bool(retry_reasons)
-                    action_success = True
+                    page_change_reasons = list(dict.fromkeys(list(retry_reasons) + [retry_tag]))
+                else:
+                    page_change_reasons = []
 
             safe_next_info = next_info if isinstance(next_info, dict) else {}
             is_stop_action = str(action.get("action_type", "")).lower() in ("finish", "stop", "done")
@@ -878,8 +906,22 @@ class ExperimentRunner:
             )
             step_total_cost = token_cost["total"] + router_overhead_cost
             failure_reason = meta.get("failure_reason")
+            parse_valid = bool(meta.get("valid", True))
+            fallback_finish = (
+                action_type_lower == "finish"
+                and (not parse_valid)
+                and str(failure_reason or "").strip().lower() == "keyword_finish"
+            )
+            if fallback_finish:
+                logger.warning(
+                    "Fallback finish detected site=%s task=%s step=%d reason=%s",
+                    task.site,
+                    task.task_id,
+                    step_idx,
+                    failure_reason,
+                )
             error_category = self._normalize_error_category(
-                failure_reason=failure_reason if not meta.get("valid", True) else None,
+                failure_reason=failure_reason if not parse_valid else None,
                 action_success=bool(action_success),
                 page_changed=bool(page_changed),
                 env_error=None,
@@ -956,6 +998,12 @@ class ExperimentRunner:
                     "title_after": state_after.get("title"),
                 },
             ).as_dict()
+            # Optional parser/debug fields (non-required schema extras).
+            step_record["parse_valid"] = parse_valid
+            step_record["parse_failure_reason"] = (
+                str(failure_reason) if failure_reason is not None else None
+            )
+            step_record["fallback_finish"] = fallback_finish
 
             validate_step_record_v2(step_record)
             condition_logger.write_step(task.site, task.task_id, step_record)

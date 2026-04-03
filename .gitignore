@@ -25,3 +25,4 @@ scripts/vwa_env_remote.sh
 .cache/
 .pytest_cache/
 external_code/
+Claude_code/

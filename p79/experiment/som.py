@@ -167,8 +167,10 @@ def _build_som_result(
             (legacy behavior). If False (new SOM mode), only SOM_MARKS is returned.
     """
     text_marks = _extract_text_marks(obs_text)
-    # ≤1 marks means the page is still loading (busy: 1) or trivially empty.
-    if len(text_marks) <= 1:
+    # Only zero marks is a hard SOM fallback.
+    # A single mark can still be a valid interactive page and should not be
+    # forced into text-only degradation.
+    if len(text_marks) == 0:
         fallback_text = obs_text if include_full_axtree else obs_text
         return SomResult(
             som_text=fallback_text,

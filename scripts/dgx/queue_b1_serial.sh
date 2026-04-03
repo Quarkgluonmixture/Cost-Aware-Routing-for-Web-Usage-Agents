@@ -52,6 +52,8 @@ export P79_DISABLE_STALE_CLEANUP="${P79_DISABLE_STALE_CLEANUP:-1}"
 NTFY_TOPIC="${NTFY_TOPIC:-p79-exp-dgx-spark}"
 NTFY_URL="https://ntfy.sh/${NTFY_TOPIC}"
 NTFY_EPISODE_INTERVAL="${NTFY_EPISODE_INTERVAL:-20}"
+# 是否在每个站点完成后自动生成失败/成功归因报告
+REASON_DIAG_ENABLE="${REASON_DIAG_ENABLE:-1}"
 
 # 加载 VWA 站点环境
 if [[ -f "${REPO_DIR}/scripts/vwa_env_remote.sh" ]]; then
@@ -73,6 +75,41 @@ ntfy_send() {
     -H "Priority: ${priority}" \
     -d "${message}" \
     "${NTFY_URL}" > /dev/null 2>&1 || true
+}
+
+run_reason_diagnostics() {
+  local run_id="$1"
+  local label="$2"
+
+  if [[ "${REASON_DIAG_ENABLE}" != "1" ]]; then
+    log "[${label}] reason diagnostics disabled (REASON_DIAG_ENABLE=${REASON_DIAG_ENABLE})."
+    return 0
+  fi
+
+  local run_dir="${RESULTS_BASE}/${run_id}"
+  local diag_script="${REPO_DIR}/scripts/analyze_reason_diagnostics.py"
+  if [[ ! -d "${run_dir}" ]]; then
+    log "[${label}] reason diagnostics skipped: run dir not found (${run_dir})"
+    return 0
+  fi
+  if [[ ! -f "${diag_script}" ]]; then
+    log "[${label}] reason diagnostics skipped: script not found (${diag_script})"
+    return 0
+  fi
+
+  log "[${label}] Running reason diagnostics for ${run_id}..."
+  if "${PYTHON_BIN}" "${diag_script}" \
+    --run-dir "${run_dir}" \
+    --report \
+    --report-language zh \
+    --samples-per-bucket 5 \
+    >> "${REPO_DIR}/logs/queue_b1_serial_reason_diag.log" 2>&1; then
+    log "[${label}] reason diagnostics completed."
+    ntfy_send "P79 [${label}] 归因报告已生成" "run_id=${run_id}；输出目录: ${run_dir}/analysis/reason_diagnostics" "default"
+  else
+    log "[${label}] WARNING: reason diagnostics failed (non-blocking)."
+    ntfy_send "P79 [${label}] 归因报告失败" "run_id=${run_id}；请检查 logs/queue_b1_serial_reason_diag.log" "default"
+  fi
 }
 
 progress_hint() {
@@ -314,6 +351,7 @@ ntfy_send "P79 队列启动" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")�
 # 1) classifieds
 ntfy_send "P79 [classifieds] 开始" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_CLASSIFIEDS}" "default"
 run_until_complete "classifieds" "${RUN_ID_CLASSIFIEDS}" "classifieds"
+run_reason_diagnostics "${RUN_ID_CLASSIFIEDS}" "classifieds"
 done_sites=$(( done_sites + 1 ))
 ntfy_send "P79 [classifieds] 完成" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_CLASSIFIEDS}" "default"
 log "classifieds complete. Waiting 15s..."
@@ -322,6 +360,7 @@ sleep 15
 # 2) reddit
 ntfy_send "P79 [reddit] 开始" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_REDDIT}" "default"
 run_until_complete "reddit" "${RUN_ID_REDDIT}" "reddit"
+run_reason_diagnostics "${RUN_ID_REDDIT}" "reddit"
 done_sites=$(( done_sites + 1 ))
 ntfy_send "P79 [reddit] 完成" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_REDDIT}" "default"
 log "reddit complete. Waiting 15s..."
@@ -330,6 +369,7 @@ sleep 15
 # 3) shopping
 ntfy_send "P79 [shopping] 开始" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_SHOPPING}" "default"
 run_until_complete "shopping" "${RUN_ID_SHOPPING}" "shopping"
+run_reason_diagnostics "${RUN_ID_SHOPPING}" "shopping"
 done_sites=$(( done_sites + 1 ))
 ntfy_send "P79 [shopping] 完成" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_SHOPPING}" "default"
 
