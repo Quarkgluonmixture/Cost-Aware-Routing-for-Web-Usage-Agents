@@ -86,7 +86,6 @@ class Qwen3VLAgent:
                 torch_dtype=model_dtype,
                 device_map="auto",
                 quantization_config=quantization_config,
-                attn_implementation="sdpa",
                 trust_remote_code=True,
             )
             self.processor = AutoProcessor.from_pretrained(self.model_path, trust_remote_code=True)

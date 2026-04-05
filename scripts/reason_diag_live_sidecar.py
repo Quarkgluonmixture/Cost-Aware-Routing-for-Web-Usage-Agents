@@ -51,14 +51,7 @@ def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, str]], tim
             "model": glmm["model"],
             "messages": list(messages),
             "temperature": 0.1,
-            "max_tokens": 1024,
-            "thinking": {"type": "enabled", "budget_tokens": 3000},
-        },
-        {
-            "model": glmm["model"],
-            "messages": list(messages),
-            "temperature": 0.1,
-            "max_tokens": 1024,
+            "max_tokens": 4096,
         },
     ]
     last_err: Optional[Exception] = None
@@ -83,6 +76,16 @@ def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, str]], tim
                     msg = msg_obj.get("content")
                     if isinstance(msg, str) and msg.strip():
                         return msg.strip()
+                    # GLM thinking models may put final answer in reasoning_content
+                    # when max_tokens is exhausted before content is written.
+                    # Fallback: extract JSON from reasoning_content if content is empty.
+                    reasoning = msg_obj.get("reasoning_content") if choices else None
+                    if isinstance(reasoning, str) and reasoning.strip():
+                        # Find last {...} block in reasoning as best-effort JSON extraction
+                        r_start = reasoning.rfind("{")
+                        r_end = reasoning.rfind("}")
+                        if r_start >= 0 and r_end > r_start:
+                            return reasoning[r_start : r_end + 1]
                 text = data.get("output_text") or data.get("text")
                 if isinstance(text, str) and text.strip():
                     return text.strip()
@@ -353,12 +356,6 @@ def _case_evidence(case: Dict[str, Any]) -> str:
     repeated_q = str(case.get("most_repeated_search_query", "") or "").strip()
     if max_search_repeat is not None and max_search_repeat > 1 and repeated_q:
         parts.append(f"重复搜索={repeated_q[:24]}×{max_search_repeat}")
-    seq = str(case.get("action_type_sequence", "") or "").strip()
-    if seq:
-        parts.append(f"动作序列={seq[:80]}")
-    page_type_seq = str(case.get("page_type_sequence", "") or "").strip()
-    if page_type_seq:
-        parts.append(f"页面轨迹={page_type_seq[:60]}")
     tiv = _to_optional_bool(case.get("target_item_ever_visible"))
     if tiv is not None:
         parts.append("目标item曾可见=是" if tiv else "目标item曾可见=否")
@@ -392,7 +389,7 @@ def _case_evidence(case: Dict[str, Any]) -> str:
             select_bits.append("页面变化=是" if changed else "页面变化=否")
         if select_bits:
             parts.append("最近select=" + ",".join(select_bits))
-    return "；".join(parts[:4])
+    return "；".join(parts[:5])
 
 
 def _fallback_episode_diagnosis(case: Dict[str, Any]) -> Dict[str, Any]:
@@ -539,6 +536,7 @@ def _fallback_episode_diagnosis(case: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "task_id": task_id,
         "condition_id": condition_id,
+        "task_intent": str(case.get("task_intent", "") or "").strip()[:40],
         "category": category,
         "root_cause": root_cause,
         "confidence": confidence,
@@ -618,12 +616,14 @@ def _glm_episode_diagnosis_one(glmm: Optional[Dict[str, str]], case: Dict[str, A
                 "你是实验失败归因助手。请基于单个失败 episode 的上下文输出结构化诊断（中文，严格 JSON）。\n"
                 "输入字段包括：task_intent、task_type、observation_mode、thought_at_step_0、all_step_thoughts、final_answer、reference_answers、reference_url、select_events、search_queries、loop_pattern。\n"
                 "输出必须严格为 JSON 对象："
-                '{"task_id":123,"category":"...","root_cause":"...","is_scaffolding_issue":"是|否","evidence":"..."}\n'
+                '{"task_id":123,"task_summary":"...","category":"...","root_cause":"...","is_scaffolding_issue":"是|否","evidence":"..."}\n'
                 "要求：\n"
+                "0) task_summary：≤12字中文，用口语概括任务目标核心操作，如「找最贵的船并打五星」「给帖子添加评论」「查找红色自行车价格」；不要包含条件细节；\n"
                 "1) task_id 必须保留；\n"
                 "2) 必须结合 all_step_thoughts 给出结论，不要只复述 bucket；\n"
                 "3) root_cause 要简短具体（<=60字），不要包含任务要求原文；\n"
-                "4) evidence 必须给出至少一个具体证据点（如动作序列模式、连续无变化区间、某步 thought 关键词、某次select值/id）；\n"
+                "4) evidence 必须给出至少一个具体证据点（如某步 thought 的关键词/决策逻辑、重复搜索词及其失败原因、连续无变化区间、某次select值/id）；"
+                "禁止原样输出 action_type_sequence 或 page_type_sequence 的压缩字符串（如 clickx4|waitx1 或 other|search|detail 等），这些对人类无意义；\n"
                 "5) 不要给建议，不要输出 markdown；\n"
                 "6) 禁止使用泛化模板句「思维与动作重复，且页面长期无变化，关键交互未完成」；\n"
                 "7) 若 loop_pattern=click_back_loop，必须回答：agent 每次进入详情页后为什么选择返回？"
@@ -678,6 +678,7 @@ def _glm_episode_diagnosis_one(glmm: Optional[Dict[str, str]], case: Dict[str, A
         if not parsed:
             return fallback
         task_id = _to_int(parsed.get("task_id"))
+        task_summary = str(parsed.get("task_summary", "") or "").strip()
         category = str(parsed.get("category", "") or "").strip()
         root_cause = str(parsed.get("root_cause", "") or "").strip()
         confidence = str(parsed.get("confidence", "") or "").strip().lower()
@@ -701,6 +702,7 @@ def _glm_episode_diagnosis_one(glmm: Optional[Dict[str, str]], case: Dict[str, A
         return {
             "task_id": task_id,
             "condition_id": str(case.get("condition_id", "") or "").strip(),
+            "task_intent": task_summary or str(case.get("task_intent", "") or "").strip(),
             "category": category,
             "root_cause": root_cause,
             "confidence": confidence,
@@ -753,6 +755,7 @@ def _format_episode_report_lines(items: Sequence[Dict[str, Any]]) -> List[str]:
             continue
         task_id = _to_int(x.get("task_id"))
         condition_id = str(x.get("condition_id", "") or "").strip()
+        task_intent = str(x.get("task_intent", "") or "").strip()
         category = _category_to_zh(str(x.get("category", "") or "").strip())
         root = str(x.get("root_cause", "") or "").strip()
         evidence = str(x.get("evidence", "") or "").strip()
@@ -763,6 +766,8 @@ def _format_episode_report_lines(items: Sequence[Dict[str, Any]]) -> List[str]:
             continue
         prefix = f"{condition_id}/" if condition_id else ""
         lines.append(f"- {prefix}task_{task_id} | {category} | 脚手架缺陷:{scaffolding_issue}")
+        if task_intent:
+            lines.append(f"  目标: {task_intent}")
         lines.append(f"  诊断: {root}")
         if evidence:
             lines.append(f"  证据: {evidence}")

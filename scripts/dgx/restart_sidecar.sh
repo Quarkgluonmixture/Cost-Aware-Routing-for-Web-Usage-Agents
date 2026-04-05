@@ -76,8 +76,10 @@ for pid in "${sidecar_pids[@]}"; do
   done
 
   if [[ -n "${state_file}" ]]; then
-    # e.g. logs/live_reason_watch_classifieds_RUN_ID.state.json -> .log
-    log_file="${REPO_DIR}/$(echo "${state_file}" | sed 's/\.state\.json$/.log/')"
+    # state_file may be absolute or relative; normalize then swap extension.
+    _sf_abs="$(cd "$(dirname "${state_file}")" 2>/dev/null && pwd)/$(basename "${state_file}")" 2>/dev/null \
+      || _sf_abs="${REPO_DIR}/${state_file}"
+    log_file="${_sf_abs%.state.json}.log"
   else
     run_id="$(basename "${run_dir:-unknown}")"
     log_file="${REPO_DIR}/logs/live_reason_watch_${run_id}.log"
