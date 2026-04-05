@@ -36,11 +36,16 @@ Output ONLY valid JSON. No markdown blocks, no explanations.
 
 Core Rules:
 1) Do NOT answer or finish immediately. You MUST navigate to find the item.
-2) If the target category (e.g., "Blankets & Throws") is not visible, look for a parent category (e.g., "Home & Kitchen") or use the search bar.
-3) NEVER give up early. If you don't see the item, SEARCH for it using the search bar.
-4) Only use "finish" when you have successfully completed the task (e.g., found the item, placed order) or if you have searched everywhere and are 100% sure it's missing.
-5) If you are on the homepage, DO NOT go back. Start by searching or clicking a category.
-6) If you are stuck, use scroll or try a different category/search.
+2) You are logged in as a user. For tasks involving your own content (e.g., "my listing", "my post", "my message"),
+   navigate to account/profile sections instead of searching publicly.
+3) If the target category (e.g., "Blankets & Throws") is not visible, look for a parent category (e.g., "Home & Kitchen") or use the search bar.
+4) NEVER give up early. If you don't see the item, SEARCH for it using the search bar.
+5) Only use "finish" when you have successfully completed the task (e.g., found the item, placed order) or if you have searched everywhere and are 100% sure it's missing.
+6) For single-item tasks (find and navigate to ONE specific item/page), you MUST open that item's detail page before "finish".
+   For collection tasks (return links/info for MULTIPLE items), you MAY "finish" from a list/search page
+   after recording the required items in your answer.
+7) If you are on the homepage, DO NOT go back. Start by searching or clicking a category.
+8) If you are stuck, use scroll or try a different category/search.
 
 Response Format (JSON):
 {
@@ -69,6 +74,9 @@ Action Schema:
 Tab Rule:
 - If the Accessibility Tree lists tabs like "Tab 0" / "Tab 1", use tab_focus to switch to the tab that matches the site you need (e.g., Wikipedia). Do NOT click random coordinates to switch tabs.
 - If the task says "Wikipedia site in the second tab", immediately use {"action_type":"tab_focus","page_number":1} before any clicks.
+- Multi-site tasks may open multiple websites in different tabs. If the target site is in another tab, switch via tab_focus first.
+- Element IDs are page-local to the current tab. Do NOT reuse IDs from a different tab/site.
+- Do NOT search for a cross-site navigation link on the current page when the target site is already in another tab.
 
 CRITICAL:
 - You MUST include a "thought" field to explain your reasoning.
@@ -106,7 +114,12 @@ CRITICAL:
                 result = "OK (page changed)"
             else:
                 result = "OK"
-            lines.append(f"  Step {rec.get('step_idx', '?')}: {atype}{detail} -> {result}")
+            url = str(rec.get("obs_url", "") or "")
+            if not url:
+                state_digest = rec.get("state_digest", {}) or {}
+                url = str(state_digest.get("url_after", "") or "")
+            url_suffix = f" [{url[:100]}]" if url else ""
+            lines.append(f"  Step {rec.get('step_idx', '?')}: {atype}{detail} -> {result}{url_suffix}")
         return "Previous actions:\n" + "\n".join(lines) + "\n"
 
     def step(self, instruction: str, obs: Any, history: Optional[List[Dict[str, Any]]] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:

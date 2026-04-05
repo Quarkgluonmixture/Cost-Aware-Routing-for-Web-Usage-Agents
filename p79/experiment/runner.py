@@ -449,12 +449,36 @@ class ExperimentRunner:
                 episode_summaries: List[Dict[str, Any]] = []
                 backend = self._get_backend(condition.backend_id)
 
+                # Markers for fatal environment errors that corrupt the Playwright/asyncio state.
+                # When caught, re-raise immediately so the process can exit cleanly and the
+                # queue watchdog can restart it with a fresh environment.
+                _FATAL_ENV_MARKERS = (
+                    "Sync API inside the asyncio",
+                    "asyncio loop",
+                    "Event loop is closed",
+                )
+
                 for task in self.tasks:
                     summary_file = condition_logger.summary_path(task.site, task.task_id)
                     if self.resume and summary_file.exists():
-                        with open(summary_file, "r", encoding="utf-8") as f:
-                            episode_summaries.append(json.load(f))
-                        continue
+                        try:
+                            with open(summary_file, "r", encoding="utf-8") as f:
+                                loaded = json.load(f)
+                            # Only treat as complete if the episode actually executed (steps > 0)
+                            # or finished cleanly with no error. Zero-step episodes with errors
+                            # indicate infrastructure failures (browser crash, asyncio loop) that
+                            # should be retried rather than permanently skipped.
+                            if int(loaded.get("steps", 0)) > 0 or not loaded.get("error"):
+                                episode_summaries.append(loaded)
+                                continue
+                            logger.info(
+                                "Retrying zero-step error episode site=%s task=%s: %s",
+                                task.site,
+                                task.task_id,
+                                str(loaded.get("error", ""))[:120],
+                            )
+                        except Exception:
+                            pass  # Corrupted summary — fall through to re-run
 
                     logger.info(
                         "Running condition=%s seed=%d backend=%s site=%s task=%s",
@@ -468,6 +492,16 @@ class ExperimentRunner:
                     try:
                         summary = self._run_episode(condition, task, backend, condition_logger, condition_dir)
                     except Exception as exc:
+                        exc_str = str(exc)
+                        if any(marker in exc_str for marker in _FATAL_ENV_MARKERS):
+                            logger.error(
+                                "Fatal environment error at site=%s task=%s — "
+                                "stopping run to allow clean restart: %s",
+                                task.site,
+                                task.task_id,
+                                exc,
+                            )
+                            raise
                         logger.warning(
                             "Episode failed at condition=%s seed=%d site=%s task=%s: %s",
                             effective_cid,
@@ -998,6 +1032,8 @@ class ExperimentRunner:
                     "title_after": state_after.get("title"),
                 },
             ).as_dict()
+            # Convenience field for history rendering/debug.
+            step_record["obs_url"] = state_after.get("url")
             # Optional parser/debug fields (non-required schema extras).
             step_record["parse_valid"] = parse_valid
             step_record["parse_failure_reason"] = (

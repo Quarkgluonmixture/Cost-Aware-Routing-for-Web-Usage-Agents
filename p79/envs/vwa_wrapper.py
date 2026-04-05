@@ -217,8 +217,12 @@ class VWAWrapper:
 
     def close(self) -> None:
         if self._env is not None:
-            self._env.close()
-            self._env = None
+            try:
+                self._env.close()
+            except Exception:
+                pass
+            finally:
+                self._env = None
 
     # ---------- helpers ----------
 

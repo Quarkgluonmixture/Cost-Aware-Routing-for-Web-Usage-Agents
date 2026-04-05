@@ -52,8 +52,20 @@ export P79_DISABLE_STALE_CLEANUP="${P79_DISABLE_STALE_CLEANUP:-1}"
 NTFY_TOPIC="${NTFY_TOPIC:-p79-exp-dgx-spark}"
 NTFY_URL="https://ntfy.sh/${NTFY_TOPIC}"
 NTFY_EPISODE_INTERVAL="${NTFY_EPISODE_INTERVAL:-20}"
+# 是否启用传统每N个任务进度提醒（建议由 live_reason_watch 替代）
+NTFY_PROGRESS_ENABLE="${NTFY_PROGRESS_ENABLE:-0}"
 # 是否在每个站点完成后自动生成失败/成功归因报告
 REASON_DIAG_ENABLE="${REASON_DIAG_ENABLE:-1}"
+# 是否启用实时增量归因 sidecar（每 N 个任务触发 analyze_reason_diagnostics + GLM总结）
+LIVE_REASON_WATCH_ENABLE="${LIVE_REASON_WATCH_ENABLE:-1}"
+LIVE_REASON_WATCH_INTERVAL="${LIVE_REASON_WATCH_INTERVAL:-5}"
+LIVE_REASON_WATCH_POLL_SECS="${LIVE_REASON_WATCH_POLL_SECS:-60}"
+LIVE_REASON_WATCH_REPORT_LANGUAGE="${LIVE_REASON_WATCH_REPORT_LANGUAGE:-zh}"
+LIVE_REASON_WATCH_SAMPLES_PER_BUCKET="${LIVE_REASON_WATCH_SAMPLES_PER_BUCKET:-5}"
+LIVE_REASON_WATCH_GLM_CONFIG="${LIVE_REASON_WATCH_GLM_CONFIG:-${REPO_DIR}/.auth/glm}"
+
+# 实时增量归因 sidecar pid（单站串行运行，单实例即可）
+LIVE_REASON_WATCH_PID=""
 
 # 加载 VWA 站点环境
 if [[ -f "${REPO_DIR}/scripts/vwa_env_remote.sh" ]]; then
@@ -110,6 +122,66 @@ run_reason_diagnostics() {
     log "[${label}] WARNING: reason diagnostics failed (non-blocking)."
     ntfy_send "P79 [${label}] 归因报告失败" "run_id=${run_id}；请检查 logs/queue_b1_serial_reason_diag.log" "default"
   fi
+}
+
+start_live_reason_watch() {
+  local run_id="$1"
+  local label="$2"
+  LIVE_REASON_WATCH_PID=""
+
+  if [[ "${LIVE_REASON_WATCH_ENABLE}" != "1" ]]; then
+    log "[${label}] live reason watch disabled (LIVE_REASON_WATCH_ENABLE=${LIVE_REASON_WATCH_ENABLE})."
+    return 0
+  fi
+
+  local run_dir="${RESULTS_BASE}/${run_id}"
+  local watch_script="${REPO_DIR}/scripts/reason_diag_live_sidecar.py"
+  if [[ ! -f "${watch_script}" ]]; then
+    log "[${label}] live reason watch skipped: script not found (${watch_script})"
+    return 0
+  fi
+  mkdir -p "${run_dir}" "${REPO_DIR}/logs"
+
+  local watch_log="${REPO_DIR}/logs/live_reason_watch_${label}_${run_id}.log"
+  local watch_state="${REPO_DIR}/logs/live_reason_watch_${label}_${run_id}.state.json"
+
+  log "[${label}] starting live reason watch (interval=${LIVE_REASON_WATCH_INTERVAL}, poll=${LIVE_REASON_WATCH_POLL_SECS}s)"
+
+  setsid nohup "${PYTHON_BIN}" -u "${watch_script}" \
+    --run-dir "${run_dir}" \
+    --poll-secs "${LIVE_REASON_WATCH_POLL_SECS}" \
+    --interval-episodes "${LIVE_REASON_WATCH_INTERVAL}" \
+    --report-language "${LIVE_REASON_WATCH_REPORT_LANGUAGE}" \
+    --samples-per-bucket "${LIVE_REASON_WATCH_SAMPLES_PER_BUCKET}" \
+    --glm-config "${LIVE_REASON_WATCH_GLM_CONFIG}" \
+    --ntfy-topic "${NTFY_TOPIC}" \
+    --state-file "${watch_state}" \
+    > "${watch_log}" 2>&1 < /dev/null &
+  local pid=$!
+  sleep 1
+  if kill -0 "${pid}" 2>/dev/null; then
+    LIVE_REASON_WATCH_PID="${pid}"
+    log "[${label}] live reason watch started: pid=${pid} log=${watch_log}"
+  else
+    log "[${label}] WARNING: live reason watch failed to stay alive. log=${watch_log}"
+    tail -n 40 "${watch_log}" || true
+  fi
+}
+
+stop_live_reason_watch() {
+  local label="$1"
+  local pid="${LIVE_REASON_WATCH_PID:-}"
+  if [[ -z "${pid}" ]]; then
+    return 0
+  fi
+  if kill -0 "${pid}" 2>/dev/null; then
+    log "[${label}] stopping live reason watch pid=${pid}..."
+    kill "${pid}" 2>/dev/null || true
+    sleep 2
+    kill -9 "${pid}" 2>/dev/null || true
+  fi
+  wait "${pid}" 2>/dev/null || true
+  LIVE_REASON_WATCH_PID=""
 }
 
 progress_hint() {
@@ -222,13 +294,16 @@ run_site_foreground() {
   ln -sfn "$(basename "${log_path}")" "${REPO_DIR}/logs/latest_${site}.log"
   log "[${label}] Site log: ${log_path}"
 
-  # 后台启动，直接写 site log（避免 pipeline 使 PID 不明确）
-  "${PYTHON_BIN}" scripts/run_experiment.py \
+  mkdir -p "${RESULTS_BASE}/${run_id}"
+  start_live_reason_watch "${run_id}" "${label}"
+
+  # 后台启动，统一使用 setsid+nohup 并直接写 site log（避免 pipeline 使 PID 不明确）
+  setsid nohup "${PYTHON_BIN}" scripts/run_experiment.py \
     --config "${tmp_config}" \
     --max_steps 30 \
     --run_id "${run_id}" \
     --log_path "${log_path}" \
-    >> "${log_path}" 2>&1 &
+    >> "${log_path}" 2>&1 < /dev/null &
   local job_pid=$!
   log "[${label}] PID=${job_pid} started."
 
@@ -259,7 +334,7 @@ run_site_foreground() {
       last_count="${current_count}"
       stale_secs=0
       next_log_secs=300
-      if (( current_count - last_notify_count >= NTFY_EPISODE_INTERVAL )); then
+      if [[ "${NTFY_PROGRESS_ENABLE}" == "1" ]] && (( current_count - last_notify_count >= NTFY_EPISODE_INTERVAL )); then
         local total_count progress_text
         total_count=$(expected_episode_total "${run_dir}")
         progress_text=$(format_site_progress "${current_count}" "${total_count}")
@@ -285,6 +360,7 @@ run_site_foreground() {
         kill -9 "${job_pid}" 2>/dev/null || true
         log "[${label}] WATCHDOG: Process killed."
         wait "${job_pid}" 2>/dev/null || true
+        stop_live_reason_watch "${label}"
         return 1
       fi
     fi
@@ -292,6 +368,7 @@ run_site_foreground() {
 
   wait "${job_pid}" 2>/dev/null || true
   local rc=$?
+  stop_live_reason_watch "${label}"
   log "=== [${label}] Process exited rc=${rc} ==="
   return ${rc}
 }
@@ -345,6 +422,8 @@ log "Completion: condition_summary_v2.json OR episodes>=task_configs"
 log "Watchdog: kill after ${WATCHDOG_TIMEOUT_MINS}min no new episode"
 log "MAX_RESUME_ATTEMPTS=${MAX_RESUME_ATTEMPTS}"
 log "ntfy topic: ${NTFY_TOPIC} (interval: ${NTFY_EPISODE_INTERVAL} episodes)"
+log "ntfy progress: enable=${NTFY_PROGRESS_ENABLE}"
+log "live_reason_watch: enable=${LIVE_REASON_WATCH_ENABLE}, interval=${LIVE_REASON_WATCH_INTERVAL}, poll=${LIVE_REASON_WATCH_POLL_SECS}s"
 log "========================================================"
 ntfy_send "P79 队列启动" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；顺序: classifieds → reddit → shopping" "default"
 

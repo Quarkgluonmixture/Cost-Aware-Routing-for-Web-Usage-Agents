@@ -25,6 +25,22 @@ NO_RESULT_PATTERNS = (
     "not present",
 )
 
+PRICE_RANGE_PATTERNS = (
+    re.compile(
+        r"(?:between|within|from)\s*\$?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)\s*(?:to|and|-|–)\s*\$?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\$\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)\s*(?:to|-|–)\s*\$?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)",
+        re.IGNORECASE,
+    ),
+)
+
+ANSWER_AMOUNT_PATTERNS = (
+    re.compile(r"\$\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)"),
+    re.compile(r"([0-9][0-9,]*(?:\.[0-9]{1,2})?)\s*\$"),
+)
+
 UNCERTAIN_PATTERNS = (
     "could be",
     "however",
@@ -35,6 +51,39 @@ UNCERTAIN_PATTERNS = (
 )
 
 SIM_REPEAT_THRESHOLD = 0.90
+
+COLLECTION_PATTERNS = (
+    re.compile(r"\b(return|provide)\s+the\s+links?\b", re.IGNORECASE),
+    re.compile(r"\b(find|list)\s+all\b", re.IGNORECASE),
+    re.compile(r"\b(top\s*\d+|three|two)\s+(most\s+recent|items?|listings?)\b", re.IGNORECASE),
+    re.compile(r"\b(mileage|size|price|date).*(for|of)\s+(each|all)\b", re.IGNORECASE),
+)
+
+ACTION_PATTERNS = (
+    re.compile(r"\b(add|post|write)\s+(a\s+)?(comment|message)\b", re.IGNORECASE),
+    re.compile(r"\bsend\s+(a\s+)?message\b", re.IGNORECASE),
+    re.compile(r"\bdelete\b", re.IGNORECASE),
+    re.compile(r"\bedit\b", re.IGNORECASE),
+)
+
+PAGE_READING_PATTERNS = (
+    re.compile(r"\bon this page\b", re.IGNORECASE),
+    re.compile(r"\bthis item\b", re.IGNORECASE),
+    re.compile(r"\bthis listing\b", re.IGNORECASE),
+    re.compile(r"\bthis exact item\b", re.IGNORECASE),
+)
+
+GRID_POSITION_PATTERNS = (
+    re.compile(r"\bin\s+the\s+(first|second|third|fourth|[0-9]+(?:st|nd|rd|th)?)\s+row\b", re.IGNORECASE),
+    re.compile(r"\b(first|second|third|fourth|[0-9]+(?:st|nd|rd|th)?)\s+(car|item|listing|bike|phone|painting)\s+in\s+the\s+(first|second|third|[0-9]+(?:st|nd|rd|th)?)\s+row\b", re.IGNORECASE),
+    re.compile(r"\b(first|second|third|fourth|[0-9]+(?:st|nd|rd|th)?)\s+row\b", re.IGNORECASE),
+)
+
+DATE_COUNT_PATTERNS = (
+    re.compile(r"\bhow\s+many\b.{0,60}\bposted\s+on\b", re.IGNORECASE),
+    re.compile(r"\bposted\s+on\s+\d", re.IGNORECASE),
+    re.compile(r"\bposted\s+on\s+\w+\s+\d{1,2}", re.IGNORECASE),
+)
 
 LANG_TEXT: Dict[str, Dict[str, str]] = {
     "zh": {
@@ -56,8 +105,14 @@ LANG_TEXT: Dict[str, Dict[str, str]] = {
         "high_similarity_patterns": "高相似 thought 模式（按 bucket）",
         "sample_thoughts": "{bucket} — 样本 thought（末 3 步）",
         "sample_header": "task_{task_id} | steps={steps} | eval={eval_type} | final_action={final_action_type}",
-        "sample_context": "final_url={final_url} | reference_url={reference_url} | early_finish={early_finish} | hit_max_steps={hit_max_steps}",
+        "sample_context": "final_url={final_url} | reference_url={reference_url} | early_finish={early_finish} | hit_max_steps={hit_max_steps} | task_type={task_type} | loop={loop_pattern} | click_back_pairs={click_back_pairs} | max_search_repeat={max_search_query_repeat}",
+        "sample_task_intent": "task_intent={task_intent}",
+        "sample_final_answer": "final_answer={final_answer}",
+        "sample_step0_thought": "step0(plan): {thought}",
+        "sample_visited_reference": "ever_visited_reference_url={ever_visited_reference_url}",
+        "sample_price_range_match": "answer_in_intent_price_range={answer_in_intent_price_range}",
         "step_thought": "step{step_idx}: {thought}",
+        "similarity_skipped": "已跳过 thought 全对全相似度计算（--skip-similarity）",
         "cross_condition": "跨 condition bucket 对照",
         "condition_overview": "condition 总览",
         "episodes": "episodes",
@@ -85,8 +140,14 @@ LANG_TEXT: Dict[str, Dict[str, str]] = {
         "high_similarity_patterns": "High-similarity thought patterns by bucket",
         "sample_thoughts": "{bucket} — Sample thoughts (final 3 steps)",
         "sample_header": "task_{task_id} | steps={steps} | eval={eval_type} | final_action={final_action_type}",
-        "sample_context": "final_url={final_url} | reference_url={reference_url} | early_finish={early_finish} | hit_max_steps={hit_max_steps}",
+        "sample_context": "final_url={final_url} | reference_url={reference_url} | early_finish={early_finish} | hit_max_steps={hit_max_steps} | task_type={task_type} | loop={loop_pattern} | click_back_pairs={click_back_pairs} | max_search_repeat={max_search_query_repeat}",
+        "sample_task_intent": "task_intent={task_intent}",
+        "sample_final_answer": "final_answer={final_answer}",
+        "sample_step0_thought": "step0(plan): {thought}",
+        "sample_visited_reference": "ever_visited_reference_url={ever_visited_reference_url}",
+        "sample_price_range_match": "answer_in_intent_price_range={answer_in_intent_price_range}",
         "step_thought": "step{step_idx}: {thought}",
+        "similarity_skipped": "Skipped all-pairs thought similarity (--skip-similarity).",
         "cross_condition": "Cross-condition bucket comparison",
         "condition_overview": "Condition overview",
         "episodes": "episodes",
@@ -162,6 +223,190 @@ def _normalize_url_candidates(ref_url: Any) -> List[str]:
     if "|OR|" in ref_url:
         return [x.strip() for x in ref_url.split("|OR|") if x.strip()]
     return [ref_url.strip()] if ref_url.strip() else []
+
+
+def _extract_item_ids_from_urls(urls: List[str]) -> List[str]:
+    out: List[str] = []
+    seen = set()
+    for u in urls:
+        m = re.search(r"[?&]id=(\d+)", str(u or ""))
+        if not m:
+            continue
+        iid = m.group(1)
+        if iid in seen:
+            continue
+        seen.add(iid)
+        out.append(iid)
+    return out
+
+
+def _step_obs_url(step: Dict[str, Any]) -> str:
+    url = str(step.get("obs_url", "") or "").strip()
+    if url:
+        return url
+    digest = step.get("state_digest") or {}
+    after = str(digest.get("url_after", "") or "").strip()
+    if after:
+        return after
+    before = str(digest.get("url_before", "") or "").strip()
+    return before
+
+
+def _resolve_artifact_path(path_text: str, run_dir: Path) -> Optional[Path]:
+    raw = str(path_text or "").strip()
+    if not raw:
+        return None
+    p = Path(raw)
+    if p.exists():
+        return p
+    if p.is_absolute():
+        return p if p.exists() else None
+    cwd_p = (Path.cwd() / p).resolve()
+    if cwd_p.exists():
+        return cwd_p
+    try:
+        repo_root = run_dir.parents[3]
+        repo_p = (repo_root / p).resolve()
+        if repo_p.exists():
+            return repo_p
+    except Exception:
+        pass
+    return None
+
+
+def _url_to_page_type(url: str) -> str:
+    u = str(url or "").lower()
+    if not u:
+        return "unknown"
+    # Classifieds
+    if "page=item" in u:
+        return "detail"
+    if "page=search" in u:
+        return "search"
+    if "page=user" in u or "my+account" in u:
+        return "account"
+    # Shopping (Magento-style)
+    if "/customer/account" in u or "/account/login" in u:
+        return "account"
+    if "/catalogsearch/" in u:
+        return "search"
+    if "/catalog/product" in u or "/product/" in u:
+        return "detail"
+    # Reddit
+    if "/login" in u or "/register" in u:
+        return "account"
+    if "/r/" in u and "/comments/" in u:
+        return "detail"
+    if "/r/" in u and "/search" in u:
+        return "search"
+    # Wikipedia
+    if "/wiki/" in u:
+        return "detail"
+    return "other"
+
+
+def _to_number(num_text: str) -> Optional[float]:
+    try:
+        return float(str(num_text).replace(",", "").strip())
+    except Exception:
+        return None
+
+
+def _extract_intent_price_ranges(intent: str) -> List[Tuple[float, float]]:
+    ranges: List[Tuple[float, float]] = []
+    text = str(intent or "")
+    for pat in PRICE_RANGE_PATTERNS:
+        for m in pat.finditer(text):
+            lo = _to_number(m.group(1))
+            hi = _to_number(m.group(2))
+            if lo is None or hi is None:
+                continue
+            if lo > hi:
+                lo, hi = hi, lo
+            ranges.append((lo, hi))
+    # Deduplicate while preserving order.
+    seen = set()
+    deduped: List[Tuple[float, float]] = []
+    for lo, hi in ranges:
+        key = (round(lo, 4), round(hi, 4))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append((lo, hi))
+    return deduped
+
+
+def _extract_answer_amounts(answer: str) -> List[float]:
+    amounts: List[float] = []
+    text = str(answer or "")
+    for pat in ANSWER_AMOUNT_PATTERNS:
+        for m in pat.finditer(text):
+            val = _to_number(m.group(1))
+            if val is not None:
+                amounts.append(val)
+    # Deduplicate with stable order.
+    seen = set()
+    uniq: List[float] = []
+    for x in amounts:
+        k = round(x, 4)
+        if k in seen:
+            continue
+        seen.add(k)
+        uniq.append(x)
+    return uniq
+
+
+def _answer_in_intent_price_range(answer: str, intent: str) -> Optional[bool]:
+    ranges = _extract_intent_price_ranges(intent)
+    if not ranges:
+        return None
+    amounts = _extract_answer_amounts(answer)
+    if not amounts:
+        return False
+    for a in amounts:
+        for lo, hi in ranges:
+            if lo <= a <= hi:
+                return True
+    return False
+
+
+def _ever_visited_reference_url(steps: List[Dict[str, Any]], ref_urls: List[str]) -> Optional[bool]:
+    if not ref_urls:
+        return None
+    refs = {x.strip() for x in ref_urls if x and x.strip()}
+    if not refs:
+        return None
+    for s in steps:
+        digest = s.get("state_digest") or {}
+        url_before = str(digest.get("url_before", "") or "")
+        url_after = str(digest.get("url_after", "") or "")
+        obs_url = _step_obs_url(s)
+        if url_before in refs or url_after in refs or obs_url in refs:
+            return True
+    return False
+
+
+def _target_item_ever_visible(steps: List[Dict[str, Any]], ref_urls: List[str], run_dir: Path) -> Optional[bool]:
+    item_ids = _extract_item_ids_from_urls(ref_urls)
+    if not item_ids:
+        return None
+    dom_found_any = False
+    for s in steps:
+        dom_path_raw = str(((s.get("artifact_paths") or {}).get("dom")) or "").strip()
+        dom_path = _resolve_artifact_path(dom_path_raw, run_dir)
+        if not dom_path or not dom_path.exists():
+            continue
+        dom_found_any = True
+        try:
+            text = dom_path.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            continue
+        if any(iid in text for iid in item_ids):
+            return True
+    # If no DOM artifacts exist (e.g. vision-only mode), we cannot determine visibility.
+    if not dom_found_any:
+        return None
+    return False
 
 
 def _normalize_thought(text: str) -> str:
@@ -277,7 +522,11 @@ def _thought_snapshots(steps: List[Dict[str, Any]]) -> Tuple[str, str, str, str,
     return thought_at_0, thought_at_5, thought_at_10, final_thought, trajectory, non_empty_norm
 
 
-def _thought_similarity_features(non_empty_norm: List[Tuple[int, str, str]]) -> Dict[str, Any]:
+def _thought_similarity_features(
+    non_empty_norm: List[Tuple[int, str, str]],
+    *,
+    skip_pairwise: bool = False,
+) -> Dict[str, Any]:
     thought_count = len(non_empty_norm)
     unique_count = len({x[1] for x in non_empty_norm})
     thought_diversity = _safe_ratio(unique_count, thought_count)
@@ -291,17 +540,18 @@ def _thought_similarity_features(non_empty_norm: List[Tuple[int, str, str]]) -> 
 
     pair_values: List[float] = []
     high_template_counter: Counter = Counter()
-    for i in range(len(non_empty_norm)):
-        for j in range(i + 1, len(non_empty_norm)):
-            sim = _sequence_similarity(non_empty_norm[i][1], non_empty_norm[j][1])
-            pair_values.append(sim)
-            if sim >= SIM_REPEAT_THRESHOLD:
-                sig_i = _first_words(non_empty_norm[i][1], 12)
-                sig_j = _first_words(non_empty_norm[j][1], 12)
-                if sig_i:
-                    high_template_counter[sig_i] += 1
-                if sig_j:
-                    high_template_counter[sig_j] += 1
+    if not skip_pairwise:
+        for i in range(len(non_empty_norm)):
+            for j in range(i + 1, len(non_empty_norm)):
+                sim = _sequence_similarity(non_empty_norm[i][1], non_empty_norm[j][1])
+                pair_values.append(sim)
+                if sim >= SIM_REPEAT_THRESHOLD:
+                    sig_i = _first_words(non_empty_norm[i][1], 12)
+                    sig_j = _first_words(non_empty_norm[j][1], 12)
+                    if sig_i:
+                        high_template_counter[sig_i] += 1
+                    if sig_j:
+                        high_template_counter[sig_j] += 1
 
     return {
         "thought_count": thought_count,
@@ -332,6 +582,239 @@ def _collect_final_thoughts(steps: List[Dict[str, Any]], k: int = 3) -> List[Dic
     return out
 
 
+def _collect_select_events(steps: List[Dict[str, Any]], max_events: int = 24) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for s in steps:
+        action = s.get("action") or {}
+        action_type = str(action.get("action_type", "") or s.get("action_type", "")).lower()
+        if action_type != "select":
+            continue
+        digest = s.get("state_digest") or {}
+        option = (
+            str(action.get("option", "") or "").strip()
+            or str(action.get("value", "") or "").strip()
+            or str(action.get("label", "") or "").strip()
+            or str(action.get("text", "") or "").strip()
+        )
+        out.append(
+            {
+                "step_idx": int(s.get("step_idx", -1)),
+                "element_id": str(action.get("element_id", "") or "").strip(),
+                "option": option,
+                "page_changed": bool(s.get("page_changed", False)),
+                "action_success": bool(s.get("action_success", False)),
+                "obs_url": str(s.get("obs_url", "") or digest.get("url_after", "") or "").strip(),
+            }
+        )
+    if len(out) <= max_events:
+        return out
+    return out[-max_events:]
+
+
+def _classify_task_type(intent: str) -> str:
+    text = str(intent or "")
+    for pat in GRID_POSITION_PATTERNS:
+        if pat.search(text):
+            return "grid_position"
+    for pat in DATE_COUNT_PATTERNS:
+        if pat.search(text):
+            return "date_count"
+    for pat in PAGE_READING_PATTERNS:
+        if pat.search(text):
+            return "page_reading"
+    for pat in COLLECTION_PATTERNS:
+        if pat.search(text):
+            return "collection"
+    for pat in ACTION_PATTERNS:
+        if pat.search(text):
+            return "action_on_item"
+    return "single_navigation"
+
+
+def _collection_overlap_score(final_answer: str, ref_answers: Any) -> Optional[float]:
+    """For must_include reference_answers with multiple URLs, compute fraction found in final_answer."""
+    if not ref_answers or not isinstance(ref_answers, dict):
+        return None
+    must_include = ref_answers.get("must_include")
+    if not must_include or not isinstance(must_include, list) or len(must_include) < 2:
+        return None
+    answer_lower = final_answer.lower()
+    found = sum(1 for item in must_include if str(item).lower() in answer_lower)
+    return round(found / len(must_include), 3)
+
+
+def _classify_stuck_subtype(
+    *,
+    reason_bucket: str,
+    task_type: str,
+    target_item_ever_visible: Optional[bool],
+    loop_pattern: str,
+    max_search_query_repeat: int,
+    page_type_sequence: str,
+    click_back_pairs: int,
+    action_type_sequence: str = "",
+) -> str:
+    """Sub-classify fail_incomplete_or_stuck / fail_no_progress into meaningful subtypes."""
+    if reason_bucket not in ("fail_incomplete_or_stuck", "fail_no_progress"):
+        return ""
+    # account/login loop: page type sequence has repeated auth pages (checked first — strongest signal)
+    if "login" in page_type_sequence.lower() or "account" in page_type_sequence.lower():
+        return "account_loop"
+    if target_item_ever_visible is False:
+        return "target_unreachable"
+    if task_type == "page_reading":
+        return "page_reading_mismatch"
+    # Scroll-only stall: actions are dominated by scroll with no click/type
+    _seq = str(action_type_sequence or "").lower()
+    _scroll_dominant = "scroll" in _seq and "click" not in _seq and "type" not in _seq
+    if _scroll_dominant:
+        return "scroll_static"
+    if int(max_search_query_repeat) >= 2:
+        return "search_no_result"
+    if int(click_back_pairs) >= 2:
+        return "nav_loop"
+    if target_item_ever_visible is True:
+        return "target_visible_not_entered"
+    return "unknown"
+
+
+# Location names that appear as constraints in task intents (classifieds/shopping tasks)
+_LOCATION_NAME_RE = re.compile(
+    r"\b(delaware|ohio|california|new york|virginia|maryland|texas|florida|"
+    r"pennsylvania|illinois|washington|oregon|michigan|georgia|colorado|"
+    r"arizona|nevada|utah|connecticut|massachusetts|new jersey|hawaii|alaska)\b",
+    re.IGNORECASE,
+)
+_VISUAL_MATCH_KWDS = (
+    # Explicit image-comparison tasks (input image provided)
+    "in the image", "same as", "same item", "same brand", "same product",
+    "similar items", "of the image", "shown in", "like the product",
+    # Visual-attribute tasks: attribute must be read from listing photo
+    "on the cover", "cover image", "selfie", "taken as a selfie",
+    "hard-case", "hard case", "color of", "colour of",
+    "purple", "red", "blue", "green", "yellow", "orange", "pink", "white", "black",
+    "pattern", "stripe", "floral", "checkered",
+)
+
+# Buckets where visual-DOM unreachability causes a loop rather than direct timeout
+_LOOP_BUCKETS = frozenset((
+    "fail_max_steps_target_unreachable",
+    "fail_max_steps_click_back_loop",
+    "fail_max_steps_search_repeat",
+    "fail_incomplete_or_stuck",
+    "fail_no_progress",
+))
+
+
+def _classify_unreachable_subtype(
+    *,
+    reason_bucket: str,
+    task_intent: str,
+    observation_mode: str,
+    search_queries: List[Dict[str, Any]],
+) -> str:
+    """Sub-classify target-unreachable structural defects.
+
+    Covers both direct timeout (fail_max_steps_target_unreachable) and loop
+    buckets where the underlying cause is a visual attribute invisible to DOM.
+    """
+    if reason_bucket not in _LOOP_BUCKETS:
+        return ""
+    intent_lower = str(task_intent or "").lower()
+    obs = str(observation_mode or "").lower()
+
+    # Visual-attribute unreachability in DOM mode (covers both image-comparison
+    # tasks and tasks whose intent describes a visual attribute of the listing photo)
+    has_visual = any(k in intent_lower for k in _VISUAL_MATCH_KWDS)
+    if has_visual and obs == "dom":
+        return "visual_dom_only"
+
+    # Location constraint only applies to the direct-timeout bucket; for loop
+    # buckets the primary cause is already the loop pattern, not location.
+    if reason_bucket == "fail_max_steps_target_unreachable":
+        has_location = bool(_LOCATION_NAME_RE.search(intent_lower))
+        if has_location:
+            loc_as_keyword = any(
+                _LOCATION_NAME_RE.search(str(q.get("query", "")).lower())
+                for q in (search_queries or [])
+            )
+            return "location_filter_keyword" if loc_as_keyword else "location_filter"
+
+    return ""
+
+
+def _normalize_query(text: str) -> str:
+    return re.sub(r"\s+", " ", str(text or "").replace("\n", " ").strip().lower())
+
+
+def _extract_search_queries(steps: List[Dict[str, Any]], max_queries: int = 40) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for s in steps:
+        act = s.get("action") or {}
+        action_type = str(act.get("action_type", "") or s.get("action_type", "")).lower()
+        if action_type != "type":
+            continue
+        raw_text = str(act.get("text", "") or "").strip()
+        q = _normalize_query(raw_text)
+        if len(q) <= 2:
+            continue
+        out.append(
+            {
+                "step_idx": int(s.get("step_idx", -1)),
+                "query": q[:160],
+                "element_id": str(act.get("element_id", "") or "").strip(),
+                "page_changed": bool(s.get("page_changed", False)),
+                "obs_url": _step_obs_url(s),
+            }
+        )
+    if len(out) <= max_queries:
+        return out
+    return out[-max_queries:]
+
+
+def _detect_loops(steps: List[Dict[str, Any]]) -> Dict[str, Any]:
+    action_types: List[str] = []
+    for s in steps:
+        act = s.get("action") or {}
+        action_types.append(str(act.get("action_type", "") or s.get("action_type", "")).lower())
+    click_back_pairs = sum(
+        1
+        for i in range(len(action_types) - 1)
+        if action_types[i] == "click" and action_types[i + 1] == "back"
+    )
+
+    search_queries = _extract_search_queries(steps)
+    query_counter: Counter = Counter(q["query"] for q in search_queries if str(q.get("query", "")).strip())
+    max_repeat = max(query_counter.values()) if query_counter else 0
+    most_repeated = query_counter.most_common(1)[0][0] if query_counter else ""
+    unique_search_queries = len(query_counter)
+
+    if click_back_pairs >= 3:
+        loop_pattern = "click_back_loop"
+    elif max_repeat >= 3:
+        loop_pattern = "search_repeat_loop"
+    else:
+        loop_pattern = "none"
+
+    return {
+        "click_back_pairs": int(click_back_pairs),
+        "max_search_query_repeat": int(max_repeat),
+        "most_repeated_search_query": most_repeated[:80],
+        "unique_search_queries": int(unique_search_queries),
+        "loop_pattern": loop_pattern,
+        "search_queries": search_queries,
+    }
+
+
+def _page_type_sequence(steps: List[Dict[str, Any]], max_items: int = 40) -> str:
+    seq: List[str] = []
+    for s in steps:
+        seq.append(_url_to_page_type(_step_obs_url(s)))
+    if len(seq) > max_items:
+        seq = seq[-max_items:]
+    return "|".join(seq)
+
+
 def _classify_reason(
     *,
     success: bool,
@@ -342,7 +825,12 @@ def _classify_reason(
     eval_type: str,
     early_finish: bool,
     hit_max_steps: bool,
+    click_back_pairs: int,
+    max_search_query_repeat: int,
+    target_item_ever_visible: Optional[bool],
     final_url_match: Optional[bool],
+    ever_visited_reference_url: Optional[bool],
+    final_answer_in_intent_price_range: Optional[bool],
 ) -> str:
     if success:
         return "success"
@@ -365,10 +853,20 @@ def _classify_reason(
         if _contains_any(final_answer, NO_RESULT_PATTERNS):
             return "fail_finish_claim_missing"
         if "url_match" in eval_type and final_url_match is False:
-            return "fail_finish_wrong_url"
+            if ever_visited_reference_url:
+                return "fail_finish_wrong_url_left_target"
+            if final_answer_in_intent_price_range is False:
+                return "fail_finish_wrong_url_price_mismatch"
+            return "fail_finish_wrong_url_not_found"
         return "fail_finish_eval_mismatch"
 
     if hit_max_steps:
+        if "url_match" in eval_type and target_item_ever_visible is False:
+            return "fail_max_steps_target_unreachable"
+        if int(click_back_pairs) >= 3:
+            return "fail_max_steps_click_back_loop"
+        if int(max_search_query_repeat) >= 3:
+            return "fail_max_steps_search_repeat"
         return "fail_max_steps"
 
     if final_error_category == "no_progress":
@@ -421,12 +919,29 @@ def _write_bucket_thought_samples(
             lines.append(
                 f"[task_{row['task_id']}, steps:{row['steps']}, eval:{row.get('eval_type','')}, final_action:{row.get('final_action_type','')}] final thoughts:"
             )
+            lines.append(f"  task_intent: {str(row.get('task_intent', '') or '').strip()}")
+            lines.append(
+                f"  ever_visited_reference_url: {row.get('ever_visited_reference_url', None)}"
+            )
+            if row.get("answer_in_intent_price_range", None) is not None:
+                lines.append(
+                    f"  answer_in_intent_price_range: {row.get('answer_in_intent_price_range')}"
+                )
+            if _is_finish(str(row.get("final_action_type", "") or "")):
+                lines.append(f"  final_answer: {str(row.get('final_answer_excerpt', '') or '').strip()}")
+            step0_thought = str(row.get("thought_at_step_0", "") or "").strip()
+            if step0_thought:
+                lines.append(f"  step0(plan): {step0_thought}")
             for item in row.get("final_three_thoughts", []):
                 step_idx = item.get("step_idx", -1)
                 thought = str(item.get("thought", "") or "").strip()
                 lines.append(f"  step{step_idx}: {thought}")
             lines.append(
-                f"  context: final_url={row.get('final_url','')} | reference_url={row.get('reference_url','')} | early_finish={row.get('early_finish', False)} | hit_max_steps={row.get('hit_max_steps', False)}"
+                "  context: "
+                f"final_url={row.get('final_url','')} | reference_url={row.get('reference_url','')} | "
+                f"early_finish={row.get('early_finish', False)} | hit_max_steps={row.get('hit_max_steps', False)} | "
+                f"task_type={row.get('task_type','')} | loop_pattern={row.get('loop_pattern','')} | "
+                f"click_back_pairs={row.get('click_back_pairs', 0)} | max_search_query_repeat={row.get('max_search_query_repeat', 0)}"
             )
             lines.append("")
         lines.append("")
@@ -448,6 +963,7 @@ def _build_report(
     bucket_similarity_rows: List[Dict[str, Any]],
     bucket_template_rows: List[Dict[str, Any]],
     samples_per_bucket: int,
+    skip_similarity: bool,
 ) -> None:
     now = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
     lines: List[str] = []
@@ -505,7 +1021,11 @@ def _build_report(
 
         # similarity summary by bucket
         sim_rows = sorted(sim_by_condition.get(cid, []), key=lambda x: str(x.get("reason_bucket", "")))
-        if sim_rows:
+        if skip_similarity:
+            lines.append(f"### {_t(lang, 'thought_similarity_summary')}")
+            lines.append(f"- {_t(lang, 'similarity_skipped')}")
+            lines.append("")
+        elif sim_rows:
             lines.append(f"### {_t(lang, 'thought_similarity_summary')}")
             lines.append(
                 _render_markdown_table(
@@ -526,19 +1046,23 @@ def _build_report(
 
         # high similarity patterns
         lines.append(f"### {_t(lang, 'high_similarity_patterns')}")
-        has_tpl = False
-        for r in cond_bucket_rows:
-            bucket = str(r["reason_bucket"])
-            tpl_rows = tpl_by_condition_bucket.get((cid, bucket), [])[:5]
-            if not tpl_rows:
-                continue
-            has_tpl = True
-            lines.append(f"- `{bucket}`")
-            for t in tpl_rows:
-                lines.append(f"  - `{t['template_signature']}` ({t['count']})")
-        if not has_tpl:
-            lines.append(f"- {_t(lang, 'none')}")
-        lines.append("")
+        if skip_similarity:
+            lines.append(f"- {_t(lang, 'similarity_skipped')}")
+            lines.append("")
+        else:
+            has_tpl = False
+            for r in cond_bucket_rows:
+                bucket = str(r["reason_bucket"])
+                tpl_rows = tpl_by_condition_bucket.get((cid, bucket), [])[:5]
+                if not tpl_rows:
+                    continue
+                has_tpl = True
+                lines.append(f"- `{bucket}`")
+                for t in tpl_rows:
+                    lines.append(f"  - `{t['template_signature']}` ({t['count']})")
+            if not has_tpl:
+                lines.append(f"- {_t(lang, 'none')}")
+            lines.append("")
 
         # samples by failure bucket
         for r in cond_bucket_rows:
@@ -568,8 +1092,44 @@ def _build_report(
                         reference_url=item.get("reference_url", ""),
                         early_finish=item.get("early_finish", False),
                         hit_max_steps=item.get("hit_max_steps", False),
+                        task_type=item.get("task_type", ""),
+                        loop_pattern=item.get("loop_pattern", ""),
+                        click_back_pairs=item.get("click_back_pairs", 0),
+                        max_search_query_repeat=item.get("max_search_query_repeat", 0),
                     )
                 )
+                lines.append(
+                    "  - "
+                    + _t(lang, "sample_task_intent").format(
+                        task_intent=str(item.get("task_intent", "") or "").strip()
+                    )
+                )
+                if _is_finish(str(item.get("final_action_type", "") or "")):
+                    lines.append(
+                        "  - "
+                        + _t(lang, "sample_final_answer").format(
+                            final_answer=str(item.get("final_answer_excerpt", "") or "").strip()
+                        )
+                    )
+                lines.append(
+                    "  - "
+                    + _t(lang, "sample_visited_reference").format(
+                        ever_visited_reference_url=item.get("ever_visited_reference_url", None)
+                    )
+                )
+                if item.get("answer_in_intent_price_range", None) is not None:
+                    lines.append(
+                        "  - "
+                        + _t(lang, "sample_price_range_match").format(
+                            answer_in_intent_price_range=item.get("answer_in_intent_price_range", None)
+                        )
+                    )
+                step0_thought = str(item.get("thought_at_step_0", "") or "").strip()
+                if step0_thought:
+                    lines.append(
+                        "  - "
+                        + _t(lang, "sample_step0_thought").format(thought=step0_thought)
+                    )
                 for ft in item.get("final_three_thoughts", []):
                     lines.append(
                         "  - "
@@ -625,6 +1185,11 @@ def main() -> None:
         help="Language for failure_report.md",
     )
     parser.add_argument("--samples-per-bucket", type=int, default=5, help="Number of episode samples per reason bucket")
+    parser.add_argument(
+        "--skip-similarity",
+        action="store_true",
+        help="Skip O(N^2) all-pairs thought similarity calculations for faster runs",
+    )
     args = parser.parse_args()
 
     run_dir = Path(args.run_dir).expanduser().resolve()
@@ -693,17 +1258,24 @@ def main() -> None:
             parse_failure_reason = final_step.get("parse_failure_reason")
             fallback_finish = bool(final_step.get("fallback_finish", False))
 
-            eval_cfg = (_extract_task_meta(run_dir, site, task_id, task_cfg_cache).get("eval") or {})
+            task_meta = _extract_task_meta(run_dir, site, task_id, task_cfg_cache)
+            eval_cfg = (task_meta.get("eval") or {})
+            task_intent = str(task_meta.get("intent", "") or "").strip()
+            task_type = _classify_task_type(task_intent)
             eval_types = eval_cfg.get("eval_types") or []
             eval_type = "|".join(str(x) for x in eval_types)
             ref_url = eval_cfg.get("reference_url")
+            ref_answers = eval_cfg.get("reference_answers")
             ref_urls = _normalize_url_candidates(ref_url)
-            final_url = ((final_step.get("state_digest") or {}).get("url_after")) or ""
+            final_url = str(((final_step.get("state_digest") or {}).get("url_after")) or "").strip() or _step_obs_url(final_step)
             final_url_match: Optional[bool]
             if not ref_urls:
                 final_url_match = None
             else:
                 final_url_match = final_url in ref_urls
+            ever_visited_ref_url = _ever_visited_reference_url(steps, ref_urls)
+            target_item_ever_visible = _target_item_ever_visible(steps, ref_urls, run_dir)
+            answer_in_intent_price_range = _answer_in_intent_price_range(final_answer, task_intent)
 
             success = bool(summary.get("success", False))
             steps_count = len(steps)
@@ -744,11 +1316,18 @@ def main() -> None:
             final_thought_sig = _first_words(final_thought, max_words=12)
 
             thought_at_0, thought_at_5, thought_at_10, thought_final, trajectory, non_empty_norm = _thought_snapshots(steps)
-            thought_metrics = _thought_similarity_features(non_empty_norm)
+            thought_metrics = _thought_similarity_features(
+                non_empty_norm,
+                skip_pairwise=bool(args.skip_similarity),
+            )
 
             stuck_first_step, unchanged_streak_max_len, unchanged_streak_max_pos = _page_unchanged_signals(steps)
             action_type_sequence = _compress_action_types(steps)
             final_three_thoughts = _collect_final_thoughts(steps, k=3)
+            select_events = _collect_select_events(steps)
+            loop_metrics = _detect_loops(steps)
+            page_type_seq = _page_type_sequence(steps)
+            observation_mode = str(steps[0].get("observation_mode", "") or summary.get("observation_mode", "") or "").strip()
 
             reason_bucket = _classify_reason(
                 success=success,
@@ -759,7 +1338,30 @@ def main() -> None:
                 eval_type=eval_type,
                 early_finish=early_finish,
                 hit_max_steps=hit_max_steps,
+                click_back_pairs=int(loop_metrics["click_back_pairs"]),
+                max_search_query_repeat=int(loop_metrics["max_search_query_repeat"]),
+                target_item_ever_visible=target_item_ever_visible,
                 final_url_match=final_url_match,
+                ever_visited_reference_url=ever_visited_ref_url,
+                final_answer_in_intent_price_range=answer_in_intent_price_range,
+            )
+
+            collection_overlap_score = _collection_overlap_score(final_answer, ref_answers)
+            stuck_subtype = _classify_stuck_subtype(
+                reason_bucket=reason_bucket,
+                task_type=task_type,
+                target_item_ever_visible=target_item_ever_visible,
+                loop_pattern=str(loop_metrics["loop_pattern"]),
+                max_search_query_repeat=int(loop_metrics["max_search_query_repeat"]),
+                page_type_sequence=page_type_seq,
+                click_back_pairs=int(loop_metrics["click_back_pairs"]),
+                action_type_sequence=action_type_sequence,
+            )
+            unreachable_subtype = _classify_unreachable_subtype(
+                reason_bucket=reason_bucket,
+                task_intent=task_intent,
+                observation_mode=observation_mode,
+                search_queries=loop_metrics["search_queries"],
             )
 
             # Phase2 aggregations
@@ -788,11 +1390,19 @@ def main() -> None:
                 "fallback_finish": fallback_finish,
                 "final_url": final_url,
                 "reference_url": ref_url,
+                "target_item_ever_visible": target_item_ever_visible,
                 "final_url_match": final_url_match,
+                "ever_visited_reference_url": ever_visited_ref_url,
                 "page_change_count": page_change_count,
                 "search_attempts": search_attempts,
                 "page_unchanged_rate": summary.get("page_unchanged_rate"),
                 "max_repeat_streak": max_repeat_streak,
+                "task_intent": task_intent,
+                "task_type": task_type,
+                "observation_mode": observation_mode,
+                "answer_in_intent_price_range": answer_in_intent_price_range,
+                "reference_answers_json": json.dumps(ref_answers, ensure_ascii=False) if ref_answers is not None else "",
+                "final_answer": final_answer,
                 "final_answer_excerpt": final_answer[:200],
                 "final_thought_signature": final_thought_sig,
                 "thought_at_step_0": thought_at_0,
@@ -813,6 +1423,26 @@ def main() -> None:
                 "thought_similarity_high_rate_all_pairs": thought_metrics["thought_similarity_high_rate_all_pairs"],
                 "high_similarity_templates": "|".join(sorted(thought_metrics["high_template_counter"].keys())),
                 "final_three_thoughts": final_three_thoughts,
+                "final_three_thoughts_json": json.dumps(final_three_thoughts, ensure_ascii=False),
+                "select_events_json": json.dumps(select_events, ensure_ascii=False),
+                "search_queries_json": json.dumps(loop_metrics["search_queries"], ensure_ascii=False),
+                "click_back_pairs": int(loop_metrics["click_back_pairs"]),
+                "max_search_query_repeat": int(loop_metrics["max_search_query_repeat"]),
+                "most_repeated_search_query": str(loop_metrics["most_repeated_search_query"]),
+                "unique_search_queries": int(loop_metrics["unique_search_queries"]),
+                "loop_pattern": str(loop_metrics["loop_pattern"]),
+                "page_type_sequence": page_type_seq,
+                "collection_overlap_score": collection_overlap_score,
+                "stuck_subtype": stuck_subtype,
+                "unreachable_subtype": unreachable_subtype,
+                "all_step_thoughts_json": json.dumps(
+                    [
+                        {"step_idx": int(t.get("step_idx", -1)), "thought": str(t.get("thought", "") or "")}
+                        for t in trajectory
+                        if str(t.get("thought", "") or "").strip()
+                    ],
+                    ensure_ascii=False,
+                ),
             }
             episode_rows.append(episode_row)
 
@@ -859,15 +1489,32 @@ def main() -> None:
         "fallback_finish",
         "final_url",
         "reference_url",
+        "target_item_ever_visible",
         "final_url_match",
+        "ever_visited_reference_url",
         "page_change_count",
         "search_attempts",
         "page_unchanged_rate",
         "max_repeat_streak",
+        "task_intent",
+        "task_type",
+        "observation_mode",
+        "answer_in_intent_price_range",
+        "reference_answers_json",
+        "final_answer",
         "stuck_first_step",
         "page_unchanged_streak_max_len",
         "page_unchanged_streak_max_pos",
         "action_type_sequence",
+        "page_type_sequence",
+        "click_back_pairs",
+        "max_search_query_repeat",
+        "most_repeated_search_query",
+        "unique_search_queries",
+        "loop_pattern",
+        "collection_overlap_score",
+        "stuck_subtype",
+        "unreachable_subtype",
         "thought_count",
         "thought_unique_count",
         "thought_diversity",
@@ -880,6 +1527,10 @@ def main() -> None:
         "thought_at_step_5",
         "thought_at_step_10",
         "thought_final",
+        "final_three_thoughts_json",
+        "select_events_json",
+        "search_queries_json",
+        "all_step_thoughts_json",
         "final_answer_excerpt",
         "final_thought_signature",
         "high_similarity_templates",
@@ -1036,6 +1687,7 @@ def main() -> None:
             "report": bool(args.report),
             "report_language": args.report_language,
             "samples_per_bucket": int(args.samples_per_bucket),
+            "skip_similarity": bool(args.skip_similarity),
         },
         "episodes": len(episode_rows),
         "reason_buckets_global": dict(Counter(str(x["reason_bucket"]) for x in episode_rows)),
@@ -1067,6 +1719,7 @@ def main() -> None:
             bucket_similarity_rows=bucket_similarity_rows,
             bucket_template_rows=bucket_template_rows,
             samples_per_bucket=int(args.samples_per_bucket),
+            skip_similarity=bool(args.skip_similarity),
         )
 
     print(f"Saved reason diagnostics to: {output_dir}")

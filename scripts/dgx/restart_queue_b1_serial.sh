@@ -115,17 +115,18 @@ log "  classifieds=${RUN_ID_CLASSIFIEDS}"
 log "  reddit=${RUN_ID_REDDIT}"
 log "  shopping=${RUN_ID_SHOPPING}"
 
-# Stop existing queue + experiment runners.
+# Stop existing queue + experiment runners + live reason sidecars.
 q_pids="$(ps -eo pid=,args= | awk '/bash scripts\/dgx\/queue_b1_serial.sh/ && !/awk/ {print $1}')"
 r_pids="$(ps -eo pid=,args= | awk '/scripts\/run_experiment.py/ && !/awk/ {print $1}')"
+s_pids="$(ps -eo pid=,args= | awk '/scripts\/reason_diag_live_sidecar.py/ && !/awk/ {print $1}')"
 
-if [[ -n "${q_pids}${r_pids}" ]]; then
-  log "Stopping existing queue/runner processes..."
-  for p in ${q_pids} ${r_pids}; do
+if [[ -n "${q_pids}${r_pids}${s_pids}" ]]; then
+  log "Stopping existing queue/runner/sidecar processes..."
+  for p in ${q_pids} ${r_pids} ${s_pids}; do
     kill "${p}" 2>/dev/null || true
   done
   sleep 2
-  for p in ${q_pids} ${r_pids}; do
+  for p in ${q_pids} ${r_pids} ${s_pids}; do
     if kill -0 "${p}" 2>/dev/null; then
       kill -9 "${p}" 2>/dev/null || true
     fi
@@ -143,6 +144,15 @@ if [[ "${CLEAN}" -eq 1 ]]; then
     "logs/B1_baseline_qwen3vl4b_classifieds_${RUN_ID_CLASSIFIEDS}.log" \
     "logs/B1_baseline_qwen3vl4b_reddit_${RUN_ID_REDDIT}.log" \
     "logs/B1_baseline_qwen3vl4b_shopping_${RUN_ID_SHOPPING}.log"
+
+  # Clear live diagnostics state/logs so sidecar doesn't inherit stale counters.
+  rm -f \
+    "logs/live_reason_watch_classifieds_${RUN_ID_CLASSIFIEDS}.state.json" \
+    "logs/live_reason_watch_reddit_${RUN_ID_REDDIT}.state.json" \
+    "logs/live_reason_watch_shopping_${RUN_ID_SHOPPING}.state.json" \
+    "logs/live_reason_watch_classifieds_${RUN_ID_CLASSIFIEDS}.log" \
+    "logs/live_reason_watch_reddit_${RUN_ID_REDDIT}.log" \
+    "logs/live_reason_watch_shopping_${RUN_ID_SHOPPING}.log"
 
   rm -f logs/queue_b1_serial_*.log logs/queue_b1_serial_*.meta.txt
 fi

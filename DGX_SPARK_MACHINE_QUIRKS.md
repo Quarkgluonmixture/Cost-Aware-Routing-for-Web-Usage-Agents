@@ -1,6 +1,6 @@
 # DGX Spark Machine Quirks (Local Only)
 
-Last updated: 2026-04-02
+Last updated: 2026-04-03
 
 > This file is **host-specific** and is **not** the default setup path for this repository.
 > General users should follow `README.md` only.
@@ -125,6 +125,21 @@ Expected: `aarch64`.
 sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'
 ```
   This requires `sudo`; if you are not the machine owner, confirm with the owner/admin first.
+
+11. All background jobs must use `setsid + nohup` on DGX Spark
+- Rule:
+```bash
+setsid nohup <command> > <log_path> 2>&1 < /dev/null &
+```
+- Do not use plain `nohup <command> &` or `<command> &` for long-running jobs.
+- Reason: this host has had background process lifecycle quirks; using both `setsid` and `nohup` avoids parent-shell/session side effects and makes jobs more stable after disconnect.
+- Recommended template:
+```bash
+LOG_PATH="logs/<job_name>.log"
+setsid nohup bash -lc 'cd /abs/repo/path && exec <command>' \
+  > "${LOG_PATH}" 2>&1 < /dev/null &
+echo "pid=$!"
+```
 
 ## DGX-only scripts
 Use scripts under `scripts/dgx/`:

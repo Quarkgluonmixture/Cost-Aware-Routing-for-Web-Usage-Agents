@@ -86,6 +86,7 @@ class Qwen3VLAgent:
                 torch_dtype=model_dtype,
                 device_map="auto",
                 quantization_config=quantization_config,
+                attn_implementation="sdpa",
                 trust_remote_code=True,
             )
             self.processor = AutoProcessor.from_pretrained(self.model_path, trust_remote_code=True)
@@ -115,11 +116,16 @@ Use element IDs from the Accessibility Tree to interact with elements.
 
 Core Rules:
 1) Do NOT answer or finish immediately. You MUST navigate to find the item.
-2) If the target category is not visible, look for a parent category or use the search bar.
-3) NEVER give up early. If you don't see the item, SEARCH for it using the search bar.
-4) Only use "finish" when you have successfully completed the task or after EXHAUSTIVE search.
-5) If you are on the homepage, DO NOT go back. Start by searching or clicking a category.
-6) If you are stuck, use scroll or try a different category/search.
+2) You are logged in as a user. For tasks involving your own content (e.g., "my listing", "my post", "my message"),
+   navigate to account/profile sections instead of searching publicly.
+3) If the target category is not visible, look for a parent category or use the search bar.
+4) NEVER give up early. If you don't see the item, SEARCH for it using the search bar.
+5) Only use "finish" when you have successfully completed the task or after EXHAUSTIVE search.
+6) For single-item tasks (find and navigate to ONE specific item/page), you MUST open that item's detail page before "finish".
+   For collection tasks (return links/info for MULTIPLE items), you MAY "finish" from a list/search page
+   after recording the required items in your answer.
+7) If you are on the homepage, DO NOT go back. Start by searching or clicking a category.
+8) If you are stuck, use scroll or try a different category/search.
 
 Response Format (JSON):
 {
@@ -142,6 +148,12 @@ Action Schema:
 7. Finish: {"action_type": "finish", "answer": "optional string"}
 8. Tab focus: {"action_type": "tab_focus", "page_number": int}
 
+Tab Rule:
+- Multi-site tasks may open multiple tabs (different websites).
+- If the target website is in another tab, switch with {"action_type":"tab_focus","page_number":N} BEFORE clicking.
+- Element IDs are page-local to the current tab. Do NOT reuse IDs from another tab/site.
+- Do NOT try to find a cross-site navigation link on the current page when the site is already in another tab.
+
 CRITICAL:
 - You MUST include a "thought" field.
 - ALWAYS use element_id for click and type. Do NOT guess coordinates.
@@ -161,11 +173,16 @@ Use the element IDs from [SOM_MARKS] to interact. Use the screenshot to understa
 
 Core Rules:
 1) Do NOT answer or finish immediately. You MUST navigate to find the item.
-2) Prefer element_id for clicks and typing. Use coordinate only when the target is visible in the image but has no ID in [SOM_MARKS].
-3) NEVER give up early. If you don't see the item, SEARCH for it using the search bar.
-4) Only use "finish" when you have successfully completed the task or after EXHAUSTIVE search.
-5) If you are on the homepage, DO NOT go back. Start by searching or clicking a category.
-6) If you are stuck, scroll or try a different approach.
+2) You are logged in as a user. For tasks involving your own content (e.g., "my listing", "my post", "my message"),
+   navigate to account/profile sections instead of searching publicly.
+3) Prefer element_id for clicks and typing. Use coordinate only when the target is visible in the image but has no ID in [SOM_MARKS].
+4) NEVER give up early. If you don't see the item, SEARCH for it using the search bar.
+5) Only use "finish" when you have successfully completed the task or after EXHAUSTIVE search.
+6) For single-item tasks (find and navigate to ONE specific item/page), you MUST open that item's detail page before "finish".
+   For collection tasks (return links/info for MULTIPLE items), you MAY "finish" from a list/search page
+   after recording the required items in your answer.
+7) If you are on the homepage, DO NOT go back. Start by searching or clicking a category.
+8) If you are stuck, scroll or try a different approach.
 
 Response Format (JSON):
 {
@@ -188,6 +205,12 @@ Action Schema:
 8. Finish: {"action_type": "finish", "answer": "optional string"}
 9. Tab focus: {"action_type": "tab_focus", "page_number": int}
 
+Tab Rule:
+- Multi-site tasks may open multiple tabs (different websites).
+- If the target website is in another tab, switch with {"action_type":"tab_focus","page_number":N} BEFORE clicking.
+- Element IDs are page-local to the current tab. Do NOT reuse IDs from another tab/site.
+- Do NOT try to find a cross-site navigation link on the current page when the site is already in another tab.
+
 CRITICAL:
 - You MUST include a "thought" field.
 - Prefer element_id over coordinate when the element appears in [SOM_MARKS].
@@ -204,11 +227,16 @@ Use normalized coordinates (x, y as floats 0.0–1.0, origin top-left) to intera
 
 Core Rules:
 1) Do NOT answer or finish immediately. You MUST navigate to find the item.
-2) Use coordinates to click visible elements. Estimate the center of the target element.
-3) NEVER give up early. Scroll to find content not visible, then search if needed.
-4) Only use "finish" when you have successfully completed the task or after EXHAUSTIVE search.
-5) If you are on the homepage, DO NOT go back. Start by searching or clicking a category.
-6) If you are stuck, scroll or try a different approach.
+2) You are logged in as a user. For tasks involving your own content (e.g., "my listing", "my post", "my message"),
+   navigate to account/profile sections instead of searching publicly.
+3) Use coordinates to click visible elements. Estimate the center of the target element.
+4) NEVER give up early. Scroll to find content not visible, then search if needed.
+5) Only use "finish" when you have successfully completed the task or after EXHAUSTIVE search.
+6) For single-item tasks (find and navigate to ONE specific item/page), you MUST open that item's detail page before "finish".
+   For collection tasks (return links/info for MULTIPLE items), you MAY "finish" from a list/search page
+   after recording the required items in your answer.
+7) If you are on the homepage, DO NOT go back. Start by searching or clicking a category.
+8) If you are stuck, scroll or try a different approach.
 
 Response Format (JSON):
 {
@@ -228,6 +256,11 @@ Action Schema:
 6. Forward: {"action_type": "forward"}
 7. Finish: {"action_type": "finish", "answer": "optional string"}
 8. Tab focus: {"action_type": "tab_focus", "page_number": int}
+
+Tab Rule:
+- Multi-site tasks may open multiple tabs (different websites).
+- If the target website is in another tab, switch with {"action_type":"tab_focus","page_number":N} BEFORE clicking.
+- Do NOT try to find a cross-site navigation link on the current page when the site is already in another tab.
 
 CRITICAL:
 - You MUST include a "thought" field.
@@ -263,8 +296,13 @@ CRITICAL:
             elif changed:
                 result = "OK (page changed)"
             else:
-                result = "OK"
-            lines.append(f"  Step {rec.get('step_idx', '?')}: {atype}{detail} -> {result}")
+                result = "OK (page unchanged)"
+            url = str(rec.get("obs_url", "") or "")
+            if not url:
+                state_digest = rec.get("state_digest", {}) or {}
+                url = str(state_digest.get("url_after", "") or "")
+            url_suffix = f" [{url[:100]}]" if url else ""
+            lines.append(f"  Step {rec.get('step_idx', '?')}: {atype}{detail} -> {result}{url_suffix}")
         return "Previous actions:\n" + "\n".join(lines) + "\n"
 
     def step(
