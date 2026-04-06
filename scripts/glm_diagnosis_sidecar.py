@@ -1525,10 +1525,26 @@ def main() -> int:
                         _all_lines = _format_episode_report_lines(_retry_results)
                         if _all_lines:
                             _title_tag = f"tasks {_bf_range}" if _bf_range else f"retry OK ({len(_retry_results)})"
+                            # Compute success rate from CSV for context
+                            _sr_line = ""
+                            _csv_p = _qi_out_dir / "episode_reason_rows.csv"
+                            if _csv_p.exists():
+                                _sr_rows = [
+                                    r for r in _read_csv_rows(_csv_p)
+                                    if str(r.get("condition_id", "")) == _qi_cond
+                                ]
+                                if _sr_rows:
+                                    _sr_ok = sum(1 for r in _sr_rows if _to_optional_bool(r.get("success")) is True)
+                                    _sr_line = f"success={_sr_ok}/{len(_sr_rows)} ({_sr_ok/len(_sr_rows):.1%})"
+                            _body_parts = [f"condition={_qi_cond}"]
+                            if _sr_line:
+                                _body_parts.append(_sr_line)
+                            _body_parts.append("per_task_failure_report:")
+                            _body_parts.extend(_all_lines)
                             _ok, _, _ = _post_ntfy(
                                 topic=args.ntfy_topic,
                                 title=f"P79 [{args.label or _qi_cond}] {_title_tag}",
-                                body=f"condition={_qi_cond}\n" + "\n".join(_all_lines),
+                                body="\n".join(_body_parts),
                                 priority="default",
                             )
                     # Update ntfy task max for backfill batches
