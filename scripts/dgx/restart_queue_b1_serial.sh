@@ -118,7 +118,7 @@ log "  shopping=${RUN_ID_SHOPPING}"
 # Stop existing queue + experiment runners + live reason sidecars.
 q_pids="$(ps -eo pid=,args= | awk '/bash scripts\/dgx\/queue_b1_serial.sh/ && !/awk/ {print $1}')"
 r_pids="$(ps -eo pid=,args= | awk '/scripts\/run_experiment.py/ && !/awk/ {print $1}')"
-s_pids="$(ps -eo pid=,args= | awk '/scripts\/reason_diag_live_sidecar.py/ && !/awk/ {print $1}')"
+s_pids="$(ps -eo pid=,args= | awk '/scripts\/glm_diagnosis_sidecar.py/ && !/awk/ {print $1}')"
 
 if [[ -n "${q_pids}${r_pids}${s_pids}" ]]; then
   log "Stopping existing queue/runner/sidecar processes..."

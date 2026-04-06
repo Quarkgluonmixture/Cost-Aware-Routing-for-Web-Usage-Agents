@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Live reason-diagnostics sidecar:
+GLM diagnosis sidecar — deep failure attribution using GLM.
+
 - Watches episode progress for a run directory.
 - Every N newly completed episodes, runs incremental reason diagnostics.
 - Uses GLM to translate bucket stats into concise human-readable conclusions.
@@ -997,6 +998,21 @@ def _episode_count(run_dir: Path, condition: Optional[str]) -> int:
     return len(_iter_episode_summary_paths(run_dir, condition))
 
 
+def _episode_count_by_condition(run_dir: Path) -> Dict[str, int]:
+    """Count episodes per condition directory (phase*)."""
+    counts: Dict[str, int] = {}
+    for cond_dir in run_dir.iterdir():
+        if not cond_dir.is_dir() or not cond_dir.name.startswith("phase"):
+            continue
+        ep_dir = cond_dir / "episodes"
+        if not ep_dir.exists():
+            continue
+        n = len(list(ep_dir.glob("*_summary_v2.json")))
+        if n > 0:
+            counts[cond_dir.name] = n
+    return counts
+
+
 def _max_task_id(run_dir: Path, condition: Optional[str]) -> Optional[int]:
     max_tid: Optional[int] = None
     for p in _iter_episode_summary_paths(run_dir, condition):
@@ -1331,7 +1347,18 @@ def main() -> int:
             return 1
 
     state = _load_state(state_file)
-    last_trigger_count = int(state.get("last_trigger_count", 0) or 0)
+    # Per-condition trigger counts (backward compat: migrate legacy scalar).
+    raw_ltc_map = state.get("last_trigger_count_by_condition", {})
+    last_trigger_count_by_condition: Dict[str, int] = {}
+    if isinstance(raw_ltc_map, dict):
+        for k, v in raw_ltc_map.items():
+            tv = _to_int(v)
+            if tv is not None:
+                last_trigger_count_by_condition[str(k)] = tv
+    # Backward compat: old scalar last_trigger_count → assign to --condition if given.
+    legacy_ltc = _to_int(state.get("last_trigger_count"))
+    if legacy_ltc is not None and args.condition and args.condition not in last_trigger_count_by_condition:
+        last_trigger_count_by_condition[args.condition] = legacy_ltc
     ntfy_cooldown_until = float(state.get("ntfy_cooldown_until", 0) or 0.0)
     pending_ntfy_queue: List[Dict[str, Any]] = []
     raw_queue = state.get("pending_ntfy_queue")
@@ -1377,44 +1404,58 @@ def main() -> int:
     )
 
     while True:
-        done = _episode_count(run_dir, args.condition)
-        if done > 0 and (done - last_trigger_count) >= int(args.interval_episodes):
-            task_max = _max_task_id(run_dir, args.condition)
-            tag = f"upto_{task_max:04d}" if task_max is not None else f"count_{done:04d}"
+        # Determine which conditions need a trigger — per-condition episode counting.
+        if args.condition:
+            # Single condition mode: only check the specified condition.
+            _cond_counts = {args.condition: _episode_count(run_dir, args.condition)}
+        else:
+            _cond_counts = _episode_count_by_condition(run_dir)
+
+        # Find conditions with enough new episodes to trigger.
+        _triggered_conditions: List[str] = []
+        for _cid, _cnt in _cond_counts.items():
+            _prev = last_trigger_count_by_condition.get(_cid, 0)
+            if _cnt > 0 and (_cnt - _prev) >= int(args.interval_episodes):
+                _triggered_conditions.append(_cid)
+
+        for _trigger_cond in _triggered_conditions:
+            _cond_done = _cond_counts[_trigger_cond]
+            task_max = _max_task_id(run_dir, _trigger_cond)
+            tag = f"{_trigger_cond}_upto_{task_max:04d}" if task_max is not None else f"{_trigger_cond}_count_{_cond_done:04d}"
             out_dir = out_root / tag
-            print(f"[live-diag] trigger: episodes={done}, last={last_trigger_count}, out={out_dir}")
+            print(f"[live-diag] trigger: condition={_trigger_cond} episodes={_cond_done}, last={last_trigger_count_by_condition.get(_trigger_cond, 0)}, out={out_dir}")
 
             proc = _run_diagnostics(
                 py_bin=args.py_bin,
                 script_path=diag_script_path,
                 run_dir=run_dir,
-                condition=args.condition,
+                condition=_trigger_cond,
                 task_max=task_max,
                 out_dir=out_dir,
                 report_language=args.report_language,
                 samples_per_bucket=int(args.samples_per_bucket),
             )
             if proc.returncode != 0:
-                print(f"[live-diag] diagnostics failed rc={proc.returncode}")
+                print(f"[live-diag] diagnostics failed rc={proc.returncode} condition={_trigger_cond}")
                 if proc.stdout.strip():
                     print(proc.stdout.strip()[-1000:])
                 if proc.stderr.strip():
                     print(proc.stderr.strip()[-1000:])
                 # Prevent rapid-fire retrigger loops when diagnostics repeatedly fail.
-                last_trigger_count = done
-                state["last_trigger_count"] = last_trigger_count
-                state["last_error"] = f"diagnostics_failed_rc={proc.returncode}"
+                last_trigger_count_by_condition[_trigger_cond] = _cond_done
+                state["last_trigger_count_by_condition"] = last_trigger_count_by_condition
+                state["last_error"] = f"diagnostics_failed_rc={proc.returncode}_cond={_trigger_cond}"
                 state["last_error_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
                 _save_state(state_file, state)
             else:
                 summary_path = out_dir / "reason_diagnostics_summary.json"
                 summary_json = _safe_load_json(summary_path) or {}
                 bucket_map = summary_json.get("reason_buckets_global") or {}
-                # Compute success_rate per condition from CSV (not global).
+                # Compute success_rate for the triggered condition from CSV.
                 _csv_rows = _read_csv_rows(out_dir / "episode_reason_rows.csv")
                 _cond_rows = [
                     r for r in _csv_rows
-                    if not args.condition or str(r.get("condition_id", "") or "") == args.condition
+                    if str(r.get("condition_id", "") or "") == _trigger_cond
                 ]
                 episodes = len(_cond_rows)
                 success_count = sum(
@@ -1422,11 +1463,11 @@ def main() -> int:
                 )
                 success_rate = (success_count / episodes) if episodes > 0 else 0.0
 
-                # Determine the active mode(s) for this trigger: conditions with new episodes
+                # Determine the active mode(s) for this trigger
                 from collections import defaultdict as _defaultdict
                 _mode_stats: Dict[str, Dict[str, int]] = _defaultdict(lambda: {"total": 0, "success": 0})
                 _active_mode_stats: Dict[str, Dict[str, int]] = _defaultdict(lambda: {"total": 0, "success": 0})
-                for _r in _csv_rows:
+                for _r in _cond_rows:
                     _mode = str(_r.get("observation_mode", "") or "?").strip() or "?"
                     _cid = str(_r.get("condition_id", "") or "").strip()
                     _tid = _to_int(_r.get("task_id"))
@@ -1454,7 +1495,7 @@ def main() -> int:
                 glm_diag = _glm_conclusion(
                     glmm=glmm,
                     run_id=run_dir.name,
-                    condition=args.condition,
+                    condition=_trigger_cond,
                     episodes=_glm_episodes,
                     task_max=task_max,
                     bucket_map=_glm_bucket_map,
@@ -1466,14 +1507,14 @@ def main() -> int:
                 new_failed_cases = _extract_new_failed_cases(
                     episode_rows_csv=out_dir / "episode_reason_rows.csv",
                     prev_task_max_by_condition=last_task_max_by_condition,
-                    condition_filter=args.condition,
+                    condition_filter=_trigger_cond,
                     max_cases=int(args.episode_diagnosis_max_cases),
                 )
                 episode_diagnoses = _glm_episode_diagnosis(glmm=glmm, cases=new_failed_cases, run_dir=run_dir)
                 episode_diag_lines = _format_episode_report_lines(episode_diagnoses)
                 msg_lines = [
                     f"run_id={run_dir.name}",
-                    f"condition={args.condition or '*'}",
+                    f"condition={_trigger_cond}",
                     f"episodes={episodes}",
                     f"success={_success_line}",
                     f"task_max={task_max}",
@@ -1494,10 +1535,11 @@ def main() -> int:
                 msg = "\n".join(msg_lines)
                 print(f"[live-diag][OK]\n{msg}")
                 if args.ntfy_topic:
-                    _cond_label = args.label or args.condition or run_dir.name
+                    _cond_label = args.label or _trigger_cond or run_dir.name
                     title = f"P79 [{_cond_label}] {_success_line}"
                     ntfy_body = "\n".join(
                         [
+                            f"condition={_trigger_cond}",
                             f"success={_success_line}",
                             "per_task_failure_report:",
                             *(episode_diag_lines or ["- 本轮新增任务未发现失败"]),
@@ -1537,10 +1579,6 @@ def main() -> int:
                                 pending_ntfy_queue.pop(0)
                                 ntfy_cooldown_until = 0.0
                                 state.pop("ntfy_cooldown_until", None)
-                                # If queue is empty now, try sending current message immediately
-                                # — but only when it has actual episode diagnoses. An empty
-                                # diagnosis report (stale watermark or transient data race)
-                                # would produce a useless second notification; defer it instead.
                                 if not pending_ntfy_queue:
                                     if episode_diag_lines:
                                         ok2, status_code2, _ = _post_ntfy(
@@ -1560,13 +1598,10 @@ def main() -> int:
                                                     f"cooldown set to {int(args.ntfy_cooldown_secs)}s"
                                                 )
                                     else:
-                                        # No new episode diagnoses; queue for next trigger instead
-                                        # of sending an empty second notification.
                                         if not _queue_contains(current_msg):
                                             pending_ntfy_queue.append(current_msg)
                                         print("[live-diag] Deferring current ntfy (no new episode diagnoses).")
                                 else:
-                                    # Queue still has items; enqueue current message to avoid dropping it.
                                     if not _queue_contains(current_msg):
                                         pending_ntfy_queue.append(current_msg)
                             elif status_code == 429:
@@ -1576,11 +1611,9 @@ def main() -> int:
                                     "[live-diag] ntfy 429 received while replaying pending; "
                                     f"cooldown set to {int(args.ntfy_cooldown_secs)}s"
                                 )
-                                # Keep newest diagnostics queued to avoid losing updates.
                                 if not _queue_contains(current_msg):
                                     pending_ntfy_queue.append(current_msg)
                             else:
-                                # Keep pending for next retry.
                                 print("[live-diag] pending ntfy replay failed; will retry later.")
                                 if not _queue_contains(current_msg):
                                     pending_ntfy_queue.append(current_msg)
@@ -1616,8 +1649,8 @@ def main() -> int:
                 deleted = _cleanup_old_output_dirs(out_root=out_root, keep_dir=out_dir, retain_dirs=int(args.retain_output_dirs))
                 if deleted > 0:
                     print(f"[live-diag] cleaned old outputs: deleted={deleted}, keep={out_dir}")
-                last_trigger_count = done
-                state["last_trigger_count"] = last_trigger_count
+                last_trigger_count_by_condition[_trigger_cond] = _cond_done
+                state["last_trigger_count_by_condition"] = last_trigger_count_by_condition
                 state["last_output_dir"] = str(out_dir)
                 state["last_task_max"] = task_max
                 current_task_max_by_condition = _task_max_by_condition_from_episode_csv(out_dir / "episode_reason_rows.csv")

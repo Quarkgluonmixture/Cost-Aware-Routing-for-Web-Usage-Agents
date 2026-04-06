@@ -10,10 +10,11 @@
 | `vwa_env.sh` | VWA 站点本地 URL 环境变量（`source scripts/vwa_env.sh`） |
 | `vwa_env_remote.sh.example` | 远程 VWA 站点 URL 模板（复制为 `vwa_env_remote.sh`） |
 
-## Sidecar
+## Sidecar / Watchdog
 | Script | Description |
 |--------|-------------|
-| `reason_diag_live_sidecar.py` | 实时增量归因 sidecar，每 N episode 触发诊断+GLM总结+ntfy推送 |
+| `glm_diagnosis_sidecar.py` | GLM 深度归因 sidecar，每 N episode 触发诊断+GLM总结+ntfy推送 |
+| `experiment_watchdog.py` | 实验健康 watchdog，滚动窗口指标告警+idle 检测（无 GLM 依赖） |
 
 ## vwa/ — VWA 环境管理
 | Script | Description |
@@ -33,7 +34,7 @@
 |--------|-------------|
 | `dgx/queue_b1_serial.sh` | B1 baseline 串行队列（classifieds→reddit→shopping），带 watchdog+自动 resume |
 | `dgx/restart_queue_b1_serial.sh` | 从最新状态重启 B1 队列 |
-| `dgx/restart_sidecar.sh` | 热重启 reason_diag_live_sidecar（保留 state，可追加参数） |
+| `dgx/restart_sidecar.sh` | 热重启 glm_diagnosis_sidecar（保留 state，可追加参数） |
 | `dgx/qwen3vl4b_status.sh` | 查看 Qwen3-VL-4B baseline 当前状态（进程/日志/GPU/完成度） |
 | `dgx/run_qwen3vl4b_baseline.sh` | DGX baseline 执行脚本（含站点健康检查、CUDA 环境） |
 | `dgx/start_qwen3vl4b_baseline_site.sh` | 单站点 baseline 启动器（细粒度环境变量控制） |
@@ -45,7 +46,6 @@
 | `dev/run_one_vwa_episode.py` | 运行单个 VWA episode（测试 agent/观测流水线） |
 | `dev/smoke_test_vwa.py` | VWA 环境快速 smoke test |
 | `dev/check_disk_usage.sh` | 查看磁盘用量（top 目录/Docker/大文件） |
-| `dev/monitor_glm_sidecar.py` | 旧版 GLM sidecar 监控（实验性，已由 reason_diag_live_sidecar 取代） |
 
 ## cloud/ — 云部署
 | Script | Description |

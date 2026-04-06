@@ -64,6 +64,20 @@ class VWAWrapper:
                 # Use example.com to allow page load without local server
                 os.environ[var] = "https://example.com"
 
+        # Workaround: playwright sync API raises if an asyncio event loop is
+        # running on this thread. This can happen after VWA program_html
+        # evaluators or HuggingFace hub (both use asyncio/httpx).
+        # Use get_running_loop() — it only returns a loop if one is *actively*
+        # running, unlike get_event_loop() which returns closed/idle loops too.
+        import asyncio as _asyncio
+        try:
+            _asyncio.get_running_loop()
+            # A loop is actively running — cannot safely replace it.
+            # Playwright sync API will likely raise; no safe workaround here.
+        except RuntimeError:
+            # No running loop — always install a fresh one before Playwright.
+            _asyncio.set_event_loop(_asyncio.new_event_loop())
+
         from browser_env import ScriptBrowserEnv  # provided by (Visual)WebArena package
 
         self._env = ScriptBrowserEnv(

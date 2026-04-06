@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-Realtime sidecar monitor for VWA phase runs.
+Experiment health watchdog — lightweight monitoring and alerting.
 
 What it does:
 1) Watches newly generated *_summary_v2.json episode files.
 2) Computes rolling health metrics (success_rate, wrong_url, no_progress, max_steps, avg step latency).
 3) Triggers alerts when thresholds are exceeded.
-4) Optionally calls GLM (configured from a local config file) to generate a short diagnosis.
+4) Uses heuristic rules to generate a short diagnosis (no GLM dependency).
 5) Optionally pushes alert text to ntfy.
+6) Tracks idle time — alerts if no new episode appears within --watchdog-idle-alert-mins.
 """
 
 from __future__ import annotations
@@ -60,62 +61,6 @@ def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
             except Exception:
                 continue
     return rows
-
-
-def _load_glm_config(cfg_path: Path) -> Dict[str, str]:
-    lines = []
-    for raw in cfg_path.read_text(encoding="utf-8").splitlines():
-        t = raw.strip()
-        if not t or t.startswith("#"):
-            continue
-        lines.append(t)
-    if len(lines) < 3:
-        raise ValueError(f"GLM config invalid: need 3 lines (endpoint/model/api_key), got {len(lines)}")
-    return {"endpoint": lines[0], "model": lines[1], "api_key": lines[2]}
-
-
-def _candidate_glm_urls(endpoint: str) -> List[str]:
-    ep = endpoint.rstrip("/")
-    if ep.endswith("/chat/completions"):
-        return [ep]
-    return [f"{ep}/chat/completions", ep]
-
-
-def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, str]], timeout_s: int = 30) -> str:
-    payload = {
-        "model": glmm["model"],
-        "messages": list(messages),
-        "temperature": 0.1,
-        "max_tokens": 2000,
-    }
-    body = json.dumps(payload).encode("utf-8")
-    last_err = None
-    for url in _candidate_glm_urls(glmm["endpoint"]):
-        req = urllib.request.Request(
-            url,
-            data=body,
-            method="POST",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {glmm['api_key']}",
-            },
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=timeout_s) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-            choices = data.get("choices") or []
-            if choices:
-                msg = (choices[0].get("message") or {}).get("content")
-                if isinstance(msg, str) and msg.strip():
-                    return msg.strip()
-            # fallback for non-openai style responses
-            text = data.get("output_text") or data.get("text")
-            if isinstance(text, str) and text.strip():
-                return text.strip()
-            return json.dumps(data, ensure_ascii=False)[:500]
-        except Exception as e:  # noqa: BLE001
-            last_err = e
-    raise RuntimeError(f"GLM request failed: {last_err}")
 
 
 def _post_ntfy(topic: str, title: str, body: str, priority: str = "default", timeout_s: int = 15) -> None:
@@ -315,59 +260,20 @@ def _triggered_rules(m: Dict[str, float], args: argparse.Namespace) -> List[str]
     return rules
 
 
-def _ai_diagnosis(
-    glmm: Optional[Dict[str, str]],
-    run_id: str,
-    condition_id: str,
+def _heuristic_diagnosis(
     metrics: Dict[str, float],
     rules: Sequence[str],
-    recent_failures: Sequence[EpisodeRecord],
 ) -> str:
-    fallback = (
+    """Generate a short heuristic diagnosis without GLM."""
+    m = metrics
+    diagnosis = (
         f"触发规则: {', '.join(rules)}\n"
-        f"观察: success={metrics['success_rate']:.1%}, wrong_url={metrics['wrong_url_rate']:.1%}, "
-        f"no_progress={metrics['no_progress_rate']:.1%}, max_steps={metrics['max_steps_rate']:.1%}, "
-        f"avg_step={metrics['avg_step_latency_s']:.1f}s\n"
-        "建议: 先排查输入动作清空覆盖、元素定位稳定性、以及 url_match 任务中 finish 前是否进入目标 item URL。"
+        f"success={m['success_rate']:.1%}, wrong_url={m['wrong_url_rate']:.1%}, "
+        f"no_progress={m['no_progress_rate']:.1%}, max_steps={m['max_steps_rate']:.1%}, "
+        f"avg_step={m['avg_step_latency_s']:.1f}s\n"
+        "建议: 排查输入动作、元素定位、url_match finish 前是否进入目标 URL。"
     )
-    if not glmm:
-        return fallback
-
-    sample = []
-    for r in recent_failures[:5]:
-        sample.append(
-            {
-                "task_id": r.task_id,
-                "reason": r.reason,
-                "final_url": r.final_url,
-                "reference_url": r.reference_url,
-                "page_unchanged_rate": r.page_unchanged_rate,
-            }
-        )
-
-    user_payload = {
-        "run_id": run_id,
-        "condition_id": condition_id,
-        "window_metrics": metrics,
-        "triggered_rules": list(rules),
-        "recent_failures": sample,
-    }
-    messages = [
-        {
-            "role": "system",
-            "content": (
-                "你是实验监控诊断助手。请用中文输出：\n"
-                "1) 三条简短诊断（每条一行）\n"
-                "2) 一条可执行修复建议（单行）\n"
-                "总计不超过120字。"
-            ),
-        },
-        {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
-    ]
-    try:
-        return _call_glm_chat(glmm, messages)
-    except Exception:
-        return fallback
+    return diagnosis
 
 
 def _load_state(path: Optional[Path]) -> set[str]:
@@ -392,7 +298,7 @@ def _save_state(path: Optional[Path], seen_keys: set[str]) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Realtime GLM sidecar monitor for VWA runs")
+    p = argparse.ArgumentParser(description="Experiment health watchdog for VWA runs")
     p.add_argument("--run-dir", required=True, help="Run directory, e.g. results/.../<run_id>")
     p.add_argument("--condition", default=None, help="Optional condition id, e.g. phase1_dom_router_0")
     p.add_argument("--poll-secs", type=int, default=30, help="Polling interval in seconds")
@@ -407,14 +313,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--avg-step-latency-threshold", type=float, default=22.0, help="seconds")
     p.add_argument("--success-rate-floor", type=float, default=0.10)
     p.add_argument("--alert-cooldown-secs", type=int, default=600)
-    p.add_argument("--glm-config", default="glm", help="Path to glm config file (endpoint/model/key)")
-    p.add_argument("--disable-glm", action="store_true", help="Disable GLM calls (local heuristics only)")
     p.add_argument("--ntfy-topic", default=None, help="Optional ntfy topic for alert push")
     p.add_argument("--state-file", default=None, help="Optional state file to persist seen episodes")
     p.add_argument(
         "--alert-on-bootstrap",
         action="store_true",
         help="Also alert for episodes that already existed at monitor startup",
+    )
+    p.add_argument(
+        "--watchdog-idle-alert-mins",
+        type=int,
+        default=20,
+        help="Alert if no new episode appears within this many minutes (default: 20)",
     )
     p.add_argument("--once", action="store_true", help="Scan once then exit")
     return p
@@ -426,23 +336,9 @@ def main() -> int:
     if not run_dir.exists():
         raise SystemExit(f"run_dir not found: {run_dir}")
 
-    glmm: Optional[Dict[str, str]] = None
-    if not args.disable_glm:
-        cfg_path = Path(args.glm_config)
-        if cfg_path.exists():
-            try:
-                glmm = _load_glm_config(cfg_path)
-                print(f"[monitor] GLM enabled: model={glmm['model']} endpoint={glmm['endpoint']}")
-            except Exception as e:  # noqa: BLE001
-                print(f"[monitor] GLM config invalid ({cfg_path}): {e}. Fallback to heuristic diagnosis.")
-        else:
-            print(f"[monitor] GLM config not found ({cfg_path}). Fallback to heuristic diagnosis.")
-    else:
-        print("[monitor] GLM disabled.")
-
     state_file = Path(args.state_file).resolve() if args.state_file else None
     seen_keys = _load_state(state_file)
-    windows: Dict[str, Deque[EpisodeRecord]] = {}  # condition_id → rolling window
+    windows: Dict[str, Deque[EpisodeRecord]] = {}  # condition_id -> rolling window
     all_records: List[EpisodeRecord] = []  # all-time for final summary
     task_cfg_cache: Dict[Tuple[str, int], Dict[str, Any]] = {}
     condition_mode_cache: Dict[str, str] = {}
@@ -452,15 +348,24 @@ def main() -> int:
     run_id = run_dir.name
     bootstrap_keys = {_episode_key(p) for p in _scan_summaries(run_dir, args.condition)}
 
+    # Idle tracking
+    last_new_episode_ts: float = time.time()
+    idle_alerted: bool = False
+    idle_alert_secs = max(60, args.watchdog_idle_alert_mins * 60)
+
     print(
-        f"[monitor] watching run_id={run_id} condition={args.condition or '*'} "
-        f"poll={args.poll_secs}s window={args.window_size}"
+        f"[watchdog] watching run_id={run_id} condition={args.condition or '*'} "
+        f"poll={args.poll_secs}s window={args.window_size} "
+        f"idle_alert={args.watchdog_idle_alert_mins}min"
     )
 
     while True:
         summaries = _scan_summaries(run_dir, args.condition)
         new_paths = [p for p in summaries if _episode_key(p) not in seen_keys]
         if new_paths:
+            last_new_episode_ts = time.time()
+            idle_alerted = False
+
             # process in deterministic order: task id first, then file path
             def _sort_key(path: Path) -> Tuple[str, int, str]:
                 m = SUMMARY_RE.match(path.name)
@@ -526,7 +431,7 @@ def main() -> int:
                 metrics = _compute_metrics(cond_window)
                 mode_summary = _mode_summary_line(windows)
                 print(
-                    "[monitor] "
+                    "[watchdog] "
                     f"[{obs_mode}] {condition_id} task={task_id:>3d} reason={reason:<12s} "
                     f"window={int(metrics['count'])}/{args.window_size} "
                     f"succ={metrics['success_rate']:.1%} wrong_url={metrics['wrong_url_rate']:.1%} "
@@ -534,7 +439,7 @@ def main() -> int:
                     f"avg_step={metrics['avg_step_latency_s']:.1f}s"
                 )
                 if mode_summary:
-                    print(f"[monitor][MODE]  {mode_summary}")
+                    print(f"[watchdog][MODE]  {mode_summary}")
 
                 rules = _triggered_rules(metrics, args)
                 is_bootstrap_episode = key in bootstrap_keys
@@ -543,16 +448,11 @@ def main() -> int:
                     sig = ",".join(sorted(rules))
                     now = time.time()
                     if sig != last_alert_sig or (now - last_alert_ts) >= int(args.alert_cooldown_secs):
-                        fails = [x for x in reversed(cond_window) if not x.success]
-                        diagnosis = _ai_diagnosis(
-                            glmm=glmm,
-                            run_id=run_id,
-                            condition_id=condition_id,
+                        diagnosis = _heuristic_diagnosis(
                             metrics=metrics,
                             rules=rules,
-                            recent_failures=fails,
                         )
-                        alert_title = f"P79 Monitor Alert [{obs_mode}/{condition_id}]"
+                        alert_title = f"P79 Watchdog Alert [{obs_mode}/{condition_id}]"
                         alert_body = (
                             f"run_id={run_id}\n"
                             f"mode={obs_mode} condition={condition_id}\n"
@@ -563,13 +463,32 @@ def main() -> int:
                             f"avg_step={metrics['avg_step_latency_s']:.1f}s\n"
                             f"{diagnosis}"
                         )
-                        print(f"[monitor][ALERT] {alert_body}")
+                        print(f"[watchdog][ALERT] {alert_body}")
                         if args.ntfy_topic:
                             _post_ntfy(args.ntfy_topic, alert_title, alert_body, priority="high")
                         last_alert_sig = sig
                         last_alert_ts = now
 
                 _save_state(state_file, seen_keys)
+        else:
+            # No new episodes — check idle timeout
+            idle_elapsed = time.time() - last_new_episode_ts
+            if idle_elapsed >= idle_alert_secs and not idle_alerted:
+                idle_mins = int(idle_elapsed / 60)
+                idle_msg = (
+                    f"run_id={run_id}\n"
+                    f"condition={args.condition or '*'}\n"
+                    f"已 {idle_mins} 分钟无新 episode（阈值={args.watchdog_idle_alert_mins}min）"
+                )
+                print(f"[watchdog][IDLE] {idle_msg}")
+                if args.ntfy_topic:
+                    _post_ntfy(
+                        args.ntfy_topic,
+                        f"P79 Watchdog idle_{idle_mins}min",
+                        idle_msg,
+                        priority="high",
+                    )
+                idle_alerted = True
 
         if args.once:
             break
@@ -577,7 +496,7 @@ def main() -> int:
 
     # Final summary table — use all_records (not rolling window) for accurate totals
     if all_records:
-        print("\n[monitor][FINAL SUMMARY]")
+        print("\n[watchdog][FINAL SUMMARY]")
         from collections import defaultdict
         cond_totals: Dict[str, Dict[str, int]] = defaultdict(lambda: {"total": 0, "success": 0})
         mode_totals: Dict[str, Dict[str, int]] = defaultdict(lambda: {"total": 0, "success": 0})

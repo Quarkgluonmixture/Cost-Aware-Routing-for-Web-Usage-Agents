@@ -67,9 +67,9 @@ metrics:
     input_cost_per_1k: 0.0018
     output_cost_per_1k: 0.0036
   cost_api:
-    # Qwen3-VL-Plus API pricing (per 1k tokens, USD)
-    input_cost_per_1k: 0.0015
-    output_cost_per_1k: 0.002
+    # Qwen3-VL-235B-A22B pricing (per 1k tokens, USD, confirmed 2026-04)
+    input_cost_per_1k: 0.001
+    output_cost_per_1k: 0.005
   energy:
     enabled: true
     kwh_per_step: null
@@ -106,7 +106,8 @@ backends:
     mock_mode: false
   api_strong:
     type: "api_qwen"
-    api_name: "qwen3-vl-plus-2025-12-19"
+    # Qwen3-VL-235B-A22B: $0.001/1K in, $0.005/1K out
+    api_name: "qwen.qwen3-vl-235b-a22b"
     temperature: 0.1
     top_p: 0.9
     max_new_tokens: 512

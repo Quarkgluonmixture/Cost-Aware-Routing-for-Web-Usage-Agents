@@ -67,6 +67,13 @@ LIVE_REASON_WATCH_GLM_CONFIG="${LIVE_REASON_WATCH_GLM_CONFIG:-${REPO_DIR}/.auth/
 # 实时增量归因 sidecar pid（单站串行运行，单实例即可）
 LIVE_REASON_WATCH_PID=""
 
+# Experiment watchdog 配置
+WATCHDOG_ENABLE="${WATCHDOG_ENABLE:-1}"
+WATCHDOG_IDLE_ALERT_MINS="${WATCHDOG_IDLE_ALERT_MINS:-20}"
+WATCHDOG_POLL_SECS="${WATCHDOG_POLL_SECS:-30}"
+WATCHDOG_WINDOW_SIZE="${WATCHDOG_WINDOW_SIZE:-20}"
+WATCHDOG_PID=""
+
 # 加载 VWA 站点环境
 if [[ -f "${REPO_DIR}/scripts/vwa_env_remote.sh" ]]; then
   source "${REPO_DIR}/scripts/vwa_env_remote.sh" || true
@@ -135,7 +142,7 @@ start_live_reason_watch() {
   fi
 
   local run_dir="${RESULTS_BASE}/${run_id}"
-  local watch_script="${REPO_DIR}/scripts/reason_diag_live_sidecar.py"
+  local watch_script="${REPO_DIR}/scripts/glm_diagnosis_sidecar.py"
   if [[ ! -f "${watch_script}" ]]; then
     log "[${label}] live reason watch skipped: script not found (${watch_script})"
     return 0
@@ -149,7 +156,7 @@ start_live_reason_watch() {
   # This handles the case where restart_sidecar.sh was used outside the queue,
   # leaving a PID that LIVE_REASON_WATCH_PID no longer tracks.
   local _orphan_pids
-  _orphan_pids="$(ps -eo pid=,args= | awk '/reason_diag_live_sidecar\.py/ && !/awk/ {print $1}')"
+  _orphan_pids="$(ps -eo pid=,args= | awk '/glm_diagnosis_sidecar\.py/ && !/awk/ {print $1}')"
   if [[ -n "${_orphan_pids}" ]]; then
     for _p in ${_orphan_pids}; do
       kill "${_p}" 2>/dev/null || true
@@ -198,6 +205,77 @@ stop_live_reason_watch() {
   fi
   wait "${pid}" 2>/dev/null || true
   LIVE_REASON_WATCH_PID=""
+}
+
+start_watchdog() {
+  local run_id="$1"
+  local label="$2"
+  WATCHDOG_PID=""
+
+  if [[ "${WATCHDOG_ENABLE}" != "1" ]]; then
+    log "[${label}] experiment watchdog disabled (WATCHDOG_ENABLE=${WATCHDOG_ENABLE})."
+    return 0
+  fi
+
+  local run_dir="${RESULTS_BASE}/${run_id}"
+  local watchdog_script="${REPO_DIR}/scripts/experiment_watchdog.py"
+  if [[ ! -f "${watchdog_script}" ]]; then
+    log "[${label}] experiment watchdog skipped: script not found (${watchdog_script})"
+    return 0
+  fi
+  mkdir -p "${run_dir}" "${REPO_DIR}/logs"
+
+  local watchdog_log="${REPO_DIR}/logs/experiment_watchdog_${label}_${run_id}.log"
+  local watchdog_state="${REPO_DIR}/logs/experiment_watchdog_${label}_${run_id}.state.json"
+
+  # Kill any orphaned watchdog processes before starting a new one.
+  local _orphan_pids
+  _orphan_pids="$(ps -eo pid=,args= | awk '/experiment_watchdog\.py/ && !/awk/ {print $1}')"
+  if [[ -n "${_orphan_pids}" ]]; then
+    for _p in ${_orphan_pids}; do
+      kill "${_p}" 2>/dev/null || true
+    done
+    sleep 1
+    for _p in ${_orphan_pids}; do
+      kill -9 "${_p}" 2>/dev/null || true
+    done
+  fi
+
+  log "[${label}] starting experiment watchdog (idle_alert=${WATCHDOG_IDLE_ALERT_MINS}min, poll=${WATCHDOG_POLL_SECS}s)"
+
+  setsid nohup "${PYTHON_BIN}" -u "${watchdog_script}" \
+    --run-dir "${run_dir}" \
+    --poll-secs "${WATCHDOG_POLL_SECS}" \
+    --window-size "${WATCHDOG_WINDOW_SIZE}" \
+    --watchdog-idle-alert-mins "${WATCHDOG_IDLE_ALERT_MINS}" \
+    --ntfy-topic "${NTFY_TOPIC}" \
+    --state-file "${watchdog_state}" \
+    > "${watchdog_log}" 2>&1 < /dev/null &
+  local pid=$!
+  sleep 1
+  if kill -0 "${pid}" 2>/dev/null; then
+    WATCHDOG_PID="${pid}"
+    log "[${label}] experiment watchdog started: pid=${pid} log=${watchdog_log}"
+  else
+    log "[${label}] WARNING: experiment watchdog failed to stay alive. log=${watchdog_log}"
+    tail -n 40 "${watchdog_log}" || true
+  fi
+}
+
+stop_watchdog() {
+  local label="$1"
+  local pid="${WATCHDOG_PID:-}"
+  if [[ -z "${pid}" ]]; then
+    return 0
+  fi
+  if kill -0 "${pid}" 2>/dev/null; then
+    log "[${label}] stopping experiment watchdog pid=${pid}..."
+    kill "${pid}" 2>/dev/null || true
+    sleep 2
+    kill -9 "${pid}" 2>/dev/null || true
+  fi
+  wait "${pid}" 2>/dev/null || true
+  WATCHDOG_PID=""
 }
 
 progress_hint() {
@@ -312,6 +390,7 @@ run_site_foreground() {
 
   mkdir -p "${RESULTS_BASE}/${run_id}"
   start_live_reason_watch "${run_id}" "${label}"
+  start_watchdog "${run_id}" "${label}"
 
   # 后台启动，统一使用 setsid+nohup 并直接写 site log（避免 pipeline 使 PID 不明确）
   setsid nohup "${PYTHON_BIN}" scripts/run_experiment.py \
@@ -377,6 +456,7 @@ run_site_foreground() {
         log "[${label}] WATCHDOG: Process killed."
         wait "${job_pid}" 2>/dev/null || true
         stop_live_reason_watch "${label}"
+        stop_watchdog "${label}"
         return 1
       fi
     fi
@@ -385,6 +465,7 @@ run_site_foreground() {
   wait "${job_pid}" 2>/dev/null || true
   local rc=$?
   stop_live_reason_watch "${label}"
+  stop_watchdog "${label}"
   log "=== [${label}] Process exited rc=${rc} ==="
   return ${rc}
 }
@@ -440,6 +521,7 @@ log "MAX_RESUME_ATTEMPTS=${MAX_RESUME_ATTEMPTS}"
 log "ntfy topic: ${NTFY_TOPIC} (interval: ${NTFY_EPISODE_INTERVAL} episodes)"
 log "ntfy progress: enable=${NTFY_PROGRESS_ENABLE}"
 log "live_reason_watch: enable=${LIVE_REASON_WATCH_ENABLE}, interval=${LIVE_REASON_WATCH_INTERVAL}, poll=${LIVE_REASON_WATCH_POLL_SECS}s"
+log "experiment_watchdog: enable=${WATCHDOG_ENABLE}, idle_alert=${WATCHDOG_IDLE_ALERT_MINS}min, poll=${WATCHDOG_POLL_SECS}s"
 log "========================================================"
 ntfy_send "P79 队列启动" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；顺序: classifieds → reddit → shopping" "default"
 

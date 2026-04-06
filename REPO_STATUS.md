@@ -83,11 +83,23 @@
 2. 远程四站核心链路：shopping/reddit/wikipedia/classifieds DGX 可达
 3. homepage 仍可能因 Windows/WSL 端口代理导致 DGX 不可达（preflight 为 WARN）
 
+## 已知 Bug（B1 跑完后修复）
+
+### Cycle detection 在 SoM（及 DOM）模式下实质失效
+- **发现日期：** 2026-04-06
+- **影响范围：** 所有 Phase 1 条件（dom / som / vision）
+- **Bug 1 — Strict 签名用了 element_id：** VWA 每步重渲染 AXTree，element_id 在步与步之间不稳定。Strict 签名 `atype|eid=X|t=...|c=...|d=...` 无法匹配语义相同但 eid 不同的动作。
+- **Bug 2 — Soft buffer 被 page_changed 清空：** SoM 模式下几乎每步都触发 `content_changed`（SoM 标注本身是动态内容），导致 soft buffer 每步清空，永远无法积累 4 次重复。
+- **实际影响：** task=6 (classifieds, motorcycle 搜索) 在 SoM 下跑满 30 步，应在 ~8 步 early stop。
+- **处理策略：** 不在实验中途修复（避免 within-condition 不一致）。B1 全部跑完后修复。分析阶段用离线 soft signature 重标注哪些 episode 本应被 early stop。
+- **修复方案：** (1) Strict 签名去掉 eid，改用 `atype|t=text|c=coord|d=delta`；(2) Soft buffer 改用 URL path 变化触发清空，而非 `page_changed`。
+
 ## 仍待完成项
 1. homepage `4399` 远程可达性固化为稳定 PASS（减少 run 间歇性波动）
 2. Phase1/2/3 在远程站点模式下做一次完整可复现实验留档
 3. 多 seed 统计汇总（mean/std/置信区间）纳入默认分析报告
 4. 旧 4-bit run (`run_1774622012`) 数据可归档或删除，不作为正式 baseline
+5. B1 跑完后修复 cycle detection bug（见上方）
 
 ## 说明
 - `DGX_SPARK_MACHINE_QUIRKS.md` 是机器特化文档，不作为通用默认流程。

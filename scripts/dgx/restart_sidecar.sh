@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# restart_sidecar.sh — Hot-restart reason_diag_live_sidecar.py instance(s)
+# restart_sidecar.sh — Hot-restart glm_diagnosis_sidecar.py instance(s)
 #
 # "热重启": reads each running sidecar's exact args from /proc/PID/cmdline,
 # kills the old process, then re-launches with setsid+nohup using the same args.
@@ -47,11 +47,11 @@ log() {
 
 # Collect running sidecar PIDs
 mapfile -t sidecar_pids < <(
-  ps -eo pid=,args= | awk '/reason_diag_live_sidecar\.py/ && !/awk/ {print $1}'
+  ps -eo pid=,args= | awk '/glm_diagnosis_sidecar\.py/ && !/awk/ {print $1}'
 )
 
 if [[ ${#sidecar_pids[@]} -eq 0 ]]; then
-  log "No running reason_diag_live_sidecar.py processes found."
+  log "No running glm_diagnosis_sidecar.py processes found."
   exit 0
 fi
 

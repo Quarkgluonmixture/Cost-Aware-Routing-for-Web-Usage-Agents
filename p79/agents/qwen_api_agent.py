@@ -23,6 +23,11 @@ class QwenApiAgent:
         if not self.api_key:
             raise RuntimeError("QWEN_API_KEY (or DASHSCOPE_API_KEY) is not set")
 
+        # enable_thinking: Qwen3 extended thinking via extra_body.
+        # NOTE: DashScope requires temperature=1.0 when enable_thinking=True.
+        # Confirm your model supports VL thinking before enabling.
+        self.enable_thinking: bool = bool(model_cfg.get("enable_thinking", False))
+
         self.client = OpenAI(
             api_key=self.api_key,
             base_url=self.base_url,
@@ -160,15 +165,27 @@ CRITICAL:
         messages = [{"role": "user", "content": content}]
 
         gen_cfg = self.config.get("model", {})
+        temperature = gen_cfg.get("temperature", 0.1)
+        if self.enable_thinking and temperature != 1.0:
+            logger.warning(
+                "enable_thinking requires temperature=1.0 (DashScope); "
+                "got %.2f — overriding to 1.0.", temperature
+            )
+            temperature = 1.0
+        extra_body = {"enable_thinking": True} if self.enable_thinking else None
         response = self.client.chat.completions.create(
             model=self.model_name,
             messages=messages,
-            temperature=gen_cfg.get("temperature", 0.1),
+            temperature=temperature,
             top_p=gen_cfg.get("top_p", 0.9),
-            max_tokens=gen_cfg.get("max_new_tokens", 256),
+            max_tokens=gen_cfg.get("max_new_tokens", 512),
+            extra_body=extra_body,
         )
 
-        output_text = response.choices[0].message.content or ""
+        msg = response.choices[0].message
+        output_text = msg.content or ""
+        # Capture thinking/reasoning content if present (Qwen3 thinking mode)
+        reasoning_content = getattr(msg, "reasoning_content", None) or ""
         action, valid, fail_reason = parse_action_text(output_text)
 
         if action.get("action_type") == "type":
@@ -188,6 +205,8 @@ CRITICAL:
             "image_payload_bytes": image_payload.get("payload_bytes") if image_payload else None,
             "image_quality": image_payload.get("quality") if image_payload else None,
             "image_compressed": image_payload.get("compressed") if image_payload else None,
+            "reasoning_content": reasoning_content if reasoning_content else None,
+            "enable_thinking": self.enable_thinking,
         }
 
         return action, meta

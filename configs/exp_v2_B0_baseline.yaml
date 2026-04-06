@@ -1,0 +1,77 @@
+# B0 — Strong API upper bound
+# Purpose: confirm task solvability and establish performance ceiling for dissertation.
+# Uses Qwen3-VL-235B-A22B (open-source MoE, strongest available VL model) with SOM + thinking.
+# Run: bash scripts/dgx/run_b0_api_baseline.sh
+#
+# Key differences from B1 (local 4B):
+#   - Backend: api_strong (Qwen3-VL-235B) vs local_4b (Qwen3-VL-4B)
+#   - enable_thinking: true — maximise task success for upper-bound measurement
+#     (DashScope forces temperature=1.0 when thinking; handled in QwenApiAgent)
+#   - max_new_tokens: 4096 — room for thinking chain + action JSON
+#   - Pricing: $0.001/1K in, $0.005/1K out (Qwen3-VL-235B-A22B)
+#   - Cost estimate (classifieds, ~450 tasks, thinking on): ~$50-70 total
+#   - Energy tracking: disabled (local GPU is idle; server inference energy is opaque)
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B0_api_strong_upper_bound"
+
+task:
+  # Start with classifieds for quick upper-bound validation (~450 tasks).
+  # Expand to ["shopping", "reddit", "classifieds"] for full-scale B0.
+  include_sites: ["classifieds"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+# No Phase 1 local-model conditions — B0 only.
+# Empty list means conditions.py generates no phase1 base conditions;
+# only the B0 condition is appended (via baselines.run_b0: true).
+variables:
+  primary:
+    observation_mode: []
+
+backends:
+  default_backend: "api_strong"
+  api_strong:
+    type: "api_qwen"
+    # Qwen3-VL-235B-A22B: open-source MoE, strongest VL model on DashScope.
+    # Pricing: $0.001/1K in, $0.005/1K out.
+    api_name: "qwen.qwen3-vl-235b-a22b"
+    # base_url defaults to DashScope International in QwenApiAgent:
+    # https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    temperature: 1.0  # Required by DashScope when enable_thinking=true
+    top_p: 0.9
+    # 4096 tokens to accommodate thinking chain + action JSON.
+    # Thinking chains for web navigation tasks can be 1000-3000 tokens.
+    max_new_tokens: 4096
+    # Thinking mode: maximise reasoning for upper-bound measurement.
+    # QwenApiAgent automatically sets temperature=1.0 when enable_thinking=true.
+    enable_thinking: true
+    max_image_payload_bytes: 5242880
+    image_max_size: 1280
+    max_obs_chars: 12000
+    dom_mode: "llm"
+    mock_mode: false
+
+metrics:
+  cost_api:
+    # Qwen3-VL-235B-A22B pricing (confirmed 2026-04):
+    # $0.001/1K input tokens, $0.005/1K output tokens (includes thinking tokens).
+    input_cost_per_1k: 0.001
+    output_cost_per_1k: 0.005
+  energy:
+    # B0 uses API: local GPU is mostly idle. pynvml/psutil readings are NOT
+    # meaningful indicators of inference energy (server-side energy is opaque).
+    # Note in dissertation: B0 energy = N/A (API black box).
+    use_pynvml: false
+    use_psutil: false
+
+baselines:
+  run_b0: true
+  b0_backend: "api_strong"
+  b0_observation_mode: "som"

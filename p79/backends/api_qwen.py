@@ -26,6 +26,7 @@ class ApiQwenBackend:
                     "max_new_tokens": config.get("max_new_tokens", 512),
                     "temperature": config.get("temperature", 0.1),
                     "top_p": config.get("top_p", 0.9),
+                    "enable_thinking": config.get("enable_thinking", False),
                 },
                 "agent": {
                     "image_max_size": config.get("image_max_size", 1024),
