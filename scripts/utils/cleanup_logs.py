@@ -3,20 +3,20 @@
 
 用法:
     # 清理所有日志（使用默认配置）
-    python scripts/cleanup_logs.py
+    python scripts/utils/cleanup_logs.py
 
     # 只显示将要删除的内容（不实际删除）
-    python scripts/cleanup_logs.py --dry-run
+    python scripts/utils/cleanup_logs.py --dry-run
 
     # 自定义清理策略
-    python scripts/cleanup_logs.py --max-age 7 --max-size 500 --max-count 50
+    python scripts/utils/cleanup_logs.py --max-age 7 --max-size 500 --max-count 50
 
     # 清理指定目录
-    python scripts/cleanup_logs.py --dir logs
-    python scripts/cleanup_logs.py --dir results
+    python scripts/utils/cleanup_logs.py --dir logs
+    python scripts/utils/cleanup_logs.py --dir results
 
     # 显示磁盘使用情况
-    python scripts/cleanup_logs.py --usage-only
+    python scripts/utils/cleanup_logs.py --usage-only
 """
 
 from __future__ import annotations

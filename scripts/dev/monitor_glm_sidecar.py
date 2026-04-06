@@ -30,6 +30,7 @@ SUMMARY_RE = re.compile(r"^(?P<site>.+)_task_(?P<task_id>\d+)_summary_v2\.json$"
 class EpisodeRecord:
     key: str
     condition_id: str
+    observation_mode: str
     site: str
     task_id: int
     success: bool
@@ -85,7 +86,7 @@ def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, str]], tim
         "model": glmm["model"],
         "messages": list(messages),
         "temperature": 0.1,
-        "max_tokens": 220,
+        "max_tokens": 2000,
     }
     body = json.dumps(payload).encode("utf-8")
     last_err = None
@@ -159,6 +160,28 @@ def _task_cfg(task_cfg_cache: Dict[Tuple[str, int], Dict[str, Any]], run_dir: Pa
     data = _read_json(p) if p.exists() else {}
     task_cfg_cache[key] = data
     return data
+
+
+def _get_observation_mode(condition_dir: Path, cache: Dict[str, str]) -> str:
+    condition_id = condition_dir.name
+    if condition_id in cache:
+        return cache[condition_id]
+    meta_path = condition_dir / "condition_meta.json"
+    mode = "dom"
+    if meta_path.exists():
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            mode = str(meta.get("observation_mode", "dom"))
+        except Exception:
+            pass
+    else:
+        cid = condition_id.lower()
+        if "som" in cid:
+            mode = "som"
+        elif "vision" in cid:
+            mode = "vision"
+    cache[condition_id] = mode
+    return mode
 
 
 def _classify_episode(
@@ -254,6 +277,24 @@ def _compute_metrics(window_records: Sequence[EpisodeRecord]) -> Dict[str, float
         "max_steps_rate": c["max_steps"] / n,
         "avg_step_latency_s": avg_step_latency_s,
     }
+
+
+def _mode_summary_line(windows: Dict[str, "Deque[EpisodeRecord]"]) -> str:
+    """Return a one-line per-mode aggregate for quick comparison."""
+    from collections import defaultdict
+    mode_recs: Dict[str, List[EpisodeRecord]] = defaultdict(list)
+    for recs in windows.values():
+        for r in recs:
+            mode_recs[r.observation_mode].append(r)
+    if not mode_recs:
+        return ""
+    parts = []
+    for mode in sorted(mode_recs):
+        recs = mode_recs[mode]
+        n = len(recs)
+        succ = sum(1 for r in recs if r.success)
+        parts.append(f"{mode}: {succ}/{n} ({succ/n:.1%})")
+    return "  |  ".join(parts)
 
 
 def _triggered_rules(m: Dict[str, float], args: argparse.Namespace) -> List[str]:
@@ -401,8 +442,10 @@ def main() -> int:
 
     state_file = Path(args.state_file).resolve() if args.state_file else None
     seen_keys = _load_state(state_file)
-    window: Deque[EpisodeRecord] = deque(maxlen=max(1, int(args.window_size)))
+    windows: Dict[str, Deque[EpisodeRecord]] = {}  # condition_id → rolling window
+    all_records: List[EpisodeRecord] = []  # all-time for final summary
     task_cfg_cache: Dict[Tuple[str, int], Dict[str, Any]] = {}
+    condition_mode_cache: Dict[str, str] = {}
 
     last_alert_sig: Optional[str] = None
     last_alert_ts: float = 0.0
@@ -451,6 +494,9 @@ def main() -> int:
                     no_progress_noop_threshold=float(args.no_progress_noop_threshold),
                 )
 
+                condition_dir = summary_path.parent.parent
+                obs_mode = _get_observation_mode(condition_dir, condition_mode_cache)
+
                 steps = int(summary.get("steps", 0) or 0)
                 total_latency_ms = float(summary.get("total_latency_ms", 0.0) or 0.0)
                 step_latency_s = (total_latency_ms / steps / 1000.0) if steps > 0 else None
@@ -458,6 +504,7 @@ def main() -> int:
                 rec = EpisodeRecord(
                     key=key,
                     condition_id=condition_id,
+                    observation_mode=obs_mode,
                     site=site,
                     task_id=task_id,
                     success=bool(summary.get("success", False)),
@@ -469,18 +516,25 @@ def main() -> int:
                     page_unchanged_rate=float(summary.get("page_unchanged_rate", 0.0) or 0.0),
                     no_op_rate=float(summary.get("no_op_rate", 0.0) or 0.0),
                 )
-                window.append(rec)
+                if condition_id not in windows:
+                    windows[condition_id] = deque(maxlen=max(1, int(args.window_size)))
+                windows[condition_id].append(rec)
+                all_records.append(rec)
                 seen_keys.add(key)
 
-                metrics = _compute_metrics(list(window))
+                cond_window = list(windows[condition_id])
+                metrics = _compute_metrics(cond_window)
+                mode_summary = _mode_summary_line(windows)
                 print(
                     "[monitor] "
-                    f"{condition_id} task={task_id:>3d} reason={reason:<12s} "
+                    f"[{obs_mode}] {condition_id} task={task_id:>3d} reason={reason:<12s} "
                     f"window={int(metrics['count'])}/{args.window_size} "
                     f"succ={metrics['success_rate']:.1%} wrong_url={metrics['wrong_url_rate']:.1%} "
                     f"no_prog={metrics['no_progress_rate']:.1%} max_steps={metrics['max_steps_rate']:.1%} "
                     f"avg_step={metrics['avg_step_latency_s']:.1f}s"
                 )
+                if mode_summary:
+                    print(f"[monitor][MODE]  {mode_summary}")
 
                 rules = _triggered_rules(metrics, args)
                 is_bootstrap_episode = key in bootstrap_keys
@@ -489,7 +543,7 @@ def main() -> int:
                     sig = ",".join(sorted(rules))
                     now = time.time()
                     if sig != last_alert_sig or (now - last_alert_ts) >= int(args.alert_cooldown_secs):
-                        fails = [x for x in reversed(window) if not x.success]
+                        fails = [x for x in reversed(cond_window) if not x.success]
                         diagnosis = _ai_diagnosis(
                             glmm=glmm,
                             run_id=run_id,
@@ -498,9 +552,10 @@ def main() -> int:
                             rules=rules,
                             recent_failures=fails,
                         )
-                        alert_title = f"P79 Monitor Alert [{condition_id}]"
+                        alert_title = f"P79 Monitor Alert [{obs_mode}/{condition_id}]"
                         alert_body = (
                             f"run_id={run_id}\n"
+                            f"mode={obs_mode} condition={condition_id}\n"
                             f"rules={sig}\n"
                             f"window={int(metrics['count'])}\n"
                             f"succ={metrics['success_rate']:.1%}, wrong_url={metrics['wrong_url_rate']:.1%}, "
@@ -519,6 +574,29 @@ def main() -> int:
         if args.once:
             break
         time.sleep(max(1, int(args.poll_secs)))
+
+    # Final summary table — use all_records (not rolling window) for accurate totals
+    if all_records:
+        print("\n[monitor][FINAL SUMMARY]")
+        from collections import defaultdict
+        cond_totals: Dict[str, Dict[str, int]] = defaultdict(lambda: {"total": 0, "success": 0})
+        mode_totals: Dict[str, Dict[str, int]] = defaultdict(lambda: {"total": 0, "success": 0})
+        for r in all_records:
+            cond_totals[r.condition_id]["total"] += 1
+            cond_totals[r.condition_id]["success"] += int(r.success)
+            mode_totals[r.observation_mode]["total"] += 1
+            mode_totals[r.observation_mode]["success"] += int(r.success)
+        for cid in sorted(cond_totals):
+            t = cond_totals[cid]
+            n, s = t["total"], t["success"]
+            mode = condition_mode_cache.get(cid, "?")
+            print(f"  {mode:6s}  {cid:<40s}  {s:>3d}/{n:<3d}  ({s/n:.1%})" if n else f"  {mode:6s}  {cid}")
+        print("  ---")
+        for mode in sorted(mode_totals):
+            t = mode_totals[mode]
+            n, s = t["total"], t["success"]
+            print(f"  {mode:6s}  {'TOTAL':<40s}  {s:>3d}/{n:<3d}  ({s/n:.1%})" if n else f"  {mode:6s}  TOTAL  0/0")
+
     return 0
 
 

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 VWA_DIR="${PROJECT_DIR}/external/visualwebarena"
 ENV_DIR="${VWA_DIR}/environment_docker"
 
@@ -15,7 +15,7 @@ CHECK_ONLY=0
 
 usage() {
   cat <<USAGE
-Usage: bash scripts/import_vwa_assets.sh [options]
+Usage: bash scripts/vwa/import_vwa_assets.sh [options]
 
 Import offline VWA assets from another machine:
   - shopping_final_0712.tar
@@ -33,7 +33,7 @@ Options:
   -h, --help             Show this help
 
 Example:
-  bash scripts/import_vwa_assets.sh --imports-dir /home/jiaming/imports --sites all --hostname localhost
+  bash scripts/vwa/import_vwa_assets.sh --imports-dir /home/jiaming/imports --sites all --hostname localhost
 USAGE
 }
 
@@ -146,8 +146,8 @@ run_start_and_preflight() {
   if (( RUN_PREFLIGHT == 1 )); then
     echo "== Running preflight =="
     # shellcheck disable=SC1090
-    source "${SCRIPT_DIR}/vwa_env.sh"
-    bash "${SCRIPT_DIR}/preflight_v2.sh"
+    source "${SCRIPT_DIR}/../vwa_env.sh"
+    bash "${SCRIPT_DIR}/../preflight_v2.sh"
   fi
 }
 

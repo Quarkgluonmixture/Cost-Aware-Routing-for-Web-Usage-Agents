@@ -10,7 +10,9 @@ Live reason-diagnostics sidecar:
 from __future__ import annotations
 
 import argparse
+import base64
 import csv
+import fcntl
 import json
 import shutil
 import subprocess
@@ -45,13 +47,13 @@ def _candidate_glm_urls(endpoint: str) -> List[str]:
     return [f"{ep}/chat/completions", ep]
 
 
-def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, str]], timeout_s: int = 120) -> str:
+def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, Any]], timeout_s: int = 120) -> str:
     payload_variants = [
         {
             "model": glmm["model"],
             "messages": list(messages),
             "temperature": 0.1,
-            "max_tokens": 4096,
+            "max_tokens": 32768,
         },
     ]
     last_err: Optional[Exception] = None
@@ -324,6 +326,7 @@ def _extract_new_failed_cases(
                 "search_queries": search_queries,
                 "stuck_subtype": str(r.get("stuck_subtype", "") or "").strip(),
                 "unreachable_subtype": str(r.get("unreachable_subtype", "") or "").strip(),
+                "degraded_som_steps": _to_int(r.get("degraded_som_steps")) or 0,
             }
         )
     failed.sort(key=lambda x: int(x.get("task_id") or -1), reverse=True)
@@ -390,6 +393,74 @@ def _case_evidence(case: Dict[str, Any]) -> str:
         if select_bits:
             parts.append("最近select=" + ",".join(select_bits))
     return "；".join(parts[:5])
+
+
+def _task_intent_to_short_zh(intent: str) -> str:
+    """Convert English VWA task_intent to short Chinese summary (≤15 chars)."""
+    import re as _re
+    s = (intent or "").strip()
+    if not s:
+        return ""
+
+    def _q(m: "_re.Match") -> str:  # type: ignore[name-defined]
+        return m.group(1).strip('"\'') if m else ""
+
+    # Navigate to most/least/newest/oldest listing
+    m = _re.search(r'[Nn]avigate to the (most |least |newest |oldest )(expensive |cheap\S* |recent |old\S* )?', s, _re.I)
+    if m:
+        qualifier = (m.group(1) + (m.group(2) or "")).strip().lower()
+        mapping = {
+            "most expensive": "最贵", "most": "最贵",
+            "least expensive": "最便宜", "cheapest": "最便宜", "least": "最便宜",
+            "newest": "最新", "most recent": "最新",
+            "oldest": "最旧",
+        }
+        adj = mapping.get(qualifier, qualifier[:6])
+        # try to get search keyword
+        km = _re.search(r'[Ss]earch(?:ing)? for ["\']?([^"\']+?)["\']? and', s)
+        kw = _q(km)[:8] if km else ""
+        return f"搜{kw}找{adj}listing" if kw else f"找{adj}listing"
+
+    # Search for X and navigate to ...
+    m = _re.search(r'[Ss]earch for ["\']?([^"\']+?)["\']? and (navigate|find|go)', s, _re.I)
+    if m:
+        kw = m.group(1).strip()[:10]
+        rest = s[m.end():].strip().lower()
+        if any(x in rest for x in ("most expensive", "highest price")):
+            return "搜" + kw + "找最贵"
+        if any(x in rest for x in ("least expensive", "cheapest", "lowest price")):
+            return "搜" + kw + "找最便宜"
+        if any(x in rest for x in ("newest", "most recent", "latest")):
+            return "搜" + kw + "找最新"
+        if any(x in rest for x in ("oldest",)):
+            return "搜" + kw + "找最旧"
+        return "搜" + kw + "并导航"
+
+    # What is the email/phone/price of ...
+    m = _re.search(r'[Ww]hat is the (email|phone|price|title|name|location|address|seller)', s, _re.I)
+    if m:
+        field = {"email": "邮箱", "phone": "电话", "price": "价格", "title": "标题",
+                 "name": "名称", "location": "地点", "address": "地址", "seller": "卖家信息"}.get(m.group(1).lower(), m.group(1))
+        return f"查询{field}"
+
+    # Add/give a N star rating
+    m = _re.search(r'(?:Add|Give|Leave) (?:a )?(\d+)[- ]star', s, _re.I)
+    if m:
+        return f"打{m.group(1)}星评价"
+
+    # Message/contact the seller
+    if _re.search(r'[Mm]essage|[Cc]ontact|[Ss]end.*seller', s, _re.I):
+        return "给卖家发消息"
+
+    # Find the most/least expensive X
+    m = _re.search(r'[Ff]ind (?:the )?(most|least) (expensive|cheap\S+) (\w[\w\s]{0,12})', s, _re.I)
+    if m:
+        adj = "最贵" if m.group(1).lower() == "most" else "最便宜"
+        obj = m.group(3).strip()[:8]
+        return f"找{adj}{obj}"
+
+    # Fallback: first 12 chars of English (better than 40-char truncation)
+    return s[:12]
 
 
 def _fallback_episode_diagnosis(case: Dict[str, Any]) -> Dict[str, Any]:
@@ -516,8 +587,10 @@ def _fallback_episode_diagnosis(case: Dict[str, Any]) -> Dict[str, Any]:
         "fail_env_error",
         "fail_summary_error",
         "fail_max_steps_click_back_loop",
-        "fail_max_steps_target_unreachable",
     }:
+        # fail_max_steps_target_unreachable is NOT unconditionally a scaffold issue:
+        # in SoM/vision modes the agent can see images, so target-unreachable is a
+        # model capability failure. Only classify as scaffold via unreachable_subtype.
         scaffolding_issue = "是"
     elif _unreachable_subtype in ("visual_dom_only", "location_filter_keyword", "location_filter"):
         scaffolding_issue = "是"
@@ -531,12 +604,14 @@ def _fallback_episode_diagnosis(case: Dict[str, Any]) -> Dict[str, Any]:
         scroll_only_like = ("scroll×" in seq) and (not has_type) and ("click×" not in seq)
         if task_type == "page_reading" and scroll_only_like and (hit_max_steps or early_finish):
             scaffolding_issue = "是"
-        if task_type == "page_reading" and observation_mode == "dom" and scroll_only_like:
+        # Scroll-only page_reading without finishing: scaffold issue in all observation modes
+        # (DOM: no visual output; SoM degraded: effectively DOM; vision: agent can't locate submit)
+        if task_type == "page_reading" and scroll_only_like:
             scaffolding_issue = "是"
     return {
         "task_id": task_id,
         "condition_id": condition_id,
-        "task_intent": str(case.get("task_intent", "") or "").strip()[:40],
+        "task_intent": _task_intent_to_short_zh(str(case.get("task_intent", "") or "").strip()),
         "category": category,
         "root_cause": root_cause,
         "confidence": confidence,
@@ -570,7 +645,49 @@ def _extract_visited_item_ids(case: Dict[str, Any]) -> List[str]:
     return ids
 
 
-def _glm_episode_diagnosis_one(glmm: Optional[Dict[str, str]], case: Dict[str, Any]) -> Dict[str, Any]:
+def _find_episode_artifact_dir(run_dir: Path, condition_id: str, task_id: int) -> Optional[Path]:
+    """Find the artifact directory for a given condition + task_id."""
+    artifacts_dir = run_dir / condition_id / "artifacts"
+    if not artifacts_dir.exists():
+        return None
+    for d in artifacts_dir.iterdir():
+        if d.is_dir() and d.name.endswith(f"_task_{task_id}"):
+            return d
+    return None
+
+
+def _load_som_marks_steps(episode_dir: Path, step_indices: Sequence[int]) -> Dict[int, str]:
+    """Load observation_som.txt for specified step indices."""
+    result: Dict[int, str] = {}
+    for idx in step_indices:
+        path = episode_dir / f"step_{idx:03d}" / "observation_som.txt"
+        if path.exists():
+            try:
+                text = path.read_text(encoding="utf-8").strip()
+                if text:
+                    result[idx] = text
+            except Exception:
+                pass
+    return result
+
+
+def _load_som_image_b64(episode_dir: Path, step_idx: int) -> Optional[str]:
+    """Load annotated SoM screenshot as base64 string."""
+    path = episode_dir / "som" / f"step_{step_idx:03d}_som.png"
+    if path.exists():
+        try:
+            return base64.b64encode(path.read_bytes()).decode("utf-8")
+        except Exception:
+            pass
+    return None
+
+
+def _glm_episode_diagnosis_one(
+    glmm: Optional[Dict[str, str]],
+    case: Dict[str, Any],
+    som_marks_by_step: Optional[Dict[int, str]] = None,
+    som_images_by_step: Optional[Dict[int, str]] = None,
+) -> Dict[str, Any]:
     fallback = _fallback_episode_diagnosis(case)
     if not glmm:
         return fallback
@@ -606,117 +723,218 @@ def _glm_episode_diagnosis_one(glmm: Optional[Dict[str, str]], case: Dict[str, A
         "reason_bucket": case.get("reason_bucket"),
         "stuck_subtype": case.get("stuck_subtype", ""),
         "unreachable_subtype": case.get("unreachable_subtype", ""),
+        "degraded_som_steps": int(case.get("degraded_som_steps") or 0),
         "select_events": (case.get("select_events") or [])[-12:],
         "visited_item_ids": _extract_visited_item_ids(case),
+        "som_marks_by_step": {str(k): v for k, v in (som_marks_by_step or {}).items()},
     }
+    _system_content = (
+        "你是实验失败归因助手。请基于单个失败 episode 的上下文输出结构化诊断（中文，严格 JSON）。\n"
+        "输入字段包括：task_intent、task_type、observation_mode、thought_at_step_0、all_step_thoughts、final_answer、reference_answers、reference_url、select_events、search_queries、loop_pattern。\n"
+        "som_marks_by_step（若存在）：各关键步骤中 agent 实际收到的 SoM 标注文本（[SOM_MARKS]...块），"
+        "可用于核查目标元素是否出现在标注中、agent 选择了哪个 element_id 等。\n"
+        "若消息中附有图片，图片为对应步骤的 SoM 标注截图（带编号框），"
+        "可直接观察页面布局、标注覆盖情况及目标元素是否可见。\n"
+        "输出必须严格为 JSON 对象："
+        '{"task_id":123,"task_summary":"...","category":"...","root_cause":"...","is_scaffolding_issue":"是|否","evidence":"..."}\n'
+        "要求：\n"
+        "0) task_summary：≤12字中文，用口语概括任务目标核心操作，如「找最贵的船并打五星」「给帖子添加评论」「查找红色自行车价格」；不要包含条件细节；\n"
+        "1) task_id 必须保留；\n"
+        "2) 必须结合 all_step_thoughts 给出结论，不要只复述 bucket；\n"
+        "3) root_cause 要简短具体（<=60字），不要包含任务要求原文；\n"
+        "4) evidence 必须给出至少一个具体证据点（如某步 thought 的关键词/决策逻辑、重复搜索词及其失败原因、连续无变化区间、某次select值/id）；"
+        "禁止原样输出 action_type_sequence 或 page_type_sequence 的压缩字符串（如 clickx4|waitx1 或 other|search|detail 等），这些对人类无意义；\n"
+        "5) 不要给建议，不要输出 markdown；\n"
+        "6) 禁止使用泛化模板句「思维与动作重复，且页面长期无变化，关键交互未完成」；\n"
+        "7) 若 loop_pattern=click_back_loop，必须回答：agent 每次进入详情页后为什么选择返回？"
+        "具体分析：(a) agent 进入详情页后 thought 里在验证什么属性？(b) 它读到了什么、缺少什么信息导致判断失败？"
+        "(c) 若 target_item_ever_visible=false 则说明目标根本未出现在结果中，agent 只能盲目尝试；"
+        "(d) 若 visited_item_ids 中出现重复 id 则说明 agent 缺乏访问历史记忆，反复进入同一页面。"
+        "禁止仅描述循环发生而不解释决策失败原因；\n"
+        "8) 若 loop_pattern=search_repeat_loop，必须引用重复搜索词证据；\n"
+        "9) 若 reference_answers 提供了价格/答案，evidence 必须优先引用 reference_answers，不得编造具体数字；\n"
+        "10) 若 task_type=page_reading，应优先判断「是否读取初始页面信息」，不要默认要求搜索。\n"
+        "11) 若 task_type=page_reading 且动作几乎只有 scroll/无 type（任何 observation_mode 均适用），可判定 is_scaffolding_issue=是。\n"
+        "12) 若 target_item_ever_visible=false，必须进一步分析目标为何未出现，需覆盖以下三点："
+        "(a) agent 实际使用了哪些搜索词（引用 search_queries 字段），这些词是否能合理匹配目标商品？"
+        "(b) 若搜索词本身无效（如过于泛化、含模板占位符、语义偏差），归因为模型选词错误；"
+        "(c) 若搜索词合理但目标仍未出现，分析是否因 DOM/accessibility tree 缺失关键属性（颜色/品牌/图片内容）"
+        "导致结构性不可达，这种情况应判定 is_scaffolding_issue=是。"
+        "禁止仅写目标未出现而不解释搜索词与目标的语义匹配关系。\n"
+        "13) 若 stuck_subtype=account_loop，必须判定 is_scaffolding_issue=是，"
+        "说明 agent 触碰了认证墙（始终停留在 account/login 页面），无法进入任务所需功能入口，这是脚手架鉴权配置缺陷。\n"
+        "14) 若 stuck_subtype=scroll_static，说明 agent 在页面上只找到了 scroll 操作，"
+        "没有找到可点击/输入的交互元素，说明页面可访问性不足，应判定 is_scaffolding_issue=是。\n"
+        "15) 若 unreachable_subtype=visual_dom_only 或 location_filter_keyword 或 location_filter，"
+        "必须判定 is_scaffolding_issue=是："
+        "visual_dom_only 意味着任务需要图片内容匹配但观测模式无法感知 listing 图片"
+        "（DOM-only 模式天然不可见；SoM 模式若 degraded_som_steps>0 则也等价于 DOM-only）；"
+        "location_filter_keyword/location_filter 意味着任务要求按地区筛选但地区 UI 入口在 DOM 中不可操作，"
+        "agent 只能把地名当搜索词，导致结果集无法限定到目标地区。\n"
+        "16) 观测模式特异性规则：\n"
+        "- observation_mode=dom：看不到图片，颜色/视觉属性类任务结构性不可达，归 is_scaffolding_issue=是；\n"
+        "- observation_mode=som：有截图+标注框，视觉任务原则上可完成；"
+        "若 degraded_som_steps>0（SoM 标注失效步骤数），说明部分步骤退化为 DOM-only，"
+        "视觉任务在这些步骤中不可达；degraded_som_steps=0 的视觉任务失败属于模型能力问题；\n"
+        "- observation_mode=vision：纯截图模式，视觉任务理论上可完成；失败通常为模型推理能力不足，"
+        "is_scaffolding_issue 默认为否，除非有其他明确的脚手架缺陷证据。\n"
+        "17) 若提供了 som_marks_by_step，必须结合其中的元素列表辅助分析："
+        "检查目标商品是否出现在 SoM marks 中（若未出现则 target_item 在感知层不可达）；"
+        "核对 agent thought 引用的 element_id 是否与 marks 中对应的元素类型/标签一致；"
+        "若图片也已提供，结合截图确认 agent 在视觉上是否能看到目标区域。"
+    )
+    _payload_text = json.dumps(payload, ensure_ascii=False)
+    # Build multimodal user content if vision images are present
+    _images = som_images_by_step or {}
+    if _images:
+        _user_content: Any = [{"type": "text", "text": _payload_text}]
+        for _sidx in sorted(_images.keys()):
+            _user_content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{_images[_sidx]}"},
+            })
+        # Use vision-capable model when images are present
+        _glmm_use = dict(glmm)
+        _glmm_use["model"] = glmm.get("vision_model") or "GLM-5V-Turbo"
+    else:
+        _user_content = _payload_text
+        _glmm_use = glmm
     messages = [
-        {
-            "role": "system",
-            "content": (
-                "你是实验失败归因助手。请基于单个失败 episode 的上下文输出结构化诊断（中文，严格 JSON）。\n"
-                "输入字段包括：task_intent、task_type、observation_mode、thought_at_step_0、all_step_thoughts、final_answer、reference_answers、reference_url、select_events、search_queries、loop_pattern。\n"
-                "输出必须严格为 JSON 对象："
-                '{"task_id":123,"task_summary":"...","category":"...","root_cause":"...","is_scaffolding_issue":"是|否","evidence":"..."}\n'
-                "要求：\n"
-                "0) task_summary：≤12字中文，用口语概括任务目标核心操作，如「找最贵的船并打五星」「给帖子添加评论」「查找红色自行车价格」；不要包含条件细节；\n"
-                "1) task_id 必须保留；\n"
-                "2) 必须结合 all_step_thoughts 给出结论，不要只复述 bucket；\n"
-                "3) root_cause 要简短具体（<=60字），不要包含任务要求原文；\n"
-                "4) evidence 必须给出至少一个具体证据点（如某步 thought 的关键词/决策逻辑、重复搜索词及其失败原因、连续无变化区间、某次select值/id）；"
-                "禁止原样输出 action_type_sequence 或 page_type_sequence 的压缩字符串（如 clickx4|waitx1 或 other|search|detail 等），这些对人类无意义；\n"
-                "5) 不要给建议，不要输出 markdown；\n"
-                "6) 禁止使用泛化模板句「思维与动作重复，且页面长期无变化，关键交互未完成」；\n"
-                "7) 若 loop_pattern=click_back_loop，必须回答：agent 每次进入详情页后为什么选择返回？"
-                "具体分析：(a) agent 进入详情页后 thought 里在验证什么属性？(b) 它读到了什么、缺少什么信息导致判断失败？"
-                "(c) 若 target_item_ever_visible=false 则说明目标根本未出现在结果中，agent 只能盲目尝试；"
-                "(d) 若 visited_item_ids 中出现重复 id 则说明 agent 缺乏访问历史记忆，反复进入同一页面。"
-                "禁止仅描述循环发生而不解释决策失败原因；\n"
-                "8) 若 loop_pattern=search_repeat_loop，必须引用重复搜索词证据；\n"
-                "9) 若 reference_answers 提供了价格/答案，evidence 必须优先引用 reference_answers，不得编造具体数字；\n"
-                "10) 若 task_type=page_reading，应优先判断「是否读取初始页面信息」，不要默认要求搜索。\n"
-                "11) 若 task_type=page_reading 且 observation_mode=dom 且动作几乎只有 scroll/无 type，可判定 is_scaffolding_issue=是。\n"
-                "12) 若 target_item_ever_visible=false，必须进一步分析目标为何未出现，需覆盖以下三点："
-                "(a) agent 实际使用了哪些搜索词（引用 search_queries 字段），这些词是否能合理匹配目标商品？"
-                "(b) 若搜索词本身无效（如过于泛化、含模板占位符、语义偏差），归因为模型选词错误；"
-                "(c) 若搜索词合理但目标仍未出现，分析是否因 DOM/accessibility tree 缺失关键属性（颜色/品牌/图片内容）"
-                "导致结构性不可达，这种情况应判定 is_scaffolding_issue=是。"
-                "禁止仅写目标未出现而不解释搜索词与目标的语义匹配关系。\n"
-                "13) 若 stuck_subtype=account_loop，必须判定 is_scaffolding_issue=是，"
-                "说明 agent 触碰了认证墙（始终停留在 account/login 页面），无法进入任务所需功能入口，这是脚手架鉴权配置缺陷。\n"
-                "14) 若 stuck_subtype=scroll_static，说明 agent 在页面上只找到了 scroll 操作，"
-                "没有找到可点击/输入的交互元素，说明页面可访问性不足，应判定 is_scaffolding_issue=是。\n"
-                "15) 若 unreachable_subtype=visual_dom_only 或 location_filter_keyword 或 location_filter，"
-                "必须判定 is_scaffolding_issue=是："
-                "visual_dom_only 意味着任务需要图片内容匹配但 DOM-only 观测模式无法感知 listing 图片；"
-                "location_filter_keyword/location_filter 意味着任务要求按地区筛选但地区 UI 入口在 DOM 中不可操作，"
-                "agent 只能把地名当搜索词，导致结果集无法限定到目标地区。"
-            ),
-        },
-        {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+        {"role": "system", "content": _system_content},
+        {"role": "user", "content": _user_content},
     ]
-    try:
-        raw = _call_glm_chat(glmm, messages).strip()
-        if raw.startswith("```"):
-            raw = raw.strip("`")
-            if raw.lower().startswith("json"):
-                raw = raw[4:].strip()
-        parsed: Optional[Dict[str, Any]] = None
+    _MAX_RETRIES = 3
+    _RETRY_SLEEP_S = 12
+    last_exc: Optional[Exception] = None
+    for _attempt in range(1, _MAX_RETRIES + 1):
         try:
-            obj = json.loads(raw)
-            if isinstance(obj, dict):
-                parsed = obj
-        except Exception:
-            l = raw.find("{")
-            r = raw.rfind("}")
-            if l >= 0 and r > l:
-                try:
-                    obj = json.loads(raw[l : r + 1])
-                    if isinstance(obj, dict):
-                        parsed = obj
-                except Exception:
-                    parsed = None
-        if not parsed:
-            return fallback
-        task_id = _to_int(parsed.get("task_id"))
-        task_summary = str(parsed.get("task_summary", "") or "").strip()
-        category = str(parsed.get("category", "") or "").strip()
-        root_cause = str(parsed.get("root_cause", "") or "").strip()
-        confidence = str(parsed.get("confidence", "") or "").strip().lower()
-        issue = str(parsed.get("is_scaffolding_issue", "") or parsed.get("is_agent_capability_issue", "") or "").strip()
-        evidence = str(parsed.get("evidence", "") or "").strip()
-        if task_id is None or not category or not root_cause:
-            return fallback
-        issue_norm = issue.lower()
-        if issue in {"是", "否"}:
-            issue_cn = issue
-        elif issue_norm in {"yes", "true", "1", "y"}:
-            issue_cn = "是"
-        elif issue_norm in {"no", "false", "0", "n"}:
-            issue_cn = "否"
-        else:
-            issue_cn = str(fallback.get("is_scaffolding_issue", "否"))
-        if confidence not in {"high", "medium", "low"}:
-            confidence = "medium"
-        if not evidence:
-            evidence = _case_evidence(case)
-        return {
-            "task_id": task_id,
-            "condition_id": str(case.get("condition_id", "") or "").strip(),
-            "task_intent": task_summary or str(case.get("task_intent", "") or "").strip(),
-            "category": category,
-            "root_cause": root_cause,
-            "confidence": confidence,
-            "is_scaffolding_issue": issue_cn,
-            "evidence": evidence,
-        }
-    except Exception:
-        return fallback
+            raw = _call_glm_chat(_glmm_use, messages).strip()
+            if raw.startswith("```"):
+                raw = raw.strip("`")
+                if raw.lower().startswith("json"):
+                    raw = raw[4:].strip()
+            parsed: Optional[Dict[str, Any]] = None
+            try:
+                obj = json.loads(raw)
+                if isinstance(obj, dict):
+                    parsed = obj
+            except Exception:
+                l = raw.find("{")
+                r = raw.rfind("}")
+                if l >= 0 and r > l:
+                    try:
+                        obj = json.loads(raw[l : r + 1])
+                        if isinstance(obj, dict):
+                            parsed = obj
+                    except Exception:
+                        parsed = None
+            if not parsed:
+                raise ValueError(f"GLM returned unparseable response: {raw[:200]!r}")
+            task_id = _to_int(parsed.get("task_id"))
+            task_summary = str(parsed.get("task_summary", "") or "").strip()
+            category = str(parsed.get("category", "") or "").strip()
+            root_cause = str(parsed.get("root_cause", "") or "").strip()
+            confidence = str(parsed.get("confidence", "") or "").strip().lower()
+            issue = str(parsed.get("is_scaffolding_issue", "") or parsed.get("is_agent_capability_issue", "") or "").strip()
+            evidence = str(parsed.get("evidence", "") or "").strip()
+            if task_id is None or not category or not root_cause:
+                raise ValueError(f"GLM response missing required fields: {parsed}")
+            issue_norm = issue.lower()
+            if issue in {"是", "否"}:
+                issue_cn = issue
+            elif issue_norm in {"yes", "true", "1", "y"}:
+                issue_cn = "是"
+            elif issue_norm in {"no", "false", "0", "n"}:
+                issue_cn = "否"
+            else:
+                issue_cn = str(fallback.get("is_scaffolding_issue", "否"))
+            if confidence not in {"high", "medium", "low"}:
+                confidence = "medium"
+            if not evidence:
+                evidence = _case_evidence(case)
+            return {
+                "task_id": task_id,
+                "condition_id": str(case.get("condition_id", "") or "").strip(),
+                "task_intent": task_summary or _task_intent_to_short_zh(str(case.get("task_intent", "") or "").strip()),
+                "category": category,
+                "root_cause": root_cause,
+                "confidence": confidence,
+                "is_scaffolding_issue": issue_cn,
+                "evidence": evidence,
+            }
+        except Exception as e:  # noqa: BLE001
+            last_exc = e
+            task_id_hint = case.get("task_id", "?")
+            print(
+                f"[live-diag] WARNING: GLM episode diagnosis attempt {_attempt}/{_MAX_RETRIES} "
+                f"failed task_id={task_id_hint}: {type(e).__name__}: {e}"
+            )
+            if _attempt < _MAX_RETRIES:
+                time.sleep(_RETRY_SLEEP_S)
+    # All retries exhausted — raise so caller decides what to do (no silent fallback)
+    task_id_hint = case.get("task_id", "?")
+    raise RuntimeError(
+        f"GLM episode diagnosis failed after {_MAX_RETRIES} retries for task_id={task_id_hint}: {last_exc}"
+    )
 
 
-def _glm_episode_diagnosis(glmm: Optional[Dict[str, str]], cases: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _glm_episode_diagnosis(
+    glmm: Optional[Dict[str, str]],
+    cases: Sequence[Dict[str, Any]],
+    run_dir: Optional[Path] = None,
+) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
-    for case in cases:
-        out.append(_glm_episode_diagnosis_one(glmm=glmm, case=case))
+    for i, case in enumerate(cases):
+        if i > 0:
+            time.sleep(2)  # prevent rapid-fire rate limiting
+        # Determine key step indices: step 0, stuck start, last step
+        _thoughts = case.get("all_step_thoughts") or []
+        _thought_idxs = [
+            int(t.get("step_idx", -1)) for t in _thoughts
+            if isinstance(t, dict) and _to_int(t.get("step_idx")) is not None and int(t.get("step_idx", -1)) >= 0
+        ]
+        _last_step = max(_thought_idxs) if _thought_idxs else None
+        _stuck_step = _to_int(case.get("stuck_first_step"))
+        _key_steps: List[int] = [0]
+        if _stuck_step is not None and _stuck_step > 0:
+            _key_steps.append(_stuck_step)
+        if _last_step is not None and _last_step > 0 and _last_step not in _key_steps:
+            _key_steps.append(_last_step)
+        # Load SoM artifacts
+        _som_marks: Dict[int, str] = {}
+        _som_images: Dict[int, str] = {}
+        if run_dir is not None:
+            _task_id = _to_int(case.get("task_id"))
+            _cond_id = str(case.get("condition_id", "") or "").strip()
+            if _task_id is not None and _cond_id:
+                _ep_dir = _find_episode_artifact_dir(run_dir, _cond_id, _task_id)
+                if _ep_dir is not None:
+                    _som_marks = _load_som_marks_steps(_ep_dir, _key_steps)
+                    if str(case.get("observation_mode", "")) == "som":
+                        for _s in _key_steps:
+                            _b64 = _load_som_image_b64(_ep_dir, _s)
+                            if _b64:
+                                _som_images[_s] = _b64
+        try:
+            out.append(_glm_episode_diagnosis_one(
+                glmm=glmm,
+                case=case,
+                som_marks_by_step=_som_marks or None,
+                som_images_by_step=_som_images or None,
+            ))
+        except Exception as e:  # noqa: BLE001
+            task_id_hint = case.get("task_id", "?")
+            print(f"[live-diag] ERROR: GLM episode diagnosis permanently failed task_id={task_id_hint}: {e}")
+            out.append({
+                "task_id": _to_int(case.get("task_id")),
+                "condition_id": str(case.get("condition_id", "") or "").strip(),
+                "task_intent": str(case.get("task_intent", "") or "")[:60].strip(),
+                "category": "GLM_FAILED",
+                "root_cause": f"GLM诊断失败，请手动分析（错误：{type(e).__name__}）",
+                "confidence": "low",
+                "is_scaffolding_issue": "?",
+                "evidence": "",
+            })
     return out
 
 
@@ -744,6 +962,7 @@ def _category_to_zh(cat: str) -> str:
         "navigation failure": "导航失败",
         "answer mismatch": "答案不匹配",
         "fail_finish_eval_mismatch": "答案对齐错误",
+        "glm_failed": "⚠GLM诊断失败",
     }
     return mapping.get(low, c or "综合失败")
 
@@ -760,7 +979,7 @@ def _format_episode_report_lines(items: Sequence[Dict[str, Any]]) -> List[str]:
         root = str(x.get("root_cause", "") or "").strip()
         evidence = str(x.get("evidence", "") or "").strip()
         scaffolding_issue = str(x.get("is_scaffolding_issue", "否") or "否").strip()
-        if scaffolding_issue not in {"是", "否"}:
+        if scaffolding_issue not in {"是", "否", "?"}:
             scaffolding_issue = "否"
         if task_id is None:
             continue
@@ -1035,7 +1254,8 @@ def _glm_conclusion(
         if not items:
             items = fallback_diag[:3]
         return {"semantic_summary": summary, "failure_diagnosis": items}
-    except Exception:
+    except Exception as e:  # noqa: BLE001
+        print(f"[live-diag] WARNING: GLM conclusion failed run_id={run_id} episodes={episodes}: {type(e).__name__}: {e}")
         return fallback
 
 
@@ -1053,6 +1273,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--glm-config", default=".auth/glm", help="Path to glm config file")
     p.add_argument("--disable-glm", action="store_true")
     p.add_argument("--ntfy-topic", default=None, help="Optional ntfy topic")
+    p.add_argument("--label", default=None, help="Short label used in ntfy title, e.g. 'classifieds' (overrides condition/run_id fallback)")
     p.add_argument("--state-file", default=None, help="Optional state json file")
     p.add_argument(
         "--ntfy-cooldown-secs",
@@ -1089,6 +1310,26 @@ def main() -> int:
         raise SystemExit(f"diag_script not found: {diag_script_path}")
 
     state_file = Path(args.state_file).resolve() if args.state_file else None
+
+    # Exclusive flock: only one sidecar per state file may run at a time.
+    # A second instance (manually started or orphaned) exits immediately.
+    _lock_fd = None
+    if state_file:
+        _lock_path = state_file.with_suffix(".lock")
+        _lock_path.parent.mkdir(parents=True, exist_ok=True)
+        _lock_fd = open(_lock_path, "w")  # noqa: SIM115
+        try:
+            fcntl.flock(_lock_fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            _lock_fd.write(str(__import__("os").getpid()))
+            _lock_fd.flush()
+        except BlockingIOError:
+            print(
+                f"[live-diag] Another sidecar instance holds the lock ({_lock_path}). "
+                "Exiting to avoid competition."
+            )
+            _lock_fd.close()
+            return 1
+
     state = _load_state(state_file)
     last_trigger_count = int(state.get("last_trigger_count", 0) or 0)
     ntfy_cooldown_until = float(state.get("ntfy_cooldown_until", 0) or 0.0)
@@ -1180,14 +1421,43 @@ def main() -> int:
                     1 for r in _cond_rows if _to_optional_bool(r.get("success")) is True
                 )
                 success_rate = (success_count / episodes) if episodes > 0 else 0.0
+
+                # Determine the active mode(s) for this trigger: conditions with new episodes
+                from collections import defaultdict as _defaultdict
+                _mode_stats: Dict[str, Dict[str, int]] = _defaultdict(lambda: {"total": 0, "success": 0})
+                _active_mode_stats: Dict[str, Dict[str, int]] = _defaultdict(lambda: {"total": 0, "success": 0})
+                for _r in _csv_rows:
+                    _mode = str(_r.get("observation_mode", "") or "?").strip() or "?"
+                    _cid = str(_r.get("condition_id", "") or "").strip()
+                    _tid = _to_int(_r.get("task_id"))
+                    _ok = _to_optional_bool(_r.get("success")) is True
+                    _mode_stats[_mode]["total"] += 1
+                    if _ok:
+                        _mode_stats[_mode]["success"] += 1
+                    # "active" = new episodes since last trigger
+                    _prev_max = last_task_max_by_condition.get(_cid, -1)
+                    if _tid is not None and _tid > _prev_max:
+                        _active_mode_stats[_mode]["total"] += 1
+                        if _ok:
+                            _active_mode_stats[_mode]["success"] += 1
+                # Single success line: show active mode(s) with cumulative totals
+                _shown_stats = _active_mode_stats if _active_mode_stats else _mode_stats
+                _success_line = "  ".join(
+                    f"{m}: {_mode_stats[m]['success']}/{_mode_stats[m]['total']} ({_mode_stats[m]['success']/_mode_stats[m]['total']:.1%})"
+                    for m in sorted(_shown_stats)
+                ) or f"{success_count}/{episodes}"
+
                 top_lines = _top_bucket_lines(summary_json, top_k=5)
+                _glm_episodes = episodes
+                _glm_bucket_map = bucket_map if isinstance(bucket_map, dict) else {}
+
                 glm_diag = _glm_conclusion(
                     glmm=glmm,
                     run_id=run_dir.name,
                     condition=args.condition,
-                    episodes=episodes,
+                    episodes=_glm_episodes,
                     task_max=task_max,
-                    bucket_map=bucket_map if isinstance(bucket_map, dict) else {},
+                    bucket_map=_glm_bucket_map,
                 )
                 glm_text = str(glm_diag.get("semantic_summary", "") or "").strip()
                 failure_diag = glm_diag.get("failure_diagnosis")
@@ -1199,12 +1469,13 @@ def main() -> int:
                     condition_filter=args.condition,
                     max_cases=int(args.episode_diagnosis_max_cases),
                 )
-                episode_diagnoses = _glm_episode_diagnosis(glmm=glmm, cases=new_failed_cases)
+                episode_diagnoses = _glm_episode_diagnosis(glmm=glmm, cases=new_failed_cases, run_dir=run_dir)
                 episode_diag_lines = _format_episode_report_lines(episode_diagnoses)
                 msg_lines = [
                     f"run_id={run_dir.name}",
                     f"condition={args.condition or '*'}",
                     f"episodes={episodes}",
+                    f"success={_success_line}",
                     f"task_max={task_max}",
                     "top_buckets:",
                     *[f"- {x}" for x in top_lines],
@@ -1223,11 +1494,11 @@ def main() -> int:
                 msg = "\n".join(msg_lines)
                 print(f"[live-diag][OK]\n{msg}")
                 if args.ntfy_topic:
-                    _cond_label = args.condition or run_dir.name
-                    title = f"P79 [{_cond_label}] {success_count}/{episodes}"
+                    _cond_label = args.label or args.condition or run_dir.name
+                    title = f"P79 [{_cond_label}] {_success_line}"
                     ntfy_body = "\n".join(
                         [
-                            f"success_rate={success_rate:.1%} ({success_count}/{episodes})",
+                            f"success={_success_line}",
                             "per_task_failure_report:",
                             *(episode_diag_lines or ["- 本轮新增任务未发现失败"]),
                         ]

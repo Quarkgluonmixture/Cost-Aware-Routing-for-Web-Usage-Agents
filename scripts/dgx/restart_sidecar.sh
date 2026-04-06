@@ -16,6 +16,7 @@ cd "${REPO_DIR}"
 
 PYTHON_BIN="${REPO_DIR}/.venv/bin/python"
 DRY_RUN=0
+EXTRA_ARGS=()
 
 usage() {
   cat <<'EOF'
@@ -23,14 +24,18 @@ Usage:
   bash scripts/dgx/restart_sidecar.sh [options]
 
 Options:
-  --dry-run   Show what would be done without actually restarting.
-  -h, --help  Show this help.
+  --dry-run              Show what would be done without actually restarting.
+  --append-args <args>   Extra args appended to the restarted sidecar cmdline.
+                         Quoted string of space-separated flags, e.g.:
+                         --append-args "--label classifieds"
+  -h, --help             Show this help.
 EOF
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=1; shift ;;
+    --append-args) IFS=' ' read -ra EXTRA_ARGS <<< "$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage; exit 2 ;;
   esac
@@ -110,7 +115,7 @@ for pid in "${sidecar_pids[@]}"; do
 
   # Re-launch: args[0]=python, args[1]=-u, args[2]=script, args[3..]= flags
   # Replace python binary with venv python for consistency; keep -u and rest.
-  setsid nohup "${PYTHON_BIN}" "${args[@]:1}" \
+  setsid nohup "${PYTHON_BIN}" "${args[@]:1}" "${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}" \
     >> "${log_file}" 2>&1 < /dev/null &
   new_pid=$!
 

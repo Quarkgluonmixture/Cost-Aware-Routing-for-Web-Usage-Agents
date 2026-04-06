@@ -712,6 +712,7 @@ def _classify_unreachable_subtype(
     task_intent: str,
     observation_mode: str,
     search_queries: List[Dict[str, Any]],
+    degraded_som_steps: int = 0,
 ) -> str:
     """Sub-classify target-unreachable structural defects.
 
@@ -723,10 +724,15 @@ def _classify_unreachable_subtype(
     intent_lower = str(task_intent or "").lower()
     obs = str(observation_mode or "").lower()
 
-    # Visual-attribute unreachability in DOM mode (covers both image-comparison
-    # tasks and tasks whose intent describes a visual attribute of the listing photo)
+    # Visual-attribute unreachability: applies to DOM mode unconditionally, and
+    # to SoM/hybrid mode when SoM was degraded (zero marks → empty [SOM_MARKS] +
+    # raw screenshot; no bounding-box marks means the model cannot locate items
+    # visually, making visual-attribute tasks structurally unreachable).
+    # Vision mode is excluded: the model always receives the raw screenshot and
+    # visual failures there are model capability issues, not scaffold defects.
     has_visual = any(k in intent_lower for k in _VISUAL_MATCH_KWDS)
-    if has_visual and obs == "dom":
+    is_dom_like = obs == "dom" or (obs in ("som", "hybrid") and degraded_som_steps > 0)
+    if has_visual and is_dom_like:
         return "visual_dom_only"
 
     # Location constraint only applies to the direct-timeout bucket; for loop
@@ -1328,6 +1334,9 @@ def main() -> None:
             loop_metrics = _detect_loops(steps)
             page_type_seq = _page_type_sequence(steps)
             observation_mode = str(steps[0].get("observation_mode", "") or summary.get("observation_mode", "") or "").strip()
+            degraded_som_steps = sum(
+                1 for s in steps if bool((s.get("som") or {}).get("degraded_som", False))
+            )
 
             reason_bucket = _classify_reason(
                 success=success,
@@ -1362,6 +1371,7 @@ def main() -> None:
                 task_intent=task_intent,
                 observation_mode=observation_mode,
                 search_queries=loop_metrics["search_queries"],
+                degraded_som_steps=degraded_som_steps,
             )
 
             # Phase2 aggregations
@@ -1400,6 +1410,7 @@ def main() -> None:
                 "task_intent": task_intent,
                 "task_type": task_type,
                 "observation_mode": observation_mode,
+                "degraded_som_steps": degraded_som_steps,
                 "answer_in_intent_price_range": answer_in_intent_price_range,
                 "reference_answers_json": json.dumps(ref_answers, ensure_ascii=False) if ref_answers is not None else "",
                 "final_answer": final_answer,
@@ -1499,6 +1510,7 @@ def main() -> None:
         "task_intent",
         "task_type",
         "observation_mode",
+        "degraded_som_steps",
         "answer_in_intent_price_range",
         "reference_answers_json",
         "final_answer",

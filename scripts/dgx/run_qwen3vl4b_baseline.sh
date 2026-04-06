@@ -130,7 +130,7 @@ validate_shopping_page_links() {
   if grep -Eqi '(https?:)?//(localhost|127\.0\.0\.1)(:7770)?/' <<< "${page_html}"; then
     echo "[baseline][error] shopping homepage still contains localhost links (e.g. http://localhost:7770/...)." >&2
     echo "[baseline][error] Clicking those links on DGX will produce 502." >&2
-    echo "[baseline][error] On the docker host machine, re-run: bash scripts/start_vwa_docker.sh --sites shopping --hostname <PUBLIC_HOST_IP>" >&2
+    echo "[baseline][error] On the docker host machine, re-run: bash scripts/vwa/start_vwa_docker.sh --sites shopping --hostname <PUBLIC_HOST_IP>" >&2
     return 1
   fi
   return 0

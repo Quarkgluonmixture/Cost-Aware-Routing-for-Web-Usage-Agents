@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 VWA_DIR="${PROJECT_DIR}/external/visualwebarena"
 ENV_DIR="${VWA_DIR}/environment_docker"
 
@@ -13,19 +13,19 @@ CHECK_ONLY=0
 
 usage() {
   cat <<USAGE
-Usage: bash scripts/start_vwa_docker.sh [options]
+Usage: bash scripts/vwa/start_vwa_docker.sh [options]
 
 Options:
   --sites <list>       Comma-separated sites: all|shopping|reddit|wikipedia|classifieds|homepage
-  --auto-setup         Run scripts/setup_vwa.sh automatically when required assets are missing
+  --auto-setup         Run scripts/vwa/setup_vwa.sh automatically when required assets are missing
   --hostname <value>   Hostname used to patch VWA templates (default: localhost)
   --check-only         Only validate prerequisites, do not start services
   -h, --help           Show this help
 
 Examples:
-  bash scripts/start_vwa_docker.sh --sites all
-  bash scripts/start_vwa_docker.sh --sites shopping,reddit --auto-setup
-  bash scripts/start_vwa_docker.sh --check-only
+  bash scripts/vwa/start_vwa_docker.sh --sites all
+  bash scripts/vwa/start_vwa_docker.sh --sites shopping,reddit --auto-setup
+  bash scripts/vwa/start_vwa_docker.sh --check-only
 USAGE
 }
 
@@ -148,10 +148,10 @@ check_prerequisites() {
         setup_target="${setup_target%,}"
         [[ -z "${setup_target}" ]] && setup_target="all"
       fi
-      bash "${PROJECT_DIR}/scripts/setup_vwa.sh" --target-dataset "${setup_target}"
+      bash "${PROJECT_DIR}/scripts/vwa/setup_vwa.sh" --target-dataset "${setup_target}"
       return 0
     fi
-    echo "Prerequisite check failed. Re-run with --auto-setup or run scripts/setup_vwa.sh first." >&2
+    echo "Prerequisite check failed. Re-run with --auto-setup or run scripts/vwa/setup_vwa.sh first." >&2
     return 1
   fi
 

@@ -18,7 +18,7 @@ Skips:    program_html / page_image_query — require live browser
 OpenAI key: loaded from .auth/openai_key (relative to project root) if present.
 
 Usage:
-    python scripts/reeval_phase1.py [--dry-run] [--phase-dir PATH]
+    python scripts/utils/reeval_phase1.py [--dry-run] [--phase-dir PATH]
 """
 
 from __future__ import annotations

@@ -562,6 +562,9 @@ class ExperimentRunner:
                 condition_logger.write_condition_summary(aggregate)
                 run_condition_metrics.append(aggregate)
 
+                # Auto-run analysis after each condition completes
+                self._run_post_condition_analysis(effective_cid)
+
         assumptions = {
             "som_fallback": "degrade_to_text_som_with_flag",
             "mind2web": "deferred",
@@ -623,6 +626,29 @@ class ExperimentRunner:
         self.environment.close()
         self.energy_tracker.close()
         return self.output_root
+
+    def _run_post_condition_analysis(self, condition_id: str) -> None:
+        """Run analyze_experiment.py in a subprocess after a condition completes."""
+        import subprocess
+        import sys
+        script = Path(__file__).parents[2] / "scripts" / "analyze_experiment.py"
+        if not script.exists():
+            logging.warning("[runner] analyze_experiment.py not found, skipping post-condition analysis")
+            return
+        cmd = [sys.executable, str(script), "--run_dir", str(self.output_root)]
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            if result.returncode == 0:
+                logging.info("[runner] Post-condition analysis completed for %s", condition_id)
+            else:
+                logging.warning(
+                    "[runner] Post-condition analysis exited %d for %s: %s",
+                    result.returncode, condition_id, result.stderr[-500:] if result.stderr else "",
+                )
+        except subprocess.TimeoutExpired:
+            logging.warning("[runner] Post-condition analysis timed out for %s", condition_id)
+        except Exception as exc:
+            logging.warning("[runner] Post-condition analysis failed for %s: %s", condition_id, exc)
 
     def _clone_observation_for_mode(
         self,
@@ -732,6 +758,13 @@ class ExperimentRunner:
             screenshot_prep_start = time.time()
             obs_prep = prepare_observation_for_mode(obs, decision_mode, episode_dir, step_idx)
             artifacts["som_image"] = obs_prep.marked_image_path
+            if decision_mode == "som" and obs_prep.som_text:
+                _step_dir = episode_dir / f"step_{step_idx:03d}"
+                _step_dir.mkdir(parents=True, exist_ok=True)
+                try:
+                    (_step_dir / "observation_som.txt").write_text(obs_prep.som_text, encoding="utf-8")
+                except Exception:
+                    pass
             obs_for_backend = self._clone_observation_for_mode(obs, decision_mode, obs_prep)
             if condition.router_on and decision_mode != condition.observation_mode:
                 overhead["extra_screenshot_ms"] = (time.time() - screenshot_prep_start) * 1000.0

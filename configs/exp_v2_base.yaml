@@ -75,7 +75,8 @@ metrics:
     kwh_per_step: null
     co2e_kg_per_kwh: null
     hardware_profile: "dgx_spark"
-    region: "world"
+    region: "uk"
+    carbon_intensity_g_per_kwh: 220  # UK grid average 2024
     use_psutil: true
     fixed_power_watts: null
     use_pynvml: true

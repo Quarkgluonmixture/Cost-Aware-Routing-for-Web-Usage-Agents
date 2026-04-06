@@ -145,10 +145,26 @@ start_live_reason_watch() {
   local watch_log="${REPO_DIR}/logs/live_reason_watch_${label}_${run_id}.log"
   local watch_state="${REPO_DIR}/logs/live_reason_watch_${label}_${run_id}.state.json"
 
+  # Kill any orphaned sidecar processes before starting a new one.
+  # This handles the case where restart_sidecar.sh was used outside the queue,
+  # leaving a PID that LIVE_REASON_WATCH_PID no longer tracks.
+  local _orphan_pids
+  _orphan_pids="$(ps -eo pid=,args= | awk '/reason_diag_live_sidecar\.py/ && !/awk/ {print $1}')"
+  if [[ -n "${_orphan_pids}" ]]; then
+    for _p in ${_orphan_pids}; do
+      kill "${_p}" 2>/dev/null || true
+    done
+    sleep 1
+    for _p in ${_orphan_pids}; do
+      kill -9 "${_p}" 2>/dev/null || true
+    done
+  fi
+
   log "[${label}] starting live reason watch (interval=${LIVE_REASON_WATCH_INTERVAL}, poll=${LIVE_REASON_WATCH_POLL_SECS}s)"
 
   setsid nohup "${PYTHON_BIN}" -u "${watch_script}" \
     --run-dir "${run_dir}" \
+    --label "${label}" \
     --poll-secs "${LIVE_REASON_WATCH_POLL_SECS}" \
     --interval-episodes "${LIVE_REASON_WATCH_INTERVAL}" \
     --report-language "${LIVE_REASON_WATCH_REPORT_LANGUAGE}" \

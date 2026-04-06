@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 VWA_DIR="${PROJECT_DIR}/external/visualwebarena"
 ENV_DIR="${VWA_DIR}/environment_docker"
 DATA_DIR="${ENV_DIR}/data"
@@ -15,7 +15,7 @@ PYTHON_BIN=""
 
 usage() {
   cat <<USAGE
-Usage: bash scripts/setup_vwa.sh [options]
+Usage: bash scripts/vwa/setup_vwa.sh [options]
 
 Options:
   --target-dataset <list>   all|shopping|reddit|wikipedia|classifieds or comma list
@@ -26,9 +26,9 @@ Options:
   -h, --help                Show this help
 
 Examples:
-  bash scripts/setup_vwa.sh
-  bash scripts/setup_vwa.sh --target-dataset shopping,reddit
-  bash scripts/setup_vwa.sh --target-dataset wikipedia --skip-docker-images
+  bash scripts/vwa/setup_vwa.sh
+  bash scripts/vwa/setup_vwa.sh --target-dataset shopping,reddit
+  bash scripts/vwa/setup_vwa.sh --target-dataset wikipedia --skip-docker-images
 USAGE
 }
 

@@ -211,7 +211,7 @@ validate_shopping_page_links() {
   if grep -Eqi '(https?:)?//(localhost|127\.0\.0\.1)(:7770)?/' <<< "${page_html}"; then
     echo "[baseline][error] shopping homepage still contains localhost links (e.g. http://localhost:7770/...)." >&2
     echo "[baseline][error] Clicking those links on DGX will produce 502." >&2
-    echo "[baseline][error] On the docker host machine, re-run: bash scripts/start_vwa_docker.sh --sites shopping --hostname <PUBLIC_HOST_IP>" >&2
+    echo "[baseline][error] On the docker host machine, re-run: bash scripts/vwa/start_vwa_docker.sh --sites shopping --hostname <PUBLIC_HOST_IP>" >&2
     return 1
   fi
   return 0
@@ -240,7 +240,7 @@ if [[ "${SITE}" == "shopping" ]] && [[ "${BASELINE_FIX_SHOPPING_BASEURL:-1}" != 
   if [[ -n "${SHOPPING_HOST}" ]]; then
     if is_local_hostname "${SHOPPING_HOST}"; then
       echo "[baseline] ensure shopping base_url host=${SHOPPING_HOST}"
-      if ! bash "${REPO_DIR}/scripts/start_vwa_docker.sh" --sites shopping --hostname "${SHOPPING_HOST}" >/dev/null 2>&1; then
+      if ! bash "${REPO_DIR}/scripts/vwa/start_vwa_docker.sh" --sites shopping --hostname "${SHOPPING_HOST}" >/dev/null 2>&1; then
         echo "[baseline][warn] failed to auto-fix shopping base_url; run may still hit 502 if page links point to localhost:7770" >&2
       fi
     else

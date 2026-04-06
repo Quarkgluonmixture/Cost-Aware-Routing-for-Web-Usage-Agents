@@ -97,7 +97,7 @@ def _draw_label(
     y: float,
     text: str,
     font: Any,
-    bg_color: str = "#D0021B",
+    bg_color: str = "#00BCD4",
     fg_color: str = "white",
     pad: int = 2,
 ) -> None:
@@ -171,13 +171,16 @@ def _build_som_result(
     # A single mark can still be a valid interactive page and should not be
     # forced into text-only degradation.
     if len(text_marks) == 0:
-        fallback_text = obs_text if include_full_axtree else obs_text
+        # Do NOT leak the full AXTree into SOM mode — the model uses a SOM-specific
+        # system prompt and expects [SOM_MARKS] format. An empty block signals
+        # "no interactive elements detected" while keeping prompt/input consistent.
+        # Fall back to the raw (unmarked) screenshot so the model can still use vision.
         return SomResult(
-            som_text=fallback_text,
+            som_text="[SOM_MARKS]\n[/SOM_MARKS]",
             marked_image_path=None,
-            marked_image=None,
+            marked_image=getattr(obs, "image", None),
             degraded_som=True,
-            mark_count=len(text_marks),
+            mark_count=0,
         )
 
     mark_lines = [f"[id={m['id']}] {m['label']}" for m in text_marks]
@@ -221,7 +224,7 @@ def _build_som_result(
                 if not bbox:
                     continue
                 x1, y1, x2, y2 = _normalize_bbox(bbox, width, height)
-                draw.rectangle([x1, y1, x2, y2], outline="#D0021B", width=2)
+                draw.rectangle([x1, y1, x2, y2], outline="#00BCD4", width=2)
                 _draw_label(draw, x1, y1, str(mark["id"]), font)
 
             marked_image = drawn  # PIL Image passed to the model

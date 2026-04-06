@@ -66,6 +66,11 @@ def validate_action(action: Dict[str, Any]) -> Dict[str, Any]:
 
     if action_type == "type":
         action["text"] = str(action.get("text", ""))
+        # Vision mode may supply a coordinate to indicate which input field to target.
+        # Keep the coordinate fields so the environment can optionally use them.
+        coord = action.get("coordinate")
+        if coord is not None and "coordinate_type" not in action:
+            action["coordinate_type"] = "normalized"
 
     if action_type in ("finish", "stop"):
         answer = action.get("answer", "")

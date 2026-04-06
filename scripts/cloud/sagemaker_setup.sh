@@ -68,7 +68,7 @@ if need_dataset reddit || need_dataset wikipedia; then
 fi
 
 # setup_vwa.sh handles repo clone + dataset files (wiki/classifieds).
-SETUP_VWA_TARGET_DATASET="$TARGET_DATASET" SKIP_DOCKER_IMAGES=1 bash "${REPO_DIR}/scripts/setup_vwa.sh"
+SETUP_VWA_TARGET_DATASET="$TARGET_DATASET" SKIP_DOCKER_IMAGES=1 bash "${REPO_DIR}/scripts/vwa/setup_vwa.sh"
 
 # Install Python dependencies once unless explicitly forced.
 if [ ! -f "$SETUP_MARKER" ] || [ "$FORCE_PYTHON_SETUP" = "1" ]; then

@@ -166,7 +166,10 @@ Output ONLY valid JSON. No markdown blocks, no explanations.
 
 You receive:
   1. A [SOM_MARKS] list: flat index of interactive elements, each with [id=N] and a short description.
-  2. A screenshot with bounding boxes drawn over those same elements, labeled with their IDs.
+  2. A screenshot — normally with bounding boxes labeled by ID, matching the [SOM_MARKS] list.
+
+Note: If [SOM_MARKS] is empty (no elements detected), no bounding boxes will appear in the screenshot.
+In that case, fall back to coordinate-based interaction using what you can see in the screenshot.
 
 Use the element IDs from [SOM_MARKS] to interact. Use the screenshot to understand spatial layout and locate elements not in the list.
 
@@ -247,8 +250,8 @@ Response Format (JSON):
 Action Schema:
 1. Click: {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}
    - x, y are floats 0.0–1.0. Estimate the center of the target element in the screenshot.
-2. Type: {"action_type": "type", "text": "string"}
-   - First click the input field, then type. To submit, append "\\n" to the text.
+2. Type: {"action_type": "type", "text": "string", "coordinate": [x, y], "coordinate_type": "normalized"}
+   - Include coordinate to specify the input field location (recommended). To submit, append "\\n" to the text.
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
 4. Wait: {"action_type": "wait"}
 5. Back: {"action_type": "back"} — WARNING: Do NOT use on the first/homepage.
@@ -331,7 +334,9 @@ CRITICAL:
         if observation_mode == "vision":
             obs_section = ""  # no text — screenshot only
         elif observation_mode == "som":
-            obs_section = f"Element Index (SOM_MARKS):\n{obs_text}" if obs_text else ""
+            # obs_text already contains the [SOM_MARKS]...[/SOM_MARKS] block
+            # (or "[SOM_MARKS]\n[/SOM_MARKS]" when degraded). Pass it through directly.
+            obs_section = obs_text if obs_text else ""
         else:
             obs_section = f"Accessibility Tree:\n{obs_text}"
 
