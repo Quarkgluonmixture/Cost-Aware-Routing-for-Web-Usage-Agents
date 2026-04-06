@@ -119,7 +119,7 @@ done
 
 if [ "$SKIP_SUMMARY" = "0" ]; then
     echo ""
-    echo "Unified v2 analyzer uses single-run input: scripts/analyze_experiment.py --run_dir <RUN_DIR>"
+    echo "Unified v2 analyzer uses single-run input: scripts/analysis/analyze_experiment.py --run_dir <RUN_DIR>"
     echo "Skipping legacy multi-run summary step."
 else
     echo "Skipping result summary (SKIP_SUMMARY=1)"

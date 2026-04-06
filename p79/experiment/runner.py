@@ -631,7 +631,7 @@ class ExperimentRunner:
         """Run analyze_experiment.py in a subprocess after a condition completes."""
         import subprocess
         import sys
-        script = Path(__file__).parents[2] / "scripts" / "analyze_experiment.py"
+        script = Path(__file__).parents[2] / "scripts" / "analysis" / "analyze_experiment.py"
         if not script.exists():
             logging.warning("[runner] analyze_experiment.py not found, skipping post-condition analysis")
             return
@@ -649,6 +649,59 @@ class ExperimentRunner:
             logging.warning("[runner] Post-condition analysis timed out for %s", condition_id)
         except Exception as exc:
             logging.warning("[runner] Post-condition analysis failed for %s: %s", condition_id, exc)
+
+        # Cross-representation analysis: only when >=2 conditions have episodes
+        self._run_cross_representation_analysis(condition_id)
+
+    def _run_cross_representation_analysis(self, condition_id: str) -> None:
+        """Run cross-representation analysis if any site has >=2 conditions with data."""
+        import subprocess
+        import sys
+        import re
+
+        script = Path(__file__).parents[2] / "scripts" / "analysis" / "analyze_cross_representation.py"
+        if not script.exists():
+            return
+
+        # Group conditions by site — require >=2 conditions for the SAME site
+        summary_re = re.compile(r"^(?P<site>.+)_task_\d+_summary_v2\.json$")
+        # site -> set of condition_ids
+        site_conditions: dict = {}
+        for p in self.output_root.glob("*/episodes/*_summary_v2.json"):
+            m = summary_re.match(p.name)
+            if m:
+                site = m.group("site")
+                cid = p.parent.parent.name
+                site_conditions.setdefault(site, set()).add(cid)
+
+        has_cross = any(len(cids) >= 2 for cids in site_conditions.values())
+        if not has_cross:
+            sites_info = {s: len(c) for s, c in site_conditions.items()}
+            logging.info(
+                "[runner] Cross-representation skipped: no site has >=2 conditions %s",
+                sites_info,
+            )
+            return
+
+        cmd = [
+            sys.executable, str(script),
+            "--run-dir", str(self.output_root),
+            "--priority", "p0",
+            "--skip-plots",
+        ]
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            if result.returncode == 0:
+                logging.info("[runner] Cross-representation analysis completed after %s", condition_id)
+            else:
+                logging.warning(
+                    "[runner] Cross-representation analysis exited %d after %s: %s",
+                    result.returncode, condition_id, result.stderr[-500:] if result.stderr else "",
+                )
+        except subprocess.TimeoutExpired:
+            logging.warning("[runner] Cross-representation analysis timed out after %s", condition_id)
+        except Exception as exc:
+            logging.warning("[runner] Cross-representation analysis failed after %s: %s", condition_id, exc)
 
     def _clone_observation_for_mode(
         self,

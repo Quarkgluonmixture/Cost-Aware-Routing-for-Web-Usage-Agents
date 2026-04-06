@@ -106,7 +106,7 @@ bash scripts/import_vwa_assets.sh --imports-dir /home/jiaming/imports --check-on
 统一入口仅保留：
 
 - `scripts/run_experiment.py`
-- `scripts/analyze_experiment.py`
+- `scripts/analysis/analyze_experiment.py`
 
 运行 Phase 1/2/3：
 
@@ -119,7 +119,7 @@ python3 scripts/run_experiment.py --config configs/exp_v2_phase3.yaml
 分析单次运行目录：
 
 ```bash
-python3 scripts/analyze_experiment.py --run_dir results/visualwebarena/phase2/<RUN_ID>
+python3 scripts/analysis/analyze_experiment.py --run_dir results/visualwebarena/phase2/<RUN_ID>
 ```
 
 ## 结果目录

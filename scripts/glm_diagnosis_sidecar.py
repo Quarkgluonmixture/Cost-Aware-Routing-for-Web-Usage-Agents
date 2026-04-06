@@ -1282,7 +1282,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--poll-secs", type=int, default=60, help="Polling interval")
     p.add_argument("--interval-episodes", type=int, default=10, help="Trigger diagnostics every N new episodes")
     p.add_argument("--py-bin", default=".venv/bin/python", help="Python bin used to run diagnostics")
-    p.add_argument("--diag-script", default="scripts/analyze_reason_diagnostics.py")
+    p.add_argument("--diag-script", default="scripts/analysis/analyze_reason_diagnostics.py")
     p.add_argument("--report-language", default="zh", choices=["zh", "en"])
     p.add_argument("--samples-per-bucket", type=int, default=5)
     p.add_argument("--out-root", default=None, help="Output root for incremental diagnostics (default: <run_dir>/analysis/reason_diagnostics_live)")
@@ -1403,7 +1403,73 @@ def main() -> int:
         f"poll={args.poll_secs}s interval={args.interval_episodes}"
     )
 
+    # GLM retry queue: when GLM API fails, failed cases are queued here for
+    # periodic retry (every GLM_RETRY_INTERVAL_S seconds).  Each entry:
+    #   {condition, out_dir, failed_cases, queued_at, last_retry_at, attempt}
+    # Persisted in state["glm_retry_queue"].
+    glm_retry_queue: List[Dict[str, Any]] = []
+    _raw_rq = state.get("glm_retry_queue")
+    if isinstance(_raw_rq, list):
+        for _qi in _raw_rq:
+            if isinstance(_qi, dict) and _qi.get("condition") and _qi.get("failed_cases"):
+                glm_retry_queue.append(_qi)
+    if glm_retry_queue:
+        print(f"[live-diag] restored {len(glm_retry_queue)} GLM retry queue entries from state")
+    GLM_RETRY_INTERVAL_S = 300  # retry every 5 minutes
+
     while True:
+        # ── GLM retry queue processing ──
+        if glm_retry_queue and glmm:
+            _new_queue: List[Dict[str, Any]] = []
+            for _qi in glm_retry_queue:
+                _elapsed = time.time() - float(_qi.get("last_retry_at") or 0)
+                if _elapsed < GLM_RETRY_INTERVAL_S:
+                    _new_queue.append(_qi)
+                    continue
+                _qi_cond = str(_qi["condition"])
+                _qi_out_dir = Path(str(_qi["out_dir"]))
+                _qi_attempt = int(_qi.get("attempt") or 0) + 1
+                _qi_cases = _qi.get("failed_cases") or []
+                if not _qi_cases:
+                    continue
+                print(f"[live-diag] GLM retry: condition={_qi_cond} cases={len(_qi_cases)} attempt={_qi_attempt}")
+                _retry_results = _glm_episode_diagnosis(glmm=glmm, cases=_qi_cases, run_dir=run_dir)
+                _has_any_failed = any(r.get("category") == "GLM_FAILED" for r in _retry_results)
+                if _has_any_failed:
+                    # Any degraded → keep entire batch in queue, no ntfy
+                    _n_still = sum(1 for r in _retry_results if r.get("category") == "GLM_FAILED")
+                    print(f"[live-diag] GLM retry: {_n_still}/{len(_qi_cases)} still failed, entire batch stays in queue (attempt={_qi_attempt})")
+                    _qi["attempt"] = _qi_attempt
+                    _qi["last_retry_at"] = time.time()
+                    _new_queue.append(_qi)
+                else:
+                    # All succeeded → append to report + send ntfy
+                    print(f"[live-diag] GLM retry OK: all {len(_qi_cases)} succeeded (attempt={_qi_attempt})")
+                    if _qi_out_dir.exists():
+                        _report_path = _qi_out_dir / "failure_report.md"
+                        if _report_path.exists():
+                            _all_lines = _format_episode_report_lines(_retry_results)
+                            if _all_lines:
+                                _old = _report_path.read_text(encoding="utf-8")
+                                _patch = "\n\n## GLM Retry (attempt {})\n{}".format(
+                                    _qi_attempt, "\n".join(_all_lines))
+                                _report_path.write_text(_old + _patch, encoding="utf-8")
+                    if args.ntfy_topic:
+                        _all_lines = _format_episode_report_lines(_retry_results)
+                        if _all_lines:
+                            _ok, _, _ = _post_ntfy(
+                                topic=args.ntfy_topic,
+                                title=f"P79 [{args.label or _qi_cond}] GLM retry OK ({len(_retry_results)})",
+                                body=f"condition={_qi_cond}\n" + "\n".join(_all_lines),
+                                priority="low",
+                            )
+            glm_retry_queue = _new_queue
+            # Persist queue (bounded)
+            if len(glm_retry_queue) > 10:
+                glm_retry_queue = glm_retry_queue[-10:]
+            state["glm_retry_queue"] = glm_retry_queue if glm_retry_queue else []
+            _save_state(state_file, state)
+
         # Determine which conditions need a trigger — per-condition episode counting.
         if args.condition:
             # Single condition mode: only check the specified condition.
@@ -1511,7 +1577,26 @@ def main() -> int:
                     max_cases=int(args.episode_diagnosis_max_cases),
                 )
                 episode_diagnoses = _glm_episode_diagnosis(glmm=glmm, cases=new_failed_cases, run_dir=run_dir)
-                episode_diag_lines = _format_episode_report_lines(episode_diagnoses)
+                # If ANY case has GLM_FAILED, queue the ENTIRE batch for retry
+                # and skip ntfy — user should never see degraded/partial results.
+                _has_glm_failed = any(
+                    d.get("category") == "GLM_FAILED" for d in episode_diagnoses
+                )
+                if _has_glm_failed:
+                    glm_retry_queue.append({
+                        "condition": _trigger_cond,
+                        "out_dir": str(out_dir),
+                        "failed_cases": new_failed_cases,
+                        "queued_at": time.time(),
+                        "last_retry_at": time.time(),
+                        "attempt": 0,
+                    })
+                    _n_failed = sum(1 for d in episode_diagnoses if d.get("category") == "GLM_FAILED")
+                    print(f"[live-diag] {_n_failed}/{len(new_failed_cases)} GLM-failed; entire batch queued for retry, ntfy deferred (condition={_trigger_cond})")
+                    # Skip ntfy push — will be sent when retry succeeds for all
+                    episode_diag_lines: List[str] = []
+                else:
+                    episode_diag_lines = _format_episode_report_lines(episode_diagnoses)
                 msg_lines = [
                     f"run_id={run_dir.name}",
                     f"condition={_trigger_cond}",
@@ -1534,7 +1619,7 @@ def main() -> int:
                 ]
                 msg = "\n".join(msg_lines)
                 print(f"[live-diag][OK]\n{msg}")
-                if args.ntfy_topic:
+                if args.ntfy_topic and not _has_glm_failed:
                     _cond_label = args.label or _trigger_cond or run_dir.name
                     title = f"P79 [{_cond_label}] {_success_line}"
                     ntfy_body = "\n".join(
@@ -1661,6 +1746,7 @@ def main() -> int:
                 state["last_task_max_by_condition"] = last_task_max_by_condition
                 state.pop("last_error", None)
                 state.pop("last_error_at", None)
+                state["glm_retry_queue"] = glm_retry_queue if glm_retry_queue else []
                 _save_state(state_file, state)
 
         if args.once:

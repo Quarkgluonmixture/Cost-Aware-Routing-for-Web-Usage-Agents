@@ -106,7 +106,7 @@ run_reason_diagnostics() {
   fi
 
   local run_dir="${RESULTS_BASE}/${run_id}"
-  local diag_script="${REPO_DIR}/scripts/analyze_reason_diagnostics.py"
+  local diag_script="${REPO_DIR}/scripts/analysis/analyze_reason_diagnostics.py"
   if [[ ! -d "${run_dir}" ]]; then
     log "[${label}] reason diagnostics skipped: run dir not found (${run_dir})"
     return 0

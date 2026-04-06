@@ -270,8 +270,7 @@ def _heuristic_diagnosis(
         f"触发规则: {', '.join(rules)}\n"
         f"success={m['success_rate']:.1%}, wrong_url={m['wrong_url_rate']:.1%}, "
         f"no_progress={m['no_progress_rate']:.1%}, max_steps={m['max_steps_rate']:.1%}, "
-        f"avg_step={m['avg_step_latency_s']:.1f}s\n"
-        "建议: 排查输入动作、元素定位、url_match finish 前是否进入目标 URL。"
+        f"avg_step={m['avg_step_latency_s']:.1f}s"
     )
     return diagnosis
 
@@ -310,8 +309,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--wrong-url-threshold", type=float, default=0.30)
     p.add_argument("--no-progress-threshold", type=float, default=0.25)
     p.add_argument("--max-steps-threshold", type=float, default=0.25)
-    p.add_argument("--avg-step-latency-threshold", type=float, default=22.0, help="seconds")
-    p.add_argument("--success-rate-floor", type=float, default=0.10)
+    p.add_argument("--avg-step-latency-threshold", type=float, default=30.0, help="seconds")
+    p.add_argument("--success-rate-floor", type=float, default=0.05)
     p.add_argument("--alert-cooldown-secs", type=int, default=600)
     p.add_argument("--ntfy-topic", default=None, help="Optional ntfy topic for alert push")
     p.add_argument("--state-file", default=None, help="Optional state file to persist seen episodes")
@@ -343,8 +342,8 @@ def main() -> int:
     task_cfg_cache: Dict[Tuple[str, int], Dict[str, Any]] = {}
     condition_mode_cache: Dict[str, str] = {}
 
-    last_alert_sig: Optional[str] = None
-    last_alert_ts: float = 0.0
+    # Per-condition cooldown: condition_id -> last alert timestamp
+    last_alert_ts_by_cond: Dict[str, float] = {}
     run_id = run_dir.name
     bootstrap_keys = {_episode_key(p) for p in _scan_summaries(run_dir, args.condition)}
 
@@ -447,7 +446,8 @@ def main() -> int:
                 if rules and allow_alert:
                     sig = ",".join(sorted(rules))
                     now = time.time()
-                    if sig != last_alert_sig or (now - last_alert_ts) >= int(args.alert_cooldown_secs):
+                    cond_last_ts = last_alert_ts_by_cond.get(condition_id, 0.0)
+                    if (now - cond_last_ts) >= int(args.alert_cooldown_secs):
                         diagnosis = _heuristic_diagnosis(
                             metrics=metrics,
                             rules=rules,
@@ -466,8 +466,7 @@ def main() -> int:
                         print(f"[watchdog][ALERT] {alert_body}")
                         if args.ntfy_topic:
                             _post_ntfy(args.ntfy_topic, alert_title, alert_body, priority="high")
-                        last_alert_sig = sig
-                        last_alert_ts = now
+                        last_alert_ts_by_cond[condition_id] = now
 
                 _save_state(state_file, seen_keys)
         else:

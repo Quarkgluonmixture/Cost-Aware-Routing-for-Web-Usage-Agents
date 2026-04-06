@@ -4,8 +4,9 @@
 | Script | Description |
 |--------|-------------|
 | `run_experiment.py` | 运行实验，配合 `--config configs/XXX.yaml` |
-| `analyze_experiment.py` | 分析实验结果，配合 `--run_dir results/...` |
-| `analyze_reason_diagnostics.py` | 失败原因诊断分析，生成 reason_buckets + 报告 |
+| `analysis/analyze_experiment.py` | 分析实验结果，配合 `--run_dir results/...` |
+| `analysis/analyze_reason_diagnostics.py` | 失败原因诊断分析，生成 reason_buckets + 报告 |
+| `analysis/analyze_cross_representation.py` | 跨表征交叉分析，生成 oracle ceiling + 排他集 + router 信号 |
 | `preflight_v2.sh` | 实验前环境预检（Python/CUDA/Docker/站点连通性） |
 | `vwa_env.sh` | VWA 站点本地 URL 环境变量（`source scripts/vwa_env.sh`） |
 | `vwa_env_remote.sh.example` | 远程 VWA 站点 URL 模板（复制为 `vwa_env_remote.sh`） |
