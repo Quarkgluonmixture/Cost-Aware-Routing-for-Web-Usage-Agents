@@ -795,12 +795,21 @@ def _glm_episode_diagnosis_one(
                 "type": "image_url",
                 "image_url": {"url": f"data:image/png;base64,{_images[_sidx]}"},
             })
-        # Use vision-capable model when images are present
+        # Use vision-capable model when images are present.
+        # Fallback chain: GLM-5V-Turbo (best quality, rate-limited) → GLM-4.6V
+        _vision_models = []
+        _primary_vm = glmm.get("vision_model") or "GLM-5V-Turbo"
+        _vision_models.append(_primary_vm)
+        _VISION_FALLBACKS = ["GLM-5V-Turbo", "GLM-4.6V"]
+        for _fb in _VISION_FALLBACKS:
+            if _fb not in _vision_models:
+                _vision_models.append(_fb)
         _glmm_use = dict(glmm)
-        _glmm_use["model"] = glmm.get("vision_model") or "GLM-4.6V"
+        _glmm_use["model"] = _vision_models[0]
     else:
         _user_content = _payload_text
         _glmm_use = glmm
+        _vision_models = []
     messages = [
         {"role": "system", "content": _system_content},
         {"role": "user", "content": _user_content},
@@ -854,7 +863,7 @@ def _glm_episode_diagnosis_one(
                 confidence = "medium"
             if not evidence:
                 evidence = _case_evidence(case)
-            return {
+            _result = {
                 "task_id": task_id,
                 "condition_id": str(case.get("condition_id", "") or "").strip(),
                 "task_intent": task_summary or _task_intent_to_short_zh(str(case.get("task_intent", "") or "").strip()),
@@ -864,6 +873,9 @@ def _glm_episode_diagnosis_one(
                 "is_scaffolding_issue": issue_cn,
                 "evidence": evidence,
             }
+            if _vision_models:
+                _result["_vision_model_used"] = _glmm_use.get("model", "")
+            return _result
         except Exception as e:  # noqa: BLE001
             last_exc = e
             task_id_hint = case.get("task_id", "?")
@@ -871,6 +883,18 @@ def _glm_episode_diagnosis_one(
                 f"[live-diag] WARNING: GLM episode diagnosis attempt {_attempt}/{_MAX_RETRIES} "
                 f"failed task_id={task_id_hint}: {type(e).__name__}: {e}"
             )
+            # Vision model fallback: on 429 (rate limit), try next vision model
+            _err_str = str(e)
+            if _vision_models and ("429" in _err_str or "rate" in _err_str.lower()):
+                _cur_vm = _glmm_use.get("model", "")
+                try:
+                    _cur_idx = _vision_models.index(_cur_vm)
+                except ValueError:
+                    _cur_idx = -1
+                if _cur_idx + 1 < len(_vision_models):
+                    _next_vm = _vision_models[_cur_idx + 1]
+                    print(f"[live-diag] vision model fallback: {_cur_vm} → {_next_vm}")
+                    _glmm_use["model"] = _next_vm
             if _attempt < _MAX_RETRIES:
                 time.sleep(_RETRY_SLEEP_S)
     # All retries exhausted — raise so caller decides what to do (no silent fallback)
