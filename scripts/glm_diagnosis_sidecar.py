@@ -1385,6 +1385,17 @@ def main() -> int:
     if legacy_last_task_max is not None and args.condition:
         last_task_max_by_condition.setdefault(str(args.condition), legacy_last_task_max)
 
+    # Track the max task_id per condition for which ntfy was successfully sent.
+    # Used on startup to detect un-pushed episodes and queue backfill batches.
+    last_ntfy_task_max_by_condition: Dict[str, int] = {}
+    raw_ntfy_max = state.get("last_ntfy_task_max_by_condition", {})
+    if isinstance(raw_ntfy_max, dict):
+        for k, v in raw_ntfy_max.items():
+            cid = str(k or "").strip()
+            tv = _to_int(v)
+            if cid and tv is not None:
+                last_ntfy_task_max_by_condition[cid] = tv
+
     glmm: Optional[Dict[str, str]] = None
     if not args.disable_glm:
         cfg_path = Path(args.glm_config).resolve()
@@ -1418,6 +1429,58 @@ def main() -> int:
         print(f"[live-diag] restored {len(glm_retry_queue)} GLM retry queue entries from state")
     GLM_RETRY_INTERVAL_S = 300  # retry every 5 minutes
 
+    # ── Startup backfill: detect un-pushed episodes and queue them ──
+    # Compare last_ntfy_task_max vs last_task_max to find episodes that were
+    # analyzed but never successfully pushed via ntfy.  Split into batches of
+    # ~interval_episodes and queue as retry entries so each batch gets its own
+    # ntfy push.
+    if glmm and args.ntfy_topic and not glm_retry_queue:
+        _last_out_dir_str = state.get("last_output_dir")
+        _last_out_dir = Path(_last_out_dir_str) if _last_out_dir_str else None
+        _backfill_csv = _last_out_dir / "episode_reason_rows.csv" if _last_out_dir and _last_out_dir.exists() else None
+        if _backfill_csv and _backfill_csv.exists():
+            for _bf_cid, _bf_analyzed_max in last_task_max_by_condition.items():
+                if args.condition and _bf_cid != args.condition:
+                    continue
+                _bf_pushed_max = last_ntfy_task_max_by_condition.get(_bf_cid, -1)
+                if _bf_pushed_max >= _bf_analyzed_max:
+                    continue  # no gap
+                # Extract all failed cases in the un-pushed range
+                _bf_cases = _extract_new_failed_cases(
+                    episode_rows_csv=_backfill_csv,
+                    prev_task_max_by_condition={_bf_cid: _bf_pushed_max},
+                    condition_filter=_bf_cid,
+                    max_cases=999,  # get all, we'll chunk them
+                )
+                if not _bf_cases:
+                    print(f"[live-diag] backfill: no un-pushed failed cases for {_bf_cid} (pushed_max={_bf_pushed_max}, analyzed_max={_bf_analyzed_max})")
+                    continue
+                # Sort by task_id ascending for chronological batching
+                _bf_cases.sort(key=lambda x: int(x.get("task_id") or 0))
+                _batch_size = max(1, int(args.interval_episodes))
+                _bf_batches: List[List[Dict[str, Any]]] = []
+                for _i in range(0, len(_bf_cases), _batch_size):
+                    _bf_batches.append(_bf_cases[_i : _i + _batch_size])
+                print(
+                    f"[live-diag] backfill: {_bf_cid} has {len(_bf_cases)} un-pushed failed cases "
+                    f"(pushed_max={_bf_pushed_max}, analyzed_max={_bf_analyzed_max}), "
+                    f"queuing {len(_bf_batches)} batches of ~{_batch_size}"
+                )
+                for _bi, _batch in enumerate(_bf_batches):
+                    _task_ids_in_batch = [c.get("task_id") for c in _batch]
+                    glm_retry_queue.append({
+                        "condition": _bf_cid,
+                        "out_dir": str(_last_out_dir),
+                        "failed_cases": _batch,
+                        "queued_at": time.time(),
+                        "last_retry_at": 0,  # eligible for immediate retry
+                        "attempt": 0,
+                        "backfill": True,
+                        "backfill_task_range": f"{min(_task_ids_in_batch)}-{max(_task_ids_in_batch)}",
+                    })
+                state["glm_retry_queue"] = glm_retry_queue
+                _save_state(state_file, state)
+
     while True:
         # ── GLM retry queue processing ──
         if glm_retry_queue and glmm:
@@ -1445,25 +1508,36 @@ def main() -> int:
                     _new_queue.append(_qi)
                 else:
                     # All succeeded → append to report + send ntfy
-                    print(f"[live-diag] GLM retry OK: all {len(_qi_cases)} succeeded (attempt={_qi_attempt})")
+                    _is_backfill = bool(_qi.get("backfill"))
+                    _bf_range = str(_qi.get("backfill_task_range", "")) if _is_backfill else ""
+                    _tag = f"backfill tasks {_bf_range}" if _bf_range else f"retry attempt={_qi_attempt}"
+                    print(f"[live-diag] GLM {_tag} OK: all {len(_qi_cases)} succeeded")
                     if _qi_out_dir.exists():
                         _report_path = _qi_out_dir / "failure_report.md"
                         if _report_path.exists():
                             _all_lines = _format_episode_report_lines(_retry_results)
                             if _all_lines:
                                 _old = _report_path.read_text(encoding="utf-8")
-                                _patch = "\n\n## GLM Retry (attempt {})\n{}".format(
-                                    _qi_attempt, "\n".join(_all_lines))
+                                _section = f"## GLM {'Backfill' if _is_backfill else 'Retry'} ({_tag})"
+                                _patch = f"\n\n{_section}\n" + "\n".join(_all_lines)
                                 _report_path.write_text(_old + _patch, encoding="utf-8")
                     if args.ntfy_topic:
                         _all_lines = _format_episode_report_lines(_retry_results)
                         if _all_lines:
+                            _title_tag = f"tasks {_bf_range}" if _bf_range else f"retry OK ({len(_retry_results)})"
                             _ok, _, _ = _post_ntfy(
                                 topic=args.ntfy_topic,
-                                title=f"P79 [{args.label or _qi_cond}] GLM retry OK ({len(_retry_results)})",
+                                title=f"P79 [{args.label or _qi_cond}] {_title_tag}",
                                 body=f"condition={_qi_cond}\n" + "\n".join(_all_lines),
-                                priority="low",
+                                priority="default",
                             )
+                    # Update ntfy task max for backfill batches
+                    if _is_backfill and _qi_cases:
+                        _batch_max_tid = max(int(c.get("task_id") or -1) for c in _qi_cases)
+                        _prev_ntfy_max = last_ntfy_task_max_by_condition.get(_qi_cond, -1)
+                        if _batch_max_tid > _prev_ntfy_max:
+                            last_ntfy_task_max_by_condition[_qi_cond] = _batch_max_tid
+                            state["last_ntfy_task_max_by_condition"] = last_ntfy_task_max_by_condition
             glm_retry_queue = _new_queue
             # Persist queue (bounded)
             if len(glm_retry_queue) > 10:
@@ -1745,6 +1819,15 @@ def main() -> int:
                     if prev is None or mx > prev:
                         last_task_max_by_condition[cid] = mx
                 state["last_task_max_by_condition"] = last_task_max_by_condition
+                # Track ntfy task max: when push succeeded (no GLM failure, no pending queue),
+                # record the task_max so backfill can detect un-pushed episodes on next restart.
+                if not _has_glm_failed and not pending_ntfy_queue:
+                    _ntfy_max = current_task_max_by_condition.get(_trigger_cond)
+                    if _ntfy_max is not None:
+                        _prev_ntfy = last_ntfy_task_max_by_condition.get(_trigger_cond, -1)
+                        if _ntfy_max > _prev_ntfy:
+                            last_ntfy_task_max_by_condition[_trigger_cond] = _ntfy_max
+                            state["last_ntfy_task_max_by_condition"] = last_ntfy_task_max_by_condition
                 state.pop("last_error", None)
                 state.pop("last_error_at", None)
                 state["glm_retry_queue"] = glm_retry_queue if glm_retry_queue else []
