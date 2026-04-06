@@ -79,16 +79,17 @@ def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, Any]], tim
                     msg = msg_obj.get("content")
                     if isinstance(msg, str) and msg.strip():
                         return msg.strip()
-                    # GLM thinking models may put final answer in reasoning_content
-                    # when max_tokens is exhausted before content is written.
-                    # Fallback: extract JSON from reasoning_content if content is empty.
-                    reasoning = msg_obj.get("reasoning_content") if choices else None
+                    # GLM thinking models (e.g. glm-4.6) may put the answer in
+                    # reasoning_content with content="" or missing.
+                    reasoning = msg_obj.get("reasoning_content")
                     if isinstance(reasoning, str) and reasoning.strip():
-                        # Find last {...} block in reasoning as best-effort JSON extraction
+                        # Try to extract JSON block first
                         r_start = reasoning.rfind("{")
                         r_end = reasoning.rfind("}")
                         if r_start >= 0 and r_end > r_start:
                             return reasoning[r_start : r_end + 1]
+                        # Otherwise return the full reasoning text
+                        return reasoning.strip()
                 text = data.get("output_text") or data.get("text")
                 if isinstance(text, str) and text.strip():
                     return text.strip()
@@ -796,7 +797,7 @@ def _glm_episode_diagnosis_one(
             })
         # Use vision-capable model when images are present
         _glmm_use = dict(glmm)
-        _glmm_use["model"] = glmm.get("vision_model") or "GLM-5V-Turbo"
+        _glmm_use["model"] = glmm.get("vision_model") or "GLM-4.6V"
     else:
         _user_content = _payload_text
         _glmm_use = glmm
