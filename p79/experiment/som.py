@@ -107,8 +107,11 @@ def _draw_label(
         tw, th = bb[2] - bb[0], bb[3] - bb[1]
     except AttributeError:
         tw, th = 8 * len(text), 12
-    rx0, ry0 = int(x), int(y)
-    rx1, ry1 = rx0 + tw + 2 * pad, ry0 + th + 2 * pad
+    label_h = th + 2 * pad
+    rx0 = int(x)
+    # Place label above the bbox; fall back to inside if near top edge
+    ry0 = int(y) - label_h - 1 if int(y) - label_h - 1 >= 0 else int(y)
+    rx1, ry1 = rx0 + tw + 2 * pad, ry0 + label_h
     draw.rectangle([rx0, ry0, rx1, ry1], fill=bg_color)
     draw.text((rx0 + pad, ry0 + pad), text, fill=fg_color, font=font)
 

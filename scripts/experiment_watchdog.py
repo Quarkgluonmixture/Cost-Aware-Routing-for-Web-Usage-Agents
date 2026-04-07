@@ -342,8 +342,10 @@ def main() -> int:
     task_cfg_cache: Dict[Tuple[str, int], Dict[str, Any]] = {}
     condition_mode_cache: Dict[str, str] = {}
 
-    # Per-condition cooldown: condition_id -> last alert timestamp
-    last_alert_ts_by_cond: Dict[str, float] = {}
+    # Per-condition+rule cooldown with exponential backoff:
+    # key = (condition_id, rule_signature) -> (last_alert_ts, consecutive_count)
+    alert_cooldown_state: Dict[Tuple[str, str], Tuple[float, int]] = {}
+    MAX_COOLDOWN_MULTIPLIER = 16  # cap at 16x base cooldown (~2.7 hours at 600s base)
     run_id = run_dir.name
     bootstrap_keys = {_episode_key(p) for p in _scan_summaries(run_dir, args.condition)}
 
@@ -443,14 +445,28 @@ def main() -> int:
                 rules = _triggered_rules(metrics, args)
                 is_bootstrap_episode = key in bootstrap_keys
                 allow_alert = args.alert_on_bootstrap or (not is_bootstrap_episode)
+                if not rules:
+                    # Condition is healthy — reset all backoff counters for it
+                    stale = [k for k in alert_cooldown_state if k[0] == condition_id]
+                    for k in stale:
+                        del alert_cooldown_state[k]
                 if rules and allow_alert:
                     sig = ",".join(sorted(rules))
                     now = time.time()
-                    cond_last_ts = last_alert_ts_by_cond.get(condition_id, 0.0)
-                    if (now - cond_last_ts) >= int(args.alert_cooldown_secs):
+                    cooldown_key = (condition_id, sig)
+                    prev_ts, prev_count = alert_cooldown_state.get(cooldown_key, (0.0, 0))
+                    # Exponential backoff: base * 2^(consecutive-1), capped
+                    multiplier = min(2 ** max(prev_count - 1, 0), MAX_COOLDOWN_MULTIPLIER)
+                    effective_cooldown = int(args.alert_cooldown_secs) * multiplier
+                    if (now - prev_ts) >= effective_cooldown:
                         diagnosis = _heuristic_diagnosis(
                             metrics=metrics,
                             rules=rules,
+                        )
+                        repeat_note = (
+                            f"[repeat #{prev_count + 1}, next alert in {effective_cooldown * 2 // 60}min]\n"
+                            if prev_count > 0
+                            else ""
                         )
                         alert_title = f"P79 Watchdog Alert [{obs_mode}/{condition_id}]"
                         alert_body = (
@@ -461,12 +477,19 @@ def main() -> int:
                             f"succ={metrics['success_rate']:.1%}, wrong_url={metrics['wrong_url_rate']:.1%}, "
                             f"no_progress={metrics['no_progress_rate']:.1%}, max_steps={metrics['max_steps_rate']:.1%}, "
                             f"avg_step={metrics['avg_step_latency_s']:.1f}s\n"
+                            f"{repeat_note}"
                             f"{diagnosis}"
                         )
                         print(f"[watchdog][ALERT] {alert_body}")
                         if args.ntfy_topic:
                             _post_ntfy(args.ntfy_topic, alert_title, alert_body, priority="high")
-                        last_alert_ts_by_cond[condition_id] = now
+                        alert_cooldown_state[cooldown_key] = (now, prev_count + 1)
+                    else:
+                        remaining = int(effective_cooldown - (now - prev_ts))
+                        print(
+                            f"[watchdog][SUPPRESSED] {condition_id} rules={sig} "
+                            f"(repeat #{prev_count}, next alert in {remaining}s)"
+                        )
 
                 _save_state(state_file, seen_keys)
         else:

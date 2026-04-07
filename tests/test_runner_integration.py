@@ -138,12 +138,32 @@ def test_runner_and_analysis_end_to_end_with_mock_env(tmp_path):
     assert first_record.get("checklist") is not None
     assert "state_digest" in first_record
 
+    # Verify state_digest contains new fields
+    state_digest = first_record.get("state_digest", {})
+    assert "dom_complexity" in state_digest
+    assert "text_length" in state_digest
+
     first_summary_path = next(run_dir.glob("*/episodes/*_summary_v2.json"))
     with open(first_summary_path, "r", encoding="utf-8") as f:
         first_summary = json.load(f)
     assert "total_model_cost_usd" in first_summary
     assert "state_change_reason_distribution" in first_summary
     assert "checklist_completion_rate" in first_summary
+
+    # Verify wasted cost and component breakdown in episode summary
+    assert "wasted_cost_usd" in first_summary
+    assert "wasted_energy_kwh" in first_summary
+    assert "component_breakdown" in first_summary
+    assert isinstance(first_summary["component_breakdown"], dict)
+    assert "model_cost_usd" in first_summary["component_breakdown"]
+
+    # Verify aggregate has new fields
+    condition_summary_path = next(run_dir.glob("*/condition_summary_v2.json"))
+    with open(condition_summary_path, "r", encoding="utf-8") as f:
+        cond_summary = json.load(f)
+    assert "avg_wasted_cost_usd" in cond_summary
+    assert "avg_wasted_energy_kwh" in cond_summary
+    assert "cost_efficiency_ratio" in cond_summary
 
     try:
         analysis_dir = analyze_run(str(run_dir))

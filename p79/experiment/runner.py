@@ -22,8 +22,10 @@ from p79.experiment.environment import create_environment, create_evaluator
 from p79.experiment.logger_v2 import LoggerV2
 from p79.experiment.metrics import (
     aggregate_condition_metrics,
+    compute_component_breakdown,
     compute_router_overhead_cost,
     compute_token_cost,
+    compute_wasted_cost,
     detect_benchmark_noise,
     net_saving,
     p95,
@@ -541,6 +543,14 @@ class ExperimentRunner:
                             artifacts_dir=str(condition_dir),
                             error=str(exc),
                         ).as_dict()
+                        # Ensure error-path summaries have the same fields as normal ones
+                        summary["wasted_cost_usd"] = 0.0
+                        summary["wasted_energy_kwh"] = 0.0
+                        summary["component_breakdown"] = {
+                            "model_cost_usd": 0.0,
+                            "router_overhead_usd": 0.0,
+                            "total_energy_kwh": 0.0,
+                        }
 
                     condition_logger.write_episode_summary(task.site, task.task_id, summary)
                     episode_summaries.append(summary)
@@ -911,6 +921,13 @@ class ExperimentRunner:
                     )
             state_before = build_page_state(obs, current_info)
 
+            # Feed page complexity signals to router state for 3-way decisions
+            router_state.dom_complexity_history.append(state_before.get("dom_complexity", 0))
+            router_state.text_length_history.append(state_before.get("text_length", 0))
+            if len(router_state.dom_complexity_history) > self.router.history_window:
+                router_state.dom_complexity_history = router_state.dom_complexity_history[-self.router.history_window:]
+                router_state.text_length_history = router_state.text_length_history[-self.router.history_window:]
+
             env_step_start = time.time()
             next_obs, reward, terminated, truncated, next_info = self.environment.step(action)
             env_step_ms = (time.time() - env_step_start) * 1000.0
@@ -1116,6 +1133,8 @@ class ExperimentRunner:
                     "url_after": state_after.get("url"),
                     "title_before": state_before.get("title"),
                     "title_after": state_after.get("title"),
+                    "dom_complexity": state_before.get("dom_complexity"),
+                    "text_length": state_before.get("text_length"),
                 },
             ).as_dict()
             # Convenience field for history rendering/debug.
@@ -1264,5 +1283,12 @@ class ExperimentRunner:
             checklist_failed_items=checklist_failed_items,
             error=eval_result.error,
         ).as_dict()
+
+        # Enrich with wasted cost and component breakdown for cost-aware analysis
+        wasted = compute_wasted_cost(step_records, success)
+        episode_summary["wasted_cost_usd"] = wasted["wasted_cost_usd"]
+        episode_summary["wasted_energy_kwh"] = wasted["wasted_energy_kwh"]
+        breakdown = compute_component_breakdown(step_records)
+        episode_summary["component_breakdown"] = breakdown
 
         return episode_summary

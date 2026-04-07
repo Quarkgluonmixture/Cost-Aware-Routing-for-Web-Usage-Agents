@@ -123,6 +123,23 @@ def net_saving_energy(
     return _net_saving(energy_baseline_kwh, energy_routed_kwh, overhead)
 
 
+def compute_wasted_cost(step_records: List[Dict[str, Any]], success: bool) -> Dict[str, float]:
+    """For failed episodes, all step cost is wasted; for successful ones, wasted is 0."""
+    if success:
+        return {"wasted_cost_usd": 0.0, "wasted_energy_kwh": 0.0}
+    total_cost = sum(float(s.get("cost_usd", {}).get("total", 0)) for s in step_records)
+    total_energy = sum(float(s.get("energy", {}).get("kwh", 0) or 0) for s in step_records)
+    return {"wasted_cost_usd": total_cost, "wasted_energy_kwh": total_energy}
+
+
+def compute_component_breakdown(step_records: List[Dict[str, Any]]) -> Dict[str, float]:
+    """Aggregate cost by component type across all steps."""
+    model_cost = sum(float(s.get("cost_usd", {}).get("model", 0)) for s in step_records)
+    router_cost = sum(float(s.get("cost_usd", {}).get("router_overhead", 0)) for s in step_records)
+    energy_kwh = sum(float(s.get("energy", {}).get("kwh", 0) or 0) for s in step_records)
+    return {"model_cost_usd": model_cost, "router_overhead_usd": router_cost, "total_energy_kwh": energy_kwh}
+
+
 def compute_wasted_energy(episode_summaries: List[Dict[str, Any]]) -> Optional[float]:
     """Total kWh spent on unsuccessful episodes (failed or hit max_steps).
 
@@ -158,6 +175,9 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             "checklist_failure_episode_rate": None,
             "benchmark_noise_rate": 0.0,
             "wasted_energy_kwh": None,
+            "avg_wasted_cost_usd": 0.0,
+            "avg_wasted_energy_kwh": 0.0,
+            "cost_efficiency_ratio": None,
         }
 
     success_rate = sum(1 for x in episode_summaries if x.get("success")) / len(episode_summaries)
@@ -222,4 +242,14 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
         ),
         "benchmark_noise_rate": float(statistics.mean(benchmark_noise_flags)),
         "wasted_energy_kwh": compute_wasted_energy(episode_summaries),
+        "avg_wasted_cost_usd": float(statistics.mean(
+            [float(x.get("wasted_cost_usd", 0.0)) for x in episode_summaries]
+        )),
+        "avg_wasted_energy_kwh": float(statistics.mean(
+            [float(x.get("wasted_energy_kwh", 0.0)) for x in episode_summaries]
+        )),
+        "cost_efficiency_ratio": (
+            sum(float(x.get("total_cost_usd", 0.0)) for x in episode_summaries if x.get("success"))
+            / max(sum(float(x.get("total_cost_usd", 0.0)) for x in episode_summaries), 1e-12)
+        ),
     }

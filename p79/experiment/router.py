@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
 
@@ -11,6 +11,11 @@ class RouterState:
     no_progress_streak: int = 0
     checklist_stall_streak: int = 0
     prev_checklist_completed: Optional[int] = None
+    # 3-way routing state
+    dom_complexity_history: List[int] = field(default_factory=list)
+    text_length_history: List[int] = field(default_factory=list)
+    current_mode: str = "dom"
+    success_streak: int = 0
 
 
 class RuleBasedRouter:
@@ -27,6 +32,15 @@ class RuleBasedRouter:
         self.checklist_trigger_enabled = bool(checklist_cfg.get("enabled", False))
         self.checklist_stalled_steps_trigger = int(checklist_cfg.get("stalled_steps_trigger", 2))
         self.checklist_failed_item_trigger = bool(checklist_cfg.get("failed_item_trigger", True))
+
+        # 3-way routing config
+        self.modes: List[str] = list(
+            router_cfg.get("modes", [self.cheap_default_mode, self.rich_escalation_mode])
+        )
+        self.dom_complexity_trigger = int(thresholds.get("dom_complexity_trigger", 500))
+        self.text_length_trigger = int(thresholds.get("text_length_trigger", 12000))
+        self.deescalation_streak = int(thresholds.get("deescalation_streak", 3))
+        self.history_window = int(thresholds.get("history_window", 5))
 
     def decide(
         self,
@@ -47,8 +61,10 @@ class RuleBasedRouter:
 
         if prev_action_success is False:
             state.no_progress_streak += 1
+            state.success_streak = 0
         elif prev_action_success is True:
             state.no_progress_streak = 0
+            state.success_streak += 1
 
         triggers: List[str] = []
 
@@ -64,6 +80,16 @@ class RuleBasedRouter:
             triggers.append("page_unchanged_streak")
         if state.no_progress_streak >= self.no_progress_steps_trigger:
             triggers.append("no_progress_streak")
+
+        # DOM complexity / text length triggers (from state_change enrichment)
+        if state.dom_complexity_history:
+            latest_dc = state.dom_complexity_history[-1]
+            if latest_dc > self.dom_complexity_trigger:
+                triggers.append("dom_complexity_high")
+        if state.text_length_history:
+            latest_tl = state.text_length_history[-1]
+            if latest_tl > self.text_length_trigger:
+                triggers.append("text_length_high")
 
         if self.checklist_trigger_enabled and checklist_status:
             total = int(checklist_status.get("total", 0) or 0)
@@ -90,7 +116,26 @@ class RuleBasedRouter:
         if not router_enabled:
             decision = preferred_mode
         else:
-            decision = self.rich_escalation_mode if triggers else self.cheap_default_mode
+            if triggers:
+                # Escalate: pick the next more expensive mode from modes list
+                current_idx = (
+                    self.modes.index(state.current_mode)
+                    if state.current_mode in self.modes
+                    else 0
+                )
+                decision = self.modes[min(current_idx + 1, len(self.modes) - 1)]
+            elif state.success_streak >= self.deescalation_streak and state.current_mode != self.modes[0]:
+                # De-escalate after sustained success
+                current_idx = (
+                    self.modes.index(state.current_mode)
+                    if state.current_mode in self.modes
+                    else 0
+                )
+                decision = self.modes[max(current_idx - 1, 0)]
+                state.success_streak = 0  # reset after de-escalation
+            else:
+                decision = self.cheap_default_mode
+        state.current_mode = decision
 
         router_decision_ms = (time.time() - start) * 1000.0
         overhead = {

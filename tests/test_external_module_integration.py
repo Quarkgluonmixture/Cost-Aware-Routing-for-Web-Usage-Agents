@@ -6,7 +6,11 @@ from p79.backends.image_utils import encode_image_data_url
 from p79.envs.vwa_wrapper import P79Observation
 from p79.experiment.checklist_module import ChecklistManagerLite
 from p79.experiment.energy_tracker import LightweightEnergyTracker
-from p79.experiment.state_change import build_page_state, detect_page_state_change
+from p79.experiment.state_change import (
+    _extract_focused_tag,
+    build_page_state,
+    detect_page_state_change,
+)
 
 
 def test_state_change_detection_uses_url_and_content():
@@ -55,6 +59,119 @@ def test_lightweight_energy_tracker_fixed_power():
     expected_co2_kg = expected_kwh * 500.0 / 1000.0
     assert math.isclose(float(energy["kwh"]), expected_kwh, rel_tol=1e-5)
     assert math.isclose(float(energy["co2e_kg"]), expected_co2_kg, rel_tol=1e-5)
+
+
+# ---------------------------------------------------------------------------
+# state_change: _extract_focused_tag
+# ---------------------------------------------------------------------------
+
+
+def test_extract_focused_tag_with_focused_element():
+    text = '[10] textbox "Search" focused input\n[11] button "Go"'
+    assert _extract_focused_tag(text) == "input"
+
+
+def test_extract_focused_tag_no_focus():
+    text = '[10] textbox "Search"\n[11] button "Go"'
+    assert _extract_focused_tag(text) is None
+
+
+def test_extract_focused_tag_empty():
+    assert _extract_focused_tag("") is None
+    assert _extract_focused_tag(None) is None
+
+
+# ---------------------------------------------------------------------------
+# state_change: build_page_state new fields
+# ---------------------------------------------------------------------------
+
+
+def test_build_page_state_has_new_fields():
+    text = "[1] button\n[2] input\n[3] link\n"
+    obs = P79Observation(text=text, image=None)
+    state = build_page_state(obs, {})
+
+    assert state["dom_complexity"] == 4  # 3 newlines + 1
+    assert state["text_length"] == len(text)
+    assert state["active_element_tag"] is None
+
+
+def test_build_page_state_empty_text():
+    obs = P79Observation(text="", image=None)
+    state = build_page_state(obs, {})
+
+    assert state["dom_complexity"] == 1  # "".count("\n") + 1 = 1
+    assert state["text_length"] == 0
+    assert state["active_element_tag"] is None
+
+
+def test_build_page_state_with_focused():
+    text = '[5] textbox "Email" focused input\n[6] button "Login"'
+    obs = P79Observation(text=text, image=None)
+    state = build_page_state(obs, {})
+
+    assert state["active_element_tag"] == "input"
+    assert state["dom_complexity"] == 2
+    assert state["text_length"] == len(text)
+
+
+# ---------------------------------------------------------------------------
+# state_change: detect_page_state_change new reasons
+# ---------------------------------------------------------------------------
+
+
+def test_detect_dom_complexity_changed():
+    """dom_complexity change >20% triggers dom_complexity_changed."""
+    before = {"visible_text": "a", "dom_complexity": 100, "text_length": 1000}
+    after = {"visible_text": "a", "dom_complexity": 130, "text_length": 1000}
+    _, reasons, _ = detect_page_state_change(before, after, "CLICK")
+    assert "dom_complexity_changed" in reasons
+
+
+def test_detect_dom_complexity_not_changed_within_threshold():
+    """dom_complexity change <=20% does NOT trigger."""
+    before = {"visible_text": "a", "dom_complexity": 100, "text_length": 1000}
+    after = {"visible_text": "a", "dom_complexity": 115, "text_length": 1000}
+    _, reasons, _ = detect_page_state_change(before, after, "CLICK")
+    assert "dom_complexity_changed" not in reasons
+
+
+def test_detect_text_length_changed():
+    """text_length change >30% triggers text_length_changed."""
+    before = {"visible_text": "a", "dom_complexity": 10, "text_length": 1000}
+    after = {"visible_text": "a", "dom_complexity": 10, "text_length": 1400}
+    _, reasons, _ = detect_page_state_change(before, after, "CLICK")
+    assert "text_length_changed" in reasons
+
+
+def test_detect_text_length_not_changed_within_threshold():
+    """text_length change <=30% does NOT trigger."""
+    before = {"visible_text": "a", "dom_complexity": 10, "text_length": 1000}
+    after = {"visible_text": "a", "dom_complexity": 10, "text_length": 1200}
+    _, reasons, _ = detect_page_state_change(before, after, "CLICK")
+    assert "text_length_changed" not in reasons
+
+
+def test_detect_complexity_zero_before_no_trigger():
+    """When before is 0, relative change is undefined — should not trigger."""
+    before = {"visible_text": "a", "dom_complexity": 0, "text_length": 0}
+    after = {"visible_text": "a", "dom_complexity": 50, "text_length": 500}
+    _, reasons, _ = detect_page_state_change(before, after, "CLICK")
+    assert "dom_complexity_changed" not in reasons
+    assert "text_length_changed" not in reasons
+
+
+def test_detect_dom_complexity_decrease_triggers():
+    """Large decrease (>20%) also triggers."""
+    before = {"visible_text": "a", "dom_complexity": 200, "text_length": 1000}
+    after = {"visible_text": "a", "dom_complexity": 100, "text_length": 1000}
+    _, reasons, _ = detect_page_state_change(before, after, "CLICK")
+    assert "dom_complexity_changed" in reasons
+
+
+# ---------------------------------------------------------------------------
+# image_utils (existing)
+# ---------------------------------------------------------------------------
 
 
 def test_image_utils_compresses_to_payload_limit():

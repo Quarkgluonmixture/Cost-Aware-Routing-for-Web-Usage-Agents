@@ -796,11 +796,11 @@ def _glm_episode_diagnosis_one(
                 "image_url": {"url": f"data:image/png;base64,{_images[_sidx]}"},
             })
         # Use vision-capable model when images are present.
-        # Fallback chain: GLM-5V-Turbo (best quality, rate-limited) → GLM-4.6V
+        # Fallback chain: GLM-4.6V (confirmed available) → GLM-5V-Turbo
         _vision_models = []
-        _primary_vm = glmm.get("vision_model") or "GLM-5V-Turbo"
+        _primary_vm = glmm.get("vision_model") or "GLM-4.6V"
         _vision_models.append(_primary_vm)
-        _VISION_FALLBACKS = ["GLM-5V-Turbo", "GLM-4.6V"]
+        _VISION_FALLBACKS = ["GLM-4.6V", "GLM-5V-Turbo"]
         for _fb in _VISION_FALLBACKS:
             if _fb not in _vision_models:
                 _vision_models.append(_fb)
@@ -883,9 +883,9 @@ def _glm_episode_diagnosis_one(
                 f"[live-diag] WARNING: GLM episode diagnosis attempt {_attempt}/{_MAX_RETRIES} "
                 f"failed task_id={task_id_hint}: {type(e).__name__}: {e}"
             )
-            # Vision model fallback: on 429 (rate limit), try next vision model
+            # Vision model fallback: on 429 (rate limit) or 404 (model not found)
             _err_str = str(e)
-            if _vision_models and ("429" in _err_str or "rate" in _err_str.lower()):
+            if _vision_models and ("429" in _err_str or "404" in _err_str or "rate" in _err_str.lower()):
                 _cur_vm = _glmm_use.get("model", "")
                 try:
                     _cur_idx = _vision_models.index(_cur_vm)
@@ -1335,6 +1335,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=5,
         help="Max number of newly failed episodes to diagnose per trigger",
     )
+    p.add_argument("--digest-output", default=None,
+        help="Path for batch digest JSONL (enables auto-digest). "
+             "E.g. analysis/digest.jsonl")
+    p.add_argument("--digest-max-images", type=int, default=3,
+        help="Max screenshots per episode for digest")
+    p.add_argument("--digest-delay-secs", type=float, default=1.0,
+        help="Delay between GLM calls for digest")
     return p
 
 
@@ -1433,6 +1440,20 @@ def main() -> int:
             print(f"[live-diag] GLM config not found ({cfg_path}). fallback only.")
     else:
         print("[live-diag] GLM disabled.")
+
+    # Import batch_digest module if --digest-output is requested
+    batch_digest = None
+    if args.digest_output:
+        try:
+            import importlib.util as _ilu
+            _bd_path = Path(__file__).parent / "glm_batch_digest.py"
+            _bd_spec = _ilu.spec_from_file_location("glm_batch_digest", _bd_path)
+            batch_digest = _ilu.module_from_spec(_bd_spec)
+            _bd_spec.loader.exec_module(batch_digest)
+            print(f"[live-diag] batch-digest enabled: output={args.digest_output}")
+        except Exception as e:  # noqa: BLE001
+            print(f"[live-diag] batch-digest import failed: {e}. digest disabled.")
+            batch_digest = None
 
     print(
         f"[live-diag] watch run_id={run_dir.name} condition={args.condition or '*'} "
@@ -1692,6 +1713,46 @@ def main() -> int:
                     max_cases=int(args.episode_diagnosis_max_cases),
                 )
                 episode_diagnoses = _glm_episode_diagnosis(glmm=glmm, cases=new_failed_cases, run_dir=run_dir)
+
+                # ── Batch digest: process ALL new failed cases → digest.jsonl ──
+                if batch_digest is not None and glmm and not args.disable_glm:
+                    digest_output = Path(args.digest_output)
+                    if not digest_output.is_absolute():
+                        digest_output = run_dir / args.digest_output
+                    done_keys = batch_digest._load_done_keys(digest_output)
+                    digest_cases = batch_digest._extract_all_failed_cases(
+                        episode_rows_csv=out_dir / "episode_reason_rows.csv",
+                        condition_filter=_trigger_cond,
+                    )
+                    pending_digest = [
+                        c for c in digest_cases
+                        if (
+                            str(c.get("condition_id", "")),
+                            batch_digest._to_int(c.get("task_id"))
+                            if batch_digest._to_int(c.get("task_id")) is not None
+                            else -1,
+                        )
+                        not in done_keys
+                    ]
+                    if pending_digest:
+                        print(f"[live-diag] batch-digest: {len(pending_digest)} new cases")
+                        for _di, _dc in enumerate(pending_digest):
+                            try:
+                                _d_rec = batch_digest._glm_digest_one(
+                                    glmm=glmm,
+                                    case=_dc,
+                                    run_dir=run_dir,
+                                    max_images=int(args.digest_max_images),
+                                )
+                                batch_digest._append_jsonl(digest_output, _d_rec)
+                            except Exception as _de:  # noqa: BLE001
+                                _d_fb = batch_digest._build_dry_run_record(_dc)
+                                _d_fb["_glm_error"] = str(_de)[:200]
+                                batch_digest._append_jsonl(digest_output, _d_fb)
+                            if _di < len(pending_digest) - 1:
+                                time.sleep(args.digest_delay_secs)
+                        print(f"[live-diag] batch-digest: done, output={digest_output}")
+
                 # If ANY case has GLM_FAILED, queue the ENTIRE batch for retry
                 # and skip ntfy — user should never see degraded/partial results.
                 _has_glm_failed = any(

@@ -379,7 +379,99 @@ cross_representation/                    # 多站时按站点分子目录
 
 ---
 
-## 5. `experiment_watchdog.py` — 实验健康监控
+## 5. `glm_batch_digest.py` — 批量失败 Episode 预消化
+
+**路径**: `scripts/glm_batch_digest.py`
+
+### 定位
+
+用 GLM 视觉模型将失败 episode 的截图 + step 日志压缩为结构化 JSONL digest，供 Claude 快速归因（无需再看截图）。
+
+### 触发方式
+
+- **自动 (sidecar)**: `glm_diagnosis_sidecar.py` 在每次诊断后自动运行（需 `--digest-output` 参数）
+- **手动**: `python3 scripts/glm_batch_digest.py --run-dir <run_dir> --output <path> --glm-config .auth/glm`
+
+### CLI
+
+```bash
+python3 scripts/glm_batch_digest.py \
+    --run-dir results/.../B1_3mode_classifieds_20260404_141103 \
+    --output analysis/digest.jsonl \
+    --glm-config .auth/glm \
+    --condition phase1_dom_router_0 \  # 可选，过滤特定 condition
+    --delay-secs 2 \                   # GLM 调用间隔
+    --max-images 3 \                   # 每 episode 最多截图数
+    --max-cases 0 \                    # 0=不限
+    --site classifieds \               # 可选，覆盖 site 字段
+    --dry-run                          # 不调 GLM，仅用确定性 fallback
+```
+
+### Sidecar 集成
+
+在 `glm_diagnosis_sidecar.py` 启动时加入 `--digest-output` 即可激活自动增量消化：
+
+```bash
+python3 scripts/glm_diagnosis_sidecar.py \
+    ... \
+    --digest-output analysis/digest/digest.jsonl \
+    --digest-max-images 3 \
+    --digest-delay-secs 1.0
+```
+
+流程：每次 sidecar 触发诊断 → episode diagnosis → **batch digest ALL 新失败 case** → ntfy 推送。
+
+digest 与 episode diagnosis 的区别：
+- episode diagnosis 受 `--episode-diagnosis-max-cases` 限制（默认 5），输出到 ntfy
+- batch digest 处理**所有**新增失败 case，输出到 JSONL 文件，供后续离线分析
+
+### 分析能力
+
+| 能力 | 说明 |
+|---|---|
+| 关键步骤选取 | 自动选 step 0 / stuck 步 / 中间步 / 最后步（最多 max_images 张） |
+| 截图描述 | GLM 视觉模型对关键步骤截图生成 30-50 字描述 |
+| 思维链压缩 | 全程 thought 压缩为 2-3 句话摘要 |
+| 动作序列压缩 | 完整 action 序列压缩为 ≤15 个语义块 |
+| 失败分类 | category / root_cause / is_scaffolding_issue / evidence |
+| 断点续跑 | 通过 `(condition_id, task_id)` 去重，自动跳过已消化 |
+| 视觉模型 fallback | GLM-5V-Turbo → GLM-4.6V 自动降级 |
+
+### 输出格式
+
+每行一个 JSON 对象（JSONL），核心字段：
+
+```json
+{
+  "task_id": 123,
+  "condition_id": "phase1_dom_router_0",
+  "task_intent": "...",
+  "observation_mode": "dom",
+  "reason_bucket": "fail_incomplete_or_stuck",
+  "screenshot_descriptions": {"0": "...", "15": "..."},
+  "thought_summary": "2-3句话压缩",
+  "key_actions_compressed": "SEARCH(...)→CLICK(...)→BACK→FINISH",
+  "category": "搜索循环",
+  "root_cause": "≤60字根因",
+  "is_scaffolding_issue": "否",
+  "confidence": "high",
+  "evidence": "具体证据"
+}
+```
+
+### Hot-restart 注意
+
+`restart_sidecar.sh` 从 `/proc/PID/cmdline` 读取原始参数原样重启。`--digest-output` 等参数只需在首次启动时传入，后续 hot-restart 自动保留。
+
+也可通过 `--append-args` 在 hot-restart 时注入新参数：
+
+```bash
+bash scripts/dgx/restart_sidecar.sh --append-args "--digest-output analysis/digest.jsonl"
+```
+
+---
+
+## 6. `experiment_watchdog.py` — 实验健康监控
 
 **路径**: `scripts/experiment_watchdog.py`
 
@@ -399,7 +491,7 @@ cross_representation/                    # 多站时按站点分子目录
 
 ---
 
-## 三脚本协作关系
+## 多脚本协作关系
 
 ```
 实验运行中
@@ -411,13 +503,16 @@ cross_representation/                    # 多站时按站点分子目录
   │                                            → analysis/cross_representation/{tables,plots}/
   │
   ├── glm_diagnosis_sidecar.py 每 N 个 episode
-  │     └── 调 analyze_reason_diagnostics.py  → analysis/reason_diagnostics_live/
+  │     ├── 调 analyze_reason_diagnostics.py  → analysis/reason_diagnostics_live/
+  │     ├── GLM episode diagnosis             → ntfy 推送
+  │     └── glm_batch_digest (自动)           → analysis/digest/digest.jsonl
   │
   └── experiment_watchdog.py 持续轮询         → ntfy 告警（不写文件）
 
 实验跑完后（手动）
   │
   ├── analyze_reason_diagnostics.py 最终版    → analysis/reason_diagnostics/
+  ├── glm_batch_digest.py 最终版              → analysis/digest/digest.jsonl
   └── analyze_cross_representation.py --priority all
                                                → analysis/cross_representation/{tables,plots}/
 ```

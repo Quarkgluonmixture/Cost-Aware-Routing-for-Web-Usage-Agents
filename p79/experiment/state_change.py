@@ -27,6 +27,14 @@ def _extract_form_fields_count(text: str) -> int:
     return sum(low.count(m) for m in markers)
 
 
+def _extract_focused_tag(text: str) -> Optional[str]:
+    """Extract the tag/role of the focused element from AXTree text."""
+    if not text:
+        return None
+    m = re.search(r"focused.*?\b(\w+)(?:\s|$)", text, re.IGNORECASE)
+    return m.group(1) if m else None
+
+
 def _extract_modal_state(text: str) -> bool:
     if not text:
         return False
@@ -65,6 +73,9 @@ def build_page_state(obs: P79Observation, info: Optional[Dict[str, Any]]) -> Dic
         "modal_present": _extract_modal_state(text),
         "scroll_x": int(info.get("scroll_x", 0) or 0),
         "scroll_y": int(info.get("scroll_y", 0) or 0),
+        "dom_complexity": text.count("\n") + 1,
+        "text_length": len(text),
+        "active_element_tag": _extract_focused_tag(text),
     }
     return state
 
@@ -117,6 +128,18 @@ def detect_page_state_change(
     say = int(after.get("scroll_y", 0) or 0)
     if abs(sax - sbx) >= 5 or abs(say - sby) >= 5:
         changes.append("scroll_changed")
+
+    # DOM complexity change (>20% relative change)
+    dc_before = int(before.get("dom_complexity", 0) or 0)
+    dc_after = int(after.get("dom_complexity", 0) or 0)
+    if dc_before > 0 and abs(dc_after - dc_before) / dc_before > 0.20:
+        changes.append("dom_complexity_changed")
+
+    # Text length change (>30% relative change)
+    tl_before = int(before.get("text_length", 0) or 0)
+    tl_after = int(after.get("text_length", 0) or 0)
+    if tl_before > 0 and abs(tl_after - tl_before) / tl_before > 0.30:
+        changes.append("text_length_changed")
 
     action_upper = (action_type or "").upper()
     if action_upper in ("SCROLL", "SCROLL UP", "SCROLL DOWN", "SCROLL TOP", "SCROLL BOTTOM"):
