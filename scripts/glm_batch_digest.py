@@ -6,17 +6,21 @@ Pipeline:
   GLM reads screenshots + step logs → outputs per-episode digest
   Claude reads digest.jsonl → fast attribution without viewing images
 
+Output is auto-split by observation mode into the --output directory:
+  digest_dom.jsonl, digest_som.jsonl, digest_vision.jsonl
+
 Usage:
   python3 scripts/glm_batch_digest.py \
     --run-dir results/.../B1_3mode_classifieds_20260404_141103 \
-    --output analysis/dom_digest.jsonl \
+    --output results/.../analysis/digest/ \
     --glm-config .auth/glm \
+    --condition phase1_dom_router_0 \
     --delay-secs 2 --max-images 3
 
   # dry-run (no GLM calls, only deterministic fallback)
   python3 scripts/glm_batch_digest.py \
     --run-dir results/.../B1_3mode_classifieds_20260404_141103 \
-    --output /tmp/test_digest.jsonl --dry-run
+    --output /tmp/test_digest/ --dry-run
 """
 
 from __future__ import annotations
@@ -234,7 +238,7 @@ def _load_dom_snippet(episode_dir: Path, step_idx: int, max_chars: int = 800) ->
 # GLM digest prompt + call
 # ---------------------------------------------------------------------------
 
-_DIGEST_SYSTEM_PROMPT = """\
+_DIGEST_SYSTEM_PROMPT_BASE = """\
 你是实验失败归因助手。对每个失败 episode，输出结构化诊断 JSON（中文）。
 
 你需要输出以下字段（严格 JSON 对象）：
@@ -267,6 +271,49 @@ _DIGEST_SYSTEM_PROMPT = """\
 9) 若 unreachable_subtype=visual_dom_only 或 location_filter*，is_scaffolding_issue=是。
 10) 若 stuck_subtype=account_loop 或 scroll_static，is_scaffolding_issue=是。
 """
+
+_DIGEST_SOM_ADDENDUM = """
+=== SoM 模式专属归因规则 ===
+
+本 episode 使用 SoM（Set-of-Marks）观测模式：截图上叠加青色（#00BCD4）编号标注框，
+agent 同时接收标注截图 + [SOM_MARKS] 文本索引。你需要额外判断 SoM 表征是否有效。
+
+**SoM 已知的结构性缺陷（应判为 is_scaffolding_issue=是）**：
+S1) 标注遮挡：青色 mark 框覆盖缩略图关键区域（如颜色、车型、商品外观），
+    导致模型即使看了截图也无法准确识别视觉属性。
+    → 检查截图中 mark 框是否遮挡了任务所需的视觉信息。
+S2) 标注色混淆：统一青色标注在涉及颜色识别的任务中，可能与目标颜色混淆
+    （如红色物品被青色框覆盖后难以辨认）。
+S3) 空间布局丢失：SoM marks 列表是线性序号，无法表达 2D grid 位置关系，
+    任务要求"第X行第Y个"时，agent 无法从 mark 列表定位。
+S4) text-over-vision 偏差：agent 的 thought 中仅引用 SoM marks 文本标签（商品标题等）
+    做决策，完全没有利用截图中的视觉信息（颜色、外观）。
+    → 这是 SoM 表征的结构性问题：mark 文字提供了"捷径"，4B 模型会忽略视觉。
+S5) viewport 外 ID 幻觉：深度滚动后 agent 引用了不可见元素的 mark ID。
+
+**关键判断：区分"SoM 表征失效"vs"模型能力不足"**：
+- 若任务需要视觉属性（颜色、外观、图片匹配）且 agent 的 thought 没有提及任何视觉观察
+  → is_scaffolding_issue=是（SoM 未能引导模型利用视觉信息）
+- 若 agent 的 thought 明确描述了视觉观察但判断错误（如"看到银色"但实际是红色）
+  → 需要进一步判断：检查截图中 mark 框是否遮挡了该区域
+    - 若遮挡 → is_scaffolding_issue=是
+    - 若未遮挡，模型确实看到了但判断错误 → is_scaffolding_issue=否（模型能力问题）
+- 若任务不涉及视觉属性（纯文本/价格/导航）→ 按通用规则判断
+
+**额外输出字段**（SoM 模式必填）：
+在 JSON 中增加：
+  "som_visual_used": "是|否" — agent 是否在 thought 中引用了视觉信息（颜色、外观等）
+  "som_mark_occlusion": "是|否|不适用" — 截图中 mark 框是否遮挡了任务所需的关键视觉区域
+  "som_failure_type": "标注遮挡|颜色混淆|空间布局丢失|text_over_vision|ID幻觉|不适用"
+    — 若为 SoM 表征问题，选择具体子类型；否则填"不适用"
+"""
+
+
+def _get_system_prompt(obs_mode: str) -> str:
+    """Return the appropriate system prompt based on observation mode."""
+    if obs_mode == "som":
+        return _DIGEST_SYSTEM_PROMPT_BASE + _DIGEST_SOM_ADDENDUM
+    return _DIGEST_SYSTEM_PROMPT_BASE
 
 
 def _build_digest_payload(
@@ -396,8 +443,9 @@ def _glm_digest_one(
         glmm_use = glmm
         vision_models = []
 
+    system_prompt = _get_system_prompt(obs_mode)
     messages = [
-        {"role": "system", "content": _DIGEST_SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_content},
     ]
 
@@ -524,6 +572,14 @@ def _build_digest_record(
     }
     if vision_models:
         record["_vision_model_used"] = glmm_use.get("model", "")
+
+    # SoM-specific fields
+    obs_mode = str(case.get("observation_mode", "") or "").strip().lower()
+    if obs_mode == "som":
+        record["som_visual_used"] = str(parsed.get("som_visual_used", "") or "").strip() or "否"
+        record["som_mark_occlusion"] = str(parsed.get("som_mark_occlusion", "") or "").strip() or "不适用"
+        record["som_failure_type"] = str(parsed.get("som_failure_type", "") or "").strip() or "不适用"
+
     return record
 
 
@@ -565,27 +621,34 @@ def _build_dry_run_record(case: Dict[str, Any]) -> Dict[str, Any]:
 # Resume support: read already-processed (condition_id, task_id) from output
 # ---------------------------------------------------------------------------
 
-def _load_done_keys(output_path: Path) -> Set[Tuple[str, int]]:
-    """Load (condition_id, task_id) pairs already in the output JSONL."""
+def _output_path_for_mode(output_dir: Path, obs_mode: str) -> Path:
+    """Return mode-specific digest file path: digest_dom.jsonl, digest_som.jsonl, etc."""
+    mode = obs_mode.lower() if obs_mode else "unknown"
+    return output_dir / f"digest_{mode}.jsonl"
+
+
+def _load_done_keys(output_dir: Path) -> Set[Tuple[str, int]]:
+    """Load (condition_id, task_id) pairs already processed across all digest_*.jsonl files."""
     done: Set[Tuple[str, int]] = set()
-    if not output_path.exists():
+    if not output_dir.exists():
         return done
-    try:
-        with output_path.open("r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    obj = json.loads(line)
-                    cid = str(obj.get("condition_id", "") or "")
-                    tid = _to_int(obj.get("task_id"))
-                    if tid is not None:
-                        done.add((cid, tid))
-                except Exception:
-                    pass
-    except Exception:
-        pass
+    for jsonl_file in output_dir.glob("digest_*.jsonl"):
+        try:
+            with jsonl_file.open("r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        obj = json.loads(line)
+                        cid = str(obj.get("condition_id", "") or "")
+                        tid = _to_int(obj.get("task_id"))
+                        if tid is not None:
+                            done.add((cid, tid))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
     return done
 
 
@@ -635,7 +698,8 @@ def main() -> None:
     )
     parser.add_argument("--run-dir", required=True, type=Path, help="Run directory")
     parser.add_argument("--condition", default=None, help="Filter to specific condition_id")
-    parser.add_argument("--output", required=True, type=Path, help="Output JSONL path")
+    parser.add_argument("--output", required=True, type=Path,
+                        help="Output directory (auto-splits into digest_dom.jsonl / digest_som.jsonl / digest_vision.jsonl)")
     parser.add_argument("--glm-config", default=None, type=Path, help="GLM config file (.auth/glm)")
     parser.add_argument("--delay-secs", default=2.0, type=float, help="Delay between GLM calls (seconds)")
     parser.add_argument("--max-images", default=3, type=int, help="Max screenshots per episode")
@@ -670,9 +734,15 @@ def main() -> None:
     all_cases = _extract_all_failed_cases(csv_path, condition_filter=args.condition)
     print(f"[batch-digest] Found {len(all_cases)} failed cases")
 
-    # Resume: skip already processed
-    output_path = args.output.resolve()
-    done_keys = _load_done_keys(output_path)
+    # Output directory (mode-specific files)
+    output_dir = args.output.resolve()
+    # Backwards compat: if user passed a .jsonl file path, use its parent dir
+    if output_dir.suffix == ".jsonl":
+        output_dir = output_dir.parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Resume: skip already processed (scans all digest_*.jsonl in output_dir)
+    done_keys = _load_done_keys(output_dir)
     if done_keys:
         print(f"[batch-digest] Resuming: {len(done_keys)} already processed, skipping")
 
@@ -698,11 +768,13 @@ def main() -> None:
         obs_mode = str(case.get("observation_mode", "") or "")
         progress = f"[{i+1}/{len(pending)}]"
 
+        out_file = _output_path_for_mode(output_dir, obs_mode)
+
         if args.dry_run:
             record = _build_dry_run_record(case)
             if args.site:
                 record["site"] = args.site
-            _append_jsonl(output_path, record)
+            _append_jsonl(out_file, record)
             print(f"{progress} {cond_id}/task_{task_id} ({obs_mode}) → fallback")
             success_count += 1
             continue
@@ -718,7 +790,7 @@ def main() -> None:
             )
             if args.site:
                 record["site"] = args.site
-            _append_jsonl(output_path, record)
+            _append_jsonl(out_file, record)
             cat = record.get("category", "?")
             print(f"→ {cat}")
             success_count += 1
@@ -729,7 +801,7 @@ def main() -> None:
             fb_record["_glm_error"] = str(e)[:200]
             if args.site:
                 fb_record["site"] = args.site
-            _append_jsonl(output_path, fb_record)
+            _append_jsonl(out_file, fb_record)
             fail_count += 1
 
         # Rate limit delay
@@ -737,7 +809,10 @@ def main() -> None:
             time.sleep(args.delay_secs)
 
     print(f"\n[batch-digest] Done. success={success_count} failed={fail_count}")
-    print(f"[batch-digest] Output: {output_path}")
+    print(f"[batch-digest] Output dir: {output_dir}")
+    for f in sorted(output_dir.glob("digest_*.jsonl")):
+        n = sum(1 for _ in f.open())
+        print(f"  {f.name}: {n} records")
 
 
 if __name__ == "__main__":

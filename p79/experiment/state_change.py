@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from p79.envs.vwa_wrapper import P79Observation
 
+_TEXT_TRUNCATION_LIMIT = 5000
+
 
 # Adapted from external_code/page_state_utils.py (Aiden Yiliu Li, Apache-2.0)
 def _safe_str(value: Any) -> str:
@@ -67,7 +69,7 @@ def build_page_state(obs: P79Observation, info: Optional[Dict[str, Any]]) -> Dic
     state = {
         "url": _safe_str(info.get("url") or info.get("current_url") or getattr(obs, "url", "")) or page_url,
         "title": _safe_str(info.get("title") or info.get("page_title") or "") or page_title,
-        "visible_text": text[:2000],
+        "visible_text": text[:_TEXT_TRUNCATION_LIMIT],
         "interactive_elements_count": _extract_interactive_count(text),
         "form_fields_count": _extract_form_fields_count(text),
         "modal_present": _extract_modal_state(text),

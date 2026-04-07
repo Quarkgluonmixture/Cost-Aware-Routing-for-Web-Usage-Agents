@@ -115,18 +115,19 @@ log "  classifieds=${RUN_ID_CLASSIFIEDS}"
 log "  reddit=${RUN_ID_REDDIT}"
 log "  shopping=${RUN_ID_SHOPPING}"
 
-# Stop existing queue + experiment runners + live reason sidecars.
+# Stop existing queue + experiment runners + sidecars + watchdogs.
 q_pids="$(ps -eo pid=,args= | awk '/bash scripts\/dgx\/queue_b1_serial.sh/ && !/awk/ {print $1}')"
 r_pids="$(ps -eo pid=,args= | awk '/scripts\/run_experiment.py/ && !/awk/ {print $1}')"
 s_pids="$(ps -eo pid=,args= | awk '/scripts\/glm_diagnosis_sidecar.py/ && !/awk/ {print $1}')"
+w_pids="$(ps -eo pid=,args= | awk '/scripts\/experiment_watchdog.py/ && !/awk/ {print $1}')"
 
-if [[ -n "${q_pids}${r_pids}${s_pids}" ]]; then
-  log "Stopping existing queue/runner/sidecar processes..."
-  for p in ${q_pids} ${r_pids} ${s_pids}; do
+if [[ -n "${q_pids}${r_pids}${s_pids}${w_pids}" ]]; then
+  log "Stopping existing queue/runner/sidecar/watchdog processes..."
+  for p in ${q_pids} ${r_pids} ${s_pids} ${w_pids}; do
     kill "${p}" 2>/dev/null || true
   done
   sleep 2
-  for p in ${q_pids} ${r_pids} ${s_pids}; do
+  for p in ${q_pids} ${r_pids} ${s_pids} ${w_pids}; do
     if kill -0 "${p}" 2>/dev/null; then
       kill -9 "${p}" 2>/dev/null || true
     fi
@@ -145,7 +146,7 @@ if [[ "${CLEAN}" -eq 1 ]]; then
     "logs/B1_baseline_qwen3vl4b_reddit_${RUN_ID_REDDIT}.log" \
     "logs/B1_baseline_qwen3vl4b_shopping_${RUN_ID_SHOPPING}.log"
 
-  # Clear live diagnostics state/logs so sidecar doesn't inherit stale counters.
+  # Clear sidecar state/logs.
   rm -f \
     "logs/live_reason_watch_classifieds_${RUN_ID_CLASSIFIEDS}.state.json" \
     "logs/live_reason_watch_reddit_${RUN_ID_REDDIT}.state.json" \
@@ -153,6 +154,15 @@ if [[ "${CLEAN}" -eq 1 ]]; then
     "logs/live_reason_watch_classifieds_${RUN_ID_CLASSIFIEDS}.log" \
     "logs/live_reason_watch_reddit_${RUN_ID_REDDIT}.log" \
     "logs/live_reason_watch_shopping_${RUN_ID_SHOPPING}.log"
+
+  # Clear watchdog state/logs.
+  rm -f \
+    "logs/experiment_watchdog_classifieds_${RUN_ID_CLASSIFIEDS}.state.json" \
+    "logs/experiment_watchdog_reddit_${RUN_ID_REDDIT}.state.json" \
+    "logs/experiment_watchdog_shopping_${RUN_ID_SHOPPING}.state.json" \
+    "logs/experiment_watchdog_classifieds_${RUN_ID_CLASSIFIEDS}.log" \
+    "logs/experiment_watchdog_reddit_${RUN_ID_REDDIT}.log" \
+    "logs/experiment_watchdog_shopping_${RUN_ID_SHOPPING}.log"
 
   rm -f logs/queue_b1_serial_*.log logs/queue_b1_serial_*.meta.txt
 fi
@@ -170,12 +180,14 @@ ts="$(date +%Y%m%d_%H%M%S)"
 queue_log="logs/queue_b1_serial_${ts}.log"
 queue_meta="logs/queue_b1_serial_${ts}.meta.txt"
 
-log "Starting queue with setsid..."
+log "Starting queue with setsid (sidecar=off, watchdog+digest=on)..."
 setsid env \
   RUN_ID_CLASSIFIEDS="${RUN_ID_CLASSIFIEDS}" \
   RUN_ID_REDDIT="${RUN_ID_REDDIT}" \
   RUN_ID_SHOPPING="${RUN_ID_SHOPPING}" \
   OPENAI_API_KEY="${OPENAI_KEY}" \
+  LIVE_REASON_WATCH_ENABLE=0 \
+  WATCHDOG_ENABLE=1 \
   bash scripts/dgx/queue_b1_serial.sh > "${queue_log}" 2>&1 < /dev/null &
 new_qpid=$!
 

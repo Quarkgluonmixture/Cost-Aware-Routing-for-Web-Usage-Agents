@@ -11,7 +11,7 @@ include = ["p79*"]
 
 [project]
 name = "p79"
-version = "0.1.0"
+version = "0.2.0"
 description = "Project 79: Cost-Aware Routing for Web Usage Agents with VisualWebArena + Qwen3-VL-4B"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,8 +25,6 @@ dependencies = [
     "pillow",
     "numpy",
     "pyyaml",
-    "scipy",
-    "einops",
     "openai>=1.0.0",
 ]
 
@@ -34,6 +32,7 @@ dependencies = [
 analysis = [
     "pandas",
     "matplotlib",
+    "scipy",
 ]
 dev = [
     "pytest>=7.0.0",

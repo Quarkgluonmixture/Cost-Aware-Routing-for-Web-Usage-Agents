@@ -76,6 +76,11 @@ class StepRecordV2:
     text_similarity: Optional[float] = None
     checklist: Optional[Dict[str, Any]] = None
     state_digest: Optional[Dict[str, Any]] = None
+    obs_url: Optional[str] = None
+    parse_valid: Optional[bool] = None
+    parse_failure_reason: Optional[str] = None
+    fallback_finish: Optional[bool] = None
+    confidence: Optional[Dict[str, Any]] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -114,6 +119,10 @@ class EpisodeSummaryV2:
     checklist_completion_rate: Optional[float] = None
     checklist_failed_items: Optional[int] = None
     error: Optional[str] = None
+    busy_wait_free_steps: int = 0
+    wasted_cost_usd: float = 0.0
+    wasted_energy_kwh: float = 0.0
+    component_breakdown: Optional[Dict[str, float]] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)

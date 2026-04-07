@@ -11,7 +11,9 @@ import time
 from pathlib import Path
 from typing import Optional, List, Tuple
 
-from p79.logging.logger import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class LogCleanupConfig:

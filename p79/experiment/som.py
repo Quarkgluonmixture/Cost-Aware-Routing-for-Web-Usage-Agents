@@ -240,6 +240,8 @@ def _build_som_result(
             marked_image_path = None
             marked_image = None
 
+    # degraded_som=True here means marks were extracted but image rendering failed.
+    # Zero-mark complete degradation is handled in the early return above.
     degraded = marked_image is None
     return SomResult(
         som_text=som_text,

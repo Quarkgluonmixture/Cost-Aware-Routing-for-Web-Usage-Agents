@@ -23,9 +23,9 @@ REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_DIR}"
 
 # --- run_id 配置 ---
-RUN_ID_CLASSIFIEDS="${RUN_ID_CLASSIFIEDS:-B1_baseline_run_classifieds_20260328_210239}"
-RUN_ID_REDDIT="${RUN_ID_REDDIT:-B1_baseline_run_reddit_20260328_210239}"
-RUN_ID_SHOPPING="${RUN_ID_SHOPPING:-B1_baseline_run_shopping_20260328_210239}"
+RUN_ID_CLASSIFIEDS="${RUN_ID_CLASSIFIEDS:-B1_3mode_classifieds_20260407}"
+RUN_ID_REDDIT="${RUN_ID_REDDIT:-B1_3mode_reddit_20260407}"
+RUN_ID_SHOPPING="${RUN_ID_SHOPPING:-B1_3mode_shopping_20260407}"
 
 RESULTS_BASE="${REPO_DIR}/results/visualwebarena/phase1"
 
@@ -57,7 +57,7 @@ NTFY_PROGRESS_ENABLE="${NTFY_PROGRESS_ENABLE:-0}"
 # 是否在每个站点完成后自动生成失败/成功归因报告
 REASON_DIAG_ENABLE="${REASON_DIAG_ENABLE:-1}"
 # 是否启用实时增量归因 sidecar（每 N 个任务触发 analyze_reason_diagnostics + GLM总结）
-LIVE_REASON_WATCH_ENABLE="${LIVE_REASON_WATCH_ENABLE:-1}"
+LIVE_REASON_WATCH_ENABLE="${LIVE_REASON_WATCH_ENABLE:-0}"
 LIVE_REASON_WATCH_INTERVAL="${LIVE_REASON_WATCH_INTERVAL:-5}"
 LIVE_REASON_WATCH_POLL_SECS="${LIVE_REASON_WATCH_POLL_SECS:-60}"
 LIVE_REASON_WATCH_REPORT_LANGUAGE="${LIVE_REASON_WATCH_REPORT_LANGUAGE:-zh}"
@@ -71,7 +71,7 @@ LIVE_REASON_WATCH_PID=""
 WATCHDOG_ENABLE="${WATCHDOG_ENABLE:-1}"
 WATCHDOG_IDLE_ALERT_MINS="${WATCHDOG_IDLE_ALERT_MINS:-20}"
 WATCHDOG_POLL_SECS="${WATCHDOG_POLL_SECS:-30}"
-WATCHDOG_WINDOW_SIZE="${WATCHDOG_WINDOW_SIZE:-20}"
+WATCHDOG_GLM_CONFIG="${WATCHDOG_GLM_CONFIG:-${REPO_DIR}/.auth/glm}"
 WATCHDOG_PID=""
 
 # 加载 VWA 站点环境
@@ -169,7 +169,7 @@ start_live_reason_watch() {
 
   log "[${label}] starting live reason watch (interval=${LIVE_REASON_WATCH_INTERVAL}, poll=${LIVE_REASON_WATCH_POLL_SECS}s)"
 
-  setsid nohup "${PYTHON_BIN}" -u "${watch_script}" \
+  nohup "${PYTHON_BIN}" -u "${watch_script}" \
     --run-dir "${run_dir}" \
     --label "${label}" \
     --poll-secs "${LIVE_REASON_WATCH_POLL_SECS}" \
@@ -243,13 +243,25 @@ start_watchdog() {
 
   log "[${label}] starting experiment watchdog (idle_alert=${WATCHDOG_IDLE_ALERT_MINS}min, poll=${WATCHDOG_POLL_SECS}s)"
 
-  setsid nohup "${PYTHON_BIN}" -u "${watchdog_script}" \
-    --run-dir "${run_dir}" \
-    --poll-secs "${WATCHDOG_POLL_SECS}" \
-    --window-size "${WATCHDOG_WINDOW_SIZE}" \
-    --watchdog-idle-alert-mins "${WATCHDOG_IDLE_ALERT_MINS}" \
-    --ntfy-topic "${NTFY_TOPIC}" \
-    --state-file "${watchdog_state}" \
+  # Build watchdog command
+  local watchdog_cmd=(
+    "${PYTHON_BIN}" -u "${watchdog_script}"
+    --run-dir "${run_dir}"
+    --poll-secs "${WATCHDOG_POLL_SECS}"
+    --idle-alert-mins "${WATCHDOG_IDLE_ALERT_MINS}"
+    --ntfy-topic "${NTFY_TOPIC}"
+    --state-file "${watchdog_state}"
+  )
+  # Enable auto-digest if GLM config exists
+  if [[ -f "${WATCHDOG_GLM_CONFIG}" ]]; then
+    watchdog_cmd+=(--glm-config "${WATCHDOG_GLM_CONFIG}")
+    watchdog_cmd+=(--digest-dir "${run_dir}/analysis/digest")
+  fi
+
+  # Use nohup without setsid: queue is already in its own session via setsid,
+  # and setsid inside the queue forks — making $! capture the wrapper PID
+  # instead of the actual watchdog PID, breaking kill -0 health checks.
+  nohup "${watchdog_cmd[@]}" \
     > "${watchdog_log}" 2>&1 < /dev/null &
   local pid=$!
   sleep 1
@@ -392,8 +404,8 @@ run_site_foreground() {
   start_live_reason_watch "${run_id}" "${label}"
   start_watchdog "${run_id}" "${label}"
 
-  # 后台启动，统一使用 setsid+nohup 并直接写 site log（避免 pipeline 使 PID 不明确）
-  setsid nohup "${PYTHON_BIN}" scripts/run_experiment.py \
+  # 后台启动，nohup 保证进程不随 HUP 退出（queue 已通过 setsid 启动，不再嵌套 setsid）
+  nohup "${PYTHON_BIN}" scripts/run_experiment.py \
     --config "${tmp_config}" \
     --max_steps 30 \
     --run_id "${run_id}" \

@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """
-Experiment health watchdog — lightweight monitoring and alerting.
+Experiment watchdog — lightweight monitoring with periodic status reports.
 
-What it does:
-1) Watches newly generated *_summary_v2.json episode files.
-2) Computes rolling health metrics (success_rate, wrong_url, no_progress, max_steps, avg step latency).
-3) Triggers alerts when thresholds are exceeded.
-4) Uses heuristic rules to generate a short diagnosis (no GLM dependency).
-5) Optionally pushes alert text to ntfy.
-6) Tracks idle time — alerts if no new episode appears within --watchdog-idle-alert-mins.
+Notifications (push to ntfy):
+1) REPORT:   periodic status every --report-interval-mins (success rate + counts)
+2) IDLE:     no new episode for --idle-alert-mins → may need restart
+3) COMPLETE: condition finished (condition_summary_v2.json appeared)
+4) ANALYSIS: post-condition analysis script completed (output files detected)
 """
 
 from __future__ import annotations
@@ -16,33 +14,33 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
-from collections import Counter, deque
-from dataclasses import dataclass
+from collections import Counter, defaultdict
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Deque, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 SUMMARY_RE = re.compile(r"^(?P<site>.+)_task_(?P<task_id>\d+)_summary_v2\.json$")
 
 
 @dataclass
 class EpisodeRecord:
-    key: str
     condition_id: str
     observation_mode: str
     site: str
     task_id: int
     success: bool
     steps: int
-    step_latency_s: Optional[float]
     reason: str
-    final_url: str
-    reference_url: str
-    page_unchanged_rate: float
-    no_op_rate: float
 
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def _read_json(path: Path) -> Dict[str, Any]:
     with path.open("r", encoding="utf-8") as f:
@@ -63,19 +61,17 @@ def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
     return rows
 
 
-def _post_ntfy(topic: str, title: str, body: str, priority: str = "default", timeout_s: int = 15) -> None:
+def _post_ntfy(topic: str, title: str, body: str, priority: str = "default") -> None:
     url = f"https://ntfy.sh/{topic}"
     req = urllib.request.Request(
-        url,
-        data=body.encode("utf-8"),
-        method="POST",
+        url, data=body.encode("utf-8"), method="POST",
         headers={"Title": title, "Priority": priority},
     )
     try:
-        with urllib.request.urlopen(req, timeout=timeout_s):
-            return
+        with urllib.request.urlopen(req, timeout=15):
+            pass
     except urllib.error.URLError:
-        return
+        pass
 
 
 def _normalize_ref_urls(ref_url: Any) -> List[str]:
@@ -87,24 +83,6 @@ def _normalize_ref_urls(ref_url: Any) -> List[str]:
     if "|OR|" in t:
         return [x.strip() for x in t.split("|OR|") if x.strip()]
     return [t]
-
-
-def _extract_last_step(steps_path: Path) -> Optional[Dict[str, Any]]:
-    rows = _read_jsonl(steps_path)
-    if not rows:
-        return None
-    rows.sort(key=lambda x: int(x.get("step_idx", 0)))
-    return rows[-1]
-
-
-def _task_cfg(task_cfg_cache: Dict[Tuple[str, int], Dict[str, Any]], run_dir: Path, site: str, task_id: int) -> Dict[str, Any]:
-    key = (site, task_id)
-    if key in task_cfg_cache:
-        return task_cfg_cache[key]
-    p = run_dir / "task_configs" / f"{site}_task_{task_id}.json"
-    data = _read_json(p) if p.exists() else {}
-    task_cfg_cache[key] = data
-    return data
 
 
 def _get_observation_mode(condition_dir: Path, cache: Dict[str, str]) -> str:
@@ -131,54 +109,17 @@ def _get_observation_mode(condition_dir: Path, cache: Dict[str, str]) -> str:
 
 def _classify_episode(
     summary: Dict[str, Any],
-    last_step: Optional[Dict[str, Any]],
     task_meta: Dict[str, Any],
     max_steps: int,
-    no_progress_unchanged_threshold: float,
-    no_progress_noop_threshold: float,
-) -> Tuple[str, str, str]:
-    """
-    Returns: (reason, final_url, reference_url)
-    """
-    success = bool(summary.get("success", False))
-    if success:
-        return "success", "", ""
-
+) -> str:
+    if bool(summary.get("success", False)):
+        return "success"
     if summary.get("error"):
-        return "runtime_error", "", ""
-
-    final_url = ""
-    if last_step:
-        final_url = str(((last_step.get("state_digest") or {}).get("url_after")) or "")
-    final_action_type = str(((last_step or {}).get("action") or {}).get("action_type", "")).lower()
-
-    eval_cfg = task_meta.get("eval") or {}
-    eval_types = [str(x) for x in (eval_cfg.get("eval_types") or [])]
-    ref_url = str(eval_cfg.get("reference_url") or "")
-    ref_urls = _normalize_ref_urls(ref_url)
-
-    # url_match failures (core real-world signal for classifieds tasks)
-    if "url_match" in eval_types and ref_urls:
-        if final_url not in ref_urls:
-            return "wrong_url", final_url, ref_url
-
+        return "error"
     steps = int(summary.get("steps", 0) or 0)
     if steps >= max_steps:
-        return "max_steps", final_url, ref_url
-
-    page_unchanged_rate = float(summary.get("page_unchanged_rate", 0.0) or 0.0)
-    no_op_rate = float(summary.get("no_op_rate", 0.0) or 0.0)
-    retry_hint = int(((summary.get("state_change_reason_distribution") or {}).get("baseline_no_progress_retry_applied")) or 0)
-    if (
-        page_unchanged_rate >= no_progress_unchanged_threshold
-        or no_op_rate >= no_progress_noop_threshold
-        or retry_hint > 0
-    ):
-        return "no_progress", final_url, ref_url
-
-    if final_action_type == "finish":
-        return "finish_fail", final_url, ref_url
-    return "other_fail", final_url, ref_url
+        return "max_steps"
+    return "fail"
 
 
 def _scan_summaries(run_dir: Path, condition_filter: Optional[str]) -> List[Path]:
@@ -199,135 +140,216 @@ def _episode_key(path: Path) -> str:
     return str(path.resolve())
 
 
-def _compute_metrics(window_records: Sequence[EpisodeRecord]) -> Dict[str, float]:
-    n = len(window_records)
-    if n == 0:
-        return {
-            "count": 0.0,
-            "success_rate": 0.0,
-            "wrong_url_rate": 0.0,
-            "no_progress_rate": 0.0,
-            "max_steps_rate": 0.0,
-            "avg_step_latency_s": 0.0,
-        }
-    c = Counter(r.reason for r in window_records)
-    success = sum(1 for r in window_records if r.success)
-    lat_vals = [r.step_latency_s for r in window_records if r.step_latency_s is not None]
-    avg_step_latency_s = sum(lat_vals) / len(lat_vals) if lat_vals else 0.0
-    return {
-        "count": float(n),
-        "success_rate": success / n,
-        "wrong_url_rate": c["wrong_url"] / n,
-        "no_progress_rate": c["no_progress"] / n,
-        "max_steps_rate": c["max_steps"] / n,
-        "avg_step_latency_s": avg_step_latency_s,
-    }
+# ---------------------------------------------------------------------------
+# Status report builder
+# ---------------------------------------------------------------------------
+
+def _build_status_report(
+    all_records: List[EpisodeRecord],
+    condition_mode_cache: Dict[str, str],
+    completed_conditions: Set[str],
+    run_id: str,
+) -> Optional[str]:
+    """Build status report for currently running (incomplete) conditions only.
+    Returns None if nothing is running."""
+    if not all_records:
+        return None
+
+    # Per-condition stats, only for incomplete conditions
+    cond_stats: Dict[str, Dict[str, int]] = defaultdict(lambda: {"total": 0, "success": 0})
+    for r in all_records:
+        if r.condition_id in completed_conditions:
+            continue
+        cond_stats[r.condition_id]["total"] += 1
+        cond_stats[r.condition_id]["success"] += int(r.success)
+
+    if not cond_stats:
+        return None
+
+    lines = [f"run_id={run_id}"]
+    for cid in sorted(cond_stats):
+        s = cond_stats[cid]
+        n, succ = s["total"], s["success"]
+        mode = condition_mode_cache.get(cid, "?")
+        lines.append(f"[{mode}] {cid}: {succ}/{n} ({succ/n:.1%})")
+
+    return "\n".join(lines)
 
 
-def _mode_summary_line(windows: Dict[str, "Deque[EpisodeRecord]"]) -> str:
-    """Return a one-line per-mode aggregate for quick comparison."""
-    from collections import defaultdict
-    mode_recs: Dict[str, List[EpisodeRecord]] = defaultdict(list)
-    for recs in windows.values():
-        for r in recs:
-            mode_recs[r.observation_mode].append(r)
-    if not mode_recs:
-        return ""
-    parts = []
-    for mode in sorted(mode_recs):
-        recs = mode_recs[mode]
-        n = len(recs)
-        succ = sum(1 for r in recs if r.success)
-        parts.append(f"{mode}: {succ}/{n} ({succ/n:.1%})")
-    return "  |  ".join(parts)
+# ---------------------------------------------------------------------------
+# Analysis output watchers
+# ---------------------------------------------------------------------------
+
+# Files to watch for analysis completion
+_ANALYSIS_MARKERS = {
+    "condition_analysis": "analysis/_overview/tables/condition_metrics.csv",
+    "reason_diagnostics": "analysis/reason_diagnostics/reason_diagnostics_summary.json",
+    "cross_representation": "analysis/cross_representation/cross_representation_summary.json",
+}
 
 
-def _triggered_rules(m: Dict[str, float], args: argparse.Namespace) -> List[str]:
-    n = int(m["count"])
-    if n < args.min_alert_samples:
-        return []
-    rules: List[str] = []
-    if m["wrong_url_rate"] >= args.wrong_url_threshold:
-        rules.append("wrong_url_high")
-    if m["no_progress_rate"] >= args.no_progress_threshold:
-        rules.append("no_progress_high")
-    if m["max_steps_rate"] >= args.max_steps_threshold:
-        rules.append("max_steps_high")
-    if m["avg_step_latency_s"] >= args.avg_step_latency_threshold:
-        rules.append("latency_high")
-    if m["success_rate"] <= args.success_rate_floor:
-        rules.append("success_low")
-    return rules
+def _check_analysis_outputs(
+    run_dir: Path,
+    seen_analysis: Dict[str, float],
+) -> List[Tuple[str, Path]]:
+    """Return list of (analysis_name, path) for newly appeared/updated analysis outputs."""
+    new_outputs: List[Tuple[str, Path]] = []
+    for name, rel_path in _ANALYSIS_MARKERS.items():
+        p = run_dir / rel_path
+        if not p.exists():
+            continue
+        mtime = p.stat().st_mtime
+        prev_mtime = seen_analysis.get(name, 0.0)
+        if mtime > prev_mtime:
+            seen_analysis[name] = mtime
+            if prev_mtime > 0:  # skip first detection (bootstrap)
+                new_outputs.append((name, p))
+            else:
+                seen_analysis[name] = mtime  # record but don't alert
+    return new_outputs
 
 
-def _heuristic_diagnosis(
-    metrics: Dict[str, float],
-    rules: Sequence[str],
-) -> str:
-    """Generate a short heuristic diagnosis without GLM."""
-    m = metrics
-    diagnosis = (
-        f"触发规则: {', '.join(rules)}\n"
-        f"success={m['success_rate']:.1%}, wrong_url={m['wrong_url_rate']:.1%}, "
-        f"no_progress={m['no_progress_rate']:.1%}, max_steps={m['max_steps_rate']:.1%}, "
-        f"avg_step={m['avg_step_latency_s']:.1f}s"
-    )
-    return diagnosis
+# ---------------------------------------------------------------------------
+# Condition completion watcher
+# ---------------------------------------------------------------------------
+
+def _check_condition_completions(
+    run_dir: Path,
+    condition_filter: Optional[str],
+    seen_completions: Set[str],
+    condition_mode_cache: Dict[str, str],
+) -> List[Tuple[str, str]]:
+    """Return list of (condition_id, obs_mode) for newly completed conditions."""
+    new_completions: List[Tuple[str, str]] = []
+    if condition_filter:
+        cond_dirs = [run_dir / condition_filter]
+    else:
+        cond_dirs = [p for p in run_dir.iterdir() if p.is_dir() and p.name.startswith("phase")]
+
+    for cond_dir in cond_dirs:
+        cid = cond_dir.name
+        if cid in seen_completions:
+            continue
+        summary_path = cond_dir / "condition_summary_v2.json"
+        if summary_path.exists():
+            seen_completions.add(cid)
+            mode = _get_observation_mode(cond_dir, condition_mode_cache)
+            new_completions.append((cid, mode))
+    return new_completions
 
 
-def _load_state(path: Optional[Path]) -> set[str]:
+# ---------------------------------------------------------------------------
+# State persistence
+# ---------------------------------------------------------------------------
+
+def _load_state(path: Optional[Path]) -> Dict[str, Any]:
     if not path or not path.exists():
-        return set()
+        return {}
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        seen = data.get("seen_keys") or []
-        if isinstance(seen, list):
-            return {str(x) for x in seen}
+        return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
-        pass
-    return set()
+        return {}
 
 
-def _save_state(path: Optional[Path], seen_keys: set[str]) -> None:
+def _save_state(
+    path: Optional[Path],
+    seen_keys: Set[str],
+    seen_completions: Set[str],
+    seen_analysis: Dict[str, float],
+) -> None:
     if not path:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {"seen_keys": sorted(seen_keys), "updated_at": time.strftime("%Y-%m-%d %H:%M:%S")}
+    payload = {
+        "seen_keys": sorted(seen_keys),
+        "seen_completions": sorted(seen_completions),
+        "seen_analysis": seen_analysis,
+        "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+# ---------------------------------------------------------------------------
+# Auto-digest: update reason CSV + run batch digest
+# ---------------------------------------------------------------------------
+
+def _run_auto_digest(run_dir: Path, glm_config: Path, digest_dir: Path) -> Optional[str]:
+    """Run reason diagnostics → batch digest pipeline. Returns status string or None on skip."""
+    scripts_dir = Path(__file__).parent
+    python = sys.executable
+
+    # 1. Update reason diagnostics CSV
+    diag_script = scripts_dir / "analysis" / "analyze_reason_diagnostics.py"
+    if not diag_script.exists():
+        return None
+    try:
+        r = subprocess.run(
+            [python, str(diag_script), "--run-dir", str(run_dir), "--skip-similarity"],
+            capture_output=True, text=True, timeout=120,
+        )
+        if r.returncode != 0:
+            print(f"[watchdog][DIGEST] reason diagnostics failed: {r.stderr[-300:]}")
+            return "diagnostics_failed"
+    except subprocess.TimeoutExpired:
+        print("[watchdog][DIGEST] reason diagnostics timed out")
+        return "diagnostics_timeout"
+
+    # 2. Run batch digest (auto-resumes, writes to digest_dir/digest_{mode}.jsonl)
+    digest_script = scripts_dir / "glm_batch_digest.py"
+    if not digest_script.exists() or not glm_config.exists():
+        return None
+    try:
+        r = subprocess.run(
+            [python, str(digest_script),
+             "--run-dir", str(run_dir),
+             "--output", str(digest_dir),
+             "--glm-config", str(glm_config),
+             "--max-images", "3",
+             "--delay-secs", "3.0",
+             "--site", "classifieds"],
+            capture_output=True, text=True, timeout=600,
+        )
+        # Extract last few lines for status
+        out_lines = (r.stdout or "").strip().splitlines()
+        tail = "\n".join(out_lines[-3:]) if out_lines else ""
+        if r.returncode == 0:
+            print(f"[watchdog][DIGEST] completed:\n  {tail}")
+            return tail
+        else:
+            print(f"[watchdog][DIGEST] digest failed: {r.stderr[-300:]}")
+            return "digest_failed"
+    except subprocess.TimeoutExpired:
+        print("[watchdog][DIGEST] digest timed out (10min)")
+        return "digest_timeout"
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Experiment health watchdog for VWA runs")
-    p.add_argument("--run-dir", required=True, help="Run directory, e.g. results/.../<run_id>")
-    p.add_argument("--condition", default=None, help="Optional condition id, e.g. phase1_dom_router_0")
-    p.add_argument("--poll-secs", type=int, default=30, help="Polling interval in seconds")
-    p.add_argument("--window-size", type=int, default=20, help="Rolling window size (episodes)")
-    p.add_argument("--min-alert-samples", type=int, default=12, help="Minimum episodes in window to alert")
+    p = argparse.ArgumentParser(description="Experiment watchdog — status reports & idle alerts")
+    p.add_argument("--run-dir", required=True, help="Run directory")
+    p.add_argument("--condition", default=None, help="Filter to specific condition_id")
+    p.add_argument("--poll-secs", type=int, default=30, help="Polling interval (seconds)")
     p.add_argument("--max-steps", type=int, default=30, help="Configured episode max steps")
-    p.add_argument("--no-progress-unchanged-threshold", type=float, default=0.66)
-    p.add_argument("--no-progress-noop-threshold", type=float, default=0.5)
-    p.add_argument("--wrong-url-threshold", type=float, default=0.30)
-    p.add_argument("--no-progress-threshold", type=float, default=0.25)
-    p.add_argument("--max-steps-threshold", type=float, default=0.25)
-    p.add_argument("--avg-step-latency-threshold", type=float, default=30.0, help="seconds")
-    p.add_argument("--success-rate-floor", type=float, default=0.05)
-    p.add_argument("--alert-cooldown-secs", type=int, default=600)
-    p.add_argument("--ntfy-topic", default=None, help="Optional ntfy topic for alert push")
-    p.add_argument("--state-file", default=None, help="Optional state file to persist seen episodes")
-    p.add_argument(
-        "--alert-on-bootstrap",
-        action="store_true",
-        help="Also alert for episodes that already existed at monitor startup",
-    )
-    p.add_argument(
-        "--watchdog-idle-alert-mins",
-        type=int,
-        default=20,
-        help="Alert if no new episode appears within this many minutes (default: 20)",
-    )
+    p.add_argument("--report-interval-mins", type=int, default=30,
+                    help="Push status report every N minutes (default: 30)")
+    p.add_argument("--idle-alert-mins", type=int, default=20,
+                    help="Alert if no new episode for N minutes (default: 20)")
+    p.add_argument("--ntfy-topic", default=None, help="ntfy topic for push notifications")
+    p.add_argument("--state-file", default=None, help="State file for persistence across restarts")
+    p.add_argument("--glm-config", default=None, type=Path,
+                    help="GLM config file for auto-digest (omit to disable)")
+    p.add_argument("--digest-dir", default=None, type=Path,
+                    help="Digest output directory (default: <run-dir>/analysis/digest/)")
     p.add_argument("--once", action="store_true", help="Scan once then exit")
     return p
 
+
+# ---------------------------------------------------------------------------
+# Main loop
+# ---------------------------------------------------------------------------
 
 def main() -> int:
     args = build_parser().parse_args()
@@ -335,45 +357,74 @@ def main() -> int:
     if not run_dir.exists():
         raise SystemExit(f"run_dir not found: {run_dir}")
 
+    run_id = run_dir.name
     state_file = Path(args.state_file).resolve() if args.state_file else None
-    seen_keys = _load_state(state_file)
-    windows: Dict[str, Deque[EpisodeRecord]] = {}  # condition_id -> rolling window
-    all_records: List[EpisodeRecord] = []  # all-time for final summary
-    task_cfg_cache: Dict[Tuple[str, int], Dict[str, Any]] = {}
+
+    # Load persisted state
+    saved = _load_state(state_file)
+    seen_keys: Set[str] = set(saved.get("seen_keys", []))
+    seen_completions: Set[str] = set(saved.get("seen_completions", []))
+    seen_analysis: Dict[str, float] = saved.get("seen_analysis", {})
+
+    all_records: List[EpisodeRecord] = []
     condition_mode_cache: Dict[str, str] = {}
 
-    # Per-condition+rule cooldown with exponential backoff:
-    # key = (condition_id, rule_signature) -> (last_alert_ts, consecutive_count)
-    alert_cooldown_state: Dict[Tuple[str, str], Tuple[float, int]] = {}
-    MAX_COOLDOWN_MULTIPLIER = 16  # cap at 16x base cooldown (~2.7 hours at 600s base)
-    run_id = run_dir.name
-    bootstrap_keys = {_episode_key(p) for p in _scan_summaries(run_dir, args.condition)}
+    # Bootstrap: rebuild all_records from existing summaries (for accurate counts)
+    if seen_keys:
+        for summary_path in _scan_summaries(run_dir, args.condition):
+            key = _episode_key(summary_path)
+            if key not in seen_keys:
+                continue
+            m_re = SUMMARY_RE.match(summary_path.name)
+            if not m_re:
+                continue
+            try:
+                summary = _read_json(summary_path)
+            except Exception:
+                continue
+            condition_dir = summary_path.parent.parent
+            obs_mode = _get_observation_mode(condition_dir, condition_mode_cache)
+            reason = _classify_episode(summary, {}, args.max_steps)
+            all_records.append(EpisodeRecord(
+                condition_id=condition_dir.name,
+                observation_mode=obs_mode,
+                site=m_re.group("site"),
+                task_id=int(m_re.group("task_id")),
+                success=bool(summary.get("success", False)),
+                steps=int(summary.get("steps", 0) or 0),
+                reason=reason,
+            ))
+        print(f"[watchdog] Restored {len(all_records)} episodes from state")
 
-    # Idle tracking
+    # Timers
     last_new_episode_ts: float = time.time()
+    last_report_ts: float = 0.0  # 0 → trigger initial report immediately after bootstrap
     idle_alerted: bool = False
-    idle_alert_secs = max(60, args.watchdog_idle_alert_mins * 60)
+    idle_alert_secs = max(60, args.idle_alert_mins * 60)
+    report_interval_secs = max(60, args.report_interval_mins * 60)
+
+    # Bootstrap: scan existing analysis files and completions without alerting
+    _check_analysis_outputs(run_dir, seen_analysis)
+    _check_condition_completions(run_dir, args.condition, seen_completions, condition_mode_cache)
 
     print(
-        f"[watchdog] watching run_id={run_id} condition={args.condition or '*'} "
-        f"poll={args.poll_secs}s window={args.window_size} "
-        f"idle_alert={args.watchdog_idle_alert_mins}min"
+        f"[watchdog] run_id={run_id} condition={args.condition or '*'} "
+        f"poll={args.poll_secs}s report_every={args.report_interval_mins}min "
+        f"idle_alert={args.idle_alert_mins}min"
     )
 
     while True:
+        now = time.time()
+
+        # --- 1. Scan new episodes ---
         summaries = _scan_summaries(run_dir, args.condition)
         new_paths = [p for p in summaries if _episode_key(p) not in seen_keys]
+
         if new_paths:
-            last_new_episode_ts = time.time()
+            last_new_episode_ts = now
             idle_alerted = False
 
-            # process in deterministic order: task id first, then file path
-            def _sort_key(path: Path) -> Tuple[str, int, str]:
-                m = SUMMARY_RE.match(path.name)
-                tid = int(m.group("task_id")) if m else 10**9
-                return (path.parent.parent.name, tid, str(path))
-
-            for summary_path in sorted(new_paths, key=_sort_key):
+            for summary_path in sorted(new_paths):
                 key = _episode_key(summary_path)
                 m = SUMMARY_RE.match(summary_path.name)
                 if not m:
@@ -384,159 +435,105 @@ def main() -> int:
                 condition_id = summary_path.parent.parent.name
                 try:
                     summary = _read_json(summary_path)
-                except Exception:  # noqa: BLE001
-                    # Summary file may still be writing; retry next poll.
+                except Exception:
                     continue
-                steps_path = summary_path.with_name(summary_path.name.replace("_summary_v2.json", "_steps_v2.jsonl"))
-                last_step = _extract_last_step(steps_path) if steps_path.exists() else None
-
-                meta = _task_cfg(task_cfg_cache, run_dir, site, task_id)
-                reason, final_url, ref_url = _classify_episode(
-                    summary=summary,
-                    last_step=last_step,
-                    task_meta=meta,
-                    max_steps=int(args.max_steps),
-                    no_progress_unchanged_threshold=float(args.no_progress_unchanged_threshold),
-                    no_progress_noop_threshold=float(args.no_progress_noop_threshold),
-                )
 
                 condition_dir = summary_path.parent.parent
                 obs_mode = _get_observation_mode(condition_dir, condition_mode_cache)
-
-                steps = int(summary.get("steps", 0) or 0)
-                total_latency_ms = float(summary.get("total_latency_ms", 0.0) or 0.0)
-                step_latency_s = (total_latency_ms / steps / 1000.0) if steps > 0 else None
+                reason = _classify_episode(summary, {}, args.max_steps)
 
                 rec = EpisodeRecord(
-                    key=key,
                     condition_id=condition_id,
                     observation_mode=obs_mode,
                     site=site,
                     task_id=task_id,
                     success=bool(summary.get("success", False)),
-                    steps=steps,
-                    step_latency_s=step_latency_s,
+                    steps=int(summary.get("steps", 0) or 0),
                     reason=reason,
-                    final_url=final_url,
-                    reference_url=ref_url,
-                    page_unchanged_rate=float(summary.get("page_unchanged_rate", 0.0) or 0.0),
-                    no_op_rate=float(summary.get("no_op_rate", 0.0) or 0.0),
                 )
-                if condition_id not in windows:
-                    windows[condition_id] = deque(maxlen=max(1, int(args.window_size)))
-                windows[condition_id].append(rec)
                 all_records.append(rec)
                 seen_keys.add(key)
 
-                cond_window = list(windows[condition_id])
-                metrics = _compute_metrics(cond_window)
-                mode_summary = _mode_summary_line(windows)
+                # Per-condition cumulative
+                cond_all = [r for r in all_records if r.condition_id == condition_id]
+                cond_total = len(cond_all)
+                cond_succ = sum(1 for r in cond_all if r.success)
+
                 print(
-                    "[watchdog] "
-                    f"[{obs_mode}] {condition_id} task={task_id:>3d} reason={reason:<12s} "
-                    f"window={int(metrics['count'])}/{args.window_size} "
-                    f"succ={metrics['success_rate']:.1%} wrong_url={metrics['wrong_url_rate']:.1%} "
-                    f"no_prog={metrics['no_progress_rate']:.1%} max_steps={metrics['max_steps_rate']:.1%} "
-                    f"avg_step={metrics['avg_step_latency_s']:.1f}s"
+                    f"[watchdog] [{obs_mode}] {condition_id} task={task_id:>3d} "
+                    f"{'OK' if rec.success else reason:<10s} "
+                    f"succ={cond_succ}/{cond_total} ({cond_succ/cond_total:.1%})"
                 )
-                if mode_summary:
-                    print(f"[watchdog][MODE]  {mode_summary}")
 
-                rules = _triggered_rules(metrics, args)
-                is_bootstrap_episode = key in bootstrap_keys
-                allow_alert = args.alert_on_bootstrap or (not is_bootstrap_episode)
-                if not rules:
-                    # Condition is healthy — reset all backoff counters for it
-                    stale = [k for k in alert_cooldown_state if k[0] == condition_id]
-                    for k in stale:
-                        del alert_cooldown_state[k]
-                if rules and allow_alert:
-                    sig = ",".join(sorted(rules))
-                    now = time.time()
-                    cooldown_key = (condition_id, sig)
-                    prev_ts, prev_count = alert_cooldown_state.get(cooldown_key, (0.0, 0))
-                    # Exponential backoff: base * 2^(consecutive-1), capped
-                    multiplier = min(2 ** max(prev_count - 1, 0), MAX_COOLDOWN_MULTIPLIER)
-                    effective_cooldown = int(args.alert_cooldown_secs) * multiplier
-                    if (now - prev_ts) >= effective_cooldown:
-                        diagnosis = _heuristic_diagnosis(
-                            metrics=metrics,
-                            rules=rules,
-                        )
-                        repeat_note = (
-                            f"[repeat #{prev_count + 1}, next alert in {effective_cooldown * 2 // 60}min]\n"
-                            if prev_count > 0
-                            else ""
-                        )
-                        alert_title = f"P79 Watchdog Alert [{obs_mode}/{condition_id}]"
-                        alert_body = (
-                            f"run_id={run_id}\n"
-                            f"mode={obs_mode} condition={condition_id}\n"
-                            f"rules={sig}\n"
-                            f"window={int(metrics['count'])}\n"
-                            f"succ={metrics['success_rate']:.1%}, wrong_url={metrics['wrong_url_rate']:.1%}, "
-                            f"no_progress={metrics['no_progress_rate']:.1%}, max_steps={metrics['max_steps_rate']:.1%}, "
-                            f"avg_step={metrics['avg_step_latency_s']:.1f}s\n"
-                            f"{repeat_note}"
-                            f"{diagnosis}"
-                        )
-                        print(f"[watchdog][ALERT] {alert_body}")
-                        if args.ntfy_topic:
-                            _post_ntfy(args.ntfy_topic, alert_title, alert_body, priority="high")
-                        alert_cooldown_state[cooldown_key] = (now, prev_count + 1)
-                    else:
-                        remaining = int(effective_cooldown - (now - prev_ts))
-                        print(
-                            f"[watchdog][SUPPRESSED] {condition_id} rules={sig} "
-                            f"(repeat #{prev_count}, next alert in {remaining}s)"
-                        )
+            _save_state(state_file, seen_keys, seen_completions, seen_analysis)
 
-                _save_state(state_file, seen_keys)
-        else:
-            # No new episodes — check idle timeout
-            idle_elapsed = time.time() - last_new_episode_ts
+        # --- 2. Periodic status report (only running conditions) ---
+        if (now - last_report_ts) >= report_interval_secs and all_records:
+            report = _build_status_report(all_records, condition_mode_cache, seen_completions, run_id)
+            if report:
+                print(f"[watchdog][REPORT]\n{report}")
+                if args.ntfy_topic:
+                    _post_ntfy(args.ntfy_topic, f"P79 Status", report)
+
+            # Auto-digest: update reason CSV + run batch digest
+            if args.glm_config:
+                digest_dir = args.digest_dir or (run_dir / "analysis" / "digest")
+                _run_auto_digest(run_dir, args.glm_config, digest_dir)
+
+            last_report_ts = now
+
+        # --- 3. Idle alert ---
+        if not new_paths:
+            idle_elapsed = now - last_new_episode_ts
             if idle_elapsed >= idle_alert_secs and not idle_alerted:
                 idle_mins = int(idle_elapsed / 60)
-                idle_msg = (
-                    f"run_id={run_id}\n"
-                    f"condition={args.condition or '*'}\n"
-                    f"已 {idle_mins} 分钟无新 episode（阈值={args.watchdog_idle_alert_mins}min）"
-                )
-                print(f"[watchdog][IDLE] {idle_msg}")
+                report = _build_status_report(all_records, condition_mode_cache, seen_completions, run_id) or ""
+                idle_body = (
+                    f"已 {idle_mins} 分钟无新 episode（阈值={args.idle_alert_mins}min）\n\n"
+                    f"{report}"
+                ).strip()
+                print(f"[watchdog][IDLE] {idle_body}")
                 if args.ntfy_topic:
-                    _post_ntfy(
-                        args.ntfy_topic,
-                        f"P79 Watchdog idle_{idle_mins}min",
-                        idle_msg,
-                        priority="high",
-                    )
+                    _post_ntfy(args.ntfy_topic, f"P79 IDLE {idle_mins}min", idle_body, priority="high")
                 idle_alerted = True
+
+        # --- 4. Condition completion ---
+        new_completions = _check_condition_completions(
+            run_dir, args.condition, seen_completions, condition_mode_cache
+        )
+        for cid, mode in new_completions:
+            # Read condition summary for final stats
+            cond_all = [r for r in all_records if r.condition_id == cid]
+            cond_total = len(cond_all)
+            cond_succ = sum(1 for r in cond_all if r.success)
+            body = (
+                f"run_id={run_id}\n"
+                f"[{mode}] {cid} 已完成\n"
+                f"结果: {cond_succ}/{cond_total} ({cond_succ/cond_total:.1%})" if cond_total else
+                f"run_id={run_id}\n[{mode}] {cid} 已完成"
+            )
+            print(f"[watchdog][COMPLETE] {body}")
+            if args.ntfy_topic:
+                _post_ntfy(args.ntfy_topic, f"P79 COMPLETE [{mode}/{cid}]", body, priority="high")
+            _save_state(state_file, seen_keys, seen_completions, seen_analysis)
+
+        # --- 5. Analysis script completion ---
+        new_analysis = _check_analysis_outputs(run_dir, seen_analysis)
+        for name, path in new_analysis:
+            body = f"run_id={run_id}\n分析脚本完成: {name}\n输出: {path.relative_to(run_dir)}"
+            print(f"[watchdog][ANALYSIS] {body}")
+            if args.ntfy_topic:
+                _post_ntfy(args.ntfy_topic, f"P79 Analysis [{name}]", body)
+            _save_state(state_file, seen_keys, seen_completions, seen_analysis)
 
         if args.once:
             break
-        time.sleep(max(1, int(args.poll_secs)))
+        time.sleep(max(1, args.poll_secs))
 
-    # Final summary table — use all_records (not rolling window) for accurate totals
+    # Final summary
     if all_records:
-        print("\n[watchdog][FINAL SUMMARY]")
-        from collections import defaultdict
-        cond_totals: Dict[str, Dict[str, int]] = defaultdict(lambda: {"total": 0, "success": 0})
-        mode_totals: Dict[str, Dict[str, int]] = defaultdict(lambda: {"total": 0, "success": 0})
-        for r in all_records:
-            cond_totals[r.condition_id]["total"] += 1
-            cond_totals[r.condition_id]["success"] += int(r.success)
-            mode_totals[r.observation_mode]["total"] += 1
-            mode_totals[r.observation_mode]["success"] += int(r.success)
-        for cid in sorted(cond_totals):
-            t = cond_totals[cid]
-            n, s = t["total"], t["success"]
-            mode = condition_mode_cache.get(cid, "?")
-            print(f"  {mode:6s}  {cid:<40s}  {s:>3d}/{n:<3d}  ({s/n:.1%})" if n else f"  {mode:6s}  {cid}")
-        print("  ---")
-        for mode in sorted(mode_totals):
-            t = mode_totals[mode]
-            n, s = t["total"], t["success"]
-            print(f"  {mode:6s}  {'TOTAL':<40s}  {s:>3d}/{n:<3d}  ({s/n:.1%})" if n else f"  {mode:6s}  TOTAL  0/0")
+        report = _build_status_report(all_records, condition_mode_cache, seen_completions, run_id)
+        print(f"\n[watchdog][FINAL]\n{report}")
 
     return 0
 

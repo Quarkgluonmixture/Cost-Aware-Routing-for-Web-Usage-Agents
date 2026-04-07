@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 
 # ── Load real OpenAI key from .auth/openai_key before anything else ───────────
-_ROOT = Path(__file__).parent.parent
+_ROOT = Path(__file__).resolve().parent.parent.parent
 _KEY_FILE = _ROOT / ".auth" / "openai_key"
 if _KEY_FILE.is_file():
     _loaded = _KEY_FILE.read_text().strip()

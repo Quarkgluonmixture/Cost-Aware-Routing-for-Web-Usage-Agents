@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import statistics
 from collections import Counter
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 def compute_token_cost(
@@ -87,9 +87,13 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
 def p95(values: List[float]) -> float:
     if not values:
         return 0.0
+    if len(values) == 1:
+        return float(values[0])
     ordered = sorted(values)
-    idx = int(round(0.95 * (len(ordered) - 1)))
-    return float(ordered[idx])
+    k = 0.95 * (len(ordered) - 1)
+    f = int(k)
+    c = min(f + 1, len(ordered) - 1)
+    return float(ordered[f] + (k - f) * (ordered[c] - ordered[f]))
 
 
 def _net_saving(baseline: float, routed: float, overhead: float) -> float:
@@ -222,6 +226,7 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
         "episodes": len(episode_summaries),
         "success_rate": success_rate,
         "avg_steps": _avg("steps"),
+        # NOTE: This is P95 of per-episode P95s (approximate; not true global P95)
         "p95_step_latency_ms": p95(step_latencies),
         "avg_total_model_cost_usd": _avg("total_model_cost_usd"),
         "avg_total_cost_usd": _avg("total_cost_usd"),
@@ -248,6 +253,7 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
         "avg_wasted_energy_kwh": float(statistics.mean(
             [float(x.get("wasted_energy_kwh", 0.0)) for x in episode_summaries]
         )),
+        # Fraction of total cost spent on successful episodes
         "cost_efficiency_ratio": (
             sum(float(x.get("total_cost_usd", 0.0)) for x in episode_summaries if x.get("success"))
             / max(sum(float(x.get("total_cost_usd", 0.0)) for x in episode_summaries), 1e-12)

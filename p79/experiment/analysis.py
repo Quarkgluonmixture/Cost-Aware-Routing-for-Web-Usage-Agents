@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from p79.experiment.io_utils import read_jsonl_dedup
 from p79.experiment.metrics import net_saving, net_saving_latency, net_saving_energy
 
 
@@ -41,15 +43,7 @@ def _collect_condition_summaries(run_dir: Path) -> List[Dict[str, Any]]:
 def _collect_step_records(run_dir: Path) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     for step_path in run_dir.glob("*/episodes/*_steps_v2.jsonl"):
-        with open(step_path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    rows.append(json.loads(line))
-                except json.JSONDecodeError:
-                    continue
+        rows.extend(read_jsonl_dedup(step_path))
     return rows
 
 

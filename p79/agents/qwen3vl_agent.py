@@ -272,6 +272,41 @@ CRITICAL:
 """
 
     @staticmethod
+    def _compute_confidence(
+        scores: Tuple[torch.Tensor, ...],
+        generated_token_ids: torch.Tensor,
+    ) -> Dict[str, Any]:
+        """Compute confidence metrics from generation scores.
+
+        Returns a dict with:
+          - mean_logprob: average log-probability of generated tokens
+          - min_logprob: lowest log-probability (least confident token)
+          - mean_margin: average gap between top-1 and top-2 log-probabilities
+          - min_margin: smallest gap (most uncertain decision point)
+        """
+        if not scores:
+            return {}
+        try:
+            n_tokens = len(scores)
+            logprobs_list = []
+            margins_list = []
+            for i in range(n_tokens):
+                logits = scores[i][0]  # (vocab_size,) for batch=0
+                log_probs = torch.log_softmax(logits, dim=-1)
+                top2 = torch.topk(log_probs, k=2)
+                logprobs_list.append(top2.values[0].item())
+                margins_list.append((top2.values[0] - top2.values[1]).item())
+            return {
+                "mean_logprob": sum(logprobs_list) / n_tokens,
+                "min_logprob": min(logprobs_list),
+                "mean_margin": sum(margins_list) / n_tokens,
+                "min_margin": min(margins_list),
+            }
+        except Exception as e:
+            logger.warning("Failed to compute confidence metrics: %s", e)
+            return {}
+
+    @staticmethod
     def _format_history(history: List[Dict[str, Any]]) -> str:
         if not history:
             return ""
@@ -388,15 +423,21 @@ CRITICAL:
         gen_kwargs = {
             "max_new_tokens": self.config.get("model", {}).get("max_new_tokens", 256),
             "do_sample": False,
+            "return_dict_in_generate": True,
+            "output_scores": True,
         }
-        
-        generated_ids = self.model.generate(**inputs, **gen_kwargs)
+
+        gen_output = self.model.generate(**inputs, **gen_kwargs)
+        generated_ids = gen_output.sequences
         generated_ids_trimmed = [
             out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
         ]
         output_text = self.processor.batch_decode(
             generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )[0]
+
+        # Extract confidence metrics from logprobs
+        confidence_metrics = self._compute_confidence(gen_output.scores, generated_ids_trimmed[0])
 
         # Parse
         action, valid, fail_reason = parse_action_text(output_text)
@@ -415,7 +456,8 @@ CRITICAL:
             "valid": valid,
             "failure_reason": fail_reason,
             "input_tokens": inputs.input_ids.shape[1], # Exact count
-            "output_tokens": len(generated_ids_trimmed[0]) # Exact count
+            "output_tokens": len(generated_ids_trimmed[0]), # Exact count
+            **confidence_metrics,
         }
         
         return action, meta

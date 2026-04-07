@@ -33,7 +33,7 @@ from p79.experiment.metrics import (
 )
 from p79.experiment.modules import apply_secondary_modules, m3_retry_action, should_trigger_m3_retry
 from p79.experiment.router import RouterState, RuleBasedRouter
-from p79.experiment.som import apply_som, prepare_observation_for_mode
+from p79.experiment.som import prepare_observation_for_mode
 from p79.experiment.state_change import build_page_state, detect_page_state_change
 from p79.experiment.tasks import load_tasks
 from p79.experiment.types import (
@@ -793,9 +793,33 @@ class ExperimentRunner:
         latest_checklist_status = checklist_manager.get_status() if checklist_manager is not None else None
 
         similarity_threshold = float(self.state_change_cfg.get("similarity_threshold", 0.95))
+        busy_wait_limit = int(self.cfg.get("runtime", {}).get("busy_wait_limit", 5))
 
-        for step_idx in range(self.max_steps):
+        step_idx = 0
+        consecutive_busy_waits = 0
+        total_busy_waits = 0
+        while step_idx < self.max_steps:
             step_start = time.time()
+
+            # ── Early busy-page guard ─────────────────────────────────────
+            # If the DOM is still loading (busy: 1), skip the LLM call entirely
+            # and issue a free wait that does NOT consume a step from the budget.
+            obs_text_raw = getattr(obs, "text", "") or ""
+            if "busy: 1" in obs_text_raw and consecutive_busy_waits < busy_wait_limit:
+                consecutive_busy_waits += 1
+                total_busy_waits += 1
+                wait_action = {"action_type": "wait"}
+                next_obs, reward, terminated, truncated, next_info = self.environment.step(wait_action)
+                logger.info(
+                    "busy:1 free wait #%d (total %d) site=%s task=%s (step_idx=%d not consumed)",
+                    consecutive_busy_waits, total_busy_waits, task.site, task.task_id, step_idx,
+                )
+                obs = next_obs
+                current_info = next_info if isinstance(next_info, dict) else {}
+                if terminated or truncated:
+                    break
+                continue  # step_idx NOT incremented
+            consecutive_busy_waits = 0  # reset consecutive counter on non-busy page
 
             artifacts = self._save_artifacts(episode_dir, step_idx, obs)
 
@@ -819,7 +843,10 @@ class ExperimentRunner:
                 escalation_count += 1
 
             screenshot_prep_start = time.time()
-            obs_prep = prepare_observation_for_mode(obs, decision_mode, episode_dir, step_idx)
+            if decision_mode == condition.observation_mode:
+                obs_prep = _size_probe
+            else:
+                obs_prep = prepare_observation_for_mode(obs, decision_mode, episode_dir, step_idx)
             artifacts["som_image"] = obs_prep.marked_image_path
             if decision_mode == "som" and obs_prep.som_text:
                 _step_dir = episode_dir / f"step_{step_idx:03d}"
@@ -872,11 +899,6 @@ class ExperimentRunner:
 
             action = validate_action(action)
             action = apply_secondary_modules(action, obs.text or "", condition.modules.as_dict())
-            # Guard: DOM captured mid-navigation (busy: 1) — any LLM action on a
-            # half-loaded page is unreliable.  Override to wait so the next step
-            # sees the fully-rendered DOM before making a decision.
-            if "busy: 1" in (obs.text or ""):
-                action = {"action_type": "wait"}
             if bool(self.diagnostic_controls.get("enabled", False)):
                 diag_notes: List[str] = []
                 query_cfg = self.diagnostic_controls.get("query_sanitization", {}) or {}
@@ -967,6 +989,8 @@ class ExperimentRunner:
                 and action_type_lower in ("click", "type")
                 and retry_count < retry_limit
             )
+            retry_was_applied = False
+            retry_action_type_str: Optional[str] = None
             if trigger_m3_retry or trigger_baseline_retry:
                 retry_action = m3_retry_action(failed_action=action, obs_text=obs.text or "")
                 retry_obs, retry_reward, retry_term, retry_trunc, retry_info = self.environment.step(retry_action)
@@ -982,6 +1006,8 @@ class ExperimentRunner:
                     similarity_threshold=similarity_threshold,
                 )
                 retry_action_type = str(retry_action.get("action_type", "")).lower()
+                retry_was_applied = True
+                retry_action_type_str = retry_action_type
                 retry_success = bool(
                     retry_success or (retry_term and retry_action_type in ("finish", "stop", "done"))
                 )
@@ -1145,6 +1171,16 @@ class ExperimentRunner:
                 str(failure_reason) if failure_reason is not None else None
             )
             step_record["fallback_finish"] = fallback_finish
+            step_record["retry_action_applied"] = retry_was_applied
+            step_record["retry_action_type"] = retry_action_type_str
+            # Confidence metrics (optional, from logprobs extraction)
+            if meta.get("mean_logprob") is not None:
+                step_record["confidence"] = {
+                    "mean_logprob": meta["mean_logprob"],
+                    "min_logprob": meta["min_logprob"],
+                    "mean_margin": meta["mean_margin"],
+                    "min_margin": meta["min_margin"],
+                }
 
             validate_step_record_v2(step_record)
             condition_logger.write_step(task.site, task.task_id, step_record)
@@ -1182,6 +1218,8 @@ class ExperimentRunner:
                 cycle_early_stop = True
                 break
 
+            step_idx += 1
+
         # VWA evaluator expects trajectory to end with an Action dict having "answer" key.
         # When the agent never stopped (max-steps / cycle), trajectory ends with an obs dict
         # which lacks "answer", causing KeyError: 'answer'.  Append a fake stop action.
@@ -1213,6 +1251,10 @@ class ExperimentRunner:
             and step_records[-1].get("action_type", "") in ("finish", "stop")
         ):
             score = 1.0
+            logger.warning(
+                "Reward override: evaluator=0 overridden to 1.0 (env reward>0, agent finished) site=%s task=%s",
+                task.site, task.task_id,
+            )
 
         success = bool(score >= 1.0)
 
@@ -1290,5 +1332,7 @@ class ExperimentRunner:
         episode_summary["wasted_energy_kwh"] = wasted["wasted_energy_kwh"]
         breakdown = compute_component_breakdown(step_records)
         episode_summary["component_breakdown"] = breakdown
+        # Track how many free busy-page waits were issued (not counted as steps)
+        episode_summary["busy_wait_free_steps"] = total_busy_waits
 
         return episode_summary

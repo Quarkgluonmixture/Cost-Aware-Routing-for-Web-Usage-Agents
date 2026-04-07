@@ -4,7 +4,7 @@ import copy
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List
 
 from p79.experiment.types import TaskSpec
 
