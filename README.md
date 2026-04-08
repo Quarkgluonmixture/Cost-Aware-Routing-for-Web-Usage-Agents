@@ -1,191 +1,136 @@
 # P79: Cost-Aware Routing for Web Usage Agents
 
-## 目标
-本仓库对齐 `P79_experimental_scope_rq_variables.md`，用于构建可复现、可扩展、可核算开销的 WebAgent 实验系统，直接支持：
+研究 cost-aware routing 能否改善 web agent 的成功率-效率权衡。基于 VisualWebArena 四站点（shopping / reddit / wikipedia / classifieds），使用 Qwen3-VL-4B 作为 baseline 模型。
 
-- RQ1: SoM / observation mode / router 的实验筛选
-- RQ2: best-fixed vs routed 的净收益评估（含 router overhead）
-- RQ3: M1-M4 单模块消融与可解释性分析
-
-当前主线默认覆盖 VisualWebArena 四站点：`shopping` / `reddit` / `wikipedia` / `classifieds`。
+对齐文档：`P79_experimental_scope_rq_variables.md`
 
 ## 快速开始
-### 1) 安装
-最小运行依赖：
 
 ```bash
-pip install -e .
-```
+# 安装
+pip install -e .                    # 最小依赖
+pip install -e ".[analysis,dev]"    # 全功能
 
-全功能（分析+测试）：
-
-```bash
-pip install -e ".[analysis,dev]"
-```
-
-### 2) 启动 VWA 环境（通用）
-先检查环境：
-
-```bash
+# 环境预检
 bash scripts/preflight_v2.sh
-```
 
-按需拉取并启动 VWA Docker：
-
-```bash
-bash scripts/setup_vwa.sh --target-dataset all
-bash scripts/start_vwa_docker.sh --sites all
-source scripts/vwa_env.sh
-```
-
-说明：`scripts/start_vwa_docker.sh` / `scripts/setup_vwa.sh` 都支持非交互参数化运行。
-
-### 2.1) DGX 远程站点模式（WSL 起站，DGX 只跑实验）
-若四站运行在另一台机器（例如你的 WSL2 笔记本），DGX 不应使用 `localhost:*`。
-
-在 DGX 仓库中创建远程环境变量文件：
-
-```bash
-cp scripts/vwa_env_remote.sh.example scripts/vwa_env_remote.sh
-# 编辑 VWA_REMOTE_HOST 或直接把 URL 改成可达地址
-```
-
-加载并检查远程站点：
-
-```bash
-source scripts/vwa_env_remote.sh
-bash scripts/preflight_v2.sh --site-mode remote --skip-docker
-```
-
-再生成 VWA 测试配置和登录态：
-
-```bash
-cd external/visualwebarena
-python scripts/generate_test_data.py
-bash prepare.sh
-cd ../..
-```
-
-最后运行实验（DGX）：
-
-```bash
-bash scripts/dgx/run_qwen3vl4b_baseline.sh
-```
-
-### 3) 准备认证文件（本地）
-`.auth/` 已停止跟踪，不随 git 提交。请在本机自行生成或复制到仓库根目录 `.auth/`。
-
-### 4) 离线迁移到另一台 DGX（不重新下载 Docker 资产）
-在源机器（例如 Windows）导出以下四个文件到目标机器的 `/home/jiaming/imports/`：
-
-- `shopping_final_0712.tar`
-- `postmill-populated-exposed-withimg.tar`
-- `wikipedia_en_all_maxi_2022-05.zim`
-- `classifieds_docker_compose.tar.gz`
-
-在目标 DGX 运行：
-
-```bash
-cd /home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents
-bash scripts/import_vwa_assets.sh --imports-dir /home/jiaming/imports --sites all --hostname localhost
-```
-
-如果只想先检查导入文件是否齐全：
-
-```bash
-bash scripts/import_vwa_assets.sh --imports-dir /home/jiaming/imports --check-only
-```
-
-这会自动完成：
-- `docker load` 两个镜像 tar
-- 复制 Wikipedia `.zim` 到 `external/visualwebarena/environment_docker/data/`
-- 解压 `classifieds_docker_compose.tar.gz` 到 `external/visualwebarena/environment_docker/`
-- 启动四站并执行 `preflight_v2.sh`
-
-## Phase 命令
-统一入口仅保留：
-
-- `scripts/run_experiment.py`
-- `scripts/analysis/analyze_experiment.py`
-
-运行 Phase 1/2/3：
-
-```bash
+# 运行实验
 python3 scripts/run_experiment.py --config configs/exp_v2_phase1.yaml
-python3 scripts/run_experiment.py --config configs/exp_v2_phase2.yaml
-python3 scripts/run_experiment.py --config configs/exp_v2_phase3.yaml
+
+# 分析结果
+python3 scripts/analysis/analyze_experiment.py --run_dir results/visualwebarena/phase1/<RUN_ID>
+
+# 测试
+pytest tests/
 ```
 
-分析单次运行目录：
+## 三阶段实验设计
 
-```bash
-python3 scripts/analysis/analyze_experiment.py --run_dir results/visualwebarena/phase2/<RUN_ID>
+- **Phase 1** — 表征筛选：2×2 grid (SoM on/off × dom_only/hybrid)
+- **Phase 2** — 路由研究：fixed best vs rule-based router
+- **Phase 3** — 模块消融：M1(select fallback) / M2(input fallback) / M3(retry) / M4(two-stage)
+
+## 代码结构
+
 ```
+p79/
+├── agents/           # LLM 推理（qwen3vl_agent=本地, qwen_api_agent=API）
+├── backends/         # Backend 抽象层（local_qwen/api_qwen/heuristic + action_utils）
+├── envs/             # VWA 环境封装（P79Observation 标准化）
+├── experiment/       # 核心实验引擎
+│   ├── runner.py     # 主编排器 condition→seed→task→step
+│   ├── router.py     # 规则路由器（dom_only↔hybrid 切换）
+│   ├── conditions.py # Phase1/2/3 条件生成
+│   ├── modules.py    # M1-M4 辅助模块
+│   ├── som.py        # Set-of-Marks 标注
+│   ├── state_change.py # 页面状态变化检测
+│   ├── metrics.py    # 成本/延迟/能耗聚合
+│   ├── logger_v2.py  # JSONL 结构化日志（写入带 fsync 持久化）
+│   ├── io_utils.py   # JSONL 读取 + restart dedup（统一入口）
+│   ├── analysis.py   # 后分析与可视化
+│   └── config.py     # 配置加载与默认值合并
+├── utils/            # 工具（CUDA workaround, asyncio, log cleanup）
+└── cli/              # CLI 入口
+configs/              # YAML 实验配置
+scripts/              # 运行/部署/分析脚本（见下方）
+tests/                # 单元测试
+docs/                 # 分析报告、schema 文档、周报
+```
+
+## 脚本说明
+
+### 实验运行
+
+| 脚本 | 用途 |
+|------|------|
+| `scripts/run_experiment.py` | 统一实验入口（Phase 1/2/3） |
+| `scripts/preflight_v2.sh` | 环境预检（CUDA、VWA 站点、认证） |
+| `scripts/vwa_env.sh` | 本地 VWA 环境变量 |
+| `scripts/vwa_env_remote.sh` | 远程 VWA 环境变量（DGX 模式） |
+
+### DGX 部署
+
+| 脚本 | 用途 |
+|------|------|
+| `scripts/dgx/queue_b1_serial.sh` | B1 baseline 串行队列（classifieds→reddit→shopping） |
+| `scripts/dgx/restart_queue_b1_serial.sh` | 重启队列（自动推断 run_id，保留/清理可选） |
+| `scripts/dgx/restart_watchdog.sh` | 热重启 watchdog（自动恢复所有参数） |
+| `scripts/dgx/run_b0_api_baseline.sh` | B0 API 模型 baseline（Phase 2 用） |
+
+### 监控与诊断
+
+| 脚本 | 用途 |
+|------|------|
+| `scripts/experiment_watchdog.py` | 实验守护进程：进度推送、idle 告警、自动 digest/标注/gallery |
+| `scripts/glm_batch_digest.py` | GLM sidecar 批量诊断（自动归因每个 episode） |
+| `scripts/glm_diagnosis_sidecar.py` | GLM 实时诊断 sidecar |
+| `scripts/digest_enrich.py` | Digest 后处理与富化 |
+
+### 可视化
+
+| 脚本 | 用途 |
+|------|------|
+| `scripts/annotate_screenshots.py` | 截图标注（动作 banner + thought + 元素高亮） |
+| `scripts/generate_gallery.py` | HTML 画廊（键盘导航、自动刷新、远程访问） |
+
+### 分析
+
+| 脚本 | 用途 |
+|------|------|
+| `scripts/analysis/analyze_experiment.py` | 主分析入口（condition 对比、成功率、成本） |
+| `scripts/analysis/analyze_reason_diagnostics.py` | 失败模式聚类与归因分析 |
+| `scripts/analysis/analyze_confidence_calibration.py` | Logprobs 置信度校准分析 |
+| `scripts/analysis/analyze_cross_representation.py` | 跨表征对比分析 |
 
 ## 结果目录
-统一目录层级：
 
-```text
-results/<benchmark>/<phase>/<run_id>/<condition_id>/
+```
+results/<benchmark>/<phase>/<run_id>/
+├── <condition_id>/
+│   ├── episodes/         # 每 episode 的 steps JSONL + summary JSON
+│   ├── artifacts/        # 截图、DOM、SoM 图、标注截图
+│   ├── condition_meta.json
+│   └── condition_summary_v2.json
+├── analysis/             # 分析输出（reason_diagnostics、digest 等）
+└── gallery.html          # 自动生成的可视化画廊
 ```
 
-关键产物（按 phase 自动输出）包括：
+## DGX Spark 注意事项
 
-- `phase1_representation_screening.csv/png`
-- `phase2_pareto_metrics.csv/png`
-- `phase2_net_saving_decomposition.csv/json`
-- `phase3_module_ablation.csv/png`
-- `phase3_module_gain_vs_base.csv`
-- `trigger_distribution.csv/png`
-- `state_change_reason_distribution.csv/png`
-- `checklist_progress_curve.csv/png`
-- `checklist_failure_distribution.csv/png`
-- `benchmark_noise_report.csv`
+- 用 `python3` 或 `.venv/bin/python`，不要用 `python`
+- 必须设置 `PYTORCH_NVML_BASED_CUDA_CHECK=1`（脚本已自动处理）
+- GB10 `sm_121` 架构可能触发 nvrtc 错误，仓库内置 fallback 自动兜底
+- 远程站点配置见 `scripts/vwa_env_remote.sh`
+- 详细机器特化见 `DGX_SPARK_MACHINE_QUIRKS.md`
 
-## 日志清理
+## 文档
 
-定期清理日志和临时文件以节省磁盘空间：
-
-```bash
-# 清理所有日志（使用默认配置：30天、1GB、100个文件）
-python scripts/cleanup_logs.py
-
-# 只显示将要删除的内容（不实际删除）
-python scripts/cleanup_logs.py --dry-run
-
-# 自定义清理策略
-python scripts/cleanup_logs.py --max-age 7 --max-size 500 --max-count 50
-
-# 只清理日志目录
-python scripts/cleanup_logs.py --dir logs
-
-# 只清理实验结果目录
-python scripts/cleanup_logs.py --dir results
-
-# 显示磁盘使用情况
-python scripts/cleanup_logs.py --usage-only
-```
-
-清理策略包括：
-- 按年龄清理：删除超过指定天数的日志文件
-- 按数量清理：保留最新的 N 个日志文件
-- 按总大小清理：当日志目录总大小超过限制时，删除最旧的文件
-
-## 常见问题
-1. 为什么 `preflight_v2.sh` 报缺少环境变量？
-   先执行 `source scripts/vwa_env.sh`（远程模式用 `source scripts/vwa_env_remote.sh`），并确认 `.auth/` 已就绪。
-
-2. 为什么分析命令报错缺少 pandas/matplotlib？
-   安装扩展依赖：`pip install -e ".[analysis]"`。
-
-3. 为什么不再推荐旧脚本/旧配置？
-   v2 主线只维护统一实验入口。旧批跑配置和脚本已移到 `legacy/` 或 `scripts/dev|cloud|dgx/`。
-
-4. DGX 本机特化怎么跑？
-   DGX 特化不作为通用默认，请看：
-   - `DGX_SPARK_MACHINE_QUIRKS.md`
-   - `scripts/dgx/`
-
-## 额外文档
-- 可选字段语义：`docs/STEP_SCHEMA_V2_OPTIONAL_FIELDS.md`
-- 第三方代码引用：`docs/THIRD_PARTY_CODE.md`
+| 文件 | 内容 |
+|------|------|
+| `P79_experimental_scope_rq_variables.md` | 实验范围与研究问题 |
+| `DGX_SPARK_MACHINE_QUIRKS.md` | DGX 机器特化 |
+| `docs/STEP_SCHEMA_V2_OPTIONAL_FIELDS.md` | Step schema 可选字段 |
+| `docs/ANALYSIS_SCRIPTS.md` | 分析脚本详细说明 |
+| `docs/Analysis/` | B1 baseline 手动/AI 分析报告 |
+| `docs/checkpoints/周报.md` | 实验进展周报 |
+| `docs/THIRD_PARTY_CODE.md` | 第三方代码引用 |

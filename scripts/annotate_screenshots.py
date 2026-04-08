@@ -479,6 +479,11 @@ def annotate_episode(
             count += 1
             continue
 
+        # Skip if annotated version is newer than source screenshot
+        if output.exists() and output.stat().st_mtime >= screenshot.stat().st_mtime:
+            count += 1
+            continue
+
         try:
             annotate_step(
                 screenshot_path=screenshot,
