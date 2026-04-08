@@ -134,7 +134,7 @@ class RuleBasedRouter:
                 decision = self.modes[max(current_idx - 1, 0)]
                 state.success_streak = 0  # reset after de-escalation
             else:
-                decision = self.cheap_default_mode
+                decision = state.current_mode
         state.current_mode = decision
 
         router_decision_ms = (time.time() - start) * 1000.0

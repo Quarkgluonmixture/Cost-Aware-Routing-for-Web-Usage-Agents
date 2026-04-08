@@ -503,6 +503,33 @@ def test_router_disabled_ignores_triggers_and_returns_preferred():
     assert decision == "vision"
 
 
+def test_router_holds_mode_when_no_trigger_after_escalation():
+    """After escalation, mode should be held (not reset to cheapest) when no triggers fire."""
+    router = _make_router(modes=["dom", "som", "vision"])
+    state = RouterState()
+    state.current_mode = "dom"
+
+    # Step 1: trigger → escalate dom→som
+    state.dom_complexity_history = [200]
+    decision, _, _, state = router.decide(
+        router_enabled=True, preferred_mode="dom", obs_text="short",
+        state=state, prev_action_success=True, prev_page_changed=True,
+    )
+    assert decision == "som"
+    assert state.current_mode == "som"
+
+    # Step 2: no trigger, success_streak < deescalation_streak → should HOLD som
+    state.dom_complexity_history = [50]  # below threshold
+    state.text_length_history = [100]    # below threshold
+    decision2, triggers2, _, state = router.decide(
+        router_enabled=True, preferred_mode="dom", obs_text="short",
+        state=state, prev_action_success=True, prev_page_changed=True,
+    )
+    assert triggers2 == []
+    assert decision2 == "som", "Mode should be held, not reset to cheapest"
+    assert state.current_mode == "som"
+
+
 def test_router_backward_compat_default_modes():
     """Default config produces 2-way modes=[dom, som]."""
     router = RuleBasedRouter({})

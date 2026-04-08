@@ -906,7 +906,7 @@ class ExperimentRunner:
             action, meta = backend.step(instruction, obs_for_backend, context)
             backend_latency_ms = (time.time() - backend_start) * 1000.0
 
-            action = validate_action(action)
+            action, _ = validate_action(action)
             action = apply_secondary_modules(action, obs.text or "", condition.modules.as_dict())
             if bool(self.diagnostic_controls.get("enabled", False)):
                 diag_notes: List[str] = []
@@ -940,7 +940,7 @@ class ExperimentRunner:
                     )
                     if note:
                         diag_notes.append(note)
-                action = validate_action(action)
+                action, _ = validate_action(action)
                 if diag_notes:
                     logger.info(
                         "Diagnostic controls applied site=%s task=%s step=%d notes=%s action=%s",

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import os
 import importlib.util
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 from PIL import Image
 
@@ -81,7 +84,8 @@ class VwaEvaluator:
 
             self._available = True
             self._evaluator_router = evaluator_router
-        except Exception:
+        except Exception as exc:
+            logger.warning("VwaEvaluator init failed (eval scores will be 0): %s", exc)
             self._available = False
             self._evaluator_router = None
 

@@ -23,7 +23,8 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
 
     try:
         parsed = json.loads(text)
-        return validate_action(parsed), True, None
+        action, is_valid = validate_action(parsed)
+        return action, is_valid, None if is_valid else "invalid_action"
     except json.JSONDecodeError:
         pass
 
@@ -31,7 +32,8 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
     if match:
         try:
             parsed = json.loads(match.group(0))
-            return validate_action(parsed), True, "repaired_regex"
+            action, is_valid = validate_action(parsed)
+            return action, is_valid, "repaired_regex" if is_valid else "invalid_action_repaired"
         except json.JSONDecodeError:
             pass
 
@@ -45,22 +47,22 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
     return {"action_type": "wait"}, False, "parse_failed"
 
 
-def validate_action(action: Dict[str, Any]) -> Dict[str, Any]:
+def validate_action(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
     if not isinstance(action, dict):
-        return {"action_type": "wait"}
+        return {"action_type": "wait"}, False
 
     action_type = str(action.get("action_type", "wait")).lower().strip()
     if action_type == "stop":
         action_type = "finish"
     if action_type not in ALLOWED_ACTION_TYPES:
-        return {"action_type": "wait"}
+        return {"action_type": "wait"}, False
 
     action["action_type"] = action_type
 
     if action_type == "click":
         coord = action.get("coordinate")
         if coord is None and "element_id" not in action:
-            return {"action_type": "wait"}
+            return {"action_type": "wait"}, False
         if coord is not None and "coordinate_type" not in action:
             action["coordinate_type"] = "normalized"
 
@@ -76,7 +78,7 @@ def validate_action(action: Dict[str, Any]) -> Dict[str, Any]:
         answer = action.get("answer", "")
         action["answer"] = "" if answer is None else str(answer)
 
-    return action
+    return action, True
 
 
 def first_element_id_by_keyword(obs_text: str, keywords: Tuple[str, ...]) -> Optional[int]:
