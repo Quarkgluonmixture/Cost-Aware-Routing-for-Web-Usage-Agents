@@ -58,6 +58,14 @@
 - 未点进详情页就调用 finish（对 url_match 类任务影响有限，对 program_html 类任务直接失败）
 - 历史记忆不足导致循环：缺乏已访问 item 记录，重复对列表第一个结果进行操作
 
+### 2.4 从不 scroll up
+
+69/69 次 scroll 操作全部向下（dy>0），0 次向上。当目标元素被滚过（y<0，在 viewport 上方）时，agent 无法回滚定位，导致：
+- 反复 click viewport 外的元素（如 task_18 step 6-8，element_bbox y=-54）
+- 继续向下滚动寻找已经滚过的内容
+
+已在 prompt 中添加 scroll 方向说明（`dy>0 scrolls DOWN, dy<0 scrolls UP`），但 task 27/28（加载了新 prompt 后运行）仍然没有出现 scroll up 行为，表明 **prompt hint 对 4B 模型的 scroll up 行为改善有限**，属于模型能力局限。
+
 ---
 
 ## 三、分类汇总

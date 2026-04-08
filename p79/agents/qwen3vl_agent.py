@@ -141,6 +141,7 @@ Action Schema:
    - ALWAYS specify element_id to target the correct input field.
    - To submit, append "\\n" to the text.
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
+   - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
 4. Wait: {"action_type": "wait"}
 5. Back: {"action_type": "back"} — WARNING: Do NOT use on the first/homepage.
 6. Forward: {"action_type": "forward"}
@@ -201,6 +202,7 @@ Action Schema:
 3. Type: {"action_type": "type", "text": "string", "element_id": N}
    - Prefer element_id. To submit, append "\\n" to the text.
 4. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
+   - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
 5. Wait: {"action_type": "wait"}
 6. Back: {"action_type": "back"} — WARNING: Do NOT use on the first/homepage.
 7. Forward: {"action_type": "forward"}
@@ -253,6 +255,7 @@ Action Schema:
 2. Type: {"action_type": "type", "text": "string", "coordinate": [x, y], "coordinate_type": "normalized"}
    - Include coordinate to specify the input field location (recommended). To submit, append "\\n" to the text.
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
+   - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
 4. Wait: {"action_type": "wait"}
 5. Back: {"action_type": "back"} — WARNING: Do NOT use on the first/homepage.
 6. Forward: {"action_type": "forward"}

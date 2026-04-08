@@ -82,6 +82,9 @@ for pid in "${watchdog_pids[@]}"; do
   state_file=""
   poll_secs=""
   window_size=""
+  idle_alert_mins=""
+  glm_config=""
+  digest_dir=""
   alert_on_bootstrap=0
   for ((i = 0; i < ${#args[@]} - 1; i++)); do
     case "${args[$i]}" in
@@ -91,6 +94,9 @@ for pid in "${watchdog_pids[@]}"; do
       --state-file)    state_file="${args[$((i + 1))]}" ;;
       --poll-secs)     poll_secs="${args[$((i + 1))]}" ;;
       --window-size)   window_size="${args[$((i + 1))]}" ;;
+      --idle-alert-mins) idle_alert_mins="${args[$((i + 1))]}" ;;
+      --glm-config)    glm_config="${args[$((i + 1))]}" ;;
+      --digest-dir)    digest_dir="${args[$((i + 1))]}" ;;
       --alert-on-bootstrap) alert_on_bootstrap=1 ;;
     esac
   done
@@ -106,11 +112,14 @@ for pid in "${watchdog_pids[@]}"; do
 
   # Build new command
   new_args=(-u "${WATCHDOG_SCRIPT}" --run-dir "${run_dir}")
-  [[ -n "${condition}" ]]  && new_args+=(--condition "${condition}")
-  [[ -n "${ntfy_topic}" ]] && new_args+=(--ntfy-topic "${ntfy_topic}")
-  [[ -n "${poll_secs}" ]]  && new_args+=(--poll-secs "${poll_secs}")
-  [[ -n "${window_size}" ]] && new_args+=(--window-size "${window_size}")
-  [[ -n "${state_file}" ]] && new_args+=(--state-file "${state_file}")
+  [[ -n "${condition}" ]]      && new_args+=(--condition "${condition}")
+  [[ -n "${ntfy_topic}" ]]     && new_args+=(--ntfy-topic "${ntfy_topic}")
+  [[ -n "${poll_secs}" ]]      && new_args+=(--poll-secs "${poll_secs}")
+  [[ -n "${window_size}" ]]    && new_args+=(--window-size "${window_size}")
+  [[ -n "${state_file}" ]]     && new_args+=(--state-file "${state_file}")
+  [[ -n "${idle_alert_mins}" ]] && new_args+=(--idle-alert-mins "${idle_alert_mins}")
+  [[ -n "${glm_config}" ]]     && new_args+=(--glm-config "${glm_config}")
+  [[ -n "${digest_dir}" ]]     && new_args+=(--digest-dir "${digest_dir}")
   [[ "${alert_on_bootstrap}" -eq 1 ]] && new_args+=(--alert-on-bootstrap)
 
   # Determine log file

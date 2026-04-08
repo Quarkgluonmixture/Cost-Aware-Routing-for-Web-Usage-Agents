@@ -7,6 +7,7 @@ Notifications (push to ntfy):
 2) IDLE:     no new episode for --idle-alert-mins → may need restart
 3) COMPLETE: condition finished (condition_summary_v2.json appeared)
 4) ANALYSIS: post-condition analysis script completed (output files detected)
+5) DIGEST:   GLM batch digest completed for a mode (all failed episodes processed)
 """
 
 from __future__ import annotations
@@ -65,7 +66,7 @@ def _post_ntfy(topic: str, title: str, body: str, priority: str = "default") -> 
     url = f"https://ntfy.sh/{topic}"
     req = urllib.request.Request(
         url, data=body.encode("utf-8"), method="POST",
-        headers={"Title": title, "Priority": priority},
+        headers={"Title": title, "Priority": priority, "Markdown": "yes"},
     )
     try:
         with urllib.request.urlopen(req, timeout=15):
@@ -187,6 +188,9 @@ _ANALYSIS_MARKERS = {
     "cross_representation": "analysis/cross_representation/cross_representation_summary.json",
 }
 
+# Digest modes to track (matches digest_{mode}.jsonl naming)
+_DIGEST_MODES = ("dom", "som", "vision")
+
 
 def _check_analysis_outputs(
     run_dir: Path,
@@ -207,6 +211,54 @@ def _check_analysis_outputs(
             else:
                 seen_analysis[name] = mtime  # record but don't alert
     return new_outputs
+
+
+def _count_failed_episodes_by_mode(
+    all_records: List[EpisodeRecord],
+    completed_conditions: Set[str],
+) -> Dict[str, int]:
+    """Count failed episodes per observation mode across completed conditions."""
+    counts: Dict[str, int] = defaultdict(int)
+    for r in all_records:
+        if r.condition_id in completed_conditions and not r.success:
+            counts[r.observation_mode] += 1
+    return dict(counts)
+
+
+def _check_digest_completions(
+    digest_dir: Path,
+    all_records: List[EpisodeRecord],
+    completed_conditions: Set[str],
+    seen_digest_completions: Set[str],
+) -> List[Tuple[str, int, int]]:
+    """Check if digest JSONL has covered all failed episodes for each mode.
+
+    Returns list of (mode, digested_count, expected_count) for newly complete modes.
+    """
+    if not digest_dir.exists():
+        return []
+    expected_by_mode = _count_failed_episodes_by_mode(all_records, completed_conditions)
+    if not expected_by_mode:
+        return []
+
+    newly_complete: List[Tuple[str, int, int]] = []
+    for mode in _DIGEST_MODES:
+        if mode in seen_digest_completions:
+            continue
+        expected = expected_by_mode.get(mode, 0)
+        if expected == 0:
+            continue
+        digest_file = digest_dir / f"digest_{mode}.jsonl"
+        if not digest_file.exists():
+            continue
+        try:
+            digested = sum(1 for line in digest_file.open(encoding="utf-8") if line.strip())
+        except Exception:
+            continue
+        if digested >= expected:
+            seen_digest_completions.add(mode)
+            newly_complete.append((mode, digested, expected))
+    return newly_complete
 
 
 # ---------------------------------------------------------------------------
@@ -251,11 +303,67 @@ def _load_state(path: Optional[Path]) -> Dict[str, Any]:
         return {}
 
 
+def _annotate_screenshots(run_dir: Path, condition: Optional[str] = None) -> str:
+    """Run screenshot annotation (best-effort, non-blocking). Returns status string."""
+    try:
+        cmd = [
+            sys.executable,
+            str(Path(__file__).resolve().parent / "annotate_screenshots.py"),
+            "--run-dir", str(run_dir),
+        ]
+        if condition:
+            cmd += ["--condition", condition]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        if r.returncode == 0:
+            # Last line has the summary
+            last_line = (r.stdout.strip().splitlines() or [""])[-1]
+            print(f"[watchdog][ANNOTATE] {last_line}")
+            return last_line
+        else:
+            msg = f"failed: {r.stderr[-200:]}"
+            print(f"[watchdog][ANNOTATE] {msg}")
+            return msg
+    except subprocess.TimeoutExpired:
+        print("[watchdog][ANNOTATE] timed out (300s)")
+        return "timed out"
+    except Exception as exc:
+        print(f"[watchdog][ANNOTATE] error: {exc}")
+        return f"error: {exc}"
+
+
+def _regenerate_gallery(run_dir: Path, condition: Optional[str] = None) -> str:
+    """Regenerate the gallery HTML (best-effort, non-blocking). Returns status string."""
+    try:
+        cmd = [
+            sys.executable,
+            str(Path(__file__).resolve().parent / "generate_gallery.py"),
+            "--run-dir", str(run_dir),
+        ]
+        if condition:
+            cmd += ["--condition", condition]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        if r.returncode == 0:
+            print(f"[watchdog][GALLERY] regenerated: {run_dir / 'gallery.html'}")
+            return "updated"
+        else:
+            msg = f"failed: {r.stderr[-200:]}"
+            print(f"[watchdog][GALLERY] {msg}")
+            return msg
+    except subprocess.TimeoutExpired:
+        print("[watchdog][GALLERY] timed out (120s)")
+        return "timed out"
+    except Exception as exc:
+        print(f"[watchdog][GALLERY] error: {exc}")
+        return f"error: {exc}"
+
+
 def _save_state(
     path: Optional[Path],
     seen_keys: Set[str],
     seen_completions: Set[str],
     seen_analysis: Dict[str, float],
+    seen_digest_completions: Optional[Set[str]] = None,
+    reported_keys: Optional[Set[str]] = None,
 ) -> None:
     if not path:
         return
@@ -264,6 +372,8 @@ def _save_state(
         "seen_keys": sorted(seen_keys),
         "seen_completions": sorted(seen_completions),
         "seen_analysis": seen_analysis,
+        "seen_digest_completions": sorted(seen_digest_completions or set()),
+        "reported_keys": sorted(reported_keys or set()),
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -365,6 +475,8 @@ def main() -> int:
     seen_keys: Set[str] = set(saved.get("seen_keys", []))
     seen_completions: Set[str] = set(saved.get("seen_completions", []))
     seen_analysis: Dict[str, float] = saved.get("seen_analysis", {})
+    seen_digest_completions: Set[str] = set(saved.get("seen_digest_completions", []))
+    reported_keys: Set[str] = set(saved.get("reported_keys", []))
 
     all_records: List[EpisodeRecord] = []
     condition_mode_cache: Dict[str, str] = {}
@@ -400,6 +512,7 @@ def main() -> int:
     last_new_episode_ts: float = time.time()
     last_report_ts: float = 0.0  # 0 → trigger initial report immediately after bootstrap
     idle_alerted: bool = False
+    # (recent episodes computed from seen_keys - reported_keys at report time)
     idle_alert_secs = max(60, args.idle_alert_mins * 60)
     report_interval_secs = max(60, args.report_interval_mins * 60)
 
@@ -465,21 +578,83 @@ def main() -> int:
                     f"succ={cond_succ}/{cond_total} ({cond_succ/cond_total:.1%})"
                 )
 
-            _save_state(state_file, seen_keys, seen_completions, seen_analysis)
+            _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys)
 
         # --- 2. Periodic status report (only running conditions) ---
         if (now - last_report_ts) >= report_interval_secs and all_records:
             report = _build_status_report(all_records, condition_mode_cache, seen_completions, run_id)
             if report:
                 print(f"[watchdog][REPORT]\n{report}")
-                if args.ntfy_topic:
-                    _post_ntfy(args.ntfy_topic, f"P79 Status", report)
 
             # Auto-digest: update reason CSV + run batch digest
+            digest_status = None
+            digest_completions_info: List[str] = []
             if args.glm_config:
                 digest_dir = args.digest_dir or (run_dir / "analysis" / "digest")
-                _run_auto_digest(run_dir, args.glm_config, digest_dir)
+                digest_status = _run_auto_digest(run_dir, args.glm_config, digest_dir)
 
+                # Check if digest is newly complete for any mode
+                newly_done = _check_digest_completions(
+                    digest_dir, all_records, seen_completions, seen_digest_completions,
+                )
+                for mode, digested, expected in newly_done:
+                    info = f"[{mode}] digest 完成: {digested}/{expected}"
+                    digest_completions_info.append(info)
+                    print(f"[watchdog][DIGEST] {info}")
+                    if args.ntfy_topic:
+                        _post_ntfy(args.ntfy_topic, f"P79 Digest [{mode}]",
+                                   f"run_id={run_id}\n{info}\n输出: analysis/digest/digest_{mode}.jsonl",
+                                   priority="high")
+                    _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys)
+
+            # Auto-annotate screenshots then regenerate gallery HTML
+            annotate_status = _annotate_screenshots(run_dir, args.condition)
+            gallery_status = _regenerate_gallery(run_dir, args.condition)
+
+            # Run analysis scripts (results fed into consolidated notification)
+            new_analysis = _check_analysis_outputs(run_dir, seen_analysis)
+            analysis_names = []
+            for name, path in new_analysis:
+                print(f"[watchdog][ANALYSIS] run_id={run_id}\n分析脚本完成: {name}\n输出: {path.relative_to(run_dir)}")
+                analysis_names.append(name)
+                _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys)
+
+            # --- Build consolidated periodic notification ---
+            if args.ntfy_topic and report:
+                parts = [report]
+
+                # Recent tasks: episodes in seen_keys but not yet reported
+                unreported_keys = seen_keys - reported_keys
+                if unreported_keys:
+                    # Match records by checking if their key pattern appears in unreported
+                    recent = [r for r in all_records
+                              if any(f"{r.site}_task_{r.task_id}_summary" in k
+                                     for k in unreported_keys)]
+                    if recent:
+                        task_lines = []
+                        for ep in sorted(recent, key=lambda e: e.task_id):
+                            status = "OK" if ep.success else ep.reason
+                            task_lines.append(f"  task {ep.task_id}: {status} ({ep.steps} steps)")
+                        parts.append(f"**新完成 ({len(recent)} tasks)**")
+                        parts.extend(task_lines)
+
+                # Pipeline status
+                pipeline = []
+                if digest_status is not None:
+                    # Take last meaningful line only
+                    digest_short = (digest_status.strip().splitlines() or [""])[-1][:80]
+                    pipeline.append(f"digest: {digest_short}")
+                pipeline.append(f"annotate: {annotate_status.strip().splitlines()[-1][:80]}")
+                pipeline.append(f"gallery: {gallery_status}")
+                if analysis_names:
+                    pipeline.append(f"analysis: {', '.join(analysis_names)}")
+                parts.append("**pipeline**")
+                parts.extend(pipeline)
+
+                _post_ntfy(args.ntfy_topic, "P79 Status", "\n".join(parts))
+
+            reported_keys = seen_keys.copy()
+            _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys)
             last_report_ts = now
 
         # --- 3. Idle alert ---
@@ -515,16 +690,7 @@ def main() -> int:
             print(f"[watchdog][COMPLETE] {body}")
             if args.ntfy_topic:
                 _post_ntfy(args.ntfy_topic, f"P79 COMPLETE [{mode}/{cid}]", body, priority="high")
-            _save_state(state_file, seen_keys, seen_completions, seen_analysis)
-
-        # --- 5. Analysis script completion ---
-        new_analysis = _check_analysis_outputs(run_dir, seen_analysis)
-        for name, path in new_analysis:
-            body = f"run_id={run_id}\n分析脚本完成: {name}\n输出: {path.relative_to(run_dir)}"
-            print(f"[watchdog][ANALYSIS] {body}")
-            if args.ntfy_topic:
-                _post_ntfy(args.ntfy_topic, f"P79 Analysis [{name}]", body)
-            _save_state(state_file, seen_keys, seen_completions, seen_analysis)
+            _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys)
 
         if args.once:
             break

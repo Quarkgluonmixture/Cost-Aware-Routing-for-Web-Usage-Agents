@@ -764,7 +764,16 @@ class ExperimentRunner:
         condition_dir: Path,
     ) -> Dict[str, Any]:
         episode_dir = condition_dir / "artifacts" / f"{task.site}_task_{task.task_id}"
+        if episode_dir.exists():
+            shutil.rmtree(episode_dir)
+            logger.info("Cleared stale artifacts for %s task %s", task.site, task.task_id)
         episode_dir.mkdir(parents=True, exist_ok=True)
+
+        # Clear stale JSONL from previous (interrupted) run
+        stale_jsonl = condition_logger.step_log_path(task.site, task.task_id)
+        if stale_jsonl.exists():
+            stale_jsonl.unlink()
+            logger.info("Cleared stale step JSONL for %s task %s", task.site, task.task_id)
 
         obs, info = self.environment.reset(task.config_file)
         current_info = info or {}
@@ -1182,6 +1191,15 @@ class ExperimentRunner:
                     "min_margin": meta["min_margin"],
                 }
 
+            # Element bounding box for annotation overlay (from obs_nodes_info)
+            eid = action.get("element_id")
+            if eid is not None and hasattr(obs, "obs_nodes_info") and obs.obs_nodes_info:
+                node_info = obs.obs_nodes_info.get(str(eid))
+                if isinstance(node_info, dict):
+                    ub = node_info.get("union_bound")
+                    if ub and len(ub) == 4:
+                        step_record["element_bbox"] = [float(v) for v in ub]
+
             validate_step_record_v2(step_record)
             condition_logger.write_step(task.site, task.task_id, step_record)
             step_records.append(step_record)
@@ -1196,7 +1214,11 @@ class ExperimentRunner:
                 break
 
             # --- cycle detection (early stop, does not alter agent behaviour) ---
-            action_signatures.append(_action_signature(action))
+            # Skip strict signature for scroll when page actually changed —
+            # scrolling down multiple times is normal browsing, not a cycle.
+            is_scroll = str(action.get("action_type", "")).lower() == "scroll"
+            if not (is_scroll and page_changed):
+                action_signatures.append(_action_signature(action))
             # Only accumulate soft signatures when the page didn't change,
             # otherwise reset — clicking different elements that each cause
             # real navigation is not a cycle.

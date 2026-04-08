@@ -9,6 +9,27 @@ from p79.experiment.io_utils import read_jsonl_dedup
 from p79.experiment.metrics import net_saving, net_saving_latency, net_saving_energy
 
 
+_VWA_CONFIG_DIR = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena" / "config_files" / "vwa"
+
+
+def _load_na_task_ids(site: str) -> set:
+    """Return task_ids whose reference answer is N/A (unanswerable tasks)."""
+    config_path = _VWA_CONFIG_DIR / f"test_{site}.json"
+    if not config_path.exists():
+        return set()
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            tasks = json.load(f)
+        na_ids = set()
+        for t in tasks:
+            ref = t.get("eval", {}).get("reference_answers", {})
+            if isinstance(ref, dict) and ref.get("fuzzy_match") == "N/A":
+                na_ids.add(t["task_id"])
+        return na_ids
+    except Exception:
+        return set()
+
+
 def _compute_pareto_front(points: List[Dict[str, float]], maximize: str, minimize: str) -> List[int]:
     """Return indices of Pareto-optimal points (maximize one axis, minimize another)."""
     indexed = list(enumerate(points))
@@ -864,6 +885,22 @@ def analyze_run(run_dir: str) -> Path:
     ep_df = pd.DataFrame(episode_rows)
     step_df = pd.DataFrame(step_rows)
 
+    # Mark N/A reference tasks (unanswerable — reference answer is "N/A")
+    if not ep_df.empty and "benchmark_site" in ep_df.columns and "task_id" in ep_df.columns:
+        na_ids_by_site: Dict[str, set] = {}
+        for site in ep_df["benchmark_site"].unique():
+            na_ids_by_site[site] = _load_na_task_ids(str(site))
+        ep_df["is_na_reference"] = ep_df.apply(
+            lambda r: int(r["task_id"]) in na_ids_by_site.get(r["benchmark_site"], set()), axis=1
+        )
+        na_count = int(ep_df["is_na_reference"].sum())
+        if na_count > 0:
+            logger.info("Flagged %d episodes as N/A reference tasks", na_count)
+            na_summary = ep_df[ep_df["is_na_reference"]][["benchmark_site", "task_id", "condition_id", "success"]].copy()
+            na_summary.to_csv(analysis_dir / "na_reference_tasks.csv", index=False)
+    else:
+        ep_df["is_na_reference"] = False
+
     # --- Per-condition (per-session) analysis ---
     cond_ids = [row.get("condition_id") for row in condition_rows if row.get("condition_id")]
     for cid in cond_ids:
@@ -940,6 +977,28 @@ def analyze_run(run_dir: str) -> Path:
     if not ep_df.empty:
         _analyze_per_site(ep_df, ov_plots, ov_tables)
 
+    # Compute adjusted success rates (excluding N/A reference tasks)
+    na_adjusted = {}
+    if not ep_df.empty and "is_na_reference" in ep_df.columns:
+        na_total = int(ep_df["is_na_reference"].sum())
+        for cid in ep_df["condition_id"].unique():
+            sub = ep_df[ep_df["condition_id"] == cid]
+            raw_sr = float(sub["success"].astype(float).fillna(0).mean())
+            adj_sub = sub[~sub["is_na_reference"]]
+            adj_sr = float(adj_sub["success"].astype(float).fillna(0).mean()) if len(adj_sub) > 0 else 0.0
+            na_in_cond = int(sub["is_na_reference"].sum())
+            na_success = int(sub[sub["is_na_reference"]]["success"].astype(float).fillna(0).sum())
+            na_adjusted[cid] = {
+                "raw_success_rate": raw_sr,
+                "adjusted_success_rate": adj_sr,
+                "raw_episodes": int(len(sub)),
+                "adjusted_episodes": int(len(adj_sub)),
+                "na_reference_tasks": na_in_cond,
+                "na_false_positives": na_success,
+            }
+    else:
+        na_total = 0
+
     with open(analysis_dir / "analysis_summary.json", "w", encoding="utf-8") as f:
         json.dump(
             {
@@ -948,6 +1007,8 @@ def analyze_run(run_dir: str) -> Path:
                 "condition_count": int(len(cond_df)),
                 "episode_count": int(len(ep_df)),
                 "step_count": int(len(step_df)),
+                "na_reference_task_count": na_total,
+                "adjusted_success_rates": na_adjusted,
             },
             f,
             indent=2,
