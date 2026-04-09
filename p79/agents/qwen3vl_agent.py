@@ -286,6 +286,8 @@ CRITICAL:
           - min_logprob: lowest log-probability (least confident token)
           - mean_margin: average gap between top-1 and top-2 log-probabilities
           - min_margin: smallest gap (most uncertain decision point)
+          - mean_entropy: average predictive entropy across tokens
+          - max_entropy: highest per-token entropy (most uncertain position)
         """
         if not scores:
             return {}
@@ -293,17 +295,23 @@ CRITICAL:
             n_tokens = len(scores)
             logprobs_list = []
             margins_list = []
+            entropies_list = []
             for i in range(n_tokens):
                 logits = scores[i][0]  # (vocab_size,) for batch=0
                 log_probs = torch.log_softmax(logits, dim=-1)
                 top2 = torch.topk(log_probs, k=2)
                 logprobs_list.append(top2.values[0].item())
                 margins_list.append((top2.values[0] - top2.values[1]).item())
+                # Predictive entropy: H = -∑ p * log(p)
+                probs = log_probs.exp()
+                entropies_list.append(-(probs * log_probs).sum().item())
             return {
                 "mean_logprob": sum(logprobs_list) / n_tokens,
                 "min_logprob": min(logprobs_list),
                 "mean_margin": sum(margins_list) / n_tokens,
                 "min_margin": min(margins_list),
+                "mean_entropy": sum(entropies_list) / n_tokens,
+                "max_entropy": max(entropies_list),
             }
         except Exception as e:
             logger.warning("Failed to compute confidence metrics: %s", e)

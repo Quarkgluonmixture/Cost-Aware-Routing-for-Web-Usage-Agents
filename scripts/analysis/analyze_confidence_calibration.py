@@ -62,9 +62,11 @@ def _load_episode_summaries(run_dir: Path) -> Dict[Tuple[str, int], Dict[str, An
 
 # ── Episode-level aggregation ─────────────────────────────────────────────
 
-CONF_KEYS = ("mean_logprob", "min_logprob", "mean_margin", "min_margin")
+CONF_KEYS = ("mean_logprob", "min_logprob", "mean_margin", "min_margin",
+             "mean_entropy", "max_entropy")
 EP_AGG_COLS = (
     "ep_mean_logprob", "ep_min_logprob", "ep_mean_margin", "ep_min_margin",
+    "ep_mean_entropy", "ep_max_entropy",
     "ep_last3_mean_logprob", "ep_prob",
 )
 
@@ -123,6 +125,18 @@ def _build_episode_df(
             row["ep_mean_margin"] = float(np.mean(margins_mean))
             row["ep_min_margin"] = float(np.min(margins_min))
 
+            # Entropy (may be absent for older episodes)
+            ent_means = [s["confidence"]["mean_entropy"] for s in conf_steps
+                         if "mean_entropy" in s.get("confidence", {})]
+            ent_maxes = [s["confidence"]["max_entropy"] for s in conf_steps
+                         if "max_entropy" in s.get("confidence", {})]
+            if ent_means:
+                row["ep_mean_entropy"] = float(np.mean(ent_means))
+                row["ep_max_entropy"] = float(np.max(ent_maxes)) if ent_maxes else np.nan
+            else:
+                row["ep_mean_entropy"] = np.nan
+                row["ep_max_entropy"] = np.nan
+
             # Last-3 steps
             last3 = means[-3:] if len(means) >= 3 else means
             row["ep_last3_mean_logprob"] = float(np.mean(last3))
@@ -154,6 +168,8 @@ def _build_step_df(step_records: List[Dict[str, Any]]) -> pd.DataFrame:
             "min_logprob": conf.get("min_logprob"),
             "mean_margin": conf.get("mean_margin"),
             "min_margin": conf.get("min_margin"),
+            "mean_entropy": conf.get("mean_entropy"),
+            "max_entropy": conf.get("max_entropy"),
         })
     return pd.DataFrame(rows)
 
@@ -188,12 +204,16 @@ def c0_coverage(ep_df: pd.DataFrame, tables_dir: Path) -> pd.DataFrame:
 
 # ── C1: Success vs Failure Distribution ───────────────────────────────────
 
-METRICS_4 = ["ep_mean_logprob", "ep_min_logprob", "ep_mean_margin", "ep_min_margin"]
+METRICS_CORE = ["ep_mean_logprob", "ep_min_logprob", "ep_mean_margin", "ep_min_margin"]
+METRICS_ENTROPY = ["ep_mean_entropy", "ep_max_entropy"]
+METRICS_ALL = METRICS_CORE + METRICS_ENTROPY
 METRIC_LABELS = {
     "ep_mean_logprob": "Mean Log-Prob",
     "ep_min_logprob": "Min Log-Prob",
     "ep_mean_margin": "Mean Margin",
     "ep_min_margin": "Min Margin",
+    "ep_mean_entropy": "Mean Entropy",
+    "ep_max_entropy": "Max Entropy",
 }
 
 
@@ -204,7 +224,8 @@ def _rank_biserial(u_stat: float, n1: int, n2: int) -> float:
 
 def c1_distribution(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
     """Success vs failure violin plots + Wilcoxon rank-sum tests."""
-    df = ep_df.dropna(subset=METRICS_4)
+    # Core metrics: require all 4 present; entropy metrics: optional
+    df = ep_df.dropna(subset=METRICS_CORE)
     if len(df) < 4:
         print("  C1: skipped – too few episodes with confidence")
         return
@@ -212,9 +233,18 @@ def c1_distribution(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
     succ = df[df["success"]]
     fail = df[~df["success"]]
 
+    # Determine which metrics have enough data
+    active_metrics = list(METRICS_CORE)
+    for m in METRICS_ENTROPY:
+        n_valid = df[m].notna().sum()
+        if n_valid >= 4:
+            active_metrics.append(m)
+        else:
+            print(f"  C1: {m} has only {n_valid} episodes with data – excluded from plots")
+
     # Stats table
     stat_rows = []
-    for m in METRICS_4:
+    for m in active_metrics:
         for label, grp in [("success", succ), ("failure", fail)]:
             vals = grp[m].dropna()
             stat_rows.append({
@@ -228,7 +258,7 @@ def c1_distribution(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
 
     # Wilcoxon rank-sum tests
     test_rows = []
-    for m in METRICS_4:
+    for m in active_metrics:
         s_vals = succ[m].dropna().values
         f_vals = fail[m].dropna().values
         if len(s_vals) < 2 or len(f_vals) < 2:
@@ -247,9 +277,14 @@ def c1_distribution(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
     pd.DataFrame(test_rows).to_csv(tables_dir / "wilcoxon_test.csv", index=False)
     print(f"  C1: tables → confidence_by_outcome.csv, wilcoxon_test.csv")
 
-    # Violin plot 2×2
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-    for ax, m in zip(axes.flat, METRICS_4):
+    # Violin plot – dynamic grid based on active metrics
+    n_metrics = len(active_metrics)
+    ncols = 3 if n_metrics > 4 else 2
+    nrows = math.ceil(n_metrics / ncols)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(6 * ncols, 5 * nrows))
+    axes_flat = axes.flat if hasattr(axes, "flat") else [axes]
+    for idx, m in enumerate(active_metrics):
+        ax = axes_flat[idx]
         data = [succ[m].dropna().values, fail[m].dropna().values]
         if any(len(d) == 0 for d in data):
             ax.text(0.5, 0.5, "insufficient data", ha="center", va="center",
@@ -266,6 +301,9 @@ def c1_distribution(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
         ax.set_xticklabels(["Success", "Failure"])
         ax.set_title(METRIC_LABELS.get(m, m))
         ax.grid(alpha=0.3)
+    # Hide unused subplot slots
+    for idx in range(n_metrics, nrows * ncols):
+        axes_flat[idx].set_visible(False)
     fig.suptitle("C1: Confidence by Episode Outcome", fontsize=14)
     fig.tight_layout()
     fig.savefig(plots_dir / "C1_confidence_violin.png", dpi=150)
@@ -343,7 +381,30 @@ def c2_calibration(
         "n_episodes": total_n,
     }
     pd.DataFrame([metrics]).to_csv(tables_dir / "calibration_metrics.csv", index=False)
-    print(f"  C2: tables → calibration_bins.csv, calibration_metrics.csv")
+
+    # Multi-metric AUROC comparison table
+    # Higher values (logprob, margin) → higher score = more likely success
+    # Higher entropy → lower confidence, so negate for AUROC
+    auroc_rows = []
+    for m in METRICS_ALL:
+        mdf = ep_df.dropna(subset=[m])
+        if len(mdf) < 4 or mdf["success"].nunique() < 2:
+            auroc_rows.append({"metric": m, "AUROC": np.nan, "n": len(mdf)})
+            continue
+        y = mdf["success"].astype(int).values
+        scores = mdf[m].values
+        # Entropy is inversely related to confidence: negate for AUROC
+        if "entropy" in m:
+            scores = -scores
+        a = _auroc_safe(y, scores)
+        auroc_rows.append({
+            "metric": m,
+            "AUROC": round(a, 6) if not math.isnan(a) else None,
+            "n": len(mdf),
+        })
+    auroc_df = pd.DataFrame(auroc_rows)
+    auroc_df.to_csv(tables_dir / "auroc_all_metrics.csv", index=False)
+    print(f"  C2: tables → calibration_bins.csv, calibration_metrics.csv, auroc_all_metrics.csv")
 
     # Plot
     valid = bin_df.dropna(subset=["mean_predicted", "mean_actual"])
@@ -434,6 +495,39 @@ def c3_trajectory(
     fig.savefig(plots_dir / "C3_confidence_trajectory.png", dpi=150)
     plt.close(fig)
     print(f"  C3: plot → C3_confidence_trajectory.png")
+
+    # ── Entropy trajectory (if available) ──
+    sdf_ent = sdf.dropna(subset=["mean_entropy"])
+    if len(sdf_ent) >= 10:
+        fig_e, ax_e = plt.subplots(figsize=(7, 5))
+        for label, grp, color in [
+            ("Success", sdf_ent[sdf_ent["success"]], "#2ca02c"),
+            ("Failure", sdf_ent[~sdf_ent["success"]], "#d62728"),
+        ]:
+            ent_means, ent_stds, xs = [], [], []
+            for si in step_range:
+                vals = grp.loc[grp["step_idx"] == si, "mean_entropy"]
+                if len(vals) >= 1:
+                    ent_means.append(float(vals.mean()))
+                    ent_stds.append(float(vals.std()) if len(vals) > 1 else 0.0)
+                    xs.append(si)
+            if xs:
+                m_arr = np.array(ent_means)
+                s_arr = np.array(ent_stds)
+                ax_e.plot(xs, m_arr, "o-", color=color, label=label, markersize=4)
+                ax_e.fill_between(xs, m_arr - s_arr, m_arr + s_arr,
+                                  alpha=0.15, color=color)
+        ax_e.set_xlabel("Step Index")
+        ax_e.set_ylabel("Mean Entropy")
+        ax_e.set_title("C3: Entropy Trajectory by Outcome")
+        ax_e.legend()
+        ax_e.grid(alpha=0.3)
+        fig_e.tight_layout()
+        fig_e.savefig(plots_dir / "C3_entropy_trajectory.png", dpi=150)
+        plt.close(fig_e)
+        print(f"  C3: plot → C3_entropy_trajectory.png")
+    else:
+        print(f"  C3: entropy trajectory skipped – only {len(sdf_ent)} steps with entropy")
 
     # ── Position heatmap ──
     # Bin step positions and mean_logprob → success rate

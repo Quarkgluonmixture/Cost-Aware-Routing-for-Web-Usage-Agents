@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -26,6 +27,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 SUMMARY_RE = re.compile(r"^(?P<site>.+)_task_(?P<task_id>\d+)_summary_v2\.json$")
+
+# Session-health heuristics: patterns in step_000 DOM that indicate login state
+_LOGIN_ABSENT_RE = re.compile(r"link\s+'(?:Login|Sign In)'", re.IGNORECASE)
+_LOGIN_PRESENT_RE = re.compile(r"link\s+'(?:Logout|My account|Sign Out|Log Out)'", re.IGNORECASE)
+_SESSION_ALERT_THRESHOLD = 3  # consecutive tasks w/o login before alerting
 
 
 @dataclass
@@ -108,6 +114,24 @@ def _get_observation_mode(condition_dir: Path, cache: Dict[str, str]) -> str:
     return mode
 
 
+def _check_session_health(condition_dir: Path, site: str, task_id: int) -> Optional[bool]:
+    """Check step_000 DOM for login state. True=logged-in, False=not, None=unknown."""
+    dom_path = condition_dir / "artifacts" / f"{site}_task_{task_id}" / "step_000" / "observation_dom.txt"
+    if not dom_path.exists():
+        return None
+    try:
+        text = dom_path.read_text(encoding="utf-8", errors="replace")[:5000]
+    except Exception:
+        return None
+    has_login_link = bool(_LOGIN_ABSENT_RE.search(text))
+    has_logout_link = bool(_LOGIN_PRESENT_RE.search(text))
+    if has_logout_link:
+        return True
+    if has_login_link:
+        return False
+    return None
+
+
 def _classify_episode(
     summary: Dict[str, Any],
     task_meta: Dict[str, Any],
@@ -116,7 +140,10 @@ def _classify_episode(
     if bool(summary.get("success", False)):
         return "success"
     if summary.get("error"):
-        return "error"
+        if summary.get("benchmark_noise"):
+            cat = summary.get("benchmark_noise_category", "unknown")
+            return f"error({cat})"
+        return "error(code_bug)"
     steps = int(summary.get("steps", 0) or 0)
     if steps >= max_steps:
         return "max_steps"
@@ -252,7 +279,18 @@ def _check_digest_completions(
         if not digest_file.exists():
             continue
         try:
-            digested = sum(1 for line in digest_file.open(encoding="utf-8") if line.strip())
+            # Count unique (condition_id, task_id) pairs to tolerate duplicate lines
+            seen_pairs: set = set()
+            for line in digest_file.open(encoding="utf-8"):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    seen_pairs.add((str(obj.get("condition_id", "")), obj.get("task_id")))
+                except Exception:
+                    pass
+            digested = len(seen_pairs)
         except Exception:
             continue
         if digested >= expected:
@@ -483,8 +521,10 @@ def main() -> int:
 
     # Bootstrap: rebuild all_records from existing summaries (for accurate counts)
     if seen_keys:
+        live_keys: Set[str] = set()
         for summary_path in _scan_summaries(run_dir, args.condition):
             key = _episode_key(summary_path)
+            live_keys.add(key)
             if key not in seen_keys:
                 continue
             m_re = SUMMARY_RE.match(summary_path.name)
@@ -506,7 +546,17 @@ def main() -> int:
                 steps=int(summary.get("steps", 0) or 0),
                 reason=reason,
             ))
+        # Prune stale keys whose files were deleted (e.g. cleared for retry)
+        stale_keys = seen_keys - live_keys
+        if stale_keys:
+            seen_keys -= stale_keys
+            reported_keys -= stale_keys
+            print(f"[watchdog] Pruned {len(stale_keys)} stale keys (files deleted since last run)")
         print(f"[watchdog] Restored {len(all_records)} episodes from state")
+
+    # Session-loss tracking: per-site streak counters
+    session_loss_streak: Dict[str, int] = defaultdict(int)
+    session_alerted: Dict[str, bool] = defaultdict(bool)
 
     # Timers
     last_new_episode_ts: float = time.time()
@@ -555,6 +605,48 @@ def main() -> int:
                 obs_mode = _get_observation_mode(condition_dir, condition_mode_cache)
                 reason = _classify_episode(summary, {}, args.max_steps)
 
+                # Auto-cleanup: delete benchmark noise errors so runner can retry.
+                # Only when the condition is still running (no condition_summary yet);
+                # once aggregated, deleting episodes would create inconsistency.
+                condition_completed = (condition_dir / "condition_summary_v2.json").exists()
+                if (
+                    reason.startswith("error(")
+                    and reason != "error(code_bug)"
+                    and not condition_completed
+                ):
+                    # 1. Delete summary JSON
+                    try:
+                        summary_path.unlink()
+                    except OSError:
+                        pass
+                    # 2. Delete steps JSONL
+                    steps_file = summary_path.parent / f"{site}_task_{task_id}_steps_v2.jsonl"
+                    try:
+                        if steps_file.exists():
+                            steps_file.unlink()
+                    except OSError:
+                        pass
+                    # 3. Delete artifacts directory
+                    artifacts_dir = condition_dir / "artifacts" / f"{site}_task_{task_id}"
+                    try:
+                        if artifacts_dir.exists():
+                            shutil.rmtree(artifacts_dir)
+                    except OSError:
+                        pass
+                    print(
+                        f"[watchdog][AUTO-RETRY] deleted benchmark noise error: "
+                        f"task {task_id} ({reason})"
+                    )
+                    if args.ntfy_topic:
+                        _post_ntfy(
+                            args.ntfy_topic,
+                            f"P79 AUTO-RETRY task {task_id}",
+                            f"run_id={run_id}\n{condition_id} task {task_id}\n"
+                            f"deleted {reason} — waiting for runner retry",
+                        )
+                    # Do NOT add to seen_keys/all_records — treat as never happened
+                    continue
+
                 rec = EpisodeRecord(
                     condition_id=condition_id,
                     observation_mode=obs_mode,
@@ -566,6 +658,43 @@ def main() -> int:
                 )
                 all_records.append(rec)
                 seen_keys.add(key)
+
+                # --- Session health check ---
+                session_ok = _check_session_health(condition_dir, site, task_id)
+                if session_ok is False:
+                    session_loss_streak[site] += 1
+                    streak = session_loss_streak[site]
+                    print(
+                        f"[watchdog][SESSION] {site} task {task_id} "
+                        f"NOT LOGGED IN (streak={streak})"
+                    )
+                    if (
+                        streak >= _SESSION_ALERT_THRESHOLD
+                        and not session_alerted[site]
+                    ):
+                        session_alerted[site] = True
+                        body = (
+                            f"run_id={run_id}\n"
+                            f"{site}: {streak} consecutive tasks without login!\n"
+                            f"Cookie/session 已过期，需刷新 .auth/{site}_state.json\n"
+                            f"python auto_login.py --site {site}"
+                        )
+                        print(f"[watchdog][SESSION] ALERT: {body}")
+                        if args.ntfy_topic:
+                            _post_ntfy(
+                                args.ntfy_topic,
+                                f"P79 SESSION LOST [{site}]",
+                                body,
+                                priority="urgent",
+                            )
+                elif session_ok is True:
+                    if session_loss_streak[site] > 0:
+                        print(
+                            f"[watchdog][SESSION] {site} login restored "
+                            f"(was streak={session_loss_streak[site]})"
+                        )
+                    session_loss_streak[site] = 0
+                    session_alerted[site] = False
 
                 # Per-condition cumulative
                 cond_all = [r for r in all_records if r.condition_id == condition_id]
@@ -626,15 +755,21 @@ def main() -> int:
                 # Recent tasks: episodes in seen_keys but not yet reported
                 unreported_keys = seen_keys - reported_keys
                 if unreported_keys:
-                    # Match records by checking if their key pattern appears in unreported
-                    recent = [r for r in all_records
-                              if any(f"{r.site}_task_{r.task_id}_summary" in k
-                                     for k in unreported_keys)]
+                    # Match records by condition-aware path, not just filename suffix.
+                    # Filenames are identical across conditions (e.g. classifieds_task_0_summary_v2.json),
+                    # so we must include the condition_id directory in the match.
+                    recent = [
+                        r for r in all_records
+                        if any(
+                            k.endswith(f"{r.condition_id}/episodes/{r.site}_task_{r.task_id}_summary_v2.json")
+                            for k in unreported_keys
+                        )
+                    ]
                     if recent:
                         task_lines = []
-                        for ep in sorted(recent, key=lambda e: e.task_id):
+                        for ep in sorted(recent, key=lambda e: (e.condition_id, e.task_id)):
                             status = "OK" if ep.success else ep.reason
-                            task_lines.append(f"  task {ep.task_id}: {status} ({ep.steps} steps)")
+                            task_lines.append(f"  [{ep.observation_mode}] task {ep.task_id}: {status} ({ep.steps} steps)")
                         parts.append(f"**新完成 ({len(recent)} tasks)**")
                         parts.extend(task_lines)
 

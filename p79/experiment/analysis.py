@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 from p79.experiment.io_utils import read_jsonl_dedup
 from p79.experiment.metrics import net_saving, net_saving_latency, net_saving_energy
 
+logger = logging.getLogger(__name__)
 
 _VWA_CONFIG_DIR = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena" / "config_files" / "vwa"
 
@@ -26,6 +27,48 @@ def _load_na_task_ids(site: str) -> set:
             if isinstance(ref, dict) and ref.get("fuzzy_match") == "N/A":
                 na_ids.add(t["task_id"])
         return na_ids
+    except Exception:
+        return set()
+
+
+# Keywords indicating task requires visual information (image content / color / appearance)
+_VISUAL_TASK_KWDS = (
+    # Explicit image-comparison tasks
+    "in the image", "same as", "same item", "same brand", "same product",
+    "similar items", "of the image", "shown in", "like the product",
+    "compatible with this image", "depicts",
+    # Visual-attribute tasks
+    "on the cover", "cover image", "selfie", "taken as a selfie",
+    "hard-case", "hard case", "color of", "colour of",
+    "purple", "red", "blue", "green", "yellow", "orange", "pink", "white", "black",
+    "blonde", "mario", "mickey",
+    "pattern", "stripe", "floral", "checkered",
+)
+
+
+def _load_visual_task_ids(site: str) -> set:
+    """Return task_ids that require visual information (image content, color, appearance).
+
+    Detection uses two signals:
+    1. Task config has an ``image`` field (explicit image-input task)
+    2. Task intent contains visual-matching keywords (color, appearance, etc.)
+    """
+    config_path = _VWA_CONFIG_DIR / f"test_{site}.json"
+    if not config_path.exists():
+        config_path = _VWA_CONFIG_DIR / f"test_{site}.raw.json"
+    if not config_path.exists():
+        return set()
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            tasks = json.load(f)
+        visual_ids = set()
+        for t in tasks:
+            has_image = t.get("image") is not None
+            intent_lower = t.get("intent", "").lower()
+            has_visual_kwd = any(k in intent_lower for k in _VISUAL_TASK_KWDS)
+            if has_image or has_visual_kwd:
+                visual_ids.add(t["task_id"])
+        return visual_ids
     except Exception:
         return set()
 
@@ -901,6 +944,33 @@ def analyze_run(run_dir: str) -> Path:
     else:
         ep_df["is_na_reference"] = False
 
+    # Mark visual tasks (require image content / color / appearance)
+    if not ep_df.empty and "benchmark_site" in ep_df.columns and "task_id" in ep_df.columns:
+        visual_ids_by_site: Dict[str, set] = {}
+        for site in ep_df["benchmark_site"].unique():
+            visual_ids_by_site[site] = _load_visual_task_ids(str(site))
+        ep_df["is_visual_task"] = ep_df.apply(
+            lambda r: int(r["task_id"]) in visual_ids_by_site.get(r["benchmark_site"], set()), axis=1
+        )
+        # Flag DOM-mode visual successes as lucky hits (agent can't see images in DOM)
+        ep_df["is_visual_lucky_hit"] = (
+            ep_df["is_visual_task"]
+            & ep_df["success"].astype(bool)
+            & (ep_df.get("observation_mode", ep_df.get("condition_id", "")).str.contains("dom", case=False, na=False)
+               if "observation_mode" in ep_df.columns
+               else ep_df["condition_id"].str.contains("dom", case=False, na=False))
+        )
+        visual_count = int(ep_df["is_visual_task"].sum())
+        lucky_count = int(ep_df["is_visual_lucky_hit"].sum())
+        if visual_count > 0:
+            logger.info("Flagged %d episodes as visual tasks, %d as visual lucky hits (DOM mode)", visual_count, lucky_count)
+        if lucky_count > 0:
+            lucky_df = ep_df[ep_df["is_visual_lucky_hit"]][["benchmark_site", "task_id", "condition_id", "success"]].copy()
+            lucky_df.to_csv(analysis_dir / "visual_lucky_hits.csv", index=False)
+    else:
+        ep_df["is_visual_task"] = False
+        ep_df["is_visual_lucky_hit"] = False
+
     # --- Per-condition (per-session) analysis ---
     cond_ids = [row.get("condition_id") for row in condition_rows if row.get("condition_id")]
     for cid in cond_ids:
@@ -999,6 +1069,34 @@ def analyze_run(run_dir: str) -> Path:
     else:
         na_total = 0
 
+    # Compute visual-adjusted success rates (exclude visual lucky hits in DOM mode)
+    visual_adjusted = {}
+    visual_lucky_total = 0
+    if not ep_df.empty and "is_visual_lucky_hit" in ep_df.columns:
+        visual_lucky_total = int(ep_df["is_visual_lucky_hit"].sum())
+        visual_task_total = int(ep_df["is_visual_task"].sum())
+        for cid in ep_df["condition_id"].unique():
+            sub = ep_df[ep_df["condition_id"] == cid]
+            raw_sr = float(sub["success"].astype(float).fillna(0).mean())
+            lucky_in_cond = int(sub["is_visual_lucky_hit"].sum())
+            visual_in_cond = int(sub["is_visual_task"].sum())
+            # Adjusted: treat visual lucky hits as failures
+            adj_success = sub["success"].astype(float).fillna(0).copy()
+            adj_success[sub["is_visual_lucky_hit"]] = 0.0
+            adj_sr = float(adj_success.mean()) if len(adj_success) > 0 else 0.0
+            # Non-visual only: exclude all visual tasks
+            non_visual = sub[~sub["is_visual_task"]]
+            nv_sr = float(non_visual["success"].astype(float).fillna(0).mean()) if len(non_visual) > 0 else 0.0
+            visual_adjusted[cid] = {
+                "raw_success_rate": raw_sr,
+                "visual_adjusted_success_rate": adj_sr,
+                "non_visual_success_rate": nv_sr,
+                "total_episodes": int(len(sub)),
+                "visual_tasks": visual_in_cond,
+                "non_visual_tasks": int(len(sub)) - visual_in_cond,
+                "visual_lucky_hits": lucky_in_cond,
+            }
+
     with open(analysis_dir / "analysis_summary.json", "w", encoding="utf-8") as f:
         json.dump(
             {
@@ -1009,6 +1107,9 @@ def analyze_run(run_dir: str) -> Path:
                 "step_count": int(len(step_df)),
                 "na_reference_task_count": na_total,
                 "adjusted_success_rates": na_adjusted,
+                "visual_task_count": visual_task_total if not ep_df.empty else 0,
+                "visual_lucky_hit_count": visual_lucky_total,
+                "visual_adjusted_success_rates": visual_adjusted,
             },
             f,
             indent=2,

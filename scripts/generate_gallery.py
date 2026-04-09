@@ -61,10 +61,8 @@ def _img_to_relative(img_path: Path, gallery_path: Path) -> Optional[str]:
     """Get relative path from gallery HTML to image."""
     if not img_path.exists():
         return None
-    try:
-        return str(img_path.relative_to(gallery_path.parent))
-    except ValueError:
-        return str(img_path)
+    import os
+    return os.path.relpath(str(img_path), str(gallery_path.parent))
 
 
 # ---------------------------------------------------------------------------
@@ -170,6 +168,7 @@ def _build_groups(
             "task_id": ep["task_id"],
             "label": ep["label"],
             "intent": ep.get("intent", ""),
+            "intent_image": ep.get("intent_image", ""),
             "success": ep["success"],
             "score": ep["score"],
             "total_steps": ep["total_steps"],
@@ -197,11 +196,15 @@ def _build_groups(
 
 _VWA_CONFIG_BASE = Path(__file__).resolve().parent.parent / "external" / "visualwebarena" / "config_files" / "vwa"
 
-def _load_task_intents() -> Dict[str, str]:
-    """Load task intents from VWA config files. Returns {'{site}_task_{id}': intent}."""
-    intents: Dict[str, str] = {}
+def _load_task_intents() -> Dict[str, Dict[str, str]]:
+    """Load task intents + image paths from VWA config files.
+
+    Returns {'{site}_task_{id}': {'intent': ..., 'image': ...}}.
+    """
+    info: Dict[str, Dict[str, str]] = {}
     if not _VWA_CONFIG_BASE.exists():
-        return intents
+        return info
+    vwa_root = _VWA_CONFIG_BASE.parent.parent  # external/visualwebarena
     for site_dir in _VWA_CONFIG_BASE.iterdir():
         if not site_dir.is_dir() or not site_dir.name.startswith("test_"):
             continue
@@ -213,10 +216,16 @@ def _load_task_intents() -> Dict[str, str]:
                 tid = cfg.get("task_id")
                 intent = cfg.get("intent", "")
                 if tid is not None and intent:
-                    intents[f"{site}_task_{tid}"] = intent
+                    entry: Dict[str, str] = {"intent": intent}
+                    img_rel = cfg.get("image", "")
+                    if img_rel:
+                        img_abs = (vwa_root / img_rel).resolve()
+                        if img_abs.exists():
+                            entry["image"] = str(img_abs)
+                    info[f"{site}_task_{tid}"] = entry
             except Exception:
                 continue
-    return intents
+    return info
 
 
 # ---------------------------------------------------------------------------
@@ -305,13 +314,23 @@ def _collect_episodes(
 
             ep_key = f"{cond_dir.name}__{site}_task_{task_id}"
             label = f"{site}_task_{task_id}"
+            task_info = intents.get(label, {})
+            intent_text = task_info.get("intent", "") if isinstance(task_info, dict) else str(task_info)
+            intent_img_abs = task_info.get("image", "") if isinstance(task_info, dict) else ""
+            # Convert intent image to relative/embedded path
+            intent_img_src = ""
+            if intent_img_abs:
+                # Always embed intent images as base64 — they're small reference
+                # images and relative paths break with HTTP servers.
+                intent_img_src = _img_to_data_uri(Path(intent_img_abs)) or ""
             episodes.append({
                 "key": ep_key,
                 "condition": cond_dir.name,
                 "site": site,
                 "task_id": task_id,
                 "label": label,
-                "intent": intents.get(label, ""),
+                "intent": intent_text,
+                "intent_image": intent_img_src,
                 "steps": step_data,
                 "success": summary.get("success") if summary else None,
                 "score": summary.get("score") if summary else None,
@@ -348,6 +367,7 @@ body{{
 .group-card{{
   margin-bottom:14px; background:#16213e; border-radius:8px;
   border:1px solid #2a2a4a; overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
 }}
 .group-header{{
   padding:12px 16px; display:flex; align-items:center; gap:12px;
@@ -371,8 +391,8 @@ body{{
 .stats-bar .s{{ white-space:nowrap; }}
 .stats-bar .s.ok{{ color:#4caf50; }}
 .stats-bar .s.no{{ color:#f44336; }}
-.progress-bar{{ width:80px; height:5px; background:#333; border-radius:3px; overflow:hidden; }}
-.progress-fill{{ height:100%; background:#4caf50; border-radius:3px; }}
+.progress-bar{{ width:80px; height:6px; background:#333; border-radius:3px; overflow:hidden; }}
+.progress-fill{{ height:100%; background:linear-gradient(90deg,#2e7d32,#66bb6a); border-radius:3px; }}
 .group-toggle{{ font-size:12px; color:#888; min-width:14px; text-align:center; }}
 
 .ep-table{{ display:none; width:100%; border-collapse:collapse; }}
@@ -382,12 +402,14 @@ body{{
   border-bottom:1px solid #333; background:#0f1a30;
 }}
 .ep-table td{{ padding:5px 12px; font-size:13px; border-bottom:1px solid #1e1e3e; }}
-.ep-table tr.ep-row{{ cursor:pointer; transition:background .1s; }}
-.ep-table tr.ep-row:hover{{ background:#1a3a5c; }}
+.ep-table tr.ep-row{{ cursor:pointer; transition:background .2s,border-color .2s; border-left:3px solid transparent; }}
+.ep-table tr.ep-row:hover{{ background:#1a3a5c; border-left-color:#64b5f6; }}
+.ep-table tr.ep-row.last-viewed{{ background:#2a3a1a; border-left-color:#ffa726; }}
+.ep-table tr.ep-row.last-viewed:hover{{ background:#35451f; border-left-color:#ffa726; }}
 
 .badge{{
-  display:inline-block; padding:2px 8px; border-radius:10px;
-  font-size:11px; font-weight:600;
+  display:inline-block; padding:3px 10px; border-radius:10px;
+  font-size:11px; font-weight:600; text-shadow:0 1px 2px rgba(0,0,0,.3);
 }}
 .badge.success{{ background:#1b5e20; color:#a5d6a7; }}
 .badge.fail{{ background:#b71c1c; color:#ef9a9a; }}
@@ -430,26 +452,31 @@ body{{
 }}
 .step-dot:hover{{ background:#1a3a5c; border-color:#64b5f6; }}
 .step-dot.active{{ background:#1a3a5c; border-color:#64b5f6; color:#fff; }}
+.step-dot.reward{{ border-color:#4caf50; background:rgba(76,175,80,.15); }}
+.step-dot.reward.active{{ border-color:#66bb6a; background:#1a3a5c; }}
 
-.steps-area{{ padding:0 16px 80px; max-width:1200px; margin:0 auto; }}
+.steps-area{{ padding:0 16px 80px; margin:0 auto; }}
 
 .step-card{{
-  margin:2px 0 40px; background:#16213e; border-radius:6px;
+  margin:2px 0 24px; background:#16213e; border-radius:6px;
   overflow:hidden; border:1px solid #2a2a4a; scroll-margin-top:62px;
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
 }}
 .step-info{{
   padding:3px 12px; font-size:12px; color:#aaa;
   display:flex; gap:10px; align-items:center; background:#0f1a30;
 }}
 .step-info .sn{{ font-weight:700; color:#64b5f6; min-width:44px; }}
-.step-info .act{{ color:#e0e0e0; font-family:monospace; font-size:11px; }}
+.step-info .act{{ color:#e0e0e0; font-family:monospace; font-size:12px; }}
+.step-info .act .kw{{ color:#64b5f6; }}
 .step-thought{{
-  padding:1px 12px 2px; font-size:11px; color:#777;
-  background:#0f1a30; border-top:1px solid #1a2a40; font-style:italic;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  padding:2px 12px 3px; font-size:12px; color:#999; line-height:1.4;
+  background:#0f1a30; border-top:1px solid #1a2a40;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  overflow:hidden;
 }}
 .step-card img{{
-  width:100%; display:block; cursor:pointer;
+  width:100%; max-height:92vh; display:block; cursor:pointer;
   object-fit:contain; background:#0a0a1a;
 }}
 img.zoomed{{
@@ -458,12 +485,21 @@ img.zoomed{{
   cursor:zoom-out;
 }}
 .no-img{{ padding:40px; color:#555; text-align:center; }}
+.kb-hints{{ text-align:center; padding:16px 0 8px; font-size:12px; color:#555; }}
+.intent-has-img{{ cursor:help; border-bottom:1px dashed #555; }}
+#intent-tooltip{{
+  display:none; position:fixed; z-index:500; padding:4px;
+  background:#0f1a30; border:1px solid #2a2a4a; border-radius:6px;
+  box-shadow:0 4px 16px rgba(0,0,0,.6); pointer-events:none;
+}}
+#intent-tooltip img{{ max-width:400px; max-height:320px; border-radius:4px; display:block; }}
 </style>
 </head>
 <body>
 
 <div id="home-view"></div>
 <div id="episode-view"></div>
+<div id="intent-tooltip"><img></div>
 
 <script type="application/json" id="gallery-data">
 {data_json}
@@ -487,6 +523,12 @@ function ep(k){{ var l=IDX[k]; return l?GROUPS[l[0]].episodes[l[1]]:null; }}
 function oi(k){{ return ORDER.indexOf(k); }}
 function esc(s){{ return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''; }}
 function escA(s){{ return s?s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'):''; }}
+function hlAct(s){{
+  if(!s) return '';
+  var sp=s.indexOf(' ');
+  if(sp<0) return '<span class="kw">'+esc(s)+'</span>';
+  return '<span class="kw">'+esc(s.substring(0,sp))+'</span> '+esc(s.substring(sp+1));
+}}
 
 var $h=document.getElementById('home-view');
 var $e=document.getElementById('episode-view');
@@ -499,7 +541,8 @@ function renderHome(){{
   GROUPS.forEach(function(g,gi){{
     var sr=(g.stats.success_rate*100).toFixed(1);
     var sc='site-'+g.site;
-    var ex=S.eg[gi];
+    var lgi=S.lastEp&&IDX[S.lastEp]?IDX[S.lastEp][0]:-1;
+    var ex=S.eg[gi]||(gi===lgi);
     h+='<div class="group-card">'
       +'<div class="group-header" data-gi="'+gi+'">'
       +'<span class="site-badge '+sc+'">'+esc(g.site)+'</span>'
@@ -515,19 +558,24 @@ function renderHome(){{
       +'<span class="group-toggle">'+(ex?'&#9660;':'&#9654;')+'</span>'
       +'</div>';
     h+='<table class="ep-table'+(ex?' expanded':'')+'" data-gi="'+gi+'">'
-      +'<thead><tr><th>Task</th><th>Status</th><th>Steps</th><th>Score</th></tr></thead><tbody>';
+      +'<thead><tr><th style="width:130px">Task</th><th>Intent</th><th style="width:70px">Status</th><th style="width:50px">Steps</th><th style="width:50px">Score</th></tr></thead><tbody>';
     g.episodes.forEach(function(e){{
       var c=e.success===true?'success':e.success===false?'fail':'unknown';
       var sl=e.success===true?'PASS':e.success===false?'FAIL':'&mdash;';
       var sc2=e.score!=null?e.score.toFixed(2):'&mdash;';
-      h+='<tr class="ep-row" data-key="'+escA(e.key)+'">'
+      var it=e.intent||'';
+      var it60=it.length>60?it.substring(0,57)+'...':it;
+      var lv=S.lastEp===e.key?' last-viewed':'';
+      h+='<tr class="ep-row'+lv+'" data-key="'+escA(e.key)+'">'
         +'<td>'+esc(e.label)+'</td>'
+        +'<td style="color:#bbb;font-size:12px" title="'+escA(it)+'">'+(e.intent_image?'<span class="intent-has-img" data-img="'+escA(e.intent_image)+'">'+esc(it60)+'</span>':esc(it60))+'</td>'
         +'<td><span class="badge '+c+'">'+sl+'</span></td>'
         +'<td>'+e.total_steps+'</td>'
         +'<td>'+sc2+'</td></tr>';
     }});
     h+='</tbody></table></div>';
   }});
+  h+='<div class="kb-hints">&#8592; &#8594; switch episode &middot; &#8593; &#8595; switch step &middot; Esc back &middot; click screenshot to zoom</div>';
   $h.innerHTML=h;
 
   /* bind group toggles */
@@ -551,6 +599,7 @@ function renderHome(){{
 
 /* ======== Episode View ======== */
 function renderEp(k){{
+  $tt.style.display='none';
   var e=ep(k); if(!e) return;
   var o=oi(k), hp=o>0, hn=o<ORDER.length-1;
   var c=e.success===true?'success':e.success===false?'fail':'unknown';
@@ -560,7 +609,10 @@ function renderEp(k){{
     +'<span class="ep-title">'+esc(e.label)+'</span>'
     +'<span class="badge '+c+'">'+sl+'</span>';
   if(e.score!=null) h+='<span style="color:#888;font-size:12px">score='+e.score.toFixed(2)+'</span>';
-  if(e.intent) h+='<span style="color:#aaa;font-size:12px;max-width:500px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escA(e.intent)+'">'+esc(e.intent)+'</span>';
+  if(e.intent){{
+    var ic=e.intent_image?' intent-has-img':'';
+    h+='<span class="'+ic+'" style="color:#e0e0e0;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escA(e.intent)+'"'+(e.intent_image?' data-img="'+escA(e.intent_image)+'"':'')+'>'+esc(e.intent)+'</span>';
+  }}
   h+='<span class="ep-spacer"></span>'
     +'<button class="nav-btn" id="enp"'+(hp?'':' disabled')+'>&#8592; Prev</button>'
     +'<span style="color:#666;font-size:12px">'+(o+1)+'/'+ORDER.length+'</span>'
@@ -573,22 +625,15 @@ function renderEp(k){{
   S.step=si;
   h+='<div class="step-nav">';
   e.steps.forEach(function(s,i){{
-    h+='<div class="step-dot'+(i===si?' active':'')+'" data-si="'+i+'">'+i+'</div>';
+    var dc='step-dot'+(i===si?' active':'')+(s.reward!=null&&s.reward>0?' reward':'');
+    h+='<div class="'+dc+'" data-si="'+i+'">'+i+'</div>';
   }});
   h+='</div>';
 
   /* step cards */
   h+='<div class="steps-area">';
   e.steps.forEach(function(s,i){{
-    h+='<div class="step-card" id="sc'+i+'">'
-      +'<div class="step-info">'
-      +'<span class="sn">Step '+s.step_idx+'</span>'
-      +'<span class="act">'+esc(s.action_summary)+'</span>';
-    if(s.reward!=null)
-      h+='<span style="margin-left:auto;color:'+(s.reward>0?'#4caf50':'#888')+';font-size:12px">r='+s.reward+'</span>';
-    h+='</div>';
-    if(s.thought)
-      h+='<div class="step-thought">'+esc(s.thought)+'</div>';
+    h+='<div class="step-card" id="sc'+i+'">';
     if(s.img_path)
       h+='<img src="'+escA(s.img_path)+'">';
     else
@@ -611,11 +656,15 @@ function renderEp(k){{
 function goHome(){{
   $e.style.display='none'; $h.style.display='block';
   S.view='home'; S.epKey=null; save();
+  /* update last-viewed highlight without full re-render */
+  $h.querySelectorAll('.ep-row').forEach(function(r){{
+    r.classList.toggle('last-viewed',r.dataset.key===S.lastEp);
+  }});
   window.scrollTo(0,S.scrollY||0);
 }}
 function goEp(k,si){{
   if(!ep(k)) return;
-  S.scrollY=window.scrollY;
+  S.scrollY=window.scrollY; S.lastEp=k;
   S.view='episode'; S.epKey=k; S.step=si||0; save();
   try{{
     renderEp(k);
@@ -654,6 +703,28 @@ function scrollStep(i){{
     d.classList.toggle('active',parseInt(d.dataset.si)===i);
   }});
 }}
+
+/* ---- intent image tooltip ---- */
+var $tt=document.getElementById('intent-tooltip');
+var $ttImg=$tt.querySelector('img');
+document.addEventListener('mouseover',function(ev){{
+  var el=ev.target.closest('.intent-has-img');
+  if(!el) return;
+  var src=el.dataset.img;
+  if(!src) return;
+  $ttImg.src=src;
+  $tt.style.display='block';
+  var r=el.getBoundingClientRect();
+  var x=r.left, y=r.bottom+6;
+  if(y+330>window.innerHeight) y=r.top-330;
+  if(x+410>window.innerWidth) x=window.innerWidth-420;
+  if(x<0) x=4;
+  $tt.style.left=x+'px'; $tt.style.top=y+'px';
+}});
+document.addEventListener('mouseout',function(ev){{
+  var el=ev.target.closest('.intent-has-img');
+  if(el) $tt.style.display='none';
+}});
 
 /* ---- image zoom ---- */
 document.addEventListener('click',function(ev){{
@@ -704,8 +775,26 @@ window.addEventListener('scroll',function(){{
   }},150);
 }});
 
-/* ---- auto-refresh ---- */
-setInterval(function(){{ save(); location.reload(); }},60000);
+/* ---- auto-refresh (fetch new data without full reload to preserve JS state) ---- */
+setInterval(function(){{
+  fetch(location.pathname+'?_='+Date.now())
+    .then(function(r){{ return r.ok?r.text():null; }})
+    .then(function(html){{
+      if(!html) return;
+      var p=new DOMParser().parseFromString(html,'text/html');
+      var el=p.getElementById('gallery-data');
+      if(!el) return;
+      try{{
+        var nd=JSON.parse(el.textContent);
+        D=nd; GROUPS=D.groups; ORDER=D.episode_order; IDX=D.episode_index;
+        if(S.view==='home'){{ renderHome(); }}
+        else if(S.view==='episode'&&S.epKey&&ep(S.epKey)){{
+          var sy=window.scrollY; renderEp(S.epKey); window.scrollTo(0,sy);
+        }}
+        save();
+      }}catch(e){{}}
+    }}).catch(function(){{}});
+}},60000);
 
 /* ---- init ---- */
 load();

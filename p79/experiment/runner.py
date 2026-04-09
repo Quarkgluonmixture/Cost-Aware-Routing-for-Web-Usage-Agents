@@ -271,6 +271,14 @@ def _no_early_finish_control(
 
 
 class ExperimentRunner:
+    # Fatal environment errors that corrupt Playwright/asyncio state.
+    # When caught, re-raise immediately so the process can exit cleanly.
+    _FATAL_ENV_MARKERS = (
+        "Sync API inside the asyncio",
+        "asyncio loop",
+        "Event loop is closed",
+    )
+
     def __init__(self, cfg: Dict[str, Any]):
         self.cfg = cfg
         self.output_root = resolve_output_root(cfg)
@@ -451,15 +459,6 @@ class ExperimentRunner:
                 episode_summaries: List[Dict[str, Any]] = []
                 backend = self._get_backend(condition.backend_id)
 
-                # Markers for fatal environment errors that corrupt the Playwright/asyncio state.
-                # When caught, re-raise immediately so the process can exit cleanly and the
-                # queue watchdog can restart it with a fresh environment.
-                _FATAL_ENV_MARKERS = (
-                    "Sync API inside the asyncio",
-                    "asyncio loop",
-                    "Event loop is closed",
-                )
-
                 for task in self.tasks:
                     summary_file = condition_logger.summary_path(task.site, task.task_id)
                     if self.resume and summary_file.exists():
@@ -482,78 +481,32 @@ class ExperimentRunner:
                         except Exception:
                             pass  # Corrupted summary — fall through to re-run
 
-                    logger.info(
-                        "Running condition=%s seed=%d backend=%s site=%s task=%s",
-                        effective_cid,
-                        current_seed,
-                        condition.backend_id,
-                        task.site,
-                        task.task_id,
+                    summary = self._run_and_record_episode(
+                        condition, task, backend, condition_logger,
+                        condition_dir, effective_cid, current_seed,
                     )
-
-                    try:
-                        summary = self._run_episode(condition, task, backend, condition_logger, condition_dir)
-                    except Exception as exc:
-                        exc_str = str(exc)
-                        if any(marker in exc_str for marker in _FATAL_ENV_MARKERS):
-                            logger.error(
-                                "Fatal environment error at site=%s task=%s — "
-                                "stopping run to allow clean restart: %s",
-                                task.site,
-                                task.task_id,
-                                exc,
-                            )
-                            raise
-                        logger.warning(
-                            "Episode failed at condition=%s seed=%d site=%s task=%s: %s",
-                            effective_cid,
-                            current_seed,
-                            task.site,
-                            task.task_id,
-                            exc,
-                        )
-                        noise, noise_cat = detect_benchmark_noise(str(exc))
-                        summary = EpisodeSummaryV2(
-                            schema_version=SCHEMA_VERSION_V2,
-                            run_id=self.cfg["experiment"]["run_id"],
-                            condition_id=effective_cid,
-                            benchmark=task.benchmark,
-                            benchmark_site=task.site,
-                            task_id=task.task_id,
-                            seed=self.seed,
-                            success=False,
-                            score=0.0,
-                            steps=0,
-                            retries=0,
-                            no_op_rate=0.0,
-                            page_unchanged_rate=0.0,
-                            total_latency_ms=0.0,
-                            p95_step_latency_ms=0.0,
-                            total_tokens=0,
-                            total_model_cost_usd=0.0,
-                            total_cost_usd=0.0,
-                            total_router_overhead_cost_usd=0.0,
-                            total_router_overhead_ms=0.0,
-                            total_energy_kwh=None,
-                            total_co2e_kg=None,
-                            escalation_count=0,
-                            trigger_distribution={},
-                            benchmark_noise=noise,
-                            benchmark_noise_category=noise_cat,
-                            artifacts_dir=str(condition_dir),
-                            error=str(exc),
-                        ).as_dict()
-                        # Ensure error-path summaries have the same fields as normal ones
-                        summary["wasted_cost_usd"] = 0.0
-                        summary["wasted_energy_kwh"] = 0.0
-                        summary["component_breakdown"] = {
-                            "model_cost_usd": 0.0,
-                            "router_overhead_usd": 0.0,
-                            "total_energy_kwh": 0.0,
-                        }
-
-                    condition_logger.write_episode_summary(task.site, task.task_id, summary)
                     episode_summaries.append(summary)
+
+                # ── Retry pass: re-run tasks whose summaries were deleted ──
+                # (e.g. by watchdog auto-cleanup of benchmark noise errors)
+                retry_tasks = [
+                    t for t in self.tasks
+                    if not condition_logger.summary_path(t.site, t.task_id).exists()
+                ]
+                if retry_tasks:
+                    logger.info("Retry pass: %d tasks with missing summaries", len(retry_tasks))
+                    # Remove stale entries from episode_summaries to avoid duplicates
+                    retry_ids = {(t.site, t.task_id) for t in retry_tasks}
+                    episode_summaries = [
+                        s for s in episode_summaries
+                        if (s.get("benchmark_site"), s.get("task_id")) not in retry_ids
+                    ]
+                    for task in retry_tasks:
+                        summary = self._run_and_record_episode(
+                            condition, task, backend, condition_logger,
+                            condition_dir, effective_cid, current_seed,
+                        )
+                        episode_summaries.append(summary)
 
                 aggregate = aggregate_condition_metrics(episode_summaries)
                 aggregate.update(
@@ -663,6 +616,9 @@ class ExperimentRunner:
         # Cross-representation analysis: only when >=2 conditions have episodes
         self._run_cross_representation_analysis(condition_id)
 
+        # Confidence calibration analysis
+        self._run_confidence_calibration_analysis(condition_id)
+
     def _run_cross_representation_analysis(self, condition_id: str) -> None:
         """Run cross-representation analysis if any site has >=2 conditions with data."""
         import subprocess
@@ -713,6 +669,28 @@ class ExperimentRunner:
         except Exception as exc:
             logging.warning("[runner] Cross-representation analysis failed after %s: %s", condition_id, exc)
 
+    def _run_confidence_calibration_analysis(self, condition_id: str) -> None:
+        """Run confidence calibration analysis after a condition completes."""
+        import subprocess
+        import sys
+        script = Path(__file__).parents[2] / "scripts" / "analysis" / "analyze_confidence_calibration.py"
+        if not script.exists():
+            return
+        cmd = [sys.executable, str(script), "--run-dir", str(self.output_root)]
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            if result.returncode == 0:
+                logging.info("[runner] Confidence calibration analysis completed after %s", condition_id)
+            else:
+                logging.warning(
+                    "[runner] Confidence calibration analysis exited %d after %s: %s",
+                    result.returncode, condition_id, result.stderr[-500:] if result.stderr else "",
+                )
+        except subprocess.TimeoutExpired:
+            logging.warning("[runner] Confidence calibration analysis timed out after %s", condition_id)
+        except Exception as exc:
+            logging.warning("[runner] Confidence calibration analysis failed after %s: %s", condition_id, exc)
+
     def _clone_observation_for_mode(
         self,
         obs: P79Observation,
@@ -754,6 +732,82 @@ class ExperimentRunner:
             "trace": None,
             "som_image": None,
         }
+
+    def _run_and_record_episode(
+        self,
+        condition: ConditionSpec,
+        task: Any,
+        backend: Any,
+        condition_logger: LoggerV2,
+        condition_dir: Path,
+        effective_cid: str,
+        current_seed: int,
+    ) -> Dict[str, Any]:
+        """Run one episode with error handling and write summary. Returns summary dict.
+
+        Fatal env errors are re-raised; all other errors produce an error summary.
+        """
+        logger.info(
+            "Running condition=%s seed=%d backend=%s site=%s task=%s",
+            effective_cid, current_seed, condition.backend_id, task.site, task.task_id,
+        )
+        try:
+            summary = self._run_episode(condition, task, backend, condition_logger, condition_dir)
+        except Exception as exc:
+            exc_str = str(exc)
+            if any(marker in exc_str for marker in self._FATAL_ENV_MARKERS):
+                logger.error(
+                    "Fatal environment error at site=%s task=%s — "
+                    "stopping run to allow clean restart: %s",
+                    task.site, task.task_id, exc,
+                )
+                raise
+            logger.warning(
+                "Episode failed at condition=%s seed=%d site=%s task=%s: %s",
+                effective_cid, current_seed, task.site, task.task_id, exc,
+                exc_info=True,
+            )
+            noise, noise_cat = detect_benchmark_noise(str(exc))
+            summary = EpisodeSummaryV2(
+                schema_version=SCHEMA_VERSION_V2,
+                run_id=self.cfg["experiment"]["run_id"],
+                condition_id=effective_cid,
+                benchmark=task.benchmark,
+                benchmark_site=task.site,
+                task_id=task.task_id,
+                seed=self.seed,
+                success=False,
+                score=0.0,
+                steps=0,
+                retries=0,
+                no_op_rate=0.0,
+                page_unchanged_rate=0.0,
+                total_latency_ms=0.0,
+                p95_step_latency_ms=0.0,
+                total_tokens=0,
+                total_model_cost_usd=0.0,
+                total_cost_usd=0.0,
+                total_router_overhead_cost_usd=0.0,
+                total_router_overhead_ms=0.0,
+                total_energy_kwh=None,
+                total_co2e_kg=None,
+                escalation_count=0,
+                trigger_distribution={},
+                benchmark_noise=noise,
+                benchmark_noise_category=noise_cat,
+                artifacts_dir=str(condition_dir),
+                error=str(exc),
+            ).as_dict()
+            summary["wasted_cost_usd"] = 0.0
+            summary["wasted_energy_kwh"] = 0.0
+            summary["component_breakdown"] = {
+                "model_cost_usd": 0.0,
+                "router_overhead_usd": 0.0,
+                "total_energy_kwh": 0.0,
+            }
+
+        condition_logger.write_episode_summary(task.site, task.task_id, summary)
+        return summary
 
     def _run_episode(
         self,
