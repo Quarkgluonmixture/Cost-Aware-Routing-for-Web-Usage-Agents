@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# run_b0_api_baseline.sh — Run B0 strong upper bound using Qwen3-VL-Plus API
+# run_b0_api_baseline.sh — Run B0 strong upper bound using Qwen3-VL-235B via proxy API
 #
 # B0 purpose: confirm task solvability and establish performance ceiling.
 # Unlike B1 (local Qwen3-VL-4B), B0 uses the API model — no local GPU inference.
 #
 # API key source: .auth/qwen_api (single-line raw key)
-#   Expected format: one line containing the DashScope API key (sk-...)
-#   Export QWEN_API_KEY manually to override.
+#   Expected format: one line containing the proxy API key (rp_...)
+#   Export PROXY_API_KEY manually to override.
 #
 # Usage:
 #   bash scripts/dgx/run_b0_api_baseline.sh
@@ -18,27 +18,29 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # ---------- API key loading ----------
-# Load QWEN_API_KEY from .auth/qwen_api unless already set.
+# Load API key from .auth/qwen_api unless already set.
+# Used as PROXY_API_KEY for the custom proxy API (also kept as QWEN_API_KEY for compat).
 AUTH_FILE="${REPO_DIR}/.auth/qwen_api"
-if [[ -z "${QWEN_API_KEY:-}" ]]; then
+if [[ -z "${PROXY_API_KEY:-}" ]]; then
   if [[ -f "${AUTH_FILE}" ]]; then
-    raw_key="$(head -1 "${AUTH_FILE}" | tr -d '[:space:]')"
+    raw_key="$(grep -m1 '^rp_' "${AUTH_FILE}" | tr -d '[:space:]')"
     if [[ -n "${raw_key}" ]]; then
+      export PROXY_API_KEY="${raw_key}"
       export QWEN_API_KEY="${raw_key}"
       export DASHSCOPE_API_KEY="${raw_key}"
-      echo "[b0] Loaded QWEN_API_KEY from ${AUTH_FILE}" >&2
+      echo "[b0] Loaded PROXY_API_KEY from ${AUTH_FILE}" >&2
     else
       echo "[b0][error] ${AUTH_FILE} exists but is empty." >&2
       exit 1
     fi
   else
-    echo "[b0][error] ${AUTH_FILE} not found and QWEN_API_KEY not set." >&2
-    echo "[b0][error] Either create ${AUTH_FILE} with your DashScope key or:" >&2
-    echo "[b0][error]   export QWEN_API_KEY=sk-..." >&2
+    echo "[b0][error] ${AUTH_FILE} not found and PROXY_API_KEY not set." >&2
+    echo "[b0][error] Either create ${AUTH_FILE} with your API key (rp_...) or:" >&2
+    echo "[b0][error]   export PROXY_API_KEY=rp_..." >&2
     exit 1
   fi
 else
-  echo "[b0] QWEN_API_KEY already set in environment." >&2
+  echo "[b0] PROXY_API_KEY already set in environment." >&2
 fi
 
 # ---------- Config and output paths ----------
@@ -89,16 +91,73 @@ else
   exit 127
 fi
 
+# ---------- Watchdog settings ----------
+B0_WATCHDOG="${B0_WATCHDOG:-1}"
+NTFY_TOPIC="${NTFY_TOPIC:-p79-exp-dgx-spark}"
+WATCHDOG_POLL_SECS="${WATCHDOG_POLL_SECS:-30}"
+WATCHDOG_IDLE_ALERT_MINS="${WATCHDOG_IDLE_ALERT_MINS:-20}"
+WATCHDOG_GLM_CONFIG="${REPO_DIR}/.auth/glm"
+WATCHDOG_PID=""
+
 # ---------- Run ID ----------
 RUN_ID="${B0_RUN_ID:-B0_api_strong_$(date +%Y%m%d_%H%M%S)}"
+OUTPUT_DIR="${REPO_DIR}/results/visualwebarena/phase1/${RUN_ID}"
 
 echo "[b0] run_id:  ${RUN_ID}" >&2
 echo "[b0] config:  ${CONFIG_PATH}" >&2
 echo "[b0] log:     ${LOG_PATH}" >&2
-echo "[b0] model:   qwen3-vl-plus (via DashScope API)" >&2
+echo "[b0] model:   qwen3-vl-235b-a22b (via proxy API)" >&2
+echo "[b0] watchdog: ${B0_WATCHDOG}" >&2
 
 cd "${REPO_DIR}"
 
+# ---------- Cleanup handler ----------
+cleanup() {
+  if [[ -n "${WATCHDOG_PID}" ]] && kill -0 "${WATCHDOG_PID}" 2>/dev/null; then
+    echo "[b0] stopping watchdog pid=${WATCHDOG_PID}" >&2
+    kill "${WATCHDOG_PID}" 2>/dev/null || true
+    sleep 1
+    kill -9 "${WATCHDOG_PID}" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
+
+# ---------- Start watchdog (optional) ----------
+if [[ "${B0_WATCHDOG}" == "1" ]]; then
+  WATCHDOG_SCRIPT="${REPO_DIR}/scripts/experiment_watchdog.py"
+  if [[ -f "${WATCHDOG_SCRIPT}" ]]; then
+    mkdir -p "${OUTPUT_DIR}" "${LOG_DIR}"
+    WATCHDOG_LOG="${LOG_DIR}/experiment_watchdog_b0_${RUN_ID}.log"
+    WATCHDOG_STATE="${LOG_DIR}/experiment_watchdog_b0_${RUN_ID}.state.json"
+
+    watchdog_cmd=(
+      "${PYTHON_BIN}" -u "${WATCHDOG_SCRIPT}"
+      --run-dir "${OUTPUT_DIR}"
+      --poll-secs "${WATCHDOG_POLL_SECS}"
+      --idle-alert-mins "${WATCHDOG_IDLE_ALERT_MINS}"
+      --ntfy-topic "${NTFY_TOPIC}"
+      --state-file "${WATCHDOG_STATE}"
+    )
+    if [[ -f "${WATCHDOG_GLM_CONFIG}" ]]; then
+      watchdog_cmd+=(--glm-config "${WATCHDOG_GLM_CONFIG}")
+      watchdog_cmd+=(--digest-dir "${OUTPUT_DIR}/analysis/digest")
+    fi
+
+    nohup "${watchdog_cmd[@]}" > "${WATCHDOG_LOG}" 2>&1 < /dev/null &
+    WATCHDOG_PID=$!
+    sleep 1
+    if kill -0 "${WATCHDOG_PID}" 2>/dev/null; then
+      echo "[b0] watchdog started: pid=${WATCHDOG_PID} log=${WATCHDOG_LOG}" >&2
+    else
+      echo "[b0][warn] watchdog failed to start. log=${WATCHDOG_LOG}" >&2
+      WATCHDOG_PID=""
+    fi
+  else
+    echo "[b0][warn] watchdog script not found: ${WATCHDOG_SCRIPT}" >&2
+  fi
+fi
+
+# ---------- Run experiment ----------
 set +e
 "${PYTHON_BIN}" scripts/run_experiment.py \
   --config "${CONFIG_PATH}" \

@@ -1,39 +1,48 @@
+"""ProxyApiAgent — calls a custom proxy API (Anthropic Messages style)."""
+
 import logging
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
+import requests
 from PIL import Image
-from openai import OpenAI
 
 from p79.backends.action_utils import parse_action_text
 from p79.backends.image_utils import DEFAULT_MAX_IMAGE_PAYLOAD_BYTES, encode_image_data_url
 
 logger = logging.getLogger(__name__)
 
+# Default timeout for API requests (seconds).
+_DEFAULT_TIMEOUT = 120
 
-class QwenApiAgent:
+
+class ProxyApiAgent:
+    """Agent that talks to a custom proxy endpoint (Anthropic Messages API style).
+
+    Request:  POST endpoint  { model, messages, max_tokens, temperature, system }
+    Response: { content: [{type:"text", text:"..."}], model, usage, metadata }
+    Auth:     X-Api-Key header
+    """
+
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         model_cfg = config.get("model", {})
-        self.model_name = model_cfg.get("api_name", model_cfg.get("name", "qwen-vl-max"))
-        self.base_url = model_cfg.get("base_url") or os.getenv(
-            "QWEN_API_BASE_URL", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
-        )
-        self.api_key = os.getenv("QWEN_API_KEY") or os.getenv("DASHSCOPE_API_KEY")
+        self.model_name = model_cfg.get("api_name", "qwen.qwen3-vl-235b-a22b")
+        self.endpoint = model_cfg.get("base_url") or os.getenv("PROXY_API_ENDPOINT", "")
+        if not self.endpoint:
+            raise RuntimeError(
+                "Proxy API endpoint not set. "
+                "Set model.base_url in config or PROXY_API_ENDPOINT env var."
+            )
+
+        self.api_key = os.getenv("PROXY_API_KEY") or ""
         if not self.api_key:
-            raise RuntimeError("QWEN_API_KEY (or DASHSCOPE_API_KEY) is not set")
+            raise RuntimeError("PROXY_API_KEY environment variable is not set")
 
-        # enable_thinking: Qwen3 extended thinking via extra_body.
-        # NOTE: DashScope requires temperature=1.0 when enable_thinking=True.
-        # Confirm your model supports VL thinking before enabling.
-        self.enable_thinking: bool = bool(model_cfg.get("enable_thinking", False))
-
-        self.client = OpenAI(
-            api_key=self.api_key,
-            base_url=self.base_url,
-        )
-
+        self.timeout = model_cfg.get("timeout", _DEFAULT_TIMEOUT)
         self.system_prompt = self._get_system_prompt()
+
+    # ---- system prompt (identical to QwenApiAgent) ----
 
     def _get_system_prompt(self) -> str:
         return """You are a precise web navigation agent.
@@ -95,6 +104,8 @@ CRITICAL:
 - ALWAYS use element_id from the Accessibility Tree for click and type actions. Do NOT guess coordinates or type blindly.
 """
 
+    # ---- history formatting (identical to QwenApiAgent) ----
+
     @staticmethod
     def _format_history(history: List[Dict[str, Any]]) -> str:
         if not history:
@@ -127,7 +138,14 @@ CRITICAL:
             lines.append(f"  Step {rec.get('step_idx', '?')}: {atype}{detail} -> {result}{url_suffix}")
         return "Previous actions:\n" + "\n".join(lines) + "\n"
 
-    def step(self, instruction: str, obs: Any, history: Optional[List[Dict[str, Any]]] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    # ---- main step ----
+
+    def step(
+        self,
+        instruction: str,
+        obs: Any,
+        history: Optional[List[Dict[str, Any]]] = None,
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         image = obs.image
         obs_text = ""
         if hasattr(obs, "text") and obs.text:
@@ -137,57 +155,87 @@ CRITICAL:
                 obs_text = obs_text[:max_chars] + "\n[TRUNCATED]"
 
         history_text = self._format_history(history or [])
-        content = [
+
+        # Build user message content (Anthropic Messages style).
+        user_content: List[Dict[str, Any]] = [
             {
                 "type": "text",
                 "text": (
-                    f"Task: {instruction}\nSystem: {self.system_prompt}\n"
+                    f"Task: {instruction}\n"
                     f"{history_text}"
                     f"Accessibility Tree:\n{obs_text}"
                 ),
             }
         ]
+
         image_payload = None
         if image is not None:
-            max_size = self.config.get("agent", {}).get("image_max_size", 1024)
-            if max(image.size) > max_size:
-                ratio = max_size / max(image.size)
-                new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
-                image = image.resize(new_size, Image.Resampling.LANCZOS)
-            image_payload = self._image_to_data_url(image)
-            content.append(
-                {
-                    "type": "image_url",
-                    "image_url": {"url": image_payload["data_url"]},
-                }
-            )
+            try:
+                max_size = self.config.get("agent", {}).get("image_max_size", 1024)
+                if max(image.size) > max_size:
+                    ratio = max_size / max(image.size)
+                    new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
+                    image = image.resize(new_size, Image.Resampling.LANCZOS)
+                image_payload = self._image_to_data_url(image)
+                # Anthropic style: {type:"image", source:{type:"base64", media_type, data}}
+                data_url: str = image_payload["data_url"]
+                # Strip "data:image/jpeg;base64," prefix to get raw base64
+                raw_b64 = data_url.split(",", 1)[1] if "," in data_url else data_url
+                user_content.append(
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/jpeg",
+                            "data": raw_b64,
+                        },
+                    }
+                )
+            except Exception:
+                logger.warning("Failed to encode image; continuing without image.", exc_info=True)
+                image_payload = None
 
-        messages = [{"role": "user", "content": content}]
+        messages = [{"role": "user", "content": user_content}]
 
         gen_cfg = self.config.get("model", {})
-        temperature = gen_cfg.get("temperature", 0.1)
-        if self.enable_thinking and temperature != 1.0:
-            logger.warning(
-                "enable_thinking requires temperature=1.0 (DashScope); "
-                "got %.2f — overriding to 1.0.", temperature
-            )
-            temperature = 1.0
-        extra_body = {"enable_thinking": True} if self.enable_thinking else None
-        response = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=messages,
-            temperature=temperature,
-            top_p=gen_cfg.get("top_p", 0.9),
-            max_tokens=gen_cfg.get("max_new_tokens", 512),
-            extra_body=extra_body,
-        )
+        payload = {
+            "model": self.model_name,
+            "messages": messages,
+            "max_tokens": gen_cfg.get("max_new_tokens", 512),
+            "temperature": gen_cfg.get("temperature", 0.1),
+            "system": self.system_prompt,
+        }
 
-        msg = response.choices[0].message
-        output_text = msg.content or ""
-        # Capture thinking/reasoning content if present (Qwen3 thinking mode)
-        reasoning_content = getattr(msg, "reasoning_content", None) or ""
+        headers = {
+            "X-Api-Key": self.api_key,
+            "Content-Type": "application/json",
+        }
+
+        resp = requests.post(
+            self.endpoint,
+            json=payload,
+            headers=headers,
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        resp_json = resp.json()
+
+        # Parse response.  content may be a plain string or a list of blocks.
+        raw_content = resp_json.get("content", "")
+        if isinstance(raw_content, str):
+            output_text = raw_content
+        elif isinstance(raw_content, list):
+            output_text = ""
+            for block in raw_content:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    output_text = block.get("text", "")
+                    break
+        else:
+            output_text = str(raw_content)
+
         action, valid, fail_reason = parse_action_text(output_text)
 
+        # Auto-append newline for search queries (same as QwenApiAgent).
         if action.get("action_type") == "type":
             text = action.get("text", "")
             thought = action.get("thought", "").lower()
@@ -195,29 +243,29 @@ CRITICAL:
                 action["text"] = text + "\n"
                 logger.info("Auto-appended newline to search query.")
 
-        usage = getattr(response, "usage", None)
-        # Extract thinking/reasoning token count if available (separate from output tokens)
-        thinking_tokens = None
-        if usage and hasattr(usage, "completion_tokens_details"):
-            details = usage.completion_tokens_details
-            if details and hasattr(details, "reasoning_tokens"):
-                thinking_tokens = getattr(details, "reasoning_tokens", None)
+        usage = resp_json.get("usage", {})
+        metadata = resp_json.get("metadata", {})
         meta = {
             "raw_output": output_text,
             "valid": valid,
             "failure_reason": fail_reason,
-            "input_tokens": getattr(usage, "prompt_tokens", None),
-            "output_tokens": getattr(usage, "completion_tokens", None),
-            "thinking_tokens": thinking_tokens,
+            "input_tokens": usage.get("inputTokens"),
+            "output_tokens": usage.get("outputTokens"),
+            "thinking_tokens": None,
             "image_payload_bytes": image_payload.get("payload_bytes") if image_payload else None,
             "image_quality": image_payload.get("quality") if image_payload else None,
             "image_compressed": image_payload.get("compressed") if image_payload else None,
-            "reasoning_content": reasoning_content if reasoning_content else None,
-            "enable_thinking": self.enable_thinking,
+            "reasoning_content": None,
+            "enable_thinking": False,
+            # Proxy-specific fields for analysis.
+            "proxy_cost": usage.get("cost"),
+            "proxy_remaining_quota": metadata.get("remaining_quota"),
         }
 
         return action, meta
 
     def _image_to_data_url(self, image: Image.Image) -> Dict[str, Any]:
-        max_payload = self.config.get("agent", {}).get("max_image_payload_bytes", DEFAULT_MAX_IMAGE_PAYLOAD_BYTES)
+        max_payload = self.config.get("agent", {}).get(
+            "max_image_payload_bytes", DEFAULT_MAX_IMAGE_PAYLOAD_BYTES
+        )
         return encode_image_data_url(image=image, max_payload_bytes=int(max_payload))

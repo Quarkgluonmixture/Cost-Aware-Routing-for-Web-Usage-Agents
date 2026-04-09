@@ -33,6 +33,9 @@ _LOGIN_ABSENT_RE = re.compile(r"link\s+'(?:Login|Sign In)'", re.IGNORECASE)
 _LOGIN_PRESENT_RE = re.compile(r"link\s+'(?:Logout|My account|Sign Out|Log Out)'", re.IGNORECASE)
 _SESSION_ALERT_THRESHOLD = 3  # consecutive tasks w/o login before alerting
 
+# Directories inside run_dir that are NOT condition directories
+_EXCLUDED_DIRS = {"analysis", ".git", "gallery_data", "task_configs"}
+
 
 @dataclass
 class EpisodeRecord:
@@ -154,7 +157,7 @@ def _scan_summaries(run_dir: Path, condition_filter: Optional[str]) -> List[Path
     if condition_filter:
         roots = [run_dir / condition_filter]
     else:
-        roots = [p for p in run_dir.iterdir() if p.is_dir() and p.name.startswith("phase")]
+        roots = [p for p in run_dir.iterdir() if p.is_dir() and p.name not in _EXCLUDED_DIRS]
     files: List[Path] = []
     for root in roots:
         ep_dir = root / "episodes"
@@ -314,7 +317,7 @@ def _check_condition_completions(
     if condition_filter:
         cond_dirs = [run_dir / condition_filter]
     else:
-        cond_dirs = [p for p in run_dir.iterdir() if p.is_dir() and p.name.startswith("phase")]
+        cond_dirs = [p for p in run_dir.iterdir() if p.is_dir() and p.name not in _EXCLUDED_DIRS]
 
     for cond_dir in cond_dirs:
         cid = cond_dir.name
@@ -366,6 +369,32 @@ def _annotate_screenshots(run_dir: Path, condition: Optional[str] = None) -> str
         return "timed out"
     except Exception as exc:
         print(f"[watchdog][ANNOTATE] error: {exc}")
+        return f"error: {exc}"
+
+
+def _run_post_condition_analysis(run_dir: Path) -> str:
+    """Run analyze_experiment.py after a condition completes (best-effort). Returns status."""
+    scripts_dir = Path(__file__).resolve().parent
+    analyze_script = scripts_dir / "analysis" / "analyze_experiment.py"
+    if not analyze_script.exists():
+        return "skipped (script not found)"
+    try:
+        r = subprocess.run(
+            [sys.executable, str(analyze_script), "--run_dir", str(run_dir)],
+            capture_output=True, text=True, timeout=300,
+        )
+        if r.returncode == 0:
+            print(f"[watchdog][AUTO-ANALYSIS] analyze_experiment completed")
+            return "completed"
+        else:
+            msg = f"failed: {r.stderr[-200:]}"
+            print(f"[watchdog][AUTO-ANALYSIS] {msg}")
+            return msg
+    except subprocess.TimeoutExpired:
+        print("[watchdog][AUTO-ANALYSIS] timed out (300s)")
+        return "timed out"
+    except Exception as exc:
+        print(f"[watchdog][AUTO-ANALYSIS] error: {exc}")
         return f"error: {exc}"
 
 
@@ -421,7 +450,7 @@ def _save_state(
 # Auto-digest: update reason CSV + run batch digest
 # ---------------------------------------------------------------------------
 
-def _run_auto_digest(run_dir: Path, glm_config: Path, digest_dir: Path) -> Optional[str]:
+def _run_auto_digest(run_dir: Path, glm_config: Path, digest_dir: Path, site: Optional[str] = None) -> Optional[str]:
     """Run reason diagnostics → batch digest pipeline. Returns status string or None on skip."""
     scripts_dir = Path(__file__).parent
     python = sys.executable
@@ -447,14 +476,16 @@ def _run_auto_digest(run_dir: Path, glm_config: Path, digest_dir: Path) -> Optio
     if not digest_script.exists() or not glm_config.exists():
         return None
     try:
-        r = subprocess.run(
-            [python, str(digest_script),
+        cmd = [python, str(digest_script),
              "--run-dir", str(run_dir),
              "--output", str(digest_dir),
              "--glm-config", str(glm_config),
              "--max-images", "3",
-             "--delay-secs", "3.0",
-             "--site", "classifieds"],
+             "--delay-secs", "3.0"]
+        if site:
+            cmd += ["--site", site]
+        r = subprocess.run(
+            cmd,
             capture_output=True, text=True, timeout=600,
         )
         # Extract last few lines for status
@@ -720,7 +751,10 @@ def main() -> int:
             digest_completions_info: List[str] = []
             if args.glm_config:
                 digest_dir = args.digest_dir or (run_dir / "analysis" / "digest")
-                digest_status = _run_auto_digest(run_dir, args.glm_config, digest_dir)
+                # Infer site: pass --site only when all episodes belong to a single site
+                sites = {r.site for r in all_records}
+                digest_site = sites.pop() if len(sites) == 1 else None
+                digest_status = _run_auto_digest(run_dir, args.glm_config, digest_dir, site=digest_site)
 
                 # Check if digest is newly complete for any mode
                 newly_done = _check_digest_completions(
@@ -825,6 +859,19 @@ def main() -> int:
             print(f"[watchdog][COMPLETE] {body}")
             if args.ntfy_topic:
                 _post_ntfy(args.ntfy_topic, f"P79 COMPLETE [{mode}/{cid}]", body, priority="high")
+
+            # Auto-run analysis pipeline after condition completion
+            analysis_status = _run_post_condition_analysis(run_dir)
+            annotate_status = _annotate_screenshots(run_dir, cid)
+            gallery_status = _regenerate_gallery(run_dir, cid)
+            if args.ntfy_topic:
+                _post_ntfy(
+                    args.ntfy_topic,
+                    f"P79 POST-ANALYSIS [{cid}]",
+                    f"run_id={run_id}\nanalysis: {analysis_status}\n"
+                    f"annotate: {annotate_status}\ngallery: {gallery_status}",
+                )
+
             _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys)
 
         if args.once:

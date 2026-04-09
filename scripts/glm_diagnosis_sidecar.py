@@ -24,6 +24,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
 
+# Directories inside run_dir that are NOT condition directories
+_EXCLUDED_DIRS = {"analysis", ".git", "gallery_data", "task_configs"}
+
+
 def _read_json(path: Path) -> Dict[str, Any]:
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
@@ -149,7 +153,7 @@ def _iter_episode_summary_paths(run_dir: Path, condition: Optional[str]) -> List
     if condition:
         roots = [run_dir / condition]
     else:
-        roots = [p for p in run_dir.iterdir() if p.is_dir() and p.name.startswith("phase")]
+        roots = [p for p in run_dir.iterdir() if p.is_dir() and p.name not in _EXCLUDED_DIRS]
     for root in roots:
         ep_dir = root / "episodes"
         if not ep_dir.exists():
@@ -1024,10 +1028,10 @@ def _episode_count(run_dir: Path, condition: Optional[str]) -> int:
 
 
 def _episode_count_by_condition(run_dir: Path) -> Dict[str, int]:
-    """Count episodes per condition directory (phase*)."""
+    """Count episodes per condition directory."""
     counts: Dict[str, int] = {}
     for cond_dir in run_dir.iterdir():
-        if not cond_dir.is_dir() or not cond_dir.name.startswith("phase"):
+        if not cond_dir.is_dir() or cond_dir.name in _EXCLUDED_DIRS:
             continue
         ep_dir = cond_dir / "episodes"
         if not ep_dir.exists():

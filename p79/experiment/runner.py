@@ -1200,7 +1200,12 @@ class ExperimentRunner:
                     "env_step": env_step_ms,
                     "router_decision": float(overhead.get("router_decision_ms", 0.0)),
                 },
-                tokens={"input": input_tokens, "output": output_tokens, "total": token_total},
+                tokens={
+                    "input": input_tokens,
+                    "output": output_tokens,
+                    "total": token_total,
+                    "thinking": meta.get("thinking_tokens"),
+                },
                 cost_usd={
                     "input": token_cost["input"],
                     "output": token_cost["output"],

@@ -317,12 +317,22 @@ def _collect_episodes(
             task_info = intents.get(label, {})
             intent_text = task_info.get("intent", "") if isinstance(task_info, dict) else str(task_info)
             intent_img_abs = task_info.get("image", "") if isinstance(task_info, dict) else ""
-            # Convert intent image to relative/embedded path
+            # Convert intent image to relative path (or base64 if --embed)
             intent_img_src = ""
             if intent_img_abs:
-                # Always embed intent images as base64 — they're small reference
-                # images and relative paths break with HTTP servers.
-                intent_img_src = _img_to_data_uri(Path(intent_img_abs)) or ""
+                if embed:
+                    intent_img_src = _img_to_data_uri(Path(intent_img_abs)) or ""
+                else:
+                    # Use _vwa symlink so path stays inside HTTP server root
+                    vwa_root = _VWA_CONFIG_BASE.resolve().parent.parent
+                    img_abs = Path(intent_img_abs)
+                    try:
+                        rel_in_vwa = img_abs.resolve().relative_to(vwa_root.resolve())
+                        intent_img_src = f"_vwa/{rel_in_vwa}"
+                    except ValueError:
+                        intent_img_src = _img_to_relative(
+                            img_abs, gallery_path
+                        ) or ""
             episodes.append({
                 "key": ep_key,
                 "condition": cond_dir.name,
@@ -817,6 +827,20 @@ if(S.view==='episode'&&S.epKey&&ep(S.epKey)){{
 # Main entry
 # ---------------------------------------------------------------------------
 
+def _ensure_intent_images_symlink(run_dir: Path) -> None:
+    """Create a symlink inside run_dir so the HTTP server can reach intent images."""
+    src = Path(__file__).resolve().parent.parent / "external" / "visualwebarena"
+    link = run_dir / "_vwa"
+    if link.is_symlink():
+        if link.resolve() == src.resolve():
+            return
+        link.unlink()
+    elif link.exists():
+        return  # real dir/file — don't touch
+    if src.exists():
+        link.symlink_to(src)
+
+
 def generate_gallery(
     run_dir: Path,
     condition: Optional[str],
@@ -824,6 +848,8 @@ def generate_gallery(
     embed: bool,
 ) -> Path:
     gallery_path = run_dir / "gallery.html"
+    if not embed:
+        _ensure_intent_images_symlink(run_dir)
     episodes = _collect_episodes(run_dir, condition, task_id, gallery_path, embed)
     if not episodes:
         print("No episodes found.")

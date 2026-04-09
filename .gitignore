@@ -1,28 +1,43 @@
+# Python
 __pycache__/
 *.pyc
 *.egg-info/
 dist/
 build/
-logs/
-.env
+
+# Virtual environments
 .venv/
 venv/
+
+# IDE / OS
 .vscode/
-wandb/
-results_summary.csv
-*.png
 .DS_Store
-episode_*.jsonl
-visualization/
-results/
+
+# Testing
+.pytest_cache/
+
+# Secrets & local config
+.env
 .auth/
-.autostart/
+scripts/vwa_env_remote.sh
+
+# Experiment outputs
+results/
+logs/
+wandb/
+visualization/
+
+# Temp files
 temp_task_*.json
 temp_smoke_config.json
+episode_*.jsonl
+results_summary.csv
+
+# External / vendored code
 external_code/
-scripts/vwa_env_remote.sh
-.claude/
+
+# Local-only
+.autostart/
 .cache/
-.pytest_cache/
-external_code/
+.claude/
 Claude_code/

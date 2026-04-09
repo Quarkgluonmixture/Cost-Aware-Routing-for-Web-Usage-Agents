@@ -105,9 +105,9 @@ backends:
     dom_mode: "llm"
     mock_mode: false
   api_strong:
-    type: "api_qwen"
-    # Qwen3-VL-235B-A22B: $0.001/1K in, $0.005/1K out
+    type: "api_proxy"
     api_name: "qwen.qwen3-vl-235b-a22b"
+    base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
     temperature: 0.1
     top_p: 0.9
     max_new_tokens: 512

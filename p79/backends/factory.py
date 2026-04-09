@@ -37,6 +37,9 @@ def create_backend(backend_id: str, cfg: Dict[str, Any]):
         return LocalQwenBackend(backend_id, cfg)
     if backend_type == "api_qwen":
         return ApiQwenBackend(backend_id, cfg)
+    if backend_type == "api_proxy":
+        from p79.backends.api_proxy import ApiProxyBackend
+        return ApiProxyBackend(backend_id, cfg)
     if backend_type == "heuristic_dom":
         b = HeuristicDomBackend()
         b.backend_id = backend_id
