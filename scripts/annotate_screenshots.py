@@ -161,17 +161,28 @@ def _draw_scroll_arrow(
     dx = delta[0] if len(delta) > 0 else 0
     dy = delta[1] if len(delta) > 1 else 0
 
+    # Snap to dominant axis (ignore minor component noise)
+    if abs(dy) >= abs(dx):
+        dx = 0
+    else:
+        dy = 0
+
+    # Normalize to fixed arrow length
+    mag = math.hypot(dx, dy)
     arrow_len = 80
-    end_x = cx + int(dx * arrow_len)
-    end_y = cy + int(dy * arrow_len)
+    if mag > 0:
+        end_x = cx + int(dx / mag * arrow_len)
+        end_y = cy + int(dy / mag * arrow_len)
+    else:
+        end_x, end_y = cx, cy - arrow_len
 
     # Wide semi-transparent shaft
     draw.line([cx, cy, end_x, end_y], fill=color + (180,), width=6)
 
-    # Arrowhead
+    # Arrowhead (barbs point backward from tip)
     angle = math.atan2(end_y - cy, end_x - cx)
     head_len = 20
-    for offset in [2.5, -2.5]:
+    for offset in [0.4, -0.4]:
         wx = end_x - int(head_len * math.cos(angle + offset))
         wy = end_y - int(head_len * math.sin(angle + offset))
         draw.line([end_x, end_y, wx, wy], fill=color + (180,), width=6)
@@ -426,6 +437,7 @@ def annotate_episode(
     font_action: ImageFont.FreeTypeFont,
     font_thought: ImageFont.FreeTypeFont,
     dry_run: bool = False,
+    force: bool = False,
 ) -> int:
     try:
         from p79.experiment.io_utils import read_jsonl_dedup
@@ -480,8 +492,7 @@ def annotate_episode(
             continue
 
         # Skip if annotated version is newer than source screenshot
-        if output.exists() and output.stat().st_mtime >= screenshot.stat().st_mtime:
-            count += 1
+        if not force and output.exists() and output.stat().st_mtime >= screenshot.stat().st_mtime:
             continue
 
         try:
@@ -511,6 +522,7 @@ def main() -> None:
     parser.add_argument("--condition", default=None, help="Filter to condition_id")
     parser.add_argument("--task-id", default=None, type=int, help="Filter to task_id")
     parser.add_argument("--dry-run", action="store_true", help="List files without writing")
+    parser.add_argument("--force", action="store_true", help="Re-annotate even if already up-to-date")
     args = parser.parse_args()
 
     run_dir = args.run_dir.resolve()
@@ -531,7 +543,7 @@ def main() -> None:
     for i, log_path in enumerate(step_logs):
         rel = log_path.relative_to(run_dir)
         print(f"[{i+1}/{len(step_logs)}] {rel}")
-        count = annotate_episode(log_path, run_dir, font_action, font_thought, dry_run=args.dry_run)
+        count = annotate_episode(log_path, run_dir, font_action, font_thought, dry_run=args.dry_run, force=args.force)
         total += count
 
     verb = "would annotate" if args.dry_run else "annotated"

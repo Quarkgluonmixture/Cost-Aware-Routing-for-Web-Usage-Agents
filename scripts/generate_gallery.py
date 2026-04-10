@@ -652,10 +652,7 @@ function renderEp(k){{
 function goHome(){{
   $e.style.display='none'; $h.style.display='block';
   S.view='home'; S.epKey=null; save();
-  /* update last-viewed highlight without full re-render */
-  $h.querySelectorAll('.ep-row').forEach(function(r){{
-    r.classList.toggle('last-viewed',r.dataset.key===S.lastEp);
-  }});
+  renderHome();
   window.scrollTo(0,S.scrollY||0);
 }}
 function goEp(k,si){{
@@ -769,24 +766,33 @@ window.addEventListener('scroll',function(){{
 }});
 
 /* ---- auto-refresh (fetch new data without full reload to preserve JS state) ---- */
+var _refreshCount=0;
 setInterval(function(){{
+  _refreshCount++;
+  var rid=_refreshCount;
+  console.log('[gallery] auto-refresh #'+rid+' fetching...');
   fetch(location.pathname+'?_='+Date.now())
-    .then(function(r){{ return r.ok?r.text():null; }})
+    .then(function(r){{
+      if(!r.ok){{ console.warn('[gallery] #'+rid+' fetch status '+r.status); return null; }}
+      return r.text();
+    }})
     .then(function(html){{
-      if(!html) return;
+      if(!html){{ console.warn('[gallery] #'+rid+' empty response'); return; }}
       var p=new DOMParser().parseFromString(html,'text/html');
       var el=p.getElementById('gallery-data');
-      if(!el) return;
+      if(!el){{ console.warn('[gallery] #'+rid+' gallery-data element not found'); return; }}
       try{{
         var nd=JSON.parse(el.textContent);
+        var oldLen=ORDER.length, newLen=nd.episode_order.length;
         D=nd; GROUPS=D.groups; ORDER=D.episode_order; IDX=D.episode_index;
         if(S.view==='home'){{ renderHome(); }}
         else if(S.view==='episode'&&S.epKey&&ep(S.epKey)){{
           var sy=window.scrollY; renderEp(S.epKey); window.scrollTo(0,sy);
         }}
         save();
-      }}catch(e){{}}
-    }}).catch(function(){{}});
+        console.log('[gallery] #'+rid+' OK: '+oldLen+'→'+newLen+' episodes, gen='+D.generated_at);
+      }}catch(e){{ console.error('[gallery] #'+rid+' parse/render error:',e); }}
+    }}).catch(function(e){{ console.error('[gallery] #'+rid+' fetch error:',e); }});
 }},60000);
 
 /* ---- init ---- */

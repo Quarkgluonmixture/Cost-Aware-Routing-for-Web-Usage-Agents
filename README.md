@@ -131,6 +131,6 @@ results/<benchmark>/<phase>/<run_id>/
 | `DGX_SPARK_MACHINE_QUIRKS.md` | DGX 机器特化 |
 | `docs/reference/STEP_SCHEMA_V2_OPTIONAL_FIELDS.md` | Step schema 可选字段 |
 | `docs/reference/ANALYSIS_SCRIPTS.md` | 分析脚本详细说明 |
-| `docs/Analysis/` | B1 baseline 分析报告（`*_manual` 人工定性 / `*_digest` GLM 定量） |
+| `docs/analysis/<site>/` | B1 baseline 分析报告（按站点分目录，`*_manual` 人工定性 / `*_digest` GLM 定量） |
 | `docs/literature/` | 文献综述与 P79 映射 |
 | `docs/checkpoints/周报/` | 实验进展周报 |
