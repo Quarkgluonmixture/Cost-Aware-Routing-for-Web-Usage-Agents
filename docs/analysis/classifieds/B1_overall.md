@@ -114,7 +114,7 @@ VWA 对"不可行任务"（reference answer = "N/A"）的评测使用两级判�
 1. **Exact match**：agent 答案是否精确等于 "N/A"
 2. **`ua_match` fallback**：调用 GPT-4o-mini 判断 agent 的回答是否与 `string_note`（不可行原因）"语义一致，即使是隐式的"
 
-Classifieds 站有 **10 个 N/A reference task**（24, 135, 164, 167, 189, 191, 194, 195, 196, 220），DOM 模式下**全部 10 个被误判为 success=1.0**，SoM 模式下 0 个误判。
+Classifieds 站有 **10 个 N/A reference task**（24, 135, 164, 167, 189, 191, 194, 195, 196, 220），DOM 模式下**全部 10 个被误判为 success=1.0**。SoM 模式已完成的 N/A task（24, 189, 195, 196）**同样全部 score=1.0**——ua_match FP 与观测模式无关。
 
 ### 误判机制
 
@@ -149,12 +149,22 @@ reported unachievable reason: 2022 GMC Sierra 1500 AT4X Frederick, MD $70,826
 
 ### 模式对比
 
-| 模式 | N/A FP 数 | 原因 |
-|------|-----------|------|
-| DOM | 10/10 | 无图 → agent 无法判断不可行性 → 提交错误答案或不 finish |
-| SoM | 0/10 | 有图 → agent 行为不同 → 不触发 ua_match 误判 |
+| 模式 | N/A task 完成数 | 其中 FP | 原因 |
+|------|---------------|---------|------|
+| DOM | 10/10 | **10** | 提交错误答案（Type B）或耗尽步数空 answer（Type A）→ ua_match 误判 |
+| SoM | 4/10（进行中） | **4** | 同上——搜索/scroll 循环→早停或 max_steps→空 answer→ua_match 误判 |
 
-**结论**：这是 VWA benchmark 评测器的设计缺陷，非实验脚手架问题。DOM 模式受影响最严重，因为无图导致 agent 更容易产生与 `ua_match` prompt 意外匹配的输出。
+### 根因：Agent prompt 无 N/A 出口（脚手架缺陷）
+
+ua_match FP 与观测模式无关，根因是 **agent prompt 没有 N/A 提交指引**：
+
+- Rule 1: *"Do NOT answer or finish immediately. You MUST navigate to find the item."*
+- Rule 4: *"NEVER give up early. If you don't see the item, SEARCH for it."*
+- Finish action 定义中无 "如果任务不可行，answer 填 N/A" 的说明
+
+结果：agent 在 N/A task 上必然陷入搜索/scroll 循环直到被截断，runner 兜底填空 answer，ua_match 将空 answer 当作"隐式报告不可行"。DOM 和 SoM 走的是同一条路径，FP 机制完全一致。
+
+**结论**：N/A FP 是评测器缺陷（ua_match 过于宽松）叠加脚手架缺陷（prompt 无 N/A 出口）的共同产物，与观测模式无关。所有模式的 N/A task 成功均应视为假阳性。
 
 ---
 
@@ -186,3 +196,4 @@ Agent 的思维链中**完全没有关于参考图片内容的描述**（如物�
 
 *生成时间：2026-04-07*
 *更新时间：2026-04-10，追加 §8 任务参考图片未传递缺陷*
+*更新时间：2026-04-10，修正 §7：SoM 同样存在 ua_match FP（原 "SoM 0/10" 有误），补充 prompt 无 N/A 出口的脚手架缺陷分析*

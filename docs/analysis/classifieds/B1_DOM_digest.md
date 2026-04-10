@@ -1,7 +1,7 @@
-# B1 DOM Baseline 失败原因分析报告
+# B1 DOM Baseline 分析报告（Classifieds）
 
 > 数据来源：`digest_dom.jsonl`（213 条，仅含 DOM 模式数据）
-> 归因方法：GLM-5.1 自动归因 211 条 + 人工补全 2 条（task_184、task_187）
+> 归因方法：GLM-5.1 自动归因 211 条 + 人工补全 2 条（task_184、task_187）+ 人工定性分析交叉验证
 > 行为指标：`digest_enrich.py` 从原始 step 日志 / artifact 提取确定性指标
 > 置信度：96.7% high / 3.3% medium
 >
@@ -110,10 +110,38 @@ Agent 的 thought 中很少显式引用 element_id，大部分决策基于对 AX
 
 ### 4.3 非视觉脚手架问题（10 例）
 
-- 筛选器/UI 操作失败：价格筛选器输入框在 AXTree 中定位困难，下拉菜单层级复杂
-- 执行停滞：页面结构导致 agent 无法定位操作目标
-- 导航/搜索循环：AXTree 信息不足导致无效探索
-- 目标不可达：非视觉原因的结构性限制（如 JS 弹窗、动态内容加载）
+#### 4.3.1 动态 UI 后 element_id 失效（下拉/弹窗）
+
+每步刷新 accessibility tree 是正确机制，失败来自两个子类型：
+
+- **子类型 A（模型行为）**：点击下拉后，模型用上一步推断出的旧 element_id 操作，而非读取新 AT 里的真实 ID → 操作无效。
+- **子类型 B（AT 表达力）**：下拉展开后 listbox/option 层级复杂，模型无法在新 AT 中识别正确的可点击节点。
+
+*对应修复路径：Phase 3 M1（select fallback）；Phase 1 SoM on 可缓解（坐标交互不依赖 element_id）*
+
+#### 4.3.2 Gallery 网格布局行列不可区分
+
+Gallery 视图（`sShowAs=gallery`）在页面上渲染为多列网格（如 3×N），但 AXTree 将所有 item 序列化为线性列表，不包含行/列/grid 语义。当任务要求"第二行的商品"时，模型无法从 DOM 中区分"第二行"与"第二个 item"。
+
+- task_41：Boats gallery 每行 3 列，模型将第 2 个 item（wellcraft V20，实为第一行第二列）误认为"第二行"，提交错误答案（2500.00 $），score=0。
+
+*SoM/Vision 模式可通过截图感知视觉布局，理论上可避免此类错误。*
+
+#### 4.3.3 长表单编辑时滚动丢失上下文
+
+编辑页（如 item_edit）表单较长，agent 点击某个 textbox 聚焦后，下一步 DOM 视窗因页面滚动而变化，导致 agent 丢失刚才的编辑意图，转而去操作当前视窗中可见的其他字段。
+
+- task_76：任务要求修改 listing 价格为 $85.50。step 3 agent 正确识别到 description 中包含旧价格 "$250"，点击了 description textbox `[2396]` 准备编辑。但 click 只是聚焦，下一步 DOM 视窗滚动到 Price 字段区域，description 不再可见。agent 丢失编辑 description 的上下文，转而点击 Price 字段 `[2400]`，之后 step 5-7 陷入无效 scroll 循环。
+
+*SoM/Vision 模式可通过截图感知页面滚动位置，理论上可缓解上下文丢失问题。*
+
+#### 4.3.4 过滤器 UI 可操作性不足
+
+- 进入过滤器页后无法定位价格输入框
+- 只能输入价格下限或上限，无法进行组合搜索
+- 过滤条件 UI 在 DOM 中结构混乱，导致操作失败
+
+*与"模型不知道用过滤器"区分：这里是知道要用但做不到*
 
 ---
 
@@ -281,13 +309,47 @@ Avenir-Web (Li et al., 2025, arXiv:2602.02468) 的 **EIP（Experience-Informed P
 
 ---
 
-## 八、方法论说明
+## 八、Visual Task 假阳性分析
+
+### 8.1 问题发现
+
+Classifieds 站 234 个任务中，**162 个（69.2%）为视觉任务**——任务 intent 涉及颜色、图片匹配、外观属性等需要视觉信息的内容。DOM 模式下 agent 无法看到截图，但由于 `url_match` 评测类型（到达正确页面即得分），agent 可能通过盲猜导航"碰巧"到达正确页面。
+
+### 8.2 关键数据
+
+| 指标 | 数值 |
+|------|------|
+| 总 episodes | 234 |
+| 视觉任务 | 162（69.2%） |
+| 非视觉任务 | 72（30.8%） |
+| 原始成功数 | 21（8.97%） |
+| **Visual lucky hits** | **19** |
+| 真实成功数（非视觉） | 2 |
+| **调整后成功率** | **0.85%**（2/234） |
+| 非视觉任务成功率 | 2.78%（2/72） |
+
+### 8.3 典型案例
+
+- **task_93 / task_94 / task_98**：任务要求匹配参考图中的视觉属性（颜色、款式），DOM 不含图片语义信息。Agent 在搜索结果中随机点击某个商品，恰好 URL 匹配评测目标，`url_match` 判定通过。这不是 agent 理解了任务，而是盲猜命中。
+
+### 8.4 影响
+
+- DOM 模式 8.97% 的原始成功率中，**90.5%（19/21）是 visual lucky hits**
+- 去除假阳性后，DOM 模式的真实成功率仅 **0.85%**，远低于表面数据
+- 这进一步印证了 §4.1"视觉信息结构性不可达"的严重性：不仅视觉任务本身无法完成，连看似成功的结果也多为巧合
+- SoM 模式无 visual lucky hits（0 个），说明 SoM 模式的成功是基于真实视觉理解
+
+---
+
+## 九、方法论说明
 
 - **数据来源**：`B1_3mode_classifieds_20260404_141103/phase1_dom_router_0`，234 episodes
 - **Digest 文件**：`digest_dom.jsonl`（213 条，仅含 DOM 模式失败 episode，与 SoM/vision 模式物理隔离）
 - **归因管线**：
-  1. GLM-5.1 batch digest — 对每个失败 episode 的 step 日志 + AXTree 片段进行归因，输出 category / root_cause / is_scaffolding_issue
-  2. `digest_enrich.py` 后处理 — 从原始 step 日志和 artifact 提取确定性指标（AXTree 描述可达性、element_id 引用率、视觉关键词回声率等）
+  1. 人工定性分析 — 逐 episode 审查 step 日志，建立分类体系（脚手架/表征缺陷 vs 模型能力问题）
+  2. GLM-5.1 batch digest — 对每个失败 episode 的 step 日志 + AXTree 片段进行归因，输出 category / root_cause / is_scaffolding_issue
+  3. `digest_enrich.py` 后处理 — 从原始 step 日志和 artifact 提取确定性指标（AXTree 描述可达性、element_id 引用率、视觉关键词回声率等）
+  4. 交叉验证 — AI 归因与人工分类结论一致，确认自动化管线可靠性
 - **局限性**：
   - GLM 归因基于 step 日志文本摘要，未直接看到原始截图（DOM 模式无截图依赖，影响有限）
   - task_184、task_187 因 GLM API 错误未自动消化，已通过人工阅读 step 日志补全归因
@@ -295,11 +357,11 @@ Avenir-Web (Li et al., 2025, arXiv:2602.02468) 的 **EIP（Experience-Informed P
 
 ---
 
-## 九、基础设施噪声分析
+## 十、基础设施噪声分析
 
 > 以下问题在 2026-04-07 的 step 级数据审查中发现，属于实验运行环境引入的系统性噪声，已在下一次重跑前修复。
 
-### 9.1 busy:1 页面加载中间态消耗步数预算
+### 10.1 busy:1 页面加载中间态消耗步数预算
 
 **现象**：VWA 底层 `wait_for_load_state("networkidle", timeout=2000)` 对远程 Classifieds 站点不够长，导致截图/DOM 捕获到半加载页面（AXTree 中 RootWebArea 携带 `busy: 1` 标记）。
 
@@ -325,7 +387,7 @@ Avenir-Web (Li et al., 2025, arXiv:2602.02468) 的 **EIP（Experience-Informed P
 
 **修复**（已合入 runner.py）：将 `busy: 1` 检查提到 LLM 调用之前，命中时跳过推理并执行免费 wait（不消耗 step_idx）。下次重跑将消除此噪声。
 
-### 9.2 type 到 RootWebArea 导致页面全选
+### 10.2 type 到 RootWebArea 导致页面全选
 
 **现象**：Agent 错误地将 `type` action 发送到 `RootWebArea`（页面根节点）而非搜索输入框。VWA 的 type 执行流程为：点击元素中心 → `Meta+A` 全选 → Backspace → 输入文本。对 RootWebArea 执行 `Meta+A` 导致页面所有文本被选中（蓝色高亮），后续截图捕获到全选状态。
 
@@ -343,7 +405,7 @@ Avenir-Web (Li et al., 2025, arXiv:2602.02468) 的 **EIP（Experience-Informed P
 
 **归因**：模型能力问题——4B 模型混淆了搜索输入框和页面根节点的 element_id。所有实例均为搜索重试场景（agent 想重新搜索但选错了元素）。此问题不需要在 runner 层修复，属于 agent 决策质量的自然表现。
 
-### 9.3 JSONL 重启噪声
+### 10.3 JSONL 重启噪声
 
 **现象**：Watchdog 超时重启或 queue 重启导致 JSONL step 文件中出现重复数据（前一次运行的 stale lines + 新运行的 lines），`step_idx` 从 0 重新开始。
 
@@ -351,7 +413,7 @@ Avenir-Web (Li et al., 2025, arXiv:2602.02468) 的 **EIP（Experience-Informed P
 
 **修复**（已合入）：所有 JSONL 读取器（`analysis.py`、`analyze_reason_diagnostics.py`、`digest_enrich.py`、`analyze_confidence_calibration.py`）增加 dedup 逻辑——检测 `step_idx` 重置为 0，仅保留最后一次运行数据。Summary JSON 不受影响（覆盖写入）。
 
-### 9.4 Evaluator 错误
+### 10.4 Evaluator 错误
 
 3 个 SoM 条件 episode（task 24, 135, 160）因 OpenAI API key 缺失或 program_html 评测超时导致 `evaluator_error`。DOM 条件未受影响。
 
@@ -361,3 +423,4 @@ Avenir-Web (Li et al., 2025, arXiv:2602.02468) 的 **EIP（Experience-Informed P
 
 *生成时间：2026-04-07，基于 digest_dom.jsonl（GLM-5.1 batch digest + digest_enrich.py）*
 *更新时间：2026-04-09，基于重跑后数据（234 episodes，21 成功 / 213 失败）全面更新统计*
+*更新时间：2026-04-10，合并人工定性分析（原 B1_DOM_manual.md），补充 §4.3 非视觉脚手架案例 + §八 Visual FP 分析*

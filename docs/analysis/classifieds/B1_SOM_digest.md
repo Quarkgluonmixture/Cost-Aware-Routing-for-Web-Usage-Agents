@@ -1,7 +1,7 @@
-# B1 SoM Baseline 失败原因分析报告
+# B1 SoM Baseline 分析报告（Classifieds）
 
 > 数据来源：`digest_som.jsonl`（仅含 SoM 模式数据，持续增长中）
-> 归因方法：GLM-5.1 + SoM 专属归因规则（S1-S5）
+> 归因方法：GLM-5.1 + SoM 专属归因规则（S1-S5）+ 人工定性分析交叉验证
 > 本报告**仅分析 SoM 模式**，不引用 DOM / vision 模式数据。
 > 三模式共性缺陷见 `B1_overall.md`。
 >
@@ -208,7 +208,9 @@ DOM 几乎全败是因为这些任务需要**视觉判断**（"image is set on g
 
 详情页有明确的区分信号（面包屑导航 "Classifieds > Category > Item Name"、单个 item 大图+描述+联系方式、URL 含 `page=item&id=`），但模型不利用这些线索判断页面类型。
 
-**归因**：模型能力（页面类型感知缺失）。这是 SoM 特有的实际影响——DOM 模式在这类视觉 navigate-to 任务上因看不到图片而根本无法到达目标，所以不会暴露"到达但不 finish"的问题。SoM 3/13 的成功中，仅 1 个是主动 finish，另 2 个是**被困在正确页面上的运气结果**。
+**Paired case 佐证（task_183 vs 184）**：两个任务行为完全一致——都是 step 7-8 就找到正确 item，然后反复进出详情页 10+ 次直到 max_steps。唯一区别是截断时机：task_183 的 step 29 恰好停在详情页（`url_match` pass），task_184 的 step 29 恰好 back 回了列表页（fail）。同一行为模式，成败纯粹取决于奇偶步数。
+
+**归因**：模型能力（页面类型感知缺失）。这是 SoM 特有的实际影响——DOM 模式在这类视觉 navigate-to 任务上因看不到图片而根本无法到达目标，所以不会暴露"到达但不 finish"的问题。SoM 的 "lucky success" 中，成功与否取决于 max_steps 截断时恰好停在详情页还是列表页，不反映真实能力。
 
 ### 表单交互 action type 选择缺陷（模型能力）
 
@@ -225,7 +227,10 @@ Agent 最终只能靠手动翻页（第1→2→3页）逐页浏览，在 17 步�
 ## 三、方法论说明
 
 - **Digest 文件**：`digest_som.jsonl`（与 DOM/vision 物理隔离）
-- **SoM 专属归因规则**：S1(标注遮挡) / S2(颜色混淆) / S3(空间布局丢失) / S4(text_over_vision) / S5(ID幻觉)
+- **归因管线**：
+  1. 人工定性分析 — 逐 episode 审查，建立 SoM 表征缺陷分类体系
+  2. GLM-5.1 batch digest + SoM 专属归因规则：S1(标注遮挡) / S2(颜色混淆) / S3(空间布局丢失) / S4(text_over_vision) / S5(ID幻觉)
+  3. 交叉验证 — 人工分类与 GLM 归因结论一致
 - **额外输出字段**：`som_visual_used`、`som_mark_occlusion`、`som_failure_type`
 
 ---
@@ -296,7 +301,33 @@ SoM 条件中 1 个 task 受影响（DOM 为 12 个）。已通过 dedup 逻辑�
 - **task 24, 135**：OpenAI API key 缺失导致 `evaluator_error:401`。已通过 `reeval_phase1.py` 离线重评 → 仍为失败（agent 提交空答案，正确答案为 "N/A"）
 - **task 160**：`program_html` 评测超时。需 live browser，无法离线重评
 
-## 五、Benchmark 答案歧义（人工审核，无法脚本批处理）
+## 五、N/A 任务 ua_match 假阳性（SoM 模式）
+
+Classifieds 10 个 N/A reference task 中，SoM 已完成 9 个，**全部 score=1.0**（ua_match FP）。此前"SoM 0/10 误判"的结论有误。
+
+| Task | 步数 | 结束方式 | FP 类型 |
+|------|------|---------|---------|
+| 24 | 15 | page_unchanged_streak | Type A（空 answer） |
+| 135 | 24 | finish("Light Pink Depression Glass Candy Dish") | Type B（离开起始页） |
+| 164 | 8 | finish(item 5636 URL) | Type B（搜索 "yellow car"） |
+| 167 | 30 | max_steps | Type A |
+| 189 | 6 | page_unchanged_streak | Type A |
+| 191 | 5 | page_unchanged_streak | Type A |
+| 194 | 6 | finish("Mickey Mouse item not found") | 特殊（正确理解不可行性） |
+| 195 | 12 | page_unchanged_streak | Type A |
+| 196 | 30 | max_steps | Type A |
+
+**根因**：ua_match 评测器 prompt 缺陷（将 agent answer 包装为 "reported unachievable reason"，"even if implicitly" 过于宽松）叠加 agent prompt 无 N/A 出口。详见 `B1_overall.md` §7。
+
+**对 adjusted SR 的影响**：10 个 N/A task 全部是 visual task，已被 visual FP 过滤覆盖，不影响 adjusted 数字。
+
+### Task 192 评测严格性边界案例
+
+非 N/A task。Agent 正确看到两辆车（red + white），thought 中明确提到两种颜色，但 answer 只写 "red"（理解 "primary color" 为主色）。Reference 要求 must_include ["red", "white"]，score=0。视觉理解正确，answer 格式不完整。
+
+---
+
+## 六、Benchmark 答案歧义（人工审核，无法脚本批处理）
 
 以下 task 模型选择了合理的答案，但因 `url_match` 只认唯一 reference URL 而被判失败。此类歧义需要**人工查看 intent 图片 + 模型选择 + reference 答案**才能判定，无法通过脚本自动检测。
 
@@ -318,3 +349,5 @@ SoM 条件中 1 个 task 受影响（DOM 为 12 个）。已通过 dedup 逻辑�
 *更新时间：2026-04-10，追加 navigate-to 页面类型感知缺失（124/130/151/152/153）——到达目标详情页但不 finish*
 *更新时间：2026-04-10，追加视觉误匹配（141/142）——语义类别匹配替代图片级匹配*
 *更新时间：2026-04-10，追加 §5 Benchmark 答案歧义（166）——人工审核，无法脚本批处理*
+*更新时间：2026-04-10，合并人工定性分析（原 B1_SOM_manual.md），更新方法论溯源*
+*更新时间：2026-04-10，追加 §5 N/A ua_match FP 分析（SoM 9/9 全部 FP）+ task_192 评测边界案例*
