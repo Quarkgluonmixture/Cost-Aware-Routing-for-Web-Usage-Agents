@@ -1,6 +1,6 @@
 # P79: Cost-Aware Routing for Web Usage Agents
 
-研究 cost-aware routing 能否改善 web agent 的成功率-效率权衡。基于 VisualWebArena 四站点（shopping / reddit / wikipedia / classifieds），使用 Qwen3-VL-4B 作为 baseline 模型。
+研究 cost-aware routing 能否改善 web agent 的成功率-效率权衡。基于 VisualWebArena 三站点（shopping / reddit / classifieds），使用 Qwen3-VL-4B 作为 baseline 模型。
 
 对齐文档：`P79_experimental_scope_rq_variables.md`
 

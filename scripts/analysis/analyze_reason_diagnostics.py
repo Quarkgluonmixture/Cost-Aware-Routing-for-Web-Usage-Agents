@@ -479,6 +479,46 @@ def _page_unchanged_signals(steps: List[Dict[str, Any]]) -> Tuple[int, int, int]
     return stuck_first_step, max_len, max_pos
 
 
+def _url_revisit_metrics(steps: List[Dict[str, Any]]) -> Tuple[int, int, int]:
+    """Count URL revisits across an episode.
+
+    Returns:
+        url_revisit_count: total number of steps that revisit a previously-seen URL
+        url_unique_count: number of distinct URLs visited
+        url_revisit_max: max times any single URL was visited
+    """
+    from collections import Counter as _Counter
+    url_counts: _Counter = _Counter()
+    for s in steps:
+        digest = s.get("state_digest") or {}
+        url = str(s.get("obs_url", "") or digest.get("url_after", "") or "").strip()
+        if url:
+            url_counts[url] += 1
+    url_unique_count = len(url_counts)
+    url_revisit_count = sum(v - 1 for v in url_counts.values() if v > 1)
+    url_revisit_max = max(url_counts.values()) if url_counts else 0
+    return url_revisit_count, url_unique_count, url_revisit_max
+
+
+def _action_diversity_metrics(steps: List[Dict[str, Any]]) -> Tuple[float, int]:
+    """Measure action type diversity across an episode.
+
+    Returns:
+        action_diversity: ratio of unique action types to total steps (0-1)
+        action_unique_types: number of distinct action types used
+    """
+    action_types = []
+    for s in steps:
+        act = s.get("action") or {}
+        atype = str(act.get("action_type", "") or "").lower()
+        if atype:
+            action_types.append(atype)
+    if not action_types:
+        return 0.0, 0
+    unique = len(set(action_types))
+    return unique / len(action_types), unique
+
+
 def _thought_snapshots(steps: List[Dict[str, Any]]) -> Tuple[str, str, str, str, List[Dict[str, Any]], List[Tuple[int, str, str]]]:
     step_to_thought: Dict[int, str] = {}
     trajectory: List[Dict[str, Any]] = []
@@ -1327,6 +1367,10 @@ def main() -> None:
                 1 for s in steps if bool((s.get("som") or {}).get("degraded_som", False))
             )
 
+            # ── URL revisit & action diversity signals ──
+            url_revisit_count, url_unique_count, url_revisit_max = _url_revisit_metrics(steps)
+            action_diversity, action_unique_types = _action_diversity_metrics(steps)
+
             reason_bucket = _classify_reason(
                 success=success,
                 summary_error=summary.get("error"),
@@ -1400,6 +1444,11 @@ def main() -> None:
                 "task_type": task_type,
                 "observation_mode": observation_mode,
                 "degraded_som_steps": degraded_som_steps,
+                "url_revisit_count": url_revisit_count,
+                "url_unique_count": url_unique_count,
+                "url_revisit_max": url_revisit_max,
+                "action_diversity": round(action_diversity, 4),
+                "action_unique_types": action_unique_types,
                 "answer_in_intent_price_range": answer_in_intent_price_range,
                 "reference_answers_json": json.dumps(ref_answers, ensure_ascii=False) if ref_answers is not None else "",
                 "final_answer": final_answer,
@@ -1500,6 +1549,11 @@ def main() -> None:
         "task_type",
         "observation_mode",
         "degraded_som_steps",
+        "url_revisit_count",
+        "url_unique_count",
+        "url_revisit_max",
+        "action_diversity",
+        "action_unique_types",
         "answer_in_intent_price_range",
         "reference_answers_json",
         "final_answer",

@@ -65,7 +65,7 @@
 
 #### VWA 远程站点联动（WSL -> DGX）
 - `scripts/start_vwa_docker.sh` 增强：
-  - 容器名兼容：`shopping`/`vwa-shopping`、`forum`/`vwa-reddit`、`wikipedia`/`vwa-wikipedia`
+  - 容器名兼容：`shopping`/`vwa-shopping`、`forum`/`vwa-reddit`
   - 即使容器已在运行，也会重写 shopping base_url（避免 302 回 `localhost`）
   - classifieds compose 中 `CLASSIFIEDS=` 会按 `--hostname` 重写
   - homepage 模板中的 `localhost:*` 链接会按 `--hostname` 重写
@@ -80,7 +80,7 @@
    - 当前 GPU 空闲 ~6.6 GB / 121.7 GB（其他用户占用大量显存）
    - 进程每 30s 自动检查，满足后自动加载模型并开始跑 shopping 466 tasks
    - 日志：`logs/baseline_qwen3vl4b_shopping_2026-03-27_151540.log`
-2. 远程四站核心链路：shopping/reddit/wikipedia/classifieds DGX 可达
+2. 远程三站核心链路：shopping/reddit/classifieds DGX 可达
 3. homepage 仍可能因 Windows/WSL 端口代理导致 DGX 不可达（preflight 为 WARN）
 
 ## 已知 Bug（B1 跑完后修复）

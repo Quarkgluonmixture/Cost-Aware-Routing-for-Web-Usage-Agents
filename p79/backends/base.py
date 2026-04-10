@@ -13,6 +13,7 @@ class BackendStepContext:
     planner_sub_goal: Optional[str] = None
     history: List[Dict[str, Any]] = field(default_factory=list)
     module_flags: Dict[str, bool] = field(default_factory=dict)
+    reference_images: List[Any] = field(default_factory=list)  # PIL Images from task config
 
 
 class AgentBackend(Protocol):

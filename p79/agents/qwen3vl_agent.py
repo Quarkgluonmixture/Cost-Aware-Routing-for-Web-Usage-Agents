@@ -129,9 +129,11 @@ Core Rules:
 Response Format (JSON):
 {
   "thought": "Brief reasoning about what to do next.",
+  "confidence": 0.0 to 1.0,
   "action_type": "click" | "type" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
   ... (other action parameters) ...
 }
+"confidence": your self-assessed probability (0.0–1.0) that this action makes meaningful progress toward the task goal.
 
 Action Schema:
 1. Click: {"action_type": "click", "element_id": N}
@@ -190,9 +192,11 @@ Core Rules:
 Response Format (JSON):
 {
   "thought": "Brief reasoning about what to do next.",
+  "confidence": 0.0 to 1.0,
   "action_type": "click" | "type" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
   ... (other action parameters) ...
 }
+"confidence": your self-assessed probability (0.0–1.0) that this action makes meaningful progress toward the task goal.
 
 Action Schema:
 1. Click by element_id (preferred): {"action_type": "click", "element_id": N}
@@ -245,9 +249,11 @@ Core Rules:
 Response Format (JSON):
 {
   "thought": "Brief reasoning about what to do next.",
+  "confidence": 0.0 to 1.0,
   "action_type": "click" | "type" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
   ... (other action parameters) ...
 }
+"confidence": your self-assessed probability (0.0–1.0) that this action makes meaningful progress toward the task goal.
 
 Action Schema:
 1. Click: {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}
@@ -359,12 +365,15 @@ CRITICAL:
         obs: Any,
         history: Optional[List[Dict[str, Any]]] = None,
         observation_mode: str = "dom",
+        reference_images: Optional[List[Any]] = None,
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """Takes instruction and observation, returns action dict and metadata.
 
         Args:
             observation_mode: One of "dom", "som", "vision". Selects the
                 appropriate system prompt and text label.
+            reference_images: Optional list of PIL Images provided by the task
+                config (e.g. product photos for "find this item" tasks).
         """
         image = obs.image
         obs_text = ""
@@ -398,14 +407,30 @@ CRITICAL:
             }
         ]
 
+        # Inject task reference images (e.g. product photos) before the screenshot
+        max_size = self.config.get("agent", {}).get("image_max_size", 1024)
+        if reference_images:
+            for idx, ref_img in enumerate(reference_images):
+                if max(ref_img.size) > max_size:
+                    ratio = max_size / max(ref_img.size)
+                    new_size = (int(ref_img.size[0] * ratio), int(ref_img.size[1] * ratio))
+                    ref_img = ref_img.resize(new_size, Image.Resampling.LANCZOS)
+                content.append({"type": "text", "text": f"[Input image {idx + 1}]"})
+                content.append({"type": "image", "image": ref_img})
+
         if image is not None:
             # Resize if necessary
-            max_size = self.config.get("agent", {}).get("image_max_size", 1024)
             if max(image.size) > max_size:
                 ratio = max_size / max(image.size)
                 new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
                 image = image.resize(new_size, Image.Resampling.LANCZOS)
-            content.insert(0, {"type": "image", "image": image})
+            if reference_images:
+                # With reference images: append screenshot at end with label
+                content.append({"type": "text", "text": "[Current screenshot]"})
+                content.append({"type": "image", "image": image})
+            else:
+                # No reference images: preserve original position (before text)
+                content.insert(0, {"type": "image", "image": image})
 
         messages = [{"role": "user", "content": content}]
 

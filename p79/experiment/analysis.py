@@ -96,11 +96,119 @@ def _collect_episode_summaries(run_dir: Path) -> List[Dict[str, Any]]:
     return rows
 
 
+def _synthesize_condition_summary(
+    cond_dir: Path, ep_summaries: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Build a condition summary from condition_meta + episode summaries.
+
+    Used for in-progress conditions that haven't finished yet.
+    """
+    meta_path = cond_dir / "condition_meta.json"
+    if not meta_path.exists():
+        return {}
+    with open(meta_path, "r", encoding="utf-8") as f:
+        meta = json.load(f)
+
+    n = len(ep_summaries)
+    if n == 0:
+        return {}
+
+    successes = sum(1 for e in ep_summaries if e.get("success"))
+    steps = [e.get("steps", 0) or e.get("total_steps", 0) or 0 for e in ep_summaries]
+    costs = [e.get("total_cost_usd", 0) or 0 for e in ep_summaries]
+    model_costs = [e.get("total_model_cost_usd", 0) or 0 for e in ep_summaries]
+    energies = [e.get("total_energy_kwh", 0) or 0 for e in ep_summaries]
+    co2es = [e.get("total_co2e_kg", 0) or 0 for e in ep_summaries]
+    # p95 latency: use per-episode p95, then take overall p95
+    ep_p95s = [e.get("p95_step_latency_ms", 0) or 0 for e in ep_summaries]
+    import numpy as _np
+    p95_lat = float(_np.percentile(ep_p95s, 95)) if ep_p95s else 0.0
+    # Retries, no_op, page_unchanged
+    retries = [e.get("retries", 0) or 0 for e in ep_summaries]
+    no_ops = [e.get("no_op_rate", 0) or 0 for e in ep_summaries]
+    page_unch = [e.get("page_unchanged_rate", 0) or 0 for e in ep_summaries]
+
+    # Aggregate trigger_distribution and state_change_reason_distribution
+    from collections import Counter
+    trigger_agg: Counter = Counter()
+    state_change_agg: Counter = Counter()
+    for e in ep_summaries:
+        td = e.get("trigger_distribution")
+        if isinstance(td, dict):
+            trigger_agg.update({str(k): int(v) for k, v in td.items()})
+        scr = e.get("state_change_reason_distribution")
+        if isinstance(scr, dict):
+            state_change_agg.update({str(k): int(v) for k, v in scr.items()})
+
+    modules = meta.get("modules", {})
+
+    return {
+        "condition_id": meta.get("condition_id", cond_dir.name),
+        "seed": meta.get("seed", 42),
+        "phase": meta.get("phase", "phase1"),
+        "backend_id": meta.get("backend_id", ""),
+        "som_on": meta.get("som_on", False),
+        "observation_mode": meta.get("observation_mode", "unknown"),
+        "router_on": meta.get("router_on", False),
+        "module_flags": modules,
+        "episodes": n,
+        "success_rate": successes / n,
+        "avg_steps": sum(steps) / n,
+        "p95_step_latency_ms": p95_lat,
+        "avg_total_model_cost_usd": sum(model_costs) / n,
+        "avg_total_cost_usd": sum(costs) / n,
+        "avg_router_overhead_cost_usd": 0.0,
+        "avg_total_energy_kwh": sum(energies) / n,
+        "avg_total_co2e_kg": sum(co2es) / n,
+        "avg_retries": sum(retries) / n,
+        "avg_no_op_rate": sum(no_ops) / n,
+        "avg_page_unchanged_rate": sum(page_unch) / n,
+        "avg_escalation_count": 0.0,
+        "trigger_distribution": dict(trigger_agg),
+        "state_change_reason_distribution": dict(state_change_agg),
+        "avg_checklist_completion_rate": None,
+        "checklist_failure_episode_rate": None,
+        "benchmark_noise_rate": 0.0,
+        "wasted_energy_kwh": 0.0,
+        "avg_wasted_cost_usd": 0.0,
+        "avg_wasted_energy_kwh": 0.0,
+        "cost_efficiency_ratio": 0.0,
+        "_synthesized": True,  # mark as not from runner
+    }
+
+
 def _collect_condition_summaries(run_dir: Path) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
+    seen_conds: set = set()
+    # 1. Completed conditions (have condition_summary_v2.json)
     for summary_path in run_dir.glob("*/condition_summary_v2.json"):
         with open(summary_path, "r", encoding="utf-8") as f:
-            rows.append(json.load(f))
+            data = json.load(f)
+            rows.append(data)
+            seen_conds.add(summary_path.parent.name)
+
+    # 2. In-progress conditions (have condition_meta.json but no summary)
+    for meta_path in run_dir.glob("*/condition_meta.json"):
+        cond_dir = meta_path.parent
+        if cond_dir.name in seen_conds:
+            continue
+        if cond_dir.name.startswith("_"):
+            continue
+        # Load episode summaries for this condition
+        ep_summaries = []
+        for ep_path in cond_dir.glob("episodes/*_summary_v2.json"):
+            with open(ep_path, "r", encoding="utf-8") as f:
+                ep_summaries.append(json.load(f))
+        if not ep_summaries:
+            continue
+        synth = _synthesize_condition_summary(cond_dir, ep_summaries)
+        if synth:
+            logger.info(
+                "Synthesized condition summary for %s (%d episodes, in-progress)",
+                cond_dir.name, len(ep_summaries),
+            )
+            rows.append(synth)
+
     return rows
 
 
@@ -902,6 +1010,10 @@ def analyze_run(run_dir: str) -> Path:
 
     analysis_dir = root / "analysis"
     analysis_dir.mkdir(parents=True, exist_ok=True)
+    results_dir = analysis_dir / "results"
+    noise_dir = analysis_dir / "benchmark_noise"
+    results_dir.mkdir(parents=True, exist_ok=True)
+    noise_dir.mkdir(parents=True, exist_ok=True)
 
     run_summary_path = root / "run_summary_v2.json"
     if run_summary_path.exists():
@@ -940,7 +1052,7 @@ def analyze_run(run_dir: str) -> Path:
         if na_count > 0:
             logger.info("Flagged %d episodes as N/A reference tasks", na_count)
             na_summary = ep_df[ep_df["is_na_reference"]][["benchmark_site", "task_id", "condition_id", "success"]].copy()
-            na_summary.to_csv(analysis_dir / "na_reference_tasks.csv", index=False)
+            na_summary.to_csv(noise_dir / "na_reference_tasks.csv", index=False)
     else:
         ep_df["is_na_reference"] = False
 
@@ -966,7 +1078,7 @@ def analyze_run(run_dir: str) -> Path:
             logger.info("Flagged %d episodes as visual tasks, %d as visual lucky hits (DOM mode)", visual_count, lucky_count)
         if lucky_count > 0:
             lucky_df = ep_df[ep_df["is_visual_lucky_hit"]][["benchmark_site", "task_id", "condition_id", "success"]].copy()
-            lucky_df.to_csv(analysis_dir / "visual_lucky_hits.csv", index=False)
+            lucky_df.to_csv(noise_dir / "visual_lucky_hits.csv", index=False)
     else:
         ep_df["is_visual_task"] = False
         ep_df["is_visual_lucky_hit"] = False
@@ -974,7 +1086,7 @@ def analyze_run(run_dir: str) -> Path:
     # --- Per-condition (per-session) analysis ---
     cond_ids = [row.get("condition_id") for row in condition_rows if row.get("condition_id")]
     for cid in cond_ids:
-        cond_analysis_dir = analysis_dir / cid
+        cond_analysis_dir = results_dir / cid
         cond_ep_rows = [r for r in episode_rows if r.get("condition_id") == cid]
         cond_step_rows = [r for r in step_rows if r.get("condition_id") == cid]
         _analyze_condition(cid, cond_analysis_dir, cond_ep_rows, cond_step_rows, phase, run_dir=root)
@@ -990,7 +1102,7 @@ def analyze_run(run_dir: str) -> Path:
             )
         return analysis_dir
 
-    overview_dir = analysis_dir / "_overview"
+    overview_dir = results_dir / "_overview"
     ov_plots = overview_dir / "plots"
     ov_tables = overview_dir / "tables"
     ov_reports = overview_dir / "reports"
@@ -1028,7 +1140,7 @@ def analyze_run(run_dir: str) -> Path:
         cond_df = cond_df.merge(tok_means, on="condition_id", how="left")
 
     if phase == "phase1" and not cond_df.empty:
-        _plot_phase1(cond_df, ov_plots, ov_tables)
+        _plot_phase1(cond_df, ov_plots, ov_tables, ep_df=ep_df)
     elif phase == "phase2" and not cond_df.empty:
         _plot_phase2(cond_df, ov_plots, ov_tables, ov_reports)
     elif phase == "phase3" and not cond_df.empty:
@@ -1119,9 +1231,10 @@ def analyze_run(run_dir: str) -> Path:
     return analysis_dir
 
 
-def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path) -> None:
+def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path, ep_df=None) -> None:
     import matplotlib.pyplot as plt  # type: ignore
     import numpy as np  # type: ignore
+    import pandas as pd  # type: ignore
 
     # Extended representation screening table
     extended_cols = [
@@ -1160,8 +1273,39 @@ def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path) -> None:
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01, f"{val:.2f}", ha="center", va="bottom")
     fig.tight_layout()
     fig.savefig(plots_dir / "phase1_representation_screening.png")
-    fig.savefig(plots_dir / "phase1_success_heatmap.png")  # kept for compat
     plt.close(fig)
+
+    # --- Per-task success heatmap (task_id × condition) ---
+    if ep_df is not None and not ep_df.empty and len(mode_order) >= 2:
+        pivot = ep_df.pivot_table(
+            index="task_id", columns="condition_id",
+            values="success", aggfunc="max",
+        )
+        # Sort by total successes for readability
+        pivot = pivot.reindex(columns=[
+            c for c in cond_df["condition_id"].tolist() if c in pivot.columns
+        ])
+        pivot_sorted = pivot.loc[pivot.sum(axis=1).sort_values(ascending=False).index]
+        # Limit to top 80 tasks for readability
+        if len(pivot_sorted) > 80:
+            pivot_sorted = pivot_sorted.head(80)
+        fig_h, ax_h = plt.subplots(figsize=(max(4, len(pivot.columns) * 2), max(6, len(pivot_sorted) * 0.15)))
+        heatmap_data = pivot_sorted.apply(pd.to_numeric, errors="coerce").fillna(-1).values.astype(float)
+        im = ax_h.imshow(heatmap_data, aspect="auto",
+                         cmap="RdYlGn", vmin=0, vmax=1, interpolation="nearest")
+        ax_h.set_xticks(range(len(pivot_sorted.columns)))
+        ax_h.set_xticklabels(pivot_sorted.columns, rotation=30, ha="right", fontsize=9)
+        ax_h.set_ylabel(f"Task ID (top {len(pivot_sorted)})")
+        ax_h.set_yticks(range(0, len(pivot_sorted), max(1, len(pivot_sorted) // 20)))
+        ax_h.set_yticklabels(
+            [pivot_sorted.index[i] for i in range(0, len(pivot_sorted), max(1, len(pivot_sorted) // 20))],
+            fontsize=7,
+        )
+        ax_h.set_title("Phase 1: Per-Task Success Heatmap")
+        fig_h.colorbar(im, ax=ax_h, label="Success (1=yes, 0=no, gray=N/A)")
+        fig_h.tight_layout()
+        fig_h.savefig(plots_dir / "phase1_success_heatmap.png", dpi=150)
+        plt.close(fig_h)
 
     # --- 2×3 multi-metric comparison overview ---
     metric_specs = [

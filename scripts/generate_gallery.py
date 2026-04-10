@@ -472,19 +472,6 @@ body{{
   overflow:hidden; border:1px solid #2a2a4a; scroll-margin-top:62px;
   box-shadow:0 1px 4px rgba(0,0,0,.2);
 }}
-.step-info{{
-  padding:3px 12px; font-size:12px; color:#aaa;
-  display:flex; gap:10px; align-items:center; background:#0f1a30;
-}}
-.step-info .sn{{ font-weight:700; color:#64b5f6; min-width:44px; }}
-.step-info .act{{ color:#e0e0e0; font-family:monospace; font-size:12px; }}
-.step-info .act .kw{{ color:#64b5f6; }}
-.step-thought{{
-  padding:2px 12px 3px; font-size:12px; color:#999; line-height:1.4;
-  background:#0f1a30; border-top:1px solid #1a2a40;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
-  overflow:hidden;
-}}
 .step-card img{{
   width:100%; max-height:92vh; display:block; cursor:pointer;
   object-fit:contain; background:#0a0a1a;
@@ -621,10 +608,9 @@ function renderEp(k){{
   if(e.score!=null) h+='<span style="color:#888;font-size:12px">score='+e.score.toFixed(2)+'</span>';
   if(e.intent){{
     var ic=e.intent_image?' intent-has-img':'';
-    h+='<span class="'+ic+'" style="color:#e0e0e0;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escA(e.intent)+'"'+(e.intent_image?' data-img="'+escA(e.intent_image)+'"':'')+'>'+esc(e.intent)+'</span>';
+    h+='<span class="'+ic+'" style="color:#e0e0e0;font-size:14px;flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escA(e.intent)+'"'+(e.intent_image?' data-img="'+escA(e.intent_image)+'"':'')+'>'+esc(e.intent)+'</span>';
   }}
-  h+='<span class="ep-spacer"></span>'
-    +'<button class="nav-btn" id="enp"'+(hp?'':' disabled')+'>&#8592; Prev</button>'
+  h+='<button class="nav-btn" id="enp" style="margin-left:auto"'+(hp?'':' disabled')+'>&#8592; Prev</button>'
     +'<span style="color:#666;font-size:12px">'+(o+1)+'/'+ORDER.length+'</span>'
     +'<button class="nav-btn" id="enn"'+(hn?'':' disabled')+'>Next &#8594;</button>'
     +'</div>';
@@ -645,7 +631,7 @@ function renderEp(k){{
   e.steps.forEach(function(s,i){{
     h+='<div class="step-card" id="sc'+i+'">';
     if(s.img_path)
-      h+='<img src="'+escA(s.img_path)+'">';
+      h+='<img src="'+escA(s.img_path)+'"'+(i>2?' loading="lazy"':'')+' style="min-height:200px">';
     else
       h+='<div class="no-img">No screenshot</div>';
     h+='</div>';
@@ -688,21 +674,18 @@ function goEp(k,si){{
     console.error('goEp error:',err);
   }}
 }}
-/* preload images of prev/next episodes to avoid flicker on switch */
-var _preloaded={{}};
-function preloadAdjacent(k){{
-  var o=oi(k);
-  var keys=[];
-  if(o>0) keys.push(ORDER[o-1]);
-  if(o<ORDER.length-1) keys.push(ORDER[o+1]);
-  keys.forEach(function(pk){{
-    if(_preloaded[pk]) return;
-    _preloaded[pk]=true;
-    var e=ep(pk); if(!e) return;
-    e.steps.forEach(function(s){{
-      if(s.img_path){{ var img=new Image(); img.src=s.img_path; }}
-    }});
+/* preload images — no dedup cache so idle browser eviction is harmless */
+function preloadEp(k){{
+  var e=ep(k); if(!e) return;
+  e.steps.forEach(function(s){{
+    if(s.img_path){{ var img=new Image(); img.src=s.img_path; }}
   }});
+}}
+function preloadAdjacent(k){{
+  preloadEp(k);
+  var o=oi(k);
+  if(o>0) preloadEp(ORDER[o-1]);
+  if(o<ORDER.length-1) preloadEp(ORDER[o+1]);
 }}
 
 function scrollStep(i){{

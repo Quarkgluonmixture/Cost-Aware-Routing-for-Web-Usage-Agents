@@ -76,7 +76,7 @@ class LocalQwenBackend:
 
         prompt = f"{stage_prefix}{instruction}"
         start = time.time()
-        action, meta = self._agent.step(prompt, obs, history=context.history, observation_mode=context.observation_mode)
+        action, meta = self._agent.step(prompt, obs, history=context.history, observation_mode=context.observation_mode, reference_images=context.reference_images)
         infer_ms = (time.time() - start) * 1000.0
 
         meta = dict(meta)

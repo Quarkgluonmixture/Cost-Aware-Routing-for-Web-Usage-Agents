@@ -220,8 +220,8 @@ def _load_raw_screenshot_b64(episode_dir: Path, step_idx: int) -> Optional[str]:
         return None
 
 
-def _load_dom_snippet(episode_dir: Path, step_idx: int, max_chars: int = 800) -> Optional[str]:
-    """Load first max_chars of observation_dom.txt for a step."""
+def _load_dom_snippet(episode_dir: Path, step_idx: int, max_chars: int = 0) -> Optional[str]:
+    """Load observation_dom.txt for a step. max_chars=0 means no truncation."""
     path = episode_dir / f"step_{step_idx:03d}" / "observation_dom.txt"
     if not path.exists():
         return None
@@ -229,7 +229,7 @@ def _load_dom_snippet(episode_dir: Path, step_idx: int, max_chars: int = 800) ->
         text = path.read_text(encoding="utf-8").strip()
         if not text:
             return None
-        return text[:max_chars]
+        return text[:max_chars] if max_chars > 0 else text
     except Exception:
         return None
 
@@ -323,12 +323,7 @@ def _build_digest_payload(
 ) -> Dict[str, Any]:
     """Build the text payload for GLM (excluding images which are added separately)."""
     thought_trace = case.get("all_step_thoughts") or []
-    if isinstance(thought_trace, list) and len(thought_trace) > 20:
-        # Keep first 3 + last 17 to preserve start context and recent trajectory
-        thought_trace = thought_trace[:3] + thought_trace[-17:]
     search_queries = case.get("search_queries") or []
-    if isinstance(search_queries, list) and len(search_queries) > 16:
-        search_queries = search_queries[-16:]
 
     return {
         "task_id": case.get("task_id"),

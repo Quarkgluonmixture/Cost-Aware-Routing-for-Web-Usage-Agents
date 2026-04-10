@@ -2,15 +2,60 @@
 
 本文档描述项目中所有分析脚本的功能、输入输出和运行方式。
 
+> **最后更新**: 2026-04-10（目录重组 + verbalized confidence + watchdog 管线集中化）
+
 ---
 
-## 1. `analyze_experiment.py` — 单 Condition 基础分析
+## 输出目录总览
 
-**路径**: `scripts/analysis/analyze_experiment.py` -> `p79.experiment.analysis.analyze_run()`
+```
+<run_dir>/analysis/
+├── analysis_summary.json              # 主实验汇总（analyze_experiment）
+│
+├── results/                           # 主实验分析结果
+│   ├── <condition_id>/                #   per-condition 指标/图表
+│   │   ├── tables/
+│   │   ├── plots/
+│   │   └── session_summary.json
+│   ├── _overview/                     #   跨 condition 对比（McNemar、Wilcoxon、Pareto）
+│   │   ├── tables/
+│   │   ├── plots/
+│   │   └── reports/
+│   └── cross_representation/          #   跨表征交叉分析
+│       ├── tables/
+│       ├── plots/
+│       └── cross_representation_summary.json
+│
+├── signals/                           # 信号分析（confidence + behavioral）
+│   ├── combined/                      #   全模式聚合
+│   │   ├── tables/
+│   │   ├── plots/
+│   │   └── confidence_summary.json
+│   ├── dom/                           #   DOM 单模式
+│   ├── som/                           #   SoM 单模式
+│   └── vision/                        #   Vision 单模式
+│
+├── benchmark_noise/                   # 基准噪声过滤
+│   ├── na_reference_tasks.csv
+│   └── visual_lucky_hits.csv
+│
+├── reason_diagnostics/                # 失败原因诊断
+│   └── episode_reason_rows.csv
+│
+└── digest/                            # GLM 批量消化
+    └── digest.jsonl
+```
+
+---
+
+## 1. `analyze_experiment.py` — 主实验分析
+
+**路径**: `scripts/analysis/analyze_experiment.py` → `p79.experiment.analysis.analyze_run()`
 
 ### 触发方式
 
-- **自动**: `runner.py:_run_post_condition_analysis()` 在每个 condition 跑完后 subprocess 调用
+- **自动**: `runner.py:_run_post_condition_analysis()` 每个 condition 跑完后 subprocess 调用
+- **自动**: `experiment_watchdog.py:_run_post_condition_analysis()` 每检测到新 condition 完成时调用
 - **手动**: `python3 scripts/analysis/analyze_experiment.py --run_dir <run_dir>`
 
 ### 输入
@@ -32,29 +77,224 @@
 | 跨 condition Wilcoxon 检验 | 按 task_id 配对的 cost/latency 显著性检验 |
 | Per-site 分层 | 按 benchmark_site 分组统计 |
 | Pareto 前沿 | 成功率 vs cost 的 Pareto 分析 |
+| NA reference tasks 过滤 | 识别并输出不可行参考任务 |
+| Visual lucky hits 过滤 | 识别 DOM 模式视觉任务假阳性 |
 
 ### 输出
 
 ```
 <run_dir>/analysis/
-├── <condition_id>/
-│   ├── tables/           # CSV: episode_metrics, step_metrics, cumulative_success_rate 等
-│   ├── plots/            # PNG: 分布图、累计曲线
-│   └── session_summary.json
-├── _overview/            # 跨 condition 对比（McNemar、Wilcoxon、Pareto）
+├── results/
+│   ├── <condition_id>/
+│   │   ├── tables/           # CSV: episode_metrics, step_metrics, cumulative_success_rate 等
+│   │   ├── plots/            # PNG: 分布图、累计曲线
+│   │   └── session_summary.json
+│   └── _overview/            # 跨 condition 对比（McNemar、Wilcoxon、Pareto）
+│       ├── tables/
+│       ├── plots/
+│       └── reports/
+├── benchmark_noise/
+│   ├── na_reference_tasks.csv
+│   └── visual_lucky_hits.csv
 └── analysis_summary.json
 ```
 
 ---
 
-## 2. `analyze_reason_diagnostics.py` — 失败原因深度诊断
+## 2. `analyze_confidence_calibration.py` — 信号分析（Token + Verbalized + Behavioral）
+
+**路径**: `scripts/analysis/analyze_confidence_calibration.py`
+
+### 定位
+
+评估 routing 信号的判别力和校准度，为 Phase 2 routing go/no-go 决策提供量化依据。分析三类信号：
+
+| 信号类型 | 来源 | 指标 |
+|----------|------|------|
+| **Token-level** | API logprobs | `ep_mean_logprob`, `ep_min_logprob`, `ep_mean_margin`, `ep_min_margin`, `ep_mean_entropy`, `ep_max_entropy`, `ep_prob` |
+| **Verbalized** | Agent JSON 自我报告 | `ep_mean_verbalized`, `ep_min_verbalized` |
+| **Behavioral** | Step 记录统计 | `url_revisit_count`, `url_revisit_max`, `action_diversity`, `max_repeat_streak` |
+
+### 触发方式
+
+- **自动**: `experiment_watchdog.py:_run_post_condition_analysis()` 每检测到新 condition 完成时调用（combined 模式）
+- **手动**: `python3 scripts/analysis/analyze_confidence_calibration.py --run-dir <run_dir> [--mode dom|som|vision]`
+
+### CLI
+
+```bash
+python3 scripts/analysis/analyze_confidence_calibration.py \
+    --run-dir <run_dir>            # 必需
+    [--output-dir <path>]          # 默认 <run_dir>/analysis/signals/<mode_name>
+    [--mode dom|som|vision]        # 过滤单模式（默认 combined）
+```
+
+### 分析模块（C0—C9 + Routing Verdict）
+
+#### C0 — Coverage Report
+
+- 每 condition 的 token-level + verbalized 覆盖率统计
+- **输出**: `tables/confidence_coverage.csv`
+- 列: `episodes`, `episodes_with_confidence`, `episode_coverage`, `confidence_steps`, `step_coverage`, `episodes_with_verbalized`, `verbalized_episode_coverage`, `verbalized_steps`, `verbalized_step_coverage`
+
+#### C1 — Success vs Failure Distribution
+
+- 所有信号指标的 success/failure violin 对比 + Mann-Whitney U 检验 + rank-biserial 效应量
+- 动态包含有足够数据（≥4 episodes）的指标（token-level + entropy + verbalized）
+- **输出**: `tables/confidence_by_outcome.csv`, `tables/wilcoxon_test.csv`, `plots/C1_confidence_violin.png`
+
+#### C2 — Reliability Diagram + Calibration Metrics
+
+**Token-level（ep_prob）**:
+- 10-bin reliability diagram + ECE/MCE/Brier/AUROC
+- **输出**: `tables/calibration_bins.csv`, `tables/calibration_metrics.csv`, `plots/C2_reliability_diagram.png`
+
+**Verbalized（ep_mean_verbalized）**:
+- 独立 reliability diagram（verbalized 已在 [0,1] 范围，无需 exp 变换）
+- **输出**: `tables/verbalized_calibration_bins.csv`, `tables/verbalized_calibration_metrics.csv`, `plots/C2_verbalized_reliability_diagram.png`
+
+**全指标 AUROC 表**:
+- 涵盖 token-level + verbalized + behavioral，每项标注 `signal_type`
+- Entropy 取反（低 entropy = 高置信）
+- **输出**: `tables/auroc_all_metrics.csv`
+
+#### C3 — Per-Step Trajectory
+
+三种轨迹图（按 success/failure 分组，含 ±1σ 带）：
+
+| 轨迹 | Y 轴 | 输出 |
+|------|------|------|
+| Log-prob | `mean_logprob` | `plots/C3_confidence_trajectory.png` |
+| Entropy | `mean_entropy` | `plots/C3_entropy_trajectory.png` |
+| Verbalized | `verbalized` | `plots/C3_verbalized_trajectory.png` |
+
+- Step×Confidence position heatmap: `tables/step_position_stats.csv`, `plots/C3_step_position_heatmap.png`
+
+#### C4 — Per-Mode Comparison
+
+- Per-mode summary 表（token-level + verbalized 统计）
+- **Token-level**: violin + per-mode reliability diagram
+- **Verbalized**: violin + per-mode reliability diagram
+- 需要 ≥2 个 observation mode
+- **输出**: `tables/per_mode_summary.csv`, `plots/C4_per_mode_violin.png`, `plots/C4_per_mode_reliability.png`, `plots/C4_per_mode_verbalized_violin.png`, `plots/C4_per_mode_verbalized_reliability.png`
+
+#### C5 — Mode × Outcome Cross-Analysis
+
+- 使用 `ep_mean_logprob` 进行 mode×outcome Kruskal-Wallis + pairwise Mann-Whitney
+- 判定信号是否 mode-invariant（相同 outcome 在不同 mode 下 logprob 分布一致）
+- 刻意只测 logprob（避免混淆 verbalized 可用性差异）
+- **输出**: `tables/mode_outcome_cross.csv`, `tables/mode_outcome_tests.csv`, `plots/C5_mode_outcome_violin.png`, `plots/C5_mode_outcome_ridge.png`
+
+#### C6 — Behavioral Signals
+
+- Behavioral 信号的 success/failure violin + Mann-Whitney U
+- AUROC bar chart：token-level（蓝）vs verbalized（紫）vs behavioral（橙），含 random baseline 线
+- **输出**: `tables/behavioral_by_outcome.csv`, `tables/behavioral_wilcoxon.csv`, `plots/C6_behavioral_violin.png`, `plots/C6_auroc_comparison.png`
+
+#### C7 — Cross-Mode AUROC Comparison
+
+- Grouped bar chart：每个信号在不同 mode 下的 AUROC，含 token-level / verbalized / behavioral 分区线
+- 需要 ≥2 个 observation mode
+- **输出**: `tables/cross_mode_auroc.csv`, `plots/C7_cross_mode_auroc.png`
+
+#### C8 — Behavioral Signal Accumulation
+
+- 逐步 cutoff 累积 behavioral 信号的 AUROC，回答"第几步可以开始 route"
+- 专注 behavioral（零成本信号），不含 token-level 或 verbalized
+- **输出**: `tables/signal_accumulation.csv`, `plots/C8_signal_accumulation.png`
+
+#### C9 — Token vs Verbalized Comparison
+
+- Scatter plot：`ep_prob` vs `ep_mean_verbalized`，按 success/failure 着色 + y=x 参考线
+- Spearman 相关（全体 + 分 outcome 子相关）
+- AUROC 对比 bar chart：ep_prob vs ep_mean_verbalized vs ep_min_verbalized
+- **输出**: `tables/token_vs_verbalized_corr.csv`, `tables/token_vs_verbalized_auroc.csv`, `plots/C9_token_vs_verbalized_scatter.png`, `plots/C9_token_vs_verbalized_auroc.png`
+
+#### Routing Readiness Verdict
+
+综合判定 routing 信号是否可用：
+
+| 判据 | 阈值 | 来源 |
+|------|------|------|
+| `token_discriminative` | Wilcoxon p < 0.05 且 \|rank_biserial\| > 0.2 | C1 |
+| `behavioral_discriminative` | best AUROC > 0.6 | C2 |
+| `verbalized_discriminative` | best AUROC > 0.6 | C2 |
+| `signal_calibrated` | ECE < 0.15 | C2 |
+| `signal_sufficient_coverage` | max episode coverage > 50% | C0 |
+| `signal_mode_invariant` | 同 outcome 跨 mode 无显著差异 | C5 |
+| **`overall_usable`** | (token ∨ behavioral ∨ verbalized) ∧ coverage | 综合 |
+
+- **输出**: `confidence_summary.json`（含所有上述字段 + coverage/calibration/discrimination/AUROC 详情）
+
+### 输出目录结构
+
+```
+signals/<mode_name>/           # combined | dom | som | vision
+├── tables/
+│   ├── confidence_coverage.csv
+│   ├── confidence_by_outcome.csv
+│   ├── wilcoxon_test.csv
+│   ├── calibration_bins.csv
+│   ├── calibration_metrics.csv
+│   ├── verbalized_calibration_bins.csv
+│   ├── verbalized_calibration_metrics.csv
+│   ├── auroc_all_metrics.csv
+│   ├── step_position_stats.csv
+│   ├── per_mode_summary.csv
+│   ├── mode_outcome_cross.csv
+│   ├── mode_outcome_tests.csv
+│   ├── behavioral_by_outcome.csv
+│   ├── behavioral_wilcoxon.csv
+│   ├── cross_mode_auroc.csv
+│   ├── signal_accumulation.csv
+│   ├── token_vs_verbalized_corr.csv
+│   └── token_vs_verbalized_auroc.csv
+├── plots/
+│   ├── C1_confidence_violin.png
+│   ├── C2_reliability_diagram.png
+│   ├── C2_verbalized_reliability_diagram.png
+│   ├── C3_confidence_trajectory.png
+│   ├── C3_entropy_trajectory.png
+│   ├── C3_verbalized_trajectory.png
+│   ├── C3_step_position_heatmap.png
+│   ├── C4_per_mode_violin.png
+│   ├── C4_per_mode_reliability.png
+│   ├── C4_per_mode_verbalized_violin.png
+│   ├── C4_per_mode_verbalized_reliability.png
+│   ├── C5_mode_outcome_violin.png
+│   ├── C5_mode_outcome_ridge.png
+│   ├── C6_behavioral_violin.png
+│   ├── C6_auroc_comparison.png
+│   ├── C7_cross_mode_auroc.png
+│   ├── C8_signal_accumulation.png
+│   ├── C9_token_vs_verbalized_scatter.png
+│   └── C9_token_vs_verbalized_auroc.png
+└── confidence_summary.json
+```
+
+### 数据不足时的降级行为
+
+| 条件 | 行为 |
+|------|------|
+| < 4 episodes with metric | 该指标从 violin/Wilcoxon 中排除 |
+| < 4 episodes with ep_prob | C2 token reliability 跳过 |
+| < 4 episodes with ep_mean_verbalized | C2 verbalized reliability 跳过 |
+| < 10 steps with verbalized | C3 verbalized trajectory 跳过 |
+| < 10 episodes with both token + verbalized | C9 全部跳过 |
+| < 2 observation modes | C4/C5/C7 跳过 |
+| 单 class（全成功或全失败） | AUROC 返回 NaN |
+| 0 verbalized data（旧 run） | 所有 verbalized 相关分析优雅跳过 |
+
+---
+
+## 3. `analyze_reason_diagnostics.py` — 失败原因深度诊断
 
 **路径**: `scripts/analysis/analyze_reason_diagnostics.py`
 
 ### 触发方式
 
 - **自动 (sidecar)**: `glm_diagnosis_sidecar.py` 每 N 个新 episode 轮询触发
-- **自动 (queue)**: `queue_b1_serial.sh` 每站跑完后调用
+- **自动 (digest)**: `glm_batch_digest.py` 在消化前调用生成最新 CSV
 - **手动**: `python3 scripts/analysis/analyze_reason_diagnostics.py --run-dir <run_dir> [--skip-similarity]`
 
 ### 输入
@@ -87,7 +327,7 @@
 
 ---
 
-## 3. `analyze_cross_representation.py` — 跨表征交叉分析
+## 4. `analyze_cross_representation.py` — 跨表征交叉分析
 
 **路径**: `scripts/analysis/analyze_cross_representation.py`
 
@@ -101,14 +341,14 @@
 
 ### 触发方式
 
-- **自动**: `runner.py:_run_cross_representation_analysis()` 在每个 condition 跑完后检测同一站点是否已有 >=2 个 condition 有数据，满足则以 `--priority p0 --skip-plots` 运行
+- **自动**: `experiment_watchdog.py:_run_post_condition_analysis()` 检测到 ≥2 个 condition 完成时以 `--priority all` 运行
 - **手动**: `python3 scripts/analysis/analyze_cross_representation.py --run-dir <run_dir> [--priority all]`
 
 ### 站点隔离
 
 **绝不跨站交叉**。两层保证：
 
-1. **Runner 层**: 从 episode 文件名解析站点，按 `site -> set(condition_ids)` 分组，仅同站点内有 >=2 个 condition 时才触发
+1. **Watchdog 层**: 检测 `condition_summary_v2.json` 存在的目录数 ≥2 才触发
 2. **脚本层**: 加载数据后按 `site` 列分组，每个站点独立运行全部分析。单站时不加 site 子目录；多站时输出到 `<out>/<site>/`
 
 ### CLI
@@ -117,7 +357,7 @@
 python3 scripts/analysis/analyze_cross_representation.py \
     --run-dir <run_dir>            # 必需
     [--reason-diag-dir <path>]     # 显式指定 reason diagnostics 目录或 CSV
-    [--output-dir <path>]          # 默认 <run_dir>/analysis/cross_representation/
+    [--output-dir <path>]          # 默认 <run_dir>/analysis/results/cross_representation/
     [--skip-plots]                 # 跳过 PNG 生成
     [--priority p0|p1|p2|all]      # 分析范围，默认 p0
 ```
@@ -295,7 +535,7 @@ task_configs/*.json ───────┘  (difficulty/eval_type/image)
 ### 输出目录结构
 
 ```
-cross_representation/                    # 单站时直接输出
+results/cross_representation/           # 单站时直接输出
 ├── tables/                              # CSV 数据表
 │   ├── A1_task_result_matrix.csv        # P0
 │   ├── A2_set_analysis.csv              # P0
@@ -320,7 +560,7 @@ cross_representation/                    # 单站时直接输出
 ├── R3_oracle_decomposition.json         # P2
 └── cross_representation_summary.json    # 总汇总
 
-cross_representation/                    # 多站时按站点分子目录
+results/cross_representation/           # 多站时按站点分子目录
 ├── classifieds/
 │   ├── tables/ ...
 │   ├── plots/ ...
@@ -331,6 +571,10 @@ cross_representation/                    # 多站时按站点分子目录
 │   └── *.json
 └── cross_representation_summary.json    # 全局汇总（含 per_site 摘要）
 ```
+
+### Stale Output Cleanup
+
+脚本在 `OutputDirs.ensure()` 中自动清理 `tables/*.csv`、`plots/*.png`、`*.json`，防止旧 run 的残留文件干扰。
 
 ---
 
@@ -348,7 +592,7 @@ cross_representation/                    # 多站时按站点分子目录
 
 ---
 
-## 4. `glm_diagnosis_sidecar.py` — 实时诊断 Sidecar
+## 5. `glm_diagnosis_sidecar.py` — 实时诊断 Sidecar
 
 **路径**: `scripts/glm_diagnosis_sidecar.py`
 
@@ -379,7 +623,7 @@ cross_representation/                    # 多站时按站点分子目录
 
 ---
 
-## 5. `glm_batch_digest.py` — 批量失败 Episode 预消化
+## 6. `glm_batch_digest.py` — 批量失败 Episode 预消化
 
 **路径**: `scripts/glm_batch_digest.py`
 
@@ -471,7 +715,7 @@ bash scripts/dgx/restart_sidecar.sh --append-args "--digest-output analysis/dige
 
 ---
 
-## 6. `experiment_watchdog.py` — 实验健康监控
+## 7. `experiment_watchdog.py` — 实验健康监控 + 自动分析
 
 **路径**: `scripts/experiment_watchdog.py`
 
@@ -479,15 +723,37 @@ bash scripts/dgx/restart_sidecar.sh --append-args "--digest-output analysis/dige
 
 - **外部启动**: `queue_b1_serial.sh` 中 `start_watchdog()` 启动
 
-### 分析能力
+### 监控能力
 
 | 能力 | 说明 |
 |---|---|
 | 滚动窗口指标 | success rate、wrong_url rate、no_progress rate、max_steps rate、avg step latency |
 | 阈值告警 | 指标超阈值时 ntfy 推送 |
 | Idle 检测 | N 分钟无新 episode 时告警 |
+| 分析状态追踪 | 检查 `_ANALYSIS_MARKERS` 判断哪些分析已完成 |
 
-不运行任何分析脚本，纯监控/告警。
+### 自动分析管线
+
+Watchdog 在检测到新 condition 完成时，通过 `_run_post_condition_analysis()` 顺序调用三个分析脚本：
+
+| 顺序 | 脚本 | 参数 | 条件 |
+|------|------|------|------|
+| 1 | `analyze_experiment.py` | `--run_dir` | 总是运行 |
+| 2 | `analyze_confidence_calibration.py` | `--run-dir`（combined 模式） | 总是运行 |
+| 3 | `analyze_cross_representation.py` | `--run-dir --priority all` | ≥2 个 condition 完成时才运行 |
+
+每个脚本独立 try/catch（timeout 300s），返回 `experiment:ok; confidence:ok; cross_rep:ok` 格式的状态字符串，ntfy 推送完成通知。
+
+### Analysis Markers
+
+```python
+_ANALYSIS_MARKERS = {
+    "condition_analysis":      "analysis/results/_overview/tables/condition_metrics.csv",
+    "reason_diagnostics":      "analysis/reason_diagnostics/reason_diagnostics_summary.json",
+    "cross_representation":    "analysis/results/cross_representation/cross_representation_summary.json",
+    "confidence_calibration":  "analysis/signals/combined/confidence_summary.json",
+}
+```
 
 ---
 
@@ -497,22 +763,27 @@ bash scripts/dgx/restart_sidecar.sh --append-args "--digest-output analysis/dige
 实验运行中
   │
   ├── runner.py 每个 condition 跑完后
-  │     ├── 调 analyze_experiment.py          → analysis/<cid>/{tables,plots}/
-  │     └── 检测同站 >=2 conditions 后
-  │           └── 调 analyze_cross_representation.py --priority p0
-  │                                            → analysis/cross_representation/{tables,plots}/
+  │     └── 调 analyze_experiment.py           → analysis/results/<cid>/{tables,plots}/
+  │
+  ├── experiment_watchdog.py 检测到新 condition 完成后
+  │     ├── 调 analyze_experiment.py           → analysis/results/_overview/
+  │     ├── 调 analyze_confidence_calibration  → analysis/signals/combined/
+  │     └── 调 analyze_cross_representation    → analysis/results/cross_representation/
+  │         （需 >=2 conditions，--priority all）
   │
   ├── glm_diagnosis_sidecar.py 每 N 个 episode
-  │     ├── 调 analyze_reason_diagnostics.py  → analysis/reason_diagnostics_live/
-  │     ├── GLM episode diagnosis             → ntfy 推送
-  │     └── glm_batch_digest (自动)           → analysis/digest/digest.jsonl
+  │     ├── 调 analyze_reason_diagnostics.py   → analysis/reason_diagnostics_live/
+  │     ├── GLM episode diagnosis              → ntfy 推送
+  │     └── glm_batch_digest (自动)            → analysis/digest/digest.jsonl
   │
-  └── experiment_watchdog.py 持续轮询         → ntfy 告警（不写文件）
+  └── experiment_watchdog.py 持续轮询          → ntfy 告警
 
 实验跑完后（手动）
   │
-  ├── analyze_reason_diagnostics.py 最终版    → analysis/reason_diagnostics/
-  ├── glm_batch_digest.py 最终版              → analysis/digest/digest.jsonl
-  └── analyze_cross_representation.py --priority all
-                                               → analysis/cross_representation/{tables,plots}/
+  ├── analyze_reason_diagnostics.py 最终版     → analysis/reason_diagnostics/
+  ├── glm_batch_digest.py 最终版               → analysis/digest/digest.jsonl
+  ├── analyze_confidence_calibration.py        → analysis/signals/{combined,dom,som,vision}/
+  │     （手动可跑 --mode dom/som/vision 单模式）
+  └── analyze_cross_representation.py          → analysis/results/cross_representation/
+        （手动 --priority all 获取完整分析）
 ```

@@ -213,9 +213,10 @@ def _build_status_report(
 
 # Files to watch for analysis completion
 _ANALYSIS_MARKERS = {
-    "condition_analysis": "analysis/_overview/tables/condition_metrics.csv",
+    "condition_analysis": "analysis/results/_overview/tables/condition_metrics.csv",
     "reason_diagnostics": "analysis/reason_diagnostics/reason_diagnostics_summary.json",
-    "cross_representation": "analysis/cross_representation/cross_representation_summary.json",
+    "cross_representation": "analysis/results/cross_representation/cross_representation_summary.json",
+    "confidence_calibration": "analysis/signals/combined/confidence_summary.json",
 }
 
 # Digest modes to track (matches digest_{mode}.jsonl naming)
@@ -373,29 +374,83 @@ def _annotate_screenshots(run_dir: Path, condition: Optional[str] = None) -> str
 
 
 def _run_post_condition_analysis(run_dir: Path) -> str:
-    """Run analyze_experiment.py after a condition completes (best-effort). Returns status."""
+    """Run analysis pipeline after a condition completes (best-effort). Returns status."""
     scripts_dir = Path(__file__).resolve().parent
+    statuses = []
+
+    # 1. Main experiment analysis (analyze_experiment.py)
     analyze_script = scripts_dir / "analysis" / "analyze_experiment.py"
-    if not analyze_script.exists():
-        return "skipped (script not found)"
-    try:
-        r = subprocess.run(
-            [sys.executable, str(analyze_script), "--run_dir", str(run_dir)],
-            capture_output=True, text=True, timeout=300,
-        )
-        if r.returncode == 0:
-            print(f"[watchdog][AUTO-ANALYSIS] analyze_experiment completed")
-            return "completed"
+    if analyze_script.exists():
+        try:
+            r = subprocess.run(
+                [sys.executable, str(analyze_script), "--run_dir", str(run_dir)],
+                capture_output=True, text=True, timeout=300,
+            )
+            if r.returncode == 0:
+                print("[watchdog][AUTO-ANALYSIS] analyze_experiment completed")
+                statuses.append("experiment:ok")
+            else:
+                msg = r.stderr[-200:] if r.stderr else "unknown"
+                print(f"[watchdog][AUTO-ANALYSIS] analyze_experiment failed: {msg}")
+                statuses.append(f"experiment:failed")
+        except subprocess.TimeoutExpired:
+            print("[watchdog][AUTO-ANALYSIS] analyze_experiment timed out (300s)")
+            statuses.append("experiment:timeout")
+        except Exception as exc:
+            print(f"[watchdog][AUTO-ANALYSIS] analyze_experiment error: {exc}")
+            statuses.append(f"experiment:error")
+
+    # 2. Confidence calibration
+    conf_script = scripts_dir / "analysis" / "analyze_confidence_calibration.py"
+    if conf_script.exists():
+        try:
+            r = subprocess.run(
+                [sys.executable, str(conf_script), "--run-dir", str(run_dir)],
+                capture_output=True, text=True, timeout=300,
+            )
+            if r.returncode == 0:
+                print("[watchdog][AUTO-ANALYSIS] confidence_calibration completed")
+                statuses.append("confidence:ok")
+            else:
+                msg = r.stderr[-200:] if r.stderr else "unknown"
+                print(f"[watchdog][AUTO-ANALYSIS] confidence_calibration failed: {msg}")
+                statuses.append("confidence:failed")
+        except subprocess.TimeoutExpired:
+            print("[watchdog][AUTO-ANALYSIS] confidence_calibration timed out (300s)")
+            statuses.append("confidence:timeout")
+        except Exception as exc:
+            print(f"[watchdog][AUTO-ANALYSIS] confidence_calibration error: {exc}")
+            statuses.append(f"confidence:error")
+
+    # 3. Cross-representation analysis (need >=2 condition dirs)
+    cross_script = scripts_dir / "analysis" / "analyze_cross_representation.py"
+    if cross_script.exists():
+        cond_dirs = [d for d in run_dir.iterdir()
+                     if d.is_dir() and (d / "condition_summary_v2.json").exists()]
+        if len(cond_dirs) >= 2:
+            try:
+                r = subprocess.run(
+                    [sys.executable, str(cross_script),
+                     "--run-dir", str(run_dir), "--priority", "all"],
+                    capture_output=True, text=True, timeout=300,
+                )
+                if r.returncode == 0:
+                    print("[watchdog][AUTO-ANALYSIS] cross_representation completed")
+                    statuses.append("cross_rep:ok")
+                else:
+                    msg = r.stderr[-200:] if r.stderr else "unknown"
+                    print(f"[watchdog][AUTO-ANALYSIS] cross_representation failed: {msg}")
+                    statuses.append("cross_rep:failed")
+            except subprocess.TimeoutExpired:
+                print("[watchdog][AUTO-ANALYSIS] cross_representation timed out (300s)")
+                statuses.append("cross_rep:timeout")
+            except Exception as exc:
+                print(f"[watchdog][AUTO-ANALYSIS] cross_representation error: {exc}")
+                statuses.append(f"cross_rep:error")
         else:
-            msg = f"failed: {r.stderr[-200:]}"
-            print(f"[watchdog][AUTO-ANALYSIS] {msg}")
-            return msg
-    except subprocess.TimeoutExpired:
-        print("[watchdog][AUTO-ANALYSIS] timed out (300s)")
-        return "timed out"
-    except Exception as exc:
-        print(f"[watchdog][AUTO-ANALYSIS] error: {exc}")
-        return f"error: {exc}"
+            statuses.append("cross_rep:skipped(<2 conditions)")
+
+    return "; ".join(statuses) if statuses else "skipped (no scripts found)"
 
 
 def _regenerate_gallery(run_dir: Path, condition: Optional[str] = None) -> str:
@@ -431,6 +486,7 @@ def _save_state(
     seen_analysis: Dict[str, float],
     seen_digest_completions: Optional[Set[str]] = None,
     reported_keys: Optional[Set[str]] = None,
+    error_retry_counts: Optional[Dict[str, int]] = None,
 ) -> None:
     if not path:
         return
@@ -441,6 +497,7 @@ def _save_state(
         "seen_analysis": seen_analysis,
         "seen_digest_completions": sorted(seen_digest_completions or set()),
         "reported_keys": sorted(reported_keys or set()),
+        "error_retry_counts": error_retry_counts or {},
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -546,6 +603,7 @@ def main() -> int:
     seen_analysis: Dict[str, float] = saved.get("seen_analysis", {})
     seen_digest_completions: Set[str] = set(saved.get("seen_digest_completions", []))
     reported_keys: Set[str] = set(saved.get("reported_keys", []))
+    error_retry_counts: Dict[str, int] = saved.get("error_retry_counts", {})
 
     all_records: List[EpisodeRecord] = []
     condition_mode_cache: Dict[str, str] = {}
@@ -636,15 +694,37 @@ def main() -> int:
                 obs_mode = _get_observation_mode(condition_dir, condition_mode_cache)
                 reason = _classify_episode(summary, {}, args.max_steps)
 
-                # Auto-cleanup: delete benchmark noise errors so runner can retry.
+                # Auto-cleanup: delete error episodes so runner can retry.
+                # Covers both benchmark noise errors AND code bugs.
+                # Code bugs get max 2 retries to avoid infinite crash loops;
+                # benchmark noise errors always retry (transient by nature).
                 # Only when the condition is still running (no condition_summary yet);
                 # once aggregated, deleting episodes would create inconsistency.
+                MAX_CODE_BUG_RETRIES = 2
                 condition_completed = (condition_dir / "condition_summary_v2.json").exists()
-                if (
+                retry_key = f"{condition_id}/{site}_task_{task_id}"
+                retries_so_far = error_retry_counts.get(retry_key, 0)
+                can_retry = (
                     reason.startswith("error(")
-                    and reason != "error(code_bug)"
                     and not condition_completed
-                ):
+                    and (reason != "error(code_bug)" or retries_so_far < MAX_CODE_BUG_RETRIES)
+                )
+                if reason.startswith("error(") and not condition_completed and not can_retry:
+                    # Persistent code_bug — exhausted retries, notify and keep
+                    print(
+                        f"[watchdog][PERSISTENT-ERROR] task {task_id} ({reason}) "
+                        f"failed {retries_so_far} retries, giving up"
+                    )
+                    if args.ntfy_topic:
+                        _post_ntfy(
+                            args.ntfy_topic,
+                            f"P79 PERSISTENT ERROR task {task_id}",
+                            f"run_id={run_id}\n{condition_id} task {task_id}\n"
+                            f"{reason} — failed after {retries_so_far} retries, needs manual fix",
+                            priority="high",
+                        )
+                if can_retry:
+                    error_retry_counts[retry_key] = retries_so_far + 1
                     # 1. Delete summary JSON
                     try:
                         summary_path.unlink()
@@ -665,16 +745,17 @@ def main() -> int:
                     except OSError:
                         pass
                     print(
-                        f"[watchdog][AUTO-RETRY] deleted benchmark noise error: "
-                        f"task {task_id} ({reason})"
+                        f"[watchdog][AUTO-RETRY] deleted error episode: "
+                        f"task {task_id} ({reason}) retry {retries_so_far + 1}/{MAX_CODE_BUG_RETRIES}"
                     )
                     if args.ntfy_topic:
                         _post_ntfy(
                             args.ntfy_topic,
                             f"P79 AUTO-RETRY task {task_id}",
                             f"run_id={run_id}\n{condition_id} task {task_id}\n"
-                            f"deleted {reason} — waiting for runner retry",
+                            f"deleted {reason} — retry {retries_so_far + 1}/{MAX_CODE_BUG_RETRIES}",
                         )
+                    _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
                     # Do NOT add to seen_keys/all_records — treat as never happened
                     continue
 
@@ -738,7 +819,7 @@ def main() -> int:
                     f"succ={cond_succ}/{cond_total} ({cond_succ/cond_total:.1%})"
                 )
 
-            _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys)
+            _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
 
         # --- 2. Periodic status report (only running conditions) ---
         if (now - last_report_ts) >= report_interval_secs and all_records:
@@ -768,7 +849,7 @@ def main() -> int:
                         _post_ntfy(args.ntfy_topic, f"P79 Digest [{mode}]",
                                    f"run_id={run_id}\n{info}\n输出: analysis/digest/digest_{mode}.jsonl",
                                    priority="high")
-                    _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys)
+                    _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
 
             # Auto-annotate screenshots then regenerate gallery HTML
             annotate_status = _annotate_screenshots(run_dir, args.condition)
@@ -780,7 +861,7 @@ def main() -> int:
             for name, path in new_analysis:
                 print(f"[watchdog][ANALYSIS] run_id={run_id}\n分析脚本完成: {name}\n输出: {path.relative_to(run_dir)}")
                 analysis_names.append(name)
-                _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys)
+                _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
 
             # --- Build consolidated periodic notification ---
             if args.ntfy_topic and report:
@@ -823,7 +904,7 @@ def main() -> int:
                 _post_ntfy(args.ntfy_topic, "P79 Status", "\n".join(parts))
 
             reported_keys = seen_keys.copy()
-            _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys)
+            _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
             last_report_ts = now
 
         # --- 3. Idle alert ---
@@ -872,7 +953,7 @@ def main() -> int:
                     f"annotate: {annotate_status}\ngallery: {gallery_status}",
                 )
 
-            _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys)
+            _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
 
         if args.once:
             break

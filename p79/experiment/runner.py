@@ -613,83 +613,8 @@ class ExperimentRunner:
         except Exception as exc:
             logging.warning("[runner] Post-condition analysis failed for %s: %s", condition_id, exc)
 
-        # Cross-representation analysis: only when >=2 conditions have episodes
-        self._run_cross_representation_analysis(condition_id)
-
-        # Confidence calibration analysis
-        self._run_confidence_calibration_analysis(condition_id)
-
-    def _run_cross_representation_analysis(self, condition_id: str) -> None:
-        """Run cross-representation analysis if any site has >=2 conditions with data."""
-        import subprocess
-        import sys
-        import re
-
-        script = Path(__file__).parents[2] / "scripts" / "analysis" / "analyze_cross_representation.py"
-        if not script.exists():
-            return
-
-        # Group conditions by site — require >=2 conditions for the SAME site
-        summary_re = re.compile(r"^(?P<site>.+)_task_\d+_summary_v2\.json$")
-        # site -> set of condition_ids
-        site_conditions: dict = {}
-        for p in self.output_root.glob("*/episodes/*_summary_v2.json"):
-            m = summary_re.match(p.name)
-            if m:
-                site = m.group("site")
-                cid = p.parent.parent.name
-                site_conditions.setdefault(site, set()).add(cid)
-
-        has_cross = any(len(cids) >= 2 for cids in site_conditions.values())
-        if not has_cross:
-            sites_info = {s: len(c) for s, c in site_conditions.items()}
-            logging.info(
-                "[runner] Cross-representation skipped: no site has >=2 conditions %s",
-                sites_info,
-            )
-            return
-
-        cmd = [
-            sys.executable, str(script),
-            "--run-dir", str(self.output_root),
-            "--priority", "p0",
-            "--skip-plots",
-        ]
-        try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-            if result.returncode == 0:
-                logging.info("[runner] Cross-representation analysis completed after %s", condition_id)
-            else:
-                logging.warning(
-                    "[runner] Cross-representation analysis exited %d after %s: %s",
-                    result.returncode, condition_id, result.stderr[-500:] if result.stderr else "",
-                )
-        except subprocess.TimeoutExpired:
-            logging.warning("[runner] Cross-representation analysis timed out after %s", condition_id)
-        except Exception as exc:
-            logging.warning("[runner] Cross-representation analysis failed after %s: %s", condition_id, exc)
-
-    def _run_confidence_calibration_analysis(self, condition_id: str) -> None:
-        """Run confidence calibration analysis after a condition completes."""
-        import subprocess
-        import sys
-        script = Path(__file__).parents[2] / "scripts" / "analysis" / "analyze_confidence_calibration.py"
-        if not script.exists():
-            return
-        cmd = [sys.executable, str(script), "--run-dir", str(self.output_root)]
-        try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-            if result.returncode == 0:
-                logging.info("[runner] Confidence calibration analysis completed after %s", condition_id)
-            else:
-                logging.warning(
-                    "[runner] Confidence calibration analysis exited %d after %s: %s",
-                    result.returncode, condition_id, result.stderr[-500:] if result.stderr else "",
-                )
-        except subprocess.TimeoutExpired:
-            logging.warning("[runner] Confidence calibration analysis timed out after %s", condition_id)
-        except Exception as exc:
-            logging.warning("[runner] Confidence calibration analysis failed after %s: %s", condition_id, exc)
+        # NOTE: confidence_calibration + cross_representation are triggered by watchdog,
+        # not runner, to avoid duplicate runs and enable unified notification.
 
     def _clone_observation_for_mode(
         self,
@@ -833,6 +758,30 @@ class ExperimentRunner:
         current_info = info or {}
         trajectory: List[Any] = [{"observation": getattr(obs, "raw", None), "info": current_info}]
 
+        # Load task reference images (e.g. "find this item" with a product photo).
+        # Only useful for multimodal modes (som/vision); DOM mode passes empty list.
+        reference_images: list = []
+        if condition.observation_mode != "dom":
+            raw_image = task.raw_task.get("image")
+            if raw_image:
+                from PIL import Image as PILImage
+                paths = [raw_image] if isinstance(raw_image, str) else list(raw_image)
+                vwa_root = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena"
+                for p in paths:
+                    img_path = vwa_root / p
+                    if img_path.exists():
+                        try:
+                            reference_images.append(PILImage.open(str(img_path)).convert("RGB"))
+                        except Exception as exc:
+                            logger.warning("Failed to load reference image %s: %s", img_path, exc)
+                    else:
+                        logger.warning("Reference image not found: %s", img_path)
+                if reference_images:
+                    logger.info(
+                        "Loaded %d reference image(s) for site=%s task=%s",
+                        len(reference_images), task.site, task.task_id,
+                    )
+
         router_state = RouterState()
         prev_action_success: Optional[bool] = None
         prev_page_changed: Optional[bool] = None
@@ -932,6 +881,7 @@ class ExperimentRunner:
                 stage="single",
                 history=step_records[-8:],
                 module_flags=condition.modules.as_dict(),
+                reference_images=reference_images,
             )
 
             planner_meta = {}
@@ -944,6 +894,7 @@ class ExperimentRunner:
                     stage="planner",
                     history=step_records[-8:],
                     module_flags=condition.modules.as_dict(),
+                    reference_images=reference_images,
                 )
                 planner_action, planner_meta = backend.step(instruction, obs_for_backend, planner_context)
                 overhead["extra_model_calls"] += float(planner_meta.get("model_calls", 1))
@@ -1249,6 +1200,20 @@ class ExperimentRunner:
                     "mean_margin": meta["mean_margin"],
                     "min_margin": meta["min_margin"],
                 }
+                # Entropy metrics (added later, optional)
+                if meta.get("mean_entropy") is not None:
+                    step_record["confidence"]["mean_entropy"] = meta["mean_entropy"]
+                    step_record["confidence"]["max_entropy"] = meta["max_entropy"]
+            # Verbalized confidence (from agent JSON output)
+            verbalized_conf = action.get("confidence")
+            if verbalized_conf is not None:
+                try:
+                    verbalized_conf = float(verbalized_conf)
+                    verbalized_conf = max(0.0, min(1.0, verbalized_conf))
+                except (ValueError, TypeError):
+                    verbalized_conf = None
+                if verbalized_conf is not None:
+                    step_record.setdefault("confidence", {})["verbalized"] = verbalized_conf
 
             # Element bounding box for annotation overlay (from obs_nodes_info)
             eid = action.get("element_id")

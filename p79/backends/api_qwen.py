@@ -75,7 +75,7 @@ class ApiQwenBackend:
 
         prompt = f"{stage_prefix}{instruction}"
         start = time.time()
-        action, meta = self._agent.step(prompt, obs, history=context.history)
+        action, meta = self._agent.step(prompt, obs, history=context.history, reference_images=context.reference_images)
         infer_ms = (time.time() - start) * 1000.0
 
         meta = dict(meta)

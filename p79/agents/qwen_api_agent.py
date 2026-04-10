@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -55,9 +56,11 @@ Core Rules:
 Response Format (JSON):
 {
   "thought": "Brief reasoning about what to do next. Why are you choosing this action? What is your plan?",
+  "confidence": 0.0 to 1.0,
   "action_type": "click" | "type" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
   ... (other action parameters) ...
 }
+"confidence": your self-assessed probability (0.0–1.0) that this action makes meaningful progress toward the task goal.
 
 Action Schema:
 1. Click: {"action_type": "click", "element_id": N}
@@ -127,7 +130,7 @@ CRITICAL:
             lines.append(f"  Step {rec.get('step_idx', '?')}: {atype}{detail} -> {result}{url_suffix}")
         return "Previous actions:\n" + "\n".join(lines) + "\n"
 
-    def step(self, instruction: str, obs: Any, history: Optional[List[Dict[str, Any]]] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def step(self, instruction: str, obs: Any, history: Optional[List[Dict[str, Any]]] = None, reference_images: Optional[List[Any]] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         image = obs.image
         obs_text = ""
         if hasattr(obs, "text") and obs.text:
@@ -147,14 +150,31 @@ CRITICAL:
                 ),
             }
         ]
+
+        # Inject task reference images (e.g. product photos)
+        max_size = self.config.get("agent", {}).get("image_max_size", 1024)
+        if reference_images:
+            for idx, ref_img in enumerate(reference_images):
+                if max(ref_img.size) > max_size:
+                    ratio = max_size / max(ref_img.size)
+                    new_size = (int(ref_img.size[0] * ratio), int(ref_img.size[1] * ratio))
+                    ref_img = ref_img.resize(new_size, Image.Resampling.LANCZOS)
+                ref_payload = self._image_to_data_url(ref_img)
+                content.append({"type": "text", "text": f"[Input image {idx + 1}]"})
+                content.append({
+                    "type": "image_url",
+                    "image_url": {"url": ref_payload["data_url"]},
+                })
+
         image_payload = None
         if image is not None:
-            max_size = self.config.get("agent", {}).get("image_max_size", 1024)
             if max(image.size) > max_size:
                 ratio = max_size / max(image.size)
                 new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
                 image = image.resize(new_size, Image.Resampling.LANCZOS)
             image_payload = self._image_to_data_url(image)
+            if reference_images:
+                content.append({"type": "text", "text": "[Current screenshot]"})
             content.append(
                 {
                     "type": "image_url",
@@ -179,6 +199,8 @@ CRITICAL:
             temperature=temperature,
             top_p=gen_cfg.get("top_p", 0.9),
             max_tokens=gen_cfg.get("max_new_tokens", 512),
+            logprobs=True,
+            top_logprobs=5,
             extra_body=extra_body,
         )
 
@@ -202,6 +224,10 @@ CRITICAL:
             details = usage.completion_tokens_details
             if details and hasattr(details, "reasoning_tokens"):
                 thinking_tokens = getattr(details, "reasoning_tokens", None)
+
+        # Extract confidence metrics from API logprobs
+        confidence_metrics = self._extract_confidence(response)
+
         meta = {
             "raw_output": output_text,
             "valid": valid,
@@ -214,9 +240,71 @@ CRITICAL:
             "image_compressed": image_payload.get("compressed") if image_payload else None,
             "reasoning_content": reasoning_content if reasoning_content else None,
             "enable_thinking": self.enable_thinking,
+            **confidence_metrics,
         }
 
         return action, meta
+
+    @staticmethod
+    def _extract_confidence(response: Any) -> Dict[str, Any]:
+        """Extract confidence metrics from OpenAI-compatible logprobs response.
+
+        Returns same keys as local agent: mean_logprob, min_logprob,
+        mean_margin, min_margin, mean_entropy, max_entropy.
+        Entropy is approximated from top-K logprobs (lower bound).
+        """
+        try:
+            logprobs_obj = getattr(response.choices[0], "logprobs", None)
+            if not logprobs_obj:
+                return {}
+            token_logprobs = getattr(logprobs_obj, "content", None)
+            if not token_logprobs:
+                return {}
+
+            logprobs_list: List[float] = []
+            margins_list: List[float] = []
+            entropies_list: List[float] = []
+
+            for tok in token_logprobs:
+                lp = tok.logprob
+                logprobs_list.append(lp)
+
+                # Margin: gap between top-1 and top-2
+                top_lps = sorted(
+                    [t.logprob for t in (tok.top_logprobs or [])],
+                    reverse=True,
+                )
+                if len(top_lps) >= 2:
+                    margins_list.append(top_lps[0] - top_lps[1])
+                else:
+                    margins_list.append(0.0)
+
+                # Approximate entropy from top-K logprobs
+                if top_lps:
+                    probs = [math.exp(lp_k) for lp_k in top_lps]
+                    total = sum(probs)
+                    ent = 0.0
+                    for p in probs:
+                        p_norm = p / total  # renormalize over top-K
+                        if p_norm > 0:
+                            ent -= p_norm * math.log(p_norm)
+                    entropies_list.append(ent)
+
+            n = len(logprobs_list)
+            if n == 0:
+                return {}
+
+            return {
+                "mean_logprob": sum(logprobs_list) / n,
+                "min_logprob": min(logprobs_list),
+                "mean_margin": sum(margins_list) / n,
+                "min_margin": min(margins_list),
+                "mean_entropy": sum(entropies_list) / n if entropies_list else None,
+                "max_entropy": max(entropies_list) if entropies_list else None,
+            }
+        except Exception as e:
+            logger.warning("Failed to extract confidence from API logprobs: %s", e)
+            return {}
 
     def _image_to_data_url(self, image: Image.Image) -> Dict[str, Any]:
         max_payload = self.config.get("agent", {}).get("max_image_payload_bytes", DEFAULT_MAX_IMAGE_PAYLOAD_BYTES)

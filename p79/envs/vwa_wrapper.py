@@ -169,7 +169,13 @@ class VWAWrapper:
             else:
                 action = None
         elif action_type == "scroll" and "delta" in action_json:
-            dy = action_json["delta"][1]
+            delta = action_json["delta"]
+            if isinstance(delta, (list, tuple)) and len(delta) >= 2:
+                dy = delta[1]
+            elif isinstance(delta, (list, tuple)) and len(delta) == 1:
+                dy = delta[0]  # single-element delta: treat as dy
+            else:
+                dy = delta if isinstance(delta, (int, float)) else 300
             direction = "down" if dy > 0 else "up"
             action = create_scroll_action(direction=direction)
         elif action_type == "type" and "text" in action_json and "element_id" not in action_json:

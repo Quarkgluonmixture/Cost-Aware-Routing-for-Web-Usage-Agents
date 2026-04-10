@@ -92,6 +92,13 @@ class OutputDirs:
         self.base.mkdir(parents=True, exist_ok=True)
         self.tables.mkdir(exist_ok=True)
         self.plots.mkdir(exist_ok=True)
+        # Clean previous outputs to avoid stale files from prior runs
+        for f in self.tables.glob("*.csv"):
+            f.unlink(missing_ok=True)
+        for f in self.plots.glob("*.png"):
+            f.unlink(missing_ok=True)
+        for f in self.base.glob("*.json"):
+            f.unlink(missing_ok=True)
 
     def all_outputs(self) -> List[str]:
         """List all produced files relative to base."""
@@ -306,6 +313,51 @@ def build_task_pivot(reason_df: pd.DataFrame, cond_metas: Dict[str, Dict]) -> pd
 
 
 # ---------------------------------------------------------------------------
+# Visual false-positive detection
+# ---------------------------------------------------------------------------
+
+
+def _mark_visual_false_positives(
+    pivot: pd.DataFrame, modes: List[str],
+) -> pd.DataFrame:
+    """Add is_visual_task + {mode}_visual_fp + {mode}_success_adj columns.
+
+    Only DOM mode is treated as "no-image" — visual task successes there are
+    false positives (agent cannot see images in DOM-only observation).
+    """
+    from p79.experiment.analysis import _load_visual_task_ids
+
+    # 1. Detect visual tasks per site
+    visual_ids_by_site: Dict[str, set] = {}
+    for site in pivot["site"].unique():
+        visual_ids_by_site[site] = _load_visual_task_ids(str(site))
+
+    pivot["is_visual_task"] = pivot.apply(
+        lambda r: int(r["task_id"]) in visual_ids_by_site.get(r["site"], set()),
+        axis=1,
+    )
+
+    # 2. Mark false positives and build adjusted success columns
+    visual_fp_count: Dict[str, int] = {}
+    for m in modes:
+        scol = f"{m}_success"
+        fp_col = f"{m}_visual_fp"
+        adj_col = f"{m}_success_adj"
+        if scol not in pivot.columns:
+            continue
+        is_dom_like = m == "dom"  # only DOM mode has no image
+        pivot[fp_col] = pivot["is_visual_task"] & (pivot[scol] == True) & is_dom_like
+        pivot[adj_col] = pivot[scol].copy()
+        pivot.loc[pivot[fp_col], adj_col] = False
+        visual_fp_count[m] = int(pivot[fp_col].sum())
+
+    n_visual = int(pivot["is_visual_task"].sum())
+    fp_total = sum(visual_fp_count.values())
+    print(f"  Visual FP: {n_visual} visual tasks, {fp_total} false positives {visual_fp_count}")
+    return pivot, visual_fp_count
+
+
+# ---------------------------------------------------------------------------
 # P0: Core cross-comparison
 # ---------------------------------------------------------------------------
 
@@ -318,17 +370,22 @@ def a1_task_result_matrix(pivot: pd.DataFrame, modes: List[str], dirs: OutputDir
     return path
 
 
-def a2_set_analysis(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs) -> Dict:
-    """A2: Set analysis + dual-layer oracle ceiling."""
+def _compute_set_metrics(
+    pivot: pd.DataFrame, modes: List[str], success_suffix: str = "_success",
+) -> Dict[str, Any]:
+    """Compute set analysis metrics using the given success column suffix.
+
+    Args:
+        success_suffix: "_success" for raw, "_success_adj" for adjusted.
+    """
     n_tasks = len(pivot)
     if n_tasks == 0:
         return {}
 
-    # Per-mode success sets
-    mode_sets = {}
-    mode_sr = {}
+    mode_sets: Dict[str, set] = {}
+    mode_sr: Dict[str, float] = {}
     for m in modes:
-        col = f"{m}_success"
+        col = f"{m}{success_suffix}"
         if col in pivot.columns:
             s = set(pivot.loc[pivot[col] == True, ["site", "task_id"]].apply(tuple, axis=1))
             mode_sets[m] = s
@@ -337,7 +394,6 @@ def a2_set_analysis(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs) -> 
             mode_sets[m] = set()
             mode_sr[m] = 0.0
 
-    # Union / intersection
     all_sets = [s for s in mode_sets.values() if s]
     union_set = set().union(*all_sets) if all_sets else set()
     intersection_set = set.intersection(*all_sets) if all_sets else set()
@@ -349,7 +405,7 @@ def a2_set_analysis(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs) -> 
 
     # Feature oracle: per (task_type, eval_type) pick best mode
     feature_oracle_sr = 0.0
-    feature_oracle_choices = {}
+    feature_oracle_choices: Dict[str, Any] = {}
     type_cols = []
     if "task_type" in pivot.columns:
         type_cols.append("task_type")
@@ -360,9 +416,9 @@ def a2_set_analysis(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs) -> 
         grouped = pivot.groupby(type_cols)
         weighted_successes = 0
         for group_key, group_df in grouped:
-            group_sr = {}
+            group_sr: Dict[str, float] = {}
             for m in modes:
-                col = f"{m}_success"
+                col = f"{m}{success_suffix}"
                 if col in group_df.columns:
                     group_sr[m] = group_df[col].sum() / len(group_df) if len(group_df) else 0
             if group_sr:
@@ -380,16 +436,15 @@ def a2_set_analysis(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs) -> 
     feature_headroom = feature_oracle_sr - best_single
     feature_gap = union_sr - feature_oracle_sr
 
-    # Per-mode n_tested (how many tasks actually have data for each mode)
-    mode_n_tested = {}
+    mode_n_tested: Dict[str, int] = {}
     for m in modes:
-        col = f"{m}_success"
+        col = f"{m}{success_suffix}"
         if col in pivot.columns:
             mode_n_tested[m] = int(pivot[col].notna().sum())
         else:
             mode_n_tested[m] = 0
 
-    summary = {
+    return {
         "n_tasks": n_tasks,
         "modes": modes,
         "per_mode_sr": {m: round(v, 4) for m, v in mode_sr.items()},
@@ -411,7 +466,52 @@ def a2_set_analysis(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs) -> 
         "feature_headroom": round(feature_headroom, 4),
         "feature_gap": round(feature_gap, 4),
         "feature_oracle_choices": feature_oracle_choices,
+        "_mode_sets": mode_sets,
+        "_union_set": union_set,
+        "_intersection_set": intersection_set,
     }
+
+
+def a2_set_analysis(
+    pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs,
+    visual_fp_count: Optional[Dict[str, int]] = None,
+) -> Dict:
+    """A2: Set analysis + dual-layer oracle ceiling (raw + adjusted)."""
+    if len(pivot) == 0:
+        return {}
+
+    # --- Raw metrics ---
+    raw = _compute_set_metrics(pivot, modes, "_success")
+    union_set = raw.pop("_union_set")
+    intersection_set = raw.pop("_intersection_set")
+    raw.pop("_mode_sets")
+
+    # --- Adjusted metrics (if visual FP columns exist) ---
+    has_adj = any(f"{m}_success_adj" in pivot.columns for m in modes)
+    if has_adj:
+        adj = _compute_set_metrics(pivot, modes, "_success_adj")
+        adj.pop("_union_set", None)
+        adj.pop("_intersection_set", None)
+        adj.pop("_mode_sets", None)
+        raw["per_mode_sr_adjusted"] = adj["per_mode_sr"]
+        raw["per_mode_success_count_adjusted"] = adj["per_mode_success_count"]
+        raw["per_mode_sr_tested_adjusted"] = adj["per_mode_sr_tested"]
+        raw["union_sr_adjusted"] = adj["union_sr"]
+        raw["union_count_adjusted"] = adj["union_count"]
+        raw["intersection_sr_adjusted"] = adj["intersection_sr"]
+        raw["intersection_count_adjusted"] = adj["intersection_count"]
+        raw["best_single_mode_adjusted"] = adj["best_single_mode"]
+        raw["best_single_sr_adjusted"] = adj["best_single_sr"]
+        raw["perfect_oracle_ceiling_adjusted"] = adj["perfect_oracle_ceiling"]
+        raw["feature_oracle_ceiling_adjusted"] = adj["feature_oracle_ceiling"]
+        raw["perfect_headroom_adjusted"] = adj["perfect_headroom"]
+        raw["feature_headroom_adjusted"] = adj["feature_headroom"]
+        raw["feature_gap_adjusted"] = adj["feature_gap"]
+        raw["feature_oracle_choices_adjusted"] = adj["feature_oracle_choices"]
+    if visual_fp_count is not None:
+        raw["visual_fp_count"] = visual_fp_count
+
+    summary = raw
 
     # Per-task annotation
     pivot_out = pivot.copy()
@@ -424,30 +524,43 @@ def a2_set_analysis(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs) -> 
 
     _write_json(summary, dirs.base / "A2_set_analysis_summary.json")
     pivot_out.to_csv(dirs.tables / "A2_set_analysis.csv", index=False)
+
+    union_sr = summary["union_sr"]
+    intersection_sr = summary["intersection_sr"]
+    best_single_mode = summary["best_single_mode"]
+    best_single = summary["best_single_sr"]
+    perfect_headroom = summary["perfect_headroom"]
+    feature_gap = summary["feature_gap"]
     print(
         f"  A2: union={_pct(union_sr)}, intersection={_pct(intersection_sr)}, "
         f"best_single={best_single_mode}@{_pct(best_single)}, "
         f"perfect_headroom={_pct(perfect_headroom)}, feature_gap={_pct(feature_gap)}"
     )
+    if has_adj:
+        print(
+            f"  A2 (adj): union={_pct(summary['union_sr_adjusted'])}, "
+            f"best_single={summary['best_single_mode_adjusted']}@"
+            f"{_pct(summary['best_single_sr_adjusted'])}, "
+            f"headroom={_pct(summary['perfect_headroom_adjusted'])}"
+        )
     return summary
 
 
-def a3_exclusive_sets(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs) -> None:
-    """A3: Enumerate exclusive success/failure sets with task_type distribution."""
-    n_modes = len(modes)
-    if n_modes == 0:
-        return
+def _compute_exclusive_sets(
+    pivot: pd.DataFrame, modes: List[str], success_suffix: str = "_success",
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Compute exclusive set summary + detail using the given success suffix.
 
-    # Build success vector per task
+    Returns (summary_df, pivot_with_exclusive_set_col).
+    """
     def _success_vector(row):
         return tuple(
-            (row.get(f"{m}_success") == True) for m in modes
+            (row.get(f"{m}{success_suffix}") == True) for m in modes
         )
 
     pivot_c = pivot.copy()
     pivot_c["_svec"] = pivot_c.apply(_success_vector, axis=1)
 
-    # Name the sets
     def _set_name(svec: tuple) -> str:
         successes = [modes[i] for i, v in enumerate(svec) if v]
         failures = [modes[i] for i, v in enumerate(svec) if not v]
@@ -459,11 +572,11 @@ def a3_exclusive_sets(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs) -
             return f"only_{successes[0]}"
         return "_and_".join(successes) + "_not_" + "_".join(failures)
 
-    pivot_c["exclusive_set"] = pivot_c["_svec"].apply(_set_name)
+    set_col = "exclusive_set" if success_suffix == "_success" else "exclusive_set_adj"
+    pivot_c[set_col] = pivot_c["_svec"].apply(_set_name)
 
-    # Summary
     summary_rows = []
-    for sname, grp in pivot_c.groupby("exclusive_set"):
+    for sname, grp in pivot_c.groupby(set_col):
         tt_dist = dict(Counter(grp.get("task_type", pd.Series(dtype=str)).dropna()))
         summary_rows.append({
             "exclusive_set": sname,
@@ -473,10 +586,20 @@ def a3_exclusive_sets(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs) -
         })
 
     summary_df = pd.DataFrame(summary_rows).sort_values("count", ascending=False)
+    return summary_df, pivot_c, set_col
+
+
+def a3_exclusive_sets(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs) -> None:
+    """A3: Enumerate exclusive success/failure sets with task_type distribution."""
+    n_modes = len(modes)
+    if n_modes == 0:
+        return
+
+    # --- Raw ---
+    summary_df, pivot_c, set_col = _compute_exclusive_sets(pivot, modes, "_success")
     summary_df.to_csv(dirs.tables / "A3_exclusive_sets_summary.csv", index=False)
 
-    # Detail
-    detail_cols = ["site", "task_id", "exclusive_set"]
+    detail_cols = ["site", "task_id", set_col]
     if "task_type" in pivot_c.columns:
         detail_cols.append("task_type")
     if "task_intent" in pivot_c.columns:
@@ -489,6 +612,32 @@ def a3_exclusive_sets(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs) -
     print(f"  A3: {len(summary_df)} exclusive sets")
     for _, r in summary_df.iterrows():
         print(f"      {r['exclusive_set']}: {r['count']} ({_pct(r['pct'])})")
+
+    # --- Adjusted (if columns exist) ---
+    has_adj = any(f"{m}_success_adj" in pivot.columns for m in modes)
+    if has_adj:
+        adj_summary_df, adj_pivot_c, adj_set_col = _compute_exclusive_sets(
+            pivot, modes, "_success_adj",
+        )
+        adj_summary_df.to_csv(
+            dirs.tables / "A3_exclusive_sets_summary_adjusted.csv", index=False,
+        )
+
+        adj_detail_cols = ["site", "task_id", adj_set_col]
+        if "task_type" in adj_pivot_c.columns:
+            adj_detail_cols.append("task_type")
+        if "task_intent" in adj_pivot_c.columns:
+            adj_detail_cols.append("task_intent")
+        for m in modes:
+            adj_detail_cols.extend([f"{m}_success_adj", f"{m}_reason_bucket"])
+        adj_detail_cols = [c for c in adj_detail_cols if c in adj_pivot_c.columns]
+        adj_pivot_c[adj_detail_cols].to_csv(
+            dirs.tables / "A3_exclusive_sets_detail_adjusted.csv", index=False,
+        )
+
+        print(f"  A3 (adj): {len(adj_summary_df)} exclusive sets")
+        for _, r in adj_summary_df.iterrows():
+            print(f"      {r['exclusive_set']}: {r['count']} ({_pct(r['pct'])})")
 
 
 # ---------------------------------------------------------------------------
@@ -604,10 +753,12 @@ def a4_cost_at_success(
 def a5_task_type_success_rate(
     pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs, skip_plots: bool,
 ) -> None:
-    """A5: Task type × mode success rate breakdown."""
+    """A5: Task type × mode success rate breakdown (raw + adjusted)."""
     if "task_type" not in pivot.columns:
         print("  A5: skipped (no task_type)")
         return
+
+    has_adj = any(f"{m}_success_adj" in pivot.columns for m in modes)
 
     rows = []
     for tt, grp in pivot.groupby("task_type"):
@@ -620,6 +771,13 @@ def a5_task_type_success_rate(
                 row[f"{m}_success_count"] = int(n_success)
                 row[f"{m}_n_present"] = int(n_present)
                 row[f"{m}_sr"] = round(_safe_ratio(n_success, n_present), 4)
+            # Adjusted
+            adj_col = f"{m}_success_adj"
+            if has_adj and adj_col in grp.columns:
+                n_adj = grp[adj_col].sum()
+                n_present_adj = grp[adj_col].notna().sum()
+                row[f"{m}_success_count_adj"] = int(n_adj)
+                row[f"{m}_sr_adj"] = round(_safe_ratio(n_adj, n_present_adj), 4)
         rows.append(row)
 
     tt_df = pd.DataFrame(rows).sort_values("n_tasks", ascending=False)
@@ -974,54 +1132,29 @@ def r2_escalation_signals(
           f"escalation_would_help={_pct(help_rate)} ({n_would_help}/{len(failed_with_div)})")
 
 
-def r3_oracle_decomposition(
-    pivot: pd.DataFrame, modes: List[str],
-    ep_summaries: pd.DataFrame, cond_mode: Dict[str, str],
-    task_configs: Dict[Tuple[str, int], Dict], dirs: OutputDirs,
-) -> None:
-    """R3: Oracle router decomposition -- for each union-success task, pick cheapest mode."""
-    # Union set: tasks that succeed in at least one mode
-    success_cols = [f"{m}_success" for m in modes if f"{m}_success" in pivot.columns]
-    mask = pivot[success_cols].any(axis=1)
-    union_tasks = pivot[mask].copy()
-
-    if union_tasks.empty:
-        print("  R3: skipped (no successful tasks)")
-        return
-
-    # Build cost lookup from episode summaries
-    cost_lookup: Dict[Tuple[str, int, str], float] = {}
-    if not ep_summaries.empty and "condition_id" in ep_summaries.columns:
-        es = ep_summaries.copy()
-        es["mode"] = es["condition_id"].map(cond_mode)
-        for _, r in es.iterrows():
-            site = r.get("benchmark_site", r.get("site", ""))
-            tid = int(r.get("task_id", -1))
-            mode = r.get("mode", "")
-            cost = r.get("total_cost_usd")
-            if mode and cost is not None:
-                cost_lookup[(site, tid, mode)] = cost
-
+def _build_oracle_rows(
+    pivot_subset: pd.DataFrame, modes: List[str],
+    cost_lookup: Dict[Tuple[str, int, str], float],
+    task_configs: Dict[Tuple[str, int], Dict],
+    success_suffix: str = "_success",
+) -> List[Dict]:
+    """Build oracle decomposition rows for given success column suffix."""
     rows = []
-    for _, r in union_tasks.iterrows():
+    for _, r in pivot_subset.iterrows():
         site, tid = r["site"], int(r["task_id"])
         succeeded = []
         for m in modes:
-            scol = f"{m}_success"
-            if scol in r and r[scol] == True:
+            scol = f"{m}{success_suffix}"
+            if scol in r.index and r[scol] == True:
                 cost = cost_lookup.get((site, tid, m))
                 succeeded.append({"mode": m, "cost": cost, "steps": r.get(f"{m}_steps")})
-
         if not succeeded:
             continue
-
-        # Pick cheapest (prefer by cost, fallback by steps)
         with_cost = [s for s in succeeded if s["cost"] is not None]
         if with_cost:
             oracle = min(with_cost, key=lambda x: x["cost"])
         else:
             oracle = min(succeeded, key=lambda x: (x["steps"] or float("inf")))
-
         cfg = task_configs.get((site, tid), {})
         rows.append({
             "site": site,
@@ -1036,24 +1169,71 @@ def r3_oracle_decomposition(
             "n_modes_succeeded": len(succeeded),
             "succeeded_modes": "|".join(s["mode"] for s in succeeded),
         })
+    return rows
 
+
+def r3_oracle_decomposition(
+    pivot: pd.DataFrame, modes: List[str],
+    ep_summaries: pd.DataFrame, cond_mode: Dict[str, str],
+    task_configs: Dict[Tuple[str, int], Dict], dirs: OutputDirs,
+) -> None:
+    """R3: Oracle router decomposition -- for each union-success task, pick cheapest mode."""
+    # Build cost lookup from episode summaries
+    cost_lookup: Dict[Tuple[str, int, str], float] = {}
+    if not ep_summaries.empty and "condition_id" in ep_summaries.columns:
+        es = ep_summaries.copy()
+        es["mode"] = es["condition_id"].map(cond_mode)
+        for _, r in es.iterrows():
+            site = r.get("benchmark_site", r.get("site", ""))
+            tid = int(r.get("task_id", -1))
+            mode = r.get("mode", "")
+            cost = r.get("total_cost_usd")
+            if mode and cost is not None:
+                cost_lookup[(site, tid, mode)] = cost
+
+    # --- Raw ---
+    success_cols = [f"{m}_success" for m in modes if f"{m}_success" in pivot.columns]
+    mask = pivot[success_cols].any(axis=1)
+    union_tasks = pivot[mask].copy()
+
+    if union_tasks.empty:
+        print("  R3: skipped (no successful tasks)")
+        return
+
+    rows = _build_oracle_rows(union_tasks, modes, cost_lookup, task_configs, "_success")
     oracle_df = pd.DataFrame(rows)
     oracle_df.to_csv(dirs.tables / "R3_oracle_decomposition.csv", index=False)
 
-    # Summary: oracle choice distribution × task features
-    summary = {
+    summary: Dict[str, Any] = {
         "n_union_tasks": len(oracle_df),
-        "oracle_choice_distribution": dict(Counter(oracle_df["oracle_choice"])),
+        "oracle_choice_distribution": dict(Counter(oracle_df["oracle_choice"])) if len(oracle_df) else {},
     }
-    if "task_type" in oracle_df.columns:
+    if "task_type" in oracle_df.columns and len(oracle_df):
         tt_choice = {}
         for tt, grp in oracle_df.groupby("task_type"):
             tt_choice[tt] = dict(Counter(grp["oracle_choice"]))
         summary["oracle_choice_by_task_type"] = tt_choice
 
-    _write_json(summary, dirs.base / "R3_oracle_decomposition.json")
     print(f"  R3: {len(oracle_df)} union tasks, oracle choice: "
           f"{summary['oracle_choice_distribution']}")
+
+    # --- Adjusted ---
+    has_adj = any(f"{m}_success_adj" in pivot.columns for m in modes)
+    if has_adj:
+        adj_cols = [f"{m}_success_adj" for m in modes if f"{m}_success_adj" in pivot.columns]
+        adj_mask = pivot[adj_cols].any(axis=1)
+        adj_union = pivot[adj_mask].copy()
+        adj_rows = _build_oracle_rows(adj_union, modes, cost_lookup, task_configs, "_success_adj")
+        adj_df = pd.DataFrame(adj_rows)
+        adj_df.to_csv(dirs.tables / "R3_oracle_decomposition_adjusted.csv", index=False)
+        summary["n_union_tasks_adjusted"] = len(adj_df)
+        summary["oracle_choice_distribution_adjusted"] = (
+            dict(Counter(adj_df["oracle_choice"])) if len(adj_df) else {}
+        )
+        print(f"  R3 (adj): {len(adj_df)} union tasks, oracle choice: "
+              f"{summary['oracle_choice_distribution_adjusted']}")
+
+    _write_json(summary, dirs.base / "R3_oracle_decomposition.json")
 
 
 # ---------------------------------------------------------------------------
@@ -1077,6 +1257,12 @@ def write_summary(
         summary["feature_oracle_ceiling"] = a2_summary.get("feature_oracle_ceiling")
         summary["feature_gap"] = a2_summary.get("feature_gap")
         summary["per_mode_sr"] = a2_summary.get("per_mode_sr")
+        # Adjusted (visual FP filtered)
+        if "per_mode_sr_adjusted" in a2_summary:
+            summary["per_mode_sr_adjusted"] = a2_summary["per_mode_sr_adjusted"]
+            summary["oracle_ceiling_adjusted"] = a2_summary.get("perfect_oracle_ceiling_adjusted")
+            summary["routing_headroom_adjusted"] = a2_summary.get("perfect_headroom_adjusted")
+            summary["visual_fp_count"] = a2_summary.get("visual_fp_count")
     _write_json(summary, dirs.base / "cross_representation_summary.json")
 
 
@@ -1106,7 +1292,7 @@ def main():
         sys.exit(1)
 
     out_root = Path(args.output_dir) if args.output_dir else (
-        run_dir / "analysis" / "cross_representation"
+        run_dir / "analysis" / "results" / "cross_representation"
     )
 
     run_p1 = args.priority in ("p1", "all")
@@ -1174,11 +1360,17 @@ def main():
         "per_site": {},
     }
     for site, a2s in all_site_summaries.items():
-        global_summary["per_site"][site] = {
+        site_info: Dict[str, Any] = {
             "oracle_ceiling": a2s.get("perfect_oracle_ceiling") if a2s else None,
             "routing_headroom": a2s.get("perfect_headroom") if a2s else None,
             "per_mode_sr": a2s.get("per_mode_sr") if a2s else None,
         }
+        if a2s and "per_mode_sr_adjusted" in a2s:
+            site_info["per_mode_sr_adjusted"] = a2s["per_mode_sr_adjusted"]
+            site_info["oracle_ceiling_adjusted"] = a2s.get("perfect_oracle_ceiling_adjusted")
+            site_info["routing_headroom_adjusted"] = a2s.get("perfect_headroom_adjusted")
+            site_info["visual_fp_count"] = a2s.get("visual_fp_count")
+        global_summary["per_site"][site] = site_info
     _write_json(global_summary, out_root / "cross_representation_summary.json")
     print(f"\nDone! Outputs in: {out_root}")
 
@@ -1210,10 +1402,13 @@ def _run_site_analysis(
 
     cond_mode = _condition_to_mode(cond_metas, reason_df)
 
+    # --- Visual false-positive detection ---
+    pivot, visual_fp_count = _mark_visual_false_positives(pivot, modes)
+
     # --- P0: Core ---
     print("  --- P0: Core cross-comparison ---")
     a1_task_result_matrix(pivot, modes, dirs)
-    a2_summary = a2_set_analysis(pivot, modes, dirs)
+    a2_summary = a2_set_analysis(pivot, modes, dirs, visual_fp_count=visual_fp_count)
     a3_exclusive_sets(pivot, modes, dirs)
 
     # --- P1: Deep ---

@@ -90,6 +90,92 @@ VWA 的 `scroll [x, y]` action 通过 `window.scrollBy()` 实现，只能滚动�
 
 ---
 
+## 6. JavaScript confirm 弹窗不可交互（VWA 框架级缺陷）
+
+Classifieds 站点的"Delete"操作会触发浏览器原生 `confirm()` 对话框（"Are you sure you want to delete this listing?"）。VWA 的 Playwright 默认不自动接受 `confirm()` 弹窗，导致删除操作实际被取消。
+
+**机制**：
+1. Agent 点击 Delete 链接 → 浏览器弹出 `confirm()` 对话框
+2. Playwright 没有注册 `page.on('dialog', dialog => dialog.accept())` 处理器
+3. 对话框被自动 dismiss（默认行为 = 取消）→ 删除未执行
+4. 页面保持不变，agent 再次点击 Delete，陷入循环
+
+**典型案例**：task_5 要求删除白色车 listing。SoM 模式下 agent 正确导航到 My account → 找到 listing → 点击 Delete（eid=1983），但连续 3 次点击页面均无变化（`page_changed=False`），最终因 cycle 停止。DOM 模式同样失败，表现完全一致。
+
+**影响范围**：所有涉及删除操作的任务。三种模式均受影响，与观测方式无关。Agent 的操作逻辑完全正确，失败完全归因于环境限制。
+
+**与 §3 `<select>` 缺陷的关系**：同属 VWA Playwright 环境对浏览器原生 UI 元素（下拉菜单、confirm 弹窗）的支持不完整。
+
+---
+
+## 7. VWA `ua_match` 评测器噪声导致 N/A 任务 False True（10 例）
+
+VWA 对"不可行任务"（reference answer = "N/A"）的评测使用两级判断：
+1. **Exact match**：agent 答案是否精确等于 "N/A"
+2. **`ua_match` fallback**：调用 GPT-4o-mini 判断 agent 的回答是否与 `string_note`（不可行原因）"语义一致，即使是隐式的"
+
+Classifieds 站有 **10 个 N/A reference task**（24, 135, 164, 167, 189, 191, 194, 195, 196, 220），DOM 模式下**全部 10 个被误判为 success=1.0**，SoM 模式下 0 个误判。
+
+### 误判机制
+
+分两类：
+
+**类型 A：空 answer 匹配（7 例）**
+Agent 未调用 finish（达到 max_steps 或 cycle 早停），runner 自动追加 `create_stop_action("")`。空字符串送入 `ua_match`，GPT-4o-mini 将空回答解读为"agent 无法完成任务"，与 `string_note` 的不可行原因判定为 "same"。
+
+**类型 B：错误答案被误判（3 例：167, 189, 196）**
+Agent 提交了具体商品名作为答案（如 task_196 提交了一辆黑色卡车 "2022 GMC Sierra 1500 AT4X"，但任务要求红色卡车）。`ua_match` 的 prompt 将 agent 答案标记为 `reported unachievable reason`，GPT-4o-mini 将"找到了非红色车"脑补为"隐式说明不存在红色车"，判定 "same"。
+
+### 根因：`ua_match` prompt 设计缺陷
+
+```
+actual unachievable reason: There are no red trucks from Maryland worth at least 50000 dollars.
+reported unachievable reason: 2022 GMC Sierra 1500 AT4X Frederick, MD $70,826
+→ GPT-4o-mini 判定 "same"（错误）
+```
+
+1. **字段名误导**：agent 的答案被标记为 "reported unachievable reason"，但 agent 实际是在提交成功答案，不是报告失败原因
+2. **"even if implicitly" 过于宽松**：给 LLM 过度解读空间
+3. **缺前提验证**：未先判断 agent 是否意识到任务不可行
+
+### 影响
+
+| 指标 | Raw | 排除 N/A FP 后 |
+|------|-----|----------------|
+| DOM 成功数 | 21 | 11 |
+| DOM SR | 8.97% | 4.70% |
+
+结合 visual FP（19 例），DOM 的 21 个 success 中：10 个 N/A FP + 部分 visual FP（两类有重叠），真实成功极少。
+
+### 模式对比
+
+| 模式 | N/A FP 数 | 原因 |
+|------|-----------|------|
+| DOM | 10/10 | 无图 → agent 无法判断不可行性 → 提交错误答案或不 finish |
+| SoM | 0/10 | 有图 → agent 行为不同 → 不触发 ua_match 误判 |
+
+**结论**：这是 VWA benchmark 评测器的设计缺陷，非实验脚手架问题。DOM 模式受影响最严重，因为无图导致 agent 更容易产生与 `ua_match` prompt 意外匹配的输出。
+
+---
+
+## 8. 任务参考图片未传递给模型（脚手架缺陷）
+
+部分 VWA 任务在 config 中包含 `"image"` 字段，指向参考图片（如 `input_images/classifieds/task_44/input_0.png`），任务 intent 通过代词引用该图片（"I recall seeing **this exact item** on the site, help me find the most recent post of it."）。
+
+**问题**：`runner.py:924` 只传递 `task.intent`（纯文本），**从未将 `task.raw_task["image"]` 传给模型**。模型唯一收到的图像是当前网页截图（`obs.image`），不是任务参考图。
+
+**表现**：
+- task_44：Agent 在搜索框输入字面量 `"item name"`（不知道搜什么），随机点了一个 item 后 finish → score=0
+- task_45：同样输入 `"item name"`，反复点击和回退 listing，最终提交错误 item（id=54140，目标 id=45196）→ score=0
+
+Agent 的思维链中**完全没有关于参考图片内容的描述**（如物品外观、颜色、类别），证实模型确实未收到图片。
+
+**影响范围**：所有含 `"image"` 字段的任务。三种模式（DOM/SoM/Vision）均受影响——即使 Vision 模式能看到网页截图，也看不到任务参考图。这不是模型能力问题，而是脚手架未将任务图片传递到 prompt 中。
+
+**修复方向**：在 runner 构建 instruction 时，检测 `task.raw_task.get("image")`，将参考图片以 base64/PIL 形式追加到多模态 prompt 中。但这会改变所有条件的 prompt schema，需在 B1 baseline 完成后的 B2 或下一轮实验中统一修复。
+
+---
+
 ## 方法论说明
 
 - 以上缺陷通过 DOM 和 SoM 的 digest 数据交叉验证确认
@@ -99,3 +185,4 @@ VWA 的 `scroll [x, y]` action 通过 `window.scrollBy()` 实现，只能滚动�
 ---
 
 *生成时间：2026-04-07*
+*更新时间：2026-04-10，追加 §8 任务参考图片未传递缺陷*
