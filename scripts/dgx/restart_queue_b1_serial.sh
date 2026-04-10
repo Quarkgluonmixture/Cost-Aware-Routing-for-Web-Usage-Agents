@@ -120,14 +120,15 @@ q_pids="$(ps -eo pid=,args= | awk '/bash scripts\/dgx\/queue_b1_serial.sh/ && !/
 r_pids="$(ps -eo pid=,args= | awk '/scripts\/run_experiment.py/ && !/awk/ {print $1}')"
 s_pids="$(ps -eo pid=,args= | awk '/scripts\/glm_diagnosis_sidecar.py/ && !/awk/ {print $1}')"
 w_pids="$(ps -eo pid=,args= | awk '/scripts\/experiment_watchdog.py/ && !/awk/ {print $1}')"
+g_pids="$(ps -eo pid=,args= | awk '/python.*http\.server/ && !/awk/ {print $1}')"
 
-if [[ -n "${q_pids}${r_pids}${s_pids}${w_pids}" ]]; then
-  log "Stopping existing queue/runner/sidecar/watchdog processes..."
-  for p in ${q_pids} ${r_pids} ${s_pids} ${w_pids}; do
+if [[ -n "${q_pids}${r_pids}${s_pids}${w_pids}${g_pids}" ]]; then
+  log "Stopping existing queue/runner/sidecar/watchdog/gallery processes..."
+  for p in ${q_pids} ${r_pids} ${s_pids} ${w_pids} ${g_pids}; do
     kill "${p}" 2>/dev/null || true
   done
   sleep 2
-  for p in ${q_pids} ${r_pids} ${s_pids} ${w_pids}; do
+  for p in ${q_pids} ${r_pids} ${s_pids} ${w_pids} ${g_pids}; do
     if kill -0 "${p}" 2>/dev/null; then
       kill -9 "${p}" 2>/dev/null || true
     fi
@@ -179,6 +180,21 @@ fi
 ts="$(date +%Y%m%d_%H%M%S)"
 queue_log="logs/queue_b1_serial_${ts}.log"
 queue_meta="logs/queue_b1_serial_${ts}.meta.txt"
+
+# Start gallery HTTP server for the active classifieds run.
+GALLERY_PORT="${GALLERY_PORT:-8765}"
+gallery_pids="$(ps -eo pid=,args= | awk '/python.*http\.server.*'"${GALLERY_PORT}"'/ && !/awk/ {print $1}')"
+for p in ${gallery_pids}; do
+  kill "${p}" 2>/dev/null || true
+done
+gallery_dir="${RESULTS_BASE}/${RUN_ID_CLASSIFIEDS}"
+if [[ -d "${gallery_dir}" ]]; then
+  nohup "${PYTHON_BIN:-python3}" -m http.server "${GALLERY_PORT}" \
+    --directory "${gallery_dir}" > /dev/null 2>&1 &
+  log "Gallery server started on port ${GALLERY_PORT} (dir=${gallery_dir}, pid=$!)"
+else
+  log "Gallery dir not found (${gallery_dir}), skipping gallery server."
+fi
 
 log "Starting queue with setsid (sidecar=off, watchdog+digest=on)..."
 setsid env \

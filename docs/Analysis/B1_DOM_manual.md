@@ -75,13 +75,15 @@ Gallery 视图（`sShowAs=gallery`）在页面上渲染为多列网格（如 3×
 - 未点进详情页就调用 finish（对 url_match 类任务影响有限，对 program_html 类任务直接失败）
 - 历史记忆不足导致循环：缺乏已访问 item 记录，重复对列表第一个结果进行操作
 
-### 2.4 从不 scroll up
+### 2.4 极少 scroll up
 
-69/69 次 scroll 操作全部向下（dy>0），0 次向上。当目标元素被滚过（y<0，在 viewport 上方）时，agent 无法回滚定位，导致：
+DOM 模式 scroll up 比例极低：646 次 scroll 中仅 24 次向上（3.7%），12/234 个 task 出现过 scroll up。作为对比，SoM 模式 scroll up 比例为 11.2%（48/430），是 DOM 的 3 倍——视觉信息帮助模型感知空间位置。
+
+DOM 模式中少数 scroll up 出现在**表单编辑**（下翻查看后回翻填写）和**搜索筛选**（换条件需回到顶部）等任务结构性触发的场景，而非模型主动意识到"内容在上方"。当目标元素被滚过（y<0，在 viewport 上方）时，agent 仍然倾向于继续向下滚动：
 - 反复 click viewport 外的元素（如 task_18 step 6-8，element_bbox y=-54）
 - 继续向下滚动寻找已经滚过的内容
 
-已在 prompt 中添加 scroll 方向说明（`dy>0 scrolls DOWN, dy<0 scrolls UP`），但 task 27/28（加载了新 prompt 后运行）仍然没有出现 scroll up 行为，表明 **prompt hint 对 4B 模型的 scroll up 行为改善有限**，属于模型能力局限。
+已在 prompt 中添加 scroll 方向说明（`dy>0 scrolls DOWN, dy<0 scrolls UP`），但 prompt hint 对改善效果有限。**不是完全不会，而是缺乏空间感知导致极少主动使用。**
 
 ---
 

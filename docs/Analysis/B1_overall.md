@@ -2,7 +2,7 @@
 
 > 本报告记录 DOM / SoM / Vision 三种观测模式**共同受影响**的脚手架缺陷。
 > 这些缺陷与观测表征无关，属于站点功能限制或 VWA 环境的结构性问题。
-> 各模式专有缺陷见 `AI_B1_DOM_analysis.md` / `AI_B1_SOM_analysis.md`。
+> 各模式专有缺陷见 `B1_DOM_digest.md` / `B1_SOM_digest.md`。
 
 ---
 
