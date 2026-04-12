@@ -151,9 +151,11 @@ class VWAWrapper:
                 left = float(coord[0])
                 top = float(coord[1])
                 # Accept either normalized [0-1] or pixel coordinates.
-                # Coordinate clicks are always treated as mouse clicks.
-                if left > 1.0 or top > 1.0:
+                # Normalize each dimension independently to handle mixed formats
+                # (e.g. [0.26, 330] where x is normalized but y is pixel).
+                if left > 1.0:
                     left = left / float(self.viewport_width)
+                if top > 1.0:
                     top = top / float(self.viewport_height)
                 # Avoid 0.0 which triggers VWA create_mouse_click_action validation
                 eps = 1e-6
@@ -179,7 +181,34 @@ class VWAWrapper:
             direction = "down" if dy > 0 else "up"
             action = create_scroll_action(direction=direction)
         elif action_type == "type" and "text" in action_json and "element_id" not in action_json:
-            # Type without ID -> keyboard type
+            # Type without element_id (vision mode): click coordinate first to focus, then keyboard type.
+            # IMPORTANT: Use direct page.mouse.click() instead of env.step(click_action).
+            # VWA's env.step() captures observations via CDP DOMSnapshot after each action,
+            # which causes the focused INPUT element to lose focus (focus resets to BODY).
+            # By clicking directly, we preserve focus for the subsequent keyboard.type().
+            coord = action_json.get("coordinate")
+            if coord is not None and isinstance(coord, (list, tuple)) and len(coord) == 2:
+                left = float(coord[0])
+                top = float(coord[1])
+                # Normalize each dimension independently (same as click path)
+                if left > 1.0:
+                    left = left / float(self.viewport_width)
+                if top > 1.0:
+                    top = top / float(self.viewport_height)
+                eps = 1e-6
+                left = max(eps, min(1.0 - eps, left))
+                top = max(eps, min(1.0 - eps, top))
+                self._env.page.mouse.click(
+                    left * self.viewport_width,
+                    top * self.viewport_height,
+                )
+                self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
+                # Match DOM/SoM id-based type behavior: select-all + delete before typing
+                # to clear any existing field content.
+                # Use Control+a (not Meta+a): Meta maps to Super on Linux, which
+                # does nothing in Chromium. Control+a works on all platforms.
+                self._env.page.keyboard.press("Control+a")
+                self._env.page.keyboard.press("Backspace")
             action = create_keyboard_type_action(action_json["text"])
         elif action_type == "type" and "text" in action_json and "element_id" in action_json:
             # Treat invalid/zero element_id as keyboard typing fallback
@@ -232,6 +261,16 @@ class VWAWrapper:
         if action_type in ("finish", "stop"):
             terminated = True
         info["raw_action"] = action  # Expose the raw VWA action for trajectory recording
+        p79_obs = self._to_p79_obs(obs, info)
+        return p79_obs, float(reward), bool(terminated), bool(truncated), info
+
+    def navigate_to(self, url: str) -> Tuple[P79Observation, float, bool, bool, Dict[str, Any]]:
+        """Navigate to a URL using create_playwright_action, then return fresh observation."""
+        self._lazy_init()
+        assert self._env is not None
+        from browser_env import create_playwright_action
+        action = create_playwright_action(f'page.goto("{url}")')
+        obs, reward, terminated, truncated, info = self._env.step(action)
         p79_obs = self._to_p79_obs(obs, info)
         return p79_obs, float(reward), bool(terminated), bool(truncated), info
 

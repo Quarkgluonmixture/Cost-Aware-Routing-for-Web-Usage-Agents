@@ -491,7 +491,13 @@ def _fallback_episode_diagnosis(case: Dict[str, Any]) -> Dict[str, Any]:
 
     if reason_bucket == "fail_max_steps_target_unreachable" or target_item_visible is False:
         unreachable_subtype = str(case.get("unreachable_subtype", "") or "").strip()
-        if unreachable_subtype == "visual_dom_only":
+        if unreachable_subtype == "visual_has_ref_image":
+            category = "视觉任务模型能力不足"
+            root_cause = (
+                "任务提供了参考图片（DOM 模式已可见），但模型未能基于参考图正确匹配目标。"
+            )
+            confidence = "high"
+        elif unreachable_subtype == "visual_dom_only":
             category = "视觉属性DOM不可达"
             root_cause = (
                 "任务要求匹配图片中的视觉属性（颜色/品牌/款式），"
@@ -515,7 +521,9 @@ def _fallback_episode_diagnosis(case: Dict[str, Any]) -> Dict[str, Any]:
         _us = str(case.get("unreachable_subtype", "") or "").strip()
         category = "导航循环"
         confidence = "high"
-        if _us == "visual_dom_only":
+        if _us == "visual_has_ref_image":
+            root_cause = "任务提供了参考图片（DOM 模式已可见），但模型无法基于参考图正确匹配目标，反复进入详情页验证失败后 back，形成循环。"
+        elif _us == "visual_dom_only":
             root_cause = "任务要求判断 listing 图片的视觉属性（颜色/款式/场景），DOM-only 模式不可见，Agent 反复进入同一页面验证失败后 back，形成循环。"
         else:
             root_cause = "反复 click→back 循环，关键路径未收敛，最终耗尽步数。"
@@ -523,7 +531,14 @@ def _fallback_episode_diagnosis(case: Dict[str, Any]) -> Dict[str, Any]:
         _us = str(case.get("unreachable_subtype", "") or "").strip()
         category = "搜索循环"
         confidence = "high"
-        if _us == "visual_dom_only":
+        if _us == "visual_has_ref_image":
+            root_cause = (
+                f"任务提供了参考图片（DOM 模式已可见），但模型无法基于参考图定位目标，"
+                f"反复使用同一搜索词「{most_repeated_q[:20]}」无效，形成搜索循环。"
+                if most_repeated_q
+                else "任务提供了参考图片（DOM 模式已可见），但模型无法基于参考图定位目标，搜索无效导致循环。"
+            )
+        elif _us == "visual_dom_only":
             root_cause = (
                 f"任务要求判断 listing 图片的视觉属性（如封面图案/拍摄方式），"
                 f"DOM-only 模式不可见，Agent 反复使用同一搜索词「{most_repeated_q[:20]}」无效，形成搜索循环。"
@@ -600,6 +615,8 @@ def _fallback_episode_diagnosis(case: Dict[str, Any]) -> Dict[str, Any]:
         scaffolding_issue = "是"
     elif _unreachable_subtype in ("visual_dom_only", "location_filter_keyword", "location_filter"):
         scaffolding_issue = "是"
+    # visual_has_ref_image: ref image is now visible to DOM mode, failure is
+    # model capability — NOT a scaffold issue.  Falls through to default "否".
     elif _stuck_subtype in ("account_loop", "scroll_static"):
         scaffolding_issue = "是"
     elif task_type == "collection" and loop_pattern == "click_back_loop":
@@ -773,12 +790,16 @@ def _glm_episode_diagnosis_one(
         "没有找到可点击/输入的交互元素，说明页面可访问性不足，应判定 is_scaffolding_issue=是。\n"
         "15) 若 unreachable_subtype=visual_dom_only 或 location_filter_keyword 或 location_filter，"
         "必须判定 is_scaffolding_issue=是："
-        "visual_dom_only 意味着任务需要图片内容匹配但观测模式无法感知 listing 图片"
+        "visual_dom_only 意味着任务需要视觉属性匹配且无参考图片，观测模式无法感知 listing 图片"
         "（DOM-only 模式天然不可见；SoM 模式若 degraded_som_steps>0 则也等价于 DOM-only）；"
         "location_filter_keyword/location_filter 意味着任务要求按地区筛选但地区 UI 入口在 DOM 中不可操作，"
-        "agent 只能把地名当搜索词，导致结果集无法限定到目标地区。\n"
+        "agent 只能把地名当搜索词，导致结果集无法限定到目标地区。"
+        "注意：unreachable_subtype=visual_has_ref_image 不判定 is_scaffolding_issue=是，"
+        "因为任务参考图片已传递给模型（DOM 模式可见），失败属于模型能力不足。\n"
         "16) 观测模式特异性规则：\n"
-        "- observation_mode=dom：看不到图片，颜色/视觉属性类任务结构性不可达，归 is_scaffolding_issue=是；\n"
+        "- observation_mode=dom：可以看到任务参考图片，但看不到页面截图。"
+        "有参考图片的匹配任务（visual_has_ref_image）失败属于模型能力不足，is_scaffolding_issue=否；"
+        "纯颜色/视觉属性类任务（无参考图，visual_dom_only）仍然结构性不可达，is_scaffolding_issue=是；\n"
         "- observation_mode=som：有截图+标注框，视觉任务原则上可完成；"
         "若 degraded_som_steps>0（SoM 标注失效步骤数），说明部分步骤退化为 DOM-only，"
         "视觉任务在这些步骤中不可达；degraded_som_steps=0 的视觉任务失败属于模型能力问题；\n"

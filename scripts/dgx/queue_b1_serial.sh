@@ -24,8 +24,8 @@ cd "${REPO_DIR}"
 
 # --- run_id 配置 ---
 RUN_ID_CLASSIFIEDS="${RUN_ID_CLASSIFIEDS:-B1_3mode_classifieds_20260407}"
-RUN_ID_REDDIT="${RUN_ID_REDDIT:-B1_3mode_reddit_20260407}"
-RUN_ID_SHOPPING="${RUN_ID_SHOPPING:-B1_3mode_shopping_20260407}"
+RUN_ID_REDDIT="${RUN_ID_REDDIT:-B1_3mode_reddit_20260413}"
+RUN_ID_SHOPPING="${RUN_ID_SHOPPING:-B1_3mode_shopping_20260413}"
 
 RESULTS_BASE="${REPO_DIR}/results/visualwebarena/phase1"
 
@@ -54,6 +54,10 @@ NTFY_URL="https://ntfy.sh/${NTFY_TOPIC}"
 NTFY_EPISODE_INTERVAL="${NTFY_EPISODE_INTERVAL:-20}"
 # 是否启用传统每N个任务进度提醒（建议由 live_reason_watch 替代）
 NTFY_PROGRESS_ENABLE="${NTFY_PROGRESS_ENABLE:-0}"
+# 通知降噪模式：
+#   1 = 仅保留失败/异常类 + 最终完成；抑制开始/中间完成/归因成功通知
+#   0 = 发送全部通知（旧行为）
+NTFY_MINIMAL_MODE="${NTFY_MINIMAL_MODE:-1}"
 # 是否在每个站点完成后自动生成失败/成功归因报告
 REASON_DIAG_ENABLE="${REASON_DIAG_ENABLE:-1}"
 # 是否启用实时增量归因 sidecar（每 N 个任务触发 analyze_reason_diagnostics + GLM总结）
@@ -72,6 +76,8 @@ WATCHDOG_ENABLE="${WATCHDOG_ENABLE:-1}"
 WATCHDOG_IDLE_ALERT_MINS="${WATCHDOG_IDLE_ALERT_MINS:-20}"
 WATCHDOG_POLL_SECS="${WATCHDOG_POLL_SECS:-30}"
 WATCHDOG_GLM_CONFIG="${WATCHDOG_GLM_CONFIG:-${REPO_DIR}/.auth/glm}"
+# 是否启用 watchdog 的 condition 完成推送（P79 COMPLETE [...]）
+WATCHDOG_NOTIFY_COMPLETION_ENABLE="${WATCHDOG_NOTIFY_COMPLETION_ENABLE:-1}"
 WATCHDOG_PID=""
 
 # 加载 VWA 站点环境
@@ -124,7 +130,9 @@ run_reason_diagnostics() {
     --samples-per-bucket 5 \
     >> "${REPO_DIR}/logs/queue_b1_serial_reason_diag.log" 2>&1; then
     log "[${label}] reason diagnostics completed."
-    ntfy_send "P79 [${label}] 归因报告已生成" "run_id=${run_id}；输出目录: ${run_dir}/analysis/reason_diagnostics" "default"
+    if [[ "${NTFY_MINIMAL_MODE}" != "1" ]]; then
+      ntfy_send "P79 [${label}] 归因报告已生成" "run_id=${run_id}；输出目录: ${run_dir}/analysis/reason_diagnostics" "default"
+    fi
   else
     log "[${label}] WARNING: reason diagnostics failed (non-blocking)."
     ntfy_send "P79 [${label}] 归因报告失败" "run_id=${run_id}；请检查 logs/queue_b1_serial_reason_diag.log" "default"
@@ -256,6 +264,9 @@ start_watchdog() {
   if [[ -f "${WATCHDOG_GLM_CONFIG}" ]]; then
     watchdog_cmd+=(--glm-config "${WATCHDOG_GLM_CONFIG}")
     watchdog_cmd+=(--digest-dir "${run_dir}/analysis/digest")
+  fi
+  if [[ "${WATCHDOG_NOTIFY_COMPLETION_ENABLE}" == "1" ]]; then
+    watchdog_cmd+=(--notify-completion)
   fi
 
   # Use nohup without setsid: queue is already in its own session via setsid,
@@ -532,35 +543,50 @@ log "Watchdog: kill after ${WATCHDOG_TIMEOUT_MINS}min no new episode"
 log "MAX_RESUME_ATTEMPTS=${MAX_RESUME_ATTEMPTS}"
 log "ntfy topic: ${NTFY_TOPIC} (interval: ${NTFY_EPISODE_INTERVAL} episodes)"
 log "ntfy progress: enable=${NTFY_PROGRESS_ENABLE}"
+log "ntfy minimal mode: ${NTFY_MINIMAL_MODE}"
 log "live_reason_watch: enable=${LIVE_REASON_WATCH_ENABLE}, interval=${LIVE_REASON_WATCH_INTERVAL}, poll=${LIVE_REASON_WATCH_POLL_SECS}s"
-log "experiment_watchdog: enable=${WATCHDOG_ENABLE}, idle_alert=${WATCHDOG_IDLE_ALERT_MINS}min, poll=${WATCHDOG_POLL_SECS}s"
+log "experiment_watchdog: enable=${WATCHDOG_ENABLE}, idle_alert=${WATCHDOG_IDLE_ALERT_MINS}min, poll=${WATCHDOG_POLL_SECS}s, notify_completion=${WATCHDOG_NOTIFY_COMPLETION_ENABLE}"
 log "========================================================"
-ntfy_send "P79 队列启动" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；顺序: classifieds → reddit → shopping" "default"
+if [[ "${NTFY_MINIMAL_MODE}" != "1" ]]; then
+  ntfy_send "P79 队列启动" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；顺序: classifieds → reddit → shopping" "default"
+fi
 
 # 1) classifieds
-ntfy_send "P79 [classifieds] 开始" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_CLASSIFIEDS}" "default"
+if [[ "${NTFY_MINIMAL_MODE}" != "1" ]]; then
+  ntfy_send "P79 [classifieds] 开始" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_CLASSIFIEDS}" "default"
+fi
 run_until_complete "classifieds" "${RUN_ID_CLASSIFIEDS}" "classifieds"
 run_reason_diagnostics "${RUN_ID_CLASSIFIEDS}" "classifieds"
 done_sites=$(( done_sites + 1 ))
-ntfy_send "P79 [classifieds] 完成" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_CLASSIFIEDS}" "default"
+if [[ "${NTFY_MINIMAL_MODE}" != "1" ]]; then
+  ntfy_send "P79 [classifieds] 完成" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_CLASSIFIEDS}" "default"
+fi
 log "classifieds complete. Waiting 15s..."
 sleep 15
 
 # 2) reddit
-ntfy_send "P79 [reddit] 开始" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_REDDIT}" "default"
+if [[ "${NTFY_MINIMAL_MODE}" != "1" ]]; then
+  ntfy_send "P79 [reddit] 开始" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_REDDIT}" "default"
+fi
 run_until_complete "reddit" "${RUN_ID_REDDIT}" "reddit"
 run_reason_diagnostics "${RUN_ID_REDDIT}" "reddit"
 done_sites=$(( done_sites + 1 ))
-ntfy_send "P79 [reddit] 完成" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_REDDIT}" "default"
+if [[ "${NTFY_MINIMAL_MODE}" != "1" ]]; then
+  ntfy_send "P79 [reddit] 完成" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_REDDIT}" "default"
+fi
 log "reddit complete. Waiting 15s..."
 sleep 15
 
 # 3) shopping
-ntfy_send "P79 [shopping] 开始" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_SHOPPING}" "default"
+if [[ "${NTFY_MINIMAL_MODE}" != "1" ]]; then
+  ntfy_send "P79 [shopping] 开始" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_SHOPPING}" "default"
+fi
 run_until_complete "shopping" "${RUN_ID_SHOPPING}" "shopping"
 run_reason_diagnostics "${RUN_ID_SHOPPING}" "shopping"
 done_sites=$(( done_sites + 1 ))
-ntfy_send "P79 [shopping] 完成" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_SHOPPING}" "default"
+if [[ "${NTFY_MINIMAL_MODE}" != "1" ]]; then
+  ntfy_send "P79 [shopping] 完成" "$(progress_hint "${done_sites}" "${TOTAL_SITES}")；run_id=${RUN_ID_SHOPPING}" "default"
+fi
 
 log "========================================================"
 log "=== All B1 baseline sites completed! ==="

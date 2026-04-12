@@ -317,44 +317,65 @@ def build_task_pivot(reason_df: pd.DataFrame, cond_metas: Dict[str, Dict]) -> pd
 # ---------------------------------------------------------------------------
 
 
-def _mark_visual_false_positives(
+def _mark_false_positives(
     pivot: pd.DataFrame, modes: List[str],
 ) -> pd.DataFrame:
-    """Add is_visual_task + {mode}_visual_fp + {mode}_success_adj columns.
+    """Add is_visual_task + is_na_task + {mode}_visual_fp + {mode}_na_fp + {mode}_success_adj columns.
 
-    Only DOM mode is treated as "no-image" — visual task successes there are
-    false positives (agent cannot see images in DOM-only observation).
+    Visual FP: DOM mode + visual task + raw success.
+    N/A FP: any mode + N/A task + raw success (evaluator bug).
     """
-    from p79.experiment.analysis import _load_visual_task_ids
+    from p79.experiment.analysis import _load_visual_task_ids, _load_has_image_task_ids, _load_na_task_ids
 
     # 1. Detect visual tasks per site
     visual_ids_by_site: Dict[str, set] = {}
+    has_image_ids_by_site: Dict[str, set] = {}
+    na_ids_by_site: Dict[str, set] = {}
     for site in pivot["site"].unique():
         visual_ids_by_site[site] = _load_visual_task_ids(str(site))
+        has_image_ids_by_site[site] = _load_has_image_task_ids(str(site))
+        na_ids_by_site[site] = _load_na_task_ids(str(site))
 
     pivot["is_visual_task"] = pivot.apply(
         lambda r: int(r["task_id"]) in visual_ids_by_site.get(r["site"], set()),
         axis=1,
     )
+    pivot["is_has_image_task"] = pivot.apply(
+        lambda r: int(r["task_id"]) in has_image_ids_by_site.get(r["site"], set()),
+        axis=1,
+    )
+    pivot["is_na_task"] = pivot.apply(
+        lambda r: int(r["task_id"]) in na_ids_by_site.get(r["site"], set()),
+        axis=1,
+    )
 
     # 2. Mark false positives and build adjusted success columns
+    # DOM visual FP: only kwd_only visual tasks (no reference image).
+    # has_image tasks excluded: DOM can now see reference images (§33/§34/§36).
     visual_fp_count: Dict[str, int] = {}
+    na_fp_count: Dict[str, int] = {}
     for m in modes:
         scol = f"{m}_success"
-        fp_col = f"{m}_visual_fp"
+        vfp_col = f"{m}_visual_fp"
+        nfp_col = f"{m}_na_fp"
         adj_col = f"{m}_success_adj"
         if scol not in pivot.columns:
             continue
-        is_dom_like = m == "dom"  # only DOM mode has no image
-        pivot[fp_col] = pivot["is_visual_task"] & (pivot[scol] == True) & is_dom_like
+        is_dom_like = m == "dom"  # only DOM mode has no page screenshot
+        pivot[vfp_col] = pivot["is_visual_task"] & ~pivot["is_has_image_task"] & (pivot[scol] == True) & is_dom_like
+        pivot[nfp_col] = pivot["is_na_task"] & (pivot[scol] == True)
         pivot[adj_col] = pivot[scol].copy()
-        pivot.loc[pivot[fp_col], adj_col] = False
-        visual_fp_count[m] = int(pivot[fp_col].sum())
+        pivot.loc[pivot[vfp_col] | pivot[nfp_col], adj_col] = False
+        visual_fp_count[m] = int(pivot[vfp_col].sum())
+        na_fp_count[m] = int(pivot[nfp_col].sum())
 
     n_visual = int(pivot["is_visual_task"].sum())
-    fp_total = sum(visual_fp_count.values())
-    print(f"  Visual FP: {n_visual} visual tasks, {fp_total} false positives {visual_fp_count}")
-    return pivot, visual_fp_count
+    n_na = int(pivot["is_na_task"].sum())
+    fp_visual_total = sum(visual_fp_count.values())
+    fp_na_total = sum(na_fp_count.values())
+    print(f"  Visual FP: {n_visual} visual tasks, {fp_visual_total} false positives {visual_fp_count}")
+    print(f"  N/A FP: {n_na} N/A tasks, {fp_na_total} false positives {na_fp_count}")
+    return pivot, visual_fp_count, na_fp_count
 
 
 # ---------------------------------------------------------------------------
@@ -475,6 +496,7 @@ def _compute_set_metrics(
 def a2_set_analysis(
     pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs,
     visual_fp_count: Optional[Dict[str, int]] = None,
+    na_fp_count: Optional[Dict[str, int]] = None,
 ) -> Dict:
     """A2: Set analysis + dual-layer oracle ceiling (raw + adjusted)."""
     if len(pivot) == 0:
@@ -510,6 +532,8 @@ def a2_set_analysis(
         raw["feature_oracle_choices_adjusted"] = adj["feature_oracle_choices"]
     if visual_fp_count is not None:
         raw["visual_fp_count"] = visual_fp_count
+    if na_fp_count is not None:
+        raw["na_fp_count"] = na_fp_count
 
     summary = raw
 
@@ -655,7 +679,11 @@ def a4_cost_at_success(
         return
 
     # Filter to intersection tasks (must be True, not NaN, in ALL modes)
-    success_cols = [f"{m}_success" for m in modes if f"{m}_success" in pivot.columns]
+    success_cols = [
+        f"{m}_success_adj" if f"{m}_success_adj" in pivot.columns else f"{m}_success"
+        for m in modes
+    ]
+    success_cols = [c for c in success_cols if c in pivot.columns]
     mask = pivot[success_cols].apply(lambda row: all(v == True for v in row), axis=1)
     inter_tasks = set(pivot.loc[mask, ["site", "task_id"]].apply(tuple, axis=1))
     if not inter_tasks:
@@ -789,14 +817,14 @@ def a5_task_type_success_rate(
         x = np.arange(len(tt_df))
         width = 0.8 / max(len(modes), 1)
         for i, m in enumerate(modes):
-            col = f"{m}_sr"
-            if col in tt_df.columns:
-                vals = tt_df[col].fillna(0)
+            sr_col = f"{m}_sr_adj" if f"{m}_sr_adj" in tt_df.columns else f"{m}_sr"
+            if sr_col in tt_df.columns:
+                vals = tt_df[sr_col].fillna(0)
                 ax.bar(x + i * width, vals, width, label=m)
         ax.set_xticks(x + width * (len(modes) - 1) / 2)
         ax.set_xticklabels(tt_df["task_type"], rotation=30, ha="right")
         ax.set_ylabel("Success Rate")
-        ax.set_title("Success Rate by Task Type × Observation Mode")
+        ax.set_title("Success Rate by Task Type × Observation Mode (adjusted)")
         ax.legend()
         ax.set_ylim(0, 1)
         fig.tight_layout()
@@ -810,7 +838,7 @@ def a6_venn_diagram(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs, ski
     """A6: Venn diagram of success sets."""
     mode_sets = {}
     for m in modes:
-        col = f"{m}_success"
+        col = f"{m}_success_adj" if f"{m}_success_adj" in pivot.columns else f"{m}_success"
         if col in pivot.columns:
             keys = set(pivot.loc[pivot[col] == True, ["site", "task_id"]].apply(tuple, axis=1))
             mode_sets[m] = keys
@@ -868,7 +896,7 @@ def a6_venn_diagram(pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs, ski
                     ha="center", va="center", fontsize=12)
             ax.set_xlim(0, 1)
             ax.set_ylim(0, 1)
-        ax.set_title("Success Set Overlap")
+        ax.set_title("Success Set Overlap (adjusted)")
         fig.tight_layout()
         fig.savefig(dirs.plots / "A6_venn_diagram.png", dpi=150)
         plt.close(fig)
@@ -1263,6 +1291,7 @@ def write_summary(
             summary["oracle_ceiling_adjusted"] = a2_summary.get("perfect_oracle_ceiling_adjusted")
             summary["routing_headroom_adjusted"] = a2_summary.get("perfect_headroom_adjusted")
             summary["visual_fp_count"] = a2_summary.get("visual_fp_count")
+            summary["na_fp_count"] = a2_summary.get("na_fp_count")
     _write_json(summary, dirs.base / "cross_representation_summary.json")
 
 
@@ -1370,6 +1399,7 @@ def main():
             site_info["oracle_ceiling_adjusted"] = a2s.get("perfect_oracle_ceiling_adjusted")
             site_info["routing_headroom_adjusted"] = a2s.get("perfect_headroom_adjusted")
             site_info["visual_fp_count"] = a2s.get("visual_fp_count")
+            site_info["na_fp_count"] = a2s.get("na_fp_count")
         global_summary["per_site"][site] = site_info
     _write_json(global_summary, out_root / "cross_representation_summary.json")
     print(f"\nDone! Outputs in: {out_root}")
@@ -1402,13 +1432,13 @@ def _run_site_analysis(
 
     cond_mode = _condition_to_mode(cond_metas, reason_df)
 
-    # --- Visual false-positive detection ---
-    pivot, visual_fp_count = _mark_visual_false_positives(pivot, modes)
+    # --- False-positive detection (visual + N/A) ---
+    pivot, visual_fp_count, na_fp_count = _mark_false_positives(pivot, modes)
 
     # --- P0: Core ---
     print("  --- P0: Core cross-comparison ---")
     a1_task_result_matrix(pivot, modes, dirs)
-    a2_summary = a2_set_analysis(pivot, modes, dirs, visual_fp_count=visual_fp_count)
+    a2_summary = a2_set_analysis(pivot, modes, dirs, visual_fp_count=visual_fp_count, na_fp_count=na_fp_count)
     a3_exclusive_sets(pivot, modes, dirs)
 
     # --- P1: Deep ---

@@ -266,7 +266,10 @@ def _build_action_line(action: Dict[str, Any], action_type: str, dom_text: str =
             parts.append(f"[{eid}]")
 
     if coord and isinstance(coord, (list, tuple)) and len(coord) >= 2:
-        parts.append(f"@ ({coord[0]:.2f}, {coord[1]:.2f})")
+        # Show raw values but flag mixed-format with asterisk
+        cx, cy = float(coord[0]), float(coord[1])
+        parts.append(f"@ ({cx:.2f}, {cy:.2f})"
+                      + ("*" if cx <= 1.0 < cy or cy <= 1.0 < cx else ""))
 
     if action_type == "type":
         text = str(action.get("text", "")).replace("\n", "\\n")
@@ -373,14 +376,50 @@ def annotate_step(
     coord = action.get("coordinate")
     has_coord = coord and isinstance(coord, (list, tuple)) and len(coord) >= 2
     if action_type in ("click", "type") and has_coord:
-        px = int(coord[0] * img_w)
-        py = int(coord[1] * img_h)
-        _draw_crosshair(draw, px, py, color)
+        # Normalize: values >1.0 are pixel coords (model mixed-format output)
+        cx = float(coord[0])
+        cy = float(coord[1])
+        if cx > 1.0:
+            cx = cx / img_w
+        if cy > 1.0:
+            cy = cy / img_h
+        px = int(cx * img_w)
+        py = int(cy * img_h)
+        # Handle off-screen clicks: clamp to image edge + draw indicator
+        off_screen = False
+        clamped_px, clamped_py = px, py
+        margin = _CROSSHAIR_RADIUS + 4
+        if px < 0 or px >= img_w or py < 0 or py >= img_h:
+            off_screen = True
+            clamped_px = max(margin, min(px, img_w - margin - 1))
+            clamped_py = max(margin, min(py, img_h - margin - 1))
+        if off_screen:
+            # Draw a hollow crosshair at clamped position with dashed outline
+            _draw_crosshair(draw, clamped_px, clamped_py, color)
+            # Draw OFF-SCREEN label with arrow indicating direction
+            arrow = ""
+            label_above = False
+            if py >= img_h:
+                arrow = " ↓"
+                label_above = True  # place label above crosshair when click is below image
+            elif py < 0:
+                arrow = " ↑"
+            if px >= img_w:
+                arrow += " →"
+            elif px < 0:
+                arrow += " ←"
+            label_offset = -(_CROSSHAIR_RADIUS + 18) if label_above else (_CROSSHAIR_RADIUS + 4)
+            _draw_label_at(draw, clamped_px, clamped_py + label_offset,
+                           f"OFF-SCREEN{arrow}", color, font_action)
+        else:
+            _draw_crosshair(draw, px, py, color)
         if action_type == "type":
             text = str(action.get("text", "")).replace("\n", "\\n")
             if len(text) > 25:
                 text = text[:22] + "..."
-            _draw_label_at(draw, px, py, f"TYPE '{text}'", color, font_action)
+            label_y = (clamped_py if off_screen else py)
+            _draw_label_at(draw, clamped_px if off_screen else px, label_y,
+                           f"TYPE '{text}'", color, font_action)
 
     # Scroll arrow
     if action_type == "scroll":

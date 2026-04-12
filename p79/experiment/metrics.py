@@ -127,6 +127,47 @@ def net_saving_energy(
     return _net_saving(energy_baseline_kwh, energy_routed_kwh, overhead)
 
 
+def estimate_step_flops(
+    input_text_tokens: int,
+    input_image_tokens: int,
+    output_tokens: int,
+    model_profile: str = "qwen3vl_4b",
+) -> Dict[str, float]:
+    """Estimate FLOPs per step based on token counts and model architecture.
+
+    Uses the standard 2*N*d^2 approximation for transformer layers
+    (covering Q/K/V/O projections + FFN ≈ 4x multiplier per layer).
+    """
+    profiles = {
+        "qwen3vl_4b": {
+            "d_model": 2560,
+            "n_layers_llm": 36,
+            "vit_d_model": 1280,
+            "vit_layers": 32,
+        },
+    }
+    p = profiles[model_profile]
+    d, L = p["d_model"], p["n_layers_llm"]
+    vit_d, vit_L = p["vit_d_model"], p["vit_layers"]
+
+    # ViT encoder: 2 * tokens * d^2 * layers * 4 (attention + FFN)
+    vit_flops = 2.0 * input_image_tokens * (vit_d ** 2) * vit_L * 4
+
+    # LLM prefill: 2 * total_input * d^2 * layers * 4
+    total_input = input_text_tokens + input_image_tokens
+    llm_prefill_flops = 2.0 * total_input * (d ** 2) * L * 4
+
+    # LLM decode: 2 * output * d^2 * layers * 4
+    llm_decode_flops = 2.0 * output_tokens * (d ** 2) * L * 4
+
+    return {
+        "vit_encoder": vit_flops,
+        "llm_prefill": llm_prefill_flops,
+        "llm_decode": llm_decode_flops,
+        "total": vit_flops + llm_prefill_flops + llm_decode_flops,
+    }
+
+
 def compute_wasted_cost(step_records: List[Dict[str, Any]], success: bool) -> Dict[str, float]:
     """For failed episodes, all step cost is wasted; for successful ones, wasted is 0."""
     if success:

@@ -1,11 +1,78 @@
 # B1 SoM Baseline 分析报告（Classifieds）
 
-> 数据来源：`digest_som.jsonl`（仅含 SoM 模式数据，持续增长中）
+> **[DATA STALE]** 本报告数据基于 §33/§34/§36 修复前的运行结果。参考图片传递修复后 adjusted 指标可能变化，待重跑后更新。
+
+> 数据来源：`digest_som.jsonl`（186 条，仅含 SoM 模式失败 episode）
 > 归因方法：GLM-5.1 + SoM 专属归因规则（S1-S5）+ 人工定性分析交叉验证
+> 置信度：57.0% high / 43.0% medium
 > 本报告**仅分析 SoM 模式**，不引用 DOM / vision 模式数据。
-> 三模式共性缺陷见 `B1_overall.md`。
->
-> **状态：digest 尚未全部完成，以下为已有数据的中间分析。**
+> 三模式共性缺陷与定量对比见 `B1_findings.md`。
+
+---
+
+## 总体概况
+
+| 指标 | 数值 |
+|------|------|
+| SoM condition 总 episode 数 | 234 |
+| 成功 | 48 (20.51%) |
+| 失败 | 186 (79.49%) |
+| Digest 覆盖率 | 186/186 (100%) |
+| N/A Adjusted SR | 16.96%（38/224，扣除 10 个 N/A FP） |
+| Visual Adjusted SR | 20.51%（无 visual FP） |
+| 失败 episode 平均步数 | 11.8 步 |
+| 全 episode 平均步数 | 11.8 步 |
+| max_steps 命中率 | 19.4%（36/186 failures） |
+
+### 失败原因分布
+
+| 失败原因 | 数量 | 占失败比 |
+|----------|------|---------|
+| fail_incomplete_or_stuck | 56 | 30.1% |
+| fail_early_finish | 29 | 15.6% |
+| fail_finish_wrong_url_not_found | 28 | 15.1% |
+| fail_max_steps_target_unreachable | 28 | 15.1% |
+| fail_finish_eval_mismatch | 15 | 8.1% |
+| fail_finish_empty_answer | 9 | 4.8% |
+| fail_no_progress | 7 | 3.8% |
+| fail_max_steps_search_repeat | 3 | 1.6% |
+| fail_parse_error | 3 | 1.6% |
+| fail_max_steps_click_back_loop | 3 | 1.6% |
+| fail_finish_claim_missing | 2 | 1.1% |
+| fail_max_steps | 2 | 1.1% |
+
+### 脚手架 vs 模型能力归因
+
+| 归因类型 | 数量 | 占比 |
+|----------|------|------|
+| 脚手架/表征结构性缺陷 | 63 | 33.9% |
+| 模型能力问题 | 123 | 66.1% |
+
+对比 DOM 模式（脚手架 44.1% / 模型 55.9%），SoM 的脚手架问题占比显著下降（-10.2pp），说明 SoM 截图有效缓解了 DOM 的信息瓶颈。
+
+### SoM 特有字段统计
+
+**som_failure_type 分布**（归因可用的 failure episodes）：
+
+| som_failure_type | 数量 |
+|------------------|------|
+| text_over_vision | 56 |
+| 不适用（非 SoM 表征问题） | 46 |
+| 标注遮挡 | 4 |
+
+**som_visual_used 分布**：
+
+| 模型是否实际使用了视觉信息 | 数量 |
+|---------------------------|------|
+| 否 | 67 |
+| 是 | 41 |
+
+**som_mark_occlusion 分布**：
+
+| SoM 标注是否遮挡关键信息 | 数量 |
+|--------------------------|------|
+| 否 | 91 |
+| 是 | 9 |
 
 ---
 
@@ -36,21 +103,19 @@ Classifieds 站点没有有效的地点筛选 UI。Agent 只能将地名（"Dela
 
 ---
 
-## 二、SoM 表征结构性缺陷（待 digest 完成后补全）
-
-> 以下为已有 70 条 digest 的中间统计，最终数据待 digest 全部完成后更新。
+## 二、SoM 表征结构性缺陷
 
 ### 已识别的 SoM 特有失败类型
 
 | som_failure_type | 数量 | 含义 |
 |------------------|------|------|
-| text_over_vision | 30 | 模型依赖 SOM_MARKS 文本而忽略截图视觉信息 |
-| 标注遮挡 | 3 | 青色 mark 框遮挡关键文字/图片区域 |
+| text_over_vision | 56 | 模型依赖 SOM_MARKS 文本而忽略截图视觉信息 |
+| 标注遮挡 | 4 | 青色 mark 框遮挡关键文字/图片区域 |
 | 空间布局丢失 | 2 | SoM 文本索引丢失了元素的空间位置关系 |
 | ID幻觉 | 1 | 模型引用不存在的 element_id |
 | location_filter | 1 | 地点过滤不可达（非表征问题，见 1.1） |
 
-### text_over_vision（30 例，86% 的表征类脚手架问题）
+### text_over_vision（56 例，87.5% 的表征类脚手架问题）
 
 4B 模型系统性忽略 SoM 截图中的视觉细节（颜色、图片内容），主要依赖 `[SOM_MARKS]` 文本索引进行决策。这导致 SoM 模式在视觉类任务上的表现与 DOM 模式接近——虽然视觉信息通过截图提供了，但模型不使用。
 
@@ -159,10 +224,10 @@ SoM 模式因能看到缩略图，模型反而"更有信心"基于不完整的�
 
 Classifieds 共 32 个 navigate-to + url_match 任务（几乎全是视觉条件：sunset/grass/human hand 等）。
 
-| 指标 | DOM (32 tasks) | SoM (13 tasks, 进行中) |
-|------|---------------|----------------------|
-| 成功 | 1/32 (3.1%) | 3/13 (23.1%) |
-| 曾到达正确 URL 但最终失败 | 0 | **2** (task_124, 152) |
+| 指标 | DOM (32 tasks) | SoM (32 tasks) |
+|------|---------------|----------------|
+| 成功 | 1/32 (3.1%) | 9/32 (28.1%) |
+| 曾到达正确 URL 但最终失败 | 0 | **多例** (task_124, 152 等) |
 | 失败原因 | 看不到图片，根本找不到目标 | 找到目标但不 finish |
 
 DOM 几乎全败是因为这些任务需要**视觉判断**（"image is set on grass"），纯 AXTree 无法完成——唯一成功的 task_153 靠文本名称 "matador painting" 碰巧匹配。DOM 不存在"到达了但不 finish"的问题，因为它过不了第一关。
@@ -295,15 +360,15 @@ SoM 条件中 13 步 / 11 task 受影响（DOM 条件为 24 步 / 18 task）。S
 
 SoM 条件中 1 个 task 受影响（DOM 为 12 个）。已通过 dedup 逻辑修复，所有 JSONL 读取器在分析时自动跳过 stale lines。
 
-### 4.5 Evaluator 错误
+### 4.5 Evaluator 错误（已解决）
 
-3 个 SoM episode 因 evaluator 基础设施问题失败：
-- **task 24, 135**：OpenAI API key 缺失导致 `evaluator_error:401`。已通过 `reeval_phase1.py` 离线重评 → 仍为失败（agent 提交空答案，正确答案为 "N/A"）
-- **task 160**：`program_html` 评测超时。需 live browser，无法离线重评
+~~3 个 SoM episode 因 evaluator 基础设施问题失败。~~ 已全部解决（2026-04-12 确认）：
+- **task 24, 135**：评测已正常运行，`score=1.0`。但这两个是 N/A 任务（`fuzzy_match="N/A"`），score=1.0 属于 `ua_match` false positive（见 §5）
+- **task 160**：`program_html` 评测已正常运行，`score=0.0, error=None`，结果为失败
 
 ## 五、N/A 任务 ua_match 假阳性（SoM 模式）
 
-Classifieds 10 个 N/A reference task 中，SoM 已完成 9 个，**全部 score=1.0**（ua_match FP）。此前"SoM 0/10 误判"的结论有误。
+Classifieds 10 个 N/A reference task 中，SoM **10/10 全部 score=1.0**（ua_match FP），与 DOM 模式一致。
 
 | Task | 步数 | 结束方式 | FP 类型 |
 |------|------|---------|---------|
@@ -316,8 +381,9 @@ Classifieds 10 个 N/A reference task 中，SoM 已完成 9 个，**全部 score
 | 194 | 6 | finish("Mickey Mouse item not found") | 特殊（正确理解不可行性） |
 | 195 | 12 | page_unchanged_streak | Type A |
 | 196 | 30 | max_steps | Type A |
+| 220 | — | — | ua_match FP |
 
-**根因**：ua_match 评测器 prompt 缺陷（将 agent answer 包装为 "reported unachievable reason"，"even if implicitly" 过于宽松）叠加 agent prompt 无 N/A 出口。详见 `B1_overall.md` §7。
+**根因**：ua_match 评测器 prompt 缺陷（将 agent answer 包装为 "reported unachievable reason"，"even if implicitly" 过于宽松）叠加 agent prompt 无 N/A 出口。详见 `B1_findings.md` §6.7。
 
 **对 adjusted SR 的影响**：10 个 N/A task 全部是 visual task，已被 visual FP 过滤覆盖，不影响 adjusted 数字。
 
@@ -351,3 +417,4 @@ Classifieds 10 个 N/A reference task 中，SoM 已完成 9 个，**全部 score
 *更新时间：2026-04-10，追加 §5 Benchmark 答案歧义（166）——人工审核，无法脚本批处理*
 *更新时间：2026-04-10，合并人工定性分析（原 B1_SOM_manual.md），更新方法论溯源*
 *更新时间：2026-04-10，追加 §5 N/A ua_match FP 分析（SoM 9/9 全部 FP）+ task_192 评测边界案例*
+*更新时间：2026-04-11，digest 全部完成（186/186），追加总体概况、更新 SoM 特有失败类型统计（text_over_vision 30→56，标注遮挡 3→4）、更新 N/A FP 为 10/10、移除"尚未完成"标注*

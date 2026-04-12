@@ -73,6 +73,78 @@ def _load_visual_task_ids(site: str) -> set:
         return set()
 
 
+def _load_has_image_task_ids(site: str) -> set:
+    """Return task_ids whose config has an ``image`` field (explicit reference image).
+
+    These tasks provide a reference image that DOM mode can now see (after §33/§34/§36
+    fixes), so DOM successes on these tasks are no longer automatic false positives.
+    """
+    config_path = _VWA_CONFIG_DIR / f"test_{site}.json"
+    if not config_path.exists():
+        config_path = _VWA_CONFIG_DIR / f"test_{site}.raw.json"
+    if not config_path.exists():
+        return set()
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            tasks = json.load(f)
+        return {t["task_id"] for t in tasks if t.get("image") is not None}
+    except Exception:
+        return set()
+
+
+def compute_adjusted_success(
+    task_id: int, benchmark_site: str, observation_mode: str,
+    raw_success: bool, *,
+    visual_task_ids: set | None = None,
+    has_image_task_ids: set | None = None,
+    na_task_ids: set | None = None,
+) -> tuple:
+    """Return (adjusted_success, fp_reason). fp_reason: '' / 'visual_fp' / 'na_fp'.
+
+    Priority:
+    1. raw_success=False → (False, '')
+    2. N/A FP: task in na_task_ids and raw_success → (False, 'na_fp')
+    3. Visual FP: DOM mode + visual kwd_only task + raw_success → (False, 'visual_fp')
+       - has_image tasks are excluded: DOM can now see reference images (§33/§34/§36)
+    4. Otherwise → (raw_success, '')
+    """
+    if not raw_success:
+        return (False, "")
+    if na_task_ids and task_id in na_task_ids:
+        return (False, "na_fp")
+    if observation_mode == "dom" and visual_task_ids and task_id in visual_task_ids:
+        # DOM can see reference images after §33/§34/§36 fixes,
+        # so has_image tasks are no longer automatic FP
+        if has_image_task_ids and task_id in has_image_task_ids:
+            return (raw_success, "")
+        return (False, "visual_fp")
+    return (raw_success, "")
+
+
+def compute_adjusted_success_batch(ep_df, benchmark_site: str):
+    """Add adjusted_success + fp_reason columns to ep_df.
+
+    Requires columns: task_id, observation_mode, success.
+    Returns ep_df with new columns added in-place.
+    """
+    visual_ids = _load_visual_task_ids(benchmark_site)
+    has_image_ids = _load_has_image_task_ids(benchmark_site)
+    na_ids = _load_na_task_ids(benchmark_site)
+
+    adj_results = ep_df.apply(
+        lambda r: compute_adjusted_success(
+            int(r["task_id"]), benchmark_site, str(r.get("observation_mode", "")),
+            bool(r["success"]),
+            visual_task_ids=visual_ids, has_image_task_ids=has_image_ids,
+            na_task_ids=na_ids,
+        ),
+        axis=1,
+    )
+    ep_df["adjusted_success"] = [r[0] for r in adj_results]
+    ep_df["fp_reason"] = [r[1] for r in adj_results]
+    return ep_df
+
+
 def _compute_pareto_front(points: List[Dict[str, float]], maximize: str, minimize: str) -> List[int]:
     """Return indices of Pareto-optimal points (maximize one axis, minimize another)."""
     indexed = list(enumerate(points))
@@ -524,7 +596,7 @@ def _analyze_condition(
         ax.set_xlabel("Task ID")
         ax.set_ylabel("Cumulative Success Rate")
         ax.set_ylim(0, 1)
-        ax.set_title(f"Success Rate — {cond_id}")
+        ax.set_title(f"Success Rate (adjusted) — {cond_id}")
         ax.grid(alpha=0.3)
         fig.tight_layout()
         fig.savefig(plots_dir / "cumulative_success_rate.png")
@@ -847,10 +919,15 @@ def _compute_statistical_tests(
                         n01 = int((~a_succ & b_succ).sum())
                         n10 = int((a_succ & ~b_succ).sum())
                         n11 = int((a_succ & b_succ).sum())
-                        table = np.array([[n11, n10], [n01, n00]])
-                        mcnemar_res = scipy_stats.mcnemar(table, exact=True, correction=False)
-                        p_val = float(mcnemar_res.pvalue)
-                        stat = float(mcnemar_res.statistic)
+                        # McNemar exact test via binomial (scipy has no mcnemar)
+                        n_discordant = n01 + n10
+                        stat = float(min(n01, n10))
+                        if n_discordant == 0:
+                            p_val = 1.0
+                        else:
+                            from scipy.stats import binomtest
+                            bres = binomtest(n10, n_discordant, 0.5, alternative='two-sided')
+                            p_val = float(bres.pvalue)
                         results["mcnemar"][pair_key] = {
                             "statistic": stat,
                             "p_value": p_val,
@@ -1059,29 +1136,99 @@ def analyze_run(run_dir: str) -> Path:
     # Mark visual tasks (require image content / color / appearance)
     if not ep_df.empty and "benchmark_site" in ep_df.columns and "task_id" in ep_df.columns:
         visual_ids_by_site: Dict[str, set] = {}
+        has_image_ids_by_site: Dict[str, set] = {}
         for site in ep_df["benchmark_site"].unique():
             visual_ids_by_site[site] = _load_visual_task_ids(str(site))
+            has_image_ids_by_site[site] = _load_has_image_task_ids(str(site))
         ep_df["is_visual_task"] = ep_df.apply(
             lambda r: int(r["task_id"]) in visual_ids_by_site.get(r["benchmark_site"], set()), axis=1
         )
-        # Flag DOM-mode visual successes as lucky hits (agent can't see images in DOM)
+        ep_df["is_has_image_task"] = ep_df.apply(
+            lambda r: int(r["task_id"]) in has_image_ids_by_site.get(r["benchmark_site"], set()), axis=1
+        )
+        # Flag DOM-mode visual kwd_only successes as lucky hits.
+        # has_image tasks excluded: DOM can now see reference images (§33/§34/§36).
+        is_dom = (ep_df.get("observation_mode", ep_df.get("condition_id", "")).str.contains("dom", case=False, na=False)
+                  if "observation_mode" in ep_df.columns
+                  else ep_df["condition_id"].str.contains("dom", case=False, na=False))
         ep_df["is_visual_lucky_hit"] = (
             ep_df["is_visual_task"]
+            & ~ep_df["is_has_image_task"]
             & ep_df["success"].astype(bool)
-            & (ep_df.get("observation_mode", ep_df.get("condition_id", "")).str.contains("dom", case=False, na=False)
-               if "observation_mode" in ep_df.columns
-               else ep_df["condition_id"].str.contains("dom", case=False, na=False))
+            & is_dom
         )
         visual_count = int(ep_df["is_visual_task"].sum())
         lucky_count = int(ep_df["is_visual_lucky_hit"].sum())
         if visual_count > 0:
-            logger.info("Flagged %d episodes as visual tasks, %d as visual lucky hits (DOM mode)", visual_count, lucky_count)
+            logger.info("Flagged %d episodes as visual tasks, %d as visual lucky hits (DOM kwd_only)", visual_count, lucky_count)
         if lucky_count > 0:
             lucky_df = ep_df[ep_df["is_visual_lucky_hit"]][["benchmark_site", "task_id", "condition_id", "success"]].copy()
             lucky_df.to_csv(noise_dir / "visual_lucky_hits.csv", index=False)
     else:
         ep_df["is_visual_task"] = False
+        ep_df["is_has_image_task"] = False
         ep_df["is_visual_lucky_hit"] = False
+
+    # --- Compute adjusted success (visual FP + N/A FP removal) ---
+    if not ep_df.empty and "benchmark_site" in ep_df.columns and "success" in ep_df.columns:
+        # Ensure observation_mode column exists (needed by compute_adjusted_success_batch)
+        if "observation_mode" not in ep_df.columns:
+            if not cond_df.empty and "observation_mode" in cond_df.columns and "condition_id" in ep_df.columns:
+                obs_map = cond_df.set_index("condition_id")["observation_mode"].to_dict()
+                ep_df["observation_mode"] = ep_df["condition_id"].map(obs_map)
+            elif "condition_id" in ep_df.columns:
+                def _infer_obs_mode(cid):
+                    cid_lower = str(cid).lower()
+                    if "vision" in cid_lower:
+                        return "vision"
+                    elif "som" in cid_lower:
+                        return "som"
+                    return "dom"
+                ep_df["observation_mode"] = ep_df["condition_id"].apply(_infer_obs_mode)
+
+        if "observation_mode" in ep_df.columns:
+            adj_parts = []
+            for site in ep_df["benchmark_site"].unique():
+                site_mask = ep_df["benchmark_site"] == site
+                site_ep = ep_df[site_mask].copy()
+                compute_adjusted_success_batch(site_ep, str(site))
+                adj_parts.append(site_ep[["adjusted_success", "fp_reason"]])
+            if adj_parts:
+                adj_combined = pd.concat(adj_parts)
+                ep_df["adjusted_success"] = adj_combined["adjusted_success"]
+                ep_df["fp_reason"] = adj_combined["fp_reason"]
+                logger.info(
+                    "Computed adjusted success: %d FPs removed (%d visual_fp, %d na_fp)",
+                    int((ep_df["fp_reason"] != "").sum()),
+                    int((ep_df["fp_reason"] == "visual_fp").sum()),
+                    int((ep_df["fp_reason"] == "na_fp").sum()),
+                )
+
+    # Override success with adjusted values for all downstream analysis
+    if not ep_df.empty and "adjusted_success" in ep_df.columns:
+        ep_df["raw_success"] = ep_df["success"].copy()
+
+        # Update cond_df success_rate
+        if not cond_df.empty and "condition_id" in cond_df.columns:
+            adj_sr = (
+                ep_df.groupby("condition_id")["adjusted_success"]
+                .apply(lambda s: s.astype(float).fillna(0).mean())
+                .reset_index()
+                .rename(columns={"adjusted_success": "success_rate_adj"})
+            )
+            cond_df = cond_df.merge(adj_sr, on="condition_id", how="left")
+            cond_df["success_rate"] = cond_df["success_rate_adj"].fillna(cond_df["success_rate"])
+            cond_df.drop(columns=["success_rate_adj"], inplace=True)
+
+        # Inject adjusted success into episode_rows for _analyze_condition
+        adj_map = ep_df.set_index(["condition_id", "task_id"])["adjusted_success"].to_dict()
+        for r in episode_rows:
+            key = (r.get("condition_id"), r.get("task_id"))
+            if key in adj_map:
+                r["success"] = adj_map[key]
+
+        # Replace ep_df success column
+        ep_df["success"] = ep_df["adjusted_success"]
 
     # --- Per-condition (per-session) analysis ---
     cond_ids = [row.get("condition_id") for row in condition_rows if row.get("condition_id")]
@@ -1165,11 +1312,12 @@ def analyze_run(run_dir: str) -> Path:
         na_total = int(ep_df["is_na_reference"].sum())
         for cid in ep_df["condition_id"].unique():
             sub = ep_df[ep_df["condition_id"] == cid]
-            raw_sr = float(sub["success"].astype(float).fillna(0).mean())
+            raw_col = "raw_success" if "raw_success" in sub.columns else "success"
+            raw_sr = float(sub[raw_col].astype(float).fillna(0).mean())
             adj_sub = sub[~sub["is_na_reference"]]
             adj_sr = float(adj_sub["success"].astype(float).fillna(0).mean()) if len(adj_sub) > 0 else 0.0
             na_in_cond = int(sub["is_na_reference"].sum())
-            na_success = int(sub[sub["is_na_reference"]]["success"].astype(float).fillna(0).sum())
+            na_success = int(sub[sub["is_na_reference"]][raw_col].astype(float).fillna(0).sum())
             na_adjusted[cid] = {
                 "raw_success_rate": raw_sr,
                 "adjusted_success_rate": adj_sr,
@@ -1189,7 +1337,8 @@ def analyze_run(run_dir: str) -> Path:
         visual_task_total = int(ep_df["is_visual_task"].sum())
         for cid in ep_df["condition_id"].unique():
             sub = ep_df[ep_df["condition_id"] == cid]
-            raw_sr = float(sub["success"].astype(float).fillna(0).mean())
+            raw_col_v = "raw_success" if "raw_success" in sub.columns else "success"
+            raw_sr = float(sub[raw_col_v].astype(float).fillna(0).mean())
             lucky_in_cond = int(sub["is_visual_lucky_hit"].sum())
             visual_in_cond = int(sub["is_visual_task"].sum())
             # Adjusted: treat visual lucky hits as failures
@@ -1268,7 +1417,7 @@ def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path, ep_df=None) -> None
     bars = ax.bar(mode_order, success, color=["#4C72B0", "#DD8452", "#55A868"][:len(mode_order)])
     ax.set_ylim(0.0, 1.0)
     ax.set_ylabel("Success Rate")
-    ax.set_title("Phase 1 Representation Screening (dom / som / vision)")
+    ax.set_title("Phase 1 Representation Screening (adjusted)")
     for bar, val in zip(bars, success):
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01, f"{val:.2f}", ha="center", va="bottom")
     fig.tight_layout()
@@ -1301,7 +1450,7 @@ def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path, ep_df=None) -> None
             [pivot_sorted.index[i] for i in range(0, len(pivot_sorted), max(1, len(pivot_sorted) // 20))],
             fontsize=7,
         )
-        ax_h.set_title("Phase 1: Per-Task Success Heatmap")
+        ax_h.set_title("Phase 1: Per-Task Success Heatmap (adjusted)")
         fig_h.colorbar(im, ax=ax_h, label="Success (1=yes, 0=no, gray=N/A)")
         fig_h.tight_layout()
         fig_h.savefig(plots_dir / "phase1_success_heatmap.png", dpi=150)
@@ -1347,7 +1496,7 @@ def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path, ep_df=None) -> None
             ax.set_ylim(*ylim)
         ax.grid(alpha=0.3, axis="y")
 
-    fig.suptitle("Phase 1 Multi-Metric Comparison", fontsize=13)
+    fig.suptitle("Phase 1 Multi-Metric Comparison (adjusted)", fontsize=13)
     fig.tight_layout()
     fig.savefig(plots_dir / "phase1_comparison_overview.png")
     plt.close(fig)

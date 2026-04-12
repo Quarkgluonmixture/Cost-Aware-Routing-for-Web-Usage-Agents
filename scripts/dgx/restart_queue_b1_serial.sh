@@ -7,7 +7,6 @@ cd "${REPO_DIR}"
 
 RESULTS_BASE="${REPO_DIR}/results/visualwebarena/phase1"
 
-CLEAN=0
 RUN_ID_CLASSIFIEDS="${RUN_ID_CLASSIFIEDS:-}"
 RUN_ID_REDDIT="${RUN_ID_REDDIT:-}"
 RUN_ID_SHOPPING="${RUN_ID_SHOPPING:-}"
@@ -18,7 +17,6 @@ Usage:
   bash scripts/dgx/restart_queue_b1_serial.sh [options]
 
 Options:
-  --clean                     Delete previous outputs/logs for selected run_ids before restart.
   --run-id-classifieds ID     Override classifieds run_id.
   --run-id-reddit ID          Override reddit run_id.
   --run-id-shopping ID        Override shopping run_id.
@@ -37,12 +35,61 @@ log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
+restart_gallery_server() {
+  local gallery_dir="$1"
+  local gallery_port="$2"
+  local gallery_log="logs/gallery_http_${gallery_port}.log"
+  local python_bin="${PYTHON_BIN:-python3}"
+
+  # Stop any previous gallery server on the same port.
+  local gallery_pids
+  gallery_pids="$(
+    ps -eo pid=,args= | awk -v port="${gallery_port}" '
+      {
+        pid=$1
+        if ($0 !~ /python/ || $0 !~ /http\.server/) next
+        for (i = 2; i <= NF; i++) {
+          if ($i == "http.server" && (i + 1) <= NF && $(i + 1) == port) {
+            print pid
+            break
+          }
+        }
+      }
+    '
+  )"
+  for p in ${gallery_pids}; do
+    kill "${p}" 2>/dev/null || true
+  done
+  sleep 1
+
+  : > "${gallery_log}"
+  setsid "${python_bin}" -u -m http.server "${gallery_port}" \
+    --directory "${gallery_dir}" > "${gallery_log}" 2>&1 < /dev/null &
+  local new_gpid=$!
+  sleep 1
+
+  if ! kill -0 "${new_gpid}" 2>/dev/null; then
+    log "Gallery server failed to stay alive (pid=${new_gpid})."
+    log "  log=${gallery_log}"
+    tail -n 30 "${gallery_log}" || true
+    return 1
+  fi
+
+  if command -v curl >/dev/null 2>&1; then
+    local code
+    code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${gallery_port}/gallery.html" || true)"
+    if [[ "${code}" != "200" ]]; then
+      log "Gallery probe returned ${code} (expect 200): http://127.0.0.1:${gallery_port}/gallery.html"
+    fi
+  fi
+
+  log "Gallery server started on port ${gallery_port} (dir=${gallery_dir}, pid=${new_gpid})"
+  log "  log=${gallery_log}"
+  return 0
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --clean)
-      CLEAN=1
-      shift
-      ;;
     --run-id-classifieds)
       RUN_ID_CLASSIFIEDS="${2:-}"
       shift 2
@@ -135,39 +182,6 @@ if [[ -n "${q_pids}${r_pids}${s_pids}${w_pids}${g_pids}" ]]; then
   done
 fi
 
-if [[ "${CLEAN}" -eq 1 ]]; then
-  log "--clean enabled: deleting previous outputs/logs for selected run_ids..."
-  rm -rf \
-    "${RESULTS_BASE}/${RUN_ID_CLASSIFIEDS}" \
-    "${RESULTS_BASE}/${RUN_ID_REDDIT}" \
-    "${RESULTS_BASE}/${RUN_ID_SHOPPING}"
-
-  rm -f \
-    "logs/B1_baseline_qwen3vl4b_classifieds_${RUN_ID_CLASSIFIEDS}.log" \
-    "logs/B1_baseline_qwen3vl4b_reddit_${RUN_ID_REDDIT}.log" \
-    "logs/B1_baseline_qwen3vl4b_shopping_${RUN_ID_SHOPPING}.log"
-
-  # Clear sidecar state/logs.
-  rm -f \
-    "logs/live_reason_watch_classifieds_${RUN_ID_CLASSIFIEDS}.state.json" \
-    "logs/live_reason_watch_reddit_${RUN_ID_REDDIT}.state.json" \
-    "logs/live_reason_watch_shopping_${RUN_ID_SHOPPING}.state.json" \
-    "logs/live_reason_watch_classifieds_${RUN_ID_CLASSIFIEDS}.log" \
-    "logs/live_reason_watch_reddit_${RUN_ID_REDDIT}.log" \
-    "logs/live_reason_watch_shopping_${RUN_ID_SHOPPING}.log"
-
-  # Clear watchdog state/logs.
-  rm -f \
-    "logs/experiment_watchdog_classifieds_${RUN_ID_CLASSIFIEDS}.state.json" \
-    "logs/experiment_watchdog_reddit_${RUN_ID_REDDIT}.state.json" \
-    "logs/experiment_watchdog_shopping_${RUN_ID_SHOPPING}.state.json" \
-    "logs/experiment_watchdog_classifieds_${RUN_ID_CLASSIFIEDS}.log" \
-    "logs/experiment_watchdog_reddit_${RUN_ID_REDDIT}.log" \
-    "logs/experiment_watchdog_shopping_${RUN_ID_SHOPPING}.log"
-
-  rm -f logs/queue_b1_serial_*.log logs/queue_b1_serial_*.meta.txt
-fi
-
 OPENAI_KEY="${OPENAI_API_KEY:-}"
 if [[ -z "${OPENAI_KEY}" && -f ".auth/openai_key" ]]; then
   OPENAI_KEY="$(tr -d '\r\n' < .auth/openai_key)"
@@ -181,17 +195,13 @@ ts="$(date +%Y%m%d_%H%M%S)"
 queue_log="logs/queue_b1_serial_${ts}.log"
 queue_meta="logs/queue_b1_serial_${ts}.meta.txt"
 
-# Start gallery HTTP server for the active classifieds run.
+# Start gallery HTTP server at phase-level so cross-site ../reddit paths work.
 GALLERY_PORT="${GALLERY_PORT:-8765}"
-gallery_pids="$(ps -eo pid=,args= | awk '/python.*http\.server.*'"${GALLERY_PORT}"'/ && !/awk/ {print $1}')"
-for p in ${gallery_pids}; do
-  kill "${p}" 2>/dev/null || true
-done
-gallery_dir="${RESULTS_BASE}/${RUN_ID_CLASSIFIEDS}"
+gallery_dir="${RESULTS_BASE}"
 if [[ -d "${gallery_dir}" ]]; then
-  nohup "${PYTHON_BIN:-python3}" -m http.server "${GALLERY_PORT}" \
-    --directory "${gallery_dir}" > /dev/null 2>&1 &
-  log "Gallery server started on port ${GALLERY_PORT} (dir=${gallery_dir}, pid=$!)"
+  if ! restart_gallery_server "${gallery_dir}" "${GALLERY_PORT}"; then
+    log "Gallery restart failed, queue will continue without gallery."
+  fi
 else
   log "Gallery dir not found (${gallery_dir}), skipping gallery server."
 fi
@@ -204,6 +214,7 @@ setsid env \
   OPENAI_API_KEY="${OPENAI_KEY}" \
   LIVE_REASON_WATCH_ENABLE=0 \
   WATCHDOG_ENABLE=1 \
+  NTFY_MINIMAL_MODE=0 \
   bash scripts/dgx/queue_b1_serial.sh > "${queue_log}" 2>&1 < /dev/null &
 new_qpid=$!
 
@@ -215,7 +226,6 @@ log=${queue_log}
 RUN_ID_CLASSIFIEDS=${RUN_ID_CLASSIFIEDS}
 RUN_ID_REDDIT=${RUN_ID_REDDIT}
 RUN_ID_SHOPPING=${RUN_ID_SHOPPING}
-clean=${CLEAN}
 EOF
 
 sleep 3

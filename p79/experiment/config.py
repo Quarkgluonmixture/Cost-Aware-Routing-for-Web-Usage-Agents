@@ -187,6 +187,7 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     cfg["runtime"].setdefault("max_steps", 40)
     cfg["runtime"].setdefault("resume", True)
     cfg["runtime"].setdefault("busy_wait_limit", 5)
+    cfg["runtime"].setdefault("baseline_retry_on_no_progress", False)
 
     cfg.setdefault("checklist", {})
     cfg["checklist"].setdefault("enabled", False)

@@ -742,6 +742,7 @@ def _classify_unreachable_subtype(
     observation_mode: str,
     search_queries: List[Dict[str, Any]],
     degraded_som_steps: int = 0,
+    has_image: bool = False,
 ) -> str:
     """Sub-classify target-unreachable structural defects.
 
@@ -762,6 +763,13 @@ def _classify_unreachable_subtype(
     has_visual = any(k in intent_lower for k in _VISUAL_MATCH_KWDS)
     is_dom_like = obs == "dom" or (obs in ("som", "hybrid") and degraded_som_steps > 0)
     if has_visual and is_dom_like:
+        # Tasks with reference images (has_image=True) provide the image in
+        # the prompt — DOM mode can now see it.  The failure is a model
+        # capability issue (can't match ref image to listings), not a
+        # scaffold defect.  Keyword-only visual tasks (has_image=False)
+        # remain structurally unreachable in DOM mode.
+        if has_image:
+            return "visual_has_ref_image"
         return "visual_dom_only"
 
     # Location constraint only applies to the direct-timeout bucket; for loop
@@ -1388,6 +1396,36 @@ def main() -> None:
                 final_answer_in_intent_price_range=answer_in_intent_price_range,
             )
 
+            # ── Adjusted success (visual FP + N/A FP) ──
+            from p79.experiment.analysis import compute_adjusted_success, _load_visual_task_ids, _load_has_image_task_ids, _load_na_task_ids
+            _visual_ids = _load_visual_task_ids(site)
+            _has_image_ids = _load_has_image_task_ids(site)
+            _na_ids = _load_na_task_ids(site)
+            adjusted_success, fp_reason = compute_adjusted_success(
+                task_id, site, observation_mode, success,
+                visual_task_ids=_visual_ids, has_image_task_ids=_has_image_ids,
+                na_task_ids=_na_ids,
+            )
+            if adjusted_success != success:
+                adjusted_reason_bucket = _classify_reason(
+                    success=adjusted_success,
+                    summary_error=summary.get("error"),
+                    final_action_type=final_action_type,
+                    final_error_category=final_error_category,
+                    final_answer=final_answer,
+                    eval_type=eval_type,
+                    early_finish=early_finish,
+                    hit_max_steps=hit_max_steps,
+                    click_back_pairs=int(loop_metrics["click_back_pairs"]),
+                    max_search_query_repeat=int(loop_metrics["max_search_query_repeat"]),
+                    target_item_ever_visible=target_item_ever_visible,
+                    final_url_match=final_url_match,
+                    ever_visited_reference_url=ever_visited_ref_url,
+                    final_answer_in_intent_price_range=answer_in_intent_price_range,
+                )
+            else:
+                adjusted_reason_bucket = reason_bucket
+
             collection_overlap_score = _collection_overlap_score(final_answer, ref_answers)
             stuck_subtype = _classify_stuck_subtype(
                 reason_bucket=reason_bucket,
@@ -1405,6 +1443,7 @@ def main() -> None:
                 observation_mode=observation_mode,
                 search_queries=loop_metrics["search_queries"],
                 degraded_som_steps=degraded_som_steps,
+                has_image=(task_id in _has_image_ids),
             )
 
             # Phase2 aggregations
@@ -1417,7 +1456,10 @@ def main() -> None:
                 "site": site,
                 "task_id": task_id,
                 "success": success,
+                "adjusted_success": adjusted_success,
+                "fp_reason": fp_reason,
                 "reason_bucket": reason_bucket,
+                "adjusted_reason_bucket": adjusted_reason_bucket,
                 "eval_type": eval_type,
                 "steps": steps_count,
                 "hit_max_steps": hit_max_steps,
@@ -1522,7 +1564,10 @@ def main() -> None:
         "site",
         "task_id",
         "success",
+        "adjusted_success",
+        "fp_reason",
         "reason_bucket",
+        "adjusted_reason_bucket",
         "eval_type",
         "steps",
         "hit_max_steps",
@@ -1610,12 +1655,21 @@ def main() -> None:
     cond_rows: List[Dict[str, Any]] = []
     for cid in sorted(per_condition_total.keys()):
         total = per_condition_total[cid]
+        adj_success_count = sum(
+            1 for x in episode_rows if x["condition_id"] == cid and bool(x.get("adjusted_success", x["success"]))
+        )
+        fp_count = sum(
+            1 for x in episode_rows if x["condition_id"] == cid and x.get("fp_reason", "")
+        )
         cond_rows.append(
             {
                 "condition_id": cid,
                 "episodes": total,
                 "success_count": per_condition_success[cid],
                 "success_rate": _safe_ratio(per_condition_success[cid], total),
+                "adjusted_success_count": adj_success_count,
+                "adjusted_success_rate": _safe_ratio(adj_success_count, total),
+                "fp_count": fp_count,
                 "early_finish_fail_count": sum(
                     1
                     for x in episode_rows
@@ -1634,6 +1688,9 @@ def main() -> None:
             "episodes",
             "success_count",
             "success_rate",
+            "adjusted_success_count",
+            "adjusted_success_rate",
+            "fp_count",
             "early_finish_fail_count",
             "fallback_finish_count",
         ],

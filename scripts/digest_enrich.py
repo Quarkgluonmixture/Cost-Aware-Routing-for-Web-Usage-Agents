@@ -73,10 +73,17 @@ _MARK_REF_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Detail page URL pattern for Classifieds
+# Detail page URL pattern for Classifieds (kept as backwards-compatible fallback)
 _DETAIL_PAGE_RE = re.compile(r"page=item&id=|/item/\d+", re.IGNORECASE)
 
-# Product description indicators in DOM
+# Multi-site detail page URL patterns
+_DETAIL_PAGE_PATTERNS = {
+    "classifieds": re.compile(r"page=item&id=|/item/\d+", re.IGNORECASE),
+    "reddit": re.compile(r"/f/[^/]+/\d+", re.IGNORECASE),
+    "shopping": re.compile(r"/[\w-]+\.html|/catalog/product/view/id/\d+", re.IGNORECASE),
+}
+
+# Product description indicators in DOM (kept as backwards-compatible fallback)
 _DESCRIPTION_INDICATORS = [
     "item_description",
     "listing-description",
@@ -84,6 +91,30 @@ _DESCRIPTION_INDICATORS = [
     "product-description",
     "ad-description",
 ]
+
+# Multi-site description indicators
+_DESCRIPTION_INDICATORS_BY_SITE = {
+    "classifieds": [
+        "item_description",
+        "listing-description",
+        "description",
+        "product-description",
+        "ad-description",
+    ],
+    "reddit": [
+        "post-content",
+        "comment-body",
+        "submission-content",
+        "post_content",
+    ],
+    "shopping": [
+        "product-info-description",
+        "product-description",
+        "description",
+        "product-attribute",
+        "short-description",
+    ],
+}
 
 
 def _extract_thoughts(steps_jsonl: Path) -> List[Dict[str, Any]]:
@@ -139,7 +170,11 @@ def _has_mark_reference(thought: str) -> bool:
     return bool(_MARK_REF_RE.search(thought))
 
 
-def _check_dom_description(artifact_dir: Path, steps: List[Dict]) -> Tuple[bool, List[int], float]:
+def _check_dom_description(
+    artifact_dir: Path,
+    steps: List[Dict],
+    site: str = "classifieds",
+) -> Tuple[bool, List[int], float]:
     """
     Check if any detail-page DOM contains product description text.
     Returns (has_description, detail_page_dom_lengths, avg_dom_length).
@@ -147,6 +182,9 @@ def _check_dom_description(artifact_dir: Path, steps: List[Dict]) -> Tuple[bool,
     dom_lengths: List[int] = []
     detail_dom_lengths: List[int] = []
     has_desc = False
+
+    detail_re = _DETAIL_PAGE_PATTERNS.get(site, _DETAIL_PAGE_RE)
+    indicators = _DESCRIPTION_INDICATORS_BY_SITE.get(site, _DESCRIPTION_INDICATORS)
 
     for s in steps:
         step_idx = s["step_idx"]
@@ -163,11 +201,11 @@ def _check_dom_description(artifact_dir: Path, steps: List[Dict]) -> Tuple[bool,
 
         # Check if this is a detail page
         obs_url = s.get("obs_url", "")
-        if _DETAIL_PAGE_RE.search(obs_url):
+        if detail_re.search(obs_url):
             detail_dom_lengths.append(dom_len)
             # Check for description section
             dom_lower = dom_text.lower()
-            for indicator in _DESCRIPTION_INDICATORS:
+            for indicator in indicators:
                 if indicator in dom_lower:
                     has_desc = True
                     break
@@ -217,13 +255,13 @@ def enrich_one(
     mark_ref_steps = sum(1 for s in steps if _has_mark_reference(s["thought"]))
 
     # 4. DOM description check
-    site = str(record.get("benchmark_site", "classifieds"))
+    site = str(record.get("benchmark_site") or record.get("site") or "classifieds")
     artifact_dir = run_dir / condition_id / "artifacts" / f"{site}_task_{task_id}"
     has_desc = False
     detail_dom_lengths: List[int] = []
     avg_dom = 0.0
     if artifact_dir.exists():
-        has_desc, detail_dom_lengths, avg_dom = _check_dom_description(artifact_dir, steps)
+        has_desc, detail_dom_lengths, avg_dom = _check_dom_description(artifact_dir, steps, site=site)
 
     # Write enrichment fields
     record["_enrich"] = {

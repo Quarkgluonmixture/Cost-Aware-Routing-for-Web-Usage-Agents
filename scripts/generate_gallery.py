@@ -19,6 +19,7 @@ import argparse
 import base64
 import json
 import html as html_mod
+import re
 from collections import OrderedDict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -90,7 +91,10 @@ def _build_action_summary(step: Dict[str, Any]) -> str:
         parts.append(f"[{eid}]")
 
     if coord and isinstance(coord, (list, tuple)) and len(coord) >= 2:
-        parts.append(f"@({coord[0]:.2f},{coord[1]:.2f})")
+        cx, cy = float(coord[0]), float(coord[1])
+        # Flag mixed-format coords (one normalized, one pixel) with asterisk
+        mixed = cx <= 1.0 < cy or cy <= 1.0 < cx
+        parts.append(f"@({cx:.2f},{cy:.2f})" + ("*" if mixed else ""))
 
     if action_type == "type":
         text = str(action.get("text", "")).replace("\n", "\\n")
@@ -119,27 +123,95 @@ def _build_action_summary(step: Dict[str, Any]) -> str:
 # Condition metadata
 # ---------------------------------------------------------------------------
 
-def _load_condition_labels(run_dir: Path) -> Dict[str, Dict[str, str]]:
+def _load_condition_labels(source_run_dirs: List[Path]) -> Dict[str, Dict[str, str]]:
     """Load condition labels and observation modes from condition_meta.json files."""
     labels: Dict[str, Dict[str, str]] = {}
-    for cond_dir in sorted(run_dir.iterdir()):
-        if not cond_dir.is_dir() or cond_dir.name in ("analysis", ".git"):
-            continue
-        default = {"label": cond_dir.name, "observation_mode": "unknown"}
-        meta_path = cond_dir / "condition_meta.json"
-        if meta_path.exists():
-            try:
-                with open(meta_path, "r", encoding="utf-8") as f:
-                    meta = json.load(f)
-                labels[cond_dir.name] = {
-                    "label": meta.get("label", cond_dir.name),
-                    "observation_mode": meta.get("observation_mode", "unknown"),
-                }
-            except Exception:
-                labels[cond_dir.name] = default
-        else:
-            labels[cond_dir.name] = default
+    for source_run_dir in source_run_dirs:
+        for cond_dir in sorted(source_run_dir.iterdir()):
+            if not cond_dir.is_dir() or cond_dir.name in ("analysis", ".git", "_vwa"):
+                continue
+            default = {"label": cond_dir.name, "observation_mode": "unknown"}
+            meta_path = cond_dir / "condition_meta.json"
+            candidate = default
+            if meta_path.exists():
+                try:
+                    with open(meta_path, "r", encoding="utf-8") as f:
+                        meta = json.load(f)
+                    candidate = {
+                        "label": meta.get("label", cond_dir.name),
+                        "observation_mode": meta.get("observation_mode", "unknown"),
+                    }
+                except Exception:
+                    candidate = default
+
+            # Prefer non-unknown observation mode if discovered later.
+            existing = labels.get(cond_dir.name)
+            if existing is None or (
+                existing.get("observation_mode") == "unknown"
+                and candidate.get("observation_mode") != "unknown"
+            ):
+                labels[cond_dir.name] = candidate
     return labels
+
+
+_KNOWN_SITE_ORDER = {
+    "classifieds": 0,
+    "reddit": 1,
+    "shopping": 2,
+    "wikipedia": 3,
+}
+_RUN_FAMILY_RE = re.compile(
+    r"^(?P<prefix>.+)_(?P<site>classifieds|reddit|shopping|wikipedia)_(?P<stamp>\d{8}(?:_\d{6})?)$"
+)
+
+
+def _parse_run_family(run_name: str) -> Optional[Dict[str, str]]:
+    """Parse run name into {prefix, site, stamp} when it matches known naming."""
+    m = _RUN_FAMILY_RE.match(run_name)
+    if not m:
+        return None
+    return m.groupdict()
+
+
+def _has_episode_data(run_dir: Path) -> bool:
+    """Quick check: does this run dir contain at least one condition episodes dir?"""
+    for cond_dir in run_dir.iterdir():
+        if not cond_dir.is_dir() or cond_dir.name in ("analysis", ".git", "_vwa"):
+            continue
+        if (cond_dir / "episodes").exists():
+            return True
+    return False
+
+
+def _discover_source_runs(run_dir: Path) -> tuple[List[Path], str]:
+    """Find source run dirs for gallery and a concise display title."""
+    family = _parse_run_family(run_dir.name)
+    if not family:
+        return [run_dir], run_dir.name
+
+    prefix = family["prefix"]
+    siblings: List[Path] = []
+    for cand in run_dir.parent.iterdir():
+        if not cand.is_dir():
+            continue
+        c_family = _parse_run_family(cand.name)
+        if not c_family:
+            continue
+        if c_family["prefix"] != prefix:
+            continue
+        if _has_episode_data(cand):
+            siblings.append(cand)
+
+    if not siblings:
+        return [run_dir], prefix
+
+    siblings.sort(
+        key=lambda p: (
+            _KNOWN_SITE_ORDER.get((_parse_run_family(p.name) or {}).get("site", ""), 999),
+            p.name,
+        )
+    )
+    return siblings, prefix
 
 
 # ---------------------------------------------------------------------------
@@ -233,7 +305,7 @@ def _load_task_intents() -> Dict[str, Dict[str, str]]:
 # ---------------------------------------------------------------------------
 
 def _collect_episodes(
-    run_dir: Path,
+    source_run_dirs: List[Path],
     condition_filter: Optional[str],
     task_id_filter: Optional[int],
     gallery_path: Path,
@@ -242,112 +314,121 @@ def _collect_episodes(
     """Collect episodes with their steps and image sources."""
     intents = _load_task_intents()
     episodes = []
-    condition_dirs = sorted(run_dir.iterdir())
-    for cond_dir in condition_dirs:
-        if not cond_dir.is_dir() or cond_dir.name in ("analysis", ".git"):
-            continue
-        if condition_filter and cond_dir.name != condition_filter:
-            continue
-        episodes_dir = cond_dir / "episodes"
-        artifacts_dir = cond_dir / "artifacts"
-        if not episodes_dir.exists():
-            continue
-
-        for jsonl_path in sorted(episodes_dir.glob("*_steps_v2.jsonl")):
-            stem = jsonl_path.stem.replace("_steps_v2", "")
-            parts = stem.rsplit("_task_", 1)
-            if len(parts) != 2:
+    for source_run_dir in source_run_dirs:
+        condition_dirs = sorted(source_run_dir.iterdir())
+        for cond_dir in condition_dirs:
+            if not cond_dir.is_dir() or cond_dir.name in ("analysis", ".git", "_vwa"):
                 continue
-            site = parts[0]
-            try:
-                task_id = int(parts[1])
-            except ValueError:
+            if condition_filter and cond_dir.name != condition_filter:
                 continue
-            if task_id_filter is not None and task_id != task_id_filter:
+            episodes_dir = cond_dir / "episodes"
+            artifacts_dir = cond_dir / "artifacts"
+            if not episodes_dir.exists():
                 continue
 
-            steps = _read_steps(jsonl_path)
-            if not steps:
-                continue
-
-            # Read summary
-            summary_path = episodes_dir / f"{site}_task_{task_id}_summary_v2.json"
-            summary = None
-            if summary_path.exists():
+            for jsonl_path in sorted(episodes_dir.glob("*_steps_v2.jsonl")):
+                stem = jsonl_path.stem.replace("_steps_v2", "")
+                parts = stem.rsplit("_task_", 1)
+                if len(parts) != 2:
+                    continue
+                site = parts[0]
                 try:
-                    with open(summary_path, "r", encoding="utf-8") as f:
-                        summary = json.load(f)
-                except Exception:
-                    pass
+                    task_id = int(parts[1])
+                except ValueError:
+                    continue
+                if task_id_filter is not None and task_id != task_id_filter:
+                    continue
 
-            # Collect steps
-            task_artifact_dir = artifacts_dir / f"{site}_task_{task_id}"
-            step_data = []
-            for step in steps:
-                step_idx = step.get("step_idx", len(step_data))
-                step_dir = task_artifact_dir / f"step_{step_idx:03d}"
-                annotated = step_dir / "screenshot_annotated.png"
-                raw = step_dir / "screenshot.png"
-                img_path = annotated if annotated.exists() else raw
+                steps = _read_steps(jsonl_path)
+                if not steps:
+                    continue
 
-                if embed:
-                    img_src = _img_to_data_uri(img_path)
-                else:
-                    img_src = _img_to_relative(img_path, gallery_path)
+                # Read summary
+                summary_path = episodes_dir / f"{site}_task_{task_id}_summary_v2.json"
+                summary = None
+                if summary_path.exists():
+                    try:
+                        with open(summary_path, "r", encoding="utf-8") as f:
+                            summary = json.load(f)
+                    except Exception:
+                        pass
 
-                # Extract thought from action dict (primary) or top-level (fallback)
-                action = step.get("action", {})
-                if isinstance(action, dict):
-                    thought = str(action.get("thought", "") or "").strip()
-                else:
-                    thought = ""
-                if not thought:
-                    thought = str(step.get("thought", "") or "").strip()
+                # Collect steps
+                task_artifact_dir = artifacts_dir / f"{site}_task_{task_id}"
+                step_data = []
+                for step in steps:
+                    step_idx = step.get("step_idx", len(step_data))
+                    step_dir = task_artifact_dir / f"step_{step_idx:03d}"
+                    annotated = step_dir / "screenshot_annotated.png"
+                    raw = step_dir / "screenshot.png"
+                    img_path = annotated if annotated.exists() else raw
 
-                step_data.append({
-                    "step_idx": step_idx,
-                    "action_summary": _build_action_summary(step),
-                    "thought": thought[:200],
-                    "reward": step.get("reward"),
-                    "img_path": img_src,
+                    if embed:
+                        img_src = _img_to_data_uri(img_path)
+                    else:
+                        img_src = _img_to_relative(img_path, gallery_path)
+
+                    # Extract thought from action dict (primary) or top-level (fallback)
+                    action = step.get("action", {})
+                    if isinstance(action, dict):
+                        thought = str(action.get("thought", "") or "").strip()
+                    else:
+                        thought = ""
+                    if not thought:
+                        thought = str(step.get("thought", "") or "").strip()
+
+                    step_data.append({
+                        "step_idx": step_idx,
+                        "action_summary": _build_action_summary(step),
+                        "thought": thought[:200],
+                        "reward": step.get("reward"),
+                        "img_path": img_src,
+                    })
+
+                ep_key = f"{source_run_dir.name}__{cond_dir.name}__{site}_task_{task_id}"
+                label = f"{site}_task_{task_id}"
+                task_info = intents.get(label, {})
+                intent_text = task_info.get("intent", "") if isinstance(task_info, dict) else str(task_info)
+                intent_img_abs = task_info.get("image", "") if isinstance(task_info, dict) else ""
+                # Convert intent image to relative path (or base64 if --embed)
+                intent_img_src = ""
+                if intent_img_abs:
+                    if embed:
+                        intent_img_src = _img_to_data_uri(Path(intent_img_abs)) or ""
+                    else:
+                        # Use _vwa symlink so path stays inside HTTP server root
+                        vwa_root = _VWA_CONFIG_BASE.resolve().parent.parent
+                        img_abs = Path(intent_img_abs)
+                        try:
+                            rel_in_vwa = img_abs.resolve().relative_to(vwa_root.resolve())
+                            intent_img_src = f"_vwa/{rel_in_vwa}"
+                        except ValueError:
+                            intent_img_src = _img_to_relative(
+                                img_abs, gallery_path
+                            ) or ""
+                episodes.append({
+                    "key": ep_key,
+                    "run_id": source_run_dir.name,
+                    "condition": cond_dir.name,
+                    "site": site,
+                    "task_id": task_id,
+                    "label": label,
+                    "intent": intent_text,
+                    "intent_image": intent_img_src,
+                    "steps": step_data,
+                    "success": summary.get("success") if summary else None,
+                    "score": summary.get("score") if summary else None,
+                    "total_steps": len(step_data),
                 })
 
-            ep_key = f"{cond_dir.name}__{site}_task_{task_id}"
-            label = f"{site}_task_{task_id}"
-            task_info = intents.get(label, {})
-            intent_text = task_info.get("intent", "") if isinstance(task_info, dict) else str(task_info)
-            intent_img_abs = task_info.get("image", "") if isinstance(task_info, dict) else ""
-            # Convert intent image to relative path (or base64 if --embed)
-            intent_img_src = ""
-            if intent_img_abs:
-                if embed:
-                    intent_img_src = _img_to_data_uri(Path(intent_img_abs)) or ""
-                else:
-                    # Use _vwa symlink so path stays inside HTTP server root
-                    vwa_root = _VWA_CONFIG_BASE.resolve().parent.parent
-                    img_abs = Path(intent_img_abs)
-                    try:
-                        rel_in_vwa = img_abs.resolve().relative_to(vwa_root.resolve())
-                        intent_img_src = f"_vwa/{rel_in_vwa}"
-                    except ValueError:
-                        intent_img_src = _img_to_relative(
-                            img_abs, gallery_path
-                        ) or ""
-            episodes.append({
-                "key": ep_key,
-                "condition": cond_dir.name,
-                "site": site,
-                "task_id": task_id,
-                "label": label,
-                "intent": intent_text,
-                "intent_image": intent_img_src,
-                "steps": step_data,
-                "success": summary.get("success") if summary else None,
-                "score": summary.get("score") if summary else None,
-                "total_steps": len(step_data),
-            })
-
-    episodes.sort(key=lambda e: (e["condition"], e["site"], e["task_id"]))
+    episodes.sort(
+        key=lambda e: (
+            _KNOWN_SITE_ORDER.get(e["site"], 999),
+            e["condition"],
+            e["task_id"],
+            e["run_id"],
+        )
+    )
     return episodes
 
 
@@ -508,7 +589,7 @@ img.zoomed{{
 
 var D=JSON.parse(document.getElementById('gallery-data').textContent);
 var GROUPS=D.groups, ORDER=D.episode_order, IDX=D.episode_index;
-var SKEY='gallery_v2_'+D.title;
+var SKEY='gallery_v2_'+(D.state_key||D.title);
 
 /* ---- state ---- */
 var S={{view:'home',epKey:null,step:0,scrollY:0,eg:{{}}}};
@@ -839,12 +920,13 @@ def generate_gallery(
     gallery_path = run_dir / "gallery.html"
     if not embed:
         _ensure_intent_images_symlink(run_dir)
-    episodes = _collect_episodes(run_dir, condition, task_id, gallery_path, embed)
+    source_run_dirs, base_title = _discover_source_runs(run_dir)
+    episodes = _collect_episodes(source_run_dirs, condition, task_id, gallery_path, embed)
     if not episodes:
         print("No episodes found.")
         raise SystemExit(1)
 
-    condition_labels = _load_condition_labels(run_dir)
+    condition_labels = _load_condition_labels(source_run_dirs)
     groups = _build_groups(episodes, condition_labels)
 
     # Build global ordering and O(1) index
@@ -855,7 +937,7 @@ def generate_gallery(
             episode_order.append(ep["key"])
             episode_index[ep["key"]] = [gi, ei]
 
-    title = run_dir.name
+    title = base_title
     if condition:
         title += f" / {condition}"
     if task_id is not None:
@@ -863,6 +945,7 @@ def generate_gallery(
 
     data = {
         "title": title,
+        "state_key": run_dir.name,
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "groups": groups,
         "episode_order": episode_order,
@@ -883,9 +966,105 @@ def generate_gallery(
     return gallery_path
 
 
+def generate_aggregate_gallery(
+    phase_dir: Path,
+    prefix_filter: Optional[str],
+    condition: Optional[str],
+    task_id: Optional[int],
+    embed: bool,
+) -> Path:
+    """Generate a single gallery aggregating all matching run dirs under *phase_dir*.
+
+    Args:
+        phase_dir: e.g. results/visualwebarena/phase1/
+        prefix_filter: only include runs whose prefix matches (e.g. "B1_3mode").
+                       None = include all.
+    """
+    # Place aggregate gallery in a subdirectory named after the prefix
+    # so the URL is e.g. http://localhost:8765/B1_3mode/gallery.html
+    if prefix_filter:
+        gallery_dir = phase_dir / prefix_filter
+        gallery_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        gallery_dir = phase_dir
+    gallery_path = gallery_dir / "gallery.html"
+    source_run_dirs: List[Path] = []
+    for cand in sorted(phase_dir.iterdir()):
+        if not cand.is_dir() or cand.is_symlink():
+            continue
+        if cand.name.startswith(".") or cand.name in ("analysis",):
+            continue
+        family = _parse_run_family(cand.name)
+        if prefix_filter and (not family or family["prefix"] != prefix_filter):
+            continue
+        if _has_episode_data(cand):
+            source_run_dirs.append(cand)
+
+    if not source_run_dirs:
+        print(f"No run dirs with episode data found in {phase_dir}")
+        raise SystemExit(1)
+
+    print(f"Aggregating {len(source_run_dirs)} run dirs:")
+    for d in source_run_dirs:
+        print(f"  {d.name}")
+
+    # Ensure each source has a _vwa symlink for intent images
+    if not embed:
+        for d in source_run_dirs:
+            _ensure_intent_images_symlink(d)
+        # Also ensure a _vwa symlink in the aggregate gallery dir
+        _ensure_intent_images_symlink(gallery_dir)
+
+    episodes = _collect_episodes(source_run_dirs, condition, task_id, gallery_path, embed)
+    if not episodes:
+        print("No episodes found.")
+        raise SystemExit(1)
+
+    condition_labels = _load_condition_labels(source_run_dirs)
+    groups = _build_groups(episodes, condition_labels)
+
+    episode_order: List[str] = []
+    episode_index: Dict[str, List[int]] = {}
+    for gi, group in enumerate(groups):
+        for ei, ep in enumerate(group["episodes"]):
+            episode_order.append(ep["key"])
+            episode_index[ep["key"]] = [gi, ei]
+
+    title = prefix_filter or "B1 Aggregate"
+    if condition:
+        title += f" / {condition}"
+    if task_id is not None:
+        title += f" / task_{task_id}"
+
+    data = {
+        "title": title,
+        "state_key": f"aggregate_{prefix_filter or 'all'}",
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "groups": groups,
+        "episode_order": episode_order,
+        "episode_index": episode_index,
+    }
+
+    data_json = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+    data_json = data_json.replace("</", "<\\/")
+
+    html_content = _HTML_TEMPLATE_V2.format(
+        title=html_mod.escape(title),
+        data_json=data_json,
+    )
+
+    gallery_path.write_text(html_content, encoding="utf-8")
+    print(f"Gallery: {gallery_path}  ({len(episodes)} episodes)")
+    return gallery_path
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate screenshot gallery HTML")
-    parser.add_argument("--run-dir", required=True, help="Run directory")
+    parser.add_argument("--run-dir", default=None, help="Run directory (single run mode)")
+    parser.add_argument("--phase-dir", default=None,
+                        help="Phase directory to aggregate all runs (e.g. results/visualwebarena/phase1)")
+    parser.add_argument("--prefix", default=None,
+                        help="Filter runs by prefix when using --phase-dir (e.g. B1_3mode)")
     parser.add_argument("--condition", default=None, help="Filter to condition_id")
     parser.add_argument("--task-id", type=int, default=None, help="Filter to task_id")
     parser.add_argument(
@@ -893,7 +1072,14 @@ def main():
         help="Embed images as base64 (larger file but self-contained)",
     )
     args = parser.parse_args()
-    generate_gallery(Path(args.run_dir), args.condition, args.task_id, args.embed)
+    if args.phase_dir:
+        generate_aggregate_gallery(
+            Path(args.phase_dir), args.prefix, args.condition, args.task_id, args.embed,
+        )
+    elif args.run_dir:
+        generate_gallery(Path(args.run_dir), args.condition, args.task_id, args.embed)
+    else:
+        parser.error("Either --run-dir or --phase-dir is required")
 
 
 if __name__ == "__main__":

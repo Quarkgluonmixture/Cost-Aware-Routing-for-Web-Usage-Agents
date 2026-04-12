@@ -19,7 +19,7 @@ variables:
 backends:
   default_backend: "local_4b"
   local_4b:
-    max_new_tokens: 256
+    max_new_tokens: 384
     min_free_vram_gb: 0
 
 baselines:

@@ -12,6 +12,7 @@ Analyses:
   C7 – Cross-mode AUROC grouped bar chart (DOM vs SoM per signal)
   C8 – Behavioral signal accumulation curve (earliest routing step)
   C9 – Token-level vs verbalized confidence comparison
+  C10 – Composite signal exploration (correlation matrix + weighted AUROC grid search)
 
 Usage:
   python scripts/analysis/analyze_confidence_calibration.py \
@@ -84,6 +85,8 @@ BEHAVIORAL_COLS = (
 def _build_episode_df(
     step_records: List[Dict[str, Any]],
     summaries: Dict[Tuple[str, int], Dict[str, Any]],
+    *,
+    run_dir: "Path | None" = None,
 ) -> pd.DataFrame:
     """Aggregate step-level confidence → episode rows with success labels."""
 
@@ -352,8 +355,8 @@ def c1_distribution(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
             "rank_biserial": round(float(rb), 4),
             "n_success": len(s_vals), "n_failure": len(f_vals),
         })
-    pd.DataFrame(test_rows).to_csv(tables_dir / "wilcoxon_test.csv", index=False)
-    print(f"  C1: tables → confidence_by_outcome.csv, wilcoxon_test.csv")
+    pd.DataFrame(test_rows).to_csv(tables_dir / "mannwhitney_test.csv", index=False)
+    print(f"  C1: tables → confidence_by_outcome.csv, mannwhitney_test.csv")
 
     # Violin plot – dynamic grid based on active metrics
     n_metrics = len(active_metrics)
@@ -468,7 +471,8 @@ def c2_calibration(
         sig_type = "verbalized" if m in METRICS_VERBALIZED else "token_level"
         mdf = ep_df.dropna(subset=[m])
         if len(mdf) < 4 or mdf["success"].nunique() < 2:
-            auroc_rows.append({"metric": m, "AUROC": np.nan, "n": len(mdf),
+            auroc_rows.append({"metric": m, "AUROC": np.nan, "AUROC_ci_lower": np.nan,
+                               "AUROC_ci_upper": np.nan, "n": len(mdf),
                                "signal_type": sig_type})
             continue
         y = mdf["success"].astype(int).values
@@ -476,10 +480,12 @@ def c2_calibration(
         # Entropy is inversely related to confidence: negate for AUROC
         if "entropy" in m:
             scores = -scores
-        a = _auroc_safe(y, scores)
+        a, ci_lo, ci_hi = _auroc_bootstrap_ci(y, scores)
         auroc_rows.append({
             "metric": m,
             "AUROC": round(a, 6) if not math.isnan(a) else None,
+            "AUROC_ci_lower": round(ci_lo, 6) if not math.isnan(ci_lo) else None,
+            "AUROC_ci_upper": round(ci_hi, 6) if not math.isnan(ci_hi) else None,
             "n": len(mdf),
             "signal_type": sig_type,
         })
@@ -489,7 +495,9 @@ def c2_calibration(
     behavioral_auroc_config = {
         "url_revisit_count": True,   # fewer revisits → success
         "url_revisit_max": True,
+        "url_unique_count": False,   # more unique URLs → success (exploratory)
         "action_diversity": False,   # higher diversity → success
+        "action_unique_types": False,  # more unique actions → success
         "max_repeat_streak": True,   # fewer repeats → success
     }
     for m, negate in behavioral_auroc_config.items():
@@ -497,23 +505,56 @@ def c2_calibration(
             continue
         mdf = ep_df.dropna(subset=[m])
         if len(mdf) < 4 or mdf["success"].nunique() < 2:
-            auroc_rows.append({"metric": m, "AUROC": np.nan, "n": len(mdf),
+            auroc_rows.append({"metric": m, "AUROC": np.nan, "AUROC_ci_lower": np.nan,
+                               "AUROC_ci_upper": np.nan, "n": len(mdf),
                                "signal_type": "behavioral"})
             continue
         y = mdf["success"].astype(int).values
         scores = mdf[m].values
         if negate:
             scores = -scores
-        a = _auroc_safe(y, scores)
+        a, ci_lo, ci_hi = _auroc_bootstrap_ci(y, scores)
         auroc_rows.append({
             "metric": m,
             "AUROC": round(a, 6) if not math.isnan(a) else None,
+            "AUROC_ci_lower": round(ci_lo, 6) if not math.isnan(ci_lo) else None,
+            "AUROC_ci_upper": round(ci_hi, 6) if not math.isnan(ci_hi) else None,
             "n": len(mdf),
             "signal_type": "behavioral",
         })
 
     auroc_df = pd.DataFrame(auroc_rows)
     auroc_df.to_csv(tables_dir / "auroc_all_metrics.csv", index=False)
+
+    # ── Optimal threshold (Youden's J) per signal ──
+    threshold_rows = []
+    threshold_negate = {
+        "ep_mean_entropy": True, "ep_max_entropy": True,
+        "url_revisit_count": True, "url_revisit_max": True,
+        "url_unique_count": False, "action_unique_types": False,
+        "action_diversity": False, "max_repeat_streak": True,
+    }
+    all_threshold_signals = list(METRICS_ALL) + list(BEHAVIORAL_LABELS.keys())
+    for m in all_threshold_signals:
+        if m not in ep_df.columns:
+            continue
+        mdf = ep_df.dropna(subset=[m])
+        if len(mdf) < 10 or mdf["success"].nunique() < 2:
+            continue
+        y = mdf["success"].astype(int).values
+        scores = mdf[m].values
+        if threshold_negate.get(m, False):
+            scores = -scores
+        opt = _optimal_threshold(y, scores)
+        opt["metric"] = m
+        # If negated, flip threshold back for interpretability
+        if threshold_negate.get(m, False) and not math.isnan(opt["threshold"]):
+            opt["threshold"] = -opt["threshold"]
+        threshold_rows.append(opt)
+    if threshold_rows:
+        pd.DataFrame(threshold_rows).to_csv(tables_dir / "optimal_thresholds.csv", index=False)
+        print(f"  C2: optimal_thresholds.csv ({len(threshold_rows)} signals)")
+
     print(f"  C2: tables → calibration_bins.csv, calibration_metrics.csv, auroc_all_metrics.csv")
 
     # Plot
@@ -927,6 +968,98 @@ def c4_per_mode(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
         print(f"  C4: verbalized per-mode skipped – no modes with verbalized data")
 
 
+# ── Holm-Bonferroni correction ────────────────────────────────────────────
+
+def _holm_bonferroni(p_values: List[float], alpha: float = 0.05) -> List[bool]:
+    """Return list of booleans indicating significance after Holm-Bonferroni correction."""
+    n = len(p_values)
+    if n == 0:
+        return []
+    indexed = sorted(enumerate(p_values), key=lambda x: x[1])
+    significant = [False] * n
+    for rank, (orig_idx, p) in enumerate(indexed):
+        adjusted_alpha = alpha / (n - rank)
+        if p <= adjusted_alpha:
+            significant[orig_idx] = True
+        else:
+            break  # all remaining are not significant
+    return significant
+
+
+# ── Bootstrap CI for AUROC ────────────────────────────────────────────────
+
+def _auroc_bootstrap_ci(
+    y_true: np.ndarray, y_score: np.ndarray,
+    n_boot: int = 2000, ci: float = 0.95, seed: int = 42,
+) -> Tuple[float, float, float]:
+    """Return (auroc_point, ci_lower, ci_upper) via bootstrap."""
+    point = _auroc_safe(y_true, y_score)
+    if math.isnan(point) or len(y_true) < 10:
+        return (point, float("nan"), float("nan"))
+
+    rng = np.random.default_rng(seed)
+    n = len(y_true)
+    boot_aurocs = []
+    for _ in range(n_boot):
+        idx = rng.integers(0, n, size=n)
+        bt = y_true[idx]
+        bs = y_score[idx]
+        if len(np.unique(bt)) < 2:
+            continue
+        boot_aurocs.append(_auroc_safe(bt, bs))
+
+    boot_aurocs = [a for a in boot_aurocs if not math.isnan(a)]
+    if len(boot_aurocs) < 100:
+        return (point, float("nan"), float("nan"))
+
+    lo_pct = (1.0 - ci) / 2 * 100
+    hi_pct = (1.0 - (1.0 - ci) / 2) * 100
+    return (point, float(np.percentile(boot_aurocs, lo_pct)),
+            float(np.percentile(boot_aurocs, hi_pct)))
+
+
+# ── Optimal threshold (Youden's J) ───────────────────────────────────────
+
+def _optimal_threshold(
+    y_true: np.ndarray, y_score: np.ndarray, n_thresholds: int = 200,
+) -> Dict[str, Any]:
+    """Youden's J optimal threshold. Returns {threshold, sensitivity, specificity, f1, youden_j}."""
+    if len(np.unique(y_true)) < 2:
+        return {"threshold": float("nan"), "sensitivity": float("nan"),
+                "specificity": float("nan"), "f1": float("nan"), "youden_j": float("nan")}
+
+    lo, hi = float(y_score.min()), float(y_score.max())
+    if lo == hi:
+        return {"threshold": lo, "sensitivity": 1.0, "specificity": 0.0,
+                "f1": float("nan"), "youden_j": 0.0}
+
+    thresholds = np.linspace(lo, hi, n_thresholds)
+    best = {"threshold": float("nan"), "sensitivity": 0.0,
+            "specificity": 0.0, "f1": 0.0, "youden_j": -1.0}
+
+    pos = (y_true == 1)
+    neg = (y_true == 0)
+    n_pos = pos.sum()
+    n_neg = neg.sum()
+
+    for t in thresholds:
+        pred_pos = y_score >= t
+        tp = (pred_pos & pos).sum()
+        fp = (pred_pos & neg).sum()
+        fn = (~pred_pos & pos).sum()
+        tn = (~pred_pos & neg).sum()
+        sens = tp / n_pos if n_pos else 0.0
+        spec = tn / n_neg if n_neg else 0.0
+        j = sens + spec - 1.0
+        prec = tp / (tp + fp) if (tp + fp) else 0.0
+        f1 = 2 * prec * sens / (prec + sens) if (prec + sens) else 0.0
+        if j > best["youden_j"]:
+            best = {"threshold": float(t), "sensitivity": float(sens),
+                    "specificity": float(spec), "f1": float(f1),
+                    "youden_j": float(j)}
+    return best
+
+
 # ── C5: Mode × Outcome Cross-Analysis ────────────────────────────────────
 
 def c5_mode_outcome(
@@ -954,9 +1087,17 @@ def c5_mode_outcome(
         })
     pd.DataFrame(cross_rows).to_csv(tables_dir / "mode_outcome_cross.csv", index=False)
 
-    # Statistical tests
+    # Statistical tests — expanded to all signals
+    all_c5_signals = list(METRICS_ALL) + list(BEHAVIORAL_LABELS.keys())
+    negate_map_c5 = {
+        "ep_mean_entropy": True, "ep_max_entropy": True,
+        "url_revisit_count": True, "url_revisit_max": True,
+        "url_unique_count": False, "action_unique_types": False,
+        "action_diversity": False, "max_repeat_streak": True,
+    }
+
     test_rows = []
-    # Kruskal-Wallis across all groups
+    # Kruskal-Wallis across all groups (logprob only, for backward compat)
     group_vals = [df.loc[df["group"] == g, "ep_mean_logprob"].values for g in groups]
     group_vals_nonempty = [v for v in group_vals if len(v) >= 2]
     if len(group_vals_nonempty) >= 2:
@@ -964,42 +1105,76 @@ def c5_mode_outcome(
             h_stat, h_p = sp_stats.kruskal(*group_vals_nonempty)
             test_rows.append({
                 "test": "Kruskal-Wallis (all groups)",
+                "signal": "ep_mean_logprob",
                 "comparison": " vs ".join(groups),
                 "statistic": round(float(h_stat), 4),
                 "p_value": round(float(h_p), 6),
+                "p_adjusted": np.nan,
+                "significant_holm": None,
             })
         except ValueError:
             pass
 
-    # Pairwise: same-outcome across modes
+    # Pairwise: same-outcome across modes, all signals
     modes = sorted(df["observation_mode"].unique())
-    mode_invariant = True  # assume invariant until proven otherwise
-    for outcome in ["success", "failure"]:
-        pairs = [(m1, m2) for i, m1 in enumerate(modes) for m2 in modes[i + 1:]]
-        for m1, m2 in pairs:
-            g1 = f"{m1}_{outcome}"
-            g2 = f"{m2}_{outcome}"
-            v1 = df.loc[df["group"] == g1, "ep_mean_logprob"].values
-            v2 = df.loc[df["group"] == g2, "ep_mean_logprob"].values
-            if len(v1) < 2 or len(v2) < 2:
+    pairwise_p_values: List[float] = []
+    pairwise_indices: List[int] = []
+
+    for signal in all_c5_signals:
+        if signal not in df.columns:
+            continue
+        for outcome in ["success", "failure"]:
+            pairs = [(m1, m2) for i, m1 in enumerate(modes) for m2 in modes[i + 1:]]
+            for m1, m2 in pairs:
+                g1 = f"{m1}_{outcome}"
+                g2 = f"{m2}_{outcome}"
+                v1 = df.loc[df["group"] == g1, signal].dropna().values
+                v2 = df.loc[df["group"] == g2, signal].dropna().values
+                row_idx = len(test_rows)
+                if len(v1) < 2 or len(v2) < 2:
+                    test_rows.append({
+                        "test": "Mann-Whitney",
+                        "signal": signal,
+                        "comparison": f"{g1} vs {g2}",
+                        "statistic": np.nan, "p_value": np.nan,
+                        "p_adjusted": np.nan, "significant_holm": None,
+                    })
+                    continue
+                u, p = sp_stats.mannwhitneyu(v1, v2, alternative="two-sided")
                 test_rows.append({
                     "test": "Mann-Whitney",
+                    "signal": signal,
                     "comparison": f"{g1} vs {g2}",
-                    "statistic": np.nan, "p_value": np.nan,
+                    "statistic": round(float(u), 2),
+                    "p_value": round(float(p), 6),
+                    "p_adjusted": np.nan,
+                    "significant_holm": None,
                 })
-                continue
-            u, p = sp_stats.mannwhitneyu(v1, v2, alternative="two-sided")
-            test_rows.append({
-                "test": "Mann-Whitney",
-                "comparison": f"{g1} vs {g2}",
-                "statistic": round(float(u), 2),
-                "p_value": round(float(p), 6),
-            })
-            if p < 0.05:
-                mode_invariant = False
+                pairwise_p_values.append(float(p))
+                pairwise_indices.append(row_idx)
+
+    # Holm-Bonferroni correction
+    if pairwise_p_values:
+        holm_sig = _holm_bonferroni(pairwise_p_values, alpha=0.05)
+        # Compute adjusted p-values
+        n_tests = len(pairwise_p_values)
+        indexed_p = sorted(enumerate(pairwise_p_values), key=lambda x: x[1])
+        adjusted_p = [0.0] * n_tests
+        for rank, (orig_idx, p) in enumerate(indexed_p):
+            adjusted_p[orig_idx] = min(p * (n_tests - rank), 1.0)
+        # Write back
+        for i, row_idx in enumerate(pairwise_indices):
+            test_rows[row_idx]["p_adjusted"] = round(adjusted_p[i], 6)
+            test_rows[row_idx]["significant_holm"] = holm_sig[i]
+
+    mode_invariant = not any(
+        r.get("significant_holm") is True
+        for r in test_rows
+        if r.get("test") == "Mann-Whitney" and r.get("signal") == "ep_mean_logprob"
+    )
 
     pd.DataFrame(test_rows).to_csv(tables_dir / "mode_outcome_tests.csv", index=False)
-    print(f"  C5: tables → mode_outcome_cross.csv, mode_outcome_tests.csv")
+    print(f"  C5: tables → mode_outcome_cross.csv, mode_outcome_tests.csv ({len(test_rows)} tests)")
 
     # ── Violin 2×2: rows=mode, cols=outcome ──
     outcomes = ["success", "failure"]
@@ -1061,7 +1236,9 @@ def c5_mode_outcome(
 BEHAVIORAL_LABELS = {
     "url_revisit_count": "URL Revisit Count",
     "url_revisit_max": "Max Visits to Same URL",
+    "url_unique_count": "Unique URLs Visited",
     "action_diversity": "Action Type Diversity",
+    "action_unique_types": "Unique Action Types",
     "max_repeat_streak": "Max Repeat Streak",
 }
 
@@ -1197,17 +1374,21 @@ def c7_cross_mode_auroc(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
         print("  C7: skipped – need >= 2 modes for cross-mode comparison")
         return
 
-    all_signals = list(METRICS_CORE) + list(METRICS_VERBALIZED) + list(BEHAVIORAL_LABELS.keys())
+    all_signals = list(METRICS_CORE) + list(METRICS_ENTROPY) + list(METRICS_VERBALIZED) + list(BEHAVIORAL_LABELS.keys())
     # Negate config: True = lower is better (negate for AUROC)
     negate_map = {
         "ep_mean_logprob": False, "ep_min_logprob": False,
         "ep_mean_margin": False, "ep_min_margin": False,
+        "ep_mean_entropy": True, "ep_max_entropy": True,
         "ep_mean_verbalized": False, "ep_min_verbalized": False,
         "url_revisit_count": True, "url_revisit_max": True,
+        "url_unique_count": False, "action_unique_types": False,
         "action_diversity": False, "max_repeat_streak": True,
     }
     signal_types = {}
     for s in METRICS_CORE:
+        signal_types[s] = "token_level"
+    for s in METRICS_ENTROPY:
         signal_types[s] = "token_level"
     for s in METRICS_VERBALIZED:
         signal_types[s] = "verbalized"
@@ -1232,10 +1413,12 @@ def c7_cross_mode_auroc(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
                 continue
             if negate_map.get(sig, False):
                 scores = -scores
-            a = _auroc_safe(y_valid, scores)
+            a, ci_lo, ci_hi = _auroc_bootstrap_ci(y_valid, scores)
             rows.append({
                 "mode": mode, "signal": sig, "signal_type": signal_types.get(sig, ""),
                 "AUROC": round(a, 4) if not math.isnan(a) else None,
+                "AUROC_ci_lower": round(ci_lo, 4) if not math.isnan(ci_lo) else None,
+                "AUROC_ci_upper": round(ci_hi, 4) if not math.isnan(ci_hi) else None,
                 "n": len(valid),
             })
 
@@ -1333,6 +1516,9 @@ def c8_signal_accumulation(
         "url_revisit_max": lambda urls: max(urls.values()) if urls else 0,
         "action_diversity": lambda acts: len(set(acts)) / len(acts) if acts else 0,
         "max_repeat_streak": None,  # computed separately
+        "mean_logprob_at_k": None,  # computed separately
+        "max_entropy_at_k": None,   # computed separately
+        "mean_verbalized_at_k": None,  # computed separately
     }
 
     cutoff_rows = []
@@ -1354,6 +1540,9 @@ def c8_signal_accumulation(
             url_counts: Dict[str, int] = defaultdict(int)
             action_types: List[str] = []
             streak, max_str, last_sig = 0, 0, ""
+            logprob_vals: List[float] = []
+            entropy_vals: List[float] = []
+            verbalized_vals: List[float] = []
             for s in subset:
                 digest = s.get("state_digest") or {}
                 url = str(s.get("obs_url", "") or digest.get("url_after", "") or "").strip()
@@ -1363,14 +1552,28 @@ def c8_signal_accumulation(
                 atype = str(act.get("action_type", "") or "").lower()
                 if atype:
                     action_types.append(atype)
-                sig = "|".join([atype, str(act.get("element_id", "")),
-                                str(act.get("text", ""))[:80]])
+                # 5-field signature (consistent with _build_episode_df)
+                sig = "|".join([
+                    atype,
+                    str(act.get("element_id", "")),
+                    str(act.get("text", ""))[:80],
+                    str(act.get("coordinate", "")),
+                    str(act.get("delta", "")),
+                ])
                 if sig == last_sig:
                     streak += 1
                 else:
                     streak = 1
                     last_sig = sig
                 max_str = max(max_str, streak)
+                # Token/entropy/verbalized signals
+                conf = s.get("confidence") or {}
+                if "mean_logprob" in conf:
+                    logprob_vals.append(conf["mean_logprob"])
+                if "max_entropy" in conf:
+                    entropy_vals.append(conf["max_entropy"])
+                if "verbalized" in conf:
+                    verbalized_vals.append(conf["verbalized"])
 
             signals["url_revisit_count"].append(
                 sum(v - 1 for v in url_counts.values() if v > 1))
@@ -1379,22 +1582,35 @@ def c8_signal_accumulation(
             signals["action_diversity"].append(
                 len(set(action_types)) / len(action_types) if action_types else 0)
             signals["max_repeat_streak"].append(max_str)
+            # Token/entropy/verbalized cumulative signals
+            signals["mean_logprob_at_k"].append(
+                float(np.mean(logprob_vals)) if logprob_vals else np.nan)
+            signals["max_entropy_at_k"].append(
+                float(np.max(entropy_vals)) if entropy_vals else np.nan)
+            signals["mean_verbalized_at_k"].append(
+                float(np.mean(verbalized_vals)) if verbalized_vals else np.nan)
 
         if len(labels) < 10 or len(set(labels)) < 2:
             continue
 
         y = np.array(labels)
+        negate_sigs = {"url_revisit_count", "url_revisit_max",
+                       "max_repeat_streak", "max_entropy_at_k"}
         for sig_name, vals in signals.items():
             scores = np.array(vals, dtype=float)
-            negate = sig_name in ("url_revisit_count", "url_revisit_max",
-                                  "max_repeat_streak")
-            if negate:
-                scores = -scores
-            a = _auroc_safe(y, scores)
+            # Filter NaN for token/entropy/verbalized signals
+            valid_mask = ~np.isnan(scores)
+            if valid_mask.sum() < 10 or len(np.unique(y[valid_mask])) < 2:
+                continue
+            y_valid = y[valid_mask]
+            scores_valid = scores[valid_mask]
+            if sig_name in negate_sigs:
+                scores_valid = -scores_valid
+            a = _auroc_safe(y_valid, scores_valid)
             cutoff_rows.append({
                 "step_cutoff": cutoff, "signal": sig_name,
                 "AUROC": round(a, 4) if not math.isnan(a) else None,
-                "n_episodes": len(labels),
+                "n_episodes": int(valid_mask.sum()),
             })
 
     if not cutoff_rows:
@@ -1407,7 +1623,9 @@ def c8_signal_accumulation(
     # Plot
     fig, ax = plt.subplots(figsize=(9, 5))
     colors = {"url_revisit_count": "#1f77b4", "url_revisit_max": "#ff7f0e",
-              "action_diversity": "#2ca02c", "max_repeat_streak": "#d62728"}
+              "action_diversity": "#2ca02c", "max_repeat_streak": "#d62728",
+              "mean_logprob_at_k": "#9467bd", "max_entropy_at_k": "#8c564b",
+              "mean_verbalized_at_k": "#e377c2"}
     for sig in acc_df["signal"].unique():
         sdf = acc_df[acc_df["signal"] == sig].sort_values("step_cutoff")
         ax.plot(sdf["step_cutoff"], sdf["AUROC"], "o-", markersize=3,
@@ -1535,6 +1753,119 @@ def c9_token_vs_verbalized(
         print(f"  C9: plot → C9_token_vs_verbalized_scatter.png")
 
 
+# ── C10: Composite Signal Exploration ─────────────────────────────────────
+
+def c10_composite_signals(
+    ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path,
+):
+    """Signal correlation matrix + composite AUROC grid search.
+
+    1. Spearman correlation matrix across all signals → heatmap
+    2. Top-2/Top-3 z-score weighted combinations → composite_auroc.csv
+    """
+    # Collect all numeric signal columns
+    all_signals = [m for m in (list(METRICS_ALL) + list(BEHAVIORAL_LABELS.keys()))
+                   if m in ep_df.columns and ep_df[m].notna().sum() >= 10]
+    if len(all_signals) < 3 or ep_df["success"].nunique() < 2:
+        print("  C10: skipped – too few signals or single class")
+        return
+
+    # ── 1. Spearman correlation matrix ──
+    sig_df = ep_df[all_signals].copy()
+    n_sig = len(all_signals)
+    corr_matrix = np.full((n_sig, n_sig), np.nan)
+    for i in range(n_sig):
+        for j in range(i, n_sig):
+            valid = sig_df[[all_signals[i], all_signals[j]]].dropna()
+            if len(valid) < 5:
+                continue
+            rho, _ = sp_stats.spearmanr(valid.iloc[:, 0], valid.iloc[:, 1])
+            corr_matrix[i, j] = rho
+            corr_matrix[j, i] = rho
+
+    corr_df = pd.DataFrame(corr_matrix, index=all_signals, columns=all_signals)
+    corr_df.to_csv(tables_dir / "signal_correlation_matrix.csv")
+    print(f"  C10: signal_correlation_matrix.csv ({n_sig} signals)")
+
+    # Heatmap
+    fig, ax = plt.subplots(figsize=(max(8, n_sig * 0.8), max(6, n_sig * 0.7)))
+    im = ax.imshow(corr_matrix, cmap="RdBu_r", vmin=-1, vmax=1, aspect="auto")
+    ax.set_xticks(range(n_sig))
+    ax.set_yticks(range(n_sig))
+    ax.set_xticklabels(all_signals, rotation=45, ha="right", fontsize=8)
+    ax.set_yticklabels(all_signals, fontsize=8)
+    for i in range(n_sig):
+        for j in range(n_sig):
+            v = corr_matrix[i, j]
+            if not np.isnan(v):
+                ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=6,
+                        color="white" if abs(v) > 0.5 else "black")
+    fig.colorbar(im, ax=ax, label="Spearman ρ")
+    ax.set_title("C10: Signal Correlation Matrix")
+    fig.tight_layout()
+    fig.savefig(plots_dir / "C10_signal_correlation.png", dpi=150)
+    plt.close(fig)
+
+    # ── 2. Composite AUROC grid search ──
+    # Negate map: entropy and revisit signals need negation for AUROC
+    negate_composite = {
+        "ep_mean_entropy": True, "ep_max_entropy": True,
+        "url_revisit_count": True, "url_revisit_max": True,
+        "max_repeat_streak": True,
+    }
+
+    # Z-score standardize all signals (directionally aligned)
+    z_scores: Dict[str, np.ndarray] = {}
+    valid_mask = ep_df["success"].notna()
+    for sig in all_signals:
+        vals = ep_df[sig].values.copy().astype(float)
+        if negate_composite.get(sig, False):
+            vals = -vals
+        mu = np.nanmean(vals)
+        sd = np.nanstd(vals)
+        if sd > 0:
+            z_scores[sig] = (vals - mu) / sd
+        else:
+            z_scores[sig] = np.zeros_like(vals)
+
+    y_all = ep_df["success"].astype(int).values
+    weights = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    composite_rows = []
+    # Top-2 combinations
+    for i, s1 in enumerate(all_signals):
+        for j, s2 in enumerate(all_signals):
+            if j <= i:
+                continue
+            z1 = z_scores[s1]
+            z2 = z_scores[s2]
+            for w in weights:
+                combined = w * z1 + (1 - w) * z2
+                mask = ~(np.isnan(z1) | np.isnan(z2))
+                if mask.sum() < 10 or len(np.unique(y_all[mask])) < 2:
+                    continue
+                a = _auroc_safe(y_all[mask], combined[mask])
+                if not math.isnan(a):
+                    composite_rows.append({
+                        "combination": f"{s1}+{s2}",
+                        "signals": f"{s1},{s2}",
+                        "weights": f"{w:.2f},{1-w:.2f}",
+                        "AUROC": round(a, 4),
+                        "n": int(mask.sum()),
+                    })
+
+    if composite_rows:
+        comp_df = pd.DataFrame(composite_rows)
+        comp_df = comp_df.sort_values("AUROC", ascending=False)
+        comp_df.to_csv(tables_dir / "composite_auroc.csv", index=False)
+        print(f"  C10: composite_auroc.csv ({len(comp_df)} combinations, "
+              f"best={comp_df.iloc[0]['AUROC']:.4f} [{comp_df.iloc[0]['combination']}])")
+    else:
+        print("  C10: no valid composite combinations")
+
+    print(f"  C10: plot → C10_signal_correlation.png")
+
+
 # ── Routing Readiness Verdict ─────────────────────────────────────────────
 
 def _routing_readiness(
@@ -1544,21 +1875,30 @@ def _routing_readiness(
     c5_result: Dict[str, Any],
     tables_dir: Path | None = None,
 ) -> Dict[str, Any]:
-    """Compute routing readiness verdict (token-level + behavioral)."""
+    """Compute routing readiness verdict (token-level + entropy + behavioral + verbalized)."""
     # Coverage: at least one condition with > 50% episode coverage
     max_cov = float(cov_df["episode_coverage"].max()) if len(cov_df) else 0.0
     sufficient_coverage = max_cov > 0.5
 
-    # Discrimination (token-level): Wilcoxon p < 0.05 and |rank_biserial| > 0.2
+    # Discrimination (token-level, logprob/margin only): Wilcoxon p < 0.05 and |rank_biserial| > 0.2
     token_discriminative = False
+    token_metrics = {"ep_mean_logprob", "ep_min_logprob", "ep_mean_margin", "ep_min_margin"}
     if wilcoxon_path.exists():
         wdf = pd.read_csv(wilcoxon_path)
         for _, row in wdf.iterrows():
+            m = row.get("metric", "")
+            if m not in token_metrics:
+                continue
             p = row.get("p_value")
             rb = row.get("rank_biserial")
             if pd.notna(p) and pd.notna(rb) and p < 0.05 and abs(rb) > 0.2:
                 token_discriminative = True
                 break
+
+    # Entropy discrimination (separate from token_discriminative)
+    entropy_discriminative = False
+    best_entropy_auroc = None
+    best_entropy_metric = None
 
     # Behavioral discrimination: any behavioral AUROC > 0.6
     behavioral_discriminative = False
@@ -1572,6 +1912,17 @@ def _routing_readiness(
     auroc_path = (tables_dir / "auroc_all_metrics.csv") if tables_dir else None
     if auroc_path and auroc_path.exists():
         adf = pd.read_csv(auroc_path)
+
+        # Entropy: check entropy-specific metrics
+        entropy_metrics = {"ep_mean_entropy", "ep_max_entropy"}
+        ent = adf[adf["metric"].isin(entropy_metrics)].dropna(subset=["AUROC"])
+        if len(ent):
+            best_idx = ent["AUROC"].idxmax()
+            best_entropy_auroc = round(float(ent.loc[best_idx, "AUROC"]), 4)
+            best_entropy_metric = str(ent.loc[best_idx, "metric"])
+            if best_entropy_auroc > 0.6:
+                entropy_discriminative = True
+
         beh = adf[adf["signal_type"] == "behavioral"].dropna(subset=["AUROC"])
         if len(beh):
             best_idx = beh["AUROC"].idxmax()
@@ -1594,12 +1945,16 @@ def _routing_readiness(
 
     mode_invariant = c5_result.get("signal_mode_invariant")
 
-    # Overall: token OR behavioral OR verbalized discrimination, plus coverage
-    discriminative = token_discriminative or behavioral_discriminative or verbalized_discriminative
+    # Overall: (token OR entropy OR behavioral OR verbalized) AND coverage
+    discriminative = (token_discriminative or entropy_discriminative
+                      or behavioral_discriminative or verbalized_discriminative)
     overall = discriminative and sufficient_coverage
 
     return {
         "token_discriminative": token_discriminative,
+        "entropy_discriminative": entropy_discriminative,
+        "best_entropy_metric": best_entropy_metric,
+        "best_entropy_auroc": best_entropy_auroc,
         "behavioral_discriminative": behavioral_discriminative,
         "best_behavioral_metric": best_behavioral_metric,
         "best_behavioral_auroc": best_behavioral_auroc,
@@ -1625,6 +1980,8 @@ def main() -> None:
                         help="Output dir (default: <run_dir>/analysis/confidence)")
     parser.add_argument("--mode", default=None,
                         help="Filter to a single observation mode (dom/som/vision)")
+    parser.add_argument("--no-adjust", action="store_true",
+                        help="Disable adjusted labels (keep raw success as-is)")
     args = parser.parse_args()
 
     run_dir = Path(args.run_dir).expanduser().resolve()
@@ -1652,9 +2009,34 @@ def main() -> None:
     summaries = _load_episode_summaries(run_dir)
     print(f"  {len(step_records)} step records, {len(summaries)} episode summaries")
 
-    ep_df = _build_episode_df(step_records, summaries)
+    ep_df = _build_episode_df(step_records, summaries, run_dir=run_dir)
     step_df = _build_step_df(step_records)
     print(f"  {len(ep_df)} episodes, {len(step_df)} steps with confidence")
+
+    # ── Adjusted labels ──
+    use_adjusted = not args.no_adjust
+    label_mode = "adjusted" if use_adjusted else "raw"
+    if use_adjusted and not ep_df.empty:
+        from p79.experiment.analysis import compute_adjusted_success_batch
+        # Detect benchmark_site from summaries
+        sites = set()
+        for (_, _), s in summaries.items():
+            bs = s.get("benchmark_site") or s.get("site") or ""
+            if bs:
+                sites.add(bs)
+        if len(sites) == 1:
+            bsite = sites.pop()
+        else:
+            bsite = "classifieds"  # fallback for multi-site / unknown
+        ep_df["raw_success"] = ep_df["success"]
+        compute_adjusted_success_batch(ep_df, bsite)
+        n_adjusted = int((ep_df["raw_success"] != ep_df["adjusted_success"]).sum())
+        ep_df["success"] = ep_df["adjusted_success"]
+        print(f"  Adjusted labels ({bsite}): {n_adjusted} episodes changed")
+    else:
+        ep_df["raw_success"] = ep_df["success"]
+        ep_df["adjusted_success"] = ep_df["success"]
+        ep_df["fp_reason"] = ""
 
     if args.mode:
         print(f"  Filtering to mode: {args.mode}")
@@ -1750,10 +2132,14 @@ def main() -> None:
     print("\n── C9: Token vs Verbalized Comparison ──")
     c9_token_vs_verbalized(ep_df_filt, tables_dir, plots_dir)
 
+    # ── C10 ──
+    print("\n── C10: Composite Signal Exploration ──")
+    c10_composite_signals(ep_df_filt, tables_dir, plots_dir)
+
     # ── Routing Readiness ──
     print("\n── Routing Readiness Verdict ──")
     readiness = _routing_readiness(
-        cov_df, tables_dir / "wilcoxon_test.csv", cal_metrics, c5_result,
+        cov_df, tables_dir / "mannwhitney_test.csv", cal_metrics, c5_result,
         tables_dir=tables_dir,
     )
     for k, v in readiness.items():
@@ -1762,13 +2148,17 @@ def main() -> None:
     # ── Write summary JSON ──
     summary: Dict[str, Any] = {
         "mode_filter": args.mode,
+        "label_mode": label_mode,
+        "n_adjusted": int((ep_df_filt["fp_reason"] != "").sum()) if "fp_reason" in ep_df_filt.columns else 0,
+        "n_success_raw": int(ep_df_filt["raw_success"].sum()) if "raw_success" in ep_df_filt.columns else None,
+        "n_success_adjusted": int(ep_df_filt["success"].sum()),
         "coverage": cov_df.to_dict(orient="records"),
         "calibration": cal_metrics,
         "routing_readiness": readiness,
     }
 
     # Token-level discrimination (wilcoxon)
-    wilcoxon_path = tables_dir / "wilcoxon_test.csv"
+    wilcoxon_path = tables_dir / "mannwhitney_test.csv"
     if wilcoxon_path.exists():
         wdf = pd.read_csv(wilcoxon_path)
         summary["discrimination_token"] = wdf.to_dict(orient="records")

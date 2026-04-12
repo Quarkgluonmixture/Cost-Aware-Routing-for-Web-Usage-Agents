@@ -759,28 +759,28 @@ class ExperimentRunner:
         trajectory: List[Any] = [{"observation": getattr(obs, "raw", None), "info": current_info}]
 
         # Load task reference images (e.g. "find this item" with a product photo).
-        # Only useful for multimodal modes (som/vision); DOM mode passes empty list.
+        # All modes receive reference images — DOM mode encodes them as base64 in
+        # the text prompt so the model can still reason about the target item.
         reference_images: list = []
-        if condition.observation_mode != "dom":
-            raw_image = task.raw_task.get("image")
-            if raw_image:
-                from PIL import Image as PILImage
-                paths = [raw_image] if isinstance(raw_image, str) else list(raw_image)
-                vwa_root = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena"
-                for p in paths:
-                    img_path = vwa_root / p
-                    if img_path.exists():
-                        try:
-                            reference_images.append(PILImage.open(str(img_path)).convert("RGB"))
-                        except Exception as exc:
-                            logger.warning("Failed to load reference image %s: %s", img_path, exc)
-                    else:
-                        logger.warning("Reference image not found: %s", img_path)
-                if reference_images:
-                    logger.info(
-                        "Loaded %d reference image(s) for site=%s task=%s",
-                        len(reference_images), task.site, task.task_id,
-                    )
+        raw_image = task.raw_task.get("image")
+        if raw_image:
+            from PIL import Image as PILImage
+            paths = [raw_image] if isinstance(raw_image, str) else list(raw_image)
+            vwa_root = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena"
+            for p in paths:
+                img_path = vwa_root / p
+                if img_path.exists():
+                    try:
+                        reference_images.append(PILImage.open(str(img_path)).convert("RGB"))
+                    except Exception as exc:
+                        logger.warning("Failed to load reference image %s: %s", img_path, exc)
+                else:
+                    logger.warning("Reference image not found: %s", img_path)
+            if reference_images:
+                logger.info(
+                    "Loaded %d reference image(s) for site=%s task=%s",
+                    len(reference_images), task.site, task.task_id,
+                )
 
         router_state = RouterState()
         prev_action_success: Optional[bool] = None
@@ -794,6 +794,9 @@ class ExperimentRunner:
         escalation_count = 0
         action_signatures: List[str] = []
         action_signatures_soft: List[str] = []
+        scroll_direction_history: List[str] = []
+        url_stuck_streak = 0
+        last_url = ""
         cycle_early_stop = False
 
         checklist_manager: Optional[ChecklistManagerLite] = None
@@ -837,6 +840,7 @@ class ExperimentRunner:
 
             # Use the preferred mode to compute router's size signal; on escalation
             # we re-prepare below with the actual decided mode.
+            obs_prepare_start = time.time()
             _size_probe = prepare_observation_for_mode(obs, condition.observation_mode, episode_dir, step_idx)
             router_obs_text = _size_probe.som_text if condition.observation_mode != "vision" else (obs.text or "")
 
@@ -868,6 +872,7 @@ class ExperimentRunner:
                 except Exception:
                     pass
             obs_for_backend = self._clone_observation_for_mode(obs, decision_mode, obs_prep)
+            obs_prepare_ms = (time.time() - obs_prepare_start) * 1000.0
             if condition.router_on and decision_mode != condition.observation_mode:
                 overhead["extra_screenshot_ms"] = (time.time() - screenshot_prep_start) * 1000.0
             instruction = task.intent
@@ -970,12 +975,35 @@ class ExperimentRunner:
 
             action_type_lower = str(action.get("action_type", "")).lower()
             state_after = build_page_state(next_obs, next_info)
+
+            # --- about:blank recovery ---
+            about_blank_recovered = False
+            post_url = state_after.get("url", "")
+            if post_url.startswith("about:blank") or (not post_url and action_type_lower == "back"):
+                recovery_url = task.raw_task.get("start_url", "")
+                if recovery_url:
+                    try:
+                        next_obs, _, _, _, next_info = self.environment.navigate_to(recovery_url)
+                        state_after = build_page_state(next_obs, next_info)
+                        about_blank_recovered = True
+                        logger.warning(
+                            "about:blank detected at step %d for task %s/%d — recovered to %s",
+                            step_idx, task.site, task.task_id, recovery_url,
+                        )
+                    except Exception as exc:
+                        logger.warning(
+                            "about:blank recovery failed at step %d for task %s/%d: %s",
+                            step_idx, task.site, task.task_id, exc,
+                        )
+
             action_success, page_change_reasons, text_similarity = detect_page_state_change(
                 state_before=state_before,
                 state_after=state_after,
                 action_type=str(action.get("action_type", "")).upper(),
                 similarity_threshold=similarity_threshold,
             )
+            if about_blank_recovered:
+                page_change_reasons.append("about_blank_recovery")
             page_changed = bool(page_change_reasons)
             # Do not use reward as action-success evidence: evaluator rewards can be noisy
             # and may mask real no-progress execution failures.
@@ -1147,12 +1175,17 @@ class ExperimentRunner:
                 page_changed=page_changed,
                 latency_ms={
                     "total": total_latency_ms,
+                    "obs_prepare": obs_prepare_ms,
+                    "preprocessing": float(meta.get("preprocess_ms", 0.0)),
+                    "generate": float(meta.get("generate_ms", 0.0)),
                     "backend_infer": float(meta.get("infer_ms", backend_latency_ms)),
                     "env_step": env_step_ms,
                     "router_decision": float(overhead.get("router_decision_ms", 0.0)),
                 },
                 tokens={
                     "input": input_tokens,
+                    "input_text": int(meta.get("input_text_tokens", 0)),
+                    "input_image": int(meta.get("input_image_tokens", 0)),
                     "output": output_tokens,
                     "total": token_total,
                     "thinking": meta.get("thinking_tokens"),
@@ -1260,6 +1293,45 @@ class ExperimentRunner:
                 logger.warning(
                     "Action cycle detected (%s, len=%d, reps>=%d) at step %d for task %s/%d — early stop.",
                     mode, detected, min_r, step_idx, task.site, task.task_id,
+                )
+                cycle_early_stop = True
+                break
+
+            # --- scroll alternation detection ---
+            if is_scroll:
+                delta_y = 0.0
+                raw_delta = action.get("delta")
+                if isinstance(raw_delta, (list, tuple)) and len(raw_delta) >= 2:
+                    delta_y = float(raw_delta[1])
+                direction = "down" if delta_y >= 0 else "up"
+                scroll_direction_history.append(direction)
+                ALT_THRESHOLD = 6
+                if len(scroll_direction_history) >= ALT_THRESHOLD:
+                    tail = scroll_direction_history[-ALT_THRESHOLD:]
+                    is_alternating = all(tail[i] != tail[i + 1] for i in range(ALT_THRESHOLD - 1))
+                    if is_alternating:
+                        logger.warning(
+                            "Scroll alternation detected (len=%d) at step %d for task %s/%d — early stop.",
+                            ALT_THRESHOLD, step_idx, task.site, task.task_id,
+                        )
+                        cycle_early_stop = True
+                        break
+            else:
+                scroll_direction_history.clear()
+
+            # --- URL stuck detection ---
+            current_url = state_after.get("url", "")
+            if current_url and current_url == last_url and action_type_lower == "click":
+                url_stuck_streak += 1
+            else:
+                url_stuck_streak = 0
+            last_url = current_url
+
+            URL_STUCK_THRESHOLD = 5
+            if url_stuck_streak >= URL_STUCK_THRESHOLD:
+                logger.warning(
+                    "URL stuck (%d consecutive clicks, url=%s) at step %d for task %s/%d — early stop.",
+                    url_stuck_streak, current_url[:80], step_idx, task.site, task.task_id,
                 )
                 cycle_early_stop = True
                 break

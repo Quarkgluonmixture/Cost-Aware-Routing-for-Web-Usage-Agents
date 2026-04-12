@@ -86,6 +86,7 @@ for pid in "${watchdog_pids[@]}"; do
   glm_config=""
   digest_dir=""
   alert_on_bootstrap=0
+  notify_completion=0
   for ((i = 0; i < ${#args[@]} - 1; i++)); do
     case "${args[$i]}" in
       --run-dir)       run_dir="${args[$((i + 1))]}" ;;
@@ -98,11 +99,15 @@ for pid in "${watchdog_pids[@]}"; do
       --glm-config)    glm_config="${args[$((i + 1))]}" ;;
       --digest-dir)    digest_dir="${args[$((i + 1))]}" ;;
       --alert-on-bootstrap) alert_on_bootstrap=1 ;;
+      --notify-completion) notify_completion=1 ;;
     esac
   done
   # --alert-on-bootstrap is a flag (no value), check last arg too
   if [[ "${args[-1]}" == "--alert-on-bootstrap" ]]; then
     alert_on_bootstrap=1
+  fi
+  if [[ "${args[-1]}" == "--notify-completion" ]]; then
+    notify_completion=1
   fi
 
   if [[ -z "${run_dir}" ]]; then
@@ -121,6 +126,7 @@ for pid in "${watchdog_pids[@]}"; do
   [[ -n "${glm_config}" ]]     && new_args+=(--glm-config "${glm_config}")
   [[ -n "${digest_dir}" ]]     && new_args+=(--digest-dir "${digest_dir}")
   [[ "${alert_on_bootstrap}" -eq 1 ]] && new_args+=(--alert-on-bootstrap)
+  [[ "${notify_completion}" -eq 1 ]] && new_args+=(--notify-completion)
 
   # Determine log file
   if [[ -n "${state_file}" ]]; then

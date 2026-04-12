@@ -267,8 +267,9 @@ _DIGEST_SYSTEM_PROMPT_BASE = """\
 5) 参考提供的 fallback_diagnosis，可修正也可保留，但必须有自己的判断依据。
 6) root_cause ≤60字，evidence 必须引用具体步骤/搜索词/数值。
 7) 若消息附有图片，优先基于图片内容填写 screenshot_descriptions。
-8) observation_mode=dom 时没有截图，根据 DOM snippet 描述页面状态。
+8) observation_mode=dom 时没有页面截图，但可以看到任务参考图片。根据 DOM snippet 描述页面状态。
 9) 若 unreachable_subtype=visual_dom_only 或 location_filter*，is_scaffolding_issue=是。
+   若 unreachable_subtype=visual_has_ref_image，is_scaffolding_issue=否（参考图片已可见，失败属于模型能力不足）。
 10) 若 stuck_subtype=account_loop 或 scroll_static，is_scaffolding_issue=是。
 """
 
@@ -309,10 +310,42 @@ S5) viewport 外 ID 幻觉：深度滚动后 agent 引用了不可见元素的 m
 """
 
 
+_DIGEST_VISION_ADDENDUM = """
+=== Vision 模式专属归因规则 ===
+
+本 episode 使用 Vision（纯截图）观测模式：agent 仅接收原始页面截图，无 AXTree、无 SoM 标注。
+所有交互通过坐标点击完成。你需要额外判断 Vision 模式特有的失败模式。
+
+**Vision 模式已知的结构性限制**：
+V1) 坐标偏移：agent 输出的点击坐标偏离目标元素，导致误操作或无效操作。
+    → 检查 thought 中是否描述了目标但 action 没有产生预期结果（page_changed=false）。
+V2) 信息充分幻觉：agent 在 thought 中声称看到了某信息但实际截图中不可见
+    （如声称看到价格但页面只显示标题）。
+V3) 过早放弃：agent 在截图可见目标元素的情况下选择放弃或提交错误答案，
+    可能因为缺乏 DOM 结构辅助定位。
+V4) 导航能力不足：缺乏 DOM 元素 ID 辅助，agent 无法有效切换页面或使用筛选器，
+    导致导航效率低于 DOM/SoM 模式。
+V5) 无跨步自纠正能力：misclick 后 agent 以完全相同的坐标重复点击，不会微调。
+
+**关键判断：区分"坐标精度问题"vs"视觉理解问题"**：
+- 若 agent 的 thought 正确描述了目标但 action 无效 → 坐标精度问题
+- 若 agent 的 thought 对视觉内容描述错误 → 视觉理解问题
+- 若任务需要文本信息但 agent 无法准确读取 → Vision 模式信息获取限制
+
+**额外输出字段**（Vision 模式必填）：
+在 JSON 中增加：
+  "vision_coordinate_issue": "是|否" — agent 是否存在坐标偏移问题
+  "vision_failure_type": "坐标偏移|信息充分幻觉|过早放弃|导航能力不足|不适用"
+    — 若为 Vision 模式特有问题，选择具体子类型；否则填"不适用"
+"""
+
+
 def _get_system_prompt(obs_mode: str) -> str:
     """Return the appropriate system prompt based on observation mode."""
     if obs_mode == "som":
         return _DIGEST_SYSTEM_PROMPT_BASE + _DIGEST_SOM_ADDENDUM
+    if obs_mode == "vision":
+        return _DIGEST_SYSTEM_PROMPT_BASE + _DIGEST_VISION_ADDENDUM
     return _DIGEST_SYSTEM_PROMPT_BASE
 
 
@@ -568,12 +601,15 @@ def _build_digest_record(
     if vision_models:
         record["_vision_model_used"] = glmm_use.get("model", "")
 
-    # SoM-specific fields
+    # Mode-specific fields
     obs_mode = str(case.get("observation_mode", "") or "").strip().lower()
     if obs_mode == "som":
         record["som_visual_used"] = str(parsed.get("som_visual_used", "") or "").strip() or "否"
         record["som_mark_occlusion"] = str(parsed.get("som_mark_occlusion", "") or "").strip() or "不适用"
         record["som_failure_type"] = str(parsed.get("som_failure_type", "") or "").strip() or "不适用"
+    elif obs_mode == "vision":
+        record["vision_coordinate_issue"] = str(parsed.get("vision_coordinate_issue", "") or "").strip() or "否"
+        record["vision_failure_type"] = str(parsed.get("vision_failure_type", "") or "").strip() or "不适用"
 
     return record
 
@@ -590,7 +626,7 @@ def _build_dry_run_record(case: Dict[str, Any]) -> Dict[str, Any]:
     """Build a digest record using only deterministic fallback (no GLM)."""
     fallback = _fallback_episode_diagnosis(case)
     _tid = _to_int(case.get("task_id"))
-    return {
+    record = {
         "task_id": _tid if _tid is not None else -1,
         "condition_id": str(case.get("condition_id", "") or "").strip(),
         "site": _extract_site(case),
@@ -610,6 +646,16 @@ def _build_dry_run_record(case: Dict[str, Any]) -> Dict[str, Any]:
         "evidence": fallback.get("evidence", ""),
         "_dry_run": True,
     }
+    # Mode-specific default fields
+    obs_mode = str(case.get("observation_mode", "") or "").strip().lower()
+    if obs_mode == "som":
+        record["som_visual_used"] = "否"
+        record["som_mark_occlusion"] = "不适用"
+        record["som_failure_type"] = "不适用"
+    elif obs_mode == "vision":
+        record["vision_coordinate_issue"] = "否"
+        record["vision_failure_type"] = "不适用"
+    return record
 
 
 # ---------------------------------------------------------------------------

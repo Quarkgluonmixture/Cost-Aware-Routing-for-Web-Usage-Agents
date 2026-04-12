@@ -5,9 +5,9 @@ Experiment watchdog — lightweight monitoring with periodic status reports.
 Notifications (push to ntfy):
 1) REPORT:   periodic status every --report-interval-mins (success rate + counts)
 2) IDLE:     no new episode for --idle-alert-mins → may need restart
-3) COMPLETE: condition finished (condition_summary_v2.json appeared)
-4) ANALYSIS: post-condition analysis script completed (output files detected)
-5) DIGEST:   GLM batch digest completed for a mode (all failed episodes processed)
+3) COMPLETE: optional (off by default; enable with --notify-completion)
+4) ANALYSIS: post-condition analysis summary (kept on by default)
+5) DIGEST:   included as pipeline summary in periodic status (no standalone push)
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import signal
 import shutil
 import subprocess
 import sys
@@ -29,8 +30,8 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 SUMMARY_RE = re.compile(r"^(?P<site>.+)_task_(?P<task_id>\d+)_summary_v2\.json$")
 
 # Session-health heuristics: patterns in step_000 DOM that indicate login state
-_LOGIN_ABSENT_RE = re.compile(r"link\s+'(?:Login|Sign In)'", re.IGNORECASE)
-_LOGIN_PRESENT_RE = re.compile(r"link\s+'(?:Logout|My account|Sign Out|Log Out)'", re.IGNORECASE)
+_LOGIN_ABSENT_RE = re.compile(r"link\s+'(?:Login|Log in|Sign In)'", re.IGNORECASE)
+_LOGIN_PRESENT_RE = re.compile(r"link\s+'(?:Logout|Log out|My account|Sign Out)'", re.IGNORECASE)
 _SESSION_ALERT_THRESHOLD = 3  # consecutive tasks w/o login before alerting
 
 # Directories inside run_dir that are NOT condition directories
@@ -126,6 +127,19 @@ def _check_session_health(condition_dir: Path, site: str, task_id: int) -> Optio
         text = dom_path.read_text(encoding="utf-8", errors="replace")[:5000]
     except Exception:
         return None
+    # Cross-site tasks may start on a different site's tab.  Detect via the
+    # Tab 0 header line and skip session check if the active page belongs to
+    # another site (login/logout links would be from the wrong site).
+    first_line = text.split("\n", 1)[0].strip().lower()
+    # Map site names to tab-header keywords (VWA uses page title as tab label)
+    _SITE_TAB_KW = {
+        "classifieds": "classifieds",
+        "reddit": "reddit",
+        "shopping": "shopping",
+    }
+    expected_kw = _SITE_TAB_KW.get(site)
+    if expected_kw and first_line.startswith("tab ") and expected_kw not in first_line:
+        return None  # active tab belongs to another site; skip
     has_login_link = bool(_LOGIN_ABSENT_RE.search(text))
     has_logout_link = bool(_LOGIN_PRESENT_RE.search(text))
     if has_logout_link:
@@ -332,6 +346,29 @@ def _check_condition_completions(
     return new_completions
 
 
+def _prune_stale_condition_completions(
+    run_dir: Path,
+    condition_filter: Optional[str],
+    seen_completions: Set[str],
+) -> int:
+    """Remove stale completion flags that no longer have condition_summary files."""
+    if condition_filter:
+        cond_dirs = [run_dir / condition_filter]
+    else:
+        cond_dirs = [p for p in run_dir.iterdir() if p.is_dir() and p.name not in _EXCLUDED_DIRS]
+
+    completed_now: Set[str] = set()
+    for cond_dir in cond_dirs:
+        if (cond_dir / "condition_summary_v2.json").exists():
+            completed_now.add(cond_dir.name)
+
+    stale = seen_completions - completed_now
+    if not stale:
+        return 0
+    seen_completions -= stale
+    return len(stale)
+
+
 # ---------------------------------------------------------------------------
 # State persistence
 # ---------------------------------------------------------------------------
@@ -466,6 +503,8 @@ def _regenerate_gallery(run_dir: Path, condition: Optional[str] = None) -> str:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if r.returncode == 0:
             print(f"[watchdog][GALLERY] regenerated: {run_dir / 'gallery.html'}")
+            # Also refresh aggregate gallery (best-effort)
+            _regenerate_aggregate_gallery(run_dir.parent)
             return "updated"
         else:
             msg = f"failed: {r.stderr[-200:]}"
@@ -477,6 +516,24 @@ def _regenerate_gallery(run_dir: Path, condition: Optional[str] = None) -> str:
     except Exception as exc:
         print(f"[watchdog][GALLERY] error: {exc}")
         return f"error: {exc}"
+
+
+def _regenerate_aggregate_gallery(phase_dir: Path) -> None:
+    """Refresh the B1_3mode aggregate gallery (best-effort, silent)."""
+    try:
+        cmd = [
+            sys.executable,
+            str(Path(__file__).resolve().parent / "generate_gallery.py"),
+            "--phase-dir", str(phase_dir),
+            "--prefix", "B1_3mode",
+        ]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        if r.returncode == 0:
+            print(f"[watchdog][GALLERY] aggregate refreshed: {phase_dir / 'B1_3mode' / 'gallery.html'}")
+        else:
+            print(f"[watchdog][GALLERY] aggregate failed: {r.stderr[-200:]}")
+    except Exception as exc:
+        print(f"[watchdog][GALLERY] aggregate error: {exc}")
 
 
 def _save_state(
@@ -579,6 +636,12 @@ def build_parser() -> argparse.ArgumentParser:
                     help="GLM config file for auto-digest (omit to disable)")
     p.add_argument("--digest-dir", default=None, type=Path,
                     help="Digest output directory (default: <run-dir>/analysis/digest/)")
+    p.add_argument(
+        "--notify-completion",
+        action="store_true",
+        help="Enable standalone COMPLETE push (P79 COMPLETE [...]). "
+             "Default off to reduce notification noise.",
+    )
     p.add_argument("--once", action="store_true", help="Scan once then exit")
     return p
 
@@ -656,6 +719,11 @@ def main() -> int:
     report_interval_secs = max(60, args.report_interval_mins * 60)
 
     # Bootstrap: scan existing analysis files and completions without alerting
+    pruned_completions = _prune_stale_condition_completions(run_dir, args.condition, seen_completions)
+    if pruned_completions > 0:
+        print(f"[watchdog] Pruned {pruned_completions} stale completions (missing condition_summary_v2.json)")
+        _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
+
     _check_analysis_outputs(run_dir, seen_analysis)
     _check_condition_completions(run_dir, args.condition, seen_completions, condition_mode_cache)
 
@@ -664,6 +732,25 @@ def main() -> int:
         f"poll={args.poll_secs}s report_every={args.report_interval_mins}min "
         f"idle_alert={args.idle_alert_mins}min"
     )
+
+    # Manual immediate-status trigger (signal):
+    #   kill -USR1 <watchdog_pid>
+    force_report_once = False
+
+    def _on_force_report_signal(sig_num: int, _frame: Any) -> None:
+        nonlocal force_report_once
+        force_report_once = True
+        try:
+            sig_name = signal.Signals(sig_num).name
+        except Exception:
+            sig_name = str(sig_num)
+        print(f"[watchdog][MANUAL] Received {sig_name}; scheduling immediate status cycle.")
+
+    try:
+        signal.signal(signal.SIGUSR1, _on_force_report_signal)
+    except Exception:
+        # Some environments may not support SIGUSR1 registration.
+        pass
 
     while True:
         now = time.time()
@@ -821,15 +908,20 @@ def main() -> int:
 
             _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
 
-        # --- 2. Periodic status report (only running conditions) ---
-        if (now - last_report_ts) >= report_interval_secs and all_records:
+        # --- 2. Periodic/manual status report ---
+        manual_report_now = force_report_once
+        if manual_report_now:
+            force_report_once = False
+
+        if ((now - last_report_ts) >= report_interval_secs and all_records) or manual_report_now:
             report = _build_status_report(all_records, condition_mode_cache, seen_completions, run_id)
             if report:
                 print(f"[watchdog][REPORT]\n{report}")
+            elif manual_report_now:
+                print(f"[watchdog][REPORT]\nrun_id={run_id}\n(manual) 当前无运行中 condition")
 
             # Auto-digest: update reason CSV + run batch digest
             digest_status = None
-            digest_completions_info: List[str] = []
             if args.glm_config:
                 digest_dir = args.digest_dir or (run_dir / "analysis" / "digest")
                 # Infer site: pass --site only when all episodes belong to a single site
@@ -843,17 +935,13 @@ def main() -> int:
                 )
                 for mode, digested, expected in newly_done:
                     info = f"[{mode}] digest 完成: {digested}/{expected}"
-                    digest_completions_info.append(info)
                     print(f"[watchdog][DIGEST] {info}")
-                    if args.ntfy_topic:
-                        _post_ntfy(args.ntfy_topic, f"P79 Digest [{mode}]",
-                                   f"run_id={run_id}\n{info}\n输出: analysis/digest/digest_{mode}.jsonl",
-                                   priority="high")
                     _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
 
             # Auto-annotate screenshots then regenerate gallery HTML
             annotate_status = _annotate_screenshots(run_dir, args.condition)
-            gallery_status = _regenerate_gallery(run_dir, args.condition)
+            # Keep primary gallery as full run view; avoid overwriting with single-condition subset.
+            gallery_status = _regenerate_gallery(run_dir, None)
 
             # Run analysis scripts (results fed into consolidated notification)
             new_analysis = _check_analysis_outputs(run_dir, seen_analysis)
@@ -864,12 +952,15 @@ def main() -> int:
                 _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
 
             # --- Build consolidated periodic notification ---
-            if args.ntfy_topic and report:
-                parts = [report]
+            if args.ntfy_topic and (report or manual_report_now):
+                if report:
+                    parts = [report]
+                else:
+                    parts = [f"run_id={run_id}", "(manual) 当前无运行中 condition"]
 
                 # Recent tasks: episodes in seen_keys but not yet reported
                 unreported_keys = seen_keys - reported_keys
-                if unreported_keys:
+                if report and unreported_keys:
                     # Match records by condition-aware path, not just filename suffix.
                     # Filenames are identical across conditions (e.g. classifieds_task_0_summary_v2.json),
                     # so we must include the condition_id directory in the match.
@@ -938,13 +1029,14 @@ def main() -> int:
                 f"run_id={run_id}\n[{mode}] {cid} 已完成"
             )
             print(f"[watchdog][COMPLETE] {body}")
-            if args.ntfy_topic:
+            if args.ntfy_topic and args.notify_completion:
                 _post_ntfy(args.ntfy_topic, f"P79 COMPLETE [{mode}/{cid}]", body, priority="high")
 
             # Auto-run analysis pipeline after condition completion
             analysis_status = _run_post_condition_analysis(run_dir)
             annotate_status = _annotate_screenshots(run_dir, cid)
-            gallery_status = _regenerate_gallery(run_dir, cid)
+            # Keep primary gallery as full run view; avoid overwriting with single-condition subset.
+            gallery_status = _regenerate_gallery(run_dir, None)
             if args.ntfy_topic:
                 _post_ntfy(
                     args.ntfy_topic,

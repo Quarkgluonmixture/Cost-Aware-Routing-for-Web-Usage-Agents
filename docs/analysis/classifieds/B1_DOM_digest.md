@@ -1,5 +1,7 @@
 # B1 DOM Baseline 分析报告（Classifieds）
 
+> **[DATA STALE]** 本报告数据基于 §33/§34/§36 修复前的运行结果。DOM 模式现在可以看到任务参考图片（但仍无页面截图），`visual_has_ref_image` subtype 已区分"有参考图但模型能力不足"和"纯视觉属性 DOM 不可达"。adjusted 指标待重跑后更新。
+
 > 数据来源：`digest_dom.jsonl`（213 条，仅含 DOM 模式数据）
 > 归因方法：GLM-5.1 自动归因 211 条 + 人工补全 2 条（task_184、task_187）+ 人工定性分析交叉验证
 > 行为指标：`digest_enrich.py` 从原始 step 日志 / artifact 提取确定性指标
@@ -17,6 +19,8 @@
 | 成功 | 21 (8.97%) |
 | 失败 | 213 (91.03%) |
 | Digest 覆盖率 | 213/213 (100%) |
+| N/A Adjusted SR | 4.91%（11/224，扣除 10 个 N/A FP） |
+| Visual Adjusted SR | 0.85%（2/234，扣除 19 个 visual lucky hits） |
 | 失败 episode 平均步数 | 15.4 步 |
 | 失败 episode 中位步数 | 11 步 |
 | 失败 episode 最大步数 | 30 步（max_steps 上限） |
@@ -127,11 +131,13 @@ Gallery 视图（`sShowAs=gallery`）在页面上渲染为多列网格（如 3×
 
 *SoM/Vision 模式可通过截图感知视觉布局，理论上可避免此类错误。*
 
-#### 4.3.3 长表单编辑时滚动丢失上下文
+#### 4.3.3 长表单编辑时滚动丢失上下文（auto-scroll 造成）
 
-编辑页（如 item_edit）表单较长，agent 点击某个 textbox 聚焦后，下一步 DOM 视窗因页面滚动而变化，导致 agent 丢失刚才的编辑意图，转而去操作当前视窗中可见的其他字段。
+编辑页（如 item_edit）表单较长，agent 点击某个 textbox 聚焦后，聚焦操作被判为 page_unchanged → **auto-scroll（`baseline_retry_on_no_progress`）触发隐式 scroll** → DOM 视窗变化 → agent 丢失编辑意图，转而操作当前视窗中可见的其他字段。
 
-- task_76：任务要求修改 listing 价格为 $85.50。step 3 agent 正确识别到 description 中包含旧价格 "$250"，点击了 description textbox `[2396]` 准备编辑。但 click 只是聚焦，下一步 DOM 视窗滚动到 Price 字段区域，description 不再可见。agent 丢失编辑 description 的上下文，转而点击 Price 字段 `[2400]`，之后 step 5-7 陷入无效 scroll 循环。
+- task_76：任务要求修改 listing 价格为 $85.50。step 3 agent 正确识别到 description 中包含旧价格 "$250"，点击了 description textbox `[2396]` 准备编辑。click 聚焦成功但被判为 page_unchanged → **auto-scroll 触发**（`retry_applied=True, retry_type=scroll`），视窗滚到 Price 区域。Step 4 agent 转而点击 Price 字段 `[2400]`，同样触发 auto-scroll。Step 5-7 陷入无效 scroll 循环。
+
+**根因确认**：step 3、4 的 `retry_action_applied=True` 证实滚动来自 auto-scroll 而非浏览器原生行为。这是实验笔记 §31 auto-scroll "破坏焦点"问题（第 4 点）的具体实例。关闭 `baseline_retry_on_no_progress` 后此问题消失。
 
 *SoM/Vision 模式可通过截图感知页面滚动位置，理论上可缓解上下文丢失问题。*
 
@@ -424,3 +430,4 @@ Classifieds 站 234 个任务中，**162 个（69.2%）为视觉任务**——�
 *生成时间：2026-04-07，基于 digest_dom.jsonl（GLM-5.1 batch digest + digest_enrich.py）*
 *更新时间：2026-04-09，基于重跑后数据（234 episodes，21 成功 / 213 失败）全面更新统计*
 *更新时间：2026-04-10，合并人工定性分析（原 B1_DOM_manual.md），补充 §4.3 非视觉脚手架案例 + §八 Visual FP 分析*
+*更新时间：2026-04-11，追加 N/A Adjusted SR（4.91%）至总体概况表，确认 N/A FP 10/10、Visual FP 19/21*

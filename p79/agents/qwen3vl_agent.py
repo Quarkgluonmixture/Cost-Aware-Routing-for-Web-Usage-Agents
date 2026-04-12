@@ -140,6 +140,9 @@ Action Schema:
    - N is the numeric ID from the Accessibility Tree (e.g., [175] link 'Comments' -> element_id: 175).
    - ALWAYS prefer element_id. Only use coordinate as last resort.
 2. Type: {"action_type": "type", "text": "string", "element_id": N}
+   - This action automatically clicks the target to focus it, then types the text.
+   - ALWAYS use "type" (not "click") when you want to enter text into an input field.
+   - "click" is for buttons, links, and navigation only — it cannot enter text.
    - ALWAYS specify element_id to target the correct input field.
    - To submit, append "\\n" to the text.
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
@@ -204,6 +207,9 @@ Action Schema:
 2. Click by coordinate (fallback): {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}
    - x, y are floats 0.0–1.0. Use only when no element_id is available.
 3. Type: {"action_type": "type", "text": "string", "element_id": N}
+   - This action automatically clicks the target to focus it, then types the text.
+   - ALWAYS use "type" (not "click") when you want to enter text into an input field.
+   - "click" is for buttons, links, and navigation only — it cannot enter text.
    - Prefer element_id. To submit, append "\\n" to the text.
 4. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
    - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
@@ -259,7 +265,10 @@ Action Schema:
 1. Click: {"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}
    - x, y are floats 0.0–1.0. Estimate the center of the target element in the screenshot.
 2. Type: {"action_type": "type", "text": "string", "coordinate": [x, y], "coordinate_type": "normalized"}
-   - Include coordinate to specify the input field location (recommended). To submit, append "\\n" to the text.
+   - This action automatically clicks the target coordinate to focus it, then types the text.
+   - ALWAYS use "type" (not "click") when you want to enter text into an input field.
+   - "click" is for buttons, links, and navigation only — it cannot enter text.
+   - Include coordinate to specify the input field location. To submit, append "\\n" to the text.
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
    - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
 4. Wait: {"action_type": "wait"}
@@ -415,7 +424,12 @@ CRITICAL:
                     ratio = max_size / max(ref_img.size)
                     new_size = (int(ref_img.size[0] * ratio), int(ref_img.size[1] * ratio))
                     ref_img = ref_img.resize(new_size, Image.Resampling.LANCZOS)
-                content.append({"type": "text", "text": f"[Input image {idx + 1}]"})
+                label = (
+                    f"[Reference image {idx + 1}] "
+                    f"This image shows the target item described in the task. "
+                    f"Use it to identify which element to interact with."
+                )
+                content.append({"type": "text", "text": label})
                 content.append({"type": "image", "image": ref_img})
 
         if image is not None:
@@ -435,10 +449,12 @@ CRITICAL:
         messages = [{"role": "user", "content": content}]
 
         # Prepare for inference
+        preprocess_start = time.time()
         text = self.processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )
-        if image is not None:
+        has_images = image is not None or bool(reference_images)
+        if has_images:
             image_inputs, video_inputs = process_vision_info(messages)
             inputs = self.processor(
                 text=[text],
@@ -454,6 +470,10 @@ CRITICAL:
                 return_tensors="pt",
             )
         inputs = inputs.to(self.model.device)
+        preprocess_ms = (time.time() - preprocess_start) * 1000.0
+
+        # Count image tokens (expanded from vision patches by the processor)
+        image_token_count = int((inputs.input_ids == self.processor.image_token_id).sum().item())
 
         # Generate
         gen_kwargs = {
@@ -463,7 +483,9 @@ CRITICAL:
             "output_scores": True,
         }
 
+        generate_start = time.time()
         gen_output = self.model.generate(**inputs, **gen_kwargs)
+        generate_ms = (time.time() - generate_start) * 1000.0
         generated_ids = gen_output.sequences
         generated_ids_trimmed = [
             out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
@@ -491,8 +513,12 @@ CRITICAL:
             "raw_output": output_text,
             "valid": valid,
             "failure_reason": fail_reason,
-            "input_tokens": inputs.input_ids.shape[1], # Exact count
-            "output_tokens": len(generated_ids_trimmed[0]), # Exact count
+            "input_tokens": inputs.input_ids.shape[1],  # Exact count
+            "input_image_tokens": image_token_count,
+            "input_text_tokens": inputs.input_ids.shape[1] - image_token_count,
+            "output_tokens": len(generated_ids_trimmed[0]),  # Exact count
+            "preprocess_ms": preprocess_ms,
+            "generate_ms": generate_ms,
             **confidence_metrics,
         }
         
