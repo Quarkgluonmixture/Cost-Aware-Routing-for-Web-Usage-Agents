@@ -97,6 +97,16 @@ class VWAWrapper:
         self._lazy_init()
         assert self._env is not None
 
+        # Re-apply asyncio event loop reset before every _env.reset().
+        # _lazy_init() only runs it on first init, but VWA program_html evaluators
+        # (httpx/asyncio) can leave a stale loop that causes Playwright sync API to
+        # raise "Sync API inside the asyncio loop" on subsequent resets.
+        import asyncio as _asyncio
+        try:
+            _asyncio.get_running_loop()
+        except RuntimeError:
+            _asyncio.set_event_loop(_asyncio.new_event_loop())
+
         try:
             obs, info = self._env.reset(options={"config_file": config_file})
         except Exception:
@@ -130,6 +140,7 @@ class VWAWrapper:
 
         action_type = (action_json.get("action_type") or "").lower().strip()
         action = None
+        _type_needs_enter = False
 
         if action_type == "click" and "element_id" in action_json:
             # Prefer element_id click (id-based action via AXTree node)
@@ -218,6 +229,8 @@ class VWAWrapper:
                 element_id = None
             if element_id is None or element_id <= 0:
                 action = create_keyboard_type_action(action_json["text"])
+            else:
+                _type_needs_enter = bool(str(action_json.get("text", "")).endswith("\n"))
         elif action_type == "back":
             action = create_go_back_action()
         elif action_type == "forward":
@@ -258,6 +271,18 @@ class VWAWrapper:
             # Reset underlying resources so next episode can re-initialize cleanly.
             self.close()
             raise
+
+        # Post-type Enter: DOM/SOM type+element_id 路径下 VWA id-based action 会 strip \n，
+        # 对于 \n 结尾的文本（搜索/表单提交），需补发 Enter 触发提交。
+        if _type_needs_enter and self._env is not None:
+            try:
+                self._env.page.keyboard.press("Enter")
+                self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
+                re_obs, _, _, _, re_info = self._env.step(create_none_action())
+                obs, info = re_obs, re_info
+            except Exception as _e:
+                logger.warning("Post-type Enter press failed: %s", _e)
+
         if action_type in ("finish", "stop"):
             terminated = True
         info["raw_action"] = action  # Expose the raw VWA action for trajectory recording
@@ -276,12 +301,25 @@ class VWAWrapper:
 
     def close(self) -> None:
         if self._env is not None:
+            env = self._env
+            self._env = None  # clear first to prevent re-entry
             try:
-                self._env.close()
+                env.close()  # VWA close(): calls context_manager.__exit__() only if reset_finished=True
             except Exception:
                 pass
-            finally:
-                self._env = None
+            # VWA's close() skips __exit__() when reset_finished=False (i.e. setup() failed
+            # mid-way, e.g. ERR_CONNECTION_REFUSED during page.goto).  The Playwright event
+            # loop started by __enter__() keeps running in its dispatcher greenlet, causing
+            # every subsequent sync_playwright().__enter__() to raise "Sync API inside the
+            # asyncio loop".  Force-close the context manager in that case.
+            if not getattr(env, "reset_finished", True):
+                ctx = getattr(env, "context_manager", None)
+                pw = getattr(env, "playwright", None)
+                if ctx is not None and pw is not None:
+                    try:
+                        ctx.__exit__(None, None, None)
+                    except Exception:
+                        pass
 
     # ---------- helpers ----------
 

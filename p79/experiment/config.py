@@ -144,7 +144,7 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     env_cfg.setdefault("viewport_height", 720)
 
     task_cfg = cfg.setdefault("task", {})
-    task_cfg.setdefault("include_sites", ["shopping", "reddit", "wikipedia", "classifieds"])
+    task_cfg.setdefault("include_sites", ["shopping", "reddit", "classifieds"])
     task_cfg.setdefault("max_tasks_per_site", None)
     task_cfg.setdefault("task_ids", {})
 

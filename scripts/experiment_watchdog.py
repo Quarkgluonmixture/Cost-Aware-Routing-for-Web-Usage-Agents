@@ -118,6 +118,115 @@ def _get_observation_mode(condition_dir: Path, cache: Dict[str, str]) -> str:
     return mode
 
 
+def _auto_refresh_auth(site: str) -> bool:
+    """Re-login to site and refresh .auth/{site}_state.json using Playwright.
+
+    Credentials and URLs are sourced from environment (CLASSIFIEDS/REDDIT/SHOPPING)
+    and hard-coded VWA defaults.  Returns True on success.
+    """
+    import os as _os
+    _ACCOUNTS = {
+        "classifieds": ("blake.sullivan@gmail.com", "Password.123"),
+        "reddit":      ("MarvelsGrantMan136",         "test1234"),
+        "shopping":    ("emma.lopez@gmail.com",        "Password.123"),
+    }
+    _BASE_URLS = {
+        "classifieds": _os.environ.get("CLASSIFIEDS", "http://100.95.81.103:9980"),
+        "reddit":      _os.environ.get("REDDIT",      "http://100.95.81.103:9999"),
+        "shopping":    _os.environ.get("SHOPPING",    "http://100.95.81.103:7770"),
+    }
+    _LOGIN_PATHS = {
+        "classifieds": "/index.php?page=login",
+        "reddit":      "/login",
+        "shopping":    "/customer/account/login/",
+    }
+    if site not in _ACCOUNTS:
+        print(f"[watchdog][SESSION] auto-refresh: unknown site {site!r}")
+        return False
+    repo_dir = Path(__file__).resolve().parent.parent
+    auth_file = repo_dir / ".auth" / f"{site}_state.json"
+    username, password = _ACCOUNTS[site]
+    base_url = _BASE_URLS[site]
+    login_path = _LOGIN_PATHS[site]
+    # Build inline Python script for Playwright (avoids importing in watchdog process)
+    script = f"""
+import sys, time
+sys.path.insert(0, {str(repo_dir / 'external' / 'visualwebarena')!r})
+from playwright.sync_api import sync_playwright
+cm = sync_playwright()
+pw = cm.__enter__()
+browser = pw.chromium.launch(headless=True)
+ctx = browser.new_context()
+page = ctx.new_page()
+page.goto({(base_url + login_path)!r})
+site = {site!r}
+if site == 'classifieds':
+    page.locator('#email').fill({username!r})
+    page.locator('#password').fill({password!r})
+    page.get_by_role('button', name='Log in').click()
+elif site == 'reddit':
+    page.get_by_label('Username').fill({username!r})
+    page.get_by_label('Password').fill({password!r})
+    page.get_by_role('button', name='Log in').click()
+elif site == 'shopping':
+    page.get_by_label('Email', exact=True).fill({username!r})
+    page.get_by_label('Password', exact=True).fill({password!r})
+    page.get_by_role('button', name='Sign In').click()
+time.sleep(2)
+ctx.storage_state(path={str(auth_file)!r})
+cm.__exit__(None, None, None)
+print('ok ->', page.url)
+"""
+    env = {**_os.environ, "DATASET": "visualwebarena"}
+    try:
+        r = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True, text=True, timeout=30, env=env,
+        )
+        if r.returncode == 0 and auth_file.exists():
+            print(f"[watchdog][SESSION] {site} auth auto-refreshed: {r.stdout.strip()}")
+            return True
+        print(f"[watchdog][SESSION][warn] {site} auto-refresh failed rc={r.returncode}: {r.stderr[-300:]}")
+        return False
+    except Exception as exc:
+        print(f"[watchdog][SESSION][warn] {site} auto-refresh error: {exc}")
+        return False
+
+
+def _purge_digest_records(digest_dir: Path, condition_id: str, task_id: int, obs_mode: str) -> int:
+    """Remove records matching (condition_id, task_id) from digest_{obs_mode}.jsonl.
+
+    Returns number of records removed.
+    """
+    if not digest_dir.exists():
+        return 0
+    digest_file = digest_dir / f"digest_{obs_mode}.jsonl"
+    if not digest_file.exists():
+        return 0
+    try:
+        lines = digest_file.read_text(encoding="utf-8").splitlines()
+        keep, removed = [], 0
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+                cid = rec.get("condition_id", "")
+                if rec.get("task_id") == task_id and (not cid or cid == condition_id):
+                    removed += 1
+                    continue
+            except Exception:
+                pass
+            keep.append(line)
+        if removed:
+            digest_file.write_text("\n".join(keep) + ("\n" if keep else ""), encoding="utf-8")
+        return removed
+    except Exception as exc:
+        print(f"[watchdog][warn] purge_digest task {task_id}: {exc}")
+        return 0
+
+
 def _check_session_health(condition_dir: Path, site: str, task_id: int) -> Optional[bool]:
     """Check step_000 DOM for login state. True=logged-in, False=not, None=unknown."""
     dom_path = condition_dir / "artifacts" / f"{site}_task_{task_id}" / "step_000" / "observation_dom.txt"
@@ -490,7 +599,8 @@ def _run_post_condition_analysis(run_dir: Path) -> str:
     return "; ".join(statuses) if statuses else "skipped (no scripts found)"
 
 
-def _regenerate_gallery(run_dir: Path, condition: Optional[str] = None) -> str:
+def _regenerate_gallery(run_dir: Path, condition: Optional[str] = None,
+                        aggregate_prefix: str = "B1_3mode") -> str:
     """Regenerate the gallery HTML (best-effort, non-blocking). Returns status string."""
     try:
         cmd = [
@@ -504,7 +614,7 @@ def _regenerate_gallery(run_dir: Path, condition: Optional[str] = None) -> str:
         if r.returncode == 0:
             print(f"[watchdog][GALLERY] regenerated: {run_dir / 'gallery.html'}")
             # Also refresh aggregate gallery (best-effort)
-            _regenerate_aggregate_gallery(run_dir.parent)
+            _regenerate_aggregate_gallery(run_dir.parent, aggregate_prefix)
             return "updated"
         else:
             msg = f"failed: {r.stderr[-200:]}"
@@ -518,18 +628,18 @@ def _regenerate_gallery(run_dir: Path, condition: Optional[str] = None) -> str:
         return f"error: {exc}"
 
 
-def _regenerate_aggregate_gallery(phase_dir: Path) -> None:
-    """Refresh the B1_3mode aggregate gallery (best-effort, silent)."""
+def _regenerate_aggregate_gallery(phase_dir: Path, prefix: str = "B1_3mode") -> None:
+    """Refresh the aggregate gallery (best-effort, silent)."""
     try:
         cmd = [
             sys.executable,
             str(Path(__file__).resolve().parent / "generate_gallery.py"),
             "--phase-dir", str(phase_dir),
-            "--prefix", "B1_3mode",
+            "--prefix", prefix,
         ]
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if r.returncode == 0:
-            print(f"[watchdog][GALLERY] aggregate refreshed: {phase_dir / 'B1_3mode' / 'gallery.html'}")
+            print(f"[watchdog][GALLERY] aggregate refreshed: {phase_dir / prefix / 'gallery.html'}")
         else:
             print(f"[watchdog][GALLERY] aggregate failed: {r.stderr[-200:]}")
     except Exception as exc:
@@ -643,6 +753,10 @@ def build_parser() -> argparse.ArgumentParser:
              "Default off to reduce notification noise.",
     )
     p.add_argument("--once", action="store_true", help="Scan once then exit")
+    p.add_argument("--aggregate-prefix", default="B1_3mode",
+                    help="Prefix used for aggregate gallery regeneration (default: B1_3mode)")
+    p.add_argument("--reset-state", action="store_true",
+                   help="Clear state file before starting (full watchdog state reset)")
     return p
 
 
@@ -658,6 +772,10 @@ def main() -> int:
 
     run_id = run_dir.name
     state_file = Path(args.state_file).resolve() if args.state_file else None
+
+    if getattr(args, "reset_state", False) and state_file and state_file.exists():
+        state_file.unlink()
+        print(f"[watchdog] --reset-state: cleared {state_file}")
 
     # Load persisted state
     saved = _load_state(state_file)
@@ -706,9 +824,48 @@ def main() -> int:
             print(f"[watchdog] Pruned {len(stale_keys)} stale keys (files deleted since last run)")
         print(f"[watchdog] Restored {len(all_records)} episodes from state")
 
+    # Prune orphan artifacts and steps files (exist but no summary file).
+    # Skip items modified within the last 10 minutes — may belong to in-progress episodes.
+    _orphan_count = 0
+    _orphan_cutoff = time.time() - 10 * 60
+    _cond_dirs_to_scan = (
+        [run_dir / args.condition] if args.condition
+        else [p for p in run_dir.iterdir() if p.is_dir() and p.name not in _EXCLUDED_DIRS]
+    )
+    for _cdir in _cond_dirs_to_scan:
+        _art_root = _cdir / "artifacts"
+        _ep_root = _cdir / "episodes"
+        # Orphan artifact directories
+        if _art_root.exists():
+            for _art in _art_root.iterdir():
+                if not _art.is_dir():
+                    continue
+                if (_ep_root / f"{_art.name}_summary_v2.json").exists():
+                    continue
+                if _art.stat().st_mtime > _orphan_cutoff:
+                    continue
+                shutil.rmtree(_art)
+                _orphan_count += 1
+        # Orphan steps files (steps JSONL without summary)
+        if _ep_root.exists():
+            for _sf in _ep_root.glob("*_steps_v2.jsonl"):
+                _summary = _ep_root / _sf.name.replace("_steps_v2.jsonl", "_summary_v2.json")
+                if _summary.exists():
+                    continue
+                if _sf.stat().st_mtime > _orphan_cutoff:
+                    continue
+                _sf.unlink()
+                _orphan_count += 1
+    if _orphan_count:
+        print(f"[watchdog] Pruned {_orphan_count} orphan item(s) (artifact dirs / steps files without summary)")
+
     # Session-loss tracking: per-site streak counters
     session_loss_streak: Dict[str, int] = defaultdict(int)
     session_alerted: Dict[str, bool] = defaultdict(bool)
+    # Contaminated episodes to auto-clean when login is restored:
+    # {site: [(condition_id, condition_dir, task_id, site, key), ...]}
+    session_contaminated: Dict[str, List[Tuple[str, Path, int, str, str]]] = defaultdict(list)
+    session_auto_refresh_attempted: Dict[str, bool] = defaultdict(bool)
 
     # Timers
     last_new_episode_ts: float = time.time()
@@ -831,9 +988,13 @@ def main() -> int:
                             shutil.rmtree(artifacts_dir)
                     except OSError:
                         pass
+                    # 4. Clean digest records (keep data consistent with deleted episode)
+                    _digest_dir = args.digest_dir or (run_dir / "analysis" / "digest")
+                    purged = _purge_digest_records(_digest_dir, condition_id, task_id, obs_mode)
                     print(
                         f"[watchdog][AUTO-RETRY] deleted error episode: "
                         f"task {task_id} ({reason}) retry {retries_so_far + 1}/{MAX_CODE_BUG_RETRIES}"
+                        + (f" (+{purged} digest records)" if purged else "")
                     )
                     if args.ntfy_topic:
                         _post_ntfy(
@@ -863,20 +1024,20 @@ def main() -> int:
                 if session_ok is False:
                     session_loss_streak[site] += 1
                     streak = session_loss_streak[site]
+                    # Track this episode as contaminated (will be cleaned when login restored)
+                    session_contaminated[site].append(
+                        (condition_id, condition_dir, task_id, site, key)
+                    )
                     print(
                         f"[watchdog][SESSION] {site} task {task_id} "
                         f"NOT LOGGED IN (streak={streak})"
                     )
-                    if (
-                        streak >= _SESSION_ALERT_THRESHOLD
-                        and not session_alerted[site]
-                    ):
+                    if streak >= _SESSION_ALERT_THRESHOLD and not session_alerted[site]:
                         session_alerted[site] = True
                         body = (
                             f"run_id={run_id}\n"
                             f"{site}: {streak} consecutive tasks without login!\n"
-                            f"Cookie/session 已过期，需刷新 .auth/{site}_state.json\n"
-                            f"python auto_login.py --site {site}"
+                            f"正在尝试自动刷新 auth..."
                         )
                         print(f"[watchdog][SESSION] ALERT: {body}")
                         if args.ntfy_topic:
@@ -886,14 +1047,66 @@ def main() -> int:
                                 body,
                                 priority="urgent",
                             )
+                    # Attempt auto-refresh once per loss wave
+                    if streak >= _SESSION_ALERT_THRESHOLD and not session_auto_refresh_attempted[site]:
+                        session_auto_refresh_attempted[site] = True
+                        print(f"[watchdog][SESSION] attempting auto-refresh for {site}...")
+                        if _auto_refresh_auth(site):
+                            print(f"[watchdog][SESSION] {site} auth refreshed — next tasks will use new cookies")
+                        else:
+                            print(f"[watchdog][SESSION][warn] {site} auto-refresh failed — manual intervention needed")
                 elif session_ok is True:
-                    if session_loss_streak[site] > 0:
+                    was_streak = session_loss_streak[site]
+                    if was_streak > 0:
                         print(
                             f"[watchdog][SESSION] {site} login restored "
-                            f"(was streak={session_loss_streak[site]})"
+                            f"(was streak={was_streak})"
                         )
+                        # Auto-clean all contaminated episodes from this loss wave
+                        contaminated = session_contaminated.pop(site, [])
+                        if contaminated:
+                            _ddir = run_dir / "analysis" / "digest"
+                            cleaned = 0
+                            for (cond_id, cond_dir, ctask_id, csite, ckey) in contaminated:
+                                # Delete episode files
+                                for p in [
+                                    cond_dir / "episodes" / f"{csite}_task_{ctask_id}_summary_v2.json",
+                                    cond_dir / "episodes" / f"{csite}_task_{ctask_id}_steps_v2.jsonl",
+                                ]:
+                                    try:
+                                        if p.exists(): p.unlink()
+                                    except OSError:
+                                        pass
+                                cart = cond_dir / "artifacts" / f"{csite}_task_{ctask_id}"
+                                try:
+                                    if cart.exists(): shutil.rmtree(cart)
+                                except OSError:
+                                    pass
+                                # Clean digest
+                                cmode = _get_observation_mode(cond_dir, condition_mode_cache)
+                                _purge_digest_records(_ddir, cond_id, ctask_id, cmode)
+                                # Remove from in-memory tracking
+                                all_records[:] = [
+                                    r for r in all_records
+                                    if not (r.condition_id == cond_id and r.task_id == ctask_id)
+                                ]
+                                seen_keys.discard(ckey)
+                                reported_keys.discard(ckey)
+                                cleaned += 1
+                            print(f"[watchdog][SESSION] {site} auto-cleaned {cleaned} NOT-LOGGED-IN episodes")
+                            _save_state(state_file, seen_keys, seen_completions, seen_analysis,
+                                        seen_digest_completions, reported_keys, error_retry_counts)
+                            if args.ntfy_topic:
+                                _post_ntfy(
+                                    args.ntfy_topic,
+                                    f"P79 SESSION RESTORED [{site}]",
+                                    f"run_id={run_id}\n{site}: login restored\n"
+                                    f"auto-cleaned {cleaned} NOT-LOGGED-IN episodes",
+                                    priority="default",
+                                )
                     session_loss_streak[site] = 0
                     session_alerted[site] = False
+                    session_auto_refresh_attempted[site] = False
 
                 # Per-condition cumulative
                 cond_all = [r for r in all_records if r.condition_id == condition_id]
@@ -941,7 +1154,7 @@ def main() -> int:
             # Auto-annotate screenshots then regenerate gallery HTML
             annotate_status = _annotate_screenshots(run_dir, args.condition)
             # Keep primary gallery as full run view; avoid overwriting with single-condition subset.
-            gallery_status = _regenerate_gallery(run_dir, None)
+            gallery_status = _regenerate_gallery(run_dir, None, args.aggregate_prefix)
 
             # Run analysis scripts (results fed into consolidated notification)
             new_analysis = _check_analysis_outputs(run_dir, seen_analysis)
@@ -1036,7 +1249,7 @@ def main() -> int:
             analysis_status = _run_post_condition_analysis(run_dir)
             annotate_status = _annotate_screenshots(run_dir, cid)
             # Keep primary gallery as full run view; avoid overwriting with single-condition subset.
-            gallery_status = _regenerate_gallery(run_dir, None)
+            gallery_status = _regenerate_gallery(run_dir, None, args.aggregate_prefix)
             if args.ntfy_topic:
                 _post_ntfy(
                     args.ntfy_topic,

@@ -174,11 +174,14 @@ def _parse_run_family(run_name: str) -> Optional[Dict[str, str]]:
 
 
 def _has_episode_data(run_dir: Path) -> bool:
-    """Quick check: does this run dir contain at least one condition episodes dir?"""
+    """Quick check: does this run dir contain at least one completed episode summary?"""
     for cond_dir in run_dir.iterdir():
         if not cond_dir.is_dir() or cond_dir.name in ("analysis", ".git", "_vwa"):
             continue
-        if (cond_dir / "episodes").exists():
+        eps_dir = cond_dir / "episodes"
+        if not eps_dir.is_dir():
+            continue
+        if any(eps_dir.glob("*_summary_v2.json")):
             return True
     return False
 
@@ -290,6 +293,9 @@ def _load_task_intents() -> Dict[str, Dict[str, str]]:
                 if tid is not None and intent:
                     entry: Dict[str, str] = {"intent": intent}
                     img_rel = cfg.get("image", "")
+                    # image field may be a list (multi-image tasks); take first element
+                    if isinstance(img_rel, list):
+                        img_rel = img_rel[0] if img_rel else ""
                     if img_rel:
                         img_abs = (vwa_root / img_rel).resolve()
                         if img_abs.exists():
@@ -343,15 +349,15 @@ def _collect_episodes(
                 if not steps:
                     continue
 
-                # Read summary
+                # Read summary — skip orphan steps files that have no summary yet
                 summary_path = episodes_dir / f"{site}_task_{task_id}_summary_v2.json"
-                summary = None
-                if summary_path.exists():
-                    try:
-                        with open(summary_path, "r", encoding="utf-8") as f:
-                            summary = json.load(f)
-                    except Exception:
-                        pass
+                if not summary_path.exists():
+                    continue
+                try:
+                    with open(summary_path, "r", encoding="utf-8") as f:
+                        summary = json.load(f)
+                except Exception:
+                    summary = None
 
                 # Collect steps
                 task_artifact_dir = artifacts_dir / f"{site}_task_{task_id}"

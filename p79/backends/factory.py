@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from p79.backends.api_qwen import ApiQwenBackend
 from p79.backends.heuristic import HeuristicDomBackend
 from p79.backends.local_qwen import LocalQwenBackend
 
@@ -35,8 +34,6 @@ def create_backend(backend_id: str, cfg: Dict[str, Any]):
     backend_type = cfg.get("type", "local_qwen")
     if backend_type == "local_qwen":
         return LocalQwenBackend(backend_id, cfg)
-    if backend_type == "api_qwen":
-        return ApiQwenBackend(backend_id, cfg)
     if backend_type == "api_proxy":
         from p79.backends.api_proxy import ApiProxyBackend
         return ApiProxyBackend(backend_id, cfg)

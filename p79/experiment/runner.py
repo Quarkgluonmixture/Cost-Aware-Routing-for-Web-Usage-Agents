@@ -1022,7 +1022,7 @@ class ExperimentRunner:
             # Baseline robustness: if click/type made no progress, run one internal retry
             # even when optional M3 module is disabled.
             baseline_retry_on_no_progress = bool(
-                self.cfg.get("runtime", {}).get("baseline_retry_on_no_progress", True)
+                self.cfg.get("runtime", {}).get("baseline_retry_on_no_progress", False)
             )
             trigger_baseline_retry = (
                 baseline_retry_on_no_progress

@@ -72,12 +72,16 @@ class VwaEvaluator:
             # VisualWebArena may import OpenAI provider modules during evaluator
             # initialization even for non-LLM eval types. Keep import recoverable.
             # Load real OpenAI key from .auth/openai_key if available (not committed).
+            # Override if the current value is a DUMMY placeholder (set by shell scripts
+            # before Python starts, which prevents setdefault from working).
             _key_file = os.path.join(os.getcwd(), ".auth", "openai_key")
             if os.path.isfile(_key_file):
                 with open(_key_file) as _kf:
                     _loaded_key = _kf.read().strip()
                 if _loaded_key:
-                    os.environ.setdefault("OPENAI_API_KEY", _loaded_key)
+                    _cur_key = os.environ.get("OPENAI_API_KEY", "")
+                    if not _cur_key or _cur_key.startswith("DUMMY"):
+                        os.environ["OPENAI_API_KEY"] = _loaded_key
             os.environ.setdefault("OPENAI_API_KEY", "DUMMY_P79_NON_LLM_EVAL")
 
             from evaluation_harness import evaluator_router  # type: ignore

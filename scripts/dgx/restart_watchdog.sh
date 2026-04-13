@@ -81,11 +81,9 @@ for pid in "${watchdog_pids[@]}"; do
   ntfy_topic=""
   state_file=""
   poll_secs=""
-  window_size=""
   idle_alert_mins=""
   glm_config=""
   digest_dir=""
-  alert_on_bootstrap=0
   notify_completion=0
   for ((i = 0; i < ${#args[@]} - 1; i++)); do
     case "${args[$i]}" in
@@ -94,18 +92,12 @@ for pid in "${watchdog_pids[@]}"; do
       --ntfy-topic)    ntfy_topic="${args[$((i + 1))]}" ;;
       --state-file)    state_file="${args[$((i + 1))]}" ;;
       --poll-secs)     poll_secs="${args[$((i + 1))]}" ;;
-      --window-size)   window_size="${args[$((i + 1))]}" ;;
       --idle-alert-mins) idle_alert_mins="${args[$((i + 1))]}" ;;
       --glm-config)    glm_config="${args[$((i + 1))]}" ;;
       --digest-dir)    digest_dir="${args[$((i + 1))]}" ;;
-      --alert-on-bootstrap) alert_on_bootstrap=1 ;;
       --notify-completion) notify_completion=1 ;;
     esac
   done
-  # --alert-on-bootstrap is a flag (no value), check last arg too
-  if [[ "${args[-1]}" == "--alert-on-bootstrap" ]]; then
-    alert_on_bootstrap=1
-  fi
   if [[ "${args[-1]}" == "--notify-completion" ]]; then
     notify_completion=1
   fi
@@ -120,12 +112,10 @@ for pid in "${watchdog_pids[@]}"; do
   [[ -n "${condition}" ]]      && new_args+=(--condition "${condition}")
   [[ -n "${ntfy_topic}" ]]     && new_args+=(--ntfy-topic "${ntfy_topic}")
   [[ -n "${poll_secs}" ]]      && new_args+=(--poll-secs "${poll_secs}")
-  [[ -n "${window_size}" ]]    && new_args+=(--window-size "${window_size}")
   [[ -n "${state_file}" ]]     && new_args+=(--state-file "${state_file}")
   [[ -n "${idle_alert_mins}" ]] && new_args+=(--idle-alert-mins "${idle_alert_mins}")
   [[ -n "${glm_config}" ]]     && new_args+=(--glm-config "${glm_config}")
   [[ -n "${digest_dir}" ]]     && new_args+=(--digest-dir "${digest_dir}")
-  [[ "${alert_on_bootstrap}" -eq 1 ]] && new_args+=(--alert-on-bootstrap)
   [[ "${notify_completion}" -eq 1 ]] && new_args+=(--notify-completion)
 
   # Determine log file

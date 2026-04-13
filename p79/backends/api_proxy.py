@@ -77,7 +77,11 @@ class ApiProxyBackend:
 
         prompt = f"{stage_prefix}{instruction}"
         start = time.time()
-        action, meta = self._agent.step(prompt, obs, history=context.history)
+        action, meta = self._agent.step(
+            prompt, obs,
+            history=context.history,
+            observation_mode=context.observation_mode,
+        )
         infer_ms = (time.time() - start) * 1000.0
 
         meta = dict(meta)

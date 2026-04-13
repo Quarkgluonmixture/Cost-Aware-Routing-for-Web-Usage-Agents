@@ -83,6 +83,10 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
         # som_on is derived (True only when mode == "som").
         obs_values = [str(x) for x in primary.get("observation_mode", ["dom", "som", "vision"])]
 
+        # Extract model_name from backend config for condition metadata (helps distinguish B0/B1).
+        backend_cfg = cfg.get("backends", {}).get(backend_id, {})
+        model_name = backend_cfg.get("api_name") or backend_cfg.get("model_path", "unknown")
+
         for obs_mode in obs_values:
             som_on = obs_mode == "som"
             cid = f"phase1_{obs_mode}_router_0"
@@ -96,6 +100,7 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
                     router_on=False,
                     modules=ModuleFlags(),
                     label=f"Phase1 {obs_mode.upper()} mode",
+                    metadata={"model_name": model_name},
                 )
             )
 

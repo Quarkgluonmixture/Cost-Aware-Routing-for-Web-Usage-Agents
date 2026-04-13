@@ -15,6 +15,13 @@ Examples:
     # Dry run (show what would be deleted)
     python scripts/clear_tasks.py --run-dir results/.../B1_run \
         --condition phase1_dom_router_0 --site classifieds --tasks 85-131 --dry-run
+
+    # Clean orphan artifact dirs (no summary file) across all conditions
+    python scripts/clear_tasks.py --run-dir results/.../B1_run --clean-orphan-artifacts
+
+    # Clean orphan artifacts for a specific condition
+    python scripts/clear_tasks.py --run-dir results/.../B1_run \
+        --condition phase1_som_router_0 --clean-orphan-artifacts
 """
 
 from __future__ import annotations
@@ -24,7 +31,9 @@ import json
 import shutil
 import sys
 from pathlib import Path
-from typing import List, Set
+from typing import List, Optional, Set
+
+_EXCLUDED_DIRS = {"analysis", "task_configs", "_vwa"}
 
 
 def _parse_task_ids(spec: str) -> List[int]:
@@ -40,18 +49,112 @@ def _parse_task_ids(spec: str) -> List[int]:
     return sorted(ids)
 
 
+def _clean_orphan_artifacts(
+    run_dir: Path,
+    condition: Optional[str],
+    dry_run: bool,
+    stale_mins: int = 10,
+) -> int:
+    """Delete artifact dirs and orphan steps files that have no corresponding summary.
+
+    Items modified within the last `stale_mins` minutes are skipped — they may
+    belong to an in-progress episode (runner creates artifacts/steps before writing
+    the summary).
+    """
+    import time as _time
+    cutoff = _time.time() - stale_mins * 60
+
+    if condition:
+        cond_dirs = [run_dir / condition]
+    else:
+        cond_dirs = sorted(
+            p for p in run_dir.iterdir()
+            if p.is_dir() and p.name not in _EXCLUDED_DIRS and not p.suffix
+        )
+
+    deleted = 0
+    skipped_recent = 0
+    for cond_dir in cond_dirs:
+        if not cond_dir.is_dir():
+            continue
+        art_dir = cond_dir / "artifacts"
+        ep_dir = cond_dir / "episodes"
+
+        # 1. Orphan artifact directories (no summary)
+        if art_dir.exists():
+            for artifact in sorted(art_dir.iterdir()):
+                if not artifact.is_dir():
+                    continue
+                if (ep_dir / f"{artifact.name}_summary_v2.json").exists():
+                    continue
+                if artifact.stat().st_mtime > cutoff:
+                    skipped_recent += 1
+                    continue
+                rel = artifact.relative_to(run_dir)
+                if dry_run:
+                    print(f"  [dry-run] rm -rf {rel}  (orphan artifact — no summary)")
+                else:
+                    shutil.rmtree(artifact)
+                    print(f"  deleted orphan artifact: {rel}")
+                deleted += 1
+
+        # 2. Orphan steps files (steps JSONL without corresponding summary)
+        if ep_dir.exists():
+            for steps_file in sorted(ep_dir.glob("*_steps_v2.jsonl")):
+                # Derive the expected summary filename
+                summary = ep_dir / steps_file.name.replace("_steps_v2.jsonl", "_summary_v2.json")
+                if summary.exists():
+                    continue
+                if steps_file.stat().st_mtime > cutoff:
+                    skipped_recent += 1
+                    continue
+                rel = steps_file.relative_to(run_dir)
+                if dry_run:
+                    print(f"  [dry-run] rm {rel}  (orphan steps — no summary)")
+                else:
+                    steps_file.unlink()
+                    print(f"  deleted orphan steps: {rel}")
+                deleted += 1
+
+    if skipped_recent:
+        print(f"  (skipped {skipped_recent} recently-modified item(s) — may be in-progress)")
+    return deleted
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="Delete task results for runner retry")
     p.add_argument("--run-dir", required=True, help="Run directory")
-    p.add_argument("--condition", required=True, help="Condition ID (e.g. phase1_dom_router_0)")
-    p.add_argument("--site", required=True, help="Site name (e.g. classifieds)")
-    p.add_argument("--tasks", required=True, help="Task IDs: '85-131' or '80,95,104' or '85-90,100-104'")
+    p.add_argument("--condition", default=None, help="Condition ID (e.g. phase1_dom_router_0)")
+    p.add_argument("--site", default=None, help="Site name (e.g. classifieds)")
+    p.add_argument("--tasks", default=None, help="Task IDs: '85-131' or '80,95,104' or '85-90,100-104'")
+    p.add_argument("--clean-orphan-artifacts", action="store_true",
+                    help="Delete artifact dirs that have no corresponding summary file")
     p.add_argument("--dry-run", action="store_true", help="Show what would be deleted without deleting")
     p.add_argument("--force", action="store_true",
                     help="Also delete tasks that may be in-progress (has steps but no summary)")
     args = p.parse_args()
 
+    # Validate: either --tasks or --clean-orphan-artifacts must be provided
+    if not args.tasks and not args.clean_orphan_artifacts:
+        p.error("one of --tasks or --clean-orphan-artifacts is required")
+    if args.tasks and not args.condition:
+        p.error("--condition is required when using --tasks")
+    if args.tasks and not args.site:
+        p.error("--site is required when using --tasks")
+
     run_dir = Path(args.run_dir).resolve()
+
+    # --- Orphan artifact cleanup mode ---
+    if args.clean_orphan_artifacts:
+        orphans_deleted = _clean_orphan_artifacts(run_dir, args.condition, args.dry_run)
+        action = "would delete" if args.dry_run else "deleted"
+        print(f"\nDone: {action} {orphans_deleted} orphan artifact dir(s)")
+        if not args.tasks:
+            return 0
+
+    # --- Task-level cleanup ---
+    if not args.condition:
+        p.error("--condition is required when using --tasks")
     cond_dir = run_dir / args.condition
     if not cond_dir.exists():
         print(f"ERROR: condition dir not found: {cond_dir}", file=sys.stderr)

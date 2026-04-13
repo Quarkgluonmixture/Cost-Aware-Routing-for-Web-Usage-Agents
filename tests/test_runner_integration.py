@@ -22,13 +22,11 @@ def _write_site_tasks(path: Path, site: str, task_id: int):
 def test_runner_and_analysis_end_to_end_with_mock_env(tmp_path):
     shopping_file = tmp_path / "shopping.json"
     reddit_file = tmp_path / "reddit.json"
-    wikipedia_file = tmp_path / "wikipedia.json"
     classifieds_file = tmp_path / "classifieds.json"
 
     _write_site_tasks(shopping_file, "shopping", 0)
     _write_site_tasks(reddit_file, "reddit", 1)
-    _write_site_tasks(wikipedia_file, "wikipedia", 2)
-    _write_site_tasks(classifieds_file, "classifieds", 3)
+    _write_site_tasks(classifieds_file, "classifieds", 2)
 
     cfg = {
         "experiment": {
@@ -40,13 +38,12 @@ def test_runner_and_analysis_end_to_end_with_mock_env(tmp_path):
             "run_id": "run_test",
         },
         "task": {
-            "include_sites": ["shopping", "reddit", "wikipedia", "classifieds"],
+            "include_sites": ["shopping", "reddit", "classifieds"],
             "max_tasks_per_site": 1,
             "task_ids": {},
             "site_configs": {
                 "shopping": str(shopping_file),
                 "reddit": str(reddit_file),
-                "wikipedia": str(wikipedia_file),
                 "classifieds": str(classifieds_file),
             },
         },
@@ -102,7 +99,7 @@ def test_runner_and_analysis_end_to_end_with_mock_env(tmp_path):
                 "dom_mode": "heuristic",
             },
             "api_strong": {
-                "type": "api_qwen",
+                "type": "api_proxy",
                 "mock_mode": True,
                 "dom_mode": "heuristic",
             },

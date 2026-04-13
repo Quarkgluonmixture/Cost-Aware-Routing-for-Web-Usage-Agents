@@ -1,0 +1,55 @@
+# B0 三模式 classifieds — 使用 api_proxy (Qwen3-VL-235B)
+# 条件: phase1_dom_router_0 / phase1_som_router_0 / phase1_vision_router_0
+#
+# 关键配置:
+#   - observation_mode: ["dom", "som", "vision"]  触发三模式条件生成
+#   - baselines.run_b0: false  使用 phase1 常规路径
+#   - experiment.name: "B0_3mode_classifieds"
+#
+# 运行: bash scripts/dgx/run_b0_3mode_classifieds.sh
+# Gallery: http://localhost:8765/B0_3mode/gallery.html
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B0_3mode_classifieds"
+
+task:
+  include_sites: ["classifieds"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["dom", "som", "vision"]
+
+backends:
+  default_backend: "api_strong"
+  api_strong:
+    type: "api_proxy"
+    api_name: "qwen.qwen3-vl-235b-a22b"
+    base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
+    temperature: 0.1
+    top_p: 0.9
+    max_new_tokens: 4096
+    max_image_payload_bytes: 5242880
+    image_max_size: 1280
+    max_obs_chars: 12000
+    dom_mode: "llm"
+    mock_mode: false
+
+metrics:
+  cost_api:
+    input_cost_per_1k: 0.001
+    output_cost_per_1k: 0.005
+  energy:
+    enabled: false
+    use_pynvml: false
+    use_psutil: false
+
+baselines:
+  run_b0: false

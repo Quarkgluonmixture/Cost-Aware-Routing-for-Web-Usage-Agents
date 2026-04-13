@@ -33,13 +33,11 @@
 ## dgx/ — DGX Spark 专用
 | Script | Description |
 |--------|-------------|
-| `dgx/queue_b1_serial.sh` | B1 baseline 串行队列（classifieds→reddit→shopping），带 watchdog+自动 resume |
-| `dgx/restart_queue_b1_serial.sh` | 从最新状态重启 B1 队列 |
-| `dgx/restart_sidecar.sh` | 热重启 glm_diagnosis_sidecar（保留 state，可追加参数） |
-| `dgx/qwen3vl4b_status.sh` | 查看 Qwen3-VL-4B baseline 当前状态（进程/日志/GPU/完成度） |
-| `dgx/run_qwen3vl4b_baseline.sh` | DGX baseline 执行脚本（含站点健康检查、CUDA 环境） |
-| `dgx/start_qwen3vl4b_baseline_site.sh` | 单站点 baseline 启动器（细粒度环境变量控制） |
-| `dgx/start_qwen3vl4b_baseline_when_gpu_idle.sh` | GPU 空闲检测，自动触发 baseline |
+| `dgx/queue_b1_with_reset.sh` | B1 三模式队列（dom→som→vision，含 condition 间站点 reset+auth 刷新，带 watchdog+自动 resume） |
+| `dgx/run_b0_3mode_classifieds.sh` | B0 三模式 classifieds（dom→reset→som→reset→vision，api_proxy 235B） |
+| `dgx/restart_watchdog.sh` | 热重启 experiment_watchdog（保留 state） |
+| `dgx/refresh_gallery.sh` | 刷新 gallery HTML |
+| `dgx/trigger_watchdog_status.sh` | 向 watchdog 发送 SIGUSR1，立即触发状态报告 |
 
 ## dev/ — 开发/调试工具
 | Script | Description |

@@ -5,7 +5,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-PYTHON="${REPO_DIR}/.venv/bin/python"
+if [[ -x "${REPO_DIR}/.venv/bin/python" ]]; then
+  PYTHON="${REPO_DIR}/.venv/bin/python"
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON="$(command -v python3)"
+else
+  echo "ERROR: 找不到 Python 解释器" >&2; exit 127
+fi
 
 # Default: latest B0 or B1 run
 RUN_DIR="${1:-$(ls -1dt "${REPO_DIR}"/results/visualwebarena/phase1/B[01]_* 2>/dev/null | head -1)}"
