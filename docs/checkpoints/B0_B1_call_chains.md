@@ -119,6 +119,7 @@ watchdog **不控制** runner 的生死（那是 queue 的工作），它只旁�
 --digest-dir      digest 输出目录
 --aggregate-prefix B1_3mode  aggregate gallery 前缀
 --notify-completion  是否发 condition 完成通知
+--reset-state        启动前清除 .state.json（全量重置 watchdog 状态）
 ```
 
 **主循环**（每 `poll_secs` 秒执行）：
@@ -402,6 +403,8 @@ __CLASSIFIEDS__  → env var CLASSIFIEDS  或 http://localhost:9980
 - ProxyApiAgent 无 M4 两阶段支持（只有 single stage）
 - ProxyApiAgent 通过环境变量 `PROXY_API_KEY` 认证，endpoint 在 config 的 `base_url` 字段
 - Qwen3VLAgent 支持 M4 planner/grounder 两阶段
+- **System prompt 对齐**：ProxyApiAgent 将 system prompt 嵌入 user message content（`"System: {prompt}\n"` 紧跟 Task 行），与 Qwen3VLAgent 行为一致；不使用 API 的独立 `system` 字段
+- **图像顺序**：ProxyApiAgent 将图像块置于 user_content[0]（`insert(0)`），text 块在后
 
 ---
 
@@ -505,6 +508,7 @@ run_b0_3mode_classifieds.sh
   ├─ [2/3] run_until_complete "som"    → cid=phase1_som_router_0
   ├─ reset_vwa_sites "classifieds" + refresh_classifieds_auth
   ├─ [3/3] run_until_complete "vision" → cid=phase1_vision_router_0
+  ├─ reset_vwa_sites "classifieds" "b0_3mode_final"（final reset，Vision 完成后清理站点状态）
   ├─ stop_watchdog()
   └─ run_reason_diagnostics → analyze_reason_diagnostics.py --report --report-language zh
 ```
@@ -537,6 +541,7 @@ queue_b1_with_reset.sh
   │    ├─ [2/3] run_condition_until_complete som    → phase1_som_router_0
   │    ├─ reset_vwa_sites "reddit" + refresh_site_auth "reddit"
   │    ├─ [3/3] run_condition_until_complete vision → phase1_vision_router_0
+  │    ├─ reset_vwa_sites "${site}" "b1_3mode_${site}_final"（final reset，Vision 完成后清理站点状态）
   │    ├─ stop_exp_watchdog()
   │    └─ run_reason_diagnostics(reddit_run_dir) → analyze_reason_diagnostics.py --report
   │
