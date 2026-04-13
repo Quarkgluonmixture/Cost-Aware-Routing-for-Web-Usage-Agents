@@ -81,6 +81,7 @@ class ApiProxyBackend:
             prompt, obs,
             history=context.history,
             observation_mode=context.observation_mode,
+            reference_images=context.reference_images,
         )
         infer_ms = (time.time() - start) * 1000.0
 

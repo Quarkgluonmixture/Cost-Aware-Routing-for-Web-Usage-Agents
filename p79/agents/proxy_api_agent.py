@@ -122,6 +122,8 @@ Output ONLY valid JSON. No markdown blocks, no explanations.
 
 Observation: You receive a [SOM_MARKS]...[/SOM_MARKS] list of labeled elements (each with an element_id and description) AND an annotated screenshot with numbered bounding boxes overlaid on the page. Use element_id from the marks for interaction; use normalized coordinates only when no element_id is available.
 
+Note: If [SOM_MARKS] is empty (no elements detected), no bounding boxes will appear in the screenshot. In that case, fall back to coordinate-based interaction using what you can see in the screenshot.
+
 {_COMMON_RULES}
 
 Response Format (JSON):
@@ -161,7 +163,8 @@ Action Schema:
    - x, y are floats 0.0-1.0 (e.g., center of screen is [0.5, 0.5]).
    - Estimate coordinates from the screenshot carefully. Click the center of the target element.
 2. Type: {{"action_type": "type", "text": "string", "coordinate": [x, y], "coordinate_type": "normalized"}}
-   - Click the input field's coordinate first, then type. Or combine into one type action with coordinate.
+   - This action automatically clicks the target coordinate to focus it, then types the text.
+   - ALWAYS use "type" (not "click") when you want to enter text into an input field.
    - To submit a search or form, append "\\n" to the text.
 {_COMMON_SCROLL_AND_NAV}
 
@@ -223,6 +226,7 @@ Action Schema:
         obs: Any,
         history: Optional[List[Dict[str, Any]]] = None,
         observation_mode: str = "dom",
+        reference_images: Optional[List[Any]] = None,
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         image = obs.image
         obs_text = ""
@@ -234,15 +238,14 @@ Action Schema:
 
         history_text = self._format_history(history or [])
 
-        # Build observation label based on mode.
-        if observation_mode == "som":
-            obs_label = "SOM_MARKS and annotated screenshot"
-        elif observation_mode == "vision":
-            obs_label = "Screenshot (no text)"
+        # Build obs_section per mode — mirrors qwen3vl_agent.py exactly.
+        if observation_mode == "vision":
+            obs_section = ""  # no text — screenshot only
+        elif observation_mode == "som":
+            # obs_text already contains [SOM_MARKS]...[/SOM_MARKS]; pass through directly.
+            obs_section = obs_text if obs_text else ""
         else:
-            obs_label = "Accessibility Tree"
-
-        obs_section = f"{obs_label}:\n{obs_text}" if obs_text else obs_label
+            obs_section = f"Accessibility Tree:\n{obs_text}"
 
         system_prompt = self._system_prompts.get(observation_mode, self._system_prompts["dom"])
 
@@ -259,25 +262,53 @@ Action Schema:
             }
         ]
 
+        max_size = self.config.get("agent", {}).get("image_max_size", 1024)
+
+        # Inject task reference images (e.g. product photos) before the screenshot.
+        # Mirrors qwen3vl_agent.py reference_images handling.
+        if reference_images:
+            for idx, ref_img in enumerate(reference_images):
+                try:
+                    if max(ref_img.size) > max_size:
+                        ratio = max_size / max(ref_img.size)
+                        new_size = (int(ref_img.size[0] * ratio), int(ref_img.size[1] * ratio))
+                        ref_img = ref_img.resize(new_size, Image.Resampling.LANCZOS)
+                    ref_label = (
+                        f"[Reference image {idx + 1}] "
+                        f"This image shows the target item described in the task. "
+                        f"Use it to identify which element to interact with."
+                    )
+                    ref_payload = self._image_to_data_url(ref_img)
+                    user_content.append({"type": "text", "text": ref_label})
+                    user_content.append({
+                        "type": "image_url",
+                        "image_url": {"url": ref_payload["data_url"]},
+                    })
+                except Exception:
+                    logger.warning("Failed to encode reference image %d; skipping.", idx + 1, exc_info=True)
+
         image_payload = None
         if image is not None:
             try:
-                max_size = self.config.get("agent", {}).get("image_max_size", 1024)
                 if max(image.size) > max_size:
                     ratio = max_size / max(image.size)
                     new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
                     image = image.resize(new_size, Image.Resampling.LANCZOS)
                 image_payload = self._image_to_data_url(image)
-                # OpenAI-compatible style: image_url with inline base64 data URL
                 data_url: str = image_payload["data_url"]
-                user_content.insert(0,
-                    {
+                if reference_images:
+                    # With reference images: append screenshot at end with label
+                    user_content.append({"type": "text", "text": "[Current screenshot]"})
+                    user_content.append({
                         "type": "image_url",
-                        "image_url": {
-                            "url": data_url,
-                        },
-                    }
-                )
+                        "image_url": {"url": data_url},
+                    })
+                else:
+                    # No reference images: insert screenshot at position 0 (before text)
+                    user_content.insert(0, {
+                        "type": "image_url",
+                        "image_url": {"url": data_url},
+                    })
             except Exception:
                 logger.warning("Failed to encode image; continuing without image.", exc_info=True)
                 image_payload = None
@@ -347,8 +378,16 @@ Action Schema:
             "raw_output": output_text,
             "valid": valid,
             "failure_reason": fail_reason,
-            "input_tokens": usage.get("inputTokens"),
-            "output_tokens": usage.get("outputTokens"),
+            "input_tokens": (
+                usage.get("inputTokens")
+                or usage.get("input_tokens")
+                or usage.get("prompt_tokens")
+            ),
+            "output_tokens": (
+                usage.get("outputTokens")
+                or usage.get("output_tokens")
+                or usage.get("completion_tokens")
+            ),
             "thinking_tokens": None,
             "image_payload_bytes": image_payload.get("payload_bytes") if image_payload else None,
             "image_quality": image_payload.get("quality") if image_payload else None,

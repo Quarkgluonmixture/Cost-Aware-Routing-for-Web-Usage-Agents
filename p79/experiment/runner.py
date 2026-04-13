@@ -1246,7 +1246,9 @@ class ExperimentRunner:
                 except (ValueError, TypeError):
                     verbalized_conf = None
                 if verbalized_conf is not None:
-                    step_record.setdefault("confidence", {})["verbalized"] = verbalized_conf
+                    if not isinstance(step_record.get("confidence"), dict):
+                        step_record["confidence"] = {}
+                    step_record["confidence"]["verbalized"] = verbalized_conf
 
             # Element bounding box for annotation overlay (from obs_nodes_info)
             eid = action.get("element_id")
@@ -1452,5 +1454,12 @@ class ExperimentRunner:
         episode_summary["component_breakdown"] = breakdown
         # Track how many free busy-page waits were issued (not counted as steps)
         episode_summary["busy_wait_free_steps"] = total_busy_waits
+        # Input/output cost breakdown for fine-grained cost analysis
+        episode_summary["total_input_cost_usd"] = sum(
+            float(s["cost_usd"].get("input", 0.0)) for s in step_records
+        )
+        episode_summary["total_output_cost_usd"] = sum(
+            float(s["cost_usd"].get("output", 0.0)) for s in step_records
+        )
 
         return episode_summary

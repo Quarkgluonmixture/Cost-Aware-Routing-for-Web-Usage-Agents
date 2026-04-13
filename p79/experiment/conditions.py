@@ -85,7 +85,7 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
 
         # Extract model_name from backend config for condition metadata (helps distinguish B0/B1).
         backend_cfg = cfg.get("backends", {}).get(backend_id, {})
-        model_name = backend_cfg.get("api_name") or backend_cfg.get("model_path", "unknown")
+        model_name = backend_cfg.get("api_name") or backend_cfg.get("path") or backend_cfg.get("model_path", "unknown")
 
         for obs_mode in obs_values:
             som_on = obs_mode == "som"

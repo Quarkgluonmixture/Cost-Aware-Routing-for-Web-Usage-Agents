@@ -1007,6 +1007,163 @@ def b2_reason_stability(
 
 
 # ---------------------------------------------------------------------------
+# P1 extras: A4b (cost by reason) + B3 (subtype breakdown)
+# ---------------------------------------------------------------------------
+
+
+def a4b_fail_reason_cost_stats(
+    reason_df: pd.DataFrame,
+    ep_summaries: pd.DataFrame,
+    cond_mode: Dict[str, str],
+    dirs: OutputDirs,
+    skip_plots: bool,
+) -> None:
+    """A4b: Cost / latency / steps breakdown by failure reason bucket."""
+    if ep_summaries.empty:
+        print("  A4b: skipped (no episode summaries)")
+        return
+
+    # Normalise site column name
+    es = ep_summaries.copy()
+    site_col = "benchmark_site" if "benchmark_site" in es.columns else "site"
+    if site_col not in es.columns:
+        print("  A4b: skipped (no site column in summaries)")
+        return
+    es = es.rename(columns={site_col: "_site"})
+
+    cost_cols = ["total_cost_usd", "total_latency_ms", "steps"]
+    available_cost_cols = [c for c in cost_cols if c in es.columns]
+    if "total_cost_usd" not in available_cost_cols:
+        print("  A4b: skipped (no total_cost_usd in summaries)")
+        return
+
+    rd = reason_df[["condition_id", "site", "task_id", "success", "reason_bucket"]].copy()
+    merge_es = es[["condition_id", "_site", "task_id"] + available_cost_cols].rename(
+        columns={"_site": "site"}
+    )
+    merged = rd.merge(merge_es, on=["condition_id", "site", "task_id"], how="left")
+
+    rows = []
+    for bucket, grp in merged.groupby("reason_bucket"):
+        row: Dict[str, Any] = {"reason_bucket": bucket, "count": len(grp)}
+        if "steps" in grp.columns:
+            row["avg_steps"] = round(float(grp["steps"].mean()), 2)
+        if "total_cost_usd" in grp.columns:
+            valid_cost = grp["total_cost_usd"].dropna()
+            if len(valid_cost):
+                row["avg_cost_usd"] = round(float(valid_cost.mean()), 6)
+                row["p50_cost_usd"] = round(float(valid_cost.median()), 6)
+        if "total_latency_ms" in grp.columns:
+            valid_lat = grp["total_latency_ms"].dropna()
+            if len(valid_lat):
+                row["p95_latency_ms"] = round(float(valid_lat.quantile(0.95)), 1)
+        rows.append(row)
+
+    if not rows:
+        print("  A4b: skipped (no rows after join)")
+        return
+
+    stats_df = pd.DataFrame(rows)
+    if "avg_cost_usd" in stats_df.columns:
+        stats_df = stats_df.sort_values("avg_cost_usd", ascending=False)
+    stats_df.to_csv(dirs.tables / "A4b_fail_reason_cost_stats.csv", index=False)
+
+    if not skip_plots and HAS_MPL and "avg_cost_usd" in stats_df.columns:
+        n = len(stats_df)
+        fig, ax = plt.subplots(figsize=(8, max(3, n * 0.4)))
+        y = np.arange(n)
+        ax.barh(y, stats_df["avg_cost_usd"].fillna(0).values)
+        ax.set_yticks(y)
+        ax.set_yticklabels(stats_df["reason_bucket"].values, fontsize=8)
+        ax.set_xlabel("Avg Cost (USD)")
+        ax.set_title("Average Cost by Failure Reason Bucket")
+        fig.tight_layout()
+        fig.savefig(dirs.plots / "A4b_fail_reason_cost_heatmap.png", dpi=150)
+        plt.close(fig)
+
+    print(f"  A4b: {len(stats_df)} reason buckets with cost stats")
+
+
+def b3_subtype_breakdown(
+    reason_df: pd.DataFrame,
+    dirs: OutputDirs,
+    skip_plots: bool,
+) -> None:
+    """B3: Failure subtype distribution within reason buckets."""
+    subtype_cols = [c for c in ["unreachable_subtype", "stuck_subtype"] if c in reason_df.columns]
+    if not subtype_cols:
+        print("  B3: skipped (no subtype columns in reason data)")
+        return
+
+    df = reason_df.copy()
+    # Collapse all subtype columns into one 'subtype' column (first non-null wins)
+    df["subtype"] = df.apply(
+        lambda r: next(
+            (str(r[c]) for c in subtype_cols if pd.notna(r.get(c)) and str(r.get(c, "")).strip()),
+            "(none)",
+        ),
+        axis=1,
+    )
+    df = df.dropna(subset=["reason_bucket"])
+
+    # Summary: (reason_bucket, subtype) → count + pct_of_bucket
+    rows = []
+    for bucket, bgrp in df.groupby("reason_bucket"):
+        bucket_total = len(bgrp)
+        for subtype, sgrp in bgrp.groupby("subtype"):
+            rows.append({
+                "reason_bucket": bucket,
+                "subtype": subtype,
+                "count": len(sgrp),
+                "pct_of_bucket": round(len(sgrp) / max(bucket_total, 1), 4),
+            })
+
+    if not rows:
+        print("  B3: skipped (no subtype data)")
+        return
+
+    summary_df = pd.DataFrame(rows).sort_values(
+        ["reason_bucket", "count"], ascending=[True, False]
+    )
+    summary_df.to_csv(dirs.tables / "B3_subtype_breakdown.csv", index=False)
+
+    # Per-task detail CSV
+    detail_cols = ["site", "task_id", "condition_id", "reason_bucket", "success", "subtype"]
+    extra_cols = [c for c in ["observation_mode", "steps"] if c in df.columns]
+    detail_cols = [c for c in detail_cols + extra_cols if c in df.columns]
+    df[detail_cols].to_csv(dirs.tables / "B3_subtype_detail.csv", index=False)
+
+    # Stacked bar plot
+    if not skip_plots and HAS_MPL and len(summary_df) > 0:
+        buckets = list(summary_df["reason_bucket"].unique())
+        subtypes = [s for s in summary_df["subtype"].unique() if s != "(none)"]
+        if not subtypes:
+            subtypes = list(summary_df["subtype"].unique())
+
+        fig, ax = plt.subplots(figsize=(max(8, len(buckets) * 0.9), 5))
+        x = np.arange(len(buckets))
+        bottom = np.zeros(len(buckets))
+        for st in subtypes:
+            vals = []
+            for b in buckets:
+                row = summary_df[(summary_df["reason_bucket"] == b) & (summary_df["subtype"] == st)]
+                vals.append(int(row["count"].sum()) if len(row) else 0)
+            ax.bar(x, vals, bottom=bottom, label=st)
+            bottom += np.array(vals, dtype=float)
+        ax.set_xticks(x)
+        ax.set_xticklabels(buckets, rotation=45, ha="right", fontsize=7)
+        ax.set_ylabel("Count")
+        ax.set_title("Failure Subtype Breakdown by Reason Bucket")
+        if subtypes:
+            ax.legend(fontsize=7, loc="upper right")
+        fig.tight_layout()
+        fig.savefig(dirs.plots / "B3_subtype_breakdown.png", dpi=150)
+        plt.close(fig)
+
+    print(f"  B3: {len(summary_df)} (bucket, subtype) combinations")
+
+
+# ---------------------------------------------------------------------------
 # P2: Router design support
 # ---------------------------------------------------------------------------
 
@@ -1445,10 +1602,12 @@ def _run_site_analysis(
     if run_p1:
         print("  --- P1: Deep analysis ---")
         a4_cost_at_success(pivot, modes, ep_summaries, cond_mode, dirs)
+        a4b_fail_reason_cost_stats(reason_df, ep_summaries, cond_mode, dirs, skip_plots)
         a5_task_type_success_rate(pivot, modes, dirs, skip_plots)
         a6_venn_diagram(pivot, modes, dirs, skip_plots)
         b1_reason_transition_matrix(pivot, modes, dirs, skip_plots)
         b2_reason_stability(pivot, modes, dirs, skip_plots)
+        b3_subtype_breakdown(reason_df, dirs, skip_plots)
 
     # --- P2: Router support ---
     if run_p2:

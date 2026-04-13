@@ -101,7 +101,6 @@ backends:
     device: "cuda"
     max_new_tokens: 512
     temperature: 0.1
-    top_p: 0.9
     dom_mode: "llm"
     mock_mode: false
   api_strong:
@@ -109,7 +108,6 @@ backends:
     api_name: "qwen.qwen3-vl-235b-a22b"
     base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
     temperature: 0.1
-    top_p: 0.9
     max_new_tokens: 512
     max_image_payload_bytes: 5242880
     dom_mode: "llm"

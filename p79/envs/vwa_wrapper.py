@@ -189,7 +189,7 @@ class VWAWrapper:
                 dy = delta[0]  # single-element delta: treat as dy
             else:
                 dy = delta if isinstance(delta, (int, float)) else 300
-            direction = "down" if dy > 0 else "up"
+            direction = "down" if dy >= 0 else "up"
             action = create_scroll_action(direction=direction)
         elif action_type == "type" and "text" in action_json and "element_id" not in action_json:
             # Type without element_id (vision mode): click coordinate first to focus, then keyboard type.
