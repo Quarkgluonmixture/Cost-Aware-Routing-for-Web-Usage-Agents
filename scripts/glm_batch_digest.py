@@ -15,7 +15,7 @@ Usage:
     --output results/.../analysis/digest/ \
     --glm-config .auth/glm \
     --condition phase1_dom_router_0 \
-    --delay-secs 2 --max-images 3
+    --delay-secs 2 --max-images 5
 
   # dry-run (no GLM calls, only deterministic fallback)
   python3 scripts/glm_batch_digest.py \
@@ -184,8 +184,12 @@ def _parse_search_item(item: Dict) -> Dict[str, Any]:
 # Key step selection + artifact loading
 # ---------------------------------------------------------------------------
 
-def _compute_key_steps(case: Dict[str, Any], max_images: int = 3) -> List[int]:
-    """Select key step indices for an episode: start, stuck, mid, last."""
+def _compute_key_steps(
+    case: Dict[str, Any],
+    max_images: int = 5,
+    failed_step_indices: Optional[List[int]] = None,
+) -> List[int]:
+    """Select key step indices for an episode: start, stuck, mid, last, + failed steps."""
     steps = _to_int(case.get("steps")) or 1
     last = max(steps - 1, 0)
     stuck = _to_int(case.get("stuck_first_step"))
@@ -199,13 +203,24 @@ def _compute_key_steps(case: Dict[str, Any], max_images: int = 3) -> List[int]:
     if last > 0 and last not in candidates:
         candidates.append(last)
 
-    # Deduplicate preserving order, cap at max_images
+    # Deduplicate preserving order
     seen: Set[int] = set()
     result: List[int] = []
     for idx in candidates:
         if idx not in seen:
             seen.add(idx)
             result.append(idx)
+
+    # Fill remaining slots with failed steps (maximize distance from existing)
+    if failed_step_indices and len(result) < max_images:
+        remaining = [i for i in failed_step_indices if i not in seen and 0 <= i < steps]
+        while remaining and len(result) < max_images:
+            # Pick the failed step farthest from any existing key step
+            best_idx = max(remaining, key=lambda fi: min(abs(fi - r) for r in result))
+            result.append(best_idx)
+            seen.add(best_idx)
+            remaining.remove(best_idx)
+
     return result[:max(1, max_images)]
 
 
@@ -218,6 +233,53 @@ def _load_raw_screenshot_b64(episode_dir: Path, step_idx: int) -> Optional[str]:
         return base64.b64encode(path.read_bytes()).decode("utf-8")
     except Exception:
         return None
+
+
+def _load_annotated_screenshot_b64(episode_dir: Path, step_idx: int) -> Optional[str]:
+    """Load screenshot_annotated.png as base64, fallback to screenshot.png."""
+    step_dir = episode_dir / f"step_{step_idx:03d}"
+    annotated = step_dir / "screenshot_annotated.png"
+    if annotated.exists():
+        try:
+            return base64.b64encode(annotated.read_bytes()).decode("utf-8")
+        except Exception:
+            pass
+    # Fallback to raw screenshot
+    return _load_raw_screenshot_b64(episode_dir, step_idx)
+
+
+def _load_reference_images_b64(site: Optional[str], task_id: int) -> List[str]:
+    """Load task reference images from VWA task JSON, return list of base64 strings."""
+    if not site:
+        return []
+    vwa_root = Path(__file__).resolve().parent.parent / "external" / "visualwebarena"
+    # Try both test_{site}.json and test_{site}.raw.json
+    for fname in [f"test_{site}.raw.json", f"test_{site}.json"]:
+        cfg_path = vwa_root / "config_files" / "vwa" / fname
+        if not cfg_path.exists():
+            continue
+        try:
+            with cfg_path.open("r", encoding="utf-8") as f:
+                tasks = json.load(f)
+        except Exception:
+            continue
+        for t in tasks:
+            if t.get("task_id") != task_id:
+                continue
+            raw_image = t.get("image")
+            if not raw_image:
+                return []
+            paths = [raw_image] if isinstance(raw_image, str) else list(raw_image)
+            result = []
+            for p in paths:
+                img_path = vwa_root / p
+                if img_path.exists():
+                    try:
+                        result.append(base64.b64encode(img_path.read_bytes()).decode("utf-8"))
+                    except Exception:
+                        pass
+            return result
+    return []
 
 
 def _load_dom_snippet(episode_dir: Path, step_idx: int, max_chars: int = 0) -> Optional[str]:
@@ -235,23 +297,117 @@ def _load_dom_snippet(episode_dir: Path, step_idx: int, max_chars: int = 0) -> O
 
 
 # ---------------------------------------------------------------------------
+# Action execution summary (from step JSONL)
+# ---------------------------------------------------------------------------
+
+def _find_step_jsonl(run_dir: Path, condition_id: str, task_id: int) -> Optional[Path]:
+    """Locate {site}_task_{task_id}_steps_v2.jsonl under episodes/."""
+    episodes_dir = run_dir / condition_id / "episodes"
+    if not episodes_dir.exists():
+        return None
+    for f in episodes_dir.iterdir():
+        if f.name.endswith(f"_task_{task_id}_steps_v2.jsonl") and f.is_file():
+            return f
+    return None
+
+
+def _compute_action_execution_summary(step_jsonl_path: Path) -> Dict[str, Any]:
+    """Compute action execution statistics from step JSONL (all modes)."""
+    # Import read_jsonl_dedup from p79
+    from p79.experiment.io_utils import read_jsonl_dedup
+
+    steps = read_jsonl_dedup(step_jsonl_path)
+    total_steps = len(steps)
+
+    click_total = 0
+    click_failed = 0
+    type_total = 0
+    type_failed = 0
+    scroll_total = 0
+    parse_error_count = 0
+    page_changed_count = 0
+    failed_step_indices: List[int] = []
+    pixel_coordinate_leak = False
+    consecutive_fail = 0
+    max_consecutive_fail_streak = 0
+
+    for rec in steps:
+        atype = str(rec.get("action_type", "") or "").lower()
+        success = rec.get("action_success")
+        step_idx = rec.get("step_idx", -1)
+        err_cat = rec.get("error_category") or ""
+
+        if atype == "click":
+            click_total += 1
+            if success is False:
+                click_failed += 1
+        elif atype == "type":
+            type_total += 1
+            if success is False:
+                type_failed += 1
+        elif atype == "scroll":
+            scroll_total += 1
+
+        if err_cat == "parse_error":
+            parse_error_count += 1
+
+        if rec.get("page_changed") is True:
+            page_changed_count += 1
+
+        if success is False:
+            failed_step_indices.append(step_idx)
+            consecutive_fail += 1
+            max_consecutive_fail_streak = max(max_consecutive_fail_streak, consecutive_fail)
+        else:
+            consecutive_fail = 0
+
+        # Check for pixel coordinate leak (coordinate > 1.0 in normalized mode)
+        action_obj = rec.get("action") or {}
+        coord = action_obj.get("coordinate")
+        if isinstance(coord, (list, tuple)) and len(coord) >= 2:
+            if any(isinstance(c, (int, float)) and c > 1.0 for c in coord[:2]):
+                pixel_coordinate_leak = True
+
+    def _rate(num: int, den: int) -> str:
+        return f"{num / den * 100:.1f}%" if den > 0 else "N/A"
+
+    return {
+        "total_steps": total_steps,
+        "click_total": click_total,
+        "click_failed": click_failed,
+        "click_fail_rate": _rate(click_failed, click_total),
+        "type_total": type_total,
+        "type_failed": type_failed,
+        "type_fail_rate": _rate(type_failed, type_total),
+        "scroll_total": scroll_total,
+        "parse_error_count": parse_error_count,
+        "parse_error_rate": _rate(parse_error_count, total_steps),
+        "page_change_rate": _rate(page_changed_count, total_steps),
+        "max_consecutive_fail_streak": max_consecutive_fail_streak,
+        "pixel_coordinate_leak": pixel_coordinate_leak,
+        "failed_step_indices": failed_step_indices,
+    }
+
+
+# ---------------------------------------------------------------------------
 # GLM digest prompt + call
 # ---------------------------------------------------------------------------
 
 _DIGEST_SYSTEM_PROMPT_BASE = """\
 你是实验失败归因助手。对每个失败 episode，输出结构化诊断 JSON（中文）。
 
-你需要输出以下字段（严格 JSON 对象）：
+你需要输出以下字段（严格 JSON 对象）。
+**重要**：优先输出分析结论字段，screenshot_descriptions 放在最后（即使 token 不够也能保留关键结论）。
 {
   "task_id": 123,
-  "screenshot_descriptions": {"0": "30-50字描述step 0截图内容", "15": "...", ...},
-  "thought_summary": "2-3句话压缩全程思维链，概括agent的决策路径和失败点",
-  "key_actions_compressed": "≤15个语义块的动作序列，如 SEARCH(used boat)→CLICK(listing)→BACK→FINISH",
   "category": "失败类别（如：搜索循环/导航循环/执行停滞/事实推理错误/目标不可达/过早结束/答案对齐错误）",
   "root_cause": "≤60字的具体根因",
   "is_scaffolding_issue": "是|否",
   "confidence": "high|medium|low",
-  "evidence": "至少一个具体证据点"
+  "evidence": "至少一个具体证据点",
+  "thought_summary": "2-3句话压缩全程思维链，概括agent的决策路径和失败点",
+  "key_actions_compressed": "≤15个语义块的动作序列，如 SEARCH(used boat)→CLICK(listing)→BACK→FINISH",
+  "screenshot_descriptions": {"0": "30-50字描述step 0截图内容", "15": "...", ...}
 }
 
 规则：
@@ -267,10 +423,38 @@ _DIGEST_SYSTEM_PROMPT_BASE = """\
 5) 参考提供的 fallback_diagnosis，可修正也可保留，但必须有自己的判断依据。
 6) root_cause ≤60字，evidence 必须引用具体步骤/搜索词/数值。
 7) 若消息附有图片，优先基于图片内容填写 screenshot_descriptions。
-8) observation_mode=dom 时没有页面截图，但可以看到任务参考图片。根据 DOM snippet 描述页面状态。
+8) observation_mode=dom 时没有页面截图，但会附带任务参考图片（标注为"[任务参考图片]"）。
+   根据参考图片判断任务是否需要视觉信息（图片匹配、颜色识别等），结合 DOM snippet 描述页面状态。
 9) 若 unreachable_subtype=visual_dom_only 或 location_filter*，is_scaffolding_issue=是。
    若 unreachable_subtype=visual_has_ref_image，is_scaffolding_issue=否（参考图片已可见，失败属于模型能力不足）。
 10) 若 stuck_subtype=account_loop 或 scroll_static，is_scaffolding_issue=是。
+"""
+
+_DIGEST_DOM_ADDENDUM = """
+=== DOM 模式专属归因规则 ===
+
+本 episode 使用 DOM（纯文本）观测模式：agent 仅接收 AXTree（Accessibility Tree）文本，
+无页面截图。所有交互通过 element_id 完成。你需要额外判断 DOM 模式特有的失败模式。
+
+**DOM 模式已知的结构性限制**：
+D1) element_id 失效：agent 引用的 element_id 在当前 DOM 中不存在或已过期，
+    导致操作无效（action_success=false）。
+    → 参考 action_execution_summary 中的 click_fail_rate / type_fail_rate 判断严重程度。
+D2) AXTree 信息过载：DOM 过长时可能被截断，关键元素丢失。
+    agent 的 thought 描述了操作目标但找不到对应 element_id → AXTree 截断问题。
+D3) 无视觉信息：任务需要视觉属性（颜色、外观、图片匹配）时，DOM 模式无法获取。
+    → 若 unreachable_subtype=visual_dom_only，is_scaffolding_issue=是（已在通用规则 9 覆盖）。
+D4) 无空间感知：DOM 是线性文本，无法表达 2D 布局。
+    任务要求空间定位（如"第X行第Y列"）时，agent 无法从 AXTree 推断位置。
+D5) 参考 payload 中的 action_execution_summary 字段（若存在）判断 element_id 问题：
+    - click_fail_rate 或 type_fail_rate > 30% → element_id 定位能力不足
+    - parse_error_rate > 5% → 输出格式不稳定，可能是基础设施问题
+
+**额外输出字段**（DOM 模式必填）：
+在 JSON 中增加：
+  "dom_element_id_issue": "是|否" — agent 是否频繁引用无效的 element_id
+  "dom_failure_type": "element_id失效|AXTree截断|视觉信息缺失|空间感知缺失|不适用"
+    — 若为 DOM 模式特有问题，选择具体子类型；否则填"不适用"
 """
 
 _DIGEST_SOM_ADDENDUM = """
@@ -291,6 +475,9 @@ S4) text-over-vision 偏差：agent 的 thought 中仅引用 SoM marks 文本标
     做决策，完全没有利用截图中的视觉信息（颜色、外观）。
     → 这是 SoM 表征的结构性问题：mark 文字提供了"捷径"，4B 模型会忽略视觉。
 S5) viewport 外 ID 幻觉：深度滚动后 agent 引用了不可见元素的 mark ID。
+S6) 参考 payload 中的 action_execution_summary 字段（若存在）辅助判断：
+    - parse_error_rate > 10% → 输出格式不稳定，可能是多模态输入导致的基础设施问题，is_scaffolding_issue=是
+    - click_fail_rate > 30% → mark ID 引用可能存在系统性问题
 
 **关键判断：区分"SoM 表征失效"vs"模型能力不足"**：
 - 若任务需要视觉属性（颜色、外观、图片匹配）且 agent 的 thought 没有提及任何视觉观察
@@ -318,7 +505,8 @@ _DIGEST_VISION_ADDENDUM = """
 
 **Vision 模式已知的结构性限制**：
 V1) 坐标偏移：agent 输出的点击坐标偏离目标元素，导致误操作或无效操作。
-    → 检查 thought 中是否描述了目标但 action 没有产生预期结果（page_changed=false）。
+    → 截图已带标注（红色十字线=点击位置，顶部 banner=动作类型），可直接观察坐标是否偏移。
+    若十字线明显未落在目标元素上 → 坐标偏移确认。
 V2) 信息充分幻觉：agent 在 thought 中声称看到了某信息但实际截图中不可见
     （如声称看到价格但页面只显示标题）。
 V3) 过早放弃：agent 在截图可见目标元素的情况下选择放弃或提交错误答案，
@@ -326,6 +514,10 @@ V3) 过早放弃：agent 在截图可见目标元素的情况下选择放弃或�
 V4) 导航能力不足：缺乏 DOM 元素 ID 辅助，agent 无法有效切换页面或使用筛选器，
     导致导航效率低于 DOM/SoM 模式。
 V5) 无跨步自纠正能力：misclick 后 agent 以完全相同的坐标重复点击，不会微调。
+V6) 参考 payload 中的 action_execution_summary 字段（若存在）判断坐标问题严重程度：
+    - click_fail_rate > 40% → 高度怀疑系统性坐标精度问题
+    - max_consecutive_fail_streak >= 3 → 连续失败说明 agent 无法自纠正
+    - failed_step_indices 对应的截图可用于交叉验证偏移
 
 **关键判断：区分"坐标精度问题"vs"视觉理解问题"**：
 - 若 agent 的 thought 正确描述了目标但 action 无效 → 坐标精度问题
@@ -342,6 +534,8 @@ V5) 无跨步自纠正能力：misclick 后 agent 以完全相同的坐标重复
 
 def _get_system_prompt(obs_mode: str) -> str:
     """Return the appropriate system prompt based on observation mode."""
+    if obs_mode == "dom":
+        return _DIGEST_SYSTEM_PROMPT_BASE + _DIGEST_DOM_ADDENDUM
     if obs_mode == "som":
         return _DIGEST_SYSTEM_PROMPT_BASE + _DIGEST_SOM_ADDENDUM
     if obs_mode == "vision":
@@ -402,7 +596,8 @@ def _glm_digest_one(
     glmm: Dict[str, str],
     case: Dict[str, Any],
     run_dir: Path,
-    max_images: int = 3,
+    max_images: int = 5,
+    site: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Run GLM digest for a single episode. Returns the digest dict."""
     task_id = _to_int(case.get("task_id"))
@@ -412,7 +607,23 @@ def _glm_digest_one(
     obs_mode = str(case.get("observation_mode", "") or "").strip().lower()
 
     fallback = _fallback_episode_diagnosis(case)
-    key_steps = _compute_key_steps(case, max_images=max_images)
+
+    # Compute action_execution_summary for all modes
+    action_summary: Optional[Dict[str, Any]] = None
+    failed_indices: Optional[List[int]] = None
+    step_jsonl = _find_step_jsonl(run_dir, condition_id, task_id)
+    if step_jsonl is not None:
+        try:
+            action_summary = _compute_action_execution_summary(step_jsonl)
+            # Vision mode: use failed steps for key_steps selection
+            if obs_mode == "vision":
+                failed_indices = action_summary.get("failed_step_indices")
+        except Exception as e:
+            print(f"[batch-digest] WARNING: action summary failed task_id={task_id}: {e}")
+
+    key_steps = _compute_key_steps(
+        case, max_images=max_images, failed_step_indices=failed_indices,
+    )
 
     # Load artifacts
     ep_dir = _find_episode_artifact_dir(run_dir, condition_id, task_id)
@@ -435,24 +646,43 @@ def _glm_digest_one(
                 if b64:
                     images_b64[idx] = b64
         elif obs_mode == "vision":
-            # Vision mode: use raw screenshots
+            # Vision mode: use annotated screenshots (with crosshair + banner)
             for idx in key_steps[:max_images]:
-                b64 = _load_raw_screenshot_b64(ep_dir, idx)
+                b64 = _load_annotated_screenshot_b64(ep_dir, idx)
                 if b64:
                     images_b64[idx] = b64
-        # dom mode: no images
+        # dom mode: no step screenshots, but load task reference images
+        # so GLM can see what visual task the agent was supposed to match
+        if obs_mode == "dom":
+            ref_imgs = _load_reference_images_b64(site, task_id)
+            for ri, b64 in enumerate(ref_imgs):
+                # Use negative indices to distinguish from step screenshots
+                images_b64[-(ri + 1)] = b64
 
     # Build payload
     payload = _build_digest_payload(case, fallback, dom_snippets)
     if som_marks:
         payload["som_marks_by_step"] = {str(k): v for k, v in som_marks.items()}
+    if action_summary is not None:
+        payload["action_execution_summary"] = action_summary
 
     payload_text = json.dumps(payload, ensure_ascii=False)
 
     # Build messages
     if images_b64:
         user_content: Any = [{"type": "text", "text": payload_text}]
-        for sidx in sorted(images_b64.keys()):
+        ref_keys = sorted([k for k in images_b64 if k < 0])
+        step_keys = sorted([k for k in images_b64 if k >= 0])
+        if ref_keys:
+            user_content.append({"type": "text", "text": "[任务参考图片 — agent 需要根据此图匹配目标]"})
+            for rk in ref_keys:
+                user_content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{images_b64[rk]}"},
+                })
+        if step_keys:
+            user_content.append({"type": "text", "text": "[关键步骤截图]"})
+        for sidx in step_keys:
             user_content.append({
                 "type": "image_url",
                 "image_url": {"url": f"data:image/png;base64,{images_b64[sidx]}"},
@@ -495,7 +725,10 @@ def _glm_digest_one(
             if not parsed:
                 raise ValueError(f"GLM returned unparseable response: {raw[:200]!r}")
 
-            return _build_digest_record(case, fallback, parsed, vision_models, glmm_use)
+            record = _build_digest_record(case, fallback, parsed, vision_models, glmm_use)
+            if action_summary is not None:
+                record["action_execution_summary"] = action_summary
+            return record
 
         except Exception as e:
             last_exc = e
@@ -523,6 +756,105 @@ def _glm_digest_one(
     )
 
 
+def _repair_truncated_json(s: str) -> Optional[Dict[str, Any]]:
+    """Attempt to repair a truncated JSON object by closing open structures.
+
+    GLM thinking models (e.g. glm-5.1) may exhaust the token budget on
+    reasoning_content, leaving the content JSON truncated.  This function
+    truncates back to the last complete key-value pair, then closes all
+    open structures so we recover the fields that were fully generated.
+    """
+    start = s.find("{")
+    if start < 0:
+        return None
+    s = s[start:]
+
+    # Strategy: find the last complete key-value pair boundary, truncate
+    # there, then close structures.  A complete pair ends with one of:
+    #   "value",   "value"}   123,   true,   null,   ],   },
+    # We scan for the last comma or closing brace/bracket that is outside
+    # any string.
+    in_string = False
+    escape_next = False
+    depth = 0
+    # Track position of last comma at depth=1 (top-level key-value separator)
+    last_top_comma = -1
+
+    for i, ch in enumerate(s):
+        if escape_next:
+            escape_next = False
+            continue
+        if ch == "\\":
+            if in_string:
+                escape_next = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch in "{[":
+            depth += 1
+            continue
+        if ch in "}]":
+            depth -= 1
+            continue
+        if ch == "," and depth == 1:
+            last_top_comma = i
+
+    if last_top_comma <= 0:
+        return None
+
+    # Truncate at the last top-level comma, then close the outer object
+    truncated = s[:last_top_comma] + "}"
+
+    try:
+        obj = json.loads(truncated)
+        if isinstance(obj, dict):
+            obj["_repaired"] = True
+            return obj
+    except Exception:
+        pass
+
+    # Fallback: try closing all open structures naively
+    repair = s
+    if in_string:
+        repair += '"'
+    # Re-scan for open structures
+    in_str2 = False
+    esc2 = False
+    stack: list[str] = []
+    for ch in repair:
+        if esc2:
+            esc2 = False
+            continue
+        if ch == "\\":
+            if in_str2:
+                esc2 = True
+            continue
+        if ch == '"':
+            in_str2 = not in_str2
+            continue
+        if in_str2:
+            continue
+        if ch in "{[":
+            stack.append(ch)
+        elif ch == "}" and stack and stack[-1] == "{":
+            stack.pop()
+        elif ch == "]" and stack and stack[-1] == "[":
+            stack.pop()
+    for bracket in reversed(stack):
+        repair += "}" if bracket == "{" else "]"
+    try:
+        obj = json.loads(repair)
+        if isinstance(obj, dict):
+            obj["_repaired"] = True
+            return obj
+    except Exception:
+        pass
+    return None
+
+
 def _try_parse_json(raw: str) -> Optional[Dict[str, Any]]:
     try:
         obj = json.loads(raw)
@@ -539,6 +871,11 @@ def _try_parse_json(raw: str) -> Optional[Dict[str, Any]]:
                 return obj
         except Exception:
             pass
+    # Last resort: try to repair truncated JSON
+    repaired = _repair_truncated_json(raw)
+    if repaired is not None:
+        print("[batch-digest] NOTE: repaired truncated JSON response")
+        return repaired
     return None
 
 
@@ -603,7 +940,10 @@ def _build_digest_record(
 
     # Mode-specific fields
     obs_mode = str(case.get("observation_mode", "") or "").strip().lower()
-    if obs_mode == "som":
+    if obs_mode == "dom":
+        record["dom_element_id_issue"] = str(parsed.get("dom_element_id_issue", "") or "").strip() or "否"
+        record["dom_failure_type"] = str(parsed.get("dom_failure_type", "") or "").strip() or "不适用"
+    elif obs_mode == "som":
         record["som_visual_used"] = str(parsed.get("som_visual_used", "") or "").strip() or "否"
         record["som_mark_occlusion"] = str(parsed.get("som_mark_occlusion", "") or "").strip() or "不适用"
         record["som_failure_type"] = str(parsed.get("som_failure_type", "") or "").strip() or "不适用"
@@ -648,7 +988,10 @@ def _build_dry_run_record(case: Dict[str, Any]) -> Dict[str, Any]:
     }
     # Mode-specific default fields
     obs_mode = str(case.get("observation_mode", "") or "").strip().lower()
-    if obs_mode == "som":
+    if obs_mode == "dom":
+        record["dom_element_id_issue"] = "否"
+        record["dom_failure_type"] = "不适用"
+    elif obs_mode == "som":
         record["som_visual_used"] = "否"
         record["som_mark_occlusion"] = "不适用"
         record["som_failure_type"] = "不适用"
@@ -743,7 +1086,7 @@ def main() -> None:
                         help="Output directory (auto-splits into digest_dom.jsonl / digest_som.jsonl / digest_vision.jsonl)")
     parser.add_argument("--glm-config", default=None, type=Path, help="GLM config file (.auth/glm)")
     parser.add_argument("--delay-secs", default=2.0, type=float, help="Delay between GLM calls (seconds)")
-    parser.add_argument("--max-images", default=3, type=int, help="Max screenshots per episode")
+    parser.add_argument("--max-images", default=5, type=int, help="Max screenshots per episode")
     parser.add_argument("--max-cases", default=0, type=int, help="Max cases to process (0=all)")
     parser.add_argument("--dry-run", action="store_true", help="No GLM calls, only deterministic fallback")
     parser.add_argument("--site", default=None, help="Override site name in output records")
@@ -828,6 +1171,7 @@ def main() -> None:
                 case=case,
                 run_dir=run_dir,
                 max_images=args.max_images,
+                site=args.site,
             )
             if args.site:
                 record["site"] = args.site

@@ -58,7 +58,7 @@ def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, Any]], tim
             "model": glmm["model"],
             "messages": list(messages),
             "temperature": 0.1,
-            "max_tokens": 32768,
+            "max_tokens": 131072,
         },
     ]
     last_err: Optional[Exception] = None
@@ -79,13 +79,25 @@ def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, Any]], tim
                     data = json.loads(resp.read().decode("utf-8"))
                 choices = data.get("choices") or []
                 if choices:
-                    msg_obj = choices[0].get("message") or {}
+                    choice = choices[0]
+                    msg_obj = choice.get("message") or {}
+                    finish = choice.get("finish_reason", "")
                     msg = msg_obj.get("content")
+                    reasoning = msg_obj.get("reasoning_content")
+                    # Thinking models: content may be truncated when
+                    # finish_reason=length because reasoning consumed
+                    # the token budget.  Prefer reasoning if content
+                    # looks like an incomplete JSON.
                     if isinstance(msg, str) and msg.strip():
+                        if finish == "length" and isinstance(reasoning, str) and reasoning.strip():
+                            # content truncated — try reasoning first
+                            r_start = reasoning.rfind("{")
+                            r_end = reasoning.rfind("}")
+                            if r_start >= 0 and r_end > r_start:
+                                return reasoning[r_start : r_end + 1]
                         return msg.strip()
                     # GLM thinking models (e.g. glm-4.6) may put the answer in
                     # reasoning_content with content="" or missing.
-                    reasoning = msg_obj.get("reasoning_content")
                     if isinstance(reasoning, str) and reasoning.strip():
                         # Try to extract JSON block first
                         r_start = reasoning.rfind("{")

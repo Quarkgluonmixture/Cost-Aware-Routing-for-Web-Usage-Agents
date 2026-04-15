@@ -147,11 +147,21 @@ count_episode_summaries() {
 is_condition_complete() {
   local run_dir="$1" cid="$2"
   local cond_dir="${run_dir}/${cid}"
-  [[ -f "${cond_dir}/condition_summary_v2.json" ]] && return 0
   local task_total
   task_total=$(find "${run_dir}/task_configs" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d '[:space:]')
   local done
   done=$(find "${cond_dir}" -type f -path "*/episodes/*_summary_v2.json" 2>/dev/null | wc -l | tr -d '[:space:]')
+  # If condition_summary exists but episodes are incomplete, the summary is stale
+  # (e.g. manually deleted episodes, bug fixes requiring re-runs). Remove it so
+  # run_until_complete will restart the runner for the missing tasks.
+  if [[ -f "${cond_dir}/condition_summary_v2.json" ]]; then
+    if [[ "${task_total}" -gt 0 && "${done}" -lt "${task_total}" ]]; then
+      log "[b0_3mode] ${cid}: condition_summary 存在但仅完成 ${done}/${task_total} tasks，删除过期 summary 重跑"
+      rm -f "${cond_dir}/condition_summary_v2.json"
+      return 1
+    fi
+    return 0
+  fi
   [[ "${task_total}" -gt 0 && "${done}" -ge "${task_total}" ]] && return 0
   return 1
 }
@@ -217,7 +227,11 @@ stop_watchdog() {
 }
 
 # ---------- Cleanup ----------
+ACTIVE_RUNNER_PID=""   # 全局跟踪当前 runner，kill 脚本时一并清理
+
 cleanup() {
+  [[ -n "${ACTIVE_RUNNER_PID:-}" ]] && kill -0 "${ACTIVE_RUNNER_PID}" 2>/dev/null \
+    && { kill "${ACTIVE_RUNNER_PID}" 2>/dev/null || true; }
   stop_watchdog
   [[ -n "${GALLERY_PID}" ]] && kill -0 "${GALLERY_PID}" 2>/dev/null \
     && { kill "${GALLERY_PID}" 2>/dev/null || true; }
@@ -259,6 +273,7 @@ run_condition() {
     --log_path "${log_path}" \
     >> "${log_path}" 2>&1 < /dev/null &
   local job_pid=$!
+  ACTIVE_RUNNER_PID="${job_pid}"
   log "[b0_3mode/${mode}] PID=${job_pid}"
 
   local last_count stale_secs=0 watchdog_secs=$(( WATCHDOG_TIMEOUT_MINS * 60 )) next_log_secs=300
@@ -328,7 +343,8 @@ run_reason_diagnostics() {
   "${PYTHON_BIN}" "${diag}" \
     --run-dir "${OUTPUT_DIR}" --report --report-language zh --samples-per-bucket 5 \
     >> "${LOG_DIR}/b0_3mode_reason_diag.log" 2>&1 \
-    && log "[b0_3mode] reason diagnostics 完成" \
+    && { log "[b0_3mode] reason diagnostics 完成"
+         ntfy_send "P79 [B0_3mode] 归因完成" "run_id=${RUN_ID}" "default"; } \
     || { log "[b0_3mode][warn] reason diagnostics 失败（非阻塞）"
          ntfy_send "P79 [B0_3mode] 归因失败" "查看 logs/b0_3mode_reason_diag.log" "default"; }
 }
@@ -344,13 +360,13 @@ make_single_mode_config "vision" "${VISION_CONFIG}"
 
 # ---------- 主流程 ----------
 mkdir -p "${OUTPUT_DIR}" "${LOG_DIR}"
-[[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B0_3mode] 启动" "run_id=${RUN_ID}" "default"
+ntfy_send "P79 [B0_3mode] 启动" "run_id=${RUN_ID}" "default"
 
 start_watchdog
 
 # 1) DOM
 log "======== [1/3] DOM ========"
-[[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B0/dom] 开始" "run_id=${RUN_ID}" "default"
+ntfy_send "P79 [B0/dom] 开始" "run_id=${RUN_ID}" "default"
 run_until_complete "dom" "${DOM_CONFIG}" "phase1_dom_router_0"
 [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B0/dom] 完成" "run_id=${RUN_ID}" "default"
 
@@ -366,7 +382,7 @@ refresh_classifieds_auth || {
 
 # 2) SOM
 log "======== [2/3] SOM ========"
-[[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B0/som] 开始" "run_id=${RUN_ID}" "default"
+ntfy_send "P79 [B0/som] 开始" "run_id=${RUN_ID}" "default"
 run_until_complete "som" "${SOM_CONFIG}" "phase1_som_router_0"
 [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B0/som] 完成" "run_id=${RUN_ID}" "default"
 
@@ -382,7 +398,7 @@ refresh_classifieds_auth || {
 
 # 3) VISION
 log "======== [3/3] Vision ========"
-[[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B0/vision] 开始" "run_id=${RUN_ID}" "default"
+ntfy_send "P79 [B0/vision] 开始" "run_id=${RUN_ID}" "default"
 run_until_complete "vision" "${VISION_CONFIG}" "phase1_vision_router_0"
 [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B0/vision] 完成" "run_id=${RUN_ID}" "default"
 

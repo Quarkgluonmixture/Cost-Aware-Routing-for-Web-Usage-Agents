@@ -14,11 +14,28 @@ ALLOWED_ACTION_TYPES = {
     "finish",
     "stop",
     "tab_focus",
+    "select_option",
 }
+
+
+def _extract_fallback_thought(text: str, max_len: int = 500) -> str:
+    """Extract thought from raw model output when JSON parsing fails.
+
+    Tries to find a "thought" value in partial/malformed JSON first,
+    then falls back to the raw text (truncated).
+    """
+    m = re.search(r'"thought"\s*:\s*"((?:[^"\\]|\\.)*)"', text)
+    if m:
+        return m.group(1)[:max_len]
+    return text.strip()[:max_len]
 
 
 def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
     text = (text or "").strip()
+    # Strip <think>...</think> blocks emitted by extended-thinking models (e.g. Qwen3-235B).
+    # Must happen before any JSON extraction so the regex below doesn't greedily capture
+    # JSON fragments embedded inside the thinking block.
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
     lowered = text.lower()
 
     try:
@@ -37,14 +54,17 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
         except json.JSONDecodeError:
             pass
 
-    if "scroll" in lowered:
-        return {"action_type": "scroll", "delta": [0, 0.8], "coordinate_type": "normalized"}, False, "keyword_scroll"
-    if "back" in lowered:
-        return {"action_type": "back"}, False, "keyword_back"
-    if "finish" in lowered or "stop" in lowered:
-        return {"action_type": "finish", "answer": ""}, False, "keyword_finish"
+    # Keyword fallback: try to salvage thought from raw text for annotation/debug.
+    thought = _extract_fallback_thought(text)
 
-    return {"action_type": "wait"}, False, "parse_failed"
+    if "scroll" in lowered:
+        return {"action_type": "scroll", "delta": [0, 0.8], "coordinate_type": "normalized", "thought": thought}, False, "keyword_scroll"
+    if "back" in lowered:
+        return {"action_type": "back", "thought": thought}, False, "keyword_back"
+    if "finish" in lowered or "stop" in lowered:
+        return {"action_type": "finish", "answer": "", "thought": thought}, False, "keyword_finish"
+
+    return {"action_type": "wait", "thought": thought}, False, "parse_failed"
 
 
 def validate_action(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
@@ -58,6 +78,20 @@ def validate_action(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
         return {"action_type": "wait"}, False
 
     action["action_type"] = action_type
+
+    if action_type == "select_option":
+        has_id = "element_id" in action
+        has_coord = "coordinate" in action
+        if not has_id and not has_coord:
+            return {"action_type": "wait"}, False
+        has_option = bool(
+            action.get("option_label") or action.get("option_value")
+            or action.get("option_index") is not None
+        )
+        if not has_option:
+            return {"action_type": "wait"}, False
+        if has_coord and "coordinate_type" not in action:
+            action["coordinate_type"] = "normalized"
 
     if action_type == "click":
         coord = action.get("coordinate")

@@ -62,7 +62,10 @@ def _action_signature(action: Dict[str, Any]) -> str:
     text = str(action.get("text", ""))[:60]
     coord = action.get("coordinate", "")
     delta = action.get("delta", "")
-    return f"{atype}|eid={eid}|t={text}|c={coord}|d={delta}"
+    # tab_focus: include page_number so switching between different tabs is not
+    # mistakenly treated as a cycle (e.g. 1→0→1 differs from 1→1→1).
+    page_num = action.get("page_number", "") if atype == "tab_focus" else ""
+    return f"{atype}|eid={eid}|t={text}|c={coord}|d={delta}|pn={page_num}"
 
 
 def _action_signature_soft(action: Dict[str, Any]) -> str:
@@ -71,7 +74,9 @@ def _action_signature_soft(action: Dict[str, Any]) -> str:
     atype = str(action.get("action_type", "")).lower()
     text = str(action.get("text", ""))[:60]
     delta = action.get("delta", "")
-    return f"{atype}|t={text}|d={delta}"
+    # tab_focus: include page_number in soft signature for the same reason.
+    page_num = action.get("page_number", "") if atype == "tab_focus" else ""
+    return f"{atype}|t={text}|d={delta}|pn={page_num}"
 
 
 def _detect_action_cycle(signatures: List[str], min_cycle: int = 1, max_cycle: int = 4,
@@ -960,7 +965,11 @@ class ExperimentRunner:
                         ";".join(diag_notes),
                         action,
                     )
-            state_before = build_page_state(obs, current_info)
+            if self.state_change_cfg.get("form_snapshot_enabled", True):
+                form_before = self.environment.snapshot_form_fields()
+            else:
+                form_before = None
+            state_before = build_page_state(obs, current_info, form_snapshot=form_before)
 
             # Feed page complexity signals to router state for 3-way decisions
             router_state.dom_complexity_history.append(state_before.get("dom_complexity", 0))
@@ -974,7 +983,11 @@ class ExperimentRunner:
             env_step_ms = (time.time() - env_step_start) * 1000.0
 
             action_type_lower = str(action.get("action_type", "")).lower()
-            state_after = build_page_state(next_obs, next_info)
+            if self.state_change_cfg.get("form_snapshot_enabled", True):
+                form_after = self.environment.snapshot_form_fields()
+            else:
+                form_after = None
+            state_after = build_page_state(next_obs, next_info, form_snapshot=form_after)
 
             # --- about:blank recovery ---
             about_blank_recovered = False
@@ -984,7 +997,11 @@ class ExperimentRunner:
                 if recovery_url:
                     try:
                         next_obs, _, _, _, next_info = self.environment.navigate_to(recovery_url)
-                        state_after = build_page_state(next_obs, next_info)
+                        if self.state_change_cfg.get("form_snapshot_enabled", True):
+                            form_after = self.environment.snapshot_form_fields()
+                        else:
+                            form_after = None
+                        state_after = build_page_state(next_obs, next_info, form_snapshot=form_after)
                         about_blank_recovered = True
                         logger.warning(
                             "about:blank detected at step %d for task %s/%d — recovered to %s",
@@ -1040,7 +1057,11 @@ class ExperimentRunner:
                 retry_total += 1
                 overhead["routing_retry_count"] += 1.0
 
-                retry_state_after = build_page_state(retry_obs, retry_info)
+                if self.state_change_cfg.get("form_snapshot_enabled", True):
+                    retry_form = self.environment.snapshot_form_fields()
+                else:
+                    retry_form = None
+                retry_state_after = build_page_state(retry_obs, retry_info, form_snapshot=retry_form)
                 retry_success, retry_reasons, retry_similarity = detect_page_state_change(
                     state_before=state_before,
                     state_after=retry_state_after,
@@ -1213,6 +1234,9 @@ class ExperimentRunner:
                     "title_after": state_after.get("title"),
                     "dom_complexity": state_before.get("dom_complexity"),
                     "text_length": state_before.get("text_length"),
+                    "scroll_y_before": state_before.get("scroll_y"),
+                    "scroll_y_after": state_after.get("scroll_y"),
+                    "form_fields_changed": "form_value_changed" in page_change_reasons,
                 },
             ).as_dict()
             # Convenience field for history rendering/debug.

@@ -453,6 +453,58 @@ def _compress_action_types(steps: List[Dict[str, Any]]) -> str:
     return "|".join(chunks)
 
 
+def _scroll_direction_stats(steps: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Analyze scroll direction usage per episode.
+
+    Returns dict with:
+        scroll_up: count of scroll actions with dy < 0 (up)
+        scroll_down: count of scroll actions with dy >= 0 (down)
+        scroll_direction_flips: number of consecutive direction changes
+        scroll_wasted_steps: scroll actions where page_changed=False
+    """
+    scroll_up = 0
+    scroll_down = 0
+    direction_flips = 0
+    wasted = 0
+    prev_direction: Optional[str] = None
+
+    for s in steps:
+        atype = str(s.get("action_type", "") or "").lower()
+        if atype != "scroll":
+            continue
+        act = s.get("action") or {}
+        delta = act.get("delta")
+        # Extract dy from various delta formats
+        if isinstance(delta, (list, tuple)) and len(delta) >= 2:
+            dy = delta[1]
+        elif isinstance(delta, (list, tuple)) and len(delta) == 1:
+            dy = delta[0]
+        elif isinstance(delta, (int, float)):
+            dy = delta
+        else:
+            continue  # unparseable delta, skip
+
+        direction = "down" if dy >= 0 else "up"
+        if direction == "up":
+            scroll_up += 1
+        else:
+            scroll_down += 1
+
+        if prev_direction is not None and direction != prev_direction:
+            direction_flips += 1
+        prev_direction = direction
+
+        if not bool(s.get("page_changed", False)):
+            wasted += 1
+
+    return {
+        "scroll_up": scroll_up,
+        "scroll_down": scroll_down,
+        "scroll_direction_flips": direction_flips,
+        "scroll_wasted_steps": wasted,
+    }
+
+
 def _page_unchanged_signals(steps: List[Dict[str, Any]]) -> Tuple[int, int, int]:
     stuck_first_step = -1
     max_len = 0
@@ -1365,6 +1417,7 @@ def main() -> None:
             )
 
             stuck_first_step, unchanged_streak_max_len, unchanged_streak_max_pos = _page_unchanged_signals(steps)
+            scroll_stats = _scroll_direction_stats(steps)
             action_type_sequence = _compress_action_types(steps)
             final_three_thoughts = _collect_final_thoughts(steps, k=3)
             select_events = _collect_select_events(steps)
@@ -1486,6 +1539,10 @@ def main() -> None:
                 "task_type": task_type,
                 "observation_mode": observation_mode,
                 "degraded_som_steps": degraded_som_steps,
+                "scroll_up": scroll_stats["scroll_up"],
+                "scroll_down": scroll_stats["scroll_down"],
+                "scroll_direction_flips": scroll_stats["scroll_direction_flips"],
+                "scroll_wasted_steps": scroll_stats["scroll_wasted_steps"],
                 "url_revisit_count": url_revisit_count,
                 "url_unique_count": url_unique_count,
                 "url_revisit_max": url_revisit_max,
@@ -1594,6 +1651,10 @@ def main() -> None:
         "task_type",
         "observation_mode",
         "degraded_som_steps",
+        "scroll_up",
+        "scroll_down",
+        "scroll_direction_flips",
+        "scroll_wasted_steps",
         "url_revisit_count",
         "url_unique_count",
         "url_revisit_max",

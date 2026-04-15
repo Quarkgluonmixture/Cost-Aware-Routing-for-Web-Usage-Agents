@@ -130,7 +130,7 @@ Response Format (JSON):
 {
   "thought": "Brief reasoning about what to do next.",
   "confidence": 0.0 to 1.0,
-  "action_type": "click" | "type" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
+  "action_type": "click" | "type" | "select_option" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
   ... (other action parameters) ...
 }
 "confidence": your self-assessed probability (0.0–1.0) that this action makes meaningful progress toward the task goal.
@@ -145,6 +145,10 @@ Action Schema:
    - "click" is for buttons, links, and navigation only — it cannot enter text.
    - ALWAYS specify element_id to target the correct input field.
    - To submit, append "\\n" to the text.
+2.5. Select Option: {"action_type": "select_option", "element_id": N, "option_label": "Option Name"}
+   - Use ONLY for <select> dropdown elements (shown as "combobox" in the Accessibility Tree).
+   - Clicking a combobox does NOT open the dropdown. Use select_option instead.
+   - option_label must match the visible option text exactly (e.g., "Electronics", "Jewelry & Watches").
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
    - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
 4. Wait: {"action_type": "wait"}
@@ -196,7 +200,7 @@ Response Format (JSON):
 {
   "thought": "Brief reasoning about what to do next.",
   "confidence": 0.0 to 1.0,
-  "action_type": "click" | "type" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
+  "action_type": "click" | "type" | "select_option" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
   ... (other action parameters) ...
 }
 "confidence": your self-assessed probability (0.0–1.0) that this action makes meaningful progress toward the task goal.
@@ -211,6 +215,10 @@ Action Schema:
    - ALWAYS use "type" (not "click") when you want to enter text into an input field.
    - "click" is for buttons, links, and navigation only — it cannot enter text.
    - Prefer element_id. To submit, append "\\n" to the text.
+3.5. Select Option: {"action_type": "select_option", "element_id": N, "option_label": "Option Name"}
+   - Use ONLY for <select> dropdown elements (shown as "combobox" in the SOM_MARKS list).
+   - Clicking a combobox does NOT open the dropdown. Use select_option instead.
+   - option_label must match the visible option text exactly (e.g., "Electronics", "Jewelry & Watches").
 4. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
    - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
 5. Wait: {"action_type": "wait"}
@@ -256,7 +264,7 @@ Response Format (JSON):
 {
   "thought": "Brief reasoning about what to do next.",
   "confidence": 0.0 to 1.0,
-  "action_type": "click" | "type" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
+  "action_type": "click" | "type" | "select_option" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
   ... (other action parameters) ...
 }
 "confidence": your self-assessed probability (0.0–1.0) that this action makes meaningful progress toward the task goal.
@@ -269,6 +277,10 @@ Action Schema:
    - ALWAYS use "type" (not "click") when you want to enter text into an input field.
    - "click" is for buttons, links, and navigation only — it cannot enter text.
    - Include coordinate to specify the input field location. To submit, append "\\n" to the text.
+2.5. Select Option: {"action_type": "select_option", "coordinate": [x, y], "option_label": "Option Name"}
+   - Use ONLY for <select> dropdown visible in the screenshot.
+   - Clicking a dropdown does NOT open it. Use select_option to set the value directly.
+   - option_label must match the visible option text exactly.
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
    - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
 4. Wait: {"action_type": "wait"}

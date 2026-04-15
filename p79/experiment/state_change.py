@@ -52,9 +52,14 @@ def _extract_title_from_html(html: str) -> str:
     return m.group(1).strip() if m else ""
 
 
-def build_page_state(obs: P79Observation, info: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def build_page_state(
+    obs: P79Observation,
+    info: Optional[Dict[str, Any]],
+    form_snapshot: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     text = _safe_str(getattr(obs, "text", ""))
     info = info or {}
+    fs = form_snapshot or {}
 
     # VWA stores url/content inside info["page"] (DetachedPage dataclass)
     page_obj = info.get("page")
@@ -73,13 +78,51 @@ def build_page_state(obs: P79Observation, info: Optional[Dict[str, Any]]) -> Dic
         "interactive_elements_count": _extract_interactive_count(text),
         "form_fields_count": _extract_form_fields_count(text),
         "modal_present": _extract_modal_state(text),
-        "scroll_x": int(info.get("scroll_x", 0) or 0),
-        "scroll_y": int(info.get("scroll_y", 0) or 0),
+        "scroll_x": int(fs.get("scroll_x", 0) or 0),
+        "scroll_y": int(fs.get("scroll_y", 0) or 0),
+        "scroll_height": int(fs.get("scroll_height", 0) or 0),
+        "client_height": int(fs.get("client_height", 0) or 0),
         "dom_complexity": text.count("\n") + 1,
         "text_length": len(text),
         "active_element_tag": _extract_focused_tag(text),
+        "form_field_values": fs.get("fields", []),
     }
     return state
+
+
+def _form_fields_changed(before_fields: List[Dict[str, Any]], after_fields: List[Dict[str, Any]]) -> bool:
+    """Compare form field snapshots by matching (tag, type, name, idx) keys."""
+    if not before_fields and not after_fields:
+        return False
+
+    def _key(f: Dict[str, Any]) -> Tuple[str, str, str, int]:
+        return (
+            str(f.get("tag", "")),
+            str(f.get("type", "")),
+            str(f.get("name", "")),
+            int(f.get("idx", 0)),
+        )
+
+    before_map = {_key(f): f for f in before_fields}
+    after_map = {_key(f): f for f in after_fields}
+
+    # Field count change (new/removed fields)
+    if set(before_map.keys()) != set(after_map.keys()):
+        return True
+
+    # Value/checked/selectedIndex change on matched fields
+    for k, bf in before_map.items():
+        af = after_map.get(k)
+        if af is None:
+            return True
+        if bf.get("value") != af.get("value"):
+            return True
+        if bf.get("checked") != af.get("checked"):
+            return True
+        if bf.get("selectedIndex") != af.get("selectedIndex"):
+            return True
+
+    return False
 
 
 def detect_page_state_change(
@@ -143,9 +186,24 @@ def detect_page_state_change(
     if tl_before > 0 and abs(tl_after - tl_before) / tl_before > 0.30:
         changes.append("text_length_changed")
 
+    # Form field value change (catches type edits, select_option, checkbox toggle)
+    if _form_fields_changed(
+        before.get("form_field_values", []),
+        after.get("form_field_values", []),
+    ):
+        changes.append("form_value_changed")
+
     action_upper = (action_type or "").upper()
     if action_upper in ("SCROLL", "SCROLL UP", "SCROLL DOWN", "SCROLL TOP", "SCROLL BOTTOM"):
-        return True, changes, similarity
+        # Use real scroll_y delta instead of unconditional True
+        if abs(say - sby) >= 5:
+            if "scroll_changed" not in changes:
+                changes.append("scroll_changed")
+            return True, changes, similarity
+        else:
+            # Scroll didn't actually move — only report success if other evidence exists
+            evidence = [c for c in changes if c != "focus_blur"]
+            return len(evidence) > 0, changes, similarity
 
     evidence = [c for c in changes if c != "focus_blur"]
     return len(evidence) > 0, changes, similarity

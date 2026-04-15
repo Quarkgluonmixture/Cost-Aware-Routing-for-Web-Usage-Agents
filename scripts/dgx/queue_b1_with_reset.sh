@@ -156,10 +156,20 @@ count_episode_summaries() {
 is_condition_complete() {
   local run_dir="$1" cid="$2"
   local cond_dir="${run_dir}/${cid}"
-  [[ -f "${cond_dir}/condition_summary_v2.json" ]] && return 0
   local task_total done
   task_total=$(find "${run_dir}/task_configs" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d '[:space:]')
   done=$(find "${cond_dir}" -type f -path "*/episodes/*_summary_v2.json" 2>/dev/null | wc -l | tr -d '[:space:]')
+  # If condition_summary exists but episodes are incomplete, the summary is stale
+  # (e.g. manually deleted episodes, bug fixes requiring re-runs). Remove it so
+  # run_until_complete will restart the runner for the missing tasks.
+  if [[ -f "${cond_dir}/condition_summary_v2.json" ]]; then
+    if [[ "${task_total}" -gt 0 && "${done}" -lt "${task_total}" ]]; then
+      log "[queue_b1] ${cid}: condition_summary 存在但仅完成 ${done}/${task_total} tasks，删除过期 summary 重跑"
+      rm -f "${cond_dir}/condition_summary_v2.json"
+      return 1
+    fi
+    return 0
+  fi
   [[ "${task_total}" -gt 0 && "${done}" -ge "${task_total}" ]] && return 0
   return 1
 }
@@ -264,6 +274,7 @@ run_condition_foreground() {
     --log_path "${log_path}" \
     >> "${log_path}" 2>&1 < /dev/null &
   local job_pid=$!
+  ACTIVE_RUNNER_PID="${job_pid}"
   log "[B1/${label}/${mode}] PID=${job_pid}"
 
   local last_count stale_secs=0 watchdog_secs=$(( WATCHDOG_TIMEOUT_MINS * 60 )) next_log_secs=300
@@ -334,7 +345,8 @@ run_reason_diagnostics() {
   "${PYTHON_BIN}" "${diag}" \
     --run-dir "${run_dir}" --report --report-language zh --samples-per-bucket 5 \
     >> "${LOG_DIR}/b1_3mode_reason_diag_${label}.log" 2>&1 \
-    && log "[B1/${label}] reason diagnostics 完成" \
+    && { log "[B1/${label}] reason diagnostics 完成"
+         ntfy_send "P79 [B1/${label}] 归因完成" "run_id=$(basename "${run_dir}")" "default"; } \
     || {
       log "[B1/${label}][warn] reason diagnostics 失败（非阻塞）"
       ntfy_send "P79 [B1/${label}] 归因失败" "查看 logs/b1_3mode_reason_diag_${label}.log" "default"
@@ -362,13 +374,13 @@ run_site_3mode_with_reset() {
   make_site_mode_config "${site}" "vision" "${vision_config}"
 
   mkdir -p "${run_dir}"
-  [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1/${label}] 启动" "run_id=${run_id}" "default"
+  ntfy_send "P79 [B1/${label}] 启动" "run_id=${run_id}" "default"
 
   start_exp_watchdog "${run_id}" "${label}"
 
   # 1) DOM
   log "======== [B1/${label} 1/3] DOM ========"
-  [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1/${label}/dom] 开始" "run_id=${run_id}" "default"
+  ntfy_send "P79 [B1/${label}/dom] 开始" "run_id=${run_id}" "default"
   run_condition_until_complete "dom" "${dom_config}" "${run_dir}" "phase1_dom_router_0" "${label}"
   [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1/${label}/dom] 完成" "run_id=${run_id}" "default"
 
@@ -384,7 +396,7 @@ run_site_3mode_with_reset() {
 
   # 2) SOM
   log "======== [B1/${label} 2/3] SOM ========"
-  [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1/${label}/som] 开始" "run_id=${run_id}" "default"
+  ntfy_send "P79 [B1/${label}/som] 开始" "run_id=${run_id}" "default"
   run_condition_until_complete "som" "${som_config}" "${run_dir}" "phase1_som_router_0" "${label}"
   [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1/${label}/som] 完成" "run_id=${run_id}" "default"
 
@@ -400,7 +412,7 @@ run_site_3mode_with_reset() {
 
   # 3) VISION
   log "======== [B1/${label} 3/3] Vision ========"
-  [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1/${label}/vision] 开始" "run_id=${run_id}" "default"
+  ntfy_send "P79 [B1/${label}/vision] 开始" "run_id=${run_id}" "default"
   run_condition_until_complete "vision" "${vision_config}" "${run_dir}" "phase1_vision_router_0" "${label}"
   [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1/${label}/vision] 完成" "run_id=${run_id}" "default"
 
@@ -421,7 +433,11 @@ run_site_3mode_with_reset() {
 }
 
 # ---------- Cleanup ----------
+ACTIVE_RUNNER_PID=""   # 全局跟踪当前 runner，kill 脚本时一并清理
+
 cleanup() {
+  [[ -n "${ACTIVE_RUNNER_PID:-}" ]] && kill -0 "${ACTIVE_RUNNER_PID}" 2>/dev/null \
+    && { kill "${ACTIVE_RUNNER_PID}" 2>/dev/null || true; }
   stop_exp_watchdog "cleanup"
   [[ -n "${GALLERY_PID:-}" ]] && kill -0 "${GALLERY_PID}" 2>/dev/null \
     && { kill "${GALLERY_PID}" 2>/dev/null || true; }
@@ -442,8 +458,7 @@ log "========================================================"
 
 start_gallery_server
 
-[[ "${NTFY_MINIMAL_MODE}" != "1" ]] && \
-  ntfy_send "P79 [B1_3mode] 队列启动" "顺序: reddit → shopping，带模式间 reset" "default"
+ntfy_send "P79 [B1_3mode] 队列启动" "顺序: reddit → shopping，带模式间 reset" "default"
 
 # 1) Reddit（resume：DOM 已有 112 episodes，污染的 10 个已清）
 run_site_3mode_with_reset "reddit" "${RUN_ID_REDDIT}"

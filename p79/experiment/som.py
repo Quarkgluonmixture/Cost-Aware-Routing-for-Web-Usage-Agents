@@ -186,7 +186,33 @@ def _build_som_result(
             mark_count=0,
         )
 
-    mark_lines = [f"[id={m['id']}] {m['label']}" for m in text_marks]
+    # Build options map: eid -> annotation line (e.g. '[OPTIONS] "a","b"' or
+    # '[OPTIONS: currently selected="x"] ...' or '[DROPDOWN OPTIONS] ...').
+    # _inject_select_options / _inject_css_dropdown_options already wrote these
+    # into obs_text (the full AXTree), but _extract_text_marks strips them because
+    # they have no [N] element id.  Re-scan obs_text to recover them.
+    _options_map: Dict[int, str] = {}
+    _obs_lines = (obs_text or "").splitlines()
+    for _i, _line in enumerate(_obs_lines):
+        _m = re.search(r"\[(\d+)\]", _line)
+        if not _m:
+            continue
+        _eid = int(_m.group(1))
+        for _j in range(_i + 1, min(_i + 3, len(_obs_lines))):
+            _stripped = _obs_lines[_j].strip()
+            if _stripped.startswith("[OPTIONS") or _stripped.startswith("[DROPDOWN OPTIONS"):
+                _options_map[_eid] = _stripped
+                break
+            if re.search(r"\[(\d+)\]", _obs_lines[_j]):
+                break  # next element reached
+
+    mark_lines = []
+    for _mark in text_marks:
+        _entry = f"[id={_mark['id']}] {_mark['label']}"
+        if _mark["id"] in _options_map:
+            _entry += f"\n    {_options_map[_mark['id']]}"
+        mark_lines.append(_entry)
+
     som_header = "\n".join(["[SOM_MARKS]"] + mark_lines + ["[/SOM_MARKS]"])
     som_text = f"{som_header}\n\n{obs_text}" if include_full_axtree else som_header
 

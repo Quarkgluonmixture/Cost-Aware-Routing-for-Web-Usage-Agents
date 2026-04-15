@@ -194,6 +194,16 @@ SoM 净优势 +36。
 
 SoM 脚手架问题占比下降 10pp：截图缓解信息瓶颈。但更多失败归因于模型——拿到足够信息但未能利用（text_over_vision 56 例）。
 
+### 4.4 DOM↔SoM 差距根因（§23）
+
+**两个被推翻的初始假设**：
+- ❌ **文本压缩**：实测 DOM 平均 2326 chars ≈ SoM 2377 chars，格式不同但信息量相当，不构成性能差距的解释
+- ❌ **坐标 fallback 兜底**：下拉菜单等交互在 SoM 同样循环，坐标参数实际未被有效利用
+
+**真正的主因：Mirage Effect（§18）**。相同文本信息下，图片存在触发了质变推理路径——scroll up 从 DOM 3.7% 升至 SoM 11.2%（3×），认知-执行鸿沟（task 58）在 Vision 下弥合。图像不只是补充信息，而是改变了模型的推理模式。
+
+**对路由的含义**：DOM↔SoM headroom (adjusted) = 0.4%，DOM 独占成功仅 1 个 task，DOM↔SoM 路由无意义。有意义方向为 SoM↔Vision。
+
 ---
 
 ## 5. 路由信号评估
@@ -269,7 +279,9 @@ Classifieds 站点的地点筛选依赖搜索结果页的 City 文本输入框�
 
 ### 6.4 Type 操作导致页面全选变蓝
 
-`type` 操作偶尔导致页面文本被全选高亮（蓝色覆盖），影响 SoM/Vision 截图可读性。DOM 无影响。归因：Playwright。
+`type` 操作偶尔导致页面文本被全选高亮（蓝色覆盖），影响 SoM/Vision 截图可读性。DOM 无影响。
+
+**根因（§52 修正）**：VWA 框架内置 `Meta+A`（全选）作为 type 前置步骤，并非 Playwright 副作用。实际触发条件：模型将非 input 节点（link/span）误认为 textbox → `type` 操作的 `Meta+A` 在无焦点 input 的情况下全选页面文本 → 蓝色覆盖。归因：VWA 框架设计 + 模型节点类型误认。
 
 ### 6.5 极少翻页（模型能力缺陷）
 
@@ -319,6 +331,10 @@ Classifieds "Delete" 触发浏览器原生 `confirm()` 弹窗，VWA Playwright �
 - 路由信号：action_diversity（行为，0.74）+ verbalized（SoM+Vision 均有）
 
 **DOM 不纳入路由**：Adjusted SR 0.85%，独占成功仅 1 个。
+
+### 7.3 Capability-Aware Routing（§9）
+
+最优表征不是绝对的，是**模型能力的函数**（Read More, Think More 文献：高能力模型用 HTML +17.5pp，低能力模型用 a11y 更好）。B1（4B）的最优模式（SoM）不一定是 B0（235B）的最优模式。Phase 2 router 框架可扩展为"任务难度 × 模型能力"双维度选表征。若 B0 classifieds DOM SR 显著高于 B1，则 DOM 在高能力模型下重新有路由价值。
 
 ### 7.3 Pareto 分析
 

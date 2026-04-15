@@ -704,7 +704,7 @@ def _run_auto_digest(run_dir: Path, glm_config: Path, digest_dir: Path, site: Op
              "--run-dir", str(run_dir),
              "--output", str(digest_dir),
              "--glm-config", str(glm_config),
-             "--max-images", "3",
+             "--max-images", "5",
              "--delay-secs", "3.0"]
         if site:
             cmd += ["--site", site]

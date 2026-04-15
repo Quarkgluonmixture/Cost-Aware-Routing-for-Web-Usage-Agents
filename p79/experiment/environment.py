@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import importlib.util
+import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -48,6 +50,9 @@ class MockEnvironment:
         }
         return obs, reward, done, False, info
 
+    def snapshot_form_fields(self) -> Dict[str, Any]:
+        return {"fields": [], "scroll_y": 0, "scroll_x": 0, "scroll_height": 0, "client_height": 0}
+
     def close(self):
         return None
 
@@ -58,9 +63,19 @@ class NullEvaluator:
 
 
 class VwaEvaluator:
+    # Minimum free VRAM (GB) required before loading BLIP-2 on CUDA.
+    # blip2-flan-t5-xl in float16 needs ~15 GB; add buffer.
+    _BLIP2_MIN_FREE_VRAM_GB: float = 18.0
+    _BLIP2_POLL_INTERVAL_S: int = 30
+    # Give up waiting and fall back to CPU after this many seconds.
+    # Must be well under the watchdog idle timeout (35 min = 2100 s).
+    _BLIP2_MAX_WAIT_S: int = 10 * 60  # 10 minutes
+
     def __init__(self):
         self._available = False
         self._evaluator_router = None
+        self._captioning_fn = None
+        self._captioning_fn_ready = False  # lazy-load guard
         try:
             import sys
 
@@ -93,12 +108,68 @@ class VwaEvaluator:
             self._available = False
             self._evaluator_router = None
 
+    def _ensure_captioning_fn(self) -> None:
+        """Lazy-load BLIP-2 on first page_image_query task.
+
+        Waits until enough GPU VRAM is free before loading on CUDA,
+        so it doesn't compete with the main inference model.
+        Falls back to CPU only if CUDA is unavailable.
+        """
+        if self._captioning_fn_ready:
+            return
+        self._captioning_fn_ready = True
+        try:
+            import torch  # type: ignore
+            from evaluation_harness.image_utils import get_captioning_fn  # type: ignore
+
+            if torch.cuda.is_available():
+                _deadline = time.monotonic() + self._BLIP2_MAX_WAIT_S
+                while True:
+                    torch.cuda.empty_cache()
+                    free_gb = torch.cuda.mem_get_info(0)[0] / 1024 ** 3
+                    if free_gb >= self._BLIP2_MIN_FREE_VRAM_GB:
+                        _device, _dtype = "cuda", torch.float16
+                        break
+                    if time.monotonic() >= _deadline:
+                        logger.warning(
+                            "BLIP-2: VRAM wait timed out (%.1f GB free after %d s), "
+                            "falling back to CPU",
+                            free_gb, self._BLIP2_MAX_WAIT_S,
+                        )
+                        _device, _dtype = "cpu", torch.float32
+                        break
+                    logger.info(
+                        "BLIP-2: waiting for VRAM (%.1f GB free, need %.1f GB), retry in %d s",
+                        free_gb, self._BLIP2_MIN_FREE_VRAM_GB, self._BLIP2_POLL_INTERVAL_S,
+                    )
+                    time.sleep(self._BLIP2_POLL_INTERVAL_S)
+            else:
+                _device, _dtype = "cpu", torch.float32
+
+            self._captioning_fn = get_captioning_fn(_device, _dtype)
+            logger.info("BLIP-2 captioning model loaded on %s", _device)
+        except Exception as exc:
+            logger.warning(
+                "BLIP-2 captioning fn unavailable (page_image_query tasks will score 0): %s",
+                exc,
+            )
+            self._captioning_fn = None
+
     def evaluate(self, trajectory: List[Any], config_file: str, env: Any) -> EpisodeEvalResult:
         if not self._available or self._evaluator_router is None:
             return EpisodeEvalResult(score=0.0, error="evaluator_unavailable")
 
+        # Lazy-load BLIP-2 only when the task actually needs it.
         try:
-            evaluator = self._evaluator_router(config_file)
+            with open(config_file) as _f:
+                _eval_types = json.load(_f)["eval"]["eval_types"]
+            if "page_image_query" in _eval_types:
+                self._ensure_captioning_fn()
+        except Exception:
+            pass
+
+        try:
+            evaluator = self._evaluator_router(config_file, captioning_fn=self._captioning_fn)
             score = evaluator(
                 trajectory=trajectory,
                 config_file=config_file,

@@ -1,20 +1,98 @@
 """ProxyApiAgent — calls a custom proxy API (Anthropic Messages style)."""
 
+import json
 import logging
 import os
 import time
+import urllib.request
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 from PIL import Image
 
-from p79.backends.action_utils import parse_action_text
+from p79.backends.action_utils import parse_action_text, validate_action
 from p79.backends.image_utils import DEFAULT_MAX_IMAGE_PAYLOAD_BYTES, encode_image_data_url
 
 logger = logging.getLogger(__name__)
 
 # Default timeout for API requests (seconds).
 _DEFAULT_TIMEOUT = 120
+
+# ---------------------------------------------------------------------------
+# Tool-calling schema — forces structured output via the API's tool_use
+# mechanism, completely eliminating parse_error from free-form text.
+# Enabled via config: model.use_tool_calling = true
+# ---------------------------------------------------------------------------
+_WEB_ACTION_TOOL = {
+    "name": "web_action",
+    "description": (
+        "Execute a web navigation action on the current page. "
+        "Call this tool with your chosen action for every step."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "thought": {
+                "type": "string",
+                "description": "Brief reasoning about what to do next and why.",
+            },
+            "confidence": {
+                "type": "number",
+                "description": "Confidence 0.0-1.0 that this action is correct.",
+            },
+            "action_type": {
+                "type": "string",
+                "enum": [
+                    "click", "type", "scroll", "wait", "back",
+                    "forward", "finish", "select_option", "tab_focus",
+                ],
+                "description": "The type of action to perform.",
+            },
+            "element_id": {
+                "type": "integer",
+                "description": "Element ID from Accessibility Tree or SOM marks.",
+            },
+            "coordinate": {
+                "type": "array",
+                "items": {"type": "number"},
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "Normalized [x, y] coordinates (0.0-1.0).",
+            },
+            "text": {
+                "type": "string",
+                "description": "Text to type (for type action). Append \\n to submit.",
+            },
+            "scroll_direction": {
+                "type": "string",
+                "enum": ["up", "down"],
+                "description": "Scroll direction: 'down' to reveal content below, 'up' to reveal content above.",
+            },
+            "option_label": {
+                "type": "string",
+                "description": "Visible option text for select_option.",
+            },
+            "option_value": {
+                "type": "string",
+                "description": "Option value for select_option.",
+            },
+            "option_index": {
+                "type": "integer",
+                "description": "Option index for select_option.",
+            },
+            "answer": {
+                "type": "string",
+                "description": "Answer for finish action.",
+            },
+            "page_number": {
+                "type": "integer",
+                "description": "Tab number for tab_focus.",
+            },
+        },
+        "required": ["action_type"],
+    },
+}
 
 
 class ProxyApiAgent:
@@ -41,7 +119,121 @@ class ProxyApiAgent:
             raise RuntimeError("PROXY_API_KEY environment variable is not set")
 
         self.timeout = model_cfg.get("timeout", _DEFAULT_TIMEOUT)
+        self._use_tool_calling = model_cfg.get("use_tool_calling", False)
+
+        # GLM fallback for parse-error recovery (Solution B).
+        # Reads .auth/glm (3-line file: endpoint, model, api_key).
+        # Cost is NOT counted in experiment metrics — purely scaffold overhead.
+        self._glm_config: Optional[Dict[str, str]] = None
+        glm_cfg_path = model_cfg.get("glm_config", ".auth/glm")
+        if model_cfg.get("use_glm_fallback", False):
+            self._glm_config = self._load_glm_config(glm_cfg_path)
+
         self._system_prompts = self._get_system_prompts()
+
+        # When tool calling is enabled, replace the "output JSON" instruction
+        # with a tool-use instruction.  This is a format-only change — the
+        # rules, action schema, and all task-relevant guidance are unchanged.
+        if self._use_tool_calling:
+            _old = "Output ONLY valid JSON. No markdown blocks, no explanations."
+            _new = "Use the web_action tool for every action. Put reasoning in the thought parameter."
+            for mode in self._system_prompts:
+                self._system_prompts[mode] = self._system_prompts[mode].replace(_old, _new)
+
+    # ---- GLM fallback (Solution B) ----
+
+    @staticmethod
+    def _load_glm_config(cfg_path: str) -> Optional[Dict[str, str]]:
+        """Load GLM config from a 3-line file: endpoint, model, api_key."""
+        p = Path(cfg_path)
+        if not p.exists():
+            logger.warning("GLM config %s not found; GLM fallback disabled.", cfg_path)
+            return None
+        lines = [
+            ln.strip()
+            for ln in p.read_text(encoding="utf-8").splitlines()
+            if ln.strip() and not ln.strip().startswith("#")
+        ]
+        if len(lines) < 3:
+            logger.warning("GLM config %s needs 3 lines (endpoint/model/key); got %d. Disabled.", cfg_path, len(lines))
+            return None
+        cfg = {"endpoint": lines[0], "model": lines[1], "api_key": lines[2]}
+        logger.info("GLM fallback enabled: model=%s", cfg["model"])
+        return cfg
+
+    def _call_glm_extract(self, raw_output: str) -> Optional[Dict[str, Any]]:
+        """Ask GLM to extract a JSON action from raw model output.
+
+        Returns validated action dict on success, None on failure.
+        This is a scaffold-level format repair — cost is NOT experiment cost.
+        """
+        if not self._glm_config:
+            return None
+
+        # Truncate to avoid sending huge payloads for a simple extraction task.
+        truncated = raw_output[:3000]
+        extract_prompt = (
+            "Extract the web navigation action as a JSON object from the following agent output.\n"
+            'The JSON must contain "action_type" (one of: click, type, scroll, wait, back, '
+            "forward, finish, select_option, tab_focus).\n"
+            "Include all relevant fields: element_id, coordinate, text, scroll_direction (up/down), "
+            "option_label, answer, page_number, thought, confidence.\n"
+            "Output ONLY the JSON object. No explanation, no markdown.\n\n"
+            f"Agent output:\n{truncated}"
+        )
+
+        messages = [
+            {"role": "system", "content": "You extract structured JSON from text. Output ONLY valid JSON."},
+            {"role": "user", "content": extract_prompt},
+        ]
+        payload = json.dumps({
+            "model": self._glm_config["model"],
+            "messages": messages,
+            "temperature": 0.0,
+            "max_tokens": 512,
+        }).encode("utf-8")
+
+        ep = self._glm_config["endpoint"].rstrip("/")
+        urls = [f"{ep}/chat/completions", ep] if not ep.endswith("/chat/completions") else [ep]
+
+        for url in urls:
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                method="POST",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self._glm_config['api_key']}",
+                },
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                choices = data.get("choices") or []
+                if not choices:
+                    continue
+                msg_obj = (choices[0].get("message") or {})
+                text = msg_obj.get("content") or ""
+                if not text.strip():
+                    # Thinking model: try reasoning_content
+                    text = msg_obj.get("reasoning_content") or ""
+                text = text.strip()
+                # Strip markdown code fence
+                if text.startswith("```"):
+                    text = text.strip("`")
+                    if text.lower().startswith("json"):
+                        text = text[4:].strip()
+                parsed = json.loads(text)
+                action, is_valid = validate_action(parsed)
+                if is_valid:
+                    logger.info("GLM fallback extracted action: %s", action.get("action_type"))
+                    return action
+                logger.warning("GLM fallback returned invalid action: %s", parsed)
+                return None
+            except Exception as exc:
+                logger.warning("GLM fallback call failed (%s): %s", url, exc)
+                continue
+        return None
 
     # ---- system prompts (per observation mode) ----
 
@@ -62,12 +254,12 @@ class ProxyApiAgent:
         _COMMON_RESPONSE_FORMAT = """{
   "thought": "Brief reasoning about what to do next. Why are you choosing this action? What is your plan?",
   "confidence": 0.7,
-  "action_type": "click" | "type" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
+  "action_type": "click" | "type" | "select_option" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
   ... (other action parameters) ...
 }"""
 
-        _COMMON_SCROLL_AND_NAV = """3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
-   - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
+        _COMMON_SCROLL_AND_NAV = """3. Scroll: {"action_type": "scroll", "scroll_direction": "down"}
+   - "down" reveals content below the current view, "up" reveals content above. Use "up" when the target is above.
 4. Wait: {"action_type": "wait"}
 5. Back: {"action_type": "back"}
    - WARNING: Do NOT use "back" if you are on the first page (homepage). Going back from the first page leads to a blank page (about:blank) and you will be stuck.
@@ -106,6 +298,10 @@ Action Schema:
    - ALWAYS specify element_id to target the correct input field.
    - To submit a search or form, append "\\n" to the text (e.g., "red blanket\\n").
    - Without element_id, text goes to whatever is focused, which is often WRONG.
+2.5. Select Option: {{"action_type": "select_option", "element_id": N, "option_label": "Option Name"}}
+   - Use ONLY for <select> dropdown elements (shown as "combobox" in the Accessibility Tree).
+   - Clicking a combobox does NOT open the dropdown. Use select_option instead.
+   - option_label must match the visible option text exactly (e.g., "Electronics", "Jewelry & Watches").
 {_COMMON_SCROLL_AND_NAV}
 
 {_COMMON_TAB_RULE}
@@ -137,6 +333,10 @@ Action Schema:
 2. Type: {{"action_type": "type", "text": "string", "element_id": N}}
    - ALWAYS specify element_id from SOM_MARKS to target the correct input field.
    - To submit a search or form, append "\\n" to the text (e.g., "red blanket\\n").
+2.5. Select Option: {{"action_type": "select_option", "element_id": N, "option_label": "Option Name"}}
+   - Use ONLY for <select> dropdown elements (shown as "combobox" in the SOM_MARKS list).
+   - Clicking a combobox does NOT open the dropdown. Use select_option instead.
+   - option_label must match the visible option text exactly (e.g., "Electronics", "Jewelry & Watches").
 {_COMMON_SCROLL_AND_NAV}
 
 {_COMMON_TAB_RULE}
@@ -166,6 +366,10 @@ Action Schema:
    - This action automatically clicks the target coordinate to focus it, then types the text.
    - ALWAYS use "type" (not "click") when you want to enter text into an input field.
    - To submit a search or form, append "\\n" to the text.
+2.5. Select Option: {{"action_type": "select_option", "coordinate": [x, y], "option_label": "Option Name"}}
+   - Use ONLY for <select> dropdown visible in the screenshot.
+   - Clicking a dropdown does NOT open it. Use select_option to set the value directly.
+   - option_label must match the visible option text exactly.
 {_COMMON_SCROLL_AND_NAV}
 
 {_COMMON_TAB_RULE}
@@ -323,6 +527,11 @@ Action Schema:
             "temperature": gen_cfg.get("temperature", 0.1),
         }
 
+        if self._use_tool_calling:
+            payload["tools"] = [_WEB_ACTION_TOOL]
+            # Force the model to call web_action — guarantees structured output.
+            payload["tool_choice"] = {"type": "tool", "name": "web_action"}
+
         headers = {
             "X-Api-Key": self.api_key,
             "Content-Type": "application/json",
@@ -349,20 +558,76 @@ Action Schema:
         resp.raise_for_status()
         resp_json = resp.json()
 
-        # Parse response.  content may be a plain string or a list of blocks.
+        # ----- Parse response -----
         raw_content = resp_json.get("content", "")
-        if isinstance(raw_content, str):
-            output_text = raw_content
-        elif isinstance(raw_content, list):
-            output_text = ""
-            for block in raw_content:
-                if isinstance(block, dict) and block.get("type") == "text":
-                    output_text = block.get("text", "")
-                    break
-        else:
-            output_text = str(raw_content)
+        output_text = ""
+        action = None
+        valid = False
+        fail_reason: Optional[str] = None
+        reasoning_text: Optional[str] = None
 
-        action, valid, fail_reason = parse_action_text(output_text)
+        # Path 1: tool_use extraction (when enabled).
+        if self._use_tool_calling and isinstance(raw_content, list):
+            text_parts: List[str] = []
+            tool_input: Optional[Dict[str, Any]] = None
+            for block in raw_content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") == "tool_use" and block.get("name") == "web_action":
+                    tool_input = block.get("input", {})
+                elif block.get("type") == "text":
+                    text_parts.append(block.get("text", ""))
+
+            reasoning_text = "\n".join(text_parts).strip() or None
+
+            if tool_input is not None:
+                # Inject thought from text blocks if not already provided.
+                if not tool_input.get("thought") and reasoning_text:
+                    tool_input["thought"] = reasoning_text[:500]
+                action, valid = validate_action(tool_input)
+                fail_reason = None if valid else "invalid_tool_input"
+                output_text = json.dumps(tool_input, ensure_ascii=False)
+                if valid:
+                    logger.info("Tool-use parsed: %s", action.get("action_type"))
+                else:
+                    logger.warning("Tool-use input invalid, falling back to text parse.")
+                    action = None  # trigger fallback below
+
+        # Path 2: text parsing fallback (original logic).
+        if action is None:
+            if isinstance(raw_content, str):
+                output_text = raw_content
+            elif isinstance(raw_content, list):
+                for block in raw_content:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        output_text = block.get("text", "")
+                        break
+                if not output_text:
+                    output_text = str(raw_content)
+            else:
+                output_text = str(raw_content)
+            action, valid, fail_reason = parse_action_text(output_text)
+
+        # Path 3: GLM extraction fallback — only when parse failed.
+        glm_fallback_used = False
+        glm_fallback_ms = 0.0
+        glm_original_fail_reason: Optional[str] = None
+        if not valid and self._glm_config:
+            glm_original_fail_reason = fail_reason  # remember what failed
+            _t0 = time.monotonic()
+            glm_action = self._call_glm_extract(output_text)
+            glm_fallback_ms = (time.monotonic() - _t0) * 1000
+            if glm_action is not None:
+                action = glm_action
+                valid = True
+                fail_reason = None  # clear so runner doesn't mis-categorize
+                glm_fallback_used = True
+
+        # Convert semantic scroll_direction → delta for environment compatibility.
+        if action.get("action_type") == "scroll" and "scroll_direction" in action:
+            sd = action.pop("scroll_direction")
+            action["delta"] = [0, 0.8] if sd == "down" else [0, -0.8]
+            action.setdefault("coordinate_type", "normalized")
 
         # Auto-append newline for search queries.
         if action.get("action_type") == "type":
@@ -392,8 +657,13 @@ Action Schema:
             "image_payload_bytes": image_payload.get("payload_bytes") if image_payload else None,
             "image_quality": image_payload.get("quality") if image_payload else None,
             "image_compressed": image_payload.get("compressed") if image_payload else None,
-            "reasoning_content": None,
+            "reasoning_content": reasoning_text,
             "enable_thinking": False,
+            "tool_calling": self._use_tool_calling,
+            # GLM fallback tracking (cost NOT in model_cost — scaffold overhead only).
+            "glm_fallback_used": glm_fallback_used,
+            "glm_fallback_latency_ms": glm_fallback_ms if glm_fallback_used else None,
+            "glm_original_fail_reason": glm_original_fail_reason if glm_fallback_used else None,
             # Proxy-specific fields for analysis.
             "proxy_cost": usage.get("cost"),
             "proxy_remaining_quota": metadata.get("remaining_quota"),

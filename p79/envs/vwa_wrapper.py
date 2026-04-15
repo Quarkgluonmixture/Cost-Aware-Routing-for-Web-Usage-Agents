@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
+
+logger = logging.getLogger(__name__)
 import os
 import re
 try:
@@ -47,6 +50,10 @@ class VWAWrapper:
         self.dry_run = dry_run
 
         self._env = None  # lazy init
+        # 保存上一次 obs 的 obs_nodes_info，供 select_option element_id 路径使用
+        self._last_obs_nodes_info: Optional[Dict[str, Any]] = None
+        # 跟踪已注册 dialog 监听器的 page 对象，避免跨 episode 重复注册
+        self._dialog_registered_page: Optional[Any] = None
 
     def _lazy_init(self) -> None:
         if self._env is not None:
@@ -114,7 +121,19 @@ class VWAWrapper:
             self.close()
             raise
 
+        # Auto-accept confirm/alert dialogs (e.g. Classifieds delete operations use
+        # onclick="return confirm(...)" which blocks navigation if not dismissed).
+        # Register once per page object to avoid listener accumulation across episodes.
+        try:
+            page = self._env.page
+            if page is not self._dialog_registered_page:
+                page.on("dialog", self._on_dialog)
+                self._dialog_registered_page = page
+        except Exception as _e:
+            logger.warning("Failed to register dialog handler: %s", _e)
+
         p79_obs = self._to_p79_obs(obs, info)
+        self._last_obs_nodes_info = p79_obs.obs_nodes_info
         return p79_obs, info
 
     def step(self, action_json: Dict[str, Any]) -> Tuple[P79Observation, float, bool, bool, Dict[str, Any]]:
@@ -181,15 +200,19 @@ class VWAWrapper:
                 action = create_mouse_click_action(left=left, top=top)
             else:
                 action = None
-        elif action_type == "scroll" and "delta" in action_json:
-            delta = action_json["delta"]
-            if isinstance(delta, (list, tuple)) and len(delta) >= 2:
-                dy = delta[1]
-            elif isinstance(delta, (list, tuple)) and len(delta) == 1:
-                dy = delta[0]  # single-element delta: treat as dy
+        elif action_type == "scroll" and ("delta" in action_json or "scroll_direction" in action_json):
+            if "scroll_direction" in action_json:
+                # Semantic scroll direction (from tool-calling schema).
+                direction = "down" if action_json["scroll_direction"] == "down" else "up"
             else:
-                dy = delta if isinstance(delta, (int, float)) else 300
-            direction = "down" if dy >= 0 else "up"
+                delta = action_json["delta"]
+                if isinstance(delta, (list, tuple)) and len(delta) >= 2:
+                    dy = delta[1]
+                elif isinstance(delta, (list, tuple)) and len(delta) == 1:
+                    dy = delta[0]  # single-element delta: treat as dy
+                else:
+                    dy = delta if isinstance(delta, (int, float)) else 300
+                direction = "down" if dy >= 0 else "up"
             action = create_scroll_action(direction=direction)
         elif action_type == "type" and "text" in action_json and "element_id" not in action_json:
             # Type without element_id (vision mode): click coordinate first to focus, then keyboard type.
@@ -214,12 +237,18 @@ class VWAWrapper:
                     top * self.viewport_height,
                 )
                 self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
-                # Match DOM/SoM id-based type behavior: select-all + delete before typing
-                # to clear any existing field content.
-                # Use Control+a (not Meta+a): Meta maps to Super on Linux, which
-                # does nothing in Chromium. Control+a works on all platforms.
-                self._env.page.keyboard.press("Control+a")
-                self._env.page.keyboard.press("Backspace")
+                # Select-all + delete to clear existing field content, but ONLY when the
+                # click actually focused an editable element.  Applying Control+a to a
+                # non-input element selects the entire page (blue highlight) and then
+                # Backspace does nothing useful — this was the root cause of the
+                # "full-page blue-select" artifact in Vision mode (task_3 step_7, etc.).
+                is_editable = self._env.page.evaluate(
+                    "() => { const el = document.activeElement; "
+                    "return el != null && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable); }"
+                )
+                if is_editable:
+                    self._env.page.keyboard.press("Control+a")
+                    self._env.page.keyboard.press("Backspace")
             action = create_keyboard_type_action(action_json["text"])
         elif action_type == "type" and "text" in action_json and "element_id" in action_json:
             # Treat invalid/zero element_id as keyboard typing fallback
@@ -251,6 +280,104 @@ class VWAWrapper:
         elif action_type in ("finish", "stop"):
             answer = action_json.get("answer", "")
             action = create_stop_action("" if answer is None else str(answer))
+        elif action_type == "select_option":
+            option_label = str(
+                action_json.get("option_label") or action_json.get("option_value") or ""
+            )
+            option_index = action_json.get("option_index")
+
+            if "element_id" in action_json:
+                # DOM/SoM 路径：用 obs_nodes_info 像素坐标 + elementFromPoint 定位 SELECT
+                try:
+                    eid = int(action_json["element_id"])
+                    # 从上一次 obs 的 obs_nodes_info 拿像素坐标（union_bound: [x, y, w, h]）
+                    node_info = (self._last_obs_nodes_info or {}).get(str(eid))
+                    if node_info and "union_bound" in node_info:
+                        ub = node_info["union_bound"]
+                        x_px = ub[0] + ub[2] / 2
+                        y_px = ub[1] + ub[3] / 2
+                    else:
+                        # obs_nodes_info 缺失时 fallback：用视口中心
+                        logger.warning(
+                            "select_option: obs_nodes_info missing for element_id=%s, using viewport center", eid
+                        )
+                        x_px = self.viewport_width / 2
+                        y_px = self.viewport_height / 2
+                    self._env.page.evaluate(
+                        """([x, y, label, idx]) => {
+                            const el = document.elementFromPoint(x, y);
+                            if (el && el.tagName === 'SELECT') {
+                                if (idx !== null) {
+                                    el.selectedIndex = idx;
+                                } else {
+                                    const opt = Array.from(el.options).find(
+                                        o => o.text.trim() === label || o.value === label);
+                                    if (opt) { el.value = opt.value; }
+                                }
+                                el.dispatchEvent(new Event('change', {bubbles: true}));
+                            }
+                        }""",
+                        [x_px, y_px, option_label, option_index],
+                    )
+                    self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
+                except Exception as _e:
+                    logger.warning("select_option (element_id=%s) failed: %s", action_json.get("element_id"), _e)
+            elif "coordinate" in action_json:
+                # Vision 路径：通过坐标找元素，用 JS 设置选中值
+                try:
+                    coord = action_json["coordinate"]
+                    x_norm, y_norm = float(coord[0]), float(coord[1])
+                    x_px = x_norm * self.viewport_width if x_norm <= 1.0 else x_norm
+                    y_px = y_norm * self.viewport_height if y_norm <= 1.0 else y_norm
+                    self._env.page.evaluate(
+                        """([x, y, label]) => {
+                            // 1. Native <select> path
+                            const el = document.elementFromPoint(x, y);
+                            if (el && el.tagName === 'SELECT') {
+                                const opt = Array.from(el.options).find(
+                                    o => o.text.trim() === label || o.value === label);
+                                if (opt) {
+                                    el.value = opt.value;
+                                    el.dispatchEvent(new Event('change', {bubbles: true}));
+                                }
+                                return;
+                            }
+                            // 2. CSS custom dropdown fallback: scan hidden <ul>s near (x, y)
+                            for (const ul of document.querySelectorAll('ul')) {
+                                const rect = ul.getBoundingClientRect();
+                                if (rect.width > 0 || rect.height > 0) continue;
+                                let trigger = ul.parentElement;
+                                while (trigger && trigger !== document.body) {
+                                    const tr = trigger.getBoundingClientRect();
+                                    if (tr.width > 0 && tr.height > 0) break;
+                                    trigger = trigger.parentElement;
+                                }
+                                if (!trigger) continue;
+                                const tr = trigger.getBoundingClientRect();
+                                const cx = tr.left + tr.width / 2;
+                                const cy = tr.top + tr.height / 2;
+                                if (Math.sqrt((cx - x) * (cx - x) + (cy - y) * (cy - y)) > 150) continue;
+                                const items = Array.from(
+                                    ul.querySelectorAll(':scope > li > a, :scope > li > button'));
+                                const opt = items.find(i => i.textContent.trim() === label);
+                                if (opt) {
+                                    const oldDisplay = ul.style.display;
+                                    const oldVisibility = ul.style.visibility;
+                                    ul.style.display = 'block';
+                                    ul.style.visibility = 'visible';
+                                    opt.click();
+                                    ul.style.display = oldDisplay;
+                                    ul.style.visibility = oldVisibility;
+                                    return;
+                                }
+                            }
+                        }""",
+                        [x_px, y_px, option_label],
+                    )
+                    self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
+                except Exception as _e:
+                    logger.warning("select_option (coordinate) failed: %s", _e)
+            action = create_none_action()
         elif action_type == "wait":
             action = create_none_action()
 
@@ -287,6 +414,7 @@ class VWAWrapper:
             terminated = True
         info["raw_action"] = action  # Expose the raw VWA action for trajectory recording
         p79_obs = self._to_p79_obs(obs, info)
+        self._last_obs_nodes_info = p79_obs.obs_nodes_info
         return p79_obs, float(reward), bool(terminated), bool(truncated), info
 
     def navigate_to(self, url: str) -> Tuple[P79Observation, float, bool, bool, Dict[str, Any]]:
@@ -297,9 +425,11 @@ class VWAWrapper:
         action = create_playwright_action(f'page.goto("{url}")')
         obs, reward, terminated, truncated, info = self._env.step(action)
         p79_obs = self._to_p79_obs(obs, info)
+        self._last_obs_nodes_info = p79_obs.obs_nodes_info
         return p79_obs, float(reward), bool(terminated), bool(truncated), info
 
     def close(self) -> None:
+        self._dialog_registered_page = None
         if self._env is not None:
             env = self._env
             self._env = None  # clear first to prevent re-entry
@@ -321,10 +451,72 @@ class VWAWrapper:
                     except Exception:
                         pass
 
+    # ---------- form snapshot ----------
+
+    _FORM_SNAPSHOT_JS = """() => {
+    const fields = [];
+    for (const el of document.querySelectorAll('input, textarea, select')) {
+        const entry = {
+            tag: el.tagName.toLowerCase(),
+            type: (el.type || '').toLowerCase(),
+            name: el.name || el.id || '',
+            idx: Array.from(el.parentElement?.children || []).indexOf(el),
+        };
+        if (el.tagName === 'SELECT') {
+            entry.selectedIndex = el.selectedIndex;
+            entry.selectedText = (el.options[el.selectedIndex]?.text || '').trim();
+            entry.value = el.value;
+        } else if (el.type === 'checkbox' || el.type === 'radio') {
+            entry.checked = el.checked;
+            entry.value = el.value;
+        } else {
+            entry.value = (el.value || '').substring(0, 200);
+        }
+        fields.push(entry);
+    }
+    const se = document.scrollingElement || document.body;
+    return {
+        fields: fields,
+        scroll_y: Math.round(se.scrollTop),
+        scroll_x: Math.round(se.scrollLeft),
+        scroll_height: se.scrollHeight,
+        client_height: window.innerHeight,
+    };
+}"""
+
+    def snapshot_form_fields(self) -> Dict[str, Any]:
+        """JS snapshot of all form field values + scroll position."""
+        empty: Dict[str, Any] = {"fields": [], "scroll_y": 0, "scroll_x": 0, "scroll_height": 0, "client_height": 0}
+        if self._env is None or self.dry_run:
+            return empty
+        try:
+            return self._env.page.evaluate(self._FORM_SNAPSHOT_JS)
+        except Exception:
+            return empty
+
     # ---------- helpers ----------
+
+    def _on_dialog(self, dialog: Any) -> None:
+        """Auto-handle browser dialogs.
+
+        - confirm / alert: accept (unblocks delete operations on Classifieds)
+        - prompt / beforeunload: dismiss (safer default)
+        """
+        try:
+            if dialog.type in ("confirm", "alert"):
+                dialog.accept()
+                logger.debug("Dialog auto-accepted: type=%s msg=%r", dialog.type, dialog.message)
+            else:
+                dialog.dismiss()
+                logger.debug("Dialog dismissed: type=%s msg=%r", dialog.type, dialog.message)
+        except Exception as _e:
+            logger.warning("Dialog handler error: %s", _e)
 
     def _json_to_id_action_str(self, a: Dict[str, Any]) -> str:
         t = (a.get("action_type") or "").lower().strip()
+
+        if t == "select_option":
+            return "wait"   # 由 step() 直接处理，不经过此路径
 
         if t == "click":
             eid = a.get("element_id")
@@ -400,4 +592,179 @@ class VWAWrapper:
         except Exception:
             pass
 
+        # Inject select options into AXTree text.
+        # VWA's AXTree shows combobox as "[N] combobox '' ... expanded: False" with no children.
+        # We query the live page for all <select> elements and append their options after each
+        # matching combobox line, so the agent can infer the correct option_label.
+        if text and self._env is not None:
+            try:
+                text = self._inject_select_options(text, obs_nodes_info)
+            except Exception as _e:
+                logger.warning("select options injection failed: %s", _e)
+            try:
+                text = self._inject_css_dropdown_options(text, obs_nodes_info)
+            except Exception as _e:
+                logger.warning("css dropdown options injection failed: %s", _e)
+
         return P79Observation(text=text, image=image, url=url, raw=obs, obs_nodes_info=obs_nodes_info)
+
+    def _inject_css_dropdown_options(self, axtree: str, obs_nodes_info: Optional[Dict[str, Any]]) -> str:
+        """Inject [DROPDOWN OPTIONS] annotations for CSS/JS custom dropdowns (non-native <select>).
+
+        Covers patterns like:
+          - classifieds "Sort by": <span class="see_by"> + plain <ul><li><a>
+          - reddit sort: <button class="dropdown__toggle"> + <ul class="dropdown__menu">
+
+        Finds hidden ULs (getBoundingClientRect returns 0) with >=2 <li><a> items,
+        locates the nearest visible ancestor as the "trigger", then injects [DROPDOWN OPTIONS]
+        after the closest AXTree node to that trigger.
+        """
+        if not obs_nodes_info:
+            return axtree
+
+        try:
+            dropdown_data = self._env.page.evaluate("""() => {
+                const results = [];
+                const seen = new Set();
+                for (const ul of document.querySelectorAll('ul')) {
+                    if (seen.has(ul)) continue;
+                    seen.add(ul);
+                    // Hidden ULs: zero bounding box
+                    const ulRect = ul.getBoundingClientRect();
+                    if (ulRect.width > 0 || ulRect.height > 0) continue;
+                    // Must have 2-20 direct LI > A/BUTTON items (menu-like)
+                    const items = Array.from(ul.querySelectorAll(':scope > li > a, :scope > li > button'))
+                        .map(el => el.textContent.trim())
+                        .filter(t => t.length > 0 && t.length < 100);
+                    if (items.length < 2 || items.length > 20) continue;
+                    // Find nearest visible ancestor (non-zero bounding box)
+                    let trigger = null;
+                    let el = ul.parentElement;
+                    while (el && el !== document.body) {
+                        const r = el.getBoundingClientRect();
+                        if (r.width > 0 && r.height > 0 &&
+                            r.top < window.innerHeight && r.bottom > 0) {
+                            trigger = el;
+                            break;
+                        }
+                        el = el.parentElement;
+                    }
+                    if (!trigger) continue;
+                    const r = trigger.getBoundingClientRect();
+                    results.push({
+                        cx: r.left + r.width / 2,
+                        cy: r.top + r.height / 2,
+                        options: items
+                    });
+                }
+                return results;
+            }""")
+        except Exception:
+            return axtree
+
+        if not dropdown_data:
+            return axtree
+
+        # Build node center lookup from obs_nodes_info
+        node_centers: dict = {}
+        for eid, node in obs_nodes_info.items():
+            ub = node.get('union_bound')
+            if ub:
+                node_centers[eid] = (ub[0] + ub[2] / 2, ub[1] + ub[3] / 2)
+
+        if not node_centers:
+            return axtree
+
+        # For each dropdown trigger, find nearest AXTree node (any type)
+        injections: dict = {}  # eid -> list[str]
+        for dd in dropdown_data:
+            best_eid = min(
+                node_centers,
+                key=lambda e: (node_centers[e][0] - dd['cx']) ** 2 + (node_centers[e][1] - dd['cy']) ** 2,
+            )
+            cx, cy = node_centers[best_eid]
+            dist = ((cx - dd['cx']) ** 2 + (cy - dd['cy']) ** 2) ** 0.5
+            if dist > 150:  # sanity: within 150px
+                continue
+            injections[best_eid] = dd['options']
+
+        if not injections:
+            return axtree
+
+        lines = axtree.splitlines()
+        out = []
+        for line in lines:
+            out.append(line)
+            m = re.search(r'\[(\d+)\]', line)
+            if m and m.group(1) in injections:
+                opts = injections[m.group(1)]
+                indent = len(line) - len(line.lstrip('\t'))
+                prefix = '\t' * (indent + 1)
+                opts_str = ', '.join(f'"{o}"' for o in opts)
+                out.append(f"{prefix}[DROPDOWN OPTIONS] {opts_str}")
+        return '\n'.join(out)
+
+    def _inject_select_options(self, axtree: str, obs_nodes_info: Optional[Dict[str, Any]]) -> str:
+        """Append available options after each combobox line in the AXTree text.
+
+        Matches each combobox element_id to a live <select> element via pixel coordinates
+        from obs_nodes_info, then inserts an [OPTIONS] annotation immediately after the
+        combobox line so the agent can use the correct option_label.
+        """
+        if not obs_nodes_info:
+            return axtree
+
+        # Collect all <select> elements on page with their bounding boxes, options, and selected value
+        try:
+            select_data = self._env.page.evaluate("""() => {
+                return Array.from(document.querySelectorAll('select')).map(el => {
+                    const r = el.getBoundingClientRect();
+                    const selectedOpt = el.options[el.selectedIndex];
+                    return {
+                        cx: r.left + r.width / 2,
+                        cy: r.top + r.height / 2,
+                        options: Array.from(el.options)
+                                      .filter(o => o.value !== '')
+                                      .map(o => o.text.trim()),
+                        selected: (selectedOpt && selectedOpt.value !== '')
+                                  ? selectedOpt.text.trim() : null
+                    };
+                });
+            }""")
+        except Exception:
+            return axtree
+
+        if not select_data:
+            return axtree
+
+        lines = axtree.splitlines()
+        out = []
+        for line in lines:
+            out.append(line)
+            # Only process combobox lines that have an element id
+            if 'combobox' not in line.lower():
+                continue
+            m = re.search(r'\[(\d+)\]', line)
+            if not m:
+                continue
+            eid = m.group(1)
+            node = obs_nodes_info.get(eid)
+            if not node or 'union_bound' not in node:
+                continue
+            ub = node['union_bound']
+            cx = ub[0] + ub[2] / 2
+            cy = ub[1] + ub[3] / 2
+            # Find the <select> whose center is closest to this combobox node
+            best = min(select_data, key=lambda s: (s['cx'] - cx) ** 2 + (s['cy'] - cy) ** 2)
+            dist = ((best['cx'] - cx) ** 2 + (best['cy'] - cy) ** 2) ** 0.5
+            if dist > 100 or not best['options']:  # sanity: within 100px
+                continue
+            indent = len(line) - len(line.lstrip('\t'))
+            prefix = '\t' * (indent + 1)
+            opts_str = ', '.join(f'"{o}"' for o in best['options'])
+            selected = best.get('selected')
+            if selected:
+                out.append(f"{prefix}[OPTIONS: currently selected=\"{selected}\"] {opts_str}")
+            else:
+                out.append(f"{prefix}[OPTIONS] {opts_str}")
+        return '\n'.join(out)

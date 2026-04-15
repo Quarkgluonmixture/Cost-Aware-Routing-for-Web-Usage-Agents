@@ -113,6 +113,23 @@ Vision 模式使用归一化坐标 `[x, y] ∈ [0,1]` 点击，但 Qwen3-VL-4B �
 
 Agent 识别了正确的目标，但生成的坐标偏移了目标元素的可点击区域。**失败后不会调整坐标**——连续 3-4 步重复几乎相同的坐标，形成死循环。
 
+**(c) 系统性坐标偏移：task 100/101/102（Art+crafts → Books）**
+
+三个独立 episode（同一任务模板，不同 seed）呈现完全一致的坐标偏移：
+
+| Task | Thought | 目标分类 | 实际点击坐标 | 实际落点 |
+|------|---------|---------|------------|---------|
+| 100 | "navigate to Art+crafts" | Arts + crafts | [0.37, 0.15] | Books (sCategory=9) |
+| 101 | "navigate to Art+crafts" | Arts + crafts | [0.37, 0.15] | Books (sCategory=9) |
+| 102 | "navigate to Art+crafts" | Arts + crafts | [0.37, 0.15] | Books (sCategory=9) |
+
+- **Thought 层正确**（知道要去 Art+crafts）
+- **Action type 正确**（click）
+- **Argument（坐标）固定偏移**，三次完全一致 → 偏差发生在 argument generation 层（非线性）
+- **零自纠正**：back → click 相同坐标，循环 3 次不调整
+
+DOM 模式通过 element_id 精确命中，无此问题——UI 元素本身没有错。这是 §19 "argument generation non-linearity"（知道要做什么，但生成的参数始终错）的坐标参数版本。三 seed 一致性排除了随机性，确认为系统性偏移。
+
 **(b) 坐标格式混乱（混合归一化/像素值）**
 
 | Task | Step | 坐标 | 格式问题 |
