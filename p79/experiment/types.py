@@ -125,6 +125,7 @@ class EpisodeSummaryV2:
     component_breakdown: Optional[Dict[str, float]] = None
     total_input_cost_usd: float = 0.0
     total_output_cost_usd: float = 0.0
+    total_obs_prepare_cost_usd: float = 0.0
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)

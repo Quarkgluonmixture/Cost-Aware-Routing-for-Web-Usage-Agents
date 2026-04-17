@@ -11,7 +11,7 @@
 #   bash scripts/dgx/run_b0_3mode_classifieds.sh
 #   B0_RUN_ID=B0_3mode_classifieds_20260413 bash scripts/dgx/run_b0_3mode_classifieds.sh
 #
-# Gallery: http://localhost:8765/B0_3mode/gallery.html
+# Gallery: http://localhost:8765/visualwebarena/phase1/B0_3mode/gallery.html
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -81,7 +81,8 @@ LOG_DIR="${REPO_DIR}/logs"
 RESULTS_BASE="${REPO_DIR}/results/visualwebarena/phase1"
 mkdir -p "${LOG_DIR}"
 
-NTFY_TOPIC="${NTFY_TOPIC:-p79-exp-dgx-spark}"
+# export for runner.py retry-pass notification
+export NTFY_TOPIC="${NTFY_TOPIC:-p79-exp-dgx-spark}"
 NTFY_URL="https://ntfy.sh/${NTFY_TOPIC}"
 NTFY_MINIMAL_MODE="${NTFY_MINIMAL_MODE:-1}"
 WATCHDOG_ENABLE="${WATCHDOG_ENABLE:-1}"
@@ -171,7 +172,7 @@ GALLERY_PID=""
 if ! ss -tlnp 2>/dev/null | grep -q ':8765 '; then
   log "[b0_3mode] 启动 Gallery 服务器 port=8765"
   nohup "${PYTHON_BIN}" -m http.server 8765 \
-    --directory "${RESULTS_BASE}" \
+    --directory "${REPO_DIR}/results" \
     > "${LOG_DIR}/gallery_server_8765.log" 2>&1 < /dev/null &
   GALLERY_PID=$!
   sleep 1
@@ -413,6 +414,6 @@ run_reason_diagnostics
 
 log "========================================================"
 log "=== B0 三模式 classifieds 全部完成！==="
-log "=== Gallery: http://localhost:8765/${AGGREGATE_PREFIX}/gallery.html ==="
+log "=== Gallery: http://localhost:8765/visualwebarena/phase1/${AGGREGATE_PREFIX}/gallery.html ==="
 log "========================================================"
 ntfy_send "P79 [B0_3mode] 完成!" "run_id=${RUN_ID}；dom+som+vision 全部跑完" "high"

@@ -202,6 +202,7 @@ def create_environment(env_cfg: Dict[str, Any]):
         viewport_height=int(env_cfg.get("viewport_height", 720)),
         sleep_after_execution=float(env_cfg.get("sleep_after_execution", 0.5)),
         dry_run=bool(env_cfg.get("dry_run", False)),
+        benchmark=str(env_cfg.get("benchmark", "visualwebarena")),
     )
 
 

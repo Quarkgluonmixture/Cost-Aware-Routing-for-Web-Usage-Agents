@@ -317,8 +317,17 @@ def build_task_pivot(reason_df: pd.DataFrame, cond_metas: Dict[str, Dict]) -> pd
 # ---------------------------------------------------------------------------
 
 
+def _infer_benchmark(run_dir: Optional[Path]) -> str:
+    """Infer benchmark from run_dir path (e.g. results/webarena/... -> 'webarena')."""
+    if run_dir is not None:
+        for part in run_dir.parts:
+            if part == "webarena":
+                return "webarena"
+    return "visualwebarena"
+
+
 def _mark_false_positives(
-    pivot: pd.DataFrame, modes: List[str],
+    pivot: pd.DataFrame, modes: List[str], *, run_dir: Optional[Path] = None,
 ) -> pd.DataFrame:
     """Add is_visual_task + is_na_task + {mode}_visual_fp + {mode}_na_fp + {mode}_success_adj columns.
 
@@ -328,13 +337,19 @@ def _mark_false_positives(
     from p79.experiment.analysis import _load_visual_task_ids, _load_has_image_task_ids, _load_na_task_ids
 
     # 1. Detect visual tasks per site
+    # Infer benchmark: pivot column > run_dir path > default VWA
+    _bm = "visualwebarena"
+    if "benchmark" in pivot.columns and not pivot.empty:
+        _bm = str(pivot["benchmark"].iloc[0])
+    elif run_dir is not None:
+        _bm = _infer_benchmark(run_dir)
     visual_ids_by_site: Dict[str, set] = {}
     has_image_ids_by_site: Dict[str, set] = {}
     na_ids_by_site: Dict[str, set] = {}
     for site in pivot["site"].unique():
-        visual_ids_by_site[site] = _load_visual_task_ids(str(site))
-        has_image_ids_by_site[site] = _load_has_image_task_ids(str(site))
-        na_ids_by_site[site] = _load_na_task_ids(str(site))
+        visual_ids_by_site[site] = _load_visual_task_ids(str(site), _bm)
+        has_image_ids_by_site[site] = _load_has_image_task_ids(str(site), _bm)
+        na_ids_by_site[site] = _load_na_task_ids(str(site), _bm)
 
     pivot["is_visual_task"] = pivot.apply(
         lambda r: int(r["task_id"]) in visual_ids_by_site.get(r["site"], set()),
@@ -1534,6 +1549,7 @@ def main():
         a2_summary = _run_site_analysis(
             site_reason_df, cond_metas, site_ep_summaries, site_task_configs,
             dirs, args.priority, run_p1, run_p2, args.skip_plots,
+            run_dir=run_dir,
         )
         all_site_summaries[site] = a2_summary
 
@@ -1572,6 +1588,8 @@ def _run_site_analysis(
     run_p1: bool,
     run_p2: bool,
     skip_plots: bool,
+    *,
+    run_dir: Optional[Path] = None,
 ) -> Dict:
     """Run all analyses for a single site. Returns A2 summary dict."""
 
@@ -1590,7 +1608,7 @@ def _run_site_analysis(
     cond_mode = _condition_to_mode(cond_metas, reason_df)
 
     # --- False-positive detection (visual + N/A) ---
-    pivot, visual_fp_count, na_fp_count = _mark_false_positives(pivot, modes)
+    pivot, visual_fp_count, na_fp_count = _mark_false_positives(pivot, modes, run_dir=run_dir)
 
     # --- P0: Core ---
     print("  --- P0: Core cross-comparison ---")

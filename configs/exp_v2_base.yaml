@@ -52,20 +52,22 @@ router:
     enabled: false
     stalled_steps_trigger: 2
     failed_item_trigger: true
-  # Router overhead: GPU amortized cost per ms (~$0.11e-6/ms for RTX 4090)
-  overhead_cost_per_ms: 0.00000011
-  # Extra model call cost: average cost of one local 4B inference (~$0.002)
-  extra_model_call_cost_usd: 0.002
+  # Router overhead: GPU amortized cost per ms
+  # DGX Spark GB10: $4,699 / 3yr + 140W × $0.12/kWh ≈ $0.20/hr → 5.6e-8 $/ms
+  overhead_cost_per_ms: 0.000000056
+  # Extra model call cost: average cost of one local 4B inference (~$0.001)
+  extra_model_call_cost_usd: 0.001
   # Retry cost: one env step + heuristic action (~$0.0005)
   retry_cost_usd: 0.0005
 
 metrics:
   cost:
     # Local 4B model: estimated from GPU-hour amortization
-    # RTX 4090 ~$0.40/hr, ~60 tok/s → ~$0.0018/1k tokens
+    # DGX Spark GB10 ~$0.20/hr, ~60 tok/s → ~$0.00093/1k tokens
+    # Output 2x (decode bound) → ~$0.00185/1k tokens
     # Adjust per actual hardware; set to 0.0 to disable monetary cost tracking
-    input_cost_per_1k: 0.0018
-    output_cost_per_1k: 0.0036
+    input_cost_per_1k: 0.00093
+    output_cost_per_1k: 0.00185
   cost_api:
     # Qwen3-VL-235B-A22B pricing (per 1k tokens, USD, confirmed 2026-04)
     input_cost_per_1k: 0.001
@@ -112,6 +114,11 @@ backends:
     max_image_payload_bytes: 5242880
     dom_mode: "llm"
     mock_mode: false
+    # Plan A: tool_use — disabled (proxy does not forward tools/tool_choice to Bedrock)
+    use_tool_calling: false
+    # Plan B: GLM-5.1 fallback for parse_error recovery (§67)
+    use_glm_fallback: true
+    glm_config: ".auth/glm"
 
 baselines:
   run_b0: false

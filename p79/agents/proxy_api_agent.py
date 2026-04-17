@@ -1,8 +1,10 @@
 """ProxyApiAgent — calls a custom proxy API (Anthropic Messages style)."""
 
+import base64
 import json
 import logging
 import os
+import re
 import time
 import urllib.request
 from pathlib import Path
@@ -107,16 +109,36 @@ class ProxyApiAgent:
         self.config = config
         model_cfg = config.get("model", {})
         self.model_name = model_cfg.get("api_name", "qwen.qwen3-vl-235b-a22b")
+
+        # API format: "anthropic" (proxy default) or "openai" (DashScope, etc.)
+        self._api_format = model_cfg.get("api_format", "anthropic")
+        # Image format in messages: "openai" (image_url) or "anthropic_native" (source base64).
+        # Auto-detect from model name if not set explicitly.
+        self._image_format = model_cfg.get("image_format", "auto")
+        if self._image_format == "auto":
+            if "anthropic" in self.model_name.lower() or "claude" in self.model_name.lower():
+                self._image_format = "anthropic_native"
+            else:
+                self._image_format = "openai"
+
         self.endpoint = model_cfg.get("base_url") or os.getenv("PROXY_API_ENDPOINT", "")
         if not self.endpoint:
             raise RuntimeError(
                 "Proxy API endpoint not set. "
                 "Set model.base_url in config or PROXY_API_ENDPOINT env var."
             )
+        # OpenAI format: ensure endpoint ends with /chat/completions
+        if self._api_format == "openai":
+            ep = self.endpoint.rstrip("/")
+            if not ep.endswith("/chat/completions"):
+                self.endpoint = ep + "/chat/completions"
+            else:
+                self.endpoint = ep
 
-        self.api_key = os.getenv("PROXY_API_KEY") or ""
+        api_key_env = model_cfg.get("api_key_env", "PROXY_API_KEY")
+        self.api_key = os.getenv(api_key_env) or ""
         if not self.api_key:
-            raise RuntimeError("PROXY_API_KEY environment variable is not set")
+            raise RuntimeError(f"{api_key_env} environment variable is not set")
 
         self.timeout = model_cfg.get("timeout", _DEFAULT_TIMEOUT)
         self._use_tool_calling = model_cfg.get("use_tool_calling", False)
@@ -190,7 +212,9 @@ class ProxyApiAgent:
             "model": self._glm_config["model"],
             "messages": messages,
             "temperature": 0.0,
-            "max_tokens": 512,
+            # GLM-5.1 is a thinking model: reasoning_content consumes most of the
+            # token budget.  512 causes content truncation for complex outputs.
+            "max_tokens": 2048,
         }).encode("utf-8")
 
         ep = self._glm_config["endpoint"].rstrip("/")
@@ -207,11 +231,13 @@ class ProxyApiAgent:
                 },
             )
             try:
-                with urllib.request.urlopen(req, timeout=30) as resp:
+                with urllib.request.urlopen(req, timeout=60) as resp:
                     data = json.loads(resp.read().decode("utf-8"))
                 choices = data.get("choices") or []
                 if not choices:
                     continue
+                import re as _re
+
                 msg_obj = (choices[0].get("message") or {})
                 text = msg_obj.get("content") or ""
                 if not text.strip():
@@ -223,7 +249,16 @@ class ProxyApiAgent:
                     text = text.strip("`")
                     if text.lower().startswith("json"):
                         text = text[4:].strip()
-                parsed = json.loads(text)
+                try:
+                    parsed = json.loads(text)
+                except json.JSONDecodeError:
+                    # Thinking model may embed JSON inside reasoning prose;
+                    # try regex extraction as last resort.
+                    m = _re.search(r"\{[^{}]*\"action_type\"[^{}]*\}", text)
+                    if m:
+                        parsed = json.loads(m.group())
+                    else:
+                        raise
                 action, is_valid = validate_action(parsed)
                 if is_valid:
                     logger.info("GLM fallback extracted action: %s", action.get("action_type"))
@@ -517,6 +552,10 @@ Action Schema:
                 logger.warning("Failed to encode image; continuing without image.", exc_info=True)
                 image_payload = None
 
+        # Convert image blocks for Claude/Anthropic native format if needed.
+        if self._image_format == "anthropic_native":
+            user_content = self._convert_images_to_anthropic(user_content)
+
         messages = [{"role": "user", "content": user_content}]
 
         gen_cfg = self.config.get("model", {})
@@ -532,10 +571,16 @@ Action Schema:
             # Force the model to call web_action — guarantees structured output.
             payload["tool_choice"] = {"type": "tool", "name": "web_action"}
 
-        headers = {
-            "X-Api-Key": self.api_key,
-            "Content-Type": "application/json",
-        }
+        if self._api_format == "openai":
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
+        else:
+            headers = {
+                "X-Api-Key": self.api_key,
+                "Content-Type": "application/json",
+            }
 
         _retryable_codes = {429, 500, 502, 503, 504}
         _max_retries = 3
@@ -559,12 +604,20 @@ Action Schema:
         resp_json = resp.json()
 
         # ----- Parse response -----
-        raw_content = resp_json.get("content", "")
+        # Normalize response: OpenAI format → extract from choices[0].message
+        if self._api_format == "openai" and "choices" in resp_json:
+            msg = resp_json["choices"][0].get("message", {})
+            raw_content = msg.get("content", "")
+            reasoning_text_openai = msg.get("reasoning_content") or None
+        else:
+            raw_content = resp_json.get("content", "")
+            reasoning_text_openai = None
+
         output_text = ""
         action = None
         valid = False
         fail_reason: Optional[str] = None
-        reasoning_text: Optional[str] = None
+        reasoning_text: Optional[str] = reasoning_text_openai
 
         # Path 1: tool_use extraction (when enabled).
         if self._use_tool_calling and isinstance(raw_content, list):
@@ -670,6 +723,33 @@ Action Schema:
         }
 
         return action, meta
+
+    @staticmethod
+    def _convert_images_to_anthropic(content: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Convert OpenAI image_url blocks to Anthropic native image blocks.
+
+        OpenAI:    {type: "image_url", image_url: {url: "data:image/jpeg;base64,..."}}
+        Anthropic: {type: "image", source: {type: "base64", media_type: "image/jpeg", data: "..."}}
+        """
+        converted = []
+        for block in content:
+            if isinstance(block, dict) and block.get("type") == "image_url":
+                data_url = block.get("image_url", {}).get("url", "")
+                m = re.match(r"data:(image/\w+);base64,(.+)", data_url, re.DOTALL)
+                if m:
+                    converted.append({
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": m.group(1),
+                            "data": m.group(2),
+                        },
+                    })
+                else:
+                    logger.warning("Cannot convert image_url to anthropic format; skipping.")
+            else:
+                converted.append(block)
+        return converted
 
     def _image_to_data_url(self, image: Image.Image) -> Dict[str, Any]:
         max_payload = self.config.get("agent", {}).get(

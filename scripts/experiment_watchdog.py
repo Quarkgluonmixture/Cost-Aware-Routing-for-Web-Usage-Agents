@@ -81,8 +81,10 @@ def _post_ntfy(topic: str, title: str, body: str, priority: str = "default") -> 
     try:
         with urllib.request.urlopen(req, timeout=15):
             pass
-    except urllib.error.URLError:
-        pass
+    except urllib.error.HTTPError as e:
+        print(f"[watchdog][NTFY] HTTP {e.code} {e.reason} — notification dropped: {title}")
+    except urllib.error.URLError as e:
+        print(f"[watchdog][NTFY] URLError: {e.reason} — notification dropped: {title}")
 
 
 def _normalize_ref_urls(ref_url: Any) -> List[str]:
@@ -118,7 +120,7 @@ def _get_observation_mode(condition_dir: Path, cache: Dict[str, str]) -> str:
     return mode
 
 
-def _auto_refresh_auth(site: str) -> bool:
+def _auto_refresh_auth(site: str, *, benchmark: str = "") -> bool:
     """Re-login to site and refresh .auth/{site}_state.json using Playwright.
 
     Credentials and URLs are sourced from environment (CLASSIFIEDS/REDDIT/SHOPPING)
@@ -126,19 +128,22 @@ def _auto_refresh_auth(site: str) -> bool:
     """
     import os as _os
     _ACCOUNTS = {
-        "classifieds": ("blake.sullivan@gmail.com", "Password.123"),
-        "reddit":      ("MarvelsGrantMan136",         "test1234"),
-        "shopping":    ("emma.lopez@gmail.com",        "Password.123"),
+        "classifieds":    ("blake.sullivan@gmail.com", "Password.123"),
+        "reddit":         ("MarvelsGrantMan136",         "test1234"),
+        "shopping":       ("emma.lopez@gmail.com",        "Password.123"),
+        "shopping_admin": ("admin",                       "admin1234"),
     }
     _BASE_URLS = {
-        "classifieds": _os.environ.get("CLASSIFIEDS", "http://100.95.81.103:9980"),
-        "reddit":      _os.environ.get("REDDIT",      "http://100.95.81.103:9999"),
-        "shopping":    _os.environ.get("SHOPPING",    "http://100.95.81.103:7770"),
+        "classifieds":    _os.environ.get("CLASSIFIEDS",    "http://100.95.81.103:9980"),
+        "reddit":         _os.environ.get("REDDIT",         "http://100.95.81.103:9999"),
+        "shopping":       _os.environ.get("SHOPPING",       "http://100.95.81.103:7770"),
+        "shopping_admin": _os.environ.get("SHOPPING_ADMIN", "http://100.95.81.103:7780"),
     }
     _LOGIN_PATHS = {
-        "classifieds": "/index.php?page=login",
-        "reddit":      "/login",
-        "shopping":    "/customer/account/login/",
+        "classifieds":    "/index.php?page=login",
+        "reddit":         "/login",
+        "shopping":       "/customer/account/login/",
+        "shopping_admin": "/admin",
     }
     if site not in _ACCOUNTS:
         print(f"[watchdog][SESSION] auto-refresh: unknown site {site!r}")
@@ -172,12 +177,21 @@ elif site == 'shopping':
     page.get_by_label('Email', exact=True).fill({username!r})
     page.get_by_label('Password', exact=True).fill({password!r})
     page.get_by_role('button', name='Sign In').click()
+elif site == 'shopping_admin':
+    page.locator('#username').fill({username!r})
+    page.locator('#login').fill({password!r})
+    page.get_by_role('button', name='Sign in').click()
 time.sleep(2)
 ctx.storage_state(path={str(auth_file)!r})
 cm.__exit__(None, None, None)
 print('ok ->', page.url)
 """
-    env = {**_os.environ, "DATASET": "visualwebarena"}
+    # Infer dataset: explicit benchmark > shopping_admin heuristic > default VWA
+    if benchmark == "webarena" or site == "shopping_admin":
+        dataset = "webarena"
+    else:
+        dataset = "visualwebarena"
+    env = {**_os.environ, "DATASET": dataset}
     try:
         r = subprocess.run(
             [sys.executable, "-c", script],
@@ -645,6 +659,44 @@ def _regenerate_aggregate_gallery(phase_dir: Path, prefix: str = "B1_3mode") -> 
     except Exception as exc:
         print(f"[watchdog][GALLERY] aggregate error: {exc}")
 
+    # Also refresh combined (cross-benchmark) gallery if both VWA and WA dirs exist
+    _regenerate_combined_gallery(phase_dir, prefix)
+
+
+def _regenerate_combined_gallery(phase_dir: Path, prefix: str) -> None:
+    """Refresh the combined VWA+WA gallery (best-effort, silent).
+
+    Infers the counterpart benchmark dir and generates a combined gallery
+    under results/<prefix>_gallery/.
+    """
+    try:
+        results_root = phase_dir.parent.parent  # results/
+        phase_name = phase_dir.name  # phase1
+        vwa_phase = results_root / "visualwebarena" / phase_name
+        wa_phase = results_root / "webarena" / phase_name
+        phase_dirs = [str(d) for d in (vwa_phase, wa_phase) if d.is_dir()]
+        if not phase_dirs:
+            return  # No benchmark dirs found
+
+        # Derive combined prefix: B1_wa_3mode -> B1_3mode, B0_wa_3mode -> B0_3mode
+        combined_prefix = prefix.replace("_wa_", "_") if "_wa_" in prefix else prefix
+        output_dir = results_root / combined_prefix
+
+        cmd = [
+            sys.executable,
+            str(Path(__file__).resolve().parent / "generate_gallery.py"),
+            "--phase-dirs", *phase_dirs,
+            "--prefix", combined_prefix,
+            "--output-dir", str(output_dir),
+        ]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+        if r.returncode == 0:
+            print(f"[watchdog][GALLERY] combined refreshed: {output_dir / 'gallery.html'}")
+        else:
+            print(f"[watchdog][GALLERY] combined failed: {r.stderr[-200:]}")
+    except Exception as exc:
+        print(f"[watchdog][GALLERY] combined error: {exc}")
+
 
 def _save_state(
     path: Optional[Path],
@@ -1051,7 +1103,8 @@ def main() -> int:
                     if streak >= _SESSION_ALERT_THRESHOLD and not session_auto_refresh_attempted[site]:
                         session_auto_refresh_attempted[site] = True
                         print(f"[watchdog][SESSION] attempting auto-refresh for {site}...")
-                        if _auto_refresh_auth(site):
+                        _bm = "webarena" if any(p == "webarena" for p in run_dir.parts) else ""
+                        if _auto_refresh_auth(site, benchmark=_bm):
                             print(f"[watchdog][SESSION] {site} auth refreshed — next tasks will use new cookies")
                         else:
                             print(f"[watchdog][SESSION][warn] {site} auto-refresh failed — manual intervention needed")

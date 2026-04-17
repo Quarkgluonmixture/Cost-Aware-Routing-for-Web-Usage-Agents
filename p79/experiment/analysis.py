@@ -10,12 +10,21 @@ from p79.experiment.metrics import net_saving, net_saving_latency, net_saving_en
 
 logger = logging.getLogger(__name__)
 
-_VWA_CONFIG_DIR = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena" / "config_files" / "vwa"
+_CONFIG_BASE = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena" / "config_files"
 
 
-def _load_na_task_ids(site: str) -> set:
+def _get_config_dir(benchmark: str = "visualwebarena") -> Path:
+    if benchmark == "webarena":
+        return _CONFIG_BASE / "wa"
+    return _CONFIG_BASE / "vwa"
+
+
+def _load_na_task_ids(site: str, benchmark: str = "visualwebarena") -> set:
     """Return task_ids whose reference answer is N/A (unanswerable tasks)."""
-    config_path = _VWA_CONFIG_DIR / f"test_{site}.json"
+    config_dir = _get_config_dir(benchmark)
+    config_path = config_dir / f"test_{site}.json"
+    if not config_path.exists():
+        config_path = config_dir / f"test_{site}.raw.json"
     if not config_path.exists():
         return set()
     try:
@@ -46,16 +55,21 @@ _VISUAL_TASK_KWDS = (
 )
 
 
-def _load_visual_task_ids(site: str) -> set:
+def _load_visual_task_ids(site: str, benchmark: str = "visualwebarena") -> set:
     """Return task_ids that require visual information (image content, color, appearance).
 
     Detection uses two signals:
     1. Task config has an ``image`` field (explicit image-input task)
     2. Task intent contains visual-matching keywords (color, appearance, etc.)
+
+    WA tasks have no visual component — return empty set to avoid keyword FP (~21%).
     """
-    config_path = _VWA_CONFIG_DIR / f"test_{site}.json"
+    if benchmark == "webarena":
+        return set()
+    config_dir = _get_config_dir(benchmark)
+    config_path = config_dir / f"test_{site}.json"
     if not config_path.exists():
-        config_path = _VWA_CONFIG_DIR / f"test_{site}.raw.json"
+        config_path = config_dir / f"test_{site}.raw.json"
     if not config_path.exists():
         return set()
     try:
@@ -73,15 +87,19 @@ def _load_visual_task_ids(site: str) -> set:
         return set()
 
 
-def _load_has_image_task_ids(site: str) -> set:
+def _load_has_image_task_ids(site: str, benchmark: str = "visualwebarena") -> set:
     """Return task_ids whose config has an ``image`` field (explicit reference image).
 
     These tasks provide a reference image that DOM mode can now see (after §33/§34/§36
     fixes), so DOM successes on these tasks are no longer automatic false positives.
+    WA tasks have no image field — return empty set.
     """
-    config_path = _VWA_CONFIG_DIR / f"test_{site}.json"
+    if benchmark == "webarena":
+        return set()
+    config_dir = _get_config_dir(benchmark)
+    config_path = config_dir / f"test_{site}.json"
     if not config_path.exists():
-        config_path = _VWA_CONFIG_DIR / f"test_{site}.raw.json"
+        config_path = config_dir / f"test_{site}.raw.json"
     if not config_path.exists():
         return set()
     try:
@@ -121,15 +139,15 @@ def compute_adjusted_success(
     return (raw_success, "")
 
 
-def compute_adjusted_success_batch(ep_df, benchmark_site: str):
+def compute_adjusted_success_batch(ep_df, benchmark_site: str, benchmark: str = "visualwebarena"):
     """Add adjusted_success + fp_reason columns to ep_df.
 
     Requires columns: task_id, observation_mode, success.
     Returns ep_df with new columns added in-place.
     """
-    visual_ids = _load_visual_task_ids(benchmark_site)
-    has_image_ids = _load_has_image_task_ids(benchmark_site)
-    na_ids = _load_na_task_ids(benchmark_site)
+    visual_ids = _load_visual_task_ids(benchmark_site, benchmark)
+    has_image_ids = _load_has_image_task_ids(benchmark_site, benchmark)
+    na_ids = _load_na_task_ids(benchmark_site, benchmark)
 
     adj_results = ep_df.apply(
         lambda r: compute_adjusted_success(
@@ -1117,11 +1135,23 @@ def analyze_run(run_dir: str) -> Path:
     ep_df = pd.DataFrame(episode_rows)
     step_df = pd.DataFrame(step_rows)
 
+    # Infer benchmark from episode data or run_dir path
+    def _infer_benchmark(ep_df, run_dir_path: Path) -> str:
+        if not ep_df.empty and "benchmark" in ep_df.columns:
+            return str(ep_df["benchmark"].iloc[0])
+        # Infer from run_dir path: results/webarena/... vs results/visualwebarena/...
+        for part in run_dir_path.parts:
+            if part == "webarena":
+                return "webarena"
+        return "visualwebarena"
+
+    _benchmark = _infer_benchmark(ep_df, root)
+
     # Mark N/A reference tasks (unanswerable — reference answer is "N/A")
     if not ep_df.empty and "benchmark_site" in ep_df.columns and "task_id" in ep_df.columns:
         na_ids_by_site: Dict[str, set] = {}
         for site in ep_df["benchmark_site"].unique():
-            na_ids_by_site[site] = _load_na_task_ids(str(site))
+            na_ids_by_site[site] = _load_na_task_ids(str(site), _benchmark)
         ep_df["is_na_reference"] = ep_df.apply(
             lambda r: int(r["task_id"]) in na_ids_by_site.get(r["benchmark_site"], set()), axis=1
         )
@@ -1138,8 +1168,8 @@ def analyze_run(run_dir: str) -> Path:
         visual_ids_by_site: Dict[str, set] = {}
         has_image_ids_by_site: Dict[str, set] = {}
         for site in ep_df["benchmark_site"].unique():
-            visual_ids_by_site[site] = _load_visual_task_ids(str(site))
-            has_image_ids_by_site[site] = _load_has_image_task_ids(str(site))
+            visual_ids_by_site[site] = _load_visual_task_ids(str(site), _benchmark)
+            has_image_ids_by_site[site] = _load_has_image_task_ids(str(site), _benchmark)
         ep_df["is_visual_task"] = ep_df.apply(
             lambda r: int(r["task_id"]) in visual_ids_by_site.get(r["benchmark_site"], set()), axis=1
         )
@@ -1191,7 +1221,7 @@ def analyze_run(run_dir: str) -> Path:
             for site in ep_df["benchmark_site"].unique():
                 site_mask = ep_df["benchmark_site"] == site
                 site_ep = ep_df[site_mask].copy()
-                compute_adjusted_success_batch(site_ep, str(site))
+                compute_adjusted_success_batch(site_ep, str(site), _benchmark)
                 adj_parts.append(site_ep[["adjusted_success", "fp_reason"]])
             if adj_parts:
                 adj_combined = pd.concat(adj_parts)

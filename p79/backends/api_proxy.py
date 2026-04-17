@@ -29,6 +29,13 @@ class ApiProxyBackend:
                     "temperature": config.get("temperature", 0.1),
                     "top_p": config.get("top_p", 0.9),
                     "timeout": config.get("timeout", 120),
+                    # API format: "anthropic" (proxy) or "openai" (DashScope)
+                    "api_format": config.get("api_format", "anthropic"),
+                    "api_key_env": config.get("api_key_env", "PROXY_API_KEY"),
+                    # Plan A/B: tool_use + GLM fallback (§67)
+                    "use_tool_calling": config.get("use_tool_calling", False),
+                    "use_glm_fallback": config.get("use_glm_fallback", False),
+                    "glm_config": config.get("glm_config", ".auth/glm"),
                 },
                 "agent": {
                     "image_max_size": config.get("image_max_size", 1024),

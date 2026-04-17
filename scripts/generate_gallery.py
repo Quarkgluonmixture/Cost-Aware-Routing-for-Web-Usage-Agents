@@ -158,10 +158,18 @@ _KNOWN_SITE_ORDER = {
     "classifieds": 0,
     "reddit": 1,
     "shopping": 2,
-    "wikipedia": 3,
+    "shopping_admin": 3,
+    "wikipedia": 4,
+    # Cross-benchmark gallery: vwa sites first, then wa sites
+    "vwa:classifieds": 10,
+    "vwa:reddit": 11,
+    "vwa:shopping": 12,
+    "wa:shopping": 20,
+    "wa:shopping_admin": 21,
+    "wa:reddit": 22,
 }
 _RUN_FAMILY_RE = re.compile(
-    r"^(?P<prefix>.+)_(?P<site>classifieds|reddit|shopping|wikipedia)_(?P<stamp>\d{8}(?:_\d{6})?)$"
+    r"^(?P<prefix>.+)_(?P<site>classifieds|reddit|shopping_admin|shopping|wikipedia)_(?P<stamp>\d{8}(?:_\d{6})?)$"
 )
 
 
@@ -269,38 +277,63 @@ def _build_groups(
 # Task intents from VWA config
 # ---------------------------------------------------------------------------
 
-_VWA_CONFIG_BASE = Path(__file__).resolve().parent.parent / "external" / "visualwebarena" / "config_files" / "vwa"
+_CONFIG_FILES_BASE = Path(__file__).resolve().parent.parent / "external" / "visualwebarena" / "config_files"
 
 def _load_task_intents() -> Dict[str, Dict[str, str]]:
-    """Load task intents + image paths from VWA config files.
+    """Load task intents + image paths from VWA and WA config files.
 
     Returns {'{site}_task_{id}': {'intent': ..., 'image': ...}}.
     """
     info: Dict[str, Dict[str, str]] = {}
-    if not _VWA_CONFIG_BASE.exists():
-        return info
-    vwa_root = _VWA_CONFIG_BASE.parent.parent  # external/visualwebarena
-    for site_dir in _VWA_CONFIG_BASE.iterdir():
-        if not site_dir.is_dir() or not site_dir.name.startswith("test_"):
+    vwa_root = _CONFIG_FILES_BASE.parent  # external/visualwebarena
+    # Scan both vwa/ and wa/ config directories
+    for subdir_name in ("vwa", "wa"):
+        config_base = _CONFIG_FILES_BASE / subdir_name
+        if not config_base.exists():
             continue
-        site = site_dir.name.replace("test_", "")
-        for cfg_path in site_dir.glob("*.json"):
+        for site_dir in config_base.iterdir():
+            if not site_dir.is_dir() or not site_dir.name.startswith("test_"):
+                continue
+            site = site_dir.name.replace("test_", "")
+            for cfg_path in site_dir.glob("*.json"):
+                try:
+                    with open(cfg_path, "r", encoding="utf-8") as f:
+                        cfg = json.load(f)
+                    tid = cfg.get("task_id")
+                    intent = cfg.get("intent", "")
+                    if tid is not None and intent:
+                        entry: Dict[str, str] = {"intent": intent}
+                        img_rel = cfg.get("image", "")
+                        # image field may be a list (multi-image tasks); take first element
+                        if isinstance(img_rel, list):
+                            img_rel = img_rel[0] if img_rel else ""
+                        if img_rel:
+                            img_abs = (vwa_root / img_rel).resolve()
+                            if img_abs.exists():
+                                entry["image"] = str(img_abs)
+                        info[f"{site}_task_{tid}"] = entry
+                except Exception:
+                    continue
+        # Also load from raw.json files (WA per-site split files)
+        for raw_path in config_base.glob("test_*.raw.json"):
+            site = raw_path.stem.replace("test_", "").replace(".raw", "")
             try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    cfg = json.load(f)
-                tid = cfg.get("task_id")
-                intent = cfg.get("intent", "")
-                if tid is not None and intent:
-                    entry: Dict[str, str] = {"intent": intent}
-                    img_rel = cfg.get("image", "")
-                    # image field may be a list (multi-image tasks); take first element
-                    if isinstance(img_rel, list):
-                        img_rel = img_rel[0] if img_rel else ""
-                    if img_rel:
-                        img_abs = (vwa_root / img_rel).resolve()
-                        if img_abs.exists():
-                            entry["image"] = str(img_abs)
-                    info[f"{site}_task_{tid}"] = entry
+                with open(raw_path, "r", encoding="utf-8") as f:
+                    tasks = json.load(f)
+                if not isinstance(tasks, list):
+                    continue
+                for cfg in tasks:
+                    tid = cfg.get("task_id")
+                    intent = cfg.get("intent", "")
+                    if tid is None or not intent:
+                        continue
+                    key = f"{site}_task_{tid}"
+                    if key not in info:
+                        info[key] = {"intent": intent}
+                    # WA tasks also stored under wa: prefix to avoid
+                    # VWA/WA collision on shared site+task_id combos
+                    if subdir_name == "wa":
+                        info[f"wa:{site}_task_{tid}"] = {"intent": intent}
             except Exception:
                 continue
     return info
@@ -316,8 +349,15 @@ def _collect_episodes(
     task_id_filter: Optional[int],
     gallery_path: Path,
     embed: bool,
+    *,
+    prefix_site_with_benchmark: bool = False,
 ) -> List[Dict[str, Any]]:
-    """Collect episodes with their steps and image sources."""
+    """Collect episodes with their steps and image sources.
+
+    If *prefix_site_with_benchmark* is True, site names are prefixed with
+    ``vwa:`` or ``wa:`` based on the source_run_dir path.  Used for
+    cross-benchmark aggregate galleries.
+    """
     intents = _load_task_intents()
     episodes = []
     for source_run_dir in source_run_dirs:
@@ -332,12 +372,17 @@ def _collect_episodes(
             if not episodes_dir.exists():
                 continue
 
+            # Determine benchmark prefix for this run dir (once per run dir)
+            _is_wa_run = any(p == "webarena" for p in source_run_dir.parts)
+            _bm_prefix = "wa" if _is_wa_run else "vwa"
+
             for jsonl_path in sorted(episodes_dir.glob("*_steps_v2.jsonl")):
                 stem = jsonl_path.stem.replace("_steps_v2", "")
                 parts = stem.rsplit("_task_", 1)
                 if len(parts) != 2:
                     continue
-                site = parts[0]
+                raw_site = parts[0]  # original site name (used for file paths)
+                site = f"{_bm_prefix}:{raw_site}" if prefix_site_with_benchmark else raw_site
                 try:
                     task_id = int(parts[1])
                 except ValueError:
@@ -350,7 +395,8 @@ def _collect_episodes(
                     continue
 
                 # Read summary — skip orphan steps files that have no summary yet
-                summary_path = episodes_dir / f"{site}_task_{task_id}_summary_v2.json"
+                # File paths always use raw_site (without benchmark prefix)
+                summary_path = episodes_dir / f"{raw_site}_task_{task_id}_summary_v2.json"
                 if not summary_path.exists():
                     continue
                 try:
@@ -360,7 +406,7 @@ def _collect_episodes(
                     summary = None
 
                 # Collect steps
-                task_artifact_dir = artifacts_dir / f"{site}_task_{task_id}"
+                task_artifact_dir = artifacts_dir / f"{raw_site}_task_{task_id}"
                 step_data = []
                 for step in steps:
                     step_idx = step.get("step_idx", len(step_data))
@@ -391,9 +437,13 @@ def _collect_episodes(
                         "img_path": img_src,
                     })
 
-                ep_key = f"{source_run_dir.name}__{cond_dir.name}__{site}_task_{task_id}"
+                ep_key = f"{source_run_dir.name}__{cond_dir.name}__{raw_site}_task_{task_id}"
                 label = f"{site}_task_{task_id}"
-                task_info = intents.get(label, {})
+                # Prefer wa:-prefixed intent for WA runs to avoid VWA/WA collision
+                raw_label = f"{raw_site}_task_{task_id}"
+                task_info = intents.get(f"wa:{raw_label}", {}) if _is_wa_run else {}
+                if not task_info:
+                    task_info = intents.get(raw_label, {})
                 intent_text = task_info.get("intent", "") if isinstance(task_info, dict) else str(task_info)
                 intent_img_abs = task_info.get("image", "") if isinstance(task_info, dict) else ""
                 # Convert intent image to relative path (or base64 if --embed)
@@ -403,7 +453,7 @@ def _collect_episodes(
                         intent_img_src = _img_to_data_uri(Path(intent_img_abs)) or ""
                     else:
                         # Use _vwa symlink so path stays inside HTTP server root
-                        vwa_root = _VWA_CONFIG_BASE.resolve().parent.parent
+                        vwa_root = _CONFIG_FILES_BASE.resolve().parent.parent
                         img_abs = Path(intent_img_abs)
                         try:
                             rel_in_vwa = img_abs.resolve().relative_to(vwa_root.resolve())
@@ -480,6 +530,13 @@ body{{
 .site-reddit{{ background:#bf360c; color:#ffab91; }}
 .site-wikipedia{{ background:#0d47a1; color:#90caf9; }}
 .site-classifieds{{ background:#4a148c; color:#ce93d8; }}
+.site-shopping_admin{{ background:#2e7d32; color:#c8e6c9; }}
+.site-vwa-classifieds{{ background:#4a148c; color:#ce93d8; }}
+.site-vwa-reddit{{ background:#bf360c; color:#ffab91; }}
+.site-vwa-shopping{{ background:#1b5e20; color:#a5d6a7; }}
+.site-wa-shopping{{ background:#33691e; color:#dce775; }}
+.site-wa-shopping_admin{{ background:#558b2f; color:#e6ee9c; }}
+.site-wa-reddit{{ background:#d84315; color:#ffcc80; }}
 
 .stats-bar{{
   display:flex; align-items:center; gap:10px;
@@ -624,7 +681,7 @@ function renderHome(){{
     +'<span class="gen-time">'+ORDER.length+' episodes</span></div>';
   GROUPS.forEach(function(g,gi){{
     var sr=(g.stats.success_rate*100).toFixed(1);
-    var sc='site-'+g.site;
+    var sc='site-'+g.site.replace(/:/g,'-');
     var lgi=S.lastEp&&IDX[S.lastEp]?IDX[S.lastEp][0]:-1;
     var ex=S.eg[gi]||(gi===lgi);
     h+='<div class="group-card">'
@@ -1064,13 +1121,122 @@ def generate_aggregate_gallery(
     return gallery_path
 
 
+def generate_combined_gallery(
+    phase_dirs: List[Path],
+    prefix_filter: str,
+    output_dir: Path,
+    condition: Optional[str],
+    task_id: Optional[int],
+    embed: bool,
+) -> Path:
+    """Generate a cross-benchmark gallery merging VWA + WA runs.
+
+    Scans each *phase_dir* for run dirs matching *prefix_filter* (via
+    ``_parse_run_family``), collects episodes with ``vwa:``/``wa:`` site
+    prefixes, and writes ``gallery.html`` into *output_dir*.
+
+    Args:
+        phase_dirs: e.g. [results/visualwebarena/phase1, results/webarena/phase1]
+        prefix_filter: e.g. "B1_3mode" — also matches "B1_wa_3mode" by
+                       stripping the ``_wa`` infix for comparison.
+        output_dir: where to write gallery.html
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    gallery_path = output_dir / "gallery.html"
+
+    # Collect run dirs across all phase_dirs
+    source_run_dirs: List[Path] = []
+    # Normalize prefix for matching: B1_3mode matches B1_3mode_* and B1_wa_3mode_*
+    base_prefix = prefix_filter.replace("_wa_", "_")  # B1_wa_3mode -> B1_3mode
+    for phase_dir in phase_dirs:
+        if not phase_dir.is_dir():
+            continue
+        for cand in sorted(phase_dir.iterdir()):
+            if not cand.is_dir() or cand.is_symlink():
+                continue
+            if cand.name.startswith(".") or cand.name in ("analysis",):
+                continue
+            family = _parse_run_family(cand.name)
+            if not family:
+                continue
+            # Match: exact prefix OR wa variant (B1_wa_3mode for B1_3mode)
+            fam_base = family["prefix"].replace("_wa_", "_")
+            if fam_base != base_prefix and family["prefix"] != prefix_filter:
+                continue
+            if _has_episode_data(cand):
+                source_run_dirs.append(cand)
+
+    if not source_run_dirs:
+        print(f"No run dirs with episode data found for prefix={prefix_filter!r} in {phase_dirs}")
+        raise SystemExit(1)
+
+    print(f"Combined gallery: {len(source_run_dirs)} run dirs:")
+    for d in source_run_dirs:
+        print(f"  {d}")
+
+    # Ensure _vwa symlinks
+    if not embed:
+        for d in source_run_dirs:
+            _ensure_intent_images_symlink(d)
+        _ensure_intent_images_symlink(output_dir)
+
+    episodes = _collect_episodes(
+        source_run_dirs, condition, task_id, gallery_path, embed,
+        prefix_site_with_benchmark=True,
+    )
+    if not episodes:
+        print("No episodes found.")
+        raise SystemExit(1)
+
+    condition_labels = _load_condition_labels(source_run_dirs)
+    groups = _build_groups(episodes, condition_labels)
+
+    episode_order: List[str] = []
+    episode_index: Dict[str, List[int]] = {}
+    for gi, group in enumerate(groups):
+        for ei, ep in enumerate(group["episodes"]):
+            episode_order.append(ep["key"])
+            episode_index[ep["key"]] = [gi, ei]
+
+    title = f"{prefix_filter} (VWA + WA)"
+    if condition:
+        title += f" / {condition}"
+    if task_id is not None:
+        title += f" / task_{task_id}"
+
+    data = {
+        "title": title,
+        "state_key": f"combined_{prefix_filter}",
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "groups": groups,
+        "episode_order": episode_order,
+        "episode_index": episode_index,
+    }
+
+    data_json = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+    data_json = data_json.replace("</", "<\\/")
+
+    html_content = _HTML_TEMPLATE_V2.format(
+        title=html_mod.escape(title),
+        data_json=data_json,
+    )
+
+    gallery_path.write_text(html_content, encoding="utf-8")
+    print(f"Gallery: {gallery_path}  ({len(episodes)} episodes)")
+    return gallery_path
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate screenshot gallery HTML")
     parser.add_argument("--run-dir", default=None, help="Run directory (single run mode)")
     parser.add_argument("--phase-dir", default=None,
                         help="Phase directory to aggregate all runs (e.g. results/visualwebarena/phase1)")
+    parser.add_argument("--phase-dirs", nargs="+", default=None,
+                        help="Multiple phase directories for cross-benchmark combined gallery")
+    parser.add_argument("--output-dir", default=None,
+                        help="Output directory for combined gallery (required with --phase-dirs)")
     parser.add_argument("--prefix", default=None,
-                        help="Filter runs by prefix when using --phase-dir (e.g. B1_3mode)")
+                        help="Filter runs by prefix when using --phase-dir/--phase-dirs (e.g. B1_3mode)")
     parser.add_argument("--condition", default=None, help="Filter to condition_id")
     parser.add_argument("--task-id", type=int, default=None, help="Filter to task_id")
     parser.add_argument(
@@ -1078,14 +1244,25 @@ def main():
         help="Embed images as base64 (larger file but self-contained)",
     )
     args = parser.parse_args()
-    if args.phase_dir:
+    if args.phase_dirs:
+        if not args.prefix:
+            parser.error("--prefix is required with --phase-dirs")
+        if not args.output_dir:
+            parser.error("--output-dir is required with --phase-dirs")
+        generate_combined_gallery(
+            [Path(p) for p in args.phase_dirs],
+            args.prefix,
+            Path(args.output_dir),
+            args.condition, args.task_id, args.embed,
+        )
+    elif args.phase_dir:
         generate_aggregate_gallery(
             Path(args.phase_dir), args.prefix, args.condition, args.task_id, args.embed,
         )
     elif args.run_dir:
         generate_gallery(Path(args.run_dir), args.condition, args.task_id, args.embed)
     else:
-        parser.error("Either --run-dir or --phase-dir is required")
+        parser.error("Either --run-dir, --phase-dir, or --phase-dirs is required")
 
 
 if __name__ == "__main__":

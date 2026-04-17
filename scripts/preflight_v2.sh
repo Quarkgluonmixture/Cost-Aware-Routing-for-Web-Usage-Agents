@@ -140,7 +140,13 @@ check_python() {
 }
 
 check_env_vars() {
-  local required=(DATASET SHOPPING REDDIT WIKIPEDIA CLASSIFIEDS HOMEPAGE CLASSIFIEDS_RESET_TOKEN)
+  # Choose required vars based on DATASET
+  local required
+  if [[ "${DATASET:-visualwebarena}" == "webarena" ]]; then
+    required=(DATASET SHOPPING SHOPPING_ADMIN REDDIT HOMEPAGE)
+  else
+    required=(DATASET SHOPPING REDDIT WIKIPEDIA CLASSIFIEDS HOMEPAGE CLASSIFIEDS_RESET_TOKEN)
+  fi
   local missing=()
   for key in "${required[@]}"; do
     if [[ -z "${!key:-}" ]]; then
@@ -148,10 +154,11 @@ check_env_vars() {
     fi
   done
 
+  local label="${DATASET:-visualwebarena}"
   if (( ${#missing[@]} > 0 )); then
-    fail "Missing VWA environment variables: ${missing[*]}"
+    fail "Missing ${label} environment variables: ${missing[*]}"
   else
-    pass "VWA environment variables are set."
+    pass "${label} environment variables are set."
   fi
 }
 
@@ -193,7 +200,7 @@ resolve_site_mode() {
     return
   fi
 
-  local endpoints=("${SHOPPING:-}" "${REDDIT:-}" "${WIKIPEDIA:-}" "${CLASSIFIEDS:-}" "${HOMEPAGE:-}")
+  local endpoints=("${SHOPPING:-}" "${REDDIT:-}" "${WIKIPEDIA:-}" "${CLASSIFIEDS:-}" "${HOMEPAGE:-}" "${SHOPPING_ADMIN:-}")
   local all_local=1
   local url
   for url in "${endpoints[@]}"; do
@@ -221,6 +228,10 @@ check_site_endpoints() {
     "classifieds:${CLASSIFIEDS:-}"
     "homepage:${HOMEPAGE:-}"
   )
+  # Add shopping_admin if set
+  if [[ -n "${SHOPPING_ADMIN:-}" ]]; then
+    endpoints+=("shopping_admin:${SHOPPING_ADMIN}")
+  fi
 
   for item in "${endpoints[@]}"; do
     local name="${item%%:*}"

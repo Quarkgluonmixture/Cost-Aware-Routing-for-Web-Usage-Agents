@@ -1,0 +1,23 @@
+# WA (WebArena) base config — overrides VWA defaults for WA three-site setup
+# Sites: shopping (192), shopping_admin (182), reddit (106) = 480 tasks
+#
+# Inherits from exp_v2_base.yaml, overrides:
+#   - experiment.benchmark: webarena
+#   - task.include_sites / site_configs for WA per-site split files
+#   - env.benchmark for DATASET switching in VWAWrapper
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  benchmark: "webarena"
+
+env:
+  benchmark: "webarena"
+
+task:
+  include_sites: ["shopping", "shopping_admin", "reddit"]
+  site_configs:
+    shopping: "external/visualwebarena/config_files/wa/test_shopping.raw.json"
+    shopping_admin: "external/visualwebarena/config_files/wa/test_shopping_admin.raw.json"
+    reddit: "external/visualwebarena/config_files/wa/test_reddit.raw.json"

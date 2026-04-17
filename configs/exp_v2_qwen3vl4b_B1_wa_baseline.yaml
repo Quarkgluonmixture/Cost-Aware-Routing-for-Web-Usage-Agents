@@ -1,0 +1,28 @@
+# B1 WA baseline — Qwen3-VL-4B local, three observation modes, three WA sites
+#
+# 运行: bash scripts/dgx/queue_b1_wa_with_reset.sh
+# 或单站: --override 'task.include_sites=["shopping"]'
+
+defaults:
+  - configs/exp_v2_wa_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "qwen3vl4b_B1_wa_baseline_phase1"
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["dom", "som", "vision"]
+
+backends:
+  default_backend: "local_4b"
+  local_4b:
+    max_new_tokens: 384
+    min_free_vram_gb: 0
+
+baselines:
+  run_b0: false

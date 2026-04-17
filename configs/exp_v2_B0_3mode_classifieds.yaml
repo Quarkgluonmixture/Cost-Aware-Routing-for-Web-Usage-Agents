@@ -40,6 +40,9 @@ backends:
     max_obs_chars: 12000
     dom_mode: "llm"
     mock_mode: false
+    # Plan B: GLM-5.1 fallback for parse_error recovery (§67)
+    use_glm_fallback: true
+    glm_config: ".auth/glm"
 
 metrics:
   cost_api:

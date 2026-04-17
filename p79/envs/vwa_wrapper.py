@@ -40,6 +40,7 @@ class VWAWrapper:
         viewport_height: int = 720,
         sleep_after_execution: float = 0.5,
         dry_run: bool = False,
+        benchmark: str = "visualwebarena",
     ) -> None:
         self.headless = headless
         self.observation_type = observation_type
@@ -48,6 +49,7 @@ class VWAWrapper:
         self.viewport_height = viewport_height
         self.sleep_after_execution = sleep_after_execution
         self.dry_run = dry_run
+        self.benchmark = benchmark
 
         self._env = None  # lazy init
         # 保存上一次 obs 的 obs_nodes_info，供 select_option element_id 路径使用
@@ -61,10 +63,15 @@ class VWAWrapper:
 
         # Ensure environment variables are set to avoid crash on import
         # User should set these to real values for actual tasks
-        if "DATASET" not in os.environ:
-            os.environ["DATASET"] = "visualwebarena"
-        
-        required_vars = ["REDDIT", "SHOPPING", "WIKIPEDIA", "HOMEPAGE", "CLASSIFIEDS", "CLASSIFIEDS_RESET_TOKEN"]
+        dataset = "webarena" if self.benchmark == "webarena" else "visualwebarena"
+        # Always set DATASET to match benchmark — shell env may have stale value
+        # (e.g. vwa_env_remote.sh exports DATASET=visualwebarena for VWA runs)
+        os.environ["DATASET"] = dataset
+
+        if dataset == "webarena":
+            required_vars = ["REDDIT", "SHOPPING", "SHOPPING_ADMIN", "HOMEPAGE"]
+        else:
+            required_vars = ["REDDIT", "SHOPPING", "WIKIPEDIA", "HOMEPAGE", "CLASSIFIEDS", "CLASSIFIEDS_RESET_TOKEN"]
         for var in required_vars:
             if var not in os.environ:
                 # Set dummy values if not present
@@ -306,6 +313,7 @@ class VWAWrapper:
                     self._env.page.evaluate(
                         """([x, y, label, idx]) => {
                             const el = document.elementFromPoint(x, y);
+                            // 1. Native <select> path
                             if (el && el.tagName === 'SELECT') {
                                 if (idx !== null) {
                                     el.selectedIndex = idx;
@@ -315,6 +323,37 @@ class VWAWrapper:
                                     if (opt) { el.value = opt.value; }
                                 }
                                 el.dispatchEvent(new Event('change', {bubbles: true}));
+                                return;
+                            }
+                            // 2. CSS custom dropdown fallback: scan hidden <ul>s near (x, y)
+                            if (!label) return;
+                            for (const ul of document.querySelectorAll('ul')) {
+                                const rect = ul.getBoundingClientRect();
+                                if (rect.width > 0 || rect.height > 0) continue;
+                                let trigger = ul.parentElement;
+                                while (trigger && trigger !== document.body) {
+                                    const tr = trigger.getBoundingClientRect();
+                                    if (tr.width > 0 && tr.height > 0) break;
+                                    trigger = trigger.parentElement;
+                                }
+                                if (!trigger) continue;
+                                const tr = trigger.getBoundingClientRect();
+                                const cx = tr.left + tr.width / 2;
+                                const cy = tr.top + tr.height / 2;
+                                if (Math.sqrt((cx - x) * (cx - x) + (cy - y) * (cy - y)) > 150) continue;
+                                const items = Array.from(
+                                    ul.querySelectorAll(':scope > li > a, :scope > li > button'));
+                                const opt = items.find(i => i.textContent.trim() === label);
+                                if (opt) {
+                                    const oldDisplay = ul.style.display;
+                                    const oldVisibility = ul.style.visibility;
+                                    ul.style.display = 'block';
+                                    ul.style.visibility = 'visible';
+                                    opt.click();
+                                    ul.style.display = oldDisplay;
+                                    ul.style.visibility = oldVisibility;
+                                    return;
+                                }
                             }
                         }""",
                         [x_px, y_px, option_label, option_index],
@@ -389,8 +428,12 @@ class VWAWrapper:
             if "action_str" in action_json:
                 action = create_playwright_action(str(action_json["action_str"]))
             else:
-                action_str = self._json_to_id_action_str(action_json)
-                action = create_id_based_action(action_str)
+                try:
+                    action_str = self._json_to_id_action_str(action_json)
+                    action = create_id_based_action(action_str)
+                except Exception as _e:
+                    logger.warning("create_id_based_action failed (%s), falling back to wait: %s", action_str, _e)
+                    action = create_none_action()
 
         try:
             obs, reward, terminated, truncated, info = self._env.step(action)
@@ -533,7 +576,10 @@ class VWAWrapper:
             if isinstance(text, str):
                 text = text.replace("\n", " ").replace("\r", " ")
             # 注意：文本里如果有 ']' 等符号，后续可以做转义；先跑通再说
-            return f"type [{int(eid)}] [{text}]"
+            # Always include explicit enter flag [0] to avoid VWA parser ambiguity:
+            # text="0" produces "type [406] [0]" which VWA misinterprets [0] as
+            # enter_flag instead of text content (§task148 bug).
+            return f"type [{int(eid)}] [{text}] [0]"
 
         if t == "scroll":
             direction = (a.get("direction") or "down").lower()

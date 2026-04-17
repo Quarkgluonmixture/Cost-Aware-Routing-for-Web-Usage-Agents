@@ -49,23 +49,14 @@ def _placeholder_mapping() -> Dict[str, str]:
 
 def _site_matches(site: str, task: Dict[str, Any]) -> bool:
     sites = [str(s).lower() for s in task.get("sites", [])]
-    start_url = str(task.get("start_url", "")).lower()
-
     if site in sites:
         return True
-    if site in start_url:
+    # Exact placeholder match avoids substring collision (e.g. shopping vs shopping_admin)
+    placeholder = f"__{site}__"
+    start_url = str(task.get("start_url", "")).lower()
+    if placeholder in start_url:
         return True
-
-    if site == "wikipedia":
-        return ("wikipedia" in sites) or ("__wikipedia__" in start_url)
-    if site == "reddit":
-        return ("reddit" in sites) or ("__reddit__" in start_url)
-    if site == "shopping":
-        return ("shopping" in sites) or ("__shopping__" in start_url)
-    if site == "classifieds":
-        return ("classifieds" in sites) or ("__classifieds__" in start_url)
-
-    return True
+    return False
 
 
 def _load_json_tasks(path: str) -> List[Dict[str, Any]]:

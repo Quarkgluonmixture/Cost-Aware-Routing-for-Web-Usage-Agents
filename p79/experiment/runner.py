@@ -6,6 +6,8 @@ import os
 import re
 import shutil
 import time
+import urllib.request
+import urllib.error
 from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -275,6 +277,38 @@ def _no_early_finish_control(
     return fallback, reason
 
 
+def _notify_retry_pass(
+    condition_id: str,
+    all_ids: List[int],
+    ok_ids: List[int],
+    fail_ids: List[int],
+) -> None:
+    """Log retry-pass results and optionally push ntfy notification."""
+    topic = os.environ.get("NTFY_TOPIC", "").strip()
+    if not topic:
+        return
+    n = len(all_ids)
+    title = f"P79 Retry [{condition_id}] {len(ok_ids)}/{n} OK"
+    lines = [f"Retried {n} tasks"]
+    if ok_ids:
+        lines.append(f"OK: {ok_ids}")
+    if fail_ids:
+        lines.append(f"FAIL: {fail_ids}")
+    body = "\n".join(lines)
+    priority = "default" if not fail_ids else "high"
+    url = f"https://ntfy.sh/{topic}"
+    req = urllib.request.Request(
+        url, data=body.encode("utf-8"), method="POST",
+        headers={"Title": title, "Priority": priority, "Markdown": "yes"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15):
+            pass
+        logger.info("Retry pass ntfy sent to %s", topic)
+    except Exception as exc:
+        logger.warning("Retry pass ntfy failed: %s", exc)
+
+
 class ExperimentRunner:
     # Fatal environment errors that corrupt Playwright/asyncio state.
     # When caught, re-raise immediately so the process can exit cleanly.
@@ -297,8 +331,10 @@ class ExperimentRunner:
         self.tasks = load_tasks(cfg, self.output_root)
 
         self.router = RuleBasedRouter(cfg)
-        self.environment = create_environment(cfg.get("env", {}))
-        self.evaluator = create_evaluator(cfg.get("env", {}))
+        env_cfg = dict(cfg.get("env", {}))
+        env_cfg.setdefault("benchmark", cfg["experiment"]["benchmark"])
+        self.environment = create_environment(env_cfg)
+        self.evaluator = create_evaluator(env_cfg)
         self.checklist_cfg = cfg.get("checklist", {})
         self.state_change_cfg = cfg.get("state_change", {})
         self.energy_tracker = LightweightEnergyTracker(cfg.get("metrics", {}).get("energy", {}))
@@ -499,19 +535,41 @@ class ExperimentRunner:
                     if not condition_logger.summary_path(t.site, t.task_id).exists()
                 ]
                 if retry_tasks:
-                    logger.info("Retry pass: %d tasks with missing summaries", len(retry_tasks))
+                    retry_task_ids = [t.task_id for t in retry_tasks]
+                    logger.info(
+                        "Retry pass: %d tasks with missing summaries: %s",
+                        len(retry_tasks), retry_task_ids,
+                    )
                     # Remove stale entries from episode_summaries to avoid duplicates
                     retry_ids = {(t.site, t.task_id) for t in retry_tasks}
                     episode_summaries = [
                         s for s in episode_summaries
                         if (s.get("benchmark_site"), s.get("task_id")) not in retry_ids
                     ]
+                    retry_ok, retry_fail = [], []
                     for task in retry_tasks:
                         summary = self._run_and_record_episode(
                             condition, task, backend, condition_logger,
                             condition_dir, effective_cid, current_seed,
                         )
                         episode_summaries.append(summary)
+                        if summary.get("error"):
+                            retry_fail.append(task.task_id)
+                        else:
+                            retry_ok.append(task.task_id)
+
+                    # ── Retry pass summary ──
+                    logger.info(
+                        "Retry pass done: %d/%d succeeded, %d failed",
+                        len(retry_ok), len(retry_tasks), len(retry_fail),
+                    )
+                    if retry_fail:
+                        logger.warning(
+                            "Retry pass still-failed tasks: %s", retry_fail,
+                        )
+                    _notify_retry_pass(
+                        effective_cid, retry_task_ids, retry_ok, retry_fail,
+                    )
 
                 aggregate = aggregate_condition_metrics(episode_summaries)
                 aggregate.update(
@@ -1130,7 +1188,9 @@ class ExperimentRunner:
             router_overhead_cost += float(overhead.get("routing_retry_count", 0.0)) * float(
                 router_cfg.get("retry_cost_usd", 0.0)
             )
-            step_total_cost = token_cost["total"] + router_overhead_cost
+            # Fold obs_prepare CPU cost into unified cost scalar (for router decisions)
+            obs_prepare_cost = obs_prepare_ms * float(router_cfg.get("overhead_cost_per_ms", 0.0))
+            step_total_cost = token_cost["total"] + router_overhead_cost + obs_prepare_cost
             failure_reason = meta.get("failure_reason")
             parse_valid = bool(meta.get("valid", True))
             fallback_finish = (
@@ -1216,6 +1276,7 @@ class ExperimentRunner:
                     "output": token_cost["output"],
                     "model": token_cost["total"],
                     "router_overhead": router_overhead_cost,
+                    "obs_prepare": obs_prepare_cost,
                     "total": step_total_cost,
                 },
                 energy=energy,
@@ -1249,6 +1310,11 @@ class ExperimentRunner:
             step_record["fallback_finish"] = fallback_finish
             step_record["retry_action_applied"] = retry_was_applied
             step_record["retry_action_type"] = retry_action_type_str
+            # GLM fallback tracking (§67 Plan B)
+            if meta.get("glm_fallback_used"):
+                step_record["glm_fallback_used"] = True
+                step_record["glm_fallback_latency_ms"] = meta.get("glm_fallback_latency_ms")
+                step_record["glm_original_fail_reason"] = meta.get("glm_original_fail_reason")
             # Confidence metrics (optional, from logprobs extraction)
             if meta.get("mean_logprob") is not None:
                 step_record["confidence"] = {
@@ -1415,7 +1481,8 @@ class ExperimentRunner:
             for s in step_records
         )
         total_router_overhead_cost = sum(float(s["cost_usd"].get("router_overhead", 0.0)) for s in step_records)
-        total_cost = total_model_cost + total_router_overhead_cost
+        total_obs_prepare_cost = sum(float(s["cost_usd"].get("obs_prepare", 0.0)) for s in step_records)
+        total_cost = total_model_cost + total_router_overhead_cost + total_obs_prepare_cost
         total_router_overhead_ms = sum(
             float(s["router"].get("overhead_ms", {}).get("router_decision_ms", 0.0))
             + float(s["router"].get("overhead_ms", {}).get("extra_dom_parse_ms", 0.0))
@@ -1485,5 +1552,6 @@ class ExperimentRunner:
         episode_summary["total_output_cost_usd"] = sum(
             float(s["cost_usd"].get("output", 0.0)) for s in step_records
         )
+        episode_summary["total_obs_prepare_cost_usd"] = total_obs_prepare_cost
 
         return episode_summary

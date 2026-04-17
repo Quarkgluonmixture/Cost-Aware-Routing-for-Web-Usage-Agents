@@ -3,10 +3,11 @@
 #
 # 用法（source 后调用）：
 #   source scripts/reset_vwa_sites.sh
-#   reset_vwa_sites all          # reset classifieds + reddit + shopping
-#   reset_vwa_sites classifieds  # 只 reset classifieds
+#   reset_vwa_sites all              # reset classifieds + reddit + shopping + shopping_admin
+#   reset_vwa_sites classifieds      # 只 reset classifieds
 #   reset_vwa_sites reddit
 #   reset_vwa_sites shopping
+#   reset_vwa_sites shopping_admin   # WA shopping_admin (Magento admin)
 #
 # 环境变量覆盖：
 #   VWA_RESET_SSH_KEY   私钥路径（默认 ~/.ssh/vwa_windows）
@@ -20,7 +21,7 @@ VWA_RESET_SCRIPT="${VWA_RESET_SCRIPT:-C:\\vwa\\reset_vwa.ps1}"
 VWA_RESET_ENABLE="${VWA_RESET_ENABLE:-1}"
 
 # reset_vwa_sites <site> [label]
-#   site:  all | classifieds | reddit | shopping
+#   site:  all | classifieds | reddit | shopping | shopping_admin
 #   label: 日志前缀（可选，默认 reset）
 reset_vwa_sites() {
     local site="${1:-all}"
