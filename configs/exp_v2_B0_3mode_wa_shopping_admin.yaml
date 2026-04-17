@@ -1,5 +1,5 @@
 # B0 三模式 WA shopping_admin — 使用 api_proxy (Qwen3-VL-235B)
-# 运行: bash scripts/dgx/run_b0_3mode_wa.sh
+# 运行: bash scripts/dgx/queue_b0_wa_with_reset.sh
 
 defaults:
   - configs/exp_v2_wa_base.yaml

@@ -99,6 +99,20 @@ class VwaEvaluator:
                         os.environ["OPENAI_API_KEY"] = _loaded_key
             os.environ.setdefault("OPENAI_API_KEY", "DUMMY_P79_NON_LLM_EVAL")
 
+            # Fill dummy URLs for sites not used in this experiment so that
+            # env_config.py assertions pass.  The evaluator only checks the
+            # sites referenced by each task's config, so dummies are harmless.
+            _DUMMY = "https://example.com"
+            _dataset = os.environ.get("DATASET", "")
+            if _dataset == "webarena":
+                for _var in ("REDDIT", "SHOPPING", "SHOPPING_ADMIN",
+                             "GITLAB", "WIKIPEDIA", "MAP", "HOMEPAGE"):
+                    os.environ.setdefault(_var, _DUMMY)
+            elif _dataset == "visualwebarena":
+                for _var in ("REDDIT", "SHOPPING", "WIKIPEDIA", "HOMEPAGE",
+                             "CLASSIFIEDS", "CLASSIFIEDS_RESET_TOKEN"):
+                    os.environ.setdefault(_var, _DUMMY)
+
             from evaluation_harness import evaluator_router  # type: ignore
 
             self._available = True

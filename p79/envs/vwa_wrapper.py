@@ -69,7 +69,7 @@ class VWAWrapper:
         os.environ["DATASET"] = dataset
 
         if dataset == "webarena":
-            required_vars = ["REDDIT", "SHOPPING", "SHOPPING_ADMIN", "HOMEPAGE"]
+            required_vars = ["REDDIT", "SHOPPING", "SHOPPING_ADMIN", "GITLAB", "WIKIPEDIA", "MAP", "HOMEPAGE"]
         else:
             required_vars = ["REDDIT", "SHOPPING", "WIKIPEDIA", "HOMEPAGE", "CLASSIFIEDS", "CLASSIFIEDS_RESET_TOKEN"]
         for var in required_vars:

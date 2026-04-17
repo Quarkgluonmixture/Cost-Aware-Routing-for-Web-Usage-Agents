@@ -283,6 +283,9 @@ def _classify_episode(
         if summary.get("benchmark_noise"):
             cat = summary.get("benchmark_noise_category", "unknown")
             return f"error({cat})"
+        err_str = str(summary.get("error", ""))
+        if err_str.startswith("evaluator_error:"):
+            return "error(evaluator)"
         return "error(code_bug)"
     steps = int(summary.get("steps", 0) or 0)
     if steps >= max_steps:
@@ -1002,6 +1005,7 @@ def main() -> int:
                 retries_so_far = error_retry_counts.get(retry_key, 0)
                 can_retry = (
                     reason.startswith("error(")
+                    and reason != "error(evaluator)"
                     and not condition_completed
                     and (reason != "error(code_bug)" or retries_so_far < MAX_CODE_BUG_RETRIES)
                 )

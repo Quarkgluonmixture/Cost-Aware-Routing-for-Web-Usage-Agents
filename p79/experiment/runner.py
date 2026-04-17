@@ -741,7 +741,9 @@ class ExperimentRunner:
         )
         try:
             summary = self._run_episode(condition, task, backend, condition_logger, condition_dir)
-        except Exception as exc:
+        except BaseException as exc:
+            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                raise
             exc_str = str(exc)
             if any(marker in exc_str for marker in self._FATAL_ENV_MARKERS):
                 logger.error(
@@ -794,7 +796,18 @@ class ExperimentRunner:
                 "total_energy_kwh": 0.0,
             }
 
-        condition_logger.write_episode_summary(task.site, task.task_id, summary)
+        try:
+            condition_logger.write_episode_summary(task.site, task.task_id, summary)
+        except Exception as write_exc:
+            logger.error(
+                "Failed to write episode summary for site=%s task=%s: %s",
+                task.site, task.task_id, write_exc, exc_info=True,
+            )
+        logger.info(
+            "Episode done site=%s task=%s success=%s steps=%s error=%s",
+            task.site, task.task_id, summary.get("success"), summary.get("steps"),
+            str(summary.get("error", ""))[:100] or "none",
+        )
         return summary
 
     def _run_episode(

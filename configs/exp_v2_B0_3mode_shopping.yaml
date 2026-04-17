@@ -1,17 +1,15 @@
-# B0 三模式 WA shopping — 使用 api_proxy (Qwen3-VL-235B)
-# 运行: bash scripts/dgx/queue_b0_wa_with_reset.sh
+# B0 三模式 shopping — 使用 api_proxy (Qwen3-VL-235B)
+# 运行: bash scripts/dgx/queue_b0_with_reset.sh
 
 defaults:
-  - configs/exp_v2_wa_base.yaml
+  - configs/exp_v2_base.yaml
 
 experiment:
   phase: "phase1"
-  name: "B0_3mode_wa_shopping"
+  name: "B0_3mode_shopping"
 
 task:
   include_sites: ["shopping"]
-  site_configs:
-    shopping: "external/visualwebarena/config_files/wa/test_shopping.raw.json"
 
 runtime:
   max_steps: 30
