@@ -44,5 +44,10 @@ metrics:
   energy:
     enabled: false
 
+auth_refresh:
+  enabled: true
+  interval: 5
+  sites: ["shopping"]
+
 baselines:
   run_b0: false

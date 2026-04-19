@@ -74,6 +74,11 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "similarity_threshold": 0.95,
         "form_snapshot_enabled": True,
     },
+    "auth_refresh": {
+        "enabled": False,
+        "interval": 5,
+        "sites": ["shopping", "shopping_admin"],
+    },
     "analysis": {
         "outputs": {
             "save_plots": True,
@@ -198,6 +203,11 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     cfg.setdefault("state_change", {})
     cfg["state_change"].setdefault("similarity_threshold", 0.95)
     cfg["state_change"].setdefault("form_snapshot_enabled", True)
+
+    cfg.setdefault("auth_refresh", {})
+    cfg["auth_refresh"].setdefault("enabled", False)
+    cfg["auth_refresh"].setdefault("interval", 5)
+    cfg["auth_refresh"].setdefault("sites", ["shopping", "shopping_admin"])
 
     cfg.setdefault("metrics", {}).setdefault("energy", {})
     cfg["metrics"]["energy"].setdefault("hardware_profile", "m2")

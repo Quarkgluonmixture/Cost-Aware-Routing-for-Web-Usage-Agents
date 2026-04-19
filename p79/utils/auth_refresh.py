@@ -1,0 +1,153 @@
+"""Shared auth refresh logic for Magento (shopping/shopping_admin) sites.
+
+Extracted from scripts/experiment_watchdog.py so that both the watchdog
+and the experiment runner can reuse the same login routine.
+"""
+from __future__ import annotations
+
+import logging
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+_ACCOUNTS = {
+    "classifieds":    ("blake.sullivan@gmail.com", "Password.123"),
+    "reddit":         ("MarvelsGrantMan136",       "test1234"),
+    "shopping":       ("emma.lopez@gmail.com",     "Password.123"),
+    "shopping_admin": ("admin",                    "admin1234"),
+}
+
+_DEFAULT_BASE_URLS = {
+    "classifieds":    "http://100.95.81.103:9980",
+    "reddit":         "http://100.95.81.103:9999",
+    "shopping":       "http://100.95.81.103:7770",
+    "shopping_admin": "http://100.95.81.103:7780",
+}
+
+_LOGIN_PATHS = {
+    "classifieds":    "/index.php?page=login",
+    "reddit":         "/login",
+    "shopping":       "/customer/account/login/",
+    "shopping_admin": "/admin",
+}
+
+_ENV_KEYS = {
+    "classifieds":    "CLASSIFIEDS",
+    "reddit":         "REDDIT",
+    "shopping":       "SHOPPING",
+    "shopping_admin": "SHOPPING_ADMIN",
+}
+
+
+def refresh_site_auth(
+    site: str,
+    auth_dir: Path,
+    *,
+    base_urls: dict | None = None,
+    benchmark: str = "",
+) -> bool:
+    """Re-login to *site* and overwrite ``auth_dir/{site}_state.json``.
+
+    Uses a Playwright subprocess (same approach as the watchdog) so that
+    the runner's own Playwright instance is not affected.
+
+    Returns True on success, False on any failure (logged as warning).
+    """
+    if site not in _ACCOUNTS:
+        logger.warning("auth_refresh: unknown site %r", site)
+        return False
+
+    auth_dir = Path(auth_dir)
+    auth_file = auth_dir / f"{site}_state.json"
+    username, password = _ACCOUNTS[site]
+
+    if base_urls and site in base_urls:
+        base_url = base_urls[site]
+    else:
+        env_key = _ENV_KEYS.get(site, site.upper())
+        base_url = os.environ.get(env_key, _DEFAULT_BASE_URLS.get(site, ""))
+
+    if not base_url:
+        logger.warning("auth_refresh: no base_url for site %r", site)
+        return False
+
+    login_path = _LOGIN_PATHS[site]
+
+    # Resolve repo root for VWA sys.path injection
+    repo_dir = Path(__file__).resolve().parent.parent.parent
+
+    script = f"""
+import sys, time
+sys.path.insert(0, {str(repo_dir / 'external' / 'visualwebarena')!r})
+from playwright.sync_api import sync_playwright
+cm = sync_playwright()
+pw = cm.__enter__()
+browser = pw.chromium.launch(headless=True, args=['--host-resolver-rules=MAP metis.lti.cs.cmu.edu 100.95.81.103'])
+ctx = browser.new_context()
+page = ctx.new_page()
+page.goto({(base_url + login_path)!r})
+site = {site!r}
+if site == 'classifieds':
+    page.locator('#email').fill({username!r})
+    page.locator('#password').fill({password!r})
+    page.get_by_role('button', name='Log in').click()
+elif site == 'reddit':
+    page.get_by_label('Username').fill({username!r})
+    page.get_by_label('Password').fill({password!r})
+    page.get_by_role('button', name='Log in').click()
+elif site == 'shopping':
+    page.get_by_label('Email', exact=True).fill({username!r})
+    page.get_by_label('Password', exact=True).fill({password!r})
+    page.get_by_role('button', name='Sign In').click()
+elif site == 'shopping_admin':
+    page.locator('#username').fill({username!r})
+    page.locator('#login').fill({password!r})
+    page.get_by_role('button', name='Sign in').click()
+time.sleep(2)
+ctx.storage_state(path={str(auth_file)!r})
+cm.__exit__(None, None, None)
+print('ok ->', page.url)
+"""
+
+    # Infer dataset for DATASET env var
+    if benchmark == "webarena" or site == "shopping_admin":
+        dataset = "webarena"
+    else:
+        dataset = "visualwebarena"
+    env = {**os.environ, "DATASET": dataset}
+
+    try:
+        r = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True, text=True, timeout=30, env=env,
+        )
+        if r.returncode == 0 and auth_file.exists():
+            logger.info("auth_refresh: %s refreshed: %s", site, r.stdout.strip())
+            return True
+        logger.warning(
+            "auth_refresh: %s failed rc=%d: %s",
+            site, r.returncode, r.stderr[-300:],
+        )
+        return False
+    except Exception as exc:
+        logger.warning("auth_refresh: %s error: %s", site, exc)
+        return False
+
+
+def should_refresh(
+    site: str,
+    episodes_since_refresh: int,
+    cfg: dict,
+) -> bool:
+    """Return True if auth should be refreshed for *site* based on config."""
+    auth_cfg = cfg.get("auth_refresh", {})
+    if not auth_cfg.get("enabled", False):
+        return False
+    allowed_sites = auth_cfg.get("sites", [])
+    if site not in allowed_sites:
+        return False
+    interval = int(auth_cfg.get("interval", 5))
+    return episodes_since_refresh >= interval

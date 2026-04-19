@@ -44,6 +44,13 @@ def _placeholder_mapping() -> Dict[str, str]:
     mapping["__MAP__"] = os.environ.get("MAP", mapping["__MAP__"])
     mapping["__HOMEPAGE__"] = os.environ.get("HOMEPAGE", mapping["__HOMEPAGE__"])
     mapping["__CLASSIFIEDS__"] = os.environ.get("CLASSIFIEDS", mapping["__CLASSIFIEDS__"])
+
+    # Wikipedia ZIM version rewrite — user's Kiwix may load a newer dump
+    zim_override = os.environ.get("WIKIPEDIA_ZIM_VERSION")
+    if zim_override:
+        # Rewrite the hardcoded 2022-05 version from VWA raw configs
+        mapping["wikipedia_en_all_maxi_2022-05"] = zim_override
+
     return mapping
 
 

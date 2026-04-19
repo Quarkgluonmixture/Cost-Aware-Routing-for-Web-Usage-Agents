@@ -31,7 +31,7 @@ SUMMARY_RE = re.compile(r"^(?P<site>.+)_task_(?P<task_id>\d+)_summary_v2\.json$"
 
 # Session-health heuristics: patterns in step_000 DOM that indicate login state
 _LOGIN_ABSENT_RE = re.compile(r"link\s+'(?:Login|Log in|Sign In)'", re.IGNORECASE)
-_LOGIN_PRESENT_RE = re.compile(r"link\s+'(?:Logout|Log out|My account|Sign Out)'", re.IGNORECASE)
+_LOGIN_PRESENT_RE = re.compile(r"link\s+'(?:Logout|Log out|Sign Out)'", re.IGNORECASE)
 _SESSION_ALERT_THRESHOLD = 3  # consecutive tasks w/o login before alerting
 
 # Directories inside run_dir that are NOT condition directories
@@ -123,9 +123,23 @@ def _get_observation_mode(condition_dir: Path, cache: Dict[str, str]) -> str:
 def _auto_refresh_auth(site: str, *, benchmark: str = "") -> bool:
     """Re-login to site and refresh .auth/{site}_state.json using Playwright.
 
-    Credentials and URLs are sourced from environment (CLASSIFIEDS/REDDIT/SHOPPING)
-    and hard-coded VWA defaults.  Returns True on success.
+    Delegates to shared module p79.utils.auth_refresh; falls back to inline
+    implementation if the import fails (e.g. running outside the venv).
     """
+    try:
+        from p79.utils.auth_refresh import refresh_site_auth
+        repo_dir = Path(__file__).resolve().parent.parent
+        auth_dir = repo_dir / ".auth"
+        ok = refresh_site_auth(site, auth_dir, benchmark=benchmark)
+        if ok:
+            print(f"[watchdog][SESSION] {site} auth auto-refreshed")
+        else:
+            print(f"[watchdog][SESSION][warn] {site} auto-refresh failed")
+        return ok
+    except ImportError:
+        pass
+
+    # ── Inline fallback (kept for robustness if p79 not installed) ──
     import os as _os
     _ACCOUNTS = {
         "classifieds":    ("blake.sullivan@gmail.com", "Password.123"),
@@ -160,7 +174,7 @@ sys.path.insert(0, {str(repo_dir / 'external' / 'visualwebarena')!r})
 from playwright.sync_api import sync_playwright
 cm = sync_playwright()
 pw = cm.__enter__()
-browser = pw.chromium.launch(headless=True)
+browser = pw.chromium.launch(headless=True, args=['--host-resolver-rules=MAP metis.lti.cs.cmu.edu 100.95.81.103'])
 ctx = browser.new_context()
 page = ctx.new_page()
 page.goto({(base_url + login_path)!r})
@@ -255,13 +269,14 @@ def _check_session_health(condition_dir: Path, site: str, task_id: int) -> Optio
     # another site (login/logout links would be from the wrong site).
     first_line = text.split("\n", 1)[0].strip().lower()
     # Map site names to tab-header keywords (VWA uses page title as tab label)
-    _SITE_TAB_KW = {
-        "classifieds": "classifieds",
-        "reddit": "reddit",
-        "shopping": "shopping",
+    _SITE_TAB_KW: Dict[str, List[str]] = {
+        "classifieds": ["classifieds"],
+        "reddit": ["reddit"],
+        "shopping": ["shopping", "one stop market"],
+        "shopping_admin": ["shopping", "magento", "admin"],
     }
-    expected_kw = _SITE_TAB_KW.get(site)
-    if expected_kw and first_line.startswith("tab ") and expected_kw not in first_line:
+    expected_kws = _SITE_TAB_KW.get(site, [])
+    if expected_kws and first_line.startswith("tab ") and not any(kw in first_line for kw in expected_kws):
         return None  # active tab belongs to another site; skip
     has_login_link = bool(_LOGIN_ABSENT_RE.search(text))
     has_logout_link = bool(_LOGIN_PRESENT_RE.search(text))
@@ -974,6 +989,7 @@ def main() -> int:
         if new_paths:
             last_new_episode_ts = now
             idle_alerted = False
+            auto_retry_batch: List[str] = []
 
             for summary_path in sorted(new_paths):
                 key = _episode_key(summary_path)
@@ -995,19 +1011,24 @@ def main() -> int:
 
                 # Auto-cleanup: delete error episodes so runner can retry.
                 # Covers both benchmark noise errors AND code bugs.
-                # Code bugs get max 2 retries to avoid infinite crash loops;
-                # benchmark noise errors always retry (transient by nature).
+                # All error types get max retries to avoid infinite loops
+                # (some benchmark noise errors like ERR_ABORTED are persistent).
                 # Only when the condition is still running (no condition_summary yet);
                 # once aggregated, deleting episodes would create inconsistency.
                 MAX_CODE_BUG_RETRIES = 2
+                MAX_NOISE_RETRIES = 3
                 condition_completed = (condition_dir / "condition_summary_v2.json").exists()
                 retry_key = f"{condition_id}/{site}_task_{task_id}"
                 retries_so_far = error_retry_counts.get(retry_key, 0)
+                is_noise = reason.startswith("error(") and reason != "error(evaluator)" and reason != "error(code_bug)"
                 can_retry = (
                     reason.startswith("error(")
                     and reason != "error(evaluator)"
                     and not condition_completed
-                    and (reason != "error(code_bug)" or retries_so_far < MAX_CODE_BUG_RETRIES)
+                    and (
+                        (reason == "error(code_bug)" and retries_so_far < MAX_CODE_BUG_RETRIES)
+                        or (is_noise and retries_so_far < MAX_NOISE_RETRIES)
+                    )
                 )
                 if reason.startswith("error(") and not condition_completed and not can_retry:
                     # Persistent code_bug — exhausted retries, notify and keep
@@ -1047,18 +1068,15 @@ def main() -> int:
                     # 4. Clean digest records (keep data consistent with deleted episode)
                     _digest_dir = args.digest_dir or (run_dir / "analysis" / "digest")
                     purged = _purge_digest_records(_digest_dir, condition_id, task_id, obs_mode)
+                    max_for_type = MAX_NOISE_RETRIES if is_noise else MAX_CODE_BUG_RETRIES
                     print(
                         f"[watchdog][AUTO-RETRY] deleted error episode: "
-                        f"task {task_id} ({reason}) retry {retries_so_far + 1}/{MAX_CODE_BUG_RETRIES}"
+                        f"task {task_id} ({reason}) retry {retries_so_far + 1}/{max_for_type}"
                         + (f" (+{purged} digest records)" if purged else "")
                     )
-                    if args.ntfy_topic:
-                        _post_ntfy(
-                            args.ntfy_topic,
-                            f"P79 AUTO-RETRY task {task_id}",
-                            f"run_id={run_id}\n{condition_id} task {task_id}\n"
-                            f"deleted {reason} — retry {retries_so_far + 1}/{MAX_CODE_BUG_RETRIES}",
-                        )
+                    auto_retry_batch.append(
+                        f"task {task_id} ({reason}) retry {retries_so_far + 1}/{max_for_type}"
+                    )
                     _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
                     # Do NOT add to seen_keys/all_records — treat as never happened
                     continue
@@ -1174,6 +1192,14 @@ def main() -> int:
                     f"[watchdog] [{obs_mode}] {condition_id} task={task_id:>3d} "
                     f"{'OK' if rec.success else reason:<10s} "
                     f"succ={cond_succ}/{cond_total} ({cond_succ/cond_total:.1%})"
+                )
+
+            # Batch-send AUTO-RETRY notifications (avoid per-task spam)
+            if auto_retry_batch and args.ntfy_topic:
+                _post_ntfy(
+                    args.ntfy_topic,
+                    f"P79 AUTO-RETRY ({len(auto_retry_batch)} tasks)",
+                    f"run_id={run_id}\n" + "\n".join(auto_retry_batch[:20]),
                 )
 
             _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)

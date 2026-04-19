@@ -38,6 +38,7 @@ from p79.experiment.router import RouterState, RuleBasedRouter
 from p79.experiment.som import prepare_observation_for_mode
 from p79.experiment.state_change import build_page_state, detect_page_state_change
 from p79.experiment.tasks import load_tasks
+from p79.utils.auth_refresh import refresh_site_auth, should_refresh
 from p79.experiment.types import (
     SCHEMA_VERSION_V2,
     ConditionSpec,
@@ -341,6 +342,7 @@ class ExperimentRunner:
         self.diagnostic_controls = cfg.get("diagnostic_controls", {}) or {}
 
         self._backends: Dict[str, Any] = {}
+        self._auth_episode_counts: Dict[str, int] = {}  # per-site counter for auth refresh
 
     def _get_backend(self, backend_id: str):
         if backend_id in self._backends:
@@ -506,17 +508,28 @@ class ExperimentRunner:
                         try:
                             with open(summary_file, "r", encoding="utf-8") as f:
                                 loaded = json.load(f)
-                            # Only treat as complete if the episode actually executed (steps > 0)
-                            # or finished cleanly with no error. Zero-step episodes with errors
-                            # indicate infrastructure failures (browser crash, asyncio loop) that
-                            # should be retried rather than permanently skipped.
-                            if int(loaded.get("steps", 0)) > 0 or not loaded.get("error"):
+                            has_steps = int(loaded.get("steps", 0)) > 0
+                            has_error = bool(loaded.get("error"))
+                            is_noise = bool(loaded.get("benchmark_noise", False))
+
+                            if has_steps or not has_error:
                                 episode_summaries.append(loaded)
                                 continue
+
+                            # Zero-step error: skip retry for benchmark noise
+                            # (watchdog handles retry with MAX_NOISE_RETRIES)
+                            if is_noise:
+                                logger.info(
+                                    "Skipping benchmark-noise zero-step episode site=%s task=%s: %s",
+                                    task.site, task.task_id,
+                                    str(loaded.get("error", ""))[:120],
+                                )
+                                episode_summaries.append(loaded)
+                                continue
+
                             logger.info(
                                 "Retrying zero-step error episode site=%s task=%s: %s",
-                                task.site,
-                                task.task_id,
+                                task.site, task.task_id,
                                 str(loaded.get("error", ""))[:120],
                             )
                         except Exception:
@@ -752,6 +765,14 @@ class ExperimentRunner:
                     task.site, task.task_id, exc,
                 )
                 raise
+            # Proxy API quota exhaustion — stop run (all subsequent tasks will fail)
+            if "403" in exc_str and any(m in exc_str for m in ("model-api", "execute-api")):
+                logger.error(
+                    "Proxy API quota exhausted at site=%s task=%s — "
+                    "stopping run: %s",
+                    task.site, task.task_id, exc,
+                )
+                raise
             logger.warning(
                 "Episode failed at condition=%s seed=%d site=%s task=%s: %s",
                 effective_cid, current_seed, task.site, task.task_id, exc,
@@ -818,6 +839,20 @@ class ExperimentRunner:
         condition_logger: LoggerV2,
         condition_dir: Path,
     ) -> Dict[str, Any]:
+        # ── Auth refresh check (before browser context creation) ──
+        site = task.site
+        self._auth_episode_counts.setdefault(site, 0)
+        self._auth_episode_counts[site] += 1
+        if should_refresh(site, self._auth_episode_counts[site], self.cfg):
+            auth_dir = Path(__file__).resolve().parent.parent.parent / ".auth"
+            benchmark = self.cfg.get("experiment", {}).get("benchmark", "")
+            ok = refresh_site_auth(site, auth_dir, benchmark=benchmark)
+            if ok:
+                self._auth_episode_counts[site] = 0
+                logger.info("Auth refreshed for %s", site)
+            else:
+                logger.warning("Auth refresh failed for %s — continuing with stale session", site)
+
         episode_dir = condition_dir / "artifacts" / f"{task.site}_task_{task.task_id}"
         if episode_dir.exists():
             shutil.rmtree(episode_dir)
@@ -832,6 +867,16 @@ class ExperimentRunner:
 
         obs, info = self.environment.reset(task.config_file)
         current_info = info or {}
+
+        # ── Start-URL tab health check ──────────────────────────────────
+        _error_title_patterns = ("content not found", "not found", "404", "page not found")
+        tab_titles = self.environment.get_all_tab_titles()
+        for _tab_url, _tab_title in tab_titles:
+            if any(pat in (_tab_title or "").lower() for pat in _error_title_patterns):
+                raise RuntimeError(
+                    f"start_url_content_error: tab title='{_tab_title}' url={_tab_url}"
+                )
+
         trajectory: List[Any] = [{"observation": getattr(obs, "raw", None), "info": current_info}]
 
         # Load task reference images (e.g. "find this item" with a product photo).
@@ -1566,5 +1611,10 @@ class ExperimentRunner:
             float(s["cost_usd"].get("output", 0.0)) for s in step_records
         )
         episode_summary["total_obs_prepare_cost_usd"] = total_obs_prepare_cost
+
+        # Agent-initiated finish flag (for N/A true positive detection)
+        _last_at = str((step_records[-1].get("action") or {}).get("action_type", "")).lower() if step_records else ""
+        _last_fb = bool(step_records[-1].get("fallback_finish", False)) if step_records else False
+        episode_summary["agent_finished"] = (_last_at in ("finish", "stop")) and not _last_fb
 
         return episode_summary

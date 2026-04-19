@@ -53,7 +53,7 @@ login_path = login_paths[site]
 
 cm = sync_playwright()
 playwright = cm.__enter__()
-browser = playwright.chromium.launch(headless=True)
+browser = playwright.chromium.launch(headless=True, args=['--host-resolver-rules=MAP metis.lti.cs.cmu.edu 100.95.81.103'])
 context = browser.new_context()
 page = context.new_page()
 page.goto(base_url + login_path)
@@ -82,6 +82,29 @@ PYEOF
     log "[b0_3mode][error] ${site} auth 刷新失败 rc=${rc}（auth_file=$(wc -c < "${auth_file}" 2>/dev/null || echo missing) bytes）"
     return 1
   fi
+}
+
+# refresh_site_auth_retry <site> <label> — 带指数退避的 auth 刷新（最多 5 次）
+AUTH_REFRESH_MAX_ATTEMPTS="${AUTH_REFRESH_MAX_ATTEMPTS:-5}"
+refresh_site_auth_retry() {
+  local site="$1" label="${2:-auth}"
+  local attempt=0 delay=10
+  while [[ $attempt -lt $AUTH_REFRESH_MAX_ATTEMPTS ]]; do
+    attempt=$(( attempt + 1 ))
+    if refresh_site_auth "${site}"; then
+      return 0
+    fi
+    if [[ $attempt -ge $AUTH_REFRESH_MAX_ATTEMPTS ]]; then
+      break
+    fi
+    log "[b0_3mode][${label}] auth 刷新第 ${attempt}/${AUTH_REFRESH_MAX_ATTEMPTS} 次失败，${delay}s 后重试..."
+    ntfy_send "P79 [B0/${label}] auth retry" "${site} 第 ${attempt} 次失败，${delay}s 后重试" "default"
+    sleep "${delay}"
+    delay=$(( delay * 2 ))
+  done
+  log "[b0_3mode][${label}][fatal] ${site} auth 刷新 ${AUTH_REFRESH_MAX_ATTEMPTS} 次均失败"
+  ntfy_send "P79 [B0/${label}] auth FAILED" "${site} ${AUTH_REFRESH_MAX_ATTEMPTS} 次失败" "urgent"
+  return 1
 }
 
 # ---------- API key 加载 ----------
@@ -141,6 +164,7 @@ export CUDA_MPS_PIPE_DIRECTORY=""
 export CUDA_MPS_LOG_DIRECTORY=""
 export OPENAI_API_KEY="${OPENAI_API_KEY:-DUMMY_P79_NON_LLM_EVAL}"
 export P79_DISABLE_STALE_CLEANUP="${P79_DISABLE_STALE_CLEANUP:-1}"
+export WIKIPEDIA_ZIM_VERSION="${WIKIPEDIA_ZIM_VERSION:-wikipedia_en_all_maxi_2025-08}"
 
 # ---------- Python 解释器 ----------
 if [[ -x "${REPO_DIR}/.venv/bin/python" ]]; then
@@ -396,7 +420,8 @@ run_site_3mode_with_reset() {
 
   start_exp_watchdog "${run_id}" "${label}"
 
-  # 1) DOM
+  # 1) DOM — auth refresh before first condition (SOM/Vision already have it)
+  refresh_site_auth_retry "${site}" "${label}/dom" || { log "[b0][fatal] ${site} DOM 前 auth 失败，中止"; exit 1; }
   log "======== [B0/${label} 1/3] DOM ========"
   ntfy_send "P79 [B0/${label}/dom] 开始" "run_id=${run_id}" "default"
   run_condition_until_complete "dom" "${dom_config}" "${run_dir}" "phase1_dom_router_0" "${label}"
@@ -406,11 +431,7 @@ run_site_3mode_with_reset() {
   log "======== reset ${site} before SOM ========"
   reset_vwa_sites "${site}" "b0_3mode_${site}" || true
   sleep 10
-  refresh_site_auth "${site}" || {
-    log "[b0_3mode][error] ${site} SOM 前 auth 刷新失败，等待 30s 后重试..."
-    sleep 30
-    refresh_site_auth "${site}" || { log "[b0_3mode][fatal] ${site} auth 刷新两次均失败，中止"; exit 1; }
-  }
+  refresh_site_auth_retry "${site}" "${label}/som" || { log "[b0_3mode][fatal] ${site} SOM 前 auth 失败，中止"; exit 1; }
 
   # 2) SOM
   log "======== [B0/${label} 2/3] SOM ========"
@@ -422,11 +443,7 @@ run_site_3mode_with_reset() {
   log "======== reset ${site} before Vision ========"
   reset_vwa_sites "${site}" "b0_3mode_${site}" || true
   sleep 10
-  refresh_site_auth "${site}" || {
-    log "[b0_3mode][error] ${site} Vision 前 auth 刷新失败，等待 30s 后重试..."
-    sleep 30
-    refresh_site_auth "${site}" || { log "[b0_3mode][fatal] ${site} auth 刷新两次均失败，中止"; exit 1; }
-  }
+  refresh_site_auth_retry "${site}" "${label}/vision" || { log "[b0_3mode][fatal] ${site} Vision 前 auth 失败，中止"; exit 1; }
 
   # 3) VISION
   log "======== [B0/${label} 3/3] Vision ========"

@@ -23,6 +23,44 @@ class P79Observation:
     # Populated from info["observation_metadata"]["text"]["obs_nodes_info"] by _to_p79_obs.
     obs_nodes_info: Optional[Dict[str, Any]] = None
 
+# Fuzzy match JS function for select_option: exact → case-insensitive → keyword overlap.
+# Injected into page.evaluate() calls to handle label mismatches between model output
+# and actual option text (e.g. "Price: Low to High" vs "Lower price first").
+_FUZZY_MATCH_JS = """
+const _fuzzyFind = (candidates, label) => {
+    // 1. Exact match (current behavior)
+    const exact = candidates.find(c => c.text === label || (c.value && c.value === label));
+    if (exact) return exact;
+    // 2. Case-insensitive
+    const lower = label.toLowerCase().trim();
+    const ci = candidates.find(c =>
+        c.text.toLowerCase().trim() === lower || (c.value && c.value.toLowerCase() === lower));
+    if (ci) return ci;
+    // 3. Keyword overlap
+    const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\\s+/g, ' ').trim();
+    const stops = new Set(['the','a','an','to','by','of','in','on','for','and','or','is','it']);
+    const kw = s => norm(s).split(' ').filter(w => w.length > 1 && !stops.has(w));
+    const lkw = kw(label);
+    if (!lkw.length) return null;
+    let best = null, bestS = 0;
+    for (const c of candidates) {
+        const ckw = kw(c.text);
+        let s = 0;
+        for (const l of lkw) {
+            for (const o of ckw) {
+                if (l === o || o.startsWith(l) || l.startsWith(o)) { s++; break; }
+                let p = 0; const m = Math.min(l.length, o.length);
+                while (p < m && l[p] === o[p]) p++;
+                if (p >= 4) { s++; break; }
+            }
+        }
+        if (s > bestS) { bestS = s; best = c; }
+    }
+    return bestS >= 2 ? best : null;
+};
+"""
+
+
 class VWAWrapper:
     """
     Thin wrapper around (Visual)WebArena ScriptBrowserEnv.
@@ -142,6 +180,16 @@ class VWAWrapper:
         p79_obs = self._to_p79_obs(obs, info)
         self._last_obs_nodes_info = p79_obs.obs_nodes_info
         return p79_obs, info
+
+    def get_all_tab_titles(self) -> list[tuple[str, str]]:
+        """Return (url, title) for every open tab. Used for start-URL health checks."""
+        if self.dry_run or self._env is None:
+            return []
+        try:
+            pages = self._env.context.pages
+            return [(p.url, p.title()) for p in pages]
+        except Exception:
+            return []
 
     def step(self, action_json: Dict[str, Any]) -> Tuple[P79Observation, float, bool, bool, Dict[str, Any]]:
         if self.dry_run:
@@ -311,16 +359,16 @@ class VWAWrapper:
                         x_px = self.viewport_width / 2
                         y_px = self.viewport_height / 2
                     self._env.page.evaluate(
-                        """([x, y, label, idx]) => {
+                        _FUZZY_MATCH_JS + """([x, y, label, idx]) => {
                             const el = document.elementFromPoint(x, y);
                             // 1. Native <select> path
                             if (el && el.tagName === 'SELECT') {
                                 if (idx !== null) {
                                     el.selectedIndex = idx;
                                 } else {
-                                    const opt = Array.from(el.options).find(
-                                        o => o.text.trim() === label || o.value === label);
-                                    if (opt) { el.value = opt.value; }
+                                    const cands = Array.from(el.options).map(o => ({text: o.text.trim(), value: o.value, el: o}));
+                                    const match = _fuzzyFind(cands, label);
+                                    if (match) { el.value = match.value; }
                                 }
                                 el.dispatchEvent(new Event('change', {bubbles: true}));
                                 return;
@@ -343,7 +391,9 @@ class VWAWrapper:
                                 if (Math.sqrt((cx - x) * (cx - x) + (cy - y) * (cy - y)) > 150) continue;
                                 const items = Array.from(
                                     ul.querySelectorAll(':scope > li > a, :scope > li > button'));
-                                const opt = items.find(i => i.textContent.trim() === label);
+                                const cands2 = items.map(i => ({text: i.textContent.trim(), el: i}));
+                                const match2 = _fuzzyFind(cands2, label);
+                                const opt = match2 ? match2.el : null;
                                 if (opt) {
                                     const oldDisplay = ul.style.display;
                                     const oldVisibility = ul.style.visibility;
@@ -369,14 +419,14 @@ class VWAWrapper:
                     x_px = x_norm * self.viewport_width if x_norm <= 1.0 else x_norm
                     y_px = y_norm * self.viewport_height if y_norm <= 1.0 else y_norm
                     self._env.page.evaluate(
-                        """([x, y, label]) => {
+                        _FUZZY_MATCH_JS + """([x, y, label]) => {
                             // 1. Native <select> path
                             const el = document.elementFromPoint(x, y);
                             if (el && el.tagName === 'SELECT') {
-                                const opt = Array.from(el.options).find(
-                                    o => o.text.trim() === label || o.value === label);
-                                if (opt) {
-                                    el.value = opt.value;
+                                const cands = Array.from(el.options).map(o => ({text: o.text.trim(), value: o.value, el: o}));
+                                const match = _fuzzyFind(cands, label);
+                                if (match) {
+                                    el.value = match.value;
                                     el.dispatchEvent(new Event('change', {bubbles: true}));
                                 }
                                 return;
@@ -398,7 +448,9 @@ class VWAWrapper:
                                 if (Math.sqrt((cx - x) * (cx - x) + (cy - y) * (cy - y)) > 150) continue;
                                 const items = Array.from(
                                     ul.querySelectorAll(':scope > li > a, :scope > li > button'));
-                                const opt = items.find(i => i.textContent.trim() === label);
+                                const cands2 = items.map(i => ({text: i.textContent.trim(), el: i}));
+                                const match2 = _fuzzyFind(cands2, label);
+                                const opt = match2 ? match2.el : null;
                                 if (opt) {
                                     const oldDisplay = ul.style.display;
                                     const oldVisibility = ul.style.visibility;

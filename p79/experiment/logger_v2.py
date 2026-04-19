@@ -36,17 +36,22 @@ class LoggerV2:
     def write_episode_summary(self, site: str, task_id: int, summary: Dict[str, Any]) -> None:
         path = self.summary_path(site, task_id)
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w", encoding="utf-8") as f:
+        tmp_path = path.with_suffix(".json.tmp")
+        with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2, ensure_ascii=False)
             f.flush()
             os.fsync(f.fileno())
+        os.replace(tmp_path, path)  # atomic on same filesystem
 
     def condition_summary_path(self) -> Path:
         return self.condition_dir / "condition_summary_v2.json"
 
     def write_condition_summary(self, payload: Dict[str, Any]) -> None:
         self.condition_dir.mkdir(parents=True, exist_ok=True)
-        with open(self.condition_summary_path(), "w", encoding="utf-8") as f:
+        path = self.condition_summary_path()
+        tmp_path = path.with_suffix(".json.tmp")
+        with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2, ensure_ascii=False)
             f.flush()
             os.fsync(f.fileno())
+        os.replace(tmp_path, path)  # atomic on same filesystem

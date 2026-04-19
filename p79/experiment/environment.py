@@ -50,6 +50,9 @@ class MockEnvironment:
         }
         return obs, reward, done, False, info
 
+    def get_all_tab_titles(self) -> list[tuple[str, str]]:
+        return []
+
     def snapshot_form_fields(self) -> Dict[str, Any]:
         return {"fields": [], "scroll_y": 0, "scroll_x": 0, "scroll_height": 0, "client_height": 0}
 
