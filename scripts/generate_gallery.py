@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import csv
 import json
 import html as html_mod
 import re
@@ -117,6 +118,95 @@ def _build_action_summary(step: Dict[str, Any]) -> str:
         parts.append(f"tab={action.get('page_number', '?')}")
 
     return " ".join(parts)
+
+
+# ---------------------------------------------------------------------------
+# Reason diagnostics CSV
+# ---------------------------------------------------------------------------
+
+def _load_reason_rows(source_run_dirs: List[Path]) -> Dict[str, Dict[str, Any]]:
+    """Load reason diagnostics CSV for each source run dir.
+
+    Returns dict keyed by ``{condition_id}__{site}_task_{tid}`` with fields:
+    reason_bucket, task_type, adjusted_success, fp_reason.
+    """
+    result: Dict[str, Dict[str, Any]] = {}
+    for run_dir in source_run_dirs:
+        csv_path = run_dir / "analysis" / "reason_diagnostics" / "episode_reason_rows.csv"
+        if not csv_path.exists():
+            continue
+        try:
+            with open(csv_path, "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    cond = row.get("condition_id", "")
+                    site = row.get("site", "")
+                    tid = row.get("task_id", "")
+                    if not (cond and site and tid):
+                        continue
+                    key = f"{cond}__{site}_task_{tid}"
+                    adj = row.get("adjusted_success", "")
+                    result[key] = {
+                        "reason_bucket": row.get("reason_bucket", ""),
+                        "task_type": row.get("task_type", ""),
+                        "adjusted_success": (
+                            True if adj == "True" else
+                            False if adj == "False" else None
+                        ),
+                        "fp_reason": row.get("fp_reason", ""),
+                    }
+        except Exception:
+            continue
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Reference answer formatting
+# ---------------------------------------------------------------------------
+
+def _format_reference_answer(eval_cfg: Dict[str, Any]) -> str:
+    """Extract a human-readable reference answer string from task eval config."""
+    if not eval_cfg:
+        return ""
+    ref = eval_cfg.get("reference_answers")
+    ref_url = eval_cfg.get("reference_url", "")
+
+    if isinstance(ref, dict):
+        if "fuzzy_match" in ref:
+            return str(ref["fuzzy_match"])
+        if "exact_match" in ref:
+            return str(ref["exact_match"])
+        if "must_include" in ref:
+            items = ref["must_include"]
+            if isinstance(items, list):
+                return ", ".join(str(x) for x in items)
+            return str(items)
+
+    if ref_url:
+        return ref_url
+
+    # program_html: summarize required_contents if available
+    ph = eval_cfg.get("program_html", [])
+    if isinstance(ph, list):
+        parts = []
+        for entry in ph:
+            rc = entry.get("required_contents", {}) if isinstance(entry, dict) else {}
+            # Check exact_match first, then fuzzy_match, then must_include
+            em = rc.get("exact_match")
+            if em:
+                parts.append(str(em))
+                continue
+            fm = rc.get("fuzzy_match")
+            if fm:
+                parts.append(str(fm))
+                continue
+            mi = rc.get("must_include", [])
+            if isinstance(mi, list) and mi:
+                parts.extend(str(x) for x in mi)
+        if parts:
+            return ", ".join(parts)
+
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -256,6 +346,13 @@ def _build_groups(
             "score": ep["score"],
             "total_steps": ep["total_steps"],
             "steps": ep["steps"],
+            "eval_type": ep.get("eval_type", ""),
+            "reference_answer": ep.get("reference_answer", ""),
+            "final_answer": ep.get("final_answer", ""),
+            "task_type": ep.get("task_type", ""),
+            "reason_bucket": ep.get("reason_bucket", ""),
+            "adjusted_success": ep.get("adjusted_success"),
+            "fp_reason": ep.get("fp_reason", ""),
         })
 
     groups = []
@@ -311,6 +408,12 @@ def _load_task_intents() -> Dict[str, Dict[str, str]]:
                             img_abs = (vwa_root / img_rel).resolve()
                             if img_abs.exists():
                                 entry["image"] = str(img_abs)
+                        # Eval metadata
+                        eval_cfg = cfg.get("eval", {})
+                        if isinstance(eval_cfg, dict):
+                            et = eval_cfg.get("eval_types", [])
+                            entry["eval_type"] = et[0] if isinstance(et, list) and et else ""
+                            entry["reference_answer"] = _format_reference_answer(eval_cfg)
                         info[f"{site}_task_{tid}"] = entry
                 except Exception:
                     continue
@@ -328,12 +431,18 @@ def _load_task_intents() -> Dict[str, Dict[str, str]]:
                     if tid is None or not intent:
                         continue
                     key = f"{site}_task_{tid}"
+                    raw_entry: Dict[str, str] = {"intent": intent}
+                    eval_cfg = cfg.get("eval", {})
+                    if isinstance(eval_cfg, dict):
+                        et = eval_cfg.get("eval_types", [])
+                        raw_entry["eval_type"] = et[0] if isinstance(et, list) and et else ""
+                        raw_entry["reference_answer"] = _format_reference_answer(eval_cfg)
                     if key not in info:
-                        info[key] = {"intent": intent}
+                        info[key] = raw_entry
                     # WA tasks also stored under wa: prefix to avoid
                     # VWA/WA collision on shared site+task_id combos
                     if subdir_name == "wa":
-                        info[f"wa:{site}_task_{tid}"] = {"intent": intent}
+                        info[f"wa:{site}_task_{tid}"] = raw_entry
             except Exception:
                 continue
     return info
@@ -359,6 +468,7 @@ def _collect_episodes(
     cross-benchmark aggregate galleries.
     """
     intents = _load_task_intents()
+    reason_rows = _load_reason_rows(source_run_dirs)
     episodes = []
     for source_run_dir in source_run_dirs:
         condition_dirs = sorted(source_run_dir.iterdir())
@@ -462,6 +572,29 @@ def _collect_episodes(
                             intent_img_src = _img_to_relative(
                                 img_abs, gallery_path
                             ) or ""
+                # Eval metadata from task config
+                eval_type = task_info.get("eval_type", "") if isinstance(task_info, dict) else ""
+                reference_answer = task_info.get("reference_answer", "") if isinstance(task_info, dict) else ""
+
+                # Extract agent's final answer from last FINISH action
+                final_answer = ""
+                for step in reversed(steps):
+                    act = step.get("action", {})
+                    if isinstance(act, str):
+                        try:
+                            act = json.loads(act)
+                        except (json.JSONDecodeError, TypeError):
+                            continue
+                    if isinstance(act, dict):
+                        at = str(act.get("action_type", "") or step.get("action_type", "")).lower()
+                        if at == "finish":
+                            final_answer = str(act.get("answer", ""))
+                            break
+
+                # Reason diagnostics from CSV
+                reason_key = f"{cond_dir.name}__{raw_site}_task_{task_id}"
+                reason_info = reason_rows.get(reason_key, {})
+
                 episodes.append({
                     "key": ep_key,
                     "run_id": source_run_dir.name,
@@ -475,6 +608,13 @@ def _collect_episodes(
                     "success": summary.get("success") if summary else None,
                     "score": summary.get("score") if summary else None,
                     "total_steps": len(step_data),
+                    "eval_type": eval_type,
+                    "reference_answer": reference_answer,
+                    "final_answer": final_answer,
+                    "task_type": reason_info.get("task_type", ""),
+                    "reason_bucket": reason_info.get("reason_bucket", ""),
+                    "adjusted_success": reason_info.get("adjusted_success"),
+                    "fp_reason": reason_info.get("fp_reason", ""),
                 })
 
     episodes.sort(
@@ -497,6 +637,9 @@ _HTML_TEMPLATE_V2 = """\
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Episode Gallery &mdash; {title}</title>
 <style>
 *{{ margin:0; padding:0; box-sizing:border-box; }}
@@ -574,34 +717,52 @@ body{{
 
 .ep-top-bar{{
   position:sticky; top:0; z-index:100;
-  background:#16213e; padding:5px 16px;
+  background:#16213e; padding:2px 12px;
   border-bottom:1px solid #333;
-  display:flex; align-items:center; gap:10px;
+}}
+.ep-row1{{
+  display:flex; align-items:center; gap:4px; flex-wrap:nowrap;
+}}
+.ep-row2{{
+  display:flex; align-items:center; gap:6px; margin-top:2px;
+  font-size:13px; color:#ccc; line-height:1.3;
+  height:20px; overflow:hidden; white-space:nowrap;
+}}
+.ep-row2 .ep-ref{{ color:#80cbc4; flex-shrink:0; }}
+.ep-row2 .ep-ans{{ color:#ef9a9a; flex-shrink:0; }}
+.ep-row2 .ep-ans.match{{ color:#a5d6a7; }}
+.ep-ref-val,.ep-ans-val{{
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  display:inline-block; vertical-align:middle; cursor:help;
+  flex-shrink:0;
+}}
+.ep-ref-val{{ max-width:250px; }}
+.ep-ans-val{{ max-width:200px; }}
+.ep-sep{{ color:#555; margin:0 2px; flex-shrink:0; }}
+.ep-intent-span{{
+  flex:1 1 0; min-width:0; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; color:#e0e0e0;
 }}
 .back-btn{{
   background:none; border:1px solid #555; color:#ccc;
-  padding:4px 10px; border-radius:4px; cursor:pointer; font-size:13px;
+  padding:3px 8px; border-radius:4px; cursor:pointer; font-size:12px;
+  flex-shrink:0;
 }}
 .back-btn:hover{{ background:#1a3a5c; }}
-.ep-title{{ font-size:15px; font-weight:600; }}
+.ep-title{{ font-size:14px; font-weight:600; white-space:nowrap; flex-shrink:0; }}
 .nav-btn{{
   background:#1a3a5c; border:none; color:#ccc;
-  padding:4px 10px; border-radius:4px; cursor:pointer; font-size:13px;
+  padding:3px 8px; border-radius:4px; cursor:pointer; font-size:12px;
+  flex-shrink:0;
 }}
 .nav-btn:hover{{ background:#2a5a8c; }}
 .nav-btn:disabled{{ opacity:.3; cursor:default; }}
 .ep-spacer{{ flex:1; }}
 
-.step-nav{{
-  position:sticky; top:34px; z-index:90;
-  background:#1a1a2e; padding:3px 16px;
-  display:flex; gap:2px; flex-wrap:wrap;
-  border-bottom:1px solid #2a2a4a;
-}}
 .step-dot{{
-  width:22px; height:22px; border-radius:3px;
+  width:20px; height:20px; border-radius:3px;
   border:1px solid #444; display:flex; align-items:center;
-  justify-content:center; font-size:10px; cursor:pointer;
+  justify-content:center; font-size:9px; cursor:pointer;
   transition:all .12s; color:#aaa;
 }}
 .step-dot:hover{{ background:#1a3a5c; border-color:#64b5f6; }}
@@ -612,12 +773,13 @@ body{{
 .steps-area{{ padding:0 16px 80px; margin:0 auto; }}
 
 .step-card{{
-  margin:2px 0 24px; background:#16213e; border-radius:6px;
-  overflow:hidden; border:1px solid #2a2a4a; scroll-margin-top:62px;
+  margin:2px 0 16px; background:#16213e; border-radius:6px;
+  overflow:hidden; border:1px solid #2a2a4a;
+  scroll-margin-top:48px;
   box-shadow:0 1px 4px rgba(0,0,0,.2);
 }}
 .step-card img{{
-  width:100%; max-height:92vh; display:block; cursor:pointer;
+  width:100%; max-height:calc(100vh - 48px); display:block; cursor:pointer;
   object-fit:contain; background:#0a0a1a;
 }}
 img.zoomed{{
@@ -628,6 +790,30 @@ img.zoomed{{
 .no-img{{ padding:40px; color:#555; text-align:center; }}
 .kb-hints{{ text-align:center; padding:16px 0 8px; font-size:12px; color:#555; }}
 .intent-has-img{{ cursor:help; border-bottom:1px dashed #555; }}
+
+/* ---- eval & reason badges ---- */
+.eval-badge{{
+  display:inline-block; padding:1px 6px; border-radius:8px;
+  font-size:10px; font-weight:600; background:#333; color:#aaa;
+  vertical-align:middle; margin-right:4px;
+}}
+.eval-badge.string_match{{ background:#1a237e; color:#9fa8da; }}
+.eval-badge.url_match{{ background:#004d40; color:#80cbc4; }}
+.eval-badge.program_html{{ background:#4e342e; color:#bcaaa4; }}
+
+.reason-badge{{
+  display:inline-block; padding:1px 6px; border-radius:8px;
+  font-size:10px; font-weight:600; vertical-align:middle;
+}}
+.reason-success{{ background:#1b5e20; color:#a5d6a7; }}
+.reason-early{{ background:#e65100; color:#ffcc80; }}
+.reason-mismatch{{ background:#f9a825; color:#333; }}
+.reason-stuck{{ background:#b71c1c; color:#ef9a9a; }}
+.reason-maxsteps{{ background:#4a148c; color:#ce93d8; }}
+.reason-default{{ background:#424242; color:#bbb; }}
+
+.ref-text{{ font-size:11px; color:#888; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block; vertical-align:middle; }}
+.fp-indicator{{ color:#ff9800; font-size:10px; margin-left:2px; }}
 #intent-tooltip{{
   display:none; position:fixed; z-index:500; padding:4px;
   background:#0f1a30; border:1px solid #2a2a4a; border-radius:6px;
@@ -671,6 +857,20 @@ function hlAct(s){{
   return '<span class="kw">'+esc(s.substring(0,sp))+'</span> '+esc(s.substring(sp+1));
 }}
 
+function reasonClass(r){{
+  if(!r) return 'reason-default';
+  if(r==='success') return 'reason-success';
+  if(r.indexOf('early_finish')>=0) return 'reason-early';
+  if(r.indexOf('eval_mismatch')>=0) return 'reason-mismatch';
+  if(r.indexOf('no_progress')>=0||r.indexOf('stuck')>=0||r.indexOf('incomplete')>=0) return 'reason-stuck';
+  if(r.indexOf('max_steps')>=0) return 'reason-maxsteps';
+  return 'reason-default';
+}}
+function shortReason(r){{
+  if(!r) return '';
+  return r.replace(/^fail_/,'').replace(/_/g,' ');
+}}
+
 var $h=document.getElementById('home-view');
 var $e=document.getElementById('episode-view');
 
@@ -699,7 +899,7 @@ function renderHome(){{
       +'<span class="group-toggle">'+(ex?'&#9660;':'&#9654;')+'</span>'
       +'</div>';
     h+='<table class="ep-table'+(ex?' expanded':'')+'" data-gi="'+gi+'">'
-      +'<thead><tr><th style="width:130px">Task</th><th>Intent</th><th style="width:70px">Status</th><th style="width:50px">Steps</th><th style="width:50px">Score</th></tr></thead><tbody>';
+      +'<thead><tr><th style="width:130px">Task</th><th>Intent</th><th style="width:70px">Status</th><th style="width:50px">Steps</th><th style="width:50px">Score</th><th style="width:200px">Eval / Ref</th><th style="width:120px">Reason</th></tr></thead><tbody>';
     g.episodes.forEach(function(e){{
       var c=e.success===true?'success':e.success===false?'fail':'unknown';
       var sl=e.success===true?'PASS':e.success===false?'FAIL':'&mdash;';
@@ -707,12 +907,21 @@ function renderHome(){{
       var it=e.intent||'';
       var it60=it.length>60?it.substring(0,57)+'...':it;
       var lv=S.lastEp===e.key?' last-viewed':'';
+      var etb=e.eval_type?'<span class="eval-badge '+esc(e.eval_type)+'">'+esc(e.eval_type)+'</span>':'';
+      var ra=e.reference_answer||'';
+      var ra30=ra.length>30?ra.substring(0,27)+'...':ra;
+      var rb=e.reason_bucket||'';
+      var fpLabel=e.fp_reason==='visual_fp'?'V-FP':e.fp_reason==='na_fp'?'N-FP':e.fp_reason==='eval_fp'?'E-FP':e.fp_reason?'FP':'';
+      var fpTag=fpLabel?'<span class="fp-indicator" title="'+escA(e.fp_reason)+'">'+fpLabel+'</span>':'';
       h+='<tr class="ep-row'+lv+'" data-key="'+escA(e.key)+'">'
         +'<td>'+esc(e.label)+'</td>'
         +'<td style="color:#bbb;font-size:12px" title="'+escA(it)+'">'+(e.intent_image?'<span class="intent-has-img" data-img="'+escA(e.intent_image)+'">'+esc(it60)+'</span>':esc(it60))+'</td>'
-        +'<td><span class="badge '+c+'">'+sl+'</span></td>'
+        +'<td><span class="badge '+c+'">'+sl+'</span>'+fpTag+'</td>'
         +'<td>'+e.total_steps+'</td>'
-        +'<td>'+sc2+'</td></tr>';
+        +'<td>'+sc2+'</td>'
+        +'<td>'+etb+(ra?'<span class="ref-text" title="'+escA(ra)+'">'+esc(ra30)+'</span>':'')+'</td>'
+        +'<td>'+(rb?'<span class="reason-badge '+reasonClass(rb)+'" title="'+escA(rb)+'">'+esc(shortReason(rb))+'</span>':'')+'</td>'
+        +'</tr>';
     }});
     h+='</tbody></table></div>';
   }});
@@ -745,29 +954,48 @@ function renderEp(k){{
   var o=oi(k), hp=o>0, hn=o<ORDER.length-1;
   var c=e.success===true?'success':e.success===false?'fail':'unknown';
   var sl=e.success===true?'PASS':e.success===false?'FAIL':'&mdash;';
+  var gm=GROUPS[IDX[k][0]].observation_mode||'';
+  var mc=gm==='dom'?'#5b9bd5':gm==='som'?'#ed7d31':'#70ad47';
+  /* ---- Row 1: task label + badges + nav ---- */
   var h='<div class="ep-top-bar">'
+    +'<div class="ep-row1">'
     +'<button class="back-btn" id="eb">&#8592; Home</button>'
     +'<span class="ep-title">'+esc(e.label)+'</span>'
+    +'<span style="background:'+mc+';color:#fff;padding:1px 8px;border-radius:8px;font-size:11px;font-weight:600">'+esc(gm.toUpperCase())+'</span>'
     +'<span class="badge '+c+'">'+sl+'</span>';
-  if(e.score!=null) h+='<span style="color:#888;font-size:12px">score='+e.score.toFixed(2)+'</span>';
-  if(e.intent){{
-    var ic=e.intent_image?' intent-has-img':'';
-    h+='<span class="'+ic+'" style="color:#e0e0e0;font-size:14px;flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escA(e.intent)+'"'+(e.intent_image?' data-img="'+escA(e.intent_image)+'"':'')+'>'+esc(e.intent)+'</span>';
+  if(e.reason_bucket) h+='<span class="reason-badge '+reasonClass(e.reason_bucket)+'" title="'+escA(e.reason_bucket)+'">'+esc(shortReason(e.reason_bucket))+'</span>';
+  if(e.fp_reason){{
+    var fpl=e.fp_reason==='visual_fp'?'V-FP':e.fp_reason==='na_fp'?'N-FP':e.fp_reason==='eval_fp'?'E-FP':'FP';
+    h+='<span class="fp-indicator" title="'+escA(e.fp_reason)+'">'+fpl+'</span>';
   }}
-  h+='<button class="nav-btn" id="enp" style="margin-left:auto"'+(hp?'':' disabled')+'>&#8592; Prev</button>'
-    +'<span style="color:#666;font-size:12px">'+(o+1)+'/'+ORDER.length+'</span>'
-    +'<button class="nav-btn" id="enn"'+(hn?'':' disabled')+'>Next &#8594;</button>'
-    +'</div>';
-
-  /* step dots */
+  /* ---- spacer + step dots + nav (all inline in row1) ---- */
   var si=Math.min(S.step, e.steps.length-1);
   if(si<0) si=0;
   S.step=si;
-  h+='<div class="step-nav">';
+  h+='<span class="ep-spacer"></span>';
   e.steps.forEach(function(s,i){{
     var dc='step-dot'+(i===si?' active':'')+(s.reward!=null&&s.reward>0?' reward':'');
     h+='<div class="'+dc+'" data-si="'+i+'">'+i+'</div>';
   }});
+  h+='<button class="nav-btn" id="enp"'+(hp?'':' disabled')+'>&#8592; Prev</button>'
+    +'<span style="color:#666;font-size:11px">'+(o+1)+'/'+ORDER.length+'</span>'
+    +'<button class="nav-btn" id="enn"'+(hn?'':' disabled')+'>Next &#8594;</button>'
+    +'</div>';
+
+  /* ---- Row 2: eval + ref + ans + intent (single line) ---- */
+  h+='<div class="ep-row2">';
+  if(e.eval_type) h+='<span class="eval-badge '+esc(e.eval_type)+'">'+esc(e.eval_type)+'</span>';
+  if(e.reference_answer) h+='<span class="ep-ref">Ref:</span> <span class="ep-ref-val" title="'+escA(e.reference_answer)+'">'+esc(e.reference_answer)+'</span>';
+  if(e.final_answer){{
+    var ansCls=e.success===true?'ep-ans match':'ep-ans';
+    h+='<span class="'+ansCls+'">Ans:</span> <span class="ep-ans-val '+ansCls+'" title="'+escA(e.final_answer)+'">'+esc(e.final_answer)+'</span>';
+  }}
+  if(e.intent){{
+    if(e.eval_type||e.reference_answer||e.final_answer) h+='<span class="ep-sep">|</span>';
+    var ic=e.intent_image?' intent-has-img':'';
+    h+='<span class="ep-intent-span'+ic+'" title="'+escA(e.intent)+'"'+(e.intent_image?' data-img="'+escA(e.intent_image)+'"':'')+'>'+esc(e.intent)+'</span>';
+  }}
+  h+='</div>';
   h+='</div>';
 
   /* step cards */

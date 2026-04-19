@@ -116,19 +116,30 @@ def compute_adjusted_success(
     visual_task_ids: set | None = None,
     has_image_task_ids: set | None = None,
     na_task_ids: set | None = None,
+    agent_finished: bool | None = None,
+    eval_type: str | None = None,
 ) -> tuple:
-    """Return (adjusted_success, fp_reason). fp_reason: '' / 'visual_fp' / 'na_fp'.
+    """Return (adjusted_success, fp_reason). fp_reason: '' / 'visual_fp' / 'na_fp' / 'eval_fp'.
 
     Priority:
     1. raw_success=False → (False, '')
-    2. N/A FP: task in na_task_ids and raw_success → (False, 'na_fp')
+    2. N/A FP: task in na_task_ids and raw_success
+       - If agent actively finished (not fallback) → true positive, keep
+       - Otherwise → (False, 'na_fp')  (coincidental match)
     3. Visual FP: DOM mode + visual kwd_only task + raw_success → (False, 'visual_fp')
        - has_image tasks are excluded: DOM can now see reference images (§33/§34/§36)
-    4. Otherwise → (raw_success, '')
+    4. Eval FP: (string_match | program_html) + raw_success + agent never actively finished
+       - string_match: empty fake-stop answer scored by GPT-4o-mini noise
+       - program_html: pre-existing state matched evaluator expectation (e.g. old comment)
+       - url_match excluded: navigating to correct page without finish is legitimate
+       → (False, 'eval_fp')
+    5. Otherwise → (raw_success, '')
     """
     if not raw_success:
         return (False, "")
     if na_task_ids and task_id in na_task_ids:
+        if agent_finished:
+            return (True, "")
         return (False, "na_fp")
     if observation_mode == "dom" and visual_task_ids and task_id in visual_task_ids:
         # DOM can see reference images after §33/§34/§36 fixes,
@@ -136,6 +147,9 @@ def compute_adjusted_success(
         if has_image_task_ids and task_id in has_image_task_ids:
             return (raw_success, "")
         return (False, "visual_fp")
+    # string_match/program_html + ~agent_finished → eval FP
+    if eval_type in ("string_match", "program_html") and agent_finished is not None and not agent_finished:
+        return (False, "eval_fp")
     return (raw_success, "")
 
 
@@ -155,6 +169,8 @@ def compute_adjusted_success_batch(ep_df, benchmark_site: str, benchmark: str = 
             bool(r["success"]),
             visual_task_ids=visual_ids, has_image_task_ids=has_image_ids,
             na_task_ids=na_ids,
+            agent_finished=bool(r["agent_finished"]) if "agent_finished" in r.index else None,
+            eval_type=str(r["eval_type"]) if "eval_type" in r.index else None,
         ),
         axis=1,
     )

@@ -126,6 +126,7 @@ class EpisodeSummaryV2:
     total_input_cost_usd: float = 0.0
     total_output_cost_usd: float = 0.0
     total_obs_prepare_cost_usd: float = 0.0
+    agent_finished: Optional[bool] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)

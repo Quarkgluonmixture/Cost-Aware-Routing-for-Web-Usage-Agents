@@ -1451,13 +1451,17 @@ def main() -> None:
 
             # ── Adjusted success (visual FP + N/A FP) ──
             from p79.experiment.analysis import compute_adjusted_success, _load_visual_task_ids, _load_has_image_task_ids, _load_na_task_ids
-            _visual_ids = _load_visual_task_ids(site)
-            _has_image_ids = _load_has_image_task_ids(site)
-            _na_ids = _load_na_task_ids(site)
+            _benchmark = "webarena" if any(p == "webarena" for p in run_dir.parts) else "visualwebarena"
+            _visual_ids = _load_visual_task_ids(site, benchmark=_benchmark)
+            _has_image_ids = _load_has_image_task_ids(site, benchmark=_benchmark)
+            _na_ids = _load_na_task_ids(site, benchmark=_benchmark)
+            _is_agent_finished = _is_finish(final_action_type) and not fallback_finish
             adjusted_success, fp_reason = compute_adjusted_success(
                 task_id, site, observation_mode, success,
                 visual_task_ids=_visual_ids, has_image_task_ids=_has_image_ids,
                 na_task_ids=_na_ids,
+                agent_finished=_is_agent_finished,
+                eval_type=eval_type,
             )
             if adjusted_success != success:
                 adjusted_reason_bucket = _classify_reason(
