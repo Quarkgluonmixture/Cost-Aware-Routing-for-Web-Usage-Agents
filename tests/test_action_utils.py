@@ -87,4 +87,6 @@ def test_parse_total_failure():
     action, valid, reason = parse_action_text("gibberish")
     assert valid is False
     assert reason == "parse_failed"
-    assert action == {"action_type": "wait"}
+    assert action["action_type"] == "wait"
+    # thought preserves raw model output for diagnostics
+    assert action.get("thought") == "gibberish"
