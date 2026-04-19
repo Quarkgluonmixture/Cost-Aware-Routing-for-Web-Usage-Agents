@@ -58,6 +58,22 @@ Agent 成功到达目标但提交空 answer。对于 `url_match` 评测类型，
 
 ---
 
+## 持久性 Evaluator 错误
+
+210/210 task 全部完成。其中 3 个 task 存在持久性 `evaluator_error:Page.goto net::ERR_ABORTED`，重跑后仍一致复现，属于 benchmark 环境缺陷（reddit Docker 特定页面 Playwright 全量加载失败，curl 200 但浏览器 load 事件中断）。
+
+| Task | 评测 URL | 评测类型 | Agent steps | 说明 |
+|------|---------|---------|-------------|------|
+| 72 | `f/memes/127531` | program_html | 7 | 检查 comment 内容 |
+| 146 | `f/wallstreetbets/50335` | program_html | 5 | 检查 comment 内容 |
+| 172 | `f/jerseycity/62526` | program_html | 8 | 检查 comment 内容 |
+
+**处理**：2026-04-17 清除旧 stub summary 后重跑全部 5 个 error task，其中 task 149 和 151 修复成功（评测器正常运行，score=0），上述 3 个仍失败。评测器导航至 reference URL 时 `ERR_ABORTED`，Agent 侧执行正常。最终 score=0 合理（均为 comment-posting 任务，Agent 均未成功发表评论）。
+
+**与 Classifieds 先例对比**（见 `classifieds/B1_DOM_digest.md` §10.4）：Classifieds 的 3 个 evaluator_error 来自 OpenAI API key 缺失或 program_html 超时，可离线重评修复；Reddit 的 3 个来自 Docker 页面加载缺陷，无法通过重评或重跑修复，属于 benchmark noise 的一种。
+
+---
+
 ## 待填充
 
 - [ ] DOM 全量完成后：GLM 定量分析
