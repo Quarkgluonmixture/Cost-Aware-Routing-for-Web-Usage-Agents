@@ -297,12 +297,12 @@ def build_task_pivot(reason_df: pd.DataFrame, cond_metas: Dict[str, Dict]) -> pd
     modes = sorted(df["mode"].unique())
 
     # Base task-level info (from first available row per task)
-    task_cols = ["site", "task_id", "task_type", "eval_type", "task_intent"]
+    task_cols = ["site", "task_id", "task_type", "eval_type", "task_intent", "require_reset"]
     available_task_cols = [c for c in task_cols if c in df.columns]
     base = df.drop_duplicates(subset=["site", "task_id"])[available_task_cols].copy()
 
     # Per-mode columns
-    per_mode_fields = ["success", "reason_bucket", "steps", "final_action_type", "fallback_finish"]
+    per_mode_fields = ["success", "reason_bucket", "steps", "final_action_type", "fallback_finish", "page_unchanged_rate", "has_effective_action", "url_unique_count"]
     for mode in modes:
         mode_df = df[df["mode"] == mode][["site", "task_id"] + per_mode_fields].copy()
         mode_df = mode_df.rename(columns={f: f"{mode}_{f}" for f in per_mode_fields})
@@ -381,20 +381,29 @@ def _mark_false_positives(
     # DOM visual FP: only kwd_only visual tasks (no reference image).
     # has_image tasks excluded: DOM can now see reference images (§33/§34/§36).
     # N/A FP: exclude agent-initiated finish (true N/A positive).
-    # Eval FP (§78b+): string_match/program_html + success + ~agent_finished.
-    #   string_match: empty answer falsely matched by GPT-4o-mini.
-    #   program_html: pre-existing state matched evaluator expectation.
+    # Eval FP (§78b+§78c+§82 refined):
+    #   string_match + success + ~agent_finished → always E-FP (empty answer GPT-4o-mini误判)
+    #   program_html + success + ~agent_finished + (PUR>0.5 OR supplementary) → E-FP
+    #     supplementary: ~has_effective_action & ~require_reset & url_unique<=2
     #   url_match excluded: navigating to correct page without finish is legitimate.
     visual_fp_count: Dict[str, int] = {}
     na_fp_count: Dict[str, int] = {}
     eval_fp_count: Dict[str, int] = {}
 
-    # Pre-compute eval_type eligibility for eval_fp (string_match or program_html)
-    _eval_fp_eligible = pd.Series(False, index=pivot.index)
+    # Pre-compute eval_type eligibility for eval_fp:
+    #   string_match: always eligible (empty answer falsely matched by GPT-4o-mini)
+    #   program_html: PUR > 0.5 OR (~has_effective_action & ~require_reset & url_unique<=2)
+    #     (high PUR = agent did little → pre-existing state matched evaluator;
+    #      supplementary: no type/select + no DB-reset task + few URLs → pre-existing state)
+    _is_string_match = pd.Series(False, index=pivot.index)
+    _is_program_html = pd.Series(False, index=pivot.index)
     if "eval_type" in pivot.columns:
-        _eval_fp_eligible = pivot["eval_type"].astype(str).str.contains(
-            r"string_match|program_html", regex=True, na=False,
-        )
+        _et = pivot["eval_type"].astype(str)
+        _is_string_match = _et.str.contains("string_match", na=False)
+        _is_program_html = _et.str.contains("program_html", na=False)
+
+    # Task-level require_reset (safe default: True → conservative, won't flag)
+    _rr = pivot["require_reset"].fillna(True).astype(bool) if "require_reset" in pivot.columns else pd.Series(True, index=pivot.index)
 
     for m in modes:
         scol = f"{m}_success"
@@ -409,8 +418,19 @@ def _mark_false_positives(
         pivot[vfp_col] = pivot["is_visual_task"] & ~pivot["is_has_image_task"] & (pivot[scol] == True) & is_dom_like
         pivot[nfp_col] = pivot["is_na_task"] & (pivot[scol] == True) & ~pivot[af_col]
         # Eval FP: success + ~agent_finished + eligible eval_type, excluding already-flagged FPs
+        #   string_match: always flag (§78b)
+        #   program_html: PUR>0.5 OR (~effective_action & ~require_reset & url_unique<=2)
+        pur_col = f"{m}_page_unchanged_rate"
+        _pur = pivot[pur_col].fillna(0.0) if pur_col in pivot.columns else pd.Series(0.0, index=pivot.index)
+        _hea_col = f"{m}_has_effective_action"
+        _hea = pivot[_hea_col].fillna(True).astype(bool) if _hea_col in pivot.columns else pd.Series(True, index=pivot.index)
+        _uuc_col = f"{m}_url_unique_count"
+        _uuc = pivot[_uuc_col].fillna(999).astype(float) if _uuc_col in pivot.columns else pd.Series(999.0, index=pivot.index)
+        _efp_eligible_m = _is_string_match | (_is_program_html & (
+            (_pur > 0.5) | (~_hea & ~_rr & (_uuc <= 2))
+        ))
         pivot[efp_col] = (
-            _eval_fp_eligible
+            _efp_eligible_m
             & (pivot[scol] == True)
             & ~pivot[af_col]
             & ~pivot[vfp_col]

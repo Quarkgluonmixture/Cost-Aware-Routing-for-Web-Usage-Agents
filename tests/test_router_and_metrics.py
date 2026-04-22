@@ -4,6 +4,7 @@ from p79.experiment.metrics import (
     aggregate_condition_metrics,
     compute_component_breakdown,
     compute_wasted_cost,
+    detect_benchmark_noise,
     net_saving,
 )
 from p79.experiment.router import RouterState, RuleBasedRouter
@@ -537,3 +538,122 @@ def test_router_backward_compat_default_modes():
     assert router.dom_complexity_trigger == 500
     assert router.deescalation_streak == 3
     assert router.history_window == 5
+
+
+# ---------------------------------------------------------------------------
+# metrics: detect_benchmark_noise
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# analysis: compute_adjusted_success — eval_fp program_html supplementary rule
+# ---------------------------------------------------------------------------
+
+from p79.experiment.analysis import compute_adjusted_success
+
+
+def test_eval_fp_program_html_supplementary_reddit69():
+    """program_html + PUR=0 + ~effective + ~require_reset + url_unique=1 → E-FP (reddit 69 pattern)."""
+    ok, reason = compute_adjusted_success(
+        69, "reddit", "dom", True,
+        agent_finished=False, eval_type="program_html",
+        page_unchanged_rate=0.0,
+        has_effective_action=False, require_reset=False, url_unique_count=1,
+    )
+    assert ok is False
+    assert reason == "eval_fp"
+
+
+def test_eval_fp_program_html_supplementary_url3_safe():
+    """program_html + PUR=0 + ~effective + ~require_reset + url_unique=3 → NOT E-FP (shopping 37 pattern)."""
+    ok, reason = compute_adjusted_success(
+        37, "shopping", "dom", True,
+        agent_finished=False, eval_type="program_html",
+        page_unchanged_rate=0.0,
+        has_effective_action=False, require_reset=False, url_unique_count=3,
+    )
+    assert ok is True
+    assert reason == ""
+
+
+def test_eval_fp_program_html_supplementary_require_reset_safe():
+    """program_html + PUR=0 + ~effective + require_reset=True + url_unique=1 → NOT E-FP (classifieds 5 pattern)."""
+    ok, reason = compute_adjusted_success(
+        5, "classifieds", "som", True,
+        agent_finished=False, eval_type="program_html",
+        page_unchanged_rate=0.0,
+        has_effective_action=False, require_reset=True, url_unique_count=1,
+    )
+    assert ok is True
+    assert reason == ""
+
+
+def test_eval_fp_program_html_effective_action_safe():
+    """program_html + PUR=0 + effective=True → NOT E-FP."""
+    ok, reason = compute_adjusted_success(
+        160, "reddit", "dom", True,
+        agent_finished=False, eval_type="program_html",
+        page_unchanged_rate=0.0,
+        has_effective_action=True, require_reset=False, url_unique_count=1,
+    )
+    assert ok is True
+    assert reason == ""
+
+
+def test_eval_fp_program_html_pur_high_still_works():
+    """program_html + PUR=0.6 → E-FP via original PUR rule."""
+    ok, reason = compute_adjusted_success(
+        999, "shopping", "dom", True,
+        agent_finished=False, eval_type="program_html",
+        page_unchanged_rate=0.6,
+        has_effective_action=True, require_reset=True, url_unique_count=10,
+    )
+    assert ok is False
+    assert reason == "eval_fp"
+
+
+def test_eval_fp_program_html_backward_compat_none():
+    """All new params None → defaults conservative (True/True/999) → NOT E-FP when PUR<=0.5."""
+    ok, reason = compute_adjusted_success(
+        42, "reddit", "dom", True,
+        agent_finished=False, eval_type="program_html",
+        page_unchanged_rate=0.0,
+        has_effective_action=None, require_reset=None, url_unique_count=None,
+    )
+    assert ok is True
+    assert reason == ""
+
+
+def test_detect_benchmark_noise_site_infra_error():
+    is_noise, label = detect_benchmark_noise(
+        "site_infra_error: title='Osclass Error' detected at step 2 for task classifieds/155"
+    )
+    assert is_noise is True
+    assert label == "site_infra_error"
+
+
+def test_detect_benchmark_noise_api_infra():
+    is_noise, label = detect_benchmark_noise(
+        "503 Server Error for url: https://model-api.example.com/v1/chat"
+    )
+    assert is_noise is True
+    assert label == "api_infra"
+
+
+def test_detect_benchmark_noise_api_infra_execute_api():
+    is_noise, label = detect_benchmark_noise(
+        "ReadTimeout for url: https://execute-api.us-east-1.amazonaws.com/..."
+    )
+    assert is_noise is True
+    assert label == "api_infra"
+
+
+def test_detect_benchmark_noise_none_input():
+    is_noise, label = detect_benchmark_noise(None)
+    assert is_noise is False
+    assert label is None
+
+
+def test_detect_benchmark_noise_normal_error():
+    is_noise, label = detect_benchmark_noise("some random agent error")
+    assert is_noise is False
+    assert label is None

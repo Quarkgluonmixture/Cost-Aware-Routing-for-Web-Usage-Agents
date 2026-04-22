@@ -118,6 +118,10 @@ def compute_adjusted_success(
     na_task_ids: set | None = None,
     agent_finished: bool | None = None,
     eval_type: str | None = None,
+    page_unchanged_rate: float | None = None,
+    has_effective_action: bool | None = None,
+    require_reset: bool | None = None,
+    url_unique_count: int | None = None,
 ) -> tuple:
     """Return (adjusted_success, fp_reason). fp_reason: '' / 'visual_fp' / 'na_fp' / 'eval_fp'.
 
@@ -128,9 +132,11 @@ def compute_adjusted_success(
        - Otherwise → (False, 'na_fp')  (coincidental match)
     3. Visual FP: DOM mode + visual kwd_only task + raw_success → (False, 'visual_fp')
        - has_image tasks are excluded: DOM can now see reference images (§33/§34/§36)
-    4. Eval FP: (string_match | program_html) + raw_success + agent never actively finished
-       - string_match: empty fake-stop answer scored by GPT-4o-mini noise
-       - program_html: pre-existing state matched evaluator expectation (e.g. old comment)
+    4. Eval FP: success + ~agent_finished + eligible eval_type
+       - string_match: always E-FP (empty answer GPT-4o-mini误判)
+       - program_html + PUR>0.5: E-FP (旧状态碰巧匹配)
+       - program_html + ~has_effective_action + ~require_reset + url_unique<=2: E-FP
+         (agent only clicked/scrolled, no DB-reset task, few unique URLs → pre-existing state)
        - url_match excluded: navigating to correct page without finish is legitimate
        → (False, 'eval_fp')
     5. Otherwise → (raw_success, '')
@@ -143,13 +149,20 @@ def compute_adjusted_success(
         return (False, "na_fp")
     if observation_mode == "dom" and visual_task_ids and task_id in visual_task_ids:
         # DOM can see reference images after §33/§34/§36 fixes,
-        # so has_image tasks are no longer automatic FP
-        if has_image_task_ids and task_id in has_image_task_ids:
-            return (raw_success, "")
-        return (False, "visual_fp")
-    # string_match/program_html + ~agent_finished → eval FP
-    if eval_type in ("string_match", "program_html") and agent_finished is not None and not agent_finished:
-        return (False, "eval_fp")
+        # so has_image tasks are no longer automatic visual FP — but still check eval_fp below
+        if not (has_image_task_ids and task_id in has_image_task_ids):
+            return (False, "visual_fp")
+    # Eval FP: string_match always; program_html with PUR or supplementary rule
+    if agent_finished is not None and not agent_finished:
+        if eval_type == "string_match":
+            return (False, "eval_fp")
+        if eval_type == "program_html":
+            pur = page_unchanged_rate if page_unchanged_rate is not None else 0.0
+            hea = has_effective_action if has_effective_action is not None else True
+            rr = require_reset if require_reset is not None else True
+            uuc = url_unique_count if url_unique_count is not None else 999
+            if pur > 0.5 or (not hea and not rr and uuc <= 2):
+                return (False, "eval_fp")
     return (raw_success, "")
 
 
@@ -171,6 +184,10 @@ def compute_adjusted_success_batch(ep_df, benchmark_site: str, benchmark: str = 
             na_task_ids=na_ids,
             agent_finished=bool(r["agent_finished"]) if "agent_finished" in r.index else None,
             eval_type=str(r["eval_type"]) if "eval_type" in r.index else None,
+            page_unchanged_rate=float(r["page_unchanged_rate"]) if "page_unchanged_rate" in r.index and r["page_unchanged_rate"] is not None else None,
+            has_effective_action=bool(r["has_effective_action"]) if "has_effective_action" in r.index else None,
+            require_reset=bool(r["require_reset"]) if "require_reset" in r.index else None,
+            url_unique_count=int(r["url_unique_count"]) if "url_unique_count" in r.index and r["url_unique_count"] is not None else None,
         ),
         axis=1,
     )
@@ -891,6 +908,7 @@ def _compute_statistical_tests(
         import pandas as pd  # type: ignore
         from scipy import stats as scipy_stats  # type: ignore
     except ImportError:
+        logger.warning("numpy/pandas/scipy not installed; skipping statistical tests")
         return
 
     if ep_df.empty or "condition_id" not in ep_df.columns:
@@ -1046,6 +1064,7 @@ def _analyze_per_site(
         import numpy as np  # type: ignore
         import pandas as pd  # type: ignore
     except ImportError:
+        logger.warning("matplotlib/numpy/pandas not installed; skipping per-site analysis")
         return
 
     if ep_df.empty:

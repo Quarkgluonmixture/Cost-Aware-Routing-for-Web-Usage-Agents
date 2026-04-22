@@ -1354,6 +1354,7 @@ def main() -> None:
             fallback_finish = bool(final_step.get("fallback_finish", False))
 
             task_meta = _extract_task_meta(run_dir, site, task_id, task_cfg_cache)
+            require_reset = bool(task_meta.get("require_reset", False))
             eval_cfg = (task_meta.get("eval") or {})
             task_intent = str(task_meta.get("intent", "") or "").strip()
             task_type = _classify_task_type(task_intent)
@@ -1431,6 +1432,11 @@ def main() -> None:
             # ── URL revisit & action diversity signals ──
             url_revisit_count, url_unique_count, url_revisit_max = _url_revisit_metrics(steps)
             action_diversity, action_unique_types = _action_diversity_metrics(steps)
+            _effective_types = {"type", "select_option"}
+            has_effective_action = any(
+                str((s.get("action") or {}).get("action_type", "")).lower() in _effective_types
+                for s in steps
+            )
 
             reason_bucket = _classify_reason(
                 success=success,
@@ -1462,6 +1468,10 @@ def main() -> None:
                 na_task_ids=_na_ids,
                 agent_finished=_is_agent_finished,
                 eval_type=eval_type,
+                page_unchanged_rate=summary.get("page_unchanged_rate"),
+                has_effective_action=has_effective_action,
+                require_reset=require_reset,
+                url_unique_count=url_unique_count,
             )
             if adjusted_success != success:
                 adjusted_reason_bucket = _classify_reason(
@@ -1552,6 +1562,8 @@ def main() -> None:
                 "url_revisit_max": url_revisit_max,
                 "action_diversity": round(action_diversity, 4),
                 "action_unique_types": action_unique_types,
+                "has_effective_action": has_effective_action,
+                "require_reset": require_reset,
                 "answer_in_intent_price_range": answer_in_intent_price_range,
                 "reference_answers_json": json.dumps(ref_answers, ensure_ascii=False) if ref_answers is not None else "",
                 "final_answer": final_answer,
@@ -1664,6 +1676,8 @@ def main() -> None:
         "url_revisit_max",
         "action_diversity",
         "action_unique_types",
+        "has_effective_action",
+        "require_reset",
         "answer_in_intent_price_range",
         "reference_answers_json",
         "final_answer",
