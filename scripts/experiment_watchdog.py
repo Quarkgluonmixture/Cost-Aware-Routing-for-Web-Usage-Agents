@@ -58,19 +58,6 @@ def _read_json(path: Path) -> Dict[str, Any]:
         return json.load(f)
 
 
-def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
-    rows: List[Dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                rows.append(json.loads(line))
-            except Exception:
-                continue
-    return rows
-
 
 def _post_ntfy(topic: str, title: str, body: str, priority: str = "default") -> None:
     url = f"https://ntfy.sh/{topic}"
@@ -248,7 +235,9 @@ def _purge_digest_records(digest_dir: Path, condition_id: str, task_id: int, obs
                 pass
             keep.append(line)
         if removed:
-            digest_file.write_text("\n".join(keep) + ("\n" if keep else ""), encoding="utf-8")
+            tmp_file = digest_file.with_suffix(".jsonl.tmp")
+            tmp_file.write_text("\n".join(keep) + ("\n" if keep else ""), encoding="utf-8")
+            tmp_file.replace(digest_file)  # atomic on same filesystem
         return removed
     except Exception as exc:
         print(f"[watchdog][warn] purge_digest task {task_id}: {exc}")
@@ -268,6 +257,11 @@ def _check_session_health(condition_dir: Path, site: str, task_id: int) -> Optio
     # Tab 0 header line and skip session check if the active page belongs to
     # another site (login/logout links would be from the wrong site).
     first_line = text.split("\n", 1)[0].strip().lower()
+    # Extract only the active tab portion (before first " | " separator)
+    # to avoid matching site keywords in non-active tab labels.
+    # e.g. "Tab 0 (current): Shopping Page | Tab 1: Classifieds"
+    #   → only check "Tab 0 (current): Shopping Page"
+    active_tab_part = first_line.split(" | ")[0]
     # Map site names to tab-header keywords (VWA uses page title as tab label)
     _SITE_TAB_KW: Dict[str, List[str]] = {
         "classifieds": ["classifieds"],
@@ -276,7 +270,7 @@ def _check_session_health(condition_dir: Path, site: str, task_id: int) -> Optio
         "shopping_admin": ["shopping", "magento", "admin"],
     }
     expected_kws = _SITE_TAB_KW.get(site, [])
-    if expected_kws and first_line.startswith("tab ") and not any(kw in first_line for kw in expected_kws):
+    if expected_kws and active_tab_part.startswith("tab ") and not any(kw in active_tab_part for kw in expected_kws):
         return None  # active tab belongs to another site; skip
     has_login_link = bool(_LOGIN_ABSENT_RE.search(text))
     has_logout_link = bool(_LOGIN_PRESENT_RE.search(text))
@@ -1203,6 +1197,9 @@ def main() -> int:
                 )
 
             _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
+
+        # --- 1.5. Prune stale completions (queue may delete condition_summary) ---
+        _prune_stale_condition_completions(run_dir, args.condition, seen_completions)
 
         # --- 2. Periodic/manual status report ---
         manual_report_now = force_report_once

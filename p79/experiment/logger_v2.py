@@ -14,10 +14,13 @@ class LoggerV2:
 
     def write_condition_meta(self, meta: Dict[str, Any]) -> None:
         self.condition_dir.mkdir(parents=True, exist_ok=True)
-        with open(self.condition_dir / "condition_meta.json", "w", encoding="utf-8") as f:
+        path = self.condition_dir / "condition_meta.json"
+        tmp_path = path.with_suffix(".json.tmp")
+        with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
             f.flush()
             os.fsync(f.fileno())
+        os.replace(tmp_path, path)  # atomic on same filesystem
 
     def step_log_path(self, site: str, task_id: int) -> Path:
         return self.episodes_dir / f"{site}_task_{task_id}_steps_v2.jsonl"

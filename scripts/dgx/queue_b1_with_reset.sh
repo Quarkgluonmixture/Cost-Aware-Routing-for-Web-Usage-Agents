@@ -131,8 +131,8 @@ NTFY_MINIMAL_MODE="${NTFY_MINIMAL_MODE:-1}"
 # experiment_watchdog 配置（外层监控，每站点单实例）
 EXP_WATCHDOG_ENABLE="${EXP_WATCHDOG_ENABLE:-1}"
 EXP_WATCHDOG_POLL_SECS="${EXP_WATCHDOG_POLL_SECS:-30}"
-EXP_WATCHDOG_IDLE_ALERT_MINS="${EXP_WATCHDOG_IDLE_ALERT_MINS:-20}"
-EXP_WATCHDOG_NOTIFY_COMPLETION_ENABLE="${EXP_WATCHDOG_NOTIFY_COMPLETION_ENABLE:-1}"
+EXP_WATCHDOG_IDLE_ALERT_MINS="${EXP_WATCHDOG_IDLE_ALERT_MINS:-30}"
+EXP_WATCHDOG_NOTIFY_COMPLETION_ENABLE="${EXP_WATCHDOG_NOTIFY_COMPLETION_ENABLE:-0}"
 EXP_WATCHDOG_GLM_CONFIG="${EXP_WATCHDOG_GLM_CONFIG:-${REPO_DIR}/.auth/glm}"
 EXP_WATCHDOG_PID=""
 
@@ -352,6 +352,7 @@ run_condition_until_complete() {
     }
     [[ ${attempt} -gt 1 ]] && {
       log "[B1/${label}/${mode}] resume ${attempt}/${MAX_RESUME_ATTEMPTS}..."
+      refresh_site_auth_retry "${site}" "${label}/${mode}/retry${attempt}" || true
       ntfy_send "P79 [B1/${label}/${mode}] 重试" "第 ${attempt}/${MAX_RESUME_ATTEMPTS} 次 resume" "default"
     }
     run_condition_foreground "${mode}" "${tmp_config}" "${run_dir}" "${label}" || true
@@ -406,7 +407,6 @@ run_site_3mode_with_reset() {
   # 1) DOM — auth refresh before first condition (SOM/Vision already have it)
   refresh_site_auth_retry "${site}" "${label}/dom" || { log "[b1][fatal] ${site} DOM 前 auth 失败，中止"; exit 1; }
   log "======== [B1/${label} 1/3] DOM ========"
-  ntfy_send "P79 [B1/${label}/dom] 开始" "run_id=${run_id}" "default"
   run_condition_until_complete "dom" "${dom_config}" "${run_dir}" "phase1_dom_router_0" "${label}"
   [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1/${label}/dom] 完成" "run_id=${run_id}" "default"
 
@@ -418,7 +418,6 @@ run_site_3mode_with_reset() {
 
   # 2) SOM
   log "======== [B1/${label} 2/3] SOM ========"
-  ntfy_send "P79 [B1/${label}/som] 开始" "run_id=${run_id}" "default"
   run_condition_until_complete "som" "${som_config}" "${run_dir}" "phase1_som_router_0" "${label}"
   [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1/${label}/som] 完成" "run_id=${run_id}" "default"
 
@@ -430,7 +429,6 @@ run_site_3mode_with_reset() {
 
   # 3) VISION
   log "======== [B1/${label} 3/3] Vision ========"
-  ntfy_send "P79 [B1/${label}/vision] 开始" "run_id=${run_id}" "default"
   run_condition_until_complete "vision" "${vision_config}" "${run_dir}" "phase1_vision_router_0" "${label}"
   [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1/${label}/vision] 完成" "run_id=${run_id}" "default"
 
@@ -477,23 +475,31 @@ log "========================================================"
 
 start_gallery_server
 
-ntfy_send "P79 [B1_3mode] 队列启动" "顺序: classifieds → reddit → shopping，带模式间 reset" "default"
+# B1_SITE 过滤：设置后只跑指定站点（如 B1_SITE=reddit,shopping）
+B1_SITE="${B1_SITE:-all}"
+ntfy_send "P79 [B1_3mode] 队列启动" "站点=${B1_SITE}，带模式间 reset" "default"
 
-# 1) Classifieds（stub 数据，is_condition_complete 会自动跳过）
-run_site_3mode_with_reset "classifieds" "${RUN_ID_CLASSIFIEDS}"
-log "classifieds 完成. Waiting 15s..."
-sleep 15
+# 1) Classifieds
+if [[ "${B1_SITE}" == "all" || "${B1_SITE}" == *"classifieds"* ]]; then
+  run_site_3mode_with_reset "classifieds" "${RUN_ID_CLASSIFIEDS}"
+  log "classifieds 完成. Waiting 15s..."
+  sleep 15
+fi
 
 # 2) Reddit
-run_site_3mode_with_reset "reddit" "${RUN_ID_REDDIT}"
-log "reddit 完成. Waiting 15s..."
-sleep 15
+if [[ "${B1_SITE}" == "all" || "${B1_SITE}" == *"reddit"* ]]; then
+  run_site_3mode_with_reset "reddit" "${RUN_ID_REDDIT}"
+  log "reddit 完成. Waiting 15s..."
+  sleep 15
+fi
 
 # 3) Shopping
-run_site_3mode_with_reset "shopping" "${RUN_ID_SHOPPING}"
+if [[ "${B1_SITE}" == "all" || "${B1_SITE}" == *"shopping"* ]]; then
+  run_site_3mode_with_reset "shopping" "${RUN_ID_SHOPPING}"
+fi
 
 log "========================================================"
-log "=== B1 三模式全部完成（classifieds + reddit + shopping）==="
+log "=== B1 三模式完成（站点=${B1_SITE}）==="
 log "=== Gallery: http://localhost:8765/visualwebarena/phase1/${AGGREGATE_PREFIX}/gallery.html ==="
 log "========================================================"
-ntfy_send "P79 [B1_3mode] 全部完成!" "classifieds + reddit + shopping 三模式全部跑完" "high"
+ntfy_send "P79 [B1_3mode] 完成!" "站点=${B1_SITE} 三模式跑完" "high"

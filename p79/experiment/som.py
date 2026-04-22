@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import re
 from dataclasses import dataclass
@@ -7,6 +8,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from PIL import ImageDraw, ImageFont
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -41,6 +44,7 @@ def _collect_bbox_map(raw: Any, bbox_map: Dict[int, List[float]]) -> None:
                     maybe_id = int(raw[id_key])
                     break
                 except Exception:
+                    logger.debug("Failed to parse element ID from key %s=%r", id_key, raw[id_key])
                     maybe_id = None
 
         bbox = None
@@ -263,6 +267,7 @@ def _build_som_result(
             marked_image_path = str(som_dir / f"step_{step_idx:03d}_som.png")
             drawn.save(marked_image_path)
         except Exception:
+            logger.warning("SOM image rendering failed; degrading to unmarked screenshot", exc_info=True)
             marked_image_path = None
             marked_image = None
 

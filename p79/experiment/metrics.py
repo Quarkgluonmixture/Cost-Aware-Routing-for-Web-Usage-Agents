@@ -61,9 +61,10 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
         return False, None
 
     msg = error_message.lower()
-    # Proxy API errors (e.g. 403 quota exhaustion) are infrastructure failures, not benchmark noise
+    # Proxy API transient errors (503/502/timeout). 403 quota exhaustion
+    # is caught earlier by runner as fatal (re-raised), never reaches here.
     if any(k in msg for k in ("model-api", "execute-api")):
-        return False, None
+        return True, "api_infra"
     if any(k in msg for k in ("captcha", "anti-bot", "blocked", "forbidden", "access denied")):
         return True, "anti_bot_or_blocked"
     if any(k in msg for k in ("geo-restricted", "not available in your region", "location")):
@@ -84,6 +85,8 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
         return True, "docker_service_error"
     if "start_url_content_error" in msg:
         return True, "start_url_content_error"
+    if "site_infra_error" in msg:
+        return True, "site_infra_error"
     if any(k in msg for k in ("navigation failed", "net::err_")):
         return True, "navigation_error"
     return False, None

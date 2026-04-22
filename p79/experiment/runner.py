@@ -516,22 +516,17 @@ class ExperimentRunner:
                                 episode_summaries.append(loaded)
                                 continue
 
-                            # Zero-step error: skip retry for benchmark noise
-                            # (watchdog handles retry with MAX_NOISE_RETRIES)
-                            if is_noise:
-                                logger.info(
-                                    "Skipping benchmark-noise zero-step episode site=%s task=%s: %s",
-                                    task.site, task.task_id,
-                                    str(loaded.get("error", ""))[:120],
-                                )
-                                episode_summaries.append(loaded)
-                                continue
-
+                            # Zero-step error: skip — watchdog handles all retries
+                            # with MAX_NOISE_RETRIES / MAX_CODE_BUG_RETRIES limits.
+                            # Runner's retry pass (line 544) will re-run if watchdog
+                            # has already deleted the summary.
                             logger.info(
-                                "Retrying zero-step error episode site=%s task=%s: %s",
+                                "Skipping zero-step error episode site=%s task=%s (watchdog handles retry): %s",
                                 task.site, task.task_id,
                                 str(loaded.get("error", ""))[:120],
                             )
+                            episode_summaries.append(loaded)
+                            continue
                         except Exception:
                             pass  # Corrupted summary — fall through to re-run
 
@@ -869,7 +864,10 @@ class ExperimentRunner:
         current_info = info or {}
 
         # ── Start-URL tab health check ──────────────────────────────────
-        _error_title_patterns = ("content not found", "not found", "404", "page not found")
+        _error_title_patterns = (
+            "content not found", "not found", "404", "page not found",
+            "osclass error",  # classifieds DB unavailable
+        )
         tab_titles = self.environment.get_all_tab_titles()
         for _tab_url, _tab_title in tab_titles:
             if any(pat in (_tab_title or "").lower() for pat in _error_title_patterns):
@@ -1129,6 +1127,15 @@ class ExperimentRunner:
                             step_idx, task.site, task.task_id, exc,
                         )
 
+            # ── Mid-episode site infrastructure check ──────────────────
+            _INFRA_TITLE_PATTERNS = ("osclass error",)
+            _title_after_lower = (state_after.get("title") or "").lower()
+            if any(pat in _title_after_lower for pat in _INFRA_TITLE_PATTERNS):
+                raise RuntimeError(
+                    f"site_infra_error: title='{state_after.get('title')}' "
+                    f"detected at step {step_idx} for task {task.site}/{task.task_id}"
+                )
+
             action_success, page_change_reasons, text_similarity = detect_page_state_change(
                 state_before=state_before,
                 state_after=state_after,
@@ -1168,49 +1175,58 @@ class ExperimentRunner:
             retry_action_type_str: Optional[str] = None
             if trigger_m3_retry or trigger_baseline_retry:
                 retry_action = m3_retry_action(failed_action=action, obs_text=obs.text or "")
-                retry_obs, retry_reward, retry_term, retry_trunc, retry_info = self.environment.step(retry_action)
+                # Common bookkeeping (always incremented regardless of retry outcome)
                 retry_count += 1
                 retry_total += 1
                 overhead["routing_retry_count"] += 1.0
-
-                if self.state_change_cfg.get("form_snapshot_enabled", True):
-                    retry_form = self.environment.snapshot_form_fields()
-                else:
-                    retry_form = None
-                retry_state_after = build_page_state(retry_obs, retry_info, form_snapshot=retry_form)
-                retry_success, retry_reasons, retry_similarity = detect_page_state_change(
-                    state_before=state_before,
-                    state_after=retry_state_after,
-                    action_type=str(retry_action.get("action_type", "")).upper(),
-                    similarity_threshold=similarity_threshold,
-                )
-                retry_action_type = str(retry_action.get("action_type", "")).lower()
                 retry_was_applied = True
-                retry_action_type_str = retry_action_type
-                retry_success = bool(
-                    retry_success or (retry_term and retry_action_type in ("finish", "stop", "done"))
-                )
-
-                # Retry step is executed in the real environment, so always adopt
-                # post-retry state to keep wrapper state and recorded observation aligned.
-                next_obs, reward, terminated, truncated, next_info = (
-                    retry_obs,
-                    retry_reward,
-                    retry_term,
-                    retry_trunc,
-                    retry_info,
-                )
-                state_after = retry_state_after
-                text_similarity = retry_similarity
-                page_changed = bool(retry_reasons)
-                action_success = retry_success
-                if retry_reasons:
-                    retry_tag = (
-                        "m3_retry_applied" if trigger_m3_retry else "baseline_no_progress_retry_applied"
+                retry_action_type_str = str(retry_action.get("action_type", "")).lower()
+                try:
+                    retry_obs, retry_reward, retry_term, retry_trunc, retry_info = self.environment.step(retry_action)
+                except Exception as retry_exc:
+                    # Retry env.step failed — preserve original obs/reward/terminated state
+                    logger.warning(
+                        "M3 retry env.step failed at step %d for task %s/%d: %s — keeping original state",
+                        step_idx, task.site, task.task_id, retry_exc,
                     )
-                    page_change_reasons = list(dict.fromkeys(list(retry_reasons) + [retry_tag]))
                 else:
-                    page_change_reasons = []
+                    if self.state_change_cfg.get("form_snapshot_enabled", True):
+                        retry_form = self.environment.snapshot_form_fields()
+                    else:
+                        retry_form = None
+                    retry_state_after = build_page_state(retry_obs, retry_info, form_snapshot=retry_form)
+                    retry_success, retry_reasons, retry_similarity = detect_page_state_change(
+                        state_before=state_before,
+                        state_after=retry_state_after,
+                        action_type=str(retry_action.get("action_type", "")).upper(),
+                        similarity_threshold=similarity_threshold,
+                    )
+                    retry_action_type = str(retry_action.get("action_type", "")).lower()
+                    retry_action_type_str = retry_action_type
+                    retry_success = bool(
+                        retry_success or (retry_term and retry_action_type in ("finish", "stop", "done"))
+                    )
+
+                    # Retry step is executed in the real environment, so always adopt
+                    # post-retry state to keep wrapper state and recorded observation aligned.
+                    next_obs, reward, terminated, truncated, next_info = (
+                        retry_obs,
+                        retry_reward,
+                        retry_term,
+                        retry_trunc,
+                        retry_info,
+                    )
+                    state_after = retry_state_after
+                    text_similarity = retry_similarity
+                    page_changed = bool(retry_reasons)
+                    action_success = retry_success
+                    if retry_reasons:
+                        retry_tag = (
+                            "m3_retry_applied" if trigger_m3_retry else "baseline_no_progress_retry_applied"
+                        )
+                        page_change_reasons = list(dict.fromkeys(list(retry_reasons) + [retry_tag]))
+                    else:
+                        page_change_reasons = []
 
             safe_next_info = next_info if isinstance(next_info, dict) else {}
             is_stop_action = str(action.get("action_type", "")).lower() in ("finish", "stop", "done")

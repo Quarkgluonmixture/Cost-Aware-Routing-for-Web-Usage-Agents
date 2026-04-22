@@ -185,16 +185,55 @@ class VwaEvaluator:
         except Exception:
             pass
 
+        max_eval_retries = 3
+        page = env._env.page  # noqa: SLF001 - VWA evaluator requires underlying page
+        eval_page = page  # first attempt uses agent's page
+        fresh_page = None  # track fresh page for cleanup
+        last_exc: Optional[Exception] = None
         try:
-            evaluator = self._evaluator_router(config_file, captioning_fn=self._captioning_fn)
-            score = evaluator(
-                trajectory=trajectory,
-                config_file=config_file,
-                page=env._env.page,  # noqa: SLF001 - VWA evaluator requires underlying page
-            )
-            return EpisodeEvalResult(score=float(score), error=None)
-        except Exception as exc:  # pragma: no cover - depends on external environment
-            return EpisodeEvalResult(score=0.0, error=f"evaluator_error:{exc}")
+            for attempt in range(max_eval_retries):
+                try:
+                    evaluator = self._evaluator_router(config_file, captioning_fn=self._captioning_fn)
+                    score = evaluator(
+                        trajectory=trajectory,
+                        config_file=config_file,
+                        page=eval_page,
+                    )
+                    return EpisodeEvalResult(score=float(score), error=None)
+                except Exception as exc:  # pragma: no cover - depends on external environment
+                    last_exc = exc
+                    err_lower = str(exc).lower()
+                    is_nav_error = any(k in err_lower for k in (
+                        "net::err_", "navigation failed", "timed out",
+                        "target closed", "page closed",
+                    ))
+                    if is_nav_error and attempt < max_eval_retries - 1:
+                        logger.warning(
+                            "Evaluator navigation error (attempt %d/%d), retrying with fresh page in 5s: %s",
+                            attempt + 1, max_eval_retries, str(exc).split('\n')[0][:120],
+                        )
+                        # Agent's page may have dirty state (open dialogs,
+                        # pending XHR, beforeunload handlers) that persistently
+                        # blocks page.goto().  Open a fresh page in the same
+                        # browser context so cookies/auth are shared but state
+                        # is clean.
+                        if fresh_page is None:
+                            try:
+                                fresh_page = page.context.new_page()
+                                eval_page = fresh_page
+                                logger.info("Opened fresh page for evaluator retry")
+                            except Exception as page_exc:
+                                logger.warning("Failed to open fresh page: %s", page_exc)
+                        time.sleep(5)
+                        continue
+                    return EpisodeEvalResult(score=0.0, error=f"evaluator_error:{exc}")
+            return EpisodeEvalResult(score=0.0, error=f"evaluator_error:{last_exc}")
+        finally:
+            if fresh_page is not None:
+                try:
+                    fresh_page.close()
+                except Exception:
+                    pass
 
 
 def create_environment(env_cfg: Dict[str, Any]):

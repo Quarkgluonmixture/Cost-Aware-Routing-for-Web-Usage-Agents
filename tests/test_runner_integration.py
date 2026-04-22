@@ -167,4 +167,4 @@ def test_runner_and_analysis_end_to_end_with_mock_env(tmp_path):
     except RuntimeError as exc:
         assert "requires pandas and matplotlib" in str(exc)
     else:
-        assert (analysis_dir / "_overview" / "tables" / "phase1_representation_screening.csv").exists()
+        assert (analysis_dir / "results" / "_overview" / "tables" / "phase1_representation_screening.csv").exists()

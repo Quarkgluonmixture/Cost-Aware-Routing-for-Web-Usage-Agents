@@ -484,7 +484,7 @@ class VWAWrapper:
                     action_str = self._json_to_id_action_str(action_json)
                     action = create_id_based_action(action_str)
                 except Exception as _e:
-                    logger.warning("create_id_based_action failed (%s), falling back to wait: %s", action_str, _e)
+                    logger.warning("create_id_based_action failed (%s), falling back to wait: %s", action_json, _e)
                     action = create_none_action()
 
         try:
@@ -531,7 +531,7 @@ class VWAWrapper:
             try:
                 env.close()  # VWA close(): calls context_manager.__exit__() only if reset_finished=True
             except Exception:
-                pass
+                logger.debug("env.close() raised (suppressed)", exc_info=True)
             # VWA's close() skips __exit__() when reset_finished=False (i.e. setup() failed
             # mid-way, e.g. ERR_CONNECTION_REFUSED during page.goto).  The Playwright event
             # loop started by __enter__() keeps running in its dispatcher greenlet, causing
@@ -544,7 +544,7 @@ class VWAWrapper:
                     try:
                         ctx.__exit__(None, None, None)
                     except Exception:
-                        pass
+                        logger.debug("ctx.__exit__() raised during force-close (suppressed)", exc_info=True)
 
     # ---------- form snapshot ----------
 
@@ -688,7 +688,7 @@ class VWAWrapper:
                     .get("obs_nodes_info")
             ) or None
         except Exception:
-            pass
+            logger.debug("Failed to extract obs_nodes_info", exc_info=True)
 
         # Inject select options into AXTree text.
         # VWA's AXTree shows combobox as "[N] combobox '' ... expanded: False" with no children.

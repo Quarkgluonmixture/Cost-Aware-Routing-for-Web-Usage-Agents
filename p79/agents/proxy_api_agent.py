@@ -585,13 +585,25 @@ Action Schema:
         _retryable_codes = {429, 500, 502, 503, 504}
         _max_retries = 3
         _backoff = 10  # seconds; doubles each attempt
+        resp = None
         for _attempt in range(_max_retries + 1):
-            resp = requests.post(
-                self.endpoint,
-                json=payload,
-                headers=headers,
-                timeout=self.timeout,
-            )
+            try:
+                resp = requests.post(
+                    self.endpoint,
+                    json=payload,
+                    headers=headers,
+                    timeout=self.timeout,
+                )
+            except (requests.Timeout, requests.ConnectionError) as net_exc:
+                if _attempt == _max_retries:
+                    raise
+                wait = _backoff * (2 ** _attempt)
+                logger.warning(
+                    "API network error %s (attempt %d/%d), retrying in %ds...",
+                    net_exc, _attempt + 1, _max_retries, wait,
+                )
+                time.sleep(wait)
+                continue
             if resp.status_code not in _retryable_codes or _attempt == _max_retries:
                 break
             wait = _backoff * (2 ** _attempt)
@@ -600,13 +612,20 @@ Action Schema:
                 resp.status_code, _attempt + 1, _max_retries, wait,
             )
             time.sleep(wait)
+        assert resp is not None, "API request failed: resp is None after all retries"
         resp.raise_for_status()
-        resp_json = resp.json()
+        try:
+            resp_json = resp.json()
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"API returned non-JSON response (status {resp.status_code}): {resp.text[:200]}") from exc
 
         # ----- Parse response -----
         # Normalize response: OpenAI format → extract from choices[0].message
         if self._api_format == "openai" and "choices" in resp_json:
-            msg = resp_json["choices"][0].get("message", {})
+            choices = resp_json["choices"]
+            if not choices:
+                raise RuntimeError("API returned empty choices list")
+            msg = choices[0].get("message", {})
             raw_content = msg.get("content", "")
             reasoning_text_openai = msg.get("reasoning_content") or None
         else:
@@ -690,8 +709,8 @@ Action Schema:
                 action["text"] = text + "\n"
                 logger.info("Auto-appended newline to search query.")
 
-        usage = resp_json.get("usage", {})
-        metadata = resp_json.get("metadata", {})
+        usage = resp_json.get("usage") or {}
+        metadata = resp_json.get("metadata") or {}
         meta = {
             "raw_output": output_text,
             "valid": valid,

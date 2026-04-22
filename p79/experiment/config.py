@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import os
 import time
+import uuid
 from pathlib import Path
 from typing import Any, Dict
 
@@ -75,9 +76,9 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "form_snapshot_enabled": True,
     },
     "auth_refresh": {
-        "enabled": False,
+        "enabled": True,
         "interval": 5,
-        "sites": ["shopping", "shopping_admin"],
+        "sites": ["classifieds", "reddit", "shopping", "shopping_admin"],
     },
     "analysis": {
         "outputs": {
@@ -91,6 +92,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
 def _merge_dict(base: Dict[str, Any], update: Dict[str, Any]) -> Dict[str, Any]:
     merged = copy.deepcopy(base)
     for k, v in (update or {}).items():
+        if v is None:
+            continue
         if isinstance(v, dict) and isinstance(merged.get(k), dict):
             merged[k] = _merge_dict(merged[k], v)
         else:
@@ -136,10 +139,11 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     experiment.setdefault("seed", 42)
     experiment.setdefault("output_root", "results")
     sites = cfg.get("task", {}).get("include_sites", [])
+    _uid = uuid.uuid4().hex[:6]
     if len(sites) == 1:
-        experiment.setdefault("run_id", f"run_{sites[0]}_{int(time.time())}")
+        experiment.setdefault("run_id", f"run_{sites[0]}_{int(time.time())}_{_uid}")
     else:
-        experiment.setdefault("run_id", f"run_{int(time.time())}")
+        experiment.setdefault("run_id", f"run_{int(time.time())}_{_uid}")
 
     env_cfg = cfg.setdefault("env", {})
     env_cfg.setdefault("type", "vwa")
@@ -205,9 +209,9 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     cfg["state_change"].setdefault("form_snapshot_enabled", True)
 
     cfg.setdefault("auth_refresh", {})
-    cfg["auth_refresh"].setdefault("enabled", False)
+    cfg["auth_refresh"].setdefault("enabled", True)
     cfg["auth_refresh"].setdefault("interval", 5)
-    cfg["auth_refresh"].setdefault("sites", ["shopping", "shopping_admin"])
+    cfg["auth_refresh"].setdefault("sites", ["classifieds", "reddit", "shopping", "shopping_admin"])
 
     cfg.setdefault("metrics", {}).setdefault("energy", {})
     cfg["metrics"]["energy"].setdefault("hardware_profile", "m2")

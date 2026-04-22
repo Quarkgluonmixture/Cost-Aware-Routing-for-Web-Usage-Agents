@@ -34,13 +34,13 @@ def read_jsonl_dedup(path: Path) -> List[Dict[str, Any]]:
     """Read a single JSONL file, deduplicating restart artifacts."""
     file_lines: List[Dict[str, Any]] = []
     with open(path, "r", encoding="utf-8") as f:
-        for line in f:
+        for line_num, line in enumerate(f, 1):
             line = line.strip()
             if not line:
                 continue
             try:
                 file_lines.append(json.loads(line))
             except json.JSONDecodeError:
-                logger.warning("Dropped corrupt JSONL line in %s: %.100s", path, line)
+                logger.warning("Dropped corrupt JSONL line %d in %s: %.100s", line_num, path, line)
                 continue
     return dedup_restart_lines(file_lines)

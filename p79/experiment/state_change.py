@@ -149,8 +149,12 @@ def detect_page_state_change(
         similarity = SequenceMatcher(None, text_before, text_after).ratio()
         if similarity < similarity_threshold:
             changes.append("content_changed")
+    elif not text_before and not text_after:
+        similarity = 1.0  # both empty — genuinely unchanged (e.g. blank page)
     else:
-        similarity = 1.0
+        # one side empty, the other not — treat as content changed
+        similarity = 0.0
+        changes.append("content_changed")
 
     if int(before.get("interactive_elements_count", 0) or 0) != int(after.get("interactive_elements_count", 0) or 0):
         changes.append("interactive_elements_changed")
