@@ -96,11 +96,38 @@ B1 有时在 type 时选错字段或丢失焦点（见 B0_DOM_digest §3/§5：�
 
 每次 scroll 方向错误消耗 1 步，并可能触发 page_unchanged 计数（若方向相反导致已在顶部/底部无变化）。由于约定混用是随机的，影响无法系统性量化，只能作为噪声记录。
 
+### 跨模型/跨 API 控制实验（§72）
+
+为判定 scroll 单向性是 (a) Bedrock proxy artifact、(b) Qwen3-VL 模型行为、还是 (c) prompt/环境通病，设计了 20 个 scroll-heavy classifieds tasks 的三条件对比实验（SoM 模式）：
+
+| 条件 | 模型 | API | 目的 |
+|------|------|-----|------|
+| Claude SoM | Claude Sonnet 4.6 | Bedrock proxy（免费） | 跨模型对比 |
+| DashScope SoM | Qwen3-VL-235B-instruct | DashScope 官方（免费额度） | 跨 API 对比 |
+| B0 Qwen DOM | Qwen3-VL-235B | Bedrock proxy | 已有 baseline |
+
+**10 个共享 task 结果**：
+
+| 指标 | DashScope 官方 | Qwen proxy DOM | Claude SoM |
+|------|---------------|----------------|------------|
+| SR | **50% (5/10)** | 30% (3/10) | 30% (3/10) |
+| Scroll up 比例 | 3.2% | 6.9% | **36.2%** |
+| Stuck scroll | 19.4% | 26.4% | **0%** |
+| Parse error | 0% | 0% | 0% |
+
+**结论**：
+1. **Scroll 单向性 = Qwen3-VL 模型行为**：DashScope 官方 3.2% ≈ proxy 6.9%，同模型不同 API 一致；Claude 36.2%，差异 10 倍。排除了 API 层 artifact。
+2. **Stuck scroll = 模型行为**：DashScope 19.4% ≈ proxy 26.4%，Claude 0%（到底部即停）。
+3. **Claude 20 tasks 全集**：SR 40% (8/20) vs Qwen DOM 20% (4/20)；平均 12.4 步 vs 24.9 步；成本 $0.070/ep vs $0.102/ep。Claude 的双向 scroll 能力使其效率显著更高。
+
+实验确认 scroll 约定不稳定是 Qwen3-VL-235B 的**模型固有行为**，非 proxy 或 prompt 导致。
+
 ### 处置
 
 - **不修复**：取反修复已验证失败（使混乱更严重）；intent-based 修复（解析 thought 文字）过于脆弱
+- **已实现的缓解方案**（§67）：Tool schema 将 `delta: [dx, dy]` 替换为 `scroll_direction: enum("up","down")`，消除符号约定冲突。`vwa_wrapper.py` 本就只取方向丢弃量级，转换保持环境兼容。
 - **分析时**：将 scroll 方向错误导致的 page_unchanged 视为模型随机噪声，非系统性脚手架缺陷
-- **论文披露**：B0 scroll 行为存在约定不稳定性，为 235B 模型的已知局限，不影响 B0 vs B1 主要结论（SR 对比）
+- **论文披露**：B0 scroll 行为存在约定不稳定性，为 Qwen3-VL-235B 的已知模型局限（跨 API 实验确认），不影响 B0 vs B1 主要结论（SR 对比）
 
 ---
 
@@ -246,19 +273,15 @@ Task 52 额外注：元素可见比例仅 27.5%（<60% 阈值），理论上应�
 
 **成功总数：35**（raw SR 14.96%，234 tasks）
 
-| 类别 | 数量 | 代表任务 | 机制 |
-|------|------|---------|------|
-| na_fp | 7 | 24,135,167,189,191,194,196 | `fuzzy_match("","N/A")=1.0`，evaluator bug |
-| visual_fp（kwd_only） | 10 | 2,5,15,17,50,94,174,201,222,233 | DOM 无 listing 图，url_match/string_match 不验证理解 |
-| §56 盲区（has_image 豁免） | 17 | 44-46,48,53-55,60,87,101,103,126,140,153,170,183,184 | has_image 豁免，可能部分为真实成功 |
-| 真实成功 | 1 | 217 | 纯文本操作 |
+| 类别 | 数量 | Task IDs | 机制 |
+|------|------|----------|------|
+| na_fp | 6 | 24, 135, 167, 191, 195, 196 | N/A reference task，agent 未真正完成 |
+| visual_fp（kwd_only） | 14 | 5, 15, 17, 24, 25, 50, 94, 98, 110, 174, 191, 195, 196, 222 | DOM 无 listing 图，url_match/string_match 不验证理解 |
+| na_fp ∩ visual_fp 重叠 | 4 | 24, 191, 195, 196 | 两类同时命中 |
+| **净 unique FP** | **16** | — | 6 + 14 - 4 = 16 |
+| **真实成功** | **19** | — | 35 - 16 = 19 |
 
-**Adjusted SR**：8.04%（18/224，现行过滤）；严格下界 0.4%（1/234）；报告使用 8.04%，注明区间。
-
-**§56 盲区内部分级**：
-- 确定 FP（2个）：87/153，需对比参考图与 listing 图，DOM 看不到 listing 图
-- 高风险 FP（5个）：44/45/46/48/101，"最贵/最新+分类"文本路径唯一可达，参考图与答案解耦（task 101 已验证）
-- 不确定（10个）：53/54/55/60/103/126/140/170/183/184，需识别参考图中角色/场景，235B 可能真正利用了图像
+**Adjusted SR**：8.48%（19/224，扣除 10 个 N/A reference tasks 后分母 224）
 
 **kwd_only 轻微过滤问题**：Task 201（snare drum black red）属于主动文本推理（搜关键词+标题语义推断）被归为 FP，是保守处理。论文注明 kwd_only 检测为启发式方法，adjusted SR 为下界估计。
 
@@ -268,21 +291,22 @@ Task 52 额外注：元素可见比例仅 27.5%（<60% 阈值），理论上应�
 
 | 失败原因 | 数量 | 比例 | 备注 |
 |---------|------|------|------|
-| **fail_no_progress** | **61** | **26.3%** | ★ 最大失败源 |
-| fail_finish_wrong_url_not_found | 46 | 19.8% | URL 不匹配 |
-| success | 35 | 15.1% | (raw) |
-| fail_finish_eval_mismatch | 33 | 14.2% | 评测不一致 |
-| fail_max_steps_target_unreachable | 19 | 8.2% | 目标不可达 |
-| fail_max_steps_search_repeat | 9 | 3.9% | 搜索循环 |
-| fail_early_finish | 9 | 3.9% | 过早结束 |
+| **fail_no_progress** | **62** | **26.5%** | 最大失败源 |
+| fail_finish_wrong_url_not_found | 43 | 18.4% | URL 不匹配 |
+| success | 35 | 15.0% | (raw) |
+| fail_finish_eval_mismatch | 32 | 13.7% | 评测不一致 |
+| fail_max_steps_target_unreachable | 14 | 6.0% | 目标不可达 |
+| fail_max_steps_click_back_loop | 11 | 4.7% | click-back 循环 |
+| fail_early_finish | 10 | 4.3% | 过早结束 |
 | fail_incomplete_or_stuck | 7 | 3.0% | 页面卡住 |
-| fail_max_steps_click_back_loop | 4 | 1.7% | click-back 循环 |
-| fail_max_steps | 3 | 1.3% | 达到最大步数 |
-| fail_finish_empty_answer | 3 | 1.3% | 空答案 |
-| fail_finish_claim_missing | 2 | 0.9% | 声称缺失 |
+| fail_finish_empty_answer | 7 | 3.0% | 空答案 |
+| fail_finish_claim_missing | 6 | 2.6% | 声称缺失 |
+| fail_max_steps_search_repeat | 3 | 1.3% | 搜索循环 |
+| fail_max_steps | 2 | 0.9% | 达到最大步数 |
 | fail_parse_error | 1 | 0.4% | JSON 解析错误 |
+| fail_finish_wrong_url_left_target | 1 | 0.4% | 离开目标 URL |
 
-DOM 模式的 `fail_no_progress`（26.3%）显著高于 SoM（10.3%），因为 DOM 纯文本无截图辅助，agent 在长 AXTree 中反复选择相同（错误的）元素但无法得到视觉反馈进行纠正。
+DOM 模式的 `fail_no_progress`（26.5%）显著高于 SoM（10.3%），因为 DOM 纯文本无截图辅助，agent 在长 AXTree 中反复选择相同（错误的）元素但无法得到视觉反馈进行纠正。
 
 ---
 
@@ -290,26 +314,25 @@ DOM 模式的 `fail_no_progress`（26.3%）显著高于 SoM（10.3%），因为 
 
 | 指标 | DOM | SoM | Vision |
 |------|-----|-----|--------|
-| Raw SR | 14.96% (35/234) | **24.36%** (57/234) | 15.38% (36/234) |
-| Adjusted SR | 8.04% (18/224) | **21.43%** (48/224) | 11.61% (26/224) |
-| FP 分解 | 7 N/A + 10 visual | 9 N/A | 10 N/A |
-| avg steps | 12.25 | 7.25 | 7.67 |
-| cost/ep | $0.0467 | $0.0355 | **$0.0241** |
-| P95 latency | **10,537ms** | 74,042ms | 50,540ms |
-| no-op rate | 15.7% | **7.7%** | 31.7% |
-| page_unchanged rate | 25.2% | 26.5% | **39.6%** |
+| Raw SR | 14.96% (35/234) | **23.50%** | 15.81% |
+| Adjusted SR | 8.48% (19/224) | **20.98%** | 12.05% |
+| FP 分解 | 6 N/A + 14 visual (overlap 4) = 16 net | — | — |
+| avg steps | 11.52 | 8.62 | **7.85** |
+| cost/ep | $0.0425 | $0.0417 | **$0.0248** |
+| P95 latency | **37,513ms** | 75,932ms | 46,361ms |
+| no-op rate | 14.4% | — | — |
+| page_unchanged rate | 25.0% | — | — |
 
 ### 统计显著性（McNemar 精确检验，adjusted labels）
 
 | 对比 | 不一致对 (A-only / B-only) | p 值 | 显著性 |
 |------|--------------------------|------|--------|
-| SoM vs DOM | 37 / 7 | **5.3e-6** | ★★★ |
-| Vision vs DOM | 16 / 8 | 0.152 | — |
-| SoM vs Vision | 27 / 5 | **1.1e-4** | ★★★ |
+| SoM vs DOM | 34 / 6 | **8.4e-6** | ★★★ |
+| Vision vs DOM | 22 / 8 | **0.016** | ★ |
+| SoM vs Vision | 31 / 17 | 0.059 | — (marginal) |
 
-> DOM adjusted SR 注：严格下界 0.4%（1/234 真实成功 task_217）；现行过滤 8.04%（扣除 7 N/A FP + 10 kwd visual FP，§56 盲区 17 tasks 暂计为成功）；报告使用 8.04%，注明为上界估计。
-> 与 B1 对比：DOM 8.04% vs B1 0.85%（9.5×）；SoM 21.43% vs B1 16.24%（+5.19pp）；Vision 11.61% vs B1 8.12%。B0 235B 在所有三种模式下均优于 B1 4B。
+> 与 B1 对比：DOM 8.48% vs B1 0.85%（10.0×）；SoM 20.98% vs B1 16.24%（+4.74pp）；Vision 12.05% vs B1 8.12%（+3.93pp）。B0 235B 在所有三种模式下均优于 B1 4B。
 
 ---
 
-*最后更新：2026-04-18（更新：全部定量数据对齐 parse_error 修复后最新分析；新增 Task 32 案例；新增失败原因分布表；新增统计显著性检验）*
+*最后更新：2026-04-21（更新：FP 分类统计对齐最新 na_fp/visual_fp 检测结果；全部定量数据、失败原因分布、McNemar 检验对齐三模式最新分析；新增 Vision 模式数据）*

@@ -142,6 +142,28 @@ DOM 模式通过 element_id 精确命中，无此问题——UI 元素本身没�
 
 Prompt 要求 `[0.0-1.0]` 归一化坐标，但模型频繁输出像素值或混合格式。`vwa_wrapper.py` 有防御性归一化（>1.0 自动除以 viewport 尺寸），实际点击位置合理，但说明 **4B 模型的指令遵循不稳定**。
 
+### F1 补充：坐标失败量化分类与截图验证（2026-04-21）
+
+基于 B1_3mode_classifieds_20260413 运行的逐 step 全量统计，Vision 模式 click 成功率 **约 49%**（SoM element-ID 约 72%，差 23pp）。失败 click 按根因分为五类：
+
+| 故障类型 | 占比 | 代表 case | 根因 |
+|---------|------|----------|------|
+| viewport 内偏移 | ~43% | task 7 `[0.192, 0.904]`、task 8 `[0.81, 0.34]` | 模型空间定位精度不足，对小面积元素中心估计有几十像素误差 |
+| 混合格式 | ~20% | task 2 `[0.602, 416]`、task 4 `[0.438, 178]` | x 归一化 + y 像素混用，prompt 要求 [0-1] 但模型不稳定遵守 |
+| 越界坐标 | ~20% | task 6 `[168, 986]`（y=986 > viewport 720） | 模型不感知 viewport 边界，输出目标在视口下方的像素值 |
+| 顶部误点 | ~10% | task 3 `[0.438, 0.037]`（y=27px 工具栏区域） | y 坐标估计严重偏移，thought 说要点 listing 但坐标指向页面顶部 |
+| 零纠错重试 | ~50%（叠加） | 所有失败 task | 4B 模型 click 失败后重试完全相同坐标，不调整不换策略 |
+
+**截图验证三个代表性失败**：
+
+1. **Task 6 step 10** `[168, 986]`：页面是 Video gaming 分类，agent 想点左下 "Refine category → Motorcycles"，但该链接在视口以下。环境标注 `OFF-SCREEN ↓`，坐标被 clamp 到底边，绿色十字准心落在 "All categories" 附近。Agent 连续 6 次输出同一越界坐标（steps 10/11/16/19/20/21）。
+
+2. **Task 2 step 1** `[0.60, 416]`：Agent 想选 Category 下拉框（位于 y≈302px），但 y=416 是像素值（归一化后 0.578），绿色十字准心落在 "Latest Listings" 标题下方空白区域——不是任何可交互元素。连续 3 步重复同一坐标。
+
+3. **Task 3 step 7** `[0.44, 0.04]`：Agent thought 说要点 $1499 相机 listing（在页面中部），但 y=0.04 → 28px，绿色十字准心在页面最顶部 header 价格文字处。连续 3 步重复。
+
+**与 DOM/SoM 的关系**：这五类故障在 DOM/SoM 中**完全不存在**——element-ID 机制绕过了坐标估计、格式遵守、viewport 感知这三个 4B 模型的弱点。SoM 虽然也支持坐标 fallback（`coordinate_type: normalized`），但有 `[SOM_MARKS]` ID 列表可用时 agent 几乎总是选 element_id。
+
 ### F2. Scroll-Down 到底早停（不会翻页）
 
 **代表 case：Task 6**（找 3 个 $1000-$2000 摩托车）
@@ -401,4 +423,5 @@ Vision 模式的 verbalized confidence 覆盖率 100%（远高于 DOM 0.85%、So
 
 *生成时间：2026-04-12*
 *更新时间：2026-04-12，全量 234 tasks 完成，数值更新为 adjusted（19/234 = 8.12%），McNemar Vision vs DOM 改为显著（p=0.0002）*
+*更新时间：2026-04-21，追加 F1 坐标失败量化分类（五类根因占比 + 三截图验证），基于 B1_3mode_classifieds_20260413 运行*
 *数据来源：B1_3mode_classifieds_20260404_141103 完整三模式运行*

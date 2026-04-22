@@ -112,6 +112,9 @@ Classifieds 站点没有有效的地点筛选 UI。Agent 只能将地名（"Dela
 | text_over_vision | 56 | 模型依赖 SOM_MARKS 文本而忽略截图视觉信息 |
 | 标注遮挡 | 4 | 青色 mark 框遮挡关键文字/图片区域 |
 | 空间布局丢失 | 2 | SoM 文本索引丢失了元素的空间位置关系 |
+| 扁平化容器误点 | — | 扁平 marks 丢失层级，模型 click 非交互容器节点 |
+| label/textbox 混淆链 | — | 扁平 marks 混淆表单 label 与 textbox → scroll → marks 丢失 → P4 |
+| 首页视觉干扰 | — | 首页缩略图截断搜索流程，agent 点击无关 item |
 | ID幻觉 | 1 | 模型引用不存在的 element_id |
 | location_filter | 1 | 地点过滤不可达（非表征问题，见 1.1） |
 
@@ -191,6 +194,94 @@ SoM 模式因能看到缩略图，模型反而"更有信心"基于不完整的�
 - **视觉自信 premature finish（task_84/85）**：看到图片 → 视觉判断增强错误信心 → 跳过搜索
 
 **归因**：模型能力 × SoM 表征交互效应。不搜索是共性缺陷，但 SoM 的视觉信息加剧了 premature finish 的倾向。
+
+### 首页视觉干扰 → 放弃搜索流程（视觉自信的行为变体）
+
+与 task_84/85 的"首页即 finish"同源，但行为路径不同：agent **正确执行了 category select**，然后被首页 Latest Listings 的缩略图吸引，**放弃搜索流程直接点进 homepage 上的无关 item**，最终在错误的商品上 finish。
+
+**task_65/66/67（三个同模板任务："Find the cheapest video game item where I can roleplay the situation in the image"）**：
+
+三个 task 意图图片不同（足球赛/橄榄球/其他），正确答案分别是 item 28239/6175/7114，但 SoM agent 的轨迹**几乎完全相同**：
+
+1. step 0：`select_option` "Video gaming" ✓（类目选对）
+2. step 1：**不是**点 Search 或输入关键词，而是点了 `[id=282] link 'xbox series x / with extras'`——这是首页 Latest Listings 的第二张缩略图（$350）
+3. step 2-3：从 xbox 详情页导航到 Video Gaming 搜索结果，找到 "tom clancy R6 lockdown"（$5.00，item 83357）
+4. step 4：finish "tom clancy R6 lockdown for $5.00" ← 三个 task 给出**完全相同的错误答案**
+
+**三个不同意图图片 → 同一个错误答案**：agent 完全忽略了 intent 图片中的场景差异（足球/橄榄球/...），只关注"cheapest video game"，被首页 xbox 缩略图的视觉吸引力捕获。
+
+**DOM 模式对比**：
+- task_65 DOM：3 步 finish（也失败，DOM 同样不够好）
+- task_66 DOM：**23 步**，触发 action_failed/page_unchanged，未 finish（至少尝试搜索）
+- task_67 DOM：**30 步**，触发 action_failed，未 finish（持续探索）
+
+DOM 模式下 task_66/67 不会被首页图片干扰（看不到缩略图），因此持续搜索直到超时。SoM 模式的截图让 agent "看到" xbox 后立即行动，跳过了本应执行的搜索流程。
+
+**与已有 task_84/85 的统一视角**：
+
+| 变体 | 首页行为 | 搜索流程 | 失败机制 |
+|------|---------|---------|---------|
+| task_84/85 | 看到 Ring → 立即 finish | **完全跳过** | 1 步，premature finish |
+| **task_65/66/67** | 选对类目 → 看到 xbox → 点击 | **中断后偏移** | 5 步，沿错误路径 finish |
+
+共性：首页 Latest Listings 的**视觉吸引力**截断了正常的"select → search → browse → compare"工作流。4B 模型将"视觉上看起来相关的 item"等同于"搜索结果"，跳过了关键的过滤/比较步骤。
+
+**归因**：模型能力（intent 图片理解不足 + 缺乏"首页 ≠ 搜索结果"的元认知）× SoM 表征交互（截图让首页 item 视觉可及，触发"捷径"行为）。
+
+#### 量化：首页 select 后走偏的系统性规模
+
+对全部 153 个首页 task 统计"前 3 步含 select_option → 后续行为"：
+
+| 指标 | SoM | DOM |
+|------|-----|-----|
+| 前 3 步含 select_option | 61 (40%) | 72 (47%) |
+| select 后走偏/早停 | **37/61 = 61%** | 30/72 = 42% |
+| → select 循环（重复 select 同一 dropdown 不搜索） | 10 | 5 |
+| → 直接点击首页 listing（SoM 独有） | **7** | **0** |
+| → type 搜索但仍走偏 | 20 | 25 |
+| select 后正常 type 搜索 | 25 (41%) | 43 (60%) |
+
+**三层结论**：
+
+1. **共性底层**（模型能力）：4B 模型缺乏"select → type keyword → click Search"的完整 action sequence 元认知。select 循环（重复选同一 dropdown）在两模式中都存在（SoM 10 / DOM 5），重叠 task（58/154/155）证实这是模型共性缺陷。
+
+2. **SoM 独有加剧——视觉捷径**：7 个 task 在 select 后**直接 click 首页 Latest Listings 缩略图**，DOM 为 0。截图让 agent "看到可点的 item"后绕过搜索流程。
+
+3. **总体搜索启动率差距**：SoM select 后 type 搜索仅 41%，DOM 达 60%。截图提供了"已经看到了信息"的错觉，降低了 agent 发起主动搜索的意愿。
+
+### 视觉非确认 → 过早否定 finish（视觉自信的镜像变体）
+
+与 task_84/85 的"视觉假阳性"对称，task_25/26/27 展示了"视觉假阴性"：模型看到缩略图但**无法视觉确认**目标属性（颜色/内饰），于是过早 finish 回答"0"。DOM 模式不存在此问题——没有视觉证据可以"不确认"，反而基于文本推理更灵活。
+
+**task_25（红船计数，答案 1）——DOM 成功 vs SoM 失败**：
+
+最干净的反转案例。两个模式搜 "red boats" 得到相同结果列表：
+
+- **DOM agent（4 步，✅）**：select "Boats" 类目 → 搜 "red boats" → 点进详情页 → thought: "this is the only listing visible and it matches the date" → finish "1"。不需要视觉颜色确认，基于"搜 red boats 返回了结果"的文本推断即可
+- **SoM agent（3 步，❌）**：搜 "red boats" → 看缩略图 → thought: "the listing is for a 1967 FIBRA/FISHING GEAR, **not a red boat**"、"**no visual indicator of the boat being red**" → finish "0"。从小缩略图无法辨识红色 → 否定匹配
+
+**task_26（黄/蓝摩托计数，答案 2）——DOM stuck vs SoM 过早否定**：
+
+- SoM（6 步）：搜 "motorcycles" → 列表日期均为 November，看不到 October 25 → scroll 一圈 → finish "0"（confidence=0.0）
+- DOM（5 步）：同样搜索，陷入 stuck/page_unchanged_streak，未 finish → 两者都失败，但 DOM 至少不会给出错误断言
+
+**task_27（RV 内饰计数，答案 3）——搜索策略错误 + 过早否定**：
+
+- SoM（9 步）：搜 "car interior" 作为关键词（错误——任务是看图片是否展示内饰，不是搜索标题含"interior"的 listing）→ 找到的 listing 标题不含 interior → finish "0"（confidence=0.95）
+- DOM（12 步）：类似困境但更多探索步骤
+
+**机制对比**：
+
+| 变体 | 视觉信息角色 | 结果 | 例子 |
+|------|------------|------|------|
+| 视觉假阳性（84/85） | 看到图 → 错误确认 → 过早肯定 | 选错 item | "缩略图看起来匹配 → finish" |
+| **视觉假阴性（25/26/27）** | 看到图 → 无法确认 → 过早否定 | 答 "0" | "缩略图看不出红色 → 不存在" |
+
+**不 scroll 是关键行为标记**：SoM agent 在搜索结果页上几乎不 scroll——task_25 仅 1 次 scroll(300px) 就 finish，task_26 scroll 3 次但只是在同一区间上下踏步，task_27 在结果页仅 1 次 scroll。与 DOM 模式形成鲜明对比：DOM agent 在同类计数任务中典型行为是反复 scroll、翻页、陷入循环——信息不足导致不敢判断。SoM 的截图让模型"看了一眼就觉得全看到了"，跳过了本应有的遍历步骤。
+
+**与 B0 过度自信的对应**：B0(235B) 信息充足时快速判断（高 confidence finish），B1 DOM(4B) 信息不足时无限循环（不敢判断）。B1 SoM 的截图给 4B 模型"类 B0 的信息完备感"——"我看到了画面 → 如果红色存在我应该能看到"——于是产生和 B0 类似的过早 finish，但 verbalized confidence=0.0 暴露了本质差异：不是"我确信"而是"我看不到所以放弃"。
+
+**归因**：模型能力（视觉分辨力不足以从小缩略图识别颜色）× SoM 表征交互。截图提供了虚假完备感，4B 模型将"视觉未确认"等同于"不存在"。
 
 ### 视觉误匹配：语义级匹配替代图片级匹配（模型能力）
 
@@ -286,6 +377,131 @@ DOM 几乎全败是因为这些任务需要**视觉判断**（"image is set on g
 Agent 最终只能靠手动翻页（第1→2→3页）逐页浏览，在 17 步后选了一个 $100 的灯塔画 finish。
 
 **与 task_6/task_219 的关系**：task_6 和 task_219 是更基础的 grounding 失误（点击 StaticText 标签而非相邻 textbox）。task_19 更进一步——定位正确但 action type 错误。两者都反映 4B 模型对表单输入交互的 action decomposition 能力不足：无法将"设置价格过滤"分解为 `type [Min] "80"` → `type [Max] "100"` → `click [Apply]` 的动作序列。
+
+### 扁平化 marks 丢层级 → 容器/文本节点误点（SoM 特有）
+
+SoM agent 在搜索结果列表页上反复 click 非交互节点（StaticText、LayoutTable），导致 `action_success=false` 卡死。**DOM 模式完全不存在此问题。**
+
+#### 机制分析
+
+DOM 与 SoM 的文本格式差异是根因：
+
+**DOM 模式**——带缩进的层级树，角色 + 父子关系一目了然：
+```
+[2913] link 'Trek - Classic Rebuild' url: http://...     ← 可点击，有 url
+    [2914] image 'Trek - Classic Rebuild'
+[2918] LayoutTable ''                                     ← 不可点击，容器
+    [2920] LayoutTableRow ''
+        [2948] StaticText 'Rebuilt bike...(International Red)...'  ← 不可点击，纯文本
+```
+
+**SoM 模式**——`_extract_text_marks()` 扫描同一 AXTree，提取所有 `[N]` 行生成**扁平列表**（`som.py:24-35`），丢失缩进：
+```
+[SOM_MARKS]
+[id=2913] link 'Trek - Classic Rebuild' url: http://...
+[id=2914] image 'Trek - Classic Rebuild'
+[id=2918] LayoutTable ''
+[id=2948] StaticText 'Rebuilt bike...(International Red)...'
+[/SOM_MARKS]
+```
+
+类型标签（`link`/`StaticText`/`LayoutTable`）**保留了**，但两个信息丢失：
+1. **层级关联**：DOM 树缩进告诉你 2913(link) 和 2948(StaticText) 属于同一个 listing 卡片。扁平列表中它们只是相邻行，模型很难将 "link 'Trek - Classic Rebuild'" 与 "StaticText '...(International Red)...'" 关联为同一 listing
+2. **交互性暗示**：DOM 树中 `link` 带 `url:` 属性是强信号；扁平列表中所有元素视觉权重相同，加上截图中整张卡片看起来是一个可点击整体，模型倾向**按文本内容匹配选 ID**而忽略类型标签
+
+#### 案例
+
+**task_39（红框自行车，step 4/5/6）**：
+- Agent 想点开含 "International Red" 的 listing
+- 选了 `[id=2948] StaticText '...(International Red)...'`（描述段落，bbox `[507,52,623,60]`）
+- 应该选 `[id=2913] link 'Trek - Classic Rebuild'`（标题链接），但标题不含 "red"
+- 连续 3 次 click 全部 `action_success=false`，最终 page_unchanged_streak 终止
+
+**task_51（Arts+crafts 画作，step 4/5/6）**：
+- Agent 想点开 Serigraph 画作
+- 选了 `[id=2185] LayoutTable ''`（容器节点，bbox `[507,633,623,139]`）
+- 应该选 `[id=2180] link 'Thou Shalt Not Covet...'`（标题链接）
+- 同样连续 3 次失败卡死
+
+**DOM 模式对比**：
+- task_39 DOM：**30 步**（无 click 卡死），自由进出详情页
+- task_51 DOM：**8 步**（无 click 卡死），正常点击链接导航
+
+#### 与已有模式的关系
+
+此缺陷与 P2（容器节点误点，bbox `[507,*,623,*]`）共享相同的失败特征（click 大面积非交互区域），但根因不同：
+
+- **P2**：模型在 DOM 模式下也可能点到容器（但 DOM 中极少发生，因为树结构区分清晰）
+- **本模式**：SoM 扁平化 + 截图视觉整体感 **共同导致**模型按内容相关性而非元素角色选 ID，是 SoM 表征结构的固有缺陷
+
+**归因**：SoM 表征结构缺陷（`_extract_text_marks` 扁平化丢失层级）× 模型能力（4B 不能从类型标签推断交互性）。截图中卡片的视觉整体感进一步加剧了误选倾向。
+
+### label/textbox 混淆 → viewport 滚动 → marks 丢失 → P4 链（SoM 特有）
+
+SoM 扁平化 marks 将表单 label（StaticText）和相邻 textbox 并列，4B 模型无法从扁平格式中区分"标签"与"输入框"。当 type 动作命中 label 时，浏览器行为不可预期，可能触发 viewport 滚动，导致表单元素滚出视野、从 SoM marks 中**永久消失**，agent 失去导航能力。
+
+**task_52（Arts+crafts 最新画作，url_match）——三重叠加故障**：
+
+step 0：正确 `select_option` Arts + crafts ✓
+
+step 1：type "painting\n" 到 `[id=138] StaticText 'Keyword'`，而非 `[id=140] textbox 'e.g., a blue used car'`。SoM marks 中两者并列：
+```
+[id=138] StaticText 'Keyword'
+[id=140] textbox 'e.g., a blue used car' required: False
+```
+Agent 选了 label 而非 textbox。`\n`（Enter）触发 `scroll_changed` + `modal_state_changed`（可能是 autocomplete），页面**向下滚动**。
+
+step 2 观测（step_002/observation_som.txt）：搜索表单**完全消失**——无 textbox、无 Search button、无 Category dropdown，只剩 `[id=2] RootWebArea` + 一堆 listing 卡片。Agent 想再搜 "painting" 但 marks 中无输入框 → type 到 `[id=2] RootWebArea`（bbox `[0,0,10,10]`，P4 根节点误操作）→ 浏览器 Ctrl+A 全选蓝 + 页面进一步下滚。
+
+后续（step 3-29）：agent 恢复导航但陷入 click-back 循环，反复进出同一个 "matador painting" 详情页（item 14761），最终 30 步截断。
+
+**故障链**：label 误选 → Enter 触发 scroll → 表单 marks 丢失 → P4 根节点 → 全选蓝 → 循环
+
+**与容器误点的区别**：容器误点（task_39/51）是模型按内容选 ID 忽略类型标签；label 误选是模型无法区分表单中"标签"和"输入框"的功能角色。两者根因同源（扁平化丢失层级关联），但后者引发的滚动→marks 丢失→P4 连锁反应更具破坏性，因为 agent 直接失去了返回表单的途径。
+
+---
+
+## 二B、SoM 正向效应：视觉信息触发高阶推理策略（Mirage Effect 案例）
+
+> 以下案例证实 Mirage Effect（§18）在 4B 模型上的正向表现：相同 DOM 文本信息下，SoM 截图的存在触发了质变推理路径——agent 使用了 DOM 模式从未尝试过的高阶 UI 交互。
+
+### 价格过滤器使用（task_17，成功 vs DOM 失败）
+
+**最干净的 Mirage Effect 正向证据。**
+
+- Intent："Show me the cheapest bike with red handlebars between $900-950"
+- **两种模式的 DOM observation 完全一致**：`heading 'Price'` → `StaticText 'Min.'` → `textbox` → `StaticText 'Max.'` → `textbox`，价格过滤 UI 在文本层面已完整暴露
+- **DOM agent（失败，10 步）**：将 `bike with red handlebars between $900-950\n` 作为自然语言整串输入搜索框，价格约束被当作搜索关键词，搜索无结果后反复 scroll，最终未找到目标
+- **SoM agent（成功，5 步）**：搜索 `bike with red handlebars\n` → type `900` 到 Min 字段 → type `900` 到 Max 字段 → 从结果中点击正确 item → finish
+
+**关键差异**：SoM agent 将价格约束**分解**为独立的过滤器操作（搜索 + Min/Max 字段填写），而 DOM agent 将整个 intent 作为单一搜索字符串。这不是信息差异——两者看到了完全相同的 Price filter 结构化字段——而是**视觉信息改变了 action decomposition 策略**。截图中 Price 区域在侧边栏视觉上突出，触发了"这是一个独立操作入口"的认知。
+
+### Sort By 使用（task_18，失败但行为值得记录）
+
+- Intent："Show me blue iPhones that were listed most recently"
+- SoM agent 在 step 5 使用了 `select_option` 选择 "Newly listed"（Sort By 下拉）。这在 4B 模型中极为罕见——B1 classifieds 全站几乎没有其他 episode 主动使用 Sort By
+- 虽然最终失败（27 步，未找到实际的蓝色 iPhone），但 Sort By 的使用表明 SoM 截图促使模型识别了"排序"这一 UI affordance
+
+### 搜索自纠正 + 价格过滤 + 多页浏览（task_19，成功）
+
+- Intent："Find a sea painting that is listed for over $80"
+- **三个高阶行为在单个 episode 中同时出现**：
+  1. **搜索自纠正**：先搜 "sea" → 无结果 → 改搜 "sea painting" → 出结果。跨步自纠正在 B1(4B) 中极为罕见
+  2. **价格过滤器**：在 Min 字段输入 `80`，与 task_17 相同的 action decomposition 策略
+  3. **多页浏览**：翻了 3 页（第 1→2→3 页），逐页比较后选择正确 item
+- 最终在 17 步内成功 finish
+
+### 小结
+
+这三个 task 集中体现了 SoM 视觉信息对 4B 模型的正向效应：
+
+| 高阶行为 | B1 DOM 出现频率 | B1 SoM 出现 |
+|---------|---------------|------------|
+| 价格过滤器 Min/Max 分解使用 | 极低（task_19 DOM 尝试但 click 代替 type） | task_17 ✅, task_19 ✅ |
+| Sort By 主动使用 | 未观测到 | task_18 |
+| 跨步搜索自纠正 | 未观测到 | task_19 ✅ |
+
+**与负向效应的关系**：本节案例与 §二 中的 visual scope anchoring、premature finish 形成对照——同一机制（视觉信息改变推理策略）在不同场景下产生正/负效果。当任务需要利用 UI 控件（过滤器、排序）时，SoM 截图让模型"看到"这些控件并主动使用；当任务需要超出当前视野推理时，截图锚定反而限制了模型。
 
 ---
 
@@ -418,3 +634,9 @@ Classifieds 10 个 N/A reference task 中，SoM **10/10 全部 score=1.0**（ua_
 *更新时间：2026-04-10，合并人工定性分析（原 B1_SOM_manual.md），更新方法论溯源*
 *更新时间：2026-04-10，追加 §5 N/A ua_match FP 分析（SoM 9/9 全部 FP）+ task_192 评测边界案例*
 *更新时间：2026-04-11，digest 全部完成（186/186），追加总体概况、更新 SoM 特有失败类型统计（text_over_vision 30→56，标注遮挡 3→4）、更新 N/A FP 为 10/10、移除"尚未完成"标注*
+*更新时间：2026-04-21，追加 §二B SoM 正向效应（task_17/18/19）——价格过滤器、Sort By、搜索自纠正，Mirage Effect 正向案例*
+*更新时间：2026-04-21，追加"视觉非确认→过早否定"（task_25/26/27）——视觉自信 premature finish 的镜像变体，task_25 DOM 成功 vs SoM 失败反转*
+*更新时间：2026-04-21，追加"扁平化 marks 丢层级→容器/文本节点误点"（task_39/51）——SoM 特有 click-stuck，含 DOM vs SoM 格式对比分析*
+*更新时间：2026-04-21，追加"label/textbox 混淆链"（task_52）——扁平 marks 表单 label 误选→scroll→marks 丢失→P4 三重叠加*
+*更新时间：2026-04-21，追加"首页视觉干扰"（task_65/66/67）——与 task_84/85 统一为首页缩略图截断搜索流程*
+*更新时间：2026-04-21，追加首页 select 后走偏量化（153 task 全量统计：SoM 61% vs DOM 42%，含三层归因）*

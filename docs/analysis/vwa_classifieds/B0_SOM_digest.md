@@ -5,7 +5,6 @@
 >
 > 数据来源：`phase1_som_router_0`，classifieds 全部 234 tasks
 > 分析方法：自动化 post analysis（condition_summary_v2 + reason_diagnostics + cross_representation）
-> **本版数据含 parse_error 修复后重跑结果（2026-04-17）**
 
 ---
 
@@ -14,39 +13,39 @@
 | 指标 | 数值 |
 |------|------|
 | SoM condition 总 episode 数 | 234 |
-| 成功（raw） | 57（24.36%） |
-| N/A FP | 9（10 个 N/A reference task 中 9 个误判） |
+| 成功（raw） | 55（23.50%） |
+| N/A FP | 8 |
 | Visual FP | 0（SoM 有截图，无 visual lucky hits） |
-| **Adjusted SR** | **21.43%**（48/224） |
-| 平均步数 | 7.25 步 |
-| 平均成本 | $0.0355 / episode |
-| 平均无效步率（no-op） | 7.7% |
-| 平均页面无变化率 | 26.5% |
-| 早停触发分布 | action_failed: 113, page_unchanged_streak: 40, no_progress_streak: 40 |
-| Bootstrap 95% CI | [15.38%, 25.64%]（raw SR） |
+| **Adjusted SR** | **20.98%**（47/224） |
+| 平均步数 | 8.62 步 |
+| 平均成本 | $0.0417 / episode |
+| 平均无效步率（no-op） | 6.0% |
+| 平均页面无变化率 | 23.9% |
+| 早停触发分布 | action_failed: 108, page_unchanged_streak: 36, no_progress_streak: 36 |
+| P95 延迟 | 75,932ms |
 
 ### 与 DOM / Vision 对比（B0 三模式）
 
 | 指标 | DOM | **SoM** | Vision |
 |------|-----|---------|--------|
-| Raw SR | 14.96% | **24.36%** | 15.38% |
-| Adjusted SR | 8.04% | **21.43%** | 11.61% |
-| 平均步数 | 12.25 | **7.25** | 7.67 |
-| 平均成本 | $0.0467 | $0.0355 | **$0.0241** |
-| parse_error 数 | 1 | 12 | 2 |
-| SoM vs DOM McNemar p | — | **5.3e-6 ★** | — |
-| SoM vs Vision McNemar p | — | **1.1e-4 ★** | — |
+| Raw SR | 14.96% | **23.50%** | 15.81% |
+| Adjusted SR | 8.48% | **20.98%** | 12.05% |
+| 平均步数 | 11.52 | **8.62** | 7.85 |
+| 平均成本 | $0.0425 | $0.0417 | **$0.0248** |
+| SoM vs DOM McNemar p | — | **8.4e-6 ★★★** | — |
+| SoM vs Vision McNemar p | — | **0.059** (marginal) | — |
+| Vision vs DOM McNemar p | — | — | **0.016 ★** |
 
-B0 三模式中，**SoM adjusted SR 最高（21.43%），显著优于 DOM 和 Vision**（McNemar p<0.001）。Vision vs DOM 差异不显著（p=0.152）。
+B0 三模式中，**SoM adjusted SR 最高（20.98%），显著优于 DOM**（McNemar p=8.4e-6）。SoM vs Vision 差异 marginal（p=0.059），Vision vs DOM 显著（p=0.016）。
 
 ### 与 B1 SoM 对比
 
 | 模型 | Raw SR | Adjusted SR |
 |------|--------|-------------|
-| **B0 (235B)** | **24.36%** | **21.43%** |
+| **B0 (235B)** | **23.50%** | **20.98%** |
 | B1 (4B) | 20.51% | 16.24% |
 
-**parse_error 修复后，B0 SoM 以 +5.19pp 领先 B1 SoM**。之前观察到的"SoM 反转"（B0 < B1）完全由 parse_error 导致（旧数据 45 例 20.1%，修复后仅 12 例 5.17%），证实了 §五 假说 A。235B 模型在 SoM 多模态输入下确实更强。
+**B0 SoM 以 +4.74pp 领先 B1 SoM**。235B 模型在 SoM 多模态输入下确实更强。
 
 ---
 
@@ -54,34 +53,25 @@ B0 三模式中，**SoM adjusted SR 最高（21.43%），显著优于 DOM 和 Vi
 
 | 失败原因 | 数量 | 比例 | 备注 |
 |---------|------|------|------|
-| **fail_finish_wrong_url_not_found** | **54** | **23.3%** | ★ 最大失败源 |
-| fail_early_finish | 34 | 14.7% | SoM 过度自信早停 |
-| success | 57 | 24.6% | (raw) |
-| fail_finish_eval_mismatch | 26 | 11.2% | 评测不一致 |
-| fail_no_progress | 24 | 10.3% | 连续无进展 |
-| fail_parse_error | 12 | 5.2% | 残留 parse error |
-| fail_max_steps_target_unreachable | 8 | 3.4% | 目标不可达 |
-| fail_finish_claim_missing | 5 | 2.2% | 声称缺失 |
-| fail_finish_empty_answer | 5 | 2.2% | 空答案 |
-| fail_max_steps_click_back_loop | 3 | 1.3% | click-back 循环 |
-| 其他 | 4 | 1.7% | search_repeat / max_steps / summary_error / left_target |
-
-### 与旧数据（parse_error 修复前）对比
-
-| 失败原因 | 旧数据 | 新数据 | 变化 |
-|---------|--------|--------|------|
-| fail_parse_error | 45（20.1%） | 12（5.2%） | **↓14.9pp** |
-| success | 37（15.8%） | 57（24.4%） | **↑8.6pp** |
-| fail_early_finish | 12（5.4%） | 34（14.7%） | ↑9.3pp（暴露出来的真实失败） |
-| fail_finish_wrong_url | 29（12.9%） | 54（23.3%） | ↑10.4pp |
-
-parse_error 大幅下降后，之前被掩盖的 **fail_early_finish 和 fail_finish_wrong_url** 成为新的头号问题。这些不是新增的失败，而是之前被 parse_error 截断的 episode 现在能够正常执行、暴露出 agent 层面的真实失败模式。
+| **fail_finish_wrong_url_not_found** | **54** | **23.1%** | ★ 最大失败源 |
+| fail_finish_eval_mismatch | 31 | 13.2% | 评测不一致 |
+| fail_early_finish | 30 | 12.8% | SoM 过度自信早停 |
+| success | 55 | 23.5% | (raw) |
+| fail_no_progress | 19 | 8.1% | 连续无进展 |
+| fail_max_steps_target_unreachable | 15 | 6.4% | 目标不可达 |
+| fail_finish_claim_missing | 9 | 3.8% | 声称缺失 |
+| fail_parse_error | 6 | 2.6% | 残留 parse error |
+| fail_max_steps | 5 | 2.1% | 步数耗尽 |
+| fail_max_steps_click_back_loop | 4 | 1.7% | click-back 循环 |
+| fail_finish_empty_answer | 3 | 1.3% | 空答案 |
+| fail_incomplete_or_stuck | 2 | 0.9% | 不完整/卡住 |
+| fail_finish_wrong_url_left_target | 1 | 0.4% | 离开目标页 |
 
 ---
 
 ## 三、核心失败模式详析
 
-### 3.1 fail_finish_wrong_url_not_found（54 例，23.3%）
+### 3.1 fail_finish_wrong_url_not_found（54 例，23.1%）
 
 最大失败源。Agent 执行了操作但 finish 时停在错误的页面/URL。
 
@@ -89,7 +79,7 @@ parse_error 大幅下降后，之前被掩盖的 **fail_early_finish 和 fail_fi
 - SoM 截图给 agent "视觉确认"感，使其更容易在相似页面上 finish
 - 对比 DOM（46 例，19.8%）：SoM 稍高，因为 agent 更果断、更少探索
 
-### 3.2 fail_early_finish / SoM 过度自信早停（34 例，14.7%）
+### 3.2 fail_early_finish / SoM 过度自信早停（30 例，12.8%）
 
 SoM 模式下 agent 过早 finish，且 confidence 往往很高（0.8-0.95）。核心机制是**"信息充分幻觉"**：SoM 截图+标注给 agent "已看到所有信息"的错觉，在视觉属性查询任务中尤为严重。
 
@@ -142,20 +132,20 @@ SoM 模式下 agent 过早 finish，且 confidence 往往很高（0.8-0.95）。
 
 这是 SoM 的 **text-over-vision 反转**：截图不是帮助 agent 更好决策，而是提供了一个"快速放弃"或"快速确认"的锚点。
 
-### 3.3 fail_no_progress（24 例，10.3%）
+### 3.3 fail_no_progress（19 例，8.1%）
 
 Agent 连续多步无进展被 cycle detection 截断。
 
 - 对比 DOM（61 例，26.3%）：SoM 远低，因为 SoM 截图帮助 agent 更快定位交互元素
 - 典型表现：反复点击 combobox、重复搜索相同关键词、select_option 循环（见 §3.5）
 
-### 3.4 fail_parse_error（12 例，5.2%）
+### 3.4 fail_parse_error（6 例，2.6%）
 
-修复后的残留 parse error。仍是 SoM 独有的偏高现象（DOM 1 例，Vision 2 例）。
+残留 parse error。仍是 SoM 独有的偏高现象（DOM 1 例，Vision 2 例）。
 
 - **根因**：SoM 是唯一同时传**长文本（SOM_MARKS 列表）+ 图像**的模式
 - temperature=0.1 在复杂多模态输入下偶尔导致 JSON 格式出错
-- 12 例中大部分可通过 GLM 后处理修复，但仍有少数无法恢复
+- 6 例中大部分可通过 GLM 后处理修复，但仍有少数无法恢复
 
 ### 3.5 select_option 重复选择循环
 
@@ -179,6 +169,8 @@ Agent 连续多步无进展被 cycle detection 截断。
 **潜在改进**：`_format_history()` 中为 `select_option` 添加 option_label 显示（`Step 7: select_option [id=3152] "Cell phones" -> OK`），可增强反馈信号，但不保证 4B 模型能利用。
 
 ### 3.6 "自信声明找不到" 跨模式定量分析（49 例，27.1% of failed）
+
+> 注：本节数据来自早期人工分析 pass，定量数字（49 例等）基于当时数据快照。失败总数因后续重跑略有变化，但定性结论和比例特征保持一致。
 
 对所有 SoM 失败 episode 的最终 finish answer/thought 进行正则匹配（`not found`/`no results`/`does not exist`/`cannot be completed` 等 20+ 模式），统计 agent **主动声明目标不存在**后放弃的比例。
 
@@ -226,39 +218,38 @@ SoM 截图上叠加了大量彩色标注框，**挤压了模型对页面内容�
 
 ## 四、交叉分析（三模式完整）
 
-### 4.1 SoM 独有成功（24 tasks）
+### 4.1 SoM 独有成功与交叉分布
 
-三模式 adjusted 集合分析：
+三模式 adjusted 集合分析（/234 denom）：
 
 | 集合 | 数量 | 占比 |
 |------|------|------|
-| only_som | 24 | 10.3% |
-| som+vision (not dom) | 13 | 5.6% |
-| all_success | 8 | 3.4% |
-| dom+som (not vision) | 3 | 1.3% |
+| only_som | 27 | 11.5% |
+| som+vision (not dom) | 6 | 2.6% |
+| som+dom (not vision) | 6 | 2.6% |
+| all_success | 9 | 3.8% |
 
-SoM 独有成功 24 tasks（single_nav:17, page_reading:6, grid:1）。另有 13 个 task 与 Vision 共享成功（可降级到更便宜的 Vision）。
+SoM adjusted: 48/234 = 20.51%。SoM 独有成功 27 tasks。
 
 ### 4.2 Oracle 路由分析
 
-| 指标 | Raw | Adjusted |
-|------|-----|----------|
-| Oracle ceiling | 32.05% (75 tasks) | **24.79%** (58 tasks) |
-| 最佳单模式 (SoM) | 24.36% | 20.51% |
-| Routing headroom | 7.69pp | **4.27pp** |
-| Oracle 选择分布 | SoM:28, Vision:28, DOM:19 | **SoM:27, Vision:21, DOM:10** |
+| 指标 | 数值 |
+|------|------|
+| Oracle ceiling (adjusted) | 68 tasks |
+| SoM 贡献 | 29 |
+| 最佳单模式 (SoM) | 20.98% |
 
-Oracle 中 SoM 贡献 27/58 adjusted 成功（46.6%），Vision 21/58（36.2%），DOM 10/58（17.2%）。SoM 在 single_navigation 类型主导（20/42），Vision 在 page_reading 类型主导（14/31）。
+Oracle 中 SoM 贡献 29/68 adjusted 成功。
 
-### 4.3 成本对比（8 tasks 三模式均成功）
+### 4.3 成本效率
 
-| 模式 | 平均成本 | 中位成本 | 平均步数 | 最便宜次数 |
-|------|---------|---------|---------|-----------|
-| DOM | $0.028 | $0.014 | 7.38 | 2/8 |
-| SoM | **$0.016** | $0.017 | **3.38** | 3/8 |
-| Vision | $0.025 | $0.018 | 7.13 | 3/8 |
+| 模式 | Adjusted SR | 平均成本 | cost_efficiency_ratio |
+|------|------------|---------|----------------------|
+| DOM | 8.48% | $0.0425 | 2.00 |
+| **SoM** | **20.98%** | $0.0417 | **5.03** |
+| Vision | 12.05% | $0.0248 | 4.86 |
 
-SoM 步数最少（3.38），三模式成本差异均不显著（Wilcoxon p>0.4）。
+SoM 的 cost_efficiency_ratio（SR/cost）是三模式中最高的（5.03）。
 
 ---
 
@@ -268,7 +259,7 @@ SoM 步数最少（3.38），三模式成本差异均不显著（Wilcoxon p>0.4�
 
 - **`<select>` 下拉菜单三层不可达**（VWA 框架级缺陷，见 §3.5 案例分析）
 - **confirm 弹窗不可交互**：Delete 操作被取消，所有删除任务均失败
-- **N/A 任务 False Positive（9/10）**：B0 N/A 任务 9 个误判 success=1.0，机制与 B1 相同（Agent prompt 无 N/A 出口）
+- **N/A 任务 False Positive（8/10）**：B0 N/A 任务 8 个误判，机制与 B1 相同（Agent prompt 无 N/A 出口）
 - **极少翻页**：SoM 模式下 agent 仍以 scroll 为主，分页导航依赖程度低
 
 ---
@@ -277,29 +268,31 @@ SoM 步数最少（3.38），三模式成本差异均不显著（Wilcoxon p>0.4�
 
 | 指标 | B0 SoM | B0 DOM | B0 Vision |
 |------|--------|--------|-----------|
-| 平均步数 | 7.25 | 12.25 | 7.67 |
-| 平均成本/ep | $0.0355 | $0.0467 | **$0.0241** |
-| cost_efficiency_ratio | **0.186** | 0.102 | 0.140 |
-| P95 延迟 | 74,042ms | 10,537ms | 50,540ms |
+| 平均步数 | 8.62 | 11.52 | 7.85 |
+| 平均成本/ep | $0.0417 | $0.0425 | **$0.0248** |
+| cost_efficiency_ratio | **5.03** | 2.00 | 4.86 |
+| P95 延迟 | 75,932ms | 10,537ms | 50,540ms |
 
-SoM 步数（7.25）远少于 DOM（12.25），接近 Vision（7.67）——SoM 截图使 agent 决策更快。SoM 的 cost_efficiency_ratio（SR/cost）是三模式中最高的。但 P95 延迟显著高于 DOM（SoM 图文混合请求在 proxy API 上更耗时）。
-
----
-
-## 七、parse_error 修复前后对比总结
-
-| 指标 | 修复前 | 修复后 | 变化 |
-|------|--------|--------|------|
-| parse_error 率 | 20.1%（45 例） | 5.2%（12 例） | **↓14.9pp** |
-| Raw SR | 15.81% | **24.36%** | **↑8.6pp** |
-| Adjusted SR | 12.05% | **21.43%** | **↑9.4pp** |
-| B0 vs B1 SoM | B0 < B1（-4.19pp） | **B0 > B1（+5.19pp）** | 反转 |
-| SoM 在三模式中排名 | 第一（但优势微弱） | **第一（显著领先）** | McNemar p<0.001 |
-
-**结论**：之前报告的"SoM 反转"完全由 parse_error 导致。修复后，B0 235B 在所有三种观测模式下均优于 B1 4B，符合模型规模预期。SoM 是 B0 Classifieds 的最优表征。
+SoM 步数（8.62）少于 DOM（11.52），略多于 Vision（7.85）——SoM 截图使 agent 决策较快。SoM 的 cost_efficiency_ratio（SR/cost）是三模式中最高的。但 P95 延迟显著高于 DOM（SoM 图文混合请求在 proxy API 上更耗时）。
 
 ---
 
-*更新时间：2026-04-18*
-*数据来源：B0_3mode_classifieds_20260413 phase1_som_router_0（parse_error 修复后重跑数据）*
+## 七、parse_error 演进总结
+
+parse_error 在实验过程中持续下降：
+
+| 阶段 | parse_error 数量 | parse_error 率 | Raw SR |
+|------|-----------------|----------------|--------|
+| 初始（修复前） | 45 | 20.1% | 15.81% |
+| 修复后首轮重跑 | 12 | 5.2% | 24.36% |
+| **当前（最终态）** | **6** | **2.6%** | **23.50%** |
+
+parse_error 从初始 45 例降至最终 6 例（↓86.7%）。Raw SR 从 15.81% 升至 23.50%（↑7.69pp），Adjusted SR 从 12.05% 升至 20.98%（↑8.93pp）。
+
+**结论**：parse_error 已基本消除（6 例残留，均为 SoM 长文本+图像的多模态输入偶发 JSON 格式错误）。B0 235B 在所有三种观测模式下均优于 B1 4B，符合模型规模预期。SoM 是 B0 Classifieds 的最优表征。
+
+---
+
+*更新时间：2026-04-21*
+*数据来源：B0_3mode_classifieds phase1_som_router_0（最终数据）*
 *B0 三模式定量对比见 `B0_findings.md`；B0 vs B1 跨模型对比见 `B0_B1_findings.md`*
