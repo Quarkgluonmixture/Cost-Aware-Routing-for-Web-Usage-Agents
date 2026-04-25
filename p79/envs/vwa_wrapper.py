@@ -297,10 +297,16 @@ class VWAWrapper:
                 # non-input element selects the entire page (blue highlight) and then
                 # Backspace does nothing useful — this was the root cause of the
                 # "full-page blue-select" artifact in Vision mode (task_3 step_7, etc.).
-                is_editable = self._env.page.evaluate(
-                    "() => { const el = document.activeElement; "
-                    "return el != null && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable); }"
-                )
+                try:
+                    is_editable = self._env.page.evaluate(
+                        "() => { const el = document.activeElement; "
+                        "return el != null && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable); }"
+                    )
+                except Exception:
+                    # Click may have triggered a navigation, destroying the
+                    # execution context.  Safe to skip the clear – the field
+                    # is gone anyway.
+                    is_editable = False
                 if is_editable:
                     self._env.page.keyboard.press("Control+a")
                     self._env.page.keyboard.press("Backspace")

@@ -867,6 +867,7 @@ class ExperimentRunner:
         _error_title_patterns = (
             "content not found", "not found", "404", "page not found",
             "osclass error",  # classifieds DB unavailable
+            "500 internal server error",  # server-side crash (e.g. Postmill)
         )
         tab_titles = self.environment.get_all_tab_titles()
         for _tab_url, _tab_title in tab_titles:
