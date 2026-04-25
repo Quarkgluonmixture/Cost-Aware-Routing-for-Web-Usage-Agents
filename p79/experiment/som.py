@@ -21,7 +21,7 @@ class SomResult:
     mark_count: int
 
 
-def _extract_text_marks(obs_text: str, max_marks: int = 80) -> List[Dict[str, Any]]:
+def _extract_text_marks(obs_text: str, max_marks: int = 200) -> List[Dict[str, Any]]:
     marks: List[Dict[str, Any]] = []
     for line in (obs_text or "").splitlines():
         m = re.search(r"\[(\d+)\]", line)
