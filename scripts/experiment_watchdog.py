@@ -462,22 +462,51 @@ def _check_condition_completions(
     seen_completions: Set[str],
     condition_mode_cache: Dict[str, str],
 ) -> List[Tuple[str, str]]:
-    """Return list of (condition_id, obs_mode) for newly completed conditions."""
+    """Return list of (condition_id, obs_mode) for newly completed conditions.
+
+    A condition is considered "newly completed" if:
+    1. condition_summary_v2.json exists AND not in seen_completions, OR
+    2. condition_summary_v2.json is newer than analysis outputs (post-analysis stale).
+
+    Case 2 handles scenarios where tasks were cleared and re-run, or where
+    a previous watchdog instance was killed before post-analysis completed.
+    """
     new_completions: List[Tuple[str, str]] = []
     if condition_filter:
         cond_dirs = [run_dir / condition_filter]
     else:
         cond_dirs = [p for p in run_dir.iterdir() if p.is_dir() and p.name not in _EXCLUDED_DIRS]
 
+    # Reference analysis output for freshness check
+    cross_rep_summary = run_dir / "analysis" / "results" / "cross_representation" / "cross_representation_summary.json"
+    analysis_summary = run_dir / "analysis" / "analysis_summary.json"
+    analysis_mtime = 0.0
+    for ref in (cross_rep_summary, analysis_summary):
+        if ref.exists():
+            analysis_mtime = max(analysis_mtime, ref.stat().st_mtime)
+
     for cond_dir in cond_dirs:
         cid = cond_dir.name
-        if cid in seen_completions:
-            continue
         summary_path = cond_dir / "condition_summary_v2.json"
-        if summary_path.exists():
+        if not summary_path.exists():
+            continue
+
+        if cid not in seen_completions:
+            # Case 1: brand new completion
             seen_completions.add(cid)
             mode = _get_observation_mode(cond_dir, condition_mode_cache)
             new_completions.append((cid, mode))
+        elif analysis_mtime > 0 and summary_path.stat().st_mtime > analysis_mtime:
+            # Case 2: condition was re-run after last analysis (cleared & re-run)
+            mode = _get_observation_mode(cond_dir, condition_mode_cache)
+            new_completions.append((cid, mode))
+            print(f"[watchdog] {cid}: condition_summary newer than analysis outputs, re-triggering post-analysis")
+        elif analysis_mtime == 0 and cid in seen_completions:
+            # Case 3: seen_completions says done but no analysis outputs at all
+            mode = _get_observation_mode(cond_dir, condition_mode_cache)
+            new_completions.append((cid, mode))
+            print(f"[watchdog] {cid}: no analysis outputs found, re-triggering post-analysis")
+
     return new_completions
 
 

@@ -120,7 +120,7 @@ RUN_ID_SHOPPING="${RUN_ID_SHOPPING:-B1_3mode_shopping_20260413}"
 MAX_RESUME_ATTEMPTS="${MAX_RESUME_ATTEMPTS:-10}"
 
 # 内层进度 watchdog 配置（检测 runner 卡死）
-WATCHDOG_TIMEOUT_MINS="${WATCHDOG_TIMEOUT_MINS:-35}"
+WATCHDOG_TIMEOUT_MINS="${WATCHDOG_TIMEOUT_MINS:-60}"
 WATCHDOG_CHECK_SECS="${WATCHDOG_CHECK_SECS:-60}"
 
 # ntfy 推送配置（export for runner.py retry-pass notification）
@@ -329,6 +329,12 @@ run_condition_foreground() {
         return 1
       }
     fi
+    # --- experiment_watchdog 存活检查 ---
+    if [[ -n "${EXP_WATCHDOG_PID:-}" ]] && ! kill -0 "${EXP_WATCHDOG_PID}" 2>/dev/null; then
+      log "[B1/${label}/${mode}] experiment_watchdog (pid=${EXP_WATCHDOG_PID}) 已挂，重启..."
+      ntfy_send "P79 [B1/${label}/${mode}] watchdog died" "pid=${EXP_WATCHDOG_PID} 已挂，自动重启" "high"
+      start_exp_watchdog "${run_id}" "${label}"
+    fi
   done
   wait "${job_pid}" 2>/dev/null || true
   log "=== [B1/${label}/${mode}] 进程退出 ==="
@@ -404,6 +410,11 @@ run_site_3mode_with_reset() {
 
   start_exp_watchdog "${run_id}" "${label}"
 
+  # 0) 前置 reset — 清除上一轮残留状态
+  log "======== initial reset ${site} before DOM ========"
+  reset_vwa_sites "${site}" "b1_3mode_${site}_initial" || true
+  sleep 10
+
   # 1) DOM — auth refresh before first condition (SOM/Vision already have it)
   refresh_site_auth_retry "${site}" "${label}/dom" || { log "[b1][fatal] ${site} DOM 前 auth 失败，中止"; exit 1; }
   log "======== [B1/${label} 1/3] DOM ========"
@@ -436,9 +447,14 @@ run_site_3mode_with_reset() {
   reset_vwa_sites "${site}" "b1_3mode_${site}_final" || true
   sleep 5
 
-  stop_exp_watchdog "${label}"
+  # Wait for watchdog to finish post-analysis before stopping it,
+  # otherwise it gets killed mid-pipeline and the ntfy notification is lost.
+  log "[B1/${label}] 等待 watchdog 完成 post-analysis (30s)..."
+  sleep 30
 
   run_reason_diagnostics "${run_dir}" "${label}"
+
+  stop_exp_watchdog "${label}"
 
   ntfy_send "P79 [B1/${label}] 完成!" "run_id=${run_id}；dom+som+vision 全部跑完" "high"
   log "========================================================"

@@ -186,6 +186,11 @@ log "=== B1 单 task 重试: ${SITE} task ${TASK_ID} ==="
 log "=== run_id=${RUN_ID} ==="
 log "========================================================"
 
+# 0) 前置 reset — 清除残留状态
+log "======== initial reset ${SITE} before DOM ========"
+reset_vwa_sites "${SITE}" "retry_${TASK_ID}_initial" || true
+sleep 10
+
 # 1) DOM
 refresh_site_auth "${SITE}" || { log "[warn] auth 刷新失败，继续尝试..."; }
 log "======== [1/3] DOM ========"
