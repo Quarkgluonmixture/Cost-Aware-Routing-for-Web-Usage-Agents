@@ -135,17 +135,25 @@ Agent 调用 finish 并提交答案，但答案不正确。说明 agent 自认�
 - 导航到了相似但不正确的目标页面
 - 正确导航但提取了错误信息
 
-### F5. Comment 自链接死循环（task 0/1/3）
+### F5. Comment 自链接死循环（系统性模式，36/210 tasks）
 
-**现象**：Agent 成功导航到帖子页面后，反复点击 "N comments" 链接（如 "45 comments" / "171 comments"），但 URL 始终不变。每步的 element_id 不同（DOM 重新渲染所致），但 bbox 完全一致。Agent thought 每步几乎相同（"clicking will navigate to the comment section"），confidence 保持 0.95。
+> 分析脚本：`scripts/analysis/analyze_reddit_selflink_cycle.py`
 
-**受影响 task**：
+**现象**：Agent 到达帖子页面后，反复点击 "N comments" 链接，但 URL 始终不变。Postmill 的 "N comments" 链接指向帖子页面本身（自链接），评论内容只需 scroll down 即可看到。Agent 不理解"已经在评论区了"，陷入死循环。
 
-| Task | Intent | 目标链接 | 循环步数 | 结果 |
-|------|--------|---------|---------|------|
-| 0 | Navigate to comment section of [homemade] Pumpkin Loaf | "45 comments" | step 1-5 (5 次) | 30 步用完，score=0 |
-| 1 | 同上（重复 task） | "45 comments" | step 1-5 (5 次) | 30 步用完，score=0 |
-| 3 | Count comments mentioning 'spicy' in Beef Noods post | "171 comments" | step 1-5 (5 次) | 30 步用完，score=0 |
+**规模**：210 个 Reddit DOM task 中 **36 个（17.1%）** 存在此模式（连续 ≥2 步 click 后 URL 不变）。其中评论相关 101 task 中有 **29 个（28.7%）** 受影响。
+
+**逃出方式分布**：
+
+| 逃出方式 | B1 (4B) | B0 (235B) |
+|---------|---------|-----------|
+| scroll | 3 | **5** |
+| type | 4 | 3 |
+| finish | 3 | 4 |
+| navigate_away | 6 | 3 |
+| **截断（未逃出）** | **19 (52.8%)** | 12 (42.9%) |
+
+**B1 的 scroll 逃出成功率为 0/3，B0 为 1/5**（仅 task 72 成功：scroll → type comment → finish）。B1 超过一半的循环 task 直到截断都没逃出。
 
 **action 序列示例（task 0）**：
 
@@ -154,16 +162,18 @@ step 0: click [401] → food 列表页 → 帖子页 ✓（正确导航）
 step 1: click [3187] "45 comments" → URL 不变 ✗
 step 2: click [9481] "45 comments" → URL 不变 ✗
 step 3: click [15775] "45 comments" → URL 不变 ✗
-step 4: click [22069] "45 comments" → URL 不变 ✗
-step 5: click [28363] "45 comments" → URL 不变 ✗
-... (重复至 step 29)
+... (重复至 step 29，element_id 每步递增但 bbox 完全一致)
 ```
+
+**步数预算影响**：36 个循环 task 共浪费 188 步（平均 5.2 步/task），占受影响 task 步数预算的约 17%。
+
+**与其他失败模式叠加**：20 个循环 task 同时存在 search-over-browse 偏差——agent 先搜索到帖子，再陷入自链接循环。
 
 **根因分析**：
 
-1. **Agent 已在目标页但不自知**：Reddit（Postmill）的帖子页面本身就是 comment section，URL `f/food/18838/homemade-...` 已包含评论。Agent 期望点击 "45 comments" 后跳转到不同 URL，但实际上该链接指向当前页面自身（锚点或自链接）。
-2. **零自纠正**：连续 5 次点击同一位置（bbox `[152, 705, 81, 14]`）后 URL 不变，Agent 不调整策略，不尝试 scroll down 查看评论，不 finish。
-3. **Postmill 特有问题**：主流 Reddit 的帖子页和评论区是同一页面，但 "N comments" 链接是自引用锚点。Agent 缺乏"已到达目标"的判断能力。
+1. **Agent 已在目标页但不自知**：Postmill 帖子页面本身就是 comment section。"N comments" 链接指向当前页面自身，Agent 期望跳转到不同 URL。
+2. **零 scroll 策略**：循环期间没有任何 task 尝试 scroll down。评论内容（以及 comment textbox）就在页面下方，但 agent 的认知模型是"点击链接 = 导航"，不是"scroll = 发现更多内容"。
+3. **B1 vs B0 的策略切换能力差异**：B0 有 5 次通过 scroll 逃出循环（虽然仅 1 次最终成功），B1 仅 3 次且全部失败。B0 更快识别"点击无效→尝试 scroll"，B1 更多被截断。
 
 ### F6. Early finish + Empty answer（18 tasks, 8.6%）
 
@@ -179,6 +189,27 @@ step 2: finish (empty answer) → score=0
 ```
 
 Agent 成功到达目标但提交空 answer。对于 `url_match` 评测类型，即使不 finish 也能得分——问题在于 Agent 选择了 finish 而非继续浏览。
+
+### F7. Upvote/Downvote toggle 循环早停（vote 类 task 系统性缺陷）
+
+**现象**：Agent 点击 Upvote 按钮成功后，DOM 状态从 `[498] button 'Upvote'` 变为 `[498] button 'Retract upvote'`，表明投票已生效。但 B1 (4B) **无法识别这一状态变化**，下一步仍对同一 element_id 发出 click——实际效果是**撤销了刚才的 upvote**。此后 page_changed=false，触发 no_progress 早停。
+
+**典型 case（Task 80）**：
+
+```
+step 0: click [498] 'Upvote'       → 成功，DOM 变为 'Retract upvote'
+step 1: click [498] 'Retract upvote' → 撤销 upvote，page_changed=false
+step 2: click [498] 'Upvote'        → 再次 upvote，page_changed=false → 截断
+```
+
+3 步即被截断（no_progress_streak），最终 0 个有效 upvote。即使 step 0 成功执行了目标操作，toggle 后净效果为零。
+
+**根因**：
+1. **零跨步状态跟踪**：B1 每步独立推理，不检查按钮文本是否已从 `'Upvote'` 变为 `'Retract upvote'`
+2. **不理解 toggle 语义**：DOM 明确给出 `'Retract upvote'` 文本，但 agent 的 thought 仍写"I should click the upvote button"
+3. **单目标锁定**：agent 始终操作同一帖子（chocolate cashew），未尝试移动到其他食物帖子（如 "21 varieties of potatoes"）
+
+**影响范围**：所有需要 upvote/downvote 操作的 task 均受此模式影响。因 toggle 后立即触发 no_progress 早停，这类 task 通常在 3-5 步内截断，是**步数最少的失败模式之一**（与 F6 early_finish 相当）。
 
 ### 失败成本分布
 
@@ -318,9 +349,10 @@ DOM 在 oracle 中占主导地位。Vision 的 3 个 exclusive 成功中 2 个�
 3. **搜索循环是 Reddit DOM 的标志性失败**（48/210=22.9%）：远超 Classifieds（1.3%），是 Reddit 搜索交互难度的直接体现
 4. **Adjusted 后零交集**：DOM 和 Vision 的 adjusted 成功完全不重叠，oracle headroom 仅 1.43pp
 5. **FP 扣除比例高**：Raw 21 → Adjusted 12（扣 9，43%），NA FP（5）+ Visual FP（2）+ Eval FP（2, §88 program_html 补充规则）
-6. **Comment 自链接死循环**（F5）：Postmill 特有问题，Agent 不理解"已到达目标"
+6. **Comment 自链接死循环是系统性模式**（F5）：36/210 tasks（17.1%）受影响，评论 task 中 28.7%；B1 52.8% 的循环 task 截断未逃出，scroll 逃出成功率 0/3
 7. **30 步跑满 episode 集中且昂贵**：search_repeat（48）+ click_back_loop（20）+ max_steps（3）= 71 个 episode（33.8%）跑满 30 步，平均成本 $0.095-0.105
 8. **Reddit 对 DOM 模式更难**：相比 Classifieds DOM（adjusted 8.48%），Reddit 5.85% 更低，搜索循环和自链接问题是主因
+9. **Upvote/Downvote toggle 循环导致系统性早停**（F7）：DOM 状态反馈充分（`'Upvote'`→`'Retract upvote'`），但 B1 无跨步状态跟踪能力，重复点击导致 toggle 撤销 + no_progress 截断，vote 类 task 通常 3-5 步即失败
 
 ---
 

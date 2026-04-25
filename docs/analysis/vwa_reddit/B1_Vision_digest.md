@@ -353,6 +353,6 @@ Agent 在相同或相近坐标连续 click 3+ 次，`page_changed=false`。
 
 ---
 
-*生成时间：2026-04-19*
+*生成时间：2026-04-19（脚注更新 2026-04-24）*
 *数据来源：B1_3mode_reddit_20260413 phase1_vision_router_0，210 tasks*
-*DOM/SoM 尚未完成，跨模式 Venn 分析待补充*
+*DOM/SoM 已完成，跨模式对比见 `B1_findings.md`*
