@@ -1,50 +1,53 @@
 # B1 Classifieds 三模式实验报告
 
-> **[DATA STALE]** 本报告数据基于 §33/§34/§36 修复前的运行结果。参考图片传递 + has_image FP 过滤修复后，DOM adjusted SR 和交叉分析数据将发生变化，待重跑后更新。
-
-> Run: `B1_3mode_classifieds_20260404_141103`
+> Run: `B1_3mode_classifieds_20260413`
 > 模型: Qwen3-VL-4B bf16
-> 站点: Classifieds (OSClass), 234 tasks × 3 modes (DOM / SoM / Vision)
-> 分析管线默认使用 **adjusted labels**（扣除 visual FP + N/A FP）
+> 站点: Classifieds (OSClass), 234 tasks x 3 modes (DOM / SoM / Vision)
+> 分析管线使用 **adjusted labels**（扣除 N/A FP + eval FP）
+> **注：visual_fp 层已在 §95 中废弃，adjusted SR 仅扣除 N/A FP + eval FP**
 > 各模式专有分析见 `B1_DOM_digest.md` / `B1_SOM_digest.md` / `B1_Vision_digest.md`
+> 文档更新：2026-04-25
 
 ---
 
 ## 1. 成功率
 
-### 1.1 主指标（Adjusted SR）
+### 1.1 主指标
 
-| 模式 | Adjusted SR | 95% CI | 成功数 |
-|------|------------|--------|--------|
-| DOM | **0.85%** | [0.00%, 2.14%] | 2 / 234 |
-| SoM | **16.24%** | [11.97%, 20.94%] | 38 / 234 |
-| Vision | **8.12%** | [4.70%, 11.54%] | 19 / 234 |
+| 模式 | Raw SR | Adjusted SR | 95% CI (Bootstrap, /234) | 成功数 (adj/raw) |
+|------|--------|-------------|--------------------------|-----------------|
+| DOM | 11.11% (26/234) | **7.59%** | [5.13%, 12.39%] | 17 / 26 |
+| SoM | 17.52% (41/234) | **13.84%** | [9.40%, 18.38%] | 31 / 41 |
+| Vision | 11.11% (26/234) | **7.14%** | [4.27%, 10.68%] | 16 / 26 |
 
-三模式 CI 均无重叠。
+- Adjusted SR 使用 N/A FP + eval FP 修正（§95），分母 224（扣除 10 个 N/A reference task）
+- Bootstrap CI 使用 cross_rep adjusted labels（/234 分母）
+
+> §95 变更：DOM adjusted SR 从 4.91%（含 visual_fp）上升至 7.59%（仅 N/A FP + eval FP）。DOM 不再是最弱模式，与 Vision（7.14%）几乎持平。
 
 ### 1.2 McNemar 检验（adjusted labels）
 
 | 对比 | p-value | 显著? | 不一致对 (A-only / B-only) |
 |------|---------|-------|--------------------------|
-| SoM vs DOM | 2.84e-10 | **是** | 37 / 1 |
-| Vision vs DOM | 2.21e-4 | **是** | 19 / 2 |
-| Vision vs SoM | 0.0013 | **是** | 7 / 26 |
+| SoM vs DOM | 0.065 | **否** (marginal) | 24 / 12 |
+| Vision vs DOM | 0.728 | **否** | 15 / 18 |
+| Vision vs SoM | 0.006 | **是** | 6 / 21 |
 
-**三组比较全部显著**，排序：SoM > Vision > DOM。
+**排序：SoM > DOM ~ Vision**。SoM vs DOM 仅 marginal（p=0.065），DOM 与 Vision 无显著差异。
 
-> 注：raw labels 时 Vision vs DOM p=0.169（不显著）。切换到 adjusted 后 DOM 从 21 降到 2，差异变显著。
+> §95 变更：SoM vs DOM 从 p=0.004（显著）变为 p=0.065（marginal）——因为 DOM adjusted SR 上升，差距缩小。
 
 ### 1.3 Raw SR 与 FP 分解
 
-| 模式 | Raw SR | N/A FP | Visual FP | Adjusted SR |
-|------|--------|--------|-----------|------------|
-| DOM | 8.97% (21) | 10 | 9 | 0.85% (2) |
-| SoM | 20.51% (48) | 10 | 0 | 16.24% (38) |
-| Vision | 12.39% (29) | 10 | 0 | 8.12% (19) |
+| 模式 | Raw SR | N/A FP | Eval FP | Adjusted SR |
+|------|--------|--------|---------|------------|
+| DOM | 11.11% (26) | 9 | 0 | 7.59% (17/224) |
+| SoM | 17.52% (41) | 10 | 1 | 13.84% (31/224) |
+| Vision | 11.11% (26) | 10 | 0 | 7.14% (16/224) |
 
-- **N/A FP**（30 个）：10 个 N/A reference task × 3 模式，`ua_match` 评测器 bug 全部误判为 success。根因：Agent prompt 无 N/A 出口（Rule 4: "NEVER give up"）→ 循环截断 → 空 answer → 评测器误判
-- **Visual FP**（9 个，仅 DOM）：无图像但 `url_match` 碰巧通过。10 个 N/A task 同时也是 visual task，被 N/A 优先捕获
-- DOM 21 个 raw 中仅 2 个是真正的能力成功
+- **N/A FP**（29 个）：10 个 N/A reference task x 3 modes（DOM 9/10, SoM 10/10, Vision 10/10）
+- **Eval FP**（1 个，仅 SoM）：§95 简化后的 eval_fp 规则检出
+- **Visual FP**：**§95 废弃**。此前 DOM 有 12 个 visual_fp（与 na_fp 重叠 6 个），现在保留为有效成功
 
 ---
 
@@ -54,155 +57,173 @@
 
 | 指标 | DOM | SoM | Vision |
 |------|-----|-----|--------|
-| 平均成本 ($/ep) | 0.074 | 0.077 | **0.029** |
-| 平均步数 | 14.9 | 11.8 | **8.0** |
-| 平均 token | 39,575 | 41,259 | **15,225** |
-| p95 步延迟 (s) | 45.5 | 82.6 | 53.2 |
-| 平均能耗 (mWh) | 5.34 | 6.49 | **3.84** |
-| 平均 CO₂e (g) | 1.17 | 1.43 | **0.84** |
-| No-op rate | 4.3% | 2.0% | **0.6%** |
-| Page unchanged rate | 22.7% | 23.4% | 30.1% |
+| 平均步数 | 13.83 | 9.90 | **6.73** |
+| 平均成本 ($/ep) | 0.0399 | 0.0347 | **0.0133** |
+| p95 步延迟 (s) | 43.2 | **30.2** | 64.5 |
+| 平均能耗 (kWh) | 0.00522 | 0.00199 | **0.00194** |
 
 ### 2.2 成本统计检验（Wilcoxon signed-rank）
 
 | 对比 | cost p | latency p |
 |------|--------|-----------|
-| Vision vs SoM | <1e-26 *** | 8.6e-7 *** |
-| Vision vs DOM | <1e-25 *** | 5.2e-28 *** |
-| SoM vs DOM | 0.88 (n.s.) | 3.6e-23 *** |
+| Vision vs SoM | <1e-23 *** | 0.172 (n.s.) |
+| Vision vs DOM | <1e-28 *** | 3.7e-6 *** |
+| SoM vs DOM | 0.050 (边界) | <1e-28 *** |
 
-Vision 成本仅为其他模式的 **38%**。SoM 与 DOM 成本无差异，但 SoM 延迟显著更高（截图+标注开销）。
+- Vision 成本仅为 DOM 的 **33%**、SoM 的 **38%**
+- SoM 与 DOM 成本差异仅边界显著（p=0.050）
 
-### 2.3 早停触发分布
+### 2.3 成本分解
 
-| 触发原因 | DOM | SoM | Vision |
-|---------|-----|-----|--------|
-| page_unchanged_streak | 188 | 123 | 164 |
-| action_failed | 100 | 49 | 9 |
-| no_progress_streak | 33 | 9 | 2 |
+| 模式 | 总成本 | 有效成本 | no-op 成本 | 循环成本 |
+|------|--------|---------|-----------|---------|
+| DOM | $0.0399 | $0.0189 | $0.0060 | $0.0159 |
+| SoM | $0.0347 | $0.0223 | $0.0072 | $0.0059 |
+| Vision | $0.0133 | $0.0078 | $0.0050 | $0.0005 |
 
-Vision 的 `action_failed` 极低（不用 element_id），但 `page_unchanged` 占比最高——坐标 miss / scroll 到底 → 无变化 → 早停。
+DOM 循环成本最高（$0.0159，占 39.8%），反映搜索/导航循环的严重浪费。Vision 循环成本最低（$0.0005），因为坐标失败直接触发早停而非循环。
+
+### 2.4 Action 执行效率
+
+| 指标 | DOM | SoM | Vision |
+|------|-----|-----|--------|
+| click_fail_rate (mean) | 17.8% | **33.3%** | **45.7%** |
+| type_fail_rate (mean) | **9.2%** | 6.5% | 5.8% |
+| pixel_coordinate_leak | 0% | 0% | **20.9%** |
+
+B1 的 click_fail_rate 全面高于 B0——4B 模型定位精度更差。SoM click_fail_rate（33.3%）远高于 B0 SoM（7.0%），这是 SoM 标注精度在小模型上衰减的体现。Vision 45.7% 的点击失败率解释了其 58.1% no_progress 失败。
+
+### 2.5 路由信号校准质量（per-mode ECE）
+
+| 模式 | Token ECE | Verbalized ECE | Verbalized Brier |
+|------|-----------|---------------|------------------|
+| DOM | 0.837 | 0.635 | — |
+| SoM | 0.781 | 0.606 | — |
+| Vision | 0.839 | 0.602 | — |
+
+Token-level ECE 极高（~0.8），几乎无校准价值。Verbalized ECE（0.60-0.64）虽然也偏高，但跨模式差异较小（模式间最大差 0.033），说明 verbalized confidence **虽不精确，但模式间可比**——可作为路由决策的相对排序信号。
 
 ---
 
 ## 3. 跨模式交叉分析
 
-### 3.1 Venn 集合（Adjusted）
+### 3.1 Venn 集合（Adjusted, /234 分母）
 
 | 区域 | 数量 | 占比 |
 |------|------|------|
-| 三模式均失败 | 188 | 80.3% |
-| 仅 SoM | 25 | 10.7% |
-| SoM + Vision（非 DOM） | 12 | 5.1% |
-| 仅 Vision | 7 | 3.0% |
-| DOM + SoM（非 Vision） | 1 | 0.4% |
-| 仅 DOM | 1 | 0.4% |
-| 三模式均成功 | 0 | 0% |
-| DOM + Vision（非 SoM） | 0 | 0% |
+| 三模式均失败 | 184 | 78.6% |
+| 仅 SoM | 15 | 6.4% |
+| **仅 DOM** | **13** | **5.6%** |
+| SoM + Vision（非 DOM） | 9 | 3.9% |
+| 仅 Vision | 6 | 2.6% |
+| DOM + SoM（非 Vision） | 5 | 2.1% |
+| 三模式均成功 | 2 | 0.9% |
 
-- DOM + Vision 交集 = 0 — 两者成功 task **完全互补**
-- Vision-only 7 个全是纯视觉任务（图片内容/颜色/形状/背景），不可被其他模式替代
-- SoM + Vision 12 个，视觉信息是共同成功因素
-- 三模式交集从 12 (raw) 降到 0 (adjusted)——DOM 的 visual FP 全部剔除
+> §95 变更：DOM 独占成功从 7 个升至 13 个，是三模式中第二大独占集（仅次于 SoM 15 个）。DOM 路由价值大幅提升。
 
 ### 3.2 Oracle Ceiling
 
-| 指标 | Raw | Adjusted |
-|------|-----|----------|
-| Best single (SoM) | 20.51% | 16.24% |
-| Oracle ceiling | 25.64% | **19.66%** |
-| Routing headroom | 5.13% | **3.42%** |
+| 指标 | Raw | Adjusted (/234) |
+|------|-----|------------------|
+| Best single (SoM) | 17.52% | 13.25% |
+| Oracle ceiling | 23.50% | **21.37%** |
+| Routing headroom | 5.98pp | **8.12pp** |
 
-Headroom 3.42pp ≈ 8 个 task 的理论改进空间。
+Oracle 选择分布（adjusted）：DOM 16 (32.0%) / Vision 17 (34.0%) / SoM 17 (34.0%)。三模式贡献均衡。
 
-**Oracle 选择分布（Adjusted, 46 tasks）**：SoM 26 (56.5%) / Vision 18 (39.1%) / DOM 2 (4.3%)
+> §95 变更：DOM oracle 从 7/44（15.9%）大幅上升至 16/50（32.0%），routing headroom 从 5.13pp 升至 8.12pp。
 
-### 3.3 任务类型分解（Adjusted SR）
-
-| 任务类型 | n | DOM | SoM | Vision |
-|---------|---|-----|-----|--------|
-| single_navigation | 148 | 0.68% | **14.86%** | 6.76% |
-| page_reading | 62 | 1.61% | **22.58%** | 12.90% |
-| grid_position | 5 | 0% | 20% | 20% |
-| date_count | 3 | 0% | **33.3%** | 0% |
-| action_on_item | 9 | 0% | 0% | 0% |
-| collection | 7 | 0% | 0% | 0% |
-
-SoM 在所有有成功的类型上均最优或并列。action_on_item、collection 三模式全败。
-
-### 3.4 模式转换矩阵（Adjusted, 234 tasks）
-
-**Vision vs DOM**：
-
-| | DOM 成功 | DOM 失败 |
-|---|---|---|
-| Vision 成功 | 0 | 19 |
-| Vision 失败 | 2 | 213 |
-
-净改善 +17。两者成功 task 完全不重叠。
-
-**Vision vs SoM**：
-
-| | SoM 成功 | SoM 失败 |
-|---|---|---|
-| Vision 成功 | 12 | 7 |
-| Vision 失败 | 26 | 189 |
-
-SoM 净优势 +19。
+### 3.3 模式转换矩阵（Adjusted labels, 234 tasks）
 
 **SoM vs DOM**：
 
 | | DOM 成功 | DOM 失败 |
 |---|---|---|
-| SoM 成功 | 1 | 37 |
-| SoM 失败 | 1 | 195 |
+| SoM 成功 | 8 | 24 |
+| SoM 失败 | 12 | 190 |
 
-SoM 净优势 +36。
+SoM 净优势 +12（24-12），但不显著（p=0.065）。
+
+**Vision vs DOM**：
+
+| | DOM 成功 | DOM 失败 |
+|---|---|---|
+| Vision 成功 | 2 | 15 |
+| Vision 失败 | 18 | 199 |
+
+净差异 -3（15-18），不显著（p=0.728）。
+
+### 3.4 Task type × mode SR 矩阵（Adjusted）
+
+| Task type | N | DOM SR | SoM SR | Vision SR |
+|-----------|---|--------|--------|-----------|
+| single_navigation | 148 | 6.1% | **12.2%** | 6.1% |
+| page_reading | 62 | 14.5% | **21.0%** | 12.9% |
+| action_on_item | 9 | **11.1%** | 0% | 0% |
+| collection | 7 | 0% | 0% | 0% |
+| grid_position | 5 | 0% | 0% | 0% |
+| date_count | 3 | **33.3%** | 0% | 0% |
+
+SoM 在主要类型上领先。DOM 在 date_count 和 action_on_item 上有独占成功——需精确文本交互的任务。grid_position 和 collection 三模式全败。
+
+### 3.5 Reason Stability（跨模式失败一致性）
+
+- **Mean stability**: 0.476（B0: 0.412）
+- **完全一致**: 48/234 tasks (20.5%)
+- **高度不一致（<0.5）**: 59/234 tasks (25.2%)
+
+B1 的 reason stability 略高于 B0（0.476 vs 0.412），说明 4B 模型在不同模式下更倾向于以相同方式失败——能力上限更低时失败模式更趋一致。
+
+### 3.6 按失败原因的成本分解
+
+高成本失败模式：
+- `fail_max_steps_target_unreachable`: $0.097/ep（30 步耗尽，45 episodes）
+- `fail_max_steps_click_back_loop`: ~$0.09/ep
+- `fail_no_progress`: $0.019/ep（单步成本低但数量最多 308 episodes，总成本 $5.82）
+
+`fail_no_progress` 虽然单个 episode 成本低（快速失败），但其 308 episodes 的总量使其成为最大成本来源。
 
 ---
 
 ## 4. 失败模式
 
-### 4.1 DOM vs SoM 失败原因对比
+### 4.1 失败原因分布
 
-| 失败原因 | DOM | SoM | 差值 |
-|----------|-----|-----|------|
-| fail_incomplete_or_stuck | 29.1% | 30.1% | +1.0pp |
-| fail_max_steps_target_unreachable | 16.9% | 15.1% | -1.8pp |
-| fail_no_progress | **9.9%** | **3.8%** | -6.1pp |
-| fail_finish_wrong_url_not_found | 9.4% | **15.1%** | +5.7pp |
-| fail_early_finish | 7.0% | **15.6%** | +8.6pp |
-| fail_max_steps_click_back_loop | **6.1%** | 1.6% | -4.5pp |
+| 失败原因 | DOM | SoM | Vision |
+|----------|-----|-----|--------|
+| fail_no_progress | **86** (36.8%) | **86** (36.8%) | **136** (58.1%) |
+| fail_early_finish | 14 (6.0%) | 28 (12.0%) | 33 (14.1%) |
+| fail_finish_eval_mismatch | 25 (10.7%) | 15 (6.4%) | 5 (2.1%) |
+| fail_max_steps_target_unreachable | 25 (10.7%) | 17 (7.3%) | 3 (1.3%) |
+| fail_finish_wrong_url_not_found | 16 (6.8%) | 19 (8.1%) | 10 (4.3%) |
+| fail_max_steps_click_back_loop | 11 (4.7%) | 6 (2.6%) | 1 (0.4%) |
+| fail_max_steps_search_repeat | 9 (3.8%) | 1 (0.4%) | 0 |
+| fail_finish_empty_answer | 8 (3.4%) | 9 (3.8%) | 3 (1.3%) |
+| fail_incomplete_or_stuck | 5 (2.1%) | 6 (2.6%) | 16 (6.8%) |
+| fail_finish_claim_missing | 6 (2.6%) | 3 (1.3%) | 1 (0.4%) |
 
-**DOM 特有高发**：`fail_no_progress` + `click_back_loop` + `search_repeat` — 信息瓶颈导致反复尝试。
-**SoM 特有高发**：`fail_early_finish` + `wrong_url` — 视觉信息加速过早（错误）决策。
-**共性**：`fail_incomplete_or_stuck` 两模式占比接近（~30%），是最大失败类别。
+### 4.2 DOM vs SoM 失败模式对比
 
-### 4.2 Vision 主要失败路径
+**DOM 特有高发**：
+- `fail_finish_eval_mismatch`（10.7% vs 6.4%）
+- `fail_max_steps_click_back_loop`（4.7% vs 2.6%）
+- `fail_max_steps_search_repeat`（3.8% vs 0.4%）
 
-- **坐标 misclick**：4B 模型坐标精度不足，misclick 后不自纠正（重复相同坐标连续 3-4 步）
-- **过早 finish**：缺乏 AXTree 结构化导航信息，首页看不到目标即放弃（1 步 finish）
-- **信息充分幻觉**：列表页截图给 agent "已看到所有信息" 的错觉，不进详情页
-- **Scroll 交替死循环**：3 个 task 出现 scroll up/down 交替，现有 cycle detection 无法捕获
+**SoM 特有高发**：
+- `fail_early_finish`（12.0% vs 6.0%）
+- `fail_finish_wrong_url_not_found`（8.1% vs 6.8%）
 
-### 4.3 脚手架 vs 模型归因
+### 4.3 Vision 主要失败路径
 
-| 归因类型 | DOM | SoM |
-|----------|-----|-----|
-| 脚手架/表征缺陷 | 97/220 (44.1%) | 63/186 (33.9%) |
-| 模型能力问题 | 123/220 (55.9%) | 123/186 (66.1%) |
+- **fail_no_progress 支配**（58.1%）：坐标 misclick → 无效动作 → 早停
+- **fail_early_finish**（14.1%）：缺 AXTree 结构化导航信息
+- **fail_incomplete_or_stuck**（6.8%）：坐标不精确的低效循环
 
-SoM 脚手架问题占比下降 10pp：截图缓解信息瓶颈。但更多失败归因于模型——拿到足够信息但未能利用（text_over_vision 56 例）。
+### 4.4 DOM 与 SoM 差距根因（§18/§23）
 
-### 4.4 DOM↔SoM 差距根因（§23）
+**Mirage Effect**（§18）：相同文本信息 + 图片存在触发质变推理路径。
 
-**两个被推翻的初始假设**：
-- ❌ **文本压缩**：实测 DOM 平均 2326 chars ≈ SoM 2377 chars，格式不同但信息量相当，不构成性能差距的解释
-- ❌ **坐标 fallback 兜底**：下拉菜单等交互在 SoM 同样循环，坐标参数实际未被有效利用
-
-**真正的主因：Mirage Effect（§18）**。相同文本信息下，图片存在触发了质变推理路径——scroll up 从 DOM 3.7% 升至 SoM 11.2%（3×），认知-执行鸿沟（task 58）在 Vision 下弥合。图像不只是补充信息，而是改变了模型的推理模式。
-
-**对路由的含义**：DOM↔SoM headroom (adjusted) = 0.4%，DOM 独占成功仅 1 个 task，DOM↔SoM 路由无意义。有意义方向为 SoM↔Vision。
+§95 后 DOM 独占成功增至 13 个（此前 7 个），说明 DOM 文本信息在更多 task 上有不可替代的价值。SoM vs DOM 差距从显著（p=0.004）变为 marginal（p=0.065）。
 
 ---
 
@@ -212,104 +233,86 @@ SoM 脚手架问题占比下降 10pp：截图缓解信息瓶颈。但更多失�
 
 ### 5.1 信号区分力（Combined AUROC）
 
-| 信号类型 | 最佳指标 | AUROC | 95% CI | 覆盖 |
-|---------|---------|-------|--------|------|
-| 行为信号 | **action_diversity** | **0.741** | [0.681, 0.797] | 100% |
-| 行为信号 | url_revisit_max | 0.723 | [0.663, 0.781] | 100% |
-| 行为信号 | url_revisit_count | 0.704 | [0.635, 0.767] | 100% |
-| 行为信号 | max_repeat_streak | 0.673 | [0.612, 0.731] | 100% |
-| Verbalized | ep_mean_verbalized | **0.695** | [0.591, 0.788] | 46% |
-| Entropy | ep_max_entropy | 0.612 | [0.519, 0.710] | 53% |
-| Token-level | ep_min_margin | 0.541 | — | 100% |
-| Token-level | ep_mean_logprob | 0.530 | — | 100% |
+| 信号类型 | 最佳指标 | AUROC | 95% CI |
+|---------|---------|-------|--------|
+| Verbalized | **ep_mean_verbalized** | **0.769** | [0.704, 0.832] |
+| 行为信号 | url_revisit_max | **0.767** | [0.718, 0.814] |
+| 行为信号 | action_diversity | 0.749 | [0.688, 0.810] |
+| 行为信号 | url_revisit_count | 0.747 | [0.691, 0.798] |
+| 行为信号 | max_repeat_streak | 0.673 | [0.607, 0.735] |
+| Token-level | ep_max_entropy | 0.594 | [0.523, 0.665] |
 
 ### 5.2 跨模式一致性
 
-| 信号 | DOM | SoM | Vision | 跨模式一致? |
-|------|-----|-----|--------|-----------|
-| action_diversity | 0.942 | 0.701 | 0.739 | 方向一致，DOM 异常高\* |
-| url_revisit_max | 0.848 | 0.682 | 0.734 | 一致 |
-| max_repeat_streak | 0.804 | 0.665 | 0.667 | 一致 |
-| ep_mean_verbalized | — | 0.717 | 0.674 | 一致（DOM 无数据） |
-| ep_max_entropy | — | 0.725 | 0.488 | **不一致** |
+| 信号 | DOM | SoM | Vision |
+|------|-----|-----|--------|
+| ep_mean_verbalized | 0.753 | 0.755 | **0.757** |
+| url_revisit_max | 0.755 | 0.727 | **0.816** |
+| action_diversity | 0.738 | 0.706 | **0.809** |
+| max_repeat_streak | **0.761** | 0.604 | 0.744 |
 
-\* DOM adjusted 仅 2 个成功，AUROC 膨胀。
-
-**行为信号跨模式最稳定**。Token-level 全部 AUROC ≈ 0.5（无用）。Verbalized 仅 SoM+Vision 覆盖（Vision 100%，SoM 37%，DOM ~1%）。
+**Verbalized 信号三模式 AUROC 几乎相同（0.753-0.757），最适合跨模式路由。**
 
 ### 5.3 路由就绪度
 
 | 维度 | 结论 |
 |------|------|
-| Token-level | **无**（AUROC ≈ 0.5） |
-| 行为信号 | **有**（action_diversity 0.74，跨模式一致） |
-| Verbalized | **有**（0.69，仅 SoM+Vision 覆盖） |
-| 校准 | 未校准（ECE=0.82 token，0.56 verbalized） |
-| **整体** | **行为信号可用于路由，verbalized 辅助 SoM↔Vision** |
+| Token-level | **弱**（AUROC 0.49-0.59） |
+| 行为信号 | **有**（url_revisit_max 0.77，跨模式一致） |
+| Verbalized | **有**（0.77，三模式高度一致） |
+| **整体** | **行为信号 + verbalized 均可用于路由** |
+
+### 5.4 State Change × Outcome
+
+| 模式 | 成功 page_change_rate | 失败 page_change_rate | 成功 avg_steps | 失败 avg_steps |
+|------|---------------------|---------------------|---------------|---------------|
+| DOM | 0.733 | 0.723 | 8.2 | 14.4 |
+| SoM | 0.603 | 0.668 | 4.9 | 10.7 |
+| Vision | 0.619 | 0.574 | 3.7 | 7.0 |
+
+成功 episode 步数显著少于失败（Vision: 3.7 vs 7.0），但 page_change_rate 差异不大。与 B0 一致：成功取决于精准少步操作。
+
+### 5.5 Temporal SR 趋势
+
+| 模式 | Q1 (earliest) | Q5 (latest) | 趋势 |
+|------|--------------|-------------|------|
+| DOM | 10.9% | 6.0% | ↓ 下降 |
+| SoM | 8.7% | 10.0% | → 稳定 |
+| Vision | 4.4% | 8.0% | ↑ 上升 |
+
+DOM 呈现 temporal degradation 趋势。SoM 和 Vision 保持稳定或略升。
 
 ---
 
 ## 6. 共性脚手架缺陷
 
-以下缺陷与观测模式无关，三种模式均受影响。
+### 6.1 地点过滤困难（3 例）
 
-### 6.1 地点过滤困难（3 例：task_58, 72, 74）
+Classifieds 站点的地点筛选依赖搜索结果页的 City 文本输入框。
 
-Classifieds 站点的地点筛选依赖搜索结果页的 City 文本输入框，而非主搜索框。模型普遍把地名塞入搜索框（按商品名匹配，不按地点过滤），导致搜索失败。
+### 6.2 `<select>` 下拉菜单三层不可达（VWA 框架级缺陷）
 
-- task_58（DOM/SoM）：搜索"blue chair Washington DC"无结果。DOM/SoM thought 多次提到要用 City 过滤（DOM 4 次、SoM 5 次），但**始终无法执行**——"认知-执行鸿沟"
-- task_58（**Vision 例外**）：step 8 成功找到 City 输入框并输入 "Washington, D.C."，视觉信息弥合了执行鸿沟（详见 Vision digest task 58）
-- task_72/74：重复搜索地名，搜索框无法理解地点约束
+`<select>` 在 VWA 默认配置下对所有 agent 实质不可用。
 
-归因：模型+UI。
+### 6.3 Type 操作导致页面全选变蓝
 
-### 6.2 编辑页面字段不可达（2 例：task_4, 75）
+VWA 框架内置 `Meta+A` 作为 type 前置步骤。
 
-商品编辑页面的价格/描述输入框不在当前 viewport 中，Agent 持续滚动但无法定位目标字段。三种模式均受限于 viewport 尺寸。归因：框架。
+### 6.4 极少翻页
 
-### 6.3 `<select>` 下拉菜单三层不可达（VWA 框架级缺陷）
+模型几乎只会反复 scroll，极少点击分页控件。
 
-`<select>` 在 VWA 默认配置下对所有 agent 实质不可用。三层过滤：
+### 6.5 confirm 弹窗不可交互（VWA 框架级缺陷）
 
-1. **关闭状态**：option 元素 bbox=0，被 `TextObervationProcessor` 的 `width==0` 过滤
-2. **展开状态**：`IN_VIEWPORT_RATIO_THRESHOLD = 0.6` 过滤 viewport 外选项
-3. **scroll 限制**：`window.scrollBy()` 只滚页面，不滚 `<select>` 内部
+Classifieds "Delete" 触发浏览器原生 `confirm()` 弹窗，VWA Playwright 默认不自动接受。
 
-模型能自行发现"All categories"链接绕路，但消耗 2-3 额外步骤。归因：VWA 框架。
+### 6.6 N/A 任务 False Positive（10 例）
 
-### 6.4 Type 操作导致页面全选变蓝
+10 个 N/A reference task，三模式全部误判为 success=1.0。
 
-`type` 操作偶尔导致页面文本被全选高亮（蓝色覆盖），影响 SoM/Vision 截图可读性。DOM 无影响。
+### 6.7 搜索关键词过于具体
 
-**根因（§52 修正）**：VWA 框架内置 `Meta+A`（全选）作为 type 前置步骤，并非 Playwright 副作用。实际触发条件：模型将非 input 节点（link/span）误认为 textbox → `type` 操作的 `Meta+A` 在无焦点 input 的情况下全选页面文本 → 蓝色覆盖。归因：VWA 框架设计 + 模型节点类型误认。
-
-### 6.5 极少翻页（模型能力缺陷）
-
-模型几乎只会反复 scroll，极少点击分页控件。已知反例：SoM task_19（逐页翻页 1→2→3）、Vision task_58（识别 pagination 并翻页到 iPage=3）。DOM 未观察到翻页。视觉信息使分页控件更显著，但远未泛化为稳定策略。归因：模型。
-
-### 6.6 confirm 弹窗不可交互（VWA 框架级缺陷）
-
-Classifieds "Delete" 触发浏览器原生 `confirm()` 弹窗，VWA Playwright 默认不自动接受，导致删除操作被取消。所有删除任务三模式均失败。归因：VWA 框架。
-
-### 6.7 N/A 任务 False Positive（10 例）
-
-10 个 N/A reference task（24, 135, 164, 167, 189, 191, 194, 195, 196, 220），**三模式全部误判为 success=1.0**。
-
-**误判机制**：
-- **Type A（7 例）**：Agent 未 finish → runner 兜底填空 answer → `ua_match` 解读为"agent 无法完成"
-- **Type B（3 例：167, 189, 196）**：Agent 提交错误答案 → `ua_match` 脑补为"隐式不可行"
-
-**根因**：Agent prompt 无 N/A 出口（Rule 4: "NEVER give up"），三模式路径完全一致。归因：Prompt + 评测器。
-
-### 6.8 ~~任务参考图片未传递给模型~~ [已修复 §33/§34/§36]
-
-~~部分 VWA 任务 config 含 `"image"` 字段，但 `runner.py:924` 只传 `task.intent` 纯文本，**从未将参考图传给模型**。三种模式均受影响。修复方向：runner 构建 instruction 时追加参考图。归因：脚手架。~~
-
-**修复说明**：§33 runner 构建 instruction 时追加参考图（三模式均支持）；§34 `analysis.py` 新增 `_load_has_image_task_ids()` + `compute_adjusted_success` 排除 has_image FP；§36 digest pipeline 新增 `visual_has_ref_image` subtype 区分"有参考图但模型能力不足"和"纯视觉属性 DOM 不可达"。DOM 模式现在可以看到任务参考图片（但仍无页面截图）。
-
-### 6.9 搜索关键词过于具体
-
-模型将任务描述全部约束拼接为搜索词，但 OSClass 仅做标题/描述简单文本匹配（且要求 ≥4 字符）。正确策略：宽泛品类词搜索 + 筛选器/排序/翻页缩小范围。潜在改善：EIP 站点先验（M5）。归因：模型策略。
+模型将任务描述全部约束拼接为搜索词。正确策略：宽泛品类词搜索 + 筛选器/排序/翻页。
 
 ---
 
@@ -317,47 +320,41 @@ Classifieds "Delete" 触发浏览器原生 `confirm()` 弹窗，VWA Playwright �
 
 ### 7.1 Headroom 评估
 
-| 路由场景 | Adjusted headroom | 可行性 |
-|---------|------------------|--------|
-| DOM ↔ SoM | 0.4% | **无意义**（DOM adjusted 仅 2 个成功） |
-| **SoM ↔ Vision** | **3.42%** | **有价值**（Oracle 选 Vision 18 次） |
-| 三模式 Oracle | 3.42% | 与 SoM↔Vision 相同（DOM 贡献极小） |
+| 路由场景 | Adjusted headroom | 独占成功 | 可行性 |
+|---------|------------------|---------|--------|
+| SoM ↔ DOM | 8.12pp − ? | DOM 13, SoM 15 | **高价值**（DOM 贡献 13 个独占成功） |
+| SoM ↔ Vision | 8.12pp − ? | Vision 6, SoM 15 | **有价值** |
+| **三模式 Oracle** | **8.12pp** | DOM 13, Vision 6, SoM 15 | **最大化利用** |
+
+> §95 变更：DOM 独占成功从 7 个升至 13 个，headroom 从 5.13pp 升至 8.12pp。DOM 路由价值大幅提升。
 
 ### 7.2 推荐路由设计
 
-**SoM ↔ Vision 路由**：
-- SoM 作为默认（Adjusted SR 最高，16.24%）
-- Vision 作为低成本替代（成本 38%，7 个独占成功）
-- 路由信号：action_diversity（行为，0.74）+ verbalized（SoM+Vision 均有）
-
-**DOM 不纳入路由**：Adjusted SR 0.85%，独占成功仅 1 个。
-
-### 7.3 Capability-Aware Routing（§9）
-
-最优表征不是绝对的，是**模型能力的函数**（Read More, Think More 文献：高能力模型用 HTML +17.5pp，低能力模型用 a11y 更好）。B1（4B）的最优模式（SoM）不一定是 B0（235B）的最优模式。Phase 2 router 框架可扩展为"任务难度 × 模型能力"双维度选表征。若 B0 classifieds DOM SR 显著高于 B1，则 DOM 在高能力模型下重新有路由价值。
+**三模式路由**：
+- SoM 作为默认（Adjusted SR 最高，13.84%）
+- DOM 作为特定 task 类型的替代（13 个独占成功）
+- Vision 作为低成本替代（$0.0133/ep）
+- 路由信号：ep_mean_verbalized（三模式高度一致 0.75+）
 
 ### 7.3 Pareto 分析
 
 | 策略 | Adjusted SR | 平均成本 |
 |------|-------------|---------|
-| 全部 SoM | 16.24% | $0.077 |
-| 全部 Vision | 8.12% | $0.029 |
-| Oracle SoM↔Vision | **19.66%** | ~$0.057 |
-
-Oracle routing 在 SoM 基础上提升 3.42pp SR 且可能降低成本。
+| 全部 SoM | 13.84% | $0.0347 |
+| 全部 DOM | 7.59% | $0.0399 |
+| 全部 Vision | 7.14% | $0.0133 |
+| Oracle 三模式 | **21.37%** | ~$0.030 |
 
 ---
 
 ## 方法论说明
 
-- **Adjusted labels**：分析管线默认扣除 visual FP（DOM + visual task + raw success → False）和 N/A FP（N/A task + raw success → False）。所有图表、统计检验、CSV 均使用 adjusted
-- **FP 优先级**：N/A FP 优先于 Visual FP（重叠时标记为 na_fp）
+- **Adjusted SR**：仅扣除 N/A FP + eval FP（§95），不再扣除 visual FP。分母 224（移除 10 个 N/A reference task）
+- **cross_rep adjusted labels**：扣除 na_fp + eval_fp，分母保持 234
 - **统计检验**：McNemar exact test（成功率），Wilcoxon signed-rank（成本/延迟），Bootstrap 10K resamples（CI）
-- **路由信号**：AUROC 使用 adjusted labels，Mann-Whitney U 检验显著性
-- **Benchmark 噪声检测**：Visual task 基于关键词 + config `image` 字段；N/A 基于 `reference_answers.fuzzy_match == "N/A"`
+- **路由信号**：AUROC 使用 adjusted labels
 
 ---
 
-*生成时间：2026-04-12*
-*数据目录：`results/visualwebarena/phase1/B1_3mode_classifieds_20260404_141103/analysis/`*
-*合并自原 `B1_findings.md` + `B1_overall.md`*
+*数据目录：`results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/`*
+*文档更新：2026-04-25（§95 FP 重构：废弃 visual_fp，DOM adjusted SR 从 4.91% 升至 7.59%；SoM vs DOM 从显著变为 marginal；DOM 独占成功增至 13 个；routing headroom 升至 8.12pp）*
