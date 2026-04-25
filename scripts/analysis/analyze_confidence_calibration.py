@@ -128,17 +128,28 @@ def _build_episode_df(
         }
 
         if conf_step_count > 0:
-            means = [s["confidence"]["mean_logprob"] for s in conf_steps]
-            mins = [s["confidence"]["min_logprob"] for s in conf_steps]
-            margins_mean = [s["confidence"]["mean_margin"] for s in conf_steps]
-            margins_min = [s["confidence"]["min_margin"] for s in conf_steps]
+            # Token-level logprobs (absent for API-based runs like B0)
+            means = [s["confidence"]["mean_logprob"] for s in conf_steps
+                     if "mean_logprob" in s.get("confidence", {})]
+            mins = [s["confidence"]["min_logprob"] for s in conf_steps
+                    if "min_logprob" in s.get("confidence", {})]
+            margins_mean = [s["confidence"]["mean_margin"] for s in conf_steps
+                            if "mean_margin" in s.get("confidence", {})]
+            margins_min = [s["confidence"]["min_margin"] for s in conf_steps
+                           if "min_margin" in s.get("confidence", {})]
 
-            row["ep_mean_logprob"] = float(np.mean(means))
-            row["ep_min_logprob"] = float(np.min(mins))
-            row["ep_mean_margin"] = float(np.mean(margins_mean))
-            row["ep_min_margin"] = float(np.min(margins_min))
+            if means:
+                row["ep_mean_logprob"] = float(np.mean(means))
+                row["ep_min_logprob"] = float(np.min(mins))
+                row["ep_mean_margin"] = float(np.mean(margins_mean))
+                row["ep_min_margin"] = float(np.min(margins_min))
+            else:
+                row["ep_mean_logprob"] = np.nan
+                row["ep_min_logprob"] = np.nan
+                row["ep_mean_margin"] = np.nan
+                row["ep_min_margin"] = np.nan
 
-            # Entropy (may be absent for older episodes)
+            # Entropy (may be absent for older episodes or API runs)
             ent_means = [s["confidence"]["mean_entropy"] for s in conf_steps
                          if "mean_entropy" in s.get("confidence", {})]
             ent_maxes = [s["confidence"]["max_entropy"] for s in conf_steps
@@ -160,12 +171,14 @@ def _build_episode_df(
                 row["ep_mean_verbalized"] = np.nan
                 row["ep_min_verbalized"] = np.nan
 
-            # Last-3 steps
-            last3 = means[-3:] if len(means) >= 3 else means
-            row["ep_last3_mean_logprob"] = float(np.mean(last3))
-
-            # Prob for reliability diagram
-            row["ep_prob"] = float(np.exp(row["ep_mean_logprob"]))
+            # Last-3 steps (token-level)
+            if means:
+                last3 = means[-3:] if len(means) >= 3 else means
+                row["ep_last3_mean_logprob"] = float(np.mean(last3))
+                row["ep_prob"] = float(np.exp(row["ep_mean_logprob"]))
+            else:
+                row["ep_last3_mean_logprob"] = np.nan
+                row["ep_prob"] = np.nan
         else:
             for col in EP_AGG_COLS:
                 row[col] = np.nan
@@ -305,23 +318,25 @@ def _rank_biserial(u_stat: float, n1: int, n2: int) -> float:
 
 def c1_distribution(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
     """Success vs failure violin plots + Wilcoxon rank-sum tests."""
-    # Core metrics: require all 4 present; entropy metrics: optional
-    df = ep_df.dropna(subset=METRICS_CORE)
+    # Determine which metrics have enough data (>=4 non-NaN episodes)
+    active_metrics: list = []
+    for m in METRICS_CORE + METRICS_ENTROPY + METRICS_VERBALIZED:
+        n_valid = ep_df[m].notna().sum() if m in ep_df.columns else 0
+        if n_valid >= 4:
+            active_metrics.append(m)
+
+    if not active_metrics:
+        print("  C1: skipped – no metric has >=4 episodes with data")
+        return
+
+    # Use episodes that have at least one active metric
+    df = ep_df.dropna(subset=active_metrics, how="all")
     if len(df) < 4:
-        print("  C1: skipped – too few episodes with confidence")
+        print("  C1: skipped – too few episodes with any confidence metric")
         return
 
     succ = df[df["success"]]
     fail = df[~df["success"]]
-
-    # Determine which metrics have enough data
-    active_metrics = list(METRICS_CORE)
-    for m in METRICS_ENTROPY + METRICS_VERBALIZED:
-        n_valid = df[m].notna().sum()
-        if n_valid >= 4:
-            active_metrics.append(m)
-        else:
-            print(f"  C1: {m} has only {n_valid} episodes with data – excluded from plots")
 
     # Stats table
     stat_rows = []
@@ -394,6 +409,30 @@ def c1_distribution(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
 
 # ── C2: Reliability Diagram + Calibration Metrics ─────────────────────────
 
+def _compute_ece_mce_brier(
+    probs: np.ndarray, labels: np.ndarray, n_bins: int = 10,
+) -> Tuple[float, float, float]:
+    """Compute ECE, MCE, and Brier score from probabilities and binary labels."""
+    if len(probs) == 0:
+        return (float("nan"), float("nan"), float("nan"))
+    bin_edges = np.linspace(0.0, 1.0, n_bins + 1)
+    ece_sum = 0.0
+    mce = 0.0
+    total_n = len(probs)
+    for i in range(n_bins):
+        lo, hi = bin_edges[i], bin_edges[i + 1]
+        mask = (probs >= lo) & (probs < hi) if i < n_bins - 1 else (probs >= lo) & (probs <= hi)
+        n_bin = int(mask.sum())
+        if n_bin == 0:
+            continue
+        diff = abs(float(probs[mask].mean()) - float(labels[mask].mean()))
+        ece_sum += n_bin * diff
+        mce = max(mce, diff)
+    ece = ece_sum / total_n if total_n else float("nan")
+    brier = float(np.mean((probs - labels) ** 2))
+    return (ece, mce, brier)
+
+
 def _auroc_safe(y_true: np.ndarray, y_score: np.ndarray) -> float:
     """AUROC via Mann-Whitney U (no sklearn needed). NaN if single class."""
     unique = np.unique(y_true)
@@ -407,14 +446,112 @@ def _auroc_safe(y_true: np.ndarray, y_score: np.ndarray) -> float:
     return float(u / (len(pos) * len(neg)))
 
 
+def _c2_auroc_table(ep_df: pd.DataFrame, tables_dir: Path) -> Dict[str, Any]:
+    """Compute AUROC for all signal types and optimal thresholds.
+
+    Called unconditionally (does not require token-level ep_prob).
+    Returns a metrics dict consumed by downstream routing readiness.
+    """
+    auroc_rows = []
+    for m in METRICS_ALL:
+        sig_type = "verbalized" if m in METRICS_VERBALIZED else "token_level"
+        mdf = ep_df.dropna(subset=[m])
+        if len(mdf) < 4 or mdf["success"].nunique() < 2:
+            auroc_rows.append({"metric": m, "AUROC": np.nan, "AUROC_ci_lower": np.nan,
+                               "AUROC_ci_upper": np.nan, "n": len(mdf),
+                               "signal_type": sig_type})
+            continue
+        y = mdf["success"].astype(int).values
+        scores = mdf[m].values
+        if "entropy" in m:
+            scores = -scores
+        a, ci_lo, ci_hi = _auroc_bootstrap_ci(y, scores)
+        auroc_rows.append({
+            "metric": m,
+            "AUROC": round(a, 6) if not math.isnan(a) else None,
+            "AUROC_ci_lower": round(ci_lo, 6) if not math.isnan(ci_lo) else None,
+            "AUROC_ci_upper": round(ci_hi, 6) if not math.isnan(ci_hi) else None,
+            "n": len(mdf), "signal_type": sig_type,
+        })
+
+    behavioral_auroc_config = {
+        "url_revisit_count": True, "url_revisit_max": True,
+        "url_unique_count": False, "action_diversity": False,
+        "action_unique_types": False, "max_repeat_streak": True,
+    }
+    for m, negate in behavioral_auroc_config.items():
+        if m not in ep_df.columns:
+            continue
+        mdf = ep_df.dropna(subset=[m])
+        if len(mdf) < 4 or mdf["success"].nunique() < 2:
+            auroc_rows.append({"metric": m, "AUROC": np.nan, "AUROC_ci_lower": np.nan,
+                               "AUROC_ci_upper": np.nan, "n": len(mdf),
+                               "signal_type": "behavioral"})
+            continue
+        y = mdf["success"].astype(int).values
+        scores = mdf[m].values
+        if negate:
+            scores = -scores
+        a, ci_lo, ci_hi = _auroc_bootstrap_ci(y, scores)
+        auroc_rows.append({
+            "metric": m,
+            "AUROC": round(a, 6) if not math.isnan(a) else None,
+            "AUROC_ci_lower": round(ci_lo, 6) if not math.isnan(ci_lo) else None,
+            "AUROC_ci_upper": round(ci_hi, 6) if not math.isnan(ci_hi) else None,
+            "n": len(mdf), "signal_type": "behavioral",
+        })
+
+    auroc_df = pd.DataFrame(auroc_rows)
+    auroc_df.to_csv(tables_dir / "auroc_all_metrics.csv", index=False)
+    print(f"  C2: auroc_all_metrics.csv ({len(auroc_rows)} signals)")
+
+    # Optimal threshold (Youden's J) per signal
+    threshold_rows = []
+    threshold_negate = {
+        "ep_mean_entropy": True, "ep_max_entropy": True,
+        "url_revisit_count": True, "url_revisit_max": True,
+        "url_unique_count": False, "action_unique_types": False,
+        "action_diversity": False, "max_repeat_streak": True,
+    }
+    all_threshold_signals = list(METRICS_ALL) + list(BEHAVIORAL_LABELS.keys())
+    for m in all_threshold_signals:
+        if m not in ep_df.columns:
+            continue
+        mdf = ep_df.dropna(subset=[m])
+        if len(mdf) < 10 or mdf["success"].nunique() < 2:
+            continue
+        y = mdf["success"].astype(int).values
+        scores = mdf[m].values
+        if threshold_negate.get(m, False):
+            scores = -scores
+        opt = _optimal_threshold(y, scores)
+        opt["metric"] = m
+        if threshold_negate.get(m, False) and not math.isnan(opt["threshold"]):
+            opt["threshold"] = -opt["threshold"]
+        threshold_rows.append(opt)
+    if threshold_rows:
+        pd.DataFrame(threshold_rows).to_csv(tables_dir / "optimal_thresholds.csv", index=False)
+        print(f"  C2: optimal_thresholds.csv ({len(threshold_rows)} signals)")
+
+    return {}
+
+
 def c2_calibration(
     ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path, n_bins: int = 10,
 ) -> Dict[str, Any]:
-    """Reliability diagram + ECE/MCE/Brier/AUROC."""
+    """Reliability diagram + ECE/MCE/Brier/AUROC.
+
+    AUROC table (auroc_all_metrics.csv) is always computed for all available
+    signals (token-level, verbalized, behavioral).  The reliability diagram
+    and ECE/MCE/Brier require token-level ep_prob and are skipped when absent.
+    """
+    # ── Always compute multi-metric AUROC (independent of ep_prob) ──
+    metrics = _c2_auroc_table(ep_df, tables_dir)
+
     df = ep_df.dropna(subset=["ep_prob"]).copy()
     if len(df) < 4:
-        print("  C2: skipped – too few episodes with ep_prob")
-        return {}
+        print("  C2: reliability diagram skipped – too few episodes with ep_prob")
+        return metrics
 
     probs = df["ep_prob"].values
     labels = df["success"].astype(int).values
@@ -462,98 +599,6 @@ def c2_calibration(
         "n_episodes": total_n,
     }
     pd.DataFrame([metrics]).to_csv(tables_dir / "calibration_metrics.csv", index=False)
-
-    # Multi-metric AUROC comparison table
-    # Higher values (logprob, margin) → higher score = more likely success
-    # Higher entropy → lower confidence, so negate for AUROC
-    auroc_rows = []
-    for m in METRICS_ALL:
-        sig_type = "verbalized" if m in METRICS_VERBALIZED else "token_level"
-        mdf = ep_df.dropna(subset=[m])
-        if len(mdf) < 4 or mdf["success"].nunique() < 2:
-            auroc_rows.append({"metric": m, "AUROC": np.nan, "AUROC_ci_lower": np.nan,
-                               "AUROC_ci_upper": np.nan, "n": len(mdf),
-                               "signal_type": sig_type})
-            continue
-        y = mdf["success"].astype(int).values
-        scores = mdf[m].values
-        # Entropy is inversely related to confidence: negate for AUROC
-        if "entropy" in m:
-            scores = -scores
-        a, ci_lo, ci_hi = _auroc_bootstrap_ci(y, scores)
-        auroc_rows.append({
-            "metric": m,
-            "AUROC": round(a, 6) if not math.isnan(a) else None,
-            "AUROC_ci_lower": round(ci_lo, 6) if not math.isnan(ci_lo) else None,
-            "AUROC_ci_upper": round(ci_hi, 6) if not math.isnan(ci_hi) else None,
-            "n": len(mdf),
-            "signal_type": sig_type,
-        })
-
-    # Behavioral signals AUROC
-    # Negate = True means lower value → more likely success
-    behavioral_auroc_config = {
-        "url_revisit_count": True,   # fewer revisits → success
-        "url_revisit_max": True,
-        "url_unique_count": False,   # more unique URLs → success (exploratory)
-        "action_diversity": False,   # higher diversity → success
-        "action_unique_types": False,  # more unique actions → success
-        "max_repeat_streak": True,   # fewer repeats → success
-    }
-    for m, negate in behavioral_auroc_config.items():
-        if m not in ep_df.columns:
-            continue
-        mdf = ep_df.dropna(subset=[m])
-        if len(mdf) < 4 or mdf["success"].nunique() < 2:
-            auroc_rows.append({"metric": m, "AUROC": np.nan, "AUROC_ci_lower": np.nan,
-                               "AUROC_ci_upper": np.nan, "n": len(mdf),
-                               "signal_type": "behavioral"})
-            continue
-        y = mdf["success"].astype(int).values
-        scores = mdf[m].values
-        if negate:
-            scores = -scores
-        a, ci_lo, ci_hi = _auroc_bootstrap_ci(y, scores)
-        auroc_rows.append({
-            "metric": m,
-            "AUROC": round(a, 6) if not math.isnan(a) else None,
-            "AUROC_ci_lower": round(ci_lo, 6) if not math.isnan(ci_lo) else None,
-            "AUROC_ci_upper": round(ci_hi, 6) if not math.isnan(ci_hi) else None,
-            "n": len(mdf),
-            "signal_type": "behavioral",
-        })
-
-    auroc_df = pd.DataFrame(auroc_rows)
-    auroc_df.to_csv(tables_dir / "auroc_all_metrics.csv", index=False)
-
-    # ── Optimal threshold (Youden's J) per signal ──
-    threshold_rows = []
-    threshold_negate = {
-        "ep_mean_entropy": True, "ep_max_entropy": True,
-        "url_revisit_count": True, "url_revisit_max": True,
-        "url_unique_count": False, "action_unique_types": False,
-        "action_diversity": False, "max_repeat_streak": True,
-    }
-    all_threshold_signals = list(METRICS_ALL) + list(BEHAVIORAL_LABELS.keys())
-    for m in all_threshold_signals:
-        if m not in ep_df.columns:
-            continue
-        mdf = ep_df.dropna(subset=[m])
-        if len(mdf) < 10 or mdf["success"].nunique() < 2:
-            continue
-        y = mdf["success"].astype(int).values
-        scores = mdf[m].values
-        if threshold_negate.get(m, False):
-            scores = -scores
-        opt = _optimal_threshold(y, scores)
-        opt["metric"] = m
-        # If negated, flip threshold back for interpretability
-        if threshold_negate.get(m, False) and not math.isnan(opt["threshold"]):
-            opt["threshold"] = -opt["threshold"]
-        threshold_rows.append(opt)
-    if threshold_rows:
-        pd.DataFrame(threshold_rows).to_csv(tables_dir / "optimal_thresholds.csv", index=False)
-        print(f"  C2: optimal_thresholds.csv ({len(threshold_rows)} signals)")
 
     print(f"  C2: tables → calibration_bins.csv, calibration_metrics.csv, auroc_all_metrics.csv")
 
@@ -787,24 +832,29 @@ def c3_trajectory(
     else:
         print(f"  C3: verbalized trajectory skipped – only {len(sdf_verb)} steps with data")
 
-    # ── Position heatmap ──
-    # Bin step positions and mean_logprob → success rate
-    sdf["logprob_bin"] = pd.cut(sdf["mean_logprob"], bins=5, labels=False)
-    sdf["step_bin"] = pd.cut(sdf["step_idx"], bins=min(6, max_step + 1), labels=False)
+    # ── Position heatmap (requires token-level logprobs) ──
+    sdf_lp = sdf.dropna(subset=["mean_logprob"])
+    if len(sdf_lp) >= 10:
+        sdf_lp = sdf_lp.copy()
+        sdf_lp["logprob_bin"] = pd.cut(sdf_lp["mean_logprob"], bins=5, labels=False)
+        sdf_lp["step_bin"] = pd.cut(sdf_lp["step_idx"], bins=min(6, max_step + 1), labels=False)
 
-    pos_stats = []
-    for (sb, lb), grp in sdf.groupby(["step_bin", "logprob_bin"], observed=True):
-        if len(grp) == 0:
-            continue
-        pos_stats.append({
-            "step_bin": int(sb) if pd.notna(sb) else -1,
-            "logprob_bin": int(lb) if pd.notna(lb) else -1,
-            "n": len(grp),
-            "success_rate": round(float(grp["success"].mean()), 4),
-            "mean_logprob": round(float(grp["mean_logprob"].mean()), 6),
-        })
-    pos_df = pd.DataFrame(pos_stats)
-    pos_df.to_csv(tables_dir / "step_position_stats.csv", index=False)
+        pos_stats = []
+        for (sb, lb), grp in sdf_lp.groupby(["step_bin", "logprob_bin"], observed=True):
+            if len(grp) == 0:
+                continue
+            pos_stats.append({
+                "step_bin": int(sb) if pd.notna(sb) else -1,
+                "logprob_bin": int(lb) if pd.notna(lb) else -1,
+                "n": len(grp),
+                "success_rate": round(float(grp["success"].mean()), 4),
+                "mean_logprob": round(float(grp["mean_logprob"].mean()), 6),
+            })
+        pos_df = pd.DataFrame(pos_stats)
+        pos_df.to_csv(tables_dir / "step_position_stats.csv", index=False)
+    else:
+        pos_df = pd.DataFrame()
+        print("  C3: position heatmap skipped – no token-level logprobs")
 
     if len(pos_df) > 1:
         pivot = pos_df.pivot_table(
@@ -827,15 +877,15 @@ def c3_trajectory(
 
 # ── C4: Per-Mode Comparison ───────────────────────────────────────────────
 
-def c4_per_mode(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
-    """Violin + reliability diagram per observation_mode."""
+def c4_per_mode(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path) -> List[Dict[str, Any]]:
+    """Violin + reliability diagram per observation_mode. Returns per-mode calibration list."""
     df = ep_df.dropna(subset=["ep_mean_logprob"])
     modes = sorted(df["observation_mode"].unique())
     if not modes:
         print("  C4: skipped – no data with confidence")
-        return
+        return []
 
-    # Summary table (token-level + verbalized)
+    # Summary table (token-level + verbalized + calibration metrics)
     summary_rows = []
     for mode in modes:
         grp = df[df["observation_mode"] == mode]
@@ -847,10 +897,35 @@ def c4_per_mode(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
             "mean_logprob_std": round(float(grp["ep_mean_logprob"].std()), 6),
             "ep_prob_mean": round(float(grp["ep_prob"].mean()), 6),
         }
+        # Token-level calibration per mode
+        prob_vals = grp["ep_prob"].dropna().values
+        labels_arr = grp["success"].astype(int).values
+        if len(prob_vals) >= 4:
+            ece, mce, brier = _compute_ece_mce_brier(prob_vals, labels_arr)
+            row["ECE"] = round(ece, 6)
+            row["MCE"] = round(mce, 6)
+            row["Brier"] = round(brier, 6)
+        else:
+            row["ECE"] = np.nan
+            row["MCE"] = np.nan
+            row["Brier"] = np.nan
+
+        # Verbalized calibration per mode
         verb_vals = grp["ep_mean_verbalized"].dropna()
         row["n_verbalized"] = len(verb_vals)
         row["mean_verbalized_mean"] = round(float(verb_vals.mean()), 6) if len(verb_vals) else np.nan
         row["mean_verbalized_std"] = round(float(verb_vals.std()), 6) if len(verb_vals) else np.nan
+        if len(verb_vals) >= 4:
+            v_labels = grp.loc[verb_vals.index, "success"].astype(int).values
+            v_ece, v_mce, v_brier = _compute_ece_mce_brier(verb_vals.values, v_labels)
+            row["verbalized_ECE"] = round(v_ece, 6)
+            row["verbalized_MCE"] = round(v_mce, 6)
+            row["verbalized_Brier"] = round(v_brier, 6)
+        else:
+            row["verbalized_ECE"] = np.nan
+            row["verbalized_MCE"] = np.nan
+            row["verbalized_Brier"] = np.nan
+
         summary_rows.append(row)
     pd.DataFrame(summary_rows).to_csv(tables_dir / "per_mode_summary.csv", index=False)
     print(f"  C4: table → per_mode_summary.csv")
@@ -966,6 +1041,8 @@ def c4_per_mode(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
               f"C4_per_mode_verbalized_reliability.png")
     else:
         print(f"  C4: verbalized per-mode skipped – no modes with verbalized data")
+
+    return summary_rows
 
 
 # ── Holm-Bonferroni correction ────────────────────────────────────────────
@@ -2059,8 +2136,10 @@ def main() -> None:
     step_df_filt = step_df[step_df["condition_id"].isin(good_conds)].copy()
     print(f"  Conditions passing 10% threshold: {sorted(good_conds) if good_conds else 'none'}")
 
-    if ep_df_filt.dropna(subset=["ep_mean_logprob"]).empty:
-        print("\n⚠ No episodes with confidence data pass coverage threshold.")
+    has_token_level = not ep_df_filt.dropna(subset=["ep_mean_logprob"]).empty
+    has_verbalized = not ep_df_filt.dropna(subset=["ep_mean_verbalized"]).empty
+    if not has_token_level and not has_verbalized:
+        print("\n⚠ No episodes with any confidence data pass coverage threshold.")
         print("  Writing minimal summary and exiting.")
         summary = {
             "coverage": cov_df.to_dict(orient="records"),
@@ -2078,6 +2157,8 @@ def main() -> None:
             json.dump(summary, f, indent=2, default=str)
         print(f"\nDone → {output_dir / 'confidence_summary.json'}")
         return
+    if not has_token_level:
+        print("\n  ℹ No token-level logprobs (API-based run); analyses will use verbalized + behavioral signals only.")
 
     # ── C1 ──
     print("\n── C1: Success vs Failure ──")
@@ -2093,9 +2174,10 @@ def main() -> None:
 
     # ── C4 ── (skip in single-mode runs)
     n_modes = ep_df_filt["observation_mode"].nunique()
+    per_mode_calibration: List[Dict[str, Any]] = []
     if n_modes >= 2:
         print("\n── C4: Per-Mode Comparison ──")
-        c4_per_mode(ep_df_filt, tables_dir, plots_dir)
+        per_mode_calibration = c4_per_mode(ep_df_filt, tables_dir, plots_dir) or []
     else:
         print(f"\n── C4: skipped (single mode: {ep_df_filt['observation_mode'].unique()[0]})")
 
@@ -2155,6 +2237,7 @@ def main() -> None:
         "coverage": cov_df.to_dict(orient="records"),
         "calibration": cal_metrics,
         "routing_readiness": readiness,
+        "per_mode_calibration": per_mode_calibration,
     }
 
     # Token-level discrimination (wilcoxon)

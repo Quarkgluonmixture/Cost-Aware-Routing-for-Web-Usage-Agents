@@ -712,6 +712,65 @@ def _classify_task_type(intent: str) -> str:
     return "single_navigation"
 
 
+INTENT_FEATURE_PATTERNS = {
+    "intent_has_sort": re.compile(r"\b(sort|order)\s+(by|from)\b", re.I),
+    "intent_has_filter": re.compile(r"\b(filter|refine|narrow)\b", re.I),
+    "intent_has_compare": re.compile(r"\b(compar|cheaper|cheapest|most\s+expensive|vs\.?)\b", re.I),
+    "intent_has_count": re.compile(r"\b(how\s+many|count|number\s+of|total)\b", re.I),
+    "intent_has_latest": re.compile(r"\b(latest|most\s+recent|newest|last\s+posted)\b", re.I),
+    "intent_has_color": re.compile(r"\b(red|blue|green|black|white|yellow|purple|pink|grey|gray|brown|orange|silver|gold)\b", re.I),
+    "intent_has_image": None,  # from config.get("image")
+    "intent_has_price": re.compile(r"\$\s*\d|price|cost|budget|afford", re.I),
+    "intent_has_location": re.compile(r"\b(from|in|near|located)\s+[A-Z]", re.I),
+    "intent_needs_scroll": re.compile(r"\b(all|every|each|complete\s+list|bottom|end\s+of)\b", re.I),
+}
+
+
+def _extract_intent_features(intent: str, config: dict) -> Dict[str, bool]:
+    """Extract boolean intent feature flags from task intent text."""
+    features: Dict[str, bool] = {}
+    for key, pattern in INTENT_FEATURE_PATTERNS.items():
+        if key == "intent_has_image":
+            features[key] = bool(config.get("image"))
+        elif pattern is not None:
+            features[key] = bool(pattern.search(intent))
+        else:
+            features[key] = False
+    return features
+
+
+def _compute_step_cost_breakdown(steps: List[Dict[str, Any]], loop_metrics: Dict[str, Any]) -> Dict[str, float]:
+    """Compute fine-grained cost breakdown from step records."""
+    total_cost = 0.0
+    no_op_cost = 0.0
+    page_unchanged_cost = 0.0
+    for s in steps:
+        step_cost = float(s.get("cost_usd", {}).get("total", 0))
+        total_cost += step_cost
+        if s.get("action_success") is False:
+            no_op_cost += step_cost
+        action_type = str(s.get("action", {}).get("action_type", "") or "").lower()
+        if s.get("page_changed") is False and action_type not in ("finish", "stop"):
+            page_unchanged_cost += step_cost
+    # Loop cost: estimate from loop_pattern
+    loop_pattern = str(loop_metrics.get("loop_pattern", "") or "")
+    loop_cost = 0.0
+    if "repeat" in loop_pattern.lower() or "cycle" in loop_pattern.lower():
+        # Rough heuristic: click_back_pairs * 2 steps worth of cost
+        click_back = int(loop_metrics.get("click_back_pairs", 0))
+        search_repeat = int(loop_metrics.get("max_search_query_repeat", 0))
+        loop_steps = max(click_back * 2, (search_repeat - 1) * 2)
+        if loop_steps > 0 and len(steps) > 0:
+            avg_step_cost = total_cost / len(steps)
+            loop_cost = min(avg_step_cost * loop_steps, total_cost)
+    return {
+        "no_op_cost_usd": no_op_cost,
+        "page_unchanged_cost_usd": page_unchanged_cost,
+        "loop_cost_usd": loop_cost,
+        "effective_cost_usd": max(0.0, total_cost - no_op_cost - loop_cost),
+    }
+
+
 def _collection_overlap_score(final_answer: str, ref_answers: Any) -> Optional[float]:
     """For must_include reference_answers with multiple URLs, compute fraction found in final_answer."""
     if not ref_answers or not isinstance(ref_answers, dict):
@@ -1262,6 +1321,437 @@ def _build_report(
         f.write("\n".join(lines).strip() + "\n")
 
 
+def _compute_action_execution_stats(steps: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Compute action execution quality metrics from raw step records."""
+    click_total = click_failed = 0
+    type_total = type_failed = 0
+    scroll_total = 0
+    parse_error_count = 0
+    page_changed_count = 0
+    pixel_coordinate_leak = False
+    consecutive_fail = 0
+    max_consecutive_fail_streak = 0
+
+    for rec in steps:
+        act = rec.get("action") or {}
+        atype = str(act.get("action_type", "") or "").lower()
+        success = rec.get("action_success")
+        err_cat = rec.get("error_category") or ""
+
+        if atype == "click":
+            click_total += 1
+            if success is False:
+                click_failed += 1
+        elif atype == "type":
+            type_total += 1
+            if success is False:
+                type_failed += 1
+        elif atype == "scroll":
+            scroll_total += 1
+
+        if err_cat == "parse_error":
+            parse_error_count += 1
+
+        if rec.get("page_changed") is True:
+            page_changed_count += 1
+
+        if success is False:
+            consecutive_fail += 1
+            max_consecutive_fail_streak = max(max_consecutive_fail_streak, consecutive_fail)
+        else:
+            consecutive_fail = 0
+
+        coord = act.get("coordinate")
+        if isinstance(coord, (list, tuple)) and len(coord) >= 2:
+            if any(isinstance(c, (int, float)) and c > 1.0 for c in coord[:2]):
+                pixel_coordinate_leak = True
+
+    total_steps = len(steps)
+    return {
+        "ax_click_total": click_total,
+        "ax_click_failed": click_failed,
+        "ax_click_fail_rate": round(click_failed / click_total, 4) if click_total else 0.0,
+        "ax_type_total": type_total,
+        "ax_type_failed": type_failed,
+        "ax_type_fail_rate": round(type_failed / type_total, 4) if type_total else 0.0,
+        "ax_scroll_total": scroll_total,
+        "ax_parse_error_count": parse_error_count,
+        "ax_parse_error_rate": round(parse_error_count / total_steps, 4) if total_steps else 0.0,
+        "ax_page_change_rate": round(page_changed_count / total_steps, 4) if total_steps else 0.0,
+        "ax_max_consecutive_fail_streak": max_consecutive_fail_streak,
+        "ax_pixel_coordinate_leak": pixel_coordinate_leak,
+    }
+
+
+def _write_action_execution_summary(
+    episode_rows: List[Dict[str, Any]], output_dir: Path,
+) -> None:
+    """Aggregate action execution stats per condition and write CSV."""
+    from collections import defaultdict as _dd
+
+    cond_data: Dict[str, List[Dict[str, Any]]] = _dd(list)
+    for row in episode_rows:
+        cond_data[row["condition_id"]].append(row)
+
+    summary_rows: List[Dict[str, Any]] = []
+    for cid in sorted(cond_data):
+        rows = cond_data[cid]
+        cfr = [r["ax_click_fail_rate"] for r in rows if r.get("ax_click_total", 0) > 0]
+        tfr = [r["ax_type_fail_rate"] for r in rows if r.get("ax_type_total", 0) > 0]
+        streaks = [r["ax_max_consecutive_fail_streak"] for r in rows]
+        pixel_leak_count = sum(1 for r in rows if r.get("ax_pixel_coordinate_leak"))
+
+        def _mean(vs):
+            return round(sum(vs) / len(vs), 4) if vs else None
+
+        def _median(vs):
+            if not vs:
+                return None
+            s = sorted(vs)
+            mid = len(s) // 2
+            return round((s[mid] + s[mid - 1]) / 2, 4) if len(s) % 2 == 0 else round(s[mid], 4)
+
+        def _p75(vs):
+            if not vs:
+                return None
+            s = sorted(vs)
+            idx = int(len(s) * 0.75)
+            return round(s[min(idx, len(s) - 1)], 4)
+
+        summary_rows.append({
+            "condition_id": cid,
+            "n_episodes": len(rows),
+            "click_fail_rate_mean": _mean(cfr),
+            "click_fail_rate_median": _median(cfr),
+            "type_fail_rate_mean": _mean(tfr),
+            "type_fail_rate_median": _median(tfr),
+            "pixel_coordinate_leak_pct": round(pixel_leak_count / len(rows), 4) if rows else 0,
+            "max_consecutive_fail_streak_mean": _mean(streaks),
+            "max_consecutive_fail_streak_p75": _p75(streaks),
+        })
+
+    _write_csv(
+        output_dir / "action_execution_summary.csv",
+        summary_rows,
+        [
+            "condition_id", "n_episodes",
+            "click_fail_rate_mean", "click_fail_rate_median",
+            "type_fail_rate_mean", "type_fail_rate_median",
+            "pixel_coordinate_leak_pct",
+            "max_consecutive_fail_streak_mean", "max_consecutive_fail_streak_p75",
+        ],
+    )
+    print(f"  Action execution summary → {output_dir / 'action_execution_summary.csv'}")
+
+
+def _write_state_change_by_outcome(
+    episode_rows: List[Dict[str, Any]], output_dir: Path,
+) -> None:
+    """Cross-tab of state_change metrics by (condition, adjusted_success)."""
+    rows_out: List[Dict[str, Any]] = []
+    cond_groups: Dict[str, Dict[bool, list]] = defaultdict(lambda: defaultdict(list))
+    for row in episode_rows:
+        adj = bool(row.get("adjusted_success", row.get("success", False)))
+        cond_groups[row["condition_id"]][adj].append(row)
+
+    for cid in sorted(cond_groups):
+        for outcome in [True, False]:
+            subset = cond_groups[cid][outcome]
+            if not subset:
+                continue
+            pcr = [float(r.get("ax_page_change_rate") or 0) for r in subset]
+            rows_out.append({
+                "condition_id": cid,
+                "adjusted_success": outcome,
+                "n_episodes": len(subset),
+                "page_change_rate_mean": round(sum(pcr) / len(pcr), 4) if pcr else None,
+                "page_change_rate_median": round(sorted(pcr)[len(pcr) // 2], 4) if pcr else None,
+                "avg_steps": round(sum(int(r.get("steps", 0)) for r in subset) / len(subset), 1),
+            })
+
+    _write_csv(
+        output_dir / "state_change_by_outcome.csv",
+        rows_out,
+        ["condition_id", "adjusted_success", "n_episodes",
+         "page_change_rate_mean", "page_change_rate_median", "avg_steps"],
+    )
+    print(f"  State change by outcome → {output_dir / 'state_change_by_outcome.csv'}")
+
+
+def _import_plt():
+    """Lazy import matplotlib with Agg backend."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    return plt
+
+
+def _generate_all_plots(episode_rows: List[Dict[str, Any]], plots_dir: Path) -> None:
+    """Generate all 7 diagnostic plots."""
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    plt = _import_plt()
+
+    _plot_reason_distribution(plt, episode_rows, plots_dir)
+    _plot_cost_by_failure_mode(plt, episode_rows, plots_dir)
+    _plot_intent_feature_sr(plt, episode_rows, plots_dir)
+    _plot_task_type_mode_sr(plt, episode_rows, plots_dir)
+    _plot_step_efficiency(plt, episode_rows, plots_dir)
+    _plot_temporal_sr(plt, episode_rows, plots_dir)
+    _plot_cost_decomposition(plt, episode_rows, plots_dir)
+    print(f"  Plots saved to: {plots_dir}")
+
+
+def _plot_reason_distribution(plt, rows, plots_dir):
+    """Plot 1: Horizontal stacked bar of reason_bucket distribution per condition."""
+    conditions = sorted(set(r["condition_id"] for r in rows))
+    all_buckets = Counter(r["reason_bucket"] for r in rows)
+    top_buckets = [b for b, _ in all_buckets.most_common(10)]
+
+    data = {}
+    for cid in conditions:
+        cond_rows = [r for r in rows if r["condition_id"] == cid]
+        total = len(cond_rows)
+        bucket_counts = Counter(r["reason_bucket"] for r in cond_rows)
+        data[cid] = {b: bucket_counts.get(b, 0) / max(total, 1) * 100 for b in top_buckets}
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    y_pos = range(len(conditions))
+    left = [0.0] * len(conditions)
+    for bucket in top_buckets:
+        widths = [data[cid].get(bucket, 0) for cid in conditions]
+        ax.barh(list(y_pos), widths, left=left, label=bucket.replace("fail_", ""), height=0.6)
+        left = [l + w for l, w in zip(left, widths)]
+    ax.set_yticks(list(y_pos))
+    ax.set_yticklabels([c.split("_")[1] for c in conditions])
+    ax.set_xlabel("Percentage (%)")
+    ax.set_title("Reason Bucket Distribution by Condition")
+    ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=7)
+    fig.tight_layout()
+    fig.savefig(plots_dir / "reason_distribution.png", dpi=150)
+    plt.close(fig)
+
+
+def _plot_cost_by_failure_mode(plt, rows, plots_dir):
+    """Plot 2: Box plot of total_cost_usd by reason_bucket (top 8)."""
+    all_buckets = Counter(r["reason_bucket"] for r in rows)
+    top_buckets = [b for b, _ in all_buckets.most_common(8)]
+    data = []
+    labels = []
+    for bucket in top_buckets:
+        costs = [float(r.get("total_cost_usd") or 0) for r in rows if r["reason_bucket"] == bucket]
+        if costs:
+            data.append(costs)
+            labels.append(bucket.replace("fail_", ""))
+
+    if not data:
+        return
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.boxplot(data, tick_labels=labels, vert=True)
+    ax.set_ylabel("Total Cost (USD)")
+    ax.set_title("Cost Distribution by Failure Mode")
+    plt.xticks(rotation=45, ha="right")
+    fig.tight_layout()
+    fig.savefig(plots_dir / "cost_by_failure_mode.png", dpi=150)
+    plt.close(fig)
+
+
+def _plot_intent_feature_sr(plt, rows, plots_dir):
+    """Plot 3: Heatmap of intent_feature x mode -> adjusted SR."""
+    intent_keys = [k for k in sorted(rows[0].keys()) if k.startswith("intent_")]
+    if not intent_keys:
+        return
+    modes = sorted(set(r.get("observation_mode", "") for r in rows))
+    if not modes:
+        return
+
+    grid = []
+    y_labels = []
+    for ik in intent_keys:
+        row_vals = []
+        for mode in modes:
+            subset = [r for r in rows if r.get("observation_mode") == mode and r.get(ik) is True]
+            if len(subset) >= 3:
+                sr = sum(1 for r in subset if r.get("adjusted_success")) / len(subset) * 100
+            else:
+                sr = float("nan")
+            row_vals.append(sr)
+        grid.append(row_vals)
+        y_labels.append(ik.replace("intent_", ""))
+
+    import numpy as np
+    arr = np.array(grid)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    im = ax.imshow(arr, aspect="auto", cmap="RdYlGn", vmin=0, vmax=max(30, float(np.nanmax(arr) if not np.all(np.isnan(arr)) else 30)))
+    ax.set_xticks(range(len(modes)))
+    ax.set_xticklabels(modes)
+    ax.set_yticks(range(len(y_labels)))
+    ax.set_yticklabels(y_labels)
+    for i in range(len(y_labels)):
+        for j in range(len(modes)):
+            v = arr[i, j]
+            if not np.isnan(v):
+                ax.text(j, i, f"{v:.1f}", ha="center", va="center", fontsize=8)
+    ax.set_title("Adjusted SR (%) by Intent Feature x Mode")
+    fig.colorbar(im, ax=ax, label="SR %")
+    fig.tight_layout()
+    fig.savefig(plots_dir / "intent_feature_sr.png", dpi=150)
+    plt.close(fig)
+
+
+def _plot_task_type_mode_sr(plt, rows, plots_dir):
+    """Plot 4: Heatmap of task_type x mode -> adjusted SR."""
+    task_types = sorted(set(r.get("task_type", "") for r in rows))
+    modes = sorted(set(r.get("observation_mode", "") for r in rows))
+    if not task_types or not modes:
+        return
+
+    grid = []
+    for tt in task_types:
+        row_vals = []
+        for mode in modes:
+            subset = [r for r in rows if r.get("observation_mode") == mode and r.get("task_type") == tt]
+            if len(subset) >= 3:
+                sr = sum(1 for r in subset if r.get("adjusted_success")) / len(subset) * 100
+            else:
+                sr = float("nan")
+            row_vals.append(sr)
+        grid.append(row_vals)
+
+    import numpy as np
+    arr = np.array(grid)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    im = ax.imshow(arr, aspect="auto", cmap="RdYlGn", vmin=0, vmax=max(30, float(np.nanmax(arr) if not np.all(np.isnan(arr)) else 30)))
+    ax.set_xticks(range(len(modes)))
+    ax.set_xticklabels(modes)
+    ax.set_yticks(range(len(task_types)))
+    ax.set_yticklabels(task_types)
+    for i in range(len(task_types)):
+        for j in range(len(modes)):
+            v = arr[i, j]
+            if not np.isnan(v):
+                ax.text(j, i, f"{v:.1f}", ha="center", va="center", fontsize=8)
+    ax.set_title("Adjusted SR (%) by Task Type x Mode")
+    fig.colorbar(im, ax=ax, label="SR %")
+    fig.tight_layout()
+    fig.savefig(plots_dir / "task_type_mode_sr.png", dpi=150)
+    plt.close(fig)
+
+
+def _plot_step_efficiency(plt, rows, plots_dir):
+    """Plot 5: Grouped bar chart of no_op_rate / page_unchanged_rate by mode."""
+    modes = sorted(set(r.get("observation_mode", "") for r in rows))
+    if not modes:
+        return
+
+    no_op_rates = []
+    pu_rates = []
+    for mode in modes:
+        subset = [r for r in rows if r.get("observation_mode") == mode]
+        if subset:
+            total_cost = sum(float(r.get("total_cost_usd") or 0) for r in subset)
+            no_op = sum(float(r.get("no_op_cost_usd") or 0) for r in subset)
+            pu = sum(float(r.get("page_unchanged_cost_usd") or 0) for r in subset)
+            no_op_rates.append(no_op / max(total_cost, 1e-9) * 100)
+            pu_rates.append(pu / max(total_cost, 1e-9) * 100)
+        else:
+            no_op_rates.append(0)
+            pu_rates.append(0)
+
+    import numpy as np
+    x = np.arange(len(modes))
+    width = 0.35
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.bar(x - width / 2, no_op_rates, width, label="No-op Cost %")
+    ax.bar(x + width / 2, pu_rates, width, label="Page-unchanged Cost %")
+    ax.set_xticks(x)
+    ax.set_xticklabels(modes)
+    ax.set_ylabel("Percentage of Total Cost (%)")
+    ax.set_title("Step Efficiency: Wasted Cost Ratios by Mode")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(plots_dir / "step_efficiency.png", dpi=150)
+    plt.close(fig)
+
+
+def _plot_temporal_sr(plt, rows, plots_dir):
+    """Plot 6: Line chart of SR by task_id quintile x condition."""
+    conditions = sorted(set(r["condition_id"] for r in rows))
+    n_bins = 5
+
+    csv_rows: List[Dict[str, Any]] = []
+    fig, ax = plt.subplots(figsize=(10, 6))
+    for cid in conditions:
+        cond_rows = sorted([r for r in rows if r["condition_id"] == cid], key=lambda r: int(r["task_id"]))
+        if len(cond_rows) < n_bins:
+            continue
+        bin_size = len(cond_rows) // n_bins
+        srs = []
+        for i in range(n_bins):
+            start = i * bin_size
+            end = start + bin_size if i < n_bins - 1 else len(cond_rows)
+            segment = cond_rows[start:end]
+            sr = sum(1 for r in segment if r.get("adjusted_success")) / len(segment) * 100
+            srs.append(sr)
+            csv_rows.append({
+                "condition_id": cid, "quintile": i + 1,
+                "adjusted_sr_pct": round(sr, 2), "n": len(segment),
+            })
+        ax.plot(range(1, n_bins + 1), srs, marker="o", label=cid.split("_")[1])
+
+    ax.set_xlabel("Task ID Quintile (1=earliest, 5=latest)")
+    ax.set_ylabel("Adjusted SR (%)")
+    ax.set_title("Temporal Success Rate Trend")
+    ax.legend()
+    ax.set_xticks(range(1, n_bins + 1))
+    fig.tight_layout()
+    fig.savefig(plots_dir / "temporal_sr.png", dpi=150)
+    plt.close(fig)
+
+    # Write CSV companion for the plot
+    if csv_rows:
+        csv_dir = plots_dir.parent  # reason_diagnostics/
+        _write_csv(
+            csv_dir / "temporal_sr.csv", csv_rows,
+            ["condition_id", "quintile", "adjusted_sr_pct", "n"],
+        )
+        print(f"  Temporal SR CSV → {csv_dir / 'temporal_sr.csv'}")
+
+
+def _plot_cost_decomposition(plt, rows, plots_dir):
+    """Plot 7: Stacked bar of effective / no_op / loop cost by condition."""
+    conditions = sorted(set(r["condition_id"] for r in rows))
+
+    effective = []
+    no_op = []
+    loop = []
+    labels = []
+    for cid in conditions:
+        subset = [r for r in rows if r["condition_id"] == cid]
+        eff = sum(float(r.get("effective_cost_usd") or 0) for r in subset)
+        nop = sum(float(r.get("no_op_cost_usd") or 0) for r in subset)
+        lp = sum(float(r.get("loop_cost_usd") or 0) for r in subset)
+        effective.append(eff)
+        no_op.append(nop)
+        loop.append(lp)
+        labels.append(cid.split("_")[1])
+
+    import numpy as np
+    x = np.arange(len(conditions))
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.bar(x, effective, label="Effective", color="#2ecc71")
+    ax.bar(x, no_op, bottom=effective, label="No-op", color="#e74c3c")
+    eff_nop = [e + n for e, n in zip(effective, no_op)]
+    ax.bar(x, loop, bottom=eff_nop, label="Loop", color="#f39c12")
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.set_ylabel("Total Cost (USD)")
+    ax.set_title("Cost Decomposition by Condition")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(plots_dir / "cost_decomposition.png", dpi=150)
+    plt.close(fig)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Stage-level success/failure diagnostics from *_summary_v2.json + *_steps_v2.jsonl"
@@ -1284,6 +1774,11 @@ def main() -> None:
         "--skip-similarity",
         action="store_true",
         help="Skip O(N^2) all-pairs thought similarity calculations for faster runs",
+    )
+    parser.add_argument(
+        "--no-plots",
+        action="store_true",
+        help="Skip generating visualization plots",
     )
     args = parser.parse_args()
 
@@ -1423,6 +1918,7 @@ def main() -> None:
             final_three_thoughts = _collect_final_thoughts(steps, k=3)
             select_events = _collect_select_events(steps)
             loop_metrics = _detect_loops(steps)
+            ax_stats = _compute_action_execution_stats(steps)
             page_type_seq = _page_type_sequence(steps)
             observation_mode = str(steps[0].get("observation_mode", "") or summary.get("observation_mode", "") or "").strip()
             degraded_som_steps = sum(
@@ -1455,23 +1951,17 @@ def main() -> None:
                 final_answer_in_intent_price_range=answer_in_intent_price_range,
             )
 
-            # ── Adjusted success (visual FP + N/A FP) ──
-            from p79.experiment.analysis import compute_adjusted_success, _load_visual_task_ids, _load_has_image_task_ids, _load_na_task_ids
+            # ── Adjusted success (N/A FP + eval FP; visual_fp removed in §95) ──
+            from p79.experiment.analysis import compute_adjusted_success, _load_na_task_ids
             _benchmark = "webarena" if any(p == "webarena" for p in run_dir.parts) else "visualwebarena"
-            _visual_ids = _load_visual_task_ids(site, benchmark=_benchmark)
-            _has_image_ids = _load_has_image_task_ids(site, benchmark=_benchmark)
             _na_ids = _load_na_task_ids(site, benchmark=_benchmark)
             _is_agent_finished = _is_finish(final_action_type) and not fallback_finish
             adjusted_success, fp_reason = compute_adjusted_success(
-                task_id, site, observation_mode, success,
-                visual_task_ids=_visual_ids, has_image_task_ids=_has_image_ids,
+                task_id, site, success,
                 na_task_ids=_na_ids,
                 agent_finished=_is_agent_finished,
                 eval_type=eval_type,
-                page_unchanged_rate=summary.get("page_unchanged_rate"),
                 has_effective_action=has_effective_action,
-                require_reset=require_reset,
-                url_unique_count=url_unique_count,
             )
             if adjusted_success != success:
                 adjusted_reason_bucket = _classify_reason(
@@ -1510,13 +2000,20 @@ def main() -> None:
                 observation_mode=observation_mode,
                 search_queries=loop_metrics["search_queries"],
                 degraded_som_steps=degraded_som_steps,
-                has_image=(task_id in _has_image_ids),
+                has_image=(task_meta.get("image") is not None),
             )
 
             # Phase2 aggregations
             bucket_key = (condition_id, reason_bucket)
             bucket_pair_values[bucket_key].extend(thought_metrics["all_pair_values"])
             bucket_template_counter[bucket_key].update(thought_metrics["high_template_counter"])
+
+            # Cost breakdown
+            _summary_cost = float(summary.get("total_cost_usd") or 0)
+            _summary_tokens = int(summary.get("total_tokens") or 0)
+            _waste = _compute_step_cost_breakdown(steps, loop_metrics)
+            # Intent features
+            _intent_features = _extract_intent_features(task_intent, task_meta)
 
             episode_row: Dict[str, Any] = {
                 "condition_id": condition_id,
@@ -1607,6 +2104,17 @@ def main() -> None:
                     ],
                     ensure_ascii=False,
                 ),
+                # --- Cost columns ---
+                "total_cost_usd": _summary_cost,
+                "total_tokens": _summary_tokens,
+                "no_op_cost_usd": round(_waste["no_op_cost_usd"], 6),
+                "page_unchanged_cost_usd": round(_waste["page_unchanged_cost_usd"], 6),
+                "loop_cost_usd": round(_waste["loop_cost_usd"], 6),
+                "effective_cost_usd": round(_waste["effective_cost_usd"], 6),
+                # --- Intent features ---
+                **_intent_features,
+                # --- Action execution ---
+                **ax_stats,
             }
             episode_rows.append(episode_row)
 
@@ -1713,6 +2221,37 @@ def main() -> None:
         "final_answer_excerpt",
         "final_thought_signature",
         "high_similarity_templates",
+        # Cost columns
+        "total_cost_usd",
+        "total_tokens",
+        "no_op_cost_usd",
+        "page_unchanged_cost_usd",
+        "loop_cost_usd",
+        "effective_cost_usd",
+        # Intent features
+        "intent_has_sort",
+        "intent_has_filter",
+        "intent_has_compare",
+        "intent_has_count",
+        "intent_has_latest",
+        "intent_has_color",
+        "intent_has_image",
+        "intent_has_price",
+        "intent_has_location",
+        "intent_needs_scroll",
+        # Action execution
+        "ax_click_total",
+        "ax_click_failed",
+        "ax_click_fail_rate",
+        "ax_type_total",
+        "ax_type_failed",
+        "ax_type_fail_rate",
+        "ax_scroll_total",
+        "ax_parse_error_count",
+        "ax_parse_error_rate",
+        "ax_page_change_rate",
+        "ax_max_consecutive_fail_streak",
+        "ax_pixel_coordinate_leak",
     ]
     _write_csv(output_dir / "episode_reason_rows.csv", episode_rows_sorted, episode_fields)
 
@@ -1896,6 +2435,20 @@ def main() -> None:
     }
     with open(output_dir / "reason_diagnostics_summary.json", "w", encoding="utf-8") as f:
         json.dump(snapshot, f, indent=2, ensure_ascii=False)
+
+    # Supplementary summary CSVs
+    try:
+        _write_action_execution_summary(episode_rows_sorted, output_dir)
+        _write_state_change_by_outcome(episode_rows_sorted, output_dir)
+    except Exception as e:
+        print(f"Warning: supplementary summary write failed: {e}")
+
+    # Visualization plots
+    if not args.no_plots:
+        try:
+            _generate_all_plots(episode_rows_sorted, output_dir / "plots")
+        except Exception as e:
+            print(f"Warning: plot generation failed: {e}")
 
     # Markdown report
     if args.report:

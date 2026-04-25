@@ -49,7 +49,12 @@ def _candidate_glm_urls(endpoint: str) -> List[str]:
     ep = endpoint.rstrip("/")
     if ep.endswith("/chat/completions"):
         return [ep]
-    return [f"{ep}/chat/completions", ep]
+    return [f"{ep}/chat/completions"]
+
+
+def _is_vision_model(model: str) -> bool:
+    m = model.lower()
+    return "4v" in m or "4.6v" in m or "5v" in m
 
 
 def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, Any]], timeout_s: int = 120) -> str:
@@ -58,7 +63,7 @@ def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, Any]], tim
             "model": glmm["model"],
             "messages": list(messages),
             "temperature": 0.1,
-            "max_tokens": 131072,
+            "max_tokens": 16384 if _is_vision_model(glmm["model"]) else 131072,
         },
     ]
     last_err: Optional[Exception] = None
@@ -643,6 +648,8 @@ def _fallback_episode_diagnosis(case: Dict[str, Any]) -> Dict[str, Any]:
         # (DOM: no visual output; SoM degraded: effectively DOM; vision: agent can't locate submit)
         if task_type == "page_reading" and scroll_only_like:
             scaffolding_issue = "是"
+    _cost = float(case.get("total_cost_usd") or 0)
+    _wasted = float(case.get("wasted_cost_usd") or case.get("total_cost_usd") or 0) if not case.get("success") else 0.0
     return {
         "task_id": task_id,
         "condition_id": condition_id,
@@ -652,6 +659,9 @@ def _fallback_episode_diagnosis(case: Dict[str, Any]) -> Dict[str, Any]:
         "confidence": confidence,
         "is_scaffolding_issue": scaffolding_issue,
         "evidence": evidence,
+        "total_cost_usd": _cost,
+        "wasted_cost_usd": _wasted,
+        "cost_note": f"${_cost:.4f}" if _cost else "",
     }
 
 
@@ -900,6 +910,8 @@ def _glm_episode_diagnosis_one(
                 confidence = "medium"
             if not evidence:
                 evidence = _case_evidence(case)
+            _glm_cost = float(case.get("total_cost_usd") or 0)
+            _glm_wasted = float(case.get("wasted_cost_usd") or case.get("total_cost_usd") or 0) if not case.get("success") else 0.0
             _result = {
                 "task_id": task_id,
                 "condition_id": str(case.get("condition_id", "") or "").strip(),
@@ -909,6 +921,8 @@ def _glm_episode_diagnosis_one(
                 "confidence": confidence,
                 "is_scaffolding_issue": issue_cn,
                 "evidence": evidence,
+                "total_cost_usd": _glm_cost,
+                "wasted_cost_usd": _glm_wasted,
             }
             if _vision_models:
                 _result["_vision_model_used"] = _glmm_use.get("model", "")

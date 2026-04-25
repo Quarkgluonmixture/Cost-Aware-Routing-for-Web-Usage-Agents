@@ -185,6 +185,31 @@ def compute_wasted_cost(step_records: List[Dict[str, Any]], success: bool) -> Di
     return {"wasted_cost_usd": total_cost, "wasted_energy_kwh": total_energy}
 
 
+def compute_waste_breakdown(step_records: List[Dict[str, Any]], success: bool) -> Dict[str, float]:
+    """Break down cost into no-op, page-unchanged, and total components.
+
+    Unlike compute_wasted_cost (binary: all-or-nothing), this provides
+    fine-grained cost attribution useful for post-hoc analysis scripts.
+    """
+    total_cost = 0.0
+    no_op_cost = 0.0
+    page_unchanged_cost = 0.0
+    for s in step_records:
+        step_cost = float(s.get("cost_usd", {}).get("total", 0))
+        total_cost += step_cost
+        if s.get("action_success") is False:
+            no_op_cost += step_cost
+        action_type = str(s.get("action", {}).get("action_type", "") or "").lower()
+        if s.get("page_changed") is False and action_type not in ("finish", "stop"):
+            page_unchanged_cost += step_cost
+    return {
+        "total_cost_usd": total_cost,
+        "no_op_cost_usd": no_op_cost,
+        "page_unchanged_cost_usd": page_unchanged_cost,
+        "wasted_cost_usd": total_cost if not success else 0.0,
+    }
+
+
 def compute_component_breakdown(step_records: List[Dict[str, Any]]) -> Dict[str, float]:
     """Aggregate cost by component type across all steps."""
     model_cost = sum(float(s.get("cost_usd", {}).get("model", 0)) for s in step_records)
