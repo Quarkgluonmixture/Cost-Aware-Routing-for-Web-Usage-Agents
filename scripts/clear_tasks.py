@@ -243,8 +243,29 @@ def main() -> int:
                     jsonl_file.write_text("\n".join(keep) + ("\n" if keep else ""), encoding="utf-8")
                 digest_cleaned += removed_here
 
+    # --- Remove stale condition_summary if episodes are now incomplete ---
+    # This ensures the watchdog and queue scripts detect the condition as
+    # incomplete and re-run the missing tasks + post-analysis.
+    cond_summary_removed = False
+    if deleted > 0:
+        cond_summary_path = cond_dir / "condition_summary_v2.json"
+        if cond_summary_path.exists():
+            # Count remaining summaries vs total task configs
+            remaining = len(list(ep_dir.glob("*_summary_v2.json"))) if ep_dir.exists() else 0
+            tc_dir = run_dir / "task_configs"
+            total = len(list(tc_dir.glob("*.json"))) if tc_dir.exists() else 0
+            if total > 0 and remaining < total:
+                if args.dry_run:
+                    print(f"  [dry-run] rm {cond_summary_path.relative_to(run_dir)}  (stale: {remaining}/{total} episodes)")
+                else:
+                    cond_summary_path.unlink()
+                    print(f"  deleted stale condition_summary ({remaining}/{total} episodes remaining)")
+                cond_summary_removed = True
+
     action = "would delete" if args.dry_run else "deleted"
     parts = [f"{action} {deleted} tasks"]
+    if cond_summary_removed:
+        parts.append(f"{action} stale condition_summary")
     if digest_cleaned:
         parts.append(f"{action} {digest_cleaned} digest records")
     if skipped:

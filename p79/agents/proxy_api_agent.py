@@ -193,19 +193,31 @@ class ProxyApiAgent:
             return None
 
         # Truncate to avoid sending huge payloads for a simple extraction task.
-        truncated = raw_output[:3000]
+        truncated = raw_output[:4000]
         extract_prompt = (
-            "Extract the web navigation action as a JSON object from the following agent output.\n"
-            'The JSON must contain "action_type" (one of: click, type, scroll, wait, back, '
+            "Extract or infer the intended web navigation action from the following agent output.\n"
+            "The output may be valid JSON, malformed JSON, or natural language describing the intended action.\n\n"
+            "Rules:\n"
+            '- Output a single JSON object with "action_type" (one of: click, type, scroll, wait, back, '
             "forward, finish, select_option, tab_focus).\n"
-            "Include all relevant fields: element_id, coordinate, text, scroll_direction (up/down), "
-            "option_label, answer, page_number, thought, confidence.\n"
-            "Output ONLY the JSON object. No explanation, no markdown.\n\n"
+            "- Include relevant fields: element_id, coordinate, text, scroll_direction (up/down), "
+            "option_label, answer, thought.\n"
+            "- If the output contains JSON (possibly malformed), extract and fix it.\n"
+            "- If the output is natural language, infer the action from the described intent.\n"
+            '- For finish/stop actions, extract the answer from context (do NOT leave answer as "").\n'
+            "- Output ONLY the JSON object. No explanation, no markdown.\n\n"
+            "Examples:\n"
+            'Input: "I need to click on the submit button which is element 42"\n'
+            'Output: {"action_type": "click", "element_id": 42, "thought": "click submit button"}\n\n'
+            'Input: "Let me scroll down to see more results on this page"\n'
+            'Output: {"action_type": "scroll", "scroll_direction": "down", "thought": "scroll to see more results"}\n\n'
+            'Input: "The answer to the question is $25.99, I should finish now"\n'
+            'Output: {"action_type": "finish", "answer": "$25.99", "thought": "found the answer"}\n\n'
             f"Agent output:\n{truncated}"
         )
 
         messages = [
-            {"role": "system", "content": "You extract structured JSON from text. Output ONLY valid JSON."},
+            {"role": "system", "content": "You extract or infer structured JSON actions from agent output. Output ONLY valid JSON."},
             {"role": "user", "content": extract_prompt},
         ]
         payload = json.dumps({
@@ -254,7 +266,11 @@ class ProxyApiAgent:
                 except json.JSONDecodeError:
                     # Thinking model may embed JSON inside reasoning prose;
                     # try regex extraction as last resort.
-                    m = _re.search(r"\{[^{}]*\"action_type\"[^{}]*\}", text)
+                    # First try: allow nested braces (for coordinate arrays etc.)
+                    m = _re.search(r"\{[^{}]*\"action_type\"[^}]*\}", text)
+                    if not m:
+                        # Second try: non-greedy match from action_type to end
+                        m = _re.search(r"\{.*?\"action_type\".*?\}", text, _re.DOTALL)
                     if m:
                         parsed = json.loads(m.group())
                     else:
@@ -682,9 +698,11 @@ Action Schema:
 
         # Path 3: GLM extraction fallback — only when parse failed.
         glm_fallback_used = False
+        glm_fallback_attempted = False
         glm_fallback_ms = 0.0
         glm_original_fail_reason: Optional[str] = None
         if not valid and self._glm_config:
+            glm_fallback_attempted = True
             glm_original_fail_reason = fail_reason  # remember what failed
             _t0 = time.monotonic()
             glm_action = self._call_glm_extract(output_text)
@@ -734,8 +752,9 @@ Action Schema:
             "tool_calling": self._use_tool_calling,
             # GLM fallback tracking (cost NOT in model_cost — scaffold overhead only).
             "glm_fallback_used": glm_fallback_used,
-            "glm_fallback_latency_ms": glm_fallback_ms if glm_fallback_used else None,
-            "glm_original_fail_reason": glm_original_fail_reason if glm_fallback_used else None,
+            "glm_fallback_attempted": glm_fallback_attempted if glm_fallback_attempted else None,
+            "glm_fallback_latency_ms": glm_fallback_ms if glm_fallback_attempted else None,
+            "glm_original_fail_reason": glm_original_fail_reason,
             # Proxy-specific fields for analysis.
             "proxy_cost": usage.get("cost"),
             "proxy_remaining_quota": metadata.get("remaining_quota"),

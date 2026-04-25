@@ -61,8 +61,10 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
         return {"action_type": "scroll", "delta": [0, 0.8], "coordinate_type": "normalized", "thought": thought}, False, "keyword_scroll"
     if "back" in lowered:
         return {"action_type": "back", "thought": thought}, False, "keyword_back"
-    if "finish" in lowered or "stop" in lowered:
-        return {"action_type": "finish", "answer": "", "thought": thought}, False, "keyword_finish"
+    # NOTE: keyword_finish removed (§67 follow-up).  "finish"/"stop" appearing
+    # in unparseable verbose text is almost always incidental, not intentional.
+    # Genuine finish actions produce valid JSON and are handled above.
+    # Falling through to wait keeps the episode alive.
 
     return {"action_type": "wait", "thought": thought}, False, "parse_failed"
 
