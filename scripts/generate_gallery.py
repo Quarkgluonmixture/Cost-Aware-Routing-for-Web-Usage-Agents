@@ -911,7 +911,7 @@ function renderHome(){{
       var ra=e.reference_answer||'';
       var ra30=ra.length>30?ra.substring(0,27)+'...':ra;
       var rb=e.reason_bucket||'';
-      var fpLabel=e.fp_reason==='visual_fp'?'V-FP':e.fp_reason==='na_fp'?'N-FP':e.fp_reason==='eval_fp'?'E-FP':e.fp_reason?'FP':'';
+      var fpLabel=e.fp_reason==='na_fp'?'N-FP':e.fp_reason==='eval_fp'?'E-FP':e.fp_reason?'FP':'';
       var fpTag=fpLabel?'<span class="fp-indicator" title="'+escA(e.fp_reason)+'">'+fpLabel+'</span>':'';
       h+='<tr class="ep-row'+lv+'" data-key="'+escA(e.key)+'">'
         +'<td>'+esc(e.label)+'</td>'
@@ -965,7 +965,7 @@ function renderEp(k){{
     +'<span class="badge '+c+'">'+sl+'</span>';
   if(e.reason_bucket) h+='<span class="reason-badge '+reasonClass(e.reason_bucket)+'" title="'+escA(e.reason_bucket)+'">'+esc(shortReason(e.reason_bucket))+'</span>';
   if(e.fp_reason){{
-    var fpl=e.fp_reason==='visual_fp'?'V-FP':e.fp_reason==='na_fp'?'N-FP':e.fp_reason==='eval_fp'?'E-FP':'FP';
+    var fpl=e.fp_reason==='na_fp'?'N-FP':e.fp_reason==='eval_fp'?'E-FP':'FP';
     h+='<span class="fp-indicator" title="'+escA(e.fp_reason)+'">'+fpl+'</span>';
   }}
   /* ---- spacer + step dots + nav (all inline in row1) ---- */

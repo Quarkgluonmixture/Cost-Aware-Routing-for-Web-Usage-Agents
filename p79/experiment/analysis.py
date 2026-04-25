@@ -40,106 +40,27 @@ def _load_na_task_ids(site: str, benchmark: str = "visualwebarena") -> set:
         return set()
 
 
-# Keywords indicating task requires visual information (image content / color / appearance)
-_VISUAL_TASK_KWDS = (
-    # Explicit image-comparison tasks
-    "in the image", "same as", "same item", "same brand", "same product",
-    "similar items", "of the image", "shown in", "like the product",
-    "compatible with this image", "depicts",
-    # Visual-attribute tasks
-    "on the cover", "cover image", "selfie", "taken as a selfie",
-    "hard-case", "hard case", "color of", "colour of",
-    "purple", "red", "blue", "green", "yellow", "orange", "pink", "white", "black",
-    "blonde", "mario", "mickey",
-    "pattern", "stripe", "floral", "checkered",
-)
-
-
-def _load_visual_task_ids(site: str, benchmark: str = "visualwebarena") -> set:
-    """Return task_ids that require visual information (image content, color, appearance).
-
-    Detection uses two signals:
-    1. Task config has an ``image`` field (explicit image-input task)
-    2. Task intent contains visual-matching keywords (color, appearance, etc.)
-
-    WA tasks have no visual component — return empty set to avoid keyword FP (~21%).
-    """
-    if benchmark == "webarena":
-        return set()
-    config_dir = _get_config_dir(benchmark)
-    config_path = config_dir / f"test_{site}.json"
-    if not config_path.exists():
-        config_path = config_dir / f"test_{site}.raw.json"
-    if not config_path.exists():
-        return set()
-    try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            tasks = json.load(f)
-        visual_ids = set()
-        for t in tasks:
-            has_image = t.get("image") is not None
-            intent_lower = t.get("intent", "").lower()
-            has_visual_kwd = any(k in intent_lower for k in _VISUAL_TASK_KWDS)
-            if has_image or has_visual_kwd:
-                visual_ids.add(t["task_id"])
-        return visual_ids
-    except Exception:
-        return set()
-
-
-def _load_has_image_task_ids(site: str, benchmark: str = "visualwebarena") -> set:
-    """Return task_ids whose config has an ``image`` field (explicit reference image).
-
-    These tasks provide a reference image that DOM mode can now see (after §33/§34/§36
-    fixes), so DOM successes on these tasks are no longer automatic false positives.
-    WA tasks have no image field — return empty set.
-    """
-    if benchmark == "webarena":
-        return set()
-    config_dir = _get_config_dir(benchmark)
-    config_path = config_dir / f"test_{site}.json"
-    if not config_path.exists():
-        config_path = config_dir / f"test_{site}.raw.json"
-    if not config_path.exists():
-        return set()
-    try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            tasks = json.load(f)
-        return {t["task_id"] for t in tasks if t.get("image") is not None}
-    except Exception:
-        return set()
-
-
 def compute_adjusted_success(
-    task_id: int, benchmark_site: str, observation_mode: str,
+    task_id: int, benchmark_site: str,
     raw_success: bool, *,
-    visual_task_ids: set | None = None,
-    has_image_task_ids: set | None = None,
     na_task_ids: set | None = None,
     agent_finished: bool | None = None,
     eval_type: str | None = None,
-    page_unchanged_rate: float | None = None,
     has_effective_action: bool | None = None,
-    require_reset: bool | None = None,
-    url_unique_count: int | None = None,
 ) -> tuple:
-    """Return (adjusted_success, fp_reason). fp_reason: '' / 'visual_fp' / 'na_fp' / 'eval_fp'.
+    """Return (adjusted_success, fp_reason). fp_reason: '' / 'na_fp' / 'eval_fp'.
 
-    Priority:
+    Priority (§95 simplified):
     1. raw_success=False → (False, '')
     2. N/A FP: task in na_task_ids and raw_success
        - If agent actively finished (not fallback) → true positive, keep
        - Otherwise → (False, 'na_fp')  (coincidental match)
-    3. Visual FP: DOM mode + visual kwd_only task + raw_success → (False, 'visual_fp')
-       - has_image tasks are excluded: DOM can now see reference images (§33/§34/§36)
-    4. Eval FP: success + ~agent_finished + eligible eval_type
+    3. Eval FP: success + ~agent_finished + eligible eval_type
        - string_match: always E-FP (empty answer GPT-4o-mini误判)
-       - program_html + PUR>0.5: E-FP (旧状态碰巧匹配)
-       - program_html + ~has_effective_action + ~require_reset + url_unique<=2: E-FP
-         (agent only clicked/scrolled, no DB-reset task, few unique URLs → pre-existing state)
+       - program_html + ~has_effective_action: E-FP (no meaningful action → pre-existing state)
        - url_match excluded: navigating to correct page without finish is legitimate
        → (False, 'eval_fp')
-    5. Otherwise → (raw_success, '')
+    4. Otherwise → (raw_success, '')
     """
     if not raw_success:
         return (False, "")
@@ -147,21 +68,12 @@ def compute_adjusted_success(
         if agent_finished:
             return (True, "")
         return (False, "na_fp")
-    if observation_mode == "dom" and visual_task_ids and task_id in visual_task_ids:
-        # DOM can see reference images after §33/§34/§36 fixes,
-        # so has_image tasks are no longer automatic visual FP — but still check eval_fp below
-        if not (has_image_task_ids and task_id in has_image_task_ids):
-            return (False, "visual_fp")
-    # Eval FP: string_match always; program_html with PUR or supplementary rule
     if agent_finished is not None and not agent_finished:
         if eval_type == "string_match":
             return (False, "eval_fp")
         if eval_type == "program_html":
-            pur = page_unchanged_rate if page_unchanged_rate is not None else 0.0
             hea = has_effective_action if has_effective_action is not None else True
-            rr = require_reset if require_reset is not None else True
-            uuc = url_unique_count if url_unique_count is not None else 999
-            if pur > 0.5 or (not hea and not rr and uuc <= 2):
+            if not hea:
                 return (False, "eval_fp")
     return (raw_success, "")
 
@@ -169,25 +81,19 @@ def compute_adjusted_success(
 def compute_adjusted_success_batch(ep_df, benchmark_site: str, benchmark: str = "visualwebarena"):
     """Add adjusted_success + fp_reason columns to ep_df.
 
-    Requires columns: task_id, observation_mode, success.
+    Requires columns: task_id, success.
     Returns ep_df with new columns added in-place.
     """
-    visual_ids = _load_visual_task_ids(benchmark_site, benchmark)
-    has_image_ids = _load_has_image_task_ids(benchmark_site, benchmark)
     na_ids = _load_na_task_ids(benchmark_site, benchmark)
 
     adj_results = ep_df.apply(
         lambda r: compute_adjusted_success(
-            int(r["task_id"]), benchmark_site, str(r.get("observation_mode", "")),
+            int(r["task_id"]), benchmark_site,
             bool(r["success"]),
-            visual_task_ids=visual_ids, has_image_task_ids=has_image_ids,
             na_task_ids=na_ids,
             agent_finished=bool(r["agent_finished"]) if "agent_finished" in r.index else None,
             eval_type=str(r["eval_type"]) if "eval_type" in r.index else None,
-            page_unchanged_rate=float(r["page_unchanged_rate"]) if "page_unchanged_rate" in r.index and r["page_unchanged_rate"] is not None else None,
             has_effective_action=bool(r["has_effective_action"]) if "has_effective_action" in r.index else None,
-            require_reset=bool(r["require_reset"]) if "require_reset" in r.index else None,
-            url_unique_count=int(r["url_unique_count"]) if "url_unique_count" in r.index and r["url_unique_count"] is not None else None,
         ),
         axis=1,
     )
@@ -1198,76 +1104,24 @@ def analyze_run(run_dir: str) -> Path:
     else:
         ep_df["is_na_reference"] = False
 
-    # Mark visual tasks (require image content / color / appearance)
-    if not ep_df.empty and "benchmark_site" in ep_df.columns and "task_id" in ep_df.columns:
-        visual_ids_by_site: Dict[str, set] = {}
-        has_image_ids_by_site: Dict[str, set] = {}
-        for site in ep_df["benchmark_site"].unique():
-            visual_ids_by_site[site] = _load_visual_task_ids(str(site), _benchmark)
-            has_image_ids_by_site[site] = _load_has_image_task_ids(str(site), _benchmark)
-        ep_df["is_visual_task"] = ep_df.apply(
-            lambda r: int(r["task_id"]) in visual_ids_by_site.get(r["benchmark_site"], set()), axis=1
-        )
-        ep_df["is_has_image_task"] = ep_df.apply(
-            lambda r: int(r["task_id"]) in has_image_ids_by_site.get(r["benchmark_site"], set()), axis=1
-        )
-        # Flag DOM-mode visual kwd_only successes as lucky hits.
-        # has_image tasks excluded: DOM can now see reference images (§33/§34/§36).
-        is_dom = (ep_df.get("observation_mode", ep_df.get("condition_id", "")).str.contains("dom", case=False, na=False)
-                  if "observation_mode" in ep_df.columns
-                  else ep_df["condition_id"].str.contains("dom", case=False, na=False))
-        ep_df["is_visual_lucky_hit"] = (
-            ep_df["is_visual_task"]
-            & ~ep_df["is_has_image_task"]
-            & ep_df["success"].astype(bool)
-            & is_dom
-        )
-        visual_count = int(ep_df["is_visual_task"].sum())
-        lucky_count = int(ep_df["is_visual_lucky_hit"].sum())
-        if visual_count > 0:
-            logger.info("Flagged %d episodes as visual tasks, %d as visual lucky hits (DOM kwd_only)", visual_count, lucky_count)
-        if lucky_count > 0:
-            lucky_df = ep_df[ep_df["is_visual_lucky_hit"]][["benchmark_site", "task_id", "condition_id", "success"]].copy()
-            lucky_df.to_csv(noise_dir / "visual_lucky_hits.csv", index=False)
-    else:
-        ep_df["is_visual_task"] = False
-        ep_df["is_has_image_task"] = False
-        ep_df["is_visual_lucky_hit"] = False
-
-    # --- Compute adjusted success (visual FP + N/A FP removal) ---
+    # --- Compute adjusted success (N/A FP + eval FP removal; visual_fp removed in §95) ---
     if not ep_df.empty and "benchmark_site" in ep_df.columns and "success" in ep_df.columns:
-        # Ensure observation_mode column exists (needed by compute_adjusted_success_batch)
-        if "observation_mode" not in ep_df.columns:
-            if not cond_df.empty and "observation_mode" in cond_df.columns and "condition_id" in ep_df.columns:
-                obs_map = cond_df.set_index("condition_id")["observation_mode"].to_dict()
-                ep_df["observation_mode"] = ep_df["condition_id"].map(obs_map)
-            elif "condition_id" in ep_df.columns:
-                def _infer_obs_mode(cid):
-                    cid_lower = str(cid).lower()
-                    if "vision" in cid_lower:
-                        return "vision"
-                    elif "som" in cid_lower:
-                        return "som"
-                    return "dom"
-                ep_df["observation_mode"] = ep_df["condition_id"].apply(_infer_obs_mode)
-
-        if "observation_mode" in ep_df.columns:
-            adj_parts = []
-            for site in ep_df["benchmark_site"].unique():
-                site_mask = ep_df["benchmark_site"] == site
-                site_ep = ep_df[site_mask].copy()
-                compute_adjusted_success_batch(site_ep, str(site), _benchmark)
-                adj_parts.append(site_ep[["adjusted_success", "fp_reason"]])
-            if adj_parts:
-                adj_combined = pd.concat(adj_parts)
-                ep_df["adjusted_success"] = adj_combined["adjusted_success"]
-                ep_df["fp_reason"] = adj_combined["fp_reason"]
-                logger.info(
-                    "Computed adjusted success: %d FPs removed (%d visual_fp, %d na_fp)",
-                    int((ep_df["fp_reason"] != "").sum()),
-                    int((ep_df["fp_reason"] == "visual_fp").sum()),
-                    int((ep_df["fp_reason"] == "na_fp").sum()),
-                )
+        adj_parts = []
+        for site in ep_df["benchmark_site"].unique():
+            site_mask = ep_df["benchmark_site"] == site
+            site_ep = ep_df[site_mask].copy()
+            compute_adjusted_success_batch(site_ep, str(site), _benchmark)
+            adj_parts.append(site_ep[["adjusted_success", "fp_reason"]])
+        if adj_parts:
+            adj_combined = pd.concat(adj_parts)
+            ep_df["adjusted_success"] = adj_combined["adjusted_success"]
+            ep_df["fp_reason"] = adj_combined["fp_reason"]
+            logger.info(
+                "Computed adjusted success: %d FPs removed (%d na_fp, %d eval_fp)",
+                int((ep_df["fp_reason"] != "").sum()),
+                int((ep_df["fp_reason"] == "na_fp").sum()),
+                int((ep_df["fp_reason"] == "eval_fp").sum()),
+            )
 
     # Override success with adjusted values for all downstream analysis
     if not ep_df.empty and "adjusted_success" in ep_df.columns:
@@ -1394,35 +1248,6 @@ def analyze_run(run_dir: str) -> Path:
     else:
         na_total = 0
 
-    # Compute visual-adjusted success rates (exclude visual lucky hits in DOM mode)
-    visual_adjusted = {}
-    visual_lucky_total = 0
-    if not ep_df.empty and "is_visual_lucky_hit" in ep_df.columns:
-        visual_lucky_total = int(ep_df["is_visual_lucky_hit"].sum())
-        visual_task_total = int(ep_df["is_visual_task"].sum())
-        for cid in ep_df["condition_id"].unique():
-            sub = ep_df[ep_df["condition_id"] == cid]
-            raw_col_v = "raw_success" if "raw_success" in sub.columns else "success"
-            raw_sr = float(sub[raw_col_v].astype(float).fillna(0).mean())
-            lucky_in_cond = int(sub["is_visual_lucky_hit"].sum())
-            visual_in_cond = int(sub["is_visual_task"].sum())
-            # Adjusted: treat visual lucky hits as failures
-            adj_success = sub["success"].astype(float).fillna(0).copy()
-            adj_success[sub["is_visual_lucky_hit"]] = 0.0
-            adj_sr = float(adj_success.mean()) if len(adj_success) > 0 else 0.0
-            # Non-visual only: exclude all visual tasks
-            non_visual = sub[~sub["is_visual_task"]]
-            nv_sr = float(non_visual["success"].astype(float).fillna(0).mean()) if len(non_visual) > 0 else 0.0
-            visual_adjusted[cid] = {
-                "raw_success_rate": raw_sr,
-                "visual_adjusted_success_rate": adj_sr,
-                "non_visual_success_rate": nv_sr,
-                "total_episodes": int(len(sub)),
-                "visual_tasks": visual_in_cond,
-                "non_visual_tasks": int(len(sub)) - visual_in_cond,
-                "visual_lucky_hits": lucky_in_cond,
-            }
-
     with open(analysis_dir / "analysis_summary.json", "w", encoding="utf-8") as f:
         json.dump(
             {
@@ -1433,9 +1258,6 @@ def analyze_run(run_dir: str) -> Path:
                 "step_count": int(len(step_df)),
                 "na_reference_task_count": na_total,
                 "adjusted_success_rates": na_adjusted,
-                "visual_task_count": visual_task_total if not ep_df.empty else 0,
-                "visual_lucky_hit_count": visual_lucky_total,
-                "visual_adjusted_success_rates": visual_adjusted,
             },
             f,
             indent=2,

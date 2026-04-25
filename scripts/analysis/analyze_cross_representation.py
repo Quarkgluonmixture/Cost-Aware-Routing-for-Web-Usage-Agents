@@ -313,7 +313,7 @@ def build_task_pivot(reason_df: pd.DataFrame, cond_metas: Dict[str, Dict]) -> pd
 
 
 # ---------------------------------------------------------------------------
-# Visual false-positive detection
+# False-positive detection (N/A FP + Eval FP; visual_fp removed in §95)
 # ---------------------------------------------------------------------------
 
 
@@ -329,42 +329,31 @@ def _infer_benchmark(run_dir: Optional[Path]) -> str:
 def _mark_false_positives(
     pivot: pd.DataFrame, modes: List[str], *, run_dir: Optional[Path] = None,
 ) -> pd.DataFrame:
-    """Add is_visual_task + is_na_task + {mode}_visual_fp + {mode}_na_fp + {mode}_eval_fp + {mode}_success_adj columns.
+    """Add is_na_task + {mode}_na_fp + {mode}_eval_fp + {mode}_success_adj columns.
 
-    Visual FP: DOM mode + visual task + raw success.
-    N/A FP: any mode + N/A task + raw success (evaluator bug).
+    N/A FP: any mode + N/A task + raw success + ~agent_finished.
+    Eval FP (§95 simplified):
+      string_match + success + ~agent_finished → always E-FP
+      program_html + success + ~agent_finished + ~has_effective_action → E-FP
+      url_match excluded: navigating to correct page without finish is legitimate.
     """
-    from p79.experiment.analysis import _load_visual_task_ids, _load_has_image_task_ids, _load_na_task_ids
+    from p79.experiment.analysis import _load_na_task_ids
 
-    # 1. Detect visual tasks per site
-    # Infer benchmark: pivot column > run_dir path > default VWA
     _bm = "visualwebarena"
     if "benchmark" in pivot.columns and not pivot.empty:
         _bm = str(pivot["benchmark"].iloc[0])
     elif run_dir is not None:
         _bm = _infer_benchmark(run_dir)
-    visual_ids_by_site: Dict[str, set] = {}
-    has_image_ids_by_site: Dict[str, set] = {}
     na_ids_by_site: Dict[str, set] = {}
     for site in pivot["site"].unique():
-        visual_ids_by_site[site] = _load_visual_task_ids(str(site), _bm)
-        has_image_ids_by_site[site] = _load_has_image_task_ids(str(site), _bm)
         na_ids_by_site[site] = _load_na_task_ids(str(site), _bm)
 
-    pivot["is_visual_task"] = pivot.apply(
-        lambda r: int(r["task_id"]) in visual_ids_by_site.get(r["site"], set()),
-        axis=1,
-    )
-    pivot["is_has_image_task"] = pivot.apply(
-        lambda r: int(r["task_id"]) in has_image_ids_by_site.get(r["site"], set()),
-        axis=1,
-    )
     pivot["is_na_task"] = pivot.apply(
         lambda r: int(r["task_id"]) in na_ids_by_site.get(r["site"], set()),
         axis=1,
     )
 
-    # 2. Compute agent_finished per mode (active finish, not fallback)
+    # Compute agent_finished per mode (active finish, not fallback)
     for m in modes:
         fat_col = f"{m}_final_action_type"
         ff_col = f"{m}_fallback_finish"
@@ -377,24 +366,10 @@ def _mark_false_positives(
         else:
             pivot[af_col] = False
 
-    # 3. Mark false positives and build adjusted success columns
-    # DOM visual FP: only kwd_only visual tasks (no reference image).
-    # has_image tasks excluded: DOM can now see reference images (§33/§34/§36).
-    # N/A FP: exclude agent-initiated finish (true N/A positive).
-    # Eval FP (§78b+§78c+§82 refined):
-    #   string_match + success + ~agent_finished → always E-FP (empty answer GPT-4o-mini误判)
-    #   program_html + success + ~agent_finished + (PUR>0.5 OR supplementary) → E-FP
-    #     supplementary: ~has_effective_action & ~require_reset & url_unique<=2
-    #   url_match excluded: navigating to correct page without finish is legitimate.
-    visual_fp_count: Dict[str, int] = {}
+    # Mark false positives and build adjusted success columns
     na_fp_count: Dict[str, int] = {}
     eval_fp_count: Dict[str, int] = {}
 
-    # Pre-compute eval_type eligibility for eval_fp:
-    #   string_match: always eligible (empty answer falsely matched by GPT-4o-mini)
-    #   program_html: PUR > 0.5 OR (~has_effective_action & ~require_reset & url_unique<=2)
-    #     (high PUR = agent did little → pre-existing state matched evaluator;
-    #      supplementary: no type/select + no DB-reset task + few URLs → pre-existing state)
     _is_string_match = pd.Series(False, index=pivot.index)
     _is_program_html = pd.Series(False, index=pivot.index)
     if "eval_type" in pivot.columns:
@@ -402,55 +377,36 @@ def _mark_false_positives(
         _is_string_match = _et.str.contains("string_match", na=False)
         _is_program_html = _et.str.contains("program_html", na=False)
 
-    # Task-level require_reset (safe default: True → conservative, won't flag)
-    _rr = pivot["require_reset"].fillna(True).astype(bool) if "require_reset" in pivot.columns else pd.Series(True, index=pivot.index)
-
     for m in modes:
         scol = f"{m}_success"
-        vfp_col = f"{m}_visual_fp"
         nfp_col = f"{m}_na_fp"
         efp_col = f"{m}_eval_fp"
         adj_col = f"{m}_success_adj"
         af_col = f"{m}_agent_finished"
         if scol not in pivot.columns:
             continue
-        is_dom_like = m == "dom"  # only DOM mode has no page screenshot
-        pivot[vfp_col] = pivot["is_visual_task"] & ~pivot["is_has_image_task"] & (pivot[scol] == True) & is_dom_like
         pivot[nfp_col] = pivot["is_na_task"] & (pivot[scol] == True) & ~pivot[af_col]
-        # Eval FP: success + ~agent_finished + eligible eval_type, excluding already-flagged FPs
-        #   string_match: always flag (§78b)
-        #   program_html: PUR>0.5 OR (~effective_action & ~require_reset & url_unique<=2)
-        pur_col = f"{m}_page_unchanged_rate"
-        _pur = pivot[pur_col].fillna(0.0) if pur_col in pivot.columns else pd.Series(0.0, index=pivot.index)
+        # Eval FP: string_match always; program_html + ~has_effective_action
         _hea_col = f"{m}_has_effective_action"
         _hea = pivot[_hea_col].fillna(True).astype(bool) if _hea_col in pivot.columns else pd.Series(True, index=pivot.index)
-        _uuc_col = f"{m}_url_unique_count"
-        _uuc = pivot[_uuc_col].fillna(999).astype(float) if _uuc_col in pivot.columns else pd.Series(999.0, index=pivot.index)
-        _efp_eligible_m = _is_string_match | (_is_program_html & (
-            (_pur > 0.5) | (~_hea & ~_rr & (_uuc <= 2))
-        ))
+        _efp_eligible_m = _is_string_match | (_is_program_html & ~_hea)
         pivot[efp_col] = (
             _efp_eligible_m
             & (pivot[scol] == True)
             & ~pivot[af_col]
-            & ~pivot[vfp_col]
             & ~pivot[nfp_col]
         )
         pivot[adj_col] = pivot[scol].copy()
-        pivot.loc[pivot[vfp_col] | pivot[nfp_col] | pivot[efp_col], adj_col] = False
-        visual_fp_count[m] = int(pivot[vfp_col].sum())
+        pivot.loc[pivot[nfp_col] | pivot[efp_col], adj_col] = False
         na_fp_count[m] = int(pivot[nfp_col].sum())
         eval_fp_count[m] = int(pivot[efp_col].sum())
 
-    n_visual = int(pivot["is_visual_task"].sum())
     n_na = int(pivot["is_na_task"].sum())
-    fp_visual_total = sum(visual_fp_count.values())
     fp_na_total = sum(na_fp_count.values())
     fp_eval_total = sum(eval_fp_count.values())
-    print(f"  Visual FP: {n_visual} visual tasks, {fp_visual_total} false positives {visual_fp_count}")
     print(f"  N/A FP: {n_na} N/A tasks, {fp_na_total} false positives {na_fp_count}")
     print(f"  Eval FP: {fp_eval_total} false positives {eval_fp_count}")
-    return pivot, visual_fp_count, na_fp_count, eval_fp_count
+    return pivot, na_fp_count, eval_fp_count
 
 
 # ---------------------------------------------------------------------------
@@ -570,7 +526,6 @@ def _compute_set_metrics(
 
 def a2_set_analysis(
     pivot: pd.DataFrame, modes: List[str], dirs: OutputDirs,
-    visual_fp_count: Optional[Dict[str, int]] = None,
     na_fp_count: Optional[Dict[str, int]] = None,
     eval_fp_count: Optional[Dict[str, int]] = None,
 ) -> Dict:
@@ -606,8 +561,6 @@ def a2_set_analysis(
         raw["feature_headroom_adjusted"] = adj["feature_headroom"]
         raw["feature_gap_adjusted"] = adj["feature_gap"]
         raw["feature_oracle_choices_adjusted"] = adj["feature_oracle_choices"]
-    if visual_fp_count is not None:
-        raw["visual_fp_count"] = visual_fp_count
     if na_fp_count is not None:
         raw["na_fp_count"] = na_fp_count
     if eval_fp_count is not None:
@@ -1525,7 +1478,6 @@ def write_summary(
             summary["per_mode_sr_adjusted"] = a2_summary["per_mode_sr_adjusted"]
             summary["oracle_ceiling_adjusted"] = a2_summary.get("perfect_oracle_ceiling_adjusted")
             summary["routing_headroom_adjusted"] = a2_summary.get("perfect_headroom_adjusted")
-            summary["visual_fp_count"] = a2_summary.get("visual_fp_count")
             summary["na_fp_count"] = a2_summary.get("na_fp_count")
             summary["eval_fp_count"] = a2_summary.get("eval_fp_count")
     _write_json(summary, dirs.base / "cross_representation_summary.json")
@@ -1635,7 +1587,6 @@ def main():
             site_info["per_mode_sr_adjusted"] = a2s["per_mode_sr_adjusted"]
             site_info["oracle_ceiling_adjusted"] = a2s.get("perfect_oracle_ceiling_adjusted")
             site_info["routing_headroom_adjusted"] = a2s.get("perfect_headroom_adjusted")
-            site_info["visual_fp_count"] = a2s.get("visual_fp_count")
             site_info["na_fp_count"] = a2s.get("na_fp_count")
             site_info["eval_fp_count"] = a2s.get("eval_fp_count")
         global_summary["per_site"][site] = site_info
@@ -1673,12 +1624,12 @@ def _run_site_analysis(
     cond_mode = _condition_to_mode(cond_metas, reason_df)
 
     # --- False-positive detection (visual + N/A + eval) ---
-    pivot, visual_fp_count, na_fp_count, eval_fp_count = _mark_false_positives(pivot, modes, run_dir=run_dir)
+    pivot, na_fp_count, eval_fp_count = _mark_false_positives(pivot, modes, run_dir=run_dir)
 
     # --- P0: Core ---
     print("  --- P0: Core cross-comparison ---")
     a1_task_result_matrix(pivot, modes, dirs)
-    a2_summary = a2_set_analysis(pivot, modes, dirs, visual_fp_count=visual_fp_count, na_fp_count=na_fp_count, eval_fp_count=eval_fp_count)
+    a2_summary = a2_set_analysis(pivot, modes, dirs, na_fp_count=na_fp_count, eval_fp_count=eval_fp_count)
     a3_exclusive_sets(pivot, modes, dirs)
 
     # --- P1: Deep ---

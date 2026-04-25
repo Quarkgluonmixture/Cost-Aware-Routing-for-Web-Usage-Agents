@@ -551,76 +551,47 @@ def test_router_backward_compat_default_modes():
 from p79.experiment.analysis import compute_adjusted_success
 
 
-def test_eval_fp_program_html_supplementary_reddit69():
-    """program_html + PUR=0 + ~effective + ~require_reset + url_unique=1 → E-FP (reddit 69 pattern)."""
+def test_eval_fp_program_html_no_effective_action():
+    """program_html + ~agent_finished + ~has_effective_action → E-FP (§95 simplified rule)."""
     ok, reason = compute_adjusted_success(
-        69, "reddit", "dom", True,
+        69, "reddit", True,
         agent_finished=False, eval_type="program_html",
-        page_unchanged_rate=0.0,
-        has_effective_action=False, require_reset=False, url_unique_count=1,
+        has_effective_action=False,
     )
     assert ok is False
     assert reason == "eval_fp"
-
-
-def test_eval_fp_program_html_supplementary_url3_safe():
-    """program_html + PUR=0 + ~effective + ~require_reset + url_unique=3 → NOT E-FP (shopping 37 pattern)."""
-    ok, reason = compute_adjusted_success(
-        37, "shopping", "dom", True,
-        agent_finished=False, eval_type="program_html",
-        page_unchanged_rate=0.0,
-        has_effective_action=False, require_reset=False, url_unique_count=3,
-    )
-    assert ok is True
-    assert reason == ""
-
-
-def test_eval_fp_program_html_supplementary_require_reset_safe():
-    """program_html + PUR=0 + ~effective + require_reset=True + url_unique=1 → NOT E-FP (classifieds 5 pattern)."""
-    ok, reason = compute_adjusted_success(
-        5, "classifieds", "som", True,
-        agent_finished=False, eval_type="program_html",
-        page_unchanged_rate=0.0,
-        has_effective_action=False, require_reset=True, url_unique_count=1,
-    )
-    assert ok is True
-    assert reason == ""
 
 
 def test_eval_fp_program_html_effective_action_safe():
-    """program_html + PUR=0 + effective=True → NOT E-FP."""
+    """program_html + ~agent_finished + effective=True → NOT E-FP."""
     ok, reason = compute_adjusted_success(
-        160, "reddit", "dom", True,
+        160, "reddit", True,
         agent_finished=False, eval_type="program_html",
-        page_unchanged_rate=0.0,
-        has_effective_action=True, require_reset=False, url_unique_count=1,
+        has_effective_action=True,
     )
     assert ok is True
     assert reason == ""
-
-
-def test_eval_fp_program_html_pur_high_still_works():
-    """program_html + PUR=0.6 → E-FP via original PUR rule."""
-    ok, reason = compute_adjusted_success(
-        999, "shopping", "dom", True,
-        agent_finished=False, eval_type="program_html",
-        page_unchanged_rate=0.6,
-        has_effective_action=True, require_reset=True, url_unique_count=10,
-    )
-    assert ok is False
-    assert reason == "eval_fp"
 
 
 def test_eval_fp_program_html_backward_compat_none():
-    """All new params None → defaults conservative (True/True/999) → NOT E-FP when PUR<=0.5."""
+    """has_effective_action=None defaults True → NOT E-FP."""
     ok, reason = compute_adjusted_success(
-        42, "reddit", "dom", True,
+        42, "reddit", True,
         agent_finished=False, eval_type="program_html",
-        page_unchanged_rate=0.0,
-        has_effective_action=None, require_reset=None, url_unique_count=None,
+        has_effective_action=None,
     )
     assert ok is True
     assert reason == ""
+
+
+def test_no_visual_fp_layer():
+    """Confirm visual_fp reason no longer exists (§95)."""
+    ok, reason = compute_adjusted_success(
+        100, "classifieds", True,
+        agent_finished=True,
+    )
+    assert ok is True
+    assert reason != "visual_fp"
 
 
 def test_detect_benchmark_noise_site_infra_error():

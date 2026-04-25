@@ -110,9 +110,8 @@ def load_condition_summaries(run_dir: Path) -> List[Dict[str, Any]]:
     return summaries
 
 
-def load_visual_fp_stats(run_dir: Path) -> Dict[str, Any]:
-    """Try to load visual_lucky_hits.csv or cross_representation_summary.json."""
-    # Prefer cross_representation_summary (has visual_fp_count per mode)
+def load_fp_stats(run_dir: Path) -> Dict[str, Any]:
+    """Try to load cross_representation_summary.json for FP stats."""
     for pattern in [
         "analysis/results/cross_representation/cross_representation_summary.json",
         "analysis/results/cross_representation/*/cross_representation_summary.json",
@@ -175,29 +174,6 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             "is_stub": is_stub,
         })
     return rows
-
-
-# ---------------------------------------------------------------------------
-# Visual task distribution
-# ---------------------------------------------------------------------------
-
-def _load_visual_task_pct(run_dir: Path, site: str) -> Optional[float]:
-    """Try to read visual task percentage from cross_representation outputs."""
-    # Look for A2_set_analysis_summary.json
-    for pattern in [
-        "analysis/results/cross_representation/A2_set_analysis_summary.json",
-        f"analysis/results/cross_representation/{site}/A2_set_analysis_summary.json",
-    ]:
-        p = run_dir / pattern
-        if p.is_file():
-            try:
-                d = _read_json(p)
-                n_tasks = d.get("n_tasks", 0)
-                # Try to read visual_fp_count or n_visual from elsewhere
-                # We don't have n_visual directly here; skip
-            except Exception:
-                pass
-    return None
 
 
 # ---------------------------------------------------------------------------
