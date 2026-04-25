@@ -1,415 +1,568 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import {
-  AlertTriangle, CheckCircle2, XCircle, Info, Activity, BookOpen, Layers, Zap,
-  Bug, MonitorPlay, ListTodo, FileText, Database, GitMerge, FileSearch, ArrowRight, ShieldAlert
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+} from 'recharts';
+import { 
+  BarChart2, 
+  Lightbulb, 
+  AlertTriangle, 
+  Activity, 
+  Layers, 
+  Settings, 
+  Calendar,
+  Info,
+  CheckCircle2,
+  XCircle,
+  Clock
 } from 'lucide-react';
 
-// ============================================================
-// DATA IMPORT — Change this line for each new weekly report
-// ============================================================
-import data from './data/weekly_4_16.js';
+// ==========================================
+// 📊 DATA STORE (Externalized per request)
+// ==========================================
 
-// --- Icon Map (for data-driven icon references) ---
-const IconMap = { Zap, ListTodo, Bug, ArrowRight, Activity, BookOpen, Layers, Database, FileText, GitMerge, FileSearch, ShieldAlert, MonitorPlay, AlertTriangle, CheckCircle2 };
+const METADATA = {
+  title: "P79 Weekly Report: Classifieds Full Matrix Completed + Cross-Model Comparison Finalized",
+  tags: [
+    { label: "Date", value: "2026-04-23" },
+    { label: "Phase", value: "Phase 1 Rep. Screening" },
+    { label: "Status", value: "VWA Classifieds B0+B1 Done · B0 Reddit WIP" },
+    { label: "Models", value: "Qwen3-VL-235B / 4B" }
+  ],
+  disclaimer: "Data Note: All 6 cells for Classifieds (B0×3 + B1×3) completed and finalized. B1 re-run after fixing viewport ratio bug (§80) and reference image passing; B0 re-run after fixing parse_error (§67). SRs are all adjusted (excluding false positives, denominator 224)."
+};
 
-// --- Reusable UI Components ---
+const SUCCESS_RATES_DATA = [
+  { mode: 'DOM', B0: 8.48, B1: 4.91, diff: '+3.57pp', rawB0: '19/224', rawB1: '11/224' },
+  { mode: 'SoM', B0: 20.98, B1: 13.84, diff: '+7.14pp', rawB0: '47/224', rawB1: '31/224' },
+  { mode: 'Vision', B0: 12.05, B1: 7.14, diff: '+4.91pp', rawB0: '27/224', rawB1: '16/224' }
+];
+
+const FAILURE_MODES_DATA = [
+  { type: 'No-progress loop', dom: '36.8%', som: '36.8%', vision: '58.1%', isVisionMax: true, feature: 'Inaccurate Vision coordinates lead to repeated invalid actions' },
+  { type: 'Premature termination', dom: '6.0%', som: '12.0%', vision: '14.1%', isSomMax: true, feature: 'High information density on SoM first screen, model answers without full exploration' },
+  { type: 'Answer mismatch', dom: '10.7%', som: '6.4%', vision: '2.1%', isDomMax: true, feature: 'DOM lacks visual info, submitted answers deviate significantly' }
+];
+
+const ROUTING_SIGNALS_DATA = [
+  { signal: 'Verbalized Confidence', raw: 'verbalized', auroc: '0.769', ci: '[0.704, 0.832]', dom: '0.753', som: '0.755', vision: '0.757', isStrong: true },
+  { signal: 'URL Revisit Max', raw: 'url_revisit_max', auroc: '0.767', ci: '[0.718, 0.814]', dom: '0.755', som: '0.727', vision: '0.816', isStrong: true },
+  { signal: 'Action Diversity', raw: 'action_diversity', auroc: '0.749', ci: '[0.688, 0.810]', dom: '0.738', som: '0.706', vision: '0.809', isStrong: true },
+  { signal: 'Max Repeat Streak', raw: 'max_repeat_streak', auroc: '0.673', ci: '[0.607, 0.735]', dom: '0.761', som: '0.604', vision: '0.744', isStrong: false },
+  { signal: 'Token Level (entropy/margin, etc.)', raw: '', auroc: '≈0.50', ci: '—', dom: '—', som: '—', vision: '—', isStrong: false }
+];
+
+const ORACLE_ROUTING_DATA = [
+  { metric: 'Best Single Mode (SoM)', b0: '20.98%', b1: '13.84%' },
+  { metric: 'Oracle Tri-Mode', b0: '29.06%', b1: '18.80%', isBold: true },
+  { metric: 'Improvement Room', b0: '+8.55pp', b1: '+5.13pp' }
+];
+
+const VENN_B1_DATA = [
+  { set: 'SoM Only', count: '19', note: 'Largest exclusive set, SoM is the primary force', isBold: true },
+  { set: 'SoM + Vision (Not DOM)', count: '8', note: 'Shared advantage of visual info', isBold: false },
+  { set: 'DOM Only', count: '7', note: 'Irreplaceable value of exact element positioning', isBold: true },
+  { set: 'Vision Only', count: '5', note: 'Low-cost alternative path', isBold: false },
+  { set: 'DOM + SoM (Not Vision)', count: '3', note: '—', isBold: false },
+  { set: 'All 3 Modes Success', count: '2', note: 'Simple tasks, minor differences', isBold: false },
+  { set: 'DOM + Vision (Not SoM)', count: '0', note: 'DOM and Vision success sets completely non-overlapping', isBold: true }
+];
+
+const VENN_B0_DATA = [
+  { set: 'SoM Only', count: '27', note: 'Still the largest exclusive set', isBold: true },
+  { set: 'Vision Only', count: '15', note: '235B has stronger visual ability, Vision exclusives increased significantly', isBold: true },
+  { set: 'All 3 Modes Success', count: '9', note: 'DOM is the cheapest on these intersection tasks ($0.013 vs SoM $0.020)', isBold: false },
+  { set: 'DOM + SoM / SoM + Vision', count: '6 each', note: '—', isBold: false },
+  { set: 'DOM Only', count: '4', note: '—', isBold: false }
+];
+
+const PROGRESS_DATA = [
+  { site: 'Classifieds (234)', b0: '✅ 3/3', b1: '✅ 3/3', completed: '6/6', isBold: true },
+  { site: 'Reddit (210)', b0: '🔄 dom 137/210', b1: '✅ dom; ⏸ som/vision diff 22+37', completed: '1/6', isBold: false },
+  { site: 'Shopping (466)', b0: '✅ dom', b1: '❌', completed: '1/6', isBold: false }
+];
+
+const FIXES_DATA = [
+  { id: '§80', desc: 'Viewport filter threshold calculation bug', impact: 'DOM/SoM completely re-run' },
+  { id: '§81', desc: 'Wikipedia version mismatch causing 404', impact: '35 tasks cleaned and re-run' },
+  { id: '§78/83/88', desc: 'False positive detection system refinement', impact: 'SR numbers more accurate' }
+];
+
+const NEXT_WEEK_FOCUS = [
+  "B0 Reddit dom→som→vision (Automated run)",
+  "B1 Reddit som/vision completion (Manual start, diff 22+37)",
+  "Reddit Analysis Document",
+  "B0 Shopping analysis + som/vision start",
+  "WA Full Site (Infrastructure ready)"
+];
+
+// ==========================================
+// 🧩 COMPONENTS
+// ==========================================
+
 const SectionHeader = ({ num, title, icon: Icon }) => (
-  <div className="flex items-center gap-3 pb-3 border-b-2 border-slate-800 mt-10 mb-6">
-    <div className="bg-slate-800 text-white w-9 h-9 rounded flex items-center justify-center font-bold text-lg shadow-sm">
+  <div className="flex items-center gap-4 mb-6">
+    <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-2xl shadow-sm">
       {num}
     </div>
-    <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-      {Icon && <Icon className="w-6 h-6 text-indigo-600" />}
+    <h2 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+      <Icon className="w-8 h-8 text-indigo-600" /> 
       {title}
     </h2>
   </div>
 );
 
-const MetricBox = ({ title, value, subtext, colorClass = "text-indigo-600", bgClass = "bg-white" }) => (
-  <div className={`p-4 rounded-xl border border-slate-200 shadow-sm ${bgClass}`}>
-    <div className="text-base font-semibold text-slate-500 mb-1">{title}</div>
-    <div className={`text-3xl font-bold ${colorClass}`}>{value}</div>
-    {subtext && <div className="text-sm text-slate-500 mt-2 font-medium">{subtext}</div>}
-  </div>
-);
-
-// --- Helper to render HTML strings ---
-const Html = ({ children, className = '' }) => (
-  <span className={className} dangerouslySetInnerHTML={{ __html: children }} />
-);
-const HtmlP = ({ children, className = '' }) => (
-  <p className={className} dangerouslySetInnerHTML={{ __html: children }} />
-);
-const HtmlDiv = ({ children, className = '' }) => (
-  <div className={className} dangerouslySetInnerHTML={{ __html: children }} />
-);
-
-export default function ComprehensiveReport() {
-  const { header, disclaimer, srData, significance, costNote, domBugNote,
-    falsePositives, oracle, findings, signalEvalData, signalNote,
-    routingLitData, ablationData, phantomSom, b0Observations,
-    scaffoldFixes, otherInfra, executionStatus, nextMilestones } = data;
-
+const AlertBox = ({ type = 'info', children }) => {
+  const styles = {
+    info: "bg-blue-50 border-blue-200 text-blue-800",
+    warning: "bg-amber-50 border-amber-200 text-amber-800",
+    success: "bg-emerald-50 border-emerald-200 text-emerald-800"
+  };
+  const Icon = type === 'warning' ? AlertTriangle : (type === 'success' ? CheckCircle2 : Info);
+  
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-2 md:p-4 font-sans text-slate-800 leading-relaxed selection:bg-indigo-100">
-      <div className="max-w-[1400px] mx-auto space-y-8 bg-white p-4 md:p-8 rounded-2xl shadow-xl border border-slate-100">
+    <div className={`p-5 rounded-xl border flex gap-4 text-base ${styles[type]}`}>
+      <Icon className="w-6 h-6 flex-shrink-0 mt-0.5" />
+      <div>{children}</div>
+    </div>
+  );
+};
 
-        {/* === Header === */}
-        <header className="space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 text-base font-bold rounded-md mb-2 border border-indigo-100">
-            P79 Weekly Report
+// ==========================================
+// 🚀 MAIN APPLICATION
+// ==========================================
+
+export default function Dashboard() {
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 py-10 px-4 md:px-8 font-sans selection:bg-indigo-200 selection:text-indigo-900">
+      <div className="max-w-[1400px] mx-auto space-y-12">
+        
+        {/* HEADER SECTION */}
+        <header className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 space-y-6">
+          <div className="flex flex-wrap gap-3">
+            {METADATA.tags.map((tag, idx) => (
+              <span key={idx} className="px-4 py-1.5 rounded-full bg-slate-100 text-slate-700 text-sm font-semibold tracking-wide uppercase">
+                <span className="text-slate-400 mr-2">{tag.label}:</span>{tag.value}
+              </span>
+            ))}
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-snug">
-            {header.title}
+          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight">
+            {METADATA.title}
           </h1>
-          <div className="flex flex-wrap gap-x-4 gap-y-2 text-base font-medium text-slate-500 border-b border-slate-200 pb-6">
-            <span className="flex items-center gap-1.5"><MonitorPlay className="w-5 h-5"/> {header.date}</span>
-            <span className="flex items-center gap-1.5"><Layers className="w-5 h-5"/> {header.phase}</span>
-            <span className="flex items-center gap-1.5"><Activity className="w-5 h-5"/> {header.status}</span>
-            <span className="flex items-center gap-1.5"><Database className="w-5 h-5"/> {header.models}</span>
-          </div>
-
-          {disclaimer && (
-            <div className="bg-amber-50/80 border border-amber-200 p-5 rounded-xl flex gap-4 text-base mt-4">
-              <ShieldAlert className="w-7 h-7 text-amber-600 shrink-0 mt-0.5" />
-              <div className="text-amber-900 space-y-2">
-                <p><strong>{disclaimer.title}:</strong> {disclaimer.summary}</p>
-                <ul className="list-disc list-inside space-y-1 text-amber-800/90 ml-1">
-                  {disclaimer.items.map((item, i) => (
-                    <li key={i}><Html>{item}</Html></li>
-                  ))}
-                </ul>
-                <p className="font-medium mt-2">{disclaimer.footer}</p>
-              </div>
-            </div>
-          )}
+          <AlertBox type="warning">
+            <strong className="font-bold">Data Note:</strong> {METADATA.disclaimer}
+          </AlertBox>
         </header>
 
-        {/* === Section 1: SR Results === */}
-        <section>
-          <SectionHeader num="1" title="B1 Classifieds Tri-Mode Full Results" icon={Layers} />
-          <p className="mb-4 text-slate-600 text-base font-medium">All three modes completed (234 tasks each). Core metrics:</p>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div className="lg:col-span-7 bg-slate-50 p-4 rounded-xl border border-slate-200">
-              <div className="h-[320px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={srData} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} style={{ fontSize: '14px', fontWeight: 'bold' }} />
-                    <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `${val}%`} style={{ fontSize: '13px' }} />
-                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '14px' }} />
-                    <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '14px' }} />
-                    <Bar dataKey="raw" name="Raw SR" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={55} />
-                    <Bar dataKey="adjusted" name="Adjusted SR" fill="#4f46e5" radius={[4, 4, 0, 0]} maxBarSize={55} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="lg:col-span-5 space-y-4">
-              <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-base">
-                <h4 className="font-bold text-indigo-900 mb-2 border-b border-indigo-200 pb-2">Significance Testing (McNemar & Wilcoxon)</h4>
-                <ul className="space-y-2 text-indigo-800">
-                  {significance.map((s, i) => (
-                    <li key={i} className="flex justify-between"><span>{s.pair}:</span> <strong>{s.pValue}</strong></li>
-                  ))}
-                  <li className="pt-2 mt-2 border-t border-indigo-100 text-indigo-900 leading-relaxed">
-                    <Html>{costNote}</Html>
-                  </li>
-                </ul>
-              </div>
-              {domBugNote && (
-                <div className="text-base text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <strong>Note:</strong> {domBugNote}
+        {/* SECTION 1 */}
+        <section className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+          <SectionHeader num="1" title="B0 vs B1 Complete Results" icon={BarChart2} />
+          
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-6">1.1 Success Rate</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={SUCCESS_RATES_DATA} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="mode" tick={{fontSize: 16, fill: '#475569'}} axisLine={false} tickLine={false} />
+                      <YAxis tick={{fontSize: 14, fill: '#475569'}} axisLine={false} tickLine={false} tickFormatter={(val) => `${val}%`} />
+                      <Tooltip cursor={{fill: '#f1f5f9'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                      <Legend wrapperStyle={{paddingTop: '20px'}} />
+                      <Bar dataKey="B0" name="B0 (235B)" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={40} />
+                      <Bar dataKey="B1" name="B1 (4B)" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={40} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-8 space-y-6">
-            <p className="text-slate-700 font-medium text-xl border-l-4 border-indigo-500 pl-4 py-1 bg-slate-50">
-              The massive drop from Raw to Adjusted SR stems from two classes of False Positives (FP)—this is our most critical methodological finding this week.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Visual FP */}
-              <div className="border border-red-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
-                <div className="bg-red-50 px-4 py-3 font-bold text-red-900 text-lg flex items-center gap-2 border-b border-red-100">
-                  <FileSearch className="w-5 h-5 text-red-600" /> {falsePositives.visual.title}
-                </div>
-                <div className="p-4 text-base text-slate-700 space-y-3 bg-white flex-1">
-                  <HtmlP>{falsePositives.visual.description}</HtmlP>
-                  <HtmlP>{falsePositives.visual.detail}</HtmlP>
-                  <HtmlDiv className="bg-slate-50 p-3 rounded text-sm border border-slate-200 mt-auto">{falsePositives.visual.b0Note}</HtmlDiv>
-                </div>
-              </div>
-
-              {/* N/A FP */}
-              <div className="border border-orange-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
-                <div className="bg-orange-50 px-4 py-3 font-bold text-orange-900 text-lg flex items-center gap-2 border-b border-orange-100">
-                  <AlertTriangle className="w-5 h-5 text-orange-600" /> {falsePositives.naTask.title}
-                </div>
-                <div className="p-4 text-base text-slate-700 space-y-3 bg-white flex-1">
-                  <HtmlP>{falsePositives.naTask.description}</HtmlP>
-                  <ul className="list-disc list-inside text-orange-900/80 pl-1 space-y-1 font-medium">
-                    {falsePositives.naTask.types.map((t, i) => (
-                      <li key={i}><Html>{t}</Html></li>
-                    ))}
-                  </ul>
-                  <div className="bg-slate-50 p-3 rounded text-sm border border-slate-200 mt-auto">
-                    <Html>{falsePositives.naTask.rootCauses}</Html><br/>
-                    {falsePositives.naTask.impact}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Oracle */}
-            <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-5">
-              <h3 className="font-bold text-indigo-900 text-xl flex items-center gap-2 mb-4">
-                <GitMerge className="w-6 h-6" /> 1.3 Oracle Routing Ceiling
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <MetricBox title="Oracle Ceiling (Adjusted)" value={oracle.ceiling} subtext="Best mode per task" bgClass="bg-white/60" />
-                <MetricBox title="Headroom (vs SoM)" value={oracle.headroom} colorClass="text-emerald-600" bgClass="bg-white/60" />
-                <MetricBox title="Vision-only Successes" value={oracle.visionOnly} subtext="Pure visual tasks where DOM/SoM failed" colorClass="text-purple-600" bgClass="bg-white/60" />
-                <MetricBox title="DOM + Vision Overlap" value={oracle.domVisionOverlap} subtext="Completely complementary" colorClass="text-slate-600" bgClass="bg-white/60" />
-              </div>
-              <HtmlP className="text-base font-semibold text-indigo-900 border-t border-indigo-200 pt-3">
-                {'Conclusion: ' + oracle.conclusion}
-              </HtmlP>
-            </div>
-          </div>
-        </section>
-
-        {/* === Section 2: Behavioral Findings === */}
-        <section>
-          <SectionHeader num="2" title="Key Behavioral Findings" icon={Activity} />
-
-          <div className="space-y-6">
-            {/* Mirage Effect */}
-            <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm hover:border-indigo-300 transition-colors">
-              <h3 className="text-xl font-bold text-slate-900 mb-3 text-indigo-700">{findings.mirage.title}</h3>
-              <HtmlP className="text-base text-slate-700 mb-4">{findings.mirage.intro}</HtmlP>
-
-              <div className="overflow-x-auto rounded-lg border border-slate-200 mb-4">
-                <table className="w-full text-base text-left">
-                  <thead className="bg-slate-50 text-slate-700 border-b border-slate-200">
-                    <tr><th className="px-4 py-2.5">Mirage Paper</th><th className="px-4 py-2.5">B1 Observation</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-600">
-                    {findings.mirage.comparisons.map((c, i) => (
-                      <tr key={i}>
-                        <td className="px-4 py-2.5">{c.paper}</td>
-                        <td className="px-4 py-2.5 font-medium">{c.observation}</td>
+                
+                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-left text-base">
+                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                      <tr>
+                        <th className="p-4">Mode</th>
+                        <th className="p-4">B0 (235B)</th>
+                        <th className="p-4">B1 (4B)</th>
+                        <th className="p-4 text-emerald-600">Difference</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {SUCCESS_RATES_DATA.map((row, idx) => (
+                        <tr key={idx} className={row.mode === 'SoM' ? 'bg-indigo-50/50' : ''}>
+                          <td className={`p-4 font-medium ${row.mode === 'SoM' ? 'text-indigo-900 font-bold' : 'text-slate-800'}`}>{row.mode}</td>
+                          <td className={`p-4 ${row.mode === 'SoM' ? 'font-bold' : ''}`}>{row.B0}% <span className="text-slate-400 text-sm">({row.rawB0})</span></td>
+                          <td className={`p-4 ${row.mode === 'SoM' ? 'font-bold' : ''}`}>{row.B1}% <span className="text-slate-400 text-sm">({row.rawB1})</span></td>
+                          <td className={`p-4 ${row.mode === 'SoM' ? 'font-bold text-indigo-600' : 'text-emerald-600'}`}>{row.diff}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <p className="text-base text-slate-700 bg-indigo-50 p-3 rounded border border-indigo-100">
-                <strong>Explanatory Power:</strong> {findings.mirage.explanatoryPower}
+              <p className="mt-4 text-lg text-slate-700 bg-slate-50 p-4 rounded-xl">
+                B0 dominates B1 across all three modes. The gap in SoM is the largest (+7.14pp), while DOM is the smallest (+3.57pp).
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Cognitive Gap */}
-              <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm hover:border-emerald-300 transition-colors">
-                <h3 className="text-xl font-bold text-slate-900 mb-3 text-emerald-700">{findings.cognitiveGap.title}</h3>
-                <div className="space-y-3 text-base text-slate-700">
-                  <p><strong>{findings.cognitiveGap.caseStudy}</strong></p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li><strong>DOM/SoM:</strong> <Html>{findings.cognitiveGap.domSom}</Html></li>
-                    <li><strong>Vision:</strong> {findings.cognitiveGap.vision}</li>
-                  </ul>
-                  <p className="pt-2 border-t border-slate-100">{findings.cognitiveGap.broader}</p>
+            <div className="pt-8 border-t border-slate-100">
+              <h3 className="text-2xl font-bold text-slate-800 mb-4">1.2 B1 Mode Ranking Correction</h3>
+              <div className="bg-white border-2 border-indigo-100 rounded-xl p-6 shadow-sm">
+                <p className="text-lg text-slate-700 mb-4">
+                  Last week's conclusion was SoM &gt;&gt; Vision &gt;&gt; DOM (three distinct tiers). This week, after fixing the bugs and re-running, the gap between Vision and DOM is no longer significant (p=0.701):
+                </p>
+                <div className="bg-indigo-50 text-indigo-900 text-2xl font-bold p-6 rounded-xl text-center mb-4">
+                  New Ranking: SoM &gt;&gt; Vision ≈ DOM
                 </div>
-              </div>
-
-              {/* Self-Correction */}
-              <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm hover:border-rose-300 transition-colors">
-                <h3 className="text-xl font-bold text-slate-900 mb-3 text-rose-700">{findings.selfCorrection.title}</h3>
-                <div className="space-y-3 text-base text-slate-700">
-                  <HtmlP>{findings.selfCorrection.description}</HtmlP>
-                  <HtmlP className="bg-rose-50 p-3 rounded border border-rose-100">{findings.selfCorrection.keyPoint}</HtmlP>
-                  <p>{findings.selfCorrection.implication}</p>
-                </div>
+                <p className="text-lg text-slate-700">
+                  After fixing two bugs, B1 DOM rose from 0.85% to 4.91%, producing 7 exclusive successful tasks, restoring its routing value.
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* === Section 3: Routing === */}
-        <section>
-          <SectionHeader num="3" title="Routing Theoretical Framework" icon={BookOpen} />
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div className="space-y-4">
-              <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2"><Zap className="w-5 h-5 text-indigo-500"/> 3.1 Signal Evaluation (Preliminary)</h3>
-              <div className="border border-slate-200 rounded-lg overflow-hidden">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-100 text-slate-700">
-                    <tr><th className="px-3 py-2.5">Signal Type</th><th className="px-3 py-2.5">Specific Signal</th><th className="px-3 py-2.5">AUROC</th><th className="px-3 py-2.5">Conclusion</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {signalEvalData.map((row, i) => (
-                      <tr key={i}>
-                        <td className="px-3 py-2.5 font-medium">{row.type}</td>
-                        <td className="px-3 py-2.5">{row.signal}</td>
-                        <td className="px-3 py-2.5 font-bold text-indigo-600 whitespace-nowrap">{row.auroc}</td>
-                        <td className="px-3 py-2.5 text-slate-600">{row.conclusion}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <HtmlP className="text-sm text-slate-600 leading-relaxed">{signalNote}</HtmlP>
+        {/* SECTION 2 */}
+        <section className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+          <SectionHeader num="2" title="Unique Value of DOM Mode" icon={Lightbulb} />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+              <h4 className="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <span className="w-8 h-8 rounded bg-white shadow-sm flex items-center justify-center text-indigo-600">4B</span>
+                B1 DOM Exclusives
+              </h4>
+              <p className="text-lg text-slate-700 leading-relaxed">
+                B1 DOM has <strong>7 exclusive successes</strong> (both SoM and Vision failed): 4 via exact <code className="bg-slate-200 px-1 rounded text-slate-800">element_id</code> click navigation, and 3 via text extraction yielding correct answers. These tasks rely on exact element positioning, where DOM's id mechanism is more reliable than coordinate clicking (Vision) or annotated screenshots (SoM).
+              </p>
             </div>
-
-            <div className="space-y-4">
-              <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2"><FileText className="w-5 h-5 text-indigo-500"/> 3.2 Routing Lit Review (\u00a724)</h3>
-              <p className="text-sm text-slate-500">Systematic review of ~1400 papers (2023-2026), establishing priority:</p>
-              <div className="border border-slate-200 rounded-lg overflow-hidden">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-100 text-slate-700">
-                    <tr><th className="px-3 py-2.5">Signal</th><th className="px-3 py-2.5">Status</th><th className="px-3 py-2.5">Literature Support</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {routingLitData.map((row, i) => (
-                      <tr key={i}>
-                        <td className="px-3 py-2.5 font-medium">{row.signal}</td>
-                        <td className={`px-3 py-2.5 font-bold ${row.status.includes('Impl')||row.status.includes('Analysis') ? 'text-emerald-600' : 'text-slate-400'}`}>{row.status}</td>
-                        <td className="px-3 py-2.5">{row.reference}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            
+            <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-100">
+              <h4 className="text-xl font-bold text-indigo-900 mb-3 flex items-center gap-2">
+                <span className="w-8 h-8 rounded bg-white shadow-sm flex items-center justify-center text-indigo-600">235B</span>
+                B0 DOM Dominance
+              </h4>
+              <p className="text-lg text-slate-700 leading-relaxed">
+                B0 DOM performance is much stronger (8.48% vs 4.91%, <strong>1.73x</strong>). The 235B model exhibits behaviors the 4B model lacks: active pagination (33+ tasks), using price filters (21+ tasks), and multi-tab switching.
+              </p>
             </div>
           </div>
-
-          {/* Phantom-SoM */}
-          <div className="border-2 border-indigo-100 bg-white rounded-xl overflow-hidden shadow-sm">
-            <div className="bg-indigo-50/50 px-5 py-4 border-b border-indigo-100">
-              <h3 className="text-xl font-bold text-indigo-900">3.3 Phantom-SoM Ablation Design (\u00a725)</h3>
-              <HtmlP className="text-base text-indigo-800/80 mt-1">{phantomSom.intro}</HtmlP>
-            </div>
-
-            <div className="p-5">
-              <p className="text-base text-slate-700 mb-4">We designed 5 ablation groups to isolate three confounding variables (prompt/scaffold, text format, image implication):</p>
-              <div className="overflow-x-auto rounded-lg border border-slate-200 mb-4">
-                <table className="w-full text-base text-left whitespace-nowrap">
-                  <thead className="bg-slate-800 text-white">
-                    <tr><th className="px-4 py-2.5">Group</th><th className="px-4 py-2.5">Prompt</th><th className="px-4 py-2.5">Text Content</th><th className="px-4 py-2.5">Visuals</th><th className="px-4 py-2.5">Isolated Variable</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {ablationData.map((row, i) => (
-                      <tr key={i} className={row.bg}>
-                        <td className="px-4 py-2.5 font-bold">{row.group}</td>
-                        <td className="px-4 py-2.5">{row.prompt}</td>
-                        <td className="px-4 py-2.5">{row.text}</td>
-                        <td className="px-4 py-2.5">{row.image}</td>
-                        <td className="px-4 py-2.5">{row.variable}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="bg-slate-50 p-4 rounded-lg text-base text-slate-700 border border-slate-200 space-y-2">
-                <HtmlP>{phantomSom.causalLogic}</HtmlP>
-                <HtmlP className="text-indigo-800 font-medium">{phantomSom.critical}</HtmlP>
-                <HtmlP className="text-sm text-slate-500 mt-2 pt-2 border-t border-slate-200">{phantomSom.novelty}</HtmlP>
-              </div>
-            </div>
+          
+          <div className="mt-6 bg-emerald-50 border border-emerald-200 text-emerald-900 p-6 rounded-xl text-center text-xl shadow-sm">
+            <strong>The value of DOM is positively correlated with model capability.</strong>
           </div>
         </section>
 
-        {/* === Section 4: B0 === */}
-        <section>
-          <SectionHeader num="4" title="B0 Preliminary Observations (Qwen3-235B)" icon={Database} />
-          <p className="text-base text-slate-600 mb-4 font-medium">Initial look at B0 (Qwen3-235B-A22B) Classifieds DOM (affected by parse_error, pending rerun):</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {b0Observations.map((obs, i) => {
-              const ObsIcon = IconMap[obs.icon] || Zap;
-              const colorMap = { indigo: 'text-indigo-500', orange: 'text-orange-500', red: 'text-red-500', slate: 'text-slate-500' };
-              return (
-                <div key={i} className="bg-white border border-slate-200 p-4 rounded-xl flex gap-4 hover:shadow-md transition-shadow">
-                  <ObsIcon className={`w-7 h-7 ${colorMap[obs.color] || 'text-slate-500'} shrink-0`} />
-                  <div>
-                    <h4 className="font-bold text-lg text-slate-800 mb-1">{obs.title}</h4>
-                    <HtmlP className="text-base text-slate-600">{obs.description}</HtmlP>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* === Section 5 & 6 === */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
-          <section>
-            <SectionHeader num="5" title="Scaffold Fixes Summary" icon={Bug} />
-            <p className="text-base text-slate-600 mb-3">Numerous scaffold bugs fixed this week, most necessitating reruns:</p>
-            <div className="border border-slate-200 rounded-lg overflow-hidden">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-slate-100 text-slate-700">
-                  <tr><th className="px-3 py-2.5 w-12">\u00a7</th><th className="px-3 py-2.5">Issue</th><th className="px-3 py-2.5">Status</th></tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {scaffoldFixes.map((fix, i) => (
-                    <tr key={i}>
-                      <td className="px-3 py-2.5 font-mono text-slate-400">{fix.id}</td>
-                      <td className="px-3 py-2.5">
-                        <div className="font-medium text-slate-800">{fix.issue}</div>
-                        <div className="text-slate-500 mt-0.5">Impact: {fix.impact}</div>
-                      </td>
-                      <td className={`px-3 py-2.5 font-bold whitespace-nowrap ${fix.status.includes('rerun')||fix.status.includes('pending') ? 'text-amber-600' : 'text-emerald-600'}`}>
-                        {fix.status}
-                      </td>
+        {/* SECTION 3 */}
+        <section className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+          <SectionHeader num="3" title="Failure Mode Analysis" icon={AlertTriangle} />
+          
+          <div className="space-y-10">
+            <div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-6">3.1 B1 Three-Mode Failure Distribution</h3>
+              <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+                <table className="w-full text-left text-base">
+                  <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+                    <tr>
+                      <th className="p-4 w-1/4">Failure Type</th>
+                      <th className="p-4">DOM</th>
+                      <th className="p-4">SoM</th>
+                      <th className="p-4">Vision</th>
+                      <th className="p-4 w-2/5">Feature</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {FAILURE_MODES_DATA.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-4 font-medium text-slate-800">{row.type}</td>
+                        <td className={`p-4 ${row.type === 'Answer mismatch' ? 'font-bold text-indigo-700 bg-indigo-50/50' : 'text-slate-600'}`}>{row.dom}</td>
+                        <td className={`p-4 ${row.type === 'Premature termination' ? 'font-bold text-indigo-700 bg-indigo-50/50' : 'text-slate-600'}`}>{row.som}</td>
+                        <td className={`p-4 ${row.type === 'No-progress loop' ? 'font-bold text-indigo-700 bg-indigo-50/50' : 'text-slate-600'}`}>{row.vision}</td>
+                        <td className="p-4 text-slate-600 text-sm leading-relaxed">{row.feature}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-4 text-lg text-slate-700 p-4 bg-slate-50 rounded-xl">
+                The failure paths of the three modes are distinctly different, indicating that they each have their own pros and cons on different task types. This provides the foundation for routing.
+              </p>
             </div>
-            <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 leading-relaxed">
-              <strong>Other Infrastructure Complete:</strong> {otherInfra}
+
+            <div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-4">3.2 B0 vs B1 Behavior Differences</h3>
+              <div className="bg-white border border-slate-200 rounded-xl p-6 text-lg text-slate-700 leading-relaxed shadow-sm">
+                <p>
+                  <strong>235B</strong> attempts to adjust coordinates and retry after a click failure, whereas <strong>4B</strong> repeatedly clicks using the exact same coordinates.
+                </p>
+                <p className="mt-4">
+                  However, <strong>235B exhibits an "overconfidence" issue</strong>: if it sees partial matching results on the first screen, it immediately submits an answer without continuing to paginate or scroll. This is particularly noticeable in <strong>SoM mode</strong>—which has the highest information density on the first screen. Combined with 235B's high confidence, it is the most prone to premature termination.
+                </p>
+              </div>
             </div>
-          </section>
+          </div>
+        </section>
 
-          <section>
-            <SectionHeader num="6" title="Status & Next Steps" icon={ListTodo} />
+        {/* SECTION 4 */}
+        <section className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+          <SectionHeader num="4" title="Routing Signal Evaluation" icon={Activity} />
+          
+          <p className="text-lg text-slate-700 mb-6">
+            AUROC measures the signal's ability to distinguish between success and failure (0.5 is the random baseline). Based on B1 tri-mode 702 episodes (adjusted labels):
+          </p>
 
-            <div className="space-y-3 mb-8">
-              <h3 className="text-base font-bold text-slate-500 uppercase tracking-wider mb-2">Execution Queue</h3>
-              {executionStatus.map((item, i) => (
-                <div key={i} className={`p-3 rounded-lg border flex justify-between items-center ${item.color}`}>
-                  <div>
-                    <div className="font-bold text-base">{item.task}</div>
-                    <div className="text-sm opacity-80 mt-0.5">{item.note}</div>
+          <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm mb-6">
+            <table className="w-full text-left text-base">
+              <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+                <tr>
+                  <th className="p-4">Signal</th>
+                  <th className="p-4">AUROC</th>
+                  <th className="p-4">95% CI</th>
+                  <th className="p-4">DOM</th>
+                  <th className="p-4">SoM</th>
+                  <th className="p-4">Vision</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {ROUTING_SIGNALS_DATA.map((row, idx) => (
+                  <tr key={idx} className={row.isStrong ? 'bg-indigo-50/30' : ''}>
+                    <td className={`p-4 text-slate-800 ${row.isStrong ? 'font-bold' : ''}`}>
+                      {row.signal}
+                      {row.raw && <span className="block text-sm text-slate-400 font-normal mt-0.5 font-mono">{row.raw}</span>}
+                    </td>
+                    <td className={`p-4 ${row.isStrong ? 'font-bold text-indigo-700' : 'text-slate-600'}`}>{row.auroc}</td>
+                    <td className="p-4 text-slate-500 font-mono text-sm">{row.ci}</td>
+                    <td className="p-4 text-slate-600">{row.dom}</td>
+                    <td className="p-4 text-slate-600">{row.som}</td>
+                    <td className="p-4 text-slate-600">{row.vision}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="bg-slate-50 rounded-xl p-6 border border-slate-200 space-y-4 text-lg text-slate-700">
+            <p>
+              <strong>Verbalized Confidence</strong> is the most stable across modes (tri-mode AUROC diff is only 0.004), making it the most suitable unified criterion for cross-mode routing.
+            </p>
+            <p>
+              <strong>Behavioral Signals</strong> (<code className="text-sm">url_revisit</code>, <code className="text-sm">action_diversity</code>) are also effective, showing the strongest discriminative power in Vision mode (0.809-0.816) because the looping behavior upon Vision failure is more pronounced.
+            </p>
+            <p>
+              <strong>Token Level Signals are completely useless</strong> (AUROC ≈ 0.5). The 4B model's probability distribution is too concentrated, making it impossible to extract meaningful uncertainty from logprob/entropy.
+            </p>
+          </div>
+        </section>
+
+        {/* SECTION 5 */}
+        <section className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+          <SectionHeader num="5" title="Routing Landscape: Tri-Mode Feasible" icon={Layers} />
+          
+          <div className="space-y-10">
+            {/* 5.1 */}
+            <div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-6">5.1 Theoretical Upper Bound (Oracle Routing)</h3>
+              <div className="max-w-3xl overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+                <table className="w-full text-left text-base">
+                  <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+                    <tr>
+                      <th className="p-4"></th>
+                      <th className="p-4">B0 (235B)</th>
+                      <th className="p-4">B1 (4B)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {ORACLE_ROUTING_DATA.map((row, idx) => (
+                      <tr key={idx} className={row.isBold ? 'bg-indigo-50/50' : ''}>
+                        <td className={`p-4 text-slate-800 ${row.isBold ? 'font-bold' : ''}`}>{row.metric}</td>
+                        <td className={`p-4 ${row.isBold ? 'font-bold text-indigo-700' : 'text-slate-600'}`}>{row.b0}</td>
+                        <td className={`p-4 ${row.isBold ? 'font-bold text-indigo-700' : 'text-slate-600'}`}>{row.b1}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-4 text-lg text-slate-700">
+                B0's routing space is <strong>1.67x</strong> that of B1.
+              </p>
+            </div>
+
+            {/* 5.2 */}
+            <div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-6">5.2 Success Set Complementarity (Venn Analysis)</h3>
+              
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                {/* B1 Table */}
+                <div>
+                  <h4 className="font-bold text-lg text-slate-700 mb-3 bg-slate-100 p-3 rounded-t-xl border-x border-t border-slate-200">
+                    B1 Exclusive Success Distribution (adjusted):
+                  </h4>
+                  <div className="overflow-hidden rounded-b-xl border border-slate-200 shadow-sm">
+                    <table className="w-full text-left text-base">
+                      <thead className="bg-slate-50 text-slate-600 text-sm">
+                        <tr>
+                          <th className="p-3">Set</th>
+                          <th className="p-3">Count</th>
+                          <th className="p-3 w-1/2">Note</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {VENN_B1_DATA.map((row, idx) => (
+                          <tr key={idx}>
+                            <td className={`p-3 text-slate-800 ${row.isBold ? 'font-bold' : ''}`}>{row.set}</td>
+                            <td className={`p-3 ${row.isBold ? 'font-bold text-indigo-700' : 'text-slate-600'}`}>{row.count}</td>
+                            <td className="p-3 text-sm text-slate-600">{row.note}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                  <div className="text-base font-bold px-2 py-1 bg-white/50 rounded">{item.status}</div>
+                </div>
+
+                {/* B0 Table */}
+                <div>
+                  <h4 className="font-bold text-lg text-slate-700 mb-3 bg-indigo-50 p-3 rounded-t-xl border-x border-t border-indigo-100 text-indigo-900">
+                    B0 Exclusive Success Distribution (adjusted):
+                  </h4>
+                  <div className="overflow-hidden rounded-b-xl border border-indigo-100 shadow-sm">
+                    <table className="w-full text-left text-base">
+                      <thead className="bg-indigo-50/50 text-indigo-800 text-sm">
+                        <tr>
+                          <th className="p-3">Set</th>
+                          <th className="p-3">Count</th>
+                          <th className="p-3 w-1/2">Note</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-indigo-50 bg-white">
+                        {VENN_B0_DATA.map((row, idx) => (
+                          <tr key={idx}>
+                            <td className={`p-3 text-slate-800 ${row.isBold ? 'font-bold' : ''}`}>{row.set}</td>
+                            <td className={`p-3 ${row.isBold ? 'font-bold text-indigo-700' : 'text-slate-600'}`}>{row.count}</td>
+                            <td className="p-3 text-sm text-slate-600">{row.note}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 5.3 */}
+            <div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-6">5.3 Key Findings</h3>
+              <ul className="space-y-4 text-lg text-slate-700 list-disc pl-6 marker:text-indigo-500">
+                <li>
+                  <strong>DOM and Vision successful tasks have absolutely no overlap</strong> (B1 Intersection = 0), making them naturally suited for complementary routing.
+                </li>
+                <li>
+                  <strong>B0 Tri-mode Oracle distribution is more balanced</strong>: SoM 42.6%, Vision 38.2%, DOM 19.1%; Whereas in B1, SoM accounts for 68.2%, making the routing space highly concentrated.
+                </li>
+                <li>
+                  Last week's assumption that DOM was valueless and routing only existed between SoM↔Vision is now corrected to <strong>Tri-Mode Routing</strong>.
+                </li>
+                <li>
+                  <strong>The optimal mode depends on model capability</strong> (Hypothesis from §9 is validated): The stronger the model, the stronger all modes become, and the larger the routing space.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 6 */}
+        <section className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+          <SectionHeader num="6" title="Execution Progress & Fixes" icon={Settings} />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            
+            {/* 6.1 Progress */}
+            <div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-6">6.1 Progress</h3>
+              <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm mb-4">
+                <table className="w-full text-left text-base">
+                  <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+                    <tr>
+                      <th className="p-4">Site</th>
+                      <th className="p-4">B0</th>
+                      <th className="p-4">B1</th>
+                      <th className="p-4">Completed</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {PROGRESS_DATA.map((row, idx) => (
+                      <tr key={idx}>
+                        <td className="p-4 font-medium text-slate-800">{row.site}</td>
+                        <td className="p-4 text-slate-600">{row.b0}</td>
+                        <td className="p-4 text-slate-600">{row.b1}</td>
+                        <td className={`p-4 ${row.isBold ? 'font-bold text-indigo-700' : 'text-slate-600'}`}>{row.completed}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-lg text-slate-700 px-2 font-medium">VWA 8/18 done, WA 0/18.</p>
+            </div>
+
+            {/* 6.2 Fixes */}
+            <div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-6">6.2 Major Fixes</h3>
+              <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm mb-4">
+                <table className="w-full text-left text-base">
+                  <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+                    <tr>
+                      <th className="p-4 w-1/6">§</th>
+                      <th className="p-4 w-1/2">Content</th>
+                      <th className="p-4">Data Impact</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {FIXES_DATA.map((row, idx) => (
+                      <tr key={idx}>
+                        <td className="p-4 font-mono text-sm text-slate-500">{row.id}</td>
+                        <td className="p-4 text-slate-800">{row.desc}</td>
+                        <td className="p-4 text-slate-600 text-sm">{row.impact}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-xl text-slate-700 text-base">
+                <strong>New Features:</strong> WebArena integration (§71), scroll cross-model validation (§72), gallery enhancements (§73/§79).
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        {/* SECTION 7: Next Week's Focus */}
+        <section className="bg-indigo-900 text-white rounded-2xl p-8 md:p-12 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+            <Calendar className="w-48 h-48" />
+          </div>
+          
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+              <span className="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xl shadow-sm">7</span>
+              Next Week's Focus
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 text-xl">
+              {NEXT_WEEK_FOCUS.map((focus, idx) => (
+                <div key={idx} className="flex items-start gap-4">
+                  <div className="w-8 h-8 shrink-0 rounded-full bg-indigo-800 border border-indigo-600 flex items-center justify-center text-indigo-300 font-bold text-base mt-0.5">
+                    {idx + 1}
+                  </div>
+                  <div className="leading-relaxed font-medium text-indigo-50">
+                    {focus.split('(').map((part, i) => (
+                      <span key={i}>
+                        {i > 0 && <span className="text-indigo-300 text-lg"> ({part}</span>}
+                        {i === 0 && part}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
-
-            <div className="bg-indigo-900 text-white p-5 rounded-xl shadow-lg">
-              <h3 className="font-bold text-lg text-indigo-100 mb-4 flex items-center gap-2">
-                <CheckCircle2 className="w-6 h-6 text-indigo-400" /> Next Week's Milestones
-              </h3>
-              <ul className="space-y-3 text-base font-medium">
-                {nextMilestones.map((milestone, i) => (
-                  <li key={i} className="flex gap-3 items-start">
-                    <span className="bg-indigo-800 w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-sm text-indigo-300">{i + 1}</span>
-                    {milestone}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
       </div>
     </div>

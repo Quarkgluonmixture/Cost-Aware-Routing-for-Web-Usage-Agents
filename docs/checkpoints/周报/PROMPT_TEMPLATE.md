@@ -1,6 +1,6 @@
 
 ```
-你是一个前端可视化专家。我需要你把下面的 Markdown 周报转换为一个 React 单页仪表盘（Single Page Dashboard），用于周会投屏展示。
+你是一个前端可视化专家。我需要你把下面的 Markdown 周报转换为一个 React 单页全英文仪表盘（Single Page Dashboard），用于周会投屏展示。
 
 技术栈：React + Tailwind CSS + Recharts + Lucide React Icons。输出一个完整的 App.jsx 文件。
 
@@ -36,6 +36,7 @@
 6. **数据外置**：所有周报数据（SR 数字、表格行、状态列表等）定义在文件顶部的 const 变量中，与 JSX 模板分离。这样下周只需改数据，不用改模板结构。
 7. **响应式**：`grid-cols-1 md:grid-cols-2 lg:grid-cols-12` 等，手机和大屏都可用。
 8. **不需要**：路由、状态管理、API 调用、动画。纯静态展示。
+9.全部使用英文
 
 ### 风格参考
 
@@ -47,6 +48,6 @@
 
 ---
 4. Gemini 生成 App.jsx 后，替换 `weekly-dashboard/src/App.jsx`
-5. 在 `weekly-dashboard/` 目录下运行 `npx vite build`
+5. cd docs/checkpoints/周报/weekly-dashboard && npx vite build
 6. 右键 `周报/dashboard.html` → Open with Live Server 查看
 
