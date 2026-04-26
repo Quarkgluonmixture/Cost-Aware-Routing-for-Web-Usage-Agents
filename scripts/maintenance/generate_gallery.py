@@ -3,13 +3,13 @@
 
 Usage:
     # Single task
-    python3 scripts/generate_gallery.py --run-dir results/.../B1_xxx --task-id 17
+    python3 scripts/maintenance/generate_gallery.py --run-dir results/.../B1_xxx --task-id 17
 
     # Single condition, all tasks
-    python3 scripts/generate_gallery.py --run-dir results/.../B1_xxx --condition phase1_dom_router_0
+    python3 scripts/maintenance/generate_gallery.py --run-dir results/.../B1_xxx --condition phase1_dom_router_0
 
     # Entire run
-    python3 scripts/generate_gallery.py --run-dir results/.../B1_xxx
+    python3 scripts/maintenance/generate_gallery.py --run-dir results/.../B1_xxx
 
 Output: <run-dir>/gallery.html (open in browser)
 """

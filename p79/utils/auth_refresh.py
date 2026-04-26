@@ -1,6 +1,6 @@
 """Shared auth refresh logic for Magento (shopping/shopping_admin) sites.
 
-Extracted from scripts/experiment_watchdog.py so that both the watchdog
+Extracted from scripts/maintenance/experiment_watchdog.py so that both the watchdog
 and the experiment runner can reuse the same login routine.
 """
 from __future__ import annotations

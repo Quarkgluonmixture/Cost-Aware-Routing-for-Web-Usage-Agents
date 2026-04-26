@@ -594,7 +594,7 @@ results/cross_representation/           # 多站时按站点分子目录
 
 ## 5. `glm_diagnosis_sidecar.py` — 实时诊断 Sidecar
 
-**路径**: `scripts/glm_diagnosis_sidecar.py`
+**路径**: `scripts/maintenance/glm_diagnosis_sidecar.py`
 
 ### 触发方式
 
@@ -625,7 +625,7 @@ results/cross_representation/           # 多站时按站点分子目录
 
 ## 6. `glm_batch_digest.py` — 批量失败 Episode 预消化
 
-**路径**: `scripts/glm_batch_digest.py`
+**路径**: `scripts/maintenance/glm_batch_digest.py`
 
 ### 定位
 
@@ -634,12 +634,12 @@ results/cross_representation/           # 多站时按站点分子目录
 ### 触发方式
 
 - **自动 (sidecar)**: `glm_diagnosis_sidecar.py` 在每次诊断后自动运行（需 `--digest-output` 参数）
-- **手动**: `python3 scripts/glm_batch_digest.py --run-dir <run_dir> --output <path> --glm-config .auth/glm`
+- **手动**: `python3 scripts/maintenance/glm_batch_digest.py --run-dir <run_dir> --output <path> --glm-config .auth/glm`
 
 ### CLI
 
 ```bash
-python3 scripts/glm_batch_digest.py \
+python3 scripts/maintenance/glm_batch_digest.py \
     --run-dir results/.../B1_3mode_classifieds_20260404_141103 \
     --output analysis/digest.jsonl \
     --glm-config .auth/glm \
@@ -656,7 +656,7 @@ python3 scripts/glm_batch_digest.py \
 在 `glm_diagnosis_sidecar.py` 启动时加入 `--digest-output` 即可激活自动增量消化：
 
 ```bash
-python3 scripts/glm_diagnosis_sidecar.py \
+python3 scripts/maintenance/glm_diagnosis_sidecar.py \
     ... \
     --digest-output analysis/digest/digest.jsonl \
     --digest-max-images 3 \
@@ -705,19 +705,19 @@ digest 与 episode diagnosis 的区别：
 
 ### Hot-restart 注意
 
-`restart_sidecar.sh` 从 `/proc/PID/cmdline` 读取原始参数原样重启。`--digest-output` 等参数只需在首次启动时传入，后续 hot-restart 自动保留。
+`scripts/maintenance/restart_watchdog.sh` 从 `/proc/PID/cmdline` 读取原始参数原样重启（也兼容 legacy `monitor_glm_sidecar.py` 进程）。`--digest-output` 等参数只需在首次启动时传入，后续 hot-restart 自动保留。
 
 也可通过 `--append-args` 在 hot-restart 时注入新参数：
 
 ```bash
-bash scripts/dgx/restart_sidecar.sh --append-args "--digest-output analysis/digest.jsonl"
+bash scripts/maintenance/restart_watchdog.sh --append-args "--digest-output analysis/digest.jsonl"
 ```
 
 ---
 
 ## 7. `experiment_watchdog.py` — 实验健康监控 + 自动分析
 
-**路径**: `scripts/experiment_watchdog.py`
+**路径**: `scripts/maintenance/experiment_watchdog.py`
 
 ### 触发方式
 

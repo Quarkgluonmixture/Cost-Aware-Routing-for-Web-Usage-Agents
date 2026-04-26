@@ -141,13 +141,14 @@ setsid nohup bash -lc 'cd /abs/repo/path && exec <command>' \
 echo "pid=$!"
 ```
 
-## DGX-only scripts
-Use scripts under `scripts/dgx/`:
+## Experiment queue scripts
+Use scripts under `scripts/queues/` for B0/B1 三模式 baseline runs（contain DGX-specific env handling: NVML CUDA check, MPS pipe disable, sm_121 fallback）：
 
 ```bash
-bash scripts/dgx/run_qwen3vl4b_baseline.sh
-bash scripts/dgx/start_qwen3vl4b_baseline_when_gpu_idle.sh
-bash scripts/dgx/qwen3vl4b_status.sh
+bash scripts/queues/queue_b1_with_reset.sh        # B1 三模式 VWA
+bash scripts/queues/queue_b1_wa_with_reset.sh     # B1 三模式 WA
+bash scripts/queues/queue_b0_with_reset.sh        # B0 三模式 VWA
+bash scripts/queues/queue_b0_wa_with_reset.sh     # B0 三模式 WA
 ```
 
-These scripts intentionally include DGX-specific env handling and should not be treated as general defaults.
+These scripts include DGX-specific env handling and should not be treated as general defaults.

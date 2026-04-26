@@ -3,13 +3,13 @@
 # then rederive episode summaries with §97-audit fixed code.
 #
 # Designed to be launched once and left in background:
-#   setsid nohup bash scripts/wait_for_reddit_then_rederive.sh \
+#   setsid nohup bash scripts/maintenance/wait_for_reddit_then_rederive.sh \
 #     > logs/wait_reddit_followup.log 2>&1 < /dev/null &
 #
 # Behavior:
 #   1. Polls for the Python runner PID matching b1_3mode_reddit_som every 5 min.
 #   2. When the process exits, sleeps 30s for filesystem flush.
-#   3. Runs scripts/rederive_episode_summary.py on the B1 reddit run dir.
+#   3. Runs scripts/maintenance/rederive_episode_summary.py on the B1 reddit run dir.
 #   4. Touches logs/reddit_rederive_done.flag for the user to notice.
 #   5. Does NOT auto-start B1 shopping queue — that requires user decision
 #      about handling the partial SoM (331/466) under new max_marks=200.
@@ -42,7 +42,7 @@ sleep 30
 
 # Step 2: re-derive episode summaries using §97-audit fixed code.
 echo "[$(date -Iseconds)] running rederive_episode_summary.py on ${RUN_DIR}"
-.venv/bin/python3 scripts/rederive_episode_summary.py --run-dir "${RUN_DIR}" 2>&1
+.venv/bin/python3 scripts/maintenance/rederive_episode_summary.py --run-dir "${RUN_DIR}" 2>&1
 
 # Step 3: signal rederive done.
 mkdir -p logs
@@ -54,7 +54,7 @@ echo "[$(date -Iseconds)] reddit rederive complete; flag=${DONE_FLAG}"
 # Queue will resume DOM (skip already-done), run SoM clean from 0, then Vision from 0.
 echo "[$(date -Iseconds)] launching B1 shopping queue (clean SoM + Vision)"
 SHOPPING_LOG="logs/queue_b1_shopping_$(date +%Y%m%d_%H%M%S).log"
-B1_SITE=shopping setsid nohup bash scripts/dgx/queue_b1_with_reset.sh \
+B1_SITE=shopping setsid nohup bash scripts/queues/queue_b1_with_reset.sh \
     > "${SHOPPING_LOG}" 2>&1 < /dev/null &
 echo "[$(date -Iseconds)] B1 shopping queue launched (log: ${SHOPPING_LOG})"
 date -Iseconds > logs/shopping_queue_started.flag

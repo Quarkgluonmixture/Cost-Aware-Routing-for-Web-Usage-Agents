@@ -14,22 +14,22 @@ Output: screenshot_annotated.png alongside the original screenshot.png
 
 Usage:
   # Annotate a single episode
-  python3 scripts/annotate_screenshots.py \
+  python3 scripts/maintenance/annotate_screenshots.py \
     --run-dir results/visualwebarena/phase1/B1_3mode_classifieds_20260404_141103 \
     --condition phase1_dom_router_0 \
     --task-id 12
 
   # Annotate all episodes in a condition
-  python3 scripts/annotate_screenshots.py \
+  python3 scripts/maintenance/annotate_screenshots.py \
     --run-dir results/visualwebarena/phase1/B1_3mode_classifieds_20260404_141103 \
     --condition phase1_dom_router_0
 
   # Annotate entire run
-  python3 scripts/annotate_screenshots.py \
+  python3 scripts/maintenance/annotate_screenshots.py \
     --run-dir results/visualwebarena/phase1/B1_3mode_classifieds_20260404_141103
 
   # Dry-run: list what would be annotated
-  python3 scripts/annotate_screenshots.py --run-dir ... --dry-run
+  python3 scripts/maintenance/annotate_screenshots.py --run-dir ... --dry-run
 """
 
 from __future__ import annotations

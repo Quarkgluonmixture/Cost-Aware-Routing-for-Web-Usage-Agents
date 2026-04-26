@@ -42,10 +42,10 @@ smoke-only:
 # ---- Rederive ----
 rederive:
 	@test -n "$(RUN)" || (echo "ERROR: RUN=<run_dir> required"; exit 1)
-	$(PYTHON) scripts/rederive_episode_summary.py --run-dir $(RUN)
+	$(PYTHON) scripts/maintenance/rederive_episode_summary.py --run-dir $(RUN)
 
 rederive-all:
-	$(PYTHON) scripts/rederive_episode_summary.py --all-b0
+	$(PYTHON) scripts/maintenance/rederive_episode_summary.py --all-b0
 
 # ---- Analysis pipeline ----
 reason-diag:
@@ -77,7 +77,7 @@ compare:
 clean-tasks:
 	@test -n "$(RUN)" -a -n "$(COND)" -a -n "$(SITE)" -a -n "$(TASKS)" || \
 		(echo "ERROR: RUN= COND= SITE= TASKS= all required"; exit 1)
-	$(PYTHON) scripts/clear_tasks.py --run-dir $(RUN) --condition $(COND) --site $(SITE) --tasks $(TASKS)
+	$(PYTHON) scripts/maintenance/clear_tasks.py --run-dir $(RUN) --condition $(COND) --site $(SITE) --tasks $(TASKS)
 
 validate:
 	@test -n "$(RUN)" || (echo "ERROR: RUN=<run_dir> required"; exit 1)
@@ -85,11 +85,11 @@ validate:
 
 gallery:
 	@test -n "$(RUN)" || (echo "ERROR: RUN=<run_dir> required"; exit 1)
-	$(PYTHON) scripts/generate_gallery.py --run-dir $(RUN)
+	$(PYTHON) scripts/maintenance/generate_gallery.py --run-dir $(RUN)
 
 # ---- Background tasks ----
 watch-reddit:
-	setsid nohup bash scripts/wait_for_reddit_then_rederive.sh \
+	setsid nohup bash scripts/maintenance/wait_for_reddit_then_rederive.sh \
 	    > logs/wait_reddit_followup.log 2>&1 < /dev/null &
 	@sleep 1 && pgrep -af wait_for_reddit_then_rederive | head -1 || echo "(watch may have exited)"
 

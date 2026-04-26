@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Quick refresh: annotate screenshots + regenerate gallery HTML.
-# Usage: bash scripts/dgx/refresh_gallery.sh [RUN_DIR]
+# Usage: bash scripts/maintenance/refresh_gallery.sh [RUN_DIR]
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,12 +17,12 @@ fi
 RUN_DIR="${1:-$(ls -1dt "${REPO_DIR}"/results/visualwebarena/phase1/B[01]_* 2>/dev/null | head -1)}"
 
 if [[ -z "${RUN_DIR}" || ! -d "${RUN_DIR}" ]]; then
-  echo "Usage: bash scripts/dgx/refresh_gallery.sh [RUN_DIR]" >&2
+  echo "Usage: bash scripts/maintenance/refresh_gallery.sh [RUN_DIR]" >&2
   exit 1
 fi
 
 echo "Annotating: ${RUN_DIR}"
-"${PYTHON}" "${REPO_DIR}/scripts/annotate_screenshots.py" --run-dir "${RUN_DIR}"
+"${PYTHON}" "${REPO_DIR}/scripts/maintenance/annotate_screenshots.py" --run-dir "${RUN_DIR}"
 
 echo "Generating gallery..."
-"${PYTHON}" "${REPO_DIR}/scripts/generate_gallery.py" --run-dir "${RUN_DIR}"
+"${PYTHON}" "${REPO_DIR}/scripts/maintenance/generate_gallery.py" --run-dir "${RUN_DIR}"

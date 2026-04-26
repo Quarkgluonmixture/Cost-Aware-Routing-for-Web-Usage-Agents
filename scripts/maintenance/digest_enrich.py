@@ -15,12 +15,12 @@ Adds per-episode fields:
 
 Usage:
   # Directory mode: enrich all digest_*.jsonl files in-place
-  python3 scripts/digest_enrich.py \
+  python3 scripts/maintenance/digest_enrich.py \
     --digest results/.../analysis/digest/ \
     --run-dir results/.../B1_3mode_classifieds_20260404_141103
 
   # Single file mode (backwards compat)
-  python3 scripts/digest_enrich.py \
+  python3 scripts/maintenance/digest_enrich.py \
     --digest results/.../digest_dom.jsonl \
     --run-dir results/.../B1_3mode_classifieds_20260404_141103
 """

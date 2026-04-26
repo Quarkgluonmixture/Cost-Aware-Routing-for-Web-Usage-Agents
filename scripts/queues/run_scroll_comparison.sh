@@ -6,9 +6,9 @@
 #   dashscope — Qwen3-VL-235B-instruct on DashScope official (free quota, 10 tasks)
 #
 # Usage:
-#   bash scripts/dgx/run_scroll_comparison.sh claude
-#   bash scripts/dgx/run_scroll_comparison.sh dashscope
-#   bash scripts/dgx/run_scroll_comparison.sh all
+#   bash scripts/queues/run_scroll_comparison.sh claude
+#   bash scripts/queues/run_scroll_comparison.sh dashscope
+#   bash scripts/queues/run_scroll_comparison.sh all
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

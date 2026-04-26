@@ -2,7 +2,7 @@
 # reset_vwa_sites.sh — VWA 站点 reset 工具（通用，可 source）
 #
 # 用法（source 后调用）：
-#   source scripts/reset_vwa_sites.sh
+#   source scripts/maintenance/reset_vwa_sites.sh
 #   reset_vwa_sites all              # reset classifieds + reddit + shopping + shopping_admin
 #   reset_vwa_sites classifieds      # 只 reset classifieds
 #   reset_vwa_sites reddit

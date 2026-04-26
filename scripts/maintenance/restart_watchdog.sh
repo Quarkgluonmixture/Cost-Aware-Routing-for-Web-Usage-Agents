@@ -7,7 +7,7 @@
 # State files are preserved — the watchdog resumes from where it left off.
 #
 # Usage:
-#   bash scripts/dgx/restart_watchdog.sh [--dry-run] [--append-args "<flags>"]
+#   bash scripts/maintenance/restart_watchdog.sh [--dry-run] [--append-args "<flags>"]
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,14 +15,14 @@ REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_DIR}"
 
 PYTHON_BIN="${REPO_DIR}/.venv/bin/python"
-WATCHDOG_SCRIPT="scripts/experiment_watchdog.py"
+WATCHDOG_SCRIPT="scripts/maintenance/experiment_watchdog.py"
 DRY_RUN=0
 EXTRA_ARGS=()
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash scripts/dgx/restart_watchdog.sh [options]
+  bash scripts/maintenance/restart_watchdog.sh [options]
 
 Options:
   --dry-run              Show what would be done without actually restarting.

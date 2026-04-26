@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
-# queue_b1_wa_with_reset.sh — B1 三模式 WA shopping→shopping_admin→reddit
+# queue_b0_with_reset.sh — B0 三模式 classifieds→reddit→shopping（每 condition 间 reset 站点）
 #
-# WebArena 三站 (480 tasks)，每 condition 间 reset 站点。
+# 每个 condition 独立跑，condition 间自动 reset 站点，消除跨模式数据污染。
 # 基于 queue_b1_with_reset.sh 模板，主要差异:
-#   - BASELINE_CONFIG → exp_v2_qwen3vl4b_B1_wa_baseline.yaml
-#   - RESULTS_BASE → results/webarena/phase1
-#   - 站点列表: shopping → shopping_admin → reddit
-#   - DATASET=webarena
+#   - 使用 api_proxy (Qwen3-VL-235B) 而非本地 4B
+#   - per-site B0 configs
+#   - API key 加载
 #
 # 用法:
-#   nohup bash scripts/dgx/queue_b1_wa_with_reset.sh \
-#     > logs/queue_b1_wa_with_reset_main.log 2>&1 &
+#   nohup bash scripts/queues/queue_b0_with_reset.sh \
+#     > logs/queue_b0_with_reset_main.log 2>&1 &
+#
+# Gallery: http://localhost:8765/visualwebarena/phase1/B0_3mode/gallery.html
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,15 +19,14 @@ REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_DIR}"
 
 # ---------- 通用 reset 工具 ----------
-source "${REPO_DIR}/scripts/reset_vwa_sites.sh"
+source "${REPO_DIR}/scripts/maintenance/reset_vwa_sites.sh"
 
 # refresh_site_auth <site> — 站点 reset 后重新登录，刷新 .auth/<site>_state.json
 refresh_site_auth() {
   local site="$1"
   local auth_file="${REPO_DIR}/.auth/${site}_state.json"
-  log "[b1_wa] 刷新 ${site} auth state..."
-  local dataset="webarena"  # WA script — all sites are webarena
-  DATASET="${dataset}" "${PYTHON_BIN:-python3}" - <<PYEOF
+  log "[b0_3mode] 刷新 ${site} auth state..."
+  DATASET=visualwebarena "${PYTHON_BIN:-python3}" - <<PYEOF
 import os, sys, time
 sys.path.insert(0, '${REPO_DIR}/external/visualwebarena')
 from playwright.sync_api import sync_playwright
@@ -36,19 +36,16 @@ ACCOUNTS = {
     'classifieds': ('blake.sullivan@gmail.com', 'Password.123'),
     'reddit':      ('MarvelsGrantMan136',        'test1234'),
     'shopping':    ('emma.lopez@gmail.com',       'Password.123'),
-    'shopping_admin': ('admin',                   'admin1234'),
 }
 base_urls = {
     'classifieds': os.environ.get('CLASSIFIEDS', 'http://100.95.81.103:9980'),
     'reddit':      os.environ.get('REDDIT',      'http://100.95.81.103:9999'),
     'shopping':    os.environ.get('SHOPPING',    'http://100.95.81.103:7770'),
-    'shopping_admin': os.environ.get('SHOPPING_ADMIN', 'http://100.95.81.103:7780'),
 }
 login_paths = {
     'classifieds': '/index.php?page=login',
     'reddit':      '/login',
     'shopping':    '/customer/account/login/',
-    'shopping_admin': '/admin',
 }
 username, password = ACCOUNTS[site]
 base_url = base_urls[site]
@@ -72,10 +69,6 @@ elif site == 'shopping':
     page.get_by_label('Email', exact=True).fill(username)
     page.get_by_label('Password', exact=True).fill(password)
     page.get_by_role('button', name='Sign In').click()
-elif site == 'shopping_admin':
-    page.locator('#username').fill(username)
-    page.locator('#login').fill(password)
-    page.get_by_role('button', name='Sign in').click()
 time.sleep(2)
 context.storage_state(path='${auth_file}')
 cm.__exit__(None, None, None)
@@ -83,10 +76,10 @@ print('${site} auth refreshed -> ' + page.url)
 PYEOF
   local rc=$?
   if [[ $rc -eq 0 ]] && [[ -s "${auth_file}" ]]; then
-    log "[b1_wa] ${site} auth state 已刷新"
+    log "[b0_3mode] ${site} auth state 已刷新"
     return 0
   else
-    log "[b1_wa][error] ${site} auth 刷新失败 rc=${rc}（auth_file=$(wc -c < "${auth_file}" 2>/dev/null || echo missing) bytes）"
+    log "[b0_3mode][error] ${site} auth 刷新失败 rc=${rc}（auth_file=$(wc -c < "${auth_file}" 2>/dev/null || echo missing) bytes）"
     return 1
   fi
 }
@@ -104,29 +97,51 @@ refresh_site_auth_retry() {
     if [[ $attempt -ge $AUTH_REFRESH_MAX_ATTEMPTS ]]; then
       break
     fi
-    log "[b1_wa][${label}] auth 刷新第 ${attempt}/${AUTH_REFRESH_MAX_ATTEMPTS} 次失败，${delay}s 后重试..."
-    ntfy_send "P79 [B1_WA/${label}] auth retry" "${site} 第 ${attempt} 次失败，${delay}s 后重试" "default"
+    log "[b0_3mode][${label}] auth 刷新第 ${attempt}/${AUTH_REFRESH_MAX_ATTEMPTS} 次失败，${delay}s 后重试..."
+    ntfy_send "P79 [B0/${label}] auth retry" "${site} 第 ${attempt} 次失败，${delay}s 后重试" "default"
     sleep "${delay}"
     delay=$(( delay * 2 ))
   done
-  log "[b1_wa][${label}][fatal] ${site} auth 刷新 ${AUTH_REFRESH_MAX_ATTEMPTS} 次均失败"
-  ntfy_send "P79 [B1_WA/${label}] auth FAILED" "${site} ${AUTH_REFRESH_MAX_ATTEMPTS} 次失败" "urgent"
+  log "[b0_3mode][${label}][fatal] ${site} auth 刷新 ${AUTH_REFRESH_MAX_ATTEMPTS} 次均失败"
+  ntfy_send "P79 [B0/${label}] auth FAILED" "${site} ${AUTH_REFRESH_MAX_ATTEMPTS} 次失败" "urgent"
   return 1
 }
 
+# ---------- API key 加载 ----------
+AUTH_FILE="${REPO_DIR}/.auth/qwen_api"
+if [[ -z "${PROXY_API_KEY:-}" ]]; then
+  if [[ -f "${AUTH_FILE}" ]]; then
+    raw_key="$(grep -m1 '^rp_' "${AUTH_FILE}" | tr -d '[:space:]')"
+    if [[ -n "${raw_key}" ]]; then
+      export PROXY_API_KEY="${raw_key}"
+      export QWEN_API_KEY="${raw_key}"
+      export DASHSCOPE_API_KEY="${raw_key}"
+      echo "[b0_3mode] Loaded PROXY_API_KEY from ${AUTH_FILE}" >&2
+    else
+      echo "[b0_3mode][error] ${AUTH_FILE} 存在但为空" >&2; exit 1
+    fi
+  else
+    echo "[b0_3mode][error] ${AUTH_FILE} 不存在，且 PROXY_API_KEY 未设置" >&2; exit 1
+  fi
+else
+  echo "[b0_3mode] PROXY_API_KEY 已由环境变量提供" >&2
+fi
+
 # ---------- 配置 ----------
-BASELINE_CONFIG="${REPO_DIR}/configs/exp_v2_qwen3vl4b_B1_wa_baseline.yaml"
+CONFIGS_CLASSIFIEDS="${REPO_DIR}/configs/exp_v2_B0_3mode_classifieds.yaml"
+CONFIGS_REDDIT="${REPO_DIR}/configs/exp_v2_B0_3mode_reddit.yaml"
+CONFIGS_SHOPPING="${REPO_DIR}/configs/exp_v2_B0_3mode_shopping.yaml"
 LOG_DIR="${REPO_DIR}/logs"
-RESULTS_BASE="${REPO_DIR}/results/webarena/phase1"
+RESULTS_BASE="${REPO_DIR}/results/visualwebarena/phase1"
 mkdir -p "${LOG_DIR}"
 
 # --- run_id 配置 ---
-RUN_ID_SHOPPING="${RUN_ID_SHOPPING:-B1_wa_3mode_shopping_$(date +%Y%m%d)}"
-RUN_ID_SHOPPING_ADMIN="${RUN_ID_SHOPPING_ADMIN:-B1_wa_3mode_shopping_admin_$(date +%Y%m%d)}"
-RUN_ID_REDDIT="${RUN_ID_REDDIT:-B1_wa_3mode_reddit_$(date +%Y%m%d)}"
+RUN_ID_CLASSIFIEDS="${RUN_ID_CLASSIFIEDS:-B0_3mode_classifieds_20260413}"
+RUN_ID_REDDIT="${RUN_ID_REDDIT:-B0_3mode_reddit_$(date +%Y%m%d)}"
+RUN_ID_SHOPPING="${RUN_ID_SHOPPING:-B0_3mode_shopping_$(date +%Y%m%d)}"
 
 MAX_RESUME_ATTEMPTS="${MAX_RESUME_ATTEMPTS:-10}"
-WATCHDOG_TIMEOUT_MINS="${WATCHDOG_TIMEOUT_MINS:-60}"
+WATCHDOG_TIMEOUT_MINS="${WATCHDOG_TIMEOUT_MINS:-35}"
 WATCHDOG_CHECK_SECS="${WATCHDOG_CHECK_SECS:-60}"
 
 export NTFY_TOPIC="${NTFY_TOPIC:-p79-exp-dgx-spark}"
@@ -135,13 +150,13 @@ NTFY_MINIMAL_MODE="${NTFY_MINIMAL_MODE:-1}"
 
 EXP_WATCHDOG_ENABLE="${EXP_WATCHDOG_ENABLE:-1}"
 EXP_WATCHDOG_POLL_SECS="${EXP_WATCHDOG_POLL_SECS:-30}"
-EXP_WATCHDOG_IDLE_ALERT_MINS="${EXP_WATCHDOG_IDLE_ALERT_MINS:-20}"
-EXP_WATCHDOG_NOTIFY_COMPLETION_ENABLE="${EXP_WATCHDOG_NOTIFY_COMPLETION_ENABLE:-1}"
+EXP_WATCHDOG_IDLE_ALERT_MINS="${EXP_WATCHDOG_IDLE_ALERT_MINS:-30}"
+EXP_WATCHDOG_NOTIFY_COMPLETION_ENABLE="${EXP_WATCHDOG_NOTIFY_COMPLETION_ENABLE:-0}"
 EXP_WATCHDOG_GLM_CONFIG="${EXP_WATCHDOG_GLM_CONFIG:-${REPO_DIR}/.auth/glm}"
 EXP_WATCHDOG_PID=""
 
 REASON_DIAG_ENABLE="${REASON_DIAG_ENABLE:-1}"
-AGGREGATE_PREFIX="B1_wa_3mode"
+AGGREGATE_PREFIX="B0_3mode"
 
 # DGX Spark 环境变量
 export PYTORCH_NVML_BASED_CUDA_CHECK=1
@@ -149,6 +164,7 @@ export CUDA_MPS_PIPE_DIRECTORY=""
 export CUDA_MPS_LOG_DIRECTORY=""
 export OPENAI_API_KEY="${OPENAI_API_KEY:-DUMMY_P79_NON_LLM_EVAL}"
 export P79_DISABLE_STALE_CLEANUP="${P79_DISABLE_STALE_CLEANUP:-1}"
+export WIKIPEDIA_ZIM_VERSION="${WIKIPEDIA_ZIM_VERSION:-wikipedia_en_all_maxi_2025-08}"
 
 # ---------- Python 解释器 ----------
 if [[ -x "${REPO_DIR}/.venv/bin/python" ]]; then
@@ -156,7 +172,7 @@ if [[ -x "${REPO_DIR}/.venv/bin/python" ]]; then
 elif command -v python3 >/dev/null 2>&1; then
   PYTHON_BIN="$(command -v python3)"
 else
-  echo "[b1_wa][error] 找不到 Python 解释器" >&2; exit 127
+  echo "[b0_3mode][error] 找不到 Python 解释器" >&2; exit 127
 fi
 
 # ---------- VWA 站点环境 ----------
@@ -167,8 +183,6 @@ elif [[ -f "${REPO_DIR}/scripts/vwa_env_remote.sh" ]]; then
 elif [[ -f "${REPO_DIR}/scripts/vwa_env.sh" ]]; then
   source "${REPO_DIR}/scripts/vwa_env.sh" || true
 fi
-# Override DATASET for WA (vwa_env scripts may export visualwebarena)
-export DATASET=webarena
 
 # ---------- 辅助函数 ----------
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
@@ -191,7 +205,7 @@ is_condition_complete() {
   done=$(find "${cond_dir}" -type f -path "*/episodes/*_summary_v2.json" 2>/dev/null | wc -l | tr -d '[:space:]')
   if [[ -f "${cond_dir}/condition_summary_v2.json" ]]; then
     if [[ "${task_total}" -gt 0 && "${done}" -lt "${task_total}" ]]; then
-      log "[b1_wa] ${cid}: condition_summary 存在但仅完成 ${done}/${task_total} tasks，删除过期 summary 重跑"
+      log "[b0_3mode] ${cid}: condition_summary 存在但仅完成 ${done}/${task_total} tasks，删除过期 summary 重跑"
       rm -f "${cond_dir}/condition_summary_v2.json"
       return 1
     fi
@@ -202,44 +216,47 @@ is_condition_complete() {
 }
 
 # ---------- 生成 site+mode 组合的 temp config ----------
-make_site_mode_config() {
-  local site="$1" mode="$2" dest="$3"
+make_single_mode_config() {
+  local base_config="$1" mode="$2" dest="$3"
   "${PYTHON_BIN}" - << PYEOF
 import re
-with open("${BASELINE_CONFIG}") as f:
+with open("${base_config}") as f:
     content = f.read()
-content = re.sub(r'include_sites:\s*\[.*?\]', 'include_sites: ["${site}"]', content)
-content = re.sub(r'observation_mode:\s*\[.*?\]', 'observation_mode: ["${mode}"]', content)
+content = re.sub(
+    r'observation_mode:\s*\[.*?\]',
+    'observation_mode: ["${mode}"]',
+    content
+)
 with open("${dest}", "w") as f:
     f.write(content)
 print("ok")
 PYEOF
 }
 
-# ---------- Gallery 服务器 ----------
+# ---------- Gallery 服务器（启动一次，如果未运行）----------
 GALLERY_PID=""
 start_gallery_server() {
   if ! ss -tlnp 2>/dev/null | grep -q ':8765 '; then
-    log "[b1_wa] 启动 Gallery 服务器 port=8765"
+    log "[b0_3mode] 启动 Gallery 服务器 port=8765"
     nohup "${PYTHON_BIN}" -m http.server 8765 \
       --directory "${REPO_DIR}/results" \
       > "${LOG_DIR}/gallery_server_8765.log" 2>&1 < /dev/null &
     GALLERY_PID=$!
     sleep 1
     kill -0 "${GALLERY_PID}" 2>/dev/null \
-      && log "[b1_wa] Gallery pid=${GALLERY_PID}" \
-      || { log "[b1_wa][warn] Gallery 启动失败"; GALLERY_PID=""; }
+      && log "[b0_3mode] Gallery pid=${GALLERY_PID} url=http://localhost:8765/visualwebarena/phase1/${AGGREGATE_PREFIX}/gallery.html" \
+      || { log "[b0_3mode][warn] Gallery 启动失败"; GALLERY_PID=""; }
   else
-    log "[b1_wa] 8765 端口已占用，跳过 Gallery 服务器"
+    log "[b0_3mode] 8765 端口已占用，跳过 Gallery 服务器"
   fi
 }
 
-# ---------- experiment_watchdog ----------
+# ---------- experiment_watchdog（每站点单实例）----------
 start_exp_watchdog() {
   local run_id="$1" label="$2"
   EXP_WATCHDOG_PID=""
   [[ "${EXP_WATCHDOG_ENABLE}" != "1" ]] && return 0
-  local ws="${REPO_DIR}/scripts/experiment_watchdog.py"
+  local ws="${REPO_DIR}/scripts/maintenance/experiment_watchdog.py"
   [[ -f "${ws}" ]] || { log "[${label}][warn] experiment_watchdog.py 不存在，跳过"; return 0; }
 
   local run_dir="${RESULTS_BASE}/${run_id}"
@@ -250,8 +267,8 @@ start_exp_watchdog() {
     for p in ${_op}; do kill -9 "${p}" 2>/dev/null || true; done
   fi
 
-  local wlog="${LOG_DIR}/experiment_watchdog_b1_wa_${label}_${run_id}.log"
-  local wstate="${LOG_DIR}/experiment_watchdog_b1_wa_${label}_${run_id}.state.json"
+  local wlog="${LOG_DIR}/experiment_watchdog_b0_${label}_${run_id}.log"
+  local wstate="${LOG_DIR}/experiment_watchdog_b0_${label}_${run_id}.state.json"
   local wcmd=(
     "${PYTHON_BIN}" -u "${ws}"
     --run-dir "${run_dir}"
@@ -289,9 +306,9 @@ run_condition_foreground() {
   local run_id
   run_id="$(basename "${run_dir}")"
 
-  log "=== [B1_WA/${label}/${mode}] 启动 run_id=${run_id} ==="
+  log "=== [B0/${label}/${mode}] 启动 run_id=${run_id} ==="
 
-  local log_path="${LOG_DIR}/b1_wa_3mode_${label}_${mode}_${run_id}.log"
+  local log_path="${LOG_DIR}/b0_3mode_${label}_${mode}_${run_id}.log"
   mkdir -p "${run_dir}"
 
   nohup "${PYTHON_BIN}" scripts/run_experiment.py \
@@ -301,7 +318,7 @@ run_condition_foreground() {
     >> "${log_path}" 2>&1 < /dev/null &
   local job_pid=$!
   ACTIVE_RUNNER_PID="${job_pid}"
-  log "[B1_WA/${label}/${mode}] PID=${job_pid}"
+  log "[B0/${label}/${mode}] PID=${job_pid}"
 
   local last_count stale_secs=0 watchdog_secs=$(( WATCHDOG_TIMEOUT_MINS * 60 )) next_log_secs=300
   last_count=$(count_episode_summaries "${run_dir}")
@@ -313,17 +330,17 @@ run_condition_foreground() {
     cur=$(count_episode_summaries "${run_dir}")
     if [[ "${cur}" -gt "${last_count}" ]]; then
       local new=$(( cur - last_count ))
-      log "[B1_WA/${label}/${mode}] +${new} episode(s) total=${cur}，计时重置"
+      log "[B0/${label}/${mode}] +${new} episode(s) total=${cur}，计时重置"
       last_count="${cur}"; stale_secs=0; next_log_secs=300
     else
       stale_secs=$(( stale_secs + WATCHDOG_CHECK_SECS ))
       [[ "${stale_secs}" -ge "${next_log_secs}" ]] && {
-        log "[B1_WA/${label}/${mode}] $(( stale_secs / 60 ))min 无新 episode（上限 ${WATCHDOG_TIMEOUT_MINS}min）"
+        log "[B0/${label}/${mode}] $(( stale_secs / 60 ))min 无新 episode（上限 ${WATCHDOG_TIMEOUT_MINS}min）"
         next_log_secs=$(( next_log_secs + 300 ))
       }
       [[ "${stale_secs}" -ge "${watchdog_secs}" ]] && {
-        log "[B1_WA/${label}/${mode}] WATCHDOG: kill PID ${job_pid}"
-        ntfy_send "P79 [B1_WA/${label}/${mode}] WATCHDOG" "${WATCHDOG_TIMEOUT_MINS}min 无进展，kill 准备 resume" "high"
+        log "[B0/${label}/${mode}] WATCHDOG: kill PID ${job_pid}"
+        ntfy_send "P79 [B0/${label}/${mode}] WATCHDOG" "${WATCHDOG_TIMEOUT_MINS}min 无进展，kill 准备 resume" "high"
         kill "${job_pid}" 2>/dev/null || true; sleep 10
         kill -9 "${job_pid}" 2>/dev/null || true
         wait "${job_pid}" 2>/dev/null || true
@@ -332,13 +349,13 @@ run_condition_foreground() {
     fi
     # --- experiment_watchdog 存活检查 ---
     if [[ -n "${EXP_WATCHDOG_PID:-}" ]] && ! kill -0 "${EXP_WATCHDOG_PID}" 2>/dev/null; then
-      log "[B1_WA/${label}/${mode}] experiment_watchdog (pid=${EXP_WATCHDOG_PID}) 已挂，重启..."
-      ntfy_send "P79 [B1_WA/${label}/${mode}] watchdog died" "pid=${EXP_WATCHDOG_PID} 已挂，自动重启" "high"
+      log "[B0/${label}/${mode}] experiment_watchdog (pid=${EXP_WATCHDOG_PID}) 已挂，重启..."
+      ntfy_send "P79 [B0/${label}/${mode}] watchdog died" "pid=${EXP_WATCHDOG_PID} 已挂，自动重启" "high"
       start_exp_watchdog "${run_id}" "${label}"
     fi
   done
   wait "${job_pid}" 2>/dev/null || true
-  log "=== [B1_WA/${label}/${mode}] 进程退出 ==="
+  log "=== [B0/${label}/${mode}] 进程退出 ==="
 }
 
 run_condition_until_complete() {
@@ -346,119 +363,117 @@ run_condition_until_complete() {
   local attempt=0
 
   if is_condition_complete "${run_dir}" "${cid}"; then
-    log "[B1_WA/${label}/${mode}] 已完成，跳过"
+    log "[B0/${label}/${mode}] 已完成，跳过"
     return 0
   fi
 
   while ! is_condition_complete "${run_dir}" "${cid}"; do
     attempt=$(( attempt + 1 ))
     [[ ${attempt} -gt ${MAX_RESUME_ATTEMPTS} ]] && {
-      log "[B1_WA/${label}/${mode}] ERROR: ${MAX_RESUME_ATTEMPTS} 次 resume 后仍未完成"
-      ntfy_send "P79 [B1_WA/${label}/${mode}] 失败" "已重试 ${MAX_RESUME_ATTEMPTS} 次" "urgent"
+      log "[B0/${label}/${mode}] ERROR: ${MAX_RESUME_ATTEMPTS} 次 resume 后仍未完成"
+      ntfy_send "P79 [B0/${label}/${mode}] 失败" "已重试 ${MAX_RESUME_ATTEMPTS} 次" "urgent"
       return 1
     }
     [[ ${attempt} -gt 1 ]] && {
-      log "[B1_WA/${label}/${mode}] resume ${attempt}/${MAX_RESUME_ATTEMPTS}..."
-      ntfy_send "P79 [B1_WA/${label}/${mode}] 重试" "第 ${attempt}/${MAX_RESUME_ATTEMPTS} 次 resume" "default"
+      log "[B0/${label}/${mode}] resume ${attempt}/${MAX_RESUME_ATTEMPTS}..."
+      refresh_site_auth_retry "${site}" "${label}/${mode}/retry${attempt}" || true
+      ntfy_send "P79 [B0/${label}/${mode}] 重试" "第 ${attempt}/${MAX_RESUME_ATTEMPTS} 次 resume" "default"
     }
     run_condition_foreground "${mode}" "${tmp_config}" "${run_dir}" "${label}" || true
-    log "[B1_WA/${label}/${mode}] 等待 15s..."
+    log "[B0/${label}/${mode}] 等待 15s..."
     sleep 15
   done
-  log "[B1_WA/${label}/${mode}] 完成（${attempt} 次）"
+  log "[B0/${label}/${mode}] 完成（${attempt} 次）"
 }
 
 run_reason_diagnostics() {
   [[ "${REASON_DIAG_ENABLE}" != "1" ]] && return 0
   local run_dir="$1" label="$2"
   local diag="${REPO_DIR}/scripts/analysis/analyze_reason_diagnostics.py"
-  [[ -f "${diag}" ]] || { log "[B1_WA/${label}] reason diagnostics 脚本不存在，跳过"; return 0; }
-  log "[B1_WA/${label}] 运行 reason diagnostics..."
+  [[ -f "${diag}" ]] || { log "[B0/${label}] reason diagnostics 脚本不存在，跳过"; return 0; }
+  log "[B0/${label}] 运行 reason diagnostics..."
   "${PYTHON_BIN}" "${diag}" \
     --run-dir "${run_dir}" --report --report-language zh --samples-per-bucket 5 \
-    >> "${LOG_DIR}/b1_wa_3mode_reason_diag_${label}.log" 2>&1 \
-    && { log "[B1_WA/${label}] reason diagnostics 完成"
-         ntfy_send "P79 [B1_WA/${label}] 归因完成" "run_id=$(basename "${run_dir}")" "default"; } \
+    >> "${LOG_DIR}/b0_3mode_reason_diag_${label}.log" 2>&1 \
+    && { log "[B0/${label}] reason diagnostics 完成"
+         ntfy_send "P79 [B0/${label}] 归因完成" "run_id=$(basename "${run_dir}")" "default"; } \
     || {
-      log "[B1_WA/${label}][warn] reason diagnostics 失败（非阻塞）"
-      ntfy_send "P79 [B1_WA/${label}] 归因失败" "查看 logs/" "default"
+      log "[B0/${label}][warn] reason diagnostics 失败（非阻塞）"
+      ntfy_send "P79 [B0/${label}] 归因失败" "查看 logs/b0_3mode_reason_diag_${label}.log" "default"
     }
 }
 
 # ---------- 单站三模式（dom → reset → som → reset → vision）----------
 run_site_3mode_with_reset() {
-  local site="$1" run_id="$2"
+  local site="$1" base_config="$2" run_id="$3"
   local run_dir="${RESULTS_BASE}/${run_id}"
   local label="${site}"
 
   log "========================================================"
-  log "=== [B1_WA/${label}] 开始三模式（dom → reset → som → reset → vision）==="
+  log "=== [B0/${label}] 开始三模式（dom → reset → som → reset → vision）==="
   log "=== run_id=${run_id} run_dir=${run_dir} ==="
   log "========================================================"
 
-  local dom_config="/tmp/b1_wa_3mode_${site}_dom_$$.yaml"
-  local som_config="/tmp/b1_wa_3mode_${site}_som_$$.yaml"
-  local vision_config="/tmp/b1_wa_3mode_${site}_vision_$$.yaml"
+  local dom_config="/tmp/b0_3mode_${site}_dom_$$.yaml"
+  local som_config="/tmp/b0_3mode_${site}_som_$$.yaml"
+  local vision_config="/tmp/b0_3mode_${site}_vision_$$.yaml"
 
-  make_site_mode_config "${site}" "dom"    "${dom_config}"
-  make_site_mode_config "${site}" "som"    "${som_config}"
-  make_site_mode_config "${site}" "vision" "${vision_config}"
+  make_single_mode_config "${base_config}" "dom"    "${dom_config}"
+  make_single_mode_config "${base_config}" "som"    "${som_config}"
+  make_single_mode_config "${base_config}" "vision" "${vision_config}"
 
   mkdir -p "${run_dir}"
-  ntfy_send "P79 [B1_WA/${label}] 启动" "run_id=${run_id}" "default"
+  ntfy_send "P79 [B0/${label}] 启动" "run_id=${run_id}" "default"
 
   start_exp_watchdog "${run_id}" "${label}"
 
   # 0) 前置 reset — 清除上一轮残留状态
   log "======== initial reset ${site} before DOM ========"
-  reset_vwa_sites "${site}" "b1_wa_3mode_${site}_initial" || true
+  reset_vwa_sites "${site}" "b0_3mode_${site}_initial" || true
   sleep 10
 
   # 1) DOM — auth refresh before first condition (SOM/Vision already have it)
-  refresh_site_auth_retry "${site}" "${label}/dom" || { log "[b1_wa][fatal] ${site} DOM 前 auth 失败，中止"; exit 1; }
-  log "======== [B1_WA/${label} 1/3] DOM ========"
-  ntfy_send "P79 [B1_WA/${label}/dom] 开始" "run_id=${run_id}" "default"
+  refresh_site_auth_retry "${site}" "${label}/dom" || { log "[b0][fatal] ${site} DOM 前 auth 失败，中止"; exit 1; }
+  log "======== [B0/${label} 1/3] DOM ========"
   run_condition_until_complete "dom" "${dom_config}" "${run_dir}" "phase1_dom_router_0" "${label}"
-  [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1_WA/${label}/dom] 完成" "run_id=${run_id}" "default"
+  [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B0/${label}/dom] 完成" "run_id=${run_id}" "default"
 
   # reset → SOM
   log "======== reset ${site} before SOM ========"
-  reset_vwa_sites "${site}" "b1_wa_3mode_${site}" || true
+  reset_vwa_sites "${site}" "b0_3mode_${site}" || true
   sleep 10
-  refresh_site_auth_retry "${site}" "${label}/som" || { log "[b1_wa][fatal] ${site} SOM 前 auth 失败，中止"; exit 1; }
+  refresh_site_auth_retry "${site}" "${label}/som" || { log "[b0_3mode][fatal] ${site} SOM 前 auth 失败，中止"; exit 1; }
 
   # 2) SOM
-  log "======== [B1_WA/${label} 2/3] SOM ========"
-  ntfy_send "P79 [B1_WA/${label}/som] 开始" "run_id=${run_id}" "default"
+  log "======== [B0/${label} 2/3] SOM ========"
   run_condition_until_complete "som" "${som_config}" "${run_dir}" "phase1_som_router_0" "${label}"
-  [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1_WA/${label}/som] 完成" "run_id=${run_id}" "default"
+  [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B0/${label}/som] 完成" "run_id=${run_id}" "default"
 
   # reset → VISION
   log "======== reset ${site} before Vision ========"
-  reset_vwa_sites "${site}" "b1_wa_3mode_${site}" || true
+  reset_vwa_sites "${site}" "b0_3mode_${site}" || true
   sleep 10
-  refresh_site_auth_retry "${site}" "${label}/vision" || { log "[b1_wa][fatal] ${site} Vision 前 auth 失败，中止"; exit 1; }
+  refresh_site_auth_retry "${site}" "${label}/vision" || { log "[b0_3mode][fatal] ${site} Vision 前 auth 失败，中止"; exit 1; }
 
   # 3) VISION
-  log "======== [B1_WA/${label} 3/3] Vision ========"
-  ntfy_send "P79 [B1_WA/${label}/vision] 开始" "run_id=${run_id}" "default"
+  log "======== [B0/${label} 3/3] Vision ========"
   run_condition_until_complete "vision" "${vision_config}" "${run_dir}" "phase1_vision_router_0" "${label}"
-  [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B1_WA/${label}/vision] 完成" "run_id=${run_id}" "default"
+  [[ "${NTFY_MINIMAL_MODE}" != "1" ]] && ntfy_send "P79 [B0/${label}/vision] 完成" "run_id=${run_id}" "default"
 
   log "======== final reset ${site} after Vision ========"
-  reset_vwa_sites "${site}" "b1_wa_3mode_${site}_final" || true
+  reset_vwa_sites "${site}" "b0_3mode_${site}_final" || true
   sleep 5
 
-  log "[B1_WA/${label}] 等待 watchdog 完成 post-analysis (30s)..."
+  log "[B0/${label}] 等待 watchdog 完成 post-analysis (30s)..."
   sleep 30
 
   run_reason_diagnostics "${run_dir}" "${label}"
 
   stop_exp_watchdog "${label}"
 
-  ntfy_send "P79 [B1_WA/${label}] 完成!" "run_id=${run_id}；dom+som+vision 全部跑完" "high"
+  ntfy_send "P79 [B0/${label}] 完成!" "run_id=${run_id}；dom+som+vision 全部跑完" "high"
   log "========================================================"
-  log "=== [B1_WA/${label}] 三模式全部完成！==="
+  log "=== [B0/${label}] 三模式全部完成！==="
   log "========================================================"
 
   rm -f "${dom_config}" "${som_config}" "${vision_config}"
@@ -473,40 +488,49 @@ cleanup() {
   stop_exp_watchdog "cleanup"
   [[ -n "${GALLERY_PID:-}" ]] && kill -0 "${GALLERY_PID}" 2>/dev/null \
     && { kill "${GALLERY_PID}" 2>/dev/null || true; }
-  rm -f /tmp/b1_wa_3mode_*_$$.yaml 2>/dev/null || true
+  rm -f /tmp/b0_3mode_*_$$.yaml 2>/dev/null || true
 }
 trap cleanup EXIT
 
 # ---------- 主流程 ----------
 log "========================================================"
-log "=== B1 WA 三模式队列启动（带 reset）==="
-log "=== 顺序: shopping → shopping_admin → reddit ==="
-log "=== RUN_ID_SHOPPING=${RUN_ID_SHOPPING} ==="
-log "=== RUN_ID_SHOPPING_ADMIN=${RUN_ID_SHOPPING_ADMIN} ==="
+log "=== B0 三模式队列启动（带 reset）==="
+log "=== 顺序: classifieds → reddit → shopping ==="
+log "=== RUN_ID_CLASSIFIEDS=${RUN_ID_CLASSIFIEDS} ==="
 log "=== RUN_ID_REDDIT=${RUN_ID_REDDIT} ==="
+log "=== RUN_ID_SHOPPING=${RUN_ID_SHOPPING} ==="
 log "=== MAX_RESUME_ATTEMPTS=${MAX_RESUME_ATTEMPTS} ==="
+log "=== WATCHDOG_TIMEOUT_MINS=${WATCHDOG_TIMEOUT_MINS} ==="
 log "=== AGGREGATE_PREFIX=${AGGREGATE_PREFIX} ==="
 log "========================================================"
 
 start_gallery_server
 
-ntfy_send "P79 [B1_WA_3mode] 队列启动" "顺序: shopping → shopping_admin → reddit，带模式间 reset" "default"
+# B0_SITE 过滤：设置后只跑指定站点（如 B0_SITE=classifieds）
+B0_SITE="${B0_SITE:-all}"
+ntfy_send "P79 [B0_3mode] 队列启动" "站点=${B0_SITE}，带模式间 reset" "default"
 
-# 1) Shopping
-run_site_3mode_with_reset "shopping" "${RUN_ID_SHOPPING}"
-log "shopping 完成. Waiting 15s..."
-sleep 15
+# 1) Classifieds
+if [[ "${B0_SITE}" == "all" || "${B0_SITE}" == "classifieds" ]]; then
+  run_site_3mode_with_reset "classifieds" "${CONFIGS_CLASSIFIEDS}" "${RUN_ID_CLASSIFIEDS}"
+  log "classifieds 完成. Waiting 15s..."
+  sleep 15
+fi
 
-# 2) Shopping Admin
-run_site_3mode_with_reset "shopping_admin" "${RUN_ID_SHOPPING_ADMIN}"
-log "shopping_admin 完成. Waiting 15s..."
-sleep 15
+# 2) Reddit
+if [[ "${B0_SITE}" == "all" || "${B0_SITE}" == "reddit" ]]; then
+  run_site_3mode_with_reset "reddit" "${CONFIGS_REDDIT}" "${RUN_ID_REDDIT}"
+  log "reddit 完成. Waiting 15s..."
+  sleep 15
+fi
 
-# 3) Reddit
-run_site_3mode_with_reset "reddit" "${RUN_ID_REDDIT}"
+# 3) Shopping
+if [[ "${B0_SITE}" == "all" || "${B0_SITE}" == "shopping" ]]; then
+  run_site_3mode_with_reset "shopping" "${CONFIGS_SHOPPING}" "${RUN_ID_SHOPPING}"
+fi
 
 log "========================================================"
-log "=== B1 WA 三模式全部完成（shopping + shopping_admin + reddit）==="
-log "=== Gallery: http://localhost:8765/webarena/phase1/${AGGREGATE_PREFIX}/gallery.html ==="
+log "=== B0 三模式完成（站点=${B0_SITE}）==="
+log "=== Gallery: http://localhost:8765/visualwebarena/phase1/${AGGREGATE_PREFIX}/gallery.html ==="
 log "========================================================"
-ntfy_send "P79 [B1_WA_3mode] 全部完成!" "shopping + shopping_admin + reddit 三模式全部跑完" "high"
+ntfy_send "P79 [B0_3mode] 完成!" "站点=${B0_SITE} 三模式跑完" "high"

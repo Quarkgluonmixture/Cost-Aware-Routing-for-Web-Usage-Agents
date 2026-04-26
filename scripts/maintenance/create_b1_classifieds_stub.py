@@ -15,7 +15,7 @@ create_b1_classifieds_stub.py
   - 所有 episode-level 数据缺失，cross-representation 分析需从此 JSON 读取汇总数字
 
 用法：
-  python3 scripts/create_b1_classifieds_stub.py [--run_id B1_3mode_classifieds_20260413]
+  python3 scripts/maintenance/create_b1_classifieds_stub.py [--run_id B1_3mode_classifieds_20260413]
 """
 
 from __future__ import annotations

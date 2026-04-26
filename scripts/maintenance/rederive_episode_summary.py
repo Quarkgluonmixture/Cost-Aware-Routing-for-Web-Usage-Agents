@@ -19,13 +19,13 @@ After all episodes in a condition are rewritten, recompute and re-write
 
 Usage:
     # Dry-run on one run dir (prints diff, doesn't write):
-    python scripts/rederive_episode_summary.py --run-dir results/visualwebarena/phase1/B0_3mode_classifieds_20260413 --dry-run
+    python scripts/maintenance/rederive_episode_summary.py --run-dir results/visualwebarena/phase1/B0_3mode_classifieds_20260413 --dry-run
 
     # Apply to all B0 run dirs across both benchmarks:
-    python scripts/rederive_episode_summary.py --all-b0
+    python scripts/maintenance/rederive_episode_summary.py --all-b0
 
     # Apply to a specific run dir:
-    python scripts/rederive_episode_summary.py --run-dir results/visualwebarena/phase1/B0_3mode_reddit_20260422
+    python scripts/maintenance/rederive_episode_summary.py --run-dir results/visualwebarena/phase1/B0_3mode_reddit_20260422
 """
 
 from __future__ import annotations

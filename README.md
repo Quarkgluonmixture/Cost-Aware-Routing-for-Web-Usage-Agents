@@ -68,30 +68,30 @@ docs/                 # 分析报告、schema 文档、周报
 | `scripts/vwa_env.sh` | 本地 VWA 环境变量 |
 | `scripts/vwa_env_remote.sh` | 远程 VWA 环境变量（DGX 模式） |
 
-### DGX 部署
+### 实验队列（`scripts/queues/`）
 
 | 脚本 | 用途 |
 |------|------|
-| `scripts/dgx/queue_b1_serial.sh` | B1 baseline 串行队列（classifieds→reddit→shopping） |
-| `scripts/dgx/restart_queue_b1_serial.sh` | 重启队列（自动推断 run_id，保留/清理可选） |
-| `scripts/dgx/restart_watchdog.sh` | 热重启 watchdog（自动恢复所有参数） |
-| `scripts/dgx/run_b0_api_baseline.sh` | B0 API 模型 baseline（Phase 2 用） |
+| `scripts/queues/queue_b0_with_reset.sh` / `queue_b1_with_reset.sh` | B0/B1 三模式 VWA 队列（classifieds→reddit→shopping，condition 间 reset） |
+| `scripts/queues/queue_b0_wa_with_reset.sh` / `queue_b1_wa_with_reset.sh` | B0/B1 三模式 WA 队列（shopping→shopping_admin→reddit） |
+| `scripts/maintenance/restart_watchdog.sh` | 热重启 watchdog（自动恢复所有参数，支持 `--append-args`） |
+| `scripts/maintenance/wait_for_reddit_then_rederive.sh` | reddit 跑完→自动 rederive→自动启 shopping queue（用 `make watch-reddit`） |
 
 ### 监控与诊断
 
 | 脚本 | 用途 |
 |------|------|
-| `scripts/experiment_watchdog.py` | 实验守护进程：进度推送、idle 告警、自动 digest/标注/gallery |
-| `scripts/glm_batch_digest.py` | GLM sidecar 批量诊断（自动归因每个 episode） |
-| `scripts/glm_diagnosis_sidecar.py` | GLM 实时诊断 sidecar |
-| `scripts/digest_enrich.py` | Digest 后处理与富化 |
+| `scripts/maintenance/experiment_watchdog.py` | 实验守护进程：进度推送、idle 告警、自动 digest/标注/gallery |
+| `scripts/maintenance/glm_batch_digest.py` | GLM sidecar 批量诊断（自动归因每个 episode） |
+| `scripts/maintenance/glm_diagnosis_sidecar.py` | GLM 实时诊断 sidecar |
+| `scripts/maintenance/digest_enrich.py` | Digest 后处理与富化 |
 
 ### 可视化
 
 | 脚本 | 用途 |
 |------|------|
-| `scripts/annotate_screenshots.py` | 截图标注（动作 banner + thought + 元素高亮） |
-| `scripts/generate_gallery.py` | HTML 画廊（键盘导航、自动刷新、远程访问） |
+| `scripts/maintenance/annotate_screenshots.py` | 截图标注（动作 banner + thought + 元素高亮） |
+| `scripts/maintenance/generate_gallery.py` | HTML 画廊（键盘导航、自动刷新、远程访问） |
 
 ### 分析
 

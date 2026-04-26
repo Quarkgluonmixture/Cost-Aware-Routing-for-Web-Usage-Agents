@@ -2,10 +2,10 @@
 # retry_b1_single_task.sh — 重跑 B1 单个 task 的三模式（dom→reset→som→reset→vision）
 #
 # 用法:
-#   B1_SITE=reddit B1_TASK_ID=143 bash scripts/dgx/retry_b1_single_task.sh
+#   B1_SITE=reddit B1_TASK_ID=143 bash scripts/maintenance/retry_b1_single_task.sh
 #   # 或后台:
 #   B1_SITE=reddit B1_TASK_ID=143 \
-#     setsid nohup bash scripts/dgx/retry_b1_single_task.sh \
+#     setsid nohup bash scripts/maintenance/retry_b1_single_task.sh \
 #     > logs/retry_b1_reddit_143.log 2>&1 < /dev/null &
 set -uo pipefail
 
@@ -26,7 +26,7 @@ declare -A DEFAULT_RUN_IDS=(
 RUN_ID="${B1_RUN_ID:-${DEFAULT_RUN_IDS[$SITE]:-B1_3mode_${SITE}_20260413}}"
 
 # ---------- 通用 ----------
-source "${REPO_DIR}/scripts/reset_vwa_sites.sh"
+source "${REPO_DIR}/scripts/maintenance/reset_vwa_sites.sh"
 
 BASELINE_CONFIG="${REPO_DIR}/configs/exp_v2_qwen3vl4b_B1_baseline.yaml"
 RESULTS_BASE="${REPO_DIR}/results/visualwebarena/phase1"

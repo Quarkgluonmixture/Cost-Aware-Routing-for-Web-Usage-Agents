@@ -1,6 +1,6 @@
 # B1 WA baseline — Qwen3-VL-4B local, three observation modes, three WA sites
 #
-# 运行: bash scripts/dgx/queue_b1_wa_with_reset.sh
+# 运行: bash scripts/queues/queue_b1_wa_with_reset.sh
 # 或单站: --override 'task.include_sites=["shopping"]'
 
 defaults:

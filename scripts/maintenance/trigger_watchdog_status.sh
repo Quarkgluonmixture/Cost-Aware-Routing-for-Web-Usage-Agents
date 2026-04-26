@@ -5,9 +5,9 @@
 # and performs an on-demand status+pipeline run without waiting for report window.
 #
 # Usage:
-#   bash scripts/dgx/trigger_watchdog_status.sh
-#   bash scripts/dgx/trigger_watchdog_status.sh --run-dir /abs/path/to/run_dir
-#   bash scripts/dgx/trigger_watchdog_status.sh --dry-run
+#   bash scripts/maintenance/trigger_watchdog_status.sh
+#   bash scripts/maintenance/trigger_watchdog_status.sh --run-dir /abs/path/to/run_dir
+#   bash scripts/maintenance/trigger_watchdog_status.sh --dry-run
 set -euo pipefail
 
 RUN_DIR_FILTER=""
@@ -16,7 +16,7 @@ DRY_RUN=0
 usage() {
   cat <<'EOF'
 Usage:
-  bash scripts/dgx/trigger_watchdog_status.sh [options]
+  bash scripts/maintenance/trigger_watchdog_status.sh [options]
 
 Options:
   --run-dir PATH   Trigger only watchdog whose cmdline contains this run-dir.

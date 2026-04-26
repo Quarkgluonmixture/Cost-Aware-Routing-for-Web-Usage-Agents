@@ -6,7 +6,7 @@
 #   - baselines.run_b0: false  使用 phase1 常规路径
 #   - experiment.name: "B0_3mode_classifieds"
 #
-# 运行: bash scripts/dgx/queue_b0_with_reset.sh
+# 运行: bash scripts/queues/queue_b0_with_reset.sh
 # Gallery: http://localhost:8765/B0_3mode/gallery.html
 
 defaults:

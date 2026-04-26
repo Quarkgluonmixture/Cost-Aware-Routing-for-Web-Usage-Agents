@@ -5,22 +5,22 @@ Deletes: summary JSON, steps JSONL, artifacts directory, and digest records for 
 
 Examples:
     # Delete tasks 85-131 for classifieds
-    python scripts/clear_tasks.py --run-dir results/.../B1_run \
+    python scripts/maintenance/clear_tasks.py --run-dir results/.../B1_run \
         --condition phase1_dom_router_0 --site classifieds --tasks 85-131
 
     # Delete specific tasks
-    python scripts/clear_tasks.py --run-dir results/.../B1_run \
+    python scripts/maintenance/clear_tasks.py --run-dir results/.../B1_run \
         --condition phase1_dom_router_0 --site classifieds --tasks 80,95,104
 
     # Dry run (show what would be deleted)
-    python scripts/clear_tasks.py --run-dir results/.../B1_run \
+    python scripts/maintenance/clear_tasks.py --run-dir results/.../B1_run \
         --condition phase1_dom_router_0 --site classifieds --tasks 85-131 --dry-run
 
     # Clean orphan artifact dirs (no summary file) across all conditions
-    python scripts/clear_tasks.py --run-dir results/.../B1_run --clean-orphan-artifacts
+    python scripts/maintenance/clear_tasks.py --run-dir results/.../B1_run --clean-orphan-artifacts
 
     # Clean orphan artifacts for a specific condition
-    python scripts/clear_tasks.py --run-dir results/.../B1_run \
+    python scripts/maintenance/clear_tasks.py --run-dir results/.../B1_run \
         --condition phase1_som_router_0 --clean-orphan-artifacts
 """
 

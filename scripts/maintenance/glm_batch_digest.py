@@ -10,7 +10,7 @@ Output is auto-split by observation mode into the --output directory:
   digest_dom.jsonl, digest_som.jsonl, digest_vision.jsonl
 
 Usage:
-  python3 scripts/glm_batch_digest.py \
+  python3 scripts/maintenance/glm_batch_digest.py \
     --run-dir results/.../B1_3mode_classifieds_20260404_141103 \
     --output results/.../analysis/digest/ \
     --glm-config .auth/glm \
@@ -18,7 +18,7 @@ Usage:
     --delay-secs 2 --max-images 5
 
   # dry-run (no GLM calls, only deterministic fallback)
-  python3 scripts/glm_batch_digest.py \
+  python3 scripts/maintenance/glm_batch_digest.py \
     --run-dir results/.../B1_3mode_classifieds_20260404_141103 \
     --output /tmp/test_digest/ --dry-run
 """

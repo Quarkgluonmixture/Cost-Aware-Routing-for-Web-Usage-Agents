@@ -40,7 +40,7 @@ B1 实验（B0 同理）运行时，系统里同时存在三个独立进程，�
 
 ### 进程 1：queue（总调度员）
 
-**脚本**：`scripts/dgx/queue_b1_with_reset.sh`
+**脚本**：`scripts/queues/queue_b1_with_reset.sh`
 
 **职责**：
 - 决定实验的整体顺序：reddit 全部三模式完成后，再跑 shopping
@@ -104,7 +104,7 @@ B0: api_strong → ApiProxyBackend(api_proxy.py)    → ProxyApiAgent(proxy_api_
 
 ### 进程 3：watchdog（旁观监控员）
 
-**脚本**：`scripts/experiment_watchdog.py`
+**脚本**：`scripts/maintenance/experiment_watchdog.py`
 
 watchdog **不控制** runner 的生死（那是 queue 的工作），它只旁观、汇报、做后处理。
 
@@ -460,7 +460,7 @@ __CLASSIFIEDS__  → env var CLASSIFIEDS  或 http://localhost:9980
 ```
 情况：watchdog 进程异常退出
 处理：queue 重新启动时会 kill 同 run_dir 的遗留 watchdog 再启动新实例
-      或手动 bash scripts/dgx/restart_watchdog.sh（热重启，保留 .state.json）
+      或手动 bash scripts/maintenance/restart_watchdog.sh（热重启，保留 .state.json）
       watchdog 通过 .state.json 恢复：不重复触发已做过的分析，不重复发告警
 ```
 
@@ -577,13 +577,13 @@ queue_b1_with_reset.sh
 
 | 脚本 | 路径 | 作用 |
 |------|------|------|
-| B1 总调度 | `scripts/dgx/queue_b1_with_reset.sh` | B1 实验入口，管理站点顺序和 condition 重启 |
+| B1 总调度 | `scripts/queues/queue_b1_with_reset.sh` | B1 实验入口，管理站点顺序和 condition 重启 |
 | B0 总调度 | `scripts/dgx/run_b0_3mode_classifieds.sh` | B0 实验入口 |
 | 实验执行 | `scripts/run_experiment.py` | Runner 入口，委托给 `p79/cli/run_experiment.py` |
 | Runner 核心 | `p79/experiment/runner.py` | 主编排器：condition→task→step 循环，含 cycle 检测、reward override 等 |
-| Watchdog | `scripts/experiment_watchdog.py` | 监控、分析触发、error 重试、session 检测 |
-| Watchdog 重启 | `scripts/dgx/restart_watchdog.sh` | 热重启 watchdog（保留 .state.json） |
-| 站点重置 | `scripts/reset_vwa_sites.sh` | SSH → quark@100.95.81.103 → PowerShell C:\vwa\reset_vwa.ps1 |
+| Watchdog | `scripts/maintenance/experiment_watchdog.py` | 监控、分析触发、error 重试、session 检测 |
+| Watchdog 重启 | `scripts/maintenance/restart_watchdog.sh` | 热重启 watchdog（保留 .state.json） |
+| 站点重置 | `scripts/maintenance/reset_vwa_sites.sh` | SSH → quark@100.95.81.103 → PowerShell C:\vwa\reset_vwa.ps1 |
 | Backend 工厂 | `p79/backends/factory.py` | 根据 `type` 字段创建 LocalQwenBackend / ApiProxyBackend 等 |
 | B1 Backend | `p79/backends/local_qwen.py` | 本地 4B，__init__ 时加载模型 |
 | B1 Agent | `p79/agents/qwen3vl_agent.py` | 4B 推理，支持 M4 两阶段 |
@@ -597,10 +597,10 @@ queue_b1_with_reset.sh
 | 置信度分析 | `scripts/analysis/analyze_confidence_calibration.py` | 路由信号，输出 `analysis/signals/` |
 | 交叉分析 | `scripts/analysis/analyze_cross_representation.py` | ≥2 conditions，含 visual FP 过滤 |
 | 归因分析 | `scripts/analysis/analyze_reason_diagnostics.py` | 失败分类，`--report` 生成中文报告 |
-| GLM Digest | `scripts/glm_batch_digest.py` | 对失败 episode 做 GLM 批量解读 |
-| Gallery 生成 | `scripts/generate_gallery.py` | 生成 HTML gallery（`--run-dir` 单 run 或 `--phase-dir` aggregate） |
-| 截图标注 | `scripts/annotate_screenshots.py` | 给 artifacts 截图加标注 |
-| Gallery 刷新 | `scripts/dgx/refresh_gallery.sh` | 手动触发 gallery 重新生成 |
+| GLM Digest | `scripts/maintenance/glm_batch_digest.py` | 对失败 episode 做 GLM 批量解读 |
+| Gallery 生成 | `scripts/maintenance/generate_gallery.py` | 生成 HTML gallery（`--run-dir` 单 run 或 `--phase-dir` aggregate） |
+| 截图标注 | `scripts/maintenance/annotate_screenshots.py` | 给 artifacts 截图加标注 |
+| Gallery 刷新 | `scripts/maintenance/refresh_gallery.sh` | 手动触发 gallery 重新生成 |
 
 ---
 
