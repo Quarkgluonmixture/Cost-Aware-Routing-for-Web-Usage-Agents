@@ -1,0 +1,30 @@
+# B1 Phantom-SoM (§25 / §100/§101) — reddit
+# Phantom-SoM = SoM prompt + SoM marks 文本 + 无图（试 mirage effect）
+# B1 4B 本地推理，假说预测 Phantom > Full SoM (B1 视觉 hijack 损失被避免)
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B1_phantom_reddit"
+
+task:
+  include_sites: ["reddit"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["phantom_som"]
+
+backends:
+  default_backend: "local_4b"
+  local_4b:
+    max_new_tokens: 384
+    min_free_vram_gb: 0
+
+baselines:
+  run_b0: false

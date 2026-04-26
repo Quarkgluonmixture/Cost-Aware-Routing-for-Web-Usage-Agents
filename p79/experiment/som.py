@@ -137,9 +137,12 @@ def prepare_observation_for_mode(
 ) -> SomResult:
     """Prepare observation representation for the given observation mode.
 
-    mode == "dom":    Return full AXTree text unchanged, no image.
-    mode == "som":    Return SOM_MARKS compressed index + marked image (no full AXTree).
-    mode == "vision": Return empty text, raw screenshot as image.
+    mode == "dom":         Return full AXTree text unchanged, no image.
+    mode == "som":         Return SOM_MARKS compressed index + marked image (no full AXTree).
+    mode == "phantom_som": Return SOM_MARKS compressed index, NO image (text-only SoM, §25 Phantom-SoM).
+                           Same prompt + text as "som" but image is dropped.
+                           Tests whether the model can complete tasks using SoM textual labels alone.
+    mode == "vision":      Return empty text, raw screenshot as image.
     """
     obs_text = getattr(obs, "text", "") or ""
 
@@ -150,6 +153,19 @@ def prepare_observation_for_mode(
             marked_image=getattr(obs, "image", None),
             degraded_som=False,
             mark_count=0,
+        )
+
+    if mode == "phantom_som":
+        # Build SOM text identical to full SoM mode, but drop the image.
+        # The marked image is still saved for inspection / debugging — only
+        # `marked_image` (passed to the model) is set to None.
+        result = _build_som_result(obs, obs_text, artifact_dir, step_idx)
+        return SomResult(
+            som_text=result.som_text,
+            marked_image_path=result.marked_image_path,  # keep artifact for inspection
+            marked_image=None,                           # model receives no image
+            degraded_som=result.degraded_som,
+            mark_count=result.mark_count,
         )
 
     if mode != "som":

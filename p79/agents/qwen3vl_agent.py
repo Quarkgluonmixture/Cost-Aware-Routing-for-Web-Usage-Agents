@@ -94,9 +94,14 @@ class Qwen3VLAgent:
             raise e
 
         # Prompts are selected per observation mode at inference time.
+        # Phantom-SoM (§25): same SoM prompt + same SoM marks text, but no image.
+        # Tests whether the model can complete tasks using SoM textual labels alone
+        # (a.k.a. "mirage" mode — preserves prompt that mentions screenshot).
+        som_prompt = self._make_som_prompt()
         self._system_prompts = {
             "dom": self._make_dom_prompt(),
-            "som": self._make_som_prompt(),
+            "som": som_prompt,
+            "phantom_som": som_prompt,  # same prompt as som; image dropped in obs prep
             "vision": self._make_vision_prompt(),
         }
         # Default (backward compat / unknown mode)
@@ -408,9 +413,10 @@ CRITICAL:
         # Label the text section according to mode
         if observation_mode == "vision":
             obs_section = ""  # no text — screenshot only
-        elif observation_mode == "som":
+        elif observation_mode in ("som", "phantom_som"):
             # obs_text already contains the [SOM_MARKS]...[/SOM_MARKS] block
             # (or "[SOM_MARKS]\n[/SOM_MARKS]" when degraded). Pass it through directly.
+            # phantom_som receives the same text but no image (see som.py).
             obs_section = obs_text if obs_text else ""
         else:
             obs_section = f"Accessibility Tree:\n{obs_text}"
