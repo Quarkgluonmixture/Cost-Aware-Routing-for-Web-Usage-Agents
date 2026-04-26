@@ -1,6 +1,12 @@
-"""Manually audited non-visual / uncertain task ids for VisualWebArena.
+"""Codex-judged non-visual / uncertain task ids for VisualWebArena.
 
-Provenance: human audit of every VWA task's `intent` + reference image set.
+⚠️ **Provenance correction (2026-04-26)**: original docstring claimed
+"Manually audited / human audit" but the classification was actually generated
+by an LLM (codex). Treat the lists below as a single-judge LLM audit, not an
+authoritative manual benchmark — known to under-classify visual cues (see
+experiment notes §101). A re-audit with explicit per-task reasoning is planned;
+new output will go to ``docs/analysis/cross_sites/codex_audit_{site}.json``.
+
 A task is *non-visual* if it can be solved purely from DOM/AXTree text without
 inspecting any image — i.e. every fact required by the intent is reachable as
 text in the page tree (titles, prices, descriptions, listing labels, etc.).
