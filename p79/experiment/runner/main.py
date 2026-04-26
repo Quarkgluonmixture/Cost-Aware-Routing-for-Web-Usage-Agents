@@ -453,7 +453,9 @@ class ExperimentRunner:
         """Run analyze_experiment.py in a subprocess after a condition completes."""
         import subprocess
         import sys
-        script = Path(__file__).parents[2] / "scripts" / "analysis" / "analyze_experiment.py"
+        # __file__ = p79/experiment/runner/main.py → parents[3] = repo root.
+        # Bug fix 2026-04-26: was parents[2] (= p79/), pointing to p79/scripts/...
+        script = Path(__file__).parents[3] / "scripts" / "analysis" / "analyze_experiment.py"
         if not script.exists():
             logging.warning("[runner] analyze_experiment.py not found, skipping post-condition analysis")
             return
@@ -627,7 +629,9 @@ class ExperimentRunner:
         self._auth_episode_counts.setdefault(site, 0)
         self._auth_episode_counts[site] += 1
         if should_refresh(site, self._auth_episode_counts[site], self.cfg):
-            auth_dir = Path(__file__).resolve().parent.parent.parent / ".auth"
+            # __file__ = p79/experiment/runner/main.py → repo root needs 4 .parent
+            # (runner → experiment → p79 → REPO_ROOT). Bug fix 2026-04-26.
+            auth_dir = Path(__file__).resolve().parent.parent.parent.parent / ".auth"
             benchmark = self.cfg.get("experiment", {}).get("benchmark", "")
             ok = refresh_site_auth(site, auth_dir, benchmark=benchmark)
             if ok:
