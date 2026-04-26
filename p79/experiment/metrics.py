@@ -119,9 +119,23 @@ def net_saving(cost_baseline_total: float, cost_routed_model: float, cost_router
 
 
 def net_saving_latency(
-    latency_baseline_ms: float, latency_routed_ms: float, router_overhead_ms: float
+    latency_baseline_ms: float,
+    latency_routed_ms: float,
+    router_overhead_ms: float = 0.0,
 ) -> float:
-    return _net_saving(latency_baseline_ms, latency_routed_ms, router_overhead_ms)
+    """Net latency saving between baseline and routed conditions.
+
+    `latency_routed_ms` MUST be the *end-to-end* routed latency that already
+    includes the router decision overhead (which is recorded inside each step's
+    `latency_ms.total`). Therefore we DO NOT add `router_overhead_ms` again —
+    it would double-count.
+
+    `router_overhead_ms` is kept as a parameter for symmetry with the other
+    net_saving_* functions and for diagnostic reporting (callers can pass 0).
+
+    Semantics: saving = baseline - routed. Positive = routing is faster.
+    """
+    return float(latency_baseline_ms) - float(latency_routed_ms)
 
 
 def net_saving_energy(
@@ -176,12 +190,25 @@ def estimate_step_flops(
     }
 
 
-def compute_wasted_cost(step_records: List[Dict[str, Any]], success: bool) -> Dict[str, float]:
-    """For failed episodes, all step cost is wasted; for successful ones, wasted is 0."""
-    if success:
+def compute_wasted_cost(
+    step_records: List[Dict[str, Any]],
+    success: bool,
+    *,
+    adjusted_success: Optional[bool] = None,
+) -> Dict[str, float]:
+    """For failed episodes, all step cost is wasted; for successful ones, wasted is 0.
+
+    `adjusted_success` (optional, §95): when provided and False, the episode
+    is treated as wasted even if raw `success` is True (FP episodes that
+    coincidentally matched the evaluator without the agent finishing the task).
+    """
+    # Use adjusted_success when provided; otherwise fall back to raw.
+    is_real_success = adjusted_success if adjusted_success is not None else success
+    if is_real_success:
         return {"wasted_cost_usd": 0.0, "wasted_energy_kwh": 0.0}
-    total_cost = sum(float(s.get("cost_usd", {}).get("total", 0)) for s in step_records)
-    total_energy = sum(float(s.get("energy", {}).get("kwh", 0) or 0) for s in step_records)
+    # Defensive: cost_usd / energy may be explicitly None on partial rows.
+    total_cost = sum(float((s.get("cost_usd") or {}).get("total", 0)) for s in step_records)
+    total_energy = sum(float((s.get("energy") or {}).get("kwh", 0) or 0) for s in step_records)
     return {"wasted_cost_usd": total_cost, "wasted_energy_kwh": total_energy}
 
 
@@ -195,11 +222,12 @@ def compute_waste_breakdown(step_records: List[Dict[str, Any]], success: bool) -
     no_op_cost = 0.0
     page_unchanged_cost = 0.0
     for s in step_records:
-        step_cost = float(s.get("cost_usd", {}).get("total", 0))
+        # Defensive: cost_usd may be explicitly None on partial/error rows.
+        step_cost = float((s.get("cost_usd") or {}).get("total", 0))
         total_cost += step_cost
         if s.get("action_success") is False:
             no_op_cost += step_cost
-        action_type = str(s.get("action", {}).get("action_type", "") or "").lower()
+        action_type = str((s.get("action") or {}).get("action_type", "") or "").lower()
         if s.get("page_changed") is False and action_type not in ("finish", "stop"):
             page_unchanged_cost += step_cost
     return {
@@ -212,9 +240,10 @@ def compute_waste_breakdown(step_records: List[Dict[str, Any]], success: bool) -
 
 def compute_component_breakdown(step_records: List[Dict[str, Any]]) -> Dict[str, float]:
     """Aggregate cost by component type across all steps."""
-    model_cost = sum(float(s.get("cost_usd", {}).get("model", 0)) for s in step_records)
-    router_cost = sum(float(s.get("cost_usd", {}).get("router_overhead", 0)) for s in step_records)
-    energy_kwh = sum(float(s.get("energy", {}).get("kwh", 0) or 0) for s in step_records)
+    # Defensive: cost_usd / energy may be explicitly None on partial/error rows.
+    model_cost = sum(float((s.get("cost_usd") or {}).get("model", 0)) for s in step_records)
+    router_cost = sum(float((s.get("cost_usd") or {}).get("router_overhead", 0)) for s in step_records)
+    energy_kwh = sum(float((s.get("energy") or {}).get("kwh", 0) or 0) for s in step_records)
     return {"model_cost_usd": model_cost, "router_overhead_usd": router_cost, "total_energy_kwh": energy_kwh}
 
 
@@ -238,9 +267,11 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             "success_rate": 0.0,
             "avg_steps": 0.0,
             "p95_step_latency_ms": 0.0,
+            "avg_total_latency_ms": 0.0,
             "avg_total_model_cost_usd": 0.0,
             "avg_total_cost_usd": 0.0,
             "avg_router_overhead_cost_usd": 0.0,
+            "avg_router_overhead_ms": 0.0,
             "avg_obs_prepare_cost_usd": 0.0,
             "avg_input_cost_usd": 0.0,
             "avg_output_cost_usd": 0.0,
@@ -259,6 +290,9 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             "avg_wasted_cost_usd": 0.0,
             "avg_wasted_energy_kwh": 0.0,
             "cost_efficiency_ratio": None,
+            "avg_busy_wait_total_ms": 0.0,
+            "energy_partial_episode_count": 0,
+            "energy_partial_episode_rate": 0.0,
         }
 
     success_rate = sum(1 for x in episode_summaries if x.get("success")) / len(episode_summaries)
@@ -299,15 +333,26 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
                     continue
         benchmark_noise_flags.append(1 if bool(ep.get("benchmark_noise", False)) else 0)
 
+    # Energy completeness aggregation (RU-5 / §97 audit).
+    energy_partial_count = sum(
+        1 for x in episode_summaries if bool(x.get("energy_partial", False))
+    )
     return {
         "episodes": len(episode_summaries),
         "success_rate": success_rate,
         "avg_steps": _avg("steps"),
-        # NOTE: This is P95 of per-episode P95s (approximate; not true global P95)
+        # NOTE: This is P95 of per-episode P95s (approximate; not true global
+        # step-latency P95). Per-episode end-to-end latency is reported
+        # separately as avg_total_latency_ms — that is what should be used for
+        # net_saving_latency comparisons (single-step P95 mixes step granularities).
         "p95_step_latency_ms": p95(step_latencies),
+        "avg_total_latency_ms": _avg("total_latency_ms"),
         "avg_total_model_cost_usd": _avg("total_model_cost_usd"),
         "avg_total_cost_usd": _avg("total_cost_usd"),
         "avg_router_overhead_cost_usd": _avg("total_router_overhead_cost_usd"),
+        # End-to-end router overhead per episode (ms). Reported for diagnostics
+        # only — net_saving_latency does NOT subtract this (already in routed total).
+        "avg_router_overhead_ms": _avg("total_router_overhead_ms"),
         "avg_obs_prepare_cost_usd": _avg("total_obs_prepare_cost_usd"),
         "avg_input_cost_usd": _avg("total_input_cost_usd"),
         "avg_output_cost_usd": _avg("total_output_cost_usd"),
@@ -333,9 +378,18 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
         "avg_wasted_energy_kwh": float(statistics.mean(
             [float(x.get("wasted_energy_kwh", 0.0)) for x in episode_summaries]
         )),
-        # Fraction of total cost spent on successful episodes
+        # Fraction of total cost spent on successful episodes (RAW success).
+        # NOTE: This uses raw `success` not adjusted (§95). Downstream
+        # analysis.py overrides condition success_rate to adjusted but does
+        # NOT recompute this ratio — caveat for paper interpretation.
         "cost_efficiency_ratio": (
             sum(float(x.get("total_cost_usd", 0.0)) for x in episode_summaries if x.get("success"))
             / max(sum(float(x.get("total_cost_usd", 0.0)) for x in episode_summaries), 1e-12)
+        ),
+        # §97 audit additions:
+        "avg_busy_wait_total_ms": _avg("busy_wait_total_ms"),
+        "energy_partial_episode_count": energy_partial_count,
+        "energy_partial_episode_rate": (
+            float(energy_partial_count) / len(episode_summaries) if episode_summaries else 0.0
         ),
     }

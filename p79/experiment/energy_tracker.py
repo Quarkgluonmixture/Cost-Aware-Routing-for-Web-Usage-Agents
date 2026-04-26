@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Deque, Dict, Optional, Tuple
 
 try:
     import psutil  # type: ignore
@@ -222,9 +223,7 @@ class LightweightEnergyTracker:
       enabled, kwh_per_step, co2e_kg_per_kwh, hardware_profile, region,
       use_psutil, fixed_power_watts,
       use_pynvml (bool, default True),
-      sample_interval_s (float, default 0.5),
-      track_model_load (bool, default False),
-      model_load_amortize_over (int, default 0 = auto).
+      sample_interval_s (float, default 0.5).
     """
 
     def __init__(self, energy_cfg: Dict[str, Any]) -> None:
@@ -246,20 +245,27 @@ class LightweightEnergyTracker:
         # pynvml / sampling config
         self._use_pynvml = bool(energy_cfg.get("use_pynvml", True))
         self._sample_interval = float(energy_cfg.get("sample_interval_s", 0.5))
-        self._track_model_load = bool(energy_cfg.get("track_model_load", False))
-        self._model_load_amortize_over = int(energy_cfg.get("model_load_amortize_over", 0))
 
         # sampling state
         self._nvidia_reader: Optional[NVIDIAPowerReader] = None
         self._rapl_reader: Optional[RAPLReader] = None
-        self._power_samples: List[Tuple[float, float]] = []  # (monotonic_ts, watts)
+        # Bounded deque caps memory + makes append O(1) (was list+rebuild O(N) per sample).
+        # 5 minutes / sample_interval = max sample count.
+        _max_samples = max(60, int(300.0 / max(self._sample_interval, 0.05)))
+        self._power_samples: Deque[Tuple[float, float]] = deque(maxlen=_max_samples)
         self._sample_lock = threading.Lock()
         self._sample_thread: Optional[threading.Thread] = None
         self._sampling_active = False
 
-        # model load amortization
-        self._model_load_kwh_amortized: Optional[float] = None
-        self._model_load_co2_amortized: Optional[float] = None
+        # Prime psutil.cpu_percent: the first call with interval=0.0 always
+        # returns 0.0 (no prior baseline) → first step would severely
+        # underestimate CPU power. Discard that initial reading here so
+        # estimate_step's subsequent calls return real per-call deltas.
+        if self.use_psutil and psutil is not None:
+            try:
+                psutil.cpu_percent(interval=0.0)
+            except Exception:
+                pass
 
         if self.enabled and self._use_pynvml:
             self._nvidia_reader = NVIDIAPowerReader()
@@ -287,13 +293,10 @@ class LightweightEnergyTracker:
             if gpu_w is not None:
                 rapl_w = self._rapl_reader.get_power() if self._rapl_reader else None
                 total_w = gpu_w + (rapl_w or 0.0)
+                # deque(maxlen=...) auto-evicts oldest sample → O(1) append,
+                # no per-sample list rebuild (was O(N) per sample → O(N²) cumulative).
                 with self._sample_lock:
                     self._power_samples.append((t, total_w))
-                    # Prune samples older than 5 minutes to cap memory
-                    cutoff = t - 300.0
-                    self._power_samples = [
-                        (ts, w) for ts, w in self._power_samples if ts >= cutoff
-                    ]
             time.sleep(self._sample_interval)
 
     def _average_measured_power(self, duration_seconds: float) -> Optional[float]:
@@ -385,52 +388,6 @@ class LightweightEnergyTracker:
             kwh=kwh, co2e_kg=co2, power_watts=power_watts, source=source
         ).as_dict()
 
-    def record_model_load(
-        self,
-        duration_seconds: float,
-        amortize_over: Optional[int] = None,
-    ) -> Dict[str, Any]:
-        """Record energy consumed during model loading and store amortized cost.
-
-        Args:
-            duration_seconds: Wall time of model load.
-            amortize_over: Number of inference steps to amortize over.
-                Defaults to config value, then 1 if both are 0.
-
-        Returns:
-            Dict with total and amortized kWh/CO2 figures.
-        """
-        if not self.enabled:
-            return {"source": "disabled"}
-
-        n = amortize_over if amortize_over is not None else self._model_load_amortize_over
-        n = max(1, n)
-
-        measured_watts = self._average_measured_power(duration_seconds)
-        if measured_watts is not None:
-            power_watts = measured_watts
-            source = "pynvml"
-        else:
-            power_est = self._estimate_power_watts()
-            power_watts = float(power_est.power_watts or 0.0)
-            source = power_est.source
-
-        kwh_total = power_watts * max(duration_seconds, 0.0) / 3600.0 / 1000.0
-        kwh_amortized = kwh_total / n
-        co2_amortized = kwh_amortized * self.carbon_intensity_g_per_kwh / 1000.0
-
-        self._model_load_kwh_amortized = kwh_amortized
-        self._model_load_co2_amortized = co2_amortized
-
-        return {
-            "kwh_total": kwh_total,
-            "kwh_amortized": kwh_amortized,
-            "co2e_kg_amortized": co2_amortized,
-            "power_watts": power_watts,
-            "amortize_over": n,
-            "source": source,
-        }
-
     @property
     def gpu_info(self) -> Optional[Dict[str, Any]]:
         """Return GPU name/memory info if pynvml is available."""
@@ -440,7 +397,13 @@ class LightweightEnergyTracker:
 
     @property
     def measurement_source(self) -> str:
-        """Report which measurement source is active."""
+        """Report which measurement source `estimate_step` will use.
+
+        Must mirror the priority chain in `estimate_step` exactly:
+        kwh_per_step → pynvml → fixed_power → psutil_profile → profile_fallback.
+        """
+        if self.kwh_per_step is not None:
+            return "kwh_per_step"
         if self._nvidia_reader is not None and self._nvidia_reader.available:
             return "pynvml"
         if self.fixed_power_watts is not None:

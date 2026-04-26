@@ -120,6 +120,9 @@ class EpisodeSummaryV2:
     checklist_failed_items: Optional[int] = None
     error: Optional[str] = None
     busy_wait_free_steps: int = 0
+    # Total wall time spent in busy-wait stalls that did not consume a step
+    # from the budget — added retroactively (RU-4); old data has 0 + audit warning.
+    busy_wait_total_ms: float = 0.0
     wasted_cost_usd: float = 0.0
     wasted_energy_kwh: float = 0.0
     component_breakdown: Optional[Dict[str, float]] = None
@@ -127,6 +130,18 @@ class EpisodeSummaryV2:
     total_output_cost_usd: float = 0.0
     total_obs_prepare_cost_usd: float = 0.0
     agent_finished: Optional[bool] = None
+    # Energy completeness diagnostics (RU-5): partial=True when any step in
+    # the episode lacks an energy reading (NVML probe failed mid-episode).
+    energy_partial: bool = False
+    energy_step_complete_count: int = 0
+    # §95 adjusted success — computed by runner at episode finalization
+    # (single source of truth, eliminates 5 downstream re-computations).
+    # adjusted_success: True iff raw success and not flagged as a false positive.
+    # fp_reason: "" / "na_fp" / "eval_fp" — reason raw was downgraded.
+    # has_effective_action: any step had type/select_option (used by eval_fp).
+    adjusted_success: Optional[bool] = None
+    fp_reason: str = ""
+    has_effective_action: bool = False
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)

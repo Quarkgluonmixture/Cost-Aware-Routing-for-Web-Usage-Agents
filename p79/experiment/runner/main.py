@@ -1,3 +1,9 @@
+"""ExperimentRunner — main class extracted from runner.py during §97 Step-3 split.
+
+Free helper functions live in `helpers.py`; this module hosts only the
+ExperimentRunner class. The original `from p79.experiment.runner import
+ExperimentRunner` import path is preserved via `runner/__init__.py`.
+"""
 from __future__ import annotations
 
 import json
@@ -48,266 +54,23 @@ from p79.experiment.types import (
     validate_step_record_v2,
 )
 
+# Helpers extracted into sibling module — re-imported here so any code inside
+# the class that calls e.g. `_parse_seeds(...)` resolves correctly.
+from p79.experiment.runner.helpers import (
+    _parse_seeds,
+    _action_signature,
+    _action_signature_soft,
+    _detect_action_cycle,
+    _sanitize_query_text,
+    _query_sanitization_control,
+    _repeat_hits_same_target,
+    _build_exploration_fallback_action,
+    _anti_repeat_control,
+    _no_early_finish_control,
+    _notify_retry_pass,
+)
+
 logger = logging.getLogger(__name__)
-
-
-def _parse_seeds(seed_value: Any) -> List[int]:
-    """Accept seed as int or list of ints."""
-    if isinstance(seed_value, (list, tuple)):
-        return [int(s) for s in seed_value]
-    return [int(seed_value)]
-
-
-def _action_signature(action: Dict[str, Any]) -> str:
-    """Compact fingerprint of an action for cycle detection (strict: includes element_id)."""
-    atype = str(action.get("action_type", "")).lower()
-    eid = action.get("element_id", "")
-    text = str(action.get("text", ""))[:60]
-    coord = action.get("coordinate", "")
-    delta = action.get("delta", "")
-    # tab_focus: include page_number so switching between different tabs is not
-    # mistakenly treated as a cycle (e.g. 1→0→1 differs from 1→1→1).
-    page_num = action.get("page_number", "") if atype == "tab_focus" else ""
-    return f"{atype}|eid={eid}|t={text}|c={coord}|d={delta}|pn={page_num}"
-
-
-def _action_signature_soft(action: Dict[str, Any]) -> str:
-    """Loose fingerprint ignoring element_id/coordinate (catches semantic loops
-    where the same search query or click-type is repeated on re-rendered pages)."""
-    atype = str(action.get("action_type", "")).lower()
-    text = str(action.get("text", ""))[:60]
-    delta = action.get("delta", "")
-    # tab_focus: include page_number in soft signature for the same reason.
-    page_num = action.get("page_number", "") if atype == "tab_focus" else ""
-    return f"{atype}|t={text}|d={delta}|pn={page_num}"
-
-
-def _detect_action_cycle(signatures: List[str], min_cycle: int = 1, max_cycle: int = 4,
-                         min_reps: int = 3) -> int:
-    """Return cycle length if the tail of *signatures* is a repeating cycle, else 0.
-
-    Requires at least *min_reps* full repetitions of the cycle to trigger.
-    E.g. [A,B,A,B,A,B] → cycle_len=2.  [A,A,A] → cycle_len=1.
-    """
-    n = len(signatures)
-    for clen in range(min_cycle, max_cycle + 1):
-        window = clen * min_reps
-        if n < window:
-            continue
-        tail = signatures[-window:]
-        pattern = tail[:clen]
-        if all(tail[i] == pattern[i % clen] for i in range(window)):
-            return clen
-    return 0
-
-
-# ---------------------------------------------------------------------------
-# Diagnostic control helpers
-# These functions are only active when `diagnostic_controls` is explicitly set
-# in the experiment config (diagnostic_controls.enabled: true).  They are
-# NOT enabled by default and must NOT be used in main baseline conditions.
-# ---------------------------------------------------------------------------
-
-
-def _sanitize_query_text(raw_query: str, max_words: int = 4, suspicious_word_threshold: int = 6) -> str:
-    query = re.sub(r"\s+", " ", (raw_query or "").strip())
-    if not query:
-        return query
-
-    suspicious = (
-        ">" in query
-        or "|" in query
-        or "/" in query
-        or query.count("&") >= 2
-        or len(query.split()) >= max(1, suspicious_word_threshold)
-    )
-    if not suspicious:
-        return query
-
-    parts = [p.strip() for p in re.split(r"\s*(?:>|/|\|)\s*", query) if p.strip()]
-    candidate = parts[-1] if parts else query
-    candidate = re.sub(r"\([^)]*\)", " ", candidate)
-    if "&" in candidate:
-        left = candidate.split("&", 1)[0].strip()
-        if left:
-            candidate = left
-    candidate = re.sub(r"[^A-Za-z0-9\-\s]", " ", candidate)
-    candidate = re.sub(r"\s+", " ", candidate).strip()
-
-    words = [w for w in candidate.split() if w]
-    if len(words) > max(1, max_words):
-        words = words[: max(1, max_words)]
-    candidate = " ".join(words).strip()
-
-    if len(candidate) < 2:
-        return query
-    return candidate
-
-
-def _query_sanitization_control(action: Dict[str, Any], cfg: Dict[str, Any]) -> Tuple[Dict[str, Any], Optional[str]]:
-    if str(action.get("action_type", "")).lower() != "type":
-        return action, None
-
-    text = str(action.get("text", ""))
-    had_newline = text.endswith("\n")
-    core = text[:-1] if had_newline else text
-
-    cleaned = _sanitize_query_text(
-        raw_query=core,
-        max_words=int(cfg.get("max_words", 4)),
-        suspicious_word_threshold=int(cfg.get("suspicious_word_threshold", 6)),
-    )
-    if not cleaned or cleaned == core:
-        return action, None
-
-    patched = dict(action)
-    patched["text"] = cleaned + ("\n" if had_newline else "")
-    return patched, f"query_sanitized:{core}->{cleaned}"
-
-
-def _repeat_hits_same_target(
-    step_records: List[Dict[str, Any]],
-    action: Dict[str, Any],
-    window: int,
-) -> int:
-    atype = str(action.get("action_type", "")).lower()
-    target_eid = action.get("element_id")
-    if atype not in ("click", "type") or target_eid is None or not step_records:
-        return 0
-
-    hits = 0
-    for rec in step_records[-max(1, window):]:
-        if str(rec.get("action_type", "")).lower() != atype:
-            continue
-        prev_action = rec.get("action", {}) or {}
-        if prev_action.get("element_id") != target_eid:
-            continue
-        if bool(rec.get("page_changed", True)):
-            continue
-        hits += 1
-    return hits
-
-
-def _build_exploration_fallback_action(
-    obs_text: str,
-    instruction: str,
-    query_cfg: Dict[str, Any],
-) -> Dict[str, Any]:
-    input_id = first_element_id_by_keyword(obs_text, ("textbox", "input", "search", "edit"))
-    query = _sanitize_query_text(
-        raw_query=extract_candidate_query(instruction),
-        max_words=int(query_cfg.get("max_words", 4)),
-        suspicious_word_threshold=int(query_cfg.get("suspicious_word_threshold", 6)),
-    )
-    if input_id is not None and query:
-        return {
-            "action_type": "type",
-            "element_id": int(input_id),
-            "text": f"{query}\n",
-            "thought": "Diagnostic control: break loop with reformulated search.",
-        }
-
-    return {
-        "action_type": "scroll",
-        "delta": [0, 0.8],
-        "coordinate_type": "normalized",
-        "thought": "Diagnostic control: break loop with forced exploration scroll.",
-    }
-
-
-def _anti_repeat_control(
-    action: Dict[str, Any],
-    step_records: List[Dict[str, Any]],
-    obs_text: str,
-    instruction: str,
-    cfg: Dict[str, Any],
-    query_cfg: Dict[str, Any],
-) -> Tuple[Dict[str, Any], Optional[str]]:
-    if str(action.get("action_type", "")).lower() not in ("click", "type"):
-        return action, None
-
-    window = int(cfg.get("window", 3))
-    min_repeat_hits = int(cfg.get("min_repeat_hits", 2))
-    hits = _repeat_hits_same_target(step_records, action, window=window)
-    if hits < max(1, min_repeat_hits):
-        return action, None
-
-    fallback = _build_exploration_fallback_action(obs_text, instruction, query_cfg=query_cfg)
-    return fallback, f"anti_repeat_blocked:hits={hits}"
-
-
-def _no_early_finish_control(
-    action: Dict[str, Any],
-    step_records: List[Dict[str, Any]],
-    obs_text: str,
-    instruction: str,
-    cfg: Dict[str, Any],
-    query_cfg: Dict[str, Any],
-) -> Tuple[Dict[str, Any], Optional[str]]:
-    atype = str(action.get("action_type", "")).lower()
-    if atype not in ("finish", "stop"):
-        return action, None
-
-    min_exploration_steps = int(cfg.get("min_exploration_steps", 5))
-    min_page_changes = int(cfg.get("min_page_changes", 2))
-    min_search_attempts = int(cfg.get("min_search_attempts", 2))
-
-    explored_steps = len(step_records)
-    page_change_count = sum(1 for s in step_records if bool(s.get("page_changed", False)))
-    search_attempts = sum(
-        1
-        for s in step_records
-        if str(s.get("action_type", "")).lower() == "type"
-        and bool(str((s.get("action", {}) or {}).get("text", "")).strip())
-    )
-
-    if (
-        explored_steps >= min_exploration_steps
-        and page_change_count >= min_page_changes
-        and search_attempts >= min_search_attempts
-    ):
-        return action, None
-
-    fallback = _build_exploration_fallback_action(obs_text, instruction, query_cfg=query_cfg)
-    reason = (
-        f"no_early_finish_blocked:"
-        f"steps={explored_steps}/{min_exploration_steps},"
-        f"page_changes={page_change_count}/{min_page_changes},"
-        f"search={search_attempts}/{min_search_attempts}"
-    )
-    return fallback, reason
-
-
-def _notify_retry_pass(
-    condition_id: str,
-    all_ids: List[int],
-    ok_ids: List[int],
-    fail_ids: List[int],
-) -> None:
-    """Log retry-pass results and optionally push ntfy notification."""
-    topic = os.environ.get("NTFY_TOPIC", "").strip()
-    if not topic:
-        return
-    n = len(all_ids)
-    title = f"P79 Retry [{condition_id}] {len(ok_ids)}/{n} OK"
-    lines = [f"Retried {n} tasks"]
-    if ok_ids:
-        lines.append(f"OK: {ok_ids}")
-    if fail_ids:
-        lines.append(f"FAIL: {fail_ids}")
-    body = "\n".join(lines)
-    priority = "default" if not fail_ids else "high"
-    url = f"https://ntfy.sh/{topic}"
-    req = urllib.request.Request(
-        url, data=body.encode("utf-8"), method="POST",
-        headers={"Title": title, "Priority": priority, "Markdown": "yes"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=15):
-            pass
-        logger.info("Retry pass ntfy sent to %s", topic)
-    except Exception as exc:
-        logger.warning("Retry pass ntfy failed: %s", exc)
 
 
 class ExperimentRunner:
@@ -343,6 +106,16 @@ class ExperimentRunner:
 
         self._backends: Dict[str, Any] = {}
         self._auth_episode_counts: Dict[str, int] = {}  # per-site counter for auth refresh
+        # Per-site N/A task IDs cache — used by §95 adjusted_success computation
+        # in _run_episode. Pre-loaded once to avoid repeated config file reads.
+        self._na_ids_cache: Dict[str, set] = {}
+        try:
+            from p79.experiment.analysis import _load_na_task_ids
+            _benchmark = self.cfg.get("experiment", {}).get("benchmark", "visualwebarena")
+            for _site in self.cfg.get("task", {}).get("include_sites", []):
+                self._na_ids_cache[str(_site)] = _load_na_task_ids(str(_site), _benchmark)
+        except Exception as _exc:
+            logger.warning("Failed to pre-load N/A task IDs: %s", _exc)
 
     def _get_backend(self, backend_id: str):
         if backend_id in self._backends:
@@ -510,7 +283,6 @@ class ExperimentRunner:
                                 loaded = json.load(f)
                             has_steps = int(loaded.get("steps", 0)) > 0
                             has_error = bool(loaded.get("error"))
-                            is_noise = bool(loaded.get("benchmark_noise", False))
 
                             if has_steps or not has_error:
                                 episode_summaries.append(loaded)
@@ -886,20 +658,34 @@ class ExperimentRunner:
         if raw_image:
             from PIL import Image as PILImage
             paths = [raw_image] if isinstance(raw_image, str) else list(raw_image)
-            vwa_root = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena"
+            # __file__ now lives in p79/experiment/runner/main.py — go up 4 levels
+            # to reach the repo root (was 3 levels in old runner.py).
+            vwa_root = Path(__file__).resolve().parent.parent.parent.parent / "external" / "visualwebarena"
+            # Pre-resize reference images once at episode load (Step-5 ref image
+            # cache): saves N_steps × resize_per_step. Agent's per-step resize
+            # check (`if max(ref_img.size) > max_size`) becomes a no-op when
+            # incoming image is already within bounds.
+            ref_max_size = int(self.cfg.get("agent", {}).get("image_max_size", 1024))
             for p in paths:
                 img_path = vwa_root / p
                 if img_path.exists():
                     try:
-                        reference_images.append(PILImage.open(str(img_path)).convert("RGB"))
+                        img = PILImage.open(str(img_path)).convert("RGB")
+                        if max(img.size) > ref_max_size:
+                            ratio = ref_max_size / max(img.size)
+                            img = img.resize(
+                                (int(img.size[0] * ratio), int(img.size[1] * ratio)),
+                                PILImage.Resampling.LANCZOS,
+                            )
+                        reference_images.append(img)
                     except Exception as exc:
                         logger.warning("Failed to load reference image %s: %s", img_path, exc)
                 else:
                     logger.warning("Reference image not found: %s", img_path)
             if reference_images:
                 logger.info(
-                    "Loaded %d reference image(s) for site=%s task=%s",
-                    len(reference_images), task.site, task.task_id,
+                    "Loaded %d reference image(s) for site=%s task=%s (pre-resized to <= %dpx)",
+                    len(reference_images), task.site, task.task_id, ref_max_size,
                 )
 
         router_state = RouterState()
@@ -933,21 +719,30 @@ class ExperimentRunner:
         step_idx = 0
         consecutive_busy_waits = 0
         total_busy_waits = 0
+        # Track total wall time spent in free busy-page waits (RU-4): these
+        # don't consume a step but still count toward end-to-end episode time.
+        busy_wait_total_ms = 0.0
         while step_idx < self.max_steps:
             step_start = time.time()
 
             # ── Early busy-page guard ─────────────────────────────────────
-            # If the DOM is still loading (busy: 1), skip the LLM call entirely
-            # and issue a free wait that does NOT consume a step from the budget.
+            # If the DOM is still loading (busy marker = 1), skip the LLM call
+            # entirely and issue a free wait that does NOT consume a step from
+            # the budget. Tolerate whitespace variations ("busy: 1" / "busy:1").
             obs_text_raw = getattr(obs, "text", "") or ""
-            if "busy: 1" in obs_text_raw and consecutive_busy_waits < busy_wait_limit:
+            _busy_marker = bool(re.search(r"\bbusy\s*:\s*1\b", obs_text_raw))
+            if _busy_marker and consecutive_busy_waits < busy_wait_limit:
                 consecutive_busy_waits += 1
                 total_busy_waits += 1
+                _busy_start = time.time()
                 wait_action = {"action_type": "wait"}
                 next_obs, reward, terminated, truncated, next_info = self.environment.step(wait_action)
+                _busy_elapsed_ms = (time.time() - _busy_start) * 1000.0
+                busy_wait_total_ms += _busy_elapsed_ms
                 logger.info(
-                    "busy:1 free wait #%d (total %d) site=%s task=%s (step_idx=%d not consumed)",
-                    consecutive_busy_waits, total_busy_waits, task.site, task.task_id, step_idx,
+                    "busy:1 free wait #%d (total %d, %.0fms) site=%s task=%s (step_idx=%d not consumed)",
+                    consecutive_busy_waits, total_busy_waits, _busy_elapsed_ms,
+                    task.site, task.task_id, step_idx,
                 )
                 obs = next_obs
                 current_info = next_info if isinstance(next_info, dict) else {}
@@ -999,12 +794,15 @@ class ExperimentRunner:
             if checklist_manager and bool(self.checklist_cfg.get("inject_into_prompt", True)):
                 instruction = f"{task.intent}\n\n{checklist_manager.format_for_prompt()}"
 
+            # History window: configurable (cfg.agent.history_window),
+            # default 8. Was hardcoded 8 pre-§97 Step-5.
+            _history_window = int(self.cfg.get("agent", {}).get("history_window", 8))
             context = BackendStepContext(
                 observation_mode=decision_mode,
                 som_enabled=(decision_mode == "som"),
                 som_text=obs_prep.som_text,
                 stage="single",
-                history=step_records[-8:],
+                history=step_records[-_history_window:],
                 module_flags=condition.modules.as_dict(),
                 reference_images=reference_images,
             )
@@ -1017,7 +815,7 @@ class ExperimentRunner:
                     som_enabled=(decision_mode == "som"),
                     som_text=obs_prep.som_text,
                     stage="planner",
-                    history=step_records[-8:],
+                    history=step_records[-_history_window:],
                     module_flags=condition.modules.as_dict(),
                     reference_images=reference_images,
                 )
@@ -1152,6 +950,10 @@ class ExperimentRunner:
                 action_success = True
 
             retry_count = 0
+            # NOTE: retry_limit only gates the trigger condition for the single
+            # retry attempt below — there is no while-loop around the retry
+            # block, so values >1 do NOT enable multiple consecutive retries.
+            # If multi-retry is needed, the block at line ~1177 must become a loop.
             retry_limit = int(self.cfg.get("router", {}).get("thresholds", {}).get("retry_limit", 1))
             trigger_m3_retry = should_trigger_m3_retry(
                 action_success=action_success,
@@ -1566,7 +1368,15 @@ class ExperimentRunner:
         )
 
         no_op_count = sum(1 for s in step_records if not bool(s.get("action_success", False)))
-        unchanged_count = sum(1 for s in step_records if not bool(s.get("page_changed", False)))
+        # Exclude finish/stop steps from unchanged_count: they intentionally
+        # don't change the page (they end the episode), so counting them
+        # inflates page_unchanged_rate. Aligns with reason_diagnostics
+        # _compute_step_cost_breakdown which already excludes these.
+        unchanged_count = sum(
+            1 for s in step_records
+            if not bool(s.get("page_changed", False))
+            and str((s.get("action") or {}).get("action_type", "")).lower() not in ("finish", "stop")
+        )
 
         energy_vals = [s["energy"].get("kwh") for s in step_records if s["energy"].get("kwh") is not None]
         co2_vals = [s["energy"].get("co2e_kg") for s in step_records if s["energy"].get("co2e_kg") is not None]
@@ -1620,6 +1430,17 @@ class ExperimentRunner:
         episode_summary["component_breakdown"] = breakdown
         # Track how many free busy-page waits were issued (not counted as steps)
         episode_summary["busy_wait_free_steps"] = total_busy_waits
+        # Total wall time spent in busy-wait stalls (RU-4): not counted in
+        # total_latency_ms (which sums step_records latencies), exposed
+        # separately so end-to-end episode time = total_latency_ms + busy_wait_total_ms.
+        episode_summary["busy_wait_total_ms"] = busy_wait_total_ms
+        # Energy completeness diagnostics (RU-5): some NVML probes can fail
+        # mid-episode; report partial flag + complete-step count so downstream
+        # can decide whether to compare energy fairly across conditions.
+        episode_summary["energy_step_complete_count"] = len(energy_vals)
+        episode_summary["energy_partial"] = bool(
+            step_records and len(energy_vals) < len(step_records)
+        )
         # Input/output cost breakdown for fine-grained cost analysis
         episode_summary["total_input_cost_usd"] = sum(
             float(s["cost_usd"].get("input", 0.0)) for s in step_records
@@ -1632,6 +1453,42 @@ class ExperimentRunner:
         # Agent-initiated finish flag (for N/A true positive detection)
         _last_at = str((step_records[-1].get("action") or {}).get("action_type", "")).lower() if step_records else ""
         _last_fb = bool(step_records[-1].get("fallback_finish", False)) if step_records else False
-        episode_summary["agent_finished"] = (_last_at in ("finish", "stop")) and not _last_fb
+        _agent_finished = (_last_at in ("finish", "stop")) and not _last_fb
+        episode_summary["agent_finished"] = _agent_finished
+
+        # §95 adjusted_success — compute here as single source of truth.
+        # Downstream analysis scripts read this field directly instead of
+        # re-deriving it (was scattered across 5 locations pre-§97 audit).
+        try:
+            from p79.experiment.analysis import compute_adjusted_success
+            _eval_types = (
+                (task.raw_task.get("eval") or {}).get("eval_types") or []
+                if hasattr(task, "raw_task") and isinstance(task.raw_task, dict)
+                else []
+            )
+            _eval_type_str = "|".join(str(x) for x in _eval_types) if _eval_types else ""
+            _has_eff = any(
+                str((s.get("action") or {}).get("action_type", "")).lower() in ("type", "select_option")
+                for s in step_records
+            )
+            _na_ids = self._na_ids_cache.get(task.site, set())
+            _adj, _fp = compute_adjusted_success(
+                task.task_id, task.site, success,
+                na_task_ids=_na_ids,
+                agent_finished=_agent_finished,
+                eval_type=_eval_type_str,
+                has_effective_action=_has_eff,
+            )
+            episode_summary["adjusted_success"] = bool(_adj)
+            episode_summary["fp_reason"] = str(_fp)
+            episode_summary["has_effective_action"] = bool(_has_eff)
+        except Exception as _adj_exc:
+            logger.warning(
+                "Failed to compute adjusted_success for site=%s task=%s: %s",
+                task.site, task.task_id, _adj_exc,
+            )
+            episode_summary.setdefault("adjusted_success", None)
+            episode_summary.setdefault("fp_reason", "")
+            episode_summary.setdefault("has_effective_action", False)
 
         return episode_summary
