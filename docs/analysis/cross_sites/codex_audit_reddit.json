@@ -1,0 +1,1472 @@
+[
+  {
+    "task_id": 0,
+    "intent": "I'm trying to find this post. Navigate to the comment section for it.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “I'm trying to find this post. Navigate to the comment section for it” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 1,
+    "intent": "I'm trying to find this post. Navigate to the comment section for it.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “I'm trying to find this post. Navigate to the comment section for it” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 2,
+    "intent": "I'm trying to find this post. Navigate to the comment section for it.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “I'm trying to find this post. Navigate to the comment section for it” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 3,
+    "intent": "I'm trying to do some research about the post with this image. Tell me how many comments mention the word \"spicy\".",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 4,
+    "intent": "I'm trying to do some research about the post with this image. Tell me how many comments mention the word \"wheat\".",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 5,
+    "intent": "I'm trying to do some research about the post with this image. Tell me how many comments this post has.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 6,
+    "intent": "I'm trying to do some research about the post with this image. Tell me how many comments this post has.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 7,
+    "intent": "I'm doing some research about the post with this image. Navigate to the comment url of the recipe posted by the OP in the comments.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 8,
+    "intent": "I'm doing some research about the post with this image. Navigate to the comment url of the recipe posted by the OP in the comments.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 9,
+    "intent": "I'm doing some research about the post with this image. Navigate to the comment url of the recipe posted by the OP in the comments.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 10,
+    "intent": "I'm doing some research about the post with this image. Navigate to the comment url of the recipe posted by the OP in the comments.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 11,
+    "intent": "Can you help me find and navigate to the comments section of the post with this image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 12,
+    "intent": "Can you help me find and navigate to the comments section of the post with this image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 13,
+    "intent": "Can you help me find and navigate to the comments section of the post with this image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 14,
+    "intent": "Can you help me find and navigate to the comments section of an image post that has something like this image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 15,
+    "intent": "Can you help me find and navigate to the comments section of an image post that has something like this image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 16,
+    "intent": "What month and year (in mm-yyyy format) was this image posted in the /f/pics subreddit?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 17,
+    "intent": "Navigate to a subreddit where I can find the most similar content to this image.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 18,
+    "intent": "Navigate to a subreddit where I can find the most similar content to this image.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 19,
+    "intent": "Find and upvote this post. I think it was posted in /f/GetMotivated.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Find and upvote this post. I think it was posted in /f/GetMotivated” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 20,
+    "intent": "Find and upvote this post. I think it was posted in /f/space.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Find and upvote this post. I think it was posted in /f/space” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 21,
+    "intent": "Find and upvote this post. I think it was posted in /f/OldSchoolCool.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Find and upvote this post. I think it was posted in /f/OldSchoolCool” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 22,
+    "intent": "Find this post and tell me what the top comment says.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Find this post and tell me what the top comment says” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 23,
+    "intent": "Find this post and tell me what the top comment says.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Find this post and tell me what the top comment says” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 24,
+    "intent": "Find this post and tell me what the top comment says.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Find this post and tell me what the top comment says” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 25,
+    "intent": "Find this post and tell me what the top comment says.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Find this post and tell me what the top comment says” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 26,
+    "intent": "Find this post and tell me what the top comment says.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Find this post and tell me what the top comment says” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 27,
+    "intent": "Make a Reddit post with this image (https://images.pexels.com/photos/14267038/pexels-photo-14267038.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2) in the most relevant subreddit, and navigate to its comments section.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 28,
+    "intent": "Write a story about this picture and post it in the most relevant subreddit.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Write a story about this picture and post it in the most relevant subreddit” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 29,
+    "intent": "Write a story about this picture and post it in the most relevant subreddit.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Write a story about this picture and post it in the most relevant subreddit” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 30,
+    "intent": "Find the user who posted this and navigate to the comments section of one of their other posts.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Find the user who posted this and navigate to the comments section of one of their other posts” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 31,
+    "intent": "Find the user who posted this and navigate to the comments section of one of their other posts.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Find the user who posted this and navigate to the comments section of one of their other posts” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 32,
+    "intent": "Find the user who posted this and navigate to the comments section of one of their other posts.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Find the user who posted this and navigate to the comments section of one of their other posts” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 33,
+    "intent": "Find the user who posted this and navigate to the comments section of one of their other posts.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Find the user who posted this and navigate to the comments section of one of their other posts” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 34,
+    "intent": "Navigate to the comments section of the all time top ranked image post in the /f/boston subreddit that is a photo of the city.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of the all time top ranked image post in the /f/boston subreddit that is a photo of the city” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 35,
+    "intent": "Navigate to the comments section of the latest image post in the /f/washingtondc subreddit that contains trees.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of the latest image post in the /f/washingtondc subreddit that contains trees” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 36,
+    "intent": "Navigate to the comments section of the all time top ranked image post in the /f/nyc subreddit that contains an animal.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of the all time top ranked image post in the /f/nyc subreddit that contains an animal” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 37,
+    "intent": "Navigate to the comments section of the latest image post in the /f/Art subreddit that contains animals.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of the latest image post in the /f/Art subreddit that contains animals” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 38,
+    "intent": "I'd like to find the subreddit for the city this photo was taken in. Can you navigate to it?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “city this photo was taken in” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 39,
+    "intent": "I'd like to find the subreddit for the city this photo was taken in. Can you navigate to it?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “city this photo was taken in” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 40,
+    "intent": "I'd like to find the subreddit for the city this photo was taken in. Can you navigate to it?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “city this photo was taken in” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 41,
+    "intent": "Navigate to the comments section of the first image post in /f/Newark as sorted by hot that does not have people in it.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of the first image post in /f/Newark as sorted by hot that does not have people in it” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 42,
+    "intent": "Navigate to the comments section of the first image post in /f/MechanicalKeyboards as sorted by hot that does not have a keyboard in its photo.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of the first image post in /f/MechanicalKeyboards as sorted by hot that does not have a keyboard in its...” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 43,
+    "intent": "Gather the title of the cheapest yellow video projector in the \"Video Projectors\" category from OneStopShop, and post its full product name in the /f/gadgets subreddit under the title \"Has anyone bought this product?\"",
+    "has_reference_image": false,
+    "category": "A_NON_VISUAL_TEXT_ONLY",
+    "reason": "intent 已给出 “Video Projectors” 这类可文本检索/表单操作的线索；目标标题、价格、类别、评论或字段可由 DOM/AXTree 读取。"
+  },
+  {
+    "task_id": 44,
+    "intent": "Find an image of the most expensive artwork from the Posters & Prints category from OneStopShop, and post it as an image in the /f/Art subreddit with the title as the name of the piece and the artist's name.",
+    "has_reference_image": false,
+    "category": "A_NON_VISUAL_TEXT_ONLY",
+    "reason": "intent 已给出 “most expensive artwork from the Posters & Prints category from OneStopShop” 这类可文本检索/表单操作的线索；目标标题、价格、类别、评论或字段可由 DOM/AXTree 读取。"
+  },
+  {
+    "task_id": 45,
+    "intent": "What is the total area in square miles, of the states that are ranked as having 150+ endangered species? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the total area in square miles, of the states that are ranked as having 150+ endangered spec” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 46,
+    "intent": "What is the 2022 total nominal GDP of the area that produces most sugarcane in the year of 2021? (in billion)? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the 2022 total nominal GDP of the area that produces most sugarcane in the year of 2021? (in” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 47,
+    "intent": "What is the area (in km^2) of the country that emitted second most plastic waste into the ocean? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the area (in km^2) of the country that emitted second most plastic waste into the ocean? Ans” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 48,
+    "intent": "What is the absolute difference between NVIDIA's FY22 net income listed in wikipedia and reddit forum 'dataisbeautiful' (in billions)? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the absolute difference between NVIDIA's FY22 net income listed in wikipedia and reddit foru” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 49,
+    "intent": "What is the first year the Summer Olympics include the women's version of the sport that had the largest average male athlete weight in the 2012 Olympics? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the first year the Summer Olympics include the women's version of the sport that had the lar” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 50,
+    "intent": "What is the name of the major commercial airport in the state that is colored green? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the name of the major commercial airport in the state that is colored green? Answer using th” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 51,
+    "intent": "What is the ISIN of the company that occupies the largest portion in Warren Buffet's portfolio? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the ISIN of the company that occupies the largest portion in Warren Buffet's portfolio? Answ” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 52,
+    "intent": "What is the largest ethnic group in the country that has the least average number of physicians per person? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the largest ethnic group in the country that has the least average number of physicians per” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 53,
+    "intent": "What was the total asset value (in trillions of USD, to 3 decimal places) of the fifth largest employer in China in 2017? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What was the total asset value (in trillions of USD, to 3 decimal places) of the fifth largest emplo” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 54,
+    "intent": "When did programming language that has the largest variance in salary first appear? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “When did programming language that has the largest variance in salary first appear? Answer using the” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 55,
+    "intent": "Who is the first spouse of the second most philanthropic billionaire, measured in percentage of wealth donated in 2022? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Who is the first spouse of the second most philanthropic billionaire, measured in percentage of weal” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 56,
+    "intent": "What are the three major geographical divisions of the state that has the third highest number of bank failure? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What are the three major geographical divisions of the state that has the third highest number of ba” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 57,
+    "intent": "What is the sum of the area, in sq km, of the top two countries that has the most uniformly dense transportation network? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the sum of the area, in sq km, of the top two countries that has the most uniformly dense tr” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 58,
+    "intent": "Who is the author of the most popular novel adapted anime in year 2012?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Who is the author of the most popular novel adapted anime in year 2012” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 59,
+    "intent": "What is the total employees (in 2021) of the accounting firms that provide both tax and legal services? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the total employees (in 2021) of the accounting firms that provide both tax and legal servic” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 60,
+    "intent": "What is the ISBN of the genre fiction book that takes OP the longest time to read in 2022? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the ISBN of the genre fiction book that takes OP the longest time to read in 2022? Answer us” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 61,
+    "intent": "Who directed the movie that is shown as the background picture of the third highest earning movie production companies? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Who directed the movie that is shown as the background picture of the third highest earning movie production companies” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 62,
+    "intent": "Who potrayed the character in friends that has the most intimate connections? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Who potrayed the character in friends that has the most intimate connections? Answer using the infor” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 63,
+    "intent": "What is the highest elevation (in ft) of the home state of the team that surpassed Buffalo Bills in both defensive rating and offensive rating during the 2022 Season? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the highest elevation (in ft) of the home state of the team that surpassed Buffalo Bills in” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 64,
+    "intent": "What are the colors of the flag used in the country that is the third largest producer of cherries in year 2012?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What are the colors of the flag used in the country that is the third largest producer of cherries i” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 65,
+    "intent": "What is the total city population in 2021 of the two cities that the densest populated in the population density map of Portugal? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the total city population in 2021 of the two cities that the densest populated in the popula” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 66,
+    "intent": "What is the third most popular non-english language (as of 2016) in the state that has the deepest snow during 2022-2023 winter? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the third most popular non-english language (as of 2016) in the state that has the deepest s” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 67,
+    "intent": "Who is the founder of the brand that has zero stores in Washington state (before 2021) according to the chart in the first tab?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Who is the founder of the brand that has zero stores in Washington state (before 2021) according to” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 68,
+    "intent": "Who is the founder of the second largest asset management firm, as measured by AUM in the end of 2022? Answer using the information from the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "A_NON_VISUAL_TEXT_ONLY",
+    "reason": "intent 已给出 “Who is the founder of the second largest asset management firm, as measured by AUM in the end of 202” 这类可文本检索/表单操作的线索；目标标题、价格、类别、评论或字段可由 DOM/AXTree 读取。"
+  },
+  {
+    "task_id": 69,
+    "intent": "Make a comment in this post explaining what the picture is about.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Make a comment in this post explaining what the picture is about” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 70,
+    "intent": "How many comments are removed or deleted in the post that has a turkey picture in the hot posts of f/pics",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “How many comments are removed or deleted in the post that has a turkey picture in the hot posts of f/pics” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 71,
+    "intent": "Find me the most recent animated gif of spiderman in f/memes. Then, leave a comment that describes what the spiderman is doing in the meme.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Find me the most recent animated gif of spiderman in f/memes. Then, leave a comment that describes w” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 72,
+    "intent": "Make a comment in this post explaining what the picture is about.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Make a comment in this post explaining what the picture is about” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 73,
+    "intent": "Find a post in f/MechanicalKeyboards that contains a special keyboard that has a huge W key. Then, repost the picture to f/gaming with title \"WwWwWwWwWwwWw all the way\". Finally, navigate to the post.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “repost the picture to f/gaming with title \"WwWwWwWwWwwWw all the way” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 74,
+    "intent": "Find me a keyboard version of what the man is wearing in the picture. Then, count how many white key is on it and post it in the comment section of that post with the following format: \"It has <number of keys> white keys!!\" (not including the double inverted commas), replacing <number of keys> with the actual number of white keys in the picture. Remember that partially occluded keycaps need to be counted also.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the picture” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 75,
+    "intent": "How should I keep my keyboard clean while eating cheese balls and typing on keyboard at the same time? Search f/MechanicalKeyboards for the answer and buy me the tool on the shopping site.",
+    "has_reference_image": false,
+    "category": "A_NON_VISUAL_TEXT_ONLY",
+    "reason": "intent 已给出 “How should I keep my keyboard clean while eating cheese balls and typing on keyboard at the same tim” 这类可文本检索/表单操作的线索；目标标题、价格、类别、评论或字段可由 DOM/AXTree 读取。"
+  },
+  {
+    "task_id": 76,
+    "intent": "How much money does the person have? Downvote the post and create a comment with the following format: \"This is a <amount of money (in digits only)> bill from <country>.\" (not including the double inverted commas), replacing <amount of money> with the actual amount of money the person has and <country> with the country that issue the bill.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “How much money does the person have? Downvote the post and create a comment with the following forma” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 77,
+    "intent": "Navigate to the comments section of any post that contains Mona Lisa in the picture.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of any post that contains Mona Lisa in the picture” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 78,
+    "intent": "Navigate to the comments section of any post that contains a silver banana in the picture.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of any post that contains a silver banana in the picture” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 79,
+    "intent": "Navigate to the comments section of any post that contains Rick and Morty in the picture.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of any post that contains Rick and Morty in the picture” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 80,
+    "intent": "Upvote all the posts that have a picture which contains food on this page.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Upvote all the posts that have a picture which contains food on this page” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 81,
+    "intent": "Upvote all the posts that have a picture which contains cat on this page.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Upvote all the posts that have a picture which contains cat on this page” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 82,
+    "intent": "Upvote all the posts that have a picture which contains Mario on this page.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Upvote all the posts that have a picture which contains Mario on this page” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 83,
+    "intent": "Upvote all the posts that have a picture which contains a human or human-like face on this page.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Upvote all the posts that have a picture which contains a human or human-like face on this page” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 84,
+    "intent": "Downvote the posts in odd row and upvote the posts in even row but skip the one with a fox icon.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Downvote the posts in odd row and upvote the posts in even row but skip the one with a fox icon” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 85,
+    "intent": "Consider all posts with bodies of water in this page. Downvote the posts that are taken in northern hemisphere and upvote the posts that are taken in the southern hemisphere.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Consider all posts with bodies of water in this page. Downvote the posts that are taken in northern” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 86,
+    "intent": "Consider all post in this page. What is the username of the user that posted the picture where the moon takes up the largest proportion of the image?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the username of the user that posted the picture where the moon takes up the largest proportion of the image” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 87,
+    "intent": "Consider all post in this page. What is the total number of dogs shown?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Consider all post in this page. What is the total number of dogs shown” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 88,
+    "intent": "Upvote all the posts that do not contain headphones on this page.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Upvote all the posts that do not contain headphones on this page” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 89,
+    "intent": "How many Jupiter instances are in this picture? Leave a comment with the following format: \"It has <number of Jupiter> Jupiter!!\" (not including the double inverted commas), replacing <number of Jupiter> with the actual number of Jupiter in the picture. Remember to use digits.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “How many Jupiter instances are in this picture” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 90,
+    "intent": "How many teeth does the pumpkin have? Leave a comment with the following format: \"It has <number of teeth> teeth :)\" (not including the double inverted commas), replacing <number of teeth> with the actual number of teeth the pumpkin has. Remember to use digits.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “How many teeth does the pumpkin have? Leave a comment with the following format: \"It has <number of” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 91,
+    "intent": "What is the color of topmost container? Leave a comment with the following format: \"Let's go <color of container>\" (not including the double inverted commas), replacing <color of container> with the actual color of the topmost container. Remember to use basic color names.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the color of topmost container” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 92,
+    "intent": "What is the animal in the picture from the most active post in f/aww?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the animal in the picture from the most active post in f/aww” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 93,
+    "intent": "What is the color of the plate used for the picture from the most controversial post of all time in f/food?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the color of the plate used for the picture from the most controversial post of all time in f/food” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 94,
+    "intent": "Is there snow in the picture from the hottest post in f/EarthPorn?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Is there snow in the picture from the hottest post in f/EarthPorn” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 95,
+    "intent": "What is the color of the snow near the Chrismas tree in the picture from the second hottest post in f/newhaven?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the color of the snow near the Chrismas tree in the picture from the second hottest post in f/newhaven” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 96,
+    "intent": "Who authored the post shown in the picture (not the reddit author) of the most commented post of all time in f/Newark?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Who authored the post shown in the picture (not the reddit author) of the most commented post of all time in f/Newark” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 97,
+    "intent": "What is the color of the radio in the picture from the newest post in f/BuyItForLife?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the color of the radio in the picture from the newest post in f/BuyItForLife” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 98,
+    "intent": "Navigate to the comments section of a post that contains a picture of a dog.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of a post that contains a picture of a dog” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 99,
+    "intent": "Navigate to the comments section of a post that contains a picture of a dog and a cat.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of a post that contains a picture of a dog and a cat” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 100,
+    "intent": "Navigate to the comments section of a post that contains a picture of a cake.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of a post that contains a picture of a cake” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 101,
+    "intent": "Navigate to the comments section of a post that contains a picture of a keyboard.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the comments section of a post that contains a picture of a keyboard” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 102,
+    "intent": "How many red keys are in the picture? Leave a comment replying to user \"liverblow\" with the following format: \"It has <number of red key> $%@\" (not including the double inverted commas), replacing <number of red key> with the actual number of red key. Remember to use digits.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “How many red keys are in the picture” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 103,
+    "intent": "What is the color of the mattress? Leave a comment replying to user \"BiAdventureTime\" with the following format: \"Its color is <color of the mattress> ~~~~``~~~~\" (not including the quote marks), replacing <color of the mattress> with the actual color of the mattress. Remember to use basic color names.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the color of the mattress? Leave a comment replying to user \"BiAdventureTime\" with the follo” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 104,
+    "intent": "How many kirbies are in the picture? Leave a comment replying to user \"Valenyn\" with the following format: \"There are <number of kirbies> kirbies *･゜ﾟ･*:.｡..｡.:*･'(*ﾟ▽ﾟ*)'･*:.｡. .｡.:*･゜ﾟ･*\" (not including the quote marks), replacing <number of kirbies> with the actual number of kirbies. Remember to use digits.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “How many kirbies are in the picture” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 105,
+    "intent": "Subscribe to a forum that contains one of the following pictures.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “following picture” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 106,
+    "intent": "Subscribe to a forum that contains the following picture.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “following picture” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 107,
+    "intent": "Subscribe to a forum that contains the following picture.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “following picture” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 108,
+    "intent": "Send a direct message to the user that created the post that contains the following picture.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “following picture” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 109,
+    "intent": "Send a direct message to the user that created the post that contains the following picture.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “following picture” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 110,
+    "intent": "Send a direct message to the user that created the post that contains the following picture.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “following picture” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 111,
+    "intent": "Create a post for each of the following image in the most related forum.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “following image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 112,
+    "intent": "Create a post for each of the following image in the most related forum.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “following image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 113,
+    "intent": "Create a post for each of the following image in the most related forum.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “following image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 114,
+    "intent": "Navigate to the second most active post with a picture across f/washingtondc, f/vermont and f/nyc. What is in the picture?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the second most active post with a picture across f/washingtondc” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 115,
+    "intent": "Navigate to the most controversial post of all time (with a picture) across f/Paterson, f/WaterburyCT and f/monitor. What operating system is the person using (windows/ubuntu/arch/macos)?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the most controversial post of all time (with a picture) across f/Paterson” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 116,
+    "intent": "Navigate to the most commented post of all time (with a picture) across f/aww and f/dataisbeautiful. Does the picture contain an animal (yes/no)?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Navigate to the most commented post of all time (with a picture) across f/aww and f/dataisbeautiful” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 117,
+    "intent": "What is the birth year of the dog with pink hair? Answer using the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the birth year of the dog with pink hair? Answer using the Wikipedia site in the second tab” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 118,
+    "intent": "What is the birth year of the guy in red jacket? Answer using the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the birth year of the guy in red jacket? Answer using the Wikipedia site in the second tab” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 119,
+    "intent": "What is the birth year of the guy holding the goblet? Answer using the Wikipedia site in the second tab.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the birth year of the guy holding the goblet? Answer using the Wikipedia site in the second” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 120,
+    "intent": "According to the image, which country in this picture has the worst rail system?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “According to the image” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 121,
+    "intent": "I'm doing some research about the post with this image. Navigate to the recipe posted by the OP in the comments.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 122,
+    "intent": "I'm doing some research about the post with this image. Navigate to the recipe posted by the OP in the comments.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 123,
+    "intent": "Find me a post in /f/wallstreetbets that illustrates the Amazon revenue in Q3 FY22, and tell me the revenue of the online store in Q3 FY22 (in billions).",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Find me a post in /f/wallstreetbets that illustrates the Amazon revenue in Q3 FY22, and tell me the” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 124,
+    "intent": "Find me a post in /f/dataisbeautiful that illustrates the Microsoft revenue in 1985, and tell me the revenue of the whole company in 1985 (in billions).",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Find me a post in /f/dataisbeautiful that illustrates the Microsoft revenue in 1985, and tell me the” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 125,
+    "intent": "Find me a post in /f/dataisbeautiful that illustrates the Nvidia revenue in FY22, and tell me the revenue of the whole company in FY22 (in billions).",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Find me a post in /f/dataisbeautiful that illustrates the Nvidia revenue in FY22, and tell me the re” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 126,
+    "intent": "Can you navigate me to the most commented post by the author of this image? I think it is in the /f/memes forum.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 127,
+    "intent": "Can you navigate me to the most commented post by the author of this image? I think it is in the /f/memes forum.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 128,
+    "intent": "Can you navigate me to the most commented post by the author of this image? I think it is in the /f/pics forum.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 129,
+    "intent": "Subscribe to the forum which is most likely to include discussions related to the image.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 130,
+    "intent": "Subscribe to the forum which is most likely to include discussions related to the image.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 131,
+    "intent": "Subscribe to the forum which is most likely to include discussions related to the image.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 132,
+    "intent": "How many comments did the post with this image receive? I remember it being one of the top 50 hot posts of /f/nyc.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 133,
+    "intent": "How many comments did the post with this image receive? I remember it being one of the top 50 hot posts of /f/ColumbiaMD.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 134,
+    "intent": "How many comments did the post with this image receive? I remember it being one of the top 50 hot posts of /f/Maine.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 135,
+    "intent": "Can you search for 'meme' and find the post with 2 upvotes and includes a meme of three Spider-Men, a flag of the Netherlands, and a flag of Croatia?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you search for 'meme' and find the post with 2 upvotes and includes a meme of three Spider-Men,” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 136,
+    "intent": "Can you navigate to the post with 307 upvotes, which includes a meme of a dog sitting in a room that is engulfed in flames and saying it is fine? I think this was posted in /f/wallstreetbets.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you navigate to the post with 307 upvotes, which includes a meme of a dog sitting in a room that” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 137,
+    "intent": "Can you navigate to the post with 128 upvotes, which includes a meme of Squidward watching SpongeBob and Patrick through a window? I think this was posted in /f/wallstreetbets.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you navigate to the post with 128 upvotes, which includes a meme of Squidward watching SpongeBob” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 138,
+    "intent": "Change my username to the first name of the recipient in the image.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 139,
+    "intent": "I don't like the author of this image from one of the hot posts in /f/memes. Can you help me block them?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 140,
+    "intent": "I would like to know the author of this image, from one of the top posts in /f/pics. Can you help me send them a dm with \"Hello\"?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “this image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 141,
+    "intent": "Leave a comment in this post with the release date of the movie in the image in mm-dd-yyyy format.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Leave a comment in this post with the release date of the movie in the image in mm-dd-yyyy format” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 142,
+    "intent": "Leave a comment in this post with the release date of the movie in the image in mm-dd-yyyy format.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Leave a comment in this post with the release date of the movie in the image in mm-dd-yyyy format” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 143,
+    "intent": "Leave a comment in this post with the release date of the movie in the image in mm-dd-yyyy format.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Leave a comment in this post with the release date of the movie in the image in mm-dd-yyyy format” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 144,
+    "intent": "Leave a comment in this post with the text as the trading loss of the OP in dollars.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Leave a comment in this post with the text as the trading loss of the OP in dollars” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 145,
+    "intent": "Leave a comment in this post with the text as the trading loss of the OP in euros.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Leave a comment in this post with the text as the trading loss of the OP in euros” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 146,
+    "intent": "Leave a comment in this post with the text as the trading loss of the OP in dollars.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Leave a comment in this post with the text as the trading loss of the OP in dollars” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 147,
+    "intent": "Leave a comment in this post with the text as the number of buns in the image.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Leave a comment in this post with the text as the number of buns in the image” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 148,
+    "intent": "Leave a comment in this post with the text as the number of arancinis in the image.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Leave a comment in this post with the text as the number of arancinis in the image” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 149,
+    "intent": "Leave a comment in this post with the text as the number of gyozas in the image.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Leave a comment in this post with the text as the number of gyozas in the image” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 150,
+    "intent": "Leave a comment in this post with the text as the number of adults in the image.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Leave a comment in this post with the text as the number of adults in the image” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 151,
+    "intent": "Leave a comment in this post with the text as the number of adults in the image.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Leave a comment in this post with the text as the number of adults in the image” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 152,
+    "intent": "Leave a comment in this post with the text as the number of adults in the image.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Leave a comment in this post with the text as the number of adults in the image” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 153,
+    "intent": "Is there a version of this post with the final results? If so, navigate to the comment section for it.",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Is there a version of this post with the final results? If so, navigate to the comment section for i” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 154,
+    "intent": "I think I saw a post in f/DataIsBeautiful that talked about the price of training ImageNet models. Can you tell me how much it cost in 2020 was to train a top-5 model with >93% accuracy? Finally, take me to the comments section of the post.",
+    "has_reference_image": false,
+    "category": "A_NON_VISUAL_TEXT_ONLY",
+    "reason": "intent 已给出 “price of training ImageNet models” 这类可文本检索/表单操作的线索；目标标题、价格、类别、评论或字段可由 DOM/AXTree 读取。"
+  },
+  {
+    "task_id": 155,
+    "intent": "I saw a really funny movie last week (the image is the movie poster). Can you navigate to the comments section of a post that has the picture that was the inspiration for the IRS scene?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 156,
+    "intent": "I saw a fun Mario and Princess Peach cosplay in f/gaming. Can you tell me the top comment for that post?",
+    "has_reference_image": false,
+    "category": "D_UNCERTAIN",
+    "reason": "intent 中的 “I saw a fun Mario and Princess Peach cosplay in f/gaming. Can you tell me the top comment for that p” 可能出现在标题/规格/描述里，也可能只体现在图片中；DOM 有机会完成但需要视觉核验风险。"
+  },
+  {
+    "task_id": 157,
+    "intent": "Can you take me to the comments section of the post in this subreddit that talks about how the person who wrote this symphony died?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Can you take me to the comments section of the post in this subreddit that talks about how the perso” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 158,
+    "intent": "Can you subscribe to all subreddits that start with the letter 'a' and have a dog image in their top 3 posts of all time?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you subscribe to all subreddits that start with the letter 'a' and have a dog image in their top 3 posts of all time” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 159,
+    "intent": "Can you subscribe to all subreddits that start with the letter 'n' and have a downtown image in their top 3 posts of all time?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you subscribe to all subreddits that start with the letter 'n' and have a downtown image in their top 3 posts of all time” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 160,
+    "intent": "Can you subscribe to all subreddits that start with the letter 'i' and have a female usb to male lightning connector image in their top 3 posts of all time?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you subscribe to all subreddits that start with the letter 'i' and have a female usb to male lightning connector image in their top 3...” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 161,
+    "intent": "Take me to the post for the joke on this page that is most likely to take place in the following image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “following image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 162,
+    "intent": "Can you give me the URL for a gif I could send to my friend about the contrast of investing in a retirement account vs a brokerage account from the hot posts of /f/wallstreetbets?",
+    "has_reference_image": false,
+    "category": "A_NON_VISUAL_TEXT_ONLY",
+    "reason": "intent 已给出 “Can you give me the URL for a gif I could send to my friend about the contrast of investing in a ret” 这类可文本检索/表单操作的线索；目标标题、价格、类别、评论或字段可由 DOM/AXTree 读取。"
+  },
+  {
+    "task_id": 163,
+    "intent": "What is the top comment for the most popular post of all time (across all forums) containing a character from the movie in the Wikipedia tab?",
+    "has_reference_image": false,
+    "category": "A_NON_VISUAL_TEXT_ONLY",
+    "reason": "intent 已给出 “What is the top comment for the most popular post of all time (across all forums) containing a chara” 这类可文本检索/表单操作的线索；目标标题、价格、类别、评论或字段可由 DOM/AXTree 读取。"
+  },
+  {
+    "task_id": 164,
+    "intent": "What is the top comment for the most popular post of all time (across all forums) containing a dog trying to perform the action in the Wikipedia tab?",
+    "has_reference_image": false,
+    "category": "D_UNCERTAIN",
+    "reason": "intent 中的 “What is the top comment for the most popular post of all time (across all forums) containing a dog t” 可能出现在标题/规格/描述里，也可能只体现在图片中；DOM 有机会完成但需要视觉核验风险。"
+  },
+  {
+    "task_id": 165,
+    "intent": "Can you find art of the building in the picture and message the poster 'I really like this picture! Can I print it out and hang it on my wall?'?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the picture” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 166,
+    "intent": "Can you find a post of the International Space Station's solar panels with the Earth in the background and message the poster 'Was the sun super bright in space?'?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you find a post of the International Space Station's solar panels with the Earth in the background and message the poster 'Was the su...” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 167,
+    "intent": "I am feeling sad today. Can you navigate to the comments section of a post that has an image of a dog and a cat to cheer me up?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you navigate to the comments section of a post that has an image of a dog and a cat to cheer me up” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 168,
+    "intent": "Can you repost the image on this page that would fit best in f/EarthPorn with the same title and text as the original post and take me to the comments section of the post?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you repost the image on this page that would fit best in f/EarthPorn with the same title and text as the original post and take me to...” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 169,
+    "intent": "Can you repost the image on this page that would fit best in f/sports with the same title and text as the original post and take me to the comments section of the post?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you repost the image on this page that would fit best in f/sports with the same title and text as the original post and take me to th...” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 170,
+    "intent": "Can you subscribe to the forum that is most likely to contain posts like this?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Can you subscribe to the forum that is most likely to contain posts like this” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 171,
+    "intent": "Can you subscribe to the forum that is most likely to contain posts like this?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Can you subscribe to the forum that is most likely to contain posts like this” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 172,
+    "intent": "Can you post a comment on the post that has a crispy chicken sandwhich with the text 'I love those things!'?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you post a comment on the post that has a crispy chicken sandwhich with the text 'I love those t” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 173,
+    "intent": "Can you post a comment on the post with an 👽 in it with the text 'Scary!'?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you post a comment on the post with an 👽 in it with the text 'Scary!'” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 174,
+    "intent": "Can you post a comment on the post with a 🛹 in it with the text '🏎️🏎️🏎️'?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you post a comment on the post with a 🛹 in it with the text '🏎️🏎️🏎️'” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 175,
+    "intent": "How much money was user cezapiza's SPY puts worth the day before in their screenshot (in USD)?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “How much money was user cezapiza's SPY puts worth the day before in their screenshot (in USD)” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 176,
+    "intent": "Can you comment on the food from the country in the image and about 🍜 saying 'Sooo tasty!'?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 177,
+    "intent": "Can you comment on the food from the country in the image and about a dog in the background saying 'Someone is looking for a bite 🐶'?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 178,
+    "intent": "Can you subscribe to the forum for this city?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “Can you subscribe to the forum for this city” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 179,
+    "intent": "Can you take me to the page that shows the most controversial posts of the past month in the forum for a city located in the state pictured in the image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 180,
+    "intent": "Can you take me to the newest posts in the forum for the highlighted county in the image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 181,
+    "intent": "I am a student at the school in the image. Can you make a post asking for the best pizza in the forum for the city my school is in and navigate to it?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 182,
+    "intent": "I am a student at the school in the image. Can you make a post asking for the best Indian food in the forum for the city my school is in and navigate to it?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 183,
+    "intent": "Can you make a post in f/food, title it '[I ate] this', add the full sized version of the image with the pop tart on this page of OneStopMarket, and navigate to it?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “add the full sized version of the image with the pop tart on this page of OneStopMarket” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 184,
+    "intent": "Can you make a post in f/food, title it '[HOMEMADE] this yummy cheese', add the full sized version of the image with the semicircle cheese, and navigate to it?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “add the full sized version of the image with the semicircle cheese” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 185,
+    "intent": "Can you make a post in the /f/gaming forum titled 'Should I buy this? I can get a 25% discount', add the full sized version of the image on the shopping page most related to the wikipedia page? Finally, navigate to the comments section of it.",
+    "has_reference_image": false,
+    "category": "A_NON_VISUAL_TEXT_ONLY",
+    "reason": "intent 已给出 “Should I buy this? I can get a 25% discount” 这类可文本检索/表单操作的线索；目标标题、价格、类别、评论或字段可由 DOM/AXTree 读取。"
+  },
+  {
+    "task_id": 186,
+    "intent": "Can you make a post in the /f/aww forum titled 'Perfect for the winter holidays!', add the full sized version of the image on the shopping page most related to the wikipedia page? Finally, navigate to the comments section of it.",
+    "has_reference_image": false,
+    "category": "A_NON_VISUAL_TEXT_ONLY",
+    "reason": "intent 已给出 “Perfect for the winter holidays!” 这类可文本检索/表单操作的线索；目标标题、价格、类别、评论或字段可由 DOM/AXTree 读取。"
+  },
+  {
+    "task_id": 187,
+    "intent": "Can you make a post in the forum for the capital of Rhode Island (not the one for the state) titled 'Perfect for the cold weather', add the full sized version of the image on the shopping page most related to the wikipedia page? Finally, navigate to the comments section of it.",
+    "has_reference_image": false,
+    "category": "A_NON_VISUAL_TEXT_ONLY",
+    "reason": "intent 已给出 “Perfect for the cold weather” 这类可文本检索/表单操作的线索；目标标题、价格、类别、评论或字段可由 DOM/AXTree 读取。"
+  },
+  {
+    "task_id": 188,
+    "intent": "Can you subscribe me to the most suitable forum where I can find more posts like in the image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 189,
+    "intent": "Can you subscribe me to the most suitable forum where I can find more posts like in the image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 190,
+    "intent": "Can you subscribe me to the most suitable forum where I can find more posts like in the image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 191,
+    "intent": "What is the sum of the number of upvotes for the posts on this page that have any part of a physical phone?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the sum of the number of upvotes for the posts on this page that have any part of a physical” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 192,
+    "intent": "What is the sum of the number of upvotes for the posts on this page that have three animals?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “What is the sum of the number of upvotes for the posts on this page that have three animals” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 193,
+    "intent": "Can you comment 'I love this!' on the post with a blue/turquoise aurora posted in the fall?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you comment 'I love this!' on the post with a blue/turquoise aurora posted in the fall” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 194,
+    "intent": "Can you comment 'This looks really fun to type on!' on the post with a single keyboard with a number pad posted on Halloween (in UTC)?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you comment 'This looks really fun to type on!' on the post with a single keyboard with a number” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 195,
+    "intent": "Can you comment 'Wish I had this for my setup' on the post with a pink escape key posted after 8pm UTC?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you comment 'Wish I had this for my setup' on the post with a pink escape key posted after 8pm U” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 196,
+    "intent": "Can you take me to the comments section of the hottest post (of all time) in the art forum where the post is only in black and white?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you take me to the comments section of the hottest post (of all time) in the art forum where the” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 197,
+    "intent": "Can you take me to the comments section of the most commented post (of all time) in f/food where the food is vegetarian?",
+    "has_reference_image": false,
+    "category": "A_NON_VISUAL_TEXT_ONLY",
+    "reason": "intent 已给出 “Can you take me to the comments section of the most commented post (of all time) in f/food where the” 这类可文本检索/表单操作的线索；目标标题、价格、类别、评论或字段可由 DOM/AXTree 读取。"
+  },
+  {
+    "task_id": 198,
+    "intent": "Can you comment '𓀠𓀠' on the top post (of all time) in f/history that relates to the image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 199,
+    "intent": "Can you comment 'I remember seeing him in person, one of the best nights of my life.' on the top post (of all time) in f/music that relates to the image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 200,
+    "intent": "Can you take me to the post on this page that is most related to the picture on this page?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the picture” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 201,
+    "intent": "Can you take me to the post on this page that is most related to the picture on this page?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the picture” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 202,
+    "intent": "Can you message the users who posted art with an animal (including stuffed animals) on this page with 'Animals are so cute, and I really like your work!'?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you message the users who posted art with an animal (including stuffed animals) on this page wit” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 203,
+    "intent": "Can you message the users who posted pictures related to Nintendo games on this page with 'Mama mia!!'?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you message the users who posted pictures related to Nintendo games on this page with 'Mama mia!!” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 204,
+    "intent": "Can you take me to the comments section of the last post on this page that has a picture of a person?",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Can you take me to the comments section of the last post on this page that has a picture of a person” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 205,
+    "intent": "What is the top comment on the post about the company founded by the guy in the image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 206,
+    "intent": "What is the top comment on the post about the thing that looks like the image?",
+    "has_reference_image": true,
+    "category": "B_VISUAL_REQUIRED_REFERENCE_IMAGE",
+    "reason": "intent 中的 “the image” 把目标绑定到 task config 的 reference image；去掉该图后缺少要匹配的对象、地点、品牌或外观。"
+  },
+  {
+    "task_id": 207,
+    "intent": "Can you first make a post in f/headphones (then afterwards in f/gaming) asking for a comparison between the two headphones in the shopping tabs? Make sure to include both their SKUs in the title and a picture of the darker one.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Make sure to include both their SKUs in the title and a picture of the darker one” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 208,
+    "intent": "Can you first make a post in f/monitor (then afterwards in f/gadgets) asking for a comparison between the two monitors in the shopping tabs? Make sure to include both their SKUs in the title and a picture of the monitor with the movie titles.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Make sure to include both their SKUs in the title and a picture of the monitor with the movie titles” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  },
+  {
+    "task_id": 209,
+    "intent": "Can you first make a post in f/pittsburgh (then afterwards in f/Pennsylvania) asking for a comparison between the two products in the shopping tabs? Make sure to include both their SKUs in the title and a picture of the front of the hoodie.",
+    "has_reference_image": false,
+    "category": "C_VISUAL_REQUIRED_PAGE_SCREENSHOT",
+    "reason": "intent 中的 “Make sure to include both their SKUs in the title and a picture of the front of the hoodie” 需要从页面截图、商品图、帖子图或网格布局识别视觉事实；普通 DOM 文本无法稳定提供该信号。"
+  }
+]
