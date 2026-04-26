@@ -116,7 +116,13 @@ time.sleep(2)
 # login → caller (watchdog) believed auth was refreshed but next episode
 # still NOT-LOGGED-IN. Heuristic: post-login URL no longer on login page.
 final_url = page.url
-login_marker = {login_path!r}.lower().split('?')[0].rstrip('/')
+# Bug fix (2026-04-26): previous code did `.split('?')[0]` which collapsed
+# `/index.php?page=login` to `/index.php` for OSClass classifieds — this matches
+# ALL OSClass pages (including the post-login dashboard at
+# /index.php?page=user&action=items), causing every successful login to be
+# misclassified as LOGIN_FAILED. Fix: keep the full login path (with query)
+# when checking for "still on login page".
+login_marker = {login_path!r}.lower().rstrip('/')
 still_on_login = bool(login_marker) and login_marker in final_url.lower()
 if still_on_login:
     cm.__exit__(None, None, None)
