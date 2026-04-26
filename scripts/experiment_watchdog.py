@@ -537,11 +537,28 @@ def _prune_stale_condition_completions(
 # State persistence
 # ---------------------------------------------------------------------------
 
+# Watchdog state schema version. Bumped when state shape changes (audit §97).
+# v1 = pre-§97 (no session_*, no retry_decay)
+# v2 = §97 audit (session_* persisted, retry counts reset on condition completion,
+#                 schema_version recorded)
+_STATE_SCHEMA_VERSION = "v2"
+
+
 def _load_state(path: Optional[Path]) -> Dict[str, Any]:
+    """Load watchdog state. Returns {} if missing/corrupt.
+
+    Forward-compatible: callers use `state.get(key, default)` so adding new
+    fields in newer schema versions does not break loading old state files.
+    """
     if not path or not path.exists():
         return {}
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        d = json.loads(path.read_text(encoding="utf-8"))
+        # Migration: pre-v2 state files have no _schema_version. Treat as v1
+        # and let the in-memory restore logic fill defaults for new fields.
+        if isinstance(d, dict):
+            d.setdefault("_schema_version", "v1")
+        return d if isinstance(d, dict) else {}
     except Exception:
         return {}
 
@@ -654,6 +671,122 @@ def _run_post_condition_analysis(run_dir: Path) -> str:
     return "; ".join(statuses) if statuses else "skipped (no scripts found)"
 
 
+# ---------------------------------------------------------------------------
+# Cross-run analysis (跨 site 聚合 / 跨 baseline 对比)
+# ---------------------------------------------------------------------------
+# Naming convention: results/{benchmark}/phase1/{B0|B1}_(?:wa_)?3mode_{site}_{YYYYMMDD}
+_RUN_ID_RE = re.compile(r"^(B[01])_(?:wa_)?3mode_(.+?)_(\d{8})$")
+
+
+def _parse_run_id(run_dir: Path) -> Optional[Dict[str, str]]:
+    """Parse run_id; returns {benchmark, baseline, site, date} or None."""
+    parts = run_dir.parts
+    try:
+        benchmark = parts[parts.index("results") + 1]
+    except (ValueError, IndexError):
+        return None
+    m = _RUN_ID_RE.match(run_dir.name)
+    if not m:
+        return None
+    return {"benchmark": benchmark, "baseline": m.group(1),
+            "site": m.group(2), "date": m.group(3)}
+
+
+def _has_any_completion(run_dir: Path) -> bool:
+    """True iff at least one condition has condition_summary_v2.json."""
+    if not run_dir.exists():
+        return False
+    return any(
+        (d / "condition_summary_v2.json").exists()
+        for d in run_dir.iterdir() if d.is_dir()
+    )
+
+
+def _find_sibling_runs(phase_dir: Path, baseline: str, *, site: Optional[str] = None,
+                       exclude: Optional[Path] = None) -> Dict[str, Path]:
+    """Return {site: latest run_dir} for given baseline (and optional site filter).
+    Skips runs with no completed condition."""
+    by_site: Dict[str, Tuple[str, Path]] = {}
+    if not phase_dir.exists():
+        return {}
+    for d in phase_dir.iterdir():
+        if not d.is_dir() or (exclude and d == exclude):
+            continue
+        info = _parse_run_id(d)
+        if not info or info["baseline"] != baseline:
+            continue
+        if site and info["site"] != site:
+            continue
+        if not _has_any_completion(d):
+            continue
+        prev = by_site.get(info["site"])
+        if prev is None or prev[0] < info["date"]:
+            by_site[info["site"]] = (info["date"], d)
+    return {s: d for s, (_, d) in by_site.items()}
+
+
+def _run_cross_run_analysis(run_dir: Path) -> Optional[str]:
+    """Trigger aggregate_cross_site + compare_b0_b1 when sibling runs make them
+    possible. Returns short status or None if nothing was triggered."""
+    info = _parse_run_id(run_dir)
+    if not info:
+        return None
+    phase_dir = run_dir.parent
+    scripts_dir = Path(__file__).resolve().parent / "analysis"
+    statuses: List[str] = []
+
+    # 1) compare_b0_b1: same site, other baseline
+    other_b = "B1" if info["baseline"] == "B0" else "B0"
+    sib = _find_sibling_runs(phase_dir, other_b, site=info["site"], exclude=run_dir)
+    sib_run = sib.get(info["site"])
+    cmp_script = scripts_dir / "compare_b0_b1.py"
+    if sib_run and cmp_script.exists():
+        b0_dir = run_dir if info["baseline"] == "B0" else sib_run
+        b1_dir = run_dir if info["baseline"] == "B1" else sib_run
+        try:
+            r = subprocess.run(
+                [sys.executable, str(cmp_script),
+                 "--b0-run-dir", str(b0_dir),
+                 "--b1-run-dir", str(b1_dir),
+                 "--site", info["site"]],
+                capture_output=True, text=True, timeout=300,
+            )
+            tag = f"compare_b0_b1[{info['site']}]"
+            statuses.append(f"{tag}:{'ok' if r.returncode == 0 else 'failed'}")
+            if r.returncode != 0:
+                print(f"[watchdog][CROSS-RUN] {tag} failed: {r.stderr[-200:]}")
+        except subprocess.TimeoutExpired:
+            statuses.append(f"compare_b0_b1[{info['site']}]:timeout")
+        except Exception as exc:
+            statuses.append(f"compare_b0_b1[{info['site']}]:error")
+            print(f"[watchdog][CROSS-RUN] compare_b0_b1 error: {exc}")
+
+    # 2) aggregate_cross_site: same baseline, ≥2 distinct sites
+    same_b = _find_sibling_runs(phase_dir, info["baseline"], exclude=None)
+    same_b[info["site"]] = run_dir  # ensure self present
+    agg_script = scripts_dir / "aggregate_cross_site.py"
+    if len(same_b) >= 2 and agg_script.exists():
+        try:
+            r = subprocess.run(
+                [sys.executable, str(agg_script),
+                 "--run-dirs", *(str(d) for d in same_b.values()),
+                 "--b1-label", info["baseline"]],
+                capture_output=True, text=True, timeout=300,
+            )
+            sites_str = ",".join(sorted(same_b.keys()))
+            tag = f"cross_site[{info['baseline']}/{sites_str}]"
+            statuses.append(f"{tag}:{'ok' if r.returncode == 0 else 'failed'}")
+            if r.returncode != 0:
+                print(f"[watchdog][CROSS-RUN] {tag} failed: {r.stderr[-200:]}")
+        except subprocess.TimeoutExpired:
+            statuses.append(f"cross_site[{info['baseline']}]:timeout")
+        except Exception as exc:
+            statuses.append(f"cross_site[{info['baseline']}]:error")
+            print(f"[watchdog][CROSS-RUN] aggregate_cross_site error: {exc}")
+
+    return "; ".join(statuses) if statuses else None
+
+
 def _regenerate_gallery(run_dir: Path, condition: Optional[str] = None,
                         aggregate_prefix: str = "B1_3mode") -> str:
     """Regenerate the gallery HTML (best-effort, non-blocking). Returns status string."""
@@ -747,17 +880,40 @@ def _save_state(
     seen_digest_completions: Optional[Set[str]] = None,
     reported_keys: Optional[Set[str]] = None,
     error_retry_counts: Optional[Dict[str, int]] = None,
+    *,
+    session_loss_streak: Optional[Dict[str, int]] = None,
+    session_alerted: Optional[Dict[str, bool]] = None,
+    session_auto_refresh_attempted: Optional[Dict[str, bool]] = None,
+    session_contaminated: Optional[Dict[str, list]] = None,
 ) -> None:
+    """Persist watchdog state. §97 audit added session_* fields so they survive
+    watchdog restarts (was: lost on restart → missed cleanup of contaminated
+    NOT-LOGGED-IN episodes)."""
     if not path:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
+    # session_contaminated values are list of (cond_id, condition_dir, task_id,
+    # site, key) where condition_dir is a Path — JSON can't serialize Path,
+    # so stringify here and re-Path on load.
+    session_contaminated_serializable: Dict[str, list] = {}
+    for site_key, items in (session_contaminated or {}).items():
+        session_contaminated_serializable[site_key] = [
+            [str(cond_id), str(condition_dir), int(task_id), str(site), str(key)]
+            for (cond_id, condition_dir, task_id, site, key) in items
+        ]
     payload = {
+        "_schema_version": _STATE_SCHEMA_VERSION,
         "seen_keys": sorted(seen_keys),
         "seen_completions": sorted(seen_completions),
         "seen_analysis": seen_analysis,
         "seen_digest_completions": sorted(seen_digest_completions or set()),
         "reported_keys": sorted(reported_keys or set()),
         "error_retry_counts": error_retry_counts or {},
+        # §97 audit: session-loss tracking persisted.
+        "session_loss_streak": dict(session_loss_streak or {}),
+        "session_alerted": dict(session_alerted or {}),
+        "session_auto_refresh_attempted": dict(session_auto_refresh_attempted or {}),
+        "session_contaminated": session_contaminated_serializable,
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -952,13 +1108,48 @@ def main() -> int:
     if _orphan_count:
         print(f"[watchdog] Pruned {_orphan_count} orphan item(s) (artifact dirs / steps files without summary)")
 
-    # Session-loss tracking: per-site streak counters
-    session_loss_streak: Dict[str, int] = defaultdict(int)
-    session_alerted: Dict[str, bool] = defaultdict(bool)
+    # Session-loss tracking: per-site streak counters.
+    # §97 audit: restore from persisted state so watchdog restarts don't
+    # lose contaminated-episode tracking (was: in-memory only → restart →
+    # missed cleanup of NOT-LOGGED-IN episodes when login restored).
+    session_loss_streak: Dict[str, int] = defaultdict(
+        int, saved.get("session_loss_streak", {})
+    )
+    session_alerted: Dict[str, bool] = defaultdict(
+        bool, saved.get("session_alerted", {})
+    )
+    session_auto_refresh_attempted: Dict[str, bool] = defaultdict(
+        bool, saved.get("session_auto_refresh_attempted", {})
+    )
     # Contaminated episodes to auto-clean when login is restored:
     # {site: [(condition_id, condition_dir, task_id, site, key), ...]}
+    # Re-Path the condition_dir on load (was stringified for JSON).
     session_contaminated: Dict[str, List[Tuple[str, Path, int, str, str]]] = defaultdict(list)
-    session_auto_refresh_attempted: Dict[str, bool] = defaultdict(bool)
+    for _site_key, _items in (saved.get("session_contaminated") or {}).items():
+        for _item in _items:
+            if isinstance(_item, (list, tuple)) and len(_item) == 5:
+                _cid, _cdir_str, _tid, _site, _key = _item
+                session_contaminated[_site_key].append(
+                    (str(_cid), Path(_cdir_str), int(_tid), str(_site), str(_key))
+                )
+    if session_loss_streak or session_contaminated:
+        print(
+            f"[watchdog] Restored session state: "
+            f"loss_streak={dict(session_loss_streak)}, "
+            f"contaminated_sites={list(session_contaminated.keys())}"
+        )
+
+    # Closure that captures current session state — every _save_state caller
+    # in this function should use this instead so session_* fields persist.
+    def _persist_state() -> None:
+        _save_state(
+            state_file, seen_keys, seen_completions, seen_analysis,
+            seen_digest_completions, reported_keys, error_retry_counts,
+            session_loss_streak=dict(session_loss_streak),
+            session_alerted=dict(session_alerted),
+            session_auto_refresh_attempted=dict(session_auto_refresh_attempted),
+            session_contaminated=dict(session_contaminated),
+        )
 
     # Timers
     last_new_episode_ts: float = time.time()
@@ -972,7 +1163,7 @@ def main() -> int:
     pruned_completions = _prune_stale_condition_completions(run_dir, args.condition, seen_completions)
     if pruned_completions > 0:
         print(f"[watchdog] Pruned {pruned_completions} stale completions (missing condition_summary_v2.json)")
-        _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
+        _persist_state()
 
     _check_analysis_outputs(run_dir, seen_analysis)
     _check_condition_completions(run_dir, args.condition, seen_completions, condition_mode_cache)
@@ -1100,7 +1291,7 @@ def main() -> int:
                     auto_retry_batch.append(
                         f"task {task_id} ({reason}) retry {retries_so_far + 1}/{max_for_type}"
                     )
-                    _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
+                    _persist_state()
                     # Do NOT add to seen_keys/all_records — treat as never happened
                     continue
 
@@ -1192,8 +1383,7 @@ def main() -> int:
                                 reported_keys.discard(ckey)
                                 cleaned += 1
                             print(f"[watchdog][SESSION] {site} auto-cleaned {cleaned} NOT-LOGGED-IN episodes")
-                            _save_state(state_file, seen_keys, seen_completions, seen_analysis,
-                                        seen_digest_completions, reported_keys, error_retry_counts)
+                            _persist_state()
                             if args.ntfy_topic:
                                 _post_ntfy(
                                     args.ntfy_topic,
@@ -1225,7 +1415,7 @@ def main() -> int:
                     f"run_id={run_id}\n" + "\n".join(auto_retry_batch[:20]),
                 )
 
-            _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
+            _persist_state()
 
         # --- 1.5. Prune stale completions (queue may delete condition_summary) ---
         _prune_stale_condition_completions(run_dir, args.condition, seen_completions)
@@ -1258,7 +1448,7 @@ def main() -> int:
                 for mode, digested, expected in newly_done:
                     info = f"[{mode}] digest 完成: {digested}/{expected}"
                     print(f"[watchdog][DIGEST] {info}")
-                    _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
+                    _persist_state()
 
             # Auto-annotate screenshots then regenerate gallery HTML
             annotate_status = _annotate_screenshots(run_dir, args.condition)
@@ -1271,7 +1461,7 @@ def main() -> int:
             for name, path in new_analysis:
                 print(f"[watchdog][ANALYSIS] run_id={run_id}\n分析脚本完成: {name}\n输出: {path.relative_to(run_dir)}")
                 analysis_names.append(name)
-                _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
+                _persist_state()
 
             # --- Build consolidated periodic notification ---
             if args.ntfy_topic and (report or manual_report_now):
@@ -1317,7 +1507,7 @@ def main() -> int:
                 _post_ntfy(args.ntfy_topic, "P79 Status", "\n".join(parts))
 
             reported_keys = seen_keys.copy()
-            _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
+            _persist_state()
             last_report_ts = now
 
         # --- 3. Idle alert ---
@@ -1340,6 +1530,18 @@ def main() -> int:
             run_dir, args.condition, seen_completions, condition_mode_cache
         )
         for cid, mode in new_completions:
+            # §97 audit: reset error_retry_counts for all tasks under this
+            # condition. Was: counts persisted forever → re-running a task
+            # in a new condition could exhaust retries from prior history.
+            # Format: retry_key = "{condition_id}/{site}_task_{task_id}"
+            _reset_keys = [k for k in error_retry_counts if k.startswith(f"{cid}/")]
+            if _reset_keys:
+                for _k in _reset_keys:
+                    error_retry_counts.pop(_k, None)
+                print(
+                    f"[watchdog][RETRY-RESET] {cid} completed → cleared "
+                    f"{len(_reset_keys)} retry counters"
+                )
             # Read condition summary for final stats
             cond_all = [r for r in all_records if r.condition_id == cid]
             cond_total = len(cond_all)
@@ -1359,15 +1561,20 @@ def main() -> int:
             annotate_status = _annotate_screenshots(run_dir, cid)
             # Keep primary gallery as full run view; avoid overwriting with single-condition subset.
             gallery_status = _regenerate_gallery(run_dir, None, args.aggregate_prefix)
+            # Cross-run analysis: triggers compare_b0_b1 when sibling baseline run
+            # exists for same site, and aggregate_cross_site when ≥2 sites under
+            # same baseline have data. Returns None if nothing was triggered.
+            cross_run_status = _run_cross_run_analysis(run_dir)
             if args.ntfy_topic:
-                _post_ntfy(
-                    args.ntfy_topic,
-                    f"P79 POST-ANALYSIS [{cid}]",
+                body = (
                     f"run_id={run_id}\nanalysis: {analysis_status}\n"
-                    f"annotate: {annotate_status}\ngallery: {gallery_status}",
+                    f"annotate: {annotate_status}\ngallery: {gallery_status}"
                 )
+                if cross_run_status:
+                    body += f"\ncross_run: {cross_run_status}"
+                _post_ntfy(args.ntfy_topic, f"P79 POST-ANALYSIS [{cid}]", body)
 
-            _save_state(state_file, seen_keys, seen_completions, seen_analysis, seen_digest_completions, reported_keys, error_retry_counts)
+            _persist_state()
 
         if args.once:
             break
