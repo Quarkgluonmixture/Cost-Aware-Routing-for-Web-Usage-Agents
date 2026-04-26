@@ -7,7 +7,8 @@
 > **注：visual_fp 层已在 §95 中废弃，本文档中的 visual FP 数据为历史记录**
 > 各模式专有分析见 `B0_DOM_digest.md` / `B0_SOM_digest.md` / `B0_Vision_digest.md`
 > B0 vs B1 跨模型对比见 `B0_B1_findings.md`
-> **本版数据三模式全部完整（210/210 × 3），2026-04-24 更新**
+>
+> **数据更新 (2026-04-26)**：04-26 rederive 重算 PUR → eval FP 判定更新。当前 adjusted SR：DOM **8.10%** / SoM **10.48%** / Vision **6.67%**（v1: 8.78% / 11.71% / 6.34%，漂移 <1.3pp，文字结论与排序不变）。完整数字以 `condition_summary_v2.json` + `b0_vs_b1_summary.json` 为准。
 
 ---
 

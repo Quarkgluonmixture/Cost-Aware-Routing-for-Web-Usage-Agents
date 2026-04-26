@@ -6,7 +6,11 @@
 > 分析管线使用 **adjusted labels**（扣除 N/A FP + eval FP）
 > **注：visual_fp 层已在 §95 中废弃，adjusted SR 仅扣除 N/A FP + eval FP**
 > 各模式专有分析见 `B1_DOM_digest.md` / `B1_SOM_digest.md` / `B1_Vision_digest.md`
-> 文档更新：2026-04-25
+> 文档更新：2026-04-26
+>
+> **数据更新 (2026-04-26)**：04-26 全 condition rederive。当前 adjusted SR：DOM **8.55%** / SoM **13.25%** / Vision **7.26%**（v1: 7.59% / 13.84% / 7.14%，漂移 <1.0pp，三模式排序与结论不变，SoM 仍领先）。
+>
+> **B1 数据非最终**：DGX 共享 GPU 同时跑多实例时存在 VRAM/算力争抢，B1 latency 数字受污染；最终 latency 待 Myriad HPC 上线后用独占 GPU 重跑。SR/cost/oracle 数字不受影响。
 
 ---
 

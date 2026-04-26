@@ -6,6 +6,10 @@
 > 本报告关注模型规模（4B vs 235B）对三种观测模式的差异化影响
 > B0 run: `B0_3mode_classifieds_20260413` | B1 run: `B1_3mode_classifieds_20260413`
 > **注：visual_fp 层已在 §95 中废弃，adjusted SR 仅扣除 N/A FP + eval FP**
+>
+> **数据更新 (2026-04-26)**：04-26 全 condition rederive。当前 adjusted SR：B0 DOM 14.10% / SoM **21.37%** / Vision 13.68% · B1 DOM 8.55% / SoM **13.25%** / Vision 7.26%（漂移 <1.7pp，文字结论不变）。Mirage Gap：B0 +7.27pp / B1 +4.70pp（两个模型都强 SoM 优势）。
+>
+> **B1 数据非最终**：DGX 共享 GPU 争抢污染 latency，待 Myriad HPC 独占 GPU 重跑。SR/cost/oracle 数字不受影响。
 
 ---
 

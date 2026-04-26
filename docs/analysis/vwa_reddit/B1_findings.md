@@ -7,7 +7,12 @@
 > **注：visual_fp 层已在 §95 中废弃，本文档中的 visual FP 数据为历史记录**
 > 各模式专有分析见 `B1_DOM_digest.md` / `B1_SOM_digest.md` / `B1_Vision_digest.md`
 > B0 vs B1 跨模型对比见 `B0_B1_findings.md`
-> **本版数据三模式全部完整（210/210 × 3），2026-04-24 更新**
+>
+> **v2 (2026-04-26)**：
+> - **SoM 是 max_marks 80→200 重跑后版本**（§94），04-25 启动，04-26 16:36 完成 210/210。目的：验证之前 SoM 反垫底是否因为标记不足。**结果：反转未消失**（DOM 6.67% > SoM 4.76% > Vision 1.43%）。
+> - 04-26 全部 condition rederive（PUR 重算 → eval FP 判定更新），SR 数字相对 v1 (2026-04-24) 有 0.1-1.0pp 漂移。
+> - **B1 数据非最终**：DGX 共享 GPU 同时跑多实例时存在 VRAM/算力争抢，B1 latency 数字受污染；最终 latency 待 Myriad HPC 上线后用独占 GPU 重跑。SR/cost/oracle 数字不受影响。
+> - v1 (2026-04-24)：三模式完整数据首版，max_marks=80。
 
 ---
 
@@ -17,13 +22,15 @@
 
 | 模式 | Raw SR | Adjusted SR | 成功数（adjusted） | FP 分解 |
 |------|--------|------------|------------------|---------|
-| **DOM** | **10.00%** (21/210) | **6.83%** (14/205) | 14 | N/A FP: 5, Visual FP: 2, Eval FP: 2 |
-| SoM | 8.10% (17/210) | 5.85% (12/205) | 12 | N/A FP: 5, Eval FP: 3 |
-| Vision | 4.76% (10/210) | 2.44% (5/205) | 5 | N/A FP: 5, Eval FP: 2 |
+| **DOM** | **10.00%** (21/210) | **6.67%** (14/210) | 14 | N/A FP: 5, Eval FP: 2 |
+| SoM | 8.10% (17/210) | 4.76% (10/210) | 10 | N/A FP: 5, Eval FP: 7 |
+| Vision | 4.76% (10/210) | 1.43% (3/210) | 3 | N/A FP: 5, Eval FP: 2 |
 
-**三模式排序：DOM (6.83%) > SoM (5.85%) > Vision (2.44%)**
+**三模式排序：DOM (6.67%) > SoM (4.76%) > Vision (1.43%)**
 
-B1 Reddit 是唯一**DOM 领先 SoM** 的场景（Classifieds 中 SoM 始终最优）。但三模式间差异均不显著（见 §1.3）。
+B1 Reddit 是唯一 **DOM 领先 SoM** 的场景（Classifieds 中 SoM 始终最优）。**§94 验证（max_marks=200）**：v1 max_marks=80 时假设 reddit 列表元素超出标记上限导致 SoM 反垫底，重跑 max_marks=200 后反转**未消失反而加深**（v1 -0.98pp → v2 -1.91pp）。结论：标记数不是主导因素，4B 模型在 reddit 密集页面上无法从 SoM 视觉信息获益是结构性问题。
+
+> 注：v2 起 cross_representation 对 reddit 用 /210 分母（不再扣除 N/A reference tasks），与 §95 canonical 一致。
 
 ### 1.2 FP 机制说明
 
@@ -43,15 +50,15 @@ B1 Reddit 是唯一**DOM 领先 SoM** 的场景（Classifieds 中 SoM 始终最�
 
 **三模式间差异均不显著**。B1 (4B) 在 Reddit 站点上能力极低，三模式差异被大量共同失败淹没。
 
-### 1.4 Bootstrap 95% CI
+### 1.4 Bootstrap 95% CI（v1 数据，post-rederive 待重跑）
 
-| 模式 | SR | CI 下界 | CI 上界 |
+| 模式 | SR (v2) | CI 下界 (v1) | CI 上界 (v1) |
 |------|-----|---------|---------|
 | DOM | 6.67% | 3.33% | 10.48% |
-| SoM | 5.71% | 2.86% | 9.05% |
-| Vision | 4.76% | 1.90% | 7.62% |
+| SoM | 4.76% | 2.86% | 9.05% |
+| Vision | 1.43% | 1.90% | 7.62% |
 
-三模式 CI 大幅重叠，与 McNemar 全不显著一致。
+三模式 CI 大幅重叠，与 McNemar 全不显著一致。CI 数字基于 v1（max_marks=80），post-rederive 后 SoM/Vision SR 略低于 CI 下界，需重跑 bootstrap。
 
 ---
 

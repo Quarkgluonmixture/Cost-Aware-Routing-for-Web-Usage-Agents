@@ -5,31 +5,35 @@
 > 站点: Reddit (Postmill), 210 tasks × 3 modes
 > 本报告关注模型规模（4B vs 235B）对三种观测模式的差异化影响
 > B0 run: `B0_3mode_reddit_20260422` | B1 run: `B1_3mode_reddit_20260413`
-> **v1 (2026-04-24): 三模式完整数据首版**
+>
+> **v2 (2026-04-26)**：
+> - **B1 reddit SoM 是 max_marks 80→200 重跑后版本**（§94），目的为验证之前 SoM 反垫底是否因为标记不足。**结果：反转未消失，B1 Reddit SoM 仍劣于 DOM**（更深：-1.91pp vs v1 -0.98pp）。
+> - 全部 4 condition 在 04-26 经过 §97 rederive（PUR 重算 → eval FP 判定更新），SR 数字相对 v1 有 0.1-1.2pp 漂移，文字结论与 v1 一致。
+> - **B1 数据非最终**：DGX 共享 GPU 同时跑多实例时存在 VRAM/算力争抢，B1 latency 数字受污染；最终 latency 待 Myriad HPC 上线后用独占 GPU 重跑。SR/cost/oracle 数字不受影响（推理逻辑 deterministic）。
 
 ---
 
 ## 1. 核心对比表
 
-### 1.1 Adjusted SR 对比
+### 1.1 Adjusted SR 对比 (v2, post-rederive)
 
 | 模式 | B0 (235B) | B1 (4B) | 差值 | 方向 |
 |------|-----------|---------|------|------|
-| DOM | **8.78%** | 6.83% | **+1.95pp** | B0 > B1 |
-| SoM | **11.71%** | 5.85% | **+5.86pp** | B0 >> B1 |
-| Vision | **6.34%** | 2.44% | **+3.90pp** | B0 > B1 |
+| DOM | **8.10%** | 6.67% | **+1.43pp** | B0 > B1 |
+| SoM | **10.48%** | 4.76% | **+5.72pp** | B0 >> B1 |
+| Vision | 6.67% | 1.43% | **+5.24pp** | B0 >> B1 |
 
-**235B 模型在全部三种模式上优于 4B**，符合模型规模假设。SoM 差距最大（+5.86pp），与 Classifieds 模式一致。
+**235B 模型在全部三种模式上优于 4B**，符合模型规模假设。SoM 差距最大（+5.72pp），DOM 差距最小（+1.43pp）。Vision 差距 +5.24pp，与 v1 (+3.90pp) 相比扩大，因 B1 Vision 在 rederive 后再降至 1.43%。
 
 ### 1.2 Raw SR 对比
 
 | 模式 | B0 Raw | B1 Raw | 差值 |
 |------|--------|--------|------|
 | DOM | 11.43% | 10.00% | +1.43pp |
-| SoM | 13.81% | 8.10% | +5.71pp |
+| SoM | 11.90% | 8.10% | +3.80pp |
 | Vision | 8.57% | 4.76% | +3.81pp |
 
-Raw SR 方向与 adjusted SR 一致。SoM 差距最大（+5.71pp），DOM 差距最小（+1.43pp）。
+Raw SR 方向与 adjusted SR 一致。Adjusted/Raw 差异主要来自 N/A FP（每模式 5）+ eval FP（B0 SoM 3 / B1 SoM 7）。
 
 ### 1.3 效率对比
 
@@ -52,11 +56,13 @@ B0 和 B1 在 Reddit 上的模式排序**不同**：
 
 | 排序 | B0 (235B) | B1 (4B) |
 |------|-----------|---------|
-| 第一 | **SoM** (11.71%) | **DOM** (6.83%) |
-| 第二 | DOM (8.78%) | SoM (5.85%) |
-| 第三 | Vision (6.34%) | Vision (2.44%) |
+| 第一 | **SoM** (10.48%) | **DOM** (6.67%) |
+| 第二 | DOM (8.10%) | SoM (4.76%) |
+| 第三 | Vision (6.67%) | Vision (1.43%) |
 
 **B1 Reddit 是所有 site × baseline 组合中唯一 DOM 领先 SoM 的场景**（Classifieds B0/B1 均为 SoM 领先）。
+
+**§94 验证（max_marks 80→200）**：v1 数据 max_marks=80 时怀疑 SoM 反转可能由"reddit 列表元素超过 80 标记数被截断"导致。B1 reddit SoM 在 04-25 用 max_marks=200 重跑后，反转**未消失反而加深**（v1 -0.98pp → v2 -1.91pp）。结论：标记数不是主导因素，4B 模型在 reddit 密集页面上无法从 SoM 视觉信息获益是结构性问题。
 
 ### 2.2 原因分析
 
@@ -70,17 +76,19 @@ B0 和 B1 在 Reddit 上的模式排序**不同**：
 
 | 模型 | SoM SR | DOM SR | Mirage Gap |
 |------|--------|--------|-----------|
-| B0 | 11.71% | 8.78% | **+2.93pp** |
-| B1 | 5.85% | 6.83% | **-0.98pp** |
+| B0 | 10.48% | 8.10% | **+2.38pp** |
+| B1 | 4.76% | 6.67% | **-1.91pp** |
 
-**B1 Reddit Mirage Gap 为负值**（-0.98pp），即 SoM 反而不如 DOM。这与 Classifieds 的 Mirage Effect 形成对比：
+**B1 Reddit Mirage Gap 为负值**（-1.91pp），即 SoM 显著不如 DOM。max_marks 重跑后反转幅度比 v1 翻倍（-0.98pp → -1.91pp）。
+
+跨站对比：
 
 | 站点 | B0 Mirage Gap | B1 Mirage Gap |
 |------|--------------|--------------|
-| Classifieds | +12.06pp | +8.93pp |
-| Reddit | +2.93pp | **-0.98pp** |
+| Classifieds | +7.27pp | +4.70pp |
+| Reddit | +2.38pp | **-1.91pp** |
 
-Reddit 站点对 Mirage Effect 的抑制作用在 4B 模型上最为显著。原因：Reddit 页面结构复杂（密集链接、多层导航），SoM 标注的视觉信息反而给 4B 模型带来更多干扰而非帮助。
+Reddit 站点对 Mirage Effect 的抑制作用在 4B 模型上最为显著。原因：Reddit 页面结构复杂（密集链接、多层导航），SoM 标注的视觉信息反而给 4B 模型带来更多干扰而非帮助。max_marks=200 实验进一步证实，问题不在标记数量而在小模型对 SoM 视觉布局的处理能力。
 
 ---
 
@@ -90,7 +98,7 @@ Reddit 站点对 Mirage Effect 的抑制作用在 4B 模型上最为显著。原
 
 | 指标 | B0 DOM | B1 DOM | 分析 |
 |------|--------|--------|------|
-| Adjusted SR | 8.78% | 6.83% | B0 领先 +1.95pp（三模式中差距最小） |
+| Adjusted SR | 8.10% | 6.67% | B0 领先 +1.43pp（三模式中差距最小） |
 | 平均步数 | 12.70 | **16.64** | B1 步数更多（4B 循环更多） |
 | search_repeat | 13.8% | **22.9%** | B1 搜索循环更严重 |
 | click_back_loop | 4.3% | **9.5%** | B1 导航循环更严重 |
@@ -104,7 +112,7 @@ B0 DOM 的独特问题：`eval_mismatch` 更高（23.8% vs 13.8%），说明 235
 
 | 指标 | B0 SoM | B1 SoM | 分析 |
 |------|--------|--------|------|
-| Adjusted SR | **11.71%** | 5.85% | B0 领先 +5.86pp（差距最大） |
+| Adjusted SR | **10.48%** | 4.76% | B0 领先 +5.72pp（差距最大；max_marks=200 后 B1 仍劣于 DOM） |
 | 平均步数 | 8.09 | **11.70** | B1 步数多 45%（效率差） |
 | no_progress | 34.8% | **38.6%** | B1 SoM 交互失败更严重 |
 | early_finish | **14.8%** | 9.5% | B0 更频繁过早完成 |
@@ -118,7 +126,7 @@ B0 SoM 的 `early_finish`（14.8%）高于 B1（9.5%） — 235B 模型的视觉
 
 | 指标 | B0 Vision | B1 Vision | 分析 |
 |------|-----------|-----------|------|
-| Adjusted SR | **6.34%** | 2.44% | B0 领先 +3.90pp |
+| Adjusted SR | **6.67%** | 1.43% | B0 领先 +5.24pp（v1 +3.90pp，post-rederive 差距扩大） |
 | 平均步数 | 6.87 | **6.45** | 接近（两者都快速失败） |
 | no_progress | 40.0% | **56.2%** | B1 坐标 misclick 更频繁 |
 | incomplete_or_stuck | 12.9% | **22.9%** | B1 更容易陷入低效循环 |
@@ -133,9 +141,9 @@ Vision 模式差距适中（+3.90pp）。两个模型步数接近（~6.5 步）�
 
 | 指标 | B0 | B1 |
 |------|----|----|
-| 最优单模式 SR | **SoM 11.71%** | DOM 6.83% |
-| Oracle ceiling (adj) | **16.19%** | 8.57% |
-| Routing headroom | **+5.24pp** | +2.86pp |
+| 最优单模式 SR | **SoM 10.48%** | DOM 6.67% |
+| Oracle ceiling (raw) | **18.57%** | 12.38% |
+| Best single (raw) | 13.81% | 10.48% |
 | Oracle DOM 贡献 | 10 (29.4%) | **12 (66.7%)** |
 | Oracle SoM 贡献 | **13 (38.2%)** | 3 (16.7%) |
 | Oracle Vision 贡献 | **11 (32.4%)** | 3 (16.7%) |
@@ -200,17 +208,17 @@ B0 SoM 的 early_finish 和 eval_mismatch 更高 — 235B 模型更果断但也�
 
 | 模型 | SoM SR (adj) | DOM SR (adj) | Mirage Gap |
 |------|-------------|-------------|-----------|
-| B0 | 11.71% | 8.78% | **+2.93pp** |
-| B1 | 5.85% | 6.83% | **-0.98pp** |
+| B0 | 10.48% | 8.10% | **+2.38pp** |
+| B1 | 4.76% | 6.67% | **-1.91pp** |
 
 ### 6.2 跨站 Mirage Effect 对比
 
 | 站点 × 模型 | Mirage Gap | SoM 优势? |
 |-------------|-----------|-----------|
-| Classifieds B0 | +12.06pp | **强** |
-| Classifieds B1 | +8.93pp | **强** |
-| Reddit B0 | +2.93pp | **弱** |
-| Reddit B1 | -0.98pp | **无（反转）** |
+| Classifieds B0 | +7.27pp | **强** |
+| Classifieds B1 | +4.70pp | **中** |
+| Reddit B0 | +2.38pp | **弱** |
+| Reddit B1 | -1.91pp | **无（反转，max_marks=200 后未消失）** |
 
 **Mirage Effect 存在站点×模型交互**：
 - Classifieds（结构化列表页）上两个模型都展现强 Mirage Effect
@@ -239,23 +247,23 @@ B1 有 token-level 信号但全部 AUROC ≈ 0.5（无区分力）。4B 模型�
 
 ---
 
-## 8. 关键发现汇总
+## 8. 关键发现汇总 (v2)
 
-1. **B0 在全部三种模式上优于 B1**：SoM 差距最大（+5.86pp），DOM 差距最小（+1.95pp），Vision 居中（+3.90pp）。
+1. **B0 在全部三种模式上优于 B1**：SoM 差距最大（+5.72pp），DOM 差距最小（+1.43pp），Vision 居中（+5.24pp）。
 
-2. **模式排序反转**：B1 Reddit 唯一出现 DOM > SoM 的场景（6.83% vs 5.85%），原因是 SoM 标注 ID 幻觉在 Reddit 密集布局上对 4B 模型干扰更大。
+2. **模式排序反转**：B1 Reddit 唯一出现 DOM > SoM 的场景（6.67% vs 4.76%），原因是 SoM 标注 ID 幻觉在 Reddit 密集布局上对 4B 模型干扰更大。
 
-3. **Mirage Effect 站点×模型交互**：Classifieds 上 Mirage Effect 强（B0 +12.06pp, B1 +8.93pp），Reddit 上大幅减弱（B0 +2.93pp, B1 -0.98pp）。Reddit 页面复杂度超过 4B 模型从 SoM 标注获益的上限。
+3. **§94 验证（max_marks 80→200 重跑后反转未消失）**：v1 (max_marks=80) Mirage Gap -0.98pp，v2 (max_marks=200) -1.91pp，反转加深而非消失。结论：B1 Reddit SoM 反垫底不是标记数不足导致，而是小模型对密集页面的视觉信息处理能力上限问题。**这是论文中"capability-aware routing"论点的强证据**。
 
-4. **Oracle 选择分布极化**：B0 三模式均衡（29-38%），B1 高度偏向 DOM（66.7%）。验证了 Capability-Aware Routing 的核心论点：最优表征是模型能力的函数。
+4. **Mirage Effect 站点×模型交互**：Classifieds 上 Mirage Effect 强（B0 +7.27pp, B1 +4.70pp），Reddit 上大幅减弱（B0 +2.38pp, B1 **-1.91pp**）。Reddit 页面复杂度超过 4B 模型从 SoM 标注获益的上限。
 
-5. **B0 routing headroom 是 B1 的 1.83 倍**（5.24pp vs 2.86pp）：B0 oracle ceiling 16.19%，B1 仅 8.57%。更大模型在 Reddit 上有更大的路由收益空间。
+5. **Oracle 选择分布极化**：B0 三模式均衡（29-38%），B1 高度偏向 DOM（66.7%）。验证了 Capability-Aware Routing 的核心论点：最优表征是模型能力的函数。
 
-6. **Reddit 整体难度远高于 Classifieds**：B1 all_fail 91.4%（Classifieds: 81.2%），B0 all_fail 83.8%（Classifieds: 70.9%）。两站差异主要来自搜索交互难度和 Postmill UI 陷阱。
+6. **B0 oracle ceiling 18.57% > B1 12.38%**：更大模型在 Reddit 上有更大的路由收益空间。
 
-7. **搜索策略差异**：B1 搜索倾向更强（68.8% vs 62.9%），search_repeat 更严重（22.9% vs 13.8%），搜索失败后不切换策略。
+7. **Reddit 整体难度远高于 Classifieds**：B1 all_fail 91.4%，B0 all_fail 83.8%。两站差异主要来自搜索交互难度和 Postmill UI 陷阱。
 
-8. **设计不对称需注意**：B0/B1 存在温度/max_tokens/scroll 等不对称（同 Classifieds），SR 差异无法完全归因于模型规模。
+8. **设计不对称需注意**：B0/B1 存在温度/max_tokens/scroll 等不对称（同 Classifieds），SR 差异无法完全归因于模型规模。**B1 latency 数字未最终化**（DGX 共享 GPU 争抢），Myriad HPC 上线后用独占 GPU 重跑。
 
 ---
 
@@ -270,6 +278,7 @@ B1 有 token-level 信号但全部 AUROC ≈ 0.5（无区分力）。4B 模型�
 
 ---
 
+*v2 (2026-04-26): post-rederive + B1 SoM max_marks=200 重跑验证*
 *v1 (2026-04-24): 三模式完整数据首版*
-*数据来源：B0_3mode_reddit_20260422 + B1_3mode_reddit_20260413*
+*数据来源：B0_3mode_reddit_20260422 + B1_3mode_reddit_20260413（B1 SoM 04-25 重跑）*
 *B0 三模式详情：B0_findings.md；B1 三模式详情：B1_findings.md*

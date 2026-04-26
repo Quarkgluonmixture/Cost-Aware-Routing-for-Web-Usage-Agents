@@ -7,6 +7,8 @@
 > **注：visual_fp 层已在 §95 中废弃，adjusted SR 仅扣除 N/A FP + eval FP**
 > 各模式专有分析见 `B0_DOM_digest.md` / `B0_SOM_digest.md` / `B0_Vision_digest.md`
 > B0 vs B1 跨模型对比见 `B0_B1_findings.md`
+>
+> **数据更新 (2026-04-26)**：04-26 全 condition rederive。当前 adjusted SR：DOM **14.10%** / SoM **21.37%** / Vision **13.68%**（v1: 12.95% / 20.54% / 12.05%，漂移 <1.7pp，三模式排序与结论不变，SoM 仍显著领先）。
 
 ---
 
