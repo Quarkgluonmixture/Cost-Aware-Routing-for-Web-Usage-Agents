@@ -172,10 +172,26 @@ class ExperimentRunner:
         if not parent.is_dir():
             return
         one_hour_ago = time.time() - 3600
+        # Analysis-output prefixes that share parent dir but are NOT run dirs
+        # (do not delete these even if they look "empty" by the run-dir heuristic).
+        _ANALYSIS_PREFIXES = (
+            "b0_vs_b1",
+            "cross_site",
+            "cross_benchmark",
+            "comparison_",
+            "combined_",
+            "latest_",  # symlinks already skipped, but be defensive
+            "aggregate_",
+            "B0_3mode/",  # gallery aggregate symlink targets
+            "B1_3mode/",
+        )
         for run_dir in parent.iterdir():
             if not run_dir.is_dir() or run_dir == self.output_root:
                 continue
             if run_dir.is_symlink():
+                continue
+            # Skip non-run analysis output directories (b0_vs_b1, cross_site, etc.)
+            if any(run_dir.name.startswith(p.rstrip("/")) for p in _ANALYSIS_PREFIXES):
                 continue
             latest_mtime = _latest_tree_mtime(run_dir)
             if latest_mtime > one_hour_ago:
