@@ -62,8 +62,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
             "fixed_power_watts": None,
             "use_pynvml": True,
             "sample_interval_s": 0.5,
-            "track_model_load": False,
-            "model_load_amortize_over": 0,
+            # `track_model_load` / `model_load_amortize_over` removed in §97
+            # ET-12 (record_model_load was dead code).
         },
     },
     "checklist": {
@@ -110,6 +110,12 @@ def load_experiment_config(config_path: str) -> Dict[str, Any]:
         cfg = yaml.safe_load(f) or {}
 
     defaults = cfg.get("defaults", [])
+    # Tolerate single-string form (`defaults: "base.yaml"`) — wrap in list to
+    # avoid iterating characters of the string.
+    if isinstance(defaults, str):
+        defaults = [defaults]
+    elif not isinstance(defaults, (list, tuple)):
+        defaults = []
     merged = copy.deepcopy(DEFAULT_CONFIG)
     for default_cfg in defaults:
         default_path = Path(default_cfg)
@@ -220,8 +226,7 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     cfg["metrics"]["energy"].setdefault("fixed_power_watts", None)
     cfg["metrics"]["energy"].setdefault("use_pynvml", True)
     cfg["metrics"]["energy"].setdefault("sample_interval_s", 0.5)
-    cfg["metrics"]["energy"].setdefault("track_model_load", False)
-    cfg["metrics"]["energy"].setdefault("model_load_amortize_over", 0)
+    # `track_model_load` / `model_load_amortize_over` removed in §97 ET-12.
 
     return cfg
 

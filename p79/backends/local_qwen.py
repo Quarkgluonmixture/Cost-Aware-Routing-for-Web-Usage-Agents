@@ -24,7 +24,10 @@ class LocalQwenBackend:
                     "path": config.get("path", "Qwen/Qwen3-VL-4B-Instruct"),
                     "quantization": config.get("quantization", "none"),
                     "device": config.get("device", "cuda"),
-                    "max_new_tokens": config.get("max_new_tokens", 512),
+                    # Default raised 512 → 4096 (§45 alignment, §97 audit):
+                    # 512 truncates typical thought+JSON envelope (~400-1500 tok)
+                    # → silent parse errors. Configs should set this explicitly.
+                    "max_new_tokens": config.get("max_new_tokens", 4096),
                     "temperature": config.get("temperature", 0.1),
                     "top_p": config.get("top_p", 0.9),
                     "min_free_vram_gb": config.get("min_free_vram_gb", 0),

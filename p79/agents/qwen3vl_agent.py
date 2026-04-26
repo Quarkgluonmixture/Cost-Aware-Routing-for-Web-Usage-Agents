@@ -304,7 +304,6 @@ CRITICAL:
     @staticmethod
     def _compute_confidence(
         scores: Tuple[torch.Tensor, ...],
-        generated_token_ids: torch.Tensor,
     ) -> Dict[str, Any]:
         """Compute confidence metrics from generation scores.
 
@@ -487,9 +486,12 @@ CRITICAL:
         # Count image tokens (expanded from vision patches by the processor)
         image_token_count = int((inputs.input_ids == self.processor.image_token_id).sum().item())
 
-        # Generate
+        # Generate. Default raised from 256 → 4096 (§45 alignment): 256 is
+        # below typical thought+JSON envelope (~400-1500 tok), causing silent
+        # truncation that produces parse errors rather than valid actions.
+        max_new_tokens = int(self.config.get("model", {}).get("max_new_tokens", 4096))
         gen_kwargs = {
-            "max_new_tokens": self.config.get("model", {}).get("max_new_tokens", 256),
+            "max_new_tokens": max_new_tokens,
             "do_sample": False,
             "return_dict_in_generate": True,
             "output_scores": True,
@@ -507,15 +509,17 @@ CRITICAL:
         )[0]
 
         # Extract confidence metrics from logprobs
-        confidence_metrics = self._compute_confidence(gen_output.scores, generated_ids_trimmed[0])
+        confidence_metrics = self._compute_confidence(gen_output.scores)
 
         # Parse
         action, valid, fail_reason = parse_action_text(output_text)
         
         # Enforce newline for search queries if missing
         if action.get("action_type") == "type":
-            text = action.get("text", "")
-            thought = action.get("thought", "").lower()
+            text = action.get("text", "") or ""
+            # action.get("thought") may be None (e.g. agent omitted the field
+            # despite system-prompt requirement) — guard before .lower().
+            thought = (action.get("thought") or "").lower()
             # If thought mentions search/find, or if text looks like a query (short, no newlines)
             if ("search" in thought or "find" in thought or "look for" in thought) and not text.endswith("\n"):
                 action["text"] = text + "\n"

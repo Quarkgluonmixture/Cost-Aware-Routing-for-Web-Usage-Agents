@@ -259,6 +259,7 @@ class VWAWrapper:
             if "scroll_direction" in action_json:
                 # Semantic scroll direction (from tool-calling schema).
                 direction = "down" if action_json["scroll_direction"] == "down" else "up"
+                action = create_scroll_action(direction=direction)
             else:
                 delta = action_json["delta"]
                 if isinstance(delta, (list, tuple)) and len(delta) >= 2:
@@ -267,8 +268,13 @@ class VWAWrapper:
                     dy = delta[0]  # single-element delta: treat as dy
                 else:
                     dy = delta if isinstance(delta, (int, float)) else 300
-                direction = "down" if dy >= 0 else "up"
-            action = create_scroll_action(direction=direction)
+                # dy == 0 is not a scroll — treat as no-op rather than coercing
+                # it into a "down" scroll (which would inflate scroll_down stats).
+                if dy == 0:
+                    action = create_none_action()
+                else:
+                    direction = "down" if dy > 0 else "up"
+                    action = create_scroll_action(direction=direction)
         elif action_type == "type" and "text" in action_json and "element_id" not in action_json:
             # Type without element_id (vision mode): click coordinate first to focus, then keyboard type.
             # IMPORTANT: Use direct page.mouse.click() instead of env.step(click_action).
@@ -353,19 +359,26 @@ class VWAWrapper:
                     eid = int(action_json["element_id"])
                     # 从上一次 obs 的 obs_nodes_info 拿像素坐标（union_bound: [x, y, w, h]）
                     node_info = (self._last_obs_nodes_info or {}).get(str(eid))
-                    if node_info and "union_bound" in node_info:
+                    if not node_info or "union_bound" not in node_info:
+                        # obs_nodes_info 缺失时不瞎猜——视口中心几乎肯定不是
+                        # 目标 SELECT，会随机选错下拉。降级为 no-op，让上层
+                        # cycle/no-progress 检测处理。Skip the page.evaluate()
+                        # below; action=create_none_action() is set at branch end.
+                        logger.warning(
+                            "select_option: obs_nodes_info missing for element_id=%s, "
+                            "fallback to no-op (previously: viewport-center fallback that silently mis-selected)",
+                            eid,
+                        )
+                        ub = None
+                    else:
                         ub = node_info["union_bound"]
+                    if ub is None:
+                        pass  # no-op fallback handled above; skip the page.evaluate()
+                    else:
                         x_px = ub[0] + ub[2] / 2
                         y_px = ub[1] + ub[3] / 2
-                    else:
-                        # obs_nodes_info 缺失时 fallback：用视口中心
-                        logger.warning(
-                            "select_option: obs_nodes_info missing for element_id=%s, using viewport center", eid
-                        )
-                        x_px = self.viewport_width / 2
-                        y_px = self.viewport_height / 2
-                    self._env.page.evaluate(
-                        _FUZZY_MATCH_JS + """([x, y, label, idx]) => {
+                        self._env.page.evaluate(
+                            _FUZZY_MATCH_JS + """([x, y, label, idx]) => {
                             const el = document.elementFromPoint(x, y);
                             // 1. Native <select> path
                             if (el && el.tagName === 'SELECT') {
@@ -412,9 +425,9 @@ class VWAWrapper:
                                 }
                             }
                         }""",
-                        [x_px, y_px, option_label, option_index],
-                    )
-                    self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
+                            [x_px, y_px, option_label, option_index],
+                        )
+                        self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
                 except Exception as _e:
                     logger.warning("select_option (element_id=%s) failed: %s", action_json.get("element_id"), _e)
             elif "coordinate" in action_json:

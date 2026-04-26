@@ -79,13 +79,17 @@ def refresh_site_auth(
     # Resolve repo root for VWA sys.path injection
     repo_dir = Path(__file__).resolve().parent.parent.parent
 
+    # Resolve host IP for --host-resolver-rules from env (default = legacy
+    # value). Lets users with different Tailscale IPs override without code edit.
+    _resolver_ip = os.environ.get("VWA_REMOTE_HOST", "100.95.81.103")
+
     script = f"""
 import sys, time
 sys.path.insert(0, {str(repo_dir / 'external' / 'visualwebarena')!r})
 from playwright.sync_api import sync_playwright
 cm = sync_playwright()
 pw = cm.__enter__()
-browser = pw.chromium.launch(headless=True, args=['--host-resolver-rules=MAP metis.lti.cs.cmu.edu 100.95.81.103'])
+browser = pw.chromium.launch(headless=True, args=['--host-resolver-rules=MAP metis.lti.cs.cmu.edu {_resolver_ip}'])
 ctx = browser.new_context()
 page = ctx.new_page()
 page.goto({(base_url + login_path)!r})
@@ -107,9 +111,20 @@ elif site == 'shopping_admin':
     page.locator('#login').fill({password!r})
     page.get_by_role('button', name='Sign in').click()
 time.sleep(2)
+# Verify login actually succeeded BEFORE writing storage_state.
+# Was: storage_state written unconditionally → empty/stale cookies on failed
+# login → caller (watchdog) believed auth was refreshed but next episode
+# still NOT-LOGGED-IN. Heuristic: post-login URL no longer on login page.
+final_url = page.url
+login_marker = {login_path!r}.lower().split('?')[0].rstrip('/')
+still_on_login = bool(login_marker) and login_marker in final_url.lower()
+if still_on_login:
+    cm.__exit__(None, None, None)
+    print('LOGIN_FAILED ->', final_url)
+    sys.exit(2)  # distinct exit code so caller knows it's a login failure
 ctx.storage_state(path={str(auth_file)!r})
 cm.__exit__(None, None, None)
-print('ok ->', page.url)
+print('ok ->', final_url)
 """
 
     # Infer dataset for DATASET env var
@@ -127,6 +142,15 @@ print('ok ->', page.url)
         if r.returncode == 0 and auth_file.exists():
             logger.info("auth_refresh: %s refreshed: %s", site, r.stdout.strip())
             return True
+        # rc=2 → script detected login failure (still on login page, no
+        # storage_state written). Distinguish for clearer logging.
+        if r.returncode == 2:
+            logger.warning(
+                "auth_refresh: %s LOGIN VERIFICATION FAILED (still on login page) — "
+                "credentials wrong, site down, or page structure changed: %s",
+                site, r.stdout.strip(),
+            )
+            return False
         logger.warning(
             "auth_refresh: %s failed rc=%d: %s",
             site, r.returncode, r.stderr[-300:],

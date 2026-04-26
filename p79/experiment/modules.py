@@ -93,12 +93,12 @@ def m3_retry_action(
             "thought": "M3 retry: type failed, no input found, scroll to reveal.",
         }
     elif failed_type in ("go_back", "goto"):
-        # Navigation failed — wait briefly via a no-op scroll
+        # Navigation failed — wait briefly. (Was: scroll with dy=0; after
+        # §97 audit VW-1 fix, dy=0 is coerced to no-op anyway, so use
+        # an explicit wait action for clarity.)
         return {
-            "action_type": "scroll",
-            "delta": [0, 0.0],
-            "coordinate_type": "normalized",
-            "thought": "M3 retry: navigation failed, minimal scroll as wait.",
+            "action_type": "wait",
+            "thought": "M3 retry: navigation failed, brief wait.",
         }
     else:
         # Default: scroll to gather more context

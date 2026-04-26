@@ -721,8 +721,9 @@ Action Schema:
 
         # Auto-append newline for search queries.
         if action.get("action_type") == "type":
-            text = action.get("text", "")
-            thought = action.get("thought", "").lower()
+            text = action.get("text", "") or ""
+            # action.get("thought") may be None — guard before .lower() (same as B1).
+            thought = (action.get("thought") or "").lower()
             if ("search" in thought or "find" in thought or "look for" in thought) and not text.endswith("\n"):
                 action["text"] = text + "\n"
                 logger.info("Auto-appended newline to search query.")
