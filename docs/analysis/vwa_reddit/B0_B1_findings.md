@@ -414,3 +414,92 @@ P79 SoM 实现 vs VWA 原版有 3 大差异：
 
 *v3 (2026-04-26): §100/§101 SoM probe + Codex audit subset + Phantom-SoM 评估*
 *v2 (2026-04-26): post-rederive + max_marks=200 重跑验证*
+
+---
+
+## 12. M1+M2 root cause 实证 + 设计 confound（v4, §101 后修订）
+
+### 12.1 实证 4 cell × SoM mode 非交互 click 率
+
+| Cell | total clicks | non-interactive % | top non-interactive role |
+|---|---|---|---|
+| B0 classifieds SoM | 524 | 11.3% | image (46) |
+| B1 classifieds SoM | 957 | **30.0%** ⚠️ | image (184, 商品 thumbnail) |
+| B0 reddit SoM | 662 | 10.4% | heading (60, 字母分类) |
+| **B1 reddit SoM** | 1488 | **9.5%** ⭐ | heading (49) |
+
+**关键反直觉**：
+- **B1 reddit M2（误点 StaticText）= 9.5% ≈ B0 reddit 10.4%**——M2 在 reddit 上 **不显著**
+- 之前外推 §96 classifieds B1 32% 数据到 reddit 是错的
+- → reddit 上 B0/B1 都受 heading 误点影响，差异不构成反转主因
+
+### 12.2 反转 root cause 拆解（实证后修订）
+
+**M1 (visual hijack)**：4B attention 被高对比度青色数字标签 dominate
+**M2 (误点 StaticText)**：4B click 自由度被赋予非交互元素
+
+```
+classifieds B1 (SoM > DOM +6.4pp 仍正向):
+  M1: 弱（41 marks num_ids=12, 33 marks=0；阈值未触发）
+  M2: 显著（30%）但被 visual 收益压过 → C subset SoM-DOM +10.4pp
+
+reddit B1 (SoM < DOM -1.9pp 反转):
+  M1: 强（111 marks num_ids=88, 128 marks=446）
+  M2: 弱（9.5% ≈ B0 10.4%，B0/B1 都受 heading 误点影响）
+  反转主因：M1（hijack），M2 解释 ~0%
+
+reddit B0 (SoM > DOM +0.5pp 微正):
+  M1: 极弱（B0 视觉容量足以分辨标签 vs 内容）
+  M2: 弱
+  net: 截图微弱视觉收益勉强压过损失
+```
+
+→ **reddit B1 反转 -1.9pp 主要由 M1 解释**。M2 hypothesis 在 reddit 上被实证否定。
+
+### 12.3 P79 vs VWA 原版 SoM 设计差异（confound 评估）
+
+**1 fundamental（标注范围）+ 2 minor（颜色/placement 影响小）**：
+
+| | P79 "Universal SoM" | VWA 原版 "Action-Affordance SoM" |
+|---|---|---|
+| 标注范围 | 所有元素（StaticText/heading 也标） | 仅 `Interactable=True` |
+| Action affordance | 可 click 任何元素（含 StaticText） | 只能 click 可交互（结构性约束 M2=0%） |
+| 设计哲学 | trust model with role info | structural constraint |
+
+**VWA 原版下预测**（修正后）：
+- M1 hijack：标签数 reddit ~74 vs P79 111；阈值是否触发未知，hijack 减弱程度待实证
+- M2 在 reddit 上本来就不显著（实测 9.5% ≈ B0），VWA 改进意义有限
+- M2 在 classifieds 上结构性消除（B1 30%→0%），但 SoM 已经赢，进一步扩大优势
+
+→ **reddit B1 反转量级几乎完全取决于 M1 在 VWA 原版下的命运**。
+
+### 12.4 主 claim 与 SoM 设计的依赖度
+
+| Claim | 设计依赖度 |
+|---|---|
+| **Lazy minimization** (4B 偏好 easy 信号: 数字 > 文本 > 内容文字) | 独立 |
+| **B1 视觉 capability ≈ B0** (NoMarks 75% ≈ 78%) | 独立 |
+| **text-over-vision bias 在 small VLM 更强** (DOM-Vision +5.2pp B1 / +2.9pp B0) | 独立 |
+| **Capability × density × task-category 三轴交互** | 独立 |
+| **Phantom-SoM cost saving motivation** | 独立 |
+| reddit B1 反转 **量级** -1.9pp | 依赖 P79 设计（VWA 下可能 -0.5 ~ -1.5pp） |
+| occlusion OCR -60pp **量级** | 依赖 P79 设计 |
+| classifieds M2 **量级** 30% | 依赖 P79 设计（VWA 下结构性 0%） |
+
+**主 mechanism claim 全部独立于 SoM 设计选择**。仅"具体量级"是 P79-specific。
+
+### 12.5 Phantom-SoM motivation 不依赖反转 magnitude
+
+即便 L4 ablation 显示 VWA 原版下 reddit B1 反转消失（SoM ≈ DOM），Phantom-SoM 仍 motivated：
+- SoM 含图片 token (~50% input cost)，DOM/Phantom 无
+- 同等 SR 下 → cost-saving win（universal）
+- 韦恩图角度：SoM only / DOM only 非空 → 两 mode 解决不同 task → routing headroom 存在
+- → **Phantom-SoM 是 universal cost-aware tool，不是反转 magnitude 的 hostage**
+
+### 12.6 Honest scope statement（论文应披露）
+
+> "We adopt the 'Universal SoM' design (annotating all elements including non-interactive ones), motivated by §96's routing experiment control variable need (DOM/SoM textual content parity). The mechanism findings (lazy minimization, capability × density × task-category interaction, text-over-vision bias) are design-independent. Specific reversal magnitudes (e.g. reddit B1 SoM-DOM = -1.9pp) reflect this design and may attenuate (not reverse direction) under VWA-style 'Action-Affordance SoM'. M2 (StaticText 误点) was empirically verified to contribute ~0% to reddit reversal but ~30% (B1 classifieds) to action affordance overhead."
+
+---
+
+*v4 (2026-04-26): M1+M2 实证拆解 + Universal vs Action-Affordance 范式 + scope 标注*
