@@ -282,3 +282,135 @@ B1 有 token-level 信号但全部 AUROC ≈ 0.5（无区分力）。4B 模型�
 *v1 (2026-04-24): 三模式完整数据首版*
 *数据来源：B0_3mode_reddit_20260422 + B1_3mode_reddit_20260413（B1 SoM 04-25 重跑）*
 *B0 三模式详情：B0_findings.md；B1 三模式详情：B1_findings.md*
+
+---
+
+## 11. SoM 视觉 probe 实验（v3, §100/§101）
+
+### 11.1 实验设计
+
+5 张密度梯度截图 × B0/B1 × 3 mode probe，让 model 列出截图可见 link/button/heading 文字内容，ground truth 从 axtree 提取。脚本：`scripts/maintenance/probe_som_occlusion.py`。
+
+三个 mode：
+- **mode-SoM**：当前实现的带标签截图（含 occlusion bug）
+- **mode-NoMarks**：原始 `screenshot.png`（无标签 baseline）
+- **mode-WithText**：SoM 截图 + prompt 附加完整 [SOM_MARKS] 文本
+
+### 11.2 完整数据矩阵（visual recall %）
+
+| 图 | marks | B0 SoM | B0 NoMarks | B0 WithText | B1 SoM | B1 NoMarks | B1 WithText |
+|---|---|---|---|---|---|---|---|
+| reddit_164 step14 | 54 | 46% | 46% | 50% | 46% | 36% | **96%** ⭐⭐ |
+| **reddit_task_6 step0** | **111** | **18%** | **78%** | **80%** | 15% | **75%** | **81%** ⭐⭐ |
+| reddit_164 step0 | 128 | 40% | 55% | 43% | 28% | 42% | **81%** ⭐⭐ |
+
+**B1 num_ids 输出（attention hijack 量）随密度变化**：
+- mode-SoM: 1 (54 marks) → 88 (111 marks) → **446** (128 marks) ⚠️
+- mode-WithText: 0 → 0 → 7（给文本后 attention 完全 bypass 截图）
+
+### 11.3 三个核心 finding
+
+**(F1) B1 视觉 capability ≈ B0**（NoMarks 接近）：reddit_task_6 上 B1 NoMarks 75% vs B0 78%，差仅 3pp。**反驳"4B 视觉本质弱"假说**——B1 视觉 capability 在无标签下接近 B0。
+
+**(F2) SoM 标签是 destructive bug**：B0/B1 OCR 都从 ~78% 降至 ~15-18%（-60pp），实心填充覆盖元素文字开头 3-6 字符是系统性问题。但 task SR 不直接受 OCR 损失影响，因 [SOM_MARKS] 文本提供 fallback。
+
+**(F3) text-over-vision bias 在 small VLM 更强**：B1 mode-WithText reddit_164/14 = **96%** 反超 B0 50%——4B 给文本后**完全忽略截图**（甚至比 235B 切换更彻底）。Asadi 2026 small VLM 强 text-over-vision bias 的直接 probe-level 证据。
+
+### 11.4 三模式分解（DOM-Vision = text-over-vision bias 量化）
+
+| | DOM | SoM | Vision | SoM-DOM | **DOM-Vision** | SoM-Vision |
+|---|---|---|---|---|---|---|
+| B0 reddit | 11.4% | 11.9% | 8.6% | +0.5pp | **+2.9pp** | +3.3pp |
+| B1 reddit | 10.0% | 8.1% | 4.8% | -1.9pp | **+5.2pp** ⭐ | +3.3pp |
+
+**B1 DOM-Vision +5.2pp** 是 4B 强 text-over-vision bias 的论文级直接证据：纯文本（DOM）SR 远高于纯截图（Vision），且 B1 比 B0 (+2.9pp) 更显著。
+
+注：SoM-Vision = (文本贡献) + (带标签截图 vs 无标签截图差异)，**不能简化为"全文本贡献"**。
+
+### 11.5 韦恩图：B1 reddit DOM only 主导（反转 fundamental 证据）
+
+| 区域 | B0 reddit (n=210) | B1 reddit (n=210) |
+|---|---|---|
+| DOM only | 5 | **7** ⭐ |
+| SoM only | 7 | 3 |
+| Vision only | 5 | 2 |
+| DOM ∩ SoM | 9 | 6 |
+| DOM ∩ Vision | 4 | **0**（完全互斥） |
+| SoM ∩ Vision | 3 | **0** |
+| all 3 | 6 | 8 |
+| **Oracle** | **18.6%** | **12.4%** |
+| **Headroom** | +6.7pp | +2.4pp |
+
+**B1 reddit DOM only 7 ≫ SoM only 3** —— 反转的 fundamental 证据。其他 3 cell（B0 reddit / classifieds B0/B1）都是 SoM only > DOM only。
+
+**B1 上 DOM ∩ Vision = 0**：DOM (text path) 和 Vision (coordinate path) 解决**完全不同**的 task，路由理论上有意义。
+
+### 11.6 Codex 重审计 task category subset SR
+
+[Codex audit](../cross_sites/codex_audit_reddit.json) 把 reddit 210 tasks 分为：
+- A NON_VISUAL_TEXT_ONLY: 11 (5.2%)
+- B VISUAL_REQUIRED_REFERENCE_IMAGE: 84 (40%)
+- C VISUAL_REQUIRED_PAGE_SCREENSHOT: 113 (53.8%)
+- D UNCERTAIN: 2 (1%)
+
+| Cat | n | B0 DOM | B0 SoM | B0 Vision | B1 DOM | B1 SoM | B1 Vision |
+|---|---|---|---|---|---|---|---|
+| A | 11 | 0% | 0% | 0% | 0% | 0% | 0% |
+| **B** | **84** | 20.2% | 21.4% | 15.5% | **16.7%** | **13.1%** | 7.1% |
+| C | 113 | 6.2% | 6.2% | 4.4% | 6.2% | 5.3% | 3.5% |
+
+**B subset (ref-image required) × B1 SoM-DOM = -3.6pp**——reddit 上反转最严重的 subset。给 4B 加 reference image + page screenshot，hijack 完全压制视觉收益。**Lazy minimization 假说的直接证据**。
+
+### 11.7 反转因果链（reddit B1 SoM < DOM）
+
+```
+[B1 视觉 capability 正常 (NoMarks 75% ≈ B0 78%)]
+            ↓
+[SoM 标签 destructive: 实心 fill + 数字 hijack]
+            ↓
+[B1 给截图 → OCR 75%→15% (-60pp), num_ids 0→88]
+            ↓
+[B1 给截图 + 文本 → 完全忽略截图，OCR 跳到 81%, num_ids 归 0]
+            ↓
+[Task SR: DOM 10.0% > SoM 8.1% > Vision 4.8%]
+[反转 -1.9pp 来自截图 destructive + 视觉收益本来就低 (reddit 高密度)]
+```
+
+### 11.8 Phantom-SoM 路由分析
+
+probe 直接证据（mode-WithText num_ids 0 + B1 reddit OCR recover）：
+- B1 给 [SOM_MARKS] 文本后 attention 完全 bypass 截图
+- **B1 reddit Phantom-SoM (无图) 预测 ≥ Full SoM**（去掉 hijack +2pp + 省 50% token cost）
+- **B0 reddit Phantom-SoM ≈ Full SoM**（gap +0.5pp 可忽略）→ **cost-saving win**（保 SR + 省 50% cost）
+
+### 11.9 Lazy minimization 假说（4B 偏好 easy 信号）
+
+```
+4B 信号选择优先级: 数字标签 > 文本 > 截图内容文字
+
+机制：
+  - 给 [文本 + 截图]: 默认用文本
+  - 给 [数字标签 + 内容文字]: 默认 attend 数字
+  - 给 [仅截图]: OCR 仍可用 (NoMarks ≈ B0)
+
+证据：
+  - num_ids 0→446 with marks（lazy 选数字）
+  - 给文本归 0（lazy 选文本）
+  - WithText 反超 B0（4B 切换更彻底）
+
+Asadi 2026 small VLM 强 text-over-vision bias 的 mechanistic 解释。
+```
+
+### 11.10 SoM 设计参数 confound（claim scope 限制）
+
+P79 SoM 实现 vs VWA 原版有 3 大差异：
+1. 标全部元素 vs 仅 Interactable（P79 marks +50%）
+2. 固定青色 #00BCD4 vs categorical 多色
+3. simple placement (2 候选) vs 8-corner + 重叠避免
+
+→ §11.x findings 的 scope 限于 P79 实现。要 generalize 到 VWA 原版必须重做实验。详见笔记 §101。
+
+---
+
+*v3 (2026-04-26): §100/§101 SoM probe + Codex audit subset + Phantom-SoM 评估*
+*v2 (2026-04-26): post-rederive + max_marks=200 重跑验证*

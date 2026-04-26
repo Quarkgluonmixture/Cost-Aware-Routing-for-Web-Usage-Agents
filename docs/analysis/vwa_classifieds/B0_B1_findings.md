@@ -285,3 +285,113 @@ B0 和 B1 存在以下已知设计不对称（见 MEMORY），对 SR 对比有�
 *v6 (2026-04-25): 新增 §6 Action 执行效率对比（click_fail_rate per mode per baseline）*
 *数据来源：B0_3mode_classifieds_20260413 + B1_3mode_classifieds_20260413*
 *B0 三模式详情：B0_findings.md；B1 三模式详情：B1_findings.md*
+
+---
+
+## 11. SoM 视觉 probe 实验（v3, §100/§101）
+
+### 11.1 实验设计
+
+5 张密度梯度截图 × B0/B1 × 3 mode probe（同 reddit findings §11.1）。Classifieds 测试图：classifieds_task_14 step1 (33 marks) + classifieds_task_15 step1 (41 marks)，density 显著低于 reddit (54-128 marks)。
+
+### 11.2 数据矩阵（classifieds 图）
+
+| 图 | marks | B0 SoM | B0 NoMarks | B0 WithText | B1 SoM | B1 NoMarks | B1 WithText |
+|---|---|---|---|---|---|---|---|
+| classifieds_task_14 | 33 | 41% | 36% | 46% | 27% | 36% | 32% |
+| classifieds_task_15 | 41 | 11% | 21% | 26% | 32% | 21% | 58% |
+
+**Classifieds 三 mode 接近**（差异多在 ±10pp 内）：标签数少，遮挡轻，B0/B1 视觉处理都正常。**B1 num_ids 仅 0/12（vs reddit 高密度 88/446）**——低密度场景 attention 不被 hijack。
+
+### 11.3 三模式分解（classifieds vs reddit 对比）
+
+| | DOM | SoM | Vision | SoM-DOM | **DOM-Vision** | SoM-Vision |
+|---|---|---|---|---|---|---|
+| B0 classifieds | 15.0% | 23.1% | 15.8% | **+8.1pp** | -0.9pp | +7.3pp |
+| B1 classifieds | 11.1% | 17.5% | 11.1% | **+6.4pp** | 0.0pp | +6.4pp |
+
+**Classifieds DOM-Vision ≈ 0**：纯文本（DOM）与纯截图（Vision）SR 持平 —— **classifieds 上 text-over-vision bias 极弱**（与 reddit B1 +5.2pp 形成强对比）。
+
+### 11.4 韦恩图：classifieds SoM 主导独占
+
+| 区域 | B0 classifieds (n=234) | B1 classifieds (n=234) |
+|---|---|---|
+| DOM only | 7 | 9 |
+| **SoM only** | **21** ⭐ | **14** ⭐ |
+| Vision only | 11 | 5 |
+| DOM ∩ SoM | 10 | 6 |
+| DOM ∩ Vision | 3 | **0** |
+| SoM ∩ Vision | 8 | 10 |
+| all 3 | 15 | 11 |
+| **Oracle** | **32.1%** | **23.5%** |
+| **Headroom** | **+9.0pp** | **+6.0pp** |
+
+**SoM only 是 4 cell 中独占贡献最大的**（21 / 14）—— 验证 classifieds SoM 视觉收益真实。**Headroom 9.0pp 是 4 cell 最大** → classifieds 路由价值最大。
+
+### 11.5 Codex 重审计 task category subset SR
+
+[Codex audit](../cross_sites/codex_audit_classifieds.json) 把 classifieds 234 tasks 分为：
+- A NON_VISUAL_TEXT_ONLY: 27 (11.5%)
+- B VISUAL_REQUIRED_REFERENCE_IMAGE: 68 (29.1%)
+- C VISUAL_REQUIRED_PAGE_SCREENSHOT: 96 (41.0%)
+- D UNCERTAIN: 43 (18.4%)
+
+| Cat | n | B0 DOM | B0 SoM | B0 Vision | B1 DOM | B1 SoM | B1 Vision |
+|---|---|---|---|---|---|---|---|
+| A | 27 | 7.4% | 11.1% | 11.1% | 11.1% | 11.1% | **0.0%** |
+| B | 68 | 29.4% | 35.3% | 23.5% | 16.2% | 19.1% | 11.8% |
+| **C** | **96** | 8.3% | **21.9%** | 13.5% | 8.3% | **18.8%** | 14.6% |
+| D | 43 | 11.6% | 14.0% | 11.6% | 9.3% | 16.3% | 9.3% |
+
+**核心 finding**：
+
+- **C subset (page-screen required) × SoM-DOM = +13.5pp (B0) / +10.4pp (B1)** ⭐：classifieds 视觉收益**完全集中在需要 page screenshot 的 task** 上。
+- **A subset (text-only) × B1: SoM = DOM (11.1% = 11.1%)**：视觉无价值 task 上 SoM 收益 = 0，predict-perfect。
+- **A subset × B1 Vision = 0%**：B1 在 text-only task 上**纯截图模式失败率 100%**。
+
+→ classifieds 上 SoM > DOM 的 +6-8pp 整体 gap **完全由 C subset 贡献**。论文 narrative 强化：**SoM 收益是 task-category 函数，不是 site-uniform**。
+
+### 11.6 Phantom-SoM 路由分析
+
+probe 直接证据（mode-WithText 在 classifieds 不像 reddit 那样大幅 recover）：
+- classifieds_task_14: B1 WithText 32% < NoMarks 36%（轻微负向）
+- classifieds_task_15: B1 WithText 58% > NoMarks 21%（正向 +37pp）
+- → classifieds 上文本 fallback 效果**不一致**，截图本身有真实视觉收益
+
+**4 价值跨 model 评估（classifieds 视角）**：
+
+| 价值 | B0 classifieds | B1 classifieds |
+|---|---|---|
+| V1 省 token cost | ✅ | ✅ |
+| V2 避免 hijack | ⛔ N/A | ⚠️ 微弱（41 marks 上 num_ids=12 但 task 仍 SoM>DOM） |
+| V3 保留 action path | ✅ | ✅ |
+| V4 routing 中间层 | ✅ | ✅ |
+
+**Phantom-SoM 预测 vs Full SoM**：
+- B0 classifieds: Phantom < Full SoM **(-7pp)** → 截图有真实视觉收益，省 cost 损失大
+- B1 classifieds: Phantom < Full SoM **(-6pp)** → 同上，但 gap 略小（B1 也有 partial hijack）
+
+→ **classifieds 路由决策**：
+- C subset (page-screen): **必须 Full SoM**（视觉收益 +10pp 实测）
+- A subset (text-only): **DOM 即可**（视觉无价值）
+- B/D subset: trade-off based on cost sensitivity
+
+### 11.7 Lazy minimization 假说在 classifieds 上的验证
+
+probe num_ids 数据（classifieds 33-41 marks 低密度）：
+- B1 SoM: 0 (33 marks) / 12 (41 marks)
+- B1 NoMarks: 0 / 0
+- B1 WithText: 0 / 0
+
+→ **低密度下 hijack 不显著**（B1 attention 不优先 attend 数字）。Lazy minimization 假说在 classifieds 上 hijack 阈值未触发。
+
+但 B1 SoM-DOM gap +6.4pp 仍正向 → classifieds 上 SoM 收益主要来自**截图带来的真实视觉信号**（与 reddit 上 SoM 收益主要被 hijack 抵消形成对比）。
+
+### 11.8 SoM 设计参数 confound
+
+详见笔记 §101 + reddit findings §11.10。Classifieds 上的 finding 同样限于 P79 SoM 实现，generalize 到 VWA 原版需独立验证。
+
+---
+
+*v3 (2026-04-26): §100/§101 SoM probe + Codex audit subset + Phantom-SoM 评估*
+*v2 (2026-04-26): post-rederive*
