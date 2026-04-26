@@ -55,12 +55,29 @@ def _load_step_records(run_dir: Path) -> List[Dict[str, Any]]:
 
 
 def _load_episode_summaries(run_dir: Path) -> Dict[Tuple[str, int], Dict[str, Any]]:
-    """Load *_summary_v2.json, keyed by (condition_id, task_id)."""
+    """Load *_summary_v2.json, keyed by (condition_id, task_id).
+
+    Skips summaries with missing/invalid task_id rather than coalescing
+    them all to (-1) which silently overwrites entries.
+    """
     out: Dict[Tuple[str, int], Dict[str, Any]] = {}
     for path in run_dir.glob("*/episodes/*_summary_v2.json"):
-        with open(path, "r", encoding="utf-8") as f:
-            d = json.load(f)
-        key = (d.get("condition_id", ""), int(d.get("task_id", -1)))
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                d = json.load(f)
+        except Exception as exc:
+            print(f"  [WARN] cannot read {path.name}: {exc}")
+            continue
+        tid_raw = d.get("task_id")
+        if tid_raw is None:
+            print(f"  [WARN] missing task_id in {path.name}, skipping")
+            continue
+        try:
+            tid = int(tid_raw)
+        except (TypeError, ValueError):
+            print(f"  [WARN] invalid task_id={tid_raw!r} in {path.name}, skipping")
+            continue
+        key = (d.get("condition_id", ""), tid)
         out[key] = d
     return out
 
@@ -312,8 +329,17 @@ METRIC_LABELS = {
 
 
 def _rank_biserial(u_stat: float, n1: int, n2: int) -> float:
-    """Rank-biserial correlation from Mann-Whitney U."""
-    return 1.0 - (2.0 * u_stat) / (n1 * n2)
+    """Rank-biserial correlation from Mann-Whitney U.
+
+    Standard definition: rb = 2 * AUROC - 1 = 2*U/(n1*n2) - 1, where U is U1
+    (the U statistic for the FIRST sample in mannwhitneyu(x, y)). With x =
+    success_vals, positive rb means success > failure on the metric.
+
+    Previous version (`1 - 2*U/(n1*n2)`) was sign-reversed; downstream
+    `_routing_readiness` uses |rb| so the verdict was unaffected, but the
+    `mannwhitney_test.csv` rb column had the wrong sign.
+    """
+    return (2.0 * float(u_stat)) / (n1 * n2) - 1.0
 
 
 def c1_distribution(ep_df: pd.DataFrame, tables_dir: Path, plots_dir: Path):
@@ -1097,33 +1123,29 @@ def _auroc_bootstrap_ci(
 
 # ── Optimal threshold (Youden's J) ───────────────────────────────────────
 
-def _optimal_threshold(
+def _youden_j_search(
     y_true: np.ndarray, y_score: np.ndarray, n_thresholds: int = 200,
 ) -> Dict[str, Any]:
-    """Youden's J optimal threshold. Returns {threshold, sensitivity, specificity, f1, youden_j}."""
+    """Inner Youden's J grid search — used both in-sample and inside LOO."""
     if len(np.unique(y_true)) < 2:
         return {"threshold": float("nan"), "sensitivity": float("nan"),
-                "specificity": float("nan"), "f1": float("nan"), "youden_j": float("nan")}
-
+                "specificity": float("nan"), "f1": float("nan"),
+                "youden_j": float("nan")}
     lo, hi = float(y_score.min()), float(y_score.max())
     if lo == hi:
         return {"threshold": lo, "sensitivity": 1.0, "specificity": 0.0,
                 "f1": float("nan"), "youden_j": 0.0}
-
     thresholds = np.linspace(lo, hi, n_thresholds)
-    best = {"threshold": float("nan"), "sensitivity": 0.0,
-            "specificity": 0.0, "f1": 0.0, "youden_j": -1.0}
-
     pos = (y_true == 1)
     neg = (y_true == 0)
     n_pos = pos.sum()
     n_neg = neg.sum()
-
+    best = {"threshold": float("nan"), "sensitivity": 0.0,
+            "specificity": 0.0, "f1": 0.0, "youden_j": -1.0}
     for t in thresholds:
         pred_pos = y_score >= t
         tp = (pred_pos & pos).sum()
         fp = (pred_pos & neg).sum()
-        fn = (~pred_pos & pos).sum()
         tn = (~pred_pos & neg).sum()
         sens = tp / n_pos if n_pos else 0.0
         spec = tn / n_neg if n_neg else 0.0
@@ -1135,6 +1157,95 @@ def _optimal_threshold(
                     "specificity": float(spec), "f1": float(f1),
                     "youden_j": float(j)}
     return best
+
+
+def _optimal_threshold(
+    y_true: np.ndarray, y_score: np.ndarray, n_thresholds: int = 200,
+    *, loo: bool = True, n_bootstrap: int = 500, seed: int = 42,
+) -> Dict[str, Any]:
+    """Youden's J optimal threshold with cross-validated point estimate.
+
+    Returns the same in-sample {threshold, sensitivity, specificity, f1,
+    youden_j} keys for backward compatibility, plus optional CV diagnostics:
+      - threshold_loo_mean / threshold_loo_std: LOO-CV averaged threshold +
+        spread (out-of-sample)
+      - sensitivity_loo / specificity_loo / youden_j_loo: averaged held-out
+        performance (the honest estimate of how a deployed router will do)
+      - threshold_ci_lower / threshold_ci_upper: bootstrap 95% CI of in-sample
+        threshold (non-cv variability)
+      - validation: "in_sample" if too few samples for CV, "loo_cv" otherwise
+
+    The in-sample fields are kept because they were the previous output schema,
+    but **callers should prefer `*_loo` for any go/no-go threshold deployment**
+    — in-sample Youden's J is overfit to the data it was selected on.
+    """
+    in_sample = _youden_j_search(y_true, y_score, n_thresholds)
+    n = len(y_true)
+    if n < 20 or len(np.unique(y_true)) < 2 or not loo:
+        in_sample.update({
+            "threshold_loo_mean": float("nan"),
+            "threshold_loo_std": float("nan"),
+            "sensitivity_loo": float("nan"),
+            "specificity_loo": float("nan"),
+            "youden_j_loo": float("nan"),
+            "threshold_ci_lower": float("nan"),
+            "threshold_ci_upper": float("nan"),
+            "validation": "in_sample",
+        })
+        return in_sample
+
+    # LOO-CV: for each held-out i, fit threshold on rest, evaluate on i.
+    rng = np.random.default_rng(seed)
+    loo_thresholds = []
+    loo_correct_pos = []  # per-fold sensitivity numerators
+    loo_correct_neg = []
+    for i in range(n):
+        mask = np.ones(n, dtype=bool)
+        mask[i] = False
+        sub = _youden_j_search(y_true[mask], y_score[mask], n_thresholds)
+        t = sub["threshold"]
+        if math.isnan(t):
+            continue
+        loo_thresholds.append(t)
+        # Apply held-out fold
+        held_label = int(y_true[i])
+        pred_pos = y_score[i] >= t
+        if held_label == 1:
+            loo_correct_pos.append(int(pred_pos))
+        else:
+            loo_correct_neg.append(int(not pred_pos))
+
+    sens_loo = float(np.mean(loo_correct_pos)) if loo_correct_pos else float("nan")
+    spec_loo = float(np.mean(loo_correct_neg)) if loo_correct_neg else float("nan")
+
+    # Bootstrap CI of in-sample threshold (variability under resampling).
+    boot_ts = []
+    for _ in range(n_bootstrap):
+        idx = rng.integers(0, n, size=n)
+        sub = _youden_j_search(y_true[idx], y_score[idx], n_thresholds)
+        if not math.isnan(sub["threshold"]):
+            boot_ts.append(sub["threshold"])
+    if len(boot_ts) >= 100:
+        ci_lo = float(np.percentile(boot_ts, 2.5))
+        ci_hi = float(np.percentile(boot_ts, 97.5))
+    else:
+        ci_lo = ci_hi = float("nan")
+
+    in_sample.update({
+        "threshold_loo_mean": float(np.mean(loo_thresholds)) if loo_thresholds else float("nan"),
+        "threshold_loo_std": float(np.std(loo_thresholds)) if loo_thresholds else float("nan"),
+        "sensitivity_loo": sens_loo,
+        "specificity_loo": spec_loo,
+        "youden_j_loo": (
+            sens_loo + spec_loo - 1.0
+            if not (math.isnan(sens_loo) or math.isnan(spec_loo))
+            else float("nan")
+        ),
+        "threshold_ci_lower": ci_lo,
+        "threshold_ci_upper": ci_hi,
+        "validation": "loo_cv",
+    })
+    return in_sample
 
 
 # ── C5: Mode × Outcome Cross-Analysis ────────────────────────────────────
@@ -1909,7 +2020,13 @@ def c10_composite_signals(
     weights = [0.0, 0.25, 0.5, 0.75, 1.0]
 
     composite_rows = []
-    # Top-2 combinations
+    # Top-2 combinations. WARNING: this is an in-sample grid search across
+    # C(n,2) * len(weights) combinations — the reported "best AUROC" is
+    # overfit. For honest reporting we attach (a) the number of combinations
+    # tested so a Bonferroni-style adjustment is possible, and (b) per-row
+    # `validation = "in_sample"` so consumers can't accidentally take it as
+    # a CV-validated number. For Phase 2 router design, perform a separate
+    # holdout / k-fold validation on the top combinations.
     for i, s1 in enumerate(all_signals):
         for j, s2 in enumerate(all_signals):
             if j <= i:
@@ -1929,14 +2046,21 @@ def c10_composite_signals(
                         "weights": f"{w:.2f},{1-w:.2f}",
                         "AUROC": round(a, 4),
                         "n": int(mask.sum()),
+                        "validation": "in_sample",
                     })
 
     if composite_rows:
+        n_combinations = len(composite_rows)
         comp_df = pd.DataFrame(composite_rows)
         comp_df = comp_df.sort_values("AUROC", ascending=False)
+        # Annotate effective rank: top-K out of N combinations searched.
+        # Useful for "best AUROC" interpretation (it's a max over many trials).
+        comp_df["rank"] = range(1, len(comp_df) + 1)
+        comp_df["n_combinations_searched"] = n_combinations
         comp_df.to_csv(tables_dir / "composite_auroc.csv", index=False)
-        print(f"  C10: composite_auroc.csv ({len(comp_df)} combinations, "
-              f"best={comp_df.iloc[0]['AUROC']:.4f} [{comp_df.iloc[0]['combination']}])")
+        print(f"  C10: composite_auroc.csv ({n_combinations} combinations, "
+              f"best={comp_df.iloc[0]['AUROC']:.4f} [{comp_df.iloc[0]['combination']}], "
+              f"in-sample only — validate with holdout before Phase 2 deployment)")
     else:
         print("  C10: no valid composite combinations")
 
@@ -2023,9 +2147,14 @@ def _routing_readiness(
     mode_invariant = c5_result.get("signal_mode_invariant")
 
     # Overall: (token OR entropy OR behavioral OR verbalized) AND coverage
+    # AND (mode_invariant OR single-mode-run). Phase 2 router uses one
+    # threshold across modes — if signal is mode-dependent, a single
+    # threshold won't generalize. mode_invariant=None (single mode / not
+    # tested) does NOT block readiness; only an explicit False does.
     discriminative = (token_discriminative or entropy_discriminative
                       or behavioral_discriminative or verbalized_discriminative)
-    overall = discriminative and sufficient_coverage
+    mode_ok = mode_invariant is not False  # True or None both pass
+    overall = discriminative and sufficient_coverage and mode_ok
 
     return {
         "token_discriminative": token_discriminative,
@@ -2067,13 +2196,16 @@ def main() -> None:
                   else run_dir / "analysis" / "signals" / mode_name)
     tables_dir = output_dir / "tables"
     plots_dir = output_dir / "plots"
-    # Clean previous outputs to avoid stale files from prior runs
+    # Clean previous outputs to avoid stale files from prior runs.
+    # Skip directories defensively (don't recurse into / delete subdirs).
     if tables_dir.exists():
         for f in tables_dir.iterdir():
-            f.unlink()
+            if f.is_file():
+                f.unlink()
     if plots_dir.exists():
         for f in plots_dir.iterdir():
-            f.unlink()
+            if f.is_file():
+                f.unlink()
     tables_dir.mkdir(parents=True, exist_ok=True)
     plots_dir.mkdir(parents=True, exist_ok=True)
 
@@ -2095,21 +2227,59 @@ def main() -> None:
     label_mode = "adjusted" if use_adjusted else "raw"
     if use_adjusted and not ep_df.empty:
         from p79.experiment.analysis import compute_adjusted_success_batch
+        # Detect benchmark from run_dir path (visualwebarena vs webarena).
+        # Previously hardcoded "visualwebarena" → wrong na_task_ids loaded for WA.
+        benchmark = "webarena" if any(p == "webarena" for p in run_dir.parts) else "visualwebarena"
         # Detect benchmark_site from summaries
         sites = set()
         for (_, _), s in summaries.items():
             bs = s.get("benchmark_site") or s.get("site") or ""
             if bs:
                 sites.add(bs)
-        if len(sites) == 1:
-            bsite = sites.pop()
+
+        if not sites:
+            # No site info — abort adjusting rather than silently using a
+            # wrong default site (was: hardcoded fallback to 'classifieds').
+            print("  ⚠ Cannot detect benchmark_site from summaries; skipping adjustment.")
+            ep_df["raw_success"] = ep_df["success"]
+            ep_df["adjusted_success"] = ep_df["success"]
+            ep_df["fp_reason"] = ""
+            label_mode = "raw_no_site_info"
+        elif len(sites) == 1:
+            bsite = next(iter(sites))
+            ep_df["raw_success"] = ep_df["success"]
+            compute_adjusted_success_batch(ep_df, bsite, benchmark)
+            n_adjusted = int((ep_df["raw_success"] != ep_df["adjusted_success"]).sum())
+            ep_df["success"] = ep_df["adjusted_success"]
+            print(f"  Adjusted labels ({bsite}, benchmark={benchmark}): {n_adjusted} episodes changed")
         else:
-            bsite = "classifieds"  # fallback for multi-site / unknown
-        ep_df["raw_success"] = ep_df["success"]
-        compute_adjusted_success_batch(ep_df, bsite)
-        n_adjusted = int((ep_df["raw_success"] != ep_df["adjusted_success"]).sum())
-        ep_df["success"] = ep_df["adjusted_success"]
-        print(f"  Adjusted labels ({bsite}): {n_adjusted} episodes changed")
+            # Multi-site: per-site batch (was: hardcoded fallback to 'classifieds').
+            print(f"  ⚠ Multi-site run detected: {sorted(sites)}. Adjusting per-site.")
+            ep_df["raw_success"] = ep_df["success"]
+            bs_map = {
+                (s.get("condition_id", ""), int(s.get("task_id", -1))):
+                (s.get("benchmark_site") or s.get("site") or "")
+                for (_, _), s in summaries.items()
+            }
+            ep_df["_bsite"] = ep_df.apply(
+                lambda r: bs_map.get((r["condition_id"], int(r["task_id"])), ""), axis=1
+            )
+            adj_parts = []
+            for site in sorted(sites):
+                site_ep = ep_df[ep_df["_bsite"] == site].copy()
+                if site_ep.empty:
+                    continue
+                compute_adjusted_success_batch(site_ep, site, benchmark)
+                adj_parts.append(site_ep[["adjusted_success", "fp_reason"]])
+            if adj_parts:
+                import pandas as _pd
+                adj_combined = _pd.concat(adj_parts)
+                ep_df["adjusted_success"] = adj_combined["adjusted_success"]
+                ep_df["fp_reason"] = adj_combined["fp_reason"]
+            n_adjusted = int((ep_df["raw_success"] != ep_df["adjusted_success"]).sum())
+            ep_df["success"] = ep_df["adjusted_success"]
+            ep_df.drop(columns=["_bsite"], inplace=True)
+            print(f"  Adjusted labels (multi-site, benchmark={benchmark}): {n_adjusted} episodes changed")
     else:
         ep_df["raw_success"] = ep_df["success"]
         ep_df["adjusted_success"] = ep_df["success"]

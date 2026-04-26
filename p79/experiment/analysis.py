@@ -26,6 +26,11 @@ def _load_na_task_ids(site: str, benchmark: str = "visualwebarena") -> set:
     if not config_path.exists():
         config_path = config_dir / f"test_{site}.raw.json"
     if not config_path.exists():
+        logger.warning(
+            "N/A task config not found for site=%s benchmark=%s (looked under %s); "
+            "na_fp detection will be silently disabled for this site",
+            site, benchmark, config_dir,
+        )
         return set()
     try:
         with open(config_path, "r", encoding="utf-8") as f:
@@ -36,7 +41,11 @@ def _load_na_task_ids(site: str, benchmark: str = "visualwebarena") -> set:
             if isinstance(ref, dict) and ref.get("fuzzy_match") == "N/A":
                 na_ids.add(t["task_id"])
         return na_ids
-    except Exception:
+    except Exception as exc:
+        logger.warning(
+            "Failed to parse N/A task config %s: %s; na_fp detection disabled",
+            config_path, exc,
+        )
         return set()
 
 
@@ -83,7 +92,21 @@ def compute_adjusted_success_batch(ep_df, benchmark_site: str, benchmark: str = 
 
     Requires columns: task_id, success.
     Returns ep_df with new columns added in-place.
+
+    Fast-path (§97 audit Step 2): if ep_df already carries `adjusted_success`
+    AND `fp_reason` columns (runner-computed since §97), skip recomputation.
+    The runner is the single source of truth; this batch path is kept for
+    backward compatibility with episode summaries written before §97.
     """
+    if (
+        not ep_df.empty
+        and "adjusted_success" in ep_df.columns
+        and "fp_reason" in ep_df.columns
+        and ep_df["adjusted_success"].notna().all()
+    ):
+        # Already populated by runner — skip O(N) lambda apply.
+        return ep_df
+
     na_ids = _load_na_task_ids(benchmark_site, benchmark)
 
     adj_results = ep_df.apply(
@@ -103,14 +126,19 @@ def compute_adjusted_success_batch(ep_df, benchmark_site: str, benchmark: str = 
 
 
 def _compute_pareto_front(points: List[Dict[str, float]], maximize: str, minimize: str) -> List[int]:
-    """Return indices of Pareto-optimal points (maximize one axis, minimize another)."""
+    """Return indices of Pareto-optimal points (maximize one axis, minimize another).
+
+    Sweep order: by `maximize` desc, then `minimize` asc. A point joins the
+    front only when its `minimize` is strictly less than the running best —
+    `<=` would let dominated points (same minimize, lower maximize) sneak in.
+    """
     indexed = list(enumerate(points))
     indexed.sort(key=lambda x: (-x[1].get(maximize, 0.0), x[1].get(minimize, 0.0)))
     pareto_indices: List[int] = []
     best_min = float("inf")
     for idx, pt in indexed:
         val = pt.get(minimize, float("inf"))
-        if val <= best_min:
+        if val < best_min:
             pareto_indices.append(idx)
             best_min = val
     pareto_indices.sort(key=lambda i: points[i].get(minimize, 0.0))
@@ -1090,11 +1118,17 @@ def analyze_run(run_dir: str) -> Path:
 
     # Mark N/A reference tasks (unanswerable — reference answer is "N/A")
     if not ep_df.empty and "benchmark_site" in ep_df.columns and "task_id" in ep_df.columns:
+        import pandas as _pd
         na_ids_by_site: Dict[str, set] = {}
         for site in ep_df["benchmark_site"].unique():
             na_ids_by_site[site] = _load_na_task_ids(str(site), _benchmark)
         ep_df["is_na_reference"] = ep_df.apply(
-            lambda r: int(r["task_id"]) in na_ids_by_site.get(r["benchmark_site"], set()), axis=1
+            lambda r: (
+                False
+                if _pd.isna(r["task_id"])
+                else int(r["task_id"]) in na_ids_by_site.get(r["benchmark_site"], set())
+            ),
+            axis=1,
         )
         na_count = int(ep_df["is_na_reference"].sum())
         if na_count > 0:
@@ -1123,12 +1157,29 @@ def analyze_run(run_dir: str) -> Path:
                 int((ep_df["fp_reason"] == "eval_fp").sum()),
             )
 
+    # Adjusted wasted cost (§97 audit, M-5): an episode that is FP (raw
+    # success=True but adjusted=False) has its full step cost recorded as
+    # `wasted_cost_usd=0` by the runner (raw success path). Re-derive an
+    # adjusted version so downstream "wasted budget" stats reflect §95 FP
+    # filtering. Original raw stays in `wasted_cost_usd`.
+    if not ep_df.empty and "adjusted_success" in ep_df.columns and "total_cost_usd" in ep_df.columns:
+        import numpy as _np
+        ep_df["wasted_cost_usd_adjusted"] = _np.where(
+            ep_df["adjusted_success"].astype(bool),
+            0.0,
+            ep_df["total_cost_usd"].astype(float),
+        )
+
     # Override success with adjusted values for all downstream analysis
     if not ep_df.empty and "adjusted_success" in ep_df.columns:
         ep_df["raw_success"] = ep_df["success"].copy()
 
-        # Update cond_df success_rate
+        # Update cond_df success_rate to adjusted (used by all downstream
+        # plotting / Pareto / etc.). Preserve the original raw value as
+        # `success_rate_raw` so callers can opt back in. Documented behavior:
+        # by default the project reports adjusted success rates per §95.
         if not cond_df.empty and "condition_id" in cond_df.columns:
+            cond_df["success_rate_raw"] = cond_df["success_rate"].copy()
             adj_sr = (
                 ep_df.groupby("condition_id")["adjusted_success"]
                 .apply(lambda s: s.astype(float).fillna(0).mean())
@@ -1225,28 +1276,18 @@ def analyze_run(run_dir: str) -> Path:
     if not ep_df.empty:
         _analyze_per_site(ep_df, ov_plots, ov_tables)
 
-    # Compute adjusted success rates (excluding N/A reference tasks)
-    na_adjusted = {}
-    if not ep_df.empty and "is_na_reference" in ep_df.columns:
-        na_total = int(ep_df["is_na_reference"].sum())
-        for cid in ep_df["condition_id"].unique():
-            sub = ep_df[ep_df["condition_id"] == cid]
-            raw_col = "raw_success" if "raw_success" in sub.columns else "success"
-            raw_sr = float(sub[raw_col].astype(float).fillna(0).mean())
-            adj_sub = sub[~sub["is_na_reference"]]
-            adj_sr = float(adj_sub["success"].astype(float).fillna(0).mean()) if len(adj_sub) > 0 else 0.0
-            na_in_cond = int(sub["is_na_reference"].sum())
-            na_success = int(sub[sub["is_na_reference"]][raw_col].astype(float).fillna(0).sum())
-            na_adjusted[cid] = {
-                "raw_success_rate": raw_sr,
-                "adjusted_success_rate": adj_sr,
-                "raw_episodes": int(len(sub)),
-                "adjusted_episodes": int(len(adj_sub)),
-                "na_reference_tasks": na_in_cond,
-                "na_false_positives": na_success,
-            }
-    else:
-        na_total = 0
+    # Note: A previous "exclude all N/A reference tasks" double-filter
+    # (`na_adjusted` dict) lived here. It applied a second pass on top of
+    # the §95 `compute_adjusted_success_batch` result above, producing a
+    # different "adjusted SR" with a non-canonical meaning. Removed in §97
+    # cleanup — the canonical adjusted SR now flows through `ep_df["success"]`
+    # (overwritten earlier with §95 adjusted_success) and `cond_df["success_rate"]`,
+    # while raw values are preserved as `cond_df["success_rate_raw"]` and
+    # `ep_df["raw_success"]`. Reported per-condition na_fp counts come from
+    # `cross_representation_summary.json` / `episode_reason_rows.csv:fp_reason`.
+    na_total = int(ep_df["is_na_reference"].sum()) if (
+        not ep_df.empty and "is_na_reference" in ep_df.columns
+    ) else 0
 
     with open(analysis_dir / "analysis_summary.json", "w", encoding="utf-8") as f:
         json.dump(
@@ -1257,7 +1298,6 @@ def analyze_run(run_dir: str) -> Path:
                 "episode_count": int(len(ep_df)),
                 "step_count": int(len(step_df)),
                 "na_reference_task_count": na_total,
-                "adjusted_success_rates": na_adjusted,
             },
             f,
             indent=2,
@@ -1287,13 +1327,6 @@ def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path, ep_df=None) -> None
         return
 
     mode_order = [m for m in ["dom", "som", "vision"] if m in cond_df["observation_mode"].values]
-    # Also include any conditions not in the standard mode order
-    for cid in cond_df["condition_id"].tolist():
-        if cid not in mode_order:
-            mode_order_ext = cond_df["condition_id"].tolist()
-            break
-    else:
-        mode_order_ext = mode_order
 
     success = [
         float(cond_df.loc[cond_df["observation_mode"] == m, "success_rate"].mean())
@@ -1523,15 +1556,24 @@ def _plot_phase2(cond_df, plots_dir: Path, tables_dir: Path, reports_dir: Path) 
         )
         decomp.to_csv(tables_dir / "phase2_net_saving_decomposition.csv", index=False)
 
-        # Latency net saving
-        fixed_latency = float(fixed.iloc[0].get("p95_step_latency_ms", 0.0)) if "p95_step_latency_ms" in fixed.columns else 0.0
-        routed_latency = float(routed.iloc[0].get("p95_step_latency_ms", 0.0)) if "p95_step_latency_ms" in routed.columns else 0.0
+        # Latency net saving — use end-to-end episode latency, not single-step P95.
+        # P95 of step latency mixes step granularities and is not subtractable
+        # across conditions; avg_total_latency_ms is the proper episode-level
+        # measure produced by aggregate_condition_metrics (§97 audit).
+        latency_col = (
+            "avg_total_latency_ms" if "avg_total_latency_ms" in fixed.columns
+            else "p95_step_latency_ms"
+        )
+        fixed_latency = float(fixed.iloc[0].get(latency_col, 0.0)) if latency_col in fixed.columns else 0.0
+        routed_latency = float(routed.iloc[0].get(latency_col, 0.0)) if latency_col in routed.columns else 0.0
         routed_overhead_ms = float(routed.iloc[0].get("avg_router_overhead_ms", 0.0)) if "avg_router_overhead_ms" in work_df.columns else 0.0
-        latency_ns = net_saving_latency(fixed_latency, routed_latency, routed_overhead_ms)
+        # net_saving_latency no longer subtracts overhead (already in routed total).
+        latency_ns = net_saving_latency(fixed_latency, routed_latency)
         latency_payload = {
-            "baseline_p95_latency_ms": fixed_latency,
-            "routed_p95_latency_ms": routed_latency,
-            "router_overhead_ms": routed_overhead_ms,
+            "latency_basis": latency_col,
+            "baseline_latency_ms": fixed_latency,
+            "routed_latency_ms": routed_latency,
+            "router_overhead_ms": routed_overhead_ms,  # diagnostic only
             "net_saving_latency_ms": latency_ns,
         }
         with open(reports_dir / "phase2_net_saving_latency.json", "w", encoding="utf-8") as f:

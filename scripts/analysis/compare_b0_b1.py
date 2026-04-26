@@ -82,7 +82,9 @@ MODES = ["dom", "som", "vision"]
 def load_conditions(run_dir: Path, model_label: str) -> Dict[str, Dict[str, Any]]:
     """Load condition summaries keyed by observation_mode.
 
-    Returns {mode: cond_dict} for all modes found in run_dir.
+    Returns {mode: cond_dict} for all modes found in run_dir. Also attempts
+    to enrich each cond with adjusted_sr from cross_representation_summary.json
+    so non-stub conditions get a real adjusted SR (was: always None).
     """
     result: Dict[str, Dict[str, Any]] = {}
     for p in run_dir.glob("*/condition_summary_v2.json"):
@@ -94,12 +96,41 @@ def load_conditions(run_dir: Path, model_label: str) -> Dict[str, Dict[str, Any]
                 result[mode] = d
         except Exception as e:
             print(f"  [WARN] Cannot read {p}: {e}")
+
+    # Enrich with cross_representation adjusted_sr (per-mode).
+    cross_rep_per_site: Optional[Dict[str, Any]] = None
+    for pattern in [
+        "analysis/results/cross_representation/cross_representation_summary.json",
+        "analysis/results/cross_representation/*/cross_representation_summary.json",
+    ]:
+        for cp in run_dir.glob(pattern):
+            try:
+                cross_rep_per_site = _read_json(cp).get("per_site")
+                break
+            except Exception:
+                pass
+        if cross_rep_per_site:
+            break
+    if cross_rep_per_site:
+        for site_block in cross_rep_per_site.values():
+            if not isinstance(site_block, dict):
+                continue
+            per_mode_adj = site_block.get("per_mode_sr_adjusted") or {}
+            for mode, adj in per_mode_adj.items():
+                if mode in result:
+                    result[mode]["_adjusted_sr_xrep"] = float(adj)
+            # Single-site run: stop after first site block with data.
+            if per_mode_adj:
+                break
     return result
 
 
 def _get_adjusted_sr(cond: Dict[str, Any]) -> Optional[float]:
     if cond.get("_stub"):
         return _extract_stub_adjusted_sr(cond.get("_stub_note", ""))
+    # Non-stub: pulled from cross_representation_summary.json by load_conditions.
+    if "_adjusted_sr_xrep" in cond:
+        return float(cond["_adjusted_sr_xrep"])
     return None
 
 

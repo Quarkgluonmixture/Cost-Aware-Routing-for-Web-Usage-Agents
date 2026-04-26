@@ -80,6 +80,14 @@ NAV_VERB_PATTERNS = re.compile(
 )
 
 
+_OUTPUT_FILENAME_PREFIXES = (
+    "A1_", "A2_", "A3_", "A4_", "A4b_", "A5_", "A6_",
+    "B1_", "B2_", "B3_",
+    "R1_", "R2_", "R3_",
+    "cross_representation_",
+)
+
+
 class OutputDirs:
     """Manages output subdirectories (tables/, plots/, root for JSON)."""
 
@@ -92,13 +100,19 @@ class OutputDirs:
         self.base.mkdir(parents=True, exist_ok=True)
         self.tables.mkdir(exist_ok=True)
         self.plots.mkdir(exist_ok=True)
-        # Clean previous outputs to avoid stale files from prior runs
+        # Clean previous outputs to avoid stale files from prior runs.
+        # Restricted to known prefixes so user/external files placed in
+        # the same directory are preserved (single-site runs use
+        # base == out_root, where users may place notes or other JSON).
         for f in self.tables.glob("*.csv"):
-            f.unlink(missing_ok=True)
+            if f.name.startswith(_OUTPUT_FILENAME_PREFIXES):
+                f.unlink(missing_ok=True)
         for f in self.plots.glob("*.png"):
-            f.unlink(missing_ok=True)
+            if f.name.startswith(_OUTPUT_FILENAME_PREFIXES):
+                f.unlink(missing_ok=True)
         for f in self.base.glob("*.json"):
-            f.unlink(missing_ok=True)
+            if f.name.startswith(_OUTPUT_FILENAME_PREFIXES):
+                f.unlink(missing_ok=True)
 
     def all_outputs(self) -> List[str]:
         """List all produced files relative to base."""
@@ -167,7 +181,13 @@ def resolve_reason_diagnostics(run_dir: Path, explicit: Optional[Path]) -> Path:
 
     script = Path(__file__).parent / "analyze_reason_diagnostics.py"
     cmd = [sys.executable, str(script), "--run-dir", str(run_dir), "--skip-similarity"]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        # Bound the auto-gen run so we don't hang forever if the
+        # subprocess deadlocks (no progress reporting back here).
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+    except subprocess.TimeoutExpired:
+        print("[ERROR] Auto-generation timed out after 1800s")
+        sys.exit(1)
     if result.returncode != 0:
         print(f"[ERROR] Auto-generation failed:\n{result.stderr[:500]}")
         sys.exit(1)
@@ -214,14 +234,19 @@ def load_reason_rows(csv_path: Path) -> pd.DataFrame:
 
 
 def load_episode_summaries(run_dir: Path) -> pd.DataFrame:
-    """Load all *_summary_v2.json into a DataFrame."""
+    """Load all *_summary_v2.json into a DataFrame. Corrupt files are
+    skipped with a warning so we don't silently lose data."""
     rows = []
+    n_skipped = 0
     for p in run_dir.glob("*/episodes/*_summary_v2.json"):
         try:
             d = _read_json(p)
             rows.append(d)
-        except Exception:
-            pass
+        except Exception as exc:
+            n_skipped += 1
+            print(f"  [WARN] failed to read {p.name}: {exc}")
+    if n_skipped:
+        print(f"  [WARN] skipped {n_skipped} corrupt episode summaries")
     if not rows:
         return pd.DataFrame()
     df = pd.DataFrame(rows)
@@ -282,12 +307,20 @@ def _condition_to_mode(cond_metas: Dict[str, Dict], reason_df: pd.DataFrame) -> 
                 modes = subset["observation_mode"].dropna().unique()
                 if len(modes) == 1:
                     mapping[cid] = modes[0]
+                elif len(modes) > 1:
+                    print(
+                        f"  [WARN] condition_id={cid} has multiple observation_modes "
+                        f"{modes.tolist()} in reason_df; dropping (its tasks will be "
+                        f"excluded from per-mode analysis)"
+                    )
     return mapping
 
 
-def build_task_pivot(reason_df: pd.DataFrame, cond_metas: Dict[str, Dict]) -> pd.DataFrame:
+def build_task_pivot(
+    reason_df: pd.DataFrame, cond_metas: Dict[str, Dict],
+) -> Tuple[pd.DataFrame, List[str]]:
     """Pivot reason_df from (condition × task) rows to one row per (site, task_id)
-    with per-mode columns."""
+    with per-mode columns. Returns (pivot_df, sorted_modes)."""
     cond_mode = _condition_to_mode(cond_metas, reason_df)
     # Add mode column
     df = reason_df.copy()
@@ -339,6 +372,9 @@ def _mark_false_positives(
     """
     from p79.experiment.analysis import _load_na_task_ids
 
+    # episode_reason_rows.csv does not currently carry a `benchmark`
+    # column, so this almost always falls through to path-based
+    # inference; left here in case the schema gains the column later.
     _bm = "visualwebarena"
     if "benchmark" in pivot.columns and not pivot.empty:
         _bm = str(pivot["benchmark"].iloc[0])
@@ -353,18 +389,29 @@ def _mark_false_positives(
         axis=1,
     )
 
-    # Compute agent_finished per mode (active finish, not fallback)
+    # Compute agent_finished per mode (active finish, not fallback).
+    # Mirror canonical p79.experiment.analysis.compute_adjusted_success:
+    #   - na_fp is strict: missing/unknown agent_finished → flag as FP
+    #     (we accomplish this by setting af_col=False when data missing,
+    #      which makes nfp_col = is_na & success & ~False = True)
+    #   - eval_fp is permissive: missing/unknown → skip (don't flag)
+    #     (gated by af_known_col below)
     for m in modes:
         fat_col = f"{m}_final_action_type"
         ff_col = f"{m}_fallback_finish"
         af_col = f"{m}_agent_finished"
-        if fat_col in pivot.columns:
+        af_known_col = f"{m}_agent_finished_known"
+        if fat_col in pivot.columns and ff_col in pivot.columns:
+            ff_series = pivot[ff_col].fillna(False).astype(bool)
             pivot[af_col] = (
                 pivot[fat_col].astype(str).str.lower().isin(["finish", "stop"])
-                & ~pivot[ff_col].fillna(False).astype(bool)
+                & ~ff_series
             )
+            pivot[af_known_col] = pivot[fat_col].notna()
         else:
-            pivot[af_col] = False
+            # Missing schema → treat as "agent_finished unknown".
+            pivot[af_col] = False  # strict for na_fp
+            pivot[af_known_col] = False  # blocks eval_fp
 
     # Mark false positives and build adjusted success columns
     na_fp_count: Dict[str, int] = {}
@@ -383,16 +430,20 @@ def _mark_false_positives(
         efp_col = f"{m}_eval_fp"
         adj_col = f"{m}_success_adj"
         af_col = f"{m}_agent_finished"
+        af_known_col = f"{m}_agent_finished_known"
         if scol not in pivot.columns:
             continue
         pivot[nfp_col] = pivot["is_na_task"] & (pivot[scol] == True) & ~pivot[af_col]
-        # Eval FP: string_match always; program_html + ~has_effective_action
+        # Eval FP: string_match always; program_html + ~has_effective_action.
+        # Gate on af_known to avoid over-flagging when agent_finished can't be
+        # determined from data (matches canonical compute_adjusted_success).
         _hea_col = f"{m}_has_effective_action"
         _hea = pivot[_hea_col].fillna(True).astype(bool) if _hea_col in pivot.columns else pd.Series(True, index=pivot.index)
         _efp_eligible_m = _is_string_match | (_is_program_html & ~_hea)
         pivot[efp_col] = (
             _efp_eligible_m
             & (pivot[scol] == True)
+            & pivot[af_known_col]
             & ~pivot[af_col]
             & ~pivot[nfp_col]
         )
@@ -539,7 +590,7 @@ def a2_set_analysis(
     intersection_set = raw.pop("_intersection_set")
     raw.pop("_mode_sets")
 
-    # --- Adjusted metrics (if visual FP columns exist) ---
+    # --- Adjusted metrics (na_fp + eval_fp; visual_fp removed in §95) ---
     has_adj = any(f"{m}_success_adj" in pivot.columns for m in modes)
     if has_adj:
         adj = _compute_set_metrics(pivot, modes, "_success_adj")
@@ -603,29 +654,58 @@ def a2_set_analysis(
 
 def _compute_exclusive_sets(
     pivot: pd.DataFrame, modes: List[str], success_suffix: str = "_success",
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> Tuple[pd.DataFrame, pd.DataFrame, str]:
     """Compute exclusive set summary + detail using the given success suffix.
 
-    Returns (summary_df, pivot_with_exclusive_set_col).
+    Returns (summary_df, pivot_with_exclusive_set_col, set_col_name).
+
+    Each task is classified into a tri-state vector per mode:
+      True  → tested and succeeded
+      False → tested and failed
+      None  → not tested (column missing or NaN value)
+    Untested modes are reported in the set name explicitly so they are not
+    silently conflated with failure (which would inflate "only_X" buckets
+    when modes have asymmetric task coverage).
     """
     def _success_vector(row):
-        return tuple(
-            (row.get(f"{m}{success_suffix}") == True) for m in modes
-        )
+        out = []
+        for m in modes:
+            col = f"{m}{success_suffix}"
+            if col not in row.index:
+                out.append(None)
+                continue
+            v = row[col]
+            if v is None or (isinstance(v, float) and np.isnan(v)) or pd.isna(v):
+                out.append(None)
+            else:
+                out.append(bool(v))
+        return tuple(out)
 
     pivot_c = pivot.copy()
     pivot_c["_svec"] = pivot_c.apply(_success_vector, axis=1)
 
     def _set_name(svec: tuple) -> str:
-        successes = [modes[i] for i, v in enumerate(svec) if v]
-        failures = [modes[i] for i, v in enumerate(svec) if not v]
+        successes = [modes[i] for i, v in enumerate(svec) if v is True]
+        failures = [modes[i] for i, v in enumerate(svec) if v is False]
+        untested = [modes[i] for i, v in enumerate(svec) if v is None]
+        # Build base classification over tested modes only.
+        if not successes and not failures:
+            return "all_untested"
         if not successes:
+            base = "all_tested_fail"
+        elif not failures:
+            base = "all_tested_success" if untested else "all_success"
+        elif len(successes) == 1:
+            base = f"only_{successes[0]}"
+        else:
+            base = "_and_".join(successes) + "_not_" + "_".join(failures)
+        if untested:
+            return base + "_untested_" + "_".join(untested)
+        # No untested modes → restore the legacy "all_fail" / "all_success"
+        # labels for backward-compat with downstream consumers.
+        if base == "all_tested_fail":
             return "all_fail"
-        if not failures:
-            return "all_success"
-        if len(successes) == 1:
-            return f"only_{successes[0]}"
-        return "_and_".join(successes) + "_not_" + "_".join(failures)
+        return base
 
     set_col = "exclusive_set" if success_suffix == "_success" else "exclusive_set_adj"
     pivot_c[set_col] = pivot_c["_svec"].apply(_set_name)
@@ -729,10 +809,17 @@ def a4_cost_at_success(
     es = ep_summaries.copy()
     es["mode"] = es["condition_id"].map(cond_mode)
     es = es.dropna(subset=["mode"])
-    es["_key"] = list(zip(
-        es.get("benchmark_site", es.get("site", pd.Series(dtype=str))),
-        es["task_id"],
-    ))
+    # Resolve site per-row: prefer benchmark_site, fall back to site
+    # only when benchmark_site is missing on that row.
+    if "benchmark_site" in es.columns and "site" in es.columns:
+        es["_site_resolved"] = es["benchmark_site"].fillna(es["site"])
+    elif "benchmark_site" in es.columns:
+        es["_site_resolved"] = es["benchmark_site"]
+    elif "site" in es.columns:
+        es["_site_resolved"] = es["site"]
+    else:
+        es["_site_resolved"] = ""
+    es["_key"] = list(zip(es["_site_resolved"], es["task_id"]))
     es = es[es["_key"].isin(inter_tasks)]
 
     cost_fields = [
@@ -1012,7 +1099,7 @@ def b2_reason_stability(
             "n_modes_present": n_present,
             "n_unique_buckets": len(set(buckets)) if buckets else 0,
             "stability": round(stability, 4) if not np.isnan(stability) else None,
-            "buckets": "|".join(buckets) if buckets else "",
+            "buckets": "|".join(str(b) for b in buckets) if buckets else "",
         })
 
     stab_df = pd.DataFrame(rows)
@@ -1226,18 +1313,26 @@ def r1_task_features(
         overall_diff = cfg.get("overall_difficulty", "")
         has_image = cfg.get("image") is not None
 
-        # From episode data: succeeded_in_modes, best_mode
-        succeeded_modes = []
-        best_mode = ""
-        min_steps = float("inf")
-        for m in modes:
-            scol = f"{m}_success"
-            if scol in pivot.columns and r.get(scol) == True:
-                succeeded_modes.append(m)
-                st = r.get(f"{m}_steps", float("inf"))
-                if st is not None and st < min_steps:
-                    min_steps = st
-                    best_mode = m
+        # From episode data: succeeded_in_modes, best_mode (raw + adjusted)
+        def _collect(success_suffix: str):
+            succ, best, ms = [], "", float("inf")
+            for m in modes:
+                scol = f"{m}{success_suffix}"
+                if scol in pivot.columns and r.get(scol) == True:
+                    succ.append(m)
+                    st = r.get(f"{m}_steps")
+                    # Skip NaN/None steps when picking best.
+                    if st is not None and not pd.isna(st) and st < ms:
+                        ms = st
+                        best = m
+            # If no mode had usable steps but at least one succeeded,
+            # fall back to the first succeeded mode rather than "".
+            if not best and succ:
+                best = succ[0]
+            return succ, best
+
+        succeeded_modes, best_mode = _collect("_success")
+        succeeded_modes_adj, best_mode_adj = _collect("_success_adj")
 
         row = {
             "site": site,
@@ -1256,6 +1351,9 @@ def r1_task_features(
             "succeeded_in_modes": "|".join(succeeded_modes),
             "n_modes_succeeded": len(succeeded_modes),
             "best_mode": best_mode,
+            "succeeded_in_modes_adj": "|".join(succeeded_modes_adj),
+            "n_modes_succeeded_adj": len(succeeded_modes_adj),
+            "best_mode_adj": best_mode_adj,
         }
         rows.append(row)
 
@@ -1292,40 +1390,63 @@ def r2_escalation_signals(
         for sc in available_signals:
             row[sc] = r.get(sc)
 
-        # Divergence step = stuck_first_step or page_unchanged_streak_max_pos
-        div_step = None
+        # Divergence step = earliest of stuck_first_step / page_unchanged_streak_max_pos.
+        div_candidates = []
         sfs = r.get("stuck_first_step")
         if pd.notna(sfs) and int(sfs) >= 0:
-            div_step = int(sfs)
+            div_candidates.append(int(sfs))
+        pump = r.get("page_unchanged_streak_max_pos")
+        if pd.notna(pump) and int(pump) >= 0:
+            div_candidates.append(int(pump))
+        div_step = min(div_candidates) if div_candidates else None
         row["divergence_step"] = div_step
 
         # Counterfactual: did other modes succeed for this task?
-        if not success and div_step is not None:
-            other_success = False
+        # Compute both raw and adjusted variants — raw can over-count
+        # "escalation_would_help" if the other mode's success is itself
+        # an FP (na_fp/eval_fp). Adjusted uses the FP-filtered column
+        # when available and is the load-bearing number for routing
+        # headroom estimates.
+        def _other_success(success_suffix: str) -> bool:
             for m in modes:
                 if m == mode:
                     continue
-                scol = f"{m}_success"
+                scol = f"{m}{success_suffix}"
                 task_row = pivot[
                     (pivot["site"] == site) & (pivot["task_id"] == tid)
                 ]
                 if not task_row.empty and scol in task_row.columns:
                     if task_row.iloc[0].get(scol) == True:
-                        other_success = True
-                        break
-            row["escalation_would_help"] = other_success
+                        return True
+            return False
+
+        if not success and div_step is not None:
+            row["escalation_would_help"] = _other_success("_success")
+            # Only emit adj column if any mode has it (avoid dense
+            # all-False column when adjusted wasn't computed).
+            if any(f"{m}_success_adj" in pivot.columns for m in modes):
+                row["escalation_would_help_adj"] = _other_success("_success_adj")
+            else:
+                row["escalation_would_help_adj"] = None
         else:
             row["escalation_would_help"] = None
+            row["escalation_would_help_adj"] = None
 
         rows.append(row)
 
     esc_df = pd.DataFrame(rows)
     esc_df.to_csv(dirs.tables / "R2_escalation_signals.csv", index=False)
 
-    # Summary stats
+    # Summary stats (raw + adjusted)
     failed_with_div = esc_df[(esc_df["success"] == False) & esc_df["divergence_step"].notna()]
     n_would_help = failed_with_div["escalation_would_help"].sum() if len(failed_with_div) else 0
     help_rate = _safe_ratio(n_would_help, len(failed_with_div))
+    n_would_help_adj = (
+        failed_with_div["escalation_would_help_adj"].fillna(False).sum()
+        if "escalation_would_help_adj" in failed_with_div.columns and len(failed_with_div)
+        else 0
+    )
+    help_rate_adj = _safe_ratio(n_would_help_adj, len(failed_with_div))
 
     # Divergence step distribution plot
     if not skip_plots and HAS_MPL:
@@ -1346,6 +1467,9 @@ def r2_escalation_signals(
 
     print(f"  R2: {len(failed_with_div)} failed episodes with divergence, "
           f"escalation_would_help={_pct(help_rate)} ({n_would_help}/{len(failed_with_div)})")
+    if "escalation_would_help_adj" in failed_with_div.columns:
+        print(f"  R2 (adj): escalation_would_help={_pct(help_rate_adj)} "
+              f"({int(n_would_help_adj)}/{len(failed_with_div)})")
 
 
 def _build_oracle_rows(
@@ -1357,20 +1481,37 @@ def _build_oracle_rows(
     """Build oracle decomposition rows for given success column suffix."""
     rows = []
     for _, r in pivot_subset.iterrows():
-        site, tid = r["site"], int(r["task_id"])
+        _tid_raw = r.get("task_id")
+        if _tid_raw is None or pd.isna(_tid_raw):
+            continue
+        site, tid = r["site"], int(_tid_raw)
         succeeded = []
         for m in modes:
             scol = f"{m}{success_suffix}"
             if scol in r.index and r[scol] == True:
                 cost = cost_lookup.get((site, tid, m))
-                succeeded.append({"mode": m, "cost": cost, "steps": r.get(f"{m}_steps")})
+                # Treat NaN cost as missing — min() on NaN is undefined.
+                if cost is not None and pd.isna(cost):
+                    cost = None
+                steps_val = r.get(f"{m}_steps")
+                # Same for steps: NaN ruins min().
+                if steps_val is not None and pd.isna(steps_val):
+                    steps_val = None
+                succeeded.append({"mode": m, "cost": cost, "steps": steps_val})
         if not succeeded:
             continue
         with_cost = [s for s in succeeded if s["cost"] is not None]
         if with_cost:
             oracle = min(with_cost, key=lambda x: x["cost"])
         else:
-            oracle = min(succeeded, key=lambda x: (x["steps"] or float("inf")))
+            with_steps = [s for s in succeeded if s["steps"] is not None]
+            if with_steps:
+                # Use explicit None guard rather than `x or inf` —
+                # 0 is a valid step count and would otherwise be coerced to inf.
+                oracle = min(with_steps, key=lambda x: x["steps"])
+            else:
+                # No cost, no steps — pick first deterministically.
+                oracle = succeeded[0]
         cfg = task_configs.get((site, tid), {})
         rows.append({
             "site": site,
@@ -1399,12 +1540,29 @@ def r3_oracle_decomposition(
     if not ep_summaries.empty and "condition_id" in ep_summaries.columns:
         es = ep_summaries.copy()
         es["mode"] = es["condition_id"].map(cond_mode)
+        # Resolve site per-row: prefer benchmark_site, fall back to site
+        # only when benchmark_site is missing on that row (DataFrame.get
+        # is per-column, not per-row, so this needs explicit fillna).
+        if "benchmark_site" in es.columns and "site" in es.columns:
+            es["_site_resolved"] = es["benchmark_site"].fillna(es["site"])
+        elif "benchmark_site" in es.columns:
+            es["_site_resolved"] = es["benchmark_site"]
+        elif "site" in es.columns:
+            es["_site_resolved"] = es["site"]
+        else:
+            es["_site_resolved"] = ""
         for _, r in es.iterrows():
-            site = r.get("benchmark_site", r.get("site", ""))
-            tid = int(r.get("task_id", -1))
+            site = r.get("_site_resolved", "")
+            if site is None or (isinstance(site, float) and pd.isna(site)):
+                continue
+            _tid_raw = r.get("task_id")
+            if _tid_raw is None or pd.isna(_tid_raw):
+                continue
+            tid = int(_tid_raw)
             mode = r.get("mode", "")
             cost = r.get("total_cost_usd")
-            if mode and cost is not None:
+            # Skip NaN cost — would corrupt min() in oracle selection.
+            if mode and cost is not None and not pd.isna(cost):
                 cost_lookup[(site, tid, mode)] = cost
 
     # --- Raw ---
@@ -1446,6 +1604,11 @@ def r3_oracle_decomposition(
         summary["oracle_choice_distribution_adjusted"] = (
             dict(Counter(adj_df["oracle_choice"])) if len(adj_df) else {}
         )
+        if "task_type" in adj_df.columns and len(adj_df):
+            tt_choice_adj = {}
+            for tt, grp in adj_df.groupby("task_type"):
+                tt_choice_adj[tt] = dict(Counter(grp["oracle_choice"]))
+            summary["oracle_choice_by_task_type_adjusted"] = tt_choice_adj
         print(f"  R3 (adj): {len(adj_df)} union tasks, oracle choice: "
               f"{summary['oracle_choice_distribution_adjusted']}")
 
@@ -1577,18 +1740,28 @@ def main():
         "sites": sites,
         "per_site": {},
     }
+    # Transpose every per-site A2 summary verbatim (minus the leading-
+    # underscore "private" set fields used internally), so the global
+    # summary doesn't silently drop feature_oracle_ceiling / feature_gap /
+    # FP counts. This also keeps single-site and multi-site output
+    # structures aligned (single-site runs previously had dirs.base ==
+    # out_root, causing the per-site write_summary file to be overwritten
+    # by this global write with a thinner structure).
     for site, a2s in all_site_summaries.items():
-        site_info: Dict[str, Any] = {
-            "oracle_ceiling": a2s.get("perfect_oracle_ceiling") if a2s else None,
-            "routing_headroom": a2s.get("perfect_headroom") if a2s else None,
-            "per_mode_sr": a2s.get("per_mode_sr") if a2s else None,
-        }
-        if a2s and "per_mode_sr_adjusted" in a2s:
-            site_info["per_mode_sr_adjusted"] = a2s["per_mode_sr_adjusted"]
-            site_info["oracle_ceiling_adjusted"] = a2s.get("perfect_oracle_ceiling_adjusted")
-            site_info["routing_headroom_adjusted"] = a2s.get("perfect_headroom_adjusted")
-            site_info["na_fp_count"] = a2s.get("na_fp_count")
-            site_info["eval_fp_count"] = a2s.get("eval_fp_count")
+        if not a2s:
+            global_summary["per_site"][site] = None
+            continue
+        site_info = {k: v for k, v in a2s.items() if not k.startswith("_")}
+        # Preserve the legacy top-level field names callers may rely on.
+        site_info.setdefault("oracle_ceiling", a2s.get("perfect_oracle_ceiling"))
+        site_info.setdefault("routing_headroom", a2s.get("perfect_headroom"))
+        if "per_mode_sr_adjusted" in a2s:
+            site_info.setdefault(
+                "oracle_ceiling_adjusted", a2s.get("perfect_oracle_ceiling_adjusted")
+            )
+            site_info.setdefault(
+                "routing_headroom_adjusted", a2s.get("perfect_headroom_adjusted")
+            )
         global_summary["per_site"][site] = site_info
     _write_json(global_summary, out_root / "cross_representation_summary.json")
     print(f"\nDone! Outputs in: {out_root}")

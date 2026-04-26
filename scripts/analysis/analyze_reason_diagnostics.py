@@ -379,6 +379,14 @@ def _target_item_ever_visible(steps: List[Dict[str, Any]], ref_urls: List[str], 
     item_ids = _extract_item_ids_from_urls(ref_urls)
     if not item_ids:
         return None
+    # Use stricter ID-context patterns than bare substring match: short IDs
+    # (e.g. "12") would otherwise match arbitrary digits in DOM text — prices,
+    # timestamps, other product IDs containing the digits as substring.
+    # Match `id=NNNN` (URL query) or `?id=NNNN` or `/NNNN` (path segment).
+    id_patterns = [
+        re.compile(rf"(?:[?&]id={re.escape(iid)}\b|/{re.escape(iid)}\b|\bid=\"?{re.escape(iid)}\b)")
+        for iid in item_ids
+    ]
     dom_found_any = False
     for s in steps:
         dom_path_raw = str(((s.get("artifact_paths") or {}).get("dom")) or "").strip()
@@ -390,7 +398,7 @@ def _target_item_ever_visible(steps: List[Dict[str, Any]], ref_urls: List[str], 
             text = dom_path.read_text(encoding="utf-8", errors="ignore")
         except Exception:
             continue
-        if any(iid in text for iid in item_ids):
+        if any(p.search(text) for p in id_patterns):
             return True
     # If no DOM artifacts exist (e.g. vision-only mode), we cannot determine visibility.
     if not dom_found_any:
@@ -484,7 +492,11 @@ def _scroll_direction_stats(steps: List[Dict[str, Any]]) -> Dict[str, Any]:
         else:
             continue  # unparseable delta, skip
 
-        direction = "down" if dy >= 0 else "up"
+        # dy == 0 is not a real scroll — skip rather than coerce to "down"
+        # (which would inflate scroll_down stats).
+        if dy == 0:
+            continue
+        direction = "down" if dy > 0 else "up"
         if direction == "up":
             scroll_up += 1
         else:
@@ -542,8 +554,16 @@ def _url_revisit_metrics(steps: List[Dict[str, Any]]) -> Tuple[int, int, int]:
     from collections import Counter as _Counter
     url_counts: _Counter = _Counter()
     for s in steps:
+        # Use the same fallback chain as _step_obs_url for consistency:
+        # obs_url → url_after → url_before. Previously this skipped url_before,
+        # silently dropping visits when both other fields were empty.
         digest = s.get("state_digest") or {}
-        url = str(s.get("obs_url", "") or digest.get("url_after", "") or "").strip()
+        url = str(
+            s.get("obs_url", "")
+            or digest.get("url_after", "")
+            or digest.get("url_before", "")
+            or ""
+        ).strip()
         if url:
             url_counts[url] += 1
     url_unique_count = len(url_counts)
@@ -745,11 +765,12 @@ def _compute_step_cost_breakdown(steps: List[Dict[str, Any]], loop_metrics: Dict
     no_op_cost = 0.0
     page_unchanged_cost = 0.0
     for s in steps:
-        step_cost = float(s.get("cost_usd", {}).get("total", 0))
+        # Defensive: cost_usd may be explicitly None on partial/error rows.
+        step_cost = float((s.get("cost_usd") or {}).get("total", 0))
         total_cost += step_cost
         if s.get("action_success") is False:
             no_op_cost += step_cost
-        action_type = str(s.get("action", {}).get("action_type", "") or "").lower()
+        action_type = str((s.get("action") or {}).get("action_type", "") or "").lower()
         if s.get("page_changed") is False and action_type not in ("finish", "stop"):
             page_unchanged_cost += step_cost
     # Loop cost: estimate from loop_pattern
@@ -797,8 +818,12 @@ def _classify_stuck_subtype(
     """Sub-classify fail_incomplete_or_stuck / fail_no_progress into meaningful subtypes."""
     if reason_bucket not in ("fail_incomplete_or_stuck", "fail_no_progress"):
         return ""
-    # account/login loop: page type sequence has repeated auth pages (checked first — strongest signal)
-    if "login" in page_type_sequence.lower() or "account" in page_type_sequence.lower():
+    # account/login loop: page type sequence has DOMINANT account visits.
+    # Old check (any single "account" → loop) over-flagged single-visit
+    # tasks (~33% FP rate observed). `_url_to_page_type` never returns
+    # "login", so the "login in ..." branch was dead code — removed.
+    _seq_lower = page_type_sequence.lower()
+    if _seq_lower.count("account") >= 3:
         return "account_loop"
     if target_item_ever_visible is False:
         return "target_unreachable"
@@ -853,6 +878,7 @@ def _classify_unreachable_subtype(
     observation_mode: str,
     search_queries: List[Dict[str, Any]],
     degraded_som_steps: int = 0,
+    total_steps: int = 0,
     has_image: bool = False,
 ) -> str:
     """Sub-classify target-unreachable structural defects.
@@ -866,13 +892,18 @@ def _classify_unreachable_subtype(
     obs = str(observation_mode or "").lower()
 
     # Visual-attribute unreachability: applies to DOM mode unconditionally, and
-    # to SoM/hybrid mode when SoM was degraded (zero marks → empty [SOM_MARKS] +
-    # raw screenshot; no bounding-box marks means the model cannot locate items
-    # visually, making visual-attribute tasks structurally unreachable).
-    # Vision mode is excluded: the model always receives the raw screenshot and
-    # visual failures there are model capability issues, not scaffold defects.
+    # to SoM/hybrid mode when SoM is degraded for a DOMINANT share of steps.
+    # Old check (any single degraded step → dom-like) over-flagged 30-step
+    # episodes with one bad probe — switched to >=30% of steps degraded.
+    # Vision mode is excluded: the model always receives the raw screenshot
+    # and visual failures there are model capability issues, not scaffold defects.
     has_visual = any(k in intent_lower for k in _VISUAL_MATCH_KWDS)
-    is_dom_like = obs == "dom" or (obs in ("som", "hybrid") and degraded_som_steps > 0)
+    _DEGRADED_DOMINANT_RATIO = 0.30
+    _som_dominant_degraded = (
+        total_steps > 0
+        and (degraded_som_steps / total_steps) >= _DEGRADED_DOMINANT_RATIO
+    )
+    is_dom_like = obs == "dom" or (obs in ("som", "hybrid") and _som_dominant_degraded)
     if has_visual and is_dom_like:
         # Tasks with reference images (has_image=True) provide the image in
         # the prompt — DOM mode can now see it.  The failure is a model
@@ -1363,7 +1394,12 @@ def _compute_action_execution_stats(steps: List[Dict[str, Any]]) -> Dict[str, An
 
         coord = act.get("coordinate")
         if isinstance(coord, (list, tuple)) and len(coord) >= 2:
-            if any(isinstance(c, (int, float)) and c > 1.0 for c in coord[:2]):
+            # Normalized coords live in [0, 1]; anything outside that range
+            # (incl. negatives) indicates the model leaked pixel coordinates.
+            if any(
+                isinstance(c, (int, float)) and (c > 1.0 or c < 0.0)
+                for c in coord[:2]
+            ):
                 pixel_coordinate_leak = True
 
     total_steps = len(steps)
@@ -1454,6 +1490,13 @@ def _write_state_change_by_outcome(
         adj = bool(row.get("adjusted_success", row.get("success", False)))
         cond_groups[row["condition_id"]][adj].append(row)
 
+    def _proper_median(vs):
+        if not vs:
+            return None
+        s = sorted(vs)
+        mid = len(s) // 2
+        return round((s[mid] + s[mid - 1]) / 2, 4) if len(s) % 2 == 0 else round(s[mid], 4)
+
     for cid in sorted(cond_groups):
         for outcome in [True, False]:
             subset = cond_groups[cid][outcome]
@@ -1465,7 +1508,9 @@ def _write_state_change_by_outcome(
                 "adjusted_success": outcome,
                 "n_episodes": len(subset),
                 "page_change_rate_mean": round(sum(pcr) / len(pcr), 4) if pcr else None,
-                "page_change_rate_median": round(sorted(pcr)[len(pcr) // 2], 4) if pcr else None,
+                # Use proper even-length median (avg of two middle values),
+                # not sorted[len//2] which only returns the upper-middle.
+                "page_change_rate_median": _proper_median(pcr),
                 "avg_steps": round(sum(int(r.get("steps", 0)) for r in subset) / len(subset), 1),
             })
 
@@ -2000,6 +2045,7 @@ def main() -> None:
                 observation_mode=observation_mode,
                 search_queries=loop_metrics["search_queries"],
                 degraded_som_steps=degraded_som_steps,
+                total_steps=steps_count,
                 has_image=(task_meta.get("image") is not None),
             )
 

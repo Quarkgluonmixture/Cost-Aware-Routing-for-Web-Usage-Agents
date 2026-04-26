@@ -134,12 +134,27 @@ MODES = ["dom", "som", "vision"]
 _STUB_ADJ_RE = re.compile(r"[Aa]djusted SR[=:\s]*([\d]+)[/\s]*([\d]+)")
 
 
-def _get_adjusted_sr(cond: Dict[str, Any]) -> Optional[float]:
-    """Extract adjusted SR from condition_summary, handling stubs."""
+def _get_adjusted_sr(
+    cond: Dict[str, Any],
+    cross_rep_per_site: Optional[Dict[str, Dict[str, float]]] = None,
+    site: Optional[str] = None,
+) -> Optional[float]:
+    """Extract adjusted SR from condition_summary, handling stubs.
+
+    Non-stub conditions don't carry adjusted SR in condition_summary_v2.json
+    (it's computed by analyze_cross_representation.py separately). Look it up
+    in the cross_rep_per_site map if provided.
+    """
     if cond.get("_stub"):
         note = cond.get("_stub_note", "")
         return _extract_stub_adjusted_sr(note)
-    # Non-stub: no adjusted SR in condition_summary itself (computed by cross_representation)
+    # Cross-rep override: per_site[site].per_mode_sr_adjusted[mode]
+    if cross_rep_per_site and site:
+        site_block = cross_rep_per_site.get(site) or {}
+        per_mode_adj = site_block.get("per_mode_sr_adjusted") or {}
+        mode = cond.get("observation_mode", "")
+        if mode in per_mode_adj:
+            return float(per_mode_adj[mode])
     return None
 
 
@@ -150,6 +165,11 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
         print(f"  [WARN] No condition summaries in {run_dir}")
         return []
 
+    # Load cross_representation_summary.json for adjusted_sr — it's where the
+    # §95 FP-filtered numbers live (condition_summary_v2.json only carries raw).
+    fp_stats = load_fp_stats(run_dir)
+    cross_rep_per_site = fp_stats.get("per_site") if isinstance(fp_stats, dict) else None
+
     rows = []
     for cond in summaries:
         mode = cond.get("observation_mode", "")
@@ -157,7 +177,7 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             continue
         is_stub = bool(cond.get("_stub"))
         raw_sr = float(cond.get("success_rate", 0.0))
-        adj_sr = _get_adjusted_sr(cond)
+        adj_sr = _get_adjusted_sr(cond, cross_rep_per_site=cross_rep_per_site, site=site)
         if is_stub:
             print(f"  [STUB] site={site} mode={mode} raw_sr={raw_sr:.3f} adj_sr={adj_sr}")
 
