@@ -115,7 +115,7 @@ def _auto_refresh_auth(site: str, *, benchmark: str = "") -> bool:
     """
     try:
         from p79.utils.auth_refresh import refresh_site_auth
-        repo_dir = Path(__file__).resolve().parent.parent
+        repo_dir = Path(__file__).resolve().parent.parent.parent
         auth_dir = repo_dir / ".auth"
         ok = refresh_site_auth(site, auth_dir, benchmark=benchmark)
         if ok:
@@ -149,7 +149,7 @@ def _auto_refresh_auth(site: str, *, benchmark: str = "") -> bool:
     if site not in _ACCOUNTS:
         print(f"[watchdog][SESSION] auto-refresh: unknown site {site!r}")
         return False
-    repo_dir = Path(__file__).resolve().parent.parent
+    repo_dir = Path(__file__).resolve().parent.parent.parent
     auth_file = repo_dir / ".auth" / f"{site}_state.json"
     username, password = _ACCOUNTS[site]
     base_url = _BASE_URLS[site]

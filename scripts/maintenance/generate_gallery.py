@@ -374,7 +374,7 @@ def _build_groups(
 # Task intents from VWA config
 # ---------------------------------------------------------------------------
 
-_CONFIG_FILES_BASE = Path(__file__).resolve().parent.parent / "external" / "visualwebarena" / "config_files"
+_CONFIG_FILES_BASE = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena" / "config_files"
 
 def _load_task_intents() -> Dict[str, Dict[str, str]]:
     """Load task intents + image paths from VWA and WA config files.
@@ -1190,7 +1190,7 @@ if(S.view==='episode'&&S.epKey&&ep(S.epKey)){{
 
 def _ensure_intent_images_symlink(run_dir: Path) -> None:
     """Create a symlink inside run_dir so the HTTP server can reach intent images."""
-    src = Path(__file__).resolve().parent.parent / "external" / "visualwebarena"
+    src = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena"
     link = run_dir / "_vwa"
     if link.is_symlink():
         if link.resolve() == src.resolve():

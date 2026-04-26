@@ -252,7 +252,7 @@ def _load_reference_images_b64(site: Optional[str], task_id: int) -> List[str]:
     """Load task reference images from VWA task JSON, return list of base64 strings."""
     if not site:
         return []
-    vwa_root = Path(__file__).resolve().parent.parent / "external" / "visualwebarena"
+    vwa_root = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena"
     # Try both test_{site}.json and test_{site}.raw.json
     for fname in [f"test_{site}.raw.json", f"test_{site}.json"]:
         cfg_path = vwa_root / "config_files" / "vwa" / fname

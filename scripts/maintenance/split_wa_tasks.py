@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-WA_DIR = Path(__file__).resolve().parent.parent / "external" / "visualwebarena" / "config_files" / "wa"
+WA_DIR = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena" / "config_files" / "wa"
 RAW_FILE = WA_DIR / "test_webarena.raw.json"
 TARGET_SITES = {"shopping", "shopping_admin", "reddit"}
 
