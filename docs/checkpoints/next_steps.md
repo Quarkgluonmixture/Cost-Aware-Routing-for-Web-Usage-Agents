@@ -45,7 +45,18 @@ Note: Phantom-DOM **adj 14.53% ≈ DOM 14.10%** (基本持平), raw **16.67% > D
 Section 4 draft + figures 用的是 §103 之前 stale 数据 (Phantom-DOM 12.50%)，
 **需要 update with fresh numbers** (待 phantom_som re-run done 后一起 update).
 
-ETA paper-grade clean cls + red full 4-mode matrix: **~30h from now**
+ETA paper-grade clean cls + red full 4-mode matrix: **~48h from now** (revised)
+
+⚠️ Reddit 比 cls 慢 2.4×/step (Postmill render 5.4× slower + AXTree 1.5× larger).
+B1 reddit chain (GPU sequential, 4B + slow site) = **~42h alone**.
+B1 cls chain ~16h.
+
+Wall-time breakdown:
+- B0 phantom_som cls re-run: ~5h (4.6h × 234 task)
+- B0 phantom_som red re-run: ~14h
+- B0 phantom_dom red continue: ~9h remaining
+- B1 cls chain (sequential GPU som + dom): ~16h
+- B1 red chain (sequential GPU som + dom): ~42h ⚠️
 
 ---
 
