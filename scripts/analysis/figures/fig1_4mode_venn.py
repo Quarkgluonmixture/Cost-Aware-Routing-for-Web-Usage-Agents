@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Draw 4-arm success-overlap sketches for B0 VWA classifieds and reddit.
+"""Draw live success-overlap sketches for B0/B1 VWA observation arms.
 
-The marginal SR and drop-one annotations are pinned to the verified numbers in
-docs/checkpoints/实验笔记.md §103. Full 4-way region labels are read from the
-current episode summary JSON when available; if those summaries disagree with
-§103 adjusted marginals, the script prints a warning and keeps the §103 labels.
+The B0/B1 DOM/SoM/Vision cells are read from current episode-level
+``adjusted_success`` summaries. B0 Phantom-SoM uses the pre-rederive backup
+episode summaries because the fresh runs are currently being regenerated. B1
+Phantom-SoM is intentionally marked unavailable.
 """
 
 from __future__ import annotations
@@ -22,40 +22,65 @@ ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig1_4mode_venn.png"
 
-MODE_ORDER = ["DOM", "SoM", "Vision", "Phantom"]
 COLORS = {
     "DOM": "#4c78a8",
     "SoM": "#f58518",
     "Vision": "#54a24b",
-    "Phantom": "#b279a2",
+    "Phantom-SoM": "#b279a2",
 }
 
-EPISODES = {
-    "classifieds": {
-        "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-        "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-        "Phantom": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+PANELS = [
+    {
+        "key": "b0_cls",
+        "title": "B0 classifieds",
+        "expected": 234,
+        "modes": {
+            "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
+            "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+            "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes/.bak_pre_rederive",
+        },
+        "notes": {"Phantom-SoM": "stale fallback"},
     },
-    "reddit": {
-        "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-        "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-        "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-        "Phantom": RESULTS / "run_reddit_1777238854_ef9c4b/phase1_phantom_som_router_0/episodes",
+    {
+        "key": "b0_red",
+        "title": "B0 reddit",
+        "expected": 210,
+        "modes": {
+            "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
+            "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
+            "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
+            "Phantom-SoM": RESULTS / "run_reddit_1777238854_ef9c4b/phase1_phantom_som_router_0/episodes/.bak_pre_rederive",
+        },
+        "notes": {"Phantom-SoM": "stale fallback"},
     },
-}
+    {
+        "key": "b1_cls",
+        "title": "B1 classifieds",
+        "expected": 234,
+        "modes": {
+            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
+            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
+        },
+        "missing": "Phantom-SoM N/A pending re-run",
+    },
+    {
+        "key": "b1_red",
+        "title": "B1 reddit",
+        "expected": 210,
+        "modes": {
+            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
+            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
+            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
+        },
+        "missing": "Phantom-SoM N/A pending re-run",
+    },
+]
 
-VERIFIED = {
-    "classifieds": {
-        "N": 234,
-        "sr": {"DOM": 14.10, "SoM": 21.37, "Vision": 13.68, "Phantom": 11.97},
-        "drop": {"DOM": 2.14, "SoM": 7.69, "Vision": 3.85, "Phantom": 1.71},
-    },
-    "reddit": {
-        "N": 210,
-        "sr": {"DOM": 9.52, "SoM": 10.48, "Vision": 6.67, "Phantom": 10.95},
-        "drop": {"DOM": 1.43, "SoM": 2.86, "Vision": 1.90, "Phantom": 2.38},
-    },
+SECTION103_SR = {
+    "b0_cls": {"DOM": 14.10, "SoM": 21.37, "Vision": 13.68, "Phantom-SoM": 11.97},
+    "b0_red": {"DOM": 9.52, "SoM": 10.48, "Vision": 6.67, "Phantom-SoM": 10.95},
 }
 
 
@@ -66,118 +91,156 @@ def task_id(path: Path) -> int:
     return int(match.group(1))
 
 
-def load_success_set(ep_dir: Path) -> set[int]:
+def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
+    files = sorted(ep_dir.glob("*_summary_v2.json"))
+    if not files:
+        print(f"[warn] no episode summaries under {ep_dir}", file=sys.stderr)
+        return set(), set()
     successes: set[int] = set()
-    files = list(ep_dir.rglob("*_summary_v2.json"))
+    observed: set[int] = set()
     for path in files:
         with path.open() as f:
             record = json.load(f)
+        tid = task_id(path)
+        observed.add(tid)
         if bool(record.get("adjusted_success", record.get("success", False))):
-            successes.add(task_id(path))
-    return successes
+            successes.add(tid)
+    return successes, observed
 
 
-def region_counts(site: str) -> dict[tuple[str, ...], int]:
-    sets = {mode: load_success_set(path) for mode, path in EPISODES[site].items()}
-    all_tasks = set().union(*sets.values())
-    counts: dict[tuple[str, ...], int] = {}
-    for tid in all_tasks:
-        key = tuple(mode for mode in MODE_ORDER if tid in sets[mode])
-        if key:
-            counts[key] = counts.get(key, 0) + 1
-
-    n = VERIFIED[site]["N"]
-    for mode, success_set in sets.items():
-        computed = 100.0 * len(success_set) / n
-        verified = VERIFIED[site]["sr"][mode]
-        if abs(computed - verified) > 0.25:
+def panel_sets(panel: dict) -> tuple[dict[str, set[int]], dict[str, int]]:
+    sets: dict[str, set[int]] = {}
+    observed_counts: dict[str, int] = {}
+    expected = panel["expected"]
+    for mode, ep_dir in panel["modes"].items():
+        successes, observed = load_success_set(ep_dir)
+        sets[mode] = successes
+        observed_counts[mode] = len(observed)
+        if len(observed) != expected:
             print(
-                f"[warn] {site} {mode}: episode summaries give {computed:.2f}% "
-                f"adjusted SR, §103 uses {verified:.2f}%",
+                f"[warn] {panel['title']} {mode}: n={len(observed)} expected={expected}",
                 file=sys.stderr,
             )
-    return counts
+        if panel["key"] in SECTION103_SR and mode in SECTION103_SR[panel["key"]]:
+            live_sr = 100.0 * len(successes) / expected
+            verified = SECTION103_SR[panel["key"]][mode]
+            if abs(live_sr - verified) > 0.25:
+                print(
+                    f"[warn] {panel['title']} {mode}: live/fallback adjusted SR "
+                    f"{live_sr:.2f}% vs §103 {verified:.2f}%",
+                    file=sys.stderr,
+                )
+    return sets, observed_counts
 
 
-def draw_site(ax: plt.Axes, site: str) -> None:
+def unique_count(mode: str, sets: dict[str, set[int]]) -> int:
+    others = set().union(*(s for m, s in sets.items() if m != mode))
+    return len(sets[mode] - others)
+
+
+def draw_panel(ax: plt.Axes, panel: dict) -> None:
+    sets, observed_counts = panel_sets(panel)
+    modes = list(panel["modes"])
+    expected = panel["expected"]
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim(-2.35, 2.35)
-    ax.set_ylim(-2.15, 2.15)
-    positions = {
-        "DOM": (-0.75, 0.45),
-        "SoM": (0.75, 0.45),
-        "Vision": (-0.75, -0.45),
-        "Phantom": (0.75, -0.45),
-    }
-    for mode in MODE_ORDER:
-        circle = Circle(
-            positions[mode],
-            1.22,
-            facecolor=COLORS[mode],
-            edgecolor=COLORS[mode],
-            alpha=0.24,
-            lw=2.0,
-        )
-        ax.add_patch(circle)
+    ax.set_xlim(-2.6, 2.6)
+    ax.set_ylim(-2.25, 2.25)
 
-    v = VERIFIED[site]
-    label_offsets = {
-        "DOM": (-1.55, 1.68),
-        "SoM": (0.55, 1.68),
-        "Vision": (-1.80, -1.72),
-        "Phantom": (0.35, -1.72),
-    }
-    for mode in MODE_ORDER:
-        x, y = label_offsets[mode]
+    if len(modes) == 4:
+        positions = {
+            "DOM": (-0.75, 0.45),
+            "SoM": (0.75, 0.45),
+            "Vision": (-0.75, -0.45),
+            "Phantom-SoM": (0.75, -0.45),
+        }
+        label_positions = {
+            "DOM": (-2.35, 1.65),
+            "SoM": (0.35, 1.65),
+            "Vision": (-2.35, -1.72),
+            "Phantom-SoM": (0.25, -1.72),
+        }
+        radius = 1.22
+    else:
+        positions = {
+            "DOM": (-0.85, 0.25),
+            "SoM": (0.85, 0.25),
+            "Vision": (0.0, -0.7),
+        }
+        label_positions = {
+            "DOM": (-2.35, 1.45),
+            "SoM": (0.55, 1.45),
+            "Vision": (-0.9, -1.82),
+        }
+        radius = 1.16
+
+    for mode in modes:
+        ax.add_patch(
+            Circle(
+                positions[mode],
+                radius,
+                facecolor=COLORS[mode],
+                edgecolor=COLORS[mode],
+                alpha=0.24,
+                lw=2.0,
+            )
+        )
+
+    for mode in modes:
+        sr = 100.0 * len(sets[mode]) / expected
+        suffix = "*" if panel.get("notes", {}).get(mode) else ""
+        x, y = label_positions[mode]
         ax.text(
             x,
             y,
-            f"{mode}\nSR {v['sr'][mode]:.2f}%\nunique {v['drop'][mode]:.2f} pp",
+            f"{mode}{suffix}\nSR {sr:.2f}%\nunique {unique_count(mode, sets)}",
             ha="left",
             va="center",
-            fontsize=9,
+            fontsize=8.5,
             color="#222222",
             fontweight="bold",
         )
 
-    counts = region_counts(site)
-    # Label a compact subset of regions; these are descriptive, not area-scaled.
-    region_positions = {
-        ("DOM",): (-1.48, 0.78),
-        ("SoM",): (1.48, 0.78),
-        ("Vision",): (-1.48, -0.78),
-        ("Phantom",): (1.48, -0.78),
-        ("DOM", "SoM"): (0.0, 1.12),
-        ("DOM", "Vision"): (-1.32, 0.0),
-        ("SoM", "Phantom"): (1.32, 0.0),
-        ("Vision", "Phantom"): (0.0, -1.12),
-        ("DOM", "SoM", "Vision", "Phantom"): (0.0, 0.0),
-    }
-    for key, (x, y) in region_positions.items():
-        value = counts.get(key, 0)
-        if value:
-            ax.text(x, y, str(value), ha="center", va="center", fontsize=10, color="#222222")
+    common = set.intersection(*(sets[m] for m in modes)) if modes else set()
+    oracle = set().union(*sets.values()) if sets else set()
+    ax.text(
+        0,
+        0.03,
+        f"all {len(common)}\noracle {len(oracle)}",
+        ha="center",
+        va="center",
+        fontsize=10,
+        color="#222222",
+        bbox={"boxstyle": "round,pad=0.25", "facecolor": "white", "edgecolor": "#dddddd", "alpha": 0.86},
+    )
 
-    ax.set_title(f"{site.capitalize()} (N={v['N']}, adjusted)", fontsize=13, fontweight="bold")
+    if panel.get("missing"):
+        ax.text(0, -2.08, panel["missing"], ha="center", va="center", fontsize=8.5, color="#777777")
+
+    if any(n != expected for n in observed_counts.values()):
+        observed = ", ".join(f"{m} n={n}" for m, n in observed_counts.items())
+        ax.text(0, 2.03, observed, ha="center", va="center", fontsize=7.5, color="#9a3412")
+
+    ax.set_title(f"{panel['title']} (N={expected})", fontsize=12, fontweight="bold")
 
 
 def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    plt.rcParams.update({"font.size": 10, "figure.dpi": 140})
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5.7))
-    for ax, site in zip(axes, ["classifieds", "reddit"]):
-        draw_site(ax, site)
-    fig.suptitle("Four Observation Arms: Success-Pool Overlap", fontsize=15, fontweight="bold")
+    plt.rcParams.update({"font.size": 10, "figure.dpi": 150})
+    fig, axes = plt.subplots(2, 2, figsize=(12.2, 9.5))
+    for ax, panel in zip(axes.flat, PANELS):
+        draw_panel(ax, panel)
+    fig.suptitle("Observation Arms: Success-Pool Overlap", fontsize=15, fontweight="bold")
     fig.text(
         0.5,
-        0.03,
-        "Circle labels use §103 verified adjusted SR and drop-one oracle loss; interior counts are read from current episode JSON for orientation.",
+        0.025,
+        "Labels show adjusted SR and tasks uniquely solved by that arm within the plotted set. "
+        "* B0 Phantom-SoM uses stale pre-rederive fallback summaries; B1 Phantom-SoM is unavailable pending re-run.",
         ha="center",
-        fontsize=9,
+        fontsize=8.5,
         color="#555555",
     )
-    fig.tight_layout(rect=(0, 0.06, 1, 0.94))
+    fig.tight_layout(rect=(0, 0.055, 1, 0.94))
     fig.savefig(OUT, bbox_inches="tight")
     print(OUT)
 
