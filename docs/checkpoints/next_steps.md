@@ -266,9 +266,129 @@ Section 4-5 数据 + figures 是 paper 主体核心，~~已 ready~~ 待 chain do
 
 ---
 
-## 5. Future paper 2 (Routing) — defer
+## 4.5 Paper 1 顶刊 Execution Plan（2026-04-27 晚 final scope 定）
 
-记录 routing-relevant 已积累的 infra (供未来 paper 2 用):
+### 4.5.1 Final scope (paper 完整版)
+
+```
+Benchmark: VWA 3 站 (cls 234 + red 210 + shop 466) + WA 3 站 (red 106 + shop 192 + sa 182)
+           = 6 sites, ~1390 task per condition
+Models:    B0 (Qwen3-VL-235B proxy) + B1 (Qwen3-VL-4B local) + Claude Opus 4.7
+           = 3 model families
+Modes:     DOM / SoM / Vision / Phantom-SoM / Phantom-DOM = 5 modes
+Cells:     6 sites × 3 models × 5 modes = ~90 cells (~125K episode total)
++ Router:  build router using disagreement-cluster / capability / category signals
++ Deploy:  实际 run agent with router, measure cost/SR/latency vs best-single-mode
+```
+
+### 4.5.2 顶刊概率（final scope 完成后）
+
+| 投稿目标 | 接收概率 | 投稿优先级 |
+|---|---:|---|
+| **NeurIPS / ICLR main** | **40-55%** | **Tier 1 stretch** |
+| **ICML** | 35-50% | Tier 1 stretch |
+| **ACL / EMNLP main** | 45-60% | Tier 1 |
+| **MLSys** | **60-70%** | **Tier 1 safe** ⭐ drop-in framing 完美 fit |
+| WWW / WSDM | 70-80% | Tier 2 |
+| NeurIPS D&B | 60-70% | Tier 2 |
+| **TMLR (journal)** | **65-80%** | **保底** ⭐ |
+
+→ Final scope 完成后, paper 顶刊出版几乎 lock (cascade NeurIPS → ACL → MLSys → TMLR)。NeurIPS/ICLR 顶级命中率 ~50%。
+
+**对比 baseline**: VWA (Koh ICLR 2024) / WebArena (Zhou ICLR 2024) / SeeAct (Zheng ICML 2024) / SoM (Yang NeurIPS 2023) / FocusAgent (Kerboua EMNLP 2025) — 你 final scope 比上述任何一个 axis coverage 都全 (2 benchmark family × 3 model × deployed router).
+
+### 4.5.3 Timeline 估算（execution-only, 不含 paper writing）
+
+| 阶段 | 任务 | 时间 | 资源 |
+|---|---|---|---|
+| 1 | cls+red 5-mode B0+B1 完整 (current paper-grade clean re-run) | ~48h | 现有 GPU |
+| 2 | shopping (B0+B1, 5 modes, 10 cells) | ~3-5 天 | Myriad GPU 待 |
+| 3 | WA 三站 (B0+B1, 5 modes, 30 cells) | ~1-2 周 | 现有 GPU |
+| 4 | Claude Opus 4.7 (6 sites × 5 modes, 30 cells) | ~3-5 天 | $70-150 API |
+| 5 | Router design + train + offline eval + deploy on agent | ~2-3 周 | 现有 + API |
+| 6 | Paper writing + figures + 投稿 | ~3-4 周 | — |
+| **Total** | | **~3 月 (12 周)** | — |
+
+### 4.5.4 4 个关键 Risks + Mitigation（按重要性排序）
+
+#### Risk 1: Execution quality（顶刊成败 #1 因素 ⚠️⚠️⚠️）
+90 cells × ~1390 task = ~125K episode。任何 cell 跑 sloppy（auth bug / cross-contam / 数据污染 / FP 没处理）都被 reviewer 抓出。
+
+**Mitigation**:
+- 维持现有 paper-grade re-run 协议: reset between conditions, exclusive same-site B0 XOR B1, watchdog auto-rederive
+- 每 cell 完成后立刻 `make analyze` + manual audit gallery
+- 不在 execution quality 妥协（哪怕慢也不要 cherry-pick / 跳过 reset）
+
+#### Risk 2: Story discipline ⚠️⚠️
+6×3×5 cells 容易让 paper 变 "data dump"。顶会 reviewer 反感 "everything but the kitchen sink"。
+
+**Mitigation**: **Single narrative**:
+> "Phantom-SoM is a hidden routing arm + we explain why + we route on it + here's the cost saving"
+
+其他 finding (capability shift / category profile / etc) 都是 supporting evidence, 不是独立 contribution. Section 4-5 each ≤4 pages, supplementary 装其余.
+
+#### Risk 3: Router design ⚠️⚠️
+Router 只比 best-single-mode 提升 1-2pp 被 reviewer 说 "不值"。用 oracle features (test-time leak) 直接 reject.
+
+**Router design tiers**:
+- **Tier 1 (must-have)**: Oracle router — task feature → best mode lookup, train 在 train split, 测在 held-out test split
+- **Tier 2 (great-to-have)**: First-step-trigger router — 看 step 1 obs 决定 mode, no test leak
+- **Tier 3 (stretch)**: Online learning router — mid-trajectory escalation
+
+Tier 1 + Tier 2 就够顶会 contribution; Tier 3 stretch goal.
+
+#### Risk 4: Negative results 必须诚实报告 ⚠️
+某些 cell 可能反 trend (e.g. Claude shopping Phantom-SoM 不 work)。**绝不 cherry-pick**, reviewer 看出直接 reject.
+
+**Mitigation**: 诚实报告反而强化 mechanism claim ("effect 是 model-capability-bound, 不是 universal").
+
+### 4.5.5 投稿 Cascade Plan
+
+```
+Round 1 (T+12 周, paper done):
+  → NeurIPS 2026 (or ICLR 2027 if timing 错过 NeurIPS)
+  → 50% expected outcome
+
+Round 2 (rejection 后):
+  → ACL / EMNLP (大幅修改 narrative for NLP venue)
+  → 50% expected outcome
+
+Round 3 (still rejected):
+  → MLSys (强调 drop-in deployment 角度)
+  → 65% expected outcome
+
+Round 4 (保底):
+  → TMLR (journal rolling review)
+  → 70% expected outcome
+```
+
+期望出版 venue 链 ~99%（5 站 5 model deployed-router scope 没法被全拒）, NeurIPS/ICLR 命中 ~50%.
+
+### 4.5.6 关键决策点
+
+| 时间点 | 决策 | 影响 |
+|---|---|---|
+| 当前 (week 0) | 维持 paper-grade re-run 纪律 | execution quality risk ↓ |
+| Week 4 (cls+red done) | Claude Opus 启动决定 | API budget vs scope |
+| Week 6 (shopping done) | Router design 启动 | Tier 1/2/3 选择 |
+| Week 8 (WA + Claude done) | Router 实际 deploy 时机 | paper 主 contribution 成型 |
+| Week 10 (router done) | Paper writing 启动 | story discipline 决策 |
+| Week 12 (paper done) | 投稿 venue 决策 | NeurIPS vs ICLR vs ACL timing |
+
+---
+
+## 5. Future paper 2 — REVISED (2026-04-27 晚)
+
+⚠️ **决策更新**: 原计划 "Phantom-only paper + Routing follow-up paper". 
+**新决策 (final scope)**: Router (Tier 1+2) integrated into Paper 1 主 contribution, 
+**not 独立 follow-up paper**.
+
+如果未来真有 Paper 2, 主题应转向:
+- Phase 3 模块消融 (M1-M4 fallback 机制)
+- 或 routing online learning / mid-trajectory escalation (Tier 3 stretch)
+- 或 cross-model routing meta-policy (跨 model family 的 routing 一致性)
+
+记录 routing-relevant 已积累的 infra (供 paper 1 router section + future use):
 
 - Routing signals: 4 baselines × confidence_summary.json (`overall_usable: True`)
   - Behavioral signals: action_diversity / max_repeat_streak / url_revisit (AUROC 0.62-0.77)
