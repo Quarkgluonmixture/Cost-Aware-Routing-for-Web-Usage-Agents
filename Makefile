@@ -87,7 +87,7 @@ gallery:
 	@test -n "$(RUN)" || (echo "ERROR: RUN=<run_dir> required"; exit 1)
 	$(PYTHON) scripts/maintenance/generate_gallery.py --run-dir $(RUN)
 
-# Regenerate paper figures (8 PNGs in results/phantom_paper/figures/)
+# Regenerate paper figures (9 PNGs in results/phantom_paper/figures/)
 figures:
 	$(PYTHON) scripts/analysis/figures/fig1_4mode_venn.py
 	$(PYTHON) scripts/analysis/figures/fig2_drop_one_oracle.py
@@ -96,6 +96,7 @@ figures:
 	$(PYTHON) scripts/analysis/figures/fig5_category_mode_heatmap.py
 	$(PYTHON) scripts/analysis/figures/fig6_capability_contrast.py
 	$(PYTHON) scripts/analysis/figures/fig7_cost_sr_frontier.py
+	$(PYTHON) scripts/analysis/figures/fig8_overlap_stacked_bar.py
 	$(PYTHON) scripts/analysis/figures/fig9_regional_carbon_sensitivity.py
 	@echo "Figures regenerated → results/phantom_paper/figures/"
 
