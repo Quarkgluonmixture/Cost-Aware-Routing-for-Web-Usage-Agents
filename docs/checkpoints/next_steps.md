@@ -281,19 +281,37 @@ Cells:     6 sites × 3 models × 5 modes = ~90 cells (~125K episode total)
 + Deploy:  实际 run agent with router, measure cost/SR/latency vs best-single-mode
 ```
 
-### 4.5.2 顶刊概率（final scope 完成后）
+### 4.5.2 顶刊概率（final scope + multi-metric/green AI 加成 后）
 
-| 投稿目标 | 接收概率 | 投稿优先级 |
-|---|---:|---|
-| **NeurIPS / ICLR main** | **40-55%** | **Tier 1 stretch** |
-| **ICML** | 35-50% | Tier 1 stretch |
-| **ACL / EMNLP main** | 45-60% | Tier 1 |
-| **MLSys** | **60-70%** | **Tier 1 safe** ⭐ drop-in framing 完美 fit |
-| WWW / WSDM | 70-80% | Tier 2 |
-| NeurIPS D&B | 60-70% | Tier 2 |
-| **TMLR (journal)** | **65-80%** | **保底** ⭐ |
+| 投稿目标 | 概率 (final scope only) | **+ multi-metric + green AI** | 上调 |
+|---|---:|---:|---:|
+| **NeurIPS / ICLR main** | 40-55% | **45-60%** | +5pp |
+| **ICML** | 35-50% | 40-55% | +5pp |
+| **ACL / EMNLP main** | 45-60% | 50-65% | +5pp |
+| **MLSys** | 60-70% | **75-85%** ⭐ | **+15pp** multi-metric Pareto + drop-in + green AI 完美 fit |
+| WWW / WSDM | 70-80% | 75-85% | +5pp |
+| NeurIPS D&B | 60-70% | 70-80% | +10pp |
+| **TMLR (journal)** | 65-80% | **75-85%** | +10pp |
 
-→ Final scope 完成后, paper 顶刊出版几乎 lock (cascade NeurIPS → ACL → MLSys → TMLR)。NeurIPS/ICLR 顶级命中率 ~50%。
+→ Final scope + multi-metric + green AI 完成后:
+  - **MLSys 几乎 lock (75-85%)**
+  - NeurIPS/ICLR 命中 ~50%+
+  - 顶刊出版几乎 100% (cascade 4 venue)
+
+**Multi-metric/Green AI axis 加成的 paper-level 价值**:
+1. Differentiator: 现有 web-agent paper (VWA/WebArena/SeeAct/SoM/FocusAgent) 几乎全部不报 carbon
+2. Multi-metric Pareto 在 ML 顶会近年是 expected
+3. 正好支撑 drop-in framing (cost+latency+carbon 三向论点, narrative 更立体)
+4. Green AI 是 NeurIPS/ICLR 近 2 年新兴关注点 (Strubell ACL 2019, Patterson 2021)
+
+**Caveat (重要)**: green AI 是 second-order 价值, **不能抢主线**.
+- ❌ 不要把 paper 改成 "Green AI for Web Agents" (retrofit 痕迹)
+- ✅ 保持主线 "Phantom-SoM hidden routing arm + drop-in deployment"
+- ✅ Multi-metric / green AI 作为 Section 4 supporting + Section 7 implications
+
+**Reviewer 风险 + 应对**:
+- Risk: B0 carbon NaN reviewer 会问 "怎么能 claim green AI"
+- 应对: 透明 disclose (B0 proxy API 远端 GPU 不可测), B1 measured + B0 token-based estimate
 
 **对比 baseline**: VWA (Koh ICLR 2024) / WebArena (Zhou ICLR 2024) / SeeAct (Zheng ICML 2024) / SoM (Yang NeurIPS 2023) / FocusAgent (Kerboua EMNLP 2025) — 你 final scope 比上述任何一个 axis coverage 都全 (2 benchmark family × 3 model × deployed router).
 
