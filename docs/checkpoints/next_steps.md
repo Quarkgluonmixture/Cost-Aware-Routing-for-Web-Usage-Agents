@@ -423,6 +423,54 @@ Phantom-DOM 是 **mechanism ablation** (two-knob: 同 obs 不同 prompt), 不是
 - B1 capability profile draft done
 - Section 1/2/3 paper drafts done (已 done 现在)
 
+### 4.5.9 Cost / Latency / Carbon Metrics — Paper 利用规划
+
+**已有数据状况** (per condition_summary_v2.json):
+
+| Backend | Cost | P95 Latency | Energy (kWh) | CO2e (kg) |
+|---|---|---|---|---|
+| B0 (proxy 235B API) | ✅ | ✅ | ❌ NaN | ❌ NaN |
+| B1 (local 4B GPU NVML) | ✅ | ✅ | ✅ | ✅ |
+
+理由: B0 inference 在远端服务器, DGX local GPU 不动, NVML 测不到; B1 走 local GPU 有真实测量.
+
+**Striking findings 已在数据里 (paper 直接可用)**:
+
+1. **B0 cls SoM P95 latency 74s ≈ 2× DOM 38s** — image encoding/inference 拖慢
+   → Phantom-SoM 预期 recover DOM latency ⭐ paper Section 1/4 hook
+2. **B1 cls SoM energy (0.0020 kWh) < DOM (0.0052 kWh)** — step count 主导
+   B1 reddit 反向: SoM 高于 DOM (132s vs 88s) — site-dependent
+   → Phantom-SoM 预期 **任何 site 都接近 DOM 数据** (no image penalty)
+
+**Phantom-SoM 三重 Win Hypothesis** (待 phantom 数据验证):
+- Cost ≈ DOM (regex filter same AXTree)
+- P95 latency ≈ DOM (no image inference stage, B0 省 ~50%)
+- Energy ≤ DOM (no image processing, B1 直接验证)
+
+**已有分析 infrastructure** (`p79/experiment/analysis.py:1379-1410`):
+- `phase1_comparison_overview.png` — 6-panel multi-metric overview (success / steps / cost / p95_lat / energy / co2e)
+- 每 run `make analyze` 自动 regen
+- paper figure 不需新建 — 现有 pipeline 已 paper-ready
+
+**Paper 利用 plan**:
+
+| Section | Metric 用法 | 触发时机 |
+|---|---|---|
+| Section 1 hook | "SoM 2× DOM latency in production (B0 235B), Phantom-SoM 预期 recover" | 当前 prose 可加 (B0 数据已 stable) |
+| Section 4 main table | Cost-aware snapshot: 5 mode × {SR, cost, p95 lat} 表 | Section 4 fresh-data update 时 (~Week 2-3) |
+| Section 4 fig9 (新) | 2x2 panel (B0 cls/red + B1 cls/red), 每 panel 多指标 grouped bar | Week 2-3, codex prompt |
+| Section 5 wasted-cost | DOM search-loop 12 step 高 wasted cost, Phantom-SoM quick decision 低 wasted cost | Section 5 prose 时 |
+| Section 7 Sustainability | B1 CO2 数据 (B0 不可测) 论证 representation routing as green-AI lever | Section 7 写时 |
+| Supplementary | B0+B1 完整 multi-metric table + per-condition cost/latency distribution | paper appendix |
+
+**Tier 1 (paper main body)**: SR + drop-one + cost + P95 latency
+**Tier 2 (Section 7)**: CO2 (B1 only, transparent disclosure)
+**Tier 3 (supplementary)**: wasted cost / energy kWh / cost_efficiency_ratio
+
+**Risk: 不要让 cost/latency/carbon overload 主 narrative.**
+保持 single narrative ("Phantom-SoM is hidden routing arm + drop-in deployment"),
+其他 metric 是 supporting evidence, 不抢主线.
+
 ---
 
 ## 5. Future paper 2 — REVISED (2026-04-27 晚)
