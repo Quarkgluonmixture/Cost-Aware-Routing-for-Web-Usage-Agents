@@ -512,6 +512,93 @@ Phantom-DOM 是 **mechanism ablation** (two-knob: 同 obs 不同 prompt), 不是
 
 ---
 
+## 4.6 Forward-Thinking — Router 难点 / Advisor Align / Visualization (2026-04-27 晚)
+
+### 4.6.1 Router 是真难点 (修正 §4.5.3 timeline)
+
+5 个关键设计决策点 (每个都要做 ablation):
+
+| 维度 | 选项 | 难点 |
+|---|---|---|
+| Feature | task NLP / browser state / step-1 trigger / capability / audit cat | audit cat 是 leak; small data overfit |
+| Target | max SR / SR-per-cost / Pareto / budget-constrained | multi-obj weight 选, single-obj 失论点 |
+| Granularity | task-level / step-level / confidence-triggered | step-level 重跑实验 2x cost |
+| Cascade | 单 router / B1→B0 escalation / rule+ML hybrid | escalation 实验代价大 |
+| Baseline | random / best-single-mode / oracle / rule-based | best-single-mode 是 hardest baseline |
+
+**Realistic timeline 修正** (vs §4.5.3 估 2-3 周):
+- Tier 1 (task-level oracle): ~5-7 天
+- Tier 2 (first-step trigger / cascade): ~7-10 天
+- **Total: ~3-4 周** (paper 真正最值钱的工作量, 不应压缩)
+
+**Minimum viable router** (start, ~3 天 prototype):
+```
+Feature:  task instruction TF-IDF + binary {has_ref_image, has_finish_string_match}
+Target:   max adjusted SR
+Model:    Logistic regression (interpretable + small-data friendly)
+Train:    cls + red 6 mode, 80/20 split
+Baseline: random / best-single-mode / rule-based ("if has_ref_image → SoM else → Phantom-SoM")
+```
+LR 都打过 best-single-mode → paper 已 honest minimum router 论证, Tier 2 再加 escalation.
+
+### 4.6.2 Advisor / 学长 Align 时机 + 议题
+
+**第一次 align (~Week 3, cls+red+shopping 5-mode B0+B1 完整)**:
+- Router scope (Tier 1+2 vs Tier 1+2+3)
+- Claude Opus 启动决定 (~$70 budget)
+- 单 paper vs 双 paper 决策
+- Authorship / 学长导师贡献预期
+
+**第二次 align (~Week 6-7, WA + Claude done)**:
+- Paper venue (NeurIPS / ICLR / ACL / MLSys)
+- Section 6 generalization 范围 (是否加 Mind2Web)
+- 投稿 timing (NeurIPS 2026 deadline ~5 月 / ICLR 2027 ~9 月)
+
+**Align checklist** (每次带):
+| 决策 | 现状 | 影响 |
+|---|---|---|
+| Paper venue | NeurIPS → ACL → MLSys cascade | narrative angle (discovery vs systems) |
+| Router scope | Tier 1+2 (timeline ~3-4 周) | paper main contribution 强度 |
+| Cross-model | Claude Opus 4.7 only | + GPT-4o/Gemini/Llama 加分但贵 |
+| Section 6 范围 | VWA + WA + Claude | + Mind2Web 是 advisor 偏好 |
+| Paper 数 | 单 paper (router integrated) | split 增 publication count 但每篇弱 |
+| 投稿 timing | TBD | 紧 vs 松 决定 polish 程度 |
+
+**关键**: 不要等所有数据 done 才 align, 提前 align 可避免方向错重做.
+
+### 4.6.3 级联 Router 可视化方案
+
+**单纯 2D cost-SR Pareto 不够 striking**, 推荐 4-figure stack:
+
+| Figure | 作用 | 设计 |
+|---|---|---|
+| **Fig A: 3-panel multi-metric Pareto** | 主 figure, fig7 升级 | 3 panel: cost-SR + latency-SR + CO2-SR; router 点 above frontier |
+| **Fig B: Cumulative SR vs Budget curve** ⭐ | 最 striking, cost-aware 顶刊套路 | x=budget per task, y=cumulative SR; lines: random/best-single/rule/learned/oracle |
+| **Fig C: Routing decision Sankey** | Section 6 解释 router 学到什么 | task category → routed mode → outcome flow |
+| **Fig D: Per-task savings histogram** | Appendix supplementary | distribution: cost saved by routing per task |
+
+**Fig B 详细设计** (cost-aware paper 顶级 figure 套路, 参考 RouteLLM ICML 2024 / FocusAgent EMNLP 2025):
+
+```
+x: cumulative cost budget per task ($)
+y: cumulative SR achievable
+lines:
+  --- random
+  ··· best-single-mode (DOM/SoM/Phantom-SoM 各一条)
+  --- rule-based router (handcrafted)
+  ▬▬▬ learned ML router (ours) ⭐
+  ─── oracle router (upper bound)
+fill area: ours vs best-single-mode gap; ours vs oracle gap
+```
+
+直观论证: 在 $0.04 budget per task → 我们 router 25% SR vs best-single-mode 21%; oracle 边界 ~30%, learned router 缩小 60% gap.
+
+**反对 3D Pareto**: rotate 才看清, paper 印刷不友好, reviewer 抗拒. 用 2D multi-panel 替代.
+
+CO2 维度单独 fig E (regional sensitivity, 见 §4.5.9 Option D), 不塞主 Pareto.
+
+---
+
 ## 5. Future paper 2 — REVISED (2026-04-27 晚)
 
 ⚠️ **决策更新**: 原计划 "Phantom-only paper + Routing follow-up paper". 
