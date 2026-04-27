@@ -20,7 +20,7 @@ from matplotlib.patches import Circle
 
 ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
-OUT = ROOT / "docs/analysis/figures/fig1_4mode_venn.png"
+OUT = ROOT / "results/phantom_paper/figures/fig1_4mode_venn.png"
 
 MODE_ORDER = ["DOM", "SoM", "Vision", "Phantom"]
 COLORS = {

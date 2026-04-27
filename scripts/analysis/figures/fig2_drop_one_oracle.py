@@ -19,7 +19,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
-OUT = ROOT / "docs/analysis/figures/fig2_drop_one_oracle.png"
+OUT = ROOT / "results/phantom_paper/figures/fig2_drop_one_oracle.png"
 
 MODES = ["DOM", "SoM", "Vision", "Phantom"]
 COLORS = ["#4c78a8", "#f58518", "#54a24b", "#b279a2"]

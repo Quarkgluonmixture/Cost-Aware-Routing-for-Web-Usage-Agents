@@ -10,7 +10,7 @@ from matplotlib.patches import FancyArrowPatch, Rectangle
 
 
 ROOT = Path(__file__).resolve().parents[3]
-OUT = ROOT / "docs/analysis/figures/fig4_two_knob_diagram.png"
+OUT = ROOT / "results/phantom_paper/figures/fig4_two_knob_diagram.png"
 
 
 def cell(ax, xy, w, h, title, subtitle, face, edge="#333333"):

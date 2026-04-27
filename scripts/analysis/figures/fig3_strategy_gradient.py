@@ -19,7 +19,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
-OUT = ROOT / "docs/analysis/figures/fig3_strategy_gradient.png"
+OUT = ROOT / "results/phantom_paper/figures/fig3_strategy_gradient.png"
 
 MODES = ["DOM", "Vision", "SoM", "Phantom-SoM", "Phantom-DOM"]
 COLORS = {
