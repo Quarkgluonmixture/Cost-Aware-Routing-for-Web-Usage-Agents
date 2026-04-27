@@ -1351,31 +1351,36 @@ def generate_aggregate_gallery(
 
 def generate_combined_gallery(
     phase_dirs: List[Path],
-    prefix_filter: str,
+    prefix_filters: List[str],
     output_dir: Path,
     condition: Optional[str],
     task_id: Optional[int],
     embed: bool,
+    extra_run_dirs: Optional[List[Path]] = None,
 ) -> Path:
     """Generate a cross-benchmark gallery merging VWA + WA runs.
 
-    Scans each *phase_dir* for run dirs matching *prefix_filter* (via
+    Scans each *phase_dir* for run dirs matching any of *prefix_filters* (via
     ``_parse_run_family``), collects episodes with ``vwa:``/``wa:`` site
     prefixes, and writes ``gallery.html`` into *output_dir*.
 
     Args:
         phase_dirs: e.g. [results/visualwebarena/phase1, results/webarena/phase1]
-        prefix_filter: e.g. "B1_3mode" — also matches "B1_wa_3mode" by
-                       stripping the ``_wa`` infix for comparison.
+        prefix_filters: list of prefixes, e.g. ["B1_3mode", "B1_phantom"].
+                       Each also matches its ``_wa_`` variant by stripping the
+                       infix for comparison.
         output_dir: where to write gallery.html
+        extra_run_dirs: explicit run dirs to include even when they don't match
+                       a prefix (used for legacy/non-standard naming).
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     gallery_path = output_dir / "gallery.html"
 
     # Collect run dirs across all phase_dirs
     source_run_dirs: List[Path] = []
-    # Normalize prefix for matching: B1_3mode matches B1_3mode_* and B1_wa_3mode_*
-    base_prefix = prefix_filter.replace("_wa_", "_")  # B1_wa_3mode -> B1_3mode
+    # Normalize each prefix for matching: B1_3mode matches B1_3mode_* and B1_wa_3mode_*
+    base_prefixes = {p.replace("_wa_", "_") for p in prefix_filters}
+    exact_prefixes = set(prefix_filters)
     for phase_dir in phase_dirs:
         if not phase_dir.is_dir():
             continue
@@ -1387,15 +1392,30 @@ def generate_combined_gallery(
             family = _parse_run_family(cand.name)
             if not family:
                 continue
-            # Match: exact prefix OR wa variant (B1_wa_3mode for B1_3mode)
             fam_base = family["prefix"].replace("_wa_", "_")
-            if fam_base != base_prefix and family["prefix"] != prefix_filter:
+            if fam_base not in base_prefixes and family["prefix"] not in exact_prefixes:
                 continue
             if _has_episode_data(cand):
                 source_run_dirs.append(cand)
 
+    # Add explicit extra run dirs (deduplicate)
+    if extra_run_dirs:
+        existing = {p.resolve() for p in source_run_dirs}
+        for extra in extra_run_dirs:
+            extra = extra.resolve()
+            if extra in existing:
+                continue
+            if not extra.is_dir():
+                print(f"WARN: extra run dir not found: {extra}")
+                continue
+            if not _has_episode_data(extra):
+                print(f"WARN: extra run dir has no episode data: {extra}")
+                continue
+            source_run_dirs.append(extra)
+            existing.add(extra)
+
     if not source_run_dirs:
-        print(f"No run dirs with episode data found for prefix={prefix_filter!r} in {phase_dirs}")
+        print(f"No run dirs with episode data found for prefixes={prefix_filters!r} in {phase_dirs}")
         raise SystemExit(1)
 
     print(f"Combined gallery: {len(source_run_dirs)} run dirs:")
@@ -1426,7 +1446,8 @@ def generate_combined_gallery(
             episode_order.append(ep["key"])
             episode_index[ep["key"]] = [gi, ei]
 
-    title = f"{prefix_filter} (VWA + WA)"
+    prefix_label = "+".join(prefix_filters)
+    title = f"{prefix_label} (VWA + WA)"
     if condition:
         title += f" / {condition}"
     if task_id is not None:
@@ -1434,7 +1455,7 @@ def generate_combined_gallery(
 
     data = {
         "title": title,
-        "state_key": f"combined_{prefix_filter}",
+        "state_key": f"combined_{prefix_label}",
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "groups": groups,
         "episode_order": episode_order,
@@ -1463,8 +1484,12 @@ def main():
                         help="Multiple phase directories for cross-benchmark combined gallery")
     parser.add_argument("--output-dir", default=None,
                         help="Output directory for combined gallery (required with --phase-dirs)")
-    parser.add_argument("--prefix", default=None,
-                        help="Filter runs by prefix when using --phase-dir/--phase-dirs (e.g. B1_3mode)")
+    parser.add_argument("--prefix", nargs="+", default=None,
+                        help="Filter runs by prefix when using --phase-dir/--phase-dirs "
+                             "(e.g. B1_3mode, or 'B0_3mode B0_phantom' for unified)")
+    parser.add_argument("--extra-run-dir", action="append", default=None,
+                        help="Explicit run dir(s) to include even when name doesn't match a prefix "
+                             "(repeatable; used with --phase-dirs)")
     parser.add_argument("--condition", default=None, help="Filter to condition_id")
     parser.add_argument("--task-id", type=int, default=None, help="Filter to task_id")
     parser.add_argument(
@@ -1477,15 +1502,19 @@ def main():
             parser.error("--prefix is required with --phase-dirs")
         if not args.output_dir:
             parser.error("--output-dir is required with --phase-dirs")
+        extra_dirs = [Path(p) for p in (args.extra_run_dir or [])]
         generate_combined_gallery(
             [Path(p) for p in args.phase_dirs],
             args.prefix,
             Path(args.output_dir),
             args.condition, args.task_id, args.embed,
+            extra_run_dirs=extra_dirs,
         )
     elif args.phase_dir:
+        # Single-prefix path; extract scalar from list if user passed --prefix B1_3mode
+        single_prefix = args.prefix[0] if args.prefix else None
         generate_aggregate_gallery(
-            Path(args.phase_dir), args.prefix, args.condition, args.task_id, args.embed,
+            Path(args.phase_dir), single_prefix, args.condition, args.task_id, args.embed,
         )
     elif args.run_dir:
         generate_gallery(Path(args.run_dir), args.condition, args.task_id, args.embed)

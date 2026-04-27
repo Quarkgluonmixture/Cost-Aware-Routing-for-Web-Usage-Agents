@@ -593,7 +593,9 @@ def _annotate_screenshots(run_dir: Path, condition: Optional[str] = None) -> str
 
 def _run_post_condition_analysis(run_dir: Path) -> str:
     """Run analysis pipeline after a condition completes (best-effort). Returns status."""
-    scripts_dir = Path(__file__).resolve().parent
+    # __file__ lives in scripts/maintenance/; analysis scripts moved to
+    # scripts/analysis/ during §99 reorg, so go up one then into analysis/.
+    scripts_dir = Path(__file__).resolve().parent.parent
     statuses = []
 
     # 1. Main experiment analysis (analyze_experiment.py)
@@ -732,7 +734,8 @@ def _run_cross_run_analysis(run_dir: Path) -> Optional[str]:
     if not info:
         return None
     phase_dir = run_dir.parent
-    scripts_dir = Path(__file__).resolve().parent / "analysis"
+    # §99 reorg: analysis scripts at scripts/analysis/ (sibling of maintenance/)
+    scripts_dir = Path(__file__).resolve().parent.parent / "analysis"
     statuses: List[str] = []
 
     # 1) compare_b0_b1: same site, other baseline
@@ -801,8 +804,10 @@ def _regenerate_gallery(run_dir: Path, condition: Optional[str] = None,
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if r.returncode == 0:
             print(f"[watchdog][GALLERY] regenerated: {run_dir / 'gallery.html'}")
-            # Also refresh aggregate gallery (best-effort)
-            _regenerate_aggregate_gallery(run_dir.parent, aggregate_prefix)
+            # Also refresh aggregate gallery (best-effort). Pass run_dir so the
+            # combined/unified rebuild can include it as --extra-run-dir when
+            # its name doesn't match the aggregate prefix (legacy naming).
+            _regenerate_aggregate_gallery(run_dir.parent, aggregate_prefix, self_run_dir=run_dir)
             return "updated"
         else:
             msg = f"failed: {r.stderr[-200:]}"
@@ -816,7 +821,11 @@ def _regenerate_gallery(run_dir: Path, condition: Optional[str] = None,
         return f"error: {exc}"
 
 
-def _regenerate_aggregate_gallery(phase_dir: Path, prefix: str = "B1_3mode") -> None:
+def _regenerate_aggregate_gallery(
+    phase_dir: Path,
+    prefix: str = "B1_3mode",
+    self_run_dir: Optional[Path] = None,
+) -> None:
     """Refresh the aggregate gallery (best-effort, silent)."""
     try:
         cmd = [
@@ -834,10 +843,23 @@ def _regenerate_aggregate_gallery(phase_dir: Path, prefix: str = "B1_3mode") -> 
         print(f"[watchdog][GALLERY] aggregate error: {exc}")
 
     # Also refresh combined (cross-benchmark) gallery if both VWA and WA dirs exist
-    _regenerate_combined_gallery(phase_dir, prefix)
+    _regenerate_combined_gallery(phase_dir, prefix, self_run_dir=self_run_dir)
+    # And refresh the per-baseline unified gallery (3mode + phantom)
+    _regenerate_unified_gallery(phase_dir, prefix, self_run_dir=self_run_dir)
 
 
-def _regenerate_combined_gallery(phase_dir: Path, prefix: str) -> None:
+def _build_extra_run_args(prefix: str, self_run_dir: Optional[Path]) -> List[str]:
+    """If self_run_dir's name doesn't start with prefix_, return [--extra-run-dir, path]."""
+    if not self_run_dir:
+        return []
+    if self_run_dir.name.startswith(f"{prefix}_"):
+        return []
+    return ["--extra-run-dir", str(self_run_dir)]
+
+
+def _regenerate_combined_gallery(
+    phase_dir: Path, prefix: str, self_run_dir: Optional[Path] = None,
+) -> None:
     """Refresh the combined VWA+WA gallery (best-effort, silent).
 
     Infers the counterpart benchmark dir and generates a combined gallery
@@ -856,12 +878,15 @@ def _regenerate_combined_gallery(phase_dir: Path, prefix: str) -> None:
         combined_prefix = prefix.replace("_wa_", "_") if "_wa_" in prefix else prefix
         output_dir = results_root / combined_prefix
 
+        extra_args = _build_extra_run_args(combined_prefix, self_run_dir)
+
         cmd = [
             sys.executable,
             str(Path(__file__).resolve().parent / "generate_gallery.py"),
             "--phase-dirs", *phase_dirs,
             "--prefix", combined_prefix,
             "--output-dir", str(output_dir),
+            *extra_args,
         ]
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
         if r.returncode == 0:
@@ -870,6 +895,59 @@ def _regenerate_combined_gallery(phase_dir: Path, prefix: str) -> None:
             print(f"[watchdog][GALLERY] combined failed: {r.stderr[-200:]}")
     except Exception as exc:
         print(f"[watchdog][GALLERY] combined error: {exc}")
+
+
+def _regenerate_unified_gallery(
+    phase_dir: Path, prefix: str, self_run_dir: Optional[Path] = None,
+) -> None:
+    """Refresh the per-baseline unified gallery (3mode + phantom, VWA+WA).
+
+    Triggers when *prefix* belongs to a known unified family (B0_3mode,
+    B0_phantom, B1_3mode, B1_phantom). Output: results/<baseline>_unified/.
+    """
+    # Map any known component prefix to its baseline letter
+    baseline = None
+    for b in ("B0", "B1"):
+        if prefix in (f"{b}_3mode", f"{b}_wa_3mode", f"{b}_phantom", f"{b}_wa_phantom"):
+            baseline = b
+            break
+    if baseline is None:
+        return  # Not a unified-family prefix; skip
+
+    try:
+        results_root = phase_dir.parent.parent  # results/
+        phase_name = phase_dir.name  # phase1
+        vwa_phase = results_root / "visualwebarena" / phase_name
+        wa_phase = results_root / "webarena" / phase_name
+        phase_dirs = [str(d) for d in (vwa_phase, wa_phase) if d.is_dir()]
+        if not phase_dirs:
+            return
+
+        unified_prefixes = [f"{baseline}_3mode", f"{baseline}_phantom"]
+        output_dir = results_root / f"{baseline}_unified"
+
+        # Forward self_run_dir if it doesn't match either unified component
+        extra_args: List[str] = []
+        if self_run_dir and not any(
+            self_run_dir.name.startswith(f"{p}_") for p in unified_prefixes
+        ):
+            extra_args = ["--extra-run-dir", str(self_run_dir)]
+
+        cmd = [
+            sys.executable,
+            str(Path(__file__).resolve().parent / "generate_gallery.py"),
+            "--phase-dirs", *phase_dirs,
+            "--prefix", *unified_prefixes,
+            "--output-dir", str(output_dir),
+            *extra_args,
+        ]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=240)
+        if r.returncode == 0:
+            print(f"[watchdog][GALLERY] unified refreshed: {output_dir / 'gallery.html'}")
+        else:
+            print(f"[watchdog][GALLERY] unified failed: {r.stderr[-200:]}")
+    except Exception as exc:
+        print(f"[watchdog][GALLERY] unified error: {exc}")
 
 
 def _save_state(
