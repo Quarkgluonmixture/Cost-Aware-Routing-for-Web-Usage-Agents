@@ -60,6 +60,98 @@ Wall-time breakdown:
 
 ---
 
+## 0. 完备性审计（2026-04-27 22:00）
+
+### 0.1 数据状态矩阵
+
+| Cell | DOM | SoM | Vision | Phantom-SoM | Phantom-DOM |
+|---|---|---|---|---|---|
+| **B0 cls** | ✅ stable | ✅ stable | ✅ stable | 🔄 重跑 (4 ep) | ✅ FRESH 234/234 |
+| **B0 red** | ✅ stable | ✅ stable | ✅ stable | ⏳ 待 chain | 🟡 partial 71/210 |
+| **B1 cls** | ✅ stable | ✅ stable | ✅ stable | ⏳ 待 queue_b1 | ⏳ 待 queue_b1 |
+| **B1 red** | ✅ stable | ✅ stable | ✅ stable | ⏳ 待 queue_b1 | ⏳ 待 queue_b1 |
+| Shopping (B0/B1) | ❌ cleared 待 Myriad | ❌ | ❌ | ❌ | ❌ |
+| WA (3 sites × B0/B1) | ❌ 未跑 | ❌ | ❌ | ❌ | ❌ |
+
+**paper-ready**: baseline 12/20 (60%) + phantom 1/8 (12.5%)
+
+### 0.2 分析层完备性
+
+| 分析 | 状态 | 缺口 |
+|---|---|---|
+| Codex audit (cls/red) | ✅ A/B/C/D 已分类 | shopping, WA 未做 |
+| disagreement_clusters.md (B0+B1 cls+red) | ✅ 9 categories | aggregate, 待 cross-site 拆 |
+| Cross-site pattern consolidation | 🔄 codex 跑中 | — |
+| B1 capability profile 单独文档 | ❌ 未做 | Section 6 cross-model 准备 |
+| Phantom-SoM step traces digest | ❌ 待 phantom-SoM 重跑 done | Section 5 prose 必备 |
+
+### 0.3 核心 paper claim evidence 完备性
+
+| Claim | 当前 evidence | 完备度 | 主要 blocker |
+|---|---|---|---|
+| **C1**: Phantom-SoM 是 hidden 4th routing arm | fig1/fig2 (stale) + §103 §95 N=48 | 50% ⚠️ | **B0 Phantom-SoM fresh 重跑 — paper 第一论点的根** |
+| **C2**: Two-knob (prompt × obs format) | fig3 reddit + fig5 + B0 cls Phantom-DOM ≈ DOM | 60% | red Phantom-DOM 完整 + cls 4 metrics + B0 cls Phantom-SoM fresh |
+| **C3**: Capability × representation interaction | fig6 +43.7pp aggregate | 65% | per-site 拆分 (cross-site consolidation 跑中) + B1 phantom |
+| **C4**: Cost-SR routing value | fig7 B0+B1 baseline + B0 cls Phantom-DOM | 75% | B1 Phantom 4 cell + red Phantom-DOM |
+| **C5**: Generalization (cross-site/benchmark/model) | cls+red 部分 | 30% | shopping + WA + Claude — Section 6 后期 |
+
+### 0.4 7 张 Figure 当前讲故事能力
+
+| Figure | 能看到的 ⭐ paper-relevant finding | 看不到 / 缺口 |
+|---|---|---|
+| **fig1** 4-mode venn (2x2) | B0 red Phantom-SoM 10.95% > DOM 9.52%, ≈ SoM 10.48% (反直觉) | B1 phantom panel 全 N/A; B0 phantom-SoM stale; 4 圆视觉拥挤 unique 数字小 |
+| **fig2** drop-one oracle (2x2) | Phantom-SoM cls **1.71pp** / red **2.38pp** drop-one (paper 标题数字 ⭐); SoM cls 7.69pp 最高 | B1 panel N/A |
+| **fig3** strategy gradient (red only) | DOM search-loop 22.7%→SoM 12%→Phantom-SoM 10.8% **单调梯度** ⭐⭐; Phantom-DOM = Phantom-SoM (obs 决定 exploration, prompt 不决定) | cls 待加 (cherry-pick 风险) |
+| **fig4** two-knob diagram | schematic, paper reader 一图理解 2x2 | 无数据 |
+| **fig5** category × mode heatmap | Cat A 全 mode 高; Cat B 仅 SoM/Vision 高 (视觉必需); Cat C SoM 最优; Cat D 全低 (FP) ⭐ | Phantom-SoM stale; reddit Phantom-DOM partial |
+| **fig6** capability contrast | B0 SoM early-finish 53.3% → B1 SoM visual-hijack 70.4%, **+43.7pp flip** ⭐⭐ | aggregate cls+red, per-site 拆分待 |
+| **fig7** cost-SR Pareto (cls+red) | B1 ~0 cost 占 frontier; B0 SoM cls 21.37%/$0.04; Phantom-DOM cls 14.5%/$0.012 ≈ DOM (不是 routing 值) | B1 Phantom 4 点 dotted placeholder |
+
+### 0.5 现在可下结论 vs 待数据 finding
+
+**已稳定（不需等数据，可写进 paper 主文）**:
+1. DOM-only mode 在 visual-required task 上系统性失败 (fig5 cat B)
+2. B0→B1 同 mode 失败 pattern 显著 flip (+43.7pp aggregate)
+3. DOM 在 reddit search-loop 22.7% (vs SoM 12%) — 单 site，cls 扩 fig3 后强化
+4. **Phantom-DOM cls adj 14.53% ≈ DOM 14.10% (n=234, FRESH)** — prompt-as-commitment-knob 直接 evidence ⭐
+5. Cost gap B0 vs B1 ~30× (Pareto frontier 形状清楚)
+
+**待数据**:
+- Phantom-SoM 真实 unique task pool (stale → fresh shift 风险)
+- cross-site Phantom-DOM 一致性 (red partial)
+- B1 phantom 在 cost-SR 上的位置 (全 N/A)
+- shopping / WA / cross-model 的 generalization
+
+### 0.6 Paper Section 论证强度 + critical path
+
+| Section | evidence 质量 | 可立刻动笔 | Hard blocker |
+|---|---|---|---|
+| 1 Intro | ✅ 已写 | — | — |
+| 2 Background | ✅ 已写 | — | — |
+| 3 Definition | ✅ 已写 | — | — |
+| 4 Empirical | 🟡 60% | DOM/SoM/Vision baseline + B0 cls Phantom-DOM 单点 | **B0 phantom-SoM 重跑 + B1 phantom 全跑** (~48h) |
+| 5 Mechanism | 🟡 50% | fig3 reddit + fig5 cls/red | **fig3 cls 扩 + Phantom-SoM step traces** |
+| 6 Generalization | ❌ 30% | cls vs red 一致性 | **shopping + WA + cross-model** (~周-月) |
+| 7 Discussion | ❌ — | — | 全部 data done |
+
+**Critical path A** (Section 4-5): B0 phantom-SoM 重跑 + B0 phantom-DOM red 完整 + cross-site consolidation = ~24-48h
+**Critical path B** (Section 6): shopping + WA + cross-model = ~周-月，独立 critical path
+
+### 0.7 下一步 codex 任务（按论证收益/token 比）
+
+| # | Task | Tokens | 论证收益 | Blocker |
+|---|---|---|---|---|
+| 1 | **fig3 cls 扩展** (top reddit + bottom cls = 2x4 grid) | ~80K | ⭐⭐ Section 5 强化 cross-site mechanism | 无 |
+| 2 | **B1 capability profile 单独文档** | ~300K | ⭐ Section 6 cross-model 准备 | 无 |
+| 3 | **fig8 stacked bar by overlap depth** (fig1 替代/补充) | ~120K | ⭐ paper figure quality 提升 | 无 |
+| 4 | **Cross-site pattern consolidation** | ~200K | ⭐⭐ Section 4/6 evidence | 已发包跑中 |
+| 5 | Phantom-SoM step trace digest | ~400K | ⭐⭐ Section 5 prose 必备 | 待 phantom-SoM 重跑 done (~24h) |
+| 6 | Section 4 + figures 全量 update with fresh data | ~30K | ⭐ data accuracy | 待 B0 phantom-SoM/DOM 全完成 (~48h) |
+| 7 | Section 5 prose | ~30K | ⭐ paper end-stage | 待 #5 + #6 done |
+| 8 | Codex audit shopping VWA tasks (466) | ~500K | ⭐ fig5 扩 shopping panel | 待 shopping 数据 (Myriad) |
+
+---
+
 ## 1. 实验队列（优先级排序）
 
 ### 1.1 立即跑中（不要动）
