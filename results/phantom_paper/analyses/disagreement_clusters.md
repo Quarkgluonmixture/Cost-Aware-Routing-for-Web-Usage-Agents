@@ -338,3 +338,165 @@ Why Phantom-SoM succeeded: direct step traces are unavailable, but §103 classif
 | reddit | 179 | Vision | DOM | visual-missing | P6 | P6; 30 steps; actions click→type→type→type→type→type→type→click→…; final_url=http://100.95.81.103:9999/search?q=Missouri+city+discussion+; reason=fail_max_steps_search_repeat |
 | reddit | 179 | Vision | SoM | abandon-after-N | - | no P-rule; 30 steps; actions type→type→click→type→type→type→type→type→…; final_url=http://100.95.81.103:9999/search?q=St.+Louis+forum+; reason=fail_max_steps_search_repeat |
 | reddit | 179 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+
+## B1 Disagreement Analysis
+
+This section repeats the B0 disagreement analysis for **B1 = Qwen3-VL-4B local** on the completed B1 3-mode runs only: `B1_3mode_classifieds_20260413` and `B1_3mode_reddit_20260413`. Phantom-SoM is not included in the B1 table because the B1 phantom runs are cleared / trace-unavailable; this section therefore measures DOM/SoM/Vision capability-by-representation interaction.
+
+### B1 disagreement task IDs (cls + red)
+
+- Total B1 one-arm-only disagreement tasks: **45** (`classifieds` 33, `reddit` 12).
+- Failure-side `(task, mode)` pairs diagnosed: **90 / 90** have step traces.
+- Cluster categories observed under the shared paper taxonomy: **9**; low-frequency P-rule-only cases are folded into `other`.
+
+| Site | DOM-only success | SoM-only success | Vision-only success |
+|---|---|---|---|
+| classifieds | 12: `10, 15, 25, 45, 50, 64, 83, 101, 164, 189, 196, 210` | 15: `17, 19, 40, 48, 93, 111, 112, 127, 130, 135, 170, 173, 174, 184, 221` | 6: `44, 79, 110, 131, 151, 220` |
+| reddit | 7: `0, 6, 18, 58, 100, 188, 189` | 3: `77, 131, 171` | 2: `120, 201` |
+
+### Per-mode failure distribution (B1)
+
+| Mode | N fail | search-loop | click-loop | early-finish/wrong-commit | abandon-after-N | visual-missing | visual-hijack/click-loop | click-loop/no-text-grounding | element-misground | other |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| DOM | 26 | 2 (7.7%) | 1 (3.8%) | 1 (3.8%) | 1 (3.8%) | 21 (80.8%) | - | - | - | - |
+| SoM | 27 | - | - | 7 (25.9%) | 1 (3.7%) | - | 19 (70.4%) | - | - | - |
+| Vision | 37 | - | - | 6 (16.2%) | 6 (16.2%) | - | - | 11 (29.7%) | 9 (24.3%) | 5 (13.5%) |
+
+Site split:
+
+| Site | Mode | search-loop | click-loop family | early-finish | visual-missing | element-misground | other |
+|---|---|---:|---:|---:|---:|---:|---:|
+| classifieds | DOM | 2 | 1 | 1 | 16 | 0 | 1 |
+| classifieds | SoM | 0 | 13 | 4 | 0 | 0 | 1 |
+| classifieds | Vision | 0 | 10 | 5 | 0 | 4 | 8 |
+| reddit | DOM | 0 | 0 | 0 | 5 | 0 | 0 |
+| reddit | SoM | 0 | 6 | 3 | 0 | 0 | 0 |
+| reddit | Vision | 0 | 1 | 1 | 0 | 5 | 3 |
+
+Pair membership uses `adjusted_success`; the compact diagnostics preserve the raw trajectory termination string, so a few failed-side rows still display `reason=success` when raw success was later adjusted false.
+
+Representative B1 diag excerpts:
+
+- `classifieds task 45 SoM` (winner: DOM, cluster: `visual-hijack/click-loop`): P5,P13,P14; 7 steps; actions type→scroll→scroll→scroll→type→type→type; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=putty+knife+; reason=fail_no_progress. Intent: I recall seeing this exact item on the site, help me find the most recent post of it.
+- `reddit task 100 SoM` (winner: DOM, cluster: `visual-hijack/click-loop`): P5,P14; 16 steps; actions click→scroll→scroll→scroll→type→scroll→scroll→scroll→…; final_url=http://100.95.81.103:9999/submission_images/ba413f846d564b8c3997acd1b7; reason=fail_finish_empty_answer. Intent: Navigate to the comments section of a post that contains a picture of a cake.
+- `classifieds task 17 DOM` (winner: SoM, cluster: `visual-missing`): P5,P6,P14; 10 steps; actions select_option→type→scroll→click→back→scroll→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=bike+with+red; reason=fail_no_progress. Intent: Show me the cheapest bike with red handlebars between $900-950.
+- `reddit task 131 DOM` (winner: SoM, cluster: `visual-missing`): P5,P6,P14; 6 steps; actions type→click→type→click→click→click; final_url=http://100.95.81.103:9999/search?q=Finance+; reason=fail_no_progress. Intent: Subscribe to the forum which is most likely to include discussions related to the image.
+- `classifieds task 83 Vision` (winner: DOM, cluster: `element-misground`): P1,P5; 8 steps; actions click→click→scroll→click→scroll→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=19&sOrder=i_; reason=fail_no_progress. Intent: Tell me the last name of the lister who posted the item on the page that does not include jewelry in its image?
+- `reddit task 120 DOM` (winner: Vision, cluster: `visual-missing`): no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9999/submission_images/361ec602ee63f8d052217fe657; reason=fail_early_finish. Intent: According to the image, which country in this picture has the worst rail system?
+- `classifieds task 10 Vision` (winner: DOM, cluster: `early-finish/wrong-commit`): no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/; reason=fail_early_finish. Intent: What is the seat height in inches of the smaller piece of furniture on this page?
+- `classifieds task 10 SoM` (winner: DOM, cluster: `visual-hijack/click-loop`): P14; 3 steps; actions select_option→select_option→select_option; final_url=http://100.95.81.103:9980/; reason=fail_no_progress. Intent: What is the seat height in inches of the smaller piece of furniture on this page?
+- `classifieds task 15 SoM` (winner: DOM, cluster: `early-finish/wrong-commit`): no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=15342; reason=fail_early_finish. Intent: What is the email of the seller of the guitar in the red case on this page?
+- `classifieds task 25 Vision` (winner: DOM, cluster: `abandon-after-N`): P14; 4 steps; actions type→scroll→scroll→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=red+boat; reason=fail_finish_eval_mismatch. Intent: How many red boats were posted on 16th November 2023?
+
+### B0-vs-B1 contrast table
+
+| Mode / pattern | B0 count | B0 share | B1 count | B1 share | Shift | Interpretation |
+|---|---:|---:|---:|---:|---:|---|
+| DOM visual-missing | 34/46 | 73.9% | 21/26 | 80.8% | +6.9 pp | Universal: visual-bound tasks defeat text-only DOM in both models. |
+| DOM search-loop | 3/46 | 6.5% | 2/26 | 7.7% | +1.2 pp | Capability/denominator-sensitive: the exclusive slice is visual-heavy, so search-loop is not dominant here despite the whole-run reddit gradient. |
+| SoM early-finish/wrong-commit | 16/30 | 53.3% | 7/27 | 25.9% | -27.4 pp | B0 confidently commits wrong more often; B1 shifts away from this pattern. |
+| SoM visual-hijack/click-loop | 8/30 | 26.7% | 19/27 | 70.4% | +43.7 pp | Capability interaction: B1 is more mark/loop vulnerable, matching the §100 attention-hijack hypothesis. |
+| Vision text/grounding loops | 11/41 | 26.8% | 11/37 | 29.7% | +2.9 pp | Universal Vision weakness: screen evidence without stable text/element grounding causes repeated plausible clicks. |
+| Vision element-misground | 12/41 | 29.3% | 9/37 | 24.3% | -4.9 pp | B1 remains vulnerable to coordinate/target errors; high full-run P1 rate shows this beyond the exclusive slice. |
+
+### Implications for paper Section 5 capability sub-claim
+
+1. **DOM visual-missing is universal across capability.** B0 DOM visual-missing was 34/46 failure pairs; B1 DOM is 21/26. The model size/capability change does not remove the representational blind spot when the task requires image/color/page-screen evidence.
+2. **SoM failure mode shifts with capability.** In B0, SoM failures in the exclusive slice were mostly early/wrong commit (16/30) with fewer mark-driven loops (8/30). In B1, SoM flips: visual-hijack/click-loop is 19/27 while early/wrong commit falls to 7/27. This is direct evidence for a capability × representation interaction: the smaller local model is more likely to be captured by the mark/action surface and repeat on the wrong page.
+3. **Vision failures are representation-limited rather than purely capability-limited.** B0 and B1 both show substantial Vision click/grounding and element-targeting failures. The screenshot supplies visual evidence, but without DOM/mark text the agent lacks stable symbolic anchors for multi-step correction.
+4. **Phantom-SoM remains unresolved for B1 step-level mechanism.** The B1 phantom runs are cleared, so this B1 section cannot diagnose Phantom trajectories. Use this B1 section for DOM/SoM/Vision capability interaction and keep Phantom mechanism claims anchored to B0 §103 macro metrics until B1 phantom traces are restored.
+
+### B1 compact pair diagnostics
+
+| Site | Task | Winner | Failed mode | Category | P-rules | Diag excerpt |
+|---|---:|---|---|---|---|---|
+| classifieds | 10 | DOM | SoM | visual-hijack/click-loop | P14 | P14; 3 steps; actions select_option→select_option→select_option; final_url=http://100.95.81.103:9980/; reason=fail_no_progress |
+| classifieds | 10 | DOM | Vision | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/; reason=fail_early_finish |
+| classifieds | 15 | DOM | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=15342; reason=fail_early_finish |
+| classifieds | 15 | DOM | Vision | early-finish/wrong-commit | - | no P-rule; 2 steps; actions scroll→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=21; reason=fail_early_finish |
+| classifieds | 17 | SoM | DOM | visual-missing | P5,P6,P14 | P5,P6,P14; 10 steps; actions select_option→type→scroll→click→back→scroll→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=bike+with+red; reason=fail_no_progress |
+| classifieds | 17 | SoM | Vision | abandon-after-N | P5,P14 | P5,P14; 7 steps; actions type→scroll→scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=bike+with+red; reason=fail_no_progress |
+| classifieds | 19 | SoM | DOM | abandon-after-N | P5,P14 | P5,P14; 8 steps; actions select_option→type→scroll→scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=sea+painting+; reason=fail_no_progress |
+| classifieds | 19 | SoM | Vision | other | P14 | P14; 4 steps; actions click→select_option→select_option→select_option; final_url=http://100.95.81.103:9980/; reason=fail_no_progress |
+| classifieds | 25 | DOM | SoM | visual-hijack/click-loop | P14 | P14; 3 steps; actions type→scroll→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=red+boats+; reason=fail_finish_eval_mismatch |
+| classifieds | 25 | DOM | Vision | abandon-after-N | P14 | P14; 4 steps; actions type→scroll→scroll→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=red+boat; reason=fail_finish_eval_mismatch |
+| classifieds | 40 | SoM | DOM | search-loop | P5,P14 | P5,P14; 13 steps; actions type→click→type→scroll→type→scroll→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=3; reason=fail_no_progress |
+| classifieds | 40 | SoM | Vision | click-loop/no-text-grounding | P5,P14 | P5,P14; 10 steps; actions type→scroll→click→back→click→scroll→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=18607; reason=fail_no_progress |
+| classifieds | 44 | Vision | DOM | visual-missing | P6 | P6; 5 steps; actions type→type→scroll→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=53620; reason=fail_finish_wrong_url_not_found |
+| classifieds | 44 | Vision | SoM | visual-hijack/click-loop | P5,P14 | P5,P14; 15 steps; actions type→click→type→type→type→type→type→type→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_no_progress |
+| classifieds | 45 | DOM | SoM | visual-hijack/click-loop | P5,P13,P14 | P5,P13,P14; 7 steps; actions type→scroll→scroll→scroll→type→type→type; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=putty+knife+; reason=fail_no_progress |
+| classifieds | 45 | DOM | Vision | click-loop/no-text-grounding | P5,P14 | P5,P14; 4 steps; actions type→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=HYDE+NO.1000+; reason=fail_no_progress |
+| classifieds | 48 | SoM | DOM | visual-missing | P6 | P6; 4 steps; actions select_option→type→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=44305; reason=fail_finish_empty_answer |
+| classifieds | 48 | SoM | Vision | click-loop/no-text-grounding | P14 | P14; 5 steps; actions click→click→click→click→click; final_url=http://100.95.81.103:9980/; reason=fail_no_progress |
+| classifieds | 50 | DOM | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=15485; reason=fail_early_finish |
+| classifieds | 50 | DOM | Vision | early-finish/wrong-commit | - | no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=15485; reason=fail_early_finish |
+| classifieds | 64 | DOM | SoM | visual-hijack/click-loop | P5,P13,P14 | P5,P13,P14; 9 steps; actions type→type→type→scroll→scroll→type→type→type→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_no_progress |
+| classifieds | 64 | DOM | Vision | click-loop/no-text-grounding | P14 | P14; 13 steps; actions type→type→type→click→type→click→click→type→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_incomplete_or_stuck |
+| classifieds | 79 | Vision | DOM | visual-missing | P6 | P6; 1 steps; actions finish; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=9&sOrder=dt_; reason=fail_early_finish |
+| classifieds | 79 | Vision | SoM | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=9&sOrder=dt_; reason=fail_early_finish |
+| classifieds | 83 | DOM | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=49779; reason=fail_early_finish |
+| classifieds | 83 | DOM | Vision | element-misground | P1,P5 | P1,P5; 8 steps; actions click→click→scroll→click→scroll→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=19&sOrder=i_; reason=fail_no_progress |
+| classifieds | 93 | SoM | DOM | visual-missing | P6 | P6; 7 steps; actions type→scroll→click→type→type→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=33622; reason=fail_finish_wrong_url_not_found |
+| classifieds | 93 | SoM | Vision | abandon-after-N | P5 | P5; 6 steps; actions scroll→scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sRegion=7361885&sCateg; reason=fail_no_progress |
+| classifieds | 101 | DOM | SoM | visual-hijack/click-loop | P2,P5,P14 | P2,P5,P14; 12 steps; actions select_option→type→click→back→click→click→click→back→…; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=painting+&sCa; reason=fail_no_progress |
+| classifieds | 101 | DOM | Vision | click-loop/no-text-grounding | P14 | P14; 5 steps; actions click→click→click→click→click; final_url=http://100.95.81.103:9980/; reason=fail_no_progress |
+| classifieds | 110 | Vision | DOM | visual-missing | P10 | P10; 4 steps; actions type→scroll→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=34406; reason=fail_finish_eval_mismatch |
+| classifieds | 110 | Vision | SoM | visual-hijack/click-loop | P5,P14 | P5,P14; 18 steps; actions type→scroll→click→back→click→back→click→type→…; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=mario+kart+; reason=fail_no_progress |
+| classifieds | 111 | SoM | DOM | search-loop | P14 | P14; 30 steps; actions type→click→type→scroll→type→type→type→type→…; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=12; reason=fail_max_steps_search_repeat |
+| classifieds | 111 | SoM | Vision | element-misground | P1,P5,P14 | P1,P5,P14; 5 steps; actions type→click→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=hockey; reason=fail_no_progress |
+| classifieds | 112 | SoM | DOM | visual-missing | P5,P14 | P5,P14; 6 steps; actions type→scroll→type→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=basketball+; reason=fail_no_progress |
+| classifieds | 112 | SoM | Vision | click-loop/no-text-grounding | P5,P14 | P5,P14; 6 steps; actions type→scroll→scroll→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=basketball; reason=fail_no_progress |
+| classifieds | 127 | SoM | DOM | click-loop | P5,P14 | P5,P14; 7 steps; actions type→scroll→scroll→click→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=item&id=68187; reason=fail_no_progress |
+| classifieds | 127 | SoM | Vision | click-loop/no-text-grounding | P5,P14 | P5,P14; 5 steps; actions type→scroll→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=MCAT; reason=fail_no_progress |
+| classifieds | 130 | SoM | DOM | visual-missing | P5,P14 | P5,P14; 12 steps; actions scroll→scroll→scroll→scroll→type→type→type→type→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=7657; reason=fail_no_progress |
+| classifieds | 130 | SoM | Vision | element-misground | P1 | P1; 3 steps; actions click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_no_progress |
+| classifieds | 131 | Vision | DOM | visual-missing | - | no P-rule; 3 steps; actions type→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=65634; reason=fail_finish_wrong_url_not_found |
+| classifieds | 131 | Vision | SoM | abandon-after-N | - | no P-rule; 30 steps; actions type→click→type→type→click→type→type→click→…; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=dogs+; reason=fail_max_steps_target_unreachable |
+| classifieds | 135 | SoM | DOM | visual-missing | P6,P14 | P6,P14; 30 steps; actions type→click→back→click→type→type→type→type→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=success |
+| classifieds | 135 | SoM | Vision | abandon-after-N | P5 | P5; 6 steps; actions scroll→scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=success |
+| classifieds | 151 | Vision | DOM | visual-missing | P6,P14 | P6,P14; 11 steps; actions scroll→scroll→scroll→scroll→type→type→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_no_progress |
+| classifieds | 151 | Vision | SoM | visual-hijack/click-loop | P14 | P14; 6 steps; actions click→click→scroll→scroll→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=9146; reason=fail_finish_empty_answer |
+| classifieds | 164 | DOM | SoM | visual-hijack/click-loop | P5,P14 | P5,P14; 5 steps; actions type→click→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=item&id=5636; reason=success |
+| classifieds | 164 | DOM | Vision | abandon-after-N | P5 | P5; 6 steps; actions scroll→scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=10&iPage=4y; reason=success |
+| classifieds | 170 | SoM | DOM | visual-missing | P6,P14 | P6,P14; 30 steps; actions type→type→type→type→click→click→back→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_max_steps_target_unreachable |
+| classifieds | 170 | SoM | Vision | click-loop/no-text-grounding | P5,P14 | P5,P14; 18 steps; actions click→scroll→click→back→scroll→click→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=11; reason=fail_no_progress |
+| classifieds | 173 | SoM | DOM | visual-missing | - | no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=14834; reason=fail_early_finish |
+| classifieds | 173 | SoM | Vision | element-misground | P1 | P1; 3 steps; actions click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=17&sOrder=i_; reason=fail_no_progress |
+| classifieds | 174 | SoM | DOM | visual-missing | P5,P6 | P5,P6; 7 steps; actions scroll→scroll→scroll→scroll→scroll→type→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=8383; reason=fail_finish_eval_mismatch |
+| classifieds | 174 | SoM | Vision | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=17&sOrder=i_; reason=fail_early_finish |
+| classifieds | 184 | SoM | DOM | visual-missing | P6,P14 | P6,P14; 30 steps; actions select_option→type→type→type→type→click→back→type→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=15047; reason=fail_max_steps_search_repeat |
+| classifieds | 184 | SoM | Vision | click-loop/no-text-grounding | P14 | P14; 3 steps; actions click→click→click; final_url=http://100.95.81.103:9980/; reason=fail_no_progress |
+| classifieds | 189 | DOM | SoM | visual-hijack/click-loop | P5 | P5; 5 steps; actions scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=24&sShowAs=g; reason=success |
+| classifieds | 189 | DOM | Vision | abandon-after-N | P5 | P5; 5 steps; actions scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=24&sShowAs=g; reason=success |
+| classifieds | 196 | DOM | SoM | visual-hijack/click-loop | P7,P10,P14 | P7,P10,P14; 27 steps; actions select_option→type→click→scroll→type→type→scroll→click→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=success |
+| classifieds | 196 | DOM | Vision | other | P14 | P14; 4 steps; actions click→select_option→select_option→select_option; final_url=http://100.95.81.103:9980/; reason=success |
+| classifieds | 210 | DOM | SoM | visual-hijack/click-loop | P14 | P14; 6 steps; actions type→click→click→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=lamb+; reason=fail_incomplete_or_stuck |
+| classifieds | 210 | DOM | Vision | click-loop/no-text-grounding | P5,P14 | P5,P14; 12 steps; actions click→scroll→click→click→scroll→click→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=16; reason=fail_no_progress |
+| classifieds | 220 | Vision | DOM | visual-missing | P6,P14 | P6,P14; 13 steps; actions type→scroll→click→click→type→scroll→click→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=76756#contact-in; reason=fail_finish_eval_mismatch |
+| classifieds | 220 | Vision | SoM | visual-hijack/click-loop | P5,P14 | P5,P14; 4 steps; actions type→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=red+microwave; reason=success |
+| classifieds | 221 | SoM | DOM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions scroll→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=48575; reason=fail_early_finish |
+| classifieds | 221 | SoM | Vision | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=48575; reason=fail_early_finish |
+| reddit | 0 | DOM | SoM | visual-hijack/click-loop | P14 | P14; 6 steps; actions click→click→click→click→click→click; final_url=http://100.95.81.103:9999/f/food/18823/i-ate-maple-pecan-croissant; reason=fail_incomplete_or_stuck |
+| reddit | 0 | DOM | Vision | other | - | no P-rule; 5 steps; actions click→click→click→click→click; final_url=http://100.95.81.103:9999/f/food; reason=fail_no_progress |
+| reddit | 6 | DOM | SoM | early-finish/wrong-commit | - | no P-rule; 9 steps; actions click→type→click→click→click→click→click→type→…; final_url=http://100.95.81.103:9999/search?q=cooking+post+with+pork+in+pan+; reason=fail_finish_eval_mismatch |
+| reddit | 6 | DOM | Vision | other | - | no P-rule; 3 steps; actions click→click→click; final_url=http://100.95.81.103:9999/forums/all; reason=fail_no_progress |
+| reddit | 18 | DOM | SoM | visual-hijack/click-loop | P5,P14 | P5,P14; 10 steps; actions click→click→click→click→back→click→type→click→…; final_url=http://100.95.81.103:9999/search?q=colorful+keyboard+; reason=fail_no_progress |
+| reddit | 18 | DOM | Vision | click-loop/no-text-grounding | P5 | P5; 4 steps; actions click→click→click→click; final_url=http://100.95.81.103:9999/forums/all; reason=fail_no_progress |
+| reddit | 58 | DOM | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions type→finish; final_url=http://100.95.81.103:9999/search?q=most+popular+novel+adapted+anime+20; reason=fail_early_finish |
+| reddit | 58 | DOM | Vision | other | P14 | P14; 4 steps; actions scroll→back→back→back; final_url=http://100.95.81.103:9999/f/dataisbeautiful/38990%20%7CAND%7C%20http:/; reason=fail_incomplete_or_stuck |
+| reddit | 77 | SoM | DOM | visual-missing | P5,P14 | P5,P14; 30 steps; actions type→click→scroll→scroll→scroll→back→click→scroll→…; final_url=http://100.95.81.103:9999/submission_images/5bcb8d62749031657890e4b43b; reason=fail_max_steps_click_back_loop |
+| reddit | 77 | SoM | Vision | element-misground | P1,P5,P14 | P1,P5,P14; 7 steps; actions click→click→type→click→scroll→scroll→scroll; final_url=http://100.95.81.103:9999/submission_images/5bcb8d62749031657890e4b43b; reason=fail_no_progress |
+| reddit | 100 | DOM | SoM | visual-hijack/click-loop | P5,P14 | P5,P14; 16 steps; actions click→scroll→scroll→scroll→type→scroll→scroll→scroll→…; final_url=http://100.95.81.103:9999/submission_images/ba413f846d564b8c3997acd1b7; reason=fail_finish_empty_answer |
+| reddit | 100 | DOM | Vision | element-misground | P1,P5,P14 | P1,P5,P14; 4 steps; actions click→click→click→click; final_url=http://100.95.81.103:9999/; reason=fail_no_progress |
+| reddit | 120 | Vision | DOM | visual-missing | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9999/submission_images/361ec602ee63f8d052217fe657; reason=fail_early_finish |
+| reddit | 120 | Vision | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9999/submission_images/361ec602ee63f8d052217fe657; reason=fail_early_finish |
+| reddit | 131 | SoM | DOM | visual-missing | P5,P6,P14 | P5,P6,P14; 6 steps; actions type→click→type→click→click→click; final_url=http://100.95.81.103:9999/search?q=Finance+; reason=fail_no_progress |
+| reddit | 131 | SoM | Vision | element-misground | P1,P14 | P1,P14; 3 steps; actions click→click→click; final_url=http://100.95.81.103:9999/; reason=fail_incomplete_or_stuck |
+| reddit | 171 | SoM | DOM | visual-missing | P6 | P6; 1 steps; actions finish; final_url=http://100.95.81.103:9999/; reason=fail_early_finish |
+| reddit | 171 | SoM | Vision | element-misground | P1,P14 | P1,P14; 3 steps; actions click→click→click; final_url=http://100.95.81.103:9999/; reason=fail_incomplete_or_stuck |
+| reddit | 188 | DOM | SoM | visual-hijack/click-loop | P14 | P14; 11 steps; actions click→click→click→click→click→type→click→click→…; final_url=http://100.95.81.103:9999/forums; reason=fail_no_progress |
+| reddit | 188 | DOM | Vision | element-misground | P1,P5,P14 | P1,P5,P14; 5 steps; actions click→click→click→click→click; final_url=http://100.95.81.103:9999/forums; reason=fail_no_progress |
+| reddit | 189 | DOM | SoM | visual-hijack/click-loop | P5,P14 | P5,P14; 6 steps; actions click→click→click→click→click→click; final_url=http://100.95.81.103:9999/forums; reason=fail_no_progress |
+| reddit | 189 | DOM | Vision | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9999/; reason=fail_early_finish |
+| reddit | 201 | Vision | DOM | visual-missing | P5,P6,P14 | P5,P6,P14; 4 steps; actions type→click→click→click; final_url=http://100.95.81.103:9999/search?q=bed+; reason=fail_no_progress |
+| reddit | 201 | Vision | SoM | visual-hijack/click-loop | P5 | P5; 4 steps; actions scroll→click→click→click; final_url=http://100.95.81.103:9999/f/explainlikeimfive; reason=fail_no_progress |
