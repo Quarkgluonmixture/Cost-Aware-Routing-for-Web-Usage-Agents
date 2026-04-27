@@ -375,6 +375,54 @@ Round 4 (保底):
 | Week 10 (router done) | Paper writing 启动 | story discipline 决策 |
 | Week 12 (paper done) | 投稿 venue 决策 | NeurIPS vs ICLR vs ACL timing |
 
+### 4.5.7 Phantom-DOM scope 缩减 (2026-04-27 晚)
+
+Phantom-DOM 是 **mechanism ablation** (two-knob: 同 obs 不同 prompt), 不是 routing arm 候选. 所以不需要 cross-site cross-model 全跑.
+
+**Phantom-DOM 实际必需 scope (5 cells, 节省 70%)**:
+- B0 cls + red (✅ done / 🔄 跑中)
+- B1 cls + red (待 queue_b1_after_b0)
+- Claude cls 1 site (cross-model frontier validation, ~$15 API)
+
+**不需要的 Phantom-DOM cells**:
+- B0/B1/Claude × shopping (mechanism 论证不需要)
+- B0/B1/Claude × WA × 3 sites (mechanism 论证 VWA 已够)
+
+**Phantom-SoM 仍需要全 scope** (18 cells: 3 model × 6 site) — routing arm 主体，drop-in deployment claim 需要 cross-site cross-model validation.
+
+### 4.5.8 Week 0 行动清单 (2026-04-27 → 2026-05-03)
+
+**🟢 主动跑 (priority order)**:
+1. ✅ 维持现有 paper-grade chain — 不打断 (B0 phantom_dom red 跑中, chain auto-trigger phantom_som re-run, queue_b1_after_b0 sequencer)
+2. ✅ 22:06 codex 重置后发 4 prompts (按收益排序):
+   - Prompt A (~80K): fig3 cls 扩展
+   - Prompt C (~30K): fig7 deployment annotation
+   - Prompt B (~120K): fig8 stacked bar overlap
+   - Prompt D (~300K): B1 capability profile
+3. ✅ Cross-site cluster consolidation (codex 已发跑中)
+4. ✅ 每天 monitor watchdog ntfy + chain progress
+5. ✅ 每天 quick health check (`make schedule-list` + check chain logs)
+
+**🟡 准备 (不动手)**:
+- Claude Opus API key + cost budget align (启动决定 ~Week 4)
+- Router design literature search (启动 ~Week 5-6)
+
+**🔴 不要做**:
+- ❌ shopping (B0+B1, 等 Myriad GPU)
+- ❌ WA (任何 site, 等 cls+red 完整)
+- ❌ Claude API run (等 cls+red 完整)
+- ❌ Router design 实际写代码 (等 baseline + phantom 完整再启动)
+- ❌ Section 4-5 prose (等 fresh phantom data)
+- ❌ Mind2Web (out of scope)
+
+**Week 0 末预期状态**:
+- B0 phantom 5-mode cls + red 完整 ✅
+- B1 phantom 5-mode cls 完整 ✅ (red 还在跑)
+- 4 paper figures (1/2/3/5/7/8) 数据完整
+- Cross-site pattern consolidation done
+- B1 capability profile draft done
+- Section 1/2/3 paper drafts done (已 done 现在)
+
 ---
 
 ## 5. Future paper 2 — REVISED (2026-04-27 晚)
