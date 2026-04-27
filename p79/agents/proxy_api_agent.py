@@ -439,6 +439,10 @@ Action Schema:
             # Tests whether the model can complete tasks using SoM textual labels alone
             # ("mirage" mode — preserves prompt that mentions screenshot).
             "phantom_som": som_prompt,
+            # Phantom-DOM ablation: same obs as phantom_som ([SOM_MARKS] text + no image)
+            # but with DOM system prompt. Disentangles prompt wording from
+            # representation effect.
+            "phantom_dom": dom_prompt,
             "vision": vision_prompt,
         }
 
@@ -500,7 +504,7 @@ Action Schema:
         # Build obs_section per mode — mirrors qwen3vl_agent.py exactly.
         if observation_mode == "vision":
             obs_section = ""  # no text — screenshot only
-        elif observation_mode in ("som", "phantom_som"):
+        elif observation_mode in ("som", "phantom_som", "phantom_dom"):
             # obs_text already contains [SOM_MARKS]...[/SOM_MARKS]; pass through directly.
             # phantom_som receives the same text but no image (see som.py).
             obs_section = obs_text if obs_text else ""

@@ -1,0 +1,31 @@
+# B1 Phantom-SoM (§103) — WA reddit
+# B1 4B local on WebArena reddit (text-only benchmark)
+
+defaults:
+  - configs/exp_v2_wa_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B1_phantom_wa_reddit"
+
+task:
+  include_sites: ["reddit"]
+  site_configs:
+    reddit: "external/visualwebarena/config_files/wa/test_reddit.raw.json"
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["phantom_som"]
+
+backends:
+  default_backend: "local_4b"
+  local_4b:
+    max_new_tokens: 384
+    min_free_vram_gb: 0
+
+baselines:
+  run_b0: false

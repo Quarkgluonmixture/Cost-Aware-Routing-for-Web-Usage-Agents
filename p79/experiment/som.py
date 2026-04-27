@@ -155,10 +155,11 @@ def prepare_observation_for_mode(
             mark_count=0,
         )
 
-    if mode == "phantom_som":
-        # Build SOM text identical to full SoM mode, but drop the image.
-        # The marked image is still saved for inspection / debugging — only
-        # `marked_image` (passed to the model) is set to None.
+    if mode in ("phantom_som", "phantom_dom"):
+        # phantom_som: SoM prompt + [SOM_MARKS] text + no image
+        # phantom_dom: DOM prompt + [SOM_MARKS] text + no image (ablation)
+        # Obs construction is identical for both — only the system prompt differs
+        # (handled by the agent based on observation_mode).
         result = _build_som_result(obs, obs_text, artifact_dir, step_idx)
         return SomResult(
             som_text=result.som_text,

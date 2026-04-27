@@ -98,10 +98,12 @@ class Qwen3VLAgent:
         # Tests whether the model can complete tasks using SoM textual labels alone
         # (a.k.a. "mirage" mode — preserves prompt that mentions screenshot).
         som_prompt = self._make_som_prompt()
+        dom_prompt = self._make_dom_prompt()
         self._system_prompts = {
-            "dom": self._make_dom_prompt(),
+            "dom": dom_prompt,
             "som": som_prompt,
             "phantom_som": som_prompt,  # same prompt as som; image dropped in obs prep
+            "phantom_dom": dom_prompt,  # ablation: dom prompt + [SOM_MARKS] text + no image
             "vision": self._make_vision_prompt(),
         }
         # Default (backward compat / unknown mode)
@@ -413,7 +415,7 @@ CRITICAL:
         # Label the text section according to mode
         if observation_mode == "vision":
             obs_section = ""  # no text — screenshot only
-        elif observation_mode in ("som", "phantom_som"):
+        elif observation_mode in ("som", "phantom_som", "phantom_dom"):
             # obs_text already contains the [SOM_MARKS]...[/SOM_MARKS] block
             # (or "[SOM_MARKS]\n[/SOM_MARKS]" when degraded). Pass it through directly.
             # phantom_som receives the same text but no image (see som.py).
