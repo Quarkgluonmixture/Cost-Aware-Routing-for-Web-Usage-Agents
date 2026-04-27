@@ -447,10 +447,31 @@ Phantom-DOM 是 **mechanism ablation** (two-knob: 同 obs 不同 prompt), 不是
 
 | Backend | Cost | P95 Latency | Energy (kWh) | CO2e (kg) |
 |---|---|---|---|---|
-| B0 (proxy 235B API) | ✅ | ✅ | ❌ NaN | ❌ NaN |
+| B0 (proxy 235B API) | ✅ | ✅ | ❌ NaN | ❌ NaN (token-estimate-able) |
 | B1 (local 4B GPU NVML) | ✅ | ✅ | ✅ | ✅ |
 
 理由: B0 inference 在远端服务器, DGX local GPU 不动, NVML 测不到; B1 走 local GPU 有真实测量.
+
+**Carbon tracker 现状 (`p79/experiment/energy_tracker.py`)**:
+- ✅ 已 port: NVML GPU measurement + 45 region intensity table (REGION_INTENSITY_G_PER_KWH, 含 30+ country/region: world/USA/EU 各国/Asia-Pacific/Americas/Mid-East-Africa)
+- ❌ 未 port (但 external_code 有, 数据可 import): 220+ country database (CodeCarbon/OWID), cloud provider GCP/AWS/Azure region data, network backbone emission, token-based proxy API estimator
+- ⚠️ Default region: UK 220 g/kWh (configs/exp_v2_base.yaml:80-81)
+
+**paper 完善 carbon evidence 的 3 个选项**:
+
+| Option | 工作量 | Paper 影响 | 推荐 |
+|---|---|---|---|
+| A. 现状不动 (B1 measured + B0 不报) | 0 | 主线稳, 透明 disclose | ⭐ default |
+| B. 集成完整 codecarbon (220+ country) | ~3 天 | 边际加分小 | ❌ overkill |
+| C. Token-based B0 estimator (per-token energy × API server region) | ~1 天 | B0 carbon 也可 disclose | ⭐⭐ 加分明显 |
+| D. **Regional sensitivity fig** (45 region 上 Phantom-SoM vs SoM CO2 savings) | ~2 小时 codex | reviewer 喜欢的 framing | ⭐⭐ low cost high value |
+
+**推荐组合**: A + D (Week 2-3 codex 做), C 视情况后期补 (Week 4-5)
+
+**Regional sensitivity fig 设计**:
+- x 轴: 45 region 按 carbon intensity sorted (France 85 → Poland 773 → South Africa 928)
+- y 轴: per-task CO2 savings (Phantom-SoM vs SoM, 用 B1 measured energy + region intensity)
+- 论点: "Phantom-SoM 的 carbon 优势 region-dependent — carbon-heavy 部署 (India/Poland) saving > carbon-light 部署 (France/Norway)"
 
 **Striking findings 已在数据里 (paper 直接可用)**:
 
