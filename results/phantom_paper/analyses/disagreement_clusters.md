@@ -1,407 +1,340 @@
-# Disagreement Failure Clusters
+# Disagreement Task Cluster Analysis (B0 cls + red)
 
-Generated: 2026-04-27 18:08 UTC
+This analysis uses the `diag` workflow: run P1-P14 hard-rule matching, inspect the per-step action sequence, then cluster root causes into mechanism-level categories for Section 5. Data access was read-only; no shopping data, auth state, live experiments, or running processes were touched.
 
-Scope: B0 VWA `classifieds` and `reddit` only. Shopping data was not read. The primary set is the four-arm phantom-paper comparison: DOM, SoM, Vision, and Phantom-SoM. A short reddit Phantom-DOM ablation snapshot is included separately because that run is active/partial.
+## Overview
 
-Definition: a disagreement task has at least one adjusted-success mode and at least one adjusted-failure mode on the same task. The cluster counts below are over the failure-side `(task, mode)` pairs for those disagreement tasks.
+- Total one-arm-only disagreement tasks analyzed: **54** (`classifieds` 36, `reddit` 18).
+- Total `(task, mode)` pairs considered: **216** = 54 success-side pairs + 162 failure-side pairs.
+- Failure-side pairs with step traces: **117 / 162**. The missing 45 are all Phantom-SoM pairs from cleared runs; they are counted from summaries but not per-step diagnosed.
+- Modes covered: DOM, SoM, Vision, Phantom-SoM.
+- Cluster categories identified: **9** observed categories.
 
-Important trace note: completed Phantom-SoM runs currently have summary JSON under `.bak_pre_rederive` but no `*_steps_v2.jsonl` traces in this checkout, so Phantom-SoM failure pairs are counted in the success-vector disagreement set but cannot receive P1-P14 per-step hits here.
+Exclusive success sets used for the analysis:
 
-## Inputs
+| Site | DOM only | SoM only | Vision only | Phantom-SoM only |
+|---|---:|---:|---:|---:|
+| classifieds | 5 | 18 | 9 | 4 |
+| reddit | 3 | 6 | 4 | 5 |
 
-| Site | Mode | Run dir | Condition | episodes scanned by P1-P14 | episodes with hits |
-|---|---|---|---|---:|---:|
-| classifieds | DOM | `results/visualwebarena/phase1/B0_3mode_classifieds_20260413` | `phase1_dom_router_0` | 234 | 187 |
-| classifieds | SoM | `results/visualwebarena/phase1/B0_3mode_classifieds_20260413` | `phase1_som_router_0` | 234 | 102 |
-| classifieds | Vision | `results/visualwebarena/phase1/B0_3mode_classifieds_20260413` | `phase1_vision_router_0` | 234 | 189 |
-| classifieds | Phantom-SoM | `results/visualwebarena/phase1/B0_phantom_classifieds_20260426` | `phase1_phantom_som_router_0` | 0 | 0 |
-| reddit | DOM | `results/visualwebarena/phase1/B0_3mode_reddit_20260422` | `phase1_dom_router_0` | 210 | 156 |
-| reddit | SoM | `results/visualwebarena/phase1/B0_3mode_reddit_20260422` | `phase1_som_router_0` | 210 | 113 |
-| reddit | Vision | `results/visualwebarena/phase1/B0_3mode_reddit_20260422` | `phase1_vision_router_0` | 210 | 153 |
-| reddit | Phantom-SoM | `results/visualwebarena/phase1/run_reddit_1777238854_ef9c4b` | `phase1_phantom_som_router_0` | 0 | 0 |
-| reddit | Phantom-DOM | `results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427` | `phase1_phantom_dom_router_0` | 59 | 46 |
+§103 consistency check: the exclusive sets derived from local summaries match the provided §103 lists exactly, including the complete classifieds SoM-only set `[14, 49, 52, 101, 106, 111, 115, 120, 127, 130, 132, 149, 160, 165, 166, 187, 209, 210]`.
 
-## Primary Summary
+## Failure Pattern Categories
 
-| Site | same-task N | disagreement tasks | failure-side pairs | pairs with step trace | no-trace pairs |
-|---|---:|---:|---:|---:|---:|
-| classifieds | 234 | 69 | 165 | 116 | 49 |
-| reddit | 210 | 42 | 89 | 70 | 19 |
-| **Total** | 444 | 111 | 254 | 186 | 68 |
+### trace-unavailable
 
-## P1-P14 Distribution
+**Definition.** Phantom-SoM summary exists but steps/artifacts were cleared; only success/failure set membership can be used until the chain re-run restores traces.
 
-Counts are over failure-side pairs with step traces. `pair_count` counts a pair once per rule; `hit_count` counts all step-level hits.
+**Prevalence.** 45/162 failure pairs; by mode: Phantom-SoM: 45.
 
-| Rule | pair_count | hit_count |
-|---|---:|---:|
-| P1 | 20 | 57 |
-| P2 | 2 | 2 |
-| P4 | 1 | 1 |
-| P5 | 48 | 48 |
-| P6 | 32 | 32 |
-| P7 | 1 | 1 |
-| P10 | 3 | 3 |
-| P12 | 2 | 2 |
-| P13 | 12 | 12 |
-| P14 | 83 | 120 |
+**Representative diag excerpts.**
+- `classifieds task 98 Phantom-SoM` (winner: DOM): summary-only: step trace unavailable after run clear; counted from adjusted_success summary.. Intent: How many hours are on the engine of the most recently listed red boat?
+- `classifieds task 167 Phantom-SoM` (winner: DOM): summary-only: step trace unavailable after run clear; counted from adjusted_success summary.. Intent: Navigate to the listing on this page whose image includes an instrument the same color as the item in the image provided.
 
-## High-Level Failure Clusters
+### visual-missing
 
-| Cluster | Label | total | classifieds | reddit |
-|---|---|---:|---:|---:|
-| `no-step-trace` | Summary only; step trace unavailable | 68 | 49 | 19 |
-| `navigation-loop` | Navigation/self-loop after reaching or choosing a page | 63 | 41 | 22 |
-| `premature-or-wrong-finish` | Premature finish / wrong answer / eval mismatch | 49 | 31 | 18 |
-| `visual-info-missing` | Visual information missing from the representation | 31 | 19 | 12 |
-| `element-targeting` | Element grounding / wrong target selection | 23 | 20 | 3 |
-| `unmatched-stuck` | Stuck/no-progress without P-rule hit | 10 | 1 | 9 |
-| `no-hard-rule-hit` | No P1-P14 hard-rule hit | 4 | 2 | 2 |
-| `search-browse-strategy` | Search-over-browse or insufficient exploration | 3 | 0 | 3 |
-| `answer-memory` | Answer synthesis or numeric memory failure | 1 | 1 | 0 |
-| `benchmark-url-quirk` | Benchmark/API URL quirk | 1 | 1 | 0 |
-| `max-step-exhaustion` | Max-step exhaustion without specific P-rule | 1 | 0 | 1 |
+**Definition.** DOM cannot observe necessary image/color/screen information. P6 is the dominant diagnostic; this is an observation limitation, not a scaffold bug.
 
-## Mode Exposure
+**Prevalence.** 34/162 failure pairs; by mode: DOM: 34.
 
-| Site | Mode | failure-side disagreement pairs |
-|---|---|---:|
-| classifieds | DOM | 44 |
-| classifieds | Phantom-SoM | 49 |
-| classifieds | SoM | 27 |
-| classifieds | Vision | 45 |
-| reddit | DOM | 22 |
-| reddit | Phantom-SoM | 19 |
-| reddit | SoM | 20 |
-| reddit | Vision | 28 |
+**Representative diag excerpts.**
+- `classifieds task 60 DOM` (winner: Phantom-SoM): P6,P14; 3 steps; actions select_option→select_option→select_option; final_url=http://100.95.81.103:9980/; reason=fail_incomplete_or_stuck. Intent: Find the most expensive video game item where I can roleplay the situation in the image.
+- `classifieds task 49 DOM` (winner: SoM): P6; 4 steps; actions type→scroll→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=678; reason=fail_finish_eval_mismatch. Intent: How much RAM (in GB) does the item with blue LED lights on this page have?
 
-## Reading
+### early-finish/wrong-commit
 
-- The largest hard-rule bucket is navigation/self-loop (`P5`/`P14`), especially on reddit: agents often commit to a page/post and continue acting on the same URL even when another mode found the correct target.
-- `P6` marks genuine representation mismatch: DOM can be inside a disagreement task but still lack necessary color/image evidence. Treat this as observation-limit evidence, not an infrastructure bug.
-- A large `premature-or-wrong-finish` residue remains outside P1-P14. Those pairs usually fail by answering/finishing from an incomplete page state rather than by a detectable click/scroll pathology.
-- Phantom-SoM contributes to the disagreement set, but its completed step traces are not present in this checkout. Restore the cleared `*_steps_v2.jsonl` files if per-step Phantom-SoM clusters are needed.
+**Definition.** The agent terminates or answers from insufficient evidence, producing wrong-url, eval-mismatch, claim-missing, or empty-answer outcomes.
 
-## Classifieds Details
+**Prevalence.** 33/162 failure pairs; by mode: DOM: 6, SoM: 16, Vision: 11.
 
-| Cluster | count | top modes | example tasks |
-|---|---:|---|---|
-| `no-step-trace` | 49 | Phantom-SoM:49 | 5, 11, 14, 16, 24, 40, 49, 52 |
-| `navigation-loop` | 41 | Vision:19, DOM:12, SoM:10 | 5, 13, 16, 25, 40, 45, 46, 52 |
-| `premature-or-wrong-finish` | 31 | SoM:14, DOM:10, Vision:7 | 11, 14, 14, 16, 25, 40, 50, 60 |
-| `element-targeting` | 20 | Vision:17, DOM:2, SoM:1 | 10, 13, 15, 17, 44, 49, 50, 93 |
-| `visual-info-missing` | 19 | DOM:19 | 11, 24, 49, 52, 60, 61, 62, 64 |
-| `no-hard-rule-hit` | 2 | SoM:1, Vision:1 | 167, 167 |
-| `answer-memory` | 1 | SoM:1 | 93 |
-| `unmatched-stuck` | 1 | DOM:1 | 130 |
-| `benchmark-url-quirk` | 1 | Vision:1 | 196 |
+**Representative diag excerpts.**
+- `reddit task 69 SoM` (winner: DOM): no P-rule; 4 steps; actions scroll→type→click→finish; final_url=http://100.95.81.103:9999/f/newhampshire/129011/new-hampshire-be-like/; reason=fail_finish_eval_mismatch. Intent: Make a comment in this post explaining what the picture is about.
+- `classifieds task 14 DOM` (winner: SoM): no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=60133; reason=fail_early_finish. Intent: What is the email of the seller of the painting in the second row?
 
-## Reddit Details
+### element-misground
 
-| Cluster | count | top modes | example tasks |
-|---|---:|---|---|
-| `navigation-loop` | 22 | Vision:12, SoM:6, DOM:4 | 0, 2, 4, 7, 19, 26, 79, 79 |
-| `no-step-trace` | 19 | Phantom-SoM:19 | 2, 4, 14, 69, 79, 81, 120, 129 |
-| `premature-or-wrong-finish` | 18 | SoM:8, Vision:6, DOM:4 | 58, 69, 69, 72, 81, 94, 94, 94 |
-| `visual-info-missing` | 12 | DOM:12 | 2, 4, 7, 14, 26, 107, 131, 139 |
-| `unmatched-stuck` | 9 | Vision:4, SoM:3, DOM:2 | 0, 18, 40, 107, 151, 152, 152, 170 |
-| `element-targeting` | 3 | Vision:3 | 7, 42, 81 |
-| `search-browse-strategy` | 3 | Vision:2, SoM:1 | 14, 162, 162 |
-| `no-hard-rule-hit` | 2 | SoM:1, Vision:1 | 31, 31 |
-| `max-step-exhaustion` | 1 | SoM:1 | 179 |
+**Definition.** Element grounding failure: out-of-viewport target, container/root node, or mislocalized click target (P1/P2/P4).
 
-## Reddit Phantom-DOM Ablation Snapshot
+**Prevalence.** 13/162 failure pairs; by mode: DOM: 1, Vision: 12.
 
-Partial same-task comparison over DOM, SoM, Phantom-DOM where Phantom-DOM summaries exist: N=59 tasks. Disagreement failure-side pairs: 15. This is a read-only snapshot of an active/partial run, so use it directionally.
+**Representative diag excerpts.**
+- `reddit task 81 Vision` (winner: DOM): P1; 3 steps; actions click→click→click; final_url=http://100.95.81.103:9999/f/photoshopbattles; reason=fail_no_progress. Intent: Upvote all the posts that have a picture which contains cat on this page.
+- `classifieds task 115 DOM` (winner: SoM): P2,P6,P14; 30 steps; actions type→scroll→scroll→click→back→click→back→click→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=15342; reason=fail_max_steps_target_unreachable. Intent: Search for "brace" and navigate to the most recently listed item that matches the body part in this image.
 
-| Cluster | count | modes |
-|---|---:|---|
-| `visual-info-missing` | 5 | DOM:5 |
-| `navigation-loop` | 4 | Phantom-DOM:3, SoM:1 |
-| `no-hard-rule-hit` | 3 | Phantom-DOM:2, SoM:1 |
-| `premature-or-wrong-finish` | 2 | DOM:1, SoM:1 |
-| `unmatched-stuck` | 1 | SoM:1 |
+### click-loop/no-text-grounding
 
-## Compact Pair Diagnostics
+**Definition.** Vision-specific click-loop: the model can see the screen but lacks stable DOM/mark text grounding, so it clicks plausible visual regions and then loops on the same page.
 
-Success vectors use mode order `DOM SoM Vision Phantom-SoM` for the primary table. `1` means adjusted success; `0` means adjusted failure.
+**Prevalence.** 11/162 failure pairs; by mode: Vision: 11.
 
-| Site | Task | Mode | Vector | Cluster | P-rules | Reason bucket / note | Intent |
-|---|---:|---|---|---|---|---|---|
-| classifieds | 5 | SoM | `1010` | `navigation-loop` | P14 | fail_finish_eval_mismatch | Navigate to my listing of the white car and delete it. |
-| classifieds | 5 | Phantom-SoM | `1010` | `no-step-trace` | - | step trace unavailable | Navigate to my listing of the white car and delete it. |
-| classifieds | 10 | Vision | `1101` | `element-targeting` | P1,P5,P14 | fail_no_progress | What is the seat height in inches of the smaller piece of furniture on this page? |
-| classifieds | 11 | DOM | `0010` | `visual-info-missing` | P5,P6,P14 | fail_no_progress | What is the size of the wheels in inches of the first blue bike on this page? |
-| classifieds | 11 | SoM | `0010` | `premature-or-wrong-finish` | - | fail_early_finish | What is the size of the wheels in inches of the first blue bike on this page? |
-| classifieds | 11 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | What is the size of the wheels in inches of the first blue bike on this page? |
-| classifieds | 13 | DOM | `0101` | `navigation-loop` | P14 | fail_finish_claim_missing | What is the color of the most expensive item in the "Boats" category? |
-| classifieds | 13 | Vision | `0101` | `element-targeting` | P1,P5,P14 | fail_no_progress | What is the color of the most expensive item in the "Boats" category? |
-| classifieds | 14 | DOM | `0100` | `premature-or-wrong-finish` | - | fail_early_finish | What is the email of the seller of the painting in the second row? |
-| classifieds | 14 | Vision | `0100` | `premature-or-wrong-finish` | - | fail_early_finish | What is the email of the seller of the painting in the second row? |
-| classifieds | 14 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | What is the email of the seller of the painting in the second row? |
-| classifieds | 15 | Vision | `1101` | `element-targeting` | P1,P5 | fail_no_progress | What is the email of the seller of the guitar in the red case on this page? |
-| classifieds | 16 | DOM | `0010` | `navigation-loop` | P5,P14 | fail_no_progress | What is the email of the seller of the item with the coffee mug in the picture on this page? |
-| classifieds | 16 | SoM | `0010` | `premature-or-wrong-finish` | - | fail_early_finish | What is the email of the seller of the item with the coffee mug in the picture on this page? |
-| classifieds | 16 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | What is the email of the seller of the item with the coffee mug in the picture on this page? |
-| classifieds | 17 | Vision | `1101` | `element-targeting` | P1,P5,P12,P14 | fail_no_progress | Show me the cheapest bike with red handlebars between $900-950. |
-| classifieds | 24 | DOM | `0110` | `visual-info-missing` | P5,P6,P14 | success | How many miles does the black truck on this page have? |
-| classifieds | 24 | Phantom-SoM | `0110` | `no-step-trace` | - | step trace unavailable | How many miles does the black truck on this page have? |
-| classifieds | 25 | SoM | `1001` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | How many red boats were posted on 16th November 2023? |
-| classifieds | 25 | Vision | `1001` | `navigation-loop` | P14 | fail_finish_eval_mismatch | How many red boats were posted on 16th November 2023? |
-| classifieds | 40 | DOM | `0010` | `navigation-loop` | P14 | fail_finish_eval_mismatch | Search for "dishwasher" and tell me the brand of the most recent listing of a stainless steel o… |
-| classifieds | 40 | SoM | `0010` | `premature-or-wrong-finish` | - | fail_early_finish | Search for "dishwasher" and tell me the brand of the most recent listing of a stainless steel o… |
-| classifieds | 40 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | Search for "dishwasher" and tell me the brand of the most recent listing of a stainless steel o… |
-| classifieds | 44 | Vision | `1101` | `element-targeting` | P1,P5,P14 | fail_no_progress | I recall seeing this exact item on the site, help me find the most recent post of it. |
-| classifieds | 45 | Vision | `1101` | `navigation-loop` | P5,P13,P14 | fail_no_progress | I recall seeing this exact item on the site, help me find the most recent post of it. |
-| classifieds | 46 | Vision | `1101` | `navigation-loop` | P13,P14 | fail_no_progress | I recall seeing this exact item on the site, help me find the most recent post of it. |
-| classifieds | 49 | DOM | `0100` | `visual-info-missing` | P6 | fail_finish_eval_mismatch | How much RAM (in GB) does the item with blue LED lights on this page have? |
-| classifieds | 49 | Vision | `0100` | `element-targeting` | P1 | fail_finish_eval_mismatch | How much RAM (in GB) does the item with blue LED lights on this page have? |
-| classifieds | 49 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | How much RAM (in GB) does the item with blue LED lights on this page have? |
-| classifieds | 50 | SoM | `1001` | `premature-or-wrong-finish` | - | fail_early_finish | What is the email of the seller of the red palette on this page? |
-| classifieds | 50 | Vision | `1001` | `element-targeting` | P1,P5 | fail_no_progress | What is the email of the seller of the red palette on this page? |
-| classifieds | 52 | DOM | `0100` | `visual-info-missing` | P5,P6,P14 | fail_no_progress | Find me the most recent painting in the "Arts + crafts" category of something that looks close … |
-| classifieds | 52 | Vision | `0100` | `navigation-loop` | P14 | fail_incomplete_or_stuck | Find me the most recent painting in the "Arts + crafts" category of something that looks close … |
-| classifieds | 52 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Find me the most recent painting in the "Arts + crafts" category of something that looks close … |
-| classifieds | 55 | Phantom-SoM | `1110` | `no-step-trace` | - | step trace unavailable | Find the most recently listed item in the "Collectibles" category that depicts the inventors of… |
-| classifieds | 60 | DOM | `0001` | `visual-info-missing` | P6,P14 | fail_incomplete_or_stuck | Find the most expensive video game item where I can roleplay the situation in the image. |
-| classifieds | 60 | SoM | `0001` | `premature-or-wrong-finish` | - | fail_finish_wrong_url_not_found | Find the most expensive video game item where I can roleplay the situation in the image. |
-| classifieds | 60 | Vision | `0001` | `navigation-loop` | P14 | fail_no_progress | Find the most expensive video game item where I can roleplay the situation in the image. |
-| classifieds | 61 | DOM | `0010` | `visual-info-missing` | P6 | fail_max_steps_target_unreachable | Find the most expensive video game item where I can roleplay the situation in the image. |
-| classifieds | 61 | SoM | `0010` | `navigation-loop` | P13,P14 | fail_no_progress | Find the most expensive video game item where I can roleplay the situation in the image. |
-| classifieds | 61 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | Find the most expensive video game item where I can roleplay the situation in the image. |
-| classifieds | 62 | DOM | `0101` | `visual-info-missing` | P5,P6,P14 | fail_no_progress | Find the most expensive video game item with the character from the image on its display. |
-| classifieds | 62 | Vision | `0101` | `navigation-loop` | P14 | fail_finish_wrong_url_not_found | Find the most expensive video game item with the character from the image on its display. |
-| classifieds | 63 | Vision | `1100` | `navigation-loop` | P5,P13,P14 | fail_no_progress | Find the most expensive video game item with the character from the image on its display. |
-| classifieds | 63 | Phantom-SoM | `1100` | `no-step-trace` | - | step trace unavailable | Find the most expensive video game item with the character from the image on its display. |
-| classifieds | 64 | DOM | `0001` | `visual-info-missing` | P5,P6,P13,P14 | fail_no_progress | Find the video game item that costs exactly $500 where I can roleplay the situation in the imag… |
-| classifieds | 64 | SoM | `0001` | `navigation-loop` | P14 | fail_max_steps_target_unreachable | Find the video game item that costs exactly $500 where I can roleplay the situation in the imag… |
-| classifieds | 64 | Vision | `0001` | `navigation-loop` | P5,P13,P14 | fail_no_progress | Find the video game item that costs exactly $500 where I can roleplay the situation in the imag… |
-| classifieds | 79 | DOM | `0101` | `visual-info-missing` | P5,P6,P14 | fail_no_progress | Find me an item on this page that references the person in the image. |
-| classifieds | 79 | Vision | `0101` | `navigation-loop` | P5,P14 | fail_no_progress | Find me an item on this page that references the person in the image. |
-| classifieds | 93 | DOM | `0001` | `visual-info-missing` | P6,P10 | fail_finish_wrong_url_left_target | Find the electronics item on the page which is compatible with this image. |
-| classifieds | 93 | SoM | `0001` | `answer-memory` | P10 | fail_finish_wrong_url_left_target | Find the electronics item on the page which is compatible with this image. |
-| classifieds | 93 | Vision | `0001` | `element-targeting` | P1,P14 | fail_finish_wrong_url_not_found | Find the electronics item on the page which is compatible with this image. |
-| classifieds | 94 | Vision | `1100` | `element-targeting` | P1,P5 | fail_no_progress | Find the animal on this page that has someone riding it in the image. |
-| classifieds | 94 | Phantom-SoM | `1100` | `no-step-trace` | - | step trace unavailable | Find the animal on this page that has someone riding it in the image. |
-| classifieds | 98 | SoM | `1000` | `premature-or-wrong-finish` | - | fail_early_finish | How many hours are on the engine of the most recently listed red boat? |
-| classifieds | 98 | Vision | `1000` | `element-targeting` | P1,P5,P14 | fail_no_progress | How many hours are on the engine of the most recently listed red boat? |
-| classifieds | 98 | Phantom-SoM | `1000` | `no-step-trace` | - | step trace unavailable | How many hours are on the engine of the most recently listed red boat? |
-| classifieds | 101 | DOM | `0100` | `visual-info-missing` | P6 | fail_finish_wrong_url_not_found | Explore the "Art + crafts" category, and find the most expensive painting of the city in this i… |
-| classifieds | 101 | Vision | `0100` | `navigation-loop` | P14 | fail_no_progress | Explore the "Art + crafts" category, and find the most expensive painting of the city in this i… |
-| classifieds | 101 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Explore the "Art + crafts" category, and find the most expensive painting of the city in this i… |
-| classifieds | 106 | DOM | `0100` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | What is the email of the seller of the most expensive item in Photo + videos that has an animal… |
-| classifieds | 106 | Vision | `0100` | `element-targeting` | P1,P5,P12,P14 | fail_no_progress | What is the email of the seller of the most expensive item in Photo + videos that has an animal… |
-| classifieds | 106 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | What is the email of the seller of the most expensive item in Photo + videos that has an animal… |
-| classifieds | 110 | Vision | `1101` | `navigation-loop` | P14 | fail_finish_eval_mismatch | Search for "mario kart" and tell me how many games are in the image of the most recently listed… |
-| classifieds | 111 | DOM | `0100` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | Search for "hockey" and tell me the team name of the jersey on the most recently listed item. |
-| classifieds | 111 | Vision | `0100` | `premature-or-wrong-finish` | - | fail_early_finish | Search for "hockey" and tell me the team name of the jersey on the most recently listed item. |
-| classifieds | 111 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Search for "hockey" and tell me the team name of the jersey on the most recently listed item. |
-| classifieds | 112 | DOM | `0010` | `navigation-loop` | P5,P14 | fail_no_progress | Search for "basketball" and navigate to the cheapest item that has a man in a suit in its image. |
-| classifieds | 112 | SoM | `0010` | `premature-or-wrong-finish` | - | fail_early_finish | Search for "basketball" and navigate to the cheapest item that has a man in a suit in its image. |
-| classifieds | 112 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | Search for "basketball" and navigate to the cheapest item that has a man in a suit in its image. |
-| classifieds | 115 | DOM | `0100` | `element-targeting` | P2,P6,P14 | fail_max_steps_target_unreachable | Search for "brace" and navigate to the most recently listed item that matches the body part in … |
-| classifieds | 115 | Vision | `0100` | `element-targeting` | P1,P14 | fail_no_progress | Search for "brace" and navigate to the most recently listed item that matches the body part in … |
-| classifieds | 115 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Search for "brace" and navigate to the most recently listed item that matches the body part in … |
-| classifieds | 116 | SoM | `1010` | `navigation-loop` | P14 | fail_finish_wrong_url_not_found | Search for "brace" and navigate to the cheapest item that matches the body part in this image. |
-| classifieds | 116 | Phantom-SoM | `1010` | `no-step-trace` | - | step trace unavailable | Search for "brace" and navigate to the cheapest item that matches the body part in this image. |
-| classifieds | 120 | DOM | `0100` | `visual-info-missing` | P5,P6 | fail_no_progress | What is written on the down tube of the bike with the purple frame on this page? |
-| classifieds | 120 | Vision | `0100` | `premature-or-wrong-finish` | - | fail_early_finish | What is written on the down tube of the bike with the purple frame on this page? |
-| classifieds | 120 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | What is written on the down tube of the bike with the purple frame on this page? |
-| classifieds | 124 | DOM | `0110` | `navigation-loop` | P5 | fail_no_progress | Navigate to the item on this page whose image is set on grass. |
-| classifieds | 124 | Phantom-SoM | `0110` | `no-step-trace` | - | step trace unavailable | Navigate to the item on this page whose image is set on grass. |
-| classifieds | 125 | DOM | `0110` | `element-targeting` | P4 | fail_finish_empty_answer | Navigate to the item on this page whose image is a desktop screenshot. |
-| classifieds | 125 | Phantom-SoM | `0110` | `no-step-trace` | - | step trace unavailable | Navigate to the item on this page whose image is a desktop screenshot. |
-| classifieds | 127 | DOM | `0100` | `navigation-loop` | P10,P14 | fail_finish_wrong_url_not_found | Search for "MCAT" and navigate to the prep book that has 2020-2021 on the cover. |
-| classifieds | 127 | Vision | `0100` | `element-targeting` | P1 | fail_finish_claim_missing | Search for "MCAT" and navigate to the prep book that has 2020-2021 on the cover. |
-| classifieds | 127 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Search for "MCAT" and navigate to the prep book that has 2020-2021 on the cover. |
-| classifieds | 130 | DOM | `0100` | `unmatched-stuck` | - | fail_max_steps_click_back_loop | Navigate to the item on this page whose image is taken during a sunset. |
-| classifieds | 130 | Vision | `0100` | `element-targeting` | P1 | fail_no_progress | Navigate to the item on this page whose image is taken during a sunset. |
-| classifieds | 130 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Navigate to the item on this page whose image is taken during a sunset. |
-| classifieds | 132 | DOM | `0100` | `visual-info-missing` | P6 | fail_max_steps_click_back_loop | Navigate to the item on this page whose image has 3 black animals. |
-| classifieds | 132 | Vision | `0100` | `element-targeting` | P1 | fail_finish_empty_answer | Navigate to the item on this page whose image has 3 black animals. |
-| classifieds | 132 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Navigate to the item on this page whose image has 3 black animals. |
-| classifieds | 139 | SoM | `1010` | `navigation-loop` | P14 | fail_max_steps_target_unreachable | I recall seeing this exact item on the site, help me find the most recent post of it. I recall … |
-| classifieds | 139 | Phantom-SoM | `1010` | `no-step-trace` | - | step trace unavailable | I recall seeing this exact item on the site, help me find the most recent post of it. I recall … |
-| classifieds | 149 | DOM | `0100` | `navigation-loop` | P5 | fail_no_progress | For the item with a gold colored controller, tell me the number of games displayed in the image. |
-| classifieds | 149 | Vision | `0100` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | For the item with a gold colored controller, tell me the number of games displayed in the image. |
-| classifieds | 149 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | For the item with a gold colored controller, tell me the number of games displayed in the image. |
-| classifieds | 151 | DOM | `0110` | `visual-info-missing` | P5,P6 | fail_no_progress | Navigate to the item on this page whose image has pink sticky notes. |
-| classifieds | 151 | Phantom-SoM | `0110` | `no-step-trace` | - | step trace unavailable | Navigate to the item on this page whose image has pink sticky notes. |
-| classifieds | 152 | DOM | `0010` | `navigation-loop` | P5 | fail_no_progress | Navigate to the item on this page whose image includes a human hand. |
-| classifieds | 152 | SoM | `0010` | `navigation-loop` | P14 | fail_finish_wrong_url_not_found | Navigate to the item on this page whose image includes a human hand. |
-| classifieds | 152 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | Navigate to the item on this page whose image includes a human hand. |
-| classifieds | 160 | DOM | `0100` | `navigation-loop` | P14 | fail_finish_eval_mismatch | Add a comment on the item on this page whose image is taken inside a garage with the title "Mor… |
-| classifieds | 160 | Vision | `0100` | `premature-or-wrong-finish` | - | fail_early_finish | Add a comment on the item on this page whose image is taken inside a garage with the title "Mor… |
-| classifieds | 160 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Add a comment on the item on this page whose image is taken inside a garage with the title "Mor… |
-| classifieds | 165 | DOM | `0100` | `visual-info-missing` | P6,P13 | fail_max_steps_target_unreachable | Navigate to the listing on this page whose image includes a car the same color as the item in t… |
-| classifieds | 165 | Vision | `0100` | `navigation-loop` | P5 | fail_no_progress | Navigate to the listing on this page whose image includes a car the same color as the item in t… |
-| classifieds | 165 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Navigate to the listing on this page whose image includes a car the same color as the item in t… |
-| classifieds | 166 | DOM | `0100` | `visual-info-missing` | P5,P6 | fail_no_progress | Navigate to the listing on this page whose image includes an instrument the same color as the i… |
-| classifieds | 166 | Vision | `0100` | `navigation-loop` | P5 | fail_no_progress | Navigate to the listing on this page whose image includes an instrument the same color as the i… |
-| classifieds | 166 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Navigate to the listing on this page whose image includes an instrument the same color as the i… |
-| classifieds | 167 | SoM | `1000` | `no-hard-rule-hit` | - | success | Navigate to the listing on this page whose image includes an instrument the same color as the i… |
-| classifieds | 167 | Vision | `1000` | `no-hard-rule-hit` | - | success | Navigate to the listing on this page whose image includes an instrument the same color as the i… |
-| classifieds | 167 | Phantom-SoM | `1000` | `no-step-trace` | - | step trace unavailable | Navigate to the listing on this page whose image includes an instrument the same color as the i… |
-| classifieds | 170 | SoM | `1001` | `navigation-loop` | P14 | fail_max_steps_target_unreachable | Navigate to the most expensive item in the "Cell phones" category which includes in its design … |
-| classifieds | 170 | Vision | `1001` | `navigation-loop` | P5,P14 | fail_no_progress | Navigate to the most expensive item in the "Cell phones" category which includes in its design … |
-| classifieds | 173 | DOM | `0110` | `premature-or-wrong-finish` | - | fail_early_finish | For the item on this page with a website address in the image, tell me the address. |
-| classifieds | 173 | Phantom-SoM | `0110` | `no-step-trace` | - | step trace unavailable | For the item on this page with a website address in the image, tell me the address. |
-| classifieds | 174 | SoM | `1000` | `premature-or-wrong-finish` | - | fail_early_finish | For the item on this page which includes a Black Friday logo in the image, tell me the most spe… |
-| classifieds | 174 | Vision | `1000` | `element-targeting` | P1,P5 | fail_no_progress | For the item on this page which includes a Black Friday logo in the image, tell me the most spe… |
-| classifieds | 174 | Phantom-SoM | `1000` | `no-step-trace` | - | step trace unavailable | For the item on this page which includes a Black Friday logo in the image, tell me the most spe… |
-| classifieds | 183 | DOM | `0011` | `visual-info-missing` | P5,P6,P14 | fail_no_progress | Navigate to the most recently listed item in the "Collectibles" category with the same characte… |
-| classifieds | 183 | SoM | `0011` | `navigation-loop` | P14 | fail_incomplete_or_stuck | Navigate to the most recently listed item in the "Collectibles" category with the same characte… |
-| classifieds | 184 | SoM | `1000` | `navigation-loop` | P14 | fail_max_steps | Navigate to the most expensive item in the "Collectibles" category with the same exact item fro… |
-| classifieds | 184 | Vision | `1000` | `navigation-loop` | P14 | fail_max_steps | Navigate to the most expensive item in the "Collectibles" category with the same exact item fro… |
-| classifieds | 184 | Phantom-SoM | `1000` | `no-step-trace` | - | step trace unavailable | Navigate to the most expensive item in the "Collectibles" category with the same exact item fro… |
-| classifieds | 187 | DOM | `0100` | `premature-or-wrong-finish` | - | fail_finish_wrong_url_not_found | Navigate to the item on the page where Lightning McQueen is in the image. |
-| classifieds | 187 | Vision | `0100` | `element-targeting` | P1 | fail_no_progress | Navigate to the item on the page where Lightning McQueen is in the image. |
-| classifieds | 187 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Navigate to the item on the page where Lightning McQueen is in the image. |
-| classifieds | 189 | DOM | `0011` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | Navigate to the item on the page where Mario is in the image. |
-| classifieds | 189 | SoM | `0011` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | Navigate to the item on the page where Mario is in the image. |
-| classifieds | 191 | SoM | `1010` | `element-targeting` | P2 | success | Navigate to the item on this page with a blonde horse. |
-| classifieds | 191 | Phantom-SoM | `1010` | `no-step-trace` | - | step trace unavailable | Navigate to the item on this page with a blonde horse. |
-| classifieds | 192 | DOM | `0010` | `navigation-loop` | P14 | fail_no_progress | For the listing on this page with books of cars, tell me the primary color of the cars. |
-| classifieds | 192 | SoM | `0010` | `premature-or-wrong-finish` | - | fail_early_finish | For the listing on this page with books of cars, tell me the primary color of the cars. |
-| classifieds | 192 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | For the listing on this page with books of cars, tell me the primary color of the cars. |
-| classifieds | 194 | DOM | `0010` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | Navigate to the item on the page where Mickey Mouse is in the image. |
-| classifieds | 194 | SoM | `0010` | `navigation-loop` | P14 | fail_finish_eval_mismatch | Navigate to the item on the page where Mickey Mouse is in the image. |
-| classifieds | 194 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | Navigate to the item on the page where Mickey Mouse is in the image. |
-| classifieds | 195 | Vision | `1101` | `navigation-loop` | P14 | success | Navigate to the most expensive yellow motorcycle in the "Motorcycles" category that costs at le… |
-| classifieds | 196 | Vision | `1100` | `benchmark-url-quirk` | P7 | success | Navigate to the most expensive red truck in the "Cars + trucks" category from Maryland that is … |
-| classifieds | 196 | Phantom-SoM | `1100` | `no-step-trace` | - | step trace unavailable | Navigate to the most expensive red truck in the "Cars + trucks" category from Maryland that is … |
-| classifieds | 201 | DOM | `0001` | `visual-info-missing` | P5,P6,P14 | fail_no_progress | Show me the latest listing of a snare drum with a black and red color scheme. |
-| classifieds | 201 | SoM | `0001` | `premature-or-wrong-finish` | - | fail_finish_wrong_url_not_found | Show me the latest listing of a snare drum with a black and red color scheme. |
-| classifieds | 201 | Vision | `0001` | `navigation-loop` | P14 | fail_finish_wrong_url_not_found | Show me the latest listing of a snare drum with a black and red color scheme. |
-| classifieds | 209 | DOM | `0100` | `premature-or-wrong-finish` | - | fail_early_finish | What is the cheapest price that I can pay for 31 of these wooden pallets? |
-| classifieds | 209 | Vision | `0100` | `premature-or-wrong-finish` | - | fail_early_finish | What is the cheapest price that I can pay for 31 of these wooden pallets? |
-| classifieds | 209 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | What is the cheapest price that I can pay for 31 of these wooden pallets? |
-| classifieds | 210 | DOM | `0100` | `premature-or-wrong-finish` | - | fail_finish_wrong_url_not_found | Find me the cheapest lamb in the "Farm + garden" category on this site. |
-| classifieds | 210 | Vision | `0100` | `navigation-loop` | P14 | fail_incomplete_or_stuck | Find me the cheapest lamb in the "Farm + garden" category on this site. |
-| classifieds | 210 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Find me the cheapest lamb in the "Farm + garden" category on this site. |
-| classifieds | 214 | Vision | `1100` | `navigation-loop` | P13,P14 | fail_max_steps_target_unreachable | Show me the most expensive phone with a theme matching that of the image. |
-| classifieds | 214 | Phantom-SoM | `1100` | `no-step-trace` | - | step trace unavailable | Show me the most expensive phone with a theme matching that of the image. |
-| classifieds | 217 | DOM | `0010` | `navigation-loop` | P5,P14 | fail_no_progress | Find me the most recent listing offering a book titled "Captain's Logs: The Complete Trek Voyag… |
-| classifieds | 217 | SoM | `0010` | `premature-or-wrong-finish` | - | fail_early_finish | Find me the most recent listing offering a book titled "Captain's Logs: The Complete Trek Voyag… |
-| classifieds | 217 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | Find me the most recent listing offering a book titled "Captain's Logs: The Complete Trek Voyag… |
-| classifieds | 220 | DOM | `0110` | `visual-info-missing` | P6 | fail_finish_eval_mismatch | Find the cheapest red-colored microwave that is $10 and under and still works. |
-| classifieds | 220 | Phantom-SoM | `0110` | `no-step-trace` | - | step trace unavailable | Find the cheapest red-colored microwave that is $10 and under and still works. |
-| classifieds | 221 | DOM | `0110` | `premature-or-wrong-finish` | - | fail_early_finish | How many bowls are there in this set of bowls? |
-| classifieds | 221 | Phantom-SoM | `0110` | `no-step-trace` | - | step trace unavailable | How many bowls are there in this set of bowls? |
-| classifieds | 222 | SoM | `1000` | `premature-or-wrong-finish` | - | fail_early_finish | Based on the measuring tape in the image, is the stated diameter of this item correct? |
-| classifieds | 222 | Vision | `1000` | `premature-or-wrong-finish` | - | fail_early_finish | Based on the measuring tape in the image, is the stated diameter of this item correct? |
-| classifieds | 222 | Phantom-SoM | `1000` | `no-step-trace` | - | step trace unavailable | Based on the measuring tape in the image, is the stated diameter of this item correct? |
-| classifieds | 233 | DOM | `0110` | `navigation-loop` | P14 | fail_max_steps_search_repeat | Are the characters in the image on Reddit shown in the listing on the classifieds site? If they… |
-| classifieds | 233 | Phantom-SoM | `0110` | `no-step-trace` | - | step trace unavailable | Are the characters in the image on Reddit shown in the listing on the classifieds site? If they… |
-| reddit | 0 | SoM | `1001` | `unmatched-stuck` | - | fail_max_steps_click_back_loop | I'm trying to find this post. Navigate to the comment section for it. |
-| reddit | 0 | Vision | `1001` | `navigation-loop` | P5,P14 | fail_no_progress | I'm trying to find this post. Navigate to the comment section for it. |
-| reddit | 2 | DOM | `0100` | `visual-info-missing` | P6 | fail_finish_wrong_url_not_found | I'm trying to find this post. Navigate to the comment section for it. |
-| reddit | 2 | Vision | `0100` | `navigation-loop` | P14 | fail_incomplete_or_stuck | I'm trying to find this post. Navigate to the comment section for it. |
-| reddit | 2 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | I'm trying to find this post. Navigate to the comment section for it. |
-| reddit | 4 | DOM | `0100` | `visual-info-missing` | P5,P6,P14 | fail_no_progress | I'm trying to do some research about the post with this image. Tell me how many comments mentio… |
-| reddit | 4 | Vision | `0100` | `navigation-loop` | P5,P14 | fail_no_progress | I'm trying to do some research about the post with this image. Tell me how many comments mentio… |
-| reddit | 4 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | I'm trying to do some research about the post with this image. Tell me how many comments mentio… |
-| reddit | 7 | DOM | `0001` | `visual-info-missing` | P6 | success | I'm doing some research about the post with this image. Navigate to the comment url of the reci… |
-| reddit | 7 | SoM | `0001` | `navigation-loop` | P14 | success | I'm doing some research about the post with this image. Navigate to the comment url of the reci… |
-| reddit | 7 | Vision | `0001` | `element-targeting` | P1,P5,P14 | success | I'm doing some research about the post with this image. Navigate to the comment url of the reci… |
-| reddit | 14 | DOM | `0100` | `visual-info-missing` | P6,P14 | fail_incomplete_or_stuck | Can you help me find and navigate to the comments section of an image post that has something l… |
-| reddit | 14 | Vision | `0100` | `search-browse-strategy` | P13 | fail_incomplete_or_stuck | Can you help me find and navigate to the comments section of an image post that has something l… |
-| reddit | 14 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Can you help me find and navigate to the comments section of an image post that has something l… |
-| reddit | 18 | Vision | `1101` | `unmatched-stuck` | - | fail_no_progress | Navigate to a subreddit where I can find the most similar content to this image. |
-| reddit | 19 | Vision | `1101` | `navigation-loop` | P14 | fail_no_progress | Find and upvote this post. I think it was posted in /f/GetMotivated. |
-| reddit | 26 | DOM | `0101` | `visual-info-missing` | P5,P6,P14 | success | Find this post and tell me what the top comment says. |
-| reddit | 26 | Vision | `0101` | `navigation-loop` | P5,P14 | success | Find this post and tell me what the top comment says. |
-| reddit | 31 | SoM | `1001` | `no-hard-rule-hit` | - | success | Find the user who posted this and navigate to the comments section of one of their other posts. |
-| reddit | 31 | Vision | `1001` | `no-hard-rule-hit` | - | success | Find the user who posted this and navigate to the comments section of one of their other posts. |
-| reddit | 40 | Vision | `1101` | `unmatched-stuck` | - | fail_no_progress | I'd like to find the subreddit for the city this photo was taken in. Can you navigate to it? |
-| reddit | 42 | Vision | `1101` | `element-targeting` | P1 | fail_finish_wrong_url_not_found | Navigate to the comments section of the first image post in /f/MechanicalKeyboards as sorted by… |
-| reddit | 58 | Vision | `1101` | `premature-or-wrong-finish` | - | fail_early_finish | Who is the author of the most popular novel adapted anime in year 2012? |
-| reddit | 69 | SoM | `1000` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | Make a comment in this post explaining what the picture is about. |
-| reddit | 69 | Vision | `1000` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | Make a comment in this post explaining what the picture is about. |
-| reddit | 69 | Phantom-SoM | `1000` | `no-step-trace` | - | step trace unavailable | Make a comment in this post explaining what the picture is about. |
-| reddit | 72 | Vision | `1101` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | Make a comment in this post explaining what the picture is about. |
-| reddit | 79 | SoM | `1000` | `navigation-loop` | P14 | fail_finish_eval_mismatch | Navigate to the comments section of any post that contains Rick and Morty in the picture. |
-| reddit | 79 | Vision | `1000` | `navigation-loop` | P14 | fail_finish_empty_answer | Navigate to the comments section of any post that contains Rick and Morty in the picture. |
-| reddit | 79 | Phantom-SoM | `1000` | `no-step-trace` | - | step trace unavailable | Navigate to the comments section of any post that contains Rick and Morty in the picture. |
-| reddit | 81 | SoM | `1000` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | Upvote all the posts that have a picture which contains cat on this page. |
-| reddit | 81 | Vision | `1000` | `element-targeting` | P1 | fail_no_progress | Upvote all the posts that have a picture which contains cat on this page. |
-| reddit | 81 | Phantom-SoM | `1000` | `no-step-trace` | - | step trace unavailable | Upvote all the posts that have a picture which contains cat on this page. |
-| reddit | 94 | DOM | `0001` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | Is there snow in the picture from the hottest post in f/EarthPorn? |
-| reddit | 94 | SoM | `0001` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | Is there snow in the picture from the hottest post in f/EarthPorn? |
-| reddit | 94 | Vision | `0001` | `premature-or-wrong-finish` | - | fail_early_finish | Is there snow in the picture from the hottest post in f/EarthPorn? |
-| reddit | 100 | DOM | `0001` | `navigation-loop` | P14 | fail_finish_eval_mismatch | Navigate to the comments section of a post that contains a picture of a cake. |
-| reddit | 100 | SoM | `0001` | `navigation-loop` | P5,P14 | fail_no_progress | Navigate to the comments section of a post that contains a picture of a cake. |
-| reddit | 100 | Vision | `0001` | `navigation-loop` | P14 | fail_finish_empty_answer | Navigate to the comments section of a post that contains a picture of a cake. |
-| reddit | 107 | DOM | `0011` | `visual-info-missing` | P6 | fail_max_steps_click_back_loop | Subscribe to a forum that contains the following picture. |
-| reddit | 107 | SoM | `0011` | `unmatched-stuck` | - | fail_max_steps_click_back_loop | Subscribe to a forum that contains the following picture. |
-| reddit | 120 | DOM | `0110` | `premature-or-wrong-finish` | - | fail_early_finish | According to the image, which country in this picture has the worst rail system? |
-| reddit | 120 | Phantom-SoM | `0110` | `no-step-trace` | - | step trace unavailable | According to the image, which country in this picture has the worst rail system? |
-| reddit | 124 | DOM | `0001` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | Find me a post in /f/dataisbeautiful that illustrates the Microsoft revenue in 1985, and tell m… |
-| reddit | 124 | SoM | `0001` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | Find me a post in /f/dataisbeautiful that illustrates the Microsoft revenue in 1985, and tell m… |
-| reddit | 124 | Vision | `0001` | `navigation-loop` | P5,P14 | fail_no_progress | Find me a post in /f/dataisbeautiful that illustrates the Microsoft revenue in 1985, and tell m… |
-| reddit | 129 | Phantom-SoM | `1110` | `no-step-trace` | - | step trace unavailable | Subscribe to the forum which is most likely to include discussions related to the image. |
-| reddit | 130 | SoM | `1001` | `premature-or-wrong-finish` | - | fail_early_finish | Subscribe to the forum which is most likely to include discussions related to the image. |
-| reddit | 130 | Vision | `1001` | `navigation-loop` | P14 | fail_finish_eval_mismatch | Subscribe to the forum which is most likely to include discussions related to the image. |
-| reddit | 131 | DOM | `0100` | `visual-info-missing` | P6,P14 | fail_finish_eval_mismatch | Subscribe to the forum which is most likely to include discussions related to the image. |
-| reddit | 131 | Vision | `0100` | `navigation-loop` | P5,P14 | fail_no_progress | Subscribe to the forum which is most likely to include discussions related to the image. |
-| reddit | 131 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Subscribe to the forum which is most likely to include discussions related to the image. |
-| reddit | 139 | DOM | `0100` | `visual-info-missing` | P6 | fail_early_finish | I don't like the author of this image from one of the hot posts in /f/memes. Can you help me bl… |
-| reddit | 139 | Vision | `0100` | `navigation-loop` | P5,P14 | fail_no_progress | I don't like the author of this image from one of the hot posts in /f/memes. Can you help me bl… |
-| reddit | 139 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | I don't like the author of this image from one of the hot posts in /f/memes. Can you help me bl… |
-| reddit | 142 | DOM | `0100` | `navigation-loop` | P5,P13,P14 | fail_no_progress | Leave a comment in this post with the release date of the movie in the image in mm-dd-yyyy form… |
-| reddit | 142 | Vision | `0100` | `premature-or-wrong-finish` | - | fail_early_finish | Leave a comment in this post with the release date of the movie in the image in mm-dd-yyyy form… |
-| reddit | 142 | Phantom-SoM | `0100` | `no-step-trace` | - | step trace unavailable | Leave a comment in this post with the release date of the movie in the image in mm-dd-yyyy form… |
-| reddit | 148 | DOM | `0010` | `premature-or-wrong-finish` | - | fail_early_finish | Leave a comment in this post with the text as the number of arancinis in the image. |
-| reddit | 148 | SoM | `0010` | `premature-or-wrong-finish` | - | fail_early_finish | Leave a comment in this post with the text as the number of arancinis in the image. |
-| reddit | 148 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | Leave a comment in this post with the text as the number of arancinis in the image. |
-| reddit | 150 | DOM | `0010` | `navigation-loop` | P14 | fail_finish_eval_mismatch | Leave a comment in this post with the text as the number of adults in the image. |
-| reddit | 150 | SoM | `0010` | `navigation-loop` | P14 | fail_finish_eval_mismatch | Leave a comment in this post with the text as the number of adults in the image. |
-| reddit | 150 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | Leave a comment in this post with the text as the number of adults in the image. |
-| reddit | 151 | DOM | `0110` | `unmatched-stuck` | - | fail_no_progress | Leave a comment in this post with the text as the number of adults in the image. |
-| reddit | 151 | Phantom-SoM | `0110` | `no-step-trace` | - | step trace unavailable | Leave a comment in this post with the text as the number of adults in the image. |
-| reddit | 152 | DOM | `0010` | `unmatched-stuck` | - | fail_no_progress | Leave a comment in this post with the text as the number of adults in the image. |
-| reddit | 152 | SoM | `0010` | `unmatched-stuck` | - | fail_no_progress | Leave a comment in this post with the text as the number of adults in the image. |
-| reddit | 152 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | Leave a comment in this post with the text as the number of adults in the image. |
-| reddit | 155 | Vision | `1101` | `navigation-loop` | P5,P14 | fail_no_progress | I saw a really funny movie last week (the image is the movie poster). Can you navigate to the c… |
-| reddit | 160 | Vision | `1100` | `premature-or-wrong-finish` | - | fail_early_finish | Can you subscribe to all subreddits that start with the letter 'i' and have a female usb to mal… |
-| reddit | 160 | Phantom-SoM | `1100` | `no-step-trace` | - | step trace unavailable | Can you subscribe to all subreddits that start with the letter 'i' and have a female usb to mal… |
-| reddit | 161 | DOM | `0110` | `visual-info-missing` | P5,P6,P14 | fail_no_progress | Take me to the post for the joke on this page that is most likely to take place in the followin… |
-| reddit | 161 | Phantom-SoM | `0110` | `no-step-trace` | - | step trace unavailable | Take me to the post for the joke on this page that is most likely to take place in the followin… |
-| reddit | 162 | DOM | `0001` | `navigation-loop` | P14 | fail_max_steps_search_repeat | Can you give me the URL for a gif I could send to my friend about the contrast of investing in … |
-| reddit | 162 | SoM | `0001` | `search-browse-strategy` | P13 | fail_finish_claim_missing | Can you give me the URL for a gif I could send to my friend about the contrast of investing in … |
-| reddit | 162 | Vision | `0001` | `search-browse-strategy` | P13 | fail_finish_claim_missing | Can you give me the URL for a gif I could send to my friend about the contrast of investing in … |
-| reddit | 170 | DOM | `0101` | `visual-info-missing` | P5,P6,P14 | fail_no_progress | Can you subscribe to the forum that is most likely to contain posts like this? |
-| reddit | 170 | Vision | `0101` | `unmatched-stuck` | - | fail_incomplete_or_stuck | Can you subscribe to the forum that is most likely to contain posts like this? |
-| reddit | 171 | Phantom-SoM | `1110` | `no-step-trace` | - | step trace unavailable | Can you subscribe to the forum that is most likely to contain posts like this? |
-| reddit | 178 | Vision | `1101` | `unmatched-stuck` | - | fail_incomplete_or_stuck | Can you subscribe to the forum for this city? |
-| reddit | 179 | DOM | `0010` | `visual-info-missing` | P6 | fail_max_steps_search_repeat | Can you take me to the page that shows the most controversial posts of the past month in the fo… |
-| reddit | 179 | SoM | `0010` | `max-step-exhaustion` | - | fail_max_steps_search_repeat | Can you take me to the page that shows the most controversial posts of the past month in the fo… |
-| reddit | 179 | Phantom-SoM | `0010` | `no-step-trace` | - | step trace unavailable | Can you take me to the page that shows the most controversial posts of the past month in the fo… |
-| reddit | 182 | DOM | `0011` | `visual-info-missing` | P6 | success | I am a student at the school in the image. Can you make a post asking for the best Indian food … |
-| reddit | 182 | SoM | `0011` | `premature-or-wrong-finish` | - | fail_finish_eval_mismatch | I am a student at the school in the image. Can you make a post asking for the best Indian food … |
-| reddit | 188 | SoM | `1011` | `navigation-loop` | P14 | fail_finish_eval_mismatch | Can you subscribe me to the most suitable forum where I can find more posts like in the image? |
-| reddit | 189 | SoM | `1011` | `navigation-loop` | P14 | fail_finish_eval_mismatch | Can you subscribe me to the most suitable forum where I can find more posts like in the image? |
-| reddit | 200 | SoM | `1011` | `premature-or-wrong-finish` | - | fail_finish_wrong_url_not_found | Can you take me to the post on this page that is most related to the picture on this page? |
+**Representative diag excerpts.**
+- `classifieds task 184 Vision` (winner: DOM): P14; 30 steps; actions type→click→click→scroll→click→scroll→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=Charizard+Pok; reason=fail_max_steps. Intent: Navigate to the most expensive item in the "Collectibles" category with the same exact item from the image.
+- `classifieds task 52 Vision` (winner: SoM): P14; 5 steps; actions type→click→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=wave+painting; reason=fail_incomplete_or_stuck. Intent: Find me the most recent painting in the "Arts + crafts" category of something that looks close to this.
 
-## Ablation Pair Diagnostics
+### search-loop
 
-Success vectors use mode order `DOM SoM Phantom-DOM`.
+**Definition.** The agent keeps using search or search-result scanning instead of committing to the relevant page. Operationally: P13 or repeated type/search actions, often with DOM hierarchy inducing continued exploration.
 
-| Task | Mode | Vector | Cluster | P-rules | Reason bucket / note |
-|---:|---|---|---|---|---|
-| 0 | SoM | `101` | `unmatched-stuck` | - | fail_max_steps_click_back_loop |
-| 2 | DOM | `010` | `visual-info-missing` | P6 | fail_finish_wrong_url_not_found |
-| 2 | Phantom-DOM | `010` | `no-hard-rule-hit` | - | - |
-| 4 | DOM | `010` | `visual-info-missing` | P5,P6,P14 | fail_no_progress |
-| 4 | Phantom-DOM | `010` | `navigation-loop` | P5,P14 | - |
-| 14 | DOM | `010` | `visual-info-missing` | P6,P14 | fail_incomplete_or_stuck |
-| 14 | Phantom-DOM | `010` | `navigation-loop` | P5,P14 | - |
-| 15 | DOM | `001` | `visual-info-missing` | P5,P6,P14 | fail_no_progress |
-| 15 | SoM | `001` | `navigation-loop` | P14 | fail_finish_empty_answer |
-| 18 | Phantom-DOM | `110` | `no-hard-rule-hit` | - | - |
-| 26 | DOM | `010` | `visual-info-missing` | P5,P6,P14 | success |
-| 26 | Phantom-DOM | `010` | `navigation-loop` | P5,P14 | - |
-| 31 | SoM | `101` | `no-hard-rule-hit` | - | success |
-| 36 | DOM | `001` | `premature-or-wrong-finish` | - | fail_finish_wrong_url_not_found |
-| 36 | SoM | `001` | `premature-or-wrong-finish` | - | fail_finish_wrong_url_not_found |
+**Prevalence.** 10/162 failure pairs; by mode: DOM: 3, SoM: 3, Vision: 4.
+
+**Representative diag excerpts.**
+- `reddit task 14 Vision` (winner: SoM): P13; 12 steps; actions type→type→type→type→type→type→type→type→…; final_url=http://100.95.81.103:9999/search?q=cityscape+at+dusk+with+wet+pavement; reason=fail_incomplete_or_stuck. Intent: Can you help me find and navigate to the comments section of an image post that has something like this image?
+- `reddit task 162 DOM` (winner: Phantom-SoM): P14; 30 steps; actions type→click→type→click→type→type→click→click→…; final_url=http://100.95.81.103:9999/; reason=fail_max_steps_search_repeat. Intent: Subscribe to the forum which is most likely to include discussions related to the image.
+
+### visual-hijack/click-loop
+
+**Definition.** SoM-specific click-loop: a marked visual/text element looks actionable, the model follows that mark, then repeats clicks or wrong-page actions. This is the dense-mark version of visual attention hijack.
+
+**Prevalence.** 8/162 failure pairs; by mode: SoM: 8.
+
+**Representative diag excerpts.**
+- `reddit task 79 SoM` (winner: DOM): P14; 5 steps; actions type→click→click→click→finish; final_url=http://100.95.81.103:9999/f/television/92954/rick-and-morty-with-the-a; reason=fail_finish_eval_mismatch. Intent: Navigate to the comments section of any post that contains Rick and Morty in the picture.
+- `classifieds task 184 SoM` (winner: DOM): P14; 30 steps; actions select_option→type→select_option→scroll→scroll→scroll→scroll→click→…; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=Charizard+Pok; reason=fail_max_steps. Intent: Navigate to the most expensive item in the "Collectibles" category with the same exact item from the image.
+
+### abandon-after-N
+
+**Definition.** The trajectory exhausts a long budget, usually max steps or repeated scroll/back/search, without converging on a target.
+
+**Prevalence.** 7/162 failure pairs; by mode: DOM: 2, SoM: 2, Vision: 3.
+
+**Representative diag excerpts.**
+- `reddit task 179 SoM` (winner: Vision): no P-rule; 30 steps; actions type→type→click→type→type→type→type→type→…; final_url=http://100.95.81.103:9999/search?q=St.+Louis+forum+; reason=fail_max_steps_search_repeat. Intent: Can you take me to the page that shows the most controversial posts of the past month in the forum for a city located in the state pictured in the ima
+- `classifieds task 167 SoM` (winner: DOM): no P-rule; 30 steps; actions type→click→back→click→back→click→back→click→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=72933; reason=raw_success_adjusted_false. Intent: Navigate to the listing on this page whose image includes an instrument the same color as the item in the image provided.
+
+### other
+
+**Definition.** No strong P-rule or cluster matched; mostly idiosyncratic failed trajectories.
+
+**Prevalence.** 1/162 failure pairs; by mode: SoM: 1.
+
+**Representative diag excerpts.**
+- `reddit task 152 SoM` (winner: Vision): no P-rule; 4 steps; actions scroll→type→type→type; final_url=http://100.95.81.103:9999/f/OldSchoolCool/15059; reason=fail_no_progress. Intent: Leave a comment in this post with the text as the number of adults in the image.
+
+## Per-Mode Failure Distribution Table
+
+Counts are failure-side `(task, mode)` pairs among the 54 one-arm-only disagreement tasks. Percentages are within each failed mode. Phantom-SoM is reported separately as trace-unavailable because the completed runs were cleared. Note the denominator here is not the same as the §103 global behavior metric denominator: in this exclusive-task failure slice, DOM failures skew toward visual-missing because most non-DOM-only tasks are visually grounded; the broader §103 reddit search-loop gradient remains a whole-run trajectory statistic.
+
+| Mode | N fail | search-loop | click-loop | early-finish/wrong-commit | abandon-after-N | hierarchy-confusion | visual-missing | visual-hijack/click-loop | click-loop/no-text-grounding | element-misground | trace-unavailable | other |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| DOM | 46 | 3 (6.5%) | - | 6 (13.0%) | 2 (4.3%) | - | 34 (73.9%) | - | - | 1 (2.2%) | - | - |
+| SoM | 30 | 3 (10.0%) | - | 16 (53.3%) | 2 (6.7%) | - | - | 8 (26.7%) | - | - | - | 1 (3.3%) |
+| Vision | 41 | 4 (9.8%) | - | 11 (26.8%) | 3 (7.3%) | - | - | - | 11 (26.8%) | 12 (29.3%) | - | - |
+| Phantom-SoM | 45 | - | - | - | - | - | - | - | - | - | 45 (100.0%) | - |
+
+Site split:
+
+| Site | Mode | search-loop | click-loop family | early-finish | visual-missing | element-misground | trace-unavailable | other |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| classifieds | DOM | 1 | 0 | 5 | 22 | 1 | 0 | 2 |
+| classifieds | SoM | 1 | 4 | 12 | 0 | 0 | 0 | 1 |
+| classifieds | Vision | 2 | 7 | 7 | 0 | 10 | 0 | 1 |
+| classifieds | Phantom-SoM | 0 | 0 | 0 | 0 | 0 | 32 | 0 |
+| reddit | DOM | 2 | 0 | 1 | 12 | 0 | 0 | 0 |
+| reddit | SoM | 2 | 4 | 4 | 0 | 0 | 0 | 2 |
+| reddit | Vision | 2 | 4 | 4 | 0 | 2 | 0 | 2 |
+| reddit | Phantom-SoM | 0 | 0 | 0 | 0 | 0 | 13 | 0 |
+
+## Mode-Pair Disagreement Insights
+
+### DOM-only success tasks (8 tasks)
+
+Tasks: reddit:69, reddit:79, reddit:81, classifieds:98, classifieds:167, classifieds:174, classifieds:184, classifieds:222.
+Failure modes cluster as: early-finish/wrong-commit=8, trace-unavailable=8, element-misground=3, visual-hijack/click-loop=2, abandon-after-N=1, search-loop=1, click-loop/no-text-grounding=1.
+Why DOM succeeded: these are cases where sustained AXTree/hierarchy exploration pays off. The failed visual/mark arms tend to click a plausible result too early or lose grounding after choosing a screen element; reddit tasks 69/79/81 are all page-screen style cases noted in §103.
+
+### SoM-only success tasks (24 tasks)
+
+Tasks: reddit:2, reddit:4, reddit:14, reddit:131, reddit:139, reddit:142, classifieds:14, classifieds:49, classifieds:52, classifieds:101, classifieds:106, classifieds:111, classifieds:115, classifieds:120, classifieds:127, classifieds:130, classifieds:132, classifieds:149, classifieds:160, classifieds:165, classifieds:166, classifieds:187, classifieds:209, classifieds:210.
+Failure modes cluster as: trace-unavailable=24, visual-missing=18, early-finish/wrong-commit=11, element-misground=8, click-loop/no-text-grounding=8, abandon-after-N=2, search-loop=1.
+Why SoM succeeded: the image plus marks supplies a locator that the text-only or unmarked visual arms lack. Failures in DOM are mostly visual-missing or hierarchy/search problems; failures in Vision often lack stable text grounding.
+
+### Vision-only success tasks (13 tasks)
+
+Tasks: reddit:148, reddit:150, reddit:152, reddit:179, classifieds:11, classifieds:16, classifieds:40, classifieds:61, classifieds:112, classifieds:152, classifieds:192, classifieds:194, classifieds:217.
+Failure modes cluster as: trace-unavailable=13, visual-missing=10, early-finish/wrong-commit=8, visual-hijack/click-loop=3, abandon-after-N=2, search-loop=2, other=1.
+Why Vision succeeded: the raw screenshot can solve some page-screen tasks without mark occlusion or AXTree over-search. The failed DOM/SoM arms either miss visual facts or over-commit to marked/textual affordances.
+
+### Phantom-SoM-only success tasks (9 tasks)
+
+Tasks: reddit:7, reddit:94, reddit:100, reddit:124, reddit:162, classifieds:60, classifieds:64, classifieds:93, classifieds:201.
+Failure modes cluster as: visual-missing=6, early-finish/wrong-commit=6, search-loop=6, visual-hijack/click-loop=3, click-loop/no-text-grounding=2, element-misground=2, abandon-after-N=2.
+Why Phantom-SoM succeeded: direct step traces are unavailable, but §103 classifies these as mixed and text-compact quick-decision cases. The counterpart failures are dominated by visual-missing, click-loop, and search-loop patterns, consistent with Phantom opening a distinct low-cost solution basin.
+
+## Implications for Paper Section 5
+
+1. **Representation effect: AXTree versus flat marks changes exploration shape.** DOM failures among non-DOM-only tasks include a visible search/hierarchy component, while SoM/Vision failures more often become click-loop or grounding failures after choosing a plausible visual target. This supports the Section 5 claim that representation changes the default trajectory, not only final accuracy.
+2. **Visual channel effect: image access helps, but it also changes failure mode.** DOM has the cleanest `visual-missing` signature; SoM and Vision remove that bottleneck but introduce mark/visual grounding loops. This explains why full SoM is strong on classifieds but not a superset of DOM or Phantom-SoM.
+3. **Phantom-SoM remains a distinct routing arm, but current per-step evidence is incomplete.** The exclusive sets match §103, yet Phantom-SoM traces are absent after run clearing. The mechanism evidence for Phantom therefore rests on §103 macro behavior metrics and counterpart-mode diagnostics until the chain re-run restores Phantom JSONL. This is the only material limitation relative to the requested 200-call diag sweep.
+
+## Validation Notes
+
+- `diag_pattern_match.py` was invoked through `.venv/bin/python3` via its Python API for each relevant run/condition; no experiments were started.
+- Completed baseline scans: B0 classifieds DOM/SoM/Vision and B0 reddit DOM/SoM/Vision. Phantom-SoM scans returned zero step episodes because only summary backups are present.
+- No §103 exclusive-set mismatch was found. The main missing item is not a claim contradiction but missing Phantom-SoM step-level traces.
+
+## Appendix: Compact Pair Diagnostics
+
+| Site | Task | Winner | Failed mode | Category | P-rules | Diag excerpt |
+|---|---:|---|---|---|---|---|
+| classifieds | 11 | Vision | DOM | visual-missing | P5,P6,P14 | P5,P6,P14; 12 steps; actions scroll→scroll→scroll→scroll→scroll→click→scroll→type→…; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=7; reason=fail_no_progress |
+| classifieds | 11 | Vision | SoM | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=7; reason=fail_early_finish |
+| classifieds | 11 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 14 | SoM | DOM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=60133; reason=fail_early_finish |
+| classifieds | 14 | SoM | Vision | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=4&iPage=2&sS; reason=fail_early_finish |
+| classifieds | 14 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 16 | Vision | DOM | abandon-after-N | P5,P14 | P5,P14; 11 steps; actions type→scroll→scroll→scroll→click→scroll→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_no_progress |
+| classifieds | 16 | Vision | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=45239; reason=fail_early_finish |
+| classifieds | 16 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 40 | Vision | DOM | early-finish/wrong-commit | P14 | P14; 4 steps; actions type→click→scroll→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=60649; reason=fail_finish_eval_mismatch |
+| classifieds | 40 | Vision | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions type→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=dishwasher+; reason=fail_early_finish |
+| classifieds | 40 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 49 | SoM | DOM | visual-missing | P6 | P6; 4 steps; actions type→scroll→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=678; reason=fail_finish_eval_mismatch |
+| classifieds | 49 | SoM | Vision | element-misground | P1 | P1; 6 steps; actions click→scroll→scroll→click→click→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=14; reason=fail_finish_eval_mismatch |
+| classifieds | 49 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 52 | SoM | DOM | visual-missing | P5,P6,P14 | P5,P6,P14; 8 steps; actions select_option→click→scroll→scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=4; reason=fail_no_progress |
+| classifieds | 52 | SoM | Vision | click-loop/no-text-grounding | P14 | P14; 5 steps; actions type→click→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=wave+painting; reason=fail_incomplete_or_stuck |
+| classifieds | 52 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 60 | Phantom-SoM | DOM | visual-missing | P6,P14 | P6,P14; 3 steps; actions select_option→select_option→select_option; final_url=http://100.95.81.103:9980/; reason=fail_incomplete_or_stuck |
+| classifieds | 60 | Phantom-SoM | SoM | early-finish/wrong-commit | - | no P-rule; 5 steps; actions select_option→click→select_option→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=17379; reason=fail_finish_wrong_url_not_found |
+| classifieds | 60 | Phantom-SoM | Vision | click-loop/no-text-grounding | P14 | P14; 17 steps; actions type→type→type→type→type→type→type→type→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_no_progress |
+| classifieds | 61 | Vision | DOM | visual-missing | P6 | P6; 30 steps; actions select_option→click→select_option→click→type→click→type→select_option→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=i_price&iOrderT; reason=fail_max_steps_target_unreachable |
+| classifieds | 61 | Vision | SoM | search-loop | P13,P14 | P13,P14; 6 steps; actions type→scroll→type→type→type→type; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=video+game+; reason=fail_no_progress |
+| classifieds | 61 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 64 | Phantom-SoM | DOM | visual-missing | P5,P6,P13,P14 | P5,P6,P13,P14; 9 steps; actions type→type→scroll→scroll→scroll→scroll→type→type→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_no_progress |
+| classifieds | 64 | Phantom-SoM | SoM | visual-hijack/click-loop | P14 | P14; 30 steps; actions type→type→scroll→scroll→scroll→click→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=44459; reason=fail_max_steps_target_unreachable |
+| classifieds | 64 | Phantom-SoM | Vision | search-loop | P5,P13,P14 | P5,P13,P14; 9 steps; actions type→scroll→scroll→scroll→type→type→type→type→…; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=driving+video; reason=fail_no_progress |
+| classifieds | 93 | Phantom-SoM | DOM | visual-missing | P6,P10 | P6,P10; 6 steps; actions click→type→click→type→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=33622; reason=fail_finish_wrong_url_left_target |
+| classifieds | 93 | Phantom-SoM | SoM | early-finish/wrong-commit | P10 | P10; 6 steps; actions click→type→select_option→type→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=33622; reason=fail_finish_wrong_url_left_target |
+| classifieds | 93 | Phantom-SoM | Vision | element-misground | P1,P14 | P1,P14; 5 steps; actions type→scroll→scroll→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=39763; reason=fail_finish_wrong_url_not_found |
+| classifieds | 98 | DOM | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions type→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=red+boat+; reason=fail_early_finish |
+| classifieds | 98 | DOM | Vision | element-misground | P1,P5,P14 | P1,P5,P14; 4 steps; actions type→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=red+boat; reason=fail_no_progress |
+| classifieds | 98 | DOM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 101 | SoM | DOM | visual-missing | P6 | P6; 5 steps; actions select_option→click→select_option→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=60318; reason=fail_finish_wrong_url_not_found |
+| classifieds | 101 | SoM | Vision | click-loop/no-text-grounding | P14 | P14; 5 steps; actions click→click→click→click→click; final_url=http://100.95.81.103:9980/; reason=fail_no_progress |
+| classifieds | 101 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 106 | SoM | DOM | visual-missing | - | no P-rule; 4 steps; actions select_option→type→type→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_finish_eval_mismatch |
+| classifieds | 106 | SoM | Vision | element-misground | P1,P5,P12,P14 | P1,P5,P12,P14; 11 steps; actions select_option→select_option→click→select_option→select_option→type→click→type→…; final_url=http://100.95.81.103:9980/; reason=fail_no_progress |
+| classifieds | 106 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 111 | SoM | DOM | early-finish/wrong-commit | - | no P-rule; 4 steps; actions type→scroll→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=81897; reason=fail_finish_eval_mismatch |
+| classifieds | 111 | SoM | Vision | early-finish/wrong-commit | - | no P-rule; 2 steps; actions type→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=hockey; reason=fail_early_finish |
+| classifieds | 111 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 112 | Vision | DOM | visual-missing | P5,P14 | P5,P14; 23 steps; actions type→select_option→click→back→click→back→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=basketball+&s; reason=fail_no_progress |
+| classifieds | 112 | Vision | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions type→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=basketball+; reason=fail_early_finish |
+| classifieds | 112 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 115 | SoM | DOM | element-misground | P2,P6,P14 | P2,P6,P14; 30 steps; actions type→scroll→scroll→click→back→click→back→click→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=15342; reason=fail_max_steps_target_unreachable |
+| classifieds | 115 | SoM | Vision | element-misground | P1,P14 | P1,P14; 5 steps; actions type→click→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=brace; reason=fail_no_progress |
+| classifieds | 115 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 120 | SoM | DOM | visual-missing | P5,P6 | P5,P6; 5 steps; actions scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=7&sShowAs=ga; reason=fail_no_progress |
+| classifieds | 120 | SoM | Vision | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=7&sShowAs=ga; reason=fail_early_finish |
+| classifieds | 120 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 127 | SoM | DOM | abandon-after-N | P10,P14 | P10,P14; 6 steps; actions type→scroll→scroll→scroll→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=68187; reason=fail_finish_wrong_url_not_found |
+| classifieds | 127 | SoM | Vision | element-misground | P1 | P1; 4 steps; actions type→scroll→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=17593; reason=fail_finish_claim_missing |
+| classifieds | 127 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 130 | SoM | DOM | visual-missing | - | no P-rule; 30 steps; actions type→scroll→click→back→click→back→click→back→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=58060; reason=fail_max_steps_click_back_loop |
+| classifieds | 130 | SoM | Vision | element-misground | P1 | P1; 3 steps; actions click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_no_progress |
+| classifieds | 130 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 132 | SoM | DOM | visual-missing | P6 | P6; 30 steps; actions scroll→scroll→click→back→click→back→click→back→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=20660; reason=fail_max_steps_click_back_loop |
+| classifieds | 132 | SoM | Vision | element-misground | P1 | P1; 4 steps; actions scroll→click→click→finish; final_url=http://100.95.81.103:9980/oc-content/uploads/21697/21697.png; reason=fail_finish_empty_answer |
+| classifieds | 132 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 149 | SoM | DOM | visual-missing | P5 | P5; 5 steps; actions scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=24&sOrder=i_; reason=fail_no_progress |
+| classifieds | 149 | SoM | Vision | early-finish/wrong-commit | - | no P-rule; 3 steps; actions scroll→scroll→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=24&sOrder=i_; reason=fail_finish_eval_mismatch |
+| classifieds | 149 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 152 | Vision | DOM | visual-missing | P5 | P5; 5 steps; actions scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=22&sShowAs=g; reason=fail_no_progress |
+| classifieds | 152 | Vision | SoM | visual-hijack/click-loop | P14 | P14; 18 steps; actions type→scroll→scroll→click→back→click→back→click→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_finish_wrong_url_not_found |
+| classifieds | 152 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 160 | SoM | DOM | visual-missing | P14 | P14; 14 steps; actions scroll→scroll→type→scroll→click→type→type→click→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=41121; reason=fail_finish_eval_mismatch |
+| classifieds | 160 | SoM | Vision | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=5&sShowAs=ga; reason=fail_early_finish |
+| classifieds | 160 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 165 | SoM | DOM | visual-missing | P6,P13 | P6,P13; 30 steps; actions type→type→type→type→type→type→type→type→…; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOr; reason=fail_max_steps_target_unreachable |
+| classifieds | 165 | SoM | Vision | click-loop/no-text-grounding | P5 | P5; 5 steps; actions scroll→scroll→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=10&iPage=8; reason=fail_no_progress |
+| classifieds | 165 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 166 | SoM | DOM | visual-missing | P5,P6 | P5,P6; 6 steps; actions scroll→scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=21&iPage=11; reason=fail_no_progress |
+| classifieds | 166 | SoM | Vision | click-loop/no-text-grounding | P5 | P5; 4 steps; actions scroll→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=21&iPage=11; reason=fail_no_progress |
+| classifieds | 166 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 167 | DOM | SoM | abandon-after-N | - | no P-rule; 30 steps; actions type→click→back→click→back→click→back→click→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=72933; reason=raw_success_adjusted_false |
+| classifieds | 167 | DOM | Vision | search-loop | - | no P-rule; 13 steps; actions scroll→scroll→type→type→scroll→click→back→type→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=1465; reason=raw_success_adjusted_false |
+| classifieds | 167 | DOM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 174 | DOM | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions scroll→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=17&sOrder=i_; reason=fail_early_finish |
+| classifieds | 174 | DOM | Vision | element-misground | P1,P5 | P1,P5; 4 steps; actions scroll→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=17&sOrder=i_; reason=fail_no_progress |
+| classifieds | 174 | DOM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 184 | DOM | SoM | visual-hijack/click-loop | P14 | P14; 30 steps; actions select_option→type→select_option→scroll→scroll→scroll→scroll→click→…; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=Charizard+Pok; reason=fail_max_steps |
+| classifieds | 184 | DOM | Vision | click-loop/no-text-grounding | P14 | P14; 30 steps; actions type→click→click→scroll→click→scroll→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=Charizard+Pok; reason=fail_max_steps |
+| classifieds | 184 | DOM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 187 | SoM | DOM | visual-missing | - | no P-rule; 3 steps; actions type→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=76299; reason=fail_finish_wrong_url_not_found |
+| classifieds | 187 | SoM | Vision | element-misground | P1 | P1; 3 steps; actions click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sCategory=9&iPage=6&sS; reason=fail_no_progress |
+| classifieds | 187 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 192 | Vision | DOM | visual-missing | P14 | P14; 7 steps; actions type→click→click→click→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sOrder=i_price&iOrderT; reason=fail_no_progress |
+| classifieds | 192 | Vision | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=57831; reason=fail_early_finish |
+| classifieds | 192 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 194 | Vision | DOM | visual-missing | - | no P-rule; 4 steps; actions type→scroll→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=43845; reason=fail_finish_eval_mismatch |
+| classifieds | 194 | Vision | SoM | visual-hijack/click-loop | P14 | P14; 8 steps; actions type→click→type→type→scroll→scroll→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=80994; reason=fail_finish_eval_mismatch |
+| classifieds | 194 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 201 | Phantom-SoM | DOM | visual-missing | P5,P6,P14 | P5,P6,P14; 12 steps; actions type→scroll→scroll→scroll→scroll→click→scroll→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=snare+drum+bl; reason=fail_no_progress |
+| classifieds | 201 | Phantom-SoM | SoM | early-finish/wrong-commit | - | no P-rule; 3 steps; actions type→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=31068; reason=fail_finish_wrong_url_not_found |
+| classifieds | 201 | Phantom-SoM | Vision | abandon-after-N | P14 | P14; 6 steps; actions type→scroll→scroll→type→scroll→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=snare+drum+bl; reason=fail_finish_wrong_url_not_found |
+| classifieds | 209 | SoM | DOM | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=27156; reason=fail_early_finish |
+| classifieds | 209 | SoM | Vision | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=27156; reason=fail_early_finish |
+| classifieds | 209 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 210 | SoM | DOM | early-finish/wrong-commit | - | no P-rule; 5 steps; actions select_option→type→select_option→click→finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=32759; reason=fail_finish_wrong_url_not_found |
+| classifieds | 210 | SoM | Vision | click-loop/no-text-grounding | P14 | P14; 4 steps; actions type→click→click→click; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=lamb; reason=fail_incomplete_or_stuck |
+| classifieds | 210 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 217 | Vision | DOM | search-loop | P5,P14 | P5,P14; 18 steps; actions type→type→type→scroll→scroll→click→back→scroll→…; final_url=http://100.95.81.103:9980/index.php?page=item&id=27617; reason=fail_no_progress |
+| classifieds | 217 | Vision | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions type→finish; final_url=http://100.95.81.103:9980/index.php?page=search&sPattern=Captain%27s+L; reason=fail_early_finish |
+| classifieds | 217 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| classifieds | 222 | DOM | SoM | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=34501; reason=fail_early_finish |
+| classifieds | 222 | DOM | Vision | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9980/index.php?page=item&id=34501; reason=fail_early_finish |
+| classifieds | 222 | DOM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 2 | SoM | DOM | visual-missing | P6 | P6; 3 steps; actions type→click→finish; final_url=http://100.95.81.103:9999/f/washingtondc/136669/fbi-police-citing-driv; reason=fail_finish_wrong_url_not_found |
+| reddit | 2 | SoM | Vision | click-loop/no-text-grounding | P14 | P14; 5 steps; actions click→click→click→click→click; final_url=https://deadline.com/2023/01/cindy-williams-dead-laverne-and-shirley-s; reason=fail_incomplete_or_stuck |
+| reddit | 2 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 4 | SoM | DOM | visual-missing | P5,P6,P14 | P5,P6,P14; 21 steps; actions type→type→type→type→type→type→type→type→…; final_url=http://100.95.81.103:9999/f/OldSchoolCool/121626/in-1982-agnes-denes-c; reason=fail_no_progress |
+| reddit | 4 | SoM | Vision | click-loop/no-text-grounding | P5,P14 | P5,P14; 12 steps; actions click→type→scroll→scroll→click→click→scroll→click→…; final_url=http://100.95.81.103:9999/search?q=wheat+field+woman; reason=fail_no_progress |
+| reddit | 4 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 7 | Phantom-SoM | DOM | visual-missing | P6 | P6; 30 steps; actions type→click→type→click→type→click→type→click→…; final_url=http://100.95.81.103:9999/search?q=cranberry+rosemary+cake+recipe+; reason=raw_success_adjusted_false |
+| reddit | 7 | Phantom-SoM | SoM | visual-hijack/click-loop | P14 | P14; 11 steps; actions click→scroll→scroll→click→back→click→click→click→…; final_url=http://100.95.81.103:9999/f/food/18811/homemade-peanut-butter-chocolat; reason=raw_success_adjusted_false |
+| reddit | 7 | Phantom-SoM | Vision | element-misground | P1,P5,P14 | P1,P5,P14; 8 steps; actions type→click→click→scroll→click→click→click→click; final_url=http://100.95.81.103:9999/search?q=recipe+post+by+OP; reason=raw_success_adjusted_false |
+| reddit | 14 | SoM | DOM | visual-missing | P6,P14 | P6,P14; 7 steps; actions type→click→click→click→click→click→click; final_url=http://100.95.81.103:9999/f/nyc/66043/development-v-historical-preserv; reason=fail_incomplete_or_stuck |
+| reddit | 14 | SoM | Vision | search-loop | P13 | P13; 12 steps; actions type→type→type→type→type→type→type→type→…; final_url=http://100.95.81.103:9999/search?q=cityscape+at+dusk+with+wet+pavement; reason=fail_incomplete_or_stuck |
+| reddit | 14 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 69 | DOM | SoM | early-finish/wrong-commit | - | no P-rule; 4 steps; actions scroll→type→click→finish; final_url=http://100.95.81.103:9999/f/newhampshire/129011/new-hampshire-be-like/; reason=fail_finish_eval_mismatch |
+| reddit | 69 | DOM | Vision | early-finish/wrong-commit | - | no P-rule; 5 steps; actions scroll→click→type→click→finish; final_url=http://100.95.81.103:9999/f/newhampshire/129011/new-hampshire-be-like/; reason=fail_finish_eval_mismatch |
+| reddit | 69 | DOM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 79 | DOM | SoM | visual-hijack/click-loop | P14 | P14; 5 steps; actions type→click→click→click→finish; final_url=http://100.95.81.103:9999/f/television/92954/rick-and-morty-with-the-a; reason=fail_finish_eval_mismatch |
+| reddit | 79 | DOM | Vision | early-finish/wrong-commit | P14 | P14; 4 steps; actions type→click→scroll→finish; final_url=http://100.95.81.103:9999/f/television/92954/rick-and-morty-with-the-a; reason=fail_finish_empty_answer |
+| reddit | 79 | DOM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 81 | DOM | SoM | early-finish/wrong-commit | - | no P-rule; 3 steps; actions click→click→finish; final_url=http://100.95.81.103:9999/f/photoshopbattles; reason=fail_finish_eval_mismatch |
+| reddit | 81 | DOM | Vision | element-misground | P1 | P1; 3 steps; actions click→click→click; final_url=http://100.95.81.103:9999/f/photoshopbattles; reason=fail_no_progress |
+| reddit | 81 | DOM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 94 | Phantom-SoM | DOM | early-finish/wrong-commit | - | no P-rule; 4 steps; actions type→click→click→finish; final_url=http://100.95.81.103:9999/submission_images/e253bf35b1027ae2cb2664d5e1; reason=fail_finish_eval_mismatch |
+| reddit | 94 | Phantom-SoM | SoM | early-finish/wrong-commit | - | no P-rule; 4 steps; actions click→type→click→finish; final_url=http://100.95.81.103:9999/submission_images/6a1e28e0f5710c55d1b653fd7f; reason=fail_finish_eval_mismatch |
+| reddit | 94 | Phantom-SoM | Vision | early-finish/wrong-commit | - | no P-rule; 2 steps; actions type→finish; final_url=http://100.95.81.103:9999/search?q=f%2FEarthPorn; reason=fail_early_finish |
+| reddit | 100 | Phantom-SoM | DOM | visual-missing | P14 | P14; 22 steps; actions type→click→type→click→type→click→type→click→…; final_url=http://100.95.81.103:9999/f/pics/110740; reason=fail_finish_eval_mismatch |
+| reddit | 100 | Phantom-SoM | SoM | visual-hijack/click-loop | P5,P14 | P5,P14; 25 steps; actions click→type→click→back→click→back→click→back→…; final_url=http://100.95.81.103:9999/f/funny; reason=fail_no_progress |
+| reddit | 100 | Phantom-SoM | Vision | abandon-after-N | P14 | P14; 6 steps; actions type→scroll→scroll→click→scroll→finish; final_url=http://100.95.81.103:9999/f/tifu/135257/tifu-with-lemon-pound-cake; reason=fail_finish_empty_answer |
+| reddit | 124 | Phantom-SoM | DOM | search-loop | - | no P-rule; 14 steps; actions type→type→click→type→type→type→type→type→…; final_url=http://100.95.81.103:9999/submission_images/5b47b170a63d6de812d2ca101b; reason=fail_finish_eval_mismatch |
+| reddit | 124 | Phantom-SoM | SoM | search-loop | - | no P-rule; 4 steps; actions type→type→type→finish; final_url=http://100.95.81.103:9999/search?q=Microsoft+revenue+1980s+; reason=fail_finish_eval_mismatch |
+| reddit | 124 | Phantom-SoM | Vision | click-loop/no-text-grounding | P5,P14 | P5,P14; 12 steps; actions type→type→click→type→click→scroll→scroll→scroll→…; final_url=http://100.95.81.103:9999/forums; reason=fail_no_progress |
+| reddit | 131 | SoM | DOM | visual-missing | P6,P14 | P6,P14; 4 steps; actions type→click→click→finish; final_url=http://100.95.81.103:9999/f/dataisbeautiful; reason=fail_finish_eval_mismatch |
+| reddit | 131 | SoM | Vision | click-loop/no-text-grounding | P5,P14 | P5,P14; 5 steps; actions type→click→click→click→click; final_url=http://100.95.81.103:9999/f/IAmA/119736/i-am-mark-humphery-jenner-a-fi; reason=fail_no_progress |
+| reddit | 131 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 139 | SoM | DOM | visual-missing | P6 | P6; 1 steps; actions finish; final_url=http://100.95.81.103:9999/; reason=fail_early_finish |
+| reddit | 139 | SoM | Vision | abandon-after-N | P5,P14 | P5,P14; 6 steps; actions scroll→scroll→scroll→scroll→scroll→scroll; final_url=http://100.95.81.103:9999/; reason=fail_no_progress |
+| reddit | 139 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 142 | SoM | DOM | visual-missing | P5,P13,P14 | P5,P13,P14; 11 steps; actions type→type→type→type→type→type→type→type→…; final_url=http://100.95.81.103:9999/search?q=Creed+III+release+date+; reason=fail_no_progress |
+| reddit | 142 | SoM | Vision | early-finish/wrong-commit | - | no P-rule; 1 steps; actions finish; final_url=http://100.95.81.103:9999/f/movies/86107; reason=fail_early_finish |
+| reddit | 142 | SoM | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 148 | Vision | DOM | visual-missing | - | no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9999/submission_images/57601f433cafd96a7d3883beea; reason=fail_early_finish |
+| reddit | 148 | Vision | SoM | early-finish/wrong-commit | - | no P-rule; 2 steps; actions click→finish; final_url=http://100.95.81.103:9999/f/food/60745/homemade-arancini; reason=fail_early_finish |
+| reddit | 148 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 150 | Vision | DOM | visual-missing | P14 | P14; 7 steps; actions click→click→click→scroll→type→click→finish; final_url=http://100.95.81.103:9999/f/OldSchoolCool/35826/myself-center-in-1966/; reason=fail_finish_eval_mismatch |
+| reddit | 150 | Vision | SoM | visual-hijack/click-loop | P14 | P14; 7 steps; actions click→click→click→scroll→type→click→finish; final_url=http://100.95.81.103:9999/f/OldSchoolCool/35826/myself-center-in-1966/; reason=fail_finish_eval_mismatch |
+| reddit | 150 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 152 | Vision | DOM | visual-missing | - | no P-rule; 5 steps; actions scroll→type→type→type→type; final_url=http://100.95.81.103:9999/f/OldSchoolCool/15059; reason=fail_no_progress |
+| reddit | 152 | Vision | SoM | other | - | no P-rule; 4 steps; actions scroll→type→type→type; final_url=http://100.95.81.103:9999/f/OldSchoolCool/15059; reason=fail_no_progress |
+| reddit | 152 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
+| reddit | 162 | Phantom-SoM | DOM | search-loop | P14 | P14; 30 steps; actions type→click→type→click→type→type→click→click→…; final_url=http://100.95.81.103:9999/; reason=fail_max_steps_search_repeat |
+| reddit | 162 | Phantom-SoM | SoM | search-loop | P13 | P13; 6 steps; actions type→type→type→type→type→finish; final_url=http://100.95.81.103:9999/search?q=retirement+account+vs+brokerage+acc; reason=fail_finish_claim_missing |
+| reddit | 162 | Phantom-SoM | Vision | search-loop | P13 | P13; 5 steps; actions type→type→type→type→finish; final_url=http://100.95.81.103:9999/search?q=%2Ff%2Fwallstreetbets; reason=fail_finish_claim_missing |
+| reddit | 179 | Vision | DOM | visual-missing | P6 | P6; 30 steps; actions click→type→type→type→type→type→type→click→…; final_url=http://100.95.81.103:9999/search?q=Missouri+city+discussion+; reason=fail_max_steps_search_repeat |
+| reddit | 179 | Vision | SoM | abandon-after-N | - | no P-rule; 30 steps; actions type→type→click→type→type→type→type→type→…; final_url=http://100.95.81.103:9999/search?q=St.+Louis+forum+; reason=fail_max_steps_search_repeat |
+| reddit | 179 | Vision | Phantom-SoM | trace-unavailable | - | summary-only: step trace unavailable after run clear; counted from adjusted_success summary. |
