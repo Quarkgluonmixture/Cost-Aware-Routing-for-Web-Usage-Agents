@@ -246,6 +246,25 @@ def main() -> None:
         for col, metric in enumerate(METRICS):
             draw_panel(axes[row, col], site, metric, values[site])
 
+    axes[1, 0].text(
+        0.02,
+        0.96,
+        "OSClass tasks intrinsically use search pages;\n"
+        "this is search-page coverage, not a\n"
+        "cross-site failure-loop metric.",
+        transform=axes[1, 0].transAxes,
+        ha="left",
+        va="top",
+        fontsize=7.4,
+        color="#5c3b00",
+        bbox={
+            "boxstyle": "round,pad=0.28",
+            "facecolor": "#fff4d6",
+            "edgecolor": "#c28f2c",
+            "alpha": 0.9,
+        },
+    )
+
     fig.text(0.015, 0.69, SITE_LABELS["reddit"], rotation=90, va="center", ha="center", fontsize=12, fontweight="bold")
     fig.text(0.015, 0.29, SITE_LABELS["classifieds"], rotation=90, va="center", ha="center", fontsize=12, fontweight="bold")
     fig.suptitle("Strategy Gradient: Representation Changes Exploration Shape", fontsize=14, fontweight="bold")
@@ -253,7 +272,8 @@ def main() -> None:
         0.5,
         0.025,
         "Reddit row uses §103/current N=48 verified anchors. Classifieds row is live-computed from step JSONL; "
-        "OSClass search detection uses 'page=search'. * Phantom-SoM classifieds has stale summaries but no step JSONL, so metrics are n/a.",
+        "OSClass search detection uses 'page=search' and measures search-page coverage, not failure-mode looping; "
+        "cross-site comparison is not valid for this column. * Phantom-SoM classifieds has stale summaries but no step JSONL, so metrics are n/a.",
         ha="center",
         fontsize=8.5,
         color="#555555",
