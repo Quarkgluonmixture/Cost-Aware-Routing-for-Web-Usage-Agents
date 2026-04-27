@@ -58,6 +58,7 @@ SPECS = [
     ConditionSpec("B0", "reddit", "DOM", RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0", 210),
     ConditionSpec("B0", "reddit", "SoM", RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0", 210),
     ConditionSpec("B0", "reddit", "Vision", RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0", 210),
+    ConditionSpec("B0", "reddit", "Phantom-DOM", RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0", 210),
     ConditionSpec("B1", "classifieds", "DOM", RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0", 234),
     ConditionSpec("B1", "classifieds", "SoM", RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0", 234),
     ConditionSpec("B1", "classifieds", "Vision", RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0", 234),
@@ -74,11 +75,13 @@ def task_id(path: Path) -> int:
     return int(match.group(1))
 
 
-def load_adjusted_sr(condition_dir: Path) -> tuple[float, int]:
+def episode_summary(condition_dir: Path) -> dict[str, float | int | None]:
     episodes_dir = condition_dir / "episodes"
     files = sorted(episodes_dir.glob("*_summary_v2.json"))
     seen: set[int] = set()
     successes = 0
+    total_cost = total_model_cost = total_latency_ms = total_energy_kwh = 0.0
+    cost_n = model_cost_n = latency_n = energy_n = 0
     for path in files:
         tid = task_id(path)
         if tid in seen:
@@ -88,18 +91,48 @@ def load_adjusted_sr(condition_dir: Path) -> tuple[float, int]:
         with path.open() as f:
             record = json.load(f)
         successes += bool(record.get("adjusted_success", record.get("success", False)))
+        if record.get("total_cost_usd") is not None:
+            total_cost += float(record["total_cost_usd"])
+            cost_n += 1
+        if record.get("total_model_cost_usd") is not None:
+            total_model_cost += float(record["total_model_cost_usd"])
+            model_cost_n += 1
+        if record.get("total_latency_ms") is not None:
+            total_latency_ms += float(record["total_latency_ms"])
+            latency_n += 1
+        if record.get("total_energy_kwh") is not None:
+            total_energy_kwh += float(record["total_energy_kwh"])
+            energy_n += 1
     if not seen:
         raise FileNotFoundError(f"No episode summaries under {episodes_dir}")
-    return 100.0 * successes / len(seen), len(seen)
+    return {
+        "adjusted_sr": 100.0 * successes / len(seen),
+        "n": len(seen),
+        "avg_total_cost_usd": total_cost / cost_n if cost_n else None,
+        "avg_total_model_cost_usd": total_model_cost / model_cost_n if model_cost_n else None,
+        "avg_total_latency_ms": total_latency_ms / latency_n if latency_n else None,
+        "avg_total_energy_kwh": total_energy_kwh / energy_n if energy_n else None,
+    }
 
 
 def load_point(spec: ConditionSpec) -> Point | None:
     summary_path = spec.condition_dir / "condition_summary_v2.json"
-    if not summary_path.exists():
-        print(f"[warn] missing condition summary: {summary_path}", file=sys.stderr)
-        return None
-    with summary_path.open() as f:
-        summary = json.load(f)
+    ep_summary = episode_summary(spec.condition_dir)
+    if summary_path.exists():
+        with summary_path.open() as f:
+            summary = json.load(f)
+    else:
+        print(
+            f"[warn] missing condition summary, using episode-summary fallback: {summary_path}",
+            file=sys.stderr,
+        )
+        summary = {
+            "avg_total_cost_usd": ep_summary["avg_total_cost_usd"],
+            "avg_total_model_cost_usd": ep_summary["avg_total_model_cost_usd"],
+            "avg_total_latency_ms": ep_summary["avg_total_latency_ms"],
+            "avg_total_energy_kwh": ep_summary["avg_total_energy_kwh"],
+            "success_rate": None,
+        }
     cost = summary.get("avg_total_cost_usd")
     if cost is None or float(cost) <= 0:
         print(
@@ -108,7 +141,8 @@ def load_point(spec: ConditionSpec) -> Point | None:
             file=sys.stderr,
         )
         return None
-    adjusted_sr, n = load_adjusted_sr(spec.condition_dir)
+    adjusted_sr = float(ep_summary["adjusted_sr"])
+    n = int(ep_summary["n"])
     latency_ms = summary.get("avg_total_latency_ms")
     point = Point(
         model=spec.model,
@@ -157,6 +191,7 @@ def annotate_point(ax: plt.Axes, point: Point, index: int) -> None:
         ("reddit", "B0", "DOM"): (8, 8),
         ("reddit", "B0", "SoM"): (8, -22),
         ("reddit", "B0", "Vision"): (-42, 10),
+        ("reddit", "B0", "Phantom-DOM"): (-66, 12),
         ("reddit", "B1", "DOM"): (-54, -18),
         ("reddit", "B1", "SoM"): (12, 22),
         ("reddit", "B1", "Vision"): (-50, 24),
@@ -175,8 +210,6 @@ def annotate_point(ax: plt.Axes, point: Point, index: int) -> None:
 
 def draw_pending(ax: plt.Axes, site: str) -> None:
     pending = "pending: B0 Phantom-SoM, B1 Phantom"
-    if site == "reddit":
-        pending += ", Phantom-DOM"
     ax.text(
         0.98,
         0.04,
@@ -187,6 +220,88 @@ def draw_pending(ax: plt.Axes, site: str) -> None:
         fontsize=8,
         color="#777777",
         bbox={"boxstyle": "round,pad=0.3", "facecolor": "white", "edgecolor": "#bdbdbd", "linestyle": "dotted"},
+    )
+
+
+def point_by(points: list[Point], site: str, model: str, mode: str) -> Point | None:
+    return next((point for point in points if point.site == site and point.model == model and point.mode == mode), None)
+
+
+def add_deployment_callouts(ax: plt.Axes, site: str, site_points: list[Point]) -> None:
+    dom = point_by(site_points, site, "B0", "DOM")
+    som = point_by(site_points, site, "B0", "SoM")
+    phantom = point_by(site_points, site, "B0", "Phantom-DOM")
+    if not dom or not som or not phantom:
+        print(f"[warn] {site}: deployment callout skipped; missing DOM/SoM/Phantom-DOM point", file=sys.stderr)
+        return
+
+    color = "#7a3f6d"
+    if site == "classifieds":
+        box_xy = (0.014, 24.5)
+        arrow_y = 18.1
+        label_y_offset = 0.7
+    else:
+        box_xy = (0.014, 15.7)
+        arrow_y = 12.6
+        label_y_offset = 0.45
+
+    callout = (
+        "Phantom-DOM ~= DOM cost\n"
+        f"({phantom.adjusted_sr:.1f}% vs {dom.adjusted_sr:.1f}% adj SR)"
+    )
+    ax.annotate(
+        callout,
+        xy=(phantom.cost, phantom.adjusted_sr),
+        xytext=box_xy,
+        textcoords="data",
+        fontsize=9,
+        fontweight="bold",
+        color=color,
+        bbox={"boxstyle": "round,pad=0.35", "facecolor": "#f7edf4", "edgecolor": color, "alpha": 0.85},
+        arrowprops={"arrowstyle": "->", "color": color, "lw": 1.5},
+        zorder=5,
+    )
+    ax.annotate(
+        "",
+        xy=(dom.cost, dom.adjusted_sr),
+        xytext=box_xy,
+        textcoords="data",
+        arrowprops={"arrowstyle": "->", "color": color, "lw": 1.2, "alpha": 0.85},
+        zorder=5,
+    )
+
+    ratio = som.cost / phantom.cost
+    label = f"{ratio:.1f}x measured cost"
+    if abs(ratio - 3.5) > 0.4:
+        print(
+            f"[warn] {site}: requested ~3.5x SoM/Phantom-DOM cost gap is not in "
+            f"avg_total_cost_usd; live ratio={ratio:.2f}x",
+            file=sys.stderr,
+        )
+    x0, x1 = sorted([phantom.cost, som.cost])
+    ax.annotate(
+        "",
+        xy=(x1, arrow_y),
+        xytext=(x0, arrow_y),
+        arrowprops={"arrowstyle": "<->", "color": "#9a3412", "lw": 1.5},
+        zorder=4,
+    )
+    ax.text(
+        (x0 + x1) / 2,
+        arrow_y + label_y_offset,
+        label,
+        ha="center",
+        va="bottom",
+        fontsize=9,
+        color="#9a3412",
+        fontweight="bold",
+        bbox={"boxstyle": "round,pad=0.25", "facecolor": "#fff7ed", "edgecolor": "#9a3412", "alpha": 0.85},
+        zorder=5,
+    )
+    print(
+        f"[annot] {site}: callout_box={box_xy} DOM=({dom.cost:.4f},{dom.adjusted_sr:.2f}) "
+        f"Phantom-DOM=({phantom.cost:.4f},{phantom.adjusted_sr:.2f}) "
+        f"SoM=({som.cost:.4f},{som.adjusted_sr:.2f}) ratio={ratio:.2f}x arrow_y={arrow_y}"
     )
 
 
@@ -230,13 +345,15 @@ def draw_site(ax: plt.Axes, site: str, points: list[Point]) -> None:
     partials = [point for point in site_points if point.n != point.expected_n]
     if partials:
         partial_text = "\n".join(f"{p.model} {p.mode} n={p.n}/{p.expected_n} partial" for p in partials)
+        partial_y = 0.08 if site == "reddit" else 0.96
+        partial_va = "bottom" if site == "reddit" else "top"
         ax.text(
             0.03,
-            0.96,
+            partial_y,
             partial_text,
             transform=ax.transAxes,
             ha="left",
-            va="top",
+            va=partial_va,
             fontsize=8,
             color="#9a3412",
             bbox={"boxstyle": "round,pad=0.3", "facecolor": "#fff7ed", "edgecolor": "#fed7aa"},
@@ -252,6 +369,7 @@ def draw_site(ax: plt.Axes, site: str, points: list[Point]) -> None:
     ax.grid(color="#dddddd", linewidth=0.8)
     ax.set_axisbelow(True)
     ax.set_xlabel("avg_total_cost_usd per task")
+    add_deployment_callouts(ax, site, site_points)
 
 
 def main() -> None:
