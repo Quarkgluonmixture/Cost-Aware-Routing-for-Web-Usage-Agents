@@ -9,6 +9,13 @@
 
 ## 0.0 今晚 (2026-04-27) Progress Dashboard ⭐
 
+### Infra 修复
+
+| 修复 | 状态 | Commits / Notes |
+|---|---|---|
+| **Magento base_url 复发** (docker restart 后 redirect 退回 metis, shopping reset FAIL 3 次) | ✅ **fixed + 三层持久化** | quark side: `magento_baseurl_fix.sh` 维护脚本 + `start_vwa_docker.sh` hook + `reset_shopping.sh` 移除 hardcode localhost; DGX side: `reset_vwa_sites.sh` 加 defensive curl health check 验证 redirect ≠ metis |
+| DGX→shopping 可达性 | ✅ HTTP 200 OK (no metis redirect, 04-27 23:00 verify) | shopping 7770 + shopping_admin 7780 都 OK |
+
 ### 论证 / Framing 升级（paper-level）
 
 | 升级项 | Commit | 影响 |
@@ -742,7 +749,8 @@ CO2 维度单独 fig E (regional sensitivity, 见 §4.5.9 Option D), 不塞主 P
 | B0 phantom_classifieds 04-26 跑过 234 ep on 04-24 reset state, cleared for paper-grade | 待 chain re-run | none |
 | Phantom-SoM step traces unavailable for cleared runs | 待 chain re-run done | ~30h |
 | WA tasks 5 reddit 含"image" intent keyword (5/106) | 不 codex audit (verified 100% non-visual benchmark) | n/a |
-| Magento auth bug (cookie domain split) | ✅ 已 fix (commit 7150db8) | quark side base_url 改 IP |
+| Magento auth bug (cookie domain split) | ✅ initially fix `7150db8` | quark side base_url 改 IP |
+| **Magento base_url 复发 (04-27)** — docker restart 后 base_url 退回 metis, shopping reset FAIL 3 次 | ✅ **fixed + 持久化** (quark side 三层: `magento_baseurl_fix.sh` + `start_vwa_docker.sh` hook + `reset_shopping.sh` 不再 hardcode localhost; DGX side 加 post-reset redirect health check) | DGX-quark reset chain 走 PowerShell, 持久化在 quark linux side, 加 defensive curl check on DGX 验证 redirect target ≠ metis |
 
 ---
 

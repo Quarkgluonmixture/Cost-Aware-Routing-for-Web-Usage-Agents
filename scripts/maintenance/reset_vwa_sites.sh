@@ -50,5 +50,24 @@ reset_vwa_sites() {
     else
         echo "[${label}][reset_vwa] WARNING: reset 失败 rc=${rc}（继续执行）"
     fi
+
+    # DGX-side defensive check: Magento base_url 复发是历史 bug, 持久化在 quark
+    # side 已做三层 (commit on quark: magento_baseurl_fix.sh + start_vwa_docker.sh
+    # + reset_shopping.sh), 这里加个 reachability+redirect 验证作为 belt-and-
+    # suspenders. 仅 warn, 不 fail (避免 reset rc 干扰上游 chain).
+    if [[ "${site}" == "shopping" || "${site}" == "shopping_admin" || "${site}" == "all" ]]; then
+        for shop_site in shopping shopping_admin; do
+            [[ "${site}" != "all" && "${site}" != "${shop_site}" ]] && continue
+            local port="7770"
+            [[ "${shop_site}" == "shopping_admin" ]] && port="7780"
+            local url="http://100.95.81.103:${port}/"
+            local redirect
+            redirect=$(curl -sS -o /dev/null --max-time 10 -w "%{redirect_url}" -I "${url}" 2>/dev/null || echo "")
+            if [[ "${redirect}" == *metis* ]]; then
+                echo "[${label}][reset_vwa] ⚠️ ${shop_site} 又 redirect 到 metis (${redirect}). 需 quark side magento_baseurl_fix.sh 重跑."
+            fi
+        done
+    fi
+
     return $rc
 }
