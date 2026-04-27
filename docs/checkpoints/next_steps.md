@@ -76,12 +76,12 @@ ETA paper-grade clean cls + red full 4-mode matrix: **~36h from now**
 |---|---|---|
 | Section 4 draft (1725 words) + 4 figure scripts | docs/analysis/paper_drafts/section4_empirical_findings.md + scripts/analysis/figures/ | bfe0154 |
 | Disagreement task cluster analysis (B0 cls+red) | results/phantom_paper/analyses/disagreement_clusters.md | ded0ef6 |
+| **B1 disagreement capability contrast** (B0 vs B1 SoM hijack flip +43.7pp ⭐) | append to disagreement_clusters.md (90 fail pairs, 9 categories) | **c4b52c3** |
 
 ### 2.2 现在能发包（数据 ready, paper-value 高）
 
 | Task | Estimated tokens | 输出位置 | Paper value |
 |---|---|---|---|
-| **B1 disagreement cluster analysis** (mirror Tier 1A on B1) | ~500K | append to disagreement_clusters.md | ⭐⭐⭐ capability × representation 关键 evidence |
 | **Cross-mode trajectory diff (Tier 1B)** | ~700K | results/phantom_paper/analyses/trajectory_diff.md | ⭐⭐ paper figure visualization power |
 | **Codex audit category × failure pattern correlation** | ~200K | append to disagreement_clusters.md or new file | ⭐⭐ Section 5 quantitative anchor |
 | **Section 1 Intro draft** | ~15K | docs/analysis/paper_drafts/section1_intro.md | ⭐ paper hook |
