@@ -3,36 +3,49 @@
 > 中央 plan 文档。汇总所有 pending experiments / analyses / paper-writing tasks。
 > 实验笔记 (`docs/checkpoints/实验笔记.md`) 顶部"行动规划"区是 quick reference，
 > 这个文档是详细 owner / blocker / ETA 跟踪。
-> 最后更新：2026-04-27 evening
+> 最后更新：2026-04-27 ~20:00 (B0 phantom_dom_classifieds fresh 234/234 done)
 
 ---
 
 ## 当前 status snapshot
 
 ```
-Active processes (7):
-  ├─ runner B0_phantom_dom_classifieds (running, ~30+ ep)
-  ├─ runner B0_phantom_dom_reddit (running, ~few ep)
-  ├─ watchdog B0_phantom_dom_classifieds
-  ├─ watchdog B0_phantom_dom_reddit
-  ├─ chain orchestrator B0 cls (dom,som)
-  ├─ chain orchestrator B0 red (dom,som)
-  └─ queue_b1_after_b0 sequencer
+Active processes:
+  ├─ runner B0_phantom_som_classifieds  (re-run, fresh 04-27 reset, 4 ep, ~3-6h ETA)
+  ├─ runner B0_phantom_dom_reddit       (running, 65 ep, ~2-3h ETA)
+  ├─ watchdog × 2
+  ├─ chain orchestrator B0 cls (waiting som re-run done)
+  ├─ chain orchestrator B0 red (waiting dom done → reset → som re-run)
+  └─ queue_b1_after_b0 sequencer (waiting all B0 chains)
 
 Active data (paper-grade clean):
   ├─ B0 cls + red 3-mode baseline (rederived 04-27, 数字 stable per §103)
   ├─ B1 cls + red 3-mode baseline (rederived 04-27)
-  └─ B0 phantom_dom cls + red (跑中)
+  ├─ B0 phantom_dom cls (FRESH 04-27 reset, 234/234 ✅ DONE)
+  └─ B0 phantom_dom red (跑中 65/210)
 
 Cleared / pending re-run:
-  ├─ B0 phantom_classifieds (待 chain re-run after dom)
-  ├─ B0 phantom_reddit (同上)
+  ├─ B0 phantom_som cls (re-running 现在 fresh, 4 ep)
+  ├─ B0 phantom_som red (待 chain re-run after dom)
   ├─ B1 phantom_reddit (待 queue_b1_after_b0 trigger)
   ├─ B1 phantom_classifieds (同上)
   └─ All shopping data (cleared, 等 Myriad)
 ```
 
-ETA paper-grade clean cls + red full 4-mode matrix: **~36h from now**
+### 04-27 fresh data: B0 phantom_dom_classifieds 234/234 完整 ⭐
+
+| Mode | N | raw | adj | FP gap |
+|---|---:|---:|---:|---:|
+| DOM (baseline) | 234 | 14.96% | 14.10% | 0.85pp |
+| **SoM** (baseline) | 234 | **23.08%** | **21.37%** | 1.71pp |
+| Vision (baseline) | 234 | 15.81% | 13.68% | 2.14pp |
+| **Phantom-DOM** (FRESH) | 234 | **16.67%** | **14.53%** | 2.14pp |
+
+Note: Phantom-DOM **adj 14.53% ≈ DOM 14.10%** (基本持平), raw **16.67% > DOM 14.96%**.
+Section 4 draft + figures 用的是 §103 之前 stale 数据 (Phantom-DOM 12.50%)，
+**需要 update with fresh numbers** (待 phantom_som re-run done 后一起 update).
+
+ETA paper-grade clean cls + red full 4-mode matrix: **~30h from now**
 
 ---
 
@@ -77,11 +90,20 @@ ETA paper-grade clean cls + red full 4-mode matrix: **~36h from now**
 | Section 4 draft (1725 words) + 4 figure scripts | docs/analysis/paper_drafts/section4_empirical_findings.md + scripts/analysis/figures/ | bfe0154 |
 | Disagreement task cluster analysis (B0 cls+red) | results/phantom_paper/analyses/disagreement_clusters.md | ded0ef6 |
 | **B1 disagreement capability contrast** (B0 vs B1 SoM hijack flip +43.7pp ⭐) | append to disagreement_clusters.md (90 fail pairs, 9 categories) | **c4b52c3** |
+| **Section 2 Background + paper.bib** (1514 words, 16 bibtex entries) | docs/analysis/paper_drafts/section2_background.md + results/phantom_paper/paper.bib | **206cd93** |
 
-### 2.2 现在能发包（数据 ready, paper-value 高）
+### 2.2 已发包跑中
+
+| Task | Status | ETA |
+|---|---|---|
+| **Section 1 Intro draft** (~600-800 words) | 已发 codex (just sent) | ~30-60min |
+
+### 2.3 现在能发包（数据 ready, paper-value 高）
 
 | Task | Estimated tokens | 输出位置 | Paper value |
 |---|---|---|---|
+| **Section 3 Phantom-SoM Definition + Ablation Setup** (待 Section 1 done, sequential 一致性) | ~18K | docs/analysis/paper_drafts/section3_definition.md | ⭐⭐ structure 必备 |
+| **Section 4 + figures update with fresh numbers** (Phantom-DOM cls 12.50→14.53 / others 等 phantom_som re-run) | ~10K | update existing | ⭐ data accuracy |
 | **Cross-mode trajectory diff (Tier 1B)** | ~700K | results/phantom_paper/analyses/trajectory_diff.md | ⭐⭐ paper figure visualization power |
 | **Codex audit category × failure pattern correlation** | ~200K | append to disagreement_clusters.md or new file | ⭐⭐ Section 5 quantitative anchor |
 | **Section 1 Intro draft** | ~15K | docs/analysis/paper_drafts/section1_intro.md | ⭐ paper hook |
