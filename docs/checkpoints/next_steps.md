@@ -137,10 +137,12 @@ Critical path A 完整 ETA: ~Friday 凌晨 (04-30 / 05-01)
 | **B0 red** | ✅ stable | ✅ stable | ✅ stable | ⏳ 待 chain | 🔄 跑中 123/210 |
 | **B1 cls** | ✅ stable | ✅ stable | ✅ stable | ⏳ 待 queue_b1 | ⏳ 待 queue_b1 |
 | **B1 red** | ✅ stable | ✅ stable | ✅ stable | ⏳ 待 queue_b1 | ⏳ 待 queue_b1 |
-| Shopping (B0/B1) | ❌ cleared 待 Myriad | ❌ | ❌ | ❌ | ❌ |
+| **B1 shopping** | 🟡 466 ep pre-Magento-fix (待 clear+重跑) | 🟡 4 ep partial | ❌ 0 ep | ❌ | ❌ |
+| B0 shopping | ❌ cleared 待 Myriad | ❌ | ❌ | ❌ | ❌ |
 | WA (3 sites × B0/B1) | ❌ 未跑 | ❌ | ❌ | ❌ | ❌ |
 
 **paper-ready**: baseline 12/20 (60%) + phantom 1/8 (12.5%) (与昨晚相同, 但 phantom 重跑进度推进)
+**Shopping 状态修正 (2026-04-27 23:40)**: B1 shopping DOM 466 ep 实际仍存（之前误标 cleared）, 跑期间 Magento bug 可能 active, 决策 clear+重跑 (timing ~Wed advisor align #1 后)
 
 ### 0.2 分析层完备性
 
@@ -751,6 +753,7 @@ CO2 维度单独 fig E (regional sensitivity, 见 §4.5.9 Option D), 不塞主 P
 | WA tasks 5 reddit 含"image" intent keyword (5/106) | 不 codex audit (verified 100% non-visual benchmark) | n/a |
 | Magento auth bug (cookie domain split) | ✅ initially fix `7150db8` | quark side base_url 改 IP |
 | **Magento base_url 复发 (04-27)** — docker restart 后 base_url 退回 metis, shopping reset FAIL 3 次 | ✅ **fixed + 持久化** (quark side 三层: `magento_baseurl_fix.sh` + `start_vwa_docker.sh` hook + `reset_shopping.sh` 不再 hardcode localhost; DGX side 加 post-reset redirect health check) | DGX-quark reset chain 走 PowerShell, 持久化在 quark linux side, 加 defensive curl check on DGX 验证 redirect target ≠ metis |
+| **B1 shopping DOM 466 ep 跑期间 Magento bug 状态不明** (04-23 → 04-24, 在 fix 之前) | 🟡 **决策**: clear+重跑 (paper-grade 协议一致性) | timing: 等 Critical path A done (~Wed) + advisor align #1 后；推荐 rename 旧 run dir `_pre_magento_fix` 保留 reference |
 
 ---
 
