@@ -102,26 +102,38 @@ Wall-time breakdown:
 | Disagreement task cluster analysis (B0 cls+red) | results/phantom_paper/analyses/disagreement_clusters.md | ded0ef6 |
 | **B1 disagreement capability contrast** (B0 vs B1 SoM hijack flip +43.7pp ⭐) | append to disagreement_clusters.md (90 fail pairs, 9 categories) | **c4b52c3** |
 | **Section 2 Background + paper.bib** (1514 words, 16 bibtex entries) | docs/analysis/paper_drafts/section2_background.md + results/phantom_paper/paper.bib | **206cd93** |
+| **Section 1 Introduction** (786 words) | docs/analysis/paper_drafts/section1_intro.md | **62c1380** |
+| **Section 3 Phantom-SoM Definition + Ablation Setup** (863 words) | docs/analysis/paper_drafts/section3_definition.md | **13b9608** |
+| **figs 5/6/7 + fig1/2 update** (2x2 panels with B0/B1, Codex audit heatmap, capability contrast, fig7 placeholder) | results/phantom_paper/figures/ | **5736fb4** |
 
 ### 2.2 已发包跑中
 
-| Task | Status | ETA |
-|---|---|---|
-| **Section 1 Intro draft** (~600-800 words) | 已发 codex (just sent) | ~30-60min |
+(空 — 等待 codex 接下来任务派发)
 
-### 2.3 现在能发包（数据 ready, paper-value 高）
+### 2.3 Figures 当前数据完整度审计 (2026-04-27)
+
+| Figure | 数据完整度 | 备注 |
+|---|---|---|
+| fig1 4-mode venn (2x2) | ~63% | B0 Phantom-SoM `.bak_pre_rederive` (stale) + B1 Phantom-SoM 整列 N/A |
+| fig2 drop-one oracle (2x2) | ~63% | 同上 |
+| fig3 strategy gradient | ✅ 100% | §103 verified N=48 anchors |
+| fig4 two-knob diagram | ✅ 100% | schematic, 无数据 |
+| fig5 category × mode heatmap | ~70% | B0 Phantom-SoM stale + reddit Phantom-DOM partial |
+| fig6 capability contrast | ✅ 100% | parses disagreement_clusters.md aggregate |
+| fig7 cost-SR frontier | 0% | placeholder; **数据 ready，待 codex 填实** |
+
+→ 数据完整后 `make figures` 一键 regen，scaffolding 已备。
+
+### 2.4 现在能发包（不依赖 phantom 重跑，数据 ready）
 
 | Task | Estimated tokens | 输出位置 | Paper value |
 |---|---|---|---|
-| **Section 3 Phantom-SoM Definition + Ablation Setup** (待 Section 1 done, sequential 一致性) | ~18K | docs/analysis/paper_drafts/section3_definition.md | ⭐⭐ structure 必备 |
-| **Section 4 + figures update with fresh numbers** (Phantom-DOM cls 12.50→14.53 / others 等 phantom_som re-run) | ~10K | update existing | ⭐ data accuracy |
-| **Cross-mode trajectory diff (Tier 1B)** | ~700K | results/phantom_paper/analyses/trajectory_diff.md | ⭐⭐ paper figure visualization power |
-| **Codex audit category × failure pattern correlation** | ~200K | append to disagreement_clusters.md or new file | ⭐⭐ Section 5 quantitative anchor |
-| **Section 1 Intro draft** | ~15K | docs/analysis/paper_drafts/section1_intro.md | ⭐ paper hook |
-| **Section 2 Background + bibtex** | ~35K | docs/analysis/paper_drafts/section2_background.md + paper.bib | ⭐⭐ |
-| **Section 3 Phantom-SoM Definition** | ~18K | docs/analysis/paper_drafts/section3_definition.md | ⭐ |
+| **fig7 实数据填充** (cost vs adj-SR Pareto, B0/B1 baseline 6 cells + B0 Phantom-DOM cls) | ~80K | scripts/analysis/figures/fig7_cost_sr_frontier.py + .png | ⭐⭐ paper 核心 figure |
+| **Cross-site cluster consolidation** (cls vs red site-agnostic vs site-specific patterns) | ~200K | results/phantom_paper/analyses/cross_site_pattern_consolidation.md | ⭐⭐ Section 4/6 evidence |
+| **B1 capability profile 单独文档** (B1 cls/red 三模式 trajectory + capability vs B0) | ~300K | docs/analysis/B1_capability_profile.md | ⭐ Section 6 cross-model 准备 |
+| **Codex audit shopping VWA tasks** (466 tasks, A/B/C/D 分类) | ~500K | docs/analysis/cross_sites/codex_audit_shopping.json | ⭐ fig5 扩 shopping panel |
 
-### 2.3 等数据后发（codex prompt 已 prep，等 trigger）
+### 2.5 等数据后发（codex prompt 已 prep，等 trigger）
 
 | Task | Blocker | 触发条件 |
 |---|---|---|
