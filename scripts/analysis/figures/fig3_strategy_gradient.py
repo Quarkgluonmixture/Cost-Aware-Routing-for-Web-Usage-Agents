@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Strategy-gradient bars for reddit observation/prompt variants.
+"""Strategy-gradient bars for reddit and classifieds observation variants.
 
-The plotted Phantom-DOM ablation points use the verified N=48 notes supplied in
-§103/current checkpoint context. The script also counts local episode/step JSON
-where present as a sanity check, but does not replace verified values on mismatch.
+The reddit row keeps the verified §103 / N=48 anchor values. The classifieds
+row is computed live from available step JSONL files. Phantom-SoM classifieds
+currently has only stale summary backups and no step JSONL, so it is shown as
+n/a with a stale-data footnote.
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig3_strategy_gradient.png"
 
 MODES = ["DOM", "Vision", "SoM", "Phantom-SoM", "Phantom-DOM"]
+METRICS = ["Search-loop %", "Type action %", "Scroll action %", "Self-correction / ep"]
 COLORS = {
     "DOM": "#4c78a8",
     "Vision": "#54a24b",
@@ -37,7 +39,7 @@ COLORS = {
 #   Phantom-DOM search-loop 10.8; 5/5 macro metrics Phantom-DOM = Phantom-SoM.
 # - N=26 table in §103 supplies type/scroll/self-correction anchors for the
 #   ablation subset; we keep Phantom-DOM equal to Phantom-SoM per the N=48 note.
-VERIFIED = {
+REDDIT_VERIFIED = {
     "Search-loop %": {
         "DOM": 22.7,
         "Vision": None,
@@ -69,12 +71,23 @@ VERIFIED = {
 }
 
 STEP_DIRS = {
-    "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-    "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-    "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-    "Phantom-SoM": RESULTS / "run_reddit_1777238854_ef9c4b/phase1_phantom_som_router_0/episodes",
-    "Phantom-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+    "reddit": {
+        "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
+        "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
+        "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
+        "Phantom-SoM": RESULTS / "run_reddit_1777238854_ef9c4b/phase1_phantom_som_router_0/episodes",
+        "Phantom-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+    },
+    "classifieds": {
+        "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
+        "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
+        "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+        "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes/.bak_pre_rederive",
+        "Phantom-DOM": RESULTS / "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+    },
 }
+SITE_LABELS = {"reddit": "Reddit (Postmill)", "classifieds": "Classifieds (OSClass)"}
+SEARCH_MARKERS = {"reddit": ("/search",), "classifieds": ("page=search", "/search")}
 
 
 def read_steps(path: Path) -> list[dict]:
@@ -89,20 +102,30 @@ def read_steps(path: Path) -> list[dict]:
 
 
 def step_task_id(path: Path) -> int:
-    return int(re.search(r"task_(\d+)_steps", path.name).group(1))
+    match = re.search(r"task_(\d+)_steps", path.name)
+    if not match:
+        raise ValueError(f"Cannot parse task id from {path}")
+    return int(match.group(1))
 
 
-def compute_available_metrics() -> dict[str, dict[str, float]]:
-    out: dict[str, dict[str, float]] = {}
-    for mode, ep_dir in STEP_DIRS.items():
-        files = list(ep_dir.rglob("reddit_task_*_steps_v2.jsonl"))
+def is_search_url(site: str, url: str) -> bool:
+    return any(marker in url for marker in SEARCH_MARKERS[site])
+
+
+def compute_available_metrics(site: str, step_dirs: dict[str, Path]) -> dict[str, dict[str, float | None]]:
+    out: dict[str, dict[str, float | None]] = {}
+    for mode, ep_dir in step_dirs.items():
+        files = sorted(ep_dir.glob(f"{site}_task_*_steps_v2.jsonl"))
         if not files:
-            print(f"[warn] no step JSONL found for {mode}; using verified constants only", file=sys.stderr)
+            print(f"[warn] {site} {mode}: no step JSONL found; plotting n/a or verified anchor", file=sys.stderr)
+            out[mode] = {metric: None for metric in METRICS}
             continue
         total = typed = scrolled = 0
         search_loop_eps = 0
         selfcorr = 0
+        task_ids = set()
         for path in files:
+            task_ids.add(step_task_id(path))
             steps = read_steps(path)
             total += len(steps)
             search_steps = 0
@@ -114,7 +137,7 @@ def compute_available_metrics() -> dict[str, dict[str, float]]:
                     scrolled += 1
                 url = step.get("obs_url", "")
                 next_url = steps[idx + 1].get("obs_url", "") if idx + 1 < len(steps) else ""
-                if "/search" in url or (action_type == "type" and "/search" in next_url):
+                if is_search_url(site, url) or (action_type == "type" and is_search_url(site, next_url)):
                     search_steps += 1
                 action = step.get("action") or {}
                 thought = action.get("thought", "").lower() if isinstance(action, dict) else ""
@@ -122,8 +145,8 @@ def compute_available_metrics() -> dict[str, dict[str, float]]:
                     selfcorr += 1
             if search_steps >= 2:
                 search_loop_eps += 1
-        n = len({step_task_id(p) for p in files})
-        if total:
+        n = len(task_ids)
+        if total and n:
             out[mode] = {
                 "Search-loop %": 100.0 * search_loop_eps / n,
                 "Type action %": 100.0 * typed / total,
@@ -133,69 +156,109 @@ def compute_available_metrics() -> dict[str, dict[str, float]]:
     return out
 
 
-def main() -> None:
-    available = compute_available_metrics()
-    if "Phantom-DOM" in available:
-        observed = available["Phantom-DOM"]["Search-loop %"]
-        verified = VERIFIED["Search-loop %"]["Phantom-DOM"]
+def site_values() -> dict[str, dict[str, dict[str, float | None]]]:
+    reddit_available = compute_available_metrics("reddit", STEP_DIRS["reddit"])
+    if reddit_available.get("Phantom-DOM", {}).get("Search-loop %") is not None:
+        observed = reddit_available["Phantom-DOM"]["Search-loop %"]
+        verified = REDDIT_VERIFIED["Search-loop %"]["Phantom-DOM"]
         if verified is not None and abs(observed - verified) > 0.5:
             print(
-                f"[warn] Phantom-DOM derived search-loop {observed:.1f}% differs from "
+                f"[warn] reddit Phantom-DOM derived search-loop {observed:.1f}% differs from "
                 f"verified {verified:.1f}%; plotting verified value",
                 file=sys.stderr,
             )
 
+    classifieds_available = compute_available_metrics("classifieds", STEP_DIRS["classifieds"])
+    values = {
+        "reddit": {mode: {metric: REDDIT_VERIFIED[metric][mode] for metric in METRICS} for mode in MODES},
+        "classifieds": classifieds_available,
+    }
+    return values
+
+
+def print_verbose(values: dict[str, dict[str, dict[str, float | None]]]) -> None:
+    for site in ["reddit", "classifieds"]:
+        prefix = "red" if site == "reddit" else "cls"
+        for mode in MODES:
+            metrics = values[site].get(mode, {})
+            search = metrics.get("Search-loop %")
+            typed = metrics.get("Type action %")
+            scroll = metrics.get("Scroll action %")
+            selfcorr = metrics.get("Self-correction / ep")
+            fmt = lambda value: "n/a" if value is None else f"{value:.2f}"
+            print(
+                f"{prefix} {mode}: search_loop={fmt(search)} "
+                f"type={fmt(typed)} scroll={fmt(scroll)} selfcorr={fmt(selfcorr)}"
+            )
+
+
+def draw_panel(ax: plt.Axes, site: str, metric: str, values: dict[str, dict[str, float | None]]) -> None:
+    metric_values = [values.get(mode, {}).get(metric) for mode in MODES]
+    heights = [0 if value is None else value for value in metric_values]
+    x = np.arange(len(MODES))
+    bars = ax.bar(x, heights, color=[COLORS[mode] for mode in MODES], width=0.68)
+    for bar, mode, value in zip(bars, MODES, metric_values):
+        if value is None:
+            bar.set_alpha(0.18)
+            bar.set_hatch("//")
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                0.2,
+                "n/a",
+                ha="center",
+                va="bottom",
+                fontsize=7.5,
+                color="#666666",
+            )
+            continue
+        label = f"{value:.1f}" if "Self" not in metric else f"{value:.2f}"
+        if site == "classifieds" and mode == "Phantom-SoM":
+            label += "*"
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + max(0.35, 0.02 * max(heights or [1])),
+            label,
+            ha="center",
+            va="bottom",
+            fontsize=7.5,
+        )
+    if site == "reddit":
+        ax.set_title(metric, fontsize=10.5, fontweight="bold")
+    ax.set_xticks(x, ["DOM", "Vision", "SoM", "Phantom\nSoM", "Phantom\nDOM"], rotation=0)
+    ax.grid(axis="y", color="#dddddd", linewidth=0.8)
+    ax.set_axisbelow(True)
+    ymax = max([v for v in metric_values if v is not None] or [1])
+    ax.set_ylim(0, ymax * (1.28 if "Self" not in metric else 1.45) + (1.0 if "Self" not in metric else 0.05))
+    if metric == "Search-loop %":
+        ax.set_ylabel("Percent")
+    elif metric == "Self-correction / ep":
+        ax.set_ylabel("Count / episode")
+
+
+def main() -> None:
+    values = site_values()
+    print_verbose(values)
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    plt.rcParams.update({"font.size": 9.5, "figure.dpi": 150})
-    fig, axes = plt.subplots(2, 2, figsize=(11, 7.2))
-    axes = axes.ravel()
+    plt.rcParams.update({"font.size": 9.2, "figure.dpi": 150})
+    fig, axes = plt.subplots(2, 4, figsize=(15, 7.8))
 
-    for ax, metric in zip(axes, VERIFIED):
-        values = [VERIFIED[metric][mode] for mode in MODES]
-        x = np.arange(len(MODES))
-        heights = [0 if value is None else value for value in values]
-        bars = ax.bar(x, heights, color=[COLORS[m] for m in MODES], width=0.68)
-        for bar, value in zip(bars, values):
-            if value is None:
-                bar.set_alpha(0.18)
-                ax.text(
-                    bar.get_x() + bar.get_width() / 2,
-                    0.2,
-                    "n/a",
-                    ha="center",
-                    va="bottom",
-                    fontsize=8,
-                    color="#666666",
-                )
-            else:
-                label = f"{value:.1f}" if "Self" not in metric else f"{value:.2f}"
-                ax.text(
-                    bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() + max(0.35, 0.02 * max(heights or [1])),
-                    label,
-                    ha="center",
-                    va="bottom",
-                    fontsize=8,
-                )
-        ax.set_title(metric)
-        ax.set_xticks(x, MODES, rotation=25, ha="right")
-        ax.grid(axis="y", color="#dddddd", linewidth=0.8)
-        ax.set_axisbelow(True)
-        if "Self" not in metric:
-            ax.set_ylabel("Percent")
-        else:
-            ax.set_ylabel("Count per episode")
+    for row, site in enumerate(["reddit", "classifieds"]):
+        for col, metric in enumerate(METRICS):
+            draw_panel(axes[row, col], site, metric, values[site])
 
-    fig.suptitle("Reddit Strategy Gradient: Representation Changes Exploration", fontsize=14, fontweight="bold")
+    fig.text(0.015, 0.69, SITE_LABELS["reddit"], rotation=90, va="center", ha="center", fontsize=12, fontweight="bold")
+    fig.text(0.015, 0.29, SITE_LABELS["classifieds"], rotation=90, va="center", ha="center", fontsize=12, fontweight="bold")
+    fig.suptitle("Strategy Gradient: Representation Changes Exploration Shape", fontsize=14, fontweight="bold")
     fig.text(
         0.5,
-        0.02,
-        "Verified points from §103/current N=48 ablation notes; n/a means no §103-verified value for that mode/metric.",
+        0.025,
+        "Reddit row uses §103/current N=48 verified anchors. Classifieds row is live-computed from step JSONL; "
+        "OSClass search detection uses 'page=search'. * Phantom-SoM classifieds has stale summaries but no step JSONL, so metrics are n/a.",
         ha="center",
-        fontsize=9,
+        fontsize=8.5,
         color="#555555",
     )
-    fig.tight_layout(rect=(0, 0.06, 1, 0.93))
+    fig.tight_layout(rect=(0.035, 0.07, 1, 0.92))
     fig.savefig(OUT, bbox_inches="tight")
     print(OUT)
 
