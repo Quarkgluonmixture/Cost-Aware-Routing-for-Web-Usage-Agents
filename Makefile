@@ -93,6 +93,51 @@ watch-reddit:
 	    > logs/wait_reddit_followup.log 2>&1 < /dev/null &
 	@sleep 1 && pgrep -af wait_for_reddit_then_rederive | head -1 || echo "(watch may have exited)"
 
+# Phantom (§102/§103) — start/resume one cell. Idempotent: skips if already running.
+# Usage: make phantom B=B0 M=som S=reddit          (phantom_som on VWA reddit)
+#        make phantom B=B0 M=dom S=reddit          (phantom_dom ablation on VWA reddit)
+#        make phantom B=B0 M=som S=shopping BMK=wa (phantom_som on WA shopping)
+phantom:
+	@test -n "$(B)" -a -n "$(S)" || (echo "ERROR: B=<B0|B1> S=<site> required (M defaults som, BMK defaults vwa)"; exit 1)
+	bash scripts/queues/queue_phantom.sh $(B) $(or $(M),som) $(S) $(or $(BMK),vwa)
+
+# Phantom-SoM Phase 2.1 — VWA all 4 baseline cells
+phantom-vwa-all:
+	bash scripts/queues/queue_phantom.sh B0 som classifieds
+	bash scripts/queues/queue_phantom.sh B0 som reddit
+	bash scripts/queues/queue_phantom.sh B0 som shopping
+	bash scripts/queues/queue_phantom.sh B1 som classifieds
+	bash scripts/queues/queue_phantom.sh B1 som reddit
+
+# Phantom-DOM (§103 ablation) — all VWA cells (B0 + B1)
+phantom-dom-vwa-all:
+	bash scripts/queues/queue_phantom.sh B0 dom classifieds
+	bash scripts/queues/queue_phantom.sh B0 dom reddit
+	bash scripts/queues/queue_phantom.sh B0 dom shopping
+	bash scripts/queues/queue_phantom.sh B1 dom classifieds
+	bash scripts/queues/queue_phantom.sh B1 dom reddit
+
+# Phantom — WA generalization (3 sites, B0 + B1)
+phantom-wa-all:
+	bash scripts/queues/queue_phantom.sh B0 som reddit         wa
+	bash scripts/queues/queue_phantom.sh B0 som shopping       wa
+	bash scripts/queues/queue_phantom.sh B0 som shopping_admin wa
+	bash scripts/queues/queue_phantom.sh B1 som reddit         wa
+	bash scripts/queues/queue_phantom.sh B1 som shopping       wa
+	bash scripts/queues/queue_phantom.sh B1 som shopping_admin wa
+
+# Phantom-DOM ablation on WA (3 sites, B0 + B1)
+phantom-dom-wa-all:
+	bash scripts/queues/queue_phantom.sh B0 dom reddit         wa
+	bash scripts/queues/queue_phantom.sh B0 dom shopping       wa
+	bash scripts/queues/queue_phantom.sh B0 dom shopping_admin wa
+	bash scripts/queues/queue_phantom.sh B1 dom reddit         wa
+	bash scripts/queues/queue_phantom.sh B1 dom shopping       wa
+	bash scripts/queues/queue_phantom.sh B1 dom shopping_admin wa
+
+# Backward-compat alias for old "phantom-all" (B=... S=... interface)
+phantom-all: phantom-vwa-all
+
 schedule-list:
 	@echo "Active P79 background processes:"
-	@pgrep -af "wait_for_reddit|experiment_watchdog|run_experiment|queue_b1|queue_b0" | head -20 || echo "(none)"
+	@pgrep -af "wait_for_reddit|experiment_watchdog|run_experiment|queue_b1|queue_b0|queue_phantom" | head -20 || echo "(none)"

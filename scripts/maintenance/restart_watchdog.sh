@@ -84,6 +84,7 @@ for pid in "${watchdog_pids[@]}"; do
   idle_alert_mins=""
   glm_config=""
   digest_dir=""
+  aggregate_prefix=""
   notify_completion=0
   for ((i = 0; i < ${#args[@]} - 1; i++)); do
     case "${args[$i]}" in
@@ -95,6 +96,7 @@ for pid in "${watchdog_pids[@]}"; do
       --idle-alert-mins) idle_alert_mins="${args[$((i + 1))]}" ;;
       --glm-config)    glm_config="${args[$((i + 1))]}" ;;
       --digest-dir)    digest_dir="${args[$((i + 1))]}" ;;
+      --aggregate-prefix) aggregate_prefix="${args[$((i + 1))]}" ;;
       --notify-completion) notify_completion=1 ;;
     esac
   done
@@ -116,6 +118,7 @@ for pid in "${watchdog_pids[@]}"; do
   [[ -n "${idle_alert_mins}" ]] && new_args+=(--idle-alert-mins "${idle_alert_mins}")
   [[ -n "${glm_config}" ]]     && new_args+=(--glm-config "${glm_config}")
   [[ -n "${digest_dir}" ]]     && new_args+=(--digest-dir "${digest_dir}")
+  [[ -n "${aggregate_prefix}" ]] && new_args+=(--aggregate-prefix "${aggregate_prefix}")
   [[ "${notify_completion}" -eq 1 ]] && new_args+=(--notify-completion)
 
   # Determine log file
