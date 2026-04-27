@@ -30,7 +30,7 @@ Phantom-SoM uses the same SoM prompt family as full SoM and the same `[SOM_MARKS
 
 The critical property is that the prompt remains the SoM prompt. It still describes an annotated screenshot with numbered boxes, even though the observation channel contains no page screenshot. We call this the **mirage prompt** property: the behavioral scaffold of SoM is preserved while the visual substrate is removed.
 
-Phantom-SoM is also a cost intervention. The `[SOM_MARKS]` block is a flat indexed list rather than a full AXTree; in our notes it is roughly half the AXTree token length on average, and it avoids page image tokens entirely. Section 4 tests whether this cheaper condition also creates independent routing value.
+Phantom-SoM is also a cost intervention, but the savings come from a different place than one might assume. The `[SOM_MARKS]` block is a flat indexed list rather than a hierarchical AXTree, but in our runs the two have comparable text token length: holding the system prompt fixed at the DOM family, the median total input is 3437 tokens for DOM (AXTree) versus 3661 for Phantom-DOM (`[SOM_MARKS]`) on reddit, and 3008 versus 2948 on classifieds — within ±7% on both sites. The cheaper-than-SoM property therefore comes almost entirely from removing the screenshot rather than from compressing the text channel; we estimate the dropped image contributes roughly 600 tokens per step on reddit and around 1100 on classifieds under our backend tokenization. Section 4 tests whether this image-free condition also creates independent routing value.
 
 ### 3.3 Phantom-DOM
 
