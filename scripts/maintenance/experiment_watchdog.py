@@ -704,6 +704,34 @@ def _has_any_completion(run_dir: Path) -> bool:
     )
 
 
+def _regenerate_paper_figures() -> str:
+    """Regenerate paper figures (best-effort, non-blocking). Returns status string."""
+    figures_dir = Path(__file__).resolve().parent.parent / "analysis" / "figures"
+    if not figures_dir.is_dir():
+        return "skipped: figures dir missing"
+    scripts = sorted(figures_dir.glob("fig*.py"))
+    if not scripts:
+        return "skipped: no figure scripts"
+    ok, failed = 0, 0
+    for s in scripts:
+        try:
+            r = subprocess.run(
+                [sys.executable, str(s)],
+                capture_output=True, text=True, timeout=60,
+            )
+            if r.returncode == 0:
+                ok += 1
+            else:
+                failed += 1
+                print(f"[watchdog][FIGURES] {s.name} failed: {r.stderr[-200:]}")
+        except Exception as exc:
+            failed += 1
+            print(f"[watchdog][FIGURES] {s.name} error: {exc}")
+    msg = f"{ok}/{ok+failed} ok"
+    print(f"[watchdog][FIGURES] regenerated: {msg}")
+    return msg
+
+
 def _find_sibling_runs(phase_dir: Path, baseline: str, *, site: Optional[str] = None,
                        exclude: Optional[Path] = None) -> Dict[str, Path]:
     """Return {site: latest run_dir} for given baseline (and optional site filter).
@@ -1643,6 +1671,8 @@ def main() -> int:
             # exists for same site, and aggregate_cross_site when ≥2 sites under
             # same baseline have data. Returns None if nothing was triggered.
             cross_run_status = _run_cross_run_analysis(run_dir)
+            # Regenerate paper figures (cls/red 4-mode oracle, drop-one bar, etc.)
+            figures_status = _regenerate_paper_figures()
             if args.ntfy_topic:
                 body = (
                     f"run_id={run_id}\nanalysis: {analysis_status}\n"
@@ -1650,6 +1680,7 @@ def main() -> int:
                 )
                 if cross_run_status:
                     body += f"\ncross_run: {cross_run_status}"
+                body += f"\nfigures: {figures_status}"
                 _post_ntfy(args.ntfy_topic, f"P79 POST-ANALYSIS [{cid}]", body)
 
             _persist_state()

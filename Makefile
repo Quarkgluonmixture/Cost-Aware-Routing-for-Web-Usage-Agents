@@ -87,6 +87,14 @@ gallery:
 	@test -n "$(RUN)" || (echo "ERROR: RUN=<run_dir> required"; exit 1)
 	$(PYTHON) scripts/maintenance/generate_gallery.py --run-dir $(RUN)
 
+# Regenerate paper figures (4 PNGs in docs/analysis/figures/)
+figures:
+	$(PYTHON) scripts/analysis/figures/fig1_4mode_venn.py
+	$(PYTHON) scripts/analysis/figures/fig2_drop_one_oracle.py
+	$(PYTHON) scripts/analysis/figures/fig3_strategy_gradient.py
+	$(PYTHON) scripts/analysis/figures/fig4_two_knob_diagram.py
+	@echo "Figures regenerated → docs/analysis/figures/"
+
 # ---- Background tasks ----
 watch-reddit:
 	setsid nohup bash scripts/maintenance/wait_for_reddit_then_rederive.sh \
