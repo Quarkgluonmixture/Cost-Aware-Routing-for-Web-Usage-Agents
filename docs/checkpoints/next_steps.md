@@ -48,25 +48,28 @@
 
 ---
 
-## §2 Paper Section Status
+## §2 Paper Section Status (8 sections final scope)
 
 | Section | Status | Path | Blocker |
 |---|---|---|---|
-| 1 Intro | ✅ done (786w) | `docs/analysis/paper_drafts/section1_intro.md` | — |
+| 1 Intro | ✅ done (786w + 4-fold drop-in framing) | `docs/analysis/paper_drafts/section1_intro.md` | — |
 | 2 Background + paper.bib (16 entries) | ✅ done (1514w) | `section2_background.md` | codex #10 expand to ~38 |
 | 3 Definition + Ablation | ✅ done (863w) | `section3_definition.md` | — |
-| 4 Empirical | 🟡 80% (figures FRESH ✅, prose stale 1725w) | `section4_empirical_findings.md` | codex #11 fresh prose (~30K) |
-| 5 Mechanism | 🟡 90% evidence ready (3-axis × 8-channel) | (待写) | codex #13 prose (~50K, 待 #10) |
-| 6 Generalization | 🟡 40% (B1 profile done) | (待写) | shopping (跑中) + WA + cross-model |
-| 7 Discussion | ❌ 未写 | (end-stage) | 全部 data done |
+| 4 Empirical Findings | 🟡 80% (figures FRESH ✅, prose stale 1725w) | `section4_empirical_findings.md` | codex #11 fresh prose (~30K) |
+| 5 Mechanism (3-axis × 8-channel) | 🟡 90% evidence ready | (待写) | codex #13 prose (~50K, 待 #10) |
+| **6 Routing (Tier 1+2)** ⭐ | 🟡 40% (signal AUROC ≥ baseline ✅, scaffold ready) | (待写) | Tier 1 prototype (~3 天) + Tier 2 (~7-10 天) — Week 4-5 |
+| 7 Generalization (cross-site/model) | 🟡 40% (B1 profile done) | (待写) | shopping (跑中) + WA + cross-model |
+| 8 Discussion (含 sustainability / green AI) | ❌ 未写 | (end-stage) | 全部 data done |
 
 **Strategic content (未 prose 化)** → see `paper_planning.md`:
 - §2 Theory framework (3-axis × 8-channel × bidirectional)
-- §3 Findings 列表 (10 paper-grade findings)
-- §6 Risks (4 critical risks)
-- §7 Investment cascade (MLSys round 1)
-- §8 Router design (Tier 1+2)
+- §3 Findings 列表 (10 paper-grade findings, 含 phantom signal AUROC + 4-fold drop-in)
+- §4 Section 6 Routing detailed outline + Section 8 sustainability outline ⭐
+- §5/6/7 Final scope + 顶刊概率 + risks + cascade
+- §8 Router design (Tier 1+2 with 5 决策维度)
 - §9 Advisor align checklist
+- §10 Visualization plan (4-fig stack)
+- §11 Cost / latency / carbon multi-metric plan
 
 ---
 
@@ -112,6 +115,27 @@
 | Cross-model Claude Opus 4.7 cls+red 4-mode | advisor align + agent 适配 | ~$70 |
 | B1 shopping 5-mode | Myriad GPU + DGX-side B1 phantom done | ~24h GPU 独占 |
 
+### 3.5 Router experiments (Section 6 paper, ~Week 4-5)
+
+| Cell | Blocker | Implementation |
+|---|---|---|
+| **Tier 1 oracle router prototype** (TF-IDF + LR, 3 天) | baseline + phantom 全 done | `p79/experiment/router.py::RuleBasedRouter` 扩展 |
+| **Tier 2 first-step trigger router** (~7-10 天) | Tier 1 done + step-1 trigger feature engineering | 新增 cascade runner config |
+| **Routing signal infra** (Phantom modes 已 verified `9d7e99f`) | ✅ ready | `confidence_summary.json` per-condition (5/5 `overall_usable=True`) |
+| **Router eval baseline** (random / best-single / rule-based / oracle / learned) | Tier 1+2 done | benchmark suite |
+
+详见 `paper_planning.md` §8 Router design (5 决策维度: feature / target / granularity / cascade / baseline).
+
+### 3.6 Sustainability / Green AI (Section 8 Discussion)
+
+| Item | Status | Source |
+|---|---|---|
+| fig9 regional carbon sensitivity (B1 only, 45 region) | ✅ done `d3dfc8f` `0cb26c5` | `scripts/analysis/figures/fig9_regional_carbon_sensitivity.py` |
+| B1 measured energy (cls + red × DOM/SoM/Vision) | ✅ ready | `condition_summary_v2.json` |
+| B0 carbon (proxy API) token-based estimator | ❌ optional Tier 3 | future deep work |
+| Section 8 sustainability prose (含 latency 4× + carbon region-dependent) | ❌ 待 codex #17 (paper end-stage) | 待全部 data done |
+| paper.bib green AI lit (Strubell 2019, Patterson 2021) | ✅ already in `paper.bib` | — |
+
 ---
 
 ## §4 Codex Task Queue (pending only)
@@ -125,9 +149,10 @@
 | **13** | **Section 5 prose 写** (3-axis hierarchical + lit inline cite) | ~50K | 待 #10 + #11 done | 🟡 ~Thu |
 | 14 | Codex audit shopping VWA (466) | ~500K | 待 shopping 5-mode 数据 | ⏳ ~Week 2-3 |
 | 15 | Codex audit WA tasks (480) | ~500K | 待 WA 数据 | ⏳ Week 4-5 |
-| 16 | Section 6 Generalization 草稿 | ~50K | 待 WA + Claude done + 二次 lit research | ⏳ Week 6-7 |
-| 17 | Section 7 Discussion 草稿 (含 sustainability + lat 4× finding) | ~30K | 待全部 data done | ⏳ Week 8+ |
-| 18 | 二次 deep research (Section 6/7 + 全 paper revisit, 终稿前) | ~300K | Week 8+ paper 终稿前 | ⏳ Week 8+ |
+| **16** | **Section 6 Routing prose** (Tier 1+2 implementation + eval + 4-fig stack) | ~50K | Tier 1+2 prototype done + figures | ⏳ Week 5-6 |
+| 17 | Section 7 Generalization 草稿 (cross-site/model) | ~50K | shopping + WA + Claude done | ⏳ Week 6-7 |
+| 18 | Section 8 Discussion 草稿 (含 sustainability + 4-fold drop-in summary) | ~30K | 全部 data done | ⏳ Week 8+ |
+| 19 | 二次 deep research (Section 6/7/8 + 全 paper revisit, 终稿前) | ~300K | Week 8+ paper 终稿前 | ⏳ Week 8+ |
 
 **Decisions made (don't redo)**:
 - 不重做现有 5 codex docs (lazy integrate via Section 5 prose, saves ~1M tokens)

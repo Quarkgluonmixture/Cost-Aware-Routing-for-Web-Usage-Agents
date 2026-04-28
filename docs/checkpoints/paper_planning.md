@@ -193,19 +193,81 @@ Site × axis: cls visual-bound → image helping dominate; red text-dom → harm
 
 ---
 
-## §4 Paper Section Status (2026-04-28)
+## §4 Paper Section Status (2026-04-28, 8 sections final scope)
 
 | Section | evidence 质量 | 状态 | Hard blocker |
 |---|---|---|---|
-| 1 Intro | ✅ 已写 (786w + drop-in framing + conservative framing) | done `62c1380` `ef29add` | — |
+| 1 Intro | ✅ 已写 (786w + 4-fold drop-in framing + conservative framing) | done `62c1380` `ef29add` | — |
 | 2 Background + paper.bib | ✅ 已写 (1514w, 16 entries) | done `206cd93` | 待 codex #10 expand to ~38 |
 | 3 Definition + Ablation | ✅ 已写 (863w, token re-estimate corrected) | done `13b9608` `4d63c9f` `48db047` | — |
-| 4 Empirical | 🟡 80% (figures FRESH ✅ + B0 5-mode FRESH, prose 待 update) | data ready | codex #11 fresh prose (~30K) |
+| 4 Empirical Findings | 🟡 80% (figures FRESH ✅ + B0 5-mode FRESH, prose 待 update) | data ready | codex #11 fresh prose (~30K) |
 | 5 Mechanism | 🟡 90% evidence (3-axis × 8-channel × bidirectional × §100) | data 完整 | codex #13 prose (~50K, 待 #10 lit) |
-| 6 Generalization | 🟡 40% (B1 capability profile done) | partial | shopping (跑中) + WA + cross-model |
-| 7 Discussion | ❌ 未写 | end-stage | 全部 data done |
+| **6 Routing (Tier 1+2)** ⭐ NEW | 🟡 40% (signal AUROC ≥ baseline `9d7e99f`, infra scaffold) | scaffold ready | Tier 1 prototype (~3 天) + Tier 2 first-step trigger (~7-10 天) |
+| 7 Generalization | 🟡 40% (B1 capability profile done) | partial | shopping (跑中) + WA + cross-model (Claude) |
+| 8 Discussion + Implications (含 sustainability + 4-fold drop-in summary) | ❌ 未写 | end-stage | 全部 data done |
 
-**Section 1-3 总 prose 3163 words** (paper-ready). Section 4 1725w draft 待 fresh data update.
+**Section 1-3 总 prose 3163 words** (paper-ready). Section 4 1725w draft 待 fresh data update. Section 5/6/7/8 待写.
+
+### Section 6 Routing — 详细 outline
+
+paper Section 6 不是 Section 7 Generalization 的子部分, 是**独立 contribution**. 内容:
+
+```
+6.1 Routing problem formulation
+  - 5-mode arms: DOM / SoM / Vision / Phantom-SoM / Phantom-DOM
+  - Per-task feature space (instruction + browser meta + step-1 trigger signals)
+  - Target: max adjusted SR / cost-aware / Pareto
+
+6.2 Tier 1 — task-level oracle router (offline supervised)
+  - Feature: TF-IDF (task instruction) + binary {has_ref_image, has_finish_string_match}
+  - Model: Logistic regression / random forest (interpretable + small data)
+  - Train/eval split: 80/20 of cls + red task pool
+  - Result: routing pool oracle bound vs learned router gap
+
+6.3 Tier 2 — first-step-trigger router (online cascade)
+  - First step on cheaper mode (e.g. DOM) → trigger signal at step 1 → escalate to expensive mode
+  - Trigger features: response confidence / action_diversity / behavioral signals
+  - No test-time leakage (step-1 obs ≠ task feature)
+  - Cost vs SR Pareto improvement
+
+6.4 Routing infra drop-in property (4-fold #c)
+  - Phantom modes signal AUROC ≥ baseline (5/5 usable, red Phantom-DOM 0.793 highest)
+  - 不需要 retrain signal extraction infra
+  - paper claim: "router trained on baseline 可 directly extend to Phantom"
+
+6.5 Visualization (4-fig stack, see §10)
+  - Fig A: 3-panel multi-metric Pareto
+  - Fig B: Cumulative SR vs Budget curve ⭐ (cost-aware 顶刊套路)
+  - Fig C: Routing decision Sankey
+  - Fig D: Per-task savings histogram
+```
+
+### Section 8 Discussion — 详细 outline (含 sustainability + green AI)
+
+```
+8.1 4-fold drop-in property summary
+  (a) Cost ≈ DOM
+  (b) Latency ~50% lower (cls SoM 74s → Phantom 18s)
+  (c) Signal AUROC ≥ baseline (router infra drop-in)
+  (d) Drop-one oracle 1.7-3.3pp
+
+8.2 Site/capability-modulated mechanism
+  cls visual-rich → image helping channels dominate (3a-3d)
+  red text-dominated → image harming channels dominate (3e-3j)
+  B1 amplify failure dimensions (lazy minimization, density threshold)
+
+8.3 Sustainability + Green AI implications ⭐
+  - cls Phantom-SoM latency 4× improvement (production-relevant)
+  - Regional carbon sensitivity (fig9): Phantom-SoM advantage region-dependent
+    (large for India 632 g/kWh / Poland 773; small for France 85 / Norway 29)
+  - Multi-metric Pareto: cost + latency + carbon 三向 drop-in
+  - Lit anchor: Strubell ACL 2019, Patterson 2021
+
+8.4 Limitations + future work
+  - Single benchmark family (VWA + WA), single backbone model family (Qwen + Claude)
+  - Tier 3 online learning router 留 future work
+  - Cross-model meta-policy (cross model family routing) 留 future
+```
 
 ---
 
