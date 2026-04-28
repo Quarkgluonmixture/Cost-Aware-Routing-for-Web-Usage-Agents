@@ -121,17 +121,30 @@ Cells:     6 sites × 3 models × 5 modes = ~90 baseline cells (~125K episode to
 | B1 phantom_som cls (PID 371892) | 跑中 ~64/234, SR 13.1% | ~7-10 days (GPU contention from seonglae) |
 | B0 dom shopping clean re-run (PID 1106560, with reset) | 跑中 ~9/466 | ~9h (~Wed 01:00) |
 
-### 3.3 Pending — manual chain via queue scripts (慢慢跑, sequential)
+### 3.3 Pending chains — automated via `queue_chain.sh` (sequential)
 
-B1 4B 单 GPU instance, 4 cells 必须 sequential. B0 phantom shopping pair 等 B0 dom shopping done.
+B1 4B 单 GPU instance + B0 phantom shopping 同 site exclusive → 必须 sequential. 用 `queue_chain.sh` 自动 chain 一组 cells (idempotent 检测 already-running, paper-grade RESET_BEFORE=1 默认):
 
-| Cell | Trigger | Command |
+```bash
+# B1 phantom 4-cell chain (cls already running PID 371892, chain wait + chain rest)
+nohup bash scripts/queues/queue_chain.sh \
+  "queue_phantom_som.sh B1 classifieds" \
+  "queue_phantom_som.sh B1 reddit" \
+  "queue_phantom_dom.sh B1 classifieds" \
+  "queue_phantom_dom.sh B1 reddit" \
+  > logs/queue_chain_b1_phantom.log 2>&1 &
+
+# B0 phantom shopping pair (after B0 dom shopping done)
+nohup bash scripts/queues/queue_chain.sh \
+  "queue_phantom_som.sh B0 shopping" \
+  "queue_phantom_dom.sh B0 shopping" \
+  > logs/queue_chain_b0_phantom_shop.log 2>&1 &
+```
+
+| Chain | ETA | Trigger |
 |---|---|---|
-| B1 phantom_som red | after B1 phantom_som cls done | `RESET_BEFORE=1 bash scripts/queues/queue_phantom_som.sh B1 reddit` |
-| B1 phantom_dom cls | after B1 phantom_som red done | `RESET_BEFORE=1 bash scripts/queues/queue_phantom_dom.sh B1 classifieds` |
-| B1 phantom_dom red | after B1 phantom_dom cls done | `RESET_BEFORE=1 bash scripts/queues/queue_phantom_dom.sh B1 reddit` |
-| B0 phantom_som shopping (重跑, dirty archive 04-27 已移走) | after B0 dom shopping done | `RESET_BEFORE=1 bash scripts/queues/queue_phantom_som.sh B0 shopping` |
-| B0 phantom_dom shopping (重跑) | after B0 phantom_som shopping done | `RESET_BEFORE=1 bash scripts/queues/queue_phantom_dom.sh B0 shopping` |
+| B1 phantom 4-cell (cls som → red som → cls dom → red dom) | ~30-40d (GPU contention 7-10d/cell) | 立即可启 (chain attaches to existing PID 371892 via idempotent) |
+| B0 phantom shopping pair (som → dom) | ~24h | wait B0 dom shopping done (~Wed 01:00) |
 
 ### 3.4 Missing cells — 等资源 (manual decision)
 
