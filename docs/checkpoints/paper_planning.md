@@ -626,3 +626,261 @@ ef29add  drop-in deployment punchline
 - [ ] Advisor align meeting #1 prep (~Week 3)
 - [ ] Advisor align meeting #2 prep (~Week 6-7)
 - [ ] paper writing + revisions (~Week 8-12)
+
+---
+
+## §14 Reviewer Attack Anticipation + Pre-Rebuttal
+
+顶刊投稿 reviewer 常见攻击 + 我们的 response (paper integrity hardening):
+
+| Attack | Likely Reviewer Concern | Our Response | Evidence |
+|---|---|---|---|
+| **Sample size too small** | "VWA cls 234 + red 210 = 444 task, single benchmark" | Final scope = 6 sites × 3 models × 5 modes ≈ 1390 task per condition. Cross-site (cls + red + shopping × VWA + WA), cross-model (Qwen 235B + 4B + Claude Opus 4.7) | §5 Final scope; §3.1 B0 5-mode SR table |
+| **Single benchmark family** | "VWA only, no Mind2Web/WebVoyager validation" | + WA (Postmill / Magento / shopping_admin) cross-stack validation. Mind2Web out of scope per advisor align (Plan B) | §7 generalization + paper §6 |
+| **Single model family (Qwen)** | "Effect Qwen-specific?" | + Claude Opus 4.7 cross-model after advisor align (~$70). B0 (235B) + B1 (4B) shows capability-dependent shift (+50/+33pp cross-site, §101.九 lazy minimization) | §2 capability layer + cross_site_pattern_consolidation.md |
+| **Phantom is just a degraded SoM** | "Why not collapse to DOM if no image?" | Theory C (codex 5821387) verifies prompt knob: cls Phantom-DOM = Phantom-SoM SR 14.53% but Jaccard 0.447 (task pool 显著 disjoint). Same SR ≠ same routing pool | paper §5; codex `5821387` |
+| **Effect size small (drop-one 1.7-3.3pp)** | "Statistically marginal" | site-modulated effect, conservative framing (within 2σ noise floor). Paper claim 不是 "Phantom #1 routing arm" 而是 "site-modulated representation effect with 4-fold drop-in property" | §1 Paper hook conservative framing |
+| **Latency claim cherry-picked** | "Just one P95 measurement" | §100 SoM probe ground truth (5 imgs × 3 mode × 2 model = 30 cells measured). cls SoM 74s vs Phantom 18s p95 = 4× slower. Across all conditions consistent | §11 + 实验笔记 §100 |
+| **Carbon estimation rough** | "B0 carbon NaN, only B1 measured" | Transparent disclose: B1 NVML measured directly, B0 (proxy API) 远端 GPU 不可测 (per Strubell 2019 / Patterson 2021 estimation acknowledged). fig9 regional sensitivity 用 B1 measured + 45 region intensity table | §11 + fig9 footnote |
+| **Router contribution toy** | "Tier 1 oracle is overfit" | Tier 1 train/test split, baseline 对比 (random, best-single-mode, rule-based, oracle, learned). Tier 2 first-step trigger no test leakage | §8 + Section 6 outline §4.6 |
+| **No production deployment** | "Drop-in claim hypothetical" | 4-fold drop-in property: code-level verified (`som.py::_extract_text_marks` line 24 regex); routing signal AUROC ≥ baseline (5/5 `overall_usable=True`); 实证 cost+latency+CO2 measured | §1 + §3 finding #5 #9 |
+| **Watchdog detection unreliable** | "FPC false alarm undermines paper-grade" | Site-specific audit: cls (real auth issue + auto-clean + 重跑 done), red (0 events), shopping (FPC false alarm fixed). Watchdog auto-clean protocol delete contaminated + runner resume → 0% wasted task. paper-grade 100% pure verified | §18 + 实验笔记 §104 |
+| **Mechanism not novel** | "Each axis has prior literature" | Contribution = systematic decomposition + web-agent multi-step setting + drop-in deployment claim. NOT new LLM mechanism. Paper §5 framing 已 acknowledge | §2 paper contribution position |
+| **Overfit to VWA visual specifics** | "Effect won't generalize to WA" | §103 falsifiable prediction: WA Phantom-SoM 5-mode oracle gain. WA pilot ≤50 task verify Jaccard ≤0.5 universal vs >0.7 VWA-specific | §103 generalization prediction; pending data |
+
+**Pre-rebuttal strategy**:
+- Section 4-5 prose 写时 inline cite this table (proactive defense)
+- Section 7 Generalization 必须 explicit address WA + Claude (跨 stack + 跨 model)
+- Section 8 Discussion 4.4 limitations 提前 acknowledge known weaknesses
+
+---
+
+## §15 Prior Work Comparison Table
+
+paper Section 2 必备 explicit table (review 加分项):
+
+| Aspect | Yang 2023 SoM (NeurIPS) | VWA Koh 2024 (ICLR) | SeeAct Zheng 2024 (ICML) | FocusAgent Kerboua 2025 (EMNLP) | RouteLLM Ong 2024 (ICML) | **Ours (Phantom-SoM)** |
+|---|---|---|---|---|---|---|
+| **Marks-text isolation** | ❌ bundled with image | ❌ bundled | ❌ bundled | n/a | n/a | ✅ Phantom-SoM ⭐ |
+| **Routing arms** | 1 (single SoM) | 1 (per mode) | 1 (single SoM) | 1 (text prune) | model-level routing | **5-mode** (DOM/SoM/Vision/Phantom-SoM/Phantom-DOM) ⭐ |
+| **Cost-aware Pareto** | ❌ | ❌ | ❌ | ✅ token cost | ✅ model cost | ✅ **multi-metric** (cost+latency+carbon) ⭐ |
+| **Cross-site validation** | 4 task domains | 3 sites (cls+red+shop) | 1 site | 2 sites | n/a | **6 sites** (VWA+WA) ⭐ |
+| **Cross-model** | 4 models (multimodal) | 6 models (api+local) | 4 models | 1-2 | many (text-only LLM) | 3 models (Qwen 235B+4B + Claude Opus) |
+| **Mechanism analysis** | ❌ effect-only | ❌ partial | ❌ baseline | partial (text size effect) | ❌ effect-only | ✅ **3-axis × 8-channel × bidirectional** ⭐ |
+| **Drop-in deployment** | ❌ | ❌ | ❌ | partial | partial | ✅ **4-fold property** (cost/latency/signal/oracle) ⭐ |
+| **Carbon report** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ **Differentiator** ⭐ |
+| **Failure mode taxonomy** | none | 3 categories | none | none | none | **9 categories** + 8-channel image (codex diags) |
+| **Sample size** | varies | 910 task total | 50 task subset | 3 sites partial | many | **1390 task** per condition (final scope) |
+
+**Closest prior pairing**: FocusAgent (text 压缩, hierarchy 保持) + Yang 2023 SoM (visual marks). 本工作 = unprecedented synthesis + drop-in deployment claim + multi-metric Pareto + green AI differentiator.
+
+详 deep research: `docs/literature/The Novelty and Efficacy of Set-of-Mark Text as an Independent Representation Routing Arm in Web Agents.md` (5-dimension gap confirmation, §103).
+
+---
+
+## §16 Authorship + Advisor Roles + First-Paper Strategy
+
+### 毕设 paper authorship plan (TBD with advisor align meeting #1)
+
+```
+First author: jiaming (毕设 student, primary work)
+Co-supervisor: Zekun (Holistic AI, industry collaboration)
+Advisor: Maria Perez Ortiz (UCL, AI4SD program director)
+
+Tentative authorship order: jiaming, Zekun, Maria
+(final order pending advisor align meeting #1)
+```
+
+### Advisor / collaborator roles
+
+| Person | Role | Paper contribution |
+|---|---|---|
+| **jiaming** | Implementation + experiments + writing + first-paper learning | Main author, all sections, codex orchestration, paper-grade execution |
+| **Zekun** | Industry collab + drop-in deployment 视角 + MLSys positioning | Section 8 Discussion deployment angle + venue strategy + reference review |
+| **Maria** | Theoretical guidance + AI4SD framing + sustainability + conference network | Section 1/2 background + Section 8 sustainability + referrer pipeline (NeurIPS/Climate Change AI workshop) |
+
+### Personal context (毕设 backdrop, 本 paper 是 first paper)
+
+- 西安交大 undergrad → UCL AI4SD master/PhD transition
+- First paper, 经历: paper trajectory 从 "magical noise 怀疑" 到 "4-fold drop-in deployment claim"
+- 多次 critique-driven theory refinement (4 rounds: prompt-only / visual-hijack-only / image-over-text / SoM density) — paper integrity discipline 体现
+- Holistic AI industry collab 是 publication track signal (industry endorsement)
+
+### First-paper psychology + strategic advice
+
+```
+Realistic outcome distribution (per §5 顶刊概率):
+  Round 1 (MLSys 2027 ~9月): 75-85% accept (推荐 first paper friendly)
+  Round 2 (ACL/EMNLP if rejected): 50-65%
+  Round 3 (NeurIPS/ICLR main if still rejected): 45-60%
+  Round 4 保底 (TMLR rolling): 75-85%
+  
+出版概率 cascade 累积: ~99% (基本 lock paper 出版)
+
+Key first-paper considerations:
+- Don't put NeurIPS/ICLR as round 1 (lottery + first-paper baggage if rejected)
+- MLSys 推荐: drop-in framing 完美 fit + first-paper friendly review
+- Maria's referrer pipeline (NeurIPS workshop / Climate Change AI / AI4SD venue) 是 strategic leverage
+- Holistic AI industry endorsement → industry track 友好
+- Rejection 是 norm, 不要把 rejection 等同于 paper 不行
+```
+
+### Acknowledgments draft (paper end-stage)
+
+```
+预 draft (Section 8 Acknowledgments):
+- Compute: DGX Spark (UCL AI4SD) + remote VWA Docker (Tailscale) + Myriad GPU pending
+- Data: VWA + WA benchmarks (open source, properly cited)
+- API: Qwen3-VL-235B-A22B (proxy via internal infra), Claude Opus 4.7 (advisor budget)
+- Discussions: advisor + co-supervisor + UCL AI4SD group
+- COI: Holistic AI industry collab acknowledged
+```
+
+---
+
+## §17 Pre-Submission Checklist (~Week 10-12 paper 终稿前)
+
+### Content completeness
+
+- [ ] All 8 sections prose done (Section 1-3 ✅ done, Section 4-8 待 codex)
+- [ ] paper.bib expanded to ~38 entries (待 codex #10 deep research)
+- [ ] All figures FRESH with latest data + paper-grade captions
+- [ ] Section 2 含 prior work comparison table (paper_planning §15)
+- [ ] Section 4-5 prose 含 reviewer attack pre-rebuttal (paper_planning §14)
+- [ ] Section 5 mechanism 含 §100 SoM probe ground truth + 14 case studies + Tong 2024 cite
+- [ ] Section 6 Routing 含 Tier 1+2 implementation + 4-fig stack
+- [ ] Section 7 Generalization 含 cross-site (shopping + WA) + cross-model (Claude) data
+- [ ] Section 8 Discussion 4 sub-sections (drop-in summary / mechanism / sustainability / limitations)
+- [ ] Negative results explicit listed (paper integrity)
+- [ ] Limitations section honest (no over-claim)
+
+### Format / Style
+
+- [ ] Page count check (NeurIPS/ICLR 9 page main + unlimited supp; MLSys 12-15 page)
+- [ ] Reference style (BibTeX validation, all 38+ entries cite-resolved)
+- [ ] Figure resolution 300 DPI (paper print)
+- [ ] Code anonymized for review (if double-blind)
+- [ ] Supplementary materials packed (data CSVs, configs, analysis dirs)
+- [ ] Captions self-contained (figure 不依赖 text)
+
+### Reproducibility
+
+- [ ] Code release path: github / zenodo decided
+- [ ] Data: VWA tasks + run results + figures input data (per condition_summary_v2.json)
+- [ ] Configs: configs/exp_v2_*.yaml all referenced
+- [ ] Reproducibility statement: `make figures` / `make analyze` workflow documented
+- [ ] Replication recipe in supplementary
+
+### Authorship + Submission
+
+- [ ] Author order finalized (advisor align #1 + #2)
+- [ ] Acknowledgments (compute resources + advisor + collaborators)
+- [ ] Conflict of interest declaration (Holistic AI industry collab)
+- [ ] Venue-specific format (MLSys vs NeurIPS template chosen)
+- [ ] cover letter / abstract polished
+
+### Pre-rebuttal preparedness
+
+- [ ] §14 reviewer attack table integrated to prose (proactive)
+- [ ] §15 prior work table integrated to Section 2
+- [ ] Limitations explicit (Section 8.4)
+- [ ] Cost/budget transparency (acknowledgments)
+
+---
+
+## §18 Watchdog Protocol + Paper-Grade Execution Discipline
+
+> 这部分内容 paper 写时可作为 supplementary "paper-grade execution discipline"
+> 引用; 也是 reviewer 信任度的 evidence。
+
+### 6-layer Defense in Depth (per `experiment_watchdog.py`)
+
+```
+1. Detection: per-task DOM session check (5000 char window, _check_session_health)
+   - Site-specific tab guard (cross-site task skip)
+   - Logout / Sign In link regex
+2. Alert: streak ≥3 → ntfy notification + ALERT log
+3. Refresh: real Playwright sign-in subprocess (auth_refresh.py)
+   - Per-site account credentials
+   - host-resolver-rules MAP metis → IP (legacy)
+   - Verify post-login URL ≠ login_path before storage_state write
+4. Cleanup: delete contaminated episodes (auto-clean on login restored)
+   - Delete summary_v2.json + steps_v2.jsonl
+   - rmtree artifacts/{site}_task_{tid}/
+   - Purge digest records
+   - Remove from seen_keys
+5. Resume: runner re-run with fresh logged-in storage_state
+6. Verify: post-cleanup mtime + DOM check (paper-grade integrity audit)
+   - State file persists across watchdog restart
+```
+
+### Magento history (3 复发 + final fix)
+
+```
+2026-04-X (initial): cookie domain split (PHPSESSID under IP, form_key under metis)
+                     → fix `7150db8` (quark side base_url 改 IP)
+2026-04-27: docker reset 后 base_url 退回 metis
+                     → fix `f9cbebf` (DGX defensive curl + quark side scripts)
+                     → 3-layer 持久化 (magento_baseurl_fix.sh + start_vwa_docker.sh
+                        hook + reset_shopping.sh remove hardcode localhost)
+2026-04-28: PowerShell reset chain 没集成 base_url fix → docker reset 仍 invalidate
+                     → fix: PowerShell `C:\vwa\reset_vwa.ps1` 加 Configure-MagentoBaseUrl
+                       (docker exec config:set + cache:flush, shopping 7770 +
+                        shopping_admin 7780 都覆盖)
+2026-04-28: Magento Full Page Cache (FPC) homepage cache guest page → false alarm
+                     → fix: quark side `bin/magento cache:disable full_page` +
+                       PowerShell hook 持久化 (reset 后 auto-disable FPC)
+```
+
+### Paper-grade clean re-run protocol
+
+```
+Before each new condition:
+  1. reset_vwa_sites.sh → DGX SSH quark PowerShell
+     PowerShell: docker stop + start vwa-{site} container
+     PowerShell: Configure-MagentoBaseUrl (config:set + cache:flush + cache:disable full_page)
+     PowerShell: site-specific health check (HTTP 200)
+  2. DGX defensive curl: verify redirect ≠ metis (commit f9cbebf)
+  3. Refresh storage_state (auth_refresh.py if streak ≥3)
+  4. Launch runner with --resume flag
+  
+During run:
+  - Watchdog poll 30s, NOT LOGGED IN streak detection
+  - Auto-clean on streak ≥3 + login restored
+  - Runner resume picks up missing tasks → fresh re-run
+  
+Post run:
+  - rederive episode summaries (re-compute adjusted_success per FP rules)
+  - Auto figures regen (`make figures`)
+  - Cross-rep / reason_diag / cross_run analysis (per analyze pipeline)
+```
+
+### Paper integrity 论证 (Section 4 / supplementary)
+
+- **0% wasted task data** (Day 2 audit verified): all NOT LOGGED IN events auto-cleaned + 重跑 done. Final episode summaries 全 fresh logged-in.
+- **Site-specific noise sources**:
+  - cls (OSClass): real auth issue, watchdog auto-clean + 重跑 (~2% early tasks affected per condition)
+  - red (Postmill): 0 NOT LOGGED IN events
+  - shopping (Magento): FPC false alarm fixed, B0 NEW launch with FPC disabled
+- **Cross-mode comparison preserved**: 5 modes 受同一 protocol, drop-one oracle / Jaccard / cost-SR Pareto 都不被 ~2% noise bias
+- **Paper-grade discipline**: self-healing data pipeline, 6-layer defense in depth → reviewer 信任 paper data integrity
+
+---
+
+## §19 Decision Log (paper-strategic decisions audit trail)
+
+| Date | Decision | Rationale | Status |
+|---|---|---|---|
+| 2026-04-27 | Final scope: 6 sites × 3 models × 5 modes + deployed router + multi-metric + green AI | NeurIPS/顶刊 viable scope (paper_planning §5) | ✅ in plan |
+| 2026-04-27 | Phantom-DOM scope 缩减 18→5 cells (mechanism only) | Phantom-DOM 是 ablation 不是 routing arm 候选 | ✅ in plan |
+| 2026-04-27 | Future paper 2 转向 Phase 3 modules (router 整合 paper 1) | 毕设决策, paper 1 含完整 contribution | ✅ in plan |
+| 2026-04-27 | First paper 投稿 cascade: round 1 → MLSys (不 NeurIPS) | first-paper friendly + drop-in framing 完美 fit | ✅ in plan |
+| 2026-04-27 | Paper hook 升级到 "drop-in deployment intervention" | Phantom-SoM cost ≈ DOM (regex filter), 4-fold property | ✅ commits 48db047 + ef29add |
+| 2026-04-28 | B1 shopping DOM 466 ep clear+rerun (paper-grade 协议一致性) | pre-Magento-bug 跑期间, cookie domain split risk | ⏳ 等 Myriad GPU |
+| 2026-04-28 | Magento FPC disabled (server-wide) | FPC homepage cache guest false alarm + persistent fix | ✅ done |
+| 2026-04-28 | Theory C: prompt as task-conditional decision prior (NOT commit-only) | codex `5821387` Jaccard 0.45-0.54 disjoint task pool | ✅ paper_planning §2 |
+| 2026-04-28 | Image axis 8-channel taxonomy (NOT visual-hijack only) | codex `7106d2e` 4 helping + 4 harming, false visual confidence MAIN red 60% | ✅ paper_planning §2 |
+| 2026-04-28 | Bidirectional modality framing (image-over-text vs text-over-vision) | user Q3 critique + Tong 2024 "Eyes wide shut" anchor | ✅ paper_planning §2 |
+| 2026-04-28 | 4-doc structure (next_steps + paper_planning + drafts + 笔记) | original 1102-line next_steps too dense, separation of concerns | ✅ commit 97cc4ac |
+| 2026-04-28 | 8 sections paper structure (含 Section 6 Routing 独立) | router 是 paper independent contribution, not Section 7 sub | ✅ commit 4ca9f66 |
+

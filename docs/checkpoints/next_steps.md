@@ -273,3 +273,156 @@ p79/experiment/router.py               (RuleBasedRouter scaffold)
 > Next 1-2 周: shopping baseline + phantom 5-mode (~$74), Section 4-5 prose update via codex (~3 prompts).
 >
 > 决策待 align: router scope (Tier 1+2 推荐), Claude Opus budget (~$70), 投稿 timing (MLSys round 1 推荐, first-paper friendly venue)."
+
+---
+
+## §9 学长 Onboarding Reading Order
+
+学长第一次读 paper / 进入 paper context 的推荐 reading order:
+
+### Quick path (~30 min)
+
+1. **(5 min)** `next_steps.md` §0 TL;DR + §8 5-min advisor pre-canned report
+   → 当前 status overview + paper hook
+2. **(5 min)** `paper_planning.md` §1 Hook + Tagline + §3 Findings 列表
+   → 4-fold drop-in property + 10 paper-grade findings
+3. **(10 min)** `docs/analysis/paper_drafts/section1_intro.md`
+   → Paper intro prose (786w, 含 4-fold drop-in framing)
+4. **(5 min)** Browse figures: fig1 venn + fig7 cost-SR + fig8 unique
+   → `results/phantom_paper/figures/fig{1,7,8}*.png`
+5. **(5 min)** `paper_planning.md` §6 Risks + §9 Advisor align checklist
+   → 顶刊 risks 主轴 + advisor align meeting #1 checklist
+
+### Deep dive (optional, ~60 min)
+
+- `paper_planning.md` §2 theory framework (3-axis × 8-channel × bidirectional × LLM rationale)
+- `paper_planning.md` §14 reviewer attack 预案 + §15 prior work comparison table
+- `paper_drafts/section3_definition.md` (Phantom-SoM 定义 + 2x2 ablation + token re-estimate)
+- `paper_drafts/section4_empirical_findings.md` (1725w stale, 数据结构理解, 待 codex update)
+- 实验笔记 §103 paper narrative + §100 SoM probe ground truth + §104 chronicle
+
+### Codex analysis docs (paper Section 5 evidence base)
+
+- `results/phantom_paper/analyses/phantom_dom_vs_som_diagnostic.md` (axis 2 prompt)
+- `results/phantom_paper/analyses/som_vs_phantom_som_diagnostic.md` (axis 3 image 8-ch)
+- `results/phantom_paper/analyses/cross_site_pattern_consolidation.md` (cls vs red shift)
+- `docs/analysis/B1_capability_profile.md` (Section 7 cross-model prep)
+
+### Decision audit trail
+
+- `paper_planning.md` §19 Decision log (paper-strategic decisions + timestamp)
+
+---
+
+## §10 Doc Update Workflow (新数据 → docs)
+
+> 当获得新 data / new finding / new decision 时, 该 update 哪些 docs.
+
+### A. 新 condition 数据 (e.g. B1 phantom_som cls done)
+
+```
+✅ 实验笔记: append chronicle entry (§104+ daily, Day-by-day finding)
+✅ next_steps §1 Active processes: mark done (remove or move to §3.1 done table)
+✅ next_steps §3.1 done table: add row (raw/adj SR + N + done time)
+✅ Run `make figures` (auto-regen fresh data, 9 figures)
+🟡 next_steps §0 TL;DR: update if Critical path A 进度变化
+🟡 paper_planning §3 finding 列表: if new paper-grade finding emerges
+🟡 paper_planning §4 paper section status: if evidence quality 变化
+❌ paper drafts: 不动 (等 codex prose update batch)
+```
+
+### B. 新 figure (e.g. fig10 cumulative SR vs budget)
+
+```
+✅ next_steps §7 figures list: add new path
+✅ paper_planning §10 visualization plan: update 4-fig stack
+✅ paper_planning §12 figures inventory: add row
+🟡 paper_planning §3 finding: if figure reveals new finding
+✅ Makefile figures target: add fig10_*.py
+```
+
+### C. 新 codex analysis (e.g. trajectory diff diag)
+
+```
+✅ paper_planning §12 codex analyses inventory: add row
+✅ next_steps §7 references: add path
+🟡 paper_planning §3 finding 列表: if new finding from analysis
+🟡 paper_planning §2 theory framework: if mechanism discovery (e.g. axis refinement)
+🟡 paper_planning §19 decision log: if framing decision made
+✅ next_steps §4 codex queue: mark done
+```
+
+### D. 新 paper drafts (e.g. Section 5 prose done by codex)
+
+```
+✅ next_steps §2 paper section status: status update (drafted)
+✅ paper_planning §4 paper section status: same
+🟡 paper_planning §2/§3 strategy notes: shrink (move to drafts now in prose)
+✅ paper_planning §17 pre-submission checklist: tick off content completeness items
+❌ next_steps §0 TL;DR: 不变 (除非 strategic shift)
+```
+
+### E. 新 decision (e.g. advisor align meeting #1 outcome)
+
+```
+✅ paper_planning §19 decision log: append timestamped row
+✅ paper_planning §9 advisor align checklist: tick off items
+✅ next_steps §6 decisions pending: remove resolved items
+✅ 实验笔记: append decision entry with rationale
+🟡 paper_planning §5/§6/§7 (final scope / risks / cascade): if scope decision changes
+🟡 paper_planning §16 authorship: if authorship order finalized
+```
+
+### F. 新 infra fix (e.g. another bug fix or watchdog upgrade)
+
+```
+✅ next_steps §5 open issues: add or move to resolved
+✅ 实验笔记: append technical chronicle entry
+🟡 paper_planning §18 watchdog protocol + execution discipline: update 6-layer description
+🟡 paper_planning §14 reviewer attack: if fix addresses an attack scenario
+```
+
+### G. 新 finding (e.g. unexpected mechanism observation)
+
+```
+✅ paper_planning §3 finding 列表: add new entry
+✅ 实验笔记: append finding with date + evidence
+🟡 paper_planning §2 theory framework: if framework refinement needed
+🟡 paper_planning §19 decision log: if framing decision triggered
+🟡 next_steps §0 TL;DR: if changes paper hook
+```
+
+### H. 新 reviewer attack scenario discovered
+
+```
+✅ paper_planning §14 reviewer attack: add row
+✅ paper drafts (when writing prose): proactive defense in Section 4-5
+```
+
+### I. 新 paper section prose done
+
+```
+✅ next_steps §2 paper section status: status drafted
+✅ paper_planning §4 same
+✅ paper_planning §13 pending TODO: tick off
+🟡 paper_planning §3 finding: shrink (now in prose) or expand (new finding from prose writing)
+🟡 paper_planning §17 pre-submission checklist: tick off content items
+```
+
+### General principle
+
+- **Daily update**: next_steps.md (active state, codex queue, open issues)
+- **Weekly update**: paper_planning.md (strategy notebook, when finding/decision emerges)
+- **Append-only**: 实验笔记.md (chronicle, never overwrite, append §)
+- **Stable until prose write**: paper drafts (only update when Section X prose batch written)
+
+### Quick mental check before update
+
+```
+What changed? → 找对应类型 (A-I)
+Mark current status? → next_steps
+Add new strategic finding? → paper_planning
+Record what happened (history)? → 实验笔记 append §
+Modify final paper text? → paper drafts (only when prose batch writing)
+```
+
