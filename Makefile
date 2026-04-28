@@ -110,43 +110,51 @@ watch-reddit:
 # Usage: make phantom B=B0 M=som S=reddit          (phantom_som on VWA reddit)
 #        make phantom B=B0 M=dom S=reddit          (phantom_dom ablation on VWA reddit)
 #        make phantom B=B0 M=som S=shopping BMK=wa (phantom_som on WA shopping)
+#        RESET_BEFORE=1 make phantom ...           (reset site before launch)
 phantom:
 	@test -n "$(B)" -a -n "$(S)" || (echo "ERROR: B=<B0|B1> S=<site> required (M defaults som, BMK defaults vwa)"; exit 1)
-	bash scripts/queues/queue_phantom.sh $(B) $(or $(M),som) $(S) $(or $(BMK),vwa)
+	bash scripts/queues/queue_phantom_$(or $(M),som).sh $(B) $(S) $(or $(BMK),vwa)
+
+# Baseline (dom/som/vision) — start/resume one cell. Idempotent.
+# Usage: make baseline B=B0 M=dom S=shopping         (B0 DOM-only on VWA shopping)
+#        make baseline B=B1 M=som S=reddit BMK=wa    (B1 SoM on WA reddit)
+baseline:
+	@test -n "$(B)" -a -n "$(M)" -a -n "$(S)" || (echo "ERROR: B=<B0|B1> M=<dom|som|vision> S=<site> required"; exit 1)
+	bash scripts/queues/queue_baseline.sh $(B) $(M) $(S) $(or $(BMK),vwa)
 
 # Phantom-SoM Phase 2.1 — VWA all 4 baseline cells
 phantom-vwa-all:
-	bash scripts/queues/queue_phantom.sh B0 som classifieds
-	bash scripts/queues/queue_phantom.sh B0 som reddit
-	bash scripts/queues/queue_phantom.sh B0 som shopping
-	bash scripts/queues/queue_phantom.sh B1 som classifieds
-	bash scripts/queues/queue_phantom.sh B1 som reddit
+	bash scripts/queues/queue_phantom_som.sh B0 classifieds
+	bash scripts/queues/queue_phantom_som.sh B0 reddit
+	bash scripts/queues/queue_phantom_som.sh B0 shopping
+	bash scripts/queues/queue_phantom_som.sh B1 classifieds
+	bash scripts/queues/queue_phantom_som.sh B1 reddit
 
 # Phantom-DOM (§103 ablation) — all VWA cells (B0 + B1)
 phantom-dom-vwa-all:
-	bash scripts/queues/queue_phantom.sh B0 dom classifieds
-	bash scripts/queues/queue_phantom.sh B0 dom reddit
-	bash scripts/queues/queue_phantom.sh B0 dom shopping
-	bash scripts/queues/queue_phantom.sh B1 dom classifieds
-	bash scripts/queues/queue_phantom.sh B1 dom reddit
+	bash scripts/queues/queue_phantom_dom.sh B0 classifieds
+	bash scripts/queues/queue_phantom_dom.sh B0 reddit
+	bash scripts/queues/queue_phantom_dom.sh B0 shopping
+	bash scripts/queues/queue_phantom_dom.sh B1 classifieds
+	bash scripts/queues/queue_phantom_dom.sh B1 reddit
 
 # Phantom — WA generalization (3 sites, B0 + B1)
 phantom-wa-all:
-	bash scripts/queues/queue_phantom.sh B0 som reddit         wa
-	bash scripts/queues/queue_phantom.sh B0 som shopping       wa
-	bash scripts/queues/queue_phantom.sh B0 som shopping_admin wa
-	bash scripts/queues/queue_phantom.sh B1 som reddit         wa
-	bash scripts/queues/queue_phantom.sh B1 som shopping       wa
-	bash scripts/queues/queue_phantom.sh B1 som shopping_admin wa
+	bash scripts/queues/queue_phantom_som.sh B0 reddit         wa
+	bash scripts/queues/queue_phantom_som.sh B0 shopping       wa
+	bash scripts/queues/queue_phantom_som.sh B0 shopping_admin wa
+	bash scripts/queues/queue_phantom_som.sh B1 reddit         wa
+	bash scripts/queues/queue_phantom_som.sh B1 shopping       wa
+	bash scripts/queues/queue_phantom_som.sh B1 shopping_admin wa
 
 # Phantom-DOM ablation on WA (3 sites, B0 + B1)
 phantom-dom-wa-all:
-	bash scripts/queues/queue_phantom.sh B0 dom reddit         wa
-	bash scripts/queues/queue_phantom.sh B0 dom shopping       wa
-	bash scripts/queues/queue_phantom.sh B0 dom shopping_admin wa
-	bash scripts/queues/queue_phantom.sh B1 dom reddit         wa
-	bash scripts/queues/queue_phantom.sh B1 dom shopping       wa
-	bash scripts/queues/queue_phantom.sh B1 dom shopping_admin wa
+	bash scripts/queues/queue_phantom_dom.sh B0 reddit         wa
+	bash scripts/queues/queue_phantom_dom.sh B0 shopping       wa
+	bash scripts/queues/queue_phantom_dom.sh B0 shopping_admin wa
+	bash scripts/queues/queue_phantom_dom.sh B1 reddit         wa
+	bash scripts/queues/queue_phantom_dom.sh B1 shopping       wa
+	bash scripts/queues/queue_phantom_dom.sh B1 shopping_admin wa
 
 # Backward-compat alias for old "phantom-all" (B=... S=... interface)
 phantom-all: phantom-vwa-all

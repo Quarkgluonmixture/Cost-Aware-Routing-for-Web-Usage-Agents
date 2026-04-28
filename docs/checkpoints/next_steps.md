@@ -3,12 +3,14 @@
 > **Daily action plan**. 当前 active state + 接下来 actions only.
 >
 > **职能分工**:
-> - **next_steps.md** (此文档): action ledger (~300 行)
+> - **next_steps.md** (此文档): action ledger (~430 行)
 > - **paper_planning.md**: paper strategy notebook (theory / findings / risks / cascade / router / advisor align)
 > - **paper drafts** (`docs/analysis/paper_drafts/`): final paper prose
 > - **实验笔记** (`docs/checkpoints/实验笔记.md`): time-order chronicle (历史 record)
 >
-> **Last updated**: 2026-04-28 14:35
+> 📖 **新数据/figure/finding/codex 回复 → 该更新哪些文档？** see §10 Doc Update Workflow
+>
+> **Last updated**: 2026-04-28 17:00
 
 ---
 
@@ -20,10 +22,10 @@
 
 **Active 跑中**:
 - B1 phantom_som cls (PID 371892, GPU contention 慢, ~7-10d ETA)
-- B0 dom shopping pilot (PID 893601 + watchdog 988735, FPC disabled, ~9h ETA — 实测 1.36min/task)
+- B0 dom shopping clean re-run (relaunched ~18:30 with `RESET_BEFORE=1`，new run_id `B0_dom_shopping_20260428`，旧 dirty 移到 `results/.../_archive/`)
 
 **Next 3 actions**:
-1. ~Wed 凌晨 01:00: B0 dom shopping pilot done → verify SR/cost/auth → 启 SoM/Vision/Phantom shopping (~$74)
+1. **B0 phantom shopping pair 重跑**: 等 B0 dom shopping done → `RESET_BEFORE=1 bash scripts/queues/queue_phantom_som.sh B0 shopping` + 串行 `RESET_BEFORE=1 bash queue_phantom_dom.sh B0 shopping`（两次 reset 之间）— ~$30/condition × 2 conditions ≈ $60
 2. ~Wed 中午: 发 codex #10 (axis 2/3 lit deep research, ~600K) + #11 (Section 4 fresh prose, ~30K)
 3. ~Thu: 发 codex #13 (Section 5 prose 写, 3-axis hierarchical + lit cite, ~50K)
 
@@ -36,8 +38,8 @@
 | PID | Process | Status | ETA |
 |---|---|---|---|
 | 371892 | B1_phantom_classifieds runner | 跑中 ~16/234, GPU contention | ~7-10 days ⚠️ |
-| 893601 | B0_dom_shopping runner (NEW 14:33) | 跑中 task ~75/466, 1.36 min/task | ~9h (~Wed 01:00) |
-| 988735 | B0_dom_shopping watchdog (RESTARTED 16:16, was 893429 crashed @ 14:35 ZeroDivisionError fix line 1509) | active, SR 9/75 = 12.0% | continuous |
+| 1106560 | B0_dom_shopping runner (clean re-run, RESET_BEFORE=1, queue_baseline.sh) | 跑中 task=0+, fresh run_id `B0_dom_shopping_20260428` | ~9h |
+| 1106686 | B0_dom_shopping watchdog | active | continuous |
 | 32263, 4124316, 4124482, 370225, 371979 | Watchdog × 5 | per-condition monitor | continuous |
 | 3964734 | queue_b1_after_b0 sequencer | sleeping (will trigger after B1 cls done) | continuous |
 
@@ -45,10 +47,29 @@
 - Magento HTTP 200 (FPC disabled, PowerShell hook 持久化) ✅
 - Watchdog auto-clean protocol verified (paper-grade 100% pure) ✅
 - DGX defensive curl post-reset metis check ✅
+- ✅ B0 dom shopping clean re-run launched (was stopped 17:05 due to no-reset audit; old dirty dir 移 `_archive/`)
 
 ---
 
 ## §2 Paper Section Status (8 sections final scope)
+
+### Final scope (paper 完整版, 详见 `paper_planning.md` §5)
+
+```
+Benchmark: VWA 3 站 (cls 234 + red 210 + shop 466) + WA 3 站 (red 106 + shop 192 + sa 182)
+           = 6 sites, ~1390 task per condition
+Models:    B0 (Qwen3-VL-235B proxy) + B1 (Qwen3-VL-4B local) + Claude Opus 4.7
+           = 3 model families
+Modes:     DOM / SoM / Vision / Phantom-SoM / Phantom-DOM = 5 modes
+Cells:     6 sites × 3 models × 5 modes = ~90 baseline cells (~125K episode total)
++ Router:  Tier 1+2 (oracle TF-IDF+LR / first-step trigger), 实际 deploy on agent,
+           measure cost / SR / latency vs best-single-mode
++ Multi-metric: cost / P95 latency / carbon (B1 measured + B0 estimate)
+```
+
+⚠️ Cells 数会缩减 — phantom_dom 在某些 site/model 计划砍掉（control 价值 vs cost：phantom_som 是 hidden 4th routing arm 必跑，phantom_dom 只在 axis 2 prompt-effect 论证关键 site/model 跑）。具体砍哪些待 `paper_planning.md` §3 findings 完整化后定。
+
+### Section status table
 
 | Section | Status | Path | Blocker |
 |---|---|---|---|
@@ -167,7 +188,8 @@
 |---|---|---|
 | **B1 phantom_som cls GPU contention** (seonglae 95% utilization, 5× latency) | 🟡 持续 | 联系 seonglae 协调 GPU sharing or 接受 slow progression |
 | **B1 shopping DOM 466 ep pre-Magento-bug** (clear+重跑 决策) | 🟡 等 Myriad GPU | rename to `_pre_magento_fix` (保留 reference), 重跑 with FPC disabled |
-| **IP env-var-ize 重构** (9 处 `.py/.sh` hardcoded `100.95.81.103`) | 🟡 backlog | 替换为 `${VWA_REMOTE_HOST}` env var read，让 Myriad / future host 不必 sed。文件: `p79/utils/auth_refresh.py` / `external/visualwebarena/browser_env/envs.py` / `scripts/maintenance/{reset_vwa_sites,retry_b1_single_task,experiment_watchdog}.sh\|.py` / `scripts/queues/queue_b{0,1}_{,wa_}with_reset.sh`。**触发条件**: Myriad onboard 时如果不能 Tailscale reach quark IP，先做这个 |
+| **IP env-var-ize 重构** (9 处 `.py/.sh` hardcoded `100.95.81.103`) | 🟡 backlog | 替换为 `${VWA_REMOTE_HOST}` env var read，让 Myriad / future host 不必 sed。文件: `p79/utils/auth_refresh.py` / `external/visualwebarena/browser_env/envs.py` / `scripts/maintenance/{reset_vwa_sites,retry_b1_single_task,experiment_watchdog}.sh\|.py`。**触发条件**: Myriad onboard 时如果不能 Tailscale reach quark IP |
+| **WA reset mechanism**（queue scripts 当前仅 vwa reset, wa skip） | 🟡 backlog | webarena docker reset 路径未实现。需写 `reset_wa_sites.sh` (类似 `reset_vwa_sites.sh`) 然后 queue scripts 加 `BENCHMARK=wa` 分支调用 |
 | **Tier A summary commit decision** (是否 commit `condition_summary_v2.json` + `run_meta.json` 入 git LFS / 直 git for paper-grade archive) | 🟡 待评估 | size: 10 conditions × ~50KB = ~500KB total，git 直管也行；好处: paper repro 时 reviewer 不需 hub access；坏处: 实验未冻结前每次 rederive 改动多 |
 
 **Resolved (recent)**:

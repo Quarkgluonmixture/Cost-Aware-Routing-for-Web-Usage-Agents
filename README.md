@@ -194,7 +194,8 @@ make rsync-artifacts-from-hub RUN=... COND=phase1_phantom_som_router_0   # 包�
 ## 实验启动 hard rules（paper-grade 不可违反）
 
 1. **同 site 同时只能跑一个 baseline (B0 XOR B1)** — 否则共享 user account / cart / session → cross-contam
-2. **跑实验必须 reset 站点** — 用 `RESET_BEFORE=1 make phantom ...` 或 `bash scripts/queues/queue_phantom_pair.sh`
+2. **跑实验必须 reset 站点** — 用 `RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh ...` 或 `queue_phantom_{som,dom}.sh`
+3. **禁止裸用 `python scripts/run_experiment.py`** — 必须走 queue script (`queue_baseline.sh` / `queue_phantom_som.sh` / `queue_phantom_dom.sh`)。Queue 处理 reset (race-safe)、env loading、watchdog 启动、idempotent skip。裸 runner 实证导致 contamination（04-28 audit）。
 
 ## 参考文档
 
