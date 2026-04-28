@@ -28,7 +28,7 @@ RUN_ID="${B1_RUN_ID:-${DEFAULT_RUN_IDS[$SITE]:-B1_3mode_${SITE}_20260413}}"
 # ---------- 通用 ----------
 source "${REPO_DIR}/scripts/maintenance/reset_vwa_sites.sh"
 
-BASELINE_CONFIG="${REPO_DIR}/configs/exp_v2_qwen3vl4b_B1_baseline.yaml"
+BASELINE_CONFIG="${REPO_DIR}/configs/_deprecated/exp_v2_qwen3vl4b_B1_baseline.yaml"
 RESULTS_BASE="${REPO_DIR}/results/visualwebarena/phase1"
 RUN_DIR="${RESULTS_BASE}/${RUN_ID}"
 LOG_DIR="${REPO_DIR}/logs"

@@ -43,6 +43,7 @@
 | 1106560 | B0_dom_shopping runner (clean re-run, RESET_BEFORE=1, queue_baseline.sh) | 跑中 task=0+, fresh run_id `B0_dom_shopping_20260428` | ~9h |
 | 1106686 | B0_dom_shopping watchdog | active | continuous |
 | 32263, 4124316, 4124482, 371979 | Watchdog × 4 (B0 phantom history + B1 cls active) | per-condition monitor | continuous |
+| 1145483 | queue_chain B1 phantom 4-cell sequencer | wait B1 cls done → chain 3 next | continuous |
 
 **Health checks**:
 - Magento HTTP 200 (FPC disabled, PowerShell hook 持久化) ✅
@@ -141,9 +142,9 @@ nohup bash scripts/queues/queue_chain.sh \
   > logs/queue_chain_b0_phantom_shop.log 2>&1 &
 ```
 
-| Chain | ETA | Trigger |
+| Chain | ETA | Status |
 |---|---|---|
-| B1 phantom 4-cell (cls som → red som → cls dom → red dom) | ~30-40d (GPU contention 7-10d/cell) | 立即可启 (chain attaches to existing PID 371892 via idempotent) |
+| B1 phantom 4-cell (cls som → red som → cls dom → red dom) | ~30-40d (GPU contention 7-10d/cell) | ✅ **launched 19:11 PID 1145483** (attached to existing 371892, queues 3 sequential) |
 | B0 phantom shopping pair (som → dom) | ~24h | wait B0 dom shopping done (~Wed 01:00) |
 
 ### 3.4 Missing cells — 等资源 (manual decision)
