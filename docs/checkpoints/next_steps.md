@@ -406,15 +406,16 @@ WA routing pool 扩展为 {DOM_AXTree, Phantom_SoM_marks_text}, oracle 增益理
 6. **Image tokens per step (measured medians)**: red 733 / cls 1064 (SoM input - Phantom-DOM input, n=145/234) `4d63c9f`
 7. Cost gap B0 vs B1 ~30× (Pareto frontier 形状清楚, fig7)
 8. **Phantom-SoM unique tasks 验证**: red 7 task (3.33% drop-one), cls fresh 5 task (vs stale 1 — 验证 fresh 比 stale 更强)
-10. **Magento FPC homepage cached guest page 影响 watchdog SESSION false alarm** (2026-04-28 audit):
-    - User 觉得 "之前所有 condition 最一开始都 session lost" 实际是 watchdog false alarm
-    - Server-side session 完全 valid (sales/order/history accessible, /customer/section/load/ returns Emma Lopez)
-    - 但 homepage `/` 是 Magento FPC cached guest page (server-rendered HTML 含 "Sign In")
-    - Watchdog SESSION 检测 step_000 DOM 看 "Sign In/Out" link → 误判
-    - 实际 task functional logged-in OK (cart/checkout/profile 都 work)
-    - paper-grade impact: cls/red/B1 shopping 历史 run 都受此 noise 影响, 但 SR 数据 valid (model 看 obs Sign In 一般不 trigger sign in)
-    - Fix: quark side `bin/magento cache:disable full_page` (~6h 额外 wall on shopping 5-mode)
-    - Watchdog SESSION detection 改进 (改用 server-side check) 是更长期 fix
+10. **Watchdog NOT LOGGED IN 警告原因 site-specific** (2026-04-28 deep audit, 修正之前不准确 framing):
+    - **cls (OSClass)**: 真实 auth issue — clear+resume 后 storage_state stale → task 0-3 真 NOT LOGGED IN → watchdog `auth_refresh` 真 sign in → task 4 restored. 历史 cls phantom_som/phantom_dom 各 ~4-5 events, max streak 4-5
+    - **red (Postmill)**: 0 events — Postmill cookies 持久, reset+resume 不 issue
+    - **shopping (Magento)**: FPC false alarm — server session valid (/sales/order/history accessible), 但 homepage `/` 是 FPC cached guest page → watchdog 误判. Fix: quark side `bin/magento cache:disable full_page` ✅ done 2026-04-28 + PowerShell hook 持久化
+    - paper-grade impact 评估:
+      - cls phantom 各 condition ~2% task (4-5/234) 跑在 broken auth state — **所有 5 mode 受同样 ~2% noise** (因为 clear+resume protocol 一致), drop-one oracle / Jaccard / cross-mode 比较 preserve
+      - red 数据完全 clean
+      - shopping NEW launch FPC disabled, clean
+    - Section 4 prose disclose: "watchdog auto-refresh per-task ensures auth state; ~2% early tasks per condition may run with stale storage_state before refresh, affecting all modes uniformly and not biasing mode-pair comparisons"
+    - 长期 fix: watchdog SESSION detection 改用 server-side check (e.g. /customer/account/ access test) 替代 client-side DOM grep
 
 9. **⭐⭐⭐ Phantom 模式 routing signal 完整 + ≥ baseline** (新发现 2026-04-28):
    - 5/5 phantom condition `overall_usable=True`, signal extraction 直接复用 baseline infra
