@@ -23,7 +23,7 @@ PYTEST ?= .venv/bin/pytest
 
 .PHONY: help test smoke smoke-only rederive rederive-all analyze cross-rep \
         confidence compare reason-diag clean-tasks watch-reddit schedule-list \
-        validate gallery
+        validate gallery rsync-to-hub rsync-from-hub rsync-artifacts-from-hub
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
@@ -154,3 +154,21 @@ phantom-all: phantom-vwa-all
 schedule-list:
 	@echo "Active P79 background processes:"
 	@pgrep -af "wait_for_reddit|experiment_watchdog|run_experiment|queue_b1|queue_b0|queue_phantom" | head -20 || echo "(none)"
+
+# ---- Cross-host results sync (hub-spoke, default hub = DGX) ----
+# Tier B (episodes/*.jsonl + condition/run summary + analysis) by default.
+# Set ARTIFACTS=1 to include artifacts (screenshots/SoM 图).
+# Override hub via HOST=<ssh-alias>; narrow with RUN=<run_id> [+ COND=<cond_id>].
+rsync-to-hub:
+	@HOST="$(HOST)" HUB_PATH="$(HUB_PATH)" DRY="$(DRY)" \
+	  bash scripts/maintenance/rsync_results_to_hub.sh
+
+rsync-from-hub:
+	@HOST="$(HOST)" HUB_PATH="$(HUB_PATH)" RUN="$(RUN)" COND="$(COND)" \
+	  ARTIFACTS="$(ARTIFACTS)" DRY="$(DRY)" \
+	  bash scripts/maintenance/rsync_results_from_hub.sh
+
+rsync-artifacts-from-hub:
+	@HOST="$(HOST)" HUB_PATH="$(HUB_PATH)" RUN="$(RUN)" COND="$(COND)" \
+	  ARTIFACTS=1 DRY="$(DRY)" \
+	  bash scripts/maintenance/rsync_results_from_hub.sh

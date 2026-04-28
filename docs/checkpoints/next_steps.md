@@ -167,11 +167,15 @@
 |---|---|---|
 | **B1 phantom_som cls GPU contention** (seonglae 95% utilization, 5× latency) | 🟡 持续 | 联系 seonglae 协调 GPU sharing or 接受 slow progression |
 | **B1 shopping DOM 466 ep pre-Magento-bug** (clear+重跑 决策) | 🟡 等 Myriad GPU | rename to `_pre_magento_fix` (保留 reference), 重跑 with FPC disabled |
+| **IP env-var-ize 重构** (9 处 `.py/.sh` hardcoded `100.95.81.103`) | 🟡 backlog | 替换为 `${VWA_REMOTE_HOST}` env var read，让 Myriad / future host 不必 sed。文件: `p79/utils/auth_refresh.py` / `external/visualwebarena/browser_env/envs.py` / `scripts/maintenance/{reset_vwa_sites,retry_b1_single_task,experiment_watchdog}.sh\|.py` / `scripts/queues/queue_b{0,1}_{,wa_}with_reset.sh`。**触发条件**: Myriad onboard 时如果不能 Tailscale reach quark IP，先做这个 |
+| **Tier A summary commit decision** (是否 commit `condition_summary_v2.json` + `run_meta.json` 入 git LFS / 直 git for paper-grade archive) | 🟡 待评估 | size: 10 conditions × ~50KB = ~500KB total，git 直管也行；好处: paper repro 时 reviewer 不需 hub access；坏处: 实验未冻结前每次 rederive 改动多 |
 
 **Resolved (recent)**:
 - ✅ Magento base_url 三次复发 → PowerShell hook + DGX defensive curl 持久化 (`f9cbebf` + quark side)
 - ✅ Magento FPC homepage cached guest → `cache:disable full_page` (quark side, persistent via PowerShell hook)
 - ✅ Watchdog auto-clean protocol → paper-grade 100% pure verified (no contamination)
+- ✅ VWA submodule reproducibility → fork to `Quarkgluonmixture/visualwebarena` p79-patches branch (`e9f7562` / `5ca2c0f`)
+- ✅ Cross-host results sync infra → `make rsync-{to,from,artifacts-from}-hub` (Tier B/C separation)
 
 详 `paper_planning.md` §6 (risks + mitigation) for paper-grade execution discipline.
 

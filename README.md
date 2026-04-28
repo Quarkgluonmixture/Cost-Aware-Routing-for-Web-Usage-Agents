@@ -136,6 +136,61 @@ results/phantom_paper/figures/   # paper figure 输出（gitignored, 由 scripts
 - Shopping base_url 必须配为 DGX 可达 IP（非 localhost），否则 Magento 302 回环
 - 详细见 `DGX_SPARK_MACHINE_QUIRKS.md`
 
+## Onboarding new host (Myriad / future GPU machines)
+
+`git clone --recursive` + `pip install -e .` 之后还要本地准备 6 项（不入 git，per-host）：
+
+1. **`.env`** — API keys (`OPENAI_API_KEY` for VWA eval / `DASHSCOPE_API_KEY` for B0 proxy / `P79_GLM_KEY` optional for digest)
+2. **`scripts/vwa_env_remote.sh`** — 15 行 BASE_URL（template 见 `DGX_SPARK_MACHINE_QUIRKS.md`）
+   ```bash
+   export VWA_REMOTE_HOST=100.95.81.103   # quark Tailscale IP
+   export CLASSIFIEDS=http://${VWA_REMOTE_HOST}:9980
+   export REDDIT=http://${VWA_REMOTE_HOST}:9999
+   export SHOPPING=http://${VWA_REMOTE_HOST}:7770
+   export SHOPPING_ADMIN=http://${VWA_REMOTE_HOST}:7780
+   export WIKIPEDIA=http://${VWA_REMOTE_HOST}:8888
+   export HOMEPAGE=http://${VWA_REMOTE_HOST}:4399
+   ```
+3. **VWA 站点 access** — 选 A：Tailscale 加入网内（reach quark `100.95.81.103`）；选 B：本机起 docker compose（需 sudo + ~3GB Wikipedia zim + ~81MB classifieds compose，按 VWA upstream README）
+4. **`.auth/`** — Playwright session state，`cd external/visualwebarena && bash prepare.sh` 生成（依赖 VWA 可达）
+5. **GPU torch CUDA build**：
+   ```bash
+   pip install --index-url https://download.pytorch.org/whl/cu128 \
+       torch==2.11.0+cu128 torchvision==0.26.0+cu128
+   python3 -c "import torch; print(torch.cuda.is_available())"   # must be True
+   ```
+6. **Shell env** — 加到 `~/.bashrc` 或 conda activate hook：
+   ```bash
+   export PYTORCH_NVML_BASED_CUDA_CHECK=1
+   export CUDA_MPS_PIPE_DIRECTORY=""
+   export CUDA_MPS_LOG_DIRECTORY=""
+   ```
+
+**已知 hardcoded `100.95.81.103` (quark)** — 9 处 .py/.sh 直写。Myriad 若直接 reach 此 IP（Tailscale）则无需改。否则临时 `sed` 替换或等 IP env-var-ize 重构（next_steps §5 backlog）。
+
+## Cross-host results sync (hub-spoke)
+
+数据画像：单 condition run **~1.7GB**（artifacts ~100MB / **JSONL 仅 ~15MB**）。3 层 sync 策略（DGX = hub）：
+
+| Tier | 内容 | 大小/cell | 策略 |
+|---|---|---|---|
+| A. Summary | `condition_summary_v2.json` + `run_meta.json` | KB-MB | 重要数据，可 commit candidate（待评估，大概率不） |
+| B. Episodes JSONL + analysis | `episodes/*.jsonl` + `analysis/**` | ~15MB | 跑完即 rsync 到 hub（默认行为） |
+| C. Artifacts | screenshots / SoM 图 | 100MB-1GB | 留本地，paper figure 重生时按需拉 |
+
+```bash
+# Spoke (Myriad) → Hub (DGX): 推 Tier B（默认无 artifacts）
+make rsync-to-hub                                 # HOST=spark-9ea3 (default)
+DRY=1 make rsync-to-hub HOST=jiaming@spark-9ea3   # 预演
+
+# Hub (DGX) → 拉别 host 跑出来的数据
+make rsync-from-hub                               # 默认 Tier B
+make rsync-from-hub RUN=B1_phantom_classifieds_20260428          # narrow 1 run
+make rsync-artifacts-from-hub RUN=... COND=phase1_phantom_som_router_0   # 包含 artifacts
+```
+
+底层脚本 `scripts/maintenance/rsync_results_{to,from}_hub.sh` 支持 `HOST` / `HUB_PATH` / `RUN` / `COND` / `ARTIFACTS` / `DRY` env vars。
+
 ## 实验启动 hard rules（paper-grade 不可违反）
 
 1. **同 site 同时只能跑一个 baseline (B0 XOR B1)** — 否则共享 user account / cart / session → cross-contam
