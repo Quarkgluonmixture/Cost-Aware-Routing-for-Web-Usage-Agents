@@ -329,6 +329,64 @@ has prior literature; what this paper adds is systematic decomposition + web-
 agent-setting empirical evidence + drop-in deployment claim". Reviewer 不会攻
 "你没新 mechanism" — paper contribution 是 decomposition + framing.
 
+### 0.4.7 §101-103 Additional Findings worth integrating into Section 5/6
+
+(Earlier analyses 2026-04-26 → 04-27 含 valuable mechanism 论点, 现 integrate 入 framework)
+
+**§101.九 Lazy Minimization Hypothesis** ⭐⭐⭐ (Section 5 capability-modulated 主轴):
+```
+4B small VLM 信号选择优先级:
+  数字标签 (高对比) > 文本 (结构化) > 截图内容文字 (低对比 + 遮挡)
+Mechanism: small VLM 视觉处理成本/收益比差 → text-over-vision bias 在 small
+VLM 更强 (与 Asadi 2026 anchor 一致)
+→ 给 capability shift +43.7pp 提供 LLM-level 解释:
+  B1 不是"弱视觉" (NoMarks 75% ≈ B0 78%), 是 "lazy minimization 默认选 easy
+  signal (numeric labels), 跳过 visual content"
+```
+
+**§103 Site-Modulated Universal Effect** ⭐⭐ (Section 5 cross-site mechanism):
+```
+Reddit: clear strategy gradient (search-loop 27→20→12%, 12.7→9.9→8.1 steps)
+Classifieds: 弱 gradient (DOM ≈ Phantom_som macro metric) 但 Jaccard 0.40-0.48
+→ Effect 在不同 layer manifest:
+  reddit: macro strategy (search-loop, type rate)
+  cls: micro element selection ordering (same macro stats, different task pool)
+统一 mechanism: representation 改变 default exploration strategy + decision threshold
+  → site-specific MAGNITUDE 但 universal EFFECT
+```
+
+**§101.1.3 Density-Threshold Capability Hijack** ⭐⭐ (Section 5 axis 3.e refinement):
+```
+B1 hijack 量化与 mark density 挂钩:
+  cls B1 (33-41 marks): hijack 弱, num_ids 0-12, M2 是主要 cost
+  red B1 (111-128 marks): hijack 强, num_ids 88-446, M1 主因 -1.9pp 反转
+  阈值约 ≥111 marks B1 hijack onset
+→ axis 3.e numeric label attention hijack 不是 binary, 是 density-dependent
+```
+
+**§103 Literature Gap 5-Dimension Confirmation** ⭐⭐⭐ (Section 2 + 6 backbone, codex #10 deep research anchor):
+```
+A. SoM lit: 全 bundle text+image, 没人 isolate marks-text
+B. Representation routing: 现 routing model-level/modality-level, 非 text-format-level
+C. AXTree vs flat list: head-to-head 对比缺失
+D. Prompt format sensitivity: anchor (Sclar 2023, Mishra 2022) 但无 web agent 应用
+E. Cost-aware web agent: token efficiency 焦于 prune, 不 reformat
+Closest prior: FOCUSAGENT (text 压缩) + Yang 2023 (SoM with image)
+本工作 = unprecedented synthesis
+
+完整 deep research: docs/literature/The Novelty and Efficacy of SoM Text...md
+codex prompt 10 应当 anchor 在这 5 dimensions
+```
+
+**§103 WA Generalization Falsifiable Prediction** ⭐ (Section 6 待数据 verify):
+```
+If H2' (representation 主导): Phantom-SoM 适用所有 text-only web benchmark
+WA pilot ≤50 task verify (Jaccard ≤0.5 universal, >0.7 VWA-specific)
+WA routing pool 扩展为 {DOM_AXTree, Phantom_SoM_marks_text}, oracle 增益理论 universal
+```
+
+**Section 5 prose codex #13 必须 read 这 5 entries (in addition to §100/Q2/diags).**
+
 ### 0.5 现在可下结论 vs 待数据 finding（2026-04-28 fresh phantom 完成 + audit 后）
 
 **已稳定（可写进 paper 主文）**:
