@@ -207,19 +207,23 @@ Axis 2: Prompt (SECONDARY, multi-dimensional, task-conditional)
     (d) commitment confidence (FP gap evidence, NOT唯一)
   Effect 是 task-pool divergence (Jaccard 0.45-0.54), NOT uniform SR shift
 
-Axis 3: Image (待 codex prompt 10 verify)
+Axis 3: Image (codex diag commit `7106d2e` validated)
   SoM image vs Phantom-SoM no-image, same SoM prompt + [SOM_MARKS]
-  Hypothesized multi-dimensional sub-effects:
-    Helping dimensions:
-      (a) Spatial grounding (layout, hierarchy)
-      (b) Visual context disambiguation (color/shape/state)
-      (c) Element disambiguation (same label different positions)
-      (d) State recognition (loading/error/modal)
-    Failure dimensions:
-      (e) Visual-hijack (loop on marks) — NOT唯一 image failure mode
-      (f) Visual misdirection (wrong region attention)
-      (g) False visual confidence (hallucinate evidence)
-  Effect site-modulated: cls 助益 dominate, red 失败 dominate
+  Multi-dimensional sub-effects (counted over adj-exclusive task sets):
+    Helping dimensions (image-on win):
+      cls: Visual context disambig 13, Element disambig 10, Spatial 5, State 1 (total 29)
+      red: State/action recognition 6, Visual context 2 (total 8)
+    Failure dimensions (image-off win):
+      cls: False confidence 8, Image-induced detour 5 (total 13)
+      red: ⭐ False visual confidence 9 (60% of red failures), Detour 3,
+            Visual-hijack 2 (only 13%!), Misdirection 1 (total 15)
+  Effect site-modulated:
+    cls: helping 29 vs harming 13 → +6.84pp adj SR (image win 主导)
+    red: helping 8 vs harming 15 → -3.33pp adj SR (image hurt 主导)
+  Task-conditional (Jaccard adj 0.333 cls / 0.378 red, 不是 monotone)
+  Visual-hijack 只是 minor: red 13%, NOT main image-induced failure
+  ⭐ False visual confidence (premature commit before text verify) is main
+  ⭐ Latency: cls SoM p95 74.0s vs Phantom-SoM 18.2s = 4x faster (no image encoding)
   Capability-modulated: B1 失败 amplify (cross_site +50/+33pp shift)
 
 Cross-axis interaction:
@@ -228,24 +232,32 @@ Cross-axis interaction:
 ```
 
 **Paper Section 1/5 prose 修订要求**:
-- ❌ 撤回 "prompt knob mainly changes commitment confidence"
+- ❌ 撤回 "prompt knob mainly changes commitment confidence" (codex `5821387` falsify)
 - ✅ 改成 "prompt as task-conditional decision prior over search/select/backtrack/commit"
-- ❌ 撤回 "visual-hijack is the main image effect"
-- ✅ 改成 "image as multi-dimensional capability with site-modulated helping vs failure dimensions"
-- 保留: drop-in deployment / cost ≈ DOM / hidden 4th arm / cross-capability visual effect (refined)
+- ❌ 撤回 "visual-hijack is the main image effect" (codex `7106d2e` falsify)
+- ✅ 改成 "image as 8-dimensional channel: 4 helping (spatial/context/element/state)
+  + 4 harming (false confidence DOMINANT 60% red, detour, misdirection, hijack 13% red)"
+- 保留: drop-in deployment / cost ≈ DOM / hidden 4th arm / cross-capability mild
+- ⭐ NEW: latency 4x improvement (cls Phantom-SoM 18.2s vs SoM 74.0s) — paper Section 7
+  sustainability framing 新维度
 
-待 codex prompt 10 (som_vs_phantom_som diag) 完成后 axis 3 evidence 完整, paper
-Section 5 prose 写作可基于 hierarchical framework.
+Codex prompt 9 (som_vs_phantom_som) 已 done (commit `7106d2e`), axis 3 evidence
+完整. Paper Section 4/5 prose 修订可基于 3-axis hierarchical framework, 待 user
+决定时机.
 
 ### 0.5 现在可下结论 vs 待数据 finding（2026-04-28 fresh phantom 完成 + audit 后）
 
 **已稳定（可写进 paper 主文）**:
 1. DOM-only mode 在 visual-required task 上系统性失败 (fig5 cat B)
-2. **Image effect 是 cross-capability + site-modulated + multi-dimensional 现象** ⭐⭐ (refined per codex diag, §0.4.5):
-   - **Multi-dimensional** (NOT 单一 visual-hijack): image 提供 spatial grounding + visual context + state recognition, 同时 introduce visual-hijack + misdirection + false-confidence (待 codex prompt 9 verify dimension counts)
+2. **Image effect 是 cross-capability + site-modulated + 8-dimensional 现象** ⭐⭐ (codex `7106d2e` validated):
+   - **8-channel multi-dimensional** (NOT 单一 visual-hijack):
+     * 4 helping: spatial grounding (cls 5), visual context (cls 13 / red 2), element disambig (cls 10), state recognition (cls 1 / red 6)
+     * 4 harming: **false visual confidence (cls 8 / red 9 ⭐ MAIN red failure 60%)**, image-induced detour (cls 5 / red 3), visual-hijack (cls 0 / red 2 only 13%), misdirection (red 1)
    - **Capability-modulated**: B0→B1 shift +50.0pp cls / +33.3pp red (B1 4B 模型 amplify failure dimensions)
-   - **Capability-agnostic mild form**: 即便 B0 frontier (235B) 在 reddit 上 Phantom-SoM 13.81% ≥ SoM 10.48% (no image → 失败 dimensions 不出现)
-   - **Site-modulated**: cls 视觉重 → SoM 21.37% >> Phantom-SoM 14.53% (image 助益 dominate); red 文本主导 → image 失败 dominate
+   - **Capability-agnostic mild form**: 即便 B0 frontier (235B) 在 reddit 上 Phantom-SoM 13.81% ≥ SoM 10.48% (no image → harming dimensions 不出现)
+   - **Site-modulated**: cls helping 29 vs harming 13 → image win +6.84pp; red helping 8 vs harming 15 → image lose -3.33pp
+   - **Task-conditional**: Jaccard adj 0.333 cls / 0.378 red (not monotone "more visual" knob)
+   - ⭐ **Latency 4x improvement**: cls SoM p95 74s vs Phantom-SoM 18.2s — production-relevant sustainability dimension
 3. DOM 在 reddit search-loop 22.7% (vs SoM 12%) — cls 不直接对比 (search 是 OSClass 核心 workflow, fig3 已加 footnote)
 4. **Phantom-DOM cls adj 14.53% ≈ DOM 14.10% (n=234, FRESH)** — prompt-as-commitment-knob 直接 evidence ⭐
 5. **Phantom-SoM cost ≈ DOM cost (deployment-time)** — `[SOM_MARKS]` 是 AXTree regex filter, 不需 bbox/image 处理 ⭐⭐
@@ -294,8 +306,8 @@ Section 5 prose 写作可基于 hierarchical framework.
 | 6 | Cross-site pattern consolidation | ~200K | ⭐⭐ | — | ✅ done `ab86019` |
 | 7 | fig3 cls metric footnote + Section 3.2 token re-estimate | ~50K | ⭐⭐ | — | ✅ done `4d63c9f` |
 | 8 | **Phantom-DOM vs Phantom-SoM mechanism diag** (Axis 2 prompt) | ~300K | ⭐⭐ Theory C validate | — | ✅ done `5821387` |
+| 9 | **SoM vs Phantom-SoM mechanism diag** (Axis 3 image multi-dim) | ~350K | ⭐⭐ Theory image multi-dim validated | — | ✅ done `7106d2e` |
 | --- | --- | --- | --- | --- | --- |
-| 9 | **SoM vs Phantom-SoM mechanism diag** (Axis 3 image multi-dim) | ~300-400K | ⭐⭐ Theory image multi-dim | — | 🟢 **prompt ready, 立刻发** |
 | 10 | Phantom-SoM step trace digest (Section 5 case studies) | ~400K | ⭐ Section 5 prose | 待 #9 done + B1 phantom done | ⏳ Wed-Thu |
 | 11 | Section 4 fresh-data prose update (新 framework) | ~30K | ⭐⭐ paper hook 升级 | 待 #9 done (axis 3 evidence 完整) | ⏳ ~Wed |
 | 12 | Section 5 prose 写 (3-axis hierarchical) | ~50K | ⭐⭐⭐ paper Section 5 | 待 #9 + #10 done | ⏳ ~Thu-Fri |
