@@ -394,6 +394,7 @@ agent-setting empirical evidence + drop-in deployment claim". Reviewer 不会攻
 | --- | --- | --- | --- | --- | --- |
 | 10 | **Axis 2/3 literature deep research + paper.bib expansion** (16→~38 entries, 含 bidirectional modality + Tong 2024 Eyes Wide Shut) ⭐⭐⭐ | ~400-600K | ⭐⭐⭐ Section 5 grounding + reviewer resilience | — | 🟡 prompt ready, 发 ~Wed/Thu |
 | 10.5 | ~~Axis 3 sub-mechanism 专项 audit~~ — **不需要** (§100 already measured + Q2 verified) | — | — | — | ✅ 已用 §100 SoM probe 测试 + red task 0/167 verify, 不需要重做 |
+| 10.6 | **Existing codex docs refine 决策**: 不重做, lazy integrate via Section 5 prose | — | — | — | ✅ verdict: 5 docs 80-95% valid, prose 写时 codex 一次 integrate refined framework + §100 + Q2; 不重做 saves ~1M tokens |
 | 11 | Section 4 fresh-data prose update (3-axis framework + cost/latency 4x finding) | ~30K | ⭐⭐ paper hook 升级 | 等 #10 一起发 | ⏳ ~Wed |
 | 12 | Phantom-SoM step trace digest (extra Section 5 case studies, supplementary) | ~400K | ⭐ supplement #8/#9 已有 14 case studies | 14 case 已在 #8/#9 cover | ⏳ optional, Thu+ |
 | 13 | Section 5 prose 写 (3-axis hierarchical + literature inline cite) | ~50K | ⭐⭐⭐ paper Section 5 main | 待 #10 + #11 done | ⏳ ~Thu-Fri |
