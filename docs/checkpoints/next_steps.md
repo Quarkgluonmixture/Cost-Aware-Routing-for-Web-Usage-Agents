@@ -951,25 +951,32 @@ CO2 维度单独 fig E (regional sensitivity, 见 §4.5.9 Option D), 不塞主 P
 
 ---
 
-## 5. Future paper 2 — REVISED (2026-04-27 晚)
+## 5. Future paper 2 — DEPRECATED (2026-04-28 晚)
 
-⚠️ **决策更新**: 原计划 "Phantom-only paper + Routing follow-up paper". 
-**新决策 (final scope)**: Router (Tier 1+2) integrated into Paper 1 主 contribution, 
-**not 独立 follow-up paper**.
+⚠️ **最终决策**: Paper 1 = 毕设论文, **全部 contribution 含 router 都 integrated**.
+Paper 2 现在非常边缘 — 仅作为远期 future work 占位, 不进入 active planning.
 
-如果未来真有 Paper 2, 主题应转向:
-- Phase 3 模块消融 (M1-M4 fallback 机制)
-- 或 routing online learning / mid-trajectory escalation (Tier 3 stretch)
-- 或 cross-model routing meta-policy (跨 model family 的 routing 一致性)
+实际 Paper 1 (毕设) integrated contributions:
+- Phantom-SoM hidden 4th routing arm + drop-in deployment
+- 3-axis hierarchical mechanism (representation × prompt × image)
+- Bidirectional modality + 6-channel image taxonomy
+- Site/capability-modulated routing pool
+- **Router (Tier 1+2)** 含 phantom routing signal (AUROC ≥ baseline) ⭐
+- Cost-aware multi-metric Pareto + green AI sustainability framing
 
-记录 routing-relevant 已积累的 infra (供 paper 1 router section + future use):
+如果毕设答辩后未来真做 Paper 2 (可能性低), 主题候选:
+- Phase 3 模块消融 (M1-M4 fallback) — 实验笔记 §19 提到的 future work
+- Online learning / mid-trajectory escalation (Tier 3 stretch)
+- Cross-model routing meta-policy (跨 model family 一致性)
 
-- Routing signals: 4 baselines × confidence_summary.json (`overall_usable: True`)
-  - Behavioral signals: action_diversity / max_repeat_streak / url_revisit (AUROC 0.62-0.77)
-  - Verbalized signals: ep_mean_verbalized (0.69-0.77)
-  - Cross-mode AUROC computed
+→ 不进入 active planning, 仅 Phase 3 modules 作 placeholder.
+
+Routing infra 现 paper 1 直接用 (不再是 future):
+- 4 baselines + 5 phantom × confidence_summary.json (`overall_usable: True`)
+- Behavioral signals AUROC 0.682-0.748 (cls behavioral 主导, red verbalized 主导)
+- Verbalized signals AUROC 0.701-0.793 (red Phantom-DOM 0.793 是 5-mode 最高)
 - Router infrastructure: `p79/experiment/router.py` RuleBasedRouter scaffold ready
-- Pending: routing rule design, threshold tuning, Phase 2 condition variants
+- Phantom modes 直接复用 baseline signal infra (drop-in routing claim 第 4 fold)
 
 ---
 
@@ -998,6 +1005,7 @@ CO2 维度单独 fig E (regional sensitivity, 见 §4.5.9 Option D), 不塞主 P
 | Magento auth bug (cookie domain split) | ✅ initially fix `7150db8` | quark side base_url 改 IP |
 | **Magento base_url 复发 (04-27)** — docker restart 后 base_url 退回 metis, shopping reset FAIL 3 次 | ✅ **fixed + 持久化** (quark side 三层: `magento_baseurl_fix.sh` + `start_vwa_docker.sh` hook + `reset_shopping.sh` 不再 hardcode localhost; DGX side 加 post-reset redirect health check) | DGX-quark reset chain 走 PowerShell, 持久化在 quark linux side, 加 defensive curl check on DGX 验证 redirect target ≠ metis |
 | **B1 shopping DOM 466 ep 跑期间 Magento bug 状态不明** (04-23 → 04-24, 在 fix 之前) | 🟡 **决策**: clear+重跑 (paper-grade 协议一致性) | timing: 等 Critical path A done (~Wed) + advisor align #1 后；推荐 rename 旧 run dir `_pre_magento_fix` 保留 reference |
+| **Magento base_url 第三次复发 (04-28)** — DGX defensive reset 检测到 metis redirect after docker reset | 🟡 **PowerShell reset chain 没集成 quark side fix** (DGX→ps1 重启 docker, 没 trigger magento_baseurl_fix.sh) | 修复: PowerShell `C:\vwa\reset_vwa.ps1` 加 docker exec 命令 (`config:set base_url + cache:flush`) 或 ssh quark Linux side 跑 magento_baseurl_fix.sh; **B0 shopping launch BLOCKED 直到修复** |
 
 ---
 

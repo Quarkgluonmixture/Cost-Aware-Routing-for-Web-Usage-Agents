@@ -1,0 +1,55 @@
+# B0 DOM-only shopping — 单 condition pilot (paper-grade clean re-run, 04-28)
+# 用途: 启动 baseline DOM single mode, 跑完 verify 健康再扩 SoM/Vision/Phantom
+# 防止 5-mode 一次性启动 cost 流失 ($93)
+#
+# 运行:
+#   bash scripts/queues/queue_b0_dom_shopping.sh   # (TBD) 单 condition launcher
+# 或 manual:
+#   .venv/bin/python3 scripts/run_experiment.py \
+#     --config configs/exp_v2_B0_dom_shopping.yaml \
+#     --run_id B0_dom_shopping_$(date +%Y%m%d) \
+#     --log_path logs/B0_dom_shopping_<ts>.log
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B0_dom_shopping"
+
+task:
+  include_sites: ["shopping"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["dom"]
+
+backends:
+  default_backend: "api_strong"
+  api_strong:
+    type: "api_proxy"
+    api_name: "qwen.qwen3-vl-235b-a22b"
+    base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
+    temperature: 0.1
+    max_new_tokens: 4096
+    max_image_payload_bytes: 5242880
+    image_max_size: 1280
+    max_obs_chars: 12000
+    dom_mode: "llm"
+    mock_mode: false
+    use_glm_fallback: true
+    glm_config: ".auth/glm"
+
+metrics:
+  cost_api:
+    input_cost_per_1k: 0.001
+    output_cost_per_1k: 0.005
+  energy:
+    enabled: false
+
+baselines:
+  run_b0: false
