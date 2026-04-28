@@ -146,6 +146,18 @@ else
       if reset_vwa_sites "${SITE}" "phantom_dom_${SITE}"; then
         echo "[phantom_dom] reset OK; sleeping 15s for site to settle..."
         sleep 15
+        echo "[phantom_dom] refreshing .auth/${SITE}_state.json post-reset..."
+        if "${PYTHON_BIN}" -c "
+import sys
+sys.path.insert(0, '${REPO_DIR}')
+from pathlib import Path
+from p79.utils.auth_refresh import refresh_site_auth
+sys.exit(0 if refresh_site_auth('${SITE}', Path('${REPO_DIR}/.auth')) else 1)
+" 2>&1; then
+          echo "[phantom_dom] auth refresh OK — runner task=0 will be LOGGED IN"
+        else
+          echo "[phantom_dom][warn] post-reset auth refresh failed; watchdog will retry reactively after streak=3" >&2
+        fi
       else
         echo "[phantom_dom][warn] reset failed (rc=$?); continuing anyway" >&2
       fi
@@ -153,7 +165,7 @@ else
       echo "[phantom_dom][warn] reset_vwa_sites.sh not found; skipping reset" >&2
     fi
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
-    echo "[phantom_dom] RESET_BEFORE=1 but BENCHMARK=wa — WA reset uses different mechanism, skipping"
+    echo "[phantom_dom] RESET_BEFORE=1 but BENCHMARK=wa — WA reset+auth refresh uses different mechanism, skipping"
   fi
 
   RUNNER_LOG="${LOG_DIR}/${CFG_NAME}_resume_${TS_FULL}.log"

@@ -161,6 +161,21 @@ else
       if reset_vwa_sites "${SITE}" "baseline_${MODE}_${SITE}"; then
         echo "[baseline] reset OK; sleeping 15s for site to settle..."
         sleep 15
+        # Refresh .auth/<site>_state.json post-reset — server-side session was wiped,
+        # so the runner's first task would otherwise hit NOT-LOGGED-IN (watchdog only
+        # reactively refreshes after streak=3, costing 3 dirty episodes).
+        echo "[baseline] refreshing .auth/${SITE}_state.json post-reset..."
+        if "${PYTHON_BIN}" -c "
+import sys
+sys.path.insert(0, '${REPO_DIR}')
+from pathlib import Path
+from p79.utils.auth_refresh import refresh_site_auth
+sys.exit(0 if refresh_site_auth('${SITE}', Path('${REPO_DIR}/.auth')) else 1)
+" 2>&1; then
+          echo "[baseline] auth refresh OK — runner task=0 will be LOGGED IN"
+        else
+          echo "[baseline][warn] post-reset auth refresh failed; watchdog will retry reactively after streak=3" >&2
+        fi
       else
         echo "[baseline][warn] reset failed (rc=$?); continuing anyway" >&2
       fi
@@ -168,7 +183,7 @@ else
       echo "[baseline][warn] reset_vwa_sites.sh not found; skipping reset" >&2
     fi
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
-    echo "[baseline] RESET_BEFORE=1 but BENCHMARK=wa — WA reset uses different mechanism, skipping"
+    echo "[baseline] RESET_BEFORE=1 but BENCHMARK=wa — WA reset+auth refresh uses different mechanism, skipping"
   fi
 
   RUNNER_LOG="${LOG_DIR}/${CFG_NAME}_runner_${TS_FULL}.log"
