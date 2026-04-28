@@ -119,15 +119,8 @@ if [[ -n "${EXISTING}" ]]; then
   RUN_ID="$(basename "${EXISTING}")"
   echo "[phantom_som] resuming existing run_id=${RUN_ID}"
 else
-  # Special case for legacy B0_phantom_reddit (run_reddit_1777238854_ef9c4b)
-  if [[ "${CFG_NAME}" == "B0_phantom_reddit" ]] \
-     && [[ -d "${PHASE_DIR}/run_reddit_1777238854_ef9c4b" ]]; then
-    RUN_ID="run_reddit_1777238854_ef9c4b"
-    echo "[phantom_som] resuming legacy run_id=${RUN_ID}"
-  else
-    RUN_ID="${CFG_NAME}_${TS_DATE}"
-    echo "[phantom_som] new run_id=${RUN_ID}"
-  fi
+  RUN_ID="${CFG_NAME}_${TS_DATE}"
+  echo "[phantom_som] new run_id=${RUN_ID}"
 fi
 
 RUN_DIR="${PHASE_DIR}/${RUN_ID}"

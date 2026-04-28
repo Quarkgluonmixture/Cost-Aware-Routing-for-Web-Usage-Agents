@@ -49,7 +49,7 @@ PANELS = [
             "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
             "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "run_reddit_1777238854_ef9c4b/phase1_phantom_som_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
         },
             },
     {
