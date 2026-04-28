@@ -25,7 +25,7 @@ PYTEST ?= .venv/bin/pytest
         confidence compare reason-diag clean-tasks watch-reddit schedule-list \
         validate gallery rsync-to-hub rsync-from-hub rsync-artifacts-from-hub \
         aggregate-cross-site summary-collect routing-auroc analyze-paper \
-        analyze-paper-per-run
+        analyze-paper-per-run compare-b0-b1-all
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
@@ -133,19 +133,42 @@ analyze-paper-per-run:
 	  $(MAKE) --no-print-directory confidence RUN=$$rd || echo "  [warn] confidence failed for $$rd"; \
 	done
 
+# B0 vs B1 site comparison — runs compare_b0_b1.py for each (B0_run, B1_run)
+# pair on cls + red. Outputs to results/visualwebarena/phase1/b0_vs_b1_<site>/.
+B0_RUN_CLS ?= results/visualwebarena/phase1/B0_3mode_classifieds_20260413
+B0_RUN_RED ?= results/visualwebarena/phase1/B0_3mode_reddit_20260422
+B1_RUN_CLS ?= results/visualwebarena/phase1/B1_3mode_classifieds_20260413
+B1_RUN_RED ?= results/visualwebarena/phase1/B1_3mode_reddit_20260413
+
+compare-b0-b1-all:
+	@$(MAKE) --no-print-directory compare B0=$(B0_RUN_CLS) B1=$(B1_RUN_CLS) SITE=classifieds || true
+	@$(MAKE) --no-print-directory compare B0=$(B0_RUN_RED) B1=$(B1_RUN_RED) SITE=reddit || true
+
 # Paper-grade snapshot — one-shot "everything after new data":
 #   1. per-run pipeline (rederive + reason-diag + cross-rep + confidence) on
 #      all 8 paper-grade VWA runs (override RUN_DIRS_PAPER_VWA if needed)
-#   2. cross-condition aggregations (cross-site SR/cost/lat/energy + run
-#      summary + routing AUROC merge)
-#   3. figures (9 PNGs incl. fig2 bootstrap CI)
+#   2. B0 vs B1 site comparison (cls + red; b0_vs_b1_<site>/ output)
+#   3. cross-condition aggregations:
+#      - aggregate-cross-site (SR/cost/lat/energy join → cross_site/)
+#      - summary-collect (run-level metadata → run_summary_collect.json)
+#      - routing-auroc (per-condition AUROC merge → auroc_cross_condition.*)
+#   4. figures (9 PNGs incl. fig2 bootstrap CI)
 # Total ~5-10 min for 8 runs. Run before codex prose tasks (#11 / #13 / #16)
 # or before paper revisits.
-analyze-paper: analyze-paper-per-run aggregate-cross-site summary-collect routing-auroc figures
+#
+# NOT included (intentional):
+#   - GLM digest sidecar — watchdog handles incrementally
+#   - Annotate screenshots / gallery regen — watchdog handles
+#   - Codex narrative analyses (docs/analysis/phantom_paper/*.md) — manual codex
+#   - Narrow ad-hoc diagnostics (analyze_*selflink_loop, b0_vision_coordinate_*,
+#     analyze_search_over_browse, diag_pattern_match) — invoke individually
+analyze-paper: analyze-paper-per-run compare-b0-b1-all aggregate-cross-site summary-collect routing-auroc figures
 	@echo ""
-	@echo "[analyze-paper] outputs in results/phantom_paper/:"
+	@echo "[analyze-paper] cross-condition outputs in results/phantom_paper/:"
 	@ls results/phantom_paper/*.csv results/phantom_paper/*.md 2>/dev/null || true
 	@ls results/phantom_paper/cross_site/*.csv 2>/dev/null || true
+	@echo "[analyze-paper] B0 vs B1 site comparisons:"
+	@ls -d results/visualwebarena/phase1/b0_vs_b1_* 2>/dev/null || true
 	@echo "[analyze-paper] figures in results/phantom_paper/figures/:"
 	@ls results/phantom_paper/figures/*.png 2>/dev/null || true
 

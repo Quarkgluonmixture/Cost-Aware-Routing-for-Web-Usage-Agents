@@ -9,7 +9,13 @@
 > - **实验笔记** (`docs/checkpoints/实验笔记.md`): time-order chronicle (历史 record)
 >
 > 📖 **新数据/figure/finding/codex 回复 → 该更新哪些文档？** see §10 Doc Update Workflow
-> 🔧 **新数据后一键 snapshot**: `make analyze-paper` (~5-10min, **everything**: per-run rederive+reason-diag+cross-rep+confidence on all 8 paper-grade runs → cross-condition aggregate + summary + routing-auroc → 9 figures incl. fig2 bootstrap CI)
+> 🔧 **新数据后一键 snapshot**: `make analyze-paper` (~5-10min, **everything**):
+>   1. per-run on 8 paper-grade VWA runs: rederive + reason-diag + cross-rep + confidence
+>   2. B0 vs B1 site comparison (cls + red, `b0_vs_b1_<site>/`)
+>   3. cross-condition aggregations: aggregate-cross-site + summary-collect + routing-auroc
+>   4. 9 figures (含 fig2 bootstrap CI)
+>
+> **NOT** included (intentional): GLM digest sidecar + gallery + annotate (watchdog handles); codex narrative analyses (manual); narrow ad-hoc diagnostics (selflink_loop / vision_coordinate / search_over_browse / diag_pattern_match — invoke per-need)
 >
 > **Last updated**: 2026-04-28 17:00
 
@@ -390,15 +396,19 @@ p79/experiment/router.py               (RuleBasedRouter scaffold)
 ✅ next_steps §3.1 done table: add row (raw/adj SR + N + done time)
 ✅ Run `make analyze-paper` (one-shot **everything**, ~5-10min):
    - per-run pipeline (rederive + reason-diag + cross-rep + confidence) on
-     all 8 paper-grade VWA runs (override RUN_DIRS_PAPER_VWA if needed)
-   - cross-condition aggregations (cross-site CSV/plots, run_summary_collect,
-     routing AUROC merge)
+     all 8 paper-grade VWA runs (override `RUN_DIRS_PAPER_VWA` if needed)
+   - B0 vs B1 site comparison (cls + red → `b0_vs_b1_<site>/`)
+   - cross-condition aggregations: aggregate-cross-site + summary-collect +
+     routing-auroc
    - 9 figures (含 fig2 bootstrap CI)
-   ↳ 仅 quick figure regen 用 `make figures` (~10s, 不含 per-run + cross-cond)
-   ↳ 仅 cross-condition refresh 用 `make analyze-paper-per-run` 之后
-     `make aggregate-cross-site summary-collect routing-auroc`（debug 用）
-   ↳ 输出 path: results/phantom_paper/{auroc_cross_condition.*,cross_site/,
-     run_summary_collect.json,figures/*.png + fig2_drop_one_bootstrap_ci.csv}
+   ↳ Quick path: `make figures` (~10s, 仅 fig regen, 不含 per-run + agg)
+   ↳ Debug path: 单独 `make analyze-paper-per-run` / `compare-b0-b1-all` /
+     `aggregate-cross-site` / `summary-collect` / `routing-auroc`
+   ↳ 输出 path: `results/phantom_paper/{auroc_cross_condition.*, cross_site/,
+     run_summary_collect.json, figures/*.png + fig2_drop_one_bootstrap_ci.csv}`
+     + `results/visualwebarena/phase1/b0_vs_b1_<site>/`
+   ↳ NOT 自动: GLM digest sidecar (watchdog) + 9 narrow ad-hoc diagnostics
+     (selflink_loop / vision_coordinate / search_over_browse / diag_pattern_match)
 🟡 next_steps §0 TL;DR: update if Critical path A 进度变化
 🟡 paper_planning §3 finding 列表: if new paper-grade finding emerges
 🟡 paper_planning §4 paper section status: if evidence quality 变化
