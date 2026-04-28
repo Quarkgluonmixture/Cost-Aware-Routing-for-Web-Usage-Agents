@@ -178,21 +178,31 @@ Critical path A 完整 ETA: ~Friday 凌晨 (04-30 / 05-01)
 | **fig8** ⭐ NEW overlap-depth stacked bar | 2x2 panel (B0+B1 cls+red), depth=1 (unique) 数字 = paper hidden-arm hook; B0 cls SoM unique=16, Phantom-DOM=5, Phantom-SoM=1\* | Phantom-SoM stale → unique=1 (期待 fresh 后 ↑); B1 phantom hatched N/A |
 | **fig9** ⭐ NEW regional carbon sensitivity (B1 only) | 45 region × 3 modes per-task CO2; cls Vision ≪ DOM (steps 少); red SoM ≈ DOM | B0 proxy API 不可测 (transparent disclose); Phantom modes pending |
 
-### 0.5 现在可下结论 vs 待数据 finding（今晚 cross-site 拆分后强化）
+### 0.5 现在可下结论 vs 待数据 finding（2026-04-28 fresh phantom 完成 + audit 后）
 
 **已稳定（可写进 paper 主文）**:
 1. DOM-only mode 在 visual-required task 上系统性失败 (fig5 cat B)
-2. **B0→B1 同 mode 失败 pattern 显著 flip — cross-site validated**: SoM hijack +50.0pp cls / +33.3pp red (vs aggregate +43.7pp) ⭐ `ab86019`
+2. **Visual-hijack 是 cross-capability + site-modulated 现象** ⭐⭐ (paper Section 5 核心 mechanism):
+   - **Capability-modulated**: B0→B1 shift +50.0pp cls / +33.3pp red (B1 4B 模型 amplify visual-hijack)
+   - **Capability-agnostic mild form**: 即便 B0 frontier (235B) 在 reddit 上 Phantom-SoM 13.81% ≥ SoM 10.48% (no image → no visual-hijack opportunity)
+   - **Site-modulated**: cls 视觉重 → SoM 21.37% >> Phantom-SoM 14.53% (image 真有用); red 文本主导 → image 反而 hurt
+   - 二层 framing 让 mechanism 论证更完整 (capability + task-type interaction)
 3. DOM 在 reddit search-loop 22.7% (vs SoM 12%) — cls 不直接对比 (search 是 OSClass 核心 workflow, fig3 已加 footnote)
 4. **Phantom-DOM cls adj 14.53% ≈ DOM 14.10% (n=234, FRESH)** — prompt-as-commitment-knob 直接 evidence ⭐
 5. **Phantom-SoM cost ≈ DOM cost (deployment-time)** — `[SOM_MARKS]` 是 AXTree regex filter, 不需 bbox/image 处理 ⭐⭐
 6. **Image tokens per step (measured medians)**: red 733 / cls 1064 (SoM input - Phantom-DOM input, n=145/234) `4d63c9f`
 7. Cost gap B0 vs B1 ~30× (Pareto frontier 形状清楚, fig7)
+8. **Phantom-SoM unique tasks 验证**: red 7 task (3.33% drop-one), cls fresh 5 task (vs stale 1 — 验证 fresh 比 stale 更强)
+
+**Honest framing 警告 (audit 04-28)**:
+- Phantom-SoM red 13.81% > SoM 10.48% **不是 unconditional dominance** — fresh vs stale 同 condition 也有 ±5% task variance (16/210 task 不同), +3.33pp ≈ 2σ noise floor
+- 主 narrative 应当是 "**site-modulated representation effect**" NOT "Phantom-SoM #1 routing arm"
+- cls SoM 显著领先 Phantom-SoM (+6.84pp adj SR) 反例必须明示, 不要 cherry-pick reddit
+- Section 1+4 prose 建议 "matches or modestly exceeds" / "comparable to top arms" 而不是 "clearly exceeds" / "first place"
 
 **待数据**:
-- Phantom-SoM 真实 unique task pool (stale → fresh 后 unique 数应 ↑, 期待 cls fig8 unique 从 1 升到 ~10+)
-- cross-site Phantom-DOM 一致性 (red partial 跑中)
-- B1 phantom 在 cost-SR 上的位置 (queue_b1_after_b0 trigger 后)
+- cross-site Phantom-DOM 一致性 (red 已 done, cls 已 done — 都 fresh ✅)
+- B1 phantom 在 cost-SR 上的位置 (queue_b1_after_b0 trigger 后, B1 cls 跑中 GPU 共享 ETA ~7-10d)
 - shopping / WA / cross-model (Claude Opus) 的 generalization
 
 ### 0.6 Paper Section 论证强度 + critical path（今晚 cross-site + B1 profile + 9 figures 后）
