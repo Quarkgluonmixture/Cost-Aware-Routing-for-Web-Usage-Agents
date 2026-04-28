@@ -33,10 +33,10 @@ SITES = {
             "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
             "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes/.bak_pre_rederive",
+            "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
             "Phantom-DOM": RESULTS / "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
         },
-        "notes": {"Phantom-SoM": "stale fallback"},
+        "notes": {"Phantom-SoM": "fresh re-run"},
     },
     "reddit": {
         "expected": 210,
@@ -45,10 +45,10 @@ SITES = {
             "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
             "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "run_reddit_1777238854_ef9c4b/phase1_phantom_som_router_0/episodes/.bak_pre_rederive",
+            "Phantom-SoM": RESULTS / "run_reddit_1777238854_ef9c4b/phase1_phantom_som_router_0/episodes",
             "Phantom-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
         },
-        "notes": {"Phantom-SoM": "stale fallback", "Phantom-DOM": "partial live"},
+        "notes": {"Phantom-SoM": "fresh re-run", "Phantom-DOM": "partial live"},
     },
 }
 
