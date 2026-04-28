@@ -1005,7 +1005,7 @@ Routing infra 现 paper 1 直接用 (不再是 future):
 | Magento auth bug (cookie domain split) | ✅ initially fix `7150db8` | quark side base_url 改 IP |
 | **Magento base_url 复发 (04-27)** — docker restart 后 base_url 退回 metis, shopping reset FAIL 3 次 | ✅ **fixed + 持久化** (quark side 三层: `magento_baseurl_fix.sh` + `start_vwa_docker.sh` hook + `reset_shopping.sh` 不再 hardcode localhost; DGX side 加 post-reset redirect health check) | DGX-quark reset chain 走 PowerShell, 持久化在 quark linux side, 加 defensive curl check on DGX 验证 redirect target ≠ metis |
 | **B1 shopping DOM 466 ep 跑期间 Magento bug 状态不明** (04-23 → 04-24, 在 fix 之前) | 🟡 **决策**: clear+重跑 (paper-grade 协议一致性) | timing: 等 Critical path A done (~Wed) + advisor align #1 后；推荐 rename 旧 run dir `_pre_magento_fix` 保留 reference |
-| **Magento base_url 第三次复发 (04-28)** — DGX defensive reset 检测到 metis redirect after docker reset | 🟡 **PowerShell reset chain 没集成 quark side fix** (DGX→ps1 重启 docker, 没 trigger magento_baseurl_fix.sh) | 修复: PowerShell `C:\vwa\reset_vwa.ps1` 加 docker exec 命令 (`config:set base_url + cache:flush`) 或 ssh quark Linux side 跑 magento_baseurl_fix.sh; **B0 shopping launch BLOCKED 直到修复** |
+| **Magento base_url 第三次复发 (04-28)** — DGX defensive reset 检测到 metis redirect after docker reset | ✅ **fixed + 持久化 (2026-04-28 13:43)** — PowerShell `C:\vwa\reset_vwa.ps1` 加 `Configure-MagentoBaseUrl` (docker exec config:set + cache:flush, shopping 7770 + shopping_admin 7780 都覆盖). DGX defensive curl check 验证 post-reset HTTP 200 no metis redirect. PowerShell parser check OK. B0 shopping unblocked. | (verified 04-28 13:48 launch B0 dom shopping success) |
 
 ---
 
