@@ -1,12 +1,12 @@
 # 4. Empirical Findings
 
-This section reports the first empirical evidence for cost-aware routing over web-agent observation representations. The key surprise is that **Set-of-Mark text alone**, with the marked screenshot removed, does not collapse to a DOM-like baseline. Instead, it behaves as a fourth routing arm whose successes only partially overlap with DOM, full SoM, and vision-only observations. We refer to this arm as **Phantom-SoM**: the agent receives the `[SOM_MARKS]` textual element list and the SoM-style prompt, but no image.
+This section reports empirical evidence that web-agent observation representations should be treated as routing arms, not only as fidelity levels. The key surprise is that **Set-of-Mark text alone**, with the marked screenshot removed, does not collapse to a DOM-like baseline. Instead, it behaves as a distinct text-only arm whose successes only partially overlap with DOM, full SoM, and vision-only observations. We refer to this arm as **Phantom-SoM**: the agent receives the `[SOM_MARKS]` textual element list and the SoM-style prompt, but no image.
 
-Throughout this section, we distinguish three measurement conventions. **Raw SR** is the evaluator success rate directly recorded by the episode summary. **Adjusted SR** subtracts confirmed false-positive terminal answers on not-applicable or evaluator-mismatch tasks. **Same-task adjusted SR** uses the same task set for all arms within a site. Unless otherwise noted, claims in Sections 4.2 and 4.3 use same-task adjusted SR on the completed B0 VisualWebArena classifieds and reddit runs. We report the denominator and metric convention with each claim because the difference between raw and adjusted rates is material for this benchmark.
+Throughout this section, we distinguish three measurement conventions. **Raw SR** is the evaluator success rate in `condition_summary_v2.json`. **Adjusted SR** subtracts confirmed false-positive terminal answers on not-applicable or evaluator-mismatch tasks. **Same-task adjusted SR** uses the same task set for all arms within a site. Unless otherwise noted, claims use same-task adjusted SR on completed B0 VisualWebArena classifieds and reddit runs. We also treat small cell-to-cell differences cautiously: under same-condition repeats, we observe roughly **+/-5% task-set variance**, so individual differences below about **2 pp** should be interpreted as noise-floor evidence rather than stable rankings.
 
 ## 4.1 Setup
 
-We evaluate a single strong API-backed web agent, denoted **B0**, on two completed VisualWebArena sites: classifieds and reddit. The completed B0 pool contains **234 classifieds tasks** and **210 reddit tasks** for each of the four compared observation arms (**N=234 classifieds; N=210 reddit; same-task adjusted unless marked otherwise**):
+We evaluate a single strong API-backed web agent, denoted **B0**, on two completed VisualWebArena sites: classifieds and reddit. The completed B0 pool contains **234 classifieds tasks** and **210 reddit tasks** for each reported observation condition:
 
 | Arm | Observation | Prompt family | Image input | Intended contrast |
 |---|---|---|---|---|
@@ -14,46 +14,59 @@ We evaluate a single strong API-backed web agent, denoted **B0**, on two complet
 | SoM | `[SOM_MARKS]` text plus marked screenshot | SoM | Yes | Full Set-of-Mark baseline |
 | Vision | Screenshot without SoM marks | Vision | Yes | Visual-only baseline |
 | Phantom-SoM | `[SOM_MARKS]` text only | SoM | No | Isolated marks-text representation |
+| Phantom-DOM | `[SOM_MARKS]` text only | DOM | No | Prompt-family control for marks text |
 
-The first three arms are the original Phase 1 representation baselines. Phantom-SoM is the new ablation arm. The original intuition was that Phantom-SoM should be either a broken SoM configuration or a weak DOM surrogate: it keeps a prompt that says the agent is operating with marked visual context, but removes the marked screenshot. The empirical results reject that intuition. Phantom-SoM is lower than full SoM on classifieds but competitive on reddit, and its task-success pool is not subsumed by DOM, SoM, or vision (**N=234/210; adjusted/drop-one oracle evidence below**).
+The first three arms are the original Phase 1 representation baselines. Phantom-SoM is the new ablation arm. Phantom-DOM is a prompt-family control: it receives the same marks-text-only observation as Phantom-SoM but uses the DOM prompt. We report all five modes for descriptive SR, cost, and latency. For the main routing-value claim, we keep the primary drop-one oracle on the four-arm comparison used throughout the paper: DOM, SoM, Vision, and Phantom-SoM.
 
-We additionally use a partial reddit ablation, **Phantom-DOM**, to separate the effects of representation format from prompt wording. Phantom-DOM receives the same `[SOM_MARKS]` text as Phantom-SoM and no image, but uses the DOM prompt rather than the SoM prompt. This 2-by-2 contrast is currently available on a **same-task reddit subset of N=48**. The N=48 ablation is not used to claim final task-level SR superiority; it is used only for mechanism: which knob changes exploration strategy, and which knob changes commitment confidence.
+The original intuition was that Phantom-SoM should be either a broken SoM configuration or a weak DOM surrogate: it keeps a prompt that says the agent is operating with marked visual context, but removes the marked screenshot. The empirical results reject that collapse story. Phantom-SoM is lower than full SoM on classifieds, where marked screenshots carry clear visual grounding value, but it matches or modestly exceeds full SoM on reddit under adjusted SR.
 
-## 4.2 Single-Mode SR
+## 4.2 Single-Mode SR, Cost, and Latency
 
-The single-mode success rates show that Phantom-SoM is not simply a failed or degenerate arm. On classifieds, full SoM remains the strongest individual representation, while Phantom-SoM trails the other arms. On reddit, however, Phantom-SoM is the strongest single arm by same-task adjusted SR.
+The single-mode success rates show a site-modulated effect. On classifieds, full SoM remains the strongest individual representation. On reddit, Phantom-SoM is at least competitive with the strongest baselines, while using no image input. The table reports adjusted SR, because Figures 1, 2, 7, and 8 use episode-level `adjusted_success` for the paper comparisons. The latency column is p95 step latency from `condition_summary_v2.json`; cost is average total cost per task.
 
-| Site | DOM | SoM | Vision | Phantom-SoM | Metric |
-|---|---:|---:|---:|---:|---|
-| Classifieds | 14.10 | **21.37** | 13.68 | 11.97 | Same-task adjusted SR, N=234 |
-| Reddit | 9.52 | 10.48 | 6.67 | **10.95** | Same-task adjusted SR, N=210 |
+| Site | Arm | Adjusted SR | Avg cost | p95 step latency | Metric |
+|---|---|---:|---:|---:|---|
+| Classifieds | DOM | 14.10 | $0.043 | 37.5s | N=234 |
+| Classifieds | SoM | **21.37** | $0.042 | 74.0s | N=234 |
+| Classifieds | Vision | 13.68 | $0.025 | 45.0s | N=234 |
+| Classifieds | Phantom-DOM | 14.53 | $0.040 | 12.8s | N=234 |
+| Classifieds | Phantom-SoM | 14.53 | $0.044 | 18.2s | N=234 |
+| Reddit | DOM | 9.52 | $0.052 | 73.6s | N=210 |
+| Reddit | SoM | 10.48 | $0.041 | 58.9s | N=210 |
+| Reddit | Vision | 6.67 | $0.023 | 55.6s | N=210 |
+| Reddit | Phantom-DOM | 11.90 | $0.046 | 58.1s | N=210 |
+| Reddit | Phantom-SoM | **13.81** | $0.038 | 51.4s | N=210 |
 
-The classifieds result is the expected sanity check: when tasks benefit from visual page layout, the marked screenshot adds useful grounding and full SoM is best (**SoM 21.37 vs Phantom-SoM 11.97; N=234; adjusted**). The reddit result is the counterintuitive case: removing the image does not eliminate the value of the SoM representation. Phantom-SoM slightly exceeds full SoM and DOM on adjusted SR (**Phantom-SoM 10.95 vs SoM 10.48 vs DOM 9.52; N=210; adjusted**). The magnitude is small in absolute SR, but the direction matters because Phantom-SoM is text-only and avoids image-token cost.
+The classifieds result is the expected sanity check: when tasks benefit from visual page layout and product imagery, the marked screenshot adds useful grounding and full SoM is clearly best (**SoM 21.37 vs Phantom-SoM 14.53; N=234; adjusted**). Phantom-SoM is close to DOM on classifieds (**14.53 vs 14.10**), but this is not a dominance claim; it is inside the noise floor and far below full SoM.
 
-This pattern suggests that the `[SOM_MARKS]` list is doing more than serving as a caption for a screenshot. It is a compact, flat, indexed text representation. Compared with AXTree-style DOM text, it removes much of the hierarchical nesting and metadata, and presents candidate actions as a linear set of marked elements. The outcome is not uniformly better, but it can push the agent toward a different solution basin. The rest of this section tests that routing interpretation directly.
+The reddit result is the counterintuitive case. Removing the image does not eliminate the value of the SoM representation: Phantom-SoM matches or modestly exceeds full SoM and DOM on adjusted SR (**13.81 vs SoM 10.48 vs DOM 9.52; N=210; adjusted**). Given the variance we observe in repeats, the **+3.33 pp** gap over SoM is near the boundary of what should be treated as stable. We interpret this as evidence that Phantom-SoM is competitive on text-dominated reddit threads, not as an unconditional single-cell dominance claim. The more robust pattern is the cross-site asymmetry: **classifieds favors full SoM; reddit does not**. We treat that asymmetry as mechanism evidence rather than a setup bug: Section 5 shows a related site-modulated capability shift, with B0-to-B1 SoM visual-hijack/click-loop increasing by **+50.0 pp** on classifieds and **+33.3 pp** on reddit.
 
-Raw SR tells the same high-level story but should not be mixed with the adjusted table. For example, the current episode summaries record higher raw rates for some baseline arms before false-positive adjustment. Because the paper claim concerns deployable task success rather than answer attempts that only appear correct under a noisy evaluator, we use the adjusted rates above for the main empirical comparisons (**raw/adjusted distinction; N=234/210**).
+This pattern suggests that the `[SOM_MARKS]` list is doing more than serving as a caption for a screenshot. It is a compact, flat, indexed text representation. Compared with AXTree-style DOM text, it removes much of the hierarchical nesting and metadata, and presents candidate actions as a linear set of marked elements. The outcome is not uniformly better, but it can push the agent toward a different solution basin.
+
+The cost and latency columns make the routing tradeoff concrete. On classifieds, Phantom-SoM's average cost is effectively in the same band as DOM and SoM (**$0.044 vs $0.043 vs $0.041**), but its p95 step latency is much lower than full SoM (**18.2s vs 74.0s**, roughly 4x faster). On reddit, Phantom-SoM is the cheapest of the main text/SoM-style arms (**$0.038 vs SoM $0.041 vs DOM $0.052**) and remains faster at p95 step latency than full SoM (**51.4s vs 58.9s**). These numbers support the cost-aware routing interpretation in Figures 7 and 9 without requiring Phantom-SoM to win every site.
+
+Raw SR tells the same high-level story but should not be mixed with adjusted SR. Some arms lose points after false-positive adjustment. Because the paper claim concerns deployable task success rather than answer attempts that only appear correct under a noisy evaluator, we use adjusted SR for the main empirical comparisons.
 
 ## 4.3 Drop-One Oracle
 
-Single-mode SR can hide routing value. A representation may have modest average SR while still solving tasks that the other arms miss. We therefore compute a drop-one oracle: form the oracle union over all four arms, remove one arm, and measure how much oracle SR falls. This loss is the arm's incremental contribution to the routing pool.
+Single-mode SR can hide routing value. A representation may have modest average SR while still solving tasks that the other arms miss. We therefore compute a drop-one oracle: form the oracle union over the four primary arms, remove one arm, and measure how much oracle SR falls. This loss is the arm's incremental contribution to the routing pool.
 
 | Site | Largest loss | Second | Third | Fourth | Metric |
 |---|---:|---:|---:|---:|---|
-| Classifieds | SoM -7.69 pp | Vision -3.85 pp | DOM -2.14 pp | Phantom-SoM -1.71 pp | Drop-one oracle loss, N=234, adjusted |
-| Reddit | SoM -2.86 pp | **Phantom-SoM -2.38 pp** | Vision -1.90 pp | DOM -1.43 pp | Drop-one oracle loss, N=210, adjusted |
+| Classifieds | SoM -8.55 pp | Vision -3.42 pp | Phantom-SoM -2.56 pp | DOM -2.14 pp | Drop-one oracle loss, N=234, adjusted |
+| Reddit | Phantom-SoM -3.33 pp | DOM -1.90 pp | SoM -1.90 pp | Vision -1.43 pp | Drop-one oracle loss, N=210, adjusted |
 
-The classifieds oracle is consistent with the single-mode story: full SoM contributes the most unique oracle value, vision contributes next, and Phantom-SoM has the smallest unique loss (**N=234; adjusted**). Even there, however, Phantom-SoM is not zero. Removing it still loses 1.71 percentage points of oracle success, meaning that a non-empty set of tasks is solved only by the marks-text-only arm.
+The classifieds oracle is consistent with the single-mode story: full SoM contributes the most unique oracle value, followed by vision. Phantom-SoM still has a non-zero loss (**2.56 pp; N=234**), but the main effect on classifieds belongs to visual grounding.
 
-The reddit oracle is the stronger result. Phantom-SoM has the second-largest drop-one loss, behind only full SoM (**-2.38 pp vs SoM -2.86 pp; N=210; adjusted**). This directly rejects the "Phantom-SoM is noise" hypothesis. If the arm were merely a degraded DOM or an unreliable SoM prompt artifact, dropping it should have little effect after DOM, SoM, and vision are already in the pool. Instead, it contributes more incremental oracle value than DOM and vision on reddit.
+The reddit oracle is the stronger routing signal. Phantom-SoM has the largest nominal drop-one loss in the fresh four-arm oracle (**3.33 pp; N=210**), while DOM and SoM each contribute **1.90 pp** and Vision contributes **1.43 pp**. Because these are small absolute task counts, we do not read the ordering as a precise rank claim. The important point is that Phantom-SoM is comparable to the top routing-value arms and is not subsumed by DOM, SoM, or Vision.
 
-Qualitative audits of only-solved tasks point to different specialization mechanisms. Full SoM and vision disproportionately cover screen-layout or visual-reference cases, where spatial grounding matters (**classifieds only-set: SoM page-screen 61%, vision page-screen 56%; reddit only-set: SoM ref-image 83%, vision page-screen 75%; audit categories, adjusted only-set**). DOM's successes are tied to sustained hierarchical exploration, especially on page-screen reddit cases. Phantom-SoM, by contrast, tends toward compact quick decisions from the flat marks list, including a classifieds only-set skew toward reference-image tasks (**classifieds Phantom-SoM only-set: ref-image 75%; audit category; adjusted only-set**).
+The overlap view supports the same conclusion. In the four-arm oracle, Phantom-SoM contributes a concrete reddit-only set of seven tasks (**7, 15, 36, 94, 157, 162, 167**) and a non-zero classifieds set as well. Two examples illustrate the kind of work this arm is doing. On reddit task 7, Phantom-SoM searched for the cake-recipe post and navigated directly to the OP recipe comment permalink. On reddit task 162, it searched within /f/wallstreetbets, scrolled hot posts, and returned the GIF URL for the retirement-account-versus-brokerage-account prompt. These are not proof of a universal mechanism by themselves, but they make the drop-one value concrete: the arm is adding recoverable successes, not only shifting aggregate percentages.
 
-The main empirical claim is therefore not that Phantom-SoM dominates the other modes. It does not. The claim is that it is an **independent routing arm**: it opens a distinct task pool at nearly DOM-like text-only cost. This is the core motivation for routing over observation representations rather than treating SoM text as inseparable from a marked image.
+The main empirical claim is therefore not that Phantom-SoM dominates the other modes. It does not. The claim is that it is an **independent routing arm**: it opens a distinct task pool at text-only cost, with the strongest relative benefit on the text-dominated reddit site and a clear visual-grounding disadvantage on classifieds.
 
 ## 4.4 Two-Knob Ablation
 
-The four-arm result raises a confound: is Phantom-SoM useful because of the `[SOM_MARKS]` text representation, or because the SoM prompt changes the agent's confidence and behavior even without an image? The Phantom-DOM ablation separates these factors. Phantom-DOM uses the **DOM prompt** with the **same `[SOM_MARKS]` text-only observation** used by Phantom-SoM. On the currently verified reddit subset, it reveals a two-knob mechanism:
+The five-mode result raises a confound: is Phantom-SoM useful because of the `[SOM_MARKS]` text representation, or because the SoM prompt changes the agent's confidence and behavior even without an image? Phantom-DOM separates these factors. The full clean Phantom-DOM runs are reported above for SR, cost, and latency; for behavioral mechanism, we use the verified same-task reddit subset of **N=48**, where all four cells of the prompt-by-representation ablation were manually checked.
 
 > **Text format shapes how the agent explores. Prompt wording tunes when the agent commits.**
 
@@ -72,4 +85,4 @@ The aggregate SR equality should not be overread as task-level identity: equal c
 
 The two-knob account reconciles the apparent tension. The representation is the novel routing axis because it changes the agent's default exploration path. The prompt is a secondary but real tuning knob because it changes commitment confidence. Both are needed to explain the ablation. A representation-only story misses the FP gap, while a prompt-only story cannot explain why Phantom-DOM follows Phantom-SoM rather than DOM on search-loop behavior.
 
-These findings also explain why Phantom-SoM can be valuable despite not winning every single-mode comparison. Routing benefits depend on complementarity, not only average SR. A flat marks list can be worse for tasks that need hierarchy or visual layout, yet better for tasks where the same hierarchy induces over-searching. The practical implication for P79 is a cost-aware cascade: try cheap text representations first, use behavioral signals to detect when their exploration is unproductive, and escalate to full SoM only when the image is likely to add grounding value.
+These findings explain why Phantom-SoM can be valuable despite not winning every single-mode comparison. Routing benefits depend on complementarity, not only average SR. A flat marks list can be worse for tasks that need hierarchy or visual layout, yet better for tasks where the same hierarchy induces over-searching. The practical implication is a cost-aware cascade: try cheap text representations first, use behavioral signals to detect when their exploration is unproductive, and escalate to full SoM when visual grounding is likely to matter.
