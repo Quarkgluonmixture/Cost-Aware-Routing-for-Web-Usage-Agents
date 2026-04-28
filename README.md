@@ -1,106 +1,117 @@
 # P79: Cost-Aware Routing for Web Usage Agents
 
-研究 cost-aware routing 能否改善 web agent 的成功率-效率权衡。基于 VisualWebArena 三站点（shopping / reddit / classifieds），使用 Qwen3-VL-4B 作为 baseline 模型。
+研究 cost-aware routing 能否改善 web agent 的成功率-效率权衡。基于 VisualWebArena 三站点（shopping / reddit / classifieds），使用 Qwen3-VL-4B (B1 local) + Qwen3-VL-235B (B0 API proxy) 双 baseline。
 
-对齐文档：`P79_experimental_scope_rq_variables.md`
+**Paper hook (毕设)**: Phantom-SoM 是 SoM-style web agent 的隐藏第 4 个 routing arm，具备 **4-fold drop-in property**：
+- (a) cost ≈ DOM（regex filter 同一 AXTree, 无需 bbox / image）
+- (b) latency ~50% 更低（cls SoM p95 74s → Phantom-SoM 18.2s = 4× 更快）
+- (c) signal AUROC ≥ baseline（5-mode 全 `overall_usable=True`）
+- (d) drop-one oracle 1.7-3.3pp（red Phantom-SoM 3.33pp ≥ SoM 1.90pp）
+
+完整 paper 论证 + theory framework (3-axis × 8-channel) + section status 见 `docs/checkpoints/paper_planning.md`。
 
 ## 快速开始
 
 ```bash
+# Clone（含 visualwebarena fork submodule）
+git clone --recursive <repo-url> Cost-Aware-Routing-for-Web-Usage-Agents
+cd Cost-Aware-Routing-for-Web-Usage-Agents
+# 或已 clone 过：
+git submodule update --init --recursive
+
 # 安装
 pip install -e .                    # 最小依赖
-pip install -e ".[analysis,dev]"    # 全功能
+pip install -e ".[analysis,dev]"    # 全功能（含 scipy/pandas/matplotlib）
 
-# 环境预检
+# 环境预检（CUDA + VWA 站点 + 认证）
 bash scripts/preflight_v2.sh
 
-# 运行实验
+# 实验入口（推荐 Makefile）
+make help                                          # 列所有 targets
+make smoke                                         # smoke + integration 测试
+make phantom B=B0 M=dom S=red                      # 单 condition phantom 实验
+make analyze RUN=results/visualwebarena/phase1/<RUN_ID>  # 全分析管线
+make compare B0=<b0_run> B1=<b1_run> SITE=classifieds    # B0 vs B1 对比
+
+# 底层命令
 python3 scripts/run_experiment.py --config configs/exp_v2_phase1.yaml
-
-# 分析结果
 python3 scripts/analysis/analyze_experiment.py --run_dir results/visualwebarena/phase1/<RUN_ID>
-
-# 测试
-pytest tests/
+pytest tests/                                      # 81 测试
 ```
+
+## 文档分层（4-doc separation of concerns）
+
+| 文档 | 用途 | 更新频率 |
+|---|---|---|
+| `docs/checkpoints/next_steps.md` | **Action ledger** — active processes / next 3 actions / codex queue / paper section status | Daily |
+| `docs/checkpoints/paper_planning.md` | **Paper strategy notebook** — theory framework / findings 列表 / risks / cascade / router / advisor align / reviewer 预案 / decision log（19 sections） | Weekly |
+| `docs/analysis/paper_drafts/` | **Final paper prose** — `section1_intro.md` ... `section8_discussion.md` + `paper.bib` | 每 codex round |
+| `docs/checkpoints/实验笔记.md` | **Time-order chronicle** — §1-§104 append-only history | Append-only |
+
+新数据/结果该更新哪些文档详见 `next_steps.md` §10 (Doc Update Workflow)。
 
 ## 三阶段实验设计
 
-- **Phase 1** — 表征筛选：2×2 grid (SoM on/off × dom_only/hybrid)
-- **Phase 2** — 路由研究：fixed best vs rule-based router
-- **Phase 3** — 模块消融：M1(select fallback) / M2(input fallback) / M3(retry) / M4(two-stage)
+- **Phase 1** — 表征筛选：5-mode flat (`dom` / `som` / `vision` / `phantom_dom` / `phantom_som`)，per site per model
+- **Phase 2** — 路由研究：Tier 1 oracle router (TF-IDF + LR) + Tier 2 first-step trigger router（Phantom-SoM 是 router 第 4 arm，同一篇 paper）
+- **Phase 3** — 模块消融：M1(select fallback) / M2(input fallback) / M3(retry) / M4(two-stage)（未启动）
+
+## 当前实验状态（2026-04-28）
+
+| Cell | Status |
+|---|---|
+| B0 VWA cls + red 5-mode FRESH paper-grade clean | ✅ done (Critical path A B0 部分) |
+| B0 VWA shopping DOM pilot | 🟡 跑中 ~9h ETA |
+| B0 VWA shopping {SoM, Vision, Phantom-DOM, Phantom-SoM} | ⏳ 待 DOM pilot 验证 |
+| B1 VWA cls phantom_som | 🟡 跑中 ~7-10d ETA (GPU contention) |
+| B1 VWA red phantom + B1 shopping 5-mode | ⏳ chain after B1 cls done |
+| B0/B1 WA 480 tasks | ⏳ Week 4-5 cross-bench generalization |
+
+详细 active processes / codex queue / pending cells 见 `next_steps.md`。
+
+## 关键变量
+
+- **A1 Observation Mode** (5-mode flat):
+  - `dom` — viewport-only AXTree
+  - `som` — `[SOM_MARKS]` text + 带框截图
+  - `vision` — 裸截图
+  - `phantom_dom` — DOM prompt + AXTree, 无图（control for prompt vs image effect）
+  - `phantom_som` — SoM prompt + `[SOM_MARKS]` text, 无图（hidden 4th routing arm）
+- **B1 Router**: off (固定策略) / on (规则路由 / oracle / learned) — Phase 2
+- **M1-M4**: 二级模块，Phase 3 逐一消融
 
 ## 代码结构
 
 ```
 p79/
-├── agents/           # LLM 推理（qwen3vl_agent=本地, qwen_api_agent=API）
-├── backends/         # Backend 抽象层（local_qwen/api_qwen/heuristic + action_utils）
-├── envs/             # VWA 环境封装（P79Observation 标准化）
+├── agents/           # LLM 推理（qwen3vl_agent=B1 本地, proxy_api_agent=B0 API）
+├── backends/         # Backend 抽象层（local_qwen / api_proxy / heuristic + factory）
+├── envs/             # VWA 环境封装（P79Observation 标准化 + viewport 过滤）
 ├── experiment/       # 核心实验引擎
-│   ├── runner.py     # 主编排器 condition→seed→task→step
-│   ├── router.py     # 规则路由器（dom_only↔hybrid 切换）
-│   ├── conditions.py # Phase1/2/3 条件生成
+│   ├── runner/       # 主编排器 condition→seed→task→step
+│   ├── router.py     # 规则路由器
+│   ├── conditions.py # Phase1/2/3 条件生成（5-mode 含 phantom）
 │   ├── modules.py    # M1-M4 辅助模块
-│   ├── som.py        # Set-of-Marks 标注
-│   ├── state_change.py # 页面状态变化检测
-│   ├── metrics.py    # 成本/延迟/能耗聚合
-│   ├── logger_v2.py  # JSONL 结构化日志（写入带 fsync 持久化）
-│   ├── io_utils.py   # JSONL 读取 + restart dedup（统一入口）
-│   ├── analysis.py   # 后分析与可视化
-│   └── config.py     # 配置加载与默认值合并
-├── utils/            # 工具（CUDA workaround, asyncio, log cleanup）
+│   ├── som.py        # Set-of-Marks 标注 + `[SOM_MARKS]` 文本提取
+│   ├── metrics.py    # 成本 / 延迟 / 能耗聚合
+│   ├── logger_v2.py  # JSONL 结构化日志（fsync 持久化）
+│   ├── io_utils.py   # JSONL 读取 + restart dedup
+│   ├── analysis.py   # adjusted_success canonical + Pareto + analyze_run
+│   └── ...
+├── utils/            # auth_refresh / CUDA workaround / asyncio
 └── cli/              # CLI 入口
-configs/              # YAML 实验配置
-scripts/              # 运行/部署/分析脚本（见下方）
-tests/                # 单元测试
-docs/                 # 分析报告、schema 文档、周报
+configs/              # YAML 实验配置（base + phase1-3 + B0/B1/WA per-site + phantom 5-mode）
+external/visualwebarena/  # ⭐ Submodule → P79 fork (Quarkgluonmixture/visualwebarena, p79-patches branch)
+                          # 含 viewport ratio bug fix / DGX host-resolver / NumPy 2.0 float casts
+scripts/
+├── analysis/         # 数据分析（analyze_*, compare_b0_b1, validate_run）
+├── analysis/figures/ # 论文 figure 生成（fig1-9，输出到 results/phantom_paper/figures/）
+├── queues/           # 实验队列（queue_b{0,1}{,_wa}_with_reset.sh, queue_phantom_pair.sh）
+├── maintenance/      # experiment_watchdog / rederive / clear_tasks / annotate / gallery
+├── vwa/              # VWA 站点 setup
+└── *.sh / run_experiment.py / preflight_v2.sh
+tests/                # 81 测试（含 test_runner_smoke invariants）
 ```
-
-## 脚本说明
-
-### 实验运行
-
-| 脚本 | 用途 |
-|------|------|
-| `scripts/run_experiment.py` | 统一实验入口（Phase 1/2/3） |
-| `scripts/preflight_v2.sh` | 环境预检（CUDA、VWA 站点、认证） |
-| `scripts/vwa_env.sh` | 本地 VWA 环境变量 |
-| `scripts/vwa_env_remote.sh` | 远程 VWA 环境变量（DGX 模式） |
-
-### 实验队列（`scripts/queues/`）
-
-| 脚本 | 用途 |
-|------|------|
-| `scripts/queues/queue_b0_with_reset.sh` / `queue_b1_with_reset.sh` | B0/B1 三模式 VWA 队列（classifieds→reddit→shopping，condition 间 reset） |
-| `scripts/queues/queue_b0_wa_with_reset.sh` / `queue_b1_wa_with_reset.sh` | B0/B1 三模式 WA 队列（shopping→shopping_admin→reddit） |
-| `scripts/maintenance/restart_watchdog.sh` | 热重启 watchdog（自动恢复所有参数，支持 `--append-args`） |
-| `scripts/maintenance/wait_for_reddit_then_rederive.sh` | reddit 跑完→自动 rederive→自动启 shopping queue（用 `make watch-reddit`） |
-
-### 监控与诊断
-
-| 脚本 | 用途 |
-|------|------|
-| `scripts/maintenance/experiment_watchdog.py` | 实验守护进程：进度推送、idle 告警、自动 digest/标注/gallery |
-| `scripts/maintenance/glm_batch_digest.py` | GLM sidecar 批量诊断（自动归因每个 episode） |
-| `scripts/maintenance/glm_diagnosis_sidecar.py` | GLM 实时诊断 sidecar |
-| `scripts/maintenance/digest_enrich.py` | Digest 后处理与富化 |
-
-### 可视化
-
-| 脚本 | 用途 |
-|------|------|
-| `scripts/maintenance/annotate_screenshots.py` | 截图标注（动作 banner + thought + 元素高亮） |
-| `scripts/maintenance/generate_gallery.py` | HTML 画廊（键盘导航、自动刷新、远程访问） |
-
-### 分析
-
-| 脚本 | 用途 |
-|------|------|
-| `scripts/analysis/analyze_experiment.py` | 主分析入口（condition 对比、成功率、成本） |
-| `scripts/analysis/analyze_reason_diagnostics.py` | 失败模式聚类与归因分析 |
-| `scripts/analysis/analyze_confidence_calibration.py` | Logprobs 置信度校准分析 |
-| `scripts/analysis/analyze_cross_representation.py` | 跨表征对比分析 |
 
 ## 结果目录
 
@@ -111,26 +122,33 @@ results/<benchmark>/<phase>/<run_id>/
 │   ├── artifacts/        # 截图、DOM、SoM 图、标注截图
 │   ├── condition_meta.json
 │   └── condition_summary_v2.json
-├── analysis/             # 分析输出（reason_diagnostics、digest 等）
-└── gallery.html          # 自动生成的可视化画廊
+├── analysis/             # 分析输出（reason_diagnostics、digest、confidence）
+└── gallery.html          # HTML 画廊
+results/phantom_paper/figures/   # paper figure 输出（gitignored, 由 scripts/analysis/figures/*.py 生成）
 ```
 
 ## DGX Spark 注意事项
 
-- 用 `python3` 或 `.venv/bin/python`，不要用 `python`
-- 必须设置 `PYTORCH_NVML_BASED_CUDA_CHECK=1`（脚本已自动处理）
-- GB10 `sm_121` 架构可能触发 nvrtc 错误，仓库内置 fallback 自动兜底
-- 远程站点配置见 `scripts/vwa_env_remote.sh`
-- 详细机器特化见 `DGX_SPARK_MACHINE_QUIRKS.md`
+- 用 `python3` 或 `.venv/bin/python`，不要用 `python`（可能不存在）
+- 必须设置 `PYTORCH_NVML_BASED_CUDA_CHECK=1` + `CUDA_MPS_PIPE_DIRECTORY=""`（脚本已自动处理）
+- GB10 `sm_121` 架构可能触发 nvrtc 错误，仓库内置 `torch.prod` fallback (`p79/utils/torch_cuda_workarounds.py`)
+- 远程站点配置见 `scripts/vwa_env_remote.sh`（不入版本管理；`VWA_REMOTE_HOST=100.95.81.103`）
+- Shopping base_url 必须配为 DGX 可达 IP（非 localhost），否则 Magento 302 回环
+- 详细见 `DGX_SPARK_MACHINE_QUIRKS.md`
 
-## 文档
+## 实验启动 hard rules（paper-grade 不可违反）
 
-| 文件 | 内容 |
-|------|------|
-| `P79_experimental_scope_rq_variables.md` | 实验范围与研究问题 |
-| `DGX_SPARK_MACHINE_QUIRKS.md` | DGX 机器特化 |
-| `docs/reference/STEP_SCHEMA_V2_OPTIONAL_FIELDS.md` | Step schema 可选字段 |
-| `docs/reference/ANALYSIS_SCRIPTS.md` | 分析脚本详细说明 |
-| `docs/analysis/<site>/` | B1 baseline 分析报告（按站点分目录，`*_manual` 人工定性 / `*_digest` GLM 定量） |
-| `docs/literature/` | 文献综述与 P79 映射 |
-| `docs/checkpoints/周报/` | 实验进展周报 |
+1. **同 site 同时只能跑一个 baseline (B0 XOR B1)** — 否则共享 user account / cart / session → cross-contam
+2. **跑实验必须 reset 站点** — 用 `RESET_BEFORE=1 make phantom ...` 或 `bash scripts/queues/queue_phantom_pair.sh`
+
+## 参考文档
+
+- `docs/checkpoints/next_steps.md` — daily action ledger ⭐
+- `docs/checkpoints/paper_planning.md` — paper strategy notebook ⭐
+- `docs/analysis/paper_drafts/` — paper section1-8 prose + paper.bib
+- `docs/checkpoints/实验笔记.md` — chronicle §1-§104
+- `docs/runs_index.md` — results/ 目录索引
+- `P79_experimental_scope_rq_variables.md` — 实验范围与研究问题
+- `DGX_SPARK_MACHINE_QUIRKS.md` — DGX 机器特化
+- `docs/reference/STEP_SCHEMA_V2_OPTIONAL_FIELDS.md` — step schema 可选字段
+- `Makefile` — daily 命令一键化（`make help`）
