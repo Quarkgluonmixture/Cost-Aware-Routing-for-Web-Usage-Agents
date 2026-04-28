@@ -245,6 +245,58 @@ Codex prompt 9 (som_vs_phantom_som) 已 done (commit `7106d2e`), axis 3 evidence
 完整. Paper Section 4/5 prose 修订可基于 3-axis hierarchical framework, 待 user
 决定时机.
 
+### 0.4.6 3-axis Framework LLM-level Mechanism Rationale (Section 5 写作 reference)
+
+**Each axis 的 LLM 底层 mechanism 都有 prior literature support** (deep research 待 codex #10 verify + cite):
+
+**Axis 1 Representation (text format)**:
+- Token distribution shift → attention pattern → next-token logits 不同
+- In-context learning bias (pretraining 中 AXTree-like vs numbered-list contexts 不同)
+- Long-context attention degradation (lost-in-the-middle)
+- Output format priming
+- Lit support: ⭐⭐⭐ Sclar 2024 ICLR, Mishra 2022 ACL, Liu 2023 lost-in-the-middle
+
+**Axis 2 Prompt (system prompt as decision prior)**:
+- "Phantom prompt" effect: prompt 描述不存在 modality 仍 anchor behavior
+- Task instruction reinterpretation under prompt prefix
+- Action schema priming (click-by-id vs click-by-text bias)
+- Latent state anchoring (prefix attention always-active)
+- Lit support: ⭐⭐ persona priming (Salemi 2024), in-context learning (Min 2022),
+  but task-pool divergence 0.45-0.54 是 paper 的 unique empirical finding
+
+**Axis 3 Image (8-channel multi-dimensional)**:
+- Helping channels: vision encoder 提供 spatial / context / disambig / state
+- Harming channels:
+  - **False visual confidence** (MAIN red 60%): "image present → text claim true"
+    implicit bias from multi-modal alignment pretraining → premature commit
+  - Image-induced detour: vision attention dominate query rewrite
+  - Visual-hijack: marked [N] bbox attention bias
+  - Misdirection: visual saliency bias (color/center/size 主导)
+- Lit support: ⭐⭐⭐ object hallucination (Li POPE 2023, Yang 2024, Yu 2024),
+  modality dominance (Wang 2024), visual saliency bias (经典 + modern MLLM)
+
+**Cross-axis interaction LLM mechanism**:
+- Repr × Prompt: 同 obs token, 不同 prompt prefix → attention(obs|prompt) 不同
+- Repr × Image: 同 prompt, image vs no-image → cross-modal vs pure self-attention
+- Prompt × Image: SoM prompt + no image (Phantom-SoM) = "phantom prompt" mismatch
+- Site × axis: cls visual-bound → image helping dominate; red text-dom → harming dominate
+
+**Paper contribution position** (Section 5 写作 framing):
+不是发现新 LLM mechanism (每 axis 都有 prior). Contribution 是:
+1. **Systematic isolation**: 2x2 ablation matrix isolate 三轴在同 setup 下 effect
+2. **Joint quantification**: web agent multi-step setting jointly form routing pool
+   disjoint structure (Jaccard 0.33-0.55)
+3. **Site-modulated framework**: cls vs red 自然提供 task-type ablation
+4. **Task-conditional task-pool divergence**: 同 SR 不同 task pool, routing 论点
+   direct evidence
+5. **Drop-in deployment**: LLM mechanism + cost analysis combined → systems-level
+   claim
+
+→ Section 5 prose 应当 frame 成 "we don't propose new LLM mechanisms, each axis
+has prior literature; what this paper adds is systematic decomposition + web-
+agent-setting empirical evidence + drop-in deployment claim". Reviewer 不会攻
+"你没新 mechanism" — paper contribution 是 decomposition + framing.
+
 ### 0.5 现在可下结论 vs 待数据 finding（2026-04-28 fresh phantom 完成 + audit 后）
 
 **已稳定（可写进 paper 主文）**:
@@ -308,13 +360,15 @@ Codex prompt 9 (som_vs_phantom_som) 已 done (commit `7106d2e`), axis 3 evidence
 | 8 | **Phantom-DOM vs Phantom-SoM mechanism diag** (Axis 2 prompt) | ~300K | ⭐⭐ Theory C validate | — | ✅ done `5821387` |
 | 9 | **SoM vs Phantom-SoM mechanism diag** (Axis 3 image multi-dim) | ~350K | ⭐⭐ Theory image multi-dim validated | — | ✅ done `7106d2e` |
 | --- | --- | --- | --- | --- | --- |
-| 10 | Phantom-SoM step trace digest (Section 5 case studies) | ~400K | ⭐ Section 5 prose | 待 #9 done + B1 phantom done | ⏳ Wed-Thu |
-| 11 | Section 4 fresh-data prose update (新 framework) | ~30K | ⭐⭐ paper hook 升级 | 待 #9 done (axis 3 evidence 完整) | ⏳ ~Wed |
-| 12 | Section 5 prose 写 (3-axis hierarchical) | ~50K | ⭐⭐⭐ paper Section 5 | 待 #9 + #10 done | ⏳ ~Thu-Fri |
-| 13 | Codex audit shopping VWA (466) | ~500K | ⭐ fig5 扩 shopping panel | 待 shopping 数据 | ⏳ Myriad |
-| 14 | Codex audit WA tasks (480) | ~500K | ⭐ fig5 扩 WA panel | 待 WA 数据 | ⏳ Week 4-5 |
-| 15 | Section 6 Generalization 草稿 | ~50K | ⭐⭐ | 待 WA + Claude done | ⏳ Week 6-7 |
-| 16 | Section 7 Discussion 草稿 (含 sustainability 段) | ~30K | ⭐ | 待全部 data done | ⏳ Week 8+ |
+| 10 | **Axis 2/3 literature deep research + paper.bib expansion** (16→~38 entries) ⭐⭐⭐ | ~400-600K | ⭐⭐⭐ Section 5 grounding + reviewer resilience | — | 🟡 prompt ready, 发 ~Wed/Thu (Section 4/5 prose 时一起) |
+| 11 | Section 4 fresh-data prose update (3-axis framework + cost/latency 4x finding) | ~30K | ⭐⭐ paper hook 升级 | 等 #10 一起发 | ⏳ ~Wed |
+| 12 | Phantom-SoM step trace digest (extra Section 5 case studies, supplementary) | ~400K | ⭐ supplement #8/#9 已有 14 case studies | 14 case 已在 #8/#9 cover | ⏳ optional, Thu+ |
+| 13 | Section 5 prose 写 (3-axis hierarchical + literature inline cite) | ~50K | ⭐⭐⭐ paper Section 5 main | 待 #10 + #11 done | ⏳ ~Thu-Fri |
+| 14 | Codex audit shopping VWA (466) | ~500K | ⭐ fig5 扩 shopping panel | 待 shopping 数据 | ⏳ Myriad |
+| 15 | Codex audit WA tasks (480) | ~500K | ⭐ fig5 扩 WA panel | 待 WA 数据 | ⏳ Week 4-5 |
+| 16 | Section 6 Generalization 草稿 | ~50K | ⭐⭐ | 待 WA + Claude done + 二次 lit research | ⏳ Week 6-7 |
+| 17 | Section 7 Discussion 草稿 (含 sustainability + latency 4x finding) | ~30K | ⭐ | 待全部 data done | ⏳ Week 8+ |
+| 18 | 二次 deep research (Section 6/7 + 全 paper revisit, 终稿前) | ~300K | ⭐ paper 终稿前 review robustness | Week 8+ paper 终稿前 | ⏳ Week 8+ |
 
 ---
 
