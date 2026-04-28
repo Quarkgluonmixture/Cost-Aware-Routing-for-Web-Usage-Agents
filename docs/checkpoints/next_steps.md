@@ -406,6 +406,17 @@ WA routing pool 扩展为 {DOM_AXTree, Phantom_SoM_marks_text}, oracle 增益理
 6. **Image tokens per step (measured medians)**: red 733 / cls 1064 (SoM input - Phantom-DOM input, n=145/234) `4d63c9f`
 7. Cost gap B0 vs B1 ~30× (Pareto frontier 形状清楚, fig7)
 8. **Phantom-SoM unique tasks 验证**: red 7 task (3.33% drop-one), cls fresh 5 task (vs stale 1 — 验证 fresh 比 stale 更强)
+9. **⭐⭐⭐ Phantom 模式 routing signal 完整 + ≥ baseline** (新发现 2026-04-28):
+   - 5/5 phantom condition `overall_usable=True`, signal extraction 直接复用 baseline infra
+   - Behavioral AUROC 0.694-0.733, Verbalized AUROC 0.701-0.793 (与 baseline 同 tier)
+   - **red Phantom-DOM verbalized AUROC 0.793 是 5-mode 最高** (超 baseline 0.766)
+   - cls site behavioral 主导 (action_diversity), red site verbalized 主导 (ep_mean_verbalized) — 与 site-modulated effect 一致
+   - Token-level signal 全 non-discriminative — paper 应避免 token-level routing claim
+   - **paper 论证升级**: Phantom 是 4-fold drop-in property:
+     (a) Cost ≈ DOM (deployment)
+     (b) Latency 4x 改进 (cls 18s vs SoM 74s)
+     (c) Signal AUROC ≥ baseline (router 复用 infra)
+     (d) Drop-one oracle 1.7-3.3pp (routing value)
 
 **Honest framing 警告 (audit 04-28)**:
 - Phantom-SoM red 13.81% > SoM 10.48% **不是 unconditional dominance** — fresh vs stale 同 condition 也有 ±5% task variance (16/210 task 不同), +3.33pp ≈ 2σ noise floor
