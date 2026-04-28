@@ -73,32 +73,34 @@
 
 ---
 
-## 当前 status snapshot
+## 当前 status snapshot (2026-04-28 14:35 update)
 
 ```
-Active processes (paper-grade clean re-run chain):
-  ├─ runner B0_phantom_som_classifieds  (re-run, 82/234, ~35%, ~6-7h ETA)
-  ├─ runner B0_phantom_dom_reddit       (123/210, ~59%, ~3-4h ETA)
-  ├─ watchdog × 4 (含 phantom_dom cls done watchdog)
-  ├─ chain orchestrator B0 cls (waiting som re-run done)
-  ├─ chain orchestrator B0 red (waiting dom done → reset → som re-run)
-  └─ queue_b1_after_b0 sequencer (waiting all B0 chains)
+Active processes:
+  ├─ runner B1_phantom_classifieds (PID 371892)  — 跑中 ~16/234, GPU contention 慢 (ETA ~7-10d)
+  ├─ runner B0_dom_shopping (PID 893601, 14:33)  — NEW launch, FPC disabled, healthy
+  ├─ watchdog × 6 (各 condition monitor, auto-clean protocol active)
+  └─ queue_b1_after_b0 sequencer (sleeping, will trigger B1 phantom_dom + B1 red after cls done)
 
-Active data (paper-grade clean):
-  ├─ B0 cls + red 3-mode baseline ✅
-  ├─ B1 cls + red 3-mode baseline ✅
-  ├─ B0 phantom_dom cls (FRESH 234/234) ✅
-  └─ B0 phantom_dom red (123/210, ~59%) 🔄
+✅ Critical path A B0 部分 100% done (FRESH paper-grade clean):
+  ├─ B0 cls 5-mode (DOM/SoM/Vision/Phantom-DOM/Phantom-SoM) — done 04-28 01:11
+  └─ B0 red 5-mode — done 04-28 10:28 (phantom_som red 14.29% raw, 13.81% adj)
 
-Pending re-run / waiting:
-  ├─ B0 phantom_som cls (82/234 跑中) 🔄
-  ├─ B0 phantom_som red (chain auto-trigger after dom done) ⏳
-  ├─ B1 phantom_reddit (queue_b1_after_b0) ⏳
-  ├─ B1 phantom_classifieds (queue_b1_after_b0) ⏳
-  └─ Shopping (B0+B1, all modes, cleared) — 待 Myriad GPU
+Active fresh paper-grade clean data:
+  ├─ B0 cls 5-mode FRESH ✅ (all auto-cleaned + 重跑 done, 100% paper-grade pure)
+  ├─ B0 red 5-mode FRESH ✅ (0 NOT LOGGED IN events, completely clean)
+  ├─ B1 cls + red 3-mode baseline ✅ (0 events)
+  ├─ B1 phantom_som cls 🔄 跑中 (~16/234)
+  └─ B0 dom shopping 🔄 NEW 14:33 (FPC disabled, paper-grade infra)
+
+Pending:
+  ├─ B1 phantom_dom cls (queue_b1_after_b0 chain)
+  ├─ B1 phantom_som red + phantom_dom red (queue_b1_after_b0 chain)
+  ├─ Shopping SoM/Vision/Phantom (待 B0 dom shopping verify done)
+  └─ B1 shopping 5-mode (待 Myriad GPU, B1 466 ep pre-Magento-bug clear+重跑)
 ```
 
-### B0 cls 5-mode 现况（其中 phantom_som 是 stale, 其他 fresh）
+### B0 cls 5-mode FRESH paper-grade clean (2026-04-28 01:11 done)
 
 | Mode | N | raw | adj | FP gap |
 |---|---:|---:|---:|---:|
@@ -106,77 +108,98 @@ Pending re-run / waiting:
 | **SoM** (baseline) | 234 | **23.08%** | **21.37%** | 1.71pp |
 | Vision (baseline) | 234 | 15.81% | 13.68% | 2.14pp |
 | **Phantom-DOM** (FRESH 04-27) | 234 | **16.67%** | **14.53%** | 2.14pp |
-| Phantom-SoM (stale .bak, 重跑中) | 234 | — | — | — |
+| **Phantom-SoM** (FRESH 04-28) | 234 | **15.81%** | **14.53%** ⭐ | 1.28pp |
 
-Phantom-DOM **adj 14.53% ≈ DOM 14.10%** (Phantom-SoM 期望 fresh 后类似 SoM 21%, 待验证)
-Section 4 prose 待 phantom-SoM re-run done 后一起 fresh-data update.
+### B0 red 5-mode FRESH paper-grade clean (2026-04-28 10:28 done)
 
-### Wall-time ETA (2026-04-27 23:30 → 完整 cls+red 5-mode)
+| Mode | N | raw | adj | FP gap |
+|---|---:|---:|---:|---:|
+| DOM (baseline) | 210 | 11.43% | 9.52% | 1.90pp |
+| SoM (baseline) | 210 | 11.90% | 10.48% | 1.43pp |
+| Vision (baseline) | 210 | 8.57% | 6.67% | 1.90pp |
+| **Phantom-DOM** (FRESH 04-28) | 210 | **13.81%** | **11.90%** | 1.91pp |
+| **Phantom-SoM** (FRESH 04-28) ⭐⭐ | 210 | **14.29%** | **13.81%** | 0.48pp |
+
+⭐ red Phantom-SoM 13.81% > SoM 10.48% (但 within 2σ noise floor, conservative framing)
+
+### Wall-time ETA (2026-04-28 14:35 → Critical path A 完整)
 
 ```
-B0 phantom_som cls re-run    : 现 82/234 → 234 完成 ~Tue 06:00
-B0 phantom_dom red continue  : 现 123/210 → 210 完成 ~Tue 02:00
-B0 phantom_som red re-run    : chain auto, 完成 ~Tue 16:00
-B1 cls chain (som→dom)       : queue_b1 trigger, 完成 ~Wed 08:00
-B1 red chain (som→dom)       : 完成 ~Fri 02:00 ⚠️ reddit 慢 2.4x/step
+✅ B0 cls 5-mode + B0 red 5-mode  done (paper-grade clean)
+🔄 B0 dom shopping (single mode pilot)  ETA ~Wed 06:00 (~16h)
+🔄 B1 phantom_som cls                    ETA ~7-10 days ⚠️ GPU contention by seonglae
+⏳ B1 phantom_dom cls (chain after som)  ETA queue trigger
+⏳ B1 phantom_som/dom red                ETA after B1 cls chain done
+⏳ Shopping SoM/Vision/Phantom-SoM/Phantom-DOM  待 B0 dom shopping pilot verify
+⏳ B1 shopping 5-mode                    待 Myriad GPU + B1 phantom done
 
-Critical path A 完整 ETA: ~Friday 凌晨 (04-30 / 05-01)
+Critical path A B0 部分: ✅ DONE
+Critical path A B1 部分: ⏳ ~Friday/Saturday (GPU contention)
+Critical path A B0 shopping: 🔄 跑中 ~Wed
 ```
 
 ⚠️ Reddit 比 cls 慢 2.4×/step (Postmill render 5.4× + AXTree 1.5×).
+⚠️ B1 GPU contention from seonglae (95% utilization, 5x latency).
 
 ---
 
-## 0. 完备性审计（2026-04-27 23:30）
+## 0. 完备性审计（2026-04-28 14:35 update）
 
 ### 0.1 数据状态矩阵
 
 | Cell | DOM | SoM | Vision | Phantom-SoM | Phantom-DOM |
 |---|---|---|---|---|---|
-| **B0 cls** | ✅ stable | ✅ stable | ✅ stable | 🔄 重跑 82/234 | ✅ FRESH 234/234 |
-| **B0 red** | ✅ stable | ✅ stable | ✅ stable | ⏳ 待 chain | 🔄 跑中 123/210 |
-| **B1 cls** | ✅ stable | ✅ stable | ✅ stable | ⏳ 待 queue_b1 | ⏳ 待 queue_b1 |
+| **B0 cls** | ✅ FRESH | ✅ FRESH | ✅ FRESH | ✅ **FRESH 04-28** ⭐ | ✅ FRESH |
+| **B0 red** | ✅ FRESH | ✅ FRESH | ✅ FRESH | ✅ **FRESH 04-28** ⭐ | ✅ FRESH |
+| **B1 cls** | ✅ stable | ✅ stable | ✅ stable | 🔄 跑中 ~16/234 (GPU contention 慢) | ⏳ 待 chain |
 | **B1 red** | ✅ stable | ✅ stable | ✅ stable | ⏳ 待 queue_b1 | ⏳ 待 queue_b1 |
-| **B1 shopping** | 🟡 466 ep pre-Magento-fix (待 clear+重跑) | 🟡 4 ep partial | ❌ 0 ep | ❌ | ❌ |
-| B0 shopping | ❌ cleared 待 Myriad | ❌ | ❌ | ❌ | ❌ |
+| **B0 shopping** | 🔄 NEW 14:33 (FPC disabled) | ⏳ wait verify | ⏳ wait verify | ⏳ wait verify | ⏳ wait verify |
+| B1 shopping | 🟡 466 ep pre-Magento-bug (clear+重跑 决策) | 🟡 4 ep partial | ❌ 0 ep | ❌ | ❌ |
 | WA (3 sites × B0/B1) | ❌ 未跑 | ❌ | ❌ | ❌ | ❌ |
 
-**paper-ready**: baseline 12/20 (60%) + phantom 1/8 (12.5%) (与昨晚相同, 但 phantom 重跑进度推进)
-**Shopping 状态修正 (2026-04-27 23:40)**: B1 shopping DOM 466 ep 实际仍存（之前误标 cleared）, 跑期间 Magento bug 可能 active, 决策 clear+重跑 (timing ~Wed advisor align #1 后)
+**paper-ready**: B0 baseline+phantom 10/10 (100% ✅) + B1 baseline 6/6 (100%) + B1 phantom 0/4 + shopping 0/10 + WA 0/30
+**总进度**: Critical path A B0 部分 ✅ 完整 done (cls+red 5-mode FRESH paper-grade clean)
+**Critical path A B1 部分**: 跑中 (慢, GPU contention)
 
-### 0.2 分析层完备性
+### 0.2 分析层完备性 (2026-04-28 update)
 
 | 分析 | 状态 | 备注 |
 |---|---|---|
 | Codex audit (cls/red, A/B/C/D 分类) | ✅ done | shopping, WA 未做 (待数据) |
 | disagreement_clusters.md (B0+B1 cls+red, 9 categories) | ✅ done | aggregate cls+red |
-| **cross_site_pattern_consolidation.md** (cls vs red 拆分) | ✅ **done** ⭐ `ab86019` | per-site 拆出 SoM hijack +50.0/+33.3pp |
-| **B1_capability_profile.md** (6 sections, 2245w) | ✅ **done** ⭐ `03ffb2f` | Section 6 cross-model 准备 |
-| Phantom-SoM step traces digest | ❌ 待 phantom-SoM 重跑 done | Section 5 prose 必备 |
+| cross_site_pattern_consolidation.md (cls vs red 拆分, +50/+33pp shift) | ✅ done `ab86019` | per-site SoM hijack flip |
+| B1_capability_profile.md (6 sections, 2245w) | ✅ done `03ffb2f` | Section 6 cross-model 准备 |
+| **phantom_dom_vs_som_diagnostic.md** (axis 2 prompt diag) | ✅ **done** ⭐ `5821387` | Theory C task-conditional decision prior |
+| **som_vs_phantom_som_diagnostic.md** (axis 3 image 8-channel) | ✅ **done** ⭐ `7106d2e` | Helping × 4 + harming × 4 (false visual confidence MAIN red 60%) |
+| Phantom-SoM step traces digest | ❌ 不必要 (#8/#9 已 14 case studies cover) | optional supplementary |
+| Section 5 literature deep research | ❌ 待 codex prompt #10 | paper.bib 16→~38 entries (axis 2/3 + bidirectional modality + Tong 2024) |
 
 ### 0.3 核心 paper claim evidence 完备性
 
 | Claim | 当前 evidence | 完备度 | 主要 blocker |
 |---|---|---|---|
-| **C1**: Phantom-SoM 是 hidden 4th routing arm | fig1/fig2 (stale) + §103 §95 N=48 | 50% ⚠️ | **B0 Phantom-SoM fresh 重跑 — paper 第一论点的根** |
-| **C2**: Two-knob (prompt × obs format) | fig3 reddit + fig5 + B0 cls Phantom-DOM ≈ DOM | 60% | red Phantom-DOM 完整 + cls 4 metrics + B0 cls Phantom-SoM fresh |
-| **C3**: Capability × representation interaction | fig6 +43.7pp aggregate | 65% | per-site 拆分 (cross-site consolidation 跑中) + B1 phantom |
-| **C4**: Cost-SR routing value | fig7 B0+B1 baseline + B0 cls Phantom-DOM | 75% | B1 Phantom 4 cell + red Phantom-DOM |
-| **C5**: Generalization (cross-site/benchmark/model) | cls+red 部分 | 30% | shopping + WA + Claude — Section 6 后期 |
+| **C1**: Phantom-SoM 是 hidden 4th routing arm | fig1/fig2/fig8 FRESH + §103 §95 N=48 + 14 case studies | **90% ✅** | shopping + B1 phantom 加成 generalization |
+| **C2**: 3-axis hierarchical (representation × prompt × image) | fig3 cls+red + fig5 + 2 codex diags + §100 OCR probe | **95% ✅** | Section 5 prose 写 (待 codex #10 + #13) |
+| **C3**: Capability × representation interaction (含 lazy minimization) | fig6 +43.7pp + cross_site +50/+33pp + §101.九 lazy minimization | **85% ✅** | B1 phantom 完成后强化 |
+| **C4**: Cost-SR routing value + 4-fold drop-in property | fig7 B0+B1 cls+red + Phantom signal AUROC ≥ baseline | **90% ✅** | B0 dom shopping + B1 phantom 加成 |
+| **C5**: Generalization (cross-site/benchmark/model) | cls+red 完整, shopping 跑中 | 35% | shopping + WA + Claude — Section 6 后期 |
+| **C6** (NEW): Phantom routing signal infra drop-in | 5-mode AUROC table, red Phantom-DOM 0.793 最高 (超 baseline) | **80% ✅** | B1 phantom 完成 verify |
 
-### 0.4 9 张 Figure 当前讲故事能力 (今晚 fig3 扩展 + fig7 callouts + fig8/fig9 新增)
+### 0.4 9 张 Figure 状态 (2026-04-28 fresh 完整 update)
 
-| Figure | 能看到的 ⭐ paper-relevant finding | 看不到 / 缺口 |
+| Figure | 能看到的 ⭐ paper-relevant finding | 状态 |
 |---|---|---|
-| **fig1** 4-mode venn (2x2) | B0 red Phantom-SoM 10.95% > DOM 9.52%, ≈ SoM 10.48% (反直觉) | B1 phantom panel 全 N/A; B0 phantom-SoM stale; 4 圆视觉拥挤 |
-| **fig2** drop-one oracle (2x2) | Phantom-SoM cls **1.71pp** / red **2.38pp** drop-one ⭐; SoM cls 7.69pp 最高 | B1 panel N/A |
-| **fig3** ⭐ strategy gradient **2x4 (red + cls)** | DOM search-loop 22.7%→SoM 12%→Phantom-SoM 10.8% **单调梯度** (red); cls Search-loop% 加 footnote 标 cross-site 不可比较 | cls Phantom-SoM n/a (stale .bak 没 step JSONL) |
-| **fig4** two-knob diagram | schematic 2x2 ablation 解释图 | 无数据 |
-| **fig5** category × mode heatmap | Cat A 全 mode 高; Cat B 仅 SoM/Vision 高 (视觉必需); Cat D 全低 (FP) ⭐ | Phantom-SoM stale; reddit Phantom-DOM partial (auto-fix on chain done) |
-| **fig6** capability contrast | B0 SoM early-finish 53.3% → B1 SoM visual-hijack 70.4%, **+43.7pp flip** ⭐⭐ | aggregate cls+red — per-site 拆已在 cross_site_pattern_consolidation.md |
-| **fig7** ⭐ cost-SR Pareto (cls+red) **+ deployment callouts** | B0 cls cost: SoM 0.041 ≈ Phantom-DOM 0.040; deployment callout "Phantom ≈ DOM cost" 已 visual emphasis | B1 Phantom 4 点 dotted placeholder |
-| **fig8** ⭐ NEW overlap-depth stacked bar | 2x2 panel (B0+B1 cls+red), depth=1 (unique) 数字 = paper hidden-arm hook; B0 cls SoM unique=16, Phantom-DOM=5, Phantom-SoM=1\* | Phantom-SoM stale → unique=1 (期待 fresh 后 ↑); B1 phantom hatched N/A |
-| **fig9** ⭐ NEW regional carbon sensitivity (B1 only) | 45 region × 3 modes per-task CO2; cls Vision ≪ DOM (steps 少); red SoM ≈ DOM | B0 proxy API 不可测 (transparent disclose); Phantom modes pending |
+| **fig1** 4-mode venn (2x2) | B0 red Phantom-SoM 13.81% > SoM 10.48% (FRESH), B0 cls Phantom-SoM 14.53% | ✅ FRESH (commit e111adf) — stale `.bak` 已切 fresh path |
+| **fig2** drop-one oracle (2x2) | Phantom-SoM cls **2.56pp** / red **3.33pp** drop-one ⭐ FRESH | ✅ FRESH |
+| **fig3** strategy gradient 2x4 (red + cls) | DOM search-loop 22.7%→Phantom 10.8% (red), cls Search-loop% 加 cross-site footnote | ✅ FRESH (cls phantom_som live data 含 fresh step JSONL) |
+| **fig4** two-knob diagram | schematic 2x2 ablation 解释图 | ✅ schematic |
+| **fig5** category × mode heatmap | Cat A 全高, Cat B 仅 SoM/Vision 高 (视觉必需), Cat D 全低 (FP) | ✅ FRESH |
+| **fig6** capability contrast | B0 SoM early-finish 53.3% → B1 SoM visual-hijack 70.4%, +43.7pp aggregate | ✅ FRESH |
+| **fig7** cost-SR Pareto (cls+red) + deployment callouts | "Phantom ≈ DOM cost" callouts 已加 (commit 91367f3) | ✅ FRESH (B1 Phantom dotted pending) |
+| **fig8** overlap-depth stacked bar | depth=1 (unique) 数字 = hidden-arm hook | ✅ FRESH (B0 cls Phantom-SoM unique=5 fresh, vs stale 1) |
+| **fig9** regional carbon sensitivity (B1 only) | 45 region × 3 modes per-task CO2 | ✅ B1 done, B0 proxy 不可测 (transparent disclose) |
+
+**最近 mtime**: all figures regen 04-28 (post fresh phantom data), `make figures` 一键 verify pass.
 
 ### 0.4.5 Theory Framework Refinement (2026-04-28 codex diag 后) ⭐⭐
 
@@ -445,20 +468,24 @@ WA routing pool 扩展为 {DOM_AXTree, Phantom_SoM_marks_text}, oracle 增益理
 - B1 phantom 在 cost-SR 上的位置 (queue_b1_after_b0 trigger 后, B1 cls 跑中 GPU 共享 ETA ~7-10d)
 - shopping / WA / cross-model (Claude Opus) 的 generalization
 
-### 0.6 Paper Section 论证强度 + critical path（今晚 cross-site + B1 profile + 9 figures 后）
+### 0.6 Paper Section 论证强度 + critical path (2026-04-28 update)
 
 | Section | evidence 质量 | 状态 | Hard blocker |
 |---|---|---|---|
-| 1 Intro | ✅ 已写 (786w + drop-in framing 强化) | done | — |
-| 2 Background + paper.bib | ✅ 已写 (1514w, 16 entries) | done | — |
+| 1 Intro | ✅ 已写 (786w + drop-in framing + conservative framing user manual) | done | — |
+| 2 Background + paper.bib | ✅ 已写 (1514w, 16 entries) | done | 待 codex #10 deep research expand to ~38 |
 | 3 Definition + Ablation | ✅ 已写 (863w, token re-estimate corrected) | done | — |
-| 4 Empirical | 🟡 70% (figures done, prose 待 fresh phantom 数据) | drafted (1725w stale) | B0 phantom-SoM 重跑 + B1 phantom (~48h) |
-| 5 Mechanism | 🟡 65% (fig3 cls+red + fig5 + cross-site +50/+33pp ⭐) | data 充分 | Phantom-SoM step traces digest |
-| 6 Generalization | 🟡 40% (B1 capability profile done) | partial | shopping + WA + cross-model (~周-月) |
+| **4 Empirical** | 🟡 80% (figures FRESH ✅ + B0 cls/red 5-mode FRESH ✅, prose 待 update) | data ready | codex #11 fresh-data prose update (~30K) |
+| **5 Mechanism** | 🟡 90% evidence (3-axis × 8-channel × bidirectional × §100 ground truth ⭐) | data 完整 | codex #13 prose 写 (~50K, 待 #10 lit done) |
+| 6 Generalization | 🟡 40% (B1 capability profile done) | partial | shopping (跑中) + WA + cross-model (~周-月) |
 | 7 Discussion | ❌ 未写 | end-stage | 全部 data done |
 
-**Critical path A** (Section 4-5 prose): B0 phantom-SoM cls (~6h) + red (~14h) + B0 phantom-DOM red (~3h) ≈ **~24h** to fresh data, +Phantom-SoM step traces digest = ~36h
-**Critical path B** (Section 6 generalization): shopping + WA + cross-model = ~周-月，独立 critical path
+**Critical path A B0 部分**: ✅ DONE (B0 cls + red 5-mode FRESH paper-grade clean, all auto-cleaned + 重跑 verified pure)
+**Critical path A B1 部分**: 🔄 跑中 ~7-10d (GPU contention from seonglae)
+**Critical path A shopping pilot**: 🔄 跑中 ~16h (B0 dom shopping NEW launch FPC disabled)
+**Critical path B** (Section 6): shopping 5-mode + WA + cross-model = ~周-月, 独立 critical path
+
+**Section 4-5 prose 写时机**: ~Wed (codex #10 lit deep research) + #11 (Section 4 fresh prose) + #13 (Section 5 prose)
 
 ### 0.7 下一步 codex 任务（按论证收益/token 比）
 
@@ -490,33 +517,32 @@ WA routing pool 扩展为 {DOM_AXTree, Phantom_SoM_marks_text}, oracle 增益理
 
 ## 1. 实验队列（优先级排序）
 
-### 1.1 立即跑中（不要动）
+### 1.1 现在跑中 (2026-04-28 14:35)
 
 | Cell | Status | ETA | Owner |
 |---|---|---|---|
-| B0 phantom_dom cls (chain step 1) | 跑中 | ~3-6h | runner 自动 |
-| B0 phantom_dom red (chain step 1) | 跑中 | ~3-6h | runner 自动 |
-| Chain B0 cls (dom→som) | sleeping | ~6-12h total | chain script 自动 |
-| Chain B0 red (dom→som) | sleeping | ~6-12h total | chain script 自动 |
+| **B1 phantom_som cls** (PID 371892) | 跑中 ~16/234 | ~7-10 days ⚠️ GPU contention | runner |
+| **B0 dom shopping** (PID 893601, NEW 14:33) | 跑中 task 0+ | ~16h (~Wed 06:00) | runner + watchdog (FPC disabled) |
+| Watchdog × 6 | active monitor | continuous | per-condition |
+| queue_b1_after_b0 sequencer | sleeping | trigger after B1 cls done | sequencer |
 
-### 1.2 自动 follow-up（chain done 后立即触发）
+### 1.2 ✅ Critical path A B0 部分已完成 (2026-04-28)
 
-| Cell | Trigger | Owner |
-|---|---|---|
-| B0 phantom_som cls re-run (fresh state) | chain B0 cls dom 完成后 | chain 自动 |
-| B0 phantom_som red re-run | chain B0 red dom 完成后 | chain 自动 |
-| B1 phantom_som cls + B1 phantom_dom cls (sequential GPU) | queue_b1_after_b0: B0 全 chain 退出 | sequencer 自动 |
-| B1 phantom_som red + B1 phantom_dom red | queue_b1_after_b0: B1 cls done | sequencer 自动 |
+| Cell | Done time | SR (raw/adj) | Status |
+|---|---|---|---|
+| B0 phantom_som cls (FRESH) | 04-28 01:11 | 15.81% / 14.53% | ✅ 234/234 |
+| B0 phantom_dom cls (FRESH) | earlier | 16.67% / 14.53% | ✅ 234/234 |
+| B0 phantom_dom red (FRESH) | 04-28 02:12 | 13.81% / 11.90% | ✅ 210/210 |
+| B0 phantom_som red (FRESH) | 04-28 10:28 | 14.29% / 13.81% ⭐ | ✅ 210/210 |
 
-### 1.3 等资源（手动决定时机）
+### 1.4 等资源（手动决定时机）
 
 | Cell | Blocker | 启动命令 | Cost |
 |---|---|---|---|
-| WA × 3 sites × B0+B1 × som+dom (12 cells) | 学长 align + 当前 chain done | `make phantom-wa-all && make phantom-dom-wa-all` | ~$6 + 24h GPU |
+| **B0 shopping SoM/Vision/Phantom (4 cells)** | wait B0 dom shopping pilot done + verify ~Wed | sequential chain after dom verify | ~$74 + ~50h API |
+| WA × 3 sites × B0+B1 × som+dom (12 cells) | 学长 align + B1 chain done | `make phantom-wa-all && make phantom-dom-wa-all` | ~$6 + 24h GPU |
 | Cross-model Claude Opus 4.7 cls+red 4-mode | 学长 align + agent 适配 | (需先 add Anthropic agent) | ~$70 |
-| B0_3mode_shopping (DOM/SoM/Vision baseline) | Myriad GPU 上线 | 改写 queue_b0_with_reset 的 site filter | ~$7 + 18h API |
-| B0/B1 phantom shopping (4 cells) | Myriad GPU + B0 baseline first | sequential after baseline | ~$10 + 24h |
-| B1 phantom shopping (2 cells) | Myriad GPU 独占 | `make phantom B=B1 M=som S=shopping` | ~12h GPU 独占 |
+| B1 shopping 5-mode (re-run after Magento bug 期间 466 ep clear) | Myriad GPU + DGX-side B1 phantom done | clear+restart chain | ~24h GPU 独占 |
 
 ---
 
@@ -765,45 +791,52 @@ Phantom-DOM 是 **mechanism ablation** (two-knob: 同 obs 不同 prompt), 不是
 
 **Phantom-SoM 仍需要全 scope** (18 cells: 3 model × 6 site) — routing arm 主体，drop-in deployment claim 需要 cross-site cross-model validation.
 
-### 4.5.8 Week 0 行动清单 (2026-04-27 → 2026-05-03)
+### 4.5.8 Week 0 行动清单 (2026-04-27 → 2026-05-03, Day 2 update 04-28)
 
-**🟢 已完成 (Day 1, 2026-04-27 晚)**:
-- ✅ 维持现有 paper-grade chain (B0 phantom_dom red 跑中, queue_b1_after_b0 sequencer)
-- ✅ 5 codex prompts 全部 done (fig3 cls / fig7 callouts / fig8 / fig9 / B1 profile)
-- ✅ Cross-site cluster consolidation done (`ab86019`)
-- ✅ Section 3.2 image-token 数字 measured corrected (`4d63c9f`)
-- ✅ Paper-level framing 升级 (drop-in deployment intervention) 落地 Section 1/3 + 实验笔记
+**🟢 已完成 (Day 1-2, 2026-04-27 → 04-28)**:
+- ✅ 5 codex prompts 全部 done (Day 1): fig3 cls / fig7 callouts / fig8 / fig9 / B1 profile
+- ✅ Cross-site cluster consolidation (`ab86019`)
+- ✅ Section 3.2 image-token 数字 corrected (`4d63c9f`)
+- ✅ Paper-level framing 升级 (drop-in deployment intervention) 落地 Section 1/3
+- ✅ **Critical path A B0 部分 100% done** (Day 2): cls + red 5-mode FRESH paper-grade clean
+- ✅ Codex prompt 8 + 9 done: phantom_dom_vs_som diag (`5821387`) + som_vs_phantom_som diag (`7106d2e`)
+- ✅ Section 1 user manual conservative framing (含 audit insight)
+- ✅ Theory framework refined to 3-axis × 8-channel × bidirectional
+- ✅ **Magento FPC 持久化 fixed** (PowerShell hook + DGX defensive curl, `f9cbebf` + quark side)
+- ✅ B0 dom shopping pilot launched (PID 893601, FPC disabled)
+- ✅ Watchdog auto-clean protocol verified — paper-grade 数据 100% pure
 
-**🟢 Day 2-7 应做**:
-1. Monitor chain progress (auto, 不需手动)
-2. ~Tue PM (B0 phantom-SoM cls+red done) — 发 codex prompt 8: Phantom-SoM step trace digest (~400K)
-3. ~Wed (B1 phantom cls done) — 发 codex prompt 9: Section 4 + figures fresh-data update (~30K)
-4. ~Thu (B1 phantom red done) — 发 codex prompt 10: Section 5 prose draft (~30K)
-5. Week 1 末: 第一次 advisor align checklist 准备 (router scope + Claude budget + 单/双 paper)
+**🟢 Day 3-7 应做**:
+1. Monitor B0 dom shopping (~16h ETA, 期望 Wed 06:00 done)
+2. **Wed (B0 dom shopping pilot done + verify)** — 启 B0 SoM/Vision/Phantom shopping (4 cells, ~$74)
+3. **Wed (并行)** — 发 codex prompt #10 (Axis 2/3 lit deep research, ~600K) + #11 (Section 4 fresh prose, ~30K)
+4. **Thu (lit + Section 4 prose done)** — 发 codex prompt #13 (Section 5 prose, ~50K)
+5. Week 1 末: 第一次 advisor align meeting (router scope + Claude budget + 单/双 paper)
 
 **🟡 准备 (不动手)**:
 - Claude Opus API key + cost budget align (启动决定 ~Week 3, advisor align 后)
-- Router design literature search (启动 ~Week 4-5, baseline 全 done 后)
-- Shopping pipeline check (Magento auth, etc. — 等 Myriad GPU 上线时一起)
+- Router design Tier 1+2 实际 write code (启动 ~Week 4-5, baseline + phantom 全 done 后)
+- WA pipeline check (`make phantom-wa-all` 启动条件)
 
 **🔴 不要做**:
-- ❌ shopping (B0+B1, 等 Myriad GPU + advisor align)
+- ❌ B1 shopping 现 (等 Myriad GPU)
 - ❌ WA (任何 site, 等 cls+red 完整 + advisor align)
 - ❌ Claude API run (等 cls+red 完整 + advisor align)
-- ❌ Router design 实际写代码 (等 baseline + phantom 完整再启动 ~Week 4)
-- ❌ Section 4-5 prose (等 fresh phantom data, ~Wed-Thu)
-- ❌ Mind2Web (out of scope per Plan B)
+- ❌ Router design 实际写代码 (等 baseline + phantom 完整 ~Week 4)
+- ❌ Section 6/7 prose (待 cross-site/cross-model data, ~Week 6-8)
+- ❌ Mind2Web (out of scope)
 
 **Week 0 末 (2026-05-03) 预期状态**:
-- ✅ B0 phantom 5-mode cls + red 完整 (fresh paper-grade clean)
-- ✅ B1 phantom 5-mode cls 完整 (B1 red 还在跑)
-- ✅ 9 paper figures 全数据完整 (auto-regen 完成)
-- ✅ Cross-site pattern consolidation done (今晚已 done)
-- ✅ B1 capability profile done (今晚已 done)
-- ✅ Section 1/2/3 paper drafts done (今晚已 done)
-- 🟡 Section 4 fresh-data prose update (codex prompt 9 done)
-- 🟡 Section 5 prose draft (codex prompt 10 done)
-- ⏳ Phantom-SoM step trace digest done
+- ✅ Critical path A B0 部分 done (cls + red 5-mode FRESH)
+- ✅ 9 paper figures FRESH (all auto-regen with fresh data)
+- ✅ Codex 2 mechanism diag done (axis 2 + axis 3)
+- ✅ Magento FPC fixed + DGX defensive curl
+- 🔄 B0 dom shopping done + 决策扩 SoM/Vision/Phantom shopping
+- 🔄 B1 phantom_som cls 进度 (GPU contention, ~30-50%)
+- 🟡 Codex #10 lit deep research done
+- 🟡 Codex #11 Section 4 fresh-data prose done
+- 🟡 Codex #13 Section 5 prose done
+- 🟡 Section 1/2/3/4/5 paper drafts complete
 
 ### 4.5.9 Cost / Latency / Carbon Metrics — Paper 利用规划
 
@@ -1022,50 +1055,48 @@ Routing infra 现 paper 1 直接用 (不再是 future):
 
 ---
 
-## 优先级总结（如果只能做一件事）— 修正 (2026-04-27 23:30)
+## 优先级总结（如果只能做一件事）— 修正 (2026-04-28 14:35)
 
-**Now (Day 1 night, 全部 codex prompts 完成)**:
-- ✅ 不打扰 active chain (cls phantom_som re-run + red phantom_dom)
-- ✅ 不发新 codex prompt (今晚 5 个 prompts 全 done)
-- 🟢 睡觉 — chain 自动跑, watchdog 自动 rederive + figures regen, ntfy 自动通知
+**Now (Day 2 mid, B0 cls/red 5-mode FRESH 完整 + B0 dom shopping 启动)**:
+- ✅ B0 cls + red 5-mode FRESH paper-grade clean (Critical path A B0 部分 100%)
+- ✅ B0 dom shopping pilot 跑中 (PID 893601, FPC disabled)
+- 🔄 B1 phantom_som cls 跑中 (慢, GPU contention)
+- ✅ Codex 2 mechanism diags done (axis 2 + axis 3, 14 case studies)
+- 🟢 监控 + 不发新 codex prompt (今晚 prompts 全 done, 等 ~Wed shopping pilot done 启 next batch)
 
-**+6h (~Tue 06:00)**:
-- B0 phantom_som cls re-run 完成 (~234/234)
-- chain auto trigger B0 phantom_som red re-run
-- watchdog auto regen fig8 (Phantom-SoM unique 数字应 ↑)
+**+6h (~Wed 06:00)**:
+- B0 dom shopping pilot 完成 (~466 task)
+- Verify SR + cost + auth health
+- 决策启 SoM/Vision/Phantom shopping (4 cells, ~$74)
 
-**+12h (~Tue 12:00)**:
-- B0 phantom_dom red 完成 (~210/210)
-- watchdog auto regen fig5 + fig8 (Phantom-DOM 完整 panel)
+**+12h (~Wed 中午)**:
+- 发 codex prompt #10 (Axis 2/3 lit deep research, ~600K)
+- 发 codex prompt #11 (Section 4 fresh-data prose update, ~30K)
+- 二者并行
 
-**+24h (~Wed)**:
-- B0 phantom_som red 完成 → B0 5-mode 完整
-- queue_b1_after_b0 trigger B1 cls chain
-- 发 codex prompt 8: Phantom-SoM step trace digest (~400K)
-- 发 codex prompt 9: Section 4 prose fresh-data update (~30K)
+**+24h (~Thu)**:
+- Codex #10 + #11 done
+- 发 codex prompt #13 (Section 5 prose 写, 3-axis hierarchical + lit cite, ~50K)
+- B0 shopping baseline (3-mode SoM/Vision) 跑中
 
-**+36-48h (~Thu)**:
-- B1 cls chain done, B1 red chain start
-- 发 codex prompt 10: Section 5 prose draft (~30K)
+**+48h (~Fri)**:
+- Section 5 prose done → paper 1 Section 1-5 全 fresh complete
+- B0 shopping 5-mode 部分 done
+- B1 phantom_som cls 进度 ~30-50% (GPU contention)
 
-**+72h (~Fri 凌晨)**:
-- B1 red chain done → cls+red 5-mode B0+B1 完整
-- **Critical path A 完成** (Section 4-5 prose 全 ready)
-- 启动 advisor align meeting #1: router scope + Claude budget + 单/双 paper
-
-**Week 2 (~05-04 起)** Pending advisor align:
+**Week 2 (~05-05 起)** advisor align meeting #1:
+- 决策: router scope (Tier 1+2)、Claude budget (~$70)、shopping continue
 - 启 WA × 3 sites × B0+B1 (advisor approve 后)
 - 启 Cross-model Claude Opus 4.7 (advisor approve 后)
-- Shopping (Myriad GPU 上线后)
 
 **Week 3-5 (paper Section 6 + Router)**:
 - WA + Claude done → Section 6 generalization draft
 - Router design + train + eval (~3-4 weeks)
 
 **Week 6-7 第二次 advisor align**:
-- Paper venue 决定 (MLSys vs NeurIPS workshop vs ACL)
+- Paper venue 决定 (MLSys 推荐 / NeurIPS workshop / ACL)
 - 投稿 timing decision
 
-**Week 8-12 paper writing + revisions**
+**Week 8-12 paper writing + revisions + 二次 lit research (Section 6/7)**
 
 **Paper submit target**: ~Week 12 (12 周后, 即 ~2026-07-20).
