@@ -40,8 +40,7 @@ PANELS = [
             "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
             "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
         },
-        "notes": {"Phantom-SoM": "fresh re-run"},
-    },
+            },
     {
         "key": "b0_red",
         "title": "B0 reddit",
@@ -52,8 +51,7 @@ PANELS = [
             "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
             "Phantom-SoM": RESULTS / "run_reddit_1777238854_ef9c4b/phase1_phantom_som_router_0/episodes",
         },
-        "notes": {"Phantom-SoM": "fresh re-run"},
-    },
+            },
     {
         "key": "b1_cls",
         "title": "B1 classifieds",
@@ -235,7 +233,7 @@ def main() -> None:
         0.5,
         0.025,
         "Labels show adjusted SR and tasks uniquely solved by that arm within the plotted set. "
-        "* B0 Phantom-SoM uses stale pre-rederive fallback summaries; B1 Phantom-SoM is unavailable pending re-run.",
+        "B1 Phantom-SoM/Phantom-DOM is unavailable pending re-run.",
         ha="center",
         fontsize=8.5,
         color="#555555",

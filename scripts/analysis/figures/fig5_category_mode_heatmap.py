@@ -48,7 +48,7 @@ SITES = {
             "Phantom-SoM": RESULTS / "run_reddit_1777238854_ef9c4b/phase1_phantom_som_router_0/episodes",
             "Phantom-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
         },
-        "notes": {"Phantom-SoM": "fresh re-run", "Phantom-DOM": "partial live"},
+        # all phantom modes fresh complete (B0 cls/red Phantom-SoM 234/210, Phantom-DOM 234/210)
     },
 }
 
@@ -148,7 +148,7 @@ def main() -> None:
     fig.text(
         0.5,
         -0.03,
-        "* Phantom-SoM uses stale pre-rederive fallback summaries; reddit Phantom-DOM is partial live data while the run is still in progress.",
+        "All B0 phantom modes use fresh paper-grade clean re-run. B1 phantom modes pending.",
         ha="center",
         fontsize=8.5,
         color="#555555",

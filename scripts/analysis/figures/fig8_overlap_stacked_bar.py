@@ -40,8 +40,7 @@ PANELS = [
             "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
             "Phantom-DOM": RESULTS / "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
         },
-        "notes": {"Phantom-SoM": "*"},
-    },
+            },
     {
         "key": "B0 red",
         "title": "B0 reddit",
@@ -53,8 +52,7 @@ PANELS = [
             "Phantom-SoM": RESULTS / "run_reddit_1777238854_ef9c4b/phase1_phantom_som_router_0/episodes",
             "Phantom-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
         },
-        "notes": {"Phantom-SoM": "*", "Phantom-DOM": "**"},
-    },
+            },
     {
         "key": "B1 cls",
         "title": "B1 classifieds",
@@ -243,7 +241,7 @@ def main() -> None:
         0.5,
         0.025,
         "Stacked segments = number of modes that solved each task. Depth=1 (solid) means uniquely solved by that arm — "
-        "primary evidence for hidden 4th routing arm. * stale .bak; ** partial live; N/A pending re-run.",
+        "primary evidence for hidden 4th routing arm. N/A pending B1 phantom re-run.",
         ha="center",
         fontsize=8.5,
         color="#555555",

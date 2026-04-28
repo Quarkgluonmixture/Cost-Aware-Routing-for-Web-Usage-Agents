@@ -2,8 +2,8 @@
 """Drop-one oracle loss for B0/B1 VWA observation arms.
 
 All available cells are computed from episode-level ``adjusted_success`` sets.
-B0 Phantom-SoM uses stale pre-rederive fallback summaries; B1 Phantom-SoM is
-drawn as unavailable until the cleared runs are regenerated.
+B0 Phantom-SoM/Phantom-DOM use fresh paper-grade clean re-run; B1 Phantom-SoM is
+drawn as unavailable pending re-run.
 """
 
 from __future__ import annotations
@@ -40,8 +40,7 @@ PANELS = [
             "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
             "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
         },
-        "notes": {"Phantom-SoM": "fresh re-run"},
-    },
+            },
     {
         "key": "b0_red",
         "title": "B0 reddit",
@@ -52,8 +51,7 @@ PANELS = [
             "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
             "Phantom-SoM": RESULTS / "run_reddit_1777238854_ef9c4b/phase1_phantom_som_router_0/episodes",
         },
-        "notes": {"Phantom-SoM": "fresh re-run"},
-    },
+            },
     {
         "key": "b1_cls",
         "title": "B1 classifieds",
@@ -189,7 +187,7 @@ def main() -> None:
         0.5,
         0.025,
         "Higher bars mean the representation solves tasks not recovered by the other plotted arms. "
-        "* B0 Phantom-SoM uses stale pre-rederive fallback summaries; B1 Phantom-SoM pending re-run.",
+        "B1 Phantom-SoM/Phantom-DOM pending re-run.",
         ha="center",
         fontsize=8.5,
         color="#555555",
