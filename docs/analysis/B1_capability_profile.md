@@ -144,9 +144,9 @@ B1 loses most often when the task requires sustained multi-step exploration, sta
 - Reddit: DOM is B1's best mode (7.62% adjusted), ahead of SoM (5.71%) and Vision (2.38%). Reddit tasks punish weak visual grounding and comment/post localization; SoM marks do not compensate enough for the smaller model.
 - Vision-only B1 is consistently the weakest arm, especially on reddit, where screen evidence without symbolic anchors produces low SR and high element/click grounding failures.
 
-## 6. Phantom B1 Placeholder (queue_b1_after_b0 trigger after update)
+## 6. Phantom B1 Placeholder (B1 phantom chains pending)
 
-B1 Phantom-SoM and Phantom-DOM runs are currently pending / cleared and are not included in this profile. Once `queue_b1_after_b0` completes, update this document with:
+B1 Phantom-SoM and Phantom-DOM runs are currently pending / cleared and are not included in this profile. Once B1 cls + red phantom_som + phantom_dom complete (4 cells, manual chain via `RESET_BEFORE=1 bash scripts/queues/queue_phantom_{som,dom}.sh B1 {classifieds,reddit}`), update this document with:
 
 - B1 Phantom-SoM and Phantom-DOM raw + adjusted SR for classifieds and reddit.
 - Phantom-vs-DOM / Phantom-vs-SoM overlap and unique-task counts.

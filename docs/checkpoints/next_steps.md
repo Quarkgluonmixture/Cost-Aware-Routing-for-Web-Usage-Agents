@@ -40,8 +40,7 @@
 | 371892 | B1_phantom_classifieds runner | 跑中 ~16/234, GPU contention | ~7-10 days ⚠️ |
 | 1106560 | B0_dom_shopping runner (clean re-run, RESET_BEFORE=1, queue_baseline.sh) | 跑中 task=0+, fresh run_id `B0_dom_shopping_20260428` | ~9h |
 | 1106686 | B0_dom_shopping watchdog | active | continuous |
-| 32263, 4124316, 4124482, 370225, 371979 | Watchdog × 5 | per-condition monitor | continuous |
-| 3964734 | queue_b1_after_b0 sequencer | sleeping (will trigger after B1 cls done) | continuous |
+| 32263, 4124316, 4124482, 371979 | Watchdog × 4 (B0 phantom history + B1 cls active) | per-condition monitor | continuous |
 
 **Health checks**:
 - Magento HTTP 200 (FPC disabled, PowerShell hook 持久化) ✅
@@ -125,7 +124,7 @@ Cells:     6 sites × 3 models × 5 modes = ~90 baseline cells (~125K episode to
 | Cell | Trigger |
 |---|---|
 | B1 phantom_dom cls | chain after B1 phantom_som cls done |
-| B1 phantom_som + dom red | queue_b1_after_b0: B1 cls done |
+| B1 phantom_som + dom red | manual chain after B1 cls done (`RESET_BEFORE=1 queue_phantom_{som,dom}.sh B1 reddit`) |
 
 ### 3.4 等资源 (manual decision)
 
