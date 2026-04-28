@@ -31,7 +31,7 @@
 2. ~Wed 中午: 发 codex #10 (axis 2/3 lit deep research, ~600K) + #11 (Section 4 fresh prose, ~30K)
 3. ~Thu: 发 codex #13 (Section 5 prose 写, 3-axis hierarchical + lit cite, ~50K)
 
-**Paper progress**: Section 1/2/3 ✅ done (3163 words), Section 4 figures ✅ FRESH + prose 待 codex update, Section 5 evidence 90% (3-axis + 8-channel + bidirectional + §100 ground truth), Section 6/7 待 cross-site/cross-model data.
+**Paper progress**: Section 1/2/3 ✅ done (3163 words), Section 4 figures ✅ FRESH + bootstrap CI ✅ + prose 待 codex update, Section 5 evidence 90% (3-axis + 8-channel + bidirectional + §100 ground truth), Section 6 routing AUROC table ✅ ready (B0 red phantom_dom 0.793 highest), Section 7/8 待 cross-site/cross-model data + multi-metric Pareto.
 
 ---
 
@@ -205,15 +205,17 @@ nohup bash scripts/queues/queue_chain.sh \
 
 ### Data analysis backlog (Python scripts, 非 codex)
 
-paper_strategic 数据 pipeline gaps（详 `paper_planning.md` §13.B）：
+paper_strategic 数据 pipeline (详 `paper_planning.md` §13.B)。一键 `make analyze-paper` 触发现有 done 项 + figures 重生。
 
-| Task | 用途 | Effort |
+| Task | 用途 | Status |
 |---|---|---|
-| Bootstrap CI / paired permutation test | Section 4 显著性 (drop-one 1.7-3.3pp 是否 within noise) | ~hour |
-| AUROC aggregation per-condition routing signal | Section 6 "AUROC ≥ baseline" supporting table | ~30 min |
-| Multi-metric Pareto (cost + lat + carbon) pipeline | Section 8 sustainability 前置 | ~2 hour |
-| 每 task TF-IDF + binary feature extraction | Section 6 Tier 1 router 前置 | ~hour |
-| B0 token-based carbon estimator | Section 8 Tier 3 sustainability | ~20 行 helper |
+| ✅ A. Bootstrap CI for drop-one oracle | Section 4 显著性 | done `847eaeb` — `fig2_drop_one_oracle.py` + `fig2_drop_one_bootstrap_ci.csv` (12 rows × 95% CI) |
+| ✅ B. AUROC aggregation per-condition routing signal | Section 6 "AUROC ≥ baseline" supporting table | done `847eaeb` — `aggregate_routing_auroc.py` → `auroc_cross_condition.{csv,md,_summary.md}` (188 rows) |
+| ⏳ C. Multi-metric Pareto (cost + lat + carbon) | Section 8 sustainability 前置 | 待 (~2h, fig10 new + carbon estimator integration) |
+| ⏳ D. TF-IDF + binary feature extraction | Section 6 Tier 1 router 前置 | 待 (~1h, extend `r1_task_features` in `analyze_cross_representation.py`) |
+| ⏳ E. B0 token-based carbon estimator | Section 8 Tier 3 sustainability | 待 (~20 行 helper in `p79/experiment/metrics.py`) |
+
+**`make analyze-paper`** 一键 chain：`aggregate-cross-site` (cross-site SR/cost/lat/energy CSV+plots) + `summary-collect` (run_summary_collect.json) + `routing-auroc` (cross-condition AUROC table) + `figures` (9 PNGs 含 fig2 bootstrap CI). 跑前 paper-grade snapshot 一键生成 — codex #11/#13 prose 写之前 invoke。
 
 ---
 
