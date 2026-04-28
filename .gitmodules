@@ -1,4 +1,5 @@
 [submodule "external/visualwebarena"]
 	path = external/visualwebarena
-	url = https://github.com/web-arena-x/visualwebarena.git
+	url = https://github.com/Quarkgluonmixture/visualwebarena.git
+	branch = p79-patches
 	ignore = dirty
