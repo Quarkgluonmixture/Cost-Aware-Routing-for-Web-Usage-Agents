@@ -1506,11 +1506,12 @@ def main() -> int:
                 cond_all = [r for r in all_records if r.condition_id == condition_id]
                 cond_total = len(cond_all)
                 cond_succ = sum(1 for r in cond_all if r.success)
+                cond_rate = (cond_succ / cond_total) if cond_total else 0.0
 
                 print(
                     f"[watchdog] [{obs_mode}] {condition_id} task={task_id:>3d} "
                     f"{'OK' if rec.success else reason:<10s} "
-                    f"succ={cond_succ}/{cond_total} ({cond_succ/cond_total:.1%})"
+                    f"succ={cond_succ}/{cond_total} ({cond_rate:.1%})"
                 )
 
             # Batch-send AUTO-RETRY notifications (avoid per-task spam)
