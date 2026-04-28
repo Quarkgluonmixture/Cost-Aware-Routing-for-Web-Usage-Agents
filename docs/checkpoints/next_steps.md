@@ -9,6 +9,7 @@
 > - **实验笔记** (`docs/checkpoints/实验笔记.md`): time-order chronicle (历史 record)
 >
 > 📖 **新数据/figure/finding/codex 回复 → 该更新哪些文档？** see §10 Doc Update Workflow
+> 🔧 **paper-grade snapshot 一键命令**: `make analyze-paper` (chains aggregate + summary + routing-auroc + figures)
 >
 > **Last updated**: 2026-04-28 17:00
 
@@ -387,7 +388,12 @@ p79/experiment/router.py               (RuleBasedRouter scaffold)
 ✅ 实验笔记: append chronicle entry (§104+ daily, Day-by-day finding)
 ✅ next_steps §1 Active processes: mark done (remove or move to §3.1 done table)
 ✅ next_steps §3.1 done table: add row (raw/adj SR + N + done time)
-✅ Run `make figures` (auto-regen fresh data, 9 figures)
+✅ Run `make analyze-paper` (canonical paper-grade snapshot, ~30s, chains
+   aggregate-cross-site + summary-collect + routing-auroc + figures)
+   ↳ 仅 quick figure regen 用 `make figures` (~10s, 不含 cross-condition
+     aggregations)
+   ↳ 输出 path: results/phantom_paper/{auroc_cross_condition.*,cross_site/,
+     run_summary_collect.json,figures/*.png + fig2_drop_one_bootstrap_ci.csv}
 🟡 next_steps §0 TL;DR: update if Critical path A 进度变化
 🟡 paper_planning §3 finding 列表: if new paper-grade finding emerges
 🟡 paper_planning §4 paper section status: if evidence quality 变化
@@ -401,7 +407,16 @@ p79/experiment/router.py               (RuleBasedRouter scaffold)
 ✅ paper_planning §10 visualization plan: update 4-fig stack
 ✅ paper_planning §12 figures inventory: add row
 🟡 paper_planning §3 finding: if figure reveals new finding
-✅ Makefile figures target: add fig10_*.py
+✅ Makefile figures target: add fig10_*.py（同时 analyze-paper 自动 chain）
+```
+
+### B'. 新 cross-condition aggregator (e.g. paired permutation table)
+
+```
+✅ scripts/analysis/aggregate_*.py: implement
+✅ Makefile: 新 PHONY target + chain into analyze-paper
+✅ paper_planning §13.B: mark done with output path
+✅ next_steps §4 Data analysis backlog: mark ✅
 ```
 
 ### C. 新 codex analysis (e.g. trajectory diff diag)
