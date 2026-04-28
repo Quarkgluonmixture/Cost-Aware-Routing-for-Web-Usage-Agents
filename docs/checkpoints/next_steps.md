@@ -203,6 +203,18 @@ nohup bash scripts/queues/queue_chain.sh \
 - Phantom-SoM step trace digest 不必要 (#8/#9 已 14 case studies cover)
 - §100 SoM probe + Q1/Q2 audit done, 不需重做
 
+### Data analysis backlog (Python scripts, 非 codex)
+
+paper_strategic 数据 pipeline gaps（详 `paper_planning.md` §13.B）：
+
+| Task | 用途 | Effort |
+|---|---|---|
+| Bootstrap CI / paired permutation test | Section 4 显著性 (drop-one 1.7-3.3pp 是否 within noise) | ~hour |
+| AUROC aggregation per-condition routing signal | Section 6 "AUROC ≥ baseline" supporting table | ~30 min |
+| Multi-metric Pareto (cost + lat + carbon) pipeline | Section 8 sustainability 前置 | ~2 hour |
+| 每 task TF-IDF + binary feature extraction | Section 6 Tier 1 router 前置 | ~hour |
+| B0 token-based carbon estimator | Section 8 Tier 3 sustainability | ~20 行 helper |
+
 ---
 
 ## §5 Open Issues (active)

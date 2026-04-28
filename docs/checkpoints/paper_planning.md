@@ -615,12 +615,44 @@ ef29add  drop-in deployment punchline
 
 ## §13 Pending TODO (paper-strategic, not action ledger)
 
+### A. Codex prose tasks (跟踪 in next_steps §4 codex queue)
+
 - [ ] codex #10 axis 2/3 literature deep research → expand paper.bib 16→~38 (~Wed)
 - [ ] codex #11 Section 4 fresh-data prose update (~Wed)
 - [ ] codex #13 Section 5 prose 写 (3-axis hierarchical + lit cite, ~Thu)
-- [ ] Section 6 Generalization 草稿 (~Week 6-7, after WA + Claude done)
-- [ ] Section 7 Discussion 草稿 (paper end-stage,含 sustainability + lat 4× finding)
-- [ ] 二次 deep research (Section 6/7 + 全 paper revisit, paper 终稿前 Week 8+)
+- [ ] codex #16 Section 6 Routing prose (Week 5-6, after Tier 1+2 prototype)
+- [ ] codex #17 Section 7 Generalization 草稿 (~Week 6-7, after WA + Claude done)
+- [ ] codex #18 Section 8 Discussion 草稿 (paper end-stage, 含 sustainability + lat 4× finding)
+- [ ] codex #19 二次 deep research (Section 6/7/8 + 全 paper revisit, paper 终稿前 Week 8+)
+
+### B. Data analysis pipeline (Python scripts, not codex tokens)
+
+- [ ] **统计显著性测试** for drop-one oracle 1.7-3.3pp + 跨 mode SR delta (bootstrap CI / paired permutation, ~hour)
+  - Section 4 reviewer-grade rigor; 当前 paper drafts 仅 point estimates
+  - Implementation: `scripts/analysis/significance_test.py`，每 condition pair 跑 1000 bootstrap, 输出 p-value + 95% CI
+- [ ] **AUROC aggregation table** per-condition routing signal AUROC vs baseline
+  - Section 6 "AUROC ≥ baseline" claim 必需 supporting table
+  - Source: existing `confidence_summary.json` per-condition; aggregate cross-mode
+  - Implementation: `scripts/analysis/aggregate_routing_auroc.py`，~30 行
+- [ ] **Multi-metric Pareto pipeline** (cost + latency + carbon)
+  - Section 8 sustainability prose 前置；fig9 已有 carbon B1 only, 需 cost/latency 三向 join
+  - Output: 3-panel Pareto figure + per-condition multi-metric table
+  - Implementation: extend `scripts/analysis/figures/fig7_cost_sr_frontier.py`
+- [ ] **每 task 特征提取** (Section 6 Tier 1 oracle router 前置)
+  - Features: TF-IDF (task instruction) + has_ref_image binary + has_finish_string_match binary + site / category metadata
+  - Output: `task_features.parquet` per benchmark
+  - Implementation: `scripts/analysis/extract_task_features.py`
+- [ ] **B0 token-based carbon estimator** (Section 8 Tier 3 sustainability)
+  - 当前 §3.6 marked "optional"; 需 minimum implementation (eu-west-2 default region, token × carbon factor)
+  - Source: `condition_summary_v2.json` 含 token counts per condition
+  - Implementation: ~20 行 helper in `p79/experiment/metrics.py`，paper Section 8 引用
+
+### C. Paper end-stage tasks (Week 8+)
+
+- [ ] Pre-submission checklist (paper_planning §17) execute
+- [ ] LaTeX 转换（当前 markdown drafts → LaTeX template per venue）
+- [ ] Bib 完整性 check (citations present, format correct)
+- [ ] Reproducibility appendix（commit summaries + onboarding instructions）
 - [ ] Router Tier 1 prototype (~3 天, baseline + phantom 全 done 后)
 - [ ] Router Tier 2 first-step trigger (~7-10 天)
 - [ ] Advisor align meeting #1 prep (~Week 3)
