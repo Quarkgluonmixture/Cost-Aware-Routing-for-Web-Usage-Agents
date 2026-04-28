@@ -24,7 +24,8 @@ PYTEST ?= .venv/bin/pytest
 .PHONY: help test smoke smoke-only rederive rederive-all analyze cross-rep \
         confidence compare reason-diag clean-tasks watch-reddit schedule-list \
         validate gallery rsync-to-hub rsync-from-hub rsync-artifacts-from-hub \
-        aggregate-cross-site summary-collect routing-auroc analyze-paper
+        aggregate-cross-site summary-collect routing-auroc analyze-paper \
+        analyze-paper-per-run
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
@@ -119,13 +120,32 @@ summary-collect:
 routing-auroc:
 	$(PYTHON) scripts/analysis/aggregate_routing_auroc.py
 
-# Paper-grade aggregation — chains everything cross-condition + figures
-# Run once before sending codex prose tasks (#11 / #13 / #16) so they pull
-# paper-ready numbers + bootstrap CI + AUROC tables.
-analyze-paper: aggregate-cross-site summary-collect routing-auroc figures
+# Per-run paper-grade analysis pipeline: rederive → reason-diag → cross-rep
+# → confidence calibration. Iterates over all paper-grade VWA run dirs.
+# Watchdog already runs this incrementally per-condition, but `analyze-paper`
+# brute-forces all runs to ensure cross-condition aggregations consume fresh
+# per-run output (e.g. after manual data edits, rederives, or fresh re-runs).
+analyze-paper-per-run:
+	@for rd in $(RUN_DIRS_PAPER_VWA); do \
+	  echo ""; \
+	  echo "=== [analyze-paper-per-run] $$rd ==="; \
+	  $(MAKE) --no-print-directory analyze RUN=$$rd || echo "  [warn] analyze failed for $$rd"; \
+	  $(MAKE) --no-print-directory confidence RUN=$$rd || echo "  [warn] confidence failed for $$rd"; \
+	done
+
+# Paper-grade snapshot — one-shot "everything after new data":
+#   1. per-run pipeline (rederive + reason-diag + cross-rep + confidence) on
+#      all 8 paper-grade VWA runs (override RUN_DIRS_PAPER_VWA if needed)
+#   2. cross-condition aggregations (cross-site SR/cost/lat/energy + run
+#      summary + routing AUROC merge)
+#   3. figures (9 PNGs incl. fig2 bootstrap CI)
+# Total ~5-10 min for 8 runs. Run before codex prose tasks (#11 / #13 / #16)
+# or before paper revisits.
+analyze-paper: analyze-paper-per-run aggregate-cross-site summary-collect routing-auroc figures
 	@echo ""
 	@echo "[analyze-paper] outputs in results/phantom_paper/:"
 	@ls results/phantom_paper/*.csv results/phantom_paper/*.md 2>/dev/null || true
+	@ls results/phantom_paper/cross_site/*.csv 2>/dev/null || true
 	@echo "[analyze-paper] figures in results/phantom_paper/figures/:"
 	@ls results/phantom_paper/figures/*.png 2>/dev/null || true
 

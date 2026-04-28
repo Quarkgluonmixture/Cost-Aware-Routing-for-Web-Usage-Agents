@@ -9,7 +9,7 @@
 > - **实验笔记** (`docs/checkpoints/实验笔记.md`): time-order chronicle (历史 record)
 >
 > 📖 **新数据/figure/finding/codex 回复 → 该更新哪些文档？** see §10 Doc Update Workflow
-> 🔧 **paper-grade snapshot 一键命令**: `make analyze-paper` (chains aggregate + summary + routing-auroc + figures)
+> 🔧 **新数据后一键 snapshot**: `make analyze-paper` (~5-10min, **everything**: per-run rederive+reason-diag+cross-rep+confidence on all 8 paper-grade runs → cross-condition aggregate + summary + routing-auroc → 9 figures incl. fig2 bootstrap CI)
 >
 > **Last updated**: 2026-04-28 17:00
 
@@ -388,10 +388,15 @@ p79/experiment/router.py               (RuleBasedRouter scaffold)
 ✅ 实验笔记: append chronicle entry (§104+ daily, Day-by-day finding)
 ✅ next_steps §1 Active processes: mark done (remove or move to §3.1 done table)
 ✅ next_steps §3.1 done table: add row (raw/adj SR + N + done time)
-✅ Run `make analyze-paper` (canonical paper-grade snapshot, ~30s, chains
-   aggregate-cross-site + summary-collect + routing-auroc + figures)
-   ↳ 仅 quick figure regen 用 `make figures` (~10s, 不含 cross-condition
-     aggregations)
+✅ Run `make analyze-paper` (one-shot **everything**, ~5-10min):
+   - per-run pipeline (rederive + reason-diag + cross-rep + confidence) on
+     all 8 paper-grade VWA runs (override RUN_DIRS_PAPER_VWA if needed)
+   - cross-condition aggregations (cross-site CSV/plots, run_summary_collect,
+     routing AUROC merge)
+   - 9 figures (含 fig2 bootstrap CI)
+   ↳ 仅 quick figure regen 用 `make figures` (~10s, 不含 per-run + cross-cond)
+   ↳ 仅 cross-condition refresh 用 `make analyze-paper-per-run` 之后
+     `make aggregate-cross-site summary-collect routing-auroc`（debug 用）
    ↳ 输出 path: results/phantom_paper/{auroc_cross_condition.*,cross_site/,
      run_summary_collect.json,figures/*.png + fig2_drop_one_bootstrap_ci.csv}
 🟡 next_steps §0 TL;DR: update if Critical path A 进度变化
