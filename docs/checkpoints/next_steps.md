@@ -20,10 +20,10 @@
 
 **Active 跑中**:
 - B1 phantom_som cls (PID 371892, GPU contention 慢, ~7-10d ETA)
-- B0 dom shopping pilot (PID 893601, FPC disabled, ~16h ETA)
+- B0 dom shopping pilot (PID 893601 + watchdog 988735, FPC disabled, ~9h ETA — 实测 1.36min/task)
 
 **Next 3 actions**:
-1. ~Wed 06:00: B0 dom shopping pilot done → verify SR/cost/auth → 启 SoM/Vision/Phantom shopping (~$74)
+1. ~Wed 凌晨 01:00: B0 dom shopping pilot done → verify SR/cost/auth → 启 SoM/Vision/Phantom shopping (~$74)
 2. ~Wed 中午: 发 codex #10 (axis 2/3 lit deep research, ~600K) + #11 (Section 4 fresh prose, ~30K)
 3. ~Thu: 发 codex #13 (Section 5 prose 写, 3-axis hierarchical + lit cite, ~50K)
 
@@ -36,8 +36,8 @@
 | PID | Process | Status | ETA |
 |---|---|---|---|
 | 371892 | B1_phantom_classifieds runner | 跑中 ~16/234, GPU contention | ~7-10 days ⚠️ |
-| 893601 | B0_dom_shopping runner (NEW 14:33) | 跑中, FPC disabled | ~16h (~Wed 06:00) |
-| 893429 | B0_dom_shopping watchdog | active | continuous |
+| 893601 | B0_dom_shopping runner (NEW 14:33) | 跑中 task ~75/466, 1.36 min/task | ~9h (~Wed 01:00) |
+| 988735 | B0_dom_shopping watchdog (RESTARTED 16:16, was 893429 crashed @ 14:35 ZeroDivisionError fix line 1509) | active, SR 9/75 = 12.0% | continuous |
 | 32263, 4124316, 4124482, 370225, 371979 | Watchdog × 5 | per-condition monitor | continuous |
 | 3964734 | queue_b1_after_b0 sequencer | sleeping (will trigger after B1 cls done) | continuous |
 
@@ -219,10 +219,10 @@ docs/analysis/paper_drafts/section7_discussion.md     ❌ paper end-stage
 ### Codex analysis docs
 
 ```
-results/phantom_paper/analyses/disagreement_clusters.md           (B0+B1 9-cat)
-results/phantom_paper/analyses/cross_site_pattern_consolidation.md (cls vs red shift +50/+33pp)
-results/phantom_paper/analyses/phantom_dom_vs_som_diagnostic.md   (axis 2 prompt)
-results/phantom_paper/analyses/som_vs_phantom_som_diagnostic.md   (axis 3 image 8-channel)
+docs/analysis/phantom_paper/disagreement_clusters.md           (B0+B1 9-cat)
+docs/analysis/phantom_paper/cross_site_pattern_consolidation.md (cls vs red shift +50/+33pp)
+docs/analysis/phantom_paper/phantom_dom_vs_som_diagnostic.md   (axis 2 prompt)
+docs/analysis/phantom_paper/som_vs_phantom_som_diagnostic.md   (axis 3 image 8-channel)
 docs/analysis/B1_capability_profile.md                            (B1 cross-model prep)
 docs/literature/The Novelty and Efficacy of Set-of-Mark Text...md (deep research, §103 lit gap)
 ```
@@ -303,9 +303,9 @@ p79/experiment/router.py               (RuleBasedRouter scaffold)
 
 ### Codex analysis docs (paper Section 5 evidence base)
 
-- `results/phantom_paper/analyses/phantom_dom_vs_som_diagnostic.md` (axis 2 prompt)
-- `results/phantom_paper/analyses/som_vs_phantom_som_diagnostic.md` (axis 3 image 8-ch)
-- `results/phantom_paper/analyses/cross_site_pattern_consolidation.md` (cls vs red shift)
+- `docs/analysis/phantom_paper/phantom_dom_vs_som_diagnostic.md` (axis 2 prompt)
+- `docs/analysis/phantom_paper/som_vs_phantom_som_diagnostic.md` (axis 3 image 8-ch)
+- `docs/analysis/phantom_paper/cross_site_pattern_consolidation.md` (cls vs red shift)
 - `docs/analysis/B1_capability_profile.md` (Section 7 cross-model prep)
 
 ### Decision audit trail

@@ -1,6 +1,6 @@
 # B1 Capability Profile — Qwen3-VL-4B Local Baseline
 
-This profile summarizes the completed B1 three-mode VisualWebArena baselines for classifieds and reddit. It is intended as Section 6 cross-model generalization prep. It uses episode-level `adjusted_success` for SR, `condition_summary_v2.json` for cost/latency/energy, and the shared P1-P14/cluster taxonomy used by `results/phantom_paper/analyses/disagreement_clusters.md`. No experiments were run.
+This profile summarizes the completed B1 three-mode VisualWebArena baselines for classifieds and reddit. It is intended as Section 6 cross-model generalization prep. It uses episode-level `adjusted_success` for SR, `condition_summary_v2.json` for cost/latency/energy, and the shared P1-P14/cluster taxonomy used by `docs/analysis/phantom_paper/disagreement_clusters.md`. No experiments were run.
 
 ## 1. SR Snapshot (cls + red, raw + adjusted)
 

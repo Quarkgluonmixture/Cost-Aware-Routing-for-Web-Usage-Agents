@@ -547,9 +547,9 @@ CO2 维度单独 fig E (regional sensitivity, 见 §11).
 
 ### paper.bib
 
-`results/phantom_paper/paper.bib` (16 entries, 待 codex #10 expand to ~38)
+`docs/analysis/paper_drafts/paper.bib` (16 entries, 待 codex #10 expand to ~38)
 
-### Codex analyses (`results/phantom_paper/analyses/`)
+### Codex analyses (`docs/analysis/phantom_paper/`)
 
 | File | Words | Commit |
 |---|---:|---|

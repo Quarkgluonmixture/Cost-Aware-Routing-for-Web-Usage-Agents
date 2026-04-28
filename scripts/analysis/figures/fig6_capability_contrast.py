@@ -11,7 +11,7 @@ import numpy as np
 
 
 ROOT = Path(__file__).resolve().parents[3]
-ANALYSIS = ROOT / "results/phantom_paper/analyses/disagreement_clusters.md"
+ANALYSIS = ROOT / "docs/analysis/phantom_paper/disagreement_clusters.md"
 OUT = ROOT / "results/phantom_paper/figures/fig6_capability_contrast.png"
 
 LABELS = {
