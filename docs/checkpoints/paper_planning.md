@@ -627,13 +627,12 @@ ef29add  drop-in deployment punchline
 
 ### B. Data analysis pipeline (Python scripts, not codex tokens)
 
-- [ ] **统计显著性测试** for drop-one oracle 1.7-3.3pp + 跨 mode SR delta (bootstrap CI / paired permutation, ~hour)
-  - Section 4 reviewer-grade rigor; 当前 paper drafts 仅 point estimates
-  - Implementation: `scripts/analysis/significance_test.py`，每 condition pair 跑 1000 bootstrap, 输出 p-value + 95% CI
-- [ ] **AUROC aggregation table** per-condition routing signal AUROC vs baseline
-  - Section 6 "AUROC ≥ baseline" claim 必需 supporting table
-  - Source: existing `confidence_summary.json` per-condition; aggregate cross-mode
-  - Implementation: `scripts/analysis/aggregate_routing_auroc.py`，~30 行
+- [x] **统计显著性测试** ✅ done 04-28 — `fig2_drop_one_oracle.py` 加 `bootstrap_drop_one_ci()` (1000 resample × 4 panel)，error bars + `fig2_drop_one_bootstrap_ci.csv` 12 rows
+  - Section 4 reviewer-grade rigor; codex #11 prose 可直接引用 95% CI
+  - Pending: paired permutation test for cross-mode SR delta (lower priority)
+- [x] **AUROC aggregation table** ✅ done 04-28 — `scripts/analysis/aggregate_routing_auroc.py` (~110 行)
+  - Outputs: `results/phantom_paper/auroc_cross_condition.csv` (188 rows × 5 modes × 4 cells) + `_summary.md` (top-1 per cell, Section 6 claim 证据)
+  - Section 6 "AUROC ≥ baseline" claim 部分支持: B0 red phantom_dom 0.793 highest; B0 cls phantom_dom 0.737 ≥ som 0.709 baseline; B1 cells 待 chain done
 - [ ] **Multi-metric Pareto pipeline** (cost + latency + carbon)
   - Section 8 sustainability prose 前置；fig9 已有 carbon B1 only, 需 cost/latency 三向 join
   - Output: 3-panel Pareto figure + per-condition multi-metric table

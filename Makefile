@@ -23,7 +23,8 @@ PYTEST ?= .venv/bin/pytest
 
 .PHONY: help test smoke smoke-only rederive rederive-all analyze cross-rep \
         confidence compare reason-diag clean-tasks watch-reddit schedule-list \
-        validate gallery rsync-to-hub rsync-from-hub rsync-artifacts-from-hub
+        validate gallery rsync-to-hub rsync-from-hub rsync-artifacts-from-hub \
+        aggregate-cross-site summary-collect routing-auroc analyze-paper
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
@@ -86,6 +87,47 @@ validate:
 gallery:
 	@test -n "$(RUN)" || (echo "ERROR: RUN=<run_dir> required"; exit 1)
 	$(PYTHON) scripts/maintenance/generate_gallery.py --run-dir $(RUN)
+
+# ---- Cross-run / paper-grade aggregation (cross-condition) ----
+# Run once after a batch of conditions is paper-grade clean.
+# Outputs land under results/phantom_paper/ for paper drafts to consume.
+
+# Cross-site SR/cost/lat/energy aggregator (per benchmark).
+# Default RUN_DIRS = paper-grade clean B0+B1 cls+red runs (override via RUN_DIRS=...).
+RUN_DIRS_PAPER_VWA ?= \
+  results/visualwebarena/phase1/B0_3mode_classifieds_20260413 \
+  results/visualwebarena/phase1/B0_3mode_reddit_20260422 \
+  results/visualwebarena/phase1/B0_phantom_classifieds_20260426 \
+  results/visualwebarena/phase1/B0_phantom_reddit_20260428 \
+  results/visualwebarena/phase1/B0_phantom_dom_classifieds_20260427 \
+  results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427 \
+  results/visualwebarena/phase1/B1_3mode_classifieds_20260413 \
+  results/visualwebarena/phase1/B1_3mode_reddit_20260413
+
+aggregate-cross-site:
+	$(PYTHON) scripts/analysis/aggregate_cross_site.py \
+	  --run-dirs $(RUN_DIRS_PAPER_VWA) \
+	  --output-dir results/phantom_paper/cross_site
+
+# Run-level summary collector (one row per run)
+summary-collect:
+	$(PYTHON) scripts/analysis/collect_analysis_summary.py \
+	  $(foreach rd,$(RUN_DIRS_PAPER_VWA),--run-dir $(rd)) \
+	  --output results/phantom_paper/run_summary_collect.json
+
+# Cross-condition routing signal AUROC table (Section 6 claim support)
+routing-auroc:
+	$(PYTHON) scripts/analysis/aggregate_routing_auroc.py
+
+# Paper-grade aggregation — chains everything cross-condition + figures
+# Run once before sending codex prose tasks (#11 / #13 / #16) so they pull
+# paper-ready numbers + bootstrap CI + AUROC tables.
+analyze-paper: aggregate-cross-site summary-collect routing-auroc figures
+	@echo ""
+	@echo "[analyze-paper] outputs in results/phantom_paper/:"
+	@ls results/phantom_paper/*.csv results/phantom_paper/*.md 2>/dev/null || true
+	@echo "[analyze-paper] figures in results/phantom_paper/figures/:"
+	@ls results/phantom_paper/figures/*.png 2>/dev/null || true
 
 # Regenerate paper figures (9 PNGs in results/phantom_paper/figures/)
 figures:

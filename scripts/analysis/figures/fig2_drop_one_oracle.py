@@ -129,9 +129,56 @@ def drop_one_losses(sets: dict[str, set[int]], expected: int) -> dict[str, float
     return losses
 
 
-def draw_panel(ax: plt.Axes, panel: dict) -> None:
+def bootstrap_drop_one_ci(
+    sets: dict[str, set[int]],
+    expected: int,
+    n_bootstrap: int = 1000,
+    seed: int = 42,
+    ci: float = 0.95,
+) -> dict[str, tuple[float, float]]:
+    """Bootstrap 95% CI for drop-one oracle loss per mode.
+
+    Resamples N tasks (with replacement) from observed task universe; for each
+    resample, recomputes drop-one loss; returns (low, high) percentiles.
+    """
+    rng = np.random.default_rng(seed)
+    if not sets:
+        return {}
+    universe = sorted(set().union(*sets.values()))
+    if not universe:
+        return {mode: (0.0, 0.0) for mode in sets}
+    n = len(universe)
+    arr = np.asarray(universe)
+    # Pre-build per-mode boolean masks indexed by universe order
+    mode_masks = {mode: np.isin(arr, list(s)) for mode, s in sets.items()}
+    losses_samples = {mode: np.empty(n_bootstrap) for mode in sets}
+    for b in range(n_bootstrap):
+        idx = rng.integers(0, n, size=n)
+        union_succ = np.zeros(n, dtype=bool)
+        for mask in mode_masks.values():
+            union_succ |= mask[idx]
+        union_count = int(union_succ.sum())
+        for mode, mask in mode_masks.items():
+            without = np.zeros(n, dtype=bool)
+            for m, mk in mode_masks.items():
+                if m == mode:
+                    continue
+                without |= mk[idx]
+            losses_samples[mode][b] = 100.0 * (union_count - int(without.sum())) / expected
+    alpha = (1 - ci) / 2
+    return {
+        mode: (
+            float(np.quantile(samples, alpha)),
+            float(np.quantile(samples, 1 - alpha)),
+        )
+        for mode, samples in losses_samples.items()
+    }
+
+
+def draw_panel(ax: plt.Axes, panel: dict, csv_rows: list[dict]) -> None:
     sets = load_panel_sets(panel)
     losses = drop_one_losses(sets, panel["expected"])
+    cis = bootstrap_drop_one_ci(sets, panel["expected"])
     if panel["key"] in SECTION103_LOSS:
         for mode, verified in SECTION103_LOSS[panel["key"]].items():
             if mode in losses and abs(losses[mode] - verified) > 0.25:
@@ -144,7 +191,14 @@ def draw_panel(ax: plt.Axes, panel: dict) -> None:
     x = np.arange(len(MODES))
     values = [losses.get(mode, 0.0) for mode in MODES]
     colors = [COLORS[mode] if mode in losses else "#d4d4d4" for mode in MODES]
-    bars = ax.bar(x, values, color=colors, width=0.66)
+    err_low = [max(0.0, values[i] - cis.get(MODES[i], (values[i], values[i]))[0]) for i in range(len(MODES))]
+    err_high = [max(0.0, cis.get(MODES[i], (values[i], values[i]))[1] - values[i]) for i in range(len(MODES))]
+    err_arr = [
+        [err_low[i] if MODES[i] in losses else 0.0 for i in range(len(MODES))],
+        [err_high[i] if MODES[i] in losses else 0.0 for i in range(len(MODES))],
+    ]
+    bars = ax.bar(x, values, color=colors, width=0.66, yerr=err_arr,
+                  ecolor="#333333", capsize=3, error_kw={"linewidth": 0.9})
     for bar, mode, value in zip(bars, MODES, values):
         if mode not in losses:
             bar.set_hatch("//")
@@ -158,36 +212,48 @@ def draw_panel(ax: plt.Axes, panel: dict) -> None:
                 color="#666666",
             )
             continue
-        label = f"{value:.2f}" + ("*" if panel.get("notes", {}).get(mode) else "")
+        ci_low, ci_high = cis.get(mode, (value, value))
+        label = f"{value:.2f}\n[{ci_low:.2f},{ci_high:.2f}]"
         ax.text(
             bar.get_x() + bar.get_width() / 2,
-            value + 0.15,
+            ci_high + 0.15,
             label,
             ha="center",
             va="bottom",
-            fontsize=8.5,
+            fontsize=7.0,
         )
+        csv_rows.append({
+            "panel": panel["key"],
+            "site_baseline": panel["title"],
+            "mode": mode,
+            "drop_one_loss_pp": round(value, 4),
+            "ci95_low_pp": round(ci_low, 4),
+            "ci95_high_pp": round(ci_high, 4),
+            "n_tasks": panel["expected"],
+        })
     ax.set_title(f"{panel['title']} (N={panel['expected']})", fontsize=11, fontweight="bold")
     ax.set_xticks(x, ["DOM", "SoM", "Vision", "Phantom"])
-    ax.set_ylim(0, 9.0)
+    ax.set_ylim(0, 11.0)
     ax.grid(axis="y", color="#dddddd", linewidth=0.8)
     ax.set_axisbelow(True)
 
 
 def main() -> None:
+    import csv as _csv
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 10, "figure.dpi": 150})
     fig, axes = plt.subplots(2, 2, figsize=(11.5, 8.4), sharey=True)
+    csv_rows: list[dict] = []
     for ax, panel in zip(axes.flat, PANELS):
-        draw_panel(ax, panel)
+        draw_panel(ax, panel, csv_rows)
     for ax in axes[:, 0]:
-        ax.set_ylabel("Oracle loss when arm is removed (pp)")
-    fig.suptitle("Drop-One Oracle: Incremental Routing Value", fontsize=14, fontweight="bold")
+        ax.set_ylabel("Oracle loss when arm is removed (pp, 95% bootstrap CI)")
+    fig.suptitle("Drop-One Oracle: Incremental Routing Value (95% bootstrap CI, n=1000)", fontsize=14, fontweight="bold")
     fig.text(
         0.5,
         0.025,
         "Higher bars mean the representation solves tasks not recovered by the other plotted arms. "
-        "B1 Phantom-SoM/Phantom-DOM pending re-run.",
+        "Error bars: 95% bootstrap CI (n=1000 resamples). B1 Phantom-SoM/Phantom-DOM pending re-run.",
         ha="center",
         fontsize=8.5,
         color="#555555",
@@ -195,6 +261,15 @@ def main() -> None:
     fig.tight_layout(rect=(0, 0.06, 1, 0.93))
     fig.savefig(OUT, bbox_inches="tight")
     print(OUT)
+    csv_path = OUT.parent / "fig2_drop_one_bootstrap_ci.csv"
+    with csv_path.open("w", newline="") as f:
+        writer = _csv.DictWriter(f, fieldnames=[
+            "panel", "site_baseline", "mode",
+            "drop_one_loss_pp", "ci95_low_pp", "ci95_high_pp", "n_tasks",
+        ])
+        writer.writeheader()
+        writer.writerows(csv_rows)
+    print(csv_path)
 
 
 if __name__ == "__main__":

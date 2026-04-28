@@ -113,6 +113,7 @@ def collect_run(run_dir: Path) -> Dict[str, Any]:
         per_site = cross_rep.get("per_site", {})
         cross = {}
         for site, sdata in per_site.items():
+            sdata = sdata or {}  # tolerate None entries (e.g. site present but no analysis)
             cross[site] = {
                 "oracle_ceiling": sdata.get("oracle_ceiling"),
                 "routing_headroom": sdata.get("routing_headroom"),
