@@ -264,16 +264,40 @@ Codex prompt 9 (som_vs_phantom_som) 已 done (commit `7106d2e`), axis 3 evidence
 - Lit support: ⭐⭐ persona priming (Salemi 2024), in-context learning (Min 2022),
   but task-pool divergence 0.45-0.54 是 paper 的 unique empirical finding
 
-**Axis 3 Image (8-channel multi-dimensional)**:
-- Helping channels: vision encoder 提供 spatial / context / disambig / state
-- Harming channels:
-  - **False visual confidence** (MAIN red 60%): "image present → text claim true"
-    implicit bias from multi-modal alignment pretraining → premature commit
-  - Image-induced detour: vision attention dominate query rewrite
-  - Visual-hijack: marked [N] bbox attention bias
-  - Misdirection: visual saliency bias (color/center/size 主导)
-- Lit support: ⭐⭐⭐ object hallucination (Li POPE 2023, Yang 2024, Yu 2024),
-  modality dominance (Wang 2024), visual saliency bias (经典 + modern MLLM)
+**Axis 3 Image (multi-dimensional, refined per user critique 04-28)**:
+
+Helping channels:
+- Vision encoder 提供 spatial / context / disambig / state recognition
+
+Harming channels (sub-decomposed, **bidirectional modality failure**):
+- **3a. False visual confidence (image-over-text)** [MAIN, red 60% failures]:
+  - Mechanism: image-text alignment pretraining bias → premature commit
+  - Lit: Li POPE 2023, Yang 2024, Yu 2024 (object hallucination)
+- **3b. Text-over-vision fallback fail** (反向 modality bias):
+  - Mechanism: language prior dominance → ignore actual image content
+  - Manifests as Phantom-SoM 失败 in vision-required task (cls task 24 black truck)
+  - Lit: ⭐ Tong 2024 "Eyes wide shut", Bitton-Guetta 2023, Cui 2023
+- **3c. Image-asset-detour** [实测 verified red task 0/167]:
+  - Mechanism: 直接 click visual content URL → back → click different image → loop
+  - Codex 标 "visual-hijack" 实际是这个 sub-mechanism (mark_count 117 ≠ outlier vs P95 127)
+- **3d. SoM density overload** [user hypothesis, 待专项 audit]:
+  - Mechanism: mark_count > 100 → disambiguation fail → wrong click
+  - 现 codex case 不是这个; 需找 mark_count P95+ task 专门 verify
+- **3e. Numeric label attention bias** [待 verify]:
+  - Mechanism: high-attention [N] bbox click 即便 not target
+- **3f. Visual saliency drift / misdirection**:
+  - Mechanism: visually salient region ≠ task target
+
+**Bidirectional framing 关键 insight (新)**:
+- Task 需 vision: 3b (text-over-vision) 主导 → Phantom-SoM 失败
+- Task 不需 vision: 3a (image-over-text) 主导 → SoM 失败
+- → site-modulated effect (cls visual-rich vs red text-dom) 的 **LLM-level bidirectional 解释**
+
+Lit support: ⭐⭐⭐ bidirectional modality fusion failure literature
+  - Image→text dominance: Li POPE 2023, Yang 2024, Yu 2024 (object hallucination)
+  - Text→vision dominance: ⭐ Tong 2024 "Eyes wide shut" (NeurIPS), Bitton-Guetta 2023
+  - Bidirectional modality bias: Wang 2024
+  - SoM-specific: Yang 2023 (mark numeric label attention), 待 verify SoM density paper
 
 **Cross-axis interaction LLM mechanism**:
 - Repr × Prompt: 同 obs token, 不同 prompt prefix → attention(obs|prompt) 不同
@@ -360,7 +384,8 @@ agent-setting empirical evidence + drop-in deployment claim". Reviewer 不会攻
 | 8 | **Phantom-DOM vs Phantom-SoM mechanism diag** (Axis 2 prompt) | ~300K | ⭐⭐ Theory C validate | — | ✅ done `5821387` |
 | 9 | **SoM vs Phantom-SoM mechanism diag** (Axis 3 image multi-dim) | ~350K | ⭐⭐ Theory image multi-dim validated | — | ✅ done `7106d2e` |
 | --- | --- | --- | --- | --- | --- |
-| 10 | **Axis 2/3 literature deep research + paper.bib expansion** (16→~38 entries) ⭐⭐⭐ | ~400-600K | ⭐⭐⭐ Section 5 grounding + reviewer resilience | — | 🟡 prompt ready, 发 ~Wed/Thu (Section 4/5 prose 时一起) |
+| 10 | **Axis 2/3 literature deep research + paper.bib expansion** (16→~38 entries, 含 bidirectional modality + Tong 2024 Eyes Wide Shut) ⭐⭐⭐ | ~400-600K | ⭐⭐⭐ Section 5 grounding + reviewer resilience | — | 🟡 prompt ready, 发 ~Wed/Thu |
+| 10.5 | **Axis 3 sub-mechanism专项 audit** (SoM density 3d / numeric label bias 3e / saliency drift 3f) ⭐⭐ | ~250K | ⭐⭐ verify user critique sub-mechanisms | — | 🟡 prompt ready, 发 ~Wed |
 | 11 | Section 4 fresh-data prose update (3-axis framework + cost/latency 4x finding) | ~30K | ⭐⭐ paper hook 升级 | 等 #10 一起发 | ⏳ ~Wed |
 | 12 | Phantom-SoM step trace digest (extra Section 5 case studies, supplementary) | ~400K | ⭐ supplement #8/#9 已有 14 case studies | 14 case 已在 #8/#9 cover | ⏳ optional, Thu+ |
 | 13 | Section 5 prose 写 (3-axis hierarchical + literature inline cite) | ~50K | ⭐⭐⭐ paper Section 5 main | 待 #10 + #11 done | ⏳ ~Thu-Fri |
