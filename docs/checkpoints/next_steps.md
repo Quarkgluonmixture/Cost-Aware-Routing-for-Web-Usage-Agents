@@ -21,11 +21,13 @@
 **Critical path A B0 部分**: ✅ DONE 2026-04-28 (cls + red 5-mode FRESH paper-grade clean)
 
 **Active 跑中**:
-- B1 phantom_som cls (PID 371892, GPU contention 慢, ~7-10d ETA)
-- B0 dom shopping clean re-run (relaunched ~18:30 with `RESET_BEFORE=1`，new run_id `B0_dom_shopping_20260428`，旧 dirty 移到 `results/.../_archive/`)
+- B1 phantom_som cls (PID 371892, ~64/234 SR 13.1%, GPU contention 慢, ~7-10d ETA)
+- B0 dom shopping clean re-run (PID 1106560, with reset, ~9/466 task 0+, ~9h ETA)
 
 **Next 3 actions**:
-1. **B0 phantom shopping pair 重跑**: 等 B0 dom shopping done → `RESET_BEFORE=1 bash scripts/queues/queue_phantom_som.sh B0 shopping` + 串行 `RESET_BEFORE=1 bash queue_phantom_dom.sh B0 shopping`（两次 reset 之间）— ~$30/condition × 2 conditions ≈ $60
+1. **B1 phantom 4 cell sequential chain**: cls phantom_som → red phantom_som → cls phantom_dom → red phantom_dom，每 cell `RESET_BEFORE=1 bash queue_phantom_{som,dom}.sh B1 {site}` 手动 launch when previous done
+2. **B0 phantom shopping pair 重跑**: 等 B0 dom shopping done → som / dom 串行（~$60，paper-grade clean）
+3. **B0 shopping SoM/Vision** (2 cells, ~$30): 等 B0 dom shopping verify done
 2. ~Wed 中午: 发 codex #10 (axis 2/3 lit deep research, ~600K) + #11 (Section 4 fresh prose, ~30K)
 3. ~Thu: 发 codex #13 (Section 5 prose 写, 3-axis hierarchical + lit cite, ~50K)
 
@@ -116,24 +118,32 @@ Cells:     6 sites × 3 models × 5 modes = ~90 baseline cells (~125K episode to
 
 | Cell | Status | ETA |
 |---|---|---|
-| B1 phantom_som cls | 跑中 ~16/234 | ~7-10 days (GPU contention from seonglae) |
-| B0 dom shopping pilot | 跑中 task 0+ | ~16h (~Wed 06:00) |
+| B1 phantom_som cls (PID 371892) | 跑中 ~64/234, SR 13.1% | ~7-10 days (GPU contention from seonglae) |
+| B0 dom shopping clean re-run (PID 1106560, with reset) | 跑中 ~9/466 | ~9h (~Wed 01:00) |
 
-### 3.3 自动 follow-up (chain triggered)
+### 3.3 Pending — manual chain via queue scripts (慢慢跑, sequential)
 
-| Cell | Trigger |
-|---|---|
-| B1 phantom_dom cls | chain after B1 phantom_som cls done |
-| B1 phantom_som + dom red | manual chain after B1 cls done (`RESET_BEFORE=1 queue_phantom_{som,dom}.sh B1 reddit`) |
+B1 4B 单 GPU instance, 4 cells 必须 sequential. B0 phantom shopping pair 等 B0 dom shopping done.
 
-### 3.4 等资源 (manual decision)
+| Cell | Trigger | Command |
+|---|---|---|
+| B1 phantom_som red | after B1 phantom_som cls done | `RESET_BEFORE=1 bash scripts/queues/queue_phantom_som.sh B1 reddit` |
+| B1 phantom_dom cls | after B1 phantom_som red done | `RESET_BEFORE=1 bash scripts/queues/queue_phantom_dom.sh B1 classifieds` |
+| B1 phantom_dom red | after B1 phantom_dom cls done | `RESET_BEFORE=1 bash scripts/queues/queue_phantom_dom.sh B1 reddit` |
+| B0 phantom_som shopping (重跑, dirty archive 04-27 已移走) | after B0 dom shopping done | `RESET_BEFORE=1 bash scripts/queues/queue_phantom_som.sh B0 shopping` |
+| B0 phantom_dom shopping (重跑) | after B0 phantom_som shopping done | `RESET_BEFORE=1 bash scripts/queues/queue_phantom_dom.sh B0 shopping` |
+
+### 3.4 Missing cells — 等资源 (manual decision)
+
+数据 picture (post 04-28 archive cleanup): VWA cls 8/10 + 1 跑中 + 1 missing; VWA red 8/10 + 2 missing; VWA shop 0/10 paper-grade clean (1 跑中, 9 待); WA 0/30. 总 60 cells (B0+B1) 当前 16 done + 2 跑中 + **42 missing**.
 
 | Cell | Blocker | Cost |
 |---|---|---|
-| B0 shopping SoM/Vision/Phantom (4 cells) | wait B0 dom shopping pilot done + verify ~Wed | ~$74 + ~50h API |
-| WA × 3 sites × B0+B1 × som+dom (12 cells) | advisor align + B1 chain done | ~$6 + 24h GPU |
-| Cross-model Claude Opus 4.7 cls+red 4-mode | advisor align + agent 适配 | ~$70 |
-| B1 shopping 5-mode | Myriad GPU + DGX-side B1 phantom done | ~24h GPU 独占 |
+| B0 shopping SoM/Vision (2 cells) | B0 dom shopping done + verify | ~$30 + ~24h API |
+| WA × 3 sites × B0+B1 × 5 modes (30 cells) | advisor align + B1 VWA chain done | ~$60 + 60h GPU |
+| Cross-model Claude Opus 4.7 cls+red 5-mode (10 cells) | advisor align + agent 适配 | ~$100 |
+| B1 shopping 5-mode (5 cells) | Myriad GPU + DGX-side B1 phantom 全 done | ~24h GPU 独占 each |
+| ~~B1 shopping DOM 466 ep (pre-Magento-bug)~~ | ✅ archived 04-28 (`_archive/B1_3mode_shopping_20260413_pre_magento_bug`)，待 Myriad clean re-run | — |
 
 ### 3.5 Router experiments (Section 6 paper, ~Week 4-5)
 
@@ -186,7 +196,7 @@ Cells:     6 sites × 3 models × 5 modes = ~90 baseline cells (~125K episode to
 | Issue | Status | Action needed |
 |---|---|---|
 | **B1 phantom_som cls GPU contention** (seonglae 95% utilization, 5× latency) | 🟡 持续 | 联系 seonglae 协调 GPU sharing or 接受 slow progression |
-| **B1 shopping DOM 466 ep pre-Magento-bug** (clear+重跑 决策) | 🟡 等 Myriad GPU | rename to `_pre_magento_fix` (保留 reference), 重跑 with FPC disabled |
+| ~~**B1 shopping DOM 466 ep pre-Magento-bug**~~ | ✅ resolved 04-28 19:00 | archived `_archive/B1_3mode_shopping_20260413_pre_magento_bug` (含 dom 465/466) + som 5ep abandoned condition 删除. 待 Myriad GPU clean re-run via `queue_baseline.sh B1 dom shopping` |
 | **IP env-var-ize 重构** (9 处 `.py/.sh` hardcoded `100.95.81.103`) | 🟡 backlog | 替换为 `${VWA_REMOTE_HOST}` env var read，让 Myriad / future host 不必 sed。文件: `p79/utils/auth_refresh.py` / `external/visualwebarena/browser_env/envs.py` / `scripts/maintenance/{reset_vwa_sites,retry_b1_single_task,experiment_watchdog}.sh\|.py`。**触发条件**: Myriad onboard 时如果不能 Tailscale reach quark IP |
 | **WA reset mechanism**（queue scripts 当前仅 vwa reset, wa skip） | 🟡 backlog | webarena docker reset 路径未实现。需写 `reset_wa_sites.sh` (类似 `reset_vwa_sites.sh`) 然后 queue scripts 加 `BENCHMARK=wa` 分支调用 |
 | **Tier A summary commit decision** (是否 commit `condition_summary_v2.json` + `run_meta.json` 入 git LFS / 直 git for paper-grade archive) | 🟡 待评估 | size: 10 conditions × ~50KB = ~500KB total，git 直管也行；好处: paper repro 时 reviewer 不需 hub access；坏处: 实验未冻结前每次 rederive 改动多 |
