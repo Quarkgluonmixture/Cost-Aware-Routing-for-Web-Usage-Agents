@@ -412,11 +412,12 @@ WA routing pool 扩展为 {DOM_AXTree, Phantom_SoM_marks_text}, oracle 增益理
    - **red Phantom-DOM verbalized AUROC 0.793 是 5-mode 最高** (超 baseline 0.766)
    - cls site behavioral 主导 (action_diversity), red site verbalized 主导 (ep_mean_verbalized) — 与 site-modulated effect 一致
    - Token-level signal 全 non-discriminative — paper 应避免 token-level routing claim
-   - **paper 论证升级**: Phantom 是 4-fold drop-in property:
+   - **paper 论证升级 (paper 1 router section 直接用)**: Phantom 是 4-fold drop-in property:
      (a) Cost ≈ DOM (deployment)
      (b) Latency 4x 改进 (cls 18s vs SoM 74s)
-     (c) Signal AUROC ≥ baseline (router 复用 infra)
+     (c) Signal AUROC ≥ baseline (router 复用 infra) ⭐ NEW
      (d) Drop-one oracle 1.7-3.3pp (routing value)
+   - **paper 1 router section 论证 backbone**: router trained on baseline 可 directly extend to Phantom (signal infra drop-in), 不是 future work
 
 **Honest framing 警告 (audit 04-28)**:
 - Phantom-SoM red 13.81% > SoM 10.48% **不是 unconditional dominance** — fresh vs stale 同 condition 也有 ±5% task variance (16/210 task 不同), +3.33pp ≈ 2σ noise floor
