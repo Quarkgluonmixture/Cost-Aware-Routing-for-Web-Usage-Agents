@@ -101,6 +101,26 @@
             "tab_focus": 14,
             "type": 94
           }
+        },
+        "Phantom-prompt": {
+          "n_tasks": 138,
+          "mean_url_set_size": 3.398551,
+          "mean_url_path_set_size": 2.478261,
+          "mean_n_steps": 12.210145,
+          "finish_rate": 0.5,
+          "target_hit_n": 82,
+          "target_hit_rate": 0.207317,
+          "mean_n_type_actions": 3.304348,
+          "mean_max_keyword_repeat": 1.876812,
+          "mean_distinct_keywords": 1.76087,
+          "first_action_type_counts": {
+            "click": 50,
+            "finish": 3,
+            "scroll": 10,
+            "select_option": 1,
+            "tab_focus": 16,
+            "type": 58
+          }
         }
       },
       "classifieds": {
@@ -466,6 +486,60 @@
           "left_mode": "DOM",
           "right_mode": "P-SoM"
         },
+        "axis_2_prompt_alt": {
+          "n": 138,
+          "url_jaccard_mean": 0.591158,
+          "url_decision_divergence": 0.408842,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 82,
+          "target_hit_rate_left": 0.243902,
+          "target_hit_rate_right": 0.207317,
+          "target_hit_rate_diff": -0.036585,
+          "target_hit_rate_diff_pct_pts": -3.658537,
+          "target_hit_mcnemar": {
+            "left_only": 4,
+            "right_only": 1,
+            "p_exact": 0.375
+          },
+          "max_keyword_repeat_diff": -0.557971,
+          "distinct_keywords_diff": -0.072464,
+          "n_type_actions_diff": -1.115942,
+          "n_steps_diff": -0.507246,
+          "finish_rate_diff": 0.0,
+          "first_action_divergence_rate": 0.195652,
+          "first_action_target_url_path_divergence_rate": 0.413043,
+          "contrast": "P-prompt minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-prompt"
+        },
+        "axis_1_text_alt": {
+          "n": 138,
+          "url_jaccard_mean": 0.546687,
+          "url_decision_divergence": 0.453313,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 82,
+          "target_hit_rate_left": 0.207317,
+          "target_hit_rate_right": 0.207317,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.355072,
+          "distinct_keywords_diff": -0.688406,
+          "n_type_actions_diff": -0.869565,
+          "n_steps_diff": -2.942029,
+          "finish_rate_diff": -0.108696,
+          "first_action_divergence_rate": 0.181159,
+          "first_action_target_url_path_divergence_rate": 0.463768,
+          "contrast": "P-SoM minus P-prompt",
+          "left_mode": "P-prompt",
+          "right_mode": "P-SoM"
+        },
         "endpoint_dom_to_som": {
           "n": 210,
           "url_jaccard_mean": 0.377708,
@@ -603,6 +677,20 @@
           "left_mode": "DOM",
           "right_mode": "P-SoM"
         },
+        "axis_2_prompt_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-prompt minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-prompt"
+        },
+        "axis_1_text_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-prompt",
+          "left_mode": "P-prompt",
+          "right_mode": "P-SoM"
+        },
         "endpoint_dom_to_som": {
           "n": 234,
           "url_jaccard_mean": 0.878348,
@@ -660,6 +748,20 @@
           "skipped": true,
           "contrast": "P-SoM minus DOM",
           "left_mode": "DOM",
+          "right_mode": "P-SoM"
+        },
+        "axis_2_prompt_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-prompt minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-prompt"
+        },
+        "axis_1_text_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-prompt",
+          "left_mode": "P-prompt",
           "right_mode": "P-SoM"
         },
         "endpoint_dom_to_som": {
@@ -757,6 +859,20 @@
           "first_action_target_url_path_divergence_rate": 0.204348,
           "contrast": "P-SoM minus DOM",
           "left_mode": "DOM",
+          "right_mode": "P-SoM"
+        },
+        "axis_2_prompt_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-prompt minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-prompt"
+        },
+        "axis_1_text_alt": {
+          "n": 0,
+          "skipped": true,
+          "contrast": "P-SoM minus P-prompt",
+          "left_mode": "P-prompt",
           "right_mode": "P-SoM"
         },
         "endpoint_dom_to_som": {
@@ -1201,6 +1317,14 @@
       },
       "B0/reddit/compound_dom_to_psom": {
         "value": 0.481306,
+        "pass": true
+      },
+      "B0/reddit/axis_2_prompt_alt": {
+        "value": 0.591158,
+        "pass": true
+      },
+      "B0/reddit/axis_1_text_alt": {
+        "value": 0.546687,
         "pass": true
       },
       "B0/reddit/endpoint_dom_to_som": {

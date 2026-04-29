@@ -23,6 +23,15 @@ OUT_MD = ROOT / "docs/analysis/cross_sites/sr_fp_per_mode.md"
 
 # Per-baseline summary directories. B1 phantom_text (P-text) and B1 reddit phantom
 # data are not yet available; missing modes are skipped at aggregate time.
+def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
+    """Resolve newest B0/B1 phantom_prompt run dir glob for (baseline, site).
+
+    Returns None when no run dir exists yet (cell pending).
+    """
+    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
+    return candidates[-1] if candidates else None
+
+
 SUMMARY_DIRS: dict[str, dict[str, dict[str, Path]]] = {
     "B0": {
         "reddit": {
@@ -31,6 +40,8 @@ SUMMARY_DIRS: dict[str, dict[str, dict[str, Path]]] = {
             "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
             "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
             "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+            # P-prompt: newest B0_phantom_prompt_reddit_* run dir (None if none)
+            "Phantom-prompt": _phantom_prompt_dir("B0", "reddit"),
         },
         "classifieds": {
             "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
@@ -38,6 +49,7 @@ SUMMARY_DIRS: dict[str, dict[str, dict[str, Path]]] = {
             "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
             "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
             "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+            "Phantom-prompt": _phantom_prompt_dir("B0", "classifieds"),
         },
     },
     "B1": {
@@ -46,6 +58,7 @@ SUMMARY_DIRS: dict[str, dict[str, dict[str, Path]]] = {
             "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
             # Phantom-SoM / P-text not yet available for B1 reddit
+            "Phantom-prompt": _phantom_prompt_dir("B1", "reddit"),
         },
         "classifieds": {
             "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
@@ -53,11 +66,12 @@ SUMMARY_DIRS: dict[str, dict[str, dict[str, Path]]] = {
             "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
             "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
             # P-text not yet available for B1 classifieds (only 4 ep at present)
+            "Phantom-prompt": _phantom_prompt_dir("B1", "classifieds"),
         },
     },
 }
 
-MODE_ORDER = ["DOM", "P-text", "Phantom-SoM", "SoM", "Vision"]
+MODE_ORDER = ["DOM", "P-text", "Phantom-prompt", "Phantom-SoM", "SoM", "Vision"]
 BASELINE_ORDER = ["B0", "B1"]
 SITE_ORDER = ["reddit", "classifieds"]
 
@@ -174,7 +188,13 @@ def main() -> None:
                 ep_dir = site_dirs.get(mode)
                 if ep_dir is None:
                     continue
+                if not ep_dir.exists():
+                    # Path resolved (e.g. P-prompt glob) but the run dir does
+                    # not exist yet — cell pending, skip silently.
+                    continue
                 cell = aggregate_cell(baseline, site, mode, ep_dir)
+                if cell["n_total"] == 0:
+                    continue
                 cells[f"{baseline}/{site}/{mode}"] = cell
                 summary_table.append(cell)
 

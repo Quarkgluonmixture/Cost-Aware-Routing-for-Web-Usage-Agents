@@ -44,6 +44,11 @@ TASK_CONFIGS = {
     "classifieds": ROOT / "external/visualwebarena/config_files/vwa/test_classifieds.json",
 }
 
+def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
+    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
+    return candidates[-1] if candidates else None
+
+
 STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
     "B0": {
         "reddit": {
@@ -52,6 +57,7 @@ STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
             "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
             "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
             "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+            "Phantom-prompt": _phantom_prompt_dir("B0", "reddit"),
         },
         "classifieds": {
             "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
@@ -59,6 +65,7 @@ STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
             "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
             "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+            "Phantom-prompt": _phantom_prompt_dir("B0", "classifieds"),
         },
     },
     "B1": {
@@ -66,12 +73,14 @@ STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
             "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
             "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
             "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
+            "Phantom-prompt": _phantom_prompt_dir("B1", "reddit"),
         },
         "classifieds": {
             "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
             "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
             "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
+            "Phantom-prompt": _phantom_prompt_dir("B1", "classifieds"),
         },
     },
 }
@@ -82,6 +91,7 @@ MODE_LABELS = {
     "DOM": "DOM",
     "P-text": "P-text",
     "Phantom-SoM": "P-SoM",
+    "Phantom-prompt": "P-prompt",
     "SoM": "SoM",
     "Vision": "Vision",
 }
@@ -95,6 +105,11 @@ AXIS_CONTRASTS = {
     # Validates that P-SoM's per-step decisions diverge from DOM at the micro level even
     # when aggregate macro action frequencies converge (especially relevant for cls).
     "compound_dom_to_psom": ("DOM", "Phantom-SoM"),
+    # Diamond ablation alt-paths via P-prompt
+    # axis_2_prompt_alt: prompt-only effect on AXTree text (DOM->P-prompt)
+    "axis_2_prompt_alt": ("DOM", "Phantom-prompt"),
+    # axis_1_text_alt: text-only effect on SoM prompt (P-prompt->P-SoM)
+    "axis_1_text_alt": ("Phantom-prompt", "Phantom-SoM"),
     # Endpoint sanity — full mode swap for reference
     "endpoint_dom_to_som": ("DOM", "SoM"),
 }
@@ -496,7 +511,7 @@ def main() -> None:
         metrics_by_baseline[baseline] = {}
         for site in SITES_LIST:
             metrics_by_baseline[baseline][site] = {}
-            for mode in ["DOM", "Vision", "SoM", "Phantom-SoM", "P-text"]:
+            for mode in ["DOM", "Vision", "SoM", "Phantom-SoM", "P-text", "Phantom-prompt"]:
                 metrics_by_baseline[baseline][site][mode] = per_task_mode_metrics(
                     baseline, site, mode, task_configs[site]
                 )

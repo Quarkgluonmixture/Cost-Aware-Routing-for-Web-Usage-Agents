@@ -56,6 +56,23 @@ DEFAULT_RUNS = [
 ]
 
 
+def _phantom_prompt_runs() -> list[Path]:
+    """Return all available B0/B1 phantom_prompt run dirs (cls + red)."""
+    out: list[Path] = []
+    for baseline in ("B0", "B1"):
+        for site in ("reddit", "classifieds"):
+            for path in sorted((REPO / "results/visualwebarena/phase1").glob(
+                f"{baseline}_phantom_prompt_{site}_*"
+            )):
+                if path.is_dir():
+                    out.append(path)
+    return out
+
+
+# Auto-extend with any P-prompt runs that exist on disk
+DEFAULT_RUNS = DEFAULT_RUNS + _phantom_prompt_runs()
+
+
 def parse_run_id(run_dir: Path) -> tuple[str, str]:
     """Extract (baseline, site) from a run_id like B0_phantom_text_classifieds_20260427."""
     name = run_dir.name

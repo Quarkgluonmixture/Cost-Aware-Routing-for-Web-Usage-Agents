@@ -27,6 +27,11 @@ RESULTS = ROOT / "results/visualwebarena/phase1"
 PAPER = ROOT / "results/phantom_paper"
 CROSS = ROOT / "docs/analysis/cross_sites"
 
+def _phantom_prompt_cond(site: str) -> Path | None:
+    candidates = sorted(RESULTS.glob(f"B0_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0"))
+    return candidates[-1] if candidates else None
+
+
 MODE_SPECS: dict[str, dict[str, Path]] = {
     "classifieds": {
         "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0",
@@ -43,6 +48,11 @@ MODE_SPECS: dict[str, dict[str, Path]] = {
         "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0",
     },
 }
+# P-prompt is conditionally added when its run dir exists (Tier 2 cls+red only)
+for _site in ("classifieds", "reddit"):
+    _pp = _phantom_prompt_cond(_site)
+    if _pp is not None:
+        MODE_SPECS[_site]["P-prompt"] = _pp
 
 AUDITS = {
     "classifieds": CROSS / "codex_audit_classifieds.json",
@@ -297,7 +307,7 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
     lines += ["### 0a SR per mode (B0)", ""]
     for site in ["reddit", "classifieds"]:
         parts = []
-        for mode in ["DOM", "P-text", "P-SoM", "SoM", "Vision"]:
+        for mode in ["DOM", "P-text", "P-prompt", "P-SoM", "SoM", "Vision"]:
             if mode not in stats[site]:
                 continue
             s = stats[site][mode]
@@ -309,7 +319,11 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
 
     lines += ["### 0b FP rate (raw success - adjusted success)", ""]
     for site in ["reddit", "classifieds"]:
-        parts = [f"{mode} {fmt_pct(stats[site][mode]['fp_rate'])}" for mode in ["DOM", "P-text", "P-SoM", "SoM", "Vision"]]
+        parts = [
+            f"{mode} {fmt_pct(stats[site][mode]['fp_rate'])}"
+            for mode in ["DOM", "P-text", "P-prompt", "P-SoM", "SoM", "Vision"]
+            if mode in stats[site]
+        ]
         lines.append(f"- {site}: " + "; ".join(parts))
     lines.append(f"- source: same live episode `summary_v2.json` files as 0a; standalone `{rel(sr_fp_md)}` | last update: {timestamp(sr_fp_md)}")
     lines.append("")
@@ -399,9 +413,11 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
     lines += ["### 0f Overlap depth", ""]
     for site in ["reddit", "classifieds"]:
         depths = success_depths(stats[site])
-        for mode in ["P-SoM", "P-text"]:
+        for mode in ["P-SoM", "P-text", "P-prompt"]:
+            if mode not in stats[site]:
+                continue
             c = depths.get(mode, Counter())
-            parts = [f"d{depth}={c.get(depth, 0)}" for depth in range(1, 6)]
+            parts = [f"d{depth}={c.get(depth, 0)}" for depth in range(1, 7)]
             lines.append(f"- {site} {mode}: " + " / ".join(parts))
     lines.append(f"- figure: `{rel(FIGURES['fig0f'])}` | last update: {timestamp(FIGURES['fig0f'])}")
     lines.append("")
@@ -411,7 +427,7 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
         lines.append(f"- ⚠️ missing or unreadable | {source_line(auroc_csv)}")
     for site in ["reddit", "classifieds"]:
         parts = []
-        for mode in ["dom", "phantom_dom", "phantom_som", "som", "vision"]:
+        for mode in ["dom", "phantom_dom", "phantom_prompt", "phantom_som", "som", "vision"]:
             row = auroc_rows.get(("B0", site, mode))
             if not row:
                 parts.append(f"{display_mode(mode)} n/a")

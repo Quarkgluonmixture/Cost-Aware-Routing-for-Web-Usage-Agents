@@ -134,9 +134,10 @@ def main() -> None:
     fig.text(
         0.5,
         0.02,
-        "Source: disagreement_clusters.md B0-vs-B1 contrast table. The table is aggregate across classifieds and reddit; site-specific contrast was not present in the source.",
+        "Source: disagreement_clusters.md B0-vs-B1 contrast table. The table is aggregate across classifieds and reddit; site-specific contrast was not present in the source. "
+        "P-prompt failure clustering pending diag re-run on B0 reddit P-prompt episodes (live).",
         ha="center",
-        fontsize=8.5,
+        fontsize=8.0,
         color="#555555",
     )
     fig.tight_layout(rect=(0, 0.06, 1, 0.93))

@@ -50,8 +50,8 @@ def main() -> None:
 
     plt.rcParams.update({"font.size": 10})
 
-    BARS = ["3-mode", "+P-text", "+P-SoM", "5-mode"]
-    COLORS = ["#a0a0a0", "#9e6da8", "#b279a2", "#54a24b"]
+    BARS = ["3-mode", "+P-text", "+P-prompt", "+P-SoM", "5-mode", "6-mode"]
+    COLORS = ["#a0a0a0", "#9e6da8", "#9467bd", "#b279a2", "#54a24b", "#2e7d32"]
 
     def _to_float(value: str) -> float | None:
         if value is None or value == "" or value.lower() == "none":
@@ -64,47 +64,65 @@ def main() -> None:
     for ax, r in zip(axes, rows):
         sr3 = _to_float(r["oracle_3mode_pp"]) or 0.0
         sr_pdom = _to_float(r["oracle_4mode_pdom_pp"])  # may be None when P-text pending
+        sr_pprompt = _to_float(r.get("oracle_4mode_pprompt_pp"))  # may be None when P-prompt pending
         sr_psom = _to_float(r["oracle_4mode_psom_pp"]) or 0.0
         sr5 = _to_float(r["oracle_5mode_pp"])  # may be None
+        sr6 = _to_float(r.get("oracle_6mode_pp"))  # may be None when P-prompt pending
 
         ci_lo_pdom_lift = _to_float(r["lift_4pdom_vs_3_ci95_lo_pp"])
         ci_hi_pdom_lift = _to_float(r["lift_4pdom_vs_3_ci95_hi_pp"])
+        ci_lo_pprompt_lift = _to_float(r.get("lift_4pprompt_vs_3_ci95_lo_pp"))
+        ci_hi_pprompt_lift = _to_float(r.get("lift_4pprompt_vs_3_ci95_hi_pp"))
         ci_lo_5_lift = _to_float(r["lift_5_vs_3_ci95_lo_pp"])
         ci_hi_5_lift = _to_float(r["lift_5_vs_3_ci95_hi_pp"])
         ci_lo_psom_lift = _to_float(r["lift_4psom_vs_3_ci95_lo_pp"]) or 0.0
         ci_hi_psom_lift = _to_float(r["lift_4psom_vs_3_ci95_hi_pp"]) or 0.0
+        ci_lo_6_lift = _to_float(r.get("lift_6_vs_3_ci95_lo_pp"))
+        ci_hi_6_lift = _to_float(r.get("lift_6_vs_3_ci95_hi_pp"))
 
         ci_lo_psom = sr3 + ci_lo_psom_lift
         ci_hi_psom = sr3 + ci_hi_psom_lift
 
-        # Build sr_vals; pdom and 5-mode may be None (pending)
+        # Build sr_vals; pdom / pprompt / 5-mode / 6-mode may be None (pending)
         sr_pdom_plot = 0.0 if sr_pdom is None else sr_pdom
+        sr_pprompt_plot = 0.0 if sr_pprompt is None else sr_pprompt
         sr5_plot = 0.0 if sr5 is None else sr5
+        sr6_plot = 0.0 if sr6 is None else sr6
 
-        sr_vals = [sr3, sr_pdom_plot, sr_psom, sr5_plot]
+        sr_vals = [sr3, sr_pdom_plot, sr_pprompt_plot, sr_psom, sr5_plot, sr6_plot]
         err_low = [
             0,
             0 if sr_pdom is None or ci_lo_pdom_lift is None else max(0, sr_pdom - (sr3 + ci_lo_pdom_lift)),
+            0 if sr_pprompt is None or ci_lo_pprompt_lift is None else max(0, sr_pprompt - (sr3 + ci_lo_pprompt_lift)),
             max(0, sr_psom - ci_lo_psom),
             0 if sr5 is None or ci_lo_5_lift is None else max(0, sr5 - (sr3 + ci_lo_5_lift)),
+            0 if sr6 is None or ci_lo_6_lift is None else max(0, sr6 - (sr3 + ci_lo_6_lift)),
         ]
         err_high = [
             0,
             0 if sr_pdom is None or ci_hi_pdom_lift is None else max(0, (sr3 + ci_hi_pdom_lift) - sr_pdom),
+            0 if sr_pprompt is None or ci_hi_pprompt_lift is None else max(0, (sr3 + ci_hi_pprompt_lift) - sr_pprompt),
             max(0, ci_hi_psom - sr_psom),
             0 if sr5 is None or ci_hi_5_lift is None else max(0, (sr3 + ci_hi_5_lift) - sr5),
+            0 if sr6 is None or ci_hi_6_lift is None else max(0, (sr3 + ci_hi_6_lift) - sr6),
         ]
 
         x = np.arange(len(BARS))
-        # Use grey placeholder for pending bars (pdom and/or 5-mode)
+        # Use grey placeholder for pending bars
         bar_colors = list(COLORS)
-        pending_idx = []
+        pending_idx: list[int] = []
         if sr_pdom is None:
             bar_colors[1] = "#dddddd"
             pending_idx.append(1)
+        if sr_pprompt is None:
+            bar_colors[2] = "#dddddd"
+            pending_idx.append(2)
         if sr5 is None:
-            bar_colors[3] = "#dddddd"
-            pending_idx.append(3)
+            bar_colors[4] = "#dddddd"
+            pending_idx.append(4)
+        if sr6 is None:
+            bar_colors[5] = "#dddddd"
+            pending_idx.append(5)
 
         bars = ax.bar(x, sr_vals, color=bar_colors, width=0.66,
                       yerr=[err_low, err_high], ecolor="#222222", capsize=4,
@@ -125,7 +143,8 @@ def main() -> None:
                 lift_label = f"Δ +{delta:.2f}pp"
             ax.text(bar.get_x() + bar.get_width()/2, val + max(err_high[i], 0.0) + 0.5,
                     f"{val:.2f}%\n{lift_label}",
-                    ha="center", va="bottom", fontsize=9, fontweight="bold" if i == 3 else "normal")
+                    ha="center", va="bottom", fontsize=9,
+                    fontweight="bold" if i in (4, 5) else "normal")
 
         n_label = (f"N={r['n_common']}/{r['n_expected']}†" if r["is_partial"].lower() == "true"
                    else f"N={r['n_common']}")
@@ -138,11 +157,11 @@ def main() -> None:
         ax.grid(axis="y", color="#dddddd", linewidth=0.8)
         ax.set_axisbelow(True)
 
-    fig.suptitle("Phantom routing lift: 3-mode → +P-text → +P-SoM → 5-mode oracle ceiling",
+    fig.suptitle("Phantom routing lift: 3-mode → +P-text → +P-prompt → +P-SoM → 5-mode → 6-mode oracle ceiling",
                  fontsize=13, fontweight="bold")
     fig.text(0.5, 0.012,
              "Bars = oracle ceiling success rate (any-of-modes solves task). Error bars: 95% bootstrap CI. "
-             "Δ = lift vs 3-mode baseline. Phantom modes are zero-cost (text-only inference).",
+             "Δ = lift vs 3-mode baseline. Phantom modes (P-text/P-prompt/P-SoM) are zero-extra-image-cost (text+optional SoM marks).",
              ha="center", fontsize=8.5, color="#555555")
     fig.tight_layout(rect=(0, 0.05, 1, 0.94))
     OUT.parent.mkdir(parents=True, exist_ok=True)

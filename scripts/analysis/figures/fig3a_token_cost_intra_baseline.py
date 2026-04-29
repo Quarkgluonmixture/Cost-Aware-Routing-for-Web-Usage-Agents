@@ -38,8 +38,16 @@ MODE_COLORS = {
     "Vision": "#54a24b",
     "Phantom-SoM": "#b279a2",
     "P-text": "#e45756",
+    "Phantom-prompt": "#9467bd",
 }
-MODE_DISPLAY = {"Phantom-SoM": "P-SoM", "P-text": "P-text"}
+MODE_DISPLAY = {"Phantom-SoM": "P-SoM", "P-text": "P-text", "Phantom-prompt": "P-prompt"}
+
+
+def _phantom_prompt_subpath(baseline: str, site: str) -> str | None:
+    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0"))
+    if not candidates:
+        return None
+    return str(candidates[-1].relative_to(RESULTS))
 
 
 @dataclass(frozen=True)
@@ -74,6 +82,12 @@ SPECS = [
     ("B1", "reddit", "SoM", "B1_3mode_reddit_20260413/phase1_som_router_0", 210),
     ("B1", "reddit", "Vision", "B1_3mode_reddit_20260413/phase1_vision_router_0", 210),
 ]
+# Auto-extend SPECS with P-prompt entries when run dirs exist
+for _b, _expected_pairs in (("B0", {"reddit": 210, "classifieds": 234}), ("B1", {"reddit": 210, "classifieds": 234})):
+    for _site, _expected in _expected_pairs.items():
+        _sub = _phantom_prompt_subpath(_b, _site)
+        if _sub is not None:
+            SPECS.append((_b, _site, "Phantom-prompt", _sub, _expected))
 
 
 def task_id(path: Path) -> int:
@@ -139,7 +153,8 @@ def draw_panel(ax: plt.Axes, baseline: str, site: str, cells: list[Cell]) -> Non
         label_mode = MODE_DISPLAY.get(cell.mode, cell.mode)
         ax.scatter(cell.cost, cell.adj_sr, color=color, s=140, edgecolor="white", linewidth=1.5, zorder=3)
         offset = {"DOM": (8, 8), "SoM": (8, -16), "Vision": (-42, 10),
-                  "Phantom-SoM": (-72, 4), "P-text": (-50, -18)}.get(cell.mode, (8, 8))
+                  "Phantom-SoM": (-72, 4), "P-text": (-50, -18),
+                  "Phantom-prompt": (-72, -22)}.get(cell.mode, (8, 8))
         ax.annotate(
             f"{label_mode}\n{cell.adj_sr:.1f}%",
             xy=(cell.cost, cell.adj_sr),
@@ -148,6 +163,16 @@ def draw_panel(ax: plt.Axes, baseline: str, site: str, cells: list[Cell]) -> Non
             fontsize=8.0,
             color="#222222",
             arrowprops={"arrowstyle": "-", "color": "#cccccc", "lw": 0.7},
+        )
+
+    # P-prompt placeholder annotation when this panel lacks a P-prompt point
+    if not any(c.mode == "Phantom-prompt" for c in panel_cells):
+        ax.text(
+            0.02, 0.97,
+            "P-prompt: pending",
+            transform=ax.transAxes, ha="left", va="top",
+            fontsize=8.0, color=MODE_COLORS["Phantom-prompt"],
+            bbox={"boxstyle": "round,pad=0.25", "facecolor": "#f3eaf7", "edgecolor": MODE_COLORS["Phantom-prompt"], "alpha": 0.7, "linestyle": "dotted"},
         )
     frontier = pareto_frontier(panel_cells)
     if len(frontier) >= 2:
@@ -190,7 +215,7 @@ def main() -> None:
     legend_handles = [
         Line2D([0], [0], marker="o", color="w", markerfacecolor=MODE_COLORS[m], markeredgecolor="white",
                markersize=10, label=MODE_DISPLAY.get(m, m))
-        for m in ("DOM", "SoM", "Vision", "Phantom-SoM", "P-text")
+        for m in ("DOM", "SoM", "Vision", "Phantom-SoM", "P-text", "Phantom-prompt")
     ]
     legend_handles.append(Line2D([0], [0], color="#444444", linewidth=1.2, linestyle="--", label="Pareto frontier (per-panel)"))
     fig.legend(handles=legend_handles, loc="upper center", ncol=6, frameon=False, fontsize=9.5,

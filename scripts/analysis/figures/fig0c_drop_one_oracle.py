@@ -29,14 +29,28 @@ ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig0c_drop_one_oracle.png"
 
-MODES = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text"]
+MODES = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text", "Phantom-prompt"]
 COLORS = {
     "DOM": "#4c78a8",
     "SoM": "#f58518",
     "Vision": "#54a24b",
     "Phantom-SoM": "#b279a2",
     "P-text": "#9e6da8",
+    "Phantom-prompt": "#9467bd",
 }
+MODE_LABELS = {
+    "DOM": "DOM",
+    "SoM": "SoM",
+    "Vision": "Vision",
+    "Phantom-SoM": "P-SoM",
+    "P-text": "P-text",
+    "Phantom-prompt": "P-prompt",
+}
+
+
+def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
+    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
+    return candidates[-1] if candidates else None
 
 # Drop-one oracle uses union/intersection over the **common observed** task
 # universe per panel (so a partial in-flight run doesn't artificially shrink
@@ -79,7 +93,7 @@ PANELS = [
             # B1 phantom_som chain in flight — partial run included with intersection-based drop-one
             "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
         },
-        "missing": "P-text N/A",
+        "missing": "P-text / P-prompt N/A",
     },
     {
         "key": "b1_red",
@@ -90,9 +104,17 @@ PANELS = [
             "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
         },
-        "missing": "Phantom-SoM/P-text N/A (chain pending)",
+        "missing": "Phantom-SoM/P-text/P-prompt N/A (chain pending)",
     },
 ]
+# Auto-attach Phantom-prompt run dir per panel when it exists on disk
+for _panel in PANELS:
+    _baseline, _site = _panel["key"].split("_", 1)
+    _baseline = "B0" if _baseline.lower() == "b0" else "B1"
+    _site_full = "classifieds" if _site == "cls" else ("reddit" if _site == "red" else _site)
+    _pp = _phantom_prompt_dir(_baseline, _site_full)
+    if _pp is not None:
+        _panel["modes"]["Phantom-prompt"] = _pp
 
 SECTION103_LOSS = {
     "b0_cls": {"DOM": 2.14, "SoM": 7.69, "Vision": 3.85, "Phantom-SoM": 1.71},
@@ -124,28 +146,40 @@ def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
     return successes, observed
 
 
-def load_panel_sets(panel: dict) -> tuple[dict[str, set[int]], dict[str, set[int]], set[int]]:
-    """Returns (succ_sets_intersected, observed_sets, common_universe).
+def load_panel_sets(panel: dict) -> tuple[dict[str, set[int]], dict[str, set[int]], set[int], set[str]]:
+    """Returns (succ_sets_intersected, observed_sets, common_universe, partial_modes).
 
-    Drop-one is computed on the intersection of observed task IDs across all
-    modes, so a partial in-flight run (e.g. B1 phantom_som mid-chain) doesn't
-    artificially shrink the unique-task count for the fully-completed modes.
+    Drop-one is computed on the intersection of **complete** modes only.
+    Partial modes (observed < 0.9 × expected) are excluded from the oracle
+    union/intersection so they don't artificially shrink the comparable
+    universe (otherwise modes that diverge on the full pool can become
+    accidentally redundant in the partial intersection — e.g. B0 reddit
+    Vision drop-one collapsed to 0 when P-prompt at n=134 was included).
     """
     sets: dict[str, set[int]] = {}
     obs: dict[str, set[int]] = {}
+    partial_modes: set[str] = set()
     for mode, ep_dir in panel["modes"].items():
         successes, observed = load_success_set(ep_dir)
         sets[mode] = successes
         obs[mode] = observed
-        if observed and len(observed) != panel["expected"]:
+        if observed and len(observed) < int(panel["expected"] * 0.9):
+            partial_modes.add(mode)
             print(
                 f"[note] {panel['title']} {mode}: partial n={len(observed)}/"
-                f"{panel['expected']}",
+                f"{panel['expected']} — excluded from drop-one oracle",
                 file=sys.stderr,
             )
-    common = set.intersection(*obs.values()) if obs else set()
-    sets_r = {m: s & common for m, s in sets.items()}
-    return sets_r, obs, common
+        elif observed and len(observed) != panel["expected"]:
+            print(
+                f"[note] {panel['title']} {mode}: near-complete n={len(observed)}/"
+                f"{panel['expected']} — included",
+                file=sys.stderr,
+            )
+    complete_obs = {m: o for m, o in obs.items() if m not in partial_modes and o}
+    common = set.intersection(*complete_obs.values()) if complete_obs else set()
+    sets_r = {m: s & common for m, s in sets.items() if m not in partial_modes}
+    return sets_r, obs, common, partial_modes
 
 
 def drop_one_losses(sets: dict[str, set[int]], expected: int) -> dict[str, float]:
@@ -205,13 +239,12 @@ def bootstrap_drop_one_ci(
 
 
 def draw_panel(ax: plt.Axes, panel: dict, csv_rows: list[dict]) -> None:
-    sets_r, obs, common = load_panel_sets(panel)
-    # If common universe < expected, drop-one denominator = N_common (so percentages
-    # are over the actually-comparable subset).
+    sets_r, obs, common, partial_modes_set = load_panel_sets(panel)
+    # Drop-one denominator = N_common across complete (non-partial) modes.
     n_common = len(common) if common else panel["expected"]
     losses = drop_one_losses(sets_r, n_common)
     cis = bootstrap_drop_one_ci(sets_r, n_common)
-    partial_modes = [m for m, o in obs.items() if o and len(o) < panel["expected"]]
+    partial_modes = sorted(partial_modes_set)
     if panel["key"] in SECTION103_LOSS:
         for mode, verified in SECTION103_LOSS[panel["key"]].items():
             if mode in losses and abs(losses[mode] - verified) > 0.25:
@@ -235,13 +268,15 @@ def draw_panel(ax: plt.Axes, panel: dict, csv_rows: list[dict]) -> None:
     for bar, mode, value in zip(bars, MODES, values):
         if mode not in losses:
             bar.set_hatch("//")
+            n_obs = len(obs.get(mode, set()))
+            label = f"partial\nN={n_obs}/{panel['expected']}" if mode in partial_modes_set else "N/A"
             ax.text(
                 bar.get_x() + bar.get_width() / 2,
                 0.23,
-                "N/A",
+                label,
                 ha="center",
                 va="bottom",
-                fontsize=8.5,
+                fontsize=7.5,
                 color="#666666",
             )
             continue
@@ -270,7 +305,7 @@ def draw_panel(ax: plt.Axes, panel: dict, csv_rows: list[dict]) -> None:
         })
     n_label = f"N={n_common}" if n_common == panel["expected"] else f"N={n_common}/{panel['expected']}†"
     ax.set_title(f"{panel['title']} ({n_label})", fontsize=10.5, fontweight="bold")
-    ax.set_xticks(x, ["DOM", "SoM", "Vision", "P-SoM", "P-text"], fontsize=8.5)
+    ax.set_xticks(x, [MODE_LABELS[m] for m in MODES], fontsize=8.5, rotation=20, ha="right")
     ax.set_ylim(0, 13.0)
     ax.grid(axis="y", color="#dddddd", linewidth=0.8)
     ax.set_axisbelow(True)
@@ -286,13 +321,14 @@ def main() -> None:
         draw_panel(ax, panel, csv_rows)
     for ax in axes[:, 0]:
         ax.set_ylabel("Oracle loss when arm is removed (pp, 95% bootstrap CI)")
-    fig.suptitle("Drop-One Oracle: Incremental Routing Value (5-mode, 95% bootstrap CI, n=1000)", fontsize=13.5, fontweight="bold")
+    fig.suptitle("Drop-One Oracle: Incremental Routing Value (up to 6-mode, 95% bootstrap CI, n=1000)", fontsize=13.5, fontweight="bold")
     fig.text(
         0.5,
         0.025,
         "Higher bars = representation solves tasks not recovered by the other plotted arms. "
-        "P-SoM = Phantom-SoM, P-text = P-text. † = partial / common-universe subset (B1 phantom_som "
-        "chain in flight). N=common observed across all modes per panel. CI from 1000-resample bootstrap.",
+        "P-SoM = Phantom-SoM, P-text = AXTree+DOM-prompt+no-image, P-prompt = AXTree+SoM-prompt+no-image. "
+        "† = partial / common-universe subset (B0 reddit P-prompt run live; "
+        "B1 phantom_som chain in flight). N=common observed across all modes per panel. CI from 1000-resample bootstrap.",
         ha="center",
         fontsize=8.0,
         color="#555555",

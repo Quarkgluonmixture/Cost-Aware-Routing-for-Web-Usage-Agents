@@ -45,6 +45,11 @@ RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT_JSON = ROOT / "docs/analysis/cross_sites/axis_effect_size.json"
 OUT_MD = ROOT / "docs/analysis/cross_sites/axis_effect_size_report.md"
 
+def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
+    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
+    return candidates[-1] if candidates else None
+
+
 STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
     "B0": {
         "reddit": {
@@ -53,6 +58,7 @@ STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
             "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
             "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
             "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+            "Phantom-prompt": _phantom_prompt_dir("B0", "reddit"),
         },
         "classifieds": {
             "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
@@ -60,6 +66,7 @@ STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
             "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
             "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+            "Phantom-prompt": _phantom_prompt_dir("B0", "classifieds"),
         },
     },
     "B1": {
@@ -68,6 +75,7 @@ STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
             "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
             "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
             # Phantom-SoM / P-text not yet available for B1 reddit
+            "Phantom-prompt": _phantom_prompt_dir("B1", "reddit"),
         },
         "classifieds": {
             "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
@@ -75,6 +83,7 @@ STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
             "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
             # P-text not yet available for B1 classifieds (only 4 ep at present)
+            "Phantom-prompt": _phantom_prompt_dir("B1", "classifieds"),
         },
     },
 }
@@ -118,7 +127,7 @@ def _action_type(step: dict) -> Optional[str]:
 
 
 def per_task_metrics(baseline: str, site: str, mode: str) -> dict[int, dict[str, Optional[float]]]:
-    ep_dir = STEP_DIRS[baseline][site].get(mode)
+    ep_dir = STEP_DIRS.get(baseline, {}).get(site, {}).get(mode)
     out: dict[int, dict[str, Optional[float]]] = {}
     if ep_dir is None or not ep_dir.exists():
         return out
@@ -452,6 +461,11 @@ def main() -> None:
             # Tier 2 cascade decomposition (axes 1 & 2 split the compound axis)
             "text": {"contrast": "P-text minus DOM", "controls": "prompt=DOM, image=no", "tier": 2},
             "prompt": {"contrast": "P-SoM minus P-text", "controls": "text=[SOM_MARKS], image=no", "tier": 2},
+            # Diamond ablation alt-paths via P-prompt (text=AXTree + prompt=SoM)
+            # axis_2_prompt_alt: prompt-only effect on AXTree text (DOM->P-prompt)
+            "axis_2_prompt_alt": {"contrast": "P-prompt minus DOM", "controls": "text=AXTree, image=no", "tier": 2},
+            # axis_1_text_alt: text-only effect on SoM prompt (P-prompt->P-SoM)
+            "axis_1_text_alt": {"contrast": "P-SoM minus P-prompt", "controls": "prompt=SoM, image=no", "tier": 2},
         },
         "results": {},
         "validation": {
@@ -475,6 +489,7 @@ def main() -> None:
                 "P-text": per_task_metrics(baseline, site, "P-text"),
                 "P-SoM": per_task_metrics(baseline, site, "Phantom-SoM"),
                 "SoM": per_task_metrics(baseline, site, "SoM"),
+                "P-prompt": per_task_metrics(baseline, site, "Phantom-prompt"),
             }
             available = {k: bool(v) for k, v in modes_data.items()}
             site_block: dict = {}
@@ -493,10 +508,17 @@ def main() -> None:
                 endpoint = maybe_contrast("SoM", "DOM")
                 # Tier 1 hook contrast: DOM <-> P-SoM (compound text+prompt swap)
                 compound = maybe_contrast("P-SoM", "DOM")
+                # Diamond alt-path contrasts via P-prompt
+                # axis_2_prompt_alt = P-prompt minus DOM (prompt-only on AXTree)
+                # axis_1_text_alt = P-SoM minus P-prompt (text-only on SoM prompt)
+                axis_2_prompt_alt = maybe_contrast("P-prompt", "DOM")
+                axis_1_text_alt = maybe_contrast("P-SoM", "P-prompt")
                 text["meaningful"] = meaningful(text, binary) if text.get("n", 0) else False
                 prompt["meaningful"] = meaningful(prompt, binary) if prompt.get("n", 0) else False
                 image["meaningful"] = meaningful(image, binary) if image.get("n", 0) else False
                 compound["meaningful"] = meaningful(compound, binary) if compound.get("n", 0) else False
+                axis_2_prompt_alt["meaningful"] = meaningful(axis_2_prompt_alt, binary) if axis_2_prompt_alt.get("n", 0) else False
+                axis_1_text_alt["meaningful"] = meaningful(axis_1_text_alt, binary) if axis_1_text_alt.get("n", 0) else False
                 cascade_contrasts = {"text": text, "prompt": prompt, "image": image}
                 # Antagonism / consistency only when all 3 cascade legs are present
                 if text.get("n", 0) and prompt.get("n", 0) and image.get("n", 0):
@@ -518,6 +540,9 @@ def main() -> None:
                     "text": text,
                     "prompt": prompt,
                     "image": image,
+                    # Diamond alt-path (via P-prompt)
+                    "axis_2_prompt_alt": axis_2_prompt_alt,
+                    "axis_1_text_alt": axis_1_text_alt,
                     # Endpoint (DOM <-> SoM, sanity)
                     "endpoint_dom_to_som": endpoint,
                     # Decomposition diagnostics

@@ -30,9 +30,15 @@ COLORS = {
     "Vision": "#54a24b",
     "Phantom-SoM": "#b279a2",
     "P-text": "#e45756",
+    "Phantom-prompt": "#9467bd",
 }
 
-MODE_ORDER = ["DOM", "P-text", "Phantom-SoM", "SoM", "Vision"]
+MODE_ORDER = ["DOM", "P-text", "Phantom-prompt", "Phantom-SoM", "SoM", "Vision"]
+
+
+def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
+    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
+    return candidates[-1] if candidates else None
 
 PANELS = [
     {
@@ -81,6 +87,14 @@ PANELS = [
         },
     },
 ]
+# Auto-attach Phantom-prompt run dir per panel when it exists on disk
+for _panel in PANELS:
+    _baseline_short, _site_short = _panel["key"].split("_", 1)
+    _baseline = "B0" if _baseline_short.lower() == "b0" else "B1"
+    _site_full = "classifieds" if _site_short == "cls" else ("reddit" if _site_short == "red" else _site_short)
+    _pp = _phantom_prompt_dir(_baseline, _site_full)
+    if _pp is not None:
+        _panel["modes"]["Phantom-prompt"] = _pp
 
 
 def task_id(path: Path) -> int:
@@ -116,25 +130,27 @@ def jaccard(left: set[int], right: set[int]) -> tuple[float, int, int]:
     return (inter / union if union else 1.0), inter, union
 
 
-def panel_sets(panel: dict) -> tuple[dict[str, set[int]], dict[str, int], list[str]]:
+def panel_sets(panel: dict) -> tuple[dict[str, set[int]], dict[str, set[int]], dict[str, int], list[str]]:
     sets: dict[str, set[int]] = {}
+    obs: dict[str, set[int]] = {}
     observed_counts: dict[str, int] = {}
     expected = panel["expected"]
     panel_modes = [m for m in MODE_ORDER if m in panel["modes"]]
     for mode in panel_modes:
         successes, observed = load_success_set(panel["modes"][mode])
         sets[mode] = successes
+        obs[mode] = observed
         observed_counts[mode] = len(observed)
         if len(observed) != expected:
             print(
                 f"[warn] {panel['title']} {mode}: n={len(observed)} expected={expected}",
                 file=sys.stderr,
             )
-    return sets, observed_counts, panel_modes
+    return sets, obs, observed_counts, panel_modes
 
 
 def draw_panel(ax: plt.Axes, panel: dict, cmap) -> None:
-    sets, observed_counts, panel_modes = panel_sets(panel)
+    sets, obs, observed_counts, panel_modes = panel_sets(panel)
     expected = panel["expected"]
     n_modes = len(panel_modes)
     matrix = np.zeros((n_modes, n_modes), dtype=float)
@@ -142,11 +158,20 @@ def draw_panel(ax: plt.Axes, panel: dict, cmap) -> None:
 
     for i, left in enumerate(panel_modes):
         for j, right in enumerate(panel_modes):
-            value, inter, union = jaccard(sets[left], sets[right])
+            # Restrict both success sets to the joint-observed task universe so
+            # a partial mode (e.g. P-prompt at n=134) doesn't artificially
+            # under-count overlap on its unobserved tasks.
+            joint_obs = obs[left] & obs[right]
+            left_s = sets[left] & joint_obs
+            right_s = sets[right] & joint_obs
+            value, inter, union = jaccard(left_s, right_s)
             matrix[i, j] = value
             if i == j:
-                sr = 100.0 * len(sets[left]) / expected
-                annotations[i][j] = f"1.00\n{len(sets[left])}/{expected}\nSR {sr:.1f}%"
+                # Self-Jaccard on observed pool reports per-mode SR over its own pool
+                n_obs = len(obs[left])
+                sr = 100.0 * len(sets[left]) / n_obs if n_obs else 0.0
+                partial_mark = "*" if n_obs < expected else ""
+                annotations[i][j] = f"1.00\n{len(sets[left])}/{n_obs}{partial_mark}\nSR {sr:.1f}%"
             else:
                 annotations[i][j] = f"{value:.2f}\n{inter}/{union}"
 

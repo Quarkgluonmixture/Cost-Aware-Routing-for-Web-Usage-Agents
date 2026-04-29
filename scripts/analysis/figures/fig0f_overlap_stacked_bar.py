@@ -25,16 +25,22 @@ ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig0f_overlap_stacked_bar.png"
 
-MODE_ORDER = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text"]
-MODE_LABELS = ["DOM", "SoM", "Vision", "Phantom\nSoM", "Phantom\nDOM"]
+MODE_ORDER = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text", "Phantom-prompt"]
+MODE_LABELS = ["DOM", "SoM", "Vision", "Phantom\nSoM", "Phantom\nDOM", "Phantom\nprompt"]
 COLORS = {
     "DOM": "#4c78a8",
     "SoM": "#f58518",
     "Vision": "#54a24b",
     "Phantom-SoM": "#b279a2",
     "P-text": "#e45756",
+    "Phantom-prompt": "#9467bd",
 }
-DEPTH_ALPHA = {1: 1.0, 2: 0.75, 3: 0.55, 4: 0.40, 5: 0.25}
+DEPTH_ALPHA = {1: 1.0, 2: 0.75, 3: 0.60, 4: 0.45, 5: 0.30, 6: 0.20}
+
+
+def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
+    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
+    return candidates[-1] if candidates else None
 
 PANELS = [
     {
@@ -71,7 +77,7 @@ PANELS = [
             "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
             "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
         },
-        "pending": ["P-text"],
+        "pending": ["P-text", "Phantom-prompt"],
     },
     {
         "key": "B1 red",
@@ -82,9 +88,23 @@ PANELS = [
             "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
         },
-        "pending": ["Phantom-SoM", "P-text"],
+        "pending": ["Phantom-SoM", "P-text", "Phantom-prompt"],
     },
 ]
+# Auto-attach Phantom-prompt run dir per panel when it exists on disk
+_panel_baseline_site = {
+    "B0 cls": ("B0", "classifieds"),
+    "B0 red": ("B0", "reddit"),
+    "B1 cls": ("B1", "classifieds"),
+    "B1 red": ("B1", "reddit"),
+}
+for _panel in PANELS:
+    _baseline, _site_full = _panel_baseline_site[_panel["key"]]
+    _pp = _phantom_prompt_dir(_baseline, _site_full)
+    if _pp is not None:
+        _panel["modes"]["Phantom-prompt"] = _pp
+        if "pending" in _panel and "Phantom-prompt" in _panel["pending"]:
+            _panel["pending"] = [m for m in _panel["pending"] if m != "Phantom-prompt"]
 
 
 def task_id(path: Path) -> int:
@@ -241,7 +261,7 @@ def main() -> None:
 
     depth_handles = [
         Patch(facecolor=to_rgba("#555555", DEPTH_ALPHA[depth]), edgecolor="#555555", label=f"depth={depth}")
-        for depth in [1, 2, 3, 4, 5]
+        for depth in [1, 2, 3, 4, 5, 6]
     ]
     pending_handle = Patch(facecolor="#eeeeee", edgecolor="#999999", hatch="//", label="N/A pending")
     fig.legend(handles=depth_handles + [pending_handle], loc="upper center", ncol=6, frameon=False, fontsize=8.5)

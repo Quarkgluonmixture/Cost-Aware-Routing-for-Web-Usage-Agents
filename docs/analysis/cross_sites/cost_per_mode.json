@@ -65,6 +65,10 @@
           "avg_co2e_kg": null,
           "paper_cost_usd": 0.04594304696634383,
           "paper_cost_class": "API_token_dollars"
+        },
+        "P-prompt": {
+          "available": false,
+          "reason": "missing condition_summary_v2.json"
         }
       },
       "classifieds": {
@@ -122,6 +126,10 @@
           "avg_co2e_kg": null,
           "paper_cost_usd": 0.03973111219020583,
           "paper_cost_class": "API_token_dollars"
+        },
+        "P-prompt": {
+          "available": false,
+          "reason": "no run dir"
         }
       }
     },
@@ -163,6 +171,10 @@
         "P-SoM": {
           "available": false,
           "reason": "missing condition_summary_v2.json"
+        },
+        "P-prompt": {
+          "available": false,
+          "reason": "no run dir"
         }
       },
       "classifieds": {
@@ -209,6 +221,10 @@
           "avg_co2e_kg": 0.0014675958088314607,
           "paper_cost_usd": 0.0008005068048171604,
           "paper_cost_class": "electricity_equivalent"
+        },
+        "P-prompt": {
+          "available": false,
+          "reason": "no run dir"
         }
       }
     }

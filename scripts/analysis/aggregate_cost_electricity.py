@@ -37,6 +37,14 @@ ELECTRICITY_USD_PER_KWH = 0.12
 # For B0 this = API token cost. For B1 this = same rate × token count, but B1
 # pays $0 in actual API dollars, so we mark it "non-comparable" and report
 # electricity-equivalent instead.
+def _phantom_prompt_subpath(baseline: str, site: str) -> Optional[str]:
+    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0"))
+    if not candidates:
+        return None
+    # Return path relative to RESULTS root for consistency with other entries.
+    return str(candidates[-1].relative_to(RESULTS))
+
+
 RUNS = {
     "B0": {
         "reddit": {
@@ -45,6 +53,7 @@ RUNS = {
             "SoM":         "B0_3mode_reddit_20260422/phase1_som_router_0",
             "P-SoM":       "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0",
             "P-text":      "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0",
+            "P-prompt":    _phantom_prompt_subpath("B0", "reddit"),
         },
         "classifieds": {
             "DOM":         "B0_3mode_classifieds_20260413/phase1_dom_router_0",
@@ -52,6 +61,7 @@ RUNS = {
             "SoM":         "B0_3mode_classifieds_20260413/phase1_som_router_0",
             "P-SoM":       "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0",
             "P-text":      "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0",
+            "P-prompt":    _phantom_prompt_subpath("B0", "classifieds"),
         },
     },
     "B1": {
@@ -60,12 +70,14 @@ RUNS = {
             "Vision": "B1_3mode_reddit_20260413/phase1_vision_router_0",
             "SoM":    "B1_3mode_reddit_20260413/phase1_som_router_0",
             "P-SoM":  "B1_phantom_reddit_20260426/phase1_phantom_som_router_0",
+            "P-prompt": _phantom_prompt_subpath("B1", "reddit"),
         },
         "classifieds": {
             "DOM":    "B1_3mode_classifieds_20260413/phase1_dom_router_0",
             "Vision": "B1_3mode_classifieds_20260413/phase1_vision_router_0",
             "SoM":    "B1_3mode_classifieds_20260413/phase1_som_router_0",
             "P-SoM":  "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0",
+            "P-prompt": _phantom_prompt_subpath("B1", "classifieds"),
         },
     },
 }
@@ -124,6 +136,9 @@ def main() -> None:
         for site, modes in sites.items():
             cells[baseline][site] = {}
             for mode, sub in modes.items():
+                if sub is None:
+                    cells[baseline][site][mode] = {"available": False, "reason": "no run dir"}
+                    continue
                 cells[baseline][site][mode] = collect_cell(baseline, site, mode, sub)
 
     # Cross-class summary stats
@@ -194,6 +209,9 @@ def main() -> None:
     lines.append("|---|---|---:|---:|")
     for site in ("reddit", "classifieds"):
         for mode, cell in cells["B0"][site].items():
+            if not cell.get("available"):
+                lines.append(f"| {site} | {mode} | n/a | n/a (pending) |")
+                continue
             cost_str = (
                 f"${cell['paper_cost_usd']:.4f}"
                 if cell.get("paper_cost_usd") is not None
@@ -213,6 +231,9 @@ def main() -> None:
     lines.append("|---|---|---:|---:|---:|---:|")
     for site in ("reddit", "classifieds"):
         for mode, cell in cells["B1"][site].items():
+            if not cell.get("available"):
+                lines.append(f"| {site} | {mode} | n/a | n/a | n/a | n/a (pending) |")
+                continue
             steps = cell.get("avg_steps")
             steps_str = f"{steps:.1f}" if isinstance(steps, (int, float)) else "n/a"
             kwh = cell.get("avg_energy_kwh")

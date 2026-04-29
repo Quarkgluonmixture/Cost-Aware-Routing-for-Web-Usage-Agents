@@ -39,6 +39,21 @@ OUT_JSON = ROOT / "docs/analysis/cross_sites/mechanism_per_task.json"
 OUT_MD = ROOT / "docs/analysis/cross_sites/mechanism_per_task_report.md"
 SR_FP_JSON = ROOT / "docs/analysis/cross_sites/sr_fp_per_mode.json"
 
+def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
+    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
+    return candidates[-1] if candidates else None
+
+
+def _phantom_prompt_run(baseline: str, site: str) -> Path | None:
+    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*"))
+    return candidates[-1] if candidates else None
+
+
+def _maybe_add(d: dict, key: str, path: Path | None) -> None:
+    if path is not None:
+        d[key] = path
+
+
 STEP_DIRS = {
     "reddit": {
         "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
@@ -55,6 +70,8 @@ STEP_DIRS = {
         "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
     },
 }
+_maybe_add(STEP_DIRS["reddit"], "Phantom-prompt", _phantom_prompt_dir("B0", "reddit"))
+_maybe_add(STEP_DIRS["classifieds"], "Phantom-prompt", _phantom_prompt_dir("B0", "classifieds"))
 
 B1_STEP_DIRS = {
     "reddit": {
@@ -69,6 +86,8 @@ B1_STEP_DIRS = {
         "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
     },
 }
+_maybe_add(B1_STEP_DIRS["reddit"], "Phantom-prompt", _phantom_prompt_dir("B1", "reddit"))
+_maybe_add(B1_STEP_DIRS["classifieds"], "Phantom-prompt", _phantom_prompt_dir("B1", "classifieds"))
 
 CONF_RUNS = [
     ("B0", "classifieds", RESULTS / "B0_3mode_classifieds_20260413"),
@@ -81,12 +100,21 @@ CONF_RUNS = [
     ("B1", "reddit", RESULTS / "B1_3mode_reddit_20260413"),
     ("B1", "classifieds", RESULTS / "B1_phantom_som_classifieds_20260428"),
 ]
+# Append P-prompt runs (when present and analyzed)
+for _baseline in ("B0", "B1"):
+    for _site in ("classifieds", "reddit"):
+        _run = _phantom_prompt_run(_baseline, _site)
+        if _run is not None:
+            CONF_RUNS.append((_baseline, _site, _run))
 
 AXIS_CONTRASTS = {
     "axis_1_text": ("DOM", "P-text"),
     "axis_2_prompt": ("P-text", "Phantom-SoM"),
     "axis_3_image": ("Phantom-SoM", "SoM"),
     "compound_DOM_to_PSoM": ("DOM", "Phantom-SoM"),
+    # Diamond ablation alt-paths via P-prompt
+    "axis_2_prompt_alt": ("DOM", "Phantom-prompt"),
+    "axis_1_text_alt": ("Phantom-prompt", "Phantom-SoM"),
 }
 
 ACTION_TYPES = [
@@ -272,6 +300,9 @@ def load_all_tasks() -> dict[str, dict[str, dict[int, dict[str, Any]]]]:
     for site, modes in STEP_DIRS.items():
         all_tasks[site] = {}
         for mode, ep_dir in modes.items():
+            if ep_dir is None or not ep_dir.exists():
+                all_tasks[site][mode] = {}
+                continue
             all_tasks[site][mode] = load_mode_tasks(site, mode, ep_dir)
     return all_tasks
 
@@ -313,7 +344,18 @@ def build_e1(all_tasks: dict[str, dict[str, dict[int, dict[str, Any]]]]) -> dict
     for site, modes in all_tasks.items():
         out[site] = {}
         for axis, (left_mode, right_mode) in AXIS_CONTRASTS.items():
-            block = summarize_click_contrast(modes[left_mode], modes[right_mode])
+            left = modes.get(left_mode) or {}
+            right = modes.get(right_mode) or {}
+            if not left or not right:
+                out[site][axis] = {
+                    "n": 0,
+                    "skipped": True,
+                    "left_mode": left_mode,
+                    "right_mode": right_mode,
+                    "contrast": f"{short_mode(left_mode)} vs {short_mode(right_mode)}",
+                }
+                continue
+            block = summarize_click_contrast(left, right)
             block["left_mode"] = left_mode
             block["right_mode"] = right_mode
             block["contrast"] = f"{short_mode(left_mode)} vs {short_mode(right_mode)}"
@@ -401,7 +443,23 @@ def build_e2(all_tasks: dict[str, dict[str, dict[int, dict[str, Any]]]]) -> dict
         out[site] = {}
         for _axis, (left_mode, right_mode) in AXIS_CONTRASTS.items():
             name = f"{left_mode}_vs_{right_mode}"
-            block = summarize_boundary_contrast(modes[left_mode], modes[right_mode])
+            left = modes.get(left_mode) or {}
+            right = modes.get(right_mode) or {}
+            if not left or not right:
+                out[site][name] = {
+                    "n_symmetric_diff_tasks": 0,
+                    "median_first_divergent_step": None,
+                    "early_divergence_rate": None,
+                    "late_divergence_rate": None,
+                    "first_divergent_step_histogram": {},
+                    "case_study_task_ids": [],
+                    "case_studies": [],
+                    "left_mode": left_mode,
+                    "right_mode": right_mode,
+                    "skipped": True,
+                }
+                continue
+            block = summarize_boundary_contrast(left, right)
             block["left_mode"] = left_mode
             block["right_mode"] = right_mode
             out[site][name] = block
@@ -530,6 +588,8 @@ def summarize_action_modes(all_tasks: dict[str, dict[str, dict[int, dict[str, An
     cells: dict[str, dict[str, float]] = {}
     for site, modes in all_tasks.items():
         for mode, tasks in modes.items():
+            if not tasks:
+                continue
             counts = Counter({name: 0 for name in ACTION_TYPES})
             total = 0
             for row in tasks.values():
@@ -557,6 +617,7 @@ def action_shift_contrast(left: dict[int, dict[str, Any]], right: dict[int, dict
         "n": len(common),
         "mean_per_task_fraction_shift": shifts,
         "top_abs_shifts": top_abs[:5],
+        "skipped": False,
     }
 
 
@@ -566,7 +627,19 @@ def build_e4(all_tasks: dict[str, dict[str, dict[int, dict[str, Any]]]]) -> dict
     for site, modes in all_tasks.items():
         contrasts[site] = {}
         for axis, (left_mode, right_mode) in AXIS_CONTRASTS.items():
-            block = action_shift_contrast(modes[left_mode], modes[right_mode])
+            left = modes.get(left_mode) or {}
+            right = modes.get(right_mode) or {}
+            if not left or not right:
+                contrasts[site][axis] = {
+                    "n": 0,
+                    "skipped": True,
+                    "mean_per_task_fraction_shift": {at: None for at in ACTION_TYPES},
+                    "top_abs_shifts": [],
+                    "left_mode": left_mode,
+                    "right_mode": right_mode,
+                }
+                continue
+            block = action_shift_contrast(left, right)
             block["left_mode"] = left_mode
             block["right_mode"] = right_mode
             contrasts[site][axis] = block
@@ -575,7 +648,10 @@ def build_e4(all_tasks: dict[str, dict[str, dict[int, dict[str, Any]]]]) -> dict
         for at in ACTION_TYPES:
             mode_values = []
             for mode in STEP_DIRS[site]:
-                value = cells[f"B0/{site}/{mode}"][at]
+                cell = cells.get(f"B0/{site}/{mode}")
+                if cell is None:
+                    continue
+                value = cell[at]
                 mode_values.append((mode, value))
             nonzero = [(mode, value) for mode, value in mode_values if value > 0]
             if len(nonzero) < 2:
@@ -676,10 +752,13 @@ def validation_block(e1: dict[str, Any], e2: dict[str, Any], e3: dict[str, Any],
             abs(item["mean_fraction_shift"]) > 0.1
             for site_block in e4["axis_contrasts"].values()
             for block in site_block.values()
-            for item in block["top_abs_shifts"]
+            for item in block.get("top_abs_shifts", [])
         ),
     }
-    expected_e3_cells = 17  # B0×{cls,red}×5 + B1×{cls(4),red(3)} = 10 + 4 + 3 = 17
+    # Baseline E3 cells: B0×{cls,red}×5 + B1×{cls(4),red(3)} = 17.
+    # Each available P-prompt run adds 1 cell (when calibration tables are
+    # generated for the run); the count is dynamic, so just track observed.
+    expected_e3_cells = max(17, len(e3["cells"]))
     return {
         "axis1_n_checks": axis1_n,
         "E1_mean_jaccard_range_checks": e1_range,
@@ -725,15 +804,13 @@ def headline_implications(e1: dict[str, Any], e2: dict[str, Any], e3: dict[str, 
         e3["cells"].items(),
         key=lambda item: max(item[1].get("AUROC_token") or -1, item[1].get("AUROC_verbal") or -1, item[1].get("AUROC_behavioral_max") or -1),
     )
-    top_e4 = max(
-        (
-            (site, axis, item)
-            for site, site_block in e4["axis_contrasts"].items()
-            for axis, block in site_block.items()
-            for item in block["top_abs_shifts"]
-        ),
-        key=lambda row: abs(row[2]["mean_fraction_shift"]),
-    )
+    top_e4_iter = [
+        (site, axis, item)
+        for site, site_block in e4["axis_contrasts"].items()
+        for axis, block in site_block.items()
+        for item in block.get("top_abs_shifts", [])
+    ]
+    top_e4 = max(top_e4_iter, key=lambda row: abs(row[2]["mean_fraction_shift"])) if top_e4_iter else None
     return {
         "E1_headline": (
             "DOM and P-SoM click transitions diverge at event granularity: "
@@ -753,6 +830,7 @@ def headline_implications(e1: dict[str, Any], e2: dict[str, Any], e3: dict[str, 
         "E4_headline": (
             f"The largest action-vocabulary shift is {top_e4[0]} {top_e4[1]} "
             f"{top_e4[2]['action_type']} ({fmt(top_e4[2]['mean_fraction_shift'])} right-minus-left)."
+            if top_e4 is not None else "No E4 axis contrast had data."
         ),
     }
 
@@ -777,6 +855,12 @@ def write_report(out: dict[str, Any]) -> None:
     ]
     for site in ("reddit", "classifieds"):
         for axis, block in e1[site].items():
+            if block.get("skipped") or block.get("n", 0) == 0:
+                lines.append(
+                    f"| {site} | {axis} ({short_mode(block.get('left_mode', '?'))} vs "
+                    f"{short_mode(block.get('right_mode', '?'))}) | 0 (pending) | n/a | n/a | n/a | n/a | n/a | n/a | n/a |"
+                )
+                continue
             sizes = block["click_target_set_size"]
             lines.append(
                 f"| {site} | {axis} ({short_mode(block['left_mode'])} vs {short_mode(block['right_mode'])}) | "
@@ -792,7 +876,7 @@ def write_report(out: dict[str, Any]) -> None:
         red = e1["reddit"][axis]
         cls = e1["classifieds"][axis]
         lines.append(
-            f"- {axis}: reddit Jaccard {fmt(red['mean_jaccard'])}; classifieds Jaccard {fmt(cls['mean_jaccard'])}. "
+            f"- {axis}: reddit Jaccard {fmt(red.get('mean_jaccard'))}; classifieds Jaccard {fmt(cls.get('mean_jaccard'))}. "
             f"Lower values indicate that the modes use different URL-changing click decisions."
         )
     lines += [
@@ -883,11 +967,11 @@ def write_report(out: dict[str, Any]) -> None:
     ]
     for site in ("reddit", "classifieds"):
         for axis, block in e4["axis_contrasts"][site].items():
-            top = block["top_abs_shifts"][:3]
+            top = block.get("top_abs_shifts", [])[:3]
             labels = [f"{item['action_type']} {fmt(item['mean_fraction_shift'])}" for item in top]
             while len(labels) < 3:
                 labels.append("")
-            lines.append(f"| {site} | {axis} | {block['n']} | {labels[0]} | {labels[1]} | {labels[2]} |")
+            lines.append(f"| {site} | {axis} | {block.get('n', 0)} | {labels[0]} | {labels[1]} | {labels[2]} |")
     lines += ["", "Uncommon-action highlights:"]
     if e4["uncommon_action_highlights"]:
         for row in e4["uncommon_action_highlights"][:8]:
@@ -921,6 +1005,12 @@ def write_report(out: dict[str, Any]) -> None:
     ]
     for site in ("reddit", "classifieds"):
         for axis, block in e1[site].items():
+            if block.get("skipped") or block.get("n", 0) == 0:
+                lines.append(
+                    f"| {site} | {axis} | {short_mode(block.get('left_mode', '?'))} | "
+                    f"`{{}}` | {short_mode(block.get('right_mode', '?'))} | `{{}}` |"
+                )
+                continue
             sizes = block["click_target_set_size"]
             lines.append(
                 f"| {site} | {axis} | {short_mode(block['left_mode'])} | "

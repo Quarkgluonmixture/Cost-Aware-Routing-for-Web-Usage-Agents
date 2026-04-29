@@ -31,11 +31,17 @@ CATEGORY_LABELS = [
     "C\npage-screen",
     "D\nuncertain",
 ]
-MODES = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text"]
+MODES = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text", "Phantom-prompt"]
+
+
+def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
+    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
+    return candidates[-1] if candidates else None
 
 PANELS = [
     {
         "key": "B0 classifieds",
+        "baseline": "B0",
         "site": "classifieds",
         "expected": 234,
         "audit": ROOT / "docs/analysis/cross_sites/codex_audit_classifieds.json",
@@ -50,6 +56,7 @@ PANELS = [
     },
     {
         "key": "B0 reddit",
+        "baseline": "B0",
         "site": "reddit",
         "expected": 210,
         "audit": ROOT / "docs/analysis/cross_sites/codex_audit_reddit.json",
@@ -63,6 +70,7 @@ PANELS = [
     },
     {
         "key": "B1 classifieds",
+        "baseline": "B1",
         "site": "classifieds",
         "expected": 234,
         "audit": ROOT / "docs/analysis/cross_sites/codex_audit_classifieds.json",
@@ -75,6 +83,7 @@ PANELS = [
     },
     {
         "key": "B1 reddit",
+        "baseline": "B1",
         "site": "reddit",
         "expected": 210,
         "audit": ROOT / "docs/analysis/cross_sites/codex_audit_reddit.json",
@@ -85,6 +94,11 @@ PANELS = [
         },
     },
 ]
+# Auto-attach Phantom-prompt run dir per panel when it exists on disk
+for _panel in PANELS:
+    _pp = _phantom_prompt_dir(_panel["baseline"], _panel["site"])
+    if _pp is not None:
+        _panel["modes"]["Phantom-prompt"] = _pp
 
 
 def task_id(path: Path) -> int:
@@ -160,7 +174,7 @@ def draw_panel(ax: plt.Axes, panel: dict, vmax: float) -> None:
     cmap.set_bad("#f2f2f2")
     im = ax.imshow(matrix, cmap=cmap, vmin=0, vmax=vmax, aspect="auto")
     ax.set_title(panel["key"], fontsize=11, fontweight="bold")
-    ax.set_xticks(np.arange(len(MODES)), ["DOM", "SoM", "Vision", "Phantom\nSoM", "Phantom\nDOM"], fontsize=8.5)
+    ax.set_xticks(np.arange(len(MODES)), ["DOM", "SoM", "Vision", "Phantom\nSoM", "Phantom\nDOM", "Phantom\nprompt"], fontsize=8.0)
     ax.set_yticks(np.arange(len(CATEGORIES)), CATEGORY_LABELS, fontsize=8.5)
     ax.tick_params(axis="both", length=0)
     for i in range(len(CATEGORIES)):
@@ -179,14 +193,14 @@ def draw_panel(ax: plt.Axes, panel: dict, vmax: float) -> None:
 def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 10, "figure.dpi": 150})
-    fig, axes = plt.subplots(1, 4, figsize=(22.0, 5.6), constrained_layout=True)
+    fig, axes = plt.subplots(1, 4, figsize=(25.0, 5.6), constrained_layout=True)
     ims = [draw_panel(ax, panel, vmax=32.0) for ax, panel in zip(axes, PANELS)]
     fig.colorbar(ims[0], ax=axes, shrink=0.82, label="Adjusted success rate (%)")
     fig.suptitle("Codex Audit Category x Observation Mode (B0 + B1)", fontsize=15, fontweight="bold")
     fig.text(
         0.5,
         -0.03,
-        "B0 covers 5 modes per site (paper-grade fresh). B1 cls covers 4 modes (Phantom-SoM available, P-text pending). B1 reddit phantom modes pending.",
+        "B0 covers 5-6 modes per site (paper-grade fresh; B0 reddit P-prompt partial). B1 cls covers 4 modes (Phantom-SoM available, P-text/P-prompt pending). B1 reddit phantom modes pending.",
         ha="center",
         fontsize=8.5,
         color="#555555",

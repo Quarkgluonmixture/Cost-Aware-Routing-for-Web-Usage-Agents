@@ -34,6 +34,22 @@
       },
       "source_dir": "results/visualwebarena/phase1/B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes"
     },
+    "B0/reddit/Phantom-prompt": {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "Phantom-prompt",
+      "n_total": 137,
+      "n_raw_success": 14,
+      "n_adjusted_success": 12,
+      "raw_sr_pct": 10.218978,
+      "adjusted_sr_pct": 8.759124,
+      "fp_count": 2,
+      "fp_rate_pct": 1.459854,
+      "fp_breakdown": {
+        "na_fp": 2
+      },
+      "source_dir": "results/visualwebarena/phase1/B0_phantom_prompt_reddit_20260429/phase1_phantom_prompt_router_0/episodes"
+    },
     "B0/reddit/Phantom-SoM": {
       "baseline": "B0",
       "site": "reddit",
@@ -307,6 +323,22 @@
         "na_fp": 3
       },
       "source_dir": "results/visualwebarena/phase1/B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes"
+    },
+    {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "Phantom-prompt",
+      "n_total": 137,
+      "n_raw_success": 14,
+      "n_adjusted_success": 12,
+      "raw_sr_pct": 10.218978,
+      "adjusted_sr_pct": 8.759124,
+      "fp_count": 2,
+      "fp_rate_pct": 1.459854,
+      "fp_breakdown": {
+        "na_fp": 2
+      },
+      "source_dir": "results/visualwebarena/phase1/B0_phantom_prompt_reddit_20260429/phase1_phantom_prompt_router_0/episodes"
     },
     {
       "baseline": "B0",

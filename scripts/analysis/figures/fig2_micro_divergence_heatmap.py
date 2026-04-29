@@ -29,6 +29,9 @@ CONTRASTS = [
     ("axis_2_prompt", "axis 2\nprompt"),
     ("axis_3_image", "axis 3\nimage"),
     ("compound_dom_to_psom", "DOM->\nP-SoM"),
+    # Diamond alt-paths via P-prompt
+    ("axis_2_prompt_alt", "axis 2 alt\n(DOM->P-prompt)"),
+    ("axis_1_text_alt", "axis 1 alt\n(P-prompt->P-SoM)"),
     ("endpoint_dom_to_som", "DOM->\nSoM"),
 ]
 
@@ -87,7 +90,7 @@ def render_baseline(data: dict[str, Any], baseline: str, out_path: Path) -> None
     overlap_cmap = LinearSegmentedColormap.from_list("overlap", ["#b91c1c", "#fef2f2", "#dbeafe", "#1d4ed8"])
     divergence_cmap = LinearSegmentedColormap.from_list("divergence", ["#eff6ff", "#fee2e2", "#b91c1c"])
 
-    fig, axes = plt.subplots(2, 2, figsize=(12.8, 6.8), constrained_layout=True)
+    fig, axes = plt.subplots(2, 2, figsize=(15.5, 7.2), constrained_layout=True)
 
     def label_or_na(value: float, fmt: str) -> str:
         if math.isnan(value):

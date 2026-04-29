@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig1c_strategy_gradient.png"
 
-MODES = ["DOM", "Vision", "SoM", "Phantom-SoM", "P-text"]
+MODES = ["DOM", "Vision", "SoM", "Phantom-SoM", "P-text", "Phantom-prompt"]
 METRICS = ["Search-loop %", "Type action %", "Scroll action %", "Self-correction / ep"]
 COLORS = {
     "DOM": "#4c78a8",
@@ -39,7 +39,13 @@ COLORS = {
     "SoM": "#f58518",
     "Phantom-SoM": "#b279a2",
     "P-text": "#e45756",
+    "Phantom-prompt": "#9467bd",
 }
+
+
+def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
+    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
+    return candidates[-1] if candidates else None
 
 # Verified notes:
 # - Full reddit gradient (§103): DOM search 27/type 38/steps 12.7;
@@ -55,6 +61,7 @@ REDDIT_VERIFIED = {
         "SoM": 12.0,
         "Phantom-SoM": 10.8,
         "P-text": 10.8,
+        "Phantom-prompt": None,
     },
     "Type action %": {
         "DOM": 40.2,
@@ -62,6 +69,7 @@ REDDIT_VERIFIED = {
         "SoM": 23.0,
         "Phantom-SoM": 20.4,
         "P-text": 20.4,
+        "Phantom-prompt": None,
     },
     "Scroll action %": {
         "DOM": 15.2,
@@ -69,6 +77,7 @@ REDDIT_VERIFIED = {
         "SoM": None,
         "Phantom-SoM": 26.2,
         "P-text": 26.2,
+        "Phantom-prompt": None,
     },
     "Self-correction / ep": {
         "DOM": 0.31,
@@ -76,6 +85,7 @@ REDDIT_VERIFIED = {
         "SoM": None,
         "Phantom-SoM": 0.35,
         "P-text": 0.35,
+        "Phantom-prompt": None,
     },
 }
 
@@ -110,6 +120,12 @@ STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
         },
     },
 }
+# Auto-attach Phantom-prompt run dirs (B0/B1 × cls/red) when present
+for _b in ("B0", "B1"):
+    for _s in ("reddit", "classifieds"):
+        _pp = _phantom_prompt_dir(_b, _s)
+        if _pp is not None:
+            STEP_DIRS[_b][_s]["Phantom-prompt"] = _pp
 ROW_SPECS = [
     ("B0", "reddit", "B0 Reddit"),
     ("B0", "classifieds", "B0 Classifieds"),
@@ -257,7 +273,7 @@ def draw_panel(ax: plt.Axes, row_idx: int, metric: str, values: dict[str, dict[s
         )
     if row_idx == 0:
         ax.set_title(metric, fontsize=10.0, fontweight="bold")
-    ax.set_xticks(x, ["DOM", "Vision", "SoM", "Phantom\nSoM", "Phantom\nDOM"], rotation=0, fontsize=7.5)
+    ax.set_xticks(x, ["DOM", "Vision", "SoM", "Phantom\nSoM", "Phantom\nDOM", "Phantom\nprompt"], rotation=0, fontsize=7.0)
     ax.grid(axis="y", color="#dddddd", linewidth=0.8)
     ax.set_axisbelow(True)
     ymax = max([v for v in metric_values if v is not None] or [1])
