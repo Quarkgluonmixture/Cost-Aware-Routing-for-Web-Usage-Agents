@@ -98,6 +98,31 @@ for cmd in "$@"; do
     exit 1
   fi
 
+  # ---- Same-site B0/B1 collision check (paper-grade hard rule §106) ----
+  # Parse <baseline> + <site> from the queue command args.
+  # queue_baseline.sh format: <baseline> <mode> <site> [benchmark]
+  # queue_phantom_*.sh format: <baseline> <site> [benchmark]
+  cmd_args=( ${cmd} )
+  this_baseline="${cmd_args[1]:-}"  # B0 or B1
+  if [[ "${script_name}" == queue_baseline.sh ]]; then
+    this_site="${cmd_args[3]:-}"    # 4th token (script bash mode site)
+  else
+    this_site="${cmd_args[2]:-}"    # 3rd token (script bash site)
+  fi
+  if [[ -n "${this_baseline}" && -n "${this_site}" ]]; then
+    other_baseline="B0"
+    [[ "${this_baseline}" == "B0" ]] && other_baseline="B1"
+    if pgrep -f "run_experiment.*${other_baseline}_.*_${this_site}_" > /dev/null 2>&1; then
+      log "  [collision] ${other_baseline} runner already active on site=${this_site}"
+      log "  paper-grade hard rule: same site cannot run B0+B1 simultaneously"
+      log "  waiting for ${other_baseline} ${this_site} to finish before launching ${this_baseline}..."
+      while pgrep -f "run_experiment.*${other_baseline}_.*_${this_site}_" > /dev/null 2>&1; do
+        sleep 60
+      done
+      log "  ${other_baseline} ${this_site} finished; proceeding with ${this_baseline}"
+    fi
+  fi
+
   # Launch via the queue script (idempotent — picks up existing or fresh+reset)
   out=$(RESET_BEFORE="${RESET_FLAG}" bash "${SCRIPT_DIR}/${script_name}" \
         ${cmd#${script_name} } 2>&1 || true)

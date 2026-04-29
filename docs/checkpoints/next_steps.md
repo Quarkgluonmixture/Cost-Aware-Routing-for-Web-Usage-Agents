@@ -31,12 +31,20 @@
 
 **🆕 Cost methodology fix (~100× deployment-class gap)**: §103 legacy "30×" claim **已 superseded**。real ratio 用 electricity-equivalent ($0.12/kWh) 算: B0 API ~$0.04/ep vs B1 local ~$0.0004/ep → **reddit 98× / cls 105×**。`cost_per_mode.md` standalone aggregator + fig3d log-scale Pareto with annotation.
 
-**🆕 P-prompt mode 加入设计 (Diamond ablation)**: P-text 已显著 → P-prompt (AXTree+SoM-prompt+无图) 是 symmetric counterpart, paper Section 5 必需用于 disentangle prompt × text 交互。Code + yaml + queue 已就位; B0 P-prompt reddit 跑中（PID 2075552, ~6h ETA）。
+**🆕 P-prompt mode 加入设计 (Diamond ablation)**: P-text 已显著 → P-prompt (AXTree+SoM-prompt+无图) 是 symmetric counterpart, paper Section 5 必需用于 disentangle prompt × text 交互。Code + yaml + queue 已就位; B0 P-prompt reddit 跑中（PID 2075552, ~3-4h ETA）。
+
+**🆕 B0 5-mode reddit + cls 全 done (10/10 cells); B1 cls phantom_som 04-29 17:43 done (4/5 cls cells, P-text pending)**
+
+**🔴 04-29 18:15 same-site collision incident**: queue_chain.sh 自动 advance B1 phantom cls→reddit 时未 check B0 P-prompt reddit 已经在跑 (paper-grade hard rule violation)。30min 后发现 + 立即处理：kill chain (PID 1145483) + B1 phantom reddit runner+watchdog (2244780/2244882) + clear 7 contaminated reddit_task_0-6 episodes via `clear_tasks.py`. B0 P-prompt reddit 完好保留 (PID 2075552, 51/210 progress). Fix: queue_chain.sh 加 `same-site collision check` (commit pending), 自动 wait 对方 baseline 完事再 launch.
+
+**🆕 site_mechanism_dictionary.md done (codex 04-29 17:43)**: 30KB markdown + 30KB JSON, 3 sites × 3 axes × 6 fields，Section 5 prose codex (#13) lookup target. Cross-site invariant: P-SoM Jaccard ≤0.7 sentinel both red/cls + positive single-phantom oracle lift.
 
 **Active 跑中**:
-- **B0 P-prompt reddit (PID 2075552, NEW 04-29 14:35)** — symmetric ablation, ~6h ETA → 跑完 fig1ab P-prompt cell auto-fill
-- B1 phantom_som cls (PID 1821957, watchdog auto-cleaned 5 NOT-LOGGED-IN tasks 04-29 verified, ~10d ETA GPU contention)
+- **B0 P-prompt reddit (PID 2075552, 51/210)** — symmetric ablation 完整保留, ~3-4h ETA → 跑完 fig1ab P-prompt cell auto-fill
 - B0 dom shopping clean re-run (PID 1106560, ~9h ETA)
+- ~~B1 phantom_som cls (PID 1821957)~~ ✅ done 17:43 (234/234)
+- ~~B1 phantom_som reddit (PID 2244780)~~ 🔴 killed 18:15 (collision); contaminated tasks 0-6 cleared
+- ~~queue_chain B1 phantom (PID 1145483)~~ 🔴 killed 18:15
 
 **Next 3 actions**:
 1. **B0 P-prompt cls** — 等 B1 phantom cls 完事再启（同 site B0 XOR B1 hard rule）
@@ -309,6 +317,7 @@ paper_strategic 数据 pipeline (详 `paper_planning.md` §13.B)。一键 `make 
 | **Tier A summary commit decision** (是否 commit `condition_summary_v2.json` + `run_meta.json` 入 git LFS / 直 git for paper-grade archive) | 🟡 待评估 | size: 10 conditions × ~50KB = ~500KB total，git 直管也行；好处: paper repro 时 reviewer 不需 hub access；坏处: 实验未冻结前每次 rederive 改动多 |
 
 **Resolved (recent)**:
+- ✅ **§107 (04-29 18:15) queue_chain.sh same-site collision fix** → B1 phantom auto-advance reddit 撞 B0 P-prompt reddit (30min cross-contam, cleaned). Patch added pre-launch collision check waits for opposite baseline to finish before proceeding.
 - ✅ **§106 (04-29) 4-Layer Evidence Framework + cost methodology fix + figure rename** → paper_planning §3 重组，13 figures rename layer-prefix，cost ~100× via electricity equivalent (legacy 30× superseded), `make analyze-layered` pipeline, `layered_evidence_status.md` live status. 详见 实验笔记 §106.
 - ✅ **§105 (04-29) Magento custom-option radio swatch 漏检** → `state_change.py:_key` 加 value discriminator；同 bug 影响 review form ratings；B0 dom shopping 11/465 ep 受影响（全 fail，9/11 cycle 早停）；DOM/SoM 共享受影响（Vision 不受）；详见 `docs/analysis/cross_sites/swatch_form_change_audit.md`
 - ✅ Magento base_url 三次复发 → PowerShell hook + DGX defensive curl 持久化 (`f9cbebf` + quark side)
