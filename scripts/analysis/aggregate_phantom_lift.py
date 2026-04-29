@@ -253,6 +253,13 @@ def analyze_cell(cell: dict) -> Optional[dict]:
     pdom_only = pdom_adds - psom_adds
     psom_only = psom_adds - pdom_adds
 
+    # Jaccard P-SoM ↔ P-DOM (Scenario C sentinel — paper Section 5 axis 2 evidence)
+    inter = succ_r["P-SoM"] & succ_r["P-DOM"]
+    union = succ_r["P-SoM"] | succ_r["P-DOM"]
+    jaccard = (len(inter) / len(union)) if union else 0.0
+    # Threshold: > 0.7 → P-SoM ≈ P-DOM redundant, paper claim weakens (Scenario C)
+    jaccard_warn = jaccard > 0.7
+
     is_partial = any(len(o) < cell["n_expected"] for o in obs.values())
 
     return {
@@ -300,6 +307,9 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         "pdom_only_count":      len(pdom_only),
         "psom_only_count":      len(psom_only),
         "both_phantom_overlap_count": len(both_add),
+        # Scenario C sentinel: P-SoM ↔ P-DOM Jaccard
+        "phantom_pair_jaccard": round(jaccard, 4),
+        "phantom_pair_jaccard_warn": jaccard_warn,
     }
 
 
@@ -395,6 +405,31 @@ def main() -> int:
             f"{r['psom_only_count']} ({100*r['psom_only_count']/n:.2f}pp) | "
             f"{r['both_phantom_overlap_count']} ({100*r['both_phantom_overlap_count']/n:.2f}pp) |"
         )
+
+    # Scenario C sentinel: P-SoM ↔ P-DOM Jaccard
+    lines += [
+        "",
+        "## Scenario C sentinel — P-SoM ↔ P-DOM task-pool Jaccard",
+        "",
+        "Threshold: Jaccard > 0.7 → phantoms become routing-redundant; paper",
+        "Section 5 axis-2 prompt-effect claim weakens. Current paper claim",
+        "(\"prompt creates task-pool divergence without uniform SR change\")",
+        "requires Jaccard ≤ 0.7 across cells.",
+        "",
+        "| Baseline | Site | Jaccard | Status |",
+        "|---|---|---:|:---:|",
+    ]
+    for r in rows:
+        if r["phantom_pair_jaccard_warn"]:
+            status = "🔴 > 0.7 (WARN: redundant)"
+        elif r["phantom_pair_jaccard"] > 0.6:
+            status = "🟡 > 0.6 (watch)"
+        else:
+            status = "✅ ≤ 0.6 (safe)"
+        lines.append(
+            f"| {r['baseline']} | {r['site']} | {r['phantom_pair_jaccard']:.3f} | {status} |"
+        )
+
     if skipped:
         lines += ["", f"_Cells pending data (skipped): {', '.join(skipped)}_"]
     md.write_text("\n".join(lines) + "\n", encoding="utf-8")
