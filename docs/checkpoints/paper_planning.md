@@ -330,7 +330,80 @@ Stage 3 (Mechanism 层):  axis 1 改 text payload 结构 → 改 in-context atte
 
 ---
 
-## §4 Paper Section Status (2026-04-28, 8 sections final scope)
+### Evidence vs Explanation: framework 的真实定位（2026-04-29 反思）
+
+4-Layer framework **不是 paper Section 4/5 的 narrative 结构**，是**分析 scaffold + future-data drop-in 索引**。明确两个层次：
+
+#### 4-Layer = Evidence layer（paper Section 4）
+
+观测 evidence: "在 mode/axis swap 下我们 observe 到什么 shift"
+- Layer 0: 哪些 task 成功（SR / oracle / Jaccard / category / overlap / AUROC）
+- Layer 1: agent 平均怎么 act（action-type 频率 cascade）
+- Layer 2: per-step 决策怎么变（URL / target / keyword）
+- Layer 3: 资源 footprint（cost / latency / carbon）
+
+四个**正交 dimensions**（不是 hierarchical layer），从宏观 outcome 到微观 decision。Paper Section 4 是 evidence catalog，每个 sub-finding 引用一层数据 + figure。
+
+#### LLM mechanism = Explanation layer（paper Section 5）
+
+解释 evidence: "为什么 axis swap 产生这个 shift"——必须 **跨 layer** 同时 **site × axis × LLM-mechanism** 三阶交互：
+
+```
+观测 (evidence): reddit axis 1 swap → search-loop 51.9 → 35.7 (Layer 1c) +
+                                       URL Jaccard 0.57 (Layer 2a) +
+                                       SR uplift 4.76pp drop-one (Layer 0c)
+解释 (LLM mechanism):
+  AXTree (hierarchical, sidebar embedded in tree) → [SOM_MARKS] (flat indexed list)
+  ⇒ attention pattern shift: sidebar forum link 在 flat list 显著
+  ⇒ agent 直接 click forum link 而非 search-loop
+  ⇒ trajectory 变短 + 决策准 + SR up
+  ⇒ 横跨 Layer 1+2+0 evidence 的 single mechanism
+```
+
+不同 site 触发不同 mechanism (site × axis × LLM):
+- **reddit text-heavy forum**: axis 1 主要影响 attention pattern (sidebar visibility)；image axis 几乎冗余
+- **cls visual-rich product browsing**: axis 3 image 是 affordance（finish-rate h=+0.57 决定性）；axis 1 主要影响 ID-system parsing efficiency
+
+**paper Section 5 narrative 由 mechanism 驱动**, layered evidence 作 underlying support — 不是按层组织 narrative。
+
+#### Axis decomposition（diamond 完整后的 final form）
+
+```
+total observed effect (DOM → SoM endpoint)
+  = main(axis 1, P-text alone via DOM↔P-text)
+  + main(axis 2, P-prompt alone via DOM↔P-prompt)              [DIAMOND ENABLES]
+  + main(axis 3, image alone via P-SoM↔SoM)
+  + interaction(axis 1, axis 2)                                 [DIAMOND ENABLES]
+  + ...higher-order interactions usually 0
+```
+
+P-prompt 是必需的，因为它是 **axis 2 在 AXTree-text context 下的唯一测量点**。如果 interaction term ≈ 0 → paper 写 "axis additive, independent first-order"；如果 interaction term ≠ 0 → honest disclose "axis 1 effect is modulated by prompt context"。任一 verdict 都比 cascade-only 多一个 quantitative claim。
+
+#### Framework 的 future-data 弹性
+
+所有 cells 自动落到 layer × site × axis × baseline 索引：
+
+| Future data | drop-in 到 |
+|---|---|
+| B1 phantom cls/red 4-cell (P-SoM + P-text × cls + red) | Layer 0/1/2/3 × cls/red × B1 cells |
+| B1 P-prompt cls/red (Tier 2) | Diamond axis 2 in B1 capability — Section 7 cross-capability |
+| B0/B1 shopping 6-mode | Layer 0e per-category（shopping-rich audit categories）+ all layers shopping cells |
+| WA B0/B1 6 sites × 5 modes | Cross-benchmark generalization (Section 7 main) |
+| Claude Opus 4.7 5-mode | Cross-model boundary check (Section 7) |
+| 其他 benchmark | Same scaffold, no rework |
+
+`make analyze-layered` 是 idempotent 的——新数据 commit 后跑一遍 `layered_status.py` 自动 regenerate `layered_evidence_status.md` + 所有 figures。
+
+#### Caveats / honest framing
+
+- **N=234 cls underpower**: cls Layer 1 macro 弱信号可能是 statistical power not enough（needs ~800 task to detect d=0.2 small effect with α=0.05, β=0.2）。后续 shopping 466 + WA 480 数据可补强
+- **"Layer" 命名不严格**：4 层是 orthogonal dimensions, 不是 hierarchical。命名沿用 "Layer" 是因 codebase 已 lock-down (Makefile / scripts), 不改回 "dimension"
+- **不是所有 13 figures 进 paper**：Section 4 只 cherry-pick 5 个代表 figure (e.g. fig0c + fig0d + fig0g + fig1c + fig3d)，其他 supplementary
+- **paper Section 5 可能简化**：若 codex prose 过分 layered cataloging，必须 mechanism-first restructure
+
+---
+
+## §4 Paper Section Status (2026-04-29, 8 sections final scope)
 
 | Section | evidence 质量 | 状态 | Hard blocker |
 |---|---|---|---|
