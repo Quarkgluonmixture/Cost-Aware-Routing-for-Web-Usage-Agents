@@ -23,11 +23,19 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import re
+import warnings
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
+
+try:
+    from scipy import stats as sp_stats
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
 
 REPO = Path(__file__).resolve().parents[2]
 RES = REPO / "results/visualwebarena/phase1"
@@ -113,6 +121,72 @@ def bootstrap_lift_ci(in_3: np.ndarray, in_5: np.ndarray, B: int = 1000, seed: i
     return float(np.quantile(lifts, 0.025)), float(np.quantile(lifts, 0.975))
 
 
+def cohen_h(p1: float, p2: float) -> float:
+    """Cohen's h effect size between two proportions p1, p2 ∈ [0, 1].
+
+    h = 2 * (arcsin(√p1) - arcsin(√p2))
+
+    Interpretation: |h|<0.2 small, 0.2-0.5 medium, 0.5-0.8 large, >0.8 huge.
+    Sign indicates direction (p1 > p2 → h > 0).
+    """
+    p1 = max(0.0, min(1.0, p1))
+    p2 = max(0.0, min(1.0, p2))
+    return 2 * (math.asin(math.sqrt(p1)) - math.asin(math.sqrt(p2)))
+
+
+def cohen_h_label(h: float) -> str:
+    a = abs(h)
+    if a < 0.2:
+        return "small"
+    if a < 0.5:
+        return "medium"
+    if a < 0.8:
+        return "large"
+    return "huge"
+
+
+def wilcoxon_signed_rank(in_a: np.ndarray, in_b: np.ndarray) -> tuple[Optional[float], Optional[float]]:
+    """Wilcoxon signed-rank test on paired binary task outcomes (a vs b).
+
+    For binary outcomes diff ∈ {-1, 0, +1}; scipy drops zero diffs. When set b
+    ⊇ set a (e.g. 5-mode oracle ⊇ 3-mode oracle), all non-zero diffs are
+    positive (b solves task that a doesn't) → test reduces to one-sided
+    binomial (sign test). Returns (statistic, p_two_sided) or (None, None) if
+    scipy unavailable / undefined.
+    """
+    if not HAS_SCIPY:
+        return None, None
+    diffs = in_b.astype(int) - in_a.astype(int)
+    nonzero = diffs[diffs != 0]
+    if len(nonzero) == 0:
+        return None, 1.0  # no difference, p = 1
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            stat, p = sp_stats.wilcoxon(diffs, zero_method="wilcox", alternative="two-sided")
+        return float(stat), float(p)
+    except Exception:
+        return None, None
+
+
+def mcnemar_exact_one_sided(in_a: np.ndarray, in_b: np.ndarray) -> Optional[float]:
+    """McNemar exact one-sided p-value: H1 = b > a (b adds tasks a misses).
+
+    For monotonic case (b ⊇ a), discordant b-only count = sum(b - a > 0),
+    a-only count = 0. Exact binomial: p = 0.5^(b_only).
+    """
+    if not HAS_SCIPY:
+        return None
+    a = in_a.astype(int); b = in_b.astype(int)
+    a_only = int(((a > b)).sum())
+    b_only = int(((b > a)).sum())
+    n_disc = a_only + b_only
+    if n_disc == 0:
+        return 1.0
+    # one-sided: H1 = b > a
+    return float(sp_stats.binom.cdf(a_only, n_disc, 0.5))
+
+
 def analyze_cell(cell: dict) -> Optional[dict]:
     """Compute phantom lift for a single (baseline, site) cell.
 
@@ -135,18 +209,42 @@ def analyze_cell(cell: dict) -> Optional[dict]:
     # Restrict each mode's success set to common universe
     succ_r = {m: s & common for m, s in succ.items()}
 
-    # 3-mode and 5-mode oracle unions on common universe
+    # 3-mode, 4-mode (each phantom alone), 5-mode oracle unions
     union_3 = succ_r["DOM"] | succ_r["SoM"] | succ_r["Vision"]
+    union_4_pdom = union_3 | succ_r["P-DOM"]
+    union_4_psom = union_3 | succ_r["P-SoM"]
     union_5 = union_3 | succ_r["P-DOM"] | succ_r["P-SoM"]
     sr_3 = 100 * len(union_3) / n
+    sr_4_pdom = 100 * len(union_4_pdom) / n
+    sr_4_psom = 100 * len(union_4_psom) / n
     sr_5 = 100 * len(union_5) / n
-    lift_pp = sr_5 - sr_3
 
-    # Bootstrap CI
     universe = sorted(common)
-    in_3 = np.array([t in union_3 for t in universe], dtype=bool)
-    in_5 = np.array([t in union_5 for t in universe], dtype=bool)
+    in_3        = np.array([t in union_3       for t in universe], dtype=bool)
+    in_4_pdom   = np.array([t in union_4_pdom  for t in universe], dtype=bool)
+    in_4_psom   = np.array([t in union_4_psom  for t in universe], dtype=bool)
+    in_5        = np.array([t in union_5       for t in universe], dtype=bool)
+
+    # Bootstrap CI on lift (5-mode vs 3-mode)
     ci_lo, ci_hi = bootstrap_lift_ci(in_3, in_5)
+    # Single-phantom lift CIs
+    ci_lo_pdom, ci_hi_pdom = bootstrap_lift_ci(in_3, in_4_pdom)
+    ci_lo_psom, ci_hi_psom = bootstrap_lift_ci(in_3, in_4_psom)
+
+    # Cohen's h effect sizes (proportion difference, dimensionless)
+    h_5_vs_3        = cohen_h(sr_5 / 100, sr_3 / 100)
+    h_4pdom_vs_3    = cohen_h(sr_4_pdom / 100, sr_3 / 100)
+    h_4psom_vs_3    = cohen_h(sr_4_psom / 100, sr_3 / 100)
+
+    # Wilcoxon signed-rank (paired binary) — degenerate to sign test for monotonic
+    wstat_5, wp_5 = wilcoxon_signed_rank(in_3, in_5)
+    wstat_pdom, wp_pdom = wilcoxon_signed_rank(in_3, in_4_pdom)
+    wstat_psom, wp_psom = wilcoxon_signed_rank(in_3, in_4_psom)
+
+    # McNemar exact one-sided (b > a; trivially significant if any new tasks added)
+    mc_p_5    = mcnemar_exact_one_sided(in_3, in_5)
+    mc_p_pdom = mcnemar_exact_one_sided(in_3, in_4_pdom)
+    mc_p_psom = mcnemar_exact_one_sided(in_3, in_4_psom)
 
     # Decomposition
     pdom_adds = succ_r["P-DOM"] - union_3
@@ -169,10 +267,34 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         "sr_pdom":    round(100 * len(succ_r["P-DOM"]) / n, 4),
         "sr_psom":    round(100 * len(succ_r["P-SoM"]) / n, 4),
         "oracle_3mode_pp":  round(sr_3, 4),
+        "oracle_4mode_pdom_pp": round(sr_4_pdom, 4),
+        "oracle_4mode_psom_pp": round(sr_4_psom, 4),
         "oracle_5mode_pp":  round(sr_5, 4),
-        "lift_pp":          round(lift_pp, 4),
-        "lift_ci95_lo_pp":  round(ci_lo, 4),
-        "lift_ci95_hi_pp":  round(ci_hi, 4),
+        "lift_5_vs_3_pp":   round(sr_5 - sr_3, 4),
+        "lift_5_vs_3_ci95_lo_pp":  round(ci_lo, 4),
+        "lift_5_vs_3_ci95_hi_pp":  round(ci_hi, 4),
+        "lift_4pdom_vs_3_pp":   round(sr_4_pdom - sr_3, 4),
+        "lift_4pdom_vs_3_ci95_lo_pp": round(ci_lo_pdom, 4),
+        "lift_4pdom_vs_3_ci95_hi_pp": round(ci_hi_pdom, 4),
+        "lift_4psom_vs_3_pp":   round(sr_4_psom - sr_3, 4),
+        "lift_4psom_vs_3_ci95_lo_pp": round(ci_lo_psom, 4),
+        "lift_4psom_vs_3_ci95_hi_pp": round(ci_hi_psom, 4),
+        # Effect sizes (Cohen's h on oracle proportions)
+        "cohen_h_5_vs_3":     round(h_5_vs_3, 4),
+        "cohen_h_5_vs_3_label": cohen_h_label(h_5_vs_3),
+        "cohen_h_4pdom_vs_3": round(h_4pdom_vs_3, 4),
+        "cohen_h_4pdom_vs_3_label": cohen_h_label(h_4pdom_vs_3),
+        "cohen_h_4psom_vs_3": round(h_4psom_vs_3, 4),
+        "cohen_h_4psom_vs_3_label": cohen_h_label(h_4psom_vs_3),
+        # Wilcoxon (paired sign on binary)
+        "wilcoxon_5_vs_3_p":     wp_5,
+        "wilcoxon_4pdom_vs_3_p": wp_pdom,
+        "wilcoxon_4psom_vs_3_p": wp_psom,
+        # McNemar exact 1-sided
+        "mcnemar_5_vs_3_p":     mc_p_5,
+        "mcnemar_4pdom_vs_3_p": mc_p_pdom,
+        "mcnemar_4psom_vs_3_p": mc_p_psom,
+        # Decomposition
         "pdom_adds_count":      len(pdom_adds),
         "psom_adds_count":      len(psom_adds),
         "pdom_only_count":      len(pdom_only),
@@ -210,23 +332,49 @@ def main() -> int:
     lines = [
         "# Phantom routing lift — paper Section 1/4 hook evidence",
         "",
-        "Routing lift = (5-mode oracle ceiling) - (3-mode oracle ceiling), where",
-        "5-mode = DOM ∪ SoM ∪ Vision ∪ Phantom-DOM ∪ Phantom-SoM. CI from",
-        "1000-resample task-level bootstrap.",
+        "Routing lift = (X-mode oracle ceiling) - (3-mode oracle ceiling), where",
+        "3-mode = DOM ∪ SoM ∪ Vision (baseline). 95% CI from 1000-resample",
+        "task-level bootstrap. Cohen's h effect size (small <0.2, medium 0.2-0.5,",
+        "large 0.5-0.8). Wilcoxon paired (binary, equiv to sign test). McNemar",
+        "exact 1-sided (H1: extra mode adds tasks).",
         "",
-        "| Baseline | Site | N | 3-mode oracle | 5-mode oracle | **Lift (pp)** | 95% CI | Significant? |",
-        "|---|---|---:|---:|---:|---:|---|:---:|",
+        "## Routing lift summary (5-mode vs 3-mode + each single phantom)",
+        "",
+        "| Baseline | Site | N | 3→5-mode lift | 95% CI | Cohen's h | Wilcoxon p | McNemar p | sig? |",
+        "|---|---|---:|---:|---|---:|---:|---:|:---:|",
     ]
     for r in rows:
         n_label = (f"{r['n_common']}/{r['n_expected']}†" if r["is_partial"]
                    else f"{r['n_common']}")
-        sig = "✅" if r["lift_ci95_lo_pp"] > 0 else ("🟡" if r["lift_ci95_hi_pp"] > 0 else "❌")
+        sig = "✅" if r["lift_5_vs_3_ci95_lo_pp"] > 0 else ("🟡" if r["lift_5_vs_3_ci95_hi_pp"] > 0 else "❌")
+        wp = f"{r['wilcoxon_5_vs_3_p']:.4f}" if r['wilcoxon_5_vs_3_p'] is not None else "—"
+        mp = f"{r['mcnemar_5_vs_3_p']:.4f}" if r['mcnemar_5_vs_3_p'] is not None else "—"
         lines.append(
             f"| {r['baseline']} | {r['site']} | {n_label} | "
-            f"{r['oracle_3mode_pp']:.2f}% | {r['oracle_5mode_pp']:.2f}% | "
-            f"**+{r['lift_pp']:.2f}** | "
-            f"[{r['lift_ci95_lo_pp']:.2f}, {r['lift_ci95_hi_pp']:.2f}] | {sig} |"
+            f"+{r['lift_5_vs_3_pp']:.2f}pp | "
+            f"[{r['lift_5_vs_3_ci95_lo_pp']:.2f}, {r['lift_5_vs_3_ci95_hi_pp']:.2f}] | "
+            f"{r['cohen_h_5_vs_3']:.3f} ({r['cohen_h_5_vs_3_label']}) | "
+            f"{wp} | {mp} | {sig} |"
         )
+
+    lines += [
+        "",
+        "## Single-phantom upgrade lifts (4-mode vs 3-mode)",
+        "",
+        "| Baseline | Site | +P-DOM lift | CI | h | +P-SoM lift | CI | h |",
+        "|---|---|---:|---|---:|---:|---|---:|",
+    ]
+    for r in rows:
+        lines.append(
+            f"| {r['baseline']} | {r['site']} | "
+            f"+{r['lift_4pdom_vs_3_pp']:.2f}pp | "
+            f"[{r['lift_4pdom_vs_3_ci95_lo_pp']:.2f}, {r['lift_4pdom_vs_3_ci95_hi_pp']:.2f}] | "
+            f"{r['cohen_h_4pdom_vs_3']:.3f} | "
+            f"+{r['lift_4psom_vs_3_pp']:.2f}pp | "
+            f"[{r['lift_4psom_vs_3_ci95_lo_pp']:.2f}, {r['lift_4psom_vs_3_ci95_hi_pp']:.2f}] | "
+            f"{r['cohen_h_4psom_vs_3']:.3f} |"
+        )
+
     if any(r["is_partial"] for r in rows):
         lines.append("")
         lines.append("† = partial (any mode < expected N); using intersection of observed tasks.")
