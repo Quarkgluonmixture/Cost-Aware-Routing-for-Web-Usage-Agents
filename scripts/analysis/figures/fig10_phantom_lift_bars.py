@@ -35,7 +35,7 @@ def main() -> None:
         return
 
     n = len(rows)
-    fig, axes = plt.subplots(1, n, figsize=(5.0 * n, 5.0), sharey=True)
+    fig, axes = plt.subplots(1, n, figsize=(5.0 * n, 5.0), sharey=False)
     if n == 1:
         axes = [axes]
 
@@ -82,8 +82,10 @@ def main() -> None:
                    else f"N={r['n_common']}")
         ax.set_title(f"{r['baseline']} {r['site']} ({n_label})", fontsize=11, fontweight="bold")
         ax.set_xticks(x, BARS, fontsize=9.5)
-        ax.set_ylabel("Oracle ceiling SR (%)" if ax is axes[0] else "")
-        ax.set_ylim(0, max(sr_vals) * 1.35)
+        ax.set_ylabel("Oracle ceiling SR (%)")
+        # Per-panel zoomed y-axis (sharey=False) so each cell's lift differences are visible
+        max_with_err = max(sr_vals[i] + err_high[i] for i in range(len(BARS)))
+        ax.set_ylim(0, max_with_err * 1.30)
         ax.grid(axis="y", color="#dddddd", linewidth=0.8)
         ax.set_axisbelow(True)
 
