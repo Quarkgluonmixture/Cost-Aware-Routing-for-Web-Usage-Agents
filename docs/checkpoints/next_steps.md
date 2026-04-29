@@ -218,7 +218,9 @@ paper_strategic 数据 pipeline (详 `paper_planning.md` §13.B)。一键 `make 
 |---|---|---|
 | ✅ A. Bootstrap CI for drop-one oracle | Section 4 显著性 | done `847eaeb` — `fig2_drop_one_oracle.py` + `fig2_drop_one_bootstrap_ci.csv` (12 rows × 95% CI) |
 | ✅ B. AUROC aggregation per-condition routing signal | Section 6 "AUROC ≥ baseline" supporting table | done `847eaeb` — `aggregate_routing_auroc.py` → `auroc_cross_condition.{csv,md,_summary.md}` (188 rows) |
-| ✅ **B'. Phantom routing lift** (3→5-mode oracle ceiling) | **Section 1/4 paper hook 主 evidence**: B0 cls +4.70pp [2.14, 7.69] / B0 red +5.24pp [2.38, 8.11] CI 排除 0 ✅ | done 04-29 — `aggregate_phantom_lift.py` → `phantom_lift.{csv,md}`; chained into `make analyze-paper`; B1 cells 自动 cover when chain done |
+| ✅ **B'. Phantom routing lift** (3→5-mode oracle ceiling) | **Section 1/4 paper hook 主 evidence**: B0 cls +4.70pp [2.14, 7.69] / B0 red +5.24pp [2.38, 8.11] CI 排除 0 ✅ | done 04-29 — `aggregate_phantom_lift.py` → `phantom_lift.{csv,md}`; chained into `make analyze-paper`; B1 cells 自动 cover when chain done. **Cohen's h + Wilcoxon + McNemar + Scenario C Jaccard sentinel 全 added** |
+| ✅ **B''. fig10 phantom_lift_bars** | Section 1/4 hook visualization (5-mode oracle ceiling bar chart with bootstrap CI + lift Δ annotation) | done 04-29 — `figures/fig10_phantom_lift_bars.py`; in `make figures` chain |
+| ✅ **B'''. fig11 routing_auroc_heatmap** | **Section 6 main figure (之前 0 figure)** — cross-condition × signal AUROC heatmap (★ = ≥ 0.7 routing-usable) | done 04-29 — `figures/fig11_routing_auroc_heatmap.py`; in `make figures` chain |
 | ⏳ C. Multi-metric Pareto (cost + lat + carbon) | Section 8 sustainability 前置 | 待 (~2h, fig10 new + carbon estimator integration) |
 | ⏳ D. TF-IDF + binary feature extraction | Section 6 Tier 1 router 前置 | 待 (~1h, extend `r1_task_features` in `analyze_cross_representation.py`) |
 | ⏳ E. B0 token-based carbon estimator | Section 8 Tier 3 sustainability | 待 (~20 行 helper in `p79/experiment/metrics.py`) |
@@ -235,6 +237,7 @@ paper_strategic 数据 pipeline (详 `paper_planning.md` §13.B)。一键 `make 
 | ~~**B1 shopping DOM 466 ep pre-Magento-bug**~~ | ✅ resolved 04-28 19:00 | archived `_archive/B1_3mode_shopping_20260413_pre_magento_bug` (含 dom 465/466) + som 5ep abandoned condition 删除. 待 Myriad GPU clean re-run via `queue_baseline.sh B1 dom shopping` |
 | **IP env-var-ize 重构** (9 处 `.py/.sh` hardcoded `100.95.81.103`) | 🟡 backlog | 替换为 `${VWA_REMOTE_HOST}` env var read，让 Myriad / future host 不必 sed。文件: `p79/utils/auth_refresh.py` / `external/visualwebarena/browser_env/envs.py` / `scripts/maintenance/{reset_vwa_sites,retry_b1_single_task,experiment_watchdog}.sh\|.py`。**触发条件**: Myriad onboard 时如果不能 Tailscale reach quark IP |
 | **WA reset mechanism**（queue scripts 当前仅 vwa reset, wa skip） | 🟡 backlog | webarena docker reset 路径未实现。需写 `reset_wa_sites.sh` (类似 `reset_vwa_sites.sh`) 然后 queue scripts 加 `BENCHMARK=wa` 分支调用 |
+| **Watchdog AUTO-ANALYSIS spam guard** (partial condition_summary 触发 infinite loop, §104 Day 3 04:00 audit) | 🟡 backlog | `experiment_watchdog.py:1340` `condition_completed = condition_summary_v2.json.exists()` 应增加 episode count vs expected_episodes guard，避免 partial 数据 (e.g. 165/234 ep) 触发 Case 3 re-trigger loop. 当前 workaround: 不要在 in-flight run 上跑 `make rederive RUN=...` |
 | **Tier A summary commit decision** (是否 commit `condition_summary_v2.json` + `run_meta.json` 入 git LFS / 直 git for paper-grade archive) | 🟡 待评估 | size: 10 conditions × ~50KB = ~500KB total，git 直管也行；好处: paper repro 时 reviewer 不需 hub access；坏处: 实验未冻结前每次 rederive 改动多 |
 
 **Resolved (recent)**:

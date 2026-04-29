@@ -177,7 +177,9 @@ analyze-paper: analyze-paper-per-run compare-b0-b1-all aggregate-cross-site summ
 	@echo "[analyze-paper] figures in results/phantom_paper/figures/:"
 	@ls results/phantom_paper/figures/*.png 2>/dev/null || true
 
-# Regenerate paper figures (9 PNGs in results/phantom_paper/figures/)
+# Regenerate paper figures (11 PNGs in results/phantom_paper/figures/).
+# fig10/fig11 depend on phantom_lift.csv / auroc_cross_condition.csv —
+# automatically regenerated upstream by `make analyze-paper`.
 figures:
 	$(PYTHON) scripts/analysis/figures/fig1_4mode_venn.py
 	$(PYTHON) scripts/analysis/figures/fig2_drop_one_oracle.py
@@ -188,6 +190,8 @@ figures:
 	$(PYTHON) scripts/analysis/figures/fig7_cost_sr_frontier.py
 	$(PYTHON) scripts/analysis/figures/fig8_overlap_stacked_bar.py
 	$(PYTHON) scripts/analysis/figures/fig9_regional_carbon_sensitivity.py
+	$(PYTHON) scripts/analysis/figures/fig10_phantom_lift_bars.py
+	$(PYTHON) scripts/analysis/figures/fig11_routing_auroc_heatmap.py
 	@echo "Figures regenerated → results/phantom_paper/figures/"
 
 # ---- Background tasks ----
