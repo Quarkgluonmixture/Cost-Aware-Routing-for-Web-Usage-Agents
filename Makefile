@@ -27,7 +27,7 @@ PYTEST ?= .venv/bin/pytest
         aggregate-cross-site summary-collect routing-auroc analyze-paper \
         analyze-paper-per-run compare-b0-b1-all phantom-lift \
         analyze-layer0 analyze-layer1 analyze-layer2 analyze-layer3 analyze-layered \
-        aggregate-sr-fp fig12-micro-heatmap aggregate-cost-electricity
+        aggregate-sr-fp fig12-micro-heatmap aggregate-cost-electricity analyze-mechanism
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
@@ -158,6 +158,9 @@ analyze-layer2:
 	$(PYTHON) scripts/analysis/axis1_microbehavior.py
 	$(MAKE) fig12-micro-heatmap
 
+analyze-mechanism:
+	$(PYTHON) scripts/analysis/mechanism_per_task.py
+
 fig12-micro-heatmap:
 	$(PYTHON) scripts/analysis/figures/fig2_micro_divergence_heatmap.py
 
@@ -176,6 +179,7 @@ aggregate-cost-electricity:
 # Run all 4 layers
 analyze-layered: analyze-layer0 analyze-layer1 analyze-layer2 analyze-layer3
 	$(PYTHON) scripts/analysis/figures/fig_capability_b0_b1.py
+	$(MAKE) analyze-mechanism
 	$(PYTHON) scripts/analysis/layered_status.py
 
 # Per-run paper-grade analysis pipeline: rederive → reason-diag → cross-rep

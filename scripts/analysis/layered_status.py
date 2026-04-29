@@ -302,6 +302,45 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
     lines.append(f"- source: same live episode `summary_v2.json` files as 0a; standalone `{rel(sr_fp_md)}` | last update: {timestamp(sr_fp_md)}")
     lines.append("")
 
+    mechanism_json = CROSS / "mechanism_per_task.json"
+    mechanism = read_json(mechanism_json) or {}
+    e3 = (mechanism.get("E3_confidence_calibration") or {}).get("cells", {})
+    if e3:
+        lines += ["### 0b-extra Confidence calibration (E3)", ""]
+        for model in ["B0", "B1"]:
+            for site in ["reddit", "classifieds"]:
+                rows = [
+                    row for row in e3.values()
+                    if row.get("model") == model and row.get("site") == site
+                ]
+                if not rows:
+                    continue
+                best = max(
+                    rows,
+                    key=lambda row: max(
+                        row.get("AUROC_token") or -1,
+                        row.get("AUROC_verbal") or -1,
+                        row.get("AUROC_behavioral_max") or -1,
+                    ),
+                )
+                honest = [row for row in rows if row.get("ECE_verbal") is not None]
+                honest_row = min(honest, key=lambda row: row["ECE_verbal"]) if honest else None
+                best_val = max(
+                    best.get("AUROC_token") or -1,
+                    best.get("AUROC_verbal") or -1,
+                    best.get("AUROC_behavioral_max") or -1,
+                )
+                honest_part = (
+                    f"; lowest verbal ECE {honest_row['mode']} {fmt_num(honest_row['ECE_verbal'])}"
+                    if honest_row else "; ECE n/a in existing outputs"
+                )
+                lines.append(
+                    f"- {model} {site}: best routing AUROC {best['mode']} **{fmt_num(best_val)}**"
+                    f"{honest_part}"
+                )
+        lines.append(f"- {source_line(mechanism_json)}")
+        lines.append("")
+
     lines += ["### 0c Routing oracle (3→5-mode lift)", ""]
     if not lift_rows:
         lines.append(f"- ⚠️ missing or unreadable | {source_line(phantom_csv)}")
@@ -405,6 +444,20 @@ def render_layer1(lines: list[str]) -> None:
     lines.append(f"- figure: `{rel(FIGURES['fig1c'])}` | last update: {timestamp(FIGURES['fig1c'])}")
     lines.append("")
 
+    mechanism_json = CROSS / "mechanism_per_task.json"
+    mechanism = read_json(mechanism_json) or {}
+    e4 = mechanism.get("E4_action_vocabulary") or {}
+    contrasts = e4.get("axis_contrasts") or {}
+    if contrasts:
+        lines += ["### 1d Full action vocabulary (E4)", ""]
+        for site in ["reddit", "classifieds"]:
+            comp = contrasts.get(site, {}).get("compound_DOM_to_PSoM", {})
+            top = (comp.get("top_abs_shifts") or [])[:3]
+            bits = [f"{row['action_type']} {fmt_num(row['mean_fraction_shift'])}" for row in top]
+            lines.append(f"- {site}: compound DOM→P-SoM top shifts: " + "; ".join(bits))
+        lines.append(f"- {source_line(mechanism_json)}")
+        lines.append("")
+
 
 def render_layer2(lines: list[str]) -> None:
     micro_json = CROSS / "axis1_microbehavior.json"
@@ -425,6 +478,21 @@ def render_layer2(lines: list[str]) -> None:
     lines.append(f"- {source_line(micro_json)}")
     lines.append(f"- figure: `{rel(FIGURES['fig2'])}` | last update: {timestamp(FIGURES['fig2'])}")
     lines.append("")
+
+    mechanism_json = CROSS / "mechanism_per_task.json"
+    mechanism = read_json(mechanism_json) or {}
+    e1 = mechanism.get("E1_click_target_divergence") or {}
+    if e1:
+        lines += ["### 2a-extra Click-target divergence (E1)", ""]
+        for site in ["reddit", "classifieds"]:
+            axis1 = e1.get(site, {}).get("axis_1_text", {})
+            comp = e1.get(site, {}).get("compound_DOM_to_PSoM", {})
+            lines.append(
+                f"- {site}: axis-1 click-transition Jaccard **{fmt_num(axis1.get('mean_jaccard'))}**; "
+                f"compound DOM↔P-SoM **{fmt_num(comp.get('mean_jaccard'))}**"
+            )
+        lines.append(f"- {source_line(mechanism_json)}")
+        lines.append("")
 
     lines += ["### 2b Target-hit", ""]
     for site in ["reddit", "classifieds"]:
@@ -466,6 +534,19 @@ def render_layer2(lines: list[str]) -> None:
     )
     lines.append(f"- {source_line(micro_json)}")
     lines.append("")
+
+    e2 = mechanism.get("E2_trajectory_boundary") or {}
+    if e2:
+        lines += ["### 2f Trajectory boundary (E2)", ""]
+        for site in ["reddit", "classifieds"]:
+            comp = e2.get(site, {}).get("DOM_vs_Phantom-SoM", {})
+            lines.append(
+                f"- {site}: DOM↔P-SoM symmetric-diff N **{comp.get('n_symmetric_diff_tasks', 'n/a')}**; "
+                f"median first divergent step {fmt_num(comp.get('median_first_divergent_step'), 1)}; "
+                f"early {fmt_pct(comp.get('early_divergence_rate'))}; late {fmt_pct(comp.get('late_divergence_rate'))}"
+            )
+        lines.append(f"- {source_line(mechanism_json)}")
+        lines.append("")
 
 
 def render_layer3(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]]) -> None:
@@ -576,17 +657,17 @@ def render_claim_matrix(lines: list[str]) -> None:
         "| C2 4-fold drop-in property | 3a, 3c, 0g, 0c | ✅ cost/latency/signal/oracle evidence present |",
         "| C3 3-axis hierarchical theory | 1b, 2a-2e, cross-layer mechanism chain | ✅ cascade + micro decomposition present |",
         "| C4 Aggregate macro can mislead about routing potential | 1a, 0d, 2a | ✅ supported by task-pool and micro-divergence evidence |",
-        "| C5 Prompt as task-conditional decision prior | 0b, 0d, 1b | ✅ supported; cite cautiously as mechanism evidence |",
+        "| C5 Prompt as task-conditional decision prior | 0b, 0b-extra, 0d, 1b, 1d, 2a-extra, 2f | ✅ supported; cite cautiously as mechanism evidence |",
         "| C6 Image is bidirectional modality fusion | 1b, 0e, 3b | ✅ supported for cls-heavy image axis; 3b is a token-gap proxy |",
         "",
         "## Cross-layer Mechanism Chain",
         "",
         "| Axis | Outcome layer | Macro layer | Micro layer | Efficiency layer |",
         "|---|---|---|---|---|",
-        "| Axis 1 text payload | 0c single-phantom lift | 1b text-axis cells | 2a-2e URL/target/keyword shifts | no image tax |",
-        "| Axis 2 prompt | 0d task-pool divergence | 1b prompt-axis dominant cells | 2d first-action and URL shifts | prompt-only cost-neutral |",
-        "| Axis 3 image | 0e category recovery | 1b image-axis dominant cells | 2a endpoint URL/target shifts | 3b token/latency tax |",
-        "| Compound P-SoM vs DOM | 0a/0c/0d routing arm | 1a hook contrast | 2a compound URL divergence | 3a/3c drop-in profile |",
+        "| Axis 1 text payload | 0c single-phantom lift | 1b text-axis cells, 1d action shifts | 2a-2e URL/target/keyword shifts, E1 click transitions | no image tax |",
+        "| Axis 2 prompt | 0d task-pool divergence, 0b-extra calibration | 1b prompt-axis dominant cells, 1d action shifts | 2d first-action, E1 click transitions, E2 boundary | prompt-only cost-neutral |",
+        "| Axis 3 image | 0e category recovery | 1b image-axis dominant cells, 1d action shifts | 2a endpoint URL/target shifts, E1/E2 | 3b token/latency tax |",
+        "| Compound P-SoM vs DOM | 0a/0c/0d routing arm, E3 confidence | 1a hook contrast, E4 action vocabulary | 2a compound URL divergence, E1/E2 per-step evidence | 3a/3c drop-in profile |",
         "",
     ]
 

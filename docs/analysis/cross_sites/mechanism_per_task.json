@@ -1,0 +1,1717 @@
+{
+  "E1_click_target_divergence": {
+    "classifieds": {
+      "axis_1_text": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 147,
+            "1": 46,
+            "2": 21,
+            "3": 11,
+            "4": 6,
+            "5": 2,
+            "8": 1
+          },
+          "left_mean": 0.696581,
+          "right_hist": {
+            "0": 143,
+            "1": 51,
+            "2": 25,
+            "3": 11,
+            "4": 2,
+            "5": 2
+          },
+          "right_mean": 0.649573,
+          "union_mean": 1.15812
+        },
+        "contrast": "DOM vs P-DOM",
+        "left_mode": "DOM",
+        "mean_decision_divergence": 0.438967,
+        "mean_jaccard": 0.561033,
+        "median_jaccard": 1.0,
+        "n": 234,
+        "right_mode": "Phantom-DOM",
+        "std_jaccard": 0.475682
+      },
+      "axis_2_prompt": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 143,
+            "1": 51,
+            "2": 25,
+            "3": 11,
+            "4": 2,
+            "5": 2
+          },
+          "left_mean": 0.649573,
+          "right_hist": {
+            "0": 136,
+            "1": 50,
+            "2": 30,
+            "3": 10,
+            "4": 5,
+            "5": 2,
+            "7": 1
+          },
+          "right_mean": 0.75641,
+          "union_mean": 1.230769
+        },
+        "contrast": "P-DOM vs P-SoM",
+        "left_mode": "Phantom-DOM",
+        "mean_decision_divergence": 0.458186,
+        "mean_jaccard": 0.541814,
+        "median_jaccard": 1.0,
+        "n": 234,
+        "right_mode": "Phantom-SoM",
+        "std_jaccard": 0.484566
+      },
+      "axis_3_image": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 136,
+            "1": 50,
+            "2": 30,
+            "3": 10,
+            "4": 5,
+            "5": 2,
+            "7": 1
+          },
+          "left_mean": 0.75641,
+          "right_hist": {
+            "0": 159,
+            "1": 50,
+            "2": 14,
+            "3": 4,
+            "4": 6,
+            "7": 1
+          },
+          "right_mean": 0.517094,
+          "union_mean": 1.166667
+        },
+        "contrast": "P-SoM vs SoM",
+        "left_mode": "Phantom-SoM",
+        "mean_decision_divergence": 0.517877,
+        "mean_jaccard": 0.482123,
+        "median_jaccard": 0.291667,
+        "n": 234,
+        "right_mode": "SoM",
+        "std_jaccard": 0.487632
+      },
+      "compound_DOM_to_PSoM": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 147,
+            "1": 46,
+            "2": 21,
+            "3": 11,
+            "4": 6,
+            "5": 2,
+            "8": 1
+          },
+          "left_mean": 0.696581,
+          "right_hist": {
+            "0": 136,
+            "1": 50,
+            "2": 30,
+            "3": 10,
+            "4": 5,
+            "5": 2,
+            "7": 1
+          },
+          "right_mean": 0.75641,
+          "union_mean": 1.260684
+        },
+        "contrast": "DOM vs P-SoM",
+        "left_mode": "DOM",
+        "mean_decision_divergence": 0.469088,
+        "mean_jaccard": 0.530912,
+        "median_jaccard": 0.633333,
+        "n": 234,
+        "right_mode": "Phantom-SoM",
+        "std_jaccard": 0.47839
+      }
+    },
+    "reddit": {
+      "axis_1_text": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 99,
+            "1": 53,
+            "2": 28,
+            "3": 14,
+            "4": 8,
+            "5": 4,
+            "6": 1,
+            "7": 1,
+            "8": 2
+          },
+          "left_mean": 1.104762,
+          "right_hist": {
+            "0": 106,
+            "1": 56,
+            "2": 20,
+            "3": 16,
+            "4": 7,
+            "5": 3,
+            "6": 1,
+            "7": 1
+          },
+          "right_mean": 0.952381,
+          "union_mean": 1.795238
+        },
+        "contrast": "DOM vs P-DOM",
+        "left_mode": "DOM",
+        "mean_decision_divergence": 0.53655,
+        "mean_jaccard": 0.46345,
+        "median_jaccard": 0.25,
+        "n": 210,
+        "right_mode": "Phantom-DOM",
+        "std_jaccard": 0.472415
+      },
+      "axis_2_prompt": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 106,
+            "1": 56,
+            "2": 20,
+            "3": 16,
+            "4": 7,
+            "5": 3,
+            "6": 1,
+            "7": 1
+          },
+          "left_mean": 0.952381,
+          "right_hist": {
+            "0": 113,
+            "1": 58,
+            "10": 1,
+            "2": 20,
+            "3": 10,
+            "4": 4,
+            "5": 3,
+            "6": 1
+          },
+          "right_mean": 0.833333,
+          "union_mean": 1.590476
+        },
+        "contrast": "P-DOM vs P-SoM",
+        "left_mode": "Phantom-DOM",
+        "mean_decision_divergence": 0.515595,
+        "mean_jaccard": 0.484405,
+        "median_jaccard": 0.333333,
+        "n": 210,
+        "right_mode": "Phantom-SoM",
+        "std_jaccard": 0.484585
+      },
+      "axis_3_image": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 113,
+            "1": 58,
+            "10": 1,
+            "2": 20,
+            "3": 10,
+            "4": 4,
+            "5": 3,
+            "6": 1
+          },
+          "left_mean": 0.833333,
+          "right_hist": {
+            "0": 129,
+            "1": 58,
+            "2": 17,
+            "3": 4,
+            "5": 1,
+            "6": 1
+          },
+          "right_mean": 0.547619,
+          "union_mean": 1.261905
+        },
+        "contrast": "P-SoM vs SoM",
+        "left_mode": "Phantom-SoM",
+        "mean_decision_divergence": 0.508333,
+        "mean_jaccard": 0.491667,
+        "median_jaccard": 0.333333,
+        "n": 210,
+        "right_mode": "SoM",
+        "std_jaccard": 0.491248
+      },
+      "compound_DOM_to_PSoM": {
+        "click_target_set_size": {
+          "left_hist": {
+            "0": 99,
+            "1": 53,
+            "2": 28,
+            "3": 14,
+            "4": 8,
+            "5": 4,
+            "6": 1,
+            "7": 1,
+            "8": 2
+          },
+          "left_mean": 1.104762,
+          "right_hist": {
+            "0": 113,
+            "1": 58,
+            "10": 1,
+            "2": 20,
+            "3": 10,
+            "4": 4,
+            "5": 3,
+            "6": 1
+          },
+          "right_mean": 0.833333,
+          "union_mean": 1.742857
+        },
+        "contrast": "DOM vs P-SoM",
+        "left_mode": "DOM",
+        "mean_decision_divergence": 0.579444,
+        "mean_jaccard": 0.420556,
+        "median_jaccard": 0.0,
+        "n": 210,
+        "right_mode": "Phantom-SoM",
+        "std_jaccard": 0.470955
+      }
+    }
+  },
+  "E2_trajectory_boundary": {
+    "classifieds": {
+      "DOM_vs_Phantom-DOM": {
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 14,
+            "left_success": true,
+            "right_n_steps": 10,
+            "right_success": false,
+            "task_id": 63,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 5,
+            "left_success": true,
+            "right_n_steps": 5,
+            "right_success": false,
+            "task_id": 98,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 7,
+            "left_n_steps": 12,
+            "left_success": false,
+            "right_n_steps": 11,
+            "right_success": true,
+            "task_id": 201,
+            "trajectory_jaccard": 0.5
+          }
+        ],
+        "case_study_task_ids": [
+          63,
+          201,
+          98
+        ],
+        "early_divergence_rate": 0.809524,
+        "first_divergent_step_histogram": {
+          "0": 5,
+          "1": 8,
+          "2": 2,
+          "3": 2,
+          "4": 1,
+          "6": 2,
+          "7": 1
+        },
+        "late_divergence_rate": 0.0,
+        "left_mode": "DOM",
+        "median_first_divergent_step": 1,
+        "n_symmetric_diff_tasks": 21,
+        "right_mode": "Phantom-DOM"
+      },
+      "DOM_vs_Phantom-SoM": {
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 6,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 17,
+            "trajectory_jaccard": 0.125
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 14,
+            "left_success": true,
+            "right_n_steps": 11,
+            "right_success": false,
+            "task_id": 63,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 10,
+            "left_n_steps": 12,
+            "left_success": false,
+            "right_n_steps": 18,
+            "right_success": true,
+            "task_id": 201,
+            "trajectory_jaccard": 0.4
+          }
+        ],
+        "case_study_task_ids": [
+          17,
+          201,
+          63
+        ],
+        "early_divergence_rate": 0.73913,
+        "first_divergent_step_histogram": {
+          "0": 8,
+          "1": 6,
+          "10": 1,
+          "2": 1,
+          "3": 2,
+          "4": 2,
+          "5": 2,
+          "9": 1
+        },
+        "late_divergence_rate": 0.043478,
+        "left_mode": "DOM",
+        "median_first_divergent_step": 1,
+        "n_symmetric_diff_tasks": 23,
+        "right_mode": "Phantom-SoM"
+      },
+      "Phantom-DOM_vs_Phantom-SoM": {
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 6,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 17,
+            "trajectory_jaccard": 0.125
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 5,
+            "left_success": false,
+            "right_n_steps": 3,
+            "right_success": true,
+            "task_id": 79,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 7,
+            "left_n_steps": 8,
+            "left_success": false,
+            "right_n_steps": 12,
+            "right_success": true,
+            "task_id": 103,
+            "trajectory_jaccard": 0.5
+          }
+        ],
+        "case_study_task_ids": [
+          17,
+          103,
+          79
+        ],
+        "early_divergence_rate": 0.923077,
+        "first_divergent_step_histogram": {
+          "0": 10,
+          "1": 6,
+          "2": 3,
+          "3": 5,
+          "4": 1,
+          "7": 1
+        },
+        "late_divergence_rate": 0.0,
+        "left_mode": "Phantom-DOM",
+        "median_first_divergent_step": 1.0,
+        "n_symmetric_diff_tasks": 26,
+        "right_mode": "Phantom-SoM"
+      },
+      "Phantom-SoM_vs_SoM": {
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 2,
+            "left_success": false,
+            "right_n_steps": 2,
+            "right_success": true,
+            "task_id": 14,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 5,
+            "left_n_steps": 30,
+            "left_success": false,
+            "right_n_steps": 5,
+            "right_success": true,
+            "task_id": 17,
+            "trajectory_jaccard": 1.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 5,
+            "left_success": false,
+            "right_n_steps": 3,
+            "right_success": true,
+            "task_id": 49,
+            "trajectory_jaccard": 0.0
+          }
+        ],
+        "case_study_task_ids": [
+          14,
+          17,
+          49
+        ],
+        "early_divergence_rate": 0.948718,
+        "first_divergent_step_histogram": {
+          "0": 11,
+          "1": 18,
+          "2": 5,
+          "3": 3,
+          "4": 1,
+          "5": 1
+        },
+        "late_divergence_rate": 0.0,
+        "left_mode": "Phantom-SoM",
+        "median_first_divergent_step": 1,
+        "n_symmetric_diff_tasks": 42,
+        "right_mode": "SoM"
+      }
+    },
+    "reddit": {
+      "DOM_vs_Phantom-DOM": {
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 12,
+            "left_success": false,
+            "right_n_steps": 8,
+            "right_success": true,
+            "task_id": 15,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 6,
+            "left_n_steps": 8,
+            "left_success": true,
+            "right_n_steps": 6,
+            "right_success": false,
+            "task_id": 81,
+            "trajectory_jaccard": 1.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": false,
+            "right_n_steps": 4,
+            "right_success": true,
+            "task_id": 107,
+            "trajectory_jaccard": 0.0
+          }
+        ],
+        "case_study_task_ids": [
+          15,
+          81,
+          107
+        ],
+        "early_divergence_rate": 0.875,
+        "first_divergent_step_histogram": {
+          "0": 10,
+          "1": 2,
+          "2": 1,
+          "3": 1,
+          "5": 1,
+          "6": 1
+        },
+        "late_divergence_rate": 0.0,
+        "left_mode": "DOM",
+        "median_first_divergent_step": 0.0,
+        "n_symmetric_diff_tasks": 16,
+        "right_mode": "Phantom-DOM"
+      },
+      "DOM_vs_Phantom-SoM": {
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": false,
+            "right_n_steps": 5,
+            "right_success": true,
+            "task_id": 7,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 12,
+            "left_success": false,
+            "right_n_steps": 30,
+            "right_success": true,
+            "task_id": 15,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 6,
+            "left_n_steps": 8,
+            "left_success": true,
+            "right_n_steps": 6,
+            "right_success": false,
+            "task_id": 81,
+            "trajectory_jaccard": 1.0
+          }
+        ],
+        "case_study_task_ids": [
+          7,
+          81,
+          15
+        ],
+        "early_divergence_rate": 0.913043,
+        "first_divergent_step_histogram": {
+          "0": 13,
+          "1": 5,
+          "2": 1,
+          "3": 2,
+          "4": 1,
+          "6": 1
+        },
+        "late_divergence_rate": 0.0,
+        "left_mode": "DOM",
+        "median_first_divergent_step": 0,
+        "n_symmetric_diff_tasks": 23,
+        "right_mode": "Phantom-SoM"
+      },
+      "Phantom-DOM_vs_Phantom-SoM": {
+        "case_studies": [
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 4,
+            "left_success": false,
+            "right_n_steps": 5,
+            "right_success": true,
+            "task_id": 7,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 9,
+            "left_success": false,
+            "right_n_steps": 6,
+            "right_success": true,
+            "task_id": 26,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 3,
+            "left_n_steps": 6,
+            "left_success": false,
+            "right_n_steps": 30,
+            "right_success": true,
+            "task_id": 167,
+            "trajectory_jaccard": 0.333333
+          }
+        ],
+        "case_study_task_ids": [
+          7,
+          167,
+          26
+        ],
+        "early_divergence_rate": 1.0,
+        "first_divergent_step_histogram": {
+          "0": 12,
+          "1": 1,
+          "2": 1,
+          "3": 1
+        },
+        "late_divergence_rate": 0.0,
+        "left_mode": "Phantom-DOM",
+        "median_first_divergent_step": 0,
+        "n_symmetric_diff_tasks": 15,
+        "right_mode": "Phantom-SoM"
+      },
+      "Phantom-SoM_vs_SoM": {
+        "case_studies": [
+          {
+            "first_divergent_step": 6,
+            "left_n_steps": 12,
+            "left_success": true,
+            "right_n_steps": 30,
+            "right_success": false,
+            "task_id": 0,
+            "trajectory_jaccard": 0.666667
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 5,
+            "left_success": true,
+            "right_n_steps": 11,
+            "right_success": false,
+            "task_id": 7,
+            "trajectory_jaccard": 0.0
+          },
+          {
+            "first_divergent_step": 0,
+            "left_n_steps": 30,
+            "left_success": false,
+            "right_n_steps": 7,
+            "right_success": true,
+            "task_id": 14,
+            "trajectory_jaccard": 0.0
+          }
+        ],
+        "case_study_task_ids": [
+          7,
+          0,
+          14
+        ],
+        "early_divergence_rate": 0.952381,
+        "first_divergent_step_histogram": {
+          "0": 13,
+          "1": 7,
+          "6": 1
+        },
+        "late_divergence_rate": 0.0,
+        "left_mode": "Phantom-SoM",
+        "median_first_divergent_step": 0,
+        "n_symmetric_diff_tasks": 23,
+        "right_mode": "SoM"
+      }
+    }
+  },
+  "E3_confidence_calibration": {
+    "cells": {
+      "B0/classifieds/DOM": {
+        "AUROC_behavioral_max": 0.7693,
+        "AUROC_behavioral_n": 234,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": null,
+        "AUROC_token_n": null,
+        "AUROC_token_signal": null,
+        "AUROC_verbal": 0.7415,
+        "AUROC_verbal_n": 234,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": 0.854701,
+        "mode": "DOM",
+        "model": "B0",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B0_3mode_classifieds_20260413",
+        "source_table": "results/visualwebarena/phase1/B0_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv"
+      },
+      "B0/classifieds/Phantom-DOM": {
+        "AUROC_behavioral_max": 0.733447,
+        "AUROC_behavioral_n": 234,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": null,
+        "AUROC_token_n": null,
+        "AUROC_token_signal": null,
+        "AUROC_verbal": 0.737237,
+        "AUROC_verbal_n": 234,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": 2.136752,
+        "mode": "Phantom-DOM",
+        "model": "B0",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B0_phantom_dom_classifieds_20260427",
+        "source_table": "results/visualwebarena/phase1/B0_phantom_dom_classifieds_20260427/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/classifieds/Phantom-SoM": {
+        "AUROC_behavioral_max": 0.727754,
+        "AUROC_behavioral_n": 234,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": null,
+        "AUROC_token_n": null,
+        "AUROC_token_signal": null,
+        "AUROC_verbal": 0.700589,
+        "AUROC_verbal_n": 234,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": 1.282051,
+        "mode": "Phantom-SoM",
+        "model": "B0",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B0_phantom_classifieds_20260426",
+        "source_table": "results/visualwebarena/phase1/B0_phantom_classifieds_20260426/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/classifieds/SoM": {
+        "AUROC_behavioral_max": 0.6972,
+        "AUROC_behavioral_n": 234,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": null,
+        "AUROC_token_n": null,
+        "AUROC_token_signal": null,
+        "AUROC_verbal": 0.7085,
+        "AUROC_verbal_n": 234,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": 1.709402,
+        "mode": "SoM",
+        "model": "B0",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B0_3mode_classifieds_20260413",
+        "source_table": "results/visualwebarena/phase1/B0_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv"
+      },
+      "B0/classifieds/Vision": {
+        "AUROC_behavioral_max": 0.7734,
+        "AUROC_behavioral_n": 234,
+        "AUROC_behavioral_signal": "max_repeat_streak",
+        "AUROC_token": null,
+        "AUROC_token_n": null,
+        "AUROC_token_signal": null,
+        "AUROC_verbal": 0.7627,
+        "AUROC_verbal_n": 234,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": 2.136752,
+        "mode": "Vision",
+        "model": "B0",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B0_3mode_classifieds_20260413",
+        "source_table": "results/visualwebarena/phase1/B0_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv"
+      },
+      "B0/reddit/DOM": {
+        "AUROC_behavioral_max": 0.6819,
+        "AUROC_behavioral_n": 210,
+        "AUROC_behavioral_signal": "max_repeat_streak",
+        "AUROC_token": null,
+        "AUROC_token_n": null,
+        "AUROC_token_signal": null,
+        "AUROC_verbal": 0.8166,
+        "AUROC_verbal_n": 209,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": 1.904762,
+        "mode": "DOM",
+        "model": "B0",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B0_3mode_reddit_20260422",
+        "source_table": "results/visualwebarena/phase1/B0_3mode_reddit_20260422/analysis/signals/combined/tables/cross_mode_auroc.csv"
+      },
+      "B0/reddit/Phantom-DOM": {
+        "AUROC_behavioral_max": 0.698477,
+        "AUROC_behavioral_n": 210,
+        "AUROC_behavioral_signal": "url_revisit_count",
+        "AUROC_token": null,
+        "AUROC_token_n": null,
+        "AUROC_token_signal": null,
+        "AUROC_verbal": 0.792686,
+        "AUROC_verbal_n": 208,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": 1.428571,
+        "mode": "Phantom-DOM",
+        "model": "B0",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427",
+        "source_table": "results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/reddit/Phantom-SoM": {
+        "AUROC_behavioral_max": 0.693514,
+        "AUROC_behavioral_n": 210,
+        "AUROC_behavioral_signal": "max_repeat_streak",
+        "AUROC_token": null,
+        "AUROC_token_n": null,
+        "AUROC_token_signal": null,
+        "AUROC_verbal": 0.720111,
+        "AUROC_verbal_n": 205,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": 0.47619,
+        "mode": "Phantom-SoM",
+        "model": "B0",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B0_phantom_reddit_20260428",
+        "source_table": "results/visualwebarena/phase1/B0_phantom_reddit_20260428/analysis/signals/combined/tables/auroc_all_metrics.csv"
+      },
+      "B0/reddit/SoM": {
+        "AUROC_behavioral_max": 0.6808,
+        "AUROC_behavioral_n": 210,
+        "AUROC_behavioral_signal": "action_diversity",
+        "AUROC_token": null,
+        "AUROC_token_n": null,
+        "AUROC_token_signal": null,
+        "AUROC_verbal": 0.7194,
+        "AUROC_verbal_n": 199,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": 1.428571,
+        "mode": "SoM",
+        "model": "B0",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B0_3mode_reddit_20260422",
+        "source_table": "results/visualwebarena/phase1/B0_3mode_reddit_20260422/analysis/signals/combined/tables/cross_mode_auroc.csv"
+      },
+      "B0/reddit/Vision": {
+        "AUROC_behavioral_max": 0.7091,
+        "AUROC_behavioral_n": 210,
+        "AUROC_behavioral_signal": "max_repeat_streak",
+        "AUROC_token": null,
+        "AUROC_token_n": null,
+        "AUROC_token_signal": null,
+        "AUROC_verbal": 0.7778,
+        "AUROC_verbal_n": 210,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": null,
+        "Brier_verbal": null,
+        "ECE_token": null,
+        "ECE_verbal": null,
+        "MCE_token": null,
+        "MCE_verbal": null,
+        "calibration_source": null,
+        "layer0b_fp_rate_pct": 1.904762,
+        "mode": "Vision",
+        "model": "B0",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B0_3mode_reddit_20260422",
+        "source_table": "results/visualwebarena/phase1/B0_3mode_reddit_20260422/analysis/signals/combined/tables/cross_mode_auroc.csv"
+      },
+      "B1/classifieds/DOM": {
+        "AUROC_behavioral_max": 0.7596,
+        "AUROC_behavioral_n": 234,
+        "AUROC_behavioral_signal": "max_repeat_streak",
+        "AUROC_token": 0.6744,
+        "AUROC_token_n": 234,
+        "AUROC_token_signal": "ep_max_entropy",
+        "AUROC_verbal": 0.6827,
+        "AUROC_verbal_n": 234,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": 0.767281,
+        "Brier_verbal": 0.484168,
+        "ECE_token": 0.836521,
+        "ECE_verbal": 0.635243,
+        "MCE_token": 0.838372,
+        "MCE_verbal": 0.777462,
+        "calibration_source": "results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/per_mode_summary.csv",
+        "layer0b_fp_rate_pct": null,
+        "mode": "DOM",
+        "model": "B1",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B1_3mode_classifieds_20260413",
+        "source_table": "results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv"
+      },
+      "B1/classifieds/SoM": {
+        "AUROC_behavioral_max": 0.7267,
+        "AUROC_behavioral_n": 234,
+        "AUROC_behavioral_signal": "url_revisit_max",
+        "AUROC_token": 0.6534,
+        "AUROC_token_n": 234,
+        "AUROC_token_signal": "ep_mean_logprob",
+        "AUROC_verbal": 0.7548,
+        "AUROC_verbal_n": 234,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": 0.723923,
+        "Brier_verbal": 0.48552,
+        "ECE_token": 0.781323,
+        "ECE_verbal": 0.605733,
+        "MCE_token": 0.839752,
+        "MCE_verbal": 0.676211,
+        "calibration_source": "results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/per_mode_summary.csv",
+        "layer0b_fp_rate_pct": null,
+        "mode": "SoM",
+        "model": "B1",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B1_3mode_classifieds_20260413",
+        "source_table": "results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv"
+      },
+      "B1/classifieds/Vision": {
+        "AUROC_behavioral_max": 0.8155,
+        "AUROC_behavioral_n": 234,
+        "AUROC_behavioral_signal": "url_revisit_max",
+        "AUROC_token": 0.5413,
+        "AUROC_token_n": 234,
+        "AUROC_token_signal": "ep_max_entropy",
+        "AUROC_verbal": 0.7566,
+        "AUROC_verbal_n": 234,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": 0.769415,
+        "Brier_verbal": 0.451565,
+        "ECE_token": 0.839393,
+        "ECE_verbal": 0.601564,
+        "MCE_token": 0.869081,
+        "MCE_verbal": 0.770464,
+        "calibration_source": "results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/per_mode_summary.csv",
+        "layer0b_fp_rate_pct": null,
+        "mode": "Vision",
+        "model": "B1",
+        "site": "classifieds",
+        "source_run": "results/visualwebarena/phase1/B1_3mode_classifieds_20260413",
+        "source_table": "results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv"
+      },
+      "B1/reddit/DOM": {
+        "AUROC_behavioral_max": 0.6195,
+        "AUROC_behavioral_n": 210,
+        "AUROC_behavioral_signal": "url_revisit_count",
+        "AUROC_token": 0.5483,
+        "AUROC_token_n": 210,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.7236,
+        "AUROC_verbal_n": 210,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": 0.756413,
+        "Brier_verbal": 0.524725,
+        "ECE_token": 0.827864,
+        "ECE_verbal": 0.666124,
+        "MCE_token": 0.854179,
+        "MCE_verbal": 0.750421,
+        "calibration_source": "results/visualwebarena/phase1/B1_3mode_reddit_20260413/analysis/signals/combined/tables/per_mode_summary.csv",
+        "layer0b_fp_rate_pct": null,
+        "mode": "DOM",
+        "model": "B1",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B1_3mode_reddit_20260413",
+        "source_table": "results/visualwebarena/phase1/B1_3mode_reddit_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv"
+      },
+      "B1/reddit/SoM": {
+        "AUROC_behavioral_max": 0.613,
+        "AUROC_behavioral_n": 210,
+        "AUROC_behavioral_signal": "url_revisit_max",
+        "AUROC_token": 0.5892,
+        "AUROC_token_n": 210,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.6385,
+        "AUROC_verbal_n": 210,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": 0.777128,
+        "Brier_verbal": 0.612644,
+        "ECE_token": 0.850073,
+        "ECE_verbal": 0.740038,
+        "MCE_token": 0.861441,
+        "MCE_verbal": 0.846486,
+        "calibration_source": "results/visualwebarena/phase1/B1_3mode_reddit_20260413/analysis/signals/combined/tables/per_mode_summary.csv",
+        "layer0b_fp_rate_pct": null,
+        "mode": "SoM",
+        "model": "B1",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B1_3mode_reddit_20260413",
+        "source_table": "results/visualwebarena/phase1/B1_3mode_reddit_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv"
+      },
+      "B1/reddit/Vision": {
+        "AUROC_behavioral_max": 0.8624,
+        "AUROC_behavioral_n": 210,
+        "AUROC_behavioral_signal": "url_revisit_count",
+        "AUROC_token": 0.6605,
+        "AUROC_token_n": 210,
+        "AUROC_token_signal": "ep_min_logprob",
+        "AUROC_verbal": 0.6976,
+        "AUROC_verbal_n": 210,
+        "AUROC_verbal_signal": "ep_mean_verbalized",
+        "Brier_token": 0.790131,
+        "Brier_verbal": 0.515463,
+        "ECE_token": 0.874487,
+        "ECE_verbal": 0.677567,
+        "MCE_token": 0.899668,
+        "MCE_verbal": 0.863683,
+        "calibration_source": "results/visualwebarena/phase1/B1_3mode_reddit_20260413/analysis/signals/combined/tables/per_mode_summary.csv",
+        "layer0b_fp_rate_pct": null,
+        "mode": "Vision",
+        "model": "B1",
+        "site": "reddit",
+        "source_run": "results/visualwebarena/phase1/B1_3mode_reddit_20260413",
+        "source_table": "results/visualwebarena/phase1/B1_3mode_reddit_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv"
+      }
+    },
+    "highlights": {
+      "B0/classifieds": {
+        "best_signal_AUROC": 0.7734,
+        "best_signal_AUROC_mode": "B0/classifieds/Vision",
+        "fp_cross_reference": "B0 FP rates attached when available; B1 FP table is not in sr_fp_per_mode.json.",
+        "honest_commit_mode_lowest_ECE_verbal": null,
+        "lowest_ECE_verbal": null
+      },
+      "B0/reddit": {
+        "best_signal_AUROC": 0.8166,
+        "best_signal_AUROC_mode": "B0/reddit/DOM",
+        "fp_cross_reference": "B0 FP rates attached when available; B1 FP table is not in sr_fp_per_mode.json.",
+        "honest_commit_mode_lowest_ECE_verbal": null,
+        "lowest_ECE_verbal": null
+      },
+      "B1/classifieds": {
+        "best_signal_AUROC": 0.8155,
+        "best_signal_AUROC_mode": "B1/classifieds/Vision",
+        "fp_cross_reference": "B0 FP rates attached when available; B1 FP table is not in sr_fp_per_mode.json.",
+        "honest_commit_mode_lowest_ECE_verbal": "B1/classifieds/Vision",
+        "lowest_ECE_verbal": 0.601564
+      },
+      "B1/reddit": {
+        "best_signal_AUROC": 0.8624,
+        "best_signal_AUROC_mode": "B1/reddit/Vision",
+        "fp_cross_reference": "B0 FP rates attached when available; B1 FP table is not in sr_fp_per_mode.json.",
+        "honest_commit_mode_lowest_ECE_verbal": "B1/reddit/DOM",
+        "lowest_ECE_verbal": 0.666124
+      }
+    }
+  },
+  "E4_action_vocabulary": {
+    "axis_contrasts": {
+      "classifieds": {
+        "axis_1_text": {
+          "left_mode": "DOM",
+          "mean_per_task_fraction_shift": {
+            "back": -0.015444,
+            "click": -0.007387,
+            "finish": 0.004093,
+            "forward": 0.0,
+            "other": 0.0,
+            "scroll": 0.008484,
+            "select_option": 0.004815,
+            "tab_focus": -0.009481,
+            "type": 0.014919,
+            "wait": 0.0
+          },
+          "n": 234,
+          "right_mode": "Phantom-DOM",
+          "top_abs_shifts": [
+            {
+              "action_type": "back",
+              "mean_fraction_shift": -0.015444
+            },
+            {
+              "action_type": "type",
+              "mean_fraction_shift": 0.014919
+            },
+            {
+              "action_type": "tab_focus",
+              "mean_fraction_shift": -0.009481
+            },
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": 0.008484
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": -0.007387
+            }
+          ]
+        },
+        "axis_2_prompt": {
+          "left_mode": "Phantom-DOM",
+          "mean_per_task_fraction_shift": {
+            "back": 0.020905,
+            "click": 0.021441,
+            "finish": -0.014926,
+            "forward": 0.0,
+            "other": 0.0,
+            "scroll": 0.018177,
+            "select_option": -0.01288,
+            "tab_focus": 0.004592,
+            "type": -0.037309,
+            "wait": 0.0
+          },
+          "n": 234,
+          "right_mode": "Phantom-SoM",
+          "top_abs_shifts": [
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.037309
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": 0.021441
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": 0.020905
+            },
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": 0.018177
+            },
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": -0.014926
+            }
+          ]
+        },
+        "axis_3_image": {
+          "left_mode": "Phantom-SoM",
+          "mean_per_task_fraction_shift": {
+            "back": -0.012994,
+            "click": -0.015885,
+            "finish": 0.134728,
+            "forward": 0.0,
+            "other": 0.0,
+            "scroll": -0.095455,
+            "select_option": -0.01025,
+            "tab_focus": -0.007161,
+            "type": 0.006508,
+            "wait": 0.00051
+          },
+          "n": 234,
+          "right_mode": "SoM",
+          "top_abs_shifts": [
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": 0.134728
+            },
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": -0.095455
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": -0.015885
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": -0.012994
+            },
+            {
+              "action_type": "select_option",
+              "mean_fraction_shift": -0.01025
+            }
+          ]
+        },
+        "compound_DOM_to_PSoM": {
+          "left_mode": "DOM",
+          "mean_per_task_fraction_shift": {
+            "back": 0.005462,
+            "click": 0.014055,
+            "finish": -0.010833,
+            "forward": 0.0,
+            "other": 0.0,
+            "scroll": 0.026661,
+            "select_option": -0.008065,
+            "tab_focus": -0.00489,
+            "type": -0.022391,
+            "wait": 0.0
+          },
+          "n": 234,
+          "right_mode": "Phantom-SoM",
+          "top_abs_shifts": [
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": 0.026661
+            },
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.022391
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": 0.014055
+            },
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": -0.010833
+            },
+            {
+              "action_type": "select_option",
+              "mean_fraction_shift": -0.008065
+            }
+          ]
+        }
+      },
+      "reddit": {
+        "axis_1_text": {
+          "left_mode": "DOM",
+          "mean_per_task_fraction_shift": {
+            "back": 0.001377,
+            "click": -0.010428,
+            "finish": -0.005733,
+            "forward": 0.0,
+            "other": 0.0,
+            "scroll": 0.0344,
+            "select_option": 0.015883,
+            "tab_focus": -0.012119,
+            "type": -0.023381,
+            "wait": 0.0
+          },
+          "n": 210,
+          "right_mode": "Phantom-DOM",
+          "top_abs_shifts": [
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": 0.0344
+            },
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.023381
+            },
+            {
+              "action_type": "select_option",
+              "mean_fraction_shift": 0.015883
+            },
+            {
+              "action_type": "tab_focus",
+              "mean_fraction_shift": -0.012119
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": -0.010428
+            }
+          ]
+        },
+        "axis_2_prompt": {
+          "left_mode": "Phantom-DOM",
+          "mean_per_task_fraction_shift": {
+            "back": 0.011381,
+            "click": -0.001351,
+            "finish": 0.014323,
+            "forward": 0.0,
+            "other": 0.0,
+            "scroll": -0.037887,
+            "select_option": -0.003427,
+            "tab_focus": 0.08275,
+            "type": -0.06579,
+            "wait": 0.0
+          },
+          "n": 210,
+          "right_mode": "Phantom-SoM",
+          "top_abs_shifts": [
+            {
+              "action_type": "tab_focus",
+              "mean_fraction_shift": 0.08275
+            },
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.06579
+            },
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": -0.037887
+            },
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": 0.014323
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": 0.011381
+            }
+          ]
+        },
+        "axis_3_image": {
+          "left_mode": "Phantom-SoM",
+          "mean_per_task_fraction_shift": {
+            "back": -0.005376,
+            "click": -0.03081,
+            "finish": 0.070921,
+            "forward": 0.0,
+            "other": 0.0,
+            "scroll": -0.034119,
+            "select_option": 0.012924,
+            "tab_focus": 0.01144,
+            "type": -0.024979,
+            "wait": 0.0
+          },
+          "n": 210,
+          "right_mode": "SoM",
+          "top_abs_shifts": [
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": 0.070921
+            },
+            {
+              "action_type": "scroll",
+              "mean_fraction_shift": -0.034119
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": -0.03081
+            },
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.024979
+            },
+            {
+              "action_type": "select_option",
+              "mean_fraction_shift": 0.012924
+            }
+          ]
+        },
+        "compound_DOM_to_PSoM": {
+          "left_mode": "DOM",
+          "mean_per_task_fraction_shift": {
+            "back": 0.012758,
+            "click": -0.011778,
+            "finish": 0.00859,
+            "forward": 0.0,
+            "other": 0.0,
+            "scroll": -0.003486,
+            "select_option": 0.012456,
+            "tab_focus": 0.070632,
+            "type": -0.089171,
+            "wait": 0.0
+          },
+          "n": 210,
+          "right_mode": "Phantom-SoM",
+          "top_abs_shifts": [
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.089171
+            },
+            {
+              "action_type": "tab_focus",
+              "mean_fraction_shift": 0.070632
+            },
+            {
+              "action_type": "back",
+              "mean_fraction_shift": 0.012758
+            },
+            {
+              "action_type": "select_option",
+              "mean_fraction_shift": 0.012456
+            },
+            {
+              "action_type": "click",
+              "mean_fraction_shift": -0.011778
+            }
+          ]
+        }
+      }
+    },
+    "cells": {
+      "B0/classifieds/DOM": {
+        "back": 0.092757,
+        "click": 0.249815,
+        "finish": 0.04878,
+        "forward": 0.0,
+        "other": 0.0,
+        "scroll": 0.225795,
+        "select_option": 0.075388,
+        "tab_focus": 0.014043,
+        "type": 0.293422,
+        "wait": 0.0
+      },
+      "B0/classifieds/Phantom-DOM": {
+        "back": 0.064701,
+        "click": 0.222435,
+        "finish": 0.05245,
+        "forward": 0.0,
+        "other": 0.0,
+        "scroll": 0.246172,
+        "select_option": 0.078101,
+        "tab_focus": 0.006891,
+        "type": 0.32925,
+        "wait": 0.0
+      },
+      "B0/classifieds/Phantom-SoM": {
+        "back": 0.099326,
+        "click": 0.2547,
+        "finish": 0.043278,
+        "forward": 0.0,
+        "other": 0.0,
+        "scroll": 0.236254,
+        "select_option": 0.065981,
+        "tab_focus": 0.009933,
+        "type": 0.290529,
+        "wait": 0.0
+      },
+      "B0/classifieds/SoM": {
+        "back": 0.098907,
+        "click": 0.260437,
+        "finish": 0.091451,
+        "forward": 0.0,
+        "other": 0.0,
+        "scroll": 0.199801,
+        "select_option": 0.060139,
+        "tab_focus": 0.006461,
+        "type": 0.281809,
+        "wait": 0.000994
+      },
+      "B0/classifieds/Vision": {
+        "back": 0.029956,
+        "click": 0.270697,
+        "finish": 0.05719,
+        "forward": 0.0,
+        "other": 0.0,
+        "scroll": 0.246187,
+        "select_option": 0.037037,
+        "tab_focus": 0.005447,
+        "type": 0.353486,
+        "wait": 0.0
+      },
+      "B0/reddit/DOM": {
+        "back": 0.059243,
+        "click": 0.35808,
+        "finish": 0.036745,
+        "forward": 0.0,
+        "other": 0.0,
+        "scroll": 0.141732,
+        "select_option": 0.00075,
+        "tab_focus": 0.025872,
+        "type": 0.377578,
+        "wait": 0.0
+      },
+      "B0/reddit/Phantom-DOM": {
+        "back": 0.050728,
+        "click": 0.337214,
+        "finish": 0.038669,
+        "forward": 0.0,
+        "other": 0.0,
+        "scroll": 0.197505,
+        "select_option": 0.011227,
+        "tab_focus": 0.014553,
+        "type": 0.350104,
+        "wait": 0.0
+      },
+      "B0/reddit/Phantom-SoM": {
+        "back": 0.085096,
+        "click": 0.38125,
+        "finish": 0.042308,
+        "forward": 0.0,
+        "other": 0.0,
+        "scroll": 0.148558,
+        "select_option": 0.010577,
+        "tab_focus": 0.041827,
+        "type": 0.290385,
+        "wait": 0.0
+      },
+      "B0/reddit/SoM": {
+        "back": 0.095801,
+        "click": 0.391484,
+        "finish": 0.065642,
+        "forward": 0.0,
+        "other": 0.0,
+        "scroll": 0.155529,
+        "select_option": 0.015376,
+        "tab_focus": 0.049675,
+        "type": 0.226493,
+        "wait": 0.0
+      },
+      "B0/reddit/Vision": {
+        "back": 0.032571,
+        "click": 0.326403,
+        "finish": 0.063756,
+        "forward": 0.0,
+        "other": 0.0,
+        "scroll": 0.255024,
+        "select_option": 0.005544,
+        "tab_focus": 0.06237,
+        "type": 0.254331,
+        "wait": 0.0
+      }
+    },
+    "uncommon_action_highlights": [
+      {
+        "action_type": "select_option",
+        "high_fraction": 0.015376,
+        "high_mode": "SoM",
+        "low_fraction": 0.00075,
+        "low_mode": "DOM",
+        "ratio": 20.503253,
+        "site": "reddit"
+      },
+      {
+        "action_type": "tab_focus",
+        "high_fraction": 0.06237,
+        "high_mode": "Vision",
+        "low_fraction": 0.014553,
+        "low_mode": "Phantom-DOM",
+        "ratio": 4.285714,
+        "site": "reddit"
+      },
+      {
+        "action_type": "back",
+        "high_fraction": 0.099326,
+        "high_mode": "Phantom-SoM",
+        "low_fraction": 0.029956,
+        "low_mode": "Vision",
+        "ratio": 3.315683,
+        "site": "classifieds"
+      },
+      {
+        "action_type": "back",
+        "high_fraction": 0.095801,
+        "high_mode": "SoM",
+        "low_fraction": 0.032571,
+        "low_mode": "Vision",
+        "ratio": 2.941304,
+        "site": "reddit"
+      },
+      {
+        "action_type": "finish",
+        "high_fraction": 0.091451,
+        "high_mode": "SoM",
+        "low_fraction": 0.043278,
+        "low_mode": "Phantom-SoM",
+        "ratio": 2.113125,
+        "site": "classifieds"
+      },
+      {
+        "action_type": "select_option",
+        "high_fraction": 0.078101,
+        "high_mode": "Phantom-DOM",
+        "low_fraction": 0.037037,
+        "low_mode": "Vision",
+        "ratio": 2.108729,
+        "site": "classifieds"
+      }
+    ]
+  },
+  "data_status": {
+    "p_prompt": {
+      "B0_phantom_prompt_reddit_20260429": {
+        "episodes": 48,
+        "policy": "P-prompt is not included in E1-E4 contrasts.",
+        "status": "partial / pending"
+      }
+    },
+    "step_dirs": {
+      "classifieds": {
+        "DOM": "results/visualwebarena/phase1/B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
+        "Phantom-DOM": "results/visualwebarena/phase1/B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+        "Phantom-SoM": "results/visualwebarena/phase1/B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+        "SoM": "results/visualwebarena/phase1/B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+        "Vision": "results/visualwebarena/phase1/B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes"
+      },
+      "reddit": {
+        "DOM": "results/visualwebarena/phase1/B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
+        "Phantom-DOM": "results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+        "Phantom-SoM": "results/visualwebarena/phase1/B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
+        "SoM": "results/visualwebarena/phase1/B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
+        "Vision": "results/visualwebarena/phase1/B0_3mode_reddit_20260422/phase1_vision_router_0/episodes"
+      }
+    }
+  },
+  "method": "Per-task mechanism evidence over B0 reddit/classifieds five-mode runs. E1 uses URL-changing click transition sets, E2 uses first divergent URL-signature step on symmetric-difference adjusted-success tasks, E3 aggregates existing confidence analyzer outputs across paper-grade B0/B1 cells without recomputing calibration, and E4 reports full action_type distributions. Element ids are not used because they are not mode-invariant or step-invariant.",
+  "paper_section5_implications": {
+    "E1_headline": "DOM and P-SoM click transitions diverge at event granularity: compound click-target Jaccard is 0.421 on reddit and 0.531 on classifieds.",
+    "E2_headline": "Boundary divergence is usually visible early among symmetric-difference tasks: DOM vs P-SoM early rates are reddit 91.3% and classifieds 73.9%.",
+    "E3_headline": "The strongest calibration/routing cell is B1/reddit/Vision with max AUROC 0.862; B0 token ECE is unavailable in existing per-run outputs.",
+    "E4_headline": "The largest action-vocabulary shift is classifieds axis_3_image finish (0.135 right-minus-left)."
+  },
+  "validation": {
+    "E1_mean_jaccard_range_checks": {
+      "classifieds/axis_1_text": true,
+      "classifieds/axis_2_prompt": true,
+      "classifieds/axis_3_image": true,
+      "classifieds/compound_DOM_to_PSoM": true,
+      "reddit/axis_1_text": true,
+      "reddit/axis_2_prompt": true,
+      "reddit/axis_3_image": true,
+      "reddit/compound_DOM_to_PSoM": true
+    },
+    "E2_first_divergent_step_range_checks": {
+      "classifieds/DOM_vs_Phantom-DOM": true,
+      "classifieds/DOM_vs_Phantom-SoM": true,
+      "classifieds/Phantom-DOM_vs_Phantom-SoM": true,
+      "classifieds/Phantom-SoM_vs_SoM": true,
+      "reddit/DOM_vs_Phantom-DOM": true,
+      "reddit/DOM_vs_Phantom-SoM": true,
+      "reddit/Phantom-DOM_vs_Phantom-SoM": true,
+      "reddit/Phantom-SoM_vs_SoM": true
+    },
+    "E3_cell_count": {
+      "expected": 16,
+      "observed": 16,
+      "pass": true
+    },
+    "E4_action_dist_sum_checks": {
+      "B0/classifieds/DOM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/classifieds/Phantom-DOM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/classifieds/Phantom-SoM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/classifieds/SoM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/classifieds/Vision": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/reddit/DOM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/reddit/Phantom-DOM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/reddit/Phantom-SoM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/reddit/SoM": {
+        "pass": true,
+        "sum": 1.0
+      },
+      "B0/reddit/Vision": {
+        "pass": true,
+        "sum": 1.0
+      }
+    },
+    "axis1_n_checks": {
+      "classifieds": {
+        "expected": 234,
+        "observed": 234,
+        "pass": true
+      },
+      "reddit": {
+        "expected": 210,
+        "observed": 210,
+        "pass": true
+      }
+    },
+    "effect_size_presence_checks": {
+      "E1_any_click_divergence_gt_0.1": true,
+      "E2_any_early_or_late_rate_gt_0.1": true,
+      "E3_any_AUROC_effect_gt_0.1": true,
+      "E4_any_action_shift_gt_0.1": true
+    },
+    "pass": true
+  }
+}
