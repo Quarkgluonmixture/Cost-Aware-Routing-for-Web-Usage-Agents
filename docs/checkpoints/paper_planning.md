@@ -403,6 +403,62 @@ P-prompt 是必需的，因为它是 **axis 2 在 AXTree-text context 下的唯�
 
 ---
 
+### Mechanism Tier 1/2/3 escalation plan (Section 5 explanation methodology, 2026-04-29)
+
+4-Layer evidence catalogs *what shifts*; Section 5 mechanism explains *why*. Three escalating tiers, only Tier 1 is currently feasible; Tier 2/3 execute on existing 实验笔记 §19 future-work plan once B1 GPU frees up.
+
+#### Tier 1 — Behavioral mechanism (paper-ready now, B0+B1 data, no GPU work)
+
+Per-task per-step decision-quality metrics, mode-invariant, computable from existing step JSONL:
+
+| Metric | What it measures | Layer | Status |
+|---|---|---|---|
+| **E1** click-target Jaccard | per-task `(pre_url, post_url)` transition signature, mode-invariant + step-invariant | Layer 2 micro | 🟢 codex prompt ready (`mechanism_per_task_explanation.md`) |
+| **E2** trajectory boundary | for symmetric-diff success tasks, first divergent step | Layer 2 micro | 🟢 prompt ready |
+| **E3** confidence calibration cross-condition | ECE/MCE/Brier/AUROC per (model, site, mode), aggregating existing `analyze_confidence_calibration.py` per-run output | Layer 0b + Layer 1 | 🟢 prompt ready |
+| **E4** action vocabulary distribution | full action_type × subtype frequency per cell (extends axis_effect_size's 4 metrics) | Layer 1 macro | 🟢 prompt ready |
+
+Tier 1 deliverables: `scripts/analysis/mechanism_per_task.py` + `docs/analysis/cross_sites/mechanism_per_task.{json,md}`. Adds `make analyze-mechanism` target. ~80K codex tokens. **Trigger anytime**.
+
+#### Tier 2 — Mechanistic interpretability (B1-only, executes 实验笔记 §19 future-work)
+
+实验笔记 §19 已 documented "Tool Calling is a Linear, Steerable Circuit" (ACL 2026, Qwen3 4B verified) 适用于 P79: action selection 是线性电路, cosine gap 预测 92% 错误, L23+ steering 可 80-93% 准确率切换 tool。Section 5 paper-strongest mechanism evidence 走这条路:
+
+| Metric | What it measures | Tooling | Status |
+|---|---|---|---|
+| **M1** B1 attention pattern probe | feed same task obs through B1 in DOM/P-text/P-SoM modes; extract attention to "forum sidebar link" / "search box" / "post title" tokens; measure shift across modes | `output_attentions=True` forward pass, ~2300 forwards | 🟡 blocked B1 GPU contention |
+| **M2** B1 hidden state probing | layer L hidden state → probe "task will succeed"; PCA cosine gap (per §19) → AUROC vs logprob | `output_hidden_states=True` forward pass; PCA + LR | 🟡 blocked B1 GPU |
+| **M3** Token-level decision attribution | next-action token distribution per mode; quantify "axis 1 改 token-level decision prior" claim | forward inference, no training | 🟡 blocked B1 GPU |
+
+**Trigger condition**: B1 GPU 空 (~B1 phantom 4-cell chain done, ~30-40d ETA). 不需要重跑 environment — `~2300 task × ~12 steps = ~28K forward passes`, 离线 inference 单 GPU 可在 ~1-2 天 batch 跑完。Code 已部分存在: `analyze_confidence_calibration.py` 处理 logprob, 可扩展 `output_hidden_states/attentions` 提取。
+
+**Paper value**: 比 Tier 1 行为分析更 mechanistic, reviewer 期望顶刊看到。直接对应 ACL 2026 Tool Calling lit。
+
+#### Tier 3 — Causal mechanistic intervention (heavy, may be future paper)
+
+| Metric | What it measures | Tooling | Status |
+|---|---|---|---|
+| **H1** Activation patching | DOM forward pass at (layer L, step S) → patch hidden state into P-text run → does behavior become DOM-like? | causal scrubbing infrastructure | 🔴 blocked B1 GPU + 1-2 weeks impl |
+| **H2** Steering vectors | train PCA / linear probe to find "mode direction" in activation space; add steering vector at inference to induce mode-like behavior without obs/prompt swap | per §19 future work "L23 steering 修正 'know-but-cant-say'" | 🔴 blocked B1 GPU + advanced technique |
+| **H3** Attention head ablation | systematic zero-out specific heads; find "axis 1 head" / "axis 2 head" responsible for mode-specific behavior | head-by-head intervention scaffold | 🔴 heaviest, possible split paper |
+
+**Trigger condition**: 顶刊投稿 reviewer 要求 mechanistic 强化 OR 时间允许提前做。可能的 split: H1+H2 进 Section 5, H3 留 future work / paper 2.
+
+**Paper value**: causal claim, 比 correlation-based mechanism (Tier 2) 更强. ACL/NeurIPS mechanistic interpretability track 期望.
+
+#### 总体 Section 5 mechanism narrative cascade
+
+```
+Section 5 (顶刊版) 期望证据 stack:
+  Tier 1 behavioral (E1-E4)  ← Section 5 fast-write, 现在 ready
+  Tier 2 mechanistic (M1-M3) ← Section 5 strengthening, ~30-40d
+  Tier 3 causal (H1-H3)      ← Section 5 顶刊 differentiator, optional
+```
+
+如果 deadline 紧, Tier 1 + Tier 2 already make Section 5 paper-grade. Tier 3 是 nice-to-have / split-paper option.
+
+---
+
 ## §4 Paper Section Status (2026-04-29, 8 sections final scope)
 
 | Section | evidence 质量 | 状态 | Hard blocker |
