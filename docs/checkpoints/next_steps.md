@@ -265,6 +265,7 @@ nohup bash scripts/queues/queue_chain.sh \
 | **13** | **Section 5 prose 写** (3-axis cascade diamond + cls task-pool 0.53 paradox + Layer 2 micro mechanism) | ~50K | 待 P-prompt reddit done (~6h) + #11 一起发 | 🟡 ~Thu |
 | 14 | Codex audit shopping VWA (466) — full 5-mode | ~500K | 待 shopping 5-mode 数据 | ⏳ ~Week 2-3 |
 | 14b | Codex audit reddit cat refine (类 shopping A-refine 04-29) | ~50K | red 5-mode FRESH already | 🟢 ready |
+| **14c** | **Codex redo `disagreement_clusters.md` 含 5+1 phantom modes** (mechanism narrative for paper Section 5; current md is 04-27 baseline-only snapshot, drives `fig_capability_b0_b1`) | ~80K | B1 phantom 4-cell + B0 P-prompt diamond done (~30-40d) | ⏳ Week 4-5 |
 | 15 | Codex audit WA tasks (480) | ~500K | 待 WA 数据 | ⏳ Week 4-5 |
 | **16** | **Section 6 Routing prose** (Tier 1+2 implementation + eval + 4-fig stack) | ~50K | Tier 1+2 prototype done + figures | ⏳ Week 5-6 |
 | 17 | Section 7 Generalization 草稿 (cross-site/model) | ~50K | shopping + WA + Claude done | ⏳ Week 6-7 |
