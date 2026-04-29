@@ -1,13 +1,16 @@
-# B1 Phantom-DOM ablation (§103) — VWA shopping
+# B1 P-text ablation (§103) — VWA shopping
 # DOM prompt + SoM marks 文本 + 无图，与 B1 phantom_shopping 唯一差: system prompt
 # 待 Myriad 独占 GPU 跑 final
+
+# Note: observation_mode value kept as "phantom_dom" (legacy alias) so condition_id
+# stays phase1_phantom_dom_router_0 — paper-grade run dirs already use this path.
 
 defaults:
   - configs/exp_v2_base.yaml
 
 experiment:
   phase: "phase1"
-  name: "B1_phantom_dom_shopping"
+  name: "B1_phantom_text_shopping"
 
 task:
   include_sites: ["shopping"]

@@ -1,6 +1,6 @@
 # B0 Phantom-prompt (P-prompt §105) — VWA classifieds
-# SoM prompt + AXTree text + 无图。symmetric counterpart of phantom_dom (P-text).
-# Together with phantom_dom, completes the diamond design and lets us measure
+# SoM prompt + AXTree text + 无图。symmetric counterpart of phantom_text (P-text).
+# Together with phantom_text, completes the diamond design and lets us measure
 # axis 2 (prompt) effect in BOTH AXTree-text and [SOM_MARKS]-text contexts,
 # disentangling prompt × text interaction.
 

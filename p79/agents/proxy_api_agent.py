@@ -438,11 +438,14 @@ Action Schema:
             # P-SoM (Phantom-SoM, §25): SoM prompt + [SOM_MARKS] text + no image.
             # Image-mismatched: prompt promises screenshot but agent receives none.
             "phantom_som": som_prompt,
-            # P-text (Phantom-DOM ablation): DOM prompt + [SOM_MARKS] text + no image.
+            # P-text ablation: DOM prompt + [SOM_MARKS] text + no image.
             # Text-mismatched: prompt expects AXTree but obs is [SOM_MARKS].
+            # phantom_dom is the legacy mode value (paper-grade run dirs use it);
+            # phantom_text is the current name. Both dispatch identically.
             "phantom_dom": dom_prompt,
+            "phantom_text": dom_prompt,
             # P-prompt: SoM prompt + AXTree text + no image. Symmetric counterpart of
-            # phantom_dom — only the prompt axis is swapped from DOM. Lets us measure
+            # phantom_text — only the prompt axis is swapped from DOM. Lets us measure
             # the prompt effect in AXTree-text context (current cascade only measures
             # it in [SOM_MARKS]-text context via P-text -> P-SoM).
             "phantom_prompt": som_prompt,
@@ -507,9 +510,10 @@ Action Schema:
         # Build obs_section per mode — mirrors qwen3vl_agent.py exactly.
         if observation_mode == "vision":
             obs_section = ""  # no text — screenshot only
-        elif observation_mode in ("som", "phantom_som", "phantom_dom"):
+        elif observation_mode in ("som", "phantom_som", "phantom_dom", "phantom_text"):
             # obs_text already contains [SOM_MARKS]...[/SOM_MARKS]; pass through directly.
             # phantom_som receives the same text but no image (see som.py).
+            # phantom_text is the current name for phantom_dom (legacy alias preserved).
             obs_section = obs_text if obs_text else ""
         else:
             # "dom" or "phantom_prompt": AXTree text. phantom_prompt uses SoM-prompt

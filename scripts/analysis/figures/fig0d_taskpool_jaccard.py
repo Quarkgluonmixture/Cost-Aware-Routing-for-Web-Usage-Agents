@@ -59,6 +59,27 @@ PANELS = [
             "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
         },
     },
+    {
+        "key": "b1_cls",
+        "title": "B1 classifieds",
+        "expected": 234,
+        "modes": {
+            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
+            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
+        },
+    },
+    {
+        "key": "b1_red",
+        "title": "B1 reddit",
+        "expected": 210,
+        "modes": {
+            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
+            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
+            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
+        },
+    },
 ]
 
 
@@ -95,11 +116,12 @@ def jaccard(left: set[int], right: set[int]) -> tuple[float, int, int]:
     return (inter / union if union else 1.0), inter, union
 
 
-def panel_sets(panel: dict) -> tuple[dict[str, set[int]], dict[str, int]]:
+def panel_sets(panel: dict) -> tuple[dict[str, set[int]], dict[str, int], list[str]]:
     sets: dict[str, set[int]] = {}
     observed_counts: dict[str, int] = {}
     expected = panel["expected"]
-    for mode in MODE_ORDER:
+    panel_modes = [m for m in MODE_ORDER if m in panel["modes"]]
+    for mode in panel_modes:
         successes, observed = load_success_set(panel["modes"][mode])
         sets[mode] = successes
         observed_counts[mode] = len(observed)
@@ -108,18 +130,18 @@ def panel_sets(panel: dict) -> tuple[dict[str, set[int]], dict[str, int]]:
                 f"[warn] {panel['title']} {mode}: n={len(observed)} expected={expected}",
                 file=sys.stderr,
             )
-    return sets, observed_counts
+    return sets, observed_counts, panel_modes
 
 
 def draw_panel(ax: plt.Axes, panel: dict, cmap) -> None:
-    sets, observed_counts = panel_sets(panel)
+    sets, observed_counts, panel_modes = panel_sets(panel)
     expected = panel["expected"]
-    n_modes = len(MODE_ORDER)
+    n_modes = len(panel_modes)
     matrix = np.zeros((n_modes, n_modes), dtype=float)
-    annotations: list[list[str]] = [["" for _ in MODE_ORDER] for _ in MODE_ORDER]
+    annotations: list[list[str]] = [["" for _ in panel_modes] for _ in panel_modes]
 
-    for i, left in enumerate(MODE_ORDER):
-        for j, right in enumerate(MODE_ORDER):
+    for i, left in enumerate(panel_modes):
+        for j, right in enumerate(panel_modes):
             value, inter, union = jaccard(sets[left], sets[right])
             matrix[i, j] = value
             if i == j:
@@ -129,25 +151,25 @@ def draw_panel(ax: plt.Axes, panel: dict, cmap) -> None:
                 annotations[i][j] = f"{value:.2f}\n{inter}/{union}"
 
     im = ax.imshow(matrix, vmin=0.0, vmax=1.0, cmap=cmap)
-    ax.set_xticks(range(n_modes), MODE_ORDER, rotation=35, ha="right", fontsize=8.5)
-    ax.set_yticks(range(n_modes), MODE_ORDER, fontsize=8.5)
-    ax.set_title(f"{panel['title']} (N={expected})", fontsize=12, fontweight="bold")
+    ax.set_xticks(range(n_modes), panel_modes, rotation=35, ha="right", fontsize=8.0)
+    ax.set_yticks(range(n_modes), panel_modes, fontsize=8.0)
+    ax.set_title(f"{panel['title']} (N={expected})", fontsize=11, fontweight="bold")
     ax.set_xlabel("mode")
     ax.set_ylabel("mode")
 
-    for tick, mode in zip(ax.get_xticklabels(), MODE_ORDER):
+    for tick, mode in zip(ax.get_xticklabels(), panel_modes):
         tick.set_color(COLORS[mode])
         tick.set_fontweight("bold")
-    for tick, mode in zip(ax.get_yticklabels(), MODE_ORDER):
+    for tick, mode in zip(ax.get_yticklabels(), panel_modes):
         tick.set_color(COLORS[mode])
         tick.set_fontweight("bold")
 
     for i in range(n_modes):
         for j in range(n_modes):
             color = "white" if matrix[i, j] < 0.42 else "#111111"
-            ax.text(j, i, annotations[i][j], ha="center", va="center", fontsize=7.2, color=color)
+            ax.text(j, i, annotations[i][j], ha="center", va="center", fontsize=6.5, color=color)
 
-    observed_note = ", ".join(f"{mode} n={observed_counts[mode]}" for mode in MODE_ORDER if observed_counts[mode] != expected)
+    observed_note = ", ".join(f"{mode} n={observed_counts[mode]}" for mode in panel_modes if observed_counts[mode] != expected)
     if observed_note:
         ax.text(
             0.5,
@@ -166,7 +188,7 @@ def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 10, "figure.dpi": 150})
     cmap = LinearSegmentedColormap.from_list("overlap", ["#b91c1c", "#fef2f2", "#dbeafe", "#1d4ed8"])
-    fig, axes = plt.subplots(1, 2, figsize=(12.4, 5.8), constrained_layout=True)
+    fig, axes = plt.subplots(1, 4, figsize=(22.0, 5.8), constrained_layout=True)
     image = None
     for ax, panel in zip(axes.flat, PANELS):
         image = draw_panel(ax, panel, cmap)

@@ -52,7 +52,7 @@ pytest tests/                                      # 81 测试
 
 ## 三阶段实验设计
 
-- **Phase 1** — 表征筛选：5-mode flat (`dom` / `som` / `vision` / `phantom_dom` / `phantom_som`)，per site per model
+- **Phase 1** — 表征筛选：5-mode flat (`dom` / `som` / `vision` / `phantom_text` / `phantom_som`)，per site per model
 - **Phase 2** — 路由研究：Tier 1 oracle router (TF-IDF + LR) + Tier 2 first-step trigger router（Phantom-SoM 是 router 第 4 arm，同一篇 paper）
 - **Phase 3** — 模块消融：M1(select fallback) / M2(input fallback) / M3(retry) / M4(two-stage)（未启动）
 
@@ -62,7 +62,7 @@ pytest tests/                                      # 81 测试
 |---|---|
 | B0 VWA cls + red 5-mode FRESH paper-grade clean | ✅ done (Critical path A B0 部分) |
 | B0 VWA shopping DOM pilot | 🟡 跑中 ~9h ETA |
-| B0 VWA shopping {SoM, Vision, Phantom-DOM, Phantom-SoM} | ⏳ 待 DOM pilot 验证 |
+| B0 VWA shopping {SoM, Vision, P-text, Phantom-SoM} | ⏳ 待 DOM pilot 验证 |
 | B1 VWA cls phantom_som | 🟡 跑中 ~7-10d ETA (GPU contention) |
 | B1 VWA red phantom + B1 shopping 5-mode | ⏳ chain after B1 cls done |
 | B0/B1 WA 480 tasks | ⏳ Week 4-5 cross-bench generalization |
@@ -75,7 +75,7 @@ pytest tests/                                      # 81 测试
   - `dom` — viewport-only AXTree
   - `som` — `[SOM_MARKS]` text + 带框截图
   - `vision` — 裸截图
-  - `phantom_dom` — DOM prompt + AXTree, 无图（control for prompt vs image effect）
+  - `phantom_text` (P-text; legacy mode value `phantom_dom` still accepted) — DOM prompt + `[SOM_MARKS]` text, 无图（control for prompt vs image effect）
   - `phantom_som` — SoM prompt + `[SOM_MARKS]` text, 无图（hidden 4th routing arm）
 - **B1 Router**: off (固定策略) / on (规则路由 / oracle / learned) — Phase 2
 - **M1-M4**: 二级模块，Phase 3 逐一消融
@@ -194,8 +194,8 @@ make rsync-artifacts-from-hub RUN=... COND=phase1_phantom_som_router_0   # 包�
 ## 实验启动 hard rules（paper-grade 不可违反）
 
 1. **同 site 同时只能跑一个 baseline (B0 XOR B1)** — 否则共享 user account / cart / session → cross-contam
-2. **跑实验必须 reset 站点** — 用 `RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh ...` 或 `queue_phantom_{som,dom}.sh`
-3. **禁止裸用 `python scripts/run_experiment.py`** — 必须走 queue script (`queue_baseline.sh` / `queue_phantom_som.sh` / `queue_phantom_dom.sh`)。Queue 处理 reset (race-safe)、env loading、watchdog 启动、idempotent skip。裸 runner 实证导致 contamination（04-28 audit）。
+2. **跑实验必须 reset 站点** — 用 `RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh ...` 或 `queue_phantom_{som,text}.sh`
+3. **禁止裸用 `python scripts/run_experiment.py`** — 必须走 queue script (`queue_baseline.sh` / `queue_phantom_som.sh` / `queue_phantom_text.sh`)。Queue 处理 reset (race-safe)、env loading、watchdog 启动、idempotent skip。裸 runner 实证导致 contamination（04-28 audit）。
 
 ## 参考文档
 

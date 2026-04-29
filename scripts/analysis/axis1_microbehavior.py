@@ -44,22 +44,39 @@ TASK_CONFIGS = {
     "classifieds": ROOT / "external/visualwebarena/config_files/vwa/test_classifieds.json",
 }
 
-STEP_DIRS = {
-    "reddit": {
-        "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-        "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-        "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-        "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
+    "B0": {
+        "reddit": {
+            "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
+            "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
+            "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
+            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+        },
+        "classifieds": {
+            "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
+            "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
+            "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+        },
     },
-    "classifieds": {
-        "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-        "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-        "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-        "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+    "B1": {
+        "reddit": {
+            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
+            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
+            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
+        },
+        "classifieds": {
+            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
+            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
+            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
+        },
     },
 }
+BASELINES = ["B0", "B1"]
+SITES_LIST = ["reddit", "classifieds"]
 
 MODE_LABELS = {
     "DOM": "DOM",
@@ -208,9 +225,11 @@ def consecutive_unique_routes(steps: list[dict[str, Any]], *, include_query: boo
     return trajectory
 
 
-def per_task_mode_metrics(site: str, mode: str, task_configs: dict[int, dict[str, Any]]) -> dict[int, dict[str, Any]]:
-    ep_dir = STEP_DIRS[site][mode]
+def per_task_mode_metrics(baseline: str, site: str, mode: str, task_configs: dict[int, dict[str, Any]]) -> dict[int, dict[str, Any]]:
+    ep_dir = STEP_DIRS.get(baseline, {}).get(site, {}).get(mode)
     out: dict[int, dict[str, Any]] = {}
+    if ep_dir is None or not ep_dir.exists():
+        return out
     for path in sorted(ep_dir.glob(f"{site}_task_*_steps_v2.jsonl")):
         task_id = task_id_from_path(path)
         steps = read_steps(path)
@@ -348,14 +367,21 @@ def contrast_metrics(left: dict[int, dict[str, Any]], right: dict[int, dict[str,
     }
 
 
-def macro_axis1_effects(site: str) -> dict[str, float]:
+def macro_axis1_effects(baseline: str, site: str) -> dict[str, float]:
     if not MACRO_JSON.exists():
         return {}
     data = read_json(MACRO_JSON)
-    site_data = data.get("results", {}).get(site, {})
+    # New schema: results[baseline][site][metric]; fall back to legacy results[site][metric] if needed.
+    results = data.get("results", {})
+    if baseline in results and site in results[baseline]:
+        site_data = results[baseline][site]
+    else:
+        site_data = results.get(site, {}) if baseline == "B0" else {}
     effects: dict[str, float] = {}
     for metric, block in site_data.items():
         text = block.get("text", {})
+        if not text or text.get("n", 0) == 0:
+            continue
         key = "cohen_h" if "cohen_h" in text else "cohen_d_z"
         value = text.get(key)
         if isinstance(value, (int, float)) and not math.isnan(float(value)):
@@ -391,8 +417,10 @@ def trajectory_summary(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def select_classified_case_tasks(metrics: dict[str, dict[str, dict[int, dict[str, Any]]]]) -> list[int]:
-    left = metrics["classifieds"]["DOM"]
-    right = metrics["classifieds"]["P-text"]
+    left = metrics["classifieds"].get("DOM", {})
+    right = metrics["classifieds"].get("P-text", {})
+    if not left or not right:
+        return []
     scored = []
     for task_id in sorted(set(left) & set(right)):
         left_hit = left[task_id]["target_url_visited"]
@@ -412,9 +440,12 @@ def build_case_studies(
     cases: list[dict[str, Any]] = []
     requested = {"reddit": REPORT_CASE_REDDIT, "classifieds": select_classified_case_tasks(metrics)}
     for site, task_ids in requested.items():
+        site_modes = metrics.get(site, {})
+        if not site_modes.get("DOM") or not site_modes.get("P-text"):
+            continue
         for task_id in task_ids:
-            dom = metrics[site]["DOM"].get(task_id)
-            pdom = metrics[site]["P-text"].get(task_id)
+            dom = site_modes["DOM"].get(task_id)
+            pdom = site_modes["P-text"].get(task_id)
             if not dom or not pdom:
                 continue
             cases.append(
@@ -458,68 +489,99 @@ def format_paths(paths: list[str]) -> str:
 
 
 def main() -> None:
-    task_configs = {site: load_task_configs(site) for site in ["reddit", "classifieds"]}
-    metrics: dict[str, dict[str, dict[int, dict[str, Any]]]] = {}
-    for site in ["reddit", "classifieds"]:
-        metrics[site] = {}
-        for mode in ["DOM", "Vision", "SoM", "Phantom-SoM", "P-text"]:
-            metrics[site][mode] = per_task_mode_metrics(site, mode, task_configs[site])
+    task_configs = {site: load_task_configs(site) for site in SITES_LIST}
+    # metrics_by_baseline[baseline][site][mode] -> dict task_id -> per-task metric
+    metrics_by_baseline: dict[str, dict[str, dict[str, dict[int, dict[str, Any]]]]] = {}
+    for baseline in BASELINES:
+        metrics_by_baseline[baseline] = {}
+        for site in SITES_LIST:
+            metrics_by_baseline[baseline][site] = {}
+            for mode in ["DOM", "Vision", "SoM", "Phantom-SoM", "P-text"]:
+                metrics_by_baseline[baseline][site][mode] = per_task_mode_metrics(
+                    baseline, site, mode, task_configs[site]
+                )
 
-    summary = {
-        site: {mode: summarize_mode(mode_data) for mode, mode_data in site_modes.items()}
-        for site, site_modes in metrics.items()
-    }
+    summary: dict[str, dict[str, dict[str, Any]]] = {}
+    for baseline, sites in metrics_by_baseline.items():
+        summary[baseline] = {}
+        for site, site_modes in sites.items():
+            summary[baseline][site] = {
+                mode: summarize_mode(mode_data) for mode, mode_data in site_modes.items() if mode_data
+            }
 
-    axis_contrasts: dict[str, dict[str, Any]] = {}
+    axis_contrasts: dict[str, dict[str, dict[str, Any]]] = {}
     validation: dict[str, Any] = {
         "expected_axis1_n": EXPECTED_N,
         "axis1_n_checks": {},
         "target_extraction": {},
         "url_jaccard_range_checks": {},
     }
-    for site in ["reddit", "classifieds"]:
-        axis_contrasts[site] = {}
-        target_available = sum(1 for cfg in task_configs[site].values() if cfg.get("target_url"))
-        validation["target_extraction"][site] = {
-            "task_config_n": len(task_configs[site]),
-            "target_url_extracted_n": target_available,
-        }
-        for axis_name, (left_mode, right_mode) in AXIS_CONTRASTS.items():
-            contrast = contrast_metrics(metrics[site][left_mode], metrics[site][right_mode])
-            contrast["contrast"] = f"{MODE_LABELS[right_mode]} minus {MODE_LABELS[left_mode]}"
-            contrast["left_mode"] = MODE_LABELS[left_mode]
-            contrast["right_mode"] = MODE_LABELS[right_mode]
-            axis_contrasts[site][axis_name] = contrast
-            if axis_name == "axis_1_text":
-                validation["axis1_n_checks"][site] = {
-                    "observed": contrast["n"],
-                    "expected": EXPECTED_N[site],
-                    "pass": contrast["n"] == EXPECTED_N[site],
+    for baseline in BASELINES:
+        axis_contrasts[baseline] = {}
+        for site in SITES_LIST:
+            axis_contrasts[baseline][site] = {}
+            site_metrics = metrics_by_baseline[baseline][site]
+            if baseline == "B0":
+                target_available = sum(1 for cfg in task_configs[site].values() if cfg.get("target_url"))
+                validation["target_extraction"][site] = {
+                    "task_config_n": len(task_configs[site]),
+                    "target_url_extracted_n": target_available,
                 }
-            value = contrast.get("url_jaccard_mean")
-            validation["url_jaccard_range_checks"][f"{site}/{axis_name}"] = {
-                "value": value,
-                "pass": value is not None and 0.0 <= value <= 1.0,
-            }
+            for axis_name, (left_mode, right_mode) in AXIS_CONTRASTS.items():
+                left = site_metrics.get(left_mode, {})
+                right = site_metrics.get(right_mode, {})
+                if not left or not right:
+                    # Skip contrasts that need missing modes (B1 cls P-text / B1 red phantom)
+                    axis_contrasts[baseline][site][axis_name] = {
+                        "n": 0,
+                        "skipped": True,
+                        "contrast": f"{MODE_LABELS[right_mode]} minus {MODE_LABELS[left_mode]}",
+                        "left_mode": MODE_LABELS[left_mode],
+                        "right_mode": MODE_LABELS[right_mode],
+                    }
+                    continue
+                contrast = contrast_metrics(left, right)
+                contrast["contrast"] = f"{MODE_LABELS[right_mode]} minus {MODE_LABELS[left_mode]}"
+                contrast["left_mode"] = MODE_LABELS[left_mode]
+                contrast["right_mode"] = MODE_LABELS[right_mode]
+                axis_contrasts[baseline][site][axis_name] = contrast
+                if axis_name == "axis_1_text":
+                    validation["axis1_n_checks"][f"{baseline}/{site}"] = {
+                        "observed": contrast["n"],
+                        "expected": EXPECTED_N[site],
+                        "pass": contrast["n"] == EXPECTED_N[site],
+                    }
+                value = contrast.get("url_jaccard_mean")
+                validation["url_jaccard_range_checks"][f"{baseline}/{site}/{axis_name}"] = {
+                    "value": value,
+                    "pass": value is not None and 0.0 <= value <= 1.0,
+                }
 
     ratio_block: dict[str, Any] = {
         "claim": "axis 1 decision-quality effect > axis 1 macro-action-freq effect",
     }
-    site_ratios = {}
-    for site in ["reddit", "classifieds"]:
-        decision_effects = decision_axis1_effect(axis_contrasts[site]["axis_1_text"])
-        macro_effects = macro_axis1_effects(site)
-        macro_mean = mean(abs(value) for value in macro_effects.values()) if macro_effects else None
-        decision_mean = decision_effects["mean_abs_decision_effect"]
-        ratio = decision_mean / macro_mean if macro_mean and macro_mean > 0 else None
-        site_ratios[site] = ratio
-        ratio_block[f"{site}_decision_effects"] = decision_effects
-        ratio_block[f"{site}_macro_axis1_effects"] = macro_effects
-        ratio_block[f"{site}_macro_mean_abs_effect"] = macro_mean
-        ratio_block[f"{site}_ratio"] = ratio
+    site_ratios: dict[str, float | None] = {}
+    for baseline in BASELINES:
+        for site in SITES_LIST:
+            axis1 = axis_contrasts[baseline][site].get("axis_1_text", {})
+            if axis1.get("skipped") or axis1.get("n", 0) == 0:
+                site_ratios[f"{baseline}/{site}"] = None
+                continue
+            decision_effects = decision_axis1_effect(axis1)
+            macro_effects = macro_axis1_effects(baseline, site)
+            macro_mean = mean(abs(value) for value in macro_effects.values()) if macro_effects else None
+            decision_mean = decision_effects["mean_abs_decision_effect"]
+            ratio = decision_mean / macro_mean if macro_mean and macro_mean > 0 else None
+            site_ratios[f"{baseline}/{site}"] = ratio
+            prefix = f"{baseline}_{site}"
+            ratio_block[f"{prefix}_decision_effects"] = decision_effects
+            ratio_block[f"{prefix}_macro_axis1_effects"] = macro_effects
+            ratio_block[f"{prefix}_macro_mean_abs_effect"] = macro_mean
+            ratio_block[f"{prefix}_ratio"] = ratio
 
-    reddit_ok = bool(site_ratios.get("reddit") is not None and site_ratios["reddit"] > 1.0)
-    classifieds_ok = bool(site_ratios.get("classifieds") is not None and site_ratios["classifieds"] > 1.0)
+    # Verdict computed on B0 only (B1 axis-1 contrasts unavailable until P-text data lands).
+    reddit_ok = bool(site_ratios.get("B0/reddit") is not None and site_ratios["B0/reddit"] > 1.0)
+    classifieds_ok = bool(site_ratios.get("B0/classifieds") is not None and site_ratios["B0/classifieds"] > 1.0)
     if reddit_ok and classifieds_ok:
         verdict = "generalizes"
         narrative = (
@@ -541,7 +603,8 @@ def main() -> None:
     ratio_block["verdict"] = verdict
     ratio_block["narrative"] = narrative
 
-    case_studies = build_case_studies(metrics, task_configs)
+    # Case studies use B0 metrics (need P-text intermediate, only B0 has full set).
+    case_studies = build_case_studies(metrics_by_baseline["B0"], task_configs)
     out = {
         "method": (
             "Mode-invariant micro-behavior analysis over reddit and classifieds. Per-task/per-mode metrics "
@@ -568,26 +631,31 @@ def main() -> None:
     lines.append("## Headline finding")
     lines.append("")
     lines.append(
-        f"Axis 1 decision-quality vs macro-frequency test: reddit ratio "
-        f"{fmt(out['cross_site_validity']['reddit_ratio'], 2)}, classifieds ratio "
-        f"{fmt(out['cross_site_validity']['classifieds_ratio'], 2)}; verdict: "
+        f"Axis 1 decision-quality vs macro-frequency test (B0 only — B1 P-text pending): reddit ratio "
+        f"{fmt(out['cross_site_validity'].get('B0_reddit_ratio'), 2)}, classifieds ratio "
+        f"{fmt(out['cross_site_validity'].get('B0_classifieds_ratio'), 2)}; verdict: "
         f"**{out['cross_site_validity']['verdict']}**."
     )
     lines.append("")
-    lines.append("## Per-site Axis 1 Table")
+    lines.append("## Per-(baseline, site) Axis 1 Table")
     lines.append("")
-    lines.append("| site | N | URL-path Jaccard | URL divergence | target-hit diff | target N | keyword repeat diff | distinct keyword diff | first-action divergence | macro mean | ratio |")
-    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
-    for site in ["reddit", "classifieds"]:
-        axis1 = out["axis_contrasts"][site]["axis_1_text"]
-        lines.append(
-            f"| {site} | {axis1['n']} | {fmt(axis1['url_jaccard_mean'])} | "
-            f"{fmt(axis1['url_decision_divergence'])} | {fmt(axis1['target_hit_rate_diff_pct_pts'], 2)} pp | "
-            f"{axis1['target_hit_n']} | {fmt(axis1['max_keyword_repeat_diff'])} | "
-            f"{fmt(axis1['distinct_keywords_diff'])} | {fmt(axis1['first_action_divergence_rate'])} | "
-            f"{fmt(out['cross_site_validity'][f'{site}_macro_mean_abs_effect'])} | "
-            f"{fmt(out['cross_site_validity'][f'{site}_ratio'], 2)} |"
-        )
+    lines.append("| baseline | site | N | URL-path Jaccard | URL divergence | target-hit diff | target N | keyword repeat diff | distinct keyword diff | first-action divergence | macro mean | ratio |")
+    lines.append("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+    for baseline in BASELINES:
+        for site in SITES_LIST:
+            axis1 = out["axis_contrasts"].get(baseline, {}).get(site, {}).get("axis_1_text", {})
+            if not axis1 or axis1.get("skipped") or axis1.get("n", 0) == 0:
+                lines.append(f"| {baseline} | {site} | — | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |")
+                continue
+            prefix = f"{baseline}_{site}"
+            lines.append(
+                f"| {baseline} | {site} | {axis1['n']} | {fmt(axis1['url_jaccard_mean'])} | "
+                f"{fmt(axis1['url_decision_divergence'])} | {fmt(axis1['target_hit_rate_diff_pct_pts'], 2)} pp | "
+                f"{axis1['target_hit_n']} | {fmt(axis1['max_keyword_repeat_diff'])} | "
+                f"{fmt(axis1['distinct_keywords_diff'])} | {fmt(axis1['first_action_divergence_rate'])} | "
+                f"{fmt(out['cross_site_validity'].get(f'{prefix}_macro_mean_abs_effect'))} | "
+                f"{fmt(out['cross_site_validity'].get(f'{prefix}_ratio'), 2)} |"
+            )
     lines.append("")
     lines.append(
         "All signed differences are cascade-direction right-minus-left, so axis 1 is P-text minus DOM. "
@@ -604,26 +672,34 @@ def main() -> None:
         "visit (or vice versa) ⇒ task-pool divergence at the decision-trace level."
     )
     lines.append("")
-    lines.append("| site | N | URL-path Jaccard (compound) | URL divergence | target-hit diff | first-action divergence |")
-    lines.append("|---|---:|---:|---:|---:|---:|")
-    for site in ["reddit", "classifieds"]:
-        c = out["axis_contrasts"][site].get("compound_dom_to_psom", {})
-        lines.append(
-            f"| {site} | {c.get('n', 'n/a')} | {fmt(c.get('url_jaccard_mean'))} | "
-            f"{fmt(c.get('url_decision_divergence'))} | {fmt(c.get('target_hit_rate_diff_pct_pts'), 2)} pp | "
-            f"{fmt(c.get('first_action_divergence_rate'))} |"
-        )
+    lines.append("| baseline | site | N | URL-path Jaccard (compound) | URL divergence | target-hit diff | first-action divergence |")
+    lines.append("|---|---|---:|---:|---:|---:|---:|")
+    for baseline in BASELINES:
+        for site in SITES_LIST:
+            c = out["axis_contrasts"].get(baseline, {}).get(site, {}).get("compound_dom_to_psom", {})
+            if not c or c.get("skipped") or c.get("n", 0) == 0:
+                lines.append(f"| {baseline} | {site} | — | n/a | n/a | n/a | n/a |")
+                continue
+            lines.append(
+                f"| {baseline} | {site} | {c.get('n', 'n/a')} | {fmt(c.get('url_jaccard_mean'))} | "
+                f"{fmt(c.get('url_decision_divergence'))} | {fmt(c.get('target_hit_rate_diff_pct_pts'), 2)} pp | "
+                f"{fmt(c.get('first_action_divergence_rate'))} |"
+            )
     lines.append("")
     lines.append("## Cross-site Validity")
     lines.append("")
     lines.append(out["cross_site_validity"]["narrative"])
     lines.append("")
-    lines.append("Validation checks: axis-1 N is "
-                 f"reddit {out['validation']['axis1_n_checks']['reddit']['observed']}/210 and "
-                 f"classifieds {out['validation']['axis1_n_checks']['classifieds']['observed']}/234. "
+    b0_red_n = out["validation"]["axis1_n_checks"].get("B0/reddit", {}).get("observed", 0)
+    b0_cls_n = out["validation"]["axis1_n_checks"].get("B0/classifieds", {}).get("observed", 0)
+    lines.append("Validation checks: B0 axis-1 N is "
+                 f"reddit {b0_red_n}/210 and "
+                 f"classifieds {b0_cls_n}/234. "
                  f"Target URLs were extracted for reddit "
                  f"{out['validation']['target_extraction']['reddit']['target_url_extracted_n']}/210 and classifieds "
-                 f"{out['validation']['target_extraction']['classifieds']['target_url_extracted_n']}/234 tasks.")
+                 f"{out['validation']['target_extraction']['classifieds']['target_url_extracted_n']}/234 tasks. "
+                 "B1 axis-1 (P-text minus DOM) cannot be computed yet because B1 P-text data is pending; "
+                 "B1 compound (DOM ↔ P-SoM) is computed for cls only.")
     lines.append("")
     lines.append("## Case Studies")
     for case in out["case_studies"]:

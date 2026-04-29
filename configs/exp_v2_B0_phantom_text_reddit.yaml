@@ -1,17 +1,19 @@
-# B0 Phantom-DOM ablation (§103) — WA reddit (106 task)
-# Generalization test: representation routing 在 text-only WA benchmark 是否生效
+# B0 P-text ablation — reddit
+# P-text = DOM prompt + SoM marks 文本 + 无图（disentangle prompt vs representation）
+# 与 phantom_som 配套：observation 完全相同，只换 system prompt
+
+# Note: observation_mode value kept as "phantom_dom" (legacy alias) so condition_id
+# stays phase1_phantom_dom_router_0 — paper-grade run dirs already use this path.
 
 defaults:
-  - configs/exp_v2_wa_base.yaml
+  - configs/exp_v2_base.yaml
 
 experiment:
   phase: "phase1"
-  name: "B0_phantom_dom_wa_reddit"
+  name: "B0_phantom_text_reddit"
 
 task:
   include_sites: ["reddit"]
-  site_configs:
-    reddit: "external/visualwebarena/config_files/wa/test_reddit.raw.json"
 
 runtime:
   max_steps: 30

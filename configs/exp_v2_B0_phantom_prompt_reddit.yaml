@@ -1,5 +1,5 @@
 # B0 Phantom-prompt (P-prompt §105) — VWA reddit
-# SoM prompt + AXTree text + 无图。symmetric counterpart of phantom_dom (P-text).
+# SoM prompt + AXTree text + 无图。symmetric counterpart of phantom_text (P-text).
 # Used to measure axis 2 (prompt) effect in AXTree-text context — current cascade
 # only measures it in [SOM_MARKS]-text context.
 

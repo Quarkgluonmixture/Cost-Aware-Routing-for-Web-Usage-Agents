@@ -72,17 +72,18 @@ E3 reads existing `analyze_confidence_calibration.py` outputs under `analysis/si
 
 | model | site | mode | ECE token | ECE verbal | AUROC token | AUROC verbal | AUROC behavioral max | FP rate | best signals |
 |---|---|---|---:|---:|---:|---:|---:|---:|---|
-| B0 | classifieds | DOM | n/a | n/a | n/a | 0.742 | 0.769 | 0.855 | verb=ep_mean_verbalized; beh=action_diversity |
-| B0 | classifieds | P-text | n/a | n/a | n/a | 0.737 | 0.733 | 2.137 | verb=ep_mean_verbalized; beh=action_diversity |
-| B0 | classifieds | P-SoM | n/a | n/a | n/a | 0.701 | 0.728 | 1.282 | verb=ep_mean_verbalized; beh=action_diversity |
-| B0 | classifieds | SoM | n/a | n/a | n/a | 0.709 | 0.697 | 1.709 | verb=ep_mean_verbalized; beh=action_diversity |
-| B0 | classifieds | Vision | n/a | n/a | n/a | 0.763 | 0.773 | 2.137 | verb=ep_mean_verbalized; beh=max_repeat_streak |
-| B0 | reddit | DOM | n/a | n/a | n/a | 0.817 | 0.682 | 1.905 | verb=ep_mean_verbalized; beh=max_repeat_streak |
-| B0 | reddit | P-text | n/a | n/a | n/a | 0.793 | 0.698 | 1.429 | verb=ep_mean_verbalized; beh=url_revisit_count |
-| B0 | reddit | P-SoM | n/a | n/a | n/a | 0.720 | 0.694 | 0.476 | verb=ep_mean_verbalized; beh=max_repeat_streak |
-| B0 | reddit | SoM | n/a | n/a | n/a | 0.719 | 0.681 | 1.429 | verb=ep_mean_verbalized; beh=action_diversity |
-| B0 | reddit | Vision | n/a | n/a | n/a | 0.778 | 0.709 | 1.905 | verb=ep_mean_verbalized; beh=max_repeat_streak |
+| B0 | classifieds | DOM | n/a | n/a | n/a | 0.742 | 0.769 | n/a | verb=ep_mean_verbalized; beh=action_diversity |
+| B0 | classifieds | P-text | n/a | n/a | n/a | 0.737 | 0.733 | n/a | verb=ep_mean_verbalized; beh=action_diversity |
+| B0 | classifieds | P-SoM | n/a | n/a | n/a | 0.701 | 0.728 | n/a | verb=ep_mean_verbalized; beh=action_diversity |
+| B0 | classifieds | SoM | n/a | n/a | n/a | 0.709 | 0.697 | n/a | verb=ep_mean_verbalized; beh=action_diversity |
+| B0 | classifieds | Vision | n/a | n/a | n/a | 0.763 | 0.773 | n/a | verb=ep_mean_verbalized; beh=max_repeat_streak |
+| B0 | reddit | DOM | n/a | n/a | n/a | 0.817 | 0.682 | n/a | verb=ep_mean_verbalized; beh=max_repeat_streak |
+| B0 | reddit | P-text | n/a | n/a | n/a | 0.793 | 0.698 | n/a | verb=ep_mean_verbalized; beh=url_revisit_count |
+| B0 | reddit | P-SoM | n/a | n/a | n/a | 0.720 | 0.694 | n/a | verb=ep_mean_verbalized; beh=max_repeat_streak |
+| B0 | reddit | SoM | n/a | n/a | n/a | 0.719 | 0.681 | n/a | verb=ep_mean_verbalized; beh=action_diversity |
+| B0 | reddit | Vision | n/a | n/a | n/a | 0.778 | 0.709 | n/a | verb=ep_mean_verbalized; beh=max_repeat_streak |
 | B1 | classifieds | DOM | 0.837 | 0.635 | 0.674 | 0.683 | 0.760 | n/a | tok=ep_max_entropy; verb=ep_mean_verbalized; beh=max_repeat_streak |
+| B1 | classifieds | P-SoM | n/a | n/a | 0.689 | 0.715 | 0.788 | n/a | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=action_diversity |
 | B1 | classifieds | SoM | 0.781 | 0.606 | 0.653 | 0.755 | 0.727 | n/a | tok=ep_mean_logprob; verb=ep_mean_verbalized; beh=url_revisit_max |
 | B1 | classifieds | Vision | 0.839 | 0.602 | 0.541 | 0.757 | 0.816 | n/a | tok=ep_max_entropy; verb=ep_mean_verbalized; beh=url_revisit_max |
 | B1 | reddit | DOM | 0.828 | 0.666 | 0.548 | 0.724 | 0.620 | n/a | tok=ep_min_logprob; verb=ep_mean_verbalized; beh=url_revisit_count |
@@ -194,6 +195,7 @@ Each E3 row is sourced from existing analyzer outputs; calibration source is nul
 | B0/reddit/SoM | `results/visualwebarena/phase1/B0_3mode_reddit_20260422/analysis/signals/combined/tables/cross_mode_auroc.csv` | n/a | n/a | 199 | 210 |
 | B0/reddit/Vision | `results/visualwebarena/phase1/B0_3mode_reddit_20260422/analysis/signals/combined/tables/cross_mode_auroc.csv` | n/a | n/a | 210 | 210 |
 | B1/classifieds/DOM | `results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv` | `results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/per_mode_summary.csv` | 234 | 234 | 234 |
+| B1/classifieds/Phantom-SoM | `results/visualwebarena/phase1/B1_phantom_som_classifieds_20260428/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | 230 | 230 | 230 |
 | B1/classifieds/SoM | `results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv` | `results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/per_mode_summary.csv` | 234 | 234 | 234 |
 | B1/classifieds/Vision | `results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv` | `results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/per_mode_summary.csv` | 234 | 234 | 234 |
 | B1/reddit/DOM | `results/visualwebarena/phase1/B1_3mode_reddit_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv` | `results/visualwebarena/phase1/B1_3mode_reddit_20260413/analysis/signals/combined/tables/per_mode_summary.csv` | 210 | 210 | 210 |
@@ -317,5 +319,5 @@ Overall pass: True.
 |---|---|
 | E1 N reddit | 210 / 210 |
 | E1 N classifieds | 234 / 234 |
-| E3 cells | 16 / 16 |
-| P-prompt status | {"B0_phantom_prompt_reddit_20260429": {"episodes": 52, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}} |
+| E3 cells | 17 / 17 |
+| P-prompt status | {"B0_phantom_prompt_reddit_20260429": {"episodes": 119, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}} |

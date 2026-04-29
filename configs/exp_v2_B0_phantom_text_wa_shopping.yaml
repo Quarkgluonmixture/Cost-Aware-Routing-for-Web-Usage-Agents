@@ -1,16 +1,19 @@
-# B0 Phantom-DOM ablation — reddit
-# Phantom-DOM = DOM prompt + SoM marks 文本 + 无图（disentangle prompt vs representation）
-# 与 phantom_som 配套：observation 完全相同，只换 system prompt
+# B0 P-text ablation (§103) — WA shopping (192 task)
+
+# Note: observation_mode value kept as "phantom_dom" (legacy alias) so condition_id
+# stays phase1_phantom_dom_router_0 — paper-grade run dirs already use this path.
 
 defaults:
-  - configs/exp_v2_base.yaml
+  - configs/exp_v2_wa_base.yaml
 
 experiment:
   phase: "phase1"
-  name: "B0_phantom_dom_reddit"
+  name: "B0_phantom_text_wa_shopping"
 
 task:
-  include_sites: ["reddit"]
+  include_sites: ["shopping"]
+  site_configs:
+    shopping: "external/visualwebarena/config_files/wa/test_shopping.raw.json"
 
 runtime:
   max_steps: 30

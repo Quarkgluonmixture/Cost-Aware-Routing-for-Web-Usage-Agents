@@ -141,10 +141,13 @@ def prepare_observation_for_mode(
     mode == "som":            SOM_MARKS compressed index + marked image (consistent SoM).
     mode == "phantom_som":    SOM_MARKS index, NO image (P-SoM: image-mismatched — prompt
                               promises screenshot but agent gets none).
-    mode == "phantom_dom":    SOM_MARKS index, NO image, but DOM-prompt (P-text: text-mismatched —
+    mode == "phantom_dom"
+       or "phantom_text":     SOM_MARKS index, NO image, but DOM-prompt (P-text: text-mismatched —
                               prompt expects AXTree, agent receives [SOM_MARKS]).
+                              phantom_dom is the legacy mode value (paper-grade run dirs use it);
+                              phantom_text is the current name. Both dispatch identically.
     mode == "phantom_prompt": Full AXTree text, NO image, with SoM-prompt (P-prompt: text+image
-                              mismatched — symmetric counterpart of phantom_dom across the
+                              mismatched — symmetric counterpart of phantom_text across the
                               prompt × text axes; isolates prompt swap effect on AXTree text).
     mode == "vision":         Empty text, raw screenshot as image.
     """
@@ -159,9 +162,9 @@ def prepare_observation_for_mode(
             mark_count=0,
         )
 
-    if mode in ("phantom_som", "phantom_dom"):
+    if mode in ("phantom_som", "phantom_dom", "phantom_text"):
         # phantom_som: SoM prompt + [SOM_MARKS] text + no image (image-mismatched)
-        # phantom_dom: DOM prompt + [SOM_MARKS] text + no image (text-mismatched)
+        # phantom_dom / phantom_text: DOM prompt + [SOM_MARKS] text + no image (text-mismatched)
         # Obs construction identical — only system prompt differs (handled in agent).
         result = _build_som_result(obs, obs_text, artifact_dir, step_idx)
         return SomResult(
@@ -174,7 +177,7 @@ def prepare_observation_for_mode(
 
     if mode == "phantom_prompt":
         # P-prompt: AXTree text (same as DOM mode) + no image, but SoM prompt (set in agent).
-        # Symmetric ablation of phantom_dom: only the prompt axis is swapped from DOM.
+        # Symmetric ablation of phantom_text: only the prompt axis is swapped from DOM.
         return SomResult(som_text=obs_text, marked_image_path=None, marked_image=None,
                          degraded_som=False, mark_count=0)
 

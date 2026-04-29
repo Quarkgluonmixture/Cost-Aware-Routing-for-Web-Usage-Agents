@@ -45,22 +45,41 @@ RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT_JSON = ROOT / "docs/analysis/cross_sites/axis_effect_size.json"
 OUT_MD = ROOT / "docs/analysis/cross_sites/axis_effect_size_report.md"
 
-STEP_DIRS = {
-    "reddit": {
-        "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-        "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-        "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-        "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
+    "B0": {
+        "reddit": {
+            "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
+            "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
+            "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
+            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+        },
+        "classifieds": {
+            "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
+            "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
+            "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+        },
     },
-    "classifieds": {
-        "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-        "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-        "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-        "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+    "B1": {
+        "reddit": {
+            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
+            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
+            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
+            # Phantom-SoM / P-text not yet available for B1 reddit
+        },
+        "classifieds": {
+            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
+            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
+            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
+            # P-text not yet available for B1 classifieds (only 4 ep at present)
+        },
     },
 }
+BASELINES = ["B0", "B1"]
+SITES = ["reddit", "classifieds"]
 SEARCH_MARKERS = {"reddit": ("/search",), "classifieds": ("page=search", "/search")}
 SELFCORR_TOKENS = ("mistake", "wrong", "try again", "go back")
 
@@ -98,9 +117,11 @@ def _action_type(step: dict) -> Optional[str]:
     return step.get("action_type") or (step.get("action") or {}).get("action_type")
 
 
-def per_task_metrics(site: str, mode: str) -> dict[int, dict[str, Optional[float]]]:
-    ep_dir = STEP_DIRS[site][mode]
+def per_task_metrics(baseline: str, site: str, mode: str) -> dict[int, dict[str, Optional[float]]]:
+    ep_dir = STEP_DIRS[baseline][site].get(mode)
     out: dict[int, dict[str, Optional[float]]] = {}
+    if ep_dir is None or not ep_dir.exists():
+        return out
     for path in sorted(ep_dir.glob(f"{site}_task_*_steps_v2.jsonl")):
         tid = step_task_id(path)
         steps = read_steps(path)
@@ -443,87 +464,119 @@ def main() -> None:
             "antagonistic_pairs": [],
         },
     }
-    for site in ["reddit", "classifieds"]:
-        modes_data = {
-            "DOM": per_task_metrics(site, "DOM"),
-            "P-text": per_task_metrics(site, "P-text"),
-            "P-SoM": per_task_metrics(site, "Phantom-SoM"),
-            "SoM": per_task_metrics(site, "SoM"),
-        }
-        site_block: dict = {}
-        for metric, binary in metrics_def:
-            # Tier 2 cascade contrasts (DOM -> P-text -> P-SoM -> SoM)
-            text = paired_contrast(modes_data["P-text"], modes_data["DOM"], metric, binary)
-            prompt = paired_contrast(modes_data["P-SoM"], modes_data["P-text"], metric, binary)
-            image = paired_contrast(modes_data["SoM"], modes_data["P-SoM"], metric, binary)
-            endpoint = paired_contrast(modes_data["SoM"], modes_data["DOM"], metric, binary)
-            # Tier 1 hook contrast: DOM <-> P-SoM (compound text+prompt swap)
-            compound = paired_contrast(modes_data["P-SoM"], modes_data["DOM"], metric, binary)
-            metric_name = METRIC_LABELS[metric]
-            text["meaningful"] = meaningful(text, binary)
-            prompt["meaningful"] = meaningful(prompt, binary)
-            image["meaningful"] = meaningful(image, binary)
-            compound["meaningful"] = meaningful(compound, binary)
-            cascade_contrasts = {"text": text, "prompt": prompt, "image": image}
-            pair_patterns = antagonistic_pairs(cascade_contrasts, binary=binary)
-            check = consistency_check(text, prompt, image, endpoint, binary=binary)
-            # Hook-tier dominance: just compound vs image
-            hook_contrasts = {"compound": compound, "image": image}
-            site_block[metric_name] = {
-                # Tier 1 (hook)
-                "compound_dom_to_psom": compound,
-                # Tier 2 (cascade)
-                "text": text,
-                "prompt": prompt,
-                "image": image,
-                # Endpoint (DOM <-> SoM, sanity)
-                "endpoint_dom_to_som": endpoint,
-                # Decomposition diagnostics
-                "dominant_cascade": dominant(cascade_contrasts, binary=binary),
-                "dominant_hook": dominant(hook_contrasts, binary=binary),
-                "psom_distinct_from_dom": compound["meaningful"],
-                "psom_distinct_from_som": image["meaningful"],
-                "consistency_check": check,
-                "cancellation_patterns": pair_patterns,
-            }
-            expected_n = out["validation"]["expected_n"][site]
-            out["validation"]["consistency_checks"][f"{site}/{metric_name}"] = check
-            for pattern in pair_patterns:
-                out["validation"]["antagonistic_pairs"].append(f"{pattern['axis_a']}_vs_{pattern['axis_b']}@{metric_name}@{site}")
-            all_contrasts = {**cascade_contrasts, "compound": compound}
-            for axis_name, contrast in all_contrasts.items():
-                n_key = f"{site}/{metric_name}/{axis_name}"
-                out["validation"]["n_checks"][n_key] = {
-                    "observed": contrast["n"],
-                    "expected": expected_n,
-                    "pass": contrast["n"] == expected_n,
-                }
-                if contrast["meaningful"]:
-                    out["validation"]["non_negligible_effects"].append(f"{axis_name}@{metric_name}@{site}")
-                    if axis_name == "text":
-                        out["validation"]["axis_1_non_negligible"].append(f"{metric_name}@{site}")
-        out["results"][site] = site_block
+    def empty_contrast() -> dict:
+        return {"n": 0, "meaningful": False}
 
-    # Tier 1 hook verdict: which (site, metric) cells show P-SoM distinct from BOTH DOM and SoM
+    for baseline in BASELINES:
+        out["results"].setdefault(baseline, {})
+        for site in SITES:
+            modes_data = {
+                "DOM": per_task_metrics(baseline, site, "DOM"),
+                "P-text": per_task_metrics(baseline, site, "P-text"),
+                "P-SoM": per_task_metrics(baseline, site, "Phantom-SoM"),
+                "SoM": per_task_metrics(baseline, site, "SoM"),
+            }
+            available = {k: bool(v) for k, v in modes_data.items()}
+            site_block: dict = {}
+            for metric, binary in metrics_def:
+                metric_name = METRIC_LABELS[metric]
+
+                def maybe_contrast(left_mode: str, right_mode: str) -> dict:
+                    if not (available[left_mode] and available[right_mode]):
+                        return empty_contrast()
+                    return paired_contrast(modes_data[left_mode], modes_data[right_mode], metric, binary)
+
+                # Tier 2 cascade contrasts (DOM -> P-text -> P-SoM -> SoM)
+                text = maybe_contrast("P-text", "DOM")
+                prompt = maybe_contrast("P-SoM", "P-text")
+                image = maybe_contrast("SoM", "P-SoM")
+                endpoint = maybe_contrast("SoM", "DOM")
+                # Tier 1 hook contrast: DOM <-> P-SoM (compound text+prompt swap)
+                compound = maybe_contrast("P-SoM", "DOM")
+                text["meaningful"] = meaningful(text, binary) if text.get("n", 0) else False
+                prompt["meaningful"] = meaningful(prompt, binary) if prompt.get("n", 0) else False
+                image["meaningful"] = meaningful(image, binary) if image.get("n", 0) else False
+                compound["meaningful"] = meaningful(compound, binary) if compound.get("n", 0) else False
+                cascade_contrasts = {"text": text, "prompt": prompt, "image": image}
+                # Antagonism / consistency only when all 3 cascade legs are present
+                if text.get("n", 0) and prompt.get("n", 0) and image.get("n", 0):
+                    pair_patterns = antagonistic_pairs(cascade_contrasts, binary=binary)
+                else:
+                    pair_patterns = []
+                if all(c.get("n", 0) for c in (text, prompt, image, endpoint)):
+                    check = consistency_check(text, prompt, image, endpoint, binary=binary)
+                else:
+                    check = {"axis_sum": float("nan"), "endpoint_diff": float("nan"),
+                             "error": float("nan"), "tolerance": 0.0,
+                             "units": "n/a", "pass": False, "skipped": True}
+                # Hook-tier dominance: just compound vs image
+                hook_contrasts = {"compound": compound, "image": image}
+                site_block[metric_name] = {
+                    # Tier 1 (hook)
+                    "compound_dom_to_psom": compound,
+                    # Tier 2 (cascade)
+                    "text": text,
+                    "prompt": prompt,
+                    "image": image,
+                    # Endpoint (DOM <-> SoM, sanity)
+                    "endpoint_dom_to_som": endpoint,
+                    # Decomposition diagnostics
+                    "dominant_cascade": dominant(cascade_contrasts, binary=binary),
+                    "dominant_hook": dominant(hook_contrasts, binary=binary),
+                    "psom_distinct_from_dom": compound.get("meaningful", False),
+                    "psom_distinct_from_som": image.get("meaningful", False),
+                    "consistency_check": check,
+                    "cancellation_patterns": pair_patterns,
+                }
+                expected_n = out["validation"]["expected_n"][site]
+                out["validation"]["consistency_checks"][f"{baseline}/{site}/{metric_name}"] = check
+                for pattern in pair_patterns:
+                    out["validation"]["antagonistic_pairs"].append(
+                        f"{pattern['axis_a']}_vs_{pattern['axis_b']}@{metric_name}@{baseline}/{site}"
+                    )
+                all_contrasts = {**cascade_contrasts, "compound": compound}
+                for axis_name, contrast in all_contrasts.items():
+                    n_key = f"{baseline}/{site}/{metric_name}/{axis_name}"
+                    out["validation"]["n_checks"][n_key] = {
+                        "observed": contrast.get("n", 0),
+                        "expected": expected_n,
+                        "pass": contrast.get("n", 0) == expected_n,
+                    }
+                    if contrast.get("meaningful", False):
+                        out["validation"]["non_negligible_effects"].append(
+                            f"{axis_name}@{metric_name}@{baseline}/{site}"
+                        )
+                        if axis_name == "text":
+                            out["validation"]["axis_1_non_negligible"].append(f"{metric_name}@{baseline}/{site}")
+            out["results"][baseline][site] = site_block
+
+    # Tier 1 hook verdict: which (baseline, site, metric) cells show P-SoM distinct from BOTH DOM and SoM
     psom_independent_cells = []
     psom_distinct_from_dom_only = []
     psom_distinct_from_som_only = []
     psom_indistinct = []
-    for site in ["reddit", "classifieds"]:
-        for metric, _binary in metrics_def:
-            metric_name = METRIC_LABELS[metric]
-            block = out["results"][site][metric_name]
-            from_dom = block["psom_distinct_from_dom"]
-            from_som = block["psom_distinct_from_som"]
-            cell = f"{metric_name}@{site}"
-            if from_dom and from_som:
-                psom_independent_cells.append(cell)
-            elif from_dom:
-                psom_distinct_from_dom_only.append(cell)
-            elif from_som:
-                psom_distinct_from_som_only.append(cell)
-            else:
-                psom_indistinct.append(cell)
+    for baseline in BASELINES:
+        for site in SITES:
+            site_block = out["results"][baseline].get(site, {})
+            for metric, _binary in metrics_def:
+                metric_name = METRIC_LABELS[metric]
+                block = site_block.get(metric_name)
+                if not block:
+                    continue
+                # Skip cells where P-SoM is missing (no compound/image contrast)
+                if block["compound_dom_to_psom"].get("n", 0) == 0:
+                    continue
+                from_dom = block["psom_distinct_from_dom"]
+                from_som = block["psom_distinct_from_som"]
+                cell = f"{metric_name}@{baseline}/{site}"
+                if from_dom and from_som:
+                    psom_independent_cells.append(cell)
+                elif from_dom:
+                    psom_distinct_from_dom_only.append(cell)
+                elif from_som:
+                    psom_distinct_from_som_only.append(cell)
+                else:
+                    psom_indistinct.append(cell)
 
     out["interpretation"] = {
         "tier1_hook": {
@@ -538,10 +591,11 @@ def main() -> None:
             "claim": "The compound DOM->P-SoM transition decomposes into text (axis 1) and prompt (axis 2) sub-effects via P-text intermediate.",
             "dominant_cascade_by_axis": {
                 axis: [
-                    f"{METRIC_LABELS[m]}@{site}"
-                    for site in ["reddit", "classifieds"]
+                    f"{METRIC_LABELS[m]}@{baseline}/{site}"
+                    for baseline in BASELINES
+                    for site in SITES
                     for m, _b in metrics_def
-                    if out["results"][site][METRIC_LABELS[m]]["dominant_cascade"] == axis
+                    if out["results"].get(baseline, {}).get(site, {}).get(METRIC_LABELS[m], {}).get("dominant_cascade") == axis
                 ]
                 for axis in ["text", "prompt", "image"]
             },
@@ -604,17 +658,21 @@ def main() -> None:
 
     # ----- Tier 1 -----
     lines.append("## Tier 1 — Hook: is P-SoM distinct from both DOM and SoM?\n")
-    hook_lines = ["| site | metric | DOM→P-SoM (compound) | P-SoM→SoM (image) | distinct from DOM? | distinct from SoM? |",
-                  "|---|---|---|---|---|---|"]
-    for site in ["reddit", "classifieds"]:
-        for metric, binary in metrics_def:
-            metric_name = METRIC_LABELS[metric]
-            r = out["results"][site][metric_name]
-            from_dom = "✅" if r["psom_distinct_from_dom"] else "—"
-            from_som = "✅" if r["psom_distinct_from_som"] else "—"
-            hook_lines.append(
-                f"| {site} | {REPORT_METRIC_LABELS[metric_name]} | {fmt(r['compound_dom_to_psom'], binary)} | {fmt(r['image'], binary)} | {from_dom} | {from_som} |"
-            )
+    hook_lines = ["| baseline | site | metric | DOM→P-SoM (compound) | P-SoM→SoM (image) | distinct from DOM? | distinct from SoM? |",
+                  "|---|---|---|---|---|---|---|"]
+    for baseline in BASELINES:
+        for site in SITES:
+            site_block = out["results"].get(baseline, {}).get(site, {})
+            for metric, binary in metrics_def:
+                metric_name = METRIC_LABELS[metric]
+                r = site_block.get(metric_name)
+                if not r or r["compound_dom_to_psom"].get("n", 0) == 0:
+                    continue
+                from_dom = "✅" if r["psom_distinct_from_dom"] else "—"
+                from_som = "✅" if r["psom_distinct_from_som"] else "—"
+                hook_lines.append(
+                    f"| {baseline} | {site} | {REPORT_METRIC_LABELS[metric_name]} | {fmt(r['compound_dom_to_psom'], binary)} | {fmt(r['image'], binary)} | {from_dom} | {from_som} |"
+                )
     lines.extend(hook_lines)
 
     independence = out["interpretation"]["tier1_hook"]
@@ -637,18 +695,28 @@ def main() -> None:
         "Once P-prompt data arrives this becomes a full diamond with two paths from DOM to P-SoM "
         "(via P-text or via P-prompt), letting us check prompt × text additivity / interaction.\n"
     )
-    lines.append("| site | metric | text-axis (DOM→P-text) | prompt-axis (P-text→P-SoM) | image-axis (P-SoM→SoM) | dominant cascade axis | consistency |")
-    lines.append("|---|---|---|---|---|---|---|")
+    lines.append("| baseline | site | metric | text-axis (DOM→P-text) | prompt-axis (P-text→P-SoM) | image-axis (P-SoM→SoM) | dominant cascade axis | consistency |")
+    lines.append("|---|---|---|---|---|---|---|---|")
 
-    for site in ["reddit", "classifieds"]:
-        for metric, binary in metrics_def:
-            metric_name = METRIC_LABELS[metric]
-            r = out["results"][site][metric_name]
-            check = r["consistency_check"]
-            check_label = "pass" if check["pass"] else "fail"
-            lines.append(
-                f"| {site} | {REPORT_METRIC_LABELS[metric_name]} | {fmt(r['text'], binary)} | {fmt(r['prompt'], binary)} | {fmt(r['image'], binary)} | {r['dominant_cascade']} | {check_label} |"
-            )
+    for baseline in BASELINES:
+        for site in SITES:
+            site_block = out["results"].get(baseline, {}).get(site, {})
+            for metric, binary in metrics_def:
+                metric_name = METRIC_LABELS[metric]
+                r = site_block.get(metric_name)
+                if not r:
+                    continue
+                # Skip cells where the cascade text-axis is missing (no P-text) — full cascade not computable
+                if r["text"].get("n", 0) == 0 and r["prompt"].get("n", 0) == 0:
+                    continue
+                check = r["consistency_check"]
+                if check.get("skipped"):
+                    check_label = "skipped"
+                else:
+                    check_label = "pass" if check.get("pass") else "fail"
+                lines.append(
+                    f"| {baseline} | {site} | {REPORT_METRIC_LABELS[metric_name]} | {fmt(r['text'], binary)} | {fmt(r['prompt'], binary)} | {fmt(r['image'], binary)} | {r['dominant_cascade']} | {check_label} |"
+                )
 
     lines.append("\n★ marks Wilcoxon p<0.05. Effects with |d_z|>0.1 or |h|>0.1 are treated as non-negligible for axis dominance and cancellation checks.")
 
@@ -659,18 +727,23 @@ def main() -> None:
             "The following site/metric pairs are antagonistic: two cascade axes have opposite-signed effects and both exceed |0.1| effect size. "
             "These are exactly the cases where a DOM-vs-SoM endpoint comparison can mask the internal mechanism.\n"
         )
-        for site in ["reddit", "classifieds"]:
-            for metric, _binary in metrics_def:
-                metric_name = METRIC_LABELS[metric]
-                patterns = out["results"][site][metric_name]["cancellation_patterns"]
-                for pattern in patterns:
-                    key = "cohen_h_a" if "cohen_h_a" in pattern else "cohen_d_z_a"
-                    key_b = "cohen_h_b" if "cohen_h_b" in pattern else "cohen_d_z_b"
-                    label = "h" if key == "cohen_h_a" else "d_z"
-                    lines.append(
-                        f"- {site} / {REPORT_METRIC_LABELS[metric_name]}: {pattern['axis_a']} vs {pattern['axis_b']} "
-                        f"({label}={pattern[key]:+.2f} vs {pattern[key_b]:+.2f}) -> antagonistic"
-                    )
+        for baseline in BASELINES:
+            for site in SITES:
+                site_block = out["results"].get(baseline, {}).get(site, {})
+                for metric, _binary in metrics_def:
+                    metric_name = METRIC_LABELS[metric]
+                    block = site_block.get(metric_name)
+                    if not block:
+                        continue
+                    patterns = block.get("cancellation_patterns", [])
+                    for pattern in patterns:
+                        key = "cohen_h_a" if "cohen_h_a" in pattern else "cohen_d_z_a"
+                        key_b = "cohen_h_b" if "cohen_h_b" in pattern else "cohen_d_z_b"
+                        label = "h" if key == "cohen_h_a" else "d_z"
+                        lines.append(
+                            f"- {baseline} {site} / {REPORT_METRIC_LABELS[metric_name]}: {pattern['axis_a']} vs {pattern['axis_b']} "
+                            f"({label}={pattern[key]:+.2f} vs {pattern[key_b]:+.2f}) -> antagonistic"
+                        )
     else:
         lines.append("No antagonistic pairs met the |0.1| effect-size threshold.")
 

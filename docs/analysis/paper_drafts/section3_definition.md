@@ -26,7 +26,7 @@ Phantom-SoM(page) =
   image  = None
 ```
 
-Phantom-SoM uses the same SoM prompt family as full SoM and the same `[SOM_MARKS]` text, but removes the page screenshot passed to the model. In code, `p79/experiment/som.py::prepare_observation_for_mode` handles `mode in ("phantom_som", "phantom_dom")` by calling `_build_som_result(...)`, then returning the generated `som_text` with `marked_image=None`. The rendered screenshot path is retained for debugging; the model does not receive it.
+Phantom-SoM uses the same SoM prompt family as full SoM and the same `[SOM_MARKS]` text, but removes the page screenshot passed to the model. In code, `p79/experiment/som.py::prepare_observation_for_mode` handles `mode in ("phantom_som", "phantom_dom", "phantom_text")` by calling `_build_som_result(...)`, then returning the generated `som_text` with `marked_image=None` (`phantom_dom` is the legacy mode value retained as alias for paper-grade run dirs; `phantom_text` is the current canonical name for P-text). The rendered screenshot path is retained for debugging; the model does not receive it.
 
 The critical property is that the prompt remains the SoM prompt. It still describes an annotated screenshot with numbered boxes, even though the observation channel contains no page screenshot. We call this the **mirage prompt** property: the behavioral scaffold of SoM is preserved while the visual substrate is removed.
 
@@ -49,7 +49,7 @@ P-text(page) =
   image  = None
 ```
 
-Its observation is identical to Phantom-SoM: `[SOM_MARKS]` text only, no page screenshot. The only intended change is the system prompt. In both B0 (`p79/agents/proxy_api_agent.py`) and B1 (`p79/agents/qwen3vl_agent.py`), `_system_prompts["phantom_som"]` maps to the SoM prompt, while `_system_prompts["phantom_dom"]` maps to the DOM prompt. For `som`, `phantom_som`, and `phantom_dom`, the agent passes through the `[SOM_MARKS]...[/SOM_MARKS]` text directly.
+Its observation is identical to Phantom-SoM: `[SOM_MARKS]` text only, no page screenshot. The only intended change is the system prompt. In both B0 (`p79/agents/proxy_api_agent.py`) and B1 (`p79/agents/qwen3vl_agent.py`), `_system_prompts["phantom_som"]` maps to the SoM prompt, while `_system_prompts["phantom_dom"]` (and the alias `_system_prompts["phantom_text"]`) maps to the DOM prompt. For `som`, `phantom_som`, `phantom_dom`, and `phantom_text`, the agent passes through the `[SOM_MARKS]...[/SOM_MARKS]` text directly.
 
 This cell separates representation from prompt wording. If P-text behaves like Phantom-SoM, the flat marks text is driving behavior. If it behaves like DOM, the prompt is doing more of the work.
 

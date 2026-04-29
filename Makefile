@@ -27,14 +27,22 @@ PYTEST ?= .venv/bin/pytest
         aggregate-cross-site summary-collect routing-auroc analyze-paper \
         analyze-paper-per-run compare-b0-b1-all phantom-lift \
         analyze-layer0 analyze-layer1 analyze-layer2 analyze-layer3 analyze-layered \
-        aggregate-sr-fp fig12-micro-heatmap aggregate-cost-electricity analyze-mechanism
+        aggregate-sr-fp fig12-micro-heatmap aggregate-cost-electricity analyze-mechanism \
+        active
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
+	@echo "Active processes: make active"
 	@echo "Layered analysis: make analyze-layered"
 	@echo "Layer 0 SR/FP: make aggregate-sr-fp"
 	@echo "Layer 2 figure: make fig12-micro-heatmap"
 	@grep -E '^[a-z0-9-]+:' Makefile | grep -v '^.PHONY' | sed 's/:.*//' | sort | sed 's/^/  /'
+
+# ---- Live status ----
+# Real-time scan of run_experiment + experiment_watchdog processes;
+# replaces the manually-maintained §1 Active Processes table in next_steps.md.
+active:
+	@$(PYTHON) scripts/maintenance/active_processes.py
 
 # ---- Tests ----
 test:
@@ -108,7 +116,8 @@ RUN_DIRS_PAPER_VWA ?= \
   results/visualwebarena/phase1/B0_phantom_text_classifieds_20260427 \
   results/visualwebarena/phase1/B0_phantom_text_reddit_20260427 \
   results/visualwebarena/phase1/B1_3mode_classifieds_20260413 \
-  results/visualwebarena/phase1/B1_3mode_reddit_20260413
+  results/visualwebarena/phase1/B1_3mode_reddit_20260413 \
+  results/visualwebarena/phase1/B1_phantom_som_classifieds_20260428
 
 aggregate-cross-site:
 	$(PYTHON) scripts/analysis/aggregate_cross_site.py \
@@ -260,9 +269,11 @@ watch-reddit:
 
 # Phantom (§102/§103) — start/resume one cell. Idempotent: skips if already running.
 # Usage: make phantom B=B0 M=som S=reddit          (phantom_som on VWA reddit)
-#        make phantom B=B0 M=dom S=reddit          (phantom_dom ablation on VWA reddit)
+#        make phantom B=B0 M=text S=reddit         (P-text ablation on VWA reddit)
 #        make phantom B=B0 M=som S=shopping BMK=wa (phantom_som on WA shopping)
 #        RESET_BEFORE=1 make phantom ...           (reset site before launch)
+# Note: M=dom is accepted as a back-compat alias for M=text (queue_phantom_dom.sh
+# is symlinked to queue_phantom_text.sh).
 phantom:
 	@test -n "$(B)" -a -n "$(S)" || (echo "ERROR: B=<B0|B1> S=<site> required (M defaults som, BMK defaults vwa)"; exit 1)
 	bash scripts/queues/queue_phantom_$(or $(M),som).sh $(B) $(S) $(or $(BMK),vwa)
@@ -283,12 +294,15 @@ phantom-vwa-all:
 	bash scripts/queues/queue_phantom_som.sh B1 reddit
 
 # P-text (§103 ablation) — all VWA cells (B0 + B1)
-phantom-dom-vwa-all:
-	bash scripts/queues/queue_phantom_dom.sh B0 classifieds
-	bash scripts/queues/queue_phantom_dom.sh B0 reddit
-	bash scripts/queues/queue_phantom_dom.sh B0 shopping
-	bash scripts/queues/queue_phantom_dom.sh B1 classifieds
-	bash scripts/queues/queue_phantom_dom.sh B1 reddit
+phantom-text-vwa-all:
+	bash scripts/queues/queue_phantom_text.sh B0 classifieds
+	bash scripts/queues/queue_phantom_text.sh B0 reddit
+	bash scripts/queues/queue_phantom_text.sh B0 shopping
+	bash scripts/queues/queue_phantom_text.sh B1 classifieds
+	bash scripts/queues/queue_phantom_text.sh B1 reddit
+
+# Back-compat alias for legacy target name
+phantom-dom-vwa-all: phantom-text-vwa-all
 
 # Phantom — WA generalization (3 sites, B0 + B1)
 phantom-wa-all:
@@ -300,13 +314,16 @@ phantom-wa-all:
 	bash scripts/queues/queue_phantom_som.sh B1 shopping_admin wa
 
 # P-text ablation on WA (3 sites, B0 + B1)
-phantom-dom-wa-all:
-	bash scripts/queues/queue_phantom_dom.sh B0 reddit         wa
-	bash scripts/queues/queue_phantom_dom.sh B0 shopping       wa
-	bash scripts/queues/queue_phantom_dom.sh B0 shopping_admin wa
-	bash scripts/queues/queue_phantom_dom.sh B1 reddit         wa
-	bash scripts/queues/queue_phantom_dom.sh B1 shopping       wa
-	bash scripts/queues/queue_phantom_dom.sh B1 shopping_admin wa
+phantom-text-wa-all:
+	bash scripts/queues/queue_phantom_text.sh B0 reddit         wa
+	bash scripts/queues/queue_phantom_text.sh B0 shopping       wa
+	bash scripts/queues/queue_phantom_text.sh B0 shopping_admin wa
+	bash scripts/queues/queue_phantom_text.sh B1 reddit         wa
+	bash scripts/queues/queue_phantom_text.sh B1 shopping       wa
+	bash scripts/queues/queue_phantom_text.sh B1 shopping_admin wa
+
+# Back-compat alias for legacy target name
+phantom-dom-wa-all: phantom-text-wa-all
 
 # Backward-compat alias for old "phantom-all" (B=... S=... interface)
 phantom-all: phantom-vwa-all

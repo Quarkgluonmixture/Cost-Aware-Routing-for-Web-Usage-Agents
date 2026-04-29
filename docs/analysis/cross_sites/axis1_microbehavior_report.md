@@ -1,13 +1,15 @@
 ## Headline finding
 
-Axis 1 decision-quality vs macro-frequency test: reddit ratio 2.42, classifieds ratio 1.46; verdict: **generalizes**.
+Axis 1 decision-quality vs macro-frequency test (B0 only — B1 P-text pending): reddit ratio 2.42, classifieds ratio 1.46; verdict: **generalizes**.
 
-## Per-site Axis 1 Table
+## Per-(baseline, site) Axis 1 Table
 
-| site | N | URL-path Jaccard | URL divergence | target-hit diff | target N | keyword repeat diff | distinct keyword diff | first-action divergence | macro mean | ratio |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| reddit | 210 | 0.573 | 0.427 | 3.47 pp | 144 | -0.633 | 0.100 | 0.210 | 0.093 | 2.42 |
-| classifieds | 234 | 0.904 | 0.096 | 2.33 pp | 172 | 0.077 | 0.004 | 0.137 | 0.059 | 1.46 |
+| baseline | site | N | URL-path Jaccard | URL divergence | target-hit diff | target N | keyword repeat diff | distinct keyword diff | first-action divergence | macro mean | ratio |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| B0 | reddit | 210 | 0.573 | 0.427 | 3.47 pp | 144 | -0.633 | 0.100 | 0.210 | 0.093 | 2.42 |
+| B0 | classifieds | 234 | 0.904 | 0.096 | 2.33 pp | 172 | 0.077 | 0.004 | 0.137 | 0.059 | 1.46 |
+| B1 | reddit | — | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
+| B1 | classifieds | — | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a |
 
 All signed differences are cascade-direction right-minus-left, so axis 1 is P-text minus DOM. Classifieds search-keyword levels should be read by axis differential, because OSClass tasks normally use search pages.
 
@@ -15,16 +17,18 @@ All signed differences are cascade-direction right-minus-left, so axis 1 is P-te
 
 Direct test of the hook claim: even when aggregate macro action frequencies converge toward DOM (especially on classifieds, see Tier 1 macro), per-step decisions still diverge meaningfully. Lower URL-path Jaccard ⇒ more pages visited that DOM does not visit (or vice versa) ⇒ task-pool divergence at the decision-trace level.
 
-| site | N | URL-path Jaccard (compound) | URL divergence | target-hit diff | first-action divergence |
-|---|---:|---:|---:|---:|---:|
-| reddit | 210 | 0.481 | 0.519 | -0.69 pp | 0.248 |
-| classifieds | 234 | 0.885 | 0.115 | 1.74 pp | 0.201 |
+| baseline | site | N | URL-path Jaccard (compound) | URL divergence | target-hit diff | first-action divergence |
+|---|---|---:|---:|---:|---:|---:|
+| B0 | reddit | 210 | 0.481 | 0.519 | -0.69 pp | 0.248 |
+| B0 | classifieds | 234 | 0.885 | 0.115 | 1.74 pp | 0.201 |
+| B1 | reddit | — | n/a | n/a | n/a | n/a |
+| B1 | classifieds | 230 | 0.835 | 0.165 | -2.37 pp | 0.270 |
 
 ## Cross-site Validity
 
 Both sites show a larger axis-1 shift in mode-invariant decision anchors than in macro action frequencies, so the claim generalizes beyond the reddit search-loop failure mode.
 
-Validation checks: axis-1 N is reddit 210/210 and classifieds 234/234. Target URLs were extracted for reddit 144/210 and classifieds 172/234 tasks.
+Validation checks: B0 axis-1 N is reddit 210/210 and classifieds 234/234. Target URLs were extracted for reddit 144/210 and classifieds 172/234 tasks. B1 axis-1 (P-text minus DOM) cannot be computed yet because B1 P-text data is pending; B1 compound (DOM ↔ P-SoM) is computed for cls only.
 
 ## Case Studies
 

@@ -41,7 +41,7 @@ STEP_DIRS = {
         "Vision": "results/visualwebarena/phase1/B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
         "SoM": "results/visualwebarena/phase1/B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
         "Phantom-SoM": "results/visualwebarena/phase1/B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
-        "Phantom-DOM": "results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+        "P-text": "results/visualwebarena/phase1/B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
     },
     "classifieds": {... same shape ...},
 }

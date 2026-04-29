@@ -1,12 +1,15 @@
-# B1 Phantom-DOM ablation (§103) — WA shopping_admin
+# B1 P-text ablation (§103) — WA shopping_admin
 # DOM prompt + SoM marks 文本 + 无图，与 B1 phantom_som shopping_admin 唯一差: system prompt
+
+# Note: observation_mode value kept as "phantom_dom" (legacy alias) so condition_id
+# stays phase1_phantom_dom_router_0 — paper-grade run dirs already use this path.
 
 defaults:
   - configs/exp_v2_wa_base.yaml
 
 experiment:
   phase: "phase1"
-  name: "B1_phantom_dom_wa_shopping_admin"
+  name: "B1_phantom_text_wa_shopping_admin"
 
 task:
   include_sites: ["shopping_admin"]

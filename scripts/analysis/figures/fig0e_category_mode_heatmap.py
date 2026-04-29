@@ -33,8 +33,10 @@ CATEGORY_LABELS = [
 ]
 MODES = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text"]
 
-SITES = {
-    "classifieds": {
+PANELS = [
+    {
+        "key": "B0 classifieds",
+        "site": "classifieds",
         "expected": 234,
         "audit": ROOT / "docs/analysis/cross_sites/codex_audit_classifieds.json",
         "modes": {
@@ -46,7 +48,9 @@ SITES = {
         },
         "notes": {"Phantom-SoM": "fresh re-run"},
     },
-    "reddit": {
+    {
+        "key": "B0 reddit",
+        "site": "reddit",
         "expected": 210,
         "audit": ROOT / "docs/analysis/cross_sites/codex_audit_reddit.json",
         "modes": {
@@ -56,9 +60,31 @@ SITES = {
             "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
             "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
         },
-        # all phantom modes fresh complete (B0 cls/red Phantom-SoM 234/210, P-text 234/210)
     },
-}
+    {
+        "key": "B1 classifieds",
+        "site": "classifieds",
+        "expected": 234,
+        "audit": ROOT / "docs/analysis/cross_sites/codex_audit_classifieds.json",
+        "modes": {
+            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
+            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
+        },
+    },
+    {
+        "key": "B1 reddit",
+        "site": "reddit",
+        "expected": 210,
+        "audit": ROOT / "docs/analysis/cross_sites/codex_audit_reddit.json",
+        "modes": {
+            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
+            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
+            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
+        },
+    },
+]
 
 
 def task_id(path: Path) -> int:
@@ -96,19 +122,23 @@ def load_successes(ep_dir: Path) -> tuple[set[int], set[int]]:
     return successes, observed
 
 
-def build_matrix(site: str) -> tuple[np.ndarray, list[list[str]]]:
-    spec = SITES[site]
-    audit = load_audit(spec["audit"])
+def build_matrix(panel: dict) -> tuple[np.ndarray, list[list[str]]]:
+    audit = load_audit(panel["audit"])
     category_tasks = {cat: {tid for tid, c in audit.items() if c == cat} for cat in CATEGORIES}
     matrix = np.full((len(CATEGORIES), len(MODES)), np.nan)
     labels: list[list[str]] = [["" for _ in MODES] for _ in CATEGORIES]
 
     for j, mode in enumerate(MODES):
-        successes, observed = load_successes(spec["modes"][mode])
-        if len(observed) != spec["expected"]:
+        ep_dir = panel["modes"].get(mode)
+        if ep_dir is None:
+            for i in range(len(CATEGORIES)):
+                labels[i][j] = "—\npending"
+            continue
+        successes, observed = load_successes(ep_dir)
+        if len(observed) != panel["expected"]:
             print(
-                f"[warn] {site} {mode}: n={len(observed)} expected={spec['expected']} "
-                f"({spec.get('notes', {}).get(mode, 'live')})",
+                f"[warn] {panel['key']} {mode}: n={len(observed)} expected={panel['expected']} "
+                f"({panel.get('notes', {}).get(mode, 'live')})",
                 file=sys.stderr,
             )
         for i, category in enumerate(CATEGORIES):
@@ -119,25 +149,25 @@ def build_matrix(site: str) -> tuple[np.ndarray, list[list[str]]]:
                 continue
             value = 100.0 * len(successes & denom_tasks) / n
             matrix[i, j] = value
-            suffix = "*" if spec.get("notes", {}).get(mode) else ""
+            suffix = "*" if panel.get("notes", {}).get(mode) else ""
             labels[i][j] = f"{value:.1f}%{suffix}\n(n={n})"
     return matrix, labels
 
 
-def draw_site(ax: plt.Axes, site: str, vmax: float) -> None:
-    matrix, labels = build_matrix(site)
+def draw_panel(ax: plt.Axes, panel: dict, vmax: float) -> None:
+    matrix, labels = build_matrix(panel)
     cmap = plt.colormaps["YlGnBu"].copy()
     cmap.set_bad("#f2f2f2")
     im = ax.imshow(matrix, cmap=cmap, vmin=0, vmax=vmax, aspect="auto")
-    ax.set_title(f"B0 {site}", fontsize=12, fontweight="bold")
-    ax.set_xticks(np.arange(len(MODES)), ["DOM", "SoM", "Vision", "Phantom\nSoM", "Phantom\nDOM"])
-    ax.set_yticks(np.arange(len(CATEGORIES)), CATEGORY_LABELS)
+    ax.set_title(panel["key"], fontsize=11, fontweight="bold")
+    ax.set_xticks(np.arange(len(MODES)), ["DOM", "SoM", "Vision", "Phantom\nSoM", "Phantom\nDOM"], fontsize=8.5)
+    ax.set_yticks(np.arange(len(CATEGORIES)), CATEGORY_LABELS, fontsize=8.5)
     ax.tick_params(axis="both", length=0)
     for i in range(len(CATEGORIES)):
         for j in range(len(MODES)):
             value = matrix[i, j]
             color = "white" if np.isfinite(value) and value >= vmax * 0.58 else "#222222"
-            ax.text(j, i, labels[i][j], ha="center", va="center", fontsize=8.2, color=color)
+            ax.text(j, i, labels[i][j], ha="center", va="center", fontsize=7.2, color=color)
     for spine in ax.spines.values():
         spine.set_visible(False)
     ax.set_xticks(np.arange(-0.5, len(MODES), 1), minor=True)
@@ -149,14 +179,14 @@ def draw_site(ax: plt.Axes, site: str, vmax: float) -> None:
 def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 10, "figure.dpi": 150})
-    fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.6), constrained_layout=True)
-    ims = [draw_site(ax, site, vmax=32.0) for ax, site in zip(axes, ["classifieds", "reddit"])]
+    fig, axes = plt.subplots(1, 4, figsize=(22.0, 5.6), constrained_layout=True)
+    ims = [draw_panel(ax, panel, vmax=32.0) for ax, panel in zip(axes, PANELS)]
     fig.colorbar(ims[0], ax=axes, shrink=0.82, label="Adjusted success rate (%)")
-    fig.suptitle("Codex Audit Category x Observation Mode", fontsize=15, fontweight="bold")
+    fig.suptitle("Codex Audit Category x Observation Mode (B0 + B1)", fontsize=15, fontweight="bold")
     fig.text(
         0.5,
         -0.03,
-        "All B0 phantom modes use fresh paper-grade clean re-run. B1 phantom modes pending.",
+        "B0 covers 5 modes per site (paper-grade fresh). B1 cls covers 4 modes (Phantom-SoM available, P-text pending). B1 reddit phantom modes pending.",
         ha="center",
         fontsize=8.5,
         color="#555555",

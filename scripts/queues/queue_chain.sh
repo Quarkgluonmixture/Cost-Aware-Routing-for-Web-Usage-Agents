@@ -4,10 +4,11 @@
 # that share a single GPU instance (B1 4B local) or any paper-grade sequence.
 #
 # Each queued command goes through queue_baseline.sh / queue_phantom_som.sh /
-# queue_phantom_dom.sh which already handle reset+auth_refresh+watchdog
+# queue_phantom_text.sh which already handle reset+auth_refresh+watchdog
 # launch+idempotent skip. This chain ALWAYS exports RESET_BEFORE=1 by default
 # (paper-grade — every cell starts from a fresh post-reset site state); pass
 # --no-reset to disable (rare, e.g. resume-only chain).
+# Note: queue_phantom_dom.sh exists as a back-compat symlink to queue_phantom_text.sh.
 #
 # Usage:
 #   nohup bash scripts/queues/queue_chain.sh [--no-reset] \
@@ -16,7 +17,7 @@
 #
 # Each <cmd> is a queue script invocation, relative to scripts/queues/:
 #   "queue_phantom_som.sh B1 classifieds"
-#   "queue_phantom_dom.sh B1 reddit"
+#   "queue_phantom_text.sh B1 reddit"
 #   "queue_baseline.sh B0 dom shopping"
 #   "queue_baseline.sh B0 som shopping wa"
 #
@@ -30,14 +31,14 @@
 #   nohup bash scripts/queues/queue_chain.sh \
 #     "queue_phantom_som.sh B1 classifieds" \
 #     "queue_phantom_som.sh B1 reddit" \
-#     "queue_phantom_dom.sh B1 classifieds" \
-#     "queue_phantom_dom.sh B1 reddit" \
+#     "queue_phantom_text.sh B1 classifieds" \
+#     "queue_phantom_text.sh B1 reddit" \
 #     > logs/queue_chain_b1_phantom.log 2>&1 &
 #
 #   # B0 phantom shopping pair (after B0 dom shopping done):
 #   nohup bash scripts/queues/queue_chain.sh \
 #     "queue_phantom_som.sh B0 shopping" \
-#     "queue_phantom_dom.sh B0 shopping" \
+#     "queue_phantom_text.sh B0 shopping" \
 #     > logs/queue_chain_b0_phantom_shop.log 2>&1 &
 
 set -uo pipefail

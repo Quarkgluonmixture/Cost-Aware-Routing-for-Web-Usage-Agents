@@ -53,31 +53,71 @@ def main() -> None:
     BARS = ["3-mode", "+P-text", "+P-SoM", "5-mode"]
     COLORS = ["#a0a0a0", "#9e6da8", "#b279a2", "#54a24b"]
 
+    def _to_float(value: str) -> float | None:
+        if value is None or value == "" or value.lower() == "none":
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
     for ax, r in zip(axes, rows):
-        sr3 = float(r["oracle_3mode_pp"])
-        sr_pdom = float(r["oracle_4mode_pdom_pp"])
-        sr_psom = float(r["oracle_4mode_psom_pp"])
-        sr5 = float(r["oracle_5mode_pp"])
+        sr3 = _to_float(r["oracle_3mode_pp"]) or 0.0
+        sr_pdom = _to_float(r["oracle_4mode_pdom_pp"])  # may be None when P-text pending
+        sr_psom = _to_float(r["oracle_4mode_psom_pp"]) or 0.0
+        sr5 = _to_float(r["oracle_5mode_pp"])  # may be None
 
-        # err bars only on the lift bars (vs 3-mode, anchored at 3-mode level)
-        # Use the bootstrap CI from CSV; convert to error magnitudes
-        ci_lo_pdom = sr3 + float(r["lift_4pdom_vs_3_ci95_lo_pp"])
-        ci_hi_pdom = sr3 + float(r["lift_4pdom_vs_3_ci95_hi_pp"])
-        ci_lo_psom = sr3 + float(r["lift_4psom_vs_3_ci95_lo_pp"])
-        ci_hi_psom = sr3 + float(r["lift_4psom_vs_3_ci95_hi_pp"])
-        ci_lo_5    = sr3 + float(r["lift_5_vs_3_ci95_lo_pp"])
-        ci_hi_5    = sr3 + float(r["lift_5_vs_3_ci95_hi_pp"])
+        ci_lo_pdom_lift = _to_float(r["lift_4pdom_vs_3_ci95_lo_pp"])
+        ci_hi_pdom_lift = _to_float(r["lift_4pdom_vs_3_ci95_hi_pp"])
+        ci_lo_5_lift = _to_float(r["lift_5_vs_3_ci95_lo_pp"])
+        ci_hi_5_lift = _to_float(r["lift_5_vs_3_ci95_hi_pp"])
+        ci_lo_psom_lift = _to_float(r["lift_4psom_vs_3_ci95_lo_pp"]) or 0.0
+        ci_hi_psom_lift = _to_float(r["lift_4psom_vs_3_ci95_hi_pp"]) or 0.0
 
-        sr_vals  = [sr3, sr_pdom, sr_psom, sr5]
-        err_low  = [0, max(0, sr_pdom - ci_lo_pdom), max(0, sr_psom - ci_lo_psom), max(0, sr5 - ci_lo_5)]
-        err_high = [0, max(0, ci_hi_pdom - sr_pdom), max(0, ci_hi_psom - sr_psom), max(0, ci_hi_5 - sr5)]
+        ci_lo_psom = sr3 + ci_lo_psom_lift
+        ci_hi_psom = sr3 + ci_hi_psom_lift
+
+        # Build sr_vals; pdom and 5-mode may be None (pending)
+        sr_pdom_plot = 0.0 if sr_pdom is None else sr_pdom
+        sr5_plot = 0.0 if sr5 is None else sr5
+
+        sr_vals = [sr3, sr_pdom_plot, sr_psom, sr5_plot]
+        err_low = [
+            0,
+            0 if sr_pdom is None or ci_lo_pdom_lift is None else max(0, sr_pdom - (sr3 + ci_lo_pdom_lift)),
+            max(0, sr_psom - ci_lo_psom),
+            0 if sr5 is None or ci_lo_5_lift is None else max(0, sr5 - (sr3 + ci_lo_5_lift)),
+        ]
+        err_high = [
+            0,
+            0 if sr_pdom is None or ci_hi_pdom_lift is None else max(0, (sr3 + ci_hi_pdom_lift) - sr_pdom),
+            max(0, ci_hi_psom - sr_psom),
+            0 if sr5 is None or ci_hi_5_lift is None else max(0, (sr3 + ci_hi_5_lift) - sr5),
+        ]
 
         x = np.arange(len(BARS))
-        bars = ax.bar(x, sr_vals, color=COLORS, width=0.66,
+        # Use grey placeholder for pending bars (pdom and/or 5-mode)
+        bar_colors = list(COLORS)
+        pending_idx = []
+        if sr_pdom is None:
+            bar_colors[1] = "#dddddd"
+            pending_idx.append(1)
+        if sr5 is None:
+            bar_colors[3] = "#dddddd"
+            pending_idx.append(3)
+
+        bars = ax.bar(x, sr_vals, color=bar_colors, width=0.66,
                       yerr=[err_low, err_high], ecolor="#222222", capsize=4,
                       error_kw={"linewidth": 1.0})
+        for idx in pending_idx:
+            bars[idx].set_hatch("//")
+            bars[idx].set_edgecolor("#999999")
 
         for i, (bar, val) in enumerate(zip(bars, sr_vals)):
+            if i in pending_idx:
+                ax.text(bar.get_x() + bar.get_width()/2, max(val, 1.0) + 0.5,
+                        "(pending)", ha="center", va="bottom", fontsize=8, color="#666666")
+                continue
             if i == 0:
                 lift_label = "(baseline)"
             else:
@@ -93,7 +133,7 @@ def main() -> None:
         ax.set_xticks(x, BARS, fontsize=9.5)
         ax.set_ylabel("Oracle ceiling SR (%)")
         # Per-panel zoomed y-axis (sharey=False) so each cell's lift differences are visible
-        max_with_err = max(sr_vals[i] + err_high[i] for i in range(len(BARS)))
+        max_with_err = max(sr_vals[i] + err_high[i] for i in range(len(BARS))) or 1.0
         ax.set_ylim(0, max_with_err * 1.30)
         ax.grid(axis="y", color="#dddddd", linewidth=0.8)
         ax.set_axisbelow(True)

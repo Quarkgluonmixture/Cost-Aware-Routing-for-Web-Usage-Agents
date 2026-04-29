@@ -138,8 +138,10 @@ def fmt_num(x: Any, digits: int = 3) -> str:
 def display_mode(mode: str) -> str:
     return {
         "dom": "DOM",
-        "phantom_dom": "P-text",
+        "phantom_dom": "P-text",   # legacy mode value (paper-grade run dirs use it)
+        "phantom_text": "P-text",  # current mode value
         "phantom_som": "P-SoM",
+        "phantom_prompt": "P-prompt",
         "som": "SoM",
         "vision": "Vision",
     }.get(mode, mode)

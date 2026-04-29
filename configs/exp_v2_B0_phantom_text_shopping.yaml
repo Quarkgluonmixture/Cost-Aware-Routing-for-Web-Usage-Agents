@@ -1,16 +1,18 @@
-# B0 Phantom-DOM ablation (§103) — WA shopping_admin (182 task)
+# B0 P-text ablation (§103) — VWA shopping
+# DOM prompt + SoM marks 文本 + 无图
+
+# Note: observation_mode value kept as "phantom_dom" (legacy alias) so condition_id
+# stays phase1_phantom_dom_router_0 — paper-grade run dirs already use this path.
 
 defaults:
-  - configs/exp_v2_wa_base.yaml
+  - configs/exp_v2_base.yaml
 
 experiment:
   phase: "phase1"
-  name: "B0_phantom_dom_wa_shopping_admin"
+  name: "B0_phantom_text_shopping"
 
 task:
-  include_sites: ["shopping_admin"]
-  site_configs:
-    shopping_admin: "external/visualwebarena/config_files/wa/test_shopping_admin.raw.json"
+  include_sites: ["shopping"]
 
 runtime:
   max_steps: 30

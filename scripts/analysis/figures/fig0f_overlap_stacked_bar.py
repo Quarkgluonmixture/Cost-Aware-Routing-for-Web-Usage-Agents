@@ -69,8 +69,9 @@ PANELS = [
             "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
             "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
         },
-        "pending": ["Phantom-SoM", "P-text"],
+        "pending": ["P-text"],
     },
     {
         "key": "B1 red",

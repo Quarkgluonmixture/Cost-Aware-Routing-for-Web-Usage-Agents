@@ -79,23 +79,43 @@ REDDIT_VERIFIED = {
     },
 }
 
-STEP_DIRS = {
-    "reddit": {
-        "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-        "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-        "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-        "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
+    "B0": {
+        "reddit": {
+            "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
+            "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
+            "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
+            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+        },
+        "classifieds": {
+            "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
+            "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
+            "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+        },
     },
-    "classifieds": {
-        "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-        "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-        "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-        "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+    "B1": {
+        "reddit": {
+            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
+            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
+            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
+        },
+        "classifieds": {
+            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
+            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
+            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
+        },
     },
 }
-SITE_LABELS = {"reddit": "Reddit (Postmill)", "classifieds": "Classifieds (OSClass)"}
+ROW_SPECS = [
+    ("B0", "reddit", "B0 Reddit"),
+    ("B0", "classifieds", "B0 Classifieds"),
+    ("B1", "reddit", "B1 Reddit"),
+    ("B1", "classifieds", "B1 Classifieds"),
+]
 SEARCH_MARKERS = {"reddit": ("/search",), "classifieds": ("page=search", "/search")}
 
 
@@ -123,7 +143,11 @@ def is_search_url(site: str, url: str) -> bool:
 
 def compute_available_metrics(site: str, step_dirs: dict[str, Path]) -> dict[str, dict[str, float | None]]:
     out: dict[str, dict[str, float | None]] = {}
-    for mode, ep_dir in step_dirs.items():
+    for mode in MODES:
+        ep_dir = step_dirs.get(mode)
+        if ep_dir is None:
+            out[mode] = {metric: None for metric in METRICS}
+            continue
         files = sorted(ep_dir.glob(f"{site}_task_*_steps_v2.jsonl"))
         if not files:
             print(f"[warn] {site} {mode}: no step JSONL found; plotting n/a or verified anchor", file=sys.stderr)
@@ -167,31 +191,31 @@ def compute_available_metrics(site: str, step_dirs: dict[str, Path]) -> dict[str
     return out
 
 
-def site_values() -> dict[str, dict[str, dict[str, float | None]]]:
-    reddit_available = compute_available_metrics("reddit", STEP_DIRS["reddit"])
-    # Sanity check live values against §103 N=48 anchors (warn-only, do not override)
-    for mode in MODES:
-        live = reddit_available.get(mode, {}).get("Search-loop %")
-        anchor = REDDIT_VERIFIED["Search-loop %"].get(mode)
-        if live is not None and anchor is not None and abs(live - anchor) > 3.0:
-            print(
-                f"[warn] reddit {mode} live search-loop {live:.1f}% differs from "
-                f"§103 N=48 anchor {anchor:.1f}% (>3pp)",
-                file=sys.stderr,
-            )
+def all_values() -> dict[tuple[str, str], dict[str, dict[str, float | None]]]:
+    out: dict[tuple[str, str], dict[str, dict[str, float | None]]] = {}
+    for baseline, baseline_dirs in STEP_DIRS.items():
+        for site, site_dirs in baseline_dirs.items():
+            metrics = compute_available_metrics(site, site_dirs)
+            out[(baseline, site)] = metrics
+            if baseline == "B0" and site == "reddit":
+                # Sanity check live values against §103 N=48 anchors (warn-only)
+                for mode in MODES:
+                    live = metrics.get(mode, {}).get("Search-loop %")
+                    anchor = REDDIT_VERIFIED["Search-loop %"].get(mode)
+                    if live is not None and anchor is not None and abs(live - anchor) > 3.0:
+                        print(
+                            f"[warn] B0 reddit {mode} live search-loop {live:.1f}% differs from "
+                            f"§103 N=48 anchor {anchor:.1f}% (>3pp)",
+                            file=sys.stderr,
+                        )
+    return out
 
-    classifieds_available = compute_available_metrics("classifieds", STEP_DIRS["classifieds"])
-    return {
-        "reddit": reddit_available,
-        "classifieds": classifieds_available,
-    }
 
-
-def print_verbose(values: dict[str, dict[str, dict[str, float | None]]]) -> None:
-    for site in ["reddit", "classifieds"]:
-        prefix = "red" if site == "reddit" else "cls"
+def print_verbose(values: dict[tuple[str, str], dict[str, dict[str, float | None]]]) -> None:
+    for (baseline, site), site_metrics in values.items():
+        prefix = f"{baseline} {'red' if site == 'reddit' else 'cls'}"
         for mode in MODES:
-            metrics = values[site].get(mode, {})
+            metrics = site_metrics.get(mode, {})
             search = metrics.get("Search-loop %")
             typed = metrics.get("Type action %")
             scroll = metrics.get("Scroll action %")
@@ -203,7 +227,7 @@ def print_verbose(values: dict[str, dict[str, dict[str, float | None]]]) -> None
             )
 
 
-def draw_panel(ax: plt.Axes, site: str, metric: str, values: dict[str, dict[str, float | None]]) -> None:
+def draw_panel(ax: plt.Axes, row_idx: int, metric: str, values: dict[str, dict[str, float | None]]) -> None:
     metric_values = [values.get(mode, {}).get(metric) for mode in MODES]
     heights = [0 if value is None else value for value in metric_values]
     x = np.arange(len(MODES))
@@ -218,7 +242,7 @@ def draw_panel(ax: plt.Axes, site: str, metric: str, values: dict[str, dict[str,
                 "n/a",
                 ha="center",
                 va="bottom",
-                fontsize=7.5,
+                fontsize=7.0,
                 color="#666666",
             )
             continue
@@ -229,11 +253,11 @@ def draw_panel(ax: plt.Axes, site: str, metric: str, values: dict[str, dict[str,
             label,
             ha="center",
             va="bottom",
-            fontsize=7.5,
+            fontsize=7.0,
         )
-    if site == "reddit":
-        ax.set_title(metric, fontsize=10.5, fontweight="bold")
-    ax.set_xticks(x, ["DOM", "Vision", "SoM", "Phantom\nSoM", "Phantom\nDOM"], rotation=0)
+    if row_idx == 0:
+        ax.set_title(metric, fontsize=10.0, fontweight="bold")
+    ax.set_xticks(x, ["DOM", "Vision", "SoM", "Phantom\nSoM", "Phantom\nDOM"], rotation=0, fontsize=7.5)
     ax.grid(axis="y", color="#dddddd", linewidth=0.8)
     ax.set_axisbelow(True)
     ymax = max([v for v in metric_values if v is not None] or [1])
@@ -241,53 +265,41 @@ def draw_panel(ax: plt.Axes, site: str, metric: str, values: dict[str, dict[str,
     if metric == "Search-loop %":
         ax.set_ylabel("Percent")
     elif metric == "Self-correction / ep":
-        ax.set_ylabel("Count / episode")
+        ax.set_ylabel("Count / ep")
 
 
 def main() -> None:
-    values = site_values()
+    values = all_values()
     print_verbose(values)
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    plt.rcParams.update({"font.size": 9.2, "figure.dpi": 150})
-    fig, axes = plt.subplots(2, 4, figsize=(15, 7.8))
+    plt.rcParams.update({"font.size": 8.5, "figure.dpi": 150})
+    fig, axes = plt.subplots(4, 4, figsize=(15, 13.5))
 
-    for row, site in enumerate(["reddit", "classifieds"]):
+    for row, (baseline, site, _label) in enumerate(ROW_SPECS):
+        site_metrics = values[(baseline, site)]
         for col, metric in enumerate(METRICS):
-            draw_panel(axes[row, col], site, metric, values[site])
+            draw_panel(axes[row, col], row, metric, site_metrics)
 
-    axes[1, 0].text(
-        0.98,
-        0.02,
-        "OSClass: search-page coverage,\n"
-        "not failure-loop; cross-site\n"
-        "comparison invalid for this column.",
-        transform=axes[1, 0].transAxes,
-        ha="right",
-        va="bottom",
-        fontsize=7.0,
-        color="#5c3b00",
-        bbox={
-            "boxstyle": "round,pad=0.25",
-            "facecolor": "#fff4d6",
-            "edgecolor": "#c28f2c",
-            "alpha": 0.92,
-        },
-    )
+    # Row labels (left side)
+    n_rows = len(ROW_SPECS)
+    for idx, (_baseline, _site, label) in enumerate(ROW_SPECS):
+        # Y position at vertical center of each row in figure coords
+        y = 1.0 - (idx + 0.5) / n_rows * 0.85 - 0.04
+        fig.text(0.012, y, label, rotation=90, va="center", ha="center", fontsize=11, fontweight="bold")
 
-    fig.text(0.015, 0.69, SITE_LABELS["reddit"], rotation=90, va="center", ha="center", fontsize=12, fontweight="bold")
-    fig.text(0.015, 0.29, SITE_LABELS["classifieds"], rotation=90, va="center", ha="center", fontsize=12, fontweight="bold")
-    fig.suptitle("Strategy Gradient: Representation Changes Exploration Shape", fontsize=14, fontweight="bold")
+    fig.suptitle("Strategy Gradient: Representation Changes Exploration Shape (B0 + B1)", fontsize=13, fontweight="bold")
     fig.text(
         0.5,
-        0.025,
-        "Both rows live-computed from B0 step JSONL (3-mode + Phantom-SoM + P-text). "
-        "OSClass search detection uses 'page=search' / '/search' and measures search-page coverage, "
-        "not failure-mode looping; cross-site comparison is not valid for the search-loop column.",
+        0.012,
+        "All rows live-computed from step JSONL (B0 5-mode + B1 partial). "
+        "B1 cls includes Phantom-SoM; B1 reddit phantom modes pending (n/a hatched). "
+        "OSClass search detection uses 'page=search' / '/search' and measures search-page coverage; "
+        "cross-site comparison invalid for the search-loop column.",
         ha="center",
-        fontsize=8.5,
+        fontsize=7.5,
         color="#555555",
     )
-    fig.tight_layout(rect=(0.035, 0.07, 1, 0.92))
+    fig.tight_layout(rect=(0.035, 0.04, 1, 0.95))
     fig.savefig(OUT, bbox_inches="tight")
     print(OUT)
 

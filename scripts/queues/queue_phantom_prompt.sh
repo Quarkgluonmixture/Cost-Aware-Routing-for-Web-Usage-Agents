@@ -2,7 +2,7 @@
 # queue_phantom_prompt.sh — Launch P-prompt (SoM prompt + AXTree text + no image).
 #
 # P-prompt (§105): SoM prompt + AXTree text + 无图. Symmetric counterpart of
-# phantom_dom (P-text). Together they complete the diamond design — DOM splits
+# phantom_text (P-text; legacy mode value phantom_dom). Together they complete the diamond design — DOM splits
 # into two single-axis-swap phantoms (P-text via axis 1; P-prompt via axis 2),
 # both converging at P-SoM (both axes swapped). Lets paper measure axis 2
 # (prompt) effect in BOTH AXTree-text and [SOM_MARKS]-text contexts, and the

@@ -1,8 +1,8 @@
 # B1 Phantom-prompt (P-prompt §106) — VWA classifieds
-# SoM prompt + AXTree text + 无图。symmetric counterpart of phantom_dom (P-text).
-# Together with phantom_dom, completes the diamond design — paper Section 7
+# SoM prompt + AXTree text + 无图。symmetric counterpart of phantom_text (P-text).
+# Together with phantom_text, completes the diamond design — paper Section 7
 # cross-capability check that prompt × text interaction holds on B1 too.
-# B1 4B 本地推理；与 B1_phantom_dom_classifieds 仅差 system prompt（DOM vs SoM）。
+# B1 4B 本地推理；与 B1_phantom_text_classifieds 仅差 system prompt（DOM vs SoM）。
 
 defaults:
   - configs/exp_v2_base.yaml

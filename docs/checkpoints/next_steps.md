@@ -40,16 +40,18 @@
 **🆕 site_mechanism_dictionary.md done (codex 04-29 17:43)**: 30KB markdown + 30KB JSON, 3 sites × 3 axes × 6 fields，Section 5 prose codex (#13) lookup target. Cross-site invariant: P-SoM Jaccard ≤0.7 sentinel both red/cls + positive single-phantom oracle lift.
 
 **Active 跑中**:
-- **B0 P-prompt reddit (PID 2075552, 51/210)** — symmetric ablation 完整保留, ~3-4h ETA → 跑完 fig1ab P-prompt cell auto-fill
-- B0 dom shopping clean re-run (PID 1106560, ~9h ETA)
-- ~~B1 phantom_som cls (PID 1821957)~~ ✅ done 17:43 (234/234)
-- ~~B1 phantom_som reddit (PID 2244780)~~ 🔴 killed 18:15 (collision); contaminated tasks 0-6 cleared
-- ~~queue_chain B1 phantom (PID 1145483)~~ 🔴 killed 18:15
+- **B0 P-prompt reddit (PID 2075552, 103/210, 49%)** — symmetric ablation 完整保留, ETA ~03:00 → 跑完 fig1ab P-prompt cell auto-fill
+- **B1 P-text cls (PID 2280869, 46/234, 20%)** — queue_chain B1 cls，跑完 auto chain 起 B1 P-prompt cls
+- ~~B0 dom shopping clean re-run~~ ✅ done 04-29 07:36 (**N=465/466**, task 345 wikipedia kiwix 404)
+- ~~B1 phantom_som cls~~ ✅ done 17:43 (234/234)
+- ~~B1 phantom_som reddit / queue_chain B1 phantom~~ 🔴 killed 18:15 (collision)
 
 **Next 3 actions**:
-1. **B0 P-prompt cls** — 等 B1 phantom cls 完事再启（同 site B0 XOR B1 hard rule）
+1. **B0 P-prompt cls** — 等 B1 P-prompt cls 完事再启（同 site B0 XOR B1 hard rule, ~36h chain ETA）
 2. **Codex Section 4 prose update** (~30K codex job): 用 4-Layer framework + ~100× cost + N=210 全数据替换 §103 N=48 + 30× narrative
 3. **Codex Section 5 mechanism prose** (~50K): 等 P-prompt reddit 跑完 + diamond ablation 数据 ready 后做
+
+**⏸️ Shopping pipeline on hold 04-29 22:30** — B0 DOM shopping run 已自然完成 (N=465/466, task 345 wikipedia.zim 404)，但 **paper-grade 状态 pending 用户手动 gallery 排错**：每个 task 逐一审视 success/fail trajectory，定位剩余 site bug（swatch §105 已修，FPC §104 已修，kiwix 404 单点已知，可能还有 review/cart/checkout 边界 bug 未被运行 detect）。在 B0 DOM gallery triage 收尾前 **不启动** B0 shopping 其余 4 mode (SoM/Vision/P-text/P-SoM) + B1 shopping 全套 + shopping P-prompt——避免在 site-bug 未稳定的状态下花钱跑数据。debug 完后再决定是否 re-run B0 DOM 影响的 task subset 还是当作 known-noise 收尾。
 
 **Paper progress**: Section 1/2/3 ✅ done (3163 words), Section 4 figures ✅ FRESH (12 layer-prefixed PNGs) + bootstrap CI ✅ + prose **stale 1725w** 待 codex #11 update, Section 5 evidence **95%** (4-Layer framework + 3-axis cascade diamond + 6 antagonistic pairs + cross-site micro), Section 6 AUROC ≥ baseline ✅, Section 7/8 待 cross-site/cross-model data + multi-metric Pareto.
 
@@ -57,21 +59,25 @@
 
 ## §1 Active Processes
 
-| PID | Process | Status | ETA |
-|---|---|---|---|
-| **2075552** | **B0_phantom_prompt_reddit runner** (NEW 04-29 14:35, symmetric ablation for diamond) | 跑中 task ~16/210 → 跑完 fig1ab cell auto-fill | ~6h |
-| 2075658 | B0_phantom_prompt_reddit watchdog | active | continuous |
-| ~~371892~~ → 1821957 | B1_phantom_classifieds runner (restarted 04-29 09:02 — old PID 371892 stalled 4h due to GPU contention deadlock with seonglae 5 train jobs) | 跑中 task 184/234 → resume 185+, SR 9.7% (17/175); 04-29 watchdog auto-cleaned 5 NOT-LOGGED-IN tasks (0/1/2/3/174) + verified resume | ~10-15d ⚠️ (GPU contention) |
-| 1106560 | B0_dom_shopping runner (clean re-run, RESET_BEFORE=1, queue_baseline.sh) | 跑中 task=0+, fresh run_id `B0_dom_shopping_20260428` | ~9h |
-| 1106686 | B0_dom_shopping watchdog | active | continuous |
-| 32263, 4124316, 4124482, 371979 | Watchdog × 4 (B0 phantom history + B1 cls active) | per-condition monitor | continuous |
-| 1145483 | queue_chain B1 phantom 4-cell sequencer | wait B1 cls done → chain 3 next | continuous |
+🔄 **Live status**: `make active` (real-time scan of run_experiment + experiment_watchdog；自动报 progress / adj-SR / 吞吐 / ETA / stale-watchdog flag)
+
+可选 `make active --json` / `python3 scripts/maintenance/active_processes.py --json` 给机器读。**这张表不再手维护** —— 实时数据从 `ps` + `episodes/*_summary_v2.json` mtime 算出来。
+
+### Recent incidents (manually maintained — `make active` 拿不到的 once-events)
+
+| 日期 | 事件 | 处置 |
+|---|---|---|
+| 04-29 22:30 | shopping pipeline on hold pending 用户手动 gallery triage（B0 DOM N=465/466 done, task 345 wikipedia.zim 404 单点） | 不启动 shopping 其余 4 mode + B1 shopping 5-mode；等 triage 收尾 |
+| 04-29 22:30 | B0 dom shopping watchdog (PID 1106686) 在 runner 自然完成后留 zombie | 🔴 killed |
+| 04-29 19:30 | 4 个 stale watchdog (PID 32263, 4124316, 4124482, 1822028) 指向 paper-grade rename 前的旧 dir → `failto annotate, run_dir not found` | 🔴 killed; renamed dirs (`B0_phantom_som_*`, `B0_phantom_text_*`, `B1_phantom_som_*`) 仍 paper-grade 完整 |
+| 04-29 18:15 | B0 P-prompt reddit + B1 phantom_som reddit 同 site 触发 collision | 🔴 B1 phantom_som reddit 杀掉 + tasks 0-6 cleared；queue_chain B1 phantom (PID 1145483) 一起停 |
+| 04-29 17:43 | B1 phantom_som cls 完成 (234/234 paper-grade) | ✅ run finalized, paper-grade |
+| 04-29 09:02 | B1_phantom_classifieds runner restart (旧 PID 371892 因 GPU contention with seonglae 5 train jobs stalled 4h) | ✅ restarted, watchdog auto-cleaned 5 NOT-LOGGED-IN tasks |
 
 **Health checks**:
 - Magento HTTP 200 (FPC disabled, PowerShell hook 持久化) ✅
 - Watchdog auto-clean protocol verified (paper-grade 100% pure) ✅
 - DGX defensive curl post-reset metis check ✅
-- ✅ B0 dom shopping clean re-run launched (was stopped 17:05 due to no-reset audit; old dirty dir 移 `_archive/`)
 
 ---
 
@@ -127,7 +133,7 @@ Cells:     6 sites × 3 models × 6 modes = ~108 cells (~135K episodes)
 
 ### 3.1 Critical path A B0 部分 (5-mode 已 DONE; **diamond P-prompt 跑中 04-29**)
 
-**Naming convention (paper-facing, §106)**: 5 modes = DOM / SoM / Vision / **P-text** (= phantom_dom) / **P-SoM** (= phantom_som). **+ P-prompt** (= phantom_prompt, NEW 04-29) for diamond completion.
+**Naming convention (paper-facing, §106)**: 5 modes = DOM / SoM / Vision / **P-text** (= phantom_text; legacy mode value `phantom_dom` still accepted) / **P-SoM** (= phantom_som). **+ P-prompt** (= phantom_prompt, NEW 04-29) for diamond completion.
 
 | Cell | Done time | raw / adj SR | N |
 |---|---|---|---:|
@@ -172,14 +178,14 @@ nohup bash scripts/queues/queue_chain.sh \
 nohup bash scripts/queues/queue_chain.sh \
   "queue_phantom_som.sh B1 classifieds" \
   "queue_phantom_som.sh B1 reddit" \
-  "queue_phantom_dom.sh B1 classifieds" \
-  "queue_phantom_dom.sh B1 reddit" \
+  "queue_phantom_text.sh B1 classifieds" \
+  "queue_phantom_text.sh B1 reddit" \
   > logs/queue_chain_b1_phantom.log 2>&1 &
 
 # B0 phantom shopping pair (after B0 dom shopping done)
 nohup bash scripts/queues/queue_chain.sh \
   "queue_phantom_som.sh B0 shopping" \
-  "queue_phantom_dom.sh B0 shopping" \
+  "queue_phantom_text.sh B0 shopping" \
   > logs/queue_chain_b0_phantom_shop.log 2>&1 &
 ```
 

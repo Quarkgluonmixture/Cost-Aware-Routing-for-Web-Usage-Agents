@@ -103,7 +103,8 @@ class Qwen3VLAgent:
             "dom": dom_prompt,
             "som": som_prompt,
             "phantom_som": som_prompt,     # P-SoM: SoM prompt + [SOM_MARKS] text + no image (image-mismatched)
-            "phantom_dom": dom_prompt,     # P-text: DOM prompt + [SOM_MARKS] text + no image (text-mismatched)
+            "phantom_dom": dom_prompt,     # P-text (legacy alias): DOM prompt + [SOM_MARKS] text + no image (text-mismatched)
+            "phantom_text": dom_prompt,    # P-text (current name): same dispatch as phantom_dom
             "phantom_prompt": som_prompt,  # P-prompt: SoM prompt + AXTree text + no image (prompt-only swap from DOM)
             "vision": self._make_vision_prompt(),
         }
@@ -416,10 +417,11 @@ CRITICAL:
         # Label the text section according to mode
         if observation_mode == "vision":
             obs_section = ""  # no text — screenshot only
-        elif observation_mode in ("som", "phantom_som", "phantom_dom"):
+        elif observation_mode in ("som", "phantom_som", "phantom_dom", "phantom_text"):
             # obs_text already contains the [SOM_MARKS]...[/SOM_MARKS] block
             # (or "[SOM_MARKS]\n[/SOM_MARKS]" when degraded). Pass it through directly.
             # phantom_som receives the same text but no image (see som.py).
+            # phantom_text is the current name for phantom_dom (legacy alias preserved).
             obs_section = obs_text if obs_text else ""
         else:
             # "dom" or "phantom_prompt": full AXTree text. phantom_prompt has the SoM

@@ -66,6 +66,7 @@ B1_STEP_DIRS = {
         "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
         "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
         "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
+        "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
     },
 }
 
@@ -78,6 +79,7 @@ CONF_RUNS = [
     ("B0", "reddit", RESULTS / "B0_phantom_text_reddit_20260427"),
     ("B1", "classifieds", RESULTS / "B1_3mode_classifieds_20260413"),
     ("B1", "reddit", RESULTS / "B1_3mode_reddit_20260413"),
+    ("B1", "classifieds", RESULTS / "B1_phantom_som_classifieds_20260428"),
 ]
 
 AXIS_CONTRASTS = {
@@ -191,7 +193,8 @@ def normalize_mode_name(value: str) -> str:
         "som": "SoM",
         "vision": "Vision",
         "phantom_som": "Phantom-SoM",
-        "phantom_dom": "P-text",
+        "phantom_dom": "P-text",   # legacy mode value (paper-grade runs)
+        "phantom_text": "P-text",  # current canonical mode value
         "phantom_prompt": "Phantom-prompt",
     }.get(key, value)
 
@@ -676,7 +679,7 @@ def validation_block(e1: dict[str, Any], e2: dict[str, Any], e3: dict[str, Any],
             for item in block["top_abs_shifts"]
         ),
     }
-    expected_e3_cells = 16
+    expected_e3_cells = 17  # B0×{cls,red}×5 + B1×{cls(4),red(3)} = 10 + 4 + 3 = 17
     return {
         "axis1_n_checks": axis1_n,
         "E1_mean_jaccard_range_checks": e1_range,

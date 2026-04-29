@@ -74,30 +74,22 @@ CELLS = [
             "P-SoM": RES/"B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
         },
     },
-    # B1 cells — partial / pending (chain in flight)
+    # B1 cells — partial. B1 cls Phantom-SoM is paper-grade (234 ep); P-text is
+    # not yet available, so this cell is treated as 4-mode-no-P-text. B1 reddit
+    # phantom data not started, so the reddit cell is intentionally absent.
     {
         "baseline": "B1", "site": "classifieds", "n_expected": 234,
         "modes": {
             "DOM":   RES/"B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
             "SoM":   RES/"B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Vision":RES/"B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "P-text": RES/"B1_phantom_dom_classifieds_20260428/phase1_phantom_dom_router_0/episodes",
+            # P-text intentionally omitted — no paper-grade B1 phantom-DOM data yet
             "P-SoM": RES/"B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
-        },
-    },
-    {
-        "baseline": "B1", "site": "reddit", "n_expected": 210,
-        "modes": {
-            "DOM":   RES/"B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
-            "SoM":   RES/"B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
-            "Vision":RES/"B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
-            "P-text": RES/"B1_phantom_dom_reddit_20260428/phase1_phantom_dom_router_0/episodes",
-            "P-SoM": RES/"B1_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
         },
     },
 ]
 
-MIN_EP_FOR_CELL = 50  # skip cells where any mode has < 50 ep (too partial)
+MIN_EP_FOR_CELL = 50  # skip cells where any present mode has < 50 ep (too partial)
 
 
 def load(d: Path) -> tuple[set[int], set[int]]:
@@ -201,7 +193,10 @@ def mcnemar_exact_one_sided(in_a: np.ndarray, in_b: np.ndarray) -> Optional[floa
 def analyze_cell(cell: dict) -> Optional[dict]:
     """Compute phantom lift for a single (baseline, site) cell.
 
-    Returns None if cell incomplete (any mode missing or <MIN_EP_FOR_CELL ep).
+    Required modes: DOM, SoM, Vision, P-SoM. P-text is optional — when absent,
+    P-text-dependent oracle/lift columns are emitted as None (CSV blank).
+
+    Returns None if any required mode missing or below MIN_EP_FOR_CELL.
     """
     succ, obs = {}, {}
     for mode, ep_dir in cell["modes"].items():
@@ -211,7 +206,12 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         succ[mode] = s
         obs[mode] = o
 
-    # Common observed universe (intersection across all 5 modes)
+    required = ("DOM", "SoM", "Vision", "P-SoM")
+    if any(m not in succ for m in required):
+        return None
+    has_pdom = "P-text" in succ
+
+    # Common observed universe (intersection across all present modes)
     common = set.intersection(*obs.values())
     n = len(common)
     if n < MIN_EP_FOR_CELL:
@@ -220,58 +220,65 @@ def analyze_cell(cell: dict) -> Optional[dict]:
     # Restrict each mode's success set to common universe
     succ_r = {m: s & common for m, s in succ.items()}
 
-    # 3-mode, 4-mode (each phantom alone), 5-mode oracle unions
+    # 3-mode + 4-mode (P-SoM alone). 4-mode P-text and 5-mode only when P-text present.
     union_3 = succ_r["DOM"] | succ_r["SoM"] | succ_r["Vision"]
-    union_4_pdom = union_3 | succ_r["P-text"]
     union_4_psom = union_3 | succ_r["P-SoM"]
-    union_5 = union_3 | succ_r["P-text"] | succ_r["P-SoM"]
     sr_3 = 100 * len(union_3) / n
-    sr_4_pdom = 100 * len(union_4_pdom) / n
     sr_4_psom = 100 * len(union_4_psom) / n
-    sr_5 = 100 * len(union_5) / n
 
     universe = sorted(common)
-    in_3        = np.array([t in union_3       for t in universe], dtype=bool)
-    in_4_pdom   = np.array([t in union_4_pdom  for t in universe], dtype=bool)
-    in_4_psom   = np.array([t in union_4_psom  for t in universe], dtype=bool)
-    in_5        = np.array([t in union_5       for t in universe], dtype=bool)
+    in_3 = np.array([t in union_3 for t in universe], dtype=bool)
+    in_4_psom = np.array([t in union_4_psom for t in universe], dtype=bool)
 
-    # Bootstrap CI on lift (5-mode vs 3-mode)
-    ci_lo, ci_hi = bootstrap_lift_ci(in_3, in_5)
-    # Single-phantom lift CIs
-    ci_lo_pdom, ci_hi_pdom = bootstrap_lift_ci(in_3, in_4_pdom)
+    # Single-P-SoM lift CI
     ci_lo_psom, ci_hi_psom = bootstrap_lift_ci(in_3, in_4_psom)
-
-    # Cohen's h effect sizes (proportion difference, dimensionless)
-    h_5_vs_3        = cohen_h(sr_5 / 100, sr_3 / 100)
-    h_4pdom_vs_3    = cohen_h(sr_4_pdom / 100, sr_3 / 100)
-    h_4psom_vs_3    = cohen_h(sr_4_psom / 100, sr_3 / 100)
-
-    # Wilcoxon signed-rank (paired binary) — degenerate to sign test for monotonic
-    wstat_5, wp_5 = wilcoxon_signed_rank(in_3, in_5)
-    wstat_pdom, wp_pdom = wilcoxon_signed_rank(in_3, in_4_pdom)
+    h_4psom_vs_3 = cohen_h(sr_4_psom / 100, sr_3 / 100)
     wstat_psom, wp_psom = wilcoxon_signed_rank(in_3, in_4_psom)
-
-    # McNemar exact one-sided (b > a; trivially significant if any new tasks added)
-    mc_p_5    = mcnemar_exact_one_sided(in_3, in_5)
-    mc_p_pdom = mcnemar_exact_one_sided(in_3, in_4_pdom)
     mc_p_psom = mcnemar_exact_one_sided(in_3, in_4_psom)
 
-    # Decomposition
-    pdom_adds = succ_r["P-text"] - union_3
     psom_adds = succ_r["P-SoM"] - union_3
-    both_add = pdom_adds & psom_adds
-    pdom_only = pdom_adds - psom_adds
-    psom_only = psom_adds - pdom_adds
 
-    # Jaccard P-SoM ↔ P-text (Scenario C sentinel — paper Section 5 axis 2 evidence)
-    inter = succ_r["P-SoM"] & succ_r["P-text"]
-    union = succ_r["P-SoM"] | succ_r["P-text"]
-    jaccard = (len(inter) / len(union)) if union else 0.0
-    # Threshold: > 0.7 → P-SoM ≈ P-text redundant, paper claim weakens (Scenario C)
-    jaccard_warn = jaccard > 0.7
+    if has_pdom:
+        union_4_pdom = union_3 | succ_r["P-text"]
+        union_5 = union_3 | succ_r["P-text"] | succ_r["P-SoM"]
+        sr_4_pdom = 100 * len(union_4_pdom) / n
+        sr_5 = 100 * len(union_5) / n
+        in_4_pdom = np.array([t in union_4_pdom for t in universe], dtype=bool)
+        in_5 = np.array([t in union_5 for t in universe], dtype=bool)
+        ci_lo, ci_hi = bootstrap_lift_ci(in_3, in_5)
+        ci_lo_pdom, ci_hi_pdom = bootstrap_lift_ci(in_3, in_4_pdom)
+        h_5_vs_3 = cohen_h(sr_5 / 100, sr_3 / 100)
+        h_4pdom_vs_3 = cohen_h(sr_4_pdom / 100, sr_3 / 100)
+        wstat_5, wp_5 = wilcoxon_signed_rank(in_3, in_5)
+        wstat_pdom, wp_pdom = wilcoxon_signed_rank(in_3, in_4_pdom)
+        mc_p_5 = mcnemar_exact_one_sided(in_3, in_5)
+        mc_p_pdom = mcnemar_exact_one_sided(in_3, in_4_pdom)
+        pdom_adds = succ_r["P-text"] - union_3
+        both_add = pdom_adds & psom_adds
+        pdom_only = pdom_adds - psom_adds
+        psom_only = psom_adds - pdom_adds
+        inter = succ_r["P-SoM"] & succ_r["P-text"]
+        unionj = succ_r["P-SoM"] | succ_r["P-text"]
+        jaccard = (len(inter) / len(unionj)) if unionj else 0.0
+        jaccard_warn = jaccard > 0.7
+    else:
+        sr_4_pdom = None
+        sr_5 = None
+        ci_lo = ci_hi = None
+        ci_lo_pdom = ci_hi_pdom = None
+        h_5_vs_3 = None
+        h_4pdom_vs_3 = None
+        wp_5 = wp_pdom = None
+        mc_p_5 = mc_p_pdom = None
+        pdom_adds = both_add = pdom_only = set()
+        psom_only = psom_adds  # no overlap with absent P-text
+        jaccard = None
+        jaccard_warn = False
 
-    is_partial = any(len(o) < cell["n_expected"] for o in obs.values())
+    is_partial = any(len(o) < cell["n_expected"] for o in obs.values()) or not has_pdom
+
+    def maybe_round(value, ndigits=4):
+        return None if value is None else round(value, ndigits)
 
     return {
         "baseline": cell["baseline"],
@@ -279,29 +286,30 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         "n_common": n,
         "n_expected": cell["n_expected"],
         "is_partial": is_partial,
+        "has_pdom": has_pdom,
         "sr_dom":     round(100 * len(succ_r["DOM"]) / n, 4),
         "sr_som":     round(100 * len(succ_r["SoM"]) / n, 4),
         "sr_vision":  round(100 * len(succ_r["Vision"]) / n, 4),
-        "sr_pdom":    round(100 * len(succ_r["P-text"]) / n, 4),
+        "sr_pdom":    (round(100 * len(succ_r["P-text"]) / n, 4) if has_pdom else None),
         "sr_psom":    round(100 * len(succ_r["P-SoM"]) / n, 4),
         "oracle_3mode_pp":  round(sr_3, 4),
-        "oracle_4mode_pdom_pp": round(sr_4_pdom, 4),
+        "oracle_4mode_pdom_pp": maybe_round(sr_4_pdom),
         "oracle_4mode_psom_pp": round(sr_4_psom, 4),
-        "oracle_5mode_pp":  round(sr_5, 4),
-        "lift_5_vs_3_pp":   round(sr_5 - sr_3, 4),
-        "lift_5_vs_3_ci95_lo_pp":  round(ci_lo, 4),
-        "lift_5_vs_3_ci95_hi_pp":  round(ci_hi, 4),
-        "lift_4pdom_vs_3_pp":   round(sr_4_pdom - sr_3, 4),
-        "lift_4pdom_vs_3_ci95_lo_pp": round(ci_lo_pdom, 4),
-        "lift_4pdom_vs_3_ci95_hi_pp": round(ci_hi_pdom, 4),
+        "oracle_5mode_pp":  maybe_round(sr_5),
+        "lift_5_vs_3_pp":   (round(sr_5 - sr_3, 4) if sr_5 is not None else None),
+        "lift_5_vs_3_ci95_lo_pp":  maybe_round(ci_lo),
+        "lift_5_vs_3_ci95_hi_pp":  maybe_round(ci_hi),
+        "lift_4pdom_vs_3_pp":   (round(sr_4_pdom - sr_3, 4) if sr_4_pdom is not None else None),
+        "lift_4pdom_vs_3_ci95_lo_pp": maybe_round(ci_lo_pdom),
+        "lift_4pdom_vs_3_ci95_hi_pp": maybe_round(ci_hi_pdom),
         "lift_4psom_vs_3_pp":   round(sr_4_psom - sr_3, 4),
         "lift_4psom_vs_3_ci95_lo_pp": round(ci_lo_psom, 4),
         "lift_4psom_vs_3_ci95_hi_pp": round(ci_hi_psom, 4),
         # Effect sizes (Cohen's h on oracle proportions)
-        "cohen_h_5_vs_3":     round(h_5_vs_3, 4),
-        "cohen_h_5_vs_3_label": cohen_h_label(h_5_vs_3),
-        "cohen_h_4pdom_vs_3": round(h_4pdom_vs_3, 4),
-        "cohen_h_4pdom_vs_3_label": cohen_h_label(h_4pdom_vs_3),
+        "cohen_h_5_vs_3":     maybe_round(h_5_vs_3),
+        "cohen_h_5_vs_3_label": (cohen_h_label(h_5_vs_3) if h_5_vs_3 is not None else None),
+        "cohen_h_4pdom_vs_3": maybe_round(h_4pdom_vs_3),
+        "cohen_h_4pdom_vs_3_label": (cohen_h_label(h_4pdom_vs_3) if h_4pdom_vs_3 is not None else None),
         "cohen_h_4psom_vs_3": round(h_4psom_vs_3, 4),
         "cohen_h_4psom_vs_3_label": cohen_h_label(h_4psom_vs_3),
         # Wilcoxon (paired sign on binary)
@@ -313,13 +321,13 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         "mcnemar_4pdom_vs_3_p": mc_p_pdom,
         "mcnemar_4psom_vs_3_p": mc_p_psom,
         # Decomposition
-        "pdom_adds_count":      len(pdom_adds),
+        "pdom_adds_count":      (len(pdom_adds) if has_pdom else None),
         "psom_adds_count":      len(psom_adds),
-        "pdom_only_count":      len(pdom_only),
-        "psom_only_count":      len(psom_only),
-        "both_phantom_overlap_count": len(both_add),
+        "pdom_only_count":      (len(pdom_only) if has_pdom else None),
+        "psom_only_count":      (len(psom_only) if has_pdom else None),
+        "both_phantom_overlap_count": (len(both_add) if has_pdom else None),
         # Scenario C sentinel: P-SoM ↔ P-text Jaccard
-        "phantom_pair_jaccard": round(jaccard, 4),
+        "phantom_pair_jaccard": (round(jaccard, 4) if jaccard is not None else None),
         "phantom_pair_jaccard_warn": jaccard_warn,
     }
 
@@ -367,6 +375,11 @@ def main() -> int:
     for r in rows:
         n_label = (f"{r['n_common']}/{r['n_expected']}†" if r["is_partial"]
                    else f"{r['n_common']}")
+        if r.get("lift_5_vs_3_pp") is None:
+            lines.append(
+                f"| {r['baseline']} | {r['site']} | {n_label} | n/a (P-text pending) | — | — | — | — | — |"
+            )
+            continue
         sig = "✅" if r["lift_5_vs_3_ci95_lo_pp"] > 0 else ("🟡" if r["lift_5_vs_3_ci95_hi_pp"] > 0 else "❌")
         wp = f"{r['wilcoxon_5_vs_3_p']:.4f}" if r['wilcoxon_5_vs_3_p'] is not None else "—"
         mp = f"{r['mcnemar_5_vs_3_p']:.4f}" if r['mcnemar_5_vs_3_p'] is not None else "—"
@@ -386,11 +399,17 @@ def main() -> int:
         "|---|---|---:|---|---:|---:|---|---:|",
     ]
     for r in rows:
+        if r.get("lift_4pdom_vs_3_pp") is None:
+            pdom_cell = "n/a"
+            pdom_ci = "—"
+            pdom_h = "—"
+        else:
+            pdom_cell = f"+{r['lift_4pdom_vs_3_pp']:.2f}pp"
+            pdom_ci = f"[{r['lift_4pdom_vs_3_ci95_lo_pp']:.2f}, {r['lift_4pdom_vs_3_ci95_hi_pp']:.2f}]"
+            pdom_h = f"{r['cohen_h_4pdom_vs_3']:.3f}"
         lines.append(
             f"| {r['baseline']} | {r['site']} | "
-            f"+{r['lift_4pdom_vs_3_pp']:.2f}pp | "
-            f"[{r['lift_4pdom_vs_3_ci95_lo_pp']:.2f}, {r['lift_4pdom_vs_3_ci95_hi_pp']:.2f}] | "
-            f"{r['cohen_h_4pdom_vs_3']:.3f} | "
+            f"{pdom_cell} | {pdom_ci} | {pdom_h} | "
             f"+{r['lift_4psom_vs_3_pp']:.2f}pp | "
             f"[{r['lift_4psom_vs_3_ci95_lo_pp']:.2f}, {r['lift_4psom_vs_3_ci95_hi_pp']:.2f}] | "
             f"{r['cohen_h_4psom_vs_3']:.3f} |"
@@ -408,13 +427,15 @@ def main() -> int:
     ]
     for r in rows:
         n = max(r["n_common"], 1)
+        def cell(val):
+            return "n/a" if val is None else f"{val} ({100*val/n:.2f}pp)"
         lines.append(
             f"| {r['baseline']} | {r['site']} | "
-            f"{r['pdom_adds_count']} ({100*r['pdom_adds_count']/n:.2f}pp) | "
-            f"{r['psom_adds_count']} ({100*r['psom_adds_count']/n:.2f}pp) | "
-            f"{r['pdom_only_count']} ({100*r['pdom_only_count']/n:.2f}pp) | "
-            f"{r['psom_only_count']} ({100*r['psom_only_count']/n:.2f}pp) | "
-            f"{r['both_phantom_overlap_count']} ({100*r['both_phantom_overlap_count']/n:.2f}pp) |"
+            f"{cell(r['pdom_adds_count'])} | "
+            f"{cell(r['psom_adds_count'])} | "
+            f"{cell(r['pdom_only_count'])} | "
+            f"{cell(r['psom_only_count'])} | "
+            f"{cell(r['both_phantom_overlap_count'])} |"
         )
 
     # Scenario C sentinel: P-SoM ↔ P-text Jaccard
@@ -431,6 +452,11 @@ def main() -> int:
         "|---|---|---:|:---:|",
     ]
     for r in rows:
+        if r.get("phantom_pair_jaccard") is None:
+            lines.append(
+                f"| {r['baseline']} | {r['site']} | n/a | ⏳ P-text pending |"
+            )
+            continue
         if r["phantom_pair_jaccard_warn"]:
             status = "🔴 > 0.7 (WARN: redundant)"
         elif r["phantom_pair_jaccard"] > 0.6:
