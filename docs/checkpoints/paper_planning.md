@@ -26,18 +26,46 @@
 | (d) **Drop-one oracle 1.7-3.3pp** | red Phantom-SoM 3.33pp drop-one (≥ SoM 1.90pp); cls 2.56pp |
 
 **Paper one-liner (for advisor pitch)**:
-> "Phantom-SoM identifies a hidden text-only routing arm in SoM-style web agents that achieves DOM-level cost and ~50% lower latency while contributing 1.7-3.3pp drop-one oracle value. The arm is created by skipping the marked-image draw and image-token inference path — no model retraining, no prompt change, no infrastructure overhead. We characterize its mechanism via 3-axis ablation (representation × prompt × image), explain its site-modulated effect (cls visual-rich win for SoM, red text-dominated win for Phantom), and demonstrate routing infrastructure drop-in (signal AUROC ≥ baseline)."
+> "Phantom-SoM identifies a hidden text-only routing arm in SoM-style web agents that achieves DOM-level cost and ~50% lower latency while contributing 1.7-3.3pp drop-one oracle value. The arm is created by skipping the marked-image draw and image-token inference path — no model retraining, no prompt change, no infrastructure overhead. We characterize its mechanism via 3-axis ablation (text-payload structure × system prompt × image), explain its site-modulated effect (cls visual-rich win for SoM, red text-dominated win for Phantom), and demonstrate routing infrastructure drop-in (signal AUROC ≥ baseline)."
+
+### Cascade design (token-monotonic, paper Section 6)
+
+```
+DOM       (~3K AXTree text + DOM prompt + 无图)        ← cheapest text
+  ↓ axis 1: AXTree → [SOM_MARKS] flat (text 结构 swap, ~3K both, prompt 不变)
+P-DOM     ([SOM_MARKS] flat + DOM prompt + 无图)
+  ↓ axis 2: dom_prompt → som_prompt (system prompt swap, 0 data token)
+P-SoM     ([SOM_MARKS] flat + SoM prompt + 无图)
+  ↓ axis 3: + image (~1.5K image embedding tokens)
+SoM       ([SOM_MARKS] flat + SoM prompt + 有图)        ← highest text+image
+```
+
+**Order rationale**: Step 1+2 都 **0 增量 token**，第 3 步才付 image embedding tax — token-monotonic cascade，trigger router 不需要"先加再删"。Vision 是另条独立路径（image-only, no text），适合纯 visual task。
 
 ---
 
 ## §2 Theory Framework — 3-axis Hierarchical (validated)
 
-### Axis 1: Representation (PRIMARY, first-order SR effect)
+### 5-mode 选择基于 2×2×2 design cube 对角路径
+
+3 axes 形成 2×2×2 = 8 hypothetical modes，paper 5-mode 是其中**沿对角 axis-by-axis 路径**的 5 个 self-consistent 节点 (DOM → P-DOM → P-SoM → SoM + Vision 独立 image-only arm)。
+
+**4 个 mismatched hybrid 故意排除** (e.g. AXTree + SoM-prompt + 无图)：
+- 没 LLM 机制 — SoM prompt 指 `[SOM_MARKS] N` 但 AXTree 用 DOM accessibility ID（不同 ID 系统 → mismatched parsing）
+- Confuse agent — `click [42]` 解析歧义，action selection 必错
+- 不 clean axis 2 ablation — confound prompt-effect with ID-system-parsing-effect
+- 跳出 token-monotonic cascade — token 数与 P-DOM 同但 SR 必差（mismatched parsing tax）
+
+Paper Section 3 footnote 用此 defense reviewer "why 5 not 8".
+
+### Axis 1: Text payload structure (PRIMARY, first-order SR effect)
 
 ```
-AXTree vs [SOM_MARKS] → action surface + trajectory basin
-→ Phantom modes 获得 4th routing arm (因为 [SOM_MARKS] obs)
+AXTree (hierarchical) vs [SOM_MARKS] (flat indexed) → action surface + trajectory basin
+→ Phantom modes 获得 routing arm (因为 [SOM_MARKS] obs structure)
 ```
+
+注意：这个 axis 是 **text payload 结构**（agent 看到的 obs 文本），不是抽象的"模型表征"。Token 数大致不变（~3K both），但 layout / parsing pattern 不同。
 
 **LLM mechanism**:
 - Token distribution shift (hierarchical metadata vs flat indexed list)

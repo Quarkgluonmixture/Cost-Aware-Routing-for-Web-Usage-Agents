@@ -53,25 +53,27 @@ Its observation is identical to Phantom-SoM: `[SOM_MARKS]` text only, no page sc
 
 This cell separates representation from prompt wording. If Phantom-DOM behaves like Phantom-SoM, the flat marks text is driving behavior. If it behaves like DOM, the prompt is doing more of the work.
 
-### 3.4 The 2x2 Ablation Matrix
+### 3.4 The 2x2 Ablation Matrix and Excluded Hybrid
 
 The core ablation is a prompt-by-representation matrix:
 
 | | DOM prompt | SoM prompt |
 |---|---|---|
-| AXTree obs | DOM | unused in Paper 1 |
+| AXTree obs | DOM | *excluded — see below* |
 | `[SOM_MARKS]` obs | Phantom-DOM | Phantom-SoM |
 
 Full SoM is adjacent to this 2x2: it uses the SoM prompt, the same `[SOM_MARKS]` text, and the marked screenshot. Vision is a separate screenshot-only baseline.
 
+The fourth cell — AXTree observation paired with the SoM prompt — is intentionally excluded from Paper 1 because it is not a self-consistent design point. The SoM system prompt instructs the agent to interact via `[SOM_MARKS]` IDs (e.g. `click [42]` referring to the SoM-marked element 42), but AXTree text uses an independent accessibility-tree ID space; an action like `click [42]` becomes parsing-ambiguous when the two ID systems do not match. This hybrid mode (i) has no clean LLM mechanism, (ii) confounds the prompt-effect ablation with mismatched-ID parsing failure, and (iii) does not reduce token cost relative to Phantom-DOM. We treat the 5-mode set (DOM, Phantom-DOM, Phantom-SoM, full SoM, plus Vision as a separate screenshot-only arm) as the diagonal axis-by-axis path through the 2×2×2 (text-payload-structure × prompt × image) design cube; the four mismatched-prompt-representation hybrids are excluded for the same reason.
+
 Each contrast isolates a different factor:
 
-- **DOM vs Phantom-DOM** holds the prompt family fixed at DOM and changes the text representation from AXTree to `[SOM_MARKS]`.
+- **DOM vs Phantom-DOM** holds the prompt family fixed at DOM and changes the text-payload structure from AXTree to `[SOM_MARKS]`.
 - **Phantom-SoM vs Phantom-DOM** holds the text observation fixed and changes only the prompt family.
 - **Full SoM vs Phantom-SoM** holds prompt and marks text fixed and adds the implemented marked-image channel.
 - **Full SoM vs DOM** measures the combined effect of SoM prompt, marks text, and marked screenshot relative to the standard text baseline.
 
-The 2x2 is not a routing policy by itself. It is a causal scaffold for Section 5: text representation shapes exploration, while prompt wording tunes commitment confidence.
+The 2x2 is not a routing policy by itself. It is a causal scaffold for Section 5: text-payload structure shapes exploration, while prompt wording tunes commitment confidence. Section 6 promotes this scaffold to a token-monotonic cascade — DOM → Phantom-DOM (axis 1, text-payload swap, no token increase) → Phantom-SoM (axis 2, system-prompt swap, no data-token increase) → full SoM (axis 3, image embedding cost) — so a routing trigger never has to "add then remove" tokens.
 
 ### 3.5 Implementation and Measurement Protocol
 
