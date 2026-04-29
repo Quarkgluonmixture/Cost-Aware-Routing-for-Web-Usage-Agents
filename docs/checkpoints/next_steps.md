@@ -46,7 +46,7 @@
 
 | PID | Process | Status | ETA |
 |---|---|---|---|
-| 371892 | B1_phantom_classifieds runner | 跑中 ~16/234, GPU contention | ~7-10 days ⚠️ |
+| ~~371892~~ → 1821957 | B1_phantom_classifieds runner (restarted 04-29 09:02 — old PID 371892 stalled 4h due to GPU contention deadlock with seonglae 5 train jobs) | 跑中 task 184/234 → resume 185+, SR 9.7% (17/175) | ~10-15d ⚠️ (GPU contention) |
 | 1106560 | B0_dom_shopping runner (clean re-run, RESET_BEFORE=1, queue_baseline.sh) | 跑中 task=0+, fresh run_id `B0_dom_shopping_20260428` | ~9h |
 | 1106686 | B0_dom_shopping watchdog | active | continuous |
 | 32263, 4124316, 4124482, 371979 | Watchdog × 4 (B0 phantom history + B1 cls active) | per-condition monitor | continuous |
@@ -238,6 +238,7 @@ paper_strategic 数据 pipeline (详 `paper_planning.md` §13.B)。一键 `make 
 | **IP env-var-ize 重构** (9 处 `.py/.sh` hardcoded `100.95.81.103`) | 🟡 backlog | 替换为 `${VWA_REMOTE_HOST}` env var read，让 Myriad / future host 不必 sed。文件: `p79/utils/auth_refresh.py` / `external/visualwebarena/browser_env/envs.py` / `scripts/maintenance/{reset_vwa_sites,retry_b1_single_task,experiment_watchdog}.sh\|.py`。**触发条件**: Myriad onboard 时如果不能 Tailscale reach quark IP |
 | **WA reset mechanism**（queue scripts 当前仅 vwa reset, wa skip） | 🟡 backlog | webarena docker reset 路径未实现。需写 `reset_wa_sites.sh` (类似 `reset_vwa_sites.sh`) 然后 queue scripts 加 `BENCHMARK=wa` 分支调用 |
 | **Watchdog AUTO-ANALYSIS spam guard** (partial condition_summary 触发 infinite loop, §104 Day 3 04:00 audit) | 🟡 backlog | `experiment_watchdog.py:1340` `condition_completed = condition_summary_v2.json.exists()` 应增加 episode count vs expected_episodes guard，避免 partial 数据 (e.g. 165/234 ep) 触发 Case 3 re-trigger loop. 当前 workaround: 不要在 in-flight run 上跑 `make rederive RUN=...` |
+| **GPU contention deadlock detection** (B1 cls stalled 4h 04-29 05:01-09:00, seonglae 5 train jobs + StreamWriter 8.5GB hogged GPU 95%) | 🟡 backlog | runner state R but ep_pol kernel wait → no progress detection in watchdog. Need watchdog stale-runner heartbeat: 检测 episode mtime 超过 N 分钟无更新 → 自动 SIGTERM runner + queue script idempotent re-spawn. 当前 workaround: manual stop+restart `bash scripts/queues/queue_phantom_som.sh B1 classifieds` |
 | **Tier A summary commit decision** (是否 commit `condition_summary_v2.json` + `run_meta.json` 入 git LFS / 直 git for paper-grade archive) | 🟡 待评估 | size: 10 conditions × ~50KB = ~500KB total，git 直管也行；好处: paper repro 时 reviewer 不需 hub access；坏处: 实验未冻结前每次 rederive 改动多 |
 
 **Resolved (recent)**:
