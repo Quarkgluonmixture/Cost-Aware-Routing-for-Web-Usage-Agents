@@ -1279,15 +1279,39 @@ def generate_aggregate_gallery(
     else:
         gallery_dir = phase_dir
     gallery_path = gallery_dir / "gallery.html"
+    # Special "baseline alias" semantics: prefix `B0_3mode` / `B1_3mode` aggregates
+    # ALL runs of that baseline (3mode + dom + phantom + phantom_dom + ...).
+    # This lets queue scripts share one unified gallery URL per baseline while
+    # keeping the legacy `B0_3mode/` / `B1_3mode/` paths the user already
+    # bookmarked. Other prefix values (e.g. `B0_phantom`) keep exact match.
+    is_baseline_alias = prefix_filter in {"B0_3mode", "B1_3mode"}
+    baseline_label = prefix_filter.split("_", 1)[0] if is_baseline_alias else None
+
     source_run_dirs: List[Path] = []
     for cand in sorted(phase_dir.iterdir()):
         if not cand.is_dir() or cand.is_symlink():
             continue
         if cand.name.startswith(".") or cand.name in ("analysis",):
             continue
-        family = _parse_run_family(cand.name)
-        if prefix_filter and (not family or family["prefix"] != prefix_filter):
+        # Skip archive / dirty / aborted dirs (they have legitimate `_` prefix)
+        if cand.name.startswith("_"):
             continue
+        family = _parse_run_family(cand.name)
+        if prefix_filter:
+            if not family:
+                continue
+            if is_baseline_alias:
+                # Match any prefix starting with the baseline label
+                # (e.g. B0_3mode, B0_dom, B0_phantom, B0_phantom_dom for "B0")
+                # Exclude `_wa_` runs to keep VWA-only aggregate clean
+                # (WA runs go to separate B0_3mode_wa / B1_3mode_wa galleries)
+                if not family["prefix"].startswith(baseline_label + "_"):
+                    continue
+                if "_wa" in family["prefix"]:
+                    continue
+            else:
+                if family["prefix"] != prefix_filter:
+                    continue
         if _has_episode_data(cand):
             source_run_dirs.append(cand)
 

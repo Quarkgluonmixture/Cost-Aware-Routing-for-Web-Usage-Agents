@@ -188,7 +188,10 @@ fi
 # ---------- watchdog 启动 ----------
 WD_STATE="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.state.json"
 WD_LOG="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.log"
-AGGREGATE_PREFIX="${CFG_NAME%_${SITE}}"
+# Unified per-baseline aggregate gallery — all B0/B1 modes share one URL
+# (B0_3mode/ or B1_3mode/). gallery script's "baseline alias" semantics
+# expands this to match all B0_*/B1_* runs (3mode + dom + phantom variants).
+AGGREGATE_PREFIX="${BASELINE}_3mode"
 
 if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
   echo "[phantom_som] watchdog for ${RUN_ID} already running, skipping spawn"

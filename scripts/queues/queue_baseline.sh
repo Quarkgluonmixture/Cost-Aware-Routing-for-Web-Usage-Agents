@@ -220,7 +220,7 @@ else
     --idle-alert-mins 30 \
     --ntfy-topic p79-exp-dgx-spark \
     --state-file "${WATCHDOG_STATE}" \
-    --aggregate-prefix "${BASELINE}_${MODE}" \
+    --aggregate-prefix "${BASELINE}_3mode" \
     --glm-config .auth/glm \
     --digest-dir "${WATCHDOG_DIGEST}" \
     > "${WATCHDOG_LOG}" 2>&1 < /dev/null &
