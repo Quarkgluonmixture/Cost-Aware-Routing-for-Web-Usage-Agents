@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""
+"""Per-run diagnostic; not part of the 4-layer evidence framework.
+
 Analyze Reddit "comment self-link cycle" escape patterns in B0 and B1 DOM mode.
 
 Detects tasks where the agent repeatedly clicks on a post page without the URL

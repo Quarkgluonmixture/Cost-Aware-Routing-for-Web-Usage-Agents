@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Overlap-depth stacked bars for observation-mode solve pools."""
+"""[Layer 0f] Outcome — overlap-depth distribution for solve pools.
+
+Output:
+- results/phantom_paper/figures/fig0f_overlap_stacked_bar.png
+
+Layer 0f: solve-pool overlap depth across observation modes.
+
+See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
+"""
 
 from __future__ import annotations
 
@@ -15,7 +23,7 @@ from matplotlib.patches import Patch
 
 ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
-OUT = ROOT / "results/phantom_paper/figures/fig8_overlap_stacked_bar.png"
+OUT = ROOT / "results/phantom_paper/figures/fig0f_overlap_stacked_bar.png"
 
 MODE_ORDER = ["DOM", "SoM", "Vision", "Phantom-SoM", "Phantom-DOM"]
 MODE_LABELS = ["DOM", "SoM", "Vision", "Phantom\nSoM", "Phantom\nDOM"]

@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
-"""Strategy-gradient bars for reddit and classifieds observation variants.
+"""[Layer 1c] Macro Behavior — strategy-gradient visualization.
 
-The reddit row keeps the verified §103 / N=48 anchor values. The classifieds
-row is computed live from available step JSONL files. Phantom-SoM classifieds
-currently has only stale summary backups and no step JSONL, so it is shown as
-n/a with a stale-data footnote.
+Output:
+- results/phantom_paper/figures/fig1c_strategy_gradient.png
+
+Layer 1c: search-loop, type, scroll, and self-correction strategy gradient.
+
+See docs/checkpoints/paper_planning.md §3 Layer 1 framework.
+
+Strategy-gradient bars for reddit and classifieds observation variants.
+
+Both rows are computed live from available step JSONL files (full 5-mode B0
+data: B0_3mode_<site> + B0_phantom_<site> + B0_phantom_dom_<site>).
+The §103 / N=48 anchor values are kept as a sanity-check reference but are
+no longer used for plotting; live values are reported instead.
 """
 
 from __future__ import annotations
@@ -20,7 +29,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
-OUT = ROOT / "results/phantom_paper/figures/fig3_strategy_gradient.png"
+OUT = ROOT / "results/phantom_paper/figures/fig1c_strategy_gradient.png"
 
 MODES = ["DOM", "Vision", "SoM", "Phantom-SoM", "Phantom-DOM"]
 METRICS = ["Search-loop %", "Type action %", "Scroll action %", "Self-correction / ep"]
@@ -153,27 +162,29 @@ def compute_available_metrics(site: str, step_dirs: dict[str, Path]) -> dict[str
                 "Scroll action %": 100.0 * scrolled / total,
                 "Self-correction / ep": selfcorr / n,
             }
+        else:
+            out[mode] = {metric: None for metric in METRICS}
     return out
 
 
 def site_values() -> dict[str, dict[str, dict[str, float | None]]]:
     reddit_available = compute_available_metrics("reddit", STEP_DIRS["reddit"])
-    if reddit_available.get("Phantom-DOM", {}).get("Search-loop %") is not None:
-        observed = reddit_available["Phantom-DOM"]["Search-loop %"]
-        verified = REDDIT_VERIFIED["Search-loop %"]["Phantom-DOM"]
-        if verified is not None and abs(observed - verified) > 0.5:
+    # Sanity check live values against §103 N=48 anchors (warn-only, do not override)
+    for mode in MODES:
+        live = reddit_available.get(mode, {}).get("Search-loop %")
+        anchor = REDDIT_VERIFIED["Search-loop %"].get(mode)
+        if live is not None and anchor is not None and abs(live - anchor) > 3.0:
             print(
-                f"[warn] reddit Phantom-DOM derived search-loop {observed:.1f}% differs from "
-                f"verified {verified:.1f}%; plotting verified value",
+                f"[warn] reddit {mode} live search-loop {live:.1f}% differs from "
+                f"§103 N=48 anchor {anchor:.1f}% (>3pp)",
                 file=sys.stderr,
             )
 
     classifieds_available = compute_available_metrics("classifieds", STEP_DIRS["classifieds"])
-    values = {
-        "reddit": {mode: {metric: REDDIT_VERIFIED[metric][mode] for metric in METRICS} for mode in MODES},
+    return {
+        "reddit": reddit_available,
         "classifieds": classifieds_available,
     }
-    return values
 
 
 def print_verbose(values: dict[str, dict[str, dict[str, float | None]]]) -> None:
@@ -212,8 +223,6 @@ def draw_panel(ax: plt.Axes, site: str, metric: str, values: dict[str, dict[str,
             )
             continue
         label = f"{value:.1f}" if "Self" not in metric else f"{value:.2f}"
-        if site == "classifieds" and mode == "Phantom-SoM":
-            label += "*"
         ax.text(
             bar.get_x() + bar.get_width() / 2,
             bar.get_height() + max(0.35, 0.02 * max(heights or [1])),
@@ -247,21 +256,21 @@ def main() -> None:
             draw_panel(axes[row, col], site, metric, values[site])
 
     axes[1, 0].text(
+        0.98,
         0.02,
-        0.96,
-        "OSClass tasks intrinsically use search pages;\n"
-        "this is search-page coverage, not a\n"
-        "cross-site failure-loop metric.",
+        "OSClass: search-page coverage,\n"
+        "not failure-loop; cross-site\n"
+        "comparison invalid for this column.",
         transform=axes[1, 0].transAxes,
-        ha="left",
-        va="top",
-        fontsize=7.4,
+        ha="right",
+        va="bottom",
+        fontsize=7.0,
         color="#5c3b00",
         bbox={
-            "boxstyle": "round,pad=0.28",
+            "boxstyle": "round,pad=0.25",
             "facecolor": "#fff4d6",
             "edgecolor": "#c28f2c",
-            "alpha": 0.9,
+            "alpha": 0.92,
         },
     )
 
@@ -271,9 +280,9 @@ def main() -> None:
     fig.text(
         0.5,
         0.025,
-        "Reddit row uses §103/current N=48 verified anchors. Classifieds row is live-computed from step JSONL; "
-        "OSClass search detection uses 'page=search' and measures search-page coverage, not failure-mode looping; "
-        "cross-site comparison is not valid for this column. * Phantom-SoM classifieds has stale summaries but no step JSONL, so metrics are n/a.",
+        "Both rows live-computed from B0 step JSONL (3-mode + Phantom-SoM + Phantom-DOM). "
+        "OSClass search detection uses 'page=search' / '/search' and measures search-page coverage, "
+        "not failure-mode looping; cross-site comparison is not valid for the search-loop column.",
         ha="center",
         fontsize=8.5,
         color="#555555",

@@ -102,8 +102,9 @@ class Qwen3VLAgent:
         self._system_prompts = {
             "dom": dom_prompt,
             "som": som_prompt,
-            "phantom_som": som_prompt,  # same prompt as som; image dropped in obs prep
-            "phantom_dom": dom_prompt,  # ablation: dom prompt + [SOM_MARKS] text + no image
+            "phantom_som": som_prompt,     # P-SoM: SoM prompt + [SOM_MARKS] text + no image (image-mismatched)
+            "phantom_dom": dom_prompt,     # P-text: DOM prompt + [SOM_MARKS] text + no image (text-mismatched)
+            "phantom_prompt": som_prompt,  # P-prompt: SoM prompt + AXTree text + no image (prompt-only swap from DOM)
             "vision": self._make_vision_prompt(),
         }
         # Default (backward compat / unknown mode)
@@ -421,6 +422,8 @@ CRITICAL:
             # phantom_som receives the same text but no image (see som.py).
             obs_section = obs_text if obs_text else ""
         else:
+            # "dom" or "phantom_prompt": full AXTree text. phantom_prompt has the SoM
+            # prompt above but the obs is AXTree (no [SOM_MARKS] block in obs_text).
             obs_section = f"Accessibility Tree:\n{obs_text}"
 
         history_text = self._format_history(history or [])

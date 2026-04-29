@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-"""Cross-site aggregation for Phase 1 experiments.
+"""[Layer 3a-3c] Efficiency — cross-site cost, latency, and SR aggregation.
+
+Outputs:
+- results/phantom_paper/cross_site/cross_site_aggregation.csv
+- results/phantom_paper/cross_site/cross_site_summary.json
+- results/phantom_paper/cross_site/cross_site_{cost,sr}_comparison.png
+
+Layer 3a token/cost, 3b image embedding support, and 3c latency inputs.
+
+See docs/checkpoints/paper_planning.md §3 Layer 3 framework.
+
+Cross-site aggregation for Phase 1 experiments.
 
 Reads condition_summary_v2.json from multiple run directories (one per site),
 computes cross-site SR / cost / visual-task statistics, and writes comparison

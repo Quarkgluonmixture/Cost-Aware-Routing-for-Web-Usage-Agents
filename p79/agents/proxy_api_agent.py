@@ -435,14 +435,17 @@ Action Schema:
         return {
             "dom": dom_prompt,
             "som": som_prompt,
-            # Phantom-SoM (§25): identical SoM prompt + SoM marks text, but no image.
-            # Tests whether the model can complete tasks using SoM textual labels alone
-            # ("mirage" mode — preserves prompt that mentions screenshot).
+            # P-SoM (Phantom-SoM, §25): SoM prompt + [SOM_MARKS] text + no image.
+            # Image-mismatched: prompt promises screenshot but agent receives none.
             "phantom_som": som_prompt,
-            # Phantom-DOM ablation: same obs as phantom_som ([SOM_MARKS] text + no image)
-            # but with DOM system prompt. Disentangles prompt wording from
-            # representation effect.
+            # P-text (Phantom-DOM ablation): DOM prompt + [SOM_MARKS] text + no image.
+            # Text-mismatched: prompt expects AXTree but obs is [SOM_MARKS].
             "phantom_dom": dom_prompt,
+            # P-prompt: SoM prompt + AXTree text + no image. Symmetric counterpart of
+            # phantom_dom — only the prompt axis is swapped from DOM. Lets us measure
+            # the prompt effect in AXTree-text context (current cascade only measures
+            # it in [SOM_MARKS]-text context via P-text -> P-SoM).
+            "phantom_prompt": som_prompt,
             "vision": vision_prompt,
         }
 
@@ -509,6 +512,8 @@ Action Schema:
             # phantom_som receives the same text but no image (see som.py).
             obs_section = obs_text if obs_text else ""
         else:
+            # "dom" or "phantom_prompt": AXTree text. phantom_prompt uses SoM-prompt
+            # (set above) but the obs payload is AXTree (no [SOM_MARKS] markers).
             obs_section = f"Accessibility Tree:\n{obs_text}"
 
         system_prompt = self._system_prompts.get(observation_mode, self._system_prompts["dom"])

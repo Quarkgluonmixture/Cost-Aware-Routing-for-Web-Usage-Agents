@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""
+"""Per-run diagnostic; not part of the 4-layer evidence framework.
+
 Analyze "search-over-browse" bias in VWA Reddit tasks.
 
 search-over-browse = agent uses search bar when it could have browsed

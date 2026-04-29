@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Regional carbon sensitivity from B1 measured episode energy."""
+"""[Layer 3 supporting] Efficiency — regional carbon sensitivity.
+
+Output:
+- results/phantom_paper/figures/fig3_regional_carbon.png
+
+Regional carbon sensitivity from B1 measured episode energy.
+"""
 
 from __future__ import annotations
 
@@ -16,7 +22,7 @@ from p79.experiment.energy_tracker import REGION_INTENSITY_G_PER_KWH
 
 ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
-OUT = ROOT / "results/phantom_paper/figures/fig9_regional_sensitivity.png"
+OUT = ROOT / "results/phantom_paper/figures/fig3_regional_carbon.png"
 
 MODES = ["DOM", "SoM", "Vision"]
 COLORS = {

@@ -1,0 +1,666 @@
+[
+  {
+    "task_id": 0,
+    "intent": "Buy the least expensive red blanket (in any size) from \"Blankets & Throws\" category.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["least expensive (aggregation keyword)", "red (visual attribute, secondary)"],
+    "rationale": "Primary axis is price aggregation (least expensive) over a category list; the color filter is secondary and applied after sort. Failure mode is aggregation cost, not visual inference."
+  },
+  {
+    "task_id": 1,
+    "intent": "Buy the least expensive blue headset from \"Virtual Reality (VR) Headsets\" category.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["least expensive (aggregation keyword)", "blue (visual attribute, secondary)"],
+    "rationale": "Aggregation (least expensive) is the dominant failure dimension; color filter is secondary. Agent must traverse VR Headsets list and sort by price."
+  },
+  {
+    "task_id": 2,
+    "intent": "Buy the least expensive canvas print with grapes from \"Posters & Prints\" category.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["least expensive (aggregation keyword)", "grapes (latent visual content, secondary)"],
+    "rationale": "Aggregation over the Posters & Prints list dominates; the grape design is a latent content cue that may be in title/desc but secondary to the sort/min-price axis."
+  },
+  {
+    "task_id": 3,
+    "intent": "I am doing a market survey for one stop market, show me the most expensive red controller from \"PS4 accessories\" category",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["most expensive (aggregation keyword)", "red (visual attribute, secondary)"],
+    "rationale": "Primary failure dimension is price aggregation across the PS4 accessories category; red is a secondary visual filter."
+  },
+  {
+    "task_id": 4,
+    "intent": "I am doing a market survey for one stop market, show me the most expensive black and white item from \"Posters & Prints\" category",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["most expensive (aggregation keyword)", "black and white (visual attribute, secondary)"],
+    "rationale": "Aggregation dominates; the black-and-white color filter is secondary."
+  },
+  {
+    "task_id": 5,
+    "intent": "I am doing a market survey for one stop market, show me the most expensive yellow product from \"Dried Fruits & Vegetables\" category",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["most expensive (aggregation keyword)", "yellow (visual attribute, secondary)"],
+    "rationale": "Price aggregation is the primary axis; color filter is secondary."
+  },
+  {
+    "task_id": 12,
+    "intent": "Show me the first painting in the \"van gogh\" search results by descending relevance.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["first item by descending relevance (default sort)", "exact search term 'van gogh'"],
+    "rationale": "'Descending relevance' is the default search ordering, so this reduces to picking the first hit for an exact text query — pure text retrieval, no visual or numeric aggregation needed."
+  },
+  {
+    "task_id": 18,
+    "intent": "What is the price of the most expensive red product in the \"Basic Cases\" category?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["most expensive (aggregation keyword)", "red (visual attribute, secondary)"],
+    "rationale": "Aggregation over Basic Cases is the dominant axis; color filter is secondary."
+  },
+  {
+    "task_id": 19,
+    "intent": "What is the price of the most expensive feather lamp product in the \"Lamps & Shades\" category?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["most expensive (aggregation keyword)", "feather lamp (latent design, secondary)"],
+    "rationale": "Price aggregation dominates; feather design is a latent visual descriptor that may surface in titles but is secondary."
+  },
+  {
+    "task_id": 20,
+    "intent": "What is the price of the most expensive blue product in the \"Posters & Prints\" category?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["most expensive (aggregation keyword)", "blue (visual attribute, secondary)"],
+    "rationale": "Aggregation dominates over the color filter."
+  },
+  {
+    "task_id": 21,
+    "intent": "What is the color of the most expensive item in the \"Over-Ear Headphones\" category?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["most expensive (aggregation keyword)", "color readout (visual attribute downstream)"],
+    "rationale": "Primary task is price aggregation across the category; color readout is performed only after the sort completes."
+  },
+  {
+    "task_id": 22,
+    "intent": "What is the color of the second cheapest item in the \"Snack Gifts\" category?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["second cheapest (aggregation/rank keyword)", "color readout (downstream)"],
+    "rationale": "Rank-2 aggregation dominates; color readout is downstream."
+  },
+  {
+    "task_id": 23,
+    "intent": "What is the color of the third most expensive item in the \"Exercise & Fitness\" category?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["third most expensive (aggregation/rank keyword)", "color readout (downstream)"],
+    "rationale": "Rank-3 aggregation across the category is the failure mode; color readout follows."
+  },
+  {
+    "task_id": 25,
+    "intent": "Search for \"raincoat\" and show me the first item that is blue in color",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["blue (latent visual color filter)", "first matching item"],
+    "rationale": "No aggregation keyword; agent must filter search results by color (a latent visual attribute) without a reference image. Color may appear in title/swatches in DOM but requires inference."
+  },
+  {
+    "task_id": 26,
+    "intent": "Search for \"plush toy\" and show me the first item that is pink in color",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["pink (latent visual color filter)", "first matching item"],
+    "rationale": "Color filter without reference image; requires DOM-text visual inference, no aggregation."
+  },
+  {
+    "task_id": 27,
+    "intent": "Show me the first white table in the search results for \"table\".",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["white (latent visual color filter)", "first match"],
+    "rationale": "Pure color filter on search results; no aggregation. Visual inference required from DOM text."
+  },
+  {
+    "task_id": 28,
+    "intent": "Show me the first rainbow colored coat in the search results for \"winter coat\".",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["rainbow colored (latent visual pattern)", "first match"],
+    "rationale": "Rainbow color/pattern filter without reference image; no aggregation; visual inference dominates."
+  },
+  {
+    "task_id": 29,
+    "intent": "Show me the first red coat in the search results for \"winter coat\".",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["red (latent visual color)", "first match"],
+    "rationale": "Color filter on search results; no aggregation."
+  },
+  {
+    "task_id": 30,
+    "intent": "Show me the first coat with a furry hood in the search results for \"winter coat\".",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["furry hood (latent visual design feature)", "first match"],
+    "rationale": "Design feature filter without reference image; no aggregation."
+  },
+  {
+    "task_id": 31,
+    "intent": "Explore the \"Headphones\" category listed by ascending price and add the first blue item to my shopping cart.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["ascending price + first (sort/rank aggregation)", "blue (color filter, secondary)", "add-to-cart form action"],
+    "rationale": "Primary axis is price-sort aggregation (cheapest matching color); color and cart action are secondary. A3 chosen over A4 because the dominant difficulty is the sort+filter, not the form op."
+  },
+  {
+    "task_id": 32,
+    "intent": "Explore the \"Makeup Palettes\" category listed by ascending price and add the first blue palette item to my shopping cart.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["ascending price + first (sort aggregation)", "blue (color filter, secondary)"],
+    "rationale": "Sort-first aggregation dominates; color is secondary."
+  },
+  {
+    "task_id": 41,
+    "intent": "What is the color and price of the cheapest item in the \"Men's Uniforms, Work & Safety\" category?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["cheapest (aggregation keyword)", "color readout (downstream)"],
+    "rationale": "Min-price aggregation is the dominant axis; color/price readout is downstream after sort."
+  },
+  {
+    "task_id": 44,
+    "intent": "Find me the cheapest item in the \"Posters & Prints\" category that comes in blue.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["cheapest (aggregation keyword)", "blue (color filter, secondary)"],
+    "rationale": "Aggregation dominates color filter."
+  },
+  {
+    "task_id": 45,
+    "intent": "Find me the cheapest item in the \"Children's Dental Care\" category that comes in the style of a cupcake.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["cheapest (aggregation keyword)", "cupcake style (latent visual design, secondary)"],
+    "rationale": "Min-price aggregation dominates; cupcake style is a latent visual cue but secondary."
+  },
+  {
+    "task_id": 54,
+    "intent": "Add the one with waves to my wish list.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["waves (latent visual pattern)", "add-to-wishlist form action"],
+    "rationale": "Identifying 'the one with waves' on the page requires visual pattern inference (no ref image); the wishlist add is trivial follow-up. A2 chosen over A4 because the dominant difficulty is visual identification."
+  },
+  {
+    "task_id": 72,
+    "intent": "Add this to my cart if it comes in orange",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["orange (latent visual color filter)", "conditional cart add"],
+    "rationale": "Color availability check is a latent visual attribute requiring DOM swatch/option inference; cart add is conditional and secondary."
+  },
+  {
+    "task_id": 187,
+    "intent": "Add the least expensive opaque phone case that can hold an iPhone X to my shopping cart.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["least expensive (aggregation keyword)", "opaque (visual material/style, secondary)", "iPhone X (text spec)"],
+    "rationale": "Min-price aggregation dominates; opaque is a latent visual style filter but secondary."
+  },
+  {
+    "task_id": 192,
+    "intent": "What is the width and length of this product in inches? (Not the package size)",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["dimension readout from product spec page"],
+    "rationale": "Pure text retrieval of dimensions from the product spec table — no aggregation, no visual attribute, no form action."
+  },
+  {
+    "task_id": 200,
+    "intent": "How much does the cheese with the orange rind weigh (in pounds)?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["orange rind (latent visual color/feature)", "weight readout"],
+    "rationale": "Identifying 'the cheese with the orange rind' requires visual color inference without ref image; the weight readout is downstream text retrieval."
+  },
+  {
+    "task_id": 201,
+    "intent": "How much does the PS4 sticker with a skull weigh (in ounces)?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["skull design (latent visual graphic)", "weight readout"],
+    "rationale": "Skull-themed sticker requires visual/design inference; weight readout follows."
+  },
+  {
+    "task_id": 212,
+    "intent": "Can you add the red flower seeds with around 4 stars to my cart?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["red flower (latent visual color/content)", "~4 stars (rating filter, secondary)", "cart add"],
+    "rationale": "Color filter on flower seeds is the dominant signal; rating filter is auxiliary and 'around 4 stars' is fuzzy rather than strict aggregation."
+  },
+  {
+    "task_id": 217,
+    "intent": "What colors do the mini ring trays come in?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["available color options readout from product page"],
+    "rationale": "Color options are listed in the DOM as swatch/option text — pure text retrieval. No visual inference needed because options are explicit."
+  },
+  {
+    "task_id": 221,
+    "intent": "Can you add the most expensive smartwatch (from the \"Smartwatches\" category) to my cart that is less than $200 and not black?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["most expensive under $200 (aggregation + numeric filter)", "not black (color filter, secondary)"],
+    "rationale": "Constrained-max aggregation dominates; color exclusion is a secondary filter."
+  },
+  {
+    "task_id": 223,
+    "intent": "Can you add all the amiibo figures that cost less than $50 to my shopping cart?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["all items < $50 (count/threshold aggregation)", "bulk cart add"],
+    "rationale": "Filter-and-count over the amiibo list with a price threshold is the dominant axis; multi-cart add follows."
+  },
+  {
+    "task_id": 236,
+    "intent": "Can you set the right side address to 5000 Forbes Ave, Pittsburgh, PA 15213? My phone number is also (412) 268-2000.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A4_FORM_ACTION",
+    "primary_signals": ["update address form (deterministic profile edit)"],
+    "rationale": "Deterministic profile address-update form op; no retrieval, no visual attribute, no aggregation."
+  },
+  {
+    "task_id": 237,
+    "intent": "Can you set the left side address to 201 N Goodwin Ave in Urbana Illinois 61801? My phone number is also 2173333426.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A4_FORM_ACTION",
+    "primary_signals": ["update address form (deterministic profile edit)"],
+    "rationale": "Address-update form op."
+  },
+  {
+    "task_id": 240,
+    "intent": "Can you add the items corresponding to the prime numbered positions on this page to my wishlist?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["prime-indexed positions (positional/index aggregation)", "bulk wishlist add"],
+    "rationale": "Positional indexing across the page list is a list-traversal/aggregation operation; the wishlist add is repeated form ops downstream."
+  },
+  {
+    "task_id": 248,
+    "intent": "Order a 6 pack of the green chocolate bars. If the shipping is more than 7% of the total price, leave a 3 star review mentioning it, otherwise 5.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["green (latent visual color filter)", "conditional review form action"],
+    "rationale": "Color identification of 'green chocolate bars' is the upstream gating step; the conditional review math/form follows. A2 chosen because failure to identify the green item blocks the rest."
+  },
+  {
+    "task_id": 250,
+    "intent": "I have twin sons, can you order enough soccer ball earbuds so each can get their own?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["soccer ball design (latent visual theme)", "quantity=2 cart op"],
+    "rationale": "Identifying 'soccer ball earbuds' (themed design) is the visual inference axis; the quantity calc is trivial."
+  },
+  {
+    "task_id": 251,
+    "intent": "I have a dozen wedding guests, can you order enough of the (non-alcoholic) white wine in the first row so each can get their own?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["non-alcoholic + white wine (text attribute filter)", "first row positional", "qty=12 cart op"],
+    "rationale": "Non-alcoholic and 'white wine' are textual product-name/category attributes (not a color visual); 'first row' is a positional cue commonly resolvable via DOM. Closer to text retrieval + form than visual or aggregation."
+  },
+  {
+    "task_id": 252,
+    "intent": "I have octuplets on the way, can you order enough white wii remotes so each can get their own?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["white (latent visual color filter)", "qty=8 cart op"],
+    "rationale": "Color filter on Wii remotes is the dominant inference axis; qty calc is trivial."
+  },
+  {
+    "task_id": 253,
+    "intent": "Can you order a wii remote with an M logo and let me know the final price?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["M logo (latent visual graphic)", "order + price readout"],
+    "rationale": "Identifying the Wii remote with the M logo requires latent visual inference (logo is a graphic feature)."
+  },
+  {
+    "task_id": 263,
+    "intent": "Can you leave a 2 star review on the most expensive CoComelon blanket set (from the \"Kids' Bedding\" category) saying \"I was expecting more for the price, started to fall apart after a few days\"?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["most expensive (aggregation keyword)", "review form (secondary)"],
+    "rationale": "Max-price aggregation across CoComelon blanket sets is the dominant axis; the review submission is a follow-up form action."
+  },
+  {
+    "task_id": 267,
+    "intent": "Can you add the RGB headset to my cart and take me to the final checkout screen before placing the order?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["RGB (latent visual color/lighting style)", "cart + checkout form ops"],
+    "rationale": "RGB is a visual lighting/style descriptor that may or may not appear verbatim in titles; identification dominates the failure mode."
+  },
+  {
+    "task_id": 271,
+    "intent": "Can you add the bed with a slide in white in the triple bunk + 2 drawers configuration to my cart and order it only if the total comes out to less than $1000?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["white + slide + triple bunk (latent visual configuration)", "conditional checkout"],
+    "rationale": "White color and slide design are latent visual descriptors needing inference; the conditional checkout follows. No aggregation keyword."
+  },
+  {
+    "task_id": 272,
+    "intent": "Can you search for \"Cheerios\", and add the family sized blue Cheerios cereal to my cart and order it only if the total comes out to less than $43?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["blue (latent visual color filter on packaging)", "family size (text spec)", "conditional checkout"],
+    "rationale": "Blue packaging is a visual attribute on Cheerios variants; family size is textual. Visual filter dominates failure mode."
+  },
+  {
+    "task_id": 273,
+    "intent": "Can you add the Santa humidifier to my cart and order it only if the total comes out to less than 63 quarters?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["Santa-themed (latent visual design)", "conditional checkout"],
+    "rationale": "Santa-themed design is a latent visual cue; the math + checkout is downstream."
+  },
+  {
+    "task_id": 289,
+    "intent": "Add 72 cans of the purple energy drink from this page to my shopping cart.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["purple (latent visual color filter)", "qty=72 cart add"],
+    "rationale": "Color filter dominates; cart-add quantity is mechanical."
+  },
+  {
+    "task_id": 299,
+    "intent": "What size of the zip hoodie in this page should I buy if my waist size is 30 inches?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["sizing chart lookup with numeric mapping"],
+    "rationale": "Look up size chart text and match to waist=30in — pure text retrieval; no visual or aggregation."
+  },
+  {
+    "task_id": 300,
+    "intent": "What size of this item should I buy if my shirt width is 28 and 1/4 inches?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["sizing chart lookup with numeric mapping"],
+    "rationale": "Pure text retrieval from sizing table."
+  },
+  {
+    "task_id": 301,
+    "intent": "How many calories are in this item per serving?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["calorie spec readout"],
+    "rationale": "Pure text retrieval from nutrition fact panel/description."
+  },
+  {
+    "task_id": 302,
+    "intent": "How many calories are in this item per container?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["calorie spec readout"],
+    "rationale": "Pure text retrieval from nutrition spec."
+  },
+  {
+    "task_id": 303,
+    "intent": "How many calories are in this item per container?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["calorie spec readout"],
+    "rationale": "Pure text retrieval from nutrition spec."
+  },
+  {
+    "task_id": 304,
+    "intent": "How many calories are in this item per serving?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["calorie spec readout"],
+    "rationale": "Pure text retrieval from nutrition spec."
+  },
+  {
+    "task_id": 306,
+    "intent": "Show me the product page of the 10 oz net weight cookie.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["exact numeric spec match (10 oz)"],
+    "rationale": "Match a numeric weight spec — pure text retrieval, no visual or aggregation."
+  },
+  {
+    "task_id": 307,
+    "intent": "Show me the product page of the 1.6 oz net weight ice cream.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["exact numeric spec match (1.6 oz)"],
+    "rationale": "Pure text spec match."
+  },
+  {
+    "task_id": 316,
+    "intent": "Tell me the price of the 30 oz coke.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["exact numeric spec + price readout"],
+    "rationale": "Pure text retrieval."
+  },
+  {
+    "task_id": 317,
+    "intent": "Tell me the price of the 18 oz beer.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A1_PURE_TEXT",
+    "primary_signals": ["exact numeric spec + price readout"],
+    "rationale": "Pure text retrieval."
+  },
+  {
+    "task_id": 345,
+    "intent": "Prepend the country code of South Korea to the phone number of my account profile.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A4_FORM_ACTION",
+    "primary_signals": ["update profile phone field (deterministic form edit)"],
+    "rationale": "Deterministic profile-edit form op."
+  },
+  {
+    "task_id": 366,
+    "intent": "Buy the controller with the cherry blossom design.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["cherry blossom design (latent visual theme)"],
+    "rationale": "Visual design identification without reference image; pure A2."
+  },
+  {
+    "task_id": 371,
+    "intent": "Search for \"hoodie\" and buy me a hoodie (in any color) with a jack-o-lantern design for less than 10 dollars.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["jack-o-lantern design (latent visual theme)", "<$10 (numeric filter, secondary)"],
+    "rationale": "Theme identification dominates; the <$10 filter is a simple threshold not requiring sort."
+  },
+  {
+    "task_id": 373,
+    "intent": "What is the color of the cheapest car charger item in the \"Chargers & Power Adapters\" category?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["cheapest (aggregation keyword)", "color readout (downstream)"],
+    "rationale": "Min-price aggregation dominates; color readout downstream."
+  },
+  {
+    "task_id": 374,
+    "intent": "Buy me a phone case (from the \"Basic Cases\" category) with a Barbie theme between 12-14 dollars.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["Barbie theme (latent visual theme)", "$12-14 (numeric range, secondary)"],
+    "rationale": "Theme identification dominates; price range is a simple bound, not aggregation."
+  },
+  {
+    "task_id": 375,
+    "intent": "Buy me a pink phone case for my iPhone 11 6.1\" with a Stitch graphic from the \"Basic Cases\" category.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["pink (color)", "Stitch graphic (latent visual theme)"],
+    "rationale": "Two latent visual filters (color + character graphic) dominate failure mode."
+  },
+  {
+    "task_id": 376,
+    "intent": "Buy me a black phone case (from the \"Basic Cases\" category) with a Pikachu graphic.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["black (color)", "Pikachu graphic (latent visual theme)"],
+    "rationale": "Color + character-graphic visual filters."
+  },
+  {
+    "task_id": 377,
+    "intent": "Buy me a red phone case with an Iron Man graphic.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["red (color)", "Iron Man graphic (latent visual theme)"],
+    "rationale": "Color + character-graphic visual filters."
+  },
+  {
+    "task_id": 383,
+    "intent": "Buy the item on the page with Rick and Morty themes.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["Rick and Morty theme (latent visual theme)"],
+    "rationale": "Pure theme/visual filter."
+  },
+  {
+    "task_id": 384,
+    "intent": "Buy the item with a scared Mario Bros character in the \"Nintendo Switch\" category.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["scared Mario character (latent visual content/expression)"],
+    "rationale": "Character expression is a fine-grained visual cue; pure A2."
+  },
+  {
+    "task_id": 385,
+    "intent": "Can you buy the cheapest beer that comes in a box in the \"Alcoholic Beverages\" category?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["cheapest (aggregation keyword)", "in a box (latent packaging/visual, secondary)"],
+    "rationale": "Min-price aggregation dominates; box packaging is a secondary filter."
+  },
+  {
+    "task_id": 386,
+    "intent": "Can you buy the incorrectly labeled Bud Light in the \"Alcoholic Beverages\" category?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["incorrectly labeled (latent visual mismatch between label and listing)"],
+    "rationale": "Detecting a labeling mismatch requires comparing image to text — strong visual inference need despite no ref image. Closest fit is A2 (latent visual)."
+  },
+  {
+    "task_id": 387,
+    "intent": "Can you buy the cheapest box wine in the \"Alcoholic Beverages\" category?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["cheapest (aggregation keyword)", "box wine (text/category descriptor)"],
+    "rationale": "Min-price aggregation dominates; 'box wine' is largely textual."
+  },
+  {
+    "task_id": 388,
+    "intent": "Buy the pink trimmer for women on the page .",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["pink (latent visual color filter)"],
+    "rationale": "Color filter without ref image; pure A2."
+  },
+  {
+    "task_id": 392,
+    "intent": "Can you buy the purple and blue controllers with lightning and galaxy designs in the \"Legacy Systems > Playstation Systems\" category?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["purple/blue (color)", "lightning + galaxy designs (latent visual themes)"],
+    "rationale": "Multiple latent visual attributes (colors + design themes); no aggregation."
+  },
+  {
+    "task_id": 397,
+    "intent": "Buy the item on the page with a banana theme.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["banana theme (latent visual theme)"],
+    "rationale": "Pure theme visual filter."
+  },
+  {
+    "task_id": 407,
+    "intent": "Buy the top on the page with Boston Celtics colors.",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["Boston Celtics colors (latent visual color palette green/white)"],
+    "rationale": "Team color palette is a latent visual descriptor; no aggregation."
+  },
+  {
+    "task_id": 421,
+    "intent": "Help me to add the cheapest purple phone stand above $8 to my wishlist",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["cheapest above $8 (constrained min aggregation)", "purple (color, secondary)"],
+    "rationale": "Constrained min-price aggregation dominates; color filter is secondary."
+  },
+  {
+    "task_id": 422,
+    "intent": "Help me to add the cheapest fully white women's shoes (any size) to my wishlist",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["cheapest (aggregation keyword)", "fully white (color, secondary)"],
+    "rationale": "Min-price aggregation dominates; color is secondary."
+  },
+  {
+    "task_id": 423,
+    "intent": "Help me to add the cheapest white humidifier to my wishlist",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["cheapest (aggregation keyword)", "white (color, secondary)"],
+    "rationale": "Min-price aggregation dominates."
+  },
+  {
+    "task_id": 424,
+    "intent": "Please add the cheapest anime poster (from the \"Posters & Print\" category) to my shopping cart",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["cheapest (aggregation keyword)", "anime (latent visual style, secondary)"],
+    "rationale": "Min-price aggregation dominates."
+  },
+  {
+    "task_id": 425,
+    "intent": "Please add the cheapest round smartwatch (from the \"Smartwatches\" category) to my shopping cart",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["cheapest (aggregation keyword)", "round (visual shape, secondary)"],
+    "rationale": "Min-price aggregation dominates; shape is secondary."
+  },
+  {
+    "task_id": 426,
+    "intent": "Please add the cheapest standing projection screen to my shopping cart",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["cheapest (aggregation keyword)", "standing (form factor, mostly textual)"],
+    "rationale": "Min-price aggregation dominates; 'standing' is largely a textual product-type descriptor."
+  },
+  {
+    "task_id": 444,
+    "intent": "Place the item with the highest amount of protein per bar on this page into my cart",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A3_AGGREGATION",
+    "primary_signals": ["highest protein per bar (max-aggregation across nutrition specs)"],
+    "rationale": "Max aggregation over a nutrition field across listed products; pure A3."
+  },
+  {
+    "task_id": 460,
+    "intent": "I've been thinking about ordering an Xbox One controller shell, but one that has a matte finish. Can you add it to my shopping cart if it exists?",
+    "original_category": "A_NON_VISUAL_TEXT_ONLY",
+    "refined_category": "A2_LATENT_VISUAL",
+    "primary_signals": ["matte finish (latent visual material/style)"],
+    "rationale": "Matte finish is a visual surface descriptor needing inference; existence-conditional cart add follows. No aggregation."
+  }
+]

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Analyze "comment self-link loop" pattern in VWA Reddit tasks.
+"""Per-run diagnostic; not part of the 4-layer evidence framework.
+
+Analyze "comment self-link loop" pattern in VWA Reddit tasks.
 
 Postmill's post pages have "N comments" links that point back to the same page.
 Agents frequently click these links repeatedly, trying to "navigate to comments",

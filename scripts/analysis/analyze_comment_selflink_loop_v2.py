@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Supplementary analysis: How do tasks with self-link loops still succeed?
+"""Per-run diagnostic; not part of the 4-layer evidence framework.
+
+Supplementary analysis: How do tasks with self-link loops still succeed?
 And compute B1-B0 correlation in loop behavior."""
 
 import json

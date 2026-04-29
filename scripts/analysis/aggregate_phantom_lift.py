@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-"""Aggregate phantom routing lift across (baseline, site) cells.
+"""[Layer 0c + 0d] Outcome — routing oracle lift and task-pool Jaccard.
+
+Outputs:
+- results/phantom_paper/phantom_lift.csv
+- results/phantom_paper/phantom_lift.md
+
+Layer 0c: 3-mode to 4/5-mode oracle lift and significance tests.
+Layer 0d: P-DOM↔P-SoM task-pool Jaccard Scenario C sentinel.
+
+See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
+
+Aggregate phantom routing lift across (baseline, site) cells.
 
 For each cell with all 5 modes (DOM / SoM / Vision / P-DOM / P-SoM) present:
   - Compute 3-mode oracle ceiling (DOM ∪ SoM ∪ Vision)

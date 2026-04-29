@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""
+"""Per-run diagnostic; not part of the 4-layer evidence framework.
+
 分析 B0/B1 classifieds SoM 模式中，agent 点击非交互元素导致早停的比例。
 
 对每个 SoM episode 的每一步：

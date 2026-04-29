@@ -187,37 +187,146 @@ Site × axis: cls visual-bound → image helping dominate; red text-dom → harm
 
 ---
 
-## §3 Findings 列表 (10 paper-grade findings, FRESH 04-28)
+## §3 Findings — 4-Layer Evidence + Mechanism Framework (重组 2026-04-29)
 
-1. **DOM-only mode visual-required task 系统性失败** (fig5 Cat B)
-2. **Image effect 是 cross-capability + site-modulated + 8-channel 现象** (codex `7106d2e`)
-   - Helping × 4 + harming × 6 (含 §100 ground truth)
-   - Site-modulated: cls helping dominate +6.84pp, red harming dominate -3.33pp
-   - Capability-modulated: B0→B1 +50/+33pp shift cross-site
-   - Bidirectional modality (image-over-text 主导 red, text-over-vision 主导 cls vision-needed)
-3. **DOM reddit search-loop 22.7%** (vs SoM 12% Phantom 10.8% gradient, fig3)
-4. **Phantom-DOM cls adj 14.53% ≈ DOM 14.10%** — prompt-as-decision-prior direct evidence
-5. **Phantom-SoM cost ≈ DOM cost** — `[SOM_MARKS]` 是 AXTree regex filter (code-level 验证)
-6. **Image tokens per step (measured medians)**: red 733 / cls 1064 (`4d63c9f`)
-7. **Cost gap B0 vs B1 ~30×** (fig7 Pareto frontier)
-8. **Phantom-SoM unique tasks 验证** (fig8): red 7 task (3.33% drop-one), cls fresh 5 (vs stale 1)
-9. **⭐ Phantom 模式 routing signal 完整 + ≥ baseline** (新发现 04-28):
-   - 5/5 phantom condition `overall_usable=True`, infra 直接复用 baseline
-   - red Phantom-DOM verbalized AUROC 0.793 是 5-mode 最高 (超 baseline 0.766)
-   - cls behavioral 主导 (action_diversity), red verbalized 主导
-   - Token-level 全 non-discriminative (paper 避免 claim)
-   - **paper 4-fold drop-in property 第 (c) 条**
-10. **Watchdog auto-clean protocol — paper-grade 数据 100% pure** (04-28 audit):
-    - cls (OSClass) NOT LOGGED IN events 全 auto-cleaned + 重跑 (verified mtime + DOM)
-    - red 0 events (Postmill cookies 持久)
-    - shopping FPC false alarm fixed (`bin/magento cache:disable full_page` + PowerShell hook)
-    - paper-grade 数据 0% wasted task
+> **重组动因 (§105)**：之前 10 条 finding 是 flat list，paper 写作时不好定位"哪个证据支持哪个 claim"。重组为 **4-layer framework** —— 每个证据进自己的层，每个 paper claim 引用层 (e.g. "Layer 0d Jaccard 0.447 supports routing-arm complementarity")。**所有原 10 条 finding 都映射到对应 layer，未删除**（见末尾索引）。
+
+### Layered framework 概览
+
+```
+Layer 0  Outcome           哪些 task 成功 / 哪些 mode 在哪些 task 上 win
+Layer 1  Macro Behavior    agent 平均怎么 act（action-type 频率）
+Layer 2  Micro Behavior    agent per-step 决策（点哪个元素 / 走哪些页 / 搜什么词）
+Layer 3  Efficiency        cost / latency / carbon (4-fold drop-in property)
+```
+
+每 layer 内部 sub-evidence 都标注 source artifact + current 数字（实时 live）。
+
+---
+
+### Layer 0 — Outcome（task 成功 / 路由 arm 证据）
+
+| Sub | 内容 | Source artifact | 当前数字（B0, FRESH 04-29） |
+|---|---|---|---|
+| **0a** Aggregate raw + adjusted SR per mode | summary_v2.json live | live | red P-SoM **adj 13.81%** > all baseline; red P-text **12.38%** > DOM **9.52%**; cls SoM **21.37%** (best); cls P-text/P-SoM **adj 14.53%** ≈ DOM 14.10% |
+| **0b** FP rate per mode | summary_v2.json (raw_succ 与 adj_succ 之差) | live | **red P-SoM 0.48%** (lowest, "honest commit"); cls P-SoM 1.28%; **§3-legacy finding 4 prompt-as-decision-prior 的核心证据** |
+| **0c** Routing oracle uplift (3-mode → 4/5-mode) + drop-one | `phantom_lift.{md,csv}` | red 3→5: **+5.24pp** [2.38, 8.11] Wilcoxon p=0.0009 McNemar p=0.0005 ✅; cls +4.70pp [2.14, 7.69] p=0.0009 ✅. red drop-one P-text +3.81pp / P-SoM +3.33pp; cls P-text +3.42pp / P-SoM +2.56pp |
+| **0d** Task-pool Jaccard (Scenario C sentinel) | `phantom_lift.md` | red P-SoM↔P-text **0.571** (≤0.7 safe ✅); cls 0.447 ✅. **核心 routing-arm 证据**：cls aggregate SR 同 (P-SoM≈DOM) 但 task-pool 0.53 disjoint —— same SR ≠ same routing pool |
+| **0e** Per-category SR (4 cat × 5 mode heatmap) | `fig0e_category_mode_heatmap.png` ✅ live (rebuilt 04-29) | DOM-only Cat B (ref-image) systematic fail; cls Cat A counter-intuitive 8.54% < B 21.30% (codex audit refined → A1/A2/A3/A4 04-29) |
+| **0f** Overlap depth (5-mode solve-pool depth distribution) | `fig0f_overlap_stacked_bar.png` ✅ live | red P-SoM 30 succ: 3 unique / 8 d2 / 7 d3 / 9 d4 / 2 d5; **§3-legacy finding 8** |
+| **0g** Routing AUROC per mode (signal quality) | `auroc_cross_condition_summary.md` | red P-text 0.793 (5-mode max), P-SoM 0.720; cls P-text 0.737, P-SoM 0.728. **5/5 phantom `overall_usable=True`** —— paper 4-fold drop-in property (c) ✅ |
+
+---
+
+### Layer 1 — Macro Behavior（agent 平均怎么 act）
+
+| Sub | 内容 | Source | 当前数字 |
+|---|---|---|---|
+| **1a** Tier 1 hook (3-mode coarse: DOM/P-SoM/SoM × 8 metric) | `axis_effect_size.py` (FRESH 04-29) + `axis_effect_size_report.md` | P-SoM "fully independent" cells: **red 4/8 vs cls 1/8**. cls P-SoM 主要"瘫向 DOM" (6/8 DOM-like) —— image axis 决定性, **印证 0d 的 task-pool 复杂性** |
+| **1b** Tier 2a Mechanism cascade (3 axes × 8 metric) | `axis_effect_size.py` | **6 antagonistic pairs** (red scroll/text↔prompt 反向相消 / cls finish/prompt↔image 反向); cls **image axis 5/8 dominant** (h=+0.57 finish, d=−0.42 repeat); axis 1 在 macro 0/8 dominant (但 outcome 层 primary, 见 0c) |
+| **1c** Strategy gradient (search-loop / type / scroll / selfcorr) | `fig1c_strategy_gradient.png` ✅ FRESH 04-29 全数据 | red DOM **search-loop 51.9%** → P-SoM 35.7% → SoM 31.4% (§3-legacy finding 3 升级版：从 §103 N=48 → N=210 全数据，原"5/5 metrics P-DOM=P-SoM"已 falsify) |
+
+---
+
+### Layer 2 — Micro Behavior（per-step 决策）
+
+| Sub | 内容 | Source | 当前数字 |
+|---|---|---|---|
+| **2a** URL signature divergence | `axis1_microbehavior.{py,json,md}` (FRESH 04-29 codex + 我补 compound) | **axis 1 alone**: red Jaccard 0.573 / cls 0.904 (path-only). **compound DOM↔P-SoM**: red 0.481 / cls 0.885 path-only (但 cls path+query 0.66 —— OSClass 用 query routing). **决策真改了，aggregate macro 在 cls 上掩盖** |
+| **2b** Target-page hit rate | `axis1_microbehavior.json` | red axis 1 +3.47pp; cls axis 1 +2.33pp; compound red −0.69pp / cls +1.74pp |
+| **2c** Search-keyword reuse / repeat | `axis1_microbehavior.json` | red P-text vs DOM 重复 −0.633 (axis 1 减少死循环); cls P-text +0.077 (无 site 损失) |
+| **2d** First-action divergence | `axis1_microbehavior.json` | red 21% / cls 14% tasks first-action type differ (axis 1) |
+| **2e** Cross-site validity ratio | `axis1_microbehavior.json` `cross_site_validity` | **verdict: generalizes** (red 2.28, cls 1.02). cls 边界 —— 单独 axis 1 在 cls 上 micro≈macro，但 compound DOM↔P-SoM 在 cls 上 path+query Jaccard 0.66 强 divergence |
+
+---
+
+### Layer 3 — Efficiency（4-fold drop-in property）
+
+| Sub | 内容 | Source | 当前数字 |
+|---|---|---|---|
+| **3a** Token cost per step (input) | `condition_summary_v2.json` | P-SoM ≈ DOM (~3K both); SoM +image embedding tax. **4-fold drop-in (a) cost ≈ DOM ✅** |
+| **3b** Image embedding tokens (per step median) | `run_summary_collect.json` | red 733 / cls 1064 tokens; **P-SoM 省去这部分**, **§3-legacy finding 6** |
+| **3c** Latency per step | `condition_summary_v2.json` | P-SoM ~50% of SoM latency (无 image inference). **4-fold drop-in (b) latency ~50% ✅** |
+| **3d** B0 (API) vs B1 (local) deployment-class cost gap | `cost_per_mode.{json,md}` (FRESH 04-29) + `fig3d_cost_sr_frontier.png` | **B0 API ~$0.04/ep (Qwen3-VL-235B-A22B token cost)**; **B1 electricity-equivalent ~$0.0004/ep** (DGX Spark `avg_total_energy_kwh × $0.12/kWh` UK industrial rate). **Ratio ~100×** (red 98× / cls 105×) — **deployment-class gap, NOT capability/parameter ratio**. ⚠️ §103 / §3-legacy "30×" claim **superseded** by FRESH data. Paper presents both classes side-by-side, not a single multiplier. |
+
+---
+
+### Cross-layer Mechanism Chain（每个 axis 在哪些 layer 上 first-order）
+
+| Axis | Layer 0 outcome 贡献 | Layer 1 macro signature | Layer 2 micro signature | Layer 3 cost |
+|---|---|---|---|---|
+| **Axis 1 (text payload)** | **PRIMARY** (red P-text +3.81pp drop-one over 3-mode; cls +3.42pp) | 0/8 dominant (但**红 scroll/selfcorr 是 antagonist canceller**) | red URL Jaccard 0.57 / cls 0.90 (axis 1 alone) — 在 reddit 改 WHERE 强 | 0 (text swap 不改 token 量) |
+| **Axis 2 (prompt)** | secondary (red P-SoM 加在 P-text 上 +3.33pp; cls +2.56pp) | red 3/8 cascade dominant (search/type/scroll); cls 3/8 (type/selfcorr/click) | URL Jaccard 0.55 (axis 2 alone) | 0 (prompt swap 不改 token 量) |
+| **Axis 3 (image)** | secondary (cls SoM 21.37% > P-SoM 14.53%, image 决定性 cls 上) | **cls 5/8 dominant** (finish h=+0.57 medium-effect 最强信号); red 3/8 dominant (efficiency cluster) | image 加上 = URL Jaccard 0.46-0.60 minor change | **+700-1100 image tokens** (Layer 3a 主要 cost source) |
+| **Compound Axis 1+2 (P-SoM vs DOM)** | red SR delta +2.86pp aggregate; **cls SR delta 0.85pp 但 task-pool Jaccard 0.53** = routing-arm 证据 | cls macro 60-70% DOM-like 但 task-pool 0.53 disjoint —— aggregate 误导 | **path+query Jaccard cls 0.66 / red 0.48** —— per-step decision quality 真改了 | 0 |
+
+---
+
+### Evidence chain — paper claims → layer support
+
+每个 paper claim 直接 cite layer + 数字：
+
+| Paper claim | Layer support |
+|---|---|
+| **C1**: P-SoM is independent routing arm | 0a (red SR best), 0c (drop-one 3.33pp red / 2.56pp cls), 0d (Jaccard ≤ 0.6), 0g (AUROC ≥ baseline), 1a (red 4/8 macro independent), 2a (red URL Jaccard 0.48 micro divergence) |
+| **C2**: 4-fold drop-in property (cost / latency / signal / drop-one) | (a) Layer 3a, (b) Layer 3c, (c) Layer 0g, (d) Layer 0c |
+| **C3**: 3-axis hierarchical theory | Layer 1b (cascade decomposition), Layer 2 (axis-by-axis micro), Cross-layer table |
+| **C4**: aggregate macro can mislead about routing potential (cls case) | Layer 1a (cls 6/8 DOM-like macro) + Layer 0d (cls task-pool Jaccard 0.53) + Layer 2a (cls path+query Jaccard 0.66) |
+| **C5**: prompt as task-conditional decision prior (not commit-only) | Layer 0b (FP rate), Layer 0d (Jaccard 0.45-0.55 same-SR-different-pool), Layer 1b (cascade axis 2 dominant on red strategy metrics) |
+| **C6**: image is bidirectional 8-channel modality fusion | Layer 1b (cls image axis 5/8 dominant), Layer 0e (codex audit category × mode), codex `7106d2e` channel decomposition |
+
+---
+
+### Mechanism chain — 三个机制阶段
+
+```
+Stage 1 (Outcome 层):    P-SoM 的 routing arm 价值在 task-pool complementarity (0d), 不在 aggregate SR
+                         ↓ 为什么 P-SoM 拿到 unique tasks?
+Stage 2 (Micro 层):       因为 axis 1+2 swap 改变了 per-step 决策 (2a 0.48-0.66 URL Jaccard)
+                          ↓ 这些决策具体改了什么?
+Stage 3 (Mechanism 层):  axis 1 改 text payload 结构 → 改 in-context attention pattern → 改 element selection 决策
+                          axis 2 改 prompt 描述 → 改 task-conditional decision prior → 改 commit / search / 导航策略
+                          axis 3 加 image → 改 visual disambiguation → 决定 cls 上的 finish rate
+```
+
+**关键 insight**: Layer 1 macro (action-type 频率) 是 downstream signal，单独看会误导 (cls case)。真正的 mechanism chain 是 Layer 2 micro (decision quality) + Layer 0 outcome (task-pool complementarity) 闭环。
+
+---
 
 ### Honest framing (avoid over-claim)
 
-- Phantom-SoM red 13.81% > SoM 10.48% **不是 unconditional dominance** — within 2σ noise floor
-- 主 narrative: **site-modulated representation effect**, NOT "Phantom #1 routing arm"
-- cls SoM 21.37% 显著领先 Phantom-SoM 14.53% (+6.84pp adj) 反例必须明示
+- Phantom-SoM red **adj 13.81% > SoM adj 10.48%** —— 这次有数据，是 site-specific dominance（reddit 上）
+- cls SoM **adj 21.37% 显著领先 P-SoM 14.53% (+6.84pp)** —— 反例必须明示, image 在 cls 是决定性 axis (Layer 1b 5/8 dominant 印证)
+- 主 narrative: **site-modulated representation × prompt × image effects**, 不是 "Phantom #1 universal routing arm"
+- Layer 1 macro 单独 weak on cls (1/8 fully independent) —— paper 必须用 Layer 0 task-pool + Layer 2 micro 一起讲，不能只 cite macro
+- §103 N=48 "5/5 metrics P-DOM = P-SoM" 已 **superseded** by N=210 (FRESH 04-29 Layer 1c) — 早期 small-sample artifact
+
+---
+
+### Legacy index (原 10 条 finding 映射)
+
+| 原 finding | 映射到 layer |
+|---|---|
+| 1 DOM Cat B 系统性失败 | **0e** per-category heatmap |
+| 2 Image 8-channel cross-capability | **1b axis 3 + 0e cls cat × image** |
+| 3 DOM reddit search-loop 22.7% | **1c strategy gradient** (升级为 N=210 51.9%) |
+| 4 P-text cls adj 14.53% ≈ DOM 14.10% | **0a + 0d** (same-SR-different-pool) |
+| 5 P-SoM cost ≈ DOM cost | **3a** (4-fold drop-in (a)) |
+| 6 Image tokens per step (red 733 / cls 1064) | **3b** |
+| 7 B0 vs B1 cost gap | **3d** (修正 04-29: ~100× deployment-class gap, NOT 30× — see `cost_per_mode.md`) |
+| 8 Phantom unique tasks (fig8) | **0f** overlap depth |
+| 9 AUROC ≥ baseline | **0g** (4-fold drop-in (c)) |
+| 10 Watchdog 100% pure | (data quality precondition, 不是 finding) |
+
+新增 finding（§105 04-29）：
+| 新 finding | Layer |
+|---|---|
+| **N1**: P-prompt 模式必要性（symmetric ablation, AXTree+SoM-prompt+无图） | 设计层 (§2 cube), 数据 pending B0 reddit 跑中 |
+| **N2**: Tier 1 hook macro: red 4/8 cells fully independent / cls 1/8 (cls 主要 DOM-like) | **1a** |
+| **N3**: 6 antagonistic mechanism pairs（4-level cascade vs 2-endpoint 比较的核心 paper value） | **1b** |
+| **N4**: cls compound DOM↔P-SoM micro path+query Jaccard 0.66 | **2a** |
+| **N5**: P-SoM cls aggregate SR ≈ DOM 但 task-pool 0.53 (12 unique successes) | **0d** (reframes "cls Phantom-SoM 失败" 为 "complementary not dominant") |
+| **N6**: red P-SoM FP=0.48% lowest（最 honest commit） | **0b** |
 
 ---
 
@@ -552,7 +661,7 @@ CO2 维度单独 fig E (regional sensitivity, 见 §11).
 
 ### Regional Carbon Sensitivity (fig9 already done, codex `d3dfc8f`)
 
-`scripts/analysis/figures/fig9_regional_carbon_sensitivity.py`:
+`scripts/analysis/figures/fig3_regional_carbon.py`:
 - 45 region × B1 3-mode × cls + red
 - Norway 29 g/kWh → South Africa 928 g/kWh (32x range)
 - Phantom-SoM advantage region-dependent (large for India/Poland, small for France/Norway)
@@ -655,7 +764,7 @@ ef29add  drop-in deployment punchline
 
 ### B. Data analysis pipeline (Python scripts, not codex tokens)
 
-- [x] **统计显著性测试** ✅ done 04-28 — `fig2_drop_one_oracle.py` 加 `bootstrap_drop_one_ci()` (1000 resample × 4 panel)，error bars + `fig2_drop_one_bootstrap_ci.csv` 12 rows
+- [x] **统计显著性测试** ✅ done 04-28 — `fig0c_drop_one_oracle.py` 加 `bootstrap_drop_one_ci()` (1000 resample × 4 panel)，error bars + `fig0c_drop_one_bootstrap_ci.csv` 12 rows
   - Section 4 reviewer-grade rigor; codex #11 prose 可直接引用 95% CI
   - Pending: paired permutation test for cross-mode SR delta (lower priority)
 - [x] **AUROC aggregation table** ✅ done 04-28 — `scripts/analysis/aggregate_routing_auroc.py` (~110 行)
@@ -669,7 +778,7 @@ ef29add  drop-in deployment punchline
 - [ ] **Multi-metric Pareto pipeline** (cost + latency + carbon)
   - Section 8 sustainability prose 前置；fig9 已有 carbon B1 only, 需 cost/latency 三向 join
   - Output: 3-panel Pareto figure + per-condition multi-metric table
-  - Implementation: extend `scripts/analysis/figures/fig7_cost_sr_frontier.py`
+  - Implementation: extend `scripts/analysis/figures/fig3d_cost_sr_frontier.py`
 - [ ] **每 task 特征提取** (Section 6 Tier 1 oracle router 前置)
   - Features: TF-IDF (task instruction) + has_ref_image binary + has_finish_string_match binary + site / category metadata
   - Output: `task_features.parquet` per benchmark

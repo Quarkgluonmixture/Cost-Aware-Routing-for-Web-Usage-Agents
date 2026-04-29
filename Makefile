@@ -25,11 +25,16 @@ PYTEST ?= .venv/bin/pytest
         confidence compare reason-diag clean-tasks watch-reddit schedule-list \
         validate gallery rsync-to-hub rsync-from-hub rsync-artifacts-from-hub \
         aggregate-cross-site summary-collect routing-auroc analyze-paper \
-        analyze-paper-per-run compare-b0-b1-all phantom-lift
+        analyze-paper-per-run compare-b0-b1-all phantom-lift \
+        analyze-layer0 analyze-layer1 analyze-layer2 analyze-layer3 analyze-layered \
+        aggregate-sr-fp fig12-micro-heatmap aggregate-cost-electricity
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
-	@grep -E '^[a-z-]+:' Makefile | grep -v '^.PHONY' | sed 's/:.*//' | sort | sed 's/^/  /'
+	@echo "Layered analysis: make analyze-layered"
+	@echo "Layer 0 SR/FP: make aggregate-sr-fp"
+	@echo "Layer 2 figure: make fig12-micro-heatmap"
+	@grep -E '^[a-z0-9-]+:' Makefile | grep -v '^.PHONY' | sed 's/:.*//' | sort | sed 's/^/  /'
 
 # ---- Tests ----
 test:
@@ -125,6 +130,53 @@ routing-auroc:
 phantom-lift:
 	$(PYTHON) scripts/analysis/aggregate_phantom_lift.py
 
+# ---- Layered analysis (paper_planning §3 framework, paper-grade B0 only) ----
+
+# Layer 0 — Outcome (SR / oracle / AUROC / task-pool / category)
+analyze-layer0:
+	$(MAKE) aggregate-sr-fp
+	$(MAKE) phantom-lift
+	$(MAKE) routing-auroc
+	$(PYTHON) scripts/analysis/figures/fig0d_taskpool_jaccard.py
+	$(PYTHON) scripts/analysis/figures/fig0c_drop_one_oracle.py
+	$(PYTHON) scripts/analysis/figures/fig0c_phantom_lift_bars.py
+	$(PYTHON) scripts/analysis/figures/fig0g_routing_auroc_heatmap.py
+	$(PYTHON) scripts/analysis/figures/fig0e_category_mode_heatmap.py
+	$(PYTHON) scripts/analysis/figures/fig0f_overlap_stacked_bar.py
+
+aggregate-sr-fp:
+	$(PYTHON) scripts/analysis/aggregate_sr_fp_per_mode.py
+
+# Layer 1 — Macro Behavior (action-type frequencies, cascade)
+analyze-layer1:
+	$(PYTHON) scripts/analysis/axis_effect_size.py
+	$(PYTHON) scripts/analysis/figures/fig1ab_cascade_diamond.py
+	$(PYTHON) scripts/analysis/figures/fig1c_strategy_gradient.py
+
+# Layer 2 — Micro Behavior (per-step decision quality)
+analyze-layer2:
+	$(PYTHON) scripts/analysis/axis1_microbehavior.py
+	$(MAKE) fig12-micro-heatmap
+
+fig12-micro-heatmap:
+	$(PYTHON) scripts/analysis/figures/fig2_micro_divergence_heatmap.py
+
+# Layer 3 — Efficiency (cost / latency)
+analyze-layer3:
+	$(MAKE) summary-collect
+	$(MAKE) aggregate-cost-electricity
+	$(PYTHON) scripts/analysis/figures/fig3d_cost_sr_frontier.py
+	$(PYTHON) scripts/analysis/figures/fig3_regional_carbon.py
+
+# Layer 3a + 3d — deployment-class cost (B0 API $ vs B1 electricity-equivalent)
+aggregate-cost-electricity:
+	$(PYTHON) scripts/analysis/aggregate_cost_electricity.py
+
+# Run all 4 layers
+analyze-layered: analyze-layer0 analyze-layer1 analyze-layer2 analyze-layer3
+	$(PYTHON) scripts/analysis/figures/fig_capability_b0_b1.py
+	$(PYTHON) scripts/analysis/layered_status.py
+
 # Per-run paper-grade analysis pipeline: rederive → reason-diag → cross-rep
 # → confidence calibration. Iterates over all paper-grade VWA run dirs.
 # Watchdog already runs this incrementally per-condition, but `analyze-paper`
@@ -177,21 +229,22 @@ analyze-paper: analyze-paper-per-run compare-b0-b1-all aggregate-cross-site summ
 	@echo "[analyze-paper] figures in results/phantom_paper/figures/:"
 	@ls results/phantom_paper/figures/*.png 2>/dev/null || true
 
-# Regenerate paper figures (11 PNGs in results/phantom_paper/figures/).
-# fig10/fig11 depend on phantom_lift.csv / auroc_cross_condition.csv —
+# Regenerate paper figures (12 PNGs in results/phantom_paper/figures/).
+# fig0c_phantom_lift_bars/fig0g_routing_auroc_heatmap depend on phantom_lift.csv / auroc_cross_condition.csv —
 # automatically regenerated upstream by `make analyze-paper`.
 figures:
-	$(PYTHON) scripts/analysis/figures/fig1_4mode_venn.py
-	$(PYTHON) scripts/analysis/figures/fig2_drop_one_oracle.py
-	$(PYTHON) scripts/analysis/figures/fig3_strategy_gradient.py
-	$(PYTHON) scripts/analysis/figures/fig4_two_knob_diagram.py
-	$(PYTHON) scripts/analysis/figures/fig5_category_mode_heatmap.py
-	$(PYTHON) scripts/analysis/figures/fig6_capability_contrast.py
-	$(PYTHON) scripts/analysis/figures/fig7_cost_sr_frontier.py
-	$(PYTHON) scripts/analysis/figures/fig8_overlap_stacked_bar.py
-	$(PYTHON) scripts/analysis/figures/fig9_regional_carbon_sensitivity.py
-	$(PYTHON) scripts/analysis/figures/fig10_phantom_lift_bars.py
-	$(PYTHON) scripts/analysis/figures/fig11_routing_auroc_heatmap.py
+	$(PYTHON) scripts/analysis/figures/fig0d_taskpool_jaccard.py
+	$(PYTHON) scripts/analysis/figures/fig0c_drop_one_oracle.py
+	$(PYTHON) scripts/analysis/figures/fig1c_strategy_gradient.py
+	$(PYTHON) scripts/analysis/figures/fig1ab_cascade_diamond.py
+	$(PYTHON) scripts/analysis/figures/fig0e_category_mode_heatmap.py
+	$(PYTHON) scripts/analysis/figures/fig_capability_b0_b1.py
+	$(PYTHON) scripts/analysis/figures/fig3d_cost_sr_frontier.py
+	$(PYTHON) scripts/analysis/figures/fig0f_overlap_stacked_bar.py
+	$(PYTHON) scripts/analysis/figures/fig3_regional_carbon.py
+	$(PYTHON) scripts/analysis/figures/fig0c_phantom_lift_bars.py
+	$(PYTHON) scripts/analysis/figures/fig0g_routing_auroc_heatmap.py
+	$(PYTHON) scripts/analysis/figures/fig2_micro_divergence_heatmap.py
 	@echo "Figures regenerated → results/phantom_paper/figures/"
 
 # ---- Background tasks ----

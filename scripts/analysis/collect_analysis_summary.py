@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Collect all key analysis outputs into a single consolidated JSON.
+"""[Layer 3 supporting] Efficiency — run-level metadata collector.
+
+Outputs:
+- results/phantom_paper/run_summary_collect.json
+
+Supports Layer 3a token/cost, Layer 3b image embedding-token summaries, and
+Layer 3c latency by consolidating per-run condition_summary_v2.json artifacts.
+
+See docs/checkpoints/paper_planning.md §3 Layer 3 framework.
+
+Collect all key analysis outputs into a single consolidated JSON.
 
 Replaces 10+ manual Read calls in write-analysis/report SKILLs by gathering
 adjusted SR, FP counts, McNemar p-values, condition metrics, oracle ceiling,

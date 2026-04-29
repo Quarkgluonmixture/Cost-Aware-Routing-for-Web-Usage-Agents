@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-"""Aggregate per-mode routing signal AUROC + 95% bootstrap CI across runs.
+"""[Layer 0g] Outcome — routing signal quality across conditions.
+
+Outputs:
+- results/phantom_paper/auroc_cross_condition.csv
+- results/phantom_paper/auroc_cross_condition.md
+- results/phantom_paper/auroc_cross_condition_summary.md
+
+Layer 0g: per-mode routing AUROC evidence for router-usable signals.
+
+See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
+
+Aggregate per-mode routing signal AUROC + 95% bootstrap CI across runs.
 
 Reads existing per-run `analysis/signals/combined/tables/cross_mode_auroc.csv`
 (produced by analyze_confidence_calibration.py) and merges them into a single

@@ -1,0 +1,31 @@
+# B1 Phantom-prompt (P-prompt §106) — VWA reddit
+# SoM prompt + AXTree text + 无图。symmetric counterpart of phantom_dom (P-text).
+# Cross-capability diamond completion (Section 7).
+# B1 4B 本地推理；与 B1_phantom_dom_reddit 仅差 system prompt（DOM vs SoM）。
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B1_phantom_prompt_reddit"
+
+task:
+  include_sites: ["reddit"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["phantom_prompt"]
+
+backends:
+  default_backend: "local_4b"
+  local_4b:
+    max_new_tokens: 384
+    min_free_vram_gb: 0
+
+baselines:
+  run_b0: false

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""B0 vs B1 Phase 1 comparison script.
+"""Per-run diagnostic; not part of the 4-layer evidence framework.
+
+B0 vs B1 Phase 1 comparison script.
 
 Reads condition_summary_v2.json from B0 (235B API model) and B1 (4B local model)
 run directories and computes SR / cost / Mirage Effect comparisons.

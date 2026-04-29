@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Validate a P79 experiment run directory for data integrity and completeness.
+"""Per-run diagnostic; not part of the 4-layer evidence framework.
+
+Validate a P79 experiment run directory for data integrity and completeness.
 
 Runs 27 checks across 10 groups and outputs a structured report.
 

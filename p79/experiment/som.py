@@ -137,12 +137,16 @@ def prepare_observation_for_mode(
 ) -> SomResult:
     """Prepare observation representation for the given observation mode.
 
-    mode == "dom":         Return full AXTree text unchanged, no image.
-    mode == "som":         Return SOM_MARKS compressed index + marked image (no full AXTree).
-    mode == "phantom_som": Return SOM_MARKS compressed index, NO image (text-only SoM, §25 Phantom-SoM).
-                           Same prompt + text as "som" but image is dropped.
-                           Tests whether the model can complete tasks using SoM textual labels alone.
-    mode == "vision":      Return empty text, raw screenshot as image.
+    mode == "dom":            Full AXTree text, no image (consistent: prompt expects AXTree, gets it).
+    mode == "som":            SOM_MARKS compressed index + marked image (consistent SoM).
+    mode == "phantom_som":    SOM_MARKS index, NO image (P-SoM: image-mismatched — prompt
+                              promises screenshot but agent gets none).
+    mode == "phantom_dom":    SOM_MARKS index, NO image, but DOM-prompt (P-text: text-mismatched —
+                              prompt expects AXTree, agent receives [SOM_MARKS]).
+    mode == "phantom_prompt": Full AXTree text, NO image, with SoM-prompt (P-prompt: text+image
+                              mismatched — symmetric counterpart of phantom_dom across the
+                              prompt × text axes; isolates prompt swap effect on AXTree text).
+    mode == "vision":         Empty text, raw screenshot as image.
     """
     obs_text = getattr(obs, "text", "") or ""
 
@@ -156,10 +160,9 @@ def prepare_observation_for_mode(
         )
 
     if mode in ("phantom_som", "phantom_dom"):
-        # phantom_som: SoM prompt + [SOM_MARKS] text + no image
-        # phantom_dom: DOM prompt + [SOM_MARKS] text + no image (ablation)
-        # Obs construction is identical for both — only the system prompt differs
-        # (handled by the agent based on observation_mode).
+        # phantom_som: SoM prompt + [SOM_MARKS] text + no image (image-mismatched)
+        # phantom_dom: DOM prompt + [SOM_MARKS] text + no image (text-mismatched)
+        # Obs construction identical — only system prompt differs (handled in agent).
         result = _build_som_result(obs, obs_text, artifact_dir, step_idx)
         return SomResult(
             som_text=result.som_text,
@@ -168,6 +171,12 @@ def prepare_observation_for_mode(
             degraded_som=result.degraded_som,
             mark_count=result.mark_count,
         )
+
+    if mode == "phantom_prompt":
+        # P-prompt: AXTree text (same as DOM mode) + no image, but SoM prompt (set in agent).
+        # Symmetric ablation of phantom_dom: only the prompt axis is swapped from DOM.
+        return SomResult(som_text=obs_text, marked_image_path=None, marked_image=None,
+                         degraded_som=False, mark_count=0)
 
     if mode != "som":
         # "dom" mode or any unknown mode — full AXTree, no image

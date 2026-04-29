@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""B0-vs-B1 capability contrast from disagreement cluster analysis."""
+"""Per-run/generalization diagnostic; not part of the 4-layer B0 evidence framework.
+
+B0-vs-B1 capability contrast from disagreement cluster analysis.
+"""
 
 from __future__ import annotations
 
@@ -12,7 +15,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
 ANALYSIS = ROOT / "docs/analysis/phantom_paper/disagreement_clusters.md"
-OUT = ROOT / "results/phantom_paper/figures/fig6_capability_contrast.png"
+OUT = ROOT / "results/phantom_paper/figures/fig_capability_b0_b1.png"
 
 LABELS = {
     "DOM visual-missing": "DOM\nvisual\nmissing",

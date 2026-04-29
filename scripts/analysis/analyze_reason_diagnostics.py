@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Per-run diagnostic; not part of the 4-layer evidence framework."""
+
 from __future__ import annotations
 
 import argparse

@@ -1,3 +1,5 @@
+"""Per-run diagnostic wrapper; not part of the 4-layer evidence framework."""
+
 import os
 import sys
 

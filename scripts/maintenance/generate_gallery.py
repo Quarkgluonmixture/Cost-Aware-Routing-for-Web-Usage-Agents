@@ -1405,6 +1405,11 @@ def generate_combined_gallery(
     # Normalize each prefix for matching: B1_3mode matches B1_3mode_* and B1_wa_3mode_*
     base_prefixes = {p.replace("_wa_", "_") for p in prefix_filters}
     exact_prefixes = set(prefix_filters)
+    # Baseline-alias semantics (mirrors generate_aggregate_gallery): when prefix
+    # is `B0_3mode` / `B1_3mode`, expand to ALL runs of that baseline (3mode +
+    # dom + phantom + phantom_dom) so the unified URL aggregates everything.
+    baseline_aliases = {p for p in prefix_filters if p in {"B0_3mode", "B1_3mode"}}
+    baseline_labels = {p.split("_", 1)[0] for p in baseline_aliases}
     for phase_dir in phase_dirs:
         if not phase_dir.is_dir():
             continue
@@ -1413,11 +1418,23 @@ def generate_combined_gallery(
                 continue
             if cand.name.startswith(".") or cand.name in ("analysis",):
                 continue
+            if cand.name.startswith("_"):
+                continue
             family = _parse_run_family(cand.name)
             if not family:
                 continue
+            matched = False
+            # Exact / _wa-stripped matching
             fam_base = family["prefix"].replace("_wa_", "_")
-            if fam_base not in base_prefixes and family["prefix"] not in exact_prefixes:
+            if fam_base in base_prefixes or family["prefix"] in exact_prefixes:
+                matched = True
+            # Baseline alias: any prefix starting with `B0_` / `B1_`
+            if not matched and baseline_labels:
+                for label in baseline_labels:
+                    if family["prefix"].startswith(label + "_"):
+                        matched = True
+                        break
+            if not matched:
                 continue
             if _has_episode_data(cand):
                 source_run_dirs.append(cand)

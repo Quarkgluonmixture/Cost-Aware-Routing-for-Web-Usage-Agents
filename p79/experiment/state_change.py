@@ -95,11 +95,18 @@ def _form_fields_changed(before_fields: List[Dict[str, Any]], after_fields: List
     if not before_fields and not after_fields:
         return False
 
-    def _key(f: Dict[str, Any]) -> Tuple[str, str, str, int]:
+    def _key(f: Dict[str, Any]) -> Tuple[str, str, str, str, int]:
+        # For radio/checkbox in same-name groups, each radio is typically the
+        # sole child of its wrapper (idx=0 for all), so include value to keep
+        # group members individually addressable. See
+        # docs/analysis/cross_sites/swatch_form_change_audit.md.
+        ftype = str(f.get("type", ""))
+        discriminator = str(f.get("value", "")) if ftype in ("radio", "checkbox") else ""
         return (
             str(f.get("tag", "")),
-            str(f.get("type", "")),
+            ftype,
             str(f.get("name", "")),
+            discriminator,
             int(f.get("idx", 0)),
         )
 

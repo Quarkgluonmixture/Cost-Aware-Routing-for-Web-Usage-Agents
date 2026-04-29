@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""B0 adjusted SR by Codex audit category and observation mode."""
+"""[Layer 0e] Outcome — per-category adjusted SR heatmap.
+
+Output:
+- results/phantom_paper/figures/fig0e_category_mode_heatmap.png
+
+Layer 0e: category × observation-mode success-rate evidence.
+
+See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
+"""
 
 from __future__ import annotations
 
@@ -14,7 +22,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
-OUT = ROOT / "results/phantom_paper/figures/fig5_category_mode_heatmap.png"
+OUT = ROOT / "results/phantom_paper/figures/fig0e_category_mode_heatmap.png"
 
 CATEGORIES = ["A", "B", "C", "D"]
 CATEGORY_LABELS = [

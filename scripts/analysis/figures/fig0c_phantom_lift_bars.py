@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""fig10: Phantom routing lift — Section 1/4 paper hook visualization.
+"""[Layer 0c viz] Outcome — phantom routing lift visualization.
+
+Output:
+- results/phantom_paper/figures/fig0c_phantom_lift_bars.png
+
+Visual companion to Layer 0c routing oracle lift.
+
+See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
+
+fig10: Phantom routing lift — Section 1/4 paper hook visualization.
 
 Reads results/phantom_paper/phantom_lift.csv (produced by aggregate_phantom_lift.py)
 and visualizes 4 oracle ceilings per (baseline, site) cell:
@@ -8,7 +17,7 @@ and visualizes 4 oracle ceilings per (baseline, site) cell:
 Each bar = oracle SR%. Error bars from bootstrap 95% CI on the lift vs 3-mode.
 Text annotations show absolute ceiling % and lift Δ vs 3-mode.
 
-Output: results/phantom_paper/figures/fig10_phantom_lift_bars.png
+Output: results/phantom_paper/figures/fig0c_phantom_lift_bars.png
 """
 from __future__ import annotations
 
@@ -20,7 +29,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
 CSV = ROOT / "results/phantom_paper/phantom_lift.csv"
-OUT = ROOT / "results/phantom_paper/figures/fig10_phantom_lift_bars.png"
+OUT = ROOT / "results/phantom_paper/figures/fig0c_phantom_lift_bars.png"
 
 
 def load_rows() -> list[dict]:

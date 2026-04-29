@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Confidence calibration & signal analysis for Phase 2 routing go/no-go decision.
+"""Per-run diagnostic; not part of the 4-layer evidence framework.
+
+Confidence calibration & signal analysis for Phase 2 routing go/no-go decision.
 
 Analyses:
   C0 – Coverage report per condition (token-level + verbalized)

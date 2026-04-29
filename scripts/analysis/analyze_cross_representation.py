@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Cross-representation task-level analysis for Phase 1 experiments.
+"""Per-run diagnostic; not part of the 4-layer evidence framework.
+
+Cross-representation task-level analysis for Phase 1 experiments.
 
 Consumes episode_reason_rows.csv + episode summary JSONs to produce
 task-granularity cross-representation comparisons (oracle ceiling,

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""B0 Vision 坐标错误定量统计 — 含 DOM/SoM 对比."""
+"""Per-run diagnostic; not part of the 4-layer evidence framework.
+
+B0 Vision 坐标错误定量统计 — 含 DOM/SoM 对比.
+"""
 
 import sys
 import os

@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""fig11: Routing signal AUROC heatmap — Section 6 paper main evidence.
+"""[Layer 0g viz] Outcome — routing signal AUROC heatmap.
+
+Output:
+- results/phantom_paper/figures/fig0g_routing_auroc_heatmap.png
+
+Visual companion to Layer 0g routing AUROC evidence.
+
+See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
+
+fig11: Routing signal AUROC heatmap — Section 6 paper main evidence.
 
 Reads results/phantom_paper/auroc_cross_condition.csv (per-cell × per-signal
 AUROC + 95% CI) and visualizes as cross-condition × signal heatmap.
@@ -8,7 +17,7 @@ Rows: (baseline, site, mode) cells (~20 across full matrix).
 Cols: signal types (verbalized / token-level / behavioral).
 Color: AUROC value (0.5 random — 1.0 perfect; threshold 0.7 routing-usable).
 
-Output: results/phantom_paper/figures/fig11_routing_auroc_heatmap.png
+Output: results/phantom_paper/figures/fig0g_routing_auroc_heatmap.png
 """
 from __future__ import annotations
 
@@ -21,7 +30,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[3]
 CSV = ROOT / "results/phantom_paper/auroc_cross_condition.csv"
-OUT = ROOT / "results/phantom_paper/figures/fig11_routing_auroc_heatmap.png"
+OUT = ROOT / "results/phantom_paper/figures/fig0g_routing_auroc_heatmap.png"
 
 # Featured signals to display (one of each type)
 FEATURED_SIGNALS = [

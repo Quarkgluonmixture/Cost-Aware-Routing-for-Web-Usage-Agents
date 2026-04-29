@@ -114,18 +114,12 @@ for mode in "${MODES[@]}"; do
     continue
   fi
 
-  # Reset site (only for VWA; WA reset uses different mechanism if any)
-  if [[ "$BENCHMARK" == "vwa" ]]; then
-    log "  resetting ${SITE} before ${mode}..."
-    reset_vwa_sites "$SITE" "chain_${BASELINE}_phantom_${mode}_${SITE}" || log "  [warn] reset failed (continuing)"
-    sleep 15
-  else
-    log "  [info] WA benchmark — no site reset"
-  fi
-
-  # Launch via queue_phantom.sh (it handles env setup + watchdog)
-  log "  launching ${BASELINE}_phantom_${mode} ${SITE}..."
-  bash "${REPO_DIR}/scripts/queues/queue_phantom.sh" \
+  # Delegate reset to queue_phantom.sh via RESET_BEFORE=1 — it places the
+  # reset AFTER its own idempotent runner check, preventing the race where
+  # `reset` lands on a site that already has an attached runner. (Was a
+  # real bug 04-27 — see 实验笔记 §104 audit).
+  log "  launching ${BASELINE}_phantom_${mode} ${SITE} (with RESET_BEFORE=1, delegated)..."
+  RESET_BEFORE=1 bash "${REPO_DIR}/scripts/queues/queue_phantom.sh" \
     "$BASELINE" "$mode" "$SITE" "$BENCHMARK" 2>&1 | sed 's/^/  /'
 
   # Wait for it to complete

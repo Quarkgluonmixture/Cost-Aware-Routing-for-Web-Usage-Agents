@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Batch pattern-matching diagnostics for P79 episodes.
+"""Per-run diagnostic; not part of the 4-layer evidence framework.
+
+Batch pattern-matching diagnostics for P79 episodes.
 
 Automates diag SKILL Step 2 (hard rules P1-P14) across all episodes in a run.
 Outputs structured JSON with per-episode hits and aggregate summary.
