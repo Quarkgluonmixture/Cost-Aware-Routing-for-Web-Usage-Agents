@@ -2,8 +2,8 @@
 """[Layer 0 supporting] Outcome — drop-one oracle loss visualization.
 
 Outputs:
-- results/phantom_paper/figures/fig0c_drop_one_oracle.png
-- results/phantom_paper/figures/fig0c_drop_one_bootstrap_ci.csv
+- results/phantom_paper/figures/fig0c_drop_one_oracle.png  (figure)
+- results/phantom_paper/fig0c_drop_one_bootstrap_ci.csv     (data sidecar, alongside other paper-grade aggregations)
 
 Supporting visualization for oracle/drop-one solve-pool evidence.
 
@@ -300,7 +300,10 @@ def main() -> None:
     fig.tight_layout(rect=(0, 0.06, 1, 0.93))
     fig.savefig(OUT, bbox_inches="tight")
     print(OUT)
-    csv_path = OUT.parent / "fig0c_drop_one_bootstrap_ci.csv"
+    # Data sidecar lives alongside other cross-condition aggregations
+    # (phantom_lift.csv, auroc_cross_condition.csv, run_summary_collect.json),
+    # not inside figures/ — figures/ is for PNGs only.
+    csv_path = OUT.parent.parent / "fig0c_drop_one_bootstrap_ci.csv"
     with csv_path.open("w", newline="") as f:
         writer = _csv.DictWriter(f, fieldnames=[
             "panel", "site_baseline", "mode",

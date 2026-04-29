@@ -34,7 +34,7 @@ complementarity, category SR, overlap depth, and routing AUROC.
 | `scripts/analysis/figures/fig0c_phantom_lift_bars.py` | 0c viz | `results/phantom_paper/phantom_lift.csv` | `results/phantom_paper/figures/fig0c_phantom_lift_bars.png` | visualizes reddit +5.24pp and classifieds +4.70pp 3→5 oracle lift |
 | `scripts/analysis/figures/fig0g_routing_auroc_heatmap.py` | 0g viz | `results/phantom_paper/auroc_cross_condition.csv` | `results/phantom_paper/figures/fig0g_routing_auroc_heatmap.png` | visualizes B0/B1 AUROC by condition, mode, and signal |
 | `scripts/analysis/figures/fig0d_taskpool_jaccard.py` | 0 supporting | live episode adjusted-success sets | `results/phantom_paper/figures/fig0d_taskpool_jaccard.png` | solve-pool overlap sketch for B0/B1 observation arms |
-| `scripts/analysis/figures/fig0c_drop_one_oracle.py` | 0 supporting | live episode adjusted-success sets | `results/phantom_paper/figures/fig0c_drop_one_oracle.png`, `fig0c_drop_one_bootstrap_ci.csv` | drop-one oracle loss for B0/B1 mode pools |
+| `scripts/analysis/figures/fig0c_drop_one_oracle.py` | 0 supporting | live episode adjusted-success sets | `results/phantom_paper/figures/fig0c_drop_one_oracle.png` (figure) + `results/phantom_paper/fig0c_drop_one_bootstrap_ci.csv` (data sidecar) | drop-one oracle loss for B0/B1 mode pools |
 
 Layer 0 live sources also include raw/adjusted SR and FP rate from:
 
