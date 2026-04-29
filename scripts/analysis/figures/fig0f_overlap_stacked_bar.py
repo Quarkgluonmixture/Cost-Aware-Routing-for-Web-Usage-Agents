@@ -26,7 +26,7 @@ RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig0f_overlap_stacked_bar.png"
 
 MODE_ORDER = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text", "Phantom-prompt"]
-MODE_LABELS = ["DOM", "SoM", "Vision", "Phantom\nSoM", "Phantom\nDOM", "Phantom\nprompt"]
+MODE_LABELS = ["DOM", "SoM", "Vision", "P-SoM", "P-text", "P-prompt"]
 COLORS = {
     "DOM": "#4c78a8",
     "SoM": "#f58518",

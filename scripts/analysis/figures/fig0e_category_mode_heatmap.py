@@ -174,7 +174,7 @@ def draw_panel(ax: plt.Axes, panel: dict, vmax: float) -> None:
     cmap.set_bad("#f2f2f2")
     im = ax.imshow(matrix, cmap=cmap, vmin=0, vmax=vmax, aspect="auto")
     ax.set_title(panel["key"], fontsize=11, fontweight="bold")
-    ax.set_xticks(np.arange(len(MODES)), ["DOM", "SoM", "Vision", "Phantom\nSoM", "Phantom\nDOM", "Phantom\nprompt"], fontsize=8.0)
+    ax.set_xticks(np.arange(len(MODES)), ["DOM", "SoM", "Vision", "P-SoM", "P-text", "P-prompt"], fontsize=8.0)
     ax.set_yticks(np.arange(len(CATEGORIES)), CATEGORY_LABELS, fontsize=8.5)
     ax.tick_params(axis="both", length=0)
     for i in range(len(CATEGORIES)):

@@ -53,8 +53,19 @@ def main() -> None:
         print("[warn] empty AUROC table")
         return
 
-    # Build cell label
-    df["cell"] = df["baseline"] + " " + df["site"] + " " + df["mode"]
+    # Build cell label — paper-facing mode short forms (mode value `phantom_dom`
+    # is legacy alias for P-text; row labels use the paper short form).
+    MODE_LABEL = {
+        "dom": "DOM",
+        "som": "SoM",
+        "vision": "Vision",
+        "phantom_som": "P-SoM",
+        "phantom_dom": "P-text",
+        "phantom_text": "P-text",
+        "phantom_prompt": "P-prompt",
+    }
+    df["mode_label"] = df["mode"].map(lambda m: MODE_LABEL.get(str(m).lower(), m))
+    df["cell"] = df["baseline"] + " " + df["site"] + " " + df["mode_label"]
     cells = df["cell"].drop_duplicates().tolist()
 
     # Pivot: rows = cells, cols = featured signals

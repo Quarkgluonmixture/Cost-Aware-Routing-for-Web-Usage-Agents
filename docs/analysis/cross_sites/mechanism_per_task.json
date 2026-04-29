@@ -185,36 +185,36 @@
       "axis_1_text_alt": {
         "click_target_set_size": {
           "left_hist": {
-            "0": 70,
-            "1": 41,
-            "2": 14,
+            "0": 72,
+            "1": 42,
+            "2": 15,
             "3": 6,
-            "4": 3,
+            "4": 4,
             "5": 2,
             "7": 2
           },
-          "left_mean": 0.891304,
+          "left_mean": 0.909091,
           "right_hist": {
-            "0": 81,
-            "1": 30,
+            "0": 82,
+            "1": 31,
             "10": 1,
-            "2": 11,
-            "3": 8,
-            "4": 3,
+            "2": 12,
+            "3": 9,
+            "4": 4,
             "5": 3,
             "6": 1
           },
-          "right_mean": 0.862319,
-          "union_mean": 1.536232
+          "right_mean": 0.902098,
+          "union_mean": 1.594406
         },
         "contrast": "P-prompt vs P-SoM",
         "left_mode": "Phantom-prompt",
-        "mean_decision_divergence": 0.514058,
-        "mean_jaccard": 0.485942,
-        "median_jaccard": 0.309524,
-        "n": 138,
+        "mean_decision_divergence": 0.517063,
+        "mean_jaccard": 0.482937,
+        "median_jaccard": 0.285714,
+        "n": 143,
         "right_mode": "Phantom-SoM",
-        "std_jaccard": 0.485191
+        "std_jaccard": 0.485616
       },
       "axis_2_prompt": {
         "click_target_set_size": {
@@ -254,35 +254,35 @@
       "axis_2_prompt_alt": {
         "click_target_set_size": {
           "left_hist": {
-            "0": 64,
-            "1": 36,
+            "0": 67,
+            "1": 38,
             "2": 19,
             "3": 8,
             "4": 6,
             "5": 3,
             "8": 2
           },
-          "left_mean": 1.108696,
+          "left_mean": 1.083916,
           "right_hist": {
-            "0": 70,
-            "1": 41,
-            "2": 14,
+            "0": 72,
+            "1": 42,
+            "2": 15,
             "3": 6,
-            "4": 3,
+            "4": 4,
             "5": 2,
             "7": 2
           },
-          "right_mean": 0.891304,
-          "union_mean": 1.717391
+          "right_mean": 0.909091,
+          "union_mean": 1.713287
         },
         "contrast": "DOM vs P-prompt",
         "left_mode": "DOM",
-        "mean_decision_divergence": 0.498229,
-        "mean_jaccard": 0.501771,
+        "mean_decision_divergence": 0.494794,
+        "mean_jaccard": 0.505206,
         "median_jaccard": 0.5,
-        "n": 138,
+        "n": 143,
         "right_mode": "Phantom-prompt",
-        "std_jaccard": 0.470088
+        "std_jaccard": 0.471148
       },
       "axis_3_image": {
         "click_target_set_size": {
@@ -721,17 +721,17 @@
           19,
           17
         ],
-        "early_divergence_rate": 0.769231,
+        "early_divergence_rate": 0.785714,
         "first_divergent_step_histogram": {
-          "0": 5,
+          "0": 6,
           "1": 3,
           "2": 2,
           "4": 3
         },
         "late_divergence_rate": 0.0,
         "left_mode": "DOM",
-        "median_first_divergent_step": 1,
-        "n_symmetric_diff_tasks": 13,
+        "median_first_divergent_step": 1.0,
+        "n_symmetric_diff_tasks": 14,
         "right_mode": "Phantom-prompt"
       },
       "P-text_vs_Phantom-SoM": {
@@ -866,13 +866,13 @@
         ],
         "early_divergence_rate": 1.0,
         "first_divergent_step_histogram": {
-          "0": 6,
+          "0": 8,
           "2": 1
         },
         "late_divergence_rate": 0.0,
         "left_mode": "Phantom-prompt",
         "median_first_divergent_step": 0,
-        "n_symmetric_diff_tasks": 8,
+        "n_symmetric_diff_tasks": 10,
         "right_mode": "Phantom-SoM"
       }
     }
@@ -1589,40 +1589,40 @@
         "axis_1_text_alt": {
           "left_mode": "Phantom-prompt",
           "mean_per_task_fraction_shift": {
-            "back": -0.014134,
-            "click": -0.011908,
-            "finish": 0.014761,
+            "back": -0.014339,
+            "click": -0.007102,
+            "finish": 0.015119,
             "forward": 0.0,
             "other": 0.0,
-            "scroll": -0.04597,
-            "select_option": -8.4e-05,
-            "tab_focus": 0.123726,
-            "type": -0.066391,
+            "scroll": -0.045664,
+            "select_option": -8.1e-05,
+            "tab_focus": 0.1194,
+            "type": -0.067333,
             "wait": 0.0
           },
-          "n": 138,
+          "n": 143,
           "right_mode": "Phantom-SoM",
           "skipped": false,
           "top_abs_shifts": [
             {
               "action_type": "tab_focus",
-              "mean_fraction_shift": 0.123726
+              "mean_fraction_shift": 0.1194
             },
             {
               "action_type": "type",
-              "mean_fraction_shift": -0.066391
+              "mean_fraction_shift": -0.067333
             },
             {
               "action_type": "scroll",
-              "mean_fraction_shift": -0.04597
+              "mean_fraction_shift": -0.045664
             },
             {
               "action_type": "finish",
-              "mean_fraction_shift": 0.014761
+              "mean_fraction_shift": 0.015119
             },
             {
               "action_type": "back",
-              "mean_fraction_shift": -0.014134
+              "mean_fraction_shift": -0.014339
             }
           ]
         },
@@ -1669,40 +1669,40 @@
         "axis_2_prompt_alt": {
           "left_mode": "DOM",
           "mean_per_task_fraction_shift": {
-            "back": 0.019847,
-            "click": -0.017296,
-            "finish": -0.010087,
+            "back": 0.021018,
+            "click": -0.014159,
+            "finish": -0.015588,
             "forward": 0.0,
             "other": 0.0,
-            "scroll": 0.028455,
-            "select_option": 0.011189,
-            "tab_focus": -0.010234,
-            "type": -0.021873,
+            "scroll": 0.02915,
+            "select_option": 0.010798,
+            "tab_focus": -0.011783,
+            "type": -0.019434,
             "wait": 0.0
           },
-          "n": 138,
+          "n": 143,
           "right_mode": "Phantom-prompt",
           "skipped": false,
           "top_abs_shifts": [
             {
               "action_type": "scroll",
-              "mean_fraction_shift": 0.028455
-            },
-            {
-              "action_type": "type",
-              "mean_fraction_shift": -0.021873
+              "mean_fraction_shift": 0.02915
             },
             {
               "action_type": "back",
-              "mean_fraction_shift": 0.019847
+              "mean_fraction_shift": 0.021018
+            },
+            {
+              "action_type": "type",
+              "mean_fraction_shift": -0.019434
+            },
+            {
+              "action_type": "finish",
+              "mean_fraction_shift": -0.015588
             },
             {
               "action_type": "click",
-              "mean_fraction_shift": -0.017296
-            },
-            {
-              "action_type": "select_option",
-              "mean_fraction_shift": 0.011189
+              "mean_fraction_shift": -0.014159
             }
           ]
         },
@@ -1886,15 +1886,15 @@
         "wait": 0.0
       },
       "B0/reddit/Phantom-prompt": {
-        "back": 0.097272,
-        "click": 0.33274,
-        "finish": 0.040925,
+        "back": 0.098624,
+        "click": 0.335436,
+        "finish": 0.040711,
         "forward": 0.0,
         "other": 0.0,
-        "scroll": 0.228351,
-        "select_option": 0.007711,
-        "tab_focus": 0.021945,
-        "type": 0.271056,
+        "scroll": 0.226491,
+        "select_option": 0.007454,
+        "tab_focus": 0.021216,
+        "type": 0.270069,
         "wait": 0.0
       },
       "B0/reddit/SoM": {
@@ -1952,11 +1952,11 @@
       },
       {
         "action_type": "back",
-        "high_fraction": 0.097272,
+        "high_fraction": 0.098624,
         "high_mode": "Phantom-prompt",
         "low_fraction": 0.032571,
         "low_mode": "Vision",
-        "ratio": 2.986447,
+        "ratio": 3.027962,
         "site": "reddit"
       },
       {
@@ -1982,7 +1982,7 @@
   "data_status": {
     "p_prompt": {
       "B0_phantom_prompt_reddit_20260429": {
-        "episodes": 138,
+        "episodes": 142,
         "policy": "P-prompt is not included in E1-E4 contrasts.",
         "status": "partial / pending"
       }

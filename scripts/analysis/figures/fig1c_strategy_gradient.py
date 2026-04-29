@@ -273,7 +273,7 @@ def draw_panel(ax: plt.Axes, row_idx: int, metric: str, values: dict[str, dict[s
         )
     if row_idx == 0:
         ax.set_title(metric, fontsize=10.0, fontweight="bold")
-    ax.set_xticks(x, ["DOM", "Vision", "SoM", "Phantom\nSoM", "Phantom\nDOM", "Phantom\nprompt"], rotation=0, fontsize=7.0)
+    ax.set_xticks(x, ["DOM", "Vision", "SoM", "P-SoM", "P-text", "P-prompt"], rotation=0, fontsize=7.0)
     ax.grid(axis="y", color="#dddddd", linewidth=0.8)
     ax.set_axisbelow(True)
     ymax = max([v for v in metric_values if v is not None] or [1])
