@@ -165,6 +165,7 @@ fig12-micro-heatmap:
 analyze-layer3:
 	$(MAKE) summary-collect
 	$(MAKE) aggregate-cost-electricity
+	$(PYTHON) scripts/analysis/figures/fig3a_token_cost_intra_baseline.py
 	$(PYTHON) scripts/analysis/figures/fig3d_cost_sr_frontier.py
 	$(PYTHON) scripts/analysis/figures/fig3_regional_carbon.py
 
