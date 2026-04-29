@@ -31,7 +31,7 @@ CATEGORY_LABELS = [
     "C\npage-screen",
     "D\nuncertain",
 ]
-MODES = ["DOM", "SoM", "Vision", "Phantom-SoM", "Phantom-DOM"]
+MODES = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text"]
 
 SITES = {
     "classifieds": {
@@ -41,8 +41,8 @@ SITES = {
             "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
             "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-            "Phantom-DOM": RESULTS / "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
         },
         "notes": {"Phantom-SoM": "fresh re-run"},
     },
@@ -53,10 +53,10 @@ SITES = {
             "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
             "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
-            "Phantom-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
+            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
         },
-        # all phantom modes fresh complete (B0 cls/red Phantom-SoM 234/210, Phantom-DOM 234/210)
+        # all phantom modes fresh complete (B0 cls/red Phantom-SoM 234/210, P-text 234/210)
     },
 }
 

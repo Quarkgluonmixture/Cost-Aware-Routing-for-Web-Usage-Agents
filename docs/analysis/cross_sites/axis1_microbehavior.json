@@ -1,5 +1,5 @@
 {
-  "method": "Mode-invariant micro-behavior analysis over reddit and classifieds. Per-task/per-mode metrics extract URL sets, URL path sets, target-page hits from task-config URLs, typed keywords, first action type, first post-action URL path, step count, and finish status. Cascade contrasts are right-minus-left: P-DOM minus DOM (axis 1 text), P-SoM minus P-DOM (axis 2 prompt), and SoM minus P-SoM (axis 3 image). URL path Jaccard is symmetric; lower values indicate stronger decision divergence. The cross-site claim ratio compares bounded decision effects (1 - URL-path Jaccard, absolute target-hit diff, first-action divergence) with the mean absolute axis-1 macro effect from axis_effect_size.json.",
+  "method": "Mode-invariant micro-behavior analysis over reddit and classifieds. Per-task/per-mode metrics extract URL sets, URL path sets, target-page hits from task-config URLs, typed keywords, first action type, first post-action URL path, step count, and finish status. Cascade contrasts are right-minus-left: P-text minus DOM (axis 1 text), P-SoM minus P-text (axis 2 prompt), and SoM minus P-SoM (axis 3 image). URL path Jaccard is symmetric; lower values indicate stronger decision divergence. The cross-site claim ratio compares bounded decision effects (1 - URL-path Jaccard, absolute target-hit diff, first-action divergence) with the mean absolute axis-1 macro effect from axis_effect_size.json.",
   "metrics_per_task_per_mode": {
     "reddit": {
       "DOM": {
@@ -81,7 +81,7 @@
           "type": 82
         }
       },
-      "Phantom-DOM": {
+      "P-text": {
         "n_tasks": 210,
         "mean_url_set_size": 3.695238,
         "mean_url_path_set_size": 2.504762,
@@ -185,7 +185,7 @@
           "type": 94
         }
       },
-      "Phantom-DOM": {
+      "P-text": {
         "n_tasks": 234,
         "mean_url_set_size": 3.666667,
         "mean_url_path_set_size": 1.504274,
@@ -232,9 +232,9 @@
         "finish_rate_diff": -0.02381,
         "first_action_divergence_rate": 0.209524,
         "first_action_target_url_path_divergence_rate": 0.4,
-        "contrast": "P-DOM minus DOM",
+        "contrast": "P-text minus DOM",
         "left_mode": "DOM",
-        "right_mode": "P-DOM"
+        "right_mode": "P-text"
       },
       "axis_2_prompt": {
         "n": 210,
@@ -259,8 +259,8 @@
         "finish_rate_diff": -0.02381,
         "first_action_divergence_rate": 0.204762,
         "first_action_target_url_path_divergence_rate": 0.5,
-        "contrast": "P-SoM minus P-DOM",
-        "left_mode": "P-DOM",
+        "contrast": "P-SoM minus P-text",
+        "left_mode": "P-text",
         "right_mode": "P-SoM"
       },
       "axis_3_image": {
@@ -369,9 +369,9 @@
         "finish_rate_diff": 0.021368,
         "first_action_divergence_rate": 0.136752,
         "first_action_target_url_path_divergence_rate": 0.123932,
-        "contrast": "P-DOM minus DOM",
+        "contrast": "P-text minus DOM",
         "left_mode": "DOM",
-        "right_mode": "P-DOM"
+        "right_mode": "P-text"
       },
       "axis_2_prompt": {
         "n": 234,
@@ -396,8 +396,8 @@
         "finish_rate_diff": -0.064103,
         "first_action_divergence_rate": 0.179487,
         "first_action_target_url_path_divergence_rate": 0.111111,
-        "contrast": "P-SoM minus P-DOM",
-        "left_mode": "P-DOM",
+        "contrast": "P-SoM minus P-text",
+        "left_mode": "P-text",
         "right_mode": "P-SoM"
       },
       "axis_3_image": {
@@ -527,7 +527,7 @@
           "/search?q=pumpkin+"
         ]
       },
-      "Phantom-DOM": {
+      "P-text": {
         "n_steps": 10,
         "n_url_visits": 3,
         "target_url_visited": false,
@@ -600,7 +600,7 @@
           "/search?q=Good+Lord%21+This+man+has+Handgun+ammo+in+his+torso%21+"
         ]
       },
-      "Phantom-DOM": {
+      "P-text": {
         "n_steps": 10,
         "n_url_visits": 3,
         "target_url_visited": false,
@@ -675,7 +675,7 @@
           "/search?q=woman+wheat+field+city+skyline+"
         ]
       },
-      "Phantom-DOM": {
+      "P-text": {
         "n_steps": 4,
         "n_url_visits": 1,
         "target_url_visited": false,
@@ -721,7 +721,7 @@
           "/index.php?page=item&id=32241"
         ]
       },
-      "Phantom-DOM": {
+      "P-text": {
         "n_steps": 10,
         "n_url_visits": 3,
         "target_url_visited": true,
@@ -790,7 +790,7 @@
           "/index.php?page=item&id=67190"
         ]
       },
-      "Phantom-DOM": {
+      "P-text": {
         "n_steps": 5,
         "n_url_visits": 2,
         "target_url_visited": true,

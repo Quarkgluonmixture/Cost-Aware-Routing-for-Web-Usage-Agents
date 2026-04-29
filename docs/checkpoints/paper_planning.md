@@ -10,7 +10,7 @@
 > - **paper drafts** (`docs/analysis/paper_drafts/`): final paper prose
 > - **实验笔记** (`docs/checkpoints/实验笔记.md`): time-order chronicle (历史 record)
 >
-> **Last updated**: 2026-04-28
+> **Last updated**: 2026-04-29
 
 ---
 
@@ -22,7 +22,7 @@
 |---|---|
 | (a) **Cost ≈ DOM** | `[SOM_MARKS]` 是 AXTree regex filter, 不需 bbox/image (验 `som.py::_extract_text_marks` line 24); text token ±7% (3437 vs 3661 reddit / 3008 vs 2948 cls) |
 | (b) **Latency ~50% lower** | cls SoM p95 74s vs Phantom-SoM 18.2s = **4× faster** (no image encoding stage) |
-| (c) **Signal AUROC ≥ baseline** | 5-mode 全 `overall_usable=True`; red Phantom-DOM verbalized 0.793 是 5-mode 最高 (超 baseline 0.766) |
+| (c) **Signal AUROC ≥ baseline** | 5-mode 全 `overall_usable=True`; red P-text verbalized 0.793 是 5-mode 最高 (超 baseline 0.766) |
 | (d) **Drop-one oracle 1.7-3.3pp** | red Phantom-SoM 3.33pp drop-one (≥ SoM 1.90pp); cls 2.56pp |
 
 **Paper one-liner (for advisor pitch)**:
@@ -33,7 +33,7 @@
 ```
 DOM       (~3K AXTree text + DOM prompt + 无图)        ← cheapest text
   ↓ axis 1: AXTree → [SOM_MARKS] flat (text 结构 swap, ~3K both, prompt 不变)
-P-DOM     ([SOM_MARKS] flat + DOM prompt + 无图)
+P-text     ([SOM_MARKS] flat + DOM prompt + 无图)
   ↓ axis 2: dom_prompt → som_prompt (system prompt swap, 0 data token)
 P-SoM     ([SOM_MARKS] flat + SoM prompt + 无图)
   ↓ axis 3: + image (~1.5K image embedding tokens)
@@ -48,13 +48,13 @@ SoM       ([SOM_MARKS] flat + SoM prompt + 有图)        ← highest text+image
 
 ### 5-mode 选择基于 2×2×2 design cube 对角路径
 
-3 axes 形成 2×2×2 = 8 hypothetical modes，paper 5-mode 是其中**沿对角 axis-by-axis 路径**的 5 个 self-consistent 节点 (DOM → P-DOM → P-SoM → SoM + Vision 独立 image-only arm)。
+3 axes 形成 2×2×2 = 8 hypothetical modes，paper 5-mode 是其中**沿对角 axis-by-axis 路径**的 5 个 self-consistent 节点 (DOM → P-text → P-SoM → SoM + Vision 独立 image-only arm)。
 
 **4 个 mismatched hybrid 故意排除** (e.g. AXTree + SoM-prompt + 无图)：
 - 没 LLM 机制 — SoM prompt 指 `[SOM_MARKS] N` 但 AXTree 用 DOM accessibility ID（不同 ID 系统 → mismatched parsing）
 - Confuse agent — `click [42]` 解析歧义，action selection 必错
 - 不 clean axis 2 ablation — confound prompt-effect with ID-system-parsing-effect
-- 跳出 token-monotonic cascade — token 数与 P-DOM 同但 SR 必差（mismatched parsing tax）
+- 跳出 token-monotonic cascade — token 数与 P-text 同但 SR 必差（mismatched parsing tax）
 
 Paper Section 3 footnote 用此 defense reviewer "why 5 not 8".
 
@@ -86,9 +86,9 @@ AXTree (hierarchical) vs [SOM_MARKS] (flat indexed) → action surface + traject
 - (d) commitment confidence (FP gap evidence, **subeffect not唯一**)
 
 **Evidence**:
-- Phantom-DOM ∩ Phantom-SoM Jaccard 0.45-0.54 (task pool 显著 disjoint despite same SR)
+- P-text ∩ Phantom-SoM Jaccard 0.45-0.54 (task pool 显著 disjoint despite same SR)
 - 6 case studies (codex `5821387` phantom_dom_vs_som_diagnostic.md)
-- N=48 verified anchor: Phantom-SoM FP gap 2.08pp vs Phantom-DOM 6.25pp
+- N=48 verified anchor: Phantom-SoM FP gap 2.08pp vs P-text 6.25pp
 
 **Lit support**: Persona priming (Salemi 2024), in-context learning (Min 2022), Sclar 2024 prompt format sensitivity, Mishra 2022. Task-pool divergence Jaccard <0.5 是 paper unique empirical finding.
 
@@ -289,7 +289,7 @@ Layer 3  Efficiency        cost / latency / carbon (4-fold drop-in property)
 |---|---|---|---|
 | **1a** Tier 1 hook (3-mode coarse: DOM/P-SoM/SoM × 8 metric) | `axis_effect_size.py` (FRESH 04-29) + `axis_effect_size_report.md` | P-SoM "fully independent" cells: **red 4/8 vs cls 1/8**. cls P-SoM 主要"瘫向 DOM" (6/8 DOM-like) —— image axis 决定性, **印证 0d 的 task-pool 复杂性** |
 | **1b** Tier 2a Mechanism cascade (3 axes × 8 metric) | `axis_effect_size.py` | **6 antagonistic pairs** (red scroll/text↔prompt 反向相消 / cls finish/prompt↔image 反向); cls **image axis 5/8 dominant** (h=+0.57 finish, d=−0.42 repeat); axis 1 在 macro 0/8 dominant (但 outcome 层 primary, 见 0c) |
-| **1c** Strategy gradient (search-loop / type / scroll / selfcorr) | `fig1c_strategy_gradient.png` ✅ FRESH 04-29 全数据 | red DOM **search-loop 51.9%** → P-SoM 35.7% → SoM 31.4% (§3-legacy finding 3 升级版：从 §103 N=48 → N=210 全数据，原"5/5 metrics P-DOM=P-SoM"已 falsify) |
+| **1c** Strategy gradient (search-loop / type / scroll / selfcorr) | `fig1c_strategy_gradient.png` ✅ FRESH 04-29 全数据 | red DOM **search-loop 51.9%** → P-SoM 35.7% → SoM 31.4% (§3-legacy finding 3 升级版：从 §103 N=48 → N=210 全数据，原"5/5 metrics P-text=P-SoM"已 falsify) |
 
 ---
 
@@ -364,11 +364,14 @@ Stage 3 (Mechanism 层):  axis 1 改 text payload 结构 → 改 in-context atte
 - cls SoM **adj 21.37% 显著领先 P-SoM 14.53% (+6.84pp)** —— 反例必须明示, image 在 cls 是决定性 axis (Layer 1b 5/8 dominant 印证)
 - 主 narrative: **site-modulated representation × prompt × image effects**, 不是 "Phantom #1 universal routing arm"
 - Layer 1 macro 单独 weak on cls (1/8 fully independent) —— paper 必须用 Layer 0 task-pool + Layer 2 micro 一起讲，不能只 cite macro
-- §103 N=48 "5/5 metrics P-DOM = P-SoM" 已 **superseded** by N=210 (FRESH 04-29 Layer 1c) — 早期 small-sample artifact
+- §103 N=48 "5/5 metrics P-text = P-SoM" 已 **superseded** by N=210 (FRESH 04-29 Layer 1c) — 早期 small-sample artifact
 
 ---
 
 ### Legacy index (原 10 条 finding 映射)
+
+Naming traceability (04-29): completed filesystem run dirs now distinguish paper-facing text from SoM phantom arms:
+`B0_phantom_*` completed runs became `B0_phantom_som_*`, and completed `B0_phantom_dom_*` runs became `B0_phantom_text_*`. Internal mode IDs and condition dirs remain unchanged (`phantom_dom` / `phase1_phantom_dom_router_0`, `phantom_som` / `phase1_phantom_som_router_0`) for backward compatibility with recorded JSONL.
 
 | 原 finding | 映射到 layer |
 |---|---|
@@ -545,7 +548,7 @@ paper Section 6 不是 Section 7 Generalization 的子部分, 是**独立 contri
 
 ```
 6.1 Routing problem formulation
-  - 5-mode arms: DOM / SoM / Vision / Phantom-SoM / Phantom-DOM
+  - 5-mode arms: DOM / SoM / Vision / Phantom-SoM / P-text
   - Per-task feature space (instruction + browser meta + step-1 trigger signals)
   - Target: max adjusted SR / cost-aware / Pareto
 
@@ -562,7 +565,7 @@ paper Section 6 不是 Section 7 Generalization 的子部分, 是**独立 contri
   - Cost vs SR Pareto improvement
 
 6.4 Routing infra drop-in property (4-fold #c)
-  - Phantom modes signal AUROC ≥ baseline (5/5 usable, red Phantom-DOM 0.793 highest)
+  - Phantom modes signal AUROC ≥ baseline (5/5 usable, red P-text 0.793 highest)
   - 不需要 retrain signal extraction infra
   - paper claim: "router trained on baseline 可 directly extend to Phantom"
 
@@ -611,7 +614,7 @@ Benchmark: VWA 3 站 (cls 234 + red 210 + shop 466) + WA 3 站 (red 106 + shop 1
            = 6 sites, ~1390 task per condition
 Models:    B0 (Qwen3-VL-235B proxy) + B1 (Qwen3-VL-4B local) + Claude Opus 4.7
            = 3 model families
-Modes:     DOM / SoM / Vision / Phantom-SoM / Phantom-DOM = 5 modes
+Modes:     DOM / SoM / Vision / Phantom-SoM / P-text = 5 modes
 Cells:     6 sites × 3 models × 5 modes = ~90 cells (~125K episode total)
 + Router:  Tier 1+2 (oracle + first-step trigger), 实际 deploy on agent
 + Multi-metric: cost / P95 latency / carbon (B1 measured + B0 estimate)
@@ -754,7 +757,7 @@ Total: ~3-4 周
 
 - 4 baselines + 5 phantom × `confidence_summary.json` (`overall_usable=True`)
 - Behavioral signals AUROC 0.682-0.748 (cls behavioral 主导, red verbalized 主导)
-- Verbalized signals AUROC 0.701-0.793 (red Phantom-DOM 0.793 是 5-mode 最高)
+- Verbalized signals AUROC 0.701-0.793 (red P-text 0.793 是 5-mode 最高)
 - Router scaffold: `p79/experiment/router.py::RuleBasedRouter`
 - **Phantom modes 直接复用 baseline signal infra** (drop-in routing claim 第 4 fold)
 
@@ -963,11 +966,11 @@ ef29add  drop-in deployment punchline
   - Pending: paired permutation test for cross-mode SR delta (lower priority)
 - [x] **AUROC aggregation table** ✅ done 04-28 — `scripts/analysis/aggregate_routing_auroc.py` (~110 行)
   - Outputs: `results/phantom_paper/auroc_cross_condition.csv` (188 rows × 5 modes × 4 cells) + `_summary.md` (top-1 per cell, Section 6 claim 证据)
-  - Section 6 "AUROC ≥ baseline" claim 部分支持: B0 red phantom_dom 0.793 highest; B0 cls phantom_dom 0.737 ≥ som 0.709 baseline; B1 cells 待 chain done
+  - Section 6 "AUROC ≥ baseline" claim 部分支持: B0 red P-text 0.793 highest; B0 cls P-text 0.737 ≥ SoM 0.709 baseline; B1 cells 待 chain done
 - [x] **Phantom routing lift** ✅ done 04-29 — `scripts/analysis/aggregate_phantom_lift.py` (~180 行)
   - Outputs: `results/phantom_paper/phantom_lift.{csv,md}` — 3-mode → 5-mode oracle ceiling lift + bootstrap CI + per-phantom decomposition
   - **Paper Section 1/4 hook 主 evidence**: B0 cls **+4.70pp [2.14, 7.69]** ✅, B0 red **+5.24pp [2.38, 8.11]** ✅ (CI 排除 0)
-  - Decomposition: P-DOM adds 8 tasks / P-SoM adds 6-7; each phantom 有独家 + overlap 部分 → keep both phantoms in paper
+  - Decomposition: P-text adds 8 tasks / P-SoM adds 6-7; each phantom 有独家 + overlap 部分 → keep both phantoms in paper
   - B1 cells 待 chain done 自动 cover (script 检测 ep count, ≥50 ep 触发)
 - [ ] **Multi-metric Pareto pipeline** (cost + latency + carbon)
   - Section 8 sustainability prose 前置；fig9 已有 carbon B1 only, 需 cost/latency 三向 join
@@ -1005,7 +1008,7 @@ ef29add  drop-in deployment punchline
 | **Sample size too small** | "VWA cls 234 + red 210 = 444 task, single benchmark" | Final scope = 6 sites × 3 models × 5 modes ≈ 1390 task per condition. Cross-site (cls + red + shopping × VWA + WA), cross-model (Qwen 235B + 4B + Claude Opus 4.7) | §5 Final scope; §3.1 B0 5-mode SR table |
 | **Single benchmark family** | "VWA only, no Mind2Web/WebVoyager validation" | + WA (Postmill / Magento / shopping_admin) cross-stack validation. Mind2Web out of scope per advisor align (Plan B) | §7 generalization + paper §6 |
 | **Single model family (Qwen)** | "Effect Qwen-specific?" | + Claude Opus 4.7 cross-model after advisor align (~$70). B0 (235B) + B1 (4B) shows capability-dependent shift (+50/+33pp cross-site, §101.九 lazy minimization) | §2 capability layer + cross_site_pattern_consolidation.md |
-| **Phantom is just a degraded SoM** | "Why not collapse to DOM if no image?" | Theory C (codex 5821387) verifies prompt knob: cls Phantom-DOM = Phantom-SoM SR 14.53% but Jaccard 0.447 (task pool 显著 disjoint). Same SR ≠ same routing pool | paper §5; codex `5821387` |
+| **Phantom is just a degraded SoM** | "Why not collapse to DOM if no image?" | Theory C (codex 5821387) verifies prompt knob: cls P-text = Phantom-SoM SR 14.53% but Jaccard 0.447 (task pool 显著 disjoint). Same SR ≠ same routing pool | paper §5; codex `5821387` |
 | **Effect size small (drop-one 1.7-3.3pp)** | "Statistically marginal" | site-modulated effect, conservative framing (within 2σ noise floor). Paper claim 不是 "Phantom #1 routing arm" 而是 "site-modulated representation effect with 4-fold drop-in property" | §1 Paper hook conservative framing |
 | **Latency claim cherry-picked** | "Just one P95 measurement" | §100 SoM probe ground truth (5 imgs × 3 mode × 2 model = 30 cells measured). cls SoM 74s vs Phantom 18s p95 = 4× slower. Across all conditions consistent | §11 + 实验笔记 §100 |
 | **Carbon estimation rough** | "B0 carbon NaN, only B1 measured" | Transparent disclose: B1 NVML measured directly, B0 (proxy API) 远端 GPU 不可测 (per Strubell 2019 / Patterson 2021 estimation acknowledged). fig9 regional sensitivity 用 B1 measured + 45 region intensity table | §11 + fig9 footnote |
@@ -1029,7 +1032,7 @@ paper Section 2 必备 explicit table (review 加分项):
 | Aspect | Yang 2023 SoM (NeurIPS) | VWA Koh 2024 (ICLR) | SeeAct Zheng 2024 (ICML) | FocusAgent Kerboua 2025 (EMNLP) | RouteLLM Ong 2024 (ICML) | **Ours (Phantom-SoM)** |
 |---|---|---|---|---|---|---|
 | **Marks-text isolation** | ❌ bundled with image | ❌ bundled | ❌ bundled | n/a | n/a | ✅ Phantom-SoM ⭐ |
-| **Routing arms** | 1 (single SoM) | 1 (per mode) | 1 (single SoM) | 1 (text prune) | model-level routing | **5-mode** (DOM/SoM/Vision/Phantom-SoM/Phantom-DOM) ⭐ |
+| **Routing arms** | 1 (single SoM) | 1 (per mode) | 1 (single SoM) | 1 (text prune) | model-level routing | **5-mode** (DOM/SoM/Vision/Phantom-SoM/P-text) ⭐ |
 | **Cost-aware Pareto** | ❌ | ❌ | ❌ | ✅ token cost | ✅ model cost | ✅ **multi-metric** (cost+latency+carbon) ⭐ |
 | **Cross-site validation** | 4 task domains | 3 sites (cls+red+shop) | 1 site | 2 sites | n/a | **6 sites** (VWA+WA) ⭐ |
 | **Cross-model** | 4 models (multimodal) | 6 models (api+local) | 4 models | 1-2 | many (text-only LLM) | 3 models (Qwen 235B+4B + Claude Opus) |
@@ -1239,7 +1242,7 @@ Post run:
 | Date | Decision | Rationale | Status |
 |---|---|---|---|
 | 2026-04-27 | Final scope: 6 sites × 3 models × 5 modes + deployed router + multi-metric + green AI | NeurIPS/顶刊 viable scope (paper_planning §5) | ✅ in plan |
-| 2026-04-27 | Phantom-DOM scope 缩减 18→5 cells (mechanism only) | Phantom-DOM 是 ablation 不是 routing arm 候选 | ✅ in plan |
+| 2026-04-27 | P-text scope 缩减 18→5 cells (mechanism only) | P-text 是 ablation 不是 routing arm 候选 | ✅ in plan |
 | 2026-04-27 | Future paper 2 转向 Phase 3 modules (router 整合 paper 1) | 毕设决策, paper 1 含完整 contribution | ✅ in plan |
 | 2026-04-27 | First paper 投稿 cascade: round 1 → MLSys (不 NeurIPS) | first-paper friendly + drop-in framing 完美 fit | ✅ in plan |
 | 2026-04-27 | Paper hook 升级到 "drop-in deployment intervention" | Phantom-SoM cost ≈ DOM (regex filter), 4-fold property | ✅ commits 48db047 + ef29add |
@@ -1250,4 +1253,3 @@ Post run:
 | 2026-04-28 | Bidirectional modality framing (image-over-text vs text-over-vision) | user Q3 critique + Tong 2024 "Eyes wide shut" anchor | ✅ paper_planning §2 |
 | 2026-04-28 | 4-doc structure (next_steps + paper_planning + drafts + 笔记) | original 1102-line next_steps too dense, separation of concerns | ✅ commit 97cc4ac |
 | 2026-04-28 | 8 sections paper structure (含 Section 6 Routing 独立) | router 是 paper independent contribution, not Section 7 sub | ✅ commit 4ca9f66 |
-

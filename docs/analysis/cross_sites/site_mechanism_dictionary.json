@@ -23,8 +23,8 @@
           "dominance": "PRIMARY",
           "mechanism": "AXTree hierarchy exposes a deep forum/post tree and encourages search-box fallback; [SOM_MARKS] flattens the action surface and changes which sidebar/post links enter the candidate set.",
           "evidence_layer_0": {
-            "single_phantom_lift": "+P-DOM adds +3.81pp oracle lift over 3-mode baseline; P-DOM adds 8 tasks, P-DOM-only 4 tasks [phantom_lift.csv]",
-            "sr_fp": "B0 adjusted SR: DOM 9.52%, P-DOM 12.38%, P-SoM 13.81%, SoM 10.48%, Vision 6.67% [sr_fp_per_mode.json]"
+            "single_phantom_lift": "+P-text adds +3.81pp oracle lift over 3-mode baseline; P-text adds 8 tasks, P-text-only 4 tasks [phantom_lift.csv]",
+            "sr_fp": "B0 adjusted SR: DOM 9.52%, P-text 12.38%, P-SoM 13.81%, SoM 10.48%, Vision 6.67% [sr_fp_per_mode.json]"
           },
           "evidence_layer_1": {
             "macro_effects": "text axis: n_steps -1.25, type_frac -2.34pp, action_repeat_frac +4.64pp; search_loop -2.38pp not meaningful [axis_effect_size.json]",
@@ -38,8 +38,8 @@
             "first_action_divergence_rate": 0.209524
           },
           "evidence_layer_3": {
-            "cost": "B0 DOM $0.0516/ep vs P-DOM $0.0459/ep; both API_token_dollars [cost_per_mode.json]",
-            "steps": "B0 DOM 12.70 steps vs P-DOM 11.45 steps [cost_per_mode.json]"
+            "cost": "B0 DOM $0.0516/ep vs P-text $0.0459/ep; both API_token_dollars [cost_per_mode.json]",
+            "steps": "B0 DOM 12.70 steps vs P-text 11.45 steps [cost_per_mode.json]"
           },
           "case_studies": [
             "task 4: DOM searches 'wheat field city skyline' repeatedly [B0_DOM_digest.md]",
@@ -54,7 +54,7 @@
           "mechanism": "The SoM prompt shifts the decision prior: fewer type/search actions, more direct tab/finish/back choices, and early trajectory divergence even with the same flat [SOM_MARKS] text.",
           "evidence_layer_0": {
             "single_phantom_lift": "+P-SoM adds +3.33pp oracle lift; P-SoM adds 7 tasks, P-SoM-only 3 tasks [phantom_lift.csv]",
-            "task_pool_jaccard": "P-DOM vs P-SoM task-pool Jaccard 0.571, below the 0.7 redundancy sentinel [phantom_lift.csv]"
+            "task_pool_jaccard": "P-text vs P-SoM task-pool Jaccard 0.571, below the 0.7 redundancy sentinel [phantom_lift.csv]"
           },
           "evidence_layer_1": {
             "macro_effects": "prompt axis dominates reddit search_loop (-13.81pp, h=-0.280), type_frac (-6.58pp, d=-0.356), scroll_frac (-3.79pp, d=-0.152), n_steps (-1.55) [axis_effect_size.json]",
@@ -65,13 +65,13 @@
             "click_target_jaccard": 0.484405,
             "target_hit_diff_pct_pts": -4.166667,
             "first_action_divergence_rate": 0.204762,
-            "trajectory_boundary": "P-DOM vs P-SoM symmetric-diff N=15; median first divergent step 0; early divergence 100% [mechanism_per_task.json]"
+            "trajectory_boundary": "P-text vs P-SoM symmetric-diff N=15; median first divergent step 0; early divergence 100% [mechanism_per_task.json]"
           },
           "evidence_layer_3": {
-            "cost": "Prompt swap is text-only/cost-neutral relative to image addition; P-DOM $0.0459/ep vs P-SoM $0.0381/ep because P-SoM takes fewer steps [cost_per_mode.json]"
+            "cost": "Prompt swap is text-only/cost-neutral relative to image addition; P-text $0.0459/ep vs P-SoM $0.0381/ep because P-SoM takes fewer steps [cost_per_mode.json]"
           },
           "case_studies": [
-            "E2 P-DOM_vs_P-SoM cases: tasks 7, 26, 167 [mechanism_per_task.json]",
+            "E2 P-text_vs_P-SoM cases: tasks 7, 26, 167 [mechanism_per_task.json]",
             "task 124: Phantom-SoM-only; DOM/SoM search-loop counterparts in disagreement snapshot [disagreement_clusters.md, 04-27 snapshot caveat]"
           ],
           "digest_quote": "SoM search-loop is lower than DOM but still includes task 23 'pumpkin robot' x15 and task 28 'baseball' repeated search [B0_SOM_digest.md §2.3]."
@@ -167,8 +167,8 @@
           "dominance": "SECONDARY",
           "mechanism": "AXTree-to-[SOM_MARKS] changes click targets and element grounding, but OSClass path structure hides semantic item differences; path-level URL signatures remain highly overlapping.",
           "evidence_layer_0": {
-            "single_phantom_lift": "+P-DOM adds +3.42pp oracle lift; P-DOM adds 8 tasks, P-DOM-only 5 tasks [phantom_lift.csv]",
-            "sr_fp": "B0 adjusted SR: DOM 14.10%, P-DOM 14.53%, P-SoM 14.53%, SoM 21.37%, Vision 13.68% [sr_fp_per_mode.json]"
+            "single_phantom_lift": "+P-text adds +3.42pp oracle lift; P-text adds 8 tasks, P-text-only 5 tasks [phantom_lift.csv]",
+            "sr_fp": "B0 adjusted SR: DOM 14.10%, P-text 14.53%, P-SoM 14.53%, SoM 21.37%, Vision 13.68% [sr_fp_per_mode.json]"
           },
           "evidence_layer_1": {
             "macro_effects": "text axis is small in most classifieds metrics: URL/path behavior differs but finish_rate +2.14pp, search_loop -3.85pp not meaningful [axis_effect_size.json]",
@@ -182,22 +182,22 @@
             "first_action_divergence_rate": 0.136752
           },
           "evidence_layer_3": {
-            "cost": "B0 DOM $0.0427/ep vs P-DOM $0.0397/ep; both API_token_dollars [cost_per_mode.json]",
-            "steps": "B0 DOM 11.56 steps vs P-DOM 11.16 steps [cost_per_mode.json]"
+            "cost": "B0 DOM $0.0427/ep vs P-text $0.0397/ep; both API_token_dollars [cost_per_mode.json]",
+            "steps": "B0 DOM 11.56 steps vs P-text 11.16 steps [cost_per_mode.json]"
           },
           "case_studies": [
-            "task 63: DOM succeeds, P-DOM fails with first divergent step 0 [mechanism_per_task.json]",
-            "task 201: P-DOM succeeds after late divergence from DOM [mechanism_per_task.json]",
+            "task 63: DOM succeeds, P-text fails with first divergent step 0 [mechanism_per_task.json]",
+            "task 201: P-text succeeds after late divergence from DOM [mechanism_per_task.json]",
             "task 222: DOM hallucinated visual content [B0_DOM_digest.md]"
           ],
           "digest_quote": "B0 DOM shows 33+ pagination tasks and 21+ price-range filter tasks; these behaviors are rare or absent in B1 [B0_DOM_digest.md §3]."
         },
         "axis_2_prompt": {
           "dominance": "SECONDARY_TASK_CONDITIONAL",
-          "mechanism": "Prompt changes action vocabulary and commitment style more than aggregate outcome: it reduces typing, increases click/back/scroll, and creates a distinct P-DOM vs P-SoM task pool despite equal adjusted SR.",
+          "mechanism": "Prompt changes action vocabulary and commitment style more than aggregate outcome: it reduces typing, increases click/back/scroll, and creates a distinct P-text vs P-SoM task pool despite equal adjusted SR.",
           "evidence_layer_0": {
             "single_phantom_lift": "+P-SoM adds +2.56pp oracle lift; P-SoM adds 6 tasks, P-SoM-only 3 tasks [phantom_lift.csv]",
-            "task_pool_jaccard": "P-DOM vs P-SoM task-pool Jaccard 0.447 [phantom_lift.csv]"
+            "task_pool_jaccard": "P-text vs P-SoM task-pool Jaccard 0.447 [phantom_lift.csv]"
           },
           "evidence_layer_1": {
             "macro_effects": "prompt axis dominates type_frac (-3.73pp), selfcorr_count (+0.342), and click_frac (+2.14pp) in classifieds [axis_effect_size.json]",
@@ -208,13 +208,13 @@
             "click_target_jaccard": 0.541814,
             "target_hit_diff_pct_pts": -0.581395,
             "first_action_divergence_rate": 0.179487,
-            "trajectory_boundary": "P-DOM vs P-SoM symmetric-diff N=26; median first divergent step 1.0; early divergence 92.31% [mechanism_per_task.json]"
+            "trajectory_boundary": "P-text vs P-SoM symmetric-diff N=26; median first divergent step 1.0; early divergence 92.31% [mechanism_per_task.json]"
           },
           "evidence_layer_3": {
-            "cost": "Prompt swap is text-only; P-DOM $0.0397/ep vs P-SoM $0.0441/ep because P-SoM takes more steps [cost_per_mode.json]"
+            "cost": "Prompt swap is text-only; P-text $0.0397/ep vs P-SoM $0.0441/ep because P-SoM takes more steps [cost_per_mode.json]"
           },
           "case_studies": [
-            "tasks 17, 79, 103: P-DOM vs P-SoM symmetric-diff cases [mechanism_per_task.json]",
+            "tasks 17, 79, 103: P-text vs P-SoM symmetric-diff cases [mechanism_per_task.json]",
             "task 60: Phantom-SoM-only in disagreement snapshot; DOM visual-missing and SoM wrong-commit counterparts [disagreement_clusters.md, 04-27 snapshot caveat]"
           ],
           "digest_quote": "SoM failures often show an 'information sufficient' illusion: screenshots/marks make the agent finish on similar but wrong item pages [B0_SOM_digest.md §3.1-3.2]."
@@ -253,7 +253,7 @@
           "url_signature_jaccard": 0.884577,
           "target_hit_diff_pct_pts": 1.744186,
           "macro_independence_cells": "P-SoM distinct from both endpoints in 2/8 classifieds Layer 1 cells; aggregate macro can look DOM-like while task pools diverge [layered_evidence_status.md]",
-          "routing_arm_claim": "P-SoM and P-DOM have equal adjusted SR (14.53%) but P-DOM/P-SoM Jaccard is 0.447, so they are routing-complementary [sr_fp_per_mode.json; phantom_lift.csv]"
+          "routing_arm_claim": "P-SoM and P-text have equal adjusted SR (14.53%) but P-text/P-SoM Jaccard is 0.447, so they are routing-complementary [sr_fp_per_mode.json; phantom_lift.csv]"
         }
       },
       "failure_modes": {
@@ -300,7 +300,7 @@
           "mechanism": "Text/element structure matters for precise form action, category menus, cart/profile updates, and dropdown/radio selection. DOM element IDs help ordinary form fields but fail when AXTree lacks hover submenu IDs or when form-state detection collapses same-name radios.",
           "evidence_layer_0": {
             "sr_fp": "B0 DOM raw SR 11.80% (55/466); condition-metrics adjusted SR 6.44%; reason-diagnostics adjusted SR 6.24% [B0_findings.md]",
-            "data_gap": "No P-DOM/P-SoM/SoM/Vision shopping aggregate cells available."
+            "data_gap": "No P-text/P-SoM/SoM/Vision shopping aggregate cells available."
           },
           "evidence_layer_1": {
             "macro_effects": "missing for shopping; Layer 1 axis_effect_size.json covers reddit/classifieds only.",
@@ -325,7 +325,7 @@
         },
         "axis_2_prompt": {
           "dominance": "MIXED_FORWARD_LOOKING",
-          "mechanism": "Prompt effects are expected to split retrieval, aggregation, and form-action tasks, but shopping lacks P-DOM/P-SoM data. Existing evidence is task-taxonomy/audit evidence rather than measured prompt-axis effect.",
+          "mechanism": "Prompt effects are expected to split retrieval, aggregation, and form-action tasks, but shopping lacks P-text/P-SoM data. Existing evidence is task-taxonomy/audit evidence rather than measured prompt-axis effect.",
           "evidence_layer_0": {
             "task_taxonomy": "83 audited A-class shopping tasks: A2 latent visual 34, A3 aggregation 32, A1 pure text 14, A4 form action 3 [codex_audit_shopping_A_refined.json]",
             "data_gap": "No phantom/prompt oracle lift for shopping."
@@ -423,13 +423,13 @@
   "cross_site_table": {
     "axis_dominance": {
       "axis_1": [
-        "reddit (PRIMARY: URL Jaccard 0.573, click-target Jaccard 0.463, +P-DOM +3.81pp oracle)",
-        "classifieds (secondary: URL Jaccard 0.904 but click-target Jaccard 0.561, +P-DOM +3.42pp oracle)",
+        "reddit (PRIMARY: URL Jaccard 0.573, click-target Jaccard 0.463, +P-text +3.81pp oracle)",
+        "classifieds (secondary: URL Jaccard 0.904 but click-target Jaccard 0.561, +P-text +3.42pp oracle)",
         "shopping (mixed/form-action; sparse: DOM click failure 24.7%, swatch bug 11 episodes)"
       ],
       "axis_2": [
         "reddit (macro driver for search/type/scroll; prompt search_loop -13.81pp)",
-        "classifieds (type/self-correction/action-vocabulary; P-DOM/P-SoM Jaccard 0.447)",
+        "classifieds (type/self-correction/action-vocabulary; P-text/P-SoM Jaccard 0.447)",
         "shopping (prompt x text task split; taxonomy evidence only)"
       ],
       "axis_3": [
@@ -439,13 +439,13 @@
       ]
     },
     "site_mechanism_thesis": "Each site's mechanical substrate (information structure, navigation affordance, image role) determines which axis dominates: reddit is text/forum-structure dominated, classifieds is visual product-identity dominated, and shopping is mixed form-action plus visual-variant dominated.",
-    "cross_site_invariant": "P-SoM is task-pool complementary where measured: P-DOM↔P-SoM Jaccard is 0.571 on reddit and 0.447 on classifieds, both <=0.7; single-phantom oracle lift is positive on both sites (+3.33pp reddit P-SoM, +2.56pp classifieds P-SoM). Shopping is unmeasured and listed as a data gap."
+    "cross_site_invariant": "P-SoM is task-pool complementary where measured: P-text↔P-SoM Jaccard is 0.571 on reddit and 0.447 on classifieds, both <=0.7; single-phantom oracle lift is positive on both sites (+3.33pp reddit P-SoM, +2.56pp classifieds P-SoM). Shopping is unmeasured and listed as a data gap."
   },
   "section5_narrative_anchors": {
     "reddit_substrate_claim": "Reddit's forum hierarchy makes representation the first-order mechanism: AXTree depth and image-referential tasks push DOM into search loops, while flat marks and prompt priors open a distinct low-cost trajectory basin.",
-    "classifieds_substrate_claim": "Classifieds exposes why aggregate macro can mislead: P-DOM and P-SoM have DOM-like aggregate SR, yet their task pools diverge (Jaccard 0.447) and full SoM wins because image supplies product identity.",
+    "classifieds_substrate_claim": "Classifieds exposes why aggregate macro can mislead: P-text and P-SoM have DOM-like aggregate SR, yet their task pools diverge (Jaccard 0.447) and full SoM wins because image supplies product identity.",
     "shopping_substrate_claim": "Shopping is sparse but mechanistically clear: Magento combines visual product/variant identity with brittle form interactions. The §105 swatch bug shows form-state tracking is an orthogonal scaffold failure, separate from visual recognition.",
-    "cross_site_invariant_claim": "P-SoM is always task-pool complementary where currently measured: P-DOM↔P-SoM Jaccard is 0.571 on reddit and 0.447 on classifieds, both below the 0.7 redundancy sentinel, supporting a routing-arm thesis even when aggregate SR is close to DOM."
+    "cross_site_invariant_claim": "P-SoM is always task-pool complementary where currently measured: P-text↔P-SoM Jaccard is 0.571 on reddit and 0.447 on classifieds, both below the 0.7 redundancy sentinel, supporting a routing-arm thesis even when aggregate SR is close to DOM."
   },
   "open_questions": [
     "Shopping section needs B0/B1 5-mode data; current mechanism is sparse / mostly forward-looking.",

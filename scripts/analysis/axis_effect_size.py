@@ -13,12 +13,12 @@ See docs/checkpoints/paper_planning.md §3 Layer 1 framework.
 3-axis cascade effect size ablation on per-task macro behavior.
 
 Computes paired contrasts on per-task metrics:
-- Text axis:   P-DOM minus DOM   (controls prompt=DOM, image=no)
-- Prompt axis: P-SoM minus P-DOM (controls text=[SOM_MARKS], image=no)
+- Text axis:   P-text minus DOM   (controls prompt=DOM, image=no)
+- Prompt axis: P-SoM minus P-text (controls text=[SOM_MARKS], image=no)
 - Image axis:  SoM   minus P-SoM (controls text=[SOM_MARKS], prompt=SoM)
 
 All signs follow the cascade direction:
-DOM -> P-DOM -> P-SoM -> SoM.
+DOM -> P-text -> P-SoM -> SoM.
 Thus text + prompt + image should recover SoM minus DOM.
 
 Metrics per task:
@@ -50,15 +50,15 @@ STEP_DIRS = {
         "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
         "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
         "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
-        "Phantom-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+        "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
+        "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
     },
     "classifieds": {
         "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
         "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
         "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-        "Phantom-DOM": RESULTS / "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+        "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+        "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
     },
 }
 SEARCH_MARKERS = {"reddit": ("/search",), "classifieds": ("page=search", "/search")}
@@ -446,15 +446,15 @@ def main() -> None:
     for site in ["reddit", "classifieds"]:
         modes_data = {
             "DOM": per_task_metrics(site, "DOM"),
-            "P-DOM": per_task_metrics(site, "Phantom-DOM"),
+            "P-text": per_task_metrics(site, "P-text"),
             "P-SoM": per_task_metrics(site, "Phantom-SoM"),
             "SoM": per_task_metrics(site, "SoM"),
         }
         site_block: dict = {}
         for metric, binary in metrics_def:
             # Tier 2 cascade contrasts (DOM -> P-text -> P-SoM -> SoM)
-            text = paired_contrast(modes_data["P-DOM"], modes_data["DOM"], metric, binary)
-            prompt = paired_contrast(modes_data["P-SoM"], modes_data["P-DOM"], metric, binary)
+            text = paired_contrast(modes_data["P-text"], modes_data["DOM"], metric, binary)
+            prompt = paired_contrast(modes_data["P-SoM"], modes_data["P-text"], metric, binary)
             image = paired_contrast(modes_data["SoM"], modes_data["P-SoM"], metric, binary)
             endpoint = paired_contrast(modes_data["SoM"], modes_data["DOM"], metric, binary)
             # Tier 1 hook contrast: DOM <-> P-SoM (compound text+prompt swap)

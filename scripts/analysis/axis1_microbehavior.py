@@ -49,21 +49,21 @@ STEP_DIRS = {
         "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
         "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
         "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
-        "Phantom-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+        "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
+        "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
     },
     "classifieds": {
         "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
         "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
         "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-        "Phantom-DOM": RESULTS / "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+        "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+        "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
     },
 }
 
 MODE_LABELS = {
     "DOM": "DOM",
-    "Phantom-DOM": "P-DOM",
+    "P-text": "P-text",
     "Phantom-SoM": "P-SoM",
     "SoM": "SoM",
     "Vision": "Vision",
@@ -71,8 +71,8 @@ MODE_LABELS = {
 
 AXIS_CONTRASTS = {
     # Tier 2 mechanism cascade — each axis isolated via P-text intermediate
-    "axis_1_text": ("DOM", "Phantom-DOM"),
-    "axis_2_prompt": ("Phantom-DOM", "Phantom-SoM"),
+    "axis_1_text": ("DOM", "P-text"),
+    "axis_2_prompt": ("P-text", "Phantom-SoM"),
     "axis_3_image": ("Phantom-SoM", "SoM"),
     # Tier 1 hook — compound DOM->P-SoM (text+prompt simultaneously swapped, image still no)
     # Validates that P-SoM's per-step decisions diverge from DOM at the micro level even
@@ -392,7 +392,7 @@ def trajectory_summary(row: dict[str, Any]) -> dict[str, Any]:
 
 def select_classified_case_tasks(metrics: dict[str, dict[str, dict[int, dict[str, Any]]]]) -> list[int]:
     left = metrics["classifieds"]["DOM"]
-    right = metrics["classifieds"]["Phantom-DOM"]
+    right = metrics["classifieds"]["P-text"]
     scored = []
     for task_id in sorted(set(left) & set(right)):
         left_hit = left[task_id]["target_url_visited"]
@@ -414,7 +414,7 @@ def build_case_studies(
     for site, task_ids in requested.items():
         for task_id in task_ids:
             dom = metrics[site]["DOM"].get(task_id)
-            pdom = metrics[site]["Phantom-DOM"].get(task_id)
+            pdom = metrics[site]["P-text"].get(task_id)
             if not dom or not pdom:
                 continue
             cases.append(
@@ -425,7 +425,7 @@ def build_case_studies(
                     "target_url": task_configs[site].get(task_id, {}).get("target_url"),
                     "url_path_jaccard": jaccard(dom["url_path_set"], pdom["url_path_set"]),
                     "DOM": trajectory_summary(dom),
-                    "Phantom-DOM": trajectory_summary(pdom),
+                    "P-text": trajectory_summary(pdom),
                 }
             )
     return cases[:5]
@@ -462,7 +462,7 @@ def main() -> None:
     metrics: dict[str, dict[str, dict[int, dict[str, Any]]]] = {}
     for site in ["reddit", "classifieds"]:
         metrics[site] = {}
-        for mode in ["DOM", "Vision", "SoM", "Phantom-SoM", "Phantom-DOM"]:
+        for mode in ["DOM", "Vision", "SoM", "Phantom-SoM", "P-text"]:
             metrics[site][mode] = per_task_mode_metrics(site, mode, task_configs[site])
 
     summary = {
@@ -547,7 +547,7 @@ def main() -> None:
             "Mode-invariant micro-behavior analysis over reddit and classifieds. Per-task/per-mode metrics "
             "extract URL sets, URL path sets, target-page hits from task-config URLs, typed keywords, first "
             "action type, first post-action URL path, step count, and finish status. Cascade contrasts are "
-            "right-minus-left: P-DOM minus DOM (axis 1 text), P-SoM minus P-DOM (axis 2 prompt), and SoM "
+            "right-minus-left: P-text minus DOM (axis 1 text), P-SoM minus P-text (axis 2 prompt), and SoM "
             "minus P-SoM (axis 3 image). URL path Jaccard is symmetric; lower values indicate stronger "
             "decision divergence. The cross-site claim ratio compares bounded decision effects "
             "(1 - URL-path Jaccard, absolute target-hit diff, first-action divergence) with the mean absolute "
@@ -590,7 +590,7 @@ def main() -> None:
         )
     lines.append("")
     lines.append(
-        "All signed differences are cascade-direction right-minus-left, so axis 1 is P-DOM minus DOM. "
+        "All signed differences are cascade-direction right-minus-left, so axis 1 is P-text minus DOM. "
         "Classifieds search-keyword levels should be read by axis differential, because OSClass tasks normally use search pages."
     )
 
@@ -633,7 +633,7 @@ def main() -> None:
         lines.append(f"Intent: {case['intent']}")
         lines.append(f"Target: {case['target_url']}")
         lines.append(f"URL-path Jaccard: {fmt(case['url_path_jaccard'])}")
-        for mode in ["DOM", "Phantom-DOM"]:
+        for mode in ["DOM", "P-text"]:
             row = case[mode]
             lines.append(
                 f"- {mode}: steps={row['n_steps']}, target_hit={row['target_url_visited']}, "

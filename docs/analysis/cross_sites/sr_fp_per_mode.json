@@ -17,9 +17,9 @@
       },
       "source_dir": "results/visualwebarena/phase1/B0_3mode_reddit_20260422/phase1_dom_router_0/episodes"
     },
-    "reddit/Phantom-DOM": {
+    "reddit/P-text": {
       "site": "reddit",
-      "mode": "Phantom-DOM",
+      "mode": "P-text",
       "n_total": 210,
       "n_raw_success": 29,
       "n_adjusted_success": 26,
@@ -30,7 +30,7 @@
       "fp_breakdown": {
         "na_fp": 3
       },
-      "source_dir": "results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes"
+      "source_dir": "results/visualwebarena/phase1/B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes"
     },
     "reddit/Phantom-SoM": {
       "site": "reddit",
@@ -45,7 +45,7 @@
       "fp_breakdown": {
         "na_fp": 1
       },
-      "source_dir": "results/visualwebarena/phase1/B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes"
+      "source_dir": "results/visualwebarena/phase1/B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes"
     },
     "reddit/SoM": {
       "site": "reddit",
@@ -92,9 +92,9 @@
       },
       "source_dir": "results/visualwebarena/phase1/B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes"
     },
-    "classifieds/Phantom-DOM": {
+    "classifieds/P-text": {
       "site": "classifieds",
-      "mode": "Phantom-DOM",
+      "mode": "P-text",
       "n_total": 234,
       "n_raw_success": 39,
       "n_adjusted_success": 34,
@@ -105,7 +105,7 @@
       "fp_breakdown": {
         "na_fp": 5
       },
-      "source_dir": "results/visualwebarena/phase1/B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes"
+      "source_dir": "results/visualwebarena/phase1/B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes"
     },
     "classifieds/Phantom-SoM": {
       "site": "classifieds",
@@ -120,7 +120,7 @@
       "fp_breakdown": {
         "na_fp": 3
       },
-      "source_dir": "results/visualwebarena/phase1/B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes"
+      "source_dir": "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes"
     },
     "classifieds/SoM": {
       "site": "classifieds",
@@ -171,7 +171,7 @@
     },
     {
       "site": "reddit",
-      "mode": "Phantom-DOM",
+      "mode": "P-text",
       "n_total": 210,
       "n_raw_success": 29,
       "n_adjusted_success": 26,
@@ -182,7 +182,7 @@
       "fp_breakdown": {
         "na_fp": 3
       },
-      "source_dir": "results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes"
+      "source_dir": "results/visualwebarena/phase1/B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes"
     },
     {
       "site": "reddit",
@@ -197,7 +197,7 @@
       "fp_breakdown": {
         "na_fp": 1
       },
-      "source_dir": "results/visualwebarena/phase1/B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes"
+      "source_dir": "results/visualwebarena/phase1/B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes"
     },
     {
       "site": "reddit",
@@ -246,7 +246,7 @@
     },
     {
       "site": "classifieds",
-      "mode": "Phantom-DOM",
+      "mode": "P-text",
       "n_total": 234,
       "n_raw_success": 39,
       "n_adjusted_success": 34,
@@ -257,7 +257,7 @@
       "fp_breakdown": {
         "na_fp": 5
       },
-      "source_dir": "results/visualwebarena/phase1/B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes"
+      "source_dir": "results/visualwebarena/phase1/B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes"
     },
     {
       "site": "classifieds",
@@ -272,7 +272,7 @@
       "fp_breakdown": {
         "na_fp": 3
       },
-      "source_dir": "results/visualwebarena/phase1/B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes"
+      "source_dir": "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes"
     },
     {
       "site": "classifieds",

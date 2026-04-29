@@ -25,14 +25,14 @@ ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig0f_overlap_stacked_bar.png"
 
-MODE_ORDER = ["DOM", "SoM", "Vision", "Phantom-SoM", "Phantom-DOM"]
+MODE_ORDER = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text"]
 MODE_LABELS = ["DOM", "SoM", "Vision", "Phantom\nSoM", "Phantom\nDOM"]
 COLORS = {
     "DOM": "#4c78a8",
     "SoM": "#f58518",
     "Vision": "#54a24b",
     "Phantom-SoM": "#b279a2",
-    "Phantom-DOM": "#e45756",
+    "P-text": "#e45756",
 }
 DEPTH_ALPHA = {1: 1.0, 2: 0.75, 3: 0.55, 4: 0.40, 5: 0.25}
 
@@ -45,8 +45,8 @@ PANELS = [
             "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
             "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-            "Phantom-DOM": RESULTS / "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
         },
             },
     {
@@ -57,8 +57,8 @@ PANELS = [
             "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
             "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
-            "Phantom-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
+            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
         },
             },
     {
@@ -70,7 +70,7 @@ PANELS = [
             "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
         },
-        "pending": ["Phantom-SoM", "Phantom-DOM"],
+        "pending": ["Phantom-SoM", "P-text"],
     },
     {
         "key": "B1 red",
@@ -81,7 +81,7 @@ PANELS = [
             "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
         },
-        "pending": ["Phantom-SoM", "Phantom-DOM"],
+        "pending": ["Phantom-SoM", "P-text"],
     },
 ]
 

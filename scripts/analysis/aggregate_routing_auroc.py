@@ -20,10 +20,10 @@ Usage:
     python3 scripts/analysis/aggregate_routing_auroc.py \\
         --runs results/visualwebarena/phase1/B0_3mode_classifieds_20260413 \\
                results/visualwebarena/phase1/B0_3mode_reddit_20260422 \\
-               results/visualwebarena/phase1/B0_phantom_classifieds_20260426 \\
-               results/visualwebarena/phase1/B0_phantom_reddit_20260428 \\
-               results/visualwebarena/phase1/B0_phantom_dom_classifieds_20260427 \\
-               results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427 \\
+               results/visualwebarena/phase1/B0_phantom_som_classifieds_20260426 \\
+               results/visualwebarena/phase1/B0_phantom_som_reddit_20260428 \\
+               results/visualwebarena/phase1/B0_phantom_text_classifieds_20260427 \\
+               results/visualwebarena/phase1/B0_phantom_text_reddit_20260427 \\
                results/visualwebarena/phase1/B1_3mode_classifieds_20260413 \\
                results/visualwebarena/phase1/B1_3mode_reddit_20260413 \\
         --output results/phantom_paper/auroc_cross_condition.csv
@@ -47,17 +47,17 @@ REPO = Path(__file__).resolve().parents[2]
 DEFAULT_RUNS = [
     REPO / "results/visualwebarena/phase1/B0_3mode_classifieds_20260413",
     REPO / "results/visualwebarena/phase1/B0_3mode_reddit_20260422",
-    REPO / "results/visualwebarena/phase1/B0_phantom_classifieds_20260426",
-    REPO / "results/visualwebarena/phase1/B0_phantom_reddit_20260428",
-    REPO / "results/visualwebarena/phase1/B0_phantom_dom_classifieds_20260427",
-    REPO / "results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427",
+    REPO / "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260426",
+    REPO / "results/visualwebarena/phase1/B0_phantom_som_reddit_20260428",
+    REPO / "results/visualwebarena/phase1/B0_phantom_text_classifieds_20260427",
+    REPO / "results/visualwebarena/phase1/B0_phantom_text_reddit_20260427",
     REPO / "results/visualwebarena/phase1/B1_3mode_classifieds_20260413",
     REPO / "results/visualwebarena/phase1/B1_3mode_reddit_20260413",
 ]
 
 
 def parse_run_id(run_dir: Path) -> tuple[str, str]:
-    """Extract (baseline, site) from a run_id like B0_phantom_dom_classifieds_20260427."""
+    """Extract (baseline, site) from a run_id like B0_phantom_text_classifieds_20260427."""
     name = run_dir.name
     baseline = "B0" if name.startswith("B0") else ("B1" if name.startswith("B1") else "?")
     for site in ("classifieds", "reddit", "shopping_admin", "shopping"):

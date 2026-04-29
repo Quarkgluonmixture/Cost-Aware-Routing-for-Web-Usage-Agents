@@ -30,7 +30,7 @@ COLORS = {
     "SoM": "#f58518",
     "Vision": "#54a24b",
     "Phantom-SoM": "#b279a2",
-    "Phantom-DOM": "#e45756",
+    "P-text": "#e45756",
 }
 RUNS = {
     "classifieds": {
@@ -213,7 +213,7 @@ def main() -> None:
 
     pending_handles = [
         Line2D([0], [0], color=COLORS["Phantom-SoM"], linestyle=":", lw=2, label="Phantom-SoM (B1) pending"),
-        Line2D([0], [0], color=COLORS["Phantom-DOM"], linestyle=":", lw=2, label="Phantom-DOM (B1) pending"),
+        Line2D([0], [0], color=COLORS["P-text"], linestyle=":", lw=2, label="P-text (B1) pending"),
     ]
     handles, labels = axes[0].get_legend_handles_labels()
     axes[1].legend(handles + pending_handles, labels + [h.get_label() for h in pending_handles], loc="upper right", fontsize=8.5)
@@ -227,7 +227,7 @@ def main() -> None:
         0.5,
         0.02,
         "Energy from B1 (Qwen3-VL-4B) NVML measurement on cls (N=234) / red (N=210). "
-        "Per-region intensity from IEA 2023 / ElectricityMaps. Phantom-SoM/Phantom-DOM pending B1 re-run; expected to be comparable or lower than DOM. "
+        "Per-region intensity from IEA 2023 / ElectricityMaps. Phantom-SoM/P-text pending B1 re-run; expected to be comparable or lower than DOM. "
         "B0 (Qwen3-VL-235B via proxy API) energy is not directly observable on local hardware; B1 measurement serves as a lower-bound reference for representation-driven carbon sensitivity.",
         ha="center",
         fontsize=7.8,

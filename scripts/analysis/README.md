@@ -30,7 +30,7 @@ complementarity, category SR, overlap depth, and routing AUROC.
 | `scripts/analysis/aggregate_phantom_lift.py` | 0c, 0d | B0 3-mode + phantom episode `*_summary_v2.json` files | `results/phantom_paper/phantom_lift.csv`, `results/phantom_paper/phantom_lift.md` | reddit 3→5 lift +5.24pp, Jaccard 0.571; classifieds +4.70pp, Jaccard 0.447 |
 | `scripts/analysis/aggregate_routing_auroc.py` | 0g | per-run `analysis/signals/combined/tables/cross_mode_auroc.csv` | `results/phantom_paper/auroc_cross_condition.csv`, `.md`, `_summary.md` | reddit P-SoM max AUROC 0.720; classifieds P-SoM 0.728 |
 | `scripts/analysis/figures/fig0e_category_mode_heatmap.py` | 0e | audit JSON + episode `adjusted_success` | `results/phantom_paper/figures/fig0e_category_mode_heatmap.png` | reddit/cls category × mode adjusted SR heatmap |
-| `scripts/analysis/figures/fig0f_overlap_stacked_bar.py` | 0f | B0 adjusted-success task sets | `results/phantom_paper/figures/fig0f_overlap_stacked_bar.png` | reddit P-SoM solve depth distribution; classifieds P-SoM/P-DOM overlap depth |
+| `scripts/analysis/figures/fig0f_overlap_stacked_bar.py` | 0f | B0 adjusted-success task sets | `results/phantom_paper/figures/fig0f_overlap_stacked_bar.png` | reddit P-SoM solve depth distribution; classifieds P-SoM/P-text overlap depth |
 | `scripts/analysis/figures/fig0c_phantom_lift_bars.py` | 0c viz | `results/phantom_paper/phantom_lift.csv` | `results/phantom_paper/figures/fig0c_phantom_lift_bars.png` | visualizes reddit +5.24pp and classifieds +4.70pp 3→5 oracle lift |
 | `scripts/analysis/figures/fig0g_routing_auroc_heatmap.py` | 0g viz | `results/phantom_paper/auroc_cross_condition.csv` | `results/phantom_paper/figures/fig0g_routing_auroc_heatmap.png` | visualizes B0/B1 AUROC by condition, mode, and signal |
 | `scripts/analysis/figures/fig0d_taskpool_jaccard.py` | 0 supporting | live episode adjusted-success sets | `results/phantom_paper/figures/fig0d_taskpool_jaccard.png` | solve-pool overlap sketch for B0/B1 observation arms |
@@ -40,10 +40,10 @@ Layer 0 live sources also include raw/adjusted SR and FP rate from:
 
 - `results/visualwebarena/phase1/B0_3mode_reddit_20260422/*/episodes/*_summary_v2.json`
 - `results/visualwebarena/phase1/B0_3mode_classifieds_20260413/*/episodes/*_summary_v2.json`
-- `results/visualwebarena/phase1/B0_phantom_reddit_20260428/*/episodes/*_summary_v2.json`
-- `results/visualwebarena/phase1/B0_phantom_classifieds_20260426/*/episodes/*_summary_v2.json`
-- `results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427/*/episodes/*_summary_v2.json`
-- `results/visualwebarena/phase1/B0_phantom_dom_classifieds_20260427/*/episodes/*_summary_v2.json`
+- `results/visualwebarena/phase1/B0_phantom_som_reddit_20260428/*/episodes/*_summary_v2.json`
+- `results/visualwebarena/phase1/B0_phantom_som_classifieds_20260426/*/episodes/*_summary_v2.json`
+- `results/visualwebarena/phase1/B0_phantom_text_reddit_20260427/*/episodes/*_summary_v2.json`
+- `results/visualwebarena/phase1/B0_phantom_text_classifieds_20260427/*/episodes/*_summary_v2.json`
 
 ## Layer 1 — Macro Behavior
 

@@ -146,9 +146,9 @@ B1 loses most often when the task requires sustained multi-step exploration, sta
 
 ## 6. Phantom B1 Placeholder (B1 phantom chains pending)
 
-B1 Phantom-SoM and Phantom-DOM runs are currently pending / cleared and are not included in this profile. Once B1 cls + red phantom_som + phantom_dom complete (4 cells, manual chain via `RESET_BEFORE=1 bash scripts/queues/queue_phantom_{som,dom}.sh B1 {classifieds,reddit}`), update this document with:
+B1 Phantom-SoM and P-text runs are currently pending / cleared and are not included in this profile. Once B1 cls + red P-SoM + P-text complete (4 cells, internal modes `phantom_som`/`phantom_dom`; manual chain via `RESET_BEFORE=1 bash scripts/queues/queue_phantom_{som,dom}.sh B1 {classifieds,reddit}`), update this document with:
 
-- B1 Phantom-SoM and Phantom-DOM raw + adjusted SR for classifieds and reddit.
+- B1 Phantom-SoM and P-text raw + adjusted SR for classifieds and reddit.
 - Phantom-vs-DOM / Phantom-vs-SoM overlap and unique-task counts.
 - B1 phantom cost/latency/energy, including whether text-only Phantom retains DOM-like energy/cost and whether it avoids SoM visual-hijack loops.
 - Updated Section 6 cross-model claim: whether Phantom remains an independent arm for the smaller local model, or whether the effect depends on B0-level capability.

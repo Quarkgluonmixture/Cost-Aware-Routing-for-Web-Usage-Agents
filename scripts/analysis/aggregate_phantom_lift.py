@@ -6,18 +6,18 @@ Outputs:
 - results/phantom_paper/phantom_lift.md
 
 Layer 0c: 3-mode to 4/5-mode oracle lift and significance tests.
-Layer 0d: P-DOM↔P-SoM task-pool Jaccard Scenario C sentinel.
+Layer 0d: P-text↔P-SoM task-pool Jaccard Scenario C sentinel.
 
 See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
 
 Aggregate phantom routing lift across (baseline, site) cells.
 
-For each cell with all 5 modes (DOM / SoM / Vision / P-DOM / P-SoM) present:
+For each cell with all 5 modes (DOM / SoM / Vision / P-text / P-SoM) present:
   - Compute 3-mode oracle ceiling (DOM ∪ SoM ∪ Vision)
-  - Compute 5-mode oracle ceiling (+ P-DOM + P-SoM)
+  - Compute 5-mode oracle ceiling (+ P-text + P-SoM)
   - Routing lift = 5-mode - 3-mode oracle SR (pp)
   - 95% bootstrap CI on lift (n=1000 task resamples)
-  - Decomposition: P-DOM-only, P-SoM-only, both-add-same contributions
+  - Decomposition: P-text-only, P-SoM-only, both-add-same contributions
 
 Outputs (results/phantom_paper/):
   - phantom_lift.csv          (one row per (baseline, site, decomposition))
@@ -60,8 +60,8 @@ CELLS = [
             "DOM":   RES/"B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
             "SoM":   RES/"B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Vision":RES/"B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "P-DOM": RES/"B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
-            "P-SoM": RES/"B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+            "P-text": RES/"B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+            "P-SoM": RES/"B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
         },
     },
     {
@@ -70,8 +70,8 @@ CELLS = [
             "DOM":   RES/"B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
             "SoM":   RES/"B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
             "Vision":RES/"B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "P-DOM": RES/"B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
-            "P-SoM": RES/"B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
+            "P-text": RES/"B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+            "P-SoM": RES/"B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
         },
     },
     # B1 cells — partial / pending (chain in flight)
@@ -81,8 +81,8 @@ CELLS = [
             "DOM":   RES/"B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
             "SoM":   RES/"B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Vision":RES/"B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "P-DOM": RES/"B1_phantom_dom_classifieds_20260428/phase1_phantom_dom_router_0/episodes",
-            "P-SoM": RES/"B1_phantom_classifieds_20260428/phase1_phantom_som_router_0/episodes",
+            "P-text": RES/"B1_phantom_dom_classifieds_20260428/phase1_phantom_dom_router_0/episodes",
+            "P-SoM": RES/"B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
         },
     },
     {
@@ -91,7 +91,7 @@ CELLS = [
             "DOM":   RES/"B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
             "SoM":   RES/"B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
             "Vision":RES/"B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
-            "P-DOM": RES/"B1_phantom_dom_reddit_20260428/phase1_phantom_dom_router_0/episodes",
+            "P-text": RES/"B1_phantom_dom_reddit_20260428/phase1_phantom_dom_router_0/episodes",
             "P-SoM": RES/"B1_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
         },
     },
@@ -222,9 +222,9 @@ def analyze_cell(cell: dict) -> Optional[dict]:
 
     # 3-mode, 4-mode (each phantom alone), 5-mode oracle unions
     union_3 = succ_r["DOM"] | succ_r["SoM"] | succ_r["Vision"]
-    union_4_pdom = union_3 | succ_r["P-DOM"]
+    union_4_pdom = union_3 | succ_r["P-text"]
     union_4_psom = union_3 | succ_r["P-SoM"]
-    union_5 = union_3 | succ_r["P-DOM"] | succ_r["P-SoM"]
+    union_5 = union_3 | succ_r["P-text"] | succ_r["P-SoM"]
     sr_3 = 100 * len(union_3) / n
     sr_4_pdom = 100 * len(union_4_pdom) / n
     sr_4_psom = 100 * len(union_4_psom) / n
@@ -258,17 +258,17 @@ def analyze_cell(cell: dict) -> Optional[dict]:
     mc_p_psom = mcnemar_exact_one_sided(in_3, in_4_psom)
 
     # Decomposition
-    pdom_adds = succ_r["P-DOM"] - union_3
+    pdom_adds = succ_r["P-text"] - union_3
     psom_adds = succ_r["P-SoM"] - union_3
     both_add = pdom_adds & psom_adds
     pdom_only = pdom_adds - psom_adds
     psom_only = psom_adds - pdom_adds
 
-    # Jaccard P-SoM ↔ P-DOM (Scenario C sentinel — paper Section 5 axis 2 evidence)
-    inter = succ_r["P-SoM"] & succ_r["P-DOM"]
-    union = succ_r["P-SoM"] | succ_r["P-DOM"]
+    # Jaccard P-SoM ↔ P-text (Scenario C sentinel — paper Section 5 axis 2 evidence)
+    inter = succ_r["P-SoM"] & succ_r["P-text"]
+    union = succ_r["P-SoM"] | succ_r["P-text"]
     jaccard = (len(inter) / len(union)) if union else 0.0
-    # Threshold: > 0.7 → P-SoM ≈ P-DOM redundant, paper claim weakens (Scenario C)
+    # Threshold: > 0.7 → P-SoM ≈ P-text redundant, paper claim weakens (Scenario C)
     jaccard_warn = jaccard > 0.7
 
     is_partial = any(len(o) < cell["n_expected"] for o in obs.values())
@@ -282,7 +282,7 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         "sr_dom":     round(100 * len(succ_r["DOM"]) / n, 4),
         "sr_som":     round(100 * len(succ_r["SoM"]) / n, 4),
         "sr_vision":  round(100 * len(succ_r["Vision"]) / n, 4),
-        "sr_pdom":    round(100 * len(succ_r["P-DOM"]) / n, 4),
+        "sr_pdom":    round(100 * len(succ_r["P-text"]) / n, 4),
         "sr_psom":    round(100 * len(succ_r["P-SoM"]) / n, 4),
         "oracle_3mode_pp":  round(sr_3, 4),
         "oracle_4mode_pdom_pp": round(sr_4_pdom, 4),
@@ -318,7 +318,7 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         "pdom_only_count":      len(pdom_only),
         "psom_only_count":      len(psom_only),
         "both_phantom_overlap_count": len(both_add),
-        # Scenario C sentinel: P-SoM ↔ P-DOM Jaccard
+        # Scenario C sentinel: P-SoM ↔ P-text Jaccard
         "phantom_pair_jaccard": round(jaccard, 4),
         "phantom_pair_jaccard_warn": jaccard_warn,
     }
@@ -382,7 +382,7 @@ def main() -> int:
         "",
         "## Single-phantom upgrade lifts (4-mode vs 3-mode)",
         "",
-        "| Baseline | Site | +P-DOM lift | CI | h | +P-SoM lift | CI | h |",
+        "| Baseline | Site | +P-text lift | CI | h | +P-SoM lift | CI | h |",
         "|---|---|---:|---|---:|---:|---|---:|",
     ]
     for r in rows:
@@ -403,7 +403,7 @@ def main() -> int:
         "",
         "## Decomposition: which phantom contributes which tasks",
         "",
-        "| Baseline | Site | P-DOM adds | P-SoM adds | P-DOM only | P-SoM only | Both phantoms overlap |",
+        "| Baseline | Site | P-text adds | P-SoM adds | P-text only | P-SoM only | Both phantoms overlap |",
         "|---|---|---:|---:|---:|---:|---:|",
     ]
     for r in rows:
@@ -417,10 +417,10 @@ def main() -> int:
             f"{r['both_phantom_overlap_count']} ({100*r['both_phantom_overlap_count']/n:.2f}pp) |"
         )
 
-    # Scenario C sentinel: P-SoM ↔ P-DOM Jaccard
+    # Scenario C sentinel: P-SoM ↔ P-text Jaccard
     lines += [
         "",
-        "## Scenario C sentinel — P-SoM ↔ P-DOM task-pool Jaccard",
+        "## Scenario C sentinel — P-SoM ↔ P-text task-pool Jaccard",
         "",
         "Threshold: Jaccard > 0.7 → phantoms become routing-redundant; paper",
         "Section 5 axis-2 prompt-effect claim weakens. Current paper claim",

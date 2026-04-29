@@ -68,11 +68,11 @@ SPECS = [
     ConditionSpec("B0", "classifieds", "DOM", RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0", 234),
     ConditionSpec("B0", "classifieds", "SoM", RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0", 234),
     ConditionSpec("B0", "classifieds", "Vision", RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0", 234),
-    ConditionSpec("B0", "classifieds", "Phantom-SoM", RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0", 234),
+    ConditionSpec("B0", "classifieds", "Phantom-SoM", RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0", 234),
     ConditionSpec("B0", "reddit", "DOM", RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0", 210),
     ConditionSpec("B0", "reddit", "SoM", RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0", 210),
     ConditionSpec("B0", "reddit", "Vision", RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0", 210),
-    ConditionSpec("B0", "reddit", "Phantom-SoM", RESULTS / "B0_phantom_reddit_20260428/phase1_phantom_som_router_0", 210),
+    ConditionSpec("B0", "reddit", "Phantom-SoM", RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0", 210),
     ConditionSpec("B1", "classifieds", "DOM", RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0", 234),
     ConditionSpec("B1", "classifieds", "SoM", RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0", 234),
     ConditionSpec("B1", "classifieds", "Vision", RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0", 234),
@@ -81,7 +81,7 @@ SPECS = [
     ConditionSpec("B1", "reddit", "Vision", RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0", 210),
 ]
 OPTIONAL_SPECS = [
-    ConditionSpec("B1", "classifieds", "Phantom-SoM", RESULTS / "B1_phantom_classifieds_20260428/phase1_phantom_som_router_0", 234),
+    ConditionSpec("B1", "classifieds", "Phantom-SoM", RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0", 234),
     ConditionSpec("B1", "reddit", "Phantom-SoM", RESULTS / "B1_phantom_reddit_20260426/phase1_phantom_som_router_0", 210),
 ]
 

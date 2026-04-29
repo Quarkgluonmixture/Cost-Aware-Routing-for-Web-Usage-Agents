@@ -30,7 +30,7 @@ Layer 0 fresh outcome:
 | Mode | Adjusted SR | FP rate |
 |---|---:|---:|
 | DOM | 9.52% | 1.90% |
-| P-DOM | 12.38% | 1.43% |
+| P-text | 12.38% | 1.43% |
 | P-SoM | 13.81% | 0.48% |
 | SoM | 10.48% | 1.43% |
 | Vision | 6.67% | 1.90% |
@@ -47,9 +47,9 @@ AXTree hierarchy exposes a deep forum/post/comment tree and makes the search box
 
 Layer 0 evidence:
 
-- +P-DOM adds +3.81pp oracle lift over the 3-mode baseline.
-- P-DOM adds 8 tasks; P-DOM-only tasks = 4.
-- B0 adjusted SR moves from DOM 9.52% to P-DOM 12.38%.
+- +P-text adds +3.81pp oracle lift over the 3-mode baseline.
+- P-text adds 8 tasks; P-text-only tasks = 4.
+- B0 adjusted SR moves from DOM 9.52% to P-text 12.38%.
 
 Layer 1 evidence:
 
@@ -72,8 +72,8 @@ Layer 2 evidence:
 Layer 3 evidence:
 
 - DOM costs $0.0516/ep.
-- P-DOM costs $0.0459/ep.
-- DOM uses 12.70 steps; P-DOM uses 11.45 steps.
+- P-text costs $0.0459/ep.
+- DOM uses 12.70 steps; P-text uses 11.45 steps.
 - This is a text-surface swap with no image tax.
 
 Case studies:
@@ -104,7 +104,7 @@ Layer 0 evidence:
 
 - +P-SoM adds +3.33pp oracle lift.
 - P-SoM adds 7 tasks; P-SoM-only tasks = 3.
-- P-DOM vs P-SoM task-pool Jaccard = 0.571, below the 0.7 redundancy sentinel.
+- P-text vs P-SoM task-pool Jaccard = 0.571, below the 0.7 redundancy sentinel.
 
 Layer 1 evidence:
 
@@ -122,19 +122,19 @@ Layer 2 evidence:
 | Click-target Jaccard | 0.484405 |
 | Target-hit diff | -4.17pp |
 | First-action divergence | 20.48% |
-| P-DOM vs P-SoM symmetric-diff N | 15 |
+| P-text vs P-SoM symmetric-diff N | 15 |
 | Median first divergent step | 0 |
 | Early divergence | 100% |
 
 Layer 3 evidence:
 
-- P-DOM costs $0.0459/ep.
+- P-text costs $0.0459/ep.
 - P-SoM costs $0.0381/ep.
 - The cost difference is driven by fewer steps, not image tokens.
 
 Case studies:
 
-- E2 P-DOM vs P-SoM cases: tasks 7, 26, 167.
+- E2 P-text vs P-SoM cases: tasks 7, 26, 167.
 - Task 124: Phantom-SoM-only in the disagreement snapshot; cite only with the 04-27 snapshot / baseline-only caveat.
 - Task 28: SoM repeats `"baseball"` search, showing prompt helps but does not eliminate the failure basin.
 
@@ -144,7 +144,7 @@ Digest quote:
 
 Interpretation for Section 5:
 
-Prompt is not only confidence wording. On reddit, it is the largest macro driver for search/type behavior and shifts trajectories at step 0 in the P-DOM/P-SoM symmetric-diff set. This supports the "prompt as task-conditional decision prior" claim.
+Prompt is not only confidence wording. On reddit, it is the largest macro driver for search/type behavior and shifts trajectories at step 0 in the P-text/P-SoM symmetric-diff set. This supports the "prompt as task-conditional decision prior" claim.
 
 ### Axis 3 Image
 
@@ -206,7 +206,7 @@ The reddit image axis should be written as bidirectional. It is not irrelevant: 
 
 | Metric | Value |
 |---|---:|
-| P-DOM vs P-SoM task-pool Jaccard | 0.5714 |
+| P-text vs P-SoM task-pool Jaccard | 0.5714 |
 | DOM vs P-SoM URL-path Jaccard | 0.481306 |
 | DOM vs P-SoM click-target Jaccard | 0.420556 |
 | DOM vs P-SoM target-hit diff | -0.69pp |
@@ -255,12 +255,12 @@ Layer 0 fresh outcome:
 | Mode | Adjusted SR | FP rate |
 |---|---:|---:|
 | DOM | 14.10% | 0.85% |
-| P-DOM | 14.53% | 2.14% |
+| P-text | 14.53% | 2.14% |
 | P-SoM | 14.53% | 1.28% |
 | SoM | 21.37% | 1.71% |
 | Vision | 13.68% | 2.14% |
 
-The substrate claim is that classifieds is image-dominant. The product identity often lives in the photo, not the path string. But the site also shows why aggregate SR can mislead: P-DOM and P-SoM have nearly identical aggregate SR while their task pools and click targets diverge.
+The substrate claim is that classifieds is image-dominant. The product identity often lives in the photo, not the path string. But the site also shows why aggregate SR can mislead: P-text and P-SoM have nearly identical aggregate SR while their task pools and click targets diverge.
 
 ### Axis 1 Text Payload
 
@@ -272,9 +272,9 @@ AXTree vs `[SOM_MARKS]` changes event-level grounding and click targets, but OSC
 
 Layer 0 evidence:
 
-- +P-DOM adds +3.42pp oracle lift.
-- P-DOM adds 8 tasks; P-DOM-only tasks = 5.
-- B0 adjusted SR: DOM 14.10%, P-DOM 14.53%.
+- +P-text adds +3.42pp oracle lift.
+- P-text adds 8 tasks; P-text-only tasks = 5.
+- B0 adjusted SR: DOM 14.10%, P-text 14.53%.
 
 Layer 1 evidence:
 
@@ -296,13 +296,13 @@ Layer 2 evidence:
 Layer 3 evidence:
 
 - DOM costs $0.0427/ep.
-- P-DOM costs $0.0397/ep.
-- DOM uses 11.56 steps; P-DOM uses 11.16 steps.
+- P-text costs $0.0397/ep.
+- DOM uses 11.56 steps; P-text uses 11.16 steps.
 
 Case studies:
 
-- Task 63: DOM succeeds and P-DOM fails with first divergent step 0.
-- Task 201: P-DOM succeeds after late divergence from DOM.
+- Task 63: DOM succeeds and P-text fails with first divergent step 0.
+- Task 201: P-text succeeds after late divergence from DOM.
 - Task 222: DOM hallucinates visual content in the digest.
 
 Digest quote:
@@ -319,13 +319,13 @@ Dominance: SECONDARY_TASK_CONDITIONAL.
 
 Mechanism:
 
-Prompt changes commitment and action vocabulary more than headline SR. P-DOM and P-SoM have equal adjusted SR in fresh Layer 0, but their task-pool Jaccard is only 0.447. This is the cleanest classifieds example of aggregate SR hiding routing complementarity.
+Prompt changes commitment and action vocabulary more than headline SR. P-text and P-SoM have equal adjusted SR in fresh Layer 0, but their task-pool Jaccard is only 0.447. This is the cleanest classifieds example of aggregate SR hiding routing complementarity.
 
 Layer 0 evidence:
 
 - +P-SoM adds +2.56pp oracle lift.
 - P-SoM adds 6 tasks; P-SoM-only tasks = 3.
-- P-DOM vs P-SoM task-pool Jaccard = 0.447.
+- P-text vs P-SoM task-pool Jaccard = 0.447.
 
 Layer 1 evidence:
 
@@ -342,19 +342,19 @@ Layer 2 evidence:
 | Click-target Jaccard | 0.541814 |
 | Target-hit diff | -0.58pp |
 | First-action divergence | 17.95% |
-| P-DOM vs P-SoM symmetric-diff N | 26 |
+| P-text vs P-SoM symmetric-diff N | 26 |
 | Median first divergent step | 1 |
 | Early divergence | 92.31% |
 
 Layer 3 evidence:
 
-- P-DOM costs $0.0397/ep.
+- P-text costs $0.0397/ep.
 - P-SoM costs $0.0441/ep.
 - P-SoM takes more steps in this site, so prompt does not automatically reduce cost.
 
 Case studies:
 
-- Tasks 17, 79, 103: P-DOM vs P-SoM symmetric-diff examples.
+- Tasks 17, 79, 103: P-text vs P-SoM symmetric-diff examples.
 - Task 60: Phantom-SoM-only in stale disagreement snapshot; DOM visual-missing and SoM wrong-commit counterparts.
 - Task 93: Phantom-SoM-only in stale disagreement snapshot.
 
@@ -428,7 +428,7 @@ Classifieds is the strongest image-axis site. Full SoM wins because the site ask
 
 | Metric | Value |
 |---|---:|
-| P-DOM vs P-SoM task-pool Jaccard | 0.4468 |
+| P-text vs P-SoM task-pool Jaccard | 0.4468 |
 | DOM vs P-SoM URL-path Jaccard | 0.884577 |
 | DOM vs P-SoM click-target Jaccard | 0.530912 |
 | DOM vs P-SoM target-hit diff | +1.74pp |
@@ -436,7 +436,7 @@ Classifieds is the strongest image-axis site. Full SoM wins because the site ask
 
 Compound claim:
 
-P-DOM and P-SoM have the same fresh adjusted SR, 14.53%, but P-DOM/P-SoM task-pool Jaccard is 0.447. Aggregate SR alone would miss the routing signal.
+P-text and P-SoM have the same fresh adjusted SR, 14.53%, but P-text/P-SoM task-pool Jaccard is 0.447. Aggregate SR alone would miss the routing signal.
 
 ### Classifieds Failure Modes
 
@@ -456,7 +456,7 @@ P-DOM and P-SoM have the same fresh adjusted SR, 14.53%, but P-DOM/P-SoM task-po
 
 ### Classifieds Narrative Anchor
 
-Classifieds is the clean visual-substrate contrast to reddit. Image is not decoration; it is product identity. Yet the equal P-DOM/P-SoM adjusted SR and Jaccard 0.447 show why Section 5 should not infer mechanism from aggregate SR alone.
+Classifieds is the clean visual-substrate contrast to reddit. Image is not decoration; it is product identity. Yet the equal P-text/P-SoM adjusted SR and Jaccard 0.447 show why Section 5 should not infer mechanism from aggregate SR alone.
 
 ## Shopping
 
@@ -492,7 +492,7 @@ Layer 0 evidence:
 - B0 DOM raw SR = 11.80% (55/466).
 - Condition-metrics adjusted SR = 6.44%.
 - Reason-diagnostics adjusted SR = 6.24%.
-- No P-DOM/P-SoM/SoM/Vision cells are available.
+- No P-text/P-SoM/SoM/Vision cells are available.
 
 Layer 1 evidence:
 
@@ -666,13 +666,13 @@ Shopping combines form-interaction complexity with visual product identity. The 
 
 | Axis | Reddit | Classifieds | Shopping |
 |---|---|---|---|
-| Axis 1 text | PRIMARY: URL Jaccard 0.573, click-target Jaccard 0.463, +P-DOM +3.81pp oracle | Secondary: URL Jaccard 0.904, click-target Jaccard 0.561, +P-DOM +3.42pp oracle | Mixed/form-action; sparse evidence: click failure 24.7%, swatch bug 11 episodes |
-| Axis 2 prompt | Macro driver for search/type/scroll; prompt search_loop -13.81pp | Type/self-correction/action-vocabulary; P-DOM/P-SoM Jaccard 0.447 | Prompt x task split expected; taxonomy evidence only |
+| Axis 1 text | PRIMARY: URL Jaccard 0.573, click-target Jaccard 0.463, +P-text +3.81pp oracle | Secondary: URL Jaccard 0.904, click-target Jaccard 0.561, +P-text +3.42pp oracle | Mixed/form-action; sparse evidence: click failure 24.7%, swatch bug 11 episodes |
+| Axis 2 prompt | Macro driver for search/type/scroll; prompt search_loop -13.81pp | Type/self-correction/action-vocabulary; P-text/P-SoM Jaccard 0.447 | Prompt x task split expected; taxonomy evidence only |
 | Axis 3 image | Weak/balanced; image is content, P-SoM 13.81% vs SoM 10.48% | PRIMARY; image finish_rate +26.50pp, h=0.567, SoM 21.37% | PRIMARY forward-looking; 269/466 visual tasks, 73 visual-missing DOM failures |
 
 ### Routing Complementarity
 
-| Site | P-DOM vs P-SoM Jaccard | Status |
+| Site | P-text vs P-SoM Jaccard | Status |
 |---|---:|---|
 | reddit | 0.571 | <= 0.7, complementary |
 | classifieds | 0.447 | <= 0.7, complementary |
@@ -680,7 +680,7 @@ Shopping combines form-interaction complexity with visual product identity. The 
 
 ### Oracle Lift
 
-| Site | 3->5-mode lift | +P-DOM lift | +P-SoM lift |
+| Site | 3->5-mode lift | +P-text lift | +P-SoM lift |
 |---|---:|---:|---:|
 | reddit | +5.24pp [2.38, 8.11] | +3.81pp | +3.33pp |
 | classifieds | +4.70pp [2.14, 7.69] | +3.42pp | +2.56pp |
@@ -702,7 +702,7 @@ Reddit is a forum-hierarchy site where image is content rather than navigation. 
 
 ### Classifieds Anchor
 
-Classifieds is the visual-substrate site. Product identity often lives in the image, so full SoM recovers finish behavior and dominates Layer 1 image metrics, including +26.50pp finish rate. But P-DOM and P-SoM have equal fresh adjusted SR and only 0.447 task-pool Jaccard, so aggregate SR would miss the routing arm. Section 5 should use classifieds to argue both that image can be the dominant axis and that routing complementarity is not reducible to single-mode SR.
+Classifieds is the visual-substrate site. Product identity often lives in the image, so full SoM recovers finish behavior and dominates Layer 1 image metrics, including +26.50pp finish rate. But P-text and P-SoM have equal fresh adjusted SR and only 0.447 task-pool Jaccard, so aggregate SR would miss the routing arm. Section 5 should use classifieds to argue both that image can be the dominant axis and that routing complementarity is not reducible to single-mode SR.
 
 ### Shopping Anchor
 
@@ -710,7 +710,7 @@ Shopping is sparse, but the failure audit makes its substrate visible. Magento c
 
 ### Cross-Site Invariant
 
-Where measured, P-SoM is task-pool complementary rather than redundant. P-DOM vs P-SoM Jaccard is 0.571 on reddit and 0.447 on classifieds, both below the 0.7 redundancy sentinel. This supports the routing-arm thesis even when aggregate SR is close to DOM or equal across phantom modes. Shopping is not measured yet and should be named as the data gap.
+Where measured, P-SoM is task-pool complementary rather than redundant. P-text vs P-SoM Jaccard is 0.571 on reddit and 0.447 on classifieds, both below the 0.7 redundancy sentinel. This supports the routing-arm thesis even when aggregate SR is close to DOM or equal across phantom modes. Shopping is not measured yet and should be named as the data gap.
 
 ## Open Questions And Data Gaps
 

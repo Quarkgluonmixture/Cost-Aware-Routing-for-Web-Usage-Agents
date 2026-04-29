@@ -96,7 +96,7 @@ Cells:     6 sites × 3 models × 6 modes = ~108 cells (~135K episodes)
                ~100× deployment-class gap (~Section 8 sustainability)
 ```
 
-⚠️ Cells 数实际会少一些 — phantom_dom 在某些 site/model 计划砍掉（control 价值 vs cost：phantom_som 是 hidden 4th routing arm 必跑，phantom_dom 只在 axis 2 prompt-effect 论证关键 site/model 跑）。**P-prompt 只在 cls+red 跑（mechanism Section 5 用），shopping/WA P-prompt 不必**。具体 final cell selection 见 `paper_planning.md` §3 重组后的 layered framework + §5 final scope。
+⚠️ Cells 数实际会少一些 — P-text 在某些 site/model 计划砍掉（control 价值 vs cost：P-SoM 是 hidden 4th routing arm 必跑，P-text 只在 axis 2 prompt-effect 论证关键 site/model 跑）。**P-prompt 只在 cls+red 跑（mechanism Section 5 用），shopping/WA P-prompt 不必**。具体 final cell selection 见 `paper_planning.md` §3 重组后的 layered framework + §5 final scope。
 
 ### Section status table
 
@@ -227,7 +227,7 @@ nohup bash scripts/queues/queue_chain.sh \
 | WA × 3 sites × B0+B1 × 5 modes (30 cells; +6 P-prompt opt = 36) | advisor align + B1 VWA chain done | ~$60-72 + 60-72h GPU |
 | Cross-model Claude Opus 4.7 cls+red 5-mode (10 cells; +2 P-prompt opt) | advisor align + agent 适配 | ~$100-120 |
 | B1 shopping 5-mode + P-prompt (6 cells) | Myriad GPU + DGX-side B1 phantom 全 done | ~24h GPU 独占 each |
-| **B1 P-prompt cls + red (Tier 2 diamond cross-cap, NEW yamls 04-29)** | B1 phantom_som + phantom_dom 4-cell chain done | ~14-20d GPU (queued in chain) |
+| **B1 P-prompt cls + red (Tier 2 diamond cross-cap, NEW yamls 04-29)** | B1 P-SoM + P-text 4-cell chain done | ~14-20d GPU (queued in chain) |
 | ~~B1 shopping DOM 466 ep (pre-Magento-bug)~~ | ✅ archived 04-28，待 Myriad clean re-run | — |
 
 ### 3.5 Router experiments (Section 6 paper, ~Week 4-5)
@@ -418,7 +418,7 @@ p79/experiment/router.py               (RuleBasedRouter scaffold)
 
 ## §8 What I'd say in a 5-min advisor report (pre-canned)
 
-> "Critical path A B0 部分已完成 — cls + red 5-mode (DOM/SoM/Vision/Phantom-DOM/Phantom-SoM) 全部 fresh paper-grade clean (watchdog auto-clean 协议保证 100% pure data, no contamination).
+> "Critical path A B0 部分已完成 — cls + red 5-mode (DOM/SoM/Vision/P-text/Phantom-SoM) 全部 fresh paper-grade clean (watchdog auto-clean 协议保证 100% pure data, no contamination).
 >
 > Paper hook 升级到 4-fold drop-in property: Phantom-SoM cost ≈ DOM (regex filter), latency ~50% lower, signal AUROC ≥ baseline (router infra 复用), drop-one oracle 1.7-3.3pp.
 >
@@ -606,4 +606,3 @@ Add new strategic finding? → paper_planning
 Record what happened (history)? → 实验笔记 append §
 Modify final paper text? → paper drafts (only when prose batch writing)
 ```
-

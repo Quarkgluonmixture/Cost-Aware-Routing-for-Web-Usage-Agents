@@ -103,10 +103,10 @@ gallery:
 RUN_DIRS_PAPER_VWA ?= \
   results/visualwebarena/phase1/B0_3mode_classifieds_20260413 \
   results/visualwebarena/phase1/B0_3mode_reddit_20260422 \
-  results/visualwebarena/phase1/B0_phantom_classifieds_20260426 \
-  results/visualwebarena/phase1/B0_phantom_reddit_20260428 \
-  results/visualwebarena/phase1/B0_phantom_dom_classifieds_20260427 \
-  results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427 \
+  results/visualwebarena/phase1/B0_phantom_som_classifieds_20260426 \
+  results/visualwebarena/phase1/B0_phantom_som_reddit_20260428 \
+  results/visualwebarena/phase1/B0_phantom_text_classifieds_20260427 \
+  results/visualwebarena/phase1/B0_phantom_text_reddit_20260427 \
   results/visualwebarena/phase1/B1_3mode_classifieds_20260413 \
   results/visualwebarena/phase1/B1_3mode_reddit_20260413
 
@@ -282,7 +282,7 @@ phantom-vwa-all:
 	bash scripts/queues/queue_phantom_som.sh B1 classifieds
 	bash scripts/queues/queue_phantom_som.sh B1 reddit
 
-# Phantom-DOM (§103 ablation) — all VWA cells (B0 + B1)
+# P-text (§103 ablation) — all VWA cells (B0 + B1)
 phantom-dom-vwa-all:
 	bash scripts/queues/queue_phantom_dom.sh B0 classifieds
 	bash scripts/queues/queue_phantom_dom.sh B0 reddit
@@ -299,7 +299,7 @@ phantom-wa-all:
 	bash scripts/queues/queue_phantom_som.sh B1 shopping       wa
 	bash scripts/queues/queue_phantom_som.sh B1 shopping_admin wa
 
-# Phantom-DOM ablation on WA (3 sites, B0 + B1)
+# P-text ablation on WA (3 sites, B0 + B1)
 phantom-dom-wa-all:
 	bash scripts/queues/queue_phantom_dom.sh B0 reddit         wa
 	bash scripts/queues/queue_phantom_dom.sh B0 shopping       wa

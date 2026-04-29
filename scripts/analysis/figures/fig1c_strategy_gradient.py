@@ -11,7 +11,7 @@ See docs/checkpoints/paper_planning.md §3 Layer 1 framework.
 Strategy-gradient bars for reddit and classifieds observation variants.
 
 Both rows are computed live from available step JSONL files (full 5-mode B0
-data: B0_3mode_<site> + B0_phantom_<site> + B0_phantom_dom_<site>).
+data: B0_3mode_<site> + B0_phantom_som_<site> + B0_phantom_text_<site>).
 The §103 / N=48 anchor values are kept as a sanity-check reference but are
 no longer used for plotting; live values are reported instead.
 """
@@ -31,51 +31,51 @@ ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig1c_strategy_gradient.png"
 
-MODES = ["DOM", "Vision", "SoM", "Phantom-SoM", "Phantom-DOM"]
+MODES = ["DOM", "Vision", "SoM", "Phantom-SoM", "P-text"]
 METRICS = ["Search-loop %", "Type action %", "Scroll action %", "Self-correction / ep"]
 COLORS = {
     "DOM": "#4c78a8",
     "Vision": "#54a24b",
     "SoM": "#f58518",
     "Phantom-SoM": "#b279a2",
-    "Phantom-DOM": "#e45756",
+    "P-text": "#e45756",
 }
 
 # Verified notes:
 # - Full reddit gradient (§103): DOM search 27/type 38/steps 12.7;
 #   Phantom-SoM search 20/type 32/steps 9.9; SoM search 12/type 23/steps 8.1.
 # - N=48 ablation/user context: DOM search-loop 22.7; Phantom-SoM and
-#   Phantom-DOM search-loop 10.8; 5/5 macro metrics Phantom-DOM = Phantom-SoM.
+#   P-text search-loop 10.8; 5/5 macro metrics P-text = Phantom-SoM.
 # - N=26 table in §103 supplies type/scroll/self-correction anchors for the
-#   ablation subset; we keep Phantom-DOM equal to Phantom-SoM per the N=48 note.
+#   ablation subset; we keep P-text equal to Phantom-SoM per the N=48 note.
 REDDIT_VERIFIED = {
     "Search-loop %": {
         "DOM": 22.7,
         "Vision": None,
         "SoM": 12.0,
         "Phantom-SoM": 10.8,
-        "Phantom-DOM": 10.8,
+        "P-text": 10.8,
     },
     "Type action %": {
         "DOM": 40.2,
         "Vision": None,
         "SoM": 23.0,
         "Phantom-SoM": 20.4,
-        "Phantom-DOM": 20.4,
+        "P-text": 20.4,
     },
     "Scroll action %": {
         "DOM": 15.2,
         "Vision": None,
         "SoM": None,
         "Phantom-SoM": 26.2,
-        "Phantom-DOM": 26.2,
+        "P-text": 26.2,
     },
     "Self-correction / ep": {
         "DOM": 0.31,
         "Vision": None,
         "SoM": None,
         "Phantom-SoM": 0.35,
-        "Phantom-DOM": 0.35,
+        "P-text": 0.35,
     },
 }
 
@@ -84,15 +84,15 @@ STEP_DIRS = {
         "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
         "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
         "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
-        "Phantom-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+        "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
+        "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
     },
     "classifieds": {
         "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
         "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
         "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-        "Phantom-DOM": RESULTS / "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+        "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+        "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
     },
 }
 SITE_LABELS = {"reddit": "Reddit (Postmill)", "classifieds": "Classifieds (OSClass)"}
@@ -280,7 +280,7 @@ def main() -> None:
     fig.text(
         0.5,
         0.025,
-        "Both rows live-computed from B0 step JSONL (3-mode + Phantom-SoM + Phantom-DOM). "
+        "Both rows live-computed from B0 step JSONL (3-mode + Phantom-SoM + P-text). "
         "OSClass search detection uses 'page=search' / '/search' and measures search-page coverage, "
         "not failure-mode looping; cross-site comparison is not valid for the search-loop column.",
         ha="center",

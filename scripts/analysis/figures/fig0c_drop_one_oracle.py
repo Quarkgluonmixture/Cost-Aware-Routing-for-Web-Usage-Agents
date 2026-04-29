@@ -10,7 +10,7 @@ Supporting visualization for oracle/drop-one solve-pool evidence.
 Drop-one oracle loss for B0/B1 VWA observation arms.
 
 All available cells are computed from episode-level ``adjusted_success`` sets.
-B0 Phantom-SoM/Phantom-DOM use fresh paper-grade clean re-run; B1 Phantom-SoM is
+B0 Phantom-SoM/P-text use fresh paper-grade clean re-run; B1 Phantom-SoM is
 drawn as unavailable pending re-run.
 """
 
@@ -29,13 +29,13 @@ ROOT = Path(__file__).resolve().parents[3]
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig0c_drop_one_oracle.png"
 
-MODES = ["DOM", "SoM", "Vision", "Phantom-SoM", "Phantom-DOM"]
+MODES = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text"]
 COLORS = {
     "DOM": "#4c78a8",
     "SoM": "#f58518",
     "Vision": "#54a24b",
     "Phantom-SoM": "#b279a2",
-    "Phantom-DOM": "#9e6da8",
+    "P-text": "#9e6da8",
 }
 
 # Drop-one oracle uses union/intersection over the **common observed** task
@@ -52,8 +52,8 @@ PANELS = [
             "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
             "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-            "Phantom-DOM": RESULTS / "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
         },
     },
     {
@@ -64,8 +64,8 @@ PANELS = [
             "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
             "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
-            "Phantom-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
+            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
         },
     },
     {
@@ -77,9 +77,9 @@ PANELS = [
             "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
             # B1 phantom_som chain in flight — partial run included with intersection-based drop-one
-            "Phantom-SoM": RESULTS / "B1_phantom_classifieds_20260428/phase1_phantom_som_router_0/episodes",
+            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
         },
-        "missing": "Phantom-DOM N/A",
+        "missing": "P-text N/A",
     },
     {
         "key": "b1_red",
@@ -90,7 +90,7 @@ PANELS = [
             "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
             "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
         },
-        "missing": "Phantom-SoM/DOM N/A (chain pending)",
+        "missing": "Phantom-SoM/P-text N/A (chain pending)",
     },
 ]
 
@@ -270,7 +270,7 @@ def draw_panel(ax: plt.Axes, panel: dict, csv_rows: list[dict]) -> None:
         })
     n_label = f"N={n_common}" if n_common == panel["expected"] else f"N={n_common}/{panel['expected']}†"
     ax.set_title(f"{panel['title']} ({n_label})", fontsize=10.5, fontweight="bold")
-    ax.set_xticks(x, ["DOM", "SoM", "Vision", "P-SoM", "P-DOM"], fontsize=8.5)
+    ax.set_xticks(x, ["DOM", "SoM", "Vision", "P-SoM", "P-text"], fontsize=8.5)
     ax.set_ylim(0, 13.0)
     ax.grid(axis="y", color="#dddddd", linewidth=0.8)
     ax.set_axisbelow(True)
@@ -291,7 +291,7 @@ def main() -> None:
         0.5,
         0.025,
         "Higher bars = representation solves tasks not recovered by the other plotted arms. "
-        "P-SoM = Phantom-SoM, P-DOM = Phantom-DOM. † = partial / common-universe subset (B1 phantom_som "
+        "P-SoM = Phantom-SoM, P-text = P-text. † = partial / common-universe subset (B1 phantom_som "
         "chain in flight). N=common observed across all modes per panel. CI from 1000-resample bootstrap.",
         ha="center",
         fontsize=8.0,

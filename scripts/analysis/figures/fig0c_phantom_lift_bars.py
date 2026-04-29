@@ -12,7 +12,7 @@ fig10: Phantom routing lift — Section 1/4 paper hook visualization.
 
 Reads results/phantom_paper/phantom_lift.csv (produced by aggregate_phantom_lift.py)
 and visualizes 4 oracle ceilings per (baseline, site) cell:
-  3-mode | +P-DOM (4-mode) | +P-SoM (4-mode) | 5-mode
+  3-mode | +P-text (4-mode) | +P-SoM (4-mode) | 5-mode
 
 Each bar = oracle SR%. Error bars from bootstrap 95% CI on the lift vs 3-mode.
 Text annotations show absolute ceiling % and lift Δ vs 3-mode.
@@ -50,7 +50,7 @@ def main() -> None:
 
     plt.rcParams.update({"font.size": 10})
 
-    BARS = ["3-mode", "+P-DOM", "+P-SoM", "5-mode"]
+    BARS = ["3-mode", "+P-text", "+P-SoM", "5-mode"]
     COLORS = ["#a0a0a0", "#9e6da8", "#b279a2", "#54a24b"]
 
     for ax, r in zip(axes, rows):
@@ -98,7 +98,7 @@ def main() -> None:
         ax.grid(axis="y", color="#dddddd", linewidth=0.8)
         ax.set_axisbelow(True)
 
-    fig.suptitle("Phantom routing lift: 3-mode → +P-DOM → +P-SoM → 5-mode oracle ceiling",
+    fig.suptitle("Phantom routing lift: 3-mode → +P-text → +P-SoM → 5-mode oracle ceiling",
                  fontsize=13, fontweight="bold")
     fig.text(0.5, 0.012,
              "Bars = oracle ceiling success rate (any-of-modes solves task). Error bars: 95% bootstrap CI. "

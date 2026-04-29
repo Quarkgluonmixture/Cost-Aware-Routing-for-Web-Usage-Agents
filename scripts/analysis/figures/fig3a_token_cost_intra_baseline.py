@@ -34,9 +34,9 @@ MODE_COLORS = {
     "SoM": "#f58518",
     "Vision": "#54a24b",
     "Phantom-SoM": "#b279a2",
-    "Phantom-DOM": "#e45756",
+    "P-text": "#e45756",
 }
-MODE_DISPLAY = {"Phantom-SoM": "P-SoM", "Phantom-DOM": "P-text"}
+MODE_DISPLAY = {"Phantom-SoM": "P-SoM", "P-text": "P-text"}
 
 
 @dataclass(frozen=True)
@@ -53,13 +53,13 @@ SPECS = [
     ("classifieds", "DOM", "B0_3mode_classifieds_20260413/phase1_dom_router_0", 234),
     ("classifieds", "SoM", "B0_3mode_classifieds_20260413/phase1_som_router_0", 234),
     ("classifieds", "Vision", "B0_3mode_classifieds_20260413/phase1_vision_router_0", 234),
-    ("classifieds", "Phantom-SoM", "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0", 234),
-    ("classifieds", "Phantom-DOM", "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0", 234),
+    ("classifieds", "Phantom-SoM", "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0", 234),
+    ("classifieds", "P-text", "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0", 234),
     ("reddit", "DOM", "B0_3mode_reddit_20260422/phase1_dom_router_0", 210),
     ("reddit", "SoM", "B0_3mode_reddit_20260422/phase1_som_router_0", 210),
     ("reddit", "Vision", "B0_3mode_reddit_20260422/phase1_vision_router_0", 210),
-    ("reddit", "Phantom-SoM", "B0_phantom_reddit_20260428/phase1_phantom_som_router_0", 210),
-    ("reddit", "Phantom-DOM", "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0", 210),
+    ("reddit", "Phantom-SoM", "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0", 210),
+    ("reddit", "P-text", "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0", 210),
 ]
 
 
@@ -120,7 +120,7 @@ def draw_panel(ax: plt.Axes, site: str, cells: list[Cell]) -> None:
         ax.scatter(cell.cost, cell.adj_sr, color=color, s=150, edgecolor="white", linewidth=1.5, zorder=3, label=label_mode)
         # Concise per-marker label
         offset = {"DOM": (8, 8), "SoM": (8, -16), "Vision": (-42, 10),
-                  "Phantom-SoM": (-72, 4), "Phantom-DOM": (-50, -18)}.get(cell.mode, (8, 8))
+                  "Phantom-SoM": (-72, 4), "P-text": (-50, -18)}.get(cell.mode, (8, 8))
         ax.annotate(
             f"{label_mode}\n{cell.adj_sr:.1f}%",
             xy=(cell.cost, cell.adj_sr),
@@ -172,7 +172,7 @@ def main() -> None:
     legend_handles = [
         Line2D([0], [0], marker="o", color="w", markerfacecolor=MODE_COLORS[m], markeredgecolor="white",
                markersize=10, label=MODE_DISPLAY.get(m, m))
-        for m in ("DOM", "SoM", "Vision", "Phantom-SoM", "Phantom-DOM")
+        for m in ("DOM", "SoM", "Vision", "Phantom-SoM", "P-text")
     ]
     legend_handles.append(Line2D([0], [0], color="#444444", linewidth=1.2, linestyle="--", label="Pareto frontier"))
     fig.legend(handles=legend_handles, loc="upper center", ncol=6, frameon=False, fontsize=9.5,

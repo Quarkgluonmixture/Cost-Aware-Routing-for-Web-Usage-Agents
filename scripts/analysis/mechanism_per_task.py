@@ -44,15 +44,15 @@ STEP_DIRS = {
         "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
         "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
         "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_reddit_20260428/phase1_phantom_som_router_0/episodes",
-        "Phantom-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0/episodes",
+        "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
+        "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
     },
     "classifieds": {
         "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
         "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
         "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-        "Phantom-DOM": RESULTS / "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
+        "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
+        "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
     },
 }
 
@@ -72,17 +72,17 @@ B1_STEP_DIRS = {
 CONF_RUNS = [
     ("B0", "classifieds", RESULTS / "B0_3mode_classifieds_20260413"),
     ("B0", "reddit", RESULTS / "B0_3mode_reddit_20260422"),
-    ("B0", "classifieds", RESULTS / "B0_phantom_classifieds_20260426"),
-    ("B0", "reddit", RESULTS / "B0_phantom_reddit_20260428"),
-    ("B0", "classifieds", RESULTS / "B0_phantom_dom_classifieds_20260427"),
-    ("B0", "reddit", RESULTS / "B0_phantom_dom_reddit_20260427"),
+    ("B0", "classifieds", RESULTS / "B0_phantom_som_classifieds_20260426"),
+    ("B0", "reddit", RESULTS / "B0_phantom_som_reddit_20260428"),
+    ("B0", "classifieds", RESULTS / "B0_phantom_text_classifieds_20260427"),
+    ("B0", "reddit", RESULTS / "B0_phantom_text_reddit_20260427"),
     ("B1", "classifieds", RESULTS / "B1_3mode_classifieds_20260413"),
     ("B1", "reddit", RESULTS / "B1_3mode_reddit_20260413"),
 ]
 
 AXIS_CONTRASTS = {
-    "axis_1_text": ("DOM", "Phantom-DOM"),
-    "axis_2_prompt": ("Phantom-DOM", "Phantom-SoM"),
+    "axis_1_text": ("DOM", "P-text"),
+    "axis_2_prompt": ("P-text", "Phantom-SoM"),
     "axis_3_image": ("Phantom-SoM", "SoM"),
     "compound_DOM_to_PSoM": ("DOM", "Phantom-SoM"),
 }
@@ -191,14 +191,14 @@ def normalize_mode_name(value: str) -> str:
         "som": "SoM",
         "vision": "Vision",
         "phantom_som": "Phantom-SoM",
-        "phantom_dom": "Phantom-DOM",
+        "phantom_dom": "P-text",
         "phantom_prompt": "Phantom-prompt",
     }.get(key, value)
 
 
 def short_mode(mode: str) -> str:
     return {
-        "Phantom-DOM": "P-DOM",
+        "P-text": "P-text",
         "Phantom-SoM": "P-SoM",
         "Phantom-prompt": "P-prompt",
     }.get(mode, mode)
@@ -866,7 +866,7 @@ def write_report(out: dict[str, Any]) -> None:
     for key in sorted(e4["cells"]):
         row = e4["cells"][key]
         lines.append(
-            f"| {key.replace('Phantom-DOM', 'P-DOM').replace('Phantom-SoM', 'P-SoM')} | "
+            f"| {key.replace('P-text', 'P-text').replace('Phantom-SoM', 'P-SoM')} | "
             f"{fmt(row['click'])} | {fmt(row['type'])} | {fmt(row['scroll'])} | "
             f"{fmt(row['select_option'])} | {fmt(row['wait'])} | {fmt(row['back'])} | "
             f"{fmt(row['forward'])} | {fmt(row['finish'])} | {fmt(row['tab_focus'])} | {fmt(row['other'])} |"

@@ -43,15 +43,15 @@ RUNS = {
             "DOM":         "B0_3mode_reddit_20260422/phase1_dom_router_0",
             "Vision":      "B0_3mode_reddit_20260422/phase1_vision_router_0",
             "SoM":         "B0_3mode_reddit_20260422/phase1_som_router_0",
-            "P-SoM":       "B0_phantom_reddit_20260428/phase1_phantom_som_router_0",
-            "P-text":      "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0",
+            "P-SoM":       "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0",
+            "P-text":      "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0",
         },
         "classifieds": {
             "DOM":         "B0_3mode_classifieds_20260413/phase1_dom_router_0",
             "Vision":      "B0_3mode_classifieds_20260413/phase1_vision_router_0",
             "SoM":         "B0_3mode_classifieds_20260413/phase1_som_router_0",
-            "P-SoM":       "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0",
-            "P-text":      "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0",
+            "P-SoM":       "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0",
+            "P-text":      "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0",
         },
     },
     "B1": {
@@ -65,7 +65,7 @@ RUNS = {
             "DOM":    "B1_3mode_classifieds_20260413/phase1_dom_router_0",
             "Vision": "B1_3mode_classifieds_20260413/phase1_vision_router_0",
             "SoM":    "B1_3mode_classifieds_20260413/phase1_som_router_0",
-            "P-SoM":  "B1_phantom_classifieds_20260428/phase1_phantom_som_router_0",
+            "P-SoM":  "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0",
         },
     },
 }

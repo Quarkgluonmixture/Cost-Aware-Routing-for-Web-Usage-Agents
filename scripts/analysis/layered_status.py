@@ -32,15 +32,15 @@ MODE_SPECS: dict[str, dict[str, Path]] = {
         "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0",
         "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0",
         "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0",
-        "P-SoM": RESULTS / "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0",
-        "P-DOM": RESULTS / "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0",
+        "P-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0",
+        "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0",
     },
     "reddit": {
         "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0",
         "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0",
         "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0",
-        "P-SoM": RESULTS / "B0_phantom_reddit_20260428/phase1_phantom_som_router_0",
-        "P-DOM": RESULTS / "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0",
+        "P-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0",
+        "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0",
     },
 }
 
@@ -133,6 +133,16 @@ def fmt_num(x: Any, digits: int = 3) -> str:
     if math.isnan(xf):
         return "n/a"
     return f"{xf:.{digits}f}"
+
+
+def display_mode(mode: str) -> str:
+    return {
+        "dom": "DOM",
+        "phantom_dom": "P-text",
+        "phantom_som": "P-SoM",
+        "som": "SoM",
+        "vision": "Vision",
+    }.get(mode, mode)
 
 
 def episode_summaries(condition_dir: Path) -> list[dict[str, Any]]:
@@ -285,7 +295,7 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
     lines += ["### 0a SR per mode (B0)", ""]
     for site in ["reddit", "classifieds"]:
         parts = []
-        for mode in ["DOM", "P-DOM", "P-SoM", "SoM", "Vision"]:
+        for mode in ["DOM", "P-text", "P-SoM", "SoM", "Vision"]:
             if mode not in stats[site]:
                 continue
             s = stats[site][mode]
@@ -297,7 +307,7 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
 
     lines += ["### 0b FP rate (raw success - adjusted success)", ""]
     for site in ["reddit", "classifieds"]:
-        parts = [f"{mode} {fmt_pct(stats[site][mode]['fp_rate'])}" for mode in ["DOM", "P-DOM", "P-SoM", "SoM", "Vision"]]
+        parts = [f"{mode} {fmt_pct(stats[site][mode]['fp_rate'])}" for mode in ["DOM", "P-text", "P-SoM", "SoM", "Vision"]]
         lines.append(f"- {site}: " + "; ".join(parts))
     lines.append(f"- source: same live episode `summary_v2.json` files as 0a; standalone `{rel(sr_fp_md)}` | last update: {timestamp(sr_fp_md)}")
     lines.append("")
@@ -354,7 +364,7 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
             f"Wilcoxon p={fmt_num(row['wilcoxon_5_vs_3_p'], 4)}, McNemar p={fmt_num(row['mcnemar_5_vs_3_p'], 4)} {sig}"
         )
         lines.append(
-            f"  - single phantom lifts: +P-DOM {fmt_pp(float(row['lift_4pdom_vs_3_pp']))}; "
+            f"  - single phantom lifts: +P-text {fmt_pp(float(row['lift_4pdom_vs_3_pp']))}; "
             f"+P-SoM {fmt_pp(float(row['lift_4psom_vs_3_pp']))}"
         )
     lines.append(f"- {source_line(phantom_csv)}")
@@ -367,7 +377,7 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
             continue
         j = float(row["phantom_pair_jaccard"])
         verdict = "✅ safe" if j <= 0.7 else "⚠️ redundant-risk"
-        lines.append(f"- {row['site']}: P-DOM↔P-SoM Jaccard **{j:.3f}** ({verdict}); threshold ≤0.7")
+        lines.append(f"- {row['site']}: P-text↔P-SoM Jaccard **{j:.3f}** ({verdict}); threshold ≤0.7")
     lines.append(f"- {source_line(phantom_csv)}")
     lines.append(f"- figure: `{rel(FIGURES['fig0d'])}` | last update: {timestamp(FIGURES['fig0d'])}")
     lines.append("")
@@ -387,7 +397,7 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
     lines += ["### 0f Overlap depth", ""]
     for site in ["reddit", "classifieds"]:
         depths = success_depths(stats[site])
-        for mode in ["P-SoM", "P-DOM"]:
+        for mode in ["P-SoM", "P-text"]:
             c = depths.get(mode, Counter())
             parts = [f"d{depth}={c.get(depth, 0)}" for depth in range(1, 6)]
             lines.append(f"- {site} {mode}: " + " / ".join(parts))
@@ -402,9 +412,9 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
         for mode in ["dom", "phantom_dom", "phantom_som", "som", "vision"]:
             row = auroc_rows.get(("B0", site, mode))
             if not row:
-                parts.append(f"{mode} n/a")
+                parts.append(f"{display_mode(mode)} n/a")
                 continue
-            parts.append(f"{mode} {float(row['AUROC']):.3f} ({row['signal']})")
+            parts.append(f"{display_mode(mode)} {float(row['AUROC']):.3f} ({row['signal']})")
         lines.append(f"- {site}: " + "; ".join(parts))
     lines.append(f"- {source_line(auroc_csv)}")
     lines.append(f"- figure: `{rel(FIGURES['fig0g'])}` | last update: {timestamp(FIGURES['fig0g'])}")

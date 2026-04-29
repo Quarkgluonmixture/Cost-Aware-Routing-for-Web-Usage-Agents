@@ -46,7 +46,7 @@
         },
         "P-SoM": {
           "available": true,
-          "run_subpath": "B0_phantom_reddit_20260428/phase1_phantom_som_router_0",
+          "run_subpath": "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0",
           "avg_steps": 9.904761904761905,
           "avg_token_cost_usd_yaml_rate": 0.03813441360556285,
           "avg_energy_kwh": null,
@@ -57,7 +57,7 @@
         },
         "P-text": {
           "available": true,
-          "run_subpath": "B0_phantom_dom_reddit_20260427/phase1_phantom_dom_router_0",
+          "run_subpath": "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0",
           "avg_steps": 11.452380952380953,
           "avg_token_cost_usd_yaml_rate": 0.04594304696634383,
           "avg_energy_kwh": null,
@@ -103,7 +103,7 @@
         },
         "P-SoM": {
           "available": true,
-          "run_subpath": "B0_phantom_classifieds_20260426/phase1_phantom_som_router_0",
+          "run_subpath": "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0",
           "avg_steps": 12.047008547008547,
           "avg_token_cost_usd_yaml_rate": 0.04410694303707384,
           "avg_energy_kwh": null,
@@ -114,7 +114,7 @@
         },
         "P-text": {
           "available": true,
-          "run_subpath": "B0_phantom_dom_classifieds_20260427/phase1_phantom_dom_router_0",
+          "run_subpath": "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0",
           "avg_steps": 11.162393162393162,
           "avg_token_cost_usd_yaml_rate": 0.03973111219020583,
           "avg_energy_kwh": null,
@@ -200,8 +200,15 @@
           "paper_cost_class": "electricity_equivalent"
         },
         "P-SoM": {
-          "available": false,
-          "reason": "missing condition_summary_v2.json"
+          "available": true,
+          "run_subpath": "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0",
+          "avg_steps": 11.551282051282051,
+          "avg_token_cost_usd_yaml_rate": 0.03418603899609166,
+          "avg_energy_kwh": 0.006670890040143003,
+          "avg_electricity_usd": 0.0008005068048171604,
+          "avg_co2e_kg": 0.0014675958088314607,
+          "paper_cost_usd": 0.0008005068048171604,
+          "paper_cost_class": "electricity_equivalent"
         }
       }
     }
@@ -215,8 +222,8 @@
     },
     "classifieds": {
       "avg_B0_API_dollars": 0.03856,
-      "avg_B1_electricity_dollars": 0.00036573,
-      "ratio_B0_over_B1": 105.43,
+      "avg_B1_electricity_dollars": 0.00047442,
+      "ratio_B0_over_B1": 81.28,
       "note": "ratio across deployment classes, not capability tiers"
     }
   }

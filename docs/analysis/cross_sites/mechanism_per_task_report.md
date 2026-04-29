@@ -8,12 +8,12 @@ E1 asks whether modes click into the same server-determined page transitions. Ja
 
 | site | contrast | N | mean Jaccard | std | median | mean divergence | left size | right size | union size |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| reddit | axis_1_text (DOM vs P-DOM) | 210 | 0.463 | 0.472 | 0.250 | 0.537 | 1.105 | 0.952 | 1.795 |
-| reddit | axis_2_prompt (P-DOM vs P-SoM) | 210 | 0.484 | 0.485 | 0.333 | 0.516 | 0.952 | 0.833 | 1.590 |
+| reddit | axis_1_text (DOM vs P-text) | 210 | 0.463 | 0.472 | 0.250 | 0.537 | 1.105 | 0.952 | 1.795 |
+| reddit | axis_2_prompt (P-text vs P-SoM) | 210 | 0.484 | 0.485 | 0.333 | 0.516 | 0.952 | 0.833 | 1.590 |
 | reddit | axis_3_image (P-SoM vs SoM) | 210 | 0.492 | 0.491 | 0.333 | 0.508 | 0.833 | 0.548 | 1.262 |
 | reddit | compound_DOM_to_PSoM (DOM vs P-SoM) | 210 | 0.421 | 0.471 | 0.000 | 0.579 | 1.105 | 0.833 | 1.743 |
-| classifieds | axis_1_text (DOM vs P-DOM) | 234 | 0.561 | 0.476 | 1.000 | 0.439 | 0.697 | 0.650 | 1.158 |
-| classifieds | axis_2_prompt (P-DOM vs P-SoM) | 234 | 0.542 | 0.485 | 1.000 | 0.458 | 0.650 | 0.756 | 1.231 |
+| classifieds | axis_1_text (DOM vs P-text) | 234 | 0.561 | 0.476 | 1.000 | 0.439 | 0.697 | 0.650 | 1.158 |
+| classifieds | axis_2_prompt (P-text vs P-SoM) | 234 | 0.542 | 0.485 | 1.000 | 0.458 | 0.650 | 0.756 | 1.231 |
 | classifieds | axis_3_image (P-SoM vs SoM) | 234 | 0.482 | 0.488 | 0.292 | 0.518 | 0.756 | 0.517 | 1.167 |
 | classifieds | compound_DOM_to_PSoM (DOM vs P-SoM) | 234 | 0.531 | 0.478 | 0.633 | 0.469 | 0.697 | 0.756 | 1.261 |
 
@@ -31,34 +31,34 @@ E2 filters to symmetric-difference tasks, where exactly one side of the contrast
 
 | site | contrast | symmetric diff N | median first step | early rate | late rate | case tasks |
 |---|---|---:|---:|---:|---:|---|
-| reddit | DOM_vs_Phantom-DOM | 16 | 0.000 | 87.5% | 0.0% | 15, 81, 107 |
-| reddit | Phantom-DOM_vs_Phantom-SoM | 15 | 0 | 100.0% | 0.0% | 7, 167, 26 |
+| reddit | DOM_vs_P-text | 16 | 0.000 | 87.5% | 0.0% | 15, 81, 107 |
+| reddit | P-text_vs_Phantom-SoM | 15 | 0 | 100.0% | 0.0% | 7, 167, 26 |
 | reddit | Phantom-SoM_vs_SoM | 23 | 0 | 95.2% | 0.0% | 7, 0, 14 |
 | reddit | DOM_vs_Phantom-SoM | 23 | 0 | 91.3% | 0.0% | 7, 81, 15 |
-| classifieds | DOM_vs_Phantom-DOM | 21 | 1 | 81.0% | 0.0% | 63, 201, 98 |
-| classifieds | Phantom-DOM_vs_Phantom-SoM | 26 | 1.000 | 92.3% | 0.0% | 17, 103, 79 |
+| classifieds | DOM_vs_P-text | 21 | 1 | 81.0% | 0.0% | 63, 201, 98 |
+| classifieds | P-text_vs_Phantom-SoM | 26 | 1.000 | 92.3% | 0.0% | 17, 103, 79 |
 | classifieds | Phantom-SoM_vs_SoM | 42 | 1 | 94.9% | 0.0% | 14, 17, 49 |
 | classifieds | DOM_vs_Phantom-SoM | 23 | 1 | 73.9% | 4.3% | 17, 201, 63 |
 
 E2 case studies:
-- reddit DOM_vs_Phantom-DOM task_15: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 12 vs 8.
-- reddit DOM_vs_Phantom-DOM task_81: first divergent step 6, trajectory Jaccard 1.000, left_success=True, right_success=False, steps 8 vs 6.
-- reddit DOM_vs_Phantom-DOM task_107: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 30 vs 4.
-- reddit Phantom-DOM_vs_Phantom-SoM task_7: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 4 vs 5.
-- reddit Phantom-DOM_vs_Phantom-SoM task_26: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 9 vs 6.
-- reddit Phantom-DOM_vs_Phantom-SoM task_167: first divergent step 3, trajectory Jaccard 0.333, left_success=False, right_success=True, steps 6 vs 30.
+- reddit DOM_vs_P-text task_15: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 12 vs 8.
+- reddit DOM_vs_P-text task_81: first divergent step 6, trajectory Jaccard 1.000, left_success=True, right_success=False, steps 8 vs 6.
+- reddit DOM_vs_P-text task_107: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 30 vs 4.
+- reddit P-text_vs_Phantom-SoM task_7: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 4 vs 5.
+- reddit P-text_vs_Phantom-SoM task_26: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 9 vs 6.
+- reddit P-text_vs_Phantom-SoM task_167: first divergent step 3, trajectory Jaccard 0.333, left_success=False, right_success=True, steps 6 vs 30.
 - reddit Phantom-SoM_vs_SoM task_0: first divergent step 6, trajectory Jaccard 0.667, left_success=True, right_success=False, steps 12 vs 30.
 - reddit Phantom-SoM_vs_SoM task_7: first divergent step 0, trajectory Jaccard 0.000, left_success=True, right_success=False, steps 5 vs 11.
 - reddit Phantom-SoM_vs_SoM task_14: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 30 vs 7.
 - reddit DOM_vs_Phantom-SoM task_7: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 30 vs 5.
 - reddit DOM_vs_Phantom-SoM task_15: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 12 vs 30.
 - reddit DOM_vs_Phantom-SoM task_81: first divergent step 6, trajectory Jaccard 1.000, left_success=True, right_success=False, steps 8 vs 6.
-- classifieds DOM_vs_Phantom-DOM task_63: first divergent step 0, trajectory Jaccard 0.000, left_success=True, right_success=False, steps 14 vs 10.
-- classifieds DOM_vs_Phantom-DOM task_98: first divergent step 0, trajectory Jaccard 0.000, left_success=True, right_success=False, steps 5 vs 5.
-- classifieds DOM_vs_Phantom-DOM task_201: first divergent step 7, trajectory Jaccard 0.500, left_success=False, right_success=True, steps 12 vs 11.
-- classifieds Phantom-DOM_vs_Phantom-SoM task_17: first divergent step 0, trajectory Jaccard 0.125, left_success=True, right_success=False, steps 6 vs 30.
-- classifieds Phantom-DOM_vs_Phantom-SoM task_79: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 5 vs 3.
-- classifieds Phantom-DOM_vs_Phantom-SoM task_103: first divergent step 7, trajectory Jaccard 0.500, left_success=False, right_success=True, steps 8 vs 12.
+- classifieds DOM_vs_P-text task_63: first divergent step 0, trajectory Jaccard 0.000, left_success=True, right_success=False, steps 14 vs 10.
+- classifieds DOM_vs_P-text task_98: first divergent step 0, trajectory Jaccard 0.000, left_success=True, right_success=False, steps 5 vs 5.
+- classifieds DOM_vs_P-text task_201: first divergent step 7, trajectory Jaccard 0.500, left_success=False, right_success=True, steps 12 vs 11.
+- classifieds P-text_vs_Phantom-SoM task_17: first divergent step 0, trajectory Jaccard 0.125, left_success=True, right_success=False, steps 6 vs 30.
+- classifieds P-text_vs_Phantom-SoM task_79: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 5 vs 3.
+- classifieds P-text_vs_Phantom-SoM task_103: first divergent step 7, trajectory Jaccard 0.500, left_success=False, right_success=True, steps 8 vs 12.
 - classifieds Phantom-SoM_vs_SoM task_14: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 2 vs 2.
 - classifieds Phantom-SoM_vs_SoM task_17: first divergent step 5, trajectory Jaccard 1.000, left_success=False, right_success=True, steps 30 vs 5.
 - classifieds Phantom-SoM_vs_SoM task_49: first divergent step 0, trajectory Jaccard 0.000, left_success=False, right_success=True, steps 5 vs 3.
@@ -73,12 +73,12 @@ E3 reads existing `analyze_confidence_calibration.py` outputs under `analysis/si
 | model | site | mode | ECE token | ECE verbal | AUROC token | AUROC verbal | AUROC behavioral max | FP rate | best signals |
 |---|---|---|---:|---:|---:|---:|---:|---:|---|
 | B0 | classifieds | DOM | n/a | n/a | n/a | 0.742 | 0.769 | 0.855 | verb=ep_mean_verbalized; beh=action_diversity |
-| B0 | classifieds | P-DOM | n/a | n/a | n/a | 0.737 | 0.733 | 2.137 | verb=ep_mean_verbalized; beh=action_diversity |
+| B0 | classifieds | P-text | n/a | n/a | n/a | 0.737 | 0.733 | 2.137 | verb=ep_mean_verbalized; beh=action_diversity |
 | B0 | classifieds | P-SoM | n/a | n/a | n/a | 0.701 | 0.728 | 1.282 | verb=ep_mean_verbalized; beh=action_diversity |
 | B0 | classifieds | SoM | n/a | n/a | n/a | 0.709 | 0.697 | 1.709 | verb=ep_mean_verbalized; beh=action_diversity |
 | B0 | classifieds | Vision | n/a | n/a | n/a | 0.763 | 0.773 | 2.137 | verb=ep_mean_verbalized; beh=max_repeat_streak |
 | B0 | reddit | DOM | n/a | n/a | n/a | 0.817 | 0.682 | 1.905 | verb=ep_mean_verbalized; beh=max_repeat_streak |
-| B0 | reddit | P-DOM | n/a | n/a | n/a | 0.793 | 0.698 | 1.429 | verb=ep_mean_verbalized; beh=url_revisit_count |
+| B0 | reddit | P-text | n/a | n/a | n/a | 0.793 | 0.698 | 1.429 | verb=ep_mean_verbalized; beh=url_revisit_count |
 | B0 | reddit | P-SoM | n/a | n/a | n/a | 0.720 | 0.694 | 0.476 | verb=ep_mean_verbalized; beh=max_repeat_streak |
 | B0 | reddit | SoM | n/a | n/a | n/a | 0.719 | 0.681 | 1.429 | verb=ep_mean_verbalized; beh=action_diversity |
 | B0 | reddit | Vision | n/a | n/a | n/a | 0.778 | 0.709 | 1.905 | verb=ep_mean_verbalized; beh=max_repeat_streak |
@@ -104,12 +104,12 @@ E4 expands Layer 1 macro behavior from a few hand-picked action metrics to the f
 | cell | click | type | scroll | select | wait | back | forward | finish | tab_focus | other |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | B0/classifieds/DOM | 0.250 | 0.293 | 0.226 | 0.075 | 0.000 | 0.093 | 0.000 | 0.049 | 0.014 | 0.000 |
-| B0/classifieds/P-DOM | 0.222 | 0.329 | 0.246 | 0.078 | 0.000 | 0.065 | 0.000 | 0.052 | 0.007 | 0.000 |
+| B0/classifieds/P-text | 0.222 | 0.329 | 0.246 | 0.078 | 0.000 | 0.065 | 0.000 | 0.052 | 0.007 | 0.000 |
 | B0/classifieds/P-SoM | 0.255 | 0.291 | 0.236 | 0.066 | 0.000 | 0.099 | 0.000 | 0.043 | 0.010 | 0.000 |
 | B0/classifieds/SoM | 0.260 | 0.282 | 0.200 | 0.060 | 0.001 | 0.099 | 0.000 | 0.091 | 0.006 | 0.000 |
 | B0/classifieds/Vision | 0.271 | 0.353 | 0.246 | 0.037 | 0.000 | 0.030 | 0.000 | 0.057 | 0.005 | 0.000 |
 | B0/reddit/DOM | 0.358 | 0.378 | 0.142 | 0.001 | 0.000 | 0.059 | 0.000 | 0.037 | 0.026 | 0.000 |
-| B0/reddit/P-DOM | 0.337 | 0.350 | 0.198 | 0.011 | 0.000 | 0.051 | 0.000 | 0.039 | 0.015 | 0.000 |
+| B0/reddit/P-text | 0.337 | 0.350 | 0.198 | 0.011 | 0.000 | 0.051 | 0.000 | 0.039 | 0.015 | 0.000 |
 | B0/reddit/P-SoM | 0.381 | 0.290 | 0.149 | 0.011 | 0.000 | 0.085 | 0.000 | 0.042 | 0.042 | 0.000 |
 | B0/reddit/SoM | 0.391 | 0.226 | 0.156 | 0.015 | 0.000 | 0.096 | 0.000 | 0.066 | 0.050 | 0.000 |
 | B0/reddit/Vision | 0.326 | 0.254 | 0.255 | 0.006 | 0.000 | 0.033 | 0.000 | 0.064 | 0.062 | 0.000 |
@@ -129,11 +129,11 @@ Paired action-fraction shifts by axis (right-minus-left):
 
 Uncommon-action highlights:
 - reddit select_option: SoM 0.015 vs DOM 0.001 (20.5x).
-- reddit tab_focus: Vision 0.062 vs P-DOM 0.015 (4.3x).
+- reddit tab_focus: Vision 0.062 vs P-text 0.015 (4.3x).
 - classifieds back: P-SoM 0.099 vs Vision 0.030 (3.3x).
 - reddit back: SoM 0.096 vs Vision 0.033 (2.9x).
 - classifieds finish: SoM 0.091 vs P-SoM 0.043 (2.1x).
-- classifieds select_option: P-DOM 0.078 vs Vision 0.037 (2.1x).
+- classifieds select_option: P-text 0.078 vs Vision 0.037 (2.1x).
 
 ## Mechanism evidence for paper Section 5
 
@@ -153,12 +153,12 @@ These histograms summarize how many URL-changing click transitions each task pro
 
 | site | axis | left mode | left hist | right mode | right hist |
 |---|---|---|---|---|---|
-| reddit | axis_1_text | DOM | `{"0": 99, "1": 53, "2": 28, "3": 14, "4": 8, "5": 4, "6": 1, "7": 1, "8": 2}` | P-DOM | `{"0": 106, "1": 56, "2": 20, "3": 16, "4": 7, "5": 3, "6": 1, "7": 1}` |
-| reddit | axis_2_prompt | P-DOM | `{"0": 106, "1": 56, "2": 20, "3": 16, "4": 7, "5": 3, "6": 1, "7": 1}` | P-SoM | `{"0": 113, "1": 58, "10": 1, "2": 20, "3": 10, "4": 4, "5": 3, "6": 1}` |
+| reddit | axis_1_text | DOM | `{"0": 99, "1": 53, "2": 28, "3": 14, "4": 8, "5": 4, "6": 1, "7": 1, "8": 2}` | P-text | `{"0": 106, "1": 56, "2": 20, "3": 16, "4": 7, "5": 3, "6": 1, "7": 1}` |
+| reddit | axis_2_prompt | P-text | `{"0": 106, "1": 56, "2": 20, "3": 16, "4": 7, "5": 3, "6": 1, "7": 1}` | P-SoM | `{"0": 113, "1": 58, "10": 1, "2": 20, "3": 10, "4": 4, "5": 3, "6": 1}` |
 | reddit | axis_3_image | P-SoM | `{"0": 113, "1": 58, "10": 1, "2": 20, "3": 10, "4": 4, "5": 3, "6": 1}` | SoM | `{"0": 129, "1": 58, "2": 17, "3": 4, "5": 1, "6": 1}` |
 | reddit | compound_DOM_to_PSoM | DOM | `{"0": 99, "1": 53, "2": 28, "3": 14, "4": 8, "5": 4, "6": 1, "7": 1, "8": 2}` | P-SoM | `{"0": 113, "1": 58, "10": 1, "2": 20, "3": 10, "4": 4, "5": 3, "6": 1}` |
-| classifieds | axis_1_text | DOM | `{"0": 147, "1": 46, "2": 21, "3": 11, "4": 6, "5": 2, "8": 1}` | P-DOM | `{"0": 143, "1": 51, "2": 25, "3": 11, "4": 2, "5": 2}` |
-| classifieds | axis_2_prompt | P-DOM | `{"0": 143, "1": 51, "2": 25, "3": 11, "4": 2, "5": 2}` | P-SoM | `{"0": 136, "1": 50, "2": 30, "3": 10, "4": 5, "5": 2, "7": 1}` |
+| classifieds | axis_1_text | DOM | `{"0": 147, "1": 46, "2": 21, "3": 11, "4": 6, "5": 2, "8": 1}` | P-text | `{"0": 143, "1": 51, "2": 25, "3": 11, "4": 2, "5": 2}` |
+| classifieds | axis_2_prompt | P-text | `{"0": 143, "1": 51, "2": 25, "3": 11, "4": 2, "5": 2}` | P-SoM | `{"0": 136, "1": 50, "2": 30, "3": 10, "4": 5, "5": 2, "7": 1}` |
 | classifieds | axis_3_image | P-SoM | `{"0": 136, "1": 50, "2": 30, "3": 10, "4": 5, "5": 2, "7": 1}` | SoM | `{"0": 159, "1": 50, "2": 14, "3": 4, "4": 6, "7": 1}` |
 | classifieds | compound_DOM_to_PSoM | DOM | `{"0": 147, "1": 46, "2": 21, "3": 11, "4": 6, "5": 2, "8": 1}` | P-SoM | `{"0": 136, "1": 50, "2": 30, "3": 10, "4": 5, "5": 2, "7": 1}` |
 
@@ -168,12 +168,12 @@ The histogram key is first divergent step. Step 0 means the two modes start from
 
 | site | contrast | histogram |
 |---|---|---|
-| reddit | DOM_vs_Phantom-DOM | `{"0": 10, "1": 2, "2": 1, "3": 1, "5": 1, "6": 1}` |
-| reddit | Phantom-DOM_vs_Phantom-SoM | `{"0": 12, "1": 1, "2": 1, "3": 1}` |
+| reddit | DOM_vs_P-text | `{"0": 10, "1": 2, "2": 1, "3": 1, "5": 1, "6": 1}` |
+| reddit | P-text_vs_Phantom-SoM | `{"0": 12, "1": 1, "2": 1, "3": 1}` |
 | reddit | Phantom-SoM_vs_SoM | `{"0": 13, "1": 7, "6": 1}` |
 | reddit | DOM_vs_Phantom-SoM | `{"0": 13, "1": 5, "2": 1, "3": 2, "4": 1, "6": 1}` |
-| classifieds | DOM_vs_Phantom-DOM | `{"0": 5, "1": 8, "2": 2, "3": 2, "4": 1, "6": 2, "7": 1}` |
-| classifieds | Phantom-DOM_vs_Phantom-SoM | `{"0": 10, "1": 6, "2": 3, "3": 5, "4": 1, "7": 1}` |
+| classifieds | DOM_vs_P-text | `{"0": 5, "1": 8, "2": 2, "3": 2, "4": 1, "6": 2, "7": 1}` |
+| classifieds | P-text_vs_Phantom-SoM | `{"0": 10, "1": 6, "2": 3, "3": 5, "4": 1, "7": 1}` |
 | classifieds | Phantom-SoM_vs_SoM | `{"0": 11, "1": 18, "2": 5, "3": 3, "4": 1, "5": 1}` |
 | classifieds | DOM_vs_Phantom-SoM | `{"0": 8, "1": 6, "10": 1, "2": 1, "3": 2, "4": 2, "5": 2, "9": 1}` |
 
@@ -184,13 +184,13 @@ Each E3 row is sourced from existing analyzer outputs; calibration source is nul
 | cell | AUROC source | calibration source | token n | verbal n | behavioral n |
 |---|---|---|---:|---:|---:|
 | B0/classifieds/DOM | `results/visualwebarena/phase1/B0_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv` | n/a | n/a | 234 | 234 |
-| B0/classifieds/Phantom-DOM | `results/visualwebarena/phase1/B0_phantom_dom_classifieds_20260427/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | n/a | 234 | 234 |
-| B0/classifieds/Phantom-SoM | `results/visualwebarena/phase1/B0_phantom_classifieds_20260426/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | n/a | 234 | 234 |
+| B0/classifieds/P-text | `results/visualwebarena/phase1/B0_phantom_text_classifieds_20260427/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | n/a | 234 | 234 |
+| B0/classifieds/Phantom-SoM | `results/visualwebarena/phase1/B0_phantom_som_classifieds_20260426/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | n/a | 234 | 234 |
 | B0/classifieds/SoM | `results/visualwebarena/phase1/B0_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv` | n/a | n/a | 234 | 234 |
 | B0/classifieds/Vision | `results/visualwebarena/phase1/B0_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv` | n/a | n/a | 234 | 234 |
 | B0/reddit/DOM | `results/visualwebarena/phase1/B0_3mode_reddit_20260422/analysis/signals/combined/tables/cross_mode_auroc.csv` | n/a | n/a | 209 | 210 |
-| B0/reddit/Phantom-DOM | `results/visualwebarena/phase1/B0_phantom_dom_reddit_20260427/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | n/a | 208 | 210 |
-| B0/reddit/Phantom-SoM | `results/visualwebarena/phase1/B0_phantom_reddit_20260428/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | n/a | 205 | 210 |
+| B0/reddit/P-text | `results/visualwebarena/phase1/B0_phantom_text_reddit_20260427/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | n/a | 208 | 210 |
+| B0/reddit/Phantom-SoM | `results/visualwebarena/phase1/B0_phantom_som_reddit_20260428/analysis/signals/combined/tables/auroc_all_metrics.csv` | n/a | n/a | 205 | 210 |
 | B0/reddit/SoM | `results/visualwebarena/phase1/B0_3mode_reddit_20260422/analysis/signals/combined/tables/cross_mode_auroc.csv` | n/a | n/a | 199 | 210 |
 | B0/reddit/Vision | `results/visualwebarena/phase1/B0_3mode_reddit_20260422/analysis/signals/combined/tables/cross_mode_auroc.csv` | n/a | n/a | 210 | 210 |
 | B1/classifieds/DOM | `results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/cross_mode_auroc.csv` | `results/visualwebarena/phase1/B1_3mode_classifieds_20260413/analysis/signals/combined/tables/per_mode_summary.csv` | 234 | 234 | 234 |
@@ -226,11 +226,11 @@ Top action types per B0 cell by pooled step fraction.
 | B0/classifieds/DOM | 3 | scroll | 0.226 |
 | B0/classifieds/DOM | 4 | back | 0.093 |
 | B0/classifieds/DOM | 5 | select_option | 0.075 |
-| B0/classifieds/Phantom-DOM | 1 | type | 0.329 |
-| B0/classifieds/Phantom-DOM | 2 | scroll | 0.246 |
-| B0/classifieds/Phantom-DOM | 3 | click | 0.222 |
-| B0/classifieds/Phantom-DOM | 4 | select_option | 0.078 |
-| B0/classifieds/Phantom-DOM | 5 | back | 0.065 |
+| B0/classifieds/P-text | 1 | type | 0.329 |
+| B0/classifieds/P-text | 2 | scroll | 0.246 |
+| B0/classifieds/P-text | 3 | click | 0.222 |
+| B0/classifieds/P-text | 4 | select_option | 0.078 |
+| B0/classifieds/P-text | 5 | back | 0.065 |
 | B0/classifieds/Phantom-SoM | 1 | type | 0.291 |
 | B0/classifieds/Phantom-SoM | 2 | click | 0.255 |
 | B0/classifieds/Phantom-SoM | 3 | scroll | 0.236 |
@@ -251,11 +251,11 @@ Top action types per B0 cell by pooled step fraction.
 | B0/reddit/DOM | 3 | scroll | 0.142 |
 | B0/reddit/DOM | 4 | back | 0.059 |
 | B0/reddit/DOM | 5 | finish | 0.037 |
-| B0/reddit/Phantom-DOM | 1 | type | 0.350 |
-| B0/reddit/Phantom-DOM | 2 | click | 0.337 |
-| B0/reddit/Phantom-DOM | 3 | scroll | 0.198 |
-| B0/reddit/Phantom-DOM | 4 | back | 0.051 |
-| B0/reddit/Phantom-DOM | 5 | finish | 0.039 |
+| B0/reddit/P-text | 1 | type | 0.350 |
+| B0/reddit/P-text | 2 | click | 0.337 |
+| B0/reddit/P-text | 3 | scroll | 0.198 |
+| B0/reddit/P-text | 4 | back | 0.051 |
+| B0/reddit/P-text | 5 | finish | 0.039 |
 | B0/reddit/Phantom-SoM | 1 | click | 0.381 |
 | B0/reddit/Phantom-SoM | 2 | type | 0.290 |
 | B0/reddit/Phantom-SoM | 3 | scroll | 0.149 |
@@ -286,21 +286,21 @@ Top action types per B0 cell by pooled step fraction.
 | E1 Jaccard range reddit/axis_2_prompt | [0, 1] | True |
 | E1 Jaccard range reddit/axis_3_image | [0, 1] | True |
 | E1 Jaccard range reddit/compound_DOM_to_PSoM | [0, 1] | True |
-| E2 first step range classifieds/DOM_vs_Phantom-DOM | [0, 30] | True |
+| E2 first step range classifieds/DOM_vs_P-text | [0, 30] | True |
 | E2 first step range classifieds/DOM_vs_Phantom-SoM | [0, 30] | True |
-| E2 first step range classifieds/Phantom-DOM_vs_Phantom-SoM | [0, 30] | True |
+| E2 first step range classifieds/P-text_vs_Phantom-SoM | [0, 30] | True |
 | E2 first step range classifieds/Phantom-SoM_vs_SoM | [0, 30] | True |
-| E2 first step range reddit/DOM_vs_Phantom-DOM | [0, 30] | True |
+| E2 first step range reddit/DOM_vs_P-text | [0, 30] | True |
 | E2 first step range reddit/DOM_vs_Phantom-SoM | [0, 30] | True |
-| E2 first step range reddit/Phantom-DOM_vs_Phantom-SoM | [0, 30] | True |
+| E2 first step range reddit/P-text_vs_Phantom-SoM | [0, 30] | True |
 | E2 first step range reddit/Phantom-SoM_vs_SoM | [0, 30] | True |
 | E4 action sum B0/classifieds/DOM | 1.000000 | True |
-| E4 action sum B0/classifieds/Phantom-DOM | 1.000000 | True |
+| E4 action sum B0/classifieds/P-text | 1.000000 | True |
 | E4 action sum B0/classifieds/Phantom-SoM | 1.000000 | True |
 | E4 action sum B0/classifieds/SoM | 1.000000 | True |
 | E4 action sum B0/classifieds/Vision | 1.000000 | True |
 | E4 action sum B0/reddit/DOM | 1.000000 | True |
-| E4 action sum B0/reddit/Phantom-DOM | 1.000000 | True |
+| E4 action sum B0/reddit/P-text | 1.000000 | True |
 | E4 action sum B0/reddit/Phantom-SoM | 1.000000 | True |
 | E4 action sum B0/reddit/SoM | 1.000000 | True |
 | E4 action sum B0/reddit/Vision | 1.000000 | True |
@@ -318,4 +318,4 @@ Overall pass: True.
 | E1 N reddit | 210 / 210 |
 | E1 N classifieds | 234 / 234 |
 | E3 cells | 16 / 16 |
-| P-prompt status | {"B0_phantom_prompt_reddit_20260429": {"episodes": 48, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}} |
+| P-prompt status | {"B0_phantom_prompt_reddit_20260429": {"episodes": 52, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}} |
