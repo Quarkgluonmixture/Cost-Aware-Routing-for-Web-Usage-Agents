@@ -131,6 +131,71 @@ Net effect:
   red: helping 8 vs harming 15 → image lose -3.33pp adj SR
 ```
 
+### Site mechanical substrate (full characterization, 2026-04-29)
+
+Each VWA/WA site has distinct **mechanical substrate** that determines which axis dominates. Section 5 narrative organized as `site × axis × LLM-mechanism` 3-way table, not just "axis effect on aggregate". Source for detailed per-site failure analyses: `docs/analysis/vwa_<site>/B*_{DOM,SoM,Vision}_digest.md` (9 files per site, manually + codex curated).
+
+#### reddit (Postmill, N=210)
+
+| Aspect | Detail |
+|---|---|
+| Information structure | Forum hierarchy (forum → posts → comments) |
+| Navigation affordance | Sidebar `f/<forum>` links + search box (text-rich) |
+| Image role | Content (post attachments), NOT navigation affordance |
+| Mechanically dominant axis | **Axis 1 (text payload structure)** |
+| Mechanism | AXTree hierarchical embeds sidebar in deep tree → search-box becomes shortcut → search-loop pathology. [SOM_MARKS] flat list makes sidebar `f/<forum>` directly clickable → DOM digest §2.1 search-loop 29.6% failure → P-text reduces |
+| Image axis sub-effects | Layer 1b axis 3 small (5/5 reddit metrics show image effect d_z<0.16) — image is content not navigation, helping/harming roughly balanced |
+| Site-specific failures | `fail_max_steps_search_repeat` (DOM 13.8%), `fail_no_progress` (22.4%), `fail_finish_eval_mismatch` (23.8%, read-and-report tasks) |
+| Source digest | `docs/analysis/vwa_reddit/B0_DOM_digest.md` etc. |
+
+#### classifieds (OSClass, N=234)
+
+| Aspect | Detail |
+|---|---|
+| Information structure | Product listings + categories + search results |
+| Navigation affordance | Category dropdown (`select_option`) + search box (intrinsic — most cls tasks are search) |
+| Image role | **Product identity** (visual disambiguation critical for color/style) |
+| Mechanically dominant axis | **Axis 3 (image)** — Layer 1b cls image axis dominates 5/8 metrics (h=+0.57 finish rate, d=−0.42 action repeat) |
+| Mechanism | OSClass query routing (`/index.php?page=item&id=N`) means URL-path is uninformative — visual product comparison required for "find blue motorcycle" tasks. Image absence → P-SoM cls collapses toward DOM (Layer 1a 6/8 cells DOM-like). Image axis recovers at SoM. |
+| Axis 1 sub-effects | Smaller; axis 1 (DOM↔P-text) on cls path-only Jaccard 0.904 (path-level same), 0.66 with query (semantic page-id divergence). Reveals macro-vs-micro mismatch: aggregate macro DOM-like but per-task page selection differs |
+| Site-specific failures | Latent visual attribute (e.g. "red blanket" without ref image, A2 64% per `codex_audit_shopping_A_refined.json`), aggregation (least/most/cheapest, A3 35%), category navigation (case study task 12) |
+| Source digest | `docs/analysis/vwa_classifieds/B0_findings.md`, `_DOM_digest.md` etc. |
+
+#### shopping (Magento, N=466)
+
+| Aspect | Detail |
+|---|---|
+| Information structure | Product pages + cart + checkout + admin (largest, most complex) |
+| Navigation affordance | Product browsing + form interactions (custom-options swatch / qty / cart actions) + admin panel |
+| Image role | **Product identification + visual variant selection** (color swatches partially DOM-readable, partially visual) |
+| Mechanically dominant axis | **Axis 1 + Axis 3 mixed**, plus axis 2 prompt matters for form-action vs retrieval task split |
+| Mechanism | Magento custom-options form interactions (swatch radio / select_option / qty) require precise element selection. §105 swatch state-change bug discovered 04-29 affects 2.4% tasks (DOM/SoM, not Vision). Visual-rich product variants need image axis for color/style disambiguation |
+| Axis 1 sub-effects | Form action tasks need select_option for dropdowns; product retrieval needs visual ID |
+| Site-specific failures | Aggregation (>50%, A3 dominant per `codex_audit_shopping_A_refined.json`), latent visual attribute (A2 41%), form-stall (swatch loop §105), admin-flow tasks |
+| Site-specific quirks | Magento FPC cache full-page-cache requires hook + post-restart curl; custom-option radio swatch bug; review form ratings same bug pattern; long product comparison (12 items × 10 fields per Magento aggregation tasks) |
+| Source digest | `docs/analysis/vwa_shopping/` (sparse, 跑中) + `codex_audit_shopping_A_refined.json` (A1/A2/A3/A4 sub-classification) + §105 swatch_form_change_audit.md |
+
+#### Mechanism three-way table (Section 5 narrative scaffold)
+
+```
+                    reddit          classifieds         shopping
+                    ─────────       ────────────        ──────────
+Axis 1 (text)       PRIMARY         secondary           secondary (form-action)
+                    sidebar→loop    page-id semantic    select_option matters
+                                    divergence
+
+Axis 2 (prompt)     macro driver    type/selfcorr only  prompt × text task split
+                    of search/type  (cls aggregate masked)
+
+Axis 3 (image)      weak/balanced   PRIMARY (5/8)       PRIMARY (visual variant)
+                    image=content   image=affordance    image=ID + variant select
+
+Site failure mode   search-loop     latent visual /     aggregation /
+                    eval-mismatch   aggregation         form-stall / swatch
+```
+
+Section 5 prose 用此 3-way table 组织: per-site axis-by-axis mechanism, citing 4-Layer evidence + per-site digests + LLM-level mechanism (axis 1 attention shift / axis 2 task-conditional decision prior / axis 3 bidirectional fusion).
+
 ### Capability layer (B0 vs B1, lazy minimization §101.九)
 
 **Lazy Minimization Hypothesis** (4B small VLM signal selection):

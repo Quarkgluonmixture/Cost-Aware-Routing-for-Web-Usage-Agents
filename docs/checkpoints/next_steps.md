@@ -262,7 +262,7 @@ nohup bash scripts/queues/queue_chain.sh \
 |---|---|---|---|---|
 | **10** | **Axis 2/3 literature deep research + paper.bib expansion** (16→~38, 含 bidirectional modality + Tong 2024 Eyes Wide Shut) ⭐⭐⭐ | ~400-600K | — | 🟢 prompt ready, 发 ~Wed |
 | **11** | **Section 4 fresh-data prose update** (4-Layer framework + ~100× cost framing + N=210 全数据) ⭐ priority next | ~30K | — (现可发) | 🟢 ready, 等用户 trigger |
-| **13** | **Section 5 prose 写** (3-axis cascade diamond + cls task-pool 0.53 paradox + Layer 2 micro mechanism) | ~50K | 待 P-prompt reddit done (~6h) + #11 一起发 | 🟡 ~Thu |
+| **13** | **Section 5 prose 写** (organize as **site × axis × LLM-mechanism 3-way table**, per `paper_planning §2.x site mechanical substrate`); primary input: 9 site digests `docs/analysis/vwa_*/B*_{DOM,SoM,Vision}_digest.md` + `mechanism_per_task.{json,md}` (E1-E4) + `axis_effect_size_report.md` + `disagreement_clusters.md` (04-27 stale, refresh via #14c when phantom data ready) + `axis1_microbehavior_report.md` + cls task-pool 0.53 paradox + 6 antagonistic pairs | ~50-80K | 待 P-prompt reddit done (~6h) + #11 一起发 | 🟡 ~Thu |
 | 14 | Codex audit shopping VWA (466) — full 5-mode | ~500K | 待 shopping 5-mode 数据 | ⏳ ~Week 2-3 |
 | 14b | Codex audit reddit cat refine (类 shopping A-refine 04-29) | ~50K | red 5-mode FRESH already | 🟢 ready |
 | **14c** | **Codex redo `disagreement_clusters.md` 含 5+1 phantom modes** (mechanism narrative for paper Section 5; current md is 04-27 baseline-only snapshot, drives `fig_capability_b0_b1`) | ~80K | B1 phantom 4-cell + B0 P-prompt diamond done (~30-40d) | ⏳ Week 4-5 |
