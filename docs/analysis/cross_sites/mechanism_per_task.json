@@ -185,36 +185,36 @@
       "axis_1_text_alt": {
         "click_target_set_size": {
           "left_hist": {
-            "0": 72,
-            "1": 42,
+            "0": 82,
+            "1": 45,
             "2": 15,
             "3": 6,
-            "4": 4,
+            "4": 5,
             "5": 2,
             "7": 2
           },
-          "left_mean": 0.909091,
+          "left_mean": 0.872611,
           "right_hist": {
-            "0": 82,
-            "1": 31,
+            "0": 92,
+            "1": 34,
             "10": 1,
-            "2": 12,
+            "2": 13,
             "3": 9,
             "4": 4,
             "5": 3,
             "6": 1
           },
-          "right_mean": 0.902098,
-          "union_mean": 1.594406
+          "right_mean": 0.853503,
+          "union_mean": 1.515924
         },
         "contrast": "P-prompt vs P-SoM",
         "left_mode": "Phantom-prompt",
-        "mean_decision_divergence": 0.517063,
-        "mean_jaccard": 0.482937,
-        "median_jaccard": 0.285714,
-        "n": 143,
+        "mean_decision_divergence": 0.490064,
+        "mean_jaccard": 0.509936,
+        "median_jaccard": 0.5,
+        "n": 157,
         "right_mode": "Phantom-SoM",
-        "std_jaccard": 0.485616
+        "std_jaccard": 0.487097
       },
       "axis_2_prompt": {
         "click_target_set_size": {
@@ -254,35 +254,35 @@
       "axis_2_prompt_alt": {
         "click_target_set_size": {
           "left_hist": {
-            "0": 67,
-            "1": 38,
-            "2": 19,
+            "0": 76,
+            "1": 42,
+            "2": 20,
             "3": 8,
             "4": 6,
             "5": 3,
             "8": 2
           },
-          "left_mean": 1.083916,
+          "left_mean": 1.025478,
           "right_hist": {
-            "0": 72,
-            "1": 42,
+            "0": 82,
+            "1": 45,
             "2": 15,
             "3": 6,
-            "4": 4,
+            "4": 5,
             "5": 2,
             "7": 2
           },
-          "right_mean": 0.909091,
-          "union_mean": 1.713287
+          "right_mean": 0.872611,
+          "union_mean": 1.636943
         },
         "contrast": "DOM vs P-prompt",
         "left_mode": "DOM",
-        "mean_decision_divergence": 0.494794,
-        "mean_jaccard": 0.505206,
+        "mean_decision_divergence": 0.482519,
+        "mean_jaccard": 0.517481,
         "median_jaccard": 0.5,
-        "n": 143,
+        "n": 157,
         "right_mode": "Phantom-prompt",
-        "std_jaccard": 0.471148
+        "std_jaccard": 0.473511
       },
       "axis_3_image": {
         "click_target_set_size": {
@@ -867,12 +867,12 @@
         "early_divergence_rate": 1.0,
         "first_divergent_step_histogram": {
           "0": 8,
-          "2": 1
+          "2": 2
         },
         "late_divergence_rate": 0.0,
         "left_mode": "Phantom-prompt",
-        "median_first_divergent_step": 0,
-        "n_symmetric_diff_tasks": 10,
+        "median_first_divergent_step": 0.0,
+        "n_symmetric_diff_tasks": 11,
         "right_mode": "Phantom-SoM"
       }
     }
@@ -1589,40 +1589,40 @@
         "axis_1_text_alt": {
           "left_mode": "Phantom-prompt",
           "mean_per_task_fraction_shift": {
-            "back": -0.014339,
-            "click": -0.007102,
-            "finish": 0.015119,
+            "back": -0.010566,
+            "click": -0.010587,
+            "finish": 0.009552,
             "forward": 0.0,
             "other": 0.0,
-            "scroll": -0.045664,
-            "select_option": -8.1e-05,
-            "tab_focus": 0.1194,
-            "type": -0.067333,
+            "scroll": -0.037505,
+            "select_option": -7.4e-05,
+            "tab_focus": 0.106266,
+            "type": -0.057086,
             "wait": 0.0
           },
-          "n": 143,
+          "n": 157,
           "right_mode": "Phantom-SoM",
           "skipped": false,
           "top_abs_shifts": [
             {
               "action_type": "tab_focus",
-              "mean_fraction_shift": 0.1194
+              "mean_fraction_shift": 0.106266
             },
             {
               "action_type": "type",
-              "mean_fraction_shift": -0.067333
+              "mean_fraction_shift": -0.057086
             },
             {
               "action_type": "scroll",
-              "mean_fraction_shift": -0.045664
+              "mean_fraction_shift": -0.037505
             },
             {
-              "action_type": "finish",
-              "mean_fraction_shift": 0.015119
+              "action_type": "click",
+              "mean_fraction_shift": -0.010587
             },
             {
               "action_type": "back",
-              "mean_fraction_shift": -0.014339
+              "mean_fraction_shift": -0.010566
             }
           ]
         },
@@ -1669,40 +1669,40 @@
         "axis_2_prompt_alt": {
           "left_mode": "DOM",
           "mean_per_task_fraction_shift": {
-            "back": 0.021018,
-            "click": -0.014159,
-            "finish": -0.015588,
+            "back": 0.019201,
+            "click": -0.009332,
+            "finish": -0.007982,
             "forward": 0.0,
             "other": 0.0,
-            "scroll": 0.02915,
-            "select_option": 0.010798,
-            "tab_focus": -0.011783,
-            "type": -0.019434,
+            "scroll": 0.025416,
+            "select_option": 0.009835,
+            "tab_focus": -0.008246,
+            "type": -0.028892,
             "wait": 0.0
           },
-          "n": 143,
+          "n": 157,
           "right_mode": "Phantom-prompt",
           "skipped": false,
           "top_abs_shifts": [
             {
+              "action_type": "type",
+              "mean_fraction_shift": -0.028892
+            },
+            {
               "action_type": "scroll",
-              "mean_fraction_shift": 0.02915
+              "mean_fraction_shift": 0.025416
             },
             {
               "action_type": "back",
-              "mean_fraction_shift": 0.021018
+              "mean_fraction_shift": 0.019201
             },
             {
-              "action_type": "type",
-              "mean_fraction_shift": -0.019434
-            },
-            {
-              "action_type": "finish",
-              "mean_fraction_shift": -0.015588
+              "action_type": "select_option",
+              "mean_fraction_shift": 0.009835
             },
             {
               "action_type": "click",
-              "mean_fraction_shift": -0.014159
+              "mean_fraction_shift": -0.009332
             }
           ]
         },
@@ -1886,15 +1886,15 @@
         "wait": 0.0
       },
       "B0/reddit/Phantom-prompt": {
-        "back": 0.098624,
-        "click": 0.335436,
-        "finish": 0.040711,
+        "back": 0.094238,
+        "click": 0.331179,
+        "finish": 0.04308,
         "forward": 0.0,
         "other": 0.0,
-        "scroll": 0.226491,
-        "select_option": 0.007454,
-        "tab_focus": 0.021216,
-        "type": 0.270069,
+        "scroll": 0.219171,
+        "select_option": 0.007001,
+        "tab_focus": 0.022617,
+        "type": 0.282714,
         "wait": 0.0
       },
       "B0/reddit/SoM": {
@@ -1952,11 +1952,11 @@
       },
       {
         "action_type": "back",
-        "high_fraction": 0.098624,
-        "high_mode": "Phantom-prompt",
+        "high_fraction": 0.095801,
+        "high_mode": "SoM",
         "low_fraction": 0.032571,
         "low_mode": "Vision",
-        "ratio": 3.027962,
+        "ratio": 2.941304,
         "site": "reddit"
       },
       {
@@ -1982,7 +1982,7 @@
   "data_status": {
     "p_prompt": {
       "B0_phantom_prompt_reddit_20260429": {
-        "episodes": 142,
+        "episodes": 156,
         "policy": "P-prompt is not included in E1-E4 contrasts.",
         "status": "partial / pending"
       }

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""[Layer 0c viz] Outcome — phantom routing lift visualization.
+"""[Outcome 0c viz] Outcome dimension — phantom routing lift visualization.
 
 Output:
 - results/phantom_paper/figures/fig0c_phantom_lift_bars.png
 
-Visual companion to Layer 0c routing oracle lift.
+Visual companion to Outcome 0c routing oracle lift.
 
-See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
+See docs/checkpoints/paper_planning.md §3 Outcome dimension framework.
 
 fig10: Phantom routing lift — Section 1/4 paper hook visualization.
 

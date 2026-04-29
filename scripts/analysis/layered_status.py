@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Generate the live 4-layer evidence status report.
+"""Generate the live 4-dimension evidence status report.
 
 Reads existing analysis artifacts without failing on missing files. The report
 is intended as the paper-facing index for docs/checkpoints/paper_planning.md §3.
 
 Output:
-- docs/analysis/layered_evidence_status.md
+- docs/analysis/layered_evidence_status.md (filename retained as CLI alias)
 """
 
 from __future__ import annotations
@@ -302,7 +302,7 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
     lift_rows = read_csv(phantom_csv)
     auroc_rows = best_auroc(read_csv(auroc_csv))
 
-    lines += ["## Layer 0 — Outcome", ""]
+    lines += ["## Outcome — task 成功 / 路由 arm 证据", ""]
 
     lines += ["### 0a SR per mode (B0)", ""]
     for site in ["reddit", "classifieds"]:
@@ -446,7 +446,7 @@ def render_layer1(lines: list[str]) -> None:
     tier1 = interp.get("tier1_hook", {})
     tier2 = interp.get("tier2_mechanism", {})
 
-    lines += ["## Layer 1 — Macro Behavior", ""]
+    lines += ["## Macro — agent 平均怎么 act", ""]
     lines += ["### 1a Tier 1 hook coarse", ""]
     both = tier1.get("psom_distinct_from_both_dom_and_som", [])
     by_site = Counter(item.split("@")[-1] for item in both if "@" in item)
@@ -493,7 +493,7 @@ def render_layer2(lines: list[str]) -> None:
     contrasts = micro.get("axis_contrasts", {}) if isinstance(micro, dict) else {}
     validity = micro.get("cross_site_validity", {}) if isinstance(micro, dict) else {}
 
-    lines += ["## Layer 2 — Micro Behavior", ""]
+    lines += ["## Micro — per-step 决策", ""]
 
     lines += ["### 2a URL signature", ""]
     for site in ["reddit", "classifieds"]:
@@ -580,7 +580,7 @@ def render_layer2(lines: list[str]) -> None:
 def render_layer3(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]]) -> None:
     run_collect = PAPER / "run_summary_collect.json"
 
-    lines += ["## Layer 3 — Efficiency", ""]
+    lines += ["## Efficiency — cost / latency / carbon", ""]
 
     lines += ["### 3a Token/cost per step", ""]
     for site in ["reddit", "classifieds"]:
@@ -677,20 +677,20 @@ def render_layer3(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
 
 def render_claim_matrix(lines: list[str]) -> None:
     lines += [
-        "## Paper Claim → Layer Support Matrix",
+        "## Paper Claim → Dimension Support Matrix",
         "",
-        "| Claim | Layers cited | Verdict |",
+        "| Claim | Dimensions cited | Verdict |",
         "|---|---|---|",
         "| C1 P-SoM independent routing arm | 0a, 0c, 0d, 0g, 1a, 2a | ✅ supported by live outcome + behavior artifacts |",
         "| C2 4-fold drop-in property | 3a, 3c, 0g, 0c | ✅ cost/latency/signal/oracle evidence present |",
-        "| C3 3-axis hierarchical theory | 1b, 2a-2e, cross-layer mechanism chain | ✅ cascade + micro decomposition present |",
+        "| C3 3-axis hierarchical theory | 1b, 2a-2e, cross-dimension mechanism chain | ✅ cascade + micro decomposition present |",
         "| C4 Aggregate macro can mislead about routing potential | 1a, 0d, 2a | ✅ supported by task-pool and micro-divergence evidence |",
         "| C5 Prompt as task-conditional decision prior | 0b, 0b-extra, 0d, 1b, 1d, 2a-extra, 2f | ✅ supported; cite cautiously as mechanism evidence |",
         "| C6 Image is bidirectional modality fusion | 1b, 0e, 3b | ✅ supported for cls-heavy image axis; 3b is a token-gap proxy |",
         "",
-        "## Cross-layer Mechanism Chain",
+        "## Cross-dimension Mechanism Chain",
         "",
-        "| Axis | Outcome layer | Macro layer | Micro layer | Efficiency layer |",
+        "| Axis | Outcome dimension | Macro dimension | Micro dimension | Efficiency dimension |",
         "|---|---|---|---|---|",
         "| Axis 1 text payload | 0c single-phantom lift | 1b text-axis cells, 1d action shifts | 2a-2e URL/target/keyword shifts, E1 click transitions | no image tax |",
         "| Axis 2 prompt | 0d task-pool divergence, 0b-extra calibration | 1b prompt-axis dominant cells, 1d action shifts | 2d first-action, E1 click transitions, E2 boundary | prompt-only cost-neutral |",
@@ -704,11 +704,12 @@ def main() -> None:
     stats = all_mode_stats()
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = [
-        "# 4-Layer Evidence Status (live snapshot)",
+        "# 4-dimension Evidence Status (live snapshot)",
         "",
         f"Generated: {generated}  ",
-        "Source: `make analyze-layered`",
+        "Source: `make analyze-layered` (CLI alias preserved)",
         "",
+        "> Four orthogonal dimensions: Outcome / Macro / Micro / Efficiency. Sub-codes (0a / 1c / 2a / 3d) remain as figure-internal anchors.",
         "> Missing artifacts are marked with ⚠️. All percentages and counts are read live from existing JSON/CSV artifacts or episode summaries.",
         "",
     ]

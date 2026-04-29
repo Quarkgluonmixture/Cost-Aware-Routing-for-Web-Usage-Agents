@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""[Layer 0a + 0b] Outcome — aggregate SR + FP per mode.
+"""[Outcome 0a + 0b] Outcome dimension — aggregate SR + FP per mode.
 
 Outputs:
 - docs/analysis/cross_sites/sr_fp_per_mode.json
@@ -140,7 +140,7 @@ def write_markdown(summary_table: list[dict[str, Any]]) -> None:
     lines: list[str] = []
     lines.append("# SR + FP per Mode")
     lines.append("")
-    lines.append("Standalone Layer 0a/0b aggregation from paper-grade per-task `summary_v2.json` files (B0 + B1).")
+    lines.append("Standalone Outcome 0a/0b aggregation from paper-grade per-task `summary_v2.json` files (B0 + B1).")
     lines.append("")
     lines.append("## Main Table")
     lines.append("")

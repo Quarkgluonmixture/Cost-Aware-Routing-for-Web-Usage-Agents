@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""[Layer 0g] Outcome — routing signal quality across conditions.
+"""[Outcome 0g] Outcome dimension — routing signal quality across conditions.
 
 Outputs:
 - results/phantom_paper/auroc_cross_condition.csv
 - results/phantom_paper/auroc_cross_condition.md
 - results/phantom_paper/auroc_cross_condition_summary.md
 
-Layer 0g: per-mode routing AUROC evidence for router-usable signals.
+Outcome 0g: per-mode routing AUROC evidence for router-usable signals.
 
-See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
+See docs/checkpoints/paper_planning.md §3 Outcome dimension framework.
 
 Aggregate per-mode routing signal AUROC + 95% bootstrap CI across runs.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""[Layer 1/2 supporting] Mechanism schematic for 3-axis cascade controls.
+"""[Macro/Micro supporting] Mechanism schematic for 3-axis cascade controls.
 
 Output:
 - results/phantom_paper/figures/fig1ab_cascade_diamond.png

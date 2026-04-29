@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""[Layer 3d] Efficiency — B0 vs B1 deployment-class cost gap.
+"""[Efficiency 3d] Efficiency — B0 vs B1 deployment-class cost gap.
 
 Output:
 - results/phantom_paper/figures/fig3d_cost_sr_frontier.png
 
-Layer 3d: B0 (API token $) vs B1 (electricity-equivalent $) deployment-class gap.
+Efficiency 3d: B0 (API token $) vs B1 (electricity-equivalent $) deployment-class gap.
 Single message: ~100× gap (reddit 98×, cls 105×). For intra-baseline token-cost
 ratio (P-SoM ≈ DOM), see fig3a_token_cost_intra_baseline.
 
@@ -15,7 +15,7 @@ Design choices (simplified vs prior cluttered version):
 - No per-cell labels; modes via legend
 - Single prominent annotation: deployment-class gap
 
-See docs/checkpoints/paper_planning.md §3 Layer 3d framework.
+See docs/checkpoints/paper_planning.md §3 Efficiency 3d framework.
 """
 from __future__ import annotations
 
@@ -240,7 +240,7 @@ def main() -> None:
     )
     fig.text(
         0.5, -0.03,
-        "Cost source: cost_per_mode.json paper_cost_usd. For intra-baseline P-SoM/DOM token-cost ratio (Layer 3a), see fig3a.",
+        "Cost source: cost_per_mode.json paper_cost_usd. For intra-baseline P-SoM/DOM token-cost ratio (Efficiency 3a), see fig3a.",
         ha="center", fontsize=8, color="#666666",
     )
     fig.tight_layout(rect=(0, 0.04, 1, 0.93))

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""[Layer 3 supporting] Efficiency — run-level metadata collector.
+"""[Efficiency supporting] Efficiency dimension — run-level metadata collector.
 
 Outputs:
 - results/phantom_paper/run_summary_collect.json
 
-Supports Layer 3a token/cost, Layer 3b image embedding-token summaries, and
-Layer 3c latency by consolidating per-run condition_summary_v2.json artifacts.
+Supports Efficiency 3a token/cost, 3b image embedding-token summaries, and
+3c latency by consolidating per-run condition_summary_v2.json artifacts.
 
-See docs/checkpoints/paper_planning.md §3 Layer 3 framework.
+See docs/checkpoints/paper_planning.md §3 Efficiency dimension framework.
 
 Collect all key analysis outputs into a single consolidated JSON.
 

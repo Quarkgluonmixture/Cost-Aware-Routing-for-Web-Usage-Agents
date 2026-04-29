@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""[Layer 0g viz] Outcome — routing signal AUROC heatmap.
+"""[Outcome 0g viz] Outcome — routing signal AUROC heatmap.
 
 Output:
 - results/phantom_paper/figures/fig0g_routing_auroc_heatmap.png
 
-Visual companion to Layer 0g routing AUROC evidence.
+Visual companion to Outcome 0g routing AUROC evidence.
 
-See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
+See docs/checkpoints/paper_planning.md §3 Outcome dimension framework.
 
 fig11: Routing signal AUROC heatmap — Section 6 paper main evidence.
 

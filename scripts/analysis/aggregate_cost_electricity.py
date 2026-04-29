@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""[Layer 3a + 3d] Efficiency — principled cost aggregation across B0/B1.
+"""[Efficiency 3a + 3d] Efficiency dimension — principled cost aggregation across B0/B1.
 
 B0 cost = API token cost (avg_total_cost_usd from Qwen3-VL-235B-A22B per-token rates)
 B1 cost = electricity-equivalent (avg_total_energy_kwh × electricity price)
@@ -16,7 +16,7 @@ Output:
 - docs/analysis/cross_sites/cost_per_mode.json (machine-readable)
 - docs/analysis/cross_sites/cost_per_mode.md   (paper-ready table)
 
-See paper_planning.md §3 Layer 3d framework.
+See paper_planning.md §3 Efficiency dimension (sub-code 3d) framework.
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ OUT_MD = ROOT / "docs/analysis/cross_sites/cost_per_mode.md"
 # DGX Spark in user's region; matches `region: uk` in B1 runs' energy config).
 ELECTRICITY_USD_PER_KWH = 0.12
 
-# Layer 3a token cost field (computed at run-time using metrics.cost_api rates).
+# Efficiency 3a token cost field (computed at run-time using metrics.cost_api rates).
 # For B0 this = API token cost. For B1 this = same rate × token count, but B1
 # pays $0 in actual API dollars, so we mark it "non-comparable" and report
 # electricity-equivalent instead.
@@ -105,9 +105,9 @@ def collect_cell(baseline: str, site: str, mode: str, sub: str) -> dict:
         "available": True,
         "run_subpath": sub,
         "avg_steps": avg_steps,
-        # Layer 3a token cost (B0 = real API $; B1 = artifact, see notes)
+        # Efficiency 3a token cost (B0 = real API $; B1 = artifact, see notes)
         "avg_token_cost_usd_yaml_rate": avg_token_cost,
-        # Layer 3d energy + electricity cost (only B1 has reliable energy data)
+        # Efficiency 3d energy + electricity cost (only B1 has reliable energy data)
         "avg_energy_kwh": avg_energy_kwh,
         "avg_electricity_usd": (
             None
@@ -202,7 +202,7 @@ def main() -> None:
 
     # Markdown report
     lines: list[str] = []
-    lines.append("# Layer 3 Efficiency — Cost Per Mode (deployment-class aware)\n")
+    lines.append("# Efficiency — Cost Per Mode (deployment-class aware)\n")
     lines.append(summary["method"] + "\n")
     lines.append("## B0 — API token dollars (paid)\n")
     lines.append("| site | mode | avg_steps | avg_total_cost_usd ($/ep) |")

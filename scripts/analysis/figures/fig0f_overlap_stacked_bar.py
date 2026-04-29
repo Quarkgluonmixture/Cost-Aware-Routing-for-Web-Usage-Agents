@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""[Layer 0f] Outcome — overlap-depth distribution for solve pools.
+"""[Outcome 0f] Outcome dimension — overlap-depth distribution for solve pools.
 
 Output:
 - results/phantom_paper/figures/fig0f_overlap_stacked_bar.png
 
-Layer 0f: solve-pool overlap depth across observation modes.
+Outcome 0f: solve-pool overlap depth across observation modes.
 
-See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
+See docs/checkpoints/paper_planning.md §3 Outcome dimension framework.
 """
 
 from __future__ import annotations

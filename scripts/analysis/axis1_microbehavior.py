@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""[Layer 2a-2e] Micro Behavior — per-step decision quality.
+"""[Micro 2a-2e] Micro dimension — per-step decision quality.
 
 Outputs:
 - docs/analysis/cross_sites/axis1_microbehavior.json  (machine-readable)
 - docs/analysis/cross_sites/axis1_microbehavior_report.md  (paper-ready)
 
-Layer 2a URL signature, 2b target-hit, 2c keyword reuse, 2d first-action,
+Micro 2a URL signature, 2b target-hit, 2c keyword reuse, 2d first-action,
 and 2e cross-site validity.
 
-See docs/checkpoints/paper_planning.md §3 Layer 2 framework.
+See docs/checkpoints/paper_planning.md §3 Micro dimension framework.
 
 Axis-1 micro-behavior decomposition for reddit and classifieds.
 

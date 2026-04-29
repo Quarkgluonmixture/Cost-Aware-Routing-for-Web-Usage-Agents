@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""[Layer 0 supporting] Outcome — drop-one oracle loss visualization.
+"""[Outcome supporting] Outcome dimension — drop-one oracle loss visualization.
 
 Outputs:
 - results/phantom_paper/figures/fig0c_drop_one_oracle.png  (figure)

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""[Layer 3a] Efficiency — intra-baseline cost vs adjusted SR (B0 + B1).
+"""[Efficiency 3a] Efficiency dimension — intra-baseline cost vs adjusted SR (B0 + B1).
 
 Output:
 - results/phantom_paper/figures/fig3a_token_cost_intra_baseline.png
 
-Layer 3a: per-baseline cost vs adjusted SR with per-panel Pareto frontier.
+Efficiency 3a: per-baseline cost vs adjusted SR with per-panel Pareto frontier.
 - B0 panels: x = avg_total_cost_usd (API token $).
 - B1 panels: x = avg_total_energy_kwh * $0.12/kWh (UK industrial electricity $).
   B1 token-cost field is computed with B0 per-token rates and is therefore an
@@ -12,7 +12,7 @@ Layer 3a: per-baseline cost vs adjusted SR with per-panel Pareto frontier.
 
 Pareto frontier is computed within each panel (no cross-baseline ratios).
 
-See docs/checkpoints/paper_planning.md §3 Layer 3a framework.
+See docs/checkpoints/paper_planning.md §3 Efficiency dimension (sub-code 3a) framework.
 """
 from __future__ import annotations
 

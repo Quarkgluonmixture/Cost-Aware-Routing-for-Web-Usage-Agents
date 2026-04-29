@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""[Layer 1a + 1b] Macro Behavior — axis-by-axis cascade ablation.
+"""[Macro 1a + 1b] Macro dimension — axis-by-axis cascade ablation.
 
 Outputs:
 - docs/analysis/cross_sites/axis_effect_size.json  (machine-readable)
@@ -8,7 +8,7 @@ Outputs:
 Tier 1 hook (1a): DOM↔P-SoM compound + DOM↔SoM endpoint (sanity)
 Tier 2a cascade (1b): DOM→P-text→P-SoM→SoM 3-axis decomposition
 
-See docs/checkpoints/paper_planning.md §3 Layer 1 framework.
+See docs/checkpoints/paper_planning.md §3 Macro dimension framework.
 
 3-axis cascade effect size ablation on per-task macro behavior.
 

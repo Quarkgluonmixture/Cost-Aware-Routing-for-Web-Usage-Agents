@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""[Layer 3a-3c] Efficiency — cross-site cost, latency, and SR aggregation.
+"""[Efficiency 3a-3c] Efficiency dimension — cross-site cost, latency, and SR aggregation.
 
 Outputs:
 - results/phantom_paper/cross_site/cross_site_aggregation.csv
 - results/phantom_paper/cross_site/cross_site_summary.json
 - results/phantom_paper/cross_site/cross_site_{cost,sr}_comparison.png
 
-Layer 3a token/cost, 3b image embedding support, and 3c latency inputs.
+Efficiency 3a token/cost, 3b image embedding support, and 3c latency inputs.
 
-See docs/checkpoints/paper_planning.md §3 Layer 3 framework.
+See docs/checkpoints/paper_planning.md §3 Efficiency dimension framework.
 
 Cross-site aggregation for Phase 1 experiments.
 

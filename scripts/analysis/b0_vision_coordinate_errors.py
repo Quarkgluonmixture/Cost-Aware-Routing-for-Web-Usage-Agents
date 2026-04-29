@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Per-run diagnostic; not part of the 4-layer evidence framework.
+"""Per-run diagnostic; not part of the 4-dimension evidence framework.
 
 B0 Vision 坐标错误定量统计 — 含 DOM/SoM 对比.
 """

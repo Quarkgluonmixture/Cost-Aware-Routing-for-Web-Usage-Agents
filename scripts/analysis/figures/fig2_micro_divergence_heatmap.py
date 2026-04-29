@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""[Layer 2 visualization] Micro behavior decision divergence heatmap.
+"""[Micro visualization] Micro dimension decision divergence heatmap.
 
 Output:
 - results/phantom_paper/figures/fig2_micro_divergence_heatmap.png
@@ -134,7 +134,7 @@ def render_baseline(data: dict[str, Any], baseline: str, out_path: Path) -> None
     fig.colorbar(im3, ax=axes[1, 1], fraction=0.045, pad=0.02)
 
     fig.suptitle(
-        f"Layer 2 Micro Behavior ({baseline}) — per-task URL-path overlap (lower = more decision divergence)",
+        f"Micro dimension ({baseline}) — per-task URL-path overlap (lower = more decision divergence)",
         fontsize=14,
         fontweight="bold",
     )

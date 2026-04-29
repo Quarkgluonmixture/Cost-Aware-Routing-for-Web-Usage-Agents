@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""[Layer 0d] Outcome — task-pool Jaccard heatmap (5-mode).
+"""[Outcome 0d] Outcome — task-pool Jaccard heatmap (5-mode).
 
 Output:
 - results/phantom_paper/figures/fig0d_taskpool_jaccard.png

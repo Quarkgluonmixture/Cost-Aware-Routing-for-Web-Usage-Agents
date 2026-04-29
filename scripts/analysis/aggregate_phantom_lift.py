@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""[Layer 0c + 0d] Outcome — routing oracle lift and task-pool Jaccard.
+"""[Outcome 0c + 0d] Outcome dimension — routing oracle lift and task-pool Jaccard.
 
 Outputs:
 - results/phantom_paper/phantom_lift.csv
 - results/phantom_paper/phantom_lift.md
 
-Layer 0c: 3-mode to 4/5-mode oracle lift and significance tests.
-Layer 0d: P-text↔P-SoM task-pool Jaccard Scenario C sentinel.
+Outcome 0c: 3-mode to 4/5-mode oracle lift and significance tests.
+Outcome 0d: P-text↔P-SoM task-pool Jaccard Scenario C sentinel.
 
-See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
+See docs/checkpoints/paper_planning.md §3 Outcome dimension framework.
 
 Aggregate phantom routing lift across (baseline, site) cells.
 

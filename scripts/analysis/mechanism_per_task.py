@@ -5,7 +5,7 @@ Outputs:
 - docs/analysis/cross_sites/mechanism_per_task.json
 - docs/analysis/cross_sites/mechanism_per_task_report.md
 
-This script extends the 4-layer evidence stack with four quick-win mechanism
+This script extends the 4-dimension evidence stack with four quick-win mechanism
 metrics:
 - E1 click-target divergence using URL-changing click transitions.
 - E2 trajectory boundary divergence on symmetric-difference success tasks.
@@ -941,11 +941,11 @@ def write_report(out: dict[str, Any]) -> None:
         )
     lines += [
         "",
-        "Layer 0b FP cross-reference: B0 FP rates are attached for cells present in `sr_fp_per_mode.json`. Because B0 ECE is absent from the existing analyzer outputs, low-ECE versus low-FP claims should be made only for B1 calibration cells or deferred until B0 calibration tables are generated.",
+        "Outcome 0b FP cross-reference: B0 FP rates are attached for cells present in `sr_fp_per_mode.json`. Because B0 ECE is absent from the existing analyzer outputs, low-ECE versus low-FP claims should be made only for B1 calibration cells or deferred until B0 calibration tables are generated.",
         "",
         "## E4 Action vocabulary distribution",
         "",
-        "E4 expands Layer 1 macro behavior from a few hand-picked action metrics to the full normalized action vocabulary. Fractions below are pooled over all steps in each B0 site/mode cell.",
+        "E4 expands the Macro dimension from a few hand-picked action metrics to the full normalized action vocabulary. Fractions below are pooled over all steps in each B0 site/mode cell.",
         "",
         "| cell | click | type | scroll | select | wait | back | forward | finish | tab_focus | other |",
         "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",

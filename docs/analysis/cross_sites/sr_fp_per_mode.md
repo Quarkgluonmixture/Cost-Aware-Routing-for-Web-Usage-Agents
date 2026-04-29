@@ -1,6 +1,6 @@
 # SR + FP per Mode
 
-Standalone Layer 0a/0b aggregation from paper-grade per-task `summary_v2.json` files (B0 + B1).
+Standalone Outcome 0a/0b aggregation from paper-grade per-task `summary_v2.json` files (B0 + B1).
 
 ## Main Table
 
@@ -8,7 +8,7 @@ Standalone Layer 0a/0b aggregation from paper-grade per-task `summary_v2.json` f
 |---|---|---|---:|---:|---:|---:|---:|---|
 | B0 | reddit | DOM | 210 | 11.43% | 9.52% | 4 | 1.90% | na_fp=4 |
 | B0 | reddit | P-text | 210 | 13.81% | 12.38% | 3 | 1.43% | na_fp=3 |
-| B0 | reddit | Phantom-prompt | 142 | 10.56% | 9.15% | 2 | 1.41% | na_fp=2 |
+| B0 | reddit | Phantom-prompt | 156 | 10.26% | 8.97% | 2 | 1.28% | na_fp=2 |
 | B0 | reddit | Phantom-SoM | 210 | 14.29% | 13.81% | 1 | 0.48% | na_fp=1 |
 | B0 | reddit | SoM | 210 | 11.90% | 10.48% | 3 | 1.43% | na_fp=3 |
 | B0 | reddit | Vision | 210 | 8.57% | 6.67% | 4 | 1.90% | na_fp=4 |
@@ -27,7 +27,7 @@ Standalone Layer 0a/0b aggregation from paper-grade per-task `summary_v2.json` f
 
 ## FP rate ranking per (baseline, site)
 
-- B0 reddit: Phantom-SoM 0.48% < Phantom-prompt 1.41% < P-text 1.43% < SoM 1.43% < DOM 1.90% < Vision 1.90%
+- B0 reddit: Phantom-SoM 0.48% < Phantom-prompt 1.28% < P-text 1.43% < SoM 1.43% < DOM 1.90% < Vision 1.90%
 - B0 classifieds: DOM 0.85% < Phantom-SoM 1.28% < SoM 1.71% < P-text 2.14% < Vision 2.14%
 - B1 reddit: DOM 2.38% < SoM 2.38% < Vision 2.38%
 - B1 classifieds: DOM 2.56% < Phantom-SoM 2.56% < SoM 3.85% < Vision 3.85%

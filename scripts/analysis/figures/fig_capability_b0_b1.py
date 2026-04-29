@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Per-run/generalization diagnostic; not part of the 4-layer B0 evidence framework.
+"""Per-run/generalization diagnostic; not part of the 4-dimension B0 evidence framework.
 
 B0-vs-B1 capability contrast from disagreement cluster analysis.
 """

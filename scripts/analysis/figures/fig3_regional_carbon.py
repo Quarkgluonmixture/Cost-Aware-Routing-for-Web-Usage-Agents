@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""[Layer 3 supporting] Efficiency — regional carbon sensitivity.
+"""[Efficiency supporting] Efficiency dimension — regional carbon sensitivity.
 
 Output:
 - results/phantom_paper/figures/fig3_regional_carbon.png

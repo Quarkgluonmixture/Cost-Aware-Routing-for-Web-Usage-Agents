@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""[Layer 0e] Outcome — per-category adjusted SR heatmap.
+"""[Outcome 0e] Outcome dimension — per-category adjusted SR heatmap.
 
 Output:
 - results/phantom_paper/figures/fig0e_category_mode_heatmap.png
 
-Layer 0e: category × observation-mode success-rate evidence.
+Outcome 0e: category × observation-mode success-rate evidence.
 
-See docs/checkpoints/paper_planning.md §3 Layer 0 framework.
+See docs/checkpoints/paper_planning.md §3 Outcome dimension framework.
 """
 
 from __future__ import annotations

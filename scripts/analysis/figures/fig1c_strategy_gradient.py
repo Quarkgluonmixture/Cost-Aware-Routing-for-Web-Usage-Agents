@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""[Layer 1c] Macro Behavior — strategy-gradient visualization.
+"""[Macro 1c] Macro dimension — strategy-gradient visualization.
 
 Output:
 - results/phantom_paper/figures/fig1c_strategy_gradient.png
 
-Layer 1c: search-loop, type, scroll, and self-correction strategy gradient.
+Macro 1c: search-loop, type, scroll, and self-correction strategy gradient.
 
-See docs/checkpoints/paper_planning.md §3 Layer 1 framework.
+See docs/checkpoints/paper_planning.md §3 Macro dimension framework.
 
 Strategy-gradient bars for reddit and classifieds observation variants.
 

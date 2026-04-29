@@ -2,12 +2,12 @@
 
 Generated: 2026-04-29T17:37:59+01:00
 
-Method: synthesis of site digests, `paper_planning.md` §2 substrate framing, Layer 0-3 aggregate files, shopping audit files, the swatch form-state audit, and the disagreement-cluster diagnostic.
+Method: synthesis of site digests, `paper_planning.md` §2 substrate framing, 4-dimension (Outcome/Macro/Micro/Efficiency) aggregate files, shopping audit files, the swatch form-state audit, and the disagreement-cluster diagnostic.
 
 Important caveats:
 
-- Fresh Layer 0 SR and FP numbers come from `docs/analysis/cross_sites/sr_fp_per_mode.json`.
-- Older per-mode digests are used for qualitative mechanisms and case studies; their older SR lines are not treated as authoritative when they differ from fresh Layer 0.
+- Fresh Outcome SR and FP numbers come from `docs/analysis/cross_sites/sr_fp_per_mode.json`.
+- Older per-mode digests are used for qualitative mechanisms and case studies; their older SR lines are not treated as authoritative when they differ from fresh Outcome data.
 - Shopping is sparse: only `vwa_shopping/B0_findings.md` and `B0_DOM_digest.md` exist.
 - `docs/analysis/phantom_paper/disagreement_clusters.md` is cited only as a 2026-04-27 stale snapshot / baseline-only diagnostic caveat, per queue instructions.
 
@@ -25,7 +25,7 @@ Important caveats:
 | Intrinsic search | False. Search-loop is usually a failure basin, not the intended substrate |
 | URL routing | Path-based `/f/<forum>/<post>/<comment>` |
 
-Layer 0 fresh outcome:
+Outcome fresh data:
 
 | Mode | Adjusted SR | FP rate |
 |---|---:|---:|
@@ -45,21 +45,21 @@ Mechanism:
 
 AXTree hierarchy exposes a deep forum/post/comment tree and makes the search box an attractive shortcut. `[SOM_MARKS]` flattens the action surface, exposes direct forum/post affordances, and changes which candidate links are attended to.
 
-Layer 0 evidence:
+Outcome evidence:
 
 - +P-text adds +3.81pp oracle lift over the 3-mode baseline.
 - P-text adds 8 tasks; P-text-only tasks = 4.
 - B0 adjusted SR moves from DOM 9.52% to P-text 12.38%.
 
-Layer 1 evidence:
+Macro evidence:
 
 - Text-axis n_steps effect: -1.25 steps.
 - Text-axis type_frac effect: -2.34pp.
 - Text-axis action_repeat_frac effect: +4.64pp.
-- Search-loop text-axis effect is only -2.38pp and not meaningful in Layer 1; the stronger search-loop change appears in the compound/prompt path.
+- Search-loop text-axis effect is only -2.38pp and not meaningful in Macro; the stronger search-loop change appears in the compound/prompt path.
 - Whole-run search-loop gradient: DOM 51.90% -> P-SoM 35.71% -> SoM 31.43%.
 
-Layer 2 evidence:
+Micro evidence:
 
 | Metric | Value |
 |---|---:|
@@ -69,7 +69,7 @@ Layer 2 evidence:
 | Max keyword repeat diff | -0.633 |
 | First-action divergence | 20.95% |
 
-Layer 3 evidence:
+Efficiency evidence:
 
 - DOM costs $0.0516/ep.
 - P-text costs $0.0459/ep.
@@ -100,13 +100,13 @@ Mechanism:
 
 The SoM prompt acts as a task-conditional decision prior. Holding flat text constant, it changes search phrasing, first actions, use of `tab_focus`, backtracking, and commitment. It reduces typing and shifts the agent out of repeated search.
 
-Layer 0 evidence:
+Outcome evidence:
 
 - +P-SoM adds +3.33pp oracle lift.
 - P-SoM adds 7 tasks; P-SoM-only tasks = 3.
 - P-text vs P-SoM task-pool Jaccard = 0.571, below the 0.7 redundancy sentinel.
 
-Layer 1 evidence:
+Macro evidence:
 
 - Prompt axis dominates search_loop: -13.81pp, Cohen's h = -0.280.
 - Prompt axis dominates type_frac: -6.58pp, d = -0.356.
@@ -114,7 +114,7 @@ Layer 1 evidence:
 - Prompt axis changes n_steps: -1.55.
 - Action-vocabulary top shifts: `tab_focus` +0.0828, `type` -0.0658, `scroll` -0.0379.
 
-Layer 2 evidence:
+Micro evidence:
 
 | Metric | Value |
 |---|---:|
@@ -126,7 +126,7 @@ Layer 2 evidence:
 | Median first divergent step | 0 |
 | Early divergence | 100% |
 
-Layer 3 evidence:
+Efficiency evidence:
 
 - P-text costs $0.0459/ep.
 - P-SoM costs $0.0381/ep.
@@ -154,14 +154,14 @@ Mechanism:
 
 Images help when the task is genuinely image-post matching or visual readout, but the screenshot/mark channel also introduces early visual confidence, mark occlusion, coordinate errors, and text-over-vision fallback. Since images are content rather than navigation affordances on reddit, the net effect is mixed.
 
-Layer 0 evidence:
+Outcome evidence:
 
 - P-SoM adjusted SR = 13.81%.
 - SoM adjusted SR = 10.48%.
 - Vision adjusted SR = 6.67%.
 - Vision still contributes 11/34 adjusted oracle selections in the B0 three-mode digest.
 
-Layer 1 evidence:
+Macro evidence:
 
 - Image axis improves finish_rate by +10.95pp.
 - Image axis search_loop effect is -4.29pp, with CI crossing zero.
@@ -169,7 +169,7 @@ Layer 1 evidence:
 - Image axis type_frac effect is -2.50pp.
 - `reddit_task_6` probe: OCR drops from roughly 75-78% without marks to 15-18% with SoM labels.
 
-Layer 2 evidence:
+Micro evidence:
 
 | Metric | Value |
 |---|---:|
@@ -181,7 +181,7 @@ Layer 2 evidence:
 | Median first divergent step | 0 |
 | Early divergence | 95.24% |
 
-Layer 3 evidence:
+Efficiency evidence:
 
 - P-SoM costs $0.0381/ep.
 - SoM costs $0.0409/ep.
@@ -210,7 +210,7 @@ The reddit image axis should be written as bidirectional. It is not irrelevant: 
 | DOM vs P-SoM URL-path Jaccard | 0.481306 |
 | DOM vs P-SoM click-target Jaccard | 0.420556 |
 | DOM vs P-SoM target-hit diff | -0.69pp |
-| P-SoM distinct from both endpoints | 2/8 Layer 1 cells |
+| P-SoM distinct from both endpoints | 2/8 Macro cells |
 
 Compound claim:
 
@@ -250,7 +250,7 @@ Reddit's forum hierarchy makes representation and prompt the leading mechanisms.
 | Intrinsic search | True |
 | URL routing | Query-heavy OSClass routes, often `/index.php?page=item&id=N` |
 
-Layer 0 fresh outcome:
+Outcome fresh data:
 
 | Mode | Adjusted SR | FP rate |
 |---|---:|---:|
@@ -270,20 +270,20 @@ Mechanism:
 
 AXTree vs `[SOM_MARKS]` changes event-level grounding and click targets, but OSClass path structure compresses many semantic differences into similar URL paths. The text axis is therefore weaker at path-level macro metrics than on reddit, while still visible in click-target divergence and oracle lift.
 
-Layer 0 evidence:
+Outcome evidence:
 
 - +P-text adds +3.42pp oracle lift.
 - P-text adds 8 tasks; P-text-only tasks = 5.
 - B0 adjusted SR: DOM 14.10%, P-text 14.53%.
 
-Layer 1 evidence:
+Macro evidence:
 
 - Text-axis finish_rate effect: +2.14pp.
 - Text-axis search_loop effect: -3.85pp, not meaningful.
 - Text axis is not the dominant classifieds macro axis.
 - B0 DOM paginates in 33+ tasks and uses `sPriceMin`/`sPriceMax` in 21+ tasks.
 
-Layer 2 evidence:
+Micro evidence:
 
 | Metric | Value |
 |---|---:|
@@ -293,7 +293,7 @@ Layer 2 evidence:
 | Max keyword repeat diff | +0.077 |
 | First-action divergence | 13.68% |
 
-Layer 3 evidence:
+Efficiency evidence:
 
 - DOM costs $0.0427/ep.
 - P-text costs $0.0397/ep.
@@ -319,22 +319,22 @@ Dominance: SECONDARY_TASK_CONDITIONAL.
 
 Mechanism:
 
-Prompt changes commitment and action vocabulary more than headline SR. P-text and P-SoM have equal adjusted SR in fresh Layer 0, but their task-pool Jaccard is only 0.447. This is the cleanest classifieds example of aggregate SR hiding routing complementarity.
+Prompt changes commitment and action vocabulary more than headline SR. P-text and P-SoM have equal adjusted SR in fresh Outcome data, but their task-pool Jaccard is only 0.447. This is the cleanest classifieds example of aggregate SR hiding routing complementarity.
 
-Layer 0 evidence:
+Outcome evidence:
 
 - +P-SoM adds +2.56pp oracle lift.
 - P-SoM adds 6 tasks; P-SoM-only tasks = 3.
 - P-text vs P-SoM task-pool Jaccard = 0.447.
 
-Layer 1 evidence:
+Macro evidence:
 
 - Prompt axis dominates type_frac: -3.73pp.
 - Prompt axis dominates selfcorr_count: +0.342.
 - Prompt axis dominates click_frac: +2.14pp.
 - Action shifts: `type` -0.0373, `click` +0.0214, `back` +0.0209, `scroll` +0.0182.
 
-Layer 2 evidence:
+Micro evidence:
 
 | Metric | Value |
 |---|---:|
@@ -346,7 +346,7 @@ Layer 2 evidence:
 | Median first divergent step | 1 |
 | Early divergence | 92.31% |
 
-Layer 3 evidence:
+Efficiency evidence:
 
 - P-text costs $0.0397/ep.
 - P-SoM costs $0.0441/ep.
@@ -374,7 +374,7 @@ Mechanism:
 
 Classifieds item identity is visual. The image axis supplies product identity for color/style/object matching and helps commit to item pages. It also reduces scrolling, repeated action, and search-loop behavior.
 
-Layer 0 evidence:
+Outcome evidence:
 
 - P-SoM adjusted SR = 14.53%.
 - SoM adjusted SR = 21.37%.
@@ -382,7 +382,7 @@ Layer 0 evidence:
 - 3->5-mode oracle lift = +4.70pp.
 - B0 digest: SoM has 21 SoM-only adjusted successes.
 
-Layer 1 evidence:
+Macro evidence:
 
 - Image axis search_loop effect: -11.97pp.
 - Image axis scroll_frac effect: -9.55pp.
@@ -391,7 +391,7 @@ Layer 1 evidence:
 - Image axis action_repeat_frac effect: -17.08pp.
 - Page-screen-required subset: SoM-DOM +13.5pp in B0 and +10.4pp in B1.
 
-Layer 2 evidence:
+Micro evidence:
 
 | Metric | Value |
 |---|---:|
@@ -403,7 +403,7 @@ Layer 2 evidence:
 | Median first divergent step | 1 |
 | Early divergence | 94.87% |
 
-Layer 3 evidence:
+Efficiency evidence:
 
 - P-SoM costs $0.0441/ep.
 - SoM costs $0.0415/ep.
@@ -432,7 +432,7 @@ Classifieds is the strongest image-axis site. Full SoM wins because the site ask
 | DOM vs P-SoM URL-path Jaccard | 0.884577 |
 | DOM vs P-SoM click-target Jaccard | 0.530912 |
 | DOM vs P-SoM target-hit diff | +1.74pp |
-| P-SoM distinct from both endpoints | 2/8 Layer 1 cells |
+| P-SoM distinct from both endpoints | 2/8 Macro cells |
 
 Compound claim:
 
@@ -487,28 +487,28 @@ Mechanism:
 
 Text and element structure matter for form actions, dropdowns, radios, quantity fields, profile edits, cart actions, and category menus. DOM element IDs are useful for ordinary fields but fail when the AXTree lacks independent submenu IDs or when state-change bookkeeping collapses same-name radio options.
 
-Layer 0 evidence:
+Outcome evidence:
 
 - B0 DOM raw SR = 11.80% (55/466).
 - Condition-metrics adjusted SR = 6.44%.
 - Reason-diagnostics adjusted SR = 6.24%.
 - No P-text/P-SoM/SoM/Vision cells are available.
 
-Layer 1 evidence:
+Macro evidence:
 
 - Shopping macro axis effects are missing.
 - DOM click failure rate is 24.7%.
 - `action_failed` trigger count is 664.
 - `form_value_changed` occurs 2309 times in the run.
 
-Layer 2 evidence:
+Micro evidence:
 
 - URL Jaccard: missing.
 - Click-target Jaccard: missing.
 - Swatch form-state bug: 11/466 B0 DOM episodes match the same-name custom-option radio swatch-loop signature.
 - 9/11 affected swatch episodes terminated before finish.
 
-Layer 3 evidence:
+Efficiency evidence:
 
 - B0 DOM costs $0.0424/ep.
 - B0 DOM uses 10.20 steps on average.
@@ -538,7 +538,7 @@ Mechanism:
 
 Prompt effects are expected to split retrieval, aggregation, and form-action behaviors, but the current shopping evidence is taxonomy evidence rather than measured prompt-axis evidence.
 
-Layer 0 evidence:
+Outcome evidence:
 
 - A-class shopping audit contains 83 tasks.
 - A2 latent visual: 34 tasks.
@@ -546,20 +546,20 @@ Layer 0 evidence:
 - A1 pure text: 14 tasks.
 - A4 form action: 3 tasks.
 
-Layer 1 evidence:
+Macro evidence:
 
 - Shopping prompt macro effects are missing.
 - Single-mode DOM routing signals are usable but modest:
 - `action_diversity` AUROC = 0.6856.
 - `ep_mean_verbalized` AUROC = 0.6808.
 
-Layer 2 evidence:
+Micro evidence:
 
 - URL/click/trajectory prompt metrics are missing.
 - A3 aggregation tasks require sorted/scanned candidate pools.
 - A4 form tasks require deterministic form edits.
 
-Layer 3 evidence:
+Efficiency evidence:
 
 - No prompt-axis cost cell exists.
 
@@ -586,25 +586,25 @@ Mechanism:
 
 Shopping product choice often depends on color, shape, pattern, packaging, and grid position. DOM can use product names and sparse alt text only; many task-critical attributes are absent from the AXTree. Therefore the image axis is expected to be decisive once SoM/Vision data exist.
 
-Layer 0 evidence:
+Outcome evidence:
 
 - 269/466 tasks, or 57.7%, involve visual attributes.
 - DOM has 12 visual lucky hits.
 - No SoM/Vision shopping SR exists in current aggregates.
 
-Layer 1 evidence:
+Macro evidence:
 
 - Shopping image macro effects are missing.
 - DOM bottleneck: 73/213 DOM failures, 34.3%, are directly attributed to missing visual information.
 - Target-unreachable failures: 43; 40/43 are visual-missing.
 
-Layer 2 evidence:
+Micro evidence:
 
 - URL/click image metrics are missing.
 - A2 latent visual is the largest audited class: 34/83.
 - A3 aggregation frequently includes secondary visual filters such as color or pattern.
 
-Layer 3 evidence:
+Efficiency evidence:
 
 - No image-axis cost cell exists.
 
@@ -702,7 +702,7 @@ Reddit is a forum-hierarchy site where image is content rather than navigation. 
 
 ### Classifieds Anchor
 
-Classifieds is the visual-substrate site. Product identity often lives in the image, so full SoM recovers finish behavior and dominates Layer 1 image metrics, including +26.50pp finish rate. But P-text and P-SoM have equal fresh adjusted SR and only 0.447 task-pool Jaccard, so aggregate SR would miss the routing arm. Section 5 should use classifieds to argue both that image can be the dominant axis and that routing complementarity is not reducible to single-mode SR.
+Classifieds is the visual-substrate site. Product identity often lives in the image, so full SoM recovers finish behavior and dominates Macro image metrics, including +26.50pp finish rate. But P-text and P-SoM have equal fresh adjusted SR and only 0.447 task-pool Jaccard, so aggregate SR would miss the routing arm. Section 5 should use classifieds to argue both that image can be the dominant axis and that routing complementarity is not reducible to single-mode SR.
 
 ### Shopping Anchor
 
@@ -728,7 +728,7 @@ Where measured, P-SoM is task-pool complementary rather than redundant. P-text v
 |---|---|
 | 3 sites present | yes |
 | 3 axes per site | yes |
-| Mechanism fields per axis | dominance, mechanism, Layer 0-3 evidence, case studies, quote |
+| Mechanism fields per axis | dominance, mechanism, Outcome/Macro/Micro/Efficiency evidence, case studies, quote |
 | At least 6 case IDs | yes: reddit 4/23/30/72/7/15/81, classifieds 14/49/63/115/201, shopping 0/6/11/18/19/25/54 |
 | Shopping sparse caveat | explicit |
 | Disagreement caveat | explicit wherever used |

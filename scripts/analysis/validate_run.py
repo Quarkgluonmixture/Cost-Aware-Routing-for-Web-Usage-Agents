@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Per-run diagnostic; not part of the 4-layer evidence framework.
+"""Per-run diagnostic; not part of the 4-dimension evidence framework.
 
 Validate a P79 experiment run directory for data integrity and completeness.
 

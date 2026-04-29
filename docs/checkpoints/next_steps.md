@@ -27,7 +27,7 @@
 
 **Critical path A B0 部分**: ✅ DONE 2026-04-28 (cls + red 5-mode FRESH paper-grade clean)
 
-**🆕 4-Layer Evidence Framework 落地 (2026-04-29 §106)**: paper_planning §3 重组 + 13 figures rename layer-prefix + Makefile `analyze-layered` 一键 pipeline + `layered_evidence_status.md` live status report. 详见 实验笔记 §106.
+**🆕 4-dimension Evidence Framework 落地 (2026-04-29 §106)**: paper_planning §3 重组（4 orthogonal dimensions: Outcome / Macro / Micro / Efficiency）+ 13 figures rename dimension-prefix + Makefile `analyze-layered` 一键 pipeline (CLI alias 保留) + `layered_evidence_status.md` live status report (filename retained). 详见 实验笔记 §106.
 
 **🆕 Cost methodology fix (~100× deployment-class gap)**: §103 legacy "30×" claim **已 superseded**。real ratio 用 electricity-equivalent ($0.12/kWh) 算: B0 API ~$0.04/ep vs B1 local ~$0.0004/ep → **reddit 98× / cls 105×**。`cost_per_mode.md` standalone aggregator + fig3d log-scale Pareto with annotation.
 
@@ -48,12 +48,12 @@
 
 **Next 3 actions**:
 1. **B0 P-prompt cls** — 等 B1 P-prompt cls 完事再启（同 site B0 XOR B1 hard rule, ~36h chain ETA）
-2. **Codex Section 4 prose update** (~30K codex job): 用 4-Layer framework + ~100× cost + N=210 全数据替换 §103 N=48 + 30× narrative
+2. **Codex Section 4 prose update** (~30K codex job): 用 4-dimension framework + ~100× cost + N=210 全数据替换 §103 N=48 + 30× narrative
 3. **Codex Section 5 mechanism prose** (~50K): 等 P-prompt reddit 跑完 + diamond ablation 数据 ready 后做
 
 **⏸️ Shopping pipeline on hold 04-29 22:30** — B0 DOM shopping run 已自然完成 (N=465/466, task 345 wikipedia.zim 404)，但 **paper-grade 状态 pending 用户手动 gallery 排错**：每个 task 逐一审视 success/fail trajectory，定位剩余 site bug（swatch §105 已修，FPC §104 已修，kiwix 404 单点已知，可能还有 review/cart/checkout 边界 bug 未被运行 detect）。在 B0 DOM gallery triage 收尾前 **不启动** B0 shopping 其余 4 mode (SoM/Vision/P-text/P-SoM) + B1 shopping 全套 + shopping P-prompt——避免在 site-bug 未稳定的状态下花钱跑数据。debug 完后再决定是否 re-run B0 DOM 影响的 task subset 还是当作 known-noise 收尾。
 
-**Paper progress**: Section 1/2/3 ✅ done (3163 words), Section 4 figures ✅ FRESH (12 layer-prefixed PNGs) + bootstrap CI ✅ + prose **stale 1725w** 待 codex #11 update, Section 5 evidence **95%** (4-Layer framework + 3-axis cascade diamond + 6 antagonistic pairs + cross-site micro), Section 6 AUROC ≥ baseline ✅, Section 7/8 待 cross-site/cross-model data + multi-metric Pareto.
+**Paper progress**: Section 1/2/3 ✅ done (3163 words), Section 4 figures ✅ FRESH (12 dimension-prefixed PNGs) + bootstrap CI ✅ + prose **stale 1725w** 待 codex #11 update, Section 5 evidence **95%** (4-dimension framework + 3-axis cascade diamond + 6 antagonistic pairs + cross-site micro), Section 6 AUROC ≥ baseline ✅, Section 7/8 待 cross-site/cross-model data + multi-metric Pareto.
 
 ---
 
@@ -268,14 +268,14 @@ nohup bash scripts/queues/queue_chain.sh \
 - ✅ codex axis_effect_size_ablation_v2 (cascade decomposition + consistency check, 72K tok)
 - ✅ codex axis1_microbehavior cross-site (verdict generalizes red 2.28 / cls 1.02, 80K tok)
 - ✅ codex shopping A-refine (A1/A2/A3/A4 sub-classification, 50K tok)
-- ✅ codex layered refactor (Layer{0,1,2,3} make targets + README + status report, 202K tok)
+- ✅ codex layered refactor (4-dimension make targets + README + status report, 202K tok)
 - ✅ codex fix figures (fig4 cascade diamond + fig7 P-SoM + fig1 5-mode + fig12 + sr_fp aggregator, 145K tok)
-- ✅ codex rename figures (12 figs → layer-prefixed + fig3d cost source fix log-scale 100×, 371K tok)
+- ✅ codex rename figures (12 figs → dimension-prefixed sub-codes + fig3d cost source fix log-scale 100×, 371K tok)
 
 | # | Task | Tokens | Blocker | Status |
 |---|---|---|---|---|
 | **10** | **Axis 2/3 literature deep research + paper.bib expansion** (16→~38, 含 bidirectional modality + Tong 2024 Eyes Wide Shut) ⭐⭐⭐ | ~400-600K | — | 🟢 prompt ready, 发 ~Wed |
-| **11** | **Section 4 fresh-data prose update** (4-Layer framework + ~100× cost framing + N=210 全数据) ⭐ priority next | ~30K | — (现可发) | 🟢 ready, 等用户 trigger |
+| **11** | **Section 4 fresh-data prose update** (4-dimension framework + ~100× cost framing + N=210 全数据) ⭐ priority next | ~30K | — (现可发) | 🟢 ready, 等用户 trigger |
 | **13** | **Section 5 prose 写** (organize as **site × axis × LLM-mechanism 3-way table**, per `paper_planning §2.x site mechanical substrate`); primary input: 9 site digests `docs/analysis/vwa_*/B*_{DOM,SoM,Vision}_digest.md` + `mechanism_per_task.{json,md}` (E1-E4) + `axis_effect_size_report.md` + `disagreement_clusters.md` (04-27 stale, refresh via #14c when phantom data ready) + `axis1_microbehavior_report.md` + cls task-pool 0.53 paradox + 6 antagonistic pairs | ~50-80K | 待 P-prompt reddit done (~6h) + #11 一起发 | 🟡 ~Thu |
 | 14 | Codex audit shopping VWA (466) — full 5-mode | ~500K | 待 shopping 5-mode 数据 | ⏳ ~Week 2-3 |
 | 14b | Codex audit reddit cat refine (类 shopping A-refine 04-29) | ~50K | red 5-mode FRESH already | 🟢 ready |
@@ -324,7 +324,7 @@ paper_strategic 数据 pipeline (详 `paper_planning.md` §13.B)。一键 `make 
 
 **Resolved (recent)**:
 - ✅ **§107 (04-29 18:15) queue_chain.sh same-site collision fix** → B1 phantom auto-advance reddit 撞 B0 P-prompt reddit (30min cross-contam, cleaned). Patch added pre-launch collision check waits for opposite baseline to finish before proceeding.
-- ✅ **§106 (04-29) 4-Layer Evidence Framework + cost methodology fix + figure rename** → paper_planning §3 重组，13 figures rename layer-prefix，cost ~100× via electricity equivalent (legacy 30× superseded), `make analyze-layered` pipeline, `layered_evidence_status.md` live status. 详见 实验笔记 §106.
+- ✅ **§106 (04-29) 4-dimension Evidence Framework + cost methodology fix + figure rename** → paper_planning §3 重组（Outcome / Macro / Micro / Efficiency 4 orthogonal dimensions），13 figures rename dimension-prefix sub-codes，cost ~100× via electricity equivalent (legacy 30× superseded), `make analyze-layered` pipeline (CLI alias 保留), `layered_evidence_status.md` live status (filename retained). 详见 实验笔记 §106.
 - ✅ **§105 (04-29) Magento custom-option radio swatch 漏检** → `state_change.py:_key` 加 value discriminator；同 bug 影响 review form ratings；B0 dom shopping 11/465 ep 受影响（全 fail，9/11 cycle 早停）；DOM/SoM 共享受影响（Vision 不受）；详见 `docs/analysis/cross_sites/swatch_form_change_audit.md`
 - ✅ Magento base_url 三次复发 → PowerShell hook + DGX defensive curl 持久化 (`f9cbebf` + quark side)
 - ✅ Magento FPC homepage cached guest → `cache:disable full_page` (quark side, persistent via PowerShell hook)

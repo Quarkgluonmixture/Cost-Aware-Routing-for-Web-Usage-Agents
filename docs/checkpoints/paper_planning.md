@@ -144,7 +144,7 @@ Each VWA/WA site has distinct **mechanical substrate** that determines which axi
 | Image role | Content (post attachments), NOT navigation affordance |
 | Mechanically dominant axis | **Axis 1 (text payload structure)** |
 | Mechanism | AXTree hierarchical embeds sidebar in deep tree → search-box becomes shortcut → search-loop pathology. [SOM_MARKS] flat list makes sidebar `f/<forum>` directly clickable → DOM digest §2.1 search-loop 29.6% failure → P-text reduces |
-| Image axis sub-effects | Layer 1b axis 3 small (5/5 reddit metrics show image effect d_z<0.16) — image is content not navigation, helping/harming roughly balanced |
+| Image axis sub-effects | Macro 1b axis 3 small (5/5 reddit metrics show image effect d_z<0.16) — image is content not navigation, helping/harming roughly balanced |
 | Site-specific failures | `fail_max_steps_search_repeat` (DOM 13.8%), `fail_no_progress` (22.4%), `fail_finish_eval_mismatch` (23.8%, read-and-report tasks) |
 | Source digest | `docs/analysis/vwa_reddit/B0_DOM_digest.md` etc. |
 
@@ -155,8 +155,8 @@ Each VWA/WA site has distinct **mechanical substrate** that determines which axi
 | Information structure | Product listings + categories + search results |
 | Navigation affordance | Category dropdown (`select_option`) + search box (intrinsic — most cls tasks are search) |
 | Image role | **Product identity** (visual disambiguation critical for color/style) |
-| Mechanically dominant axis | **Axis 3 (image)** — Layer 1b cls image axis dominates 5/8 metrics (h=+0.57 finish rate, d=−0.42 action repeat) |
-| Mechanism | OSClass query routing (`/index.php?page=item&id=N`) means URL-path is uninformative — visual product comparison required for "find blue motorcycle" tasks. Image absence → P-SoM cls collapses toward DOM (Layer 1a 6/8 cells DOM-like). Image axis recovers at SoM. |
+| Mechanically dominant axis | **Axis 3 (image)** — Macro 1b cls image axis dominates 5/8 metrics (h=+0.57 finish rate, d=−0.42 action repeat) |
+| Mechanism | OSClass query routing (`/index.php?page=item&id=N`) means URL-path is uninformative — visual product comparison required for "find blue motorcycle" tasks. Image absence → P-SoM cls collapses toward DOM (Macro 1a 6/8 cells DOM-like). Image axis recovers at SoM. |
 | Axis 1 sub-effects | Smaller; axis 1 (DOM↔P-text) on cls path-only Jaccard 0.904 (path-level same), 0.66 with query (semantic page-id divergence). Reveals macro-vs-micro mismatch: aggregate macro DOM-like but per-task page selection differs |
 | Site-specific failures | Latent visual attribute (e.g. "red blanket" without ref image, A2 64% per `codex_audit_shopping_A_refined.json`), aggregation (least/most/cheapest, A3 35%), category navigation (case study task 12) |
 | Source digest | `docs/analysis/vwa_classifieds/B0_findings.md`, `_DOM_digest.md` etc. |
@@ -194,7 +194,7 @@ Site failure mode   search-loop     latent visual /     aggregation /
                     eval-mismatch   aggregation         form-stall / swatch
 ```
 
-Section 5 prose 用此 3-way table 组织: per-site axis-by-axis mechanism, citing 4-Layer evidence + per-site digests + LLM-level mechanism (axis 1 attention shift / axis 2 task-conditional decision prior / axis 3 bidirectional fusion).
+Section 5 prose 用此 3-way table 组织: per-site axis-by-axis mechanism, citing 4-dimension evidence + per-site digests + LLM-level mechanism (axis 1 attention shift / axis 2 task-conditional decision prior / axis 3 bidirectional fusion).
 
 ### Capability layer (B0 vs B1, lazy minimization §101.九)
 
@@ -252,24 +252,24 @@ Site × axis: cls visual-bound → image helping dominate; red text-dom → harm
 
 ---
 
-## §3 Findings — 4-Layer Evidence + Mechanism Framework (重组 2026-04-29)
+## §3 Findings — 4-dimension Evidence + Mechanism Framework (重组 2026-04-29)
 
-> **重组动因 (§105)**：之前 10 条 finding 是 flat list，paper 写作时不好定位"哪个证据支持哪个 claim"。重组为 **4-layer framework** —— 每个证据进自己的层，每个 paper claim 引用层 (e.g. "Layer 0d Jaccard 0.447 supports routing-arm complementarity")。**所有原 10 条 finding 都映射到对应 layer，未删除**（见末尾索引）。
+> **重组动因 (§105)**：之前 10 条 finding 是 flat list，paper 写作时不好定位"哪个证据支持哪个 claim"。重组为 **4-dimension framework** —— 每个证据进对应 dimension，每个 paper claim 引用 dimension (e.g. "Outcome 0d Jaccard 0.447 supports routing-arm complementarity")。四个 dimensions 是 **正交** 的（不是 hierarchical layers）。**所有原 10 条 finding 都映射到对应 dimension，未删除**（见末尾索引）。
 
-### Layered framework 概览
+### 4-dimension framework 概览
 
 ```
-Layer 0  Outcome           哪些 task 成功 / 哪些 mode 在哪些 task 上 win
-Layer 1  Macro Behavior    agent 平均怎么 act（action-type 频率）
-Layer 2  Micro Behavior    agent per-step 决策（点哪个元素 / 走哪些页 / 搜什么词）
-Layer 3  Efficiency        cost / latency / carbon (4-fold drop-in property)
+Outcome     哪些 task 成功 / 哪些 mode 在哪些 task 上 win
+Macro       agent 平均怎么 act（action-type 频率）
+Micro       agent per-step 决策（点哪个元素 / 走哪些页 / 搜什么词）
+Efficiency  cost / latency / carbon (4-fold drop-in property)
 ```
 
-每 layer 内部 sub-evidence 都标注 source artifact + current 数字（实时 live）。
+每个 dimension 内部 sub-evidence (0a / 1c / 2a / 3d 等 sub-codes) 都标注 source artifact + current 数字（实时 live）。Sub-codes 保留作 figure-internal anchors。
 
 ---
 
-### Layer 0 — Outcome（task 成功 / 路由 arm 证据）
+### Outcome — task 成功 / 路由 arm 证据
 
 | Sub | 内容 | Source artifact | 当前数字（B0, FRESH 04-29） |
 |---|---|---|---|
@@ -283,7 +283,7 @@ Layer 3  Efficiency        cost / latency / carbon (4-fold drop-in property)
 
 ---
 
-### Layer 1 — Macro Behavior（agent 平均怎么 act）
+### Macro — agent 平均怎么 act
 
 | Sub | 内容 | Source | 当前数字 |
 |---|---|---|---|
@@ -293,7 +293,7 @@ Layer 3  Efficiency        cost / latency / carbon (4-fold drop-in property)
 
 ---
 
-### Layer 2 — Micro Behavior（per-step 决策）
+### Micro — per-step 决策
 
 | Sub | 内容 | Source | 当前数字 |
 |---|---|---|---|
@@ -305,7 +305,7 @@ Layer 3  Efficiency        cost / latency / carbon (4-fold drop-in property)
 
 ---
 
-### Layer 3 — Efficiency（4-fold drop-in property）
+### Efficiency — 4-fold drop-in property
 
 | Sub | 内容 | Source | 当前数字 |
 |---|---|---|---|
@@ -316,29 +316,29 @@ Layer 3  Efficiency        cost / latency / carbon (4-fold drop-in property)
 
 ---
 
-### Cross-layer Mechanism Chain（每个 axis 在哪些 layer 上 first-order）
+### Cross-dimension Mechanism Chain（每个 axis 在哪些 dimension 上 first-order）
 
-| Axis | Layer 0 outcome 贡献 | Layer 1 macro signature | Layer 2 micro signature | Layer 3 cost |
+| Axis | Outcome dimension 贡献 | Macro dimension signature | Micro dimension signature | Efficiency dimension cost |
 |---|---|---|---|---|
 | **Axis 1 (text payload)** | **PRIMARY** (red P-text +3.81pp drop-one over 3-mode; cls +3.42pp) | 0/8 dominant (但**红 scroll/selfcorr 是 antagonist canceller**) | red URL Jaccard 0.57 / cls 0.90 (axis 1 alone) — 在 reddit 改 WHERE 强 | 0 (text swap 不改 token 量) |
 | **Axis 2 (prompt)** | secondary (red P-SoM 加在 P-text 上 +3.33pp; cls +2.56pp) | red 3/8 cascade dominant (search/type/scroll); cls 3/8 (type/selfcorr/click) | URL Jaccard 0.55 (axis 2 alone) | 0 (prompt swap 不改 token 量) |
-| **Axis 3 (image)** | secondary (cls SoM 21.37% > P-SoM 14.53%, image 决定性 cls 上) | **cls 5/8 dominant** (finish h=+0.57 medium-effect 最强信号); red 3/8 dominant (efficiency cluster) | image 加上 = URL Jaccard 0.46-0.60 minor change | **+700-1100 image tokens** (Layer 3a 主要 cost source) |
+| **Axis 3 (image)** | secondary (cls SoM 21.37% > P-SoM 14.53%, image 决定性 cls 上) | **cls 5/8 dominant** (finish h=+0.57 medium-effect 最强信号); red 3/8 dominant (efficiency cluster) | image 加上 = URL Jaccard 0.46-0.60 minor change | **+700-1100 image tokens** (Efficiency 3a 主要 cost source) |
 | **Compound Axis 1+2 (P-SoM vs DOM)** | red SR delta +2.86pp aggregate; **cls SR delta 0.85pp 但 task-pool Jaccard 0.53** = routing-arm 证据 | cls macro 60-70% DOM-like 但 task-pool 0.53 disjoint —— aggregate 误导 | **path+query Jaccard cls 0.66 / red 0.48** —— per-step decision quality 真改了 | 0 |
 
 ---
 
-### Evidence chain — paper claims → layer support
+### Evidence chain — paper claims → dimension support
 
-每个 paper claim 直接 cite layer + 数字：
+每个 paper claim 直接 cite dimension + 数字：
 
-| Paper claim | Layer support |
+| Paper claim | Dimension support |
 |---|---|
 | **C1**: P-SoM is independent routing arm | 0a (red SR best), 0c (drop-one 3.33pp red / 2.56pp cls), 0d (Jaccard ≤ 0.6), 0g (AUROC ≥ baseline), 1a (red 4/8 macro independent), 2a (red URL Jaccard 0.48 micro divergence) |
-| **C2**: 4-fold drop-in property (cost / latency / signal / drop-one) | (a) Layer 3a, (b) Layer 3c, (c) Layer 0g, (d) Layer 0c |
-| **C3**: 3-axis hierarchical theory | Layer 1b (cascade decomposition), Layer 2 (axis-by-axis micro), Cross-layer table |
-| **C4**: aggregate macro can mislead about routing potential (cls case) | Layer 1a (cls 6/8 DOM-like macro) + Layer 0d (cls task-pool Jaccard 0.53) + Layer 2a (cls path+query Jaccard 0.66) |
-| **C5**: prompt as task-conditional decision prior (not commit-only) | Layer 0b (FP rate), Layer 0d (Jaccard 0.45-0.55 same-SR-different-pool), Layer 1b (cascade axis 2 dominant on red strategy metrics) |
-| **C6**: image is bidirectional 8-channel modality fusion | Layer 1b (cls image axis 5/8 dominant), Layer 0e (codex audit category × mode), codex `7106d2e` channel decomposition |
+| **C2**: 4-fold drop-in property (cost / latency / signal / drop-one) | (a) Efficiency 3a, (b) Efficiency 3c, (c) Outcome 0g, (d) Outcome 0c |
+| **C3**: 3-axis hierarchical theory | Macro 1b (cascade decomposition), Micro (axis-by-axis micro), Cross-dimension table |
+| **C4**: aggregate macro can mislead about routing potential (cls case) | Macro 1a (cls 6/8 DOM-like macro) + Outcome 0d (cls task-pool Jaccard 0.53) + Micro 2a (cls path+query Jaccard 0.66) |
+| **C5**: prompt as task-conditional decision prior (not commit-only) | Outcome 0b (FP rate), Outcome 0d (Jaccard 0.45-0.55 same-SR-different-pool), Macro 1b (cascade axis 2 dominant on red strategy metrics) |
+| **C6**: image is bidirectional 8-channel modality fusion | Macro 1b (cls image axis 5/8 dominant), Outcome 0e (codex audit category × mode), codex `7106d2e` channel decomposition |
 
 ---
 
@@ -354,17 +354,17 @@ Stage 3 (Mechanism 层):  axis 1 改 text payload 结构 → 改 in-context atte
                           axis 3 加 image → 改 visual disambiguation → 决定 cls 上的 finish rate
 ```
 
-**关键 insight**: Layer 1 macro (action-type 频率) 是 downstream signal，单独看会误导 (cls case)。真正的 mechanism chain 是 Layer 2 micro (decision quality) + Layer 0 outcome (task-pool complementarity) 闭环。
+**关键 insight**: Macro dimension (action-type 频率) 是 downstream signal，单独看会误导 (cls case)。真正的 mechanism chain 是 Micro dimension (decision quality) + Outcome dimension (task-pool complementarity) 闭环。
 
 ---
 
 ### Honest framing (avoid over-claim)
 
 - Phantom-SoM red **adj 13.81% > SoM adj 10.48%** —— 这次有数据，是 site-specific dominance（reddit 上）
-- cls SoM **adj 21.37% 显著领先 P-SoM 14.53% (+6.84pp)** —— 反例必须明示, image 在 cls 是决定性 axis (Layer 1b 5/8 dominant 印证)
+- cls SoM **adj 21.37% 显著领先 P-SoM 14.53% (+6.84pp)** —— 反例必须明示, image 在 cls 是决定性 axis (Macro 1b 5/8 dominant 印证)
 - 主 narrative: **site-modulated representation × prompt × image effects**, 不是 "Phantom #1 universal routing arm"
-- Layer 1 macro 单独 weak on cls (1/8 fully independent) —— paper 必须用 Layer 0 task-pool + Layer 2 micro 一起讲，不能只 cite macro
-- §103 N=48 "5/5 metrics P-text = P-SoM" 已 **superseded** by N=210 (FRESH 04-29 Layer 1c) — 早期 small-sample artifact
+- Macro dimension 单独 weak on cls (1/8 fully independent) —— paper 必须用 Outcome task-pool + Micro 一起讲，不能只 cite macro
+- §103 N=48 "5/5 metrics P-text = P-SoM" 已 **superseded** by N=210 (FRESH 04-29 Macro 1c) — 早期 small-sample artifact
 
 ---
 
@@ -373,7 +373,7 @@ Stage 3 (Mechanism 层):  axis 1 改 text payload 结构 → 改 in-context atte
 Naming traceability (04-29): completed filesystem run dirs now distinguish paper-facing text from SoM phantom arms:
 `B0_phantom_*` completed runs became `B0_phantom_som_*`, and completed `B0_phantom_dom_*` runs became `B0_phantom_text_*`. Internal mode IDs and condition dirs remain unchanged (`phantom_dom` / `phase1_phantom_dom_router_0`, `phantom_som` / `phase1_phantom_som_router_0`) for backward compatibility with recorded JSONL.
 
-| 原 finding | 映射到 layer |
+| 原 finding | 映射到 dimension |
 |---|---|
 | 1 DOM Cat B 系统性失败 | **0e** per-category heatmap |
 | 2 Image 8-channel cross-capability | **1b axis 3 + 0e cls cat × image** |
@@ -387,52 +387,52 @@ Naming traceability (04-29): completed filesystem run dirs now distinguish paper
 | 10 Watchdog 100% pure | (data quality precondition, 不是 finding) |
 
 新增 finding（§105 04-29）：
-| 新 finding | Layer |
+| 新 finding | Dimension |
 |---|---|
 | **N1**: P-prompt 模式必要性（symmetric ablation, AXTree+SoM-prompt+无图） | 设计层 (§2 cube), 数据 pending B0 reddit 跑中 |
-| **N2**: Tier 1 hook macro: red 4/8 cells fully independent / cls 1/8 (cls 主要 DOM-like) | **1a** |
-| **N3**: 6 antagonistic mechanism pairs（4-level cascade vs 2-endpoint 比较的核心 paper value） | **1b** |
-| **N4**: cls compound DOM↔P-SoM micro path+query Jaccard 0.66 | **2a** |
-| **N5**: P-SoM cls aggregate SR ≈ DOM 但 task-pool 0.53 (12 unique successes) | **0d** (reframes "cls Phantom-SoM 失败" 为 "complementary not dominant") |
-| **N6**: red P-SoM FP=0.48% lowest（最 honest commit） | **0b** |
+| **N2**: Tier 1 hook macro: red 4/8 cells fully independent / cls 1/8 (cls 主要 DOM-like) | **Macro 1a** |
+| **N3**: 6 antagonistic mechanism pairs（4-level cascade vs 2-endpoint 比较的核心 paper value） | **Macro 1b** |
+| **N4**: cls compound DOM↔P-SoM micro path+query Jaccard 0.66 | **Micro 2a** |
+| **N5**: P-SoM cls aggregate SR ≈ DOM 但 task-pool 0.53 (12 unique successes) | **Outcome 0d** (reframes "cls Phantom-SoM 失败" 为 "complementary not dominant") |
+| **N6**: red P-SoM FP=0.48% lowest（最 honest commit） | **Outcome 0b** |
 
 ---
 
 ### Evidence vs Explanation: framework 的真实定位（2026-04-29 反思）
 
-4-Layer framework **不是 paper Section 4/5 的 narrative 结构**，是**分析 scaffold + future-data drop-in 索引**。明确两个层次：
+4-dimension framework **不是 paper Section 4/5 的 narrative 结构**，是**分析 scaffold + future-data drop-in 索引**。明确两个层次：
 
-#### 4-Layer = Evidence layer（paper Section 4）
+#### 4-dimension = Evidence dimensions（paper Section 4）
 
 观测 evidence: "在 mode/axis swap 下我们 observe 到什么 shift"
-- Layer 0: 哪些 task 成功（SR / oracle / Jaccard / category / overlap / AUROC）
-- Layer 1: agent 平均怎么 act（action-type 频率 cascade）
-- Layer 2: per-step 决策怎么变（URL / target / keyword）
-- Layer 3: 资源 footprint（cost / latency / carbon）
+- Outcome: 哪些 task 成功（SR / oracle / Jaccard / category / overlap / AUROC）
+- Macro: agent 平均怎么 act（action-type 频率 cascade）
+- Micro: per-step 决策怎么变（URL / target / keyword）
+- Efficiency: 资源 footprint（cost / latency / carbon）
 
-四个**正交 dimensions**（不是 hierarchical layer），从宏观 outcome 到微观 decision。Paper Section 4 是 evidence catalog，每个 sub-finding 引用一层数据 + figure。
+四个 **正交 dimensions**（不是 hierarchical layers），从宏观 outcome 到微观 decision。Paper Section 4 是 evidence catalog，每个 sub-finding 引用一个 dimension 的数据 + figure。
 
 #### LLM mechanism = Explanation layer（paper Section 5）
 
-解释 evidence: "为什么 axis swap 产生这个 shift"——必须 **跨 layer** 同时 **site × axis × LLM-mechanism** 三阶交互：
+解释 evidence: "为什么 axis swap 产生这个 shift"——必须 **跨 dimension** 同时 **site × axis × LLM-mechanism** 三阶交互：
 
 ```
-观测 (evidence): reddit axis 1 swap → search-loop 51.9 → 35.7 (Layer 1c) +
-                                       URL Jaccard 0.57 (Layer 2a) +
-                                       SR uplift 4.76pp drop-one (Layer 0c)
+观测 (evidence): reddit axis 1 swap → search-loop 51.9 → 35.7 (Macro 1c) +
+                                       URL Jaccard 0.57 (Micro 2a) +
+                                       SR uplift 4.76pp drop-one (Outcome 0c)
 解释 (LLM mechanism):
   AXTree (hierarchical, sidebar embedded in tree) → [SOM_MARKS] (flat indexed list)
   ⇒ attention pattern shift: sidebar forum link 在 flat list 显著
   ⇒ agent 直接 click forum link 而非 search-loop
   ⇒ trajectory 变短 + 决策准 + SR up
-  ⇒ 横跨 Layer 1+2+0 evidence 的 single mechanism
+  ⇒ 横跨 Macro+Micro+Outcome dimensions 的 single mechanism
 ```
 
 不同 site 触发不同 mechanism (site × axis × LLM):
 - **reddit text-heavy forum**: axis 1 主要影响 attention pattern (sidebar visibility)；image axis 几乎冗余
 - **cls visual-rich product browsing**: axis 3 image 是 affordance（finish-rate h=+0.57 决定性）；axis 1 主要影响 ID-system parsing efficiency
 
-**paper Section 5 narrative 由 mechanism 驱动**, layered evidence 作 underlying support — 不是按层组织 narrative。
+**paper Section 5 narrative 由 mechanism 驱动**, dimension-organized evidence 作 underlying support — 不是按 dimension 组织 narrative。
 
 #### Axis decomposition（diamond 完整后的 final form）
 
@@ -449,42 +449,42 @@ P-prompt 是必需的，因为它是 **axis 2 在 AXTree-text context 下的唯�
 
 #### Framework 的 future-data 弹性
 
-所有 cells 自动落到 layer × site × axis × baseline 索引：
+所有 cells 自动落到 dimension × site × axis × baseline 索引：
 
 | Future data | drop-in 到 |
 |---|---|
-| B1 phantom cls/red 4-cell (P-SoM + P-text × cls + red) | Layer 0/1/2/3 × cls/red × B1 cells |
+| B1 phantom cls/red 4-cell (P-SoM + P-text × cls + red) | Outcome/Macro/Micro/Efficiency × cls/red × B1 cells |
 | B1 P-prompt cls/red (Tier 2) | Diamond axis 2 in B1 capability — Section 7 cross-capability |
-| B0/B1 shopping 6-mode | Layer 0e per-category（shopping-rich audit categories）+ all layers shopping cells |
+| B0/B1 shopping 6-mode | Outcome 0e per-category（shopping-rich audit categories）+ all dimensions shopping cells |
 | WA B0/B1 6 sites × 5 modes | Cross-benchmark generalization (Section 7 main) |
 | Claude Opus 4.7 5-mode | Cross-model boundary check (Section 7) |
 | 其他 benchmark | Same scaffold, no rework |
 
-`make analyze-layered` 是 idempotent 的——新数据 commit 后跑一遍 `layered_status.py` 自动 regenerate `layered_evidence_status.md` + 所有 figures。
+`make analyze-layered` 是 idempotent 的——新数据 commit 后跑一遍 `layered_status.py` 自动 regenerate `layered_evidence_status.md` + 所有 figures。CLI alias 保留 (`analyze-layered`, `layered_status`, `layered_evidence_status.md`) 是 backward compat — paper-facing 命名是 4-dimension。
 
 #### Caveats / honest framing
 
-- **N=234 cls underpower**: cls Layer 1 macro 弱信号可能是 statistical power not enough（needs ~800 task to detect d=0.2 small effect with α=0.05, β=0.2）。后续 shopping 466 + WA 480 数据可补强
-- **"Layer" 命名不严格**：4 层是 orthogonal dimensions, 不是 hierarchical。命名沿用 "Layer" 是因 codebase 已 lock-down (Makefile / scripts), 不改回 "dimension"
+- **N=234 cls underpower**: cls Macro dimension 弱信号可能是 statistical power not enough（needs ~800 task to detect d=0.2 small effect with α=0.05, β=0.2）。后续 shopping 466 + WA 480 数据可补强
+- **命名约定**: paper-facing 用 "Outcome / Macro / Micro / Efficiency" (4 orthogonal dimensions). Sub-codes (0a / 1c / 2a / 3d) 保留作 figure-internal anchors. Code-level CLI 保留 "layered_*" 别名 (Makefile target / `layered_status.py` / `layered_evidence_status.md`) 作 backward compat
 - **不是所有 13 figures 进 paper**：Section 4 只 cherry-pick 5 个代表 figure (e.g. fig0c + fig0d + fig0g + fig1c + fig3d)，其他 supplementary
-- **paper Section 5 可能简化**：若 codex prose 过分 layered cataloging，必须 mechanism-first restructure
+- **paper Section 5 可能简化**：若 codex prose 过分 dimension cataloging，必须 mechanism-first restructure
 
 ---
 
 ### Mechanism Tier 1/2/3 escalation plan (Section 5 explanation methodology, 2026-04-29)
 
-4-Layer evidence catalogs *what shifts*; Section 5 mechanism explains *why*. Three escalating tiers, only Tier 1 is currently feasible; Tier 2/3 execute on existing 实验笔记 §19 future-work plan once B1 GPU frees up.
+4-dimension evidence catalogs *what shifts*; Section 5 mechanism explains *why*. Three escalating tiers, only Tier 1 is currently feasible; Tier 2/3 execute on existing 实验笔记 §19 future-work plan once B1 GPU frees up.
 
 #### Tier 1 — Behavioral mechanism (paper-ready now, B0+B1 data, no GPU work)
 
 Per-task per-step decision-quality metrics, mode-invariant, computable from existing step JSONL:
 
-| Metric | What it measures | Layer | Status |
+| Metric | What it measures | Dimension | Status |
 |---|---|---|---|
-| **E1** click-target Jaccard | per-task `(pre_url, post_url)` transition signature, mode-invariant + step-invariant | Layer 2 micro | 🟢 codex prompt ready (`mechanism_per_task_explanation.md`) |
-| **E2** trajectory boundary | for symmetric-diff success tasks, first divergent step | Layer 2 micro | 🟢 prompt ready |
-| **E3** confidence calibration cross-condition | ECE/MCE/Brier/AUROC per (model, site, mode), aggregating existing `analyze_confidence_calibration.py` per-run output | Layer 0b + Layer 1 | 🟢 prompt ready |
-| **E4** action vocabulary distribution | full action_type × subtype frequency per cell (extends axis_effect_size's 4 metrics) | Layer 1 macro | 🟢 prompt ready |
+| **E1** click-target Jaccard | per-task `(pre_url, post_url)` transition signature, mode-invariant + step-invariant | Micro | 🟢 codex prompt ready (`mechanism_per_task_explanation.md`) |
+| **E2** trajectory boundary | for symmetric-diff success tasks, first divergent step | Micro | 🟢 prompt ready |
+| **E3** confidence calibration cross-condition | ECE/MCE/Brier/AUROC per (model, site, mode), aggregating existing `analyze_confidence_calibration.py` per-run output | Outcome 0b + Macro | 🟢 prompt ready |
+| **E4** action vocabulary distribution | full action_type × subtype frequency per cell (extends axis_effect_size's 4 metrics) | Macro | 🟢 prompt ready |
 
 Tier 1 deliverables: `scripts/analysis/mechanism_per_task.py` + `docs/analysis/cross_sites/mechanism_per_task.{json,md}`. Adds `make analyze-mechanism` target. ~80K codex tokens. **Trigger anytime**.
 
