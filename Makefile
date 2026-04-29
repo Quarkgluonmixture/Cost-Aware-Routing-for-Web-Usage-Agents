@@ -25,7 +25,7 @@ PYTEST ?= .venv/bin/pytest
         confidence compare reason-diag clean-tasks watch-reddit schedule-list \
         validate gallery rsync-to-hub rsync-from-hub rsync-artifacts-from-hub \
         aggregate-cross-site summary-collect routing-auroc analyze-paper \
-        analyze-paper-per-run compare-b0-b1-all
+        analyze-paper-per-run compare-b0-b1-all phantom-lift
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
@@ -120,6 +120,11 @@ summary-collect:
 routing-auroc:
 	$(PYTHON) scripts/analysis/aggregate_routing_auroc.py
 
+# Phantom routing lift — Section 1/4 paper hook evidence
+# (3-mode oracle vs 5-mode oracle ceiling lift + bootstrap CI + decomposition)
+phantom-lift:
+	$(PYTHON) scripts/analysis/aggregate_phantom_lift.py
+
 # Per-run paper-grade analysis pipeline: rederive → reason-diag → cross-rep
 # → confidence calibration. Iterates over all paper-grade VWA run dirs.
 # Watchdog already runs this incrementally per-condition, but `analyze-paper`
@@ -162,7 +167,7 @@ compare-b0-b1-all:
 #   - Codex narrative analyses (docs/analysis/phantom_paper/*.md) — manual codex
 #   - Narrow ad-hoc diagnostics (analyze_*selflink_loop, b0_vision_coordinate_*,
 #     analyze_search_over_browse, diag_pattern_match) — invoke individually
-analyze-paper: analyze-paper-per-run compare-b0-b1-all aggregate-cross-site summary-collect routing-auroc figures
+analyze-paper: analyze-paper-per-run compare-b0-b1-all aggregate-cross-site summary-collect routing-auroc phantom-lift figures
 	@echo ""
 	@echo "[analyze-paper] cross-condition outputs in results/phantom_paper/:"
 	@ls results/phantom_paper/*.csv results/phantom_paper/*.md 2>/dev/null || true

@@ -633,6 +633,11 @@ ef29add  drop-in deployment punchline
 - [x] **AUROC aggregation table** ✅ done 04-28 — `scripts/analysis/aggregate_routing_auroc.py` (~110 行)
   - Outputs: `results/phantom_paper/auroc_cross_condition.csv` (188 rows × 5 modes × 4 cells) + `_summary.md` (top-1 per cell, Section 6 claim 证据)
   - Section 6 "AUROC ≥ baseline" claim 部分支持: B0 red phantom_dom 0.793 highest; B0 cls phantom_dom 0.737 ≥ som 0.709 baseline; B1 cells 待 chain done
+- [x] **Phantom routing lift** ✅ done 04-29 — `scripts/analysis/aggregate_phantom_lift.py` (~180 行)
+  - Outputs: `results/phantom_paper/phantom_lift.{csv,md}` — 3-mode → 5-mode oracle ceiling lift + bootstrap CI + per-phantom decomposition
+  - **Paper Section 1/4 hook 主 evidence**: B0 cls **+4.70pp [2.14, 7.69]** ✅, B0 red **+5.24pp [2.38, 8.11]** ✅ (CI 排除 0)
+  - Decomposition: P-DOM adds 8 tasks / P-SoM adds 6-7; each phantom 有独家 + overlap 部分 → keep both phantoms in paper
+  - B1 cells 待 chain done 自动 cover (script 检测 ep count, ≥50 ep 触发)
 - [ ] **Multi-metric Pareto pipeline** (cost + latency + carbon)
   - Section 8 sustainability prose 前置；fig9 已有 carbon B1 only, 需 cost/latency 三向 join
   - Output: 3-panel Pareto figure + per-condition multi-metric table

@@ -218,6 +218,7 @@ paper_strategic 数据 pipeline (详 `paper_planning.md` §13.B)。一键 `make 
 |---|---|---|
 | ✅ A. Bootstrap CI for drop-one oracle | Section 4 显著性 | done `847eaeb` — `fig2_drop_one_oracle.py` + `fig2_drop_one_bootstrap_ci.csv` (12 rows × 95% CI) |
 | ✅ B. AUROC aggregation per-condition routing signal | Section 6 "AUROC ≥ baseline" supporting table | done `847eaeb` — `aggregate_routing_auroc.py` → `auroc_cross_condition.{csv,md,_summary.md}` (188 rows) |
+| ✅ **B'. Phantom routing lift** (3→5-mode oracle ceiling) | **Section 1/4 paper hook 主 evidence**: B0 cls +4.70pp [2.14, 7.69] / B0 red +5.24pp [2.38, 8.11] CI 排除 0 ✅ | done 04-29 — `aggregate_phantom_lift.py` → `phantom_lift.{csv,md}`; chained into `make analyze-paper`; B1 cells 自动 cover when chain done |
 | ⏳ C. Multi-metric Pareto (cost + lat + carbon) | Section 8 sustainability 前置 | 待 (~2h, fig10 new + carbon estimator integration) |
 | ⏳ D. TF-IDF + binary feature extraction | Section 6 Tier 1 router 前置 | 待 (~1h, extend `r1_task_features` in `analyze_cross_representation.py`) |
 | ⏳ E. B0 token-based carbon estimator | Section 8 Tier 3 sustainability | 待 (~20 行 helper in `p79/experiment/metrics.py`) |
