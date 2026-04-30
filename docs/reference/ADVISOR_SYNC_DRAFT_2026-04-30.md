@@ -13,9 +13,16 @@
 
 **2. VWA framework bugs 发现**：今天系统 audit 发现了 37 个 scaffold-level bugs（5-tier audit + 文献支撑 / Gemini DR 综述对照），其中最严重的 dispatch bug 让 94.4% 的失败 click 落在错误 DOM target 上。今天已经修完（Phase A 4-cluster patch），pilot 验证 PASS。这个 bug 影响 absolute SR 数字，但不影响 cross-mode 比较（symmetric contamination + Vision counter-evidence），所以 Phantom finding 仍 valid。这本身可能也是一个值得披露的副 contribution。
 
-**3. 资源障碍**：UCL Myriad 申请下来了我也试着用了，但 UCL 防火墙 drop Tailscale CGNAT 段，**Myriad 不能 reach 我家里 quark Windows 的 VWA docker**，物理级 blocked，没法绕过（详见 `docs/reference/MYRIAD_SMOKE_REPORT.md`）。同时 DGX GPU 争抢非常严重，B1 baseline 跑 234 ep 需要 20+ 小时，Phase A 14-cell 全跑需要 150-200h wallclock。
+**3. 资源障碍**：UCL Myriad 申请下来了我也试着用了，但 UCL 防火墙 drop Tailscale CGNAT 段，**Myriad 不能 reach 我家里 quark Windows 的 VWA docker**，物理级 blocked，没法绕过（详见 `docs/reference/MYRIAD_SMOKE_REPORT.md`）。
 
-**4. 提议**：调研 RunPod 4090 dedicated 只要 $0.6/h，14-cell 全跑预计 ~$150-200 总预算。想申请课题经费走 RunPod。
+DGX GPU 争抢的实测数据：B1 P-text cls 现在跑 26h 完成 198/234 ep，**~8 min/ep average**（peak 时段更慢）。对比 B0 proxy（无 GPU 争抢）~3.5 min/ep。即 **DGX shared 比 dedicated 资源慢 2-3× average，peak 时段 5-10×**。Phase A 14-cell × 234 ep 全跑：DGX shared 需 ~437h（~18 天 24/7 wallclock），独占 4090 估 ~87-145h（3-6 天）。
+
+**4. 提议**：调研 RunPod 4090 dedicated 只要 $0.6/h。基于实测吞吐:
+- 4090 dedicated 估 ~87-145 GPU hours × $0.6/h = **~$52-87 actual**
+- + 30% buffer (crash/retry/idle): **~$70-115 reasonable estimate**
+- 申请 **$200 budget** 留 head-room for additional probes (Q3 B0 multi-call extended verify ~$10, Tier 5 evaluator probe ~$20, P-prompt diamond shop ~$30, Section 5 ad-hoc query ~$20).
+
+**Wallclock 影响是 deal-breaker**: paper data ready 时间从 ~3 周 (DGX) 缩到 ~1 周 (4090). paper writing + 学长 review 时间从此 unblocked.
 
 **问您几件事**：
 - RunPod 经费可不可以走？走什么流程？
