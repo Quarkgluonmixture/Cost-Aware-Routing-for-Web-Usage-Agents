@@ -28,8 +28,14 @@ class LocalQwenBackend:
                     # 512 truncates typical thought+JSON envelope (~400-1500 tok)
                     # → silent parse errors. Configs should set this explicitly.
                     "max_new_tokens": config.get("max_new_tokens", 4096),
-                    "temperature": config.get("temperature", 0.1),
-                    "top_p": config.get("top_p", 0.9),
+                    # B-37 fix: B1 already greedy via do_sample=False, but kept as
+                    # config for fallback paths (BLIP-2 captioning etc.). Default
+                    # 0.1→0 here for consistency, but qwen3vl_agent ignores at
+                    # generate() since do_sample=False is hardcoded.
+                    "temperature": config.get("temperature", 0.0),
+                    "top_p": config.get("top_p", 1.0),
+                    # B-37 fix: forward seed for torch.manual_seed in agent's generate path.
+                    "seed": config.get("seed"),
                     "min_free_vram_gb": config.get("min_free_vram_gb", 0),
                 },
                 "agent": {

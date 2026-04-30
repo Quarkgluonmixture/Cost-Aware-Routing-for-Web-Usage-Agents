@@ -597,8 +597,21 @@ Action Schema:
             "model": self.model_name,
             "messages": messages,
             "max_tokens": gen_cfg.get("max_new_tokens", 512),
-            "temperature": gen_cfg.get("temperature", 0.1),
+            # B-37 fix: default 0.1 → 0 for paper-grade reproducibility. T=0 is
+            # greedy decoding (top-1 token deterministic given prefix). Override
+            # via config only if mode-collapse signature appears in pilot.
+            "temperature": gen_cfg.get("temperature", 0.0),
+            # B-37 fix: explicit top_p=1.0 to prevent provider-default top_p<1
+            # from introducing token-boundary non-determinism even at T=0.
+            "top_p": gen_cfg.get("top_p", 1.0),
         }
+
+        # B-37 best-effort: forward seed if provider supports OpenAI-compat seed.
+        # Anthropic native protocol ignores unknown fields, so safe to include.
+        # Some proxies (DashScope OpenAI-format) honor seed; others ignore.
+        _seed_from_cfg = gen_cfg.get("seed")
+        if _seed_from_cfg is not None:
+            payload["seed"] = int(_seed_from_cfg)
 
         if self._use_tool_calling:
             payload["tools"] = [_WEB_ACTION_TOOL]

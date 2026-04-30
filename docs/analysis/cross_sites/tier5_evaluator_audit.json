@@ -1,0 +1,220 @@
+{
+  "audit_date": "2026-04-30",
+  "scope_notes": {
+    "audited_harness": "external/visualwebarena/evaluation_harness",
+    "missing_paths": [
+      "external/webarena/evaluation_harness",
+      "external/visualwebarena/evaluation_harness/webarena_utils.py"
+    ],
+    "python": ".venv/bin/python3"
+  },
+  "ua_match": {
+    "prompt_template_file": "external/visualwebarena/evaluation_harness/helper_functions.py",
+    "prompt_template_lineno": 623,
+    "prompt_template_full_text": "message = \"\"\\nmessage += f\"task: {question}\\n\"\\nmessage += f\"actual unachievable reason: {reference}\\n\"\\nmessage += f\"reported unachievable reason: {pred}\\n\"\\nmessage += (\\n    \"The task described above is inherently unachievable due to the reason specified under 'actual unachievable reason'. \"\\n    \"An individual previously attempted this task and was unable to complete it. They provided a reason for their failure, \"\\n    \"which is listed under 'reported unachievable reason'. Your role is to review both the actual and reported reasons. \"\\n    \"Determine if the reported reason aligns with the actual reason, even if implicitly. \"\\n    \"If the stated reason is in line with the actual reason, respond with 'same'. Otherwise, respond with 'different'.\"\\n)",
+    "model_and_sampling": {
+      "default_model": "gpt-4o-mini",
+      "override_env_vars": [
+        "VWA_EVAL_MODEL",
+        "OPENAI_EVAL_MODEL"
+      ],
+      "temperature": 0,
+      "top_p": 1.0,
+      "max_tokens": 768,
+      "fixed_seed": false
+    },
+    "drift_modes_identified": [
+      {
+        "mode": "N/A task accept bias",
+        "evidence": "Prompt states the task is inherently unachievable and accepts reasons aligned even implicitly; checkpoint §78a records empty/non-finish N/A successes. In available diagnostics, 87 string_match raw successes were removed as na_fp.",
+        "covered_by_existing_fp_filter": true
+      },
+      {
+        "mode": "Active-finish blank/generic N/A gap",
+        "evidence": "compute_adjusted_success preserves N/A raw_success whenever agent_finished=True. Spot check found adjusted-true N/A rows with active finish and empty final_answer.",
+        "covered_by_existing_fp_filter": false
+      },
+      {
+        "mode": "Ambiguous task / LLM nondeterminism",
+        "evidence": "temperature=0 and top_p=1.0 are set, but no seed is passed and model aliases can be overridden by env vars.",
+        "covered_by_existing_fp_filter": false
+      },
+      {
+        "mode": "Parser substring brittleness",
+        "evidence": "llm_ua_match checks whether 'different' appears before checking 'same'; noncompliant responses can be misparsed.",
+        "covered_by_existing_fp_filter": false
+      }
+    ],
+    "recommended_fixes": [
+      "Add deterministic pre-gates for N/A: reject empty answers, generic impossibility statements, and answers without required task-specific evidence.",
+      "Rewrite prompt to require JSON with same, evidence_span, and missing_required_fact; avoid pre-anchoring on the gold reason before judging the reported reason.",
+      "Use majority vote only for residual ambiguous cases and pin model/version where possible.",
+      "Replace common N/A task families with deterministic rules instead of GPT reason matching."
+    ]
+  },
+  "string_match": {
+    "function_file": "external/visualwebarena/evaluation_harness/evaluators.py",
+    "function_lineno": 203,
+    "fuzzy_helper_file": "external/visualwebarena/evaluation_harness/helper_functions.py",
+    "fuzzy_helper_lineno": 581,
+    "fuzzy_threshold": 1.0,
+    "threshold_note": "No Levenshtein/Jaccard/edit-distance threshold exists; fuzzy_match is GPT-judged and returns binary 1.0 only for a 'correct' label. Runner success requires score >= 1.0.",
+    "case_sensitivity": false,
+    "normalization": {
+      "lowercase": true,
+      "strip_whitespace": false,
+      "strip_surrounding_quotes": true,
+      "strip_punctuation": false,
+      "single_token_must_include_uses_nltk_word_tokenize": true
+    },
+    "multi_answer_logic": "Outer reference lists are conjunctive; alternatives use the literal delimiter ' |OR| ' inside a single list entry. one_of uses substring search.",
+    "edge_case_concerns": [
+      {
+        "case": "pred '$5.99' vs target '5.99'",
+        "expected_behavior": "must_include likely matches via tokenization; exact_match fails; required_values fails."
+      },
+      {
+        "case": "pred '5.99' vs target '$5.99'",
+        "expected_behavior": "must_include likely misses because '$5.99' is not a substring of '5.99'; exact_match fails."
+      },
+      {
+        "case": "pred 'five point nine nine dollars' vs target '5.99'",
+        "expected_behavior": "deterministic paths miss; GPT fuzzy may accept if that path is configured."
+      },
+      {
+        "case": "leading/trailing whitespace in exact answer",
+        "expected_behavior": "can false-negative because clean_answer lowercases but does not strip."
+      },
+      {
+        "case": "one_of short answer tokens",
+        "expected_behavior": "can false-positive because one_of does substring search rather than token matching."
+      }
+    ],
+    "paper_grade_sample": {
+      "source": "non-archived results/**/analysis/reason_diagnostics/episode_reason_rows.csv",
+      "string_match_rows": 1316,
+      "raw_success_count": 228,
+      "adjusted_success_count": 141,
+      "removed_false_positive_count": 87,
+      "removed_false_positive_reasons": {
+        "na_fp": 87
+      },
+      "spot_check_20_summary": "12 raw-true/adjusted-false samples were N/A tasks with non-finish final actions and null final answers; 4 raw-true/adjusted-true samples included exact matches and active N/A finishes; 4 raw-false samples were normal count/numeric misses."
+    }
+  },
+  "program_html": {
+    "function_file": "external/visualwebarena/evaluation_harness/evaluators.py",
+    "function_lineno": 345,
+    "selector_pattern": "Target URL is literal/last/func; non-last calls page.goto then time.sleep(3). Locator is full page if empty, raw JS if document.* or [...document.*, JS if lambda:, Python eval helper if func:.",
+    "selector_category_counts_raw_configs": {
+      "program_html_tasks": 1068,
+      "target_checks": 1598,
+      "raw_js_document": 1100,
+      "full_page": 233,
+      "func_get_query_text_css": 143,
+      "func_shopping_helper": 63,
+      "func_reddit_helper": 31,
+      "lambda_js": 16,
+      "func_other": 12,
+      "static_brittle_flag_count": 562
+    },
+    "brittleness_concerns": [
+      "No wait_for_selector; only fixed 3 second sleep after non-last navigation.",
+      "last-url checks receive no post-action wait.",
+      "Raw querySelector/querySelectorAll selectors depend on exact classes, positions, and child structure.",
+      "Helper exceptions are swallowed and converted to empty strings/zero/empty dicts, hiding selector breakage.",
+      "reddit latest-comment-by-username helpers are non-causal and can match stale comments.",
+      "Full-page scans can match incidental or stale text."
+    ],
+    "task_pool_audit": [
+      {
+        "benchmark": "vwa",
+        "site": "classifieds",
+        "task_id": 4,
+        "selector": "func:get_query_text(__page__, '.price'); func:get_query_text(__page__, '.desc')",
+        "brittleness": "Class-only selectors and exact price/description formatting."
+      },
+      {
+        "benchmark": "vwa",
+        "site": "classifieds",
+        "task_id": 5,
+        "selector": "empty locator, full page must include 404",
+        "brittleness": "Full-page scan; click-only delete state is hard to distinguish from stale/pre-existing state."
+      },
+      {
+        "benchmark": "vwa",
+        "site": "shopping",
+        "task_id": 0,
+        "selector": "document.querySelector(\".order-details-items.ordered\").outerText",
+        "brittleness": "Magento class contract and async order-page rendering."
+      },
+      {
+        "benchmark": "vwa",
+        "site": "shopping",
+        "task_id": 37,
+        "selector": "document.querySelector('.products-grid.wishlist').textContent",
+        "brittleness": "Wishlist async render and stale wishlist contents."
+      },
+      {
+        "benchmark": "vwa",
+        "site": "reddit",
+        "task_id": 19,
+        "selector": "document.querySelectorAll('div.submission__vote')[0].querySelector('form').getAttribute('class')",
+        "brittleness": "Positional vote-form selector and exact class-state contract."
+      },
+      {
+        "benchmark": "vwa",
+        "site": "reddit",
+        "task_id": 69,
+        "selector": "func:reddit_get_latest_comment_content_by_username(__page__, 'MarvelsGrantMan136')",
+        "brittleness": "Non-causal latest-comment lookup can accept an old matching comment."
+      },
+      {
+        "benchmark": "vwa",
+        "site": "reddit",
+        "task_id": 80,
+        "selector": "eight document.querySelectorAll('div.submission__vote')[0] checks",
+        "brittleness": "Repeated positional selector across pages; exact vote class equality."
+      },
+      {
+        "benchmark": "wa",
+        "site": "shopping",
+        "task_id": 118,
+        "selector": "empty locator, full page must include jaw bruxism and mouth guard",
+        "brittleness": "Full-page text can accept incidental content."
+      },
+      {
+        "benchmark": "wa",
+        "site": "reddit",
+        "task_id": 399,
+        "selector": "document.querySelector(\".user-bio__biography\").outerText",
+        "brittleness": "Single class contract; no explicit wait."
+      },
+      {
+        "benchmark": "wa",
+        "site": "webarena",
+        "task_id": 620,
+        "selector": "document.querySelector('.submission__inner').outerText",
+        "brittleness": "Broad container text; no causal post-creation check."
+      },
+      {
+        "benchmark": "wa",
+        "site": "shopping_admin",
+        "task_id": 423,
+        "selector": "document.querySelector('input[name=\"product[sale]\"]').value",
+        "brittleness": "Attribute selector is stable-ish but can race admin form async load."
+      }
+    ]
+  },
+  "fp_filter_cross_reference": {
+    "existing_coverage": "na_fp covers N/A raw successes without active finish. eval_fp covers string_match raw successes without active finish and program_html raw successes without active finish plus no has_effective_action. visual_fp was removed in §95.",
+    "gaps": [
+      "Active finish on N/A with empty/generic wrong answer is preserved and can still be a ua_match FP.",
+      "LLM judge drift/model override/nondeterminism is not corrected post hoc.",
+      "Deterministic string false negatives from whitespace, punctuation, numeric wording, and decimal parsing are not addressed because the filter only removes FPs.",
+      "program_html selector brittleness and async-render false negatives are not covered.",
+      "Click-only state changes are ambiguous because has_effective_action is currently type/select_option only; this can over-remove real click-caused successes and still cannot prove causality for stale click-only successes."
+    ],
+    "section4_framing_recommendation": "Report raw and adjusted success, where adjusted_success removes empirically observed N/A and evaluator false-positive families. Then frame Tier 5 as a residual evaluator-side limitation audit: post-hoc filters mitigate common FPs but do not replace causal Verified-style evaluators, deterministic N/A rules, stronger string normalization, or selector/backend state-delta checks."
+  }
+}

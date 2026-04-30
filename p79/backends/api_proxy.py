@@ -26,8 +26,12 @@ class ApiProxyBackend:
                     "api_name": config.get("api_name", config.get("name", "qwen.qwen3-vl-235b-a22b")),
                     "base_url": config.get("base_url"),
                     "max_new_tokens": config.get("max_new_tokens", 512),
-                    "temperature": config.get("temperature", 0.1),
-                    "top_p": config.get("top_p", 0.9),
+                    # B-37 fix: defaults 0.1→0 (greedy), 0.9→1.0 (no nucleus pruning).
+                    # yaml configs may still override but new default is reproducibility-first.
+                    "temperature": config.get("temperature", 0.0),
+                    "top_p": config.get("top_p", 1.0),
+                    # B-37 fix: forward seed from runner-injected backend cfg.
+                    "seed": config.get("seed"),
                     "timeout": config.get("timeout", 120),
                     # API format: "anthropic" (proxy) or "openai" (DashScope)
                     "api_format": config.get("api_format", "anthropic"),

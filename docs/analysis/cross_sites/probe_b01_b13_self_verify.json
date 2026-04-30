@@ -1,0 +1,685 @@
+{
+  "b01_results": [
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 102,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 8,
+        "signature": [
+          "self_collected_silent_type"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=4",
+        "element_bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "action_text": "stained glass religious\n",
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "type": null,
+        "editable": false,
+        "nearest_input": null
+      },
+      "classification": "SCAFFOLD_TYPE_BUG",
+      "reason": "center hits HEADER (no nearby input within 6 ancestors) \u2014 Meta+A would select page text",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 29,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 16,
+        "signature": [
+          "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox",
+          "runner_failed_no_progress",
+          "runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+car+",
+        "element_bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "action_text": "red car 2024 for sale\n",
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "type": null,
+        "editable": false,
+        "nearest_input": null
+      },
+      "classification": "SCAFFOLD_TYPE_BUG",
+      "reason": "center hits HEADER (no nearby input within 6 ancestors) \u2014 Meta+A would select page text",
+      "elapsed_s": 1.2
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 159,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 9,
+        "signature": [
+          "self_collected_silent_type"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=user&action=items",
+        "element_bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "action_text": "rug\n",
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "type": null,
+        "editable": false,
+        "nearest_input": null
+      },
+      "classification": "SCAFFOLD_TYPE_BUG",
+      "reason": "center hits HEADER (no nearby input within 6 ancestors) \u2014 Meta+A would select page text",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 29,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 10,
+        "signature": [
+          "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox",
+          "runner_failed_no_progress",
+          "runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+car+",
+        "element_bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "action_text": "red car 2024\n",
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "type": null,
+        "editable": false,
+        "nearest_input": null
+      },
+      "classification": "SCAFFOLD_TYPE_BUG",
+      "reason": "center hits HEADER (no nearby input within 6 ancestors) \u2014 Meta+A would select page text",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 29,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 9,
+        "signature": [
+          "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox",
+          "runner_failed_no_progress",
+          "runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+car+",
+        "element_bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "action_text": "red car 2024\n",
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "type": null,
+        "editable": false,
+        "nearest_input": null
+      },
+      "classification": "SCAFFOLD_TYPE_BUG",
+      "reason": "center hits HEADER (no nearby input within 6 ancestors) \u2014 Meta+A would select page text",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 8,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 23,
+        "signature": [
+          "self_collected_silent_type"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=item&action=item_add",
+        "element_bbox": [
+          378.0,
+          260.0,
+          532.0,
+          50.0
+        ],
+        "action_text": "Nintendo Switch Console\n",
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "SELECT",
+        "type": "select-one",
+        "editable": false,
+        "nearest_input": null
+      },
+      "classification": "SCAFFOLD_TYPE_BUG",
+      "reason": "center hits SELECT (no nearby input within 6 ancestors) \u2014 Meta+A would select page text",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 29,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 17,
+        "signature": [
+          "self_collected_silent_type"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+car+",
+        "element_bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "action_text": "red car 2024\n",
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "type": null,
+        "editable": false,
+        "nearest_input": null
+      },
+      "classification": "SCAFFOLD_TYPE_BUG",
+      "reason": "center hits HEADER (no nearby input within 6 ancestors) \u2014 Meta+A would select page text",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 198,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 6,
+        "signature": [
+          "self_collected_silent_type"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=watch+faded+red+green+13000+&sOrder=i_price",
+        "element_bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "action_text": "luxury watch faded red green 13000\n",
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "type": null,
+        "editable": false,
+        "nearest_input": null
+      },
+      "classification": "SCAFFOLD_TYPE_BUG",
+      "reason": "center hits HEADER (no nearby input within 6 ancestors) \u2014 Meta+A would select page text",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 64,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 6,
+        "signature": [
+          "self_collected_silent_type"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=video+ga",
+        "element_bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "action_text": "video game $500\n",
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "type": null,
+        "editable": false,
+        "nearest_input": null
+      },
+      "classification": "SCAFFOLD_TYPE_BUG",
+      "reason": "center hits HEADER (no nearby input within 6 ancestors) \u2014 Meta+A would select page text",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 11,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 7,
+        "signature": [
+          "runner_failed_no_progress;same_url_no_form_or_text_echo"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=71313",
+        "element_bbox": [],
+        "action_text": "blue bike\n",
+        "action_success": false,
+        "page_changed": false
+      },
+      "classification": "REPLAY_FAIL",
+      "reason": "auth/obs_url/bbox missing",
+      "elapsed_s": 0.0
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 29,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 11,
+        "signature": [
+          "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox",
+          "runner_failed_no_progress",
+          "runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+car+",
+        "element_bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "action_text": "red car 2024 for sale\n",
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "type": null,
+        "editable": false,
+        "nearest_input": null
+      },
+      "classification": "SCAFFOLD_TYPE_BUG",
+      "reason": "center hits HEADER (no nearby input within 6 ancestors) \u2014 Meta+A would select page text",
+      "elapsed_s": 1.0
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 5,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 15,
+        "signature": [
+          "self_collected_silent_type"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=user&action=items",
+        "element_bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "action_text": "white car\n",
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "type": null,
+        "editable": false,
+        "nearest_input": null
+      },
+      "classification": "SCAFFOLD_TYPE_BUG",
+      "reason": "center hits HEADER (no nearby input within 6 ancestors) \u2014 Meta+A would select page text",
+      "elapsed_s": 0.8
+    }
+  ],
+  "b13_results": [
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 226,
+        "run": "B0_phantom_classifieds",
+        "condition_id": "phase1_phantom_som_router_0",
+        "mode": "P-SoM",
+        "step_idx": 7,
+        "snippet": "action=back; url_before=about:blank; url_after=about:blank; page_changed=True; action_success=False; text_similarity=1.000"
+      },
+      "classification": "REPLAY_FAIL",
+      "reason": "step_idx out of range",
+      "elapsed_s": 0.0
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 226,
+        "run": "B0_phantom_classifieds",
+        "condition_id": "phase1_phantom_som_router_0",
+        "mode": "P-SoM",
+        "step_idx": 8,
+        "snippet": "action=back; url_before=about:blank; url_after=about:blank; page_changed=True; action_success=False; text_similarity=1.000"
+      },
+      "classification": "REPLAY_FAIL",
+      "reason": "step_idx out of range",
+      "elapsed_s": 0.0
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 231,
+        "run": "B1_3mode_classifieds",
+        "condition_id": "phase1_vision_router_0",
+        "mode": "Vision",
+        "step_idx": 1,
+        "snippet": "action=back; url_before=http://100.95.81.103:9999/f/Maine/99914/new-tourist-trap%20%7CAND%7C%20http://100.95.81.103:9980; url_after=http://100.95.81.103:9999/f/Maine/99914/new-tourist-trap%20%7CAND%7C%20http://100.95.81.103:9980; page_changed=True; action_success=False; text_similarity=0.979"
+      },
+      "logged": {
+        "action_type": "back",
+        "action_success": false,
+        "page_changed": true,
+        "page_change_reasons": [
+          "about_blank_recovery"
+        ],
+        "url_before": "http://100.95.81.103:9999/f/Maine/99914/new-tourist-trap%20%7CAND%7C%20http://100.95.81.103:9980",
+        "url_after": "http://100.95.81.103:9999/f/Maine/99914/new-tourist-trap%20%7CAND%7C%20http://100.95.81.103:9980",
+        "title_before": "404 Not Found",
+        "title_after": "404 Not Found",
+        "scroll_y_before": 0,
+        "scroll_y_after": 0,
+        "text_similarity": 0.978891820580475
+      },
+      "state_digest_check": {
+        "url_changed": false,
+        "title_changed": false,
+        "scroll_delta": 0,
+        "text_similarity": 0.978891820580475,
+        "real_change_signals": []
+      },
+      "classification": "PAGE_CHANGED_FALSE_TRIGGER",
+      "reason": "logged page_changed=True but no url/title/scroll/text_similarity evidence \u2014 false trigger",
+      "elapsed_s": 0.0
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 231,
+        "run": "B1_3mode_classifieds",
+        "condition_id": "phase1_vision_router_0",
+        "mode": "Vision",
+        "step_idx": 2,
+        "snippet": "action=back; url_before=http://100.95.81.103:9999/f/Maine/99914/new-tourist-trap%20%7CAND%7C%20http://100.95.81.103:9980; url_after=http://100.95.81.103:9999/f/Maine/99914/new-tourist-trap%20%7CAND%7C%20http://100.95.81.103:9980; page_changed=True; action_success=False; text_similarity=0.976"
+      },
+      "logged": {
+        "action_type": "back",
+        "action_success": false,
+        "page_changed": true,
+        "page_change_reasons": [
+          "about_blank_recovery"
+        ],
+        "url_before": "http://100.95.81.103:9999/f/Maine/99914/new-tourist-trap%20%7CAND%7C%20http://100.95.81.103:9980",
+        "url_after": "http://100.95.81.103:9999/f/Maine/99914/new-tourist-trap%20%7CAND%7C%20http://100.95.81.103:9980",
+        "title_before": "404 Not Found",
+        "title_after": "404 Not Found",
+        "scroll_y_before": 0,
+        "scroll_y_after": 0,
+        "text_similarity": 0.9762532981530343
+      },
+      "state_digest_check": {
+        "url_changed": false,
+        "title_changed": false,
+        "scroll_delta": 0,
+        "text_similarity": 0.9762532981530343,
+        "real_change_signals": []
+      },
+      "classification": "PAGE_CHANGED_FALSE_TRIGGER",
+      "reason": "logged page_changed=True but no url/title/scroll/text_similarity evidence \u2014 false trigger",
+      "elapsed_s": 0.0
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 232,
+        "run": "B1_3mode_classifieds",
+        "condition_id": "phase1_vision_router_0",
+        "mode": "Vision",
+        "step_idx": 1,
+        "snippet": "action=back; url_before=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t%20%7CAND%7C%20http://100.95.81.103:9980; url_after=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t%20%7CAND%7C%20http://100.95.81.103:9980; page_changed=True; action_success=False; text_similarity=0.975"
+      },
+      "logged": {
+        "action_type": "back",
+        "action_success": false,
+        "page_changed": true,
+        "page_change_reasons": [
+          "about_blank_recovery"
+        ],
+        "url_before": "http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t%20%7CAND%7C%20http://100.95.81.103:9980",
+        "url_after": "http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t%20%7CAND%7C%20http://100.95.81.103:9980",
+        "title_before": "404 Not Found",
+        "title_after": "404 Not Found",
+        "scroll_y_before": 0,
+        "scroll_y_after": 0,
+        "text_similarity": 0.9751243781094527
+      },
+      "state_digest_check": {
+        "url_changed": false,
+        "title_changed": false,
+        "scroll_delta": 0,
+        "text_similarity": 0.9751243781094527,
+        "real_change_signals": []
+      },
+      "classification": "PAGE_CHANGED_FALSE_TRIGGER",
+      "reason": "logged page_changed=True but no url/title/scroll/text_similarity evidence \u2014 false trigger",
+      "elapsed_s": 0.0
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 232,
+        "run": "B1_3mode_classifieds",
+        "condition_id": "phase1_vision_router_0",
+        "mode": "Vision",
+        "step_idx": 2,
+        "snippet": "action=back; url_before=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t%20%7CAND%7C%20http://100.95.81.103:9980; url_after=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t%20%7CAND%7C%20http://100.95.81.103:9980; page_changed=True; action_success=False; text_similarity=0.983"
+      },
+      "logged": {
+        "action_type": "back",
+        "action_success": false,
+        "page_changed": true,
+        "page_change_reasons": [
+          "about_blank_recovery"
+        ],
+        "url_before": "http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t%20%7CAND%7C%20http://100.95.81.103:9980",
+        "url_after": "http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t%20%7CAND%7C%20http://100.95.81.103:9980",
+        "title_before": "404 Not Found",
+        "title_after": "404 Not Found",
+        "scroll_y_before": 0,
+        "scroll_y_after": 0,
+        "text_similarity": 0.9825870646766169
+      },
+      "state_digest_check": {
+        "url_changed": false,
+        "title_changed": false,
+        "scroll_delta": 0,
+        "text_similarity": 0.9825870646766169,
+        "real_change_signals": []
+      },
+      "classification": "PAGE_CHANGED_FALSE_TRIGGER",
+      "reason": "logged page_changed=True but no url/title/scroll/text_similarity evidence \u2014 false trigger",
+      "elapsed_s": 0.0
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 183,
+        "run": "B1_3mode_reddit",
+        "condition_id": "phase1_vision_router_0",
+        "mode": "Vision",
+        "step_idx": 1,
+        "snippet": "action=scroll; url_before=about:blank; url_after=about:blank; page_changed=True; action_success=False; text_similarity=1.000"
+      },
+      "logged": {
+        "action_type": "scroll",
+        "action_success": false,
+        "page_changed": true,
+        "page_change_reasons": [
+          "about_blank_recovery"
+        ],
+        "url_before": "about:blank",
+        "url_after": "about:blank",
+        "title_before": "",
+        "title_after": "",
+        "scroll_y_before": 0,
+        "scroll_y_after": 0,
+        "text_similarity": 1.0
+      },
+      "state_digest_check": {
+        "url_changed": false,
+        "title_changed": false,
+        "scroll_delta": 0,
+        "text_similarity": 1.0,
+        "real_change_signals": []
+      },
+      "classification": "PAGE_CHANGED_FALSE_TRIGGER",
+      "reason": "logged page_changed=True but no url/title/scroll/text_similarity evidence \u2014 false trigger",
+      "elapsed_s": 0.0
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 183,
+        "run": "B1_3mode_reddit",
+        "condition_id": "phase1_vision_router_0",
+        "mode": "Vision",
+        "step_idx": 2,
+        "snippet": "action=back; url_before=about:blank; url_after=about:blank; page_changed=True; action_success=False; text_similarity=1.000"
+      },
+      "logged": {
+        "action_type": "back",
+        "action_success": false,
+        "page_changed": true,
+        "page_change_reasons": [
+          "about_blank_recovery"
+        ],
+        "url_before": "about:blank",
+        "url_after": "about:blank",
+        "title_before": "",
+        "title_after": "",
+        "scroll_y_before": 0,
+        "scroll_y_after": 0,
+        "text_similarity": 1.0
+      },
+      "state_digest_check": {
+        "url_changed": false,
+        "title_changed": false,
+        "scroll_delta": 0,
+        "text_similarity": 1.0,
+        "real_change_signals": []
+      },
+      "classification": "PAGE_CHANGED_FALSE_TRIGGER",
+      "reason": "logged page_changed=True but no url/title/scroll/text_similarity evidence \u2014 false trigger",
+      "elapsed_s": 0.0
+    }
+  ],
+  "summary": {
+    "audit_date": "2026-04-30",
+    "purpose": "Self-verify B-01 TYPE 100% scaffold (codex claim) + B-13 NOT_A_BUG (codex 0/5 with 3 REPLAY_FAIL).",
+    "b01_type_silent_failure": {
+      "codex_claim_scaffold_fraction": 1.0,
+      "codex_n_cases": 15,
+      "self_verify_n_probed": 12,
+      "self_verify_n_replay_ok": 11,
+      "self_verify_breakdown": {
+        "SCAFFOLD_TYPE_BUG": 11,
+        "REPLAY_FAIL": 1
+      },
+      "scaffold_fraction_strict": 1.0,
+      "scaffold_fraction_lenient_with_partial": 1.0,
+      "editable_at_center_fraction": 0.0
+    },
+    "b13_action_fail_page_changed": {
+      "tier4_claim_violations": 25,
+      "codex_claim_scaffold_fraction": 0.0,
+      "codex_n_cases": 5,
+      "self_verify_n_probed": 8,
+      "self_verify_breakdown": {
+        "REPLAY_FAIL": 2,
+        "PAGE_CHANGED_FALSE_TRIGGER": 6
+      },
+      "page_changed_false_trigger_count": 6,
+      "runner_false_negative_count": 0,
+      "verdict": "NOT_A_BUG_CONFIRMED"
+    }
+  }
+}

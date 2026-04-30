@@ -1,0 +1,1550 @@
+{
+  "scroll_results": [
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 11,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 10,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 2027,
+        "scroll_y_after": 2027,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=7"
+      },
+      "page_geometry": {
+        "scroll_height": 2747,
+        "viewport_h": 720,
+        "starting_scroll_y": 2027,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (2027+720\u22652747)",
+      "elapsed_s": 1.0
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 29,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 15,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1855,
+        "scroll_y_after": 1855,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+car+"
+      },
+      "page_geometry": {
+        "scroll_height": 2575,
+        "viewport_h": 720,
+        "starting_scroll_y": 1855,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (1855+720\u22652575)",
+      "elapsed_s": 1.1
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 32,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 6,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1955,
+        "scroll_y_after": 1955,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=GT+mountain+bike+"
+      },
+      "page_geometry": {
+        "scroll_height": 2675,
+        "viewport_h": 720,
+        "starting_scroll_y": 1955,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (1955+720\u22652675)",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 16,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 10,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1887,
+        "scroll_y_after": 1887,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=coffee+m"
+      },
+      "page_geometry": {
+        "scroll_height": 2607,
+        "viewport_h": 720,
+        "starting_scroll_y": 1887,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (1887+720\u22652607)",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 29,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 6,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1855,
+        "scroll_y_after": 1855,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+car+"
+      },
+      "classification": "REPLAY_FAIL",
+      "reason": "playwright error: TimeoutError: Page.goto: Timeout 15000ms exceeded.\nCall log:\n  - navigating to \"http://100.95.81.103:9980/index.php?page=search&sOrder",
+      "elapsed_s": 15.0
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 11,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 11,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 2027,
+        "scroll_y_after": 2027,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=7"
+      },
+      "page_geometry": {
+        "scroll_height": 2747,
+        "viewport_h": 720,
+        "starting_scroll_y": 2027,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (2027+720\u22652747)",
+      "elapsed_s": 1.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 32,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 5,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1955,
+        "scroll_y_after": 1955,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=GT+mountain+bike+"
+      },
+      "page_geometry": {
+        "scroll_height": 2675,
+        "viewport_h": 720,
+        "starting_scroll_y": 1955,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (1955+720\u22652675)",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 24,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 11,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1002,
+        "scroll_y_after": 1002,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=10&sShowAs=gallery&iPage=6"
+      },
+      "page_geometry": {
+        "scroll_height": 1722,
+        "viewport_h": 720,
+        "starting_scroll_y": 1002,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (1002+720\u22651722)",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 24,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 6,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1002,
+        "scroll_y_after": 1002,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=10&sShowAs=gallery&iPage=5"
+      },
+      "page_geometry": {
+        "scroll_height": 1722,
+        "viewport_h": 720,
+        "starting_scroll_y": 1002,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (1002+720\u22651722)",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 6,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 11,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 2067,
+        "scroll_y_after": 2067,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=motorcycle+%241000-%242000+not+orange+&sCat"
+      },
+      "page_geometry": {
+        "scroll_height": 2787,
+        "viewport_h": 720,
+        "starting_scroll_y": 2067,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (2067+720\u22652787)",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 5,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 14,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1818,
+        "scroll_y_after": 1818,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=user&action=items"
+      },
+      "page_geometry": {
+        "scroll_height": 3106,
+        "viewport_h": 720,
+        "starting_scroll_y": 1818,
+        "at_bottom": false,
+        "no_overflow": false
+      },
+      "classification": "SCAFFOLD_SCROLL_BUG",
+      "reason": "room=568px expected\u2248576px but scroll_y stayed at 1818",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 24,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 12,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1002,
+        "scroll_y_after": 1002,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=10&sShowAs=gallery&iPage=6"
+      },
+      "page_geometry": {
+        "scroll_height": 1722,
+        "viewport_h": 720,
+        "starting_scroll_y": 1002,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (1002+720\u22651722)",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 16,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 9,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1887,
+        "scroll_y_after": 1887,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=coffee+m"
+      },
+      "page_geometry": {
+        "scroll_height": 2607,
+        "viewport_h": 720,
+        "starting_scroll_y": 1887,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (1887+720\u22652607)",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 11,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 4,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 2027,
+        "scroll_y_after": 2027,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=7"
+      },
+      "page_geometry": {
+        "scroll_height": 2747,
+        "viewport_h": 720,
+        "starting_scroll_y": 2027,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (2027+720\u22652747)",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 12,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 5,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1228,
+        "scroll_y_after": 1228,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=32241"
+      },
+      "page_geometry": {
+        "scroll_height": 1948,
+        "viewport_h": 720,
+        "starting_scroll_y": 1228,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (1228+720\u22651948)",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 63,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_vision_router_0",
+        "mode": "Vision",
+        "step_idx": 4,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move_self_collected"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1915,
+        "scroll_y_after": 1915,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=Iron+Man+video+game"
+      },
+      "page_geometry": {
+        "scroll_height": 2635,
+        "viewport_h": 720,
+        "starting_scroll_y": 1915,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (1915+720\u22652635)",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 135,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_vision_router_0",
+        "mode": "Vision",
+        "step_idx": 9,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move_self_collected"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1875,
+        "scroll_y_after": 1875,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=pink+car"
+      },
+      "page_geometry": {
+        "scroll_height": 2595,
+        "viewport_h": 720,
+        "starting_scroll_y": 1875,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (1875+720\u22652595)",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 2,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_vision_router_0",
+        "mode": "Vision",
+        "step_idx": 7,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move_self_collected"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 1755,
+        "scroll_y_after": 1755,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=red+gem+jewelry"
+      },
+      "page_geometry": {
+        "scroll_height": 2475,
+        "viewport_h": 720,
+        "starting_scroll_y": 1755,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (1755+720\u22652475)",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 134,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_vision_router_0",
+        "mode": "Vision",
+        "step_idx": 2,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move_self_collected"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 197,
+        "scroll_y_after": 197,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=purple+j"
+      },
+      "page_geometry": {
+        "scroll_height": 917,
+        "viewport_h": 720,
+        "starting_scroll_y": 197,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (197+720\u2265917)",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 159,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_vision_router_0",
+        "mode": "Vision",
+        "step_idx": 5,
+        "signature": [
+          "consecutive_scrolls_no_viewport_move_self_collected"
+        ]
+      },
+      "logged": {
+        "scroll_y_before": 2386,
+        "scroll_y_after": 2386,
+        "text_similarity": 1.0,
+        "action_success": false,
+        "page_changed": false,
+        "action_delta": [
+          0,
+          0.8
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=user&action=items"
+      },
+      "page_geometry": {
+        "scroll_height": 3106,
+        "viewport_h": 720,
+        "starting_scroll_y": 2386,
+        "at_bottom": true,
+        "no_overflow": false
+      },
+      "classification": "LEGIT_AT_BOTTOM",
+      "reason": "already at bottom (2386+720\u22653106)",
+      "elapsed_s": 0.8
+    }
+  ],
+  "select_results": [
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 122,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 8,
+        "signature": [
+          "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+          "runner_failed_no_progress;same_url_dropdown_not_selected"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=red+book+&sCategory=9&sOrder=dt_pub_date&iO",
+        "element_bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "id": null,
+        "cls": null,
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is LABEL not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 154,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 6,
+        "signature": [
+          "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+          "runner_failed_no_progress;same_url_dropdown_not_selected"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=17&sOrder=dt_pub_date&iOrderType=desc",
+        "element_bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "id": null,
+        "cls": null,
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is LABEL not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 133,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 24,
+        "signature": [
+          "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+          "runner_failed_no_progress",
+          "runner_failed_no_progress;same_url_dropdown_not_selected"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=Xbox+One+games+&sCategory=24&sOrder=dt_pub_",
+        "element_bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "id": null,
+        "cls": null,
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is LABEL not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 133,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 22,
+        "signature": [
+          "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+          "runner_failed_no_progress",
+          "runner_failed_no_progress;same_url_dropdown_not_selected"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=Xbox+One+games+&sCategory=24&sOrder=dt_pub_",
+        "element_bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "id": null,
+        "cls": null,
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is LABEL not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 133,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 1,
+        "signature": [
+          "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+          "runner_failed_no_progress",
+          "runner_failed_no_progress;same_url_dropdown_not_selected"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/",
+        "element_bbox": [
+          640.0,
+          278.0,
+          274.0,
+          50.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "SELECT",
+        "id": "sCategory",
+        "cls": null,
+        "role": null,
+        "is_select": true,
+        "nearest_select": {
+          "tag": "SELECT",
+          "id": "sCategory"
+        }
+      },
+      "select_state": {
+        "n_options": 24,
+        "sample": [
+          {
+            "value": "",
+            "text": "Select a category"
+          },
+          {
+            "value": "2",
+            "text": "Antiques"
+          },
+          {
+            "value": "3",
+            "text": "Appliances"
+          },
+          {
+            "value": "4",
+            "text": "Arts + crafts"
+          },
+          {
+            "value": "5",
+            "text": "Auto parts"
+          }
+        ],
+        "current": ""
+      },
+      "classification": "SCAFFOLD_SELECT_ARG_DROP",
+      "reason": "native <select> with 24 options; framework calls .select_option() with NO args (line 1395 actions.py) \u2192 would clear or no-op rather than picking 'None'",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 133,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 17,
+        "signature": [
+          "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+          "runner_failed_no_progress",
+          "runner_failed_no_progress;same_url_dropdown_not_selected"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=Xbox+One+games+&sCategory=24&sOrder=dt_pub_",
+        "element_bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "id": null,
+        "cls": null,
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is LABEL not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 154,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 7,
+        "signature": [
+          "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+          "runner_failed_no_progress;same_url_dropdown_not_selected"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=17&sOrder=dt_pub_date&iOrderType=desc",
+        "element_bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "id": null,
+        "cls": null,
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is LABEL not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 114,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 16,
+        "signature": [
+          "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+          "runner_failed_no_progress;same_url_dropdown_not_selected"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=Virginia+&iPage=104&sOrder=dt_pub_date&iOrd",
+        "element_bbox": [
+          1021.0,
+          155.0,
+          85.0,
+          19.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "id": null,
+        "cls": null,
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is LABEL not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 145,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 1,
+        "signature": [
+          "runner_failed_no_progress"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/",
+        "element_bbox": [
+          640.0,
+          278.0,
+          274.0,
+          50.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "SELECT",
+        "id": "sCategory",
+        "cls": null,
+        "role": null,
+        "is_select": true,
+        "nearest_select": {
+          "tag": "SELECT",
+          "id": "sCategory"
+        }
+      },
+      "select_state": {
+        "n_options": 24,
+        "sample": [
+          {
+            "value": "",
+            "text": "Select a category"
+          },
+          {
+            "value": "2",
+            "text": "Antiques"
+          },
+          {
+            "value": "3",
+            "text": "Appliances"
+          },
+          {
+            "value": "4",
+            "text": "Arts + crafts"
+          },
+          {
+            "value": "5",
+            "text": "Auto parts"
+          }
+        ],
+        "current": ""
+      },
+      "classification": "SCAFFOLD_SELECT_ARG_DROP",
+      "reason": "native <select> with 24 options; framework calls .select_option() with NO args (line 1395 actions.py) \u2192 would clear or no-op rather than picking 'None'",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 154,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 5,
+        "signature": [
+          "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+          "runner_failed_no_progress;same_url_dropdown_not_selected"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=17&sOrder=dt_pub_date&iOrderType=desc",
+        "element_bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "id": null,
+        "cls": null,
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is LABEL not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 133,
+        "run": "B0_3mode_classifieds",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 23,
+        "signature": [
+          "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+          "runner_failed_no_progress",
+          "runner_failed_no_progress;same_url_dropdown_not_selected"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=Xbox+One+games+&sCategory=24&sOrder=dt_pub_",
+        "element_bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "id": null,
+        "cls": null,
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is LABEL not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 169,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 1,
+        "signature": [
+          "self_collected_silent_select_option"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9999/submit/pics",
+        "element_bbox": [
+          104.0,
+          652.0,
+          187.0,
+          28.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "id": null,
+        "cls": "flex__grow",
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is SPAN not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 113,
+        "run": "B0_phantom_som_reddit_20260428",
+        "condition_id": "phase1_phantom_som_router_0",
+        "mode": "SoM",
+        "step_idx": 3,
+        "signature": [
+          "self_collected_silent_select_option"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9999/submit",
+        "element_bbox": [
+          104.0,
+          658.0,
+          167.0,
+          28.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "id": null,
+        "cls": "flex__grow",
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is SPAN not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.7
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 28,
+        "run": "B1_3mode_reddit_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 3,
+        "signature": [
+          "self_collected_silent_select_option"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9999/submit",
+        "element_bbox": [
+          104.0,
+          652.0,
+          167.0,
+          28.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "id": null,
+        "cls": "flex__grow",
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is SPAN not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.7
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 183,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 3,
+        "signature": [
+          "self_collected_silent_select_option"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9999/submit",
+        "element_bbox": [
+          104.0,
+          652.0,
+          187.0,
+          28.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "id": null,
+        "cls": "flex__grow",
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is SPAN not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 187,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 1,
+        "signature": [
+          "self_collected_silent_select_option"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9999/submit",
+        "element_bbox": [
+          104.0,
+          652.0,
+          187.0,
+          28.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "id": null,
+        "cls": "flex__grow",
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is SPAN not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.7
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 186,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 1,
+        "signature": [
+          "self_collected_silent_select_option"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:9999/submit",
+        "element_bbox": [
+          104.0,
+          652.0,
+          187.0,
+          28.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "id": null,
+        "cls": "flex__grow",
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is SPAN not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 0.7
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 252,
+        "run": "latest_shopping",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 26,
+        "signature": [
+          "self_collected_silent_select_option"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:7770/wii-remote-controller-for-nintendo-wii-and-wii-u-console-2-pack-wireless-r",
+        "element_bbox": [
+          764.0,
+          563.0,
+          52.0,
+          52.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "INPUT",
+        "id": "qty",
+        "cls": "input-text qty",
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is INPUT not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 1.6
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 252,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 28,
+        "signature": [
+          "self_collected_silent_select_option"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:7770/wii-remote-controller-for-nintendo-wii-and-wii-u-console-2-pack-wireless-r",
+        "element_bbox": [
+          764.0,
+          563.0,
+          52.0,
+          52.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "INPUT",
+        "id": "qty",
+        "cls": "input-text qty",
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is INPUT not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 1.5
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 251,
+        "run": "latest_shopping",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 6,
+        "signature": [
+          "self_collected_silent_select_option"
+        ]
+      },
+      "logged": {
+        "obs_url": "http://100.95.81.103:7770/lussory-organic-chardonnay-non-alcoholic-white-wine.html",
+        "element_bbox": [
+          764.0,
+          519.0,
+          52.0,
+          52.0
+        ],
+        "action_text": null,
+        "action_value": null,
+        "action_success": false,
+        "page_changed": false
+      },
+      "dom_at_bbox": {
+        "tag": "INPUT",
+        "id": "qty",
+        "cls": "input-text qty",
+        "role": null,
+        "is_select": false,
+        "nearest_select": null
+      },
+      "classification": "OTHER_CUSTOM_DROPDOWN",
+      "reason": "target is INPUT not <select> \u2014 different code path, not arg-drop bug",
+      "elapsed_s": 1.5
+    }
+  ],
+  "summary": {
+    "audit_date": "2026-04-30",
+    "methodology_note": "Self-replay probe uses logged state_digest.scroll_y_before/after instead of fresh-state replay (avoids the codex 'didn't replay prior steps' issue). For SCROLL: classifies via logged delta + obs_url page geometry (scrollHeight, viewport, starting scroll_y). For SELECT: navigates to obs_url, identifies element at logged bbox, separates native <select> from custom div dropdown, then verifies framework's no-args .select_option() dispatch path.",
+    "scroll": {
+      "tier2_claim_ep": 667,
+      "tier2_claim_blast_radius_pct": 14.85,
+      "n_probed": 20,
+      "n_replay_ok": 19,
+      "breakdown": {
+        "LEGIT_AT_BOTTOM": 18,
+        "REPLAY_FAIL": 1,
+        "SCAFFOLD_SCROLL_BUG": 1
+      },
+      "scaffold_fraction_of_replayed": 0.053,
+      "legit_fraction_of_replayed": 0.947,
+      "false_positive_of_tier2": 0,
+      "extrapolated_blast_radius_ep": 35
+    },
+    "select": {
+      "tier2_claim_ep": 149,
+      "tier2_claim_blast_radius_pct": 3.32,
+      "n_probed": 20,
+      "n_replay_ok": 20,
+      "breakdown": {
+        "OTHER_CUSTOM_DROPDOWN": 18,
+        "SCAFFOLD_SELECT_ARG_DROP": 2
+      },
+      "scaffold_fraction_of_replayed": 0.1,
+      "extrapolated_blast_radius_ep": 15,
+      "non_native_dropdown_fraction": 0.9
+    },
+    "comparison_to_codex": {
+      "codex_scroll_scaffold_fraction": 0.3,
+      "codex_select_scaffold_fraction": 0.286,
+      "codex_n_scroll": 10,
+      "codex_n_select": 8
+    }
+  }
+}

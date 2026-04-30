@@ -50,6 +50,27 @@ def _action_signature_soft(action: Dict[str, Any]) -> str:
     return f"{atype}|t={text}|d={delta}|pn={page_num}"
 
 
+def _action_signature_fuzzy(action: Dict[str, Any], obs_url: str = "") -> str:
+    """Fuzzy fingerprint ignoring element_id/coordinate/text — catches semantic
+    loops where agent varies query/target slightly but stays on same URL doing
+    same action_type (B-11 search-loop with rephrased queries, B-17 repeat
+    click-on-link, B-18 click-truncate-at-max-step).
+
+    Uses (action_type, url_path_no_query) — max-aggressive fuzzy. Higher
+    min_reps required at cycle-detect call site (5 instead of 3-4) to keep
+    false-positive rate acceptable.
+    """
+    atype = str(action.get("action_type", "")).lower()
+    # Strip query string from URL (search-loop varies query=foo&query=bar but
+    # URL path stays /index.php). Also strip fragment.
+    url = str(obs_url or "")
+    url_path = url.split("?", 1)[0].split("#", 1)[0]
+    # tab_focus: include page_number so different tab orchestration doesn't
+    # collapse into one fuzzy bucket.
+    page_num = action.get("page_number", "") if atype == "tab_focus" else ""
+    return f"{atype}|u={url_path}|pn={page_num}"
+
+
 def _detect_action_cycle(signatures: List[str], min_cycle: int = 1, max_cycle: int = 4,
                          min_reps: int = 3) -> int:
     """Return cycle length if the tail of *signatures* is a repeating cycle, else 0.

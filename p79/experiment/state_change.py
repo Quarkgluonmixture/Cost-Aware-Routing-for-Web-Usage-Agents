@@ -132,6 +132,45 @@ def _form_fields_changed(before_fields: List[Dict[str, Any]], after_fields: List
     return False
 
 
+# B-09 fix: split page_changed into two derivations:
+#   - runner_page_changed = bool(any reason)  → for cycle/retry decision (retains
+#     historical behavior; needed because form_value_changed / dom_complexity
+#     correctly indicate "framework should not early-stop")
+#   - agent_visible_changed = bool(any AGENT_VISIBLE_REASONS reason) → for SR
+#     derivation, fig0a metrics, search-loop detection (excludes form_value /
+#     dom_complexity / text_length / interactive_elements / form_fields which
+#     fire even when agent cannot perceive the change in obs_text)
+#
+# Probe self-verify (probe_b01_b13_self_verify.py 2026-04-30) found 6/8 I2
+# violations are page_changed=True with no agent-visible delta — those should
+# be agent_visible_changed=False.
+AGENT_VISIBLE_REASONS = frozenset({
+    "url_changed",
+    "title_changed",
+    "content_changed",
+    "scroll_changed",
+    "modal_state_changed",
+})
+
+RUNNER_INTERNAL_REASONS = frozenset({
+    "interactive_elements_changed",
+    "form_fields_changed",
+    "dom_complexity_changed",
+    "text_length_changed",
+    "form_value_changed",
+})
+
+
+def is_agent_visible_change(reasons: List[str]) -> bool:
+    """Return True if any reason in `reasons` is agent-perceivable.
+
+    Used to derive `agent_visible_changed` step record field for paper-grade
+    SR computation that excludes runner-internal noise (form_value_changed
+    et al firing on form edits that don't change obs_text).
+    """
+    return bool(set(reasons or []) & AGENT_VISIBLE_REASONS)
+
+
 def detect_page_state_change(
     state_before: Dict[str, Any],
     state_after: Dict[str, Any],

@@ -1,0 +1,114 @@
+{
+  "audit_date": "2026-04-30",
+  "scope": {
+    "local_visualwebarena": "external/visualwebarena/browser_env",
+    "local_webarena": "not available at external/webarena/browser_env",
+    "browsergym": "not available locally; online best-effort references used in markdown"
+  },
+  "candidate_bugs": [
+    {
+      "id": "candidate_1",
+      "action_type": "TYPE",
+      "file": "external/visualwebarena/browser_env/actions.py",
+      "lineno": 1341,
+      "suspicion": "HIGH",
+      "description": "Id-based TYPE clicks the AX/SoM bbox center, sends Meta+A and Backspace, then keyboard-types into the current focus. It inherits the union_bound center mismatch and can clear/type into the wrong element while env.step reports success=True.",
+      "fix_sketch": "Store an injected locator attribute for each exposed element_id and route type through locator.fill() or locator.click()/locator.press() with explicit actionability failure. Avoid global clear keystrokes unless the target locator is confirmed focused.",
+      "blast_radius_estimate": "needs probe; likely broad on search and form tasks"
+    },
+    {
+      "id": "candidate_2",
+      "action_type": "CLEAR",
+      "file": "external/visualwebarena/browser_env/actions.py",
+      "lineno": 1292,
+      "suspicion": "HIGH",
+      "description": "Id-based CLEAR clicks union_bound center and sends Meta+A/Backspace. The creator accepts role/pw fields, but sync dispatch ignores them, so the default path can destructively clear the wrong focused element.",
+      "fix_sketch": "Use locator.clear() for id-based clear after bid injection; support role/pw branches consistently or reject unsupported locator forms explicitly.",
+      "blast_radius_estimate": "needs probe; lower frequency but high severity"
+    },
+    {
+      "id": "candidate_3",
+      "action_type": "HOVER",
+      "file": "external/visualwebarena/browser_env/actions.py",
+      "lineno": 1322,
+      "suspicion": "HIGH",
+      "description": "Id-based HOVER maps element_id to union_bound center and sends page.mouse.move. Menus, tooltips, and card hovers can silently fail when the AX node bbox center is not over the actionable hover region.",
+      "fix_sketch": "Route id-based hover through an injected locator and locator.hover(timeout=...). Return explicit failure when the locator is hidden, detached, or covered.",
+      "blast_radius_estimate": "needs probe; likely clustered around menus/dropdowns"
+    },
+    {
+      "id": "candidate_4",
+      "action_type": "UPLOAD",
+      "file": "external/visualwebarena/browser_env/actions.py",
+      "lineno": 1409,
+      "suspicion": "HIGH",
+      "description": "UPLOAD dispatch uses element center click inside expect_file_chooser. Separately, create_upload_action() sets action_type to TYPE at line 708, making parsed id-based upload bypass the UPLOAD branch.",
+      "fix_sketch": "Set create_upload_action() to ActionTypes.UPLOAD and use locator.click() inside expect_file_chooser for id-based upload targets.",
+      "blast_radius_estimate": "needs probe; likely rare but currently structurally broken"
+    },
+    {
+      "id": "candidate_5",
+      "action_type": "SELECT_OPTION",
+      "file": "external/visualwebarena/browser_env/actions.py",
+      "lineno": 1391,
+      "suspicion": "MEDIUM",
+      "description": "SELECT_OPTION is locator-based, but execute_action drops the parsed select_option arguments and calls locator.select_option() with no args.",
+      "fix_sketch": "Forward parsed_code[-1].arguments and parsed_code[-1].keywords into execute_playwright_select_option(). Add a controlled select-option regression test.",
+      "blast_radius_estimate": "needs probe; likely limited to Playwright-code action path"
+    },
+    {
+      "id": "candidate_6",
+      "action_type": "NEW_TAB_OR_TARGET_BLANK",
+      "file": "external/visualwebarena/browser_env/actions.py",
+      "lineno": 1417,
+      "suspicion": "MEDIUM",
+      "description": "After any action, new-tab handling only polls browser_ctx.pages length and brings the last page to front. There is no expect_popup/load wait around target=_blank clicks, matching the known POPUP_OR_TARGET_BLANK probe category.",
+      "fix_sketch": "Wrap locator-based clicks that may open pages with expect_popup fallback and bring the popup to front after load; retain page-count fallback for legacy coordinate actions.",
+      "blast_radius_estimate": "existing probe category: 12 episodes / 13% of probed failures"
+    }
+  ],
+  "axtree_findings": [
+    {
+      "question": "Q1 role inclusion rules",
+      "answer": "AXTree parse includes any CDP AX node with a non-empty rendered node string, filtering only nameless generic/img/list/strong/paragraph/banner/navigation/Section/LabelText/Legend/listitem nodes and nameless listitem nodes with properties. It is not a strict role allowlist.",
+      "code_ref": "external/visualwebarena/browser_env/processors.py:529",
+      "concern_level": "HIGH"
+    },
+    {
+      "question": "Q1 ignored properties",
+      "answer": "Properties focusable, editable, readonly, level, settable, multiline, and invalid are suppressed from the text observation, which can hide actionability and form-state clues from the agent.",
+      "code_ref": "external/visualwebarena/browser_env/constants.py:288",
+      "concern_level": "MEDIUM"
+    },
+    {
+      "question": "Q2 element_id assignment",
+      "answer": "AXTree visible element_id is the CDP Accessibility nodeId; backendDOMNodeId is stored only as metadata. HTML observations use DOM cursor indices; SoM uses a fresh drawing counter. IDs are observation-local, not stable backend identities.",
+      "code_ref": "external/visualwebarena/browser_env/processors.py:581",
+      "concern_level": "HIGH"
+    },
+    {
+      "question": "Q3 union_bound source",
+      "answer": "Bounds come from DOM.resolveNode plus Runtime.callFunctionOn; elements return getBoundingClientRect().toJSON(), text nodes return a Range.getBoundingClientRect(). The center is then normalized by viewport size.",
+      "code_ref": "external/visualwebarena/browser_env/processors.py:157",
+      "concern_level": "HIGH"
+    },
+    {
+      "question": "Q4 stale-cache risk",
+      "answer": "Metadata is rebuilt after each action, so there is no persistent post-step cache, but dispatch uses previous-observation bounds. AJAX/lazy rendering/layout shifts between observation and action can stale the coordinate and still produce success=True.",
+      "code_ref": "external/visualwebarena/browser_env/envs.py:282",
+      "concern_level": "HIGH"
+    },
+    {
+      "question": "Q5 role='link' non-<a>",
+      "answer": "The AXTree path trusts CDP role/name and does not validate tag or href. SoM explicitly includes [role='link']. Non-anchor links can enter obs and be dispatched by bbox-center mouse actions rather than locator actionability.",
+      "code_ref": "external/visualwebarena/browser_env/processors.py:813",
+      "concern_level": "HIGH"
+    },
+    {
+      "question": "current_viewport_only pruning",
+      "answer": "Nodes outside the viewport or below the 0.6 overlap threshold are removed and children are spliced into the parent. This can alter apparent hierarchy and ID availability between small scroll/layout changes.",
+      "code_ref": "external/visualwebarena/browser_env/processors.py:480",
+      "concern_level": "MEDIUM"
+    }
+  ]
+}

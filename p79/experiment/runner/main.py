@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import random
 import re
 import shutil
 import time
@@ -42,7 +43,7 @@ from p79.experiment.metrics import (
 from p79.experiment.modules import apply_secondary_modules, m3_retry_action, should_trigger_m3_retry
 from p79.experiment.router import RouterState, RuleBasedRouter
 from p79.experiment.som import prepare_observation_for_mode
-from p79.experiment.state_change import build_page_state, detect_page_state_change
+from p79.experiment.state_change import build_page_state, detect_page_state_change, is_agent_visible_change
 from p79.experiment.tasks import load_tasks
 from p79.utils.auth_refresh import refresh_site_auth, should_refresh
 from p79.experiment.types import (
@@ -60,6 +61,7 @@ from p79.experiment.runner.helpers import (
     _parse_seeds,
     _action_signature,
     _action_signature_soft,
+    _action_signature_fuzzy,
     _detect_action_cycle,
     _sanitize_query_text,
     _query_sanitization_control,
@@ -71,6 +73,29 @@ from p79.experiment.runner.helpers import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _seed_global_rng(seed: int) -> None:
+    """B-37: propagate seed to Python/NumPy/torch RNG.
+
+    Called at start of each (condition, seed) iteration. Without this, seed=42
+    is metadata only — Python random.choice / np.random.shuffle / torch ops
+    produce different results across runs. Paper-grade reproducibility claim
+    requires this propagation.
+    """
+    random.seed(seed)
+    try:
+        import numpy as np
+        np.random.seed(seed)
+    except ImportError:
+        pass
+    try:
+        import torch
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+    except ImportError:
+        pass
 
 
 class ExperimentRunner:
@@ -124,6 +149,12 @@ class ExperimentRunner:
         backend_cfg = self.cfg.get("backends", {}).get(backend_id)
         if not backend_cfg:
             raise KeyError(f"Backend {backend_id} is not defined in config.backends")
+        # B-37 fix: inject experiment seed into backend cfg for downstream
+        # propagation to LLM payload (proxy `seed` param) and torch generation.
+        # Uses self.seed which was set per (condition, seed) pair in run().
+        backend_cfg = dict(backend_cfg)  # shallow copy to avoid mutating self.cfg
+        if backend_cfg.get("seed") is None:
+            backend_cfg["seed"] = int(self.seed)
         backend = create_backend(backend_id, backend_cfg)
         self._backends[backend_id] = backend
         return backend
@@ -277,6 +308,10 @@ class ExperimentRunner:
         for condition in self.conditions:
             for current_seed in self.seeds:
                 self.seed = current_seed
+                # B-37 fix: propagate seed to Python/NumPy/torch RNG so seed=42 is
+                # actually deterministic, not just metadata. Per (condition, seed)
+                # pair so each condition gets fresh RNG state from the same seed.
+                _seed_global_rng(current_seed)
                 seed_suffix = f"_seed{current_seed}" if len(self.seeds) > 1 else ""
                 effective_cid = f"{condition.condition_id}{seed_suffix}"
 
@@ -720,6 +755,11 @@ class ExperimentRunner:
         escalation_count = 0
         action_signatures: List[str] = []
         action_signatures_soft: List[str] = []
+        # B-11/17/18 Cluster 3 fix: fuzzy signature track catches semantic loops
+        # where strict/soft signatures miss because text varies (search-loop
+        # with rephrased queries, click-loop on different element_ids of same
+        # role on same URL).
+        action_signatures_fuzzy: List[str] = []
         scroll_direction_history: List[str] = []
         url_stuck_streak = 0
         last_url = ""
@@ -1185,6 +1225,11 @@ class ExperimentRunner:
                 page_change_reasons=page_change_reasons,
                 text_similarity=text_similarity,
                 checklist=checklist_snapshot,
+                # B-09 Cluster 2 fix: agent_visible_changed excludes runner-
+                # internal reasons (form_value/dom_complexity/text_length/
+                # interactive_elements/form_fields). Use this for SR derivation
+                # downstream; page_changed retains 12-union for cycle/retry.
+                agent_visible_changed=is_agent_visible_change(page_change_reasons),
                 state_digest={
                     "url_before": state_before.get("url"),
                     "url_after": state_after.get("url"),
@@ -1272,13 +1317,29 @@ class ExperimentRunner:
                 action_signatures_soft.append(_action_signature_soft(action))
             else:
                 action_signatures_soft.clear()
+            # B-11/17/18 fix: fuzzy signature track. Reset when page changes
+            # (different URL/title/visible-text means agent navigated, not stuck).
+            # Use agent_visible_changed if available; fallback to page_changed.
+            avis_changed = is_agent_visible_change(page_change_reasons)
+            if not avis_changed:
+                action_signatures_fuzzy.append(
+                    _action_signature_fuzzy(action, obs_url=str(state_after.get("url", "")))
+                )
+            else:
+                action_signatures_fuzzy.clear()
             cycle_len = _detect_action_cycle(action_signatures)
             # Soft check uses higher reps threshold to reduce false positives
             soft_cycle_len = _detect_action_cycle(action_signatures_soft, min_reps=4)
-            if cycle_len > 0 or soft_cycle_len > 0:
-                detected = cycle_len if cycle_len > 0 else soft_cycle_len
-                mode = "strict" if cycle_len > 0 else "soft"
-                min_r = 3 if cycle_len > 0 else 4
+            # Fuzzy check uses even higher threshold (5 reps) — most aggressive
+            # collapse catches search-loop / click-loop with text-variation.
+            fuzzy_cycle_len = _detect_action_cycle(action_signatures_fuzzy, min_reps=5)
+            if cycle_len > 0 or soft_cycle_len > 0 or fuzzy_cycle_len > 0:
+                if cycle_len > 0:
+                    detected, mode, min_r = cycle_len, "strict", 3
+                elif soft_cycle_len > 0:
+                    detected, mode, min_r = soft_cycle_len, "soft", 4
+                else:
+                    detected, mode, min_r = fuzzy_cycle_len, "fuzzy", 5
                 logger.warning(
                     "Action cycle detected (%s, len=%d, reps>=%d) at step %d for task %s/%d — early stop.",
                     mode, detected, min_r, step_idx, task.site, task.task_id,

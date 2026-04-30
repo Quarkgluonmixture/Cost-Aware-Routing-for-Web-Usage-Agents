@@ -1,0 +1,1763 @@
+{
+  "click": [
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 125,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 2,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          150.0,
+          303.0,
+          550.0,
+          412.5
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=32204"
+      },
+      "dom_at_bbox": {
+        "tag": "IMG",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": {
+          "href": "javascript:;",
+          "text": ""
+        },
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "ICON_OR_IMG_INSIDE",
+      "elapsed_s": 1.0
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 8,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 22,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          150.0,
+          149.0,
+          760.0,
+          36.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=item&action=item_add"
+      },
+      "dom_at_bbox": {
+        "tag": "H1",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "HEADING_ELEMENT",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 121,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 2,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          150.0,
+          303.0,
+          550.0,
+          412.5
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=73349"
+      },
+      "dom_at_bbox": {
+        "tag": "IMG",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": {
+          "href": "javascript:;",
+          "text": ""
+        },
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "ICON_OR_IMG_INSIDE",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 125,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 3,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          150.0,
+          303.0,
+          550.0,
+          412.5
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=32204"
+      },
+      "dom_at_bbox": {
+        "tag": "IMG",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": {
+          "href": "javascript:;",
+          "text": ""
+        },
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "ICON_OR_IMG_INSIDE",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 223,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 1,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          850.0,
+          489.0,
+          171.0,
+          42.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=13215"
+      },
+      "dom_at_bbox": {
+        "tag": "P",
+        "cls": "email bld",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "BLOCK_PARENT",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 66,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 3,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          507.0,
+          355.0,
+          58.0,
+          27.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=football+game+&sCategory=24&sOrder=i_price&"
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "cls": "currency-value",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER_SPAN",
+      "elapsed_s": 1.3
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 81,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 1,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          121.0,
+          527.75,
+          14.0,
+          14.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/f/photoshopbattles"
+      },
+      "dom_at_bbox": {
+        "tag": "use",
+        "cls": {},
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": {
+          "text": ""
+        },
+        "nearest_input": null
+      },
+      "category": "ICON_OR_IMG_INSIDE",
+      "elapsed_s": 1.1
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 106,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 2,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          924.0,
+          241.0,
+          178.0,
+          37.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/f/books/124099/i-just-feel-so-betrayed-by-adventures-of-huckleberry-finn"
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "cls": "subscribe-button__label",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": {
+          "text": "Subscribe\n0"
+        },
+        "nearest_input": null
+      },
+      "category": "BUTTON_LABEL_SPAN",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 193,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 4,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          104.0,
+          615.28125,
+          560.0,
+          142.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/f/EarthPorn/119058/aurora-and-crescent-moon-near-svolvaer-norway-2500x1668"
+      },
+      "dom_at_bbox": {
+        "tag": "TEXTAREA",
+        "cls": "flex__grow form-control",
+        "type": "textarea",
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": {
+          "tag": "TEXTAREA",
+          "type": "textarea"
+        }
+      },
+      "category": "TEXTAREA_AT_CENTER_NO_FOLLOWUP",
+      "elapsed_s": 2.7
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 84,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 1,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          121.0,
+          227.0,
+          14.0,
+          14.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/f/consoles"
+      },
+      "dom_at_bbox": {
+        "tag": "use",
+        "cls": {},
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": {
+          "text": ""
+        },
+        "nearest_input": null
+      },
+      "category": "ICON_OR_IMG_INSIDE",
+      "elapsed_s": 1.0
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 28,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 3,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          104.0,
+          171.0,
+          560.0,
+          43.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/submit"
+      },
+      "dom_at_bbox": {
+        "tag": "INPUT",
+        "cls": "form-control",
+        "type": "text",
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": {
+          "tag": "INPUT",
+          "type": "text"
+        }
+      },
+      "category": "INPUT_AT_CENTER_AGENT_PATTERN",
+      "elapsed_s": 0.7
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 159,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 13,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          236.0,
+          502.1875,
+          643.0,
+          49.9375
+        ],
+        "obs_url": "http://100.95.81.103:9999/f/nyc"
+      },
+      "dom_at_bbox": {
+        "tag": "A",
+        "cls": "submission__link",
+        "type": null,
+        "role": null,
+        "nearest_a": {
+          "href": "http://100.95.81.103:9999/submission_images/35c74f2100e7d9bf311c41cccc87c1fe918f0fbe814ae64109476f1b99b75a42.jpg",
+          "text": "I love this city even as I hate it haha."
+        },
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "ON_TARGET",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 267,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 3,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          251.46875,
+          223.9375,
+          112.0,
+          32.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/catalogsearch/result/?q=RGB+headset+"
+      },
+      "dom_at_bbox": {
+        "tag": "DIV",
+        "cls": "page-wrapper",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "BLOCK_PARENT",
+      "elapsed_s": 3.4
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 87,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 14,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          508.625,
+          263.34375,
+          112.0,
+          32.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/catalogsearch/result/?q=hot+dogs+"
+      },
+      "dom_at_bbox": {
+        "tag": "DIV",
+        "cls": "page-wrapper",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "BLOCK_PARENT",
+      "elapsed_s": 2.3
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 165,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 3,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          251.46875,
+          287.25,
+          196.0,
+          39.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/catalogsearch/result/?q=Asics+men%27s+tennis+shoe+"
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "cls": "base",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER_SPAN",
+      "elapsed_s": 2.7
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 407,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 6,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          20.0,
+          476.703125,
+          165.0,
+          39.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/catalogsearch/result/index/?cat=6&q=Boston+Celtics+top+"
+      },
+      "dom_at_bbox": {
+        "tag": "LI",
+        "cls": "item",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "BLOCK_PARENT",
+      "elapsed_s": 2.3
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 165,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 4,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          251.46875,
+          287.25,
+          196.0,
+          39.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/catalogsearch/result/?q=Asics+men%27s+tennis+shoe+"
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "cls": "base",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER_SPAN",
+      "elapsed_s": 2.1
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 327,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 7,
+        "action_type": "click"
+      },
+      "logged": {
+        "bbox": [
+          20.0,
+          482.09375,
+          161.0,
+          39.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/catalogsearch/result/index/?q=black%20wireless%20earbuds%20&product_list_o"
+      },
+      "dom_at_bbox": {
+        "tag": "LI",
+        "cls": "item",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "BLOCK_PARENT",
+      "elapsed_s": 2.1
+    }
+  ],
+  "type": [
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 224,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 4,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=heron+wall+rack+"
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "BLOCK_PARENT",
+      "elapsed_s": 1.3
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 232,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 6,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/search?q=Nintendo+64+controller+"
+      },
+      "dom_at_bbox": {
+        "tag": "NAV",
+        "cls": "site-nav",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 159,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 9,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=user&action=items"
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "BLOCK_PARENT",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 29,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 13,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+car+"
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "BLOCK_PARENT",
+      "elapsed_s": 1.0
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 207,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 7,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://metis.lti.cs.cmu.edu:7770/catalogsearch/result/index/?q=headphones%20Neon%20Red%20Neon%20Blue"
+      },
+      "category": "REPLAY_FAIL",
+      "reason": "Error: Page.goto: net::ERR_CONNECTION_REFUSED at http://metis.lti.cs.cmu.edu:7770/catalogsearch/result/index/?q=headphones%20Ne",
+      "elapsed_s": 0.3
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 159,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 8,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=user&action=items"
+      },
+      "dom_at_bbox": {
+        "tag": "HEADER",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "BLOCK_PARENT",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 75,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 8,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/search?q=MechanicalKeyboards+"
+      },
+      "dom_at_bbox": {
+        "tag": "NAV",
+        "cls": "site-nav",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 1.0
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 22,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 6,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/search?q=Xbox+Limited+Edition+"
+      },
+      "dom_at_bbox": {
+        "tag": "NAV",
+        "cls": "site-nav",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 194,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 9,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/f/MechanicalKeyboards/most_commented?t=all"
+      },
+      "dom_at_bbox": {
+        "tag": "NAV",
+        "cls": "site-nav",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 195,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 8,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/search?q=pink+escape+key+"
+      },
+      "dom_at_bbox": {
+        "tag": "NAV",
+        "cls": "site-nav",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 22,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 7,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/search?q=Xbox+Limited+Edition+"
+      },
+      "dom_at_bbox": {
+        "tag": "NAV",
+        "cls": "site-nav",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 0.7
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 75,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 6,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/search?q=MechanicalKeyboards+"
+      },
+      "dom_at_bbox": {
+        "tag": "NAV",
+        "cls": "site-nav",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 1.0
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 23,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 5,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          937.0,
+          488.75,
+          220.0,
+          32.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/catalogsearch/result/index/?q=Exercise%20%26%20Fitness%20&product_list_ord"
+      },
+      "dom_at_bbox": {
+        "tag": "IMG",
+        "cls": "product-image-photo",
+        "type": null,
+        "role": null,
+        "nearest_a": {
+          "href": "http://100.95.81.103:7770/henkel-harris-model-175-mahogany-new-market-high-chest-new.html",
+          "text": ""
+        },
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "ICON_OR_IMG_INSIDE",
+      "elapsed_s": 2.1
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 402,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 7,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          937.0,
+          488.75,
+          220.0,
+          32.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/catalogsearch/result/?q=Korean+packaging+"
+      },
+      "dom_at_bbox": {
+        "tag": "DD",
+        "cls": "item",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 2.0
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 327,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 18,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          1123.0,
+          323.75,
+          58.0,
+          32.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/catalogsearch/result/index/?cat=60&product_list_order=price&q=black+wirele"
+      },
+      "dom_at_bbox": {
+        "tag": "DIV",
+        "cls": "page-title-wrapper",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "BLOCK_PARENT",
+      "elapsed_s": 1.9
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 325,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 8,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          1123.0,
+          323.75,
+          58.0,
+          32.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/catalogsearch/result/index/?q=blue%20computer%20mouse%20&product_list_orde"
+      },
+      "dom_at_bbox": {
+        "tag": "DIV",
+        "cls": "page-title-wrapper",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "BLOCK_PARENT",
+      "elapsed_s": 1.8
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 387,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 18,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          937.0,
+          488.75,
+          220.0,
+          32.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/catalogsearch/result/index/?q=box%20wine%20&product_list_order=price"
+      },
+      "dom_at_bbox": {
+        "tag": "DD",
+        "cls": "item",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 1.8
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 188,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 20,
+        "action_type": "type"
+      },
+      "logged": {
+        "bbox": [
+          0.0,
+          0.0,
+          10.0,
+          10.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/catalogsearch/result/?q=4-seater+car+"
+      },
+      "dom_at_bbox": {
+        "tag": "DIV",
+        "cls": "panel header",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "BLOCK_PARENT",
+      "elapsed_s": 1.8
+    }
+  ],
+  "select_option": [
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 156,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 11,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=7&sOrder=dt_pub_date&iOrderType=desc"
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 122,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 10,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=red+book+&sCategory=9&sOrder=dt_pub_date&iO"
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 122,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 14,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=red+book+&sCategory=9&sOrder=dt_pub_date&iO"
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 154,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 5,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=17&sOrder=dt_pub_date&iOrderType=desc"
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 133,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 16,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=Xbox+One+games+&sCategory=24&sOrder=dt_pub_"
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "classifieds",
+        "task": 133,
+        "run": "B0_3mode_classifieds_20260413",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 23,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          1021.0,
+          227.0,
+          85.0,
+          19.0
+        ],
+        "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=Xbox+One+games+&sCategory=24&sOrder=dt_pub_"
+      },
+      "dom_at_bbox": {
+        "tag": "LABEL",
+        "cls": null,
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER",
+      "elapsed_s": 0.9
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 186,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 1,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          104.0,
+          652.0,
+          187.0,
+          28.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/submit"
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "cls": "flex__grow",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER_SPAN",
+      "elapsed_s": 0.7
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 208,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 3,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          104.0,
+          652.0,
+          187.0,
+          28.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/submit"
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "cls": "flex__grow",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER_SPAN",
+      "elapsed_s": 0.7
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 169,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 1,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          104.0,
+          652.0,
+          187.0,
+          28.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/submit/pics"
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "cls": "flex__grow",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER_SPAN",
+      "elapsed_s": 0.7
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 169,
+        "run": "B0_phantom_prompt_reddit_20260429",
+        "condition_id": "phase1_phantom_prompt_router_0",
+        "mode": "P-prompt",
+        "step_idx": 4,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          104.0,
+          652.0,
+          187.0,
+          28.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/submit/pics"
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "cls": "flex__grow",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER_SPAN",
+      "elapsed_s": 0.7
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 184,
+        "run": "B0_3mode_reddit_20260422",
+        "condition_id": "phase1_som_router_0",
+        "mode": "SoM",
+        "step_idx": 5,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          104.0,
+          652.0,
+          187.0,
+          28.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/submit"
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "cls": "flex__grow",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER_SPAN",
+      "elapsed_s": 0.7
+    },
+    {
+      "case": {
+        "site": "reddit",
+        "task": 169,
+        "run": "B0_phantom_prompt_reddit_20260429",
+        "condition_id": "phase1_phantom_prompt_router_0",
+        "mode": "P-prompt",
+        "step_idx": 3,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          104.0,
+          652.0,
+          187.0,
+          28.0
+        ],
+        "obs_url": "http://100.95.81.103:9999/submit/pics"
+      },
+      "dom_at_bbox": {
+        "tag": "SPAN",
+        "cls": "flex__grow",
+        "type": null,
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": null
+      },
+      "category": "OTHER_SPAN",
+      "elapsed_s": 0.8
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 252,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 27,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          764.0,
+          563.0,
+          52.0,
+          52.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/wii-remote-controller-for-nintendo-wii-and-wii-u-console-2-pack-wireless-r"
+      },
+      "dom_at_bbox": {
+        "tag": "INPUT",
+        "cls": "input-text qty",
+        "type": "number",
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": {
+          "tag": "INPUT",
+          "type": "number"
+        }
+      },
+      "category": "OTHER",
+      "elapsed_s": 1.6
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 284,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 6,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          764.0,
+          563.0,
+          52.0,
+          52.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/21-ounce-hormel-pepperoni-deli-thin-sliced-1-5-pounds-total-pack-of-1.html"
+      },
+      "dom_at_bbox": {
+        "tag": "INPUT",
+        "cls": "input-text qty",
+        "type": "number",
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": {
+          "tag": "INPUT",
+          "type": "number"
+        }
+      },
+      "category": "OTHER",
+      "elapsed_s": 1.6
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 252,
+        "run": "latest_shopping",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 27,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          764.0,
+          563.0,
+          52.0,
+          52.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/wii-remote-controller-for-nintendo-wii-and-wii-u-console-2-pack-wireless-r"
+      },
+      "dom_at_bbox": {
+        "tag": "INPUT",
+        "cls": "input-text qty",
+        "type": "number",
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": {
+          "tag": "INPUT",
+          "type": "number"
+        }
+      },
+      "category": "OTHER",
+      "elapsed_s": 1.6
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 251,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 6,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          764.0,
+          519.0,
+          52.0,
+          52.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/lussory-organic-chardonnay-non-alcoholic-white-wine.html"
+      },
+      "dom_at_bbox": {
+        "tag": "INPUT",
+        "cls": "input-text qty",
+        "type": "number",
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": {
+          "tag": "INPUT",
+          "type": "number"
+        }
+      },
+      "category": "OTHER",
+      "elapsed_s": 1.5
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 284,
+        "run": "latest_shopping",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 6,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          764.0,
+          563.0,
+          52.0,
+          52.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/21-ounce-hormel-pepperoni-deli-thin-sliced-1-5-pounds-total-pack-of-1.html"
+      },
+      "dom_at_bbox": {
+        "tag": "INPUT",
+        "cls": "input-text qty",
+        "type": "number",
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": {
+          "tag": "INPUT",
+          "type": "number"
+        }
+      },
+      "category": "OTHER",
+      "elapsed_s": 1.6
+    },
+    {
+      "case": {
+        "site": "shopping",
+        "task": 321,
+        "run": "B0_dom_shopping_20260428",
+        "condition_id": "phase1_dom_router_0",
+        "mode": "DOM",
+        "step_idx": 3,
+        "action_type": "select_option"
+      },
+      "logged": {
+        "bbox": [
+          764.0,
+          563.0,
+          52.0,
+          52.0
+        ],
+        "obs_url": "http://100.95.81.103:7770/oreo-cookies-variety-pack-oreo-original-oreo-golden-oreo-double-stuf-oreo-"
+      },
+      "dom_at_bbox": {
+        "tag": "INPUT",
+        "cls": "input-text qty",
+        "type": "number",
+        "role": null,
+        "nearest_a": null,
+        "nearest_button": null,
+        "nearest_input": {
+          "tag": "INPUT",
+          "type": "number"
+        }
+      },
+      "category": "OTHER",
+      "elapsed_s": 1.5
+    }
+  ],
+  "summary": {
+    "audit_date": "2026-04-30",
+    "purpose": "Tier 10 dispatch-effective-target mapping audit across all action types.",
+    "per_action": {
+      "click": {
+        "n_total": 18,
+        "n_replay_ok": 18,
+        "breakdown": {
+          "ICON_OR_IMG_INSIDE": 5,
+          "HEADING_ELEMENT": 1,
+          "BLOCK_PARENT": 5,
+          "OTHER_SPAN": 3,
+          "BUTTON_LABEL_SPAN": 1,
+          "TEXTAREA_AT_CENTER_NO_FOLLOWUP": 1,
+          "INPUT_AT_CENTER_AGENT_PATTERN": 1,
+          "ON_TARGET": 1
+        },
+        "on_target_fraction_of_replayed": 0.056,
+        "off_target_fraction_of_replayed": 0.944
+      },
+      "type": {
+        "n_total": 18,
+        "n_replay_ok": 17,
+        "breakdown": {
+          "BLOCK_PARENT": 7,
+          "OTHER": 9,
+          "REPLAY_FAIL": 1,
+          "ICON_OR_IMG_INSIDE": 1
+        },
+        "on_target_fraction_of_replayed": 0.0,
+        "off_target_fraction_of_replayed": 1.0
+      },
+      "select_option": {
+        "n_total": 18,
+        "n_replay_ok": 18,
+        "breakdown": {
+          "OTHER": 12,
+          "OTHER_SPAN": 6
+        },
+        "on_target_fraction_of_replayed": 0.0,
+        "off_target_fraction_of_replayed": 1.0
+      }
+    }
+  }
+}

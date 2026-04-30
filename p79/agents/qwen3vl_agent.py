@@ -509,6 +509,19 @@ CRITICAL:
             "return_dict_in_generate": True,
             "output_scores": True,
         }
+        # B-37 fix: torch.manual_seed already called per-condition in runner.run(),
+        # but transformers.generate() can introduce its own RNG state during
+        # tokenization padding / mask. Force fresh seed before each generate call
+        # to guarantee strict per-step reproducibility on B1 greedy path.
+        _b37_seed = self.config.get("model", {}).get("seed")
+        if _b37_seed is not None:
+            try:
+                import torch as _torch_b37
+                _torch_b37.manual_seed(int(_b37_seed))
+                if _torch_b37.cuda.is_available():
+                    _torch_b37.cuda.manual_seed_all(int(_b37_seed))
+            except ImportError:
+                pass
 
         generate_start = time.time()
         gen_output = self.model.generate(**inputs, **gen_kwargs)

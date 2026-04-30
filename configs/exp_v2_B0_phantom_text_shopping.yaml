@@ -28,7 +28,7 @@ backends:
     type: "api_proxy"
     api_name: "qwen.qwen3-vl-235b-a22b"
     base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
-    temperature: 0.1
+    temperature: 0.0
     max_new_tokens: 4096
     max_image_payload_bytes: 5242880
     image_max_size: 1280

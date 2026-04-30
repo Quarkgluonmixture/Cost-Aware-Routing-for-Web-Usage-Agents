@@ -1,0 +1,876 @@
+{
+  "audit_date": "2026-04-30",
+  "run_roots": [
+    "results/visualwebarena/phase1/B0_3mode_classifieds_20260413",
+    "results/visualwebarena/phase1/B0_3mode_reddit_20260422",
+    "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260426",
+    "results/visualwebarena/phase1/B0_phantom_som_reddit_20260428",
+    "results/visualwebarena/phase1/B0_phantom_text_classifieds_20260427",
+    "results/visualwebarena/phase1/B0_phantom_text_reddit_20260427",
+    "results/visualwebarena/phase1/B0_phantom_prompt_reddit_20260429",
+    "results/visualwebarena/phase1/B0_dom_shopping_20260428",
+    "results/visualwebarena/phase1/B1_3mode_classifieds_20260413",
+    "results/visualwebarena/phase1/B1_3mode_reddit_20260413",
+    "results/visualwebarena/phase1/B1_phantom_som_classifieds_20260428",
+    "results/visualwebarena/phase1/B1_phantom_dom_classifieds_20260429"
+  ],
+  "total_episodes_scanned": 4501,
+  "total_steps_scanned": 46921,
+  "invariants": [
+    {
+      "id": "I6",
+      "name": "inv_axtree_drift_same_url",
+      "description": "Adjacent pre-action AXTree DOM artifacts have shingle similarity < 0.7 while URL is unchanged and the intervening action is not click/goto.",
+      "implementable": true,
+      "implementation_notes": "Uses cached 5-token shingle Jaccard over adjacent pre-action DOM artifacts.",
+      "n_violations": 6002,
+      "violation_pct_of_steps": 12.7917,
+      "episode_traces_with_violation": 1724,
+      "violation_pct_of_episodes": 38.3026,
+      "mode_breakdown": {
+        "DOM": 2885,
+        "P-prompt": 358,
+        "P-text": 249,
+        "SoM": 1128,
+        "Vision": 1382
+      },
+      "site_breakdown": {
+        "classifieds": 2946,
+        "reddit": 1938,
+        "shopping": 1118
+      },
+      "case_study_examples": [
+        {
+          "site": "classifieds",
+          "task": 0,
+          "step": 2,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=scroll; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=blue+kayak+&sOrder=i_price&iOrderType=asc; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=blue+kayak+&sOrder=i_price&iOrderType=asc; page_changed=True; action_success=True; text_similarity=0.088; adjacent_obs_shingle_similarity=0.037"
+        },
+        {
+          "site": "classifieds",
+          "task": 0,
+          "step": 3,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=scroll; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=blue+kayak+&sOrder=i_price&iOrderType=asc; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=blue+kayak+&sOrder=i_price&iOrderType=asc; page_changed=True; action_success=True; text_similarity=0.094; adjacent_obs_shingle_similarity=0.081"
+        },
+        {
+          "site": "classifieds",
+          "task": 0,
+          "step": 4,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=type; element_id=2331; text=blue kayak; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=blue+kayak+&sOrder=i_price&iOrderType=asc; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=blue+kayak+&sOrder=i_price&iOrderType=asc; page_changed=True; action_success=True; text_similarity=0.095; adjacent_obs_shingle_similarity=0.317"
+        },
+        {
+          "site": "classifieds",
+          "task": 102,
+          "step": 3,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=scroll; url_before=http://100.95.81.103:9980/index.php?page=search&sCategory=4; url_after=http://100.95.81.103:9980/index.php?page=search&sCategory=4; page_changed=True; action_success=True; text_similarity=0.096; adjacent_obs_shingle_similarity=0.044"
+        },
+        {
+          "site": "classifieds",
+          "task": 102,
+          "step": 4,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=scroll; url_before=http://100.95.81.103:9980/index.php?page=search&sCategory=4; url_after=http://100.95.81.103:9980/index.php?page=search&sCategory=4; page_changed=True; action_success=True; text_similarity=0.175; adjacent_obs_shingle_similarity=0.036"
+        },
+        {
+          "site": "classifieds",
+          "task": 102,
+          "step": 5,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=scroll; url_before=http://100.95.81.103:9980/index.php?page=search&sCategory=4; url_after=http://100.95.81.103:9980/index.php?page=search&sCategory=4; page_changed=True; action_success=True; text_similarity=0.187; adjacent_obs_shingle_similarity=0.274"
+        },
+        {
+          "site": "classifieds",
+          "task": 104,
+          "step": 2,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=type; element_id=1849; text=Recreational Vehicle; url_before=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=RVs+; url_after=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=RVs+; page_changed=True; action_success=True; text_similarity=0.097; adjacent_obs_shingle_similarity=0.062"
+        },
+        {
+          "site": "classifieds",
+          "task": 104,
+          "step": 6,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=scroll; url_before=http://100.95.81.103:9980/index.php?page=item&id=62274; url_after=http://100.95.81.103:9980/index.php?page=item&id=62274; page_changed=True; action_success=True; text_similarity=0.230; adjacent_obs_shingle_similarity=0.058"
+        }
+      ],
+      "candidate_root_cause": "AJAX render, overlay/modal replacement, in-place search update, or observation-cache replacement not represented as navigation.",
+      "tier3_taxonomy_match": "Type 4 Evaluator State Drift",
+      "novelty_assessment": "matches Tier 2 cross-step trajectory anomaly already-known family"
+    },
+    {
+      "id": "I7",
+      "name": "inv_finish_but_eval_reject",
+      "description": "Agent attempted finish but raw evaluator success is false.",
+      "implementable": true,
+      "implementation_notes": "",
+      "n_violations": 1552,
+      "violation_pct_of_steps": 3.3077,
+      "episode_traces_with_violation": 1552,
+      "violation_pct_of_episodes": 34.4812,
+      "mode_breakdown": {
+        "DOM": 474,
+        "P-SoM": 215,
+        "P-prompt": 80,
+        "P-text": 194,
+        "SoM": 353,
+        "Vision": 236
+      },
+      "site_breakdown": {
+        "classifieds": 774,
+        "reddit": 609,
+        "shopping": 169
+      },
+      "case_study_examples": [
+        {
+          "site": "classifieds",
+          "task": 100,
+          "step": 3,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=finish; answer=18000.00; url_before=http://100.95.81.103:9980/index.php?page=item&id=23386; url_after=http://100.95.81.103:9980/index.php?page=item&id=23386; page_changed=False; action_success=True; text_similarity=1.000; finish_attempted=True; raw_success=False"
+        },
+        {
+          "site": "classifieds",
+          "task": 101,
+          "step": 4,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=finish; answer=The most expensive painting of the city in the 'Art + crafts' category is 'Wanted stained glass shee; url_before=http://100.95.81.103:9980/index.php?page=item&id=60318; url_after=http://100.95.81.103:9980/index.php?page=item&id=60318; page_changed=False; action_success=True; text_similarity=1.000; finish_attempted=True; raw_success=False"
+        },
+        {
+          "site": "classifieds",
+          "task": 105,
+          "step": 17,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=finish; answer=No guitar with a red velvet lined case was found.; url_before=http://100.95.81.103:9980/index.php?page=item&id=67527; url_after=http://100.95.81.103:9980/index.php?page=item&id=67527; page_changed=False; action_success=True; text_similarity=1.000; finish_attempted=True; raw_success=False"
+        },
+        {
+          "site": "classifieds",
+          "task": 106,
+          "step": 3,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=finish; answer=seller@example.com; url_before=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=animals+&sCategory=22; url_after=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=animals+&sCategory=22; page_changed=False; action_success=True; text_similarity=1.000; finish_attempted=True; raw_success=False"
+        },
+        {
+          "site": "classifieds",
+          "task": 107,
+          "step": 9,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=finish; answer=The color of the rims on the most expensive bike in West Virginia is not specified on the available ; url_before=http://100.95.81.103:9980/index.php?page=item&id=52440; url_after=http://100.95.81.103:9980/index.php?page=item&id=52440; page_changed=False; action_success=True; text_similarity=1.000; finish_attempted=True; raw_success=False"
+        },
+        {
+          "site": "classifieds",
+          "task": 109,
+          "step": 22,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=finish; answer=2022; url_before=http://100.95.81.103:9980/index.php?page=item&id=73880; url_after=http://100.95.81.103:9980/index.php?page=item&id=73880; page_changed=False; action_success=True; text_similarity=1.000; finish_attempted=True; raw_success=False"
+        },
+        {
+          "site": "classifieds",
+          "task": 111,
+          "step": 3,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=finish; answer=Wheeling Thunderbirds/Nailers; url_before=http://100.95.81.103:9980/index.php?page=item&id=81897; url_after=http://100.95.81.103:9980/index.php?page=item&id=81897; page_changed=False; action_success=True; text_similarity=1.000; finish_attempted=True; raw_success=False"
+        },
+        {
+          "site": "classifieds",
+          "task": 118,
+          "step": 1,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=finish; answer=The time on the phone with the visible screen in the third row cannot be determined because the curr; url_before=http://100.95.81.103:9980/index.php?page=item&id=42906; url_after=http://100.95.81.103:9980/index.php?page=item&id=42906; page_changed=False; action_success=True; text_similarity=1.000; finish_attempted=True; raw_success=False"
+        }
+      ],
+      "candidate_root_cause": "Agent terminates from an answer-shaped or partial state that does not satisfy evaluator URL/database/content checks.",
+      "tier3_taxonomy_match": "Type 4 Evaluator State Drift and false negatives/false positives",
+      "novelty_assessment": "matches Tier 2 finish_wrong_state already-known family"
+    },
+    {
+      "id": "I9",
+      "name": "inv_element_id_role_drift",
+      "description": "The same exposed AXTree element_id resolves to different roles at different steps in the same episode.",
+      "implementable": true,
+      "implementation_notes": "Parses all exposed `[element_id] role` lines from per-step DOM artifacts, not only action-targeted IDs.",
+      "n_violations": 1127,
+      "violation_pct_of_steps": 2.4019,
+      "episode_traces_with_violation": 133,
+      "violation_pct_of_episodes": 2.9549,
+      "mode_breakdown": {
+        "DOM": 813,
+        "P-prompt": 192,
+        "SoM": 29,
+        "Vision": 93
+      },
+      "site_breakdown": {
+        "classifieds": 84,
+        "reddit": 663,
+        "shopping": 380
+      },
+      "case_study_examples": [
+        {
+          "site": "classifieds",
+          "task": 207,
+          "step": 1,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=type; element_id=140; text=headphones; url_before=http://100.95.81.103:9980/; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=headphones+; page_changed=True; action_success=True; text_similarity=0.240; element_id=7; previous_role=button; previous_step=0; current_role=link"
+        },
+        {
+          "site": "classifieds",
+          "task": 225,
+          "step": 8,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=select_option; element_id=2197; option=Higher price first; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=ring+; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=ring+&sOrder=i_price&iOrderType=desc; page_changed=True; action_success=True; text_similarity=0.421; element_id=2158; previous_role=radio; previous_step=3; current_role=StaticText"
+        },
+        {
+          "site": "classifieds",
+          "task": 225,
+          "step": 8,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=select_option; element_id=2197; option=Higher price first; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=ring+; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=ring+&sOrder=i_price&iOrderType=desc; page_changed=True; action_success=True; text_similarity=0.421; element_id=2213; previous_role=radio; previous_step=6; current_role=StaticText"
+        },
+        {
+          "site": "classifieds",
+          "task": 225,
+          "step": 8,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=select_option; element_id=2197; option=Higher price first; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=ring+; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=ring+&sOrder=i_price&iOrderType=desc; page_changed=True; action_success=True; text_similarity=0.421; element_id=2224; previous_role=radio; previous_step=6; current_role=StaticText"
+        },
+        {
+          "site": "classifieds",
+          "task": 225,
+          "step": 8,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=select_option; element_id=2197; option=Higher price first; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=ring+; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=ring+&sOrder=i_price&iOrderType=desc; page_changed=True; action_success=True; text_similarity=0.421; element_id=2235; previous_role=radio; previous_step=6; current_role=StaticText"
+        },
+        {
+          "site": "classifieds",
+          "task": 226,
+          "step": 1,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=545; url_before=http://metis.lti.cs.cmu.edu:7770/5pcs-30ml-cute-mini-portable-gel-silicone-hand-bottle-cartoon-empty-spray-bottle-cosmet; url_after=http://metis.lti.cs.cmu.edu:7770/5pcs-30ml-cute-mini-portable-gel-silicone-hand-bottle-cartoon-empty-spray-bottle-cosmet; page_changed=False; action_success=False; text_similarity=0.997; element_id=372; previous_role=StaticText; previous_step=0; current_role=link"
+        },
+        {
+          "site": "classifieds",
+          "task": 226,
+          "step": 5,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=select_option; element_id=1641; option=Lower price first; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=figurine+; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=figurine+&sOrder=i_price&iOrderType=asc; page_changed=True; action_success=True; text_similarity=0.316; element_id=1201; previous_role=menuitem; previous_step=2; current_role=RootWebArea"
+        },
+        {
+          "site": "classifieds",
+          "task": 229,
+          "step": 1,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=tab_focus; url_before=http://100.95.81.103:9980/index.php?page=item&id=23338; url_after=http://100.95.81.103:9980/index.php?page=item&id=47824; page_changed=True; action_success=True; text_similarity=0.338; element_id=199; previous_role=link; previous_step=0; current_role=StaticText"
+        }
+      ],
+      "candidate_root_cause": "Observation-local AX node IDs are reused across rerenders; treating element_id as stable across history risks stale-cache or wrong-role grounding.",
+      "tier3_taxonomy_match": "Type 1 Coordinate Dispatch Anomaly / Type 4 state drift",
+      "novelty_assessment": "mechanism anticipated by Tier 1 AXTree audit; empirical exposed-ID role-drift count is NEW"
+    },
+    {
+      "id": "I4",
+      "name": "inv_long_step_unexplained",
+      "description": "env_step_ms > 30s for a non-wait, non-type, non-scroll action.",
+      "implementable": true,
+      "implementation_notes": "",
+      "n_violations": 828,
+      "violation_pct_of_steps": 1.7647,
+      "episode_traces_with_violation": 245,
+      "violation_pct_of_episodes": 5.4432,
+      "mode_breakdown": {
+        "DOM": 275,
+        "P-SoM": 70,
+        "P-prompt": 107,
+        "P-text": 116,
+        "SoM": 200,
+        "Vision": 60
+      },
+      "site_breakdown": {
+        "classifieds": 7,
+        "reddit": 821
+      },
+      "case_study_examples": [
+        {
+          "site": "classifieds",
+          "task": 232,
+          "step": 0,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_som_router_0",
+          "mode": "SoM",
+          "snippet": "action=tab_focus; url_before=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t; url_after=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t; page_changed=True; action_success=True; text_similarity=1.000; env_step_ms=41041"
+        },
+        {
+          "site": "classifieds",
+          "task": 232,
+          "step": 0,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_vision_router_0",
+          "mode": "Vision",
+          "snippet": "action=tab_focus; url_before=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t; url_after=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t; page_changed=True; action_success=True; text_similarity=1.000; env_step_ms=43074"
+        },
+        {
+          "site": "classifieds",
+          "task": 232,
+          "step": 1,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_vision_router_0",
+          "mode": "Vision",
+          "snippet": "action=tab_focus; url_before=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t; url_after=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t; page_changed=False; action_success=False; text_similarity=1.000; env_step_ms=41903"
+        },
+        {
+          "site": "classifieds",
+          "task": 232,
+          "step": 2,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_vision_router_0",
+          "mode": "Vision",
+          "snippet": "action=tab_focus; url_before=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t; url_after=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t; page_changed=False; action_success=False; text_similarity=1.000; env_step_ms=47545"
+        },
+        {
+          "site": "reddit",
+          "task": 0,
+          "step": 0,
+          "run": "B0_3mode_reddit",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=737; url_before=http://100.95.81.103:9999/f/food; url_after=http://100.95.81.103:9999/f/food/82896/i-ate-sushi-platter; page_changed=True; action_success=True; text_similarity=0.064; env_step_ms=53223"
+        },
+        {
+          "site": "reddit",
+          "task": 0,
+          "step": 1,
+          "run": "B0_3mode_reddit",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=3188; url_before=http://100.95.81.103:9999/f/food/82896/i-ate-sushi-platter; url_after=http://100.95.81.103:9999/f/food/82896/i-ate-sushi-platter; page_changed=True; action_success=True; text_similarity=0.594; env_step_ms=54588"
+        },
+        {
+          "site": "reddit",
+          "task": 0,
+          "step": 2,
+          "run": "B0_3mode_reddit",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=27257; url_before=http://100.95.81.103:9999/f/food/82896/i-ate-sushi-platter; url_after=http://100.95.81.103:9999/f/food/82896/i-ate-sushi-platter; page_changed=True; action_success=True; text_similarity=0.663; env_step_ms=55373"
+        },
+        {
+          "site": "reddit",
+          "task": 0,
+          "step": 3,
+          "run": "B0_3mode_reddit",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=51546; url_before=http://100.95.81.103:9999/f/food/82896/i-ate-sushi-platter; url_after=http://100.95.81.103:9999/f/food/82896/i-ate-sushi-platter; page_changed=True; action_success=True; text_similarity=0.507; env_step_ms=56214"
+        }
+      ],
+      "candidate_root_cause": "Hidden Playwright timeout or slow actionability wait is collapsed into a generic step result rather than exposed as an environment error.",
+      "tier3_taxonomy_match": "Type 5 Actionability Check Masking and Timeout Swallowing",
+      "novelty_assessment": "partly anticipated by Tier 1 static timeout concerns; empirical long-step count is NEW"
+    },
+    {
+      "id": "I3",
+      "name": "inv_repeat_click_no_cycle_break",
+      "description": "Same element_id is clicked at least three consecutive times in one episode.",
+      "implementable": true,
+      "implementation_notes": "",
+      "n_violations": 481,
+      "violation_pct_of_steps": 1.0251,
+      "episode_traces_with_violation": 481,
+      "violation_pct_of_episodes": 10.6865,
+      "mode_breakdown": {
+        "DOM": 194,
+        "P-SoM": 101,
+        "P-prompt": 20,
+        "P-text": 42,
+        "SoM": 124
+      },
+      "site_breakdown": {
+        "classifieds": 181,
+        "reddit": 199,
+        "shopping": 101
+      },
+      "case_study_examples": [
+        {
+          "site": "classifieds",
+          "task": 117,
+          "step": 3,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=2599; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=blue+bike+&sCategory=7&sOrder=i_price&iOrderType=asc; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=blue+bike+&sCategory=7&sOrder=i_price&iOrderType=asc; page_changed=False; action_success=False; text_similarity=1.000; repeat_click_element_id=2599; repeats=3"
+        },
+        {
+          "site": "classifieds",
+          "task": 123,
+          "step": 2,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=1348; url_before=http://100.95.81.103:9980/index.php?page=search&sOrder=i_price&iOrderType=desc&sPattern=yellow+; url_after=http://100.95.81.103:9980/index.php?page=search&sOrder=i_price&iOrderType=desc&sPattern=yellow+; page_changed=False; action_success=False; text_similarity=1.000; repeat_click_element_id=1348; repeats=3"
+        },
+        {
+          "site": "classifieds",
+          "task": 128,
+          "step": 15,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=6648; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=sports+jersey+; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=sports+jersey+&iPage=2; page_changed=True; action_success=True; text_similarity=0.116; repeat_click_element_id=6648; repeats=3"
+        },
+        {
+          "site": "classifieds",
+          "task": 144,
+          "step": 8,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=2636; url_before=http://100.95.81.103:9980/index.php?page=item&id=80403; url_after=http://100.95.81.103:9980/index.php?page=item&id=80403; page_changed=False; action_success=False; text_similarity=1.000; repeat_click_element_id=2636; repeats=3"
+        },
+        {
+          "site": "classifieds",
+          "task": 146,
+          "step": 13,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=7333; url_before=http://100.95.81.103:9980/index.php?page=item&id=24229; url_after=http://100.95.81.103:9980/index.php?page=item&id=24229; page_changed=False; action_success=False; text_similarity=0.997; repeat_click_element_id=7333; repeats=3"
+        },
+        {
+          "site": "classifieds",
+          "task": 148,
+          "step": 2,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=2052; url_before=http://100.95.81.103:9980/index.php?page=search&sOrder=i_price&iOrderType=desc&sPattern=https%3A%2F%2Fwww.amazon.com+&sC; url_after=http://100.95.81.103:9980/index.php?page=search&sOrder=i_price&iOrderType=desc&sPattern=https%3A%2F%2Fwww.amazon.com+&sC; page_changed=False; action_success=False; text_similarity=0.998; repeat_click_element_id=2052; repeats=3"
+        },
+        {
+          "site": "classifieds",
+          "task": 193,
+          "step": 19,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=6686; url_before=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=Music+CDs+&sCategory=9; url_after=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=Music+CDs+&sCategory=9; page_changed=False; action_success=False; text_similarity=1.000; repeat_click_element_id=6686; repeats=3"
+        },
+        {
+          "site": "classifieds",
+          "task": 204,
+          "step": 17,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=10388; url_before=http://100.95.81.103:9980/index.php?page=search&sOrder=i_price&iOrderType=asc&sPattern=guitar&sPriceMin=1200+&sPriceMax=; url_after=http://100.95.81.103:9980/index.php?page=search&sOrder=i_price&iOrderType=asc&sPattern=guitar&sPriceMin=1200+&sPriceMax=; page_changed=False; action_success=False; text_similarity=1.000; repeat_click_element_id=10388; repeats=3"
+        }
+      ],
+      "candidate_root_cause": "Cycle detection did not halt a same-target click loop soon enough, or repeated clicks were treated as exploration despite no new target.",
+      "tier3_taxonomy_match": "Type 1 Coordinate Dispatch Anomaly, surfacing as a loop",
+      "novelty_assessment": "matches click-probe and phantom-paper click-loop already-known family"
+    },
+    {
+      "id": "I10",
+      "name": "inv_state_change_but_obs_same",
+      "description": "action_success=True and page_changed=True, but normalized pre-action and next pre-action DOM artifacts are identical.",
+      "implementable": true,
+      "implementation_notes": "Uses normalized exact equality over adjacent pre-action DOM artifacts.",
+      "n_violations": 288,
+      "violation_pct_of_steps": 0.6138,
+      "episode_traces_with_violation": 243,
+      "violation_pct_of_episodes": 5.3988,
+      "mode_breakdown": {
+        "DOM": 40,
+        "P-prompt": 4,
+        "P-text": 1,
+        "SoM": 58,
+        "Vision": 185
+      },
+      "site_breakdown": {
+        "classifieds": 61,
+        "reddit": 218,
+        "shopping": 9
+      },
+      "case_study_examples": [
+        {
+          "site": "classifieds",
+          "task": 150,
+          "step": 0,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=tab_focus; url_before=http://100.95.81.103:9980/index.php?page=search&sCategory=16&sOrder=i_price&iOrderType=asc&iPage=331&sShowAs=gallery; url_after=http://100.95.81.103:9980/index.php?page=search&sCategory=16&sOrder=i_price&iOrderType=asc&iPage=331&sShowAs=gallery; page_changed=True; action_success=True; text_similarity=1.000; normalized_prev_and_next_obs_text_identical=True"
+        },
+        {
+          "site": "classifieds",
+          "task": 163,
+          "step": 0,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=tab_focus; url_before=http://100.95.81.103:9980/index.php?page=search&sCategory=18; url_after=http://100.95.81.103:9980/index.php?page=search&sCategory=18; page_changed=True; action_success=True; text_similarity=1.000; normalized_prev_and_next_obs_text_identical=True"
+        },
+        {
+          "site": "classifieds",
+          "task": 163,
+          "step": 0,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_som_router_0",
+          "mode": "SoM",
+          "snippet": "action=tab_focus; url_before=http://100.95.81.103:9980/index.php?page=search&sCategory=18; url_after=http://100.95.81.103:9980/index.php?page=search&sCategory=18; page_changed=True; action_success=True; text_similarity=1.000; normalized_prev_and_next_obs_text_identical=True"
+        },
+        {
+          "site": "classifieds",
+          "task": 214,
+          "step": 13,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_som_router_0",
+          "mode": "SoM",
+          "snippet": "action=scroll; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=Star+Wars+phone+&sOrder=i_price&iOrderType=desc&iPage=3; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=Star+Wars+phone+&sOrder=i_price&iOrderType=desc&iPage=3; page_changed=True; action_success=True; text_similarity=1.000; normalized_prev_and_next_obs_text_identical=True"
+        },
+        {
+          "site": "classifieds",
+          "task": 223,
+          "step": 0,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_som_router_0",
+          "mode": "SoM",
+          "snippet": "action=click; element_id=528; url_before=http://100.95.81.103:9980/index.php?page=item&id=13215; url_after=http://100.95.81.103:9980/index.php?page=item&id=13215; page_changed=True; action_success=True; text_similarity=1.000; normalized_prev_and_next_obs_text_identical=True"
+        },
+        {
+          "site": "classifieds",
+          "task": 232,
+          "step": 0,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_som_router_0",
+          "mode": "SoM",
+          "snippet": "action=tab_focus; url_before=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t; url_after=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t; page_changed=True; action_success=True; text_similarity=1.000; normalized_prev_and_next_obs_text_identical=True"
+        },
+        {
+          "site": "classifieds",
+          "task": 106,
+          "step": 0,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_vision_router_0",
+          "mode": "Vision",
+          "snippet": "action=select_option; option=Photo + videos; url_before=http://100.95.81.103:9980/; url_after=http://100.95.81.103:9980/; page_changed=True; action_success=True; text_similarity=1.000; normalized_prev_and_next_obs_text_identical=True"
+        },
+        {
+          "site": "classifieds",
+          "task": 119,
+          "step": 0,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_vision_router_0",
+          "mode": "Vision",
+          "snippet": "action=click; url_before=http://100.95.81.103:9980/index.php?page=search&sCategory=11&sOrder=i_price&iOrderType=desc&sShowAs=gallery; url_after=http://100.95.81.103:9980/index.php?page=search&sCategory=11&sOrder=i_price&iOrderType=desc&sShowAs=gallery; page_changed=True; action_success=True; text_similarity=1.000; normalized_prev_and_next_obs_text_identical=True"
+        }
+      ],
+      "candidate_root_cause": "Step state-change bookkeeping and persisted observations disagree; likely logger/state digest desynchronization if nonzero.",
+      "tier3_taxonomy_match": "Type 4 Evaluator State Drift",
+      "novelty_assessment": "NEW if nonzero; direct logger consistency check not covered by earlier tiers"
+    },
+    {
+      "id": "I8",
+      "name": "inv_max_step_truncate_at_click",
+      "description": "Derived max-step truncation (last.done=False, no agent finish, len(steps) reaches observed cap) with last action click.",
+      "implementable": true,
+      "implementation_notes": "`truncated_at_max_step` is derived because no literal field exists; observed max step cap=30.",
+      "n_violations": 201,
+      "violation_pct_of_steps": 0.4284,
+      "episode_traces_with_violation": 201,
+      "violation_pct_of_episodes": 4.4657,
+      "mode_breakdown": {
+        "DOM": 94,
+        "P-SoM": 32,
+        "P-prompt": 9,
+        "P-text": 20,
+        "SoM": 41,
+        "Vision": 5
+      },
+      "site_breakdown": {
+        "classifieds": 91,
+        "reddit": 96,
+        "shopping": 14
+      },
+      "case_study_examples": [
+        {
+          "site": "classifieds",
+          "task": 115,
+          "step": 29,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=21394; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=foot+brace+; url_after=http://100.95.81.103:9980/index.php?page=item&id=15342; page_changed=True; action_success=True; text_similarity=0.173; derived_truncated_at_max_step=True; max_steps_cap=30"
+        },
+        {
+          "site": "classifieds",
+          "task": 121,
+          "step": 29,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=18915; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=text+image+; url_after=http://100.95.81.103:9980/index.php?page=item&id=16826; page_changed=True; action_success=True; text_similarity=0.077; derived_truncated_at_max_step=True; max_steps_cap=30"
+        },
+        {
+          "site": "classifieds",
+          "task": 130,
+          "step": 29,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=24722; url_before=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=sunset+boat+; url_after=http://100.95.81.103:9980/index.php?page=item&id=58060; page_changed=True; action_success=True; text_similarity=0.049; derived_truncated_at_max_step=True; max_steps_cap=30"
+        },
+        {
+          "site": "classifieds",
+          "task": 135,
+          "step": 29,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=17559; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=pink+McLaren+&sCategory=10; url_after=http://100.95.81.103:9980/index.php?page=item&id=74336; page_changed=True; action_success=True; text_similarity=0.104; derived_truncated_at_max_step=True; max_steps_cap=30"
+        },
+        {
+          "site": "classifieds",
+          "task": 136,
+          "step": 29,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=11207; url_before=http://100.95.81.103:9980/index.php?page=search&sPattern=blue+kids+bike+Frozen+&iPage=5; url_after=http://100.95.81.103:9980/index.php?page=search&sPattern=blue+kids+bike+Frozen+&iPage=5; page_changed=False; action_success=False; text_similarity=1.000; derived_truncated_at_max_step=True; max_steps_cap=30"
+        },
+        {
+          "site": "classifieds",
+          "task": 139,
+          "step": 29,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=19738; url_before=http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=Babe+Ruth+&sCategory=2; url_after=http://100.95.81.103:9980/index.php?page=item&id=47595; page_changed=True; action_success=True; text_similarity=0.074; derived_truncated_at_max_step=True; max_steps_cap=30"
+        },
+        {
+          "site": "classifieds",
+          "task": 190,
+          "step": 29,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=23392; url_before=http://100.95.81.103:9980/index.php?page=search&sCategory=24&sOrder=i_price&iOrderType=asc; url_after=http://100.95.81.103:9980/index.php?page=item&id=15671; page_changed=True; action_success=True; text_similarity=0.068; derived_truncated_at_max_step=True; max_steps_cap=30"
+        },
+        {
+          "site": "classifieds",
+          "task": 22,
+          "step": 29,
+          "run": "B0_3mode_classifieds",
+          "condition_id": "phase1_dom_router_0",
+          "mode": "DOM",
+          "snippet": "action=click; element_id=22126; url_before=http://100.95.81.103:9980/index.php?page=search&sCategory=10&sShowAs=gallery; url_after=http://100.95.81.103:9980/index.php?page=item&id=56177; page_changed=True; action_success=True; text_similarity=0.072; derived_truncated_at_max_step=True; max_steps_cap=30"
+        }
+      ],
+      "candidate_root_cause": "Max-iteration masking hides the final failed click or unresolved click loop as a generic truncation.",
+      "tier3_taxonomy_match": "Type 5 Actionability Check Masking and Timeout Swallowing",
+      "novelty_assessment": "NEW count relative to Tier 1/Tier 2/probe: explicit max-step-at-click masking slice"
+    },
+    {
+      "id": "I2",
+      "name": "inv_action_fail_but_page_changed",
+      "description": "action_success=False but page_changed=True.",
+      "implementable": true,
+      "implementation_notes": "",
+      "n_violations": 25,
+      "violation_pct_of_steps": 0.0533,
+      "episode_traces_with_violation": 12,
+      "violation_pct_of_episodes": 0.2666,
+      "mode_breakdown": {
+        "P-SoM": 2,
+        "Vision": 23
+      },
+      "site_breakdown": {
+        "classifieds": 6,
+        "reddit": 19
+      },
+      "case_study_examples": [
+        {
+          "site": "classifieds",
+          "task": 226,
+          "step": 7,
+          "run": "B0_phantom_classifieds",
+          "condition_id": "phase1_phantom_som_router_0",
+          "mode": "P-SoM",
+          "snippet": "action=back; url_before=about:blank; url_after=about:blank; page_changed=True; action_success=False; text_similarity=1.000"
+        },
+        {
+          "site": "classifieds",
+          "task": 226,
+          "step": 8,
+          "run": "B0_phantom_classifieds",
+          "condition_id": "phase1_phantom_som_router_0",
+          "mode": "P-SoM",
+          "snippet": "action=back; url_before=about:blank; url_after=about:blank; page_changed=True; action_success=False; text_similarity=1.000"
+        },
+        {
+          "site": "classifieds",
+          "task": 231,
+          "step": 1,
+          "run": "B1_3mode_classifieds",
+          "condition_id": "phase1_vision_router_0",
+          "mode": "Vision",
+          "snippet": "action=back; url_before=http://100.95.81.103:9999/f/Maine/99914/new-tourist-trap%20%7CAND%7C%20http://100.95.81.103:9980; url_after=http://100.95.81.103:9999/f/Maine/99914/new-tourist-trap%20%7CAND%7C%20http://100.95.81.103:9980; page_changed=True; action_success=False; text_similarity=0.979"
+        },
+        {
+          "site": "classifieds",
+          "task": 231,
+          "step": 2,
+          "run": "B1_3mode_classifieds",
+          "condition_id": "phase1_vision_router_0",
+          "mode": "Vision",
+          "snippet": "action=back; url_before=http://100.95.81.103:9999/f/Maine/99914/new-tourist-trap%20%7CAND%7C%20http://100.95.81.103:9980; url_after=http://100.95.81.103:9999/f/Maine/99914/new-tourist-trap%20%7CAND%7C%20http://100.95.81.103:9980; page_changed=True; action_success=False; text_similarity=0.976"
+        },
+        {
+          "site": "classifieds",
+          "task": 232,
+          "step": 1,
+          "run": "B1_3mode_classifieds",
+          "condition_id": "phase1_vision_router_0",
+          "mode": "Vision",
+          "snippet": "action=back; url_before=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t%20%7CAND%7C%20http://100.95.81.103:9980; url_after=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t%20%7CAND%7C%20http://100.95.81.103:9980; page_changed=True; action_success=False; text_similarity=0.975"
+        },
+        {
+          "site": "classifieds",
+          "task": 232,
+          "step": 2,
+          "run": "B1_3mode_classifieds",
+          "condition_id": "phase1_vision_router_0",
+          "mode": "Vision",
+          "snippet": "action=back; url_before=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t%20%7CAND%7C%20http://100.95.81.103:9980; url_after=http://100.95.81.103:9999/f/consoles/124577/name-a-better-console-you-can-t%20%7CAND%7C%20http://100.95.81.103:9980; page_changed=True; action_success=False; text_similarity=0.983"
+        },
+        {
+          "site": "reddit",
+          "task": 183,
+          "step": 1,
+          "run": "B1_3mode_reddit",
+          "condition_id": "phase1_vision_router_0",
+          "mode": "Vision",
+          "snippet": "action=scroll; url_before=about:blank; url_after=about:blank; page_changed=True; action_success=False; text_similarity=1.000"
+        },
+        {
+          "site": "reddit",
+          "task": 183,
+          "step": 2,
+          "run": "B1_3mode_reddit",
+          "condition_id": "phase1_vision_router_0",
+          "mode": "Vision",
+          "snippet": "action=back; url_before=about:blank; url_after=about:blank; page_changed=True; action_success=False; text_similarity=1.000"
+        }
+      ],
+      "candidate_root_cause": "Runner success flag is stricter or stale relative to actual state transition; this can cause unnecessary retries or wrong self-diagnosis.",
+      "tier3_taxonomy_match": "Type 4 Evaluator State Drift / Type 5 actionability masking",
+      "novelty_assessment": "NEW finding relative to Tier 1/Tier 2/probe counts: empirical runner-false-negative success flag"
+    },
+    {
+      "id": "I1",
+      "name": "inv_action_success_but_no_change",
+      "description": "Non-terminal action_success=True but page_changed=False and recorded text_similarity > 0.99.",
+      "implementable": true,
+      "implementation_notes": "Terminal finish/stop actions are excluded because they are local answer actions and are audited by I7.",
+      "n_violations": 0,
+      "violation_pct_of_steps": 0.0,
+      "episode_traces_with_violation": 0,
+      "violation_pct_of_episodes": 0.0,
+      "mode_breakdown": {},
+      "site_breakdown": {},
+      "case_study_examples": [],
+      "candidate_root_cause": "Runner accepted a no-op or swallowed an actionability failure; policy sees no state progress after a supposedly successful action.",
+      "tier3_taxonomy_match": "Type 5 Actionability Check Masking and Timeout Swallowing",
+      "novelty_assessment": "matches Tier 2 type/scroll silent-failure catalog and click probe no-progress family"
+    },
+    {
+      "id": "I5",
+      "name": "inv_unexplained_url_jump",
+      "description": "Adjacent recorder states disagree: current url_before differs from previous url_after after a non-navigation previous action.",
+      "implementable": true,
+      "implementation_notes": "Adapted to runner schema by comparing previous `url_after` to current `url_before`.",
+      "n_violations": 0,
+      "violation_pct_of_steps": 0.0,
+      "episode_traces_with_violation": 0,
+      "violation_pct_of_episodes": 0.0,
+      "mode_breakdown": {},
+      "site_breakdown": {},
+      "case_study_examples": [],
+      "candidate_root_cause": "Popup, redirect, tab/frame switch, recovery path, or logger/environment state drift between recorded steps.",
+      "tier3_taxonomy_match": "Type 4 Evaluator State Drift",
+      "novelty_assessment": "NEW if nonzero; Tier 2 only covered same-URL drift, not between-record URL discontinuity"
+    }
+  ],
+  "summary": {
+    "n_new_findings_not_covered_by_t1_t2_probe": 5,
+    "highest_novelty_invariant_id": "I9",
+    "recommended_followup": "Manually adjudicate high-signal I2/I4/I8/I9 examples against raw browser/environment logs; keep I7 as evaluator/policy endpoint evidence and I6 as same-URL async-state evidence."
+  },
+  "self_check": {
+    "implementable_invariants": 10,
+    "at_least_7_of_10_implementable": true,
+    "case_study_count_at_least_3_unless_zero": {
+      "I6": true,
+      "I7": true,
+      "I9": true,
+      "I4": true,
+      "I3": true,
+      "I10": true,
+      "I8": true,
+      "I2": true,
+      "I1": true,
+      "I5": true
+    },
+    "all_case_study_requirements_met": true,
+    "invariants_sorted_by_violation_count": true,
+    "max_steps_cap_used_for_i8": 30
+  }
+}

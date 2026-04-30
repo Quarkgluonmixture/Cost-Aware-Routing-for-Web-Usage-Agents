@@ -220,7 +220,31 @@ class VWAWrapper:
             # Prefer element_id click (id-based action via AXTree node)
             try:
                 eid = int(action_json["element_id"])
-                action = create_id_based_action(f"click [{eid}]")
+                # B-01/02/33 Cluster 1 fix: locator-route bypasses framework's
+                # mouse.click(union_bound_center) which hits child span/icon
+                # instead of actionable parent (94.4% off-target on failed
+                # clicks per Tier 10 sweep). Walks up DOM to find <a>/<button>/
+                # [role=link]/[role=button]/<input type=submit/checkbox/radio>
+                # and dispatches via Playwright locator.click() (real mouse
+                # event + actionability check). Falls back to framework path
+                # if walk-up fails (preserves existing behavior on edge cases).
+                from p79.envs.locator_dispatch import dispatch_id_based_click as _lr_click
+                _lr_result = _lr_click(
+                    self._env.page,
+                    self._last_obs_nodes_info,
+                    eid,
+                    sleep_after_ms=int(self.sleep_after_execution * 1000),
+                )
+                if _lr_result.get("success"):
+                    # JS dispatch already ran + slept. Skip framework dispatch
+                    # via NONE action — env.step(NONE) just refreshes observation.
+                    action = create_none_action()
+                else:
+                    logger.debug(
+                        "locator-route click fallback: eid=%s reason=%s",
+                        eid, _lr_result.get("error", "")[:80],
+                    )
+                    action = create_id_based_action(f"click [{eid}]")
             except (TypeError, ValueError):
                 action = None
         elif action_type == "click" and "coordinate" in action_json:
@@ -327,6 +351,34 @@ class VWAWrapper:
                 action = create_keyboard_type_action(action_json["text"])
             else:
                 _type_needs_enter = bool(str(action_json.get("text", "")).endswith("\n"))
+                # B-01 Cluster 1 fix: locator-route TYPE bypasses framework's
+                # mouse.click(center) + Meta+A + Backspace + keyboard.type
+                # pattern that causes 全选变蓝 (§52/§64) when click hits
+                # non-input. Uses locator.fill() which auto-clears and dispatches
+                # input event WITHOUT global Meta+A. press_enter handled by
+                # text trailing-newline detection.
+                from p79.envs.locator_dispatch import dispatch_id_based_type as _lr_type
+                _lr_result = _lr_type(
+                    self._env.page,
+                    self._last_obs_nodes_info,
+                    element_id,
+                    str(action_json["text"]),
+                    sleep_after_ms=int(self.sleep_after_execution * 1000),
+                    press_enter=_type_needs_enter,
+                )
+                if _lr_result.get("success"):
+                    action = create_none_action()
+                    # Locator dispatch already pressed Enter if text ended with
+                    # \n (see locator_dispatch.py:dispatch_id_based_type); avoid
+                    # double Enter from post-step keyboard.press at line ~565.
+                    _type_needs_enter = False
+                else:
+                    logger.debug(
+                        "locator-route type fallback: eid=%s reason=%s",
+                        element_id, _lr_result.get("error", "")[:80],
+                    )
+                    # Framework will build id-based action below; nothing to do.
+                    pass
         elif action_type == "back":
             action = create_go_back_action()
         elif action_type == "forward":

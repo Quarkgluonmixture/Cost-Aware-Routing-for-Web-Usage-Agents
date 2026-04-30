@@ -1,0 +1,1208 @@
+{
+  "audit_date": "2026-04-30",
+  "scan_scope_note": "Scanned only the listed Phase 1 VisualWebArena run roots; archives, WA runs, and click reclassification were excluded. The listed roots currently contain 4,493 episode-mode traces, above the prompt's approximate 3,500 estimate.",
+  "total_episodes_scanned": 4493,
+  "total_steps_scanned": 46844,
+  "per_run_scanned": [
+    {
+      "run": "B0_3mode_classifieds_20260413",
+      "episode_mode_traces": 702,
+      "status": "scanned"
+    },
+    {
+      "run": "B0_3mode_reddit_20260422",
+      "episode_mode_traces": 630,
+      "status": "scanned"
+    },
+    {
+      "run": "B0_phantom_som_classifieds_20260426",
+      "episode_mode_traces": 234,
+      "status": "scanned"
+    },
+    {
+      "run": "B0_phantom_som_reddit_20260428",
+      "episode_mode_traces": 210,
+      "status": "scanned"
+    },
+    {
+      "run": "B0_phantom_text_classifieds_20260427",
+      "episode_mode_traces": 234,
+      "status": "scanned"
+    },
+    {
+      "run": "B0_phantom_text_reddit_20260427",
+      "episode_mode_traces": 210,
+      "status": "scanned"
+    },
+    {
+      "run": "B0_phantom_prompt_reddit_20260429",
+      "episode_mode_traces": 175,
+      "status": "scanned"
+    },
+    {
+      "run": "B0_dom_shopping_20260428",
+      "episode_mode_traces": 465,
+      "status": "scanned"
+    },
+    {
+      "run": "B1_3mode_classifieds_20260413",
+      "episode_mode_traces": 702,
+      "status": "scanned"
+    },
+    {
+      "run": "B1_3mode_reddit_20260413",
+      "episode_mode_traces": 630,
+      "status": "scanned"
+    },
+    {
+      "run": "B1_phantom_som_classifieds_20260428",
+      "episode_mode_traces": 230,
+      "status": "scanned"
+    },
+    {
+      "run": "B1_phantom_dom_classifieds_20260429",
+      "episode_mode_traces": 71,
+      "status": "scanned"
+    }
+  ],
+  "skipped_runs": [],
+  "action_type_counts": {
+    "click": 16711,
+    "type": 13002,
+    "scroll": 9392,
+    "back": 3563,
+    "finish": 1972,
+    "select_option": 1451,
+    "tab_focus": 720,
+    "wait": 33
+  },
+  "site_episode_mode_traces": {
+    "classifieds": 2173,
+    "reddit": 1855,
+    "shopping": 465
+  },
+  "mode_episode_mode_traces": {
+    "DOM": 1353,
+    "P-SoM": 674,
+    "P-prompt": 175,
+    "P-text": 515,
+    "SoM": 888,
+    "Vision": 888
+  },
+  "categories": {
+    "type_silent_failure": {
+      "n_episodes": 549,
+      "blast_radius_pct": 12.22,
+      "mode_breakdown": {
+        "DOM": 224,
+        "P-SoM": 79,
+        "P-prompt": 12,
+        "P-text": 76,
+        "SoM": 78,
+        "Vision": 80
+      },
+      "site_breakdown": {
+        "classifieds": 291,
+        "reddit": 172,
+        "shopping": 86
+      },
+      "run_breakdown": {
+        "B0_3mode_classifieds": 90,
+        "B0_3mode_reddit": 47,
+        "B0_dom_shopping": 86,
+        "B0_phantom_classifieds": 22,
+        "B0_phantom_dom_classifieds": 34,
+        "B0_phantom_dom_reddit": 23,
+        "B0_phantom_prompt_reddit": 12,
+        "B1_3mode_classifieds": 84,
+        "B1_3mode_reddit": 75,
+        "B1_phantom_classifieds": 42,
+        "B1_phantom_dom_classifieds": 19,
+        "run_reddit_1777238854_ef9c4b": 15
+      },
+      "signature_counts": {
+        "slow_env_step_without_text_echo;stale_or_offscreen_bbox": 146,
+        "runner_failed_no_progress": 115,
+        "runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox": 111,
+        "runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo": 98,
+        "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox": 89,
+        "runner_failed_no_progress;same_url_no_form_or_text_echo": 83,
+        "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo": 77,
+        "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo": 49,
+        "same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox": 46,
+        "same_url_no_form_or_text_echo;slow_env_step_without_text_echo": 31,
+        "runner_failed_no_progress;same_url_no_form_or_text_echo;stale_or_offscreen_bbox": 17,
+        "stale_or_offscreen_bbox": 15,
+        "same_url_no_form_or_text_echo": 12,
+        "repeated_same_element_type_without_echo;slow_env_step_without_text_echo": 12,
+        "repeated_same_element_type_without_echo": 11,
+        "repeated_same_element_type_without_echo;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox": 11,
+        "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo;stale_or_offscreen_bbox": 10,
+        "same_url_no_form_or_text_echo;stale_or_offscreen_bbox": 8,
+        "repeated_same_element_type_without_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox": 8,
+        "repeated_same_element_type_without_echo;same_url_no_form_or_text_echo": 5,
+        "repeated_same_element_type_without_echo;same_url_no_form_or_text_echo;stale_or_offscreen_bbox": 4,
+        "repeated_same_element_type_without_echo;same_url_no_form_or_text_echo;slow_env_step_without_text_echo": 2
+      },
+      "case_study_task_ids": [
+        {
+          "site": "classifieds",
+          "task": 0,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            5,
+            6,
+            7
+          ],
+          "signatures": [
+            "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox",
+            "runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox"
+          ],
+          "evidence": {
+            "example_text": "blue kayak for sale",
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=blue+kayak+&sOrder=i_price&iOrderType=asc",
+            "env_step_ms": 9043.4
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 5,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            15
+          ],
+          "signatures": [
+            "runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox"
+          ],
+          "evidence": {
+            "example_text": "white car",
+            "obs_url": "http://100.95.81.103:9980/index.php?page=user&action=items",
+            "env_step_ms": 6794.3
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 11,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            7
+          ],
+          "signatures": [
+            "runner_failed_no_progress;same_url_no_form_or_text_echo"
+          ],
+          "evidence": {
+            "example_text": "blue bike",
+            "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=71313",
+            "env_step_ms": 4247.7
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 29,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            16
+          ],
+          "signatures": [
+            "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox",
+            "runner_failed_no_progress",
+            "runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox"
+          ],
+          "evidence": {
+            "example_text": "red car 2024",
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+car+for+sale+",
+            "env_step_ms": 8389.2
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 30,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            25,
+            26,
+            27
+          ],
+          "signatures": [
+            "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox",
+            "runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox"
+          ],
+          "evidence": {
+            "example_text": "black couch furniture",
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=black+couch+&sOrder=i_price&iOrderType=desc",
+            "env_step_ms": 8228.2
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 64,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            6,
+            7,
+            8
+          ],
+          "signatures": [
+            "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox",
+            "runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox"
+          ],
+          "evidence": {
+            "example_text": "video game $500",
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=video+game&sPriceMax=500+",
+            "env_step_ms": 8267.6
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 67,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            19
+          ],
+          "signatures": [
+            "same_url_no_form_or_text_echo;stale_or_offscreen_bbox"
+          ],
+          "evidence": {
+            "example_text": "basketball video game",
+            "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=15671",
+            "env_step_ms": 4298.7
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 68,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            3,
+            5,
+            7,
+            9,
+            12,
+            13,
+            14,
+            15
+          ],
+          "signatures": [
+            "repeated_same_element_type_without_echo;runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox",
+            "runner_failed_no_progress",
+            "runner_failed_no_progress;same_url_no_form_or_text_echo;slow_env_step_without_text_echo;stale_or_offscreen_bbox",
+            "slow_env_step_without_text_echo;stale_or_offscreen_bbox"
+          ],
+          "evidence": {
+            "example_text": "Tiger Woods video game red shirt cover",
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=Tiger+Woods+video+game+",
+            "env_step_ms": 9450.5
+          }
+        }
+      ],
+      "candidate_root_cause": "Typing frequently lands on stale, offscreen, or non-submitting elements: the runner may report success, but URL/form state and AXTree text do not echo the typed value, leaving the agent to repeat the same search or continue from an unchanged page."
+    },
+    "scroll_silent_failure": {
+      "n_episodes": 667,
+      "blast_radius_pct": 14.85,
+      "mode_breakdown": {
+        "DOM": 192,
+        "P-SoM": 116,
+        "P-prompt": 24,
+        "P-text": 90,
+        "SoM": 94,
+        "Vision": 151
+      },
+      "site_breakdown": {
+        "classifieds": 373,
+        "reddit": 240,
+        "shopping": 54
+      },
+      "run_breakdown": {
+        "B0_3mode_classifieds": 77,
+        "B0_3mode_reddit": 74,
+        "B0_dom_shopping": 54,
+        "B0_phantom_classifieds": 45,
+        "B0_phantom_dom_classifieds": 37,
+        "B0_phantom_dom_reddit": 36,
+        "B0_phantom_prompt_reddit": 24,
+        "B1_3mode_classifieds": 157,
+        "B1_3mode_reddit": 75,
+        "B1_phantom_classifieds": 40,
+        "B1_phantom_dom_classifieds": 17,
+        "run_reddit_1777238854_ef9c4b": 31
+      },
+      "signature_counts": {
+        "consecutive_scrolls_no_viewport_move": 666,
+        "action_success_true_but_scroll_y_static": 3
+      },
+      "case_study_task_ids": [
+        {
+          "site": "classifieds",
+          "task": 5,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            14
+          ],
+          "signatures": [
+            "consecutive_scrolls_no_viewport_move"
+          ],
+          "evidence": {
+            "scroll_y": 1818,
+            "text_similarity": 1.0,
+            "env_step_ms": 3079.0
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 6,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            11
+          ],
+          "signatures": [
+            "consecutive_scrolls_no_viewport_move"
+          ],
+          "evidence": {
+            "scroll_y": 2067,
+            "text_similarity": 1.0,
+            "env_step_ms": 3795.4
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 11,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            4,
+            10,
+            11
+          ],
+          "signatures": [
+            "consecutive_scrolls_no_viewport_move"
+          ],
+          "evidence": {
+            "scroll_y": 2027,
+            "text_similarity": 1.0,
+            "env_step_ms": 3568.6
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 12,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            5
+          ],
+          "signatures": [
+            "consecutive_scrolls_no_viewport_move"
+          ],
+          "evidence": {
+            "scroll_y": 1228,
+            "text_similarity": 1.0,
+            "env_step_ms": 1871.0
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 16,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            9,
+            10
+          ],
+          "signatures": [
+            "consecutive_scrolls_no_viewport_move"
+          ],
+          "evidence": {
+            "scroll_y": 1887,
+            "text_similarity": 1.0,
+            "env_step_ms": 3521.9
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 24,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            6,
+            11,
+            12
+          ],
+          "signatures": [
+            "consecutive_scrolls_no_viewport_move"
+          ],
+          "evidence": {
+            "scroll_y": 1002,
+            "text_similarity": 1.0,
+            "env_step_ms": 2200.9
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 29,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            6,
+            15
+          ],
+          "signatures": [
+            "consecutive_scrolls_no_viewport_move"
+          ],
+          "evidence": {
+            "scroll_y": 1855,
+            "text_similarity": 1.0,
+            "env_step_ms": 3703.5
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 32,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            5,
+            6
+          ],
+          "signatures": [
+            "consecutive_scrolls_no_viewport_move"
+          ],
+          "evidence": {
+            "scroll_y": 1955,
+            "text_similarity": 1.0,
+            "env_step_ms": 4119.9
+          }
+        }
+      ],
+      "candidate_root_cause": "Scroll no-ops are concentrated where the viewport is already pinned, a modal/overlay captures scroll, or the target page is not scrollable; the agent receives another near-identical AXTree and tends to spend more steps looking for hidden content."
+    },
+    "select_option_silent_failure": {
+      "n_episodes": 149,
+      "blast_radius_pct": 3.32,
+      "mode_breakdown": {
+        "DOM": 35,
+        "P-SoM": 32,
+        "P-prompt": 4,
+        "P-text": 19,
+        "SoM": 32,
+        "Vision": 27
+      },
+      "site_breakdown": {
+        "classifieds": 117,
+        "reddit": 27,
+        "shopping": 5
+      },
+      "run_breakdown": {
+        "B0_3mode_classifieds": 27,
+        "B0_3mode_reddit": 9,
+        "B0_dom_shopping": 5,
+        "B0_phantom_classifieds": 12,
+        "B0_phantom_dom_classifieds": 10,
+        "B0_phantom_dom_reddit": 5,
+        "B0_phantom_prompt_reddit": 4,
+        "B1_3mode_classifieds": 47,
+        "B1_3mode_reddit": 6,
+        "B1_phantom_classifieds": 17,
+        "B1_phantom_dom_classifieds": 4,
+        "run_reddit_1777238854_ef9c4b": 3
+      },
+      "signature_counts": {
+        "runner_failed_no_progress;same_url_dropdown_not_selected": 88,
+        "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected": 81,
+        "runner_failed_no_progress": 46,
+        "repeated_same_option_without_state_update": 5,
+        "same_url_dropdown_not_selected": 5
+      },
+      "case_study_task_ids": [
+        {
+          "site": "classifieds",
+          "task": 60,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            2
+          ],
+          "signatures": [
+            "repeated_same_option_without_state_update"
+          ],
+          "evidence": {
+            "option_label": "Cars + trucks",
+            "obs_url": "http://100.95.81.103:9980/",
+            "text_similarity": 0.9953866026942241,
+            "env_step_ms": 4421.1
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 74,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            1,
+            2
+          ],
+          "signatures": [
+            "runner_failed_no_progress"
+          ],
+          "evidence": {
+            "option_label": "Cars + trucks",
+            "obs_url": "http://100.95.81.103:9980/",
+            "text_similarity": 1.0,
+            "env_step_ms": 3968.2
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 81,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            1
+          ],
+          "signatures": [
+            "runner_failed_no_progress"
+          ],
+          "evidence": {
+            "option_label": "Books",
+            "obs_url": "http://100.95.81.103:9980/",
+            "text_similarity": 1.0,
+            "env_step_ms": 4079.7
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 114,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            14,
+            15,
+            16
+          ],
+          "signatures": [
+            "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+            "runner_failed_no_progress;same_url_dropdown_not_selected"
+          ],
+          "evidence": {
+            "option_label": "Oldest first",
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=Virginia+&iPage=104&sOrder=dt_pub_date&iOrderType=desc",
+            "text_similarity": 1.0,
+            "env_step_ms": 2866.9
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 122,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            8,
+            10,
+            13,
+            14
+          ],
+          "signatures": [
+            "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+            "runner_failed_no_progress;same_url_dropdown_not_selected"
+          ],
+          "evidence": {
+            "option_label": "Oldest first",
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=red+book+&sCategory=9&sOrder=dt_pub_date&iOrderType=desc",
+            "text_similarity": 1.0,
+            "env_step_ms": 4434.5
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 133,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            1,
+            16,
+            17,
+            22,
+            23,
+            24
+          ],
+          "signatures": [
+            "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+            "runner_failed_no_progress",
+            "runner_failed_no_progress;same_url_dropdown_not_selected"
+          ],
+          "evidence": {
+            "option_label": "Oldest first",
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=Xbox+One+games+&sCategory=24&sOrder=dt_pub_date&iOrderType=desc",
+            "text_similarity": 1.0,
+            "env_step_ms": 3542.1
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 145,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            1
+          ],
+          "signatures": [
+            "runner_failed_no_progress"
+          ],
+          "evidence": {
+            "option_label": "Video gaming",
+            "obs_url": "http://100.95.81.103:9980/",
+            "text_similarity": 1.0,
+            "env_step_ms": 3775.6
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 154,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            5,
+            6,
+            7
+          ],
+          "signatures": [
+            "repeated_same_option_without_state_update;runner_failed_no_progress;same_url_dropdown_not_selected",
+            "runner_failed_no_progress;same_url_dropdown_not_selected"
+          ],
+          "evidence": {
+            "option_label": "Oldest first",
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=17&sOrder=dt_pub_date&iOrderType=desc",
+            "text_similarity": 1.0,
+            "env_step_ms": 3769.8
+          }
+        }
+      ],
+      "candidate_root_cause": "Dropdown failures mostly arise from selecting unavailable or DOM-stale options. The page keeps the previous sort/category state, often with action_success=false or no selected-option echo, so the agent continues under a false filter assumption."
+    },
+    "finish_wrong_state": {
+      "n_episodes": 1972,
+      "blast_radius_pct": 43.89,
+      "mode_breakdown": {
+        "DOM": 604,
+        "P-SoM": 285,
+        "P-prompt": 87,
+        "P-text": 253,
+        "SoM": 447,
+        "Vision": 296
+      },
+      "site_breakdown": {
+        "classifieds": 1033,
+        "reddit": 710,
+        "shopping": 229
+      },
+      "run_breakdown": {
+        "B0_3mode_classifieds": 421,
+        "B0_3mode_reddit": 301,
+        "B0_dom_shopping": 229,
+        "B0_phantom_classifieds": 122,
+        "B0_phantom_dom_classifieds": 137,
+        "B0_phantom_dom_reddit": 93,
+        "B0_phantom_prompt_reddit": 87,
+        "B1_3mode_classifieds": 255,
+        "B1_3mode_reddit": 141,
+        "B1_phantom_classifieds": 75,
+        "B1_phantom_dom_classifieds": 23,
+        "run_reddit_1777238854_ef9c4b": 88
+      },
+      "signature_counts": {
+        "agent_false_confidence_after_partial_work": 646,
+        "wrong_state_unclear_from_trace": 557,
+        "agent_finished_on_search_results_page_not_target": 432,
+        "visual_perception_guess_or_image_blind_finish": 158,
+        "finished_off_eval_target_url": 156,
+        "agent_hallucinated_answer": 23
+      },
+      "case_study_task_ids": [
+        {
+          "site": "classifieds",
+          "task": 1,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            3
+          ],
+          "signatures": [
+            "agent_false_confidence_after_partial_work"
+          ],
+          "evidence": {
+            "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=7846",
+            "answer": "Found the cheapest red Toyota: 2007 Toyota Yaris priced at $3000 in Gainesville, Virginia.",
+            "confidence": 0.95,
+            "intent": "Find me the cheapest red Toyota. It should be between $3000 to $6000."
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 2,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            6
+          ],
+          "signatures": [
+            "agent_false_confidence_after_partial_work"
+          ],
+          "evidence": {
+            "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=69296",
+            "answer": "Found: Vintage Carved Jade Floral Ring 14kt (Reduced), $300.00, published 2023/11/01, Towson, Maryland.",
+            "confidence": 0.95,
+            "intent": "Find me the most recently posted item in the \"Jewelry\" category with a red gem. It should be between $300 to $600."
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 3,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            16
+          ],
+          "signatures": [
+            "agent_false_confidence_after_partial_work"
+          ],
+          "evidence": {
+            "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=60392",
+            "answer": "Nikon Z6 II, $1000, published 2023/11/15, not completely black, in Photo + video category.",
+            "confidence": 0.95,
+            "intent": "Find me the most recently posted item in the \"Photo + video\" category that is not completely black in color. It should be between $1000 to $1200."
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 4,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            7
+          ],
+          "signatures": [
+            "agent_false_confidence_after_partial_work"
+          ],
+          "evidence": {
+            "obs_url": "http://100.95.81.103:9980/index.php?page=item&action=item_edit&id=84144",
+            "answer": "The price of the white car listing has been updated to $25,000 in both the price field and the description.",
+            "confidence": 0.95,
+            "intent": "Navigate to my listing of the white car and change the price to $25000. Update the price in the description as well."
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 5,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            16
+          ],
+          "signatures": [
+            "finished_off_eval_target_url"
+          ],
+          "evidence": {
+            "obs_url": "http://100.95.81.103:9980/index.php?page=user&action=items",
+            "answer": "The white car listing was not found after exhaustive search and scrolling. It may have already been deleted or does not exist.",
+            "confidence": 0.95,
+            "intent": "Navigate to my listing of the white car and delete it."
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 6,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            14
+          ],
+          "signatures": [
+            "agent_finished_on_search_results_page_not_target"
+          ],
+          "evidence": {
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=motorcycle+%241000-%242000+not+orange+&sCategory=20",
+            "answer": "[\"http://100.95.81.103:9980/index.php?page=item&id=83291\", \"http://100.95.81.103:9980/index.php?page=item&id=18961\", \"http://100.95.81.103:9",
+            "confidence": 0.85,
+            "intent": "Return the links of the 3 most recent motorcycles within $1000 to $2000 that are not orange."
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 7,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            4
+          ],
+          "signatures": [
+            "agent_finished_on_search_results_page_not_target"
+          ],
+          "evidence": {
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=white&sPriceMin=300+&sPriceMax=600+&sCategory=11",
+            "answer": "[\"http://100.95.81.103:9980/index.php?page=item&id=38125\", \"http://100.95.81.103:9980/index.php?page=item&id=26581\"]",
+            "confidence": 0.95,
+            "intent": "Return the links of the 2 most recent items in the \"Cell phones\" category within $300 to $600 that are white in color."
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 10,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            4
+          ],
+          "signatures": [
+            "wrong_state_unclear_from_trace"
+          ],
+          "evidence": {
+            "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=43887",
+            "answer": "21",
+            "confidence": 0.95,
+            "intent": "What is the seat height in inches of the smaller piece of furniture on this page?"
+          }
+        }
+      ],
+      "candidate_root_cause": "Wrong-state finishes are dominated by agents completing from an answer-shaped local observation rather than the evaluator target state: search pages, image-only pages, partial form/message workflows, and confident but unevaluated claims.",
+      "subcategories": {
+        "agent_false_confidence_after_partial_work": 646,
+        "wrong_state_unclear_from_trace": 557,
+        "agent_finished_on_search_results_page_not_target": 432,
+        "visual_perception_guess_or_image_blind_finish": 158,
+        "finished_off_eval_target_url": 156,
+        "agent_hallucinated_answer": 23
+      }
+    },
+    "cross_step_trajectory_anomaly": {
+      "n_episodes": 353,
+      "blast_radius_pct": 7.86,
+      "mode_breakdown": {
+        "DOM": 183,
+        "P-SoM": 47,
+        "P-prompt": 5,
+        "P-text": 45,
+        "SoM": 62,
+        "Vision": 11
+      },
+      "site_breakdown": {
+        "classifieds": 192,
+        "reddit": 95,
+        "shopping": 66
+      },
+      "run_breakdown": {
+        "B0_3mode_classifieds": 30,
+        "B0_3mode_reddit": 27,
+        "B0_dom_shopping": 66,
+        "B0_phantom_classifieds": 14,
+        "B0_phantom_dom_classifieds": 14,
+        "B0_phantom_dom_reddit": 15,
+        "B0_phantom_prompt_reddit": 5,
+        "B1_3mode_classifieds": 91,
+        "B1_3mode_reddit": 42,
+        "B1_phantom_classifieds": 27,
+        "B1_phantom_dom_classifieds": 16,
+        "run_reddit_1777238854_ef9c4b": 6
+      },
+      "signature_counts": {
+        "same_url_large_axtree_shift_non_navigation_action": 353
+      },
+      "case_study_task_ids": [
+        {
+          "site": "classifieds",
+          "task": 0,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            4
+          ],
+          "signatures": [
+            "same_url_large_axtree_shift_non_navigation_action"
+          ],
+          "evidence": {
+            "action_type": "type",
+            "text_similarity": 0.09520816967792615,
+            "page_change_reasons": [
+              "content_changed",
+              "form_fields_changed",
+              "interactive_elements_changed",
+              "scroll_changed"
+            ],
+            "env_step_ms": 7815.8,
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=blue+kayak+&sOrder=i_price&iOrderType=asc"
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 30,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            8
+          ],
+          "signatures": [
+            "same_url_large_axtree_shift_non_navigation_action"
+          ],
+          "evidence": {
+            "action_type": "type",
+            "text_similarity": 0.24248894311422906,
+            "page_change_reasons": [
+              "content_changed",
+              "form_fields_changed",
+              "interactive_elements_changed",
+              "scroll_changed"
+            ],
+            "env_step_ms": 8526.7,
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=black+couch+&sOrder=i_price&iOrderType=desc&iPage=2"
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 68,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            3
+          ],
+          "signatures": [
+            "same_url_large_axtree_shift_non_navigation_action"
+          ],
+          "evidence": {
+            "action_type": "type",
+            "text_similarity": 0.4493175893267904,
+            "page_change_reasons": [
+              "content_changed",
+              "dom_complexity_changed",
+              "form_fields_changed",
+              "interactive_elements_changed",
+              "scroll_changed"
+            ],
+            "env_step_ms": 9119.8,
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=Tiger+Woods+video+game+"
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 70,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            5
+          ],
+          "signatures": [
+            "same_url_large_axtree_shift_non_navigation_action"
+          ],
+          "evidence": {
+            "action_type": "type",
+            "text_similarity": 0.4880078316201664,
+            "page_change_reasons": [
+              "content_changed",
+              "form_value_changed"
+            ],
+            "env_step_ms": 5041.1,
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=green+tractor+&sCity=Delaware+"
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 73,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            4
+          ],
+          "signatures": [
+            "same_url_large_axtree_shift_non_navigation_action"
+          ],
+          "evidence": {
+            "action_type": "type",
+            "text_similarity": 0.2722058595566579,
+            "page_change_reasons": [
+              "content_changed",
+              "dom_complexity_changed",
+              "form_fields_changed",
+              "interactive_elements_changed",
+              "scroll_changed"
+            ],
+            "env_step_ms": 8588.1,
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=McDonald%27s+Drive+Thru+sign+"
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 96,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            1
+          ],
+          "signatures": [
+            "same_url_large_axtree_shift_non_navigation_action"
+          ],
+          "evidence": {
+            "action_type": "type",
+            "text_similarity": 0.07449941107184924,
+            "page_change_reasons": [
+              "content_changed",
+              "form_fields_changed",
+              "scroll_changed"
+            ],
+            "env_step_ms": 6935.6,
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sCategory=3&sOrder=i_price&iOrderType=asc&iPage=12"
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 109,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            15
+          ],
+          "signatures": [
+            "same_url_large_axtree_shift_non_navigation_action"
+          ],
+          "evidence": {
+            "action_type": "type",
+            "text_similarity": 0.38113089659481414,
+            "page_change_reasons": [
+              "content_changed",
+              "form_fields_changed",
+              "interactive_elements_changed",
+              "scroll_changed"
+            ],
+            "env_step_ms": 6755.5,
+            "obs_url": "http://100.95.81.103:9980/index.php?page=search&sPattern=white+sports+car+Ohio+&sCategory=10&sOrder=i_price&iOrderType=desc"
+          }
+        },
+        {
+          "site": "classifieds",
+          "task": 128,
+          "run": "B0_3mode_classifieds",
+          "mode": "DOM",
+          "condition_id": "phase1_dom_router_0",
+          "steps": [
+            2
+          ],
+          "signatures": [
+            "same_url_large_axtree_shift_non_navigation_action"
+          ],
+          "evidence": {
+            "action_type": "type",
+            "text_similarity": 0.2572084715488645,
+            "page_change_reasons": [
+              "content_changed",
+              "form_fields_changed",
+              "interactive_elements_changed",
+              "scroll_changed",
+              "text_length_changed"
+            ],
+            "env_step_ms": 5373.2,
+            "obs_url": "http://100.95.81.103:9980/index.php?page=item&id=74603"
+          }
+        }
+      ],
+      "candidate_root_cause": "Large same-URL AXTree shifts without a navigation-like action point to frame-side async refreshes, form-only rerenders, modal state changes, and stale cache/observation replacements that change what the agent sees without an explicit navigation signal."
+    }
+  },
+  "cross_action_summary": {
+    "total_silent_failures_estimated": 3052,
+    "fraction_of_all_failures": 0.765,
+    "failed_episode_mode_traces": 3992,
+    "site_with_highest_concentration": "classifieds",
+    "site_concentration_rates": {
+      "classifieds": 0.756,
+      "reddit": 0.581,
+      "shopping": 0.714
+    },
+    "mode_with_highest_concentration": "P-text",
+    "mode_concentration_rates": {
+      "DOM": 0.703,
+      "P-SoM": 0.682,
+      "P-prompt": 0.691,
+      "P-text": 0.779,
+      "SoM": 0.689,
+      "Vision": 0.571
+    },
+    "unique_category_sum": 3690,
+    "overlap_adjusted_unique_episodes": 3052
+  },
+  "validation": {
+    "mode_breakdowns_sum_to_n_episodes": {
+      "type_silent_failure": true,
+      "scroll_silent_failure": true,
+      "select_option_silent_failure": true,
+      "finish_wrong_state": true,
+      "cross_step_trajectory_anomaly": true
+    },
+    "case_study_count_at_least_3": {
+      "type_silent_failure": true,
+      "scroll_silent_failure": true,
+      "select_option_silent_failure": true,
+      "finish_wrong_state": true,
+      "cross_step_trajectory_anomaly": true
+    },
+    "category_episode_floor_at_least_5": {
+      "type_silent_failure": true,
+      "scroll_silent_failure": true,
+      "select_option_silent_failure": true,
+      "finish_wrong_state": true,
+      "cross_step_trajectory_anomaly": true
+    }
+  }
+}

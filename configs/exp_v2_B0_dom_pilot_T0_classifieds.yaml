@@ -1,0 +1,54 @@
+# B-37 Pilot: B0 DOM cls 30 tasks at T=0 + RNG seeding
+# Phase A sanity gate: does T=0 cause mode collapse vs existing T=0.1 baseline?
+# If pilot SR within ±5pp of existing B0_3mode_classifieds DOM (~14.96% adj), GREEN
+# Marginal -5 to -15pp: investigate top_p / repetition_penalty
+# Fail < -15pp or signature mode-collapse: revert T=0 → 0.1, paper takes disclosure path
+#
+# Run:
+#   bash scripts/queues/queue_pilot_t0.sh classifieds
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B0_dom_pilot_T0_classifieds"
+
+task:
+  include_sites: ["classifieds"]
+  max_tasks_per_site: 30  # B-37 pilot: subset for fast gate (~1h vs 4h full)
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["dom"]
+
+backends:
+  default_backend: "api_strong"
+  api_strong:
+    type: "api_proxy"
+    api_name: "qwen.qwen3-vl-235b-a22b"
+    base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
+    temperature: 0.0  # B-37: strict greedy
+    top_p: 1.0        # B-37: explicit no-pruning
+    max_new_tokens: 4096
+    max_image_payload_bytes: 5242880
+    image_max_size: 1280
+    max_obs_chars: 12000
+    dom_mode: "llm"
+    mock_mode: false
+    use_glm_fallback: true
+    glm_config: ".auth/glm"
+
+metrics:
+  cost_api:
+    input_cost_per_1k: 0.001
+    output_cost_per_1k: 0.005
+  energy:
+    enabled: false
+
+baselines:
+  run_b0: false

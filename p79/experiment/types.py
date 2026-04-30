@@ -81,6 +81,13 @@ class StepRecordV2:
     parse_failure_reason: Optional[str] = None
     fallback_finish: Optional[bool] = None
     confidence: Optional[Dict[str, Any]] = None
+    # B-09 fix (Cluster 2 patch, 2026-04-30): split derivation of page_changed.
+    # `page_changed` = bool(any of 12 reasons) — used internally for cycle/retry.
+    # `agent_visible_changed` = bool(any AGENT_VISIBLE_REASONS reason) — used by
+    # paper-grade SR derivation, fig0a metrics, search-loop detection. Excludes
+    # form_value_changed / dom_complexity_changed / text_length_changed which
+    # fire on form edits not visible in obs_text (B-09 root cause).
+    agent_visible_changed: Optional[bool] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
