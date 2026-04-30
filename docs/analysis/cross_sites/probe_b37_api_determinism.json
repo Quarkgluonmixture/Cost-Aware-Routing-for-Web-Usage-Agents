@@ -1,0 +1,53 @@
+{
+  "audit_date": "2026-04-30",
+  "purpose": "B-37 verification \u2014 does temperature=0 give byte-identical output across calls?",
+  "model": "qwen.qwen3-vl-235b-a22b",
+  "endpoint": "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke",
+  "n_calls": 5,
+  "n_successful": 5,
+  "n_unique_digests": 5,
+  "all_match": false,
+  "verdict": "NON-DETERMINISTIC (5 unique outputs across 5 calls)",
+  "results": [
+    {
+      "call_idx": 0,
+      "status_code": 200,
+      "text": "{\"content\":\"{\\n  \\\"action_type\\\": \\\"click\\\",\\n  \\\"element_id\\\": 5,\\n  \\\"thought\\\": \\\"The $320 Blue Inflatable Kayak is the cheapest option among the listed blue kayaks.\\\"\\n}\",\"model\":\"qwen.qwen3-vl-235b-a22b\",\"usage\":{\"inputTokens\":162,\"outputTokens\":46,\"cost\":0.00039200000000000004},\"metadata\":{\"remaining_quota\":{\"llm_cost\":332.60454799999997,\"total_cost\":332.60454799999997,\"budget_limit\":350,\"remaining_budget\":17.39545200000001,\"budget_usage_percent\":95.02987085714285}}}",
+      "text_digest": "f83bc369231c8a8c",
+      "text_len": 477,
+      "elapsed_ms": 2761.0769999999998
+    },
+    {
+      "call_idx": 1,
+      "status_code": 200,
+      "text": "{\"content\":\"{\\\"action_type\\\": \\\"click\\\", \\\"element_id\\\": 5, \\\"thought\\\": \\\"The $320 blue inflatable kayak is the cheapest option available in the search results.\\\"}\",\"model\":\"qwen.qwen3-vl-235b-a22b\",\"usage\":{\"inputTokens\":162,\"outputTokens\":38,\"cost\":0.000352},\"metadata\":{\"remaining_quota\":{\"llm_cost\":332.60490000000004,\"total_cost\":332.60490000000004,\"budget_limit\":350,\"remaining_budget\":17.395099999999978,\"budget_usage_percent\":95.02997142857143}}}",
+      "text_digest": "ee9b2b6cf3a0ce4e",
+      "text_len": 455,
+      "elapsed_ms": 834.384
+    },
+    {
+      "call_idx": 2,
+      "status_code": 200,
+      "text": "{\"content\":\"{\\\"action_type\\\": \\\"click\\\", \\\"element_id\\\": 5, \\\"thought\\\": \\\"The cheapest blue kayak listed is the $320 Blue Inflatable Kayak, so I will click on it to view more details.\\\"}\",\"model\":\"qwen.qwen3-vl-235b-a22b\",\"usage\":{\"inputTokens\":162,\"outputTokens\":49,\"cost\":0.000407},\"metadata\":{\"remaining_quota\":{\"llm_cost\":332.605307,\"total_cost\":332.605307,\"budget_limit\":350,\"remaining_budget\":17.394693000000014,\"budget_usage_percent\":95.0300877142857}}}",
+      "text_digest": "72f07ca81a7a5b86",
+      "text_len": 461,
+      "elapsed_ms": 896.616
+    },
+    {
+      "call_idx": 3,
+      "status_code": 200,
+      "text": "{\"content\":\"{\\\"action_type\\\": \\\"click\\\", \\\"element_id\\\": 5, \\\"thought\\\": \\\"The cheapest blue kayak listed is the $320 Blue Inflatable Kayak, which matches the goal of finding the lowest-priced option.\\\"}\",\"model\":\"qwen.qwen3-vl-235b-a22b\",\"usage\":{\"inputTokens\":162,\"outputTokens\":49,\"cost\":0.000407},\"metadata\":{\"remaining_quota\":{\"llm_cost\":332.605714,\"total_cost\":332.605714,\"budget_limit\":350,\"remaining_budget\":17.39428600000002,\"budget_usage_percent\":95.030204}}}",
+      "text_digest": "127521ee4a72359d",
+      "text_len": 469,
+      "elapsed_ms": 884.7819999999999
+    },
+    {
+      "call_idx": 4,
+      "status_code": 200,
+      "text": "{\"content\":\"{\\n  \\\"action_type\\\": \\\"click\\\",\\n  \\\"element_id\\\": 5,\\n  \\\"thought\\\": \\\"The $320 Blue Inflatable Kayak is the cheapest option available among the search results.\\\"\\n}\",\"model\":\"qwen.qwen3-vl-235b-a22b\",\"usage\":{\"inputTokens\":162,\"outputTokens\":45,\"cost\":0.00038700000000000003},\"metadata\":{\"remaining_quota\":{\"llm_cost\":332.606101,\"total_cost\":332.606101,\"budget_limit\":350,\"remaining_budget\":17.393898999999966,\"budget_usage_percent\":95.03031457142858}}}",
+      "text_digest": "c26643e84e46ee7c",
+      "text_len": 468,
+      "elapsed_ms": 834.692
+    }
+  ]
+}

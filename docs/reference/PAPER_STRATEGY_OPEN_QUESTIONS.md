@@ -77,7 +77,19 @@
 
 **Status**: ❌ **Retracted as advisor-ask** (per user 2026-04-30: greedy 下 LLM-level 没 variance to measure on B1). Self-decision:
 1. Section 4 footnote disclosure (B0 vs B1 determinism asymmetry)
-2. Run cheap B0 multi-call probe ($5) when 14-cell rerun starts — confirms proxy-side determinism behavior
+2. ~~Run cheap B0 multi-call probe ($5) when 14-cell rerun starts — confirms proxy-side determinism behavior~~ → ✅ **DONE 2026-04-30**, see below
+
+### Q3 follow-up — B0 multi-call determinism probe results (2026-04-30)
+
+`scripts/maintenance/probe_b37_api_determinism.py` ran 5 calls × T=0 + top_p=1.0 + seed=42 forwarded × `qwen.qwen3-vl-235b-a22b` proxy:
+
+**Result**: 5/5 calls produced **5 distinct byte-level outputs**. Output token counts: 38/45/46/49/49.
+
+**But**: all 5 selected the **same action** (`click [element_id=5]`, cheapest blue kayak).
+
+**Verdict**: **Token-level non-deterministic, decision-level convergent**. B0 cannot claim byte-reproducibility in Section 4, but action-level outcome stability supports paper SR-level conclusions.
+
+详 `docs/analysis/cross_sites/probe_b37_api_determinism.md` (含 5 个 raw output text, recommended Section 4 disclosure paragraph).
 
 ---
 

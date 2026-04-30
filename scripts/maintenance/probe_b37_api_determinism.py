@@ -29,20 +29,27 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT_JSON = ROOT / "docs/analysis/cross_sites/probe_b37_api_determinism.json"
 OUT_MD = ROOT / "docs/analysis/cross_sites/probe_b37_api_determinism.md"
 
-# Read .env for API key
-ENV_PATH = ROOT / ".env"
-ENV_VARS = {}
-if ENV_PATH.exists():
-    for line in ENV_PATH.read_text().splitlines():
+# Read API key from .auth/qwen_api (prefix-grep extraction, same pattern as
+# queue_baseline.sh — the file is NOT shell-source format).
+def _load_proxy_key_from_auth() -> str:
+    auth_path = ROOT / ".auth" / "qwen_api"
+    if not auth_path.exists():
+        return ""
+    for line in auth_path.read_text().splitlines():
         line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        k, v = line.split("=", 1)
-        ENV_VARS[k.strip()] = v.strip().strip("'\"")
+        if line.startswith("rp_"):
+            return line
+    return ""
 
-API_KEY = ENV_VARS.get("PROXY_API_KEY") or os.environ.get("PROXY_API_KEY", "")
-BASE_URL = ENV_VARS.get("PROXY_API_BASE") or os.environ.get("PROXY_API_BASE", "")
-MODEL_NAME = "qwen.qwen3-vl-235b-a22b"
+
+API_KEY = os.environ.get("PROXY_API_KEY", "") or _load_proxy_key_from_auth()
+# BASE_URL hardcoded per configs/exp_v2_B0_*.yaml (all share same endpoint).
+# Override via env var if needed.
+BASE_URL = os.environ.get(
+    "PROXY_API_BASE",
+    "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke",
+)
+MODEL_NAME = os.environ.get("PROXY_MODEL_NAME", "qwen.qwen3-vl-235b-a22b")
 
 if not API_KEY or not BASE_URL:
     print("ERROR: PROXY_API_KEY / PROXY_API_BASE not set — cannot probe", file=sys.stderr)
@@ -73,7 +80,7 @@ def call_api(prompt: str, temperature: float = 0.0, max_tokens: int = 128, seed:
     if seed is not None:
         payload["seed"] = seed
     headers = {"X-Api-Key": API_KEY, "Content-Type": "application/json"}
-    resp = requests.post(f"{BASE_URL}/v1/messages", json=payload, headers=headers, timeout=60)
+    resp = requests.post(f"{BASE_URL}", json=payload, headers=headers, timeout=60)
     return {
         "status_code": resp.status_code,
         "body": resp.text,
@@ -101,7 +108,7 @@ def extract_text(body: str) -> str:
 def main():
     n_calls = 5
     print(f"Probing API determinism: {n_calls} calls × temperature=0 × {MODEL_NAME}", file=sys.stderr)
-    print(f"Endpoint: {BASE_URL}/v1/messages", file=sys.stderr)
+    print(f"Endpoint: {BASE_URL}", file=sys.stderr)
 
     results = []
     for i in range(n_calls):
