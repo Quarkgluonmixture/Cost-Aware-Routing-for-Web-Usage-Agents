@@ -164,6 +164,78 @@ Spoke (Myriad) → Hub (DGX): 推 Tier B (episodes JSONL) via rsync over Tailsca
 
 ---
 
+## 4.4 Alternative — VWA Docker on Myriad? (五层 barrier 分析, 拒掉)
+
+**问题**: 用户 ask "如果 myriad 上面自己跑 docker，会不会不用内网穿透了". 思路是把 VWA sites 跟 B1 都 deploy 到 Myriad compute node, 同 node localhost 通信, 绕开 Tailscale CGNAT firewall 问题.
+
+**Verdict**: 🔴 **rejected — 五层 barrier 累计 = 不可行**.
+
+### Barrier 1: Docker 权限 (可绕)
+
+- Docker daemon 要 root → HPC 共享 node 不给
+- 替代: **Singularity / Apptainer** (rootless container, designed for HPC)
+- VWA 三站镜像理论上能转 Singularity image (镜像 push HF Hub / Singularity registry, 然后 myriad 上 pull)
+- 工程量: 1-2 天 (学习 + 转换 + multi-container orchestration + 测试)
+
+### Barrier 2: HPC 48h wallclock (致命)
+
+- B1 baseline 跑全 466 task × 30 min/task ≈ 10 天 wallclock per cell × 14 cells
+- 单 qsub job 最多 48h ≈ 96 task → 必须切 5+ jobs per cell
+- 每 job 启动 = 启动 VWA 7 容器 + 加载 fixture + 跑 runner ≥ 10-30 min overhead
+- 累计 overhead ~1-3h, 但**主要问题不是时间损失, 是 job 间状态不连续** (Barrier 3)
+
+### Barrier 3: Job 间数据持久化 (deal-breaker) 🔴
+
+**Naive view (我之前的)**: mount myriadfs 到 `/var/lib/mysql` → DB 文件持久 → 解决.
+
+**Paper-grade view (用户 critique 后)**: data files persist 但**measurement instrument inconsistency** 仍存在.
+
+- Job A 跑 task 0-95 后退出 → MySQL container 销毁
+- 即使 myriadfs 持久 mysql data files:
+  - **In-memory transactional state** 丢 (uncommitted writes rollback)
+  - **Session / cookie / cart state** reset (Magento PHP session 在 Redis/files, 跨 restart 失效)
+  - **DB query cache / connection pool** cold restart (PHP-FPM opcache 5-10 min 才稳)
+  - **DB warmup behavior 不一致** — Job A task 95 时 DB hot, Job B task 96 cold
+- VWA evaluator 依赖 deterministic state ("shopping cart 应该有 X")
+- **结果**: page render latency 跨 job 差几百 ms → agent timing-dependent decisions 可能 flip → SR 数字 **uncontrolled noise**
+
+这不是 P79 项目特有, 是 **web app + HPC batch 通用矛盾**:
+- Web app 设计 for long-running stateful service
+- HPC batch 设计 for ephemeral compute
+- 两者**架构不兼容** (DB warmup variance vs paper-grade SR comparison)
+
+### Barrier 4: Compute-to-compute 通信 (可绕但繁琐)
+
+- 单 job 内: runner + VWA 在同 node localhost — ✅ OK
+- 跨 job "VWA daemon 一直跑 + runner 多 job 共享":
+  - HPC 不允许长 daemon job (违反 fair-share scheduling)
+  - 即使能跑, compute node A 上 VWA 监听 9999, compute node B 上 runner 能否 reach? 需诊断 compute-to-compute custom port policy
+  - login node 不允许跑长 daemon (only short < 15min jobs)
+
+### Barrier 5: VWA fixture 预热 (累加成本)
+
+- Magento (shopping) 启动后 ~5-10 min 预热 (PHP-FPM + opcache + DB connections + warmup queries)
+- classifieds DB import ~3 min
+- reddit Postgres ~1 min
+- 每 job 启动都付这成本 → 14-cell × 5 jobs/cell × 10 min = ~12h pure setup overhead
+
+### 累计判定
+
+Barrier 3 单独**就足以否定**这条 path (paper-grade SR 不可比). 加 Barrier 1-2-4-5 累积工程量 + risk:
+
+| 维度 | Myriad VWA | RunPod 4090 |
+|---|---|---|
+| Setup 时间 | 2-3 天 | 1-2h |
+| Cost | $0 | $90-150 |
+| Cross-job state continuity | ❌ 不保证 (deal-breaker) | ✅ instance always-on |
+| Container 政策 | ⚠️ Singularity 未 verify | ✅ Docker 直接 |
+| Wallclock limit | 48-72h per job | 你 rent 期间 |
+| Multi-container orchestration | 🔴 复杂 | ✅ docker-compose |
+
+**结论**: 省 $90 不值得 paper-grade integrity 风险 + 2-3 天 setup. RunPod path 是 dominant choice.
+
+---
+
 ## 5. Viable Myriad Use Cases
 
 **不依赖 quark VWA docker** 的任务，Myriad 都能做:
