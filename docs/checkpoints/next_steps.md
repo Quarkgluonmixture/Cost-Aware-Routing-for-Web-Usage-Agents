@@ -17,43 +17,48 @@
 >
 > **NOT** included (intentional): GLM digest sidecar + gallery + annotate (watchdog handles); codex narrative analyses (manual); narrow ad-hoc diagnostics (selflink_loop / vision_coordinate / search_over_browse / diag_pattern_match — invoke per-need)
 >
-> **Last updated**: 2026-04-29（§105 swatch radio 漏检 fix）
+> **Last updated**: 2026-04-30（§107 **Phase A 4-cluster bug fix wave + 5-tier audit**: 37 catalogued bugs, ship Phase A patches commit `3c15cd7`, pilot wave-2/3 PASS N=120, **14-cell paper-grade re-run blocked on RunPod 经费 approval**, Myriad 物理级 blocked. **Next: 学长 sync + RunPod approval + 14-cell rerun + 4-dim integration**.）
 
 ---
 
-## §0 TL;DR
+## §0 TL;DR (2026-04-30 status)
 
 **Paper hook**: "Phantom-SoM is hidden 4th routing arm with **4-fold drop-in property** (cost ≈ DOM / latency ~50% / signal AUROC ≥ baseline / drop-one 1.7-3.3pp)"
 
-**Critical path A B0 部分**: ✅ DONE 2026-04-28 (cls + red 5-mode FRESH paper-grade clean)
+### 这周 (~04-23 → 04-30) 做的事
 
-**🆕 4-dimension Evidence Framework 落地 (2026-04-29 §106)**: paper_planning §3 重组（4 orthogonal dimensions: Outcome / Macro / Micro / Efficiency）+ 13 figures rename dimension-prefix + Makefile `analyze-layered` 一键 pipeline (CLI alias 保留) + `layered_evidence_status.md` live status report (filename retained). 详见 实验笔记 §106.
+1. **Phantom 量化 + 6-mode 实验设计完整** — B0 cls + reddit 5-mode (DOM/SoM/Vision/P-text/P-SoM) FRESH paper-grade clean; P-prompt diamond corner reddit 已 done, cls/shop pending. 14 figures 全部 FRESH dimension-prefixed.
+2. **Paper planning 完整重组** — paper_planning.md (1255 行) 4-dimension framework (Outcome/Macro/Micro/Efficiency) + 3-axis × 8-channel × bidirectional theory; Section 1-3 prose done (3163 words); Section 4-6 evidence 95%.
+3. **🆕 04-30 系统 audit VWA framework** — 找到 **37 catalogued bugs** (Tier 1-5 + Tier 10 dispatch probe + 4 verification probes), ship Phase A 4-cluster patches (~455 LOC, commit `3c15cd7`): C1 locator-route / C2 page_changed split / C3 fuzzy cycle / C4 RNG seeding+T=0. Pilot wave-2/3 N=120 PASS, reddit B-33 fix lift +2.14pp. 详见 `docs/checkpoints/master_bug_catalog.md` (37 entries) + `docs/reference/VWA_FRAMEWORK_BUGS_AND_PHASE_A_FIXES.md` + 实验笔记 §107.
+4. **VWA bugs ⇒ 14-cell paper-grade re-run 必需** — Phase A patches 落地后, 之前 14-cell 数据需要全部重跑才能 paper-grade clean. cross-mode 比较 robust (symmetric contamination + Vision counter-evidence + pilot Δ=0pp 验证), Phantom finding 仍 valid, 但 absolute SR 需要新数据.
+5. **🔴 Myriad 不可行** — UCL 申请下来了, 但物理级 blocked: UCL 防火墙 drop Tailscale CGNAT (100.64/10), Myriad 不能 reach quark VWA docker. 详见 `docs/reference/MYRIAD_SMOKE_REPORT.md`. 备选: RunPod 4090 dedicated $0.6/h × ~180h ≈ $110-200 总预算.
 
-**🆕 Cost methodology fix (~100× deployment-class gap)**: §103 legacy "30×" claim **已 superseded**。real ratio 用 electricity-equivalent ($0.12/kWh) 算: B0 API ~$0.04/ep vs B1 local ~$0.0004/ep → **reddit 98× / cls 105×**。`cost_per_mode.md` standalone aggregator + fig3d log-scale Pareto with annotation.
+### 当前 blocker
 
-**🆕 P-prompt mode 加入设计 (Diamond ablation)**: P-text 已显著 → P-prompt (AXTree+SoM-prompt+无图) 是 symmetric counterpart, paper Section 5 必需用于 disentangle prompt × text 交互。Code + yaml + queue 已就位; B0 P-prompt reddit 跑中（PID 2075552, ~3-4h ETA）。
+| 项 | 状态 | 原因 |
+|---|---|---|
+| **14-cell paper-grade re-run** | ⏸️ **blocked** | DGX GPU 争抢严重 (B1 234 ep 跑 20+ 小时), 需要 RunPod 经费 approval |
+| **Cls pilot wave-3 (Cluster 1+2+3+4 验证 cls)** | ⏸️ blocked | B1 P-text cls 仍在跑 (~198/234 ep, ~1-2 天 ETA) — 同 site exclusivity |
+| **学长 sync** | ⏸️ pending | 学长答应开会, 时间未定 — 我已 ready advisor brief |
 
-**🆕 B0 5-mode reddit + cls 全 done (10/10 cells); B1 cls phantom_som 04-29 17:43 done (4/5 cls cells, P-text pending)**
+### Next 3 actions (priority order)
 
-**🔴 04-29 18:15 same-site collision incident**: queue_chain.sh 自动 advance B1 phantom cls→reddit 时未 check B0 P-prompt reddit 已经在跑 (paper-grade hard rule violation)。30min 后发现 + 立即处理：kill chain (PID 1145483) + B1 phantom reddit runner+watchdog (2244780/2244882) + clear 7 contaminated reddit_task_0-6 episodes via `clear_tasks.py`. B0 P-prompt reddit 完好保留 (PID 2075552, 51/210 progress). Fix: queue_chain.sh 加 `same-site collision check` (commit pending), 自动 wait 对方 baseline 完事再 launch.
+1. **学长 sync + meeting** ⭐ — 给学长发 sync (`docs/reference/ADVISOR_SYNC_DRAFT_2026-04-30.md` 模板) + GitHub repo link + code tour (`PHANTOM_SOM_CODE_TOUR.md`). 会议 30-45 min: 拿 Phantom finding + Phase A bug audit + 学长 schedule 会议. **Asks**: (a) RunPod ~$200 经费, (b) paper scope (single vs split with VWA bug paper), (c) Section 4 4-dim framework approval.
+2. **RunPod 拿 GPU 启动 14-cell 全跑** — 学长 approve 后 onboard RunPod (~1-2h setup), launch B0/B1 × 5-mode × 3-site = 14 cells (estimated ~180h GPU × $0.6/h ≈ $108). 用 commit `3c15cd7` 后的 Phase A 代码, 数据自动 paper-grade.
+3. **新数据按 4-dimension framework 整合** — 14-cell 跑完后 (~1 周) 运行 `make analyze-paper` 一键 regenerate 14 figures + bootstrap CI + AUROC table. 重 evaluate Phantom 4-fold drop-in property: (a) cost ratio (b) latency (c) AUROC (d) drop-one. Compare wave-3 (+2.14pp 估算) vs full 14-cell 真值. **预期: paper-grade clean Phantom finding**.
 
-**🆕 site_mechanism_dictionary.md done (codex 04-29 17:43)**: 30KB markdown + 30KB JSON, 3 sites × 3 axes × 6 fields，Section 5 prose codex (#13) lookup target. Cross-site invariant: P-SoM Jaccard ≤0.7 sentinel both red/cls + positive single-phantom oracle lift.
+### Advisor meeting prep status
 
-**Active 跑中**:
-- **B0 P-prompt reddit (PID 2075552, 103/210, 49%)** — symmetric ablation 完整保留, ETA ~03:00 → 跑完 fig1ab P-prompt cell auto-fill
-- **B1 P-text cls (PID 2280869, 46/234, 20%)** — queue_chain B1 cls，跑完 auto chain 起 B1 P-prompt cls
-- ~~B0 dom shopping clean re-run~~ ✅ done 04-29 07:36 (**N=465/466**, task 345 wikipedia kiwix 404)
-- ~~B1 phantom_som cls~~ ✅ done 17:43 (234/234)
-- ~~B1 phantom_som reddit / queue_chain B1 phantom~~ 🔴 killed 18:15 (collision)
+- ✅ `docs/reference/PHANTOM_SOM_ADVISOR_MEETING_BRIEF.md` (347 行 stage-direction 讲稿: 14 figures × "indicate-and-say" + 6 reviewer Q&A + cheat sheet)
+- ✅ `docs/reference/PHANTOM_SOM_CODE_TOUR.md` (168 行 GitHub permalink 导览)
+- ✅ React dashboard `docs/checkpoints/周报/weekly-dashboard/` (`npm run preview` → `http://localhost:4173/`)
+- ✅ All commits pushed (50169bf), repo public on GitHub for advisor click-through
 
-**Next 3 actions**:
-1. **B0 P-prompt cls** — 等 B1 P-prompt cls 完事再启（同 site B0 XOR B1 hard rule, ~36h chain ETA）
-2. **Codex Section 4 prose update** (~30K codex job): 用 4-dimension framework + ~100× cost + N=210 全数据替换 §103 N=48 + 30× narrative
-3. **Codex Section 5 mechanism prose** (~50K): 等 P-prompt reddit 跑完 + diamond ablation 数据 ready 后做
+### Paper progress
 
-**⏸️ Shopping pipeline on hold 04-29 22:30** — B0 DOM shopping run 已自然完成 (N=465/466, task 345 wikipedia.zim 404)，但 **paper-grade 状态 pending 用户手动 gallery 排错**：每个 task 逐一审视 success/fail trajectory，定位剩余 site bug（swatch §105 已修，FPC §104 已修，kiwix 404 单点已知，可能还有 review/cart/checkout 边界 bug 未被运行 detect）。在 B0 DOM gallery triage 收尾前 **不启动** B0 shopping 其余 4 mode (SoM/Vision/P-text/P-SoM) + B1 shopping 全套 + shopping P-prompt——避免在 site-bug 未稳定的状态下花钱跑数据。debug 完后再决定是否 re-run B0 DOM 影响的 task subset 还是当作 known-noise 收尾。
+Section 1/2/3 ✅ done (3163 words). Section 4 figures ✅ FRESH (14 dimension-prefixed PNGs) + bootstrap CI ✅; **prose stale 1725w 待 14-cell rerun + codex #11 update**. Section 5 evidence 95% (4-dim framework + 3-axis cascade diamond). Section 6 AUROC ≥ baseline ✅. Section 7/8 待 cross-site/cross-model 数据.
 
-**Paper progress**: Section 1/2/3 ✅ done (3163 words), Section 4 figures ✅ FRESH (12 dimension-prefixed PNGs) + bootstrap CI ✅ + prose **stale 1725w** 待 codex #11 update, Section 5 evidence **95%** (4-dimension framework + 3-axis cascade diamond + 6 antagonistic pairs + cross-site micro), Section 6 AUROC ≥ baseline ✅, Section 7/8 待 cross-site/cross-model data + multi-metric Pareto.
+**Post-rerun roadmap**: 14-cell paper-grade clean → codex #11 (Section 4 prose) → codex #13 (Section 5 mechanism) → Section 6/7/8 outline → 1st draft 完整。
 
 ---
 
@@ -67,6 +72,10 @@
 
 | 日期 | 事件 | 处置 |
 |---|---|---|
+| **04-30** | **Phase A 4-cluster bug fix wave** — 5-tier audit 找 37 bugs, ship Cluster 1+2+3+4 (commit `3c15cd7`), pilot wave-2/3 PASS N=120, reddit Cluster 1 lift +2.14pp | ✅ pushed to GitHub master (50169bf); 14-cell rerun blocked on RunPod approval |
+| 04-30 12:01 | **Cross-session pilot data destruction** — another Claude session (Myriad config work) misjudged "busy:1 free wait" as "stuck", `clear_tasks.py --force` wiped pilot wave-1 reddit + shopping data | ✅ wave-2 fresh re-launched 12:13, 60 ep PASS Δ=0pp; lesson encoded in `feedback_wsl_shutdown_quark_rule.md` memory |
+| 04-30 11:48 | **Quark Windows wsl --shutdown** triggered docker-desktop distro restart → 7 VWA containers exit 255 → DGX→quark Tailscale unreachable | 用户 docker start 恢复; B1 main run 自愈; pilot shopping 自然 crash |
+| 04-30 ~10:00 | **UCL Myriad smoke test FAILED** (other session) — UCL 防火墙物理级 drop Tailscale CGNAT, Myriad 不能 reach quark VWA docker. 试 OpenConnect/Cisco/SAML/反向 ssh 全部失败 | 详 `docs/reference/MYRIAD_SMOKE_REPORT.md`; B1 baseline migration 不可行 → RunPod fallback |
 | 04-29 22:30 | shopping pipeline on hold pending 用户手动 gallery triage（B0 DOM N=465/466 done, task 345 wikipedia.zim 404 单点） | 不启动 shopping 其余 4 mode + B1 shopping 5-mode；等 triage 收尾 |
 | 04-29 22:30 | B0 dom shopping watchdog (PID 1106686) 在 runner 自然完成后留 zombie | 🔴 killed |
 | 04-29 19:30 | 4 个 stale watchdog (PID 32263, 4124316, 4124482, 1822028) 指向 paper-grade rename 前的旧 dir → `failto annotate, run_dir not found` | 🔴 killed; renamed dirs (`B0_phantom_som_*`, `B0_phantom_text_*`, `B1_phantom_som_*`) 仍 paper-grade 完整 |
@@ -345,7 +354,29 @@ paper_strategic 数据 pipeline (详 `paper_planning.md` §13.B)。一键 `make 
 
 详 `paper_planning.md` §9 (full advisor align checklist).
 
-### Meeting #1 quick checklist (~Week 3)
+### 🔴 URGENT — Meeting #1 (2026-04-30 sync, 时间 pending 学长)
+
+**Sync 已 ready** — 给学长发 sync draft + GitHub repo + code tour 了, 等回复定时间.
+
+`docs/reference/ADVISOR_SYNC_DRAFT_2026-04-30.md` (250 字 elevator pitch)
+`docs/reference/PHANTOM_SOM_ADVISOR_MEETING_BRIEF.md` (347 行 stage-direction 讲稿)
+`docs/reference/PHANTOM_SOM_CODE_TOUR.md` (168 行 GitHub permalink 导览)
+`docs/checkpoints/周报/weekly-dashboard/` React presentation page (`npm run preview`)
+
+**Meeting asks (3 items)**:
+- [ ] **RunPod 经费 ~$150-200** — DGX GPU 争抢严重, Myriad 物理级 blocked, RunPod 4090 dedicated $0.6/h × ~180h. 走什么报销流程?
+- [ ] **Paper scope** — single paper (Phantom 主线 + appendix VWA bugs 披露) vs split (Phantom paper + VWA bug audit short paper)? Bug audit 37 entries + Tier 1-5 系统 audit 可独立 short paper.
+- [ ] **Section 4 framing** — 4-dimension framework (Outcome/Macro/Micro/Efficiency) + Section 5 site × axis × LLM-mechanism 框架 OK?
+
+**Meeting prep checklist** (我已 ready):
+- [x] 14 figures FRESH at `results/phantom_paper/figures/`
+- [x] Wave-2 + Wave-3 pilot validation reports
+- [x] Phantom existence 6-signal argument (in case 学长 ask "Phantom 是不是 bug 假象")
+- [x] 6 reviewer Q&A prep
+- [x] 8 个关键数字 cheat sheet
+- [x] Anti-patterns reminder (不要先提 bug, 不 overclaim, diamond 必须强调是我设计)
+
+### Meeting #2 quick checklist (~Week 6-7, after RunPod 14-cell rerun + Claude cross-model)
 
 - [ ] Router scope (Tier 1+2 推荐)
 - [ ] Cross-model: Claude Opus 4.7 only (~$70)
