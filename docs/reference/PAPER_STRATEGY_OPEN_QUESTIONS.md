@@ -62,16 +62,22 @@
 
 **Implication**: 同 task 同 seed 跑两次会在某步 diverge — LLM 收到同 obs 进同 action, 但 next obs 因 env 非确定性 differ → trajectory drift. 这跟 LLM 采样变化无关.
 
-**Current state**: paper hasn't disclosed this. Bootstrap CI 是 task-level binomial (~±5pp), 不 capture environment variance.
+**B0 vs B1 asymmetry** (refined per user 2026-04-30):
+- **B1** (4B local Qwen3-VL via transformers): `do_sample=False` + Cluster 4 加的 `torch.manual_seed(seed)` + `cuda.manual_seed_all(seed)` → **strict deterministic by construction**. 同 seed 同 hardware 同 prompt → byte-identical output. **No replication needed.**
+- **B0** (235B Qwen3-VL via proxy API): payload 加 `T=0, top_p=1.0`, best-effort forward `seed=42`. BUT: Anthropic native API **没有 seed 参数**; proxy server 可能 load-balance 不同 GPU instance / mid-experiment 更新 checkpoint / 用不同 attention 实现 (vLLM vs TRT). **Determinism is provider-side promise, unverifiable from client.**
+
+**Current state**: paper hasn't disclosed this. Bootstrap CI 是 task-level binomial (~±5pp), 不 capture environment variance OR proxy variance.
 
 **Options**:
-- (A) Section 4 1-line disclosure: "Post-Phase A LLM is strictly greedy (B1 do_sample=False, B0 T=0+top_p=1.0); residual trajectory variance comes from VWA environment non-determinism (page load timing, async render, site state mutation), not LLM sampling. Bootstrap CI captures task-level binomial variance only."
-- (B) 跑 environment determinism probe (3 ep × 3 replicates each task on B1 to measure env-induced trajectory divergence). Cost ~$5 only B1 (B0 too expensive to replicate).
-- (C) Skip — accept env variance as inherent to web agent benchmarks (no prior paper has measured this either).
+- (A) Section 4 1-line disclosure: "B1 strictly greedy via do_sample=False + torch.manual_seed; B0 deterministic at API level relies on proxy provider's T=0 implementation (Anthropic native protocol has no seed parameter). Residual trajectory variance from VWA environment non-determinism (page load timing, Magento async render, site state mutation) bounded but unmeasured."
+- (B) **B0 multi-call determinism check** (跑 5 calls × 3 representative prompts to proxy, byte-level match check, ~$5). 量化 proxy variance: 全 match → effectively deterministic; differ → disclose %.
+- (C) Skip — accept asymmetry as inherent to API vs local model setup (no prior paper has measured this either).
 
-**Lean**: A (single footnote). B 可选 if want to quantify but not required.
+**Lean**: **A + B for B0 only**. B1 不需要 replication (deterministic by construction); B0 cheap multi-call probe ($5) 量化 proxy variance for paper-grade rigor.
 
-**Status**: ❌ **Retracted as advisor-ask** (per user 2026-04-30: greedy 下 LLM-level 没 variance to measure). Self-decision: 加 Section 4 footnote, no replication needed.
+**Status**: ❌ **Retracted as advisor-ask** (per user 2026-04-30: greedy 下 LLM-level 没 variance to measure on B1). Self-decision:
+1. Section 4 footnote disclosure (B0 vs B1 determinism asymmetry)
+2. Run cheap B0 multi-call probe ($5) when 14-cell rerun starts — confirms proxy-side determinism behavior
 
 ---
 
