@@ -67,8 +67,15 @@
           "paper_cost_class": "API_token_dollars"
         },
         "P-prompt": {
-          "available": false,
-          "reason": "missing condition_summary_v2.json"
+          "available": true,
+          "run_subpath": "B0_phantom_prompt_reddit_20260429/phase1_phantom_prompt_router_0",
+          "avg_steps": 11.928571428571429,
+          "avg_token_cost_usd_yaml_rate": 0.04861861117880685,
+          "avg_energy_kwh": null,
+          "avg_electricity_usd": null,
+          "avg_co2e_kg": null,
+          "paper_cost_usd": 0.04861861117880685,
+          "paper_cost_class": "API_token_dollars"
         }
       },
       "classifieds": {
@@ -231,9 +238,9 @@
   },
   "deployment_class_ratios": {
     "reddit": {
-      "avg_B0_API_dollars": 0.039867,
+      "avg_B0_API_dollars": 0.041325,
       "avg_B1_electricity_dollars": 0.00040662,
-      "ratio_B0_over_B1": 98.04,
+      "ratio_B0_over_B1": 101.63,
       "note": "ratio across deployment classes, not capability tiers"
     },
     "classifieds": {

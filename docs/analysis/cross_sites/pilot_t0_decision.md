@@ -8,8 +8,8 @@
 | Site | Pilot run | Pilot SR (N) | Paper-grade matched SR (N) | Mode collapse % | Verdict |
 |---|---|---:|---:|---:|---|
 | classifieds | — | — | — | — | NOT_RUN_YET |
-| reddit | `B0_dom_pilot_T0_reddit_20260430_121324` | 17.86% (28) | 17.86% (28) | 42.9% | **PASS** |
-| shopping | `B0_dom_pilot_T0_shopping_20260430_121328` | 13.33% (30) | 13.33% (30) | 53.3% | **PASS** |
+| reddit | `B0_dom_pilot_T0_reddit_20260430_193022` | 20.0% (30) | 16.67% (30) | 46.7% | **PASS** |
+| shopping | `B0_dom_pilot_T0_shopping_20260430_193028` | 10.0% (30) | 13.33% (30) | 40.0% | **PASS** |
 
 ## Decision matrix
 

@@ -188,15 +188,19 @@ def main() -> None:
     }
     prompt_lines = []
     prompt_real: dict[str, dict[str, float | int | None]] = {}
+    pending_sites: list[str] = []
     for site in ["reddit", "classifieds"]:
         status, stats = prompt_status(site)
         if stats is None:
-            prompt_lines.append(f"{SITE_SHORT[site]} P-prompt ({status})")
+            pending_sites.append(f"{SITE_SHORT[site]} P-prompt ({status})")
         else:
             prompt_real[site] = stats
-    prompt_subtitle = stats_lines(prompt_real) if len(prompt_real) == 2 else "\n".join(prompt_lines)
-    prompt_face = "#dce8f5" if len(prompt_real) == 2 else "#eeeeee"
-    prompt_edge = "#333333" if len(prompt_real) == 2 else "#888888"
+    # Render mixed content: real metrics for completed sites + placeholder for pending
+    real_lines = stats_lines(prompt_real).splitlines() if prompt_real else []
+    prompt_subtitle = "\n".join(real_lines + pending_sites)
+    # Face color: solid blue when at least one site has real data; grey only if all pending
+    prompt_face = "#dce8f5" if prompt_real else "#eeeeee"
+    prompt_edge = "#333333" if prompt_real else "#888888"
 
     cell(ax, (1.55, 3.58), 3.28, 1.62, "DOM", stats_lines({s: metrics[s]["DOM"] for s in metrics}), "#dce8f5")
     cell(ax, (5.15, 3.58), 3.28, 1.62, "P-prompt", prompt_subtitle, prompt_face, edge=prompt_edge)

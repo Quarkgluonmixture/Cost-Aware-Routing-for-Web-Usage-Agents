@@ -89,29 +89,29 @@
             "meaningful": false
           },
           "axis_2_prompt_alt": {
-            "n": 157,
-            "mean_diff": -5.095541,
+            "n": 210,
+            "mean_diff": -4.285714,
             "diff_units": "pct_pts",
-            "cohen_h": -0.101974,
+            "cohen_h": -0.085742,
             "ci95": [
-              -12.101911,
-              1.910828
+              -10.47619,
+              1.904762
             ],
-            "wilcoxon_p": 0.144127,
-            "mean_diff_pct_pts": -5.095541,
-            "meaningful": true
+            "wilcoxon_p": 0.159854,
+            "mean_diff_pct_pts": -4.285714,
+            "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 157,
-            "mean_diff": -14.649682,
+            "n": 210,
+            "mean_diff": -11.904762,
             "diff_units": "pct_pts",
-            "cohen_h": -0.301426,
+            "cohen_h": -0.242115,
             "ci95": [
-              -22.929936,
-              -7.006369
+              -18.571429,
+              -5.702381
             ],
-            "wilcoxon_p": 0.000328,
-            "mean_diff_pct_pts": -14.649682,
+            "wilcoxon_p": 0.000464,
+            "mean_diff_pct_pts": -11.904762,
             "meaningful": true
           },
           "endpoint_dom_to_som": {
@@ -210,36 +210,36 @@
             "meaningful": true
           },
           "axis_2_prompt_alt": {
-            "n": 157,
-            "mean_diff": -0.028513,
+            "n": 210,
+            "mean_diff": -0.045013,
             "diff_units": "fraction",
-            "cohen_d_z": -0.126816,
+            "cohen_d_z": -0.210023,
             "ci95": [
-              -0.062142,
-              0.005678
+              -0.073545,
+              -0.01513
             ],
-            "wilcoxon_p": 0.230588,
-            "mean_diff_pct_pts": -2.851312,
+            "wilcoxon_p": 0.004654,
+            "mean_diff_pct_pts": -4.501279,
             "ci95_pct_pts": [
-              -6.214166,
-              0.567786
+              -7.354457,
+              -1.513004
             ],
             "meaningful": true
           },
           "axis_1_text_alt": {
-            "n": 157,
-            "mean_diff": -0.057465,
+            "n": 210,
+            "mean_diff": -0.044158,
             "diff_units": "fraction",
-            "cohen_d_z": -0.268595,
+            "cohen_d_z": -0.214158,
             "ci95": [
-              -0.089637,
-              -0.024573
+              -0.071016,
+              -0.015979
             ],
-            "wilcoxon_p": 0.000378,
-            "mean_diff_pct_pts": -5.746523,
+            "wilcoxon_p": 0.000734,
+            "mean_diff_pct_pts": -4.415849,
             "ci95_pct_pts": [
-              -8.963654,
-              -2.457293
+              -7.101622,
+              -1.597864
             ],
             "meaningful": true
           },
@@ -343,38 +343,38 @@
             "meaningful": true
           },
           "axis_2_prompt_alt": {
-            "n": 157,
-            "mean_diff": 0.025416,
+            "n": 210,
+            "mean_diff": 0.017268,
             "diff_units": "fraction",
-            "cohen_d_z": 0.114784,
+            "cohen_d_z": 0.078103,
             "ci95": [
-              -0.008505,
-              0.060497
+              -0.012047,
+              0.047902
             ],
-            "wilcoxon_p": 0.283948,
-            "mean_diff_pct_pts": 2.541564,
+            "wilcoxon_p": 0.428734,
+            "mean_diff_pct_pts": 1.726759,
             "ci95_pct_pts": [
-              -0.850517,
-              6.049659
+              -1.204682,
+              4.790156
             ],
-            "meaningful": true
+            "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 157,
-            "mean_diff": -0.037505,
+            "n": 210,
+            "mean_diff": -0.020754,
             "diff_units": "fraction",
-            "cohen_d_z": -0.154709,
+            "cohen_d_z": -0.087015,
             "ci95": [
-              -0.076323,
-              -0.000822
+              -0.053385,
+              0.010845
             ],
-            "wilcoxon_p": 0.174074,
-            "mean_diff_pct_pts": -3.750476,
+            "wilcoxon_p": 0.477287,
+            "mean_diff_pct_pts": -2.075398,
             "ci95_pct_pts": [
-              -7.632296,
-              -0.082188
+              -5.3385,
+              1.084547
             ],
-            "meaningful": true
+            "meaningful": false
           },
           "endpoint_dom_to_som": {
             "n": 210,
@@ -475,29 +475,29 @@
             "meaningful": false
           },
           "axis_2_prompt_alt": {
-            "n": 157,
-            "mean_diff": 0.082803,
+            "n": 210,
+            "mean_diff": 0.104762,
             "diff_units": "count",
-            "cohen_d_z": 0.050956,
+            "cohen_d_z": 0.054239,
             "ci95": [
-              -0.165605,
-              0.33758
+              -0.147619,
+              0.361905
             ],
-            "wilcoxon_p": 0.512213,
-            "mean_diff_count": 0.082803,
+            "wilcoxon_p": 0.427282,
+            "mean_diff_count": 0.104762,
             "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 157,
-            "mean_diff": -0.050955,
+            "n": 210,
+            "mean_diff": -0.161905,
             "diff_units": "count",
-            "cohen_d_z": -0.030424,
+            "cohen_d_z": -0.084214,
             "ci95": [
-              -0.312102,
-              0.197611
+              -0.42381,
+              0.1
             ],
-            "wilcoxon_p": 0.680201,
-            "mean_diff_count": -0.050955,
+            "wilcoxon_p": 0.176361,
+            "mean_diff_count": -0.161905,
             "meaningful": false
           },
           "endpoint_dom_to_som": {
@@ -596,36 +596,36 @@
             "meaningful": true
           },
           "axis_2_prompt_alt": {
-            "n": 157,
-            "mean_diff": -0.009711,
+            "n": 210,
+            "mean_diff": -0.000336,
             "diff_units": "fraction",
-            "cohen_d_z": -0.041035,
+            "cohen_d_z": -0.001467,
             "ci95": [
-              -0.047698,
-              0.026202
+              -0.030377,
+              0.032005
             ],
-            "wilcoxon_p": 0.255768,
-            "mean_diff_pct_pts": -0.971065,
+            "wilcoxon_p": 0.589751,
+            "mean_diff_pct_pts": -0.033586,
             "ci95_pct_pts": [
-              -4.769759,
-              2.620222
+              -3.037714,
+              3.200486
             ],
             "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 157,
-            "mean_diff": -0.010208,
+            "n": 210,
+            "mean_diff": -0.011442,
             "diff_units": "fraction",
-            "cohen_d_z": -0.04922,
+            "cohen_d_z": -0.051951,
             "ci95": [
-              -0.043571,
-              0.022067
+              -0.041485,
+              0.016589
             ],
-            "wilcoxon_p": 0.697296,
-            "mean_diff_pct_pts": -1.020804,
+            "wilcoxon_p": 0.574356,
+            "mean_diff_pct_pts": -1.144237,
             "ci95_pct_pts": [
-              -4.357061,
-              2.206686
+              -4.14854,
+              1.658886
             ],
             "meaningful": false
           },
@@ -713,29 +713,29 @@
             "meaningful": true
           },
           "axis_2_prompt_alt": {
-            "n": 157,
-            "mean_diff": 0.0,
+            "n": 210,
+            "mean_diff": 1.904762,
             "diff_units": "pct_pts",
-            "cohen_h": 0.0,
+            "cohen_h": 0.038141,
             "ci95": [
-              -7.643312,
-              7.643312
+              -4.761905,
+              8.571429
             ],
-            "wilcoxon_p": 1.0,
-            "mean_diff_pct_pts": 0.0,
+            "wilcoxon_p": 0.586214,
+            "mean_diff_pct_pts": 1.904762,
             "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 157,
-            "mean_diff": -9.55414,
+            "n": 210,
+            "mean_diff": -6.666667,
             "diff_units": "pct_pts",
-            "cohen_h": -0.191943,
+            "cohen_h": -0.134045,
             "ci95": [
-              -18.471338,
-              -0.636943
+              -13.821429,
+              0.952381
             ],
-            "wilcoxon_p": 0.035692,
-            "mean_diff_pct_pts": -9.55414,
+            "wilcoxon_p": 0.084838,
+            "mean_diff_pct_pts": -6.666667,
             "meaningful": true
           },
           "endpoint_dom_to_som": {
@@ -818,29 +818,29 @@
             "meaningful": true
           },
           "axis_2_prompt_alt": {
-            "n": 157,
-            "mean_diff": -0.471338,
+            "n": 210,
+            "mean_diff": -0.771429,
             "diff_units": "count",
-            "cohen_d_z": -0.048934,
+            "cohen_d_z": -0.077501,
             "ci95": [
-              -1.942994,
-              1.000159
+              -2.104762,
+              0.671786
             ],
-            "wilcoxon_p": 0.330607,
-            "mean_diff_count": -0.471338,
+            "wilcoxon_p": 0.081233,
+            "mean_diff_count": -0.771429,
             "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 157,
-            "mean_diff": -2.592357,
+            "n": 210,
+            "mean_diff": -2.02381,
             "diff_units": "count",
-            "cohen_d_z": -0.26483,
+            "cohen_d_z": -0.212556,
             "ci95": [
-              -4.165605,
-              -1.031847
+              -3.381071,
+              -0.738095
             ],
-            "wilcoxon_p": 0.000636,
-            "mean_diff_count": -2.592357,
+            "wilcoxon_p": 0.001145,
+            "mean_diff_count": -2.02381,
             "meaningful": true
           },
           "endpoint_dom_to_som": {
@@ -939,36 +939,36 @@
             "meaningful": false
           },
           "axis_2_prompt_alt": {
-            "n": 157,
-            "mean_diff": 0.017359,
+            "n": 210,
+            "mean_diff": 0.015407,
             "diff_units": "fraction",
-            "cohen_d_z": 0.053438,
+            "cohen_d_z": 0.047867,
             "ci95": [
-              -0.036357,
-              0.067989
+              -0.027429,
+              0.059742
             ],
-            "wilcoxon_p": 0.19681,
-            "mean_diff_pct_pts": 1.735877,
+            "wilcoxon_p": 0.30773,
+            "mean_diff_pct_pts": 1.540736,
             "ci95_pct_pts": [
-              -3.635684,
-              6.798851
+              -2.7429,
+              5.974217
             ],
             "meaningful": false
           },
           "axis_1_text_alt": {
-            "n": 157,
-            "mean_diff": 0.0337,
+            "n": 210,
+            "mean_diff": 0.024605,
             "diff_units": "fraction",
-            "cohen_d_z": 0.092689,
+            "cohen_d_z": 0.069008,
             "ci95": [
-              -0.023645,
-              0.092507
+              -0.025672,
+              0.072046
             ],
-            "wilcoxon_p": 0.266887,
-            "mean_diff_pct_pts": 3.369995,
+            "wilcoxon_p": 0.32118,
+            "mean_diff_pct_pts": 2.460536,
             "ci95_pct_pts": [
-              -2.364517,
-              9.250659
+              -2.567156,
+              7.204637
             ],
             "meaningful": false
           },

@@ -5,12 +5,12 @@
       "verdict": "NOT_RUN_YET"
     },
     "reddit": {
-      "pilot_run": "B0_dom_pilot_T0_reddit_20260430_121324",
+      "pilot_run": "B0_dom_pilot_T0_reddit_20260430_193022",
       "paper_grade_run": "B0_3mode_reddit_20260422",
       "pilot_sr": {
-        "n": 28,
-        "n_success": 5,
-        "sr_raw": 17.86
+        "n": 30,
+        "n_success": 6,
+        "sr_raw": 20.0
       },
       "paper_grade_full_sr": {
         "n": 210,
@@ -18,31 +18,31 @@
         "sr_raw": 11.43
       },
       "paper_grade_matched_subset_sr": {
-        "n": 28,
+        "n": 30,
         "n_success": 5,
-        "sr_raw": 17.86
+        "sr_raw": 16.67
       },
-      "task_subset_size": 28,
+      "task_subset_size": 30,
       "mode_collapse_check": {
         "checked": true,
-        "n_episodes": 28,
+        "n_episodes": 30,
         "most_common_first_action": [
           "type",
           111
         ],
-        "most_common_count": 12,
-        "most_common_pct": 42.9,
+        "most_common_count": 14,
+        "most_common_pct": 46.7,
         "collapse_detected": false
       },
       "verdict": "PASS"
     },
     "shopping": {
-      "pilot_run": "B0_dom_pilot_T0_shopping_20260430_121328",
+      "pilot_run": "B0_dom_pilot_T0_shopping_20260430_193028",
       "paper_grade_run": "B0_dom_shopping_20260428",
       "pilot_sr": {
         "n": 30,
-        "n_success": 4,
-        "sr_raw": 13.33
+        "n_success": 3,
+        "sr_raw": 10.0
       },
       "paper_grade_full_sr": {
         "n": 465,
@@ -60,10 +60,10 @@
         "n_episodes": 30,
         "most_common_first_action": [
           "type",
-          484
+          450
         ],
-        "most_common_count": 16,
-        "most_common_pct": 53.3,
+        "most_common_count": 12,
+        "most_common_pct": 40.0,
         "collapse_detected": false
       },
       "verdict": "PASS"

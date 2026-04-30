@@ -11,7 +11,7 @@ B0 reports avg_total_cost_usd from per-token API rates (Qwen3-VL-235B-A22B $0.00
 | reddit | SoM | 8.1 | $0.0409 |
 | reddit | P-SoM | 9.9 | $0.0381 |
 | reddit | P-text | 11.5 | $0.0459 |
-| reddit | P-prompt | n/a | n/a (pending) |
+| reddit | P-prompt | 11.9 | $0.0486 |
 | classifieds | DOM | 11.6 | $0.0427 |
 | classifieds | Vision | 7.8 | $0.0248 |
 | classifieds | SoM | 8.6 | $0.0415 |
@@ -40,7 +40,7 @@ Computed as `avg_total_energy_kwh × $0.12/kWh` (DGX Spark, UK industrial rate p
 
 | site | avg B0 API ($/ep) | avg B1 electricity ($/ep) | ratio (B0/B1) |
 |---|---:|---:|---:|
-| reddit | $0.0399 | $0.000407 | 98× |
+| reddit | $0.0413 | $0.000407 | 102× |
 | classifieds | $0.0386 | $0.000474 | 81× |
 
 The qualitative cost gap between API and local inference is large (2–3 orders of magnitude per these data) but is fundamentally a deployment-mode comparison, not a model-size ratio. Reporting a single multiplier (e.g. '30x') without specifying the cost class is misleading.
