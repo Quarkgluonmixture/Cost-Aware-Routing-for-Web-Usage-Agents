@@ -21,13 +21,11 @@
 - RunPod 经费可不可以走？走什么流程？
 - Phantom finding 方向您觉得 OK 吗？
 - VWA bug 这一发现要不要单独成文？
-- **paper-strategy 4 个 framing 决定** (我自己 audit 出来的, 想听您意见):
-  1. **Early-stop bias on micro metrics**: agent cycle-detect 早停 truncate trajectory, 让 micro 2a (URL Jaccard) / 2b (target hit rate) / 2c (keyword repeat) 三个指标 cross-mode 不可比 (短 trajectory 分母小). 选 A 关掉早停 (cost +$1300) / B 算 length-normalized / C demote 这 3 个到 secondary, 主用 first-divergence (uncensored) ?
-  2. **B0 pre/post Phase A 数据 sampling 不对称**: Phase A 之前 B0 用 T=0.1 stochastic, 之后 T=0 greedy. archived data + 14-cell re-run 是不同 sampling regime. 直接合 vs 只用 post-Phase-A 重跑 数据?
-  3. **Single seed=42, 没 replication study**: SR delta 数字没有 across-seed variance estimate. bootstrap CI 是 task-level binomial, 不 capture sampling variance. 加 N=3 replication (3× cost) 还是 disclose limitation?
-  4. **Cross-site SR 不直接可比**: cls/red/shop 任务池不同, agent capability 不同. Section 5 已经 site-modulated framing, 但是否需要更明确 "我们不 claim cross-site dominance"?
+- **paper-strategy 2 个 framing 决定** (我 audit 出来 + 自己 sanity check 后, 这两个真 ask 您):
+  1. **Early-stop bias on micro metrics**: agent cycle-detect 早停 truncate trajectory, 让 micro 2a (URL Jaccard) / 2b (target hit rate) / 2c (keyword repeat) 三个指标 cross-mode 不可比 (短 trajectory 分母小). 选 A 关掉早停 (cost +$1300) / B 算 length-normalized / C demote 这 3 个到 secondary, 主用 first-divergence (uncensored)?
+  2. **B0 pre/post Phase A 数据 sampling 不对称**: Phase A 之前 B0 用 T=0.1 stochastic, 之后 T=0 greedy. archived data + 14-cell re-run 是不同 sampling regime. 直接合 vs 只用 post-Phase-A 重跑 数据 (弃 archived)?
 
-详 `docs/reference/PAPER_STRATEGY_OPEN_QUESTIONS.md` (我整理的 open audit)
+详 `docs/reference/PAPER_STRATEGY_OPEN_QUESTIONS.md` (audit 9 个 issues, 7 个我自决 disclose, 上面 2 个真 ask 您)
 
 具体细节希望能开个会聊聊（30-45 分钟应该够），您方便的时候定个时间。
 

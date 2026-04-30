@@ -50,47 +50,50 @@
 
 ---
 
-### Q3 🟡 Single seed=42, no replication study
+### Q3 🟢 Environment non-determinism (REFRAMED 2026-04-30 from "single seed replication")
 
-**Issue**: 整篇 paper 数据 single seed run. SR delta 数字 (e.g., red P-SoM 13.81% > SoM 10.48%) 没有 across-seed variance estimate. Bootstrap CI 是 **task-level binomial** (~±5pp), 不 capture **across-run sampling variance**.
+**Original framing (incorrect)**: "single seed=42, no across-seed replication".
 
-**Current state**: paper Section 4 用 bootstrap CI 数字, 但 reviewer 可能 ask "你 seed=42 跑一次, seed=43 一样吗?".
+**Reframe (post user critique)**: At post-Phase A B0 T=0 + top_p=1.0 + B1 `do_sample=False`, **LLM-level replication 没有 variance** to measure (greedy 严格 deterministic up to CUDA float-point ~1% top-1 flip). 真正的 trajectory variance 来源是 **environment non-determinism**:
+- Page load timing (Tailscale + Magento response 抖动)
+- Async render timing
+- Site state mutation (Magento DB writes accumulate from prior agents/tasks)
+- busy:1 wait 时长 (~30-50s 抖动)
+
+**Implication**: 同 task 同 seed 跑两次会在某步 diverge — LLM 收到同 obs 进同 action, 但 next obs 因 env 非确定性 differ → trajectory drift. 这跟 LLM 采样变化无关.
+
+**Current state**: paper hasn't disclosed this. Bootstrap CI 是 task-level binomial (~±5pp), 不 capture environment variance.
 
 **Options**:
-- (A) 加 N=3 seed replication (seed=42/43/44) on critical cells (B0 cls/red 5-mode = 10 cells). Cost ~$60 on RunPod (3× cost of one cell × 10 cells × $2/cell), small相对总 budget.
-- (B) Single-seed paper, disclose "Seed=42 single replicate; bootstrap CI captures task-level variance, not seed variance." 风险: reviewer 不 buy.
-- (C) Subset replication: only 2-3 most controversial cells (e.g., red P-SoM vs SoM) get N=3. Cheaper (~$20) compromise.
+- (A) Section 4 1-line disclosure: "Post-Phase A LLM is strictly greedy (B1 do_sample=False, B0 T=0+top_p=1.0); residual trajectory variance comes from VWA environment non-determinism (page load timing, async render, site state mutation), not LLM sampling. Bootstrap CI captures task-level binomial variance only."
+- (B) 跑 environment determinism probe (3 ep × 3 replicates each task on B1 to measure env-induced trajectory divergence). Cost ~$5 only B1 (B0 too expensive to replicate).
+- (C) Skip — accept env variance as inherent to web agent benchmarks (no prior paper has measured this either).
 
-**Lean**: C. 关键 P-SoM vs SoM 配对加 replication 是 paper-grade rigor 最强 ammunition, additional ~$20 cost negligible.
+**Lean**: A (single footnote). B 可选 if want to quantify but not required.
+
+**Status**: ❌ **Retracted as advisor-ask** (per user 2026-04-30: greedy 下 LLM-level 没 variance to measure). Self-decision: 加 Section 4 footnote, no replication needed.
 
 ---
 
-### Q4 🟡 Cross-site SR 不直接可比
+### Q4 ❌ RETRACTED — Cross-site SR comparability already handled
 
-**Issue**: cls/red/shop 任务池不同 (234/210/466 tasks), 任务难度不同, agent capability 不同 per site. paper 写 "Phantom-SoM 13.81% on red > 10.48% on red" OK, 但 "Phantom-SoM red 13.81% > SoM cls 21.37%" 不直接 mean Phantom 比 SoM 弱.
+**Original concern**: cls/red/shop 任务池不同, cross-site SR 不可比, 应该加 disclosure + normalize.
 
-**Current state**: paper Section 5 已经 site-modulated framing (paper_planning line 363).
+**Retraction reason** (per user 2026-04-30): paper_planning §3 line 363 已经明确 "site-modulated representation × prompt × image effects, 不是 Phantom #1 universal routing arm". Section 5 主线一直是 site-aware. **加 disclosure + normalize 是 over-engineering** — paper 当前 framing 已经 sufficient.
 
-**Options**:
-- (A) 加 explicit Section 4 limitation note: "We do not claim cross-site SR dominance; comparison is within-site between modes."
-- (B) Show normalized cross-site metric (e.g., relative SR vs DOM baseline per site).
-- (C) Skip cross-site comparison entirely, paper 只 within-site claims.
-
-**Lean**: A + B. Add disclosure + show relative-to-DOM normalization figure. 不需 new data.
+**Status**: ❌ **Retracted**. Current site-modulated framing is paper-grade adequate.
 
 ---
 
-### Q5 🟢 FP filter (na_fp / eval_fp) is post-hoc mode-asymmetric
+### Q5 ❌ RETRACTED — FP filter asymmetry is feature not bug
 
-**Issue**: §95 FP filter 体系 trigger depends on agent finish answer + GPT-judge. 不同 mode 产生不同 finish pattern → filter 应用 asymmetric.
+**Original concern**: FP filter mode-asymmetric, 应该 footnote disclose.
 
-**Current state**: §95 chronicle 已经讨论, FP rates per mode 都 < 5%, 整体 cross-mode bias 小. Section 4 标 "adjusted_success" 跟 raw_success 都 cite.
+**Retraction reason** (per user 2026-04-30): FP filter 是行为研究**方法论必需的 measurement instrument** (na_fp 防 agent 说 "task impossible" 被 GPT 误判 success; eval_fp 防 string_match 偶然碰对). 不同 mode 产生不同 failure pattern, filter 应用 asymmetric **正是 filter 在做它该做的事 (instrument-aware adjustment)**, 不是 confound.
 
-**Options**:
-- (A) Status quo: 现 framing 已经 OK, 不需 action.
-- (B) Section 4 加 footnote: "FP filter is mode-asymmetric; reported numbers are adjusted_success."
+类比: 不同 thermometer 在不同温度区间灵敏度不同, "灵敏度 asymmetric" 是 instrument 特性, 不是 bias.
 
-**Lean**: B. 简单 footnote 加 paper-grade rigor, 0 cost.
+**Status**: ❌ **Retracted**. FP filter is measurement, not contamination. Current "raw_success vs adjusted_success" Section 4 framing 已 sufficient.
 
 ---
 
@@ -151,16 +154,26 @@
 
 ---
 
-## 总结 — 4 个真 actionable 给学长 raise
+## 总结 — 修订后 (2026-04-30 user critique 后)
 
-按 paper-impact 排序, 给 sync 4-question:
+**给学长 ask 收缩到 2 个 (Q1 + Q2)**:
 
-1. **Q1 Early-stop micro bias** — 推荐 B+C (length-normalized + demote 2a/2b/2c). 不需重跑.
-2. **Q2 B0 pre/post sampling 不对称** — 推荐 A (only 14-cell rerun data). 需 commitment "弃用 archived B0".
-3. **Q3 Single-seed replication** — 推荐 C (~$20 partial replication). 加 paper rigor.
-4. **Q4 Cross-site comparability** — 推荐 A+B (disclosure + relative normalization). 不需重跑.
+1. **Q1 Early-stop micro bias** 🔴 — 推荐 B+C (length-normalized + demote 2a/2b/2c 到 secondary). 不需重跑.
+2. **Q2 B0 pre/post sampling 不对称** 🟡 — 推荐 A (only 14-cell rerun data, 弃 archived). 需 commitment "丢弃 archived B0 数据".
 
-其他 Q5-Q9 都是 1-句 footnote disclosure, 不需 ask 学长 (我自己 sign off 写进 Section 4).
+**Retracted (per 2026-04-30 user critique)**:
+- ~~Q3 Single seed replication~~ → reframed as Q3 environment non-determinism, demoted to self-decided 1-line footnote (greedy 下 LLM-level 没 variance 测)
+- ~~Q4 Cross-site SR comparability~~ → already handled by site-modulated framing in paper_planning §3
+- ~~Q5 FP filter mode-asymmetric~~ → FP filter is measurement instrument, asymmetry is feature not bug
+
+**Self-decided footnotes (不 ask 学长)**:
+- Q3 environment non-determinism disclosure (1 line)
+- Q6 diamond completion (covered by 14-cell rerun)
+- Q7 B0 vs B1 determinism asymmetry (1 line + optional $5 verification)
+- Q8 drop-one oracle 5-mode set scope (1 line)
+- Q9 routing AUROC in-sample assumption (Section 6 framing)
+
+**Net effect of revisions**: advisor sync ask list 从 4 个 framing decisions 收缩到 **2 个**. 减负 + 学长聚焦更高 stakes 的真 framing decisions.
 
 ---
 
