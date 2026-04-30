@@ -694,6 +694,24 @@ Baseline: random / best-single-mode / rule-based ("if has_ref_image → SoM else
 
 **Mitigation**: 诚实报告反而强化 mechanism claim ("effect 是 task-type/capability bound, 不是 universal").
 
+### Risk 5: B0 vs B1 reproducibility 不对称 (新增 2026-04-30) ⚠️
+
+**实证 finding** (probe_b37_api_determinism.py 5 calls × T=0+top_p=1.0 + seed=42 forwarded):
+- B1 (4B local + `do_sample=False` + `torch.manual_seed`): byte-deterministic by construction
+- **B0 (235B proxy API): 5/5 calls produced 5 distinct byte-level outputs** at T=0
+- BUT: 5/5 calls selected the **same action** (`click element_id=5`) — decision-level convergent
+- Output token count varied 38/45/46/49/49 — model genuinely sampling differently across calls
+
+**Reviewer attack vector**: "你 paper 说 seed=42 reproducible, 但 B0 proxy 不可控, 你 SR 数字哪有 reproducibility?"
+
+**Mitigation** (Section 4 disclosure):
+1. Frame B0 vs B1 asymmetry honestly: B1 strict deterministic; B0 decision-level convergent only
+2. SR-level conclusions robust (action selection stable across replicates)
+3. Token-level metrics (string_match exact-match, thought-text similarity) acknowledged residual variance
+4. Empirical evidence anchored in `docs/analysis/cross_sites/probe_b37_api_determinism.md` (5 raw outputs + Section 4 disclosure paragraph drafted)
+
+**Cost saved by NOT pursuing this further**: replication study at full 14-cell scale would cost ~$60-200; instead cheap 5-call probe ($0.005) gave us decisive characterization. Paper Section 4 disclosure paragraph is the deliverable.
+
 ---
 
 ## §7 Investment Cascade Plan

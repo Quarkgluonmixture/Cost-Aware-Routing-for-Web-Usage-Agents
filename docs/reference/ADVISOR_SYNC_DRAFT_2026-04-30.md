@@ -25,6 +25,13 @@
   1. **Early-stop bias on micro metrics**: agent cycle-detect 早停 truncate trajectory, 让 micro 2a (URL Jaccard) / 2b (target hit rate) / 2c (keyword repeat) 三个指标 cross-mode 不可比 (短 trajectory 分母小). 选 A 关掉早停 (cost +$1300) / B 算 length-normalized / C demote 这 3 个到 secondary, 主用 first-divergence (uncensored)?
   2. **B0 pre/post Phase A 数据 sampling 不对称**: Phase A 之前 B0 用 T=0.1 stochastic, 之后 T=0 greedy. archived data + 14-cell re-run 是不同 sampling regime. 直接合 vs 只用 post-Phase-A 重跑 数据 (弃 archived)?
 
+**🆕 实证 anchor for B0/B1 reproducibility 不对称** (我跑了 cheap probe 验证):
+- Probe: 5 calls × T=0 + top_p=1.0 + seed=42 forwarded × 同 prompt × proxy API
+- Result: 5/5 byte-level distinct outputs **但** 5/5 same action (`click element_id=5`)
+- **Conclusion**: B0 token-level non-deterministic, decision-level convergent
+- Section 4 disclosure paragraph drafted in `docs/analysis/cross_sites/probe_b37_api_determinism.md`
+- Cost: $0.005, 给 paper 实证 anchor 而不是 "trust the proxy" claim
+
 详 `docs/reference/PAPER_STRATEGY_OPEN_QUESTIONS.md` (audit 9 个 issues, 7 个我自决 disclose, 上面 2 个真 ask 您)
 
 具体细节希望能开个会聊聊（30-45 分钟应该够），您方便的时候定个时间。
