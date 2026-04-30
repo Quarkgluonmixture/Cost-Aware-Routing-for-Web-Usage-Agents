@@ -17,7 +17,7 @@
 >
 > **NOT** included (intentional): GLM digest sidecar + gallery + annotate (watchdog handles); codex narrative analyses (manual); narrow ad-hoc diagnostics (selflink_loop / vision_coordinate / search_over_browse / diag_pattern_match — invoke per-need)
 >
-> **Last updated**: 2026-04-30（§107 **Phase A 4-cluster bug fix wave + 5-tier audit**: 37 catalogued bugs, ship Phase A patches commit `3c15cd7`, pilot wave-2/3 PASS N=120, **14-cell paper-grade re-run blocked on RunPod 经费 approval**, Myriad 物理级 blocked. **Next: 学长 sync + RunPod approval + 14-cell rerun + 4-dim integration**.）
+> **Last updated**: 2026-04-30 EOD（§107 + §107.1 **Phase A done + B-37 probe done + Myriad rejected + RunPod planned**: 37 bugs catalogued + 4-cluster patches shipped (`3c15cd7`); pilot wave-2/3 PASS N=120 (reddit C1 lift +2.14pp); **B-37 probe**: B0 proxy NOT byte-deterministic (5/5 distinct outputs) but decision-level convergent (5/5 same action); **Myriad VWA Docker rejected** (5-barrier, Barrier 3 deal-breaker = job-job state continuity); RunPod hub-spoke onboarding doc ready (`docs/reference/RUNPOD_ONBOARDING.md`). **Next: 学长 sync (5 unpushed commits 待 push first) + RunPod approval + 14-cell rerun**. Workflow change: commit autonomous, push needs explicit confirm.）
 
 ---
 
@@ -41,11 +41,11 @@
 | **Cls pilot wave-3 (Cluster 1+2+3+4 验证 cls)** | ⏸️ blocked | B1 P-text cls 仍在跑 (~198/234 ep, ~1-2 天 ETA) — 同 site exclusivity |
 | **学长 sync** | ⏸️ pending | 学长答应开会, 时间未定 — 我已 ready advisor brief |
 
-### Next 3 actions (priority order)
+### Next 3 actions (priority order, 2026-04-30 EOD)
 
-1. **学长 sync + meeting** ⭐ — 给学长发 sync (`docs/reference/ADVISOR_SYNC_DRAFT_2026-04-30.md` 模板) + GitHub repo link + code tour (`PHANTOM_SOM_CODE_TOUR.md`). 会议 30-45 min: 拿 Phantom finding + Phase A bug audit + 学长 schedule 会议. **Asks**: (a) RunPod ~$200 经费, (b) paper scope (single vs split with VWA bug paper), (c) Section 4 4-dim framework approval.
-2. **RunPod 拿 GPU 启动 14-cell 全跑** — 学长 approve 后 onboard RunPod (~1-2h setup), launch B0/B1 × 5-mode × 3-site = 14 cells (estimated ~180h GPU × $0.6/h ≈ $108). 用 commit `3c15cd7` 后的 Phase A 代码, 数据自动 paper-grade.
-3. **新数据按 4-dimension framework 整合** — 14-cell 跑完后 (~1 周) 运行 `make analyze-paper` 一键 regenerate 14 figures + bootstrap CI + AUROC table. 重 evaluate Phantom 4-fold drop-in property: (a) cost ratio (b) latency (c) AUROC (d) drop-one. Compare wave-3 (+2.14pp 估算) vs full 14-cell 真值. **预期: paper-grade clean Phantom finding**.
+1. **Push 5 unpushed commits + 给学长发 sync** ⭐ — 5 commits 累积今晚 (b37 probe + paper-strategy refines + Myriad §4.4 rejection + RunPod onboarding doc). Push 后**给学长发 `docs/reference/ADVISOR_SYNC_DRAFT_2026-04-30.md`** + GitHub link. 会议 30-45 min asks: (a) RunPod ~$200 经费 ($70-115 actual based on measured throughput), (b) paper scope (single vs split with VWA bug paper), (c) 2 paper-strategy framing decisions (Q1 early-stop micro bias, Q2 B0 pre/post Phase A sampling).
+2. **RunPod onboarding (post-approval)** — `docs/reference/RUNPOD_ONBOARDING.md` 7-step playbook ready. Pin paper-grade commit hash on RunPod, scp `.auth/` files, smoke test B1 cls 1 task, then launch 14-cell parallel: 7 cells B0 on DGX (proxy API) + 7 cells B1 on RunPod 4090. ETA ~3-5 天 wallclock.
+3. **新数据按 4-dimension framework 整合** — 14-cell 跑完后运行 `make analyze-paper` 一键 regenerate. 重 evaluate Phantom 4-fold drop-in (cost / latency / AUROC / drop-one). 加 Section 4 disclosure paragraphs: (a) B0 vs B1 reproducibility 不对称 (probe md draft), (b) early-stop micro bias mitigation per advisor decision, (c) Phase A bug audit summary. Codex #11 Section 4 prose update + #13 Section 5 mechanism prose triggered.
 
 ### Advisor meeting prep status
 
