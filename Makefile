@@ -183,7 +183,13 @@ _figures:
 	$(PYTHON) scripts/analysis/figures/fig1ab_cascade_diamond.py
 	$(PYTHON) scripts/analysis/figures/fig1c_strategy_gradient.py
 	$(PYTHON) scripts/analysis/figures/fig2_micro_divergence_heatmap.py
+	$(PYTHON) scripts/analysis/figures/fig2b_target_hit_rate.py
+	$(PYTHON) scripts/analysis/figures/fig2c_keyword_repeat.py
+	$(PYTHON) scripts/analysis/figures/fig2d_first_action_divergence.py
+	$(PYTHON) scripts/analysis/figures/fig2e_cross_site_validity.py
+	$(PYTHON) scripts/analysis/figures/fig2f_first_divergence.py
 	$(PYTHON) scripts/analysis/figures/fig3a_token_cost_intra_baseline.py
+	$(PYTHON) scripts/analysis/figures/fig3c_latency_per_step.py
 	$(PYTHON) scripts/analysis/figures/fig3d_cost_sr_frontier.py
 	$(PYTHON) scripts/analysis/figures/fig3_regional_carbon.py
 	$(PYTHON) scripts/analysis/figures/fig_capability_b0_b1.py
