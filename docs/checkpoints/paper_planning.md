@@ -278,6 +278,33 @@ Drop-one ranking 跨 capability 反转:
 - **Idefics2 8B**: trained on OBELICS (350M images / 115B text tokens), text:image ratio fundamentally conditions transformer to prioritize text representations
 - **VILA**: re-blends text-only instruction data alongside image-text data during fine-tuning to remedy text-task degradation, inadvertently boosting text inertia
 
+**Q5 Bidirectional modality fusion (Gemini DR 6/6 returned 2026-05-01 evening)** (`docs/literature/5.1/Vision-Language Model Modality Interaction A Comprehensive Analysis of Bidirectional Dominance and Failure Modes.md`):
+
+⭐⭐ **Paper §2 Axis 3 lit anchor 厚度终于到了** — 之前 axis 3 只有单点 anchor (Tong 2024 / Li POPE / Bitton-Guetta)，Q5 给 cross-benchmark 综合 + bidirectional framing 学术名词。
+
+- **Bidirectional Failure framing 是 "Novel synthesis"** (Q5 doc 自己 line 22 标注): "framing VLM modality interaction as exhibiting **dual failure modes that act in opposite directions** constitutes a novel theoretical synthesis. The current 2023-2026 literature largely treats these failure modes in isolation." → Paper §5 axis 3 prose 可 cite Q5 综述 + claim "first systematic web-agent multi-step application"
+- **Dual-axis same-paper benchmarks** (验证 axis 3 bidirectional framing 不是 paper artifact):
+  - **Guan et al. 2024 HallusionBench** (CVPR, arXiv:2310.14566): 单 benchmark 同时测 "visual illusion" (image-over-text) + "language hallucination" (text-over-vision). GPT-4V 31.42% / 其他开源 <16% on dual-axis control pairs
+  - **Sun 2023 MMHal-Bench**: 8 distinct error categories, both visually-grounded failures + language-driven hallucinations on same model
+- **Per-axis benchmark mapping** (paper §5 prose anchor):
+  - **Image-over-text** (M1 visual saliency hijack): Li et al. 2023 POPE (EMNLP, arXiv:2305.10355) — co-occurrence triggers false positives; CHAIR — autoregressive text fills visual gaps
+  - **Text-over-vision** (M2 language prior override): Tong et al. 2024 "Eyes Wide Shut" (CVPR); Fu et al. 2024 BLINK (ECCV, arXiv:2404.12390) — perception primitives at 24-30% near random; Bitton-Guetta et al. 2023 WHOOPS! (ICCV); MM-Vet — OCR/spatial trigger text fallback
+- **Scaling law on bidirectional bias** (paper §7 cross-capability anchor):
+  - **Large LLM (70B+) + compressed vision** → text-over-vision (parametric memory dominates sparse visual tokens)
+  - **Small LLM (7B) + uncompressed dense vision** → image-over-text (dense tokens overwhelm small LLM reasoning)
+  - **Long-sequence generation (any size)** → "**vision sink**" / cross-attention decay over time → text-over-vision drift
+  - 这给 B0 (235B-A22B MoE + image embedding ~1.5K tokens) 跟 B1 (4B + 同 image budget) 一个不对称 mechanism prediction：B1 image-over-text dominance 更强；B0 long-trajectory text-over-vision drift 更强
+- **SoM-specific harming channels formalized** (paper §5 axis 3 8-channel 的 cross-paper validation):
+  - **SoM occlusion → image-over-text (saliency hijack)** — markers obscure underlying pixels + act as "embedded geometric shape" distractor (与 §100 ground truth -60pp OCR 一致)
+  - **Numeric attention hijack at high mark density → text-over-vision (prior override)** — LLM 优化处理 alphanumeric, "latches onto numeric IDs as primary reasoning anchors" 离开 spatial grounding (与 §100 num_ids 0→446 一致)
+  - 注意 Q5 给两条 SoM channels 的 dominance direction 是 opposite — 这正是我们 axis 3 8-channel framework "bidirectional fusion" 的 lit anchor (一个 channel image-over-text，另一个同框架内反向 text-over-vision)
+- **Mid-layer attention decay (Liu 2025 "Devils in Middle Layers", arXiv:2512.07730)**: object hallucinations 是 multi-faceted — 同时由 mid-layer visual attention decay + decoding 时 language prior dominance 导致。**Paper §5 axis 3 双因机制 anchor** (从单 cause 升级到 dual cause 解释)
+- **Counter-evidence**:
+  - "Seeing but Not Believing" (2025): linear probing 显示 visual encoder 准确提取 features，failure 是 **late-stage generative disconnect** 而非 cross-modal interaction failure → reviewer attack vector "你说 cross-modal failure 但其实是 decoding-stage failure"，paper §5 prose 应承认 mechanism granularity (我们的 8-channel 是 behavioral level, 不 commit on encoding vs decoding stage)
+  - M3amba (2025): 显式 bidirectional state space (BiMamba blocks) 在 specialized domain (pathology) 可 lossless integrate — 说明 bidirectional dominance 不是架构必然, 是 generalist VLM 的 typical pattern (paper §7 prose specialized exception caveat)
+
+→ **Paper §5 axis 3 prose strategy 升级**: 从 "我们 propose 8-channel" → "我们把 cross-paper 散落的 dominance findings 在 web-agent multi-step setting 系统映射成 8-channel + 提供 first systematic 分类". Bidirectional framing 是 Q5 "novel synthesis"，paper 在 web-agent 应用层是首次。
+
 ### Zoom 3 counter-evidence catalog (NEW 2026-05-01 from Gemini DR, mandatory for paper §5 honest framing)
 
 **M1 (Image-mirage) counter-anchors** — text-only fallback fails on these:
@@ -294,6 +321,12 @@ Drop-one ranking 跨 capability 反转:
 - **Zheng et al. 2024 EMNLP** "When 'A Helpful Assistant' Is Not Really Helpful": 162 personas, **NO effect on accuracy** vs no-persona baseline — counter-evidence on persona-style prompt effects
 - → **Paper §2 prose distinguish**: phantom space P-text is obs-format swap (axis 1), NOT prompt-instruction-style swap. Sclar/Mishra prompt-format sensitivity applies to former.
 
+**M3 (Image axis bidirectional dominance) counter-anchors** — bidirectional framing not universal (Q5 Gemini DR):
+- **"Seeing but Not Believing" 2025**: linear probing on visual encoder shows it accurately extracts features; failure is **late-stage generative disconnect inside LLM**, NOT cross-modal interaction failure. Implication: paper §5 axis 3 prose 不应 over-commit "cross-modal failure" mechanism — 我们 8-channel 是 behavioral level taxonomy, 不 claim encoding-stage vs decoding-stage attribution
+- **M3amba 2025**: explicit BiMamba blocks 在 pathology (specialized domain) achieve lossless bidirectional integration — bidirectional dominance 不是架构必然, 是 generalist VLM 的 typical pattern. Paper §7 cross-domain caveat: 我们 finding 限于 generalist VLM (B0 Qwen3-VL-235B, B1 Qwen3-VL-4B), domain-specialized fine-tuned VLM 可能不复现
+- **MM-Vet 7-capability decomposition**: failure mode is **task-dependent / both directions** — single dominance direction framing 可能 oversimplify. Paper §5 prose 应保持 "site-modulated" framing 跟 Q5 task-dependent 一致 (cls visual-rich → image-axis dominate; red text-dom → text-axis dominate)
+- → **Paper §5 axis 3 honest framing**: bidirectional fusion 是 behavioral-level pattern, 不 commit mechanism stage; site/task/capability modulate which direction dominates
+
 **Capability-scaling (Lazy Minimization) counter-anchors** — small VLMs are not universally inferior:
 - **ChartGemma 3B** (early-fusion VLM fine-tuned for chart QA): 3B specialized model **beats GPT-4o**, on par with closed-source frontier VLMs — fine-tuning can override Lazy Minimization in narrow visual domains
 - **InternVL3 8B**: under specific high-contrast marker conditions, **matches or exceeds Gemini 2.5 Pro** grounding accuracy (VPBench evaluation)
@@ -308,8 +341,16 @@ Drop-one ranking 跨 capability 反转:
 
 - **Cross-modal flow** (Kaduri et al.): layerwise attention probe 显示 middle-layer cross-modal flows enable image-like representations from query tokens — M1 axis activation 的 mechanistic 解释
 - **SteerMoE expert routing** (Fayyaz et al. 2026 ICLR, 学长 2026-05-01 发, 详 §108.9): MoE LLM 用 paired prompts 算 expert Risk Difference, alignment 集中在 subset of experts, alternate routing path 可绕过 ("Alignment Faking")。**对 phantom-SoM 的暗示**: vision-grounding 在 VLM 也可能 concentrated in subset of experts, phantom routing 通过 obs/prompt config 绕过这些 experts。Methodology template for paper sequence follow-up paper (Phantom-SoM Zoom 1+2+3 + SteerMoE-style follow-up Zoom 4 self-probe = paper trilogy)
+- **Tool Calling Linear Steerable Circuit** (Anonymous 2026 ACL, 笔记 §19 archived 2026-04-09): 在 **Qwen3-4B** (跟 B1 = Qwen3-VL-4B 是 architectural cousin) 验证 — 15 tools → 10 PCA 方向 (90.2% var), **cosine gap 捕获 92% action-selection 错误**, L23+ layer steering 切 tool 准确率 80-93%, "**knows but cannot say**" (hidden state 77-89% correct, output layer 3-61%)。**对 phantom-SoM 的暗示**: (a) action selection 在 **action-type axis 线性可分** + argument generation 非线性，给 §1 cascade `DOM→P-text→P-SoM→SoM` 的 token-monotonic path 一个 mechanistic 理由 (轴 selection 比 argument 廉价); (b) hidden-state cosine gap 是 B1 白盒 routing signal candidate，AUROC 可对比 logprob (~2300 forward pass，无需重跑 environment); (c) "knows but cannot say" 跟我们 §70 infra 观测到 Bedrock proxy 静默吞 `tools`/`tool_choice` 参数返回纯文本的现象在不同 stack layer 互相印证 (架构层 vs API 层 stack-wide brittleness)。**对 B1-side 平衡 anchor**: SteerMoE / Cross-modal flow 都偏 B0 (235B-A22B MoE) 路径，Tool Calling Linear Circuit 是 Zoom 4 anchor stack 中**唯一在 4B 模型直接验证**的，给 paper §8 future work B1 self-probe 一个直接 method template (output_hidden_states=True forward pass + PCA + cosine gap AUROC, 仅 B1 白盒可行)
 
-**B0 = Qwen3-VL-235B-A22B 是 MoE family** (与 SteerMoE 实验 Qwen3-30B-A3B 是 architectural cousin), methodology 几乎可直接 transfer — 但 paper 不 self-probe, 标 future work 列举。
+**Zoom 4 anchor stack 三角覆盖**:
+| Anchor | Probe path | Capability tier | Paper 用途 |
+|---|---|---|---|
+| Cross-modal flow (Kaduri) | layerwise attention probe | model-agnostic | M1 axis (Mirage / Scaffold) 的 mechanism 解释 |
+| SteerMoE (Fayyaz 2026) | expert Risk Difference + routing logits steering | **B0-side** (MoE family, Qwen3-30B-A3B cousin) | follow-up paper Zoom 4 self-probe method template |
+| Tool Calling Linear Circuit (Anon 2026) | hidden-state PCA + cosine gap AUROC + L23+ steering | **B1-side** (Qwen3-4B cousin) | B1 白盒 routing signal + cascade action-selection 线性 mechanistic 支撑 |
+
+**B0 = Qwen3-VL-235B-A22B 是 MoE family** (与 SteerMoE 实验 Qwen3-30B-A3B 是 architectural cousin), methodology 几乎可直接 transfer。**B1 = Qwen3-VL-4B** 跟 Tool Calling Linear Circuit 实验的 Qwen3-4B 是 architectural cousin (同 base LM, 加 vision encoder), tool selection 线性可分性合理 transfer 到 web action selection (click/type/scroll/finish 等 8 action 在结构上跟 ACL 论文 15 tools 同质)。两条 architectural cousin 路径让 follow-up paper 能 cover B0 + B1 双侧 mechanistic probe — 但本 paper 不 self-probe, 标 future work 列举。
 
 ### Zoom 4 paper sequence implication
 
@@ -320,10 +361,15 @@ Phantom-SoM 主 paper (本 paper):
   Zoom 3 ✅ (lit-anchored named phenomena)
   Zoom 4 标 future work, 不 self-probe
 
-Follow-up paper (sequence sibling):
-  Zoom 4 self-probe (SteerMoE-style expert RD on B0 phantom corners)
-  需要 local deploy 或 API extension (RunPod 4×4090 ~$400-600 cost)
-  Method template: SteerMoE paired examples → expert RD → routing logits steering
+Follow-up paper (sequence sibling) — dual-tier Zoom 4 self-probe:
+  B0-side: SteerMoE-style expert RD on B0 phantom corners
+    需要 local deploy 或 API extension (RunPod 4×4090 ~$400-600 cost)
+    Method template: SteerMoE paired examples → expert RD → routing logits steering
+  B1-side: Tool-Calling-style hidden-state PCA on B1 phantom corners
+    仅需 output_hidden_states=True forward pass (~2300 calls 已有 trajectory)
+    无需重跑 environment, 单卡 RTX 4090 24h 可完成
+    Method template: per-step hidden state → PCA action-direction → cosine gap → AUROC
+    cross-validate 跟 logprob signal 比较, 检查 phantom routing 是否在 B1 hidden state 层可读
 ```
 
 这给 paper §8 discussion 一个清晰 future work direction, 不需要 paper 内 over-commit Zoom 4 mechanism。
@@ -375,6 +421,11 @@ AXTree (hierarchical) vs [SOM_MARKS] (flat indexed) → action surface + traject
 
 **Replaced theory**: Image is **bidirectional modality fusion** with multiple sub-channels:
 
+**Cross-paper lit anchor stack (Q5 Gemini DR 2026-05-01 evening)**: Bidirectional dominance framing 在 VLM general literature 是 "novel synthesis" (Q5 doc line 22), web-agent multi-step setting 是 paper §5 first systematic application。
+- **Dual-axis same-paper benchmarks**: Guan 2024 HallusionBench (CVPR) "visual illusion" + "language hallucination" 同 suite; Sun 2023 MMHal-Bench 8 categories 同 model; 实证 bidirectional dominance 是 measurable architecture property 不是 paper artifact
+- **Per-axis benchmark mapping**: image-over-text → Li 2023 POPE (co-occurrence FP) + CHAIR (autoregressive fill); text-over-vision → Tong 2024 Eyes Wide Shut + Fu 2024 BLINK (perception primitives 24-30% near random) + Bitton-Guetta 2023 WHOOPS! + MM-Vet OCR/spatial fallback
+- **Mid-layer mechanism dual-cause** (Liu 2025 "Devils in Middle Layers" arXiv:2512.07730): mid-layer visual attention decay + decoding-time language prior dominance — paper §5 axis 3 dual-cause anchor
+
 **Helping channels (4)**:
 - 3a Spatial grounding (cls 5 tasks)
 - 3b Visual context disambiguation (cls 13 / red 2)
@@ -384,17 +435,19 @@ AXTree (hierarchical) vs [SOM_MARKS] (flat indexed) → action surface + traject
 **Harming channels (6, refined per user critique 04-28)**:
 - **3e False visual confidence (image-over-text)** [MAIN red 60%, 9/15 failures]
   - Mechanism: image-text alignment pretraining bias → premature commit
-  - Lit: Li POPE 2023, Yang 2024, Yu 2024 (object hallucination)
+  - Lit: Li 2023 POPE (EMNLP, co-occurrence FP), Yang 2024, Yu 2024 (object hallucination); Guan 2024 HallusionBench dual-axis benchmark "visual illusion" axis (Q5)
 - **3f Text-over-vision fallback fail** (反向 modality bias) [cls task 24 verified]
   - Mechanism: language prior dominance → ignore actual image content
-  - Lit: ⭐ Tong 2024 "Eyes wide shut" (NeurIPS), Bitton-Guetta 2023
+  - Lit: ⭐ Tong 2024 "Eyes wide shut" (CVPR), Bitton-Guetta 2023 WHOOPS! (ICCV); Fu 2024 BLINK (ECCV, perception primitives 24-30%); Liu 2025 Devils mid-layer attention decay; Guan 2024 HallusionBench "language hallucination" axis (Q5)
 - **3g Visual saliency hijack on image content** [red task 0/167 verified]
   - 实测: 15× cycles same image link, element_id +2846 each cycle (page reload 不脱)
   - 与 SoM density 不直接相关 (mark_count 117 ≠ outlier vs P95 127)
 - **3h SoM occlusion** [§100 ground truth, B0/B1 都 affected]
   - 量化: B0/B1 reddit_task_6 mode-SoM 18%/15% vs NoMarks 78%/75% → **-60pp OCR**
+  - Lit (Q5): Q5 doc formalizes SoM occlusion → image-over-text (saliency hijack) — markers obscure pixels + "embedded geometric shape" distractor
 - **3i SoM numeric label attention hijack** [§100 verified, density-dependent]
   - 量化: B1 num_ids 0→**446** at 128 marks; mode-WithText 立即降 0
+  - Lit (Q5): Q5 doc formalizes numeric hijack → text-over-vision (prior override) — LLM optimized for alphanumeric "latches onto numeric IDs as primary reasoning anchors"; opposite dominance direction vs 3h, 验证 axis 3 同 framework 内 bidirectional
 - **3j Visual misdirection** (visual saliency drift)
 
 ### Site-modulated framing (LLM-level explanation)
