@@ -1,0 +1,188 @@
+{
+  "nodes": [
+    {
+      "id": "1a2b3c4d5e6f7890",
+      "type": "text",
+      "x": 100,
+      "y": -260,
+      "width": 1100,
+      "height": 140,
+      "color": "6",
+      "text": "# Phantom Routing Space\n*paper §2 Zoom 1 architectural completeness*\n\nCube 8 corners → **4 phantom (image=✗) + 1 image-on endpoint + 1 image-only mode = 6 paper modes**"
+    },
+    {
+      "id": "2b3c4d5e6f789012",
+      "type": "group",
+      "x": -50,
+      "y": -50,
+      "width": 1300,
+      "height": 690,
+      "color": "5",
+      "label": "Phantom routing space (boundary: no annotated image)"
+    },
+    {
+      "id": "3c4d5e6f78901234",
+      "type": "text",
+      "x": 80,
+      "y": 80,
+      "width": 360,
+      "height": 230,
+      "color": "4",
+      "text": "# DOM\n**origin baseline**\n\n• text: AXTree (hierarchical)\n• prompt: DOM\n• image: ✗\n\nM1 ❌  M2 ❌"
+    },
+    {
+      "id": "4d5e6f7890123456",
+      "type": "text",
+      "x": 800,
+      "y": 80,
+      "width": 360,
+      "height": 230,
+      "color": "2",
+      "text": "# P-prompt\n**axis 2 alone (AXTree 锚点)**\n\n• text: AXTree\n• prompt: SoM-style\n• image: ✗\n\nM1 ✅  M2 ❌\n\nMirage subspace\n(visual prompting w/o image)"
+    },
+    {
+      "id": "5e6f789012345678",
+      "type": "text",
+      "x": 80,
+      "y": 380,
+      "width": 360,
+      "height": 230,
+      "color": "1",
+      "text": "# P-text\n**axis 1 alone (DOM-prompt 锚点)**\n\n• text: [SOM_MARKS] flat\n• prompt: DOM\n• image: ✗\n\nM1 ❌  M2 ✅\n\nFormat-swap subspace"
+    },
+    {
+      "id": "6f7890123456789a",
+      "type": "text",
+      "x": 800,
+      "y": 380,
+      "width": 360,
+      "height": 230,
+      "color": "6",
+      "text": "# P-SoM ⭐\n**cube center · paper hero**\n\n• text: [SOM_MARKS]\n• prompt: SoM\n• image: ✗\n\nM1 ✅  M2 ✅  **compound**\n\nemergent unique tasks\n(B0 red 3 tasks 既不在 P-text 也不在 P-prompt)"
+    },
+    {
+      "id": "78901234567890ab",
+      "type": "text",
+      "x": 580,
+      "y": 740,
+      "width": 360,
+      "height": 200,
+      "color": "3",
+      "text": "# SoM\n**cube image-on endpoint** (paper baseline, NOT phantom)\n\n• text: [SOM_MARKS]\n• prompt: SoM\n• image: ✓\n\n→ full cost + latency"
+    },
+    {
+      "id": "8901234567890abc",
+      "type": "text",
+      "x": 1000,
+      "y": 740,
+      "width": 360,
+      "height": 200,
+      "color": "5",
+      "text": "# Vision\n**image-only mode**\n(cube 之外, axis 1 = no text)\n\n• text: ∅\n• prompt: SoM-like\n• image: ✓"
+    },
+    {
+      "id": "901234567890abcd",
+      "type": "text",
+      "x": -250,
+      "y": 240,
+      "width": 200,
+      "height": 200,
+      "text": "↑ **Axis 1**\n(text payload)\n\nAXTree\n  ↓\n[SOM_MARKS]"
+    },
+    {
+      "id": "01234567890abcde",
+      "type": "text",
+      "x": 380,
+      "y": -110,
+      "width": 540,
+      "height": 80,
+      "text": "**Axis 2 (prompt)** →   DOM-prompt → SoM-prompt"
+    },
+    {
+      "id": "1234567890abcdef",
+      "type": "text",
+      "x": -550,
+      "y": 80,
+      "width": 380,
+      "height": 380,
+      "color": "5",
+      "text": "## Boundary 定义\n\n**axis 3 = ✗ (no annotated image)**\n\n排除 3 image-on phantom corners:\n• #2 DOM-prompt + AXTree + image\n• #4 (mismatched) + image\n• #6 P-text + image\n\n→ image embedding tax 拉齐 SoM\n→ 失去 4-fold drop-in\n→ violate phantom space\n\n**Boundary ≠ matched parsing** (旧 framing 已 retract)"
+    },
+    {
+      "id": "234567890abcdef1",
+      "type": "text",
+      "x": 1400,
+      "y": 80,
+      "width": 380,
+      "height": 380,
+      "color": "4",
+      "text": "## 4-fold drop-in property\n\n4 phantom corners 共享 *by construction*:\n\n**(a) cost ≈ DOM**\n     no image embedding tax\n\n**(b) latency ~50% lower**\n     no image inference (cls 4×)\n\n**(c) signal AUROC ≥ baseline** ✅\n     5/5 phantom usable, red P-text 0.793 = 5-mode max\n\n**(d) drop-one oracle 1.7-3.8pp** ✅\n     B0 red: P-text +3.81 / P-SoM +3.33 / P-prompt +2.86\n     CI 全 exclude 0\n\n(a)(b) definitional\n(c)(d) emergent (实证)"
+    },
+    {
+      "id": "34567890abcdef12",
+      "type": "text",
+      "x": 1400,
+      "y": 500,
+      "width": 380,
+      "height": 240,
+      "color": "1",
+      "text": "## Zoom 1 deductive argument\n\nphantom comparison 锁 image=✗\n→ input 仅剩 (prompt + obs 文本)\n→ 任何 differential 必由这两 input 差异 trigger\n→ **M1 + M2 by construction exhaustive**\n\n即使跑 100 个 phantom corners 也不能反驳 — phantom space 内**无 hidden 3rd axis**"
+    }
+  ],
+  "edges": [
+    {
+      "id": "4567890abcdef123",
+      "fromNode": "3c4d5e6f78901234",
+      "fromSide": "right",
+      "toNode": "4d5e6f7890123456",
+      "toSide": "left",
+      "color": "2",
+      "label": "axis 2 alone\n(AXTree 锚点)"
+    },
+    {
+      "id": "567890abcdef1234",
+      "fromNode": "3c4d5e6f78901234",
+      "fromSide": "bottom",
+      "toNode": "5e6f789012345678",
+      "toSide": "top",
+      "color": "1",
+      "label": "axis 1 alone\n(DOM-prompt 锚点)"
+    },
+    {
+      "id": "67890abcdef12345",
+      "fromNode": "4d5e6f7890123456",
+      "fromSide": "bottom",
+      "toNode": "6f7890123456789a",
+      "toSide": "top",
+      "color": "1",
+      "label": "axis 1 alone\n(SoM-prompt 锚点)\n→ invariance"
+    },
+    {
+      "id": "7890abcdef123456",
+      "fromNode": "5e6f789012345678",
+      "fromSide": "right",
+      "toNode": "6f7890123456789a",
+      "toSide": "left",
+      "color": "2",
+      "label": "axis 2 alone\n([SOM_MARKS] 锚点)\n→ invariance"
+    },
+    {
+      "id": "890abcdef1234567",
+      "fromNode": "3c4d5e6f78901234",
+      "fromSide": "bottom",
+      "toNode": "6f7890123456789a",
+      "toSide": "top",
+      "color": "6",
+      "label": "cube diagonal\n(axis 1+2 compound)\n→ paper hero"
+    },
+    {
+      "id": "90abcdef12345678",
+      "fromNode": "6f7890123456789a",
+      "fromSide": "bottom",
+      "toNode": "78901234567890ab",
+      "toSide": "top",
+      "color": "3",
+      "label": "axis 3 (image)\n→ exits phantom space"
+    }
+  ]
+}

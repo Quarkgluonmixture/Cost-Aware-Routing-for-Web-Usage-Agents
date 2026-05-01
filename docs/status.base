@@ -1,0 +1,99 @@
+filters:
+  and:
+    - file.inFolder("checkpoints/_status")
+
+formulas:
+  status_icon: 'if(status == "done", "✅", if(status == "partial", "🟡", if(status == "active", "🔄", if(status == "blocked", "🚫", if(status == "pending", "⏳", if(status == "queued", "📋", "❓"))))))'
+  progress_bar: 'if(progress, progress.toString() + "%", "—")'
+
+properties:
+  type:
+    displayName: Type
+  status:
+    displayName: Status
+  formula.status_icon:
+    displayName: ""
+  formula.progress_bar:
+    displayName: Progress
+  blocker:
+    displayName: Blocker
+  eta:
+    displayName: ETA
+  owner:
+    displayName: Owner
+  section_num:
+    displayName: "§"
+  words:
+    displayName: Words
+
+views:
+  - type: table
+    name: "Paper Sections"
+    filters:
+      and:
+        - 'type == "paper-section"'
+    order:
+      - section_num
+      - file.name
+      - formula.status_icon
+      - status
+      - formula.progress_bar
+      - blocker
+      - words
+      - owner
+
+  - type: table
+    name: "Active Processes"
+    filters:
+      and:
+        - 'type == "process"'
+    order:
+      - file.name
+      - formula.status_icon
+      - status
+      - formula.progress_bar
+      - blocker
+      - eta
+      - owner
+
+  - type: table
+    name: "All Status (consolidated)"
+    order:
+      - file.name
+      - type
+      - formula.status_icon
+      - status
+      - formula.progress_bar
+      - blocker
+      - eta
+    groupBy:
+      property: type
+      direction: ASC
+
+  - type: table
+    name: "Blocked / Pending only"
+    filters:
+      or:
+        - 'status == "blocked"'
+        - 'status == "pending"'
+        - 'status == "partial"'
+    order:
+      - file.name
+      - type
+      - formula.status_icon
+      - status
+      - blocker
+      - eta
+      - owner
+
+  - type: cards
+    name: "Sections at a glance"
+    filters:
+      and:
+        - 'type == "paper-section"'
+    order:
+      - section_num
+      - file.name
+      - formula.status_icon
+      - status
+      - blocker
