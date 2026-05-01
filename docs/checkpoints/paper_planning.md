@@ -157,6 +157,82 @@ Axis M2 (Flat-list activation):
 
 **P-SoM 是 cube center 的 mechanistic 理由**: 唯一同时 activate M1 + M2 + 它们 nonlinear interaction 的 corner。Compound state ≠ 简单叠加 (transformer attention nonlinear combination), P-SoM unique tasks (3 tasks B0 reddit, 既不在 P-text 也不在 P-prompt) 是 emergent capability。这给 P-SoM 是 paper hero 一个 mechanistic 理由 (不只是几何 cube center)。
 
+### Zoom 2.5 (reverse explanation, NEW 2026-05-01 evening): 别扭 framework + Capability-modulated effect
+
+> **⏸️ Provisional**: 现有数据 N=4 cells (B0 cls/red 含 phantom + B1 cls 5-mode + B1 red 3-mode), 全部 Phase A bug fix 之前 (commit `3c15cd7` 之前). 14-cell rerun 后 statistical commit, 现 framework 标 "provisional pending 14-cell rerun + cross-VLM-family validation"。详 笔记 §108.16。
+
+**Insight**: M1/M2 framework 是 **forward causal upstream** ("what input change happens"). 别扭 framework 是 **reverse causal downstream** ("what gap between expectation and reality"). 两者描述同一现象的不同 layer, 但 别扭 在 phantom space 内提供更 mechanism-aligned 解释。
+
+**别扭 2×2 grid (跟 forward 2×2 isomorphic 但 axis 不同)**:
+
+```
+                    No image 别扭         Image 别扭
+                    ────────────────      ────────────────
+No text 别扭        DOM (origin, 0)       P-SoM (axis B only, 1)
+                    SoM (image-on)        
+                    
+Text 别扭           P-text (axis A only,1) P-prompt (compound A+B, 2)
+```
+
+| Mode | Text 别扭 | Image 别扭 | # mismatch |
+|---|:---:|:---:|:---:|
+| DOM | ❌ | ❌ | 0 (origin baseline) |
+| P-text | ✅ (DOM-prompt 期 AXTree, 给 [SOM_MARKS]) | ❌ | 1 |
+| P-prompt | ✅ (SoM-prompt 期 [SOM_MARKS], 给 AXTree) | ✅ (SoM 期 image, 无) | 2 (compound) |
+| P-SoM | ❌ ([SOM_MARKS] match SoM-prompt) | ✅ (SoM 期 image, 无) | 1 |
+| SoM (image-on) | ❌ | ❌ | 0 |
+| Vision | n/a | n/a | n/a |
+
+**Per-axis mechanism (跟 Zoom 3 lit anchor 直接对接)**:
+- **Text-轴 别扭** (axis A): prompt expects format X, obs gives format Y → format-translation fallback → **Sclar 2024 prompt-format sensitivity / Mishra 2022** lit anchor
+- **Image-轴 别扭** (axis B): prompt expects image, none provided → language-prior visual completion → **Mirage Effect Asadi 2026 / Scaffold Effect Vu Balloccu 2026 / Cross-modal flow Kaduri** lit anchor
+
+**4 distinguishing predictions** (vs forward M1/M2):
+
+| Prediction | Forward (M1/M2 activation) | Reverse (别扭) |
+|---|---|---|
+| 1. Drop-one ranking | P-SoM (compound) > P-text ≈ P-prompt | P-text ≈ P-SoM (1 别扭) > P-prompt (2 别扭) |
+| 2. Compound aggregate effect | predicted positive (more activation = better) | predicted **negative** (compound disruption hurts) |
+| 3. FP rate | not predicted | image-轴 别扭 → cautious commit → low FP |
+| 4. Single 别扭 vs DOM aggregate | (forward predicts ≥) | predicted ≥ DOM (positive aggregate) |
+
+**Empirical cross-cell validation (4 cells, Phase A pre-fix data)**:
+
+| Prediction | B0 reddit | B0 cls | B1 cls | B1 red |
+|---|:---:|:---:|:---:|:---:|
+| 1. P-prompt drop-one lowest | ✅ 2.86 < 3.81/3.33 | (P-prompt pending) | (P-prompt pending) | n/a |
+| 2. P-prompt raw SR < DOM | ✅ 10.48 < 11.43 | (pending) | (pending) | n/a |
+| 3. Image-轴 别扭 → low FP | ✅ P-SoM 0.48 lowest | 🟡 P-SoM 1.28 < P-text 2.14 | 🟡 P-SoM 2.56 = DOM | n/a |
+| 4. Single 别扭 ≥ DOM | ✅ both > DOM | ✅ both > DOM | ❌ **REVERSED** (P-text/P-SoM both < DOM) | n/a |
+
+→ **B0 cells: 4/4 别扭 predictions confirmed**. **B1 cls: prediction 4 reversed**.
+
+**Capability-modulated discovery (paper §7 finding)**:
+
+Drop-one ranking 跨 capability 反转:
+- B0 reddit: P-text 3.81 > P-SoM 3.33 (text-axis > image-axis)
+- B0 cls: P-text 3.42 > P-SoM 2.56 (text-axis > image-axis)
+- **B1 cls: P-text 0.85 < P-SoM 1.71** (image-axis > text-axis, REVERSED)
+
+**Resolution: 别扭 + Lazy Minimization Hypothesis 联合**:
+- 大 VLM (B0 235B-A22B): capability 充分 → text-format mismatch fallback effective → P-text drop-one 高
+- 小 VLM (B1 4B): 视觉处理性价比差 → text-over-vision bias 强 → 优先 numeric label / 结构化 token. P-text 上 DOM-prompt vs [SOM_MARKS] obs format mismatch 让小 VLM confused (no capability for fallback). P-SoM 上 SoM-prompt + [SOM_MARKS] obs internally consistent + 仅 image 别扭 — 小 VLM thrives (依赖 numeric label, image absence less cognitive load).
+
+→ **Capability-modulated 别扭 effect**: 小 VLM 偏好 image-轴 别扭, 大 VLM 偏好 text-轴 别扭。Paper §7 cross-capability 章节直接 cite。
+
+**对 paper sections 的 implication**:
+- §1 hook drop-one "1.7-3.8pp per arm" 加 capability-modulated caveat ("magnitude 4× weaker on small VLM, direction reverses text-vs-image axis preference")
+- §2 Theory: forward (M1/M2) + reverse (别扭) **layered framework** — forward describes design + measurement, reverse describes mechanism + interpretation
+- §5 mechanism prose 用 别扭 narrative ("compound mismatch overload" / "image-axis fallback via language priors")
+- §7 cross-capability 章节 直接受益 (capability-modulated reversal 是 paper §7 真实证 finding, 解锁 §7 prose ~40% → ~70% completion path)
+
+**Caveat (provisional)**:
+- N=4 cells, 1 cell (B0 reddit) full 6-mode, 其他 partial
+- Phase A bug pre-fix data — cycle false positives / dispatch noise affect aggregate metrics
+- 14-cell rerun 后 8+ 完整 phantom cells, statistical commit time
+- B1 reddit phantom 数据缺 (14-cell rerun 必跑) — 不能 yet validate B1 cross-site direction
+- Cross-VLM-family (Claude / other 235B-tier) 待 advisor sync 后 决定 scope
+
 ### Zoom 3 (named phenomena): Lit-anchored mechanism phenomena
 
 **M1 axis (Image-mirage) Zoom 3 lit anchors** (cross-model behavioral evidence):
@@ -1465,3 +1541,4 @@ Post run:
 | 2026-05-01 | 8-corner 2x2x2 cube + 6-corner asymmetric grid 实验设计 **retract** | M1/M2 mechanism activation framework 已 saturate phantom space description; ablation cells (p(a-pure)) 价值降级到 nice-to-have for Zoom 2 sub-mechanism granularity | ✅ retract list + 笔记 §108.3 |
 | 2026-05-01 | SteerMoE (Fayyaz 2026 ICLR) 作 Zoom 4 lit anchor + paper §8 future work | 学长 2026-05-01 发; B0 = Qwen3-VL-235B-A22B 是 SteerMoE 实验模型 architectural cousin; methodology template 但 paper 不 self-probe (proxy API + budget barrier) | ✅ paper_planning §2 Zoom 4 + 笔记 §108.9 |
 | 2026-05-01 | Early-stop mechanism design decision: lean Option A (full cancel), pending advisor align | early-stop 是 cross-dimension systemic confound (不止 micro layer); Option A +$1300 全 cancel / B keep / C hybrid +$200 | ⏸️ advisor sync Q1 重写, lean A pending | 
+| 2026-05-01 | 别扭 framework refinement (provisional) — reverse-explanation layer + capability-modulated discovery | (a) Cross-cell empirical validation 4 cells: B0 4/4 别扭 predictions confirmed, B1 cls prediction 4 reversed (small VLM single 别扭 negative aggregate); (b) drop-one direction reversal cross-capability (B0 P-text > P-SoM, B1 cls P-SoM > P-text) → 别扭 + Lazy Minimization 联合 framework; (c) compound 别扭 (P-prompt) 实证 negative aggregate (B0 reddit raw 10.48 < DOM 11.43) but positive complementarity (drop-one +2.86pp) — double-edged property | ⏸️ provisional, pending 14-cell rerun statistical commit + B1 reddit phantom 数据 |
