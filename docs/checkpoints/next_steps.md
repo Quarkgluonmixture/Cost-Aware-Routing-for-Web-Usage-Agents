@@ -126,7 +126,7 @@ Cells:     6 sites × 3 models × 6 modes = ~108 cells (~135K episodes)
 | Section | Status | Path | Blocker |
 |---|---|---|---|
 | 1 Intro | ✅ done (786w + 4-fold drop-in framing) | `docs/analysis/paper_drafts/section1_intro.md` | — |
-| 2 Background + paper.bib (16 entries) | ✅ done (1514w) | `section2_background.md` | codex #10 expand to ~38 |
+| 2 Background + paper.bib (16 → ~40-50 entries 待 codex 跑完) | ✅ done (1514w), paper.bib expanding 5/6 Gemini DR | `section2_background.md` | codex #10 跑中 (Q5 pending) |
 | 3 Definition + Ablation | ✅ done (863w) | `section3_definition.md` | — |
 | 4 Empirical Findings | 🟡 80% (figures FRESH ✅, prose stale 1725w) | `section4_empirical_findings.md` | codex #11 fresh prose (~30K) |
 | 5 Mechanism (3-axis × 8-channel) | 🟡 90% evidence ready | (待写) | codex #13 prose (~50K, 待 #10) |
@@ -291,7 +291,7 @@ nohup bash scripts/queues/queue_chain.sh \
 
 | # | Task | Tokens | Blocker | Status |
 |---|---|---|---|---|
-| **10** | **Axis 2/3 literature deep research + paper.bib expansion** (16→~38, 含 bidirectional modality + Tong 2024 Eyes Wide Shut) ⭐⭐⭐ | ~400-600K | — | 🟢 prompt ready, 发 ~Wed |
+| **10** | **paper.bib formal expansion + paper §2 Zoom 3 cross-reference** — **scope REDUCED 2026-05-01**: lit search done via 5/6 Gemini DR (`docs/literature/5.1/`), only integration left. Q5 (bidirectional modality fusion) pending Gemini quota — append later when arrives. | ~50-100K (was ~400-600K, 缩 80%) | — | 🟡 codex 跑中 (paper.bib 部分, see `integrate_gemini_dr_zoom3_2026-05-01.md`); §2 Zoom 3 已 update (笔记 §108.17) |
 | **11** | **Section 4 fresh-data prose update** (4-dimension framework + ~100× cost framing + N=210 全数据) ⭐ priority next | ~30K | — (现可发) | 🟢 ready, 等用户 trigger |
 | **13** | **Section 5 prose 写** (organize as **site × axis × LLM-mechanism 3-way table**, per `paper_planning §2.x site mechanical substrate`); primary input: 9 site digests `docs/analysis/vwa_*/B*_{DOM,SoM,Vision}_digest.md` + `mechanism_per_task.{json,md}` (E1-E4) + `axis_effect_size_report.md` + `disagreement_clusters.md` (04-27 stale, refresh via #14c when phantom data ready) + `axis1_microbehavior_report.md` + cls task-pool 0.53 paradox + 6 antagonistic pairs | ~50-80K | 待 P-prompt reddit done (~6h) + #11 一起发 | 🟡 ~Thu |
 | 14 | Codex audit shopping VWA (466) — full 5-mode | ~500K | 待 shopping 5-mode 数据 | ⏳ ~Week 2-3 |

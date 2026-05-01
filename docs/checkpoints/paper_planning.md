@@ -245,6 +245,63 @@ Drop-one ranking 跨 capability 反转:
 - **Tree-traversal vs list-scanning** (你 deep research SoM novelty doc line 84): "AXTree induces tree traversal trajectory (logical deduction over hierarchy) vs flat SoM induces sequential list scanning trajectory (rapid spatial approximation)"
 - Paper draft `section2_background.md` line 27 已 adopt: "the flat marks list tends to shift exploration toward quick element selection, AXTree hierarchy supports sustained navigation and search"
 
+### Zoom 3 expansion (5/6 Gemini DR returns 2026-05-01, Q5 pending)
+
+**Q1 Mirage / visual prompting w/o image — additional cross-model anchors** (`docs/literature/5.1/Cost-Aware Routing...md`):
+- **Wang et al. 2025 XLRS-Bench** (CVPR 2025, arXiv:2503.23771): text-only Qwen3-8B 51.6% **>** multimodal GPT-4o 45.2% on aggregate visual remote-sensing tasks — text-only **beats** multimodal in some visual-heavy domains
+- **Liu et al. 2025 Plan-and-Act** (ICML 2025): 81.36% text-only SR on WebVoyager, 57.58% on WebArena-Lite — text-only SOTA via two-tier planner-executor architecture
+- **Lù et al. 2025 AgentRewardBench** (arXiv:2604.04399): "**distraction phenomenon**" — incorporating both text + image observations *degrades* PRM performance vs text-only inputs (image introduces high-dimensional noise on text-defined semantic boundaries)
+- **Koh et al. 2024 VWA empirical**: GPT-4 text-only 7.25% vs GPT-4V multimodal 16.37% = **44% relative retention** (more conservative than Asadi 70-80% on real web tasks vs synthetic mirage benchmarks)
+- **Cross-VLM-family confirmed**: GPT-4V/4o (XLRS-Bench, ViLP) + Claude 3 (cross-modal flow) + Gemini 1.5 Pro (WebNavigator 72.9% multi-site) + Qwen-VL/LLaVA/InternVL (text-inertia + Mirage) — all exhibit Mirage Effect, validating cross-architecture generalization
+
+**Q2 system prompt format (multi-step agent)** (`docs/literature/5.1/Sensitivity of LLM Agents...md`):
+- **Multi-step compounding finding**: format-induced loop rates compound exponentially over multi-step trajectories (single-turn lit understates effect)
+- **Surprise**: "**Text-based DOM-element referencing consistently outperforms Set-of-Mark visual bounding boxes** for prompt referencing due to alignment with textual pre-training" — relevant to paper §2 axis 2 framing (need careful prose distinction, see counter-evidence)
+- **Structured hallucination**: forced JSON output induces structured hallucinations + cycle increase, particularly on smaller models (Llama-3-8B)
+- **CoT trade-off**: Chain-of-Thought helps single-screen reasoning, **hurts** complex compositional sequences (catastrophic trajectory degradation when agents skip intermediary steps)
+
+**Q3 AXTree vs flat list — head-to-head + SoM-text isolation gap** (`docs/literature/5.1/Empirical Analysis of Observation Modalities...md`):
+- ✅ **Paper §1 first-work claim VERIFIED**: "**no study isolates SoM-style flat text as a standalone observation without its accompanying marked screenshot. The target paper fills this unprecedented gap**" — Phantom-SoM "first systematic SoM-text isolation" claim is lit-verified novel
+- **Kerboua et al. 2025 FOCUSAGENT** (arXiv:2510.16252): AXTree pruning achieves task-success comparable to full AXTree at significantly reduced token count, but does NOT compare to flat lists
+- **Tan et al. 2026 HMT** (arXiv:2603.07024): hierarchical 84.2% recall vs flat 65.8% — applied to **memory architecture** not direct observation, suggests structural format trade-off is task-dependent
+- Forward citation: Yang 2023 SoM original paper has near-zero work isolating text from image — reaffirms gap
+
+**Q4 Scaffold Effect cross-domain** (`docs/literature/5.1/Modality Collapse...md`):
+- ✅ **No fundamental counter-evidence**: "A comprehensive review of the 2023-2026 literature yields **no fundamental counter-evidence** directly contradicting the core premise of the Scaffold Effect"
+- Scaffold + Mirage + Text Inertia identified as 3 manifestations of same underlying "modality collapse" phenomenon
+- DPO mitigation contestably fails ("collapsing multi-modal accuracy to random baselines rather than establishing genuine visual grounding")
+- → Paper §5 axis 2 Mirage subspace anchored robustly; reviewer attack "Vu & Balloccu only clinical" preempted
+
+**Q6 Lazy Minimization Hypothesis cross-VLM scaling** (`docs/literature/5.1/Examining the Lazy Minimization Hypothesis...md`):
+- **Scaling Law of Redundancy**: large VLMs robust to image-token pruning (Qwen-32B MMLU 80.81 → 80.01 under 80% retention pruning); small VLMs collapse harder
+- **Pre-training mixture**: Qwen2-VL-7B BUTTERFLY ablation — text-only fine-tuning **slightly outperforms** image-text training (50.50% vs 50.00%) for complex conceptual learning — text provides cleaner gradient signals
+- **Idefics2 8B**: trained on OBELICS (350M images / 115B text tokens), text:image ratio fundamentally conditions transformer to prioritize text representations
+- **VILA**: re-blends text-only instruction data alongside image-text data during fine-tuning to remedy text-task degradation, inadvertently boosting text inertia
+
+### Zoom 3 counter-evidence catalog (NEW 2026-05-01 from Gemini DR, mandatory for paper §5 honest framing)
+
+**M1 (Image-mirage) counter-anchors** — text-only fallback fails on these:
+- **AsgardBench 2026**: text-only collapses on perception-conditioned execution tasks ("Text-Only performance remains low across models")
+- **DailyDroid Benchmark 2026**: 75 tasks × 25 Android apps, multimodal > text-only on dynamic mobile GUI (margin "marginal" but consistent)
+- **Mind2Web Deep Research 2025**: text-only struggles with structurally ambiguous DOM environments + noisy spatial layouts
+- **FileGramOS / Mind2Web Tracking 2025**: text-only insufficient for behavioral state tracking; rendered page images expose certain operational statistics
+- → **Paper §1 hook honest framing**: text-only fallback works on **standard web schema with stable DOM**; fails on perception-conditioned, dynamic GUI, behavioral tracking, structurally ambiguous tasks
+
+**M2 (Flat-list) counter-anchors** — flat-list framing is not universally superior:
+- **Tan 2026 HMT**: hierarchical 84.2% recall vs flat 65.8% (memory architecture context, not direct observation)
+- "**Flat sequences actively remove critical structural signals** required for human-level spatial reasoning" — failed to indicate line wraps, grouping, spatial organization
+- **Q2 surprise**: DOM-element-id referencing > SoM [N] referencing in some prompt-instruction settings — paper §2 prose must distinguish phantom-space P-text uses [SOM_MARKS] **obs format** (different from "SoM-style prompt referencing system" — these are independent dimensions in our 2x2 cube)
+- **Zheng et al. 2024 EMNLP** "When 'A Helpful Assistant' Is Not Really Helpful": 162 personas, **NO effect on accuracy** vs no-persona baseline — counter-evidence on persona-style prompt effects
+- → **Paper §2 prose distinguish**: phantom space P-text is obs-format swap (axis 1), NOT prompt-instruction-style swap. Sclar/Mishra prompt-format sensitivity applies to former.
+
+**Capability-scaling (Lazy Minimization) counter-anchors** — small VLMs are not universally inferior:
+- **ChartGemma 3B** (early-fusion VLM fine-tuned for chart QA): 3B specialized model **beats GPT-4o**, on par with closed-source frontier VLMs — fine-tuning can override Lazy Minimization in narrow visual domains
+- **InternVL3 8B**: under specific high-contrast marker conditions, **matches or exceeds Gemini 2.5 Pro** grounding accuracy (VPBench evaluation)
+- **See&Trek**: spatial markers cause performance **drops** on Relative Direction and Object Counting tasks for some small VLMs — signal-priority hierarchy is not universally absolute
+- → **Paper §7 prose framing**: Lazy Minimization is general trend for **standard generalist VLMs**, with domain-specialized fine-tuned exceptions
+
+> **🆕 Paper §1 first-work claim verified (Q3 Gemini DR 2026-05-01)**: Gemini deep research synthesis explicitly confirms "no study isolates SoM-style flat text as a standalone observation without its accompanying marked screenshot" — Phantom-SoM paper §1 hook "first systematic SoM-text isolation" claim is lit-verified novel. Reviewer attack vector "you are not first" is preempted via Q3 forward-citation-chain analysis (FOCUSAGENT prunes hierarchy but doesn't compare to flat list; HMT compares hierarchical vs flat in memory architecture, not observation; Yang 2023 SoM original always bundles text with marked image).
+
 ### Zoom 4 (model-internal): Mechanistic probe lit anchors (paper §8 future work)
 
 **Paper 不 self-probe Zoom 4** (因 B0 proxy API 不暴露 router logits internals + local deploy Qwen3-VL-235B-A22B 需 ~120GB VRAM 超 RunPod $200 budget). 但 lit anchors 给 mechanism plausibility:
