@@ -17,21 +17,22 @@
 >
 > **NOT** included (intentional): GLM digest sidecar + gallery + annotate (watchdog handles); codex narrative analyses (manual); narrow ad-hoc diagnostics (selflink_loop / vision_coordinate / search_over_browse / diag_pattern_match — invoke per-need)
 >
-> **Last updated**: 2026-04-30 EOD（§107 + §107.1 **Phase A done + B-37 probe done + Myriad rejected + RunPod planned**: 37 bugs catalogued + 4-cluster patches shipped (`3c15cd7`); pilot wave-2/3 PASS N=120 (reddit C1 lift +2.14pp); **B-37 probe**: B0 proxy NOT byte-deterministic (5/5 distinct outputs) but decision-level convergent (5/5 same action); **Myriad VWA Docker rejected** (5-barrier, Barrier 3 deal-breaker = job-job state continuity); RunPod hub-spoke onboarding doc ready (`docs/reference/RUNPOD_ONBOARDING.md`). **Next: 学长 sync (5 unpushed commits 待 push first) + RunPod approval + 14-cell rerun**. Workflow change: commit autonomous, push needs explicit confirm.）
+> **Last updated**: 2026-05-01（**§108 framework refinement** + 04-30 §107/§107.1 Phase A + B-37 probe + Myriad rejected + RunPod planned）。**05-01 大 conceptual reorganize**（笔记 §108 详 chronicle）: paper hook reframe to "**phantom routing space (3 arms)**" provisional pending cls 6-mode 数据; phantom space boundary = "no annotated image" 而非 mismatched parsing; **M1/M2 mechanism activation 2x2 framework** + **Approach 2 architectural completeness** (deductive, Zoom 1); **Evidence vs Explanation 严格分层** (4 zoom scale: 架构/behavioral/named/model-internal); SteerMoE (学长发的 ICLR 2026) 定位 Zoom 4 future work; 早停 design decision lean Option A (full cancel +$1300) pending advisor align; 5 retracts (8-corner cube / 6-corner asym grid / (a)(c) decomposition / Three-layer 命名 / 3-mechanism coherence 候选); paper.bib 待 expand 4 entry (Asadi/Vu Balloccu/Kaduri/SteerMoE)。**Next: 5 unpushed commits push + 学长 sync + RunPod approval + 14-cell rerun**。Workflow change: commit autonomous, push needs explicit confirm.
 
 ---
 
-## §0 TL;DR (2026-04-30 status)
+## §0 TL;DR (2026-05-01 status)
 
-**Paper hook**: "Phantom-SoM is hidden 4th routing arm with **4-fold drop-in property** (cost ≈ DOM / latency ~50% / signal AUROC ≥ baseline / drop-one 1.7-3.3pp)"
+**Paper hook (provisional, pending cls 6-mode 数据 confirm)**: "We discover a **hidden phantom routing space** for web agents — defined by the boundary 'skip annotated image' — containing **3 routing arms** (P-text / P-prompt / P-SoM) sharing a **4-fold drop-in property**. P-SoM (cube center, axis 1+2 compound) is the space's representative arm."
 
-### 这周 (~04-23 → 04-30) 做的事
+### 这周 (~04-23 → 05-01) 做的事
 
 1. **Phantom 量化 + 6-mode 实验设计完整** — B0 cls + reddit 5-mode (DOM/SoM/Vision/P-text/P-SoM) FRESH paper-grade clean; P-prompt diamond corner reddit 已 done, cls/shop pending. 14 figures 全部 FRESH dimension-prefixed.
-2. **Paper planning 完整重组** — paper_planning.md (1255 行) 4-dimension framework (Outcome/Macro/Micro/Efficiency) + 3-axis × 8-channel × bidirectional theory; Section 1-3 prose done (3163 words); Section 4-6 evidence 95%.
+2. **Paper planning 完整重组** — paper_planning.md (1500+ 行) 4-dimension framework (Outcome/Macro/Micro/Efficiency) + 3-axis × 8-channel × bidirectional theory; Section 1-3 prose done (3163 words); Section 4-6 evidence 95%.
 3. **🆕 04-30 系统 audit VWA framework** — 找到 **37 catalogued bugs** (Tier 1-5 + Tier 10 dispatch probe + 4 verification probes), ship Phase A 4-cluster patches (~455 LOC, commit `3c15cd7`): C1 locator-route / C2 page_changed split / C3 fuzzy cycle / C4 RNG seeding+T=0. Pilot wave-2/3 N=120 PASS, reddit B-33 fix lift +2.14pp. 详见 `docs/checkpoints/master_bug_catalog.md` (37 entries) + `docs/reference/VWA_FRAMEWORK_BUGS_AND_PHASE_A_FIXES.md` + 实验笔记 §107.
 4. **VWA bugs ⇒ 14-cell paper-grade re-run 必需** — Phase A patches 落地后, 之前 14-cell 数据需要全部重跑才能 paper-grade clean. cross-mode 比较 robust (symmetric contamination + Vision counter-evidence + pilot Δ=0pp 验证), Phantom finding 仍 valid, 但 absolute SR 需要新数据.
 5. **🔴 Myriad 不可行** — UCL 申请下来了, 但物理级 blocked: UCL 防火墙 drop Tailscale CGNAT (100.64/10), Myriad 不能 reach quark VWA docker. 详见 `docs/reference/MYRIAD_SMOKE_REPORT.md`. 备选: RunPod 4090 dedicated $0.6/h × ~180h ≈ $110-200 总预算.
+6. **🆕 05-01 Paper conceptual framework 大重组 (笔记 §108 chronicle)** — 5-hour deep discussion 后 paper §2 framework 重大重写: hook reframe 到 "phantom routing space (3 arms)" provisional + **M1/M2 mechanism activation 2x2 framework** (P-SoM = compound state emergent, transformer attention nonlinear) + **Approach 2 architectural completeness argument** (deductive, phantom space 内 only 2 input dim → axes by design exhaustive) + **Evidence vs Explanation 严格分两层** (4 测量 × 4 cross-X / Zoom 1-4 named phenomena including Mirage/Scaffold/Sclar/Cross-modal flow/SteerMoE) + **5 retracts** (8-corner cube / 6-corner asym grid / (a)(c) decomposition / Three-layer 命名 / 3-mechanism candidate). SteerMoE (学长 05-01 发的 ICLR 2026) 定位 Zoom 4 future work; early-stop design decision lean Option A (full cancel +$1300) pending advisor align. 4 framing decisions Q1-Q4 已写进 advisor sync。
 
 ### 当前 blocker
 
@@ -43,7 +44,7 @@
 
 ### Next 3 actions (priority order, 2026-04-30 EOD)
 
-1. **Push 5 unpushed commits + 给学长发 sync** ⭐ — 5 commits 累积今晚 (b37 probe + paper-strategy refines + Myriad §4.4 rejection + RunPod onboarding doc). Push 后**给学长发 `docs/reference/ADVISOR_SYNC_DRAFT_2026-04-30.md`** + GitHub link. 会议 30-45 min asks: (a) RunPod ~$200 经费 ($70-115 actual based on measured throughput), (b) paper scope (single vs split with VWA bug paper), (c) 2 paper-strategy framing decisions (Q1 early-stop micro bias, Q2 B0 pre/post Phase A sampling).
+1. **Push N unpushed commits + 给学长发 sync** ⭐ — commits 累积 04-30 + 05-01 (b37 probe + paper-strategy refines + Myriad §4.4 rejection + RunPod onboarding doc + **§108 framework refinement** + paper_planning §2 大重写 + ADVISOR_SYNC update). Push 后**给学长发 `docs/checkpoints/ADVISOR_SYNC_DRAFT_2026-04-30.md`** + GitHub link. 会议 30-45 min asks: (a) RunPod ~$200 经费 ($70-115 actual based on measured throughput), (b) paper scope (single vs split with VWA bug paper), (c) **4 paper-strategy framing decisions** (Q1 early-stop design **lean A 全 cancel** / Q2 B0 pre/post Phase A sampling / Q3 phantom space 3-arm reframe + evidence-explanation 双层 + M1/M2 activation framework / **Q4 SteerMoE scope** lean option (i) future work).
 2. **RunPod onboarding (post-approval)** — `docs/reference/RUNPOD_ONBOARDING.md` 7-step playbook ready. Pin paper-grade commit hash on RunPod, scp `.auth/` files, smoke test B1 cls 1 task, then launch 14-cell parallel: 7 cells B0 on DGX (proxy API) + 7 cells B1 on RunPod 4090. ETA ~3-5 天 wallclock.
 3. **新数据按 4-dimension framework 整合** — 14-cell 跑完后运行 `make analyze-paper` 一键 regenerate. 重 evaluate Phantom 4-fold drop-in (cost / latency / AUROC / drop-one). 加 Section 4 disclosure paragraphs: (a) B0 vs B1 reproducibility 不对称 (probe md draft), (b) early-stop micro bias mitigation per advisor decision, (c) Phase A bug audit summary. Codex #11 Section 4 prose update + #13 Section 5 mechanism prose triggered.
 
@@ -72,6 +73,7 @@ Section 1/2/3 ✅ done (3163 words). Section 4 figures ✅ FRESH (14 dimension-p
 
 | 日期 | 事件 | 处置 |
 |---|---|---|
+| **05-01** | **Paper conceptual framework deep refinement** — 5-hour deep discussion 后笔记 §108 chronicle: hook reframe to "phantom routing space (3 arms)" provisional + M1/M2 mechanism activation 2x2 framework + Approach 2 architectural completeness + evidence/explanation layer 严格分离 + 4 zoom scale + 5 retracts (8-corner cube / 6-corner asym grid / (a)(c) decomposition / Three-layer 命名 / 3-mechanism candidate) + SteerMoE (学长发) 定位 Zoom 4 future work + early-stop design decision lean A | ✅ 笔记 §108 + paper_planning §2 大重写 + ADVISOR_SYNC Q1+Q3+Q4 expand; Q3 待 advisor align |
 | **04-30** | **Phase A 4-cluster bug fix wave** — 5-tier audit 找 37 bugs, ship Cluster 1+2+3+4 (commit `3c15cd7`), pilot wave-2/3 PASS N=120, reddit Cluster 1 lift +2.14pp | ✅ pushed to GitHub master (50169bf); 14-cell rerun blocked on RunPod approval |
 | 04-30 12:01 | **Cross-session pilot data destruction** — another Claude session (Myriad config work) misjudged "busy:1 free wait" as "stuck", `clear_tasks.py --force` wiped pilot wave-1 reddit + shopping data | ✅ wave-2 fresh re-launched 12:13, 60 ep PASS Δ=0pp; lesson encoded in `feedback_wsl_shutdown_quark_rule.md` memory |
 | 04-30 11:48 | **Quark Windows wsl --shutdown** triggered docker-desktop distro restart → 7 VWA containers exit 255 → DGX→quark Tailscale unreachable | 用户 docker start 恢复; B1 main run 自愈; pilot shopping 自然 crash |
@@ -358,14 +360,23 @@ paper_strategic 数据 pipeline (详 `paper_planning.md` §13.B)。一键 `make 
 
 **Sync 已 ready** — 给学长发 sync draft + GitHub repo + code tour 了, 等回复定时间.
 
-`docs/reference/ADVISOR_SYNC_DRAFT_2026-04-30.md` (250 字 elevator pitch)
+`docs/checkpoints/ADVISOR_SYNC_DRAFT_2026-04-30.md` (含 4 framing 决定, 05-01 expand)
 `docs/reference/PHANTOM_SOM_ADVISOR_MEETING_BRIEF.md` (347 行 stage-direction 讲稿)
 `docs/reference/PHANTOM_SOM_CODE_TOUR.md` (168 行 GitHub permalink 导览)
 `docs/checkpoints/周报/weekly-dashboard/` React presentation page (`npm run preview`)
 
-**Meeting asks (3 items)**:
+**Meeting asks (8 items, 含 4 framing decisions)**:
 - [ ] **RunPod 经费 ~$150-200** — DGX GPU 争抢严重, Myriad 物理级 blocked, RunPod 4090 dedicated $0.6/h × ~180h. 走什么报销流程?
 - [ ] **Paper scope** — single paper (Phantom 主线 + appendix VWA bugs 披露) vs split (Phantom paper + VWA bug audit short paper)? Bug audit 37 entries + Tier 1-5 系统 audit 可独立 short paper.
+- [ ] **Q1 (我 lean A)**: Early-stop **design decision** (cancel +$1300 / keep / hybrid +$200) — 影响全 4 dimension cross-mode comparability, 不只 micro layer
+- [ ] **Q2**: B0 pre/post Phase A sampling 不对称 (T=0.1 stochastic → T=0 greedy) — archived merge vs 弃 archived 重跑?
+- [ ] **Q3 phantom space framework reframe**:
+  - (a) hook: "P-SoM 4th arm" → "phantom routing space (3 arms)" (provisional pending cls 6-mode)
+  - (b) boundary: "no annotated image" 而非 mismatched parsing
+  - (c) **evidence vs explanation 严格分两层** (Evidence = 4 测量 × 4 cross-X / Explanation = Zoom 1-4)
+  - (d) M1/M2 mechanism activation 2x2 framework (P-SoM 是 cube center compound)
+  - (e) Approach 2 architectural completeness argument (deductive)
+- [ ] **Q4 SteerMoE scope** (我 lean (i)): (i) Zoom 4 future work cite only / (ii) Qwen3-30B-A3B proxy probe / (iii) Qwen3-VL-235B-A22B local deploy ($400-600)?
 - [ ] **Section 4 framing** — 4-dimension framework (Outcome/Macro/Micro/Efficiency) + Section 5 site × axis × LLM-mechanism 框架 OK?
 
 **Meeting prep checklist** (我已 ready):

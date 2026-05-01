@@ -10,23 +10,23 @@
 > - **paper drafts** (`docs/analysis/paper_drafts/`): final paper prose
 > - **实验笔记** (`docs/checkpoints/实验笔记.md`): time-order chronicle (历史 record)
 >
-> **Last updated**: 2026-04-29
+> **Last updated**: 2026-05-01（hook reframe to phantom space 3 arms; §2 cube boundary definition; axis 1/2 LLM mechanism refine）
 
 ---
 
 ## §1 Paper Hook + Tagline
 
-**Core finding**: Phantom-SoM (SoM prompt + `[SOM_MARKS]` text + no image) is a **hidden 4th routing arm** for web agents with **4-fold drop-in property**:
+**Core finding**: We discover a **hidden phantom routing space** for web agents — defined by the boundary "**skip annotated image**" — containing **3 routing arms** (P-text / P-prompt / P-SoM) sharing a **4-fold drop-in property**. P-SoM (cube center, axis 1 + axis 2 compound) is the space's representative arm:
 
 | Drop-in property | Evidence |
 |---|---|
 | (a) **Cost ≈ DOM** | `[SOM_MARKS]` 是 AXTree regex filter, 不需 bbox/image (验 `som.py::_extract_text_marks` line 24); text token ±7% (3437 vs 3661 reddit / 3008 vs 2948 cls) |
 | (b) **Latency ~50% lower** | cls SoM p95 74s vs Phantom-SoM 18.2s = **4× faster** (no image encoding stage) |
 | (c) **Signal AUROC ≥ baseline** | 5-mode 全 `overall_usable=True`; red P-text verbalized 0.793 是 5-mode 最高 (超 baseline 0.766) |
-| (d) **Drop-one oracle 1.7-3.3pp** | red Phantom-SoM 3.33pp drop-one (≥ SoM 1.90pp); cls 2.56pp |
+| (d) **Drop-one oracle 1.7-3.8pp per phantom arm** | B0 red: P-text +3.81pp / P-SoM +3.33pp / P-prompt +2.86pp (all sig CI excludes 0); cls: P-text +3.42pp / P-SoM +2.56pp; B1 cls P-SoM +1.71pp. **Phantom space 3 arms 都贡献 unique tasks**, 6-mode oracle vs 3-mode lift +7.14pp [3.81, 10.48] (B0 reddit) |
 
 **Paper one-liner (for advisor pitch)**:
-> "Phantom-SoM identifies a hidden text-only routing arm in SoM-style web agents that achieves DOM-level cost and ~50% lower latency while contributing 1.7-3.3pp drop-one oracle value. The arm is created by skipping the marked-image draw and image-token inference path — no model retraining, no prompt change, no infrastructure overhead. We characterize its mechanism via 3-axis ablation (text-payload structure × system prompt × image), explain its site-modulated effect (cls visual-rich win for SoM, red text-dominated win for Phantom), and demonstrate routing infrastructure drop-in (signal AUROC ≥ baseline)."
+> "We discover a hidden **phantom routing space** in SoM-style web agents — defined by the boundary 'skip annotated image' — containing 3 routing arms (P-text / P-prompt / P-SoM) sharing a **4-fold drop-in property**: cost ≈ DOM (no image embedding tax), ~50% lower latency (no image inference stage), signal AUROC ≥ baseline (routing infra drop-in), drop-one oracle 1.7-3.8pp per arm (all sig). Two LLM mechanisms create this space: (i) text-payload flattening (AXTree → `[SOM_MARKS]`) reframes the agent's task ontology from web-browsing to indexed selection (axis 1); (ii) SoM-style visual prompting without image still activates the agent's visual-mark referencing parsing and recovers a substantial fraction of visual structure information textually (axis 2; **Mirage Effect** Asadi et al. 2026 (arXiv:2603.21687) — VLM 无图准确率 ~70-80% of with-image; **Scaffold Effect** Vu & Balloccu 2026 — prompt mentioning modality alone explains 70-80% performance shift independent of image presence). P-SoM (cube center, axis 1 + axis 2 compound) is the space's representative arm; SoM (image-on cube endpoint) and Vision (image-only, outside cube) anchor the comparison. The space is site-modulated (cls visual-rich requires image; red text-dominated thrives in phantom space) and routing-deployable (B0 red 6-mode oracle lift +7.14pp over 3-mode baseline)."
 
 ### Cascade design (token-monotonic, paper Section 6)
 
@@ -44,19 +44,156 @@ SoM       ([SOM_MARKS] flat + SoM prompt + 有图)        ← highest text+image
 
 ---
 
-## §2 Theory Framework — 3-axis Hierarchical (validated)
+## §2 Theory Framework — Mechanism Activation + Phantom Space Boundary (大重写 2026-05-01)
 
-### 5-mode 选择基于 2×2×2 design cube 对角路径
+> **Conceptual structure 严格 2 层分离** (笔记 §108 evidence/explanation separation):
+> - **Explanation layer** (因果假说, §2 主住所): Zoom 1 architectural / Zoom 2 axis behavioral / Zoom 3 named phenomena / Zoom 4 model-internal
+> - **Evidence layer** (观测数据, §3 主住所): Outcome / Macro / Micro / Efficiency × cross-task / mode / site / model
+> - 两层不混 — paper writing 时 reviewer 最忌 evidence-as-explanation
+>
+> **Retract list (历史 framing 已 retract, 不要再用)**:
+> - ❌ "5-mode 沿 cube 对角路径" + "4 mismatched 排除 (mismatched parsing tax)" 论证 (§108.2)
+> - ❌ 8-corner 2x2x2 cube factorial design 作 paper §2 axis (§108.3)
+> - ❌ 6-corner asymmetric grid (a/b × c/¬c × 1/2) (§108.3)
+> - ❌ (a)(c) prompt decomposition 作 axis (改用 mechanism activation, §108.3)
+> - ❌ "Three-layer mechanism argument" (Layer 1/2/3) 命名 — 改用 evidence/explanation 双层 + Zoom 1-4 (§108.6)
+> - ❌ "Approach 1 vs Approach 2" dichotomy — Approach 2 = Zoom 1, Approach 1 不是 single thing (§108.6)
+> - ❌ "3rd mechanism (coherence)" 候选升 §2 — 应在 §3 Micro dim 内分析 (§108.4)
 
-3 axes 形成 2×2×2 = 8 hypothetical modes，paper 5-mode 是其中**沿对角 axis-by-axis 路径**的 5 个 self-consistent 节点 (DOM → P-text → P-SoM → SoM + Vision 独立 image-only arm)。
+### Zoom 1 (architectural): Phantom space boundary + 2-axis activation by design
 
-**4 个 mismatched hybrid 故意排除** (e.g. AXTree + SoM-prompt + 无图)：
-- 没 LLM 机制 — SoM prompt 指 `[SOM_MARKS] N` 但 AXTree 用 DOM accessibility ID（不同 ID 系统 → mismatched parsing）
-- Confuse agent — `click [42]` 解析歧义，action selection 必错
-- 不 clean axis 2 ablation — confound prompt-effect with ID-system-parsing-effect
-- 跳出 token-monotonic cascade — token 数与 P-text 同但 SR 必差（mismatched parsing tax）
+**Phantom routing space** = subset of 3-axis modal cube characterized by **"skip annotated image"** boundary (axis 3 = no image)。Cube 有 8 corners (3 axes: text payload × system prompt × image)；paper 测 **4 phantom corners (cube image-off 半) + 1 image-on cube endpoint + 1 image-only mode (Vision, cube 之外)** = **5 cube modes + 1 image-only mode = 6 paper modes**:
 
-Paper Section 3 footnote 用此 defense reviewer "why 5 not 8".
+**Phantom routing space** = subset of 2×2×2 modal cube characterized by **"skip annotated image"** boundary。Cube 有 8 corners (3 axes: text payload × system prompt × image)；paper 测 **4 phantom corners (cube image-off 半) + 1 image-on cube endpoint + 1 image-only mode (Vision, cube 之外)** = **5 cube modes + 1 image-only mode = 6 paper modes**:
+
+| # | text | prompt | image | mode | 在 phantom space? |
+|---|---|---|---|---|---|
+| 1 | AXTree | DOM-prompt | No | **DOM** | ✅ phantom corner (origin baseline) |
+| 2 | AXTree | DOM-prompt | Yes | "DOM+image" | ❌ violates boundary (image embedding tax) |
+| 3 | AXTree | SoM-prompt | No | **P-prompt** | ✅ phantom corner (axis 2 alone @ AXTree 锚点) |
+| 4 | AXTree | SoM-prompt | Yes | (mismatched + image) | ❌ violates boundary |
+| 5 | [SOM_MARKS] | DOM-prompt | No | **P-text** | ✅ phantom corner (axis 1 alone @ DOM-prompt 锚点) |
+| 6 | [SOM_MARKS] | DOM-prompt | Yes | "P-text+image" | ❌ violates boundary |
+| 7 | [SOM_MARKS] | SoM-prompt | No | **P-SoM** | ✅ phantom corner (cube center, axis 1+2 compound) |
+| 8 | [SOM_MARKS] | SoM-prompt | Yes | **SoM** | image-on cube endpoint (paper baseline, NOT phantom) |
+| — | none | — | Yes | **Vision** | image-only mode (cube 之外, axis 1 = "no text") |
+
+**Boundary 定义性属性 (axis 3 = "no annotated image")**:
+- 4 phantom corners 都 share 4-fold drop-in by construction:
+  - (a) cost ≈ DOM — no image embedding tax (`[SOM_MARKS]` 是 AXTree regex filter，~3K text both)
+  - (b) latency ~50% lower — no image inference stage
+  - (c) signal AUROC ≥ baseline — emergent (5/5 phantom `overall_usable=True`，red P-text 0.793 = 5-mode max)
+  - (d) drop-one oracle 1.7-3.8pp positive per arm — emergent (B0 red: P-text +3.81 / P-SoM +3.33 / P-prompt +2.86，all sig CI excludes 0)
+- (a)(b) 由 boundary derive (definitional)；(c)(d) 是经验验证的 emergent property —— **definition-then-validation 双层结构**
+
+**Why exclude #2/#4/#6 (3 image-on phantom corners)**: 一旦加 annotated image 回去，cost / latency / carbon 都跟 SoM 拉齐 → 失去 4-fold drop-in property → 不再属于 phantom space。这 3 个 corners 在 routing 维度上是 SoM 的 variants (image cost dominate)，不提供 phantom-class deployment value。即 **boundary 是 "no annotated image"，不是 "matched parsing"**。
+
+**Why P-prompt (#3) 不是 mismatched-redundant** (针对旧 framing 的修正):
+- 旧 framing 担心 SoM-prompt + AXTree text "mismatched parsing" 必死 → 实证 falsified
+- P-prompt 有真 LLM 机制 (axis 2 effect alone)：**visual prompting without image** —— SoM-style prompt 即使无图仍 activate agent 的 visual-mark referencing parsing，agent 在 AXTree 上自动 fallback 到 element_id 引用，仍 recover 部分 visual 结构信息。**Lit anchor stack** (3 互补 mechanism): (a) **Mirage Effect** Asadi et al. 2026 (arXiv:2603.21687, Stanford) — VLM 无图准确率达有图的 ~70-80% (实验笔记 §18); (b) **Scaffold Effect** Vu & Balloccu 2026 — prompt 仅提及 modality 可用就解释 70-80% performance shift independent of image presence (实验笔记 §25 + phantom_som.md §3.5); (c) **Cross-modal flow** Kaduri et al. — middle-layer cross-modal flows store image info in query tokens enabling image-consistent generation without direct image-token attention (phantom_som.md §2.1)
+- 实测 anchor: B0 red P-prompt 4-mode drop-one **+2.86pp [0.95, 5.24] sig** 验证 axis 2 alone 在 AXTree 锚点下有 routing value
+- 6-mode oracle vs 5-mode +1.90pp [0.48, 3.81] sig 验证 P-prompt 贡献 incremental unique tasks (6 tasks added, 1 unique to P-prompt)
+
+**Phantom space 内部结构 (4 corners 形成 2×2 ablation diamond)**:
+- DOM ↔ P-text: axis 1 alone (DOM-prompt 锚点)
+- P-prompt ↔ P-SoM: axis 1 alone (SoM-prompt 锚点) — **双锚点验证 axis 1 effect prompt-anchor-invariant**
+- DOM ↔ P-prompt: axis 2 alone (AXTree 锚点)
+- P-text ↔ P-SoM: axis 2 alone ([SOM_MARKS] 锚点) — **双锚点验证 axis 2 effect text-anchor-invariant**
+- DOM ↔ P-SoM: axis 1 + axis 2 compound (cube diagonal, paper-headline P-SoM 在此)
+- P-SoM = cube center, axis 1 + axis 2 compound, paper-headline representative arm
+
+**Image-on extension (cube #8) + image-only (Vision)**: SoM 是 phantom space 之外的 image-on baseline，paper 用作 axis 3 primary endpoint (与 phantom space 任一 corner 对比 isolate axis 3 effect)。Vision 是 cube 之外的 image-only mode (axis 1 = "no text")，paper 用作 image-only routing arm baseline。
+
+**Cascade interpretation (§1 cascade 与 phantom space 的关系)**: §1 cascade `DOM → P-text → P-SoM → SoM` 是 phantom space 内一条 token-monotonic path (axis 1 → axis 2) + 出 phantom space 到 SoM 的 axis 3 跃迁。P-prompt 是 phantom space 第 4 corner，闭合 2×2 ablation diamond，验证 axis 1/2 effect 在双锚点下 invariant。
+
+Paper Section 3 footnote 用此 defense reviewer "why 5+1 not 8" + "why is P-prompt not mismatched-redundant"。
+
+### Zoom 1 (architectural completeness): Approach 2 deductive argument
+
+**Paper §2 framework completeness 不依赖 finite data verification, 而是 architectural deductive argument**:
+
+```
+PREMISE 1: Phantom space comparison 锁 image=✗ (axis 3 fixed)
+PREMISE 2: Agent's input 只剩 (prompt 文本) + (obs 文本) 两个 component
+PREMISE 3: 4 phantom corners 仅 vary 这两个 input component:
+            corner ∈ {(b,1)=DOM, (b,2)=P-text, (a-with-c,1)=P-prompt, (a-with-c,2)=P-SoM}
+PREMISE 4: LLM 是 deterministic forward function on input tokens
+            (T=0 + greedy decoding 假设, Phase A 后真; 但 B0 proxy 仅 decision-level
+             convergent, 见 §107.1)
+CONCLUSION: 任何 differential 机制 必由 input 差异 trigger
+            → 必 attributable to (prompt change) 或 (text change) 或两者
+            → M1 (prompt-axis activation) 和 M2 (text-axis activation) 是 exhaustive
+            → phantom space 内**没有 hidden 3rd axis** (by construction)
+```
+
+**关键性质**: 这是 **deductive argument**, 不是 inductive evidence。即使以后跑 100 个 phantom corners, 也不能反驳 — 因为只要 phantom corners 仍只 vary 这两个 input dimension, M1+M2 仍是 exhaustive。
+
+**Caveat**: Architectural argument 给 axis-level 完备性, 不给 axis 内部 sub-mechanism 完备性 (M1 内部是 Mirage Effect / Scaffold Effect / Cross-modal flow 哪个 dominate 仍需 lit + empirical 区分 — 这归属 Zoom 2/3/4)。
+
+### Zoom 2 (behavioral): M1/M2 mechanism activation 2x2 framework
+
+**Insight (§108.4)**: prompt 文本 coupling ≠ mechanism activation coupling。LLM internal state 层有两个 orthogonal axes:
+
+```
+Axis M1 (Image-mirage activation):
+  触发条件: prompt 期待 image (SoM-style guidance 自带 image expectation)
+  LLM 内部状态: vision-grounded attention pattern 启动, visual tokens 缺席,
+              language prior 填补缺席视觉 (Mirage / Scaffold / Cross-modal flow)
+  
+Axis M2 (Flat-list activation):  
+  触发条件: obs text 是 flat indexed list ([SOM_MARKS])
+  LLM 内部状态: hierarchical tree-traversal exploration policy 切换到 
+               sequential list-scanning policy
+```
+
+**4 phantom corners = 2x2 activation pattern**:
+
+| Mode | Axis M1 | Axis M2 | LLM internal state |
+|---|:---:|:---:|---|
+| DOM | ❌ | ❌ | origin baseline |
+| P-text | ❌ | ✅ | M2 alone (Format-swap subspace) |
+| P-prompt | ✅ | ❌ | M1 alone (Mirage subspace) |
+| P-SoM | ✅ | ✅ | M1 ⊕ M2 compound (cube center, paper hero) |
+
+**P-SoM 是 cube center 的 mechanistic 理由**: 唯一同时 activate M1 + M2 + 它们 nonlinear interaction 的 corner。Compound state ≠ 简单叠加 (transformer attention nonlinear combination), P-SoM unique tasks (3 tasks B0 reddit, 既不在 P-text 也不在 P-prompt) 是 emergent capability。这给 P-SoM 是 paper hero 一个 mechanistic 理由 (不只是几何 cube center)。
+
+### Zoom 3 (named phenomena): Lit-anchored mechanism phenomena
+
+**M1 axis (Image-mirage) Zoom 3 lit anchors** (cross-model behavioral evidence):
+- **Mirage Effect** (Asadi et al. 2026, arXiv:2603.21687, Stanford): VLM 无图时仍自信描述视觉特征, **无图准确率达有图的 70-80%** (mirage-mode > guess-mode). 实验笔记 §18 line 457
+- **Scaffold Effect** (Vu & Balloccu 2026): prompt 仅提及 modality 可用就解释 **70-80% 性能变化** independent of image presence. 临床 VLM 起源, web agent 同样适用. 实验笔记 §25 + phantom_som.md line 281
+- **Cross-modal flow** (Kaduri et al.): middle-layer cross-modal flows store image info in query tokens, allowing image-consistent generation without direct image-token attention (phantom_som.md §2.1 line 83-89) — actually 这个偏 Zoom 4 mechanism
+
+**M2 axis (Flat-list) Zoom 3 lit anchors**:
+- **Prompt-format sensitivity** (Sclar 2024 / Mishra 2022): LLMs 对 spurious formatting features 极度敏感, minor prompt changes → major performance shifts
+- **Tree-traversal vs list-scanning** (你 deep research SoM novelty doc line 84): "AXTree induces tree traversal trajectory (logical deduction over hierarchy) vs flat SoM induces sequential list scanning trajectory (rapid spatial approximation)"
+- Paper draft `section2_background.md` line 27 已 adopt: "the flat marks list tends to shift exploration toward quick element selection, AXTree hierarchy supports sustained navigation and search"
+
+### Zoom 4 (model-internal): Mechanistic probe lit anchors (paper §8 future work)
+
+**Paper 不 self-probe Zoom 4** (因 B0 proxy API 不暴露 router logits internals + local deploy Qwen3-VL-235B-A22B 需 ~120GB VRAM 超 RunPod $200 budget). 但 lit anchors 给 mechanism plausibility:
+
+- **Cross-modal flow** (Kaduri et al.): layerwise attention probe 显示 middle-layer cross-modal flows enable image-like representations from query tokens — M1 axis activation 的 mechanistic 解释
+- **SteerMoE expert routing** (Fayyaz et al. 2026 ICLR, 学长 2026-05-01 发, 详 §108.9): MoE LLM 用 paired prompts 算 expert Risk Difference, alignment 集中在 subset of experts, alternate routing path 可绕过 ("Alignment Faking")。**对 phantom-SoM 的暗示**: vision-grounding 在 VLM 也可能 concentrated in subset of experts, phantom routing 通过 obs/prompt config 绕过这些 experts。Methodology template for paper sequence follow-up paper (Phantom-SoM Zoom 1+2+3 + SteerMoE-style follow-up Zoom 4 self-probe = paper trilogy)
+
+**B0 = Qwen3-VL-235B-A22B 是 MoE family** (与 SteerMoE 实验 Qwen3-30B-A3B 是 architectural cousin), methodology 几乎可直接 transfer — 但 paper 不 self-probe, 标 future work 列举。
+
+### Zoom 4 paper sequence implication
+
+```
+Phantom-SoM 主 paper (本 paper):
+  Zoom 1 ✅ (architectural completeness)
+  Zoom 2 ✅ (M1/M2 behavioral activation framework)
+  Zoom 3 ✅ (lit-anchored named phenomena)
+  Zoom 4 标 future work, 不 self-probe
+
+Follow-up paper (sequence sibling):
+  Zoom 4 self-probe (SteerMoE-style expert RD on B0 phantom corners)
+  需要 local deploy 或 API extension (RunPod 4×4090 ~$400-600 cost)
+  Method template: SteerMoE paired examples → expert RD → routing logits steering
+```
+
+这给 paper §8 discussion 一个清晰 future work direction, 不需要 paper 内 over-commit Zoom 4 mechanism。
 
 ### Axis 1: Text payload structure (PRIMARY, first-order SR effect)
 
@@ -68,10 +205,11 @@ AXTree (hierarchical) vs [SOM_MARKS] (flat indexed) → action surface + traject
 注意：这个 axis 是 **text payload 结构**（agent 看到的 obs 文本），不是抽象的"模型表征"。Token 数大致不变（~3K both），但 layout / parsing pattern 不同。
 
 **LLM mechanism**:
+- **Task ontology reframing — web-browsing → indexed selection** (核心 axis 1 effect, NEW 2026-05-01): AXTree (hierarchical tree, agent navigate tree structure 像 browser DOM walk) → `[SOM_MARKS]` (flat indexed list, agent picks ID 像 multiple-choice selection)。改变 LLM 任务 ontology 从 "browse the web" 到 "select from list"，trigger 不同的 in-context behavior。这是 P-text 4-mode drop-one +3.42-3.81pp 的根本机制。**Lit anchor**: deep research `docs/literature/The Novelty and Efficacy of Set-of-Mark Text...` line 84 frame 这个 split 为 "AXTree induces **tree traversal trajectory** (logical deduction over hierarchy) vs flat SoM induces **sequential list scanning trajectory** (rapid spatial approximation)"; paper draft `section2_background.md` line 27 已 adopt: "the flat marks list tends to shift exploration toward **quick element selection**, AXTree hierarchy supports **sustained navigation and search**". Sclar 2024 / Mishra 2022 prompt-format sensitivity theory 提供 transformer-level mechanism (different token distribution → distinct latent state → distinct exploration policy).
 - Token distribution shift (hierarchical metadata vs flat indexed list)
-- In-context learning bias (pretraining data context)
-- Long-context attention degradation (Liu 2023 "Lost in the Middle")
-- Output format priming
+- In-context learning bias (pretraining data context — selection-style prompts have stronger few-shot examples in pretraining)
+- Long-context attention degradation (Liu 2023 "Lost in the Middle" — flat list 缓解 hierarchical mid-tree attention drop)
+- Output format priming (selection prompts produce shorter / more committed outputs)
 
 **Evidence**: fig3 strategy gradient (reddit verified §103 N=48, cls live extension), fig5 category × mode
 
@@ -85,12 +223,18 @@ AXTree (hierarchical) vs [SOM_MARKS] (flat indexed) → action surface + traject
 - (c) backtracking strategy
 - (d) commitment confidence (FP gap evidence, **subeffect not唯一**)
 
+**Visual prompting without image (P-prompt 的核心 LLM 机制, NEW 2026-05-01)**: SoM-style prompt 即使无 image 仍 activate agent 的 "visual-mark referencing" mental model —— prompt 期望 numerical-marker referencing system，agent 在 AXTree 上自动 fallback 到 element_id 引用，仍 recover **substantial fraction (~70-80%) of visual structure information from textual cues**。**Lit anchor stack (3 互补 mechanism)**: (a) **Mirage Effect** Asadi et al. 2026 (arXiv:2603.21687, Stanford) — VLM 无图时仍自信描述视觉特征，**无图准确率达有图的 70-80%** (mirage-mode > guess-mode), 实验笔记 §18 line 457; (b) **Scaffold Effect** Vu & Balloccu 2026 — prompt 仅提及 MRI 可用就解释 **70-80% 性能变化** independent of image presence (clinical VLM 起源, web agent 同样适用), 实验笔记 §25 + phantom_som.md line 281; (c) **Cross-modal flow** Kaduri et al. — middle-layer cross-modal flows enable VLMs to store image info in query tokens, allowing image-consistent generation without direct image-token attention (phantom_som.md §2.1 line 83-89). 即 axis 2 swap **不是** "prompt label 改"，而是 **task ontology 切换 from textual-action-prompt to visual-mark-referencing-prompt**。这与 axis 1 的 "browse → select" 形成对称 (axis 1 改 obs ontology，axis 2 改 action-referencing ontology)。
+
+**Empirically verified**: B0 red P-prompt 4-mode drop-one **+2.86pp [0.95, 5.24] sig** (axis 2 alone 在 AXTree 锚点下有 routing value)；6-mode vs 5-mode marginal lift +1.90pp sig 验证 P-prompt 贡献 incremental unique tasks。
+
 **Evidence**:
 - P-text ∩ Phantom-SoM Jaccard 0.45-0.54 (task pool 显著 disjoint despite same SR)
 - 6 case studies (codex `5821387` phantom_dom_vs_som_diagnostic.md)
 - N=48 verified anchor: Phantom-SoM FP gap 2.08pp vs P-text 6.25pp
+- B0 red P-prompt 4-mode drop-one +2.86pp sig (axis 2 alone @ AXTree 锚点 valid)
+- B0 red 6-mode oracle +7.14pp [3.81, 10.48] vs 3-mode (3 phantom arms 都贡献 unique tasks)
 
-**Lit support**: Persona priming (Salemi 2024), in-context learning (Min 2022), Sclar 2024 prompt format sensitivity, Mishra 2022. Task-pool divergence Jaccard <0.5 是 paper unique empirical finding.
+**Lit support**: Persona priming (Salemi 2024), in-context learning (Min 2022), Sclar 2024 prompt format sensitivity, Mishra 2022. **Visual prompting without image / Mirage Effect** anchored on: Asadi et al. 2026 (arXiv:2603.21687) Mirage Effect (~70-80% of with-image accuracy); Vu & Balloccu 2026 Scaffold Effect (prompt mentioning modality alone explains 70-80% perf shift); Kaduri et al. cross-modal flow mechanistic explanation (image info stored in query tokens). 三个 mechanism stack 完整支撑 axis 2 alone routing value (B0 red P-prompt drop-one +2.86pp sig). Task-pool divergence Jaccard <0.5 是 paper unique empirical finding.
 
 ### Axis 3: Image (8-channel multi-dimensional, codex `7106d2e` validated)
 
@@ -252,9 +396,49 @@ Site × axis: cls visual-bound → image helping dominate; red text-dom → harm
 
 ---
 
-## §3 Findings — 4-dimension Evidence + Mechanism Framework (重组 2026-04-29)
+## §3 Findings — 4-dimension Evidence + Mechanism Framework (重组 2026-04-29, 2026-05-01 update: evidence/explanation separation)
 
 > **重组动因 (§105)**：之前 10 条 finding 是 flat list，paper 写作时不好定位"哪个证据支持哪个 claim"。重组为 **4-dimension framework** —— 每个证据进对应 dimension，每个 paper claim 引用 dimension (e.g. "Outcome 0d Jaccard 0.447 supports routing-arm complementarity")。四个 dimensions 是 **正交** 的（不是 hierarchical layers）。**所有原 10 条 finding 都映射到对应 dimension，未删除**（见末尾索引）。
+
+### Evidence vs Explanation Layer Separation (2026-05-01 update)
+
+Paper conceptual structure 严格 2 层分离 (避免 evidence-as-explanation 混淆):
+
+```
+EVIDENCE LAYER (观测数据, 2D organize: 测量类型 × 比较 axis)
+   测量类型 (4 dim)          ×    比较 axis (4 cross-X)
+   ─────────────────              ─────────────────────
+   Outcome (SR/oracle/Jaccard)   cross-task   (within-cell aggregation, 统计 foundation)
+   Macro   (action 频率)         cross-mode⭐ (phantom space 主战场, paired)
+   Micro   (per-step 决策)       cross-site   (跨 web 环境 generalization)
+   Efficiency (cost/lat/carbon)  cross-model  (跨 capability generalization)
+   
+   = 4 × 4 = 16 evidence sub-cells (cross-mode 那列最 saturated, 是 §3 sub-codes 0a-3d 主居)
+
+EXPLANATION LAYER (因果假说, 1D organize: zoom scale)
+   Zoom 1 (coarsest, 架构):   Approach 2 = "phantom space 内 M1/M2 axes by design exhaustive"
+                              (§2 Theory Framework 主用, deductive)
+   Zoom 2 (中粗, behavioral):  "M1 produces Image-mirage activation, M2 produces list-scanning"
+                              (§5 Mechanism prose 主用, inductive 用 Macro/Micro evidence)
+   Zoom 3 (中细, named):       Mirage Effect (Asadi 2026) / Scaffold Effect (Vu Balloccu 2026) /
+                              prompt-format sensitivity (Sclar 2024)
+                              (§5 lit anchor cite, cross-model phenomenon names)
+   Zoom 4 (最深, internal):    Cross-modal flow (Kaduri) / SteerMoE expert routing (Fayyaz 2026)
+                              (§8 future work 标 lit anchor, paper 不 self-probe)
+```
+
+**关键区分**: §3 4-dim 是 evidence layer 的**测量类型轴**, cross-X 是 evidence layer 的**比较 axis 轴**。两者**正交 organize 同一份数据**。Explanation layer 跟 evidence layer 严格分开 — explanation 是 hypothesis (Zoom 1-4), evidence 是 data。Paper writing 时 reviewer 最忌 evidence-explanation 混淆 ("Macro 1c search-loop 51.9→35.7%" 是 evidence, "M1 axis activates list-scanning trajectory" 是 explanation Zoom 2 — 两者必须分写然后 explicit link)。
+
+### Cross-X 比较 axis (4 类) 的 paper section mapping
+
+| Cross-X | 固定 keys | 变 key | Paper section 用 | Saturation status (2026-05-01) |
+|---|---|---|---|---|
+| **cross-task** | mode + site + model | task | §3/§4 evidence aggregation 基础 | ✅ 234 cls / 210 reddit per cell |
+| **cross-mode** ⭐ | task + site + model | mode (4 phantom + 2 image-on/only) | §4/§5 phantom space 主分析 | 🟡 B0 cls/red 5-mode done, B1 phantom 跑中, shop missing |
+| **cross-site** | task + mode + model | site (cls/red/shop/WA) | §7 generalization | 🔴 B0 5-mode shop missing, WA 全 missing |
+| **cross-model** | task + mode + site | model (B0/B1/Claude) | §7 cross-capability | 🔴 cross-model 数据稀薄, B1 phantom 跑中, Claude 0 |
+
+**Paper §7 (generalization) 当前 ~40% 因为 cross-site + cross-model 两 axis 数据稀薄**, 不是 §7 prose 写作问题 — 是 cross-X saturation 不够。14-cell rerun 后 cross-mode + cross-model partially fill, 但 cross-site 仍需 shop + WA 数据 (Tier 2 expansion)。
 
 ### 4-dimension framework 概览
 
@@ -1271,3 +1455,13 @@ Post run:
 | 2026-04-28 | Bidirectional modality framing (image-over-text vs text-over-vision) | user Q3 critique + Tong 2024 "Eyes wide shut" anchor | ✅ paper_planning §2 |
 | 2026-04-28 | 4-doc structure (next_steps + paper_planning + drafts + 笔记) | original 1102-line next_steps too dense, separation of concerns | ✅ commit 97cc4ac |
 | 2026-04-28 | 8 sections paper structure (含 Section 6 Routing 独立) | router 是 paper independent contribution, not Section 7 sub | ✅ commit 4ca9f66 |
+| 2026-05-01 | Paper hook reframe: "P-SoM is hidden 4th routing arm" → "**phantom routing space (3 arms)** sharing 4-fold drop-in" | B0 reddit 6-mode oracle +7.14pp [3.81, 10.48] sig + 3 arms drop-one 全 sig (P-text +3.81 / P-SoM +3.33 / P-prompt +2.86) | ⏸️ provisional pending cls 6-mode + B1 phantom 数据 confirm (advisor sync Q3) |
+| 2026-05-01 | Phantom space boundary 重新论证: "no annotated image" 而非 "matched parsing" | (a)(b) 4-fold drop-in by definition derive from no-image; P-prompt mismatched-parsing 论证 falsified by +2.86pp drop-one sig | ✅ paper_planning §2 + 笔记 §108.2 |
+| 2026-05-01 | M1/M2 mechanism activation 2x2 framework (新 §2 organizing principle) | prompt textual coupling ≠ mechanism activation coupling; LLM internal state 层 2 axes orthogonal (Image-mirage / Flat-list); P-SoM 是 cube center compound state emergent | ✅ paper_planning §2 + 笔记 §108.4 |
+| 2026-05-01 | Architectural completeness argument (Approach 2): phantom space 内 M1/M2 by design exhaustive (deductive) | 不依赖 finite data verify; phantom space 锁 image=✗ → 只 vary 2 input dim → mechanism 必映射到这 2 dim | ✅ paper_planning §2 Zoom 1 + 笔记 §108.5 |
+| 2026-05-01 | Evidence vs Explanation layer 严格分离 (paper conceptual structure) | Evidence = 2D organize (4 测量 × 4 cross-X); Explanation = 1D zoom scale (Zoom 1-4); 不混 | ✅ paper_planning §3 顶部 + §2 retract list + 笔记 §108.6 |
+| 2026-05-01 | 4 zoom scale of explanation layer | Zoom 1 (架构) / Zoom 2 (behavioral M1/M2) / Zoom 3 (named phenomena Mirage/Scaffold/Sclar) / Zoom 4 (model-internal Cross-modal flow/SteerMoE) | ✅ paper_planning §2 + 笔记 §108.6 |
+| 2026-05-01 | (a)(c) prompt decomposition 作 paper §2 axis **retract** | (a) 可独立 (SoM-prompt minus image-mention), (c) 不可独立 (变 vision-mode prompt); prompt structure 跟 mechanism activation 是不同抽象层 | ✅ retract list in §2 + 笔记 §108.3 |
+| 2026-05-01 | 8-corner 2x2x2 cube + 6-corner asymmetric grid 实验设计 **retract** | M1/M2 mechanism activation framework 已 saturate phantom space description; ablation cells (p(a-pure)) 价值降级到 nice-to-have for Zoom 2 sub-mechanism granularity | ✅ retract list + 笔记 §108.3 |
+| 2026-05-01 | SteerMoE (Fayyaz 2026 ICLR) 作 Zoom 4 lit anchor + paper §8 future work | 学长 2026-05-01 发; B0 = Qwen3-VL-235B-A22B 是 SteerMoE 实验模型 architectural cousin; methodology template 但 paper 不 self-probe (proxy API + budget barrier) | ✅ paper_planning §2 Zoom 4 + 笔记 §108.9 |
+| 2026-05-01 | Early-stop mechanism design decision: lean Option A (full cancel), pending advisor align | early-stop 是 cross-dimension systemic confound (不止 micro layer); Option A +$1300 全 cancel / B keep / C hybrid +$200 | ⏸️ advisor sync Q1 重写, lean A pending | 
