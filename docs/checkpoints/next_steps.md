@@ -9,7 +9,13 @@
 > - **实验笔记** (`docs/checkpoints/实验笔记.md`): time-order chronicle (历史 record)
 >
 > 📖 **新数据/figure/finding/codex 回复 → 该更新哪些文档？** see §10 Doc Update Workflow
-> 🔧 **新数据后一键 snapshot**: `make analyze-paper` (~5-10min, **everything**):
+> 🔧 **新数据后一键 snapshot**: `make analysis` ⭐ (~5-10min, **everything**) — Phase 2 consolidated entry point (commit ce05366+):
+>   - `make analysis` 全 pipeline (per-run + cross-condition + figures + status)
+>   - `make analysis FAST=1` 跳过 per-run, 只 aggregators + figures (~30s, paper writing 主用)
+>   - `make analysis RUN=<dir>` 单 run + downstream
+>   - `make analysis` / `make analyze-layered` 仍 work (aliases with deprecation warning)
+>
+> Old workflow context (kept for reference):
 >   1. per-run on 8 paper-grade VWA runs: rederive + reason-diag + cross-rep + confidence
 >   2. B0 vs B1 site comparison (cls + red, `b0_vs_b1_<site>/`)
 >   3. cross-condition aggregations: aggregate-cross-site + summary-collect + routing-auroc
@@ -46,7 +52,7 @@
 
 1. **Push N unpushed commits + 给学长发 sync** ⭐ — commits 累积 04-30 + 05-01 (b37 probe + paper-strategy refines + Myriad §4.4 rejection + RunPod onboarding doc + **§108 framework refinement** + paper_planning §2 大重写 + ADVISOR_SYNC update). Push 后**给学长发 `docs/checkpoints/ADVISOR_SYNC_DRAFT_2026-04-30.md`** + GitHub link. 会议 30-45 min asks: (a) RunPod ~$200 经费 ($70-115 actual based on measured throughput), (b) paper scope (single vs split with VWA bug paper), (c) **4 paper-strategy framing decisions** (Q1 early-stop design **lean A 全 cancel** / Q2 B0 pre/post Phase A sampling / Q3 phantom space 3-arm reframe + evidence-explanation 双层 + M1/M2 activation framework / **Q4 SteerMoE scope** lean option (i) future work).
 2. **RunPod onboarding (post-approval)** — `docs/reference/RUNPOD_ONBOARDING.md` 7-step playbook ready. Pin paper-grade commit hash on RunPod, scp `.auth/` files, smoke test B1 cls 1 task, then launch 14-cell parallel: 7 cells B0 on DGX (proxy API) + 7 cells B1 on RunPod 4090. ETA ~3-5 天 wallclock.
-3. **新数据按 4-dimension framework 整合** — 14-cell 跑完后运行 `make analyze-paper` 一键 regenerate. 重 evaluate Phantom 4-fold drop-in (cost / latency / AUROC / drop-one). 加 Section 4 disclosure paragraphs: (a) B0 vs B1 reproducibility 不对称 (probe md draft), (b) early-stop micro bias mitigation per advisor decision, (c) Phase A bug audit summary. Codex #11 Section 4 prose update + #13 Section 5 mechanism prose triggered.
+3. **新数据按 4-dimension framework 整合** — 14-cell 跑完后运行 `make analysis` 一键 regenerate. 重 evaluate Phantom 4-fold drop-in (cost / latency / AUROC / drop-one). 加 Section 4 disclosure paragraphs: (a) B0 vs B1 reproducibility 不对称 (probe md draft), (b) early-stop micro bias mitigation per advisor decision, (c) Phase A bug audit summary. Codex #11 Section 4 prose update + #13 Section 5 mechanism prose triggered.
 
 ### Advisor meeting prep status
 
@@ -304,20 +310,20 @@ nohup bash scripts/queues/queue_chain.sh \
 
 ### Data analysis backlog (Python scripts, 非 codex)
 
-paper_strategic 数据 pipeline (详 `paper_planning.md` §13.B)。一键 `make analyze-paper` 触发现有 done 项 + figures 重生。
+paper_strategic 数据 pipeline (详 `paper_planning.md` §13.B)。一键 `make analysis` 触发现有 done 项 + figures 重生。
 
 | Task | 用途 | Status |
 |---|---|---|
 | ✅ A. Bootstrap CI for drop-one oracle | Section 4 显著性 | done `847eaeb` — `fig0c_drop_one_oracle.py` + `fig0c_drop_one_bootstrap_ci.csv` (12 rows × 95% CI) |
 | ✅ B. AUROC aggregation per-condition routing signal | Section 6 "AUROC ≥ baseline" supporting table | done `847eaeb` — `aggregate_routing_auroc.py` → `auroc_cross_condition.{csv,md,_summary.md}` (188 rows) |
-| ✅ **B'. Phantom routing lift** (3→5-mode oracle ceiling) | **Section 1/4 paper hook 主 evidence**: B0 cls +4.70pp [2.14, 7.69] / B0 red +5.24pp [2.38, 8.11] CI 排除 0 ✅ | done 04-29 — `aggregate_phantom_lift.py` → `phantom_lift.{csv,md}`; chained into `make analyze-paper`; B1 cells 自动 cover when chain done. **Cohen's h + Wilcoxon + McNemar + Scenario C Jaccard sentinel 全 added** |
+| ✅ **B'. Phantom routing lift** (3→5-mode oracle ceiling) | **Section 1/4 paper hook 主 evidence**: B0 cls +4.70pp [2.14, 7.69] / B0 red +5.24pp [2.38, 8.11] CI 排除 0 ✅ | done 04-29 — `aggregate_phantom_lift.py` → `phantom_lift.{csv,md}`; chained into `make analysis`; B1 cells 自动 cover when chain done. **Cohen's h + Wilcoxon + McNemar + Scenario C Jaccard sentinel 全 added** |
 | ✅ **B''. fig10 phantom_lift_bars** | Section 1/4 hook visualization (5-mode oracle ceiling bar chart with bootstrap CI + lift Δ annotation) | done 04-29 — `figures/fig0c_phantom_lift_bars.py`; in `make figures` chain |
 | ✅ **B'''. fig11 routing_auroc_heatmap** | **Section 6 main figure (之前 0 figure)** — cross-condition × signal AUROC heatmap (★ = ≥ 0.7 routing-usable) | done 04-29 — `figures/fig0g_routing_auroc_heatmap.py`; in `make figures` chain |
 | ⏳ C. Multi-metric Pareto (cost + lat + carbon) | Section 8 sustainability 前置 | 待 (~2h, fig10 new + carbon estimator integration) |
 | ⏳ D. TF-IDF + binary feature extraction | Section 6 Tier 1 router 前置 | 待 (~1h, extend `r1_task_features` in `analyze_cross_representation.py`) |
 | ⏳ E. B0 token-based carbon estimator | Section 8 Tier 3 sustainability | 待 (~20 行 helper in `p79/experiment/metrics.py`) |
 
-**`make analyze-paper`** 一键 chain：`aggregate-cross-site` (cross-site SR/cost/lat/energy CSV+plots) + `summary-collect` (run_summary_collect.json) + `routing-auroc` (cross-condition AUROC table) + `figures` (9 PNGs 含 fig2 bootstrap CI). 跑前 paper-grade snapshot 一键生成 — codex #11/#13 prose 写之前 invoke。
+**`make analysis`** 一键 chain：`aggregate-cross-site` (cross-site SR/cost/lat/energy CSV+plots) + `summary-collect` (run_summary_collect.json) + `routing-auroc` (cross-condition AUROC table) + `figures` (9 PNGs 含 fig2 bootstrap CI). 跑前 paper-grade snapshot 一键生成 — codex #11/#13 prose 写之前 invoke。
 
 ---
 
@@ -530,7 +536,7 @@ p79/experiment/router.py               (RuleBasedRouter scaffold)
 ✅ 实验笔记: append chronicle entry (§104+ daily, Day-by-day finding)
 ✅ next_steps §1 Active processes: mark done (remove or move to §3.1 done table)
 ✅ next_steps §3.1 done table: add row (raw/adj SR + N + done time)
-✅ Run `make analyze-paper` (one-shot **everything**, ~5-10min):
+✅ Run `make analysis` (one-shot **everything**, ~5-10min):
    - per-run pipeline (rederive + reason-diag + cross-rep + confidence) on
      all 8 paper-grade VWA runs (override `RUN_DIRS_PAPER_VWA` if needed)
    - B0 vs B1 site comparison (cls + red → `b0_vs_b1_<site>/`)
@@ -538,7 +544,7 @@ p79/experiment/router.py               (RuleBasedRouter scaffold)
      routing-auroc
    - 9 figures (含 fig2 bootstrap CI)
    ↳ Quick path: `make figures` (~10s, 仅 fig regen, 不含 per-run + agg)
-   ↳ Debug path: 单独 `make analyze-paper-per-run` / `compare-b0-b1-all` /
+   ↳ Debug path: 单独 `make analysis-per-run` / `compare-b0-b1-all` /
      `aggregate-cross-site` / `summary-collect` / `routing-auroc`
    ↳ 输出 path: `results/phantom_paper/{auroc_cross_condition.*, cross_site/,
      run_summary_collect.json, figures/*.png + fig0c_drop_one_bootstrap_ci.csv}`

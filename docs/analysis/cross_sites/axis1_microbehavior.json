@@ -373,22 +373,22 @@
           }
         },
         "Phantom-prompt": {
-          "n_tasks": 44,
-          "mean_url_set_size": 3.272727,
-          "mean_url_path_set_size": 1.295455,
-          "mean_n_steps": 13.863636,
-          "finish_rate": 0.409091,
-          "target_hit_n": 23,
-          "target_hit_rate": 0.130435,
-          "mean_n_type_actions": 2,
-          "mean_max_keyword_repeat": 1.477273,
-          "mean_distinct_keywords": 1.318182,
+          "n_tasks": 45,
+          "mean_url_set_size": 3.288889,
+          "mean_url_path_set_size": 1.311111,
+          "mean_n_steps": 14.044444,
+          "finish_rate": 0.4,
+          "target_hit_n": 24,
+          "target_hit_rate": 0.166667,
+          "mean_n_type_actions": 2.066667,
+          "mean_max_keyword_repeat": 1.555556,
+          "mean_distinct_keywords": 1.311111,
           "first_action_type_counts": {
             "click": 10,
             "finish": 2,
             "scroll": 4,
             "select_option": 7,
-            "type": 21
+            "type": 22
           }
         }
       }
@@ -881,41 +881,14 @@
           "right_mode": "P-SoM"
         },
         "axis_2_prompt_alt": {
-          "n": 44,
-          "url_jaccard_mean": 0.893939,
-          "url_decision_divergence": 0.106061,
+          "n": 45,
+          "url_jaccard_mean": 0.885185,
+          "url_decision_divergence": 0.114815,
           "url_jaccard_min": 0.333333,
           "url_jaccard_max": 1.0,
-          "target_hit_n": 23,
-          "target_hit_rate_left": 0.173913,
-          "target_hit_rate_right": 0.130435,
-          "target_hit_rate_diff": -0.043478,
-          "target_hit_rate_diff_pct_pts": -4.347826,
-          "target_hit_mcnemar": {
-            "left_only": 2,
-            "right_only": 1,
-            "p_exact": 1.0
-          },
-          "max_keyword_repeat_diff": -0.409091,
-          "distinct_keywords_diff": 0.204545,
-          "n_type_actions_diff": -0.227273,
-          "n_steps_diff": 4,
-          "finish_rate_diff": 0.022727,
-          "first_action_divergence_rate": 0.272727,
-          "first_action_target_url_path_divergence_rate": 0.090909,
-          "contrast": "P-prompt minus DOM",
-          "left_mode": "DOM",
-          "right_mode": "P-prompt"
-        },
-        "axis_1_text_alt": {
-          "n": 44,
-          "url_jaccard_mean": 0.912879,
-          "url_decision_divergence": 0.087121,
-          "url_jaccard_min": 0.0,
-          "url_jaccard_max": 1.0,
-          "target_hit_n": 23,
-          "target_hit_rate_left": 0.130435,
-          "target_hit_rate_right": 0.130435,
+          "target_hit_n": 24,
+          "target_hit_rate_left": 0.166667,
+          "target_hit_rate_right": 0.166667,
           "target_hit_rate_diff": 0.0,
           "target_hit_rate_diff_pct_pts": 0.0,
           "target_hit_mcnemar": {
@@ -923,13 +896,40 @@
             "right_only": 2,
             "p_exact": 1.0
           },
-          "max_keyword_repeat_diff": -0.181818,
-          "distinct_keywords_diff": -0.159091,
-          "n_type_actions_diff": -0.204545,
-          "n_steps_diff": -2.954545,
-          "finish_rate_diff": 0.022727,
-          "first_action_divergence_rate": 0.227273,
-          "first_action_target_url_path_divergence_rate": 0.204545,
+          "max_keyword_repeat_diff": -0.311111,
+          "distinct_keywords_diff": 0.177778,
+          "n_type_actions_diff": -0.155556,
+          "n_steps_diff": 4.288889,
+          "finish_rate_diff": 0.0,
+          "first_action_divergence_rate": 0.266667,
+          "first_action_target_url_path_divergence_rate": 0.088889,
+          "contrast": "P-prompt minus DOM",
+          "left_mode": "DOM",
+          "right_mode": "P-prompt"
+        },
+        "axis_1_text_alt": {
+          "n": 45,
+          "url_jaccard_mean": 0.914815,
+          "url_decision_divergence": 0.085185,
+          "url_jaccard_min": 0.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 24,
+          "target_hit_rate_left": 0.166667,
+          "target_hit_rate_right": 0.166667,
+          "target_hit_rate_diff": 0.0,
+          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_mcnemar": {
+            "left_only": 2,
+            "right_only": 2,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": -0.2,
+          "distinct_keywords_diff": -0.155556,
+          "n_type_actions_diff": -0.222222,
+          "n_steps_diff": -2.711111,
+          "finish_rate_diff": 0.022222,
+          "first_action_divergence_rate": 0.244444,
+          "first_action_target_url_path_divergence_rate": 0.2,
           "contrast": "P-SoM minus P-prompt",
           "left_mode": "P-prompt",
           "right_mode": "P-SoM"
@@ -1423,11 +1423,11 @@
         "pass": true
       },
       "B1/classifieds/axis_2_prompt_alt": {
-        "value": 0.893939,
+        "value": 0.885185,
         "pass": true
       },
       "B1/classifieds/axis_1_text_alt": {
-        "value": 0.912879,
+        "value": 0.914815,
         "pass": true
       },
       "B1/classifieds/endpoint_dom_to_som": {

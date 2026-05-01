@@ -1,6 +1,9 @@
 # P79 Makefile — daily commands one-liners
 #
 # Usage examples:
+#   make analysis                                # full analysis pipeline
+#   make analysis FAST=1                         # aggregators + figures only
+#   make analysis RUN=<run_dir>                  # single-run + downstream
 #   make test                                    # full pytest suite
 #   make smoke                                   # just smoke test (fast)
 #   make rederive RUN=<run_dir>
@@ -28,15 +31,30 @@ PYTEST ?= .venv/bin/pytest
         analyze-paper-per-run compare-b0-b1-all phantom-lift \
         analyze-layer0 analyze-layer1 analyze-layer2 analyze-layer3 analyze-layered \
         aggregate-sr-fp fig12-micro-heatmap aggregate-cost-electricity analyze-mechanism \
-        active
+        analysis _per_run_all _aggregate _figures _status active
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
-	@echo "Active processes: make active"
-	@echo "Layered analysis: make analyze-layered"
-	@echo "Layer 0 SR/FP: make aggregate-sr-fp"
-	@echo "Layer 2 figure: make fig12-micro-heatmap"
-	@grep -E '^[a-z0-9-]+:' Makefile | grep -v '^.PHONY' | sed 's/:.*//' | sort | sed 's/^/  /'
+	@echo ""
+	@echo "  ⭐ make analysis              # full analysis pipeline (per-run + cross-condition + figures)"
+	@echo "  ⭐ make analysis FAST=1       # skip per-run; aggregators + figures only (~30s)"
+	@echo "  ⭐ make analysis RUN=<dir>    # single-run pipeline + downstream"
+	@echo ""
+	@echo "  make active                  # real-time process scan"
+	@echo "  make test                    # full pytest suite"
+	@echo ""
+	@echo "  Per-run / per-cell:          make analyze RUN=<dir>"
+	@echo "  Compare runs:                make compare B0=<run> B1=<run> SITE=<site>"
+	@echo "  Maintenance:                 make clean-tasks RUN= COND= SITE= TASKS="
+	@echo ""
+	@echo "  Internal (called by 'make analysis'):"
+	@echo "    _per_run_all _aggregate _figures _status"
+	@echo "    aggregate-sr-fp / phantom-lift / routing-auroc / aggregate-cross-site"
+	@echo "    summary-collect / aggregate-cost-electricity / analyze-mechanism"
+	@echo "    analyze-layer0 / analyze-layer1 / analyze-layer2 / analyze-layer3 (Phase 1 layered)"
+	@echo "    figures / fig12-micro-heatmap"
+	@echo ""
+	@echo "  All targets:                 grep '^[a-z]' Makefile | sed 's/:.*//' | sort -u"
 
 # ---- Live status ----
 # Real-time scan of run_experiment + experiment_watchdog processes;
@@ -110,6 +128,76 @@ gallery:
 # (set by scripts/analysis/lib/run_registry.py::get_run_dirs_paper_vwa())
 RUN_DIRS_PAPER_VWA = $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_run_dirs_paper_vwa; print(' '.join(str(p) for p in get_run_dirs_paper_vwa()))")
 
+# ---- Single entry point for full analysis pipeline ----
+# Default: full pipeline (per-run + cross-condition + figures + status)
+# FAST=1: skip per-run analysis, only regen aggregators + figures (use after small data update)
+# RUN=<dir>: run per-run pipeline on single run only (then full cross-condition)
+analysis:
+ifeq ($(FAST),1)
+	@echo "[analysis FAST=1] skipping per-run pipeline; aggregators + figures only"
+	$(MAKE) _aggregate
+	$(MAKE) _figures
+	$(MAKE) _status
+else ifneq ($(RUN),)
+	@echo "[analysis RUN=$(RUN)] single-run pipeline + downstream"
+	$(MAKE) analyze RUN=$(RUN)
+	$(MAKE) _aggregate
+	$(MAKE) _figures
+	$(MAKE) _status
+else
+	@echo "[analysis] full pipeline: per-run + cross-condition + figures + status"
+	$(MAKE) _per_run_all
+	$(MAKE) _aggregate
+	$(MAKE) _figures
+	$(MAKE) _status
+endif
+
+# Per-run pipeline for all paper-grade VWA runs (loop over registry)
+_per_run_all:
+	@for rd in $(RUN_DIRS_PAPER_VWA); do \
+	  echo "── per-run: $$rd ──"; \
+	  $(MAKE) analyze RUN=$$rd || exit 1; \
+	done
+
+# Cross-condition aggregators (depends on per-run output)
+_aggregate:
+	$(MAKE) aggregate-sr-fp
+	$(MAKE) phantom-lift
+	$(MAKE) routing-auroc
+	$(MAKE) aggregate-cross-site
+	$(MAKE) summary-collect
+	$(MAKE) aggregate-cost-electricity
+	$(MAKE) analyze-mechanism
+	$(PYTHON) scripts/analysis/axis_effect_size.py
+	$(PYTHON) scripts/analysis/axis1_microbehavior.py
+	$(MAKE) compare-b0-b1-all
+
+# All figures (depends on aggregator output)
+_figures:
+	$(PYTHON) scripts/analysis/figures/fig0c_drop_one_oracle.py
+	$(PYTHON) scripts/analysis/figures/fig0c_phantom_lift_bars.py
+	$(PYTHON) scripts/analysis/figures/fig0d_taskpool_jaccard.py
+	$(PYTHON) scripts/analysis/figures/fig0e_category_mode_heatmap.py
+	$(PYTHON) scripts/analysis/figures/fig0f_overlap_stacked_bar.py
+	$(PYTHON) scripts/analysis/figures/fig0g_routing_auroc_heatmap.py
+	$(PYTHON) scripts/analysis/figures/fig1ab_cascade_diamond.py
+	$(PYTHON) scripts/analysis/figures/fig1c_strategy_gradient.py
+	$(PYTHON) scripts/analysis/figures/fig2_micro_divergence_heatmap.py
+	$(PYTHON) scripts/analysis/figures/fig3a_token_cost_intra_baseline.py
+	$(PYTHON) scripts/analysis/figures/fig3d_cost_sr_frontier.py
+	$(PYTHON) scripts/analysis/figures/fig3_regional_carbon.py
+	$(PYTHON) scripts/analysis/figures/fig_capability_b0_b1.py
+
+# Live evidence status snapshot (read-only summary of aggregator outputs)
+_status:
+	$(PYTHON) scripts/analysis/layered_status.py
+	@echo ""
+	@echo "[analysis] outputs:"
+	@echo "  Aggregators: results/phantom_paper/{phantom_lift,auroc_cross_condition,run_summary_collect}.{csv,md}"
+	@echo "  Figures:     results/phantom_paper/figures/*.png"
+	@echo "  Live status: docs/analysis/layered_evidence_status.md"
+	@echo "  Per-run:     results/visualwebarena/phase1/<run>/analysis/"
+
 aggregate-cross-site:
 	$(PYTHON) scripts/analysis/aggregate_cross_site.py \
 	  --run-dirs $(RUN_DIRS_PAPER_VWA) \
@@ -176,24 +264,18 @@ analyze-layer3:
 aggregate-cost-electricity:
 	$(PYTHON) scripts/analysis/aggregate_cost_electricity.py
 
-# Run all 4 layers
-analyze-layered: analyze-layer0 analyze-layer1 analyze-layer2 analyze-layer3
-	$(PYTHON) scripts/analysis/figures/fig_capability_b0_b1.py
-	$(MAKE) analyze-mechanism
-	$(PYTHON) scripts/analysis/layered_status.py
+# DEPRECATED: use `make analysis` instead. Kept for backward compatibility.
+analyze-paper analyze-layered:
+	@echo "[deprecated] '$@' is now an alias for 'make analysis'. Use 'make analysis' going forward."
+	$(MAKE) analysis
 
 # Per-run paper-grade analysis pipeline: rederive → reason-diag → cross-rep
 # → confidence calibration. Iterates over all paper-grade VWA run dirs.
 # Watchdog already runs this incrementally per-condition, but `analyze-paper`
-# brute-forces all runs to ensure cross-condition aggregations consume fresh
+# brute-forced all runs to ensure cross-condition aggregations consumed fresh
 # per-run output (e.g. after manual data edits, rederives, or fresh re-runs).
 analyze-paper-per-run:
-	@for rd in $(RUN_DIRS_PAPER_VWA); do \
-	  echo ""; \
-	  echo "=== [analyze-paper-per-run] $$rd ==="; \
-	  $(MAKE) --no-print-directory analyze RUN=$$rd || echo "  [warn] analyze failed for $$rd"; \
-	  $(MAKE) --no-print-directory confidence RUN=$$rd || echo "  [warn] confidence failed for $$rd"; \
-	done
+	$(MAKE) _per_run_all
 
 # B0 vs B1 site comparison — runs compare_b0_b1.py for each (B0_run, B1_run)
 # pair on cls + red. Outputs to results/visualwebarena/phase1/b0_vs_b1_<site>/.
@@ -215,8 +297,8 @@ compare-b0-b1-all:
 #      - summary-collect (run-level metadata → run_summary_collect.json)
 #      - routing-auroc (per-condition AUROC merge → auroc_cross_condition.*)
 #   4. figures (9 PNGs incl. fig2 bootstrap CI)
-# Total ~5-10 min for 8 runs. Run before codex prose tasks (#11 / #13 / #16)
-# or before paper revisits.
+# Total ~5-10 min for 8 runs. Use `make analysis` before codex prose tasks
+# (#11 / #13 / #16) or before paper revisits.
 #
 # NOT included (intentional):
 #   - GLM digest sidecar — watchdog handles incrementally
@@ -224,19 +306,10 @@ compare-b0-b1-all:
 #   - Codex narrative analyses (docs/analysis/phantom_paper/*.md) — manual codex
 #   - Narrow ad-hoc diagnostics (analyze_*selflink_loop, b0_vision_coordinate_*,
 #     analyze_search_over_browse, diag_pattern_match) — invoke individually
-analyze-paper: analyze-paper-per-run compare-b0-b1-all aggregate-cross-site summary-collect routing-auroc phantom-lift figures
-	@echo ""
-	@echo "[analyze-paper] cross-condition outputs in results/phantom_paper/:"
-	@ls results/phantom_paper/*.csv results/phantom_paper/*.md 2>/dev/null || true
-	@ls results/phantom_paper/cross_site/*.csv 2>/dev/null || true
-	@echo "[analyze-paper] B0 vs B1 site comparisons:"
-	@ls -d results/visualwebarena/phase1/b0_vs_b1_* 2>/dev/null || true
-	@echo "[analyze-paper] figures in results/phantom_paper/figures/:"
-	@ls results/phantom_paper/figures/*.png 2>/dev/null || true
 
 # Regenerate paper figures (12 PNGs in results/phantom_paper/figures/).
 # fig0c_phantom_lift_bars/fig0g_routing_auroc_heatmap depend on phantom_lift.csv / auroc_cross_condition.csv —
-# automatically regenerated upstream by `make analyze-paper`.
+# automatically regenerated upstream by `make analysis`.
 figures:
 	$(PYTHON) scripts/analysis/figures/fig0d_taskpool_jaccard.py
 	$(PYTHON) scripts/analysis/figures/fig0c_drop_one_oracle.py
