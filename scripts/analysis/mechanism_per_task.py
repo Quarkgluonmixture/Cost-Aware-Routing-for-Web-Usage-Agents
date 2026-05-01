@@ -32,6 +32,13 @@ try:
 except ImportError:  # pragma: no cover - supports module-style imports.
     from scripts.analysis.axis1_microbehavior import url_path_query
 
+try:
+    from scripts.analysis.lib.run_registry import canonical_mode, get_cells
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
+    import sys
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+    from scripts.analysis.lib.run_registry import canonical_mode, get_cells
+
 
 ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "results/visualwebarena/phase1"
@@ -39,82 +46,42 @@ OUT_JSON = ROOT / "docs/analysis/cross_sites/mechanism_per_task.json"
 OUT_MD = ROOT / "docs/analysis/cross_sites/mechanism_per_task_report.md"
 SR_FP_JSON = ROOT / "docs/analysis/cross_sites/sr_fp_per_mode.json"
 
-def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
-    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
-    return candidates[-1] if candidates else None
+def _step_dirs_from_registry(baseline: str) -> dict[str, dict[str, Path]]:
+    out: dict[str, dict[str, Path]] = {"reddit": {}, "classifieds": {}}
+    for site in out:
+        out[site] = {
+            cell.mode: cell.episodes_dir
+            for cell in get_cells(baseline=baseline, site=site)
+        }
+    return out
 
 
-def _phantom_prompt_run(baseline: str, site: str) -> Path | None:
-    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*"))
-    return candidates[-1] if candidates else None
+def _conf_runs_from_registry() -> list[tuple[str, str, Path]]:
+    out: list[tuple[str, str, Path]] = []
+    seen: set[tuple[str, str, Path]] = set()
+    for baseline in ("B0", "B1"):
+        for site in ("classifieds", "reddit"):
+            for cell in get_cells(baseline=baseline, site=site):
+                key = (baseline, site, cell.run_dir)
+                if key in seen:
+                    continue
+                seen.add(key)
+                out.append(key)
+    return out
 
 
-def _maybe_add(d: dict, key: str, path: Path | None) -> None:
-    if path is not None:
-        d[key] = path
-
-
-STEP_DIRS = {
-    "reddit": {
-        "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-        "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-        "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-        "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
-    },
-    "classifieds": {
-        "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-        "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-        "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-        "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
-    },
-}
-_maybe_add(STEP_DIRS["reddit"], "Phantom-prompt", _phantom_prompt_dir("B0", "reddit"))
-_maybe_add(STEP_DIRS["classifieds"], "Phantom-prompt", _phantom_prompt_dir("B0", "classifieds"))
-
-B1_STEP_DIRS = {
-    "reddit": {
-        "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
-        "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
-        "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
-    },
-    "classifieds": {
-        "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-        "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-        "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
-    },
-}
-_maybe_add(B1_STEP_DIRS["reddit"], "Phantom-prompt", _phantom_prompt_dir("B1", "reddit"))
-_maybe_add(B1_STEP_DIRS["classifieds"], "Phantom-prompt", _phantom_prompt_dir("B1", "classifieds"))
-
-CONF_RUNS = [
-    ("B0", "classifieds", RESULTS / "B0_3mode_classifieds_20260413"),
-    ("B0", "reddit", RESULTS / "B0_3mode_reddit_20260422"),
-    ("B0", "classifieds", RESULTS / "B0_phantom_som_classifieds_20260426"),
-    ("B0", "reddit", RESULTS / "B0_phantom_som_reddit_20260428"),
-    ("B0", "classifieds", RESULTS / "B0_phantom_text_classifieds_20260427"),
-    ("B0", "reddit", RESULTS / "B0_phantom_text_reddit_20260427"),
-    ("B1", "classifieds", RESULTS / "B1_3mode_classifieds_20260413"),
-    ("B1", "reddit", RESULTS / "B1_3mode_reddit_20260413"),
-    ("B1", "classifieds", RESULTS / "B1_phantom_som_classifieds_20260428"),
-]
-# Append P-prompt runs (when present and analyzed)
-for _baseline in ("B0", "B1"):
-    for _site in ("classifieds", "reddit"):
-        _run = _phantom_prompt_run(_baseline, _site)
-        if _run is not None:
-            CONF_RUNS.append((_baseline, _site, _run))
+STEP_DIRS = _step_dirs_from_registry("B0")
+B1_STEP_DIRS = _step_dirs_from_registry("B1")
+CONF_RUNS = _conf_runs_from_registry()
 
 AXIS_CONTRASTS = {
     "axis_1_text": ("DOM", "P-text"),
-    "axis_2_prompt": ("P-text", "Phantom-SoM"),
-    "axis_3_image": ("Phantom-SoM", "SoM"),
-    "compound_DOM_to_PSoM": ("DOM", "Phantom-SoM"),
+    "axis_2_prompt": ("P-text", "P-SoM"),
+    "axis_3_image": ("P-SoM", "SoM"),
+    "compound_DOM_to_PSoM": ("DOM", "P-SoM"),
     # Diamond ablation alt-paths via P-prompt
-    "axis_2_prompt_alt": ("DOM", "Phantom-prompt"),
-    "axis_1_text_alt": ("Phantom-prompt", "Phantom-SoM"),
+    "axis_2_prompt_alt": ("DOM", "P-prompt"),
+    "axis_1_text_alt": ("P-prompt", "P-SoM"),
 }
 
 ACTION_TYPES = [
@@ -215,23 +182,14 @@ def pct(value: float | None) -> float | None:
 
 
 def normalize_mode_name(value: str) -> str:
-    key = value.strip().lower().replace("-", "_")
-    return {
-        "dom": "DOM",
-        "som": "SoM",
-        "vision": "Vision",
-        "phantom_som": "Phantom-SoM",
-        "phantom_dom": "P-text",   # legacy mode value (paper-grade runs)
-        "phantom_text": "P-text",  # current canonical mode value
-        "phantom_prompt": "Phantom-prompt",
-    }.get(key, value)
+    return canonical_mode(value)
 
 
 def short_mode(mode: str) -> str:
     return {
         "P-text": "P-text",
-        "Phantom-SoM": "P-SoM",
-        "Phantom-prompt": "P-prompt",
+        "P-SoM": "P-SoM",
+        "P-prompt": "P-prompt",
     }.get(mode, mode)
 
 
@@ -540,8 +498,7 @@ def load_fp_rates() -> dict[str, float]:
     data = read_json(SR_FP_JSON)
     rates: dict[str, float] = {}
     for key, row in (data.get("cells") or {}).items():
-        site, mode = key.split("/", 1)
-        rates[f"B0/{site}/{mode}"] = row.get("fp_rate_pct")
+        rates[key] = row.get("fp_rate_pct")
     return rates
 
 
@@ -797,7 +754,7 @@ def headline_implications(e1: dict[str, Any], e2: dict[str, Any], e3: dict[str, 
     red_e1 = e1["reddit"]["compound_DOM_to_PSoM"]
     cls_e1 = e1["classifieds"]["compound_DOM_to_PSoM"]
     e2_dom_psom = {
-        site: e2[site]["DOM_vs_Phantom-SoM"]
+        site: e2[site]["DOM_vs_P-SoM"]
         for site in ("reddit", "classifieds")
     }
     best_e3 = max(
@@ -953,7 +910,7 @@ def write_report(out: dict[str, Any]) -> None:
     for key in sorted(e4["cells"]):
         row = e4["cells"][key]
         lines.append(
-            f"| {key.replace('P-text', 'P-text').replace('Phantom-SoM', 'P-SoM')} | "
+            f"| {key} | "
             f"{fmt(row['click'])} | {fmt(row['type'])} | {fmt(row['scroll'])} | "
             f"{fmt(row['select_option'])} | {fmt(row['wait'])} | {fmt(row['back'])} | "
             f"{fmt(row['forward'])} | {fmt(row['finish'])} | {fmt(row['tab_focus'])} | {fmt(row['other'])} |"

@@ -43,63 +43,39 @@ from typing import Optional
 import numpy as np
 
 try:
+    from scripts.analysis.lib.run_registry import get_cells
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
+    import sys
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+    from scripts.analysis.lib.run_registry import get_cells
+
+try:
     from scipy import stats as sp_stats
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
 
 REPO = Path(__file__).resolve().parents[2]
-RES = REPO / "results/visualwebarena/phase1"
-
-
-def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
-    candidates = sorted(RES.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
-    return candidates[-1] if candidates else None
 
 
 # Cell registry: (baseline, site, expected_N, run_paths_per_mode)
-def _build_cell(baseline: str, site: str, expected: int, base_modes: dict) -> dict:
-    """Augment a cell's mode dict with a P-prompt entry only when its run dir exists.
+def _build_cells() -> list[dict]:
+    out: list[dict] = []
+    for baseline in ("B0", "B1"):
+        for site in ("classifieds", "reddit"):
+            specs = get_cells(baseline=baseline, site=site)
+            if not specs:
+                continue
+            out.append({
+                "baseline": baseline,
+                "site": site,
+                "n_expected": specs[0].expected_n,
+                "modes": {cell.mode: cell.episodes_dir for cell in specs},
+            })
+    return out
 
-    Avoids polluting analyze_cell with a missing-mode bypass for P-prompt; the
-    function itself handles modes that are present-but-undersized via MIN_EP_FOR_CELL.
-    """
-    pp = _phantom_prompt_dir(baseline, site)
-    if pp is not None and pp.exists():
-        # only attach if run dir actually exists (cell partial otherwise)
-        modes = dict(base_modes)
-        modes["P-prompt"] = pp
-    else:
-        modes = base_modes
-    return {"baseline": baseline, "site": site, "n_expected": expected, "modes": modes}
 
-
-CELLS = [
-    _build_cell("B0", "classifieds", 234, {
-        "DOM":   RES/"B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-        "SoM":   RES/"B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Vision":RES/"B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-        "P-text": RES/"B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
-        "P-SoM": RES/"B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-    }),
-    _build_cell("B0", "reddit", 210, {
-        "DOM":   RES/"B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-        "SoM":   RES/"B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-        "Vision":RES/"B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-        "P-text": RES/"B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
-        "P-SoM": RES/"B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-    }),
-    # B1 cells — partial. B1 cls Phantom-SoM is paper-grade (234 ep); P-text is
-    # not yet available, so this cell is treated as 4-mode-no-P-text. B1 reddit
-    # phantom data not started, so the reddit cell is intentionally absent.
-    _build_cell("B1", "classifieds", 234, {
-        "DOM":   RES/"B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-        "SoM":   RES/"B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Vision":RES/"B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-        # P-text intentionally omitted — no paper-grade B1 phantom-DOM data yet
-        "P-SoM": RES/"B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
-    }),
-]
+CELLS = _build_cells()
 
 MIN_EP_FOR_CELL = 50  # skip cells where any present mode has < 50 ep (too partial)
 

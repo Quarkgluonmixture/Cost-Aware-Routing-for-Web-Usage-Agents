@@ -15,65 +15,33 @@ import sys
 from pathlib import Path
 from typing import Any
 
+try:
+    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
 
 ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT_JSON = ROOT / "docs/analysis/cross_sites/sr_fp_per_mode.json"
 OUT_MD = ROOT / "docs/analysis/cross_sites/sr_fp_per_mode.md"
 
-# Per-baseline summary directories. B1 phantom_text (P-text) and B1 reddit phantom
-# data are not yet available; missing modes are skipped at aggregate time.
-def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
-    """Resolve newest B0/B1 phantom_prompt run dir glob for (baseline, site).
+def _summary_dirs_from_registry() -> dict[str, dict[str, dict[str, Path]]]:
+    out: dict[str, dict[str, dict[str, Path]]] = {}
+    for baseline in BASELINE_ORDER:
+        out[baseline] = {}
+        for site in SITE_ORDER:
+            out[baseline][site] = {
+                cell.mode: cell.episodes_dir
+                for cell in get_cells(baseline=baseline, site=site)
+            }
+    return out
 
-    Returns None when no run dir exists yet (cell pending).
-    """
-    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
-    return candidates[-1] if candidates else None
 
-
-SUMMARY_DIRS: dict[str, dict[str, dict[str, Path]]] = {
-    "B0": {
-        "reddit": {
-            "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
-            # P-prompt: newest B0_phantom_prompt_reddit_* run dir (None if none)
-            "Phantom-prompt": _phantom_prompt_dir("B0", "reddit"),
-        },
-        "classifieds": {
-            "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
-            "Phantom-prompt": _phantom_prompt_dir("B0", "classifieds"),
-        },
-    },
-    "B1": {
-        "reddit": {
-            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
-            # Phantom-SoM / P-text not yet available for B1 reddit
-            "Phantom-prompt": _phantom_prompt_dir("B1", "reddit"),
-        },
-        "classifieds": {
-            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
-            # P-text not yet available for B1 classifieds (only 4 ep at present)
-            "Phantom-prompt": _phantom_prompt_dir("B1", "classifieds"),
-        },
-    },
-}
-
-MODE_ORDER = ["DOM", "P-text", "Phantom-prompt", "Phantom-SoM", "SoM", "Vision"]
 BASELINE_ORDER = ["B0", "B1"]
 SITE_ORDER = ["reddit", "classifieds"]
+SUMMARY_DIRS = _summary_dirs_from_registry()
+MODE_ORDER = PAPER_MODES
 
 
 def task_id(path: Path) -> int:

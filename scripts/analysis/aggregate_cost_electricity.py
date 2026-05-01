@@ -24,6 +24,13 @@ import json
 from pathlib import Path
 from typing import Optional
 
+try:
+    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
+    import sys
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+
 ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT_JSON = ROOT / "docs/analysis/cross_sites/cost_per_mode.json"
@@ -34,53 +41,28 @@ OUT_MD = ROOT / "docs/analysis/cross_sites/cost_per_mode.md"
 ELECTRICITY_USD_PER_KWH = 0.12
 
 # Efficiency 3a token cost field (computed at run-time using metrics.cost_api rates).
-# For B0 this = API token cost. For B1 this = same rate × token count, but B1
+# For B0 this = API token cost. For B1 this = same rate x token count, but B1
 # pays $0 in actual API dollars, so we mark it "non-comparable" and report
 # electricity-equivalent instead.
-def _phantom_prompt_subpath(baseline: str, site: str) -> Optional[str]:
-    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0"))
-    if not candidates:
-        return None
-    # Return path relative to RESULTS root for consistency with other entries.
-    return str(candidates[-1].relative_to(RESULTS))
+def _condition_subpath(cell) -> str:
+    return str((cell.run_dir / cell.condition_subdir).relative_to(RESULTS))
 
 
-RUNS = {
-    "B0": {
-        "reddit": {
-            "DOM":         "B0_3mode_reddit_20260422/phase1_dom_router_0",
-            "Vision":      "B0_3mode_reddit_20260422/phase1_vision_router_0",
-            "SoM":         "B0_3mode_reddit_20260422/phase1_som_router_0",
-            "P-SoM":       "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0",
-            "P-text":      "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0",
-            "P-prompt":    _phantom_prompt_subpath("B0", "reddit"),
-        },
-        "classifieds": {
-            "DOM":         "B0_3mode_classifieds_20260413/phase1_dom_router_0",
-            "Vision":      "B0_3mode_classifieds_20260413/phase1_vision_router_0",
-            "SoM":         "B0_3mode_classifieds_20260413/phase1_som_router_0",
-            "P-SoM":       "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0",
-            "P-text":      "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0",
-            "P-prompt":    _phantom_prompt_subpath("B0", "classifieds"),
-        },
-    },
-    "B1": {
-        "reddit": {
-            "DOM":    "B1_3mode_reddit_20260413/phase1_dom_router_0",
-            "Vision": "B1_3mode_reddit_20260413/phase1_vision_router_0",
-            "SoM":    "B1_3mode_reddit_20260413/phase1_som_router_0",
-            "P-SoM":  "B1_phantom_reddit_20260426/phase1_phantom_som_router_0",
-            "P-prompt": _phantom_prompt_subpath("B1", "reddit"),
-        },
-        "classifieds": {
-            "DOM":    "B1_3mode_classifieds_20260413/phase1_dom_router_0",
-            "Vision": "B1_3mode_classifieds_20260413/phase1_vision_router_0",
-            "SoM":    "B1_3mode_classifieds_20260413/phase1_som_router_0",
-            "P-SoM":  "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0",
-            "P-prompt": _phantom_prompt_subpath("B1", "classifieds"),
-        },
-    },
-}
+def _runs_from_registry() -> dict[str, dict[str, dict[str, str]]]:
+    runs: dict[str, dict[str, dict[str, str]]] = {}
+    for baseline in ("B0", "B1"):
+        runs[baseline] = {}
+        for site in ("reddit", "classifieds"):
+            specs = get_cells(baseline=baseline, site=site)
+            runs[baseline][site] = {
+                cell.mode: _condition_subpath(cell)
+                for cell in specs
+                if cell.mode in PAPER_MODES
+            }
+    return runs
+
+
+RUNS = _runs_from_registry()
 
 
 def safe_load(path: Path) -> Optional[dict]:

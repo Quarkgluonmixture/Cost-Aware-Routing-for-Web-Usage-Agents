@@ -24,33 +24,45 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+try:
+    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
+    sys.path.append(str(Path(__file__).resolve().parents[3]))
+    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
 
 ROOT = Path(__file__).resolve().parents[3]
-RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig0c_drop_one_oracle.png"
 
-MODES = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text", "Phantom-prompt"]
+MODES = PAPER_MODES
 COLORS = {
     "DOM": "#4c78a8",
     "SoM": "#f58518",
     "Vision": "#54a24b",
-    "Phantom-SoM": "#b279a2",
+    "P-SoM": "#b279a2",
     "P-text": "#9e6da8",
-    "Phantom-prompt": "#9467bd",
+    "P-prompt": "#9467bd",
 }
 MODE_LABELS = {
     "DOM": "DOM",
     "SoM": "SoM",
     "Vision": "Vision",
-    "Phantom-SoM": "P-SoM",
+    "P-SoM": "P-SoM",
     "P-text": "P-text",
-    "Phantom-prompt": "P-prompt",
+    "P-prompt": "P-prompt",
 }
 
 
-def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
-    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
-    return candidates[-1] if candidates else None
+def _mode_dirs(baseline: str, site: str) -> dict[str, Path]:
+    return {cell.mode: cell.episodes_dir for cell in get_cells(baseline=baseline, site=site)}
+
+
+def _panel(key: str, title: str, baseline: str, site: str, expected: int) -> dict:
+    return {
+        "key": key,
+        "title": title,
+        "expected": expected,
+        "modes": _mode_dirs(baseline, site),
+    }
 
 # Drop-one oracle uses union/intersection over the **common observed** task
 # universe per panel (so a partial in-flight run doesn't artificially shrink
@@ -58,67 +70,15 @@ def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
 # restrict to intersection across modes; partial Phantom rows annotated with
 # their N/expected coverage.
 PANELS = [
-    {
-        "key": "b0_cls",
-        "title": "B0 classifieds",
-        "expected": 234,
-        "modes": {
-            "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
-        },
-    },
-    {
-        "key": "b0_red",
-        "title": "B0 reddit",
-        "expected": 210,
-        "modes": {
-            "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
-        },
-    },
-    {
-        "key": "b1_cls",
-        "title": "B1 classifieds",
-        "expected": 234,
-        "modes": {
-            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            # B1 phantom_som chain in flight — partial run included with intersection-based drop-one
-            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
-        },
-        "missing": "P-text / P-prompt N/A",
-    },
-    {
-        "key": "b1_red",
-        "title": "B1 reddit",
-        "expected": 210,
-        "modes": {
-            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
-        },
-        "missing": "Phantom-SoM/P-text/P-prompt N/A (chain pending)",
-    },
+    _panel("b0_cls", "B0 classifieds", "B0", "classifieds", 234),
+    _panel("b0_red", "B0 reddit", "B0", "reddit", 210),
+    _panel("b1_cls", "B1 classifieds", "B1", "classifieds", 234),
+    _panel("b1_red", "B1 reddit", "B1", "reddit", 210),
 ]
-# Auto-attach Phantom-prompt run dir per panel when it exists on disk
-for _panel in PANELS:
-    _baseline, _site = _panel["key"].split("_", 1)
-    _baseline = "B0" if _baseline.lower() == "b0" else "B1"
-    _site_full = "classifieds" if _site == "cls" else ("reddit" if _site == "red" else _site)
-    _pp = _phantom_prompt_dir(_baseline, _site_full)
-    if _pp is not None:
-        _panel["modes"]["Phantom-prompt"] = _pp
 
 SECTION103_LOSS = {
-    "b0_cls": {"DOM": 2.14, "SoM": 7.69, "Vision": 3.85, "Phantom-SoM": 1.71},
-    "b0_red": {"DOM": 1.43, "SoM": 2.86, "Vision": 1.90, "Phantom-SoM": 2.38},
+    "b0_cls": {"DOM": 2.14, "SoM": 7.69, "Vision": 3.85, "P-SoM": 1.71},
+    "b0_red": {"DOM": 1.43, "SoM": 2.86, "Vision": 1.90, "P-SoM": 2.38},
 }
 
 

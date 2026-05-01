@@ -19,9 +19,13 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+try:
+    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
+    sys.path.append(str(Path(__file__).resolve().parents[3]))
+    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
 
 ROOT = Path(__file__).resolve().parents[3]
-RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig0e_category_mode_heatmap.png"
 
 CATEGORIES = ["A", "B", "C", "D"]
@@ -31,74 +35,26 @@ CATEGORY_LABELS = [
     "C\npage-screen",
     "D\nuncertain",
 ]
-MODES = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text", "Phantom-prompt"]
+MODES = PAPER_MODES
+MODE_LABELS = {"DOM": "DOM", "SoM": "SoM", "Vision": "Vision", "P-SoM": "P-SoM", "P-text": "P-text", "P-prompt": "P-prompt"}
 
 
-def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
-    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
-    return candidates[-1] if candidates else None
+def _panel(key: str, baseline: str, site: str, expected: int, audit: Path) -> dict:
+    return {
+        "key": key,
+        "baseline": baseline,
+        "site": site,
+        "expected": expected,
+        "audit": audit,
+        "modes": {cell.mode: cell.episodes_dir for cell in get_cells(baseline=baseline, site=site)},
+    }
 
 PANELS = [
-    {
-        "key": "B0 classifieds",
-        "baseline": "B0",
-        "site": "classifieds",
-        "expected": 234,
-        "audit": ROOT / "docs/analysis/cross_sites/codex_audit_classifieds.json",
-        "modes": {
-            "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
-        },
-        "notes": {"Phantom-SoM": "fresh re-run"},
-    },
-    {
-        "key": "B0 reddit",
-        "baseline": "B0",
-        "site": "reddit",
-        "expected": 210,
-        "audit": ROOT / "docs/analysis/cross_sites/codex_audit_reddit.json",
-        "modes": {
-            "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
-        },
-    },
-    {
-        "key": "B1 classifieds",
-        "baseline": "B1",
-        "site": "classifieds",
-        "expected": 234,
-        "audit": ROOT / "docs/analysis/cross_sites/codex_audit_classifieds.json",
-        "modes": {
-            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
-        },
-    },
-    {
-        "key": "B1 reddit",
-        "baseline": "B1",
-        "site": "reddit",
-        "expected": 210,
-        "audit": ROOT / "docs/analysis/cross_sites/codex_audit_reddit.json",
-        "modes": {
-            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
-        },
-    },
+    _panel("B0 classifieds", "B0", "classifieds", 234, ROOT / "docs/analysis/cross_sites/codex_audit_classifieds.json"),
+    _panel("B0 reddit", "B0", "reddit", 210, ROOT / "docs/analysis/cross_sites/codex_audit_reddit.json"),
+    _panel("B1 classifieds", "B1", "classifieds", 234, ROOT / "docs/analysis/cross_sites/codex_audit_classifieds.json"),
+    _panel("B1 reddit", "B1", "reddit", 210, ROOT / "docs/analysis/cross_sites/codex_audit_reddit.json"),
 ]
-# Auto-attach Phantom-prompt run dir per panel when it exists on disk
-for _panel in PANELS:
-    _pp = _phantom_prompt_dir(_panel["baseline"], _panel["site"])
-    if _pp is not None:
-        _panel["modes"]["Phantom-prompt"] = _pp
 
 
 def task_id(path: Path) -> int:
@@ -174,7 +130,7 @@ def draw_panel(ax: plt.Axes, panel: dict, vmax: float) -> None:
     cmap.set_bad("#f2f2f2")
     im = ax.imshow(matrix, cmap=cmap, vmin=0, vmax=vmax, aspect="auto")
     ax.set_title(panel["key"], fontsize=11, fontweight="bold")
-    ax.set_xticks(np.arange(len(MODES)), ["DOM", "SoM", "Vision", "P-SoM", "P-text", "P-prompt"], fontsize=8.0)
+    ax.set_xticks(np.arange(len(MODES)), [MODE_LABELS[m] for m in MODES], fontsize=8.0)
     ax.set_yticks(np.arange(len(CATEGORIES)), CATEGORY_LABELS, fontsize=8.5)
     ax.tick_params(axis="both", length=0)
     for i in range(len(CATEGORIES)):
@@ -200,7 +156,7 @@ def main() -> None:
     fig.text(
         0.5,
         -0.03,
-        "B0 covers 5-6 modes per site (paper-grade fresh; B0 reddit P-prompt partial). B1 cls covers 4 modes (Phantom-SoM available, P-text/P-prompt pending). B1 reddit phantom modes pending.",
+        "B0/B1 cells and pending modes come from run_manifest.yaml; P-SoM/P-text/P-prompt are omitted until marked paper-grade.",
         ha="center",
         fontsize=8.5,
         color="#555555",

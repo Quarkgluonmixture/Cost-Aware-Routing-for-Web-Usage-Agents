@@ -18,14 +18,6 @@ paper-ready table with run/baseline/site metadata.
 
 Usage:
     python3 scripts/analysis/aggregate_routing_auroc.py \\
-        --runs results/visualwebarena/phase1/B0_3mode_classifieds_20260413 \\
-               results/visualwebarena/phase1/B0_3mode_reddit_20260422 \\
-               results/visualwebarena/phase1/B0_phantom_som_classifieds_20260426 \\
-               results/visualwebarena/phase1/B0_phantom_som_reddit_20260428 \\
-               results/visualwebarena/phase1/B0_phantom_text_classifieds_20260427 \\
-               results/visualwebarena/phase1/B0_phantom_text_reddit_20260427 \\
-               results/visualwebarena/phase1/B1_3mode_classifieds_20260413 \\
-               results/visualwebarena/phase1/B1_3mode_reddit_20260413 \\
         --output results/phantom_paper/auroc_cross_condition.csv
 
 Output columns: baseline, site, mode, signal, signal_type, AUROC,
@@ -42,39 +34,20 @@ from pathlib import Path
 
 import pandas as pd
 
+try:
+    from scripts.analysis.lib.run_registry import canonical_mode, get_run_dirs_paper_vwa
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
+    import sys
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+    from scripts.analysis.lib.run_registry import canonical_mode, get_run_dirs_paper_vwa
+
 
 REPO = Path(__file__).resolve().parents[2]
-DEFAULT_RUNS = [
-    REPO / "results/visualwebarena/phase1/B0_3mode_classifieds_20260413",
-    REPO / "results/visualwebarena/phase1/B0_3mode_reddit_20260422",
-    REPO / "results/visualwebarena/phase1/B0_phantom_som_classifieds_20260426",
-    REPO / "results/visualwebarena/phase1/B0_phantom_som_reddit_20260428",
-    REPO / "results/visualwebarena/phase1/B0_phantom_text_classifieds_20260427",
-    REPO / "results/visualwebarena/phase1/B0_phantom_text_reddit_20260427",
-    REPO / "results/visualwebarena/phase1/B1_3mode_classifieds_20260413",
-    REPO / "results/visualwebarena/phase1/B1_3mode_reddit_20260413",
-]
-
-
-def _phantom_prompt_runs() -> list[Path]:
-    """Return all available B0/B1 phantom_prompt run dirs (cls + red)."""
-    out: list[Path] = []
-    for baseline in ("B0", "B1"):
-        for site in ("reddit", "classifieds"):
-            for path in sorted((REPO / "results/visualwebarena/phase1").glob(
-                f"{baseline}_phantom_prompt_{site}_*"
-            )):
-                if path.is_dir():
-                    out.append(path)
-    return out
-
-
-# Auto-extend with any P-prompt runs that exist on disk
-DEFAULT_RUNS = DEFAULT_RUNS + _phantom_prompt_runs()
+DEFAULT_RUNS = get_run_dirs_paper_vwa()
 
 
 def parse_run_id(run_dir: Path) -> tuple[str, str]:
-    """Extract (baseline, site) from a run_id like B0_phantom_text_classifieds_20260427."""
+    """Extract (baseline, site) from a paper run id."""
     name = run_dir.name
     baseline = "B0" if name.startswith("B0") else ("B1" if name.startswith("B1") else "?")
     for site in ("classifieds", "reddit", "shopping_admin", "shopping"):
@@ -109,10 +82,12 @@ def main() -> int:
                 continue
             mode = cond_dirs[0].name.replace("phase1_", "").replace("_router_0", "")
             df = pd.read_csv(single_path).rename(columns={"metric": "signal"})
-            df = df.assign(mode=mode)
+            df = df.assign(mode=canonical_mode(mode))
         else:
             print(f"  [skip] {run_dir.name}: no AUROC tables")
             continue
+        if "mode" in df.columns:
+            df["mode"] = df["mode"].map(lambda value: canonical_mode(str(value)))
         df = df.assign(baseline=baseline, site=site, run_id=run_dir.name)
         rows.append(df)
 

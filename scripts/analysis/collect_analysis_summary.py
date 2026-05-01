@@ -17,17 +17,17 @@ reason distribution, and signal AUROC into one file.
 
 Usage:
   python scripts/analysis/collect_analysis_summary.py \
-      --run-dir results/visualwebarena/phase1/B1_3mode_classifieds_20260413
+      --run-dir <run_dir>
 
   # Save to file
   python scripts/analysis/collect_analysis_summary.py \
-      --run-dir results/visualwebarena/phase1/B1_3mode_classifieds_20260413 \
+      --run-dir <run_dir> \
       --output collected_summary.json
 
   # Multiple runs (e.g., for cross-baseline)
   python scripts/analysis/collect_analysis_summary.py \
-      --run-dir results/visualwebarena/phase1/B0_3mode_classifieds_20260413 \
-      --run-dir results/visualwebarena/phase1/B1_3mode_classifieds_20260413
+      --run-dir <b0_run_dir> \
+      --run-dir <b1_run_dir>
 """
 from __future__ import annotations
 
@@ -38,6 +38,12 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+try:
+    from scripts.analysis.lib.run_registry import get_run_dirs_paper_vwa
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+    from scripts.analysis.lib.run_registry import get_run_dirs_paper_vwa
 
 
 # ---------------------------------------------------------------------------
@@ -308,15 +314,16 @@ def main():
     parser = argparse.ArgumentParser(
         description="Collect all analysis outputs into a consolidated JSON",
     )
-    parser.add_argument("--run-dir", type=Path, action="append", required=True,
-                        help="Run directory (can specify multiple)")
+    parser.add_argument("--run-dir", type=Path, action="append", default=None,
+                        help="Run directory (can specify multiple; default: paper VWA runs from run_manifest.yaml)")
     parser.add_argument("--output", type=Path, default=None,
                         help="Output JSON path (default: stdout)")
 
     args = parser.parse_args()
 
     results = []
-    for rd in args.run_dir:
+    run_dirs = args.run_dir if args.run_dir else get_run_dirs_paper_vwa()
+    for rd in run_dirs:
         if not rd.is_dir():
             print(f"Warning: {rd} is not a directory, skipping", file=sys.stderr)
             continue

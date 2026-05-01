@@ -3,7 +3,7 @@
 # Usage examples:
 #   make test                                    # full pytest suite
 #   make smoke                                   # just smoke test (fast)
-#   make rederive RUN=results/visualwebarena/phase1/B0_3mode_classifieds_20260413
+#   make rederive RUN=<run_dir>
 #   make analyze RUN=...                         # rederive → reason_diag → cross_rep → analyze_run → confidence
 #   make compare B0=<b0_run> B1=<b1_run> SITE=classifieds
 #   make clean-tasks RUN=<run> COND=phase1_som_router_0 SITE=shopping TASKS=0-465
@@ -106,18 +106,9 @@ gallery:
 # Run once after a batch of conditions is paper-grade clean.
 # Outputs land under results/phantom_paper/ for paper drafts to consume.
 
-# Cross-site SR/cost/lat/energy aggregator (per benchmark).
-# Default RUN_DIRS = paper-grade clean B0+B1 cls+red runs (override via RUN_DIRS=...).
-RUN_DIRS_PAPER_VWA ?= \
-  results/visualwebarena/phase1/B0_3mode_classifieds_20260413 \
-  results/visualwebarena/phase1/B0_3mode_reddit_20260422 \
-  results/visualwebarena/phase1/B0_phantom_som_classifieds_20260426 \
-  results/visualwebarena/phase1/B0_phantom_som_reddit_20260428 \
-  results/visualwebarena/phase1/B0_phantom_text_classifieds_20260427 \
-  results/visualwebarena/phase1/B0_phantom_text_reddit_20260427 \
-  results/visualwebarena/phase1/B1_3mode_classifieds_20260413 \
-  results/visualwebarena/phase1/B1_3mode_reddit_20260413 \
-  results/visualwebarena/phase1/B1_phantom_som_classifieds_20260428
+# Single source of truth: results/phantom_paper/run_manifest.yaml
+# (set by scripts/analysis/lib/run_registry.py::get_run_dirs_paper_vwa())
+RUN_DIRS_PAPER_VWA = $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_run_dirs_paper_vwa; print(' '.join(str(p) for p in get_run_dirs_paper_vwa()))")
 
 aggregate-cross-site:
 	$(PYTHON) scripts/analysis/aggregate_cross_site.py \
@@ -206,10 +197,10 @@ analyze-paper-per-run:
 
 # B0 vs B1 site comparison — runs compare_b0_b1.py for each (B0_run, B1_run)
 # pair on cls + red. Outputs to results/visualwebarena/phase1/b0_vs_b1_<site>/.
-B0_RUN_CLS ?= results/visualwebarena/phase1/B0_3mode_classifieds_20260413
-B0_RUN_RED ?= results/visualwebarena/phase1/B0_3mode_reddit_20260422
-B1_RUN_CLS ?= results/visualwebarena/phase1/B1_3mode_classifieds_20260413
-B1_RUN_RED ?= results/visualwebarena/phase1/B1_3mode_reddit_20260413
+B0_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; print(get_cell('B0','classifieds','DOM').run_dir)")
+B0_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; print(get_cell('B0','reddit','DOM').run_dir)")
+B1_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; print(get_cell('B1','classifieds','DOM').run_dir)")
+B1_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; print(get_cell('B1','reddit','DOM').run_dir)")
 
 compare-b0-b1-all:
 	@$(MAKE) --no-print-directory compare B0=$(B0_RUN_CLS) B1=$(B1_RUN_CLS) SITE=classifieds || true

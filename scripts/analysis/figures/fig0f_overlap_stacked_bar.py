@@ -20,91 +20,42 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Patch
 
+try:
+    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
+    sys.path.append(str(Path(__file__).resolve().parents[3]))
+    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
 
 ROOT = Path(__file__).resolve().parents[3]
-RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig0f_overlap_stacked_bar.png"
 
-MODE_ORDER = ["DOM", "SoM", "Vision", "Phantom-SoM", "P-text", "Phantom-prompt"]
-MODE_LABELS = ["DOM", "SoM", "Vision", "P-SoM", "P-text", "P-prompt"]
+MODE_ORDER = PAPER_MODES
+MODE_LABELS = ["DOM", "SoM", "Vision", "P-text", "P-prompt", "P-SoM"]
 COLORS = {
     "DOM": "#4c78a8",
     "SoM": "#f58518",
     "Vision": "#54a24b",
-    "Phantom-SoM": "#b279a2",
+    "P-SoM": "#b279a2",
     "P-text": "#e45756",
-    "Phantom-prompt": "#9467bd",
+    "P-prompt": "#9467bd",
 }
 DEPTH_ALPHA = {1: 1.0, 2: 0.75, 3: 0.60, 4: 0.45, 5: 0.30, 6: 0.20}
 
 
-def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
-    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
-    return candidates[-1] if candidates else None
+def _panel(key: str, title: str, baseline: str, site: str, expected: int) -> dict:
+    return {
+        "key": key,
+        "title": title,
+        "expected": expected,
+        "modes": {cell.mode: cell.episodes_dir for cell in get_cells(baseline=baseline, site=site)},
+    }
 
 PANELS = [
-    {
-        "key": "B0 cls",
-        "title": "B0 classifieds",
-        "expected": 234,
-        "modes": {
-            "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
-        },
-            },
-    {
-        "key": "B0 red",
-        "title": "B0 reddit",
-        "expected": 210,
-        "modes": {
-            "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
-        },
-            },
-    {
-        "key": "B1 cls",
-        "title": "B1 classifieds",
-        "expected": 234,
-        "modes": {
-            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
-        },
-        "pending": ["P-text", "Phantom-prompt"],
-    },
-    {
-        "key": "B1 red",
-        "title": "B1 reddit",
-        "expected": 210,
-        "modes": {
-            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
-        },
-        "pending": ["Phantom-SoM", "P-text", "Phantom-prompt"],
-    },
+    _panel("B0 cls", "B0 classifieds", "B0", "classifieds", 234),
+    _panel("B0 red", "B0 reddit", "B0", "reddit", 210),
+    _panel("B1 cls", "B1 classifieds", "B1", "classifieds", 234),
+    _panel("B1 red", "B1 reddit", "B1", "reddit", 210),
 ]
-# Auto-attach Phantom-prompt run dir per panel when it exists on disk
-_panel_baseline_site = {
-    "B0 cls": ("B0", "classifieds"),
-    "B0 red": ("B0", "reddit"),
-    "B1 cls": ("B1", "classifieds"),
-    "B1 red": ("B1", "reddit"),
-}
-for _panel in PANELS:
-    _baseline, _site_full = _panel_baseline_site[_panel["key"]]
-    _pp = _phantom_prompt_dir(_baseline, _site_full)
-    if _pp is not None:
-        _panel["modes"]["Phantom-prompt"] = _pp
-        if "pending" in _panel and "Phantom-prompt" in _panel["pending"]:
-            _panel["pending"] = [m for m in _panel["pending"] if m != "Phantom-prompt"]
 
 
 def task_id(path: Path) -> int:

@@ -49,6 +49,12 @@ try:
 except ImportError:
     HAS_PD = False
 
+try:
+    from scripts.analysis.lib.run_registry import PAPER_MODES, canonical_mode, get_run_dirs_paper_vwa
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+    from scripts.analysis.lib.run_registry import PAPER_MODES, canonical_mode, get_run_dirs_paper_vwa
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -139,7 +145,7 @@ def load_fp_stats(run_dir: Path) -> Dict[str, Any]:
 # Core aggregation
 # ---------------------------------------------------------------------------
 
-MODES = ["dom", "som", "vision"]
+MODES = PAPER_MODES
 
 # Adjusted SR regex patterns for stub notes
 _STUB_ADJ_RE = re.compile(r"[Aa]djusted SR[=:\s]*([\d]+)[/\s]*([\d]+)")
@@ -183,7 +189,7 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
 
     rows = []
     for cond in summaries:
-        mode = cond.get("observation_mode", "")
+        mode = canonical_mode(str(cond.get("observation_mode", "")))
         if not mode:
             continue
         is_stub = bool(cond.get("_stub"))
@@ -275,8 +281,8 @@ def main() -> None:
         description="Cross-site aggregation for Phase 1 experiments"
     )
     parser.add_argument(
-        "--run-dirs", nargs="+", required=True,
-        help="Run directories (one per site, e.g. classifieds reddit shopping)",
+        "--run-dirs", nargs="+", default=None,
+        help="Run directories (default: paper VWA runs from run_manifest.yaml)",
     )
     parser.add_argument(
         "--output-dir", default=None,
@@ -289,7 +295,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    run_dirs = [Path(d) for d in args.run_dirs]
+    run_dirs = [Path(d) for d in args.run_dirs] if args.run_dirs else get_run_dirs_paper_vwa()
     for rd in run_dirs:
         if not rd.is_dir():
             print(f"[ERROR] Not a directory: {rd}")

@@ -1,0 +1,208 @@
+# Single source of truth for analysis pipeline run discovery.
+# Edit this file when adding/removing runs; no code changes needed.
+
+# Each entry maps one (baseline, site, mode) to its run dir + condition subdir.
+# Relative run_dir values are resolved under results/visualwebarena/phase1/.
+
+cells:
+  # B0 classifieds
+  - baseline: B0
+    site: classifieds
+    mode: DOM
+    run_dir: B0_3mode_classifieds_20260413
+    condition_subdir: phase1_dom_router_0
+    expected_n: 234
+    grade: paper-grade-pre-bug
+    notes: "Phase A pre-bug; will be replaced after rerun"
+  - baseline: B0
+    site: classifieds
+    mode: SoM
+    run_dir: B0_3mode_classifieds_20260413
+    condition_subdir: phase1_som_router_0
+    expected_n: 234
+    grade: paper-grade-pre-bug
+  - baseline: B0
+    site: classifieds
+    mode: Vision
+    run_dir: B0_3mode_classifieds_20260413
+    condition_subdir: phase1_vision_router_0
+    expected_n: 234
+    grade: paper-grade-pre-bug
+  - baseline: B0
+    site: classifieds
+    mode: P-text
+    run_dir: B0_phantom_text_classifieds_20260427
+    condition_subdir: phase1_phantom_dom_router_0
+    expected_n: 234
+    grade: paper-grade-pre-bug
+  - baseline: B0
+    site: classifieds
+    mode: P-SoM
+    run_dir: B0_phantom_som_classifieds_20260426
+    condition_subdir: phase1_phantom_som_router_0
+    expected_n: 234
+    grade: paper-grade-pre-bug
+
+  # B0 reddit
+  - baseline: B0
+    site: reddit
+    mode: DOM
+    run_dir: B0_3mode_reddit_20260422
+    condition_subdir: phase1_dom_router_0
+    expected_n: 210
+    grade: paper-grade-pre-bug
+  - baseline: B0
+    site: reddit
+    mode: SoM
+    run_dir: B0_3mode_reddit_20260422
+    condition_subdir: phase1_som_router_0
+    expected_n: 210
+    grade: paper-grade-pre-bug
+  - baseline: B0
+    site: reddit
+    mode: Vision
+    run_dir: B0_3mode_reddit_20260422
+    condition_subdir: phase1_vision_router_0
+    expected_n: 210
+    grade: paper-grade-pre-bug
+  - baseline: B0
+    site: reddit
+    mode: P-text
+    run_dir: B0_phantom_text_reddit_20260427
+    condition_subdir: phase1_phantom_dom_router_0
+    expected_n: 210
+    grade: paper-grade-pre-bug
+  - baseline: B0
+    site: reddit
+    mode: P-prompt
+    run_dir: B0_phantom_prompt_reddit_20260429
+    condition_subdir: phase1_phantom_prompt_router_0
+    expected_n: 210
+    grade: paper-grade-pre-bug
+  - baseline: B0
+    site: reddit
+    mode: P-SoM
+    run_dir: B0_phantom_som_reddit_20260428
+    condition_subdir: phase1_phantom_som_router_0
+    expected_n: 210
+    grade: paper-grade-pre-bug
+
+  # B1 classifieds
+  - baseline: B1
+    site: classifieds
+    mode: DOM
+    run_dir: B1_3mode_classifieds_20260413
+    condition_subdir: phase1_dom_router_0
+    expected_n: 234
+    grade: paper-grade-pre-bug
+  - baseline: B1
+    site: classifieds
+    mode: SoM
+    run_dir: B1_3mode_classifieds_20260413
+    condition_subdir: phase1_som_router_0
+    expected_n: 234
+    grade: paper-grade-pre-bug
+  - baseline: B1
+    site: classifieds
+    mode: Vision
+    run_dir: B1_3mode_classifieds_20260413
+    condition_subdir: phase1_vision_router_0
+    expected_n: 234
+    grade: paper-grade-pre-bug
+  - baseline: B1
+    site: classifieds
+    mode: P-text
+    run_dir: B1_phantom_dom_classifieds_20260429
+    condition_subdir: phase1_phantom_dom_router_0
+    expected_n: 234
+    grade: paper-grade-pre-bug
+  - baseline: B1
+    site: classifieds
+    mode: P-SoM
+    run_dir: B1_phantom_som_classifieds_20260428
+    condition_subdir: phase1_phantom_som_router_0
+    expected_n: 234
+    grade: paper-grade-pre-bug
+
+  # B1 reddit
+  - baseline: B1
+    site: reddit
+    mode: DOM
+    run_dir: B1_3mode_reddit_20260413
+    condition_subdir: phase1_dom_router_0
+    expected_n: 210
+    grade: paper-grade-pre-bug
+  - baseline: B1
+    site: reddit
+    mode: SoM
+    run_dir: B1_3mode_reddit_20260413
+    condition_subdir: phase1_som_router_0
+    expected_n: 210
+    grade: paper-grade-pre-bug
+  - baseline: B1
+    site: reddit
+    mode: Vision
+    run_dir: B1_3mode_reddit_20260413
+    condition_subdir: phase1_vision_router_0
+    expected_n: 210
+    grade: paper-grade-pre-bug
+
+in_flight:
+  - baseline: B1
+    site: classifieds
+    mode: P-prompt
+    run_dir: B1_phantom_prompt_classifieds_20260501
+    condition_subdir: phase1_phantom_prompt_router_0
+    expected_n: 234
+    grade: in-flight
+    notes: "Tier 2 chain; pre-Phase-A data, will be discarded after rerun"
+
+archived:
+  - baseline: B0
+    site: shopping
+    mode: DOM
+    run_dir: _archive/B0_3mode_shopping_20260421_abandoned_placeholder
+    condition_subdir: phase1_dom_router_0
+    expected_n: 466
+    grade: archived
+    notes: "Abandoned placeholder"
+  - baseline: B0
+    site: shopping
+    mode: DOM
+    run_dir: _archive/B0_dom_shopping_20260428_aborted_fpc_bug
+    condition_subdir: phase1_dom_router_0
+    expected_n: 466
+    grade: archived
+    notes: "Aborted FPC bug run"
+  - baseline: B0
+    site: shopping
+    mode: DOM
+    run_dir: _archive/B0_dom_shopping_20260428_dirty_no_reset
+    condition_subdir: phase1_dom_router_0
+    expected_n: 466
+    grade: archived
+    notes: "Dirty no-reset run"
+  - baseline: B0
+    site: shopping
+    mode: P-text
+    run_dir: _archive/B0_phantom_dom_shopping_20260427_dirty_partial_reset
+    condition_subdir: phase1_phantom_dom_router_0
+    expected_n: 466
+    grade: archived
+    notes: "Dirty partial reset"
+  - baseline: B0
+    site: shopping
+    mode: P-SoM
+    run_dir: _archive/B0_phantom_shopping_20260427_dirty_partial_reset
+    condition_subdir: phase1_phantom_som_router_0
+    expected_n: 466
+    grade: archived
+    notes: "Dirty partial reset"
+  - baseline: B1
+    site: shopping
+    mode: DOM
+    run_dir: _archive/B1_3mode_shopping_20260413_pre_magento_bug
+    condition_subdir: phase1_dom_router_0
+    expected_n: 466
+    grade: archived
+    notes: "Pre-Magento-bug run"

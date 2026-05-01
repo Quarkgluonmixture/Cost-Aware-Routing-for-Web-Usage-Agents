@@ -28,9 +28,14 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
+try:
+    from scripts.analysis.lib.run_registry import get_cells
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
+    sys.path.append(str(Path(__file__).resolve().parents[3]))
+    from scripts.analysis.lib.run_registry import get_cells
+
 
 ROOT = Path(__file__).resolve().parents[3]
-RESULTS = ROOT / "results/visualwebarena/phase1"
 COST_PER_MODE = ROOT / "docs/analysis/cross_sites/cost_per_mode.json"
 OUT = ROOT / "results/phantom_paper/figures/fig3d_cost_sr_frontier.png"
 
@@ -38,16 +43,12 @@ MODE_COLORS = {
     "DOM": "#4c78a8",
     "SoM": "#f58518",
     "Vision": "#54a24b",
-    "Phantom-SoM": "#b279a2",
-    "Phantom-prompt": "#9467bd",
+    "P-SoM": "#b279a2",
+    "P-text": "#e45756",
+    "P-prompt": "#9467bd",
 }
-MODE_DISPLAY = {"Phantom-SoM": "P-SoM", "Phantom-prompt": "P-prompt"}
+MODE_DISPLAY = {"P-SoM": "P-SoM", "P-prompt": "P-prompt", "P-text": "P-text"}
 MODEL_MARKERS = {"B0": "o", "B1": "s"}
-
-
-def _phantom_prompt_run(baseline: str, site: str) -> Path | None:
-    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0"))
-    return candidates[-1] if candidates else None
 
 
 @dataclass(frozen=True)
@@ -71,38 +72,18 @@ class Point:
 
 
 SPECS = [
-    ConditionSpec("B0", "classifieds", "DOM", RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0", 234),
-    ConditionSpec("B0", "classifieds", "SoM", RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0", 234),
-    ConditionSpec("B0", "classifieds", "Vision", RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0", 234),
-    ConditionSpec("B0", "classifieds", "Phantom-SoM", RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0", 234),
-    ConditionSpec("B0", "reddit", "DOM", RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0", 210),
-    ConditionSpec("B0", "reddit", "SoM", RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0", 210),
-    ConditionSpec("B0", "reddit", "Vision", RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0", 210),
-    ConditionSpec("B0", "reddit", "Phantom-SoM", RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0", 210),
-    ConditionSpec("B1", "classifieds", "DOM", RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0", 234),
-    ConditionSpec("B1", "classifieds", "SoM", RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0", 234),
-    ConditionSpec("B1", "classifieds", "Vision", RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0", 234),
-    ConditionSpec("B1", "reddit", "DOM", RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0", 210),
-    ConditionSpec("B1", "reddit", "SoM", RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0", 210),
-    ConditionSpec("B1", "reddit", "Vision", RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0", 210),
+    ConditionSpec(cell.baseline, cell.site, cell.mode, cell.run_dir / cell.condition_subdir, cell.expected_n)
+    for baseline in ("B0", "B1")
+    for site in ("classifieds", "reddit")
+    for cell in get_cells(baseline=baseline, site=site)
 ]
-OPTIONAL_SPECS = [
-    ConditionSpec("B1", "classifieds", "Phantom-SoM", RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0", 234),
-    ConditionSpec("B1", "reddit", "Phantom-SoM", RESULTS / "B1_phantom_reddit_20260426/phase1_phantom_som_router_0", 210),
-]
-# Phantom-prompt entries (B0/B1 × cls/red) when run dirs exist
-for _b in ("B0", "B1"):
-    for _site, _expected in (("reddit", 210), ("classifieds", 234)):
-        _run = _phantom_prompt_run(_b, _site)
-        if _run is not None:
-            OPTIONAL_SPECS.append(ConditionSpec(_b, _site, "Phantom-prompt", _run, _expected))
 
 
 def has_episodes(spec: ConditionSpec) -> bool:
     return any((spec.condition_dir / "episodes").glob("*_summary_v2.json"))
 
 
-SPECS = SPECS + [s for s in OPTIONAL_SPECS if has_episodes(s)]
+SPECS = [s for s in SPECS if has_episodes(s)]
 
 
 def task_id(path: Path) -> int:

@@ -22,7 +22,10 @@ venv/
 scripts/vwa_env_remote.sh
 
 # Experiment outputs
-results/
+results/*
+!results/phantom_paper/
+results/phantom_paper/*
+!results/phantom_paper/run_manifest.yaml
 logs/
 wandb/
 visualization/

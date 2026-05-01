@@ -26,26 +26,25 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+try:
+    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
+    sys.path.append(str(Path(__file__).resolve().parents[3]))
+    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
 
 ROOT = Path(__file__).resolve().parents[3]
-RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT = ROOT / "results/phantom_paper/figures/fig1c_strategy_gradient.png"
 
-MODES = ["DOM", "Vision", "SoM", "Phantom-SoM", "P-text", "Phantom-prompt"]
+MODES = PAPER_MODES
 METRICS = ["Search-loop %", "Type action %", "Scroll action %", "Self-correction / ep"]
 COLORS = {
     "DOM": "#4c78a8",
     "Vision": "#54a24b",
     "SoM": "#f58518",
-    "Phantom-SoM": "#b279a2",
+    "P-SoM": "#b279a2",
     "P-text": "#e45756",
-    "Phantom-prompt": "#9467bd",
+    "P-prompt": "#9467bd",
 }
-
-
-def _phantom_prompt_dir(baseline: str, site: str) -> Path | None:
-    candidates = sorted(RESULTS.glob(f"{baseline}_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
-    return candidates[-1] if candidates else None
 
 # Verified notes:
 # - Full reddit gradient (§103): DOM search 27/type 38/steps 12.7;
@@ -59,73 +58,43 @@ REDDIT_VERIFIED = {
         "DOM": 22.7,
         "Vision": None,
         "SoM": 12.0,
-        "Phantom-SoM": 10.8,
+        "P-SoM": 10.8,
         "P-text": 10.8,
-        "Phantom-prompt": None,
+        "P-prompt": None,
     },
     "Type action %": {
         "DOM": 40.2,
         "Vision": None,
         "SoM": 23.0,
-        "Phantom-SoM": 20.4,
+        "P-SoM": 20.4,
         "P-text": 20.4,
-        "Phantom-prompt": None,
+        "P-prompt": None,
     },
     "Scroll action %": {
         "DOM": 15.2,
         "Vision": None,
         "SoM": None,
-        "Phantom-SoM": 26.2,
+        "P-SoM": 26.2,
         "P-text": 26.2,
-        "Phantom-prompt": None,
+        "P-prompt": None,
     },
     "Self-correction / ep": {
         "DOM": 0.31,
         "Vision": None,
         "SoM": None,
-        "Phantom-SoM": 0.35,
+        "P-SoM": 0.35,
         "P-text": 0.35,
-        "Phantom-prompt": None,
+        "P-prompt": None,
     },
 }
 
 STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
-    "B0": {
-        "reddit": {
-            "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_reddit_20260422/phase1_vision_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_reddit_20260422/phase1_som_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
-        },
-        "classifieds": {
-            "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "Vision": RESULTS / "B0_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "SoM": RESULTS / "B0_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-            "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
-        },
-    },
-    "B1": {
-        "reddit": {
-            "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
-        },
-        "classifieds": {
-            "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-            "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-            "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-            "Phantom-SoM": RESULTS / "B1_phantom_som_classifieds_20260428/phase1_phantom_som_router_0/episodes",
-        },
-    },
+    baseline: {
+        site: {cell.mode: cell.episodes_dir for cell in get_cells(baseline=baseline, site=site)}
+        for site in ("reddit", "classifieds")
+    }
+    for baseline in ("B0", "B1")
 }
-# Auto-attach Phantom-prompt run dirs (B0/B1 × cls/red) when present
-for _b in ("B0", "B1"):
-    for _s in ("reddit", "classifieds"):
-        _pp = _phantom_prompt_dir(_b, _s)
-        if _pp is not None:
-            STEP_DIRS[_b][_s]["Phantom-prompt"] = _pp
 ROW_SPECS = [
     ("B0", "reddit", "B0 Reddit"),
     ("B0", "classifieds", "B0 Classifieds"),
@@ -273,7 +242,7 @@ def draw_panel(ax: plt.Axes, row_idx: int, metric: str, values: dict[str, dict[s
         )
     if row_idx == 0:
         ax.set_title(metric, fontsize=10.0, fontweight="bold")
-    ax.set_xticks(x, ["DOM", "Vision", "SoM", "P-SoM", "P-text", "P-prompt"], rotation=0, fontsize=7.0)
+    ax.set_xticks(x, MODES, rotation=0, fontsize=7.0)
     ax.grid(axis="y", color="#dddddd", linewidth=0.8)
     ax.set_axisbelow(True)
     ymax = max([v for v in metric_values if v is not None] or [1])
@@ -308,7 +277,7 @@ def main() -> None:
         0.5,
         0.012,
         "All rows live-computed from step JSONL (B0 5-mode + B1 partial). "
-        "B1 cls includes Phantom-SoM; B1 reddit phantom modes pending (n/a hatched). "
+        "B1 cls includes P-SoM; B1 reddit phantom modes pending (n/a hatched). "
         "OSClass search detection uses 'page=search' / '/search' and measures search-page coverage; "
         "cross-site comparison invalid for the search-loop column.",
         ha="center",
