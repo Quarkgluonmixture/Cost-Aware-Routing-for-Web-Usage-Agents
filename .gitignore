@@ -13,12 +13,12 @@ venv/
 .vscode/
 .DS_Store
 
-# Obsidian (vault root = repo root; per-machine state ignored, shared config may be committed)
-.obsidian/workspace.json
-.obsidian/workspace-mobile.json
-.obsidian/cache
-.obsidian/graph.json
-.trash/
+# Obsidian (vault root = docs/; per-machine state ignored, shared config may be committed)
+docs/.obsidian/workspace.json
+docs/.obsidian/workspace-mobile.json
+docs/.obsidian/cache
+docs/.obsidian/graph.json
+docs/.trash/
 
 # Testing
 .pytest_cache/
