@@ -91,12 +91,12 @@ make glm-update-cells APPLY=1      # 实际写
 ## §2 我手动维护清单
 
 ### Bases 数据层 (frontmatter, 单源化)
-| File | 何时改 | 改啥 |
-|---|---|---|
-| `_status/section*.md` | section status / words / blocker 变 | `status` `progress` `blocker` `words` |
-| `_status/cells/cell_*.md` | cell 完成或状态变 | `status` `progress` `sr_raw` `sr_adj` `drop_one` `pid` |
-| `_status/codex/codex_*.md` | codex task lifecycle | `status` (ready→running→done, done 后**删 file**) |
-| `_status/issues/issue_*.md` | issue 状态变 | `status` (active→backlog/resolved). resolved 后删 file 或留作 chronicle |
+| File | 何时改 | 改啥 | Auto? |
+|---|---|---|---|
+| `_status/section*.md` | section status / words / blocker 变 | `status` `progress` `blocker` `words` | manual |
+| `_status/cells/cell_*.md` | cell 完成或状态变 | `status` `progress` `sr_raw` `n` (auto); `sr_adj` `drop_one` `pid` `blocker` `eta` (manual) | **🤖 auto every 10 min via cron `glm-update-cells`** (skips active+pid for safety) |
+| `_status/codex/codex_*.md` | codex task lifecycle | `status` (ready→running→done, done 后**删 file**) | manual |
+| `_status/issues/issue_*.md` | issue 状态变 | `status` (active→backlog/resolved). resolved 后删 file 或留作 chronicle | manual |
 
 ### docs 自维护
 | Doc | 何时改 |
@@ -117,14 +117,38 @@ make glm-update-cells APPLY=1      # 实际写
 ---
 
 ## §3 自动 / 不需我维护
-| 数据 | 来源 |
-|---|---|
-| Active processes (实时) | `make active` (扫 ps + episode mtime) |
-| 4 Bases views | `_status/*.md` frontmatter 改后**自动重算** |
-| Figures + cross-condition CSV | `make analysis` 全 pipeline |
-| paper.bib BibTeX | codex #10 (lit search 已 done via Gemini DR 6/6) |
-| Watchdog auto-clean | watchdog 6-layer protocol (paper-grade 100% pure) |
-| obs_prepare cost / energy | 已写入 episode_summary_v2.json (§69) |
+
+### 真实时 / 自动 trigger
+| 数据 | 来源 | 触发 |
+|---|---|---|
+| Active processes | `make active` | 实时扫 ps + episode mtime |
+| 4 Bases views | `_status/*.md` frontmatter | Obsidian Bases 自动重算 |
+| Figures + cross-condition CSV | `make analysis` | 手动 (新数据后) |
+| Watchdog auto-clean | 6-layer protocol | runner-side daemon |
+| obs_prepare cost / energy | episode_summary_v2.json | runner 写入 (§69) |
+| paper.bib BibTeX | codex #10 (Gemini DR 6/6 done) | 手动 trigger codex |
+
+### 🤖 GLM Sidecar Cron (✅ ACTIVE 2026-05-02)
+
+Installed via `crontab scripts/maintenance/crontab.txt`. **失败自动 ntfy 通知** (priority high, last 500 chars output)。
+
+| Job | Cadence | Failure handling |
+|---|---|---|
+| **glm-update-cells** | `*/10 min` | ⚠️ ntfy on exit≠0 — skips active+pid cells (safety) |
+| **glm-refresh-playbook** | `@daily 08:00 BST` | ⚠️ ntfy on exit≠0 — regenerates §6 critical path |
+| **check-links** | `@weekly Sun 00:00` | log only (always exit 1 if broken links found) |
+
+**Ntfy topic**: `p79-exp-dgx-spark` (override via `NTFY_TOPIC` env)
+**Logs**: `logs/cron/glm_*.log` + `logs/cron/dead_links_<date>.log`
+**Manage**: `crontab -l` 查 / `crontab -r` 卸 / `crontab scripts/maintenance/crontab.txt` 重装
+
+### 手动 trigger (cron 之外按需)
+```bash
+make glm-update-cells [APPLY=1] [FORCE=1]              # cells frontmatter sync
+make glm-refresh-playbook [APPLY=1]                    # PLAYBOOK §6 refresh
+make glm-pre-launch-check QUEUE= BASELINE= SITE= [RESET=1]  # pre-launch sanity
+make check-links                                       # dead link scan
+```
 
 ---
 
@@ -208,9 +232,10 @@ setsid nohup ... > log 2>&1 < /dev/null &    # 后台长任务
 
 ---
 
-## §6 当前 critical path snapshot (scratchpad, 自己 daily 改)
+## §6 当前 critical path snapshot (🤖 auto-refresh @daily 08:00 BST + manual scratchpad)
 
 > 不改 next_steps.md, 这里是我的快速 mental model. 用 ✅/⏳/🚫/🔴 标.
+> **Auto**: cron `glm-refresh-playbook` 每天 08:00 BST regenerate (失败 ntfy 通知). 手动覆盖随时 OK — 下次 cron 又会 refresh.
 
 - 🔴 **学长 sync** — 时间 pending, ADVISOR_SYNC §1-§5 ready
 - ⏳ **B1 phantom_som cls** — 184+/234 (~10-15d ETA, GPU contention seonglae 95%)

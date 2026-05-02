@@ -1,21 +1,24 @@
-# P79 GLM sidecar cron — opt-in auto-trigger
+# P79 GLM sidecar cron — opt-in auto-trigger with ntfy failure alerts
 #
 # To install: crontab scripts/maintenance/crontab.txt
 # To uninstall: crontab -r
 # To preview without installing: cat scripts/maintenance/crontab.txt
+# To check installed: crontab -l
 #
-# All targets default to APPLY=1 (write to disk). Logs land in logs/cron/*.
-# Repo path hardcoded — edit if repo moves.
+# Each entry wrapped with notify_on_fail.sh — sends ntfy.sh alert (priority=high)
+# on non-zero exit code with last 500 chars of output.
+# Topic: $NTFY_TOPIC env or default p79-exp-dgx-spark.
 
 REPO=/home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents
 SHELL=/bin/bash
+NTFY_TOPIC=p79-exp-dgx-spark
 
 # every 10 min: sync _status/cells/*.md frontmatter from condition_summary_v2.json
 # (skips active+pid cells, safety guard)
-*/10 * * * * cd $REPO && make glm-update-cells APPLY=1 >> logs/cron/glm_update_cells.log 2>&1
+*/10 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "glm-update-cells" -- make glm-update-cells APPLY=1 >> logs/cron/glm_update_cells.log 2>&1
 
 # every day 08:00 BST: refresh PLAYBOOK §6 critical path snapshot via GLM
-0 8 * * * cd $REPO && make glm-refresh-playbook APPLY=1 >> logs/cron/glm_playbook.log 2>&1
+0 8 * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "glm-refresh-playbook" -- make glm-refresh-playbook APPLY=1 >> logs/cron/glm_playbook.log 2>&1
 
-# every Sunday 00:00: dead link scan, output report to logs
+# every Sunday 00:00: dead link scan, output report to logs (don't notify on this — it always exits 1 if links found)
 0 0 * * 0 cd $REPO && make check-links > logs/cron/dead_links_$(date +\%Y\%m\%d).log 2>&1
