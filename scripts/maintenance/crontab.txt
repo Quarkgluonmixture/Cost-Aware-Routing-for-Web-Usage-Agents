@@ -17,6 +17,10 @@ NTFY_TOPIC=p79-exp-dgx-spark
 # (skips active+pid cells iff PID alive; auto-clears stale dead PIDs)
 */10 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "glm-update-cells" -- make glm-update-cells APPLY=1 >> logs/cron/glm_update_cells.log 2>&1
 
+# every 5 min: scan recent runner / watchdog / cron logs for ERROR / Traceback / OOM /
+# NOT_LOGGED_IN / Timeout. Output JSON consumed by §2.5 active-errors subsection.
+*/5 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "error-scan" -- make error-scan >> logs/cron/error_scan.log 2>&1
+
 # every 30 min (15+45 to avoid colliding with full refresh on 0): fast §2 automation-status
 # refresh (cron health / changelog / dead-links / ntfy). SECTION=2 skips `make active`.
 15,45 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "glm-refresh-playbook-s2" -- make glm-refresh-playbook APPLY=1 SECTION=2 >> logs/cron/glm_playbook_s2.log 2>&1

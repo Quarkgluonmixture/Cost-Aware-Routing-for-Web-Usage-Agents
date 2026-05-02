@@ -81,6 +81,7 @@ def get_cron_job_status() -> list[dict]:
     jobs = []
     log_files = {
         "glm-update-cells": "glm_update_cells.log",
+        "glm-refresh-playbook-s2": "glm_playbook_s2.log",
         "glm-refresh-playbook": "glm_playbook.log",
     }
     for name, fname in log_files.items():
@@ -142,6 +143,29 @@ def get_cell_changelog_tail(n: int = 20) -> list[dict]:
         except Exception:
             continue
     return rows[-n:][::-1]
+
+
+def get_error_scan() -> str:
+    """Read logs/cron/error_scan.json (produced by error_scan.py @5min cron)."""
+    p = CRON_LOG_DIR / "error_scan.json"
+    if not p.exists():
+        return "(error_scan.json missing — error-scan cron 未运行)"
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        return f"(error_scan.json parse failed: {e})"
+    n = d.get("n_errors", 0)
+    n_files = d.get("n_files_scanned", "?")
+    scanned = d.get("scanned_at", "?")
+    if n == 0:
+        return f"n_errors=0, n_files_scanned={n_files}, scanned_at={scanned}"
+    lines = [f"n_errors={n}, n_files_scanned={n_files}, scanned_at={scanned}"]
+    for e in d.get("errors", [])[:8]:
+        lines.append(
+            f"- [{e.get('severity', '?')}] {e.get('kind', '?')} | {e.get('file', '?')}:{e.get('line_no', '?')} "
+            f"@ {e.get('mtime', '?')} | {e.get('snippet', '')[:200]}"
+        )
+    return "\n".join(lines)
 
 
 def get_ntfy_recent_fails() -> str:
@@ -233,23 +257,33 @@ def build_context(section: str = "both") -> str:
         lines.append("\n=== §2 INPUT — NTFY FAIL HISTORY (last 24h) ===")
         lines.append(get_ntfy_recent_fails())
 
+        lines.append("\n=== §2 INPUT — ERRORS scan (runner / watchdog / cron logs) ===")
+        lines.append(get_error_scan())
+
     return "\n".join(lines)
 
 
 # ---- GLM call ----
 
-_S1_PROMPT = """## §1 — 当前 critical path snapshot (~120 词)
-4-6 行 status emoji (✅/⏳/🚫/🔴) + 简短 cell 或 blocker 描述。
-最后 1 行: "今日瓶颈: ..." 1 句总结。
-中文为主.
+_S1_PROMPT = """## §1 — 今日 critical path 早报 (~150-200 词, narrative 风格)
+
+写法: 像给一个忙碌的研究员讲今天该关心什么。**不要罗列**, 写**连续段落**:
+1. 第 1 段 (~60 词): 主战场 — 当前正在跑的 runner / chain / 它的进度跟瓶颈, 用人话讲为什么慢/快, e.g. "B1 phantom_prompt classifieds 跑了 1.5 天, 才到 27%, 因为 seonglae 同时跑 8-seed sweep 抢 GPU, 吞吐降到 1 ep/h."
+2. 第 2 段 (~50 词): 队列 + pending — 多少 cell 在排队, 卡在哪, 啥时候能动 (e.g. advisor align / RunPod approval / 前序 cell)
+3. 第 3 段 (~50 词): Active issues 解读 — 不是抄 issue 标题, 是讲**为什么这些 issue 卡在这**, 跟主战场什么关系
+4. 最后 1 行 **明确 next action 推荐**: "👉 建议: ..." — 1 句话, 具体动作 (e.g. "联系 seonglae 协调 GPU 或推 RunPod 经费走流程", "等 17:45 cron 自动同步即可", "立刻跑 make analysis 把新数据进 figures")
+
+中文为主, 数字可以保留. 适度 emoji (🔴 ⏳ ▶️ ✅) 强调状态但不过量。
 """
 
 _S2_PROMPT = """## §2 — 自动化运行状态
-四个 subsection (按此顺序输出):
+五个 subsection (按此顺序输出):
 
 ### 2.1 Cron job 健康度 (last 24h)
-markdown table 列 cron jobs:
+markdown table 列**所有** cron jobs (现 4 个: glm-update-cells / glm-refresh-playbook-s2 / glm-refresh-playbook / check-links):
 | Job | 上次 run | 状态 | 备注 |
+
+如果某 job 状态非 ✅, 备注列写人话原因 (e.g. "首次运行待 17:45 触发", "GLM API timeout 自动 retry").
 
 ### 2.2 Cell 状态变更近况 (changelog tail)
 bullet list, 最近 5-8 条 cell frontmatter 变更, 每条 1 行: `时间(HH:MM) cell名: 变更字段`. 强调任何 `rerun_detected` / `status→active` / `status→done` / `pid_dead_cleared` 信号. 如 changelog 空则写"近 3 天无 cell 变更"。
@@ -259,6 +293,12 @@ bullet list, 最近 5-8 条 cell frontmatter 变更, 每条 1 行: `时间(HH:MM
 
 ### 2.4 Ntfy fail alerts 历史
 列 last 24h 失败 (timestamp + title). 如无: `✅ 近 24h 无失败`。
+
+### 2.5 🔴 Active errors / warnings (runner / watchdog log scan, last 24h)
+基于 INPUT 里的 ERRORS scan, **用人话**总结每条:
+- 若 `n_errors == 0`: 写 `✅ 近 24h 无 runner / watchdog 错误 (扫了 N 个 log 文件)`
+- 否则: bullet list, 每条格式 `[severity] file (line N, time): 一句话讲发生啥` — 严重 (oom/traceback/not_logged_in) 用 🔴, 中度 (timeout/http5xx) 用 ⚠️, 轻度 (notify_fail) 用 ℹ️
+- 重点: 不要把 stack trace 直接 paste, 用人话解释 — e.g. "CUDA OOM in episode 47, runner 自动重试" 不是 "torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate ..."
 """
 
 

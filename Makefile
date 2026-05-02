@@ -24,7 +24,7 @@
 PYTHON ?= .venv/bin/python3
 PYTEST ?= .venv/bin/pytest
 
-.PHONY: help test smoke smoke-only rederive rederive-all analyze cross-rep \
+.PHONY: help test smoke smoke-only rederive rederive-all analyze cross-rep error-scan \
         confidence compare reason-diag clean-tasks watch-reddit schedule-list \
         validate gallery rsync-to-hub rsync-from-hub rsync-artifacts-from-hub \
         aggregate-cross-site summary-collect routing-auroc analyze-paper \
@@ -152,6 +152,9 @@ else
 	$(MAKE) _figures
 	$(MAKE) _status
 endif
+	@echo "[analysis] post-hook: triggering PLAYBOOK refresh in background..."
+	@nohup bash -c "sleep 5 && $(MAKE) glm-update-cells APPLY=1 && $(MAKE) glm-refresh-playbook APPLY=1" \
+	  >> logs/cron/glm_playbook.log 2>&1 < /dev/null & disown ; true
 
 # Per-run pipeline for all paper-grade VWA runs (loop over registry)
 _per_run_all:
@@ -435,6 +438,12 @@ glm-refresh-playbook:
 	@.venv/bin/python scripts/maintenance/glm/glm_playbook_refresh.py \
 	  $(if $(APPLY),--apply,) \
 	  $(if $(SECTION),--section $(SECTION),)
+
+# error-scan: scan logs/ + logs/cron/ for runner / watchdog / cron errors (last 24h)
+#   Output logs/cron/error_scan.json — consumed by glm-refresh-playbook §2.5
+#   HOURS=N to override lookback (default 24)
+error-scan:
+	@.venv/bin/python scripts/maintenance/glm/error_scan.py $(if $(HOURS),--hours $(HOURS),)
 
 # glm-pre-launch-check: GLM reviews proposed launch before queue script
 #   Usage: make glm-pre-launch-check QUEUE=queue_phantom_som.sh BASELINE=B0 SITE=reddit RESET=1

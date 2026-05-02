@@ -11,11 +11,13 @@ audience: self-only
 
 ## §1 当前 critical path snapshot
 
-▶️ `B1_phantom_prompt_classifieds` 运行中 (进度 27%, 63/234), adj-SR 6.3%, 预计 7.1d 完成
-⏳ 队列链 `b1_cls_remaining` 步骤 2/2 执行中 (`queue_phantom_prompt B1 classifieds`, 已耗时 33h)
-⏳ 7 cells pending: B0/B1 reddit 与 shopping 等任务均被阻塞 (受 same-site XOR 规则与 Tier 队列依赖限制)
-🔴 3 个活跃 issue: B1 GPU 资源竞争需协调 (高优)、5 cells paper grade rerun 待启动 (高优)、B1 shopping dom 需重跑
-今日瓶颈: B1 GPU 资源争抢导致当前 runner 速率仅为 1.0 ep/h，严重拖慢进度并阻塞后续 7 个 cell 的全局流转。
+▶️ B1 phantom_prompt classifieds 依然是当前的主战场，目前已经跑了近 1.5 天，但进度仅 27% (63/234)。吞吐量掉到了 1 ep/h，预计还要约 7 天才能跑完，主要受制于 GPU 资源争夺。底层的 queue chain 已经运行近 3 天，目前正卡在第二阶段的 `queue_phantom_prompt.sh B1 classifieds`，单这一步就耗了 33 小时。
+
+⏳ 目前有 7 个 cell 在排队阻塞。B0 classifieds P-prompt 因为 B1 同站点互斥的硬性规则动弹不得。其余 6 个 cell（涉及 shopping 和 reddit 的 P-SoM/P-text）全部被 queue chain 的 Tier 1/2 死死卡住，必须要等前序任务彻底跑完才能释放推进。
+
+🔴 当前的核心卡点就是 GPU 算力。Issue 列表明确指出我们需要去跟 seonglae 协调 GPU sharing，否则整体进度只能一直龟速爬行。此外，B1 shopping dom 的重跑任务还在等 RunPod 资源，而高优的 paper_grade 任务需要一次性拉起 5 个 cell，这与当前本就不富裕的算力直接冲突。
+
+👉 建议: 立刻联系 seonglae 协调 GPU sharing 方案，或评估能否暂停部分低优任务，优先为 paper_grade 重跑腾出算力。
 
 ---
 
@@ -25,25 +27,30 @@ audience: self-only
 
 | Job | 上次 run | 状态 | 备注 |
 |---|---|---|---|
-| glm-update-cells | 05-02 16:40 | ✅ ok | - |
-| glm-refresh-playbook | 05-02 07:00 | ✅ ok | - |
-| check-links | (never run) | — | 尚未运行过 |
+| glm-update-cells | 2026-05-02 16:50 | ✅ | 正常 |
+| glm-refresh-playbook-s2 | 2026-05-02 16:45 | ✅ | 正常 |
+| glm-refresh-playbook | 2026-05-02 07:00 | ✅ | 正常 |
+| check-links | (从未运行) | — | 首次运行待相应 cron 触发 |
 
 ### 2.2 Cell 状态变更近况 (changelog tail)
 
-- 16:41 cell_b1_cls_phantom_som.md: **`pid_dead(1821957)_cleared`**, **`status→done`**, sr_raw→10.26
-- 16:41 cell_b0_red_pprompt.md: **`pid_dead(2075552)_cleared`**, **`status→done`**, sr_raw→10.48
-- 10:46 cell_b1_cls_phantom_text.md: **`status→done`**, sr_raw→10.26
-- 10:46 cell_b0_red_ptext.md: last_run_id→B0_phantom_text_reddit_2
-- 10:46 cell_b0_cls_ptext.md: last_run_id→B0_phantom_text_classifi
+- 16:41 cell_b1_cls_phantom_som: pid_dead_cleared, status→done, progress→100
+- 16:41 cell_b0_red_pprompt: pid_dead_cleared, status→done, progress→100
+- 10:46 cell_b1_cls_phantom_text: status→done, progress→100
+- 10:46 cell_b0_red_ptext: last_run_id 更新
+- 10:46 cell_b0_cls_ptext: last_run_id 更新
+- 09:44 cell_b0_red_vision: last_run_id 更新
+- 09:44 cell_b0_red_som: last_run_id 更新
+- 09:44 cell_b0_cls_vision: last_run_id 更新
 
 ### 2.3 Dead link warnings
-
-✅ 无 broken link (scan 尚未运行)
+⚠️ Dead link 扫描尚未运行过，暂无数据。
 
 ### 2.4 Ntfy fail alerts 历史
-
 ✅ 近 24h 无失败
+
+### 2.5 🔴 Active errors / warnings (runner / watchdog log scan, last 24h)
+✅ 近 24h 无 runner / watchdog 错误 (扫了 76 个 log 文件)
 
 ---
 

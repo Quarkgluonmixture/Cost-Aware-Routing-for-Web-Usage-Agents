@@ -163,6 +163,14 @@ RESET_BEFORE="$RESET" nohup bash "scripts/queues/$QUEUE" $QUEUE_ARGS \
 PID=$!
 disown
 echo "✓ Launched PID=$PID"
+
+# Post-launch hook: fire PLAYBOOK §1+§2 refresh in background so the new run
+# shows up immediately (don't wait for next 2h cron tick). Best-effort, never
+# blocks launch on GLM API hiccup.
+nohup bash -c "sleep 30 && cd '$REPO' && make glm-update-cells APPLY=1 && make glm-refresh-playbook APPLY=1" \
+  >> logs/cron/glm_playbook.log 2>&1 < /dev/null &
+disown
+echo "✓ Triggered PLAYBOOK refresh in background (30s delay for cell autodetect)"
 echo ""
 echo "Monitor:"
 echo "  tail -f $LOG"
