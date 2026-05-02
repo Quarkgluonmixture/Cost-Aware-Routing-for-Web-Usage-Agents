@@ -57,3 +57,8 @@ Claude_code/
 # would spam history with 60+ commits/day; Windows-side Task Scheduler scp
 # pulls fresh content every 1-2min over Tailscale instead)
 docs/checkpoints/PLAYBOOK.md
+
+# Cells frontmatter — cron */10min updates auto fields (status/progress/
+# sr_raw/last_run_id/pid/history). Manual semantic fields (blocker/eta/
+# priority) edited on DGX via VSCode Remote-SSH; Windows is read-only viewer.
+docs/checkpoints/_status/cells/*.md
