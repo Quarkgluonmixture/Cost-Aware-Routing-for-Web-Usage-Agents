@@ -8,7 +8,7 @@
       "width": 3000,
       "height": 140,
       "color": "6",
-      "text": "# Experiment Matrix — Paper Architecture\n*Instructional / 指导性 (NOT status tracking)*\n**Cascade DOM → Phantom-DOM → Phantom-SoM → SoM** + Vision parallel · Phantom space (2 arms) · + Router · + Deploy"
+      "text": "# Experiment Matrix — Paper Architecture\n*Instructional / 指导性 (NOT status tracking)*\n**Cascade DOM → P-text → P-SoM → SoM** + Vision · Phantom space **3 arms architectural** (P-text / P-prompt / P-SoM) · 5-mode cells scope · + Router · + Deploy"
     },
 
     {
@@ -19,7 +19,7 @@
       "width": 3000,
       "height": 90,
       "color": "5",
-      "text": "**Sites (6)**: VWA cls 234 / red 210 / shop 466 + WA red 106 / shop 192 / sa 182 = ~1390 task/condition  |  **Models (3)**: B0 Qwen3-VL-235B + B1 Qwen3-VL-4B + Claude Opus 4.7  |  **Modes (5)**: DOM / SoM / Vision / **Phantom-DOM** / **Phantom-SoM**  |  **Cells**: 6 × 3 × 5 = **90 baseline cells (~125K episode total)**"
+      "text": "**Sites (6)**: VWA cls 234 / red 210 / shop 466 + WA red 106 / shop 192 / sa 182 = ~1390 task/condition  |  **Models (3)**: B0 Qwen3-VL-235B + B1 Qwen3-VL-4B + Claude Opus 4.7  |  **Modes (5 cells)**: DOM / SoM / Vision / **P-text** / **P-SoM**  |  **Cells**: 6 × 3 × 5 = **90 baseline cells (~125K episode total)**. P-prompt = architectural 3rd phantom arm, NOT in 5-mode cells scope (theoretical / future work)"
     },
 
     {
@@ -41,18 +41,18 @@
       "width": 600,
       "height": 380,
       "color": "4",
-      "text": "## DOM\n*origin baseline*\n\n• text: AXTree (hierarchical)\n• prompt: DOM\n• image: ✗\n• cost: ~3K text\n\n**测什么**: text-only baseline, hierarchical tree-traversal trajectory\n\n**Section 4** baseline\n**Phantom space**: ✅ origin (M1 ❌ M2 ❌)"
+      "text": "## DOM\n*origin baseline*\n\n• text: AXTree (hierarchical)\n• prompt: DOM\n• image: ✗\n• cost: ~3K text\n\n**测什么**: text-only baseline, hierarchical tree-traversal trajectory\n\n**Section 4** baseline\n**Phantom space**: ✅ origin (M1 ❌ M2 ❌)\n**5-mode cell**: ✅"
     },
 
     {
-      "id": "mode_pdomzzzaaaaa1",
+      "id": "mode_ptextaaaaaa1",
       "type": "text",
       "x": 660,
       "y": 140,
       "width": 600,
       "height": 380,
       "color": "1",
-      "text": "## Phantom-DOM\n*axis 1: text format swap (DOM-prompt 锚)*\n\n• text: **`[SOM_MARKS]`** flat list (regex filter from AXTree)\n• prompt: DOM (unchanged)\n• image: ✗\n• cost: ~3K text\n\n**测什么**: 文本 ontology shift — hierarchical → flat indexed (browse → select); M2 flat-list activation\n\n**Section 5** axis 1 mechanism (Format-swap subspace)\n**Phantom space**: ✅ arm 1 (M1 ❌ M2 ✅)"
+      "text": "## P-text\n*axis 1: text format swap (DOM-prompt 锚)*\nlegacy mode value `phantom_dom` (paper-facing name = P-text)\n\n• text: **`[SOM_MARKS]`** flat list (regex filter from AXTree)\n• prompt: DOM (unchanged)\n• image: ✗\n• cost: ~3K text\n\n**测什么**: 文本 ontology shift — hierarchical → flat indexed; M2 flat-list activation\n\n**Section 5** axis 1 mechanism (Format-swap subspace)\n**Phantom space**: ✅ arm 1 (M1 ❌ M2 ✅)\n**5-mode cell**: ✅"
     },
 
     {
@@ -63,7 +63,7 @@
       "width": 600,
       "height": 380,
       "color": "6",
-      "text": "## Phantom-SoM ⭐\n*axis 1+2 compound (cube center, paper hero)*\n\n• text: `[SOM_MARKS]`\n• prompt: SoM-style\n• image: ✗\n• cost: ~3K text\n\n**测什么**: M1 ⊕ M2 compound activation — visual prompting w/o image + flat-list scanning. Emergent unique tasks (B0 red 3 tasks 既不在 Phantom-DOM 也不在 SoM)\n\n**Section 5** paper hero, mechanism centerpiece\n**Phantom space**: ✅ arm 2 (M1 ✅ M2 ✅ compound)"
+      "text": "## P-SoM ⭐\n*axis 1+2 compound (cube center, paper hero)*\nlegacy mode value `phantom_som` (paper-facing name = P-SoM)\n\n• text: `[SOM_MARKS]`\n• prompt: SoM-style\n• image: ✗\n• cost: ~3K text\n\n**测什么**: M1 ⊕ M2 compound activation — visual prompting w/o image + flat-list scanning. Emergent unique tasks (B0 red 3 tasks 既不在 P-text 也不在 P-prompt)\n\n**Section 5** paper hero, mechanism centerpiece\n**Phantom space**: ✅ arm 3 (M1 ✅ M2 ✅ compound)\n**5-mode cell**: ✅"
     },
 
     {
@@ -74,7 +74,7 @@
       "width": 600,
       "height": 380,
       "color": "3",
-      "text": "## SoM\n*image-on cube endpoint (NOT phantom)*\n\n• text: `[SOM_MARKS]`\n• prompt: SoM\n• image: ✓ (annotated screenshot)\n• cost: ~3K text + ~1.5K image\n\n**测什么**: full multimodal baseline — paper baseline 比较锚\n\n**Section 4** baseline\n**Section 5** axis 3 endpoint (vs Phantom-SoM isolate image effect)\n**Phantom space**: ❌ image-on out-of-space"
+      "text": "## SoM\n*image-on cube endpoint (NOT phantom)*\n\n• text: `[SOM_MARKS]`\n• prompt: SoM\n• image: ✓ (annotated screenshot)\n• cost: ~3K text + ~1.5K image\n\n**测什么**: full multimodal baseline — paper baseline 比较锚\n\n**Section 4** baseline\n**Section 5** axis 3 endpoint (vs P-SoM isolate image effect)\n**Phantom space**: ❌ image-on out-of-space\n**5-mode cell**: ✅"
     },
 
     {
@@ -85,7 +85,7 @@
       "width": 540,
       "height": 380,
       "color": "5",
-      "text": "## Vision\n*image-only mode (cube 之外, axis 1 = no text)*\n\n• text: ∅\n• prompt: SoM-like\n• image: ✓ (raw screenshot)\n• cost: ~1.5K image\n\n**测什么**: pure visual baseline — counter-evidence (Phantom 不是 mode-specific artifact, Vision 也 affected)\n\n**Section 4** baseline (3rd axis)\n**Phantom space**: ❌ cube 之外"
+      "text": "## Vision\n*image-only mode (cube 之外, axis 1 = no text)*\n\n• text: ∅\n• prompt: SoM-like\n• image: ✓ (raw screenshot)\n• cost: ~1.5K image\n\n**测什么**: pure visual baseline — counter-evidence (Phantom 不是 mode-specific artifact, Vision 也 affected)\n\n**Section 4** baseline (3rd axis)\n**Phantom space**: ❌ cube 之外\n**5-mode cell**: ✅"
     },
 
     {
@@ -126,10 +126,10 @@
       "type": "group",
       "x": -100,
       "y": 640,
-      "width": 1500,
+      "width": 2050,
       "height": 460,
       "color": "5",
-      "label": "PHANTOM ROUTING SPACE — boundary: no annotated image (paper §2 Zoom 1)"
+      "label": "PHANTOM ROUTING SPACE — 3 arms architectural (paper §2 Zoom 1, boundary: no annotated image)"
     },
 
     {
@@ -140,40 +140,51 @@
       "width": 600,
       "height": 340,
       "color": "1",
-      "text": "## Arm 1: Phantom-DOM\n*axis 1 alone (M2 flat-list)*\n\nFormat-swap subspace — DOM-prompt + [SOM_MARKS] flat list\n\nB0 red drop-one +3.81pp [0.95, 5.24] sig\nB0 cls drop-one +3.42pp sig"
+      "text": "## Arm 1: P-text\n*axis 1 alone (M2 flat-list)*\n\nFormat-swap subspace — DOM-prompt + [SOM_MARKS] flat list\n\nB0 red drop-one +3.81pp [0.95, 5.24] sig\nB0 cls drop-one +3.42pp sig\n\n**5-mode cell**: ✅"
     },
 
     {
       "id": "phantom_arm2aaaa1",
       "type": "text",
-      "x": 760,
+      "x": 660,
       "y": 720,
       "width": 600,
       "height": 340,
+      "color": "2",
+      "text": "## Arm 2: P-prompt\n*axis 2 alone (M1 visual-prompting w/o image)*\n\nMirage subspace — AXTree + SoM-prompt (visual prompting w/o image)\n\nB0 red drop-one +2.86pp [0.95, 5.24] sig\n\n**5-mode cell**: ❌ NOT in scope\n*Architectural completion (paper §2 Zoom 1 deductive completeness); future work / mechanism reference*"
+    },
+
+    {
+      "id": "phantom_arm3aaaa1",
+      "type": "text",
+      "x": 1360,
+      "y": 720,
+      "width": 540,
+      "height": 340,
       "color": "6",
-      "text": "## Arm 2: Phantom-SoM ⭐\n*axis 1+2 compound (M1 ⊕ M2)*\n\nMirage subspace + flat-list — SoM-prompt + [SOM_MARKS]\n\nB0 red drop-one +3.33pp sig + 3 unique emergent tasks\nB0 cls drop-one +2.56pp sig\n\n**Cube center, paper hero**"
+      "text": "## Arm 3: P-SoM ⭐\n*axis 1+2 compound (M1 ⊕ M2)*\n\nCompound — SoM-prompt + [SOM_MARKS]\n\nB0 red drop-one +3.33pp sig + 3 unique emergent tasks\nB0 cls drop-one +2.56pp sig\n\n**Cube center, paper hero**\n**5-mode cell**: ✅"
     },
 
     {
       "id": "fold4_groupaaaaaa",
       "type": "group",
-      "x": 1430,
+      "x": 1980,
       "y": 640,
-      "width": 1770,
+      "width": 1220,
       "height": 460,
       "color": "4",
-      "label": "4-FOLD DROP-IN PROPERTY (phantom arms 共享 by construction)"
+      "label": "4-FOLD DROP-IN PROPERTY (3 arms 共享 by construction)"
     },
 
     {
       "id": "fold4_card_aaaaa1",
       "type": "text",
-      "x": 1480,
+      "x": 2030,
       "y": 720,
-      "width": 1670,
+      "width": 1120,
       "height": 340,
       "color": "5",
-      "text": "## 4 phantom arms 共享:\n\n**(a) cost ≈ DOM** — no image embedding tax (regex filter, ~3K text both)\n**(b) latency ~50% lower** — no image inference stage (cls 4×)\n**(c) signal AUROC ≥ baseline** ✅ — emergent (5/5 phantom `overall_usable=True`, red P-text 0.793 = 5-mode max)\n**(d) drop-one oracle 1.7-3.8pp per arm** ✅ — emergent (B0 red CI 全 exclude 0)\n\n*(a)(b) definitional / (c)(d) emergent — definition-then-validation 双层结构*\n\n**Strategic value**: phantom-class deployment — same routing infra, ~50% latency, signal stays usable"
+      "text": "## 3 phantom arms 共享:\n\n**(a) cost ≈ DOM** — no image embedding tax (regex filter, ~3K text)\n**(b) latency ~50% lower** — no image inference (cls 4×)\n**(c) signal AUROC ≥ baseline** ✅ — emergent (5/5 phantom usable, red P-text 0.793 = 5-mode max)\n**(d) drop-one oracle 1.7-3.8pp per arm** ✅ — emergent (B0 red CI 全 exclude 0)\n\n*(a)(b) definitional / (c)(d) emergent — definition-then-validation 双层*\n\n**Strategic value**: phantom-class deployment — same routing infra, ~50% latency, signal stays usable"
     },
 
     {
@@ -206,7 +217,7 @@
       "width": 1080,
       "height": 220,
       "color": "6",
-      "text": "## §5 Mechanism (phantom arms) ⭐\n*needs*: Phantom-DOM + Phantom-SoM × 6 sites × 3 models = **36 phantom cells**\n\nM1/M2 activation analysis + drop-one oracle per arm + axis ablation isolation + lit anchors (Mirage / Scaffold / Sclar / Q5 bidirectional)."
+      "text": "## §5 Mechanism (phantom arms) ⭐\n*needs*: P-text + P-SoM × 6 sites × 3 models = **36 phantom cells**\n\nM1/M2 activation analysis + drop-one oracle per arm + axis ablation isolation + lit anchors (Mirage / Scaffold / Sclar / Q5 bidirectional).\n\n**P-prompt** architectural 3rd arm — not run in 5-mode but cite for §2 Zoom 1 completeness."
     },
 
     {
@@ -294,7 +305,7 @@
       "width": 760,
       "height": 360,
       "color": "5",
-      "text": "## Deploy: actual end-to-end agent run\n\n**Setup**:\n• router 选 arm per task\n• runner instantiates chosen arm (DOM / SoM / Vision / Phantom-DOM / Phantom-SoM)\n• run agent end-to-end on test split\n\n**Measure**:\n• SR (vs best-single-mode oracle)\n• cost (token + electricity)\n• P95 latency\n• carbon (regional sensitivity)"
+      "text": "## Deploy: actual end-to-end agent run\n\n**Setup**:\n• router 选 arm per task\n• runner instantiates chosen arm (DOM / SoM / Vision / P-text / P-SoM)\n• run agent end-to-end on test split\n\n**Measure**:\n• SR (vs best-single-mode oracle)\n• cost (token + electricity)\n• P95 latency\n• carbon (regional sensitivity)"
     },
 
     {
@@ -322,17 +333,17 @@
 
   "edges": [
     {
-      "id": "edge_dom_to_pdomm",
+      "id": "edge_dom_to_ptextt",
       "fromNode": "mode_dom00aaaaaa1",
       "fromSide": "right",
-      "toNode": "mode_pdomzzzaaaaa1",
+      "toNode": "mode_ptextaaaaaa1",
       "toSide": "left",
       "color": "1",
       "label": "axis 1\nAXTree → [SOM_MARKS]"
     },
     {
-      "id": "edge_pdom_to_psom",
-      "fromNode": "mode_pdomzzzaaaaa1",
+      "id": "edge_ptext_to_psom",
+      "fromNode": "mode_ptextaaaaaa1",
       "fromSide": "right",
       "toNode": "mode_psomaaaaaaa1",
       "toSide": "left",
