@@ -9,10 +9,10 @@ target_section: 4
 priority: tier1
 phase_a: pre-fix
 n: 210
-sr_raw: 11.90
+sr_raw: 14.29
 sr_adj: 10.48
-blocker: ""
-eta: ""
+blocker: ''
+eta: ''
 ---
 
 # B0 red SoM (FRESH 04-27)
