@@ -34,22 +34,39 @@ import yaml
 
 REPO = Path(__file__).resolve().parents[3]
 STATUS_CELLS = REPO / "docs/checkpoints/_status/cells"
-PHASE1_DIR = REPO / "results/visualwebarena/phase1"
+PHASE1_DIRS = {
+    "vwa": REPO / "results/visualwebarena/phase1",
+    "wa": REPO / "results/webarena/phase1",
+}
 CHANGELOG = REPO / "logs/cron/cell_changelog.jsonl"
 
-# Mode (frontmatter) → condition_id substring
+# Mode (frontmatter) → list of condition_id keywords (first = canonical, rest = legacy alias).
+# P-text ↔ phantom_dom is legacy mode value (paper-facing renamed 2026-04-29);
+# pre-rename runs still have observation_mode="phantom_dom" / cond_dir "phase1_phantom_dom_router_0".
 MODE_TO_COND = {
-    "DOM": "dom",
-    "SoM": "som",
-    "Vision": "vision",
-    "P-text": "phantom_text",
-    "P-SoM": "phantom_som",
-    "P-prompt": "phantom_prompt",
+    "DOM": ["dom"],
+    "SoM": ["som"],
+    "Vision": ["vision"],
+    "P-text": ["phantom_text", "phantom_dom"],
+    "P-SoM": ["phantom_som"],
+    "P-prompt": ["phantom_prompt"],
 }
 # Site (frontmatter) → run_dir site segment
-SITE_NORM = {"classifieds": "classifieds", "reddit": "reddit", "shopping": "shopping"}
-# Expected N per site
-EXPECTED_N = {"classifieds": 234, "reddit": 210, "shopping": 466}
+SITE_NORM = {
+    "classifieds": "classifieds",
+    "reddit": "reddit",
+    "shopping": "shopping",
+    "shopping_admin": "shopping_admin",
+}
+# Expected N keyed by (benchmark, site) — VWA reddit 210 ≠ WA reddit 106
+EXPECTED_N = {
+    ("vwa", "classifieds"): 234,
+    ("vwa", "reddit"): 210,
+    ("vwa", "shopping"): 466,
+    ("wa", "reddit"): 106,
+    ("wa", "shopping"): 192,
+    ("wa", "shopping_admin"): 182,
+}
 
 
 def parse_frontmatter(text: str) -> tuple[Optional[dict], str, str]:
@@ -70,20 +87,26 @@ def serialize_frontmatter(fm: dict) -> str:
     return yaml.safe_dump(fm, allow_unicode=True, sort_keys=False, default_flow_style=False).strip()
 
 
-def find_matching_runs(baseline: str, site: str, mode: str) -> list[Path]:
-    """Find condition_summary_v2.json matching this (baseline, site, mode)."""
+def find_matching_runs(baseline: str, site: str, mode: str, benchmark: str = "vwa") -> list[Path]:
+    """Find condition_summary_v2.json matching (baseline, site, mode, benchmark).
+
+    Site is anchored against `_<site>_<8-digit>` to avoid `shopping` substring
+    collision with `shopping_admin` run dirs.
+    """
     site_seg = SITE_NORM.get(site, site)
-    cond_keyword = MODE_TO_COND.get(mode, mode.lower())
+    cond_keywords = MODE_TO_COND.get(mode, [mode.lower()])
+    phase_dir = PHASE1_DIRS.get(benchmark)
 
     matches = []
-    if not PHASE1_DIR.exists():
+    if phase_dir is None or not phase_dir.exists():
         return matches
-    for run_dir in PHASE1_DIR.iterdir():
+    site_pat = re.compile(rf"_{re.escape(site_seg)}_\d{{8}}")
+    for run_dir in phase_dir.iterdir():
         if not run_dir.is_dir():
             continue
         if not run_dir.name.startswith(baseline + "_"):
             continue
-        if site_seg not in run_dir.name:
+        if not site_pat.search(run_dir.name):
             continue
         for cond_dir in run_dir.iterdir():
             if not cond_dir.is_dir():
@@ -97,7 +120,7 @@ def find_matching_runs(baseline: str, site: str, mode: str) -> list[Path]:
             except Exception:
                 continue
             obs_mode = d.get("observation_mode", "")
-            if obs_mode == cond_keyword or cond_keyword in cond_dir.name:
+            if obs_mode in cond_keywords or any(k in cond_dir.name for k in cond_keywords):
                 matches.append(summary)
     return matches
 
@@ -173,10 +196,11 @@ def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> 
     if not force and fm.get("status") == "active" and fm.get("pid"):
         return False, f"skip (active, pid={fm['pid']}; use --force to override)"
 
-    matches = find_matching_runs(baseline, site, mode)
+    benchmark = fm.get("benchmark", "vwa")
+    matches = find_matching_runs(baseline, site, mode, benchmark)
     summary_path = latest_summary(matches)
     if not summary_path:
-        return False, f"no matching run for {baseline}/{site}/{mode}"
+        return False, f"no matching run for {benchmark}/{baseline}/{site}/{mode}"
 
     try:
         d = json.loads(summary_path.read_text(encoding="utf-8"))
@@ -184,7 +208,7 @@ def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> 
         return False, f"summary parse error: {e}"
 
     episodes = d.get("episodes", 0)
-    expected_n = EXPECTED_N.get(site, fm.get("n", 234))
+    expected_n = EXPECTED_N.get((benchmark, site), fm.get("n", 234))
     sr = d.get("success_rate")
     new_run_id = summary_path.parent.parent.name  # results/.../<run_id>/<cond>/condition_summary_v2.json
     prev_run_id = fm.get("last_run_id")
