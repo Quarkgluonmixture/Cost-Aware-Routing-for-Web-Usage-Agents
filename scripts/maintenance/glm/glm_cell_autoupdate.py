@@ -3,14 +3,20 @@
 
 For each cell note, find matching VWA run via frontmatter (baseline + site + mode),
 parse latest condition_summary_v2.json, update structured fields in cell frontmatter:
-- status: active → done if episodes complete, active if running
+- status: active → done if episodes complete; done → active if NEW run detected
+  (re-run support); pending → active when first run starts
 - progress: ep_count / N * 100
 - sr_raw: success_rate * 100 (rounded 2 decimals)
-- pid: cleared if cell done
+- last_run_id: run dir name of latest summary (re-run detection key)
+- pid: cleared if cell done; auto-detected from pgrep on re-run start
+- history: append-only list of {run_id, finalized_at, ep, sr_raw} on completion
 
 Adj_sr / drop_one updates require `make analysis` cross-condition output (TODO future).
 
-Run via cron @5min or `make glm-update-cells` ad-hoc.
+Writes a changelog line per change to logs/cron/cell_changelog.jsonl
+(consumed by glm_playbook_refresh §2 automation status synthesis).
+
+Run via cron @10min or `make glm-update-cells` ad-hoc.
 """
 
 from __future__ import annotations
@@ -18,7 +24,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -27,6 +35,7 @@ import yaml
 REPO = Path(__file__).resolve().parents[3]
 STATUS_CELLS = REPO / "docs/checkpoints/_status/cells"
 PHASE1_DIR = REPO / "results/visualwebarena/phase1"
+CHANGELOG = REPO / "logs/cron/cell_changelog.jsonl"
 
 # Mode (frontmatter) → condition_id substring
 MODE_TO_COND = {
@@ -99,12 +108,55 @@ def latest_summary(paths: list[Path]) -> Optional[Path]:
     return max(paths, key=lambda p: p.stat().st_mtime)
 
 
+def detect_pid(run_id: str) -> Optional[int]:
+    """Try to recover PID for a re-run by pgrep matching condition run_id segment.
+
+    On re-run, runner spawns a new process whose argv contains the run dir name
+    (or a config that resolves to it). Best-effort match; returns None if unsure.
+    """
+    try:
+        out = subprocess.run(
+            ["pgrep", "-af", "run_experiment"],
+            capture_output=True, text=True, timeout=5,
+        )
+    except Exception:
+        return None
+    for line in out.stdout.splitlines():
+        if run_id and run_id in line:
+            try:
+                return int(line.split(None, 1)[0])
+            except (ValueError, IndexError):
+                pass
+    return None
+
+
+def append_changelog(cell_name: str, changes: list[str]) -> None:
+    """Append a JSONL row per cron tick that produced changes."""
+    if not changes:
+        return
+    try:
+        CHANGELOG.parent.mkdir(parents=True, exist_ok=True)
+        row = {
+            "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "cell": cell_name,
+            "changes": changes,
+        }
+        with CHANGELOG.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    except Exception:
+        pass  # changelog best-effort, never break the cron job
+
+
 def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> tuple[bool, str]:
     """Returns (updated, message).
 
     Safety: cells with status=active AND pid set are SKIPPED (assume in-flight
     run not yet written condition_summary; auto-update would overwrite with
     stale archived run data). Override with --force.
+
+    Re-run detection: if latest run_dir.name != stored last_run_id, treat as
+    fresh re-run — flip status done→active, attempt to detect PID via pgrep,
+    and append previous (run_id, sr_raw) to history before overwriting.
     """
     text = cell_path.read_text(encoding="utf-8")
     fm, fm_raw, body = parse_frontmatter(text)
@@ -134,9 +186,37 @@ def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> 
     episodes = d.get("episodes", 0)
     expected_n = EXPECTED_N.get(site, fm.get("n", 234))
     sr = d.get("success_rate")
+    new_run_id = summary_path.parent.parent.name  # results/.../<run_id>/<cond>/condition_summary_v2.json
+    prev_run_id = fm.get("last_run_id")
+    is_new_run = bool(prev_run_id) and prev_run_id != new_run_id
 
     new_fm = dict(fm)
     changed_fields = []
+
+    # Re-run detected: archive prior canonical sr_raw to history, flip done→active
+    if is_new_run and fm.get("status") == "done":
+        history = list(fm.get("history") or [])
+        history.append({
+            "run_id": prev_run_id,
+            "finalized_at": fm.get("finalized_at"),
+            "sr_raw": fm.get("sr_raw"),
+            "ep": fm.get("n"),
+        })
+        new_fm["history"] = history
+        new_fm["status"] = "active"
+        new_fm.pop("finalized_at", None)
+        changed_fields.append(f"rerun_detected({prev_run_id[:12]}→{new_run_id[:12]})")
+        changed_fields.append("status→active")
+        # Attempt PID recovery
+        recovered_pid = detect_pid(new_run_id)
+        if recovered_pid:
+            new_fm["pid"] = recovered_pid
+            changed_fields.append(f"pid→{recovered_pid}")
+
+    if new_fm.get("last_run_id") != new_run_id:
+        new_fm["last_run_id"] = new_run_id
+        if not is_new_run:  # avoid double-logging for re-run case
+            changed_fields.append("last_run_id→" + new_run_id[:24])
 
     progress_pct = round(100 * episodes / expected_n) if expected_n else 0
     if new_fm.get("progress") != progress_pct:
@@ -145,7 +225,8 @@ def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> 
 
     if episodes >= expected_n and new_fm.get("status") != "done":
         new_fm["status"] = "done"
-        new_fm.pop("pid", None)  # clear PID on done
+        new_fm["finalized_at"] = datetime.now(timezone.utc).date().isoformat()
+        new_fm.pop("pid", None)
         changed_fields.append("status→done")
     elif episodes < expected_n and new_fm.get("status") == "pending":
         new_fm["status"] = "active"
@@ -167,6 +248,7 @@ def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> 
 
     new_text = "---\n" + serialize_frontmatter(new_fm) + "\n---\n" + body
     cell_path.write_text(new_text, encoding="utf-8")
+    append_changelog(cell_path.name, changed_fields)
     return True, f"updated: {', '.join(changed_fields)}"
 
 

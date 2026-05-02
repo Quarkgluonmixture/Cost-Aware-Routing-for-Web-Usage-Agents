@@ -11,8 +11,9 @@ phase_a: pre-fix
 n: 234
 sr_raw: 15.81
 sr_adj: 13.68
-blocker: ""
-eta: ""
+blocker: ''
+eta: ''
+last_run_id: B0_3mode_classifieds_20260413
 ---
 
 # B0 cls Vision (paper-grade FRESH 04-27)

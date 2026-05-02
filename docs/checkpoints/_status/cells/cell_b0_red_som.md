@@ -13,6 +13,7 @@ sr_raw: 14.29
 sr_adj: 10.48
 blocker: ''
 eta: ''
+last_run_id: B0_phantom_som_reddit_20260428
 ---
 
 # B0 red SoM (FRESH 04-27)

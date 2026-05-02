@@ -10,10 +10,11 @@ priority: tier1
 phase_a: pre-fix
 n: 234
 sr_raw: 14.96
-sr_adj: 14.10
-blocker: ""
-eta: ""
-cost: ""
+sr_adj: 14.1
+blocker: ''
+eta: ''
+cost: ''
+last_run_id: B0_3mode_classifieds_20260413
 ---
 
 # B0 cls DOM (paper-grade FRESH 04-27 pre-fix)

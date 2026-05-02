@@ -12,7 +12,60 @@ audience: self-only
 
 ---
 
-## §0 Session bootstrap (开新对话怎么快速给 Claude 上下文)
+## §1 当前 critical path snapshot (🤖 GLM auto-refresh @daily 08:00 BST + manual scratchpad)
+
+> 自己 scratchpad. 用 ✅/⏳/🚫/🔴 标. 改这里, 不改 next_steps.
+> *Last GLM refresh: 2026-05-02 10:51*
+
+✅ B0 reddit P-prompt 运行中，progress 8%，eta ~6h
+⏳ B1 classifieds P-SoM progress 79%，GPU contention（seonglae 占 95%，peak 仅 4 ep/h），eta ~10-15d
+🚫 B0 classifieds P-prompt [pending] — blocked by B1 phantom_som cls done（same-site XOR 硬规则）
+🚫 B1 classifieds P-text [queued] — blocked by B1 phantom_som cls done（queue chain Tier 1）
+🔴 issue_b1_gpu_contention (high) + issue_paper_grade_rerun_5cells (high) 待处理
+
+今日瓶颈: B1 classifieds P-SoM 受 seonglae GPU 95% 占用制约，throughput 骤降，ETA 拉长至 10-15d；需尽快协调 GPU sharing 或接受慢速推进，同时 5-cell paper grade rerun 排队等待一次性 launch。
+
+---
+
+## §2 自动化运行状态 (🤖 GLM-orchestrated daily summary)
+
+> **GLM 统领**: daily 08:00 BST 这一节连同 §1 一起被 glm_playbook_refresh 重写。
+> 数据源: `logs/cron/cell_changelog.jsonl` + `logs/cron/dead_links_*.log` + ntfy fail history + 各 cron job 最后 exit status。
+> 自己想立即 refresh: `make glm-refresh-playbook APPLY=1`
+> *Last GLM refresh: 2026-05-02 10:51*
+
+### 2.1 Cron job 健康度 (last 24h)
+
+| Job | 上次 run | 状态 | 备注 |
+|---|---|---|---|
+| glm-update-cells | 05-02 09:50 UTC | ✅ ok | |
+| glm-refresh-playbook | 05-02 07:00 UTC | ✅ ok | |
+| check-links | — | — | 从未执行 |
+
+### 2.2 Cell 状态变更近况 (changelog tail)
+
+- `09:44` cell_b0_red_vision: last_run_id→B0_3mode_reddit_20260422
+- `09:44` cell_b0_red_som: last_run_id→B0_phantom_som_reddit_20
+- `09:44` cell_b0_red_psom: last_run_id→B0_phantom_som_reddit_20
+- `09:44` cell_b0_red_dom: last_run_id→B0_phantom_text_reddit_2
+- `09:44` cell_b0_cls_vision: last_run_id→B0_3mode_classifieds_202
+- `09:44` cell_b0_cls_som: last_run_id→B0_3mode_classifieds_202
+- `09:44` cell_b0_cls_psom: last_run_id→B0_phantom_som_classifie
+- `09:44` cell_b0_cls_dom: last_run_id→B0_3mode_classifieds_202
+
+### 2.3 Dead link warnings
+
+⚠️ `check-links` 尚未执行过，暂无扫描结果。建议尽快触发首次 dead link 检测。
+
+### 2.4 Ntfy fail alerts 历史
+
+- 2026-05-02 01:17 UTC — ⚠️ P79 cron fail: test-fail
+- 2026-05-02 01:42 UTC — ⚠️ P79 cron fail: fail-test-claude
+- 2026-05-02 01:42 UTC — P79 fail-test from claude
+
+---
+
+## §3 Session bootstrap (开新对话怎么快速给 Claude 上下文)
 
 ### Quick (30s) — 简单问题
 让 Claude 读: `docs/checkpoints/next_steps.md` (lean 215 行, current state 一览)
@@ -38,7 +91,7 @@ audience: self-only
 
 ---
 
-## §1 新数据到了之后的标准流程
+## §4 新数据到了之后的标准流程
 
 ### Step 1: Validate + Freeze + 看图
 ```bash
@@ -50,7 +103,7 @@ make analysis FAST=1           # 跳过 per-run, 只 aggregator + figures (~30s)
 看 `results/phantom_paper/figures/` 重生 PNGs.
 看 `results/phantom_paper/auroc_cross_condition.{csv,md}` 等 aggregations.
 
-**(可选)** GLM auto-update cell frontmatter (不能覆盖 active+pid):
+**(基本不需要手动)** Cron 每 10 min 自动 GLM auto-update cell frontmatter + re-run detection. 如想立即 sync:
 ```bash
 make glm-update-cells              # dry-run 看 diff
 make glm-update-cells APPLY=1      # 实际写
@@ -58,7 +111,7 @@ make glm-update-cells APPLY=1      # 实际写
 
 ### Step 2: 整合到 docs (按依赖顺序)
 1. **实验笔记** append §X chronicle (date + finding + evidence + tag `#finding/#bug/#infra/etc.`)
-2. **`_status/cells/cell_*.md`** frontmatter update (status: active→done, sr_raw, sr_adj, drop_one)
+2. **`_status/cells/cell_*.md`** frontmatter — `status` / `progress` / `sr_raw` / `last_run_id` / `pid` / `history` 由 cron 自动维护; `sr_adj` / `drop_one` / `blocker` / `eta` 仍人工
 3. **paper_planning §3 findings** 加新 finding (如 cross-site / cross-capability pattern 出现)
 4. **next_steps §0 current state** 如 paper hook 变 / next 3 actions 改 / blocker 变
 5. **paper_planning §19 decision log** 如有重大 framing decision
@@ -88,13 +141,13 @@ make glm-update-cells APPLY=1      # 实际写
 
 ---
 
-## §2 我手动维护清单
+## §5 我手动维护清单
 
 ### Bases 数据层 (frontmatter, 单源化)
 | File | 何时改 | 改啥 | Auto? |
 |---|---|---|---|
 | `_status/section*.md` | section status / words / blocker 变 | `status` `progress` `blocker` `words` | manual |
-| `_status/cells/cell_*.md` | cell 完成或状态变 | `status` `progress` `sr_raw` `n` (auto); `sr_adj` `drop_one` `pid` `blocker` `eta` (manual) | **🤖 auto every 10 min via cron `glm-update-cells`** (skips active+pid for safety) |
+| `_status/cells/cell_*.md` | cell 完成 / 状态变 / re-run 发起 | `status` `progress` `sr_raw` `n` `last_run_id` `pid` `history` `finalized_at` (auto via cron); `sr_adj` `drop_one` `blocker` `eta` `target_section` `priority` (manual) | **🤖 cron @10min** (skips active+pid; auto-detects re-run via `last_run_id` change → flips status done→active + archives prior sr_raw to `history`) |
 | `_status/codex/codex_*.md` | codex task lifecycle | `status` (ready→running→done, done 后**删 file**) | manual |
 | `_status/issues/issue_*.md` | issue 状态变 | `status` (active→backlog/resolved). resolved 后删 file 或留作 chronicle | manual |
 
@@ -108,6 +161,7 @@ make glm-update-cells APPLY=1      # 实际写
 | `ADVISOR_SYNC.md §4 sync history` | meeting 完后填 actual notes (placeholder section 4.2 等) |
 | `paper_section2_framework.canvas` | framework 改 (重大 retract / 新 zoom / 新 anchor) |
 | `实验笔记.md` | **append-only**, 不改过去 § |
+| `PLAYBOOK.md §1 + §2` | 🤖 GLM @daily 重写 — 自己改 §1 scratchpad 也 OK (下次 GLM run 会再覆写) |
 
 ### 跨 session 同步 (DGX vs Windows Obsidian)
 - DGX 改 → commit + push
@@ -116,7 +170,7 @@ make glm-update-cells APPLY=1      # 实际写
 
 ---
 
-## §3 自动 / 不需我维护
+## §6 自动 / 不需我维护
 
 ### 真实时 / 自动 trigger
 | 数据 | 来源 | 触发 |
@@ -132,27 +186,29 @@ make glm-update-cells APPLY=1      # 实际写
 
 Installed via `crontab scripts/maintenance/crontab.txt`. **失败自动 ntfy 通知** (priority high, last 500 chars output)。
 
-| Job | Cadence | Failure handling |
-|---|---|---|
-| **glm-update-cells** | `*/10 min` | ⚠️ ntfy on exit≠0 — skips active+pid cells (safety) |
-| **glm-refresh-playbook** | `@daily 08:00 BST` | ⚠️ ntfy on exit≠0 — regenerates §6 critical path |
-| **check-links** | `@weekly Sun 00:00` | log only (always exit 1 if broken links found) |
+| Job | Cadence | 用途 | Failure handling |
+|---|---|---|---|
+| **glm-update-cells** | `*/10 min` | cell frontmatter sync + re-run detection + changelog jsonl | ⚠️ ntfy on exit≠0 — skips active+pid cells (safety) |
+| **glm-refresh-playbook** | `@daily 08:00 BST` | 重写 PLAYBOOK §1 (critical path) + §2 (automation status) | ⚠️ ntfy on exit≠0 |
+| **check-links** | `@weekly Sun 00:00` | 扫 docs/ 全部 broken wikilinks + path refs | log only (always exit 1 if found) |
+
+**GLM 统领角色**: `glm-refresh-playbook` 每日聚合三个 cron 的产出 (cell changelog / dead links / fail alerts) + `make active` + `_status/` 全部 frontmatter → 一次 GLM 5.1 call 同时写 PLAYBOOK §1 critical path + §2 automation status。其他两个 cron 都是 deterministic infrastructure 给 GLM 喂数据。
 
 **Ntfy topic**: `p79-exp-dgx-spark` (override via `NTFY_TOPIC` env)
-**Logs**: `logs/cron/glm_*.log` + `logs/cron/dead_links_<date>.log`
+**Logs**: `logs/cron/glm_*.log` + `logs/cron/dead_links_<date>.log` + `logs/cron/cell_changelog.jsonl`
 **Manage**: `crontab -l` 查 / `crontab -r` 卸 / `crontab scripts/maintenance/crontab.txt` 重装
 
 ### 手动 trigger (cron 之外按需)
 ```bash
 make glm-update-cells [APPLY=1] [FORCE=1]              # cells frontmatter sync
-make glm-refresh-playbook [APPLY=1]                    # PLAYBOOK §6 refresh
+make glm-refresh-playbook [APPLY=1]                    # PLAYBOOK §1+§2 refresh
 make glm-pre-launch-check QUEUE= BASELINE= SITE= [RESET=1]  # pre-launch sanity
 make check-links                                       # dead link scan
 ```
 
 ---
 
-## §4 不要做的事 (self-reminder)
+## §7 不要做的事 (self-reminder)
 
 ### Doc separation
 - ❌ next_steps 复制 paper_planning 内容 (用 wikilink `[[paper_planning#§5]]`, 不 copy)
@@ -182,7 +238,7 @@ make check-links                                       # dead link scan
 
 ---
 
-## §5 常见命令 cheatsheet
+## §8 常见命令 cheatsheet
 
 ### Git
 ```bash
@@ -232,22 +288,7 @@ setsid nohup ... > log 2>&1 < /dev/null &    # 后台长任务
 
 ---
 
-## §6 当前 critical path snapshot (🤖 auto-refresh @daily 08:00 BST + manual scratchpad)
-
-> 不改 next_steps.md, 这里是我的快速 mental model. 用 ✅/⏳/🚫/🔴 标.
-> **Auto**: cron `glm-refresh-playbook` 每天 08:00 BST regenerate (失败 ntfy 通知). 手动覆盖随时 OK — 下次 cron 又会 refresh.
-
-- 🔴 **学长 sync** — 时间 pending, ADVISOR_SYNC §1-§5 ready
-- ⏳ **B1 phantom_som cls** — 184+/234 (~10-15d ETA, GPU contention seonglae 95%)
-- ⏳ **B0 P-prompt reddit** — ~16/210 PID 2075552 (~6h ETA)
-- ⏳ **B0 dom shopping clean re-run** — ~9/466 PID 1106560 (~9h)
-- 🚫 **14-cell paper-grade rerun** — blocked on RunPod $200 approval (advisor sync ask)
-- 🚫 **Myriad** — 物理级 blocked (CGNAT), 不可救
-- ✅ **Phase A 4-cluster bug fix** — done (commit `3c15cd7`), pilot validated PASS
-
----
-
-## §7 TODO 自己 (Claude 不能代做)
+## §9 TODO 自己 (Claude 不能代做)
 
 - [ ] 联系学长定 sync schedule (人际事)
 - [ ] RunPod 经费走流程 (advisor align 后)
@@ -260,18 +301,19 @@ setsid nohup ... > log 2>&1 < /dev/null &    # 后台长任务
 
 ---
 
-## §8 还想不起来的事 (catch-all, 想到啥写啥)
+## §10 还想不起来的事 (catch-all, 想到啥写啥)
 
-> 这块留空, 日常想到 doc separation / 流程 / decision 不在前面 §1-§7 cover 的, 写这里. 周期性整理回 §1-§7.
+> 这块留空, 日常想到 doc separation / 流程 / decision 不在前面 §1-§9 cover 的, 写这里. 周期性整理回 §1-§9.
 
 -
 
 ---
 
-## §9 Meta — PLAYBOOK 自维护
+## §11 Meta — PLAYBOOK 自维护
 
-- **更新频率**: 想到就改 (rolling)
-- **Review cadence**: 每周看一次, 整理 §8 catch-all 进 §1-§7 结构化区
+- **更新频率**: 想到就改 (rolling); §1+§2 由 GLM cron @daily 重写
+- **Review cadence**: 每周看一次, 整理 §10 catch-all 进 §3-§9 结构化区
 - **Frontmatter `last_review`**: 每次 review 后 update
 - **不放这里**: paper content (那 5-doc 已 cover) / live data (那 _status/ + Bases 已 cover) / chronicle (那 实验笔记 已 cover) / advisor (那 ADVISOR_SYNC 已 cover)
 - **专放这里**: 自己反复需要回忆的 operating procedure / not-to-do reminder / TODO 自己 / catch-all 思路
+- **GLM-managed sections** (§1 + §2): 自己也可以手改 (next refresh 会覆写). §1 是 today's bottleneck scratch, §2 是自动化 health board.

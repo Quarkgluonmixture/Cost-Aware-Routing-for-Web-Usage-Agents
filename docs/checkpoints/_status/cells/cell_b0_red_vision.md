@@ -11,8 +11,9 @@ phase_a: pre-fix
 n: 210
 sr_raw: 8.57
 sr_adj: 6.67
-blocker: ""
-eta: ""
+blocker: ''
+eta: ''
+last_run_id: B0_3mode_reddit_20260422
 ---
 
 # B0 red Vision (FRESH 04-27)
