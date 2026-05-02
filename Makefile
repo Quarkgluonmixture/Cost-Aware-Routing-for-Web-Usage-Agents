@@ -448,3 +448,14 @@ glm-pre-launch-check:
 # check-links: scan all docs for broken path-based + wikilink references
 check-links:
 	@.venv/bin/python scripts/maintenance/dead_link_check.py --quiet
+
+# launch: one-shot wrapper — auto-create cell note + pre-launch check + nohup queue
+#   Usage: make launch BASELINE=B0 SITE=reddit MODE=phantom_text [RESET=1] [DRY=1]
+#   Modes: dom | som | vision | phantom_text | phantom_som | phantom_prompt
+launch:
+	@if [ -z "$(BASELINE)" ] || [ -z "$(SITE)" ] || [ -z "$(MODE)" ]; then \
+	  echo "Usage: make launch BASELINE=<B0|B1> SITE=<cls|red|shop> MODE=<dom|som|vision|phantom_*>"; \
+	  exit 64; \
+	fi
+	@RESET=$${RESET:-1} DRY=$${DRY:-0} FORCE_NO_CHECK=$${FORCE_NO_CHECK:-0} \
+	  bash scripts/maintenance/launch.sh "$(BASELINE)" "$(SITE)" "$(MODE)" "$(TARGET_SECTION)" "$(PRIORITY)"
