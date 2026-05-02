@@ -107,8 +107,8 @@ nohup bash scripts/queues/queue_chain.sh \
 
 - **B0 shopping SoM/Vision/P-text/P-SoM** (4 cells) — wait B0 dom shopping done. ~$60 + ~24h API
 - **B0 shopping P-prompt** (1 cell) — wait B0 phantom shopping pair. ~$15 + ~6h
-- **WA × 3 sites × B0+B1 × 5 modes** (30 cells) — wait advisor align + B1 VWA chain. ~$60-72 + 60-72h GPU
-- **Cross-model Claude Opus 4.7 cls+red 5-mode** (10 cells) — wait advisor align + agent 适配. ~$100-120
+- **WA × 3 sites × B0+B1 × 6 modes** (36 cells; B1 P-prompt Tier 2 → 33 if dropped) — wait advisor align + B1 VWA chain. ~$60-72 + 60-72h GPU
+- **Cross-model Claude Opus 4.7 cls+red 6 modes** (12 cells) — wait advisor align + agent 适配. ~$100-120
 - **B1 shopping 5-mode + P-prompt** (6 cells) — wait RunPod 4090 + DGX-side B1 phantom done. ~24h GPU each
 - **B1 P-prompt cls + red** (Tier 2 cross-cap, 2 cells) — wait B1 P-SoM + P-text 4-cell chain done. ~14-20 d (queued)
 - **B1 cls phantom_text** (queued post-phantom_som) — already in cells.base
