@@ -312,13 +312,7 @@ def replace_section1(text: str, body: str) -> str:
     end = S1_END_RE.search(text, pos=h1.end())
     if not end:
         raise ValueError("§2 header (boundary) not found in PLAYBOOK")
-    refresh_ts = subprocess.run(['date', '+%Y-%m-%d %H:%M'], capture_output=True, text=True).stdout.strip()
-    block = (
-        f"\n\n> 自己 scratchpad. 用 ✅/⏳/🚫/🔴 标. 改这里, 不改 next_steps.\n"
-        f"> *Last GLM refresh: {refresh_ts}*\n\n"
-        f"{body}\n\n---\n"
-    )
-    return text[:h1.end()] + block + text[end.start():]
+    return text[:h1.end()] + f"\n\n{body}\n\n---\n" + text[end.start():]
 
 
 def replace_section2(text: str, body: str) -> str:
@@ -328,15 +322,7 @@ def replace_section2(text: str, body: str) -> str:
     end = S2_END_RE.search(text, pos=h2.end())
     if not end:
         raise ValueError("§3 header (boundary) not found in PLAYBOOK")
-    refresh_ts = subprocess.run(['date', '+%Y-%m-%d %H:%M'], capture_output=True, text=True).stdout.strip()
-    block = (
-        f"\n\n> **GLM 统领**: daily 08:00 BST 这一节连同 §1 一起被 glm_playbook_refresh 重写。\n"
-        f"> 数据源: `logs/cron/cell_changelog.jsonl` + `logs/cron/dead_links_*.log` + ntfy fail history + 各 cron job 最后 exit status。\n"
-        f"> 自己想立即 refresh: `make glm-refresh-playbook APPLY=1`\n"
-        f"> *Last GLM refresh: {refresh_ts}*\n\n"
-        f"{body}\n\n---\n"
-    )
-    return text[:h2.end()] + block + text[end.start():]
+    return text[:h2.end()] + f"\n\n{body}\n\n---\n" + text[end.start():]
 
 
 def main():
