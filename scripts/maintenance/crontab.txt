@@ -14,11 +14,15 @@ SHELL=/bin/bash
 NTFY_TOPIC=p79-exp-dgx-spark
 
 # every 10 min: sync _status/cells/*.md frontmatter from condition_summary_v2.json
-# (skips active+pid cells, safety guard)
+# (skips active+pid cells iff PID alive; auto-clears stale dead PIDs)
 */10 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "glm-update-cells" -- make glm-update-cells APPLY=1 >> logs/cron/glm_update_cells.log 2>&1
 
-# every day 08:00 BST: refresh PLAYBOOK §6 critical path snapshot via GLM
-0 8 * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "glm-refresh-playbook" -- make glm-refresh-playbook APPLY=1 >> logs/cron/glm_playbook.log 2>&1
+# every 30 min (15+45 to avoid colliding with full refresh on 0): fast §2 automation-status
+# refresh (cron health / changelog / dead-links / ntfy). SECTION=2 skips `make active`.
+15,45 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "glm-refresh-playbook-s2" -- make glm-refresh-playbook APPLY=1 SECTION=2 >> logs/cron/glm_playbook_s2.log 2>&1
+
+# every 2 hours: full §1 + §2 refresh (critical path narrative + automation status, dual GLM call)
+0 */2 * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "glm-refresh-playbook" -- make glm-refresh-playbook APPLY=1 >> logs/cron/glm_playbook.log 2>&1
 
 # every Sunday 00:00: dead link scan, output report to logs (don't notify on this — it always exits 1 if links found)
 0 0 * * 0 cd $REPO && make check-links > logs/cron/dead_links_$(date +\%Y\%m\%d).log 2>&1

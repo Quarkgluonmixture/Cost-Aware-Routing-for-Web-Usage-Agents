@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -31,6 +32,21 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
+
+
+def _pid_alive(pid) -> bool:
+    """Liveness probe: signal 0 raises ProcessLookupError if PID gone, no actual signal sent."""
+    if pid is None:
+        return False
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True  # PID exists, owned by another user
+    except (OSError, ValueError):
+        return False
 
 REPO = Path(__file__).resolve().parents[3]
 STATUS_CELLS = REPO / "docs/checkpoints/_status/cells"
@@ -192,9 +208,14 @@ def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> 
     if not (baseline and site and mode):
         return False, "missing baseline/site/mode"
 
-    # Safety: skip active+pid cells (in-flight, would match stale archived run)
+    # Safety: skip active+pid cells if PID is alive (in-flight, would match stale archived run).
+    # If PID is set but dead (runner died/crashed/finished without clearing), proceed with update
+    # and clear the stale pid below — prevents cron from skipping forever.
+    pid_was_dead = None
     if not force and fm.get("status") == "active" and fm.get("pid"):
-        return False, f"skip (active, pid={fm['pid']}; use --force to override)"
+        if _pid_alive(fm["pid"]):
+            return False, f"skip (active, pid={fm['pid']} alive; use --force to override)"
+        pid_was_dead = fm["pid"]
 
     benchmark = fm.get("benchmark", "vwa")
     matches = find_matching_runs(baseline, site, mode, benchmark)
@@ -216,6 +237,11 @@ def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> 
 
     new_fm = dict(fm)
     changed_fields = []
+
+    # Clear stale pid if liveness check above flagged it as dead
+    if pid_was_dead is not None:
+        new_fm.pop("pid", None)
+        changed_fields.append(f"pid_dead({pid_was_dead})_cleared")
 
     # Re-run detected: archive prior canonical sr_raw to history, flip done→active
     if is_new_run and fm.get("status") == "done":

@@ -169,121 +169,116 @@ def get_ntfy_recent_fails() -> str:
 
 # ---- context aggregation ----
 
-def build_context() -> str:
-    cells = read_status_dir("cells")
-    issues = read_status_dir("issues")
+def build_context(section: str = "both") -> str:
+    """Aggregate context for §1 (critical path) and/or §2 (automation status).
 
-    active_cells = [c for c in cells if c.get("status") == "active"]
-    pending_cells = [c for c in cells if c.get("status") in ("pending", "queued", "blocked")]
-    active_issues = [i for i in issues if i.get("status") == "active"]
+    section ∈ {"1", "2", "both"} controls which inputs are gathered — saves
+    `make active` subprocess + ntfy poll time when only one section needed.
+    """
+    lines: list[str] = []
 
-    lines = [
-        "=== §1 INPUT — ACTIVE PROCESSES (make active) ===",
-        get_active_processes(),
-        "",
-        f"=== §1 INPUT — ACTIVE CELLS ({len(active_cells)}) ===",
-    ]
-    for c in active_cells:
-        lines.append(
-            f"- {c.get('baseline','?')} {c.get('site','?')} {c.get('mode','?')}: "
-            f"progress={c.get('progress','?')}%, blocker={c.get('blocker','')}, eta={c.get('eta','')}"
-        )
+    if section in ("1", "both"):
+        cells = read_status_dir("cells")
+        issues = read_status_dir("issues")
 
-    lines.append(f"\n=== §1 INPUT — PENDING/QUEUED/BLOCKED CELLS ({len(pending_cells)}) ===")
-    for c in pending_cells[:10]:
-        lines.append(
-            f"- {c.get('baseline','?')} {c.get('site','?')} {c.get('mode','?')} "
-            f"[{c.get('status','?')}]: blocker={c.get('blocker','')}"
-        )
+        active_cells = [c for c in cells if c.get("status") == "active"]
+        pending_cells = [c for c in cells if c.get("status") in ("pending", "queued", "blocked")]
+        active_issues = [i for i in issues if i.get("status") == "active"]
 
-    lines.append(f"\n=== §1 INPUT — ACTIVE ISSUES ({len(active_issues)}) ===")
-    for i in active_issues:
-        lines.append(f"- {i['_file']}: priority={i.get('priority','?')}, action={i.get('action','')}")
+        lines += [
+            "=== §1 INPUT — ACTIVE PROCESSES (make active) ===",
+            get_active_processes(),
+            "",
+            f"=== §1 INPUT — ACTIVE CELLS ({len(active_cells)}) ===",
+        ]
+        for c in active_cells:
+            lines.append(
+                f"- {c.get('baseline','?')} {c.get('site','?')} {c.get('mode','?')}: "
+                f"progress={c.get('progress','?')}%, blocker={c.get('blocker','')}, eta={c.get('eta','')}"
+            )
 
-    # §2 inputs
-    lines.append("\n=== §2 INPUT — CRON JOB HEALTH ===")
-    for j in get_cron_job_status():
-        lines.append(f"- {j['name']} | last={j['last_run']} | {j['status']}")
+        lines.append(f"\n=== §1 INPUT — PENDING/QUEUED/BLOCKED CELLS ({len(pending_cells)}) ===")
+        for c in pending_cells[:10]:
+            lines.append(
+                f"- {c.get('baseline','?')} {c.get('site','?')} {c.get('mode','?')} "
+                f"[{c.get('status','?')}]: blocker={c.get('blocker','')}"
+            )
 
-    lines.append("\n=== §2 INPUT — CELL CHANGELOG TAIL (last 3d, most recent first) ===")
-    for row in get_cell_changelog_tail(15):
-        ts = row['ts'][:16]  # strip seconds
-        changes = ", ".join(row['changes'])[:120]
-        lines.append(f"- {ts} {row['cell']}: {changes}")
-    if not get_cell_changelog_tail(1):
-        lines.append("(empty)")
+        lines.append(f"\n=== §1 INPUT — ACTIVE ISSUES ({len(active_issues)}) ===")
+        for i in active_issues:
+            lines.append(f"- {i['_file']}: priority={i.get('priority','?')}, action={i.get('action','')}")
 
-    lines.append("\n=== §2 INPUT — DEAD LINK SCAN (latest) ===")
-    dl_logs = sorted(CRON_LOG_DIR.glob("dead_links_*.log"), key=lambda p: p.stat().st_mtime)
-    if dl_logs:
-        text = dl_logs[-1].read_text(encoding="utf-8", errors="ignore")
-        # extract first 1500 chars of warnings
-        warn_lines = [l for l in text.splitlines() if "BROKEN" in l or "missing" in l or "WARN" in l]
-        lines.append("\n".join(warn_lines[:20]) if warn_lines else "(clean — no broken links)")
-    else:
-        lines.append("(no scan run yet)")
+    if section in ("2", "both"):
+        lines.append("\n=== §2 INPUT — CRON JOB HEALTH ===")
+        for j in get_cron_job_status():
+            lines.append(f"- {j['name']} | last={j['last_run']} | {j['status']}")
 
-    lines.append("\n=== §2 INPUT — NTFY FAIL HISTORY (last 24h) ===")
-    lines.append(get_ntfy_recent_fails())
+        lines.append("\n=== §2 INPUT — CELL CHANGELOG TAIL (last 3d, most recent first) ===")
+        for row in get_cell_changelog_tail(15):
+            ts = row['ts'][:16]  # strip seconds
+            changes = ", ".join(row['changes'])[:120]
+            lines.append(f"- {ts} {row['cell']}: {changes}")
+        if not get_cell_changelog_tail(1):
+            lines.append("(empty)")
+
+        lines.append("\n=== §2 INPUT — DEAD LINK SCAN (latest) ===")
+        dl_logs = sorted(CRON_LOG_DIR.glob("dead_links_*.log"), key=lambda p: p.stat().st_mtime)
+        if dl_logs:
+            text = dl_logs[-1].read_text(encoding="utf-8", errors="ignore")
+            warn_lines = [l for l in text.splitlines() if "BROKEN" in l or "missing" in l or "WARN" in l]
+            lines.append("\n".join(warn_lines[:20]) if warn_lines else "(clean — no broken links)")
+        else:
+            lines.append("(no scan run yet)")
+
+        lines.append("\n=== §2 INPUT — NTFY FAIL HISTORY (last 24h) ===")
+        lines.append(get_ntfy_recent_fails())
 
     return "\n".join(lines)
 
 
 # ---- GLM call ----
 
-def call_glm_dual(context: str) -> Optional[tuple[str, str]]:
-    if not GLM_CFG_PATH.exists():
-        print(f"⚠️  GLM config {GLM_CFG_PATH} not found", file=sys.stderr)
-        return None
-    glm_cfg = _load_glm_config(GLM_CFG_PATH)
-    prompt = f"""你为一个 P79 实验项目的 personal playbook 同时合成 TWO 节内容。
-
-## §1 — 当前 critical path snapshot (~120 词)
+_S1_PROMPT = """## §1 — 当前 critical path snapshot (~120 词)
 4-6 行 status emoji (✅/⏳/🚫/🔴) + 简短 cell 或 blocker 描述。
 最后 1 行: "今日瓶颈: ..." 1 句总结。
 中文为主.
+"""
 
-## §2 — 自动化运行状态
+_S2_PROMPT = """## §2 — 自动化运行状态
 四个 subsection (按此顺序输出):
 
 ### 2.1 Cron job 健康度 (last 24h)
-3-row markdown table 列 cron jobs:
+markdown table 列 cron jobs:
 | Job | 上次 run | 状态 | 备注 |
 
 ### 2.2 Cell 状态变更近况 (changelog tail)
-bullet list, 最近 5-8 条 cell frontmatter 变更, 每条 1 行: `时间(HH:MM) cell名: 变更字段`. 强调任何 `rerun_detected` / `status→active` / `status→done` 信号. 如 changelog 空则写"近 3 天无 cell 变更"。
+bullet list, 最近 5-8 条 cell frontmatter 变更, 每条 1 行: `时间(HH:MM) cell名: 变更字段`. 强调任何 `rerun_detected` / `status→active` / `status→done` / `pid_dead_cleared` 信号. 如 changelog 空则写"近 3 天无 cell 变更"。
 
 ### 2.3 Dead link warnings
 若有 broken link 列前 5 条 (file:line — broken target). 否则: `✅ 无 broken link`。
 
 ### 2.4 Ntfy fail alerts 历史
 列 last 24h 失败 (timestamp + title). 如无: `✅ 近 24h 无失败`。
-
-输出格式 (严格按此分隔, 不要加额外引言):
-
-=== SECTION 1 ===
-<§1 body, no header line>
-
-=== SECTION 2 ===
-### 2.1 Cron job 健康度 (last 24h)
-
-<table>
-
-### 2.2 Cell 状态变更近况 (changelog tail)
-
-<bullets>
-
-### 2.3 Dead link warnings
-
-<content>
-
-### 2.4 Ntfy fail alerts 历史
-
-<content>
-
-INPUT (机器聚合数据, 据此合成):
-{context}
 """
+
+
+def call_glm(context: str, section: str = "both") -> Optional[tuple[Optional[str], Optional[str]]]:
+    """Synthesize requested section(s). Returns (s1_body, s2_body) — None for unrequested."""
+    if not GLM_CFG_PATH.exists():
+        print(f"⚠️  GLM config {GLM_CFG_PATH} not found", file=sys.stderr)
+        return None
+    glm_cfg = _load_glm_config(GLM_CFG_PATH)
+
+    parts = ["你为一个 P79 实验项目的 personal playbook 合成内容。\n"]
+    output_format = ["输出格式 (严格按此分隔, 不要加额外引言):\n"]
+    if section in ("1", "both"):
+        parts.append(_S1_PROMPT)
+        output_format.append("=== SECTION 1 ===\n<§1 body, no header line>\n")
+    if section in ("2", "both"):
+        parts.append(_S2_PROMPT)
+        output_format.append("=== SECTION 2 ===\n### 2.1 Cron job 健康度 (last 24h)\n\n<table>\n\n### 2.2 Cell 状态变更近况 (changelog tail)\n\n<bullets>\n\n### 2.3 Dead link warnings\n\n<content>\n\n### 2.4 Ntfy fail alerts 历史\n\n<content>\n")
+
+    prompt = "\n".join(parts) + "\n" + "\n".join(output_format) + f"\nINPUT (机器聚合数据, 据此合成):\n{context}\n"
     messages = [
         {"role": "system", "content": "You synthesize personal-project playbook sections from machine-aggregated data. Output Chinese-mixed markdown, follow exact format."},
         {"role": "user", "content": prompt},
@@ -294,13 +289,25 @@ INPUT (机器聚合数据, 据此合成):
         print(f"⚠️  GLM call failed: {e}", file=sys.stderr)
         return None
 
-    # Split on === SECTION 1 === / === SECTION 2 ===
-    m1 = re.search(r"=== SECTION 1 ===\s*\n(.*?)(?:\n=== SECTION 2 ===\s*\n|\Z)", raw, re.DOTALL)
-    m2 = re.search(r"=== SECTION 2 ===\s*\n(.*?)\Z", raw, re.DOTALL)
-    if not (m1 and m2):
-        print(f"⚠️  GLM output missing section delimiters; raw[:500]={raw[:500]}", file=sys.stderr)
-        return None
-    return m1.group(1).strip(), m2.group(1).strip()
+    s1_body, s2_body = None, None
+    if section in ("1", "both"):
+        m1 = re.search(r"=== SECTION 1 ===\s*\n(.*?)(?:\n=== SECTION 2 ===\s*\n|\Z)", raw, re.DOTALL)
+        if not m1:
+            print(f"⚠️  GLM output missing SECTION 1 delimiter; raw[:500]={raw[:500]}", file=sys.stderr)
+            return None
+        s1_body = m1.group(1).strip()
+    if section in ("2", "both"):
+        m2 = re.search(r"=== SECTION 2 ===\s*\n(.*?)\Z", raw, re.DOTALL)
+        if not m2:
+            # If only §2 requested, GLM may have skipped the SECTION 2 marker — fall back to whole raw
+            if section == "2":
+                s2_body = raw.strip()
+            else:
+                print(f"⚠️  GLM output missing SECTION 2 delimiter; raw[:500]={raw[:500]}", file=sys.stderr)
+                return None
+        else:
+            s2_body = m2.group(1).strip()
+    return s1_body, s2_body
 
 
 # ---- replace ----
@@ -329,24 +336,30 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply", action="store_true", help="actually write (default dry-run)")
     parser.add_argument("--show-context", action="store_true", help="print aggregated context")
+    parser.add_argument("--section", choices=["1", "2", "both"], default="both",
+                        help="which section(s) to refresh (default both). "
+                             "Use --section 2 for fast cron (avoids `make active` subprocess + cells/issues scan).")
     args = parser.parse_args()
 
-    context = build_context()
+    context = build_context(args.section)
     if args.show_context:
         print(context)
         return 0
 
-    print("📋 Synthesizing PLAYBOOK §1 + §2 via GLM...")
-    pair = call_glm_dual(context)
-    if not pair:
+    label = f"§{args.section}" if args.section != "both" else "§1 + §2"
+    print(f"📋 Synthesizing PLAYBOOK {label} via GLM...")
+    result = call_glm(context, args.section)
+    if not result:
         print("❌ GLM synth failed, aborting")
         return 1
-    s1_body, s2_body = pair
+    s1_body, s2_body = result
 
-    print("\n=== GLM-generated §1 body ===")
-    print(s1_body)
-    print("\n=== GLM-generated §2 body ===")
-    print(s2_body)
+    if s1_body is not None:
+        print("\n=== GLM-generated §1 body ===")
+        print(s1_body)
+    if s2_body is not None:
+        print("\n=== GLM-generated §2 body ===")
+        print(s2_body)
     print("=" * 60)
 
     if not args.apply:
@@ -354,10 +367,12 @@ def main():
         return 0
 
     text = PLAYBOOK.read_text(encoding="utf-8")
-    text = replace_section1(text, s1_body)
-    text = replace_section2(text, s2_body)
+    if s1_body is not None:
+        text = replace_section1(text, s1_body)
+    if s2_body is not None:
+        text = replace_section2(text, s2_body)
     PLAYBOOK.write_text(text, encoding="utf-8")
-    print(f"\n✏️  Updated {PLAYBOOK.relative_to(REPO)} §1 + §2")
+    print(f"\n✏️  Updated {PLAYBOOK.relative_to(REPO)} {label}")
     return 0
 
 

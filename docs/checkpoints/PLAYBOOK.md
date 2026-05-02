@@ -11,13 +11,11 @@ audience: self-only
 
 ## §1 当前 critical path snapshot
 
-✅ B0 reddit P-prompt 运行中，progress 8%，eta ~6h
-⏳ B1 classifieds P-SoM progress 79%，GPU contention（seonglae 占 95%，peak 仅 4 ep/h），eta ~10-15d
-🚫 B0 classifieds P-prompt [pending] — blocked by B1 phantom_som cls done（same-site XOR 硬规则）
-🚫 B1 classifieds P-text [queued] — blocked by B1 phantom_som cls done（queue chain Tier 1）
-🔴 issue_b1_gpu_contention (high) + issue_paper_grade_rerun_5cells (high) 待处理
-
-今日瓶颈: B1 classifieds P-SoM 受 seonglae GPU 95% 占用制约，throughput 骤降，ETA 拉长至 10-15d；需尽快协调 GPU sharing 或接受慢速推进，同时 5-cell paper grade rerun 排队等待一次性 launch。
+▶️ `B1_phantom_prompt_classifieds` 运行中 (进度 27%, 63/234), adj-SR 6.3%, 预计 7.1d 完成
+⏳ 队列链 `b1_cls_remaining` 步骤 2/2 执行中 (`queue_phantom_prompt B1 classifieds`, 已耗时 33h)
+⏳ 7 cells pending: B0/B1 reddit 与 shopping 等任务均被阻塞 (受 same-site XOR 规则与 Tier 队列依赖限制)
+🔴 3 个活跃 issue: B1 GPU 资源竞争需协调 (高优)、5 cells paper grade rerun 待启动 (高优)、B1 shopping dom 需重跑
+今日瓶颈: B1 GPU 资源争抢导致当前 runner 速率仅为 1.0 ep/h，严重拖慢进度并阻塞后续 7 个 cell 的全局流转。
 
 ---
 
@@ -27,30 +25,25 @@ audience: self-only
 
 | Job | 上次 run | 状态 | 备注 |
 |---|---|---|---|
-| glm-update-cells | 05-02 09:50 UTC | ✅ ok | |
-| glm-refresh-playbook | 05-02 07:00 UTC | ✅ ok | |
-| check-links | — | — | 从未执行 |
+| glm-update-cells | 05-02 16:40 | ✅ ok | - |
+| glm-refresh-playbook | 05-02 07:00 | ✅ ok | - |
+| check-links | (never run) | — | 尚未运行过 |
 
 ### 2.2 Cell 状态变更近况 (changelog tail)
 
-- `09:44` cell_b0_red_vision: last_run_id→B0_3mode_reddit_20260422
-- `09:44` cell_b0_red_som: last_run_id→B0_phantom_som_reddit_20
-- `09:44` cell_b0_red_psom: last_run_id→B0_phantom_som_reddit_20
-- `09:44` cell_b0_red_dom: last_run_id→B0_phantom_text_reddit_2
-- `09:44` cell_b0_cls_vision: last_run_id→B0_3mode_classifieds_202
-- `09:44` cell_b0_cls_som: last_run_id→B0_3mode_classifieds_202
-- `09:44` cell_b0_cls_psom: last_run_id→B0_phantom_som_classifie
-- `09:44` cell_b0_cls_dom: last_run_id→B0_3mode_classifieds_202
+- 16:41 cell_b1_cls_phantom_som.md: **`pid_dead(1821957)_cleared`**, **`status→done`**, sr_raw→10.26
+- 16:41 cell_b0_red_pprompt.md: **`pid_dead(2075552)_cleared`**, **`status→done`**, sr_raw→10.48
+- 10:46 cell_b1_cls_phantom_text.md: **`status→done`**, sr_raw→10.26
+- 10:46 cell_b0_red_ptext.md: last_run_id→B0_phantom_text_reddit_2
+- 10:46 cell_b0_cls_ptext.md: last_run_id→B0_phantom_text_classifi
 
 ### 2.3 Dead link warnings
 
-⚠️ `check-links` 尚未执行过，暂无扫描结果。
+✅ 无 broken link (scan 尚未运行)
 
 ### 2.4 Ntfy fail alerts 历史
 
-- 2026-05-02 01:17 UTC — ⚠️ P79 cron fail: test-fail
-- 2026-05-02 01:42 UTC — ⚠️ P79 cron fail: fail-test-claude
-- 2026-05-02 01:42 UTC — P79 fail-test from claude
+✅ 近 24h 无失败
 
 ---
 

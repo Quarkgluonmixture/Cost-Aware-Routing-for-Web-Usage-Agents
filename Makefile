@@ -428,11 +428,13 @@ glm-update-cells:
 	@.venv/bin/python scripts/maintenance/glm/glm_cell_autoupdate.py \
 	  $(if $(APPLY),--apply,) $(if $(FORCE),--force,)
 
-# glm-refresh-playbook: GLM synthesizes PLAYBOOK §6 critical path from live state
+# glm-refresh-playbook: GLM synthesizes PLAYBOOK §1 (critical path) + §2 (automation status)
 #   APPLY=1 to actually write back to PLAYBOOK.md
+#   SECTION={1,2,both} default both. Use SECTION=2 for fast cron (skips `make active` subprocess).
 glm-refresh-playbook:
 	@.venv/bin/python scripts/maintenance/glm/glm_playbook_refresh.py \
-	  $(if $(APPLY),--apply,)
+	  $(if $(APPLY),--apply,) \
+	  $(if $(SECTION),--section $(SECTION),)
 
 # glm-pre-launch-check: GLM reviews proposed launch before queue script
 #   Usage: make glm-pre-launch-check QUEUE=queue_phantom_som.sh BASELINE=B0 SITE=reddit RESET=1
