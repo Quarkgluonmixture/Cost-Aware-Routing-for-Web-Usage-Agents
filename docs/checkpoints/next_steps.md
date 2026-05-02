@@ -57,15 +57,11 @@ Per-section detail → `_status/section*.md` notes (frontmatter status/progress/
 
 ## §3 Active experiments + pending cells
 
-> Cells.base view 待 Demo E 完成 (cells 现仍 inline). 暂时表格如下:
+### 3.1 Active 跑中 + Pending
 
-### 3.1 Active 跑中
+![[cells.base#Active 跑中]]
 
-| Cell | Status | ETA |
-|---|---|---|
-| **B0 P-prompt reddit (PID 2075552)** | ~16/210 | ~6h |
-| B1 phantom_som cls (PID 1821957) | task 184+/234, watchdog auto-cleaned 5 NOT-LOGGED-IN | ~10-15 d (GPU contention) |
-| B0 dom shopping clean re-run (PID 1106560) | ~9/466 | ~9h |
+![[cells.base#Pending / Queued / Blocked]]
 
 ### 3.2 Pending chains — `queue_chain.sh` (sequential)
 
@@ -105,22 +101,18 @@ nohup bash scripts/queues/queue_chain.sh \
 | B0 phantom shopping pair (Tier 1) | ~24h | wait B0 dom shopping done |
 | B1 P-prompt 2-cell (Tier 2) | ~14-20 d | ⏳ wait B1 4-cell Tier 1 done |
 
-### 3.3 Missing cells (post 14-cell rerun target)
+### 3.3 Missing cells (longer-horizon, not yet noted)
 
-**Critical (paper Section 5)**:
-| Cell | Blocker | Cost |
-|---|---|---|
-| B0 P-prompt cls (diamond) | B1 phantom_som cls done | ~$3 + ~6h API |
-| B0 shopping SoM/Vision/Phantom × 3 | B0 dom shopping done + verify | ~$45 + ~24h |
-| B0 shopping P-prompt | B0 phantom shopping pair done | ~$15 + ~6h |
+> Cells with `_status/cells/` notes 已 covered by 3.1 embed. 下面是**还没 detail note 的 horizon-extender cells**, 待 advisor align + RunPod approval 后再 promote 到 cells.base:
 
-**Generalization (paper Section 7)**:
-| Cell | Blocker | Cost |
-|---|---|---|
-| WA × 3 sites × B0+B1 × 5 modes (30 cells) | advisor align + B1 VWA chain done | ~$60-72 + 60-72h GPU |
-| Cross-model Claude Opus 4.7 cls+red 5-mode (10 cells) | advisor align + agent 适配 | ~$100-120 |
-| B1 shopping 5-mode + P-prompt (6 cells) | RunPod 4090 + DGX-side B1 phantom done | ~24h GPU each |
-| B1 P-prompt cls + red (Tier 2 cross-cap) | B1 P-SoM + P-text 4-cell chain done | ~14-20 d (queued) |
+- **B0 shopping SoM/Vision/P-text/P-SoM** (4 cells) — wait B0 dom shopping done. ~$60 + ~24h API
+- **B0 shopping P-prompt** (1 cell) — wait B0 phantom shopping pair. ~$15 + ~6h
+- **WA × 3 sites × B0+B1 × 5 modes** (30 cells) — wait advisor align + B1 VWA chain. ~$60-72 + 60-72h GPU
+- **Cross-model Claude Opus 4.7 cls+red 5-mode** (10 cells) — wait advisor align + agent 适配. ~$100-120
+- **B1 shopping 5-mode + P-prompt** (6 cells) — wait RunPod 4090 + DGX-side B1 phantom done. ~24h GPU each
+- **B1 P-prompt cls + red** (Tier 2 cross-cap, 2 cells) — wait B1 P-SoM + P-text 4-cell chain done. ~14-20 d (queued)
+- **B1 cls phantom_text** (queued post-phantom_som) — already in cells.base
+- **B0 cls P-prompt** (diamond completion) — already in cells.base
 
 ### 3.4 Router experiments (Section 6, ~Week 4-5)
 
@@ -145,21 +137,11 @@ nohup bash scripts/queues/queue_chain.sh \
 
 ## §4 Codex task queue (pending only)
 
-> Codex.base view 待 Demo E 完成. 暂时表格:
+![[codex.base#Ready to send (now)]]
 
-| # | Task | Tokens | Blocker | Status |
-|---|---|---|---|---|
-| **10** | paper.bib formal expansion + §2 Zoom 3 cross-reference. Q5 (bidirectional) 已 6/6 integrate, Tool Calling Linear Circuit 已 Zoom 4 | ~50-100K | — | 🟡 codex 跑中 (paper.bib 部分) |
-| **11** | Section 4 fresh-data prose update (4-dim framework + ~100× cost + N=210 全数据) ⭐ | ~30K | — (现可发) | 🟢 ready, 等用户 trigger |
-| **13** | Section 5 prose 写 (site × axis × LLM-mechanism 3-way table) | ~50-80K | 待 P-prompt reddit done (~6h) + #11 一起发 | 🟡 ~Thu |
-| 14 | Codex audit shopping VWA (466) — full 5-mode | ~500K | 待 shopping 5-mode 数据 | ⏳ Week 2-3 |
-| 14b | Codex audit reddit cat refine (类 shopping A-refine) | ~50K | red 5-mode FRESH already | 🟢 ready |
-| **14c** | Codex redo `disagreement_clusters.md` 含 5+1 phantom modes | ~80K | B1 phantom 4-cell + B0 P-prompt diamond done (~30-40d) | ⏳ Week 4-5 |
-| 15 | Codex audit WA tasks (480) | ~500K | 待 WA 数据 | ⏳ Week 4-5 |
-| **16** | Section 6 Routing prose (Tier 1+2 + 4-fig stack) | ~50K | Tier 1+2 prototype done + figures | ⏳ Week 5-6 |
-| 17 | Section 7 Generalization 草稿 | ~50K | shopping + WA + Claude done | ⏳ Week 6-7 |
-| 18 | Section 8 Discussion 草稿 | ~30K | 全部 data done | ⏳ Week 8+ |
-| 19 | 二次 deep research (Section 6/7/8 revisit) | ~300K | Week 8+ paper 终稿前 | ⏳ Week 8+ |
+![[codex.base#Running / In flight]]
+
+![[codex.base#Blocked / Queued]]
 
 **Pending Python scripts (非 codex)**:
 - ⏳ Multi-metric Pareto (cost + lat + carbon) — Section 8 前置 (~2h)
@@ -170,18 +152,9 @@ nohup bash scripts/queues/queue_chain.sh \
 
 ## §5 Open issues (active)
 
-> Issues.base view 待 Demo E 完成. 暂时表格:
+![[issues.base#Active blockers]]
 
-| Issue | Status | Action needed |
-|---|---|---|
-| **B1 phantom_som cls GPU contention** (seonglae 95% util, 5× latency) | 🟡 持续 | 联系 seonglae or 接受 slow progression |
-| **IP env-var-ize 重构** (9 处 hardcoded `100.95.81.103`) | 🟡 backlog | 替换 `${VWA_REMOTE_HOST}` env var (`auth_refresh.py` / `envs.py` / queue scripts). 触发: Myriad onboard 时 (现已废) |
-| **WA reset mechanism** (queue scripts 仅 vwa reset, wa skip) | 🟡 backlog | 写 `reset_wa_sites.sh` + queue scripts 加 `BENCHMARK=wa` 分支 |
-| **Watchdog AUTO-ANALYSIS spam guard** (partial summary 触发 infinite loop) | 🟡 backlog | `experiment_watchdog.py:1340` 增加 episode count vs expected guard |
-| **GPU contention deadlock detection** (B1 cls stalled 4h, kernel wait 不报 progress) | 🟡 backlog | watchdog stale-runner heartbeat: episode mtime > N min → SIGTERM + queue script idempotent re-spawn |
-| **Tier A summary commit decision** (`condition_summary_v2.json` + `run_meta.json` 入 git LFS / 直 git?) | 🟡 待评估 | size: 10 cond × ~50KB = ~500KB |
-| **B1 shopping DOM 466 ep** (pre-Magento-bug archived) | ⏸️ 待 RunPod | `queue_baseline.sh B1 dom shopping` clean re-run |
-| **Pending paper-grade rerun: B0/B1 × DOM/SoM × shopping** | ⏸️ 待 RunPod | bugs 累积修完后一次性 re-run (含 §105 swatch radio fix) |
+![[issues.base#Backlog]]
 
 ---
 

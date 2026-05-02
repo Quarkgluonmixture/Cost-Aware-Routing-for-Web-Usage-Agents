@@ -1,0 +1,113 @@
+filters:
+  and:
+    - 'type == "cell"'
+
+formulas:
+  status_icon: 'if(status == "done", "✅", if(status == "active", "🔄", if(status == "queued", "📋", if(status == "blocked", "🚫", if(status == "pending", "⏳", "❓")))))'
+  progress_bar: 'if(progress != null, progress.toString() + "%", "—")'
+  cell_label: 'baseline + " " + site + " " + mode'
+
+properties:
+  baseline:
+    displayName: BL
+  site:
+    displayName: Site
+  mode:
+    displayName: Mode
+  status:
+    displayName: Status
+  formula.status_icon:
+    displayName: ""
+  formula.progress_bar:
+    displayName: Progress
+  target_section:
+    displayName: §
+  priority:
+    displayName: Priority
+  phase_a:
+    displayName: PhaseA
+  n:
+    displayName: N
+  sr_raw:
+    displayName: SR_raw
+  sr_adj:
+    displayName: SR_adj
+  drop_one:
+    displayName: drop1
+  blocker:
+    displayName: Blocker
+  eta:
+    displayName: ETA
+  pid:
+    displayName: PID
+
+views:
+  - type: table
+    name: "Active 跑中"
+    filters:
+      and:
+        - 'status == "active"'
+    order:
+      - formula.cell_label
+      - formula.status_icon
+      - formula.progress_bar
+      - pid
+      - blocker
+      - eta
+
+  - type: table
+    name: "Pending / Queued / Blocked"
+    filters:
+      or:
+        - 'status == "pending"'
+        - 'status == "queued"'
+        - 'status == "blocked"'
+    order:
+      - formula.cell_label
+      - formula.status_icon
+      - status
+      - target_section
+      - priority
+      - blocker
+      - eta
+
+  - type: table
+    name: "Done (paper-grade)"
+    filters:
+      and:
+        - 'status == "done"'
+    order:
+      - formula.cell_label
+      - target_section
+      - sr_raw
+      - sr_adj
+      - drop_one
+      - n
+      - phase_a
+    groupBy:
+      property: site
+      direction: ASC
+
+  - type: table
+    name: "By Section"
+    order:
+      - target_section
+      - formula.cell_label
+      - formula.status_icon
+      - status
+      - blocker
+    groupBy:
+      property: target_section
+      direction: ASC
+
+  - type: table
+    name: "All cells"
+    order:
+      - formula.cell_label
+      - formula.status_icon
+      - status
+      - target_section
+      - priority
+      - phase_a
+      - blocker
+      - eta

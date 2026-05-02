@@ -1,0 +1,92 @@
+filters:
+  and:
+    - 'type == "codex"'
+
+formulas:
+  status_icon: 'if(status == "ready", "🟢", if(status == "running", "🔄", if(status == "queued", "📋", if(status == "blocked", "🚫", "❓"))))'
+  tokens_short: 'if(tokens >= 1000, (tokens / 1000).toString() + "K", tokens.toString())'
+
+properties:
+  task_num:
+    displayName: "#"
+  section:
+    displayName: §
+  status:
+    displayName: Status
+  formula.status_icon:
+    displayName: ""
+  priority:
+    displayName: Priority
+  formula.tokens_short:
+    displayName: Tokens
+  blocker:
+    displayName: Blocker
+  eta:
+    displayName: ETA
+
+views:
+  - type: table
+    name: "Ready to send (now)"
+    filters:
+      and:
+        - 'status == "ready"'
+    order:
+      - task_num
+      - file.name
+      - section
+      - priority
+      - formula.tokens_short
+
+  - type: table
+    name: "Running / In flight"
+    filters:
+      and:
+        - 'status == "running"'
+    order:
+      - task_num
+      - file.name
+      - section
+      - formula.tokens_short
+
+  - type: table
+    name: "Blocked / Queued"
+    filters:
+      or:
+        - 'status == "blocked"'
+        - 'status == "queued"'
+    order:
+      - task_num
+      - file.name
+      - section
+      - formula.status_icon
+      - status
+      - priority
+      - blocker
+      - eta
+      - formula.tokens_short
+
+  - type: table
+    name: "All tasks (by §)"
+    order:
+      - task_num
+      - section
+      - file.name
+      - formula.status_icon
+      - status
+      - priority
+      - formula.tokens_short
+      - blocker
+      - eta
+    groupBy:
+      property: section
+      direction: ASC
+
+  - type: table
+    name: "Token budget overview"
+    order:
+      - task_num
+      - section
+      - status
+      - formula.tokens_short
+    summaries:
+      tokens: Sum

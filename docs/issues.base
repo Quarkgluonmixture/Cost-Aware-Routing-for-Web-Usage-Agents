@@ -1,0 +1,73 @@
+filters:
+  and:
+    - 'type == "issue"'
+
+formulas:
+  status_icon: 'if(status == "active", "🔴", if(status == "backlog", "🟡", if(status == "pending-evaluation", "⏳", "❓")))'
+  priority_icon: 'if(priority == "high", "🔥", if(priority == "medium", "⚠️", "💤"))'
+
+properties:
+  category:
+    displayName: Category
+  status:
+    displayName: Status
+  formula.status_icon:
+    displayName: ""
+  priority:
+    displayName: Priority
+  formula.priority_icon:
+    displayName: ""
+  action:
+    displayName: Action
+
+views:
+  - type: table
+    name: "Active blockers"
+    filters:
+      and:
+        - 'status == "active"'
+    order:
+      - file.name
+      - formula.priority_icon
+      - priority
+      - category
+      - action
+
+  - type: table
+    name: "Backlog"
+    filters:
+      and:
+        - 'status == "backlog"'
+    order:
+      - file.name
+      - formula.priority_icon
+      - priority
+      - category
+      - action
+
+  - type: table
+    name: "All issues (by category)"
+    order:
+      - file.name
+      - formula.status_icon
+      - status
+      - formula.priority_icon
+      - priority
+      - category
+      - action
+    groupBy:
+      property: category
+      direction: ASC
+
+  - type: table
+    name: "By priority"
+    order:
+      - file.name
+      - formula.status_icon
+      - status
+      - formula.priority_icon
+      - priority
+      - action
+    groupBy:
+      property: priority
+      direction: ASC
