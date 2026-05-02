@@ -8,7 +8,7 @@
       "width": 3000,
       "height": 140,
       "color": "6",
-      "text": "# Experiment Matrix — Paper Architecture\n*Cascade DOM→P-text→P-SoM→SoM · Phantom space 3 arms · Section mapping · ~108 cells (~135K ep)*\n**Final scope**: 6 sites × 3 models × 6 modes (5 base + 1 diamond control)"
+      "text": "# Experiment Matrix — Paper Architecture\n*Instructional / 指导性 (NOT status tracking)*\n**Cascade DOM → Phantom-DOM → Phantom-SoM → SoM** + Vision parallel · Phantom space (2 arms) · + Router · + Deploy"
     },
 
     {
@@ -19,7 +19,7 @@
       "width": 3000,
       "height": 90,
       "color": "5",
-      "text": "**Sites (6)**: VWA cls 234 / red 210 / shop 466 + WA red 106 / shop 192 / sa 182 = ~1390 task/condition  |  **Models (3)**: B0 Qwen3-VL-235B-A22B (proxy) + B1 Qwen3-VL-4B (local) + Claude Opus 4.7  |  **Modes (6)**: DOM / SoM / Vision / **P-text** / **P-SoM** / **P-prompt** (3 phantom arms 共享 4-fold drop-in)"
+      "text": "**Sites (6)**: VWA cls 234 / red 210 / shop 466 + WA red 106 / shop 192 / sa 182 = ~1390 task/condition  |  **Models (3)**: B0 Qwen3-VL-235B + B1 Qwen3-VL-4B + Claude Opus 4.7  |  **Modes (5)**: DOM / SoM / Vision / **Phantom-DOM** / **Phantom-SoM**  |  **Cells**: 6 × 3 × 5 = **90 baseline cells (~125K episode total)**"
     },
 
     {
@@ -38,94 +38,86 @@
       "type": "text",
       "x": -40,
       "y": 140,
-      "width": 380,
+      "width": 600,
       "height": 380,
       "color": "4",
-      "text": "## DOM\n*origin baseline*\n\n• text: AXTree (hierarchical)\n• prompt: DOM\n• image: ✗\n• cost: ~3K text\n\n**测什么**: text-only baseline, hierarchical tree-traversal trajectory\n\n**Section 4** baseline\n**Section 5** axis 1 control (DOM-prompt 锚)\n**Phantom**: ✅ corner #1 (origin)"
+      "text": "## DOM\n*origin baseline*\n\n• text: AXTree (hierarchical)\n• prompt: DOM\n• image: ✗\n• cost: ~3K text\n\n**测什么**: text-only baseline, hierarchical tree-traversal trajectory\n\n**Section 4** baseline\n**Phantom space**: ✅ origin (M1 ❌ M2 ❌)"
     },
 
     {
-      "id": "mode_ptext0aaaaa1",
+      "id": "mode_pdomzzzaaaaa1",
       "type": "text",
-      "x": 460,
+      "x": 660,
       "y": 140,
-      "width": 380,
+      "width": 600,
       "height": 380,
       "color": "1",
-      "text": "## P-text\n*axis 1 alone (DOM-prompt 锚)*\n\n• text: **`[SOM_MARKS]`** flat list\n• prompt: DOM (unchanged)\n• image: ✗\n• cost: ~3K text (regex filter from AXTree)\n\n**测什么**: 文本 ontology shift — hierarchical → flat indexed (browse → select)\n\n**Section 5** M2 axis isolation (Format-swap subspace)\n**Phantom**: ✅ corner #5"
+      "text": "## Phantom-DOM\n*axis 1: text format swap (DOM-prompt 锚)*\n\n• text: **`[SOM_MARKS]`** flat list (regex filter from AXTree)\n• prompt: DOM (unchanged)\n• image: ✗\n• cost: ~3K text\n\n**测什么**: 文本 ontology shift — hierarchical → flat indexed (browse → select); M2 flat-list activation\n\n**Section 5** axis 1 mechanism (Format-swap subspace)\n**Phantom space**: ✅ arm 1 (M1 ❌ M2 ✅)"
     },
 
     {
-      "id": "mode_psom00aaaaa1",
+      "id": "mode_psomaaaaaaa1",
       "type": "text",
-      "x": 960,
+      "x": 1360,
       "y": 140,
-      "width": 380,
+      "width": 600,
       "height": 380,
       "color": "6",
-      "text": "## P-SoM ⭐\n*axis 1+2 compound (cube center, paper hero)*\n\n• text: `[SOM_MARKS]`\n• prompt: SoM-style\n• image: ✗\n• cost: ~3K text\n\n**测什么**: M1 ⊕ M2 compound activation — visual prompting w/o image + flat-list scanning. Emergent 3 unique tasks B0 red\n\n**Section 5** paper hero\n**Phantom**: ✅ corner #7"
+      "text": "## Phantom-SoM ⭐\n*axis 1+2 compound (cube center, paper hero)*\n\n• text: `[SOM_MARKS]`\n• prompt: SoM-style\n• image: ✗\n• cost: ~3K text\n\n**测什么**: M1 ⊕ M2 compound activation — visual prompting w/o image + flat-list scanning. Emergent unique tasks (B0 red 3 tasks 既不在 Phantom-DOM 也不在 SoM)\n\n**Section 5** paper hero, mechanism centerpiece\n**Phantom space**: ✅ arm 2 (M1 ✅ M2 ✅ compound)"
     },
 
     {
       "id": "mode_som000aaaaa1",
       "type": "text",
-      "x": 1460,
+      "x": 2060,
       "y": 140,
-      "width": 380,
+      "width": 600,
       "height": 380,
       "color": "3",
-      "text": "## SoM\n*image-on cube endpoint (NOT phantom)*\n\n• text: `[SOM_MARKS]`\n• prompt: SoM\n• image: ✓ (annotated screenshot)\n• cost: ~3K text + ~1.5K image\n\n**测什么**: full multimodal baseline — paper baseline 比较锚\n\n**Section 4** baseline\n**Section 5** axis 3 endpoint (vs P-SoM isolate image effect)\n**Phantom**: ❌ image-on out-of-space"
+      "text": "## SoM\n*image-on cube endpoint (NOT phantom)*\n\n• text: `[SOM_MARKS]`\n• prompt: SoM\n• image: ✓ (annotated screenshot)\n• cost: ~3K text + ~1.5K image\n\n**测什么**: full multimodal baseline — paper baseline 比较锚\n\n**Section 4** baseline\n**Section 5** axis 3 endpoint (vs Phantom-SoM isolate image effect)\n**Phantom space**: ❌ image-on out-of-space"
     },
 
     {
       "id": "mode_vision0aaaa1",
       "type": "text",
-      "x": 1960,
+      "x": 2660,
       "y": 140,
-      "width": 380,
+      "width": 540,
       "height": 380,
       "color": "5",
-      "text": "## Vision\n*image-only (cube 之外, axis 1 = no text)*\n\n• text: ∅\n• prompt: SoM-like\n• image: ✓ (raw screenshot)\n• cost: ~1.5K image\n\n**测什么**: pure visual baseline — counter-evidence (Phantom 不是 mode-specific artifact, Vision 也 affected)\n\n**Section 4** baseline (3rd axis)\n**Phantom**: ❌ cube 之外"
-    },
-
-    {
-      "id": "mode_pprompt0aaa1",
-      "type": "text",
-      "x": 2460,
-      "y": 140,
-      "width": 380,
-      "height": 380,
-      "color": "2",
-      "text": "## P-prompt\n*axis 2 alone (AXTree 锚)* — DIAMOND control\n\n• text: AXTree (unchanged from DOM)\n• prompt: SoM-style\n• image: ✗\n• cost: ~3K text\n\n**测什么**: visual prompting w/o image — Mirage subspace, falsifies \"mismatched parsing necessarily fails\"\n\n**Section 5** axis 2 isolation\n**Phantom**: ✅ corner #3 (only B0+B1 cls/red, NOT shopping)"
+      "text": "## Vision\n*image-only mode (cube 之外, axis 1 = no text)*\n\n• text: ∅\n• prompt: SoM-like\n• image: ✓ (raw screenshot)\n• cost: ~1.5K image\n\n**测什么**: pure visual baseline — counter-evidence (Phantom 不是 mode-specific artifact, Vision 也 affected)\n\n**Section 4** baseline (3rd axis)\n**Phantom space**: ❌ cube 之外"
     },
 
     {
       "id": "cascade_arrow1aa1",
       "type": "text",
-      "x": 350,
+      "x": 605,
       "y": 280,
-      "width": 110,
+      "width": 60,
       "height": 100,
-      "text": "**axis 1**\n→\n*text format*"
+      "color": "1",
+      "text": "**axis 1**\n→\n*text*"
     },
 
     {
       "id": "cascade_arrow2aa1",
       "type": "text",
-      "x": 850,
+      "x": 1305,
       "y": 280,
-      "width": 110,
+      "width": 60,
       "height": 100,
+      "color": "2",
       "text": "**axis 2**\n→\n*prompt*"
     },
 
     {
       "id": "cascade_arrow3aa1",
       "type": "text",
-      "x": 1350,
+      "x": 2005,
       "y": 280,
-      "width": 110,
+      "width": 60,
       "height": 100,
+      "color": "3",
       "text": "**axis 3**\n→\n*image*"
     },
 
@@ -135,73 +127,62 @@
       "x": -100,
       "y": 640,
       "width": 1500,
-      "height": 800,
+      "height": 460,
       "color": "5",
       "label": "PHANTOM ROUTING SPACE — boundary: no annotated image (paper §2 Zoom 1)"
     },
 
     {
-      "id": "diamond_dom0aaaa1",
+      "id": "phantom_arm1aaaa1",
       "type": "text",
       "x": -40,
       "y": 720,
-      "width": 280,
-      "height": 200,
-      "color": "4",
-      "text": "## DOM\n**origin** (M1 ❌ M2 ❌)\n\nB0 cls 14.10\nB0 red 9.52\nB1 cls (待)"
-    },
-
-    {
-      "id": "diamond_pprmpttt1",
-      "type": "text",
-      "x": 1080,
-      "y": 720,
-      "width": 280,
-      "height": 200,
-      "color": "2",
-      "text": "## P-prompt\n**axis 2 alone** (M1 ✅)\n\nB0 red drop1 +2.86 sig\nVisual prompting w/o image\n(Mirage subspace)"
-    },
-
-    {
-      "id": "diamond_ptext0aa1",
-      "type": "text",
-      "x": -40,
-      "y": 1180,
-      "width": 280,
-      "height": 200,
+      "width": 600,
+      "height": 340,
       "color": "1",
-      "text": "## P-text\n**axis 1 alone** (M2 ✅)\n\nB0 red drop1 +3.81 sig\n[SOM_MARKS] flat list\n(Format-swap)"
+      "text": "## Arm 1: Phantom-DOM\n*axis 1 alone (M2 flat-list)*\n\nFormat-swap subspace — DOM-prompt + [SOM_MARKS] flat list\n\nB0 red drop-one +3.81pp [0.95, 5.24] sig\nB0 cls drop-one +3.42pp sig"
     },
 
     {
-      "id": "diamond_psomaaaa1",
+      "id": "phantom_arm2aaaa1",
       "type": "text",
-      "x": 1080,
-      "y": 1180,
-      "width": 280,
-      "height": 200,
+      "x": 760,
+      "y": 720,
+      "width": 600,
+      "height": 340,
       "color": "6",
-      "text": "## P-SoM ⭐\n**compound** (M1 ✅ M2 ✅)\n\nB0 red drop1 +3.33 sig\n3 unique tasks emergent\n(cube center, paper hero)"
+      "text": "## Arm 2: Phantom-SoM ⭐\n*axis 1+2 compound (M1 ⊕ M2)*\n\nMirage subspace + flat-list — SoM-prompt + [SOM_MARKS]\n\nB0 red drop-one +3.33pp sig + 3 unique emergent tasks\nB0 cls drop-one +2.56pp sig\n\n**Cube center, paper hero**"
     },
 
     {
-      "id": "diamond_4foldddd1",
+      "id": "fold4_groupaaaaaa",
+      "type": "group",
+      "x": 1430,
+      "y": 640,
+      "width": 1770,
+      "height": 460,
+      "color": "4",
+      "label": "4-FOLD DROP-IN PROPERTY (phantom arms 共享 by construction)"
+    },
+
+    {
+      "id": "fold4_card_aaaaa1",
       "type": "text",
-      "x": 320,
-      "y": 760,
-      "width": 720,
-      "height": 580,
+      "x": 1480,
+      "y": 720,
+      "width": 1670,
+      "height": 340,
       "color": "5",
-      "text": "## 4-fold drop-in property\n*4 phantom corners 共享 by construction*\n\n**(a) cost ≈ DOM** (no image embedding tax)\n**(b) latency ~50% lower** (no image inference, cls 4×)\n**(c) signal AUROC ≥ baseline** ✅\n  — 5/5 phantom `overall_usable=True`\n  — red P-text 0.793 = 5-mode max\n**(d) drop-one oracle 1.7-3.8pp ✅**\n  — B0 red CI 全 exclude 0\n\n*(a)(b) definitional / (c)(d) emergent*\n\n---\n\n**2×2 ablation diamond edges**:\n• DOM ↔ P-text: axis 1 @ DOM-prompt\n• P-prompt ↔ P-SoM: axis 1 @ SoM-prompt → invariance\n• DOM ↔ P-prompt: axis 2 @ AXTree\n• P-text ↔ P-SoM: axis 2 @ [SOM_MARKS] → invariance\n• DOM ↔ P-SoM: cube diagonal compound"
+      "text": "## 4 phantom arms 共享:\n\n**(a) cost ≈ DOM** — no image embedding tax (regex filter, ~3K text both)\n**(b) latency ~50% lower** — no image inference stage (cls 4×)\n**(c) signal AUROC ≥ baseline** ✅ — emergent (5/5 phantom `overall_usable=True`, red P-text 0.793 = 5-mode max)\n**(d) drop-one oracle 1.7-3.8pp per arm** ✅ — emergent (B0 red CI 全 exclude 0)\n\n*(a)(b) definitional / (c)(d) emergent — definition-then-validation 双层结构*\n\n**Strategic value**: phantom-class deployment — same routing infra, ~50% latency, signal stays usable"
     },
 
     {
       "id": "section_groupaaa1",
       "type": "group",
-      "x": 1450,
-      "y": 640,
-      "width": 1750,
-      "height": 800,
+      "x": -100,
+      "y": 1140,
+      "width": 3300,
+      "height": 600,
       "color": "4",
       "label": "PAPER SECTION → CELL MAPPING (which experiments serve which section)"
     },
@@ -209,136 +190,158 @@
     {
       "id": "section4_baseline",
       "type": "text",
-      "x": 1500,
-      "y": 720,
-      "width": 800,
-      "height": 200,
+      "x": -40,
+      "y": 1220,
+      "width": 1100,
+      "height": 220,
       "color": "5",
-      "text": "## §4 Empirical Findings (baseline)\n*needs*: DOM / SoM / Vision × 6 sites × 3 models = 54 cells\n\n**Done**: B0 cls/red 5-mode FRESH ✅\n**Active**: B0 dom shopping (~9/466)\n**Pending**: B0 shop SoM/Vision / B1 全 / Claude 全 / WA 全\n\n**Codex #11** ready (~30K tok)"
+      "text": "## §4 Empirical Findings (baseline)\n*needs*: DOM / SoM / Vision × 6 sites × 3 models = **54 baseline cells**\n\nCross-mode SR comparison + cost/latency/AUROC table.\nFigures: SR per mode, cost-SR Pareto, regional carbon."
     },
 
     {
       "id": "section5_mechaani",
       "type": "text",
-      "x": 1500,
-      "y": 940,
-      "width": 800,
-      "height": 200,
+      "x": 1080,
+      "y": 1220,
+      "width": 1080,
+      "height": 220,
       "color": "6",
-      "text": "## §5 Mechanism (phantom + diamond) ⭐\n*needs*: P-text / P-SoM × cls/red × B0+B1 + diamond P-prompt × cls/red × B0+B1\n\n**Done**: B0 cls/red 4 phantom ✅\n**Active**: B0 P-prompt red ~16/210\n**Pending**: B0 P-prompt cls / B1 4 phantom / B1 P-prompt 2-cell\n\n**Codex #13** queued (~50K tok, 待 #11 + P-prompt red done)"
+      "text": "## §5 Mechanism (phantom arms) ⭐\n*needs*: Phantom-DOM + Phantom-SoM × 6 sites × 3 models = **36 phantom cells**\n\nM1/M2 activation analysis + drop-one oracle per arm + axis ablation isolation + lit anchors (Mirage / Scaffold / Sclar / Q5 bidirectional)."
     },
 
     {
-      "id": "section6_routinggg",
+      "id": "section7_general",
       "type": "text",
-      "x": 1500,
-      "y": 1160,
-      "width": 800,
-      "height": 200,
-      "color": "3",
-      "text": "## §6 Routing (Tier 1+2) — paper真正最值钱工作量\n*needs*: routing infra + Tier 1 oracle (TF-IDF+LR) + Tier 2 first-step trigger\n\n**Done**: signal AUROC ≥ baseline `9d7e99f` ✅, infra scaffold ready\n**Pending**: Tier 1 prototype (~3 d) + Tier 2 trigger (~7-10 d) — Week 4-5\n\n**Codex #16** blocked on prototype done"
-    },
-
-    {
-      "id": "section7_general11",
-      "type": "text",
-      "x": 2320,
-      "y": 720,
-      "width": 820,
-      "height": 320,
+      "x": 2180,
+      "y": 1220,
+      "width": 1020,
+      "height": 220,
       "color": "5",
-      "text": "## §7 Generalization\n*cross-site + cross-model*\n\n**Cross-site (within VWA)**: shopping 5-mode 全 pending; WA × 3 sites × B0+B1 × 5 modes = 30 cells 全 pending\n\n**Cross-model**: Claude Opus 4.7 cls+red 5-mode = 10 cells 全 pending\n\n**Cross-capability** (B1 vs B0): B1 capability profile done ✅; B1 cls phantom_som active 184+/234 (~10-15 d)\n\n**Codex #14/15/17** blocked on data"
+      "text": "## §7 Generalization\n*needs*: cross-site (VWA + WA = 6 sites) × cross-model (B0 + B1 + Claude)\n\nB1 Qwen3-VL-4B = capability scaling axis.\nClaude Opus 4.7 = model family generalization.\nWA = benchmark family generalization."
+    },
+
+    {
+      "id": "section6_routing0",
+      "type": "text",
+      "x": -40,
+      "y": 1480,
+      "width": 1620,
+      "height": 220,
+      "color": "3",
+      "text": "## §6 Routing — paper真正最值钱工作量 ⭐\n*needs*: routing infra + per-task feature extraction + multi-arm decision\n\n**Signals to route on**:\n• disagreement-cluster (cross-mode error pattern per task)\n• capability (B0 vs B1 vs Claude affinity per task type)\n• category (task-type intent classifier)"
     },
 
     {
       "id": "section8_susstain",
       "type": "text",
-      "x": 2320,
-      "y": 1060,
-      "width": 820,
-      "height": 300,
+      "x": 1680,
+      "y": 1480,
+      "width": 1520,
+      "height": 220,
       "color": "5",
-      "text": "## §8 Discussion (sustainability + Green AI)\n*multi-metric Pareto: cost / latency / carbon*\n\n**Done**: fig9 regional carbon (B1, 45 region, India 632 / Norway 29 g/kWh) ✅\n**Done**: B1 measured energy (cls/red × DOM/SoM/Vision) ✅\n**Pending**: B0 token-based carbon estimator (Tier 3 future)\n\n**Codex #18** blocked on 全部 data done (paper end-stage)"
+      "text": "## §8 Discussion (sustainability + Green AI)\n*multi-metric Pareto: cost / latency / carbon*\n\nfig9 regional carbon sensitivity (45 region, India 632 / Norway 29 g/kWh).\nB1 measured energy + B0 token-based estimator.\n4-fold drop-in summary."
     },
 
     {
-      "id": "tier_groupaaaaaa1",
+      "id": "router_groupaaaaa",
       "type": "group",
       "x": -100,
-      "y": 1480,
-      "width": 3300,
-      "height": 380,
+      "y": 1780,
+      "width": 1620,
+      "height": 460,
       "color": "3",
-      "label": "TIER 1 (paper-critical) vs TIER 2 (diamond / nice-to-have)"
+      "label": "+ ROUTER — Build router using disagreement-cluster / capability / category signals"
     },
 
     {
-      "id": "tier1_critical000",
+      "id": "router_signaaaaa1",
       "type": "text",
       "x": -40,
-      "y": 1560,
-      "width": 1600,
-      "height": 280,
-      "color": "4",
-      "text": "## Tier 1 — Paper-critical\n*5 base modes everywhere — without these, paper 写不出*\n\n**Section 4 baseline**: DOM / SoM / Vision × 6 sites × 3 models\n**Section 5 mechanism**: P-text + P-SoM × cls+red × B0+B1\n**Section 6 routing**: Tier 1 oracle + Tier 2 first-step trigger\n**Section 7 generalization**: cross-site shopping + WA + Claude\n\n**Critical path bottleneck**: 14-cell rerun (B0 cls/red phantom + B1 phantom 4-cell) blocked on RunPod $200 approval"
+      "y": 1860,
+      "width": 700,
+      "height": 360,
+      "color": "5",
+      "text": "## Routing signals\n\n**1. Disagreement-cluster**\n  per-task pattern of B0/B1/mode 错误一致 vs 分歧 → 9-cat clusters → arm 选\n\n**2. Capability**\n  per-task affinity score (B0 235B vs B1 4B vs Claude); routes harder tasks 强 model\n\n**3. Category**\n  task-type intent classifier (info-seek / transact / N/A / etc.) → arm 偏好"
     },
 
     {
-      "id": "tier2_diamond000",
+      "id": "router_archaaaaa",
       "type": "text",
-      "x": 1620,
-      "y": 1560,
-      "width": 1580,
-      "height": 280,
-      "color": "3",
-      "text": "## Tier 2 — Diamond completeness / nice-to-have\n*P-prompt diamond + B1 P-prompt cross-cap + Claude all-modes*\n\n**P-prompt** (axis 2 alone): only cls + red, NOT shopping. mechanism Section 5 用. B0 red 跑中 (~16/210), B0 cls blocked, B1 cls+red 2-cell queued (~14-20 d)\n\n**B1 P-prompt cross-cap**: Section 7 cross-capability bonus, paper 不依赖\n\n**Claude P-prompt 6th mode**: nice-to-have if budget allow\n\n**总策略**: Tier 1 全 done 后再考虑 Tier 2 budget"
+      "x": 700,
+      "y": 1860,
+      "width": 760,
+      "height": 360,
+      "color": "5",
+      "text": "## Routing architecture\n\n**Tier 1**: offline supervised oracle\n  TF-IDF (task instruction) + binary {has_ref_image, has_finish_string_match} → LR / RF\n  *predicts arm choice from task features alone*\n\n**Tier 2**: online first-step trigger\n  cheap mode (DOM) step 1 → trigger signal (response confidence / action diversity / behavioral signals) → escalate to expensive arm\n  *no test-time leakage (step-1 obs ≠ task feature)*"
     },
 
     {
-      "id": "status_currrent01",
-      "type": "text",
-      "x": -100,
-      "y": 1900,
-      "width": 3300,
-      "height": 350,
+      "id": "deploy_groupaaaaa",
+      "type": "group",
+      "x": 1580,
+      "y": 1780,
+      "width": 1620,
+      "height": 460,
       "color": "2",
-      "text": "## CURRENT STATUS (live, snapshot 2026-05-02)\n\n### Active 跑中\n• 🔄 B0 P-prompt reddit (PID 2075552, ~16/210, ~6h ETA)\n• 🔄 B1 phantom_som cls (PID 1821957, task 184+/234, ~10-15d, GPU contention seonglae 95%)\n• 🔄 B0 dom shopping clean re-run (PID 1106560, ~9/466, ~9h)\n\n### Done paper-grade FRESH (Phase A pre-fix, 14-cell rerun 后会废)\n• ✅ B0 cls 5-mode (DOM/SoM/Vision/P-text/P-SoM, 04-27/28)\n• ✅ B0 red 5-mode (DOM/SoM/Vision/P-text/P-SoM, 04-27/28) — drop-one CI 全 sig\n\n### Blocked\n• 🚫 14-cell paper-grade rerun (B0 + B1 phantom cells with Phase A patches) — RunPod $200 approval pending\n• 🚫 Myriad — UCL CGNAT 物理级 blocked (`MYRIAD_SMOKE_REPORT.md`)\n• 🚫 学长 sync 时间 pending\n\n### Pending chains (queue_chain.sh)\n• ⏳ B0 P-prompt cls — wait B1 phantom_som cls done (~10d)\n• ⏳ B1 phantom 4-cell (cls/red × P-text/P-SoM) — launched 04-29 PID 1145483, ~30-40 d GPU contention\n• ⏳ B0 phantom shopping pair — wait B0 dom shopping done\n• ⏳ B1 P-prompt 2-cell (Tier 2) — wait B1 4-cell done, ~14-20 d"
+      "label": "+ DEPLOY — Actually run agent with router, measure cost/SR/latency vs best-single-mode"
+    },
+
+    {
+      "id": "deploy_runaaaaaaa",
+      "type": "text",
+      "x": 1640,
+      "y": 1860,
+      "width": 760,
+      "height": 360,
+      "color": "5",
+      "text": "## Deploy: actual end-to-end agent run\n\n**Setup**:\n• router 选 arm per task\n• runner instantiates chosen arm (DOM / SoM / Vision / Phantom-DOM / Phantom-SoM)\n• run agent end-to-end on test split\n\n**Measure**:\n• SR (vs best-single-mode oracle)\n• cost (token + electricity)\n• P95 latency\n• carbon (regional sensitivity)"
+    },
+
+    {
+      "id": "deploy_compaaaaa",
+      "type": "text",
+      "x": 2400,
+      "y": 1860,
+      "width": 760,
+      "height": 360,
+      "color": "5",
+      "text": "## Deploy: comparison baseline\n\n**Beat what?**\n• random arm pick\n• best-single-mode (e.g. always SoM)\n• rule-based (e.g. has_image → Vision)\n• oracle (upper bound, knows true best per task)\n• learned router (Tier 1 + Tier 2)\n\n**Pareto**: cost vs SR vs latency curve\n**Cumulative SR vs Budget**: cost-aware 顶刊套路 ⭐"
     },
 
     {
       "id": "navigation_aaaaa1",
       "type": "text",
       "x": -100,
-      "y": 2290,
+      "y": 2270,
       "width": 3300,
-      "height": 100,
+      "height": 90,
       "color": "6",
-      "text": "**Cross-canvas navigation**: paper §2 framework dual-layer detail → `paper_section2_framework.canvas` | live status → `cells.base` 跑/Pending/Done views | strategy 脉络 → `paper_planning.md` §1+§2+§5+§8 | doc workflow → `paper_planning.md §20`"
+      "text": "**Cross-canvas navigation**: paper §2 Evidence ⫨ Explanation 双 layer detail → `paper_section2_framework.canvas` | live status → `cells.base` views | strategy 脉络 → `paper_planning.md` §1+§2+§5+§8 | doc workflow → `paper_planning.md §20`"
     }
   ],
 
   "edges": [
     {
-      "id": "edge_dom_to_pttx1",
+      "id": "edge_dom_to_pdomm",
       "fromNode": "mode_dom00aaaaaa1",
       "fromSide": "right",
-      "toNode": "mode_ptext0aaaaa1",
+      "toNode": "mode_pdomzzzaaaaa1",
       "toSide": "left",
       "color": "1",
       "label": "axis 1\nAXTree → [SOM_MARKS]"
     },
     {
-      "id": "edge_ptx_to_psm1a",
-      "fromNode": "mode_ptext0aaaaa1",
+      "id": "edge_pdom_to_psom",
+      "fromNode": "mode_pdomzzzaaaaa1",
       "fromSide": "right",
-      "toNode": "mode_psom00aaaaa1",
+      "toNode": "mode_psomaaaaaaa1",
       "toSide": "left",
       "color": "2",
       "label": "axis 2\nDOM-prompt → SoM-prompt"
     },
     {
-      "id": "edge_psm_to_som1a",
-      "fromNode": "mode_psom00aaaaa1",
+      "id": "edge_psom_to_som1",
+      "fromNode": "mode_psomaaaaaaa1",
       "fromSide": "right",
       "toNode": "mode_som000aaaaa1",
       "toSide": "left",
@@ -346,49 +349,22 @@
       "label": "axis 3\n+ image (exits phantom)"
     },
     {
-      "id": "edge_dia_dom_ptxx",
-      "fromNode": "diamond_dom0aaaa1",
+      "id": "edge_section6_routerr",
+      "fromNode": "section6_routing0",
       "fromSide": "bottom",
-      "toNode": "diamond_ptext0aa1",
+      "toNode": "router_signaaaaa1",
       "toSide": "top",
-      "color": "1",
-      "label": "axis 1\n@ DOM-prompt 锚"
+      "color": "3",
+      "label": "router build"
     },
     {
-      "id": "edge_dia_dom_pprm",
-      "fromNode": "diamond_dom0aaaa1",
+      "id": "edge_router_to_deploy",
+      "fromNode": "router_archaaaaa",
       "fromSide": "right",
-      "toNode": "diamond_pprmpttt1",
+      "toNode": "deploy_runaaaaaaa",
       "toSide": "left",
       "color": "2",
-      "label": "axis 2\n@ AXTree 锚"
-    },
-    {
-      "id": "edge_dia_pprm_psm",
-      "fromNode": "diamond_pprmpttt1",
-      "fromSide": "bottom",
-      "toNode": "diamond_psomaaaa1",
-      "toSide": "top",
-      "color": "1",
-      "label": "axis 1\n@ SoM-prompt 锚\n→ invariance"
-    },
-    {
-      "id": "edge_dia_ptx_psmm",
-      "fromNode": "diamond_ptext0aa1",
-      "fromSide": "right",
-      "toNode": "diamond_psomaaaa1",
-      "toSide": "left",
-      "color": "2",
-      "label": "axis 2\n@ [SOM_MARKS] 锚\n→ invariance"
-    },
-    {
-      "id": "edge_dia_dom_psmm",
-      "fromNode": "diamond_dom0aaaa1",
-      "fromSide": "right",
-      "toNode": "diamond_psomaaaa1",
-      "toSide": "top",
-      "color": "6",
-      "label": "cube diagonal\n(axis 1+2 compound)"
+      "label": "deploy with router"
     }
   ]
 }
