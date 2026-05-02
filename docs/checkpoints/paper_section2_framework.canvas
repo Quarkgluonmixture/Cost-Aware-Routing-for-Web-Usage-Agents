@@ -1,0 +1,490 @@
+{
+  "nodes": [
+    {
+      "id": "title00aaaaaaaaaa",
+      "type": "text",
+      "x": 200,
+      "y": -260,
+      "width": 2400,
+      "height": 140,
+      "color": "6",
+      "text": "# Paper §2 Framework — Evidence ⫨ Explanation 双层\n*笔记 §108 reframe · Zoom 1-4 hierarchy · 4×4 evidence sub-cells*\n**Reviewer 最忌 evidence-as-explanation** — 两层必须分写然后 explicit link"
+    },
+
+    {
+      "id": "expl_grouplaaaaaaa",
+      "type": "group",
+      "x": -100,
+      "y": -80,
+      "width": 1500,
+      "height": 1980,
+      "color": "6",
+      "label": "EXPLANATION LAYER (因果假说, §2 主居所)"
+    },
+
+    {
+      "id": "evi_grouplaaaaaaaa",
+      "type": "group",
+      "x": 1480,
+      "y": -80,
+      "width": 1620,
+      "height": 1320,
+      "color": "4",
+      "label": "EVIDENCE LAYER (观测数据, §3 主居所) — 4 测量 × 4 cross-X = 16 sub-cells"
+    },
+
+    {
+      "id": "zoom1aaaaaaaaaaaa",
+      "type": "text",
+      "x": -40,
+      "y": 60,
+      "width": 1380,
+      "height": 250,
+      "color": "5",
+      "text": "## Zoom 1 — Architectural completeness (deductive, self-evidence)\n\n**Phantom routing space** (boundary: `axis 3 = no annotated image`)\n4 corners share **4-fold drop-in property**: cost ≈ DOM / latency ~50% / AUROC ≥ baseline / drop-one 1.7-3.8pp\n\n```\nPREMISE: phantom 锁 image=✗ → input 仅 (prompt, obs 文本) 2-dim\nCONCLUSION: M1 + M2 by construction exhaustive — phantom space 内**无 hidden 3rd axis**\n```\n\n**关键性质**: deductive argument, 即使跑 100 corners 也不能反驳"
+    },
+
+    {
+      "id": "zoom2aaaaaaaaaaaa",
+      "type": "text",
+      "x": -40,
+      "y": 330,
+      "width": 1380,
+      "height": 320,
+      "color": "5",
+      "text": "## Zoom 2 — Behavioral M1/M2 activation 2×2 (self-evidence)\n\n**M1 (Image-mirage)**: prompt 期 image → vision-grounded attention + language prior 填补缺席视觉\n**M2 (Flat-list)**: obs flat indexed list → tree-traversal → sequential list-scanning\n\n| Mode | M1 | M2 | LLM internal state |\n|---|:-:|:-:|---|\n| DOM | ❌ | ❌ | origin baseline |\n| P-text | ❌ | ✅ | M2 alone (Format-swap) |\n| P-prompt | ✅ | ❌ | M1 alone (Mirage subspace) |\n| **P-SoM ⭐** | ✅ | ✅ | **M1 ⊕ M2 compound** (cube center, paper hero) |\n\n**P-SoM 是 paper hero 的 mechanistic 理由**: 唯一同时 activate M1+M2 + nonlinear interaction (3 unique tasks B0 reddit emergent)"
+    },
+
+    {
+      "id": "zoom25aaaaaaaaaaa",
+      "type": "text",
+      "x": -40,
+      "y": 670,
+      "width": 1380,
+      "height": 220,
+      "color": "3",
+      "text": "## Zoom 2.5 — 别扭 reverse explanation ⏸️ provisional (lean §7 narrative use, NOT §2 main)\n\n**Forward (M1/M2)** = causal upstream (input change → activation)\n**Reverse (别扭)** = causal downstream (mismatch count → SR/FP rank prediction)\n\n2×2 grid by mismatch count: DOM 0 / P-text & P-SoM 1 / P-prompt 2 (compound)\n**Capability-modulated reversal** (paper §7 finding): 大 VLM (B0) 偏 text-axis 别扭 / 小 VLM (B1) 偏 image-axis 别扭\n\n⚠️ N=4 cells provisional pending 14-cell rerun statistical commit"
+    },
+
+    {
+      "id": "zoom3m1aaaaaaaaaa",
+      "type": "text",
+      "x": -40,
+      "y": 910,
+      "width": 450,
+      "height": 360,
+      "color": "5",
+      "text": "## Zoom 3 — M1 (Image-mirage) lit anchors\n\n• **Mirage Effect** (Asadi 2026 Stanford): VLM 无图准确率达有图 70-80%\n• **Scaffold Effect** (Vu Balloccu 2026): prompt 仅提及 modality 解释 70-80% performance shift\n• **Cross-modal flow** (Kaduri): middle-layer attention store image info in query tokens\n\n**Q1 cross-VLM**: XLRS-Bench / Plan-and-Act / AgentRewardBench distraction phenomenon / Koh 2024 VWA 44% retention"
+    },
+
+    {
+      "id": "zoom3m2aaaaaaaaaa",
+      "type": "text",
+      "x": 430,
+      "y": 910,
+      "width": 450,
+      "height": 360,
+      "color": "5",
+      "text": "## Zoom 3 — M2 (Flat-list) lit anchors\n\n• **Prompt-format sensitivity** (Sclar 2024 / Mishra 2022): minor format → major performance shift\n• **Tree-traversal vs list-scanning** (你 deep research SoM novelty doc)\n\n**Q3 first-work claim VERIFIED**: 'no study isolates SoM-style flat text as a standalone observation' — Phantom-SoM 首次系统性 SoM-text isolation, lit-verified novel\n\n**Q2 surprise**: DOM-id > SoM [N] referencing in some prompt-instruction settings"
+    },
+
+    {
+      "id": "zoom3m3aaaaaaaaaa",
+      "type": "text",
+      "x": 900,
+      "y": 910,
+      "width": 440,
+      "height": 360,
+      "color": "5",
+      "text": "## Zoom 3 — M3 (Image bidirectional) Q5 6/6 complete ⭐\n\n**Bidirectional fusion** novel synthesis (Q5 综述 line 22):\n• **Image-over-text**: POPE (Li 2023) / CHAIR (saliency hijack)\n• **Text-over-vision**: Tong 2024 Eyes Wide Shut / BLINK 24-30% near random / WHOOPS / MM-Vet OCR\n• **Dual-axis benchmark**: HallusionBench (Guan 2024) / MMHal-Bench\n• **Mid-layer attention decay** (Liu 2025 Devils, dual-cause anchor)\n\n**Scaling law**: B0 long-traj text-over-vision drift / B1 dense-vision image-over-text"
+    },
+
+    {
+      "id": "zoom4aacaaaaaaaaa",
+      "type": "text",
+      "x": -40,
+      "y": 1290,
+      "width": 450,
+      "height": 360,
+      "color": "5",
+      "text": "## Zoom 4 — Cross-modal flow (Kaduri)\n\n*model-agnostic probe*\n\nLayerwise attention probe 显示 middle-layer cross-modal flows enable image-like representations from query tokens\n\n→ **M1 axis activation 的 mechanistic 解释**\n\n*paper §8 future work, 不 self-probe*"
+    },
+
+    {
+      "id": "zoom4absteermoeeee",
+      "type": "text",
+      "x": 430,
+      "y": 1290,
+      "width": 450,
+      "height": 360,
+      "color": "5",
+      "text": "## Zoom 4 — SteerMoE (Fayyaz 2026 ICLR)\n\n**B0-side anchor**\n*MoE family, Qwen3-30B-A3B cousin*\n\nMoE LLM paired prompts 算 expert RD, alignment 集中 subset of experts → routing logits steering 可绕过\n\n→ B0 = Qwen3-VL-235B-A22B 是 SteerMoE 实验模型 architectural cousin\n\n**Methodology template** for paper sequence follow-up Zoom 4 self-probe"
+    },
+
+    {
+      "id": "zoom4actoolcallinng",
+      "type": "text",
+      "x": 900,
+      "y": 1290,
+      "width": 440,
+      "height": 360,
+      "color": "5",
+      "text": "## Zoom 4 — Tool Calling Linear Circuit (Anon ACL 2026)\n\n**B1-side anchor** ⭐ NEW\n*Qwen3-4B 直接验证, 跟 B1 = Qwen3-VL-4B 是 architectural cousin*\n\nhidden-state PCA cosine gap 捕获 92% action-selection 错误; L23+ steering 80-93%; 'knows but cannot say'\n\n→ §1 cascade `DOM→P-text→P-SoM→SoM` 的 **mechanistic 理由** (action selection 线性可分 + argument generation 非线性)\n\n仅需 ~2300 forward pass 单卡 RTX 4090 24h"
+    },
+
+    {
+      "id": "papersequenceaaaaa",
+      "type": "text",
+      "x": -40,
+      "y": 1670,
+      "width": 1380,
+      "height": 200,
+      "color": "6",
+      "text": "## Paper sequence implication (Zoom 4 future work)\n\n**主 paper (本)**: Zoom 1 ✅ / Zoom 2 ✅ / Zoom 3 ✅ (lit-anchored) / Zoom 4 标 future work, 不 self-probe\n\n**Follow-up paper (sequence sibling) — dual-tier**:\n• B0-side: SteerMoE-style expert RD (RunPod 4×4090 ~$400-600 cost)\n• **B1-side: Tool Calling hidden-state PCA (~2300 forward pass + 单卡 RTX 4090 24h, 几乎零成本) — NEW unlock 2026-05-01**"
+    },
+
+    {
+      "id": "evi_outcomealabel",
+      "type": "text",
+      "x": 1500,
+      "y": 220,
+      "width": 200,
+      "height": 220,
+      "color": "4",
+      "text": "## Outcome\n\nTask 成功 / 路由 arm 证据\n\n*direct measure*"
+    },
+
+    {
+      "id": "evi_macroalabelll",
+      "type": "text",
+      "x": 1500,
+      "y": 460,
+      "width": 200,
+      "height": 220,
+      "color": "4",
+      "text": "## Macro\n\nAgent 平均怎么 act\n\n*aggregate trajectory*"
+    },
+
+    {
+      "id": "evi_microalabelll",
+      "type": "text",
+      "x": 1500,
+      "y": 700,
+      "width": 200,
+      "height": 220,
+      "color": "4",
+      "text": "## Micro\n\nPer-step 决策\n\n*step-level pattern*"
+    },
+
+    {
+      "id": "evi_efficabellaa",
+      "type": "text",
+      "x": 1500,
+      "y": 940,
+      "width": 200,
+      "height": 220,
+      "color": "4",
+      "text": "## Efficiency\n\n4-fold drop-in property\n\n*cost / latency / carbon / signal*"
+    },
+
+    {
+      "id": "evi_taskheaaaaaaa",
+      "type": "text",
+      "x": 1720,
+      "y": 100,
+      "width": 320,
+      "height": 90,
+      "color": "4",
+      "text": "**cross-task**\n(per-instance)"
+    },
+
+    {
+      "id": "evi_modeheaaaaaaa",
+      "type": "text",
+      "x": 2060,
+      "y": 100,
+      "width": 320,
+      "height": 90,
+      "color": "4",
+      "text": "**cross-mode** ⭐\n(arm-arm, paper核心)"
+    },
+
+    {
+      "id": "evi_siteheaaaaaaa",
+      "type": "text",
+      "x": 2400,
+      "y": 100,
+      "width": 320,
+      "height": 90,
+      "color": "4",
+      "text": "**cross-site**\n(cls/red/shop)"
+    },
+
+    {
+      "id": "evi_modelheaaaaaa",
+      "type": "text",
+      "x": 2740,
+      "y": 100,
+      "width": 320,
+      "height": 90,
+      "color": "4",
+      "text": "**cross-model**\n(B0/B1/Claude)"
+    },
+
+    {
+      "id": "cell_o_taskaaaaaa",
+      "type": "text",
+      "x": 1720,
+      "y": 220,
+      "width": 320,
+      "height": 220,
+      "text": "### Outcome × task\n\nDrop-one oracle per-task gain\n*(B0 red P-text +3.81 / P-SoM +3.33 / P-prompt +2.86, CI sig)*\n\nUnique tasks (P-SoM 3 emergent B0 red)"
+    },
+
+    {
+      "id": "cell_o_modeaaaaaa",
+      "type": "text",
+      "x": 2060,
+      "y": 220,
+      "width": 320,
+      "height": 220,
+      "color": "3",
+      "text": "### Outcome × mode ⭐\n\nadj SR per arm:\n• B0 red SoM 10.48 / P-SoM 13.81\n• B0 red P-text 11.90 / P-prompt 10.48\n\n6-mode oracle vs 3-mode +7.14pp [3.81, 10.48] sig"
+    },
+
+    {
+      "id": "cell_o_siteaaaaaa",
+      "type": "text",
+      "x": 2400,
+      "y": 220,
+      "width": 320,
+      "height": 220,
+      "text": "### Outcome × site\n\ncls visual-rich vs red text-dom\n\nSR rank 跨 site 反转:\n• cls SoM 21.37 > DOM 14.10\n• red SoM 10.48 ≈ DOM 9.52"
+    },
+
+    {
+      "id": "cell_o_modelaaaa",
+      "type": "text",
+      "x": 2740,
+      "y": 220,
+      "width": 320,
+      "height": 220,
+      "text": "### Outcome × model\n\nB0 235B vs B1 4B:\n• B0 cls SoM 21.37\n• B1 cls 待 phantom_som done (active 184+/234)\n\nLazy minimization: B1 amplify failure dim"
+    },
+
+    {
+      "id": "cell_ma_taskaaaaa",
+      "type": "text",
+      "x": 1720,
+      "y": 460,
+      "width": 320,
+      "height": 220,
+      "text": "### Macro × task\n\nPer-task action freq distribution\n\nN/A task forced loop (Rule 4 NEVER give up)"
+    },
+
+    {
+      "id": "cell_ma_modeaaaaa",
+      "type": "text",
+      "x": 2060,
+      "y": 460,
+      "width": 320,
+      "height": 220,
+      "color": "3",
+      "text": "### Macro × mode ⭐\n\n• search-loop 51.9 → 35.7%\n• action_diversity DOM > SoM\n• scroll up 3.7 → 11.2%\n• type/select usage shift"
+    },
+
+    {
+      "id": "cell_ma_siteaaaaa",
+      "type": "text",
+      "x": 2400,
+      "y": 460,
+      "width": 320,
+      "height": 220,
+      "text": "### Macro × site\n\ncls 12-listing pagination signal\nred forum subscribe pattern\nshop cart navigation"
+    },
+
+    {
+      "id": "cell_ma_modelaaaa",
+      "type": "text",
+      "x": 2740,
+      "y": 460,
+      "width": 320,
+      "height": 220,
+      "text": "### Macro × model\n\nB1 4B 无跨步自纠正\nB0 235B 有限自纠正\nClaude Opus 4.7 (待跑)"
+    },
+
+    {
+      "id": "cell_mi_taskaaaaa",
+      "type": "text",
+      "x": 1720,
+      "y": 700,
+      "width": 320,
+      "height": 220,
+      "text": "### Micro × task\n\nPer-step decision pattern\n\nRepeat click 481 / finish-but-eval-reject 1552 / element_id role drift 1127"
+    },
+
+    {
+      "id": "cell_mi_modeaaaaa",
+      "type": "text",
+      "x": 2060,
+      "y": 700,
+      "width": 320,
+      "height": 220,
+      "color": "3",
+      "text": "### Micro × mode ⭐\n\nE1-E4 mechanism per-task\naxis_effect_size cascade decomposition\ndisagreement_clusters 9-cat\n6 antagonistic pairs"
+    },
+
+    {
+      "id": "cell_mi_siteaaaaa",
+      "type": "text",
+      "x": 2400,
+      "y": 700,
+      "width": 320,
+      "height": 220,
+      "text": "### Micro × site\n\ncls task-pool 0.53 paradox\nred numeric label hijack\nshop swatch radio §105"
+    },
+
+    {
+      "id": "cell_mi_modelaaaa",
+      "type": "text",
+      "x": 2740,
+      "y": 700,
+      "width": 320,
+      "height": 220,
+      "text": "### Micro × model\n\nB0 5-call probe: token distinct, decision convergent\nB1 capability profile\nB1 cls A1/A2/A3/A4 sub-class"
+    },
+
+    {
+      "id": "cell_ef_taskaaaaa",
+      "type": "text",
+      "x": 1720,
+      "y": 940,
+      "width": 320,
+      "height": 220,
+      "text": "### Efficiency × task\n\nper-task cost / lat / energy\nB1 measured energy (45 region carbon)"
+    },
+
+    {
+      "id": "cell_ef_modeaaaaa",
+      "type": "text",
+      "x": 2060,
+      "y": 940,
+      "width": 320,
+      "height": 220,
+      "color": "3",
+      "text": "### Efficiency × mode ⭐\n\n4-fold drop-in:\n(a) cost ≈ DOM\n(b) latency ~50% (cls 4×)\n(c) AUROC ≥ baseline (5/5 ✅)\n(d) drop-one 1.7-3.8pp"
+    },
+
+    {
+      "id": "cell_ef_siteaaaaa",
+      "type": "text",
+      "x": 2400,
+      "y": 940,
+      "width": 320,
+      "height": 220,
+      "text": "### Efficiency × site\n\ncls Phantom-SoM latency 4×\nregional carbon (fig9)\nIndia 632 g/kWh / Norway 29"
+    },
+
+    {
+      "id": "cell_ef_modelaaaa",
+      "type": "text",
+      "x": 2740,
+      "y": 940,
+      "width": 320,
+      "height": 220,
+      "text": "### Efficiency × model\n\nB0 token $: ~$0.04/ep\nB1 electricity equiv: ~$0.0004/ep\n**~100× deployment-class gap**"
+    },
+
+    {
+      "id": "retracttttttaaaaa",
+      "type": "text",
+      "x": 1480,
+      "y": 1290,
+      "width": 1620,
+      "height": 280,
+      "color": "1",
+      "text": "## ⚠️ Retract list (5 items, 不要再 use)\n\n• ❌ \"5-mode 沿 cube 对角路径\" + \"4 mismatched 排除 (parsing tax)\" 论证\n• ❌ 8-corner 2x2x2 cube factorial design 作 paper §2 axis\n• ❌ 6-corner asymmetric grid (a/b × c/¬c × 1/2)\n• ❌ (a)(c) prompt decomposition 作 axis (改用 mechanism activation)\n• ❌ \"Three-layer mechanism argument\" 命名 (改用 evidence/explanation 双层 + Zoom 1-4)\n\n*详 笔记 §108 chronicle + paper_planning §2 retract list*"
+    },
+
+    {
+      "id": "captionleftaaaaaa",
+      "type": "text",
+      "x": -40,
+      "y": 1890,
+      "width": 1380,
+      "height": 100,
+      "color": "6",
+      "text": "**Explanation = 因果假说**, 描述 mechanism (axis activation / mismatch / lit phenomena / model-internal probe). \n\n**Self-evidence (Zoom 1+2)** + **lit-anchored (Zoom 3)** + **future work (Zoom 4)**"
+    },
+
+    {
+      "id": "captionrightaaaaa",
+      "type": "text",
+      "x": 1480,
+      "y": 1610,
+      "width": 1620,
+      "height": 90,
+      "color": "4",
+      "text": "**Evidence = 观测数据**, 跨 4 测量类型 × 4 cross-X 比较轴 = 16 sub-cells. ⭐ = paper-headline (cross-mode 是 paper 核心比较 axis)"
+    },
+
+    {
+      "id": "reviewercaveatlbl",
+      "type": "text",
+      "x": -40,
+      "y": 2010,
+      "width": 3140,
+      "height": 100,
+      "color": "1",
+      "text": "## ⚠️ Reviewer Caveat — Evidence ≠ Explanation\n\n**Reviewer 最忌 evidence-as-explanation 混淆**: \"Macro × mode search-loop 51.9→35.7%\" 是 **evidence (data)**; \"M1 axis activates list-scanning trajectory\" 是 **explanation (Zoom 2 hypothesis)** — 两者必须分写然后 explicit link (\"the 35.7% search-loop suggests M2 flat-list activation, consistent with Zoom 2 hypothesis\")"
+    }
+  ],
+
+  "edges": [
+    {
+      "id": "e_z2_to_macromodee",
+      "fromNode": "zoom2aaaaaaaaaaaa",
+      "fromSide": "right",
+      "toNode": "cell_ma_modeaaaaa",
+      "toSide": "left",
+      "color": "3",
+      "label": "Zoom 2 M2 activation\n→ predicts list-scanning"
+    },
+    {
+      "id": "e_z1_to_effmodeaa",
+      "fromNode": "zoom1aaaaaaaaaaaa",
+      "fromSide": "right",
+      "toNode": "cell_ef_modeaaaaa",
+      "toSide": "left",
+      "color": "3",
+      "label": "Zoom 1 boundary derives\n(a)(b) of 4-fold"
+    },
+    {
+      "id": "e_z3m3_to_micrositee",
+      "fromNode": "zoom3m3aaaaaaaaaa",
+      "fromSide": "right",
+      "toNode": "cell_mi_siteaaaaa",
+      "toSide": "left",
+      "color": "3",
+      "label": "Q5 numeric hijack\n→ red site predicts"
+    },
+    {
+      "id": "e_z25_to_outmodelll",
+      "fromNode": "zoom25aaaaaaaaaaa",
+      "fromSide": "right",
+      "toNode": "cell_o_modelaaaa",
+      "toSide": "left",
+      "color": "3",
+      "label": "capability-modulated reversal"
+    },
+    {
+      "id": "e_z2_to_outmodeeee",
+      "fromNode": "zoom2aaaaaaaaaaaa",
+      "fromSide": "right",
+      "toNode": "cell_o_modeaaaaa",
+      "toSide": "left",
+      "color": "3",
+      "label": "M1⊕M2 compound\n→ P-SoM emergent"
+    }
+  ]
+}
