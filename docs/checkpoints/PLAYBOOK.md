@@ -40,13 +40,21 @@ audience: self-only
 
 ## §1 新数据到了之后的标准流程
 
-### Step 1: Freeze + 看图
+### Step 1: Validate + Freeze + 看图
 ```bash
-make analysis              # 全 pipeline ~5-10 min
-make analysis FAST=1       # 跳过 per-run, 只 aggregator + figures (~30s)
+make validate RUN=<run_dir>    # 验证 single run 完整性 (episode count / summary / artifacts)
+make analysis                  # 全 pipeline ~5-10 min (validate + per-run + cross-condition + figures)
+make analysis FAST=1           # 跳过 per-run, 只 aggregator + figures (~30s)
 ```
+**先 validate 再 analysis** — 防 partial / 污染数据进入 cross-condition aggregation.
 看 `results/phantom_paper/figures/` 重生 PNGs.
 看 `results/phantom_paper/auroc_cross_condition.{csv,md}` 等 aggregations.
+
+**(可选)** GLM auto-update cell frontmatter (不能覆盖 active+pid):
+```bash
+make glm-update-cells              # dry-run 看 diff
+make glm-update-cells APPLY=1      # 实际写
+```
 
 ### Step 2: 整合到 docs (按依赖顺序)
 1. **实验笔记** append §X chronicle (date + finding + evidence + tag `#finding/#bug/#infra/etc.`)

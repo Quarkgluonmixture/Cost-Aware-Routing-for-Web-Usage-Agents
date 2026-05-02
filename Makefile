@@ -425,19 +425,19 @@ rsync-artifacts-from-hub:
 # glm-update-cells: dry-run scan _status/cells/ frontmatter vs condition_summary_v2.json
 #   APPLY=1 to actually write; FORCE=1 to overwrite active+pid cells too
 glm-update-cells:
-	@.venv/bin/python scripts/maintenance/glm_cell_autoupdate.py \
+	@.venv/bin/python scripts/maintenance/glm/glm_cell_autoupdate.py \
 	  $(if $(APPLY),--apply,) $(if $(FORCE),--force,)
 
 # glm-refresh-playbook: GLM synthesizes PLAYBOOK §6 critical path from live state
 #   APPLY=1 to actually write back to PLAYBOOK.md
 glm-refresh-playbook:
-	@.venv/bin/python scripts/maintenance/glm_playbook_refresh.py \
+	@.venv/bin/python scripts/maintenance/glm/glm_playbook_refresh.py \
 	  $(if $(APPLY),--apply,)
 
 # glm-pre-launch-check: GLM reviews proposed launch before queue script
 #   Usage: make glm-pre-launch-check QUEUE=queue_phantom_som.sh BASELINE=B0 SITE=reddit RESET=1
 glm-pre-launch-check:
-	@.venv/bin/python scripts/maintenance/glm_pre_launch_check.py \
+	@.venv/bin/python scripts/maintenance/glm/glm_pre_launch_check.py \
 	  $(if $(QUEUE),--queue $(QUEUE),) \
 	  $(if $(BASELINE),--baseline $(BASELINE),) \
 	  $(if $(SITE),--site $(SITE),) \

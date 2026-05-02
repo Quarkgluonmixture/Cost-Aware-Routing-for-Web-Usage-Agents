@@ -25,9 +25,9 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-REPO = Path(__file__).resolve().parent.parent.parent
+REPO = Path(__file__).resolve().parents[3]
 
-sys.path.insert(0, str(REPO / "scripts/maintenance"))
+sys.path.insert(0, str(REPO / "scripts/maintenance/glm"))
 from glm_diagnosis_sidecar import _load_glm_config, _call_glm_chat  # noqa: E402
 
 GLM_CFG_PATH = REPO / ".auth/glm"

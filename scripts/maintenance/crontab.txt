@@ -1,0 +1,21 @@
+# P79 GLM sidecar cron — opt-in auto-trigger
+#
+# To install: crontab scripts/maintenance/crontab.txt
+# To uninstall: crontab -r
+# To preview without installing: cat scripts/maintenance/crontab.txt
+#
+# All targets default to APPLY=1 (write to disk). Logs land in logs/cron/*.
+# Repo path hardcoded — edit if repo moves.
+
+REPO=/home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents
+SHELL=/bin/bash
+
+# every 10 min: sync _status/cells/*.md frontmatter from condition_summary_v2.json
+# (skips active+pid cells, safety guard)
+*/10 * * * * cd $REPO && make glm-update-cells APPLY=1 >> logs/cron/glm_update_cells.log 2>&1
+
+# every day 08:00 BST: refresh PLAYBOOK §6 critical path snapshot via GLM
+0 8 * * * cd $REPO && make glm-refresh-playbook APPLY=1 >> logs/cron/glm_playbook.log 2>&1
+
+# every Sunday 00:00: dead link scan, output report to logs
+0 0 * * 0 cd $REPO && make check-links > logs/cron/dead_links_$(date +\%Y\%m\%d).log 2>&1

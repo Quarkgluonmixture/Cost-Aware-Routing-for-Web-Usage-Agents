@@ -24,7 +24,7 @@ from typing import Optional
 
 import yaml
 
-REPO = Path(__file__).resolve().parent.parent.parent
+REPO = Path(__file__).resolve().parents[3]
 STATUS_CELLS = REPO / "docs/checkpoints/_status/cells"
 PHASE1_DIR = REPO / "results/visualwebarena/phase1"
 

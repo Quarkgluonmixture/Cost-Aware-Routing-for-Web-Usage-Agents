@@ -22,12 +22,12 @@ from typing import Optional
 
 import yaml
 
-REPO = Path(__file__).resolve().parent.parent.parent
+REPO = Path(__file__).resolve().parents[3]
 PLAYBOOK = REPO / "docs/checkpoints/PLAYBOOK.md"
 STATUS = REPO / "docs/checkpoints/_status"
 
 # import GLM helpers from existing sidecar
-sys.path.insert(0, str(REPO / "scripts/maintenance"))
+sys.path.insert(0, str(REPO / "scripts/maintenance/glm"))
 from glm_diagnosis_sidecar import _load_glm_config, _call_glm_chat  # noqa: E402
 
 GLM_CFG_PATH = REPO / ".auth/glm"
