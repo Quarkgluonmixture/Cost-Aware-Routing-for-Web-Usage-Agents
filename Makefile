@@ -31,7 +31,8 @@ PYTEST ?= .venv/bin/pytest
         analyze-paper-per-run compare-b0-b1-all phantom-lift \
         analyze-layer0 analyze-layer1 analyze-layer2 analyze-layer3 analyze-layered \
         aggregate-sr-fp fig12-micro-heatmap aggregate-cost-electricity analyze-mechanism \
-        analysis _per_run_all _aggregate _figures _status active
+        analysis _per_run_all _aggregate _figures _status active \
+        glm-update-cells glm-refresh-playbook glm-pre-launch-check check-links
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
@@ -419,3 +420,31 @@ rsync-artifacts-from-hub:
 	@HOST="$(HOST)" HUB_PATH="$(HUB_PATH)" RUN="$(RUN)" COND="$(COND)" \
 	  ARTIFACTS=1 DRY="$(DRY)" \
 	  bash scripts/maintenance/rsync_results_from_hub.sh
+
+# ---- GLM sidecar maintenance (Phase 1 automation) ----
+# glm-update-cells: dry-run scan _status/cells/ frontmatter vs condition_summary_v2.json
+#   APPLY=1 to actually write; FORCE=1 to overwrite active+pid cells too
+glm-update-cells:
+	@.venv/bin/python scripts/maintenance/glm_cell_autoupdate.py \
+	  $(if $(APPLY),--apply,) $(if $(FORCE),--force,)
+
+# glm-refresh-playbook: GLM synthesizes PLAYBOOK §6 critical path from live state
+#   APPLY=1 to actually write back to PLAYBOOK.md
+glm-refresh-playbook:
+	@.venv/bin/python scripts/maintenance/glm_playbook_refresh.py \
+	  $(if $(APPLY),--apply,)
+
+# glm-pre-launch-check: GLM reviews proposed launch before queue script
+#   Usage: make glm-pre-launch-check QUEUE=queue_phantom_som.sh BASELINE=B0 SITE=reddit RESET=1
+glm-pre-launch-check:
+	@.venv/bin/python scripts/maintenance/glm_pre_launch_check.py \
+	  $(if $(QUEUE),--queue $(QUEUE),) \
+	  $(if $(BASELINE),--baseline $(BASELINE),) \
+	  $(if $(SITE),--site $(SITE),) \
+	  $(if $(MODE),--mode $(MODE),) \
+	  $(if $(RESET),--reset,) \
+	  $(if $(CONFIG),--config $(CONFIG),)
+
+# check-links: scan all docs for broken path-based + wikilink references
+check-links:
+	@.venv/bin/python scripts/maintenance/dead_link_check.py --quiet
