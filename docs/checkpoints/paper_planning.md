@@ -1652,3 +1652,135 @@ Post run:
 | 2026-05-01 | SteerMoE (Fayyaz 2026 ICLR) 作 Zoom 4 lit anchor + paper §8 future work | 学长 2026-05-01 发; B0 = Qwen3-VL-235B-A22B 是 SteerMoE 实验模型 architectural cousin; methodology template 但 paper 不 self-probe (proxy API + budget barrier) | ✅ paper_planning §2 Zoom 4 + 笔记 §108.9 |
 | 2026-05-01 | Early-stop mechanism design decision: lean Option A (full cancel), pending advisor align | early-stop 是 cross-dimension systemic confound (不止 micro layer); Option A +$1300 全 cancel / B keep / C hybrid +$200 | ⏸️ advisor sync Q1 重写, lean A pending | 
 | 2026-05-01 | 别扭 framework refinement (provisional) — reverse-explanation layer + capability-modulated discovery | (a) Cross-cell empirical validation 4 cells: B0 4/4 别扭 predictions confirmed, B1 cls prediction 4 reversed (small VLM single 别扭 negative aggregate); (b) drop-one direction reversal cross-capability (B0 P-text > P-SoM, B1 cls P-SoM > P-text) → 别扭 + Lazy Minimization 联合 framework; (c) compound 别扭 (P-prompt) 实证 negative aggregate (B0 reddit raw 10.48 < DOM 11.43) but positive complementarity (drop-one +2.86pp) — double-edged property | ⏸️ provisional, pending 14-cell rerun statistical commit + B1 reddit phantom 数据 |
+
+---
+
+## §20 Meta — Doc Update Workflow (when X happens, update which docs)
+
+> Moved from `next_steps.md §10` 2026-05-02 (next_steps 严格 live + future, meta-process 归 paper_planning).
+
+### A. 新 condition 数据 (e.g. B1 phantom_som cls done)
+
+```
+✅ 实验笔记: append chronicle entry (§104+ daily)
+✅ next_steps §3.1 active: mark done (move to status.base via _status/section*.md frontmatter)
+✅ Run `make analysis` (one-shot all-in-one, ~5-10 min):
+   - per-run pipeline (rederive + reason-diag + cross-rep + confidence) on 8 paper-grade VWA runs
+   - B0 vs B1 site comparison (cls + red → b0_vs_b1_<site>/)
+   - cross-condition aggregations: aggregate-cross-site + summary-collect + routing-auroc
+   - 9 figures (含 fig2 bootstrap CI)
+   ↳ Quick: `make figures` (~10s, 仅 fig regen)
+   ↳ Debug: 单独 `make analysis-per-run` / `compare-b0-b1-all` / `aggregate-cross-site` / `summary-collect` / `routing-auroc`
+   ↳ 输出 path: `results/phantom_paper/{auroc_cross_condition.*, cross_site/, run_summary_collect.json, figures/*.png}`
+   ↳ NOT 自动: GLM digest sidecar (watchdog) + 9 narrow ad-hoc diagnostics (selflink_loop / vision_coordinate / search_over_browse / diag_pattern_match)
+🟡 next_steps §0 current state: update if Critical path A 进度变化
+🟡 paper_planning §3 finding 列表: if new paper-grade finding emerges
+🟡 paper_planning §4 paper section status: if evidence quality 变化
+❌ paper drafts: 不动 (等 codex prose update batch)
+```
+
+### B. 新 figure (e.g. fig10 cumulative SR vs budget)
+
+```
+✅ next_steps §7 figures list: add new path
+✅ paper_planning §10 visualization plan: update 4-fig stack
+✅ paper_planning §12 figures inventory: add row
+🟡 paper_planning §3 finding: if figure reveals new finding
+✅ Makefile figures target: add fig10_*.py
+```
+
+### B'. 新 cross-condition aggregator (e.g. paired permutation table)
+
+```
+✅ scripts/analysis/aggregate_*.py: implement
+✅ Makefile: 新 PHONY target + chain into analyze-paper
+✅ paper_planning §13.B: mark done with output path
+✅ next_steps §4 codex queue / pending scripts: mark ✅
+```
+
+### C. 新 codex analysis (e.g. trajectory diff diag)
+
+```
+✅ paper_planning §12 codex analyses inventory: add row
+✅ next_steps §7 references: add path
+🟡 paper_planning §3 finding 列表: if new finding from analysis
+🟡 paper_planning §2 theory framework: if mechanism discovery (e.g. axis refinement)
+🟡 paper_planning §19 decision log: if framing decision made
+✅ next_steps §4 codex queue: mark done
+```
+
+### D. 新 paper drafts (e.g. Section 5 prose done by codex)
+
+```
+✅ next_steps §2 paper section status: status update (drafted) — via _status/section*.md frontmatter
+✅ paper_planning §4 paper section status: same
+🟡 paper_planning §2/§3 strategy notes: shrink (move to drafts now in prose)
+✅ paper_planning §17 pre-submission checklist: tick off content completeness
+❌ next_steps §0: 不变 (除非 strategic shift)
+```
+
+### E. 新 decision (e.g. advisor align meeting #1 outcome)
+
+```
+✅ paper_planning §19 decision log: append timestamped row
+✅ paper_planning §9 advisor align checklist: tick off items
+✅ ADVISOR_SYNC §2 framing decisions: status open → discussed → decided
+✅ 实验笔记: append decision entry with rationale
+🟡 paper_planning §5/§6/§7 (final scope / risks / cascade): if scope decision changes
+🟡 paper_planning §16 authorship: if authorship order finalized
+```
+
+### F. 新 infra fix (e.g. another bug fix or watchdog upgrade)
+
+```
+✅ next_steps §5 open issues: add or move to resolved
+✅ 实验笔记: append technical chronicle entry
+🟡 paper_planning §18 watchdog protocol + execution discipline: update 6-layer description
+🟡 paper_planning §14 reviewer attack: if fix addresses an attack scenario
+```
+
+### G. 新 finding (e.g. unexpected mechanism observation)
+
+```
+✅ paper_planning §3 finding 列表: add new entry
+✅ 实验笔记: append finding with date + evidence
+🟡 paper_planning §2 theory framework: if framework refinement needed
+🟡 paper_planning §19 decision log: if framing decision triggered
+🟡 next_steps §0: if changes paper hook
+```
+
+### H. 新 reviewer attack scenario
+
+```
+✅ paper_planning §14 reviewer attack: add row
+✅ paper drafts (when writing prose): proactive defense in Section 4-5
+```
+
+### I. 新 paper section prose done
+
+```
+✅ next_steps §2 paper section status: status drafted (via _status/section*.md frontmatter)
+✅ paper_planning §4 same
+✅ paper_planning §13 pending TODO: tick off
+🟡 paper_planning §3 finding: shrink (now in prose) or expand (new finding from prose writing)
+🟡 paper_planning §17 pre-submission checklist: tick off content items
+```
+
+### General principle
+
+- **Daily** → next_steps.md (live state, codex queue, open issues)
+- **Weekly** → paper_planning.md (strategy notebook, when finding/decision emerges)
+- **Append-only** → 实验笔记.md (chronicle, never overwrite, append §)
+- **Stable until prose write** → paper drafts (only update when Section X prose batch written)
+- **Per-meeting** → ADVISOR_SYNC.md (sync prep + post-meeting decision register)
+
+### Quick mental check before update
+
+```
+What changed? → 找对应类型 (A-I above)
+Mark current status? → next_steps + _status/*.md frontmatter
+Add new strategic finding? → paper_planning
+Record what happened (history)? → 实验笔记 append §
+Modify final paper text? → paper drafts (only when prose batch writing)
+Advisor decision context? → ADVISOR_SYNC
+```

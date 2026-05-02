@@ -1,197 +1,82 @@
+---
+type: action-ledger
+status: rolling
+updated: 2026-05-02
+---
+
 # Next Steps — Action Ledger
 
-> **Daily action plan**. 当前 active state + 接下来 actions only.
+> **Live + Future only**.
+> - 过去归档 → [[实验笔记]] (§1-§108 chronicle)
+> - 脉络 strategy → [[paper_planning]] (19 sections)
+> - Advisor sync → [[ADVISOR_SYNC]] (rolling self-prep notes)
+> - 落地 prose → `paper_drafts/section*.md`
 >
-> **职能分工**:
-> - **next_steps.md** (此文档): action ledger (~430 行)
-> - **paper_planning.md**: paper strategy notebook (theory / findings / risks / cascade / router / advisor align)
-> - **paper drafts** (`docs/analysis/paper_drafts/`): final paper prose
-> - **实验笔记** (`docs/checkpoints/实验笔记.md`): time-order chronicle (历史 record)
->
-> 📖 **新数据/figure/finding/codex 回复 → 该更新哪些文档？** see §10 Doc Update Workflow
-> 🔧 **新数据后一键 snapshot**: `make analysis` ⭐ (~5-10min, **everything**) — Phase 2 consolidated entry point (commit ce05366+):
->   - `make analysis` 全 pipeline (per-run + cross-condition + figures + status)
->   - `make analysis FAST=1` 跳过 per-run, 只 aggregators + figures (~30s, paper writing 主用)
->   - `make analysis RUN=<dir>` 单 run + downstream
->   - `make analysis` / `make analyze-layered` 仍 work (aliases with deprecation warning)
->
-> Old workflow context (kept for reference):
->   1. per-run on 8 paper-grade VWA runs: rederive + reason-diag + cross-rep + confidence
->   2. B0 vs B1 site comparison (cls + red, `b0_vs_b1_<site>/`)
->   3. cross-condition aggregations: aggregate-cross-site + summary-collect + routing-auroc
->   4. 9 figures (含 fig2 bootstrap CI)
->
-> **NOT** included (intentional): GLM digest sidecar + gallery + annotate (watchdog handles); codex narrative analyses (manual); narrow ad-hoc diagnostics (selflink_loop / vision_coordinate / search_over_browse / diag_pattern_match — invoke per-need)
->
-> **Last updated**: 2026-05-01（**§108 framework refinement** + 04-30 §107/§107.1 Phase A + B-37 probe + Myriad rejected + RunPod planned）。**05-01 大 conceptual reorganize**（笔记 §108 详 chronicle）: paper hook reframe to "**phantom routing space (3 arms)**" provisional pending cls 6-mode 数据; phantom space boundary = "no annotated image" 而非 mismatched parsing; **M1/M2 mechanism activation 2x2 framework** + **Approach 2 architectural completeness** (deductive, Zoom 1); **Evidence vs Explanation 严格分层** (4 zoom scale: 架构/behavioral/named/model-internal); SteerMoE (学长发的 ICLR 2026) 定位 Zoom 4 future work; 早停 design decision lean Option A (full cancel +$1300) pending advisor align; 5 retracts (8-corner cube / 6-corner asym grid / (a)(c) decomposition / Three-layer 命名 / 3-mechanism coherence 候选); paper.bib 待 expand 4 entry (Asadi/Vu Balloccu/Kaduri/SteerMoE)。**Next: 5 unpushed commits push + 学长 sync + RunPod approval + 14-cell rerun**。Workflow change: commit autonomous, push needs explicit confirm.
+> 🔧 **新数据 → `make analysis`** (~5-10min, all-in-one): per-run + cross-condition + figures + status
 
 ---
 
-## §0 TL;DR (2026-05-01 status)
+## §0 Current state
 
-**Paper hook (provisional, pending cls 6-mode 数据 confirm)**: "We discover a **hidden phantom routing space** for web agents — defined by the boundary 'skip annotated image' — containing **3 routing arms** (P-text / P-prompt / P-SoM) sharing a **4-fold drop-in property**. P-SoM (cube center, axis 1+2 compound) is the space's representative arm."
+**Paper hook (provisional, pending cls 6-mode 数据 confirm)**: "We discover a **hidden phantom routing space** for web agents — boundary 'skip annotated image' — containing **3 routing arms** (P-text / P-prompt / P-SoM) sharing a **4-fold drop-in property**. P-SoM (cube center, axis 1+2 compound) is the space's representative arm."
 
-### 这周 (~04-23 → 05-01) 做的事
+> [!warning] Active blockers
+> | 项 | 状态 | 原因 |
+> |---|---|---|
+> | **14-cell paper-grade re-run** | ⏸️ blocked | DGX GPU 争抢严重 (B1 234 ep 跑 20+ h), 需 RunPod 经费 approval |
+> | **Cls pilot wave-3** | ⏸️ blocked | B1 P-text cls 仍跑 (~198/234 ep, ~1-2 d ETA) — same-site B0 XOR B1 hard rule |
+> | **学长 sync** | ⏸️ pending | 时间未定, [[ADVISOR_SYNC]] 已 ready |
 
-1. **Phantom 量化 + 6-mode 实验设计完整** — B0 cls + reddit 5-mode (DOM/SoM/Vision/P-text/P-SoM) FRESH paper-grade clean; P-prompt diamond corner reddit 已 done, cls/shop pending. 14 figures 全部 FRESH dimension-prefixed.
-2. **Paper planning 完整重组** — paper_planning.md (1500+ 行) 4-dimension framework (Outcome/Macro/Micro/Efficiency) + 3-axis × 8-channel × bidirectional theory; Section 1-3 prose done (3163 words); Section 4-6 evidence 95%.
-3. **🆕 04-30 系统 audit VWA framework** — 找到 **37 catalogued bugs** (Tier 1-5 + Tier 10 dispatch probe + 4 verification probes), ship Phase A 4-cluster patches (~455 LOC, commit `3c15cd7`): C1 locator-route / C2 page_changed split / C3 fuzzy cycle / C4 RNG seeding+T=0. Pilot wave-2/3 N=120 PASS, reddit B-33 fix lift +2.14pp. 详见 `docs/checkpoints/master_bug_catalog.md` (37 entries) + `docs/reference/VWA_FRAMEWORK_BUGS_AND_PHASE_A_FIXES.md` + 实验笔记 §107.
-4. **VWA bugs ⇒ 14-cell paper-grade re-run 必需** — Phase A patches 落地后, 之前 14-cell 数据需要全部重跑才能 paper-grade clean. cross-mode 比较 robust (symmetric contamination + Vision counter-evidence + pilot Δ=0pp 验证), Phantom finding 仍 valid, 但 absolute SR 需要新数据.
-5. **🔴 Myriad 不可行** — UCL 申请下来了, 但物理级 blocked: UCL 防火墙 drop Tailscale CGNAT (100.64/10), Myriad 不能 reach quark VWA docker. 详见 `docs/reference/MYRIAD_SMOKE_REPORT.md`. 备选: RunPod 4090 dedicated $0.6/h × ~180h ≈ $110-200 总预算.
-6. **🆕 05-01 Paper conceptual framework 大重组 (笔记 §108 chronicle)** — 5-hour deep discussion 后 paper §2 framework 重大重写: hook reframe 到 "phantom routing space (3 arms)" provisional + **M1/M2 mechanism activation 2x2 framework** (P-SoM = compound state emergent, transformer attention nonlinear) + **Approach 2 architectural completeness argument** (deductive, phantom space 内 only 2 input dim → axes by design exhaustive) + **Evidence vs Explanation 严格分两层** (4 测量 × 4 cross-X / Zoom 1-4 named phenomena including Mirage/Scaffold/Sclar/Cross-modal flow/SteerMoE) + **5 retracts** (8-corner cube / 6-corner asym grid / (a)(c) decomposition / Three-layer 命名 / 3-mechanism candidate). SteerMoE (学长 05-01 发的 ICLR 2026) 定位 Zoom 4 future work; early-stop design decision lean Option A (full cancel +$1300) pending advisor align. 4 framing decisions Q1-Q4 已写进 advisor sync。
-
-### 当前 blocker
-
-| 项 | 状态 | 原因 |
-|---|---|---|
-| **14-cell paper-grade re-run** | ⏸️ **blocked** | DGX GPU 争抢严重 (B1 234 ep 跑 20+ 小时), 需要 RunPod 经费 approval |
-| **Cls pilot wave-3 (Cluster 1+2+3+4 验证 cls)** | ⏸️ blocked | B1 P-text cls 仍在跑 (~198/234 ep, ~1-2 天 ETA) — 同 site exclusivity |
-| **学长 sync** | ⏸️ pending | 学长答应开会, 时间未定 — 我已 ready advisor brief |
-
-### Next 3 actions (priority order, 2026-04-30 EOD)
-
-1. **Push N unpushed commits + 给学长发 sync** ⭐ — commits 累积 04-30 + 05-01 (b37 probe + paper-strategy refines + Myriad §4.4 rejection + RunPod onboarding doc + **§108 framework refinement** + paper_planning §2 大重写 + ADVISOR_SYNC update). Push 后**给学长发 `docs/checkpoints/ADVISOR_SYNC_DRAFT_2026-04-30.md`** + GitHub link. 会议 30-45 min asks: (a) RunPod ~$200 经费 ($70-115 actual based on measured throughput), (b) paper scope (single vs split with VWA bug paper), (c) **4 paper-strategy framing decisions** (Q1 early-stop design **lean A 全 cancel** / Q2 B0 pre/post Phase A sampling / Q3 phantom space 3-arm reframe + evidence-explanation 双层 + M1/M2 activation framework / **Q4 SteerMoE scope** lean option (i) future work).
-2. **RunPod onboarding (post-approval)** — `docs/reference/RUNPOD_ONBOARDING.md` 7-step playbook ready. Pin paper-grade commit hash on RunPod, scp `.auth/` files, smoke test B1 cls 1 task, then launch 14-cell parallel: 7 cells B0 on DGX (proxy API) + 7 cells B1 on RunPod 4090. ETA ~3-5 天 wallclock.
-3. **新数据按 4-dimension framework 整合** — 14-cell 跑完后运行 `make analysis` 一键 regenerate. 重 evaluate Phantom 4-fold drop-in (cost / latency / AUROC / drop-one). 加 Section 4 disclosure paragraphs: (a) B0 vs B1 reproducibility 不对称 (probe md draft), (b) early-stop micro bias mitigation per advisor decision, (c) Phase A bug audit summary. Codex #11 Section 4 prose update + #13 Section 5 mechanism prose triggered.
-
-### Advisor meeting prep status
-
-- ✅ `docs/reference/PHANTOM_SOM_ADVISOR_MEETING_BRIEF.md` (347 行 stage-direction 讲稿: 14 figures × "indicate-and-say" + 6 reviewer Q&A + cheat sheet)
-- ✅ `docs/reference/PHANTOM_SOM_CODE_TOUR.md` (168 行 GitHub permalink 导览)
-- ✅ React dashboard `docs/checkpoints/周报/weekly-dashboard/` (`npm run preview` → `http://localhost:4173/`)
-- ✅ All commits pushed (50169bf), repo public on GitHub for advisor click-through
-
-### Paper progress
-
-Section 1/2/3 ✅ done (3163 words). Section 4 figures ✅ FRESH (14 dimension-prefixed PNGs) + bootstrap CI ✅; **prose stale 1725w 待 14-cell rerun + codex #11 update**. Section 5 evidence 95% (4-dim framework + 3-axis cascade diamond). Section 6 AUROC ≥ baseline ✅. Section 7/8 待 cross-site/cross-model 数据.
-
-**Post-rerun roadmap**: 14-cell paper-grade clean → codex #11 (Section 4 prose) → codex #13 (Section 5 mechanism) → Section 6/7/8 outline → 1st draft 完整。
+> [!todo] Next 3 actions (priority order)
+> 1. **学长 sync** ⭐ — 时间定后 30-45 min meeting, [[ADVISOR_SYNC]] §1-§5 cover 主 asks (framework reframe sanity check / VWA bug 是否单独成文 / RunPod 经费 / Early-stop A/B/C / SteerMoE scope)
+> 2. **RunPod onboarding** (post-approval) — `docs/reference/RUNPOD_ONBOARDING.md` 7-step playbook ready. Pin paper-grade commit hash, scp `.auth/`, smoke test, launch 14-cell parallel (7 cells B0 on DGX + 7 cells B1 on RunPod 4090). ETA ~3-5 d wallclock
+> 3. **新数据按 4-dimension framework 整合** — 14-cell 跑完后 `make analysis`. 重 evaluate 4-fold drop-in. Section 4 disclosure paragraphs + codex #11/#13 trigger
 
 ---
 
-## §1 Active Processes
+## §1 Active processes (live)
 
-🔄 **Live status**: `make active` (real-time scan of run_experiment + experiment_watchdog；自动报 progress / adj-SR / 吞吐 / ETA / stale-watchdog flag)
+🔄 **Real-time**: `make active` — scan ps + episode mtime, 不要在此硬编码
 
-可选 `make active --json` / `python3 scripts/maintenance/active_processes.py --json` 给机器读。**这张表不再手维护** —— 实时数据从 `ps` + `episodes/*_summary_v2.json` mtime 算出来。
-
-### Recent incidents (manually maintained — `make active` 拿不到的 once-events)
-
-| 日期 | 事件 | 处置 |
-|---|---|---|
-| **05-01** | **Paper conceptual framework deep refinement** — 5-hour deep discussion 后笔记 §108 chronicle: hook reframe to "phantom routing space (3 arms)" provisional + M1/M2 mechanism activation 2x2 framework + Approach 2 architectural completeness + evidence/explanation layer 严格分离 + 4 zoom scale + 5 retracts (8-corner cube / 6-corner asym grid / (a)(c) decomposition / Three-layer 命名 / 3-mechanism candidate) + SteerMoE (学长发) 定位 Zoom 4 future work + early-stop design decision lean A | ✅ 笔记 §108 + paper_planning §2 大重写 + ADVISOR_SYNC Q1+Q3+Q4 expand; Q3 待 advisor align |
-| **04-30** | **Phase A 4-cluster bug fix wave** — 5-tier audit 找 37 bugs, ship Cluster 1+2+3+4 (commit `3c15cd7`), pilot wave-2/3 PASS N=120, reddit Cluster 1 lift +2.14pp | ✅ pushed to GitHub master (50169bf); 14-cell rerun blocked on RunPod approval |
-| 04-30 12:01 | **Cross-session pilot data destruction** — another Claude session (Myriad config work) misjudged "busy:1 free wait" as "stuck", `clear_tasks.py --force` wiped pilot wave-1 reddit + shopping data | ✅ wave-2 fresh re-launched 12:13, 60 ep PASS Δ=0pp; lesson encoded in `feedback_wsl_shutdown_quark_rule.md` memory |
-| 04-30 11:48 | **Quark Windows wsl --shutdown** triggered docker-desktop distro restart → 7 VWA containers exit 255 → DGX→quark Tailscale unreachable | 用户 docker start 恢复; B1 main run 自愈; pilot shopping 自然 crash |
-| 04-30 ~10:00 | **UCL Myriad smoke test FAILED** (other session) — UCL 防火墙物理级 drop Tailscale CGNAT, Myriad 不能 reach quark VWA docker. 试 OpenConnect/Cisco/SAML/反向 ssh 全部失败 | 详 `docs/reference/MYRIAD_SMOKE_REPORT.md`; B1 baseline migration 不可行 → RunPod fallback |
-| 04-29 22:30 | shopping pipeline on hold pending 用户手动 gallery triage（B0 DOM N=465/466 done, task 345 wikipedia.zim 404 单点） | 不启动 shopping 其余 4 mode + B1 shopping 5-mode；等 triage 收尾 |
-| 04-29 22:30 | B0 dom shopping watchdog (PID 1106686) 在 runner 自然完成后留 zombie | 🔴 killed |
-| 04-29 19:30 | 4 个 stale watchdog (PID 32263, 4124316, 4124482, 1822028) 指向 paper-grade rename 前的旧 dir → `failto annotate, run_dir not found` | 🔴 killed; renamed dirs (`B0_phantom_som_*`, `B0_phantom_text_*`, `B1_phantom_som_*`) 仍 paper-grade 完整 |
-| 04-29 18:15 | B0 P-prompt reddit + B1 phantom_som reddit 同 site 触发 collision | 🔴 B1 phantom_som reddit 杀掉 + tasks 0-6 cleared；queue_chain B1 phantom (PID 1145483) 一起停 |
-| 04-29 17:43 | B1 phantom_som cls 完成 (234/234 paper-grade) | ✅ run finalized, paper-grade |
-| 04-29 09:02 | B1_phantom_classifieds runner restart (旧 PID 371892 因 GPU contention with seonglae 5 train jobs stalled 4h) | ✅ restarted, watchdog auto-cleaned 5 NOT-LOGGED-IN tasks |
-
-**Health checks**:
-- Magento HTTP 200 (FPC disabled, PowerShell hook 持久化) ✅
-- Watchdog auto-clean protocol verified (paper-grade 100% pure) ✅
-- DGX defensive curl post-reset metis check ✅
-
----
-
-## §2 Paper Section Status (8 sections final scope)
-
-### Final scope (paper 完整版, 详见 `paper_planning.md` §5)
-
-```
-Benchmark: VWA 3 站 (cls 234 + red 210 + shop 466) + WA 3 站 (red 106 + shop 192 + sa 182)
-           = 6 sites, ~1390 task per condition
-Models:    B0 (Qwen3-VL-235B proxy) + B1 (Qwen3-VL-4B local) + Claude Opus 4.7
-           = 3 model families
-Modes:     DOM / SoM / Vision / P-text / P-SoM (5 base) + P-prompt (diamond control, NEW 04-29)
-           = 6 modes (5 paper-headline + 1 mechanism control)
-Cells:     6 sites × 3 models × 6 modes = ~108 cells (~135K episodes)
-           Tier 1 critical: 5 base modes everywhere
-           Tier 2 diamond:  P-prompt only B0 cls+red (Section 5 mechanism), B1 cls+red bonus (Section 7)
-+ Router:  Tier 1+2 (oracle TF-IDF+LR / first-step trigger), 实际 deploy on agent,
-           measure cost / SR / latency vs best-single-mode
-+ Multi-metric: cost / P95 latency / carbon (B1 measured + B0 estimate)
-+ Cost class:  B0 = API token $ (~$0.04/ep); B1 = electricity equivalent (~$0.0004/ep);
-               ~100× deployment-class gap (~Section 8 sustainability)
+```bash
+make active                  # human-readable
+make active --json           # machine-readable
 ```
 
-⚠️ Cells 数实际会少一些 — P-text 在某些 site/model 计划砍掉（control 价值 vs cost：P-SoM 是 hidden 4th routing arm 必跑，P-text 只在 axis 2 prompt-effect 论证关键 site/model 跑）。**P-prompt 只在 cls+red 跑（mechanism Section 5 用），shopping/WA P-prompt 不必**。具体 final cell selection 见 `paper_planning.md` §3 重组后的 layered framework + §5 final scope。
-
-### Section status table
-
-| Section | Status | Path | Blocker |
-|---|---|---|---|
-| 1 Intro | ✅ done (786w + 4-fold drop-in framing) | `docs/analysis/paper_drafts/section1_intro.md` | — |
-| 2 Background + paper.bib (16 → ~40-50 entries 待 codex 跑完) | ✅ done (1514w), paper.bib expanding 5/6 Gemini DR | `section2_background.md` | codex #10 跑中 (Q5 pending) |
-| 3 Definition + Ablation | ✅ done (863w) | `section3_definition.md` | — |
-| 4 Empirical Findings | 🟡 80% (figures FRESH ✅, prose stale 1725w) | `section4_empirical_findings.md` | codex #11 fresh prose (~30K) |
-| 5 Mechanism (3-axis × 8-channel) | 🟡 90% evidence ready | (待写) | codex #13 prose (~50K, 待 #10) |
-| **6 Routing (Tier 1+2)** ⭐ | 🟡 40% (signal AUROC ≥ baseline ✅, scaffold ready) | (待写) | Tier 1 prototype (~3 天) + Tier 2 (~7-10 天) — Week 4-5 |
-| 7 Generalization (cross-site/model) | 🟡 40% (B1 profile done) | (待写) | shopping (跑中) + WA + cross-model |
-| 8 Discussion (含 sustainability / green AI) | ❌ 未写 | (end-stage) | 全部 data done |
-
-**Strategic content (未 prose 化)** → see `paper_planning.md`:
-- §2 Theory framework (3-axis × 8-channel × bidirectional)
-- §3 Findings 列表 (10 paper-grade findings, 含 phantom signal AUROC + 4-fold drop-in)
-- §4 Section 6 Routing detailed outline + Section 8 sustainability outline ⭐
-- §5/6/7 Final scope + 顶刊概率 + risks + cascade
-- §8 Router design (Tier 1+2 with 5 决策维度)
-- §9 Advisor align checklist
-- §10 Visualization plan (4-fig stack)
-- §11 Cost / latency / carbon multi-metric plan
+最近 incident 历史 → [[实验笔记]] §107+ chronicle (Phase A bug fix wave / cross-session pilot data destruction / quark wsl shutdown / Myriad rejection / 等)
 
 ---
 
-## §3 Active Experiments + Pending Cells
+## §2 Paper section status
 
-### 3.1 Critical path A B0 部分 (5-mode 已 DONE; **diamond P-prompt 跑中 04-29**)
+![[status.base#Paper Sections]]
 
-**Naming convention (paper-facing, §106)**: 5 modes = DOM / SoM / Vision / **P-text** (= phantom_text; legacy mode value `phantom_dom` still accepted) / **P-SoM** (= phantom_som). **+ P-prompt** (= phantom_prompt, NEW 04-29) for diamond completion.
+Per-section detail → `_status/section*.md` notes (frontmatter status/progress/blocker/words). Final scope + 顶刊概率 → [[paper_planning#§5]].
 
-| Cell | Done time | raw / adj SR | N |
-|---|---|---|---:|
-| B0 cls DOM | (baseline) | 14.96% / 14.10% | 234 |
-| B0 cls SoM | (baseline) | 23.08% / 21.37% | 234 |
-| B0 cls Vision | (baseline) | 15.81% / 13.68% | 234 |
-| B0 cls **P-text** | FRESH 04-27 | 16.67% / 14.53% | 234 |
-| B0 cls **P-SoM** | FRESH 04-28 01:11 | **15.81% / 14.53%** ⭐ | 234 |
-| **B0 cls P-prompt** | ⏳ pending (B1 phantom cls done 后启) | — | 234 |
-| B0 red DOM | (baseline) | 11.43% / 9.52% | 210 |
-| B0 red SoM | (baseline) | 11.90% / 10.48% | 210 |
-| B0 red Vision | (baseline) | 8.57% / 6.67% | 210 |
-| B0 red **P-text** | FRESH 04-28 02:12 | 13.81% / 11.90% | 210 |
-| B0 red **P-SoM** | FRESH 04-28 10:28 | **14.29% / 13.81%** ⭐⭐ | 210 |
-| **B0 red P-prompt** | 🟢 跑中 (PID 2075552, 16/210, ~6h ETA) | — | 210 |
+---
 
-⭐⭐ red P-SoM 13.81% > SoM 10.48% (within 2σ noise floor, conservative framing per paper Section 1)
+## §3 Active experiments + pending cells
 
-**Diamond ablation status**: B0 reddit diamond ~6h after P-prompt done; B0 cls diamond blocked by B1 phantom cls (same-site B0 XOR B1 hard rule).
+> Cells.base view 待 Demo E 完成 (cells 现仍 inline). 暂时表格如下:
 
-### 3.2 Active 跑中
+### 3.1 Active 跑中
 
 | Cell | Status | ETA |
 |---|---|---|
-| **B0 P-prompt reddit (PID 2075552, NEW 04-29)** | 跑中 ~16/210 | ~6h |
-| B1 phantom_som cls (PID 1821957) | 跑中 task 184+/234, watchdog auto-cleaned 5 NOT-LOGGED-IN tasks | ~10-15 days (GPU contention) |
-| B0 dom shopping clean re-run (PID 1106560, with reset) | 跑中 ~9/466 | ~9h (~Wed 01:00) |
+| **B0 P-prompt reddit (PID 2075552)** | ~16/210 | ~6h |
+| B1 phantom_som cls (PID 1821957) | task 184+/234, watchdog auto-cleaned 5 NOT-LOGGED-IN | ~10-15 d (GPU contention) |
+| B0 dom shopping clean re-run (PID 1106560) | ~9/466 | ~9h |
 
-### 3.3 Pending chains — automated via `queue_chain.sh` (sequential)
+### 3.2 Pending chains — `queue_chain.sh` (sequential)
 
-B1 4B 单 GPU instance + B0 phantom shopping 同 site exclusive → 必须 sequential. 用 `queue_chain.sh` 自动 chain 一组 cells (idempotent 检测 already-running, paper-grade RESET_BEFORE=1 默认):
+B1 4B 单 GPU + B0 phantom shopping 同 site exclusive → sequential. Idempotent + paper-grade `RESET_BEFORE=1` 默认.
 
-**Tier 1 (paper-critical, B0 diamond + B1 5-mode)**:
+**Tier 1 (paper-critical)**:
 ```bash
-# B0 P-prompt cls (after B1 phantom_som cls done — same-site B0 XOR B1)
 nohup bash scripts/queues/queue_chain.sh \
   "queue_phantom_prompt.sh B0 classifieds" \
   > logs/queue_chain_b0_pprompt_cls.log 2>&1 &
 
-# B1 phantom 4-cell chain (cls already running PID 1821957, chain wait + 3 sequential)
-# original 4-cell still active (P-SoM cls/red + P-text cls/red)
 nohup bash scripts/queues/queue_chain.sh \
   "queue_phantom_som.sh B1 classifieds" \
   "queue_phantom_som.sh B1 reddit" \
@@ -199,16 +84,14 @@ nohup bash scripts/queues/queue_chain.sh \
   "queue_phantom_text.sh B1 reddit" \
   > logs/queue_chain_b1_phantom.log 2>&1 &
 
-# B0 phantom shopping pair (after B0 dom shopping done)
 nohup bash scripts/queues/queue_chain.sh \
   "queue_phantom_som.sh B0 shopping" \
   "queue_phantom_text.sh B0 shopping" \
   > logs/queue_chain_b0_phantom_shop.log 2>&1 &
 ```
 
-**Tier 2 (diamond completeness, B1 P-prompt — Section 7 cross-capability bonus)**:
+**Tier 2 (diamond completeness, B1 P-prompt)**:
 ```bash
-# B1 phantom_prompt 2-cell chain (yamls created 04-29, run after Tier 1 B1 chain done)
 nohup bash scripts/queues/queue_chain.sh \
   "queue_phantom_prompt.sh B1 classifieds" \
   "queue_phantom_prompt.sh B1 reddit" \
@@ -217,446 +100,143 @@ nohup bash scripts/queues/queue_chain.sh \
 
 | Chain | ETA | Status |
 |---|---|---|
-| **B0 P-prompt cls (Tier 1, NEW)** | ~6h | ⏳ wait B1 phantom_som cls done (~10d) |
-| B1 phantom 4-cell (cls som → red som → cls dom → red dom) | ~30-40d (GPU contention 7-10d/cell) | ✅ launched 19:11 PID 1145483 (cls active 1821957) |
-| B0 phantom shopping pair (som → dom) | ~24h | wait B0 dom shopping done (~Wed 01:00) |
-| **B1 P-prompt 2-cell (Tier 2, NEW)** | ~14-20d | ⏳ wait B1 4-cell Tier 1 done — paper Section 7 cross-capability diamond, not Section 5 critical path |
+| B0 P-prompt cls (Tier 1) | ~6h | ⏳ wait B1 phantom_som cls (~10d) |
+| B1 phantom 4-cell (Tier 1) | ~30-40 d (GPU contention) | ✅ launched 04-29 19:11 PID 1145483 |
+| B0 phantom shopping pair (Tier 1) | ~24h | wait B0 dom shopping done |
+| B1 P-prompt 2-cell (Tier 2) | ~14-20 d | ⏳ wait B1 4-cell Tier 1 done |
 
-**Paper-impact triage**:
-- **Section 5 (mechanism)**: needs **B0 reddit diamond** (P-text + P-prompt + P-SoM + endpoints) → ~6h后 ready
-- **Section 5 cls reinforcement**: needs **B0 cls diamond** → blocked by B1 cls (~10d ETA)
-- **Section 7 (generalization)**: B1 5-mode 现 4-cell chain done 后即可 (Tier 2 P-prompt 是 nice-to-have, paper 写 "B1 cross-capability supports B0 mechanism" 即可)
-
-### 3.4 Missing cells — 等资源 (manual decision)
-
-**Updated matrix 04-29 (含 P-prompt diamond)**: 5 modes + 1 diamond control (P-prompt) = **6 cells per (baseline × site)**. Total target: 6 sites × 3 models × 6 modes = 108 cells (~135K episodes; B1 P-prompt + Claude all-modes 是 Tier 2)。
-
-数据 picture (post 04-29):
-- VWA cls: B0 5/6 done (P-prompt missing) + B1 1/6 done + 1 跑中 (P-SoM) + 4 missing
-- VWA red: B0 5/6 done + 1 跑中 (P-prompt) + B1 1/6 done + 5 missing
-- VWA shop: 1/12 跑中 (B0 DOM) + 11 missing
-- WA: 0/30 (B0+B1 × 3 sites × 5 modes; +6 if including P-prompt = 36)
+### 3.3 Missing cells (post 14-cell rerun target)
 
 **Critical (paper Section 5)**:
 | Cell | Blocker | Cost |
 |---|---|---|
-| **B0 P-prompt cls** (diamond completion) | B1 phantom_som cls done | ~$3 + ~6h API |
-| B0 shopping SoM/Vision/Phantom × 3 (3 cells) | B0 dom shopping done + verify | ~$45 + ~24h API |
-| B0 shopping P-prompt | B0 phantom shopping pair done (Tier 2) | ~$15 + ~6h API |
+| B0 P-prompt cls (diamond) | B1 phantom_som cls done | ~$3 + ~6h API |
+| B0 shopping SoM/Vision/Phantom × 3 | B0 dom shopping done + verify | ~$45 + ~24h |
+| B0 shopping P-prompt | B0 phantom shopping pair done | ~$15 + ~6h |
 
 **Generalization (paper Section 7)**:
 | Cell | Blocker | Cost |
 |---|---|---|
-| WA × 3 sites × B0+B1 × 5 modes (30 cells; +6 P-prompt opt = 36) | advisor align + B1 VWA chain done | ~$60-72 + 60-72h GPU |
-| Cross-model Claude Opus 4.7 cls+red 5-mode (10 cells; +2 P-prompt opt) | advisor align + agent 适配 | ~$100-120 |
-| B1 shopping 5-mode + P-prompt (6 cells) | Myriad GPU + DGX-side B1 phantom 全 done | ~24h GPU 独占 each |
-| **B1 P-prompt cls + red (Tier 2 diamond cross-cap, NEW yamls 04-29)** | B1 P-SoM + P-text 4-cell chain done | ~14-20d GPU (queued in chain) |
-| ~~B1 shopping DOM 466 ep (pre-Magento-bug)~~ | ✅ archived 04-28，待 Myriad clean re-run | — |
+| WA × 3 sites × B0+B1 × 5 modes (30 cells) | advisor align + B1 VWA chain done | ~$60-72 + 60-72h GPU |
+| Cross-model Claude Opus 4.7 cls+red 5-mode (10 cells) | advisor align + agent 适配 | ~$100-120 |
+| B1 shopping 5-mode + P-prompt (6 cells) | RunPod 4090 + DGX-side B1 phantom done | ~24h GPU each |
+| B1 P-prompt cls + red (Tier 2 cross-cap) | B1 P-SoM + P-text 4-cell chain done | ~14-20 d (queued) |
 
-### 3.5 Router experiments (Section 6 paper, ~Week 4-5)
+### 3.4 Router experiments (Section 6, ~Week 4-5)
 
 | Cell | Blocker | Implementation |
 |---|---|---|
-| **Tier 1 oracle router prototype** (TF-IDF + LR, 3 天) | baseline + phantom 全 done | `p79/experiment/router.py::RuleBasedRouter` 扩展 |
-| **Tier 2 first-step trigger router** (~7-10 天) | Tier 1 done + step-1 trigger feature engineering | 新增 cascade runner config |
-| **Routing signal infra** (Phantom modes 已 verified `9d7e99f`) | ✅ ready | `confidence_summary.json` per-condition (5/5 `overall_usable=True`) |
-| **Router eval baseline** (random / best-single / rule-based / oracle / learned) | Tier 1+2 done | benchmark suite |
+| **Tier 1 oracle router** (TF-IDF + LR, ~3 d) | baseline + phantom 全 done | `p79/experiment/router.py::RuleBasedRouter` 扩展 |
+| **Tier 2 first-step trigger** (~7-10 d) | Tier 1 done + step-1 trigger features | 新增 cascade runner config |
+| Routing signal infra | ✅ ready (`9d7e99f`) | `confidence_summary.json` per-condition |
 
-详见 `paper_planning.md` §8 Router design (5 决策维度: feature / target / granularity / cascade / baseline).
+详 [[paper_planning#§8]] (5 决策维度: feature / target / granularity / cascade / baseline).
 
-### 3.6 Sustainability / Green AI (Section 8 Discussion)
+### 3.5 Sustainability / Green AI (Section 8)
 
-| Item | Status | Source |
-|---|---|---|
-| fig9 regional carbon sensitivity (B1 only, 45 region) | ✅ done `d3dfc8f` `0cb26c5` | `scripts/analysis/figures/fig3_regional_carbon.py` |
-| B1 measured energy (cls + red × DOM/SoM/Vision) | ✅ ready | `condition_summary_v2.json` |
-| B0 carbon (proxy API) token-based estimator | ❌ optional Tier 3 | future deep work |
-| Section 8 sustainability prose (含 latency 4× + carbon region-dependent) | ❌ 待 codex #17 (paper end-stage) | 待全部 data done |
-| paper.bib green AI lit (Strubell 2019, Patterson 2021) | ✅ already in `paper.bib` | — |
+| Item | Status |
+|---|---|
+| fig9 regional carbon sensitivity (B1, 45 region) | ✅ done |
+| B1 measured energy (cls + red × DOM/SoM/Vision) | ✅ ready |
+| B0 token-based carbon estimator | ❌ optional Tier 3 future |
+| Section 8 prose | ❌ 待 codex #17 (paper end-stage) |
 
 ---
 
-## §4 Codex Task Queue (pending only)
+## §4 Codex task queue (pending only)
 
-完成的 task 移除. 历史 done 列表 see `git log --oneline --since="2026-04-26"` or `paper_planning.md` §13.
-
-**🆕 Recently completed (04-29)**:
-- ✅ codex axis_effect_size_ablation (3-axis cascade, 47K tok)
-- ✅ codex axis_effect_size_ablation_v2 (cascade decomposition + consistency check, 72K tok)
-- ✅ codex axis1_microbehavior cross-site (verdict generalizes red 2.28 / cls 1.02, 80K tok)
-- ✅ codex shopping A-refine (A1/A2/A3/A4 sub-classification, 50K tok)
-- ✅ codex layered refactor (4-dimension make targets + README + status report, 202K tok)
-- ✅ codex fix figures (fig4 cascade diamond + fig7 P-SoM + fig1 5-mode + fig12 + sr_fp aggregator, 145K tok)
-- ✅ codex rename figures (12 figs → dimension-prefixed sub-codes + fig3d cost source fix log-scale 100×, 371K tok)
+> Codex.base view 待 Demo E 完成. 暂时表格:
 
 | # | Task | Tokens | Blocker | Status |
 |---|---|---|---|---|
-| **10** | **paper.bib formal expansion + paper §2 Zoom 3 cross-reference** — **scope REDUCED 2026-05-01**: lit search done via 5/6 Gemini DR (`docs/literature/5.1/`), only integration left. Q5 (bidirectional modality fusion) pending Gemini quota — append later when arrives. | ~50-100K (was ~400-600K, 缩 80%) | — | 🟡 codex 跑中 (paper.bib 部分, see `integrate_gemini_dr_zoom3_2026-05-01.md`); §2 Zoom 3 已 update (笔记 §108.17) |
-| **11** | **Section 4 fresh-data prose update** (4-dimension framework + ~100× cost framing + N=210 全数据) ⭐ priority next | ~30K | — (现可发) | 🟢 ready, 等用户 trigger |
-| **13** | **Section 5 prose 写** (organize as **site × axis × LLM-mechanism 3-way table**, per `paper_planning §2.x site mechanical substrate`); primary input: 9 site digests `docs/analysis/vwa_*/B*_{DOM,SoM,Vision}_digest.md` + `mechanism_per_task.{json,md}` (E1-E4) + `axis_effect_size_report.md` + `disagreement_clusters.md` (04-27 stale, refresh via #14c when phantom data ready) + `axis1_microbehavior_report.md` + cls task-pool 0.53 paradox + 6 antagonistic pairs | ~50-80K | 待 P-prompt reddit done (~6h) + #11 一起发 | 🟡 ~Thu |
-| 14 | Codex audit shopping VWA (466) — full 5-mode | ~500K | 待 shopping 5-mode 数据 | ⏳ ~Week 2-3 |
-| 14b | Codex audit reddit cat refine (类 shopping A-refine 04-29) | ~50K | red 5-mode FRESH already | 🟢 ready |
-| **14c** | **Codex redo `disagreement_clusters.md` 含 5+1 phantom modes** (mechanism narrative for paper Section 5; current md is 04-27 baseline-only snapshot, drives `fig_capability_b0_b1`) | ~80K | B1 phantom 4-cell + B0 P-prompt diamond done (~30-40d) | ⏳ Week 4-5 |
+| **10** | paper.bib formal expansion + §2 Zoom 3 cross-reference. Q5 (bidirectional) 已 6/6 integrate, Tool Calling Linear Circuit 已 Zoom 4 | ~50-100K | — | 🟡 codex 跑中 (paper.bib 部分) |
+| **11** | Section 4 fresh-data prose update (4-dim framework + ~100× cost + N=210 全数据) ⭐ | ~30K | — (现可发) | 🟢 ready, 等用户 trigger |
+| **13** | Section 5 prose 写 (site × axis × LLM-mechanism 3-way table) | ~50-80K | 待 P-prompt reddit done (~6h) + #11 一起发 | 🟡 ~Thu |
+| 14 | Codex audit shopping VWA (466) — full 5-mode | ~500K | 待 shopping 5-mode 数据 | ⏳ Week 2-3 |
+| 14b | Codex audit reddit cat refine (类 shopping A-refine) | ~50K | red 5-mode FRESH already | 🟢 ready |
+| **14c** | Codex redo `disagreement_clusters.md` 含 5+1 phantom modes | ~80K | B1 phantom 4-cell + B0 P-prompt diamond done (~30-40d) | ⏳ Week 4-5 |
 | 15 | Codex audit WA tasks (480) | ~500K | 待 WA 数据 | ⏳ Week 4-5 |
-| **16** | **Section 6 Routing prose** (Tier 1+2 implementation + eval + 4-fig stack) | ~50K | Tier 1+2 prototype done + figures | ⏳ Week 5-6 |
-| 17 | Section 7 Generalization 草稿 (cross-site/model) | ~50K | shopping + WA + Claude done | ⏳ Week 6-7 |
-| 18 | Section 8 Discussion 草稿 (含 sustainability + 4-fold drop-in summary + ~100× cost) | ~30K | 全部 data done | ⏳ Week 8+ |
-| 19 | 二次 deep research (Section 6/7/8 + 全 paper revisit, 终稿前) | ~300K | Week 8+ paper 终稿前 | ⏳ Week 8+ |
+| **16** | Section 6 Routing prose (Tier 1+2 + 4-fig stack) | ~50K | Tier 1+2 prototype done + figures | ⏳ Week 5-6 |
+| 17 | Section 7 Generalization 草稿 | ~50K | shopping + WA + Claude done | ⏳ Week 6-7 |
+| 18 | Section 8 Discussion 草稿 | ~30K | 全部 data done | ⏳ Week 8+ |
+| 19 | 二次 deep research (Section 6/7/8 revisit) | ~300K | Week 8+ paper 终稿前 | ⏳ Week 8+ |
 
-**Decisions made (don't redo)**:
-- 不重做现有 5 codex docs (lazy integrate via Section 5 prose, saves ~1M tokens)
-- Phantom-SoM step trace digest 不必要 (#8/#9 已 14 case studies cover)
-- §100 SoM probe + Q1/Q2 audit done, 不需重做
-
-### Data analysis backlog (Python scripts, 非 codex)
-
-paper_strategic 数据 pipeline (详 `paper_planning.md` §13.B)。一键 `make analysis` 触发现有 done 项 + figures 重生。
-
-| Task | 用途 | Status |
-|---|---|---|
-| ✅ A. Bootstrap CI for drop-one oracle | Section 4 显著性 | done `847eaeb` — `fig0c_drop_one_oracle.py` + `fig0c_drop_one_bootstrap_ci.csv` (12 rows × 95% CI) |
-| ✅ B. AUROC aggregation per-condition routing signal | Section 6 "AUROC ≥ baseline" supporting table | done `847eaeb` — `aggregate_routing_auroc.py` → `auroc_cross_condition.{csv,md,_summary.md}` (188 rows) |
-| ✅ **B'. Phantom routing lift** (3→5-mode oracle ceiling) | **Section 1/4 paper hook 主 evidence**: B0 cls +4.70pp [2.14, 7.69] / B0 red +5.24pp [2.38, 8.11] CI 排除 0 ✅ | done 04-29 — `aggregate_phantom_lift.py` → `phantom_lift.{csv,md}`; chained into `make analysis`; B1 cells 自动 cover when chain done. **Cohen's h + Wilcoxon + McNemar + Scenario C Jaccard sentinel 全 added** |
-| ✅ **B''. fig10 phantom_lift_bars** | Section 1/4 hook visualization (5-mode oracle ceiling bar chart with bootstrap CI + lift Δ annotation) | done 04-29 — `figures/fig0c_phantom_lift_bars.py`; in `make figures` chain |
-| ✅ **B'''. fig11 routing_auroc_heatmap** | **Section 6 main figure (之前 0 figure)** — cross-condition × signal AUROC heatmap (★ = ≥ 0.7 routing-usable) | done 04-29 — `figures/fig0g_routing_auroc_heatmap.py`; in `make figures` chain |
-| ⏳ C. Multi-metric Pareto (cost + lat + carbon) | Section 8 sustainability 前置 | 待 (~2h, fig10 new + carbon estimator integration) |
-| ⏳ D. TF-IDF + binary feature extraction | Section 6 Tier 1 router 前置 | 待 (~1h, extend `r1_task_features` in `analyze_cross_representation.py`) |
-| ⏳ E. B0 token-based carbon estimator | Section 8 Tier 3 sustainability | 待 (~20 行 helper in `p79/experiment/metrics.py`) |
-
-**`make analysis`** 一键 chain：`aggregate-cross-site` (cross-site SR/cost/lat/energy CSV+plots) + `summary-collect` (run_summary_collect.json) + `routing-auroc` (cross-condition AUROC table) + `figures` (9 PNGs 含 fig2 bootstrap CI). 跑前 paper-grade snapshot 一键生成 — codex #11/#13 prose 写之前 invoke。
+**Pending Python scripts (非 codex)**:
+- ⏳ Multi-metric Pareto (cost + lat + carbon) — Section 8 前置 (~2h)
+- ⏳ TF-IDF + binary feature extraction — Section 6 Tier 1 router 前置 (~1h)
+- ⏳ B0 token-based carbon estimator — Section 8 Tier 3 (~20 行 helper)
 
 ---
 
-## §5 Open Issues (active)
+## §5 Open issues (active)
+
+> Issues.base view 待 Demo E 完成. 暂时表格:
 
 | Issue | Status | Action needed |
 |---|---|---|
-| **B1 phantom_som cls GPU contention** (seonglae 95% utilization, 5× latency) | 🟡 持续 | 联系 seonglae 协调 GPU sharing or 接受 slow progression |
-| ~~**B1 shopping DOM 466 ep pre-Magento-bug**~~ | ✅ resolved 04-28 19:00 | archived `_archive/B1_3mode_shopping_20260413_pre_magento_bug` (含 dom 465/466) + som 5ep abandoned condition 删除. 待 Myriad GPU clean re-run via `queue_baseline.sh B1 dom shopping` |
-| **IP env-var-ize 重构** (9 处 `.py/.sh` hardcoded `100.95.81.103`) | 🟡 backlog | 替换为 `${VWA_REMOTE_HOST}` env var read，让 Myriad / future host 不必 sed。文件: `p79/utils/auth_refresh.py` / `external/visualwebarena/browser_env/envs.py` / `scripts/maintenance/{reset_vwa_sites,retry_b1_single_task,experiment_watchdog}.sh\|.py`。**触发条件**: Myriad onboard 时如果不能 Tailscale reach quark IP |
-| **WA reset mechanism**（queue scripts 当前仅 vwa reset, wa skip） | 🟡 backlog | webarena docker reset 路径未实现。需写 `reset_wa_sites.sh` (类似 `reset_vwa_sites.sh`) 然后 queue scripts 加 `BENCHMARK=wa` 分支调用 |
-| **Watchdog AUTO-ANALYSIS spam guard** (partial condition_summary 触发 infinite loop, §104 Day 3 04:00 audit) | 🟡 backlog | `experiment_watchdog.py:1340` `condition_completed = condition_summary_v2.json.exists()` 应增加 episode count vs expected_episodes guard，避免 partial 数据 (e.g. 165/234 ep) 触发 Case 3 re-trigger loop. 当前 workaround: 不要在 in-flight run 上跑 `make rederive RUN=...` |
-| **GPU contention deadlock detection** (B1 cls stalled 4h 04-29 05:01-09:00, seonglae 5 train jobs + StreamWriter 8.5GB hogged GPU 95%) | 🟡 backlog | runner state R but ep_pol kernel wait → no progress detection in watchdog. Need watchdog stale-runner heartbeat: 检测 episode mtime 超过 N 分钟无更新 → 自动 SIGTERM runner + queue script idempotent re-spawn. 当前 workaround: manual stop+restart `bash scripts/queues/queue_phantom_som.sh B1 classifieds` |
-| **Tier A summary commit decision** (是否 commit `condition_summary_v2.json` + `run_meta.json` 入 git LFS / 直 git for paper-grade archive) | 🟡 待评估 | size: 10 conditions × ~50KB = ~500KB total，git 直管也行；好处: paper repro 时 reviewer 不需 hub access；坏处: 实验未冻结前每次 rederive 改动多 |
-
-**Resolved (recent)**:
-- ✅ **§107 (04-29 18:15) queue_chain.sh same-site collision fix** → B1 phantom auto-advance reddit 撞 B0 P-prompt reddit (30min cross-contam, cleaned). Patch added pre-launch collision check waits for opposite baseline to finish before proceeding.
-- ✅ **§106 (04-29) 4-dimension Evidence Framework + cost methodology fix + figure rename** → paper_planning §3 重组（Outcome / Macro / Micro / Efficiency 4 orthogonal dimensions），13 figures rename dimension-prefix sub-codes，cost ~100× via electricity equivalent (legacy 30× superseded), `make analyze-layered` pipeline (CLI alias 保留), `layered_evidence_status.md` live status (filename retained). 详见 实验笔记 §106.
-- ✅ **§105 (04-29) Magento custom-option radio swatch 漏检** → `state_change.py:_key` 加 value discriminator；同 bug 影响 review form ratings；B0 dom shopping 11/465 ep 受影响（全 fail，9/11 cycle 早停）；DOM/SoM 共享受影响（Vision 不受）；详见 `docs/analysis/cross_sites/swatch_form_change_audit.md`
-- ✅ Magento base_url 三次复发 → PowerShell hook + DGX defensive curl 持久化 (`f9cbebf` + quark side)
-- ✅ Magento FPC homepage cached guest → `cache:disable full_page` (quark side, persistent via PowerShell hook)
-- ✅ Watchdog auto-clean protocol → paper-grade 100% pure verified (no contamination)
-- ✅ VWA submodule reproducibility → fork to `Quarkgluonmixture/visualwebarena` p79-patches branch (`e9f7562` / `5ca2c0f`)
-- ✅ Cross-host results sync infra → `make rsync-{to,from,artifacts-from}-hub` (Tier B/C separation)
-
-**Pending paper-grade re-run (积累中，全部修完后一次性跑)**:
-- ⏳ B0/B1 × DOM/SoM × shopping ✗ Vision — 用户在 dom shopping 上挨个 debug 失败 task，bugs 累计修完后统一 re-run
-  - 已 confirmed 影响：§105 swatch radio (DOM+SoM, Vision 不受)
-  - 触发：用户 stop debug → 一次性 launch 5 cells（B0 dom/som/vision + B1 dom/som）
-
-详 `paper_planning.md` §6 (risks + mitigation) for paper-grade execution discipline.
+| **B1 phantom_som cls GPU contention** (seonglae 95% util, 5× latency) | 🟡 持续 | 联系 seonglae or 接受 slow progression |
+| **IP env-var-ize 重构** (9 处 hardcoded `100.95.81.103`) | 🟡 backlog | 替换 `${VWA_REMOTE_HOST}` env var (`auth_refresh.py` / `envs.py` / queue scripts). 触发: Myriad onboard 时 (现已废) |
+| **WA reset mechanism** (queue scripts 仅 vwa reset, wa skip) | 🟡 backlog | 写 `reset_wa_sites.sh` + queue scripts 加 `BENCHMARK=wa` 分支 |
+| **Watchdog AUTO-ANALYSIS spam guard** (partial summary 触发 infinite loop) | 🟡 backlog | `experiment_watchdog.py:1340` 增加 episode count vs expected guard |
+| **GPU contention deadlock detection** (B1 cls stalled 4h, kernel wait 不报 progress) | 🟡 backlog | watchdog stale-runner heartbeat: episode mtime > N min → SIGTERM + queue script idempotent re-spawn |
+| **Tier A summary commit decision** (`condition_summary_v2.json` + `run_meta.json` 入 git LFS / 直 git?) | 🟡 待评估 | size: 10 cond × ~50KB = ~500KB |
+| **B1 shopping DOM 466 ep** (pre-Magento-bug archived) | ⏸️ 待 RunPod | `queue_baseline.sh B1 dom shopping` clean re-run |
+| **Pending paper-grade rerun: B0/B1 × DOM/SoM × shopping** | ⏸️ 待 RunPod | bugs 累积修完后一次性 re-run (含 §105 swatch radio fix) |
 
 ---
 
-## §6 Decisions Pending (advisor align)
+## §6 Advisor align
 
-详 `paper_planning.md` §9 (full advisor align checklist).
-
-### 🔴 URGENT — Meeting #1 (2026-04-30 sync, 时间 pending 学长)
-
-**Sync 已 ready** — 给学长发 sync draft + GitHub repo + code tour 了, 等回复定时间.
-
-`docs/checkpoints/ADVISOR_SYNC_DRAFT_2026-04-30.md` (含 4 framing 决定, 05-01 expand)
-`docs/reference/PHANTOM_SOM_ADVISOR_MEETING_BRIEF.md` (347 行 stage-direction 讲稿)
-`docs/reference/PHANTOM_SOM_CODE_TOUR.md` (168 行 GitHub permalink 导览)
-`docs/checkpoints/周报/weekly-dashboard/` React presentation page (`npm run preview`)
-
-**Meeting asks (8 items, 含 4 framing decisions)**:
-- [ ] **RunPod 经费 ~$150-200** — DGX GPU 争抢严重, Myriad 物理级 blocked, RunPod 4090 dedicated $0.6/h × ~180h. 走什么报销流程?
-- [ ] **Paper scope** — single paper (Phantom 主线 + appendix VWA bugs 披露) vs split (Phantom paper + VWA bug audit short paper)? Bug audit 37 entries + Tier 1-5 系统 audit 可独立 short paper.
-- [ ] **Q1 (我 lean A)**: Early-stop **design decision** (cancel +$1300 / keep / hybrid +$200) — 影响全 4 dimension cross-mode comparability, 不只 micro layer
-- [ ] **Q2**: B0 pre/post Phase A sampling 不对称 (T=0.1 stochastic → T=0 greedy) — archived merge vs 弃 archived 重跑?
-- [ ] **Q3 phantom space framework reframe**:
-  - (a) hook: "P-SoM 4th arm" → "phantom routing space (3 arms)" (provisional pending cls 6-mode)
-  - (b) boundary: "no annotated image" 而非 mismatched parsing
-  - (c) **evidence vs explanation 严格分两层** (Evidence = 4 测量 × 4 cross-X / Explanation = Zoom 1-4)
-  - (d) M1/M2 mechanism activation 2x2 framework (P-SoM 是 cube center compound)
-  - (e) Approach 2 architectural completeness argument (deductive)
-- [ ] **Q4 SteerMoE scope** (我 lean (i)): (i) Zoom 4 future work cite only / (ii) Qwen3-30B-A3B proxy probe / (iii) Qwen3-VL-235B-A22B local deploy ($400-600)?
-- [ ] **Section 4 framing** — 4-dimension framework (Outcome/Macro/Micro/Efficiency) + Section 5 site × axis × LLM-mechanism 框架 OK?
-
-**Meeting prep checklist** (我已 ready):
-- [x] 14 figures FRESH at `results/phantom_paper/figures/`
-- [x] Wave-2 + Wave-3 pilot validation reports
-- [x] Phantom existence 6-signal argument (in case 学长 ask "Phantom 是不是 bug 假象")
-- [x] 6 reviewer Q&A prep
-- [x] 8 个关键数字 cheat sheet
-- [x] Anti-patterns reminder (不要先提 bug, 不 overclaim, diamond 必须强调是我设计)
-
-### Meeting #2 quick checklist (~Week 6-7, after RunPod 14-cell rerun + Claude cross-model)
-
-- [ ] Router scope (Tier 1+2 推荐)
-- [ ] Cross-model: Claude Opus 4.7 only (~$70)
-- [ ] 单 paper integrated (毕设决策)
-- [ ] Authorship 预期
-- [ ] Investment timing (MLSys 2027 ~9 月)
-
-### Meeting #2 quick checklist (~Week 6-7, after WA + Claude)
-
-- [ ] Paper venue: MLSys (推荐) / NeurIPS workshop / ACL
-- [ ] Section 6 范围 (skip Mind2Web 推荐)
-- [ ] 投稿 timing (polish 1-2 周后 submit)
+详 [[ADVISOR_SYNC]] (rolling self-prep notes + 5 framing decisions register)。
 
 ---
 
-## §7 References + Quick Links
-
-### Strategy + planning
-
-- **Paper strategy notebook**: `docs/checkpoints/paper_planning.md` ⭐
-- **Time chronicle**: `docs/checkpoints/实验笔记.md` (§100 SoM probe, §101.九 Lazy minimization, §103 paper narrative, §104+ daily chronicle)
+## §7 References + quick links
 
 ### Paper drafts (final prose)
-
 ```
-docs/analysis/paper_drafts/section1_intro.md          ✅ 786w
-docs/analysis/paper_drafts/section2_background.md     ✅ 1514w + paper.bib (16 entries)
-docs/analysis/paper_drafts/section3_definition.md     ✅ 863w
-docs/analysis/paper_drafts/section4_empirical_findings.md  🟡 1725w stale
-docs/analysis/paper_drafts/section5_mechanism.md      ❌ 待 codex #13
-docs/analysis/paper_drafts/section6_generalization.md ❌ 待 WA+Claude
-docs/analysis/paper_drafts/section7_discussion.md     ❌ paper end-stage
+docs/checkpoints/paper_drafts/
+  section1_intro.md          ✅ 786w
+  section2_background.md     ✅ 1514w + paper.bib (57 entries)
+  section3_definition.md     ✅ 863w
+  section4_findings.md       🟡 1725w stale (待 codex #11)
+  section5_mechanism.md      ❌ 待 codex #13
+  section6_routing.md        ❌ 待 Tier 1+2 prototype
+  section7_generalization.md ❌ 待 WA + Claude
+  section8_discussion.md     ❌ paper end-stage
 ```
+Live progress → `![[status.base#Paper Sections]]`
 
 ### Codex analysis docs
-
 ```
 docs/analysis/phantom_paper/disagreement_clusters.md           (B0+B1 9-cat)
-docs/analysis/phantom_paper/cross_site_pattern_consolidation.md (cls vs red shift +50/+33pp)
-docs/analysis/phantom_paper/phantom_dom_vs_som_diagnostic.md   (axis 2 prompt)
-docs/analysis/phantom_paper/som_vs_phantom_som_diagnostic.md   (axis 3 image 8-channel)
-docs/analysis/B1_capability_profile.md                            (B1 cross-model prep)
-docs/literature/The Novelty and Efficacy of Set-of-Mark Text...md (deep research, §103 lit gap)
+docs/analysis/phantom_paper/cross_site_pattern_consolidation.md
+docs/analysis/phantom_paper/phantom_dom_vs_som_diagnostic.md   (axis 2)
+docs/analysis/phantom_paper/som_vs_phantom_som_diagnostic.md   (axis 3 8-channel)
+docs/analysis/B1_capability_profile.md                          (Section 7 prep)
 ```
 
-### Figures (`results/phantom_paper/figures/`, all FRESH 04-28)
-
-```
-fig1 4-mode venn (2x2 B0+B1 cls+red)
-fig2 drop-one oracle (2x2)
-fig3 strategy gradient (2x4 reddit + cls)
-fig4 two-knob diagram schematic
-fig5 category × mode heatmap (B0 cls+red)
-fig6 capability contrast B0-vs-B1
-fig7 cost-SR Pareto + deployment callouts
-fig8 overlap-depth stacked bar (5-mode)
-fig9 regional carbon sensitivity (B1 only)
-```
+### Figures
+`results/phantom_paper/figures/` (FRESH 04-28 per `make figures`):
+- fig1 4-mode venn / fig2 drop-one oracle / fig3 strategy gradient / fig4 two-knob
+- fig5 category × mode heatmap / fig6 capability B0-vs-B1 / fig7 cost-SR Pareto
+- fig8 overlap-depth / fig9 regional carbon / fig10 phantom_lift_bars / fig11 routing_auroc_heatmap
 
 ### Recent commits
-
-`git log --oneline --since="2026-04-26"`
+```bash
+git log --oneline --since="2026-04-26"
+```
 
 ### Key infra paths
-
 ```
-configs/exp_v2_*.yaml                 (per-site experiment configs)
-scripts/queues/queue_phantom*.sh       (chain orchestration)
-scripts/maintenance/reset_vwa_sites.sh (DGX→quark PowerShell reset + defensive curl)
-scripts/maintenance/experiment_watchdog.py (auto-clean + post-condition pipeline)
-p79/utils/auth_refresh.py              (Playwright sign-in subprocess)
-p79/experiment/router.py               (RuleBasedRouter scaffold)
+configs/exp_v2_*.yaml                  per-site experiment configs
+scripts/queues/queue_phantom*.sh        chain orchestration
+scripts/maintenance/reset_vwa_sites.sh  DGX→quark PowerShell reset
+scripts/maintenance/experiment_watchdog.py  auto-clean + post-condition pipeline
+p79/utils/auth_refresh.py               Playwright sign-in subprocess
+p79/experiment/router.py                RuleBasedRouter scaffold
 ```
 
 ---
 
-## §8 What I'd say in a 5-min advisor report (pre-canned)
-
-> "Critical path A B0 部分已完成 — cls + red 5-mode (DOM/SoM/Vision/P-text/Phantom-SoM) 全部 fresh paper-grade clean (watchdog auto-clean 协议保证 100% pure data, no contamination).
->
-> Paper hook 升级到 4-fold drop-in property: Phantom-SoM cost ≈ DOM (regex filter), latency ~50% lower, signal AUROC ≥ baseline (router infra 复用), drop-one oracle 1.7-3.3pp.
->
-> Theory framework 落地到 3-axis hierarchical (representation × prompt × image), 含 8-channel image taxonomy + bidirectional modality. 2 个 codex mechanism diags (axis 2 + axis 3) verified, 14 case studies + §100 ground truth (occlusion -60pp OCR + numeric hijack 0→446 num_ids).
->
-> Section 1/2/3 paper drafts 已写 (3163 words). Section 4 figures FRESH (9 PNGs), prose 待 codex update. Section 5 evidence 90% ready, prose 待 codex 写.
->
-> 现在 B0 dom shopping single-mode pilot 跑中 (~16h, FPC disabled), B1 phantom_som cls 慢 (GPU contention).
->
-> Next 1-2 周: shopping baseline + phantom 5-mode (~$74), Section 4-5 prose update via codex (~3 prompts).
->
-> 决策待 align: router scope (Tier 1+2 推荐), Claude Opus budget (~$70), 投稿 timing (MLSys round 1 推荐, first-paper friendly venue)."
-
----
-
-## §9 学长 Onboarding Reading Order
-
-学长第一次读 paper / 进入 paper context 的推荐 reading order:
-
-### Quick path (~30 min)
-
-1. **(5 min)** `next_steps.md` §0 TL;DR + §8 5-min advisor pre-canned report
-   → 当前 status overview + paper hook
-2. **(5 min)** `paper_planning.md` §1 Hook + Tagline + §3 Findings 列表
-   → 4-fold drop-in property + 10 paper-grade findings
-3. **(10 min)** `docs/analysis/paper_drafts/section1_intro.md`
-   → Paper intro prose (786w, 含 4-fold drop-in framing)
-4. **(5 min)** Browse figures: fig1 venn + fig7 cost-SR + fig8 unique
-   → `results/phantom_paper/figures/fig{1,7,8}*.png`
-5. **(5 min)** `paper_planning.md` §6 Risks + §9 Advisor align checklist
-   → 顶刊 risks 主轴 + advisor align meeting #1 checklist
-
-### Deep dive (optional, ~60 min)
-
-- `paper_planning.md` §2 theory framework (3-axis × 8-channel × bidirectional × LLM rationale)
-- `paper_planning.md` §14 reviewer attack 预案 + §15 prior work comparison table
-- `paper_drafts/section3_definition.md` (Phantom-SoM 定义 + 2x2 ablation + token re-estimate)
-- `paper_drafts/section4_empirical_findings.md` (1725w stale, 数据结构理解, 待 codex update)
-- 实验笔记 §103 paper narrative + §100 SoM probe ground truth + §104 chronicle
-
-### Codex analysis docs (paper Section 5 evidence base)
-
-- `docs/analysis/phantom_paper/phantom_dom_vs_som_diagnostic.md` (axis 2 prompt)
-- `docs/analysis/phantom_paper/som_vs_phantom_som_diagnostic.md` (axis 3 image 8-ch)
-- `docs/analysis/phantom_paper/cross_site_pattern_consolidation.md` (cls vs red shift)
-- `docs/analysis/B1_capability_profile.md` (Section 7 cross-model prep)
-
-### Decision audit trail
-
-- `paper_planning.md` §19 Decision log (paper-strategic decisions + timestamp)
-
----
-
-## §10 Doc Update Workflow (新数据 → docs)
-
-> 当获得新 data / new finding / new decision 时, 该 update 哪些 docs.
-
-### A. 新 condition 数据 (e.g. B1 phantom_som cls done)
-
-```
-✅ 实验笔记: append chronicle entry (§104+ daily, Day-by-day finding)
-✅ next_steps §1 Active processes: mark done (remove or move to §3.1 done table)
-✅ next_steps §3.1 done table: add row (raw/adj SR + N + done time)
-✅ Run `make analysis` (one-shot **everything**, ~5-10min):
-   - per-run pipeline (rederive + reason-diag + cross-rep + confidence) on
-     all 8 paper-grade VWA runs (override `RUN_DIRS_PAPER_VWA` if needed)
-   - B0 vs B1 site comparison (cls + red → `b0_vs_b1_<site>/`)
-   - cross-condition aggregations: aggregate-cross-site + summary-collect +
-     routing-auroc
-   - 9 figures (含 fig2 bootstrap CI)
-   ↳ Quick path: `make figures` (~10s, 仅 fig regen, 不含 per-run + agg)
-   ↳ Debug path: 单独 `make analysis-per-run` / `compare-b0-b1-all` /
-     `aggregate-cross-site` / `summary-collect` / `routing-auroc`
-   ↳ 输出 path: `results/phantom_paper/{auroc_cross_condition.*, cross_site/,
-     run_summary_collect.json, figures/*.png + fig0c_drop_one_bootstrap_ci.csv}`
-     + `results/visualwebarena/phase1/b0_vs_b1_<site>/`
-   ↳ NOT 自动: GLM digest sidecar (watchdog) + 9 narrow ad-hoc diagnostics
-     (selflink_loop / vision_coordinate / search_over_browse / diag_pattern_match)
-🟡 next_steps §0 TL;DR: update if Critical path A 进度变化
-🟡 paper_planning §3 finding 列表: if new paper-grade finding emerges
-🟡 paper_planning §4 paper section status: if evidence quality 变化
-❌ paper drafts: 不动 (等 codex prose update batch)
-```
-
-### B. 新 figure (e.g. fig10 cumulative SR vs budget)
-
-```
-✅ next_steps §7 figures list: add new path
-✅ paper_planning §10 visualization plan: update 4-fig stack
-✅ paper_planning §12 figures inventory: add row
-🟡 paper_planning §3 finding: if figure reveals new finding
-✅ Makefile figures target: add fig10_*.py（同时 analyze-paper 自动 chain）
-```
-
-### B'. 新 cross-condition aggregator (e.g. paired permutation table)
-
-```
-✅ scripts/analysis/aggregate_*.py: implement
-✅ Makefile: 新 PHONY target + chain into analyze-paper
-✅ paper_planning §13.B: mark done with output path
-✅ next_steps §4 Data analysis backlog: mark ✅
-```
-
-### C. 新 codex analysis (e.g. trajectory diff diag)
-
-```
-✅ paper_planning §12 codex analyses inventory: add row
-✅ next_steps §7 references: add path
-🟡 paper_planning §3 finding 列表: if new finding from analysis
-🟡 paper_planning §2 theory framework: if mechanism discovery (e.g. axis refinement)
-🟡 paper_planning §19 decision log: if framing decision made
-✅ next_steps §4 codex queue: mark done
-```
-
-### D. 新 paper drafts (e.g. Section 5 prose done by codex)
-
-```
-✅ next_steps §2 paper section status: status update (drafted)
-✅ paper_planning §4 paper section status: same
-🟡 paper_planning §2/§3 strategy notes: shrink (move to drafts now in prose)
-✅ paper_planning §17 pre-submission checklist: tick off content completeness items
-❌ next_steps §0 TL;DR: 不变 (除非 strategic shift)
-```
-
-### E. 新 decision (e.g. advisor align meeting #1 outcome)
-
-```
-✅ paper_planning §19 decision log: append timestamped row
-✅ paper_planning §9 advisor align checklist: tick off items
-✅ next_steps §6 decisions pending: remove resolved items
-✅ 实验笔记: append decision entry with rationale
-🟡 paper_planning §5/§6/§7 (final scope / risks / cascade): if scope decision changes
-🟡 paper_planning §16 authorship: if authorship order finalized
-```
-
-### F. 新 infra fix (e.g. another bug fix or watchdog upgrade)
-
-```
-✅ next_steps §5 open issues: add or move to resolved
-✅ 实验笔记: append technical chronicle entry
-🟡 paper_planning §18 watchdog protocol + execution discipline: update 6-layer description
-🟡 paper_planning §14 reviewer attack: if fix addresses an attack scenario
-```
-
-### G. 新 finding (e.g. unexpected mechanism observation)
-
-```
-✅ paper_planning §3 finding 列表: add new entry
-✅ 实验笔记: append finding with date + evidence
-🟡 paper_planning §2 theory framework: if framework refinement needed
-🟡 paper_planning §19 decision log: if framing decision triggered
-🟡 next_steps §0 TL;DR: if changes paper hook
-```
-
-### H. 新 reviewer attack scenario discovered
-
-```
-✅ paper_planning §14 reviewer attack: add row
-✅ paper drafts (when writing prose): proactive defense in Section 4-5
-```
-
-### I. 新 paper section prose done
-
-```
-✅ next_steps §2 paper section status: status drafted
-✅ paper_planning §4 same
-✅ paper_planning §13 pending TODO: tick off
-🟡 paper_planning §3 finding: shrink (now in prose) or expand (new finding from prose writing)
-🟡 paper_planning §17 pre-submission checklist: tick off content items
-```
-
-### General principle
-
-- **Daily update**: next_steps.md (active state, codex queue, open issues)
-- **Weekly update**: paper_planning.md (strategy notebook, when finding/decision emerges)
-- **Append-only**: 实验笔记.md (chronicle, never overwrite, append §)
-- **Stable until prose write**: paper drafts (only update when Section X prose batch written)
-
-### Quick mental check before update
-
-```
-What changed? → 找对应类型 (A-I)
-Mark current status? → next_steps
-Add new strategic finding? → paper_planning
-Record what happened (history)? → 实验笔记 append §
-Modify final paper text? → paper drafts (only when prose batch writing)
-```
+> 📖 **Doc update workflow** (when X happens, update which docs) → moved to [[paper_planning#§20]]
