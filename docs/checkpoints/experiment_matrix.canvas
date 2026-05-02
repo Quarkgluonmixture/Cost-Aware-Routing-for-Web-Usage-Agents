@@ -10,7 +10,6 @@
       "color": "6",
       "text": "# Experiment Matrix — Paper Architecture\n*Instructional / 指导性 (NOT status tracking)*\n**Cascade DOM → P-text → P-SoM → SoM** + Vision · Phantom space **3 arms architectural** (P-text / P-prompt / P-SoM) · 5-mode cells scope · + Router · + Deploy"
     },
-
     {
       "id": "scopeglobalaaaaa1",
       "type": "text",
@@ -19,318 +18,319 @@
       "width": 3000,
       "height": 90,
       "color": "5",
-      "text": "**Sites (6)**: VWA cls 234 / red 210 / shop 466 + WA red 106 / shop 192 / sa 182 = ~1390 task/condition  |  **Models (3)**: B0 Qwen3-VL-235B + B1 Qwen3-VL-4B + Claude Opus 4.7  |  **Modes (5 cells)**: DOM / SoM / Vision / **P-text** / **P-SoM**  |  **Cells**: 6 × 3 × 5 = **90 baseline cells (~125K episode total)**. P-prompt = architectural 3rd phantom arm, NOT in 5-mode cells scope (theoretical / future work)"
+      "text": "**Benchmarks (2)**: **VWA** (visual-rich, 910 tasks) + **WA** (text-dominated, 480 tasks) = **6 sites · ~1390 task/condition**  |  **Models (3)**: B0 Qwen3-VL-235B + B1 Qwen3-VL-4B + Claude Opus 4.7  |  **Modes (5 cells)**: DOM / SoM / Vision / **P-text** / **P-SoM**  |  **Cells**: 6 × 3 × 5 = **90 baseline cells (~125K ep)**. P-prompt = architectural 3rd phantom arm, NOT in 5-mode cells (theoretical/future)"
     },
-
     {
       "id": "cascade_groupaaa1",
       "type": "group",
       "x": -100,
-      "y": 60,
+      "y": 420,
       "width": 3300,
       "height": 540,
       "color": "5",
       "label": "CASCADE — Token-monotonic representation upgrade path (paper §1 hook)"
     },
-
     {
       "id": "mode_dom00aaaaaa1",
       "type": "text",
       "x": -40,
-      "y": 140,
+      "y": 500,
       "width": 600,
       "height": 380,
       "color": "4",
       "text": "## DOM\n*origin baseline*\n\n• text: AXTree (hierarchical)\n• prompt: DOM\n• image: ✗\n• cost: ~3K text\n\n**测什么**: text-only baseline, hierarchical tree-traversal trajectory\n\n**Section 4** baseline\n**Phantom space**: ✅ origin (M1 ❌ M2 ❌)\n**5-mode cell**: ✅"
     },
-
     {
       "id": "mode_ptextaaaaaa1",
       "type": "text",
       "x": 660,
-      "y": 140,
+      "y": 500,
       "width": 600,
       "height": 380,
       "color": "1",
       "text": "## P-text\n*axis 1: text format swap (DOM-prompt 锚)*\nlegacy mode value `phantom_dom` (paper-facing name = P-text)\n\n• text: **`[SOM_MARKS]`** flat list (regex filter from AXTree)\n• prompt: DOM (unchanged)\n• image: ✗\n• cost: ~3K text\n\n**测什么**: 文本 ontology shift — hierarchical → flat indexed; M2 flat-list activation\n\n**Section 5** axis 1 mechanism (Format-swap subspace)\n**Phantom space**: ✅ arm 1 (M1 ❌ M2 ✅)\n**5-mode cell**: ✅"
     },
-
     {
       "id": "mode_psomaaaaaaa1",
       "type": "text",
       "x": 1360,
-      "y": 140,
+      "y": 500,
       "width": 600,
       "height": 380,
       "color": "6",
       "text": "## P-SoM ⭐\n*axis 1+2 compound (cube center, paper hero)*\nlegacy mode value `phantom_som` (paper-facing name = P-SoM)\n\n• text: `[SOM_MARKS]`\n• prompt: SoM-style\n• image: ✗\n• cost: ~3K text\n\n**测什么**: M1 ⊕ M2 compound activation — visual prompting w/o image + flat-list scanning. Emergent unique tasks (B0 red 3 tasks 既不在 P-text 也不在 P-prompt)\n\n**Section 5** paper hero, mechanism centerpiece\n**Phantom space**: ✅ arm 3 (M1 ✅ M2 ✅ compound)\n**5-mode cell**: ✅"
     },
-
     {
       "id": "mode_som000aaaaa1",
       "type": "text",
       "x": 2060,
-      "y": 140,
+      "y": 500,
       "width": 600,
       "height": 380,
       "color": "3",
       "text": "## SoM\n*image-on cube endpoint (NOT phantom)*\n\n• text: `[SOM_MARKS]`\n• prompt: SoM\n• image: ✓ (annotated screenshot)\n• cost: ~3K text + ~1.5K image\n\n**测什么**: full multimodal baseline — paper baseline 比较锚\n\n**Section 4** baseline\n**Section 5** axis 3 endpoint (vs P-SoM isolate image effect)\n**Phantom space**: ❌ image-on out-of-space\n**5-mode cell**: ✅"
     },
-
     {
       "id": "mode_vision0aaaa1",
       "type": "text",
       "x": 2660,
-      "y": 140,
+      "y": 500,
       "width": 540,
       "height": 380,
       "color": "5",
       "text": "## Vision\n*image-only mode (cube 之外, axis 1 = no text)*\n\n• text: ∅\n• prompt: SoM-like\n• image: ✓ (raw screenshot)\n• cost: ~1.5K image\n\n**测什么**: pure visual baseline — counter-evidence (Phantom 不是 mode-specific artifact, Vision 也 affected)\n\n**Section 4** baseline (3rd axis)\n**Phantom space**: ❌ cube 之外\n**5-mode cell**: ✅"
     },
-
     {
       "id": "cascade_arrow1aa1",
       "type": "text",
       "x": 605,
-      "y": 280,
+      "y": 640,
       "width": 60,
       "height": 100,
       "color": "1",
       "text": "**axis 1**\n→\n*text*"
     },
-
     {
       "id": "cascade_arrow2aa1",
       "type": "text",
       "x": 1305,
-      "y": 280,
+      "y": 640,
       "width": 60,
       "height": 100,
       "color": "2",
       "text": "**axis 2**\n→\n*prompt*"
     },
-
     {
       "id": "cascade_arrow3aa1",
       "type": "text",
       "x": 2005,
-      "y": 280,
+      "y": 640,
       "width": 60,
       "height": 100,
       "color": "3",
       "text": "**axis 3**\n→\n*image*"
     },
-
     {
       "id": "phantom_groupaaa1",
       "type": "group",
       "x": -100,
-      "y": 640,
+      "y": 1000,
       "width": 2050,
       "height": 460,
       "color": "5",
       "label": "PHANTOM ROUTING SPACE — 3 arms architectural (paper §2 Zoom 1, boundary: no annotated image)"
     },
-
     {
       "id": "phantom_arm1aaaa1",
       "type": "text",
       "x": -40,
-      "y": 720,
+      "y": 1080,
       "width": 600,
       "height": 340,
       "color": "1",
       "text": "## Arm 1: P-text\n*axis 1 alone (M2 flat-list)*\n\nFormat-swap subspace — DOM-prompt + [SOM_MARKS] flat list\n\nB0 red drop-one +3.81pp [0.95, 5.24] sig\nB0 cls drop-one +3.42pp sig\n\n**5-mode cell**: ✅"
     },
-
     {
       "id": "phantom_arm2aaaa1",
       "type": "text",
       "x": 660,
-      "y": 720,
+      "y": 1080,
       "width": 600,
       "height": 340,
       "color": "2",
       "text": "## Arm 2: P-prompt\n*axis 2 alone (M1 visual-prompting w/o image)*\n\nMirage subspace — AXTree + SoM-prompt (visual prompting w/o image)\n\nB0 red drop-one +2.86pp [0.95, 5.24] sig\n\n**5-mode cell**: ❌ NOT in scope\n*Architectural completion (paper §2 Zoom 1 deductive completeness); future work / mechanism reference*"
     },
-
     {
       "id": "phantom_arm3aaaa1",
       "type": "text",
       "x": 1360,
-      "y": 720,
+      "y": 1080,
       "width": 540,
       "height": 340,
       "color": "6",
       "text": "## Arm 3: P-SoM ⭐\n*axis 1+2 compound (M1 ⊕ M2)*\n\nCompound — SoM-prompt + [SOM_MARKS]\n\nB0 red drop-one +3.33pp sig + 3 unique emergent tasks\nB0 cls drop-one +2.56pp sig\n\n**Cube center, paper hero**\n**5-mode cell**: ✅"
     },
-
     {
       "id": "fold4_groupaaaaaa",
       "type": "group",
       "x": 1980,
-      "y": 640,
+      "y": 1000,
       "width": 1220,
       "height": 460,
       "color": "4",
       "label": "4-FOLD DROP-IN PROPERTY (3 arms 共享 by construction)"
     },
-
     {
       "id": "fold4_card_aaaaa1",
       "type": "text",
       "x": 2030,
-      "y": 720,
+      "y": 1080,
       "width": 1120,
       "height": 340,
       "color": "5",
       "text": "## 3 phantom arms 共享:\n\n**(a) cost ≈ DOM** — no image embedding tax (regex filter, ~3K text)\n**(b) latency ~50% lower** — no image inference (cls 4×)\n**(c) signal AUROC ≥ baseline** ✅ — emergent (5/5 phantom usable, red P-text 0.793 = 5-mode max)\n**(d) drop-one oracle 1.7-3.8pp per arm** ✅ — emergent (B0 red CI 全 exclude 0)\n\n*(a)(b) definitional / (c)(d) emergent — definition-then-validation 双层*\n\n**Strategic value**: phantom-class deployment — same routing infra, ~50% latency, signal stays usable"
     },
-
     {
       "id": "section_groupaaa1",
       "type": "group",
       "x": -100,
-      "y": 1140,
+      "y": 1500,
       "width": 3300,
       "height": 600,
       "color": "4",
       "label": "PAPER SECTION → CELL MAPPING (which experiments serve which section)"
     },
-
     {
       "id": "section4_baseline",
       "type": "text",
       "x": -40,
-      "y": 1220,
+      "y": 1580,
       "width": 1100,
       "height": 220,
       "color": "5",
       "text": "## §4 Empirical Findings (baseline)\n*needs*: DOM / SoM / Vision × 6 sites × 3 models = **54 baseline cells**\n\nCross-mode SR comparison + cost/latency/AUROC table.\nFigures: SR per mode, cost-SR Pareto, regional carbon."
     },
-
     {
       "id": "section5_mechaani",
       "type": "text",
       "x": 1080,
-      "y": 1220,
+      "y": 1580,
       "width": 1080,
       "height": 220,
       "color": "6",
       "text": "## §5 Mechanism (phantom arms) ⭐\n*needs*: P-text + P-SoM × 6 sites × 3 models = **36 phantom cells**\n\nM1/M2 activation analysis + drop-one oracle per arm + axis ablation isolation + lit anchors (Mirage / Scaffold / Sclar / Q5 bidirectional).\n\n**P-prompt** architectural 3rd arm — not run in 5-mode but cite for §2 Zoom 1 completeness."
     },
-
     {
       "id": "section7_general",
       "type": "text",
       "x": 2180,
-      "y": 1220,
+      "y": 1580,
       "width": 1020,
       "height": 220,
       "color": "5",
       "text": "## §7 Generalization\n*needs*: cross-site (VWA + WA = 6 sites) × cross-model (B0 + B1 + Claude)\n\nB1 Qwen3-VL-4B = capability scaling axis.\nClaude Opus 4.7 = model family generalization.\nWA = benchmark family generalization."
     },
-
     {
       "id": "section6_routing0",
       "type": "text",
       "x": -40,
-      "y": 1480,
+      "y": 1840,
       "width": 1620,
       "height": 220,
       "color": "3",
       "text": "## §6 Routing — paper真正最值钱工作量 ⭐\n*needs*: routing infra + per-task feature extraction + multi-arm decision\n\n**Signals to route on**:\n• disagreement-cluster (cross-mode error pattern per task)\n• capability (B0 vs B1 vs Claude affinity per task type)\n• category (task-type intent classifier)"
     },
-
     {
       "id": "section8_susstain",
       "type": "text",
       "x": 1680,
-      "y": 1480,
+      "y": 1840,
       "width": 1520,
       "height": 220,
       "color": "5",
       "text": "## §8 Discussion (sustainability + Green AI)\n*multi-metric Pareto: cost / latency / carbon*\n\nfig9 regional carbon sensitivity (45 region, India 632 / Norway 29 g/kWh).\nB1 measured energy + B0 token-based estimator.\n4-fold drop-in summary."
     },
-
     {
       "id": "router_groupaaaaa",
       "type": "group",
       "x": -100,
-      "y": 1780,
+      "y": 2140,
       "width": 1620,
       "height": 460,
       "color": "3",
       "label": "+ ROUTER — Build router using disagreement-cluster / capability / category signals"
     },
-
     {
       "id": "router_signaaaaa1",
       "type": "text",
       "x": -40,
-      "y": 1860,
+      "y": 2220,
       "width": 700,
       "height": 360,
       "color": "5",
       "text": "## Routing signals\n\n**1. Disagreement-cluster**\n  per-task pattern of B0/B1/mode 错误一致 vs 分歧 → 9-cat clusters → arm 选\n\n**2. Capability**\n  per-task affinity score (B0 235B vs B1 4B vs Claude); routes harder tasks 强 model\n\n**3. Category**\n  task-type intent classifier (info-seek / transact / N/A / etc.) → arm 偏好"
     },
-
     {
       "id": "router_archaaaaa",
       "type": "text",
       "x": 700,
-      "y": 1860,
+      "y": 2220,
       "width": 760,
       "height": 360,
       "color": "5",
       "text": "## Routing architecture\n\n**Tier 1**: offline supervised oracle\n  TF-IDF (task instruction) + binary {has_ref_image, has_finish_string_match} → LR / RF\n  *predicts arm choice from task features alone*\n\n**Tier 2**: online first-step trigger\n  cheap mode (DOM) step 1 → trigger signal (response confidence / action diversity / behavioral signals) → escalate to expensive arm\n  *no test-time leakage (step-1 obs ≠ task feature)*"
     },
-
     {
       "id": "deploy_groupaaaaa",
       "type": "group",
       "x": 1580,
-      "y": 1780,
+      "y": 2140,
       "width": 1620,
       "height": 460,
       "color": "2",
       "label": "+ DEPLOY — Actually run agent with router, measure cost/SR/latency vs best-single-mode"
     },
-
     {
       "id": "deploy_runaaaaaaa",
       "type": "text",
       "x": 1640,
-      "y": 1860,
+      "y": 2220,
       "width": 760,
       "height": 360,
       "color": "5",
       "text": "## Deploy: actual end-to-end agent run\n\n**Setup**:\n• router 选 arm per task\n• runner instantiates chosen arm (DOM / SoM / Vision / P-text / P-SoM)\n• run agent end-to-end on test split\n\n**Measure**:\n• SR (vs best-single-mode oracle)\n• cost (token + electricity)\n• P95 latency\n• carbon (regional sensitivity)"
     },
-
     {
       "id": "deploy_compaaaaa",
       "type": "text",
       "x": 2400,
-      "y": 1860,
+      "y": 2220,
       "width": 760,
       "height": 360,
       "color": "5",
       "text": "## Deploy: comparison baseline\n\n**Beat what?**\n• random arm pick\n• best-single-mode (e.g. always SoM)\n• rule-based (e.g. has_image → Vision)\n• oracle (upper bound, knows true best per task)\n• learned router (Tier 1 + Tier 2)\n\n**Pareto**: cost vs SR vs latency curve\n**Cumulative SR vs Budget**: cost-aware 顶刊套路 ⭐"
     },
-
     {
       "id": "navigation_aaaaa1",
       "type": "text",
       "x": -100,
-      "y": 2270,
+      "y": 2630,
       "width": 3300,
       "height": 90,
       "color": "6",
       "text": "**Cross-canvas navigation**: paper §2 Evidence ⫨ Explanation 双 layer detail → `paper_section2_framework.canvas` | live status → `cells.base` views | strategy 脉络 → `paper_planning.md` §1+§2+§5+§8 | doc workflow → `paper_planning.md §20`"
+    },
+    {
+      "id": "bench_groupzaaaa1",
+      "type": "group",
+      "x": -100,
+      "y": 10,
+      "width": 3300,
+      "height": 380,
+      "color": "5",
+      "label": "BENCHMARKS (2 families) × SITES (6) — paper §7 cross-benchmark generalization"
+    },
+    {
+      "id": "bench_vwaaaaaaaa1",
+      "type": "text",
+      "x": -40,
+      "y": 90,
+      "width": 1620,
+      "height": 280,
+      "color": "4",
+      "text": "## VWA — VisualWebArena (visual-rich)\n*image-heavy real web tasks, 67% visual subset (manual audit)*\n\n| Site | N tasks | Domain |\n|---|---:|---|\n| **classifieds** | 234 | Craigslist-like classifieds (vehicle / job posts) |\n| **reddit** | 210 | Reddit forum (subscribe / comment / search) |\n| **shopping** | 466 | Magento e-commerce (cart / checkout / catalog) |\n\n**Site total**: 910 tasks · **non-visual subset**: ~33%"
+    },
+    {
+      "id": "bench_waaaaaaaaaa1",
+      "type": "text",
+      "x": 1580,
+      "y": 90,
+      "width": 1620,
+      "height": 280,
+      "color": "3",
+      "text": "## WA — WebArena (text-dominated)\n*image-light task suite, 100% non-visual (benchmark field 贯穿全链路)*\n\n| Site | N tasks | Domain |\n|---|---:|---|\n| **shopping** | 192 | Magento (e-commerce baseline) |\n| **shopping_admin** | 182 | Magento admin panel (admin/admin1234) |\n| **reddit** | 106 | Reddit forum |\n\n**Site total**: 480 tasks · cross-bench reset mechanism 暂未实现 (issue backlog)"
     }
   ],
-
   "edges": [
     {
       "id": "edge_dom_to_ptextt",
