@@ -51,3 +51,9 @@ external_code/
 .cache/
 .claude/
 Claude_code/
+
+# Live state — synced via Tailscale rsync, NOT git
+# (PLAYBOOK is regenerated every 30min/2h by GLM cron; pushing through git
+# would spam history with 60+ commits/day; Windows-side Task Scheduler scp
+# pulls fresh content every 1-2min over Tailscale instead)
+docs/checkpoints/PLAYBOOK.md
