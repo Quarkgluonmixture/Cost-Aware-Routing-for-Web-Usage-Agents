@@ -19,6 +19,7 @@ import json
 import re
 import subprocess
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
@@ -84,6 +85,19 @@ def get_cron_job_status() -> list[dict]:
         "glm-refresh-playbook-s2": "glm_playbook_s2.log",
         "glm-refresh-playbook": "glm_playbook.log",
     }
+    # Failure markers (in tail) — keep this list grep-able for future maintenance.
+    # `notify_on_fail.sh` writes "❌ P79 cron failed" to ntfy not log, so we detect
+    # the actual in-log markers from script aborts / make failures / GLM errors.
+    fail_patterns = [
+        r"❌ GLM synth failed, aborting",       # glm_playbook_refresh.py abort
+        r"make: \*\*\* \[Makefile[^\]]+\] Error \d+",  # make rule failure
+        r"⚠️\s+GLM call failed:",                # GLM upstream error (timeout/HTTP 5xx)
+        r"^Traceback \(most recent call last\)", # Python exception
+        r"❌ P79 cron failed",                   # legacy / external script
+        r"^Exit:\s*[1-9]",                       # explicit exit code
+    ]
+    fail_re = re.compile("|".join(fail_patterns), re.MULTILINE)
+
     for name, fname in log_files.items():
         path = CRON_LOG_DIR / fname
         if not path.exists():
@@ -91,13 +105,23 @@ def get_cron_job_status() -> list[dict]:
             continue
         mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
         text = path.read_text(encoding="utf-8", errors="ignore")[-3000:]
-        # detect failure marker
-        if "❌ P79 cron failed" in text or re.search(r"^Exit:\s*[1-9]", text, re.MULTILINE):
-            status = "❌ recent failure"
-        elif "Updated" in text or "no change" in text:
-            status = "✅ ok"
-        else:
+        # Detect status by looking at the LAST attempt in the tail.
+        # Strategy: find positions of all fail markers + all success markers,
+        # whichever is more recent (later in text) wins.
+        last_fail_pos = -1
+        for m in fail_re.finditer(text):
+            last_fail_pos = max(last_fail_pos, m.start())
+        last_ok_pos = -1
+        for marker in ("Updated 0/", "Updated 1/", "Updated 2/", "✏️  Updated docs/checkpoints/PLAYBOOK.md"):
+            idx = text.rfind(marker)
+            if idx > last_ok_pos:
+                last_ok_pos = idx
+        if last_fail_pos == -1 and last_ok_pos == -1:
             status = "🟡 unclear"
+        elif last_fail_pos > last_ok_pos:
+            status = "❌ recent failure"
+        else:
+            status = "✅ ok"
         jobs.append({
             "name": name,
             "last_run": mtime.isoformat(timespec="minutes"),
@@ -323,10 +347,29 @@ def call_glm(context: str, section: str = "both") -> Optional[tuple[Optional[str
         {"role": "system", "content": "You synthesize personal-project playbook sections from machine-aggregated data. Output Chinese-mixed markdown, follow exact format."},
         {"role": "user", "content": prompt},
     ]
-    try:
-        raw = _call_glm_chat(glm_cfg, messages, timeout_s=90).strip()
-    except Exception as e:
-        print(f"⚠️  GLM call failed: {e}", file=sys.stderr)
+    # Larger timeout for combined §1+§2 synthesis (more context, GLM thinking
+    # model needs more time). §2-only is leaner and 90s usually suffices.
+    timeout_s = 180 if section == "both" else 90
+    # Retry on transient GLM upstream errors (timeout / HTTP 5xx). Most failures
+    # at 21:00 BST window are GLM-side flakes; a single retry typically succeeds.
+    raw = None
+    last_err: Optional[Exception] = None
+    for attempt in range(3):
+        try:
+            raw = _call_glm_chat(glm_cfg, messages, timeout_s=timeout_s).strip()
+            if attempt > 0:
+                print(f"✅ GLM call succeeded on retry #{attempt}", file=sys.stderr)
+            break
+        except Exception as e:
+            last_err = e
+            backoff = 5 * (3 ** attempt)  # 5s, 15s, 45s — total ~65s worst case
+            print(f"⚠️  GLM call attempt {attempt+1}/3 failed: {e}; "
+                  f"{'retrying in ' + str(backoff) + 's' if attempt < 2 else 'no more retries'}",
+                  file=sys.stderr)
+            if attempt < 2:
+                time.sleep(backoff)
+    if raw is None:
+        print(f"⚠️  GLM call failed after 3 attempts: {last_err}", file=sys.stderr)
         return None
 
     s1_body, s2_body = None, None

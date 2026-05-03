@@ -103,17 +103,29 @@ def serialize_frontmatter(fm: dict) -> str:
     return yaml.safe_dump(fm, allow_unicode=True, sort_keys=False, default_flow_style=False).strip()
 
 
-def find_matching_runs(baseline: str, site: str, mode: str, benchmark: str = "vwa") -> list[Path]:
-    """Find condition_summary_v2.json matching (baseline, site, mode, benchmark).
+def find_matching_runs(baseline: str, site: str, mode: str, benchmark: str = "vwa") -> list[dict]:
+    """Find run condition dirs matching (baseline, site, mode, benchmark).
 
     Site is anchored against `_<site>_<8-digit>` to avoid `shopping` substring
     collision with `shopping_admin` run dirs.
+
+    Returns list of dicts (one per matched condition dir), each with:
+      - cond_dir: Path to condition directory
+      - summary_path: Path to condition_summary_v2.json, or None if not yet generated
+      - run_id: outer run dir name (e.g. B1_phantom_prompt_classifieds_20260501)
+      - observation_mode: extracted from summary if available, else from condition_meta.json
+      - episode_count: count of episode_*_summary_v2.json files in episodes/
+        (proxy for in-flight progress when full summary not yet generated)
+      - is_inflight: True if no condition_summary_v2.json but episodes are accumulating
+
+    Includes BOTH finalized runs (with summary) and in-flight runs (only
+    condition_meta.json + partial episodes/). Caller (update_cell) handles each case.
     """
     site_seg = SITE_NORM.get(site, site)
     cond_keywords = MODE_TO_COND.get(mode, [mode.lower()])
     phase_dir = PHASE1_DIRS.get(benchmark)
 
-    matches = []
+    matches: list[dict] = []
     if phase_dir is None or not phase_dir.exists():
         return matches
     site_pat = re.compile(rf"_{re.escape(site_seg)}_\d{{8}}")
@@ -128,23 +140,66 @@ def find_matching_runs(baseline: str, site: str, mode: str, benchmark: str = "vw
             if not cond_dir.is_dir():
                 continue
             summary = cond_dir / "condition_summary_v2.json"
-            if not summary.exists():
+            meta = cond_dir / "condition_meta.json"
+
+            # Resolve observation_mode from summary (preferred) or condition_meta.
+            obs_mode = ""
+            if summary.exists():
+                try:
+                    d = json.loads(summary.read_text(encoding="utf-8"))
+                    obs_mode = d.get("observation_mode", "")
+                except Exception:
+                    pass
+            if not obs_mode and meta.exists():
+                try:
+                    md = json.loads(meta.read_text(encoding="utf-8"))
+                    obs_mode = md.get("observation_mode", md.get("mode", ""))
+                except Exception:
+                    pass
+
+            # Filter by mode (observation_mode field OR cond_dir name keyword match)
+            if not (obs_mode in cond_keywords
+                    or any(k in cond_dir.name for k in cond_keywords)):
                 continue
-            # Match condition by observation_mode field (more reliable than dir name)
-            try:
-                d = json.loads(summary.read_text(encoding="utf-8"))
-            except Exception:
+
+            # Count in-flight progress via episodes/ dir
+            episodes_dir = cond_dir / "episodes"
+            episode_count = 0
+            if episodes_dir.exists():
+                episode_count = sum(1 for _ in episodes_dir.glob("*_summary_v2.json"))
+
+            # Skip empty-scaffolded conditions (condition_meta.json present but
+            # no episodes ever ran — typically launch-prepared-then-cancelled).
+            # Only count real matches: finalized (summary exists) or in-flight
+            # with actual episode progress.
+            if not summary.exists() and episode_count == 0:
                 continue
-            obs_mode = d.get("observation_mode", "")
-            if obs_mode in cond_keywords or any(k in cond_dir.name for k in cond_keywords):
-                matches.append(summary)
+
+            matches.append({
+                "cond_dir": cond_dir,
+                "summary_path": summary if summary.exists() else None,
+                "run_id": run_dir.name,
+                "observation_mode": obs_mode,
+                "episode_count": episode_count,
+                "is_inflight": not summary.exists() and episode_count > 0,
+            })
     return matches
 
 
-def latest_summary(paths: list[Path]) -> Optional[Path]:
-    if not paths:
+def latest_match(matches: list[dict]) -> Optional[dict]:
+    """Pick the most-recent match. Prefer finalized (has summary) over in-flight
+    when both exist for same run_id; otherwise pick by recency (mtime of summary
+    or cond_dir for in-flight).
+    """
+    if not matches:
         return None
-    return max(paths, key=lambda p: p.stat().st_mtime)
+
+    def sort_key(m: dict):
+        if m["summary_path"]:
+            return (1, m["summary_path"].stat().st_mtime)
+        return (0, m["cond_dir"].stat().st_mtime)
+
+    return max(matches, key=sort_key)
 
 
 def detect_pid(run_id: str) -> Optional[int]:
@@ -219,21 +274,27 @@ def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> 
 
     benchmark = fm.get("benchmark", "vwa")
     matches = find_matching_runs(baseline, site, mode, benchmark)
-    summary_path = latest_summary(matches)
-    if not summary_path:
+    match = latest_match(matches)
+    if not match:
         return False, f"no matching run for {benchmark}/{baseline}/{site}/{mode}"
 
-    try:
-        d = json.loads(summary_path.read_text(encoding="utf-8"))
-    except Exception as e:
-        return False, f"summary parse error: {e}"
-
-    episodes = d.get("episodes", 0)
     expected_n = EXPECTED_N.get((benchmark, site), fm.get("n", 234))
-    sr = d.get("success_rate")
-    new_run_id = summary_path.parent.parent.name  # results/.../<run_id>/<cond>/condition_summary_v2.json
+    new_run_id = match["run_id"]
     prev_run_id = fm.get("last_run_id")
     is_new_run = bool(prev_run_id) and prev_run_id != new_run_id
+
+    # Resolve episodes + sr from finalized summary (preferred) or in-flight episodes/ count.
+    if match["summary_path"]:
+        try:
+            d = json.loads(match["summary_path"].read_text(encoding="utf-8"))
+        except Exception as e:
+            return False, f"summary parse error: {e}"
+        episodes = d.get("episodes", 0)
+        sr = d.get("success_rate")
+    else:
+        # In-flight: derived progress from episodes/ count, no aggregate sr yet
+        episodes = match["episode_count"]
+        sr = None
 
     new_fm = dict(fm)
     changed_fields = []
@@ -281,6 +342,11 @@ def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> 
     elif episodes < expected_n and new_fm.get("status") == "pending":
         new_fm["status"] = "active"
         changed_fields.append("status→active")
+        # Try to recover PID for first-time pending→active flip
+        recovered_pid = detect_pid(new_run_id)
+        if recovered_pid:
+            new_fm["pid"] = recovered_pid
+            changed_fields.append(f"pid→{recovered_pid}")
 
     if sr is not None:
         sr_pct = round(sr * 100, 2)
