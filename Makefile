@@ -167,6 +167,7 @@ _per_run_all:
 _aggregate:
 	$(MAKE) aggregate-sr-fp
 	$(MAKE) phantom-lift
+	$(MAKE) phantom-meta
 	$(MAKE) routing-auroc
 	$(MAKE) aggregate-cross-site
 	$(MAKE) summary-collect
@@ -197,6 +198,9 @@ _figures:
 	$(PYTHON) scripts/analysis/figures/fig3d_cost_sr_frontier.py
 	$(PYTHON) scripts/analysis/figures/fig3_regional_carbon.py
 	$(PYTHON) scripts/analysis/figures/fig_capability_b0_b1.py
+	$(PYTHON) scripts/analysis/figures/fig_forest_drop_one.py
+	$(PYTHON) scripts/analysis/figures/fig_meta_forest.py
+	$(PYTHON) scripts/analysis/figures/fig_phantom_structure_venn.py
 
 # Live evidence status snapshot (read-only summary of aggregator outputs)
 _status:
@@ -224,9 +228,15 @@ routing-auroc:
 	$(PYTHON) scripts/analysis/aggregate_routing_auroc.py
 
 # Phantom routing lift — Section 1/4 paper hook evidence
-# (3-mode oracle vs 5-mode oracle ceiling lift + bootstrap CI + decomposition)
+# (3-mode oracle vs 5-mode oracle ceiling lift + bootstrap CI + decomposition
+#  + Bonferroni/Holm/BH/TOST per pre-registered family, T0a)
 phantom-lift:
 	$(PYTHON) scripts/analysis/aggregate_phantom_lift.py
+
+# Cross-cell meta-analysis (DerSimonian-Laird random-effect, T0c)
+# Requires phantom-lift output; produces meta_phantom_lift.{md,csv}
+phantom-meta:
+	$(PYTHON) scripts/analysis/aggregate_phantom_meta.py
 
 # ---- Layered analysis (paper_planning §3 framework, paper-grade B0 only) ----
 
@@ -333,6 +343,9 @@ figures:
 	$(PYTHON) scripts/analysis/figures/fig0c_phantom_lift_bars.py
 	$(PYTHON) scripts/analysis/figures/fig0g_routing_auroc_heatmap.py
 	$(PYTHON) scripts/analysis/figures/fig2_micro_divergence_heatmap.py
+	$(PYTHON) scripts/analysis/figures/fig_forest_drop_one.py
+	$(PYTHON) scripts/analysis/figures/fig_meta_forest.py
+	$(PYTHON) scripts/analysis/figures/fig_phantom_structure_venn.py
 	@echo "Figures regenerated → results/phantom_paper/figures/"
 
 # ---- Background tasks ----

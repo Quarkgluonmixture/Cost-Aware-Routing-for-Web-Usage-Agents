@@ -8,7 +8,7 @@
       "width": 3100,
       "height": 140,
       "color": "6",
-      "text": "# Experiment Matrix — Paper Architecture\n*Instructional / 指导性 (NOT status tracking)*\n**Cascade DOM → P-text → P-SoM → SoM** + Vision · Phantom space **3 arms architectural** (P-text / P-prompt / P-SoM) · 6-mode cell scope (5-mode cascade narrative + P-prompt 4-corner diamond) · + Router · + Deploy"
+      "text": "# Experiment Matrix — Paper Architecture\n*Instructional / 指导性 (NOT status tracking)*\n**Cascade DOM → P-text → P-SoM → SoM** + Vision · Phantom space architectural: 4 corners (DOM origin + 3 non-DOM: P-text axis-1 / P-prompt axis-2 / P-SoM compound) · **Paper framing (2026-05-03 reframe)**: **P-SoM = deployment hero (gating, strict)**; P-text/P-prompt = structural ablation arms (low-threshold non-overlap evidence) · 6-mode cell scope · + Router · + Deploy. See [[preregistration]] / [[paper_section2_framework]]"
     },
     {
       "id": "scopeglobalaaaaa1",
@@ -148,7 +148,7 @@
       "width": 1960,
       "height": 460,
       "color": "5",
-      "label": "PHANTOM ROUTING SPACE — 3 arms architectural (paper §2 Zoom 1, boundary: no annotated image)"
+      "label": "PHANTOM ROUTING SPACE — 4 architectural corners (paper §2 Zoom 1, boundary: no annotated image) · paper framing (2026-05-03): P-SoM hero + P-text/P-prompt structural ablation"
     },
     {
       "id": "phantom_arm1aaaa1",
@@ -158,7 +158,7 @@
       "width": 580,
       "height": 340,
       "color": "1",
-      "text": "## Arm 1: P-text\n*axis 1 alone (M2 flat-list)*\n\nFormat-swap subspace — DOM-prompt + [SOM_MARKS] flat list\n\nB0 red drop-one +3.81pp [0.95, 5.24] sig\nB0 cls drop-one +3.42pp sig\n\n**Cell scope**: ✅"
+      "text": "## Arm 1: P-text — Structural Ablation\n*axis 1 alone (M2 flat-list)*\n\nFormat-swap subspace — DOM-prompt + [SOM_MARKS] flat list\n\nB0 red drop-one +3.81pp [0.95, 5.24] · B0 cls +3.42pp\n\n**Paper role (2026-05-03 reframe)**: structural ablation — evidences phantom space has axis 1 (M2) empirical structure (NOT deployment routing arm)\n**Test (H3 axis 1)**: bootstrap CI on \\|P-text ∖ P-SoM\\| > 0\n**Cell scope**: ✅"
     },
     {
       "id": "phantom_arm2aaaa1",
@@ -168,7 +168,7 @@
       "width": 580,
       "height": 340,
       "color": "2",
-      "text": "## Arm 2: P-prompt\n*axis 2 alone (M1 visual-prompting w/o image)*\n\nMirage subspace — AXTree + SoM-prompt (visual prompting w/o image)\n\nB0 red drop-one +2.86pp [0.95, 5.24] sig\n\n**Cell scope**: ✅ (B0 cls active + B0 red pid 2075552 active + B0 shop pending; B1 Tier 2 chain queued)\n*Paper §2 4-corner diamond completeness — axis 2 alone ablation @ AXTree 锚点*"
+      "text": "## Arm 2: P-prompt — Structural Ablation\n*axis 2 alone (M1 visual-prompting w/o image)*\n\nMirage subspace — AXTree + SoM-prompt (visual prompting w/o image)\n\nB0 red drop-one +2.86pp [0.95, 5.24] sig\n\n**Paper role (2026-05-03 reframe)**: structural ablation — evidences phantom space has axis 2 (M1) empirical structure (NOT deployment routing arm)\n**Test (H3 axis 2)**: bootstrap CI on \\|P-prompt ∖ P-SoM\\| > 0\n**Cell scope**: ✅ (B0 cls active + B0 red active + B0 shop pending; B1 Tier 2 chain queued)\n*Paper §2 4-corner diamond completeness — axis 2 alone ablation @ AXTree 锚点*"
     },
     {
       "id": "phantom_arm3aaaa1",
@@ -178,7 +178,7 @@
       "width": 580,
       "height": 340,
       "color": "6",
-      "text": "## Arm 3: P-SoM ⭐\n*axis 1+2 compound (M1 ⊕ M2)*\n\nCompound — SoM-prompt + [SOM_MARKS]\n\nB0 red drop-one +3.33pp sig + 3 unique emergent tasks\nB0 cls drop-one +2.56pp sig\n\n**Cube center, paper hero**\n**Cell scope**: ✅"
+      "text": "## Arm 3: P-SoM ⭐ — DEPLOYMENT HERO\n*axis 1+2 compound (M1 ⊕ M2)*\n\nCompound — SoM-prompt + [SOM_MARKS]\n\nB0 red drop-one +3.33pp sig + 3 unique emergent tasks\nB0 cls drop-one +2.56pp sig\n\n**Paper role (2026-05-03 reframe)**: deployment hero — gating paper hook\n**Test (H1)**: pooled meta sig + ≥75% cells Holm-sig + magnitude ≥1pp + TOST equivalence δ=1pp rejected\n**Cube center**, M1⊕M2 compound state nonlinear emergent\n**Cell scope**: ✅"
     },
     {
       "id": "fold4_groupaaaaaa",
@@ -188,7 +188,7 @@
       "width": 1300,
       "height": 460,
       "color": "4",
-      "label": "4-FOLD DROP-IN PROPERTY (3 arms 共享 by construction)"
+      "label": "4-FOLD DROP-IN PROPERTY ((a)(b)(c) by construction for all 4 corners; (d) drop-one ≥1pp pre-registered for P-SoM hero only)"
     },
     {
       "id": "fold4_card_aaaaa1",

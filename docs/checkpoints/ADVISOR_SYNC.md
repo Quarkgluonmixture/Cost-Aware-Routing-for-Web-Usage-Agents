@@ -6,18 +6,55 @@
 
 ---
 
-## 1. Phantom space + 当前 framework
+## 1. Paper 现在怎么想的 (跟学长讲什么)
 
-### 1.1 Phantom routing space (3 arms 共享 4-fold drop-in)
+### 1.1 大方向 (5/3 重新整理)
 
-- **Boundary 定义**: `"no annotated image"` (axis 3 = ✗) — 不是 "matched parsing"
-- **3 arms**: P-text (axis 1 alone @ DOM-prompt 锚点) / P-prompt (axis 2 alone @ AXTree 锚点) / P-SoM (axis 1+2 compound, **paper hero**)
-- **4-fold drop-in property**:
-  - (a) cost ≈ DOM (no image embedding tax, `[SOM_MARKS]` 是 AXTree regex filter, ~3K text both)
-  - (b) latency ~50% lower (no image inference, cls 4×)
-  - (c) signal AUROC ≥ baseline (5/5 phantom `overall_usable=True`, red P-text 0.793 = 5-mode max)
-  - (d) drop-one oracle 1.7-3.8pp positive per arm (B0 red CI 全 exclude 0)
-- **数据 trigger** (B0 reddit 唯一 6-mode 完整 cell): P-text +3.81 / P-SoM +3.33 / P-prompt +2.86 — **3 个 arms 都贡献 unique tasks**, 旧 hook "Phantom-SoM is hidden 4th routing arm" 字面不准
+**问题**: 之前 paper hook 写 "phantom space 有 3 个 routing arm (P-text / P-SoM / P-prompt)"。但 P-text 和 P-prompt 那个 magnitude 撑不起 routing arm 这个名分 — 而且**他们各自的独立贡献是数据进来后我才看见的，不是预先猜到**。把它当 a-priori hypothesis 是事后 retrofit，reviewer 一抓一个准。
+
+**改成 3 层结构**:
+
+**(A) Phantom-SoM 是 paper 的 deployment hero (主 contribution)**
+- P-SoM 把 axis 1 (用 [SOM_MARKS] 替代 AXTree) 跟 axis 2 (SoM-style prompt 但不给图) 同时 activate
+- 4 个 drop-in 性质:
+  - 成本 ≈ DOM (因为 [SOM_MARKS] 就是 AXTree 正则过滤, 不付图片 token)
+  - 延迟比 SoM 低约 50% (省了 image 推理这步)
+  - routing signal AUROC ≥ baseline (现有 router 直接能用, 不用 retrain)
+  - drop-one ≥ 1pp 显著 lift
+- 这一层是 strict pre-register, paper hook 主要靠它撑
+
+**(B) Phantom space 是有 2-axis 结构的多区域 (structural claim)**
+- 不是说 P-text / P-prompt 是 deployment arm
+- 是说 **phantom space 这块区域不是塌成一个点**, 而是真的有 2 个 axis (M1 image-mirage + M2 flat-list) 的结构
+- 证据: P-text 和 P-prompt 各自能解 P-SoM 不能解的任务
+  - 现数据: B0 cls P-text 解了 13 个 P-SoM 没解的 / B0 red P-text 6 + P-prompt 4 / B1 cls P-text 9
+  - 全部 bootstrap CI 排除 0 ✅
+- 这层门槛低 — 只要"有 unique 贡献"即可, 不需要 P-text/P-prompt 自己当 routing arm 那种 magnitude
+- 作用: 证明 "phantom space 是 2-axis 多区域", 不是 "塌成一个点 (P-SoM 跟其他 arm 解一模一样)"
+
+**(C) Exploratory + post-hoc (paper 写明)**
+- P-text/P-prompt 的 drop-one magnitude → 写"探索性, 不 gating paper claim"
+- 别扭 framework + B0 vs B1 capability reversal → 写"post-hoc theory, 数据观察后才提出"
+- 这些不当 paper hook 的硬主张
+
+**(D) Paper hook framing rule — 数据进来后定 paper 怎么写**
+
+5 个 case 预先 lock 死:
+
+| 数据结果 | Paper 怎么写 |
+|---|---|
+| (A) + (B) 完全过 | "phantom routing space 有 2-axis 结构 + Phantom-SoM 是 deployment hero" — **最强 hook** |
+| (A) 过 + (B) 只过 1 个 axis | "phantom space 有 single-axis 结构 + hero" — 次强 |
+| (A) 过 + (B) 全 fail | 退回 04-30 旧 framing "Phantom-SoM is hidden 4th routing arm" — 中等 |
+| (A) 部分 fail (cost/latency 没 hold) | "Phantom-SoM partial drop-in" — 弱 |
+| (A) fail | paper 死, pivot 到 VWA bug paper 或者放弃 |
+
+这个 mapping 是预先写在 `preregistration.md` 里的, reviewer 能查 "数据 → framing" 是确定的, 不是数据进来后才挑 hook fit。
+
+**为什么这样改**:
+- 旧 "3-arm co-equal" 把 emergent discovery 反向 retrofit 成 a-priori hypothesis — 这是 reviewer 抓 confirmation bias 的标准切入点
+- 新结构: 主 claim (P-SoM hero) strict, 副 claim (phantom space 多区域) 低门槛, 探索 finding 标 post-hoc — 三层分开
+- claim power 几乎不损 (case 1 里 hook 跟之前一样强), 但统计 commitment 大幅减弱 (现在主要测 1 个 pooled meta + 2 axis × N cells, 不是 3 arms × N cells × 各种 metric)
 
 ### 1.2 Evidence vs Explanation 双层分离 (笔记 §108 reframe)
 
@@ -38,12 +75,31 @@
 
 **Zoom 1 deductive argument** (核心防御): phantom comparison 锁 image=✗ → input 仅剩 (prompt 文本 + obs 文本) → 任何 differential 必由这两 input 差异 trigger → **M1 + M2 by construction exhaustive**。即使跑 100 个 phantom corners 也不能反驳。
 
-### 1.4 想 advisor confirm
+### 1.4 想问学长的 (sync 主要 ask)
 
-1. **Framework reframe** (3-arm 取代 4th-arm) OK 吗?
-2. **Phantom space 命名** + `"no annotated image"` boundary 论证够 robust 吗? 旧 "why 5 not 8 (mismatched parsing)" 改用新 boundary 更 sound
-3. **Evidence-Explanation 分层 + Zoom 1-4** 是否 reviewer-friendly? 有没 cognitive overload risk?
-4. **Zoom 4 future work** 标 "follow-up paper" 是否 OK (vs paper 内 self-probe)?
+#### 大问题: 这套新结构买不买?
+
+最核心的一句 ask: **"Phantom-SoM 是 hero (主) + phantom space 2-axis 是 structural claim (副低门槛) + 别扭/capability reversal 是 post-hoc + 5 个 framing case 预先 lock"** 这个组合学长 buy 吗? 还是觉得过于精巧 / 该回到简单 a-priori 列 hypothesis?
+
+附带顾虑: 学长会觉得 "5 个 framing case 预先 lock" 是 **披着 pre-registration 外衣的 garden-of-forking-paths** 吗?
+- 我倾向不是 — mapping 是数据前写死的, reviewer 能查 "数据 → hook" 是确定函数
+- 但学长可能直觉上不喜欢, 想听他怎么看
+
+#### 5 件具体阈值, 想学长签字 (sync 后我立刻把 preregistration.md 翻成 locked)
+
+| # | 决定的事情 | 我倾向 | 为什么这样选 | 选错了风险 |
+|---|---|---|---|---|
+| **(1)** | P-SoM 在多少 % 的 cell 里要显著 (Holm-corrected) 才算 hero claim 过 | **75%** | 容忍 1-2 个 capability outlier (例如 B1 shopping power 不足), 但不允许多数失败 | 选低: paper hero 弱 / 选高: 一个 noise cell 就把整 paper 破 |
+| **(2)** | P-text / P-prompt 在多少 % 的 cell 里要有 unique 贡献 (bootstrap CI 排除 0) 才算 structural claim 过 | **67%** | 比 (1) 低 — structural 比 deployment 弱 commit, 不该卡那么严 | 选高: 容易 fail 退回 fallback / 选低: claim trivial |
+| **(3)** | Effect 多大才算"实质非零" (TOST equivalence margin δ) | **1.0pp** (≈ 2 tasks add) | 大约是 bootstrap noise floor; 比这小就在采样噪声内 | 选小: TOST 测不出东西 / 选大: 太容易 reject equivalence, paper claim 显弱 |
+| **(4)** | archived (Phase A bug 之前) 的数据怎么处理 | **paper 主分析只用 Phase A 之后 (post-fix)**, archived 进 Appendix D 作 robustness check | 主体 bug-clean + 附录展示 due diligence | 太严: 浪费 archived 数据 / 太松: bug 污染主分析 |
+| **(5)** | pre-registration 怎么留证据 | **git commit + 学长一行 email 见证 + 投稿前上 OSF 拿 DOI** (paper §1 footnote cite) | 多层 rigor signal | 没 witness reviewer 怀疑事后改 / 学长不愿见证我自己 lock 也 OK 但稍弱 |
+
+#### 旧 framework 问题 (保留, 没变)
+
+6. **Phantom space 的 "no annotated image" 边界论证** 学长觉得够 robust 吗? (4-30 旧 "mismatched parsing" 论证退役了, 因为 P-prompt 实证 +2.86pp drop-one 反驳了 mismatched-必死 假设)
+7. **Evidence (数据) / Explanation (因果) 分两层 + 解释层用 4-zoom (架构 / behavioral / named lit / model-internal)** 对 reviewer 友好吗? 会不会 cognitive overload?
+8. **Zoom 4 (model-internal mechanism, 例如 SteerMoE 在 B0 自己 probe)** 标 "future paper / follow-up" 而不是这篇 paper 自己 self-probe 是否合理? (主要是 B0 走 proxy API 看不到 expert routing + 经费有限)
 
 ---
 
@@ -245,11 +301,16 @@
 
 ## Reference files (sync 时 quick lookup)
 
-- `docs/checkpoints/paper_planning.md` — paper strategy notebook (19 sections)
-- `docs/checkpoints/实验笔记.md` — chronicle (§1-§108.19)
+- **`docs/checkpoints/preregistration.md`** ⭐ NEW (status:draft, lock 5 件 commit 后 flip locked)
+- **`docs/reference/EVIDENCE_LAYER_AUDIT.md`** ⭐ NEW (§2 pre-registration template + meta-rationale, T0a-d done)
+- `docs/checkpoints/paper_planning.md` — paper strategy notebook (20 sections)
+- `docs/checkpoints/实验笔记.md` — chronicle (§1-§108.20)
 - `docs/checkpoints/paper_drafts/` — section1-8 prose + paper.bib (57 entries)
 - `docs/checkpoints/next_steps.md` — daily action ledger
 - `docs/reference/VWA_FRAMEWORK_BUGS_AND_PHASE_A_FIXES.md` — 37 bugs + 4-cluster patch detail
 - `docs/reference/MYRIAD_SMOKE_REPORT.md` — Myriad CGNAT block 实证
 - `docs/reference/PAPER_STRATEGY_OPEN_QUESTIONS.md` — audit 9 issues (7 自决 disclose, 2 ask advisor)
 - `docs/analysis/cross_sites/probe_b37_api_determinism.md` — B0 5-call probe + Section 4 disclosure draft
+- `results/phantom_paper/figures/fig_phantom_structure_venn.png` — H3 structural Venn (paper §1 centerpiece)
+- `results/phantom_paper/figures/fig_meta_forest.png` — Hero+Ablation forest plot (P-SoM HERO 顶部黑框)
+- `results/phantom_paper/{phantom_lift,meta_phantom_lift}.md` — augmented stats (Holm/BH/Bonf/TOST/H3 structural)

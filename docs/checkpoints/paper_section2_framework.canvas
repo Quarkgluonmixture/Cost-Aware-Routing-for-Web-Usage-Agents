@@ -6,9 +6,9 @@
       "x": 200,
       "y": -260,
       "width": 2400,
-      "height": 140,
+      "height": 160,
       "color": "6",
-      "text": "# Paper §2 Framework — Evidence ⫨ Explanation 双层\n*笔记 §108 reframe · Zoom 1-4 hierarchy · 4×4 evidence sub-cells*\n**Reviewer 最忌 evidence-as-explanation** — 两层必须分写然后 explicit link"
+      "text": "# Paper §2 Framework — Evidence ⫨ Explanation 双层\n*笔记 §108 reframe · Zoom 1-4 hierarchy · 4×4 evidence sub-cells*\n**Reviewer 最忌 evidence-as-explanation** — 两层必须分写然后 explicit link\n\n📋 **2026-05-03 reframe**: paper hook 现在是 data-conditional (Hero P-SoM + Structural P-text/P-prompt + Framing rule R1-R5) — 见底部 reframe summary box 跟 [[preregistration]] / [[EVIDENCE_LAYER_AUDIT#§2]]"
     },
 
     {
@@ -34,6 +34,17 @@
     },
 
     {
+      "id": "prereg_summary00",
+      "type": "text",
+      "x": -40,
+      "y": -60,
+      "width": 1380,
+      "height": 110,
+      "color": "6",
+      "text": "## 📋 Pre-Registration Framework (2026-05-03)\n\n**(A) Hero**: P-SoM = deployment routing arm + 4-fold drop-in (gating, strict)\n**(B) Structural**: P-text/P-prompt 各有 unique non-overlap 对 P-SoM (gating, low-threshold)\n**(C) Post-hoc**: 别扭 + capability reversal (mark exploratory, not gating)\n**(D) Framing rule R1-R5**: data-conditional paper hook (R1 strongest → R5 paper death)"
+    },
+
+    {
       "id": "zoom1aaaaaaaaaaaa",
       "type": "text",
       "x": -40,
@@ -41,7 +52,7 @@
       "width": 1380,
       "height": 250,
       "color": "5",
-      "text": "## Zoom 1 — Architectural completeness (deductive, self-evidence)\n\n**Phantom routing space** (boundary: `axis 3 = no annotated image`)\n4 corners share **4-fold drop-in property**: cost ≈ DOM / latency ~50% / AUROC ≥ baseline / drop-one 1.7-3.8pp\n\n```\nPREMISE: phantom 锁 image=✗ → input 仅 (prompt, obs 文本) 2-dim\nCONCLUSION: M1 + M2 by construction exhaustive — phantom space 内**无 hidden 3rd axis**\n```\n\n**关键性质**: deductive argument, 即使跑 100 corners 也不能反驳"
+      "text": "## Zoom 1 — Architectural completeness (deductive, self-evidence)\n\n**Phantom routing space** (boundary: `axis 3 = no annotated image`)\n**4-fold drop-in**: (a)(b)(c) by-construction for ALL 4 corners; **(d) drop-one ≥1pp pre-registered for P-SoM hero only** (P-text/P-prompt 探索, see [[preregistration#H1]])\n\n```\nPREMISE: phantom 锁 image=✗ → input 仅 (prompt, obs 文本) 2-dim\nCONCLUSION: M1 + M2 by construction exhaustive — phantom space 内**无 hidden 3rd axis**\n```\n\n**关键性质**: deductive argument, 即使跑 100 corners 也不能反驳"
     },
 
     {

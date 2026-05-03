@@ -178,6 +178,109 @@ def mcnemar_exact_one_sided(in_a: np.ndarray, in_b: np.ndarray) -> Optional[floa
     return float(sp_stats.binom.cdf(a_only, n_disc, 0.5))
 
 
+def bootstrap_unique_count_ci(in_a: np.ndarray, in_b: np.ndarray,
+                              B: int = 1000, seed: int = 42, ci: float = 0.95
+                              ) -> tuple[int, float, float]:
+    """Bootstrap CI on |a ∖ b| count: tasks where a solves but b doesn't.
+
+    H3 structural claim test: arm a contributes tasks NOT solved by arm b.
+    If lower CI bound > 0, "a has unique non-overlap with b" sig at 1-ci level.
+
+    Used per-cell for:
+      P-text ∖ P-SoM unique count (axis 1 structural evidence)
+      P-prompt ∖ P-SoM unique count (axis 2 structural evidence)
+    """
+    n = len(in_a)
+    if n == 0 or len(in_b) != n:
+        return 0, 0.0, 0.0
+    a = in_a.astype(bool)
+    b = in_b.astype(bool)
+    observed = int((a & ~b).sum())
+    rng = np.random.default_rng(seed)
+    counts = np.empty(B)
+    for r in range(B):
+        idx = rng.integers(0, n, size=n)
+        counts[r] = int((a[idx] & ~b[idx]).sum())
+    alpha = (1 - ci) / 2
+    return observed, float(np.quantile(counts, alpha)), float(np.quantile(counts, 1 - alpha))
+
+
+def bootstrap_tost_p(in_a: np.ndarray, in_b: np.ndarray,
+                     delta_pp: float = 0.5, B: int = 1000, seed: int = 42
+                     ) -> Optional[float]:
+    """Bootstrap TOST (Two One-Sided Tests) p-value for paired binary lift.
+
+    H0_lower: lift ≤ -δ   →   reject if bootstrap dist mostly above -δ
+    H0_upper: lift ≥ +δ   →   reject if bootstrap dist mostly below +δ
+    TOST p = max(p_lower, p_upper). If max < α, equivalence at margin δ rejected
+    (effect is *practically nonzero* relative to δ).
+
+    For phantom_lift, δ defaults to 0.5pp (≈ 1 task in N=234), which is the
+    paper's pre-registered minimum-meaningful magnitude.
+    """
+    if len(in_a) != len(in_b):
+        return None
+    n = len(in_a)
+    if n == 0:
+        return None
+    rng = np.random.default_rng(seed)
+    lifts = np.empty(B)
+    for b in range(B):
+        idx = rng.integers(0, n, size=n)
+        lifts[b] = 100 * (int(in_b[idx].sum()) - int(in_a[idx].sum())) / n
+    p_lower = float(np.mean(lifts <= -delta_pp))
+    p_upper = float(np.mean(lifts >= delta_pp))
+    return max(p_lower, p_upper)
+
+
+def bonferroni_adjust(pvals: list) -> list:
+    """Bonferroni: p_adj = min(1, m * p_raw); None entries pass-through."""
+    m = sum(1 for p in pvals if p is not None)
+    if m == 0:
+        return list(pvals)
+    return [min(1.0, m * p) if p is not None else None for p in pvals]
+
+
+def holm_bonferroni_adjust(pvals: list) -> list:
+    """Holm-Bonferroni step-down (Holm 1979): less conservative than Bonferroni
+    while still controlling family-wise error rate at α.
+
+    Sort non-None p-values ascending; the k-th smallest gets multiplied by
+    (m - k + 1) where m = number of non-None tests; running max enforces
+    monotonicity.
+    """
+    indexed = [(i, p) for i, p in enumerate(pvals) if p is not None]
+    indexed.sort(key=lambda x: x[1])
+    m = len(indexed)
+    out: list = [None] * len(pvals)
+    prev = 0.0
+    for k, (i, p) in enumerate(indexed):
+        adj = min(1.0, max(prev, p * (m - k)))
+        out[i] = adj
+        prev = adj
+    return out
+
+
+def bh_fdr_adjust(pvals: list) -> list:
+    """Benjamini-Hochberg FDR adjusted q-values (BH 1995).
+
+    Less conservative than FWER methods; controls expected proportion of false
+    discoveries among rejections rather than family-wise error rate.
+    """
+    indexed = [(i, p) for i, p in enumerate(pvals) if p is not None]
+    indexed.sort(key=lambda x: x[1])
+    m = len(indexed)
+    out: list = [None] * len(pvals)
+    prev = 1.0
+    for k in range(m - 1, -1, -1):
+        i, p = indexed[k]
+        rank = k + 1
+        adj = min(prev, p * m / rank)
+        out[i] = min(1.0, adj)
+        prev = out[i]
+    return out
+
+
 def analyze_cell(cell: dict) -> Optional[dict]:
     """Compute phantom lift for a single (baseline, site) cell.
 
@@ -226,6 +329,7 @@ def analyze_cell(cell: dict) -> Optional[dict]:
     h_4psom_vs_3 = cohen_h(sr_4_psom / 100, sr_3 / 100)
     wstat_psom, wp_psom = wilcoxon_signed_rank(in_3, in_4_psom)
     mc_p_psom = mcnemar_exact_one_sided(in_3, in_4_psom)
+    tost_p_psom = bootstrap_tost_p(in_3, in_4_psom)
 
     psom_adds = succ_r["P-SoM"] - union_3
 
@@ -244,6 +348,8 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         wstat_pdom, wp_pdom = wilcoxon_signed_rank(in_3, in_4_pdom)
         mc_p_5 = mcnemar_exact_one_sided(in_3, in_5)
         mc_p_pdom = mcnemar_exact_one_sided(in_3, in_4_pdom)
+        tost_p_5 = bootstrap_tost_p(in_3, in_5)
+        tost_p_pdom = bootstrap_tost_p(in_3, in_4_pdom)
         pdom_adds = succ_r["P-text"] - union_3
         both_add = pdom_adds & psom_adds
         pdom_only = pdom_adds - psom_adds
@@ -261,6 +367,7 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         h_4pdom_vs_3 = None
         wp_5 = wp_pdom = None
         mc_p_5 = mc_p_pdom = None
+        tost_p_5 = tost_p_pdom = None
         pdom_adds = both_add = pdom_only = set()
         psom_only = psom_adds  # no overlap with absent P-text
         jaccard = None
@@ -275,6 +382,7 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         h_4pprompt_vs_3 = cohen_h(sr_4_pprompt / 100, sr_3 / 100)
         wstat_pprompt, wp_pprompt = wilcoxon_signed_rank(in_3, in_4_pprompt)
         mc_p_pprompt = mcnemar_exact_one_sided(in_3, in_4_pprompt)
+        tost_p_pprompt = bootstrap_tost_p(in_3, in_4_pprompt)
         pprompt_adds = succ_r["P-prompt"] - union_3
         if has_pdom:
             union_6 = union_5 | succ_r["P-prompt"]
@@ -288,24 +396,55 @@ def analyze_cell(cell: dict) -> Optional[dict]:
             _, wp_6v5 = wilcoxon_signed_rank(in_5, in_6)
             mc_p_6 = mcnemar_exact_one_sided(in_3, in_6)
             mc_p_6v5 = mcnemar_exact_one_sided(in_5, in_6)
+            tost_p_6 = bootstrap_tost_p(in_3, in_6)
+            tost_p_6v5 = bootstrap_tost_p(in_5, in_6)
         else:
             sr_6 = None
             ci_lo_6 = ci_hi_6 = ci_lo_6v5 = ci_hi_6v5 = None
             h_6_vs_3 = h_6_vs_5 = None
             wp_6 = wp_6v5 = None
             mc_p_6 = mc_p_6v5 = None
+            tost_p_6 = tost_p_6v5 = None
     else:
         sr_4_pprompt = None
         ci_lo_pprompt = ci_hi_pprompt = None
         h_4pprompt_vs_3 = None
         wp_pprompt = None
         mc_p_pprompt = None
+        tost_p_pprompt = None
         pprompt_adds = set()
         sr_6 = None
         ci_lo_6 = ci_hi_6 = ci_lo_6v5 = ci_hi_6v5 = None
         h_6_vs_3 = h_6_vs_5 = None
         wp_6 = wp_6v5 = None
         mc_p_6 = mc_p_6v5 = None
+        tost_p_6 = tost_p_6v5 = None
+
+    # H3 structural test: phantom space 2-axis empirical validation.
+    # For each axis, bootstrap CI on |arm ∖ P-SoM| unique-count + McNemar exact
+    # one-sided. CI lower bound > 0 evidences axis contributes tasks P-SoM
+    # doesn't solve (i.e., axis is empirically distinct from compound center,
+    # phantom space is multi-region not collapsed point).
+    in_psom_raw = np.array([t in succ_r["P-SoM"] for t in universe], dtype=bool)
+
+    if has_pdom:
+        in_pdom_raw = np.array([t in succ_r["P-text"] for t in universe], dtype=bool)
+        h3_axis1_count, h3_axis1_ci_lo, h3_axis1_ci_hi = bootstrap_unique_count_ci(
+            in_pdom_raw, in_psom_raw)
+        # mcnemar_exact_one_sided(a, b) tests H1: b > a (b adds tasks a misses)
+        # Set a=P-SoM, b=P-text → H1 asymmetric: P-text adds tasks P-SoM misses
+        # more often than vice versa (directional structural asymmetry test).
+        h3_axis1_mcnemar_p = mcnemar_exact_one_sided(in_psom_raw, in_pdom_raw)
+    else:
+        h3_axis1_count = h3_axis1_ci_lo = h3_axis1_ci_hi = h3_axis1_mcnemar_p = None
+
+    if has_pprompt:
+        in_pprompt_raw = np.array([t in succ_r["P-prompt"] for t in universe], dtype=bool)
+        h3_axis2_count, h3_axis2_ci_lo, h3_axis2_ci_hi = bootstrap_unique_count_ci(
+            in_pprompt_raw, in_psom_raw)
+        h3_axis2_mcnemar_p = mcnemar_exact_one_sided(in_psom_raw, in_pprompt_raw)
+    else:
+        h3_axis2_count = h3_axis2_ci_lo = h3_axis2_ci_hi = h3_axis2_mcnemar_p = None
 
     is_partial = (any(len(o) < cell["n_expected"] for o in obs.values()) or not has_pdom
                   or not has_pprompt)
@@ -378,6 +517,34 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         "mcnemar_4pprompt_vs_3_p": mc_p_pprompt,
         "mcnemar_6_vs_3_p": mc_p_6,
         "mcnemar_6_vs_5_p": mc_p_6v5,
+        # TOST equivalence p (bootstrap, δ=0.5pp; rejects equivalence if max < α)
+        "tost_5_vs_3_p":      tost_p_5,
+        "tost_4pdom_vs_3_p":  tost_p_pdom,
+        "tost_4psom_vs_3_p":  tost_p_psom,
+        "tost_4pprompt_vs_3_p": tost_p_pprompt,
+        "tost_6_vs_3_p":      tost_p_6,
+        "tost_6_vs_5_p":      tost_p_6v5,
+        # Family-adjusted p / q (filled by main() post-collection; see §family decl)
+        "mcnemar_5_vs_3_p_holm":     None,
+        "mcnemar_5_vs_3_q_bh":       None,
+        "mcnemar_5_vs_3_p_bonf":     None,
+        "mcnemar_4pdom_vs_3_p_holm": None,
+        "mcnemar_4pdom_vs_3_q_bh":   None,
+        "mcnemar_4psom_vs_3_p_holm": None,
+        "mcnemar_4psom_vs_3_q_bh":   None,
+        "mcnemar_4pprompt_vs_3_p_holm": None,
+        "mcnemar_4pprompt_vs_3_q_bh":   None,
+        # H3 structural — phantom space 2-axis empirical validation
+        "h3_axis1_unique_count":      h3_axis1_count,
+        "h3_axis1_ci95_lo":           (round(h3_axis1_ci_lo, 4) if h3_axis1_ci_lo is not None else None),
+        "h3_axis1_ci95_hi":           (round(h3_axis1_ci_hi, 4) if h3_axis1_ci_hi is not None else None),
+        "h3_axis1_mcnemar_p":         (round(h3_axis1_mcnemar_p, 6) if h3_axis1_mcnemar_p is not None else None),
+        "h3_axis1_mcnemar_p_holm":    None,  # filled by family correction in main()
+        "h3_axis2_unique_count":      h3_axis2_count,
+        "h3_axis2_ci95_lo":           (round(h3_axis2_ci_lo, 4) if h3_axis2_ci_lo is not None else None),
+        "h3_axis2_ci95_hi":           (round(h3_axis2_ci_hi, 4) if h3_axis2_ci_hi is not None else None),
+        "h3_axis2_mcnemar_p":         (round(h3_axis2_mcnemar_p, 6) if h3_axis2_mcnemar_p is not None else None),
+        "h3_axis2_mcnemar_p_holm":    None,  # filled by family correction in main()
         # Decomposition
         "pdom_adds_count":      (len(pdom_adds) if has_pdom else None),
         "psom_adds_count":      len(psom_adds),
@@ -405,6 +572,54 @@ def main() -> int:
             continue
         rows.append(r)
 
+    # ── Multiple-comparison correction (per pre-registered family) ────────
+    # Comparison families:
+    #   PRIMARY (m = N_cells):           3→5-mode lift (one per cell)
+    #   SECONDARY (m = 3 × N_cells):     per-arm drop-one (P-text/P-SoM/P-prompt)
+    #   TERTIARY (m = 2 × N_cells):      6-mode oracle (vs 3 / vs 5) — exploratory
+    # Method: Holm-Bonferroni step-down per family (FWER) + BH FDR (informational)
+    # Primary p-value: McNemar exact one-sided (directional H1: phantom adds tasks)
+    # Wilcoxon two-sided remains uncorrected as secondary report.
+
+    def _adjust_inplace(rows, key_p, key_holm, key_bh, key_bonf=None):
+        """Run Bonferroni / Holm / BH on a list of rows for a given p-value field."""
+        pvals = [r.get(key_p) for r in rows]
+        holm = holm_bonferroni_adjust(pvals)
+        bh = bh_fdr_adjust(pvals)
+        bonf = bonferroni_adjust(pvals) if key_bonf else [None] * len(rows)
+        for r, h, q, b in zip(rows, holm, bh, bonf):
+            r[key_holm] = round(h, 6) if h is not None else None
+            r[key_bh] = round(q, 6) if q is not None else None
+            if key_bonf:
+                r[key_bonf] = round(b, 6) if b is not None else None
+
+    # Family A (PRIMARY): 3→5-mode lift
+    _adjust_inplace(rows, "mcnemar_5_vs_3_p",
+                    "mcnemar_5_vs_3_p_holm", "mcnemar_5_vs_3_q_bh",
+                    key_bonf="mcnemar_5_vs_3_p_bonf")
+
+    # Family B (SECONDARY): per-arm drop-one. Pool across cells × {pdom, psom, pprompt}.
+    flat_secondary = []
+    for r in rows:
+        for arm in ("4pdom", "4psom", "4pprompt"):
+            p = r.get(f"mcnemar_{arm}_vs_3_p")
+            flat_secondary.append((r, arm, p))
+    holm_b = holm_bonferroni_adjust([t[2] for t in flat_secondary])
+    bh_b = bh_fdr_adjust([t[2] for t in flat_secondary])
+    for (r, arm, _), h, q in zip(flat_secondary, holm_b, bh_b):
+        r[f"mcnemar_{arm}_vs_3_p_holm"] = round(h, 6) if h is not None else None
+        r[f"mcnemar_{arm}_vs_3_q_bh"] = round(q, 6) if q is not None else None
+
+    # H3 STRUCTURAL family: per-axis structural test (axis 1 = P-text, axis 2 = P-prompt).
+    # Holm-corrected separately within each axis sub-family (axis 1 / axis 2),
+    # because structural claim is weaker than deployment — separate family
+    # avoids inflating PRIMARY/SECONDARY family m count.
+    for axis_key in ("h3_axis1_mcnemar_p", "h3_axis2_mcnemar_p"):
+        ps = [r.get(axis_key) for r in rows]
+        holm = holm_bonferroni_adjust(ps)
+        for r, p_h in zip(rows, holm):
+            r[f"{axis_key}_holm"] = round(p_h, 6) if p_h is not None else None
+
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w", newline="") as f:
@@ -417,6 +632,9 @@ def main() -> int:
 
     # Markdown summary
     md = out.with_suffix(".md")
+    n_cells_primary = len(rows)
+    n_secondary = sum(1 for r in rows for arm in ("4pdom", "4psom", "4pprompt")
+                      if r.get(f"mcnemar_{arm}_vs_3_p") is not None)
     lines = [
         "# Phantom routing lift — paper Section 1/4 hook evidence",
         "",
@@ -426,28 +644,61 @@ def main() -> int:
         "large 0.5-0.8). Wilcoxon paired (binary, equiv to sign test). McNemar",
         "exact 1-sided (H1: extra mode adds tasks).",
         "",
+        "## Comparison family declaration (pre-registered, 2026-05-03 framework)",
+        "",
+        "**Hero/Structural/Exploratory hierarchy** (per `EVIDENCE_LAYER_AUDIT.md` §2):",
+        "",
+        f"- **PRIMARY family — H1 (Hero deployment claim, P-SoM)**: m = {n_cells_primary} (3→5-mode lift, one per cell).",
+        "  Sub-claim H1(ii) per-cell P-SoM Holm-sig is the gating test for paper hook.",
+        f"- **STRUCTURAL family — H3 (Phantom space 2-axis empirical evidence)**: per axis, m = N_cells.",
+        "  axis 1 = P-text ∖ P-SoM unique-count; axis 2 = P-prompt ∖ P-SoM unique-count.",
+        "  Lower threshold than PRIMARY (structural claim is weaker than deployment).",
+        f"- **EXPLORATORY family — H4 (P-text/P-prompt drop-one magnitudes)**: m = {n_secondary}.",
+        "  Holm/BH q reported for transparency; **NOT used for paper claim gating**.",
+        "  Paper §4 prose must explicitly mark these as exploratory analyses.",
+        "- **TERTIARY (post-hoc, uncorrected)**: 6-mode oracle vs 3 / vs 5.",
+        "",
+        "Adjustment methods:",
+        "- **Holm** (Holm 1979) — step-down FWER control, gating PRIMARY + STRUCTURAL.",
+        "- **BH q** (Benjamini-Hochberg 1995) — FDR control, informational.",
+        "- **Bonf** — Bonferroni FWER (PRIMARY only, conservative reference).",
+        "- **TOST p** — Two One-Sided Test for equivalence at δ=1.0pp (commit-locked).",
+        "  TOST p < α rejects equivalence (effect *practically nonzero*).",
+        "",
+        "Primary p-value going through correction: **McNemar exact one-sided**",
+        "(directly maps to H1: phantom adds tasks). Wilcoxon two-sided is reported",
+        "uncorrected as secondary cross-check.",
+        "",
         "## Routing lift summary (5-mode vs 3-mode + each single phantom)",
         "",
-        "| Baseline | Site | N | 3→5-mode lift | 95% CI | Cohen's h | Wilcoxon p | McNemar p | sig? |",
-        "|---|---|---:|---:|---|---:|---:|---:|:---:|",
+        "| Baseline | Site | N | 3→5-mode lift | 95% CI | Cohen's h | Wilcoxon p | McNemar p | Holm p | BH q | Bonf p | TOST p | sig (Holm 0.05) |",
+        "|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|:---:|",
     ]
+    def _fmt(p):
+        return f"{p:.4f}" if p is not None else "—"
     for r in rows:
         n_label = (f"{r['n_common']}/{r['n_expected']}†" if r["is_partial"]
                    else f"{r['n_common']}")
         if r.get("lift_5_vs_3_pp") is None:
             lines.append(
-                f"| {r['baseline']} | {r['site']} | {n_label} | n/a (P-text pending) | — | — | — | — | — |"
+                f"| {r['baseline']} | {r['site']} | {n_label} | n/a (P-text pending) | "
+                + " | ".join(["—"] * 10) + " |"
             )
             continue
-        sig = "✅" if r["lift_5_vs_3_ci95_lo_pp"] > 0 else ("🟡" if r["lift_5_vs_3_ci95_hi_pp"] > 0 else "❌")
-        wp = f"{r['wilcoxon_5_vs_3_p']:.4f}" if r['wilcoxon_5_vs_3_p'] is not None else "—"
-        mp = f"{r['mcnemar_5_vs_3_p']:.4f}" if r['mcnemar_5_vs_3_p'] is not None else "—"
+        holm_p = r.get("mcnemar_5_vs_3_p_holm")
+        sig = "✅" if (holm_p is not None and holm_p < 0.05) else (
+            "🟡" if r["lift_5_vs_3_ci95_lo_pp"] > 0 else "❌"
+        )
         lines.append(
             f"| {r['baseline']} | {r['site']} | {n_label} | "
             f"+{r['lift_5_vs_3_pp']:.2f}pp | "
             f"[{r['lift_5_vs_3_ci95_lo_pp']:.2f}, {r['lift_5_vs_3_ci95_hi_pp']:.2f}] | "
             f"{r['cohen_h_5_vs_3']:.3f} ({r['cohen_h_5_vs_3_label']}) | "
-            f"{wp} | {mp} | {sig} |"
+            f"{_fmt(r['wilcoxon_5_vs_3_p'])} | {_fmt(r['mcnemar_5_vs_3_p'])} | "
+            f"{_fmt(r.get('mcnemar_5_vs_3_p_holm'))} | "
+            f"{_fmt(r.get('mcnemar_5_vs_3_q_bh'))} | "
+            f"{_fmt(r.get('mcnemar_5_vs_3_p_bonf'))} | "
+            f"{_fmt(r.get('tost_5_vs_3_p'))} | {sig} |"
         )
 
     lines += [
@@ -482,6 +733,100 @@ def main() -> int:
             f"{r['cohen_h_4psom_vs_3']:.3f} | "
             f"{pprompt_cell} | {pprompt_ci} | {pprompt_h} |"
         )
+
+    # ── Secondary family: per-arm drop-one adjusted p / TOST ──
+    lines += [
+        "",
+        "## Per-arm drop-one — multiple-comparison adjusted (SECONDARY family)",
+        "",
+        f"Holm-Bonferroni step-down across m = {n_secondary} tests (cells × 3 arms).",
+        "BH q-value is FDR-adjusted (informational). TOST p tests equivalence at",
+        "δ=0.5pp; max(p_lower, p_upper) < α rejects equivalence.",
+        "",
+        "| Baseline | Site | Arm | Lift | 95% CI | McNemar p | Holm p | BH q | TOST p | sig (Holm 0.05) | TOST sig (0.05) |",
+        "|---|---|---|---:|---|---:|---:|---:|---:|:---:|:---:|",
+    ]
+    arm_meta = [
+        ("4pdom", "P-text", "lift_4pdom_vs_3"),
+        ("4psom", "P-SoM", "lift_4psom_vs_3"),
+        ("4pprompt", "P-prompt", "lift_4pprompt_vs_3"),
+    ]
+    for r in rows:
+        for code, label, lift_prefix in arm_meta:
+            lift_pp = r.get(f"{lift_prefix}_pp")
+            if lift_pp is None:
+                # 11 cols total: baseline + site + arm + lift + 7 metric cols
+                lines.append(
+                    f"| {r['baseline']} | {r['site']} | {label} | n/a | "
+                    + " | ".join(["—"] * 7) + " |"
+                )
+                continue
+            ci_lo = r.get(f"{lift_prefix}_ci95_lo_pp")
+            ci_hi = r.get(f"{lift_prefix}_ci95_hi_pp")
+            mp = r.get(f"mcnemar_{code}_vs_3_p")
+            holm = r.get(f"mcnemar_{code}_vs_3_p_holm")
+            bh = r.get(f"mcnemar_{code}_vs_3_q_bh")
+            tost = r.get(f"tost_{code}_vs_3_p")
+            sig_holm = "✅" if (holm is not None and holm < 0.05) else "❌"
+            sig_tost = "✅" if (tost is not None and tost < 0.05) else "❌"
+            lines.append(
+                f"| {r['baseline']} | {r['site']} | {label} | "
+                f"+{lift_pp:.2f}pp | [{ci_lo:.2f}, {ci_hi:.2f}] | "
+                f"{_fmt(mp)} | {_fmt(holm)} | {_fmt(bh)} | {_fmt(tost)} | "
+                f"{sig_holm} | {sig_tost} |"
+            )
+
+    # ── H3 STRUCTURAL family: 2-axis empirical evidence ──
+    lines += [
+        "",
+        "## H3 Structural — phantom space 2-axis empirical validation",
+        "",
+        "Tests whether each phantom-space axis contributes tasks NOT solved by",
+        "P-SoM (the cube-center compound). Lower CI bound > 0 evidences that the",
+        "axis is empirically distinct from P-SoM, i.e., phantom space is a",
+        "multi-region structure rather than collapsed to a single point.",
+        "",
+        "**This is the structural claim, NOT the deployment claim.** Magnitude",
+        "threshold is low (≥ 2 unique tasks ≈ 1pp); commit-locked floor in",
+        "preregistration.md.",
+        "",
+        "**Primary gating test**: bootstrap CI on unique-count, lower bound > 0.",
+        "This tests the existence of non-overlap (structural multi-region",
+        "evidence). McNemar one-sided p is a secondary directional asymmetry",
+        "report (tests if axis dominates P-SoM in unique contribution), informational only.",
+        "",
+        "| Baseline | Site | Axis | Arm ∖ P-SoM unique count | 95% bootstrap CI | sig (CI > 0) ⭐ | McNemar p (asymmetry, secondary) | Holm p | sig (Holm 0.05) |",
+        "|---|---|---|---:|---|:---:|---:|---:|:---:|",
+    ]
+    for r in rows:
+        for axis_label, axis_arm, count_key, ci_lo_key, ci_hi_key, mc_key in [
+            ("axis 1", "P-text",   "h3_axis1_unique_count", "h3_axis1_ci95_lo",
+             "h3_axis1_ci95_hi", "h3_axis1_mcnemar_p"),
+            ("axis 2", "P-prompt", "h3_axis2_unique_count", "h3_axis2_ci95_lo",
+             "h3_axis2_ci95_hi", "h3_axis2_mcnemar_p"),
+        ]:
+            count = r.get(count_key)
+            if count is None:
+                # 9 cols total
+                lines.append(
+                    f"| {r['baseline']} | {r['site']} | {axis_label} ({axis_arm}) | n/a (arm pending) | "
+                    + " | ".join(["—"] * 5) + " |"
+                )
+                continue
+            ci_lo = r.get(ci_lo_key)
+            ci_hi = r.get(ci_hi_key)
+            mc_p = r.get(mc_key)
+            holm_p = r.get(f"{mc_key}_holm")
+            sig_holm = "✅" if (holm_p is not None and holm_p < 0.05) else "❌"
+            sig_ci = "✅" if (ci_lo is not None and ci_lo > 0) else "❌"
+            lines.append(
+                f"| {r['baseline']} | {r['site']} | {axis_label} ({axis_arm}) | "
+                f"{int(count)} tasks | "
+                f"[{ci_lo:.1f}, {ci_hi:.1f}] | "
+                f"{sig_ci} | "
+                f"{_fmt(mc_p)} | {_fmt(holm_p)} | "
+                f"{sig_holm} |"
+            )
 
     # 6-mode oracle (when P-prompt + P-text both present)
     lines += [
