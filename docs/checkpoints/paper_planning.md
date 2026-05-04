@@ -10,7 +10,13 @@
 > - **paper drafts** (`docs/analysis/paper_drafts/`): final paper prose
 > - **实验笔记** (`docs/checkpoints/实验笔记.md`): time-order chronicle (历史 record)
 >
-> **Last updated**: 2026-05-03 (pre-registration framework reframe: Hero+Structural+Framing-rule replacing 3-arm a-priori commit; preregistration.md draft + EVIDENCE_LAYER_AUDIT.md §2 anchor; T0a-d evidence-layer infra done)
+> **Last updated**: 2026-05-04 late evening (§21 ROUND-3 fact-check integration — Round-2 hallucinations corrected: HMT author Tan/Gao/Wu BIT (not Huang); NLAH dropped (was lying citation); WebAIM 2026 actual 59.1 vs 42 (not 57 vs 27); Operator 41.7% misattribution dropped (was MAI-UI success rate); Doubao bans dropped (no Chinese press verification); K3 Mariner / ActionEngine dropped (hallucinated). New Round-3 verified specifics: Magma uses Qwen3-VL backbone (same family as our paper); ScribeAgent fine-tunes Qwen 7B 6B-token corpus to WebArena 51.3%; NLWeb deployed at Tripadvisor + Shopify with `/ask`+`/mcp` endpoint spec; OmniParser-v2 SPS literal format `<box_start>...<box_end>`; AppAgent-v2 view_state_id JSON schema; Mind2Web 2 WebJudge 3-category taxonomy; cost anchors 241K vs 47-140K tokens; MCP 100% tool spoofing vulnerability)
+>
+> **2026-05-04 evening**: §21 EXPANDED — DR audit findings integrated: industry precedent stack mapped to 9-cell matrix [NLWeb / OmniParser-v2 / Magma / AppAgent-v2 / ScribeAgent / UI-TARS / HMT]; (ii)×L3 internal 4-tier sub-gradient identified [pretrain / RAG / inference-time / pure-visual], paper-1 occupies inference-time niche; §21.5 candidate paper §1 hook prose with substitution-gradient framing; §21.6 WebAIM 2026 + WebSuite + CAPTCHA counter-evidence stack
+>
+> **2026-05-04 morning**: §21 NEW — Environment-Agent Intervention Taxonomy 3×3 matrix; 笔记 §1-§108 audit, ~40 entries mapped to 9 cells; paper-1 main hook = (ii)×L3 phantom routing space; identified-but-unfixed (iii)×L2 channel-addition gaps as paper §5 ceiling argument material; paper-level methodology asymmetry inventory §47/§95/§96/§101
+>
+> **Previous**: 2026-05-03 (pre-registration framework reframe: Hero+Structural+Framing-rule replacing 3-arm a-priori commit; preregistration.md draft + EVIDENCE_LAYER_AUDIT.md §2 anchor; T0a-d evidence-layer infra done)
 >
 > **Previous**: 2026-05-01 (hook reframe to phantom space 3 arms; §2 cube boundary definition; axis 1/2 LLM mechanism refine)
 
@@ -50,6 +56,8 @@ SoM       ([SOM_MARKS] flat + SoM prompt + 有图)        ← highest text+image
 
 ## §2 Theory Framework — Mechanism Activation + Phantom Space Boundary (大重写 2026-05-01)
 
+> **Cross-reference (added 2026-05-04)**: §2 是 **mechanism explanation layer** (Zoom 1-4 解释假说); 跟 §21 **intervention taxonomy** (3-spectrum × 3-layer) 是 orthogonal 维度。**§2 关心 phantom routing space 内部 mechanism** (M1/M2 axis activation, etc.); **§21 关心 substitution gradient 上 paper-1 跟 industry precedents 的 substrate 站位** (NLWeb / OmniParser-v2 / Magma / ScribeAgent / AppAgent-v2 / UI-TARS vs phantom routing). 两个 view 互补不替代。
+>
 > **Conceptual structure 严格 2 层分离** (笔记 §108 evidence/explanation separation):
 > - **Explanation layer** (因果假说, §2 主住所): Zoom 1 architectural / Zoom 2 axis behavioral / Zoom 3 named phenomena / Zoom 4 model-internal
 > - **Evidence layer** (观测数据, §3 主住所): Outcome / Macro / Micro / Efficiency × cross-task / mode / site / model
@@ -588,6 +596,8 @@ Site × axis: cls visual-bound → image helping dominate; red text-dom → harm
 
 ## §3 Findings — 4-dimension Evidence + Mechanism Framework (重组 2026-04-29, 2026-05-01 update: evidence/explanation separation)
 
+> **Cross-reference (added 2026-05-04)**: §3 是 **paper finding evidence layer** (4 测量 × 4 cross-X = 16 sub-cells); 跟 §21 **intervention taxonomy** (~40 笔记 § environmental work) 是 orthogonal — §3 关心 phantom routing space 的 SR/cost/AUROC 实证, §21 关心 paper 周边 environmental scaffolding work 的 substrate categorization. **环境侧 fix** (§51-62 / §80 / §107 等 9 条) 是 §21 的 (i)+(ii)×L2 cell 内容, **paper §3 evaluation methodology footnote** acknowledge 这些 fix (跟 Avenir Web ignore env issue 形成 rigor differentiator), 但 detail 不在 §3 主分析。
+>
 > **重组动因 (§105)**：之前 10 条 finding 是 flat list，paper 写作时不好定位"哪个证据支持哪个 claim"。重组为 **4-dimension framework** —— 每个证据进对应 dimension，每个 paper claim 引用 dimension (e.g. "Outcome 0d Jaccard 0.447 supports routing-arm complementarity")。四个 dimensions 是 **正交** 的（不是 hierarchical layers）。**所有原 10 条 finding 都映射到对应 dimension，未删除**（见末尾索引）。
 
 ### Evidence vs Explanation Layer Separation (2026-05-01 update)
@@ -901,20 +911,22 @@ Section 5 (顶刊版) 期望证据 stack:
 
 ---
 
-## §4 Paper Section Status (2026-04-29, 8 sections final scope)
+## §4 Paper Section Status (2026-04-29, 8 sections final scope; 2026-05-04 update with §21 cross-references)
 
-| Section | evidence 质量 | 状态 | Hard blocker |
-|---|---|---|---|
-| 1 Intro | ✅ 已写 (786w + 4-fold drop-in framing + conservative framing) | done `62c1380` `ef29add` | — |
-| 2 Background + paper.bib | ✅ 已写 (1514w, 16 entries) | done `206cd93` | 待 codex #10 expand to ~38 |
-| 3 Definition + Ablation | ✅ 已写 (863w, token re-estimate corrected) | done `13b9608` `4d63c9f` `48db047` | — |
-| 4 Empirical Findings | 🟡 80% (figures FRESH ✅ + B0 5-mode FRESH, prose 待 update) | data ready | codex #11 fresh prose (~30K) |
-| 5 Mechanism | 🟡 90% evidence (3-axis × 8-channel × bidirectional × §100) | data 完整 | codex #13 prose (~50K, 待 #10 lit) |
-| **6 Routing (Tier 1+2)** ⭐ NEW | 🟡 40% (signal AUROC ≥ baseline `9d7e99f`, infra scaffold) | scaffold ready | Tier 1 prototype (~3 天) + Tier 2 first-step trigger (~7-10 天) |
-| 7 Generalization | 🟡 40% (B1 capability profile done) | partial | shopping (跑中) + WA + cross-model (Claude) |
-| 8 Discussion + Implications (含 sustainability + 4-fold drop-in summary) | ❌ 未写 | end-stage | 全部 data done |
+| Section | evidence 质量 | 状态 | Hard blocker | §21 cross-reference (2026-05-04) |
+|---|---|---|---|---|
+| 1 Intro | ✅ 已写 (786w + 4-fold drop-in framing + conservative framing) | done `62c1380` `ef29add` | **Pending advisor sync 5/5**: substitution-gradient framing rewrite (§21.5 candidate prose ~370w with Magma+ScribeAgent same-Qwen-base differentiator) | §21.5 hook prose, §21.2 industry precedent stack |
+| 2 Background + paper.bib | ✅ 已写 (1514w, 16 entries) | done `206cd93` | 待 codex #10 expand to ~38; **加 NLWeb/OmniParser-v2/Magma/ScribeAgent/AppAgent-v2/UI-TARS citations** | §21.5 differentiator table per system |
+| 3 Definition + Ablation | ✅ 已写 (863w, token re-estimate corrected) | done `13b9608` `4d63c9f` `48db047` | **Pending**: §3 evaluation methodology footnote acknowledge 9+ environmental scaffolding interventions (Appendix D), cite WebAIM 2026 + Mind2Web 2 WebJudge taxonomy | §21.6 counter-evidence stack |
+| 4 Empirical Findings | 🟡 80% (figures FRESH ✅ + B0 5-mode FRESH, prose 待 update) | data ready | codex #11 fresh prose (~30K) | §21.6 cost/latency anchors (241K vs 47-140K tokens) for §1/§6 quantitative positioning |
+| 5 Mechanism | 🟡 90% evidence (3-axis × 8-channel × bidirectional × §100) | data 完整 | codex #13 prose (~50K, 待 #10 lit); **Pending**: shared ceiling argument 用 (iii)×L2 7 条 § 共享 root-cause finding | §21.3 (iii)×L2 self-perception 7 条 § |
+| **6 Routing (Tier 1+2)** ⭐ NEW | 🟡 40% (signal AUROC ≥ baseline `9d7e99f`, infra scaffold) | scaffold ready | Tier 1 prototype (~3 天) + Tier 2 first-step trigger (~7-10 天) | §21.5 CoAct-1 OSWorld 60.76% task-class routing precedent; §21.6 cost anchors |
+| 7 Generalization | 🟡 40% (B1 capability profile done) | partial | shopping (跑中) + WA + cross-model (Claude); **Pending advisor sync 5/5**: 加 §7.x env-side pilot section (Sweet Spot NLWeb-style emit hidden select options) | §21.7 pending decision #2 (env-side pilot) |
+| 8 Discussion + Implications (含 sustainability + 4-fold drop-in summary) | ❌ 未写 | end-stage | 全部 data done; **加** IDPI security taxonomy + paper 2 future direction (live web / NLWeb-style env affordance) | §21.6 IDPI security findings + §21.7 paper-2 path |
 
 **Section 1-3 总 prose 3163 words** (paper-ready). Section 4 1725w draft 待 fresh data update. Section 5/6/7/8 待写.
+
+> **2026-05-04 §21 alignment audit**: 8 sections 全 cover 现 §21 9-cell taxonomy 内容, 但 explicit cross-reference 没贯通。advisor sync 5/5 lock 后 paper §1 hook 用 §21.5 prose; codex #11/#13 prose 写作时 cross-reference §21 industry precedents + counter-evidence stack。
 
 ### Section 6 Routing — 详细 outline
 
@@ -1807,3 +1819,315 @@ Record what happened (history)? → 实验笔记 append §
 Modify final paper text? → paper drafts (only when prose batch writing)
 Advisor decision context? → ADVISOR_SYNC
 ```
+
+---
+
+## §21 Environment-Agent Intervention Taxonomy (整合 2026-05-04, 笔记 §1-§108 audit)
+
+> **目的**: 整合分散在笔记里的 environment / agent intervention 类型 work, 给 paper 一个**统一的 contribution scope view**。学长 5/3 push "两头出发" 的 framing 在这里 explicit 化 — 我们一直在做 dual-track work, 只是没显性 frame。
+>
+> **Scope 不分 paper 1 vs paper 2** — 这一节是 **inventory**, 列"做了的 + 想做的"。具体哪条进 paper 1 / paper 2 / future 后续 advisor sync 决定。
+>
+> **Source of truth**: 笔记 §X 是历史 chronicle, 这一节是 cross-§ taxonomy view; 任何 § 修改/新增, 这一节同步 update.
+
+### §21.1 Framework — 3 × 3 Taxonomy
+
+**3 个 intervention nature** × **3 个 intervention layer** = 9 cells:
+
+#### Spectrum dimension (intervention 性质)
+
+| Spectrum | 含义 | 跟 Avenir Web 对比 |
+|---|---|---|
+| **(i) Bug fix** | 恢复 web/agent 已 expose 但 broken 的功能 (web 设计意图本来就有这个 functionality, 但实现/集成 broke 了) | Avenir Web ignore: 把 broken 当 valid failure 不算到 metric 里 |
+| **(ii) Affordance synthesis** | 用现有 metadata 补出 agent-readable view (web 已 expose 信息, 但 format 不是 agent-friendly, 加 preprocessing 补出来) | Avenir Web partial: 部分 synthesis (SoM marker) 标准做法, 但 select dropdown / popup 等 ad-hoc |
+| **(iii) Channel addition** | 添加 agent 之前 **absent** 的 signal channel (web 根本没 expose 这个信号) | Industry blind spot: Avenir Web / Claude Code / Codex 都 没系统 fix; agent 只能用 model capability cope |
+
+#### Layer dimension (intervention 位置)
+
+| Layer | 含义 | Cost / 修改面 |
+|---|---|---|
+| **L1 Server-side** | webserver / docker config / web-rendering 层 (改 server 配置, 改页面 HTML, 改 web 标准) | 高: 需要 server 控制权; 但 systematic |
+| **L2 Agent-pipeline** | agent script preprocessing / postprocessing layer (改 agent 端 perception 处理, 不动 web) | 中: agent-only 改动; 但 fragile (web 一变就要重写) |
+| **L3 Agent-compute** | LLM internal compute substitution (用 prompt / model 内部 compute 替代 explicit affordance) | 低增量: 已有 LLM call, 不加新 stage; 但受 model capability 限制 |
+
+#### 9-Cell 一句话总结表
+
+|  | (i) Bug fix | (ii) Affordance synthesis | (iii) Channel addition |
+|---|---|---|---|
+| **L1 Server-side** | docker / config 修 (~6 § done)<br/>**Industry**: Atlas StoragePartition isolation | agent-readable web standards (0 done, paper 2 future)<br/>**Industry**: **NLWeb** (Microsoft, May 2025, R.V. Guha — Schema.org → agent JSON channel) ⭐ | agent-specific server channel (0 done, paper 2 / M5 EIP brainstorm)<br/>**Industry**: NLWeb fits here too; A2A protocol (Google, Apr 2025) for agent-to-agent |
+| **L2 Agent-pipeline** | runner / wrapper 修 (~28 § done) | script-level affordance overlay (~9 § done, **SoM marker 是 paper-canonical instance**)<br/>**Industry**: **OmniParser-v2** (Microsoft, Feb 2025) — pipeline preprocessing canonical, screenshot → tokenized list | agent-side instrumentation (0 done, **≥7 § identified gaps**) |
+| **L3 Agent-compute** | n/a (compute 不能 fix bug) | **Paper hook 4-tier sub-gradient** (重要 distinction):<br/>• Pretraining-time: **Magma** (MS Feb 2025, SoM+ToM grounding 进 weights)<br/>• Offline exploration + RAG retrieve: **AppAgent-v2** (Tencent, agent self-generates text doc, deploy-time RAG)<br/>• Inference-time substitution: **Phantom routing space** ⭐ paper-1 main hook (P-text/P-prompt/P-SoM, no pretraining, no RAG, no offline phase)<br/>• Pure visual VLM: UI-TARS, CogAgent, Magma — opposite end (skip text substitution) | n/a (compute 不能 add absent signal) |
+
+### §21.2 Done items (已做 work, mapped to cells)
+
+#### (i) × L1 — Server-side bug fix (~6 entries)
+
+| § | Item | Affected component |
+|---|---|---|
+| §39 | PHP `session.gc_maxlifetime=1440s` 太短 → fix 到 86400s (24h) | Postmill PHP config |
+| §75 | Magento 302 → `metis.lti.cs.cmu.edu` DGX 不可解析, fix `--host-resolver-rules` 全链路注入 | Magento redirect target |
+| §81 | Wikipedia ZIM 2025-08 vs hardcoded 2022-05 mismatch, 三层 fix (URL adapter + tab health check + data cleanup) | Kiwix container ZIM version |
+| §103 | Magento auth bug, base_url 改 IP fix dropdown 渲染 | Magento base_url config |
+| §86 | Osclass DB 宕机绕过 retry 链, fix mid-episode title 检测 + health check | Osclass server outage detection |
+| §82 | 全站 auth refresh enable (跨 L1/L2; queue retry refresh + per-episode 5ep refresh) | Per-site auth lifecycle |
+
+#### (i) × L2 — Agent-pipeline bug fix (~28 entries)
+
+| § Cluster | Examples (笔记 §) | Theme |
+|---|---|---|
+| **Phase A 4-cluster (paper-grade)** | §107 (commit `3c15cd7`): C1 dispatch / C2 page_changed split / C3 fuzzy cycle hash min_reps=5 / C4 RNG seeding+T=0 | 主 paper-grade rerun trigger |
+| Runner reliability | §57 (tab_focus signature) / §58 (shell 孤儿 + stale summary) / §76 (atomic write + retry batch notification) / §85 (P0/P1/P2 batch 9 项) / §90 (keyword_finish 根除) / §87 (evaluator dirty page) / §97 (cross_rep 审计 RU/A/B 类) | Runner / pipeline 稳定性 |
+| Action surface | §28 (Vision type bug) / §29 (CDP 焦点) / §30 (np.float32 JSON) / §63 (`<think>` parse_error) / §65 (GLM batch digest) / §67 (parse_error 根治 + scroll 语义化) / §70 (GLM fallback 上线) / §68 (state_change 假阴性/假阳性) | Action parsing / execution |
+| Cross-mode symmetry | §44 (B0/B1 三模式 prompt 对称) / §45 (开跑前 9 项) / §46 (B0 ref images 静默丢失) / §42 (11 项审计) | Cross-mode 对称性 fix |
+| WA integration | §71 (集成) / §73 (集成审计) / §74 (evaluator 修复) / §83 (E-FP 规则) | WebArena 集成 |
+| Watchdog | §84 (跨站 NOT-LOGGED-IN 误判) / §82 (queue retry refresh) / §41 (gallery 幽灵) / §14 (session 丢失) / §12 (cycle 误杀) / §5 (busy:1) | Watchdog / observability fix |
+| Misc | §80 (viewport ratio precedence) / §43 (B0 N/A 401) / §40 (B0 prompt 503 retry) / §33 (reddit 7 项) / §34 (ref image processor) / §36 (ref image label) / §59 (BLIP-2 lazy) / §72 (proxy_api dual format) | 杂项 |
+
+#### (ii) × L1 — Server-side affordance synthesis: **0 done** (paper 2 future direction)
+
+**Industry precedent (added 2026-05-04 from DR audit, Round-3 verified)**:
+
+| Industry system | What it does | Date | Relevance to our paper |
+|---|---|---|---|
+| **NLWeb** (Microsoft, R.V. Guha) | Web emit Schema.org-based agent-readable JSON via `/ask` (conversational) + `/mcp` (Model Context Protocol) endpoints; bypass DOM. **Production deployment at Tripadvisor + Shopify** ✅ Round-3 verified | May 19, 2025 announce ✅ | **Closest industry precedent for our env-side pilot Sweet Spot**. NLWeb 是 deployed standard (不是 proposal), **没 paper 评估 NLWeb-style emission 跟 inference-time L3 substitution (phantom routing) 相对收益** — 我们 env-side pilot 直接 mirror NLWeb spec, 是其首个 controlled comparison |
+| **NLWeb literal endpoint spec (Round-3 verified)** | `/ask` returns schema.org JSON: `{"@context":"https://schema.org","@type":"Product","name":"...","offers":{...},"mcp_actionable":{"endpoint":"/mcp/cart/add","parameters":["sku","quantity"]}}` | May 2025 deployed | Sweet Spot env-side pilot for VWA: Postmill/Magento add `/ask`+`/mcp` endpoints emit schema.org JSON, agent reads JSON instead of running AXTree extraction |
+| **`agent.txt` / `.well-known/agentbridge.json`** | RFC-stage proposals 给 agent-specific routing hint | 2024-2025 idea stage | Conceptual analog, 没 production deployment |
+| **AgentFinder / DataFinder / ModelRouter** (NLWeb subsystems) | NLWeb 内嵌 dynamic RAG indexing + model invocation, 不只是 JSON spec | 2025 deployed | Paper §7 / §8: NLWeb extends beyond passive directory listing — active routing infrastructure |
+
+#### (ii) × L2 — Agent-pipeline affordance synthesis (~9 entries)
+
+| § | Affordance synthesized | Implementation |
+|---|---|---|
+| §51 | Native `<select>` dropdown action affordance + `[OPTIONS]` AXTree 注入 | `vwa_wrapper.py::_inject_select_options()` |
+| §54 | `[OPTIONS: currently selected="X"]` action-effect feedback | `_inject_select_options()` with `selectedOpt.text` |
+| §60 | CSS 自定义下拉 `[DROPDOWN OPTIONS]` 注入 | `_inject_css_dropdown_options()` |
+| §61 | `[OPTIONS]` cross-mode propagation 到 SoM `[SOM_MARKS]` 列表 | `som.py::_build_som_result()` mark_lines 扫描 |
+| §62 | CSS dropdown action surface for Vision `select_option` 路径 | `vwa_wrapper.py` Vision JS path 加 fallback |
+| §53 | Native `confirm()` 弹窗自动 accept (synthesizes "auto-accept" affordance) | `page.on("dialog", _on_dialog)` registration |
+| §36 | `[Reference image N] This image shows the target item...` prompt augmentation | `runner.py` ref image label |
+| §93 | 分析管线 timing/intent/cost/visualization 增强 (eval-side affordance) | `validate_run` 22→27 checks + `reason_diagnostics` 16 cols |
+| §38 | VWA 站点 reset infrastructure (一键 docker rm + volume + init_db) | `scripts/maintenance/reset_vwa_sites.sh` |
+
+**(ii) × L2 设计参数 (sub-axis, paper §3 disclosure 必备)**:
+
+| § | Design parameter | Rationale (paper §3) |
+|---|---|---|
+| §94 | SoM `max_marks` 80→200 | reddit 74% task 被截断, B1 mode 反转部分由此 |
+| §96 | SoM 全元素标注 vs 仅可交互 (P79 "Universal SoM" vs VWA "Action-Affordance SoM") | 路由研究控制变量 + Phantom-SoM 消融前提 (DOM↔SoM 切换仅格式差异) |
+| §80 | viewport ratio threshold 0.6 | ratio ≥ 0.6 → 元素中心必在 viewport 内 (mathematical guarantee) |
+| §101 | P79 vs VWA SoM 范式 fundamental 差异 (universal vs action-affordance) | 1 fundamental + 2 minor (颜色 + placement); paper §3 explicit 论证选 P79 范式 |
+
+#### (ii) × L3 — Agent-compute affordance synthesis (paper-1 main hook)
+
+| § | Item | Status |
+|---|---|---|
+| §102 | Phantom-SoM 工程实施 (mode + agent prompt + condition config) | ✅ done, all 4 phantom corners ready |
+| §103 | Phantom-SoM 4-mode routing arm finding (B0 reddit 6-mode 完整 cell) | ✅ paper §1 main hook, status:provisional pending 14-cell rerun |
+
+**(ii) × L3 内部 4-tier sub-gradient — paper §1 hook 关键 distinction (added 2026-05-04 from DR audit)**:
+
+(ii) × L3 这个 cell 内部不是单一 mechanism, 是**4 种不同的 substitution timing**:
+
+| Sub-tier | When substitution happens | Industry instance | Mechanism |
+|---|---|---|---|
+| **L3-pretrain** | Training-time (整进 weights) | **Magma** (MS Feb 2025) | SoM + ToM annotations 作 pretraining objectives, vision-text grounding 内化进 model weights |
+| **L3-RAG-offline** | Offline exploration → deployment-time retrieve | **AppAgent-v2** (Tencent) | Exploration phase agent **自己** explore 写 text document; deployment phase 用 RAG retrieve over self-generated doc |
+| **L3-inference (我们)** ⭐ | Inference-time, no offline, no retrieval | **Phantom routing space** (paper-1 hook) | Agent reads `[SOM_MARKS]` directly from observation processing — no pretraining, no RAG, no offline exploration phase |
+| **L3-pure-visual** | (opposite end — skip text substitution entirely) | UI-TARS, CogAgent, OperatorCUA | Pure visual VLM, 完全 skip textual abstraction — coordinate grounding 直接进 weights |
+
+**为什么 L3-inference 是真正没 named precedent 的 cell**:
+- L3-pretrain (Magma): 需要 retrain model with SoM/ToM data
+- L3-RAG (AppAgent-v2): 需要 offline exploration phase 跑 agent 写 doc
+- L3-pure-visual (UI-TARS): 不做 text substitution
+- L3-inference (我们): **不需 retrain, 不需 RAG, 不需 offline phase, 不需 special model — pure prompt engineering 在 deployment time 即可。也是 lowest-friction substitution option**
+
+**Paper 1 official contribution scope = L3-inference cell (substitution gradient 的 unfilled niche)**: testing how much (ii) × L2 affordance synthesis (industry instance: OmniParser-v2 pipeline preprocessing) can be substituted by L3-inference compute substitution at deployment time without offline / RAG / pretraining cooperation.
+
+**Industry precedent (added 2026-05-04 from DR audit, Round-3 verified specifics)**:
+
+| Industry system | Cell it occupies | Year | Relevance to our paper |
+|---|---|---|---|
+| **OmniParser-v2** (Microsoft, Yu/Yang/Wan/Bai) | (ii) × L2 — pipeline preprocessing | Feb 2025 (arXiv:2502.16161) ✅ verified | Canonical instance of L2 affordance synthesis. **MoE token-router shared decoder + Two-Stage Structured-Points-of-Thought (SPOT) prompting**. Literal output token format (Round-3 verified): `<box_start> <x_0.12> <y_0.45> <content_submit> <box_type_button> <box_end>`. Paper §1 / §3 cite as "pipeline preprocessing alternative to inference-time L3 substitution"; literal SPS format vs our `[id=N] role 'label'` format direct contrast |
+| **Magma** (Microsoft + UMD + UW, Yang et al.) | (ii) × L3 sub-tier "pretraining-time" | Feb 2025 (arXiv:2502.13130) ✅ verified | **Uses Qwen3-VL backbone (same family as our paper B0/B1!)** Round-3 verified. SoM + ToM 进 model weights via pretraining objectives. **Paper §1 differentiator精确 prose**: "Magma integrates SoM + ToM grounding into Qwen3-VL pretraining; we test inference-time substitution on **non-pretrained Qwen3-VL** to characterize how much routing benefit emerges from prompt structure alone vs requires pretraining" |
+| **AppAgent-v2** (Tencent, Zhang et al. arXiv:2408.11824 v1, Zheng et al. v2 arXiv:2411.18279 ✅) | (ii) × L3 sub-tier "RAG-offline-explore" | 2024 (v1), 2025 (v2) ✅ verified | Closest published precedent for textual-surrogate routing. Exploration-phase agent generates **structured JSON document with `view_state_id` + `primary_action_node` + `observed_constraints` + `blocking_conditions` + `error_states_observed`**; deployment-phase RAG retrieves chunked by view_state_id with cosine similarity. **Differs from us in needing offline exploration phase + RAG retrieve**. Paper §1 explicit cite + differentiate prose: "AppAgent-v2 achieves textual-surrogate routing via offline exploration + RAG retrieval; we achieve substitution at single-pass inference time without offline phase or persistent retrieval index" |
+| **ScribeAgent** (CMU, Shen/Jain/Xiao et al.) | (ii) × L3 sub-tier "fine-tune" | Dec 2024 (arXiv:2411.15004) ✅ verified | **Uses Qwen base (also same as our paper!)**. **6B token production-scale workflow data from 250+ digital domains (Scribe platform real human demonstration traces, NOT synthetic)**. LoRA fine-tuning, 65K context, 7B + 32B variants. **WebArena: 7B variant 45.7% → 51.3% SOTA** (specific Round-3 verified number). Paper §1 differentiator: "ScribeAgent fine-tunes Qwen 7B on 6B token DOM workflow corpus to achieve WebArena 51.3%; we use **non-fine-tuned Qwen3-VL** + inference-time prompt structure to recover routing benefit without dataset assembly" |
+| **UI-TARS** (ByteDance Seed, Qin/Ye/Fang) | Outside (ii) × L3 — pure visual VLM | Jan 2025 (arXiv:2501.12326) ✅ verified | Pure visual coordinate grounding; **opposite end** of substitution gradient. **System-2 reasoning mechanism**: long-form CoT trace **before** physical coordinate action (task decomposition + anticipatory error checking + milestone recognition). Trace gathering across **hundreds of VMs** simultaneously with iterative bootstrap. **UI-TARS-1.5 introduces multi-turn RL** for inference-time scaling (longer reasoning = higher SR). Paper §1 cite as "no-substitution baseline (visual-only) at one extreme of substitution gradient" |
+| **HMT (Hierarchical Memory Tree)** Tan, Gao, Wu (BIT) | (ii) × L3 + memory architecture | Mar 2026 (arXiv:2603.07024) ✅ verified | Decouples planning from execution via semantic element descriptions; hierarchical 84.2% recall vs flat 65.8% on memory architecture. Note: Round-2 misattributed authors "Huang et al." — actual is Tan/Gao/Wu (BIT). Paper §2 / §5 cite as "structural format trade-off task-dependent finding" |
+| **CoAct-1** (OSWorld) | Hybrid programmatic + visual routing | 2025 ✅ verified | OSWorld 60.76% SOTA via task-class routing: writes Python/Bash for file ops, reserves visual perception for tasks where no programmatic backdoor exists. Different routing axis (programmatic vs visual) but same conceptual family — paper §6 routing chapter cite as "task-class-based routing precedent" |
+
+#### (iii) × L1 — Server-side channel addition: **0 done** (paper 2 future)
+
+笔记中 brainstorm 提及但未 implement:
+- 行动规划 line 139 — "EIP 站点先验注入（M5，翻页/排序指南，零额外 token）— §31"
+- Avenir Web disclosure (用户提及): "find-expensive task → use sort by" 类 task-specific knowledge channel
+- 学长 5/3 brainstorm: "网页给 agent 友好接口" — 类 robots.txt-for-agents / page-emitted hint
+
+**Industry precedent (added 2026-05-04 from DR audit)**:
+
+| Industry system | What it adds (channel) | Year | Relevance |
+|---|---|---|---|
+| **NLWeb** (Microsoft) | Schema.org-based agent JSON channel; bypass DOM | May 2025 | Same cell as our pilot direction; standard exists 没 deployment evaluation |
+| **A2A protocol** (Google) | Agent-card metadata channel for agent-to-agent negotiation | Apr 2025 | Different layer (agent ↔ agent) but conceptually same channel-addition principle |
+| **MCP server** (Anthropic, ecosystem-wide) | Tool-execution channel; agent reads tool registry directly | Nov 2024 | Standard widely adopted; channel for tool execution rather than page perception |
+| **Doubao Mobile `INJECT_EVENTS`** (ByteDance) | OS-level event channel for cross-app actions | Dec 2025 | Mobile-specific; channel-addition at OS layer rather than web |
+| **Atlas StoragePartition** (OpenAI) | Ephemeral session isolation channel | Oct 2025 | Architectural workaround, not affordance addition
+
+#### (iii) × L2 — Agent-side instrumentation channel addition: **0 done, ≥7 § identified gaps** ⚠️
+
+**所有 7 条都指向 same root cause**: agent 缺 self-perception channel (page-position / element-clickable / action-effect / scroll-completion).
+
+| § | Surface symptom | Underlying missing channel |
+|---|---|---|
+| §52 | B0 TYPE 全选变蓝 (scroll 后 input 消失, agent 不知 focus 变) | `activeElement` change channel |
+| §64 | Vision type 非 input 全选变蓝 (类似 §52, 已部分 patch) | Same as §52 |
+| §55 | Delete 成功信号缺失 (flash msg 时序, 笔记 explicit "暂不修复, 非结构性缺失") | Action-outcome feedback channel |
+| §72 | Qwen scroll_up 3-7% (跨模型, Claude 38% 对照 — agent 不知 page-Y position) | `window.scrollY` / page-position channel |
+| §72 | B1 scroll 到底之后不停 scroll → 早停 | Page-bottom-reached signal |
+| §31 | task 19/22/58 case study (auto-scroll 不可预测, agent 无 reaction signal) | Page-reflow notification channel |
+| §32 | Vision 坐标 misclick Art+crafts→Books 系统性偏移, **零自纠正** | Click-success / element-hit feedback channel |
+| §96 | B1 32% click 打到非交互元素 (B0 仅 12.6%) | Element-clickability indicator channel |
+| §50 | B0 scroll 方向问题: **无可靠修复** (笔记 explicit 写) | scroll direction / page-position channel |
+
+**Paper §5 mechanism 直接 implication**: phantom routing space 4-fold drop-in 是测**在共享 (iii) × L2 channel-absent ceiling 下**的 (ii) × L3 compute substitution capability, 不是 break ceiling。Paper §4/§5 应 explicit 论证这个 shared-ceiling stance。
+
+#### (iii) × L3 — Agent-compute channel addition: **n/a (impossible by definition)**
+
+Compute 不能 add absent signal (信息论 下界); 但 prompt-side knowledge injection (M5 EIP) 是 L3 prompt-text 模拟 L1 channel 的**不完美 surrogate** — unsystematic (per-task / per-site 写 prior), 但 paper-2 framing 可以是 "L3 prompt prior simulates absent L1 channel"。
+
+### §21.3 Identified-but-not-done items (想做但未做)
+
+#### A. (iii) × L2 instrumentation gaps (Paper §4/§5 disclosure 必备 + paper 2 future)
+
+7 条 § identified, 共 4 个 channel 类:
+
+1. **Page-position channel** (§52/§64/§72/§31/§50) — `window.scrollY` / page-height / scroll-completion / direction
+2. **Action-effect feedback channel** (§55/§32/§96) — click-hit / type-success / form-changed indicator
+3. **Element-clickability indicator** (§96) — affordance-aware mark
+4. **Page-reflow notification** (§31) — auto-scroll / async update reaction
+
+修这些需要 agent script 加 instrumentation (agent 端 read web 已 expose 但没用的 metadata)。**Paper 1 不修, 但 §4/§5 explicit disclose ceiling stance**。
+
+#### B. (ii) × L1 — Server-side affordance synthesis (paper 2)
+
+- Agent-readable web 标准 (扩展 schema.org / ARIA roles for agent)
+- Server-rendered SoM markers (vs 现 agent-side script overlay)
+- 工作量: 中-大 (改 docker / web framework)
+
+#### C. (iii) × L1 — Server-side channel addition (paper 2)
+
+- Page-emitted task hints (`<meta name="agent-task-hint" value="use sort-by">`)
+- Agent-specific status channel (`<meta name="agent-list-total" value="235">` 解 §52 historical-orders fail)
+- M5 EIP "翻页/排序指南" — knowledge injection 跟 routing 同 family
+- 工作量: 中 (web 加 meta tags + agent 读)
+
+#### D. Agent module M-modules (笔记 行动规划)
+
+| Module | 内容 | Layer |
+|---|---|---|
+| M1 select fallback | 自动 select_option fallback | (ii) × L2 |
+| M2 input fallback | type 失败自动 fallback | (ii) × L2 |
+| M3 retry | step 失败自动 retry | (i) × L2 |
+| M4 two-stage | planner + grounder 拆分 | (ii) × L3 |
+| **M5 EIP 站点先验** | 翻页/排序指南 | (iii) × L1 if server / L3 if prompt-side |
+
+#### E. Cross-stack generalization (paper 2 / future paper)
+
+- 实测 phantom routing space 在 live websites 是否 hold (online mind2web extension)
+- 实测在不同 web stack (静态网站 / SPA / form-heavy / e-commerce) 上的 generalize
+- 学长说的 "可泛化" 验证
+
+### §21.4 Paper-level methodology asymmetries (跟 9-cell taxonomy 平行的 disclosure list)
+
+不属于 intervention category, 是 paper §3 / §4 必须 disclose 的 methodology design 决策:
+
+| § | Asymmetry | Paper disclosure 位置 |
+|---|---|---|
+| §47 A1 | B0 temperature=0.1 vs B1 do_sample=False (greedy) | §3 methodology |
+| §47 A3 | B0 max_new_tokens=4096 vs B1=384 (B1 偶发 truncation → wait action) | §3 methodology |
+| §95 | Visual_fp 删除 + eval_fp 简化为 2-rule (string_match / program_html) | §3 evaluation methodology + Appendix sensitivity analysis |
+| §96 | P79 SoM 全元素标注 (rationale: 路由研究控制变量) | §3 ablation 设计 |
+| §101 | P79 "Universal SoM" vs VWA "Action-Affordance SoM" 范式选择 | §3 ablation 设计 |
+| §80 | viewport ratio threshold 0.6 (mathematical guarantee 论证) | §3 evaluation methodology |
+| §89 | Visual / non-visual subset 三套指标 (raw + adjusted + non-visual) | §4 results presentation |
+
+### §21.5 Substitution Gradient — Paper §1 Hook Positioning (added 2026-05-04 from DR Section E)
+
+DR Section E independently characterized substitution gradient (without using "phantom routing" 术语 — circular bias 排除):
+
+```
+Server-side                Pipeline-side                 LLM-internal                LLM-internal               LLM-internal
+(α/β1)                     (β2)                          (β3 pretrain)              (β-RAG)                     (β-inference)
+─────                      ─────                         ─────                       ─────                       ─────
+NLWeb (Schema.org JSON)    OmniParser-v2 (parse →         Magma (SoM+ToM            AppAgent-v2 (offline       Phantom routing space ⭐
+   substitution at         tokenized list, downstream     grounding 进 weights,      explore 写 doc → deploy-      (paper-1 main hook)
+   server emission         LLM consumes only text)        cross-modal 内化)          time RAG retrieve)            inference-time only,
+                                                                                                                  no pretrain / no RAG /
+                                                                                                                  no offline phase
+
+[opposite end of gradient — no substitution]:
+UI-TARS / CogAgent / Operator CUA / Magma — pure visual coordinate grounding
+```
+
+**Paper §1 hook 候选 framing** (基于 substitution gradient niche, **Round-3 verified specifics**):
+
+> "Web agents face a substitution gradient between visual affordance perception and textual surrogate processing. Industry has populated nearly every cell of this gradient: server-side native emission (NLWeb, Microsoft, May 2025; deployed at Tripadvisor and Shopify via `/ask` + `/mcp` endpoints emitting schema.org JSON), pipeline-side preprocessing (OmniParser-v2, Microsoft Feb 2025; outputs structured-points sequences via Two-Stage SPOT prompting), pretraining-time LLM-internal grounding (Magma, Microsoft + UMD + UW Feb 2025; integrates Set-of-Mark + Trace-of-Mark annotations into Qwen3-VL pretraining), fine-tuning-time substitution (ScribeAgent, CMU Dec 2024; achieves WebArena 51.3% by fine-tuning Qwen 7B on 6 billion tokens of human demonstration workflows), RAG-time deploy substitution (AppAgent-v2, Tencent; offline exploration generates view-state-indexed JSON document, deployment retrieves via cosine similarity), and pure visual VLM grounding (UI-TARS, ByteDance Jan 2025; pure-pixel coordinate grounding with System-2 CoT reasoning across hundreds of training VMs). One cell remains unfilled: **inference-time LLM-internal substitution requiring no pretraining, no fine-tuning, no retrieval, no offline exploration, no environment cooperation**. We characterize this **phantom routing space**: a class of inference-time agent-compute substitutions of pipeline-side visual affordance synthesis (canonical: SoM marker overlay), recovering most routing benefit at near-zero incremental cost on **non-fine-tuned Qwen3-VL** (the same backbone Magma pretrains and ScribeAgent fine-tunes). P-SoM (cube center, axis 1+2 compound) is the deployment hero satisfying a 4-fold drop-in property: cost ≈ DOM, latency ~50% lower, signal AUROC ≥ baseline, drop-one ≥ 1pp pre-registered. The phantom space exhibits 2-axis empirical structure (axis 1 text payload via P-text; axis 2 SoM-style prompt via P-prompt) — both dimensions contribute non-overlapping unique tasks not solvable by P-SoM alone, evidencing phantom space is a multi-region 2-D structure rather than a collapsed point."
+
+(这版 hook ~370 词, 含 substitution gradient contextualization with Round-3 verified specifics + Qwen-base differentiator + phantom space 主 claim + 2-axis structural)
+
+**关键 differentiator vs each industry precedent (paper §1 必须 cite & contrast, Round-3 specifics)**:
+
+| Industry system | 我们如何 differ |
+|---|---|
+| OmniParser-v2 | They do (ii)×L2 pipeline preprocessing with literal SPS format `<box_start>...<box_end>`; we do (ii)×L3 LLM compute substitution with `[id=N] role 'label'` format. Different layer + different token economics. |
+| Magma | They integrate SoM + ToM **into Qwen3-VL pretraining weights**; we use **non-pretrained Qwen3-VL** at inference time to characterize what's recoverable from prompt structure alone (without retraining). **Same model family** = clean experimental isolation of pretraining contribution. |
+| AppAgent-v2 | They do offline exploration phase generating JSON with `view_state_id`/`primary_action_node`/`observed_constraints`, then RAG retrieval at deploy; we do single-pass inference-time substitution. **No offline phase, no persistent index**. |
+| ScribeAgent | They fine-tune Qwen 7B on 6B token DOM workflow corpus to WebArena 51.3%; we use **non-fine-tuned Qwen3-VL** (B0 235B / B1 4B) at inference time. **Same Qwen base** = clean experimental isolation of fine-tuning contribution. |
+| UI-TARS / CogAgent | Pure visual VLM (no substitution); we sit at the substitution end of the same gradient on standard VLMs. |
+| NLWeb (deployed at Tripadvisor + Shopify) | They do (ii)×L1 / (iii)×L1 server-side emission via `/ask` + `/mcp` endpoints with schema.org JSON; we test the LLM-internal compensation when server-side affordance is absent. **Our env-side pilot would mirror NLWeb spec on VWA — first controlled comparison of NLWeb-style emission vs L3 inference substitution.** |
+| HMT (Tan/Gao/Wu BIT 2026) | Memory architecture (recall trade-off hierarchical 84.2% vs flat 65.8%); orthogonal axis to phantom routing |
+| CoAct-1 (OSWorld 60.76%) | Task-class routing (programmatic Python/Bash vs visual perception); orthogonal axis but same conceptual family — paper §6 routing chapter cite |
+
+### §21.6 Industry counter-evidence stack (added 2026-05-04 from DR Section D)
+
+Empirical findings from DR that **directly support** paper §3 evaluation methodology + §107 audit narrative:
+
+| Finding | Source | Paper integration |
+|---|---|---|
+| **WebAIM Million 2026 — ARIA pages 59.1 errors avg vs non-ARIA 42 errors** ("no ARIA is better than bad ARIA"; 27% YoY ARIA attribute growth = increasing degradation) ✅ VERIFIED Round-3 | WebAIM annual report 2026 | Paper §3 evaluation methodology: "Web environments are designed for human consumption with systemically broken accessibility metadata. Our 9+ environmental scaffolding interventions (Appendix D) reflect category-level fixes consistent with WebAIM 2026's finding that ARIA-implementing pages have ~40% more errors than non-ARIA pages, with rates worsening year-over-year." (Round-2 had wrong "57 vs 27" numbers; Round-3 verified actual is 59.1 vs 42) |
+| **WebSuite trajectory analysis — failed tasks consume 2× steps vs successful** | WebSuite (Harvard, Li & Waldo 2024) | Paper §5 mechanism: connect to §72 scroll under-use / §52 type 全选 / §96 non-interactive click — failed agent task wastes steps on environmental traps, supports phantom routing 4-fold drop-in (lower latency = fewer wasted steps) |
+| **CAPTCHA Reasoning Depth + 16% e-commerce checkout deployment** | DR cited research | Paper §1 / §8: real-world deployment friction; phantom routing space doesn't address this (out-of-scope), but acknowledges as ceiling |
+| **Online-Mind2Web SOTA Avenir-Web 53.7% with Gemini 3 Pro backbone (Nov 18 2025 public preview)** ✅ VERIFIED Round-3 | Avenir-Web research initiative 2026 / Online-Mind2Web (Xue et al. 2025) | Paper §1 motivation: "Industry SOTA fails ~46% on live web, indicating environment-side hostility is unsolved at any agent-side scale" — **Round-2 "Operator 41.7% failure" claim was misattribution** (actually MAI-UI 41.7% **success** rate on MobileWorld), Round-3 verified Avenir-Web only |
+| ~~Doubao Mobile e-commerce bans~~ | (REMOVED — Round-2 hallucination, no Chinese press verification) | **Dropped from paper** — Round-3 fact-check found no verified report of Taobao/Meituan/WeChat Pay banning Doubao-1.5-UI-TARS |
+| **Browser-Use 31% → 26% drop when search disabled** ✅ Round-3 verified | OpenReview forum=6jZi4HSs6o | Paper §1 motivation: agents lean on search shortcuts rather than authentic web navigation; phantom routing tests pure-navigation capability |
+| **MCP 100% tool spoofing vulnerability** (namespace collision attack) | Anbiaee et al. 2026 "Security Threat Modeling for Emerging AI-Agent Protocols" arXiv:2602.11327 ✅ verified | Paper §8 discussion: agent-readable channels (NLWeb, MCP) introduce IDPI attack surface — tradeoff to acknowledge when proposing env-side cooperation |
+| **22 distinct IDPI payload techniques in the wild** (zero-sizing / CSS suppression / invisible chars / payload splitting / multilingual injection) | Unit 42 / Palo Alto Networks 2026 | Paper §8: when adopting environment-side channels, security tradeoff acknowledgment |
+| **Persona-based jailbreaking 50-70% reduction in refusal rates** | Zou et al. 2025 arXiv:2507.22171 | Paper §8: agent attack surface even via prompt engineering alone |
+| **Sonnet 4.6 explicit IDPI resistance positioning** (Feb 17, 2026 release, computer_20251124 tool) ✅ verified | Anthropic announce news/claude-sonnet-4-6 | Paper §8: industry recognizing IDPI as core agent threat; our work 不 directly address but acknowledge |
+| **Mind2Web 2 WebJudge 3-category failure taxonomy**: Agent Failure / Environment Failure / Task Ambiguity. **WebGym infrastructure** for parallel rollout simulations. Online-Mind2Web 300 tasks × 136 live sites; Mind2Web 2 130 tasks × 44 sites. ✅ Round-3 verified | Online-Mind2Web Xue et al. 2025 | **Paper §4 evaluation methodology direct cite**: "Our 9+ environmental scaffolding interventions (Appendix D) prevent conflation of WebJudge **Agent Failure** vs **Environment Failure** — without these patches, evaluation systematically misattributes Environment Failures to agent capability." |
+| **Cost / latency quantitative anchors** ✅ Round-3 verified | RAG/MCP/NLWeb Evaluation 2025 + OmniParser-v2 paper | Raw HTML/DOM: **241,000 tokens, 291s/task, F1=0.67**. Server-structural (NLWeb/MCP/RAG + GPT-5): **47K-140K tokens, 50-62s/task, F1=0.87**. OmniParser-v2: sub-second SPS preprocessing. **Paper §1 / §6 quantitative positioning**: phantom routing space sits between (compute substitution at L3 inference, no fine-tune, no offline phase) — measurements paper main contribution row |
+| **CoAct-1 OSWorld 60.76% SOTA** via task-class routing (programmatic Python/Bash for file ops + visual perception only when no programmatic backdoor) ✅ verified | OSWorld + CoAct-1 publication 2025 | Paper §6 routing chapter: task-class routing precedent; orthogonal to phantom routing axis but conceptually same family |
+| **3D game environments require pipeline SoM injection** (Cradle BAAI 2024 — Red Dead Redemption 2; GenSim Bayesian environment generation) ✅ Round-3 verified | Cradle paper / GenSim paper | Paper §8 future work: substitution gradient extends to game environments; opens paper 2 / 3 path |
+| **OS-level metadata broken** (OSWorld + AppWorld + AndroidWorld benchmark consensus): A11y trees rendered blank or wildly inaccurate by custom rendering engines, nested iframes, unlabelled components | OS-Genesis (ACL 2025) / OS-Atlas (ICLR 2025) ✅ verified | Paper §3 / §8: cross-platform pattern — environmental hostility is universal not web-specific |
+
+### §21.7 Pending decisions (后续 discuss / advisor sync)
+
+#### Original (5/3)
+
+1. **Paper 1 §1 hook contextualization** — 是否加 3-spectrum framing (i)/(ii)/(iii)? 现 §1 是 P-SoM hero + structural ablation, 加 contextualization 段 ~150 词
+2. **Paper 1 §107 audit 章节 vs 单独 paper** — (i) + (ii) × L2 ~37 entries 是 paper 1 §3/§4 章节 vs Appendix D vs 单独 audit paper
+3. **Paper §5 mechanism shared ceiling argument** — (iii) × L2 7 个 manifestation 是否 explicit 进 §5 (作 phantom routing space ceiling 论证)
+4. **(ii) × L2 design parameter disclosure** — §94/§96/§80/§101 是否 paper §3 ablation 章节 explicit 论证
+5. **paper 1 vs paper 2 scope split** — 现 inventory 不分; 何时 advisor sync decide 切片
+6. **Avenir Web disclosure framing** — paper §1 / §3 是否 explicit position rigor differentiator (我们 fix env issues vs Avenir Web ignore)
+7. **学长 dual-track framing** — 是否 paper §1 explicit "agent + environment dual-track" framing, 还是隐式 contextualization
+
+#### Added 2026-05-04 (post DR audit)
+
+8. **Adopt §21.5 candidate paper §1 hook prose?** — 用 substitution gradient framing (industry precedent stack contextualization) 替代 / 升级现 §1 hook (~250 词, 含 4-tier sub-gradient contrast + niche positioning)
+9. **Fact-check 高 risk industry citations** — paper writing 前必须 verify: HMT (arXiv:2603.07024), NLAH AGENTS.md (arXiv:2602.11327), WebAIM 2026 specific numbers, NLWeb May 2025 announce date, OS-Atlas ICLR 2025 / OS-Genesis ACL 2025 venues. 不 verify 直接引 = paper 审稿 immediate reject risk
+10. **Env-side pilot 实施 — Sweet Spot 设计** — 用户提议 "server emit hidden select options" 是 NLWeb-style 实例。Sweet spot 选 (a) inline `<script type="application/agent-marks">` JSON-LD / (b) HTTP header / (c) sidecar endpoint /agent/v1/page-state? 工作量 + paper claim power 跟 14-cell rerun critical path 优先级冲突
+11. **AppAgent-v2 differentiation 写哪儿** — paper §1 (closest 工业 precedent) / §2 related work / §5 mechanism (RAG-time vs inference-time substitution 的 mechanism contrast)
+12. **OmniParser-v2 跟 phantom routing 对比 prose** — paper §3 / §5 explicit (ii)×L2 vs (ii)×L3 layer 区分; OmniParser 是 industry-side L2 instance, phantom routing 是 paper-side L3 instance
+13. **WebAIM 2026 cite 进哪儿** — paper §1 motivation / §3 evaluation methodology / Appendix D environmental fix audit 章节
+
+---

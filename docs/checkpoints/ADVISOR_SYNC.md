@@ -2,7 +2,15 @@
 
 > **一次性 prep notes, 给自己看, 不是给学长发的 message**。列要 cover 的 topic + 自己 lean 哪边 + 关键 talking points。Detail 在 `paper_planning.md` / `实验笔记.md` 里, 这文档只是 sync 时的 reference checklist。
 >
-> **Sync 目标**: 30-45 min 会, cover §1-§6 各 topic, 拿到 §1.4 / §2.4 / §3.5 / §4.4 / §6.3 advisor input。
+> **Sync schedule**: ⭐ **5/5 (周一) 早上** (学长 5/3 confirm, 西班牙出差返回后)。学长 pre-sync 会先 review 我们 prep 材料 (这文档 + preregistration.md 等)。
+>
+> **Sync 目标**: 30-45 min 会, cover §1-§7 各 topic, 拿到:
+> - §1.4 (5 件 pre-registration commits + framing rule + epistemology)
+> - §2.4 (VWA bug 单独成文?)
+> - §3.5 (RunPod $200 经费流程)
+> - §4.4 (Early-stop A/B/C)
+> - §6.3 (SteerMoE scope)
+> - **§7.6 (Environment-side dual-track ⭐ 新, 学长 5/3 push)**
 
 ---
 
@@ -297,6 +305,105 @@
 - Section 6: routing infra scaffold 已 ready, signal AUROC ≥ baseline `9d7e99f`. Tier 1 (offline supervised oracle, 3 天) + Tier 2 (online first-step trigger, 7-10 天) 是 paper 真正最值钱工作量
 - Section 7: B1 capability profile done, shopping 跑中 + WA 全未开始 + cross-model (Claude) 待跑
 
+---
+
+## 7. Dual-track + Industry Landscape (学长 5/3 push + 5/4 evening 整理)
+
+> **大背景**: 学长 5/3 下午说"两头出发, environment 那边也做". 我先误解成"加新方向", 后来想清楚了 — **我们其实一直在做这事**, 笔记 §1-§108 里有 ~40 条 § 是 environment intervention work, 学长是说要把这件事 explicit frame 出来。后来花一晚上做了 9-cell 框架 + 3 轮 Gemini DR, 现在整个 paper landscape 站位非常清楚。详 `paper_planning §21`。
+
+### 7.0 整套故事的关键 insight
+
+**我们做的 work 比 paper hook 显示的多得多**:
+- Paper 现 hook: P-SoM hero + 2-axis structural ablation + framing rule R1-R5
+- 实际我们做了: 上面这个 + 9 条 environmental fix (§51-62 select dropdown 7 层 / §53 confirm 弹窗 / §80 viewport ratio / §81 Wikipedia ZIM / §103 Magento auth / §107 Phase A 4-cluster) + Phase A bug 整 audit
+- 这些 environmental fix **本来就是 dual-track 的另一头** — 我们没 explicit frame 罢了
+
+**学长 push 的真正意义**: 不是新方向, 是**把已做 work 升级成 explicit framework**。
+
+**9-cell 框架** (3 个 intervention 类型 × 3 个 layer):
+```
+                (i) Bug fix    (ii) Synthesis    (iii) Channel addition
+L1 Server-side    ~6 ✅           NLWeb (deployed)    NLWeb / agent.txt RFC
+L2 Pipeline       ~28 ✅          OmniParser-v2       (gap)
+L3 LLM-internal   n/a            ⭐ Phantom routing   n/a
+                                 (paper-1 niche)
+```
+
+**(ii)×L3 内部 4 个 sub-tier — 这是 paper-1 真正 niche**:
+- Pretraining-time: Magma (Microsoft, 用 **Qwen3-VL backbone** — 跟我们 paper 同 base!)
+- Fine-tuning-time: ScribeAgent (CMU, **同样用 Qwen** fine-tune 6B token, WebArena 51.3%)
+- RAG-offline: AppAgent-v2 (Tencent, 离线 explore 写 JSON, 部署 RAG retrieve)
+- **Inference-time only: 我们 paper** ← **没工业 system 占这格**, 不需要 retrain / fine-tune / retrieve / offline
+
+### 7.1 学长原话 (5/3 16:05-16:06)
+
+> "我在想就是我们也可以考虑目前的网页可以怎么更加的优化去符合 agent 的使用习惯。
+> 不光光从 agent 本身出发，环境也是可以的。两头出发。
+> 然后也可以变相证明 agent 本身的 routing 也是可泛化的"
+
+**"变相证明 agent 本身的 routing 可泛化"** = 跑 environment 那头, 如果同样得到 routing benefit, 反向证明 agent 那头 routing 不依赖于 specific implementation, 是 problem geometry 本身的 property — substrate-independence 论证。
+
+### 7.2 工业 precedent stack (Round-3 全 verified)
+
+| 工业 system | 跟我们 paper 关系 |
+|---|---|
+| **NLWeb** (Microsoft 2025-05, R.V. Guha) | **已部署 Tripadvisor + Shopify**, 用 `/ask` + `/mcp` endpoints emit schema.org JSON。这就是学长说的"环境侧"在工业里的 deployed 形态 |
+| **OmniParser-v2** (Microsoft 2025-02) | (ii)×L2 工业 canonical, 输出 SPS literal `<box_start>...<box_end>` 给下游 LLM |
+| **Magma** (Microsoft+UMD+UW 2025-02) | **关键发现: 用 Qwen3-VL backbone, 跟我们 paper B0/B1 是同一 base**。把 SoM + ToM 训进 weights |
+| **ScribeAgent** (CMU 2024-12) | **同样用 Qwen base**! Fine-tune 7B 在 6B token DOM workflow, WebArena 45.7→51.3% |
+| **AppAgent-v2** (Tencent 2024) | (ii)×L3 RAG 路径, 离线 exploration 写 JSON doc + 部署 RAG retrieve。**最接近我们 paper 的 published precedent**, 但需要 offline phase |
+| **UI-TARS** (ByteDance 2025-01) | 纯视觉 VLM, System-2 CoT。在 substitution gradient 反方向 — 不做 textual substitution 全靠 visual coordinate grounding |
+
+### 7.3 Paper §1 hook 升级 prose (substitution gradient framing)
+
+口头版 (sync 时讲):
+> "Web agent 面对 substitution gradient — 从 server-side 直接 emit JSON (NLWeb), 到 pipeline preprocess (OmniParser-v2), 到 pretraining 时整进 weights (Magma), 到 deploy-time RAG (AppAgent-v2), 到纯视觉 VLM (UI-TARS)。**只有一个 cell 没有 named system**: inference-time LLM-internal substitution, 不需要 retrain / fine-tune / retrieve / offline。这是 paper-1 phantom routing space 的 niche。**Magma + ScribeAgent 都用 Qwen base, 我们也用 Qwen3-VL — 但我们不 retrain 不 fine-tune**, 单纯 inference-time prompt structure 就 recover 大部分 routing benefit, isolate 出 prompt structure 单独的贡献 (clean experimental design)。"
+
+完整 paper §1 hook 候选 prose (~370 词) 详 `paper_planning §21.5`。
+
+### 7.4 Sweet Spot env-side pilot 设计 (用户 push back 后想清楚的)
+
+**用户原话**: "server 自己吐出来 select 菜单里面隐藏的字段"
+
+**这就是 NLWeb spec 的 VWA 实例化**:
+
+```
+原 phantom routing (agent-pipeline):
+  Playwright AXTree → viewport ratio filter → derive [SOM_MARKS]
+
+新 env-side pilot (server-side):
+  Server middleware (Postmill/Magento) 读 server view-model:
+    - select dropdown 内全部 options (含 closed 状态 hidden 的)
+    - 全 view component element list (含 viewport 外的)
+    - app-semantic affordance (server 内部知道哪个 link 触发 backend route)
+  Emit 进 page (`<script type="application/agent-marks">` 或 `/ask` endpoint)
+  Agent 读 server JSON, 不 run AXTree extraction
+```
+
+**Tautology trap (用户 catch 的)**: 不能 server emit 跟 agent script 提取一模一样的 [SOM_MARKS], 否则就是 implementation relocation 不是 substrate change。**真 sweet spot**: server 用 **agent script 看不到的信息** (closed dropdown options / 视口外元素 / backend semantic), 看 agent 能不能复现 routing benefit。
+
+工程实现 (1 个 site pilot, ~3-5 天):
+- Postmill (classifieds) 加 Symfony middleware emit `/ask` endpoint
+- 内容: schema.org JSON 含 elements + select hidden options + page state metadata
+- Agent 加 mode `phantom_server` 读 endpoint, 跟 phantom_text 对比
+
+### 7.5 关键决定要 advisor lock (sync 5/5 主 ask)
+
+| # | Decision | 我倾向 | Why |
+|---|---|---|---|
+| 1 | **Paper §1 hook 用 substitution gradient framing 升级吗?** | **Yes** | NLWeb / Magma / OmniParser-v2 都 verified, paper niche 站位清楚 |
+| 2 | **Env-side pilot 进 paper 1 (§7.x) vs paper 2?** | **Paper 1 §7.x small pilot** | 1 site × 2 mode (phantom_text vs phantom_server), ~3-5 天。学长 dual-track push 在 paper 1 内 honor + cross-substrate evidence ammunition |
+| 3 | **Pilot 排在 14-cell rerun 之前/之后/并行?** | **并行** | 14-cell 在 RunPod, env-side pilot 在 DGX, 资源不冲突 |
+| 4 | **Pilot fail (server emit 不 reproduce routing) 怎么办?** | **Negative finding 加分** | Either way paper-publishable, paper §1 hook 反而 strict 化 |
+| 5 | **Paper 1 把 environmental fix audit (§107 + 9 条) 进哪儿?** | **Appendix D + §3 footnote** | Audit 是 paper rigor signal, §3 evaluation methodology 加 footnote acknowledge "9+ environmental scaffolding interventions performed (Appendix D)" — 跟 Avenir Web ignore env issues 形成 rigor differentiator |
+| 6 | **跟 NLWeb / Magma / ScribeAgent 在 paper §1 explicit cite + differentiate 吗?** | **Yes** | 不 cite 等于送 reviewer "你 ignore 同期工作" 的拒稿理由 |
+| 7 | **Pre-registration 加 R6 cross-track convergence rule?** | **Optional, 等 advisor preference** | 如 env-side pilot 也 produce routing benefit ≥ K cells → 升级 paper §1 hook 强度 |
+
+### 7.6 顺便 fact-check 教训
+
+5/4 跑了 3 轮 Gemini DR, Round-2 出现 6 处 hallucination (HMT 错 author / NLAH 凑名字 / K3 Mariner 编造 / WebAIM 数字错 / Operator 41.7% misattribute / Doubao 商业封号无 verification)。Round-3 全部 catch + 修。**Paper writing 前必须 verify 所有 industry citation** — LLM lit review 不能直接 trust。
+
+---
 ---
 
 ## Reference files (sync 时 quick lookup)
