@@ -225,6 +225,23 @@
             "tab_focus": 6,
             "type": 90
           }
+        },
+        "Phantom-prompt": {
+          "n_tasks": 5,
+          "mean_url_set_size": 4.6,
+          "mean_url_path_set_size": 1.4,
+          "mean_n_steps": 12.2,
+          "finish_rate": 0.6,
+          "target_hit_n": 5,
+          "target_hit_rate": 0.4,
+          "mean_n_type_actions": 3.4,
+          "mean_max_keyword_repeat": 1.4,
+          "mean_distinct_keywords": 2.8,
+          "first_action_type_counts": {
+            "click": 1,
+            "select_option": 2,
+            "type": 2
+          }
         }
       }
     },
@@ -373,22 +390,24 @@
           }
         },
         "Phantom-prompt": {
-          "n_tasks": 45,
-          "mean_url_set_size": 3.288889,
-          "mean_url_path_set_size": 1.311111,
-          "mean_n_steps": 14.044444,
-          "finish_rate": 0.4,
-          "target_hit_n": 24,
-          "target_hit_rate": 0.166667,
-          "mean_n_type_actions": 2.066667,
-          "mean_max_keyword_repeat": 1.555556,
-          "mean_distinct_keywords": 1.311111,
+          "n_tasks": 234,
+          "mean_url_set_size": 3.594017,
+          "mean_url_path_set_size": 1.41453,
+          "mean_n_steps": 13.115385,
+          "finish_rate": 0.384615,
+          "target_hit_n": 172,
+          "target_hit_rate": 0.156977,
+          "mean_n_type_actions": 3.115385,
+          "mean_max_keyword_repeat": 2.371795,
+          "mean_distinct_keywords": 1.226496,
           "first_action_type_counts": {
-            "click": 10,
-            "finish": 2,
-            "scroll": 4,
-            "select_option": 7,
-            "type": 22
+            "back": 2,
+            "click": 51,
+            "finish": 12,
+            "scroll": 15,
+            "select_option": 52,
+            "tab_focus": 3,
+            "type": 99
           }
         }
       }
@@ -697,15 +716,55 @@
           "right_mode": "P-SoM"
         },
         "axis_2_prompt_alt": {
-          "n": 0,
-          "skipped": true,
+          "n": 5,
+          "url_jaccard_mean": 1.0,
+          "url_decision_divergence": 0.0,
+          "url_jaccard_min": 1.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 5,
+          "target_hit_rate_left": 0.2,
+          "target_hit_rate_right": 0.4,
+          "target_hit_rate_diff": 0.2,
+          "target_hit_rate_diff_pct_pts": 20.0,
+          "target_hit_mcnemar": {
+            "left_only": 0,
+            "right_only": 1,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0,
+          "distinct_keywords_diff": 0.8,
+          "n_type_actions_diff": 0.4,
+          "n_steps_diff": 3.4,
+          "finish_rate_diff": -0.2,
+          "first_action_divergence_rate": 0.0,
+          "first_action_target_url_path_divergence_rate": 0.2,
           "contrast": "P-prompt minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-prompt"
         },
         "axis_1_text_alt": {
-          "n": 0,
-          "skipped": true,
+          "n": 5,
+          "url_jaccard_mean": 1.0,
+          "url_decision_divergence": 0.0,
+          "url_jaccard_min": 1.0,
+          "url_jaccard_max": 1.0,
+          "target_hit_n": 5,
+          "target_hit_rate_left": 0.4,
+          "target_hit_rate_right": 0.2,
+          "target_hit_rate_diff": -0.2,
+          "target_hit_rate_diff_pct_pts": -20.0,
+          "target_hit_mcnemar": {
+            "left_only": 1,
+            "right_only": 0,
+            "p_exact": 1.0
+          },
+          "max_keyword_repeat_diff": 0.2,
+          "distinct_keywords_diff": -0.2,
+          "n_type_actions_diff": 0,
+          "n_steps_diff": -4.2,
+          "finish_rate_diff": 0.0,
+          "first_action_divergence_rate": 0.0,
+          "first_action_target_url_path_divergence_rate": 0.2,
           "contrast": "P-SoM minus P-prompt",
           "left_mode": "P-prompt",
           "right_mode": "P-SoM"
@@ -881,55 +940,55 @@
           "right_mode": "P-SoM"
         },
         "axis_2_prompt_alt": {
-          "n": 45,
-          "url_jaccard_mean": 0.885185,
-          "url_decision_divergence": 0.114815,
-          "url_jaccard_min": 0.333333,
+          "n": 234,
+          "url_jaccard_mean": 0.856125,
+          "url_decision_divergence": 0.143875,
+          "url_jaccard_min": 0.0,
           "url_jaccard_max": 1.0,
-          "target_hit_n": 24,
-          "target_hit_rate_left": 0.166667,
-          "target_hit_rate_right": 0.166667,
-          "target_hit_rate_diff": 0.0,
-          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_n": 172,
+          "target_hit_rate_left": 0.168605,
+          "target_hit_rate_right": 0.156977,
+          "target_hit_rate_diff": -0.011628,
+          "target_hit_rate_diff_pct_pts": -1.162791,
           "target_hit_mcnemar": {
-            "left_only": 2,
-            "right_only": 2,
-            "p_exact": 1.0
+            "left_only": 10,
+            "right_only": 8,
+            "p_exact": 0.814529
           },
-          "max_keyword_repeat_diff": -0.311111,
-          "distinct_keywords_diff": 0.177778,
-          "n_type_actions_diff": -0.155556,
-          "n_steps_diff": 4.288889,
-          "finish_rate_diff": 0.0,
-          "first_action_divergence_rate": 0.266667,
-          "first_action_target_url_path_divergence_rate": 0.088889,
+          "max_keyword_repeat_diff": -1.666667,
+          "distinct_keywords_diff": -0.209402,
+          "n_type_actions_diff": -2.029915,
+          "n_steps_diff": -0.717949,
+          "finish_rate_diff": -0.004274,
+          "first_action_divergence_rate": 0.235043,
+          "first_action_target_url_path_divergence_rate": 0.205128,
           "contrast": "P-prompt minus DOM",
           "left_mode": "DOM",
           "right_mode": "P-prompt"
         },
         "axis_1_text_alt": {
-          "n": 45,
-          "url_jaccard_mean": 0.914815,
-          "url_decision_divergence": 0.085185,
+          "n": 230,
+          "url_jaccard_mean": 0.846047,
+          "url_decision_divergence": 0.153953,
           "url_jaccard_min": 0.0,
           "url_jaccard_max": 1.0,
-          "target_hit_n": 24,
-          "target_hit_rate_left": 0.166667,
-          "target_hit_rate_right": 0.166667,
-          "target_hit_rate_diff": 0.0,
-          "target_hit_rate_diff_pct_pts": 0.0,
+          "target_hit_n": 169,
+          "target_hit_rate_left": 0.153846,
+          "target_hit_rate_right": 0.147929,
+          "target_hit_rate_diff": -0.005917,
+          "target_hit_rate_diff_pct_pts": -0.591716,
           "target_hit_mcnemar": {
-            "left_only": 2,
-            "right_only": 2,
+            "left_only": 9,
+            "right_only": 8,
             "p_exact": 1.0
           },
-          "max_keyword_repeat_diff": -0.2,
-          "distinct_keywords_diff": -0.155556,
-          "n_type_actions_diff": -0.222222,
-          "n_steps_diff": -2.711111,
-          "finish_rate_diff": 0.022222,
-          "first_action_divergence_rate": 0.244444,
-          "first_action_target_url_path_divergence_rate": 0.2,
+          "max_keyword_repeat_diff": -0.378261,
+          "distinct_keywords_diff": -0.082609,
+          "n_type_actions_diff": -0.526087,
+          "n_steps_diff": -1.4,
+          "finish_rate_diff": -0.056522,
+          "first_action_divergence_rate": 0.217391,
+          "first_action_target_url_path_divergence_rate": 0.204348,
           "contrast": "P-SoM minus P-prompt",
           "left_mode": "P-prompt",
           "right_mode": "P-SoM"
@@ -1406,6 +1465,14 @@
         "value": 0.884577,
         "pass": true
       },
+      "B0/classifieds/axis_2_prompt_alt": {
+        "value": 1.0,
+        "pass": true
+      },
+      "B0/classifieds/axis_1_text_alt": {
+        "value": 1.0,
+        "pass": true
+      },
       "B0/classifieds/endpoint_dom_to_som": {
         "value": 0.878348,
         "pass": true
@@ -1423,11 +1490,11 @@
         "pass": true
       },
       "B1/classifieds/axis_2_prompt_alt": {
-        "value": 0.885185,
+        "value": 0.856125,
         "pass": true
       },
       "B1/classifieds/axis_1_text_alt": {
-        "value": 0.914815,
+        "value": 0.846047,
         "pass": true
       },
       "B1/classifieds/endpoint_dom_to_som": {

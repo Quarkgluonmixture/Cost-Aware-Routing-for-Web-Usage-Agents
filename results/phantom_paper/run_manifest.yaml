@@ -1,8 +1,24 @@
 # Single source of truth for analysis pipeline run discovery.
 # Edit this file when adding/removing runs; no code changes needed.
-
+#
 # Each entry maps one (baseline, site, mode) to its run dir + condition subdir.
 # Relative run_dir values are resolved under results/visualwebarena/phase1/.
+#
+# ─────────────────────────────────────────────────────────────────────
+# 2026-05-04 BULK ARCHIVE (pending advisor sync 5/5):
+#   All cells flipped grade=archived. Reasons:
+#   - Paper-grade-pre-bug cells: Phase A 4-cluster fix (3c15cd7 on 4/30
+#     15:35) changed runner dispatch / cycle detection / RNG seeding
+#     materially. Pre-fix data not directly comparable to post-fix.
+#   - In-flight + just-launched post-fix (5/1 + 5/4): cross-mode grade
+#     asymmetry (post-fix mode + pre-bug siblings = fix-effect contaminates
+#     mode-effect). Plus current early-stop config differs from planned
+#     14-cell rerun (Option A full-cancel pending advisor lock).
+#   - Backup: run_manifest.yaml.bak_20260504
+#   - Recovery: after 14-cell rerun + advisor sync locks early-stop
+#     decision, flip cells back to grade=paper-grade or paper-grade-pre-bug
+#     per the actual rerun-vs-archive decision.
+# ─────────────────────────────────────────────────────────────────────
 
 cells:
   # B0 classifieds
@@ -12,7 +28,7 @@ cells:
     run_dir: B0_3mode_classifieds_20260413
     condition_subdir: phase1_dom_router_0
     expected_n: 234
-    grade: paper-grade-pre-bug
+    grade: archived
     notes: "Phase A pre-bug; will be replaced after rerun"
   - baseline: B0
     site: classifieds
@@ -20,28 +36,28 @@ cells:
     run_dir: B0_3mode_classifieds_20260413
     condition_subdir: phase1_som_router_0
     expected_n: 234
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B0
     site: classifieds
     mode: Vision
     run_dir: B0_3mode_classifieds_20260413
     condition_subdir: phase1_vision_router_0
     expected_n: 234
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B0
     site: classifieds
     mode: P-text
     run_dir: B0_phantom_text_classifieds_20260427
     condition_subdir: phase1_phantom_dom_router_0
     expected_n: 234
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B0
     site: classifieds
     mode: P-SoM
     run_dir: B0_phantom_som_classifieds_20260426
     condition_subdir: phase1_phantom_som_router_0
     expected_n: 234
-    grade: paper-grade-pre-bug
+    grade: archived
 
   # B0 reddit
   - baseline: B0
@@ -50,42 +66,42 @@ cells:
     run_dir: B0_3mode_reddit_20260422
     condition_subdir: phase1_dom_router_0
     expected_n: 210
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B0
     site: reddit
     mode: SoM
     run_dir: B0_3mode_reddit_20260422
     condition_subdir: phase1_som_router_0
     expected_n: 210
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B0
     site: reddit
     mode: Vision
     run_dir: B0_3mode_reddit_20260422
     condition_subdir: phase1_vision_router_0
     expected_n: 210
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B0
     site: reddit
     mode: P-text
     run_dir: B0_phantom_text_reddit_20260427
     condition_subdir: phase1_phantom_dom_router_0
     expected_n: 210
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B0
     site: reddit
     mode: P-prompt
     run_dir: B0_phantom_prompt_reddit_20260429
     condition_subdir: phase1_phantom_prompt_router_0
     expected_n: 210
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B0
     site: reddit
     mode: P-SoM
     run_dir: B0_phantom_som_reddit_20260428
     condition_subdir: phase1_phantom_som_router_0
     expected_n: 210
-    grade: paper-grade-pre-bug
+    grade: archived
 
   # B1 classifieds
   - baseline: B1
@@ -94,35 +110,48 @@ cells:
     run_dir: B1_3mode_classifieds_20260413
     condition_subdir: phase1_dom_router_0
     expected_n: 234
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B1
     site: classifieds
     mode: SoM
     run_dir: B1_3mode_classifieds_20260413
     condition_subdir: phase1_som_router_0
     expected_n: 234
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B1
     site: classifieds
     mode: Vision
     run_dir: B1_3mode_classifieds_20260413
     condition_subdir: phase1_vision_router_0
     expected_n: 234
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B1
     site: classifieds
     mode: P-text
     run_dir: B1_phantom_dom_classifieds_20260429
     condition_subdir: phase1_phantom_dom_router_0
     expected_n: 234
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B1
     site: classifieds
     mode: P-SoM
     run_dir: B1_phantom_som_classifieds_20260428
     condition_subdir: phase1_phantom_som_router_0
     expected_n: 234
-    grade: paper-grade-pre-bug
+    grade: archived
+  - baseline: B1
+    site: classifieds
+    mode: P-prompt
+    run_dir: B1_phantom_prompt_classifieds_20260501
+    condition_subdir: phase1_phantom_prompt_router_0
+    expected_n: 234
+    grade: archived
+    # 5/1 first post-Phase-A run (after fix 3c15cd7 on 4/30 15:35) — but
+    # sibling B1 cls 5 modes are still paper-grade-pre-bug. Mixing post-fix
+    # P-prompt into 6-mode oracle / drop-one / phantom_lift contaminates
+    # cross-mode comparisons with fix-effect ≠ mode-effect.
+    # ARCHIVED until 14-cell rerun makes all B1 cls modes post-fix; then
+    # change grade back to `paper-grade` and aggregator picks it up.
 
   # B1 reddit
   - baseline: B1
@@ -131,21 +160,21 @@ cells:
     run_dir: B1_3mode_reddit_20260413
     condition_subdir: phase1_dom_router_0
     expected_n: 210
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B1
     site: reddit
     mode: SoM
     run_dir: B1_3mode_reddit_20260413
     condition_subdir: phase1_som_router_0
     expected_n: 210
-    grade: paper-grade-pre-bug
+    grade: archived
   - baseline: B1
     site: reddit
     mode: Vision
     run_dir: B1_3mode_reddit_20260413
     condition_subdir: phase1_vision_router_0
     expected_n: 210
-    grade: paper-grade-pre-bug
+    grade: archived
 
 in_flight:
   - baseline: B1
@@ -154,7 +183,7 @@ in_flight:
     run_dir: B1_phantom_prompt_classifieds_20260501
     condition_subdir: phase1_phantom_prompt_router_0
     expected_n: 234
-    grade: in-flight
+    grade: archived
     notes: "Tier 2 chain; pre-Phase-A data, will be discarded after rerun"
 
 archived:

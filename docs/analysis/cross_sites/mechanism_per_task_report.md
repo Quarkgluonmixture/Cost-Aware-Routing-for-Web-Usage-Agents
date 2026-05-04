@@ -369,4 +369,4 @@ Overall pass: True.
 | E1 N reddit | 210 / 210 |
 | E1 N classifieds | 234 / 234 |
 | E3 cells | 19 / 19 |
-| P-prompt status | {"B0_phantom_prompt_reddit_20260429": {"episodes": 210, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_classifieds_20260501": {"episodes": 44, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}} |
+| P-prompt status | {"B0_phantom_prompt_classifieds_20260504": {"episodes": 4, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "partial / pending"}, "B0_phantom_prompt_reddit_20260429": {"episodes": 210, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}, "B1_phantom_prompt_classifieds_20260501": {"episodes": 234, "policy": "P-prompt is not included in E1-E4 contrasts.", "status": "complete but excluded by design"}} |

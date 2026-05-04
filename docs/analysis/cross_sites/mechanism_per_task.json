@@ -2008,15 +2008,20 @@
   },
   "data_status": {
     "p_prompt": {
+      "B0_phantom_prompt_classifieds_20260504": {
+        "episodes": 4,
+        "policy": "P-prompt is not included in E1-E4 contrasts.",
+        "status": "partial / pending"
+      },
       "B0_phantom_prompt_reddit_20260429": {
         "episodes": 210,
         "policy": "P-prompt is not included in E1-E4 contrasts.",
         "status": "complete but excluded by design"
       },
       "B1_phantom_prompt_classifieds_20260501": {
-        "episodes": 44,
+        "episodes": 234,
         "policy": "P-prompt is not included in E1-E4 contrasts.",
-        "status": "partial / pending"
+        "status": "complete but excluded by design"
       }
     },
     "step_dirs": {
