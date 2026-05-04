@@ -10,21 +10,21 @@
 
 按重要性排:
 
-1. **5 件 pre-registration 阈值** — K_h1 / K_h3 / TOST δ / archived 数据处理 / witness 路径. 拿到 sign-off 后我立刻翻 OSF + git commit
-2. **14-cell rerun 的 cell list 最终定** — 现在 manifest 全 archive 了, 等学长一起决定哪 14 个 cell 要重跑
+1. **8 件 pre-registration commits** — K_h1 / K_h3 / TOST δ / cell inclusion / witness 路径 + (5/4 expanded) N_cells final scope / Router paper-1-vs-2 / Split protocol. 拿到 sign-off 后立刻翻 OSF + git commit
+2. **14-cell rerun 的 cell list 最终定** — 现在 manifest 全 archive 了, 等学长一起决定 13/14/16 哪个 (跟 #1 (6) 重叠)
 3. **Early-stop 关不关** — Option A (全关) vs B (保留) vs C (hybrid). 我 lean A
 4. **RunPod $200 经费怎么走** — 物理路径 + 走流程
 5. **Dual-track framing 升级要不要做** — 把 paper §1 hook 换成 research-characterization angle
 6. **Env-side pilot 进 paper 1 还是 paper 2** — NLWeb-style server emit JSON 的 ~3-5d small pilot
 7. **VWA bug 这块要不要单独成文** — paper 1 副 contribution / 独立 short paper / 不发表
 
-时间分配 (~35 min decision + 5 min buffer):
+时间分配 (~36 min decision + 4 min buffer):
 - §1 phantom space 概念 + 当前结论 + figures: 12 min
-- §2 pre-registration 5 件: 5 min
-- §3 bug + 重跑: 5 min
-- §4 dual-track: 7 min
+- §2 pre-registration 8 件: 7 min (5 件 → 8 件 expanded 5/4)
+- §3 bug + 重跑: 5 min (#2 14-cell list 跟 §2 (6) 重叠, 时间合并)
+- §4 dual-track: 6 min
 - §5 RunPod: 3 min
-- §6 early-stop: 2 min
+- §6 early-stop: 3 min
 
 ---
 
@@ -113,9 +113,13 @@
 
 ---
 
-## 2. Pre-registration — 5 件具体阈值要 sign off (5 min)
+## 2. Pre-registration — 8 件具体 commits 要 sign off (7 min)
 
 最核心的 ask. 拿到学长一行 email 见证后, 我立刻 OSF + git commit lock.
+
+> **5/4 expanded scope**: 原 5 件 (K_h1/K_h3/δ/cell-inclusion/witness) 加 3 件新 commit (N_cells final / router paper-1-vs-2 / split protocol). 详 [[preregistration]] §2-§4 + §6 expansion.
+
+### 原 5 件 (5/3 reframe)
 
 | # | 决定的事 | 我 lean | 为什么这样选 | 选错了风险 |
 |---|---|---|---|---|
@@ -124,6 +128,14 @@
 | **(3)** | Effect 多大才算"实质非零" (TOST equivalence margin δ) | **δ=1.0pp** (≈ 2 tasks) | 大约是 bootstrap noise floor; 比这小就是采样噪声 | 选小 → TOST 测不出东西 / 选大 → 太容易 reject equivalence, claim 显弱 |
 | **(4)** | archived (Phase A 之前) 数据怎么处理 | **paper 主分析只用 post-fix**, archived 进 Appendix D 作 robustness check | 主体 bug-clean + 附录展示 due diligence | 太严 → 浪费 archived 数据 / 太松 → bug 污染主分析 |
 | **(5)** | pre-registration 怎么留证据 | **git commit + 学长一行 email 见证 + 投稿前上 OSF 拿 DOI** (paper §1 footnote cite) | 多层 rigor signal | 没 witness → reviewer 怀疑事后改 / 学长不愿见证我自己 lock 也 OK 但稍弱 |
+
+### 5/4 expanded 3 件 (audit add)
+
+| # | 决定的事 | 我 lean | 为什么这样选 | 选错了风险 |
+|---|---|---|---|---|
+| **(6)** | **N_cells final scope** — paper-grade 14-cell rerun 的 cell list 是 13 / 14 / 16? | **14 cells**: B0×{cls,red}×3 phantom + B1×{cls,red}×3 phantom + B0 shop×2 phantom | 14 cover paper hook 主claim. 13 砍 B0 shop P-prompt (省 ~$15+6h API) 是 minimal viable. 16 加 B1 shop 占 GPU 太久 | K_h1/K_h3 阈值依赖 N_cells, 锁错重新 commit 麻烦 |
+| **(7)** | **Router (Section 6) 进 paper-1 还是 paper-2** — H7-H8 PRIMARY (paper-1 contribution) 还是 SECONDARY-informational (paper-2 deferred)? | **倾向 paper-1 PRIMARY** — paper §22 Register III V/W 已 list, paper hook 4-fold drop-in 含 (c) AUROC ≥ baseline 部分 router-relevant | paper §1 prose 现写 "deferred to follow-up paper", paper_planning §22 list paper-1. **不一致, 学长拍** | paper-1: scope 大但 contribution 厚; paper-2: scope 小 H7-H8 informational only |
+| **(8)** | **Train/test split protocol** — 5-fold site-stratified CV vs LOSO (leave-one-site-out, 训 cls 测 red, 反之) | **倾向 5-fold site-stratified CV** (k=5, seed=42, min test fold ≥ 40 tasks) | k-fold 比 LOSO 数据效率高 (每 fold 平均 90 训 + 10 测 vs LOSO 200+/234), test power 足 | LOSO 更 reviewer-defensible (cross-site generalization claim 直接) 但 power 弱 |
 
 **Mapping table** (数据进来后 paper hook 怎么写, 5 个 case 预先 lock):
 

@@ -99,6 +99,35 @@ B0 vs B1 ranking direction on text-axis vs image-axis drop-one tested via B0 × 
 
 Paper §7 prose **must** explicitly flag: "post-hoc finding; no pre-registered prediction."
 
+### ROUTER family (gates Section 6 routing claim — **pending advisor 5/5 lock**: paper-1 PRIMARY vs paper-2 deferred)
+
+#### H7 — Tier 1 oracle router lift over best-single-mode baseline (offline supervised)
+
+Tier 1 router: TF-IDF task-instruction features + binary task features (`has_ref_image`, `has_finish_string_match`) → logistic regression predicting best-mode-per-task. Trained per cell-fold (site-stratified k-fold). Lift = adjusted-SR(router) − adjusted-SR(best-single-mode-baseline) per cell.
+
+- **H7(i)** Pooled DerSimonian-Laird random-effect meta-analysis on lift reaches Holm α=0.05 (PRIMARY family m=1 if paper-1 / SECONDARY informational if paper-2).
+- **H7(ii)** ≥ K_h1 of N_cells individually Holm-significant on per-cell lift, bootstrap 95% CI lower-bound > 0.
+- **H7(iii)** Pooled magnitude θ_RE ≥ 1.0pp; TOST equivalence at margin δ=1.0pp rejected (same δ as H1).
+
+**Test details**:
+- 5-fold site-stratified CV on cls+red post-Phase-A task pool (split protocol locked §4 — train/test fold seed + minimum sizes).
+- Best-single-mode-baseline = mode with highest mean adjusted-SR on train fold per cell, evaluated on held-out test fold (no test leak).
+- Bootstrap 1000 resamples, paired task-level.
+- Multiple-comparison: Holm-Bonferroni step-down within H7 sub-family m=N_cells.
+
+**Status**: ⏸️ pending advisor 5/5 lock decision — if paper-1 PRIMARY, H7 gates Section 6 routing claim; if paper-2 deferred, H7 reported as informational with explicit "paper-1 hook does NOT depend on H7-H8".
+
+#### H8 — Tier 2 first-step trigger router (online, test-leak-free)
+
+Tier 2 router: features extracted from agent's first-step observation (task instruction + initial DOM/SoM observation slice + initial action diversity proxy) → predicts which mode to commit for full trajectory. **No test leak**: features use only first-step info, mode commitment thereafter is fixed.
+
+- **H8(i)** Tier 2 router lift over Tier 1 oracle baseline ≥ 0 with bootstrap 95% CI excluding −1.0pp (paper claims Tier 2 ≈ Tier 1 within deployment-grade tolerance, given Tier 2 is leak-free and deployment-realistic).
+- **H8(ii)** Tier 2 router lift over best-single-mode-baseline ≥ 1.0pp, ≥ K_h1 cells Holm-significant.
+
+**Status**: ⏸️ pending advisor 5/5 lock — same as H7.
+
+**Companion check** (NOT gating): per-mode AUROC of selected routing signals reported for transparency (Section 6 portfolio characterization, see EXPLORATORY §5).
+
 ### FRAMING DECISION RULE (pre-registered, data-conditional)
 
 The paper §1 hook framing maps to data outcomes as follows:
@@ -127,8 +156,18 @@ The paper §1 hook framing maps to data outcomes as follows:
 - Method: Holm-Bonferroni step-down per axis sub-family.
 - Rationale: structural claim is weaker than deployment, separate family avoids inflating PRIMARY family m count.
 
+**ROUTER family** (gates Section 6 routing claim — pending advisor 5/5 paper-1-vs-paper-2 lock):
+- H7(i) pooled meta lift: m = 1 (no within-family correction).
+- H7(ii) per-cell Tier 1 lift Holm: m = N_cells.
+- H7(iii) folded into H7(i) magnitude/TOST.
+- H8(i) Tier 2 vs Tier 1: m = 1.
+- H8(ii) Tier 2 vs best-single-mode-baseline: m = N_cells.
+- Method: Holm-Bonferroni step-down per H-sub-family.
+- **Status**: ⏸️ if paper-1 PRIMARY, ROUTER family gates §6 contribution; if paper-2 deferred, reported as informational with paper-1 hook independence explicit.
+
 **EXPLORATORY family** (NOT gating, reported only):
 - H4 P-text/P-prompt drop-one per cell: m = 2 × N_cells.
+- Best-signal-per-mode characterization (Register III AA, Section 6 portfolio finding): per (mode, signal) AUROC reported, Holm-corrected within mode for transparency.
 - Method: Holm-corrected and BH q-value reported for transparency.
 - **Paper hook does NOT depend on these tests passing.**
 
@@ -157,6 +196,12 @@ The paper §1 hook framing maps to data outcomes as follows:
 | **N inclusion floor** | ≥ 100 ep per (cell × mode) | Statistical power baseline |
 | **FP filter primary** | na_fp + eval_fp + visual_fp combined | Per 实验笔记 §95 |
 | **FP filter sensitivity** | 4 variants reported (raw / +na_fp / +eval / +visual) | Robustness disclosure |
+| **Mode operational definitions** | 6 modes per paper §3 (text format × prompt × image): DOM (AXTree+DOM-prompt+no image) / SoM ([SOM_MARKS]+SoM-prompt+image) / Vision (no text+image) / P-text ([SOM_MARKS]+DOM-prompt+no image) / P-prompt (AXTree+SoM-prompt+no image) / P-SoM ([SOM_MARKS]+SoM-prompt+no image) | Stipulative — **no post-hoc episode reclassification**. Episodes systematically excluded per (FP filter / N-floor / data-corruption flag), never redefined which mode they belong to. Edge cases (empty AXTree / 0 marks / OCR-empty) follow `condition_meta.json` declared mode |
+| **Routing signal universe** | `aggregate_routing_auroc.py` enumerated set: ep_mean_verbalized / ep_min_verbalized / max_repeat_streak / action_diversity / url_revisit_count / url_revisit_max / action_unique_types / url_unique_count / ep_mean_logprob / ep_min_logprob (last 2 B1-only) | **No post-hoc engineered features** for router input. Best-signal-per-mode characterization is exploratory (§5) — paper §6 portfolio finding, not pre-registered prediction |
+| **Router train/test split** | 5-fold site-stratified CV on cls+red post-Phase-A task pool, seed=42, min test fold ≥ 40 tasks | Reproducible split via `scripts/analysis/router_split.py` (TBD). **Test fold predictions use ONLY train-fold mode rankings** to prevent oracle leak. Pending advisor 5/5 sync alternative: leave-one-site-out (LOSO) — test cls hold-out trained on red, vice versa |
+| **Failure-mode classification rubric** | 5-bucket: `early_finish` / `wrong_commit` / `visual_hijack` / `click_loop` / `persistent_error` per `docs/analysis/disagreement_clusters.md` decision tree | Pre-data inter-annotator agreement target Cohen κ ≥ 0.7 on 30-task pilot (codex prompt + 1 human spot-check). Paper §1 prose ("B0 53.3% early-finish vs B1 70.4% visual-hijack/click-loop, +43.7pp") cites these locked buckets |
+| **N_cells final scope** | 14 cells (B0 × {cls, red} × 3 phantom + B1 × {cls, red} × 3 phantom + B0 shop × 2 phantom). K_h1=0.75 → ≥ 11 cells pass; K_h3=0.67 → ≥ 10 cells pass | ⏸️ **Pending advisor 5/5 lock** — may shift to 13 (drop B0 shop P-prompt) or 16 (add B1 shop). Threshold counts auto-adjust with N_cells |
+| **Best-single-mode baseline (H7/H8 anchor)** | Per cell: mode with highest mean adjusted-SR on train fold | Used as comparison anchor for router lift; **train/test split-stratified** to prevent test leak |
 
 ---
 
@@ -169,7 +214,11 @@ The following analyses are exploratory and cannot be used to gate paper claims. 
 - Axis 3 image-axis 8-channel decomposition (paper §5 axis 3 framework)
 - 别扭 framework (H5) — post-hoc, theory developed on motivating data
 - Capability-modulated reversal (H6) — post-hoc cross-capability finding
-- Any post-hoc cell subsetting beyond H1-H6 family scope
+- **Best-signal-per-mode characterization** (Register III AA novelty, Section 6 portfolio finding): which routing signal works best for which mode is reported as exploratory characterization, NOT pre-registered prediction. Per-(mode, signal) AUROC table reported with Holm correction within mode for transparency.
+- **Router feature engineering exploration beyond locked signal universe** (§4): any new feature added post-data-lock is exploratory, NOT gating H7/H8 claim.
+- **Cross-site asymmetry as site-class adaptive routing primitive** (Register IV HH novelty, §1 + §6): reported as exploratory framing of cls/red mode-preference reversal, NOT pre-registered prediction.
+- **Phantom space generalizability speculation** beyond web agent (Register I J, §8 future work): clearly marked as speculative discussion.
+- Any post-hoc cell subsetting beyond H1-H8 family scope
 - Any analysis added after `data_lock_until` timestamp in this preregistration's frontmatter
 
 ---
@@ -178,10 +227,19 @@ The following analyses are exploratory and cannot be used to gate paper claims. 
 
 ### (a) Internal witness — Git commit + advisor email
 
-1. Advisor sync session: lock 5 commit decisions (K_h1, K_h3, δ, framing rule, cell inclusion) + lock H-list.
+1. Advisor sync session: lock **8 commit decisions** (expanded 5/4 audit):
+   - (1) **K_h1=0.75** cell-pass threshold
+   - (2) **K_h3=0.67** cell-pass threshold
+   - (3) **TOST δ=1.0pp** equivalence margin
+   - (4) **Cell inclusion**: Phase A post-fix only (main) + archived pre-Phase-A (Appendix D robustness)
+   - (5) **Witness mechanism**: Git + advisor email + OSF DOI
+   - (6) **N_cells final scope**: 14 / 13 / 16 (advisor selects)
+   - (7) **Router paper-1-vs-paper-2 decision**: H7-H8 PRIMARY (paper-1) or SECONDARY-informational (paper-2 deferred)
+   - (8) **Train/test split protocol**: 5-fold site-stratified CV vs leave-one-site-out (LOSO)
+   - Plus lock H-list (H1-H8 family declaration final).
 2. Update this file frontmatter: `status: draft` → `status: locked`, fill `registered_at`, `registered_git_sha`, `witnessed_by`.
 3. Git commit this file.
-4. Advisor sends single-line confirmation email: "I witness pre-registration of phantom-SoM hypotheses as of <git SHA> <date>." Email archived in `.witness/preregistration_witness.eml` (gitignored, local-only).
+4. Advisor sends single-line confirmation email: "I witness pre-registration of phantom-SoM hypotheses (H1-H8) and 8 lock decisions as of <git SHA> <date>." Email archived in `.witness/preregistration_witness.eml` (gitignored, local-only).
 
 ### (b) External witness — OSF DOI (optional, paper-time)
 
@@ -205,4 +263,5 @@ Approximately 1 week before paper submission:
 | 2026-05-03 | K_h1 = 0.75 cell-pass threshold for H1 | Allows ~25% capability-outlier cells; not so strict as to break on single-cell noise |
 | 2026-05-03 | K_h3 = 0.67 cell-pass threshold for H3 | Lower than K_h1 because structural < deployment commit |
 | 2026-05-03 | Disconfirmation rule changed from "any cell fail" to data-conditional R1-R5 framing rule | "Any cell fail" too strict given single-cell power limits; framing rule maps data outcomes to paper hook revisions transparently |
-| <pending advisor sync> | <commit lock decisions> | <advisor sync session date> |
+| 2026-05-04 | Pre-registration scope expanded — added H7-H8 router family + 6 §4 lock entries (mode operational defs / routing signal universe / train-test split protocol / failure-mode classification rubric / N_cells final scope / best-single-mode baseline anchor) | User audit prompt 5/4: "preregistration.md 还需要锁 Held-out router claim / router baselines train-validation-test split / routing signals / mode definition 这些吗". Claude added 2 more (failure-mode rubric / N_cells). Deferred 3 advisor lock decisions: (a) H7-H8 router family paper-1 vs paper-2 / (b) N_cells 13/14/16 final / (c) split protocol k-fold vs LOSO. Witness §6 expanded from 5 commits → 8 commits |
+| <pending advisor sync 2026-05-05> | <commit 8 lock decisions per §6> | <advisor sync session date> |
