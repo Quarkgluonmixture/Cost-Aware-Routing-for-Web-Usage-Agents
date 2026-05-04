@@ -1722,6 +1722,7 @@ Post run:
 | 2026-05-04 | Bulk archive all 27 manifest cells pre-advisor-sync (run_manifest.yaml) | Phase A 4-cluster fix (3c15cd7 4/30 15:35) makes pre-fix data not directly comparable to post-fix; cross-grade asymmetry from 5/1 + 5/4 post-fix solo runs would contaminate cross-mode comparisons (fix-effect ≠ mode-effect). All cells flipped to `grade: archived` until 14-cell rerun + advisor lock; figures preserved at last paper-grade-pre-bug-only state for 5/5 sync visual aid. | ✅ commit 8a9f595 |
 | 2026-05-04 | §5 顶刊概率 → conditional tree on R1-R5 framing rule (was unconditional single-point) | 5/3 pre-registration reframe made paper hook data-conditional; probability estimates should follow same discipline. R1 (strongest, K_h1≥0.75 + K_h3≥0.67): top-tier 55-70% / cascade ~99%. R2 (Hero pass, single-axis structural): ~97% cascade. R3 (旧 §5 baseline, hero pass + structural fail): 35-50% top-tier / ~93%. R4 (hero partial fail, e.g. cost not hold): MLSys+TMLR 保底, top-tier <30%. R5 (hero fail): pivot. R2 是 advisor-sync realistic baseline expectation. | ✅ paper_planning §5 rewritten |
 | 2026-05-04 | §21.5 + §1 hook 三层 novelty hierarchy (refines §109.17 binary reframe) | §109.17 (research-characterization angle) collapsed framework-tier into artifact-vs-characterization binary. User clarification: (a) **P-SoM specifically + 3-axis cube framework + image-axis isolation are paper-level framework contributions** — no industry deploys cube-center SoM-text-without-image combination; (b) industry deploys P-text/DOM-like artifacts **arbitrarily for token economy**, never compared P-text vs DOM, never characterized per-dimension routing behavior — artifact existence ≠ understanding. New three-tier: framework (cube + P-SoM, paper-novel) / artifact (industry has DOM/P-text/SoM analogs but deployed without characterization, NO P-SoM/P-prompt analog) / research (paper discovers + characterizes routing effects industry deployed-without-realizing). Reviewer-defense layered into 3 attack vectors. | ✅ paper_planning §21.5 + §1 hook one-liner |
+| 2026-05-04 | New §22 Multi-Register Novelty Inventory (5/4 audit consolidation) | Audit prompt "现在的 novelty 还缺什么吗 — 审计下 结合其他文档/figure" 触发. 跨 paper drafts §1-§5 + 24 figures + 笔记 §1-§109 + EVIDENCE_LAYER_AUDIT + preregistration cross-check. 出 5-register layered framework (Theory/Concept · Method/Process · App/Impact · Survey/Position · Future-trajectory) × ~38 items. 用户自列 6 dimensions covered + 4 new dimensions added (J phantom space generalizability / AA routing signal portfolio / HH site-class adaptive routing primitive / LL execution-discipline standalone short-paper). Audit gaps section list 5 main gaps (paper §1 prose stuck at 4/29 framing, figures not referenced in §1, 笔记 finding §32/§72/§94/§100 未 elevate, EVIDENCE_LAYER_AUDIT 12+ pending, industry analog 缺位 not explicit). §1 hook 6-contribution rewrite candidate drafted. Advisor 5/5 sync top-5 / Tier-2 / polish priority 列出. Post-sync action items 8 项. | ✅ paper_planning §22 (147 行 inventory) |
 
 ---
 
@@ -2357,5 +2358,153 @@ Paper §21 / §8 (Discussion + Future Work) should explicit prose:
 26. **中国 industry sweep integration into paper §1 / §2** — §109.18 verified arXiv IDs cheat sheet 已就位 (PageAgent / UI-TARS / UI-TARS-2 / AutoWebGLM / AutoGLM / WebRL / WebSailor suite / OS-Atlas / Mobile-Agent v2/v3 / Qwen3-VL technical report / CogAgent), paper.bib 加 ~10 BibTeX entries, paper §1 hook prose 中加 "Chinese industry SDKs (PageAgent from Alibaba, UI-TARS from ByteDance/Tsinghua, AutoGLM from Zhipu, WebSailor suite from Alibaba Tongyi)" parallel 西方 SDK list, achieving dual-region industry sweep coverage. **Special anchor**: Qwen3-VL Technical Report `arXiv:2511.21631` 直接对应 paper backbone (B0=235B-A22B / B1=4B variants), paper §1 / §3 method explicit cite with backbone disclosure.
 
 27. **§21.6.5 SE-module exclusion full audit** — 明确列 paper Appendix D "evidence-layer instrumentation" vs "cognitive routing finding" 两 category split: 现 Phase A 4-cluster fixes / FPC fix / watchdog auto-clean / Magento fix / Postmill PHP gc fix / Wikipedia ZIM fix 全列 evidence-layer 不算 finding. 写一段 prose: "Paper §3 evaluation methodology + Appendix D explicit categorize all SE-engineering instrumentation (~37 entries from §21.2 (i)×L1 + (i)×L2) as paper-grade rigor prereq, not as cognitive routing findings. Phantom routing space 4-corner ablation operates on top of clean evidence-layer infrastructure".
+
+---
+
+## §22 Multi-Register Novelty Inventory (advisor 5/5 sync ready, 2026-05-04 audit)
+
+> **目的**: 统一列出 paper novelty 跨 5 个 register, advisor sync 时按 priority pull. Cover gaps from 5/4 audit (笔记 §1-§109 cross-check + 24 figures inventory + EVIDENCE_LAYER_AUDIT + paper drafts §1-§5 现状).
+>
+> **缘由**: 5/3 pre-registration reframe + §109.16-19 4-round epistemic upgrade 后, paper-strategic novelty 从单 vector "phantom routing arm" 扩到 multi-register layered claim. 用户 5/4 prompt: "现在的 novelty 还缺什么吗 — 审计下, 结合其他文档/figure". 用户自己 list 了 6 个维度 (现象/效果/原因/数据比较/routing/cross-X), audit cover 现 inventory + 加补 dimensions.
+
+### §22.1 5-register novelty framework
+
+不同 register 不同 reviewer / venue 关心重点:
+- **Register I (Theory / Concept)**: NLP / ICLR / NeurIPS reviewer 看
+- **Register II (Method / Process discipline)**: 顶会 methodology reviewer 看
+- **Register III (Application / Impact)**: MLSys / WWW / WSDM / 工业 audience 看
+- **Register IV (Survey / Position framing)**: ACL / EMNLP / D&B reviewer / area chair 看
+- **Register V (Future-paper trajectory)**: Senior reviewer / area chair 看 narrative
+
+**Standard**: ⭐ = core claim (paper §1 必须 surface) / ☆ = supporting claim (各 section 必 surface) / · = polish / context
+
+### §22.2 Inventory by register
+
+#### Register I — Theory / Concept (mostly 用户列举的 A-F)
+
+| ⭐/☆ | Item | Status | Source | Where in paper |
+|---|---|---|---|---|
+| ⭐ | (A) **Phantom routing space phenomenon** (named operational entity, "no annotated image" boundary) | ✅ §1 + §2 + §21 | 笔记 §103 + §108 | §1 hook |
+| ⭐ | (B) **4-fold drop-in property** as unified deployment criterion (cost ≈ DOM + latency 50% + AUROC ≥ baseline + drop-one ≥ 1pp) | ✅ §1 + §3 + §11 | 笔记 §106 | §1 + §4 |
+| ⭐ | (C) **3-axis cube + image-axis isolation** as paper framework contribution | 🟡 §21.5 三层 + §1 one-liner 1 句, paper §1 prose 没 reflect | 用户 5/4 push | §1 hook + §3 |
+| ⭐ | (D) **Cube-center P-SoM** (`[SOM_MARKS]` text + SoM-prompt + no image, **no industry analog**) | 🟡 §21.5 三层 提, paper §1 prose 部分 | 用户 5/4 push | §1 + §3 |
+| ⭐ | (E) **M1/M2 mechanism activation 2x2 + by-construction exhaustive deductive completeness** | 🟡 §2 Zoom 1, §1 提 mechanism 但 deductive 不 highlight | 笔记 §108.4-5 | §2 framework |
+| ⭐ | (F) **Per-axis ontology shift quantified** via behavioral metrics (search-loop / action-diversity / first-action divergence as M1/M2 fingerprints) | 🟡 §3 finding + §5 prose, 未当 named contribution | 笔记 §103 + §106 + fig1c/fig2 | §5 |
+| ☆ | (G) **Lit-anchored named phenomena synthesis** (Mirage Effect / Scaffold Effect / Sclar prompt-format / cross-modal flow) | ✅ §2 Zoom 3 cite | paper.bib 57 entries | §2 |
+| ☆ | (H) **Prompt-as-decision-prior framework** (web-agent multi-step extension of Sclar prompt-format lit) | ✅ §1 prose "text shapes exploration, prompt shapes commitment" | paper §1 现 prose | §1 + §5 |
+| ☆ | (I) **Capability-modulated reversal** (B0 偏 text 别扭 / B1 偏 image 别扭, post-hoc N=4 provisional) | 🟡 §7 cross-capability, mark exploratory | 笔记 §108.16 | §7 |
+| · | (J) **Phantom space generalizability speculation** (cube concept beyond web agent → VQA / robotics / multi-doc) | (NEW, 5/4 audit add) | speculation | §8 future work 1-2 段 |
+
+#### Register II — Method / Process discipline
+
+| ⭐/☆ | Item | Status | Source |
+|---|---|---|---|
+| ⭐ | (K) **Pre-registration R1-R5 framing rule + OSF + advisor witness** | 🟡 preregistration.md status:draft, paper §1 footnote cite pending | 5/3 reframe |
+| ⭐ | (L) **4-dimension Evidence framework** (Outcome/Macro/Micro/Efficiency 正交, replaces hierarchical-layer thinking) | 🟡 paper_planning §3 重组, paper §3-§4 prose 部分 reflect | 笔记 §106 |
+| ⭐ | (M) **~100× deployment-class cost gap** (B0 API $0.04/ep vs B1 electricity $0.0004/ep, **NOT capability ratio**) | 🟡 笔记 §106 + paper §3 prose 部分, §1 没 explicit | 笔记 §106 |
+| ⭐ | (N) **B0 vs B1 reproducibility honest disclosure** (5-call probe: token-non-deterministic, action-convergent) | 🟡 paper §6 Risk 5 + paper §4 disclosure draft | probe_b37_api_determinism.md |
+| ☆ | (O) **Phase A 4-cluster bug audit + 5-tier lit-aligned review** | 🟡 笔记 §107, Appendix D candidate, ~37 entries cataloged | VWA_FRAMEWORK_BUGS doc |
+| ☆ | (P) **Bonferroni / Holm / BH / TOST equivalence per pre-registered family** | ✅ aggregate_phantom_lift.py 实现 | EVIDENCE_LAYER_AUDIT |
+| ☆ | (Q) **DerSimonian-Laird random-effect meta-analysis** | ✅ aggregate_phantom_meta.py 实现 | EVIDENCE_LAYER_AUDIT |
+| ☆ | (R) **Bootstrap CI on H3 unique-count structural test** | ✅ aggregate_phantom_lift.py 实现 | EVIDENCE_LAYER_AUDIT |
+| ☆ | (S) **Visual FP fairness correction** (non-visual subset balanced, ua_match audit) | ✅ 笔记 §89 + §27 + §95 latest | 笔记 §95 |
+| ☆ | (T) **Format-axis vs scope-axis orthogonality honesty** (processors.py:513-619 verified, retract over-claim) | ✅ paper_planning §21.6 quantitative anchor | 笔记 §109.16 |
+| · | (U) **Watchdog 6-layer auto-clean + manifest-grade discipline** (5/4 hardened: reset hard-fail + watchdog self-exit) | ✅ run_manifest.yaml + watchdog protocol commit a912545 | run_manifest.yaml |
+
+#### Register III — Application / Impact
+
+| ⭐/☆ | Item | Status | Source |
+|---|---|---|---|
+| ⭐ | (V) **Routing utility — Tier 1+2 router design** (oracle TF-IDF+LR + first-step trigger, no test leak) | 🟡 paper_planning §8 design, infra ready | §8 |
+| ⭐ | (W) **Multi-metric Pareto + Green AI axis** (cost / P95 latency / regional carbon, B1 measured 45 region) | 🟡 paper_planning §11, fig3_regional_carbon ready | §11 |
+| ⭐ | (X) **Independent routing effects beyond cost** (industry deploys P-text arbitrarily for cost; paper discovers per-axis routing benefits) | 🟡 §21.5 三层 paper-discovery 段 5/4 add | 用户 5/4 |
+| ☆ | (Y) **Drop-in deployment story** (existing full-SoM agent → Phantom-SoM by skipping image draw + image-token inference, no retrain) | ✅ §1 prose 已 frame | §1 |
+| ☆ | (Z) **Industry-can-adopt configurations based on paper characterization** (not just cost) | 🟡 §21.5 三层 hierarchy paper-discovery 段 | 5/4 surface |
+| · | (AA) **Routing signal portfolio per mode** (fig0g 5 signal × N mode AUROC matrix; not just "AUROC ≥ baseline" but **which signal works for which mode**) | (NEW, 5/4 audit add) — fig0g already computed | §6 router design input |
+
+#### Register IV — Survey / Position framing
+
+| ⭐/☆ | Item | Status | Source |
+|---|---|---|---|
+| ⭐ | (BB) **9-cell intervention taxonomy + dual-track** (3 spectrum × 3 layer, 12+ verified industry instances 西方+中国) | ✅ §21 + dual_track_taxonomy.canvas | §21 |
+| ⭐ | (CC) **Three-tier novelty hierarchy framing** (framework / artifact / research, 5/4 refine) | ✅ §21.5 重写 5/4 commit | 5/4 surface |
+| ⭐ | (DD) **Cross-X generalization** (cross-site cls/red, cross-model B0/B1, cross-size 235B/4B, planned cross-family Claude Opus) | 🟡 §7 partial — Claude Opus pending | 用户列举 (F) |
+| ☆ | (EE) **Industry-deployment-vs-research-characterization epistemic distinction** (industry deploys at artifact level, paper provides characterization at research level) | ✅ §21.5 | 笔记 §109.17 |
+| ☆ | (FF) **SE-engineering vs cognitive-routing scope-defense** (站点指纹库 / 短 grammar / FPC fix 不是 paper 主张, 是 deployment optimization) | ✅ §21.6.5 | 笔记 §109.19 |
+| ☆ | (GG) **Observation-axis vs action-axis scope honesty** (paper covers obs-axis only, action-grammar `click @7` is future work) | ✅ §21.6.6 | 笔记 §109.19 |
+| · | (HH) **Cross-site asymmetry mechanism** (cls visual-rich vs red text-dominated → mode-preference reverses with substrate visual-richness; site-class adaptive routing primitive) | (NEW, 5/4 audit add) — §1 prose 提但没 frame 为 site-class adaptive routing primitive | §1 + §6 |
+
+#### Register V — Future-paper trajectory
+
+| ⭐/☆ | Item | Status | Source |
+|---|---|---|---|
+| ☆ | (II) **Zoom 4 mechanistic anchor B0** (SteerMoE Fayyaz 2026 ICLR, **same Qwen3-VL-235B-A22B backbone**) | ✅ paper §8 future, lit anchored | 笔记 §108.9 |
+| ☆ | (JJ) **Zoom 4 mechanistic anchor B1** (Tool Calling Linear Circuit ACL 2026 **Qwen3-4B**) | ✅ paper §8 future, lit anchored | 笔记 §19 + §108.6 |
+| ☆ | (KK) **Env-side pilot → paper 2 NLWeb-style server emit** (substrate-independence test) | 🟡 dual_track canvas + ADVISOR_SYNC §4 advisor lock pending | 笔记 §109 |
+| · | (LL) **Hardened reset + watchdog + manifest discipline** as standalone "VWA paper-grade execution discipline" short paper | (NEW, 5/4 audit add) — execution-discipline novelty | run_manifest.yaml + watchdog protocol |
+
+### §22.3 Audit gaps surfaced 5/4 — 哪些 documented elsewhere 但 paper §1 hook 没 surface
+
+| Gap | What's missing | Impact | Recommendation |
+|---|---|---|---|
+| §1 prose stuck at 4/29 framing (4th-arm + 2-knob + capability) | 5/3 reframe (Hero+Structural+R1-R5) + 5/4 framework-tier (cube+image-axis) + ~100× cost gap + 4-dim Evidence + research-characterization angle 全部没 reflect | 顶会 reviewer 看 §1+abstract 决定 contribution claim, 这是最大 gap | 14-cell rerun done 后 codex pass for §1 prose 重写, 6-contribution structure (§22.4 candidate) |
+| Figures cover quantitative anchor 但 §1 prose 没 reference | fig0d Jaccard 0.29-0.49 / fig3a cost ≈ DOM / fig3c latency 50% / fig0g AUROC ≥ baseline / fig2 cross-model fingerprint | 4-fold drop-in property 缺 visual quantitative grounding | Codex pass §1 加 figure-anchor sentences (1-2 quantitative anchor per contribution) |
+| 笔记 §32 / §72 / §94 / §100 finding 未 elevate 进 paper prose | Vision systematic category bias / cross-model scroll behavior / SoM max_marks design sensitivity / OCR+attention probe ground-truth | 浪费 evidence; reviewer 看到 docstring 没 cross-ref 会怀疑 | 加进 §5 mechanism (vision probe) 或 §3 method robustness analysis (max_marks sensitivity) |
+| EVIDENCE_LAYER_AUDIT §1 36 priority gaps 部分 close | Bonferroni/Holm/BH/TOST done; per-mode visual FP correction done; routing AUROC done; **12+ pending** | rigor signal incomplete | T1 + T2 task queue 推进 (`docs/reference/EVIDENCE_LAYER_AUDIT.md` §3) |
+| Industry analogs 没 explicit 标 cube-center 缺位 | agent-browser dual-mode = text-only OR SoM+image, 没 cube-center P-SoM; Tarsier text-mode ≈ P-text-like 不 ≈ P-SoM | (C+D) 没 explicit 当 paper §1 contribution | 加 §1 prose 1-2 句 explicit "no industry deploys cube-center P-SoM" |
+
+### §22.4 Paper §1 hook 重写 candidate (6-contribution structure)
+
+旧 §1 prose (4/29 写) 是 3-contribution: 4th-arm + 2-knob + capability interaction.
+
+新 §1 prose 候选 6-contribution:
+1. **Framework**: 3-axis cube + image-axis isolation + cube-center P-SoM (paper-level framework contribution; **no industry deploys cube-center configuration**) [Register I A+C+D]
+2. **Phenomenon**: phantom routing space discovery + 4-fold drop-in property as unified deployment criterion [Register I B + Register III Y]
+3. **Industry-vs-research epistemic distinction**: industry deploys P-text arbitrarily for cost; paper discovers per-axis routing effects beyond cost [Register IV EE + Register III X]
+4. **Mechanism**: M1/M2 by-construction exhaustive deductive argument + text-explores-prompt-commits 2-knob [Register I E + H]
+5. **Capability interaction**: B0 vs B1 failure-mode shift +43.7pp (early-finish 53.3% B0 SoM vs visual-hijack/click-loop 70.4% B1 SoM, N=30/27) [Register I I, quant from 笔记 §1]
+6. **Methodology**: 4-dim Evidence framework + R1-R5 pre-registration + ~100× deployment-class cost gap framing (B0 API $0.04/ep vs B1 electricity $0.0004/ep) [Register II K+L+M]
+
+**Codex prose pass timing**: 14-cell rerun done + early-stop locked → 6-contribution prose draft → paper draft `section1_intro.md`.
+
+### §22.5 Advisor 5/5 sync priority
+
+**Top 5** (advisor 一定要听到的):
+1. (K) Pre-registration R1-R5 framing rule + OSF witness
+2. (B) 4-fold drop-in unified deployment criterion
+3. (C+D) 3-axis cube + cube-center P-SoM **framework contribution** (no industry analog)
+4. (W) Multi-metric + Green AI axis (cost+latency+carbon)
+5. (X) **Independent routing effects beyond cost** (industry-vs-research epistemic distinction)
+
+**Tier 2** (有时间讲):
+- (E) M1/M2 deductive completeness argument
+- (G) Lit-anchored named phenomena (Mirage / Scaffold / Sclar / cross-modal flow)
+- (BB) 9-cell taxonomy + dual-track (open `dual_track_taxonomy.canvas`)
+- (V) Tier 1+2 router 部署故事
+- (M) ~100× deployment-class cost gap framing
+
+**Polish** (advisor 问起再讲):
+- (CC) Three-tier novelty hierarchy framing (artifact-existence vs framework vs research)
+- (FF/GG) SE-engineering / observation-axis scope-defense
+- (II/JJ) Zoom 4 future paper trajectory (B0 SteerMoE + B1 Tool Calling)
+- (HH) Cross-site asymmetry as site-class adaptive routing primitive
+
+### §22.6 Action items (post-sync)
+
+1. **§1 prose 重写 codex pass** (14-cell rerun done + early-stop locked 后) → 6-contribution structure (§22.4 candidate)
+2. **paper.bib 加 ~10 中国 industry BibTeX entries** (§21.7 #26 verified arXiv IDs)
+3. **§5 mechanism prose update** 把 笔记 §32/§72/§94/§100 finding elevate 进 paper §3/§5
+4. **EVIDENCE_LAYER_AUDIT pending T1 / T2 推进** (12+ pending gaps from §1 priority list)
+5. **OSF DOI 上传 preregistration.md** (advisor witness email confirm 后)
+6. **Routing signal portfolio explicit prose** (Register III AA new) → §6 router design
+7. **Phantom space generalizability speculation prose** (Register I J new) → §8 future work 1-2 段
+8. **Cross-site asymmetry framing as site-class adaptive routing** (Register IV HH new) → §1 + §6
+
+### §22.7 Maintenance
+
+- **新 finding** → 实验笔记 chronicle, 然后 mirror to §22 inventory (mark Register + ⭐/☆)
+- **新 codex prose round** → §22.6 action items 标 done
+- **Advisor sync 5/5 后** → §22.5 priority 重排 (按 advisor 反馈)
+- **14-cell rerun done** → §22.4 §1 prose 6-contribution 落地 codex pass
 
 ---
