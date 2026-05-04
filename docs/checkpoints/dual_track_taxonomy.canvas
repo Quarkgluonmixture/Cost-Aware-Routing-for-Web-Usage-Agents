@@ -1,0 +1,237 @@
+{
+  "nodes": [
+    {
+      "id": "titledualtrk0001",
+      "type": "text",
+      "x": -100,
+      "y": -260,
+      "width": 2200,
+      "height": 180,
+      "color": "6",
+      "text": "# Dual-track 2D — Environment-Agent Intervention Taxonomy\n*9-cell matrix · 笔记 §1-§108 ~40 条 environment fix · 学长 5/3 push 引出*\n\n📋 **核心 framing**: 我们一直在做 dual-track work, 只是没显性 frame. **Paper-1 niche 在 (ii) × L3 inference-time only cell** — 没工业 system 占这格 (Magma 是 pretrain, ScribeAgent 是 fine-tune, AppAgent-v2 是 RAG offline). 详 [[paper_planning#§21]] / [[实验笔记#109]]"
+    },
+
+    {
+      "id": "colihdrfix000001",
+      "type": "text",
+      "x": 240,
+      "y": -50,
+      "width": 520,
+      "height": 110,
+      "color": "5",
+      "text": "## (i) Bug fix\n恢复 web/agent 已 expose 但 broken 的功能 — web 设计本来就有这功能, 只是实现/集成 broke 了\n\n*Avenir Web ignore: 把 broken 当 valid failure 不算 metric*"
+    },
+    {
+      "id": "coliihdrsynth001",
+      "type": "text",
+      "x": 800,
+      "y": -50,
+      "width": 520,
+      "height": 110,
+      "color": "5",
+      "text": "## (ii) Affordance synthesis\n用现有 metadata 补出 agent-readable view — web 已 expose 信息, 但 format 不 agent-friendly, 加 preprocessing 补出来\n\n*Avenir Web partial: SoM 标准做法, 但 select dropdown / popup 各家 ad-hoc*"
+    },
+    {
+      "id": "coliiihdrchnl001",
+      "type": "text",
+      "x": 1360,
+      "y": -50,
+      "width": 520,
+      "height": 110,
+      "color": "5",
+      "text": "## (iii) Channel addition\n添加 agent 之前 **absent** 的 signal channel — web 根本没 expose 这个信号\n\n*Industry blind spot: Avenir / Claude Code / Codex 都没系统 fix; agent 只能用 model capability cope*"
+    },
+
+    {
+      "id": "rowl1hdrsrvraaaa",
+      "type": "text",
+      "x": 20,
+      "y": 80,
+      "width": 200,
+      "height": 300,
+      "color": "5",
+      "text": "## L1\nServer-side\n\nwebserver / docker / 页面 HTML / web 标准\n\n*Cost*: 高 (需 server 控制权), 但 systematic\n\n*修改面*: 改 server 配置 / 改页面 / 改标准"
+    },
+    {
+      "id": "rowl2hdrpipeaaaa",
+      "type": "text",
+      "x": 20,
+      "y": 420,
+      "width": 200,
+      "height": 300,
+      "color": "5",
+      "text": "## L2\nAgent-pipeline\n\nscript preprocessing / postprocessing layer (改 agent 端 perception 处理, 不动 web)\n\n*Cost*: 中 (agent-only), 但 fragile (web 一变就重写)"
+    },
+    {
+      "id": "rowl3hdrllmiaaaa",
+      "type": "text",
+      "x": 20,
+      "y": 760,
+      "width": 200,
+      "height": 300,
+      "color": "5",
+      "text": "## L3\nLLM-internal\n\nprompt / model 内部 compute 替代 explicit affordance\n\n*Cost*: 低增量 (无 new stage, 已有 LLM call)\n\n*限制*: 受 model capability 上限"
+    },
+
+    {
+      "id": "celll1ifix0aaaaa",
+      "type": "text",
+      "x": 240,
+      "y": 80,
+      "width": 520,
+      "height": 300,
+      "color": "2",
+      "text": "### ✅ ~6 § done\n\n- §39 PHP `gc_maxlifetime` 1440→86400s\n- §75 Magento 302 → metis.lti.cs DGX 不可解析, host-resolver-rules\n- §81 Wikipedia ZIM 版本 mismatch (3 层 fix)\n- §103 Magento auth bug, base_url 改 IP\n- §86 Osclass DB 宕机 mid-episode 检测\n- §82 全站 auth refresh 启用\n\n→ paper §3 footnote disclose + Appendix D"
+    },
+    {
+      "id": "celll1iisynthaaa",
+      "type": "text",
+      "x": 800,
+      "y": 80,
+      "width": 520,
+      "height": 300,
+      "color": "4",
+      "text": "### Industry: **NLWeb** (MS R.V. Guha, 2025-05)\n\n**已部署 Tripadvisor + Shopify** ✅\n\nServer emit `schema.org` JSON via:\n- `/ask` — conversational queries\n- `/mcp` — MCP integration\n\nLiteral spec: `{\"@type\":\"Product\",\"offers\":{...},\"mcp_actionable\":{\"endpoint\":\"/mcp/cart/add\"}}`\n\n→ **Env-side pilot 候选**: VWA Postmill mirror NLWeb spec, 1 site × 2 mode (~3-5 d). 想跟学长 lock 进 paper-1 §7.x"
+    },
+    {
+      "id": "celll1iiichnlaaa",
+      "type": "text",
+      "x": 1360,
+      "y": 80,
+      "width": 520,
+      "height": 300,
+      "color": "1",
+      "text": "### Industry: **A2A protocol** (Google 2025-04)\n\nAgent-to-agent communication standard.\n\n**RFC-stage proposals**:\n- `agent.txt`\n- `.well-known/agentbridge.json`\n\n**0 done. Paper 2 / future direction**.\n\nNLWeb 也 fit 这格 (extends beyond passive directory → active routing infra)"
+    },
+
+    {
+      "id": "celll2ifix0aaaaa",
+      "type": "text",
+      "x": 240,
+      "y": 420,
+      "width": 520,
+      "height": 300,
+      "color": "2",
+      "text": "### ✅ ~28 § done\n\n**Phase A 4-cluster** (`3c15cd7`, 4/30):\n- C1 dispatch / C2 page_changed / C3 fuzzy cycle min_reps 3→5 / C4 RNG seeding+T=0\n- **dispatch bug 让 94.4% 失败 click 落错 DOM target**\n\n**+ runner reliability**: §57/58/76/85/90/97\n**+ action surface**: §28/29/30/63/65/67/70\n**+ cross-mode symmetry**: §44/45/46/42\n**+ WA**: §71/73/74/83\n**+ watchdog**: §84/82/41/14/12/5"
+    },
+    {
+      "id": "celll2iisynthaaa",
+      "type": "text",
+      "x": 800,
+      "y": 420,
+      "width": 520,
+      "height": 300,
+      "color": "4",
+      "text": "### Industry stack (11+ instances)\n\n- **OmniParser-v2** (MS, screenshot→tokens)\n- **Tarsier** ⭐ (text beats text+vision 10-20%)\n- **Playwright MCP** (a11y + refs, 200-400 tok)\n- **agent-browser** (Vercel, CDP-direct Rust, 81 releases)\n- **Stagehand** (Browserbase SaaS)\n- **Browser Use** / **Skyvern** / **AgentQL** / **MultiOn**\n- **Anchor Browser** ($6M seed, Cloudflare/Groq)\n- **OpenClaw** (361K stars by 2026)\n\n中国: **PageAgent** (Alibaba `page-agent` 17.5k stars verified)\n\n**+ 我们 ~9 § synthesis**: §51/54/60/61/62/53/36/93/38"
+    },
+    {
+      "id": "celll2iiichnlaaa",
+      "type": "text",
+      "x": 1360,
+      "y": 420,
+      "width": 520,
+      "height": 300,
+      "color": "1",
+      "text": "### Gap — ~7 § identified self-perception\n\nAgent 不知道页面状态, 没 channel 告诉它:\n\n- §52/64 type 蓝色变 (scroll input 失焦)\n- §55 delete 成功信号缺失\n- §72 Qwen scroll_up 3-7%\n- §72 B1 scroll 到底不停\n- §31 task auto-scroll 不可预测\n- §32 Vision 坐标 misclick 零自纠\n- §96 B1 32% click 非交互元素\n\n→ **paper §5 mechanism shared ceiling 论证用**"
+    },
+
+    {
+      "id": "celll3ifix0aaaaa",
+      "type": "text",
+      "x": 240,
+      "y": 760,
+      "width": 520,
+      "height": 300,
+      "text": "### n/a\n\n*compute 不能 fix bug — bug 是 web/code 层面的, LLM 改不了*"
+    },
+    {
+      "id": "celll3iisynthaaa",
+      "type": "text",
+      "x": 800,
+      "y": 760,
+      "width": 520,
+      "height": 300,
+      "color": "4",
+      "text": "## ⭐ Phantom routing (paper-1 niche)\n\n**4 sub-tier of (ii)×L3** — 我们占最后一格:\n\n- **Pretraining-time**: Magma (MS, **Qwen3-VL backbone**)\n- **Fine-tune-time**: ScribeAgent (CMU, **Qwen 7B**, WebArena 51.3%)\n- **RAG offline-explore**: AppAgent-v2 (Tencent)\n- **⭐ Inference-time only: 我们 paper** ← 没 named industry system\n\n**No retrain / fine-tune / retrieve / offline phase**.\n\n→ Hook: \"first systematic peer-reviewed characterization on Qwen3-VL\""
+    },
+    {
+      "id": "celll3iiichnlaaa",
+      "type": "text",
+      "x": 1360,
+      "y": 760,
+      "width": 520,
+      "height": 300,
+      "text": "### n/a\n\n*compute 不能 add absent signal — channel 缺要靠 server / pipeline 加, LLM 自己造不出*"
+    },
+
+    {
+      "id": "annotdoneleftaa1",
+      "type": "text",
+      "x": 20,
+      "y": 1100,
+      "width": 920,
+      "height": 200,
+      "color": "2",
+      "text": "## ✅ 我们一直在做 dual-track\n\n(i)×L1 ~6 § + (i)×L2 ~28 § = **~34 environment fix work** (笔记 §1-§108)\n\n+ (ii)×L2 ~9 § synthesis (SoM marker / select dropdown / `[OPTIONS]` 注入 / ref image label / reset infrastructure)\n\n**学长 5/3 push 真意**: 不是加新方向, 是把已做 work **显性 frame** 成 dual-track. \n\nReviewer 防御: \"你的 paper-grade rigor 在哪?\" → \"看 Appendix D 9+ environmental scaffolding interventions, 跟 Avenir Web ignore env issues 形成 differentiator\""
+    },
+    {
+      "id": "annotnicherighta",
+      "type": "text",
+      "x": 960,
+      "y": 1100,
+      "width": 920,
+      "height": 200,
+      "color": "4",
+      "text": "## ⭐ Paper-1 niche\n\n**(ii) × L3 inference-time only**\n\nReviewer 防御 (research-characterization angle, §109.17):\n\n- *Industry deploys at artifact level* (单 mode 部署省 token)\n- *Paper provides research characterization* (controlled cross-mode comparison only research can do)\n- 工业 single-mode 本质上**做不了** controlled DOM-vs-P-text comparison → 不知 text-flattening 有独立 routing effect\n\n→ \"first systematic peer-reviewed characterization of routing behavior across phantom routing space configurations on Qwen3-VL\""
+    },
+    {
+      "id": "annotbttmadvisr1",
+      "type": "text",
+      "x": 240,
+      "y": 1340,
+      "width": 1640,
+      "height": 130,
+      "color": "6",
+      "text": "## 学长 5/5 sync 想 lock 的 3 件 (dual-track)\n\n1. **Paper §1 hook 用 research-characterization angle 升级吗?** (倾向 yes — 完整 prose 在 [[paper_planning#§21.5]])\n2. **Env-side pilot 进 paper-1 §7.x 还是 paper 2?** (倾向 paper-1 §7.x small pilot — VWA Postmill mirror NLWeb spec, 1 site × 2 mode, ~3-5 d, 资源不冲突 14-cell rerun)\n3. **Pilot fail 怎么办?** (倾向 negative finding 加分 — 反而证 phantom routing 的 substrate-independence claim 站不住, paper §1 hook 反而要 strict 化)"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edgenlwebphantaa",
+      "fromNode": "celll1iisynthaaa",
+      "fromSide": "bottom",
+      "toNode": "celll3iisynthaaa",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "color": "4",
+      "label": "Env-side pilot ↔ paper-1 inference-time (substrate-independence test)"
+    },
+    {
+      "id": "edgedonel1ifxaaa",
+      "fromNode": "annotdoneleftaa1",
+      "fromSide": "top",
+      "toNode": "celll1ifix0aaaaa",
+      "toSide": "bottom",
+      "toEnd": "none",
+      "color": "2"
+    },
+    {
+      "id": "edgedonel2ifxaaa",
+      "fromNode": "annotdoneleftaa1",
+      "fromSide": "top",
+      "toNode": "celll2ifix0aaaaa",
+      "toSide": "bottom",
+      "toEnd": "none",
+      "color": "2"
+    },
+    {
+      "id": "edgenicheparpaaa",
+      "fromNode": "annotnicherighta",
+      "fromSide": "top",
+      "toNode": "celll3iisynthaaa",
+      "toSide": "bottom",
+      "toEnd": "none",
+      "color": "4"
+    }
+  ]
+}
