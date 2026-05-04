@@ -1828,13 +1828,19 @@ Advisor decision context? → ADVISOR_SYNC
 
 ---
 
-## §21 Environment-Agent Intervention Taxonomy (整合 2026-05-04, 笔记 §1-§108 audit)
+## §21 Environment-Agent Intervention Taxonomy (整合 2026-05-04, 笔记 §1-§108 audit, **2026-05-04 deepest-evening 4-round epistemic upgrade**)
 
 > **目的**: 整合分散在笔记里的 environment / agent intervention 类型 work, 给 paper 一个**统一的 contribution scope view**。学长 5/3 push "两头出发" 的 framing 在这里 explicit 化 — 我们一直在做 dual-track work, 只是没显性 frame。
 >
 > **Scope 不分 paper 1 vs paper 2** — 这一节是 **inventory**, 列"做了的 + 想做的"。具体哪条进 paper 1 / paper 2 / future 后续 advisor sync 决定。
 >
 > **Source of truth**: 笔记 §X 是历史 chronicle, 这一节是 cross-§ taxonomy view; 任何 § 修改/新增, 这一节同步 update.
+>
+> **2026-05-04 deepest-evening 4-round epistemic upgrade** (笔记 §109.16-19 chronicle):
+> 1. **§109.16** Format-axis vs scope-axis distinction (verified by reading processors.py:513-619, retract earlier "interactive-only filter" over-claim)
+> 2. **§109.17** Research-characterization vs artifact-existence epistemic distinction (paper §1 hook reframe — industry deploys for economy, paper characterizes for behavior; 4 phantom corners equal-novel as research cells)
+> 3. **§109.18** 国产 DR V2 fact-check + Chinese industry sweep verified arXiv cheat sheet (8/8 V2 arXiv IDs fabricated, dual-region industry sweep 现用 verified IDs)
+> 4. **§109.19** SE-module-vs-cognitive-routing scope-defense argument (§21.6.5) + observation-axis vs action-axis scope (§21.6.6) — paper deliberately excludes SE-engineering modules (站点指纹库 / 短 grammar / FPC fix as substantive findings) and limits substitution to observation-axis (action-axis future work)
 
 ### §21.1 Framework — 3 × 3 Taxonomy
 
@@ -2140,6 +2146,25 @@ UI-TARS / CogAgent / Operator CUA / Magma — pure visual coordinate grounding
 | HMT (Tan/Gao/Wu BIT 2026) | Memory architecture (recall trade-off hierarchical 84.2% vs flat 65.8%); orthogonal axis to phantom routing |
 | CoAct-1 (OSWorld 60.76%) | Task-class routing (programmatic Python/Bash vs visual perception); orthogonal axis but same conceptual family — paper §6 routing chapter cite |
 
+**Chinese industry sweep (added 2026-05-04 §109.18, verified arXiv IDs only — V2 fabricated IDs filtered out)**:
+
+| Industry / Academic instance | Cell mapping | Verified ID / repo | Differentiator vs paper |
+|---|---|---|---|
+| **PageAgent** (Alibaba, frontend pure-JS) ⭐ Chinese P-text-equivalent artifact | (ii)×L2 — pipeline preprocessing | `github.com/alibaba/page-agent` (17.5k stars / v1.8.1 / 2026-04-27) | **Their artifact**: pure-DOM flat-text representation (no multimodal), runs on any text-only LLM, deployed in Alibaba ecosystem (淘宝/天猫/钉钉/阿里云). **Their characterization gap**: single-mode production deployment for cost economy, no controlled DOM-vs-flat-text comparison on isolated routing-behavior axis. Our P-text corner provides this characterization on Qwen3-VL. |
+| **UI-TARS** (ByteDance + Tsinghua) + **UI-TARS-2** | Outside (ii)×L3 — pure visual VLM L3-pretrain | `arXiv:2501.12326` (UI-TARS) / `arXiv:2509.02544` (UI-TARS-2) / `github.com/bytedance/UI-TARS` (10.2k stars) | UI-TARS-2 (2025-09): OSWorld 47.5 / WindowsAgentArena 50.6 / AndroidWorld 73.3. Pure visual GUI agent via large-scale pretraining (627M+ GUI samples claimed by V2 — fabricated, real number TBD). **Same family as Magma**: pretraining-time substitution vs paper's inference-time substitution on non-pretrained Qwen3-VL. |
+| **AutoWebGLM** (Tsinghua + Zhipu) | (ii)×L3 sub-tier "fine-tune" | `arXiv:2404.03648` (KDD 2024) / `github.com/THUDM/AutoWebGLM` | Built on ChatGLM3-6B base, hybrid data augmentation + curriculum learning + RL + rejection sampling. Bilingual (English+Chinese) AutoWebBench. **Differentiator**: ScribeAgent (Qwen 7B + 6B-token corpus) and AutoWebGLM (ChatGLM3-6B + bilingual corpus) are both fine-tuning-axis precedents on different model families; we use **non-fine-tuned Qwen3-VL** at inference time. |
+| **AutoGLM** (Zhipu, autonomous foundation agents for GUIs) | (ii)×L3 sub-tier "fine-tune" + Web/Android dual | `arXiv:2411.00820` (2024-11) | Foundation-agent-for-GUI direction. Different paper from AutoWebGLM (V2 文档 conflated 二者). Same fine-tuning axis as ScribeAgent/AutoWebGLM. |
+| **WebRL** (LLM web agents via self-evolving RL) | (ii)×L3 sub-tier "RL fine-tune" | `arXiv:2411.02337` (2024-11) | Standalone paper (V2 misattributed as AutoGLM-internal module). Self-evolving RL framework axis — orthogonal to prompt-structure substitution; complements paper §21 substitution-gradient with "RL-finetune cell" fillable instance. |
+| **Alibaba WebAgent suite** (WebSailor + WebDancer + WebWalker + WebShaper, Tongyi Lab) | (ii)×L2 — pipeline preprocessing × multi-module decomposition | `arXiv:2507.02592` (WebSailor) / `github.com/Alibaba-NLP/WebAgent` | 4-module decomposition for information-seeking agent: WebSailor (search) + WebDancer (browse) + WebWalker (benchmark) + WebShaper. WebSailor-72B: 12.0% BrowseComp-en / 30.1% BrowseComp-zh / 55.4% GAIA. WebDancer Pass@3: 64.1% GAIA / 62.0% WebWalkerQA. **Differentiator**: production-grade information-seeking agent at L2 pipeline; orthogonal to phantom routing's representation-axis characterization. |
+| **OS-Atlas** (OS-Copilot, NOT THUDM) | (ii)×L3 sub-tier "pretrain" cross-platform | `arXiv:2410.23218` (2024-10) / `github.com/OS-Copilot/OS-Atlas` | 13M GUI grounding samples across Windows/macOS/Linux/Android/Web — largest open-source cross-platform corpus. Foundation action model. **Differentiator**: cross-platform pretraining axis at L3, complementing Magma's web-focused pretraining; we test **inference-time** substitution on Qwen3-VL without any cross-platform pretraining. |
+| **Mobile-Agent-v2** (X-PLUG/Alibaba) + **v3** (cross-platform) | (ii)×L2 — pipeline preprocessing × multi-agent | `arXiv:2406.01014` (v2 NeurIPS 2024) / `arXiv:2508.15144` (v3 2025-08) / `github.com/X-PLUG/MobileAgent` | v2: 3-agent (planning/decision/reflection). v3: 6-module cross-platform (Manager/Worker/Reflector/Notetaker/RAG/GUI-interface). **Differentiator**: multi-agent decomposition at L2 pipeline; orthogonal to single-agent representation-axis substitution paper provides. |
+| **Qwen3-VL Technical Report** (Qwen Team) ⭐ paper backbone | Reference (paper backbone) | `arXiv:2511.21631` (2025-11, dense 2B/4B/8B/32B + MoE 30B-A3B/235B-A22B, 256K context) | Qwen3-VL is paper B0/B1 backbone (B0=235B-A22B, B1=4B). Technical report disclosed Nov 2025. **Direct paper §1 cite**: paper experiments use specific Qwen3-VL variants in dense + MoE family disclosed by this report; clean experimental anchor. |
+| **CogAgent** (Tsinghua + Zhipu) | (ii)×L3 sub-tier "pretrain" | `arXiv:2312.08914` (2023-12) | Earliest Chinese GUI multimodal foundation paper, 18B parameter visual GUI agent. Pretraining-axis cell, pre-Magma precedent. |
+| **AppAgent v1** (Tencent) | (ii)×L3 sub-tier "RAG-offline-explore" | `arXiv:2312.13771` (2023-12) | Already cited in §21 (ii)×L3 table. Original LLM-as-app-controller framework, pure visual + touch (no DOM). |
+| **AppAgent-v2** (Tencent) | (ii)×L3 sub-tier "RAG-offline-explore" | (already cited in §21 main table — `arXiv:2408.11824` v1 / `arXiv:2411.18279` v2) | Differentiator already in §21 main differentiator table. |
+
+**Chinese industry consensus pattern** (per V2 framework verified): 7 of 7 旗舰 Chinese products converge on "DOM-primary + SoM-fallback" architecture (PageAgent 是异类: pure-DOM 无 multimodal). **None** runs controlled per-axis routing-behavior characterization — paper §21.5 epistemic argument applies fully to dual-region (西方 + 中国) industry sweep: **artifact-deployment level, not research-characterization level**.
+
 ### §21.6 Industry counter-evidence stack (added 2026-05-04 from DR Section D)
 
 Empirical findings from DR that **directly support** paper §3 evaluation methodology + §107 audit narrative:
@@ -2164,6 +2189,83 @@ Empirical findings from DR that **directly support** paper §3 evaluation method
 | **CoAct-1 OSWorld 60.76% SOTA** via task-class routing (programmatic Python/Bash for file ops + visual perception only when no programmatic backdoor) ✅ verified | OSWorld + CoAct-1 publication 2025 | Paper §6 routing chapter: task-class routing precedent; orthogonal to phantom routing axis but conceptually same family |
 | **3D game environments require pipeline SoM injection** (Cradle BAAI 2024 — Red Dead Redemption 2; GenSim Bayesian environment generation) ✅ Round-3 verified | Cradle paper / GenSim paper | Paper §8 future work: substitution gradient extends to game environments; opens paper 2 / 3 path |
 | **OS-level metadata broken** (OSWorld + AppWorld + AndroidWorld benchmark consensus): A11y trees rendered blank or wildly inaccurate by custom rendering engines, nested iframes, unlabelled components | OS-Genesis (ACL 2025) / OS-Atlas (ICLR 2025) ✅ verified | Paper §3 / §8: cross-platform pattern — environmental hostility is universal not web-specific |
+
+### §21.6.5 Scope-defense — Cognitive-routing vs SE-engineering distinction (added 2026-05-04 deepest-evening, 笔记 §109.19)
+
+**Critical paper-strategic argument** (parallel to §21.5 epistemic-level argument): paper deliberately **excludes SE-engineering modules** from substitution-axis ablation, because:
+
+> Paper claim is **cognitive routing-behavior characterization** (per-axis representation effect on LLM behavior). SE-engineering modules (site-specific fingerprint databases, short symbolic action grammars, benchmark instrumentation patches) are **deployment optimizations** whose effect is cost/latency engineering — not LLM cognitive behavior. Including them in substitution-axis ablation would conflate cognitive characterization with software engineering benchmarking.
+
+#### §21.6.5.1 Distinction grid
+
+| Substitution candidate | Routing? | Module? | Effect 是 cognitive 还是 SE engineering? | Paper §21 cover? |
+|---|---|---|---|---|
+| **DOM ↔ phantom mode runtime switch** | ✅ runtime dynamic switch | — | cognitive (representation 改变 LLM behavior axis) | ✅ phantom routing space main characterization |
+| **Phantom 4-corner fixed mode runs** | ❌ fixed | ✅ research instrument | cognitive (controlled comparison reveals per-axis isolated effect) | ✅ paper §21 phantom — research instrument, not deployment tool |
+| **agent-browser `click @7` short action grammar** | ❌ fixed | ✅ SE module | engineering (output-token cost saving) | ❌ exclude — out of cognitive routing scope |
+| **ArkClaw / 通义 enterprise site fingerprint database** | ❌ fixed | ✅ SE module | engineering (deployment-specific lookup table) | ❌ exclude — non-generalizable deployment hack |
+| **VWA Magento FPC fix / Postmill PHP gc_maxlifetime fix / Wikipedia ZIM version fix** | ❌ fixed | ✅ SE infrastructure module | engineering (benchmark site-config bug) | ❌ exclude **as substantive finding** — ✅ acknowledge as **evidence-layer prereq** (Appendix D) |
+| **Stagehand DOM trim algorithm / Browser Use SDK popup patches** | ❌ fixed | ✅ SE deployment module | engineering (production scaffolding) | ❌ exclude — environmental scaffolding not characterization |
+| **Phase A 4-cluster fixes (C1 dispatch / C2 page_changed / C3 fuzzy cycle / C4 RNG seeding)** | ❌ fixed | ✅ SE benchmark instrumentation module | engineering (benchmark cleanliness) | ❌ exclude as substantive finding — ✅ acknowledge as paper-grade rigor prereq |
+| **Watchdog auto-clean protocol (6-layer defense)** | ❌ fixed | ✅ SE data hygiene module | engineering (data cleanliness automation) | ❌ exclude — paper-grade rigor scaffolding |
+
+#### §21.6.5.2 Why this distinction matters (reviewer-defense argument)
+
+| Reviewer attack | Pre-distinction defense | Post-distinction defense (this scope-defense) |
+|---|---|---|
+| "Why didn't you ablate agent-browser's short-grammar?" | (no answer — implicit assume action-axis out of scope) | "Because short symbolic grammar is a SE-engineering module (fixed action-serialization for output-token economy), not a cognitive routing axis. Paper scope is per-representation-axis cognitive characterization. Action-grammar substitution is acknowledged as future-work axis (§21.6.6)." |
+| "Why didn't you compare to ArkClaw enterprise fingerprint DB?" | (no answer — implicit assume SE module unrelated) | "Because fingerprint DB is site-specific deployment lookup (per-customer SE engineering), not generalizable cognitive routing characterization. It works **on top of** any cognitive routing baseline as orthogonal SE optimization." |
+| "Why didn't you ablate FPC fix / Phase A 4-cluster as substitution dimensions?" | (no answer — risks looking like we're hiding methodology asymmetry) | "Because these are **evidence-layer instrumentation** (preventing benchmark Environment-Failure from contaminating cognitive Agent-Failure measurement). They enable controlled comparison; they're not the comparison itself. Paper §3 evaluation methodology + Appendix D explicit acknowledge them as paper-grade rigor prereq, not as cognitive routing findings." |
+| "Why is your paper not a software-engineering paper?" | (weak — relies on intuitive claim "we focus on routing") | "Because phantom 4-corner ablation **isolates per-axis representation effect on LLM cognitive behavior**, which generalizes across sites/tasks/models. SE modules (fingerprint DB / short grammar / FPC fix) generalize **only within their specific deployment configuration** — different epistemic generalization scope. Paper provides cognitive routing characterization that practitioners deploy on top of any SE-module stack." |
+
+#### §21.6.5.3 Phantom 4-corner status under this distinction
+
+**Phantom 4-corner runs are fixed-mode, but they're research instrument not deployment tool**:
+- **Purpose**: controlled cross-mode comparison to isolate per-axis cognitive routing effect
+- **Effect**: reveals **per-axis representation→LLM-behavior** causal isolation (not cost/latency engineering)
+- **Generalization**: per-axis findings apply across sites/tasks/models (cognitive science-style characterization)
+- **Distinguished from SE module by**: (a) purpose (characterization vs deployment), (b) effect dimension (cognitive vs engineering), (c) generalization scope (cross-condition vs per-deployment)
+
+This argument complements §21.5 research-characterization argument:
+- **§21.5 argument**: "industry deploys at artifact level, paper characterizes at research level" (epistemic-level distinction — defense against "industry already does this")
+- **§21.6.5 argument**: "SE modules are engineering optimization, paper does cognitive science characterization" (research-scope distinction — defense against "why didn't you ablate SE modules")
+
+Both arguments needed for full reviewer defense.
+
+### §21.6.6 Substitution-axis scope — Observation-axis paper, action-axis future work (added 2026-05-04 deepest-evening)
+
+#### §21.6.6.1 Two independent substitution axes
+
+| Axis | What gets substituted | Paper position |
+|---|---|---|
+| **Observation-representation axis** | LLM input prompt format (DOM hierarchical AXTree / SoM annotated image / flat AXTree / SoM-prompt verbal interface) | ✅ **Paper §21 phantom routing space main characterization** — 4-corner ablation cube isolates per-axis effect |
+| **Action-grammar axis** | LLM output serialization format (verbose JSON action schema vs short symbolic grammar like `click @7`) | ❌ **Paper does NOT cover** — VWA default verbose action serialization used across all 6 modes; future work axis |
+
+These two axes are **orthogonal**: observation substitution affects what LLM sees, action-grammar substitution affects what LLM emits. They independently impact cost (input vs output tokens) and behavior (representation routing vs action-format constraint).
+
+#### §21.6.6.2 Where industry sits on action-axis
+
+| Industry SDK | Action-grammar substitution | Effect |
+|---|---|---|
+| **agent-browser** (Vercel Labs) | `click @7` / `type @5 'hello'` short symbolic grammar | Output-token compression (~3 token/action vs ~30 token verbose JSON) |
+| **Playwright MCP** (Microsoft) | `[ref=e5] click` ref-based commands | Same direction — short symbolic grammar |
+| **Stagehand** (Browserbase) | 4-primitive grammar (act/extract/observe/agent) | High-level primitive grammar substitution |
+| **Tarsier** (Reworkd) | typed bracket addressing `[#23]`/`[@23]`/`[$23]` | Combined observation + action namespace alignment |
+| **PageAgent** (Alibaba) | `window.pageAgent` JS API | Verbose-JSON action style (NOT short grammar) — exception in Chinese industry |
+
+**Industry convergence on observation axis** (a11y-tree-roled flat-ref ~200-400 tokens) is well-documented; **industry convergence on action axis** (short symbolic grammar) is **also a substitution dimension**, but **paper §21 only covers observation-axis**.
+
+#### §21.6.6.3 Paper §21 explicit limitations prose
+
+Paper §21 / §8 (Discussion + Future Work) should explicit prose:
+
+> "Paper §21 9-cell intervention taxonomy and phantom routing space 4-corner ablation focus on **observation-representation substitution axis** (text payload format × prompt-format expectation × image presence). Industry SDKs (agent-browser, Playwright MCP, Stagehand, Tarsier) additionally apply **action-grammar substitution** (short symbolic commands like `click @7` replacing verbose JSON action schemas) for output-token economy. Our phantom routing space ablation **does not factor this orthogonal axis**: we use VisualWebArena's default verbose action serialization across all 6 modes for consistent ablation control on observation-axis. **This is consistent ablation control on observation axis but leaves action-grammar effect uncharacterized**. Future work extending phantom routing space to action-axis (4-corner observation × 2-corner action grammar = 8-cell extended cube) is left open."
+
+#### §21.6.6.4 Why this scope is principled (not arbitrary)
+
+1. **Cognitive science isolation rigor**: characterizing two orthogonal axes simultaneously requires 8-cell ablation (not 4); within paper budget, 4-corner observation-axis is the cleanest single-axis characterization
+2. **Industry already characterizes action-axis empirically** (short grammar vs verbose JSON cost saving), but with same SE-engineering caveat as §21.6.5 — no controlled cognitive characterization on action-axis either, parallel research opportunity
+3. **Phantom routing space hero claim (P-SoM 4-fold drop-in)** uses default verbose action grammar — claim does NOT depend on action-grammar axis. Future action-axis extension is **stackable** on top of observation-axis findings (same orthogonality logic as format-axis trim per §109.16)
 
 ### §21.7 Pending decisions (后续 discuss / advisor sync)
 
@@ -2204,5 +2306,15 @@ Empirical findings from DR that **directly support** paper §3 evaluation method
 
 22. **Paper §1 hook framing 选择** ⭐ critical — 用 **research-characterization angle** ("industry deploys for economy, paper characterizes for behavior", §21.5 prose ~530 词) 还是保留之前的 substitution-gradient-niche framing? **Strong recommend research-characterization angle**: (a) honest about industry-already-deploys-equivalent-artifacts (avoid reviewer attack vector); (b) shifts paper claim to characterization level (industry can't做 controlled comparison only research can) — different epistemic level than artifact deployment; (c) all 4 phantom corners equal-novel as research cells (P-text not less novel than P-SoM); (d) Magma+ScribeAgent same-Qwen-base differentiator becomes pretraining/fine-tuning isolation argument naturally.
 23. **Artifact-vs-characterization epistemic distinction** explicit 进 paper §1 / §2 prose — "industry deployment ≠ research finding" 是 reviewer-defense critical phrase, paper §1 hook + paper §2 related work 都 explicit acknowledge industry artifact existence + position paper at characterization level. 不 over-claim "first to use these configurations", claim "first to systematically characterize routing behavior of these configurations on Qwen3-VL via controlled cross-mode comparison".
+
+#### Added 2026-05-04 deepest-evening latest (post §109.18 fact-check + §109.19 scope-defense)
+
+24. **SE-module-vs-cognitive-routing scope-defense explicit prose 进 paper §3 / §8** ⭐ critical — §21.6.5 argument 必须 explicit 写进 paper: "deliberately exclude SE-engineering modules (站点指纹库 / 短 grammar / FPC fix as substantive findings) from substitution-axis ablation because paper claim is cognitive routing characterization not deployment optimization". Paper §3 method 段 + §8 discussion limitations 各一段 prose, parallel to §21.5 research-characterization argument. 不写 = reviewer 攻击"why not ablate site fingerprint DB / short grammar"无 principled defense.
+
+25. **Observation-axis vs action-axis scope explicit 进 paper §3 / §8 limitations** — §21.6.6 argument: paper phantom routing space focuses on observation-representation axis (4-corner cube), action-grammar substitution (short symbolic grammar like `click @7`) is orthogonal future-work axis. Paper §3 method explicit "we use VWA default verbose action serialization across all 6 modes for consistent observation-axis ablation control"; paper §8 future work explicit "extending phantom routing to action-axis (8-cell extended cube)". 不写 = reviewer 误以为 paper claims action-axis 也 covered.
+
+26. **中国 industry sweep integration into paper §1 / §2** — §109.18 verified arXiv IDs cheat sheet 已就位 (PageAgent / UI-TARS / UI-TARS-2 / AutoWebGLM / AutoGLM / WebRL / WebSailor suite / OS-Atlas / Mobile-Agent v2/v3 / Qwen3-VL technical report / CogAgent), paper.bib 加 ~10 BibTeX entries, paper §1 hook prose 中加 "Chinese industry SDKs (PageAgent from Alibaba, UI-TARS from ByteDance/Tsinghua, AutoGLM from Zhipu, WebSailor suite from Alibaba Tongyi)" parallel 西方 SDK list, achieving dual-region industry sweep coverage. **Special anchor**: Qwen3-VL Technical Report `arXiv:2511.21631` 直接对应 paper backbone (B0=235B-A22B / B1=4B variants), paper §1 / §3 method explicit cite with backbone disclosure.
+
+27. **§21.6.5 SE-module exclusion full audit** — 明确列 paper Appendix D "evidence-layer instrumentation" vs "cognitive routing finding" 两 category split: 现 Phase A 4-cluster fixes / FPC fix / watchdog auto-clean / Magento fix / Postmill PHP gc fix / Wikipedia ZIM fix 全列 evidence-layer 不算 finding. 写一段 prose: "Paper §3 evaluation methodology + Appendix D explicit categorize all SE-engineering instrumentation (~37 entries from §21.2 (i)×L1 + (i)×L2) as paper-grade rigor prereq, not as cognitive routing findings. Phantom routing space 4-corner ablation operates on top of clean evidence-layer infrastructure".
 
 ---
