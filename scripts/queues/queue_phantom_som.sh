@@ -158,10 +158,15 @@ sys.exit(0 if refresh_site_auth('${SITE}', Path('${REPO_DIR}/.auth')) else 1)
           echo "[phantom_som][warn] post-reset auth refresh failed; watchdog will retry reactively after streak=3" >&2
         fi
       else
-        echo "[phantom_som][warn] reset failed (rc=$?); continuing anyway" >&2
+        rc=$?
+        echo "[phantom_som][error] reset failed (rc=${rc}); aborting to preserve paper-grade integrity." >&2
+        echo "[phantom_som][error] To bypass reset (paper-grade dirty), explicitly set RESET_BEFORE=0." >&2
+        exit 1
       fi
     else
-      echo "[phantom_som][warn] reset_vwa_sites.sh not found; skipping reset" >&2
+      echo "[phantom_som][error] reset_vwa_sites.sh not found but RESET_BEFORE=1; aborting." >&2
+      echo "[phantom_som][error] To bypass reset (paper-grade dirty), explicitly set RESET_BEFORE=0." >&2
+      exit 1
     fi
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
     echo "[phantom_som] RESET_BEFORE=1 but BENCHMARK=wa — WA reset+auth refresh uses different mechanism, skipping"
@@ -193,10 +198,14 @@ WD_LOG="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.log"
 # expands this to match all B0_*/B1_* runs (3mode + dom + phantom variants).
 AGGREGATE_PREFIX="${BASELINE}_3mode"
 
+# Runner PID for watchdog self-exit — watchdog auto-exits when this PID dies
+# AND condition_summary_v2.json present. Prevents init-orphan idle loops.
+RUNNER_PID=$(pgrep -f "run_experiment.py.*${RUN_ID}" | head -1)
+
 if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
   echo "[phantom_som] watchdog for ${RUN_ID} already running, skipping spawn"
 else
-  echo "[phantom_som] launching watchdog → ${WD_LOG}"
+  echo "[phantom_som] launching watchdog → ${WD_LOG} (runner pid=${RUNNER_PID:-unknown})"
   setsid nohup "${PYTHON_BIN}" -u scripts/maintenance/experiment_watchdog.py \
     --run-dir "${RUN_DIR}" \
     --condition "${COND_ID}" \
@@ -206,6 +215,7 @@ else
     --aggregate-prefix "${AGGREGATE_PREFIX}" \
     --glm-config .auth/glm \
     --digest-dir "${RUN_DIR}/analysis/digest" \
+    ${RUNNER_PID:+--runner-pid "${RUNNER_PID}"} \
     >> "${WD_LOG}" 2>&1 < /dev/null &
   disown
   sleep 2

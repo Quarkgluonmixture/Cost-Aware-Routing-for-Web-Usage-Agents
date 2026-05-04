@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import signal
 import shutil
@@ -1108,6 +1109,11 @@ def build_parser() -> argparse.ArgumentParser:
              "Default off to reduce notification noise.",
     )
     p.add_argument("--once", action="store_true", help="Scan once then exit")
+    p.add_argument("--runner-pid", type=int, default=None,
+                   help="Runner PID. If set, watchdog auto-exits when runner "
+                        "dies and the (single) condition has finalized "
+                        "(condition_summary_v2.json present). Without this, "
+                        "falls back to extended-idle exit after condition done.")
     p.add_argument("--aggregate-prefix", default="B1_3mode",
                     help="Prefix used for aggregate gallery regeneration (default: B1_3mode)")
     p.add_argument("--reset-state", action="store_true",
@@ -1688,6 +1694,44 @@ def main() -> int:
 
         if args.once:
             break
+
+        # ---- Self-exit when work is done (avoids init-orphan idle loops) ----
+        # Only meaningful in single-condition mode — multi-condition watchdog
+        # waits for all conditions, harder to bound generally.
+        if args.condition:
+            cond_done = (run_dir / args.condition / "condition_summary_v2.json").exists()
+            if cond_done:
+                if args.runner_pid is not None:
+                    # Path A: explicit runner PID — exit as soon as runner dies.
+                    try:
+                        os.kill(args.runner_pid, 0)
+                        runner_alive = True
+                    except ProcessLookupError:
+                        runner_alive = False
+                    except PermissionError:
+                        # Process exists but owned by another uid — still alive.
+                        runner_alive = True
+                    except OSError:
+                        runner_alive = True  # err on safe side
+                    if not runner_alive:
+                        print(
+                            f"[watchdog] condition {args.condition} complete + "
+                            f"runner pid={args.runner_pid} dead → exiting"
+                        )
+                        _persist_state()
+                        break
+                else:
+                    # Path B (legacy launchers without --runner-pid): exit if
+                    # no new episodes for ≥ idle_alert_secs after summary written.
+                    idle_secs = time.time() - last_new_episode_ts
+                    if idle_secs >= idle_alert_secs:
+                        print(
+                            f"[watchdog] condition {args.condition} complete + "
+                            f"idle {int(idle_secs/60)}min → exiting"
+                        )
+                        _persist_state()
+                        break
+
         time.sleep(max(1, args.poll_secs))
 
     # Final summary

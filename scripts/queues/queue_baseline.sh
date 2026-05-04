@@ -177,10 +177,15 @@ sys.exit(0 if refresh_site_auth('${SITE}', Path('${REPO_DIR}/.auth')) else 1)
           echo "[baseline][warn] post-reset auth refresh failed; watchdog will retry reactively after streak=3" >&2
         fi
       else
-        echo "[baseline][warn] reset failed (rc=$?); continuing anyway" >&2
+        rc=$?
+        echo "[baseline][error] reset failed (rc=${rc}); aborting to preserve paper-grade integrity." >&2
+        echo "[baseline][error] To bypass reset (paper-grade dirty), explicitly set RESET_BEFORE=0." >&2
+        exit 1
       fi
     else
-      echo "[baseline][warn] reset_vwa_sites.sh not found; skipping reset" >&2
+      echo "[baseline][error] reset_vwa_sites.sh not found but RESET_BEFORE=1; aborting." >&2
+      echo "[baseline][error] To bypass reset (paper-grade dirty), explicitly set RESET_BEFORE=0." >&2
+      exit 1
     fi
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
     echo "[baseline] RESET_BEFORE=1 but BENCHMARK=wa — WA reset+auth refresh uses different mechanism, skipping"
@@ -209,10 +214,14 @@ WATCHDOG_LOG="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.log"
 WATCHDOG_STATE="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.state.json"
 WATCHDOG_DIGEST="${RUN_DIR}/analysis/digest"
 
+# Runner PID for watchdog self-exit — watchdog auto-exits when this PID dies
+# AND condition_summary_v2.json present. Prevents init-orphan idle loops.
+RUNNER_PID=$(pgrep -f "run_experiment.py.*${RUN_ID}" | head -1)
+
 if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
   echo "[baseline] watchdog for ${RUN_ID} already running, skipping spawn"
 else
-  echo "[baseline] launching watchdog → ${WATCHDOG_LOG}"
+  echo "[baseline] launching watchdog → ${WATCHDOG_LOG} (runner pid=${RUNNER_PID:-unknown})"
   setsid nohup "${PYTHON_BIN}" -u scripts/maintenance/experiment_watchdog.py \
     --run-dir "${RUN_DIR}" \
     --condition "${COND_ID}" \
@@ -223,6 +232,7 @@ else
     --aggregate-prefix "${BASELINE}_3mode" \
     --glm-config .auth/glm \
     --digest-dir "${WATCHDOG_DIGEST}" \
+    ${RUNNER_PID:+--runner-pid "${RUNNER_PID}"} \
     > "${WATCHDOG_LOG}" 2>&1 < /dev/null &
   disown
   sleep 2

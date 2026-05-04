@@ -157,10 +157,19 @@ def find_matching_runs(baseline: str, site: str, mode: str, benchmark: str = "vw
                 except Exception:
                     pass
 
-            # Filter by mode (observation_mode field OR cond_dir name keyword match)
-            if not (obs_mode in cond_keywords
-                    or any(k in cond_dir.name for k in cond_keywords)):
-                continue
+            # Filter by mode. Prefer strict obs_mode equality (canonical field
+            # in summary/meta). Fallback to cond_dir mode-segment strict
+            # equality only when obs_mode is unavailable — substring match is
+            # unsafe ("dom" ⊂ "phantom_dom" caused DOM cells to mis-match
+            # phantom_dom runs).
+            if obs_mode:
+                if obs_mode not in cond_keywords:
+                    continue
+            else:
+                m = re.match(r"phase1_(.+)_router_\d+$", cond_dir.name)
+                cond_seg = m.group(1) if m else ""
+                if cond_seg not in cond_keywords:
+                    continue
 
             # Count in-flight progress via episodes/ dir
             episodes_dir = cond_dir / "episodes"
@@ -169,11 +178,17 @@ def find_matching_runs(baseline: str, site: str, mode: str, benchmark: str = "vw
                 episode_count = sum(1 for _ in episodes_dir.glob("*_summary_v2.json"))
 
             # Skip empty-scaffolded conditions (condition_meta.json present but
-            # no episodes ever ran — typically launch-prepared-then-cancelled).
-            # Only count real matches: finalized (summary exists) or in-flight
-            # with actual episode progress.
+            # no real runner activity — typically launch-prepared-then-cancelled).
+            # Real in-flight: at least one *_steps_v2.jsonl exists (runner has
+            # started writing step data, even before first episode summary).
+            # ep_count=0 alone is insufficient — runner mid-task-0 has steps
+            # but no ep summary yet.
             if not summary.exists() and episode_count == 0:
-                continue
+                has_steps = episodes_dir.exists() and any(
+                    episodes_dir.glob("*_steps_v2.jsonl")
+                )
+                if not has_steps:
+                    continue
 
             matches.append({
                 "cond_dir": cond_dir,
