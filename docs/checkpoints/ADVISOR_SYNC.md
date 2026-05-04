@@ -403,6 +403,28 @@ L3 LLM-internal   n/a            ⭐ Phantom routing   n/a
 
 5/4 跑了 3 轮 Gemini DR, Round-2 出现 6 处 hallucination (HMT 错 author / NLAH 凑名字 / K3 Mariner 编造 / WebAIM 数字错 / Operator 41.7% misattribute / Doubao 商业封号无 verification)。Round-3 全部 catch + 修。**Paper writing 前必须 verify 所有 industry citation** — LLM lit review 不能直接 trust。
 
+### 7.7 5/4 evening → 5/5 早 4-round epistemic upgrade brief ⭐ NEW (advisor brief)
+
+5/4 evening 跨夜到 5/5, paper §1 hook + §21 scope 经过 4 轮 user push-back catch + epistemic correction, **完成 paper-strategic framing 重大升级**。学长 sync 前需要 brief 这 4 轮 (笔记 §109.16-19 完整 chronicle):
+
+| 轮次 | Catch | 落地 | Paper-strategic gain |
+|---|---|---|---|
+| **§109.16** Format-axis 修正 | Read `processors.py:513-619` 验证, 撤回 prior over-claim "industry SDK filter to interactive-only / P79 preserve all elements" | paper_planning §21.6 quantitative anchor + §3 method 准确化 | Paper §3 method honest framing: 工业 SDK + P79 element scope similar (a11y-tree-roled), gap 在 format-axis (URL/property/hierarchy/ref width), 不是 scope-axis. **Reviewer 防御**: 避免实际不成立的 scope claim. Commit `1ac3fbf` |
+| **§109.17** Research-characterization angle reframe ⭐ critical | User catch "工业用了 ptext 是为了省花费, 他们不知道 text 扁平化有独特效果, 因为他们无法把 dom 和 ptext 对比. 所以两个都是一样的" | paper_planning §21.5 重写 ~530 词 hook prose, 4 corners equal-novel | **Paper §1 hook epistemic-level shift**: 从"first to use P-text" → "first systematic peer-reviewed characterization of routing behavior across phantom space on Qwen3-VL via controlled cross-mode comparison". **Different epistemic level**: industry deploys at artifact level, paper provides characterization (industry single-mode 部署本质上无法做 controlled comparison). **Reviewer 防御**: "industry already does this" attack 直接 disarm. Commit `727de9f` |
+| **§109.18** V2 国产 DR fact-check + verified arXiv cheat sheet | User 给 V1 国产 Web Agents 报告, 我 prompt V2 增补, V2 出来后 trust-but-verify 抽 8 个 arXiv ID + 4 个 GitHub repo → **0/8 arXiv 真 (systematic fabrication), 2/4 GitHub repo 真**. WebSearch 找回真实 IDs | paper_planning §21.5 differentiator table 加 dual-region (西方 + 中国) industry sweep with verified IDs | **Dual-region industry sweep 完整化**: PageAgent (`alibaba/page-agent` 17.5k stars verified, 中国 P-text artifact equivalent) / UI-TARS (`arXiv:2501.12326`) / UI-TARS-2 (`arXiv:2509.02544`) / AutoWebGLM (`arXiv:2404.03648` KDD 2024) / AutoGLM (`arXiv:2411.00820`) / WebRL (`arXiv:2411.02337`) / WebSailor suite (`arXiv:2507.02592`, `Alibaba-NLP/WebAgent` repo) / OS-Atlas (`arXiv:2410.23218`) / Mobile-Agent-v2 (`arXiv:2406.01014` NeurIPS 2024) + v3 (`arXiv:2508.15144`) / **Qwen3-VL Technical Report** (`arXiv:2511.21631`, **直接 paper backbone B0=235B-A22B / B1=4B**) / CogAgent (`arXiv:2312.08914`). **Reviewer 防御**: 中国 audience / 中文期刊 reviewer 不会再 attack "你 ignore 中国 industry". Commit `c48b946` |
+| **§109.19** SE-module-vs-cognitive-routing scope-defense ⭐ critical | User 在思考 agent-browser 短命令 (`click @7`) 时 catch: "我之前的站点知识注入也是 module 但不是 routing, 所以和这个一样先不考虑。否则我们就是在测一个 software engineering 了对吧" | **paper_planning §21.6.5 NEW**: cognitive-routing vs SE-engineering distinction + **§21.6.6 NEW**: observation-axis vs action-axis scope | **双支柱 scope-defense framework**: §21.5 epistemic-level argument (artifact vs characterization, defends "industry already does X") + §21.6.5 research-scope argument (cognitive vs SE engineering, defends "why didn't you ablate SE module Y like 站点指纹库 / 短 grammar / FPC fix"). 双支柱 cover 不同 reviewer attack vector. **§21.6.6 同时 acknowledge**: paper phantom space cover observation-axis only, action-grammar axis (`click @7` 短 grammar) 是 future-work axis. Commit `b2580ba` |
+
+**Sync 时 brief 学长的 1-min summary**:
+> "5/4 evening 经过 4 轮 epistemic upgrade, paper §1 hook 从 'first to use phantom configurations' 升级到 'first systematic research characterization on Qwen3-VL'. 加了 dual-pillar scope-defense (epistemic-level + cognitive-vs-SE), dual-region industry sweep (西方 + 中国 with 12 verified arXiv IDs), action-axis future-work acknowledge. 你 5/3 push 的 'two-track' framing 现在在 §21 完整 explicit, 学长 sync 时主要 ask 是 §7.5 表的 7 项决定 + §21.7 #24-27 (新加 4 项 paper §3/§8 prose patch + paper.bib BibTeX 加 ~10 entries)."
+
+**§7.5 Decision 1 update** (上面表中 #1 "Paper §1 hook 用 substitution gradient framing 升级吗?"): **从 "substitution gradient framing" 改成 "research-characterization angle" (§109.17 落地 prose ~530 词在 §21.5)**。我 lean: **Yes adopt research-characterization angle** (理由 §21.7 #22 列), 待 advisor confirm。
+
+**§21.7 新加 4 项 pending decisions (§109.19 落地)**:
+- #24 SE-module-vs-cognitive-routing scope-defense explicit prose 进 paper §3 / §8
+- #25 Observation-axis vs action-axis scope explicit 进 paper §3 / §8 limitations
+- #26 中国 industry sweep integration into paper §1 / §2 + paper.bib ~10 BibTeX entries
+- #27 §21.6.5 SE-module exclusion full audit (Appendix D evidence-layer split)
+
 ---
 ---
 
@@ -410,8 +432,8 @@ L3 LLM-internal   n/a            ⭐ Phantom routing   n/a
 
 - **`docs/checkpoints/preregistration.md`** ⭐ NEW (status:draft, lock 5 件 commit 后 flip locked)
 - **`docs/reference/EVIDENCE_LAYER_AUDIT.md`** ⭐ NEW (§2 pre-registration template + meta-rationale, T0a-d done)
-- `docs/checkpoints/paper_planning.md` — paper strategy notebook (20 sections)
-- `docs/checkpoints/实验笔记.md` — chronicle (§1-§108.20)
+- `docs/checkpoints/paper_planning.md` — paper strategy notebook (含 §21.5 dual-region industry sweep + §21.6.5 SE-module scope-defense + §21.6.6 observation-vs-action axis + §21.7 #1-27 pending decisions)
+- `docs/checkpoints/实验笔记.md` — chronicle (§1-§109.19, **§109.16-19 是 5/4 evening 4-round epistemic upgrade ⭐**)
 - `docs/checkpoints/paper_drafts/` — section1-8 prose + paper.bib (57 entries)
 - `docs/checkpoints/next_steps.md` — daily action ledger
 - `docs/reference/VWA_FRAMEWORK_BUGS_AND_PHASE_A_FIXES.md` — 37 bugs + 4-cluster patch detail
