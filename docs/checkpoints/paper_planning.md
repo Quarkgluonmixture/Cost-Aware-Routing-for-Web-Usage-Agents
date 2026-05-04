@@ -1012,19 +1012,45 @@ Cells:     6 sites × 3 models × 5 modes = ~90 cells (~125K episode total)
 + Multi-metric: cost / P95 latency / carbon (B1 measured + B0 estimate)
 ```
 
-### 顶刊概率（final scope + multi-metric/green AI 加成 后）
+### 顶刊概率 — conditional tree on framing rule R1-R5
 
-| 投稿目标 | 概率 | 投稿优先级 |
-|---|---:|---|
-| **NeurIPS / ICLR main** | 45-60% | Tier 1 stretch |
-| **ICML** | 40-55% | Tier 1 stretch |
-| **ACL / EMNLP main** | 50-65% | Tier 1 |
-| **MLSys** | **75-85%** ⭐ | **Tier 1 safe** (drop-in framing 完美 fit) |
-| WWW / WSDM | 75-85% | Tier 2 |
-| NeurIPS D&B | 70-80% | Tier 2 |
-| **TMLR (journal)** | **75-85%** | **保底** |
+> **Update 2026-05-04**: 旧 §5 是 unconditional 单点估计 (4/27 写). 5/3 pre-registration reframe 后, paper hook 是 **data-conditional R1-R5** (见 §1 + `preregistration.md`), 概率也应该按 framing-rule 分支条件化, 不再是单点数字.
+>
+> 5/1-5/4 期间 paper-grade 加分项 (全条目 baseline +5-10%):
+> - 5/3 Pre-registration Hero+Structural+R1-R5 framework + OSF + advisor witness (方法论严谨)
+> - §109.17 Research-characterization angle (artifact-existence vs characterization, disarm "industry already does X")
+> - §109.18 Dual-region industry sweep verified (12 arXiv 西方 + 中国, fact-check 严谨)
+> - §109.19 Dual-pillar scope-defense (cognitive vs SE / observation vs action axis)
+> - Phase A 4-cluster bug fix + 5-tier audit + 14-cell rerun 计划 (Risk 1 mitigation 落地)
+> - 9-cell taxonomy + dual-track canvas (paper §1/§2 framing 升级)
 
-→ Final scope 完成后, paper 顶刊出版几乎 100% (cascade NeurIPS → ACL/EMNLP → MLSys → TMLR)
+#### 条件概率 (conditional on R-rule outcome 落在哪档)
+
+| Framing rule | 数据条件 | NeurIPS/ICLR | ICML | ACL/EMNLP | MLSys ⭐ | WWW/WSDM | NeurIPS D&B | TMLR 保底 | Cascade |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| **R1 (strongest)** | Hero + Structural 全过 (K_h1≥0.75, K_h3≥0.67) | **55-70%** | **50-65%** | **60-75%** | **82-90%** | **80-88%** | **75-85%** | **85-92%** | **~99%** |
+| **R2 (good)** | Hero pass, Structural 单 axis | 45-60% | 40-55% | 50-65% | 78-85% | 75-83% | 70-80% | 80-88% | ~97% |
+| **R3 (modest)** | Hero pass, Structural fail (回退旧 4th-arm framing) | 35-50% | 30-45% | 40-55% | 70-80% | 68-78% | 65-75% | 75-85% | ~93% |
+| **R4 (weak)** | Hero partial fail (e.g. cost/latency 不 hold) | 15-30% | 10-25% | 20-35% | 55-70% | 50-65% | 45-60% | 65-78% | ~85% |
+| **R5 (paper death)** | Hero fail | — | — | — | — | — | — | — | pivot to VWA bug paper / 放弃 |
+
+#### 解读
+
+- **R1 落地 = paper 几乎稳进顶刊** (NeurIPS/ICLR/ICML 中位 60% level + cascade 99%). 旧 §5 写的"NeurIPS 45-60%"是 R3 baseline, 现在 R1 提到 55-70%.
+- **R3 是旧 §5 的隐含基线** — 假设 hero 过但 structural 没专门测, 退回 04-30 旧 framing "Phantom-SoM is hidden 4th routing arm". 现在概率没变 (因为旧 §5 写的就是这个 case).
+- **R4 是真危险区** — MLSys + TMLR 仍能保底, 但 top-tier <30%. 这就是为啥 14-cell rerun (cost/latency 重测) 必跑.
+- **R5 概率低但要 acknowledge** — pivot 路径有 (VWA bug paper 已经是独立 short paper 候选).
+- **Cascade 投稿策略**: NeurIPS → ACL/EMNLP → MLSys → TMLR, R1/R2/R3 都能在 ≤2 轮 cascade 内 land.
+
+#### 数据未确认前的实际期待 (advisor sync 用)
+
+5/5 sync 时跟学长讲实际期待: **R2 是合理 baseline expectation** (R1 over-optimistic, R3 conservative). R2 conditional cascade ~97%, top-tier 中位 50-55%. 14-cell rerun 后可以 update 到 actual R-rule branch.
+
+#### Caveats (-)
+
+- **Cross-family generalization**: Single backbone (Qwen3-VL) 即使跟 Magma/ScribeAgent same base, reviewer 仍可能要 Claude Opus cls+red 12 cells (`paper_planning §16` advisor-input). 如果延期 → 全条目 -1-2%.
+- **VWA only**: Mind2Web 2 (newer benchmark) reviewer 可能挑. Marginal -1%.
+- **Early-stop choice**: Option A (full cancel) → 数据全 dim clean; B/C → paper §4 disclosure overhead, -1-2%.
 
 ### Multi-metric + Green AI axis 加成的 paper-level 价值
 
@@ -1693,6 +1719,8 @@ Post run:
 | 2026-05-03 | H3 structural test = bootstrap CI on \|arm ∖ P-SoM\| unique-count > 0, K_h3=0.67, ≥2 task floor | Structural claim only requires non-emptiness of axis non-overlap, not directional dominance. McNemar tests asymmetry which is wrong test for H3. Bootstrap CI > 0 is correct. | ✅ `aggregate_phantom_lift.py` H3 family + `phantom_lift.md` H3 section |
 | 2026-05-03 | Pre-registration commits locked: K_h1=0.75 / K_h3=0.67 / TOST δ=1.0pp / Phase A only main + Appendix D archived / Witness=Git+advisor email + OSF DOI | All 5 commits drafted in `preregistration.md` (status:draft); pending advisor sync to flip status:locked + record git SHA + advisor witness. | ⏸️ pending advisor sync |
 | 2026-05-03 | Evidence layer + visualization audit infra (T0a-T0d done) | `aggregate_phantom_lift.py` Bonferroni/Holm/BH/TOST + H3 structural test cols; `aggregate_phantom_meta.py` DerSimonian-Laird random-effect; `fig_forest_drop_one.py` per-cell forest with Holm-sig markers; `fig_meta_forest.py` Hero+Ablation visual hierarchy; `fig_phantom_structure_venn.py` paper §1 centerpiece Venn; `make analysis [FAST=1]` end-to-end wired. | ✅ `docs/reference/EVIDENCE_LAYER_AUDIT.md` §3 T0 4/6 done |
+| 2026-05-04 | Bulk archive all 27 manifest cells pre-advisor-sync (run_manifest.yaml) | Phase A 4-cluster fix (3c15cd7 4/30 15:35) makes pre-fix data not directly comparable to post-fix; cross-grade asymmetry from 5/1 + 5/4 post-fix solo runs would contaminate cross-mode comparisons (fix-effect ≠ mode-effect). All cells flipped to `grade: archived` until 14-cell rerun + advisor lock; figures preserved at last paper-grade-pre-bug-only state for 5/5 sync visual aid. | ✅ commit 8a9f595 |
+| 2026-05-04 | §5 顶刊概率 → conditional tree on R1-R5 framing rule (was unconditional single-point) | 5/3 pre-registration reframe made paper hook data-conditional; probability estimates should follow same discipline. R1 (strongest, K_h1≥0.75 + K_h3≥0.67): top-tier 55-70% / cascade ~99%. R2 (Hero pass, single-axis structural): ~97% cascade. R3 (旧 §5 baseline, hero pass + structural fail): 35-50% top-tier / ~93%. R4 (hero partial fail, e.g. cost not hold): MLSys+TMLR 保底, top-tier <30%. R5 (hero fail): pivot. R2 是 advisor-sync realistic baseline expectation. | ✅ paper_planning §5 rewritten |
 
 ---
 
