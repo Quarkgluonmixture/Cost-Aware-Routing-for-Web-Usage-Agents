@@ -3,61 +3,65 @@ type: issue
 category: blocker
 status: blocked
 priority: high
-action: 等 advisor sync lock + RunPod $200 批准 → onboarding → launch chain
+action: 等 advisor email lock K_h1/K_h3/TOST + A100 SSH verify → launch 16-cell on A100 (~3-5d wallclock)
 created: 2026-05-03
+updated: 2026-05-06
 ---
 
-# 14-cell phantom rerun (post-Phase-A bug fix)
+# 16-cell phantom rerun (post-Phase-A bug fix)
+
+> **Filename legacy** `issue_14cell_phantom_rerun.md` — scope updated 5/5 student decision: **16 cells** (was 14 pre-sync default). Filename retained to avoid breaking 4 cross-doc references (cell_b1_cls_pprompt / cell_b1_red_pprompt / issue_paper_grade_rerun_5cells / issue_b1_gpu_contention / PLAYBOOK §1).
 
 Paper main analysis only uses Phase A post-fix data (commit ≥ `3c15cd7`). All currently archived B0/B1 phantom cells are pre-Phase-A and need rerun for paper-grade clean numbers.
 
-## Scope (final cell list to confirm at advisor sync)
+## Scope (✅ student-decided 5/5 post-sync, advisor email witness pending)
 
-Tentative 14 cells (subject to advisor sync decision):
+**16 cells**:
 - B0 × {classifieds, reddit} × {phantom_text, phantom_som, phantom_prompt} = 6
 - B1 × {classifieds, reddit} × {phantom_text, phantom_som, phantom_prompt} = 6
-- B0 shopping × {phantom_text, phantom_som} = 2 (P-prompt deferred for shop?)
-- = 14
+- B0 shopping × {phantom_text, phantom_som} = 2
+- B1 shopping × {phantom_text, phantom_som} = 2 (added 5/5 student decision for cross-capability shop coverage)
 
-Final scope confirmed at sync — could be 13 if B0 shop P-prompt deferred, or 16 if B1 shop included.
+K_h1 threshold: 0.75 → ≥ 12/16 cells pass; K_h3: 0.67 → ≥ 11/16. See `preregistration.md` line 203.
 
-## Cost estimate
+## Compute path (5/6 update — A100 unblock)
 
-- 4090 dedicated: $0.6/h × ~87-145 h = **~$52-87 actual**
-- + 30% buffer (crash/retry) = **~$70-115**
-- + ad-hoc probe headroom (~$60: Q3 multi-call + Tier 5 evaluator + diamond shop + §5 ad-hoc) = **~$200 total ask**
+| Path | Wallclock | Cost | Status |
+|---|---|---|---|
+| ⭐ **UCL Condense A100 dedicated** (allocated 5/6) | ~3-5 d (cell-parallel feasible, 80GB VRAM 8× headroom) | $0 (UCL allocation, NOT student-funded) | pending Steve SSH info |
+| DGX shared (fallback) | ~3 weeks (seonglae sweep contention) | $0 | available |
+| RunPod 4090 (deprecated by A100) | ~1 week | $70-115 | NOT NEEDED |
 
-## Wallclock
-
-- DGX shared: ~3 weeks (GPU contention with seonglae)
-- RunPod 4090 dedicated: **~1 week**
-- 后者 unblocks paper writing 2 周
+**A100 unblocks paper writing 1-2 weeks** — see 笔记 §112.
 
 ## Blocks
 
 - Paper §4 fresh-data prose (codex #11)
-- Paper §5 mechanism prose (codex #13)
-- Framing decision rule R1-R5 evaluation
+- Paper §5 mechanism prose (codex #13) [partially unblocked by Stage 2 mechanistic finding §111 — case study + asymmetry can be quoted from current data]
+- Framing decision rule R1-R5 evaluation (data-conditional hook lock)
 - Final paper hook commit
 - All downstream paper writing
+- OSF DOI upload (also gated on advisor email reply)
 
 ## Unblocked by
 
-1. Advisor sync (`issue_advisor_sync_preregistration.md`): RunPod $200 budget approval + cell list final + framing buy-in
-2. RunPod onboarding (`docs/reference/RUNPOD_ONBOARDING.md` 7-step playbook)
-3. Pre-registration `status: locked` (`preregistration.md`)
+1. **A100 SSH verify** (Steve approval done, dashboard node + SSH info pending) — eliminates compute blocker
+2. **Advisor email reply** to `advisor_sync_5_5_followup.md` Q1-Q11 — locks threshold (K_h1=0.75 / K_h3=0.67 / TOST δ=1.0pp) per `preregistration.md`
+3. Pre-registration `status: locked` flip — happens after (2)
 
 ## Post-rerun pipeline
 
 `make analysis [FAST=1]` 一条命令 regen:
 - `phantom_lift.md` (Holm/BH/Bonf/TOST + H3 structural)
 - `meta_phantom_lift.md` (DerSimonian-Laird RE pooled + I²)
-- 13 figures including new `fig_forest_drop_one.png` / `fig_meta_forest.png` (Hero+Ablation hierarchy) / `fig_phantom_structure_venn.png` (paper §1 centerpiece)
+- 13 figures including `fig_forest_drop_one.png` / `fig_meta_forest.png` (Hero+Ablation hierarchy) / `fig_phantom_structure_venn.png` (paper §1 centerpiece)
 
 Then framing rule R1-R5 fires → paper hook locks → codex #11/#13 prose.
 
 ## Refs
 
-- `docs/reference/RUNPOD_ONBOARDING.md` 7-step playbook
-- `docs/checkpoints/preregistration.md` (data_lock_until)
-- `docs/checkpoints/ADVISOR_SYNC.md` §3 RunPod budget
+- `docs/checkpoints/preregistration.md` (`data_lock_until: <pending 16-cell rerun completion>`)
+- `docs/checkpoints/advisor_sync_5_5_followup.md` (Q1-Q11 邮件主体)
+- `docs/checkpoints/advisor_sync_5_5_outcomes.md` §A.8 (compute path, Tier 0 A100)
+- `docs/checkpoints/实验笔记.md §112` (A100 allocation chronicle)
+- ~~`docs/reference/RUNPOD_ONBOARDING.md`~~ (deprecated by A100)
