@@ -8,14 +8,19 @@ agent saw during paper-grade runs.
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union
 
 import torch
+from PIL import Image
 from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
 
 from p79.utils.torch_cuda_workarounds import apply_nvrtc_prod_fallback_if_needed
 
 logger = logging.getLogger(__name__)
+
+# Match qwen3vl_agent.py default image_max_size for production parity
+IMAGE_MAX_SIZE_DEFAULT = 1024
 
 
 class HiddenStateExtractor:
@@ -87,26 +92,64 @@ class HiddenStateExtractor:
             text += observation_text
         return text
 
+    @staticmethod
+    def _load_resize_image(image_path: Union[str, Path], max_size: int = IMAGE_MAX_SIZE_DEFAULT) -> Image.Image:
+        """Load + LANCZOS-resize image to max_size (matches qwen3vl_agent.py:447-450)."""
+        img = Image.open(image_path).convert("RGB")
+        if max(img.size) > max_size:
+            ratio = max_size / max(img.size)
+            new_size = (int(img.size[0] * ratio), int(img.size[1] * ratio))
+            img = img.resize(new_size, Image.Resampling.LANCZOS)
+        return img
+
     @torch.no_grad()
     def extract(
         self,
         intent: str,
         mode: str,
         observation_text: str = "",
+        image_path: Optional[Union[str, Path]] = None,
     ) -> torch.Tensor:
         """Forward pass with output_hidden_states=True. Return last-token hidden states.
+
+        Args:
+            intent: task instruction
+            mode: observation mode (dom / som / phantom_som / phantom_text / phantom_prompt / vision)
+            observation_text: full AXTree or [SOM_MARKS] text (mode-conditional)
+            image_path: if provided, load image and add to messages content
+                (multimodal forward pass; for SoM / Vision modes)
 
         Returns:
             Tensor of shape (n_layers + 1, hidden_dim). Layer 0 is embedding output;
             layer L for L >= 1 is post-transformer-block-L hidden state.
         """
         user_text = self._build_user_text(intent, mode, observation_text)
-        messages = [{"role": "user", "content": [{"type": "text", "text": user_text}]}]
+
+        # Build content. For multimodal: image first, then text (matches agent line 471).
+        content = []
+        if image_path is not None:
+            img = self._load_resize_image(image_path)
+            content.append({"type": "image", "image": img})
+        content.append({"type": "text", "text": user_text})
+        messages = [{"role": "user", "content": content}]
 
         text = self.processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )
-        inputs = self.processor(text=[text], padding=True, return_tensors="pt")
+
+        if image_path is not None:
+            from qwen_vl_utils import process_vision_info
+            image_inputs, video_inputs = process_vision_info(messages)
+            inputs = self.processor(
+                text=[text],
+                images=image_inputs,
+                videos=video_inputs,
+                padding=True,
+                return_tensors="pt",
+            )
+        else:
+            inputs = self.processor(text=[text], padding=True, return_tensors="pt")
+
         inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
 
         outputs = self.model(
@@ -126,12 +169,12 @@ class HiddenStateExtractor:
 
     def extract_batch(
         self,
-        items: list[tuple[str, str, Optional[str]]],
+        items: list[tuple[str, str, Optional[str], Optional[Union[str, Path]]]],
     ) -> tuple[torch.Tensor, list[str]]:
-        """Sequential extraction over (intent, mode, observation_text) tuples.
+        """Sequential extraction over (intent, mode, observation_text, image_path) tuples.
 
         Args:
-            items: list of (intent, mode, observation_text or None)
+            items: list of (intent, mode, observation_text or None, image_path or None)
 
         Returns:
             (hidden_states, mode_labels)
@@ -140,8 +183,14 @@ class HiddenStateExtractor:
         """
         hs_list = []
         labels = []
-        for i, (intent, mode, obs) in enumerate(items):
-            hs = self.extract(intent, mode, obs or "")
+        for i, item in enumerate(items):
+            # Backward-compat: support 3-tuple (without image_path)
+            if len(item) == 3:
+                intent, mode, obs = item
+                image_path = None
+            else:
+                intent, mode, obs, image_path = item
+            hs = self.extract(intent, mode, obs or "", image_path=image_path)
             hs_list.append(hs)
             labels.append(mode)
             if (i + 1) % 20 == 0:

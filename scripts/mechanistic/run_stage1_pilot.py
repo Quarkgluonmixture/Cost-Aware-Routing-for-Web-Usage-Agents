@@ -119,49 +119,73 @@ def load_archived_items(
 
     For each (task_id, step_idx) in archived run:
       - Read observation_dom.txt (raw AXTree)
-      - For mode_a (e.g. dom): observation = full AXTree
-      - For mode_b (e.g. phantom_som): observation = [SOM_MARKS] regex-extracted
-      - Yield 1 item per mode → 2 items per (task, step)
+      - Per mode: select obs format + image path (None / screenshot / annotated)
 
-    Returns list of dicts: {task_id, step_idx, intent, mode, observation_text}
+    Mode → (obs_text, image_file) mapping:
+      - dom              → (full AXTree, None)
+      - som              → ([SOM_MARKS], screenshot_annotated.png)
+      - vision           → ("", screenshot.png)
+      - phantom_som      → ([SOM_MARKS], None) — image-mismatched (mirage axis)
+      - phantom_text     → ([SOM_MARKS], None) — text-mismatched
+      - phantom_prompt   → (full AXTree, None) — prompt-only swap
+
+    Returns list of dicts: {task_id, step_idx, intent, mode, observation_text, image_path}
     """
     artifacts_dir = _find_artifacts_dir(run_dir)
     logger.info(f"Loading archived observations from {artifacts_dir}")
 
     items = []
     skipped = 0
+    skipped_no_img = 0
     for task_id, intent in intents:
         task_dir = artifacts_dir / f"{site}_task_{task_id}"
         if not task_dir.is_dir():
             skipped += 1
             continue
         for step_idx in steps:
-            obs_file = task_dir / f"step_{step_idx:03d}" / "observation_dom.txt"
+            step_dir = task_dir / f"step_{step_idx:03d}"
+            obs_file = step_dir / "observation_dom.txt"
             if not obs_file.exists():
                 continue
             obs_text = obs_file.read_text()
             som_marks_text = _build_som_marks_text(obs_text)
+            screenshot_annotated = step_dir / "screenshot_annotated.png"
+            screenshot_raw = step_dir / "screenshot.png"
+
             for mode in modes:
-                # Map mode to which observation form it sees
-                if mode == "dom" or mode == "phantom_prompt":
-                    obs_for_mode = obs_text  # full AXTree
-                elif mode in ("som", "phantom_som", "phantom_text", "phantom_dom"):
-                    obs_for_mode = som_marks_text  # [SOM_MARKS] only
+                # Mode → obs format + image
+                if mode == "dom":
+                    obs_for_mode, img_for_mode = obs_text, None
+                elif mode == "som":
+                    obs_for_mode = som_marks_text
+                    img_for_mode = screenshot_annotated if screenshot_annotated.exists() else None
                 elif mode == "vision":
-                    obs_for_mode = ""  # vision sees no text
+                    obs_for_mode = ""
+                    img_for_mode = screenshot_raw if screenshot_raw.exists() else None
+                elif mode in ("phantom_som", "phantom_text", "phantom_dom"):
+                    obs_for_mode, img_for_mode = som_marks_text, None
+                elif mode == "phantom_prompt":
+                    obs_for_mode, img_for_mode = obs_text, None
                 else:
-                    obs_for_mode = obs_text  # default fallback
+                    obs_for_mode, img_for_mode = obs_text, None
+
+                # Skip image-required modes if image missing (e.g. som mode without screenshot_annotated)
+                if mode in ("som", "vision") and img_for_mode is None:
+                    skipped_no_img += 1
+                    continue
+
                 items.append({
                     "task_id": task_id,
                     "step_idx": step_idx,
                     "intent": intent,
                     "mode": mode,
                     "observation_text": obs_for_mode,
+                    "image_path": str(img_for_mode) if img_for_mode is not None else None,
                 })
     logger.info(
         f"Loaded {len(items)} archived items "
-        f"({len(items) // len(modes)} (task, step) pairs × {len(modes)} modes); "
-        f"skipped {skipped} tasks not in artifacts dir"
+        f"(modes={list(modes)}); skipped {skipped} tasks not in artifacts dir, "
+        f"{skipped_no_img} samples with missing image artifact"
     )
     return items
 
@@ -200,6 +224,14 @@ def main():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--n-folds", type=int, default=5)
     parser.add_argument("--min-free-vram-gb", type=float, default=12.0)
+    parser.add_argument(
+        "--pca-dim", type=int, default=50,
+        help="PCA dim per fold before LR (default 50). Set 0 to disable.",
+    )
+    parser.add_argument(
+        "--probe-C", type=float, default=0.01,
+        help="LR L2 regularization C (smaller = more reg, default 0.01 for low-N regime).",
+    )
     args = parser.parse_args()
 
     is_stage_1b = args.archived_run_dir is not None
@@ -231,18 +263,21 @@ def main():
             archived_dir, args.site, intents, args.steps, (mode_a, mode_b),
         )
         for it in archived_items:
-            items_for_extractor.append((it["intent"], it["mode"], it["observation_text"]))
+            items_for_extractor.append((
+                it["intent"], it["mode"], it["observation_text"], it["image_path"],
+            ))
             item_metadata.append({
                 "task_id": it["task_id"],
                 "step_idx": it["step_idx"],
                 "mode": it["mode"],
+                "image_path": it["image_path"],
             })
     else:
-        # Stage 1A: empty observation
+        # Stage 1A: empty observation, no image
         for task_id, intent in intents:
             for mode in (mode_a, mode_b):
-                items_for_extractor.append((intent, mode, None))
-                item_metadata.append({"task_id": task_id, "step_idx": -1, "mode": mode})
+                items_for_extractor.append((intent, mode, None, None))
+                item_metadata.append({"task_id": task_id, "step_idx": -1, "mode": mode, "image_path": None})
 
     logger.info(
         f"Will extract {len(items_for_extractor)} hidden state vectors "
@@ -274,9 +309,15 @@ def main():
     logger.info(f"Saved hidden_states.npz ({hidden_states.nbytes / 1e6:.1f} MB)")
 
     # 5. Per-layer linear probe
-    logger.info(f"Running per-layer linear probe ({args.n_folds}-fold CV, seed={args.seed})")
+    pca_dim = args.pca_dim if args.pca_dim > 0 else None
+    logger.info(
+        f"Running per-layer linear probe ({args.n_folds}-fold CV, seed={args.seed}, "
+        f"pca_dim={pca_dim}, C={args.probe_C})"
+    )
     probe_results = linear_probe_per_layer(
-        hidden_states, labels, n_folds=args.n_folds, seed=args.seed,
+        hidden_states, labels,
+        n_folds=args.n_folds, seed=args.seed,
+        pca_dim=pca_dim, C=args.probe_C,
     )
     probe_results["site"] = args.site
     probe_results["modes"] = list(args.modes)

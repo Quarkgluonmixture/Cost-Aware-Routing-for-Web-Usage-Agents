@@ -10,6 +10,7 @@ import logging
 from typing import Optional
 
 import numpy as np
+from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import roc_auc_score
@@ -23,18 +24,26 @@ def linear_probe_per_layer(
     labels: np.ndarray,
     n_folds: int = 5,
     seed: int = 42,
-    C: float = 1.0,
+    C: float = 0.01,
     max_iter: int = 1000,
+    pca_dim: Optional[int] = 50,
 ) -> dict:
     """Train per-layer LR with stratified k-fold CV; return AUROC curve.
+
+    Defaults `C=0.01` + `pca_dim=50` are linear-probe-literature standards for
+    `n_samples << hidden_dim` regime to prevent trivial overfitting saturation.
+    For high-N regime (n_samples >> hidden_dim) consider raising C and disabling
+    PCA via `pca_dim=None`.
 
     Args:
         hidden_states: (n_samples, n_layers, hidden_dim)
         labels: (n_samples,) binary 0/1
         n_folds: CV folds
         seed: RNG seed for fold split
-        C: LR L2 regularization (1/lambda)
+        C: LR L2 regularization (smaller = more regularization)
         max_iter: LR solver iterations
+        pca_dim: if set, fit PCA per fold with this many components (avoids test leak);
+            None = no PCA. Auto-clamped to min(pca_dim, n_train - 1).
 
     Returns:
         {
@@ -47,6 +56,8 @@ def linear_probe_per_layer(
             "n_pos": int,
             "n_layers": int,
             "hidden_dim": int,
+            "pca_dim": int | None,
+            "C": float,
         }
     """
     n_samples, n_layers, hidden_dim = hidden_states.shape
@@ -65,6 +76,13 @@ def linear_probe_per_layer(
             scaler = StandardScaler()
             X_train = scaler.fit_transform(X[train_idx])
             X_test = scaler.transform(X[test_idx])
+
+            if pca_dim is not None:
+                effective_pca_dim = min(pca_dim, X_train.shape[0] - 1, X_train.shape[1])
+                pca = PCA(n_components=effective_pca_dim, random_state=seed)
+                X_train = pca.fit_transform(X_train)
+                X_test = pca.transform(X_test)
+
             clf = LogisticRegression(
                 C=C, max_iter=max_iter, solver="lbfgs", random_state=seed,
             )
@@ -92,6 +110,8 @@ def linear_probe_per_layer(
         "n_pos": n_pos,
         "n_layers": n_layers,
         "hidden_dim": hidden_dim,
+        "pca_dim": pca_dim,
+        "C": C,
     }
 
 
