@@ -7,12 +7,12 @@ registered_at: <pending advisor sync lock>
 registered_git_sha: <pending lock>
 witnessed_by: <pending advisor sync>
 osf_doi: <pending paper submission stage>
-data_lock_until: <pending 14-cell rerun completion>
+data_lock_until: <pending 16-cell rerun completion>
 ---
 
 # Phantom-SoM Pre-Registration (Draft)
 
-> **Status: draft** — pending advisor sync lock. Once advisor signs (single-line email or co-authored commit), `status` flips to `locked`, `registered_git_sha` records the commit at lock time, and `witnessed_by` records advisor name + lock timestamp. `data_lock_until` records when 14-cell rerun finishes — between lock-time and completion-time, NO additional analyses may be added to gating-family tests.
+> **Status: draft** — pending advisor sync lock. Once advisor signs (single-line email or co-authored commit), `status` flips to `locked`, `registered_git_sha` records the commit at lock time, and `witnessed_by` records advisor name + lock timestamp. `data_lock_until` records when 16-cell rerun finishes — between lock-time and completion-time, NO additional analyses may be added to gating-family tests.
 >
 > **Reading order**: §1 epistemic structure (why this framework) → §2 hypotheses (H1-H6 + framing rule) → §3 multiple-comparison family declaration → §4 locked analysis choices → §5 exploratory disclosure → §6 witness mechanism.
 >
@@ -89,7 +89,7 @@ Paper §4 prose **must** explicitly flag: "exploratory analysis; not pre-registe
 
 #### H5 — 别扭 (mismatch) framework predictions
 
-The 4 distinguishing predictions in 实验笔记 §108.16 are tested against 14-cell data. The framework was developed after observing N=4 pre-Phase-A cells; this is **post-hoc**.
+The 4 distinguishing predictions in 实验笔记 §108.16 are tested against 16-cell data. The framework was developed after observing N=4 pre-Phase-A cells; this is **post-hoc**.
 
 Paper §5 prose **must** explicitly flag: "post-hoc theoretical framework, validated on the same data motivating it; no formal significance gating."
 
@@ -200,7 +200,7 @@ The paper §1 hook framing maps to data outcomes as follows:
 | **Routing signal universe** | `aggregate_routing_auroc.py` enumerated set: ep_mean_verbalized / ep_min_verbalized / max_repeat_streak / action_diversity / url_revisit_count / url_revisit_max / action_unique_types / url_unique_count / ep_mean_logprob / ep_min_logprob (last 2 B1-only) | **No post-hoc engineered features** for router input. Best-signal-per-mode characterization is exploratory (§5) — paper §6 portfolio finding, not pre-registered prediction |
 | **Router train/test split** | 5-fold site-stratified CV on cls+red post-Phase-A task pool, seed=42, min test fold ≥ 40 tasks | Reproducible split via `scripts/analysis/router_split.py` (TBD). **Test fold predictions use ONLY train-fold mode rankings** to prevent oracle leak. Pending advisor 5/5 sync alternative: leave-one-site-out (LOSO) — test cls hold-out trained on red, vice versa |
 | **Failure-mode classification rubric** | 5-bucket: `early_finish` / `wrong_commit` / `visual_hijack` / `click_loop` / `persistent_error` per `docs/analysis/disagreement_clusters.md` decision tree | Pre-data inter-annotator agreement target Cohen κ ≥ 0.7 on 30-task pilot (codex prompt + 1 human spot-check). Paper §1 prose ("B0 53.3% early-finish vs B1 70.4% visual-hijack/click-loop, +43.7pp") cites these locked buckets |
-| **N_cells final scope** | 14 cells (B0 × {cls, red} × 3 phantom + B1 × {cls, red} × 3 phantom + B0 shop × 2 phantom). K_h1=0.75 → ≥ 11 cells pass; K_h3=0.67 → ≥ 10 cells pass | ⏸️ **Pending advisor 5/5 lock** — may shift to 13 (drop B0 shop P-prompt) or 16 (add B1 shop). Threshold counts auto-adjust with N_cells |
+| **N_cells final scope** | **16 cells** (B0 × {cls, red} × 3 phantom = 6 + B1 × {cls, red} × 3 phantom = 6 + B0 shop × 2 phantom = 2 + B1 shop × 2 phantom = 2). K_h1=0.75 → **≥ 12 cells pass** (= ⌈0.75 × 16⌉); K_h3=0.67 → **≥ 11 cells pass** (= ⌈0.67 × 16⌉) | ✅ **Student-decided post-5/5 sync** (chose 16 over 14 to add B1 shop × phantom_text/phantom_som for cross-capability shop coverage). Advisor email witness pending via `docs/checkpoints/advisor_sync_5_5_followup.md` follow-up |
 | **Best-single-mode baseline (H7/H8 anchor)** | Per cell: mode with highest mean adjusted-SR on train fold | Used as comparison anchor for router lift; **train/test split-stratified** to prevent test leak |
 
 ---
@@ -233,7 +233,7 @@ The following analyses are exploratory and cannot be used to gate paper claims. 
    - (3) **TOST δ=1.0pp** equivalence margin
    - (4) **Cell inclusion**: Phase A post-fix only (main) + archived pre-Phase-A (Appendix D robustness)
    - (5) **Witness mechanism**: Git + advisor email + OSF DOI
-   - (6) **N_cells final scope**: 14 / 13 / 16 (advisor selects)
+   - (6) **N_cells final scope**: **16** (student-decided post-5/5 sync; B0 × {cls,red} × 3 + B1 × {cls,red} × 3 + B0 shop × 2 + B1 shop × 2; advisor email witness pending via follow-up doc)
    - (7) **Router paper-1-vs-paper-2 decision**: H7-H8 PRIMARY (paper-1) or SECONDARY-informational (paper-2 deferred)
    - (8) **Train/test split protocol**: 5-fold site-stratified CV vs leave-one-site-out (LOSO)
    - Plus lock H-list (H1-H8 family declaration final).
@@ -246,10 +246,10 @@ The following analyses are exploratory and cannot be used to gate paper claims. 
 Approximately 1 week before paper submission:
 
 1. Create free OSF account (if not exists) at osf.io.
-2. New project: "Phantom-SoM 14-cell pre-registration witness."
+2. New project: "Phantom-SoM 16-cell pre-registration witness."
 3. Upload this `preregistration.md` (locked version) + companion EVIDENCE_LAYER_AUDIT.md §2 + ADVISOR_SYNC.md §1.4 (lock decisions).
 4. OSF generates DOI + permanent timestamp.
-5. Paper §1 footnote cites the DOI: "Hypotheses pre-registered prior to 14-cell rerun (OSF DOI X.YYYY/osf.io/zzzz, Git SHA abc123, witnessed by [advisor name] on YYYY-MM-DD)."
+5. Paper §1 footnote cites the DOI: "Hypotheses pre-registered prior to 16-cell rerun (OSF DOI X.YYYY/osf.io/zzzz, Git SHA abc123, witnessed by [advisor name] on YYYY-MM-DD)."
 
 ---
 
@@ -264,4 +264,6 @@ Approximately 1 week before paper submission:
 | 2026-05-03 | K_h3 = 0.67 cell-pass threshold for H3 | Lower than K_h1 because structural < deployment commit |
 | 2026-05-03 | Disconfirmation rule changed from "any cell fail" to data-conditional R1-R5 framing rule | "Any cell fail" too strict given single-cell power limits; framing rule maps data outcomes to paper hook revisions transparently |
 | 2026-05-04 | Pre-registration scope expanded — added H7-H8 router family + 6 §4 lock entries (mode operational defs / routing signal universe / train-test split protocol / failure-mode classification rubric / N_cells final scope / best-single-mode baseline anchor) | User audit prompt 5/4: "preregistration.md 还需要锁 Held-out router claim / router baselines train-validation-test split / routing signals / mode definition 这些吗". Claude added 2 more (failure-mode rubric / N_cells). Deferred 3 advisor lock decisions: (a) H7-H8 router family paper-1 vs paper-2 / (b) N_cells 13/14/16 final / (c) split protocol k-fold vs LOSO. Witness §6 expanded from 5 commits → 8 commits |
-| <pending advisor sync 2026-05-05> | <commit 8 lock decisions per §6> | <advisor sync session date> |
+| 2026-05-05 | Advisor sync 5/5 partial outcome — early-stop A locked (cancel全 mechanism); compute path locked (advisor 5090 → Rancher H100 → RunPod backup); paper split direction discussed but Mechanistic-nested-vs-independent + threshold detail not finalized due to network drop | Advisor explicit confirm early-stop cancel + compute paths; paper split + threshold lock deferred to email follow-up via `docs/checkpoints/advisor_sync_5_5_followup.md` |
+| 2026-05-05 | **N_cells = 16** (student-decided post-5/5 sync, advisor email witness pending) | 14 (pre-sync default) → 16 to add B1 shop × {phantom_text, phantom_som} 2 cells for cross-capability shop coverage. K_h1 threshold count: ⌈0.75 × 16⌉ = 12. K_h3 threshold count: ⌈0.67 × 16⌉ = 11 |
+| \<pending advisor email follow-up\> | \<witness K_h1=0.75 / K_h3=0.67 / TOST δ=1.0pp / N_cells=16 / split protocol / paper split per follow-up doc Q1-Q11\> | \<email reply timestamp + Git SHA at lock\> |

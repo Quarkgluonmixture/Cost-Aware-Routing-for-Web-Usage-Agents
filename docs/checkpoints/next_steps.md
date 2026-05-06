@@ -25,8 +25,8 @@ updated: 2026-05-02
 
 > [!todo] Next 3 actions (priority order)
 > 1. **学长 sync** ⭐ — 30-45 min, [[ADVISOR_SYNC]] §1-§5 cover 主 asks (framework reframe / VWA bug 单独成文 / RunPod 经费 / Early-stop A/B/C / SteerMoE scope)
-> 2. **RunPod onboarding** (post-approval) — `docs/reference/RUNPOD_ONBOARDING.md` 7-step playbook. ETA ~3-5 d wallclock for 14-cell parallel
-> 3. **新数据按 4-dimension framework 整合** — 14-cell 跑完后 `make analysis` → re-evaluate 4-fold drop-in → §4 disclosure paragraphs + codex #11/#13
+> 2. **RunPod onboarding** (post-approval) — `docs/reference/RUNPOD_ONBOARDING.md` 7-step playbook. ETA ~3-5 d wallclock for 16-cell parallel
+> 3. **新数据按 4-dimension framework 整合** — 16-cell 跑完后 `make analysis` → re-evaluate 4-fold drop-in → §4 disclosure paragraphs + codex #11/#13
 
 ---
 

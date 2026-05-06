@@ -177,7 +177,7 @@ Axis M2 (Flat-list activation):
 
 ### Zoom 2.5 (reverse explanation, NEW 2026-05-01 evening): 别扭 framework + Capability-modulated effect
 
-> **⏸️ Provisional**: 现有数据 N=4 cells (B0 cls/red 含 phantom + B1 cls 5-mode + B1 red 3-mode), 全部 Phase A bug fix 之前 (commit `3c15cd7` 之前). 14-cell rerun 后 statistical commit, 现 framework 标 "provisional pending 14-cell rerun + cross-VLM-family validation"。详 笔记 §108.16。
+> **⏸️ Provisional**: 现有数据 N=4 cells (B0 cls/red 含 phantom + B1 cls 5-mode + B1 red 3-mode), 全部 Phase A bug fix 之前 (commit `3c15cd7` 之前). 16-cell rerun 后 statistical commit, 现 framework 标 "provisional pending 16-cell rerun + cross-VLM-family validation"。详 笔记 §108.16。
 
 **Insight**: M1/M2 framework 是 **forward causal upstream** ("what input change happens"). 别扭 framework 是 **reverse causal downstream** ("what gap between expectation and reality"). 两者描述同一现象的不同 layer, 但 别扭 在 phantom space 内提供更 mechanism-aligned 解释。
 
@@ -247,8 +247,8 @@ Drop-one ranking 跨 capability 反转:
 **Caveat (provisional)**:
 - N=4 cells, 1 cell (B0 reddit) full 6-mode, 其他 partial
 - Phase A bug pre-fix data — cycle false positives / dispatch noise affect aggregate metrics
-- 14-cell rerun 后 8+ 完整 phantom cells, statistical commit time
-- B1 reddit phantom 数据缺 (14-cell rerun 必跑) — 不能 yet validate B1 cross-site direction
+- 16-cell rerun 后 8+ 完整 phantom cells, statistical commit time
+- B1 reddit phantom 数据缺 (16-cell rerun 必跑) — 不能 yet validate B1 cross-site direction
 - Cross-VLM-family (Claude / other 235B-tier) 待 advisor sync 后 决定 scope
 
 ### Zoom 3 (named phenomena): Lit-anchored mechanism phenomena
@@ -644,7 +644,7 @@ EXPLANATION LAYER (因果假说, 1D organize: zoom scale)
 | **cross-site** | task + mode + model | site (cls/red/shop/WA) | §7 generalization | 🔴 B0 5-mode shop missing, WA 全 missing |
 | **cross-model** | task + mode + site | model (B0/B1/Claude) | §7 cross-capability | 🔴 cross-model 数据稀薄, B1 phantom 跑中, Claude 0 |
 
-**Paper §7 (generalization) 当前 ~40% 因为 cross-site + cross-model 两 axis 数据稀薄**, 不是 §7 prose 写作问题 — 是 cross-X saturation 不够。14-cell rerun 后 cross-mode + cross-model partially fill, 但 cross-site 仍需 shop + WA 数据 (Tier 2 expansion)。
+**Paper §7 (generalization) 当前 ~40% 因为 cross-site + cross-model 两 axis 数据稀薄**, 不是 §7 prose 写作问题 — 是 cross-X saturation 不够。16-cell rerun 后 cross-mode + cross-model partially fill, 但 cross-site 仍需 shop + WA 数据 (Tier 2 expansion)。
 
 ### 4-dimension framework 概览
 
@@ -1021,7 +1021,7 @@ Cells:     6 sites × 3 models × 5 modes = ~90 cells (~125K episode total)
 > - §109.17 Research-characterization angle (artifact-existence vs characterization, disarm "industry already does X")
 > - §109.18 Dual-region industry sweep verified (12 arXiv 西方 + 中国, fact-check 严谨)
 > - §109.19 Dual-pillar scope-defense (cognitive vs SE / observation vs action axis)
-> - Phase A 4-cluster bug fix + 5-tier audit + 14-cell rerun 计划 (Risk 1 mitigation 落地)
+> - Phase A 4-cluster bug fix + 5-tier audit + 16-cell rerun 计划 (Risk 1 mitigation 落地)
 > - 9-cell taxonomy + dual-track canvas (paper §1/§2 framing 升级)
 
 #### 条件概率 (conditional on R-rule outcome 落在哪档)
@@ -1038,13 +1038,13 @@ Cells:     6 sites × 3 models × 5 modes = ~90 cells (~125K episode total)
 
 - **R1 落地 = paper 几乎稳进顶刊** (NeurIPS/ICLR/ICML 中位 60% level + cascade 99%). 旧 §5 写的"NeurIPS 45-60%"是 R3 baseline, 现在 R1 提到 55-70%.
 - **R3 是旧 §5 的隐含基线** — 假设 hero 过但 structural 没专门测, 退回 04-30 旧 framing "Phantom-SoM is hidden 4th routing arm". 现在概率没变 (因为旧 §5 写的就是这个 case).
-- **R4 是真危险区** — MLSys + TMLR 仍能保底, 但 top-tier <30%. 这就是为啥 14-cell rerun (cost/latency 重测) 必跑.
+- **R4 是真危险区** — MLSys + TMLR 仍能保底, 但 top-tier <30%. 这就是为啥 16-cell rerun (cost/latency 重测) 必跑.
 - **R5 概率低但要 acknowledge** — pivot 路径有 (VWA bug paper 已经是独立 short paper 候选).
 - **Cascade 投稿策略**: NeurIPS → ACL/EMNLP → MLSys → TMLR, R1/R2/R3 都能在 ≤2 轮 cascade 内 land.
 
 #### 数据未确认前的实际期待 (advisor sync 用)
 
-5/5 sync 时跟学长讲实际期待: **R2 是合理 baseline expectation** (R1 over-optimistic, R3 conservative). R2 conditional cascade ~97%, top-tier 中位 50-55%. 14-cell rerun 后可以 update 到 actual R-rule branch.
+5/5 sync 时跟学长讲实际期待: **R2 是合理 baseline expectation** (R1 over-optimistic, R3 conservative). R2 conditional cascade ~97%, top-tier 中位 50-55%. 16-cell rerun 后可以 update 到 actual R-rule branch.
 
 #### Caveats (-)
 
@@ -1128,7 +1128,7 @@ Baseline: random / best-single-mode / rule-based ("if has_ref_image → SoM else
 3. Token-level metrics (string_match exact-match, thought-text similarity) acknowledged residual variance
 4. Empirical evidence anchored in `docs/analysis/cross_sites/probe_b37_api_determinism.md` (5 raw outputs + Section 4 disclosure paragraph drafted)
 
-**Cost saved by NOT pursuing this further**: replication study at full 14-cell scale would cost ~$60-200; instead cheap 5-call probe ($0.005) gave us decisive characterization. Paper Section 4 disclosure paragraph is the deliverable.
+**Cost saved by NOT pursuing this further**: replication study at full 16-cell scale would cost ~$60-200; instead cheap 5-call probe ($0.005) gave us decisive characterization. Paper Section 4 disclosure paragraph is the deliverable.
 
 ---
 
@@ -1432,7 +1432,7 @@ ef29add  drop-in deployment punchline
   - Tests phantom space is multi-region 2D not collapsed point (paper hook structural claim)
 - [x] **Forest plots (per-cell + meta)** ✅ done 2026-05-03 (T0b/T0d) — `fig_forest_drop_one.py` raw 95% CI + Holm-sig marker + TOST band; `fig_meta_forest.py` Hero+Ablation visual hierarchy with weight-sized squares + pooled diamond
 - [x] **Phantom space Venn (paper §1 centerpiece)** ✅ done 2026-05-03 (T0d-bis) — `fig_phantom_structure_venn.py` per-cell 3-circle Venn (P-text/P-SoM/P-prompt) showing task-set overlap as visual proof of multi-region structure
-- [ ] **Pre-registration document** (T0e, blocks 14-cell rerun launch) — `docs/checkpoints/preregistration.md` (status:draft) 待 advisor sync lock 5 commits + flip to status:locked + git SHA + advisor email witness; OSF DOI optional at paper-time
+- [ ] **Pre-registration document** (T0e, blocks 16-cell rerun launch) — `docs/checkpoints/preregistration.md` (status:draft) 待 advisor sync lock 5 commits + flip to status:locked + git SHA + advisor email witness; OSF DOI optional at paper-time
 - [ ] **Hypothesis confirmation matrix viz** (T0f, post-rerun) — `fig_hypothesis_matrix.py` scaffold (~1h post-T0e lock); rerun 数据进来后 fill cell colors
 
 ### C. Paper end-stage tasks (Week 8+)
@@ -1460,7 +1460,7 @@ ef29add  drop-in deployment punchline
 | **Single model family (Qwen)** | "Effect Qwen-specific?" | + Claude Opus 4.7 cross-model after advisor align (~$70). B0 (235B) + B1 (4B) shows capability-dependent shift (+50/+33pp cross-site, §101.九 lazy minimization) | §2 capability layer + cross_site_pattern_consolidation.md |
 | **Phantom is just a degraded SoM** | "Why not collapse to DOM if no image?" | Theory C (codex 5821387) verifies prompt knob: cls P-text = Phantom-SoM SR 14.53% but Jaccard 0.447 (task pool 显著 disjoint). Same SR ≠ same routing pool | paper §5; codex `5821387` |
 | **Effect size small (drop-one 1.7-3.3pp)** | "Statistically marginal" | (i) Pre-registered Hero (P-SoM) requires pooled magnitude ≥ 1.0pp + TOST equivalence at δ=1.0pp rejected. (ii) P-text/P-prompt are framed as **structural ablation evidence** (low-threshold non-overlap proves phantom space is multi-region 2D), NOT as deployment routing arms — so deployment magnitude bar doesn't apply to them. (iii) Holm-Bonferroni multi-comparison correction applied per pre-registered family. | §1 paper hook (data-conditional R1-R5) + `preregistration.md` H1+H3 + `phantom_lift.md` Holm/TOST cols |
-| **Post-hoc hypothesis cherry-picking** ⭐ NEW pre-rebuttal | "你 H-list 是数据进来后 fit 的" | Pre-registration locked before 14-cell rerun via Git SHA + advisor email witness + OSF DOI (paper-time public). Multi-comparison family declared explicitly. Exploratory analyses (H4/H5/H6) marked "post-hoc" in paper prose with explicit non-gating disclosure. Framing decision rule R1-R5 maps data outcome to hook framing transparently — reviewer can verify framing-to-data mapping is deterministic, not chosen post-hoc. | `docs/checkpoints/preregistration.md` + `EVIDENCE_LAYER_AUDIT.md` §2 |
+| **Post-hoc hypothesis cherry-picking** ⭐ NEW pre-rebuttal | "你 H-list 是数据进来后 fit 的" | Pre-registration locked before 16-cell rerun via Git SHA + advisor email witness + OSF DOI (paper-time public). Multi-comparison family declared explicitly. Exploratory analyses (H4/H5/H6) marked "post-hoc" in paper prose with explicit non-gating disclosure. Framing decision rule R1-R5 maps data outcome to hook framing transparently — reviewer can verify framing-to-data mapping is deterministic, not chosen post-hoc. | `docs/checkpoints/preregistration.md` + `EVIDENCE_LAYER_AUDIT.md` §2 |
 | **Latency claim cherry-picked** | "Just one P95 measurement" | §100 SoM probe ground truth (5 imgs × 3 mode × 2 model = 30 cells measured). cls SoM 74s vs Phantom 18s p95 = 4× slower. Across all conditions consistent | §11 + 实验笔记 §100 |
 | **Carbon estimation rough** | "B0 carbon NaN, only B1 measured" | Transparent disclose: B1 NVML measured directly, B0 (proxy API) 远端 GPU 不可测 (per Strubell 2019 / Patterson 2021 estimation acknowledged). fig9 regional sensitivity 用 B1 measured + 45 region intensity table | §11 + fig9 footnote |
 | **Router contribution toy** | "Tier 1 oracle is overfit" | Tier 1 train/test split, baseline 对比 (random, best-single-mode, rule-based, oracle, learned). Tier 2 first-step trigger no test leakage | §8 + Section 6 outline §4.6 |
@@ -1714,12 +1714,12 @@ Post run:
 | 2026-05-01 | 8-corner 2x2x2 cube + 6-corner asymmetric grid 实验设计 **retract** | M1/M2 mechanism activation framework 已 saturate phantom space description; ablation cells (p(a-pure)) 价值降级到 nice-to-have for Zoom 2 sub-mechanism granularity | ✅ retract list + 笔记 §108.3 |
 | 2026-05-01 | SteerMoE (Fayyaz 2026 ICLR) 作 Zoom 4 lit anchor + paper §8 future work | 学长 2026-05-01 发; B0 = Qwen3-VL-235B-A22B 是 SteerMoE 实验模型 architectural cousin; methodology template 但 paper 不 self-probe (proxy API + budget barrier) | ✅ paper_planning §2 Zoom 4 + 笔记 §108.9 |
 | 2026-05-01 | Early-stop mechanism design decision: lean Option A (full cancel), pending advisor align | early-stop 是 cross-dimension systemic confound (不止 micro layer); Option A +$1300 全 cancel / B keep / C hybrid +$200 | ⏸️ advisor sync Q1 重写, lean A pending | 
-| 2026-05-01 | 别扭 framework refinement (provisional) — reverse-explanation layer + capability-modulated discovery | (a) Cross-cell empirical validation 4 cells: B0 4/4 别扭 predictions confirmed, B1 cls prediction 4 reversed (small VLM single 别扭 negative aggregate); (b) drop-one direction reversal cross-capability (B0 P-text > P-SoM, B1 cls P-SoM > P-text) → 别扭 + Lazy Minimization 联合 framework; (c) compound 别扭 (P-prompt) 实证 negative aggregate (B0 reddit raw 10.48 < DOM 11.43) but positive complementarity (drop-one +2.86pp) — double-edged property | ⏸️ provisional, pending 14-cell rerun statistical commit + B1 reddit phantom 数据 |
+| 2026-05-01 | 别扭 framework refinement (provisional) — reverse-explanation layer + capability-modulated discovery | (a) Cross-cell empirical validation 4 cells: B0 4/4 别扭 predictions confirmed, B1 cls prediction 4 reversed (small VLM single 别扭 negative aggregate); (b) drop-one direction reversal cross-capability (B0 P-text > P-SoM, B1 cls P-SoM > P-text) → 别扭 + Lazy Minimization 联合 framework; (c) compound 别扭 (P-prompt) 实证 negative aggregate (B0 reddit raw 10.48 < DOM 11.43) but positive complementarity (drop-one +2.86pp) — double-edged property | ⏸️ provisional, pending 16-cell rerun statistical commit + B1 reddit phantom 数据 |
 | 2026-05-03 | Pre-registration framework reframe: "3-arm a-priori co-equal" → **Hero (P-SoM) + Structural ablation (P-text/P-prompt non-overlap) + Framing decision rule R1-R5** | "3-arm co-equal" was retrofitting emergent discovery as a-priori hypothesis (epistemically dishonest); new framework pre-registers Hero strict + Structural low-threshold non-overlap + data-conditional framing rule. P-text/P-prompt findings emerged from data, not predicted; their proper role is structural ablation evidence (proving phantom space is multi-region 2D structure, not collapsed point). | ✅ `docs/checkpoints/preregistration.md` (status:draft) + `docs/reference/EVIDENCE_LAYER_AUDIT.md` §2 + paper_planning §1 reframe note |
 | 2026-05-03 | H3 structural test = bootstrap CI on \|arm ∖ P-SoM\| unique-count > 0, K_h3=0.67, ≥2 task floor | Structural claim only requires non-emptiness of axis non-overlap, not directional dominance. McNemar tests asymmetry which is wrong test for H3. Bootstrap CI > 0 is correct. | ✅ `aggregate_phantom_lift.py` H3 family + `phantom_lift.md` H3 section |
 | 2026-05-03 | Pre-registration commits locked: K_h1=0.75 / K_h3=0.67 / TOST δ=1.0pp / Phase A only main + Appendix D archived / Witness=Git+advisor email + OSF DOI | All 5 commits drafted in `preregistration.md` (status:draft); pending advisor sync to flip status:locked + record git SHA + advisor witness. | ⏸️ pending advisor sync |
 | 2026-05-03 | Evidence layer + visualization audit infra (T0a-T0d done) | `aggregate_phantom_lift.py` Bonferroni/Holm/BH/TOST + H3 structural test cols; `aggregate_phantom_meta.py` DerSimonian-Laird random-effect; `fig_forest_drop_one.py` per-cell forest with Holm-sig markers; `fig_meta_forest.py` Hero+Ablation visual hierarchy; `fig_phantom_structure_venn.py` paper §1 centerpiece Venn; `make analysis [FAST=1]` end-to-end wired. | ✅ `docs/reference/EVIDENCE_LAYER_AUDIT.md` §3 T0 4/6 done |
-| 2026-05-04 | Bulk archive all 27 manifest cells pre-advisor-sync (run_manifest.yaml) | Phase A 4-cluster fix (3c15cd7 4/30 15:35) makes pre-fix data not directly comparable to post-fix; cross-grade asymmetry from 5/1 + 5/4 post-fix solo runs would contaminate cross-mode comparisons (fix-effect ≠ mode-effect). All cells flipped to `grade: archived` until 14-cell rerun + advisor lock; figures preserved at last paper-grade-pre-bug-only state for 5/5 sync visual aid. | ✅ commit 8a9f595 |
+| 2026-05-04 | Bulk archive all 27 manifest cells pre-advisor-sync (run_manifest.yaml) | Phase A 4-cluster fix (3c15cd7 4/30 15:35) makes pre-fix data not directly comparable to post-fix; cross-grade asymmetry from 5/1 + 5/4 post-fix solo runs would contaminate cross-mode comparisons (fix-effect ≠ mode-effect). All cells flipped to `grade: archived` until 16-cell rerun + advisor lock; figures preserved at last paper-grade-pre-bug-only state for 5/5 sync visual aid. | ✅ commit 8a9f595 |
 | 2026-05-04 | §5 顶刊概率 → conditional tree on R1-R5 framing rule (was unconditional single-point) | 5/3 pre-registration reframe made paper hook data-conditional; probability estimates should follow same discipline. R1 (strongest, K_h1≥0.75 + K_h3≥0.67): top-tier 55-70% / cascade ~99%. R2 (Hero pass, single-axis structural): ~97% cascade. R3 (旧 §5 baseline, hero pass + structural fail): 35-50% top-tier / ~93%. R4 (hero partial fail, e.g. cost not hold): MLSys+TMLR 保底, top-tier <30%. R5 (hero fail): pivot. R2 是 advisor-sync realistic baseline expectation. | ✅ paper_planning §5 rewritten |
 | 2026-05-04 | §21.5 + §1 hook 三层 novelty hierarchy (refines §109.17 binary reframe) | §109.17 (research-characterization angle) collapsed framework-tier into artifact-vs-characterization binary. User clarification: (a) **P-SoM specifically + 3-axis cube framework + image-axis isolation are paper-level framework contributions** — no industry deploys cube-center SoM-text-without-image combination; (b) industry deploys P-text/DOM-like artifacts **arbitrarily for token economy**, never compared P-text vs DOM, never characterized per-dimension routing behavior — artifact existence ≠ understanding. New three-tier: framework (cube + P-SoM, paper-novel) / artifact (industry has DOM/P-text/SoM analogs but deployed without characterization, NO P-SoM/P-prompt analog) / research (paper discovers + characterizes routing effects industry deployed-without-realizing). Reviewer-defense layered into 3 attack vectors. | ✅ paper_planning §21.5 + §1 hook one-liner |
 | 2026-05-04 | New §22 Multi-Register Novelty Inventory (5/4 audit consolidation) | Audit prompt "现在的 novelty 还缺什么吗 — 审计下 结合其他文档/figure" 触发. 跨 paper drafts §1-§5 + 24 figures + 笔记 §1-§109 + EVIDENCE_LAYER_AUDIT + preregistration cross-check. 出 5-register layered framework (Theory/Concept · Method/Process · App/Impact · Survey/Position · Future-trajectory) × ~38 items. 用户自列 6 dimensions covered + 4 new dimensions added (J phantom space generalizability / AA routing signal portfolio / HH site-class adaptive routing primitive / LL execution-discipline standalone short-paper). Audit gaps section list 5 main gaps (paper §1 prose stuck at 4/29 framing, figures not referenced in §1, 笔记 finding §32/§72/§94/§100 未 elevate, EVIDENCE_LAYER_AUDIT 12+ pending, industry analog 缺位 not explicit). §1 hook 6-contribution rewrite candidate drafted. Advisor 5/5 sync top-5 / Tier-2 / polish priority 列出. Post-sync action items 8 项. | ✅ paper_planning §22 (147 行 inventory) |
@@ -1998,7 +1998,7 @@ Advisor decision context? → ADVISOR_SYNC
 | § | Item | Status |
 |---|---|---|
 | §102 | Phantom-SoM 工程实施 (mode + agent prompt + condition config) | ✅ done, all 4 phantom corners ready |
-| §103 | Phantom-SoM 4-mode routing arm finding (B0 reddit 6-mode 完整 cell) | ✅ paper §1 main hook, status:provisional pending 14-cell rerun |
+| §103 | Phantom-SoM 4-mode routing arm finding (B0 reddit 6-mode 完整 cell) | ✅ paper §1 main hook, status:provisional pending 16-cell rerun |
 
 **(ii) × L3 内部 4-tier sub-gradient — paper §1 hook 关键 distinction (added 2026-05-04 from DR audit)**:
 
@@ -2326,7 +2326,7 @@ Paper §21 / §8 (Discussion + Future Work) should explicit prose:
 
 8. **Adopt §21.5 candidate paper §1 hook prose?** — 用 substitution gradient framing (industry precedent stack contextualization) 替代 / 升级现 §1 hook (~250 词, 含 4-tier sub-gradient contrast + niche positioning)
 9. **Fact-check 高 risk industry citations** — paper writing 前必须 verify: HMT (arXiv:2603.07024), NLAH AGENTS.md (arXiv:2602.11327), WebAIM 2026 specific numbers, NLWeb May 2025 announce date, OS-Atlas ICLR 2025 / OS-Genesis ACL 2025 venues. 不 verify 直接引 = paper 审稿 immediate reject risk
-10. **Env-side pilot 实施 — Sweet Spot 设计** — 用户提议 "server emit hidden select options" 是 NLWeb-style 实例。Sweet spot 选 (a) inline `<script type="application/agent-marks">` JSON-LD / (b) HTTP header / (c) sidecar endpoint /agent/v1/page-state? 工作量 + paper claim power 跟 14-cell rerun critical path 优先级冲突
+10. **Env-side pilot 实施 — Sweet Spot 设计** — 用户提议 "server emit hidden select options" 是 NLWeb-style 实例。Sweet spot 选 (a) inline `<script type="application/agent-marks">` JSON-LD / (b) HTTP header / (c) sidecar endpoint /agent/v1/page-state? 工作量 + paper claim power 跟 16-cell rerun critical path 优先级冲突
 11. **AppAgent-v2 differentiation 写哪儿** — paper §1 (closest 工业 precedent) / §2 related work / §5 mechanism (RAG-time vs inference-time substitution 的 mechanism contrast)
 12. **OmniParser-v2 跟 phantom routing 对比 prose** — paper §3 / §5 explicit (ii)×L2 vs (ii)×L3 layer 区分; OmniParser 是 industry-side L2 instance, phantom routing 是 paper-side L3 instance
 13. **WebAIM 2026 cite 进哪儿** — paper §1 motivation / §3 evaluation methodology / Appendix D environmental fix audit 章节
@@ -2448,7 +2448,7 @@ Paper §21 / §8 (Discussion + Future Work) should explicit prose:
 
 | Gap | What's missing | Impact | Recommendation |
 |---|---|---|---|
-| §1 prose stuck at 4/29 framing (4th-arm + 2-knob + capability) | 5/3 reframe (Hero+Structural+R1-R5) + 5/4 framework-tier (cube+image-axis) + ~100× cost gap + 4-dim Evidence + research-characterization angle 全部没 reflect | 顶会 reviewer 看 §1+abstract 决定 contribution claim, 这是最大 gap | 14-cell rerun done 后 codex pass for §1 prose 重写, 6-contribution structure (§22.4 candidate) |
+| §1 prose stuck at 4/29 framing (4th-arm + 2-knob + capability) | 5/3 reframe (Hero+Structural+R1-R5) + 5/4 framework-tier (cube+image-axis) + ~100× cost gap + 4-dim Evidence + research-characterization angle 全部没 reflect | 顶会 reviewer 看 §1+abstract 决定 contribution claim, 这是最大 gap | 16-cell rerun done 后 codex pass for §1 prose 重写, 6-contribution structure (§22.4 candidate) |
 | Figures cover quantitative anchor 但 §1 prose 没 reference | fig0d Jaccard 0.29-0.49 / fig3a cost ≈ DOM / fig3c latency 50% / fig0g AUROC ≥ baseline / fig2 cross-model fingerprint | 4-fold drop-in property 缺 visual quantitative grounding | Codex pass §1 加 figure-anchor sentences (1-2 quantitative anchor per contribution) |
 | 笔记 §32 / §72 / §94 / §100 finding 未 elevate 进 paper prose | Vision systematic category bias / cross-model scroll behavior / SoM max_marks design sensitivity / OCR+attention probe ground-truth | 浪费 evidence; reviewer 看到 docstring 没 cross-ref 会怀疑 | 加进 §5 mechanism (vision probe) 或 §3 method robustness analysis (max_marks sensitivity) |
 | EVIDENCE_LAYER_AUDIT §1 36 priority gaps 部分 close | Bonferroni/Holm/BH/TOST done; per-mode visual FP correction done; routing AUROC done; **12+ pending** | rigor signal incomplete | T1 + T2 task queue 推进 (`docs/reference/EVIDENCE_LAYER_AUDIT.md` §3) |
@@ -2466,7 +2466,7 @@ Paper §21 / §8 (Discussion + Future Work) should explicit prose:
 5. **Capability interaction**: B0 vs B1 failure-mode shift +43.7pp (early-finish 53.3% B0 SoM vs visual-hijack/click-loop 70.4% B1 SoM, N=30/27) [Register I I, quant from 笔记 §1]
 6. **Methodology**: 4-dim Evidence framework + R1-R5 pre-registration + ~100× deployment-class cost gap framing (B0 API $0.04/ep vs B1 electricity $0.0004/ep) [Register II K+L+M]
 
-**Codex prose pass timing**: 14-cell rerun done + early-stop locked → 6-contribution prose draft → paper draft `section1_intro.md`.
+**Codex prose pass timing**: 16-cell rerun done + early-stop locked → 6-contribution prose draft → paper draft `section1_intro.md`.
 
 ### §22.5 Advisor 5/5 sync priority
 
@@ -2492,7 +2492,7 @@ Paper §21 / §8 (Discussion + Future Work) should explicit prose:
 
 ### §22.6 Action items (post-sync)
 
-1. **§1 prose 重写 codex pass** (14-cell rerun done + early-stop locked 后) → 6-contribution structure (§22.4 candidate)
+1. **§1 prose 重写 codex pass** (16-cell rerun done + early-stop locked 后) → 6-contribution structure (§22.4 candidate)
 2. **paper.bib 加 ~10 中国 industry BibTeX entries** (§21.7 #26 verified arXiv IDs)
 3. **§5 mechanism prose update** 把 笔记 §32/§72/§94/§100 finding elevate 进 paper §3/§5
 4. **EVIDENCE_LAYER_AUDIT pending T1 / T2 推进** (12+ pending gaps from §1 priority list)
@@ -2506,6 +2506,6 @@ Paper §21 / §8 (Discussion + Future Work) should explicit prose:
 - **新 finding** → 实验笔记 chronicle, 然后 mirror to §22 inventory (mark Register + ⭐/☆)
 - **新 codex prose round** → §22.6 action items 标 done
 - **Advisor sync 5/5 后** → §22.5 priority 重排 (按 advisor 反馈)
-- **14-cell rerun done** → §22.4 §1 prose 6-contribution 落地 codex pass
+- **16-cell rerun done** → §22.4 §1 prose 6-contribution 落地 codex pass
 
 ---

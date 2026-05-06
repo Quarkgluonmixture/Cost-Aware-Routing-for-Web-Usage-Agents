@@ -3,6 +3,15 @@
 > 给我自己开会时看的 reference, 不是发给学长的材料. 顺序按我开会要讲的 flow 来.
 >
 > **Sync schedule**: 5/5 (周一) 早上, 30-45 min. 学长返回西班牙出差后第一次 sync.
+>
+> ---
+>
+> ⚠️ **Post-5/5 sync status (updated 2026-05-05)** — 这份文档是 sync-prep snapshot, 部分 outdated:
+> - ✅ Sync 已发生 (5/5 下午). Transcript: `docs/reference/transcript.md`
+> - ✅ Locked: early-stop A (cancel), GPU paths (advisor 5090 + Rancher H100 + RunPod backup), N_cells=16 (学生 post-sync decide)
+> - 🟡 Pending advisor email witness: K_h1=0.75 / K_h3=0.67 / TOST δ=1.0pp / paper split (3 vs 4) / Mechanistic nested vs independent / 其他 5 件
+> - 📋 Follow-up doc: [`advisor_sync_5_5_followup.md`](advisor_sync_5_5_followup.md) — 待发学长邮件 confirm Q1-Q11
+> - Decision detail (advisor 落地的 + 来不及的) 见 transcript + follow-up doc, 不要再用本文档当 live state.
 
 ---
 
@@ -11,7 +20,7 @@
 按重要性排:
 
 1. **8 件 pre-registration commits** — K_h1 / K_h3 / TOST δ / cell inclusion / witness 路径 + (5/4 expanded) N_cells final scope / Router paper-1-vs-2 / Split protocol. 拿到 sign-off 后立刻翻 OSF + git commit
-2. **14-cell rerun 的 cell list 最终定** — 现在 manifest 全 archive 了, 等学长一起决定 13/14/16 哪个 (跟 #1 (6) 重叠)
+2. ~~**16-cell rerun 的 cell list 最终定**~~ ✅ **5/5 post-sync 学生 decide 16** (= B0×{cls,red}×3 phantom + B1×{cls,red}×3 phantom + B0 shop×2 phantom + B1 shop×2 phantom). Advisor email witness pending via [advisor_sync_5_5_followup.md](advisor_sync_5_5_followup.md)
 3. **Early-stop 关不关** — Option A (全关) vs B (保留) vs C (hybrid). 我 lean A
 4. **RunPod $200 经费怎么走** — 物理路径 + 走流程
 5. **Dual-track framing 升级要不要做** — 把 paper §1 hook 换成 research-characterization angle
@@ -21,7 +30,7 @@
 时间分配 (~36 min decision + 4 min buffer):
 - §1 phantom space 概念 + 当前结论 + figures: 12 min
 - §2 pre-registration 8 件: 7 min (5 件 → 8 件 expanded 5/4)
-- §3 bug + 重跑: 5 min (#2 14-cell list 跟 §2 (6) 重叠, 时间合并)
+- §3 bug + 重跑: 5 min (#2 16-cell list 跟 §2 (6) 重叠, 时间合并)
 - §4 dual-track: 6 min
 - §5 RunPod: 3 min
 - §6 early-stop: 3 min
@@ -65,7 +74,7 @@
 
 **反向预测**: 别扭多的 mode 应该 SR 低 / FP 多. B0 4/4 cell 跟假设方向一致, B1 cls 反过来 — 大模型偏 text 别扭, 小模型偏 image 别扭. **Capability-modulated reversal**, paper §7 写 cross-capability discussion 用.
 
-⚠️ 标 post-hoc, 不当 paper hook 主张. 现状 N=4 cells provisional, 14-cell rerun 后再 commit.
+⚠️ 标 post-hoc, 不当 paper hook 主张. 现状 N=4 cells provisional, 16-cell rerun 后再 commit.
 
 ### 1.3 Paper 主结构 + 当前结论 (重跑前)
 
@@ -109,7 +118,7 @@
 - **但 cross-mode pattern 仍 valid**, 因为:
   1. **Symmetric contamination** — bug 不偏 specific mode, DOM/SoM/Vision/P-* 都受影响
   2. **Vision counter-evidence** — Vision (image-only, 不走 phantom space) 也 affected → 排除"是 phantom-specific artifact"
-- 14-cell rerun 后 absolute 数字会更新, **但 Hero + Structural claim 的 ordinal 关系不应变**
+- 16-cell rerun 后 absolute 数字会更新, **但 Hero + Structural claim 的 ordinal 关系不应变**
 
 ---
 
@@ -133,7 +142,7 @@
 
 | # | 决定的事 | 我 lean | 为什么这样选 | 选错了风险 |
 |---|---|---|---|---|
-| **(6)** | **N_cells final scope** — paper-grade 14-cell rerun 的 cell list 是 13 / 14 / 16? | **14 cells**: B0×{cls,red}×3 phantom + B1×{cls,red}×3 phantom + B0 shop×2 phantom | 14 cover paper hook 主claim. 13 砍 B0 shop P-prompt (省 ~$15+6h API) 是 minimal viable. 16 加 B1 shop 占 GPU 太久 | K_h1/K_h3 阈值依赖 N_cells, 锁错重新 commit 麻烦 |
+| **(6)** | ~~N_cells final scope — 13/14/16?~~ ✅ **5/5 post-sync 学生 decide 16** | **16 cells**: B0×{cls,red}×3 phantom + B1×{cls,red}×3 phantom + B0 shop×2 phantom + **B1 shop×2 phantom** (新加) | 16 加 B1 shop × {phantom_text, phantom_som} 让 cross-capability shop coverage 完整 (B0 shop + B1 shop 都有). K_h1=0.75 → ≥12/16 cell pass; K_h3=0.67 → ≥11/16 cell pass | Advisor email witness pending via follow-up doc |
 | **(7)** | **Router (Section 6) 进 paper-1 还是 paper-2** — H7-H8 PRIMARY (paper-1 contribution) 还是 SECONDARY-informational (paper-2 deferred)? | **倾向 paper-1 PRIMARY** — paper §22 Register III V/W 已 list, paper hook 4-fold drop-in 含 (c) AUROC ≥ baseline 部分 router-relevant | paper §1 prose 现写 "deferred to follow-up paper", paper_planning §22 list paper-1. **不一致, 学长拍** | paper-1: scope 大但 contribution 厚; paper-2: scope 小 H7-H8 informational only |
 | **(8)** | **Train/test split protocol** — 5-fold site-stratified CV vs LOSO (leave-one-site-out, 训 cls 测 red, 反之) | **倾向 5-fold site-stratified CV** (k=5, seed=42, min test fold ≥ 40 tasks) | k-fold 比 LOSO 数据效率高 (每 fold 平均 90 训 + 10 测 vs LOSO 200+/234), test power 足 | LOSO 更 reviewer-defensible (cross-site generalization claim 直接) 但 power 弱 |
 
@@ -174,9 +183,9 @@ Pilot 验证 PASS.
 - `run_manifest.yaml` 全部 27 entries flip 成 `grade: archived`
 - Figure 留在 14:06 last paper-grade-pre-bug-only 状态 (不重 generate)
 
-**学长签了 14-cell rerun cell list 后**, 我 flip 对应 entries 回 paper-grade, aggregator 自动 pick up.
+**学长签了 16-cell rerun cell list 后**, 我 flip 对应 entries 回 paper-grade, aggregator 自动 pick up.
 
-### 3.3 14-cell rerun 想跟学长一起决定的事
+### 3.3 16-cell rerun 想跟学长一起决定的事
 
 **Cost on RunPod 4090**: ~$70-115 实际 + buffer = $200 ask
 **Wallclock**: ~1 周 dedicated (vs DGX shared ~3 周)
@@ -284,7 +293,7 @@ UCL 防火墙 drop Tailscale CGNAT 段. Myriad 不能 reach 我家 quark Windows
 ### 5.3 RunPod $200 budget
 
 - 4090 dedicated: $0.6/h
-- 14-cell × ~234 ep:
+- 16-cell × ~234 ep:
   - DGX shared: ~437h (~18 天 24/7)
   - 4090 dedicated 估: ~87-145 GPU hours
 - Cost calc:
@@ -326,9 +335,9 @@ Cluster 3 fuzzy cycle hash min_reps=5 (从 3 改 5) — 减少 false-positive cy
 
 | Option | 内容 | Cost | Paper rigor |
 |---|---|---|---|
-| **A (我 lean)** | 14-cell rerun 全 cancel early-stop | +$1300 (extra wallclock + token cost) | 全 dim clean, 无需 disclosure |
+| **A (我 lean)** | 16-cell rerun 全 cancel early-stop | +$1300 (extra wallclock + token cost) | 全 dim clean, 无需 disclosure |
 | B | 全保留 | $0 | accept cross-dim systemic confound + paper §4 disclosure 段 |
-| C | hybrid — main 14-cell with early-stop + 1-2 mechanism cells without | +$200 | rigor partial, ablation argument |
+| C | hybrid — main 16-cell with early-stop + 1-2 mechanism cells without | +$200 | rigor partial, ablation argument |
 
 ### 6.4 我 lean A — 想 advisor input
 
