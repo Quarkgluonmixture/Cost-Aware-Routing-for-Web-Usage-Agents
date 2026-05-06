@@ -65,6 +65,55 @@ class ActivationPatcher:
         return cached
 
     @torch.no_grad()
+    def patched_generate(
+        self,
+        layer_idx: int,
+        source_hidden: torch.Tensor,
+        max_new_tokens: int = 30,
+        **inputs,
+    ) -> torch.Tensor:
+        """Patch last-token hidden state at layer_idx on FIRST forward, then greedy-generate.
+
+        With use_cache=True, the first forward processes full input (seq_len = N input
+        tokens). The hook only fires for this first forward — subsequent forwards
+        process 1-token-at-a-time and shouldn't be patched (they're new generated content,
+        not source's input). Patched first-token hidden state propagates through KV cache
+        so subsequent generations attend to it.
+
+        Returns:
+            Generated token IDs (1D tensor, only generated portion not input).
+        """
+        layer = self.layers[layer_idx]
+        src = source_hidden.to(self.model.device)
+        fire_count = [0]
+
+        def hook(module, layer_input, layer_output):
+            fire_count[0] += 1
+            if fire_count[0] > 1:
+                return None  # subsequent forwards: pass through unchanged
+            hs = layer_output[0] if isinstance(layer_output, tuple) else layer_output
+            hs_patched = hs.clone()
+            hs_patched[:, -1, :] = src[:, -1, :]
+            if isinstance(layer_output, tuple):
+                return (hs_patched,) + layer_output[1:]
+            return hs_patched
+
+        h = layer.register_forward_hook(hook)
+        try:
+            out = self.model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                do_sample=False,
+                return_dict_in_generate=True,
+                use_cache=True,
+            )
+        finally:
+            h.remove()
+
+        input_len = inputs["input_ids"].shape[1]
+        return out.sequences[0, input_len:]
+
+    @torch.no_grad()
     def patched_forward(
         self,
         layer_idx: int,
@@ -208,4 +257,126 @@ def patching_grid(
         "target_argmax_token_id": target_argmax,
         "source_logit_at_argmax": float(source_logits[source_argmax].item()),
         "target_logit_at_argmax": float(target_logits[target_argmax].item()),
+    }
+
+
+def _token_seq_overlap(seq_a, seq_b) -> float:
+    """Ratio of positions where seq_a[i] == seq_b[i] (prefix-aligned). 1.0 = identical."""
+    n = min(len(seq_a), len(seq_b))
+    if n == 0:
+        return 0.0
+    return sum(int(seq_a[i] == seq_b[i]) for i in range(n)) / n
+
+
+def _levenshtein_token(a, b) -> int:
+    """Token-level edit distance between two integer sequences (DP, no extra dep)."""
+    if not a:
+        return len(b)
+    if not b:
+        return len(a)
+    m, n = len(a), len(b)
+    prev = list(range(n + 1))
+    for i in range(1, m + 1):
+        curr = [i] + [0] * n
+        for j in range(1, n + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            curr[j] = min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost)
+        prev = curr
+    return prev[n]
+
+
+@torch.no_grad()
+def patching_grid_continuation(
+    patcher: ActivationPatcher,
+    source_inputs: dict,
+    target_inputs: dict,
+    max_new_tokens: int = 15,
+    layers: Optional[list[int]] = None,
+) -> dict:
+    """Multi-token continuation patching.
+
+    Per-layer patch source's last-token hidden into target run, then greedy-generate
+    `max_new_tokens` tokens. Compare patched output sequence to source/target baselines.
+
+    This addresses the first-token-trivial-agree problem of patching_grid: by
+    generating 10+ tokens, divergence between source/target output sequences emerges
+    (e.g. action_type / element_id values vary). Layer L is causal if patching at L
+    pulls patched output toward source's full sequence.
+
+    Returns:
+        dict with:
+        - "source_tokens": list[int] (source's greedy sequence)
+        - "target_tokens": list[int]
+        - "source_text": decoded
+        - "target_text": decoded
+        - "per_layer": list of {layer, patched_tokens, patched_text,
+                                token_overlap_to_source, token_overlap_to_target,
+                                ld_to_source, ld_to_target, exact_match_source}
+    """
+    if layers is None:
+        layers = list(range(patcher.n_layers))
+
+    # 1. Source baseline generation
+    source_gen = patcher.model.generate(
+        **source_inputs, max_new_tokens=max_new_tokens, do_sample=False,
+        return_dict_in_generate=True, use_cache=True,
+    )
+    src_input_len = source_inputs["input_ids"].shape[1]
+    source_tokens = source_gen.sequences[0, src_input_len:].cpu().tolist()
+    source_text = patcher.processor.tokenizer.decode(source_tokens, skip_special_tokens=True)
+
+    # 2. Target baseline generation
+    target_gen = patcher.model.generate(
+        **target_inputs, max_new_tokens=max_new_tokens, do_sample=False,
+        return_dict_in_generate=True, use_cache=True,
+    )
+    tgt_input_len = target_inputs["input_ids"].shape[1]
+    target_tokens = target_gen.sequences[0, tgt_input_len:].cpu().tolist()
+    target_text = patcher.processor.tokenizer.decode(target_tokens, skip_special_tokens=True)
+
+    logger.info(f"  source generated: {source_text!r}")
+    logger.info(f"  target generated: {target_text!r}")
+
+    # 3. Cache source's per-layer hidden states (full forward)
+    source_cache = patcher.cache_hidden_states(**source_inputs)
+
+    # 4. Per-layer patched generate
+    per_layer = []
+    for L in layers:
+        patched_token_tensor = patcher.patched_generate(
+            layer_idx=L,
+            source_hidden=source_cache[L],
+            max_new_tokens=max_new_tokens,
+            **target_inputs,
+        )
+        patched_tokens = patched_token_tensor.cpu().tolist()
+        patched_text = patcher.processor.tokenizer.decode(patched_tokens, skip_special_tokens=True)
+
+        per_layer.append({
+            "layer": L,
+            "patched_tokens": patched_tokens,
+            "patched_text": patched_text,
+            "token_overlap_to_source": _token_seq_overlap(patched_tokens, source_tokens),
+            "token_overlap_to_target": _token_seq_overlap(patched_tokens, target_tokens),
+            "ld_to_source": _levenshtein_token(patched_tokens, source_tokens),
+            "ld_to_target": _levenshtein_token(patched_tokens, target_tokens),
+            "exact_match_source": patched_tokens == source_tokens,
+            "exact_match_target": patched_tokens == target_tokens,
+        })
+
+        if (L + 1) % 6 == 0:
+            r = per_layer[-1]
+            logger.info(
+                f"  L{L}: overlap→src={r['token_overlap_to_source']:.2f}, "
+                f"overlap→tgt={r['token_overlap_to_target']:.2f}, "
+                f"LD→src={r['ld_to_source']}, LD→tgt={r['ld_to_target']}"
+            )
+
+    return {
+        "source_tokens": source_tokens,
+        "target_tokens": target_tokens,
+        "source_text": source_text,
+        "target_text": target_text,
+        "per_layer": per_layer,
+        "max_new_tokens": max_new_tokens,
     }
