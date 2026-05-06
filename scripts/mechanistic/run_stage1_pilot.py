@@ -1,26 +1,40 @@
 """Stage 1 mechanistic pilot — per-layer linear probe on B1 (Qwen3-VL-4B).
 
+Two modes:
+
+(A) Empty observation (Stage 1A): system prompt + intent, no observation. Fast
+    infra smoke test, mode-axis is "system prompt structure only".
+
+(B) Archived observation (Stage 1B): load observation_dom.txt from an archived
+    paper-grade run; for each (task, step) build counterfactual prompts under
+    {DOM, P-SoM} on the same observation. Mode-axis is "system prompt + text
+    payload format on same page state". Cleaner contrastive — only 1 axis varies.
+
 Pipeline:
-1. Load N classifieds task configs (intent fields)
-2. For each task × {DOM, P-SoM} mode: forward pass extract last-token hidden state
-3. Run per-layer 5-fold CV linear probe predicting mode label
-4. Save: hidden_states.npz / probe_results.json / auroc_curve.png / pilot_summary.md
+1. Load N task configs (intent fields)
+2. (B only) Load observation_dom.txt per (task, step) from archived run
+3. For each (task[, step]) × {mode_a, mode_b}: forward pass extract last-token hidden state
+4. Run per-layer 5-fold CV linear probe predicting mode label
+5. Save: hidden_states.npz / probe_results.json / auroc_curve.png / pilot_summary.md
 
 Usage:
+    # Stage 1A (empty obs, fast pilot):
+    python3 scripts/mechanistic/run_stage1_pilot.py --site classifieds --n-tasks 30
+
+    # Stage 1B (archived obs, cleaner contrastive):
     python3 scripts/mechanistic/run_stage1_pilot.py \
       --site classifieds \
       --n-tasks 30 \
-      --output-dir results/mechanistic/stage1_b1_cls_pilot
-
-For full 234-task pilot:
-    python3 scripts/mechanistic/run_stage1_pilot.py --site classifieds --n-tasks 234
+      --archived-run-dir results/visualwebarena/phase1/B1_phantom_som_classifieds_20260428 \
+      --steps 2 5
 
 Stage 1 caveats (paper §X disclosure when promoting to paper-grade):
-- Empty observation (system prompt + intent only). Stage 2+ should swap in
-  archived observations to capture full prompt-conditional state.
-- Mode label = (DOM=0, P-SoM=1). This validates infra; doesn't isolate
-  "mirage signature within P-SoM" (that requires per-step mirage attribution).
-- Single seed (42). Cross-seed stability check left to Stage 1B.
+- (A) Empty observation: validates infra; doesn't reflect actual prompt context
+- (B) [SOM_MARKS] from `_extract_text_marks` regex; production also injects
+  dropdown OPTIONS via `_options_map` (slight drift, paper §X disclose)
+- Mode label = binary (mode_a=0, mode_b=1). Doesn't isolate "mirage signature
+  within P-SoM" (per-step mirage attribution = future Stage 1C).
+- Single seed (42). Cross-seed stability = Stage 1D.
 """
 
 from __future__ import annotations
@@ -72,6 +86,86 @@ def load_task_intents(site: str, n_tasks: int) -> list[tuple[int, str]]:
     return intents
 
 
+def _build_som_marks_text(obs_text: str, max_marks: int = 200) -> str:
+    """Build [SOM_MARKS] text from raw AXTree (regex-filter via p79.experiment.som).
+
+    Note: production `_build_som_result` ALSO injects dropdown OPTIONS via
+    `_options_map`. We skip that here (slight prompt drift, paper §X disclose).
+    """
+    from p79.experiment.som import _extract_text_marks
+    marks = _extract_text_marks(obs_text, max_marks=max_marks)
+    if not marks:
+        return "[SOM_MARKS]\n[/SOM_MARKS]"
+    mark_lines = [f"[id={m['id']}] {m['label']}" for m in marks]
+    return "\n".join(["[SOM_MARKS]"] + mark_lines + ["[/SOM_MARKS]"])
+
+
+def _find_artifacts_dir(run_dir: Path) -> Path:
+    """Find the condition subdir containing artifacts/ in an archived run."""
+    for child in run_dir.iterdir():
+        if child.is_dir() and (child / "artifacts").is_dir():
+            return child / "artifacts"
+    raise FileNotFoundError(f"No condition subdir with artifacts/ in {run_dir}")
+
+
+def load_archived_items(
+    run_dir: Path,
+    site: str,
+    intents: list[tuple[int, str]],
+    steps: list[int],
+    modes: tuple[str, str],
+) -> list[dict]:
+    """Load (task, step) × mode items from archived run.
+
+    For each (task_id, step_idx) in archived run:
+      - Read observation_dom.txt (raw AXTree)
+      - For mode_a (e.g. dom): observation = full AXTree
+      - For mode_b (e.g. phantom_som): observation = [SOM_MARKS] regex-extracted
+      - Yield 1 item per mode → 2 items per (task, step)
+
+    Returns list of dicts: {task_id, step_idx, intent, mode, observation_text}
+    """
+    artifacts_dir = _find_artifacts_dir(run_dir)
+    logger.info(f"Loading archived observations from {artifacts_dir}")
+
+    items = []
+    skipped = 0
+    for task_id, intent in intents:
+        task_dir = artifacts_dir / f"{site}_task_{task_id}"
+        if not task_dir.is_dir():
+            skipped += 1
+            continue
+        for step_idx in steps:
+            obs_file = task_dir / f"step_{step_idx:03d}" / "observation_dom.txt"
+            if not obs_file.exists():
+                continue
+            obs_text = obs_file.read_text()
+            som_marks_text = _build_som_marks_text(obs_text)
+            for mode in modes:
+                # Map mode to which observation form it sees
+                if mode == "dom" or mode == "phantom_prompt":
+                    obs_for_mode = obs_text  # full AXTree
+                elif mode in ("som", "phantom_som", "phantom_text", "phantom_dom"):
+                    obs_for_mode = som_marks_text  # [SOM_MARKS] only
+                elif mode == "vision":
+                    obs_for_mode = ""  # vision sees no text
+                else:
+                    obs_for_mode = obs_text  # default fallback
+                items.append({
+                    "task_id": task_id,
+                    "step_idx": step_idx,
+                    "intent": intent,
+                    "mode": mode,
+                    "observation_text": obs_for_mode,
+                })
+    logger.info(
+        f"Loaded {len(items)} archived items "
+        f"({len(items) // len(modes)} (task, step) pairs × {len(modes)} modes); "
+        f"skipped {skipped} tasks not in artifacts dir"
+    )
+    return items
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--site", default="classifieds", choices=list(SITE_TO_CONFIG_DIR))
@@ -83,9 +177,24 @@ def main():
         help="2 modes for binary contrastive (label 0 vs 1)",
     )
     parser.add_argument(
+        "--archived-run-dir",
+        default=None,
+        help="Stage 1B: load observations from this archived run dir "
+             "(e.g. results/visualwebarena/phase1/B1_phantom_som_classifieds_20260428). "
+             "If not set, Stage 1A empty-observation mode is used.",
+    )
+    parser.add_argument(
+        "--steps",
+        nargs="+",
+        type=int,
+        default=[2, 5],
+        help="Step indices to sample per task (Stage 1B only). Default [2, 5] = "
+             "step_002 + step_005 (mid-navigation, more cross-task variance than step_000).",
+    )
+    parser.add_argument(
         "--output-dir",
         default=None,
-        help="Output dir (default results/mechanistic/stage1_b1_<site>_pilot)",
+        help="Output dir (default results/mechanistic/stage1_b1_<site>_<stage>_pilot)",
     )
     parser.add_argument("--model-path", default="Qwen/Qwen3-VL-4B-Instruct")
     parser.add_argument("--seed", type=int, default=42)
@@ -93,33 +202,59 @@ def main():
     parser.add_argument("--min-free-vram-gb", type=float, default=12.0)
     args = parser.parse_args()
 
+    is_stage_1b = args.archived_run_dir is not None
+    stage_label = "1B_archived" if is_stage_1b else "1A_empty"
+
     out_dir = (
         Path(args.output_dir)
         if args.output_dir
-        else REPO_ROOT / f"results/mechanistic/stage1_b1_{args.site}_pilot"
+        else REPO_ROOT / f"results/mechanistic/stage{stage_label}_b1_{args.site}_pilot"
     )
     out_dir.mkdir(parents=True, exist_ok=True)
-    logger.info(f"Output dir: {out_dir}")
+    logger.info(f"Stage {stage_label} output dir: {out_dir}")
 
     # 1. Load task intents
     intents = load_task_intents(args.site, args.n_tasks)
     if len(intents) < 2:
         raise RuntimeError(f"Too few tasks loaded ({len(intents)}); need ≥ 2")
 
-    # 2. Build (intent, mode, observation_text=None) item list
+    # 2. Build item list — (intent, mode, observation_text)
     mode_a, mode_b = args.modes
-    items = []
-    for task_id, intent in intents:
-        items.append((intent, mode_a, None))
-        items.append((intent, mode_b, None))
-    logger.info(f"Will extract {len(items)} hidden state vectors ({len(intents)} tasks × 2 modes)")
+    items_for_extractor = []  # list of (intent, mode, obs_text)
+    item_metadata = []  # parallel: list of {task_id, step_idx, mode}
+
+    if is_stage_1b:
+        archived_dir = Path(args.archived_run_dir)
+        if not archived_dir.is_dir():
+            raise FileNotFoundError(f"--archived-run-dir not found: {archived_dir}")
+        archived_items = load_archived_items(
+            archived_dir, args.site, intents, args.steps, (mode_a, mode_b),
+        )
+        for it in archived_items:
+            items_for_extractor.append((it["intent"], it["mode"], it["observation_text"]))
+            item_metadata.append({
+                "task_id": it["task_id"],
+                "step_idx": it["step_idx"],
+                "mode": it["mode"],
+            })
+    else:
+        # Stage 1A: empty observation
+        for task_id, intent in intents:
+            for mode in (mode_a, mode_b):
+                items_for_extractor.append((intent, mode, None))
+                item_metadata.append({"task_id": task_id, "step_idx": -1, "mode": mode})
+
+    logger.info(
+        f"Will extract {len(items_for_extractor)} hidden state vectors "
+        f"({len(items_for_extractor) // 2} (task, step) pairs × 2 modes)"
+    )
 
     # 3. Load model + extract
     extractor = HiddenStateExtractor(
         model_path=args.model_path,
         min_free_vram_gb=args.min_free_vram_gb,
     )
-    hidden_states_torch, mode_labels_str = extractor.extract_batch(items)
+    hidden_states_torch, mode_labels_str = extractor.extract_batch(items_for_extractor)
     hidden_states = hidden_states_torch.numpy()  # (n_items, n_layers + 1, hidden_dim)
     labels = np.array([0 if m == mode_a else 1 for m in mode_labels_str], dtype=np.int64)
     logger.info(
@@ -132,7 +267,8 @@ def main():
         out_dir / "hidden_states.npz",
         hidden_states=hidden_states,
         labels=labels,
-        task_ids=np.array([tid for tid, _ in intents] * 2),
+        task_ids=np.array([m["task_id"] for m in item_metadata]),
+        step_indices=np.array([m["step_idx"] for m in item_metadata]),
         mode_labels_str=np.array(mode_labels_str),
     )
     logger.info(f"Saved hidden_states.npz ({hidden_states.nbytes / 1e6:.1f} MB)")
@@ -164,13 +300,20 @@ def main():
     )
 
     # 7. Pilot summary
-    summary = f"""# Stage 1 Mechanistic Pilot — Linear Probe AUROC
+    obs_desc = (
+        f"archived run `{args.archived_run_dir}`, steps {args.steps}, "
+        f"mode-conditional observation reconstruction"
+        if is_stage_1b
+        else "empty (system prompt + intent only — Stage 1A simplification)"
+    )
+    summary = f"""# Stage {stage_label} Mechanistic Pilot — Linear Probe AUROC
 
 ## Setup
 - Model: {args.model_path}
 - Site: {args.site}, N tasks: {len(intents)}
 - Contrastive modes: `{mode_a}` (label 0) vs `{mode_b}` (label 1)
-- Observation: empty (system prompt + intent only — Stage 1 simplification)
+- Observation: {obs_desc}
+- N items: {hidden_states.shape[0]}
 - CV: {args.n_folds}-fold StratifiedKFold, seed {args.seed}
 
 ## Result
@@ -179,19 +322,20 @@ def main():
 - Layer-wise AUROC: see `auroc_curve.png` and `probe_results.json::auroc_mean`
 
 ## Interpretation guide
-- AUROC ~ 0.5 at all layers → mode label not linearly decodable (unexpected)
-- AUROC ~ 1.0 at embedding then decay → mode is "input-text-only" feature
-- AUROC stable high → mode preserved as feature throughout
-- AUROC peak at middle layer → mode "computed" feature, decays after task abstraction
+- AUROC ~ 0.5 at all layers → mode label not linearly decodable (unexpected; check pipeline)
+- AUROC ~ 1.0 at embedding then decay → mode is "input-text-only" feature (separable from raw tokens)
+- AUROC stable high across layers → mode preserved as persistent feature
+- AUROC peak at middle layer (e.g. L14-L20) → mode "computed" feature; abstraction emerges then decays
+- AUROC sharp drop at deep layer → model "abstracts away" mode; mirage becomes task-relevant only
 
-## Next steps
-- If AUROC > 0.7 at any layer: validates infra, proceed to Stage 1B (full N=234)
-- Then Stage 2: activation patching to identify causal layer
+## Next steps after Stage {stage_label}
+{'- Stage 1A passes → run Stage 1B (--archived-run-dir flag) for production-grade prompt context' if not is_stage_1b else '- Stage 1B passes → Stage 2 activation patching (causal patch per layer to identify pivot layer)'}
+- All-passes path → Stage 3 SAE feature steering (deferred; Qwen3-VL-4B 公开 SAE 不存在)
 """
     with (out_dir / "pilot_summary.md").open("w") as f:
         f.write(summary)
     logger.info(f"Saved pilot_summary.md")
-    logger.info(f"\n{'='*60}\nStage 1 pilot DONE — output: {out_dir}\n{'='*60}")
+    logger.info(f"\n{'='*60}\nStage {stage_label} pilot DONE — output: {out_dir}\n{'='*60}")
 
 
 if __name__ == "__main__":
