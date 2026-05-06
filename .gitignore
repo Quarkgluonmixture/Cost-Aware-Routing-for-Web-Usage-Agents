@@ -33,6 +33,12 @@ results/*
 !results/phantom_paper/
 results/phantom_paper/*
 !results/phantom_paper/run_manifest.yaml
+# Mechanistic dataset references (paper-cite-able, small text)
+!results/mechanistic/
+results/mechanistic/*
+!results/mechanistic/curate_mirage_b1_classifieds/
+results/mechanistic/curate_mirage_b1_classifieds/*
+!results/mechanistic/curate_mirage_b1_classifieds/candidates.md
 logs/
 wandb/
 visualization/

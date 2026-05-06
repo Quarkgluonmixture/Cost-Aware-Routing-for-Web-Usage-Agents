@@ -13,15 +13,36 @@ created: 2026-05-06
 
 ## Three followups (priority order)
 
-### (a) Stage 2B curated scale-up — 10-20 tasks ⭐⭐⭐
+### (a) Stage 2B curated scale-up — 24 tasks (dataset ready) ⭐⭐⭐
 
-**Why**: 笔记 §111.4 Stage 2B 现 N=3 task pilot, only task 0 (cls blue kayak) showed clean L11 signal. Tasks 1, 2 were null because source/target diverged for non-mirage reasons. Paper §5 mechanism quotable claim needs N=10-20 curated mirage cases for cross-task aggregate (mean ± std AUROC curve, robust L11 peak).
+**Why**: 笔记 §111.4 Stage 2B 现 N=3 pilot, 1/3 task clean. Paper §5 needs cross-task aggregate.
 
-**Curation criterion**: pick cls task pairs where source (SoM with image) outputs **image-grounded ground truth** vs target (P-SoM no image) outputs **image-hallucinated mirage** at step_002+. Manual review of archived B1 phantom_som artifacts to identify candidates.
+**Dataset (5/6 evening curated 笔记 §113, commit `4425fa6` script)**:
+- ✅ 209/234 cls task scored via `scripts/mechanistic/curate_mirage_tasks.py`
+- ✅ **24 strong mirage candidates** (composite ≥ 1.0 ∧ overlap < 0.5) ready for forward-direction patching
+- ✅ **Top 7 cluster (composite +4.00-+4.20)** shares identical paper-grade mirage signature:
+  - Source (SoM with image): "do not show any X" — image-grounded absence detection
+  - Target (P-SoM no image): "show items/listings related to X" — mirage hallucination
+  - Tasks: 0 (blue kayak) / 81 (hurricane book) / 112 (basketball) / 113 (football) / 127 (MCAT) / 201 (snare drum) / 224 (wall rack)
+- Reference: `results/mechanistic/curate_mirage_b1_classifieds/candidates.md` (gitignore whitelisted)
 
-**Scope**: 10-20 curated cls task pairs × max_new_tokens=15 × forward direction × all 36 layers. ETA ~3-4h on A100 dedicated.
+**Scope**: 24 task × forward direction × 36 layer × max_new_tokens=15 = 864 patched-generate calls + 48 baseline gen + 24 source cache. ETA ~2-3h on A100 dedicated.
 
-**Deliverable**: `results/mechanistic/stage2b_curated_b1_cls_n15/` + paper-grade plot (token_overlap_to_source mean ± std with L11 peak), updated paper §5 quotable claim with N≥10 robust signal.
+**Deliverable**: `results/mechanistic/stage2b_curated_b1_cls/` + per-task per-layer 4-metric grid + cross-24-task aggregate mean ± std curve. Replace §111 N=3 placeholder.
+
+**Quotable claim post-completion**: "Patching SoM hidden state at L11 into P-SoM run recovers source's continuation token-by-token across **N=24 curated mirage cases** (B1 Qwen3-VL-4B, mean overlap_to_source X.XX ± Y.YY, p < 0.001 vs envelope baseline 0.5)."
+
+### (a-bis) Stage 2C reverse curated — 11 tasks (dataset ready)
+
+**Why**: §111.5b reverse direction null at all layers (single-task asymmetry); paper §5 needs cross-task aggregate to confirm pattern.
+
+**Dataset (curated 5/6, 笔记 §113)**: 11 reverse-direction candidates (composite ≤ −1.5):
+- task 10, 123, 130, 151, 155, 156, 157, 160, 188, 191, 200
+- Pattern: source (SoM with image) describes specific page element / target (P-SoM no image) abstract task statement
+
+**Scope**: 11 task × reverse direction × 36 layer × max_new_tokens=15 = ~400 patched-gen. ETA ~1.5h on A100.
+
+**Deliverable**: confirm reverse direction null effect across N=11 (vs §111.5b N=3 / 1 task case study). Strengthen paper §5 asymmetry-as-mechanism evidence.
 
 ### (b) Llama-4 cross-arch validation ⭐⭐ (paper claim power upgrade)
 
