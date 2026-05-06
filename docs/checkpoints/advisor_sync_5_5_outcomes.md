@@ -115,23 +115,30 @@ last_updated: 2026-05-05
 
 ---
 
-### A.8 Compute paths (优先级 ranking) ✅
+### A.8 Compute paths (优先级 ranking) ✅ (updated 2026-05-06 evening)
 
-**决议** (按优先级):
+**决议** (按优先级, 5/6 update reflects A100 self-allocation):
 
 | Priority | Path | Status |
 |---|---|---|
-| **1** | **Advisor 5090** (advisor 自有, 搬到 AI Center 后长挂, 学生夜间用) | advisor 承诺 "回去把那个 5090 给搬到 AI Center, 然后就一直挂着" |
-| **2** | **Rancher / Condenser H100** (UCL 官方, advisor 账号借) | advisor 已申请到 H100 + 几张其他卡, 学生 borrow advisor 账号试 (advisor 自己还没用过) |
-| **3** | **RunPod 4090 self-fund** ($0.6/h, $200 budget) | backup if 1+2 不够 |
-| **4** | **Myriad** (advisor 之前穿透过, 7-8h limit per block) | 已基本放弃 (Tailscale CGNAT block + 时长限制不适合 single block 实验) |
+| **0** ⭐ | **UCL Condense A100 dedicated** (学生自申请, NOT advisor account borrow) | 5/6 evening **allocated** by Steve (admin), pending dashboard node show + SSH info. ~80GB VRAM, B1 4B 8× 余量, cell-parallel feasible. Llama-4 cross-arch 也 affordable on this. ⏳ pending Steve SSH info |
+| 1 | **Advisor 5090** (advisor 自有, 搬到 AI Center 后长挂, 学生夜间用) | advisor 承诺 "回去把那个 5090 给搬到 AI Center, 然后就一直挂着" — demoted to fallback / redundancy after A100 allocated |
+| 2 | **Rancher / Condense H100** (UCL 官方, advisor 账号借) | advisor 已申请到 H100 + 几张其他卡 — redundant after 学生 owns A100 directly |
+| 3 | **RunPod 4090 self-fund** ($0.6/h, $200 budget) | **NOT NEEDED**, 经费可 save (only fallback if A100 fails verify) |
+| 4 | **DGX shared** (seonglae sweep contention) | fallback, Phase A bug fix smoke test 用 |
+| ❌ | Myriad (advisor 之前穿透过, 7-8h block limit) | 已放弃 (Tailscale CGNAT block) |
 
-**Transcript quote**:
+**Transcript quote** (advisor sync 5/5, A100 allocation 是 post-sync 5/6 student action):
 > advisor: "我有一张 5090. 我准备这次回去把我那个 5090 给搬到 AI Center, 然后就一直挂着... 那等我不打游戏的时候你来跑半夜跑."
-> advisor: "有听过 Condenser 吗? 这个东西? 就是我前段时间申请了, 他给我搞了一个 H100... 它是 UCL 官方的, 但是这个的话, 需要走一个不同的申请流程... 它不是那种 cluster 的, 那种 container, 你可以直接在里面进行长期的那个使用."
+> advisor: "有听过 Condense 吗? 这个东西? 就是我前段时间申请了, 他给我搞了一个 H100... 它是 UCL 官方的, 但是这个的话, 需要走一个不同的申请流程... 它不是那种 cluster 的, 那种 container, 你可以直接在里面进行长期的那个使用."
 > advisor: "如果我能用的话, 你应该可以用我的账号先去试试那个."
 
-**RunPod $200 budget**: advisor 没明确 reject (sync 当时跳过), 学生 keep as backup.
+**RunPod $200 budget**: deprecated by A100 allocation. 不需要走 funding 流程.
+
+**A100 timeline impact** (笔记 §112 detailed):
+- 16-cell rerun: DGX shared ~3 周 → A100 ~3-5 d (~1-2 周 paper timeline 缩短)
+- Mechanistic Stage 2B scale-up: 推迟到 post-exam → exam 期间 parallel 跑 (5/12-6/1 期间 GPU 后台跑)
+- Llama-4 cross-arch validation: 之前 trade-off → 现 affordable, 同时跑 B1 4B + Llama-4 mechanistic, 可 quote "golden feature universal across architectures"
 
 ---
 

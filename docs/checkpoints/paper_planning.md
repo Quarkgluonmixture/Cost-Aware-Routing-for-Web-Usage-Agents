@@ -1076,6 +1076,8 @@ Cells:     6 sites × 3 models × 5 modes = ~90 cells (~125K episode total)
 
 **Status (04-28)**: ✅ B0 cls + red 5-mode 100% paper-grade clean (watchdog auto-clean verified, 0% wasted task)
 
+**Update (2026-05-06 evening)**: ⭐ **UCL Condense A100 dedicated allocated** by Steve (admin) — 笔记 §112. 80GB VRAM, B1 Qwen3-VL-4B bf16 ~10GB → 8× headroom, cell-parallel feasible. 16-cell rerun timeline: DGX shared ~3 周 → A100 ~3-5 d. Mechanistic Stage 2B curated scale-up + Llama-4 cross-arch 现 exam 期间 (5/12-6/1) parallel 跑. Pending Steve SSH info / dashboard node show; verify 通过后 flip Tier 0 primary, demote 5090/Rancher/RunPod 到 redundancy.
+
 ### Risk 2: Story discipline ⚠️⚠️
 
 6×3×5 cells 容易让 paper 变 "data dump". 顶会 reviewer 反感 "everything but the kitchen sink".

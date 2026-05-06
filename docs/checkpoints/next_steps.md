@@ -23,10 +23,10 @@ updated: 2026-05-02
 
 **Paper hook**: → [[paper_planning#§1]] (canonical, 3 arms / 4-fold drop-in)
 
-> [!todo] Next 3 actions (priority order)
-> 1. **学长 sync** ⭐ — 30-45 min, [[ADVISOR_SYNC]] §1-§5 cover 主 asks (framework reframe / VWA bug 单独成文 / RunPod 经费 / Early-stop A/B/C / SteerMoE scope)
-> 2. **RunPod onboarding** (post-approval) — `docs/reference/RUNPOD_ONBOARDING.md` 7-step playbook. ETA ~3-5 d wallclock for 16-cell parallel
-> 3. **新数据按 4-dimension framework 整合** — 16-cell 跑完后 `make analysis` → re-evaluate 4-fold drop-in → §4 disclosure paragraphs + codex #11/#13
+> [!todo] Next 3 actions (priority order, 2026-05-06 update)
+> 1. **A100 SSH verify** ⭐ — UCL Condense A100 dedicated allocated 5/6 (Steve approved, pending dashboard node + SSH info). 一旦通: `nvidia-smi` + load Qwen3-VL-4B + 1 forward pass smoke. ETA 30 min once SSH ready. Unblocks 16-cell rerun + mechanistic scale-up (~3-5d wallclock vs DGX shared ~3 weeks).
+> 2. **Advisor email follow-up reply** (~2-5d) — preregistration K_h1=0.75 / K_h3=0.67 / TOST δ=1.0pp witness + paper split 3vs4 + workshop names. Reply unblock OSF DOI upload + 16-cell launch.
+> 3. **Mechanistic Stage 2B curated scale-up** (A100 verify 后, exam 期间 parallel 跑) — 10-20 task curated mirage cases + Llama-4 cross-arch (now affordable on A100). Paper §5 mechanism upgrade to "golden feature" universal claim.
 
 ---
 
