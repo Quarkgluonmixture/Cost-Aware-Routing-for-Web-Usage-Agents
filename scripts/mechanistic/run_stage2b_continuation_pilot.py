@@ -122,9 +122,15 @@ def main():
     p.add_argument("--source-mode", default="som")
     p.add_argument("--target-mode", default="phantom_som")
     p.add_argument("--min-free-vram-gb", type=float, default=0.0)
+    p.add_argument(
+        "--reverse", action="store_true",
+        help="Swap source ↔ target: patch target's hidden state into source run "
+             "(asymmetry control test). Output dir gets _reverse suffix.",
+    )
     args = p.parse_args()
 
-    out_dir = Path(args.output_dir) if args.output_dir else REPO_ROOT / f"results/mechanistic/stage2b_continuation_b1_{args.site}_pilot"
+    suffix = "_reverse" if args.reverse else ""
+    out_dir = Path(args.output_dir) if args.output_dir else REPO_ROOT / f"results/mechanistic/stage2b_continuation_b1_{args.site}_pilot{suffix}"
     out_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Output dir: {out_dir}")
 
@@ -150,8 +156,16 @@ def main():
         obs_text = obs_file.read_text()
         som_marks_text = build_som_marks(obs_text)
 
-        source_inputs = build_inputs(extractor, intent, args.source_mode, som_marks_text, str(screenshot_annotated))
-        target_inputs = build_inputs(extractor, intent, args.target_mode, som_marks_text, None)
+        source_inputs_orig = build_inputs(extractor, intent, args.source_mode, som_marks_text, str(screenshot_annotated))
+        target_inputs_orig = build_inputs(extractor, intent, args.target_mode, som_marks_text, None)
+
+        # --reverse: swap roles. patch target's hidden into source run = "remove image content"
+        if args.reverse:
+            source_inputs, target_inputs = target_inputs_orig, source_inputs_orig
+            logger.info(f"task {task_id}: REVERSE direction (patching {args.target_mode} → {args.source_mode})")
+        else:
+            source_inputs, target_inputs = source_inputs_orig, target_inputs_orig
+            logger.info(f"task {task_id}: forward direction (patching {args.source_mode} → {args.target_mode})")
 
         logger.info(f"task {task_id}: running continuation patching grid (max_new_tokens={args.max_new_tokens})...")
         result = patching_grid_continuation(
