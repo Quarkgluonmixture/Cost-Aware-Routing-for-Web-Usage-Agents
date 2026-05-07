@@ -149,14 +149,23 @@ fi
 
 log "=== Step 4: pip install --user (transformers + p79 deps) ==="
 
-# Install non-torch deps to PYTHONUSERBASE (skip torch — already from module).
-# Pin urllib3<2 because RHEL 7 OpenSSL 1.0.2k-fips can't satisfy urllib3 v2's
-# OpenSSL>=1.1.1 requirement (urllib3/issues/2168).
+# Install deps to PYTHONUSERBASE.
+# Pinning rationale (RHEL 7 + module pytorch/2.1.0 quirks):
+#   urllib3<2: RHEL 7 OpenSSL 1.0.2k can't run urllib3 v2 (urllib3/issues/2168)
+#   torch>=2.3: transformers 4.40+ uses torch.utils._pytree.register_pytree_node,
+#               added in torch 2.3. Module pytorch/2.1.0 lacks it.
+#               PYTHONPATH user-site override means our user-site torch wins.
+#   transformers 4.50+: required for Qwen3VLForConditionalGeneration support
+log "  Installing torch 2.4 (override module 2.1 — needed for transformers 4.50+ pytree API)..."
+pip install --user --only-binary=:all: --progress-bar=on \
+    --cache-dir=/tmp/pip_cache_$USER \
+    torch==2.4.0 torchvision==0.19.0 2>&1 | tail -3
+
 log "  Installing transformers + accelerate + qwen-vl-utils + huggingface_hub..."
 pip install --user --only-binary=:all: --progress-bar=on \
     --cache-dir=/tmp/pip_cache_$USER \
     "urllib3<2" \
-    transformers accelerate qwen-vl-utils huggingface_hub Pillow PyYAML 2>&1 | tail -5
+    "transformers>=4.50,<5.0" accelerate qwen-vl-utils huggingface_hub Pillow PyYAML 2>&1 | tail -5
 
 # Install p79 editable, --no-deps so pip doesn't try to re-resolve torch
 log "  Installing p79 (editable, --no-deps)..."
