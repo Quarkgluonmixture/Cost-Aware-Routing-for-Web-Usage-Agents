@@ -10,7 +10,7 @@ audience: self + advisor sync prep
 
 > **Living document** — update when compute access changes (new accounts, network policy, deprecations).
 >
-> **Last major update**: 2026-05-07 morning. UCL Condense A100 allocated 5/6 + Myriad HPC account activated 5/6 evening + GPU attached to A100 5/7 morning. SSH path via condenser bastion still pending cert generation on quark.
+> **Last major update**: 2026-05-07 evening. UCL Condense A100 allocated 5/6 + Myriad HPC account activated 5/6 evening + GPU attached to A100 5/7 morning + Myriad **passwordless SSH working 5/7 evening** (VSCode Remote-SSH ❌ glibc 2.17 vs required 2.28+, terminal-only workflow on Myriad). A100 SSH path via condenser bastion still pending cert generation on quark.
 
 ---
 
@@ -19,7 +19,7 @@ audience: self + advisor sync prep
 | Tier | Platform | Status | Use case |
 |---|---|---|---|
 | **0** | UCL Condense **A100 40GB dedicated** | ✅ allocated 5/6 / GPU attached 5/7 by Steve / SSH path pending cert | **Paper-grade primary**: Stage 2B scale-up + Llama-4 cross-arch (small variants only, 40GB constraint) + 16-cell rerun (pending VWA Tailscale path) |
-| **1** | UCL **Myriad HPC** (V/U-type 4× A100 80GB / L-type 4× A100 40GB / E/F-type 2× V100) | ✅ account activated 5/6, password SSH from quark works 5/7 | Backup + CPU batch + parallel cross-arch + future SAE training (4-GPU data-parallel) |
+| **1** | UCL **Myriad HPC** (V/U-type 4× A100 80GB / L-type 4× A100 40GB / E/F-type 2× V100) | ✅ account activated 5/6 / **passwordless SSH 5/7 evening** / ⚠️ VSCode Remote-SSH NOT viable (RHEL 7 glibc 2.17 < required 2.28) | Terminal-only batch + cross-arch (qsub on V/U-type) + future SAE training (4-GPU data-parallel). Workflow: dev on quark/A100 → git push → ssh myriad git pull → qsub. |
 | **2** | **DGX Spark** (`spark-9ea3`) shared lab | ✅ stable, no admin/sudo, lab Tailscale `981526092.github` | Archived data source / VWA Docker Tailscale bridge / curation done (笔记 §113) |
 | **3** | Advisor 5090 (post AI Center 搬运) | ⏳ pending | Backup if Condense fails, advisor offered 5/5 sync |
 | ❌ | RunPod 4090 self-fund $200 | deprecated by Tier 0 | not needed |
@@ -128,8 +128,19 @@ Host condense-a100
 
 **Provider**: UCL ARC Research Computing (traditional HPC cluster, SGE batch scheduler).
 **Login node**: `myriad.rc.ucl.ac.uk` (DNS round-robin login12 / login13).
+**OS**: RHEL 7 / CentOS 7 family (glibc 2.17, GLIBCXX 3.4.24). ⚠️ **Affects VSCode Remote-SSH** — see "Tooling caveat" below.
 **Account**: `ucab352` activated 2026-05-06 (per "We are happy to confirm" email, retroactively re-applied — previous account may have lapsed).
-**Auth**: UCL password (key auth setup pending, see §3.4).
+**Auth**: ✅ **Passwordless SSH works as of 2026-05-07 evening** (`id_rsa_myriad` RSA key from quark, `Authenticated to myriad.rc.ucl.ac.uk using "publickey"`). Just type `ssh myriad` — no password, no Cisco VPN needed beyond initial UCL routing.
+
+**⚠️ Tooling caveat — VSCode Remote-SSH NOT viable** (discovered 2026-05-07):
+- VSCode Server requires **glibc ≥ 2.28** + **GLIBCXX ≥ 3.4.25**, but Myriad login node only has glibc 2.17 (`osReleaseId == rhel`).
+- Server installs but cannot start. Symptom: `Missing GLIBC >= 2.28` / `Missing GLIBCXX >= 3.4.25` in VSCode Remote-SSH log.
+- **Implication**: Myriad workflow is **terminal SSH only** (`ssh` / `qsub` / `scp` / `rsync`); no in-IDE file editing on Myriad.
+- **Workarounds (priority order)**:
+  1. ✅ **Recommended**: edit code on quark (VSCode local) or A100 (VSCode Remote-SSH) → `git push` → `ssh myriad && cd ~/Scratch/p79 && git pull` → `qsub job.sh`. Pure terminal flow.
+  2. **code-server** in `$HOME` user space (no glibc dependency, browser-based VSCode). Run on Myriad login node, port-forward via SSH `-L 8080:localhost:8080`. Setup ~30 min.
+  3. JetBrains Gateway (Toolbox-based, sometimes ships own libstdc++) — untested on Myriad.
+  4. NOT viable: pinning old VSCode Server version that targets glibc 2.17 — Microsoft removed official support.
 
 **Node types relevant to us**:
 | Type | GPU | VRAM | Count | Notes |
@@ -311,14 +322,19 @@ ssh condense-a100
 
 `~/.ssh/config` block: see §1.1.
 
-### §3.2 Quark → Myriad
+### §3.2 Quark → Myriad ✅ passwordless (2026-05-07 evening)
 
 ```powershell
-ssh ucab352@myriad.rc.ucl.ac.uk
-# Password prompt — UCL password
+ssh myriad
+# No password prompt — id_rsa_myriad RSA key authenticated
 ```
 
-Pending key auth setup (§3.4). Until then, password every login (Cisco VPN must be active).
+Setup recap (already done):
+- Generated `id_rsa_myriad` on quark, public key copied to `~/.ssh/authorized_keys` on Myriad
+- `~/.ssh/config` on quark has `Host myriad` block with `User ucab352` + `HostName myriad.rc.ucl.ac.uk` + `IdentityFile ~/.ssh/id_rsa_myriad`
+- ✅ Confirmed: `Server accepts key: ... id_rsa_myriad RSA` + `Authenticated to myriad.rc.ucl.ac.uk using "publickey"`
+
+⚠️ **VSCode Remote-SSH NOT viable** on Myriad (glibc 2.17 vs required 2.28+ — see §1.2 Tooling caveat). Terminal SSH only; for IDE workflow develop on quark / A100 + `git push` + `ssh myriad git pull`.
 
 ### §3.3 Quark → DGX (lab Tailscale)
 
@@ -327,16 +343,24 @@ ssh jiaming@spark-9ea3   # via Tailscale, no UCL VPN needed
 # or via IP: ssh jiaming@100.99.92.18
 ```
 
-### §3.4 Myriad key auth setup (pending)
+### §3.4 Myriad key auth setup ✅ DONE (2026-05-07 evening)
 
+Already configured. For reference / future re-setup:
 ```bash
-# On Myriad (after first password login):
+# On Myriad (was done from initial password login):
 mkdir -p ~/.ssh && chmod 700 ~/.ssh
-echo "<quark public key>" >> ~/.ssh/authorized_keys
+echo "<quark id_rsa_myriad.pub content>" >> ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 
-# Quark side: cat $HOME\.ssh\id_ed25519_dgx.pub  (or generate dedicated myriad key)
+# Quark side: ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa_myriad
+# ~/.ssh/config:
+#   Host myriad
+#       HostName myriad.rc.ucl.ac.uk
+#       User ucab352
+#       IdentityFile ~/.ssh/id_rsa_myriad
 ```
+
+Test: `ssh myriad hostname` should print login12 or login13 without password prompt.
 
 ### §3.5 DGX → A100 (BLOCKED, do not configure)
 
