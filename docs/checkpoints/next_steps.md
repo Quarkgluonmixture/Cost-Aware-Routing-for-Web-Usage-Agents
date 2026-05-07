@@ -1,21 +1,23 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-05-02
+updated: 2026-05-07
 ---
 
 # Next Steps — Forward Action Ledger
 
 > **Future-only**. Live state 不在这里:
-> - Today / 瓶颈 / cron health → [[PLAYBOOK#§1]] + [[PLAYBOOK#§2]] (🤖 GLM @daily 重写)
+> - Today / 瓶颈 / cron health → [[PLAYBOOK#§1]] + [[PLAYBOOK#§2]] (🤖 GLM @daily)
 > - Real-time active runs / GPU → `make active` CLI
-> - Cell snapshot (active 跑中 / pending / done) → `cells.base` (Bases view)
-> - Paper section progress → `status.base` (Bases view)
-> - 过去 chronicle → [[实验笔记]] §1-§108
+> - Cell snapshot (active 跑中 / pending / done) → `cells.base`
+> - Paper section progress → `status.base`
+> - 过去 chronicle → [[实验笔记]] §1-§114
 > - Strategy / theory → [[paper_planning]]
 > - Advisor sync prep → [[ADVISOR_SYNC]]
+> - OSF DOI lock workflow → [[osf_lock_manifest]]
+> - Compute infrastructure → [[COMPUTE_INFRASTRUCTURE]]
 >
-> 🔧 **新数据 → `make analysis`** (~5-10min). Cron 每 10 min 自动同步 cell frontmatter (含 re-run detection). 自己只在 brain decision 层做事 — chronicle / planning / hook.
+> 🔧 新数据 → `make analysis` (~5-10min). Cron 每 10min 自动 sync cell frontmatter.
 
 ---
 
@@ -23,72 +25,129 @@ updated: 2026-05-02
 
 **Paper hook**: → [[paper_planning#§1]] (canonical, 3 arms / 4-fold drop-in)
 
-> [!todo] Next 3 actions (priority order, 2026-05-06 update)
-> 1. **A100 SSH verify** ⭐ — UCL Condense A100 dedicated allocated 5/6 (Steve approved, pending dashboard node + SSH info). 一旦通: `nvidia-smi` + load Qwen3-VL-4B + 1 forward pass smoke. ETA 30 min once SSH ready. Unblocks 16-cell rerun + mechanistic scale-up (~3-5d wallclock vs DGX shared ~3 weeks).
-> 2. **Advisor email follow-up reply** (~2-5d) — preregistration K_h1=0.75 / K_h3=0.67 / TOST δ=1.0pp witness + paper split 3vs4 + workshop names. Reply unblock OSF DOI upload + 16-cell launch.
-> 3. **Mechanistic Stage 2B curated scale-up** (A100 verify 后, exam 期间 parallel 跑) — 10-20 task curated mirage cases + Llama-4 cross-arch (now affordable on A100). Paper §5 mechanism upgrade to "golden feature" universal claim.
+> [!todo] Top 3 forward actions (priority order, 2026-05-07 update post-§114 provenance)
+> 1. **Quark SSH cert + A100 SSH verify** ⭐⭐⭐ — UCL Condense A100 40GB (10.52.6.89, ProxyJump via `ssh.condenser.arc.ucl.ac.uk`). User-side: portal cert (id_arc + id_arc.signed) + ~/.ssh/config. ETA 10 min. **Unblocks**: 16-cell rerun launch (R5 orchestrator) + Mechanistic Stage 2B scale-up + provenance A100 baseline (§5 below).
+> 2. **Advisor email reply wait** (~2-5d, passive) — Q1-Q11 in [[advisor_sync_5_5_followup]]. Critical: K_h1=12 / K_h3=11 / TOST δ=1.0pp threshold lock + paper split 3v4. Reply triggers OSF DOI 8-step lock + 16-cell launch gate clearance.
+> 3. **Mechanistic Stage 2B curated scale-up** (post 1+2 parallel) — 24 strong + 15 reverse mirage tasks (`results/mechanistic/archive_subset_b1_cls/`). A100 wallclock: ~24h forward + ~12h reverse. Paper §5 mechanism upgrade from N=3 pilot to N=24 paper-grade.
 
 ---
 
-## §1 Pending experiment chains — `queue_chain.sh` (sequential)
+## §1 16-cell rerun launch sequence (post advisor email + A100 SSH)
 
-B1 4B 单 GPU + B0 phantom shopping 同 site exclusive → sequential. Idempotent + paper-grade `RESET_BEFORE=1` 默认.
+**Scope** (post-5/5 sync, student-decided 16 cells):
+- B0×{cls, red}×3 phantom (P-text / P-SoM / P-prompt) = 6
+- B1×{cls, red}×3 phantom = 6
+- B0×shop×{P-text, P-SoM} = 2 (P-prompt scope cut, advisor confirmed)
+- B1×shop×{P-text, P-SoM} = 2
+- **Total: 16 cells**
 
-**Tier 1 (paper-critical)**:
-```bash
-nohup bash scripts/queues/queue_chain.sh \
-  "queue_phantom_prompt.sh B0 classifieds" \
-  > logs/queue_chain_b0_pprompt_cls.log 2>&1 &
+**Orchestrator**: `bash scripts/queues/queue_16cell_paper_grade.sh dry-run` (preview) → `... launch` (3 parallel chains: cls / red / shop).
 
-nohup bash scripts/queues/queue_chain.sh \
-  "queue_phantom_som.sh B1 classifieds" \
-  "queue_phantom_som.sh B1 reddit" \
-  "queue_phantom_text.sh B1 classifieds" \
-  "queue_phantom_text.sh B1 reddit" \
-  > logs/queue_chain_b1_phantom.log 2>&1 &
+**Pre-launch gates** (orchestrator auto-checks):
+1. `preregistration.md` no `TBD` in K_h1 / K_h3 / TOST_delta lines
+2. `results/provenance/env_<host>_baseline.json` committed
+3. `results/provenance/vwa_<host>_baseline.json` committed
+4. `bash scripts/preflight_v2.sh` passes
+5. GPU CUDA available (smoke `python3 -c "import torch; print(torch.cuda.is_available())"`)
+6. No conflicting active runs (`pgrep -f run_experiment` ≤ existing approved chains)
 
-nohup bash scripts/queues/queue_chain.sh \
-  "queue_phantom_som.sh B0 shopping" \
-  "queue_phantom_text.sh B0 shopping" \
-  > logs/queue_chain_b0_phantom_shop.log 2>&1 &
-```
-
-**Tier 2 (diamond completeness, B1 P-prompt)**:
-```bash
-nohup bash scripts/queues/queue_chain.sh \
-  "queue_phantom_prompt.sh B1 classifieds" \
-  "queue_phantom_prompt.sh B1 reddit" \
-  > logs/queue_chain_b1_pprompt.log 2>&1 &
-```
-
-| Chain | ETA | Status |
+**ETA on A100 40GB** (post-advisor lock):
+| Chain | Cells | ETA |
 |---|---|---|
-| B0 P-prompt cls (Tier 1) | ~6h | ⏳ wait B1 phantom_som cls (~10d) |
-| B1 phantom 4-cell (Tier 1) | ~30-40 d (GPU contention) | ✅ launched 04-29 19:11 PID 1145483 |
-| B0 phantom shopping pair (Tier 1) | ~24h | wait B0 dom shopping done |
-| B1 P-prompt 2-cell (Tier 2) | ~14-20 d | ⏳ wait B1 4-cell Tier 1 done |
+| cls | 6 (B0 12h → B1 24h) | 36h |
+| red | 6 (B0 10h → B1 20h) | 30h |
+| shop | 4 (B0 16h → B1 32h) | 48h |
+| **Total wallclock (parallel)** | 16 | **~48h ≈ 2 days** |
 
-**Pre-launch sanity 必跑**: `make glm-pre-launch-check QUEUE=... BASELINE=... SITE=... RESET=1`
-
----
-
-## §2 Horizon cells (longer-term, not yet promoted to cells.base)
-
-待 advisor align + RunPod approval 后再 promote 到 `_status/cells/`:
-
-- **B0 shopping SoM/Vision/P-text/P-SoM** (4 cells) — wait B0 dom shopping done. ~$60 + ~24h API
-- **B0 shopping P-prompt** (1 cell) — wait B0 phantom shopping pair. ~$15 + ~6h
-- **WA × 3 sites × B0+B1 × 6 modes** (36 cells; B1 P-prompt Tier 2 → 33 if dropped) — wait advisor align + B1 VWA chain. ~$60-72 + 60-72h GPU
-- **Cross-model Claude Opus 4.7 cls+red 6 modes** (12 cells) — wait advisor align + agent 适配. ~$100-120
-- **B1 shopping 6 modes** (6 cells) — wait RunPod 4090 + DGX-side B1 phantom done. ~24h GPU each
+**Post-completion**:
+```bash
+make analysis                                    # rerun all aggregators + figures
+python3 scripts/analysis/preregistration_decision_test.py \
+    --cells-csv results/phantom_paper/cells_aggregated.csv \
+    --K_h1 12 --K_h3 11 --TOST-delta 1.0 \
+    --out results/phantom_paper/preregistration_test_results.json
+```
+Output → paper §5 Table 5 quotable JSON.
 
 ---
 
-## §3 Router experiments (Section 6, ~Week 4-5)
+## §2 Mechanistic Stage 2B + Stage 2C scale-up (A100 parallel)
+
+**Pre-curated dataset** (笔记 §113, commit `cd50c34`): `results/mechanistic/archive_subset_b1_cls/` (24 strong + 15 reverse, 16.5MB).
+
+**Launch commands** (A100 SSH 通后):
+```bash
+# Stage 2B forward direction (24 task × 36 layer × 50 max_new_tokens)
+.venv/bin/python3 scripts/mechanistic/run_stage2b_continuation_pilot.py \
+    --site classifieds --n-tasks 24 --step 2 --max-new-tokens 50 \
+    --output-dir results/mechanistic/stage2b_curated_b1_cls
+    # Auto-emits: env_snapshot.json + run_manifest.json (Gap 3 §114)
+
+# Stage 2C reverse direction (15 task asymmetry confirm)
+.venv/bin/python3 scripts/mechanistic/run_stage2b_continuation_pilot.py \
+    --reverse --site classifieds --n-tasks 15 --step 2 \
+    --output-dir results/mechanistic/stage2c_reverse_curated_b1_cls
+```
+
+**Expected output**:
+- L11 forward causal layer confirmation (笔记 §111 task 0 finding extended to N=24)
+- Reverse null effect cross-task confirm → paper §5 strongest mechanism evidence
+- Token overlap distribution histogram per layer
+
+**Wallclock A100**: forward ~24h + reverse ~12h (parallel-able if memory allows, sequential safer)
+
+**Followup paper-grade artifact**: `run_manifest.json` aggregate field → paper Table 6 / Figure mechanism panel.
+
+---
+
+## §3 OSF DOI 8-step lock workflow (post advisor email)
+
+**Trigger**: Advisor email reply with confirmed K_h1 / K_h3 / TOST δ.
+
+**8 steps** (详 [[osf_lock_manifest]]):
+1. Save advisor email PDF → `docs/reference/advisor_email_<date>.pdf`
+2. Update `preregistration.md` (replace `TBD` with confirmed numbers)
+3. Run `python3 scripts/provenance/snapshot_env.py` on DGX + A100 (+ Myriad if used)
+4. Run `bash scripts/provenance/snapshot_vwa.sh` on each VWA host
+5. `cp -r paper_drafts paper_drafts_locked` + commit
+6. `git tag -a preregistration-locked -m "OSF DOI mint $(date)"` + push
+7. Mint OSF DOI at https://osf.io/registries/ (link to GitHub tag URL)
+8. Backfill `osf_lock_manifest.md` with all SHAs + DOI + timestamp
+
+**Artifacts already ready** (committed 5/7):
+- ✅ `env_dgx_baseline.json` (HF Qwen3-VL-4B SHA `ebb281ec...`)
+- ✅ `vwa_dgx_via_quark.json` (10 containers fingerprinted)
+- ✅ `osf_lock_manifest.md` (8-step checklist)
+- ✅ `scripts/provenance/snapshot_env.py` + `snapshot_vwa.sh` + `numerical_determinism_check.py`
+- ✅ `scripts/analysis/preregistration_decision_test.py` (smoke-tested with 3 synthetic scenarios)
+- ✅ HF revision pin in `qwen3vl_agent.py` + `extract_hidden_states.py` (commit TBD)
+
+---
+
+## §4 Audit follow-ups (deferred to A100 SSH)
+
+From 2026-05-07 pipeline audit (笔记 §114 follow-up):
+
+| Pri | Item | Effort | Gating |
+|---|---|---|---|
+| 🔴 C3 | A100 memory + wallclock smoke (Stage 2B 1 task forward) | 30 min | A100 SSH |
+| 🟡 R1 | Preflight v2 extension (B0 XOR B1 conflict / archive_subset / archived_run_dir checks) | 45 min | Independent (can do on DGX now) |
+| 🟡 R2 | A100 cron / live status setup (cells.base / PLAYBOOK) | 1 h | A100 SSH + crontab dump |
+| 🟡 R3 | Energy tracking pynvml test on A100 | 15 min | A100 SSH |
+| 🟡 R4 | Stage 2B `--resume` flag for reboot recovery | 10 min | Independent (can do on DGX) |
+| 🟢 N1 | Bonferroni correction paper §3 paragraph | 10 min | Paper write phase |
+| 🟢 N2 | Power analysis script | 30 min | Paper write phase |
+| 🟢 N3 | Phantom variant FP rules | 1 h | Post 16-cell rerun |
+
+**R1 + R4 可以现在做** (DGX-side, 不依赖 A100). 评估是否抢在 advisor email 来之前 fix.
+
+---
+
+## §5 Router experiments (Section 6, ~Week 4-5 post 16-cell)
 
 | Cell | Blocker | Implementation |
 |---|---|---|
-| **Tier 1 oracle router** (TF-IDF + LR, ~3 d) | baseline + phantom 全 done | `p79/experiment/router.py::RuleBasedRouter` 扩展 |
+| **Tier 1 oracle router** (TF-IDF + LR, ~3 d) | 16-cell rerun done | `p79/experiment/router.py::RuleBasedRouter` 扩展 |
 | **Tier 2 first-step trigger** (~7-10 d) | Tier 1 done + step-1 trigger features | 新增 cascade runner config |
 | Routing signal infra | ✅ ready (`9d7e99f`) | `confidence_summary.json` per-condition |
 
@@ -96,7 +155,7 @@ nohup bash scripts/queues/queue_chain.sh \
 
 ---
 
-## §4 Sustainability / Green AI (Section 8)
+## §6 Sustainability / Green AI (Section 8 end-stage)
 
 | Item | Status |
 |---|---|
@@ -107,7 +166,7 @@ nohup bash scripts/queues/queue_chain.sh \
 
 ---
 
-## §5 Codex task queue
+## §7 Codex task queue
 
 ![[codex.base#Ready to send (now)]]
 
@@ -122,7 +181,7 @@ nohup bash scripts/queues/queue_chain.sh \
 
 ---
 
-## §6 Open issues
+## §8 Open issues
 
 ![[issues.base#Active blockers]]
 
@@ -130,13 +189,13 @@ nohup bash scripts/queues/queue_chain.sh \
 
 ---
 
-## §7 Advisor align
+## §9 Advisor align
 
-详 [[ADVISOR_SYNC]] (rolling self-prep notes + 5 framing decisions register)。
+详 [[ADVISOR_SYNC]] (sync prep + 5 framing decisions register + Q1-Q11 follow-up email pending reply).
 
 ---
 
-## §8 References + quick links
+## §10 References + quick links
 
 ### Paper drafts (final prose)
 ```
@@ -145,7 +204,7 @@ docs/checkpoints/paper_drafts/
   section2_background.md     ✅ 1514w + paper.bib (57 entries)
   section3_definition.md     ✅ 863w
   section4_findings.md       🟡 1725w stale (待 codex #11)
-  section5_mechanism.md      ❌ 待 codex #13
+  section5_mechanism.md      ❌ 待 codex #13 (post Stage 2B scale-up)
   section6_routing.md        ❌ 待 Tier 1+2 prototype
   section7_generalization.md ❌ 待 WA + Claude
   section8_discussion.md     ❌ paper end-stage
@@ -153,11 +212,11 @@ docs/checkpoints/paper_drafts/
 
 ### Codex analysis docs
 ```
-docs/analysis/phantom_paper/disagreement_clusters.md           (B0+B1 9-cat)
+docs/analysis/phantom_paper/disagreement_clusters.md
 docs/analysis/phantom_paper/cross_site_pattern_consolidation.md
-docs/analysis/phantom_paper/phantom_dom_vs_som_diagnostic.md   (axis 2)
-docs/analysis/phantom_paper/som_vs_phantom_som_diagnostic.md   (axis 3 8-channel)
-docs/analysis/B1_capability_profile.md                          (Section 7 prep)
+docs/analysis/phantom_paper/phantom_dom_vs_som_diagnostic.md
+docs/analysis/phantom_paper/som_vs_phantom_som_diagnostic.md
+docs/analysis/B1_capability_profile.md
 ```
 
 ### Figures
@@ -168,13 +227,28 @@ docs/analysis/B1_capability_profile.md                          (Section 7 prep)
 
 ### Key infra paths
 ```
-configs/exp_v2_*.yaml                  per-site experiment configs
-scripts/queues/queue_phantom*.sh        chain orchestration
-scripts/maintenance/reset_vwa_sites.sh  DGX→quark PowerShell reset
-scripts/maintenance/experiment_watchdog.py  auto-clean + post-condition pipeline
-scripts/maintenance/glm/glm_*.py        GLM Sidecar (cell sync / playbook refresh / pre-launch check)
-p79/utils/auth_refresh.py               Playwright sign-in subprocess
-p79/experiment/router.py                RuleBasedRouter scaffold
+configs/exp_v2_*.yaml                              per-site experiment configs
+scripts/queues/queue_16cell_paper_grade.sh         🆕 16-cell orchestrator (post-advisor)
+scripts/queues/queue_chain.sh                      sequential chain wrapper
+scripts/queues/queue_phantom_*.sh                  per-cell launch
+scripts/maintenance/reset_vwa_sites.sh             DGX→quark PowerShell reset
+scripts/maintenance/experiment_watchdog.py         auto-clean + post-condition
+scripts/provenance/snapshot_env.py                 🆕 env fingerprint (Gap 1)
+scripts/provenance/snapshot_vwa.sh                 🆕 VWA Docker fingerprint (Gap 2)
+scripts/provenance/numerical_determinism_check.py  🆕 cross-machine drift (Gap 5)
+scripts/analysis/preregistration_decision_test.py  🆕 H1/H3/TOST canonical (Gap C2)
+p79/utils/auth_refresh.py                          Playwright sign-in subprocess
+p79/experiment/router.py                           RuleBasedRouter scaffold
+p79/agents/qwen3vl_agent.py                        🆕 HF revision pinned (Gap C1)
+p79/mechanistic/extract_hidden_states.py           🆕 HF revision pinned (Gap C1)
+```
+
+### Provenance artifacts (paper-cite-able)
+```
+results/provenance/env_dgx_baseline.json           DGX baseline lock value
+results/provenance/vwa_dgx_via_quark.json          VWA stack fingerprint
+results/provenance/preregistration_smoke_*.json    decision rule smoke tests
+docs/checkpoints/osf_lock_manifest.md              8-step DOI workflow
 ```
 
 ---

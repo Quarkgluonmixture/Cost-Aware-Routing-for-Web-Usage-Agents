@@ -37,6 +37,8 @@ class HiddenStateExtractor:
     def __init__(
         self,
         model_path: str = "Qwen/Qwen3-VL-4B-Instruct",
+        # Paper-grade: pin HF revision SHA — DGX baseline lock 2026-05-07 (笔记 §114)
+        model_revision: str = "ebb281ec70b05090aa6165b016eac8ec08e71b17",
         device: str = "cuda",
         dtype: torch.dtype = torch.bfloat16,
         min_free_vram_gb: float = 12.0,
@@ -51,16 +53,20 @@ class HiddenStateExtractor:
                     f"Wait for other GPU jobs to finish or set min_free_vram_gb=0 to skip check."
                 )
 
-        logger.info(f"Loading {model_path} for hidden state extraction (dtype={dtype})")
+        logger.info(f"Loading {model_path} (revision={model_revision[:12]}...) for hidden state extraction (dtype={dtype})")
         self.model = Qwen3VLForConditionalGeneration.from_pretrained(
             model_path,
+            revision=model_revision,
             torch_dtype=dtype,
             device_map=device,
             trust_remote_code=True,
         )
         self.model.eval()
-        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+        self.processor = AutoProcessor.from_pretrained(
+            model_path, revision=model_revision, trust_remote_code=True
+        )
         self.device = device
+        self.model_revision = model_revision
 
         # Load system prompts from the agent — single source of truth.
         from p79.agents.qwen3vl_agent import Qwen3VLAgent

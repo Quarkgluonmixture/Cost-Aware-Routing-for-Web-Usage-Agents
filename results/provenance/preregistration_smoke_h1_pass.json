@@ -1,0 +1,272 @@
+{
+  "captured_at": "2026-05-07T21:36:51.828624+00:00",
+  "n_cells": 16,
+  "thresholds": {
+    "K_h1": 12,
+    "K_h3": 11,
+    "TOST_delta_pp": 1.0,
+    "H3_min_lift_pp": 0.5
+  },
+  "input_data_sha256": "synthetic",
+  "H1": {
+    "n_cells": 16,
+    "n_pass": 14,
+    "k_threshold": 12,
+    "decision": "PASS",
+    "p_binomial_h0_random": 0.004180908203125,
+    "per_cell": [
+      {
+        "cell_id": "B0_classifieds_P-SoM_0",
+        "sr_phantom_som": 0.40498881630795674,
+        "best_baseline_sr": 0.38698145384636934,
+        "delta_pp": 1.8007362461587406,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B0_classifieds_P-text_1",
+        "sr_phantom_som": 0.3340445601854739,
+        "best_baseline_sr": 0.3163336516736913,
+        "delta_pp": 1.7710908511782586,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B0_classifieds_P-prompt_2",
+        "sr_phantom_som": 0.41789736303892305,
+        "best_baseline_sr": 0.3864375874190765,
+        "delta_pp": 3.145977561984653,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B0_reddit_P-SoM_3",
+        "sr_phantom_som": 0.38688519183617665,
+        "best_baseline_sr": 0.3873536374731002,
+        "delta_pp": -0.046844563692355345,
+        "phantom_som_wins": false
+      },
+      {
+        "cell_id": "B0_reddit_P-text_4",
+        "sr_phantom_som": 0.4123380666641533,
+        "best_baseline_sr": 0.4056159126965151,
+        "delta_pp": 0.67221539676382,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B0_reddit_P-prompt_5",
+        "sr_phantom_som": 0.28596133653619427,
+        "best_baseline_sr": 0.260894442480761,
+        "delta_pp": 2.5066894055433275,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B0_shopping_P-SoM_6",
+        "sr_phantom_som": 0.39467142168913055,
+        "best_baseline_sr": 0.39107340257152295,
+        "delta_pp": 0.3598019117607598,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B0_shopping_P-text_7",
+        "sr_phantom_som": 0.4166606735249809,
+        "best_baseline_sr": 0.4072582163147163,
+        "delta_pp": 0.9402457210264559,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B0_shopping_P-prompt_8",
+        "sr_phantom_som": 0.3274689844284579,
+        "best_baseline_sr": 0.2958179755803478,
+        "delta_pp": 3.165100884811012,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B1_classifieds_P-SoM_9",
+        "sr_phantom_som": 0.3639476276022633,
+        "best_baseline_sr": 0.3516270760334936,
+        "delta_pp": 1.232055156876971,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B1_classifieds_P-text_10",
+        "sr_phantom_som": 0.317746716514378,
+        "best_baseline_sr": 0.3013028218739559,
+        "delta_pp": 1.6443894640422119,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B1_classifieds_P-prompt_11",
+        "sr_phantom_som": 0.457026481035137,
+        "best_baseline_sr": 0.420487771243229,
+        "delta_pp": 3.6538709791907986,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B1_reddit_P-SoM_12",
+        "sr_phantom_som": 0.4278832731079128,
+        "best_baseline_sr": 0.3926065195737124,
+        "delta_pp": 3.5276753534200402,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B1_reddit_P-text_13",
+        "sr_phantom_som": 0.39943378292304366,
+        "best_baseline_sr": 0.36317142811540815,
+        "delta_pp": 3.626235480763551,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B1_reddit_P-prompt_14",
+        "sr_phantom_som": 0.37196438257769343,
+        "best_baseline_sr": 0.3660277795849099,
+        "delta_pp": 0.5936602992783535,
+        "phantom_som_wins": true
+      },
+      {
+        "cell_id": "B1_shopping_P-SoM_15",
+        "sr_phantom_som": 0.29437973780832166,
+        "best_baseline_sr": 0.2948523993985973,
+        "delta_pp": -0.0472661590275647,
+        "phantom_som_wins": false
+      }
+    ]
+  },
+  "H3": {
+    "n_cells": 16,
+    "n_pass": 16,
+    "k_threshold": 11,
+    "min_lift_pp": 0.5,
+    "decision": "PASS",
+    "per_cell": [
+      {
+        "cell_id": "B0_classifieds_P-SoM_0",
+        "oracle_3mode_sr": 0.38698145384636934,
+        "drop_one_lift_pp": 2.0675971780695455,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B0_classifieds_P-text_1",
+        "oracle_3mode_sr": 0.3163336516736913,
+        "drop_one_lift_pp": 2.011608408314448,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B0_classifieds_P-prompt_2",
+        "oracle_3mode_sr": 0.3864375874190765,
+        "drop_one_lift_pp": 1.1202951386386653,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B0_reddit_P-SoM_3",
+        "oracle_3mode_sr": 0.3873536374731002,
+        "drop_one_lift_pp": 1.7217739468876032,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B0_reddit_P-text_4",
+        "oracle_3mode_sr": 0.4056159126965151,
+        "drop_one_lift_pp": 1.5973986076711786,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B0_reddit_P-prompt_5",
+        "oracle_3mode_sr": 0.260894442480761,
+        "drop_one_lift_pp": 1.4871557329306493,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B0_shopping_P-SoM_6",
+        "oracle_3mode_sr": 0.39107340257152295,
+        "drop_one_lift_pp": 0.9772318572304404,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B0_shopping_P-text_7",
+        "oracle_3mode_sr": 0.4072582163147163,
+        "drop_one_lift_pp": 2.3656676484538135,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B0_shopping_P-prompt_8",
+        "oracle_3mode_sr": 0.2958179755803478,
+        "drop_one_lift_pp": 2.427677091947602,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B1_classifieds_P-SoM_9",
+        "oracle_3mode_sr": 0.3516270760334936,
+        "drop_one_lift_pp": 1.080659004805516,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B1_classifieds_P-text_10",
+        "oracle_3mode_sr": 0.3013028218739559,
+        "drop_one_lift_pp": 2.0152078439328736,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B1_classifieds_P-prompt_11",
+        "oracle_3mode_sr": 0.420487771243229,
+        "drop_one_lift_pp": 1.2825921004692498,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B1_reddit_P-SoM_12",
+        "oracle_3mode_sr": 0.3926065195737124,
+        "drop_one_lift_pp": 2.3995297464642413,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B1_reddit_P-text_13",
+        "oracle_3mode_sr": 0.36317142811540815,
+        "drop_one_lift_pp": 0.6647459763932948,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B1_reddit_P-prompt_14",
+        "oracle_3mode_sr": 0.3660277795849099,
+        "drop_one_lift_pp": 0.734268586417036,
+        "passes_min_lift": true
+      },
+      {
+        "cell_id": "B1_shopping_P-SoM_15",
+        "oracle_3mode_sr": 0.2948523993985973,
+        "drop_one_lift_pp": 1.8953412803824776,
+        "passes_min_lift": true
+      }
+    ]
+  },
+  "TOST": {
+    "n_cells": 16,
+    "delta_pp": 1.0,
+    "mean_diff_pp": -0.008793531814441091,
+    "ci_95": [
+      -0.23093412444333472,
+      0.21334706081445254
+    ],
+    "decision": "PASS",
+    "interpretation": "95% CI [-0.23, 0.21] \u2282 [-1.0, +1.0]",
+    "raw_diffs_pp": [
+      -0.15210538007933705,
+      -0.3490594489604759,
+      0.6434655207033346,
+      -0.1053250632739422,
+      0.488044523220843,
+      -0.7981714890969105,
+      0.10801718499307,
+      0.012705028032922172,
+      0.06445377115251727,
+      0.12104162266382001,
+      -0.6562810220870463,
+      0.06495987991688157,
+      0.14368189364986073,
+      0.4693201346083642,
+      0.3703827532653525,
+      -0.5658264177403116
+    ]
+  },
+  "overall_decision": "PASS",
+  "summary_paper_table5": {
+    "H1_text": "H1: Phantom-SoM \u2265 best baseline in 14/16 cells (threshold 12, decision PASS)",
+    "H3_text": "H3: drop-one oracle lift \u2265 0.5pp in 16/16 cells (threshold 11, decision PASS)",
+    "TOST_text": "TOST: cost equivalence \u03b4=\u00b11.0pp, observed -0.01pp, CI95 [-0.23093412444333472, 0.21334706081445254], decision PASS"
+  }
+}

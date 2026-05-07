@@ -50,6 +50,11 @@ class Qwen3VLAgent:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.model_path = config.get("model", {}).get("path", "Qwen/Qwen3-VL-4B-Instruct")
+        # Paper-grade: pin HF revision SHA (see env_snapshot.json + osf_lock_manifest.md)
+        # Default = revision captured 2026-05-07 in DGX baseline lock (笔记 §114).
+        self.model_revision = config.get("model", {}).get(
+            "revision", "ebb281ec70b05090aa6165b016eac8ec08e71b17"
+        )
         self.device = config.get("model", {}).get("device", "cuda")
         self.quantization = config.get("model", {}).get("quantization", "none")
 
@@ -80,15 +85,21 @@ class Qwen3VLAgent:
             quantization_config = BitsAndBytesConfig(load_in_8bit=True)
             model_dtype = "auto"
 
+        logger.info(f"Loading model {self.model_path} (revision={self.model_revision[:12]}...)")
         try:
             self.model = Qwen3VLForConditionalGeneration.from_pretrained(
                 self.model_path,
+                revision=self.model_revision,
                 torch_dtype=model_dtype,
                 device_map="auto",
                 quantization_config=quantization_config,
                 trust_remote_code=True,
             )
-            self.processor = AutoProcessor.from_pretrained(self.model_path, trust_remote_code=True)
+            self.processor = AutoProcessor.from_pretrained(
+                self.model_path,
+                revision=self.model_revision,
+                trust_remote_code=True,
+            )
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             raise e
