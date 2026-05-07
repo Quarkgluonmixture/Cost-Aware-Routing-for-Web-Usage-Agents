@@ -25,10 +25,10 @@ updated: 2026-05-07
 
 **Paper hook**: → [[paper_planning#§1]] (canonical, 3 arms / 4-fold drop-in)
 
-> [!todo] Top 3 forward actions (priority order, 2026-05-07 update post-§114 provenance)
-> 1. **Quark SSH cert + A100 SSH verify** ⭐⭐⭐ — UCL Condense A100 40GB (10.52.6.89, ProxyJump via `ssh.condenser.arc.ucl.ac.uk`). User-side: portal cert (id_arc + id_arc.signed) + ~/.ssh/config. ETA 10 min. **Unblocks**: 16-cell rerun launch (R5 orchestrator) + Mechanistic Stage 2B scale-up + provenance A100 baseline (§5 below).
-> 2. **Advisor email reply wait** (~2-5d, passive) — Q1-Q11 in [[advisor_sync_5_5_followup]]. Critical: K_h1=12 / K_h3=11 / TOST δ=1.0pp threshold lock + paper split 3v4. Reply triggers OSF DOI 8-step lock + 16-cell launch gate clearance.
-> 3. **Mechanistic Stage 2B curated scale-up** (post 1+2 parallel) — 24 strong + 15 reverse mirage tasks (`results/mechanistic/archive_subset_b1_cls/`). A100 wallclock: ~24h forward + ~12h reverse. Paper §5 mechanism upgrade from N=3 pilot to N=24 paper-grade.
+> [!todo] Top 3 forward actions (priority order, 2026-05-07 evening update — Myriad SSH unlock changes path)
+> 1. **Mechanistic Stage 2B+2C launch on Myriad** ⭐⭐⭐ NOW (passwordless SSH ready 5/7 evening) — `bash scripts/setup/myriad_bootstrap.sh` (~30-45 min one-shot) → `qsub scripts/queues/qsub_stage2b_myriad.sh` (forward 24 task, ~24h) + `qsub scripts/queues/qsub_stage2c_myriad.sh` (reverse 15 task, ~12h, parallel). **Doesn't wait for A100** — pure archived-data forward pass. Paper §5 mechanism upgrade from N=3 pilot to N=24+15 paper-grade in ~36h.
+> 2. **Quark SSH cert → A100 SSH verify** ⭐⭐ — needed for 16-cell rerun (VWA self-host on A100). Portal cert (id_arc + id_arc.signed) + ~/.ssh/config. ETA 10 min once user has time.
+> 3. **Advisor email reply wait** (~2-5d, passive) — Q1-Q11 in [[advisor_sync_5_5_followup]]. K_h1=12 / K_h3=11 / TOST δ=1.0pp threshold lock + paper split 3v4. Reply triggers OSF DOI 8-step lock + 16-cell launch gate clearance.
 
 ---
 
@@ -71,30 +71,52 @@ Output → paper §5 Table 5 quotable JSON.
 
 ---
 
-## §2 Mechanistic Stage 2B + Stage 2C scale-up (A100 parallel)
+## §2 Mechanistic Stage 2B + Stage 2C scale-up (Myriad NOW, A100 backup)
 
 **Pre-curated dataset** (笔记 §113, commit `cd50c34`): `results/mechanistic/archive_subset_b1_cls/` (24 strong + 15 reverse, 16.5MB).
 
-**Launch commands** (A100 SSH 通后):
-```bash
-# Stage 2B forward direction (24 task × 36 layer × 50 max_new_tokens)
-.venv/bin/python3 scripts/mechanistic/run_stage2b_continuation_pilot.py \
-    --site classifieds --n-tasks 24 --step 2 --max-new-tokens 50 \
-    --output-dir results/mechanistic/stage2b_curated_b1_cls
-    # Auto-emits: env_snapshot.json + run_manifest.json (Gap 3 §114)
+### §2a Myriad path ⭐ ACTIVE (no A100 dependency, ssh ready)
 
-# Stage 2C reverse direction (15 task asymmetry confirm)
-.venv/bin/python3 scripts/mechanistic/run_stage2b_continuation_pilot.py \
-    --reverse --site classifieds --n-tasks 15 --step 2 \
-    --output-dir results/mechanistic/stage2c_reverse_curated_b1_cls
+```bash
+# Phase A — one-shot bootstrap (~30-45 min, login node only):
+ssh myriad
+bash ~/Scratch/p79/scripts/setup/myriad_bootstrap.sh
+# 自动: git pull + venv + torch + p79 install + HF model pre-download (revision-pinned) + env_snapshot
+
+# Phase B — submit batch jobs (parallel, different GPUs):
+cd ~/Scratch/p79
+qsub scripts/queues/qsub_stage2b_myriad.sh    # forward 24 task ~24h
+qsub scripts/queues/qsub_stage2c_myriad.sh    # reverse 15 task ~12h
+qstat -u $USER                                 # check status
+
+# Phase C — monitor + retrieve:
+ssh myriad tail -f ~/Scratch/p79/logs/qsub_stage2b_b1_cls.*.out
+# 完成后:
+scp -r myriad:~/Scratch/p79/results/mechanistic/stage2b_curated_b1_cls_myriad/ ./results/mechanistic/
 ```
 
-**Expected output**:
-- L11 forward causal layer confirmation (笔记 §111 task 0 finding extended to N=24)
-- Reverse null effect cross-task confirm → paper §5 strongest mechanism evidence
-- Token overlap distribution histogram per layer
+**Why Myriad first** (vs waiting for A100 SSH):
+- ✅ SSH passwordless ready 5/7 evening (`ssh myriad`)
+- ✅ Stage 2B/2C 跑 frozen archive_subset, **不依赖 VWA Docker** (Myriad CGNAT block irrelevant)
+- ✅ L-type 4× A100 40GB single GPU = Qwen3-VL-4B 装得下
+- ✅ V/U-type 4× A100 80GB enables future Llama-4 cross-arch (A100 Condense 40GB can't)
+- ✅ 不需要 IDE (terminal+qsub batch native)
 
-**Wallclock A100**: forward ~24h + reverse ~12h (parallel-able if memory allows, sequential safer)
+### §2b A100 path (backup if Myriad queue too slow)
+
+```bash
+# 等 A100 SSH cert 之后:
+ssh condense-a100
+cd ~/workspace/p79  # post git clone + venv setup
+.venv/bin/python3 scripts/mechanistic/run_stage2b_continuation_pilot.py \
+    --site classifieds --n-tasks 24 --step 2 --max-new-tokens 50 \
+    --output-dir results/mechanistic/stage2b_curated_b1_cls_a100
+```
+
+**Expected output (either path)**:
+- L11 forward causal layer confirmation (笔记 §111 task 0 → N=24)
+- Reverse null effect cross-task → paper §5 strongest mechanism evidence
+- Token overlap per-layer distribution
 
 **Followup paper-grade artifact**: `run_manifest.json` aggregate field → paper Table 6 / Figure mechanism panel.
 
