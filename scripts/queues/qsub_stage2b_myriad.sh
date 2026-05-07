@@ -63,6 +63,9 @@ module load pytorch/2.1.0/gpu
 
 # pip install --user goes here (NOT ~/.local which fills Home quota)
 export PYTHONUSERBASE="$HOME/Scratch/python_user"
+# PYTHONPATH prepend user-site so pinned urllib3<2 wins over module's v2.3.0
+# (RHEL 7 OpenSSL 1.0.2k incompatible with urllib3 v2)
+export PYTHONPATH="$PYTHONUSERBASE/lib/python3.9/site-packages:${PYTHONPATH:-}"
 
 # Compute nodes are firewalled — force HF offline (use cache only)
 export HF_HUB_OFFLINE=1

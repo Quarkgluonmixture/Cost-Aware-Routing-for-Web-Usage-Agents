@@ -123,10 +123,24 @@ export PYTHONUSERBASE="$HOME/Scratch/python_user"
 mkdir -p "$PYTHONUSERBASE"
 log "  PYTHONUSERBASE: $PYTHONUSERBASE"
 
-# Persist in .bashrc (idempotent: only add if not already there)
+# Critical: PYTHONPATH must put user-site BEFORE module-bundled site-packages,
+# because pytorch/2.1.0/gpu ships urllib3 v2.3.0 which is incompatible with
+# RHEL 7 OpenSSL 1.0.2k. Without this, our pinned urllib3<2 in user-site is
+# shadowed by the module's v2.3.0 and verify fails.
+USER_SITE="$PYTHONUSERBASE/lib/python3.9/site-packages"
+mkdir -p "$USER_SITE"
+export PYTHONPATH="$USER_SITE:${PYTHONPATH:-}"
+log "  PYTHONPATH prepended user-site: $USER_SITE"
+
+# Persist both in .bashrc (idempotent: only add if not already there)
 if ! grep -q "PYTHONUSERBASE.*Scratch/python_user" "$HOME/.bashrc" 2>/dev/null; then
-  echo 'export PYTHONUSERBASE=$HOME/Scratch/python_user' >> "$HOME/.bashrc"
-  log "  Added PYTHONUSERBASE to ~/.bashrc"
+  cat >> "$HOME/.bashrc" <<'BASHRC_EOF'
+
+# Myriad p79 environment (added by myriad_bootstrap.sh)
+export PYTHONUSERBASE=$HOME/Scratch/python_user
+export PYTHONPATH=$PYTHONUSERBASE/lib/python3.9/site-packages:$PYTHONPATH
+BASHRC_EOF
+  log "  Added PYTHONUSERBASE + PYTHONPATH to ~/.bashrc"
 fi
 
 # ---------------------------------------------------------------------------
