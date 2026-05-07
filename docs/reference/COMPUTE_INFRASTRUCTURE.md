@@ -143,15 +143,74 @@ Host condense-a100
 **Why quark is the central gateway**:
 - ✅ Tailscale → DGX (lab tailnet member)
 - ✅ Cisco AnyConnect → UCL VPN (Myriad + bastion + Condense reachable)
-- ✅ Local Docker Desktop WSL2 backend running VWA stack (5 containers, ports 9980/9999/7770/7780/8888/4399)
+- ✅ Local Docker Desktop WSL2 backend running VWA stack (see §1.4.1 below)
 - ✅ User has admin (can install OpenSSH Server / generate keys / configure)
 - ✅ VSCode for Windows + Remote-SSH extension → A100 dev workstation
+- ✅ `(ai_learning)` conda env present (cert/scp scripts use existing Python)
 
 **Roles**:
 - **Primary SSH client** for A100 Condense + Myriad
 - **VWA Docker host** for paper-grade 16-cell rerun (DGX or A100 needs to reach via Tailscale)
 - **Cert generation host** (UCL VPN + browser → SSH Portal)
 - **Data transfer pivot** (rsync DGX → quark via Tailscale, scp quark → A100 via UCL VPN+bastion)
+
+#### §1.4.1 VWA Docker stack (verified state 2026-05-07)
+
+**Docker engine**: Docker Desktop with **WSL2 backend** (modern default, NVIDIA GPU passthrough capable).
+- Server: `linux / amd64 / 6.6.87.2-microsoft-standard-WSL2` (kernel string indicates WSL2 distro)
+- Engine endpoint: `npipe:////./pipe/dockerDesktopLinuxEngine` (Windows ↔ WSL2 named pipe)
+- Default context: `desktop-linux *` (auto-selected by CLI)
+- Daemon process: lives in WSL2 special distro `docker-desktop` (NOT in user's Ubuntu WSL distro)
+- Disk: container images stored in WSL2 VM disk (typically `C:\Users\<user>\AppData\Local\Docker\wsl\disk\` virtual disk image)
+
+**WSL distros** (`wsl --list -v`):
+| Distro | Version | State | Role |
+|---|---|---|---|
+| Ubuntu | 2 | Running | User's Ubuntu workspace (independent of Docker Desktop) |
+| docker-desktop | 2 | Running | Docker engine VM (auto-managed by Docker Desktop) |
+
+**VWA stack** (6 containers, all up 2026-05-07 after Docker Desktop wake from sleep):
+
+| Container Name | Image | Port (host:container) | Site / Role |
+|---|---|---|---|
+| `classifieds` | osclass-* | 9980:9980 | OSClass classifieds frontend (paper-grade VWA cls) |
+| `classifieds-com` | osclass-postgres / mysql | (internal) | classifieds DB backend |
+| `vwa-reddit` | postmill-pop | 9999:80 | Postmill (Reddit-like, paper-grade VWA red) |
+| `vwa-shopping` | shopping_fin | 7770:80 | Magento frontend (paper-grade VWA shop) |
+| `shopping_admin` | shopping_admin | 7780:80 | Magento admin panel (rarely used in agent runs) |
+| `vwa-homepage` | python:3.10-* | 4399:4399 | VWA hub (start page) |
+| `vwa-wikipedia` | kiwix/kiwix-serve | 8888:80 | Wikipedia knowledge base |
+
+**Network exposure**: containers bind to `0.0.0.0:<port>` on quark Windows host, accessible via:
+- Quark localhost: `http://localhost:9980` (PowerShell debug)
+- Tailscale lab tailnet: `http://100.95.81.103:9980` (DGX access via Tailscale, used in paper-grade runs)
+- UCL VPN tunnel: NOT exposed (firewall, irrelevant for our work)
+
+**Bringing up / restarting** (PowerShell):
+```powershell
+# Check state
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+# Restart all VWA containers (if Docker Desktop slept and containers stopped)
+docker compose -f <path-to-vwa-compose.yml> up -d
+# OR individually:
+docker start classifieds classifieds-com vwa-reddit vwa-shopping shopping_admin vwa-homepage vwa-wikipedia
+```
+
+**Site reset (paper-grade between conditions)**:
+- Reset script: `scripts/maintenance/reset_vwa_sites.sh` (run from DGX over Tailscale to quark, see CLAUDE.md)
+- Implementation detail: PowerShell on quark restarts container + restores DB snapshot via Docker volume reset
+- Auth file: DGX-side `.auth/` (gitignored) holds Playwright session state per site
+
+**Implications for compute path**:
+- ✅ **DGX → quark VWA** path used for historic Phase 1 paper-grade runs (B1 dom/som/vision + B0 phantom_*)
+- ✅ Same path will be used for **future fresh paper-grade runs from lab GPU** (e.g. DGX-side B1 work post-Phase-A if A100 Condense busy)
+- ❌ **Myriad → quark VWA** blocked by CGNAT (Myriad outbound firewall denies Tailscale 100.x.x.x range; documented `MYRIAD_SMOKE_REPORT.md`)
+- ⚠️ **A100 Condense → quark VWA** not yet configured — would require Tailscale install on A100 VM + lab admin approval to add to lab tailnet. Only relevant when launching 16-cell rerun on A100 (post advisor email + threshold lock).
+
+**Quark sleep/Docker Desktop quirk**: when Windows sleeps, Docker Desktop suspends → containers Stopped. Wake from sleep → Docker Desktop auto-restarts but containers may need manual `docker start` (some compose configs auto-restart, depends on `restart: unless-stopped` policy). VWA containers verified to auto-restart 2026-05-07 (50 seconds after Docker Desktop wake — likely from auto-restart policy).
+
+**Ref**: `feedback_wsl_shutdown_quark_rule.md` (memory) — quark主机 sleep/restart 之前必须 stop DGX 实验, 否则 VWA 容器全 stop 致 timeout.
 
 ### §1.5 Desk@Anywhere — fallback gateway
 
