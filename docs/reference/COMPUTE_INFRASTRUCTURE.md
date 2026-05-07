@@ -18,7 +18,7 @@ audience: self + advisor sync prep
 
 | Tier | Platform | Status | Use case |
 |---|---|---|---|
-| **0** | UCL Condense **A100 80GB dedicated** | ✅ allocated 5/6 / GPU attached 5/7 by Steve / SSH path pending cert | **Paper-grade primary**: Stage 2B scale-up + Llama-4 cross-arch + 16-cell rerun |
+| **0** | UCL Condense **A100 40GB dedicated** | ✅ allocated 5/6 / GPU attached 5/7 by Steve / SSH path pending cert | **Paper-grade primary**: Stage 2B scale-up + Llama-4 cross-arch (small variants only, 40GB constraint) + 16-cell rerun (pending VWA Tailscale path) |
 | **1** | UCL **Myriad HPC** (V/U-type 4× A100 80GB / L-type 4× A100 40GB / E/F-type 2× V100) | ✅ account activated 5/6, password SSH from quark works 5/7 | Backup + CPU batch + parallel cross-arch + future SAE training (4-GPU data-parallel) |
 | **2** | **DGX Spark** (`spark-9ea3`) shared lab | ✅ stable, no admin/sudo, lab Tailscale `981526092.github` | Archived data source / VWA Docker Tailscale bridge / curation done (笔记 §113) |
 | **3** | Advisor 5090 (post AI Center 搬运) | ⏳ pending | Backup if Condense fails, advisor offered 5/5 sync |
@@ -29,15 +29,31 @@ audience: self + advisor sync prep
 
 ## §1 Platforms Detail
 
-### §1.1 UCL Condense A100 80GB dedicated ⭐ Tier 0
+### §1.1 UCL Condense A100 40GB dedicated ⭐ Tier 0
 
 **Provider**: UCL ARC Condense (Harvester KubeVirt over Rancher).
 **Namespace**: `arc-proj-webarena-ns`.
 **VM**: `a100-jiaming-mech` — 16 CPU, 64 GB RAM, 500 GB disk, Ubuntu 22.04 cloud image, KeyPair `jiaming-dgx-spark` (fingerprint `26:53:bb:2f:26:e8:6c:9b:56:ff:14:aa:2a:3a:fe:fe`).
-**GPU**: 1× NVIDIA A100 80GB (PCI passthrough, attached by Steve 5/7 morning after VM created — VM moved to host with GPU, IP changed 10.52.12.75 → **10.52.6.89**).
+**GPU**: 1× NVIDIA A100 **40GB** (PCI passthrough, attached by Steve 5/7 morning after VM created — VM moved to host with GPU, IP changed 10.52.12.75 → **10.52.6.89**). 40GB confirmed by user 5/7.
 **Cost**: $0 (UCL allocation, NOT student-funded; supersedes RunPod budget plan).
 **Wallclock**: unlimited (dedicated, single-tenant, no queue).
 **Persistent state**: 500 GB disk persistent.
+
+**40GB capacity analysis** (paper-strategic):
+| Model | Params | bf16 size | fp16+activations buffer | Fits 40GB? |
+|---|---|---|---|---|
+| Qwen3-VL-4B (B1) | 4B | ~8 GB | ~12-15 GB | ✅ comfortable, 25 GB headroom |
+| Qwen2-VL-7B | 7B | ~14 GB | ~20 GB | ✅ comfortable |
+| Llama-3.2-11B-Vision | 11B | ~22 GB | ~30 GB | ✅ tight but OK |
+| Llama-4 Scout (~17B) | 17B | ~34 GB | ~38 GB | ⚠️ borderline OOM, need 4-bit quant or shorter sequences |
+| Llama-4 Maverick (~70B) | 70B | ~140 GB | n/a | ❌ **does not fit** — use Llama-3.2-90B 4-bit on Myriad instead |
+| SAE training (paper v2) | varies | typically need 2-4× model size | | ❌ single-card 40GB infeasible — defer to Myriad 4×80GB data-parallel |
+
+**Reachability from A100 outbound**:
+- ✅ Internet (HuggingFace download / pip / GitHub clone)
+- ✅ UCL services on UCL backbone (10.32.x.x bastion etc.)
+- ❌ **quark VWA Docker (100.95.81.103:9980/9999/7770)** — NOT reachable; would need Tailscale install + lab tailnet membership (lab admin approval pending). **16-cell rerun on A100 blocked until this configured**.
+- ❌ DGX (`100.99.92.18`) Tailscale — same as quark VWA
 
 **Access path** (post-Steve 5/7 clarification):
 - ❌ Direct SSH not allowed
@@ -329,13 +345,15 @@ DGX                  Quark                   A100/Myriad
 
 ## §6 Compute path priority (P79 paper-grade work)
 
-| Workload | Primary | Backup | Reason |
+| Workload | Primary | Backup | Reason / 40GB-aware |
 |---|---|---|---|
-| Mechanistic Stage 2B scale-up (24-task curated) | Tier 0 A100 Condense | Tier 1 Myriad V-type | Both work; Condense faster iteration |
-| Llama-4 cross-arch validation | Tier 0 A100 Condense | Tier 1 Myriad V-type 4× A100 | Cross-arch needs ≥1 GPU 80GB |
-| 16-cell paper-grade rerun (post-advisor email + threshold lock) | Tier 0 A100 Condense | ⚠️ Myriad blocked (CGNAT VWA) | needs VWA Docker reach via Tailscale |
-| SAE training (paper v2 deferred) | Tier 1 Myriad V-type 4× A100 data-parallel | Tier 0 single A100 (slower) | data-parallel scales SAE training |
-| CPU analysis batch (figures, aggregation) | DGX local | Tier 1 Myriad D-type | no GPU needed, save A100 quota |
+| Mechanistic Stage 2B scale-up (24-task curated, B1 Qwen3-VL-4B) | Tier 0 A100 40GB Condense | Tier 1 Myriad V-type 80GB | B1 4B (~10GB) fits 40GB comfortably; Condense faster iteration |
+| Llama-3.2-11B-Vision cross-arch | Tier 0 A100 40GB Condense | Tier 1 Myriad V-type 80GB | ~22GB bf16 fits 40GB tight, fine |
+| Llama-4 Scout (~17B) cross-arch | ⚠️ Tier 0 borderline (use 4-bit quant) | Tier 1 Myriad V-type 80GB | 40GB headroom thin, prefer Myriad if fp16 needed |
+| Llama-4 Maverick (~70B) cross-arch | ❌ NOT viable on Tier 0 | Tier 1 Myriad V-type 80GB (4-bit single-card) or 4× data-parallel | 40GB single-card insufficient |
+| 16-cell paper-grade rerun | ⚠️ Tier 0 **blocked** until A100 → quark VWA Tailscale path configured | Fallback: DGX shared (lab tailnet, GPU contention slow) | Needs VWA Docker reach |
+| SAE training (paper v2 deferred) | ❌ Tier 0 single 40GB infeasible | Tier 1 Myriad V-type 4× A100 80GB data-parallel | data-parallel scales SAE training |
+| CPU analysis batch (figures, aggregation) | DGX local | Tier 1 Myriad D-type | no GPU needed |
 | Smoke tests / curation (small) | DGX (if shared GPU available) | Tier 0 A100 | already done 5/6, 笔记 §113 |
 
 ---
