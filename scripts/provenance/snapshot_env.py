@@ -30,6 +30,7 @@ Output schema (paper §3 / Appendix D quotable fields):
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import platform
@@ -38,6 +39,14 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# Files whose content materially affects scoring (paper-grade evaluator SHA).
+# Add new files here when introducing new score-affecting modules.
+EVALUATOR_SOURCE_FILES = [
+    "p79/experiment/analysis.py",      # compute_adjusted_success + FP rules
+    "p79/experiment/environment.py",   # VwaEvaluator wrapper
+    "p79/experiment/metrics.py",       # aggregate_condition_metrics (SR roll-up)
+]
 
 logger = logging.getLogger("snapshot-env")
 
@@ -114,6 +123,28 @@ def capture_env_snapshot(
             lambda: _hf_revision(m),
             default="unavailable", errors=errors, label=f"hf:{m}"
         )
+
+    # Evaluator code SHA — paper-grade: scoring logic must be pinnable independent
+    # of git commit (which can change for non-scoring reasons like docs).
+    def _evaluator_sha():
+        repo_root = Path(__file__).resolve().parents[2]
+        h = hashlib.sha256()
+        per_file = {}
+        for rel_path in EVALUATOR_SOURCE_FILES:
+            f = repo_root / rel_path
+            if not f.exists():
+                per_file[rel_path] = "MISSING"
+                continue
+            content = f.read_bytes()
+            file_h = hashlib.sha256(content).hexdigest()
+            per_file[rel_path] = file_h
+            h.update(content)
+        return {
+            "combined_sha256": h.hexdigest(),
+            "per_file_sha256": per_file,
+            "files": EVALUATOR_SOURCE_FILES,
+        }
+    snap["evaluator_code"] = _safe(_evaluator_sha, default={}, errors=errors, label="evaluator-sha")
 
     # Git
     def _git_info():

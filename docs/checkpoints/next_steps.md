@@ -135,6 +135,7 @@ From 2026-05-07 pipeline audit (笔记 §114 follow-up):
 | 🟡 R2 | A100 cron / live status setup (cells.base / PLAYBOOK) | 1 h | A100 SSH + crontab dump |
 | 🟡 R3 | Energy tracking pynvml test on A100 | 15 min | A100 SSH |
 | 🟡 R4 | Stage 2B `--resume` flag for reboot recovery | 10 min | Independent (can do on DGX) |
+| 🟡 R6 | `check_evaluator_consistency.py` (Gate 7 in `queue_16cell_paper_grade.sh`) — verify all cells' most-recent `rederive_metadata.evaluator_code_sha` == lock-time SHA | 30 min | OSF DOI lock prep (笔记 §115 Protocol B §6) |
 | 🟢 N1 | Bonferroni correction paper §3 paragraph | 10 min | Paper write phase |
 | 🟢 N2 | Power analysis script | 30 min | Paper write phase |
 | 🟢 N3 | Phantom variant FP rules | 1 h | Post 16-cell rerun |

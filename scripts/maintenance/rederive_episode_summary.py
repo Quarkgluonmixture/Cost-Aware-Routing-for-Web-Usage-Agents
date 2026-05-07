@@ -214,6 +214,39 @@ def _process_episode(
         summary["fp_reason"] = fp_reason
         summary["has_effective_action"] = has_eff
 
+    # Paper-grade audit trail (笔记 §115, reeval_audit_protocol.md): every
+    # rederive invocation appends to summary['rederive_metadata'] history list.
+    # Allows reviewer to ask "this episode's SR was re-derived how many times,
+    # by which evaluator code SHA, when?" — see Protocol B for spec.
+    try:
+        from datetime import datetime as _dt, timezone as _tz
+        import hashlib as _hashlib
+        _eval_files = [
+            _REPO_ROOT / "p79/experiment/analysis.py",
+            _REPO_ROOT / "p79/experiment/environment.py",
+            _REPO_ROOT / "p79/experiment/metrics.py",
+        ]
+        _h = _hashlib.sha256()
+        for _f in _eval_files:
+            if _f.exists():
+                _h.update(_f.read_bytes())
+        evaluator_sha = _h.hexdigest()
+        new_entry = {
+            "rederived_at": _dt.now(_tz.utc).isoformat(),
+            "evaluator_code_sha": evaluator_sha,
+            "fp_rule_version": "§95_v2.0_na_eval",  # bumped if §95 reform
+            "rewrite_set": sorted(list(rewrite_set)) if isinstance(rewrite_set, set) else list(rewrite_set),
+            "trigger": "rederive_episode_summary.py",
+        }
+        history = summary.get("rederive_metadata", [])
+        if isinstance(history, dict):  # legacy single-entry — promote to list
+            history = [history]
+        history.append(new_entry)
+        summary["rederive_metadata"] = history
+    except Exception as _e:
+        # Fail-soft: never block rederive on metadata write
+        pass
+
     condition_dir = summary_path.parent.parent
     logger = LoggerV2(condition_dir)
     logger.write_episode_summary(site, task_id, summary)
