@@ -55,6 +55,9 @@ echo "[$(date '+%H:%M:%S')] GPU info:"
 nvidia-smi --query-gpu=name,memory.total,memory.free,driver_version --format=csv
 
 # Load Myriad modules (varies by node — fail-soft)
+# CRITICAL: gcc-libs/10.2.0 must load BEFORE python (provides modern libstdc++
+# for torch C++ extensions; RHEL 7 system libstdc++ too old, breaks at import)
+module load gcc-libs/10.2.0 2>/dev/null || true
 module load python/3.11.4 2>/dev/null || module load python/3.11 2>/dev/null || module load python3 2>/dev/null || true
 module load cuda/12.1 2>/dev/null || module load cuda/11.8 2>/dev/null || module load cuda 2>/dev/null || true
 

@@ -42,6 +42,34 @@ if ! curl -sS --max-time 5 https://huggingface.co/ -I &>/dev/null; then
 fi
 log "  Internet: OK"
 
+# Myriad-specific gotcha 1: gcc-libs/10.2.0 must be loaded BEFORE python+torch
+# import to provide modern libstdc++ (RHEL 7 system libstdc++ is too old, will
+# cause GLIBCXX_3.4.X not found errors at torch C++ extension import).
+log "=== Step 1a: module load gcc-libs/10.2.0 (Myriad RHEL 7 GLIBCXX fix) ==="
+module load gcc-libs/10.2.0 2>/dev/null && log "  gcc-libs/10.2.0 loaded" \
+  || log "  WARN: gcc-libs/10.2.0 not available; torch C++ ext may fail"
+
+# Myriad-specific gotcha 2: ~/.cache must symlink to Scratch
+# (Home quota typically 50 GB; one HF model = 10 GB; cache will explode Home).
+log "=== Step 1b: ~/.cache → Scratch symlink (Home quota protection) ==="
+mkdir -p "$HOME/Scratch/cache"
+if [ -L "$HOME/.cache" ]; then
+  log "  ~/.cache already symlinked: $(readlink "$HOME/.cache")"
+elif [ -d "$HOME/.cache" ]; then
+  # Move existing content to Scratch then symlink
+  log "  ~/.cache is real dir — moving content to ~/Scratch/cache"
+  if [ -n "$(ls -A "$HOME/.cache" 2>/dev/null)" ]; then
+    mv "$HOME/.cache"/* "$HOME/Scratch/cache/" 2>/dev/null || true
+    mv "$HOME/.cache"/.* "$HOME/Scratch/cache/" 2>/dev/null || true
+  fi
+  rmdir "$HOME/.cache" 2>/dev/null || rm -rf "$HOME/.cache"
+  ln -s "$HOME/Scratch/cache" "$HOME/.cache"
+  log "  ~/.cache → ~/Scratch/cache (content migrated)"
+else
+  ln -s "$HOME/Scratch/cache" "$HOME/.cache"
+  log "  ~/.cache → ~/Scratch/cache (created)"
+fi
+
 # ---------------------------------------------------------------------------
 # Step 2: Clone or update repo
 # ---------------------------------------------------------------------------
@@ -106,13 +134,18 @@ fi
 log "  CUDA module: ${CUDA_VERSION:-not loaded — may need module load cuda manually}"
 
 if ! python3 -c "import torch" &>/dev/null; then
-  log "  Installing torch (this is 1-3 GB, takes ~5-10 min)..."
+  log "  Installing torch (Myriad: --only-binary=:all: avoids gcc 4.8.5 source build)..."
+  # Myriad-specific: cc=gcc 4.8.5 (RHEL 7 default), c++=gcc 10.2.0 (gcc-libs module).
+  # Mismatch breaks numpy meson build from source. Force binary wheels only.
+  # Pin numpy<2 because numpy 2.x has narrower wheel coverage on RHEL 7.
   if [ "$CUDA_VERSION" = "12.1" ]; then
-    pip install --quiet torch torchvision --index-url https://download.pytorch.org/whl/cu121
+    pip install --quiet --only-binary=:all: "numpy<2" \
+        torch torchvision --index-url https://download.pytorch.org/whl/cu121
   elif [ "$CUDA_VERSION" = "11.8" ]; then
-    pip install --quiet torch torchvision --index-url https://download.pytorch.org/whl/cu118
+    pip install --quiet --only-binary=:all: "numpy<2" \
+        torch torchvision --index-url https://download.pytorch.org/whl/cu118
   else
-    pip install --quiet torch torchvision  # fallback CPU + auto CUDA
+    pip install --quiet --only-binary=:all: "numpy<2" torch torchvision
   fi
 fi
 
