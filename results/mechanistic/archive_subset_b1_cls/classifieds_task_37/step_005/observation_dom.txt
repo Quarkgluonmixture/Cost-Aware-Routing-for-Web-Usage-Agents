@@ -1,0 +1,37 @@
+Tab 0 (current): Nintendo Switch Mario Kart 8 Deluxe - Classifieds | Tab 1: One Stop Market
+
+[1201] RootWebArea 'Nintendo Switch Mario Kart 8 Deluxe - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sPattern=Nintendo+Switch+Mario+Kart+8+Deluxe+
+	[2119] StaticText "Merry Christmas! Coobeetsa MK2 Guitars are expertly crafted and made in the USA. It's in excellent, almost like new condition. Made in Illinois, this is a high quality American made guitar, and it really should not be overlooked. Plays like a Fender ..."
+	[2128] link 'Rare - 2006-07 GIBSON Les Paul \'Goddess"' url: http://100.95.81.103:9980/index.php?page=item&id=35300
+		[2129] image 'Rare - 2006-07 GIBSON Les Paul \'Goddess"' url: http://100.95.81.103:9980/oc-content/uploads/35300/35300_thumbnail.png
+	[2133] LayoutTable ''
+		[2135] LayoutTableRow ''
+			[2139] link 'Rare - 2006-07 GIBSON Les Paul \'Goddess"' url: http://100.95.81.103:9980/index.php?page=item&id=35300
+			[2145] StaticText '3499.00 $'
+			[2151] StaticText 'Music instruments'
+			[2155] StaticText 'Gainesville (Virginia)'
+			[2158] StaticText '2023/11/16'
+			[2163] StaticText '2006-07 Gibson Les Paul Violet model \'Goddess" is a VERY RARE, VERY COLLECTIBLE guitar. There are less than 100 of the Violet Les Pauls on the planet (assuming) Gibson made only100 of each color in the two models.The Gibson Les Paul Goddess was made ...'
+	[2172] link '50th ANNIVERSARY FENDER 1995 Deluxe Stratocaster w/extras' url: http://100.95.81.103:9980/index.php?page=item&id=25366
+		[2173] image '50th ANNIVERSARY FENDER 1995 Deluxe Stratocaster w/extras' url: http://100.95.81.103:9980/oc-content/uploads/25366/25366_thumbnail.png
+	[2177] LayoutTable ''
+		[2179] LayoutTableRow ''
+			[2183] link '50th ANNIVERSARY FENDER 1995 Deluxe Stratocaster w/extras' url: http://100.95.81.103:9980/index.php?page=item&id=25366
+			[2189] StaticText '1695.00 $'
+			[2195] StaticText 'Music instruments'
+			[2199] StaticText 'Gainesville (Virginia)'
+			[2202] StaticText '2023/11/16'
+			[2207] StaticText '1995 Fender '
+			[2209] StaticText 'Deluxe'
+			[2210] StaticText ' 50th Anniversary Stratocaster. Includes nickel locking tuners, roller nut, and a '
+			[2212] StaticText 'deluxe'
+			[2213] StaticText ' Tweed hard case by G & G, and upgraded Kinman Hx Woodstock pickups. A beautiful guitar in excellent condition. Also included are strap locks an...'
+	[2230] link '2' url: http://100.95.81.103:9980/index.php?page=search&sPattern=Nintendo+Switch+Mario+Kart+8+Deluxe+&iPage=2
+	[2234] link '3' url: http://100.95.81.103:9980/index.php?page=search&sPattern=Nintendo+Switch+Mario+Kart+8+Deluxe+&iPage=3
+	[2238] link '>' url: http://100.95.81.103:9980/index.php?page=search&sPattern=Nintendo+Switch+Mario+Kart+8+Deluxe+&iPage=2
+	[2242] link '»' url: http://100.95.81.103:9980/index.php?page=search&sPattern=Nintendo+Switch+Mario+Kart+8+Deluxe+&iPage=125
+	[2249] contentinfo ''
+		[2255] link 'Contact' url: http://100.95.81.103:9980/index.php?page=contact
+		[2263] StaticText 'Powered by '
+		[2264] link 'best classifieds scripts' url: https://osclass-classifieds.com/
+		[2266] StaticText ' osclass'

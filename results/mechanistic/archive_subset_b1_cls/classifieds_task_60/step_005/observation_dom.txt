@@ -1,0 +1,35 @@
+Tab 0 (current): gigabyte geforce rtx 4090 Bairdford - Classifieds
+
+[4357] RootWebArea 'gigabyte geforce rtx 4090 Bairdford - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=item&id=74160
+	[4445] link 'Classifieds' url: http://100.95.81.103:9980/
+		[4446] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[4472] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[4475] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[4478] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[4495] link 'Classifieds' url: http://100.95.81.103:9980/
+	[4501] StaticText '> '
+	[4502] link 'Video gaming' url: http://100.95.81.103:9980/index.php?page=search&sCategory=24
+	[4510] StaticText 'gigabyte geforce rtx 4090'
+	[4526] heading 'gigabyte geforce rtx 4090'
+	[4536] StaticText 'Published date:'
+	[4537] StaticText ' 2023/11/16'
+	[4545] StaticText 'Location:'
+	[4546] StaticText ' Bairdford, Pennsylvania, United States'
+	[4552] link 'gigabyte geforce rtx 4090' url: javascript:;
+		[4361] image 'gigabyte geforce rtx 4090' url: http://100.95.81.103:9980/oc-content/uploads/74160/74160.png
+	[4558] link 'gigabyte geforce rtx 4090' url: http://100.95.81.103:9980/oc-content/uploads/74160/74160.png
+		[4560] image 'gigabyte geforce rtx 4090' url: http://100.95.81.103:9980/oc-content/uploads/74160/74160_thumbnail.png
+	[4831] StaticText '800.00 $'
+	[4844] combobox '' hasPopup: menu expanded: False
+		[OPTIONS: currently selected="Mark as..."] "Mark as...", "Mark as spam", "Mark as misclassified", "Mark as duplicated", "Mark as expired", "Mark as offensive"
+	[4868] heading 'Contact publisher'
+	[4873] image 'Jennifer Sokolov' url: http://100.95.81.103:9980/oc-content/uploads/user-images/default-user-image.png
+	[4877] StaticText 'Name:'
+	[4878] StaticText ' Jennifer Sokolov'
+	[4881] StaticText 'E-mail:'
+	[4883] link 'jennifer.sokolov353@example.com' url: mailto:jennifer.sokolov353@example.com
+	[4899] heading 'Useful information'
+	[4905] ListMarker '• '
+	[4906] StaticText 'Avoid scams by acting locally or paying with PayPal'
+	[4909] ListMarker '• '
+	[4910] StaticText 'Never pay with Western Union, Moneygram or other anonymous payment services'

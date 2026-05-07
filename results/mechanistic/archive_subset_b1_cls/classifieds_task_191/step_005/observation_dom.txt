@@ -1,0 +1,35 @@
+Tab 0 (current): blonde horse » Farm + garden - Classifieds
+
+[940] RootWebArea 'blonde horse » Farm + garden - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=blonde+horse+&sCategory=16
+	[1758] StaticText '18" black medium wide dressage saddle with leathers, stirrups, 3 girths (2-28"\'s, 1-24"). Saddle used for 2 different horses. 2 girths are new. Plus 2 Dressage pads. 1 black pad and 1 white. Very comfortable used saddle. CASH ONLY Keywords: dressage,...'
+	[1767] link 'Trail horse' url: http://100.95.81.103:9980/index.php?page=item&id=64132
+		[1768] image 'Trail horse' url: http://100.95.81.103:9980/oc-content/uploads/64132/64132_thumbnail.png
+	[1772] LayoutTable ''
+		[1774] LayoutTableRow ''
+			[1778] link 'Trail horse' url: http://100.95.81.103:9980/index.php?page=item&id=64132
+			[1784] StaticText '1800.00 $'
+			[1790] StaticText 'Farm + garden'
+			[1794] StaticText 'Grottoes (Virginia)'
+			[1797] StaticText '2023/11/16'
+			[1802] StaticText 'Charlee is a black gaited mare that stands a stocky 14.1 hands tall and is 13 years old. She is solid black and a pretty mare. Very friendly and easy to catch. Tacks up well. We always hesitate to list these kind of horses...but we will offer her to ...'
+	[1811] link '16in barrel/trail pleasure saddle' url: http://100.95.81.103:9980/index.php?page=item&id=9244
+		[1812] image '16in barrel/trail pleasure saddle' url: http://100.95.81.103:9980/oc-content/uploads/9244/9244_thumbnail.png
+	[1816] LayoutTable ''
+		[1818] LayoutTableRow ''
+			[1822] link '16in barrel/trail pleasure saddle' url: http://100.95.81.103:9980/index.php?page=item&id=9244
+			[1828] StaticText '450.00 $'
+			[1834] StaticText 'Farm + garden'
+			[1838] StaticText 'Orwell (Ohio)'
+			[1841] StaticText '2023/11/15'
+			[1846] StaticText 'Like New beautiful leather Acerugs 16in FQHB Barrel/trail Hand tooled saddle with pad, never used reins and headstall, breast collar and 36 in girth strap. $450 for quick sale. Very comfortable and even used on a gaited '
+			[1848] StaticText 'horse'
+			[1849] StaticText '. Orwell Ohio or can meet...'
+	[1866] link '2' url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=blonde+horse+&sCategory=16&iPage=2
+	[1870] link '3' url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=blonde+horse+&sCategory=16&iPage=3
+	[1874] link '>' url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=blonde+horse+&sCategory=16&iPage=2
+	[1878] link '»' url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=blonde+horse+&sCategory=16&iPage=15
+	[1885] contentinfo ''
+		[1891] link 'Contact' url: http://100.95.81.103:9980/index.php?page=contact
+		[1899] StaticText 'Powered by '
+		[1900] link 'best classifieds scripts' url: https://osclass-classifieds.com/
+		[1902] StaticText ' osclass'

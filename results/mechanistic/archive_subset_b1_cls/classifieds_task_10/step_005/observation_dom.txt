@@ -1,0 +1,35 @@
+Tab 0 (current): Highland House Furniture Tufted Back Accent Chair (Was 4500) Dale City - Classifieds
+
+[4242] RootWebArea 'Highland House Furniture Tufted Back Accent Chair (Was 4500) Dale City - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=item&id=43887
+	[4330] link 'Classifieds' url: http://100.95.81.103:9980/
+		[4331] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[4357] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[4360] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[4363] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[4380] link 'Classifieds' url: http://100.95.81.103:9980/
+	[4386] StaticText '> '
+	[4387] link 'Furniture' url: http://100.95.81.103:9980/index.php?page=search&sCategory=17
+	[4395] StaticText 'Highland House Furniture Tufted Back Accent Chair (Was 4500)'
+	[4411] heading 'Highland House Furniture Tufted Back Accent Chair (Was 4500)'
+	[4421] StaticText 'Published date:'
+	[4422] StaticText ' 2023/11/16'
+	[4430] StaticText 'Location:'
+	[4431] StaticText ' Dale City, Virginia, United States'
+	[4437] link 'Highland House Furniture Tufted Back Accent Chair (Was 4500)' url: javascript:;
+		[4246] image 'Highland House Furniture Tufted Back Accent Chair (Was 4500)' url: http://100.95.81.103:9980/oc-content/uploads/43887/43887.png
+	[4443] link 'Highland House Furniture Tufted Back Accent Chair (Was 4500)' url: http://100.95.81.103:9980/oc-content/uploads/43887/43887.png
+		[4445] image 'Highland House Furniture Tufted Back Accent Chair (Was 4500)' url: http://100.95.81.103:9980/oc-content/uploads/43887/43887_thumbnail.png
+	[4716] StaticText '220.00 $'
+	[4729] combobox '' hasPopup: menu expanded: False
+		[OPTIONS: currently selected="Mark as..."] "Mark as...", "Mark as spam", "Mark as misclassified", "Mark as duplicated", "Mark as expired", "Mark as offensive"
+	[4753] heading 'Contact publisher'
+	[4758] image 'Chen Yamamoto' url: http://100.95.81.103:9980/oc-content/uploads/user-images/default-user-image.png
+	[4762] StaticText 'Name:'
+	[4763] StaticText ' Chen Yamamoto'
+	[4766] StaticText 'E-mail:'
+	[4768] link 'chen.yamamoto278@example.com' url: mailto:chen.yamamoto278@example.com
+	[4784] heading 'Useful information'
+	[4790] ListMarker '• '
+	[4791] StaticText 'Avoid scams by acting locally or paying with PayPal'
+	[4794] ListMarker '• '
+	[4795] StaticText 'Never pay with Western Union, Moneygram or other anonymous payment services'

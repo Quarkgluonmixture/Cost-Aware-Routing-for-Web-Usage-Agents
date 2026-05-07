@@ -1,0 +1,45 @@
+Tab 0 (current): Manage my listings - Classifieds
+
+[1200] RootWebArea 'Manage my listings - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=user&action=items
+	[1516] link 'Pristine 2021 Toyota 86 - Low Miles, Factory Warranty' url: http://100.95.81.103:9980/index.php?page=item&id=84144
+		[1517] image 'Pristine 2021 Toyota 86 - Low Miles, Factory Warranty' url: http://100.95.81.103:9980/oc-content/uploads/841/84144_thumbnail.jpg
+	[1521] LayoutTable ''
+		[1523] LayoutTableRow ''
+			[1533] StaticText '30000.00 $'
+			[1539] StaticText 'Cars + trucks'
+			[1543] StaticText 'Pittsburgh (Pennsylvania)'
+			[1546] StaticText '2023/11/14'
+			[1551] StaticText 'Experience the thrill of driving with this pristine 2021 Toyota 86. With just 10,000 miles, this car still falls under the factory warranty, ensuring peace of mind along with excitement. Its 6-speed automatic transmission paired with a sport-tuned su...'
+			[1556] link 'Edit item' url: http://100.95.81.103:9980/index.php?page=item&action=item_edit&id=84144
+			[1559] link 'Delete' url: http://100.95.81.103:9980/index.php?page=item&action=item_delete&id=84144
+	[1569] link 'Classic Road Bike - Lightweight Frame' url: http://100.95.81.103:9980/index.php?page=item&id=84146
+		[1570] image 'Classic Road Bike - Lightweight Frame' url: http://100.95.81.103:9980/oc-content/uploads/841/84146_thumbnail.jpg
+	[1574] LayoutTable ''
+		[1576] LayoutTableRow ''
+			[1580] link 'Classic Road Bike - Lightweight Frame' url: http://100.95.81.103:9980/index.php?page=item&id=84146
+			[1586] StaticText '250.00 $'
+			[1592] StaticText 'Bikes'
+			[1596] StaticText 'Monroeville (Pennsylvania)'
+			[1599] StaticText '2023/11/09'
+			[1604] StaticText 'Cruise the city in style with this classic road bike, featuring a stunning bright frame that stands out in any crowd. The bike is built with a lightweight and durable frame, offering a smooth and efficient ride. Equipped with a reliable gear set and ...'
+			[1609] link 'Edit item' url: http://100.95.81.103:9980/index.php?page=item&action=item_edit&id=84146
+			[1612] link 'Delete' url: http://100.95.81.103:9980/index.php?page=item&action=item_delete&id=84146
+	[1622] link 'Premium Stainless Steel French Door Refrigerator - Spacious & Modern' url: http://100.95.81.103:9980/index.php?page=item&id=84153
+		[1623] image 'Premium Stainless Steel French Door Refrigerator - Spacious & Modern' url: http://100.95.81.103:9980/oc-content/uploads/841/84153_thumbnail.jpg
+	[1627] LayoutTable ''
+		[1629] LayoutTableRow ''
+			[1633] link 'Premium Stainless Steel French Door Refrigerator - Spacious & Modern' url: http://100.95.81.103:9980/index.php?page=item&id=84153
+			[1639] StaticText '1200.00 $'
+			[1645] StaticText 'Appliances'
+			[1649] StaticText 'Monroeville (Pennsylvania)'
+			[1652] StaticText '2023/11/07'
+			[1657] StaticText 'Upgrade your kitchen with this spacious and modern stainless steel French door refrigerator. Boasting a large capacity to accommodate all your storage needs, it features a convenient bottom freezer, adjustable shelves, and multiple storage bins. The ...'
+			[1662] link 'Edit item' url: http://100.95.81.103:9980/index.php?page=item&action=item_edit&id=84153
+			[1665] link 'Delete' url: http://100.95.81.103:9980/index.php?page=item&action=item_delete&id=84153
+	[1675] link 'Modern Abstract Ceramic Vase - Unique Circular Design' url: http://100.95.81.103:9980/index.php?page=item&id=84148
+		[1676] image 'Modern Abstract Ceramic Vase - Unique Circular Design' url: http://100.95.81.103:9980/oc-content/uploads/841/84148_thumbnail.jpg
+	[1686] link 'Modern Abstract Ceramic Vase - Unique Circular Design' url: http://100.95.81.103:9980/index.php?page=item&id=84148
+	[1692] StaticText '80.00 $'
+	[1698] StaticText 'Household'
+	[1702] StaticText 'Pittsburgh (Pennsylvania)'
+	[1705] StaticText '2023/11/04'

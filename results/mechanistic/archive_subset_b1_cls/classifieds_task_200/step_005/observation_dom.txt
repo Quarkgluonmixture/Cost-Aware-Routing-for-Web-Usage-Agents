@@ -1,0 +1,48 @@
+Tab 0 (current): Search results for: 'pillow with animal pattern' | Tab 1: Classifieds
+
+[5180] RootWebArea "Search results for: 'pillow with animal pattern'" focused: True url: http://100.95.81.103:7770/catalogsearch/result/?q=pillow+with+animal+pattern+
+	[6934] link 'Image' url: http://100.95.81.103:7770/moslion-throw-pillow-cover-peacock-feathers-18x18-inch-animal-beautiful-colorful-digital-paint-shiny-green-purple-square-pillow-case-cushion-cover-for-home-car-decorative-cotton-linen.html
+		[6940] image 'Image' url: http://100.95.81.103:7770/media/catalog/product/cache/89ff578b9cd87e0600daac45c9e1ea98/B/0/B07W116J2C.0.jpg
+	[6953] link 'Moslion Throw Pillow Cover Peacock Feathers 18x18 Inch Animal Beautiful Colorful Digital Paint Shiny Green Purple Square Pillow Case Cushion Cover for Home Car Decorative Cotton Linen' url: http://100.95.81.103:7770/moslion-throw-pillow-cover-peacock-feathers-18x18-inch-animal-beautiful-colorful-digital-paint-shiny-green-purple-square-pillow-case-cushion-cover-for-home-car-decorative-cotton-linen.html
+	[6963] StaticText '$9.99'
+	[6981] button 'Add to Cart'
+	[6991] button 'Add to Wish List'
+	[6998] button 'Add to Compare'
+	[7015] link 'Image' url: http://100.95.81.103:7770/salemor-genshin-impact-pillow-cover-18x18-inch-anime-figure-double-sided-pattern-plush-pillowcase-decorative-square-pillow-case-for-couch-sofa-living-room-ganyu.html
+		[7021] image 'Image' url: http://100.95.81.103:7770/media/catalog/product/cache/89ff578b9cd87e0600daac45c9e1ea98/B/0/B09DKMGYBJ.0.jpg
+	[7034] link 'Salemor Genshin Impact Pillow Cover 18x18 Inch, Anime Figure Double-Sided Pattern Plush Pillowcase, Decorative Square Pillow Case for Couch Sofa Living Room(Ganyu)' url: http://100.95.81.103:7770/salemor-genshin-impact-pillow-cover-18x18-inch-anime-figure-double-sided-pattern-plush-pillowcase-decorative-square-pillow-case-for-couch-sofa-living-room-ganyu.html
+	[7044] StaticText '$8.34'
+	[7062] button 'Add to Cart'
+	[7072] button 'Add to Wish List'
+	[7079] button 'Add to Compare'
+	[7096] link 'Image' url: http://100.95.81.103:7770/emvency-throw-pillow-cover-leopard-print-pattern-black-watercolor-hand-paint-decorative-pillow-case-animal-home-decor-square-18-x-18-inch-cushion-pillowcase.html
+		[7102] image 'Image' url: http://100.95.81.103:7770/media/catalog/product/cache/89ff578b9cd87e0600daac45c9e1ea98/B/0/B076QCZPJ5.0.jpg
+	[7115] link 'Emvency Throw Pillow Cover Leopard Print Pattern Black Watercolor Hand Paint Decorative Pillow Case Animal Home Decor Square 18 x 18 Inch Cushion Pillowcase' url: http://100.95.81.103:7770/emvency-throw-pillow-cover-leopard-print-pattern-black-watercolor-hand-paint-decorative-pillow-case-animal-home-decor-square-18-x-18-inch-cushion-pillowcase.html
+	[7119] LayoutTable ''
+		[7125] StaticText 'Rating:'
+		[7133] StaticText '80%'
+		[7142] link '12 \xa0Reviews' url: http://100.95.81.103:7770/emvency-throw-pillow-cover-leopard-print-pattern-black-watercolor-hand-paint-decorative-pillow-case-animal-home-decor-square-18-x-18-inch-cushion-pillowcase.html#reviews
+	[7156] StaticText '$8.90'
+	[7174] button 'Add to Cart'
+	[7184] button 'Add to Wish List'
+	[7191] button 'Add to Compare'
+	[7208] link 'Image' url: http://100.95.81.103:7770/nicokee-throw-pillow-cover-watercolor-bird-flamingo-pink-animal-decorative-pillow-case-home-decor-20x12-inches-pillowcase.html
+		[7214] image 'Image' url: http://100.95.81.103:7770/media/catalog/product/cache/89ff578b9cd87e0600daac45c9e1ea98/B/0/B0895Q6X23.0.jpg
+	[7227] link 'Nicokee Throw Pillow Cover Watercolor Bird Flamingo Pink Animal Decorative Pillow Case Home Decor 20x12 Inches Pillowcase' url: http://100.95.81.103:7770/nicokee-throw-pillow-cover-watercolor-bird-flamingo-pink-animal-decorative-pillow-case-home-decor-20x12-inches-pillowcase.html
+	[7237] StaticText '$8.99'
+	[7255] button 'Add to Cart'
+	[7265] button 'Add to Wish List'
+	[7272] button 'Add to Compare'
+	[7295] image 'Image' url: http://100.95.81.103:7770/media/catalog/product/cache/89ff578b9cd87e0600daac45c9e1ea98/B/0/B07K33ZQLJ.0.jpg
+	[7407] image 'Image' url: http://100.95.81.103:7770/media/catalog/product/cache/89ff578b9cd87e0600daac45c9e1ea98/B/0/B08XLRCY7P.0.jpg
+		[DROPDOWN OPTIONS] "My Account", "My Wish List", "Sign In", "Compare Products", "Create an Account"
+	[7488] image 'Image' url: http://100.95.81.103:7770/media/catalog/product/cache/89ff578b9cd87e0600daac45c9e1ea98/B/0/B07QSTBYZP.0.jpg
+	[7600] image 'Image' url: http://100.95.81.103:7770/media/catalog/product/cache/89ff578b9cd87e0600daac45c9e1ea98/B/0/B09KRSHD1Z.0.jpg
+	[8304] link 'Electronics( 553 item )' url: http://100.95.81.103:7770/catalogsearch/result/index/?cat=11&q=pillow+with+animal+pattern+
+	[8317] link 'Cell Phones & Accessories( 133 item )' url: http://100.95.81.103:7770/catalogsearch/result/index/?cat=12&q=pillow+with+animal+pattern+
+	[8330] link 'Video Games( 58 item )' url: http://100.95.81.103:7770/catalogsearch/result/index/?cat=13&q=pillow+with+animal+pattern+
+	[8343] link 'Grocery & Gourmet Food( 639 item )' url: http://100.95.81.103:7770/catalogsearch/result/index/?cat=14&q=pillow+with+animal+pattern+
+	[8364] heading 'Compare Products'
+	[8418] StaticText 'You have no items to compare.'
+	[8430] heading 'My Wish List'
+	[8531] StaticText 'You have no items in your wish list.'

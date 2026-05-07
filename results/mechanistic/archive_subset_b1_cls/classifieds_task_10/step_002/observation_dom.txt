@@ -1,0 +1,35 @@
+Tab 0 (current): JBL Powered PA Speaker w/ Stand Borough of Red Lion - Classifieds
+
+[1441] RootWebArea 'JBL Powered PA Speaker w/ Stand Borough of Red Lion - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=item&id=65955
+	[1529] link 'Classifieds' url: http://100.95.81.103:9980/
+		[1530] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[1556] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[1559] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[1562] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[1579] link 'Classifieds' url: http://100.95.81.103:9980/
+	[1585] StaticText '> '
+	[1586] link 'Music instruments' url: http://100.95.81.103:9980/index.php?page=search&sCategory=21
+	[1594] StaticText 'JBL Powered PA Speaker w/ Stand'
+	[1610] heading 'JBL Powered PA Speaker w/ Stand'
+	[1620] StaticText 'Published date:'
+	[1621] StaticText ' 2023/11/16'
+	[1629] StaticText 'Location:'
+	[1630] StaticText ' Borough of Red Lion, Pennsylvania, United States'
+	[1636] link 'JBL Powered PA Speaker w/ Stand' url: javascript:;
+		[1445] image 'JBL Powered PA Speaker w/ Stand' url: http://100.95.81.103:9980/oc-content/uploads/65955/65955.png
+	[1642] link 'JBL Powered PA Speaker w/ Stand' url: http://100.95.81.103:9980/oc-content/uploads/65955/65955.png
+		[1644] image 'JBL Powered PA Speaker w/ Stand' url: http://100.95.81.103:9980/oc-content/uploads/65955/65955_thumbnail.png
+	[1915] StaticText '150.00 $'
+	[1928] combobox '' hasPopup: menu expanded: False
+		[OPTIONS: currently selected="Mark as..."] "Mark as...", "Mark as spam", "Mark as misclassified", "Mark as duplicated", "Mark as expired", "Mark as offensive"
+	[1952] heading 'Contact publisher'
+	[1957] image 'Yasmin Hernandez' url: http://100.95.81.103:9980/oc-content/uploads/user-images/default-user-image.png
+	[1961] StaticText 'Name:'
+	[1962] StaticText ' Yasmin Hernandez'
+	[1965] StaticText 'E-mail:'
+	[1967] link 'yasmin_hernandez477@example.com' url: mailto:yasmin_hernandez477@example.com
+	[1983] heading 'Useful information'
+	[1989] ListMarker '• '
+	[1990] StaticText 'Avoid scams by acting locally or paying with PayPal'
+	[1993] ListMarker '• '
+	[1994] StaticText 'Never pay with Western Union, Moneygram or other anonymous payment services'

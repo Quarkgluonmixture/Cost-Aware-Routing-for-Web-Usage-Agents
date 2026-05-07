@@ -1,0 +1,36 @@
+Tab 0 (current): Wooden Pallets Culpeper - Classifieds
+
+[2213] RootWebArea 'Wooden Pallets Culpeper - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=item&id=27156
+	[2294] link 'Classifieds' url: http://100.95.81.103:9980/
+		[2295] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[2305] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[2306] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[2307] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[2314] link 'Classifieds' url: http://100.95.81.103:9980/
+	[2520] StaticText '> '
+	[2318] link 'Farm + garden' url: http://100.95.81.103:9980/index.php?page=search&sCategory=16
+	[2523] StaticText 'Wooden Pallets'
+	[2329] heading 'Wooden Pallets'
+	[2525] StaticText 'Published date:'
+	[2526] StaticText ' 2023/11/16'
+	[2527] StaticText 'Location:'
+	[2528] StaticText ' Culpeper, Virginia, United States'
+	[2339] link 'Wooden Pallets' url: javascript:;
+		[2340] image 'Wooden Pallets' url: http://100.95.81.103:9980/oc-content/uploads/27156/27156.png
+	[2342] link 'Wooden Pallets' url: http://100.95.81.103:9980/oc-content/uploads/27156/27156.png
+		[2343] image 'Wooden Pallets' url: http://100.95.81.103:9980/oc-content/uploads/27156/27156_thumbnail.png
+	[2545] StaticText '8.00 $'
+	[2454] combobox '' hasPopup: menu expanded: False
+		[OPTIONS: currently selected="Mark as..."] "Mark as...", "Mark as spam", "Mark as misclassified", "Mark as duplicated", "Mark as expired", "Mark as offensive"
+	[2474] heading 'Contact publisher'
+	[2476] image 'Zoe Williams' url: http://100.95.81.103:9980/oc-content/uploads/user-images/default-user-image.png
+	[2548] StaticText 'Name:'
+	[2549] StaticText ' Zoe Williams'
+	[2550] StaticText 'E-mail:'
+	[2481] link 'zoe.williams59@example.com' url: mailto:zoe.williams59@example.com
+	[2487] heading 'Useful information'
+	[2512] ListMarker '• '
+	[2554] StaticText 'Avoid scams by acting locally or paying with PayPal'
+	[2513] ListMarker '• '
+	[2555] StaticText 'Never pay with Western Union, Moneygram or other anonymous payment services'
+	[2514] ListMarker '• '

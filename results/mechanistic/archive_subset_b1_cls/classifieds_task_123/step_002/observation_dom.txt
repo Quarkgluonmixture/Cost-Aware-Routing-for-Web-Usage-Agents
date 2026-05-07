@@ -1,0 +1,69 @@
+Tab 0 (current): yellow - Classifieds
+
+[1100] RootWebArea 'yellow - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sOrder=i_price&iOrderType=desc&sPattern=yellow+
+	[1182] link 'Classifieds' url: http://100.95.81.103:9980/
+		[1183] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[1209] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[1212] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[1215] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[1232] link 'Classifieds' url: http://100.95.81.103:9980/
+	[1238] StaticText '> '
+	[1240] StaticText 'Search results: yellow'
+	[1267] group ''
+		[1269] heading 'Your search'
+		[1274] textbox '' required: False
+			[2227] StaticText 'yellow'
+	[1278] group ''
+		[1280] heading 'City'
+		[1287] textbox '' required: False
+		[1288] status '' live: polite atomic: True relevant: additions text
+	[1292] group ''
+		[1294] heading 'Show only'
+		[1299] checkbox 'listings with pictures' checked: false
+	[1306] group ''
+		[1310] heading 'Price'
+		[1316] StaticText 'Min.'
+		[1318] textbox '' required: False
+		[1324] StaticText 'Max.'
+		[1326] textbox '' required: False
+	[1335] button 'Apply'
+	[1346] heading 'Subscribe to this search'
+	[1362] button 'Subscribe now!'
+	[1369] heading 'Refine category'
+	[1374] link 'All categories' url: http://100.95.81.103:9980/index.php?page=search&sOrder=i_price&iOrderType=desc&sPattern=yellow+
+	[1525] StaticText '1 - 12 of 629 listings'
+	[1537] StaticText 'Sort by:'
+	[1540] StaticText 'Higher price first '
+		[DROPDOWN OPTIONS] "Newly listed", "Lower price first", "Higher price first"
+	[1564] link '\uf0c9' url: http://100.95.81.103:9980/index.php?page=search&sOrder=i_price&iOrderType=desc&sPattern=yellow+&sShowAs=list
+	[1568] link '\uf84c' url: http://100.95.81.103:9980/index.php?page=search&sOrder=i_price&iOrderType=desc&sPattern=yellow+&sShowAs=gallery
+	[1576] heading 'Listings'
+	[1583] link '2021 Ford Bronco First Edition' url: http://100.95.81.103:9980/index.php?page=item&id=75402
+		[1584] image '2021 Ford Bronco First Edition' url: http://100.95.81.103:9980/oc-content/uploads/75402/75402_thumbnail.png
+	[1588] LayoutTable ''
+		[1590] LayoutTableRow ''
+			[1594] link '2021 Ford Bronco First Edition' url: http://100.95.81.103:9980/index.php?page=item&id=75402
+			[1600] StaticText '87500.00 $'
+			[1606] StaticText 'Cars + trucks'
+			[1610] StaticText 'Hamilton (Virginia)'
+			[1613] StaticText '2023/11/04'
+			[1617] StaticText '2021 Ford Bronco First Edition - approx 444 miles - garage kept - 1 of 3700 4-doors. Added side steps - original rock bars are included. Loaded!! Believe these will increase in value. Includes promotional items from Ford - framed window sticker, hamm...'
+	[1626] link '2017 Ford Transit T350HD EL High 148" Wheelchair Lift Van 55,936 Miles' url: http://100.95.81.103:9980/index.php?page=item&id=45325
+		[1627] image '2017 Ford Transit T350HD EL High 148" Wheelchair Lift Van 55,936 Miles' url: http://100.95.81.103:9980/oc-content/uploads/45325/45325_thumbnail.png
+	[1631] LayoutTable ''
+		[1633] LayoutTableRow ''
+			[1637] link '2017 Ford Transit T350HD EL High 148" Wheelchair Lift Van 55,936 Miles' url: http://100.95.81.103:9980/index.php?page=item&id=45325
+			[1643] StaticText '57500.00 $'
+			[1649] StaticText 'Cars + trucks'
+			[1653] StaticText 'Allison Park (Pennsylvania)'
+			[1656] StaticText '2023/11/13'
+			[1661] StaticText 'SS Sales Inc. "Vans for School & Industry" . (555) 379-7823 Office (555) 379-7823 Rob Cell 2017 Ford Transit T-350HD XL EL Full Size Wheel Chair Lift Van - HIGH HEIGHT ROOF -55,936 Miles -10,360 lb GVWR -148" Wheel Base EXTENDED LENGTH TAIL -3.7L V6 ...'
+	[1670] link '2021 FORD F-350 / BY OWNER / RV TRANSPORT / HOT SHOT TRUCK / F350' url: http://100.95.81.103:9980/index.php?page=item&id=583
+		[1671] image '2021 FORD F-350 / BY OWNER / RV TRANSPORT / HOT SHOT TRUCK / F350' url: http://100.95.81.103:9980/oc-content/uploads/583/583_thumbnail.png
+	[1675] LayoutTable ''
+		[1677] LayoutTableRow ''
+			[1681] link '2021 FORD F-350 / BY OWNER / RV TRANSPORT / HOT SHOT TRUCK / F350' url: http://100.95.81.103:9980/index.php?page=item&id=583
+			[1686] StaticText '57500.00 $'
+			[1692] StaticText 'Cars + trucks'
+			[1696] StaticText 'Pittsburgh (Pennsylvania)'
+			[1699] StaticText '2023/11/11'

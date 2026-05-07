@@ -1,0 +1,32 @@
+Tab 0 (current): Manage my listings - Classifieds
+
+[1200] RootWebArea 'Manage my listings - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=user&action=items
+	[1940] link '2019 Toyota 86 - Sporty Fun, Excellent Condition' url: http://100.95.81.103:9980/index.php?page=item&id=84143
+		[1941] image '2019 Toyota 86 - Sporty Fun, Excellent Condition' url: http://100.95.81.103:9980/oc-content/uploads/841/84143_thumbnail.jpg
+	[1945] LayoutTable ''
+		[1947] LayoutTableRow ''
+			[1951] link '2019 Toyota 86 - Sporty Fun, Excellent Condition' url: http://100.95.81.103:9980/index.php?page=item&id=84143
+			[1957] StaticText '27500.00 $'
+			[1963] StaticText 'Cars + trucks'
+			[1967] StaticText 'Pittsburgh (Pennsylvania)'
+			[1970] StaticText '2023/10/13'
+			[1975] StaticText 'Hit the road in style with this eye-catching 2019 Toyota 86. Known for its precise handling and brisk acceleration, this car has been a joy on both city streets and winding back roads. Kept in impeccable condition with just 15,000 miles on it, this v...'
+			[1980] link 'Edit item' url: http://100.95.81.103:9980/index.php?page=item&action=item_edit&id=84143
+			[1983] link 'Delete' url: http://100.95.81.103:9980/index.php?page=item&action=item_delete&id=84143
+	[1993] link 'Trail-Ready Hybrid Bike - 24-Speed, Lightweight Frame - $300' url: http://100.95.81.103:9980/index.php?page=item&id=84145
+		[1994] image 'Trail-Ready Hybrid Bike - 24-Speed, Lightweight Frame - $300' url: http://100.95.81.103:9980/oc-content/uploads/841/84145_thumbnail.jpg
+	[1998] LayoutTable ''
+		[2000] LayoutTableRow ''
+			[2004] link 'Trail-Ready Hybrid Bike - 24-Speed, Lightweight Frame - $300' url: http://100.95.81.103:9980/index.php?page=item&id=84145
+			[2010] StaticText '300.00 $'
+			[2016] StaticText 'Bikes'
+			[2020] StaticText 'Monroeville (Pennsylvania)'
+			[2023] StaticText '2023/10/07'
+			[2028] StaticText 'Get ready for adventure with this versatile hybrid bike, perfect for both city commutes and off-road trails. Featuring a lightweight aluminum frame, 24-speed gear system, and reliable hydraulic disc brakes for superior stopping power. The bike is in ...'
+			[2033] link 'Edit item' url: http://100.95.81.103:9980/index.php?page=item&action=item_edit&id=84145
+			[2036] link 'Delete' url: http://100.95.81.103:9980/index.php?page=item&action=item_delete&id=84145
+	[2057] contentinfo ''
+		[2063] link 'Contact' url: http://100.95.81.103:9980/index.php?page=contact
+		[2071] StaticText 'Powered by '
+		[2072] link 'best classifieds scripts' url: https://osclass-classifieds.com/
+		[2074] StaticText ' osclass'

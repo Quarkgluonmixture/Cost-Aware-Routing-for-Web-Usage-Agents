@@ -1,0 +1,69 @@
+Tab 0 (current): Video gaming - Classifieds
+
+[1818] RootWebArea 'Video gaming - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sCategory=24
+	[1900] link 'Classifieds' url: http://100.95.81.103:9980/
+		[1901] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[1927] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[1930] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[1933] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[1950] link 'Classifieds' url: http://100.95.81.103:9980/
+	[1956] StaticText '> '
+	[1958] StaticText 'Video gaming'
+	[1985] group ''
+		[1987] heading 'Your search'
+		[1992] textbox '' required: False
+	[1996] group ''
+		[1998] heading 'City'
+		[2005] textbox '' required: False
+		[2006] status '' live: polite atomic: True relevant: additions text
+	[2010] group ''
+		[2012] heading 'Show only'
+		[2017] checkbox 'listings with pictures' checked: false
+	[2024] group ''
+		[2028] heading 'Price'
+		[2034] StaticText 'Min.'
+		[2036] textbox '' required: False
+		[2042] StaticText 'Max.'
+		[2044] textbox '' required: False
+	[2055] button 'Apply'
+	[2066] heading 'Subscribe to this search'
+	[2082] button 'Subscribe now!'
+	[2089] heading 'Refine category'
+	[2095] link 'All categories' url: http://100.95.81.103:9980/index.php?page=search
+	[2116] heading 'Video gaming'
+	[2120] StaticText '1 - 12 of 1058 listings'
+	[2132] StaticText 'Sort by:'
+	[2135] StaticText 'Newly listed '
+		[DROPDOWN OPTIONS] "Newly listed", "Lower price first", "Higher price first"
+	[2159] link '\uf0c9' url: http://100.95.81.103:9980/index.php?page=search&sCategory=24&sShowAs=list
+	[2163] link '\uf84c' url: http://100.95.81.103:9980/index.php?page=search&sCategory=24&sShowAs=gallery
+	[2171] heading 'Listings'
+	[2178] link 'xbox series x / with extras' url: http://100.95.81.103:9980/index.php?page=item&id=50169
+		[2179] image 'xbox series x / with extras' url: http://100.95.81.103:9980/oc-content/uploads/50169/50169_thumbnail.png
+	[2183] LayoutTable ''
+		[2185] LayoutTableRow ''
+			[2189] link 'xbox series x / with extras' url: http://100.95.81.103:9980/index.php?page=item&id=50169
+			[2194] StaticText '350.00 $'
+			[2200] StaticText 'Video gaming'
+			[2204] StaticText 'Pennwyn (Pennsylvania)'
+			[2207] StaticText '2023/11/16'
+			[2212] StaticText 'Used xbox series x in great working condition ,comes with 2 controllers with rechargeable battery packs,docking station and headset. Headset not the best but works'
+	[2221] link 'gigabyte geforce rtx 4090' url: http://100.95.81.103:9980/index.php?page=item&id=74160
+		[2222] image 'gigabyte geforce rtx 4090' url: http://100.95.81.103:9980/oc-content/uploads/74160/74160_thumbnail.png
+	[2226] LayoutTable ''
+		[2228] LayoutTableRow ''
+			[2232] link 'gigabyte geforce rtx 4090' url: http://100.95.81.103:9980/index.php?page=item&id=74160
+			[2238] StaticText '800.00 $'
+			[2244] StaticText 'Video gaming'
+			[2248] StaticText 'Bairdford (Pennsylvania)'
+			[2251] StaticText '2023/11/16'
+			[2256] StaticText 'Brand new sealed gigabyte geforce rtx 4090*'
+	[2265] link 'tom clancy R6 lockdown' url: http://100.95.81.103:9980/index.php?page=item&id=83357
+		[2266] image 'tom clancy R6 lockdown' url: http://100.95.81.103:9980/oc-content/uploads/83357/83357_thumbnail.png
+	[2270] LayoutTable ''
+		[2272] LayoutTableRow ''
+			[1820] link 'tom clancy R6 lockdown' url: http://100.95.81.103:9980/index.php?page=item&id=83357
+			[2281] StaticText '5.00 $'
+			[2287] StaticText 'Video gaming'
+			[2291] StaticText 'Lewisberry (Pennsylvania)'
+			[2294] StaticText '2023/11/16'

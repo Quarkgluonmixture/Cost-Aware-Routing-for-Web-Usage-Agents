@@ -1,0 +1,35 @@
+Tab 0 (current): xbox series x / with extras Pennwyn - Classifieds
+
+[1200] RootWebArea 'xbox series x / with extras Pennwyn - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=item&id=50169
+	[1288] link 'Classifieds' url: http://100.95.81.103:9980/
+		[1289] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[1315] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[1318] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[1321] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[1338] link 'Classifieds' url: http://100.95.81.103:9980/
+	[1344] StaticText '> '
+	[1345] link 'Video gaming' url: http://100.95.81.103:9980/index.php?page=search&sCategory=24
+	[1353] StaticText 'xbox series x / with extras'
+	[1369] heading 'xbox series x / with extras'
+	[1379] StaticText 'Published date:'
+	[1380] StaticText ' 2023/11/16'
+	[1388] StaticText 'Location:'
+	[1389] StaticText ' Pennwyn, Pennsylvania, United States'
+	[1395] link 'xbox series x / with extras' url: javascript:;
+		[1204] image 'xbox series x / with extras' url: http://100.95.81.103:9980/oc-content/uploads/50169/50169.png
+	[1401] link 'xbox series x / with extras' url: http://100.95.81.103:9980/oc-content/uploads/50169/50169.png
+		[1403] image 'xbox series x / with extras' url: http://100.95.81.103:9980/oc-content/uploads/50169/50169_thumbnail.png
+	[1674] StaticText '350.00 $'
+	[1687] combobox '' hasPopup: menu expanded: False
+		[OPTIONS: currently selected="Mark as..."] "Mark as...", "Mark as spam", "Mark as misclassified", "Mark as duplicated", "Mark as expired", "Mark as offensive"
+	[1711] heading 'Contact publisher'
+	[1716] image 'Carlos Perez' url: http://100.95.81.103:9980/oc-content/uploads/user-images/default-user-image.png
+	[1720] StaticText 'Name:'
+	[1721] StaticText ' Carlos Perez'
+	[1724] StaticText 'E-mail:'
+	[1726] link 'carlos.perez450@example.com' url: mailto:carlos.perez450@example.com
+	[1742] heading 'Useful information'
+	[1748] ListMarker '• '
+	[1749] StaticText 'Avoid scams by acting locally or paying with PayPal'
+	[1752] ListMarker '• '
+	[1753] StaticText 'Never pay with Western Union, Moneygram or other anonymous payment services'

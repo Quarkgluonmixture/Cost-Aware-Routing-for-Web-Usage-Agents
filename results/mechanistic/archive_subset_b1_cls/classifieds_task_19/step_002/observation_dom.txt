@@ -1,0 +1,72 @@
+Tab 0 (current): sea painting » Arts + crafts - Classifieds
+
+[1202] RootWebArea 'sea painting » Arts + crafts - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sPattern=sea+painting+&sCategory=4
+	[1284] link 'Classifieds' url: http://100.95.81.103:9980/
+		[1285] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[1311] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[1314] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[1317] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[1334] link 'Classifieds' url: http://100.95.81.103:9980/
+	[1340] StaticText '> '
+	[1341] link 'Arts + crafts' url: http://100.95.81.103:9980/index.php?page=search&sCategory=4
+	[1349] StaticText 'Search results: sea painting'
+	[1376] group ''
+		[1378] heading 'Your search'
+		[1383] textbox '' required: False
+			[2195] StaticText 'sea painting'
+	[1387] group ''
+		[1389] heading 'City'
+		[1396] textbox '' required: False
+		[1397] status '' live: polite atomic: True relevant: additions text
+	[1401] group ''
+		[1403] heading 'Show only'
+		[1408] checkbox 'listings with pictures' checked: false
+	[1415] group ''
+		[1419] heading 'Price'
+		[1425] StaticText 'Min.'
+		[1427] textbox '' required: False
+		[1433] StaticText 'Max.'
+		[1435] textbox '' required: False
+	[1446] button 'Apply'
+	[1457] heading 'Subscribe to this search'
+	[1473] button 'Subscribe now!'
+	[1480] heading 'Refine category'
+	[1486] link 'All categories' url: http://100.95.81.103:9980/index.php?page=search&sPattern=sea+painting+
+	[1507] heading 'Arts + crafts'
+	[1511] StaticText '1 - 12 of 294 listings'
+	[1523] StaticText 'Sort by:'
+	[1526] StaticText 'Newly listed '
+		[DROPDOWN OPTIONS] "Newly listed", "Lower price first", "Higher price first"
+	[1550] link '\uf0c9' url: http://100.95.81.103:9980/index.php?page=search&sPattern=sea+painting+&sCategory=4&sShowAs=list
+	[1554] link '\uf84c' url: http://100.95.81.103:9980/index.php?page=search&sPattern=sea+painting+&sCategory=4&sShowAs=gallery
+	[1562] heading 'Listings'
+	[1569] link 'matador painting on wooden plate' url: http://100.95.81.103:9980/index.php?page=item&id=14761
+		[1570] image 'matador painting on wooden plate' url: http://100.95.81.103:9980/oc-content/uploads/14761/14761_thumbnail.png
+	[1574] LayoutTable ''
+		[1576] LayoutTableRow ''
+			[1580] link 'matador painting on wooden plate' url: http://100.95.81.103:9980/index.php?page=item&id=14761
+			[1585] StaticText '15.00 $'
+			[1591] StaticText 'Arts + crafts'
+			[1595] StaticText 'Leisure World (Maryland)'
+			[1598] StaticText '2023/11/16'
+			[1603] StaticText 'hand painted wooden matador wall plaque'
+	[1612] link 'Very Early Career Original Artwork Oil Painting By Marylin Manson' url: http://100.95.81.103:9980/index.php?page=item&id=12085
+		[1613] image 'Very Early Career Original Artwork Oil Painting By Marylin Manson' url: http://100.95.81.103:9980/oc-content/uploads/12085/12085_thumbnail.png
+	[1617] LayoutTable ''
+		[1619] LayoutTableRow ''
+			[1623] link 'Very Early Career Original Artwork Oil Painting By Marylin Manson' url: http://100.95.81.103:9980/index.php?page=item&id=12085
+			[1629] StaticText '2500.00 $'
+			[1635] StaticText 'Arts + crafts'
+			[1639] StaticText 'North Potomac (Maryland)'
+			[1642] StaticText '2023/11/16'
+			[1647] StaticText 'This oil '
+			[1649] StaticText 'painting'
+			[1650] StaticText " on Canvas was created by Marilyn Manson near the very beginning of Mr. Manson's "
+			[1653] StaticText " career and very closely resembles the House Mr. Manson later purchased in California and in which he wrote and recorded his 'Pale Emperor' Albu..."
+	[1661] link 'Hermansader Penn Square Print signed and numbered' url: http://100.95.81.103:9980/index.php?page=item&id=64089
+		[1662] image 'Hermansader Penn Square Print signed and numbered' url: http://100.95.81.103:9980/oc-content/uploads/64089/64089_thumbnail.png
+	[1672] link 'Hermansader Penn Square Print signed and numbered' url: http://100.95.81.103:9980/index.php?page=item&id=64089
+	[1678] StaticText '700.00 $'
+	[1684] StaticText 'Arts + crafts'
+	[1688] StaticText 'Mount Joy (Pennsylvania)'
+	[1691] StaticText '2023/11/16'

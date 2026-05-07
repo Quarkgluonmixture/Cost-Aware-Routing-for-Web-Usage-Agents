@@ -1,0 +1,35 @@
+Tab 0 (current): 26" aluminum Gary Fisher 21 speed Hybrid/comfort 21 speed bike Westminster - Classifieds
+
+[3009] RootWebArea '26" aluminum Gary Fisher 21 speed Hybrid/comfort 21 speed bike Westminster - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=item&id=70291
+	[3094] link 'Classifieds' url: http://100.95.81.103:9980/
+		[3095] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[3121] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[3124] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[3127] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[3144] link 'Classifieds' url: http://100.95.81.103:9980/
+	[3150] StaticText '> '
+	[3151] link 'Bikes' url: http://100.95.81.103:9980/index.php?page=search&sCategory=7
+	[3159] StaticText '26" aluminum Gary Fisher 21 speed Hybrid/comfort 21 speed bike'
+	[3175] heading '26" aluminum Gary Fisher 21 speed Hybrid/comfort 21 speed bike'
+	[3185] StaticText 'Published date:'
+	[3186] StaticText ' 2023/11/16'
+	[3194] StaticText 'Location:'
+	[3195] StaticText ' Westminster, Maryland, United States'
+	[3201] link '26' url: javascript:;
+		[3010] image '26' url: http://100.95.81.103:9980/oc-content/uploads/70291/70291.png
+	[3207] link '26' url: http://100.95.81.103:9980/oc-content/uploads/70291/70291.png
+		[3209] image '26' url: http://100.95.81.103:9980/oc-content/uploads/70291/70291_thumbnail.png
+	[3480] StaticText '140.00 $'
+	[3493] combobox '' hasPopup: menu expanded: False
+		[OPTIONS: currently selected="Mark as..."] "Mark as...", "Mark as spam", "Mark as misclassified", "Mark as duplicated", "Mark as expired", "Mark as offensive"
+	[3517] heading 'Contact publisher'
+	[3522] image 'Yuna Al-Masri' url: http://100.95.81.103:9980/oc-content/uploads/user-images/default-user-image.png
+	[3527] StaticText 'Name:'
+	[3528] StaticText ' Yuna Al-Masri'
+	[3532] StaticText 'E-mail:'
+	[3534] link 'yuna_al-masri142@example.com' url: mailto:yuna_al-masri142@example.com
+	[3551] heading 'Useful information'
+	[3557] ListMarker '• '
+	[3558] StaticText 'Avoid scams by acting locally or paying with PayPal'
+	[3561] ListMarker '• '
+	[3562] StaticText 'Never pay with Western Union, Moneygram or other anonymous payment services'

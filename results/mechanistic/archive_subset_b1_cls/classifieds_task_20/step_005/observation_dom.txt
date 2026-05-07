@@ -1,0 +1,69 @@
+Tab 0 (current): white Xbox - Classifieds
+
+[4666] RootWebArea 'white Xbox - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+Xbox+
+	[4746] link 'Classifieds' url: http://100.95.81.103:9980/
+		[4747] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[4773] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[4776] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[4779] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[4796] link 'Classifieds' url: http://100.95.81.103:9980/
+	[4802] StaticText '> '
+	[4804] StaticText 'Search results: white Xbox'
+	[4831] group ''
+		[4833] heading 'Your search'
+		[4838] textbox '' required: False
+			[5780] StaticText 'white Xbox'
+	[4842] group ''
+		[4844] heading 'City'
+		[4851] textbox '' required: False
+		[4852] status '' live: polite atomic: True relevant: additions text
+	[4856] group ''
+		[4858] heading 'Show only'
+		[4863] checkbox 'listings with pictures' checked: false
+	[4870] group ''
+		[4874] heading 'Price'
+		[4880] StaticText 'Min.'
+		[4882] textbox '' required: False
+		[4888] StaticText 'Max.'
+		[4890] textbox '' required: False
+	[4899] button 'Apply'
+	[4910] heading 'Subscribe to this search'
+	[4926] button 'Subscribe now!'
+	[4933] heading 'Refine category'
+	[4938] link 'All categories' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+Xbox+
+	[5089] StaticText '1 - 12 of 5015 listings'
+	[5101] StaticText 'Sort by:'
+	[5104] StaticText 'Newly listed '
+		[DROPDOWN OPTIONS] "Newly listed", "Lower price first", "Higher price first"
+	[5128] link '\uf0c9' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+Xbox+&sShowAs=list
+	[5132] link '\uf84c' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+Xbox+&sShowAs=gallery
+	[5140] heading 'Listings'
+	[5147] link 'xbox series x / with extras' url: http://100.95.81.103:9980/index.php?page=item&id=50169
+		[5148] image 'xbox series x / with extras' url: http://100.95.81.103:9980/oc-content/uploads/50169/50169_thumbnail.png
+	[5152] LayoutTable ''
+		[5154] LayoutTableRow ''
+			[5158] link 'xbox series x / with extras' url: http://100.95.81.103:9980/index.php?page=item&id=50169
+			[5164] StaticText '350.00 $'
+			[5170] StaticText 'Video gaming'
+			[5174] StaticText 'Pennwyn (Pennsylvania)'
+			[5177] StaticText '2023/11/16'
+			[5182] StaticText 'Used '
+			[5184] StaticText 'xbox'
+			[5185] StaticText ' series x in great working condition ,comes with 2 controllers with rechargeable battery packs,docking station and headset. Headset not the best but works'
+	[5194] link 'Century Furniture English Roll Arm Sofa (Was 5000)' url: http://100.95.81.103:9980/index.php?page=item&id=54140
+		[5195] image 'Century Furniture English Roll Arm Sofa (Was 5000)' url: http://100.95.81.103:9980/oc-content/uploads/54140/54140_thumbnail.png
+	[5199] LayoutTable ''
+		[5201] LayoutTableRow ''
+			[5205] link 'Century Furniture English Roll Arm Sofa (Was 5000)' url: http://100.95.81.103:9980/index.php?page=item&id=54140
+			[5211] StaticText '605.00 $'
+			[5221] StaticText 'Arlington (Virginia)'
+			[5224] StaticText '2023/11/16'
+			[5229] StaticText '============================================= ==== SAVE UP TO 90%! PRICES UPDATED DAILY! ==== ============================================= Learn more at: CENTURY FURNITURE ENGLISH ROLL ARM SOFA ORIGINAL PRICE: 5000 BRAND: Century Furniture PRODUCT L...'
+	[5238] link 'Highland House Furniture Tufted Back Accent Chair (Was 4500)' url: http://100.95.81.103:9980/index.php?page=item&id=43887
+		[5239] image 'Highland House Furniture Tufted Back Accent Chair (Was 4500)' url: http://100.95.81.103:9980/oc-content/uploads/43887/43887_thumbnail.png
+	[5243] LayoutTable ''
+		[5245] LayoutTableRow ''
+			[5249] link 'Highland House Furniture Tufted Back Accent Chair (Was 4500)' url: http://100.95.81.103:9980/index.php?page=item&id=43887
+			[5255] StaticText '220.00 $'
+			[5265] StaticText 'Dale City (Virginia)'
+			[5268] StaticText '2023/11/16'

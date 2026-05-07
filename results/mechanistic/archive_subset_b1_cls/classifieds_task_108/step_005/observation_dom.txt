@@ -1,0 +1,35 @@
+Tab 0 (current): 2006 INTERNATIONAL NAVISTAR CXT 4x4 Crew Cab Monster Pick Up Bellwood - Classifieds
+
+[4286] RootWebArea '2006 INTERNATIONAL NAVISTAR CXT 4x4 Crew Cab Monster Pick Up Bellwood - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=item&id=19210
+	[4375] link 'Classifieds' url: http://100.95.81.103:9980/
+		[4376] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[4402] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[4405] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[4408] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[4425] link 'Classifieds' url: http://100.95.81.103:9980/
+	[4431] StaticText '> '
+	[4432] link 'Cars + trucks' url: http://100.95.81.103:9980/index.php?page=search&sCategory=10
+	[4440] StaticText '2006 INTERNATIONAL NAVISTAR CXT 4x4 Crew Cab Monster Pick Up'
+	[4456] heading '2006 INTERNATIONAL NAVISTAR CXT 4x4 Crew Cab Monster Pick Up'
+	[4466] StaticText 'Published date:'
+	[4467] StaticText ' 2023/11/07'
+	[4474] StaticText 'Location:'
+	[4475] StaticText ' Bellwood, Virginia, United States'
+	[4481] link '2006 INTERNATIONAL NAVISTAR CXT 4x4 Crew Cab Monster Pick Up' url: javascript:;
+		[4291] image '2006 INTERNATIONAL NAVISTAR CXT 4x4 Crew Cab Monster Pick Up' url: http://100.95.81.103:9980/oc-content/uploads/19210/19210.png
+	[4487] link '2006 INTERNATIONAL NAVISTAR CXT 4x4 Crew Cab Monster Pick Up' url: http://100.95.81.103:9980/oc-content/uploads/19210/19210.png
+		[4489] image '2006 INTERNATIONAL NAVISTAR CXT 4x4 Crew Cab Monster Pick Up' url: http://100.95.81.103:9980/oc-content/uploads/19210/19210_thumbnail.png
+	[4760] StaticText '200000.00 $'
+	[4773] combobox '' hasPopup: menu expanded: False
+		[OPTIONS: currently selected="Mark as..."] "Mark as...", "Mark as spam", "Mark as misclassified", "Mark as duplicated", "Mark as expired", "Mark as offensive"
+	[4797] heading 'Contact publisher'
+	[4802] image 'Priya Mehta' url: http://100.95.81.103:9980/oc-content/uploads/user-images/default-user-image.png
+	[4806] StaticText 'Name:'
+	[4807] StaticText ' Priya Mehta'
+	[4810] StaticText 'E-mail:'
+	[4812] link 'priya.mehta152@example.com' url: mailto:priya.mehta152@example.com
+	[4828] heading 'Useful information'
+	[4834] ListMarker '• '
+	[4835] StaticText 'Avoid scams by acting locally or paying with PayPal'
+	[4838] ListMarker '• '
+	[4839] StaticText 'Never pay with Western Union, Moneygram or other anonymous payment services'

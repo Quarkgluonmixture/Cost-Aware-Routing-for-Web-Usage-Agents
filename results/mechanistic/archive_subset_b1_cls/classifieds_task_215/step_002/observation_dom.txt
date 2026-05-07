@@ -1,0 +1,62 @@
+Tab 0 (current): Photo + video - Classifieds
+
+[1817] RootWebArea 'Photo + video - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sCategory=22
+	[1899] link 'Classifieds' url: http://100.95.81.103:9980/
+		[1900] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[1926] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[1929] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[1932] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[1949] link 'Classifieds' url: http://100.95.81.103:9980/
+	[1955] StaticText '> '
+	[1957] StaticText 'Photo + video'
+	[1984] group ''
+		[1986] heading 'Your search'
+		[1991] textbox '' required: False
+	[1995] group ''
+		[1997] heading 'City'
+		[2004] textbox '' required: False
+		[2005] status '' live: polite atomic: True relevant: additions text
+	[2009] group ''
+		[2011] heading 'Show only'
+		[2016] checkbox 'listings with pictures' checked: false
+	[2023] group ''
+		[2027] heading 'Price'
+		[2033] StaticText 'Min.'
+		[2035] textbox '' required: False
+		[2041] StaticText 'Max.'
+		[2043] textbox '' required: False
+	[2054] button 'Apply'
+	[2065] heading 'Subscribe to this search'
+	[2081] button 'Subscribe now!'
+	[2088] heading 'Refine category'
+	[2094] link 'All categories' url: http://100.95.81.103:9980/index.php?page=search
+	[2115] heading 'Photo + video'
+	[2119] StaticText '1 - 12 of 938 listings'
+	[2131] StaticText 'Sort by:'
+	[2134] StaticText 'Newly listed '
+		[DROPDOWN OPTIONS] "Newly listed", "Lower price first", "Higher price first"
+	[2158] link '\uf0c9' url: http://100.95.81.103:9980/index.php?page=search&sCategory=22&sShowAs=list
+	[2162] link '\uf84c' url: http://100.95.81.103:9980/index.php?page=search&sCategory=22&sShowAs=gallery
+	[2170] heading 'Listings'
+	[2177] link 'Canon EF 100-400mm f/4.5-5.6L IS II USM with extender EF 1.4X III' url: http://100.95.81.103:9980/index.php?page=item&id=10542
+		[2178] image 'Canon EF 100-400mm f/4.5-5.6L IS II USM with extender EF 1.4X III' url: http://100.95.81.103:9980/oc-content/uploads/10542/10542_thumbnail.png
+	[2182] LayoutTable ''
+		[2184] LayoutTableRow ''
+			[2188] link 'Canon EF 100-400mm f/4.5-5.6L IS II USM with extender EF 1.4X III' url: http://100.95.81.103:9980/index.php?page=item&id=10542
+			[2193] StaticText '1645.00 $'
+			[2199] StaticText 'Photo + video'
+			[2203] StaticText 'College Park (Maryland)'
+			[2206] StaticText '2023/11/16'
+			[2211] StaticText 'This is a great lens / extender combination, it is just becoming a little too heavy for me. Seldom used, pristine, always stored in dehumidified cabinet, complete with all original items plus UV filter installed on day one. I am adding two images tak...'
+	[2219] link 'Dolica Proline 62" Tripod' url: http://100.95.81.103:9980/index.php?page=item&id=3226
+		[2220] image 'Dolica Proline 62" Tripod' url: http://100.95.81.103:9980/oc-content/uploads/3226/3226_thumbnail.png
+	[2224] LayoutTable ''
+		[2226] LayoutTableRow ''
+			[2230] link 'Dolica Proline 62" Tripod' url: http://100.95.81.103:9980/index.php?page=item&id=3226
+			[2236] StaticText '19.00 $'
+			[2242] StaticText 'Photo + video'
+			[2246] StaticText 'Towson (Maryland)'
+			[2249] StaticText '2023/11/16'
+			[2254] StaticText 'Model AX620B100. For more technical details and reviews, see Only lightly used. Shipping not included in price, would need to be paid by buyer.'
+	[2274] link 'Amish Girl with Cows Picture' url: http://100.95.81.103:9980/index.php?page=item&id=82402
+	[2280] StaticText '9.00 $'

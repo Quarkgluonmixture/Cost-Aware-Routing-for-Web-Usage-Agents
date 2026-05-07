@@ -1,0 +1,33 @@
+Tab 0 (current): Classifieds
+
+[2] RootWebArea 'Classifieds' focused: True url: http://100.95.81.103:9980/
+	[89] link 'Classifieds' url: http://100.95.81.103:9980/
+		[90] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[115] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[5] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[118] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[131] heading 'What are you looking for today?'
+	[138] StaticText 'Keyword'
+	[140] textbox 'e.g., a blue used car' required: False
+	[146] StaticText 'Category'
+	[148] combobox '' focused: True hasPopup: menu expanded: True
+		[OPTIONS: currently selected="Books"] "Antiques", "Appliances", "Arts + crafts", "Auto parts", "Beauty + health", "Bikes", "Boats", "Books", "Cars + trucks", "Cell phones", "Collectibles", "Computer parts", "Computers", "Electronics", "Farm + garden", "Furniture", "Household", "Jewelry", "Motorcycles", "Music instruments", "Photo + video", "Rvs + campers", "Video gaming"
+	[202] StaticText '\xa0'
+	[204] button '\uf002 Search'
+	[223] heading 'Latest Listings'
+	[229] link 'JBL Powered PA Speaker w/ Stand' url: http://100.95.81.103:9980/index.php?page=item&id=65955
+		[230] image 'JBL Powered PA Speaker w/ Stand' url: http://100.95.81.103:9980/oc-content/uploads/65955/65955_thumbnail.png
+	[240] link 'JBL Powered PA Speaker w/ Stand' url: http://100.95.81.103:9980/index.php?page=item&id=65955
+	[246] StaticText '150.00 $'
+	[271] link 'xbox series x / with extras' url: http://100.95.81.103:9980/index.php?page=item&id=50169
+		[272] image 'xbox series x / with extras' url: http://100.95.81.103:9980/oc-content/uploads/50169/50169_thumbnail.png
+	[282] link 'xbox series x / with extras' url: http://100.95.81.103:9980/index.php?page=item&id=50169
+	[288] StaticText '350.00 $'
+	[313] link 'Canon EF 100-400mm f/4.5-5.6L IS II USM with extender EF 1.4X III' url: http://100.95.81.103:9980/index.php?page=item&id=10542
+		[314] image 'Canon EF 100-400mm f/4.5-5.6L IS II USM with extender EF 1.4X III' url: http://100.95.81.103:9980/oc-content/uploads/10542/10542_thumbnail.png
+	[324] link 'Canon EF 100-400mm f/4.5-5.6L IS II USM with extender EF 1.4X III' url: http://100.95.81.103:9980/index.php?page=item&id=10542
+	[330] StaticText '1645.00 $'
+	[355] link 'Engagement Ring' url: http://100.95.81.103:9980/index.php?page=item&id=71405
+		[356] image 'Engagement Ring' url: http://100.95.81.103:9980/oc-content/uploads/71405/71405_thumbnail.png
+	[366] link 'Engagement Ring' url: http://100.95.81.103:9980/index.php?page=item&id=71405
+	[372] StaticText '2200.00 $'

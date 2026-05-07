@@ -1,0 +1,40 @@
+Tab 0 (current): bike - Classifieds
+
+[1201] RootWebArea 'bike - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sPattern=bike+
+	[2134] StaticText 'Rebuilt '
+	[2137] StaticText ' from the frame up. All parts beyond frame are new. Frame: Trek 800 sport circa 2000/2001 '
+	[2139] StaticText 'Bike'
+	[2140] StaticText ' was purchased new and repainted - charcoal grey Steel Frame 19.5" large Weight 29 lbs. 10 oz. Aluminum rigid fork - no suspension front or rear...'
+	[2149] link 'Specialized - classic rebuild' url: http://100.95.81.103:9980/index.php?page=item&id=66548
+		[2150] image 'Specialized - classic rebuild' url: http://100.95.81.103:9980/oc-content/uploads/66548/66548_thumbnail.png
+	[2154] LayoutTable ''
+		[2156] LayoutTableRow ''
+			[2160] link 'Specialized - classic rebuild' url: http://100.95.81.103:9980/index.php?page=item&id=66548
+			[2166] StaticText '750.00 $'
+			[2172] StaticText 'Bikes'
+			[2176] StaticText 'Borough of South Greensburg (Pennsylvania)'
+			[2179] StaticText '2023/11/16'
+			[2184] StaticText 'Rebuilt '
+			[2186] StaticText 'bike'
+			[2187] StaticText ' from the frame up. All parts new. Frame: Specialized HardRock A1 Comp FS circa 1999 Frame was professionally powder-coated (International Red) Aluminum Frame 19" - Large Aluminum rigid fork - no suspension front or rear Weight 25 lbs 5 o...'
+	[2196] link 'Trek - Classic Rebuild' url: http://100.95.81.103:9980/index.php?page=item&id=27132
+		[2197] image 'Trek - Classic Rebuild' url: http://100.95.81.103:9980/oc-content/uploads/27132/27132_thumbnail.png
+	[2201] LayoutTable ''
+		[2203] LayoutTableRow ''
+			[2207] link 'Trek - Classic Rebuild' url: http://100.95.81.103:9980/index.php?page=item&id=27132
+			[2213] StaticText '750.00 $'
+			[2219] StaticText 'Bikes'
+			[2223] StaticText 'Borough of South Greensburg (Pennsylvania)'
+			[2226] StaticText '2023/11/16'
+			[2231] StaticText 'Rebuilt '
+			[2233] StaticText 'bike'
+			[2234] StaticText ' from the frame up. All parts beyond frame are new. Frame: Trek 4500 circa 2000 Frame was professionally powder-coated (International Red) Aluminum frame 19.5" - large Aluminum rigid fork - no suspension front or rear Weight 24 lbs. 15 oz...'
+	[2251] link '2' url: http://100.95.81.103:9980/index.php?page=search&sPattern=bike+&iPage=2
+	[2255] link '3' url: http://100.95.81.103:9980/index.php?page=search&sPattern=bike+&iPage=3
+	[2259] link '>' url: http://100.95.81.103:9980/index.php?page=search&sPattern=bike+&iPage=2
+	[2263] link '»' url: http://100.95.81.103:9980/index.php?page=search&sPattern=bike+&iPage=214
+	[2270] contentinfo ''
+		[2276] link 'Contact' url: http://100.95.81.103:9980/index.php?page=contact
+		[2284] StaticText 'Powered by '
+		[2285] link 'best classifieds scripts' url: https://osclass-classifieds.com/
+		[2287] StaticText ' osclass'

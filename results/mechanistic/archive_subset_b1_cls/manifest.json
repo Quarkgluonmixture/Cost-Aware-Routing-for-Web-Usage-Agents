@@ -1,0 +1,1068 @@
+{
+  "config": {
+    "candidates_jsonl": "/home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents/results/mechanistic/curate_mirage_b1_classifieds/candidates.jsonl",
+    "archived_run_dir": "/home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents/results/visualwebarena/phase1/B1_phantom_som_classifieds_20260428",
+    "output_dir": "/home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents/results/mechanistic/archive_subset_b1_cls",
+    "site": "classifieds",
+    "steps": [
+      2,
+      5
+    ],
+    "strong_min_composite": 1.0,
+    "strong_max_overlap": 0.5,
+    "reverse_max_composite": -1.5
+  },
+  "site": "classifieds",
+  "steps": [
+    2,
+    5
+  ],
+  "strong": [
+    {
+      "task_id": 1,
+      "intent": "Find me the cheapest red Toyota. It should be between $3000 to $6000.",
+      "composite": 3.0666666666666664,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task is to find the cheapest red Toyota",
+      "target_text": "{\n  \"thought\": \"The search results show a 200",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 33,
+      "intent": "Find the latest listing of a white fridge and post a comment offering $10 less than their asking price.",
+      "composite": 3.0666666666666664,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 2,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search results do not show any white fridge",
+      "target_text": "{\n  \"thought\": \"The current page shows search results for 'white",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 40,
+      "intent": "Search for \"dishwasher\" and tell me the brand of the most recent listing of a stainless steel one.",
+      "composite": 3.0666666666666664,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task is to find the most recent listing",
+      "target_text": "{\n  \"thought\": \"The search results show multiple dishwasher listings, but",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 82,
+      "intent": "Find the most expensive purple hard-case book, and tell me how much it costs in dollars.",
+      "composite": 3.0666666666666664,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task is to find the most expensive purple",
+      "target_text": "{\n  \"thought\": \"The search results show listings for guitars and furniture",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 116,
+      "intent": "Search for \"brace\" and navigate to the cheapest item that matches the body part in this image.",
+      "composite": 3.0666666666666664,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task is to find the cheapest item that",
+      "target_text": "{\n  \"thought\": \"The search results show listings for 'shoulder",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 161,
+      "intent": "Search for \"mountain bike\" and tell me the predominant color of the frame of the cheapest bike, ignoring $1 listings.",
+      "composite": 3.0666666666666664,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task is to find the cheapest mountain bike",
+      "target_text": "{\n  \"thought\": \"The search results show multiple mountain bike listings.",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 214,
+      "intent": "Show me the most expensive phone with a theme matching that of the image.",
+      "composite": 3.0666666666666664,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 2,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search results do not show any Star Wars",
+      "target_text": "{\n  \"thought\": \"The current page shows search results for 'Star",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 19,
+      "intent": "Show me the most recently posted painting in the \"Arts + crafts\" category between $80-100 that shows the sea.",
+      "composite": 1.6,
+      "token_overlap": 0.4,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"I need to refine the search to include '",
+      "target_text": "{\n  \"thought\": \"The current page shows search results for 'sea",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 20,
+      "intent": "Show me the most recently posted white Xbox.",
+      "composite": 1.6,
+      "token_overlap": 0.4,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"I am on a single item page for a",
+      "target_text": "{\n  \"thought\": \"The current page shows a listing for an Xbox",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 122,
+      "intent": "Find the oldest listed red book in the \"Books\" category, and tell me how much it costs in dollars.",
+      "composite": 1.6,
+      "token_overlap": 0.4,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The 'Books' category is already selected,",
+      "target_text": "{\n  \"thought\": \"I need to find the oldest listed red book",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 181,
+      "intent": "Navigate to the most expensive item in the \"Video gaming\" category with the same item from the image.",
+      "composite": 1.6,
+      "token_overlap": 0.4,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires navigating to the most expensive item",
+      "target_text": "{\n  \"thought\": \"I am currently on the item page for '",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 9,
+      "intent": "Help me make a post selling this item and navigate to it. Price it at $10 cheaper than the most similar item on the site between $750-800 (of the same color). If there are multiple similar items, use the most recent posting.",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires finding the most similar item to",
+      "target_text": "{\n  \"thought\": \"The current page is showing search results for '",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 32,
+      "intent": "Find this exact bike that's listed for $300-500 and post a comment offering $10 less than their asking price.",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The target bike is a GT Stalker ",
+      "target_text": "{\n  \"thought\": \"I need to find a bike listed for $",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 37,
+      "intent": "Find all listings for this exact item on OSClass and compare its price to the cheapest listing on OneStopMarket. Return the link of the cheapest item on both sites.",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to find listings for a specific",
+      "target_text": "{\n  \"thought\": \"The current page is showing search results for '",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 60,
+      "intent": "Find the most expensive video game item where I can roleplay the situation in the image.",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to find the most expensive video",
+      "target_text": "{\n  \"thought\": \"The most expensive item visible is the 'g",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 61,
+      "intent": "Find the most expensive video game item where I can roleplay the situation in the image.",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to find the most expensive video",
+      "target_text": "{\n  \"thought\": \"The most expensive item visible is the 'g",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 69,
+      "intent": "Find the most expensive item posted from Delaware which is related to the brand on the hat in the image.",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires finding the most expensive item related",
+      "target_text": "{\n  \"thought\": \"The current page shows search results for 'New",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 73,
+      "intent": "Find me the cheapest posting from Delaware that has the same brand as the product in the image.",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires finding the cheapest posting in Delaware",
+      "target_text": "{\n  \"thought\": \"The current page shows search results for 'Mc",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 99,
+      "intent": "Find the most expensive wheelchair lift that has multiple people in the image of the listing, and tell me how much it costs in dollars.",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires finding the most expensive wheelchair lift",
+      "target_text": "{\n  \"thought\": \"The current page shows listings for wheelchair lifts,",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 108,
+      "intent": "Tell me the name of the lister with the most expensive green vehicle from West Virginia.",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to find the lister with",
+      "target_text": "{\n  \"thought\": \"The current page shows search results for 'green",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 109,
+      "intent": "How many miles does the most expensive white sports car in the \"Cars + trucks\" category from Ohio have?",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to find the most expensive white",
+      "target_text": "{\n  \"thought\": \"The current page shows search results for 'white",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 215,
+      "intent": "Show me the most expensive camera that is for sale (as confirmed in the listing description).",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to confirm the most expensive camera",
+      "target_text": "{\n  \"thought\": \"The most expensive camera listed is the Canon EF",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 227,
+      "intent": "Show me the cheapest clock from the classifieds site with the green animal at the top of the image on OneStopMarket.",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires finding the cheapest clock with a",
+      "target_text": "{\n  \"thought\": \"The current page shows search results for 'clock",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 228,
+      "intent": "Find me the most recent live plant listing from the classifieds site that is the same plant type as the plant shown in the image on OneStopMarket. Then, if there are at least 3 of those plants below 9ft tall shown in the product listing image, comment with the title \"Interested\" and text \"I want 3\".",
+      "composite": 1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires finding the most recent live plant",
+      "target_text": "{\n  \"thought\": \"The image shows a spider plant, and the",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    }
+  ],
+  "reverse": [
+    {
+      "task_id": 211,
+      "intent": "Find me the cheapest farm pig in the \"Farm + garden\" category on this site.",
+      "composite": -3.2,
+      "token_overlap": 0.4,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The search results show listings for 'farm pig",
+      "target_text": "{\n  \"thought\": \"I am on the search results page for '",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 4,
+      "intent": "Navigate to my listing of the white car and change the price to $25000. Update the price in the description as well.",
+      "composite": -1.6,
+      "token_overlap": 0.4,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The white car listing is not visible in the",
+      "target_text": "{\n  \"thought\": \"I am on the 'Manage my listings'",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 152,
+      "intent": "Navigate to the item on this page whose image includes a human hand.",
+      "composite": -1.6,
+      "token_overlap": 0.4,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The item with a human hand is visible in",
+      "target_text": "{\n  \"thought\": \"I need to find an item whose image includes",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 159,
+      "intent": "Navigate to my listing with a rug in the image and add to the description that there are no refunds.",
+      "composite": -1.6,
+      "token_overlap": 0.4,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The current page shows listings for cars, bikes",
+      "target_text": "{\n  \"thought\": \"I am on the 'Manage my listings'",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 10,
+      "intent": "What is the seat height in inches of the smaller piece of furniture on this page?",
+      "composite": -1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The current page is displaying a JBL speaker",
+      "target_text": "{\n  \"thought\": \"The task is to find the seat height in",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 123,
+      "intent": "Navigate to the item on this page which matches the color of the object being used by the person in the given image.",
+      "composite": -1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The search results are showing cars and trucks,",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the item that",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 130,
+      "intent": "Navigate to the item on this page whose image is taken during a sunset.",
+      "composite": -1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The current page shows an item titled 'Wood",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the item whose",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 151,
+      "intent": "Navigate to the item on this page whose image has pink sticky notes.",
+      "composite": -1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The item with pink sticky notes is visible in",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the item whose",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 155,
+      "intent": "Explore the \"Computers\" category, and find the oldest listed item whose image shows a Microsoft Windows background.",
+      "composite": -1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires finding the oldest listed item in",
+      "target_text": "{\n  \"thought\": \"I need to explore the 'Computers'",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 156,
+      "intent": "Explore the \"Bikes\" category, and find the oldest listed item whose image is taken on carpet.",
+      "composite": -1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires finding the oldest listed item in",
+      "target_text": "{\n  \"thought\": \"I need to explore the 'Bikes'",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 157,
+      "intent": "Explore the \"Music instruments\" category, and find the oldest listed item whose image shows an instruction manual.",
+      "composite": -1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires finding the oldest listed item in",
+      "target_text": "{\n  \"thought\": \"I need to explore the 'Music instruments'",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 160,
+      "intent": "Add a comment on the item on this page whose image is taken inside a garage with the title \"More Pictures\" and text \"Could you post different angles?\".",
+      "composite": -1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The target image is not visible on the current",
+      "target_text": "{\n  \"thought\": \"The task requires adding a comment to an item",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 188,
+      "intent": "Navigate to the book listing on the page where the cover includes a baby.",
+      "composite": -1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The current page displays books without a baby on",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the book listing",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 191,
+      "intent": "Navigate to the item on this page with a blonde horse.",
+      "composite": -1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The current page shows a listing for a '",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the item with",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 200,
+      "intent": "Show me the latest listing of a pillow from the classifieds site with a pattern matching the top left animal in the first image of the listing on OneStopMarket.",
+      "composite": -1.5333333333333332,
+      "token_overlap": 0.4666666666666667,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The page shows a 404 error",
+      "target_text": "{\n  \"thought\": \"The current page is a 404",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    }
+  ],
+  "skipped": []
+}

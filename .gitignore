@@ -39,6 +39,9 @@ results/mechanistic/*
 !results/mechanistic/curate_mirage_b1_classifieds/
 results/mechanistic/curate_mirage_b1_classifieds/*
 !results/mechanistic/curate_mirage_b1_classifieds/candidates.md
+# 24+15 mirage candidate task artifacts subset (16.5MB, paper-grade dataset for A100/Myriad)
+!results/mechanistic/archive_subset_b1_cls/
+!results/mechanistic/archive_subset_b1_cls/**
 logs/
 wandb/
 visualization/

@@ -1,0 +1,35 @@
+Tab 0 (current): Listed nyc/Annapolis artist Rufus Norman 1935-2021 abstract painting Jessup - Classifieds
+
+[3207] RootWebArea 'Listed nyc/Annapolis artist Rufus Norman 1935-2021 abstract painting Jessup - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=item&id=38872
+	[3296] link 'Classifieds' url: http://100.95.81.103:9980/
+		[3297] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[3323] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[3326] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[3329] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[3346] link 'Classifieds' url: http://100.95.81.103:9980/
+	[3352] StaticText '> '
+	[3353] link 'Arts + crafts' url: http://100.95.81.103:9980/index.php?page=search&sCategory=4
+	[3361] StaticText 'Listed nyc/Annapolis artist Rufus Norman 1935-2021 abstract painting'
+	[3377] heading 'Listed nyc/Annapolis artist Rufus Norman 1935-2021 abstract painting'
+	[3387] StaticText 'Published date:'
+	[3388] StaticText ' 2023/11/16'
+	[3395] StaticText 'Location:'
+	[3396] StaticText ' Jessup, Maryland, United States'
+	[3402] link 'Listed nyc/Annapolis artist Rufus Norman 1935-2021 abstract painting' url: javascript:;
+		[3212] image 'Listed nyc/Annapolis artist Rufus Norman 1935-2021 abstract painting' url: http://100.95.81.103:9980/oc-content/uploads/38872/38872.png
+	[3408] link 'Listed nyc/Annapolis artist Rufus Norman 1935-2021 abstract painting' url: http://100.95.81.103:9980/oc-content/uploads/38872/38872.png
+		[3410] image 'Listed nyc/Annapolis artist Rufus Norman 1935-2021 abstract painting' url: http://100.95.81.103:9980/oc-content/uploads/38872/38872_thumbnail.png
+	[3681] StaticText '200.00 $'
+	[3694] combobox '' hasPopup: menu expanded: False
+		[OPTIONS: currently selected="Mark as..."] "Mark as...", "Mark as spam", "Mark as misclassified", "Mark as duplicated", "Mark as expired", "Mark as offensive"
+	[3718] heading 'Contact publisher'
+	[3723] image 'Irina Brown' url: http://100.95.81.103:9980/oc-content/uploads/user-images/default-user-image.png
+	[3727] StaticText 'Name:'
+	[3728] StaticText ' Irina Brown'
+	[3731] StaticText 'E-mail:'
+	[3733] link 'irina.brown320@example.com' url: mailto:irina.brown320@example.com
+	[3749] heading 'Useful information'
+	[3755] ListMarker '• '
+	[3756] StaticText 'Avoid scams by acting locally or paying with PayPal'
+	[3759] ListMarker '• '
+	[3760] StaticText 'Never pay with Western Union, Moneygram or other anonymous payment services'

@@ -52,8 +52,46 @@ audience: self + advisor sync prep
 **Reachability from A100 outbound**:
 - ✅ Internet (HuggingFace download / pip / GitHub clone)
 - ✅ UCL services on UCL backbone (10.32.x.x bastion etc.)
-- ❌ **quark VWA Docker (100.95.81.103:9980/9999/7770)** — NOT reachable; would need Tailscale install + lab tailnet membership (lab admin approval pending). **16-cell rerun on A100 blocked until this configured**.
-- ❌ DGX (`100.99.92.18`) Tailscale — same as quark VWA
+- ❌ **quark VWA Docker (100.95.81.103:9980/9999/7770)** — NOT reachable directly; would need Tailscale install + lab tailnet membership.
+- ❌ DGX (`100.99.92.18`) Tailscale — same as above.
+
+**Note**: For 16-cell rerun, see §1.1.2 "VWA self-host on A100" — preferred path bypasses the reach issue entirely by co-locating VWA stack with agent on the A100 VM itself.
+
+#### §1.1.2 VWA self-host on A100 (preferred for 16-cell rerun)
+
+Instead of reaching out to quark VWA, **deploy VWA Docker stack on A100 VM itself**. Agent + VWA both localhost-only on A100. Decided 2026-05-07.
+
+**Why preferred over Tailscale-to-quark path**:
+| Dimension | A100 self-host | A100 → Tailscale → quark |
+|---|---|---|
+| Network latency | localhost ~0.1ms | overlay 50-100ms+ |
+| Lab admin gating | ❌ none | ✅ needs admin approval |
+| Quark sleep risk | not applicable | ⚠️ quark sleep kills run |
+| Reproducibility | ⭐ single VM | "agent A100 + VWA quark" complex |
+| Tear-down portability | `docker compose down` clean | needs Tailscale teardown coordination |
+| Disk cost | +~110GB (cls+red+shop, no wiki) | 0 |
+| Setup time | ~1-2h one-time | ~30min Tailscale + admin wait |
+
+**Disk budget on 500GB A100 disk**:
+- Ubuntu OS + apt cache: ~10GB
+- Docker engine + image overhead: ~5GB
+- VWA cls (osclass + MySQL DB): ~10-20GB
+- VWA red (Postmill + DB): ~5-10GB
+- VWA shop (Magento + DB): ~30-40GB
+- VWA homepage (Python): ~1GB
+- VWA wikipedia (skip — paper §5 mechanistic + 16-cell don't use Wikipedia tasks): 0
+- Qwen3-VL-4B model cache: ~10GB
+- Llama-3.2-11B-Vision cache (cross-arch): ~22GB
+- Mechanistic + 16-cell results: ~30GB
+- pip site-packages: ~10GB
+- **Total**: ~135-160GB ⇒ 500GB - 160GB = ~340GB headroom ⭐ comfortable
+
+**Setup script**: `scripts/setup/a100_self_host_vwa.sh` (added 2026-05-07).
+
+**Paper §3 method disclosure required**:
+> "Phase 1 paper-grade runs were executed against VWA Docker stack hosted on Windows machine via Docker Desktop WSL2 backend, accessed by agent through Tailscale. For post-Phase-A 16-cell rerun, the same Docker stack is deployed on the A100-equipped UCL Condense VM (Ubuntu 22.04 native Docker), with agent and stack co-located on same host. Byte-equivalence of HTML responses verified across deployments via per-site checksums."
+
+**Status (5/7)**: Setup script written (`scripts/setup/a100_self_host_vwa.sh`); execution pending SSH cert setup.
 
 **Access path** (post-Steve 5/7 clarification):
 - ❌ Direct SSH not allowed

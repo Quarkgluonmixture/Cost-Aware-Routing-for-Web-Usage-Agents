@@ -1,0 +1,69 @@
+Tab 0 (current): McDonald's - Classifieds
+
+[1201] RootWebArea "McDonald's - Classifieds" focused: True url: http://100.95.81.103:9980/index.php?page=search&sPattern=McDonald%27s+
+	[1283] link 'Classifieds' url: http://100.95.81.103:9980/
+		[1284] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[1310] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[1313] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[1316] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[1333] link 'Classifieds' url: http://100.95.81.103:9980/
+	[1339] StaticText '> '
+	[1341] StaticText "Search results: McDonald's"
+	[1368] group ''
+		[1370] heading 'Your search'
+		[1375] textbox '' required: False
+			[2316] StaticText "McDonald's"
+	[1379] group ''
+		[1381] heading 'City'
+		[1388] textbox '' focused: True required: False
+		[1389] status '' live: polite atomic: True relevant: additions text
+	[1393] group ''
+		[1395] heading 'Show only'
+		[1400] checkbox 'listings with pictures' checked: false
+	[1407] group ''
+		[1411] heading 'Price'
+		[1417] StaticText 'Min.'
+		[1419] textbox '' required: False
+		[1425] StaticText 'Max.'
+		[1427] textbox '' required: False
+	[1436] button 'Apply'
+	[1447] heading 'Subscribe to this search'
+	[1463] button 'Subscribe now!'
+	[1470] heading 'Refine category'
+	[1475] link 'All categories' url: http://100.95.81.103:9980/index.php?page=search&sPattern=McDonald%27s+
+	[1626] StaticText '1 - 12 of 139 listings'
+	[1638] StaticText 'Sort by:'
+	[1641] StaticText 'Newly listed '
+		[DROPDOWN OPTIONS] "Newly listed", "Lower price first", "Higher price first"
+	[1665] link '\uf0c9' url: http://100.95.81.103:9980/index.php?page=search&sPattern=McDonald%27s+&sShowAs=list
+	[1669] link '\uf84c' url: http://100.95.81.103:9980/index.php?page=search&sPattern=McDonald%27s+&sShowAs=gallery
+	[1677] heading 'Listings'
+	[1684] link 'Antique 1865-1875 Ingraham schoolhouse clock.' url: http://100.95.81.103:9980/index.php?page=item&id=66107
+		[1685] image 'Antique 1865-1875 Ingraham schoolhouse clock.' url: http://100.95.81.103:9980/oc-content/uploads/66107/66107_thumbnail.png
+	[1689] LayoutTable ''
+		[1691] LayoutTableRow ''
+			[1695] link 'Antique 1865-1875 Ingraham schoolhouse clock.' url: http://100.95.81.103:9980/index.php?page=item&id=66107
+			[1701] StaticText '295.00 $'
+			[1707] StaticText 'Antiques'
+			[1711] StaticText 'Manassas Park (Virginia)'
+			[1714] StaticText '2023/11/16'
+			[1718] StaticText 'This is a real old early embossed oak school clock. Old style with the big pendulum Bob! Runs good. From clockmakers estate. Movement has only had I bushing, and all other pivots are in good shape. As with all school clocks it is time only. Real soli...'
+	[1727] link 'ANTIQUE 8 day large Cuckoo Clock, hand carved' url: http://100.95.81.103:9980/index.php?page=item&id=70975
+		[1728] image 'ANTIQUE 8 day large Cuckoo Clock, hand carved' url: http://100.95.81.103:9980/oc-content/uploads/70975/70975_thumbnail.png
+	[1732] LayoutTable ''
+		[1734] LayoutTableRow ''
+			[1738] link 'ANTIQUE 8 day large Cuckoo Clock, hand carved' url: http://100.95.81.103:9980/index.php?page=item&id=70975
+			[1744] StaticText '399.00 $'
+			[1750] StaticText 'Antiques'
+			[1754] StaticText 'Manassas Park (Virginia)'
+			[1757] StaticText '2023/11/16'
+			[1762] StaticText 'This is a real antique hand carved cuckoo clock made in the Black Forest in Germany. The old cuckoo clocks were not dated. This clock had a Schmeckenbecher REGULA movement which would age it to pre 1954. I have removed the movement, that was not work...'
+	[1771] link 'ANTIQUE 1880/1900 Ingraham professionally restored black mantle clock' url: http://100.95.81.103:9980/index.php?page=item&id=63595
+		[1772] image 'ANTIQUE 1880/1900 Ingraham professionally restored black mantle clock' url: http://100.95.81.103:9980/oc-content/uploads/63595/63595_thumbnail.png
+	[1776] LayoutTable ''
+		[1778] LayoutTableRow ''
+			[1782] link 'ANTIQUE 1880/1900 Ingraham professionally restored black mantle clock' url: http://100.95.81.103:9980/index.php?page=item&id=63595
+			[1787] StaticText '199.00 $'
+			[1793] StaticText 'Antiques'
+			[1797] StaticText 'Manassas Park (Virginia)'
+			[1800] StaticText '2023/11/16'

@@ -1,0 +1,73 @@
+Tab 0 (current): red Toyota - Classifieds
+
+[2381] RootWebArea 'red Toyota - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+Toyota&sPriceMin=3000+
+	[2506] link 'Classifieds' url: http://100.95.81.103:9980/
+		[2507] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[2517] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[2518] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[2519] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[2526] link 'Classifieds' url: http://100.95.81.103:9980/
+	[2937] StaticText '> '
+	[2938] StaticText 'Search results: red Toyota'
+	[2543] group ''
+		[2544] heading 'Your search'
+		[2546] textbox '' required: False
+			[2940] StaticText 'red Toyota'
+	[2547] group ''
+		[2548] heading 'City'
+		[2551] textbox '' required: False
+		[3129] status '' live: polite atomic: True relevant: additions text
+	[2552] group ''
+		[2553] heading 'Show only'
+		[2555] checkbox 'listings with pictures' checked: false
+	[2557] group ''
+		[2559] heading 'Price'
+		[2946] StaticText 'Min.'
+		[2562] textbox '' required: False
+			[2945] StaticText '3000 '
+		[2947] StaticText 'Max.'
+		[2565] textbox '' required: False
+	[2568] button 'Apply'
+	[2571] heading 'Subscribe to this search'
+	[2578] button 'Subscribe now!'
+	[2580] heading 'Refine category'
+	[2583] link 'All categories' url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+Toyota&sPriceMin=3000+
+	[2976] StaticText '1 - 12 of 709 listings'
+	[2977] StaticText 'Sort by:'
+	[2978] StaticText 'Newly listed '
+		[DROPDOWN OPTIONS] "Newly listed", "Lower price first", "Higher price first"
+	[2648] link '\uf0c9' url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+Toyota&sPriceMin=3000+&sShowAs=list
+	[2650] link '\uf84c' url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=red+Toyota&sPriceMin=3000+&sShowAs=gallery
+	[2652] heading 'Listings'
+	[2655] link '2013 Toyota Prius C One Hatchback' url: http://100.95.81.103:9980/index.php?page=item&id=54394
+		[2656] image '2013 Toyota Prius C One Hatchback' url: http://100.95.81.103:9980/oc-content/uploads/54394/54394_thumbnail.png
+	[2658] LayoutTable ''
+		[2659] LayoutTableRow ''
+			[2661] link '2013 Toyota Prius C One Hatchback' url: http://100.95.81.103:9980/index.php?page=item&id=54394
+			[2981] StaticText '9500.00 $'
+			[2982] StaticText 'Cars + trucks'
+			[2984] StaticText 'Reisterstown (Maryland)'
+			[2986] StaticText '2023/11/16'
+			[2987] StaticText '2013 '
+			[2988] StaticText 'Toyota'
+			[2989] StaticText ' Prius C One Hatchback 129,000 Miles MD Safety Inspected. Well maintained No Accident. No Damage 53 MPG City, 46 Highway! Excellent Mechanical Condition Good Interior Condition Hybrid Component Work Properly Heat and AC Works Well Good tir...'
+	[2671] link '2018 Toyota Tacoma' url: http://100.95.81.103:9980/index.php?page=item&id=44017
+		[2672] image '2018 Toyota Tacoma' url: http://100.95.81.103:9980/oc-content/uploads/44017/44017_thumbnail.png
+	[2674] LayoutTable ''
+		[2675] LayoutTableRow ''
+			[2677] link '2018 Toyota Tacoma' url: http://100.95.81.103:9980/index.php?page=item&id=44017
+			[2991] StaticText '26000.00 $'
+			[2992] StaticText 'Cars + trucks'
+			[2994] StaticText 'Springfield (Virginia)'
+			[2996] StaticText '2023/11/16'
+			[2997] StaticText 'Low mileage and good like new'
+	[2686] link '2007 Toyota Yaris' url: http://100.95.81.103:9980/index.php?page=item&id=7846
+		[2687] image '2007 Toyota Yaris' url: http://100.95.81.103:9980/oc-content/uploads/7846/7846_thumbnail.png
+	[2689] LayoutTable ''
+		[2690] LayoutTableRow ''
+			[2692] link '2007 Toyota Yaris' url: http://100.95.81.103:9980/index.php?page=item&id=7846
+			[2999] StaticText '3000.00 $'
+			[3000] StaticText 'Cars + trucks'
+			[3002] StaticText 'Gainesville (Virginia)'
+			[3004] StaticText '2023/11/16'
+			[3005] StaticText 'Manual transmission 4 door sedan 4 new tires 200k miles Clean Carfax'

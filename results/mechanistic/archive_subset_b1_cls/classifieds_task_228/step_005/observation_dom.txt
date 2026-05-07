@@ -1,0 +1,74 @@
+Tab 0 (current): live plant - Classifieds | Tab 1: Posterazzi PDXJP6549SMALL Live Photo Print, 12 x 24, Multi
+
+[4154] RootWebArea 'live plant - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sPattern=live+plant+
+	[4236] link 'Classifieds' url: http://100.95.81.103:9980/
+		[4237] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[4263] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[4266] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[4269] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[4286] link 'Classifieds' url: http://100.95.81.103:9980/
+	[4292] StaticText '> '
+	[4294] StaticText 'Search results: live plant'
+	[4321] group ''
+		[4323] heading 'Your search'
+		[4328] textbox '' required: False
+			[5269] StaticText 'live plant'
+	[4332] group ''
+		[4334] heading 'City'
+		[4341] textbox '' required: False
+		[4342] status '' live: polite atomic: True relevant: additions text
+	[4346] group ''
+		[4348] heading 'Show only'
+		[4353] checkbox 'listings with pictures' checked: false
+	[4360] group ''
+		[4364] heading 'Price'
+		[4370] StaticText 'Min.'
+		[4372] textbox '' required: False
+		[4378] StaticText 'Max.'
+		[4380] textbox '' required: False
+	[4389] button 'Apply'
+	[4400] heading 'Subscribe to this search'
+	[4416] button 'Subscribe now!'
+	[4423] heading 'Refine category'
+	[4428] link 'All categories' url: http://100.95.81.103:9980/index.php?page=search&sPattern=live+plant+
+	[4579] StaticText '1 - 12 of 1458 listings'
+	[4591] StaticText 'Sort by:'
+	[4594] StaticText 'Newly listed '
+		[DROPDOWN OPTIONS] "Newly listed", "Lower price first", "Higher price first"
+	[4618] link '\uf0c9' url: http://100.95.81.103:9980/index.php?page=search&sPattern=live+plant+&sShowAs=list
+	[4622] link '\uf84c' url: http://100.95.81.103:9980/index.php?page=search&sPattern=live+plant+&sShowAs=gallery
+	[4630] heading 'Listings'
+	[4637] link 'Free plant with purchase of Fancy Pot' url: http://100.95.81.103:9980/index.php?page=item&id=53117
+		[4638] image 'Free plant with purchase of Fancy Pot' url: http://100.95.81.103:9980/oc-content/uploads/53117/53117_thumbnail.png
+	[4642] LayoutTable ''
+		[4644] LayoutTableRow ''
+			[4648] link 'Free plant with purchase of Fancy Pot' url: http://100.95.81.103:9980/index.php?page=item&id=53117
+			[4654] StaticText '80.00 $'
+			[4660] StaticText 'Farm + garden'
+			[4664] StaticText 'Ferndale (Maryland)'
+			[4667] StaticText '2023/11/16'
+			[4671] StaticText "That's right-- 1 FREE GSC "
+			[4673] StaticText 'plant'
+			[4674] StaticText ' (while supplies last) with purchase of Fancy Pot fabric grow container. Fancy Pots are good for indoors or out and are a great gift or addition to any garden. Recreational or medicinal, grow like a pro with your Fancy ...'
+	[4683] link 'New RING Doorbell Pro 2' url: http://100.95.81.103:9980/index.php?page=item&id=45703
+		[4684] image 'New RING Doorbell Pro 2' url: http://100.95.81.103:9980/oc-content/uploads/45703/45703_thumbnail.png
+	[4688] LayoutTable ''
+		[4690] LayoutTableRow ''
+			[4694] link 'New RING Doorbell Pro 2' url: http://100.95.81.103:9980/index.php?page=item&id=45703
+			[4700] StaticText '100.00 $'
+			[4706] StaticText 'Electronics'
+			[4710] StaticText 'Bristow (Virginia)'
+			[4713] StaticText '2023/11/16'
+			[4718] StaticText 'Brand NEW Ring Pro2 Doorbell was provided as a warranty replacement that was not used. $100 FIRM Video: 1536p HD+ '
+			[4720] StaticText 'Live'
+			[4721] StaticText ' Video, HDR, '
+			[4724] StaticText ' View: Color Night Vision Motion Detection: 3D Motion Detection with Birds Eye View Field of View: 150 horizontal, ...'
+	[4733] link "NEW Polycarbonate Aluminum Greenhouse Kits 9x14' 9x28' 9x35' 9x42' 6mm" url: http://100.95.81.103:9980/index.php?page=item&id=25173
+		[4734] image "NEW Polycarbonate Aluminum Greenhouse Kits 9x14' 9x28' 9x35' 9x42' 6mm" url: http://100.95.81.103:9980/oc-content/uploads/25173/25173_thumbnail.png
+	[4738] LayoutTable ''
+		[4740] LayoutTableRow ''
+			[4744] link "NEW Polycarbonate Aluminum Greenhouse Kits 9x14' 9x28' 9x35' 9x42' 6mm" url: http://100.95.81.103:9980/index.php?page=item&id=25173
+			[4749] StaticText '2600.00 $'
+			[4755] StaticText 'Farm + garden'
+			[4759] StaticText 'Roanoke (Virginia)'
+			[4762] StaticText '2023/11/16'

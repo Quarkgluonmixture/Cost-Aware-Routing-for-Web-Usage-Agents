@@ -1,0 +1,20 @@
+Tab 0 (current): Publish a listing - Classifieds
+
+[4088] RootWebArea 'Publish a listing - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[4173] link 'Classifieds' url: http://100.95.81.103:9980/
+		[4174] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[4200] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[4203] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[4206] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[4223] link 'Classifieds' url: http://100.95.81.103:9980/
+	[4229] StaticText '> '
+	[4231] StaticText 'Publish a listing'
+	[4254] heading 'Publish a listing'
+	[4269] heading 'General Information'
+	[4275] StaticText 'Category'
+	[4279] combobox '' hasPopup: menu expanded: False
+		[OPTIONS] "Antiques", "Appliances", "Arts + crafts", "Auto parts", "Beauty + health", "Bikes", "Boats", "Books", "Cars + trucks", "Cell phones", "Collectibles", "Computer parts", "Computers", "Electronics", "Farm + garden", "Furniture", "Household", "Jewelry", "Motorcycles", "Music instruments", "Photo + video", "Rvs + campers", "Video gaming"
+	[4334] StaticText 'Title'
+	[4338] textbox '' required: False
+	[4345] StaticText 'Description'
+	[4349] textbox '' required: False

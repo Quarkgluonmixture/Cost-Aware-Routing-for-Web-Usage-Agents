@@ -1,0 +1,71 @@
+Tab 0 (current): shoulder brace - Classifieds
+
+[2362] RootWebArea 'shoulder brace - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=shoulder+brace+
+	[2444] link 'Classifieds' url: http://100.95.81.103:9980/
+		[2445] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[2471] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[2474] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[2477] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[2494] link 'Classifieds' url: http://100.95.81.103:9980/
+	[2500] StaticText '> '
+	[2502] StaticText 'Search results: shoulder brace'
+	[2529] group ''
+		[2531] heading 'Your search'
+		[2536] textbox '' required: False
+			[3474] StaticText 'shoulder brace'
+	[2540] group ''
+		[2542] heading 'City'
+		[2549] textbox '' required: False
+		[2550] status '' live: polite atomic: True relevant: additions text
+	[2554] group ''
+		[2556] heading 'Show only'
+		[2561] checkbox 'listings with pictures' checked: false
+	[2568] group ''
+		[2572] heading 'Price'
+		[2578] StaticText 'Min.'
+		[2580] textbox '' required: False
+		[2586] StaticText 'Max.'
+		[2588] textbox '' required: False
+	[2597] button 'Apply'
+	[2608] heading 'Subscribe to this search'
+	[2624] button 'Subscribe now!'
+	[2631] heading 'Refine category'
+	[2636] link 'All categories' url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=shoulder+brace+
+	[2787] StaticText '1 - 12 of 342 listings'
+	[2799] StaticText 'Sort by:'
+	[2802] StaticText 'Newly listed '
+		[DROPDOWN OPTIONS] "Newly listed", "Lower price first", "Higher price first"
+	[2826] link '\uf0c9' url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=shoulder+brace+&sShowAs=list
+	[2830] link '\uf84c' url: http://100.95.81.103:9980/index.php?page=search&sOrder=dt_pub_date&iOrderType=desc&sPattern=shoulder+brace+&sShowAs=gallery
+	[2838] heading 'Listings'
+	[2845] link '4/4 Violin or Fiddle' url: http://100.95.81.103:9980/index.php?page=item&id=55790
+		[2846] image '4/4 Violin or Fiddle' url: http://100.95.81.103:9980/oc-content/uploads/55790/55790_thumbnail.png
+	[2850] LayoutTable ''
+		[2852] LayoutTableRow ''
+			[2856] link '4/4 Violin or Fiddle' url: http://100.95.81.103:9980/index.php?page=item&id=55790
+			[2862] StaticText '95.00 $'
+			[2868] StaticText 'Music instruments'
+			[2872] StaticText 'Greenville (Delaware)'
+			[2875] StaticText '2023/11/16'
+			[2879] StaticText 'Unlabeled full size violin, appears very lightly used. It has new rope core strings and a Glasser bow. Ready to play in lightweight case, comes with '
+			[2881] StaticText 'shoulder'
+			[2882] StaticText ' rest and rosin.'
+	[2891] link '15 Inch Carlo Robelli P-250 Viola' url: http://100.95.81.103:9980/index.php?page=item&id=39167
+		[2892] image '15 Inch Carlo Robelli P-250 Viola' url: http://100.95.81.103:9980/oc-content/uploads/39167/39167_thumbnail.png
+	[2896] LayoutTable ''
+		[2898] LayoutTableRow ''
+			[2902] link '15 Inch Carlo Robelli P-250 Viola' url: http://100.95.81.103:9980/index.php?page=item&id=39167
+			[2908] StaticText '160.00 $'
+			[2914] StaticText 'Music instruments'
+			[2918] StaticText 'Wilmington (Delaware)'
+			[2921] StaticText '2023/11/16'
+			[2926] StaticText "Pre Y-2K viola, no cracks or repairs, there is a New Jersey-shaped scraped area on the lower bout treble side. It has Red Label strings. There is a wooden bow with comfortable Viotech Suregrip comfort cushion. It's ready to play in a cloth-covered ha..."
+	[2935] link '2014 Maserati Quattroporte SEDAN 4-DR' url: http://100.95.81.103:9980/index.php?page=item&id=60938
+		[2936] image '2014 Maserati Quattroporte SEDAN 4-DR' url: http://100.95.81.103:9980/oc-content/uploads/60938/60938_thumbnail.png
+	[2940] LayoutTable ''
+		[2942] LayoutTableRow ''
+			[2946] link '2014 Maserati Quattroporte SEDAN 4-DR' url: http://100.95.81.103:9980/index.php?page=item&id=60938
+			[2951] StaticText '19993.00 $'
+			[2957] StaticText 'Cars + trucks'
+			[2961] StaticText "Boswell's Corner (Virginia)"
+			[2964] StaticText '2023/11/16'

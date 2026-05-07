@@ -1,0 +1,37 @@
+Tab 0 (current): wheelchair lift - Classifieds
+
+[1200] RootWebArea 'wheelchair lift - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sPattern=wheelchair+lift+
+	[2133] StaticText "This is brand new and still in the box. We accidentally ordered 2 and can't return the extra one. Logitech "
+	[2135] StaticText 'Lift'
+	[2136] StaticText ' Vertical Ergonomic Mouse, Wireless, Bluetooth or Logi Bolt USB receiver, Quiet clicks, 4 buttons, compatible with Windows/macOS/iPadOS, La...'
+	[2145] link '2009 Chevrolet Express G3500 Box Truck' url: http://100.95.81.103:9980/index.php?page=item&id=6532
+		[2146] image '2009 Chevrolet Express G3500 Box Truck' url: http://100.95.81.103:9980/oc-content/uploads/6532/6532_thumbnail.png
+	[2150] LayoutTable ''
+		[2152] LayoutTableRow ''
+			[2156] link '2009 Chevrolet Express G3500 Box Truck' url: http://100.95.81.103:9980/index.php?page=item&id=6532
+			[2162] StaticText '16500.00 $'
+			[2168] StaticText 'Cars + trucks'
+			[2172] StaticText 'City of Lebanon (Pennsylvania)'
+			[2175] StaticText '2023/11/16'
+			[2180] StaticText 'This is a very well maintained 2009 Chevy express g3500 box truck with a 4.8L engine and 150k miles.. This truck comes with a Tommy Gate '
+			[2182] StaticText 'lift'
+			[2183] StaticText ' with a limit of 1,000 pounds. This truck runs 100% with no issues or warning lights and is ready for the roa...'
+	[2192] link '2013 Ford F-150' url: http://100.95.81.103:9980/index.php?page=item&id=58669
+		[2193] image '2013 Ford F-150' url: http://100.95.81.103:9980/oc-content/uploads/58669/58669_thumbnail.png
+	[2197] LayoutTable ''
+		[2199] LayoutTableRow ''
+			[2203] link '2013 Ford F-150' url: http://100.95.81.103:9980/index.php?page=item&id=58669
+			[2209] StaticText '11993.00 $'
+			[2215] StaticText 'Cars + trucks'
+			[2219] StaticText "Boswell's Corner (Virginia)"
+			[2222] StaticText '2023/11/16'
+			[2227] StaticText '2013 Ford F-150 -- $11,993 Call: (555) 686-5366 Vehicle Information: 2013 Ford F-150 Price:$11,993Year:2013*Make:*Ford**Model:*F-150**Series:**Body Style:Truck*Stock Number:PE12643VIN:1FTNF1EF5DKE12643Mileage:158,000Engine:5.0L Flex Fuel V8 360hp 380...'
+	[2244] link '2' url: http://100.95.81.103:9980/index.php?page=search&sPattern=wheelchair+lift+&iPage=2
+	[2248] link '3' url: http://100.95.81.103:9980/index.php?page=search&sPattern=wheelchair+lift+&iPage=3
+	[2252] link '>' url: http://100.95.81.103:9980/index.php?page=search&sPattern=wheelchair+lift+&iPage=2
+	[2256] link '»' url: http://100.95.81.103:9980/index.php?page=search&sPattern=wheelchair+lift+&iPage=79
+	[2263] contentinfo ''
+		[2269] link 'Contact' url: http://100.95.81.103:9980/index.php?page=contact
+		[2277] StaticText 'Powered by '
+		[2278] link 'best classifieds scripts' url: https://osclass-classifieds.com/
+		[2280] StaticText ' osclass'

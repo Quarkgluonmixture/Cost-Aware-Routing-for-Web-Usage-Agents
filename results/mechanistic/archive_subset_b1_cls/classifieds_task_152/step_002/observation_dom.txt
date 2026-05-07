@@ -1,0 +1,35 @@
+Tab 0 (current): Photo + video - page 11 - Classifieds
+
+[2] RootWebArea 'Photo + video - page 11 - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sCategory=22&sShowAs=gallery&iPage=11
+	[623] link 'Used Nikon LS-5000 (LS-5000 ED) Film Scanner with accessories' url: http://100.95.81.103:9980/index.php?page=item&id=64558
+	[629] StaticText '1500.00 $'
+	[665] link 'Canon film camera' url: http://100.95.81.103:9980/index.php?page=item&id=31572
+	[671] StaticText '10.00 $'
+	[707] link 'Leica M10-M, M10M, Monochrom' url: http://100.95.81.103:9980/index.php?page=item&id=66657
+	[713] StaticText '5150.00 $'
+	[738] link 'Vintage film camera with lens attachments' url: http://100.95.81.103:9980/index.php?page=item&id=65652
+		[739] image 'Vintage film camera with lens attachments' url: http://100.95.81.103:9980/oc-content/uploads/65652/65652_thumbnail.png
+	[749] link 'Vintage film camera with lens attachments' url: http://100.95.81.103:9980/index.php?page=item&id=65652
+	[755] StaticText '1.00 $'
+	[780] link 'Canon Speedlite 200E Shoe Mount Flash for Canon Film Cameras' url: http://100.95.81.103:9980/index.php?page=item&id=19859
+		[781] image 'Canon Speedlite 200E Shoe Mount Flash for Canon Film Cameras' url: http://100.95.81.103:9980/oc-content/uploads/19859/19859_thumbnail.png
+	[791] link 'Canon Speedlite 200E Shoe Mount Flash for Canon Film Cameras' url: http://100.95.81.103:9980/index.php?page=item&id=19859
+	[797] StaticText '100.00 $'
+	[822] link 'Sony Alpha A7 III 24.2MP Mirrorless Camera - Black (50mm Prime lens a' url: http://100.95.81.103:9980/index.php?page=item&id=81346
+		[823] image 'Sony Alpha A7 III 24.2MP Mirrorless Camera - Black (50mm Prime lens a' url: http://100.95.81.103:9980/oc-content/uploads/81346/81346_thumbnail.png
+	[833] link 'Sony Alpha A7 III 24.2MP Mirrorless Camera - Black (50mm Prime lens a' url: http://100.95.81.103:9980/index.php?page=item&id=81346
+	[839] StaticText '630.00 $'
+	[868] link '«' url: http://100.95.81.103:9980/index.php?page=search&sCategory=22&sShowAs=gallery
+	[872] link '<' url: http://100.95.81.103:9980/index.php?page=search&sCategory=22&sShowAs=gallery&iPage=10
+	[876] link '9' url: http://100.95.81.103:9980/index.php?page=search&sCategory=22&sShowAs=gallery&iPage=9
+	[880] link '10' url: http://100.95.81.103:9980/index.php?page=search&sCategory=22&sShowAs=gallery&iPage=10
+	[885] StaticText '11'
+	[888] link '12' url: http://100.95.81.103:9980/index.php?page=search&sCategory=22&sShowAs=gallery&iPage=12
+	[892] link '13' url: http://100.95.81.103:9980/index.php?page=search&sCategory=22&sShowAs=gallery&iPage=13
+	[896] link '>' url: http://100.95.81.103:9980/index.php?page=search&sCategory=22&sShowAs=gallery&iPage=12
+	[900] link '»' url: http://100.95.81.103:9980/index.php?page=search&sCategory=22&sShowAs=gallery&iPage=79
+	[907] contentinfo ''
+		[913] link 'Contact' url: http://100.95.81.103:9980/index.php?page=contact
+		[921] StaticText 'Powered by '
+		[922] link 'best classifieds scripts' url: https://osclass-classifieds.com/
+		[924] StaticText ' osclass'

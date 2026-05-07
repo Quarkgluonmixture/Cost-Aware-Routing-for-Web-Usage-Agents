@@ -1,0 +1,72 @@
+Tab 0 (current): white fridge - Classifieds
+
+[1201] RootWebArea 'white fridge - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+
+	[1486] link 'Appliances' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=3
+	[1492] link 'Arts + crafts' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=4
+	[1498] link 'Auto parts' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=5
+	[1504] link 'Beauty + health' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=6
+	[1510] link 'Bikes' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=7
+	[1516] link 'Boats' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=8
+	[1522] link 'Books' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=9
+	[1528] link 'Cars + trucks' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=10
+	[1534] link 'Cell phones' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=11
+	[1540] link 'Collectibles' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=12
+	[1546] link 'Computer parts' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=13
+	[1552] link 'Computers' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=14
+	[1558] link 'Electronics' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=15
+	[1564] link 'Farm + garden' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=16
+	[1570] link 'Furniture' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=17
+	[1576] link 'Household' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=18
+	[1582] link 'Jewelry' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=19
+	[1588] link 'Motorcycles' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=20
+	[1594] link 'Music instruments' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=21
+	[1600] link 'Photo + video' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=22
+	[1606] link 'Rvs + campers' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=23
+	[1612] link 'Video gaming' url: http://100.95.81.103:9980/index.php?page=search&sPattern=white+fridge+&sCategory=24
+	[1775] LayoutTable ''
+		[1777] LayoutTableRow ''
+			[1793] StaticText 'Furniture'
+			[1797] StaticText 'Arlington (Virginia)'
+			[1800] StaticText '2023/11/16'
+			[1805] StaticText '============================================= ==== SAVE UP TO 90%! PRICES UPDATED DAILY! ==== ============================================= Learn more at: DESIGN WITHIN REACH REID SOFA ORIGINAL PRICE: 7945 BRAND: Design Within Reach PRODUCT LABEL: 45...'
+	[1814] link 'Rolf Benz Mid Century Modern Four Drawer Dresser (Was 7500)' url: http://100.95.81.103:9980/index.php?page=item&id=54312
+		[1815] image 'Rolf Benz Mid Century Modern Four Drawer Dresser (Was 7500)' url: http://100.95.81.103:9980/oc-content/uploads/54312/54312_thumbnail.png
+	[1819] LayoutTable ''
+		[1821] LayoutTableRow ''
+			[1825] link 'Rolf Benz Mid Century Modern Four Drawer Dresser (Was 7500)' url: http://100.95.81.103:9980/index.php?page=item&id=54312
+			[1831] StaticText '3177.00 $'
+			[1837] StaticText 'Furniture'
+			[1841] StaticText 'Washington (Washington, D.C.)'
+			[1844] StaticText '2023/11/16'
+			[1849] StaticText '============================================= ==== SAVE UP TO 90%! PRICES UPDATED DAILY! ==== ============================================= Learn more at: ROLF BENZ MID CENTURY MODERN FOUR DRAWER DRESSER ORIGINAL PRICE: 7500 BRAND: Rolf Benz PRODUCT ...'
+	[1858] link 'Standing Lamp' url: http://100.95.81.103:9980/index.php?page=item&id=10702
+		[1859] image 'Standing Lamp' url: http://100.95.81.103:9980/oc-content/uploads/10702/10702_thumbnail.png
+	[1863] LayoutTable ''
+		[1865] LayoutTableRow ''
+			[1869] link 'Standing Lamp' url: http://100.95.81.103:9980/index.php?page=item&id=10702
+			[1875] StaticText '10.00 $'
+			[1881] StaticText 'Furniture'
+			[1885] StaticText 'Borough of State College (Pennsylvania)'
+			[1888] StaticText '2023/11/16'
+			[1894] StaticText 'White'
+			[1895] StaticText ' Standing Lamp'
+	[1904] link 'Engagement Ring For Sale' url: http://100.95.81.103:9980/index.php?page=item&id=43381
+		[1905] image 'Engagement Ring For Sale' url: http://100.95.81.103:9980/oc-content/uploads/43381/43381_thumbnail.png
+	[1909] LayoutTable ''
+		[1911] LayoutTableRow ''
+			[1915] link 'Engagement Ring For Sale' url: http://100.95.81.103:9980/index.php?page=item&id=43381
+			[1921] StaticText '1600.00 $'
+			[1927] StaticText 'Jewelry'
+			[1931] StaticText 'Irwin (Pennsylvania)'
+			[1934] StaticText '2023/11/16'
+			[1939] StaticText 'Engagement Ring For Sale - $1,600 OBO! 0.5 Carat Diamond 14K '
+			[1941] StaticText 'White'
+			[1942] StaticText ' Gold Engagement Ring In Great Condition and Size 6.5. Contact me if you have any interest.'
+	[1951] link 'J Robert Scott Modern Accent Chair (Was 5000)' url: http://100.95.81.103:9980/index.php?page=item&id=18274
+		[1952] image 'J Robert Scott Modern Accent Chair (Was 5000)' url: http://100.95.81.103:9980/oc-content/uploads/18274/18274_thumbnail.png
+	[1962] link 'J Robert Scott Modern Accent Chair (Was 5000)' url: http://100.95.81.103:9980/index.php?page=item&id=18274
+	[1968] StaticText '483.00 $'
+	[1974] StaticText 'Furniture'
+	[1978] StaticText 'Fairfax (Virginia)'
+	[1981] StaticText '2023/11/16'
+		[DROPDOWN OPTIONS] "Newly listed", "Lower price first", "Higher price first"

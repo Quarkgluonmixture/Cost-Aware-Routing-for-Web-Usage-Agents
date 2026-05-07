@@ -1,0 +1,26 @@
+Tab 0 (current): 2021 Ford Bronco First Edition Hamilton - Classifieds
+
+[3389] RootWebArea '2021 Ford Bronco First Edition Hamilton - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=item&id=75402
+	[3600] StaticText '2021 Ford Bronco First Edition - approx 444 miles - garage kept - 1 of 3700 4-doors. Added side steps - original rock bars are included. Loaded!! Believe these will increase in value. Includes promotional items from Ford - framed window sticker, hammock, posters, etc that were sent to First Edition owners awaiting their builds. Has Grey with Navy Blue inserts for interior. Cyber Orange exterior - more of a yellow.'
+	[3606] link 'Contact seller' url: http://100.95.81.103:9980/index.php?page=item&id=75402#contact-in
+	[3609] link 'Share' url: http://100.95.81.103:9980/index.php?page=item&action=send_friend&id=75402
+	[3618] heading 'Related listings'
+	[3625] link '2013 Honda Civic' url: http://100.95.81.103:9980/index.php?page=item&id=8744
+		[3626] image '2013 Honda Civic' url: http://100.95.81.103:9980/oc-content/uploads/8744/8744_thumbnail.png
+	[3636] link '2013 Honda Civic' url: http://100.95.81.103:9980/index.php?page=item&id=8744
+	[3642] StaticText '6000.00 $'
+	[3667] link '***2008 Mercedes ML 350 VERY CLEAN***' url: http://100.95.81.103:9980/index.php?page=item&id=53187
+		[3668] image '***2008 Mercedes ML 350 VERY CLEAN***' url: http://100.95.81.103:9980/oc-content/uploads/53187/53187_thumbnail.png
+	[3678] link '***2008 Mercedes ML 350 VERY CLEAN***' url: http://100.95.81.103:9980/index.php?page=item&id=53187
+	[3684] StaticText '8500.00 $'
+	[3709] link '2018 Tesla model 3' url: http://100.95.81.103:9980/index.php?page=item&id=16550
+		[3710] image '2018 Tesla model 3' url: http://100.95.81.103:9980/oc-content/uploads/16550/16550_thumbnail.png
+	[3720] link '2018 Tesla model 3' url: http://100.95.81.103:9980/index.php?page=item&id=16550
+	[3726] StaticText '27800.00 $'
+	[3938] StaticText 'Avoid scams by acting locally or paying with PayPal'
+	[3941] ListMarker '• '
+	[3942] StaticText 'Never pay with Western Union, Moneygram or other anonymous payment services'
+	[3945] ListMarker '• '
+	[3946] StaticText "Don't buy or sell outside of your country. Don't accept cashier cheques from outside your country"
+	[3949] ListMarker '• '
+	[3950] StaticText 'This site is never involved in any transaction, and does not handle payments, shipping, guarantee transactions, provide escrow services, or offer "buyer protection" or "seller certification"'

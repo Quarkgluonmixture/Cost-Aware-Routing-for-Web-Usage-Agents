@@ -1,0 +1,35 @@
+Tab 0 (current): Mimi fridge Baltimore - Classifieds
+
+[3440] RootWebArea 'Mimi fridge Baltimore - Classifieds' focused: True url: http://100.95.81.103:9980/index.php?page=item&id=70602
+	[3568] link 'Classifieds' url: http://100.95.81.103:9980/
+		[3569] image 'Classifieds' url: http://100.95.81.103:9980/oc-content/uploads/sigma_logo.png
+	[3579] link 'My account' url: http://100.95.81.103:9980/index.php?page=user&action=dashboard
+	[3580] link 'Logout' url: http://100.95.81.103:9980/index.php?page=main&action=logout
+	[3581] link 'Publish Ad' url: http://100.95.81.103:9980/index.php?page=item&action=item_add
+	[3588] link 'Classifieds' url: http://100.95.81.103:9980/
+	[3794] StaticText '> '
+	[3592] link 'Appliances' url: http://100.95.81.103:9980/index.php?page=search&sCategory=3
+	[3797] StaticText 'Mimi fridge'
+	[3603] heading 'Mimi fridge'
+	[3799] StaticText 'Published date:'
+	[3800] StaticText ' 2023/11/16'
+	[3801] StaticText 'Location:'
+	[3802] StaticText ' Baltimore, Maryland, United States'
+	[3613] link 'Mimi fridge' url: javascript:;
+		[3614] image 'Mimi fridge' url: http://100.95.81.103:9980/oc-content/uploads/70602/70602.png
+	[3616] link 'Mimi fridge' url: http://100.95.81.103:9980/oc-content/uploads/70602/70602.png
+		[3617] image 'Mimi fridge' url: http://100.95.81.103:9980/oc-content/uploads/70602/70602_thumbnail.png
+	[3819] StaticText '160.00 $'
+	[3728] combobox '' hasPopup: menu expanded: False
+		[OPTIONS: currently selected="Mark as..."] "Mark as...", "Mark as spam", "Mark as misclassified", "Mark as duplicated", "Mark as expired", "Mark as offensive"
+	[3748] heading 'Contact publisher'
+	[3750] image 'Ananya Thomas' url: http://100.95.81.103:9980/oc-content/uploads/user-images/default-user-image.png
+	[3822] StaticText 'Name:'
+	[3823] StaticText ' Ananya Thomas'
+	[3824] StaticText 'E-mail:'
+	[3755] link 'ananya.thomas66@example.com' url: mailto:ananya.thomas66@example.com
+	[3761] heading 'Useful information'
+	[3786] ListMarker '• '
+	[3827] StaticText 'Avoid scams by acting locally or paying with PayPal'
+	[3787] ListMarker '• '
+	[3828] StaticText 'Never pay with Western Union, Moneygram or other anonymous payment services'
