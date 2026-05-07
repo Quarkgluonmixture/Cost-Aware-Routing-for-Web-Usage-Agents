@@ -135,10 +135,13 @@ fi
 
 log "=== Step 4: pip install --user (transformers + p79 deps) ==="
 
-# Install non-torch deps to PYTHONUSERBASE (skip torch — already from module)
+# Install non-torch deps to PYTHONUSERBASE (skip torch — already from module).
+# Pin urllib3<2 because RHEL 7 OpenSSL 1.0.2k-fips can't satisfy urllib3 v2's
+# OpenSSL>=1.1.1 requirement (urllib3/issues/2168).
 log "  Installing transformers + accelerate + qwen-vl-utils + huggingface_hub..."
 pip install --user --only-binary=:all: --progress-bar=on \
     --cache-dir=/tmp/pip_cache_$USER \
+    "urllib3<2" \
     transformers accelerate qwen-vl-utils huggingface_hub Pillow PyYAML 2>&1 | tail -5
 
 # Install p79 editable, --no-deps so pip doesn't try to re-resolve torch
