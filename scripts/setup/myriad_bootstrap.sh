@@ -96,68 +96,65 @@ n_reverse=$(python3 -c "import json; print(len(json.load(open('$WORKSPACE/result
 log "  Dataset: $n_strong strong + $n_reverse reverse mirage candidates"
 
 # ---------------------------------------------------------------------------
-# Step 3: Python module + venv
+# Step 3: Load Myriad pre-built pytorch module (avoids slow Lustre venv setup)
 # ---------------------------------------------------------------------------
 
-log "=== Step 3: Python venv ==="
-# Try Myriad pre-built python module first
-if module avail python 2>&1 | grep -qE "python/3\.(10|11|12)"; then
-  log "  Loading Myriad python module..."
-  module load python/3.11.4 2>/dev/null || module load python/3.11 2>/dev/null || module load python3 2>/dev/null || true
+log "=== Step 3: Load pytorch module + setup PYTHONUSERBASE ==="
+# Myriad pre-built pytorch/2.1.0/gpu auto-loads:
+#   python/3.9.6-gnu-10.2.0 + cuda/11.8 + cudnn/9.2 + gcc-libs/10.2.0
+# This avoids: (a) pip torch install ~3GB Lustre extraction, (b) numpy<2
+# constraint failures, (c) GLIBCXX_3.4.X import errors.
+module unload python python3 2>/dev/null || true
+if ! module load pytorch/2.1.0/gpu 2>&1 | tail -2; then
+  fail "module load pytorch/2.1.0/gpu failed. Check 'module avail pytorch'."
 fi
 
-if [ ! -d "$WORKSPACE/.venv" ]; then
-  log "  Creating venv..."
-  python3 -m venv "$WORKSPACE/.venv"
-else
-  log "  venv exists, skipping creation"
-fi
+log "  Loaded modules: $(module list 2>&1 | grep -E 'pytorch|python|cuda|cudnn' | tr -d '\n')"
+log "  Python: $(python3 --version), at $(which python3)"
 
-source "$WORKSPACE/.venv/bin/activate"
-pip install --upgrade pip --quiet
-log "  Python: $(python3 --version), pip: $(pip --version | head -c 50)"
+# Verify torch import works (login node will say cuda=False, that's fine)
+torch_ver=$(python3 -c "import torch; print(torch.__version__)" 2>&1)
+torch_cuda=$(python3 -c "import torch; print(torch.cuda.is_available())" 2>&1)
+log "  torch: $torch_ver, cuda: $torch_cuda"
+
+# PYTHONUSERBASE = pip --user install dir. Default ~/.local fills Home quota;
+# redirect to Scratch (lustre, plenty of space).
+export PYTHONUSERBASE="$HOME/Scratch/python_user"
+mkdir -p "$PYTHONUSERBASE"
+log "  PYTHONUSERBASE: $PYTHONUSERBASE"
+
+# Persist in .bashrc (idempotent: only add if not already there)
+if ! grep -q "PYTHONUSERBASE.*Scratch/python_user" "$HOME/.bashrc" 2>/dev/null; then
+  echo 'export PYTHONUSERBASE=$HOME/Scratch/python_user' >> "$HOME/.bashrc"
+  log "  Added PYTHONUSERBASE to ~/.bashrc"
+fi
 
 # ---------------------------------------------------------------------------
-# Step 4: Install p79 + dependencies
+# Step 4: pip install --user (skip torch — already from module)
 # ---------------------------------------------------------------------------
 
-log "=== Step 4: pip install p79 + torch ==="
-# Detect CUDA module
-CUDA_VERSION=""
-if module avail cuda 2>&1 | grep -qE "cuda/12\.[0-9]"; then
-  module load cuda/12.1 2>/dev/null || module load cuda 2>/dev/null || true
-  CUDA_VERSION="12.1"
-elif module avail cuda 2>&1 | grep -qE "cuda/11\.[0-9]"; then
-  module load cuda/11.8 2>/dev/null || module load cuda 2>/dev/null || true
-  CUDA_VERSION="11.8"
-fi
-log "  CUDA module: ${CUDA_VERSION:-not loaded — may need module load cuda manually}"
+log "=== Step 4: pip install --user (transformers + p79 deps) ==="
 
-if ! python3 -c "import torch" &>/dev/null; then
-  log "  Installing torch (Myriad: --only-binary=:all: avoids gcc 4.8.5 source build)..."
-  # Myriad-specific: cc=gcc 4.8.5 (RHEL 7 default), c++=gcc 10.2.0 (gcc-libs module).
-  # Mismatch breaks numpy meson build from source. Force binary wheels only.
-  # Pin numpy<2 because numpy 2.x has narrower wheel coverage on RHEL 7.
-  if [ "$CUDA_VERSION" = "12.1" ]; then
-    pip install --quiet --only-binary=:all: "numpy<2" \
-        torch torchvision --index-url https://download.pytorch.org/whl/cu121
-  elif [ "$CUDA_VERSION" = "11.8" ]; then
-    pip install --quiet --only-binary=:all: "numpy<2" \
-        torch torchvision --index-url https://download.pytorch.org/whl/cu118
-  else
-    pip install --quiet --only-binary=:all: "numpy<2" torch torchvision
-  fi
-fi
+# Install non-torch deps to PYTHONUSERBASE (skip torch — already from module)
+log "  Installing transformers + accelerate + qwen-vl-utils + huggingface_hub..."
+pip install --user --only-binary=:all: --progress-bar=on \
+    --cache-dir=/tmp/pip_cache_$USER \
+    transformers accelerate qwen-vl-utils huggingface_hub Pillow PyYAML 2>&1 | tail -5
 
-torch_ver=$(python3 -c "import torch; print(torch.__version__)" 2>/dev/null || echo "MISSING")
-torch_cuda=$(python3 -c "import torch; print(torch.cuda.is_available())" 2>/dev/null || echo "?")
-log "  torch: $torch_ver, cuda available: $torch_cuda"
+# Install p79 editable, --no-deps so pip doesn't try to re-resolve torch
+log "  Installing p79 (editable, --no-deps)..."
+pip install --user --no-deps -e . 2>&1 | tail -3
 
-# Install p79 + mechanistic deps
-if ! pip show p79 &>/dev/null; then
-  log "  Installing p79 + analysis deps..."
-  pip install --quiet -e ".[analysis]" 2>&1 | tail -3
-fi
+# Verify import chain
+log "  Verifying p79 + torch + transformers import..."
+python3 -c "
+import sys, torch, transformers, p79
+from p79.mechanistic.extract_hidden_states import HiddenStateExtractor
+print(f'    Python: {sys.version.split()[0]}')
+print(f'    torch:  {torch.__version__}')
+print(f'    transformers: {transformers.__version__}')
+print(f'    p79.mechanistic: import OK')
+"
 
 # ---------------------------------------------------------------------------
 # Step 5: Pre-download HF model (revision-pinned, paper-grade lock)
@@ -202,8 +199,9 @@ log "  Evaluator SHA on Myriad: ${eval_sha}..."
 log ""
 log "=== Bootstrap COMPLETE ==="
 log "Workspace: $WORKSPACE"
-log "Venv: $WORKSPACE/.venv (activate: source $WORKSPACE/.venv/bin/activate)"
-log "Model cache: ~/.cache/huggingface (compute nodes can read this offline)"
+log "PyTorch: from module pytorch/2.1.0/gpu (auto-loads python/3.9.6 + cuda/11.8)"
+log "User packages: \$PYTHONUSERBASE = $PYTHONUSERBASE"
+log "Model cache: ~/.cache/huggingface → ~/Scratch/cache (compute nodes can read offline)"
 log ""
 log "Next: qsub Stage 2B forward + Stage 2C reverse jobs:"
 log "  cd $WORKSPACE"

@@ -47,10 +47,12 @@ cd "$REPO_DIR"
 echo "[$(date '+%H:%M:%S')] Job $JOB_ID (reverse direction) start on $(hostname)"
 nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv
 
-module load python/3.11.4 2>/dev/null || module load python/3.11 2>/dev/null || module load python3 2>/dev/null || true
-module load cuda/12.1 2>/dev/null || module load cuda/11.8 2>/dev/null || module load cuda 2>/dev/null || true
+# Load Myriad pre-built PyTorch (auto-loads python/3.9.6 + cuda/11.8 + cudnn + gcc-libs)
+module unload python python3 2>/dev/null || true
+module load pytorch/2.1.0/gpu
 
-source "$REPO_DIR/.venv/bin/activate"
+# pip install --user packages live here
+export PYTHONUSERBASE="$HOME/Scratch/python_user"
 
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1

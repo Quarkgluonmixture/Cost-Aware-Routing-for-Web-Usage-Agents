@@ -54,20 +54,20 @@ echo "[$(date '+%H:%M:%S')] Job $JOB_ID start on $(hostname)"
 echo "[$(date '+%H:%M:%S')] GPU info:"
 nvidia-smi --query-gpu=name,memory.total,memory.free,driver_version --format=csv
 
-# Load Myriad modules (varies by node — fail-soft)
-# CRITICAL: gcc-libs/10.2.0 must load BEFORE python (provides modern libstdc++
-# for torch C++ extensions; RHEL 7 system libstdc++ too old, breaks at import)
-module load gcc-libs/10.2.0 2>/dev/null || true
-module load python/3.11.4 2>/dev/null || module load python/3.11 2>/dev/null || module load python3 2>/dev/null || true
-module load cuda/12.1 2>/dev/null || module load cuda/11.8 2>/dev/null || module load cuda 2>/dev/null || true
+# Load Myriad pre-built PyTorch 2.1.0/gpu (auto-loads python/3.9.6 + cuda/11.8
+# + cudnn/9.2 + gcc-libs/10.2.0). Avoids pip torch install entirely (HPC Lustre
+# slow + version pinning issues). torch 2.1.0 is sufficient for Qwen3-VL-4B
+# forward pass + activation hooks (mechanistic stages don't need 2.5+ features).
+module unload python python3 2>/dev/null || true
+module load pytorch/2.1.0/gpu
 
-# Activate p79 venv
-source "$REPO_DIR/.venv/bin/activate"
+# pip install --user goes here (NOT ~/.local which fills Home quota)
+export PYTHONUSERBASE="$HOME/Scratch/python_user"
 
 # Compute nodes are firewalled — force HF offline (use cache only)
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
-# Tell HF where cache is
+# Tell HF where cache is (symlinked to ~/Scratch/cache via bootstrap Step 1b)
 export HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}"
 
 echo "[$(date '+%H:%M:%S')] Python: $(python3 --version)"
