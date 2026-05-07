@@ -1,0 +1,40 @@
+{
+  "captured_at": "2026-05-07T21:27:34.662103+00:00",
+  "host": "spark-9ea3",
+  "platform": "Linux-6.11.0-1016-nvidia-aarch64-with-glibc2.39",
+  "python_version": "3.12.3",
+  "torch": {
+    "version": "2.11.0+cu128",
+    "cuda": "12.8",
+    "device_count": 1,
+    "compute_caps": [
+      [
+        12,
+        1
+      ]
+    ],
+    "device_names": [
+      "NVIDIA GB10"
+    ]
+  },
+  "libraries": {
+    "transformers": "5.3.0",
+    "qwen_vl_utils": "unknown",
+    "huggingface_hub": "1.7.2",
+    "numpy": "2.4.3",
+    "scikit_learn": null
+  },
+  "models": {
+    "Qwen/Qwen3-VL-4B-Instruct": "ebb281ec70b05090aa6165b016eac8ec08e71b17"
+  },
+  "git": {
+    "commit": "878fcee5cabebbadc0f0071c357247949e227c90",
+    "branch": "master",
+    "dirty": true,
+    "status": " M p79/cli/run_experiment.py\n M scripts/mechanistic/run_stage2b_continuation_pilot.py\n?? docs/checkpoints/osf_lock_manifest.md\n?? scripts/provenance/\n"
+  },
+  "nvidia_smi": [
+    "NVIDIA GB10, 580.95.05, [N/A], 12.1"
+  ],
+  "errors": []
+}

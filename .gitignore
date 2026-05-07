@@ -42,6 +42,9 @@ results/mechanistic/curate_mirage_b1_classifieds/*
 # 24+15 mirage candidate task artifacts subset (16.5MB, paper-grade dataset for A100/Myriad)
 !results/mechanistic/archive_subset_b1_cls/
 !results/mechanistic/archive_subset_b1_cls/**
+# Provenance artifacts (env / VWA fingerprint / numerical determinism) — paper §3 cite-able, small JSON
+!results/provenance/
+!results/provenance/**
 logs/
 wandb/
 visualization/

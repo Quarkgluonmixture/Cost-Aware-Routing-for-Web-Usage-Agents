@@ -2,11 +2,17 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 import time
+from pathlib import Path
 
 from p79.experiment.config import load_experiment_config
 from p79.experiment.runner import ExperimentRunner
 from p79.utils.asyncio_workarounds import install_asyncio_target_closed_warning_filter
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 
 def main() -> None:
@@ -37,6 +43,16 @@ def main() -> None:
 
     runner = ExperimentRunner(cfg)
     out_dir = runner.run()
+
+    # Paper-grade provenance: dump env snapshot once per run (Gap 1, 笔记 §114)
+    try:
+        from scripts.provenance.snapshot_env import capture_env_snapshot
+        snap_path = Path(out_dir) / "env_snapshot.json"
+        capture_env_snapshot(snap_path, extra={"run_id": cfg["experiment"]["run_id"], "config_path": args.config})
+        logging.info("Env snapshot dumped: %s", snap_path)
+    except Exception as e:
+        logging.warning("Env snapshot failed (non-fatal): %s", e)
+
     logging.info("Experiment completed: %s", out_dir)
 
 

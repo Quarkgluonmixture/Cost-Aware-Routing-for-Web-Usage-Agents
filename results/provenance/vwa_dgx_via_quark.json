@@ -1,0 +1,561 @@
+{
+  "captured_at": "2026-05-07T21:24:27.205156+00:00",
+  "host": "spark-9ea3",
+  "vwa_host_for_probe": "100.95.81.103",
+  "ports": {
+    "classifieds": 9980,
+    "reddit": 9999,
+    "shopping": 7770
+  },
+  "containers": [
+    {
+      "name": "hai-admin-postgres",
+      "image": "postgres:13.3",
+      "container_id": "7b6d1f3cdecc",
+      "image_id_full": "sha256:0904b518ad08b6c7fc606f88b392865380ea9876d15e204520c2149f366a0e80",
+      "repo_digests": [
+        "postgres@sha256:6647385dd9ae11aa2216bf55c54d126b0a85637b3cf4039ef24e3234113588e3"
+      ],
+      "status": "Up 29 hours"
+    },
+    {
+      "name": "classifieds_db",
+      "image": "mysql:8.1",
+      "container_id": "ea51848e878f",
+      "image_id_full": "sha256:d858cb210e4b84459d06dc864905ffa5d12429467e45db806ade28932e5bd65d",
+      "repo_digests": [
+        "mysql@sha256:f61944ff3f2961363a4d22913b2ac581523273679d7e14dd26e8db8c9f571a7e"
+      ],
+      "status": "Up 3 days"
+    },
+    {
+      "name": "sentiment_postgres",
+      "image": "postgres:16-alpine",
+      "container_id": "a4d3505b2733",
+      "image_id_full": "sha256:656ce000ee1e70a2049e29dc885ea0002c3d66b0e6148868c6253766f13cd481",
+      "repo_digests": [
+        "postgres@sha256:97ff59a4e30e08d1c11bdcd9455e7832368c0572b576c9092cde2df4ae5552a3"
+      ],
+      "status": "Up 3 weeks (healthy)"
+    },
+    {
+      "name": "sentiment_redis",
+      "image": "redis:7-alpine",
+      "container_id": "394ac8b6c50a",
+      "image_id_full": "sha256:67d49cdb6df6f3fb9787ff1741d54d2d2ad48ab5cc73453d83b593731f860656",
+      "repo_digests": [
+        "redis@sha256:02f2cc4882f8bf87c79a220ac958f58c700bdec0dfb9b9ea61b62fb0e8f1bfcf"
+      ],
+      "status": "Up 3 weeks (healthy)"
+    },
+    {
+      "name": "prometheus",
+      "image": "prom/prometheus:latest",
+      "container_id": "8f795d789851",
+      "image_id_full": "sha256:e851ec0ef6e0812bb969a8549bdef932abd21f5bbd2ef0f632eb65c334fb1e5b",
+      "repo_digests": [
+        "prom/prometheus@sha256:49214755b6153f90a597adcbff0252cc61069f8ab69ce8411285cd4a560e8038"
+      ],
+      "status": "Up 3 weeks"
+    },
+    {
+      "name": "grafana",
+      "image": "grafana/grafana:latest",
+      "container_id": "01c89420102f",
+      "image_id_full": "sha256:52def22e4440f1ad747ea10b77aff83d82c888b0aac48f0d70928ac45f72ce5b",
+      "repo_digests": [
+        "grafana/grafana@sha256:35c41e0fd0295f5d0ee5db7e780cf33506abfaf47686196f825364889dee878b"
+      ],
+      "status": "Up 3 weeks"
+    },
+    {
+      "name": "dcgm-exporter-9ea3",
+      "image": "nvcr.io/nvidia/k8s/dcgm-exporter:4.4.1-4.6.0-ubuntu22.04",
+      "container_id": "0582fac9b9d5",
+      "image_id_full": "sha256:518efd3d6a6968103ddd07576f75fc70f9b678088aec84a10ce89aab50b11f57",
+      "repo_digests": [
+        "nvcr.io/nvidia/k8s/dcgm-exporter@sha256:b7a4241c608253aa829041cc3575ea57082491251a4a626bcdddc68eaf9a3101"
+      ],
+      "status": "Up 3 weeks"
+    },
+    {
+      "name": "frontend",
+      "image": "assets-frontend",
+      "container_id": "cba37e38cb41",
+      "image_id_full": "sha256:2d9ac49b8226c8506d7ad1bf45c52f321f56fad90dd189f39324521ea9b283ed",
+      "repo_digests": [],
+      "status": "Up 3 weeks"
+    },
+    {
+      "name": "backend",
+      "image": "assets-backend",
+      "container_id": "074c88d1ebc0",
+      "image_id_full": "sha256:a794298368e1b1d09e434e394d5befc6914feccb10cfc7a1eb8b066dbaa06e7d",
+      "repo_digests": [],
+      "status": "Up 3 weeks"
+    },
+    {
+      "name": "postgres",
+      "image": "postgres:15-alpine",
+      "container_id": "c989fd725709",
+      "image_id_full": "sha256:f1375da969b7bac1225d266709871cae1c7a0ea0bdd0f5d2308f79b489c7525d",
+      "repo_digests": [
+        "postgres@sha256:64583b3cb4f2010277bdd9749456de78e5c36f8956466ba14b0b96922e510950"
+      ],
+      "status": "Up 3 weeks (healthy)"
+    }
+  ],
+  "sites": {
+    "classifieds": {
+      "url": "http://100.95.81.103:9980/",
+      "headers_first_line": "HTTP/1.1 200 OK",
+      "body_sha256": null
+    },
+    "reddit": {
+      "url": "http://100.95.81.103:9999/",
+      "headers_first_line": "HTTP/1.1 200 OK",
+      "body_sha256": "f25605c24f4221fbd889692d4cecffd52bf50c17c79a09c72d930259f237238d"
+    },
+    "shopping": {
+      "url": "http://100.95.81.103:7770/",
+      "headers_first_line": "",
+      "body_sha256": "950522fa3c25abf4014814424f5159a8d5403c007e956af1b37558f33ce62415"
+    }
+  },
+  "images_inventory": [
+    {
+      "repo_tag": "agentic-vla-security-benchmark-agent:latest",
+      "image_id": "71b97db963da",
+      "size": "28.2GB"
+    },
+    {
+      "repo_tag": "agentic-vla-security-benchmark-vllm:latest",
+      "image_id": "ccbe664b8f1b",
+      "size": "32.3GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "d5df65546460",
+      "size": "28.2GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "0f1795550811",
+      "size": "28.2GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "8f3848956723",
+      "size": "32.3GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "b3485629deb5",
+      "size": "32.3GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "d5068650bed1",
+      "size": "33.1GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "17e39af866d6",
+      "size": "28.2GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "61811a8cdd29",
+      "size": "28.2GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "764840da999c",
+      "size": "31.9GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "8f0979350c7f",
+      "size": "31.8GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "2283e1dcc606",
+      "size": "31.8GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "41b15a0616d5",
+      "size": "29.3GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "891abe9bd75e",
+      "size": "30.9GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "98075230f67a",
+      "size": "21.1GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "ab7a6ea99ea8",
+      "size": "21.1GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "65dd18865efc",
+      "size": "19.7GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "a31e312dc23f",
+      "size": "19.7GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "0e7d8f0087a2",
+      "size": "19.7GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "ead0e331c0ca",
+      "size": "16.7GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "851d2ef0dd0c",
+      "size": "9.87GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "201438c35574",
+      "size": "9.87GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "04fdf87688d1",
+      "size": "9.87GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "a87d79a5222a",
+      "size": "9.87GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "fafca8e56456",
+      "size": "9.87GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "7bd3aab00b06",
+      "size": "9.87GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "a251c840fbe8",
+      "size": "9.87GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "89031b2afa5b",
+      "size": "9.87GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "1613210964f8",
+      "size": "9.87GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "2cf9ba0ff3fb",
+      "size": "9.87GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "291110661b7b",
+      "size": "9.87GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "eec231afab8b",
+      "size": "9.87GB"
+    },
+    {
+      "repo_tag": "obssec-gpu:latest",
+      "image_id": "2c442e813ade",
+      "size": "10GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "f2c798d75108",
+      "size": "9.88GB"
+    },
+    {
+      "repo_tag": "sesame-maya-csm-runtime:latest",
+      "image_id": "74301c123b2d",
+      "size": "8.75GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "2b167c3f4841",
+      "size": "8.66GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "e0f6253083be",
+      "size": "8.66GB"
+    },
+    {
+      "repo_tag": "ghcr.io/open-webui/open-webui:main",
+      "image_id": "67a67abead40",
+      "size": "4.25GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "384a3de143f2",
+      "size": "8.65GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "cb19c2eb1c3d",
+      "size": "8.65GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "d890ed5d7cd4",
+      "size": "8.65GB"
+    },
+    {
+      "repo_tag": "sesame-maya-llm-runtime:latest",
+      "image_id": "f881ce78e6d5",
+      "size": "7.53GB"
+    },
+    {
+      "repo_tag": "sesame-maya-orchestrator:latest",
+      "image_id": "63dc7df30435",
+      "size": "188MB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "56230ea631c0",
+      "size": "3.42GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "853322028d22",
+      "size": "4.53GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "b46a23101304",
+      "size": "3.42GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "1ab330bf65b6",
+      "size": "4.53GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "7086eafad93e",
+      "size": "3.42GB"
+    },
+    {
+      "repo_tag": "<none>:<none>",
+      "image_id": "1a27eb06cd48",
+      "size": "188MB"
+    },
+    {
+      "repo_tag": "python:3.12-slim",
+      "image_id": "657d15078a33",
+      "size": "144MB"
+    },
+    {
+      "repo_tag": "selenium/standalone-chromium:145.0-20260222",
+      "image_id": "99f0ec37dd94",
+      "size": "2.16GB"
+    },
+    {
+      "repo_tag": "tonistiigi/binfmt:latest",
+      "image_id": "bc902d13b46a",
+      "size": "80.8MB"
+    },
+    {
+      "repo_tag": "postgres:16-alpine",
+      "image_id": "656ce000ee1e",
+      "size": "272MB"
+    },
+    {
+      "repo_tag": "ubuntu:latest",
+      "image_id": "350d40843c24",
+      "size": "101MB"
+    },
+    {
+      "repo_tag": "redis:7-alpine",
+      "image_id": "67d49cdb6df6",
+      "size": "41.8MB"
+    },
+    {
+      "repo_tag": "vllm/vllm-openai:v0.12.0",
+      "image_id": "0ceba6365d2b",
+      "size": "17.9GB"
+    },
+    {
+      "repo_tag": "jupyter-gpu-secure:latest",
+      "image_id": "a2750b1105b1",
+      "size": "17GB"
+    },
+    {
+      "repo_tag": "unsloth/unsloth:latest",
+      "image_id": "9c8ff9bd1434",
+      "size": "21.2GB"
+    },
+    {
+      "repo_tag": "nvcr.io/nvidia/pytorch:25.11-py3",
+      "image_id": "eea3fe49e8a5",
+      "size": "19.5GB"
+    },
+    {
+      "repo_tag": "gpu-process-exporter:latest",
+      "image_id": "fd1a0dc48576",
+      "size": "161MB"
+    },
+    {
+      "repo_tag": "local/llama.cpp:server-cuda",
+      "image_id": "cdb205c202c4",
+      "size": "2.58GB"
+    },
+    {
+      "repo_tag": "assets-backend:latest",
+      "image_id": "a794298368e1",
+      "size": "2.79GB"
+    },
+    {
+      "repo_tag": "assets-frontend:latest",
+      "image_id": "2d9ac49b8226",
+      "size": "791MB"
+    },
+    {
+      "repo_tag": "prom/prometheus:latest",
+      "image_id": "e851ec0ef6e0",
+      "size": "344MB"
+    },
+    {
+      "repo_tag": "nginx:alpine",
+      "image_id": "cbad6347cca2",
+      "size": "53.4MB"
+    },
+    {
+      "repo_tag": "grafana/grafana:latest",
+      "image_id": "52def22e4440",
+      "size": "685MB"
+    },
+    {
+      "repo_tag": "postgres:15-alpine",
+      "image_id": "f1375da969b7",
+      "size": "265MB"
+    },
+    {
+      "repo_tag": "nvcr.io/nvidia/k8s/dcgm-exporter:4.4.1-4.6.0-ubuntu22.04",
+      "image_id": "518efd3d6a69",
+      "size": "830MB"
+    },
+    {
+      "repo_tag": "nvcr.io/nvidia/tensorrt-llm/release:spark-single-gpu-dev",
+      "image_id": "474ca9e2e7b2",
+      "size": "37.1GB"
+    },
+    {
+      "repo_tag": "nvcr.io/nvidia/vllm:25.09-py3",
+      "image_id": "96d1b845de7f",
+      "size": "21.6GB"
+    },
+    {
+      "repo_tag": "nvcr.io/nvidia/pytorch:25.09-py3",
+      "image_id": "8cd4d4cfc0dd",
+      "size": "18.1GB"
+    },
+    {
+      "repo_tag": "nvcr.io/nvidia/cuda:13.0.1-runtime-ubuntu24.04",
+      "image_id": "55e3a0bc92ce",
+      "size": "2.55GB"
+    },
+    {
+      "repo_tag": "milvusdb/milvus:v2.5.15-20250718-3a3b374f-gpu-arm64",
+      "image_id": "0c6ceb08ba84",
+      "size": "5.1GB"
+    },
+    {
+      "repo_tag": "utkuozdemir/nvidia_gpu_exporter:1.2.1",
+      "image_id": "a350cff0dd2a",
+      "size": "111MB"
+    },
+    {
+      "repo_tag": "jykoh/classifieds:latest",
+      "image_id": "0dbbdef09dd9",
+      "size": "77.4GB"
+    },
+    {
+      "repo_tag": "nvidia/cuda:12.0.0-base-ubuntu22.04",
+      "image_id": "dd67ec7ab396",
+      "size": "80.8MB"
+    },
+    {
+      "repo_tag": "mysql:8.1",
+      "image_id": "d858cb210e4b",
+      "size": "599MB"
+    },
+    {
+      "repo_tag": "shopping_final_0712:latest",
+      "image_id": "73e22b803149",
+      "size": "64GB"
+    },
+    {
+      "repo_tag": "webarenaimages/shopping_final_0712:latest",
+      "image_id": "73e22b803149",
+      "size": "64GB"
+    },
+    {
+      "repo_tag": "postmill-populated-exposed-withimg:latest",
+      "image_id": "bd8ae768c200",
+      "size": "53.3GB"
+    },
+    {
+      "repo_tag": "webarenaimages/postmill-populated-exposed-withimg:latest",
+      "image_id": "bd8ae768c200",
+      "size": "53.3GB"
+    },
+    {
+      "repo_tag": "minio/minio:RELEASE.2023-03-20T20-16-18Z",
+      "image_id": "fb4e814a3183",
+      "size": "267MB"
+    },
+    {
+      "repo_tag": "quay.io/coreos/etcd:v3.5.5",
+      "image_id": "151959251062",
+      "size": "171MB"
+    },
+    {
+      "repo_tag": "ghcr.io/kiwix/kiwix-serve:3.3.0",
+      "image_id": "b3604a01ec59",
+      "size": "69.1MB"
+    },
+    {
+      "repo_tag": "ghcr.io/kiwix/kiwix-serve:<none>",
+      "image_id": "b5dbcc833cef",
+      "size": "59.1MB"
+    },
+    {
+      "repo_tag": "postgres:13.3",
+      "image_id": "0904b518ad08",
+      "size": "300MB"
+    }
+  ],
+  "errors": [
+    "bash: TimeoutExpired: Command '['bash', '-c', \"curl -sS --max-time 10 'http://100.95.81.103:9980/' | sha256sum | awk '{print $1}'\"]' timed out after 10 seconds",
+    "curl: CalledProcessError: Command '['curl', '-sS', '-I', '--max-time', '5', 'http://100.95.81.103:7770/']' returned non-zero exit status 28."
+  ]
+}

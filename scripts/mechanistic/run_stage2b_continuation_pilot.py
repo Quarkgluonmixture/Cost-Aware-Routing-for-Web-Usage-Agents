@@ -134,6 +134,16 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Output dir: {out_dir}")
 
+    # Paper-grade provenance: dump env snapshot at run start (Gap 1+3, 笔记 §114)
+    try:
+        from scripts.provenance.snapshot_env import capture_env_snapshot
+        capture_env_snapshot(
+            out_dir / "env_snapshot.json",
+            extra={"stage": "stage2b_curated", "reverse": args.reverse, "site": args.site},
+        )
+    except Exception as e:
+        logger.warning(f"Env snapshot failed (non-fatal): {e}")
+
     intents = load_intents(args.site, args.n_tasks)
     logger.info(f"Loaded {len(intents)} intents")
 
@@ -298,6 +308,61 @@ def main():
 - Then Stage 2C: reverse direction (target→source patching) for asymmetry check
 """
     (out_dir / "pilot_summary.md").write_text(summary)
+
+    # Paper-grade run manifest (Gap 3, 笔记 §114) — single-file roll-up of
+    # patch config + per-task outcomes for OSF DOI lock + cross-machine compare.
+    run_manifest = {
+        "stage": "stage2b_continuation_curated" if args.n_tasks > 5 else "stage2b_continuation_pilot",
+        "direction": "reverse" if args.reverse else "forward",
+        "site": args.site,
+        "patch_config": {
+            "source_mode": args.source_mode,
+            "target_mode": args.target_mode,
+            "step_idx": args.step,
+            "max_new_tokens": args.max_new_tokens,
+            "n_layers_swept": int(patcher.n_layers),
+            "hook_position": "last_token",
+            "first_forward_only": True,
+            "min_free_vram_gb": args.min_free_vram_gb,
+        },
+        "model": {
+            "path": args.model_path,
+            "n_layers": int(patcher.n_layers),
+        },
+        "input_dataset": {
+            "archived_run_dir": str(archived_dir),
+            "n_tasks_requested": args.n_tasks,
+            "n_tasks_completed": len(per_task_results),
+            "task_ids": [int(t["task_id"]) for t in per_task_results],
+        },
+        "outcomes_per_task": [
+            {
+                "task_id": int(t["task_id"]),
+                "step_idx": int(t["step_idx"]),
+                "best_layer_overlap_src": int(np.argmax([r["token_overlap_to_source"] for r in t["per_layer"]])),
+                "best_overlap_src": float(max(r["token_overlap_to_source"] for r in t["per_layer"])),
+                "L11_overlap_src": float(t["per_layer"][11]["token_overlap_to_source"]) if patcher.n_layers > 11 else None,
+                "L17_overlap_src": float(t["per_layer"][17]["token_overlap_to_source"]) if patcher.n_layers > 17 else None,
+            }
+            for t in per_task_results
+        ],
+        "aggregate": {
+            "best_layer_overlap_src_mean": int(best_overlap_layer),
+            "best_overlap_src_mean": float(overlap_src[best_overlap_layer]),
+            "best_layer_ld_src_mean": int(best_ld_layer),
+            "L11_overlap_src_mean": float(overlap_src[11]) if patcher.n_layers > 11 else None,
+            "L17_overlap_src_mean": float(overlap_src[17]) if patcher.n_layers > 17 else None,
+        },
+        "env_snapshot_ref": "env_snapshot.json",
+        "results_files": {
+            "per_task_jsonl": "patching_continuation_results.json",
+            "curves_plot": "patching_continuation_curves.png",
+            "summary_md": "pilot_summary.md",
+        },
+    }
+    with (out_dir / "run_manifest.json").open("w") as f:
+        json.dump(run_manifest, f, indent=2)
+    logger.info(f"run_manifest.json emitted ({len(per_task_results)} tasks)")
     logger.info(f"Stage 2B continuation patching pilot DONE → {out_dir}")
 
 
