@@ -258,6 +258,98 @@ After rerun, the following chain should reconstruct any cell's adjusted_SR:
 | T4 | Episode-level eval reproducibility — re-run evaluator on N=20 spot-check episodes, verify SR stable | 🔴 TBD | Add `scripts/provenance/eval_reproducibility_check.py` |
 | T5 | Cross-evaluator-version sensitivity — if evaluator code changes between cells (shouldn't), `rederive_metadata` per Protocol B captures | ✅ via §115 Protocol B | reeval_audit_protocol.md |
 
+## §U — Watchdog + automatic data-purity verification
+
+> Watchdog (`scripts/maintenance/experiment_watchdog.py`, ~1700 LOC) is the **mid-rerun
+> guardian**: it detects contamination, auto-cleans, alerts via ntfy, and triggers post-
+> condition pipeline. Pre-rerun must verify each layer is operational + automatic.
+
+### §U.1 Watchdog 6-layer auto-clean protocol (笔记 §95 + §107)
+
+| # | Layer | Status | Verify |
+|---|---|---|---|
+| U1.1 | **Detect** — step_000 DOM login marker scan, ≥3 consecutive auth failures → contamination flag | ✅ B-41 §14 | `experiment_watchdog.py::_check_session_health` |
+| U1.2 | **Alert** — ntfy push (priority=high) to `$NTFY_TOPIC` on detection | ✅ | `_post_ntfy()` line 63; verify topic env var set per launch |
+| U1.3 | **Refresh** — auto subprocess `auth_refresh.py` re-login | ✅ B-41/B-67 | `_auto_refresh_auth()` line 111 |
+| U1.4 | **Cleanup** — auto-clean contaminated episodes (delete summary + steps + artifacts; 10-min mtime guard) | ✅ B-49/B-51 | `_purge_digest_records()` line 212 + orphan prune line 1188 |
+| U1.5 | **Resume** — runner re-attempts cleaned episodes via dedup/restart logic | ✅ B-46f | `runner/main.py` resume protocol (笔记 §107 Cluster 4 RNG seeded) |
+| U1.6 | **Verify** — post-rerun spot-check ≥10 random episodes have valid auth signature | 🟡 manual | TBD: add automated post-cell `verify_auth_signatures.py` |
+
+### §U.2 Watchdog operational gates (per-cell launch)
+
+| # | Item | Status | Verify |
+|---|---|---|---|
+| U2.1 | Watchdog process alive during cell run | 🟡 | `pgrep -f experiment_watchdog` non-empty during cell |
+| U2.2 | Watchdog `--reset-state` flag clears stale state.json on launch | ✅ B-54i | restart script handles |
+| U2.3 | ntfy topic configured per cell (e.g., `p79-rerun-cls`, `p79-rerun-red`) | 🟡 | Verify `$NTFY_TOPIC` env var set in queue script |
+| U2.4 | Watchdog log rotation (prevent Scratch fill) | 🟡 | TBD: verify log size cap or log-rotate config |
+| U2.5 | Watchdog self-restart on crash (`restart_watchdog.sh`) | ✅ | Manual cron / systemd not required (script handles) |
+| U2.6 | Watchdog idle self-exit (avoid orphan loops) | ✅ | line 1698 `Self-exit when work is done` |
+| U2.7 | Watchdog cross-site NOT-LOGGED-IN false-positive guard (B-67 / B-74) | ✅ | Site-specific marker matching deployed |
+| U2.8 | Watchdog post-condition analysis trigger (`_run_post_condition_analysis`) | ✅ | line 595; auto-runs `analyze_run` + cross-rep + figures |
+| U2.9 | Watchdog auto-runs `make rederive` post-condition | 🟡 | Verify `_run_post_condition_analysis` includes rederive step |
+
+### §U.3 Pre-launch sanity gate (`glm_pre_launch_check.py`)
+
+| # | Hard rule check | Exit code on violation |
+|---|---|---|
+| U3.1 | RESET_BEFORE=1 enforced for paper-grade cell | 2 (BLOCK) |
+| U3.2 | Same-site B0 XOR B1 (no parallel B0+B1 same site) | 2 (BLOCK) |
+| U3.3 | Queue script ↔ baseline ↔ site ↔ mode arg consistency | 1 (WARN, human review) |
+| U3.4 | Config `benchmark` matches site (vwa vs wa) | 1 (WARN) |
+| U3.5 | No conflicting `pgrep -f run_experiment.*<site>` | 2 (BLOCK) |
+| **Verify** | `bash scripts/maintenance/launch.sh ... DRY=1` | Exit code 0 = OK to launch |
+
+### §U.4 Data purity automatic checks (post-condition pipeline)
+
+| # | Check | Status | Implementation |
+|---|---|---|---|
+| U4.1 | **JSONL dedup** on every step file read (B-46 §10 §41) | ✅ | `p79.experiment.io_utils.read_jsonl_dedup` (5 callsites consolidated) |
+| U4.2 | **Orphan artifact prune** — steps file without summary + 10-min mtime guard | ✅ B-51 | `experiment_watchdog.py:1188-1221` |
+| U4.3 | **Stale summary detection** — summary exists but `done < total` → delete + re-run | ✅ B-61b | `is_condition_complete` |
+| U4.4 | **Per-episode auth refresh** (Magento 302 + 24min PHP gc_maxlifetime) | ✅ B-70 / B-35 | per-cell + time-based fallback (1200s) |
+| U4.5 | **Backup before re-derive** — `.bak_pre_rederive/<orig>` one-shot, never overwrite | ✅ §97 | `rederive_episode_summary.py` |
+| U4.6 | **rederive_metadata audit trail** — append-only per `make rederive` | ✅ §115 Protocol B | `rederive_episode_summary.py` (commit 1fefd39) |
+| U4.7 | **Phase A scoring fix verified** — 13 catalog entries B-01 family / B-09 / B-11/17/18 / B-32/33 / B-35 status FIXED | ✅ post §116.9 | `master_bug_catalog.md` updated 2026-05-08 |
+| U4.8 | **Site state snapshot pre/post-cell** (cart count / posted listing / subscribed forum / etc.) | 🔴 TBD | Add `scripts/maintenance/site_state_snapshot.sh` (per §N3) |
+| U4.9 | **Disk space monitor mid-cell** — alert on Scratch >90% full | 🔴 TBD | Add cron `df -h ~/Scratch` watch + ntfy |
+| U4.10 | **GPU memory leak detection** — `nvidia-smi` polling, alert on continuous growth | 🟡 partial | watchdog has VRAM polling per BLIP-2 fix (B-62) but not generalized |
+
+### §U.5 Cross-cell isolation gates
+
+| # | Item | Status | Verify |
+|---|---|---|---|
+| U5.1 | Each cell launches with unique RUN_ID (timestamp suffix) | ✅ | `B0_3mode_classifieds_YYYYMMDD` pattern |
+| U5.2 | Cell directory isolation — no shared episodes/ across cells | ✅ | run_dir convention |
+| U5.3 | RESET_BEFORE=1 site reset between cells of same site (B0 → B1 sequential) | ✅ enforced via U3.1 | hard rule |
+| U5.4 | Auth state regeneration per-site per-cell (no cross-cell auth leakage) | ✅ B-66 | `auth_refresh.py` per-site files |
+| U5.5 | Watchdog state.json reset between cells (`--reset-state` flag B-54i) | ✅ | restart_watchdog.sh handles |
+| U5.6 | env_snapshot.json dumped at each cell launch (笔记 §114 Gap 1 hook) | ✅ | `run_experiment.py` post-runner.run() hook |
+
+### §U.6 Mid-rerun automatic safeguards
+
+| # | Trigger | Action | Status |
+|---|---|---|---|
+| U6.1 | ≥3 consecutive auth failures | ntfy + auto-refresh | ✅ |
+| U6.2 | ≥5 consecutive episode failures (any reason) | ntfy + halt cell | 🔴 TBD (笔记 §116 §S5 audit) |
+| U6.3 | API 503 cascade (B-50d) | exponential backoff 3 attempts | ✅ |
+| U6.4 | GPU OOM | watchdog kill + restart with reduced batch | 🟡 partial |
+| U6.5 | VWA Docker container down (Tailscale path) | ntfy + halt | 🟡 manual |
+| U6.6 | Disk >95% full | ntfy + halt | 🔴 TBD |
+| U6.7 | env_snapshot evaluator_code SHA mismatch | ntfy (B drift detection) | 🔴 TBD (`check_evaluator_consistency.py` per §116 R6) |
+| U6.8 | Single episode wallclock >30 min (likely env crashed) | ntfy + kill | 🟡 manual |
+
+### §U.7 Critical TBD safeguards (add before rerun)
+
+| Item | Effort | Priority |
+|---|---|---|
+| `site_state_snapshot.sh` (U4.8) | 45 min | 🔴 high — paper §3 contamination disclosure |
+| `verify_auth_signatures.py` (U1.6) | 30 min | 🟡 medium |
+| `check_evaluator_consistency.py` (U6.7 = §116 R6) | 30 min | 🔴 high — OSF DOI lock prereq |
+| Disk monitor cron + ntfy (U4.9 / U6.6) | 15 min | 🟡 medium |
+| Episode wallclock outlier detector (U6.8) | 30 min | 🟡 medium |
+| ≥5 consecutive failure halt (U6.2) | 30 min | 🟡 medium |
+
 ---
 
 ## §L — References
