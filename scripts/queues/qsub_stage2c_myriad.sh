@@ -26,7 +26,7 @@
 #$ -l h_rt=24:0:0          # 24h wallclock (15 task × ~50 min/task)
 #$ -l mem=64G
 #$ -l gpu=1
-#$ -ac allow=L,U,V         # Allow L (40GB) + U/V (80GB) — let scheduler pick least busy
+# NOTE: '-ac allow=L,U,V' broken (commas parsed as separators). Removed.
 #$ -wd /home/ucab352/Scratch/p79
 #$ -N stage2c_reverse_b1_cls
 #$ -o /home/ucab352/Scratch/p79/logs/qsub_stage2c_b1_cls.$JOB_ID.out

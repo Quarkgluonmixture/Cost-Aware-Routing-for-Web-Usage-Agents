@@ -31,7 +31,8 @@
 #$ -l h_rt=36:0:0          # 36h wallclock (24 task × ~50 min/task with margin)
 #$ -l mem=64G              # 64GB host memory (model needs ~12GB GPU + activations)
 #$ -l gpu=1                # single GPU sufficient (Qwen3-VL-4B bf16 ~10GB)
-#$ -ac allow=L,U,V         # Allow L (4× A100 40GB), U/V (4× A100 80GB) — let scheduler pick least busy
+# NOTE: SGE parses '-ac allow=L,U,V' as 3 separate context vars (allow=L + U=NONE + V=NONE).
+# Removed allow= line entirely — let scheduler pick whichever GPU type has earliest slot.
 #$ -wd /home/ucab352/Scratch/p79
 #$ -N stage2b_b1_cls
 #$ -o /home/ucab352/Scratch/p79/logs/qsub_stage2b_b1_cls.$JOB_ID.out
