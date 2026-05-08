@@ -31,7 +31,7 @@
 #$ -l h_rt=36:0:0          # 36h wallclock (24 task × ~50 min/task with margin)
 #$ -l mem=64G              # 64GB host memory (model needs ~12GB GPU + activations)
 #$ -l gpu=1                # single GPU sufficient (Qwen3-VL-4B bf16 ~10GB)
-#$ -ac allow=L             # L-type 4× A100 40GB (single GPU = 40GB; faster queue than V/U)
+#$ -ac allow=L,U,V         # Allow L (4× A100 40GB), U/V (4× A100 80GB) — let scheduler pick least busy
 #$ -wd /home/ucab352/Scratch/p79
 #$ -N stage2b_b1_cls
 #$ -o /home/ucab352/Scratch/p79/logs/qsub_stage2b_b1_cls.$JOB_ID.out
