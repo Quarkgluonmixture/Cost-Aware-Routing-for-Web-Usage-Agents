@@ -14,7 +14,7 @@ name = "p79"
 version = "0.2.0"
 description = "Project 79: Cost-Aware Routing for Web Usage Agents with VisualWebArena + Qwen3-VL-4B"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"  # Lowered for Myriad compat (pytorch/2.1.0 module ships Python 3.9.6); code uses `from __future__ import annotations` so newer type syntax still works
 dependencies = [
     "torch>=2.0.0",
     "torchvision",
