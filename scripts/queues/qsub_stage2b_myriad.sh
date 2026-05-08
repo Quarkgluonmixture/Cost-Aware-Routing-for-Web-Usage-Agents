@@ -59,10 +59,10 @@ echo "[$(date '+%H:%M:%S')] GPU info:"
 nvidia-smi --query-gpu=name,memory.total,memory.free,driver_version --format=csv
 
 # Load Myriad pre-built PyTorch 2.1.0/gpu (auto-loads python/3.9.6 + cuda/11.8
-# + cudnn/9.2 + gcc-libs/10.2.0). Avoids pip torch install entirely (HPC Lustre
-# slow + version pinning issues). torch 2.1.0 is sufficient for Qwen3-VL-4B
-# forward pass + activation hooks (mechanistic stages don't need 2.5+ features).
-module unload python python3 2>/dev/null || true
+# + cudnn/9.2 + gcc-libs/10.2.0). Avoids pip torch install entirely.
+# CRITICAL: must unload default gcc-libs/4.9.2 first — compute nodes auto-load
+# it via default-modules, and pytorch chain-load of gcc-libs/10.2.0 conflicts.
+module unload gcc-libs python python3 2>/dev/null || true
 module load pytorch/2.1.0/gpu
 
 # pip install --user goes here (NOT ~/.local which fills Home quota)

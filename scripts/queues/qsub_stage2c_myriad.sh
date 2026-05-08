@@ -47,8 +47,9 @@ cd "$REPO_DIR"
 echo "[$(date '+%H:%M:%S')] Job $JOB_ID (reverse direction) start on $(hostname)"
 nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv
 
-# Load Myriad pre-built PyTorch (auto-loads python/3.9.6 + cuda/11.8 + cudnn + gcc-libs)
-module unload python python3 2>/dev/null || true
+# Load Myriad pre-built PyTorch (auto-loads python/3.9.6 + cuda/11.8 + cudnn + gcc-libs/10.2.0)
+# CRITICAL: unload default gcc-libs/4.9.2 first (compute nodes auto-load it).
+module unload gcc-libs python python3 2>/dev/null || true
 module load pytorch/2.1.0/gpu
 
 # pip install --user packages live here
