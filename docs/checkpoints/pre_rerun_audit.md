@@ -20,7 +20,7 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 
 ---
 
-## Lifecycle Overview — 4 Phases
+## Lifecycle Overview — 5 Phases
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -28,9 +28,10 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 │  └─ §1.1 Code & Bug Catalog                                     │
 │  └─ §1.2 Config & Hyperparameters                               │
 │  └─ §1.3 Pre-Registration & Witness                             │
-│  └─ §1.4 Methodology Pre-Spec (statistical / robustness)        │
+│  └─ §1.4 Methodology Pre-Spec (statistical+robustness+stopping) │
 │  └─ §1.5 Inter-Rater Reliability Prep                           │
 │  └─ §1.6 Advisor Sync Outcomes & Open Questions                 │
+│  └─ §1.7 Pre-experimental scope & data lineage 🆕               │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -42,6 +43,7 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 │  └─ §2.5 Mid-Run Automatic Safeguards                           │
 │  └─ §2.6 Cross-Cell Isolation                                   │
 │  └─ §2.7 Failure-Mode Contingency / Resume Protocols            │
+│  └─ §2.8 Pre-launch end-to-end smoke test 🆕                    │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -61,6 +63,16 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 │  └─ §4.5 Evaluator Independence Verification                    │
 │  └─ §4.6 Audit Trail & Reproducibility                          │
 │  └─ §4.7 OSF DOI Lock (8-Step Workflow)                         │
+│  └─ §4.8 Falsification & counterfactual robustness 🆕           │
+│  └─ §4.9 Mechanistic Stage 2B/2C reproducibility 🆕             │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  Phase 5: 出版与持续性 (Publication & Continuity) 🆕            │
+│  └─ §5.1 Replication package contents catalog                   │
+│  └─ §5.2 Operational continuity & hand-off plan                 │
+│  └─ §5.3 Compliance & disclosure                                │
+│  └─ §5.4 Long-term maintenance                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -132,6 +144,16 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 1.4.12 | Hold-out site validation (LOSO if advisor confirms) | 🟡 advisor email | `preregistration.md` mentions LOSO as alternative |
 | 1.4.13 | Cross-machine reproducibility (DGX/A100/Myriad) | 🟡 | numerical_determinism_check post-rerun |
 
+### §1.4.3 Stopping rules + missing data policy (NEW per §116.13)
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| 1.4.14 | **Stopping rules** — when to halt a cell mid-run | 🔴 TBD | Pre-spec: e.g., if first 30 episodes have <5% SR or >50% eval errors, halt + investigate (do NOT continue contaminated cell to N=234) |
+| 1.4.15 | **Imputation policy for crashed episodes** | 🔴 TBD | Pre-spec: episode with `error: env_crashed` excluded from N (paired bootstrap auto-handles); no imputation. Paper §3 cite |
+| 1.4.16 | **Heterogeneity analysis pre-spec** — site differences in H1/H3 | 🔴 TBD | Pre-spec: report per-site SR + 95% CI; if >5pp site-difference, note as "site-modulated" rather than retract |
+| 1.4.17 | **Bootstrap clustering decision** — by task or IID | 🔴 TBD | Pre-spec: cluster bootstrap by task (since same task observed 6× across modes); not IID |
+| 1.4.18 | **Falsification criteria pre-spec** — what data outcome retracts hero claim | 🔴 TBD | Per paper_planning R5: <X cells pass H1+H3 → pivot to VWA bug paper; formalize threshold here |
+
 ## §1.5 Inter-Rater Reliability Prep (κ ≥ 0.7 targets)
 
 | # | Item | Status | Target |
@@ -140,6 +162,19 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 1.5.2 | Failure-mode 5-bucket rubric reliability | 🔴 TBD | κ ≥ 0.7 target |
 | 1.5.3 | Codex-as-rater calibration spot-check | 🔴 TBD | Disagreement >30% triggers prompt revision |
 | 1.5.4 | Visual subset audit | ✅ exists `docs/analysis/cross_sites/vwa_manual_non_visual_task_ids.py` | Used as Appendix D |
+
+## §1.7 Pre-experimental scope & data lineage (NEW per §116.13 deep audit)
+
+| # | Item | Status | Verify |
+|---|---|---|---|
+| 1.7.1 | **VWA submodule git SHA pin** at lock moment | 🔴 TBD | `cd external/visualwebarena && git rev-parse HEAD` recorded in osf_lock_manifest.md |
+| 1.7.2 | **Playwright Chromium version pin** | 🔴 TBD | `python3 -c "import playwright; print(playwright.__version__)"` + `playwright --version` recorded |
+| 1.7.3 | **Tokenizer SHA verification** matches model HF revision | 🔴 TBD | `cat ~/.cache/huggingface/.../tokenizer_config.json` SHA |
+| 1.7.4 | **Reference image hash registry** — per-task ref image SHA-256 stable | 🔴 TBD | `find external/visualwebarena/config_files/vwa -name "*.json" -exec jq -r '.image' {} \;` then SHA all referenced images |
+| 1.7.5 | **Task pool freezing explicit** — task IDs locked per cell | 🟡 implicit | Add `task_id_pool_sha256` in run_manifest.yaml per cell (sorted task IDs hashed) |
+| 1.7.6 | **License compliance explicit** — VWA Apache 2.0 / Qwen3-VL license / dependencies | 🔴 TBD | Add to paper §3 footnote + `LICENSE` file at repo root |
+| 1.7.7 | **Conflicts of interest** / IRB statement (likely N/A but explicit) | 🔴 TBD | Paper §1 footnote: "no IRB needed (synthetic web tasks); no COI" |
+| 1.7.8 | **Cross-paper data lineage map** — phantom 16-cell ↔ mechanistic Stage 2B/2C ↔ VWA bug catalog | 🟡 partial | Document data flow in osf_lock_manifest.md §1.5 |
 
 ## §1.6 Advisor Sync Outcomes & Open Questions
 
@@ -247,6 +282,19 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 2.6.5 | Watchdog state.json reset between cells | ✅ B-54i | restart handles |
 | 2.6.6 | env_snapshot.json dumped at each cell launch | ✅ | run_experiment.py hook |
 
+## §2.8 Pre-launch end-to-end smoke test (NEW per §116.13)
+
+**Run before launching all 16 cells** — verify full pipeline works on a minimal subset.
+
+| # | Item | Status | Verify |
+|---|---|---|---|
+| 2.8.1 | **End-to-end smoke**: 1 cell × 2 tasks × all 6 modes (DOM/SoM/Vision/P-text/P-prompt/P-SoM) | 🔴 TBD | `make smoke` or custom 2-task launch; verify all 12 (2×6) episodes produce summary.json with non-error status |
+| 2.8.2 | **ntfy delivery test** — auth fail trigger → alert reaches phone | 🔴 TBD | Manual: kill `.auth/cls_state.json`; observe ntfy notification arrives |
+| 2.8.3 | **Watchdog 6-layer artificial trigger** — fake auth fail → verify cleanup→resume on test data | 🔴 TBD | Add `scripts/maintenance/watchdog_smoke_test.sh` |
+| 2.8.4 | **Disk I/O speed baseline** for target machine | 🔴 TBD | `dd if=/dev/zero of=test bs=1M count=1000 conv=fdatasync` on Scratch — paper §3 disclose if Lustre |
+| 2.8.5 | **Auth refresh subprocess smoke** — invoke `auth_refresh.py` standalone, verify completes <30s | 🔴 TBD | `python3 -m p79.utils.auth_refresh refresh classifieds` |
+| 2.8.6 | **GPU forward pass smoke** — load model + 1 forward pass on each target machine | 🔴 TBD | A100/Myriad/DGX: `python3 -c "import torch; from p79.agents.qwen3vl_agent import Qwen3VLAgent; ..."` |
+
 ## §2.7 Failure-Mode Contingency / Resume Protocols
 
 | # | Scenario | Status | Protocol |
@@ -259,6 +307,8 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 2.7.6 | Disk full mid-cell | 🟡 | Pre-launch verify (1.6); mid-launch monitor TBD |
 | 2.7.7 | Network partition (DGX↔quark Tailscale OR A100↔bastion) | 🟡 | A100 self-host VWA solves |
 | 2.7.8 | Cell completes with `expected_n - actual_n > 5` | 🔴 TBD | Halt subsequent cells until investigated |
+| 2.7.9 | **Quark host watchdog** — VWA Docker on quark, alert if quark off / Docker daemon dead | 🔴 TBD | Cron on DGX or laptop: `curl -sI http://100.95.81.103:9980` every 10 min, ntfy on fail |
+| 2.7.10 | **Backup restore protocol** — Scratch corrupt recovery | 🔴 TBD | Document: archive subset is in git (16.5MB safe); HF model cache re-downloadable; experiment results need DGX backup if A100 Scratch lost |
 
 ---
 
@@ -386,6 +436,25 @@ After rerun, the following chain reconstructs any cell's adjusted_SR:
 6. OSF DOI page citing git SHA + advisor email message-id
 7. `master_bug_catalog.md` Status fields with commit refs (post-§116.9 backfill)
 
+## §4.8 Falsification & counterfactual robustness (NEW per §116.13)
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| 4.8.1 | **K_h1 ±1 sensitivity** — pass at K=12 but fail at K=13: paper hook intact? | 🔴 TBD | Pre-spec: K=12 gates HERO; K-12 to K-15 gradient reported transparently |
+| 4.8.2 | **Counterfactual cell removal** — removing any one cell changes decision? | 🔴 TBD | Re-run preregistration_decision_test with each cell excluded; report N_unstable |
+| 4.8.3 | **Outlier task spot-check** — top 5 / bottom 5 task-level effects, manual review | 🔴 TBD | Verify no single task drives the result |
+| 4.8.4 | **Falsification hierarchy** (per paper_planning §5 R-rules R1-R5) | 🟡 partial | Formalize threshold: if H1<10/16 AND H3<8/16 → R5 retract+pivot to VWA bug paper |
+
+## §4.9 Mechanistic Stage 2B/2C-specific reproducibility (NEW per §116.13)
+
+| # | Item | Status | Verify |
+|---|---|---|---|
+| 4.9.1 | Same input → same L11 hidden state (within 1e-3) cross-machine | 🟡 needs A100/Myriad SSH | `numerical_determinism_check.py compare` on stage2b_curated subset |
+| 4.9.2 | Hook fire_count protocol verified — first-forward-only patching | ✅ commit `1304f59` | activation_patching.py `_fire_count_tracker` |
+| 4.9.3 | Layer indexing — `model.config.num_hidden_layers` matches L0-L35 used in script | 🟡 | Verify on each machine: Qwen3-VL-4B has 36 layers |
+| 4.9.4 | Token alignment — input/output tokens correspondence per task | 🟡 | Spot-check N=5 task pairs, output length sanity |
+| 4.9.5 | Stage 2B post-rerun spot-check — re-run 3 tasks, verify L11 finding stable | 🔴 TBD | After full Stage 2B finishes, re-run task 0/100/233 to confirm reproducibility |
+
 ## §4.7 OSF DOI Lock (8-Step Workflow)
 
 **Trigger**: Advisor email reply with confirmed K_h1 / K_h3 / TOST δ.
@@ -399,6 +468,62 @@ After rerun, the following chain reconstructs any cell's adjusted_SR:
 6. `git tag -a preregistration-locked` + push
 7. Mint OSF DOI at https://osf.io/registries/ (link to GitHub tag URL)
 8. Backfill `osf_lock_manifest.md` with all SHAs + DOI + timestamp
+
+---
+
+# Phase 5 — 出版与持续性 (Publication & Continuity) — NEW per §116.13
+
+> Often-overlooked: paper-grade also covers **what gets released to public** + **how the work survives author availability gaps**.
+
+## §5.1 Replication package contents catalog
+
+| # | Item | Goes into | Status |
+|---|---|---|---|
+| 5.1.1 | preregistration.md (locked version, post advisor email) | OSF DOI deposit | 🟡 awaiting email |
+| 5.1.2 | paper_drafts_locked/ (immutable copy at lock moment) | OSF + GitHub tag | 🔴 TBD post-rerun |
+| 5.1.3 | paper.bib (57 entries) | OSF + GitHub | ✅ |
+| 5.1.4 | run_manifest.yaml (post-rerun, grade=paper-grade) | OSF + GitHub | 🟡 post-rerun |
+| 5.1.5 | env_snapshot.json (per host: DGX + A100 + Myriad) | OSF + GitHub `results/provenance/` | DGX ✅ / others 🟡 |
+| 5.1.6 | snapshot_vwa.json (per VWA host) | OSF + GitHub | DGX ✅ / others 🟡 |
+| 5.1.7 | numerical_determinism_check output | OSF + GitHub | 🔴 TBD post-rerun |
+| 5.1.8 | master_bug_catalog.md (~80 entries) | OSF + GitHub | ✅ |
+| 5.1.9 | section4_limitations_disclosure.md | Paper §4 + OSF | ✅ |
+| 5.1.10 | mechanistic archive_subset_b1_cls/ (16.5MB) | GitHub (already committed); link from paper §5 | ✅ |
+| 5.1.11 | Stage 2B/2C results — full per-task .json + curves.png + run_manifest.json | OSF + GitHub `results/mechanistic/` | 🟡 post-Myriad |
+| 5.1.12 | Code release — current master pinned at `preregistration-locked` tag | GitHub release | 🟡 post-lock |
+| 5.1.13 | License files (Apache 2.0 root + per-dependency) | GitHub root | 🔴 TBD verify |
+| 5.1.14 | README for replication (step-by-step from clone to figures) | Paper Appendix + GitHub | 🔴 TBD |
+
+## §5.2 Operational continuity & hand-off plan
+
+| # | Scenario | Status | Plan |
+|---|---|---|---|
+| 5.2.1 | **48h rerun monitoring** — who responds at 3 AM if cell halts | 🔴 TBD | Pre-rerun: define on-call schedule (you full coverage? Or family member as escalation contact?) |
+| 5.2.2 | **You unavailable >12h** (exam / illness / network out) — can advisor act? | 🔴 TBD | Document minimum-viable action list ("if PID dies, 2 commands to restart"); share with advisor or trusted peer |
+| 5.2.3 | **Hand-off documentation** — if someone else needs to continue, where do they start | 🔴 TBD | Add `docs/HANDOFF_PLAYBOOK.md` — top-3 immediate-action commands per emergency type |
+| 5.2.4 | **Calendar integration** — exam dates 5/12-6/1 vs rerun launch timing | 🟡 partial | next_steps.md mentions; ensure rerun launches AFTER exams or has reduced monitoring expectation |
+| 5.2.5 | **PLAYBOOK §1+§2 GLM cron health** — what if GLM API itself goes down | 🟡 | Cron + ntfy fail alerts already in place per §116 audit |
+
+## §5.3 Compliance & disclosure
+
+| # | Item | Status | Where |
+|---|---|---|---|
+| 5.3.1 | License compliance — VWA Apache 2.0 / Qwen3-VL Apache 2.0 / transformers Apache 2.0 | 🔴 TBD verify | Paper §3 footnote + repo `LICENSE` |
+| 5.3.2 | Conflicts of interest statement | 🔴 TBD | Paper §1 footnote (likely "none — student MSc work") |
+| 5.3.3 | IRB / ethics review statement | 🔴 TBD | Paper §3 ("no IRB needed — synthetic web tasks, no human subjects") |
+| 5.3.4 | Data sharing policy (what gets released, what doesn't) | 🔴 TBD | Section 9 / Appendix: code public, run_manifest+env_snapshots public, .auth/ private (gitignored) |
+| 5.3.5 | Compute cost transparency | 🟡 partial | Paper §3 / §8 — total GPU-hours + USD + carbon |
+| 5.3.6 | API keys / credentials redacted from any released artifacts | ✅ | `.auth/` gitignored; verify env_snapshot doesn't expose tokens |
+
+## §5.4 Long-term maintenance
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| 5.4.1 | Tag freezing protocol — `preregistration-locked` git tag at OSF DOI mint | 🟡 | osf_lock_manifest.md §3 step 6 |
+| 5.4.2 | Branch policy — main = clean post-lock, `post-paper` branch for revisions | 🔴 TBD | Decide policy now |
+| 5.4.3 | Paper §3 reproducibility statement (1 paragraph: "code at <SHA>, data at <DOI>, env at...") | 🔴 TBD post-rerun | Boilerplate template ready in paper drafts |
+| 5.4.4 | Bug-fix discipline going forward — Protocol A T0/T1/T2 classification | ✅ | evaluator_change_protocol.md |
+| 5.4.5 | Paper revision policy — if reviewer asks for new analysis, classify as preregistered or post-hoc explicit | 🔴 TBD | Pre-spec: any new analysis post-DOI is post-hoc, must be flagged in revision response |
 
 ---
 
