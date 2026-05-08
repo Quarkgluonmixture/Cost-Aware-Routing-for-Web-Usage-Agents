@@ -764,6 +764,14 @@ class ExperimentRunner:
         url_stuck_streak = 0
         last_url = ""
         cycle_early_stop = False
+        # Advisor 5/5 sync (笔记 §110, advisor_sync_5_5_outcomes.md §A.1):
+        # Option A — early-stop CANCELLED entirely. Detection logic kept for
+        # paper-grade diagnostic logging but trajectory NOT terminated.
+        # Default False (per advisor cancel); re-enable only with explicit
+        # config opt-in for ablation studies.
+        _early_stop_enabled = bool(
+            self.cfg.get("runtime", {}).get("early_stop_enabled", False)
+        )
 
         checklist_manager: Optional[ChecklistManagerLite] = None
         if bool(self.checklist_cfg.get("enabled", False)):
@@ -1341,11 +1349,13 @@ class ExperimentRunner:
                 else:
                     detected, mode, min_r = fuzzy_cycle_len, "fuzzy", 5
                 logger.warning(
-                    "Action cycle detected (%s, len=%d, reps>=%d) at step %d for task %s/%d — early stop.",
+                    "Action cycle detected (%s, len=%d, reps>=%d) at step %d for task %s/%d — %s.",
                     mode, detected, min_r, step_idx, task.site, task.task_id,
+                    "early stop" if _early_stop_enabled else "diagnostic only (early-stop disabled per advisor 5/5)",
                 )
-                cycle_early_stop = True
-                break
+                if _early_stop_enabled:
+                    cycle_early_stop = True
+                    break
 
             # --- scroll alternation detection ---
             if is_scroll:
@@ -1361,11 +1371,13 @@ class ExperimentRunner:
                     is_alternating = all(tail[i] != tail[i + 1] for i in range(ALT_THRESHOLD - 1))
                     if is_alternating:
                         logger.warning(
-                            "Scroll alternation detected (len=%d) at step %d for task %s/%d — early stop.",
+                            "Scroll alternation detected (len=%d) at step %d for task %s/%d — %s.",
                             ALT_THRESHOLD, step_idx, task.site, task.task_id,
+                            "early stop" if _early_stop_enabled else "diagnostic only (early-stop disabled per advisor 5/5)",
                         )
-                        cycle_early_stop = True
-                        break
+                        if _early_stop_enabled:
+                            cycle_early_stop = True
+                            break
             else:
                 scroll_direction_history.clear()
 
@@ -1380,11 +1392,13 @@ class ExperimentRunner:
             URL_STUCK_THRESHOLD = 5
             if url_stuck_streak >= URL_STUCK_THRESHOLD:
                 logger.warning(
-                    "URL stuck (%d consecutive clicks, url=%s) at step %d for task %s/%d — early stop.",
+                    "URL stuck (%d consecutive clicks, url=%s) at step %d for task %s/%d — %s.",
                     url_stuck_streak, current_url[:80], step_idx, task.site, task.task_id,
+                    "early stop" if _early_stop_enabled else "diagnostic only (early-stop disabled per advisor 5/5)",
                 )
-                cycle_early_stop = True
-                break
+                if _early_stop_enabled:
+                    cycle_early_stop = True
+                    break
 
             step_idx += 1
 
