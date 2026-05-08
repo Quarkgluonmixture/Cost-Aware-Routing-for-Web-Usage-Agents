@@ -167,7 +167,7 @@ After rerun, the following chain should reconstruct any cell's adjusted_SR:
 
 | # | Item | Status | Verify |
 |---|---|---|---|
-| M1 | **Multiple comparison correction** for H1+H3+TOST family | 🔴 TBD | preregistration.md must specify Bonferroni (α/3=0.0167) OR Holm-Bonferroni OR FDR; no implicit α=0.05 each |
+| M1 | **Multiple comparison correction** for H1+H3+TOST family | ✅ already in preregistration.md §3 | Holm-Bonferroni step-down per H-sub-family (PRIMARY: H1/H2; STRUCTURAL: H3 axes; ROUTER: H7/H8; EXPLORATORY: H4 + best-signal-per-mode; POST-HOC: H5/H6 disclosed) |
 | M2 | **Bootstrap CI procedure** spec — N resamples, RNG seed, BCa vs percentile | 🟡 partial | preregistration.md routing_signal section mentions bootstrap; add for H1/H3 oracle lift CI |
 | M3 | **Power analysis** — minimum detectable effect (MDE) at observed N=234/210/466 with α=0.05, β=0.20 | 🔴 TBD | run `scripts/analysis/power_analysis.py` (笔记 §116 R5 audit followup); paper §3 cite MDE |
 | M4 | **Effect size reporting** — pp lift + Cohen's h for binary SR, alongside p-values | 🟡 partial | preregistration.md mentions H3 lift_pp but no Cohen's h; add for paper §5 Table 5 |
