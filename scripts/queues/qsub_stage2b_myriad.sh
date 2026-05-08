@@ -110,7 +110,7 @@ python3 scripts/mechanistic/run_stage2b_continuation_pilot.py \
     --source-mode som \
     --target-mode phantom_som \
     --output-dir "$OUT_DIR" \
-    --archived-run-dir "$REPO_DIR/results/visualwebarena/phase1/B1_phantom_som_classifieds_20260428"
+    --archived-run-dir "$REPO_DIR/results/mechanistic/archive_subset_b1_cls"
 
 # ============================================================================
 # Done

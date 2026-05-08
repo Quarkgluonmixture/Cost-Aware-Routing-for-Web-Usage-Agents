@@ -64,6 +64,7 @@ SITE_TO_CONFIG_DIR = {
 
 
 def load_intents(site: str, n_tasks: int) -> list[tuple[int, str]]:
+    """Load intents from VWA config_files (full repo with submodule init)."""
     config_dir = SITE_TO_CONFIG_DIR[site]
     json_files = sorted(config_dir.glob("*.json"), key=lambda p: int(p.stem))
     intents = []
@@ -74,11 +75,31 @@ def load_intents(site: str, n_tasks: int) -> list[tuple[int, str]]:
     return intents
 
 
+def load_intents_from_subset_manifest(manifest_path: Path, tier: str, n_tasks: int) -> list[tuple[int, str]]:
+    """Load intents from archive_subset manifest.json (cross-machine paper-grade
+    dataset). Used on Myriad / A100 where VWA submodule isn't init'd."""
+    manifest = json.loads(manifest_path.read_text())
+    entries = manifest.get(tier, [])[:n_tasks]
+    return [(int(e["task_id"]), e["intent"]) for e in entries]
+
+
 def find_artifacts_dir(run_dir: Path) -> Path:
+    """Find artifacts directory; supports two layouts:
+    (a) nested:  <run>/<condition>/artifacts/<site>_task_X/step_NNN/
+    (b) flat:    <subset>/<site>_task_X/step_NNN/  (extract_archive_subset.py output)
+    """
+    # Layout (a): nested condition/artifacts
     for child in run_dir.iterdir():
         if child.is_dir() and (child / "artifacts").is_dir():
             return child / "artifacts"
-    raise FileNotFoundError(f"No condition subdir with artifacts/ in {run_dir}")
+    # Layout (b): flat subset (run_dir IS the artifacts dir)
+    for child in run_dir.iterdir():
+        if child.is_dir() and any(
+            child.name.startswith(prefix)
+            for prefix in ("classifieds_task_", "reddit_task_", "shopping_task_")
+        ):
+            return run_dir
+    raise FileNotFoundError(f"No artifacts in {run_dir} (tried nested + flat layouts)")
 
 
 def build_som_marks(obs_text: str, max_marks: int = 200) -> str:
@@ -144,10 +165,21 @@ def main():
     except Exception as e:
         logger.warning(f"Env snapshot failed (non-fatal): {e}")
 
-    intents = load_intents(args.site, args.n_tasks)
-    logger.info(f"Loaded {len(intents)} intents")
-
     archived_dir = Path(args.archived_run_dir)
+
+    # Auto-detect: if archived_run_dir contains manifest.json, it's a subset
+    # (extract_archive_subset.py output). Use intents from manifest, support
+    # flat layout. This enables cross-machine paper-grade workflow (Myriad / A100)
+    # without needing the full B1_phantom_som_classifieds_20260428 archive (~1.8GB).
+    subset_manifest = archived_dir / "manifest.json"
+    if subset_manifest.exists():
+        tier = "reverse" if args.reverse else "strong"
+        intents = load_intents_from_subset_manifest(subset_manifest, tier=tier, n_tasks=args.n_tasks)
+        logger.info(f"Subset mode: loaded {len(intents)} intents from manifest (tier={tier})")
+    else:
+        intents = load_intents(args.site, args.n_tasks)
+        logger.info(f"Full archive mode: loaded {len(intents)} intents from VWA config_files")
+
     artifacts_dir = find_artifacts_dir(archived_dir)
     logger.info(f"Archived artifacts: {artifacts_dir}")
 
