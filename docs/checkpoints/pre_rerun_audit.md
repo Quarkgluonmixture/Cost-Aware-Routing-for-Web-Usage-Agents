@@ -9,7 +9,9 @@ is spent on contaminated data.
 (1) "整体 audit before rerun" → §A-§L process gates
 (2) "paper grade 还缺少哪些" → §M-§T scientific gates
 (3) "watchdog 和数据纯洁度自动检查" → §U watchdog + data purity
-(4) "从头梳理: 设置 → run → 结果 → 分析 整个过程" → **this restructure (lifecycle-based)**
+(4) "从头梳理: 设置 → run → 结果 → 分析 整个过程" → lifecycle-based restructure
+(5) "validate_run + 笔记 cross-references" → §1.2.9-10 / §3.2.9-14 / §4.4.b expansion
+(6) **"continue audit — repo scripts + docs sweep"** → this round (probe scripts §2.5b / mechanistic Stage 1+2A §4.9 / experiment_matrix §3.1 / EVIDENCE_LAYER_AUDIT §1.4)
 
 **Source docs**: ADVISOR_SYNC.md, advisor_sync_5_5_outcomes.md / followup.md,
 preregistration.md, osf_lock_manifest.md, evaluator_change_protocol.md,
@@ -41,6 +43,7 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 │  └─ §2.3 Watchdog 6-Layer Auto-Clean Protocol                   │
 │  └─ §2.4 Watchdog Operational Gates                             │
 │  └─ §2.5 Mid-Run Automatic Safeguards                           │
+│  └─ §2.5b Bug self-verification probes 🆕                       │
 │  └─ §2.6 Cross-Cell Isolation                                   │
 │  └─ §2.7 Failure-Mode Contingency / Resume Protocols            │
 │  └─ §2.8 Pre-launch end-to-end smoke test 🆕                    │
@@ -134,6 +137,7 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 1.4.5 | Outlier / extreme value handling rule | 🔴 TBD | Add system-crash exclusion explicit |
 | 1.4.6 | FP filter sensitivity ladder (3 variants) | ✅ in preregistration.md | aggregate_sr_fp_per_mode.py |
 | 1.4.7 | Reporting precision standards (2dp pp / 1dp diff / int counts) | 🟡 implicit | Make explicit in paper §3 |
+| 1.4.7b | **EVIDENCE_LAYER_AUDIT.md** — methodology + visualization gap registry (5 evidence types × 4 cross-axes) | ✅ exists | `docs/reference/EVIDENCE_LAYER_AUDIT.md` linked from paper_planning §3 |
 
 ### §1.4.2 Robustness pre-spec (paper §3 commit before lock)
 
@@ -177,6 +181,11 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 1.7.6 | **License compliance explicit** — VWA Apache 2.0 / Qwen3-VL license / dependencies | 🔴 TBD | Add to paper §3 footnote + `LICENSE` file at repo root |
 | 1.7.7 | **Conflicts of interest** / IRB statement (likely N/A but explicit) | 🔴 TBD | Paper §1 footnote: "no IRB needed (synthetic web tasks); no COI" |
 | 1.7.8 | **Cross-paper data lineage map** — phantom 16-cell ↔ mechanistic Stage 2B/2C ↔ VWA bug catalog | 🟡 partial | Document data flow in osf_lock_manifest.md §1.5 |
+| 1.7.9 | **`COMPUTE_INFRASTRUCTURE.md`** — live infra landscape (UCL Condense A100 / Myriad HPC / DGX Spark, SSH paths, allocation sources) | ✅ exists | `docs/reference/COMPUTE_INFRASTRUCTURE.md` |
+| 1.7.10 | **`condition_map.md`** — condition→path mapping (run_id patterns, VWA/WA sites, fast inference rules) | ✅ exists | `docs/reference/condition_map.md` |
+| 1.7.11 | **Obsidian Bases data layer** (`cells.base` / `codex.base` / `issues.base` / `status.base` at vault root) — frontmatter source-of-truth for run state | ✅ deployed | 4 base files at `docs/` |
+| 1.7.12 | **`_status/section{1..8}*.md`** frontmatter — per-section paper prose progress + word-count + blocker registry | ✅ deployed | `docs/checkpoints/_status/section/*.md` |
+| 1.7.13 | **笔记 §99 scripts restructure lineage** — `scripts/queues/` + `scripts/maintenance/` + `scripts/analysis/` separation rationale | ✅ documented | 笔记 §99 (rationale: queue ≠ maintenance ≠ analysis script roles) |
 
 ## §1.6 Advisor Sync Outcomes & Open Questions
 
@@ -222,6 +231,9 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 2.1.3 | Queue script ↔ baseline ↔ site ↔ mode arg consistency | 1 (WARN) |
 | 2.1.4 | Config `benchmark` matches site (vwa vs wa) | 1 (WARN) |
 | 2.1.5 | No conflicting `pgrep -f run_experiment.*<site>` | 2 (BLOCK) |
+| 2.1.6 | **`bash scripts/preflight_v2.sh`** — comprehensive sanity (docker daemon / site ports strict-or-warn / CUDA / evaluator imports / VWA configs) | 1 (WARN if site down) | exit 0 = launch OK |
+| 2.1.7 | **`scripts/queues/queue_16cell_paper_grade.sh`** — master orchestrator (B0×{cls,red}×3 + B1×{cls,red}×3 + shop×4) | 🟡 lock at advisor email | replaces ad-hoc `queue_phantom_pair` chains for the 16-cell rerun |
+| 2.1.8 | **`scripts/setup/a100_self_host_vwa.sh`** — A100 self-host VWA runbook (replaces Tailscale↔quark dependency) | 🟡 needs A100 SSH | one-time ~1-2h setup; eliminates Tailscale single-point failure |
 | **Verify** | `bash scripts/maintenance/launch.sh ... DRY=1` | Exit 0 = OK |
 
 ## §2.2 Provenance Capture per Cell
@@ -245,6 +257,7 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 2.3.4 | **Cleanup** — purge contaminated episodes (10-min mtime guard) | ✅ B-49/B-51 | `_purge_digest_records()` line 212 + orphan prune line 1188 |
 | 2.3.5 | **Resume** — runner re-attempts via dedup | ✅ B-46f | `runner/main.py` resume protocol |
 | 2.3.6 | **Verify** — automated post-rerun spot-check | 🟡 manual | TBD: `verify_auth_signatures.py` |
+| 2.3.7 | **GLM auto-analysis pipeline** (笔记 §6) — daily digest generation + failure taxonomy | ✅ deployed | cron `glm-update-cells` + `glm-refresh-playbook`; PLAYBOOK §1+§2 GLM-managed |
 
 ## §2.4 Watchdog Operational Gates
 
@@ -273,6 +286,20 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 2.5.7 | env_snapshot evaluator_code SHA mismatch | ntfy (drift detection) | 🔴 TBD (R6) |
 | 2.5.8 | Episode wallclock >30 min | ntfy + kill | 🟡 manual |
 
+### §2.5b Bug self-verification probes (paper-grade scaffold safety chain)
+
+> Every CONFIRMED catalog entry has a **probe script** that re-validates the bug exists before/after a fix. Reviewer-defensible: "we don't just claim B-XX is fixed, we re-run the probe and show the symptom is gone." Probes are paper §4 limitations cite-anchors.
+
+| # | Probe | Bug coverage | Status |
+|---|---|---|---|
+| 2.5.9 | `probe_b01_b13_self_verify.py` | B-01 TYPE 100% scaffold + B-13 action_fail_page_changed | ✅ exists; re-run pre-rerun on smoke cell |
+| 2.5.10 | `probe_b08_b06_self_replay.py` | B-08/B-06 self-replay mechanistic validation (mark hallucination + scroll loop) | ✅ exists |
+| 2.5.11 | `probe_b37_api_determinism.py` | B-37 RNG + auth_refresh determinism (T=0 + seed reproducibility) | ✅ exists |
+| 2.5.12 | `probe_som_occlusion.py` | SoM occlusion consistency (text visibility ↔ rendered SoM marks) | ✅ exists |
+| 2.5.13 | `probe_tier10_dispatch_target.py` | Phase A Tier10 locator-route dispatch verification | ✅ exists; commit `3c15cd7` |
+| 2.5.14 | `compare_pilot_t0_vs_paper_grade.py` | B-37 pilot gate: T=0 pilot SR ↔ paper-grade baseline (no regression) | ✅ exists; pre-rerun gate |
+| 2.5.15 | **Pre-rerun probe re-run protocol** — fire all 6 probes on smoke cell, all exit 0 before launching 16-cell | 🔴 TBD add to launch protocol | scripts above + smoke 2-task cell |
+
 ## §2.6 Cross-Cell Isolation
 
 | # | Item | Status | Verify |
@@ -296,6 +323,8 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 2.8.4 | **Disk I/O speed baseline** for target machine | 🔴 TBD | `dd if=/dev/zero of=test bs=1M count=1000 conv=fdatasync` on Scratch — paper §3 disclose if Lustre |
 | 2.8.5 | **Auth refresh subprocess smoke** — invoke `auth_refresh.py` standalone, verify completes <30s | 🔴 TBD | `python3 -m p79.utils.auth_refresh refresh classifieds` |
 | 2.8.6 | **GPU forward pass smoke** — load model + 1 forward pass on each target machine | 🔴 TBD | A100/Myriad/DGX: `python3 -c "import torch; from p79.agents.qwen3vl_agent import Qwen3VLAgent; ..."` |
+| 2.8.7 | **`scripts/smoke_test_vwa.py`** — single VWA episode × 6 mode variants | ✅ exists | run on smoke cell pre-launch |
+| 2.8.8 | **`scripts/setup/smoke_login.sh`** — Myriad SSH + compute node connectivity smoke | ✅ exists | run pre-Myriad qsub |
 
 ## §2.7 Failure-Mode Contingency / Resume Protocols
 
@@ -325,6 +354,8 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 3.1.3 | condition_summary_v2.json aggregation | post-cell `cat condition_summary_v2.json` |
 | 3.1.4 | Logs format consistent (JSON-L) | `head <run_dir>/log.jsonl` |
 | 3.1.5 | env_snapshot.json `evaluator_code.combined_sha256` matches lock SHA | `jq .evaluator_code.combined_sha256` |
+| 3.1.6 | **`docs/analysis/experiment_matrix.md`** — Phase 1 baseline progress tracker (B0/B1 × 3 sites × 3 modes, raw/adjusted SR, post-§97 rederive version) | check after each cell completes |
+| 3.1.7 | **`docs/analysis/B1_capability_profile.md`** — B1 (Qwen3-VL-4B) snapshot: 6-cell SR + cost/latency/energy + failure patterns vs B0 | update post-rerun |
 
 ## §3.2 Data Quality Gates
 
@@ -344,6 +375,7 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 3.2.12 | **Watchdog cross-run analysis auto-trigger** (笔记 §98) — `compare_b0_b1` + `aggregate_cross_site` fire automatically when sibling/cross-site conditions complete | ✅ deployed | `experiment_watchdog.py::_run_cross_run_analysis` |
 | 3.2.13 | **Intent feature + cost attribution columns** (笔记 §93) — `analyze_reason_diagnostics.py` outputs +16 columns (10 `intent_has_*` booleans + 6 cost cols) + 7 plots | ✅ deployed | invoked by `make reason-diag` per cell |
 | 3.2.14 | **Waste breakdown** (`metrics.py::compute_waste_breakdown`) — no_op / page_unchanged / total / wasted cost dimensions per cell | ✅ §93 | aggregated post-rerun |
+| 3.2.15 | **`scripts/analysis/b0_vision_coordinate_errors.py`** — per-run B0 vision coordinate error detector (paper §4 B0 vision asymmetry) | ✅ exists | run post-cell on B0 vision cells |
 
 ## §3.3 Data Purity Automatic Checks (笔记 §107 Phase A wave verified)
 
@@ -384,6 +416,10 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 4.1.3 | Bootstrap CI (BCa) on H1/H3 oracle lift | 🟡 partial | Spec N=1000 resamples + RNG seed=42 |
 | 4.1.4 | Cohen's h effect size alongside p-values | 🟡 partial | Add to paper §5 Table 5 |
 | 4.1.5 | Post-rerun power analysis re-run with observed SR | 🔴 TBD | Update `power_analysis.py --baseline-sr <observed>` |
+| 4.1.6 | **`scripts/analysis/aggregate_phantom_meta.py`** — random-effect pooled meta-analysis with drop-one forest plots (paper §3 Figure) | ✅ exists | post-rerun |
+| 4.1.7 | **`scripts/analysis/collect_analysis_summary.py`** — run-level metadata collector + efficiency dimension evidence aggregator | ✅ exists | post-rerun |
+| 4.1.8 | **`scripts/analysis/reeval_phase1.py`** — re-evaluation of Phase 1 with locked FP filter / na_fp / eval_fp rules | ✅ exists | post-rerun (or post advisor email if FP rule changes) |
+| 4.1.9 | **笔记 §109 dual-track reframe** — methodology pivot to 9-cell taxonomy + 3-round DR | ✅ documented | paper_planning §3 + paper §1 hook |
 
 ## §4.2 Robustness / Sensitivity Analyses (run all)
 
@@ -396,6 +432,11 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 4.2.5 | Per-difficulty bucket (intent length / N actions / has_ref_image) | 🔴 TBD | Add bucketing in aggregate scripts |
 | 4.2.6 | Hold-out site validation (LOSO if locked) | 🟡 advisor email | `router_split.py` LOSO mode |
 | 4.2.7 | Cross-machine numerical agreement (DGX/A100/Myriad) | 🟡 needs A100/Myriad SSH | `numerical_determinism_check.py compare` |
+| 4.2.8 | **`analyze_cross_representation.py`** — cross-rep behavior diagnostic (DOM↔SoM↔Vision token attention) | ✅ exists | post-rerun |
+| 4.2.9 | **`analyze_search_over_browse.py`** — search vs browse behavior diagnostic (Reddit) | ✅ exists | post-rerun |
+| 4.2.10 | **`analyze_comment_selflink_loop.py`** + **`analyze_reddit_selflink_cycle.py`** — Reddit cycle / self-link diagnostics | ✅ exists | post-rerun on red cells |
+| 4.2.11 | **`analyze_noninteractive_click_earlystop.py`** — non-interactive click + early-stop pattern (paper §4) | ✅ exists | post-rerun |
+| 4.2.12 | **`analyze_confidence_calibration.py`** — model confidence calibration diagnostic (logprob/entropy/margin) | ✅ exists | feeds Phase 2 router signal selection (per `routing_signals.md` lit) |
 
 ## §4.3 Inter-Rater Reliability Execution (κ ≥ 0.7)
 
@@ -488,6 +529,14 @@ After rerun, the following chain reconstructs any cell's adjusted_SR:
 | 4.9.3 | Layer indexing — `model.config.num_hidden_layers` matches L0-L35 used in script | 🟡 | Verify on each machine: Qwen3-VL-4B has 36 layers |
 | 4.9.4 | Token alignment — input/output tokens correspondence per task | 🟡 | Spot-check N=5 task pairs, output length sanity |
 | 4.9.5 | Stage 2B post-rerun spot-check — re-run 3 tasks, verify L11 finding stable | 🔴 TBD | After full Stage 2B finishes, re-run task 0/100/233 to confirm reproducibility |
+| 4.9.6 | **`scripts/mechanistic/run_stage1_pilot.py`** — Stage 1 per-layer linear probe baseline (predates Stage 2A patching) | ✅ exists | establishes which layers are causally relevant before patching |
+| 4.9.7 | **`scripts/mechanistic/run_stage2_patching_pilot.py`** — Stage 2A activation patching pilot (preceded Stage 2B continuation) | ✅ exists | mirage layer hypothesis generation |
+| 4.9.8 | **`scripts/mechanistic/curate_mirage_tasks.py`** — paper §5 candidate scoring (24 strong + 11 reverse mirage) | ✅ commit `4425fa6` | curated subset committed |
+| 4.9.9 | **`scripts/mechanistic/extract_archive_subset.py`** — archive subset extraction → 16.5MB committed to git | ✅ commit `cd50c34` | replication artifact (paper §5 cite) |
+| 4.9.10 | **`scripts/analysis/mechanism_per_task.py`** — Section 5 per-task mechanism evidence aggregator | ✅ exists | feeds paper §5 figures |
+| 4.9.11 | **`docs/reference/PHANTOM_SOM_CODE_TOUR.md`** — mechanism extraction code walkthrough (activation patching / linear probe layer assignments) | ✅ exists | paper §5 reproducibility appendix |
+| 4.9.12 | **笔记 §111 Stage 1+2 mechanistic pilot** — initial L11 mirage hypothesis derivation | ✅ documented | predates Stage 2B; cite for theory provenance |
+| 4.9.13 | **笔记 §113 Mirage task curation** — 24 strong + 11 reverse selection rationale | ✅ documented | paper §5 candidate selection methodology |
 
 ## §4.7 OSF DOI Lock (8-Step Workflow)
 
@@ -527,6 +576,10 @@ After rerun, the following chain reconstructs any cell's adjusted_SR:
 | 5.1.12 | Code release — current master pinned at `preregistration-locked` tag | GitHub release | 🟡 post-lock |
 | 5.1.13 | License files (Apache 2.0 root + per-dependency) | GitHub root | 🔴 TBD verify |
 | 5.1.14 | README for replication (step-by-step from clone to figures) | Paper Appendix + GitHub | 🔴 TBD |
+| 5.1.15 | **`scripts/maintenance/rsync_results_to_hub.sh`** + `rsync_results_from_hub.sh` — A100↔central hub artifact sync | OSF deposit prep | ✅ exists |
+| 5.1.16 | **`scripts/generate_gallery.py`** + `scripts/maintenance/refresh_gallery.sh` — HTML annotated screenshot gallery | Paper appendix figures + OSF | ✅ exists |
+| 5.1.17 | **`docs/reference/analysis_templates.md`** — `B{x}_{Mode}_digest.md` template for replication digest | OSF + GitHub | ✅ exists |
+| 5.1.18 | **`docs/literature/literature_insights.md`** + `routing_signals.md` + `logprob_signals.md` + `phantom_som.md` — 26-paper synthesis + signal calibration lit | Paper §1+§2 + OSF | ✅ exists |
 
 ## §5.2 Operational continuity & hand-off plan
 
@@ -607,8 +660,19 @@ Phase 4 post-rerun analysis:
 - `docs/reference/PAPER_STRATEGY_OPEN_QUESTIONS.md` (Q1-Q9)
 - `docs/analysis/cross_sites/power_analysis.md` (created 5/8 — paper §3 cite-ready)
 - `docs/analysis/cross_sites/vwa_manual_non_visual_task_ids.py` (visual subset audit)
-- 实验笔记 §107 (Phase A) / §110 (5/5 sync) / §114 (provenance) / §115 (Protocol A+B) / §116 (audit + restructure)
+- `docs/reference/EVIDENCE_LAYER_AUDIT.md` (5 evidence types × 4 axes)
+- `docs/reference/COMPUTE_INFRASTRUCTURE.md` (live infra landscape)
+- `docs/reference/condition_map.md` (condition→path mapping)
+- `docs/reference/PHANTOM_SOM_CODE_TOUR.md` (mechanism extraction code walkthrough)
+- `docs/reference/analysis_templates.md` (digest template)
+- `docs/analysis/experiment_matrix.md` (Phase 1 progress) / `B1_capability_profile.md`
+- `docs/literature/literature_insights.md` / `routing_signals.md` / `logprob_signals.md` / `phantom_som.md`
+- `docs/{cells,codex,issues,status}.base` (Obsidian Bases data layer)
+- `docs/checkpoints/_status/{section,cells,codex,issues}/*.md` (frontmatter source-of-truth)
+- 实验笔记 §6 (watchdog/GLM pipeline) / §99 (scripts restructure lineage) / §107 (Phase A) / §109 (dual-track reframe) / §110 (5/5 sync) / §111 (Stage 1+2 mechanistic pilot) / §113 (mirage curation) / §114 (provenance) / §115 (Protocol A+B) / §116 (audit + restructure)
 
 ---
 
 **Last restructure**: 2026-05-08, 笔记 §116.12 — lifecycle-based reorganization (4 phases × 18 sections × ~150 gate items).
+
+**Last expansion**: 2026-05-08, 笔记 §116.15 — repo-wide scripts/docs/笔记 sweep (5 phases × 25 sections × ~245 gate items): §1.4.7b EVIDENCE_LAYER_AUDIT / §1.7.9-13 infrastructure & data layer / §2.1.6-8 preflight + 16-cell orchestrator + A100 self-host / §2.3.7 GLM pipeline / **§2.5b 7-probe bug self-verification chain** / §2.8.7-8 smoke scripts / §3.1.6-7 progress trackers / §3.2.15 B0 vision coord errors / §4.1.6-9 meta-analysis + reeval + dual-track reframe / §4.2.8-12 5 behavior diagnostics / **§4.9.6-13 Stage 1+2A mechanistic pipeline** / §5.1.15-18 replication artifacts.
