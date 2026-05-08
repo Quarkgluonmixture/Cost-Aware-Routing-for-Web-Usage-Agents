@@ -560,7 +560,13 @@ Hover and Clear actions had 0 cases collected (VWA agents almost never use these
 - **Severity**: 🚨 **CRITICAL for paper reproducibility claim**:
   - **B0 (235B Qwen3-VL via proxy)**: explicitly stochastic at temp=0.1, **trajectories DIFFER between runs by design**
   - **B1 (4B Qwen3-VL local)**: greedy → mostly stable but **not strictly deterministic** without torch seeding
-- **Status**: ✅ **CONFIRMED (no API call needed — config + code are conclusive)**
+- **Status**: 🛠️ **PARTIALLY FIXED (2026-05-08 audit re-verify)**
+  - ✅ `runner/main.py:81-94` — `random.seed(seed) + np.random.seed(seed) + torch.manual_seed(seed)` deployed (Phase A Cluster 4 fix)
+  - ✅ `proxy_api_agent.py:226,603` — `temperature: 0.0` (NOT 0.1 as old catalog said), `top_p: 1.0` explicit
+  - ✅ `proxy_api_agent.py:609-614` — seed forwarded to API as `payload["seed"]` if provider supports OpenAI-compat
+  - ✅ `qwen3vl_agent.py:519` — `do_sample=False` (greedy)
+  - ⚠️ Anthropic API native protocol still has no `seed` parameter — B0 best-effort but not guaranteed deterministic
+  - ⚠️ CUDA floating-point non-determinism remains (sm_121 vs sm_80 / sm_70 cross-machine drift); paper §3 disclose
 - **Fix options**:
   - **(a) Code fix B0**: change `temperature: 0.1 → 0` in 18 configs + add OpenAI-format proxy with seed support. ~30 LOC + config sweep. **Requires re-running all B0 data (impossible for archived runs).**
   - **(b) Code fix B1 only**: add `torch.manual_seed + torch.cuda.manual_seed_all` at runner condition iteration start. ~10 LOC. Tightens B1 reproducibility for FUTURE runs.
