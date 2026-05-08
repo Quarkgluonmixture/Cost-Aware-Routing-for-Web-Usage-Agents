@@ -67,6 +67,20 @@ echo "[$(date '+%H:%M:%S')] Repo HEAD: $(git rev-parse --short HEAD)"
 # Sanity
 # ============================================================================
 
+# Compute nodes are firewalled — must have HF model pre-downloaded to Scratch cache
+# (bootstrap Step 5). Fail-fast here instead of after 24h wallclock allocation.
+HF_REVISION="ebb281ec70b05090aa6165b016eac8ec08e71b17"
+HF_SNAPSHOT_DIR="$HF_HOME/hub/models--Qwen--Qwen3-VL-4B-Instruct/snapshots/$HF_REVISION"
+if [ ! -f "$HF_SNAPSHOT_DIR/config.json" ]; then
+  echo "FATAL: HF model snapshot missing at $HF_SNAPSHOT_DIR/config.json"
+  echo "  Compute node has HF_HUB_OFFLINE=1 (firewalled) — model must be pre-downloaded on login node."
+  echo "  Fix: ssh login node, then:"
+  echo "    unset HF_HUB_OFFLINE TRANSFORMERS_OFFLINE"
+  echo "    python3 -c \"from huggingface_hub import snapshot_download; snapshot_download('Qwen/Qwen3-VL-4B-Instruct', revision='$HF_REVISION')\""
+  exit 1
+fi
+echo "[$(date '+%H:%M:%S')] HF model snapshot OK: $HF_SNAPSHOT_DIR"
+
 n_reverse=$(python3 -c "import json; print(len(json.load(open('$REPO_DIR/results/mechanistic/archive_subset_b1_cls/manifest.json'))['reverse']))")
 echo "[$(date '+%H:%M:%S')] Dataset: $n_reverse reverse mirage candidates"
 
