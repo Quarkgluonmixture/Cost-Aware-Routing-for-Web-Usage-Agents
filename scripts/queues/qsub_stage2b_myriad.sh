@@ -4,6 +4,9 @@
 # Submission:
 #   ssh myriad
 #   cd ~/Scratch/p79
+#   mkdir -p logs                                 # CRITICAL: SGE redirects stdout/stderr
+#                                                 # to logs/ BEFORE executing the script,
+#                                                 # so logs/ must pre-exist (Eqw otherwise)
 #   qsub scripts/queues/qsub_stage2b_myriad.sh
 #
 # Monitoring:

@@ -91,6 +91,10 @@ log "  HEAD: $(git rev-parse --short HEAD) ($(git log -1 --format=%s | head -c 6
 if [ ! -f "$WORKSPACE/results/mechanistic/archive_subset_b1_cls/manifest.json" ]; then
   fail "archive_subset_b1_cls/manifest.json missing. Repo state is inconsistent — git pull failed?"
 fi
+
+# Pre-create logs/ — SGE redirects stdout/stderr BEFORE script execution.
+# Without this, qsub jobs go to Eqw (Error queued waiting) state.
+mkdir -p "$WORKSPACE/logs"
 n_strong=$(python3 -c "import json; print(len(json.load(open('$WORKSPACE/results/mechanistic/archive_subset_b1_cls/manifest.json'))['strong']))")
 n_reverse=$(python3 -c "import json; print(len(json.load(open('$WORKSPACE/results/mechanistic/archive_subset_b1_cls/manifest.json'))['reverse']))")
 log "  Dataset: $n_strong strong + $n_reverse reverse mirage candidates"
