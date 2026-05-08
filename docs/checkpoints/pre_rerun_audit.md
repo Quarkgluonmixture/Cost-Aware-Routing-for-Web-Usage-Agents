@@ -107,6 +107,8 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 1.2.6 | run_manifest.yaml grades reflect rerun plan | ✅ archived | `grep "grade:" results/phantom_paper/run_manifest.yaml \| sort \| uniq -c` |
 | 1.2.7 | `time_interval_seconds: 1200` in auth_refresh config (B-35 fix) | ✅ today | `grep "time_interval_seconds" p79/experiment/config.py` |
 | 1.2.8 | `state_change.form_snapshot_enabled: true` (B-67 fix verified) | ✅ §68 | DEFAULT_CONFIG check |
+| 1.2.9 | **SoM `max_marks=200`** (笔记 §94 reform — was 80, caused B1 Reddit DOM>SoM mode reversal) | ✅ §94 fix | `grep "max_marks" p79/experiment/som.py` should be 200 not 80 |
+| 1.2.10 | **`current_viewport_only=True`** (paper §3 mode operational definition) | ✅ | `grep "current_viewport_only" p79/envs/vwa_wrapper.py` |
 
 ## §1.3 Pre-Registration & Witness
 
@@ -336,6 +338,12 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 3.2.6 | Step JSONL no corruption | 🟡 | `read_jsonl_dedup` corrupt counter zero |
 | 3.2.7 | Schema v2 conformance | ✅ | `tests/test_step_schema_v2.py` |
 | 3.2.8 | Wall-clock outliers per task (>3σ flag) | 🔴 TBD | Add to analyze_run pipeline |
+| 3.2.9 | **`validate_run.py` 27-check suite per cell** (笔记 §91 + §93 expanded) | ✅ exists | `python3 scripts/analysis/validate_run.py --run-dir <run> --strict` post-cell. **10 check groups, 27 checks**: G1 file existence (C01-02) / G2 structure (C03-06) / G3 coverage (C07-08) / G4 episode integrity (C09-11) / G5 step integrity (C12-15) / G6 scaffold safety (C16-18) / G7 artifact integrity (C19-20) / G8 analysis freshness (C21-22) / **G9 Temporal Analysis (C23-25)** — SR-over-time degradation, auth drift, reset contamination / **G10 Data Consistency (C26-27)** — summary.steps vs JSONL line count, zero-cost episode detection. Exit 0/1/2 |
+| 3.2.10 | **Cross-baseline comparison check (C18)** — `validate_run.py --compare-dir <other_baseline_run>` | ✅ exists | Run when comparing B0 vs B1 paired data integrity |
+| 3.2.11 | `validate_run.py --strict` exit code = 0 BEFORE moving cell to grade=paper-grade | 🟡 add to launch protocol | Per-cell pipeline gate |
+| 3.2.12 | **Watchdog cross-run analysis auto-trigger** (笔记 §98) — `compare_b0_b1` + `aggregate_cross_site` fire automatically when sibling/cross-site conditions complete | ✅ deployed | `experiment_watchdog.py::_run_cross_run_analysis` |
+| 3.2.13 | **Intent feature + cost attribution columns** (笔记 §93) — `analyze_reason_diagnostics.py` outputs +16 columns (10 `intent_has_*` booleans + 6 cost cols) + 7 plots | ✅ deployed | invoked by `make reason-diag` per cell |
+| 3.2.14 | **Waste breakdown** (`metrics.py::compute_waste_breakdown`) — no_op / page_unchanged / total / wasted cost dimensions per cell | ✅ §93 | aggregated post-rerun |
 
 ## §3.3 Data Purity Automatic Checks (笔记 §107 Phase A wave verified)
 
@@ -413,6 +421,32 @@ PAPER_STRATEGY_OPEN_QUESTIONS.md.
 | 4.4.8 | Cross-machine numerical drift | ✅ template | Section 4.X.8 (post-rerun fill numbers) |
 | 4.4.9 | Pre-Phase-A vs post-Phase-A asymmetry | ✅ today | Section 4.X.9 |
 | 4.4.10 | Stage 2B input vintage independence | ✅ today | Section 4.X.10 |
+
+## §4.4.b Failure-mode pattern detection (`diag_pattern_match.py` + analysis pipeline)
+
+**Source**: 笔记 §92 (P1-P14 rule scripting), §93 (analysis pipeline 27-check + intent + cost), §94 finding (max_marks reversal), §97 (cross_representation audit), §98 (watchdog cross-run automation).
+
+| # | Item | Status | Verify |
+|---|---|---|---|
+| 4.4.b.1 | `diag_pattern_match.py` P1-P14 rules implemented (P9 deferred) | ✅ | `python3 scripts/analysis/diag_pattern_match.py --run-dir <run>` |
+| 4.4.b.2 | Per-cell failure-mode breakdown | 🟡 TBD post-rerun | Add to `make analysis` pipeline |
+| 4.4.b.3 | Cross-cell pattern comparison (e.g. P14 URL self-loop %) | 🟡 | Aggregate across 16 cells |
+| 4.4.b.4 | Pattern-rule κ for 5-bucket failure-mode mapping (per §1.5.2) | 🔴 TBD | Spot-check P-rule output vs human label |
+| 4.4.b.5 | **Analysis pipeline 4-dimension Evidence Framework** (笔记 §106) | ✅ pre-spec'd | `scripts/analysis/aggregate_phantom_lift.py` (Outcome 0c/0d) + `aggregate_routing_auroc.py` (0g) + `axis_effect_size.py` (1a/1b) + `axis1_microbehavior.py` (2a-2e) + `aggregate_cross_site.py` (3a-3c) + `figures/` per-outcome scripts |
+| 4.4.b.6 | **`layered_status.py`** — live evidence layer status | ✅ exists | `docs/analysis/layered_evidence_status.md` snapshot |
+| 4.4.b.7 | `compare_b0_b1.py` + `aggregate_cross_site.py` triggered automatically post-condition | ✅ §98 | watchdog `_run_cross_run_analysis` |
+
+## §4.4.c Reference framework integration (笔记 §106 4-dim Evidence Framework)
+
+**Source**: 笔记 §106 (4-dimension Evidence Framework), §108 (Phantom space refinement, evidence/explanation separation).
+
+| # | Item | Status | Verify |
+|---|---|---|---|
+| 4.4.c.1 | 4-dimension Evidence Framework applied to paper §1+§4 organization | ✅ pre-spec'd | paper_planning §3 + paper drafts |
+| 4.4.c.2 | Phantom space evidence/explanation separation (Zoom 1-4) | ✅ pre-spec'd | paper_planning §1 + phantom_space.canvas |
+| 4.4.c.3 | §100 SoM screenshot OCR ground truth probe — used for §5 mechanism evidence | ✅ data exists | `docs/analysis/.../som_ocr_probe.md` |
+| 4.4.c.4 | §103 4-mode routing arm finding (paper §1 hook) | ✅ pre-spec'd | paper §1 narrative |
+| 4.4.c.5 | §94 max_marks reversal as B1 capability-modulated finding (paper §7) | ✅ documented | section 4 limitations or section 7 cross-capability |
 
 ## §4.5 Evaluator Independence Verification
 
