@@ -171,8 +171,23 @@ def should_refresh(
     site: str,
     episodes_since_refresh: int,
     cfg: dict,
+    *,
+    seconds_since_refresh: float | None = None,
 ) -> bool:
-    """Return True if auth should be refreshed for *site* based on config."""
+    """Return True if auth should be refreshed for *site* based on config.
+
+    B-35 fix (笔记 §116.9, Tier 7 audit 2026-04-30):
+    Original logic was episode-count only. PHP session.gc_maxlifetime=1440s on
+    cls/shopping (§39 / B-49b) means long episodes (max_step=30 × 60s/step) can
+    expire session mid-episode before episode count threshold is crossed.
+
+    Now: refresh fires if EITHER condition met:
+      (a) episodes_since_refresh >= interval (existing)
+      (b) seconds_since_refresh >= time_interval (new — default 1200s, below 1440s)
+
+    `seconds_since_refresh` is optional; callers that don't pass it get original
+    episode-count-only behavior (backward compat for tests / older callsites).
+    """
     auth_cfg = cfg.get("auth_refresh", {})
     if not auth_cfg.get("enabled", False):
         return False
@@ -180,4 +195,10 @@ def should_refresh(
     if site not in allowed_sites:
         return False
     interval = int(auth_cfg.get("interval", 5))
-    return episodes_since_refresh >= interval
+    if episodes_since_refresh >= interval:
+        return True
+    # Time-based check (B-35 fix)
+    time_interval = float(auth_cfg.get("time_interval_seconds", 1200))
+    if seconds_since_refresh is not None and seconds_since_refresh >= time_interval:
+        return True
+    return False

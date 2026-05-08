@@ -131,6 +131,8 @@ class ExperimentRunner:
 
         self._backends: Dict[str, Any] = {}
         self._auth_episode_counts: Dict[str, int] = {}  # per-site counter for auth refresh
+        # B-35 fix (笔记 §116.9): also track last refresh timestamp for time-based threshold
+        self._auth_last_refresh_ts: Dict[str, float] = {}
         # Per-site N/A task IDs cache — used by §95 adjusted_success computation
         # in _run_episode. Pre-loaded once to avoid repeated config file reads.
         self._na_ids_cache: Dict[str, set] = {}
@@ -663,7 +665,17 @@ class ExperimentRunner:
         site = task.site
         self._auth_episode_counts.setdefault(site, 0)
         self._auth_episode_counts[site] += 1
-        if should_refresh(site, self._auth_episode_counts[site], self.cfg):
+        # B-35 fix: pass time-since-last-refresh so refresh fires before PHP
+        # session.gc_maxlifetime (~1440s) expires mid-long-episode.
+        _now = time.time()
+        _last = self._auth_last_refresh_ts.get(site, _now)
+        _seconds_since = _now - _last
+        if should_refresh(
+            site,
+            self._auth_episode_counts[site],
+            self.cfg,
+            seconds_since_refresh=_seconds_since,
+        ):
             # __file__ = p79/experiment/runner/main.py → repo root needs 4 .parent
             # (runner → experiment → p79 → REPO_ROOT). Bug fix 2026-04-26.
             auth_dir = Path(__file__).resolve().parent.parent.parent.parent / ".auth"
@@ -671,7 +683,8 @@ class ExperimentRunner:
             ok = refresh_site_auth(site, auth_dir, benchmark=benchmark)
             if ok:
                 self._auth_episode_counts[site] = 0
-                logger.info("Auth refreshed for %s", site)
+                self._auth_last_refresh_ts[site] = _now
+                logger.info("Auth refreshed for %s (seconds_since=%.0f)", site, _seconds_since)
             else:
                 logger.warning("Auth refresh failed for %s — continuing with stale session", site)
 

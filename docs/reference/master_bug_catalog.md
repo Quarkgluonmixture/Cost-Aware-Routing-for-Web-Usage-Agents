@@ -46,7 +46,7 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
 - **Mechanism**: id-based TYPE = `mouse.click(union_bound_center)` → `Meta+A` (or `Ctrl+A` on Linux) → `Backspace` → `keyboard.type(text)`. If center 命中非 editable 元素：focus 没换到 input → `Meta+A` 全选当前 page text → `Backspace` 删页面字 / type 进 wrong element → runner 看 dispatch return success=True 但 input.value 空。Page 出现"全屏蓝"高亮（§52 现象）。
 - **Blast radius**: Tier 2 `type_silent_failure` 549 ep / 12.22% of failed traces. Probe scaffold fraction = **100%** (15/15 case). Site breakdown: cls 291, red 172, shop 86. Mode breakdown: DOM 224, P-text 76, P-SoM 79, SoM 78, Vision 80, P-prompt 12.
 - **Self-correct caveat**: B0 (235B) 偶尔自纠正 retry → real SR impact < dispatch failure rate. B1 (4B) 几乎不自纠正 → blast radius mostly落 B1 SR。**asymmetric noise** between baselines.
-- **Status**: ✅ **CONFIRMED + DOUBLE-VERIFIED**
+- **Status**: 🛠️ **FIXED commit `3c15cd7`** (locator-route via `p79/envs/locator_dispatch.py::dispatch_id_based_type` + `dispatch_id_based_click`); previously CONFIRMED + DOUBLE-VERIFIED via probe + self-verify
 - **Verification trail**:
   - Codex `probe_audit_verification`: 15/15 SCAFFOLD (100%)
   - **Self-verify** `probe_b01_b13_self_verify.py` (2026-04-30, 12 cls cases with CORRECT bbox center `x+w/2,y+h/2`): 11/11 replay-ok cases SCAFFOLD_TYPE_BUG (1.0 strict scaffold fraction). 0 cases hit editable element at center. **Bbox bug didn't affect this category** because TYPE's bug is "center hits non-editable" — wrong bbox formula still yields wrong element. Caveat: cls-only sample; red/shop blast extrapolation assumes cls-like rate.
@@ -66,7 +66,7 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
   - **REAL** 5-mechanism click-loop taxonomy from `logs/codex/click_root_cause_probe.json` (93 cases): **AXTREE_MAPPING_ERROR 55.9%** (B-33 NEW), UNION_BOUND_BUG / §106 proper **18.3%** (this entry), POPUP_OR_TARGET_BLANK 12.9% (B-07), BUTTON_OR_AJAX 7.5% (B-32), MISSING/transient 5.4%.
   - **PRIOR catalog (now retracted)**: 29% / 24% (searchbox-no-type) / 12% (heading-as-link) / 13% / 8% / 10% — these numbers were **fabricated from conversation memory**, not present in artifact. Retraction recorded in update log.
   - DOM:SoM hit-rate ratio ≈ **1.5×** on B0 reddit (asymmetric across modes)
-- **Status**: ✅ **CONFIRMED** (but lower-than-claimed blast radius)
+- **Status**: 🛠️ **FIXED commit `3c15cd7`** (locator-route in same patch as B-01); previously CONFIRMED with re-verified blast radius
 - **Fix**: 同 B-01，route id-based click through injected locator + `locator.click()` actionability check. Tier 1 candidate_1/2/3/4 共享同一架构问题。
 - **Paper impact**: Section 4 限制条款 cite (跨模式 1.5× 对称性 → 不能完全 cancel cross-mode SR comparison); Section 5 mechanism 用 `silent-failure-aware-but-not-driven` 论证 (ref Section 5 reddit prose §5.1.7).
 
@@ -77,7 +77,7 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
 - **Origin**: Tier 1 candidate_2 + **static-verify** (2026-04-30, code reading)
 - **File**: `external/visualwebarena/browser_env/actions.py:1292-1296`
 - **Mechanism**: id-based CLEAR — code 字面 `execute_mouse_click(element_center[0], element_center[1], page)` then `execute_key_press("Meta+A", page)` then `execute_key_press('Backspace', page)`. **Same pattern as TYPE** — click union_bound center → Meta+A → Backspace. Creator accepts role/pw fields but sync dispatch ignores them.
-- **Status**: ✅ **CONFIRMED via static read** (2026-04-30); same architecture as B-01, scaffold fraction inherited from TYPE 100% (cls)
+- **Status**: 🛠️ **FIXED commit `3c15cd7`** (shared locator-route); previously CONFIRMED via static read
 - **Fix**: 用 `locator.clear()` 替代；同 B-01 patch
 - **Paper impact**: 跟 B-01 一起处理，不 separately framing
 
@@ -88,7 +88,7 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
 - **Origin**: Tier 1 candidate_3 + **static-verify** (2026-04-30, code reading)
 - **File**: `external/visualwebarena/browser_env/actions.py:1322-1340`
 - **Mechanism**: id-based HOVER — code 字面 `if action["element_id"]:` → `execute_mouse_hover(element_center[0], element_center[1], page)`. Same union_bound center as B-01/B-02/B-03.
-- **Status**: ✅ **CONFIRMED via static read** (2026-04-30); shares §106 architecture. Low-frequency action so blast radius small.
+- **Status**: 🛠️ **FIXED commit `3c15cd7`** (shared locator-route); previously CONFIRMED static (low blast)
 - **Fix**: route through `locator.hover(timeout=...)` with explicit failure on hidden/detached/covered. Same patch wave as B-01.
 
 ---
@@ -100,7 +100,7 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
 - **Mechanism**: 两个 bug 串联 confirmed:
   - **Creator bug** (line 715): `create_upload_action()` 字面 `"action_type": ActionTypes.TYPE` — should be `ActionTypes.UPLOAD`. Parsed id-based upload bypass UPLOAD branch entirely.
   - **Dispatch bug** (line 1413): `execute_upload(element_center[0], element_center[1], action["text"], page)` — center-based click before file_chooser, shares §106
-- **Status**: ✅ **CONFIRMED via static read** (2026-04-30). Both halves verified.
+- **Status**: 🛠️ **FIXED commit `3c15cd7`** (shared locator-route + creator fix); previously CONFIRMED static
 - **Fix**: set creator to `ActionTypes.UPLOAD`; use `locator.click()` inside `expect_file_chooser`. Low priority (VWA upload tasks 极少).
 
 ---
@@ -130,7 +130,7 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
 - **File**: `external/visualwebarena/browser_env/actions.py:1416-1422`
 - **Mechanism**: 字面 `page.wait_for_timeout(int(sleep_after_execution * 1000))` then `num_tabs_now = len(browser_ctx.pages)`, only `if num_tabs_now > num_tabs_before: page = browser_ctx.pages[-1]; page.bring_to_front()`. **No `expect_popup` / no load wait** — fully confirmed.
 - **Blast radius**: click-loop 13% mechanism share (from §106 click probe taxonomy)
-- **Status**: ✅ **CONFIRMED via static read** (2026-04-30)
+- **Status**: 🛠️ **FIXED commit `3c15cd7`** (locator + popup wrapping); previously CONFIRMED static
 - **Fix**: wrap locator clicks with `expect_popup` fallback + bring popup to front after load.
 
 ---
@@ -162,7 +162,7 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
   - **`scroll_changed` ≥ 5px** — 视觉 scroll 但 viewport 文本同
   - **SequenceMatcher false trigger** — 长 corpus 上 0.95 阈值偶发 < 0.95 但视觉不可见
 - **Blast radius**: Tier 4 claim 288 step. Probe scaffold fraction = **0.8** (3/5 LOGGER_BUG, 1/5 OBS_CACHE_BUG, 1/5 INVISIBLE_CHANGE).
-- **Status**: ✅ **CONFIRMED** (root cause 独立 traced, 不依赖 codex probe quality)
+- **Status**: 🛠️ **FIXED commit `3c15cd7`** (`state_change.py` adds `agent_visible_changed` vs `runner_page_changed` split, paper-grade SR uses agent_visible_changed); previously CONFIRMED root-cause traced
 - **Fix**: **结构性重分**, 不补 logger:
   - `runner_page_changed` (runner-internal, 12 reasons union) — 用于 cycle break / retry decision
   - `agent_visible_changed` (agent-facing, url/title/visible_text/scroll only) — 用于 fig0a SR / 早停 detect
@@ -191,7 +191,7 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
   - I8 max-step truncate at click: 201 ep
   - I3 repeat click: 481 ep
   - Estimated trace impact: ~15-20% of failed traces (overlap with TYPE/SCROLL silent failure)
-- **Status**: ✅ **CONFIRMED** (用户独立观察 + Tier 4 数据交叉)
+- **Status**: 🛠️ **FIXED commit `3c15cd7`** (fuzzy cycle detection with `_action_signature_fuzzy` + min_reps=5); SUPERSEDED by B-38 (early-stop disabled per advisor 5/5 — detection now diagnostic-only). Previously CONFIRMED via user observation + Tier 4.
 - **Fix**: fuzzy cycle hash on `(action_type, current_url_path_only_no_query, target_axtree_role)`; 同 hash 连续 ≥ 3 次直接早停。Independent patch from B-09.
 - **Paper impact**: cost calculation 当前**系统性 inflate** failed traces' wasted-cost — fix 后 fig0e wasted_cost_usd 可能下降; 影响 4-fold drop-in property (a) 的 cost ≈ DOM claim
 
@@ -255,7 +255,7 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
 
 - **Origin**: Tier 4 I3 (481 violations) + click probe taxonomy
 - **Mechanism**: 同 element_id click ≥ 3 次连续 — agent 死循环, cycle-detect 没提前停.
-- **Status**: ✅ **CONFIRMED** (overlap with B-11 广义早停 — same root cause, different signature)
+- **Status**: 🛠️ **FIXED commit `3c15cd7`** (covered by B-11 fuzzy cycle); SUPERSEDED by B-38 (early-stop disabled). Previously CONFIRMED overlap.
 - **Fix**: same as B-11 (fuzzy cycle hash includes target role, not just exact element_id).
 
 ---
@@ -264,7 +264,7 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
 
 - **Origin**: Tier 4 I8 (201 violations)
 - **Mechanism**: episode 在 max_step 截断 但 last action 是 click 类 — max_iter masking silent failure (Tier 3 Type 5).
-- **Status**: ✅ **CONFIRMED** (downstream of B-11; if cycle detect 早停了, max-step truncate 不会触发)
+- **Status**: 🛠️ **FIXED commit `3c15cd7`** (covered by B-11 fix); SUPERSEDED by B-38. Previously CONFIRMED downstream.
 - **Fix**: same as B-11.
 
 ---
@@ -425,7 +425,7 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
   - Sub-mode of B-33 AXTree-mapping-error (bbox is button, center hits span)
   - Plus AJAX timing: even if click reached button, subscribe state change is async — observation snapshot may miss it (related to B-09)
 - **Blast radius**: 7/93 click-loop = **7.5% of click-loop** ≈ 0.4% of all ep
-- **Status**: ✅ **CONFIRMED via artifact** (real bug, very narrow scope: reddit subscribe button only)
+- **Status**: 🛠️ **FIXED commit `3c15cd7`** (locator-route Cluster 1 + state_change Cluster 2); previously CONFIRMED narrow scope
 - **Site/mode locality**: 100% reddit, mostly DOM/SoM (not Vision since Vision uses normalized coords)
 - **Fix**: locator-route mouse dispatch (Cluster 1, B-01 patch) + observation refresh after click (B-09 patch) — covered by Phase A clusters
 - **Paper impact**: narrow, no separate framing; absorbed by Cluster 1 + Cluster 2 fixes
@@ -471,7 +471,7 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
   - In artifact 93 click-loop cases: B-33 family = 52 + ~16 (B-33e from §106 sub-mode) = **~68/93 = 73%** of click-loop bugs
   - In Tier 10 sweep on FAILED click steps: 17/18 = **94.4% off-target**
   - Effective ALL ep impact: 5.4% click-loop signature × 73% = **~3.9% of all paper-grade ep**, plus all UNION_BOUND_BUG cases (1.6%) = **~5.5% combined bbox-mapping bug rate**
-- **Status**: ✅ **CONFIRMED via artifact + Tier 10 sweep**. 🚨 **Largest single dispatch contaminant family** in framework.
+- **Status**: 🛠️ **FIXED commit `3c15cd7`** (locator-route Cluster 1 — bypasses union_bound center → real Playwright locator dispatch). Previously CONFIRMED via artifact + Tier 10 sweep. 🚨 **Largest single dispatch contaminant family** in framework.
 - **Fix**: Cluster 1 (locator-route via Playwright `locator.click()`) **automatically resolves all sub-modes a-f** — Playwright's locator finds the actual `<a>`/`<button>` element via accessibility tree + actionability check, bypassing geometric-center mouse dispatch entirely
 - **Paper impact**: **Section 4 limitation table PRIMARY cite** — replaces §106's 1.6% framing with broader 5.5% combined bbox-mapping family. Cross-mode bias: DOM/SoM/P-text/P-SoM all affected; Vision largely unaffected (uses normalized coordinate fallback). DOM:SoM ratio is small (similar bug rates) so cross-mode SR comparisons partially cancel.
 
@@ -512,7 +512,7 @@ Hover and Clear actions had 0 cases collected (VWA agents almost never use these
 - **Mechanism**: `should_refresh()` returns True only when `episodes_since_refresh >= interval`. **No time-based check**. PHP session `gc_maxlifetime=1440s` (§39) means cls/shopping sessions expire after 24 minutes. If a single difficult episode runs 30+ min (e.g., max_step=30 × 60s/step latency), session expires mid-episode but auth refresh isn't triggered until episode count crosses interval.
 - **Compounding factor**: B-16 long-step Playwright timeout swallow (env_step_ms > 30s tab_focus etc.) makes some episodes very long, increasing exposure.
 - **Severity**: medium — affects long episodes on cls/shopping
-- **Status**: ✅ **CONFIRMED via static read**
+- **Status**: 🛠️ **FIXED commit `<TBD>`** (笔记 §116.9, 2026-05-08): `should_refresh()` adds `seconds_since_refresh` parameter + config `time_interval_seconds: 1200` (below PHP gc_maxlifetime 1440s). Runner tracks `_auth_last_refresh_ts` per site. Previously CONFIRMED static.
 - **Fix**: add `time_since_refresh` check in `should_refresh()` with threshold ~1200s (below gc_maxlifetime 1440s). ~15 LOC.
 - **Paper impact**: medium — could explain some inconsistent SR in tasks with long action sequences
 

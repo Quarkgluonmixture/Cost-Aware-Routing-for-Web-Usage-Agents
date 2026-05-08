@@ -78,6 +78,9 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "auth_refresh": {
         "enabled": True,
         "interval": 5,
+        # B-35 fix (笔记 §116.9): time-based threshold prevents PHP session
+        # gc_maxlifetime (1440s on cls/shopping) expiring mid-long-episode
+        "time_interval_seconds": 1200,
         "sites": ["classifieds", "reddit", "shopping", "shopping_admin"],
     },
     "analysis": {
@@ -217,6 +220,7 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     cfg.setdefault("auth_refresh", {})
     cfg["auth_refresh"].setdefault("enabled", True)
     cfg["auth_refresh"].setdefault("interval", 5)
+    cfg["auth_refresh"].setdefault("time_interval_seconds", 1200)  # B-35 fix
     cfg["auth_refresh"].setdefault("sites", ["classifieds", "reddit", "shopping", "shopping_admin"])
 
     cfg.setdefault("metrics", {}).setdefault("energy", {})
