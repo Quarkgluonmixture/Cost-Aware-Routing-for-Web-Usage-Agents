@@ -1300,6 +1300,48 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 
 ---
 
+### B-81. Myriad HPC porting — 5-class failure umbrella (笔记 §116.16, 2026-05-08)
+
+- **Origin**: Stage 2B/2C launch wave on UCL Myriad HPC, jobs 324666 → 325178/325179
+- **Status**: 🛠️ FIXED (5/5 sub-classes resolved by 2026-05-08)
+- **Severity**: Operational (not paper-grade scientific) but blocks mechanistic Stage 2B/2C compute path
+- **Domain**: HPC environment porting — RHEL 7 login + compute nodes, SGE batch, module-loaded PyTorch
+- **Pattern**: Each class only surfaces under specific HPC constraint (firewall / module versioning / pre-built torch / Home quota / login-vs-compute env divergence). Collectively they are the **HPC textbook gotcha checklist** for HuggingFace transformer + activation patching workloads.
+
+#### B-81a — gcc-libs/4.9.2 ↔ 10.2.0 module conflict
+- **Symptom**: Job 324666 stderr `ERROR: Module cannot be loaded due to a conflict. HINT: Might try "module unload gcc-libs" first.`
+- **Cause**: SGE compute nodes auto-load `gcc-libs/4.9.2` via default-modules; `module load pytorch/2.1.0/gpu` chain-loads `gcc-libs/10.2.0` → conflict.
+- **Fix**: `module unload gcc-libs python python3 2>/dev/null || true` BEFORE `module load pytorch/2.1.0/gpu` in qsub script.
+- **Files**: `scripts/queues/qsub_stage2b_myriad.sh:65-66` + `qsub_stage2c_myriad.sh:52-53`
+
+#### B-81b — `register_pytree_node` private→public API kwarg incompatibility
+- **Symptom**: stderr `TypeError: register_pytree_node() got an unexpected keyword argument 'serialized_type_name'`
+- **Cause**: torch 2.1's `_register_pytree_node` (private) only takes 3 args; transformers 4.50+ calls `register_pytree_node` (public) with kwargs `serialized_type_name`, `to_dumpable_context`, `from_dumpable_context`, `flatten_with_keys_fn`. Public API only added in torch 2.2+.
+- **Fix**: `sitecustomize.py` shim creates kwarg-tolerant adapter aliasing public→private and dropping unsupported kwargs. Loaded automatically via `PYTHONUSERBASE` site-packages.
+- **Files**: `scripts/setup/myriad_bootstrap.sh` (creates shim) + sitecustomize.py at `$PYTHONUSERBASE/lib/python3.9/site-packages/sitecustomize.py`
+
+#### B-81c — urllib3 v2 ↔ OpenSSL 1.0.2k-fips on RHEL 7
+- **Symptom**: stderr `ImportError: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with OpenSSL 1.0.2k-fips`
+- **Cause**: Myriad RHEL 7 login + compute nodes ship OpenSSL 1.0.2k-fips (ancient FIPS-compliance build). urllib3 v2.0+ dropped support.
+- **Fix**: pip constraints file `myriad_constraints.txt` pins `urllib3<2`. Install via `pip install --user --constraint myriad_constraints.txt ...`. PYTHONPATH prepend so user-site wins over module's transformers-bundled urllib3 v2.3.0.
+- **Files**: `scripts/setup/myriad_bootstrap.sh` (constraints file generation + PYTHONPATH export)
+
+#### B-81d — Subset autodetect — DGX-only run dir assumed
+- **Symptom**: Jobs 324670/324671 stderr `FileNotFoundError: ... B1_phantom_som_classifieds_20260428` then `Loaded 0 intents` (silent skip via empty list).
+- **Cause**: `run_stage2b_continuation_pilot.py:78 find_artifacts_dir` walks nested `<run>/<condition>/episodes/<task_id>/` layout (DGX-only 1.8GB archive). Myriad has compact `archive_subset_b1_cls/` (16.5MB committed to git) with flat `task_<id>/` layout.
+- **Fix**: subset autodetect via `manifest.json` — if file exists, load 24 strong + 11 reverse intents from manifest, use flat layout via `find_artifacts_dir` fallback.
+- **Files**: `scripts/mechanistic/run_stage2b_continuation_pilot.py` (subset_manifest branch)
+
+#### B-81e — Compute node firewall + bootstrap Step 5 silent fail (HF cache miss)
+- **Symptom**: Jobs 324679/324680 stderr after subset fix: `LocalEntryNotFoundError: ... outgoing traffic has been disabled` → `OSError: We couldn't connect to 'https://huggingface.co'`
+- **Cause**: Myriad compute nodes have **NO outbound network** (HPC security policy). qsub script sets `HF_HUB_OFFLINE=1` so `from_pretrained` only checks local cache. Bootstrap Step 5 (`snapshot_download`) either skipped or download interrupted → `~/Scratch/cache/huggingface/hub/models--Qwen--Qwen3-VL-4B-Instruct/snapshots/<rev>/config.json` missing.
+- **Fix**: (1) Login node has internet — `unset HF_HUB_OFFLINE TRANSFORMERS_OFFLINE` then `snapshot_download('Qwen/Qwen3-VL-4B-Instruct', revision='ebb281ec70b05090aa6165b016eac8ec08e71b17')`. (2) Add fail-fast pre-flight check to qsub script (commit `d9d60b5`) — verify config.json exists before launching python; echo download command on miss. Saves 36h/24h wallclock allocations vs running through module load + python imports only to fail in `from_pretrained`.
+- **Files**: `scripts/queues/qsub_stage2b_myriad.sh:88-101` + `qsub_stage2c_myriad.sh:67-80` (pre-flight) + `scripts/setup/myriad_bootstrap.sh:255-269` (Step 5 source-of-truth download)
+
+**Reproducibility & paper §3 cite**: B-81 umbrella catalogues the canonical HPC porting checklist for HuggingFace transformer + activation-patching mechanistic workloads on RHEL 7 + SGE + module-pytorch HPC clusters. Future replicators on similar clusters (Myriad, Iridis, ARC, etc.) will hit subsets of these 5 classes; this catalog entry serves as paper §3 reproducibility-statement reference.
+
+---
+
 ## Updated Status Counts (post-§116 audit + Phase 0 backfill)
 
 | Tag | Count | Notes |
@@ -1309,7 +1351,7 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 | ⚠️ **DISPUTED** | 0 | — |
 | ❌ **NOT_A_BUG** | 4 | B-12 / B-13 / B-14 / B-27 |
 | 🔄 **UNVERIFIED** | 0 | All Phase A entries CONFIRMED via static read |
-| 🛠️ **FIXED** | ~45 | B-10 (§105) + B-26 (NOT FIXED BY DESIGN) + B-28 (MITIGATED) + B-29 (NOT FIXED BY DESIGN) + B-38 (§116) + Phase 0 historical (B-39 to B-80, including umbrella sub-entries) + Phase A patches via commits 3c15cd7 onwards |
+| 🛠️ **FIXED** | ~50 | B-10 (§105) + B-26 (NOT FIXED BY DESIGN) + B-28 (MITIGATED) + B-29 (NOT FIXED BY DESIGN) + B-38 (§116) + B-81a-e (HPC porting umbrella, 5 sub-classes) + Phase 0 historical (B-39 to B-80, including umbrella sub-entries) + Phase A patches via commits 3c15cd7 onwards |
 
 **Pre-rerun rule reaffirmed**: All 🛠️ FIXED bugs must have their fix in code at HEAD before
 16-cell rerun launch (笔记 §116 / pre_rerun_audit.md §F). UNVERIFIED entries have been
