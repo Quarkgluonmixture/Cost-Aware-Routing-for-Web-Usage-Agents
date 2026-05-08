@@ -863,3 +863,93 @@ Each tier audit costs ~30 min static + 30 min probe. Total budget for full cover
 - 27 条 bug 里**实际 fix scope 只有 ~3 簇 (Phase A) + 1 簇 (Phase B re-verify)**: TYPE/CLICK 共享 locator route, page_changed 重分层, fuzzy cycle, SCROLL/SELECT 重新验证. 这跟 §106 教训一致: signature alone over-counts, root-cause clustering reduces to actionable patches.
 - "NOT_A_BUG" 类 (B-12/B-13/B-27) 写进文档是**有据可查**的关键 — 下次再有人说 "AXTree element_id 不稳是个 bug" 直接 cite B-12 的 BrowserGym public API contract 论证, 不再争论.
 `─────────────────────────────────────────────────`
+
+
+---
+
+## Phase 0 — Pre-Phase-A historical fixes (§5-§90 sweep)
+
+**Source**: 实验笔记 [bug] tagged sections from 2026-04-04 to 2026-04-24 (pre-Phase-A audit).
+**Status**: All entries below are 🛠️ FIXED in production code at HEAD; commit refs may be lost
+to early `git log` rewrites but fix-effect is observable in current behavior. Listed for paper §3
+audit-trail completeness — `make rederive` on any cell post-Phase-A should show consistent SR
+with current code.
+
+**Why now**: User audit prompt 2026-05-08 caught that historical fixes weren't backfilled into
+catalog (笔记 §116 audit). Catalog originally focused on §107 Phase A 5-tier findings; pre-Phase-A
+fixes were merged-and-forgotten.
+
+| ID | 笔记 § | Date | Title | Domain | Status |
+|---|---|---|---|---|---|
+| B-39 | §5 | 04-04 | busy:1 中间态 — race condition in agent dispatch | runner state machine | 🛠️ FIXED |
+| B-40 | §12 | 04-07 | Cycle detection 误杀 — too-aggressive cycle break on legitimate retry | cycle detection | 🛠️ FIXED (later refined §107 Cluster 3) |
+| B-41 | §14 | 04-08 | Session 丢失 detection + 自动恢复 — Playwright session expiry | auth subsystem | 🛠️ FIXED |
+| B-42 | §28 | 04-11 | Vision 模式 type 动作 bug | vision mode | 🛠️ FIXED (subsumed by B-01) |
+| B-43 | §29 | 04-11 | Vision CDP 焦点丢失 — pre-click 机制根因 | vision mode | 🛠️ FIXED |
+| B-44 | §30 | 04-11 | np.float32 JSON 序列化 — Vision coordinate click 静默失败 | serialization | 🛠️ FIXED |
+| B-45 | §31 | 04-11 | click vs type 混淆 + baseline retry 副作用 | runner retry | 🛠️ FIXED |
+| B-46 | §33 | 04-12 | Reddit 重跑前 7 项 Bug (umbrella) | mixed | 🛠️ FIXED |
+| B-47 | §34 | 04-12 | 参考图 Processor + Classifieds 误删 | processor | 🛠️ FIXED |
+| B-48 | §36 | 04-12 | 参考图标签缺失 — DOM 模式无法用参考图 | processor | 🛠️ FIXED |
+| B-49 | §41 | 04-13 | Gallery 幽灵 episode + 孤儿文件 | gallery / cleanup | 🛠️ FIXED |
+| B-50 | §43 | 04-13 | B0 N/A task evaluator_error 401 — OpenAI key load bug | auth | 🛠️ FIXED |
+| B-51 | §53 | 04-14 | confirm 弹窗自动接受 | dialog handling | 🛠️ FIXED |
+| B-52 | §54 | 04-14 | select_option 已选反馈缺失 | feedback | 🛠️ FIXED |
+| B-53 | §57 | 04-14 | tab_focus 循环误判 | tab handling | 🛠️ FIXED |
+| B-54 | §58 | 04-14 | Shell 脚本孤儿进程 + stale summary detection | infra | 🛠️ FIXED |
+| B-55 | §59 | 04-14 | BLIP-2 lazy load + VRAM polling | infra | 🛠️ FIXED |
+| B-56 | §61 | 04-15 | SoM marks 丢失 `[OPTIONS]` 注入 | observation | 🛠️ FIXED |
+| B-57 | §62 | 04-15 | Vision select_option 不支持 CSS dropdown | vision mode | 🛠️ FIXED (workaround) |
+| B-58 | §63 | 04-15 | `<think>` 标签 → parse_error → keyword_scroll | parser | 🛠️ FIXED |
+| B-59 | §64 | 04-15 | Vision type 非 input 元素全选变蓝 | vision mode | 🛠️ FIXED (subsumed by B-01) |
+| B-60 | §68 | 04-15 | state_change 假阴/假阳 — 表单 snapshot + scroll 真值检测 | state detection | 🛠️ FIXED |
+| B-61 | §73 | 04-16 | WA 集成审计 + Gallery 合并架构 | infra | 🛠️ FIXED |
+| B-62 | §74 | 04-17 | B0 四脚本统一重构 + WA evaluator 修复 | infra / evaluator | 🛠️ FIXED |
+| B-63 | §75 | 04-17 | Per-Episode Auth Refresh + Magento 302 redirect | auth / shopping | 🛠️ FIXED |
+| B-64 | §76 | 04-18 | Runner 错误检测 + 通知审查 | runner | 🛠️ FIXED |
+| B-65 | §81 | 04-19 | Wikipedia ZIM 版本修复 + Tab 健康检查 | wikipedia (out of paper scope) | 🛠️ FIXED |
+| B-66 | §82 | 04-20 | Auth refresh 全站启用 + queue retry refresh | auth | 🛠️ FIXED |
+| B-67 | §84 | 04-20 | Watchdog 跨站 NOT-LOGGED-IN 误判 | watchdog | 🛠️ FIXED |
+| B-68 | §86 | 04-20 | auto-retry 三漏洞 + DOM 污染数据清理 | retry / cleanup | 🛠️ FIXED |
+| B-69 | §87 | 04-21 | Evaluator 脏 page → fresh page 重试 + watchdog 修复 | evaluator | 🛠️ FIXED |
+| B-70 | §97 | 04-26 | cross_representation 审计 + 4 文件审计 (post-rerun infra) | infra | 🛠️ FIXED |
+
+### Phase 0 batch entries (single 笔记 § umbrella'd N bugs)
+
+| 笔记 § | Title | N bugs | Status |
+|---|---|---|---|
+| §39 | B0 三模式启动 3 类 bug | 3 | 🛠️ FIXED |
+| §40 | B0 proxy_api_agent prompt 3 缺陷 + API 503 retry | 4 | 🛠️ FIXED |
+| §42 | B0/B1 实验代码审计 11 处 bug | 11 | 🛠️ FIXED |
+| §45 | B0/B1 开跑前 9 项 bug | 9 | 🛠️ FIXED |
+| §46 | B0 proxy_api 深度审计 2 critical | 2 | 🛠️ FIXED |
+| §47 | B0/B1 开跑前 5 项 + A1/A3 设计不对称记录 | 5 + design note | 🛠️ FIXED + design accepted |
+| §51 | select_option action type 实现 + bid 陷阱 | 2 | 🛠️ FIXED (B-06 catalog reference) |
+| §85 | 代码审计批量 P0/P1/P2 | ~10 | 🛠️ FIXED |
+
+These umbrella entries reference 笔记 § directly rather than 每 bug 单 catalog entry (granularity
+trade-off). Total Phase 0 fix count: ~70+ individual fixes across the umbrella + atomic entries.
+
+---
+
+## §116 Pre-rerun audit findings (2026-05-08)
+
+| ID | Title | Origin | Status | Notes |
+|---|---|---|---|---|
+| **B-38** | **Early-stop still active in code despite advisor 5/5 cancel** | 笔记 §116 + advisor_sync_5_5_outcomes.md §A.1 | 🛠️ FIXED commit `3de6d95` | runner/main.py 3 fire sites (cycle / scroll / URL stuck) wrapped in `if _early_stop_enabled:`. Default False. Diagnostic logging KEPT. Re-enable via `runtime.early_stop_enabled: true` in YAML config (e.g., for ablation). **Tier 0 spec drift per Protocol A** (笔记 §115). |
+
+---
+
+## Updated Status Counts (post-§116 audit)
+
+| Tag | Count | Notes |
+|---|---|---|
+| ✅ **CONFIRMED** | 1 | B-37 (seed=42 stochastic) — design note |
+| ⚠️ **DISPUTED** | 0 | — |
+| ❌ **NOT_A_BUG** | 3 | B-12 / B-13 / B-14 |
+| 🔄 **UNVERIFIED** | ~20 | Phase A audit findings without explicit replay verification |
+| 🛠️ **FIXED** | ~35 | B-10 (§105) + B-38 (§116) + Phase 0 historical (B-39 to B-70) + several Phase A patches via commits 3c15cd7 onwards |
+
+**Pre-rerun rule reaffirmed**: All 🛠️ FIXED bugs must have their fix in code at HEAD before
+16-cell rerun launch (笔记 §116 / pre_rerun_audit.md §F). UNVERIFIED entries should be triaged to
+either ✅ CONFIRMED + fix or ❌ NOT_A_BUG + close before OSF DOI lock.
