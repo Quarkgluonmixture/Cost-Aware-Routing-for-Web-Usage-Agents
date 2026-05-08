@@ -150,22 +150,82 @@ fi
 log "=== Step 4: pip install --user (transformers + p79 deps) ==="
 
 # Install deps to PYTHONUSERBASE.
-# Pinning rationale (RHEL 7 + module pytorch/2.1.0 quirks):
-#   urllib3<2: RHEL 7 OpenSSL 1.0.2k can't run urllib3 v2 (urllib3/issues/2168)
-#   torch>=2.3: transformers 4.40+ uses torch.utils._pytree.register_pytree_node,
-#               added in torch 2.3. Module pytorch/2.1.0 lacks it.
-#               PYTHONPATH user-site override means our user-site torch wins.
-#   transformers 4.50+: required for Qwen3VLForConditionalGeneration support
-log "  Installing torch 2.4 (override module 2.1 — needed for transformers 4.50+ pytree API)..."
-pip install --user --only-binary=:all: --progress-bar=on \
-    --cache-dir=/tmp/pip_cache_$USER \
-    torch==2.4.0 torchvision==0.19.0 2>&1 | tail -3
+# Final working stack (笔记 §115b chronicle, 2026-05-08 night Myriad bootstrap session):
+#   - Use module torch 2.1.0 (skip pip torch — saves 2GB Lustre extract).
+#     Compatibility via sitecustomize.py adapter that wraps
+#     torch._pytree._register_pytree_node → register_pytree_node and drops
+#     unsupported kwargs (serialized_type_name etc).
+#   - urllib3<2: RHEL 7 OpenSSL 1.0.2k incompatible with v2 (urllib3#2168)
+#   - numpy<2: torch 2.1 binary compiled against NumPy 1.x (crashes on 2.0)
+#   - transformers==4.57.6: Qwen3VLForConditionalGeneration first stable here
+#     (4.55 still missing it; 4.49 lacks Qwen3-VL entirely)
+#   - constraints.txt enforces pins across all transitive resolves
 
-log "  Installing transformers + accelerate + qwen-vl-utils + huggingface_hub..."
+# Write constraints file (single source of truth)
+cat > "$HOME/Scratch/myriad_constraints.txt" <<'CONST_EOF'
+urllib3<2
+numpy<2
+CONST_EOF
+log "  Wrote constraints: ~/Scratch/myriad_constraints.txt (urllib3<2, numpy<2)"
+
+# Write sitecustomize.py compatibility shim (torch 2.1 ↔ transformers 4.50+)
+cat > "$USER_SITE/sitecustomize.py" <<'SHIM_EOF'
+"""Myriad workaround: torch 2.1 lacks register_pytree_node public API +
+its private _register_pytree_node has narrower signature than 2.3+ public.
+Wrap with adapter dropping unsupported kwargs."""
+import sys
+import builtins
+import functools
+
+_PATCHED = False
+
+def _maybe_patch_torch():
+    global _PATCHED
+    if _PATCHED:
+        return
+    pt = sys.modules.get('torch.utils._pytree')
+    if not pt or not hasattr(pt, '_register_pytree_node'):
+        return
+    if hasattr(pt, 'register_pytree_node') and getattr(
+        pt.register_pytree_node, '_myriad_patched', False):
+        _PATCHED = True
+        return
+    _orig = pt._register_pytree_node
+
+    @functools.wraps(_orig)
+    def register_pytree_node(*args, **kwargs):
+        for k in ('serialized_type_name', 'to_dumpable_context',
+                  'from_dumpable_context', 'flatten_with_keys_fn'):
+            kwargs.pop(k, None)
+        return _orig(*args, **kwargs)
+
+    register_pytree_node._myriad_patched = True
+    pt.register_pytree_node = register_pytree_node
+    _PATCHED = True
+
+_orig_import = builtins.__import__
+def _patched_import(name, *args, **kwargs):
+    mod = _orig_import(name, *args, **kwargs)
+    if 'torch' in name and not _PATCHED:
+        _maybe_patch_torch()
+    return mod
+builtins.__import__ = _patched_import
+SHIM_EOF
+log "  Wrote sitecustomize.py: torch 2.1 ↔ transformers 4.50+ compat shim"
+
+# Pin urllib3 + numpy first (constraints satisfied for all later installs)
+log "  Installing urllib3<2 + numpy<2 (RHEL 7 + torch 2.1 binary compat)..."
 pip install --user --only-binary=:all: --progress-bar=on \
     --cache-dir=/tmp/pip_cache_$USER \
-    "urllib3<2" \
-    "transformers>=4.50,<5.0" accelerate qwen-vl-utils huggingface_hub Pillow PyYAML 2>&1 | tail -5
+    "urllib3<2" "numpy<2" 2>&1 | tail -3
+
+# Install transformers 4.57.6 (Qwen3-VL first stable) + ML stack
+log "  Installing transformers 4.57.6 + ML deps (sklearn / scipy / matplotlib / pandas)..."
+pip install --user --only-binary=:all: --progress-bar=on \
+    --cache-dir=/tmp/pip_cache_$USER \
+    -c "$HOME/Scratch/myriad_constraints.txt" \
+    "transformers==4.57.6" accelerate qwen-vl-utils huggingface_hub \
+    Pillow PyYAML scikit-learn scipy matplotlib pandas 2>&1 | tail -5
 
 # Install p79 editable, --no-deps so pip doesn't try to re-resolve torch
 log "  Installing p79 (editable, --no-deps)..."
