@@ -873,89 +873,446 @@ Each tier audit costs ~30 min static + 30 min probe. Total budget for full cover
 
 ---
 
-## Phase 0 — Pre-Phase-A historical fixes (§5-§90 sweep)
+## Phase 0 — Pre-Phase-A historical fixes (笔记 §5-§97)
 
-**Source**: 实验笔记 [bug] tagged sections from 2026-04-04 to 2026-04-24 (pre-Phase-A audit).
-**Status**: All entries below are 🛠️ FIXED in production code at HEAD; commit refs may be lost
-to early `git log` rewrites but fix-effect is observable in current behavior. Listed for paper §3
-audit-trail completeness — `make rederive` on any cell post-Phase-A should show consistent SR
-with current code.
+**Source**: 实验笔记 [bug] tagged sections from 2026-04-04 to 2026-04-26 (pre-Phase-A audit).
+All entries 🛠️ FIXED in production code at HEAD; commit refs may be lost to early `git log`
+rewrites but fix-effect is observable in current behavior. Listed for paper §3 audit-trail
+completeness — `make rederive` on any cell post-Phase-A should show consistent SR with current code.
 
-**Why now**: User audit prompt 2026-05-08 caught that historical fixes weren't backfilled into
-catalog (笔记 §116 audit). Catalog originally focused on §107 Phase A 5-tier findings; pre-Phase-A
-fixes were merged-and-forgotten.
+**Why this section exists**: User audit prompt 2026-05-08 caught that historical fixes weren't
+backfilled into catalog. Paper bug-fix chapter cites these entries; each individual bug from
+笔记 § (including umbrella sections with multiple bugs) gets its own ### subsection here.
 
-| ID | 笔记 § | Date | Title | Domain | Status |
-|---|---|---|---|---|---|
-| B-39 | §5 | 04-04 | busy:1 中间态 — race condition in agent dispatch | runner state machine | 🛠️ FIXED |
-| B-40 | §12 | 04-07 | Cycle detection 误杀 — too-aggressive cycle break on legitimate retry | cycle detection | 🛠️ FIXED (later refined §107 Cluster 3) |
-| B-41 | §14 | 04-08 | Session 丢失 detection + 自动恢复 — Playwright session expiry | auth subsystem | 🛠️ FIXED |
-| B-42 | §28 | 04-11 | Vision 模式 type 动作 bug | vision mode | 🛠️ FIXED (subsumed by B-01) |
-| B-43 | §29 | 04-11 | Vision CDP 焦点丢失 — pre-click 机制根因 | vision mode | 🛠️ FIXED |
-| B-44 | §30 | 04-11 | np.float32 JSON 序列化 — Vision coordinate click 静默失败 | serialization | 🛠️ FIXED |
-| B-45 | §31 | 04-11 | click vs type 混淆 + baseline retry 副作用 | runner retry | 🛠️ FIXED |
-| B-46 | §33 | 04-12 | Reddit 重跑前 7 项 Bug (umbrella) | mixed | 🛠️ FIXED |
-| B-47 | §34 | 04-12 | 参考图 Processor + Classifieds 误删 | processor | 🛠️ FIXED |
-| B-48 | §36 | 04-12 | 参考图标签缺失 — DOM 模式无法用参考图 | processor | 🛠️ FIXED |
-| B-49 | §41 | 04-13 | Gallery 幽灵 episode + 孤儿文件 | gallery / cleanup | 🛠️ FIXED |
-| B-50 | §43 | 04-13 | B0 N/A task evaluator_error 401 — OpenAI key load bug | auth | 🛠️ FIXED |
-| B-51 | §53 | 04-14 | confirm 弹窗自动接受 | dialog handling | 🛠️ FIXED |
-| B-52 | §54 | 04-14 | select_option 已选反馈缺失 | feedback | 🛠️ FIXED |
-| B-53 | §57 | 04-14 | tab_focus 循环误判 | tab handling | 🛠️ FIXED |
-| B-54 | §58 | 04-14 | Shell 脚本孤儿进程 + stale summary detection | infra | 🛠️ FIXED |
-| B-55 | §59 | 04-14 | BLIP-2 lazy load + VRAM polling | infra | 🛠️ FIXED |
-| B-56 | §61 | 04-15 | SoM marks 丢失 `[OPTIONS]` 注入 | observation | 🛠️ FIXED |
-| B-57 | §62 | 04-15 | Vision select_option 不支持 CSS dropdown | vision mode | 🛠️ FIXED (workaround) |
-| B-58 | §63 | 04-15 | `<think>` 标签 → parse_error → keyword_scroll | parser | 🛠️ FIXED |
-| B-59 | §64 | 04-15 | Vision type 非 input 元素全选变蓝 | vision mode | 🛠️ FIXED (subsumed by B-01) |
-| B-60 | §68 | 04-15 | state_change 假阴/假阳 — 表单 snapshot + scroll 真值检测 | state detection | 🛠️ FIXED |
-| B-61 | §73 | 04-16 | WA 集成审计 + Gallery 合并架构 | infra | 🛠️ FIXED |
-| B-62 | §74 | 04-17 | B0 四脚本统一重构 + WA evaluator 修复 | infra / evaluator | 🛠️ FIXED |
-| B-63 | §75 | 04-17 | Per-Episode Auth Refresh + Magento 302 redirect | auth / shopping | 🛠️ FIXED |
-| B-64 | §76 | 04-18 | Runner 错误检测 + 通知审查 | runner | 🛠️ FIXED |
-| B-65 | §81 | 04-19 | Wikipedia ZIM 版本修复 + Tab 健康检查 | wikipedia (out of paper scope) | 🛠️ FIXED |
-| B-66 | §82 | 04-20 | Auth refresh 全站启用 + queue retry refresh | auth | 🛠️ FIXED |
-| B-67 | §84 | 04-20 | Watchdog 跨站 NOT-LOGGED-IN 误判 | watchdog | 🛠️ FIXED |
-| B-68 | §86 | 04-20 | auto-retry 三漏洞 + DOM 污染数据清理 | retry / cleanup | 🛠️ FIXED |
-| B-69 | §87 | 04-21 | Evaluator 脏 page → fresh page 重试 + watchdog 修复 | evaluator | 🛠️ FIXED |
-| B-70 | §97 | 04-26 | cross_representation 审计 + 4 文件审计 (post-rerun infra) | infra | 🛠️ FIXED |
+---
 
-### Phase 0 batch entries (single 笔记 § umbrella'd N bugs)
+### B-39. busy:1 中间态 race condition (笔记 §5, 2026-04-04)
 
-| 笔记 § | Title | N bugs | Status |
-|---|---|---|---|
-| §39 | B0 三模式启动 3 类 bug | 3 | 🛠️ FIXED |
-| §40 | B0 proxy_api_agent prompt 3 缺陷 + API 503 retry | 4 | 🛠️ FIXED |
-| §42 | B0/B1 实验代码审计 11 处 bug | 11 | 🛠️ FIXED |
-| §45 | B0/B1 开跑前 9 项 bug | 9 | 🛠️ FIXED |
-| §46 | B0 proxy_api 深度审计 2 critical | 2 | 🛠️ FIXED |
-| §47 | B0/B1 开跑前 5 项 + A1/A3 设计不对称记录 | 5 + design note | 🛠️ FIXED + design accepted |
-| §51 | select_option action type 实现 + bid 陷阱 | 2 | 🛠️ FIXED (B-06 catalog reference) |
-| §85 | 代码审计批量 P0/P1/P2 | ~10 | 🛠️ FIXED |
+- **Origin**: 笔记 §5
+- **Status**: 🛠️ FIXED
+- **Domain**: runner state machine
+- **Bug**: VWA `networkidle timeout=2000` 过短, remote sites half-loaded, DOM 含 `busy:1`. LLM 推理 wasted before action overwritten to wait. Old run: DOM 11.8% / SoM 24.5% steps eroded; SoM-affected tasks 80.1%.
+- **Fix**: busy:1 check moved before LLM call; free wait not counted toward max_steps.
+- **Files**: `p79/experiment/runner.py`, `p79/envs/vwa_wrapper.py`
 
-These umbrella entries reference 笔记 § directly rather than 每 bug 单 catalog entry (granularity
-trade-off). Total Phase 0 fix count: ~70+ individual fixes across the umbrella + atomic entries.
+### B-40. Strict cycle detection 误杀 (笔记 §12, 2026-04-07)
+
+- **Origin**: 笔记 §12
+- **Status**: 🛠️ FIXED (later refined in §107 Phase A Cluster 3 / B-11)
+- **Domain**: cycle detection
+- **Bug**: Strict cycle detection counted 3 consecutive same-direction scrolls (page_changed=True) as deadlock; false-killed legitimate browsing. Classifieds: 3 tasks (6/16/18) wrongly killed.
+- **Fix**: scroll + page_changed=True excluded from strict signatures; soft detection retained as fallback.
+- **Files**: `p79/experiment/runner.py`
+
+### B-41. Session 丢失 detection + auto recovery (笔记 §14, 2026-04-08)
+
+- **Origin**: 笔记 §14
+- **Status**: 🛠️ FIXED
+- **Domain**: auth subsystem
+- **Bug**: Classifieds session cookie expired mid-run; tasks 85-131 (47 require_login) all lost auth. Root cause: `session.gc_maxlifetime` default too short (B-A in §39).
+- **Fix**: `auto_login.py` cookie refresh + `clear_tasks.py` for dirty episodes + watchdog step_000 DOM login-marker detection (≥3 consecutive auth failures → ntfy alert).
+- **Files**: `p79/utils/auth_refresh.py`, `scripts/maintenance/clear_tasks.py`, `scripts/maintenance/experiment_watchdog.py`
+
+### B-42. Vision type action coordinate drop (笔记 §28, 2026-04-11)
+
+- **Origin**: 笔记 §28
+- **Status**: 🛠️ FIXED (subsumed by B-01 family in Phase A)
+- **Domain**: vision mode action dispatch
+- **Bug**: `vwa_wrapper.py` `type + coordinate` (no element_id) called `create_keyboard_type_action(text)`, dropping coordinate; text typed into focused element (often empty). DOM/SoM unaffected (use element_id).
+- **Fix**: Detect type+coordinate without element_id → pre-click target → keyboard_type. (Pre-click mechanism root-cause refined in §29 / B-43.)
+- **Files**: `p79/envs/vwa_wrapper.py`
+
+### B-43. Vision CDP focus loss via env.step pre-click (笔记 §29, 2026-04-11)
+
+- **Origin**: 笔记 §29
+- **Status**: 🛠️ FIXED
+- **Domain**: vision mode action dispatch
+- **Bug**: §28 pre-click used `self._env.step(click_action)` triggering full "click→sleep→CDP captureSnapshot" flow; CDP capture reset focus (INPUT → BODY); subsequent `keyboard.type` typed into BODY. Vision 191 episodes affected.
+- **Fix**: Pre-click changed to `page.mouse.click()` + `wait_for_timeout()`, bypassing CDP observation capture. Coordinate mixing `or` corrected to independent `if left > 1.0 / if top > 1.0`.
+- **Files**: `p79/envs/vwa_wrapper.py`
+
+### B-44. np.float32 JSON serialization — Vision coordinate click silent fail (笔记 §30, 2026-04-11)
+
+- **Origin**: 笔记 §30
+- **Status**: 🛠️ FIXED 🚨 critical
+- **Domain**: serialization
+- **Bug**: VWA `create_mouse_click_action` stored coordinates as `np.float32`. NumPy 2.x type promotion no longer auto-upgraded to float64. Playwright CDP JSON serialization of float32 → TypeError → silently swallowed by VWA try/except → reward=0. Vision mode coordinate clicks: ALL silent-failed; 3.16% reported SR came from non-click eval paths (url_match/program_html). Classifieds Vision 234 episodes invalidated.
+- **Fix**: `actions.py` `execute_mouse_click` family explicit `float()` cast.
+- **Files**: `external/visualwebarena/browser_env/actions.py`, `p79/envs/vwa_wrapper.py` (Vision type pre-clear added: Control+a + Backspace)
+
+### B-45. baseline_retry_on_no_progress side-effect (笔记 §31, 2026-04-11)
+
+- **Origin**: 笔记 §31
+- **Status**: 🛠️ FIXED
+- **Domain**: runner retry policy
+- **Bug**: `baseline_retry_on_no_progress=True` retried agent action when page didn't change, but multiple retries on legit no-op (e.g., scroll at bottom) inflated step count + masked actual decisions.
+- **Fix**: Default flipped to False (paper §3 disclose).
+- **Files**: `p79/experiment/runner.py`, `p79/experiment/config.py`
+
+### B-46. Reddit umbrella 7 bugs (笔记 §33, 2026-04-12)
+
+- **Origin**: 笔记 §33 — 7 atomic bugs in single re-run wave
+- **Status**: 🛠️ ALL FIXED
+- **Domain**: mixed (DOM image / prompt / scroll / URL stuck / about:blank)
+- **Sub-entries**:
+  - **B-46a** Reference image NOT passed to DOM mode (deleted `observation_mode != "dom"` condition) — `runner.py`
+  - **B-46b** click vs type prompt clarification (type auto-focuses) — `qwen3vl_agent.py`
+  - **B-46c** baseline_retry default OFF (= B-45)
+  - **B-46d** max_new_tokens 256→384 — `B1_baseline.yaml`
+  - **B-46e** scroll alternation early-stop (6 consecutive up/down flips) — `runner.py`
+  - **B-46f** about:blank auto-recovery (`navigate_to()` + start_url fallback) — `vwa_wrapper.py`, `runner.py`
+  - **B-46g** URL stuck early-stop (5 consecutive same-URL clicks) — `runner.py`
+- **Note**: B-46e and B-46g superseded by B-38 (early-stop disabled per advisor 5/5 cancel; cycle detection now diagnostic-only).
+
+### B-47. Reference-image processor: image=None path drops images (笔记 §34, 2026-04-12)
+
+- **Origin**: 笔记 §34
+- **Status**: 🛠️ FIXED
+- **Domain**: image processor
+- **Bug**: DOM mode `obs.image=None`; `if image is not None:` skipped passing `images=` arg → processor went text-only path → reference image placeholder token present but image tensor never encoded. Reddit 84/210 tasks affected.
+- **Fix**: Changed gating to `has_images = image is not None or bool(reference_images)`.
+- **Files**: `p79/agents/qwen3vl_agent.py`
+
+### B-48. Reference-image label missing (DOM mode could not use reference image) (笔记 §36, 2026-04-12)
+
+- **Origin**: 笔记 §36
+- **Status**: 🛠️ FIXED
+- **Domain**: prompt construction
+- **Bug**: Reference-image label `[Input image 1]` did not specify purpose; 4B model never associated "this image = task target". Reddit task 0 measured: old label → 8 steps without referring to image; new label → 2 steps, step 0 directly identified sushi platter.
+- **Fix**: Label changed to `[Reference image N] This image shows the target item described in the task. Use it to identify which element to interact with.` Three-mode shared injection point. B0 same fix in §46 (= B-72).
+- **Files**: `p79/agents/qwen3vl_agent.py`, `p79/agents/proxy_api_agent.py`
+
+### B-49. B0 startup umbrella 3 bugs (笔记 §39, 2026-04-13)
+
+- **Origin**: 笔记 §39 — 3 atomic bugs at B0 first launch (250+ contaminated episodes)
+- **Status**: 🛠️ ALL FIXED
+- **Sub-entries**:
+  - **B-49a** Classifieds MySQL init-order: `c-classifieds_restore.sql` (data) ran before `i-init_db.sh` (schema); 219 DOM episodes invalid → `reset_vwa.ps1` manually runs init_db.sh
+  - **B-49b** PHP `session.gc_maxlifetime=1440s` (24min); 2 waves dirty episodes (tasks 32-39, 49-62), 19 SOM episodes invalid → `reset_vwa.ps1` sets 86400s (24h)
+  - **B-49c** Gallery `image` field-as-list TypeError silently swallowed → `Path / list` failed → task intent missing → `generate_gallery.py` takes list[0]
+
+### B-50. B0 proxy_api umbrella 4 bugs (笔记 §40, 2026-04-13)
+
+- **Origin**: 笔记 §40 — B0 SoM cycle-trapped (88% early-stop rate, 1/33 SR)
+- **Status**: 🛠️ ALL FIXED
+- **Sub-entries**:
+  - **B-50a** scroll direction missing in prompt (235B guessed wrong; dy<0 not specified as UP) → added explicit "dy>0 DOWN, dy<0 UP"
+  - **B-50b** `page_changed=False` falsely labeled FAILED → separated `success is False` (FAILED) from `changed is False` (OK page unchanged)
+  - **B-50c** No "avoid repeating action" instruction → 4 consecutive scroll-down at bottom → added explicit anti-repeat clause
+  - **B-50d** API 503 no retry → exponential backoff 3 attempts (10/20/40s) for HTTP 429/500/502/503/504
+- **Files**: `p79/agents/proxy_api_agent.py`
+
+### B-51. Gallery ghost episode + orphan files (笔记 §41, 2026-04-13)
+
+- **Origin**: 笔记 §41
+- **Status**: 🛠️ FIXED
+- **Domain**: gallery / cleanup
+- **Bug**: Old watchdog auto-retry deleted only summary, leaving orphan steps JSONL + artifact dirs. Gallery indexed by steps JSONL (summary optional load) → orphan steps produced ghost episode cards. `clear_tasks.py` only handled summary-having tasks.
+- **Fix**: `clear_tasks.py --clean-orphan-artifacts` (10-min mtime guard); `experiment_watchdog.py` startup orphan scan; `generate_gallery.py` summary-existence check before steps loop.
+- **Files**: `scripts/maintenance/clear_tasks.py`, `scripts/maintenance/experiment_watchdog.py`, `scripts/maintenance/generate_gallery.py`
+
+### B-52. B0/B1 audit umbrella 11 bugs (笔记 §42, 2026-04-13)
+
+- **Origin**: 笔记 §42 — comprehensive 11-fix audit
+- **Status**: 🛠️ ALL FIXED
+- **Sub-entries (per file)**:
+  - **B-52a** `run_b0_3mode_classifieds.sh`: watchdog kill OUTPUT_DIR filter (prevent kill-all-runners on parallel exp), `cm.__exit__(None,None,None)`, RUN_ID staticization (Bug-1/2, Issue-5)
+  - **B-52b** `queue_b1_with_reset.sh`: `cm.__exit__(None,None,None)` (Bug-2)
+  - **B-52c** `restart_watchdog.sh`: removed non-existent `--window-size`/`--alert-on-bootstrap` extract+append (Issue-4)
+  - **B-52d** `experiment_watchdog.py`: simplified redundant ternary (Issue-7)
+  - **B-52e** `config.py`: `include_sites` default removed `wikipedia` (Issue-8)
+  - **B-52f** `generate_gallery.py`: orphan steps check summary first (Issue-9)
+  - **B-52g** `refresh_gallery.sh`: 3-tier python path fallback (`.venv` → `python3` → exit 127) (Issue-10)
+  - **B-52h** Configs: B0_baseline.yaml + B0_reddit.yaml DEPRECATED comments (Issue-3/11)
+
+### B-53. OPENAI_API_KEY DUMMY override on placeholder (笔记 §43, 2026-04-13)
+
+- **Origin**: 笔记 §43
+- **Status**: 🛠️ FIXED
+- **Domain**: auth / evaluator
+- **Bug**: `ua_match` evaluator OpenAI 401 (DUMMY_P79... key). Root cause: shell `export OPENAI_API_KEY=DUMMY` first; Python `environment.py` `os.environ.setdefault` saw existing value, didn't override; `.auth/openai_key` real key never loaded.
+- **Fix**: Explicit override on DUMMY placeholder: `if not _cur_key or _cur_key.startswith("DUMMY"): os.environ["OPENAI_API_KEY"] = _loaded_key`.
+- **Files**: `p79/experiment/environment.py`
+
+### B-54. B0/B1 pre-launch umbrella 9 bugs (笔记 §45, 2026-04-13)
+
+- **Origin**: 笔记 §45
+- **Status**: 🛠️ ALL FIXED
+- **Sub-entries**:
+  - **B-54a** `B0_3mode_classifieds.yaml`: max_new_tokens 512→4096 (235B real need); removed `enable_thinking` (Bedrock silently ignored)
+  - **B-54b** `proxy_api_agent.py`: click history prefer `[id=N]`, fallback coord (Fix 2a)
+  - **B-54c** `proxy_api_agent.py`: image position `insert(0)` (OpenAI-compat convention) (Fix 2b)
+  - **B-54d** `proxy_api_agent.py`: system prompt embedded in user content (`"System: {prompt}
+"`), removed `system` field (= B1) (Fix 2c)
+  - **B-54e** `vwa_wrapper.py`: type+element_id `
+`-end → emit `keyboard.press("Enter")` + `create_none_action()` to refresh observation (Fix 3)
+  - **B-54f** `runner.py`: `baseline_retry_on_no_progress` default False (Fix 4 = B-45)
+  - **B-54g** Vision-completion final-reset addition in run scripts (Fix 5/6)
+  - **B-54h** `generate_gallery.py`: `_has_episode_data` checks actual summary file (Fix 7)
+  - **B-54i** `experiment_watchdog.py --reset-state` flag clears state.json on startup (Fix 8)
+
+### B-55. B0 proxy_api 2 critical bugs (笔记 §46, 2026-04-13)
+
+- **Origin**: 笔记 §46
+- **Status**: 🛠️ ALL FIXED 🚨 critical (would have invalidated B0/B1 comparison)
+- **Sub-entries**:
+  - **B-55a** `reference_images` dropped in B0 chain: runner→agent.step() didn't forward reference_images; B0 silently ignored 29-40% of tasks' reference images (cls 68/234, red 84/210, shop 169/466). Fix: `proxy_api_agent.py` add `reference_images` param + base64 data_url injection; `api_proxy.py` forward.
+  - **B-55b** obs_section format asymmetric vs B1: B0 vision→`"Screenshot (no text)"`, som→`"SOM_MARKS and annotated screenshot:
+{obs_text}"`; B1 vision→`""`, som→`obs_text` direct. SoM 36-char prefix divergence. Fix: aligned to B1.
+
+### B-56. B0/B1 pre-launch deep audit + design asymmetries (笔记 §47, 2026-04-13)
+
+- **Origin**: 笔记 §47
+- **Status**: 🛠️ FIXED (5 code) + design asymmetries DOCUMENTED (paper §3 disclose)
+- **Sub-entries**:
+  - **B-56a** `conditions.py:88`: `model_path` → `path` fallback for B1 condition_meta model_name (was "unknown")
+  - **B-56b** `vwa_wrapper.py:192`: scroll dy=0 direction `dy > 0` → `dy >= 0`, aligned with cycle detection
+  - **B-56c** `proxy_api_agent.py:378`: token field fallback chain (`inputTokens` → `input_tokens` → `prompt_tokens`)
+  - **B-56d** B0 SoM prompt fallback: "[SOM_MARKS] empty → coordinate" (= B1)
+  - **B-56e** B0 Vision type description: "automatically clicks to focus" (= B1)
+  - **Dead config** removed `top_p: 0.9` (local_qwen do_sample=False ignores; api_proxy payload doesn't pass)
+- **Design asymmetries (NOT fixed, paper §3 disclose)**:
+  - **A1** decoding: B0 temperature=0.1 (later changed to 0.0 per B-37 fix) vs B1 do_sample=False
+  - **A3** max_new_tokens: B0 4096 (no truncation) vs B1 384 (verbose thought may parse_fail → wait)
+
+### B-57. B0 select_option dispatch (CSS dropdown) — see B-06 + B-57 (笔记 §51, 2026-04-14)
+
+- **Origin**: 笔记 §51
+- **Status**: 🛠️ FIXED (related to B-06 SELECT_OPTION arg-drop family)
+- **Domain**: dispatch — native select + CSS dropdown
+- **Bug**: Playwright sync API can't open native `<select>` via click; agent (235B) repeatedly clicked combobox → cycle-killed. Bid attribute non-existent in real DOM (only in AXTree text); initial fix `locator('[bid="N"]')` returned 0 matches.
+- **Fix**: `vwa_wrapper.py` element_id path: `obs_nodes_info[str(eid)]["union_bound"]` → pixel center → JS `elementFromPoint(x,y)` → SELECT + dispatchEvent('change'); coordinate path normalize→pixel→same JS. `_inject_select_options()` injects `[OPTIONS] "opt1"...` after combobox row. `action_utils.py` adds `select_option` to ALLOWED_ACTION_TYPES.
+- **Files**: `p79/envs/vwa_wrapper.py`, `p79/backends/action_utils.py`, `p79/agents/proxy_api_agent.py`, `p79/agents/qwen3vl_agent.py`
+
+### B-58. confirm dialog auto-accept (笔记 §53, 2026-04-14)
+
+- **Origin**: 笔记 §53
+- **Status**: 🛠️ FIXED
+- **Domain**: dialog handling
+- **Bug**: Native `onclick="javascript:return confirm('...')"` in delete operations (cls/red/shop) blocked navigation. VWA `ScriptBrowserEnv` didn't register Playwright `dialog` event handler.
+- **Fix**: `vwa_wrapper.py` `reset()` registers `page.on("dialog", _on_dialog)`: confirm/alert→accept(), prompt→dismiss(). `_dialog_registered_page` tracks page object to avoid cross-episode listener accumulation.
+- **Files**: `p79/envs/vwa_wrapper.py`
+
+### B-59. select_option selected-state feedback missing (笔记 §54, 2026-04-14)
+
+- **Origin**: 笔记 §54
+- **Status**: 🛠️ FIXED
+- **Domain**: observation feedback
+- **Bug**: After `select_option`, AXTree combobox text unchanged (text_sim=1.000); model couldn't tell selection succeeded → re-tried 3× → cycle-killed. B0 task=2: model selected Jewelry, repeated 3 times.
+- **Fix**: `_inject_select_options()` extracts `selectedOpt.text`; injection format: `[OPTIONS: currently selected="Jewelry"] "opt1"...`.
+- **Files**: `p79/envs/vwa_wrapper.py`
+
+### B-60. tab_focus cycle false-positive (笔记 §57, 2026-04-14)
+
+- **Origin**: 笔记 §57
+- **Status**: 🛠️ FIXED
+- **Domain**: cycle detection
+- **Bug**: `_action_signature` / `_action_signature_soft` did not include `page_number`; all tab_focus → same signature (`tab_focus|eid=|t=|c=|d=`); legitimate Tab switching killed.
+- **Fix**: tab_focus appends `|pn={page_number}` to signatures. Task 229 (pn=1→0→1) no longer triggered; task 150 (pn=1→1→1, real loop) still killed.
+- **Files**: `p79/experiment/runner.py`
+
+### B-61. Shell orphan process + stale summary (笔记 §58, 2026-04-14)
+
+- **Origin**: 笔记 §58
+- **Status**: 🛠️ FIXED
+- **Sub-entries**:
+  - **B-61a** Orphan runner Python process: `kill <script_pid>` triggered cleanup but `job_pid` was local var, runner not killed → 2 parallel runners → CUDA OOM / duplicate data. Fix: scripts add global `ACTIVE_RUNNER_PID` updated on runner launch (incl. resume), killed in cleanup.
+  - **B-61b** Stale summary skip: `is_condition_complete` returned 0 (done) on summary existence regardless of episode count match. Manual episode delete + restart wrongly skipped condition. Fix: summary exists but `done < total` → delete summary, return 1 (not done).
+- **Files**: `scripts/dgx/run_b0_3mode_classifieds.sh`, `scripts/queues/queue_b1_with_reset.sh`
+
+### B-62. BLIP-2 lazy load + VRAM polling (笔记 §59, 2026-04-14)
+
+- **Origin**: 笔记 §59
+- **Status**: 🛠️ FIXED
+- **Domain**: evaluator
+- **Bug**: B1 reddit `page_image_query` tasks (28/210, 13.3%): `evaluator_error: 'NoneType' not callable`. `evaluator_router(config_file)` didn't pass `captioning_fn` → `PageImageEvaluator(None)`. GB10 shared GPU only ~5GB free → BLIP-2 (fp16, ~15GB) couldn't load to CUDA; CPU forced → 20+min/task → watchdog killed.
+- **Fix**: `_ensure_captioning_fn()` lazy-load: only on `page_image_query`; CUDA available → poll free VRAM (≥18GB threshold, 30s interval); 10min timeout → CPU fallback; reentry guard.
+- **Files**: `p79/experiment/environment.py`
+
+### B-63. SoM marks lose [OPTIONS] injection (笔记 §61, 2026-04-15)
+
+- **Origin**: 笔记 §61
+- **Status**: 🛠️ FIXED
+- **Domain**: SoM observation construction
+- **Bug**: `_inject_select_options()` / `_inject_css_dropdown_options()` injected into full AXTree (`obs_text`), but SoM mode sent `[SOM_MARKS]` list. `_extract_text_marks()` only kept `[N]`-prefixed lines; `[OPTIONS]` (no number) filtered out. Agent never saw options in SoM mode.
+- **Fix**: `som.py` `_build_som_result()`: when building `mark_lines`, scan `obs_text` for `[OPTIONS...]` lines following each combobox/trigger node, append below corresponding mark line.
+- **Files**: `p79/experiment/som.py`
+
+### B-64. Vision select_option CSS dropdown unsupported (笔记 §62, 2026-04-15)
+
+- **Origin**: 笔记 §62
+- **Status**: 🛠️ FIXED
+- **Domain**: vision mode dispatch
+- **Bug**: B0 Vision task_0 step_1-6: `select_option coordinate="Price: Low to High"` action_success=False, Sort by uncha. `vwa_wrapper.py` Vision select_option coord path only checked `tagName === 'SELECT'`. Sort by is CSS dropdown (`<span class="see_by">` + hidden `<ul>`); condition always False.
+- **Fix**: After native-select check, fallback: scan `getBoundingClientRect()=0` `<ul>`, find trigger ≤150px from (x,y), match label to `<li><a>`, temp `display:block` then `opt.click()`.
+- **Files**: `p79/envs/vwa_wrapper.py`
+
+### B-65. <think> tag → parse_error → keyword_scroll (笔记 §63, 2026-04-15)
+
+- **Origin**: 笔记 §63
+- **Status**: 🛠️ FIXED
+- **Domain**: action parser
+- **Bug**: Qwen3-235B-A22B sometimes output `<think>...</think>` extended thinking blocks. `parse_action_text` `re.search(r"\{.*\}", text, re.DOTALL)` greedy-matched from think block's first `{` to text's last `}` → invalid JSON → keyword_scroll fallback. DOM 18 steps/16 tasks; Vision 38 steps/33 tasks.
+- **Fix**: `action_utils.py` `parse_action_text()` strip `<think>...</think>` first via `re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)`.
+- **Files**: `p79/backends/action_utils.py`
+
+### B-66. Vision type non-input full-select blue (笔记 §64, 2026-04-15)
+
+- **Origin**: 笔记 §64
+- **Status**: 🛠️ FIXED
+- **Domain**: vision mode dispatch
+- **Bug**: Vision type at non-input coords: full-page text highlighted blue. P79's own `Control+a + Backspace` clear logic in `vwa_wrapper.py:240` ran before checking active element; if click not on editable, Control+a selected entire page.
+- **Fix**: Insert `page.evaluate()` check `document.activeElement` is INPUT/TEXTAREA/contentEditable before Control+a.
+- **Files**: `p79/envs/vwa_wrapper.py`
+
+### B-67. state_change false-negative + false-positive (笔记 §68, 2026-04-15)
+
+- **Origin**: 笔记 §68
+- **Status**: 🛠️ FIXED
+- **Domain**: state change detection
+- **Sub-entries**:
+  - **B-67a** False-negative: text-similarity threshold 0.95 too strict for small edits (type, select_option, checkbox). Task 4 text_similarity=0.995 → action_success=False → wasted retries.
+  - **B-67b** False-positive: scroll line 147-148 unconditional `return True`; `scroll_x/y` from `info.get(...)` never populated by VWA (dead code) → scroll-at-bottom + scroll down still success.
+- **Fix**: `vwa_wrapper.py` adds `snapshot_form_fields()` (single page.evaluate() ~10ms, all input/textarea/select values + scrollTop/scrollLeft). `state_change.py` adds `_form_fields_changed()` (input value/checked/selectedIndex match by `(tag,type,name,idx)`); scroll changed from unconditional True to `scroll_y` delta ≥5px. Config: `state_change.form_snapshot_enabled: true`.
+- **Files**: `p79/envs/vwa_wrapper.py`, `p79/experiment/state_change.py`, `p79/experiment/runner.py`, `p79/experiment/config.py`, `p79/experiment/environment.py`
+
+### B-68. WA integration audit + Gallery cross-bench merge (笔记 §73, 2026-04-16)
+
+- **Origin**: 笔记 §73
+- **Status**: 🛠️ FIXED
+- **Domain**: WA benchmark integration
+- **Bug**: Multiple cross-benchmark issues: task_id collisions (shopping 135, reddit 9), evaluator dispatch missing WA paths, Gallery couldn't merge VWA + WA per-site.
+- **Fix**: `(benchmark, site, task_id)` triple as unique key throughout; evaluator_router supports WA 3 eval types; Gallery accepts cross-bench --phase-dirs.
+- **Files**: `p79/experiment/tasks.py`, `p79/experiment/environment.py`, `scripts/maintenance/generate_gallery.py`
+
+### B-69. B0 4-script unification + WA evaluator fix (笔记 §74, 2026-04-17)
+
+- **Origin**: 笔记 §74
+- **Status**: 🛠️ FIXED
+- **Domain**: infra / evaluator
+- **Bug**: Per-site B0 launch scripts had drift (different env vars, different cleanup logic); WA evaluator `Cookie` param mishandled.
+- **Fix**: 4 scripts unified into single `queue_b0_*.sh` parametrized by site; WA evaluator updated for cookie compat.
+- **Files**: `scripts/queues/queue_b0_*.sh`, `external/visualwebarena/evaluation_harness/evaluators.py`
+
+### B-70. Per-Episode Auth Refresh + Magento 302 redirect (笔记 §75, 2026-04-17)
+
+- **Origin**: 笔记 §75
+- **Status**: 🛠️ FIXED
+- **Domain**: shopping site auth
+- **Bug**: Magento sometimes 302-redirected to login page mid-episode; old auth refresh was per-batch (not per-episode), so dirty session persisted across episodes; cls B1 had episodes without proper login state.
+- **Fix**: Auth refresh promoted to per-episode via subprocess; `auth_refresh.py` handles Magento-specific 302 detect + re-login.
+- **Files**: `p79/utils/auth_refresh.py`, `p79/experiment/runner.py`
+
+### B-71. Runner error detection + notification audit (笔记 §76, 2026-04-18)
+
+- **Origin**: 笔记 §76
+- **Status**: 🛠️ FIXED
+- **Domain**: runner error handling
+- **Bug**: Some agent errors silently caught, notification noise.
+- **Fix**: Distinct error categories with different notification policies; ntfy spam guard.
+- **Files**: `p79/experiment/runner.py`, `scripts/maintenance/experiment_watchdog.py`
+
+### B-72. Wikipedia ZIM version + tab health check (笔记 §81, 2026-04-19)
+
+- **Origin**: 笔记 §81
+- **Status**: 🛠️ FIXED (out of paper scope — wikipedia not used)
+- **Domain**: wikipedia site
+- **Bug**: ZIM version mismatch caused Wikipedia tabs to fail; tab health check missing.
+- **Fix**: ZIM version pinned; tab health check added.
+- **Files**: `scripts/vwa/setup_wikipedia.sh`
+
+### B-73. Auth refresh whole-site + queue retry refresh (笔记 §82, 2026-04-20)
+
+- **Origin**: 笔记 §82
+- **Status**: 🛠️ FIXED
+- **Domain**: auth
+- **Bug**: Auth refresh only triggered for cls/red, missing shop; queue retries used stale auth.
+- **Fix**: Auth refresh for all 3 sites + queue retry triggers refresh.
+- **Files**: `p79/utils/auth_refresh.py`, `scripts/queues/queue_*.sh`
+
+### B-74. Watchdog cross-site NOT-LOGGED-IN false-positive (笔记 §84, 2026-04-20)
+
+- **Origin**: 笔记 §84
+- **Status**: 🛠️ FIXED
+- **Domain**: watchdog
+- **Bug**: Watchdog auth-fail detection triggered on wrong site (e.g., cls episode but red login marker).
+- **Fix**: Site-specific login marker matching.
+- **Files**: `scripts/maintenance/experiment_watchdog.py`
+
+### B-75. Code audit batch P0/P1/P2 umbrella ~10 fixes (笔记 §85, 2026-04-20)
+
+- **Origin**: 笔记 §85 — comprehensive code audit batch
+- **Status**: 🛠️ ALL FIXED (atomic detail in 笔记)
+- **Domain**: mixed (logging / cost / serialization / cleanup)
+
+### B-76. auto-retry 3 holes + DOM contamination cleanup (笔记 §86, 2026-04-20)
+
+- **Origin**: 笔记 §86
+- **Status**: 🛠️ FIXED
+- **Domain**: retry / cleanup
+
+### B-77. Evaluator dirty page → fresh page retry + watchdog fixes (笔记 §87, 2026-04-21)
+
+- **Origin**: 笔记 §87
+- **Status**: 🛠️ FIXED
+- **Domain**: evaluator
+- **Bug**: Evaluator sometimes evaluated against dirty/intermediate page state (e.g., loading spinner blocking content).
+- **Fix**: Fresh-page retry on evaluator failure; watchdog detection improved.
+- **Files**: `p79/experiment/environment.py`, `scripts/maintenance/experiment_watchdog.py`
+
+### B-78. program_html E-FP rule expansion (笔记 §88, 2026-04-22)
+
+- **Origin**: 笔记 §88
+- **Status**: 🛠️ FIXED → later refactored §95 simplified ruleset
+- **Domain**: FP filter rules
+- **Bug**: Initial E-FP rules for program_html missed cases (PUR + url_unique); later iteration over-fitted.
+- **Fix**: Added rules; later simplified per §95 reform to `agent_finished=False ∧ ¬has_effective_action → E-FP`.
+- **Files**: `p79/experiment/analysis.py`
+
+### B-79. keyword_finish 根除 + GLM Prompt 升级 (笔记 §90, 2026-04-24)
+
+- **Origin**: 笔记 §90
+- **Status**: 🛠️ FIXED
+- **Domain**: parser fallback
+- **Bug**: Keyword fallback `keyword_finish` caused episodes to terminate prematurely on natural-language "finish" mention in thought.
+- **Fix**: Removed keyword_finish entirely; rely on GLM extract fallback (§67/B).
+- **Files**: `p79/backends/action_utils.py`, `p79/agents/proxy_api_agent.py`
+
+### B-80. cross_representation analysis script audit + 4 file audit (笔记 §97, 2026-04-26)
+
+- **Origin**: 笔记 §97
+- **Status**: 🛠️ FIXED (post-rerun infra hygiene)
+- **Domain**: analysis pipeline
 
 ---
 
 ## §116 Pre-rerun audit findings (2026-05-08)
 
-| ID | Title | Origin | Status | Notes |
-|---|---|---|---|---|
-| **B-38** | **Early-stop still active in code despite advisor 5/5 cancel** | 笔记 §116 + advisor_sync_5_5_outcomes.md §A.1 | 🛠️ FIXED commit `3de6d95` | runner/main.py 3 fire sites (cycle / scroll / URL stuck) wrapped in `if _early_stop_enabled:`. Default False. Diagnostic logging KEPT. Re-enable via `runtime.early_stop_enabled: true` in YAML config (e.g., for ablation). **Tier 0 spec drift per Protocol A** (笔记 §115). |
+### B-38. Early-stop still active in code despite advisor 5/5 cancel (笔记 §116, 2026-05-08)
+
+- **Origin**: 笔记 §116 + advisor_sync_5_5_outcomes.md §A.1
+- **Status**: 🛠️ FIXED commit `3de6d95`
+- **Severity**: Tier 0 spec drift per Protocol A (笔记 §115)
+- **Domain**: runner trajectory truncation
+- **Bug**: 3 fire sites in `runner/main.py` (cycle / scroll alternation / URL stuck) still set `cycle_early_stop = True; break` → trajectory truncated. Contradicts preregistration.md decision log line 268: "early-stop A 全 cancel".
+- **Fix**: Wrapped 3 sites in `if _early_stop_enabled:` config flag (default False). Detection logging KEPT (paper-grade diagnostic) — log message switches between "early stop" / "diagnostic only (early-stop disabled per advisor 5/5)". Re-enable via `runtime.early_stop_enabled: true` (e.g., for ablation).
+- **Files**: `p79/experiment/runner/main.py`
 
 ---
 
-## Updated Status Counts (post-§116 audit)
+## Updated Status Counts (post-§116 audit + Phase 0 backfill)
 
 | Tag | Count | Notes |
 |---|---|---|
-| ✅ **CONFIRMED** | 1 | B-37 (seed=42 stochastic) — design note |
+| ✅ **CONFIRMED** | ~28 | B-01 to B-37 mostly CONFIRMED but unfixed (Phase A audit findings); fix scope decided per evaluator_change_protocol.md Tier classification |
+| 🛠️ **PARTIALLY FIXED** | 1 | B-37 (seed determinism, multi-component) |
 | ⚠️ **DISPUTED** | 0 | — |
-| ❌ **NOT_A_BUG** | 3 | B-12 / B-13 / B-14 |
-| 🔄 **UNVERIFIED** | ~20 | Phase A audit findings without explicit replay verification |
-| 🛠️ **FIXED** | ~35 | B-10 (§105) + B-38 (§116) + Phase 0 historical (B-39 to B-70) + several Phase A patches via commits 3c15cd7 onwards |
+| ❌ **NOT_A_BUG** | 4 | B-12 / B-13 / B-14 / B-27 |
+| 🔄 **UNVERIFIED** | 0 | All Phase A entries CONFIRMED via static read |
+| 🛠️ **FIXED** | ~45 | B-10 (§105) + B-26 (NOT FIXED BY DESIGN) + B-28 (MITIGATED) + B-29 (NOT FIXED BY DESIGN) + B-38 (§116) + Phase 0 historical (B-39 to B-80, including umbrella sub-entries) + Phase A patches via commits 3c15cd7 onwards |
 
 **Pre-rerun rule reaffirmed**: All 🛠️ FIXED bugs must have their fix in code at HEAD before
-16-cell rerun launch (笔记 §116 / pre_rerun_audit.md §F). UNVERIFIED entries should be triaged to
-either ✅ CONFIRMED + fix or ❌ NOT_A_BUG + close before OSF DOI lock.
+16-cell rerun launch (笔记 §116 / pre_rerun_audit.md §F). UNVERIFIED entries have been
+triaged to either ✅ CONFIRMED (with paper §3 disclosure) or 🛠️ FIXED. Remaining ~28 CONFIRMED
+entries are documented in catalog with fix-scope decision per evaluator_change_protocol.md
+Tier classification (Tier 0/1 deferred to post-rerun if not blocking).
