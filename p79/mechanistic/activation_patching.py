@@ -292,6 +292,7 @@ def patching_grid_continuation(
     target_inputs: dict,
     max_new_tokens: int = 15,
     layers: Optional[list[int]] = None,
+    randomize_source_hidden: bool = False,
 ) -> dict:
     """Multi-token continuation patching.
 
@@ -339,6 +340,27 @@ def patching_grid_continuation(
 
     # 3. Cache source's per-layer hidden states (full forward)
     source_cache = patcher.cache_hidden_states(**source_inputs)
+
+    # Random-injection control (paper §5 reviewer Q "is L17 disruption from
+    # specific source content or any non-zero injection?"): replace each
+    # layer's cached source hidden with Gaussian noise matched to that
+    # layer's mean+std. Preserves activation magnitude while destroying
+    # task-specific structure. If L17 disruption persists with random
+    # injection → mechanism is non-specific (any patch disrupts). If it
+    # vanishes → source-content-specific causal claim valid.
+    if randomize_source_hidden:
+        import torch as _torch_for_random
+        randomized = []
+        for L_idx, h in enumerate(source_cache):
+            mean = h.mean()
+            std = h.std()
+            noise = _torch_for_random.randn_like(h) * std + mean
+            randomized.append(noise)
+        source_cache = randomized
+        logger.info(
+            "  RANDOMIZED source hidden: replaced cached activations with "
+            "Gaussian noise matched to per-layer mean/std"
+        )
 
     # 4. Per-layer patched generate
     per_layer = []

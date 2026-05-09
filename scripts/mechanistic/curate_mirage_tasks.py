@@ -195,6 +195,13 @@ def main():
     p.add_argument("--source-mode", default="som")
     p.add_argument("--target-mode", default="phantom_som")
     p.add_argument("--min-free-vram-gb", type=float, default=0.0)
+    p.add_argument(
+        "--artifacts-subdir", default=None,
+        help="Override condition subdir name. For multi-mode archived runs "
+             "(e.g. B1_3mode_reddit_20260413 has phase1_{dom,som,vision}_router_0), "
+             "find_artifacts_dir picks first-iterated which may be wrong condition. "
+             "Set explicitly: e.g. --artifacts-subdir phase1_som_router_0.",
+    )
     args = p.parse_args()
 
     out_dir = Path(args.output_dir) if args.output_dir else REPO_ROOT / f"results/mechanistic/curate_mirage_b1_{args.site}"
@@ -205,7 +212,12 @@ def main():
     logger.info(f"Loaded {len(intents)} task intents")
 
     archived_dir = Path(args.archived_run_dir)
-    artifacts_dir = find_artifacts_dir(archived_dir)
+    if args.artifacts_subdir:
+        artifacts_dir = archived_dir / args.artifacts_subdir / "artifacts"
+        if not artifacts_dir.is_dir():
+            raise FileNotFoundError(f"--artifacts-subdir resolved to {artifacts_dir} which doesn't exist")
+    else:
+        artifacts_dir = find_artifacts_dir(archived_dir)
     logger.info(f"Archived artifacts: {artifacts_dir}")
 
     extractor = HiddenStateExtractor(model_path=args.model_path, min_free_vram_gb=args.min_free_vram_gb)

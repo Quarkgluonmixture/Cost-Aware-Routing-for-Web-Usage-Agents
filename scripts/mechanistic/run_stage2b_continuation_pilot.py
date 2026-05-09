@@ -171,6 +171,14 @@ def main():
              "Set explicitly to enable 2x2 cross-subset control: e.g. --reverse --tier strong "
              "tests reverse direction on forward-easy tasks (selection-bias control).",
     )
+    p.add_argument(
+        "--random-inject", action="store_true",
+        help="Random-injection control (paper §5 reviewer Q): replace cached source "
+             "hidden state with Gaussian noise matched to per-layer mean/std. Tests "
+             "whether mid-layer disruption depends on source-content specificity vs "
+             "any non-zero injection. Expected null at all layers if mechanism is "
+             "source-content-specific.",
+    )
     args = p.parse_args()
 
     suffix = "_reverse" if args.reverse else ""
@@ -238,7 +246,9 @@ def main():
 
         logger.info(f"task {task_id}: running continuation patching grid (max_new_tokens={args.max_new_tokens})...")
         result = patching_grid_continuation(
-            patcher, source_inputs, target_inputs, max_new_tokens=args.max_new_tokens,
+            patcher, source_inputs, target_inputs,
+            max_new_tokens=args.max_new_tokens,
+            randomize_source_hidden=args.random_inject,
         )
         result["task_id"] = task_id
         result["step_idx"] = args.step
