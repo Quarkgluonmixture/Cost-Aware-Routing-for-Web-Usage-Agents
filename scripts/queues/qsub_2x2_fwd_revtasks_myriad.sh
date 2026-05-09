@@ -18,9 +18,9 @@
 #$ -l mem=64G
 #$ -l gpu=1
 #$ -wd /home/ucab352/Scratch/p79
-#$ -N 2x2_fwd_revtasks
-#$ -o /home/ucab352/Scratch/p79/logs/qsub_2x2_fwd_revtasks.$JOB_ID.out
-#$ -e /home/ucab352/Scratch/p79/logs/qsub_2x2_fwd_revtasks.$JOB_ID.err
+#$ -N cellc_fwd_revtasks
+#$ -o /home/ucab352/Scratch/p79/logs/qsub_cellc_fwd_revtasks.$JOB_ID.out
+#$ -e /home/ucab352/Scratch/p79/logs/qsub_cellc_fwd_revtasks.$JOB_ID.err
 #$ -j n
 
 mkdir -p /home/ucab352/Scratch/p79/logs

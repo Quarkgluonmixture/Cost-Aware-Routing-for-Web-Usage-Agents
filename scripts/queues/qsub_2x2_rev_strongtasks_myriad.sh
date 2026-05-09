@@ -16,9 +16,9 @@
 #$ -l mem=64G
 #$ -l gpu=1
 #$ -wd /home/ucab352/Scratch/p79
-#$ -N 2x2_rev_strongtasks
-#$ -o /home/ucab352/Scratch/p79/logs/qsub_2x2_rev_strongtasks.$JOB_ID.out
-#$ -e /home/ucab352/Scratch/p79/logs/qsub_2x2_rev_strongtasks.$JOB_ID.err
+#$ -N celld_rev_strongtasks
+#$ -o /home/ucab352/Scratch/p79/logs/qsub_celld_rev_strongtasks.$JOB_ID.out
+#$ -e /home/ucab352/Scratch/p79/logs/qsub_celld_rev_strongtasks.$JOB_ID.err
 #$ -j n
 
 mkdir -p /home/ucab352/Scratch/p79/logs
