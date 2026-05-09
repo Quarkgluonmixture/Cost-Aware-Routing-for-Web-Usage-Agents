@@ -53,7 +53,12 @@ MODE_LABELS = {
 
 
 def _mode_dirs(baseline: str, site: str) -> dict[str, Path]:
-    return {cell.mode: cell.episodes_dir for cell in get_cells(baseline=baseline, site=site)}
+    # F40 audit fix 2026-05-09: respect P79_AGGREGATOR_GRADE so legacy
+    # archived cells produce sensitivity figures.
+    import os as _os
+    env_grade = _os.environ.get("P79_AGGREGATOR_GRADE", "")
+    grade_filter = [g.strip() for g in env_grade.split(",") if g.strip()] or None
+    return {cell.mode: cell.episodes_dir for cell in get_cells(baseline=baseline, site=site, grade=grade_filter)}
 
 
 def _panel(key: str, title: str, baseline: str, site: str, expected: int) -> dict:

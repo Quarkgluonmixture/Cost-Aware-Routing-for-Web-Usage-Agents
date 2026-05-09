@@ -107,7 +107,7 @@
 | `fig3a_token_cost_intra_baseline.png` | cost ≈ DOM 证据 (drop-in property a) |
 | `fig3c_latency_per_step.png` | latency 50% lower 证据 (drop-in property b) |
 | `fig0g_routing_auroc_heatmap.png` | 5-mode 全 overall_usable=True (drop-in property c) |
-| `fig_capability_b0_b1.png` | B0 vs B1 capability profile (cross-capability evidence) |
+| ~~`fig_capability_b0_b1.png`~~ | ~~B0 vs B1 capability profile~~ — **dropped 2026-05-09**: paper §1 third contribution (capability × representation interaction) cut to focus paper on phantom routing space + structural axes (H1/H3). B1 retained as cross-capability robustness check, not a separate scientific claim. |
 
 ### 1.5 重要 disclosure: bug 不影响 paper 主 claim
 

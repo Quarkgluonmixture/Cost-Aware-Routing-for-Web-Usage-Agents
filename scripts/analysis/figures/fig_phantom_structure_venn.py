@@ -84,7 +84,12 @@ def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
 
 def draw_panel(ax: plt.Axes, baseline: str, site: str, title: str) -> None:
     """One Venn panel for a (baseline, site) cell."""
-    cells = list(get_cells(baseline=baseline, site=site))
+    # F40 audit fix 2026-05-09: respect P79_AGGREGATOR_GRADE so legacy
+    # archived cells produce sensitivity figures.
+    import os as _os
+    env_grade = _os.environ.get("P79_AGGREGATOR_GRADE", "")
+    grade_filter = [g.strip() for g in env_grade.split(",") if g.strip()] or None
+    cells = list(get_cells(baseline=baseline, site=site, grade=grade_filter))
     mode_dirs = {c.mode: c.episodes_dir for c in cells}
 
     needed = ["P-text", "P-SoM"]

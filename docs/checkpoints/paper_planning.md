@@ -1343,7 +1343,7 @@ fig2 drop-one oracle (2x2)
 fig3 strategy gradient (2x4 reddit + cls)
 fig4 two-knob diagram schematic
 fig5 category × mode heatmap (B0 cls+red)
-fig6 capability contrast B0-vs-B1 +43.7pp aggregate
+~~fig6 capability contrast B0-vs-B1 +43.7pp aggregate~~ — DROPPED 2026-05-09 (third contribution cut)
 fig7 cost-SR Pareto + deployment callouts
 fig8 overlap-depth stacked bar (5-mode)
 fig9 regional carbon sensitivity (B1 only)
@@ -2465,10 +2465,10 @@ Paper §21 / §8 (Discussion + Future Work) should explicit prose:
 2. **Phenomenon**: phantom routing space discovery + 4-fold drop-in property as unified deployment criterion [Register I B + Register III Y]
 3. **Industry-vs-research epistemic distinction**: industry deploys P-text arbitrarily for cost; paper discovers per-axis routing effects beyond cost [Register IV EE + Register III X]
 4. **Mechanism**: M1/M2 by-construction exhaustive deductive argument + text-explores-prompt-commits 2-knob [Register I E + H]
-5. **Capability interaction**: B0 vs B1 failure-mode shift +43.7pp (early-finish 53.3% B0 SoM vs visual-hijack/click-loop 70.4% B1 SoM, N=30/27) [Register I I, quant from 笔记 §1]
+5. ~~**Capability interaction**: B0 vs B1 failure-mode shift +43.7pp~~ — **DROPPED 2026-05-09**. Paper §1 third contribution cut to focus on phantom routing space + structural axes (H1/H3). B1 retained as cross-capability robustness check, not a separate scientific claim. `fig_capability_b0_b1.png` deleted; `disagreement_clusters.md` retained as supplement material if §8 limitations needs reference.
 6. **Methodology**: 4-dim Evidence framework + R1-R5 pre-registration + ~100× deployment-class cost gap framing (B0 API $0.04/ep vs B1 electricity $0.0004/ep) [Register II K+L+M]
 
-**Codex prose pass timing**: 16-cell rerun done + early-stop locked → 6-contribution prose draft → paper draft `section1_intro.md`.
+**Codex prose pass timing**: 16-cell rerun done + early-stop locked → **5-contribution** prose draft (was 6, cut capability interaction) → paper draft `section1_intro.md`.
 
 ### §22.5 Advisor 5/5 sync priority
 
