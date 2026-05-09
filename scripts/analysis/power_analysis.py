@@ -143,22 +143,31 @@ def main():
             line += f" {k_of_n_power(16, k, pcp):.3f} |"
         lines.append(line)
 
+    # Read per-cell power for typical effect sizes (3pp on smallest site as proxy)
+    pcp_3pp_red = per_cell_power_at_effect(210, 3, args.baseline_sr)
+    pcp_5pp_red = per_cell_power_at_effect(210, 5, args.baseline_sr)
+    fwp_k12_at_3pp = k_of_n_power(16, 12, pcp_3pp_red)
+    fwp_k12_at_5pp = k_of_n_power(16, 12, pcp_5pp_red)
+    fwp_k11_at_3pp = k_of_n_power(16, 11, pcp_3pp_red)
+    fwp_k11_at_5pp = k_of_n_power(16, 11, pcp_5pp_red)
+
     lines += [
         "",
         "## Interpretation for paper §3",
         "",
-        f"- At baseline SR={args.baseline_sr:.2f}, smallest site (reddit N=210) detects effects ≥ {per_site_mde['reddit']*100:.1f}pp at 80% power.",
-        f"- Largest site (shopping N=466) detects effects ≥ {per_site_mde['shopping']*100:.1f}pp at 80% power.",
-        "- For 1pp effect (TOST equivalence margin), per-cell power is ~50-60% → relies on K-of-N family aggregation.",
-        "- Family-wise power for K_h1=12/16 with per-cell power=0.65 (typical 2-3pp effect): >0.95 — paper-grade aggregate detection comfortable.",
-        "- TOST equivalence (δ=1.0pp) is the tightest test; relies on N=234+210+466 pooling for adequate CI width.",
+        f"- At baseline SR={args.baseline_sr:.2f}, smallest site (reddit N=210) detects effects ≥ {per_site_mde['reddit']*100:.1f}pp at 80% power per cell.",
+        f"- Largest site (shopping N=466) detects effects ≥ {per_site_mde['shopping']*100:.1f}pp at 80% power per cell.",
+        f"- At 3pp true effect, **per-cell power ≈ {pcp_3pp_red:.2f}** (smallest site) → K_h1=12/16 family power = {fwp_k12_at_3pp:.3f}, K_h3=11/16 family power = {fwp_k11_at_3pp:.3f}.",
+        f"- At 5pp true effect, **per-cell power ≈ {pcp_5pp_red:.2f}** → K_h1=12/16 family power = {fwp_k12_at_5pp:.3f}, K_h3=11/16 = {fwp_k11_at_5pp:.3f}.",
+        f"- **K_h1=12/16 is calibrated for ≥5pp effects.** For 2-3pp mechanism effects, K_h3=11/16 is the operative threshold; below ~3pp, neither K-of-N rule has paper-grade power and the paper relies on **TOST equivalence on pooled data** (N=234+210+466).",
+        "- TOST equivalence (δ=1.0pp) is the tightest test; relies on cross-cell pooling for adequate CI width.",
         "",
         "## Reviewer-defensible claim",
         "",
         f"\"Power analysis (α=0.05, β=0.20, baseline SR={args.baseline_sr:.2f}, paired design) shows ",
         f"per-cell MDE = [{per_site_mde['classifieds']*100:.1f}, {per_site_mde['reddit']*100:.1f}, {per_site_mde['shopping']*100:.1f}]pp ",
-        f"for cls/red/shop respectively. The K_h1=12/16 family-wise rule provides >95% power to detect effects ≥2.5pp ",
-        f"under per-cell power=0.65, robust to single-cell sampling noise.\"",
+        f"for cls/red/shop respectively. The K_h1=12/16 family-wise rule has {fwp_k12_at_5pp*100:.0f}% power for 5pp effects ",
+        f"and {fwp_k12_at_3pp*100:.0f}% for 3pp effects (smallest site as proxy); for sub-3pp effects we rely on TOST equivalence on pooled data.\"",
     ]
 
     payload = "\n".join(lines)
