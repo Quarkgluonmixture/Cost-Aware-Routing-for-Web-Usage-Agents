@@ -148,6 +148,13 @@ def main():
         help="Swap source ↔ target: patch target's hidden state into source run "
              "(asymmetry control test). Output dir gets _reverse suffix.",
     )
+    p.add_argument(
+        "--tier", default=None, choices=["strong", "reverse"],
+        help="Override manifest tier subset (strong=24 forward-mirage / reverse=15 reverse-mirage). "
+             "If unset, auto-derives from --reverse flag (default behavior). "
+             "Set explicitly to enable 2x2 cross-subset control: e.g. --reverse --tier strong "
+             "tests reverse direction on forward-easy tasks (selection-bias control).",
+    )
     args = p.parse_args()
 
     suffix = "_reverse" if args.reverse else ""
@@ -173,9 +180,13 @@ def main():
     # without needing the full B1_phantom_som_classifieds_20260428 archive (~1.8GB).
     subset_manifest = archived_dir / "manifest.json"
     if subset_manifest.exists():
-        tier = "reverse" if args.reverse else "strong"
+        tier = args.tier if args.tier else ("reverse" if args.reverse else "strong")
         intents = load_intents_from_subset_manifest(subset_manifest, tier=tier, n_tasks=args.n_tasks)
-        logger.info(f"Subset mode: loaded {len(intents)} intents from manifest (tier={tier})")
+        logger.info(
+            f"Subset mode: loaded {len(intents)} intents from manifest "
+            f"(tier={tier}, reverse_dir={args.reverse}, "
+            f"cross_subset={'YES' if args.tier and args.tier != ('reverse' if args.reverse else 'strong') else 'NO'})"
+        )
     else:
         intents = load_intents(args.site, args.n_tasks)
         logger.info(f"Full archive mode: loaded {len(intents)} intents from VWA config_files")
