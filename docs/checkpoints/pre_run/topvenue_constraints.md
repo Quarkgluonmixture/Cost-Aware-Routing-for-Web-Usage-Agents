@@ -161,6 +161,58 @@
 13. ⚠️ B8/F4 — Add K±1 and leave-one-cell-out sensitivity tables (0.5 day).
 14. ❌ H2 — Create negative-result/retraction registry (0.5 day).
 
+## ✓ status — pre-rerun provisional vs post-rerun final (added 2026-05-09)
+
+**`✓` 在 audit 表里只代表 "this audit check is wired into the pipeline"**, 不代表 "this finding 的 final number is locked". 区分三类:
+
+### Tier 1 — ✓-Final (data-independent, won't change with 16-cell rerun)
+
+| ✓ | Why data-independent |
+|---|---|
+| A11 release_redaction_checklist | scaffolding doc, no numbers |
+| A12 model_card | identity + revision SHAs, fixed |
+| A13 dataset_card | task-pool SHA + curation method, fixed |
+| A5 + F8 + locked_versions | version pinning, fixed |
+| B2 + B6 + B7 + B8 + **B9** preregistration locks | methodology lock, math identity |
+| F7 ethics_license_coi | scaffolding doc |
+| G1 §5.1 method box | protocol description, no numbers |
+| G3/G4/G9 layer indexing + Holm + 36-layer arch | model-architecture facts |
+| G11 lit anchor coverage | bib entries already curated |
+| H3 deployment scoping | doc-level safety scope |
+| H4 R1-R5 framing rules | preregistration commitment |
+| H5 industry precedent | doc-level positioning |
+| C7 mode definitions | preregistration §4 lock |
+| **C10** Make pre-launch-check / validate-strict | shell gates, not numerical |
+
+### Tier 2 — ✓-Scaffold (mechanism wired, numbers re-computed post-rerun)
+
+| ✓ | What re-computes |
+|---|---|
+| **D6 + H1** §8 limitations | 6 of 7 subsections cite specific numbers (8.5 N=15 Cohen's d, 8.6 "median LD=0 in 4/5 cells", etc.) — 16-cell rerun + cells F/G 完成后需复核 |
+| **F4** LOO sensitivity | **🚨 P-text fragility 完全可能消失 OR 加重** — 当前 3 cells, rerun 后 16 cells, LOO Holm-flip 模式重算 |
+| G2/G5/G6/G7/G8 Stage 2 mechanism | 5 cells fresh; cells F/G (cross-site reddit) 加上后 sparse-mechanism / 2x2 control / random-injection 全部需重算 confirm |
+| D2 + D4 confirmatory/exploratory split | label 不变, 但具体 hypothesis pass/fail 等 rerun |
+| C4 + C9 bug catalog + adjusted SR | catalog 不变, 但 SR 数字全 rerun |
+| F2 + F4 construct/conclusion validity | F4 LOO 已 done (Tier 2 重算); F2 LLM-judge spot-check 未做 (still ⚠️) |
+
+### Tier 3 — ❌ + ⚠️ remaining
+
+| 状态 | items |
+|---|---|
+| ❌ external-blocked | A1 advisor witness / B5 2nd rater κ |
+| ⚠️ post-rerun-aggregation | A2 replication README / A10 carbon table / A4 paper §3 stats prose |
+| ⚠️ remaining-fillable-now | C3 site-state snapshot (need quark up) / F1 outlier task spot-check / F2 LLM-judge spot-check / F6 cross-machine determinism (need Myriad up) / G10 action-token metrics |
+| ⚠️ scope-decision | E5 WA 480 robustness (decide cut vs run) |
+
+**Implication for paper-launch readiness**: pre-rerun audit 50/78 ✓ 是 "scaffold + methodology lock 足够发起 16-cell paper-grade rerun", **不是** "paper claim is locked". 16-cell rerun 完成后需:
+1. 重跑 `make analysis` → 全 phantom_paper figures 更新
+2. 重跑 `aggregate_phantom_meta.py` + `sensitivity_loo_meta.py` → 新 LOO 结果决定 P-text fragility
+3. 重跑 `power_analysis.py` 用 final observed SR → final paper §3 power table
+4. 复核 `section8_limitations.md` 8.5 / 8.6 numbers
+5. 添加 D6+H1 重新 ✓-Final 标记
+
+---
+
 ## Notes / caveats
 
 - Constraints not in our paper.bib that need entries: Pineau et al. 2021; NeurIPS 2024 Paper Checklist; Gebru et al. 2018; Mitchell et al. 2019; Breck et al. 2017; Sculley et al. 2014; Lipton & Steinhardt 2018; Liu et al. 2020 CONSORT-AI; Cohen 1960/1988; Holm 1979; McNemar 1947; DerSimonian & Laird 1986; Cook & Campbell 1979; Nosek et al. 2015; Guo et al. 2017 calibration; Wang et al. 2023 IOI; Zhang et al. 2024 activation patching; Heimersheim & Janiak activation patching best practices; Conmy et al. 2023 ACDC; Geva et al. 2021 key-value memories; GAIA; OSWorld.

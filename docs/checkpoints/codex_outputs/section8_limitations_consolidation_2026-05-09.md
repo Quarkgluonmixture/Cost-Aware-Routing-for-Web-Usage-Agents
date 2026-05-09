@@ -1733,3 +1733,304 @@ index 0000000000000000000000000000000000000000..b5f1526b2ec5bede526606fc5e123517
 
 codex
 The first pass came in under the requested subsection word range, so I’m tightening the compliance pass now: adding the missing missing-data and registry-bounding details, then recounting by subsection.
+apply patch
+patch: completed
+/home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents/docs/checkpoints/paper_drafts/section8_limitations.md
+diff --git a/docs/checkpoints/paper_drafts/section8_limitations.md b/docs/checkpoints/paper_drafts/section8_limitations.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c4c440894aef0698543754949e5e7c9b285fb3b5
+--- /dev/null
++++ b/docs/checkpoints/paper_drafts/section8_limitations.md
+@@ -0,0 +1,29 @@
++\subsection*{8.1 Scope \& external-validity bounds}
++
++This study is deliberately narrow: three sites (classifieds, reddit, shopping), one benchmark family (VisualWebArena plus WA-mini-style task structure), and two Qwen-family model classes: Qwen3-VL-4B locally and Qwen3-Omni-235B-Thinking through a proxy API. The blast radius is external validity, not the internal comparison: our claim is that a phantom routing space exists for Qwen-family agents on VWA-style tasks, not that every VLM, browser benchmark, or production site will expose the same arm ordering \citep{zhou2024webarena,koh2024visualwebarena,deng2023mind2web,drouin2024workarena}. The mechanism evidence in Section 5 is narrower still: it is B1-only, because the open-weight 4B model exposes activations and the B0 proxy model does not. Shopping also has weaker intermediate mechanism coverage than classifieds/reddit, so site-level generalization is reported cell-by-cell rather than averaged into a universal web-agent claim. This affects Sections 1, 5, and 6 by bounding language about universality and reproducibility: B1 behavior and mechanistic patching are byte-reproducible from released artifacts, while B0 is verifiable from traces and replayable subject to API access; cross-architecture claims, including GPT-4o-family claims, remain outside the paper.
++
++\subsection*{8.2 Construct validity \& evaluator threats}
++
++VWA success labels are imperfect measurements of task completion, especially around `ua_match` GPT-judge drift, the `string_match` `fuzzy_threshold` misnomer, brittle `program_html` selectors, and `finish_wrong_state` episodes. The blast radius is measurement-side: these four evaluator-class threats can flip individual labels or inflate raw success, but they do not redefine the task universe or the mode definitions; full appendix prose is kept in Section 4.X.1--4.X.4 rather than duplicated here. We therefore report both raw and adjusted success and isolate `na_fp`, `eval_fp`, and `visual_fp` filters as sensitivity layers, including the audit-derived false-positive filters from Sections 78a and 95, following the constraint-table rule that evaluator artifacts should be disclosed rather than hidden \citep{lipton2018troubling,neurips2024checklist}. This affects Sections 3 and 4: adjusted SR is the headline metric, raw SR remains visible, and claims that survive the filter ladder are defensible as representation effects rather than judge artifacts.
++
++\subsection*{8.3 Internal-validity threats: known scaffold bugs}
++
++Several scaffold bugs were real: the `in_viewport_ratio` operator-precedence bug exposed clipped DOM text, early scroll actions suffered direction-convention confusion, and Stage 2B/2C mechanism inputs came from pre-Phase-A archived browser states. The blast radius is bounded because these failures are mode-uniform within the relevant comparisons: the viewport bug affects DOM-derived text and Phantom-SoM's `[SOM_MARKS]` source together; scroll-direction confusion is a trajectory-execution threat rather than an evaluator rule; and Stage 2 uses frozen prompt/screenshot inputs, so Phase-A dispatch bugs affect which step an agent reached, not the model's forward pass on that saved step. This affects cross-mode interpretation in Sections 3--5: we treat environment failures as measurement threats and disclose their blast radius rather than folding them into cognitive claims.
++
++\subsection*{8.4 Pre-vs-post-hoc analyses \& retracted framings}
++
++The exact L11/L17 mechanism-layer story was not preregistered, and several earlier framings were retracted. The blast radius is epistemic status: preregistered H1--H3 gate the deployment and structural claims, H4 is exploratory, and H5--H6 are post-hoc explanatory layers; Section 5.X states that L17 emerged from the Stage 2A pilot and L11 from an early single-task continuation, then converged across logit shift, forward overlap, reverse overlap, and cross-tier tests under Holm correction. The negative-results registry records 12 retracted framings, including task-0 over-interpretation, the reverse-null claim overturned by the N=15 reverse sample, and the rejected selection-bias explanation (cross-tier Welch tests non-significant, with reverse magnitude identical across tiers). It also records two framings that survived audit: the four-fold drop-in property and the sparse L11/L17 mechanism. This affects Sections 1 and 5: the paper can claim confirmed, registry-backed evidence for those two framings, but not a preregistered exact-layer prediction or a universal single-task circuit.
++
++\subsection*{8.5 Statistical \& methodological limits}
++
++The statistical design is adequate for medium effects but underpowered for small per-cell effects and exact-layer micro-effects. The blast radius is precision, not directionality: Holm-Bonferroni is applied across the six canonical tested layers (L0/5/11/17/23/29), not all 36 cached layers; this matches the disclosed post-hoc grid but should not be read as a full-layer search correction \citep{holm1979sequentially,wang2023interpretability,zhang2024patching}. Bootstrap intervals use task-paired resampling, random-effects meta-analysis is limited to cells with N>=10 to avoid unstable tau-squared estimates, and complete-case deletion handles crashes or missing artifacts without imputation. Exclusions are listwise only, at <=5% per cell under the B6 lock, so multiple imputation would add modeling assumptions without materially changing paired denominators. Power analysis shows N=15 mechanism cells are not powered for small mid-layer effects (roughly Cohen's d below 0.65 at alpha=0.05), while site-level SR cells mainly detect 4--7pp effects. This affects Sections 4--5: null or marginal cells are interpreted as low-power evidence, and pooled estimates are paired with per-cell uncertainty.
++
++\subsection*{8.6 Sparse-mechanism caveat}
++
++The activation-patching effect is sparse: at L17, four of five completed cells have median Levenshtein-distance shift equal to zero, with IQRs including zero. The blast radius is the mechanism claim: mean disruption and Holm significance are carried by task subsets, approximately the high-salience-image quarter of the strong-tier cases, while many tasks show no visible continuation change; Cell E random injection, by contrast, destroys outputs broadly. This affects Section 5 by reframing the finding as a task-conditional sparse mechanism rather than a universal mid-layer circuit. The claim remains defensible because Section 5.1 reports per-task scatter/violin views alongside mean bands and because Cell E separates content-specific sparse patching from generic injection damage.
++
++\subsection*{8.7 Compute, cost, and sustainability bounds}
++
++Compute and carbon accounting are approximate because runs span DGX Spark, UCL Condense A100, and UCL Myriad V100/A100 profiles. The blast radius is absolute energy reporting: the per-cell table reports GPU-hours, proxy-API USD cost, and kg-CO2 estimates with hardware provenance, but cross-machine power variation limits precision \citep{qiu2025modserve}. Relative comparisons inside a cell remain valid because modes share the same hardware, benchmark site, and evaluator path. This affects the cost part of the four-fold drop-in claim: token/API cost and latency comparisons are primary, while carbon totals are disclosed as bounded estimates rather than a fine-grained lifecycle assessment.
++
++NEEDS_BIB_ENTRY: `lipton2018troubling`, `neurips2024checklist`, `holm1979sequentially`, `wang2023interpretability`, `zhang2024patching`.
+
+diff --git a/docs/checkpoints/paper_drafts/section8_limitations.md b/docs/checkpoints/paper_drafts/section8_limitations.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c4c440894aef0698543754949e5e7c9b285fb3b5
+--- /dev/null
++++ b/docs/checkpoints/paper_drafts/section8_limitations.md
+@@ -0,0 +1,29 @@
++\subsection*{8.1 Scope \& external-validity bounds}
++
++This study is deliberately narrow: three sites (classifieds, reddit, shopping), one benchmark family (VisualWebArena plus WA-mini-style task structure), and two Qwen-family model classes: Qwen3-VL-4B locally and Qwen3-Omni-235B-Thinking through a proxy API. The blast radius is external validity, not the internal comparison: our claim is that a phantom routing space exists for Qwen-family agents on VWA-style tasks, not that every VLM, browser benchmark, or production site will expose the same arm ordering \citep{zhou2024webarena,koh2024visualwebarena,deng2023mind2web,drouin2024workarena}. The mechanism evidence in Section 5 is narrower still: it is B1-only, because the open-weight 4B model exposes activations and the B0 proxy model does not. Shopping also has weaker intermediate mechanism coverage than classifieds/reddit, so site-level generalization is reported cell-by-cell rather than averaged into a universal web-agent claim. This affects Sections 1, 5, and 6 by bounding language about universality and reproducibility: B1 behavior and mechanistic patching are byte-reproducible from released artifacts, while B0 is verifiable from traces and replayable subject to API access; cross-architecture claims, including GPT-4o-family claims, remain outside the paper.
++
++\subsection*{8.2 Construct validity \& evaluator threats}
++
++VWA success labels are imperfect measurements of task completion, especially around `ua_match` GPT-judge drift, the `string_match` `fuzzy_threshold` misnomer, brittle `program_html` selectors, and `finish_wrong_state` episodes. The blast radius is measurement-side: these four evaluator-class threats can flip individual labels or inflate raw success, but they do not redefine the task universe or the mode definitions; full appendix prose is kept in Section 4.X.1--4.X.4 rather than duplicated here. We therefore report both raw and adjusted success and isolate `na_fp`, `eval_fp`, and `visual_fp` filters as sensitivity layers, including the audit-derived false-positive filters from Sections 78a and 95, following the constraint-table rule that evaluator artifacts should be disclosed rather than hidden \citep{lipton2018troubling,neurips2024checklist}. This affects Sections 3 and 4: adjusted SR is the headline metric, raw SR remains visible, and claims that survive the filter ladder are defensible as representation effects rather than judge artifacts.
++
++\subsection*{8.3 Internal-validity threats: known scaffold bugs}
++
++Several scaffold bugs were real: the `in_viewport_ratio` operator-precedence bug exposed clipped DOM text, early scroll actions suffered direction-convention confusion, and Stage 2B/2C mechanism inputs came from pre-Phase-A archived browser states. The blast radius is bounded because these failures are mode-uniform within the relevant comparisons: the viewport bug affects DOM-derived text and Phantom-SoM's `[SOM_MARKS]` source together; scroll-direction confusion is a trajectory-execution threat rather than an evaluator rule; and Stage 2 uses frozen prompt/screenshot inputs, so Phase-A dispatch bugs affect which step an agent reached, not the model's forward pass on that saved step. This affects cross-mode interpretation in Sections 3--5: we treat environment failures as measurement threats and disclose their blast radius rather than folding them into cognitive claims.
++
++\subsection*{8.4 Pre-vs-post-hoc analyses \& retracted framings}
++
++The exact L11/L17 mechanism-layer story was not preregistered, and several earlier framings were retracted. The blast radius is epistemic status: preregistered H1--H3 gate the deployment and structural claims, H4 is exploratory, and H5--H6 are post-hoc explanatory layers; Section 5.X states that L17 emerged from the Stage 2A pilot and L11 from an early single-task continuation, then converged across logit shift, forward overlap, reverse overlap, and cross-tier tests under Holm correction. The negative-results registry records 12 retracted framings, including task-0 over-interpretation, the reverse-null claim overturned by the N=15 reverse sample, and the rejected selection-bias explanation (cross-tier Welch tests non-significant, with reverse magnitude identical across tiers). It also records two framings that survived audit: the four-fold drop-in property and the sparse L11/L17 mechanism. This affects Sections 1 and 5: the paper can claim confirmed, registry-backed evidence for those two framings, but not a preregistered exact-layer prediction or a universal single-task circuit.
++
++\subsection*{8.5 Statistical \& methodological limits}
++
++The statistical design is adequate for medium effects but underpowered for small per-cell effects and exact-layer micro-effects. The blast radius is precision, not directionality: Holm-Bonferroni is applied across the six canonical tested layers (L0/5/11/17/23/29), not all 36 cached layers; this matches the disclosed post-hoc grid but should not be read as a full-layer search correction \citep{holm1979sequentially,wang2023interpretability,zhang2024patching}. Bootstrap intervals use task-paired resampling, random-effects meta-analysis is limited to cells with N>=10 to avoid unstable tau-squared estimates, and complete-case deletion handles crashes or missing artifacts without imputation. Exclusions are listwise only, at <=5% per cell under the B6 lock, so multiple imputation would add modeling assumptions without materially changing paired denominators. Power analysis shows N=15 mechanism cells are not powered for small mid-layer effects (roughly Cohen's d below 0.65 at alpha=0.05), while site-level SR cells mainly detect 4--7pp effects. This affects Sections 4--5: null or marginal cells are interpreted as low-power evidence, and pooled estimates are paired with per-cell uncertainty.
++
++\subsection*{8.6 Sparse-mechanism caveat}
++
++The activation-patching effect is sparse: at L17, four of five completed cells have median Levenshtein-distance shift equal to zero, with IQRs including zero. The blast radius is the mechanism claim: mean disruption and Holm significance are carried by task subsets, approximately the high-salience-image quarter of the strong-tier cases, while many tasks show no visible continuation change; Cell E random injection, by contrast, destroys outputs broadly. This affects Section 5 by reframing the finding as a task-conditional sparse mechanism rather than a universal mid-layer circuit. The claim remains defensible because Section 5.1 reports per-task scatter/violin views alongside mean bands and because Cell E separates content-specific sparse patching from generic injection damage.
++
++\subsection*{8.7 Compute, cost, and sustainability bounds}
++
++Compute and carbon accounting are approximate because runs span DGX Spark, UCL Condense A100, and UCL Myriad V100/A100 profiles. The blast radius is absolute energy reporting: the per-cell table reports GPU-hours, proxy-API USD cost, and kg-CO2 estimates with hardware provenance, but cross-machine power variation limits precision \citep{qiu2025modserve}. Relative comparisons inside a cell remain valid because modes share the same hardware, benchmark site, and evaluator path. This affects the cost part of the four-fold drop-in claim: token/API cost and latency comparisons are primary, while carbon totals are disclosed as bounded estimates rather than a fine-grained lifecycle assessment.
++
++NEEDS_BIB_ENTRY: `lipton2018troubling`, `neurips2024checklist`, `holm1979sequentially`, `wang2023interpretability`, `zhang2024patching`.
+
+exec
+/bin/bash -lc "python3 - <<'PY'
+from pathlib import Path
+p=Path('docs/checkpoints/paper_drafts/section8_limitations.md')
+text=p.read_text()
+parts=[]; cur=None; buf=[]
+for line in text.splitlines():
+    if line.startswith('\\\\subsection*{'):
+        if cur is not None: parts.append((cur,'\\n'.join(buf)))
+        cur=line.strip(); buf=[]
+    elif line.startswith('NEEDS_BIB_ENTRY'):
+        if cur is not None: parts.append((cur,'\\n'.join(buf))); cur=None; buf=[]
+    else:
+        if cur is not None: buf.append(line)
+if cur is not None: parts.append((cur,'\\n'.join(buf)))
+for h,b in parts:
+    print(f'{h}: {len(b.split())}')
+print('subsection_total:', sum(len(b.split()) for _,b in parts))
+print('file_total:', len(text.split()))
+PY" in /home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents
+ succeeded in 0ms:
+\subsection*{8.1 Scope \& external-validity bounds}: 166
+\subsection*{8.2 Construct validity \& evaluator threats}: 139
+\subsection*{8.3 Internal-validity threats: known scaffold bugs}: 118
+\subsection*{8.4 Pre-vs-post-hoc analyses \& retracted framings}: 149
+\subsection*{8.5 Statistical \& methodological limits}: 157
+\subsection*{8.6 Sparse-mechanism caveat}: 110
+\subsection*{8.7 Compute, cost, and sustainability bounds}: 96
+subsection_total: 935
+file_total: 978
+
+exec
+/bin/bash -lc 'rg -n "''^'"\\\\\\\\subsection\\*|NEEDS_BIB_ENTRY|\\[["'^]]+'"\\]\" docs/checkpoints/paper_drafts/section8_limitations.md" in /home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents
+ succeeded in 0ms:
+1:\subsection*{8.1 Scope \& external-validity bounds}
+5:\subsection*{8.2 Construct validity \& evaluator threats}
+9:\subsection*{8.3 Internal-validity threats: known scaffold bugs}
+11:Several scaffold bugs were real: the `in_viewport_ratio` operator-precedence bug exposed clipped DOM text, early scroll actions suffered direction-convention confusion, and Stage 2B/2C mechanism inputs came from pre-Phase-A archived browser states. The blast radius is bounded because these failures are mode-uniform within the relevant comparisons: the viewport bug affects DOM-derived text and Phantom-SoM's `[SOM_MARKS]` source together; scroll-direction confusion is a trajectory-execution threat rather than an evaluator rule; and Stage 2 uses frozen prompt/screenshot inputs, so Phase-A dispatch bugs affect which step an agent reached, not the model's forward pass on that saved step. This affects cross-mode interpretation in Sections 3--5: we treat environment failures as measurement threats and disclose their blast radius rather than folding them into cognitive claims.
+13:\subsection*{8.4 Pre-vs-post-hoc analyses \& retracted framings}
+17:\subsection*{8.5 Statistical \& methodological limits}
+21:\subsection*{8.6 Sparse-mechanism caveat}
+25:\subsection*{8.7 Compute, cost, and sustainability bounds}
+29:NEEDS_BIB_ENTRY: `lipton2018troubling`, `neurips2024checklist`, `holm1979sequentially`, `wang2023interpretability`, `zhang2024patching`.
+
+exec
+/bin/bash -lc 'git status --short docs/checkpoints/paper_drafts/section8_limitations.md docs/checkpoints/paper_drafts/section4_limitations_disclosure.md' in /home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents
+ succeeded in 0ms:
+ M docs/checkpoints/paper_drafts/section8_limitations.md
+
+diff --git a/docs/checkpoints/paper_drafts/section8_limitations.md b/docs/checkpoints/paper_drafts/section8_limitations.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c4c440894aef0698543754949e5e7c9b285fb3b5
+--- /dev/null
++++ b/docs/checkpoints/paper_drafts/section8_limitations.md
+@@ -0,0 +1,29 @@
++\subsection*{8.1 Scope \& external-validity bounds}
++
++This study is deliberately narrow: three sites (classifieds, reddit, shopping), one benchmark family (VisualWebArena plus WA-mini-style task structure), and two Qwen-family model classes: Qwen3-VL-4B locally and Qwen3-Omni-235B-Thinking through a proxy API. The blast radius is external validity, not the internal comparison: our claim is that a phantom routing space exists for Qwen-family agents on VWA-style tasks, not that every VLM, browser benchmark, or production site will expose the same arm ordering \citep{zhou2024webarena,koh2024visualwebarena,deng2023mind2web,drouin2024workarena}. The mechanism evidence in Section 5 is narrower still: it is B1-only, because the open-weight 4B model exposes activations and the B0 proxy model does not. Shopping also has weaker intermediate mechanism coverage than classifieds/reddit, so site-level generalization is reported cell-by-cell rather than averaged into a universal web-agent claim. This affects Sections 1, 5, and 6 by bounding language about universality and reproducibility: B1 behavior and mechanistic patching are byte-reproducible from released artifacts, while B0 is verifiable from traces and replayable subject to API access; cross-architecture claims, including GPT-4o-family claims, remain outside the paper.
++
++\subsection*{8.2 Construct validity \& evaluator threats}
++
++VWA success labels are imperfect measurements of task completion, especially around `ua_match` GPT-judge drift, the `string_match` `fuzzy_threshold` misnomer, brittle `program_html` selectors, and `finish_wrong_state` episodes. The blast radius is measurement-side: these four evaluator-class threats can flip individual labels or inflate raw success, but they do not redefine the task universe or the mode definitions; full appendix prose is kept in Section 4.X.1--4.X.4 rather than duplicated here. We therefore report both raw and adjusted success and isolate `na_fp`, `eval_fp`, and `visual_fp` filters as sensitivity layers, including the audit-derived false-positive filters from Sections 78a and 95, following the constraint-table rule that evaluator artifacts should be disclosed rather than hidden \citep{lipton2018troubling,neurips2024checklist}. This affects Sections 3 and 4: adjusted SR is the headline metric, raw SR remains visible, and claims that survive the filter ladder are defensible as representation effects rather than judge artifacts.
++
++\subsection*{8.3 Internal-validity threats: known scaffold bugs}
++
++Several scaffold bugs were real: the `in_viewport_ratio` operator-precedence bug exposed clipped DOM text, early scroll actions suffered direction-convention confusion, and Stage 2B/2C mechanism inputs came from pre-Phase-A archived browser states. The blast radius is bounded because these failures are mode-uniform within the relevant comparisons: the viewport bug affects DOM-derived text and Phantom-SoM's `[SOM_MARKS]` source together; scroll-direction confusion is a trajectory-execution threat rather than an evaluator rule; and Stage 2 uses frozen prompt/screenshot inputs, so Phase-A dispatch bugs affect which step an agent reached, not the model's forward pass on that saved step. This affects cross-mode interpretation in Sections 3--5: we treat environment failures as measurement threats and disclose their blast radius rather than folding them into cognitive claims.
++
++\subsection*{8.4 Pre-vs-post-hoc analyses \& retracted framings}
++
++The exact L11/L17 mechanism-layer story was not preregistered, and several earlier framings were retracted. The blast radius is epistemic status: preregistered H1--H3 gate the deployment and structural claims, H4 is exploratory, and H5--H6 are post-hoc explanatory layers; Section 5.X states that L17 emerged from the Stage 2A pilot and L11 from an early single-task continuation, then converged across logit shift, forward overlap, reverse overlap, and cross-tier tests under Holm correction. The negative-results registry records 12 retracted framings, including task-0 over-interpretation, the reverse-null claim overturned by the N=15 reverse sample, and the rejected selection-bias explanation (cross-tier Welch tests non-significant, with reverse magnitude identical across tiers). It also records two framings that survived audit: the four-fold drop-in property and the sparse L11/L17 mechanism. This affects Sections 1 and 5: the paper can claim confirmed, registry-backed evidence for those two framings, but not a preregistered exact-layer prediction or a universal single-task circuit.
++
++\subsection*{8.5 Statistical \& methodological limits}
++
++The statistical design is adequate for medium effects but underpowered for small per-cell effects and exact-layer micro-effects. The blast radius is precision, not directionality: Holm-Bonferroni is applied across the six canonical tested layers (L0/5/11/17/23/29), not all 36 cached layers; this matches the disclosed post-hoc grid but should not be read as a full-layer search correction \citep{holm1979sequentially,wang2023interpretability,zhang2024patching}. Bootstrap intervals use task-paired resampling, random-effects meta-analysis is limited to cells with N>=10 to avoid unstable tau-squared estimates, and complete-case deletion handles crashes or missing artifacts without imputation. Exclusions are listwise only, at <=5% per cell under the B6 lock, so multiple imputation would add modeling assumptions without materially changing paired denominators. Power analysis shows N=15 mechanism cells are not powered for small mid-layer effects (roughly Cohen's d below 0.65 at alpha=0.05), while site-level SR cells mainly detect 4--7pp effects. This affects Sections 4--5: null or marginal cells are interpreted as low-power evidence, and pooled estimates are paired with per-cell uncertainty.
++
++\subsection*{8.6 Sparse-mechanism caveat}
++
++The activation-patching effect is sparse: at L17, four of five completed cells have median Levenshtein-distance shift equal to zero, with IQRs including zero. The blast radius is the mechanism claim: mean disruption and Holm significance are carried by task subsets, approximately the high-salience-image quarter of the strong-tier cases, while many tasks show no visible continuation change; Cell E random injection, by contrast, destroys outputs broadly. This affects Section 5 by reframing the finding as a task-conditional sparse mechanism rather than a universal mid-layer circuit. The claim remains defensible because Section 5.1 reports per-task scatter/violin views alongside mean bands and because Cell E separates content-specific sparse patching from generic injection damage.
++
++\subsection*{8.7 Compute, cost, and sustainability bounds}
++
++Compute and carbon accounting are approximate because runs span DGX Spark, UCL Condense A100, and UCL Myriad V100/A100 profiles. The blast radius is absolute energy reporting: the per-cell table reports GPU-hours, proxy-API USD cost, and kg-CO2 estimates with hardware provenance, but cross-machine power variation limits precision \citep{qiu2025modserve}. Relative comparisons inside a cell remain valid because modes share the same hardware, benchmark site, and evaluator path. This affects the cost part of the four-fold drop-in claim: token/API cost and latency comparisons are primary, while carbon totals are disclosed as bounded estimates rather than a fine-grained lifecycle assessment.
++
++NEEDS_BIB_ENTRY: `lipton2018troubling`, `neurips2024checklist`, `holm1979sequentially`, `wang2023interpretability`, `zhang2024patching`.
+
+exec
+/bin/bash -lc 'git diff -- docs/checkpoints/paper_drafts/section8_limitations.md --stat && git diff -- docs/checkpoints/paper_drafts/section4_limitations_disclosure.md --stat' in /home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents
+ succeeded in 0ms:
+diff --git a/docs/checkpoints/paper_drafts/section8_limitations.md b/docs/checkpoints/paper_drafts/section8_limitations.md
+index b5f1526..c4c4408 100644
+--- a/docs/checkpoints/paper_drafts/section8_limitations.md
++++ b/docs/checkpoints/paper_drafts/section8_limitations.md
+@@ -1,10 +1,10 @@
+ \subsection*{8.1 Scope \& external-validity bounds}
+ 
+-This study is deliberately narrow: three sites (classifieds, reddit, shopping), one benchmark family (VisualWebArena plus WA-mini-style task structure), and two Qwen-family model classes: Qwen3-VL-4B locally and Qwen3-Omni-235B-Thinking through a proxy API. The blast radius is external validity, not the internal comparison: our claim is that a phantom routing space exists for Qwen-family agents on VWA-style tasks, not that every VLM, browser benchmark, or production site will expose the same arm ordering \citep{zhou2024webarena,koh2024visualwebarena,deng2023mind2web,drouin2024workarena}. The mechanism evidence in Section 5 is narrower still: it is B1-only, because the open-weight 4B model exposes activations and the B0 proxy model does not. This affects Sections 1, 5, and 6 by bounding language about universality and reproducibility: B1 behavior and mechanistic patching are byte-reproducible from released artifacts, while B0 is verifiable from traces and replayable subject to API access; cross-architecture claims, including GPT-4o-family claims, remain outside the paper.
++This study is deliberately narrow: three sites (classifieds, reddit, shopping), one benchmark family (VisualWebArena plus WA-mini-style task structure), and two Qwen-family model classes: Qwen3-VL-4B locally and Qwen3-Omni-235B-Thinking through a proxy API. The blast radius is external validity, not the internal comparison: our claim is that a phantom routing space exists for Qwen-family agents on VWA-style tasks, not that every VLM, browser benchmark, or production site will expose the same arm ordering \citep{zhou2024webarena,koh2024visualwebarena,deng2023mind2web,drouin2024workarena}. The mechanism evidence in Section 5 is narrower still: it is B1-only, because the open-weight 4B model exposes activations and the B0 proxy model does not. Shopping also has weaker intermediate mechanism coverage than classifieds/reddit, so site-level generalization is reported cell-by-cell rather than averaged into a universal web-agent claim. This affects Sections 1, 5, and 6 by bounding language about universality and reproducibility: B1 behavior and mechanistic patching are byte-reproducible from released artifacts, while B0 is verifiable from traces and replayable subject to API access; cross-architecture claims, including GPT-4o-family claims, remain outside the paper.
+ 
+ \subsection*{8.2 Construct validity \& evaluator threats}
+ 
+-VWA success labels are imperfect measurements of task completion, especially around `ua_match` GPT-judge drift, the `string_match` `fuzzy_threshold` misnomer, brittle `program_html` selectors, and `finish_wrong_state` episodes. The blast radius is measurement-side: these four evaluator-class threats can flip individual labels or inflate raw success, but they do not redefine the task universe or the mode definitions; full appendix prose is kept in Section 4.X.1--4.X.4 rather than duplicated here. We therefore report both raw and adjusted success and isolate `na_fp`, `eval_fp`, and `visual_fp` filters as sensitivity layers, following the constraint-table rule that evaluator artifacts should be disclosed rather than hidden \citep{lipton2018troubling,neurips2024checklist}. This affects Sections 3 and 4: adjusted SR is the headline metric, raw SR remains visible, and claims that survive the filter ladder are defensible as representation effects rather than judge artifacts.
++VWA success labels are imperfect measurements of task completion, especially around `ua_match` GPT-judge drift, the `string_match` `fuzzy_threshold` misnomer, brittle `program_html` selectors, and `finish_wrong_state` episodes. The blast radius is measurement-side: these four evaluator-class threats can flip individual labels or inflate raw success, but they do not redefine the task universe or the mode definitions; full appendix prose is kept in Section 4.X.1--4.X.4 rather than duplicated here. We therefore report both raw and adjusted success and isolate `na_fp`, `eval_fp`, and `visual_fp` filters as sensitivity layers, including the audit-derived false-positive filters from Sections 78a and 95, following the constraint-table rule that evaluator artifacts should be disclosed rather than hidden \citep{lipton2018troubling,neurips2024checklist}. This affects Sections 3 and 4: adjusted SR is the headline metric, raw SR remains visible, and claims that survive the filter ladder are defensible as representation effects rather than judge artifacts.
+ 
+ \subsection*{8.3 Internal-validity threats: known scaffold bugs}
+ 
+@@ -12,11 +12,11 @@ Several scaffold bugs were real: the `in_viewport_ratio` operator-precedence bug
+ 
+ \subsection*{8.4 Pre-vs-post-hoc analyses \& retracted framings}
+ 
+-The exact L11/L17 mechanism-layer story was not preregistered, and several earlier framings were retracted. The blast radius is epistemic status: preregistered H1--H3 gate the deployment and structural claims, H4 is exploratory, and H5--H6 are post-hoc explanatory layers; Section 5.X states that L17 emerged from the Stage 2A pilot and L11 from an early single-task continuation, then converged across logit shift, forward overlap, reverse overlap, and cross-tier tests under Holm correction. The negative-results registry records 12 retracted framings, including task-0 over-interpretation, the reverse-null claim overturned by the N=15 reverse sample, and the rejected selection-bias explanation (cross-tier Welch tests non-significant, with reverse magnitude identical across tiers). This affects Sections 1 and 5: the paper can claim a confirmed four-fold drop-in property and a sparse mid-layer mechanism, but not a preregistered exact-layer prediction or a universal single-task circuit.
++The exact L11/L17 mechanism-layer story was not preregistered, and several earlier framings were retracted. The blast radius is epistemic status: preregistered H1--H3 gate the deployment and structural claims, H4 is exploratory, and H5--H6 are post-hoc explanatory layers; Section 5.X states that L17 emerged from the Stage 2A pilot and L11 from an early single-task continuation, then converged across logit shift, forward overlap, reverse overlap, and cross-tier tests under Holm correction. The negative-results registry records 12 retracted framings, including task-0 over-interpretation, the reverse-null claim overturned by the N=15 reverse sample, and the rejected selection-bias explanation (cross-tier Welch tests non-significant, with reverse magnitude identical across tiers). It also records two framings that survived audit: the four-fold drop-in property and the sparse L11/L17 mechanism. This affects Sections 1 and 5: the paper can claim confirmed, registry-backed evidence for those two framings, but not a preregistered exact-layer prediction or a universal single-task circuit.
+ 
+ \subsection*{8.5 Statistical \& methodological limits}
+ 
+-The statistical design is adequate for medium effects but underpowered for small per-cell effects and exact-layer micro-effects. The blast radius is precision, not directionality: Holm-Bonferroni is applied across the six canonical tested layers (L0/5/11/17/23/29), not all 36 cached layers; this matches the disclosed post-hoc grid but should not be read as a full-layer search correction \citep{holm1979sequentially,wang2023interpretability,zhang2024patching}. Bootstrap intervals use task-paired resampling, random-effects meta-analysis is limited to cells with N>=10 to avoid unstable tau-squared estimates, and complete-case deletion handles crashes or missing artifacts without imputation. Power analysis shows N=15 mechanism cells are not powered for small mid-layer effects (roughly Cohen's d below 0.65 at alpha=0.05), while site-level SR cells mainly detect 4--7pp effects. This affects Sections 4--5: null or marginal cells are interpreted as low-power evidence, and pooled estimates are paired with per-cell uncertainty.
++The statistical design is adequate for medium effects but underpowered for small per-cell effects and exact-layer micro-effects. The blast radius is precision, not directionality: Holm-Bonferroni is applied across the six canonical tested layers (L0/5/11/17/23/29), not all 36 cached layers; this matches the disclosed post-hoc grid but should not be read as a full-layer search correction \citep{holm1979sequentially,wang2023interpretability,zhang2024patching}. Bootstrap intervals use task-paired resampling, random-effects meta-analysis is limited to cells with N>=10 to avoid unstable tau-squared estimates, and complete-case deletion handles crashes or missing artifacts without imputation. Exclusions are listwise only, at <=5% per cell under the B6 lock, so multiple imputation would add modeling assumptions without materially changing paired denominators. Power analysis shows N=15 mechanism cells are not powered for small mid-layer effects (roughly Cohen's d below 0.65 at alpha=0.05), while site-level SR cells mainly detect 4--7pp effects. This affects Sections 4--5: null or marginal cells are interpreted as low-power evidence, and pooled estimates are paired with per-cell uncertainty.
+ 
+ \subsection*{8.6 Sparse-mechanism caveat}
+ 
+@@ -24,6 +24,6 @@ The activation-patching effect is sparse: at L17, four of five completed cells h
+ 
+ \subsection*{8.7 Compute, cost, and sustainability bounds}
+ 
+-Compute and carbon accounting are approximate because runs span DGX Spark, UCL Condense A100, and UCL Myriad V100/A100 profiles. The blast radius is absolute energy reporting: per-cell GPU-hours, proxy-API USD cost, and kg-CO2 estimates will be reported with hardware provenance, but cross-machine power variation limits precision \citep{qiu2025modserve}. Relative comparisons inside a cell remain valid because modes share the same hardware and evaluator path. This affects the cost part of the four-fold drop-in claim: token/API cost and latency comparisons are primary, while carbon totals are disclosed as bounded estimates.
++Compute and carbon accounting are approximate because runs span DGX Spark, UCL Condense A100, and UCL Myriad V100/A100 profiles. The blast radius is absolute energy reporting: the per-cell table reports GPU-hours, proxy-API USD cost, and kg-CO2 estimates with hardware provenance, but cross-machine power variation limits precision \citep{qiu2025modserve}. Relative comparisons inside a cell remain valid because modes share the same hardware, benchmark site, and evaluator path. This affects the cost part of the four-fold drop-in claim: token/API cost and latency comparisons are primary, while carbon totals are disclosed as bounded estimates rather than a fine-grained lifecycle assessment.
+ 
+ NEEDS_BIB_ENTRY: `lipton2018troubling`, `neurips2024checklist`, `holm1979sequentially`, `wang2023interpretability`, `zhang2024patching`.
+
+exec
+/bin/bash -lc "for k in lipton2018troubling neurips2024checklist holm1979sequentially wang2023interpretability zhang2024patching; do if rg -q \"@\\w+\\{"'$k," docs/checkpoints/paper_drafts/paper.bib; then echo "$k present"; else echo "$k missing"; fi; done' in /home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents
+ succeeded in 0ms:
+lipton2018troubling missing
+neurips2024checklist missing
+holm1979sequentially missing
+wang2023interpretability missing
+zhang2024patching missing
+
+diff --git a/docs/checkpoints/paper_drafts/section8_limitations.md b/docs/checkpoints/paper_drafts/section8_limitations.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c4c440894aef0698543754949e5e7c9b285fb3b5
+--- /dev/null
++++ b/docs/checkpoints/paper_drafts/section8_limitations.md
+@@ -0,0 +1,29 @@
++\subsection*{8.1 Scope \& external-validity bounds}
++
++This study is deliberately narrow: three sites (classifieds, reddit, shopping), one benchmark family (VisualWebArena plus WA-mini-style task structure), and two Qwen-family model classes: Qwen3-VL-4B locally and Qwen3-Omni-235B-Thinking through a proxy API. The blast radius is external validity, not the internal comparison: our claim is that a phantom routing space exists for Qwen-family agents on VWA-style tasks, not that every VLM, browser benchmark, or production site will expose the same arm ordering \citep{zhou2024webarena,koh2024visualwebarena,deng2023mind2web,drouin2024workarena}. The mechanism evidence in Section 5 is narrower still: it is B1-only, because the open-weight 4B model exposes activations and the B0 proxy model does not. Shopping also has weaker intermediate mechanism coverage than classifieds/reddit, so site-level generalization is reported cell-by-cell rather than averaged into a universal web-agent claim. This affects Sections 1, 5, and 6 by bounding language about universality and reproducibility: B1 behavior and mechanistic patching are byte-reproducible from released artifacts, while B0 is verifiable from traces and replayable subject to API access; cross-architecture claims, including GPT-4o-family claims, remain outside the paper.
++
++\subsection*{8.2 Construct validity \& evaluator threats}
++
++VWA success labels are imperfect measurements of task completion, especially around `ua_match` GPT-judge drift, the `string_match` `fuzzy_threshold` misnomer, brittle `program_html` selectors, and `finish_wrong_state` episodes. The blast radius is measurement-side: these four evaluator-class threats can flip individual labels or inflate raw success, but they do not redefine the task universe or the mode definitions; full appendix prose is kept in Section 4.X.1--4.X.4 rather than duplicated here. We therefore report both raw and adjusted success and isolate `na_fp`, `eval_fp`, and `visual_fp` filters as sensitivity layers, including the audit-derived false-positive filters from Sections 78a and 95, following the constraint-table rule that evaluator artifacts should be disclosed rather than hidden \citep{lipton2018troubling,neurips2024checklist}. This affects Sections 3 and 4: adjusted SR is the headline metric, raw SR remains visible, and claims that survive the filter ladder are defensible as representation effects rather than judge artifacts.
++
++\subsection*{8.3 Internal-validity threats: known scaffold bugs}
++
++Several scaffold bugs were real: the `in_viewport_ratio` operator-precedence bug exposed clipped DOM text, early scroll actions suffered direction-convention confusion, and Stage 2B/2C mechanism inputs came from pre-Phase-A archived browser states. The blast radius is bounded because these failures are mode-uniform within the relevant comparisons: the viewport bug affects DOM-derived text and Phantom-SoM's `[SOM_MARKS]` source together; scroll-direction confusion is a trajectory-execution threat rather than an evaluator rule; and Stage 2 uses frozen prompt/screenshot inputs, so Phase-A dispatch bugs affect which step an agent reached, not the model's forward pass on that saved step. This affects cross-mode interpretation in Sections 3--5: we treat environment failures as measurement threats and disclose their blast radius rather than folding them into cognitive claims.
++
++\subsection*{8.4 Pre-vs-post-hoc analyses \& retracted framings}
++
++The exact L11/L17 mechanism-layer story was not preregistered, and several earlier framings were retracted. The blast radius is epistemic status: preregistered H1--H3 gate the deployment and structural claims, H4 is exploratory, and H5--H6 are post-hoc explanatory layers; Section 5.X states that L17 emerged from the Stage 2A pilot and L11 from an early single-task continuation, then converged across logit shift, forward overlap, reverse overlap, and cross-tier tests under Holm correction. The negative-results registry records 12 retracted framings, including task-0 over-interpretation, the reverse-null claim overturned by the N=15 reverse sample, and the rejected selection-bias explanation (cross-tier Welch tests non-significant, with reverse magnitude identical across tiers). It also records two framings that survived audit: the four-fold drop-in property and the sparse L11/L17 mechanism. This affects Sections 1 and 5: the paper can claim confirmed, registry-backed evidence for those two framings, but not a preregistered exact-layer prediction or a universal single-task circuit.
++
++\subsection*{8.5 Statistical \& methodological limits}
++
++The statistical design is adequate for medium effects but underpowered for small per-cell effects and exact-layer micro-effects. The blast radius is precision, not directionality: Holm-Bonferroni is applied across the six canonical tested layers (L0/5/11/17/23/29), not all 36 cached layers; this matches the disclosed post-hoc grid but should not be read as a full-layer search correction \citep{holm1979sequentially,wang2023interpretability,zhang2024patching}. Bootstrap intervals use task-paired resampling, random-effects meta-analysis is limited to cells with N>=10 to avoid unstable tau-squared estimates, and complete-case deletion handles crashes or missing artifacts without imputation. Exclusions are listwise only, at <=5% per cell under the B6 lock, so multiple imputation would add modeling assumptions without materially changing paired denominators. Power analysis shows N=15 mechanism cells are not powered for small mid-layer effects (roughly Cohen's d below 0.65 at alpha=0.05), while site-level SR cells mainly detect 4--7pp effects. This affects Sections 4--5: null or marginal cells are interpreted as low-power evidence, and pooled estimates are paired with per-cell uncertainty.
++
++\subsection*{8.6 Sparse-mechanism caveat}
++
++The activation-patching effect is sparse: at L17, four of five completed cells have median Levenshtein-distance shift equal to zero, with IQRs including zero. The blast radius is the mechanism claim: mean disruption and Holm significance are carried by task subsets, approximately the high-salience-image quarter of the strong-tier cases, while many tasks show no visible continuation change; Cell E random injection, by contrast, destroys outputs broadly. This affects Section 5 by reframing the finding as a task-conditional sparse mechanism rather than a universal mid-layer circuit. The claim remains defensible because Section 5.1 reports per-task scatter/violin views alongside mean bands and because Cell E separates content-specific sparse patching from generic injection damage.
++
++\subsection*{8.7 Compute, cost, and sustainability bounds}
++
++Compute and carbon accounting are approximate because runs span DGX Spark, UCL Condense A100, and UCL Myriad V100/A100 profiles. The blast radius is absolute energy reporting: the per-cell table reports GPU-hours, proxy-API USD cost, and kg-CO2 estimates with hardware provenance, but cross-machine power variation limits precision \citep{qiu2025modserve}. Relative comparisons inside a cell remain valid because modes share the same hardware, benchmark site, and evaluator path. This affects the cost part of the four-fold drop-in claim: token/API cost and latency comparisons are primary, while carbon totals are disclosed as bounded estimates rather than a fine-grained lifecycle assessment.
++
++NEEDS_BIB_ENTRY: `lipton2018troubling`, `neurips2024checklist`, `holm1979sequentially`, `wang2023interpretability`, `zhang2024patching`.
+
+codex
+DONE: wrote section8_limitations.md (935 words across 7 subsections)
+
+- `8.1 Scope & external-validity bounds` — 166 words; `8.2 Construct validity & evaluator threats` — 139 words.
+- `8.3 Internal-validity threats: known scaffold bugs` — 118 words; `8.4 Pre-vs-post-hoc analyses & retracted framings` — 149 words.
+- `8.5 Statistical & methodological limits` — 157 words.
+- `8.6 Sparse-mechanism caveat` — 110 words; `8.7 Compute, cost, and sustainability bounds` — 96 words.
+- NEEDS_BIB_ENTRY: `lipton2018troubling`, `neurips2024checklist`, `holm1979sequentially`, `wang2023interpretability`, `zhang2024patching`.
+diff --git a/docs/checkpoints/paper_drafts/section8_limitations.md b/docs/checkpoints/paper_drafts/section8_limitations.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..c4c440894aef0698543754949e5e7c9b285fb3b5
+--- /dev/null
++++ b/docs/checkpoints/paper_drafts/section8_limitations.md
+@@ -0,0 +1,29 @@
++\subsection*{8.1 Scope \& external-validity bounds}
++
++This study is deliberately narrow: three sites (classifieds, reddit, shopping), one benchmark family (VisualWebArena plus WA-mini-style task structure), and two Qwen-family model classes: Qwen3-VL-4B locally and Qwen3-Omni-235B-Thinking through a proxy API. The blast radius is external validity, not the internal comparison: our claim is that a phantom routing space exists for Qwen-family agents on VWA-style tasks, not that every VLM, browser benchmark, or production site will expose the same arm ordering \citep{zhou2024webarena,koh2024visualwebarena,deng2023mind2web,drouin2024workarena}. The mechanism evidence in Section 5 is narrower still: it is B1-only, because the open-weight 4B model exposes activations and the B0 proxy model does not. Shopping also has weaker intermediate mechanism coverage than classifieds/reddit, so site-level generalization is reported cell-by-cell rather than averaged into a universal web-agent claim. This affects Sections 1, 5, and 6 by bounding language about universality and reproducibility: B1 behavior and mechanistic patching are byte-reproducible from released artifacts, while B0 is verifiable from traces and replayable subject to API access; cross-architecture claims, including GPT-4o-family claims, remain outside the paper.
++
++\subsection*{8.2 Construct validity \& evaluator threats}
++
++VWA success labels are imperfect measurements of task completion, especially around `ua_match` GPT-judge drift, the `string_match` `fuzzy_threshold` misnomer, brittle `program_html` selectors, and `finish_wrong_state` episodes. The blast radius is measurement-side: these four evaluator-class threats can flip individual labels or inflate raw success, but they do not redefine the task universe or the mode definitions; full appendix prose is kept in Section 4.X.1--4.X.4 rather than duplicated here. We therefore report both raw and adjusted success and isolate `na_fp`, `eval_fp`, and `visual_fp` filters as sensitivity layers, including the audit-derived false-positive filters from Sections 78a and 95, following the constraint-table rule that evaluator artifacts should be disclosed rather than hidden \citep{lipton2018troubling,neurips2024checklist}. This affects Sections 3 and 4: adjusted SR is the headline metric, raw SR remains visible, and claims that survive the filter ladder are defensible as representation effects rather than judge artifacts.
++
++\subsection*{8.3 Internal-validity threats: known scaffold bugs}
++
++Several scaffold bugs were real: the `in_viewport_ratio` operator-precedence bug exposed clipped DOM text, early scroll actions suffered direction-convention confusion, and Stage 2B/2C mechanism inputs came from pre-Phase-A archived browser states. The blast radius is bounded because these failures are mode-uniform within the relevant comparisons: the viewport bug affects DOM-derived text and Phantom-SoM's `[SOM_MARKS]` source together; scroll-direction confusion is a trajectory-execution threat rather than an evaluator rule; and Stage 2 uses frozen prompt/screenshot inputs, so Phase-A dispatch bugs affect which step an agent reached, not the model's forward pass on that saved step. This affects cross-mode interpretation in Sections 3--5: we treat environment failures as measurement threats and disclose their blast radius rather than folding them into cognitive claims.
++
++\subsection*{8.4 Pre-vs-post-hoc analyses \& retracted framings}
++
++The exact L11/L17 mechanism-layer story was not preregistered, and several earlier framings were retracted. The blast radius is epistemic status: preregistered H1--H3 gate the deployment and structural claims, H4 is exploratory, and H5--H6 are post-hoc explanatory layers; Section 5.X states that L17 emerged from the Stage 2A pilot and L11 from an early single-task continuation, then converged across logit shift, forward overlap, reverse overlap, and cross-tier tests under Holm correction. The negative-results registry records 12 retracted framings, including task-0 over-interpretation, the reverse-null claim overturned by the N=15 reverse sample, and the rejected selection-bias explanation (cross-tier Welch tests non-significant, with reverse magnitude identical across tiers). It also records two framings that survived audit: the four-fold drop-in property and the sparse L11/L17 mechanism. This affects Sections 1 and 5: the paper can claim confirmed, registry-backed evidence for those two framings, but not a preregistered exact-layer prediction or a universal single-task circuit.
++
++\subsection*{8.5 Statistical \& methodological limits}
++
++The statistical design is adequate for medium effects but underpowered for small per-cell effects and exact-layer micro-effects. The blast radius is precision, not directionality: Holm-Bonferroni is applied across the six canonical tested layers (L0/5/11/17/23/29), not all 36 cached layers; this matches the disclosed post-hoc grid but should not be read as a full-layer search correction \citep{holm1979sequentially,wang2023interpretability,zhang2024patching}. Bootstrap intervals use task-paired resampling, random-effects meta-analysis is limited to cells with N>=10 to avoid unstable tau-squared estimates, and complete-case deletion handles crashes or missing artifacts without imputation. Exclusions are listwise only, at <=5% per cell under the B6 lock, so multiple imputation would add modeling assumptions without materially changing paired denominators. Power analysis shows N=15 mechanism cells are not powered for small mid-layer effects (roughly Cohen's d below 0.65 at alpha=0.05), while site-level SR cells mainly detect 4--7pp effects. This affects Sections 4--5: null or marginal cells are interpreted as low-power evidence, and pooled estimates are paired with per-cell uncertainty.
++
++\subsection*{8.6 Sparse-mechanism caveat}
++
++The activation-patching effect is sparse: at L17, four of five completed cells have median Levenshtein-distance shift equal to zero, with IQRs including zero. The blast radius is the mechanism claim: mean disruption and Holm significance are carried by task subsets, approximately the high-salience-image quarter of the strong-tier cases, while many tasks show no visible continuation change; Cell E random injection, by contrast, destroys outputs broadly. This affects Section 5 by reframing the finding as a task-conditional sparse mechanism rather than a universal mid-layer circuit. The claim remains defensible because Section 5.1 reports per-task scatter/violin views alongside mean bands and because Cell E separates content-specific sparse patching from generic injection damage.
++
++\subsection*{8.7 Compute, cost, and sustainability bounds}
++
++Compute and carbon accounting are approximate because runs span DGX Spark, UCL Condense A100, and UCL Myriad V100/A100 profiles. The blast radius is absolute energy reporting: the per-cell table reports GPU-hours, proxy-API USD cost, and kg-CO2 estimates with hardware provenance, but cross-machine power variation limits precision \citep{qiu2025modserve}. Relative comparisons inside a cell remain valid because modes share the same hardware, benchmark site, and evaluator path. This affects the cost part of the four-fold drop-in claim: token/API cost and latency comparisons are primary, while carbon totals are disclosed as bounded estimates rather than a fine-grained lifecycle assessment.
++
++NEEDS_BIB_ENTRY: `lipton2018troubling`, `neurips2024checklist`, `holm1979sequentially`, `wang2023interpretability`, `zhang2024patching`.
+
+tokens used
+94,277
+DONE: wrote section8_limitations.md (935 words across 7 subsections)
+
+- `8.1 Scope & external-validity bounds` — 166 words; `8.2 Construct validity & evaluator threats` — 139 words.
+- `8.3 Internal-validity threats: known scaffold bugs` — 118 words; `8.4 Pre-vs-post-hoc analyses & retracted framings` — 149 words.
+- `8.5 Statistical & methodological limits` — 157 words.
+- `8.6 Sparse-mechanism caveat` — 110 words; `8.7 Compute, cost, and sustainability bounds` — 96 words.
+- NEEDS_BIB_ENTRY: `lipton2018troubling`, `neurips2024checklist`, `holm1979sequentially`, `wang2023interpretability`, `zhang2024patching`.
