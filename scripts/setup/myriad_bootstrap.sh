@@ -174,25 +174,23 @@ log "  Wrote constraints: ~/Scratch/myriad_constraints.txt (urllib3<2, numpy<2)"
 
 # Write sitecustomize.py compatibility shim (torch 2.1 ↔ transformers 4.50+)
 cat > "$USER_SITE/sitecustomize.py" <<'SHIM_EOF'
-"""Myriad workaround: torch 2.1 lacks register_pytree_node public API +
-its private _register_pytree_node has narrower signature than 2.3+ public.
-Wrap with adapter dropping unsupported kwargs."""
+"""Myriad workaround:
+(1) torch 2.1 lacks register_pytree_node public API + its private
+    _register_pytree_node has narrower signature than 2.3+ public.
+    Wrap with adapter dropping unsupported kwargs.
+(2) torch 2.1 lacks torch.compiler.is_compiling() (added in 2.3+).
+    transformers 4.57+ image_processing_utils_fast calls it; shim with
+    constant False (we never run under torch.compile on Myriad)."""
 import sys
 import builtins
 import functools
 
-_PATCHED = False
-
-def _maybe_patch_torch():
-    global _PATCHED
-    if _PATCHED:
-        return
+def _try_patch_pytree():
     pt = sys.modules.get('torch.utils._pytree')
     if not pt or not hasattr(pt, '_register_pytree_node'):
         return
-    if hasattr(pt, 'register_pytree_node') and getattr(
-        pt.register_pytree_node, '_myriad_patched', False):
-        _PATCHED = True
+    rpn = getattr(pt, 'register_pytree_node', None)
+    if rpn is not None and getattr(rpn, '_myriad_patched', False):
         return
     _orig = pt._register_pytree_node
 
@@ -205,13 +203,36 @@ def _maybe_patch_torch():
 
     register_pytree_node._myriad_patched = True
     pt.register_pytree_node = register_pytree_node
-    _PATCHED = True
+
+
+def _try_patch_compiler():
+    # torch.compiler is a sub-module that may not load until first reference;
+    # force-import it once so we can shim is_compiling unconditionally.
+    try:
+        import torch.compiler as tc  # noqa: F401
+    except Exception:
+        return
+    tc = sys.modules['torch.compiler']
+    cur = getattr(tc, 'is_compiling', None)
+    if cur is not None and getattr(cur, '_myriad_patched', False):
+        return
+    if cur is None:
+        def _is_compiling():
+            return False
+        _is_compiling._myriad_patched = True
+        tc.is_compiling = _is_compiling
+
+
+def _do_patches():
+    _try_patch_pytree()
+    _try_patch_compiler()
+
 
 _orig_import = builtins.__import__
 def _patched_import(name, *args, **kwargs):
     mod = _orig_import(name, *args, **kwargs)
-    if 'torch' in name and not _PATCHED:
-        _maybe_patch_torch()
+    if 'torch' in name:
+        _do_patches()
     return mod
 builtins.__import__ = _patched_import
 SHIM_EOF

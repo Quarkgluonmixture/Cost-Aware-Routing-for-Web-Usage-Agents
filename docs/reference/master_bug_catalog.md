@@ -1300,10 +1300,10 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 
 ---
 
-### B-81. Myriad HPC porting — 5-class failure umbrella (笔记 §116.16, 2026-05-08)
+### B-81. Myriad HPC porting — 6-class failure umbrella (笔记 §116.16, 2026-05-08 → 2026-05-09)
 
-- **Origin**: Stage 2B/2C launch wave on UCL Myriad HPC, jobs 324666 → 325178/325179
-- **Status**: 🛠️ FIXED (5/5 sub-classes resolved by 2026-05-08)
+- **Origin**: Stage 2B/2C launch wave on UCL Myriad HPC, jobs 324666 → 325178/325179 → 334692/334693
+- **Status**: 🛠️ FIXED (6/6 sub-classes resolved by 2026-05-09)
 - **Severity**: Operational (not paper-grade scientific) but blocks mechanistic Stage 2B/2C compute path
 - **Domain**: HPC environment porting — RHEL 7 login + compute nodes, SGE batch, module-loaded PyTorch
 - **Pattern**: Each class only surfaces under specific HPC constraint (firewall / module versioning / pre-built torch / Home quota / login-vs-compute env divergence). Collectively they are the **HPC textbook gotcha checklist** for HuggingFace transformer + activation patching workloads.
@@ -1338,7 +1338,14 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 - **Fix**: (1) Login node has internet — `unset HF_HUB_OFFLINE TRANSFORMERS_OFFLINE` then `snapshot_download('Qwen/Qwen3-VL-4B-Instruct', revision='ebb281ec70b05090aa6165b016eac8ec08e71b17')`. (2) Add fail-fast pre-flight check to qsub script (commit `d9d60b5`) — verify config.json exists before launching python; echo download command on miss. Saves 36h/24h wallclock allocations vs running through module load + python imports only to fail in `from_pretrained`.
 - **Files**: `scripts/queues/qsub_stage2b_myriad.sh:88-101` + `qsub_stage2c_myriad.sh:67-80` (pre-flight) + `scripts/setup/myriad_bootstrap.sh:255-269` (Step 5 source-of-truth download)
 
-**Reproducibility & paper §3 cite**: B-81 umbrella catalogues the canonical HPC porting checklist for HuggingFace transformer + activation-patching mechanistic workloads on RHEL 7 + SGE + module-pytorch HPC clusters. Future replicators on similar clusters (Myriad, Iridis, ARC, etc.) will hit subsets of these 5 classes; this catalog entry serves as paper §3 reproducibility-statement reference.
+#### B-81f — `torch.compiler.is_compiling()` missing on PyTorch 2.1
+- **Symptom**: Jobs 325178/325179 stderr after fix B-81e (model loaded successfully, then crashed at first image preprocessing): `AttributeError: module 'torch.compiler' has no attribute 'is_compiling'` at `transformers/image_processing_utils_fast.py:361 resize`.
+- **Cause**: `torch.compiler.is_compiling()` was added in PyTorch **2.3**; Myriad's `pytorch/2.1.0/gpu` module ships torch 2.1.0+cu121. transformers 4.57.6 (pinned for Qwen3-VL support per B-81 stack) calls it unconditionally in image preprocessing fast path. Cannot upgrade torch (locked to module set) and cannot downgrade transformers (Qwen3VLForConditionalGeneration not in 4.55).
+- **Fix**: Extend `sitecustomize.py` import-hook shim to eagerly `import torch.compiler` and inject `is_compiling = lambda: False` (we never run under torch.compile on Myriad — eager mode only). Idempotent via `_myriad_patched` sentinel. Verified on login node: `has is_compiling: True / is_compiling(): False` post-shim (笔记 §116.16f).
+- **Files**: `scripts/setup/myriad_bootstrap.sh` (heredoc shim updated to factor `_try_patch_pytree` + `_try_patch_compiler` + `_do_patches` umbrella) + live `$PYTHONUSERBASE/lib/python3.9/site-packages/sitecustomize.py` (atomic replace via base64 → tmp → mv)
+- **Why timing matters**: Initial naive shim gated `is_compiling` patch on `torch.utils._pytree` being already imported, but `torch.compiler` is a sub-module that may not load until first reference. Fix: eagerly `import torch.compiler` inside hook so shim fires unconditionally on any `torch*` import.
+
+**Reproducibility & paper §3 cite**: B-81 umbrella catalogues the canonical HPC porting checklist for HuggingFace transformer + activation-patching mechanistic workloads on RHEL 7 + SGE + module-pytorch HPC clusters. Future replicators on similar clusters (Myriad, Iridis, ARC, etc.) will hit subsets of these 6 classes; this catalog entry serves as paper §3 reproducibility-statement reference.
 
 ---
 
@@ -1351,7 +1358,7 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 | ⚠️ **DISPUTED** | 0 | — |
 | ❌ **NOT_A_BUG** | 4 | B-12 / B-13 / B-14 / B-27 |
 | 🔄 **UNVERIFIED** | 0 | All Phase A entries CONFIRMED via static read |
-| 🛠️ **FIXED** | ~50 | B-10 (§105) + B-26 (NOT FIXED BY DESIGN) + B-28 (MITIGATED) + B-29 (NOT FIXED BY DESIGN) + B-38 (§116) + B-81a-e (HPC porting umbrella, 5 sub-classes) + Phase 0 historical (B-39 to B-80, including umbrella sub-entries) + Phase A patches via commits 3c15cd7 onwards |
+| 🛠️ **FIXED** | ~51 | B-10 (§105) + B-26 (NOT FIXED BY DESIGN) + B-28 (MITIGATED) + B-29 (NOT FIXED BY DESIGN) + B-38 (§116) + B-81a-f (HPC porting umbrella, 6 sub-classes) + Phase 0 historical (B-39 to B-80, including umbrella sub-entries) + Phase A patches via commits 3c15cd7 onwards |
 
 **Pre-rerun rule reaffirmed**: All 🛠️ FIXED bugs must have their fix in code at HEAD before
 16-cell rerun launch (笔记 §116 / pre_rerun_audit.md §F). UNVERIFIED entries have been
