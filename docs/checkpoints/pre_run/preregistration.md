@@ -183,7 +183,9 @@ The paper §1 hook framing maps to data outcomes as follows:
 | Choice | Value | Rationale |
 |---|---|---|
 | **Primary metric** | Oracle ceiling SR pp lift (binary, paired) | Standard routing-arm contribution metric |
-| **CI method** | 1000-resample task-level paired bootstrap | Existing infra in `aggregate_phantom_lift.py` |
+| **CI method** | 1000-resample task-level paired bootstrap, **percentile** intervals (BCa as sensitivity check, not primary) | Existing infra in `aggregate_phantom_lift.py`. Percentile chosen primary because: (a) paired-bootstrap on bounded proportion (SR ∈ [0,1]) → BCa acceleration estimate is unstable at small N per cell; (b) Cohen's h transformation already symmetrizes; (c) percentile is the canonical reporting in WebArena/VWA precedent. BCa shown as appendix sensitivity check. |
+| **Bootstrap resampling unit** | **Task-level** (not episode-level, not run-level) | Each (task_id) drawn with replacement N times; same task across modes drawn together to preserve pairing. This is the standard unit for adjusted_success comparisons in VWA/WA. Episode-level would break pairing; run-level would over-conservatively widen CIs. |
+| **Bootstrap clustering** | **Single-level (task_id)** for primary, no nested cluster (cell × site) bootstrap | Justification: meta-analysis at cell level is separate (`aggregate_phantom_meta.py` random-effects + I²/τ²); within-cell bootstrap only re-samples tasks. Multi-level cluster would double-count uncertainty already captured by random-effects meta. Lock: percentile + task-id unit + no nested cluster (B2 lock 2026-05-09). |
 | **Sig threshold** | Holm α=0.05 within respective family | FWER control |
 | **Effect size (binary)** | Cohen's h with bootstrap CI | Standard for proportion comparisons |
 | **Effect size (continuous)** | Cohen's d with bootstrap CI | For cost/latency H2(a)(b) |
@@ -251,6 +253,29 @@ Approximately 1 week before paper submission:
 3. Upload this `preregistration.md` (locked version) + companion EVIDENCE_LAYER_AUDIT.md §2 + ADVISOR_SYNC.md §1.4 (lock decisions).
 4. OSF generates DOI + permanent timestamp.
 5. Paper §1 footnote cites the DOI: "Hypotheses pre-registered prior to 16-cell rerun (OSF DOI X.YYYY/osf.io/zzzz, Git SHA abc123, witnessed by [advisor name] on YYYY-MM-DD)."
+
+---
+
+## §7 Reproducibility Scope Statement (audit A14, F3)
+
+**Public release scope** — what reviewers / replicators can reproduce from the released artifact:
+
+| Component | Reproducibility tier | Mechanism |
+|---|---|---|
+| **B1 (Qwen3-VL-4B local)** | **Fully reproducible** byte-identical | HF model SHA pinned (`ebb281ec70b05090aa6165b016eac8ec08e71b17`) + greedy decoding + seed=42 (`configs/exp_v2_base.yaml`) + `_seed_global_rng()` per (cond, seed) iteration + env_snapshot.json per run + git commit SHA in run_manifest. Re-running produces byte-identical action traces, hidden states, and aggregate SR. |
+| **B1 mechanistic Stage 2** | **Fully reproducible** | Same as B1 plus `--random-seed 42` for `--random-inject` (cell E). `archive_subset_b1_{cls,reddit}/` (curated mirage tasks + cached observations + screenshot_annotated) committed for cross-machine replication without needing full archive. |
+| **B0 (Qwen3-Omni-235B-Thinking via proxy API)** | **Verifiable from traces, replayable subject to API access** | All B0 episodes log full request/response traces + temperature=0 server-side. Re-running depends on: (a) proxy API endpoint availability, (b) model server-side determinism (best-effort, not guaranteed at temperature=0). For paper claims, B0 is "one controlled stochastic sample with bootstrap task uncertainty" — replicators verify via released traces or rerun under same proxy / Anthropic-native API access. |
+| **VWA environment** | **Reproducible given containers** | VWA Docker images pulled at submodule commit SHA (recorded at lock time per audit A5/F8 remediation). Reset-before-each-cell protocol (`RESET_BEFORE=1`) ensures clean start state. Site-state snapshot pre/post-cell as additional gate (audit C3 pending). |
+| **Evaluator** | **Fully reproducible** byte-identical | `evaluator_code.combined_sha256` recorded per run. T0/T1/T2/T3 evaluator-change protocol (`evaluator_change_protocol.md`) governs post-lock changes — same paper requires dual-reporting for any T0 fix. |
+| **Mechanism analysis (Stage 2 patching)** | **Fully reproducible** | Greedy decoding + seed=42 + Holm-corrected paired t-test + 1000-resample percentile bootstrap (seed=42 in `stage2_layer_significance.py`). Per-task per-layer `patching_continuation_results.json` released for re-aggregation. |
+
+**Scope claim language for paper §3**:
+
+> "All B1 (local Qwen3-VL-4B) experiments, including agent traces, mechanistic activation patching, and aggregate analysis, are fully reproducible given the released code (commit SHA), pinned HF model revision, and seed configurations. B0 (proxy-API Qwen3-Omni-235B) results are verifiable from released traces and replayable subject to API access; B0 server-side decoding determinism is best-effort under temperature=0 and reported as a single controlled stochastic sample with task-level bootstrap uncertainty. The VWA environment is reproducible given the pinned VWA submodule commit and Docker images. Cross-benchmark (WebArena) results are out of scope for this paper unless explicitly reported in the appendix."
+
+**External validity scope (audit F3)**:
+
+> "Empirical claims are scoped to the **Qwen-family VWA characterization**: Qwen3-VL-4B (B1) and Qwen3-Omni-235B-Thinking (B0) on VisualWebArena classifieds / reddit / shopping. Cross-benchmark generalization (WebArena 480 tasks) and cross-model-family generalization (Llama-VL, GPT-4o-V, Gemini-Pro-VL) are explicitly future work. Mechanistic Stage 2 findings are scoped to the curated mirage-disagreement task tiers (composite score-based curation per `curate_mirage_tasks.py`) on classifieds (and reddit if cells F/G replicate); broader phantom-routing-space mechanism universality is conditional on the 2x2 + cross-site control results."
 
 ---
 
