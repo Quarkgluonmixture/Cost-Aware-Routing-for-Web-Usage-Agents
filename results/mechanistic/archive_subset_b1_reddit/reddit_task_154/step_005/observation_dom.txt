@@ -1,0 +1,62 @@
+Tab 0 (current): Search
+
+[7498] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=price+of+training+ImageNet+models+
+	[7552] sectionheader ''
+		[7554] link 'Home' url: http://100.95.81.103:9999/
+			[7562] StaticText 'Postmill'
+	[7578] link 'Forums' url: http://100.95.81.103:9999/forums
+	[7584] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[7607] searchbox 'Search query'
+		[8016] StaticText 'price of training ImageNet models '
+	[7615] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[7619] image ''
+	[7626] link 'Submit' url: http://100.95.81.103:9999/submit
+		[7630] image ''
+	[7640] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[7644] image ''
+	[7753] main ''
+		[7755] heading 'Search'
+		[7763] StaticText 'Search query'
+		[7765] searchbox 'Search query'
+			[8017] StaticText 'price of training ImageNet models '
+		[7772] button 'Search'
+		[7777] heading '1 result for price of training ImageNet models :'
+			[7779] emphasis ''
+		[7783] article ''
+			[7785] checkbox 'Hide −' checked: true
+			[7791] sectionheader ''
+				[7793] heading 'HOnions [t1_j8yl9sw] wrote 3 years ago'
+					[7797] link 'HOnions' expanded: False url: http://100.95.81.103:9999/user/HOnions
+					[7806] time ''
+			[7829] image ''
+			[7833] StaticText 'Reply to comment by '
+			[7834] link 'workingatbeingbetter' expanded: False url: http://100.95.81.103:9999/user/workingatbeingbetter
+			[7837] StaticText ' in '
+			[7838] link '[OC] The cost of training AI on ImageNet has decreased from over $1000 to just under $5 in just 4 years' url: http://100.95.81.103:9999/f/dataisbeautiful/103920
+			[7841] StaticText ' by '
+			[7842] link 'giteam' expanded: False url: http://100.95.81.103:9999/user/giteam
+			[7850] StaticText 'tell you the '
+			[7851] mark ''
+				[7852] StaticText 'price'
+			[7853] StaticText ' of '
+			[7854] mark ''
+				[7855] StaticText 'ImageNet'
+			[7856] StaticText ', it’s fucking free. This has nothing to do with dataset, but '
+			[7857] mark ''
+				[7858] StaticText 'price'
+			[7859] StaticText ', availability and performance of compute, and the efficiency of the newer '
+			[7860] mark ''
+				[7861] StaticText 'models'
+			[7862] StaticText '. '
+			[7863] mark ''
+				[7864] StaticText 'Training'
+			[7865] StaticText ' a VGG19'
+			[7874] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/103920/-/comment/1849056
+			[7883] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/103920/-/comment/1849056
+			[7889] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/103920/-/comment/1843079
+			[7902] button 'Upvote'
+			[7920] button 'Downvote'
+	[7937] contentinfo ''
+		[7942] StaticText 'Running '
+		[7943] link 'Postmill' url: https://postmill.xyz/

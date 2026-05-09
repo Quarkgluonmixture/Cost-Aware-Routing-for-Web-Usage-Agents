@@ -1,0 +1,87 @@
+Tab 0 (current): Search
+
+[2941] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=best+pizza+in+%5Bmy+school+city%5D+
+	[3001] sectionheader ''
+		[3003] link 'Home' url: http://100.95.81.103:9999/
+			[3011] StaticText 'Postmill'
+	[3027] link 'Forums' url: http://100.95.81.103:9999/forums
+	[3033] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[3056] searchbox 'Search query'
+		[4000] StaticText 'best pizza in [my school city] '
+	[3064] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[3068] image ''
+	[3075] link 'Submit' url: http://100.95.81.103:9999/submit
+		[3079] image ''
+	[3089] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[3093] image ''
+	[3204] heading 'Search'
+	[3212] StaticText 'Search query'
+	[3214] searchbox 'Search query'
+		[4001] StaticText 'best pizza in [my school city] '
+	[3221] button 'Search'
+	[3226] heading '6 results for best pizza in [my school city] :'
+		[3228] emphasis ''
+	[3232] article ''
+		[3238] sectionheader ''
+			[3241] heading 'I Remember the Last Time My Parents Left Me at Home By Myself'
+				[3242] link 'I Remember the Last Time My Parents Left Me at Home By Myself' url: http://100.95.81.103:9999/f/nosleep/130026/i-remember-the-last-time-my-parents-left-me-at-home-by
+			[3249] StaticText 'Submitted by '
+			[3250] link 'No_Deal_9616' expanded: False url: http://100.95.81.103:9999/user/No_Deal_9616
+			[3257] StaticText 't3_124o52y'
+			[3259] time ''
+				[3260] StaticText '3 years ago'
+			[2942] StaticText ' in '
+			[3261] link 'nosleep' url: http://100.95.81.103:9999/f/nosleep
+		[3271] StaticText "I don't know why but I though I'd share something that I still"
+		[3280] link '16 comments' url: http://100.95.81.103:9999/f/nosleep/130026/i-remember-the-last-time-my-parents-left-me-at-home-by
+		[3292] button 'Upvote'
+		[3302] StaticText '150'
+		[3310] button 'Downvote'
+	[3322] article ''
+		[3328] sectionheader ''
+			[3331] heading 'I saw 270 movies in theaters in 2022. Here is my full ranking.'
+				[3332] link 'I saw 270 movies in theaters in 2022. Here is my full ranking.' url: http://100.95.81.103:9999/f/movies/64553/i-saw-270-movies-in-theaters-in-2022-here-is-my-full-ranking
+			[3339] StaticText 'Submitted by '
+			[3340] link 'BunyipPouch' expanded: False url: http://100.95.81.103:9999/user/BunyipPouch
+			[3347] StaticText 't3_zzvg5y'
+			[3349] time ''
+				[3350] StaticText '3 years ago'
+			[2944] StaticText ' in '
+			[3351] link 'movies' url: http://100.95.81.103:9999/f/movies
+		[3361] StaticText "Every year since 2015, I've been going to the movie theater as much as"
+		[3370] link 'No comments' url: http://100.95.81.103:9999/f/movies/64553/i-saw-270-movies-in-theaters-in-2022-here-is-my-full-ranking
+		[3382] button 'Upvote'
+		[3400] button 'Downvote'
+	[3412] article ''
+		[3418] sectionheader ''
+			[3421] heading 'My dad died a week ago, but today I received a letter from him.'
+				[3422] link 'My dad died a week ago, but today I received a letter from him.' url: http://100.95.81.103:9999/f/nosleep/109073/my-dad-died-a-week-ago-but-today-i-received-a-letter-from
+			[3429] StaticText 'Submitted by '
+			[3430] link 'EyamBKabin' expanded: False url: http://100.95.81.103:9999/user/EyamBKabin
+			[3437] StaticText 't3_11bgamz'
+			[3439] time ''
+				[3440] StaticText '3 years ago'
+			[2946] StaticText ' in '
+			[3441] link 'nosleep' url: http://100.95.81.103:9999/f/nosleep
+		[3451] StaticText 'The earliest and clearest memory I have of my dad is his gentle hands placing'
+		[3460] link '15 comments' url: http://100.95.81.103:9999/f/nosleep/109073/my-dad-died-a-week-ago-but-today-i-received-a-letter-from
+		[3472] button 'Upvote'
+		[3482] StaticText '194'
+		[3490] button 'Downvote'
+	[3504] checkbox 'Hide −' checked: true
+	[3510] sectionheader ''
+		[3512] heading 'marche_au_supplice [t1_jdr226x] wrote 3 years ago'
+			[3516] link 'marche_au_supplice' expanded: False url: http://100.95.81.103:9999/user/marche_au_supplice
+			[3525] time ''
+	[3548] image ''
+	[3552] StaticText 'Reply to '
+	[3553] link 'Suggestions of things/places to check out when visiting' url: http://100.95.81.103:9999/f/newhaven/129111
+	[3556] StaticText ' by '
+	[3557] link '-dreggy-' expanded: False url: http://100.95.81.103:9999/user/-dreggy-
+	[3565] StaticText 'Rock Brewing is a nice spot and they brew almost exclusively lagers. You can get yourself any '
+	[3566] mark ''
+		[3567] StaticText 'pizza'
+	[3608] button 'Upvote'
+	[3618] StaticText '9'
+	[3626] button 'Downvote'

@@ -1,0 +1,48 @@
+Tab 0 (current): List of forums | Tab 1: Sony WH-1000XM4 Wireless Noise Canceling Over-Ear Headphones (Black) with Sony WLA-NS7 Wireless TV Adapter Bundle (2 Items) | Tab 2: Bang & Olufsen Beoplay HX – Comfortable Wireless ANC Over-Ear Headphones - Timber
+
+[2901] RootWebArea 'List of forums' focused: True url: http://100.95.81.103:9999/forums
+	[3560] StaticText 'memes'
+	[3590] StaticText '3,129 submissions'
+	[3595] article ''
+		[3599] heading 'wallstreetbets — wallstreetbets'
+			[3601] link 'wallstreetbets — wallstreetbets' url: http://100.95.81.103:9999/f/wallstreetbets
+		[3627] button 'Subscribe No subscribers'
+			[3641] generic 'No subscribers'
+		[3647] StaticText '3,089 submissions'
+	[3652] article ''
+		[3656] heading 'gaming — gaming'
+			[3658] link 'gaming — gaming' url: http://100.95.81.103:9999/f/gaming
+		[3684] button 'Subscribe No subscribers'
+			[3698] generic 'No subscribers'
+		[3704] StaticText '2,572 submissions'
+	[3709] article ''
+		[3713] heading 'technology — technology'
+			[3715] link 'technology — technology' url: http://100.95.81.103:9999/f/technology
+		[3741] button 'Subscribe No subscribers'
+			[3755] generic 'No subscribers'
+		[3761] StaticText '2,472 submissions'
+	[3766] article ''
+		[3770] heading 'pics — pics'
+			[3772] link 'pics — pics' url: http://100.95.81.103:9999/f/pics
+		[3798] button 'Subscribe No subscribers'
+			[3812] generic 'No subscribers'
+		[3818] StaticText '2,450 submissions'
+	[3823] article ''
+		[3827] heading 'funny — funny'
+			[3829] link 'funny — funny' url: http://100.95.81.103:9999/f/funny
+		[3855] button 'Subscribe No subscribers'
+			[3869] generic 'No subscribers'
+		[3875] StaticText '2,407 submissions'
+	[3880] article ''
+		[3884] heading 'television — television'
+			[3886] link 'television — television' url: http://100.95.81.103:9999/f/television
+		[3912] button 'Subscribe No subscribers'
+			[3926] generic 'No subscribers'
+		[3932] StaticText '2,389 submissions'
+	[3937] article ''
+		[DROPDOWN OPTIONS] "Name", "Title", "Submissions", "Subscribers", "Creation date"
+		[3941] heading 'mildlyinteresting — mildlyinteresting'
+			[3943] link 'mildlyinteresting — mildlyinteresting' url: http://100.95.81.103:9999/f/mildlyinteresting
+		[3969] button 'Subscribe No subscribers'
+			[3983] generic 'No subscribers'
+		[3989] StaticText '2,211 submissions'

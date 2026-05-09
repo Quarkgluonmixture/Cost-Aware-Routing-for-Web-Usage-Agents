@@ -1,0 +1,54 @@
+Tab 0 (current): Fuking great year so far
+
+[36847] RootWebArea 'Fuking great year so far' focused: True url: http://100.95.81.103:9999/f/wallstreetbets/136297/fuking-great-year-so-far
+	[37238] heading 'Comments'
+	[37250] textbox 'Comment' required: True describedby: reply_to_submission_136297_comment_help
+	[37262] checkbox 'Formatting help +' checked: false
+	[37265] StaticText 'Markdown allowed.'
+	[37479] button 'Post'
+	[37493] link 'Nested' url: http://100.95.81.103:9999/f/wallstreetbets/136297/fuking-great-year-so-far
+	[37499] link 'Linear' url: http://100.95.81.103:9999/f/wallstreetbets/136297/fuking-great-year-so-far/linear
+	[37505] article ''
+		[37507] checkbox 'Hide −' checked: true
+		[37513] sectionheader ''
+			[37515] heading 'VisualMod [t1_jeg9227] wrote 3 years ago'
+				[37519] link 'VisualMod' expanded: False url: http://100.95.81.103:9999/user/VisualMod
+				[37528] time ''
+		[37550] StaticText "It looks like your portfolio has taken a hit this year. I'm sorry to hear that, but it's probably because you're not as rich and intelligent as me."
+		[37560] link 'Reply' url: http://100.95.81.103:9999/f/wallstreetbets/136297/-/comment/2547786
+		[37569] link 'Permalink' url: http://100.95.81.103:9999/f/wallstreetbets/136297/-/comment/2547786
+		[37582] button 'Upvote'
+		[37592] StaticText '578'
+		[37600] button 'Downvote'
+		[37613] article ''
+			[37615] checkbox 'Hide −' checked: true
+			[37621] sectionheader ''
+				[37623] heading 'lawthrowaway101 [t1_jegtrug] wrote 3 years ago'
+					[37627] link 'lawthrowaway101' expanded: False url: http://100.95.81.103:9999/user/lawthrowaway101
+					[37636] time ''
+			[37658] StaticText 'This bot is the best part of this entire sub'
+			[37668] link 'Reply' url: http://100.95.81.103:9999/f/wallstreetbets/136297/-/comment/2555658
+			[37677] link 'Permalink' url: http://100.95.81.103:9999/f/wallstreetbets/136297/-/comment/2555658
+			[37683] link 'Parent' url: http://100.95.81.103:9999/f/wallstreetbets/136297/-/comment/2547786
+			[37696] button 'Upvote'
+			[37706] StaticText '190'
+			[37714] button 'Downvote'
+		[37728] checkbox 'Hide −' checked: true
+		[37734] sectionheader ''
+			[37736] heading 'fscumeau [t1_jegp8mq] wrote 3 years ago'
+				[37740] link 'fscumeau' expanded: False url: http://100.95.81.103:9999/user/fscumeau
+				[37749] time ''
+		[37771] StaticText 'god damn savage lmao'
+		[37781] link 'Reply' url: http://100.95.81.103:9999/f/wallstreetbets/136297/-/comment/2553701
+		[37790] link 'Permalink' url: http://100.95.81.103:9999/f/wallstreetbets/136297/-/comment/2553701
+		[37796] link 'Parent' url: http://100.95.81.103:9999/f/wallstreetbets/136297/-/comment/2547786
+		[37809] button 'Upvote'
+		[37827] button 'Downvote'
+		[37842] checkbox 'Hide −' checked: true
+		[37848] sectionheader ''
+			[37850] heading 'random_account6721 [t1_jeh4ygp] wrote 3 years ago'
+				[37854] link 'random_account6721' expanded: False url: http://100.95.81.103:9999/user/random_account6721
+				[37863] time ''
+		[37885] StaticText 'Interfaces with your wife on the nightly'
+		[37923] button 'Upvote'
+		[37933] StaticText '20'

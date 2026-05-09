@@ -1,0 +1,70 @@
+Tab 0 (current): Recent comments
+
+[487] RootWebArea 'Recent comments' focused: True url: http://100.95.81.103:9999/comments
+	[1159] article ''
+		[1229] StaticText "Don't Say A Word with Michael Douglas and Brittany Murphy"
+		[1232] StaticText 'Mr. Brooks with Kevin Costner'
+		[1235] StaticText 'The Watcher with Keanu Reeves, James Spader & Marisa Tomei'
+		[1238] StaticText 'Identity with John Cusack, Ray Liotta, Amanda Peet and so many more'
+		[1241] StaticText 'Secret Window with Johnny Depp (Stephen King)'
+		[1244] StaticText 'Gone with Amanda Seyfried'
+		[1254] link 'Reply' url: http://100.95.81.103:9999/f/movies/128396/-/comment/2561509
+		[1263] link 'Permalink' url: http://100.95.81.103:9999/f/movies/128396/-/comment/2561509
+	[1307] article ''
+		[1309] checkbox 'Hide −' checked: true
+		[1315] sectionheader ''
+			[1317] heading 'EmergencyFair6786 [t1_jeh5m9r] wrote 3 years ago'
+				[1321] link 'EmergencyFair6786' expanded: False url: http://100.95.81.103:9999/user/EmergencyFair6786
+				[1330] time ''
+		[1353] image ''
+		[1357] StaticText 'Reply to '
+		[1358] link 'Fuking great year so far' url: http://100.95.81.103:9999/f/wallstreetbets/136297
+		[1361] StaticText ' by '
+		[1362] link 'Spare-Help562' expanded: False url: http://100.95.81.103:9999/user/Spare-Help562
+		[1370] StaticText "If people would learn to make money moving left to right instead of up and down then you wouldn't have this issue."
+		[1380] link 'Reply' url: http://100.95.81.103:9999/f/wallstreetbets/136297/-/comment/2561508
+		[1389] link 'Permalink' url: http://100.95.81.103:9999/f/wallstreetbets/136297/-/comment/2561508
+		[1402] button 'Upvote'
+		[1420] button 'Downvote'
+	[1433] article ''
+		[1435] checkbox 'Hide −' checked: true
+		[1441] sectionheader ''
+			[1443] heading 'cjsdsp [t1_jeh5mc9] wrote 3 years ago'
+				[1447] link 'cjsdsp' expanded: False url: http://100.95.81.103:9999/user/cjsdsp
+				[1456] time ''
+		[1479] image ''
+		[1483] StaticText 'Reply to comment by '
+		[1484] link 'AustinManningReddit' expanded: False url: http://100.95.81.103:9999/user/AustinManningReddit
+		[1487] StaticText ' in '
+		[1488] link 'Drivers who drive 5-10 MPH below the speed limit, why?' url: http://100.95.81.103:9999/f/AskReddit/116685
+		[1491] StaticText ' by '
+		[1492] link 'AustinManningReddit' expanded: False url: http://100.95.81.103:9999/user/AustinManningReddit
+		[1500] StaticText "Oh, on a 40 road, I'll do 40. I'm talking about the motorway where the limit is 70mph. I'll do 65 in the slow lane. Where there's no overtaking lane, it's down to conditions and traffic that determine the speed I'll choose."
+		[1510] link 'Reply' url: http://100.95.81.103:9999/f/AskReddit/116685/-/comment/2561507
+		[1519] link 'Permalink' url: http://100.95.81.103:9999/f/AskReddit/116685/-/comment/2561507
+		[1525] link 'Parent' url: http://100.95.81.103:9999/f/AskReddit/116685/-/comment/2561072
+		[1538] button 'Upvote'
+		[1556] button 'Downvote'
+	[1569] article ''
+		[1571] checkbox 'Hide −' checked: true
+		[1577] sectionheader ''
+			[1579] heading 'NosferatuRob [t1_jeh5m9q] wrote 3 years ago'
+				[1583] link 'NosferatuRob' expanded: False url: http://100.95.81.103:9999/user/NosferatuRob
+				[1592] time ''
+		[1615] image ''
+		[1619] StaticText 'Reply to '
+		[1620] link 'What basic thing have you seen someone in a respectable/admired position struggle with?' url: http://100.95.81.103:9999/f/AskReddit/116779
+		[1623] StaticText ' by '
+		[1624] link 'cogitoergodangerous' expanded: False url: http://100.95.81.103:9999/user/cogitoergodangerous
+		[1632] StaticText 'Directions/Driving'
+		[1642] link 'Reply' url: http://100.95.81.103:9999/f/AskReddit/116779/-/comment/2561506
+		[1651] link 'Permalink' url: http://100.95.81.103:9999/f/AskReddit/116779/-/comment/2561506
+		[1664] button 'Upvote'
+		[1682] button 'Downvote'
+	[1697] checkbox 'Hide −' checked: true
+	[1703] sectionheader ''
+		[1705] heading 'matt_riker [t1_jeh5m4z] wrote 3 years ago'
+			[1709] link 'matt_riker' expanded: False url: http://100.95.81.103:9999/user/matt_riker
+			[1718] time ''
+	[1790] button 'Upvote'
+	[1800] StaticText '6'

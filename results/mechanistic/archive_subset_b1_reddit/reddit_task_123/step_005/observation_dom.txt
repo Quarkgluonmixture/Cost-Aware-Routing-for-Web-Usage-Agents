@@ -1,0 +1,29 @@
+Tab 0 (current): Search
+
+[5528] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=Amazon+Q3+FY22+revenue+online+store+
+	[5582] sectionheader ''
+		[5584] link 'Home' url: http://100.95.81.103:9999/
+			[5592] StaticText 'Postmill'
+	[5608] link 'Forums' url: http://100.95.81.103:9999/forums
+	[5614] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[5637] searchbox 'Search query'
+		[5887] StaticText 'Amazon Q3 FY22 revenue online store '
+	[5645] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[5649] image ''
+	[5656] link 'Submit' url: http://100.95.81.103:9999/submit
+		[5660] image ''
+	[5670] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[5674] image ''
+	[5783] main ''
+		[5785] heading 'Search'
+		[5793] StaticText 'Search query'
+		[5795] searchbox 'Search query'
+			[5888] StaticText 'Amazon Q3 FY22 revenue online store '
+		[5802] button 'Search'
+		[5807] heading 'No results for Amazon Q3 FY22 revenue online store'
+			[5809] emphasis ''
+		[5814] StaticText 'There are no entries to display.'
+	[5820] contentinfo ''
+		[5825] StaticText 'Running '
+		[5826] link 'Postmill' url: https://postmill.xyz/

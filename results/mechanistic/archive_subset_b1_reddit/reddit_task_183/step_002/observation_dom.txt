@@ -1,0 +1,48 @@
+Tab 0 (current): List of forums | Tab 1: Fresh Meal Kits - Grocery & Gourmet Food
+
+[2900] RootWebArea 'List of forums' focused: True url: http://100.95.81.103:9999/forums
+	[3559] StaticText 'memes'
+	[3589] StaticText '3,129 submissions'
+	[3594] article ''
+		[3598] heading 'wallstreetbets — wallstreetbets'
+			[3600] link 'wallstreetbets — wallstreetbets' url: http://100.95.81.103:9999/f/wallstreetbets
+		[3626] button 'Subscribe No subscribers'
+			[3640] generic 'No subscribers'
+		[3646] StaticText '3,089 submissions'
+	[3651] article ''
+		[3655] heading 'gaming — gaming'
+			[3657] link 'gaming — gaming' url: http://100.95.81.103:9999/f/gaming
+		[3683] button 'Subscribe No subscribers'
+			[3697] generic 'No subscribers'
+		[3703] StaticText '2,572 submissions'
+	[3708] article ''
+		[3712] heading 'technology — technology'
+			[3714] link 'technology — technology' url: http://100.95.81.103:9999/f/technology
+		[3740] button 'Subscribe No subscribers'
+			[3754] generic 'No subscribers'
+		[3760] StaticText '2,472 submissions'
+	[3765] article ''
+		[3769] heading 'pics — pics'
+			[3771] link 'pics — pics' url: http://100.95.81.103:9999/f/pics
+		[3797] button 'Subscribe No subscribers'
+			[3811] generic 'No subscribers'
+		[3817] StaticText '2,450 submissions'
+	[3822] article ''
+		[3826] heading 'funny — funny'
+			[3828] link 'funny — funny' url: http://100.95.81.103:9999/f/funny
+		[3854] button 'Subscribe No subscribers'
+			[3868] generic 'No subscribers'
+		[3874] StaticText '2,407 submissions'
+	[3879] article ''
+		[3883] heading 'television — television'
+			[3885] link 'television — television' url: http://100.95.81.103:9999/f/television
+		[3911] button 'Subscribe No subscribers'
+			[3925] generic 'No subscribers'
+		[3931] StaticText '2,389 submissions'
+	[3936] article ''
+		[DROPDOWN OPTIONS] "Name", "Title", "Submissions", "Subscribers", "Creation date"
+		[3940] heading 'mildlyinteresting — mildlyinteresting'
+			[3942] link 'mildlyinteresting — mildlyinteresting' url: http://100.95.81.103:9999/f/mildlyinteresting
+		[3968] button 'Subscribe No subscribers'
+			[3982] generic 'No subscribers'
+		[3988] StaticText '2,211 submissions'

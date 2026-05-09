@@ -1,0 +1,29 @@
+Tab 0 (current): Search
+
+[4813] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=f%2Fgaming+
+	[4867] sectionheader ''
+		[4869] link 'Home' url: http://100.95.81.103:9999/
+			[4877] StaticText 'Postmill'
+	[4893] link 'Forums' url: http://100.95.81.103:9999/forums
+	[4899] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[4922] searchbox 'Search query'
+		[5172] StaticText 'f/gaming '
+	[4930] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[4934] image ''
+	[4941] link 'Submit' url: http://100.95.81.103:9999/submit
+		[4945] image ''
+	[4955] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[4959] image ''
+	[5068] main ''
+		[5070] heading 'Search'
+		[5078] StaticText 'Search query'
+		[5080] searchbox 'Search query'
+			[5173] StaticText 'f/gaming '
+		[5087] button 'Search'
+		[5092] heading 'No results for f/gaming'
+			[5094] emphasis ''
+		[5099] StaticText 'There are no entries to display.'
+	[5105] contentinfo ''
+		[5110] StaticText 'Running '
+		[5111] link 'Postmill' url: https://postmill.xyz/

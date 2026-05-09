@@ -1,0 +1,71 @@
+Tab 0 (current): Search
+
+[8154] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=wheat+
+	[8217] sectionheader ''
+		[8219] link 'Home' url: http://100.95.81.103:9999/
+			[8227] StaticText 'Postmill'
+	[8243] link 'Forums' url: http://100.95.81.103:9999/forums
+	[8249] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[8272] searchbox 'Search query'
+		[15163] StaticText 'wheat '
+	[8280] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[8284] image ''
+	[8291] link 'Submit' url: http://100.95.81.103:9999/submit
+		[8295] image ''
+	[8305] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[8309] image ''
+	[8420] heading 'Search'
+	[8428] StaticText 'Search query'
+	[8430] searchbox 'Search query'
+		[15164] StaticText 'wheat '
+	[8437] button 'Search'
+	[8442] heading '50 results for wheat :'
+		[8444] emphasis ''
+	[8448] article ''
+		[8162] sectionheader ''
+			[8456] heading "TIL Kellogg's Corn Flakes were invented by accident. A batch of wheat based dough was left out overnight by accident, started to ferment, so Will Kellogg decided to roll it to see if this would squeeze the water out. Instead, they got wheat flakes. Corn Flakes was the real winner."
+				[8457] link "TIL Kellogg's Corn Flakes were invented by accident. A batch of wheat based dough was left out overnight by accident, started to ferment, so Will Kellogg decided to roll it to see if this would squeeze the water out. Instead, they got wheat flakes. Corn Flakes was the real winner." url: https://www.history.com/news/cereal-breakfast-origins-kellogg
+					[8459] mark ''
+					[8462] mark ''
+			[8466] link 'history.com' url: http://100.95.81.103:9999/search?q=www.history.com
+			[8473] StaticText 'Submitted by '
+			[8474] link 'greed-man' expanded: False url: http://100.95.81.103:9999/user/greed-man
+			[8481] StaticText 't3_zvaoif'
+			[8483] time ''
+				[8484] StaticText '3 years ago'
+			[8156] StaticText ' in '
+			[8485] link 'todayilearned' url: http://100.95.81.103:9999/f/todayilearned
+		[8502] link '13 comments' url: http://100.95.81.103:9999/f/todayilearned/71487/til-kellogg-s-corn-flakes-were-invented-by-accident-a-batch
+		[8514] button 'Upvote'
+		[8524] StaticText '108'
+		[8532] button 'Downvote'
+	[8544] article ''
+		[8550] sectionheader ''
+			[8553] heading 'ELI5: What do food product labels that say “whole wheat” or “100% whole grain wheat” mean? Are these better for health?'
+				[8554] link 'ELI5: What do food product labels that say “whole wheat” or “100% whole grain wheat” mean? Are these better for health?' url: http://100.95.81.103:9999/f/explainlikeimfive/39199/eli5-what-do-food-product-labels-that-say-whole-wheat-or-100
+					[8556] mark ''
+					[8559] mark ''
+			[8567] StaticText 'Submitted by '
+			[8568] link 'acousticentropy' expanded: False url: http://100.95.81.103:9999/user/acousticentropy
+			[8575] StaticText 't3_z72uub'
+			[8577] time ''
+				[8578] StaticText '3 years ago'
+			[8158] StaticText ' in '
+			[8579] link 'explainlikeimfive' url: http://100.95.81.103:9999/f/explainlikeimfive
+		[8596] link '14 comments' url: http://100.95.81.103:9999/f/explainlikeimfive/39199/eli5-what-do-food-product-labels-that-say-whole-wheat-or-100
+		[8608] button 'Upvote'
+		[8626] button 'Downvote'
+	[8644] sectionheader ''
+		[8647] heading 'This was in my box of Wheat "Thins".'
+			[8648] link 'This was in my box of Wheat "Thins".' url: http://100.95.81.103:9999/submission_images/0e02bdd220997613d250dca7ceb11ca19c711b2428f0b2d864e2b20fc7b5445b.jpg
+				[8650] mark ''
+		[8658] StaticText 'Submitted by '
+		[8659] link 'dsubandbeard' expanded: False url: http://100.95.81.103:9999/user/dsubandbeard
+		[8666] StaticText 't3_y0e3rs'
+		[8668] time ''
+			[8669] StaticText '4 years ago'
+		[8160] StaticText ' in '
+		[8670] link 'funny' url: http://100.95.81.103:9999/f/funny
+	[8703] button 'Upvote'
+	[8721] button 'Downvote'

@@ -1,0 +1,62 @@
+Tab 0 (current): [Rick and Morty] With the allegations of Justin Roiland, is Rick &amp; Morty a bad show to watch?
+
+[12019] RootWebArea '[Rick and Morty] With the allegations of Justin Roiland, is Rick &amp; Morty a bad show to watch?' focused: True url: http://100.95.81.103:9999/f/television/92954/rick-and-morty-with-the-allegations-of-justin-roiland-is
+	[12102] sectionheader ''
+		[12104] link 'Home' url: http://100.95.81.103:9999/
+			[12112] StaticText 'Postmill'
+	[12128] link 'Forums' url: http://100.95.81.103:9999/forums
+	[12134] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[12157] searchbox 'Search query'
+	[12165] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[12169] image ''
+	[12176] link 'Submit' url: http://100.95.81.103:9999/submit/television
+		[12180] image ''
+	[12190] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[12194] image ''
+	[12311] link '/f/television' url: http://100.95.81.103:9999/f/television
+		[12314] image ''
+	[12326] article ''
+		[12332] sectionheader ''
+			[12335] heading '[Rick and Morty] With the allegations of Justin Roiland, is Rick &amp; Morty a bad show to watch?'
+				[12336] link '[Rick and Morty] With the allegations of Justin Roiland, is Rick &amp; Morty a bad show to watch?' url: http://100.95.81.103:9999/f/television/92954/rick-and-morty-with-the-allegations-of-justin-roiland-is
+			[12342] StaticText 'Submitted by '
+			[12343] link 'Thatfatbastard00' expanded: False url: http://100.95.81.103:9999/user/Thatfatbastard00
+			[12350] StaticText 't3_10cryt4'
+			[12352] time ''
+				[12353] StaticText '3 years ago'
+			[12021] StaticText ' in '
+			[12354] link 'television' url: http://100.95.81.103:9999/f/television
+		[12363] StaticText "'Rick and Morty' co-creator Justin Roiland and voice actor faces domestic violence charges."
+		[12366] StaticText 'The show itself often deals with themes of deep nihilism, depression and anxiety, hedonistic culture, atheist culture and Godlessness, but also themes of incest, adultery and cuckoldry and under age sex.'
+		[12369] StaticText 'Often these themes and jokes are just made for humour and comedy, but it makes you wonder if the writhers of this show are really in the right frame of mind?'
+		[12371] StaticText 'The people who really get too into it are often not right in the head. It makes you wonder, is this a bad show to watch?'
+		[12373] StaticText "I know I'm going to get downvoted to hell for this"
+		[12382] link '66 comments' url: http://100.95.81.103:9999/f/television/92954/rick-and-morty-with-the-allegations-of-justin-roiland-is
+		[12394] button 'Upvote'
+		[12412] button 'Downvote'
+	[12027] heading 'Comments'
+	[12434] textbox 'Comment' required: True describedby: reply_to_submission_92954_comment_help
+	[12446] checkbox 'Formatting help +' checked: false
+	[12449] StaticText 'Markdown allowed.'
+	[20087] complementary ''
+		[20094] StaticText '0 points'
+		[20097] StaticText '(+0, −0)'
+		[20102] heading 'Short URL:'
+		[20108] StaticText 'http://100.95.81.103:9999/92954'
+		[20115] heading 'television'
+			[20117] link 'television' url: http://100.95.81.103:9999/f/television
+		[20127] button 'Subscribe No subscribers'
+			[20141] generic 'No subscribers'
+		[20149] StaticText 't5_2qh6e'
+		[20152] separator '' orientation: horizontal
+		[20157] StaticText 'Created '
+		[20158] time ''
+			[20159] StaticText '4 years ago'
+		[20163] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/television/new.atom
+			[20165] image ''
+		[20175] group ''
+			[20177] DisclosureTriangle 'Hide this forum' expanded: False
+		[20198] heading 'Toolbox'
+		[20205] link 'Bans' url: http://100.95.81.103:9999/f/television/bans
+		[20211] link 'Moderation log' url: http://100.95.81.103:9999/f/television/moderation_log

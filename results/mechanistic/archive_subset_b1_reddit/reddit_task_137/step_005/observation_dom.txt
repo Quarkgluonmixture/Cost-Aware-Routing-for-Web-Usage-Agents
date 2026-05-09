@@ -1,0 +1,37 @@
+Tab 0 (current): Search
+
+[5201] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=wallstreetbets+
+	[5785] article ''
+		[5791] sectionheader ''
+			[5794] heading 'Man loses a 1.4 million dollar bet to win… 11k. A loss that puts Wallstreetbets to shame:'
+				[5795] link 'Man loses a 1.4 million dollar bet to win… 11k. A loss that puts Wallstreetbets to shame:' url: http://100.95.81.103:9999/submission_images/df3868c45ae29b920f58f14f27913bdb962b2108735854921b09da5b4e626462.jpg
+					[5797] mark ''
+			[5805] StaticText 'Submitted by '
+			[5806] link 'CyborgAlgoInvestor' expanded: False url: http://100.95.81.103:9999/user/CyborgAlgoInvestor
+			[5813] StaticText 't3_10cc0us'
+			[5815] time ''
+				[5816] StaticText '3 years ago'
+			[5817] StaticText ' in '
+			[5818] link 'wallstreetbets' url: http://100.95.81.103:9999/f/wallstreetbets
+		[5829] link '' url: http://100.95.81.103:9999/submission_images/df3868c45ae29b920f58f14f27913bdb962b2108735854921b09da5b4e626462.jpg
+		[5841] link 'No comments' url: http://100.95.81.103:9999/f/wallstreetbets/94592/man-loses-a-1-4-million-dollar-bet-to-win-11k-a-loss-that
+		[5853] button 'Upvote'
+		[5871] button 'Downvote'
+	[5885] checkbox 'Hide −' checked: true
+	[5891] sectionheader ''
+		[5893] heading 'bigsybee_turner [t1_j6cs5fg] wrote 3 years ago'
+			[5897] link 'bigsybee_turner' expanded: False url: http://100.95.81.103:9999/user/bigsybee_turner
+			[5906] time ''
+	[5929] image ''
+	[5933] StaticText 'Reply to '
+	[5934] link "I asked Chat GPT to write me a poem on ya'll, here it goes!" url: http://100.95.81.103:9999/f/wallstreetbets/94391
+	[5937] StaticText ' by '
+	[5938] link 'AN0NYM0US__Gentleman' expanded: False url: http://100.95.81.103:9999/user/AN0NYM0US__Gentleman
+	[5946] StaticText 'Here is mine from Chat GPT: &amp;#x200B; '
+	[5947] mark ''
+		[5948] StaticText 'WallStreetBets'
+	[5949] StaticText ", a force to be reckoned with, A subreddit where the game is rich, Stock picks and memes, a perfect mix, Making money, the ultimate fix. From ... they're making bank, or so they're told, Gamestop, AMC, they're on a roll, "
+	[5950] mark ''
+	[5986] button 'Upvote'
+	[5996] StaticText '1'
+	[6004] button 'Downvote'

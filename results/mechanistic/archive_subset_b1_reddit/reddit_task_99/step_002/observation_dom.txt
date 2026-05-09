@@ -1,0 +1,86 @@
+Tab 0 (current): Recent comments
+
+[487] RootWebArea 'Recent comments' focused: True url: http://100.95.81.103:9999/comments
+	[543] sectionheader ''
+		[545] link 'Home' url: http://100.95.81.103:9999/
+			[554] StaticText 'Postmill'
+	[570] link 'Forums' url: http://100.95.81.103:9999/forums
+	[576] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[599] searchbox 'Search query' focused: True
+	[607] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[611] image ''
+	[618] link 'Submit' url: http://100.95.81.103:9999/submit
+		[622] image ''
+	[632] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[636] image ''
+	[753] link 'Submissions' url: http://100.95.81.103:9999/
+	[759] link 'Comments' url: http://100.95.81.103:9999/comments
+	[765] heading 'Recent comments'
+	[768] article ''
+		[770] checkbox 'Hide −' checked: true
+		[776] sectionheader ''
+			[778] heading '[deleted] [t1_jeh5mkt] wrote 3 years ago'
+				[782] link '[deleted]' expanded: False url: http://100.95.81.103:9999/user/%5Bdeleted%5D
+				[791] time ''
+		[814] image ''
+		[818] StaticText 'Reply to comment by '
+		[819] link 'dakedame' expanded: False url: http://100.95.81.103:9999/user/dakedame
+		[822] StaticText ' in '
+		[823] link '20K IRS bill and no idea how to handle' url: http://100.95.81.103:9999/f/personalfinance/130785
+		[826] StaticText ' by '
+		[827] link 'cleaningupmess2023' expanded: False url: http://100.95.81.103:9999/user/cleaningupmess2023
+		[835] StaticText '[removed]'
+		[845] link 'Reply' url: http://100.95.81.103:9999/f/personalfinance/130785/-/comment/2561512
+		[854] link 'Permalink' url: http://100.95.81.103:9999/f/personalfinance/130785/-/comment/2561512
+		[860] link 'Parent' url: http://100.95.81.103:9999/f/personalfinance/130785/-/comment/2560578
+		[873] button 'Upvote'
+		[891] button 'Downvote'
+	[904] article ''
+		[906] checkbox 'Hide −' checked: true
+		[912] sectionheader ''
+			[914] heading '7SlotGrill [t1_jeh5mg9] wrote 3 years ago'
+				[918] link '7SlotGrill' expanded: False url: http://100.95.81.103:9999/user/7SlotGrill
+				[927] time ''
+		[950] image ''
+		[954] StaticText 'Reply to '
+		[955] link 'apparently Tim Kaine is performing at Main Line tomorrow' url: http://100.95.81.103:9999/f/rva/133260
+		[958] StaticText ' by '
+		[959] link 'whw53' expanded: False url: http://100.95.81.103:9999/user/whw53
+		[967] StaticText 'Fuck that guy'
+		[977] link 'Reply' url: http://100.95.81.103:9999/f/rva/133260/-/comment/2561511
+		[986] link 'Permalink' url: http://100.95.81.103:9999/f/rva/133260/-/comment/2561511
+		[999] button 'Upvote'
+		[1009] StaticText '−14'
+		[1019] button 'Downvote'
+	[1032] article ''
+		[1034] checkbox 'Hide −' checked: true
+		[1040] sectionheader ''
+			[1042] heading 'DavosLostFingers [t1_jeh5mgo] wrote 3 years ago'
+				[1046] link 'DavosLostFingers' expanded: False url: http://100.95.81.103:9999/user/DavosLostFingers
+				[1055] time ''
+		[1078] image ''
+		[1082] StaticText 'Reply to '
+		[1083] link 'What is a deal breaker when dating?' url: http://100.95.81.103:9999/f/AskReddit/116809
+		[1086] StaticText ' by '
+		[1087] link 'Tyluvshorror' expanded: False url: http://100.95.81.103:9999/user/Tyluvshorror
+		[1095] StaticText 'Constantly on their phone'
+		[1105] link 'Reply' url: http://100.95.81.103:9999/f/AskReddit/116809/-/comment/2561510
+		[1114] link 'Permalink' url: http://100.95.81.103:9999/f/AskReddit/116809/-/comment/2561510
+		[1127] button 'Upvote'
+		[1145] button 'Downvote'
+	[1160] checkbox 'Hide −' checked: true
+	[1166] sectionheader ''
+		[1168] heading 'idontwantanamern [t1_jeh5mdp] wrote 3 years ago'
+			[1172] link 'idontwantanamern' expanded: False url: http://100.95.81.103:9999/user/idontwantanamern
+			[1181] time ''
+	[1204] image ''
+	[1208] StaticText 'Reply to '
+	[1209] link 'Late 90’s-early 2000’s suspense/thrillers' url: http://100.95.81.103:9999/f/movies/128396
+	[1212] StaticText ' by '
+	[1213] link 'PopularScreen5246' expanded: False url: http://100.95.81.103:9999/user/PopularScreen5246
+	[1221] link 'Gossip ' url: https://en.m.wikipedia.org/wiki/Gossip_(2000_American_film)
+	[1223] StaticText '(Group of students who start a rumor as part of a college project - I love this movie and the cast has really grown since the movie 😂 Just a bit!)'
+	[1226] StaticText 'Hide and Seek with DeNiro and Dakota Fanning'
+	[1276] button 'Upvote'
+	[1294] button 'Downvote'

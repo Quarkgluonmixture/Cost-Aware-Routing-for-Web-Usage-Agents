@@ -1,0 +1,57 @@
+Tab 0 (current): Doesn’t Newark look amazing right now?
+
+[3876] RootWebArea 'Doesn’t Newark look amazing right now?' focused: True url: http://100.95.81.103:9999/f/Newark/35719/doesn-t-newark-look-amazing-right-now
+	[3950] sectionheader ''
+		[3952] link 'Home' url: http://100.95.81.103:9999/
+			[3960] StaticText 'Postmill'
+	[3976] link 'Forums' url: http://100.95.81.103:9999/forums
+	[3982] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[4005] searchbox 'Search query' focused: True
+	[4013] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[4017] image ''
+	[4024] link 'Submit' url: http://100.95.81.103:9999/submit/Newark
+		[4028] image ''
+	[4038] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[4042] image ''
+	[3878] main ''
+		[4158] link '/f/Newark' url: http://100.95.81.103:9999/f/Newark
+			[4161] image ''
+		[4173] article ''
+			[4179] sectionheader ''
+				[4182] heading 'Doesn’t Newark look amazing right now?'
+					[4183] link 'Doesn’t Newark look amazing right now?' url: http://100.95.81.103:9999/submission_images/dc079dc0eafe6bf8dbf1493fb9d59f6868c65ac5c3fafb71f4e6e8748d85b71b.jpg
+				[4190] StaticText 'Submitted by '
+				[4191] link 'wildwillybillyboy' expanded: False url: http://100.95.81.103:9999/user/wildwillybillyboy
+				[4198] StaticText 't3_z94hgc'
+				[4200] time ''
+					[4201] StaticText '3 years ago'
+				[4202] StaticText ' in '
+				[4203] link 'Newark' url: http://100.95.81.103:9999/f/Newark
+			[4214] link '' url: http://100.95.81.103:9999/submission_images/dc079dc0eafe6bf8dbf1493fb9d59f6868c65ac5c3fafb71f4e6e8748d85b71b.jpg
+			[4225] link '1 comment' url: http://100.95.81.103:9999/f/Newark/35719/doesn-t-newark-look-amazing-right-now
+			[4237] button 'Upvote'
+			[4247] StaticText '104'
+			[4255] button 'Downvote'
+		[4267] heading 'Comments'
+	[4648] complementary ''
+		[4655] StaticText '0 points'
+		[4658] StaticText '(+0, −0)'
+		[4663] heading 'Short URL:'
+		[4669] StaticText 'http://100.95.81.103:9999/35719'
+		[4676] heading 'Newark'
+			[4678] link 'Newark' url: http://100.95.81.103:9999/f/Newark
+		[4688] button 'Subscribe No subscribers'
+			[4702] generic 'No subscribers'
+		[4710] StaticText 't5_2rc7a'
+		[4713] separator '' orientation: horizontal
+		[4718] StaticText 'Created '
+		[4719] time ''
+			[4720] StaticText '4 years ago'
+		[4724] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/Newark/new.atom
+			[4726] image ''
+		[4736] group ''
+			[4738] DisclosureTriangle 'Hide this forum' expanded: False
+		[4759] heading 'Toolbox'
+		[4766] link 'Bans' url: http://100.95.81.103:9999/f/Newark/bans
+		[4772] link 'Moderation log' url: http://100.95.81.103:9999/f/Newark/moderation_log

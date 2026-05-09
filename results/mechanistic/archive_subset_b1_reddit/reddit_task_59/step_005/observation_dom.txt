@@ -1,0 +1,28 @@
+Tab 0 (current): Page not found | Tab 1: User:The other Kiwix guy/Landing
+
+[23374] RootWebArea 'Page not found' focused: True url: http://100.95.81.103:9999/wiki
+	[23428] sectionheader ''
+		[23430] link 'Home' url: http://100.95.81.103:9999/
+			[23438] StaticText 'Postmill'
+	[23454] link 'Forums' url: http://100.95.81.103:9999/forums
+	[23460] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[23484] searchbox 'Search query'
+	[23492] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[23496] image ''
+	[23503] link 'Submit' url: http://100.95.81.103:9999/submit
+		[23507] image ''
+	[23517] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[23521] image ''
+	[23630] main ''
+		[23632] heading 'Page not found'
+		[23636] StaticText 'The requested page was not found.'
+		[23640] link 'Create this page' url: http://100.95.81.103:9999/wiki/_create/index
+	[23645] complementary ''
+		[23649] heading 'Navigation'
+		[23656] link 'All pages' url: http://100.95.81.103:9999/wiki/_all
+		[23662] link 'Recent changes' url: http://100.95.81.103:9999/wiki/_recent
+		[23668] link 'Create new page' url: http://100.95.81.103:9999/wiki/_create
+	[23676] contentinfo ''
+		[23681] StaticText 'Running '
+		[23682] link 'Postmill' url: https://postmill.xyz/

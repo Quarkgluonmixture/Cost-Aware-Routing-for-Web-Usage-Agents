@@ -1,0 +1,48 @@
+Tab 0 (current): Myself, receiving a copy of 'Teenage Mutant Ninja Turtles' on VHS for Christmas in 1990.
+
+[2] RootWebArea "Myself, receiving a copy of 'Teenage Mutant Ninja Turtles' on VHS for Christmas in 1990." focused: True url: http://100.95.81.103:9999/f/OldSchoolCool/78885
+	[352] link '140 comments' url: http://100.95.81.103:9999/f/OldSchoolCool/78885/myself-receiving-a-copy-of-teenage-mutant-ninja-turtles-on
+	[394] heading 'Comments'
+	[406] textbox 'Comment' required: True describedby: reply_to_submission_78885_comment_help
+	[418] checkbox 'Formatting help +' checked: false
+	[421] StaticText 'Markdown allowed.'
+	[635] button 'Post'
+	[649] link 'Nested' url: http://100.95.81.103:9999/f/OldSchoolCool/78885/myself-receiving-a-copy-of-teenage-mutant-ninja-turtles-on
+	[655] link 'Linear' url: http://100.95.81.103:9999/f/OldSchoolCool/78885/myself-receiving-a-copy-of-teenage-mutant-ninja-turtles-on/linear
+	[663] checkbox 'Hide −' checked: true
+	[669] sectionheader ''
+		[671] heading 'Dontsaveme [t1_j5x1i4u] wrote 3 years ago'
+			[675] link 'Dontsaveme' expanded: False url: http://100.95.81.103:9999/user/Dontsaveme
+			[684] time ''
+	[706] StaticText 'You and I would have been friends'
+	[716] link 'Reply' url: http://100.95.81.103:9999/f/OldSchoolCool/78885/-/comment/1499259
+	[725] link 'Permalink' url: http://100.95.81.103:9999/f/OldSchoolCool/78885/-/comment/1499259
+	[738] button 'Upvote'
+	[748] StaticText '74'
+	[756] button 'Downvote'
+	[771] checkbox 'Hide −' checked: true
+	[777] sectionheader ''
+		[779] heading 'thedailyvinyls Original poster [t1_j5x1loy] wrote 3 years ago'
+			[783] link 'thedailyvinyls' expanded: False url: http://100.95.81.103:9999/user/thedailyvinyls
+			[787] generic 'Original poster'
+				[790] StaticText 'OP'
+			[795] StaticText 't1_j5x1loy'
+			[796] StaticText ' wrote '
+			[797] time ''
+				[798] StaticText '3 years ago'
+	[819] StaticText "Where were you?! I didn't have many friends at that age. 😂"
+	[829] link 'Reply' url: http://100.95.81.103:9999/f/OldSchoolCool/78885/-/comment/1499274
+	[838] link 'Permalink' url: http://100.95.81.103:9999/f/OldSchoolCool/78885/-/comment/1499274
+	[844] link 'Parent' url: http://100.95.81.103:9999/f/OldSchoolCool/78885/-/comment/1499259
+	[857] button 'Upvote'
+	[867] StaticText '29'
+	[875] button 'Downvote'
+	[890] checkbox 'Hide −' checked: true
+	[896] sectionheader ''
+		[898] heading 'ConradSchu [t1_j5x4l4j] wrote 3 years ago'
+			[902] link 'ConradSchu' expanded: False url: http://100.95.81.103:9999/user/ConradSchu
+			[911] time ''
+	[933] StaticText "GI Joe? Ninja Turtles? Yup. I would've been your friend too."
+	[971] button 'Upvote'
+	[981] StaticText '19'
+	[989] button 'Downvote'

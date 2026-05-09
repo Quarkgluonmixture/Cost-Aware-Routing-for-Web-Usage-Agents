@@ -1,0 +1,91 @@
+Tab 0 (current): Recent comments
+
+[487] RootWebArea 'Recent comments' focused: True url: http://100.95.81.103:9999/comments
+	[2889] article ''
+		[2935] image ''
+		[2939] StaticText 'Reply to '
+		[2940] link 'The Worm Moon of March rising over Beavertail Lighthouse, last year.' url: http://100.95.81.103:9999/f/RhodeIsland/122149
+		[2943] StaticText ' by '
+		[2944] link 'Jesse_Coker' expanded: False url: http://100.95.81.103:9999/user/Jesse_Coker
+		[2952] StaticText 'Beautiful 😍'
+		[2962] link 'Reply' url: http://100.95.81.103:9999/f/RhodeIsland/122149/-/comment/2561496
+		[2971] link 'Permalink' url: http://100.95.81.103:9999/f/RhodeIsland/122149/-/comment/2561496
+		[3002] button 'Downvote'
+	[3015] article ''
+		[3017] checkbox 'Hide −' checked: true
+		[3023] sectionheader ''
+			[3025] heading 'inspectorgadget69247 [t1_jeh5lbp] wrote 3 years ago'
+				[3029] link 'inspectorgadget69247' expanded: False url: http://100.95.81.103:9999/user/inspectorgadget69247
+				[3038] time ''
+		[3061] image ''
+		[3065] StaticText 'Reply to comment by '
+		[3066] link 'dafuq8916' expanded: False url: http://100.95.81.103:9999/user/dafuq8916
+		[3069] StaticText ' in '
+		[3070] link "Lana Del Rey Lands at No. 1 In Australia With 'Ocean Blvd'" url: http://100.95.81.103:9999/f/Music/121185
+		[3073] StaticText ' by '
+		[3074] link 'edenkins' expanded: False url: http://100.95.81.103:9999/user/edenkins
+		[3082] StaticText 'Have you taken a gander at other songs that have reached #1? Musicianship doesn’t appear to have ever been a priority'
+		[3092] link 'Reply' url: http://100.95.81.103:9999/f/Music/121185/-/comment/2561495
+		[3101] link 'Permalink' url: http://100.95.81.103:9999/f/Music/121185/-/comment/2561495
+		[3107] link 'Parent' url: http://100.95.81.103:9999/f/Music/121185/-/comment/2557586
+		[3120] button 'Upvote'
+		[3138] button 'Downvote'
+	[3151] article ''
+		[3153] checkbox 'Hide −' checked: true
+		[3159] sectionheader ''
+			[3161] heading 'DavosLostFingers [t1_jeh5lcu] wrote 3 years ago'
+				[3165] link 'DavosLostFingers' expanded: False url: http://100.95.81.103:9999/user/DavosLostFingers
+				[3174] time ''
+		[3197] image ''
+		[3201] StaticText 'Reply to comment by '
+		[3202] link 'Aggressive-Button536' expanded: False url: http://100.95.81.103:9999/user/Aggressive-Button536
+		[3205] StaticText ' in '
+		[3206] link 'What is a deal breaker when dating?' url: http://100.95.81.103:9999/f/AskReddit/116809
+		[3209] StaticText ' by '
+		[3210] link 'Tyluvshorror' expanded: False url: http://100.95.81.103:9999/user/Tyluvshorror
+		[3218] StaticText "Interesting to know you'd date both sexes. Fair play to you"
+		[3228] link 'Reply' url: http://100.95.81.103:9999/f/AskReddit/116809/-/comment/2561494
+		[3237] link 'Permalink' url: http://100.95.81.103:9999/f/AskReddit/116809/-/comment/2561494
+		[3243] link 'Parent' url: http://100.95.81.103:9999/f/AskReddit/116809/-/comment/2561419
+		[3256] button 'Upvote'
+		[3274] button 'Downvote'
+	[3287] article ''
+		[3289] checkbox 'Hide −' checked: true
+		[3295] sectionheader ''
+			[3297] heading 'Rome_Black [t1_jeh5l9s] wrote 3 years ago'
+				[3301] link 'Rome_Black' expanded: False url: http://100.95.81.103:9999/user/Rome_Black
+				[3310] time ''
+		[3333] image ''
+		[3337] StaticText 'Reply to '
+		[3338] link 'If you could only eat one food for the rest of your life, what would it be?' url: http://100.95.81.103:9999/f/AskReddit/116722
+		[3341] StaticText ' by '
+		[3342] link 'Interesting_State756' expanded: False url: http://100.95.81.103:9999/user/Interesting_State756
+		[3350] StaticText 'Tacos in Wraps like burritos'
+		[3360] link 'Reply' url: http://100.95.81.103:9999/f/AskReddit/116722/-/comment/2561493
+		[3369] link 'Permalink' url: http://100.95.81.103:9999/f/AskReddit/116722/-/comment/2561493
+		[3382] button 'Upvote'
+		[3400] button 'Downvote'
+	[3413] article ''
+		[3415] checkbox 'Hide −' checked: true
+		[3421] sectionheader ''
+			[3423] heading 'Daintylittlesole [t1_jeh5l8l] wrote 3 years ago'
+				[3427] link 'Daintylittlesole' expanded: False url: http://100.95.81.103:9999/user/Daintylittlesole
+				[3436] time ''
+		[3459] image ''
+		[3463] StaticText 'Reply to '
+		[3464] link 'What was the worst sex youve ever had?' url: http://100.95.81.103:9999/f/AskReddit/116711
+		[3467] StaticText ' by '
+		[3468] link 'raven-vixen' expanded: False url: http://100.95.81.103:9999/user/raven-vixen
+		[3476] StaticText 'It was with your mom and it was terrible it’s a wonder you’re here to be honest.'
+		[3479] StaticText '🤷🏽\u200d♀️'
+		[3489] link 'Reply' url: http://100.95.81.103:9999/f/AskReddit/116711/-/comment/2561492
+		[3498] link 'Permalink' url: http://100.95.81.103:9999/f/AskReddit/116711/-/comment/2561492
+		[3511] button 'Upvote'
+		[3529] button 'Downvote'
+	[3544] checkbox 'Hide −' checked: true
+	[3550] sectionheader ''
+		[3552] heading 'Reselects420 [t1_jeh5l62] wrote 3 years ago'
+			[3556] link 'Reselects420' expanded: False url: http://100.95.81.103:9999/user/Reselects420
+			[3565] time ''
+	[3647] button 'Upvote'
+	[3657] StaticText '16'

@@ -1,0 +1,73 @@
+Tab 0 (current): Search
+
+[2933] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=International+Space+Station+solar+panels+Earth+
+	[2987] sectionheader ''
+		[2989] link 'Home' url: http://100.95.81.103:9999/
+			[2997] StaticText 'Postmill'
+	[3013] link 'Forums' url: http://100.95.81.103:9999/forums
+	[3019] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[3042] searchbox 'Search query'
+		[3465] StaticText 'International Space Station solar panels Earth '
+	[3050] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[3054] image ''
+	[3061] link 'Submit' url: http://100.95.81.103:9999/submit
+		[3065] image ''
+	[3075] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[3079] image ''
+	[3188] main ''
+		[3190] heading 'Search'
+		[3198] StaticText 'Search query'
+		[3200] searchbox 'Search query'
+			[3466] StaticText 'International Space Station solar panels Earth '
+		[3207] button 'Search'
+		[3212] heading '1 result for International Space Station solar panels Earth :'
+			[3214] emphasis ''
+		[3218] article ''
+			[3220] checkbox 'Hide −' checked: true
+			[3226] sectionheader ''
+				[3228] heading 'TouchCommercial5022 [t1_j0xr52p] wrote 3 years ago'
+					[3232] link 'TouchCommercial5022' expanded: False url: http://100.95.81.103:9999/user/TouchCommercial5022
+					[3241] time ''
+			[3264] image ''
+			[3268] StaticText 'Reply to comment by '
+			[3269] link 'fastornator' expanded: False url: http://100.95.81.103:9999/user/fastornator
+			[3272] StaticText ' in '
+			[3273] link 'Humans could one day live in Manhattan-sized asteroid megacities' url: http://100.95.81.103:9999/f/Futurology/54593
+			[3276] StaticText ' by '
+			[3277] link 'Gari_305' expanded: False url: http://100.95.81.103:9999/user/Gari_305
+			[3285] StaticText 'less, and while these and other impacts can be addressed, the easiest way to do it on '
+			[3286] mark ''
+				[3287] StaticText 'Earth'
+			[3288] StaticText ' is to control our population and maintain the opportunity to get out for a regular walk. colonizing ... which the '
+			[3289] mark ''
+				[3290] StaticText 'International'
+			[3292] mark ''
+				[3293] StaticText 'Space'
+			[3295] mark ''
+				[3296] StaticText 'Station'
+			[3297] StaticText ' operates. For example, the atmospheric pressure at that altitude is similar to the pressure of sea level on '
+			[3298] mark ''
+				[3299] StaticText 'Earth'
+			[3300] StaticText '. Therefore, the walls of the floating '
+			[3301] mark ''
+				[3302] StaticText 'station'
+			[3303] StaticText ' will not have ... necessary. It is true that there is some acidity, so the exterior walls and '
+			[3304] mark ''
+				[3305] StaticText 'solar'
+			[3307] mark ''
+				[3308] StaticText 'panels'
+			[3309] StaticText ' of a floating research '
+			[3310] mark ''
+				[3311] StaticText 'station'
+			[3312] StaticText ' would have to be made of acid-proof substances. Anyone climbing outside the '
+			[3313] mark ''
+			[3323] link 'Reply' url: http://100.95.81.103:9999/f/Futurology/54593/-/comment/979060
+			[3332] link 'Permalink' url: http://100.95.81.103:9999/f/Futurology/54593/-/comment/979060
+			[3338] link 'Parent' url: http://100.95.81.103:9999/f/Futurology/54593/-/comment/976075
+			[3351] button 'Upvote'
+			[3361] StaticText '22'
+			[3369] button 'Downvote'
+	[3386] contentinfo ''
+		[3391] StaticText 'Running '
+		[3392] link 'Postmill' url: https://postmill.xyz/

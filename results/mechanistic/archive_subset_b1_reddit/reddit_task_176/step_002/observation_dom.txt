@@ -1,0 +1,105 @@
+Tab 0 (current): Search
+
+[2840] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=Japanese+food+
+	[2898] sectionheader ''
+		[2900] link 'Home' url: http://100.95.81.103:9999/
+			[2908] StaticText 'Postmill'
+	[2924] link 'Forums' url: http://100.95.81.103:9999/forums
+	[2930] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[2953] searchbox 'Search query'
+		[10661] StaticText 'Japanese food '
+	[2961] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[2965] image ''
+	[2972] link 'Submit' url: http://100.95.81.103:9999/submit
+		[2976] image ''
+	[2986] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[2990] image ''
+	[3101] heading 'Search'
+	[3109] StaticText 'Search query'
+	[3111] searchbox 'Search query'
+		[10662] StaticText 'Japanese food '
+	[3118] button 'Search'
+	[3123] heading '50 results for Japanese food :'
+		[3125] emphasis ''
+	[3129] article ''
+		[3135] sectionheader ''
+			[3138] heading 'ELI5:. Why is cheese not used in Chinese , Korean, Japanesefood ?'
+				[3139] link 'ELI5:. Why is cheese not used in Chinese , Korean, Japanesefood ?' url: http://100.95.81.103:9999/f/explainlikeimfive/39429/eli5-why-is-cheese-not-used-in-chinese-korean-japanese-food
+					[3141] mark ''
+					[3143] mark ''
+			[3151] StaticText 'Submitted by '
+			[3152] link '[deleted]' expanded: False url: http://100.95.81.103:9999/user/%5Bdeleted%5D
+			[3159] StaticText 't3_yu5yzw'
+			[3161] time ''
+				[3162] StaticText '3 years ago'
+			[2843] StaticText ' in '
+			[3163] link 'explainlikeimfive' url: http://100.95.81.103:9999/f/explainlikeimfive
+		[3172] StaticText '[removed]'
+		[3181] link 'No comments' url: http://100.95.81.103:9999/f/explainlikeimfive/39429/eli5-why-is-cheese-not-used-in-chinese-korean-japanese-food
+		[3193] button 'Upvote'
+		[3211] button 'Downvote'
+	[3223] article ''
+		[3225] checkbox 'Hide −' checked: true
+		[3231] sectionheader ''
+			[3233] heading 'thebruns [t1_j805ojw] wrote 3 years ago'
+				[3237] link 'thebruns' expanded: False url: http://100.95.81.103:9999/user/thebruns
+				[3246] time ''
+		[3269] image ''
+		[3273] StaticText 'Reply to '
+		[3274] link 'Best Japanese Restaurant in Newark?' url: http://100.95.81.103:9999/f/Newark/100592
+		[3277] StaticText ' by '
+		[3278] link 'Dramatic-Reenactment' expanded: False url: http://100.95.81.103:9999/user/Dramatic-Reenactment
+		[3286] StaticText 'Probably the worst city in the country to eat '
+		[3287] mark ''
+			[3288] StaticText 'Japanese'
+		[3290] mark ''
+			[3291] StaticText 'food'
+		[3292] StaticText '. There is a niche '
+		[3293] mark ''
+			[3294] StaticText 'japanese'
+		[3296] mark ''
+			[3297] StaticText 'food'
+		[3298] StaticText ' type at Go!Go! Curry! 1 William St, Newark'
+		[3307] link 'Reply' url: http://100.95.81.103:9999/f/Newark/100592/-/comment/1772218
+		[3316] link 'Permalink' url: http://100.95.81.103:9999/f/Newark/100592/-/comment/1772218
+		[3329] button 'Upvote'
+		[10663] StaticText '−1'
+		[3347] button 'Retract downvote'
+	[3360] article ''
+		[3362] checkbox 'Hide −' checked: true
+		[3367] sectionheader ''
+			[3369] heading 'louwish [t1_j9xxill] wrote 3 years ago'
+				[3373] link 'louwish' expanded: False url: http://100.95.81.103:9999/user/louwish
+				[3382] time ''
+		[3405] image ''
+		[3409] StaticText 'Reply to comment by '
+		[3410] link 'Freak_Out_Bazaar' expanded: False url: http://100.95.81.103:9999/user/Freak_Out_Bazaar
+		[3413] StaticText ' in '
+		[3414] link 'This Japanese restaurant has mouth wash for customers.' url: http://100.95.81.103:9999/f/mildlyinteresting/107177
+		[3417] StaticText ' by '
+		[3418] link 'aka_quinn' expanded: False url: http://100.95.81.103:9999/user/aka_quinn
+		[3426] mark ''
+			[3427] StaticText 'Japanese'
+		[3429] mark ''
+			[3430] StaticText 'food'
+		[3431] StaticText ' makes money ... Korean or Chinese people decide to open up '
+		[3432] mark ''
+			[3433] StaticText 'Japanese'
+		[3434] StaticText ' restaurants- at least in the US. I’m sure anyone who runs a '
+		[3435] mark ''
+		[3438] mark ''
+			[3439] StaticText 'food'
+		[3440] StaticText ' place also has a passion for the '
+		[3441] mark ''
+		[3451] link 'Reply' url: http://100.95.81.103:9999/f/mildlyinteresting/107177/-/comment/1990593
+		[3460] link 'Permalink' url: http://100.95.81.103:9999/f/mildlyinteresting/107177/-/comment/1990593
+		[3466] link 'Parent' url: http://100.95.81.103:9999/f/mildlyinteresting/107177/-/comment/1985094
+		[3479] button 'Upvote'
+		[3497] button 'Downvote'
+	[3512] checkbox 'Hide −' checked: true
+	[3518] sectionheader ''
+		[3520] heading 'dollrussian [t1_ixwq58b] wrote 3 years ago'
+			[3524] link 'dollrussian' expanded: False url: http://100.95.81.103:9999/user/dollrussian
+			[3533] time ''
+	[3626] button 'Upvote'

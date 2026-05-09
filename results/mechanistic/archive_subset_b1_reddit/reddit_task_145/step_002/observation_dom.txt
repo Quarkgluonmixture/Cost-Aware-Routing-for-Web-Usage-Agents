@@ -1,0 +1,55 @@
+Tab 0 (current): Fuking great year so far
+
+[18425] RootWebArea 'Fuking great year so far' focused: True url: http://100.95.81.103:9999/f/wallstreetbets/136297/fuking-great-year-so-far
+	[18500] sectionheader ''
+		[18502] link 'Home' url: http://100.95.81.103:9999/
+			[18510] StaticText 'Postmill'
+	[18526] link 'Forums' url: http://100.95.81.103:9999/forums
+	[18532] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[18555] searchbox 'Search query'
+	[18563] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[18567] image ''
+	[18574] link 'Submit' url: http://100.95.81.103:9999/submit/wallstreetbets
+		[18578] image ''
+	[18588] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[18592] image ''
+	[18709] link '/f/wallstreetbets' url: http://100.95.81.103:9999/f/wallstreetbets
+		[18712] image ''
+	[18724] article ''
+		[18730] sectionheader ''
+			[18733] heading 'Fuking great year so far'
+				[18734] link 'Fuking great year so far' url: http://100.95.81.103:9999/submission_images/3203b975122d39399866f20feee9094c1aefacb10be1baeaaadd807438f21bdd.jpg
+			[18741] StaticText 'Submitted by '
+			[18742] link 'Spare-Help562' expanded: False url: http://100.95.81.103:9999/user/Spare-Help562
+			[18749] StaticText 't3_127xgye'
+			[18751] time ''
+				[18752] StaticText '3 years ago'
+			[18426] StaticText ' in '
+			[18753] link 'wallstreetbets' url: http://100.95.81.103:9999/f/wallstreetbets
+		[18762] link '' url: http://100.95.81.103:9999/submission_images/3203b975122d39399866f20feee9094c1aefacb10be1baeaaadd807438f21bdd.jpg
+		[18774] link '69 comments' url: http://100.95.81.103:9999/f/wallstreetbets/136297/fuking-great-year-so-far
+		[18786] button 'Upvote'
+		[18796] StaticText '747'
+		[18804] button 'Downvote'
+	[26766] complementary ''
+		[26773] StaticText '0 points'
+		[26776] StaticText '(+0, −0)'
+		[26781] heading 'Short URL:'
+		[26787] StaticText 'http://100.95.81.103:9999/136297'
+		[26794] heading 'wallstreetbets'
+			[26796] link 'wallstreetbets' url: http://100.95.81.103:9999/f/wallstreetbets
+		[26806] button 'Subscribe No subscribers'
+			[26820] generic 'No subscribers'
+		[26828] StaticText 't5_2th52'
+		[26831] separator '' orientation: horizontal
+		[26836] StaticText 'Created '
+		[26837] time ''
+			[26838] StaticText '4 years ago'
+		[26842] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/wallstreetbets/new.atom
+			[26844] image ''
+		[26854] group ''
+			[26856] DisclosureTriangle 'Hide this forum' expanded: False
+		[26877] heading 'Toolbox'
+		[26884] link 'Bans' url: http://100.95.81.103:9999/f/wallstreetbets/bans
+		[26890] link 'Moderation log' url: http://100.95.81.103:9999/f/wallstreetbets/moderation_log

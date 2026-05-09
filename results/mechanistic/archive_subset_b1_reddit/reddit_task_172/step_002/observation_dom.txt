@@ -1,0 +1,116 @@
+Tab 0 (current): jerseycity
+
+[2846] RootWebArea 'jerseycity' focused: True url: http://100.95.81.103:9999/f/jerseycity
+	[2920] sectionheader ''
+		[2922] link 'Home' url: http://100.95.81.103:9999/
+			[2930] StaticText 'Postmill'
+	[2946] link 'Forums' url: http://100.95.81.103:9999/forums
+	[2952] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[2975] searchbox 'Search query'
+	[2983] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[2987] image ''
+	[2994] link 'Submit' url: http://100.95.81.103:9999/submit/jerseycity
+		[2998] image ''
+	[3008] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[3012] image ''
+	[3123] heading '/f/jerseycity'
+	[3135] link 'Submissions' url: http://100.95.81.103:9999/f/jerseycity
+	[3141] link 'Comments' url: http://100.95.81.103:9999/f/jerseycity/comments
+	[3150] button 'Sort by: Hot' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Hot", "New", "Active", "Top", "Controversial", "Most commented"
+		[3153] image ''
+	[3205] article ''
+		[3211] sectionheader ''
+			[3214] heading 'I painted Jersey City with watercolor'
+				[3215] link 'I painted Jersey City with watercolor' url: http://100.95.81.103:9999/submission_images/bb18dd0d19689efe77e7ecfc3c121f2bcf890e6221e4e77b455eeb1272d04a32.jpg
+			[3223] StaticText 'Submitted by '
+			[3224] link 'majozaur' expanded: False url: http://100.95.81.103:9999/user/majozaur
+			[3231] StaticText 't3_y311sd'
+			[3233] time ''
+				[3234] StaticText '4 years ago'
+		[3245] link '42 comments' url: http://100.95.81.103:9999/f/jerseycity/20699/i-painted-jersey-city-with-watercolor
+		[3259] button 'Upvote'
+		[3269] StaticText '397'
+		[3277] button 'Downvote'
+	[3289] article ''
+		[3295] sectionheader ''
+			[3298] heading 'Happy Halloween Amy'
+				[3299] link 'Happy Halloween Amy' url: http://100.95.81.103:9999/submission_images/f724befd6a1540c09d7e349a9731529a2ae152f81a5cb07e98a46a8d57531568.jpg
+			[3307] StaticText 'Submitted by '
+			[3308] link 'HumanityIsTheDevi1' expanded: False url: http://100.95.81.103:9999/user/HumanityIsTheDevi1
+			[3315] StaticText 't3_ygoqc6'
+			[3317] time ''
+				[3318] StaticText '3 years ago'
+		[3329] link '19 comments' url: http://100.95.81.103:9999/f/jerseycity/20698/happy-halloween-amy
+		[3343] button 'Upvote'
+		[3353] StaticText '364'
+		[3361] button 'Downvote'
+	[3373] article ''
+		[3379] sectionheader ''
+			[3382] heading 'Have you checked out all the new stuff at the Jersey City Free Public Library?'
+				[3383] link 'Have you checked out all the new stuff at the Jersey City Free Public Library?' url: http://100.95.81.103:9999/f/jerseycity/62645/have-you-checked-out-all-the-new-stuff-at-the-jersey-city
+			[3390] StaticText 'Submitted by '
+			[3391] link 'edwinblanco201' expanded: False url: http://100.95.81.103:9999/user/edwinblanco201
+			[3398] StaticText 't3_zq498p'
+			[3400] time ''
+				[3401] StaticText '3 years ago'
+		[3412] link '80 comments' url: http://100.95.81.103:9999/f/jerseycity/62645/have-you-checked-out-all-the-new-stuff-at-the-jersey-city
+		[3426] button 'Upvote'
+		[3436] StaticText '339'
+		[3444] button 'Downvote'
+	[3456] article ''
+		[3462] sectionheader ''
+			[3465] heading 'Lightrail on Warren St'
+				[3466] link 'Lightrail on Warren St' url: http://100.95.81.103:9999/submission_images/43a483233d87d8e7c7dec86b149a9a1566250187a1ef2afd8d68b0c88423301b.jpg
+			[3474] StaticText 'Submitted by '
+			[3475] link 'st_igplg' expanded: False url: http://100.95.81.103:9999/user/st_igplg
+			[3482] StaticText 't3_11ixrq8'
+			[3484] time ''
+				[3485] StaticText '3 years ago'
+		[3496] link '24 comments' url: http://100.95.81.103:9999/f/jerseycity/127118/lightrail-on-warren-st
+		[3510] button 'Upvote'
+		[3520] StaticText '324'
+		[3528] button 'Downvote'
+	[3540] article ''
+		[3546] sectionheader ''
+			[3549] heading 'Views of NYC from Weehawken'
+				[3550] link 'Views of NYC from Weehawken' url: http://100.95.81.103:9999/submission_images/63ae1b0b682f048de7ef0ceb1bf781d46d9264d3defed433424e9bfce68e2f33.jpg
+			[3558] StaticText 'Submitted by '
+			[3559] link 'jamrocboi128' expanded: False url: http://100.95.81.103:9999/user/jamrocboi128
+			[3566] StaticText 't3_ylxbnc'
+			[3568] time ''
+				[3569] StaticText '3 years ago'
+		[3580] link '16 comments' url: http://100.95.81.103:9999/f/jerseycity/41225/views-of-nyc-from-weehawken
+		[3594] button 'Upvote'
+		[3604] StaticText '324'
+		[3612] button 'Downvote'
+	[3624] article ''
+		[3630] sectionheader ''
+			[3633] heading 'St Mary of the Immaculate Conception on 2nd st told the funeral guests to just park and block the street. People parked, like me, who need to go can’t leave. What can I do? How is this allowed?'
+				[3634] link 'St Mary of the Immaculate Conception on 2nd st told the funeral guests to just park and block the street. People parked, like me, who need to go can’t leave. What can I do? How is this allowed?' url: http://100.95.81.103:9999/submission_images/1068f802d488545b8e71e66e6addcafdc9e978844bcfcacaf9b24e6d696dece6.jpg
+			[3642] StaticText 'Submitted by '
+			[3643] link 'munchlaxsleeps' expanded: False url: http://100.95.81.103:9999/user/munchlaxsleeps
+			[3650] StaticText 't3_11h3lz3'
+			[3652] time ''
+				[3653] StaticText '3 years ago'
+		[3678] button 'Upvote'
+		[3688] StaticText '286'
+		[3696] button 'Downvote'
+	[5319] complementary ''
+		[5323] heading 'jerseycity'
+			[5325] link 'jerseycity' url: http://100.95.81.103:9999/f/jerseycity
+		[5335] button 'Subscribe No subscribers'
+			[5349] generic 'No subscribers'
+		[5357] StaticText 't5_2rznh'
+		[5360] separator '' orientation: horizontal
+		[5365] StaticText 'Created '
+		[5366] time ''
+			[5367] StaticText '4 years ago'
+		[5371] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/jerseycity/new.atom
+			[5373] image ''
+		[5383] group ''
+			[5385] DisclosureTriangle 'Hide this forum' expanded: False
+		[5406] heading 'Toolbox'
+		[5413] link 'Bans' url: http://100.95.81.103:9999/f/jerseycity/bans
+		[5419] link 'Moderation log' url: http://100.95.81.103:9999/f/jerseycity/moderation_log

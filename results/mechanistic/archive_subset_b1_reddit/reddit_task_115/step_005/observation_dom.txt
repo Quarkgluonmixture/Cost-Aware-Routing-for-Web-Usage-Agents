@@ -1,0 +1,29 @@
+Tab 0 (current): Search
+
+[7439] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=f%2FWaterburyCT+
+	[7493] sectionheader ''
+		[7495] link 'Home' url: http://100.95.81.103:9999/
+			[7503] StaticText 'Postmill'
+	[7519] link 'Forums' url: http://100.95.81.103:9999/forums
+	[7525] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[7548] searchbox 'Search query'
+		[7798] StaticText 'f/WaterburyCT '
+	[7556] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[7560] image ''
+	[7567] link 'Submit' url: http://100.95.81.103:9999/submit
+		[7571] image ''
+	[7581] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[7585] image ''
+	[7694] main ''
+		[7696] heading 'Search'
+		[7704] StaticText 'Search query'
+		[7706] searchbox 'Search query'
+			[7799] StaticText 'f/WaterburyCT '
+		[7713] button 'Search'
+		[7718] heading 'No results for f/WaterburyCT'
+			[7720] emphasis ''
+		[7725] StaticText 'There are no entries to display.'
+	[7731] contentinfo ''
+		[7736] StaticText 'Running '
+		[7737] link 'Postmill' url: https://postmill.xyz/

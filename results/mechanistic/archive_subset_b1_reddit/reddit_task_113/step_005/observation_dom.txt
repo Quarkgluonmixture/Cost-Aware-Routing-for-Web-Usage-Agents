@@ -1,0 +1,54 @@
+Tab 0 (current): Create submission
+
+[7598] RootWebArea 'Create submission' focused: True url: http://100.95.81.103:9999/submit/AskReddit
+	[7661] sectionheader ''
+		[7663] link 'Home' url: http://100.95.81.103:9999/
+			[7671] StaticText 'Postmill'
+	[7687] link 'Forums' url: http://100.95.81.103:9999/forums
+	[7693] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[7716] searchbox 'Search query'
+	[7724] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[7728] image ''
+	[7735] link 'Submit' url: http://100.95.81.103:9999/submit/AskReddit
+		[7740] image ''
+	[7750] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[7754] image ''
+	[7863] main ''
+		[7865] heading 'Create submission'
+		[7880] radio 'URL' checked: false
+		[7883] radio 'Image' checked: true
+		[7902] button '' focused: True
+		[7909] StaticText 'Title '
+		[7910] generic 'This field is required.'
+			[7911] StaticText '*'
+		[7912] textbox 'Title This field is required.' required: True
+		[7917] StaticText 'Body'
+		[7919] textbox 'Body' required: False describedby: submission_body_help
+		[7931] checkbox 'Formatting help +' checked: false
+		[7934] StaticText 'Markdown allowed.'
+		[8137] StaticText 'Forum '
+		[8138] generic 'This field is required.'
+			[8139] StaticText '*'
+		[8336] combobox 'AskReddit' hasPopup: menu required: False expanded: False
+			[OPTIONS: currently selected="AskReddit ❤️"] "AskReddit ❤️", "books ❤️", "allentown", "arlingtonva", "Art", "askscience", "aww", "baltimore", "boston", "BridgeportCT", "BuyItForLife", "CambridgeMA", "ColumbiaMD", "Connecticut", "consoles", "coolgithubprojects", "creepy", "dataisbeautiful", "deeplearning", "DIY", "Documentaries", "EarthPorn", "explainlikeimfive", "food", "funny", "Futurology", "gadgets", "gaming", "GetMotivated", "gifs", "Hartford", "headphones", "history", "IAmA", "InternetIsBeautiful", "iphone", "jerseycity", "Jokes", "lakewood", "LifeProTips", "listentothis", "LowellMA", "MachineLearning", "Maine", "ManchesterNH", "massachusetts", "MechanicalKeyboards", "memes", "mildlyinteresting", "monitor", "movies", "Music", "Newark", "newhampshire", "newhaven", "newjersey", "news", "nosleep", "nottheonion", "nyc", "OldSchoolCool", "Paterson", "Pennsylvania", "personalfinance", "philadelphia", "philosophy", "photoshopbattles", "pics", "pittsburgh", "providence", "relationship_advice", "RhodeIsland", "rva", "science", "Showerthoughts", "singularity", "space", "sports", "springfieldMO", "StamfordCT", "technology", "television", "tifu", "todayilearned", "UpliftingNews", "vermont", "videos", "wallstreetbets", "Washington", "washingtondc", "WaterburyCT", "WorcesterMA", "worldnews", "WritingPrompts", "yonkers"
+			[8337] textbox 'AskReddit ❤️' required: False
+				[8345] image ''
+		[8370] StaticText 'Create submission'
+	[8378] complementary ''
+		[8382] heading 'AskReddit'
+			[8384] link 'AskReddit' url: http://100.95.81.103:9999/f/AskReddit
+		[8394] button 'Unsubscribe 1 subscriber'
+			[8408] generic '1 subscriber'
+		[8416] StaticText 't5_2qh1i'
+		[8419] separator '' orientation: horizontal
+		[8424] StaticText 'Created '
+		[8425] time ''
+			[8426] StaticText '4 years ago'
+		[8430] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/AskReddit/new.atom
+			[8432] image ''
+		[8442] group ''
+			[8444] DisclosureTriangle 'Hide this forum' expanded: False
+		[8465] heading 'Toolbox'
+		[8472] link 'Bans' url: http://100.95.81.103:9999/f/AskReddit/bans
+		[8478] link 'Moderation log' url: http://100.95.81.103:9999/f/AskReddit/moderation_log

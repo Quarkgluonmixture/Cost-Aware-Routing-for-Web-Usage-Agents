@@ -1,0 +1,29 @@
+Tab 0 (current): Search | Tab 1: User:The other Kiwix guy/Landing
+
+[9682] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=women%27s+version+of+the+sport+with+the+largest+average+male+athlete+weight+in+the+2012+Olympics+
+	[9736] sectionheader ''
+		[9738] link 'Home' url: http://100.95.81.103:9999/
+			[9746] StaticText 'Postmill'
+	[9762] link 'Forums' url: http://100.95.81.103:9999/forums
+	[9768] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[9791] searchbox 'Search query'
+		[10041] StaticText "women's version of the sport with the largest average male athlete weight in the 2012 Olympics "
+	[9799] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[9803] image ''
+	[9810] link 'Submit' url: http://100.95.81.103:9999/submit
+		[9814] image ''
+	[9824] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[9828] image ''
+	[9937] main ''
+		[9939] heading 'Search'
+		[9947] StaticText 'Search query'
+		[9949] searchbox 'Search query'
+			[10042] StaticText "women's version of the sport with the largest average male athlete weight in the 2012 Olympics "
+		[9956] button 'Search'
+		[9961] heading "No results for women's version of the sport with the largest average male athlete weight in the 2012 Olympics"
+			[9963] emphasis ''
+		[9968] StaticText 'There are no entries to display.'
+	[9974] contentinfo ''
+		[9979] StaticText 'Running '
+		[9980] link 'Postmill' url: https://postmill.xyz/

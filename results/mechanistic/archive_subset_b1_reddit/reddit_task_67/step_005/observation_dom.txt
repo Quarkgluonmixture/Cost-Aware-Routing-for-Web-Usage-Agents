@@ -1,0 +1,82 @@
+Tab 0 (current): [OC] Geospatial density of the biggest fast food chains in the USA | Tab 1: User:The other Kiwix guy/Landing
+
+[3] RootWebArea '[OC] Geospatial density of the biggest fast food chains in the USA' focused: True url: http://100.95.81.103:9999/f/dataisbeautiful/60120
+	[2713] article ''
+		[2715] checkbox 'Hide −' checked: true
+		[2721] sectionheader ''
+			[2723] heading 'MaverickJW Original poster [t1_j0311lc] wrote 3 years ago'
+				[2727] link 'MaverickJW' expanded: False url: http://100.95.81.103:9999/user/MaverickJW
+				[2731] generic 'Original poster'
+					[2734] StaticText 'OP'
+				[2739] StaticText 't1_j0311lc'
+				[2740] StaticText ' wrote '
+				[2741] time ''
+					[2742] StaticText '3 years ago'
+		[2763] StaticText 'I created a new versions with more regional chains: '
+		[2764] link 'https://www.reddit.com/r/dataisbeautiful/comments/zl3bta/oc_geospatial_distribution_of_different_fast_food/?utm_source=share&utm_medium=ios_app&utm_name=iossmf' url: https://www.reddit.com/r/dataisbeautiful/comments/zl3bta/oc_geospatial_distribution_of_different_fast_food/?utm_source=share&utm_medium=ios_app&utm_name=iossmf
+		[2775] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/921634
+		[2784] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/921634
+		[2790] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917814
+		[2803] button 'Upvote'
+		[2821] button 'Downvote'
+	[2834] article ''
+		[2836] checkbox 'Hide −' checked: true
+		[2842] sectionheader ''
+			[2844] heading 'flyingcircusdog [t1_j00je9l] wrote 3 years ago'
+				[2848] link 'flyingcircusdog' expanded: False url: http://100.95.81.103:9999/user/flyingcircusdog
+				[2857] time ''
+		[2879] StaticText 'Starbucks is especially concentrated in larger towns and cities, while subway seems to have expanded to more remote towns while still maintaining a presence in cities.'
+		[2889] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917982
+		[2898] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917982
+		[2904] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/916128
+		[2917] button 'Upvote'
+		[2935] button 'Downvote'
+	[2947] article ''
+		[2949] checkbox 'Hide −' checked: true
+		[2955] sectionheader ''
+			[2957] heading 'PrinceZuzu09 [t1_j00c1sv] wrote 3 years ago'
+				[2961] link 'PrinceZuzu09' expanded: False url: http://100.95.81.103:9999/user/PrinceZuzu09
+				[2970] time ''
+		[2992] StaticText "Finally found out why I've literally never seen one in my life lol"
+		[3002] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917675
+		[3011] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917675
+		[3017] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/916128
+		[3030] button 'Upvote'
+		[3048] button 'Downvote'
+	[3060] article ''
+		[3062] checkbox 'Hide −' checked: true
+		[3068] sectionheader ''
+			[3070] heading 'FrankDrakman [t1_j00i5l7] wrote 3 years ago'
+				[3074] link 'FrankDrakman' expanded: False url: http://100.95.81.103:9999/user/FrankDrakman
+				[3083] time ''
+		[3105] StaticText 'All across the northwest, really. Looks like the donut drought starts at the Dakotas.'
+		[3115] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917932
+		[3124] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917932
+		[3130] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/916128
+		[3143] button 'Upvote'
+		[3161] button 'Downvote'
+	[3173] article ''
+		[3175] checkbox 'Hide −' checked: true
+		[3181] sectionheader ''
+			[3183] heading '[deleted] [t1_j00ul1i] wrote 3 years ago'
+				[3187] link '[deleted]' expanded: False url: http://100.95.81.103:9999/user/%5Bdeleted%5D
+				[3196] time ''
+		[3218] StaticText '[removed]'
+		[3228] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/918381
+		[3237] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/918381
+		[3243] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/916128
+		[3256] button 'Upvote'
+		[3274] button 'Downvote'
+	[3286] article ''
+		[3288] checkbox 'Hide −' checked: true
+		[3294] sectionheader ''
+			[3296] heading 'mrzaius [t1_j038qqf] wrote 3 years ago'
+				[3300] link 'mrzaius' expanded: False url: http://100.95.81.103:9999/user/mrzaius
+				[3309] time ''
+		[3331] StaticText 'That some franchises have much more rural reach than others'
+		[3341] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/922035
+		[3350] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/922035
+		[3356] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/916128
+		[3369] button 'Upvote'
+		[3387] button 'Downvote'
+	[3401] checkbox 'Hide −' checked: true

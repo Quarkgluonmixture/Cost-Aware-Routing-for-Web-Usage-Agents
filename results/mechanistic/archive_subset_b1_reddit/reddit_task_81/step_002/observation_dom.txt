@@ -1,0 +1,113 @@
+Tab 0 (current): photoshopbattles
+
+[3] RootWebArea 'photoshopbattles' focused: True url: http://100.95.81.103:9999/f/photoshopbattles
+	[882] StaticText 'Submitted by '
+	[883] link 'RRT4444' expanded: False url: http://100.95.81.103:9999/user/RRT4444
+	[890] StaticText 't3_11f7w4v'
+	[892] time ''
+		[893] StaticText '3 years ago'
+	[904] link '153 comments' url: http://100.95.81.103:9999/f/photoshopbattles/131263/psbattle-giraffe-drinking-water
+	[936] button 'Downvote'
+	[948] article ''
+		[954] sectionheader ''
+			[957] heading 'PsBattle: 87 Y/O Man with Coronavirus Watches Sunset Outside For First Time In A Month (2020)'
+				[958] link 'PsBattle: 87 Y/O Man with Coronavirus Watches Sunset Outside For First Time In A Month (2020)' url: http://100.95.81.103:9999/submission_images/f4e7c59be573f3ddd482934efcd8f10f331852d33ba7173df932770faeb0e23c.jpg
+			[966] StaticText 'Submitted by '
+			[967] link 'CalmGameshow' expanded: False url: http://100.95.81.103:9999/user/CalmGameshow
+			[974] StaticText 't3_10z5tus'
+			[976] time ''
+				[977] StaticText '3 years ago'
+		[988] link '185 comments' url: http://100.95.81.103:9999/f/photoshopbattles/110445/psbattle-87-y-o-man-with-coronavirus-watches-sunset-outside
+		[1002] button 'Upvote'
+		[1012] StaticText '16088'
+		[1020] button 'Downvote'
+	[1032] article ''
+		[1038] sectionheader ''
+			[1041] heading 'PsBattle: Wolf in a car next to a guy'
+				[1042] link 'PsBattle: Wolf in a car next to a guy' url: http://100.95.81.103:9999/submission_images/b6461df9666aecb085f5eac674342c41bfce7a2f416449fb68e788b911935f18.jpg
+			[1050] StaticText 'Submitted by '
+			[1051] link 'Zetheryian' expanded: False url: http://100.95.81.103:9999/user/Zetheryian
+			[1058] StaticText 't3_122rt74'
+			[1060] time ''
+				[1061] StaticText '3 years ago'
+		[1072] link '185 comments' url: http://100.95.81.103:9999/f/photoshopbattles/131417/psbattle-wolf-in-a-car-next-to-a-guy
+		[1086] button 'Upvote'
+		[1096] StaticText '16010'
+		[1104] button 'Downvote'
+	[1116] article ''
+		[1122] sectionheader ''
+			[1125] heading 'PsBattle: cat behind a cat'
+				[1126] link 'PsBattle: cat behind a cat' url: http://100.95.81.103:9999/submission_images/592a05fe13159b9c8a109f8f9187b17912a6a8e37124a1af85b341564f5ad3c7.jpg
+			[1134] StaticText 'Submitted by '
+			[1135] link 'Scaulbylausis' expanded: False url: http://100.95.81.103:9999/user/Scaulbylausis
+			[1142] StaticText 't3_z4fulf'
+			[1144] time ''
+				[1145] StaticText '3 years ago'
+		[1156] link '93 comments' url: http://100.95.81.103:9999/f/photoshopbattles/45482/psbattle-cat-behind-a-cat
+		[1170] button 'Retract upvote'
+		[1188] button 'Downvote'
+	[1200] article ''
+		[1206] sectionheader ''
+			[1209] heading 'PsBattle: Miss Ukraine at the Miss Universe pageant'
+				[1210] link 'PsBattle: Miss Ukraine at the Miss Universe pageant' url: http://100.95.81.103:9999/submission_images/174f61a90ac7bac86cb6ee4a89bac8f0ecbe5b7497f11c275a80d2712a8c5cef.jpg
+			[1218] StaticText 'Submitted by '
+			[1219] link 'EmmaStonewallJackson' expanded: False url: http://100.95.81.103:9999/user/EmmaStonewallJackson
+			[1226] StaticText 't3_zwstd0'
+			[1228] time ''
+				[1229] StaticText '3 years ago'
+		[1240] link '200 comments' url: http://100.95.81.103:9999/f/photoshopbattles/66934/psbattle-miss-ukraine-at-the-miss-universe-pageant
+		[1254] button 'Upvote'
+		[1264] StaticText '14567'
+		[1272] button 'Downvote'
+	[1284] article ''
+		[1290] sectionheader ''
+			[1293] heading 'PsBattle: Peacocks fighting'
+				[1294] link 'PsBattle: Peacocks fighting' url: http://100.95.81.103:9999/submission_images/56d11475254d9838f7c9d268b40a3e94ea0a06f1495c524aaa550506aee9fb4f.jpg
+			[1302] StaticText 'Submitted by '
+			[1303] link 'Pragalbhv' expanded: False url: http://100.95.81.103:9999/user/Pragalbhv
+			[1310] StaticText 't3_yanrmv'
+			[1312] time ''
+				[1313] StaticText '4 years ago'
+		[1324] link '84 comments' url: http://100.95.81.103:9999/f/photoshopbattles/24831/psbattle-peacocks-fighting
+		[1338] button 'Upvote'
+		[1348] StaticText '14140'
+		[1356] button 'Downvote'
+	[1368] article ''
+		[DROPDOWN OPTIONS] "Hot", "New", "Active", "Top", "Controversial", "Most commented"
+		[1374] sectionheader ''
+			[1377] heading 'PsBattle: Violet-backed Starling'
+				[1378] link 'PsBattle: Violet-backed Starling' url: http://100.95.81.103:9999/submission_images/ecb8c0b10b83ab4e1f831fe8efc40c66a6bac484b030fc967834fd1bc1caccb4.jpg
+			[1386] StaticText 'Submitted by '
+			[1387] link 'stevepatail' expanded: False url: http://100.95.81.103:9999/user/stevepatail
+			[1394] StaticText 't3_10vxrx3'
+			[1396] time ''
+				[1397] StaticText '3 years ago'
+		[1408] link '57 comments' url: http://100.95.81.103:9999/f/photoshopbattles/110421/psbattle-violet-backed-starling
+		[1422] button 'Upvote'
+		[1432] StaticText '14138'
+		[1440] button 'Downvote'
+	[1452] article ''
+		[1458] sectionheader ''
+			[1461] heading 'PsBattle: This train surrounded by flooded lands'
+				[1462] link 'PsBattle: This train surrounded by flooded lands' url: http://100.95.81.103:9999/submission_images/1e0faec9ba54035f44b8bf60becad493b212f30f23abe9df9906ed761d6cc547.jpg
+			[1470] StaticText 'Submitted by '
+			[1471] link 'C_Hawk14' expanded: False url: http://100.95.81.103:9999/user/C_Hawk14
+			[1478] StaticText 't3_11zwai2'
+			[1480] time ''
+				[1481] StaticText '3 years ago'
+		[1492] link '141 comments' url: http://100.95.81.103:9999/f/photoshopbattles/131404/psbattle-this-train-surrounded-by-flooded-lands
+		[1506] button 'Upvote'
+		[1516] StaticText '13976'
+		[1524] button 'Downvote'
+	[1536] article ''
+		[1542] sectionheader ''
+			[1545] heading 'PsBattle: This baby elephant'
+				[1546] link 'PsBattle: This baby elephant' url: http://100.95.81.103:9999/submission_images/189aec9da1ea779ea19390066c1af763ee939123fd1c9fed4740a12bff772ab8.jpg
+			[1554] StaticText 'Submitted by '
+			[1555] link 'dukefaceb' expanded: False url: http://100.95.81.103:9999/user/dukefaceb
+			[1562] StaticText 't3_zdk2h4'
+			[1564] time ''
+				[1565] StaticText '3 years ago'
+		[1590] button 'Upvote'
+		[1600] StaticText '13477'
+		[1608] button 'Downvote'

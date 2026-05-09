@@ -1,0 +1,83 @@
+Tab 0 (current): Search | Tab 1: Digging
+
+[7918] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=dog+trying+to+perform+action+
+	[7972] sectionheader ''
+		[7974] link 'Home' url: http://100.95.81.103:9999/
+			[7982] StaticText 'Postmill'
+	[7998] link 'Forums' url: http://100.95.81.103:9999/forums
+	[8004] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[8027] searchbox 'Search query'
+		[8976] StaticText 'dog trying to perform action '
+	[8035] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[8039] image ''
+	[8046] link 'Submit' url: http://100.95.81.103:9999/submit
+		[8050] image ''
+	[8060] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[8064] image ''
+	[8175] heading 'Search'
+	[8183] StaticText 'Search query'
+	[8185] searchbox 'Search query'
+		[8977] StaticText 'dog trying to perform action '
+	[8192] button 'Search'
+	[8197] heading '7 results for dog trying to perform action :'
+		[8199] emphasis ''
+	[8203] article ''
+		[8209] sectionheader ''
+			[8212] heading 'The subjective experience of AGIs: A thought experiment'
+				[8213] link 'The subjective experience of AGIs: A thought experiment' url: http://100.95.81.103:9999/f/singularity/133728/the-subjective-experience-of-agis-a-thought-experiment
+			[8220] StaticText 'Submitted by '
+			[8221] link 'Lesterpaintstheworld' expanded: False url: http://100.95.81.103:9999/user/Lesterpaintstheworld
+			[8228] StaticText 't3_1245ke2'
+			[8230] time ''
+				[8231] StaticText '3 years ago'
+			[8232] StaticText ' in '
+			[8233] link 'singularity' url: http://100.95.81.103:9999/f/singularity
+		[8244] StaticText '**Would AGIs have conscious experience? This post is a thought experiment exploring what the subjective'
+		[8253] link '7 comments' url: http://100.95.81.103:9999/f/singularity/133728/the-subjective-experience-of-agis-a-thought-experiment
+		[8265] button 'Upvote'
+		[8275] StaticText '21'
+		[8283] button 'Downvote'
+	[8295] article ''
+		[8301] sectionheader ''
+			[8304] heading 'I saw 270 movies in theaters in 2022. Here is my full ranking.'
+				[8305] link 'I saw 270 movies in theaters in 2022. Here is my full ranking.' url: http://100.95.81.103:9999/f/movies/64553/i-saw-270-movies-in-theaters-in-2022-here-is-my-full-ranking
+			[8312] StaticText 'Submitted by '
+			[8313] link 'BunyipPouch' expanded: False url: http://100.95.81.103:9999/user/BunyipPouch
+			[8320] StaticText 't3_zzvg5y'
+			[8322] time ''
+				[8323] StaticText '3 years ago'
+			[8324] StaticText ' in '
+			[8325] link 'movies' url: http://100.95.81.103:9999/f/movies
+		[8336] StaticText "Every year since 2015, I've been going to the movie theater as much as"
+		[8345] link 'No comments' url: http://100.95.81.103:9999/f/movies/64553/i-saw-270-movies-in-theaters-in-2022-here-is-my-full-ranking
+		[8357] button 'Upvote'
+		[8375] button 'Downvote'
+	[8387] article ''
+		[8393] sectionheader ''
+			[8396] heading 'The Puram'
+				[8397] link 'The Puram' url: http://100.95.81.103:9999/f/nosleep/129945/the-puram
+			[8404] StaticText 'Submitted by '
+			[8405] link 'Fermi___Paradox' expanded: False url: http://100.95.81.103:9999/user/Fermi___Paradox
+			[8412] StaticText 't3_11w4g1a'
+			[8414] time ''
+				[8415] StaticText '3 years ago'
+			[8416] StaticText ' in '
+			[8417] link 'nosleep' url: http://100.95.81.103:9999/f/nosleep
+		[8428] StaticText 'It was summertime in Gusty Meadows. Nora had my hand in hers. Her eyes were'
+		[8437] link '16 comments' url: http://100.95.81.103:9999/f/nosleep/129945/the-puram
+		[8449] button 'Upvote'
+		[8459] StaticText '206'
+		[8467] button 'Downvote'
+	[8485] sectionheader ''
+		[8488] heading 'BONESAW VIC’S CRYPTOZOOLOGICAL GARDENS, PART 5: SPRITES, DRAGONS, AND GANGSTERS GALORE'
+			[8489] link 'BONESAW VIC’S CRYPTOZOOLOGICAL GARDENS, PART 5: SPRITES, DRAGONS, AND GANGSTERS GALORE' url: http://100.95.81.103:9999/f/nosleep/130032/bonesaw-vic-s-cryptozoological-gardens-part-5-sprites
+		[8496] StaticText 'Submitted by '
+		[8497] link 'theworldisgrim' expanded: False url: http://100.95.81.103:9999/user/theworldisgrim
+		[8504] StaticText 't3_126v2po'
+		[8506] time ''
+			[8507] StaticText '3 years ago'
+		[8508] StaticText ' in '
+		[8509] link 'nosleep' url: http://100.95.81.103:9999/f/nosleep
+	[8541] button 'Upvote'
+	[8559] button 'Downvote'

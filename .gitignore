@@ -42,6 +42,14 @@ results/mechanistic/curate_mirage_b1_classifieds/*
 # 24+15 mirage candidate task artifacts subset (16.5MB, paper-grade dataset for A100/Myriad)
 !results/mechanistic/archive_subset_b1_cls/
 !results/mechanistic/archive_subset_b1_cls/**
+# Reddit cross-site subset (47 strong + 48 reverse from B1_3mode_reddit_20260413, ~35MB)
+!results/mechanistic/archive_subset_b1_reddit/
+!results/mechanistic/archive_subset_b1_reddit/**
+# Reddit curate output (small text/jsonl, paper-cite-able)
+!results/mechanistic/curate_mirage_b1_reddit/
+results/mechanistic/curate_mirage_b1_reddit/*
+!results/mechanistic/curate_mirage_b1_reddit/candidates.jsonl
+!results/mechanistic/curate_mirage_b1_reddit/candidates.md
 # Provenance artifacts (env / VWA fingerprint / numerical determinism) — paper §3 cite-able, small JSON
 !results/provenance/
 !results/provenance/**

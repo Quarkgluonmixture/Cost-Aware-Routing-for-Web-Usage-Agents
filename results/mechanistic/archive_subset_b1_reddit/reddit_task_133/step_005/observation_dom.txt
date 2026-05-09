@@ -1,0 +1,99 @@
+Tab 0 (current): Search
+
+[20485] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=www.npr.org
+	[20539] sectionheader ''
+		[20541] link 'Home' url: http://100.95.81.103:9999/
+			[20549] StaticText 'Postmill'
+	[20565] link 'Forums' url: http://100.95.81.103:9999/forums
+	[20571] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[20594] searchbox 'Search query'
+		[25843] StaticText 'www.npr.org'
+	[20602] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[20606] image ''
+	[20613] link 'Submit' url: http://100.95.81.103:9999/submit
+		[20617] image ''
+	[20627] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[20631] image ''
+	[20742] heading 'Search'
+	[20750] StaticText 'Search query'
+	[20752] searchbox 'Search query'
+		[25844] StaticText 'www.npr.org'
+	[20759] button 'Search'
+	[20764] heading '50 results for www.npr.org:'
+		[20766] emphasis ''
+	[20770] article ''
+		[20776] sectionheader ''
+			[20779] heading 'Twitter has lost 50 of its top 100 advertisers since Elon Musk took over, report says'
+				[20780] link 'Twitter has lost 50 of its top 100 advertisers since Elon Musk took over, report says' url: https://www.npr.org/2022/11/25/1139180002/twitter-loses-50-top-advertisers-elon-musk
+			[20783] link 'npr.org' url: http://100.95.81.103:9999/search?q=www.npr.org
+			[20790] StaticText 'Submitted by '
+			[20791] link 'mafco' expanded: False url: http://100.95.81.103:9999/user/mafco
+			[20798] StaticText 't3_z4q5oi'
+			[20800] time ''
+				[25845] StaticText '3 years ago'
+			[20802] StaticText ' in '
+			[20803] link 'news' url: http://100.95.81.103:9999/f/news
+		[20821] link 'No comments' url: http://100.95.81.103:9999/f/news/43967/twitter-has-lost-50-of-its-top-100-advertisers-since-elon
+		[20833] button 'Upvote'
+		[20851] button 'Downvote'
+	[20863] article ''
+		[20869] sectionheader ''
+			[20872] heading "Animal populations have shrunk an average of 69% over the last half-century and are continuing to decline, a report says, and we've got limited time to try to fix it."
+				[20873] link "Animal populations have shrunk an average of 69% over the last half-century and are continuing to decline, a report says, and we've got limited time to try to fix it." url: https://www.npr.org/2022/10/14/1128858953/animal-populations-are-shrinking-drastically
+			[20876] link 'npr.org' url: http://100.95.81.103:9999/search?q=www.npr.org
+			[20883] StaticText 'Submitted by '
+			[20884] link 'mossadnik' expanded: False url: http://100.95.81.103:9999/user/mossadnik
+			[20891] StaticText 't3_y459ht'
+			[20893] time ''
+				[25847] StaticText '4 years ago'
+			[20895] StaticText ' in '
+			[20896] link 'Futurology' url: http://100.95.81.103:9999/f/Futurology
+		[20914] link '75 comments' url: http://100.95.81.103:9999/f/Futurology/12844/animal-populations-have-shrunk-an-average-of-69-over-the
+		[20926] button 'Upvote'
+		[25848] StaticText '706'
+		[20944] button 'Downvote'
+	[20956] article ''
+		[20962] sectionheader ''
+			[20965] heading 'A Florida community built to weather hurricanes endure'
+				[20966] link 'A Florida community built to weather hurricanes endure' url: https://www.npr.org/2022/10/05/1126900340/florida-community-designed-weather-hurricane-ian-babcock-ranch-solar
+			[20969] link 'npr.org' url: http://100.95.81.103:9999/search?q=www.npr.org
+			[20976] StaticText 'Submitted by '
+			[20977] link 'PhilipGreenbriar' expanded: False url: http://100.95.81.103:9999/user/PhilipGreenbriar
+			[20984] StaticText 't3_xxc10h'
+			[20986] time ''
+				[25849] StaticText '4 years ago'
+			[20988] StaticText ' in '
+			[20989] link 'Futurology' url: http://100.95.81.103:9999/f/Futurology
+		[21007] link '90 comments' url: http://100.95.81.103:9999/f/Futurology/12783/a-florida-community-built-to-weather-hurricanes-endure
+		[21019] button 'Upvote'
+		[25850] StaticText '1256'
+		[21037] button 'Downvote'
+	[21049] article ''
+		[21055] sectionheader ''
+			[21058] heading 'Hidden audits reveal millions in overcharges by Medicare Advantage plans'
+				[21059] link 'Hidden audits reveal millions in overcharges by Medicare Advantage plans' url: https://www.npr.org/sections/health-shots/2022/11/21/1137500875/audit-medicare-advantage-overcharged-medicare
+			[21062] link 'npr.org' url: http://100.95.81.103:9999/search?q=www.npr.org
+			[21069] StaticText 'Submitted by '
+			[21070] link 'rustyseapants' expanded: False url: http://100.95.81.103:9999/user/rustyseapants
+			[21077] StaticText 't3_z1826c'
+			[21079] time ''
+				[25851] StaticText '3 years ago'
+			[21081] StaticText ' in '
+			[21082] link 'news' url: http://100.95.81.103:9999/f/news
+		[21100] link '48 comments' url: http://100.95.81.103:9999/f/news/43596/hidden-audits-reveal-millions-in-overcharges-by-medicare
+		[21112] button 'Upvote'
+		[25852] StaticText '620'
+		[21130] button 'Downvote'
+	[21148] sectionheader ''
+		[21151] heading 'Penn State is about to host the Proud Boys founder, and its students are protesting'
+			[21152] link 'Penn State is about to host the Proud Boys founder, and its students are protesting' url: https://www.npr.org/2022/10/12/1128448747/proud-boys-founder-penn-state-speaker-protest
+		[21155] link 'npr.org' url: http://100.95.81.103:9999/search?q=www.npr.org
+		[21162] StaticText 'Submitted by '
+		[21163] link 'CarbonSquirrel' expanded: False url: http://100.95.81.103:9999/user/CarbonSquirrel
+		[21170] StaticText 't3_y2lswm'
+		[21172] time ''
+			[25853] StaticText '4 years ago'
+		[21174] StaticText ' in '
+		[21175] link 'Pennsylvania' url: http://100.95.81.103:9999/f/Pennsylvania
+	[21205] button 'Upvote'

@@ -1,0 +1,120 @@
+Tab 0 (current): Music
+
+[7676] RootWebArea 'Music' focused: True url: http://100.95.81.103:9999/f/Music
+	[7751] sectionheader ''
+		[7753] link 'Home' url: http://100.95.81.103:9999/
+			[7761] StaticText 'Postmill'
+	[7777] link 'Forums' url: http://100.95.81.103:9999/forums
+	[7783] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[7806] searchbox 'Search query'
+	[7814] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[7818] image ''
+	[7825] link 'Submit' url: http://100.95.81.103:9999/submit/Music
+		[7829] image ''
+	[7839] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[7843] image ''
+	[7954] heading '/f/Music'
+	[7966] link 'Submissions' url: http://100.95.81.103:9999/f/Music
+	[7972] link 'Comments' url: http://100.95.81.103:9999/f/Music/comments
+	[7981] button 'Sort by: Hot' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Hot", "New", "Active", "Top", "Controversial", "Most commented"
+		[7984] image ''
+	[8036] article ''
+		[8041] sectionheader ''
+			[8044] heading "'Fame’ and ‘Flashdance’ singer Irene Cara has died aged 63."
+				[8045] link "'Fame’ and ‘Flashdance’ singer Irene Cara has died aged 63." url: https://www.nme.com/news/music/fame-and-flashdance-singer-irene-cara-has-died-aged-63-3356136
+			[8048] link 'nme.com' url: http://100.95.81.103:9999/search?q=www.nme.com
+			[8055] StaticText 'Submitted by '
+			[8056] link 'Private_Zannon' expanded: False url: http://100.95.81.103:9999/user/Private_Zannon
+			[8063] StaticText 't3_z55mln'
+			[8065] time ''
+				[8066] StaticText '3 years ago'
+		[8077] link '156 comments' url: http://100.95.81.103:9999/f/Music/35510/fame-and-flashdance-singer-irene-cara-has-died-aged-63
+		[8091] button 'Upvote'
+		[8101] StaticText '4195'
+		[8109] button 'Downvote'
+	[8121] article ''
+		[8127] sectionheader ''
+			[8130] heading 'Brian May gets a knighthood in New Year Honours list'
+				[8131] link 'Brian May gets a knighthood in New Year Honours list' url: https://www.bbc.co.uk/news/uk-64125449
+			[8134] link 'bbc.co.uk' url: http://100.95.81.103:9999/search?q=www.bbc.co.uk
+			[8141] StaticText 'Submitted by '
+			[8142] link 'StephenHunterUK' expanded: False url: http://100.95.81.103:9999/user/StephenHunterUK
+			[8149] StaticText 't3_zze469'
+			[8151] time ''
+				[8152] StaticText '3 years ago'
+		[8163] link '180 comments' url: http://100.95.81.103:9999/f/Music/56626/brian-may-gets-a-knighthood-in-new-year-honours-list
+		[8177] button 'Upvote'
+		[8187] StaticText '3459'
+		[8195] button 'Downvote'
+	[8207] article ''
+		[7678] sectionheader ''
+			[8215] heading 'Fleetwood Mac’s Christine McVie dies at age 79'
+				[8216] link 'Fleetwood Mac’s Christine McVie dies at age 79' url: https://www.theguardian.com/music/2022/nov/30/fleetwood-macs-christine-mcvie-dies-at-age-79?CMP=Share_AndroidApp_Other
+			[8219] link 'theguardian.com' url: http://100.95.81.103:9999/search?q=www.theguardian.com
+			[8226] StaticText 'Submitted by '
+			[8227] link 'twattyprincess' expanded: False url: http://100.95.81.103:9999/user/twattyprincess
+			[8234] StaticText 't3_z912vn'
+			[8236] time ''
+				[8237] StaticText '3 years ago'
+		[8248] link '80 comments' url: http://100.95.81.103:9999/f/Music/35516/fleetwood-mac-s-christine-mcvie-dies-at-age-79
+		[8262] button 'Upvote'
+		[8272] StaticText '3080'
+		[8280] button 'Downvote'
+	[8292] article ''
+		[8298] sectionheader ''
+			[8301] heading 'D.H Peligro, drummer of punk band Dead Kennedys, has passed away.'
+				[8302] link 'D.H Peligro, drummer of punk band Dead Kennedys, has passed away.' url: http://100.95.81.103:9999/f/Music/14626/d-h-peligro-drummer-of-punk-band-dead-kennedys-has-passed
+			[8309] StaticText 'Submitted by '
+			[8310] link 'wafflesole' expanded: False url: http://100.95.81.103:9999/user/wafflesole
+			[8317] StaticText 't3_ygse9u'
+			[8319] time ''
+				[8320] StaticText '3 years ago'
+		[8331] link '104 comments' url: http://100.95.81.103:9999/f/Music/14626/d-h-peligro-drummer-of-punk-band-dead-kennedys-has-passed
+		[8345] button 'Upvote'
+		[8355] StaticText '2335'
+		[8363] button 'Downvote'
+	[8375] article ''
+		[8381] sectionheader ''
+			[8384] heading "Spotify has some bizarre auto-generated playlists that you can only find by searching them. Two of my favorites are Spooky Evil Jazz Mix and Tennessee Pirate Mix. There's also Battle Clown Music Mix and Babysitting Pirate Mix. Plenty more to be found."
+				[8385] link "Spotify has some bizarre auto-generated playlists that you can only find by searching them. Two of my favorites are Spooky Evil Jazz Mix and Tennessee Pirate Mix. There's also Battle Clown Music Mix and Babysitting Pirate Mix. Plenty more to be found." url: http://100.95.81.103:9999/f/Music/14731/spotify-has-some-bizarre-auto-generated-playlists-that-you
+			[8392] StaticText 'Submitted by '
+			[8393] link 'Higgs_Br0son' expanded: False url: http://100.95.81.103:9999/user/Higgs_Br0son
+			[8400] StaticText 't3_yexxng'
+			[8402] time ''
+				[8403] StaticText '3 years ago'
+		[8413] link '123 comments' url: http://100.95.81.103:9999/f/Music/14731/spotify-has-some-bizarre-auto-generated-playlists-that-you
+		[8427] button 'Upvote'
+		[8437] StaticText '2226'
+		[8445] button 'Downvote'
+	[8457] article ''
+		[8463] sectionheader ''
+			[8466] heading 'Michael Jackson’s ‘Thriller’ Returns To Billboard Top 10 After 38 Years'
+				[8467] link 'Michael Jackson’s ‘Thriller’ Returns To Billboard Top 10 After 38 Years' url: https://www.yahoo.com/entertainment/michael-jackson-thriller-returns-billboard-172526377.html?guccounter=1&amp;guce_referrer=aHR0cHM6Ly93d3cuZ29vZ2xlLmNvbS8&amp;guce_referrer_sig=AQAAAEqrC03PKeCIXingqZ9qZsOQ1aqnj_lv48HIRseacAt4XMmLzSzoefuQluH0WurK5sTkTedn4uGVn-M5U6Y6o5XXJ5DQld-HR_HNdmis9ndVC0kRxWl-5UdsjzDrt
+			[8470] link 'yahoo.com' url: http://100.95.81.103:9999/search?q=www.yahoo.com
+			[8477] StaticText 'Submitted by '
+			[8478] link 'lightblue_sky' expanded: False url: http://100.95.81.103:9999/user/lightblue_sky
+			[8485] StaticText 't3_z770w1'
+			[8487] time ''
+				[8488] StaticText '3 years ago'
+		[8513] button 'Upvote'
+		[8523] StaticText '1612'
+		[8531] button 'Downvote'
+	[10167] complementary ''
+		[10171] heading 'Music'
+			[10173] link 'Music' url: http://100.95.81.103:9999/f/Music
+		[10183] button 'Subscribe No subscribers'
+			[10197] generic 'No subscribers'
+		[10205] StaticText 't5_2qh1u'
+		[10208] separator '' orientation: horizontal
+		[10213] StaticText 'Created '
+		[10214] time ''
+			[10215] StaticText '4 years ago'
+		[10219] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/Music/new.atom
+			[10221] image ''
+		[10231] group ''
+			[10233] DisclosureTriangle 'Hide this forum' expanded: False
+		[10254] heading 'Toolbox'
+		[10261] link 'Bans' url: http://100.95.81.103:9999/f/Music/bans
+		[10267] link 'Moderation log' url: http://100.95.81.103:9999/f/Music/moderation_log

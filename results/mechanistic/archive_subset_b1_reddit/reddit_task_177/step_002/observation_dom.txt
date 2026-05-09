@@ -1,0 +1,63 @@
+Tab 0 (current): ELI5:. Why is cheese not used in Chinese , Korean, Japanese food ?
+
+[10665] RootWebArea 'ELI5:. Why is cheese not used in Chinese , Korean, Japanese food ?' focused: True url: http://100.95.81.103:9999/f/explainlikeimfive/39429/eli5-why-is-cheese-not-used-in-chinese-korean-japanese-food
+	[10741] sectionheader ''
+		[10743] link 'Home' url: http://100.95.81.103:9999/
+			[10751] StaticText 'Postmill'
+	[10767] link 'Forums' url: http://100.95.81.103:9999/forums
+	[10773] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[10796] searchbox 'Search query'
+	[10804] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[10808] image ''
+	[10815] link 'Submit' url: http://100.95.81.103:9999/submit/explainlikeimfive
+		[10819] image ''
+	[10829] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[10833] image ''
+	[10942] main ''
+		[10950] link '/f/explainlikeimfive' url: http://100.95.81.103:9999/f/explainlikeimfive
+			[10953] image ''
+		[10965] article ''
+			[10971] sectionheader ''
+				[10974] heading 'ELI5:. Why is cheese not used in Chinese , Korean, Japanese food ?'
+					[10975] link 'ELI5:. Why is cheese not used in Chinese , Korean, Japanese food ?' url: http://100.95.81.103:9999/f/explainlikeimfive/39429/eli5-why-is-cheese-not-used-in-chinese-korean-japanese-food
+				[10982] StaticText 'Submitted by '
+				[10983] link '[deleted]' expanded: False url: http://100.95.81.103:9999/user/%5Bdeleted%5D
+				[10990] StaticText 't3_yu5yzw'
+				[10992] time ''
+					[10993] StaticText '3 years ago'
+				[10666] StaticText ' in '
+				[10994] link 'explainlikeimfive' url: http://100.95.81.103:9999/f/explainlikeimfive
+			[11004] StaticText '[removed]'
+			[11014] link 'No comments' url: http://100.95.81.103:9999/f/explainlikeimfive/39429/eli5-why-is-cheese-not-used-in-chinese-korean-japanese-food
+			[11026] button 'Upvote'
+			[11044] button 'Downvote'
+		[11056] heading 'Comments'
+		[11068] textbox 'Comment' required: True describedby: reply_to_submission_39429_comment_help
+		[11080] checkbox 'Formatting help +' checked: false
+		[11083] StaticText 'Markdown allowed.'
+		[11297] button 'Post'
+		[11306] image 'A tense emoji'
+			[11307] StaticText '（\u3000ﾟДﾟ）'
+		[11310] StaticText "There's nothing here…"
+	[11316] complementary ''
+		[11323] StaticText '0 points'
+		[11326] StaticText '(+0, −0)'
+		[11331] heading 'Short URL:'
+		[11337] StaticText 'http://100.95.81.103:9999/39429'
+		[11344] heading 'explainlikeimfive'
+			[11346] link 'explainlikeimfive' url: http://100.95.81.103:9999/f/explainlikeimfive
+		[11356] button 'Subscribe No subscribers'
+			[11370] generic 'No subscribers'
+		[11378] StaticText 't5_2sokd'
+		[11381] separator '' orientation: horizontal
+		[11386] StaticText 'Created '
+		[11387] time ''
+			[11388] StaticText '4 years ago'
+		[11392] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/explainlikeimfive/new.atom
+			[11394] image ''
+		[11404] group ''
+			[11406] DisclosureTriangle 'Hide this forum' expanded: False
+		[11427] heading 'Toolbox'
+		[11434] link 'Bans' url: http://100.95.81.103:9999/f/explainlikeimfive/bans
+		[11440] link 'Moderation log' url: http://100.95.81.103:9999/f/explainlikeimfive/moderation_log

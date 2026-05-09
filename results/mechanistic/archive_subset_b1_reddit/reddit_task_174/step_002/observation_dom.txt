@@ -1,0 +1,4 @@
+Tab 0 (current): 1bb5ac196e584278df786d0e06abd5048fee31bb24c365794e669f9b94fcc7c9.gif (299×348)
+
+[2855] RootWebArea '1bb5ac196e584278df786d0e06abd5048fee31bb24c365794e669f9b94fcc7c9.gif (299×348)' focused: True url: http://100.95.81.103:9999/submission_images/1bb5ac196e584278df786d0e06abd5048fee31bb24c365794e669f9b94fcc7c9.gif
+	[2856] image '' url: http://100.95.81.103:9999/submission_images/1bb5ac196e584278df786d0e06abd5048fee31bb24c365794e669f9b94fcc7c9.gif

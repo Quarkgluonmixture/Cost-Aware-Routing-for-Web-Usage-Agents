@@ -1,0 +1,46 @@
+Tab 0 (current): Create submission
+
+[1029] RootWebArea 'Create submission' focused: True url: http://100.95.81.103:9999/submit
+	[1090] sectionheader ''
+		[1092] link 'Home' url: http://100.95.81.103:9999/
+			[1100] StaticText 'Postmill'
+	[1116] link 'Forums' url: http://100.95.81.103:9999/forums
+	[1122] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[1145] searchbox 'Search query'
+	[1153] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[1157] image ''
+	[1164] link 'Submit' url: http://100.95.81.103:9999/submit
+		[1169] image ''
+	[1179] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[1183] image ''
+	[1292] main ''
+		[1294] heading 'Create submission'
+		[1309] radio 'URL' checked: true
+		[1312] radio 'Image' checked: false
+		[1322] textbox '' required: False
+		[1338] StaticText 'Title '
+		[1339] generic 'This field is required.'
+			[1340] StaticText '*'
+		[1341] textbox 'Title This field is required.' required: True
+		[1346] StaticText 'Body'
+		[1348] textbox 'Body' required: False describedby: submission_body_help
+		[1360] checkbox 'Formatting help +' checked: false
+		[1363] StaticText 'Markdown allowed.'
+		[1566] StaticText 'Forum '
+		[1567] generic 'This field is required.'
+			[1568] StaticText '*'
+		[1765] combobox 'Choose one…' hasPopup: menu required: False expanded: True owns: select2-submission_forum-results
+			[OPTIONS] "allentown", "arlingtonva", "Art", "AskReddit", "askscience", "aww", "baltimore", "books", "boston", "BridgeportCT", "BuyItForLife", "CambridgeMA", "ColumbiaMD", "Connecticut", "consoles", "coolgithubprojects", "creepy", "dataisbeautiful", "deeplearning", "DIY", "Documentaries", "EarthPorn", "explainlikeimfive", "food", "funny", "Futurology", "gadgets", "gaming", "GetMotivated", "gifs", "Hartford", "headphones", "history", "IAmA", "InternetIsBeautiful", "iphone", "jerseycity", "Jokes", "lakewood", "LifeProTips", "listentothis", "LowellMA", "MachineLearning", "Maine", "ManchesterNH", "massachusetts", "MechanicalKeyboards", "memes", "mildlyinteresting", "monitor", "movies", "Music", "Newark", "newhampshire", "newhaven", "newjersey", "news", "nosleep", "nottheonion", "nyc", "OldSchoolCool", "Paterson", "Pennsylvania", "personalfinance", "philadelphia", "philosophy", "photoshopbattles", "pics", "pittsburgh", "providence", "relationship_advice", "RhodeIsland", "rva", "science", "Showerthoughts", "singularity", "space", "sports", "springfieldMO", "StamfordCT", "technology", "television", "tifu", "todayilearned", "UpliftingNews", "vermont", "videos", "wallstreetbets", "Washington", "washingtondc", "WaterburyCT", "WorcesterMA", "worldnews", "WritingPrompts", "yonkers"
+			[1766] textbox '' required: False
+			[2083] listbox '' multiselectable: False orientation: vertical required: False
+				[2084] option 'Choose one…' selected: True
+				[2089] option 'allentown' selected: False
+				[2094] option 'arlingtonva' selected: False
+				[2099] option 'Art' selected: False
+				[2104] option 'AskReddit' selected: False
+				[2109] option 'askscience' selected: False
+				[2114] option 'aww' selected: False
+				[2119] option 'baltimore' selected: False
+		[1789] button 'Create submission'
+	[2078] searchbox '' focused: True autocomplete: list controls: select2-submission_forum-results

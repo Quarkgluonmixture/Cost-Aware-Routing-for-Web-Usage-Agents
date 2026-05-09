@@ -1,0 +1,58 @@
+Tab 0 (current): Kailh BOX White switches are fantastic.
+
+[17247] RootWebArea 'Kailh BOX White switches are fantastic.' focused: True url: http://100.95.81.103:9999/f/MechanicalKeyboards/100061/kailh-box-white-switches-are-fantastic
+	[17329] sectionheader ''
+		[17331] link 'Home' url: http://100.95.81.103:9999/
+			[17339] StaticText 'Postmill'
+	[17355] link 'Forums' url: http://100.95.81.103:9999/forums
+	[17361] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[17384] searchbox 'Search query'
+	[17392] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[17396] image ''
+	[17403] link 'Submit' url: http://100.95.81.103:9999/submit/MechanicalKeyboards
+		[17407] image ''
+	[17417] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[17421] image ''
+	[17538] link '/f/MechanicalKeyboards' url: http://100.95.81.103:9999/f/MechanicalKeyboards
+		[17541] image ''
+	[17553] article ''
+		[17559] sectionheader ''
+			[17562] heading 'Kailh BOX White switches are fantastic.'
+				[17563] link 'Kailh BOX White switches are fantastic.' url: http://100.95.81.103:9999/f/MechanicalKeyboards/100061/kailh-box-white-switches-are-fantastic
+			[17570] StaticText 'Submitted by '
+			[17571] link 'neoxx1' expanded: False url: http://100.95.81.103:9999/user/neoxx1
+			[17578] StaticText 't3_1151jw6'
+			[17580] time ''
+				[17581] StaticText '3 years ago'
+			[17248] StaticText ' in '
+			[17582] link 'MechanicalKeyboards' url: http://100.95.81.103:9999/f/MechanicalKeyboards
+		[17592] StaticText "For real. Yesterday I bought a keyboard with Kailh BOX Whites and it's the best experience with mechanical keyboards I've had so far."
+		[17594] StaticText '&#x200B;'
+		[17596] StaticText "The feel and sound is amazing. They are kinda like Cherry MX Browns when pressing fast in the way that they feel almost linear, but at the same time you can definitely tell when the key actuates. Compared to MX Browns they are smoother and the shorter travel distance is noticeable in a good way, but maybe it's just placebo. They certainly feel not as mushy as Gateron Blues. They're also supposed to be pretty light, but it feels to me that they're heavier than both MX Browns and Gateron Blues, which is weird considering that they're supposed to have equal forces. Even then, typing on them is less fatiguing than typing on Gateron Blues somehow."
+		[17600] StaticText 'When it comes to the sound, they are very crisp and compared to Gaterons the sound is lower pitched and kinda longer and more "well-defined". It might feel like this since these switches click two times instead of one, which adds a little bit of depth to the sound. Overall my keyboard sounds pretty damn thocky for one with clicky switches, which I really like. It\'s probably mostly due to the materials of my board and keycaps though, but the sound of the switches itself is very pleasant.'
+		[17604] StaticText "Just after a day of using BOX Whites I'm able to type at 10-15 more words per minute than I ever could with any other mechanical switch and I've used plenty of them, mainly tactiles and clickys. I always loved Cherry MX Browns and Gateron Blues, but after trying out Kailh BOX Whites I don't think that I could ever use them again. I've also used Outemu Reds and Gateron Yellows, but tbh I just don't like linears and they're a big no-no to me. I should also mention that gaming on them is just as good as with linears, since they almost feel like ones and personally I find the tactile bump useful even for gaming so imo they're even better than linears for gaming."
+		[17642] button 'Upvote'
+		[17652] StaticText '12'
+		[17660] button 'Downvote'
+	[20712] complementary ''
+		[20719] StaticText '0 points'
+		[20722] StaticText '(+0, −0)'
+		[20727] heading 'Short URL:'
+		[20733] StaticText 'http://100.95.81.103:9999/100061'
+		[20740] heading 'MechanicalKeyboards'
+			[20742] link 'MechanicalKeyboards' url: http://100.95.81.103:9999/f/MechanicalKeyboards
+		[20752] button 'Subscribe No subscribers'
+			[20766] generic 'No subscribers'
+		[20774] StaticText 't5_2ugo7'
+		[20777] separator '' orientation: horizontal
+		[20782] StaticText 'Created '
+		[20783] time ''
+			[20784] StaticText '4 years ago'
+		[20788] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/MechanicalKeyboards/new.atom
+			[20790] image ''
+		[20800] group ''
+			[20802] DisclosureTriangle 'Hide this forum' expanded: False
+		[20823] heading 'Toolbox'
+		[20830] link 'Bans' url: http://100.95.81.103:9999/f/MechanicalKeyboards/bans
+		[20836] link 'Moderation log' url: http://100.95.81.103:9999/f/MechanicalKeyboards/moderation_log

@@ -1,0 +1,29 @@
+Tab 0 (current): Search
+
+[2933] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=Squidward+watching+SpongeBob+and+Patrick+through+a+window+
+	[2987] sectionheader ''
+		[2989] link 'Home' url: http://100.95.81.103:9999/
+			[2997] StaticText 'Postmill'
+	[3013] link 'Forums' url: http://100.95.81.103:9999/forums
+	[3019] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[3042] searchbox 'Search query'
+		[3292] StaticText 'Squidward watching SpongeBob and Patrick through a window '
+	[3050] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[3054] image ''
+	[3061] link 'Submit' url: http://100.95.81.103:9999/submit
+		[3065] image ''
+	[3075] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[3079] image ''
+	[3188] main ''
+		[3190] heading 'Search'
+		[3198] StaticText 'Search query'
+		[3200] searchbox 'Search query'
+			[3293] StaticText 'Squidward watching SpongeBob and Patrick through a window '
+		[3207] button 'Search'
+		[3212] heading 'No results for Squidward watching SpongeBob and Patrick through a window'
+			[3214] emphasis ''
+		[3219] StaticText 'There are no entries to display.'
+	[3225] contentinfo ''
+		[3230] StaticText 'Running '
+		[3231] link 'Postmill' url: https://postmill.xyz/

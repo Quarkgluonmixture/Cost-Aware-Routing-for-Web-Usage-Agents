@@ -1,0 +1,4 @@
+Tab 0 (current): 
+
+[9727] RootWebArea '' focused: True url: https://www.wboc.com/news/regional/naval-academy-renames-building-after-jimmy-carter/article_d49f3d30-af75-11ed-bd24-f36784301f0b.html
+	[9733] StaticText 'Too Many Requests\n\nclient_ip: 193.221.158.58\nrequest_id: 6031816511'

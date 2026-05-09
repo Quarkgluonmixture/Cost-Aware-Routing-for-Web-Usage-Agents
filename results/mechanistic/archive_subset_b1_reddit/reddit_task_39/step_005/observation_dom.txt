@@ -1,0 +1,85 @@
+Tab 0 (current): Search
+
+[17712] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=sf+
+	[17774] sectionheader ''
+		[17776] link 'Home' url: http://100.95.81.103:9999/
+			[17784] StaticText 'Postmill'
+	[17800] link 'Forums' url: http://100.95.81.103:9999/forums
+	[17806] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[17829] searchbox 'Search query'
+		[24658] StaticText 'sf '
+	[17837] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[17841] image ''
+	[17848] link 'Submit' url: http://100.95.81.103:9999/submit
+		[17852] image ''
+	[17862] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[17866] image ''
+	[17977] heading 'Search'
+	[17985] StaticText 'Search query'
+	[17987] searchbox 'Search query'
+		[24659] StaticText 'sf '
+	[17994] button 'Search'
+	[17999] heading '50 results for sf :'
+		[18001] emphasis ''
+	[18005] article ''
+		[18011] sectionheader ''
+			[18014] heading 'Is $2,400 too expensive for a studio in SF???'
+				[18015] link 'Is $2,400 too expensive for a studio in SF???' url: http://100.95.81.103:9999/f/personalfinance/88725/is-2-400-too-expensive-for-a-studio-in-sf
+					[18017] mark ''
+			[18025] StaticText 'Submitted by '
+			[18026] link 'PlanetBeans' expanded: False url: http://100.95.81.103:9999/user/PlanetBeans
+			[18033] StaticText 't3_10nefs4'
+			[18035] time ''
+				[18036] StaticText '3 years ago'
+			[17713] StaticText ' in '
+			[18037] link 'personalfinance' url: http://100.95.81.103:9999/f/personalfinance
+		[18046] StaticText 'moving to '
+		[18047] mark ''
+			[18048] StaticText 'SF'
+		[18049] StaticText ' in a few weeks and am looking for a studio apartment. I know '
+		[18050] mark ''
+		[18052] StaticText " rates can be crazy so I was really hoping to nail a spot around $2200. I ended ... making $138,000 pretax. Is this cost too crazy for rent? It's my first studio in "
+		[18053] mark ''
+			[18054] StaticText 'SF'
+		[18055] StaticText ' so not sure what to expect'
+		[18064] link 'No comments' url: http://100.95.81.103:9999/f/personalfinance/88725/is-2-400-too-expensive-for-a-studio-in-sf
+		[18076] button 'Upvote'
+		[18094] button 'Downvote'
+	[18106] article ''
+		[18112] sectionheader ''
+			[18115] heading "Snow Crash is simultaneously one of the funniest and and most interesting SF books I've ever read. I am still trying to wrap my head around how it manages to be both hilarious and have such big (and fun) ideas about tech, the future, religion, and language. Check it out if you haven't read it yet!"
+				[18116] link "Snow Crash is simultaneously one of the funniest and and most interesting SF books I've ever read. I am still trying to wrap my head around how it manages to be both hilarious and have such big (and fun) ideas about tech, the future, religion, and language. Check it out if you haven't read it yet!" url: http://100.95.81.103:9999/f/books/124166/snow-crash-is-simultaneously-one-of-the-funniest-and-and
+					[18118] mark ''
+			[18126] StaticText 'Submitted by '
+			[18127] link 'brent_323' expanded: False url: http://100.95.81.103:9999/user/brent_323
+			[18134] StaticText 't3_11g6pul'
+			[18136] time ''
+				[18137] StaticText '3 years ago'
+			[17715] StaticText ' in '
+			[18138] link 'books' url: http://100.95.81.103:9999/f/books
+		[18148] StaticText "series covering the best sci-fi books of all time. If you're interested in other great "
+		[18149] mark ''
+			[18150] StaticText 'SF'
+		[18151] StaticText " books, a deeper discussion about Snow Crash, or related book recommendations search 'Hugonauts' on your podcast"
+		[18160] link 'No comments' url: http://100.95.81.103:9999/f/books/124166/snow-crash-is-simultaneously-one-of-the-funniest-and-and
+		[18172] button 'Upvote'
+		[18190] button 'Downvote'
+	[18202] article ''
+		[18208] sectionheader ''
+			[18211] heading 'Fahrenheit 451 from Ray Bradbury is not SF any more'
+				[18212] link 'Fahrenheit 451 from Ray Bradbury is not SF any more' url: http://100.95.81.103:9999/f/books/124204/fahrenheit-451-from-ray-bradbury-is-not-sf-any-more
+					[18214] mark ''
+			[18221] StaticText 'Submitted by '
+			[18222] link 'besucherke' expanded: False url: http://100.95.81.103:9999/user/besucherke
+			[18229] StaticText 't3_11rqwr6'
+			[18231] time ''
+				[18232] StaticText '3 years ago'
+			[17717] StaticText ' in '
+			[18233] link 'books' url: http://100.95.81.103:9999/f/books
+		[18243] StaticText 'canonized common culture, loneliness, the empty family relationships, the media entertainment as a circus. Therefore, the '
+		[18244] mark ''
+			[18245] StaticText 'SF'
+		[18246] StaticText ' label is not really needed for this novel any more, I really recommended to read'
+		[18267] button 'Upvote'
+		[18285] button 'Downvote'

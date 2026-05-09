@@ -1,0 +1,29 @@
+Tab 0 (current): Search
+
+[4843] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=%2Ff%2Fwallstreetbets+
+	[4897] sectionheader ''
+		[4899] link 'Home' url: http://100.95.81.103:9999/
+			[4907] StaticText 'Postmill'
+	[4923] link 'Forums' url: http://100.95.81.103:9999/forums
+	[4929] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[4952] searchbox 'Search query'
+		[5202] StaticText '/f/wallstreetbets '
+	[4960] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[4964] image ''
+	[4971] link 'Submit' url: http://100.95.81.103:9999/submit
+		[4975] image ''
+	[4985] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[4989] image ''
+	[5098] main ''
+		[5100] heading 'Search'
+		[5108] StaticText 'Search query'
+		[5110] searchbox 'Search query'
+			[5203] StaticText '/f/wallstreetbets '
+		[5117] button 'Search'
+		[5122] heading 'No results for /f/wallstreetbets'
+			[5124] emphasis ''
+		[5129] StaticText 'There are no entries to display.'
+	[5135] contentinfo ''
+		[5140] StaticText 'Running '
+		[5141] link 'Postmill' url: https://postmill.xyz/

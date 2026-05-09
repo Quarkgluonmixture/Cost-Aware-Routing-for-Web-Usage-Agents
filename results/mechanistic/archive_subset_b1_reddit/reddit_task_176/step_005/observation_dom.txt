@@ -1,0 +1,24 @@
+Tab 0 (current): Notifications
+
+[19544] RootWebArea 'Notifications' focused: True url: http://100.95.81.103:9999/notifications
+	[19598] sectionheader ''
+		[19600] link 'Home' url: http://100.95.81.103:9999/
+			[19608] StaticText 'Postmill'
+	[19624] link 'Forums' url: http://100.95.81.103:9999/forums
+	[19630] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[19653] searchbox 'Search query'
+	[19661] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[19666] image ''
+	[19673] link 'Submit' url: http://100.95.81.103:9999/submit
+		[19677] image ''
+	[19687] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[19691] image ''
+	[19800] main ''
+		[19808] link 'Notifications' url: http://100.95.81.103:9999/notifications
+		[19814] link 'Messages' url: http://100.95.81.103:9999/messages
+		[19820] heading 'Notifications'
+		[19826] StaticText 'There are no entries to display.'
+	[19833] contentinfo ''
+		[19838] StaticText 'Running '
+		[19839] link 'Postmill' url: https://postmill.xyz/

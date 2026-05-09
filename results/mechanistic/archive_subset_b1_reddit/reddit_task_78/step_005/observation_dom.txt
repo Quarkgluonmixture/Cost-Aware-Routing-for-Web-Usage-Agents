@@ -1,0 +1,54 @@
+Tab 0 (current): Stay Tuned, I’ll Be Spotlighting CT Music. Are You Here For It CT?
+
+[10425] RootWebArea 'Stay Tuned, I’ll Be Spotlighting CT Music. Are You Here For It CT?' focused: True url: http://100.95.81.103:9999/f/Connecticut/118620/stay-tuned-i-ll-be-spotlighting-ct-music-are-you-here-for-it
+	[10500] sectionheader ''
+		[10502] link 'Home' url: http://100.95.81.103:9999/
+			[10510] StaticText 'Postmill'
+	[10526] link 'Forums' url: http://100.95.81.103:9999/forums
+	[10532] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[10555] searchbox 'Search query'
+	[10563] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[10567] image ''
+	[10574] link 'Submit' url: http://100.95.81.103:9999/submit/Connecticut
+		[10578] image ''
+	[10588] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[10592] image ''
+	[10709] link '/f/Connecticut' url: http://100.95.81.103:9999/f/Connecticut
+		[10712] image ''
+	[10724] article ''
+		[10730] sectionheader ''
+			[10733] heading 'Stay Tuned, I’ll Be Spotlighting CT Music. Are You Here For It CT?'
+				[10734] link 'Stay Tuned, I’ll Be Spotlighting CT Music. Are You Here For It CT?' url: http://100.95.81.103:9999/submission_images/ba148e930a6c7a0b26396894875e8909dfc888c56845dcdc5efbdb68990759e8.jpg
+			[10741] StaticText 'Submitted by '
+			[10742] link 'NuEleven_NE' expanded: False url: http://100.95.81.103:9999/user/NuEleven_NE
+			[10749] StaticText 't3_1260hvd'
+			[10751] time ''
+				[10752] StaticText '3 years ago'
+			[10426] StaticText ' in '
+			[10753] link 'Connecticut' url: http://100.95.81.103:9999/f/Connecticut
+		[10763] link '' url: http://100.95.81.103:9999/submission_images/ba148e930a6c7a0b26396894875e8909dfc888c56845dcdc5efbdb68990759e8.jpg
+		[10774] link '30 comments' url: http://100.95.81.103:9999/f/Connecticut/118620/stay-tuned-i-ll-be-spotlighting-ct-music-are-you-here-for-it
+		[10786] button 'Upvote'
+		[10804] button 'Downvote'
+	[14493] complementary ''
+		[14500] StaticText '0 points'
+		[14503] StaticText '(+0, −0)'
+		[14508] heading 'Short URL:'
+		[14514] StaticText 'http://100.95.81.103:9999/118620'
+		[14521] heading 'Connecticut'
+			[14523] link 'Connecticut' url: http://100.95.81.103:9999/f/Connecticut
+		[14533] button 'Subscribe No subscribers'
+			[14547] generic 'No subscribers'
+		[14555] StaticText 't5_2qji0'
+		[14558] separator '' orientation: horizontal
+		[14563] StaticText 'Created '
+		[14564] time ''
+			[14565] StaticText '4 years ago'
+		[14569] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/Connecticut/new.atom
+			[14571] image ''
+		[14581] group ''
+			[14583] DisclosureTriangle 'Hide this forum' expanded: False
+		[14604] heading 'Toolbox'
+		[14611] link 'Bans' url: http://100.95.81.103:9999/f/Connecticut/bans
+		[14617] link 'Moderation log' url: http://100.95.81.103:9999/f/Connecticut/moderation_log

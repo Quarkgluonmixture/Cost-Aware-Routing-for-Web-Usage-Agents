@@ -1,0 +1,26 @@
+Tab 0 (current): Search
+
+[2894] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=meme+
+	[3198] link '8 comments' url: http://100.95.81.103:9999/f/memes/106804/posting-memes-until-i-get-my-master-s-degree-day-820-meme
+	[3227] article ''
+		[3230] sectionheader ''
+			[3232] heading "Hahahaha such a funny meme (totally not a solution to the stock market pretend its a funny meme so that Reddit parent company doesn't ban)"
+				[3233] link "Hahahaha such a funny meme (totally not a solution to the stock market pretend its a funny meme so that Reddit parent company doesn't ban)" url: http://100.95.81.103:9999/submission_images/8985cf223472f01dcbd3be94de8321f86ebbf7e3c5869b9d557bc1612e57f400.png
+					[3234] mark ''
+					[3235] mark ''
+			[5805] StaticText 'Submitted by '
+			[3238] link 'vangoncho' expanded: False url: http://100.95.81.103:9999/user/vangoncho
+			[5809] StaticText 't3_12839yx'
+			[3241] time ''
+				[5812] StaticText '3 years ago'
+			[5813] StaticText ' in '
+			[3242] link 'wallstreetbets' url: http://100.95.81.103:9999/f/wallstreetbets
+		[3246] link '' url: http://100.95.81.103:9999/submission_images/8985cf223472f01dcbd3be94de8321f86ebbf7e3c5869b9d557bc1612e57f400.png
+		[3251] link '12 comments' url: http://100.95.81.103:9999/f/wallstreetbets/136144/hahahaha-such-a-funny-meme-totally-not-a-solution-to-the
+		[3256] button 'Upvote'
+		[3272] button 'Downvote'
+	[3285] heading "Posting memes until I get my master's degree day 797 meme 1088"
+		[3286] link "Posting memes until I get my master's degree day 797 meme 1088" url: http://100.95.81.103:9999/submission_images/36e250ba0d00a11842c2d48db97f31cbd85ee4e09c6b744e24929ac5f731c642.jpg
+			[3287] mark ''
+			[3288] mark ''
+	[3309] button 'Upvote'

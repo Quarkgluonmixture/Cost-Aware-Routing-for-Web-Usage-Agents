@@ -1,0 +1,115 @@
+Tab 0 (current): mildlyinteresting
+
+[2] RootWebArea 'mildlyinteresting' focused: True url: http://100.95.81.103:9999/f/mildlyinteresting
+	[98] sectionheader ''
+		[100] link 'Home' url: http://100.95.81.103:9999/
+			[108] StaticText 'Postmill'
+	[124] link 'Forums' url: http://100.95.81.103:9999/forums
+	[130] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[153] searchbox 'Search query'
+	[161] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[165] image ''
+	[172] link 'Submit' url: http://100.95.81.103:9999/submit/mildlyinteresting
+		[176] image ''
+	[186] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[190] image ''
+	[301] heading '/f/mildlyinteresting'
+	[313] link 'Submissions' url: http://100.95.81.103:9999/f/mildlyinteresting
+	[319] link 'Comments' url: http://100.95.81.103:9999/f/mildlyinteresting/comments
+	[328] button 'Sort by: Hot' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Hot", "New", "Active", "Top", "Controversial", "Most commented"
+		[331] image ''
+	[383] article ''
+		[389] sectionheader ''
+			[392] heading 'This guy riding a motorcycle has a shirt of him riding his motorcycle'
+				[393] link 'This guy riding a motorcycle has a shirt of him riding his motorcycle' url: http://100.95.81.103:9999/submission_images/9077ce379a7c8c85910b03d63d0fab8331c050a39b1520ac21756319338742b6.jpg
+			[401] StaticText 'Submitted by '
+			[402] link 'Meteorsaresexy' expanded: False url: http://100.95.81.103:9999/user/Meteorsaresexy
+			[409] StaticText 't3_123lsbl'
+			[411] time ''
+				[412] StaticText '3 years ago'
+		[423] link '176 comments' url: http://100.95.81.103:9999/f/mildlyinteresting/128184/this-guy-riding-a-motorcycle-has-a-shirt-of-him-riding-his
+		[437] button 'Upvote'
+		[447] StaticText '13379'
+		[455] button 'Downvote'
+	[467] article ''
+		[473] sectionheader ''
+			[476] heading 'A chocolate covered cashew that I mistook for my other earbud.'
+				[477] link 'A chocolate covered cashew that I mistook for my other earbud.' url: http://100.95.81.103:9999/submission_images/c3e0f19b9c34fb663c059e6001b96c416d67f95e74ef923c3814effe734d1ffe.jpg
+			[485] StaticText 'Submitted by '
+			[486] link 'darlin-clementine' expanded: False url: http://100.95.81.103:9999/user/darlin-clementine
+			[493] StaticText 't3_yzxete'
+			[495] time ''
+				[496] StaticText '3 years ago'
+		[507] link '195 comments' url: http://100.95.81.103:9999/f/mildlyinteresting/42188/a-chocolate-covered-cashew-that-i-mistook-for-my-other
+		[521] button 'Retract upvote'
+		[539] button 'Downvote'
+	[551] article ''
+		[557] sectionheader ''
+			[560] heading "A moth on my mini Buddha statue makes it look like Buddha's wearing a coat or cape"
+				[25] link "A moth on my mini Buddha statue makes it look like Buddha's wearing a coat or cape" url: http://100.95.81.103:9999/submission_images/6cce6dbc2b0f0f5dba8a84afd5a69169198232c50cdcc1a6405f03d238356020.png
+			[567] StaticText 'Submitted by '
+			[568] link 'ScruffyTree' expanded: False url: http://100.95.81.103:9999/user/ScruffyTree
+			[575] StaticText 't3_yi7fxr'
+			[577] time ''
+				[578] StaticText '3 years ago'
+		[588] link '42 comments' url: http://100.95.81.103:9999/f/mildlyinteresting/21572/a-moth-on-my-mini-buddha-statue-makes-it-look-like-buddha-s
+		[602] button 'Upvote'
+		[612] StaticText '6902'
+		[620] button 'Downvote'
+	[6] article ''
+		[636] sectionheader ''
+			[639] heading '21 varieties of potatoes for sale at the farmers market'
+				[640] link '21 varieties of potatoes for sale at the farmers market' url: http://100.95.81.103:9999/submission_images/14d26dd8fa4beb6dd163752018424b3a9b84e6d220b1a986e3487a5dde54e692.jpg
+			[647] StaticText 'Submitted by '
+			[648] link 'TuxedoFloorca' expanded: False url: http://100.95.81.103:9999/user/TuxedoFloorca
+			[655] StaticText 't3_zzvi34'
+			[657] time ''
+				[658] StaticText '3 years ago'
+		[669] link '99 comments' url: http://100.95.81.103:9999/f/mildlyinteresting/63435/21-varieties-of-potatoes-for-sale-at-the-farmers-market
+		[683] button 'Retract upvote'
+		[700] button 'Downvote'
+	[11] article ''
+		[715] sectionheader ''
+			[718] heading 'This old doll uses a vinyl like record to talk and sing'
+				[719] link 'This old doll uses a vinyl like record to talk and sing' url: http://100.95.81.103:9999/submission_images/80a35a8403364cab10efc7e946b44625a7cf0807527f6b0f08451d3f39f8d40a.png
+			[726] StaticText 'Submitted by '
+			[727] link 'Eigenurin' expanded: False url: http://100.95.81.103:9999/user/Eigenurin
+			[734] StaticText 't3_127f5hj'
+			[736] time ''
+				[737] StaticText '3 years ago'
+		[748] link '124 comments' url: http://100.95.81.103:9999/f/mildlyinteresting/128099/this-old-doll-uses-a-vinyl-like-record-to-talk-and-sing
+		[762] button 'Upvote'
+		[771] StaticText '5333'
+		[779] button 'Downvote'
+	[16] article ''
+		[26] sectionheader ''
+			[796] heading 'Sand dollar left a trail on the beach at low tide.'
+				[797] link 'Sand dollar left a trail on the beach at low tide.' url: http://100.95.81.103:9999/submission_images/e912c733db04529b5a635315e11cd48c450062bbf3008ad5626e9061354b67d0.jpg
+			[804] StaticText 'Submitted by '
+			[805] link 'gecko_echo' expanded: False url: http://100.95.81.103:9999/user/gecko_echo
+			[812] StaticText 't3_zy7mij'
+			[814] time ''
+				[815] StaticText '3 years ago'
+		[826] link '162 comments' url: http://100.95.81.103:9999/f/mildlyinteresting/63447/sand-dollar-left-a-trail-on-the-beach-at-low-tide
+		[840] button 'Upvote'
+		[849] StaticText '5252'
+		[857] button 'Downvote'
+	[2477] complementary ''
+		[2481] heading 'mildlyinteresting'
+			[2483] link 'mildlyinteresting' url: http://100.95.81.103:9999/f/mildlyinteresting
+		[2493] button 'Subscribe No subscribers'
+			[2507] generic 'No subscribers'
+		[2515] StaticText 't5_2ti4h'
+		[2518] separator '' orientation: horizontal
+		[2523] StaticText 'Created '
+		[2524] time ''
+			[2525] StaticText '4 years ago'
+		[2529] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/mildlyinteresting/new.atom
+			[2531] image ''
+		[2541] group ''
+			[2543] DisclosureTriangle 'Hide this forum' expanded: False
+		[2564] heading 'Toolbox'
+		[2571] link 'Bans' url: http://100.95.81.103:9999/f/mildlyinteresting/bans
+		[2577] link 'Moderation log' url: http://100.95.81.103:9999/f/mildlyinteresting/moderation_log

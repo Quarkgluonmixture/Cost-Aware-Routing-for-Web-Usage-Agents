@@ -1,0 +1,86 @@
+Tab 0 (current): [OC] Geospatial density of the biggest fast food chains in the USA | Tab 1: User:The other Kiwix guy/Landing
+
+[3] RootWebArea '[OC] Geospatial density of the biggest fast food chains in the USA' focused: True url: http://100.95.81.103:9999/f/dataisbeautiful/60120
+	[1228] article ''
+		[1283] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917076
+		[1292] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917076
+		[1298] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/916243
+		[1329] button 'Downvote'
+		[1342] article ''
+			[1344] checkbox 'Hide −' checked: true
+			[1350] sectionheader ''
+				[1352] heading 'GreyerGardens [t1_j00gprm] wrote 3 years ago'
+					[1356] link 'GreyerGardens' expanded: False url: http://100.95.81.103:9999/user/GreyerGardens
+					[1365] time ''
+			[1387] StaticText 'Freakin potato oles are amazing.'
+			[1397] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917880
+			[1406] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917880
+			[1412] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917076
+			[1425] button 'Upvote'
+			[1443] button 'Downvote'
+			[1456] article ''
+				[1458] checkbox 'Hide −' checked: true
+				[1464] sectionheader ''
+					[1466] heading 'Kind-Wait-2432 [t1_j030s6f] wrote 3 years ago'
+						[1470] link 'Kind-Wait-2432' expanded: False url: http://100.95.81.103:9999/user/Kind-Wait-2432
+						[1479] time ''
+				[1501] StaticText 'Potato Ole’s ftw'
+				[1511] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/921622
+				[1520] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/921622
+				[1526] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917880
+				[1539] button 'Upvote'
+				[1557] button 'Downvote'
+			[1569] article ''
+				[1571] checkbox 'Hide −' checked: true
+				[1577] sectionheader ''
+					[1579] heading '[deleted] [t1_j04akc8] wrote 3 years ago'
+						[1583] link '[deleted]' expanded: False url: http://100.95.81.103:9999/user/%5Bdeleted%5D
+						[1592] time ''
+				[1614] StaticText '[removed]'
+				[1624] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/923732
+				[1633] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/923732
+				[1639] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917880
+				[1652] button 'Upvote'
+				[1670] button 'Downvote'
+		[1683] article ''
+			[1685] checkbox 'Hide −' checked: true
+			[1691] sectionheader ''
+				[1693] heading 'G_Peccary [t1_j03n9de] wrote 3 years ago'
+					[1697] link 'G_Peccary' expanded: False url: http://100.95.81.103:9999/user/G_Peccary
+					[1706] time ''
+			[1728] StaticText 'Is a Taco John what people have to use immediately after eating Taco Bell?'
+			[1738] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/922681
+			[1747] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/922681
+			[1753] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917076
+			[1766] button 'Upvote'
+			[1784] button 'Downvote'
+	[1800] checkbox 'Hide −' checked: true
+	[1806] sectionheader ''
+		[1808] heading 'MultiplyAccumulate [t1_j000x8a] wrote 3 years ago'
+			[1812] link 'MultiplyAccumulate' expanded: False url: http://100.95.81.103:9999/user/MultiplyAccumulate
+			[1821] time ''
+	[1843] StaticText 'Dunken is pretty sparse in the southwest as well starting just past the Florida panhandle. Both Starbucks and Dunkin have a triangular hole on the lower Mississippi.'
+	[1853] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917152
+	[1862] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917152
+	[1868] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/916128
+	[1881] button 'Upvote'
+	[1891] StaticText '13'
+	[1899] button 'Downvote'
+	[1912] article ''
+		[1914] checkbox 'Hide −' checked: true
+		[1920] sectionheader ''
+			[1922] heading 'skodaddy426 [t1_j001mcp] wrote 3 years ago'
+				[1926] link 'skodaddy426' expanded: False url: http://100.95.81.103:9999/user/skodaddy426
+				[1935] time ''
+		[1957] StaticText 'Interesting pick up. Thanks'
+		[1967] link 'Reply' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917185
+		[1976] link 'Permalink' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917185
+		[1982] link 'Parent' url: http://100.95.81.103:9999/f/dataisbeautiful/60120/-/comment/917152
+		[1995] button 'Upvote'
+		[2013] button 'Downvote'
+	[2027] checkbox 'Hide −' checked: true
+	[2033] sectionheader ''
+		[2035] heading 'K_H007 [t1_j00p9gz] wrote 3 years ago'
+			[2039] link 'K_H007' expanded: False url: http://100.95.81.103:9999/user/K_H007
+			[2048] time ''
+	[2108] button 'Upvote'

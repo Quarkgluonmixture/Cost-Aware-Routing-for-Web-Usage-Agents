@@ -1,0 +1,41 @@
+Tab 0 (current): Search
+
+[1133] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=watercolor+fish+market+
+	[1187] sectionheader ''
+		[1189] link 'Home' url: http://100.95.81.103:9999/
+			[1197] StaticText 'Postmill'
+	[1213] link 'Forums' url: http://100.95.81.103:9999/forums
+	[1219] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[1242] searchbox 'Search query'
+		[1492] StaticText 'watercolor fish market '
+	[1250] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[1254] image ''
+	[1261] link 'Submit' url: http://100.95.81.103:9999/submit
+		[1265] image ''
+	[1275] button 'MarvelsGrantMan136' focused: True hasPopup: menu expanded: True
+		[1279] image ''
+	[1305] link ' Profile' url: http://100.95.81.103:9999/user/MarvelsGrantMan136
+		[1308] image ''
+	[1315] link ' My account' url: http://100.95.81.103:9999/user/MarvelsGrantMan136/account
+		[1318] image ''
+	[1325] link ' User settings' url: http://100.95.81.103:9999/user/MarvelsGrantMan136/preferences
+		[1328] image ''
+	[1335] link ' Block list' url: http://100.95.81.103:9999/user/MarvelsGrantMan136/block_list
+		[1338] image ''
+	[1344] separator '' orientation: horizontal
+	[1352] button ' Dark mode'
+		[1355] image ''
+	[1372] button ' Log out'
+		[1375] image ''
+	[1388] main ''
+		[1390] heading 'Search'
+		[1398] StaticText 'Search query'
+		[1400] searchbox 'Search query'
+			[1493] StaticText 'watercolor fish market '
+		[1407] button 'Search'
+		[1412] heading 'No results for watercolor fish market'
+			[1414] emphasis ''
+		[1419] StaticText 'There are no entries to display.'
+	[1425] contentinfo ''
+		[1430] StaticText 'Running '
+		[1431] link 'Postmill' url: https://postmill.xyz/

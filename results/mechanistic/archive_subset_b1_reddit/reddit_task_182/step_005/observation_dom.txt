@@ -1,0 +1,58 @@
+Tab 0 (current): List of forums
+
+[5581] RootWebArea 'List of forums' focused: True url: http://100.95.81.103:9999/forums
+	[5639] sectionheader ''
+		[5641] link 'Home' url: http://100.95.81.103:9999/
+			[5649] StaticText 'Postmill'
+	[5665] link 'Forums' url: http://100.95.81.103:9999/forums
+	[5672] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[5695] searchbox 'Search query'
+	[5703] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[5707] image ''
+	[5714] link 'Submit' url: http://100.95.81.103:9999/submit
+		[5718] image ''
+	[5728] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[5732] image ''
+	[5849] link 'Forums' url: http://100.95.81.103:9999/forums
+	[5855] link 'Tags' url: http://100.95.81.103:9999/tags
+	[5861] link 'Alphabetical' url: http://100.95.81.103:9999/forums/all
+	[5870] button 'Sort by: Submissions' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Name", "Title", "Submissions", "Subscribers", "Creation date"
+		[5873] image ''
+	[5921] heading 'List of forums'
+	[5926] link 'Create forum' url: http://100.95.81.103:9999/create_forum
+	[5933] article ''
+		[5937] heading 'AskReddit — AskReddit'
+			[5939] link 'AskReddit — AskReddit' url: http://100.95.81.103:9999/f/AskReddit
+		[5965] button 'Unsubscribe 1 subscriber'
+			[5979] generic '1 subscriber'
+		[5985] StaticText '10,041 submissions'
+	[5990] article ''
+		[5994] heading 'relationship_advice — relationship_advice'
+			[5996] link 'relationship_advice — relationship_advice' url: http://100.95.81.103:9999/f/relationship_advice
+		[6022] button 'Subscribe No subscribers'
+			[6036] generic 'No subscribers'
+		[6042] StaticText '5,718 submissions'
+	[6047] article ''
+		[6051] heading 'worldnews — worldnews'
+			[6053] link 'worldnews — worldnews' url: http://100.95.81.103:9999/f/worldnews
+		[6079] button 'Subscribe No subscribers'
+			[6093] generic 'No subscribers'
+		[6099] StaticText '3,464 submissions'
+	[6104] article ''
+		[6108] heading 'news — news'
+			[6110] link 'news — news' url: http://100.95.81.103:9999/f/news
+		[6136] button 'Subscribe No subscribers'
+			[6150] generic 'No subscribers'
+		[6156] StaticText '3,322 submissions'
+	[6161] article ''
+		[6165] heading 'movies — movies'
+			[6167] link 'movies — movies' url: http://100.95.81.103:9999/f/movies
+		[6193] button 'Subscribe No subscribers'
+			[6207] generic 'No subscribers'
+		[6213] StaticText '3,261 submissions'
+	[6222] heading 'memes — memes'
+		[6224] link 'memes — memes' url: http://100.95.81.103:9999/f/memes
+	[6250] button 'Subscribe No subscribers'
+		[6264] generic 'No subscribers'

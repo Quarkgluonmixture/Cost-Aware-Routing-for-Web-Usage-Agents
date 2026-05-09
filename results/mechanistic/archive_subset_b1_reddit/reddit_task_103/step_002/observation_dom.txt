@@ -1,0 +1,55 @@
+Tab 0 (current): I also squint so my eyes don’t lose the tired
+
+[2224] RootWebArea 'I also squint so my eyes don’t lose the tired' focused: True url: http://100.95.81.103:9999/f/memes/41674/i-also-squint-so-my-eyes-don-t-lose-the-tired
+	[2299] sectionheader ''
+		[2301] link 'Home' url: http://100.95.81.103:9999/
+			[2309] StaticText 'Postmill'
+	[2325] link 'Forums' url: http://100.95.81.103:9999/forums
+	[2331] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[2354] searchbox 'Search query'
+	[2362] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[2366] image ''
+	[2373] link 'Submit' url: http://100.95.81.103:9999/submit/memes
+		[2377] image ''
+	[2387] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[2391] image ''
+	[2508] link '/f/memes' url: http://100.95.81.103:9999/f/memes
+		[2511] image ''
+	[2523] article ''
+		[2529] sectionheader ''
+			[2532] heading 'I also squint so my eyes don’t lose the tired'
+				[2533] link 'I also squint so my eyes don’t lose the tired' url: http://100.95.81.103:9999/submission_images/ef3b5ca36903c7915d749d42050103a4be6e1e4677055c7d7b6493e1d08a97b4.gif
+			[2540] StaticText 'Submitted by '
+			[2541] link 'BiAdventureTime' expanded: False url: http://100.95.81.103:9999/user/BiAdventureTime
+			[2548] StaticText 't3_z96dbj'
+			[2550] time ''
+				[2551] StaticText '3 years ago'
+			[2225] StaticText ' in '
+			[2552] link 'memes' url: http://100.95.81.103:9999/f/memes
+		[2561] link '' url: http://100.95.81.103:9999/submission_images/ef3b5ca36903c7915d749d42050103a4be6e1e4677055c7d7b6493e1d08a97b4.gif
+		[2573] link '4 comments' url: http://100.95.81.103:9999/f/memes/41674/i-also-squint-so-my-eyes-don-t-lose-the-tired
+		[2585] button 'Upvote'
+		[2595] StaticText '21026'
+		[2603] button 'Downvote'
+	[3335] complementary ''
+		[3342] StaticText '0 points'
+		[3345] StaticText '(+0, −0)'
+		[3350] heading 'Short URL:'
+		[3356] StaticText 'http://100.95.81.103:9999/41674'
+		[3363] heading 'memes'
+			[3365] link 'memes' url: http://100.95.81.103:9999/f/memes
+		[3375] button 'Subscribe No subscribers'
+			[3389] generic 'No subscribers'
+		[3397] StaticText 't5_2qjpg'
+		[3400] separator '' orientation: horizontal
+		[3405] StaticText 'Created '
+		[3406] time ''
+			[3407] StaticText '4 years ago'
+		[3411] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/memes/new.atom
+			[3413] image ''
+		[3423] group ''
+			[3425] DisclosureTriangle 'Hide this forum' expanded: False
+		[3446] heading 'Toolbox'
+		[3453] link 'Bans' url: http://100.95.81.103:9999/f/memes/bans
+		[3459] link 'Moderation log' url: http://100.95.81.103:9999/f/memes/moderation_log

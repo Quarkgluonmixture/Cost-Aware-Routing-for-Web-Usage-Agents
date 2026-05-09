@@ -1,0 +1,116 @@
+Tab 0 (current): AskReddit
+
+[12346] RootWebArea 'AskReddit' focused: True url: http://100.95.81.103:9999/f/AskReddit
+	[12432] sectionheader ''
+		[12434] link 'Home' url: http://100.95.81.103:9999/
+			[12442] StaticText 'Postmill'
+	[12458] link 'Forums' url: http://100.95.81.103:9999/forums
+	[12464] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[12487] searchbox 'Search query'
+	[12495] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[12499] image ''
+	[12506] link 'Submit' url: http://100.95.81.103:9999/submit/AskReddit
+		[12510] image ''
+	[12520] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[12524] image ''
+	[12635] heading '/f/AskReddit'
+	[12647] link 'Submissions' url: http://100.95.81.103:9999/f/AskReddit
+	[12653] link 'Comments' url: http://100.95.81.103:9999/f/AskReddit/comments
+	[12662] button 'Sort by: Hot' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Hot", "New", "Active", "Top", "Controversial", "Most commented"
+		[12665] image ''
+	[12717] article ''
+		[12723] sectionheader ''
+			[12726] heading 'Why bleaching your butthole isn’t called changing your ring tone?'
+				[12727] link 'Why bleaching your butthole isn’t called changing your ring tone?' url: http://100.95.81.103:9999/f/AskReddit/10224/why-bleaching-your-butthole-isn-t-called-changing-your-ring
+			[12734] StaticText 'Submitted by '
+			[12735] link 'VampiricBanghole' expanded: False url: http://100.95.81.103:9999/user/VampiricBanghole
+			[12742] StaticText 't3_yirgqi'
+			[12744] time ''
+				[12745] StaticText '3 years ago'
+		[12756] link '16 comments' url: http://100.95.81.103:9999/f/AskReddit/10224/why-bleaching-your-butthole-isn-t-called-changing-your-ring
+		[12770] button 'Upvote'
+		[12780] StaticText '38'
+		[12788] button 'Downvote'
+	[12800] article ''
+		[12806] sectionheader ''
+			[12809] heading 'What is a battle that you are losing right now?'
+				[12810] link 'What is a battle that you are losing right now?' url: http://100.95.81.103:9999/f/AskReddit/30995/what-is-a-battle-that-you-are-losing-right-now
+			[12817] StaticText 'Submitted by '
+			[12818] link 'FrankTheBanker76' expanded: False url: http://100.95.81.103:9999/user/FrankTheBanker76
+			[12825] StaticText 't3_z97tuj'
+			[12827] time ''
+				[12828] StaticText '3 years ago'
+		[12839] link '1 comment' url: http://100.95.81.103:9999/f/AskReddit/30995/what-is-a-battle-that-you-are-losing-right-now
+		[12853] button 'Upvote'
+		[12863] StaticText '35'
+		[12871] button 'Downvote'
+	[12883] article ''
+		[12359] sectionheader ''
+			[12891] heading 'what song describes your love life atm?'
+				[12892] link 'what song describes your love life atm?' url: http://100.95.81.103:9999/f/AskReddit/116780/what-song-describes-your-love-life-atm
+			[12899] StaticText 'Submitted by '
+			[12900] link 'SashaGreatest' expanded: False url: http://100.95.81.103:9999/user/SashaGreatest
+			[12907] StaticText 't3_12831yb'
+			[12909] time ''
+				[12910] StaticText '3 years ago'
+		[12921] link '14 comments' url: http://100.95.81.103:9999/f/AskReddit/116780/what-song-describes-your-love-life-atm
+		[12935] button 'Upvote'
+		[12945] StaticText '31'
+		[12953] button 'Downvote'
+	[12965] article ''
+		[12971] sectionheader ''
+			[12974] heading 'parents of reddit: what would you do if your child was switched at birth and you only found out now?'
+				[12975] link 'parents of reddit: what would you do if your child was switched at birth and you only found out now?' url: http://100.95.81.103:9999/f/AskReddit/116707/parents-of-reddit-what-would-you-do-if-your-child-was
+			[12981] StaticText 'Submitted by '
+			[12982] link 'SashaGreatest' expanded: False url: http://100.95.81.103:9999/user/SashaGreatest
+			[12989] StaticText 't3_1283efn'
+			[12991] time ''
+				[12992] StaticText '3 years ago'
+		[13002] link '3 comments' url: http://100.95.81.103:9999/f/AskReddit/116707/parents-of-reddit-what-would-you-do-if-your-child-was
+		[13016] button 'Upvote'
+		[13026] StaticText '27'
+		[13034] button 'Downvote'
+	[12349] article ''
+		[13051] sectionheader ''
+			[13054] heading 'What is the best way to remove a champagne bottle from your rectum?'
+				[13055] link 'What is the best way to remove a champagne bottle from your rectum?' url: http://100.95.81.103:9999/f/AskReddit/51931/what-is-the-best-way-to-remove-a-champagne-bottle-from-your
+			[13062] StaticText 'Submitted by '
+			[13063] link '[deleted]' expanded: False url: http://100.95.81.103:9999/user/%5Bdeleted%5D
+			[13070] StaticText 't3_1006ovm'
+			[13072] time ''
+				[13073] StaticText '3 years ago'
+		[13084] link '87 comments' url: http://100.95.81.103:9999/f/AskReddit/51931/what-is-the-best-way-to-remove-a-champagne-bottle-from-your
+		[13098] button 'Upvote'
+		[13107] StaticText '24'
+		[13115] button 'Downvote'
+	[12352] article ''
+		[13131] sectionheader ''
+			[13134] heading 'You win $1B but in exchange you can never use social media again, are you interested what would you do?'
+				[12360] link 'You win $1B but in exchange you can never use social media again, are you interested what would you do?' url: http://100.95.81.103:9999/f/AskReddit/31001/you-win-1b-but-in-exchange-you-can-never-use-social-media
+			[13140] StaticText 'Submitted by '
+			[13141] link 'a1bells' expanded: False url: http://100.95.81.103:9999/user/a1bells
+			[13148] StaticText 't3_z96wg3'
+			[13150] time ''
+				[13151] StaticText '3 years ago'
+		[13175] button 'Upvote'
+		[13184] StaticText '23'
+		[13192] button 'Downvote'
+	[14795] complementary ''
+		[14799] heading 'AskReddit'
+			[14801] link 'AskReddit' url: http://100.95.81.103:9999/f/AskReddit
+		[14811] button 'Unsubscribe 1 subscriber'
+			[14825] generic '1 subscriber'
+		[14833] StaticText 't5_2qh1i'
+		[14836] separator '' orientation: horizontal
+		[14841] StaticText 'Created '
+		[14842] time ''
+			[14843] StaticText '4 years ago'
+		[14847] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/AskReddit/new.atom
+			[14849] image ''
+		[14859] group ''
+			[14861] DisclosureTriangle 'Hide this forum' expanded: False
+		[14882] heading 'Toolbox'
+		[14889] link 'Bans' url: http://100.95.81.103:9999/f/AskReddit/bans
+		[14895] link 'Moderation log' url: http://100.95.81.103:9999/f/AskReddit/moderation_log

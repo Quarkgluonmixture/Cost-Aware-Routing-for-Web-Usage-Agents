@@ -1,0 +1,56 @@
+Tab 0 (current): [Homemade] Arancini
+
+[18883] RootWebArea '[Homemade] Arancini' focused: True url: http://100.95.81.103:9999/f/food/60745/homemade-arancini
+	[18957] sectionheader ''
+		[18959] link 'Home' url: http://100.95.81.103:9999/
+			[18967] StaticText 'Postmill'
+	[18983] link 'Forums' url: http://100.95.81.103:9999/forums
+	[18989] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[19012] searchbox 'Search query'
+	[19020] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[19024] image ''
+	[19031] link 'Submit' url: http://100.95.81.103:9999/submit/food
+		[19035] image ''
+	[19045] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[19049] image ''
+	[19166] link '/f/food' url: http://100.95.81.103:9999/f/food
+		[19169] image ''
+	[19181] article ''
+		[19187] sectionheader ''
+			[19190] heading '[Homemade] Arancini'
+				[19191] link '[Homemade] Arancini' url: http://100.95.81.103:9999/submission_images/57601f433cafd96a7d3883beea48e01e7f10280c52f27d40433a657ce5fad3e9.jpg
+			[19198] StaticText 'Submitted by '
+			[19199] link 'Bloodfart2112' expanded: False url: http://100.95.81.103:9999/user/Bloodfart2112
+			[19206] StaticText 't3_zzayqw'
+			[19208] time ''
+				[19209] StaticText '3 years ago'
+			[19210] StaticText ' in '
+			[19211] link 'food' url: http://100.95.81.103:9999/f/food
+		[19222] link '' url: http://100.95.81.103:9999/submission_images/57601f433cafd96a7d3883beea48e01e7f10280c52f27d40433a657ce5fad3e9.jpg
+		[19233] link '147 comments' url: http://100.95.81.103:9999/f/food/60745/homemade-arancini
+		[19245] button 'Upvote'
+		[19255] StaticText '7842'
+		[19263] button 'Downvote'
+	[18885] heading 'Comments'
+	[36128] complementary ''
+		[36135] StaticText '0 points'
+		[36138] StaticText '(+0, −0)'
+		[36143] heading 'Short URL:'
+		[36149] StaticText 'http://100.95.81.103:9999/60745'
+		[36156] heading 'food'
+			[36158] link 'food' url: http://100.95.81.103:9999/f/food
+		[36168] button 'Subscribe No subscribers'
+			[36182] generic 'No subscribers'
+		[36190] StaticText 't5_2qh55'
+		[36193] separator '' orientation: horizontal
+		[36198] StaticText 'Created '
+		[36199] time ''
+			[36200] StaticText '4 years ago'
+		[36204] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/food/new.atom
+			[36206] image ''
+		[36216] group ''
+			[36218] DisclosureTriangle 'Hide this forum' expanded: False
+		[36239] heading 'Toolbox'
+		[36246] link 'Bans' url: http://100.95.81.103:9999/f/food/bans
+		[36252] link 'Moderation log' url: http://100.95.81.103:9999/f/food/moderation_log

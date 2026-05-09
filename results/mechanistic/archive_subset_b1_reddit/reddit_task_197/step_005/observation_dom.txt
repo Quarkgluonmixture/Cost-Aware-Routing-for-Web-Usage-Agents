@@ -1,0 +1,29 @@
+Tab 0 (current): Search
+
+[7468] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=vegetarian+food+in+f%2Ffood+
+	[7522] sectionheader ''
+		[7524] link 'Home' url: http://100.95.81.103:9999/
+			[7532] StaticText 'Postmill'
+	[7548] link 'Forums' url: http://100.95.81.103:9999/forums
+	[7554] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[7577] searchbox 'Search query'
+		[7827] StaticText 'vegetarian food in f/food '
+	[7585] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[7589] image ''
+	[7596] link 'Submit' url: http://100.95.81.103:9999/submit
+		[7600] image ''
+	[7610] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[7614] image ''
+	[7723] main ''
+		[7725] heading 'Search'
+		[7733] StaticText 'Search query'
+		[7735] searchbox 'Search query'
+			[7828] StaticText 'vegetarian food in f/food '
+		[7742] button 'Search'
+		[7747] heading 'No results for vegetarian food in f/food'
+			[7749] emphasis ''
+		[7754] StaticText 'There are no entries to display.'
+	[7760] contentinfo ''
+		[7765] StaticText 'Running '
+		[7766] link 'Postmill' url: https://postmill.xyz/

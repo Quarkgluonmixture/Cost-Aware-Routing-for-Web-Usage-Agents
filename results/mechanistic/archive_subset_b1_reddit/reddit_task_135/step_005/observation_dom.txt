@@ -1,0 +1,20 @@
+Tab 0 (current): Search
+
+[2894] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=meme+
+	[3410] link 'No comments' url: http://100.95.81.103:9999/f/memes/21392/meme-just-meme
+	[3439] article ''
+		[3442] sectionheader ''
+			[3444] heading 'Idk if this is a meme or an anti meme'
+				[3445] link 'Idk if this is a meme or an anti meme' url: http://100.95.81.103:9999/submission_images/9e918cdb9b9a5c6fb0cee0a0f26b9a27dd3107c637a9d72587e172f38a162928.jpg
+					[3446] mark ''
+					[3447] mark ''
+			[5870] StaticText 'Submitted by '
+			[3450] link 'Flimsyn' expanded: False url: http://100.95.81.103:9999/user/Flimsyn
+			[5874] StaticText 't3_yxoj9l'
+			[3453] time ''
+				[5877] StaticText '3 years ago'
+			[5878] StaticText ' in '
+			[3454] link 'memes' url: http://100.95.81.103:9999/f/memes
+		[3458] link '' url: http://100.95.81.103:9999/submission_images/9e918cdb9b9a5c6fb0cee0a0f26b9a27dd3107c637a9d72587e172f38a162928.jpg
+		[3468] button 'Upvote'
+		[3484] button 'Downvote'

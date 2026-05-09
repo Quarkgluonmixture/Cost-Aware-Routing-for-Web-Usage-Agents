@@ -1,0 +1,28 @@
+Tab 0 | Tab 1
+
+[7415] RootWebArea 'Page not found' focused: True url: http://100.95.81.103:9999/wiki
+	[7469] sectionheader ''
+		[7471] link 'Home' url: http://100.95.81.103:9999/
+			[7479] StaticText 'Postmill'
+	[7495] link 'Forums' url: http://100.95.81.103:9999/forums
+	[7501] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[7525] searchbox 'Search query'
+	[7533] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[7537] image ''
+	[7544] link 'Submit' url: http://100.95.81.103:9999/submit
+		[7548] image ''
+	[7558] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[7562] image ''
+	[7671] main ''
+		[7673] heading 'Page not found'
+		[7677] StaticText 'The requested page was not found.'
+		[7681] link 'Create this page' url: http://100.95.81.103:9999/wiki/_create/index
+	[7686] complementary ''
+		[7690] heading 'Navigation'
+		[7697] link 'All pages' url: http://100.95.81.103:9999/wiki/_all
+		[7703] link 'Recent changes' url: http://100.95.81.103:9999/wiki/_recent
+		[7709] link 'Create new page' url: http://100.95.81.103:9999/wiki/_create
+	[7717] contentinfo ''
+		[7722] StaticText 'Running '
+		[7723] link 'Postmill' url: https://postmill.xyz/

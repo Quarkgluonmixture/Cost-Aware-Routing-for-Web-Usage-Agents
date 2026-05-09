@@ -1,0 +1,2595 @@
+{
+  "config": {
+    "candidates_jsonl": "results/mechanistic/curate_mirage_b1_reddit/candidates.jsonl",
+    "archived_run_dir": "results/visualwebarena/phase1/B1_3mode_reddit_20260413",
+    "output_dir": "results/mechanistic/archive_subset_b1_reddit",
+    "site": "reddit",
+    "steps": [
+      2,
+      5
+    ],
+    "strong_min_composite": 1.0,
+    "strong_max_overlap": 0.5,
+    "reverse_max_composite": -1.5,
+    "artifacts_subdir": "phase1_som_router_0"
+  },
+  "site": "reddit",
+  "steps": [
+    2,
+    5
+  ],
+  "strong": [
+    {
+      "task_id": 93,
+      "intent": "What is the color of the plate used for the picture from the most controversial post of all time in f/food?",
+      "composite": 5.58,
+      "token_overlap": 0.14,
+      "src_neg": 3,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search for 'f/food' returned no results, so there is no post to analyze. The task cannot be completed as there is no data available for the most controversial post in f/food. Therefore, I",
+      "target_text": "{\n  \"thought\": \"The task requires finding the most controversial post in f/food and determining the color of the plate in its picture. Currently, the search results for 'f/food' show no results, so I need to search for",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 116,
+      "intent": "Navigate to the most commented post of all time (with a picture) across f/aww and f/dataisbeautiful. Does the picture contain an animal (yes/no)?",
+      "composite": 3.76,
+      "token_overlap": 0.12,
+      "src_neg": 1,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The search for f/aww returned no results. According to the instruction, I need to search for f/dataisbeautiful next to find the most commented post with a picture across both subreddits. The search box",
+      "target_text": "{\n  \"thought\": \"I am on the search page with a query for f/aww, but no results are displayed. I need to navigate to the f/aww subreddit directly to find the most commented post. The 'Forums",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 79,
+      "intent": "Navigate to the comments section of any post that contains Rick and Morty in the picture.",
+      "composite": 3.6799999999999997,
+      "token_overlap": 0.16,
+      "src_neg": 1,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The current page shows recent comments, but none mention Rick and Morty. I need to use the search bar to find posts related to Rick and Morty. The search box is already focused, so I can type the",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the comments section of a post that contains Rick and Morty in the picture. Currently, we are on the comments page, but no post with Rick and Morty is visible. We should",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 98,
+      "intent": "Navigate to the comments section of a post that contains a picture of a dog.",
+      "composite": 3.6799999999999997,
+      "token_overlap": 0.16,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The search bar is focused and ready for input. I need to type a search query to find a post that contains a picture of a dog.\",\n  \"confidence\": 0.9,\n  \"action_type\": \"",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the comments section of a post that contains a picture of a dog. Currently, we are on the comments page, but no post with a dog image is visible. We need to search for",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 99,
+      "intent": "Navigate to the comments section of a post that contains a picture of a dog and a cat.",
+      "composite": 3.6799999999999997,
+      "token_overlap": 0.16,
+      "src_neg": 1,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The current page shows recent comments, but none contain a picture of a dog and a cat. The search bar is available and can be used to find relevant content. I need to type a search query related to 'dog",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the comments section of a post that contains a picture of a dog and a cat. Currently, we are on the comments page, but no post with a dog and cat image is visible.",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 124,
+      "intent": "Find me a post in /f/dataisbeautiful that illustrates the Microsoft revenue in 1985, and tell me the revenue of the whole company in 1985 (in billions).",
+      "composite": 3.6799999999999997,
+      "token_overlap": 0.16,
+      "src_neg": 2,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The search for '/f/dataisbeautiful' returned no results, indicating there is no post in that forum that matches the task requirement. Therefore, I cannot find Microsoft's revenue in 1985 from this source",
+      "target_text": "{\n  \"thought\": \"The search bar is focused and ready for input. I need to search for 'Microsoft revenue 1985' in the /f/dataisbeautiful subreddit to find a relevant post.\",\n  \"confidence\": 0",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 197,
+      "intent": "Can you take me to the comments section of the most commented post (of all time) in f/food where the food is vegetarian?",
+      "composite": 3.6799999999999997,
+      "token_overlap": 0.16,
+      "src_neg": 1,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search for 'f/food' returned no results, so I need to navigate to the f/food forum directly to browse posts. The 'Forums' link is available in the SOM_MARKS list and should",
+      "target_text": "{\n  \"thought\": \"I am on the search page with a search box for 'f/food'. I need to search for the most commented vegetarian post in f/food. The search box is available, so I will type 'vegetarian",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 78,
+      "intent": "Navigate to the comments section of any post that contains a silver banana in the picture.",
+      "composite": 3.6,
+      "token_overlap": 0.2,
+      "src_neg": 1,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task requires finding a post that contains a silver banana in the picture. Since the current page is the comments section and no such post is visible, I need to search for the post using the search bar. The search",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the comments section of a post that contains a silver banana in the picture. Currently, we are on the comments page, but no post with a silver banana is visible. We need to search",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 123,
+      "intent": "Find me a post in /f/wallstreetbets that illustrates the Amazon revenue in Q3 FY22, and tell me the revenue of the online store in Q3 FY22 (in billions).",
+      "composite": 3.52,
+      "token_overlap": 0.24,
+      "src_neg": 1,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search query is currently set to '/f/wallstreetbets', which returned no results. To find a post related to Amazon's Q3 FY22 revenue, I need to modify the search query to be",
+      "target_text": "{\n  \"thought\": \"I am on the search page for /f/wallstreetbets, and the search bar is focused. I need to search for a post that mentions Amazon revenue in Q3 FY22. I will type the",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 151,
+      "intent": "Leave a comment in this post with the text as the number of adults in the image.",
+      "composite": 3.44,
+      "token_overlap": 0.28,
+      "src_neg": 2,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires leaving a comment with the text 'the number of adults in the image'. However, the image is not visible in the screenshot, and there is no visible count of adults. Therefore, I cannot determine the",
+      "target_text": "{\n  \"thought\": \"The task requires leaving a comment with the number of adults in the image. However, the image is not visible in the provided data, and no element in [SOM_MARKS] contains the image or allows viewing it",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 42,
+      "intent": "Navigate to the comments section of the first image post in /f/MechanicalKeyboards as sorted by hot that does not have a keyboard in its photo.",
+      "composite": 1.88,
+      "token_overlap": 0.12,
+      "src_neg": 1,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires navigating to the comments section of the first image post in /f/MechanicalKeyboards that does not contain a keyboard in its photo. The current post is about the brain and does not have a keyboard",
+      "target_text": "{\n  \"thought\": \"I am on the post page of the first image in /f/MechanicalKeyboards sorted by hot. The post does not have a keyboard in its photo, as per the task. The next step is to navigate",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 65,
+      "intent": "What is the total city population in 2021 of the two cities that the densest populated in the population density map of Portugal? Answer using the information from the Wikipedia site in the second tab.",
+      "composite": 1.88,
+      "token_overlap": 0.12,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"I need to access the Wikipedia site to find population data for the two most densely populated cities in Portugal. The 'Wiki' link in the navigation bar is the correct path to navigate to the Wikipedia site. I will click",
+      "target_text": "{\n  \"thought\": \"The current page is a 'Page not found' error, and the task requires accessing Wikipedia to find population data for the two most densely populated cities in Portugal. The Wikipedia link is visible in the SOM_MARKS list as",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 125,
+      "intent": "Find me a post in /f/dataisbeautiful that illustrates the Nvidia revenue in FY22, and tell me the revenue of the whole company in FY22 (in billions).",
+      "composite": 1.88,
+      "token_overlap": 0.12,
+      "src_neg": 1,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search for '/f/dataisbeautiful' returned no results, so I need to try a different approach. Since the task requires finding a post about Nvidia revenue in FY22, I should directly search for 'N",
+      "target_text": "{\n  \"thought\": \"I am on the search results page for '/f/dataisbeautiful' but no results are displayed. I need to perform a search for 'Nvidia revenue FY22' to find a relevant post.\",\n  \"confidence",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 2,
+      "intent": "I'm trying to find this post. Navigate to the comment section for it.",
+      "composite": 1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task is to navigate to the comment section for the post titled 'Late 90\u2019s-early 2000\u2019s suspense/thrillers'. The link to this post is visible in the screenshot with",
+      "target_text": "{\n  \"thought\": \"I am on the comments page for /f/movies, and I can see a specific comment by 'idontwantanamern' with a reply link. The task is to navigate to the comment section for this",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 4,
+      "intent": "I'm trying to do some research about the post with this image. Tell me how many comments mention the word \"wheat\".",
+      "composite": 1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The current screenshot shows a box of Wheat Thins crackers, which is related to the word 'wheat'. However, the task is to count comments mentioning 'wheat'. I need to navigate to the comments section.",
+      "target_text": "{\n  \"thought\": \"The image is displayed, but no comments section or interactive elements for comments are visible in the [SOM_MARKS]. I need to navigate to the comments section to count mentions of 'wheat'. Since the image is",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 18,
+      "intent": "Navigate to a subreddit where I can find the most similar content to this image.",
+      "composite": 1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task is to navigate to a subreddit with similar content to the image, which is about mechanical keyboards. The current page is already in the /r/MechanicalKeyboards subreddit, and the comments section is visible.",
+      "target_text": "{\n  \"thought\": \"The current page is displaying comments in the /f/MechanicalKeyboards subreddit. To find the most similar content to the image (which is not visible here), I should navigate to the main subreddit page to browse posts",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 32,
+      "intent": "Find the user who posted this and navigate to the comments section of one of their other posts.",
+      "composite": 1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 1,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search returned no results, so I need to find the user who posted the image. Since I am logged in, I should navigate to the user's profile via the 'Profile' link in the navigation menu.\",\n ",
+      "target_text": "{\n  \"thought\": \"The task is to find the user who posted the content and navigate to the comments section of one of their other posts. The current page shows search results for 'watercolor fish market', which yielded no results. The user",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 115,
+      "intent": "Navigate to the most controversial post of all time (with a picture) across f/Paterson, f/WaterburyCT and f/monitor. What operating system is the person using (windows/ubuntu/arch/macos)?",
+      "composite": 1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 1,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search for f/Paterson returned no results. According to the task, I need to search for the most controversial post across f/Paterson, f/WaterburyCT, and f/monitor. I should",
+      "target_text": "{\n  \"thought\": \"The current page shows a search for 'f/Paterson' with no results. I need to navigate to the actual forum page for f/Paterson to find the most controversial post. The 'Forums' link",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 147,
+      "intent": "Leave a comment in this post with the text as the number of buns in the image.",
+      "composite": 1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"I need to click on the '82 comments' link to open the comment section where I can leave a comment with the number of buns in the image.\",\n  \"confidence\": 0.95,\n ",
+      "target_text": "{\n  \"thought\": \"The task requires leaving a comment with the number of buns in the image. The image is visible in the post, but no direct element ID for the comment box is provided. I need to locate the comment section or",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 156,
+      "intent": "I saw a fun Mario and Princess Peach cosplay in f/gaming. Can you tell me the top comment for that post?",
+      "composite": 1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 1,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search for 'f/gaming' returned no results, indicating there is no post with a Mario and Princess Peach cosplay in the current context. Since the task requires finding the top comment for such a post and it doesn",
+      "target_text": "{\n  \"thought\": \"The user wants the top comment for a Mario and Princess Peach cosplay post in f/gaming. The current page shows a search for 'f/gaming' with no results. I need to navigate to the f/gaming",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 180,
+      "intent": "Can you take me to the newest posts in the forum for the highlighted county in the image?",
+      "composite": 1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The highlighted county in the image is Essex County, and there is a post titled 'Name change in Essex County' that matches this. I should click on this post to navigate to its detail page.\",\n  \"confidence\":",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the newest posts in the forum for the highlighted county. The screenshot shows a search result page with multiple forum posts related to counties. One of the posts is explicitly labeled 'Name change in Essex",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 194,
+      "intent": "Can you comment 'This looks really fun to type on!' on the post with a single keyboard with a number pad posted on Halloween (in UTC)?",
+      "composite": 1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The current screen shows a keyboard image but no comment section or post details. According to the task, I need to navigate back to the main listing or post page to find the comment section. The 'BACK' button is",
+      "target_text": "{\n  \"thought\": \"The task requires commenting 'This looks really fun to type on!' on a post. The screenshot shows an image of a keyboard with a number pad, but no comment input field or comment button is visible in the [S",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 207,
+      "intent": "Can you first make a post in f/headphones (then afterwards in f/gaming) asking for a comparison between the two headphones in the shopping tabs? Make sure to include both their SKUs in the title and a picture of the darker one.",
+      "composite": 1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 3,
+      "source_text": "{\n  \"thought\": \"The f/headphones forum is not visible in the current screenshot. I need to scroll down to find it or use the search bar if available. The screenshot shows a 'SCROLL DOWN' instruction, indicating that scrolling is",
+      "target_text": "{\n  \"thought\": \"I need to navigate to the 'headphones' forum first. The current page shows a list of forums, and I can see the 'headphones' forum is not directly visible. I should click on the 'f",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 35,
+      "intent": "Navigate to the comments section of the latest image post in the /f/washingtondc subreddit that contains trees.",
+      "composite": 1.8399999999999999,
+      "token_overlap": 0.16,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task requires navigating to the comments section of the latest image post. Since the comments link is not visible in the current screenshot, I need to scroll up to locate it. The screenshot indicates a 'SCROLL UP'",
+      "target_text": "{\n  \"thought\": \"The current view shows the image itself, not the comments section. I need to navigate to the comments section of this post. Typically, comments are accessed via a 'Comments' link or button, which is not visible in",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 77,
+      "intent": "Navigate to the comments section of any post that contains Mona Lisa in the picture.",
+      "composite": 1.8399999999999999,
+      "token_overlap": 0.16,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task is to navigate to the comments section of the post titled 'MonaLisa, Me, Sisyphus table, 2022'. The link to this post is visible in the search results with",
+      "target_text": "{\n  \"thought\": \"The search results show a post titled 'MonaLisa, Me, Sisyphus table, 2022' which likely contains the Mona Lisa image. I should click on the post link to navigate to",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 137,
+      "intent": "Can you navigate to the post with 128 upvotes, which includes a meme of Squidward watching SpongeBob and Patrick through a window? I think this was posted in /f/wallstreetbets.",
+      "composite": 1.8399999999999999,
+      "token_overlap": 0.16,
+      "src_neg": 1,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search returned no results, so I need to navigate to the /f/wallstreetbets forum as specified in the task. The 'Forums' link is available in the SOM_MARKS list and should be",
+      "target_text": "{\n  \"thought\": \"The search query has been entered, but no results were found. Since the task is to find a specific post with 128 upvotes featuring a meme of Squidward watching SpongeBob and Patrick through a window",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 162,
+      "intent": "Can you give me the URL for a gif I could send to my friend about the contrast of investing in a retirement account vs a brokerage account from the hot posts of /f/wallstreetbets?",
+      "composite": 1.8399999999999999,
+      "token_overlap": 0.16,
+      "src_neg": 1,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The search for '/f/wallstreetbets' returned no results, so I need to navigate to the actual subreddit page by clicking the 'Forums' link, as instructed in the task. This will allow me",
+      "target_text": "{\n  \"thought\": \"I need to search for a GIF related to the contrast of investing in a retirement account vs a brokerage account from /f/wallstreetbets. The search box is available and ready for input. I will type the",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 167,
+      "intent": "I am feeling sad today. Can you navigate to the comments section of a post that has an image of a dog and a cat to cheer me up?",
+      "composite": 1.8399999999999999,
+      "token_overlap": 0.16,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The current image is of a cat, not a dog and a cat as requested. I need to search for a post that has both a dog and a cat to find the comments section. The search bar or navigation options",
+      "target_text": "{\n  \"thought\": \"The image of the dog and cat is visible, but the comments section is not yet accessible. I need to locate the comments link or button, which is likely near the image or below it. Since no comments element is",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 24,
+      "intent": "Find this post and tell me what the top comment says.",
+      "composite": 1.82,
+      "token_overlap": 0.18,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The target post is the first search result titled 'I painted a very big astronaut, that is all.' with the image of the painting. I need to click on this link to navigate to the post's detail page.\",\n",
+      "target_text": "{\n  \"thought\": \"The task is to find the post titled 'I painted a very big astronaut, that is all.' and retrieve the top comment. The post is visible in the search results. I need to click on the post to open",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 154,
+      "intent": "I think I saw a post in f/DataIsBeautiful that talked about the price of training ImageNet models. Can you tell me how much it cost in 2020 was to train a top-5 model with >93% accuracy? Finally, take me to the comments section of the post.",
+      "composite": 1.82,
+      "token_overlap": 0.18,
+      "src_neg": 2,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The search for 'f/DataIsBeautiful' returned no results, indicating the post about training ImageNet models with >93% accuracy is not found in the current search. I need to navigate directly to the f/Data",
+      "target_text": "{\n  \"thought\": \"I need to navigate to the f/DataIsBeautiful subreddit to find the post about the cost of training ImageNet models. The search bar is focused, so I should type the subreddit name to navigate there.\",\n  \"confidence",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 96,
+      "intent": "Who authored the post shown in the picture (not the reddit author) of the most commented post of all time in f/Newark?",
+      "composite": 1.8,
+      "token_overlap": 0.2,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"I need to navigate to the f/Newark forum to find the most commented post. The 'Forums' link is visible in the navigation bar and should lead to a list of forums where I can find f/Newark",
+      "target_text": "{\n  \"thought\": \"I need to find the most commented post in f/Newark. The current page shows featured forums, but no specific forum or post is visible. I should use the search bar to look for 'f/Newark' and",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 100,
+      "intent": "Navigate to the comments section of a post that contains a picture of a cake.",
+      "composite": 1.78,
+      "token_overlap": 0.22,
+      "src_neg": 3,
+      "src_aff": 3,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to find a post containing a picture of a cake. Currently, no such post is visible, and the comments section is visible but does not show any cake-related posts. The user should scroll down to see",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the comments section of a post that contains a picture of a cake. The current page is the comments section, but no cake image is visible. I need to find the original post that contains",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 113,
+      "intent": "Create a post for each of the following image in the most related forum.",
+      "composite": 1.78,
+      "token_overlap": 0.22,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires creating a post for each of the three images in the most related forum. Since the images are not directly related to the current forum (AskReddit), I need to use the 'Submit' button to create",
+      "target_text": "{\n  \"thought\": \"The task is to create a post for each image in the most related forum. Since the screenshot shows the AskReddit forum, and the task involves creating a post, I should navigate to the submission page. The 'Submit",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 176,
+      "intent": "Can you comment on the food from the country in the image and about \ud83c\udf5c saying 'Sooo tasty!'?",
+      "composite": 1.78,
+      "token_overlap": 0.22,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task requires commenting on a post about Japanese food with 'Sooo tasty!' The post titled 'ELI5:. Why is cheese not used in Chinese, Korean, Japanesefood ?' is relevant and visible",
+      "target_text": "{\n  \"thought\": \"The task requires commenting on Japanese food and saying 'Sooo tasty!' about \ud83c\udf5c. The current page shows search results for Japanese food, but no direct comment section or input field is visible. I need to navigate",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 72,
+      "intent": "Make a comment in this post explaining what the picture is about.",
+      "composite": 1.76,
+      "token_overlap": 0.24,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task is to make a comment on the post. The comment section is visible and labeled 'Comments' with an ID of 395. Clicking this should open the comment input area.\",\n  \"confidence\":",
+      "target_text": "{\n  \"thought\": \"The task is to comment on the post, but no comment input field is visible in the provided [SOM_MARKS]. The post is displayed with upvote/downvote buttons and a comments link, but no direct comment",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 166,
+      "intent": "Can you find a post of the International Space Station's solar panels with the Earth in the background and message the poster 'Was the sun super bright in space?'?",
+      "composite": 1.74,
+      "token_overlap": 0.26,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search result contains a post discussing the International Space Station's solar panels and Earth, which matches the task. The next step is to open the post's detail page to message the poster.\",\n  \"confidence\": 0",
+      "target_text": "{\n  \"thought\": \"The search result contains a post with the relevant keywords, but the image of the ISS solar panels with Earth in the background is not visible. I need to click on the post to view its full content and locate the image",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 39,
+      "intent": "I'd like to find the subreddit for the city this photo was taken in. Can you navigate to it?",
+      "composite": 1.72,
+      "token_overlap": 0.28,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The user wants to find the subreddit for San Francisco, which is likely /r/sf. The search bar is available and can be used to search for this subreddit. I will type '/r/sf' into the",
+      "target_text": "{\n  \"thought\": \"The task is to find the subreddit for the city the photo was taken in. Since no photo or specific city is visible, I need to search for it. The searchbox is available and can be used to enter the",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 189,
+      "intent": "Can you subscribe me to the most suitable forum where I can find more posts like in the image?",
+      "composite": 1.72,
+      "token_overlap": 0.28,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to subscribe to the most suitable forum with similar posts. The current page is the comments section of the 'MechanicalKeyboards' forum. The 'Unsubscribe' button indicates there is already a subscriber,",
+      "target_text": "{\n  \"thought\": \"The user wants to subscribe to the most suitable forum similar to the one shown in the image. The current page is the 'MechanicalKeyboards' forum, and there is a 'Subscribe via RSS' link available.",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 188,
+      "intent": "Can you subscribe me to the most suitable forum where I can find more posts like in the image?",
+      "composite": 1.7,
+      "token_overlap": 0.3,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to subscribe to the most suitable forum for tech-related content, which is 'AskReddit' as per the reasoning in the screenshot. The element ID [id=6069] corresponds to the '",
+      "target_text": "{\n  \"thought\": \"The user wants to subscribe to the most suitable forum similar to the one in the image. The image likely shows a forum with active discussions, so I should look for a forum with high submission count and subscription option. '",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 190,
+      "intent": "Can you subscribe me to the most suitable forum where I can find more posts like in the image?",
+      "composite": 1.7,
+      "token_overlap": 0.3,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to subscribe to the most suitable forum with similar posts. The current page is the comments section of the /f/MechanicalKeyboards forum. The 'Unsubscribe' button indicates that I am already subscribed",
+      "target_text": "{\n  \"thought\": \"The user wants to subscribe to the most suitable forum similar to the one shown in the image. The current page is the comments section of the /f/MechanicalKeyboards forum. To subscribe, I need to click",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 73,
+      "intent": "Find a post in f/MechanicalKeyboards that contains a special keyboard that has a huge W key. Then, repost the picture to f/gaming with title \"WwWwWwWwWwwWw all the way\". Finally, navigate to the post.",
+      "composite": 1.68,
+      "token_overlap": 0.32,
+      "src_neg": 1,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires finding a post in f/MechanicalKeyboards, which is not visible in the current screenshot. Since the forum list does not include f/MechanicalKeyboards, I need to scroll down to locate",
+      "target_text": "{\n  \"thought\": \"I need to find a post in f/MechanicalKeyboards that contains a special keyboard with a huge W key. Currently, I am on the main page with forum links. I must navigate to f/Mechanical",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 8,
+      "intent": "I'm doing some research about the post with this image. Navigate to the comment url of the recipe posted by the OP in the comments.",
+      "composite": 1.66,
+      "token_overlap": 0.34,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to navigate to the comment URL of the post by the OP that contains the recipe image. The OP's post is the first one in the search results, titled 'LPT: When reading a recipe online",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the comment URL of the recipe posted by the OP. The screenshot shows a list of search results, and the first result is a post titled 'LPT: When reading a recipe online go",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 133,
+      "intent": "How many comments did the post with this image receive? I remember it being one of the top 50 hot posts of /f/ColumbiaMD.",
+      "composite": 1.66,
+      "token_overlap": 0.34,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to find the number of comments for the post with the image of a pizza sign. The post is identified by the link [id=3233] which contains the text 'Twitter is auctioning",
+      "target_text": "{\n  \"thought\": \"The task is to find the number of comments on a post that was one of the top 50 hot posts in /f/ColumbiaMD. The current page is showing search results for 'pizza sign', which is",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 200,
+      "intent": "Can you take me to the post on this page that is most related to the picture on this page?",
+      "composite": 1.6,
+      "token_overlap": 0.4,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The task is to navigate to the post most related to the picture. The picture shows pickles, and the post titled 'ELI5: Why is cheese not used in Chinese, Korean, Japanese food?' is directly",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the post most related to the picture on the page. The screenshot shows a post with a dog in the background, which is part of a comment under the post titled 'ELI5:.",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 37,
+      "intent": "Navigate to the comments section of the latest image post in the /f/Art subreddit that contains animals.",
+      "composite": 1.56,
+      "token_overlap": 0.44,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to navigate to the comments section of the latest image post in /f/Art that contains animals. The post titled 'King, Me, Coloured pencils, 2022' by artby",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the comments section of the latest image post in the /f/Art subreddit that contains animals. The latest post visible is 'A big eater, me, pumpkin carving, 202",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 53,
+      "intent": "What was the total asset value (in trillions of USD, to 3 decimal places) of the fifth largest employer in China in 2017? Answer using the information from the Wikipedia site in the second tab.",
+      "composite": 1.56,
+      "token_overlap": 0.44,
+      "src_neg": 1,
+      "src_aff": 1,
+      "tgt_neg": 1,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The current page is a 'Page not found' error, and the task requires information from the Wikipedia site in the second tab. The 'Wiki' link in the top navigation bar (id=6584)",
+      "target_text": "{\n  \"thought\": \"The current page is a 'Page not found' error, and the task requires accessing the Wikipedia site to find information about the fifth largest employer in China in 2017. The Wikipedia link is visible in the",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 174,
+      "intent": "Can you post a comment on the post with a \ud83d\udef9 in it with the text '\ud83c\udfce\ufe0f\ud83c\udfce\ufe0f\ud83c\udfce\ufe0f'?",
+      "composite": 1.56,
+      "token_overlap": 0.44,
+      "src_neg": 1,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires posting a comment with a \ud83d\udef9 and the text '\ud83c\udfce\ufe0f\ud83c\udfce\ufe0f\ud83c\udfce\ufe0f', but there is no visible comment section or input field in the screenshot. The only element is the image and its",
+      "target_text": "{\n  \"thought\": \"The task requires posting a comment with a \ud83d\udef9 and '\ud83c\udfce\ufe0f\ud83c\udfce\ufe0f\ud83c\udfce\ufe0f'. The current view shows an image, not a comment section. I need to navigate to the comment section or find a way",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    }
+  ],
+  "reverse": [
+    {
+      "task_id": 43,
+      "intent": "Gather the title of the cheapest yellow video projector in the \"Video Projectors\" category from OneStopShop, and post its full product name in the /f/gadgets subreddit under the title \"Has anyone bought this product?\"",
+      "composite": -3.76,
+      "token_overlap": 0.12,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires finding the cheapest yellow video projector. The current page shows search results sorted by price, but no yellow projector is visible. I need to scroll down to view more items and locate a yellow one.\",\n  \"",
+      "target_text": "{\n  \"thought\": \"I am on the search results page for 'Video Projectors'. To find the cheapest yellow video projector, I should first sort the results by price (ascending) and then look for yellow projectors. The 'Sort By",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 185,
+      "intent": "Can you make a post in the /f/gaming forum titled 'Should I buy this? I can get a 25% discount', add the full sized version of the image on the shopping page most related to the wikipedia page? Finally, navigate to the comments section of it.",
+      "composite": -3.76,
+      "token_overlap": 0.12,
+      "src_neg": 0,
+      "src_aff": 3,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search results show no entries for '/f/gaming', so I need to navigate directly to the forum by clicking the '/f/gaming' link. The link is visible in the screenshot with ID 519",
+      "target_text": "{\n  \"thought\": \"I need to navigate to the /f/gaming forum. The link 'Forums' is visible and likely leads to the main forums page where I can access /f/gaming. Clicking 'Forums' is",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 186,
+      "intent": "Can you make a post in the /f/aww forum titled 'Perfect for the winter holidays!', add the full sized version of the image on the shopping page most related to the wikipedia page? Finally, navigate to the comments section of it.",
+      "composite": -3.76,
+      "token_overlap": 0.12,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The search results show no entries for /f/aww, so I need to navigate to the main forums page by clicking the 'Forums' link. This will allow me to access the /f/aww",
+      "target_text": "{\n  \"thought\": \"I need to navigate to the /f/aww forum. The search bar is focused, and I can type '/f/aww' to directly navigate to the forum. Since the search bar is already focused,",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 106,
+      "intent": "Subscribe to a forum that contains the following picture.",
+      "composite": -3.6799999999999997,
+      "token_overlap": 0.16,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires subscribing to a forum that contains the picture. The screenshot shows a search result page for 'Adventures of Huckleberry Finn' with a post containing the target picture. The post is visible and has",
+      "target_text": "{\n  \"thought\": \"The task is to subscribe to a forum that contains a picture. The current page is a search results page for 'Adventures of Huckleberry Finn'. The relevant post is titled 'I just feel so betrayed by",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 172,
+      "intent": "Can you post a comment on the post that has a crispy chicken sandwhich with the text 'I love those things!'?",
+      "composite": -3.6799999999999997,
+      "token_overlap": 0.16,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to post a comment on the post about the crispy chicken sandwich. However, the post is not visible in the current view, and the instruction is to scroll down to find it. The screenshot shows a '",
+      "target_text": "{\n  \"thought\": \"The task requires posting a comment on a post with a crispy chicken sandwich. However, none of the visible elements in the screenshot contain a post with a crispy chicken sandwich. I need to search for such a post or navigate",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 103,
+      "intent": "What is the color of the mattress? Leave a comment replying to user \"BiAdventureTime\" with the following format: \"Its color is <color of the mattress> ~~~~``~~~~\" (not including the quote marks), replacing <color of the mattress> with the actual color of the mattress. Remember to use basic color names.",
+      "composite": -3.64,
+      "token_overlap": 0.18,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires identifying the color of the mattress in the image posted by BiAdventureTime. The image is visible in the main content area, and the mattress appears to be blue. I need to reply to the user with",
+      "target_text": "{\n  \"thought\": \"The task requires replying to the user 'BiAdventureTime' with a specific format about the mattress color. The current page is a meme post by 'BiAdventureTime', and there is no visible mattress in the screenshot",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 181,
+      "intent": "I am a student at the school in the image. Can you make a post asking for the best pizza in the forum for the city my school is in and navigate to it?",
+      "composite": -3.6,
+      "token_overlap": 0.2,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The search results show a post from 'marche_au_supplice' that mentions pizza and is related to the user's school city. The post is relevant and should be clicked to navigate to its detail page.\",\n",
+      "target_text": "{\n  \"thought\": \"The search query 'best pizza in [my school city]' is already entered in the search box. I need to click the 'Search' button to execute the search and find the best pizza forum post.\",\n  \"confidence",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 199,
+      "intent": "Can you comment 'I remember seeing him in person, one of the best nights of my life.' on the top post (of all time) in f/music that relates to the image?",
+      "composite": -3.52,
+      "token_overlap": 0.24,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires navigating to the f/music forum. The current page shows a list of forums, but f/music is not visible. I need to scroll down to find it.\",\n  \"confidence\": 0.9,\n",
+      "target_text": "{\n  \"thought\": \"The task requires commenting on the top post in f/music that relates to the image. Currently, I am on the forums list page. I need to navigate to the f/music forum first. The 'Forums' link",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 62,
+      "intent": "Who potrayed the character in friends that has the most intimate connections? Answer using the information from the Wikipedia site in the second tab.",
+      "composite": -1.88,
+      "token_overlap": 0.12,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"I am on the Wiki page, but the task requires navigating to the Wikipedia site to find information about the character in Friends with the most intimate connections. The 'Wiki' link in the top navigation bar (id=1",
+      "target_text": "{\n  \"thought\": \"The current page is a 'Page not found' error, so I need to navigate to the correct Wikipedia page for 'Friends' to find the character with the most intimate connections. I will use the search box to search",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 158,
+      "intent": "Can you subscribe to all subreddits that start with the letter 'a' and have a dog image in their top 3 posts of all time?",
+      "composite": -1.88,
+      "token_overlap": 0.12,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires navigating to the 'Forums' section to find subreddits starting with 'a' and having a dog image in their top 3 posts. The 'Forums' link is visible in the SOM",
+      "target_text": "{\n  \"thought\": \"I need to find all subreddits starting with 'a' and check if any have a dog image in their top 3 posts. The best approach is to navigate to the 'Forums' section to browse sub",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 165,
+      "intent": "Can you find art of the building in the picture and message the poster 'I really like this picture! Can I print it out and hang it on my wall?'?",
+      "composite": -1.88,
+      "token_overlap": 0.12,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"I am on the notifications page, and I need to search for 'building art' using the search bar to find the desired image. The search bar is visible and accessible.\",\n  \"confidence\": 0.9,\n",
+      "target_text": "{\n  \"thought\": \"The task requires finding art of a building in a picture and messaging a poster. Currently, I am on the notifications page, which is not relevant. I need to navigate to a page where I can search for or view",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 208,
+      "intent": "Can you first make a post in f/monitor (then afterwards in f/gadgets) asking for a comparison between the two monitors in the shopping tabs? Make sure to include both their SKUs in the title and a picture of the monitor with the movie titles.",
+      "composite": -1.88,
+      "token_overlap": 0.12,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The f/monitor forum is not visible in the current screenshot, so I need to scroll down to find it. The screenshot shows a list of forums, and I should scroll to locate f/monitor.\",\n  \"confidence",
+      "target_text": "{\n  \"thought\": \"I need to navigate to the 'monitor' section, but it's not visible in the current view. The current page is a list of forums, so I should search for 'monitor' or navigate to a category that",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 26,
+      "intent": "Find this post and tell me what the top comment says.",
+      "composite": -1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The current page shows the image of the daisy submission, and I need to navigate to the comments section. Since there is no comments link visible, I should scroll down to look for a comments button or link near the",
+      "target_text": "{\n  \"thought\": \"The task is to find the post and retrieve the top comment. The current view shows an image, not the post or comments. I need to navigate to the post's detail page or comments section. Since no comment section",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 41,
+      "intent": "Navigate to the comments section of the first image post in /f/Newark as sorted by hot that does not have people in it.",
+      "composite": -1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 1,
+      "src_aff": 1,
+      "tgt_neg": 1,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires navigating to the comments section of the first image post in /f/Newark that does not have people in it. The current page is already on the post's detail page, and the comments section is visible",
+      "target_text": "{\n  \"thought\": \"I am on the first image post in /f/Newark sorted by hot. The post has a 'Comments' link which I need to click to navigate to the comments section. The post does not have people in it",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 47,
+      "intent": "What is the area (in km^2) of the country that emitted second most plastic waste into the ocean? Answer using the information from the Wikipedia site in the second tab.",
+      "composite": -1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"I need to switch to the Wikipedia tab to find the area of the country that emitted the second most plastic waste. The current tab is the Postmill forum page. I should switch to the Wikipedia tab using the tab focus",
+      "target_text": "{\n  \"thought\": \"The task requires finding the area of the country that emitted the second most plastic waste into the ocean, using information from the Wikipedia site. The current page is a data visualization post on plastic waste emissions, but it does not",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 56,
+      "intent": "What are the three major geographical divisions of the state that has the third highest number of bank failure? Answer using the information from the Wikipedia site in the second tab.",
+      "composite": -1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires navigating to the Wikipedia site to find the three major geographical divisions of the state with the third highest number of bank failures. The 'Wiki' link is visible in the top navigation bar and is the correct element",
+      "target_text": "{\n  \"thought\": \"The current page is a forum listing, not related to bank failures or geographical divisions. I need to navigate to the Wikipedia site as per the task instruction. The search box is available, so I will use it to search",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 63,
+      "intent": "What is the highest elevation (in ft) of the home state of the team that surpassed Buffalo Bills in both defensive rating and offensive rating during the 2022 Season? Answer using the information from the Wikipedia site in the second tab.",
+      "composite": -1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 1,
+      "src_aff": 2,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires accessing the Wikipedia site via the 'Wiki' link, which is visible in the navigation bar. The current page is a 'Page not found' error, but the 'Wiki' link is available in the",
+      "target_text": "{\n  \"thought\": \"The current page is a 'Page not found' error, and the task requires accessing the Wikipedia site to find information about the team that surpassed the Buffalo Bills in both defensive and offensive ratings during the 2022",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 67,
+      "intent": "Who is the founder of the brand that has zero stores in Washington state (before 2021) according to the chart in the first tab?",
+      "composite": -1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires identifying the founder of Dunkin' (which has zero stores in Washington state before 2021). The screenshot shows a comment by 'MultiplyAccumulate' mentioning that Dunkin' has a",
+      "target_text": "{\n  \"thought\": \"The current page is a comment section on a data visualization post about fast food chain density in the USA. The task requires finding a brand with zero stores in Washington state (before 2021) and identifying its",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 135,
+      "intent": "Can you search for 'meme' and find the post with 2 upvotes and includes a meme of three Spider-Men, a flag of the Netherlands, and a flag of Croatia?",
+      "composite": -1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 1,
+      "src_aff": 1,
+      "tgt_neg": 1,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The current page shows a post with 8 comments and a meme of two men in a car, which does not match the criteria. I need to continue searching for the post with 2 upvotes and a meme of",
+      "target_text": "{\n  \"thought\": \"The search for 'meme' has returned results, but none match the specific criteria of having 2 upvotes and featuring three Spider-Men, a flag of the Netherlands, and a flag of Croatia. I need to",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 142,
+      "intent": "Leave a comment in this post with the release date of the movie in the image in mm-dd-yyyy format.",
+      "composite": -1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The comment section is not directly accessible via an element_id, so I need to use coordinate-based interaction to click on the comment section. The comment section is visible at the bottom of the post, and the coordinate (0",
+      "target_text": "{\n  \"thought\": \"The task is to leave a comment with the release date of the movie in mm-dd-yyyy format. The current page is a movie poster post, and there is no visible comment section or release date information. I need to",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 164,
+      "intent": "What is the top comment for the most popular post of all time (across all forums) containing a dog trying to perform the action in the Wikipedia tab?",
+      "composite": -1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"I am on the 'All pages' page of the Wiki, which shows no entries. To find the most popular post containing a dog trying to perform an action, I need to use the search bar. The search box",
+      "target_text": "{\n  \"thought\": \"I need to find the most popular post of all time containing a dog trying to perform an action, which requires navigating to the forums section since the task involves forums. The 'Forums' link is available in the SOM",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 195,
+      "intent": "Can you comment 'Wish I had this for my setup' on the post with a pink escape key posted after 8pm UTC?",
+      "composite": -1.8599999999999999,
+      "token_overlap": 0.14,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 1,
+      "tgt_aff": 2,
+      "source_text": "{\n  \"thought\": \"The target post with a pink escape key posted after 8pm UTC is not visible in the current view. The instruction says to scroll down to find it. Since the screenshot shows a 'SCROLL DOWN' indicator with",
+      "target_text": "{\n  \"thought\": \"The task requires commenting 'Wish I had this for my setup' on a post with a pink escape key posted after 8pm UTC. The current page shows posts, but none of the visible posts have timestamps or",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 81,
+      "intent": "Upvote all the posts that have a picture which contains cat on this page.",
+      "composite": -1.8399999999999999,
+      "token_overlap": 0.16,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task is to upvote all posts that contain a cat. From the screenshot, I can see the post titled 'PsBattle: cat behind a cat' (ID 1125) which has a cat",
+      "target_text": "{\n  \"thought\": \"I need to upvote all posts that have a picture containing a cat. The post titled 'PsBattle: cat behind a cat' (ID 1125) is the only one that explicitly mentions a cat",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 111,
+      "intent": "Create a post for each of the following image in the most related forum.",
+      "composite": -1.8399999999999999,
+      "token_overlap": 0.16,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires creating a post in the most relevant forum for each image. The first image shows the Space Needle, which is iconic to Seattle, and the most relevant forum for this location is 'AskReddit' as indicated",
+      "target_text": "{\n  \"thought\": \"The task is to create a post in the most related forum for each image. Since no images are provided, I cannot determine which forum is most related. However, based on the screenshot, the forums listed include 'Ask",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 112,
+      "intent": "Create a post for each of the following image in the most related forum.",
+      "composite": -1.8399999999999999,
+      "token_overlap": 0.16,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires navigating to the most relevant forum for each image. The first image is a galaxy, which is likely related to astronomy, and 'AskReddit' is identified as a suitable general forum for questions and discussions.",
+      "target_text": "{\n  \"thought\": \"The task is to create a post in the most related forum for each image. Since no images are provided, I cannot determine which forum is most related. However, based on the screenshot, the 'AskReddit' forum",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 28,
+      "intent": "Write a story about this picture and post it in the most relevant subreddit.",
+      "composite": -1.82,
+      "token_overlap": 0.18,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires selecting the most relevant subreddit for a baseball image. The dropdown is already expanded, and 'sports' is not visible in the current list. I need to scroll to find 'sports' or 'baseball",
+      "target_text": "{\n  \"thought\": \"The task is to write a story based on the picture and post it in the most relevant subreddit. The current page is the submission form, and I need to select a subreddit first. The forum dropdown is open, and",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 29,
+      "intent": "Write a story about this picture and post it in the most relevant subreddit.",
+      "composite": -1.82,
+      "token_overlap": 0.18,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires selecting the most relevant subreddit for a cat-related image. The dropdown is open, and 'aww' is visible as an option, which matches the description of being a subreddit that features cute animals, including",
+      "target_text": "{\n  \"thought\": \"The task is to write a story based on the picture and post it in the most relevant subreddit. The current page is the submission form, and I need to select a subreddit first. The forum dropdown is open, and",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 136,
+      "intent": "Can you navigate to the post with 307 upvotes, which includes a meme of a dog sitting in a room that is engulfed in flames and saying it is fine? I think this was posted in /f/wallstreetbets.",
+      "composite": -1.82,
+      "token_overlap": 0.18,
+      "src_neg": 1,
+      "src_aff": 1,
+      "tgt_neg": 1,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The search for '/f/wallstreetbets' returned no results, indicating the specific post is not visible here. The next logical step is to navigate directly to the forums page to search for the post by its content",
+      "target_text": "{\n  \"thought\": \"The search bar is focused and contains the query '/f/wallstreetbets', but the search results are empty. I need to refine the search or try a different approach to locate the specific post with 30",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 49,
+      "intent": "What is the first year the Summer Olympics include the women's version of the sport that had the largest average male athlete weight in the 2012 Olympics? Answer using the information from the Wikipedia site in the second tab.",
+      "composite": -1.8,
+      "token_overlap": 0.2,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The search did not return results, so I need to navigate to the Wikipedia tab to find the required information. The Wikipedia link is visible in the SOM_MARKS list.\",\n  \"confidence\": 0.9,\n ",
+      "target_text": "{\n  \"thought\": \"The search query has been entered, but no results are displayed. I need to navigate to the Wikipedia site as per the task instructions, which requires switching to the correct tab or searching for the relevant page directly.\",\n  \"",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 119,
+      "intent": "What is the birth year of the guy holding the goblet? Answer using the Wikipedia site in the second tab.",
+      "composite": -1.8,
+      "token_overlap": 0.2,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires clicking the 'Wiki' link to navigate to the Wikipedia site. The link is visible in the top navigation bar and is labeled as 'Wiki'. Clicking this link will take us to the Wikipedia site where",
+      "target_text": "{\n  \"thought\": \"The task requires finding the birth year of the guy holding the goblet via Wikipedia. Currently, I am on a forum page. I need to navigate to Wikipedia. The search bar is available, so I will use it",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 122,
+      "intent": "I'm doing some research about the post with this image. Navigate to the recipe posted by the OP in the comments.",
+      "composite": -1.8,
+      "token_overlap": 0.2,
+      "src_neg": 1,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task is to find the recipe posted by the OP in the comments. The current page shows recent comments, but none of them mention a glazed chicken wings recipe. Since the target recipe is not visible, I should use",
+      "target_text": "{\n  \"thought\": \"The task is to navigate to the recipe posted by the OP in the comments. The current page is the 'Recent comments' section, and the OP's post is likely in the comments. I need to find the OP",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 148,
+      "intent": "Leave a comment in this post with the text as the number of arancinis in the image.",
+      "composite": -1.8,
+      "token_overlap": 0.2,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires clicking the '147 comments' link to open the comments section, as the image shows two arancinis and the comment should be '2'. The link is visible in the screenshot with ID [",
+      "target_text": "{\n  \"thought\": \"The task requires leaving a comment with the number of arancinis in the image. The image is not visible in the provided data, so I must rely on the context. Since the post is titled '[Homemade]",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 6,
+      "intent": "I'm trying to do some research about the post with this image. Tell me how many comments this post has.",
+      "composite": -1.78,
+      "token_overlap": 0.22,
+      "src_neg": 1,
+      "src_aff": 1,
+      "tgt_neg": 1,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The search returned no results, so I need to navigate to the forums to find the post. The 'Forums' link is available in the SOM_MARKS list and should lead to a section where posts might be listed",
+      "target_text": "{\n  \"thought\": \"The search query did not return any results, so there is no post to check for comments. The task cannot be completed as there is no relevant post available.\",\n  \"confidence\": 0.95,\n  \"",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 80,
+      "intent": "Upvote all the posts that have a picture which contains food on this page.",
+      "composite": -1.78,
+      "token_overlap": 0.22,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"I need to upvote all posts that contain food. The post about '21 varieties of potatoes for sale at the farmers market' clearly contains food and has a visible image. I should click the upvote button for",
+      "target_text": "{\n  \"thought\": \"I need to upvote posts that contain food. The post titled 'A chocolate covered cashew that I mistook for my other earbud.' has a picture of food (chocolate-covered cashew). I will click",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 83,
+      "intent": "Upvote all the posts that have a picture which contains a human or human-like face on this page.",
+      "composite": -1.78,
+      "token_overlap": 0.22,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"I need to upvote posts that contain a human or human-like face. The first post, 'Untitled, Me, Photography + Digital, 2023', appears to show a human face based on the description",
+      "target_text": "{\n  \"thought\": \"I need to upvote all posts that have a picture containing a human or human-like face. I see multiple posts with images. I will check each post's image to determine if it contains a human or human-like face",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 177,
+      "intent": "Can you comment on the food from the country in the image and about a dog in the background saying 'Someone is looking for a bite \ud83d\udc36'?",
+      "composite": -1.78,
+      "token_overlap": 0.22,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires commenting on Japanese food and mentioning a dog in the background with the text 'Someone is looking for a bite \ud83d\udc36'. The comment box is visible and ready for input. I should type the required comment",
+      "target_text": "{\n  \"thought\": \"The task involves commenting on food from a country and a dog in the background with a specific message. However, the current page is a Reddit post about cheese usage in Asian cuisines, which is unrelated to the task.",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 183,
+      "intent": "Can you make a post in f/food, title it '[I ate] this', add the full sized version of the image with the pop tart on this page of OneStopMarket, and navigate to it?",
+      "composite": -1.78,
+      "token_overlap": 0.22,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task requires navigating to the f/food subreddit, which is not visible in the current screenshot. The instruction suggests scrolling down to find it. Since the current view only shows up to 'mildlyinteresting', I",
+      "target_text": "{\n  \"thought\": \"The task requires navigating to a specific product page on OneStopMarket, but the current page is a forum listing. There is no direct link to OneStopMarket or any product page visible. I need to search for One",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 179,
+      "intent": "Can you take me to the page that shows the most controversial posts of the past month in the forum for a city located in the state pictured in the image?",
+      "composite": -1.76,
+      "token_overlap": 0.24,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires navigating to the forum for Missouri, but the current page is for NYC. I need to use the search box to search for 'Missouri' since the state highlighted in the image is Missouri, and the",
+      "target_text": "{\n  \"thought\": \"The task requires navigating to the most controversial posts of the past month in a forum for a city located in the state pictured in the image. Since the image is not provided, I cannot determine the state or city. However",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 182,
+      "intent": "I am a student at the school in the image. Can you make a post asking for the best Indian food in the forum for the city my school is in and navigate to it?",
+      "composite": -1.76,
+      "token_overlap": 0.24,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"I need to search for the best Indian food forum in the city. The search bar is visible and has the ID 3415. I should type the search query into it to find relevant forums.\",\n  \"",
+      "target_text": "{\n  \"thought\": \"I need to find the best Indian food forum in the city my school is in. The search bar is available and can be used to search for relevant forums. I will type the query into the search box.\",\n  \"",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 168,
+      "intent": "Can you repost the image on this page that would fit best in f/EarthPorn with the same title and text as the original post and take me to the comments section of the post?",
+      "composite": -1.74,
+      "token_overlap": 0.26,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires reposting an image in the f/EarthPorn forum. Since f/EarthPorn is not visible in the current list of forums, I need to use the search bar to locate it. The searchbox",
+      "target_text": "{\n  \"thought\": \"The task requires reposting an image on f/EarthPorn with the same title and text, and navigating to the comments section. However, the current page is a list of forums, not the EarthPorn subreddit or any",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 173,
+      "intent": "Can you post a comment on the post with an \ud83d\udc7d in it with the text 'Scary!'?",
+      "composite": -1.74,
+      "token_overlap": 0.26,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires posting a comment with the text 'Scary!' on the post titled 'It\u2019s out of control' which contains the \ud83d\udc7d emoji. The post is visible in the list with the link [id=",
+      "target_text": "{\n  \"thought\": \"The task requires posting a comment with an \ud83d\udc7d and the text 'Scary!' on a post. The current page is the memes section, and there are multiple posts with comments links. I need to click on the",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 74,
+      "intent": "Find me a keyboard version of what the man is wearing in the picture. Then, count how many white key is on it and post it in the comment section of that post with the following format: \"It has <number of keys> white keys!!\" (not including the double inverted commas), replacing <number of keys> with the actual number of white keys in the picture. Remember that partially occluded keycaps need to be counted also.",
+      "composite": -1.72,
+      "token_overlap": 0.28,
+      "src_neg": 0,
+      "src_aff": 0,
+      "tgt_neg": 1,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires finding a keyboard version of the man's outfit (black suit with white shirt and black tie) and counting the white keys. The current page is a forum post about keyboards, and the user has already searched",
+      "target_text": "{\n  \"thought\": \"The task requires finding a keyboard version of what the man is wearing in the picture. However, the screenshot does not contain any image of a man or a keyboard. The current page is a forum post about mechanical keyboards,",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 117,
+      "intent": "What is the birth year of the dog with pink hair? Answer using the Wikipedia site in the second tab.",
+      "composite": -1.62,
+      "token_overlap": 0.38,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires finding the birth year of the dog with pink hair using the Wikipedia site in the second tab. The current tab is the forums page, and the Wikipedia link is visible in the top navigation bar. I need",
+      "target_text": "{\n  \"thought\": \"The task requires finding the birth year of the dog with pink hair via Wikipedia. Currently, I am on a forum listing page. I need to navigate to Wikipedia. The 'Wiki' link in the navigation bar is the",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 132,
+      "intent": "How many comments did the post with this image receive? I remember it being one of the top 50 hot posts of /f/nyc.",
+      "composite": -1.6,
+      "token_overlap": 0.4,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to find the number of comments for the post with the image of a cat, which is titled 'You heard the brain'. The post is visible in the screenshot, and the comment count is displayed as '",
+      "target_text": "{\n  \"thought\": \"The task is to find the number of comments on the post with the image that was one of the top 50 hot posts in /f/nyc. The current page shows posts in the MechanicalKeyboards forum,",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 145,
+      "intent": "Leave a comment in this post with the text as the trading loss of the OP in euros.",
+      "composite": -1.6,
+      "token_overlap": 0.4,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires leaving a comment with the trading loss in euros. The post has a link to '69 comments', which is visible and indicates where comments can be added. I need to click on this link to open",
+      "target_text": "{\n  \"thought\": \"The task requires leaving a comment with the trading loss in euros. The current page is the post detail page. I need to locate the comment section to leave a comment. The comment section is likely below the post content,",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 59,
+      "intent": "What is the total employees (in 2021) of the accounting firms that provide both tax and legal services? Answer using the information from the Wikipedia site in the second tab.",
+      "composite": -1.56,
+      "token_overlap": 0.44,
+      "src_neg": 1,
+      "src_aff": 2,
+      "tgt_neg": 1,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The current page is a 'Page not found' error, and the task requires information from the Wikipedia site in the second tab. The 'Wiki' link is visible in the top navigation bar with ID 223",
+      "target_text": "{\n  \"thought\": \"The current page is a 'Page not found' error, so I need to navigate to the Wikipedia site. The 'Wiki' link in the navigation bar is available and should lead to the Wikipedia site.\",\n  \"confidence",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 50,
+      "intent": "What is the name of the major commercial airport in the state that is colored green? Answer using the information from the Wikipedia site in the second tab.",
+      "composite": -1.54,
+      "token_overlap": 0.46,
+      "src_neg": 0,
+      "src_aff": 1,
+      "tgt_neg": 0,
+      "tgt_aff": 0,
+      "source_text": "{\n  \"thought\": \"The task requires finding the name of the major commercial airport in the state that is colored green using information from the Wikipedia site in the second tab. The current tab is on the forums page, and the Wiki tab is already",
+      "target_text": "{\n  \"thought\": \"The task requires finding the name of the major commercial airport in a state that is colored green, using information from the Wikipedia site. However, the current page is a forum listing page, not Wikipedia. I need to navigate",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": 107,
+      "intent": "Subscribe to a forum that contains the following picture.",
+      "composite": -1.5,
+      "token_overlap": 0.5,
+      "src_neg": 0,
+      "src_aff": 2,
+      "tgt_neg": 0,
+      "tgt_aff": 1,
+      "source_text": "{\n  \"thought\": \"The task is to subscribe to a forum that contains the picture. The screenshot shows a 'Subscribed' section with forum links. The image provided is not visible in the current view, so I should search for it using",
+      "target_text": "{\n  \"thought\": \"The task is to subscribe to a forum that contains a picture. The screenshot shows the 'Subscribed forums' section with links to 'AskReddit' and 'books'. Since the task involves subscribing to a forum that contains",
+      "steps_extracted": [
+        {
+          "step_idx": 2,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        },
+        {
+          "step_idx": 5,
+          "files": [
+            "observation_dom.txt",
+            "screenshot_annotated.png"
+          ]
+        }
+      ]
+    }
+  ],
+  "skipped": []
+}

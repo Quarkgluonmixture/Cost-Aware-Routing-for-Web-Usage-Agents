@@ -1,0 +1,48 @@
+Tab 0 (current): List of forums
+
+[488] RootWebArea 'List of forums' focused: True url: http://100.95.81.103:9999/forums
+	[1967] article ''
+		[1969] heading 'explainlikeimfive — explainlikeimfive'
+			[1970] link 'explainlikeimfive — explainlikeimfive' url: http://100.95.81.103:9999/f/explainlikeimfive
+		[1980] button 'Subscribe No subscribers'
+			[1985] generic 'No subscribers'
+		[2163] StaticText '1,818 submissions'
+	[1987] article ''
+		[1989] heading 'books — books'
+			[1990] link 'books — books' url: http://100.95.81.103:9999/f/books
+		[2000] button 'Subscribe No subscribers'
+			[2005] generic 'No subscribers'
+		[2172] StaticText '1,796 submissions'
+	[2007] article ''
+		[2009] heading 'science — science'
+			[2010] link 'science — science' url: http://100.95.81.103:9999/f/science
+		[2020] button 'Subscribe No subscribers'
+			[2025] generic 'No subscribers'
+		[2181] StaticText '1,792 submissions'
+	[2027] article ''
+		[2029] heading 'Jokes — Jokes'
+			[2030] link 'Jokes — Jokes' url: http://100.95.81.103:9999/f/Jokes
+		[2040] button 'Subscribe No subscribers'
+			[2045] generic 'No subscribers'
+		[2190] StaticText '1,758 submissions'
+	[2047] article ''
+		[2049] heading 'tifu — tifu'
+			[2050] link 'tifu — tifu' url: http://100.95.81.103:9999/f/tifu
+		[2060] button 'Subscribe No subscribers'
+			[2065] generic 'No subscribers'
+		[2199] StaticText '1,678 submissions'
+	[2067] article ''
+		[2069] heading 'space — space'
+			[2070] link 'space — space' url: http://100.95.81.103:9999/f/space
+		[2080] button 'Subscribe No subscribers'
+			[2085] generic 'No subscribers'
+		[2208] StaticText '1,671 submissions'
+	[2091] button 'Previous' disabled: True
+	[2093] link 'Page 1' url: http://100.95.81.103:9999/forums
+	[2095] link 'Page 2' url: http://100.95.81.103:9999/forums/by_submissions/2
+	[2097] link 'Page 3' url: http://100.95.81.103:9999/forums/by_submissions/3
+	[2099] link 'Page 4' url: http://100.95.81.103:9999/forums/by_submissions/4
+	[2101] link 'Next' url: http://100.95.81.103:9999/forums/by_submissions/2
+	[2104] contentinfo ''
+		[2215] StaticText 'Running '
+		[2107] link 'Postmill' url: https://postmill.xyz/

@@ -1,0 +1,118 @@
+Tab 0
+
+[19282] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=building+art+
+	[19336] sectionheader ''
+		[19338] link 'Home' url: http://100.95.81.103:9999/
+			[19346] StaticText 'Postmill'
+	[19362] link 'Forums' url: http://100.95.81.103:9999/forums
+	[19368] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[19391] searchbox 'Search query'
+		[24114] StaticText 'building art '
+	[19399] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[19403] image ''
+	[19410] link 'Submit' url: http://100.95.81.103:9999/submit
+		[19414] image ''
+	[19424] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[19428] image ''
+	[19539] heading 'Search'
+	[19547] StaticText 'Search query'
+	[19549] searchbox 'Search query'
+		[24115] StaticText 'building art '
+	[19556] button 'Search'
+	[19561] heading '50 results for building art :'
+		[19563] emphasis ''
+	[19567] article ''
+		[19569] checkbox 'Hide −' checked: true
+		[19575] sectionheader ''
+			[19577] heading 'Kalebxtentacion [t1_j5pi6to] wrote 3 years ago'
+				[19581] link 'Kalebxtentacion' expanded: False url: http://100.95.81.103:9999/user/Kalebxtentacion
+				[19590] time ''
+		[19613] image ''
+		[19617] StaticText 'Reply to comment by '
+		[19618] link '[deleted]' expanded: False url: http://100.95.81.103:9999/user/%5Bdeleted%5D
+		[19621] StaticText ' in '
+		[19622] link 'Designs for First New Townhouse in a Century on Newark’s James Street Earns Praise | Jersey Digs' url: http://100.95.81.103:9999/f/Newark/78821
+		[19625] StaticText ' by '
+		[19626] link '66nexus' expanded: False url: http://100.95.81.103:9999/user/66nexus
+		[19634] StaticText 'approved, options the developers can make is to keep the same design but make the '
+		[19635] mark ''
+			[19636] StaticText 'building'
+		[19638] mark ''
+			[19639] StaticText 'art'
+		[19640] StaticText ' deco in facade. Like look at one theater square materials, or both of Shaq tower materials ... some of the '
+		[19641] mark ''
+			[19642] StaticText 'buildings'
+		[19643] StaticText ' in the historic area maybe they can approve it. - The tower could also include the facade of the '
+		[19644] mark ''
+		[19646] StaticText ' that are getting demolish or something. An '
+		[19647] mark ''
+			[19648] StaticText 'art'
+		[19649] StaticText ' deco '
+		[19650] mark ''
+			[19651] StaticText 'building'
+		[19652] StaticText ' ... amazing, the last '
+		[19653] mark ''
+			[19654] StaticText 'art'
+		[19655] StaticText ' deco '
+		[19656] mark ''
+			[19657] StaticText 'building'
+		[19658] StaticText ' that is tall is the National Newark '
+		[19659] mark ''
+			[19660] StaticText 'Building'
+		[19661] StaticText ' and if this tower was to dethrone that '
+		[19662] mark ''
+			[19663] StaticText 'building'
+		[19664] StaticText ' it could be by another '
+		[19665] mark ''
+			[19666] StaticText 'Art'
+		[19667] StaticText ' deco style '
+		[19668] mark ''
+			[19669] StaticText 'building'
+		[19678] link 'Reply' url: http://100.95.81.103:9999/f/Newark/78821/-/comment/1470365
+		[19687] link 'Permalink' url: http://100.95.81.103:9999/f/Newark/78821/-/comment/1470365
+		[19693] link 'Parent' url: http://100.95.81.103:9999/f/Newark/78821/-/comment/1470341
+		[19706] button 'Upvote'
+		[19724] button 'Downvote'
+	[19737] article ''
+		[19739] checkbox 'Hide −' checked: true
+		[19745] sectionheader ''
+			[19747] heading 'Kalebxtentacion [t1_iupgsx3] wrote 3 years ago'
+				[19751] link 'Kalebxtentacion' expanded: False url: http://100.95.81.103:9999/user/Kalebxtentacion
+				[19760] time ''
+		[19783] image ''
+		[19787] StaticText 'Reply to comment by '
+		[19788] link 'bigjoe13' expanded: False url: http://100.95.81.103:9999/user/bigjoe13
+		[19791] StaticText ' in '
+		[19792] link 'They def gonna do a redesign, they should architecturally design it to match the surroundings buildings🤡😶\u200d🌫️🫡' url: http://100.95.81.103:9999/f/Newark/35662
+		[19795] StaticText ' by '
+		[19796] link 'ya_boi_seabass' expanded: False url: http://100.95.81.103:9999/user/ya_boi_seabass
+		[19804] StaticText 'gonna lie I love our '
+		[19805] mark ''
+			[19806] StaticText 'art'
+		[19807] StaticText ' deco style '
+		[19808] mark ''
+			[19809] StaticText 'buildings'
+		[19810] StaticText ' there great and beautiful but it doesn’t mean we have to only '
+		[19811] mark ''
+		[19814] mark ''
+			[19815] StaticText 'art'
+		[19816] StaticText ' deco moving forward in Newark. Our skyline should be diverse, Newark'
+		[19825] link 'Reply' url: http://100.95.81.103:9999/f/Newark/35662/-/comment/422909
+		[19834] link 'Permalink' url: http://100.95.81.103:9999/f/Newark/35662/-/comment/422909
+		[19840] link 'Parent' url: http://100.95.81.103:9999/f/Newark/35662/-/comment/421739
+		[19853] button 'Upvote'
+		[19871] button 'Downvote'
+	[19890] sectionheader ''
+		[19893] heading 'How to Survive College - I have stalkers?'
+			[19894] link 'How to Survive College - I have stalkers?' url: http://100.95.81.103:9999/f/nosleep/44217/how-to-survive-college-i-have-stalkers
+		[19901] StaticText 'Submitted by '
+		[19902] link 'fainting--goat' expanded: False url: http://100.95.81.103:9999/user/fainting--goat
+		[19909] StaticText 't3_ywjw20'
+		[19911] time ''
+			[24120] StaticText '3 years ago'
+		[19913] StaticText ' in '
+		[19914] link 'nosleep' url: http://100.95.81.103:9999/f/nosleep
+	[19961] button 'Upvote'
+	[24121] StaticText '866'
+	[19979] button 'Downvote'

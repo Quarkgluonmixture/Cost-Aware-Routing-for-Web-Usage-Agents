@@ -1,0 +1,88 @@
+Tab 0 (current): Search
+
+[1133] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=recipe+
+	[1189] sectionheader ''
+		[1191] link 'Home' url: http://100.95.81.103:9999/
+			[1199] StaticText 'Postmill'
+	[1215] link 'Forums' url: http://100.95.81.103:9999/forums
+	[1221] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[1244] searchbox 'Search query'
+		[6824] StaticText 'recipe '
+	[1252] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[1256] image ''
+	[1263] link 'Submit' url: http://100.95.81.103:9999/submit
+		[1267] image ''
+	[1277] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[1281] image ''
+	[1392] heading 'Search'
+	[1400] StaticText 'Search query'
+	[1402] searchbox 'Search query'
+		[6825] StaticText 'recipe '
+	[1409] button 'Search'
+	[1414] heading '50 results for recipe :'
+		[1416] emphasis ''
+	[1420] article ''
+		[1426] sectionheader ''
+			[1429] heading 'LPT: When reading a recipe online go straight to "Print Recipe"'
+				[1430] link 'LPT: When reading a recipe online go straight to "Print Recipe"' url: http://100.95.81.103:9999/f/LifeProTips/99412/lpt-when-reading-a-recipe-online-go-straight-to-print-recipe
+					[1432] mark ''
+					[1435] mark ''
+			[1443] StaticText 'Submitted by '
+			[1444] link 'downtownhobo' expanded: False url: http://100.95.81.103:9999/user/downtownhobo
+			[1451] StaticText 't3_1148sfu'
+			[1453] time ''
+				[1454] StaticText '3 years ago'
+			[1455] StaticText ' in '
+			[1456] link 'LifeProTips' url: http://100.95.81.103:9999/f/LifeProTips
+		[1466] StaticText 'with social media buttons, and no long story about how the kids love this family '
+		[1467] mark ''
+			[1468] StaticText 'recipe'
+		[1469] StaticText ' on Tuesday nights after practice and how is been changed since good old grandma use to make it during'
+		[1478] link '9 comments' url: http://100.95.81.103:9999/f/LifeProTips/99412/lpt-when-reading-a-recipe-online-go-straight-to-print-recipe
+		[1490] button 'Upvote'
+		[1500] StaticText '23'
+		[1508] button 'Downvote'
+	[1520] article ''
+		[1526] sectionheader ''
+			[1529] heading 'Seeking a Bulkie Recipe... any Green St. bakery veterans in this sub?'
+				[1530] link 'Seeking a Bulkie Recipe... any Green St. bakery veterans in this sub?' url: http://100.95.81.103:9999/f/WorcesterMA/102053/seeking-a-bulkie-recipe-any-green-st-bakery-veterans-in-this
+					[1532] mark ''
+			[1540] StaticText 'Submitted by '
+			[1541] link 'mattyflavor' expanded: False url: http://100.95.81.103:9999/user/mattyflavor
+			[1548] StaticText 't3_10tpdrp'
+			[1550] time ''
+				[1551] StaticText '3 years ago'
+			[1552] StaticText ' in '
+			[1553] link 'WorcesterMA' url: http://100.95.81.103:9999/f/WorcesterMA
+		[1564] StaticText 'TLDR: Bulkie '
+		[1565] mark ''
+			[1566] StaticText 'recipes'
+		[1567] StaticText " are rare and the ones I've found aren't right... seeking help! So, I moved from Worcester County a long time ago... and there are a few things I really, really ... someone in the sub has worked at one of the old Green Street bakeries or has a "
+		[1568] mark ''
+		[1570] StaticText ' or "knows some things"... so to speak. It\'s kind of spooky, to be honest... like'
+		[1579] link '8 comments' url: http://100.95.81.103:9999/f/WorcesterMA/102053/seeking-a-bulkie-recipe-any-green-st-bakery-veterans-in-this
+		[1591] button 'Upvote'
+		[1609] button 'Downvote'
+	[1621] article ''
+		[1627] sectionheader ''
+			[1630] heading "LPT: Make the recipe you're following the lock wallpaper on your phone."
+				[1631] link "LPT: Make the recipe you're following the lock wallpaper on your phone." url: http://100.95.81.103:9999/f/LifeProTips/55623/lpt-make-the-recipe-you-re-following-the-lock-wallpaper-on
+					[1633] mark ''
+			[1641] StaticText 'Submitted by '
+			[1642] link 'XxIcedaddyxX' expanded: False url: http://100.95.81.103:9999/user/XxIcedaddyxX
+			[1649] StaticText 't3_zzngcf'
+			[1651] time ''
+				[1652] StaticText '3 years ago'
+			[1653] StaticText ' in '
+			[1654] link 'LifeProTips' url: http://100.95.81.103:9999/f/LifeProTips
+		[1664] StaticText 'Yeah, first timer here long time lurker. As the title says make the '
+		[1665] mark ''
+			[1666] StaticText 'recipe'
+		[1667] StaticText " you're following your home/lock screen. It keeps your device secure and for the most part clean ... also the "
+		[1668] mark ''
+		[1670] StaticText ' is a quick tap, double tap or whatever away. I, myself, found this very helpful over the holidays'
+		[1679] link '6 comments' url: http://100.95.81.103:9999/f/LifeProTips/55623/lpt-make-the-recipe-you-re-following-the-lock-wallpaper-on
+		[1691] button 'Upvote'
+		[1701] StaticText '22'
+		[1709] button 'Downvote'

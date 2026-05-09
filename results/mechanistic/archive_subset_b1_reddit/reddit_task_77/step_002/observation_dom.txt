@@ -1,0 +1,41 @@
+Tab 0 (current): Search
+
+[4545] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=Mona+Lisa+
+	[4602] sectionheader ''
+		[4604] link 'Home' url: http://100.95.81.103:9999/
+			[4612] StaticText 'Postmill'
+	[4628] link 'Forums' url: http://100.95.81.103:9999/forums
+	[4634] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[4657] searchbox 'Search query'
+		[12204] StaticText 'Mona Lisa '
+	[4665] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[4669] image ''
+	[4676] link 'Submit' url: http://100.95.81.103:9999/submit
+		[4680] image ''
+	[4690] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[4694] image ''
+	[4805] heading 'Search'
+	[4813] StaticText 'Search query'
+	[4815] searchbox 'Search query'
+		[12205] StaticText 'Mona Lisa '
+	[4822] button 'Search'
+	[4827] heading '50 results for Mona Lisa :'
+		[4829] emphasis ''
+	[4833] article ''
+		[4839] sectionheader ''
+			[4842] heading 'MonaLisa, Me, Sisyphus table, 2022'
+				[4843] link 'MonaLisa, Me, Sisyphus table, 2022' url: http://100.95.81.103:9999/submission_images/5bcb8d62749031657890e4b43bb444a3d80e3d7279911cd13d97bda3d96ee519.gif
+					[4844] mark ''
+					[4846] mark ''
+			[4854] StaticText 'Submitted by '
+			[4855] link 'Alex_Sisyphus' expanded: False url: http://100.95.81.103:9999/user/Alex_Sisyphus
+			[4862] StaticText 't3_yv7dbj'
+			[4864] time ''
+				[4865] StaticText '3 years ago'
+			[4546] StaticText ' in '
+			[4866] link 'Art' url: http://100.95.81.103:9999/f/Art
+		[4876] link '' url: http://100.95.81.103:9999/submission_images/5bcb8d62749031657890e4b43bb444a3d80e3d7279911cd13d97bda3d96ee519.gif
+		[4899] button 'Upvote'
+		[4909] StaticText '3313'
+		[4917] button 'Downvote'

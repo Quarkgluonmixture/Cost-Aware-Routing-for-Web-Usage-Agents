@@ -1,0 +1,55 @@
+Tab 0 (current): You heard the brain
+
+[11090] RootWebArea 'You heard the brain' focused: True url: http://100.95.81.103:9999/f/MechanicalKeyboards/78235/you-heard-the-brain
+	[11166] sectionheader ''
+		[11168] link 'Home' url: http://100.95.81.103:9999/
+			[11176] StaticText 'Postmill'
+	[11192] link 'Forums' url: http://100.95.81.103:9999/forums
+	[11198] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[11221] searchbox 'Search query'
+	[11229] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[11233] image ''
+	[11240] link 'Submit' url: http://100.95.81.103:9999/submit/MechanicalKeyboards
+		[11244] image ''
+	[11254] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[11258] image ''
+	[11375] link '/f/MechanicalKeyboards' url: http://100.95.81.103:9999/f/MechanicalKeyboards
+		[11378] image ''
+	[11390] article ''
+		[11395] sectionheader ''
+			[11398] heading 'You heard the brain'
+				[11399] link 'You heard the brain' url: http://100.95.81.103:9999/submission_images/7062d80a777d2c68b68d3eb69e91b304fa3a7e2550ae6435fcecbfcd56edf35d.jpg
+			[11406] StaticText 'Submitted by '
+			[11407] link 'PhoenixUNI' expanded: False url: http://100.95.81.103:9999/user/PhoenixUNI
+			[11414] StaticText 't3_10q8lcy'
+			[11416] time ''
+				[11417] StaticText '3 years ago'
+			[11092] StaticText ' in '
+			[11418] link 'MechanicalKeyboards' url: http://100.95.81.103:9999/f/MechanicalKeyboards
+		[11428] link '' url: http://100.95.81.103:9999/submission_images/7062d80a777d2c68b68d3eb69e91b304fa3a7e2550ae6435fcecbfcd56edf35d.jpg
+		[11439] link '14 comments' url: http://100.95.81.103:9999/f/MechanicalKeyboards/78235/you-heard-the-brain
+		[11451] button 'Upvote'
+		[11461] StaticText '11883'
+		[11469] button 'Downvote'
+	[13379] complementary ''
+		[13386] StaticText '0 points'
+		[13389] StaticText '(+0, −0)'
+		[13394] heading 'Short URL:'
+		[13400] StaticText 'http://100.95.81.103:9999/78235'
+		[13407] heading 'MechanicalKeyboards'
+			[13409] link 'MechanicalKeyboards' url: http://100.95.81.103:9999/f/MechanicalKeyboards
+		[13419] button 'Unsubscribe 1 subscriber'
+			[13433] generic '1 subscriber'
+		[13441] StaticText 't5_2ugo7'
+		[13444] separator '' orientation: horizontal
+		[13449] StaticText 'Created '
+		[13450] time ''
+			[13451] StaticText '4 years ago'
+		[13455] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/MechanicalKeyboards/new.atom
+			[13457] image ''
+		[13467] group ''
+			[13469] DisclosureTriangle 'Hide this forum' expanded: False
+		[13490] heading 'Toolbox'
+		[13497] link 'Bans' url: http://100.95.81.103:9999/f/MechanicalKeyboards/bans
+		[13503] link 'Moderation log' url: http://100.95.81.103:9999/f/MechanicalKeyboards/moderation_log

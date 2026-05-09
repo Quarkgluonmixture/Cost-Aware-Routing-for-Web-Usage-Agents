@@ -1,0 +1,29 @@
+Tab 0 (current): Search
+
+[4804] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=f%2FPaterson+
+	[4858] sectionheader ''
+		[4860] link 'Home' url: http://100.95.81.103:9999/
+			[4868] StaticText 'Postmill'
+	[4884] link 'Forums' url: http://100.95.81.103:9999/forums
+	[4890] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[4913] searchbox 'Search query'
+		[5163] StaticText 'f/Paterson '
+	[4921] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[4925] image ''
+	[4932] link 'Submit' url: http://100.95.81.103:9999/submit
+		[4936] image ''
+	[4946] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[4950] image ''
+	[5059] main ''
+		[5061] heading 'Search'
+		[5069] StaticText 'Search query'
+		[5071] searchbox 'Search query'
+			[5164] StaticText 'f/Paterson '
+		[5078] button 'Search'
+		[5083] heading 'No results for f/Paterson'
+			[5085] emphasis ''
+		[5090] StaticText 'There are no entries to display.'
+	[5096] contentinfo ''
+		[5101] StaticText 'Running '
+		[5102] link 'Postmill' url: https://postmill.xyz/

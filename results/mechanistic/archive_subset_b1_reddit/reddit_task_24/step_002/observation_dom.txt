@@ -1,0 +1,41 @@
+Tab 0 (current): Search
+
+[1133] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=painting+astronaut+
+	[1190] sectionheader ''
+		[1192] link 'Home' url: http://100.95.81.103:9999/
+			[1200] StaticText 'Postmill'
+	[1216] link 'Forums' url: http://100.95.81.103:9999/forums
+	[1222] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[1245] searchbox 'Search query'
+		[3059] StaticText 'painting astronaut '
+	[1253] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[1257] image ''
+	[1264] link 'Submit' url: http://100.95.81.103:9999/submit
+		[1268] image ''
+	[1278] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[1282] image ''
+	[1393] heading 'Search'
+	[1401] StaticText 'Search query'
+	[1403] searchbox 'Search query'
+		[3060] StaticText 'painting astronaut '
+	[1410] button 'Search'
+	[1415] heading '11 results for painting astronaut :'
+		[1417] emphasis ''
+	[1421] article ''
+		[1427] sectionheader ''
+			[1430] heading 'I painted a very big astronaut, that is all.'
+				[1431] link 'I painted a very big astronaut, that is all.' url: http://100.95.81.103:9999/submission_images/c00998a8eba2c76e09451d6a01f93052f2aebd87808db67e451151aa22467578.jpg
+					[1433] mark ''
+					[1436] mark ''
+			[1444] StaticText 'Submitted by '
+			[1445] link 'theprophetisaiah' expanded: False url: http://100.95.81.103:9999/user/theprophetisaiah
+			[1452] StaticText 't3_z8f6wf'
+			[1454] time ''
+				[1455] StaticText '3 years ago'
+			[1134] StaticText ' in '
+			[1456] link 'pics' url: http://100.95.81.103:9999/f/pics
+		[1465] link '' url: http://100.95.81.103:9999/submission_images/c00998a8eba2c76e09451d6a01f93052f2aebd87808db67e451151aa22467578.jpg
+		[1489] button 'Upvote'
+		[1499] StaticText '3183'
+		[1507] button 'Downvote'

@@ -1,0 +1,61 @@
+Tab 0 (current): Leash your dogs if you take them somewhere public. Just because your dog is friendly does not mean my dog is friendly.
+
+[10441] RootWebArea 'Leash your dogs if you take them somewhere public. Just because your dog is friendly does not mean my dog is friendly.' focused: True url: http://100.95.81.103:9999/f/springfieldMO/134337/leash-your-dogs-if-you-take-them-somewhere-public-just
+	[10524] sectionheader ''
+		[10526] link 'Home' url: http://100.95.81.103:9999/
+			[10534] StaticText 'Postmill'
+	[10550] link 'Forums' url: http://100.95.81.103:9999/forums
+	[10556] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[10579] searchbox 'Search query'
+	[10587] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[10591] image ''
+	[10598] link 'Submit' url: http://100.95.81.103:9999/submit/springfieldMO
+		[10602] image ''
+	[10612] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[10616] image ''
+	[10733] link '/f/springfieldMO' url: http://100.95.81.103:9999/f/springfieldMO
+		[10736] image ''
+	[10748] article ''
+		[10754] sectionheader ''
+			[10757] heading 'Leash your dogs if you take them somewhere public. Just because your dog is friendly does not mean my dog is friendly.'
+				[10758] link 'Leash your dogs if you take them somewhere public. Just because your dog is friendly does not mean my dog is friendly.' url: http://100.95.81.103:9999/f/springfieldMO/134337/leash-your-dogs-if-you-take-them-somewhere-public-just
+			[10764] StaticText 'Submitted by '
+			[10765] link 'snorlaxatives_69' expanded: False url: http://100.95.81.103:9999/user/snorlaxatives_69
+			[10772] StaticText 't3_11j5h7e'
+			[10774] time ''
+				[10775] StaticText '3 years ago'
+			[10443] StaticText ' in '
+			[10776] link 'springfieldMO' url: http://100.95.81.103:9999/f/springfieldMO
+		[10785] StaticText 'Had too many phone calls from my mother about unleashed dogs while she’s out walking hers. Just last night, she was at the Walmart Market by her place with her dog (she takes that dog everywhere if the weather is good enough, always leashed up too) and after her shopping, she got the dog out to pee out on the edge of the property. Some old man in a yellow car pulls up, opens the back and his dog jumps out, sees my mom’s dog, and takes off towards her. Luckily the dog had a toy in its mouth or who knows what would have happened. My mom is missing part of a lung from lung cancer and gets tired easily so she was too out of breath to yell for help.'
+		[10787] StaticText 'I’m so fucking over you all who don’t leash your dogs up.'
+		[10789] StaticText 'EDIT: My mom does not take her dog INTO the store. Just on the ride when the weather is nice like this weekend. Leaves the window cracked for her and is never in the store too long. My mom is a good dog mom.'
+		[10798] link '49 comments' url: http://100.95.81.103:9999/f/springfieldMO/134337/leash-your-dogs-if-you-take-them-somewhere-public-just
+		[10810] button 'Upvote'
+		[10820] StaticText '185'
+		[10828] button 'Downvote'
+	[10449] heading 'Comments'
+	[10850] textbox 'Comment' required: True describedby: reply_to_submission_134337_comment_help
+	[10862] checkbox 'Formatting help +' checked: false
+	[10865] StaticText 'Markdown allowed.'
+	[16682] complementary ''
+		[16689] StaticText '0 points'
+		[16692] StaticText '(+0, −0)'
+		[16697] heading 'Short URL:'
+		[16703] StaticText 'http://100.95.81.103:9999/134337'
+		[16710] heading 'springfieldMO'
+			[16712] link 'springfieldMO' url: http://100.95.81.103:9999/f/springfieldMO
+		[16722] button 'Subscribe No subscribers'
+			[16736] generic 'No subscribers'
+		[16744] StaticText 't5_2qiap'
+		[16747] separator '' orientation: horizontal
+		[16752] StaticText 'Created '
+		[16753] time ''
+			[16754] StaticText '4 years ago'
+		[16758] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/springfieldMO/new.atom
+			[16760] image ''
+		[16770] group ''
+			[16772] DisclosureTriangle 'Hide this forum' expanded: False
+		[16793] heading 'Toolbox'
+		[16800] link 'Bans' url: http://100.95.81.103:9999/f/springfieldMO/bans
+		[16806] link 'Moderation log' url: http://100.95.81.103:9999/f/springfieldMO/moderation_log

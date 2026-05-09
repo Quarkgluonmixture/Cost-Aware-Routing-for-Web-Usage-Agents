@@ -79,6 +79,13 @@ def main():
         "--reverse-max-composite", type=float, default=-1.5,
         help="Reverse tier: composite <= this (paper §5 robustness check)",
     )
+    p.add_argument(
+        "--artifacts-subdir", default=None,
+        help="Override condition subdir name. For multi-mode archived runs "
+             "(e.g. B1_3mode_reddit_20260413 has phase1_{dom,som,vision}_router_0), "
+             "find_artifacts_dir picks first-iterated which may be wrong condition. "
+             "Set explicitly: e.g. --artifacts-subdir phase1_som_router_0.",
+    )
     args = p.parse_args()
 
     candidates_jsonl = Path(args.candidates_jsonl)
@@ -91,7 +98,13 @@ def main():
     if not archived_dir.is_dir():
         logger.error(f"archived run dir not found: {archived_dir}")
         sys.exit(1)
-    artifacts_dir = find_artifacts_dir(archived_dir)
+    if args.artifacts_subdir:
+        artifacts_dir = archived_dir / args.artifacts_subdir / "artifacts"
+        if not artifacts_dir.is_dir():
+            logger.error(f"--artifacts-subdir resolved to {artifacts_dir} (does not exist)")
+            sys.exit(1)
+    else:
+        artifacts_dir = find_artifacts_dir(archived_dir)
     logger.info(f"Source artifacts: {artifacts_dir}")
 
     output_dir = Path(args.output_dir)

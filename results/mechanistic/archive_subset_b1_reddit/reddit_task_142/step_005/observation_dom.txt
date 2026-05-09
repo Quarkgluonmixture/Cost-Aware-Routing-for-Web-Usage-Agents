@@ -1,0 +1,57 @@
+Tab 0 (current): New Poster for 'Creed III'
+
+[35537] RootWebArea "New Poster for 'Creed III'" focused: True url: http://100.95.81.103:9999/f/movies/86107/new-poster-for-creed-iii
+	[35612] sectionheader ''
+		[35614] link 'Home' url: http://100.95.81.103:9999/
+			[35622] StaticText 'Postmill'
+	[35638] link 'Forums' url: http://100.95.81.103:9999/forums
+	[35644] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[35667] searchbox 'Search query'
+	[35675] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[35679] image ''
+	[35686] link 'Submit' url: http://100.95.81.103:9999/submit/movies
+		[35690] image ''
+	[35700] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[35704] image ''
+	[35821] link '/f/movies' url: http://100.95.81.103:9999/f/movies
+		[35824] image ''
+	[35836] article ''
+		[35842] sectionheader ''
+			[35845] heading "New Poster for 'Creed III'"
+				[35846] link "New Poster for 'Creed III'" url: http://100.95.81.103:9999/submission_images/f78c8228c760c4f56d2577070d1e1bc73ba40a56f21bb5b9ce934f2d5cc28e42.jpg
+			[35853] StaticText 'Submitted by '
+			[35854] link 'MarvelsGrantMan136' expanded: False url: http://100.95.81.103:9999/user/MarvelsGrantMan136
+			[35861] StaticText 't3_10p7vzl'
+			[35863] time ''
+				[35864] StaticText '3 years ago'
+			[35538] StaticText ' in '
+			[35865] link 'movies' url: http://100.95.81.103:9999/f/movies
+		[35874] link '' url: http://100.95.81.103:9999/submission_images/f78c8228c760c4f56d2577070d1e1bc73ba40a56f21bb5b9ce934f2d5cc28e42.jpg
+		[35886] link '88 comments' url: http://100.95.81.103:9999/f/movies/86107/new-poster-for-creed-iii
+		[35892] link 'Edit' url: http://100.95.81.103:9999/f/movies/86107/-/edit
+		[35902] button 'Delete'
+		[35915] button 'Upvote'
+		[35925] StaticText '282'
+		[35933] button 'Downvote'
+	[46189] complementary ''
+		[46196] StaticText '0 points'
+		[46199] StaticText '(+0, −0)'
+		[46204] heading 'Short URL:'
+		[46210] StaticText 'http://100.95.81.103:9999/86107'
+		[46217] heading 'movies'
+			[46219] link 'movies' url: http://100.95.81.103:9999/f/movies
+		[46229] button 'Subscribe No subscribers'
+			[46243] generic 'No subscribers'
+		[46251] StaticText 't5_2qh3s'
+		[46254] separator '' orientation: horizontal
+		[46259] StaticText 'Created '
+		[46260] time ''
+			[46261] StaticText '4 years ago'
+		[46265] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/movies/new.atom
+			[46267] image ''
+		[46277] group ''
+			[46279] DisclosureTriangle 'Hide this forum' expanded: False
+		[46300] heading 'Toolbox'
+		[46307] link 'Bans' url: http://100.95.81.103:9999/f/movies/bans
+		[46313] link 'Moderation log' url: http://100.95.81.103:9999/f/movies/moderation_log

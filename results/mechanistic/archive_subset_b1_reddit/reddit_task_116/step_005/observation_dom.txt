@@ -1,0 +1,29 @@
+Tab 0 (current): Search
+
+[5895] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=f%2Fdataisbeautiful+
+	[5949] sectionheader ''
+		[5951] link 'Home' url: http://100.95.81.103:9999/
+			[5959] StaticText 'Postmill'
+	[5975] link 'Forums' url: http://100.95.81.103:9999/forums
+	[5981] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[6004] searchbox 'Search query'
+		[6254] StaticText 'f/dataisbeautiful '
+	[6012] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[6016] image ''
+	[6023] link 'Submit' url: http://100.95.81.103:9999/submit
+		[6027] image ''
+	[6037] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[6041] image ''
+	[6150] main ''
+		[6152] heading 'Search'
+		[6160] StaticText 'Search query'
+		[6162] searchbox 'Search query'
+			[6255] StaticText 'f/dataisbeautiful '
+		[6169] button 'Search'
+		[6174] heading 'No results for f/dataisbeautiful'
+			[6176] emphasis ''
+		[6181] StaticText 'There are no entries to display.'
+	[6187] contentinfo ''
+		[6192] StaticText 'Running '
+		[6193] link 'Postmill' url: https://postmill.xyz/

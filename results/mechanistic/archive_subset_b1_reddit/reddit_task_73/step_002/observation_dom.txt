@@ -1,0 +1,48 @@
+Tab 0 (current): List of forums
+
+[488] RootWebArea 'List of forums' focused: True url: http://100.95.81.103:9999/forums
+	[1147] StaticText 'memes'
+	[1177] StaticText '3,129 submissions'
+	[1182] article ''
+		[1186] heading 'wallstreetbets — wallstreetbets'
+			[1188] link 'wallstreetbets — wallstreetbets' url: http://100.95.81.103:9999/f/wallstreetbets
+		[1214] button 'Subscribe No subscribers'
+			[1228] generic 'No subscribers'
+		[1234] StaticText '3,089 submissions'
+	[1239] article ''
+		[1243] heading 'gaming — gaming'
+			[1245] link 'gaming — gaming' url: http://100.95.81.103:9999/f/gaming
+		[1271] button 'Subscribe No subscribers'
+			[1285] generic 'No subscribers'
+		[1291] StaticText '2,572 submissions'
+	[1296] article ''
+		[1300] heading 'technology — technology'
+			[1302] link 'technology — technology' url: http://100.95.81.103:9999/f/technology
+		[1328] button 'Subscribe No subscribers'
+			[1342] generic 'No subscribers'
+		[1348] StaticText '2,472 submissions'
+	[1353] article ''
+		[1357] heading 'pics — pics'
+			[1359] link 'pics — pics' url: http://100.95.81.103:9999/f/pics
+		[1385] button 'Subscribe No subscribers'
+			[1399] generic 'No subscribers'
+		[1405] StaticText '2,450 submissions'
+	[1410] article ''
+		[1414] heading 'funny — funny'
+			[1416] link 'funny — funny' url: http://100.95.81.103:9999/f/funny
+		[1442] button 'Subscribe No subscribers'
+			[1456] generic 'No subscribers'
+		[1462] StaticText '2,407 submissions'
+	[1467] article ''
+		[1471] heading 'television — television'
+			[1473] link 'television — television' url: http://100.95.81.103:9999/f/television
+		[1499] button 'Subscribe No subscribers'
+			[1513] generic 'No subscribers'
+		[1519] StaticText '2,389 submissions'
+	[1524] article ''
+		[DROPDOWN OPTIONS] "Name", "Title", "Submissions", "Subscribers", "Creation date"
+		[1528] heading 'mildlyinteresting — mildlyinteresting'
+			[1530] link 'mildlyinteresting — mildlyinteresting' url: http://100.95.81.103:9999/f/mildlyinteresting
+		[1556] button 'Subscribe No subscribers'
+			[1570] generic 'No subscribers'
+		[1576] StaticText '2,211 submissions'

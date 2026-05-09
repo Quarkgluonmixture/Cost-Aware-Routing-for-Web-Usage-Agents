@@ -1,0 +1,70 @@
+Tab 0 (current): LPT: When reading a recipe online go straight to "Print Recipe"
+
+[8828] RootWebArea 'LPT: When reading a recipe online go straight to "Print Recipe"' focused: True url: http://100.95.81.103:9999/f/LifeProTips/99412/lpt-when-reading-a-recipe-online-go-straight-to-print-recipe
+	[8911] sectionheader ''
+		[8913] link 'Home' url: http://100.95.81.103:9999/
+			[8921] StaticText 'Postmill'
+	[8937] link 'Forums' url: http://100.95.81.103:9999/forums
+	[8943] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[8966] searchbox 'Search query'
+	[8974] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[8978] image ''
+	[8985] link 'Submit' url: http://100.95.81.103:9999/submit/LifeProTips
+		[8989] image ''
+	[8999] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[9003] image ''
+	[9120] link '/f/LifeProTips' url: http://100.95.81.103:9999/f/LifeProTips
+		[9123] image ''
+	[9135] article ''
+		[9141] sectionheader ''
+			[9144] heading 'LPT: When reading a recipe online go straight to "Print Recipe"'
+				[9145] link 'LPT: When reading a recipe online go straight to "Print Recipe"' url: http://100.95.81.103:9999/f/LifeProTips/99412/lpt-when-reading-a-recipe-online-go-straight-to-print-recipe
+			[9152] StaticText 'Submitted by '
+			[9153] link 'downtownhobo' expanded: False url: http://100.95.81.103:9999/user/downtownhobo
+			[9160] StaticText 't3_1148sfu'
+			[9162] time ''
+				[9163] StaticText '3 years ago'
+			[8838] StaticText ' in '
+			[9164] link 'LifeProTips' url: http://100.95.81.103:9999/f/LifeProTips
+		[9174] StaticText 'It will give give just the list of ingredients and the cooking directions on a single white page. If needed can use Print to PDF feature to download it.'
+		[9176] StaticText 'No ads inserted in every paragraph, no pop ups with social media buttons, and no long story about how the kids love this family recipe on Tuesday nights after practice and how is been changed since good old grandma use to make it during the great depression.'
+		[9185] link '9 comments' url: http://100.95.81.103:9999/f/LifeProTips/99412/lpt-when-reading-a-recipe-online-go-straight-to-print-recipe
+		[9197] button 'Upvote'
+		[9207] StaticText '23'
+		[9215] button 'Downvote'
+	[8831] heading 'Comments'
+	[9237] textbox 'Comment' required: True describedby: reply_to_submission_99412_comment_help
+	[9249] checkbox 'Formatting help +' checked: false
+	[9252] StaticText 'Markdown allowed.'
+	[9466] button 'Post'
+	[9479] link 'Nested' url: http://100.95.81.103:9999/f/LifeProTips/99412/lpt-when-reading-a-recipe-online-go-straight-to-print-recipe
+	[9485] link 'Linear' url: http://100.95.81.103:9999/f/LifeProTips/99412/lpt-when-reading-a-recipe-online-go-straight-to-print-recipe/linear
+	[9492] checkbox 'Hide −' checked: true
+	[9498] sectionheader ''
+		[9500] heading 'halfkidding [t1_j8uxdtc] wrote 3 years ago'
+			[9504] link 'halfkidding' expanded: False url: http://100.95.81.103:9999/user/halfkidding
+			[9513] time ''
+	[9566] button 'Upvote'
+	[9575] StaticText '2'
+	[10516] complementary ''
+		[10523] StaticText '0 points'
+		[10526] StaticText '(+0, −0)'
+		[10531] heading 'Short URL:'
+		[10537] StaticText 'http://100.95.81.103:9999/99412'
+		[10544] heading 'LifeProTips'
+			[10546] link 'LifeProTips' url: http://100.95.81.103:9999/f/LifeProTips
+		[10556] button 'Subscribe No subscribers'
+			[10570] generic 'No subscribers'
+		[10578] StaticText 't5_2s5oq'
+		[10581] separator '' orientation: horizontal
+		[10586] StaticText 'Created '
+		[10587] time ''
+			[10588] StaticText '4 years ago'
+		[10592] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/LifeProTips/new.atom
+			[10594] image ''
+		[10604] group ''
+			[10606] DisclosureTriangle 'Hide this forum' expanded: False
+		[10627] heading 'Toolbox'
+		[10634] link 'Bans' url: http://100.95.81.103:9999/f/LifeProTips/bans
+		[10640] link 'Moderation log' url: http://100.95.81.103:9999/f/LifeProTips/moderation_log

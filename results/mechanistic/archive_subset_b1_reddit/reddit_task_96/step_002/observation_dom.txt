@@ -1,0 +1,31 @@
+Tab 0 (current): Postmill
+
+[4451] RootWebArea 'Postmill' focused: True url: http://100.95.81.103:9999/
+	[4517] sectionheader ''
+		[4519] link 'Home' url: http://100.95.81.103:9999/
+	[4544] link 'Forums' url: http://100.95.81.103:9999/forums
+	[4550] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[4573] searchbox 'Search query'
+	[4581] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[4585] image ''
+	[4592] link 'Submit' url: http://100.95.81.103:9999/submit
+		[4596] image ''
+	[4606] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[4610] image ''
+	[4719] main ''
+		[4727] link 'Submissions' url: http://100.95.81.103:9999/
+		[4733] link 'Comments' url: http://100.95.81.103:9999/comments
+		[4742] button 'Filter on: Featured' hasPopup: menu expanded: False
+			[DROPDOWN OPTIONS] "Featured", "Subscribed", "All"
+			[4745] image ''
+		[4779] button 'Sort by: Hot' hasPopup: menu expanded: False
+			[DROPDOWN OPTIONS] "Hot", "New", "Active", "Top", "Controversial", "Most commented"
+			[4782] image ''
+		[4842] StaticText 'You are not subscribed to any forum. Showing featured forums instead.'
+	[4847] complementary ''
+		[4851] heading 'Featured forums'
+		[4857] StaticText 'There are no featured forums to display.'
+	[4863] contentinfo ''
+		[4868] StaticText 'Running '
+		[4869] link 'Postmill' url: https://postmill.xyz/

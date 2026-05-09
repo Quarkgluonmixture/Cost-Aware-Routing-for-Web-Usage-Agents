@@ -1,0 +1,29 @@
+Tab 0 (current): Search
+
+[1133] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=cooking+post+with+pork+in+pan+
+	[1187] sectionheader ''
+		[1189] link 'Home' url: http://100.95.81.103:9999/
+			[1197] StaticText 'Postmill'
+	[1213] link 'Forums' url: http://100.95.81.103:9999/forums
+	[1219] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[1242] searchbox 'Search query'
+		[1492] StaticText 'cooking post with pork in pan '
+	[1250] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[1254] image ''
+	[1261] link 'Submit' url: http://100.95.81.103:9999/submit
+		[1265] image ''
+	[1275] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[1279] image ''
+	[1388] main ''
+		[1390] heading 'Search'
+		[1398] StaticText 'Search query'
+		[1400] searchbox 'Search query'
+			[1493] StaticText 'cooking post with pork in pan '
+		[1407] button 'Search'
+		[1412] heading 'No results for cooking post with pork in pan'
+			[1414] emphasis ''
+		[1419] StaticText 'There are no entries to display.'
+	[1425] contentinfo ''
+		[1430] StaticText 'Running '
+		[1431] link 'Postmill' url: https://postmill.xyz/

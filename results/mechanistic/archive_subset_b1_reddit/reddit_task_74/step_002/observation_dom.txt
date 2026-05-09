@@ -1,0 +1,61 @@
+Tab 0 (current): Cheap keyboard for modding or more expensive keyboard unmodded?
+
+[6355] RootWebArea 'Cheap keyboard for modding or more expensive keyboard unmodded?' focused: True url: http://100.95.81.103:9999/f/MechanicalKeyboards/14380/cheap-keyboard-for-modding-or-more-expensive-keyboard
+	[6438] sectionheader ''
+		[6440] link 'Home' url: http://100.95.81.103:9999/
+			[6448] StaticText 'Postmill'
+	[6464] link 'Forums' url: http://100.95.81.103:9999/forums
+	[6470] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[6493] searchbox 'Search query'
+	[6501] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[6505] image ''
+	[6512] link 'Submit' url: http://100.95.81.103:9999/submit/MechanicalKeyboards
+		[6516] image ''
+	[6526] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[6530] image ''
+	[6647] link '/f/MechanicalKeyboards' url: http://100.95.81.103:9999/f/MechanicalKeyboards
+		[6650] image ''
+	[6662] article ''
+		[6668] sectionheader ''
+			[6671] heading 'Cheap keyboard for modding or more expensive keyboard unmodded?'
+				[6672] link 'Cheap keyboard for modding or more expensive keyboard unmodded?' url: http://100.95.81.103:9999/f/MechanicalKeyboards/14380/cheap-keyboard-for-modding-or-more-expensive-keyboard
+			[6679] StaticText 'Submitted by '
+			[6680] link 'Ollewolle00' expanded: False url: http://100.95.81.103:9999/user/Ollewolle00
+			[6687] StaticText 't3_yd4ekc'
+			[6689] time ''
+				[6690] StaticText '4 years ago'
+			[6365] StaticText ' in '
+			[6691] link 'MechanicalKeyboards' url: http://100.95.81.103:9999/f/MechanicalKeyboards
+		[6701] StaticText "I am going to buy my first ever mechanical keyboard but don't want to waste my money on something cheap I might replace only a few years in the future. I decided to go with a TKL keyboard, NOT 60%. I want extra arrow keys."
+		[6703] StaticText 'Is it better to buy a cheap (50€) Keyboard (thinking about either Redragon K552 or CiY X77) and mod it (might use Akko Switches -> 25€) for around 75€, lubing stuff not included. I want to avoid lubing as long as possible, haha.'
+		[6705] StaticText "Or is it better to buy a 'finished' Keyboard within the price range of 75€ instead, without modding it for the next time since I am on a budget?"
+		[6707] StaticText 'What would be the better choice qualitiy wise?'
+		[6709] StaticText "I am very new to all of this. For example I fear that single Keys will stop working on a cheap and therefore faulty keyboard. How high are the risks of this? Is it more likely to have a broken Switch or a broken keyboard? Is it therefore the better choice to buy a more expensive 'foundation' to mod, later in the future?"
+		[6711] StaticText "Btw. I'd be glad for your input on what Keyboard to choose if I decide to do a modded one now. Other keyboards than the ones I mentioned are welcome, too. The overall price goal is 75€. I need QWERTZ layout if this information is important."
+		[6713] StaticText 'Thank you!'
+		[6722] link '14 comments' url: http://100.95.81.103:9999/f/MechanicalKeyboards/14380/cheap-keyboard-for-modding-or-more-expensive-keyboard
+		[6734] button 'Upvote'
+		[6752] button 'Downvote'
+	[6363] heading 'Comments'
+	[8711] complementary ''
+		[8718] StaticText '0 points'
+		[8721] StaticText '(+0, −0)'
+		[8726] heading 'Short URL:'
+		[8732] StaticText 'http://100.95.81.103:9999/14380'
+		[8739] heading 'MechanicalKeyboards'
+			[8741] link 'MechanicalKeyboards' url: http://100.95.81.103:9999/f/MechanicalKeyboards
+		[8751] button 'Subscribe No subscribers'
+			[8765] generic 'No subscribers'
+		[8773] StaticText 't5_2ugo7'
+		[8776] separator '' orientation: horizontal
+		[8781] StaticText 'Created '
+		[8782] time ''
+			[8783] StaticText '4 years ago'
+		[8787] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/MechanicalKeyboards/new.atom
+			[8789] image ''
+		[8799] group ''
+			[8801] DisclosureTriangle 'Hide this forum' expanded: False
+		[8822] heading 'Toolbox'
+		[8829] link 'Bans' url: http://100.95.81.103:9999/f/MechanicalKeyboards/bans
+		[8835] link 'Moderation log' url: http://100.95.81.103:9999/f/MechanicalKeyboards/moderation_log

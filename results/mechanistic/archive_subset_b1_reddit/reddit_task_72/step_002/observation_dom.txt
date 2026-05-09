@@ -1,0 +1,56 @@
+Tab 0 (current): Too much of anything 💀
+
+[2] RootWebArea 'Too much of anything 💀' focused: True url: http://100.95.81.103:9999/f/memes/127531
+	[79] sectionheader ''
+		[81] link 'Home' url: http://100.95.81.103:9999/
+			[89] StaticText 'Postmill'
+	[105] link 'Forums' url: http://100.95.81.103:9999/forums
+	[111] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[134] searchbox 'Search query'
+	[142] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[146] image ''
+	[153] link 'Submit' url: http://100.95.81.103:9999/submit/memes
+		[157] image ''
+	[167] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[171] image ''
+	[288] link '/f/memes' url: http://100.95.81.103:9999/f/memes
+		[291] image ''
+	[303] article ''
+		[309] sectionheader ''
+			[312] heading 'Too much of anything 💀'
+				[313] link 'Too much of anything 💀' url: http://100.95.81.103:9999/submission_images/fd88fb1bd371d3c10a2fbf9cd7ada438e5bb8e29bea94330b7c8db8f0fa955f2.jpg
+			[320] StaticText 'Submitted by '
+			[321] link 'hutchinsonj056' expanded: False url: http://100.95.81.103:9999/user/hutchinsonj056
+			[328] StaticText 't3_12828le'
+			[330] time ''
+				[331] StaticText '3 years ago'
+			[4] StaticText ' in '
+			[332] link 'memes' url: http://100.95.81.103:9999/f/memes
+		[342] link '' url: http://100.95.81.103:9999/submission_images/fd88fb1bd371d3c10a2fbf9cd7ada438e5bb8e29bea94330b7c8db8f0fa955f2.jpg
+		[353] link '6 comments' url: http://100.95.81.103:9999/f/memes/127531/too-much-of-anything
+		[365] button 'Upvote'
+		[375] StaticText '3284'
+		[383] button 'Downvote'
+	[395] heading 'Comments'
+	[1337] complementary ''
+		[1344] StaticText '0 points'
+		[1347] StaticText '(+0, −0)'
+		[1352] heading 'Short URL:'
+		[1358] StaticText 'http://100.95.81.103:9999/127531'
+		[1365] heading 'memes'
+			[1367] link 'memes' url: http://100.95.81.103:9999/f/memes
+		[1377] button 'Subscribe No subscribers'
+			[1391] generic 'No subscribers'
+		[1399] StaticText 't5_2qjpg'
+		[1402] separator '' orientation: horizontal
+		[1407] StaticText 'Created '
+		[1408] time ''
+			[1409] StaticText '4 years ago'
+		[1413] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/memes/new.atom
+			[1415] image ''
+		[1425] group ''
+			[1427] DisclosureTriangle 'Hide this forum' expanded: False
+		[1448] heading 'Toolbox'
+		[1455] link 'Bans' url: http://100.95.81.103:9999/f/memes/bans
+		[1461] link 'Moderation log' url: http://100.95.81.103:9999/f/memes/moderation_log

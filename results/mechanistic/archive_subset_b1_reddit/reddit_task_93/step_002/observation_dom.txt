@@ -1,0 +1,29 @@
+Tab 0 (current): Search
+
+[2393] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=f%2Ffood+
+	[2447] sectionheader ''
+		[2449] link 'Home' url: http://100.95.81.103:9999/
+			[2457] StaticText 'Postmill'
+	[2473] link 'Forums' url: http://100.95.81.103:9999/forums
+	[2479] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[2502] searchbox 'Search query'
+		[2752] StaticText 'f/food '
+	[2510] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[2514] image ''
+	[2521] link 'Submit' url: http://100.95.81.103:9999/submit
+		[2525] image ''
+	[2535] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[2539] image ''
+	[2648] main ''
+		[2650] heading 'Search'
+		[2658] StaticText 'Search query'
+		[2660] searchbox 'Search query'
+			[2753] StaticText 'f/food '
+		[2667] button 'Search'
+		[2672] heading 'No results for f/food'
+			[2674] emphasis ''
+		[2679] StaticText 'There are no entries to display.'
+	[2685] contentinfo ''
+		[2690] StaticText 'Running '
+		[2691] link 'Postmill' url: https://postmill.xyz/

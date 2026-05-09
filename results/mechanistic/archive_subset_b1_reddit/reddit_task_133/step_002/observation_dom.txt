@@ -1,0 +1,110 @@
+Tab 0 (current): Search
+
+[2932] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=pizza+sign+
+	[2992] sectionheader ''
+		[2994] link 'Home' url: http://100.95.81.103:9999/
+			[3002] StaticText 'Postmill'
+	[3018] link 'Forums' url: http://100.95.81.103:9999/forums
+	[3024] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[3047] searchbox 'Search query'
+		[9711] StaticText 'pizza sign '
+	[3055] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[3059] image ''
+	[3066] link 'Submit' url: http://100.95.81.103:9999/submit
+		[3070] image ''
+	[3080] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[3084] image ''
+	[3195] heading 'Search'
+	[3203] StaticText 'Search query'
+	[3205] searchbox 'Search query'
+		[9712] StaticText 'pizza sign '
+	[3212] button 'Search'
+	[3217] heading '50 results for pizza sign :'
+		[3219] emphasis ''
+	[3223] article ''
+		[3229] sectionheader ''
+			[3232] heading 'Twitter is auctioning off office supplies, including a pizza oven and neon bird sign'
+				[3233] link 'Twitter is auctioning off office supplies, including a pizza oven and neon bird sign' url: https://www.npr.org/2023/01/18/1149731084/twitter-office-supplies-auction-online?utm_medium=social&amp;utm_source=facebook.com&amp;utm_term=nprnews&amp;utm_campaign=npr
+					[3235] mark ''
+					[3238] mark ''
+			[3241] link 'npr.org' url: http://100.95.81.103:9999/search?q=www.npr.org
+			[3248] StaticText 'Submitted by '
+			[3249] link 'JohnGillnitz' expanded: False url: http://100.95.81.103:9999/user/JohnGillnitz
+			[3256] StaticText 't3_10f9ubf'
+			[3258] time ''
+				[3259] StaticText '3 years ago'
+			[2935] StaticText ' in '
+			[3260] link 'news' url: http://100.95.81.103:9999/f/news
+		[3276] link 'No comments' url: http://100.95.81.103:9999/f/news/87526/twitter-is-auctioning-off-office-supplies-including-a-pizza
+		[3288] button 'Upvote'
+		[3306] button 'Downvote'
+	[3318] article ''
+		[3324] sectionheader ''
+			[3327] heading 'Twitter is auctioning off office supplies, including a pizza oven and neon bird sign'
+				[3328] link 'Twitter is auctioning off office supplies, including a pizza oven and neon bird sign' url: https://www.npr.org/2023/01/18/1149731084/twitter-office-supplies-auction-online
+					[3330] mark ''
+					[3333] mark ''
+			[3336] link 'npr.org' url: http://100.95.81.103:9999/search?q=www.npr.org
+			[3343] StaticText 'Submitted by '
+			[3344] link 'Itsprobablysarcasm' expanded: False url: http://100.95.81.103:9999/user/Itsprobablysarcasm
+			[3351] StaticText 't3_10fdfan'
+			[3353] time ''
+				[3354] StaticText '3 years ago'
+			[2937] StaticText ' in '
+			[3355] link 'nottheonion' url: http://100.95.81.103:9999/f/nottheonion
+		[3372] link 'No comments' url: http://100.95.81.103:9999/f/nottheonion/88115/twitter-is-auctioning-off-office-supplies-including-a-pizza
+		[3384] button 'Upvote'
+		[3402] button 'Downvote'
+	[3414] article ''
+		[3416] checkbox 'Hide −' checked: true
+		[3422] sectionheader ''
+			[3424] heading 'mynewnameonhere [t1_iy6yh18] wrote 3 years ago'
+				[3428] link 'mynewnameonhere' expanded: False url: http://100.95.81.103:9999/user/mynewnameonhere
+				[3437] time ''
+		[3460] image ''
+		[3464] StaticText 'Reply to '
+		[3465] link 'You can sue a company for false advertising, but you can’t sue a politician for lying on the campaign trail' url: http://100.95.81.103:9999/f/Showerthoughts/36509
+		[3468] StaticText ' by '
+		[3469] link '[deleted]' expanded: False url: http://100.95.81.103:9999/user/%5Bdeleted%5D
+		[3477] StaticText 'false claims. As an example, you own a '
+		[3478] mark ''
+			[3479] StaticText 'pizza'
+		[3480] StaticText ' shop and make 30” '
+		[3481] mark ''
+			[3482] StaticText 'pizzas'
+		[3483] StaticText '. The guy across the street who makes 20” '
+		[3484] mark ''
+		[3486] StaticText ' puts up a '
+		[3487] mark ''
+			[3488] StaticText 'sign'
+		[3489] StaticText ' that says “We have the biggest '
+		[3490] mark ''
+			[3491] StaticText 'pizzas'
+		[3500] link 'Reply' url: http://100.95.81.103:9999/f/Showerthoughts/36509/-/comment/755479
+		[3509] link 'Permalink' url: http://100.95.81.103:9999/f/Showerthoughts/36509/-/comment/755479
+		[3522] button 'Upvote'
+		[3540] button 'Downvote'
+	[3553] article ''
+		[3555] checkbox 'Hide −' checked: true
+		[3561] sectionheader ''
+			[2934] heading 'bob_smithey [t1_j553ss7] wrote 3 years ago'
+				[3566] link 'bob_smithey' expanded: False url: http://100.95.81.103:9999/user/bob_smithey
+				[3575] time ''
+		[3598] image ''
+		[3602] StaticText 'Reply to '
+		[3603] link 'Favorite hole in the wall restaurants in Baltimore?' url: http://100.95.81.103:9999/f/baltimore/81190
+		[3606] StaticText ' by '
+		[3607] link 'FindAndDine' expanded: False url: http://100.95.81.103:9999/user/FindAndDine
+		[3615] StaticText "Taki's Carryout Restaurant, or on the "
+		[3616] mark ''
+			[3617] StaticText 'sign'
+		[3618] StaticText " out side, Taki's "
+		[3619] mark ''
+			[3620] StaticText 'Pizza'
+		[3621] StaticText '. Which oddly, sells no '
+		[3622] mark ''
+			[3623] StaticText 'pizza'
+		[3624] StaticText '. But go there, get the breakfast combo for under 5 bucks. Add onions to the potatoes'
+		[3655] button 'Upvote'
+		[3673] button 'Downvote'

@@ -1,0 +1,117 @@
+Tab 0 (current): nyc
+
+[2900] RootWebArea 'nyc' focused: True url: http://100.95.81.103:9999/f/nyc
+	[2974] sectionheader ''
+		[2976] link 'Home' url: http://100.95.81.103:9999/
+			[2984] StaticText 'Postmill'
+	[3000] link 'Forums' url: http://100.95.81.103:9999/forums
+	[3006] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[3029] searchbox 'Search query' focused: True
+	[3037] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[3041] image ''
+	[3048] link 'Submit' url: http://100.95.81.103:9999/submit/nyc
+		[3052] image ''
+	[3062] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[3066] image ''
+	[3177] heading '/f/nyc'
+	[3189] link 'Submissions' url: http://100.95.81.103:9999/f/nyc
+	[3195] link 'Comments' url: http://100.95.81.103:9999/f/nyc/comments
+	[3204] button 'Sort by: Hot' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Hot", "New", "Active", "Top", "Controversial", "Most commented"
+		[3207] image ''
+	[3259] article ''
+		[3265] sectionheader ''
+			[3268] heading 'Begging to get stomped'
+				[3269] link 'Begging to get stomped' url: http://100.95.81.103:9999/submission_images/892923e10b250ede9338c5a8b4e8873ea7c359e0099202615928d59bce0e17c5.jpg
+			[3277] StaticText 'Submitted by '
+			[3278] link 'klausfu' expanded: False url: http://100.95.81.103:9999/user/klausfu
+			[3285] StaticText 't3_yhk515'
+			[3287] time ''
+				[3288] StaticText '3 years ago'
+		[3299] link '126 comments' url: http://100.95.81.103:9999/f/nyc/23940/begging-to-get-stomped
+		[3313] button 'Upvote'
+		[3323] StaticText '3445'
+		[3331] button 'Downvote'
+	[3343] article ''
+		[3349] sectionheader ''
+			[3352] heading 'DSNY Trash Can Pen Holder'
+				[3353] link 'DSNY Trash Can Pen Holder' url: http://100.95.81.103:9999/submission_images/581adf5212f50f5383c451e0441dc4b367c1ff52b371dda14284cb6ab2e13787.jpg
+			[3361] StaticText 'Submitted by '
+			[3362] link 'Guardiansvn' expanded: False url: http://100.95.81.103:9999/user/Guardiansvn
+			[3369] StaticText 't3_11hjmpm'
+			[3371] time ''
+				[3372] StaticText '3 years ago'
+		[3383] link '103 comments' url: http://100.95.81.103:9999/f/nyc/130398/dsny-trash-can-pen-holder
+		[3397] button 'Upvote'
+		[3407] StaticText '2803'
+		[3415] button 'Downvote'
+	[3427] article ''
+		[3433] sectionheader ''
+			[3436] heading 'Loving the Chinese New Year celebration today in Chinatown!!!'
+				[2901] link 'Loving the Chinese New Year celebration today in Chinatown!!!' url: http://100.95.81.103:9999/submission_images/6599ac74cda6b876c0434ca0550b765e5199e25c9cb716eefd1e1090470336f2.jpg
+			[3444] StaticText 'Submitted by '
+			[3445] link 'greenthumbnyc' expanded: False url: http://100.95.81.103:9999/user/greenthumbnyc
+			[3452] StaticText 't3_10iu0uk'
+			[3454] time ''
+				[3455] StaticText '3 years ago'
+		[3466] link '63 comments' url: http://100.95.81.103:9999/f/nyc/88305/loving-the-chinese-new-year-celebration-today-in-chinatown
+		[3480] button 'Upvote'
+		[3490] StaticText '2565'
+		[3498] button 'Downvote'
+	[3510] article ''
+		[3516] sectionheader ''
+			[3519] heading 'Meet “Chanel” I’d like to nominate her as the cutest bodega cat in NYC'
+				[3520] link 'Meet “Chanel” I’d like to nominate her as the cutest bodega cat in NYC' url: http://100.95.81.103:9999/submission_images/45d19e90843d8fe7ec8c0a5929790b543dc6a4211ebcce0a79e05c9402e22caa.jpg
+			[3528] StaticText 'Submitted by '
+			[3529] link 'No-Alfalfa4979' expanded: False url: http://100.95.81.103:9999/user/No-Alfalfa4979
+			[3536] StaticText 't3_yxqya1'
+			[3538] time ''
+				[3539] StaticText '3 years ago'
+		[3550] link '105 comments' url: http://100.95.81.103:9999/f/nyc/44619/meet-chanel-i-d-like-to-nominate-her-as-the-cutest-bodega
+		[3564] button 'Upvote'
+		[3574] StaticText '2219'
+		[3582] button 'Downvote'
+	[3594] article ''
+		[3600] sectionheader ''
+			[3603] heading 'I love this city even as I hate it haha. No place comes close to the catharsis NYC can produce and this is hilarious but the NORM'
+				[3604] link 'I love this city even as I hate it haha. No place comes close to the catharsis NYC can produce and this is hilarious but the NORM' url: http://100.95.81.103:9999/submission_images/35c74f2100e7d9bf311c41cccc87c1fe918f0fbe814ae64109476f1b99b75a42.jpg
+			[3612] StaticText 'Submitted by '
+			[3613] link 'Loxodontox' expanded: False url: http://100.95.81.103:9999/user/Loxodontox
+			[3620] StaticText 't3_yjnvc3'
+			[3622] time ''
+				[3623] StaticText '3 years ago'
+		[3634] link '88 comments' url: http://100.95.81.103:9999/f/nyc/44453/i-love-this-city-even-as-i-hate-it-haha-no-place-comes-close
+		[3648] button 'Upvote'
+		[3658] StaticText '1841'
+		[3666] button 'Downvote'
+	[3678] article ''
+		[2902] sectionheader ''
+			[3686] heading 'This time capsule on 23rd'
+				[3687] link 'This time capsule on 23rd' url: http://100.95.81.103:9999/submission_images/ad6f77e49f8b53df534e065dfc8ea633d9f57b73a0acd5b76c8a751b55e483f3.jpg
+			[3695] StaticText 'Submitted by '
+			[3696] link 'laundromoat' expanded: False url: http://100.95.81.103:9999/user/laundromoat
+			[3703] StaticText 't3_10qfy9f'
+			[3705] time ''
+				[3706] StaticText '3 years ago'
+		[3717] link '96 comments' url: http://100.95.81.103:9999/f/nyc/109544/this-time-capsule-on-23rd
+		[3731] button 'Upvote'
+		[3741] StaticText '1810'
+		[3749] button 'Downvote'
+	[5376] complementary ''
+		[5380] heading 'nyc'
+			[5382] link 'nyc' url: http://100.95.81.103:9999/f/nyc
+		[5392] button 'Unsubscribe 1 subscriber'
+			[5406] generic '1 subscriber'
+		[5414] StaticText 't5_2qhu2'
+		[5417] separator '' orientation: horizontal
+		[5422] StaticText 'Created '
+		[5423] time ''
+			[5424] StaticText '4 years ago'
+		[5428] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/nyc/new.atom
+			[5430] image ''
+		[5440] group ''
+			[5442] DisclosureTriangle 'Hide this forum' expanded: False
+		[5463] heading 'Toolbox'
+		[5470] link 'Bans' url: http://100.95.81.103:9999/f/nyc/bans
+		[5476] link 'Moderation log' url: http://100.95.81.103:9999/f/nyc/moderation_log

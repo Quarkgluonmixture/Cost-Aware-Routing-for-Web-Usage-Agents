@@ -1,0 +1,29 @@
+Tab 0 (current): Search | Tab 1: Pokémon | Tab 2: PlayStation Systems - Legacy Systems - Video Games
+
+[4838] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=%2Ff%2Fgaming+
+	[4892] sectionheader ''
+		[4894] link 'Home' url: http://100.95.81.103:9999/
+			[4902] StaticText 'Postmill'
+	[4918] link 'Forums' url: http://100.95.81.103:9999/forums
+	[4924] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[4947] searchbox 'Search query'
+		[5197] StaticText '/f/gaming '
+	[4955] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[4959] image ''
+	[4966] link 'Submit' url: http://100.95.81.103:9999/submit
+		[4970] image ''
+	[4980] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[4984] image ''
+	[5093] main ''
+		[5095] heading 'Search'
+		[5103] StaticText 'Search query'
+		[5105] searchbox 'Search query'
+			[5198] StaticText '/f/gaming '
+		[5112] button 'Search'
+		[5117] heading 'No results for /f/gaming'
+			[5119] emphasis ''
+		[5124] StaticText 'There are no entries to display.'
+	[5130] contentinfo ''
+		[5135] StaticText 'Running '
+		[5136] link 'Postmill' url: https://postmill.xyz/

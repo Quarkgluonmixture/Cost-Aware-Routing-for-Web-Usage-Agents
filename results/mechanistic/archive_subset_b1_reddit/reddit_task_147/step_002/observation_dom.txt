@@ -1,0 +1,55 @@
+Tab 0 (current): [Homemade] buns
+
+[21415] RootWebArea '[Homemade] buns' focused: True url: http://100.95.81.103:9999/f/food/18831/homemade-buns
+	[21490] sectionheader ''
+		[21492] link 'Home' url: http://100.95.81.103:9999/
+			[21500] StaticText 'Postmill'
+	[21516] link 'Forums' url: http://100.95.81.103:9999/forums
+	[21522] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[21545] searchbox 'Search query'
+	[21553] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[21557] image ''
+	[21564] link 'Submit' url: http://100.95.81.103:9999/submit/food
+		[21568] image ''
+	[21578] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[21582] image ''
+	[21699] link '/f/food' url: http://100.95.81.103:9999/f/food
+		[21702] image ''
+	[21714] article ''
+		[21720] sectionheader ''
+			[21723] heading '[Homemade] buns'
+				[21724] link '[Homemade] buns' url: http://100.95.81.103:9999/submission_images/bdade4d2b9c0e3464f92675fee047c8cd0734ed3c78fd63b3d6b6ad86c6f8974.jpg
+			[21731] StaticText 'Submitted by '
+			[21732] link 'randymcatee' expanded: False url: http://100.95.81.103:9999/user/randymcatee
+			[21739] StaticText 't3_y8mhuy'
+			[21741] time ''
+				[21742] StaticText '4 years ago'
+			[21417] StaticText ' in '
+			[21743] link 'food' url: http://100.95.81.103:9999/f/food
+		[21752] link '' url: http://100.95.81.103:9999/submission_images/bdade4d2b9c0e3464f92675fee047c8cd0734ed3c78fd63b3d6b6ad86c6f8974.jpg
+		[21764] link '82 comments' url: http://100.95.81.103:9999/f/food/18831/homemade-buns
+		[21776] button 'Upvote'
+		[21786] StaticText '5468'
+		[21794] button 'Downvote'
+	[31126] complementary ''
+		[31133] StaticText '0 points'
+		[31136] StaticText '(+0, −0)'
+		[31141] heading 'Short URL:'
+		[31147] StaticText 'http://100.95.81.103:9999/18831'
+		[31154] heading 'food'
+			[31156] link 'food' url: http://100.95.81.103:9999/f/food
+		[31166] button 'Subscribe No subscribers'
+			[31180] generic 'No subscribers'
+		[31188] StaticText 't5_2qh55'
+		[31191] separator '' orientation: horizontal
+		[31196] StaticText 'Created '
+		[31197] time ''
+			[31198] StaticText '4 years ago'
+		[31202] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/food/new.atom
+			[31204] image ''
+		[31214] group ''
+			[31216] DisclosureTriangle 'Hide this forum' expanded: False
+		[31237] heading 'Toolbox'
+		[31244] link 'Bans' url: http://100.95.81.103:9999/f/food/bans
+		[31250] link 'Moderation log' url: http://100.95.81.103:9999/f/food/moderation_log

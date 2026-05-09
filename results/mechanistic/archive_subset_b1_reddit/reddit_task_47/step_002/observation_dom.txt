@@ -1,0 +1,55 @@
+Tab 0 (current): [OC] Plastic waste emitted to the ocean per country | Tab 1: User:The other Kiwix guy/Landing
+
+[3] RootWebArea '[OC] Plastic waste emitted to the ocean per country' focused: True url: http://100.95.81.103:9999/f/dataisbeautiful/103905
+	[78] sectionheader ''
+		[80] link 'Home' url: http://100.95.81.103:9999/
+			[88] StaticText 'Postmill'
+	[104] link 'Forums' url: http://100.95.81.103:9999/forums
+	[110] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[133] searchbox 'Search query'
+	[141] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[145] image ''
+	[152] link 'Submit' url: http://100.95.81.103:9999/submit/dataisbeautiful
+		[156] image ''
+	[166] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[170] image ''
+	[287] link '/f/dataisbeautiful' url: http://100.95.81.103:9999/f/dataisbeautiful
+		[290] image ''
+	[302] article ''
+		[308] sectionheader ''
+			[311] heading '[OC] Plastic waste emitted to the ocean per country'
+				[312] link '[OC] Plastic waste emitted to the ocean per country' url: http://100.95.81.103:9999/submission_images/2c126c8ba855a4cb33de9526bfee93c435195ea82b9074495946d9ba792bfcca.png
+			[319] StaticText 'Submitted by '
+			[320] link 'sometiara1' expanded: False url: http://100.95.81.103:9999/user/sometiara1
+			[327] StaticText 't3_113mvpx'
+			[329] time ''
+				[330] StaticText '3 years ago'
+			[5] StaticText ' in '
+			[331] link 'dataisbeautiful' url: http://100.95.81.103:9999/f/dataisbeautiful
+		[340] link '' url: http://100.95.81.103:9999/submission_images/2c126c8ba855a4cb33de9526bfee93c435195ea82b9074495946d9ba792bfcca.png
+		[352] link '161 comments' url: http://100.95.81.103:9999/f/dataisbeautiful/103905/oc-plastic-waste-emitted-to-the-ocean-per-country
+		[364] button 'Upvote'
+		[374] StaticText '1035'
+		[382] button 'Downvote'
+	[18945] complementary ''
+		[18952] StaticText '0 points'
+		[18955] StaticText '(+0, −0)'
+		[18960] heading 'Short URL:'
+		[18966] StaticText 'http://100.95.81.103:9999/103905'
+		[18973] heading 'dataisbeautiful'
+			[18975] link 'dataisbeautiful' url: http://100.95.81.103:9999/f/dataisbeautiful
+		[18985] button 'Subscribe No subscribers'
+			[18999] generic 'No subscribers'
+		[19007] StaticText 't5_2tk95'
+		[19010] separator '' orientation: horizontal
+		[19015] StaticText 'Created '
+		[19016] time ''
+			[19017] StaticText '4 years ago'
+		[19021] link 'Subscribe via RSS' url: http://100.95.81.103:9999/f/dataisbeautiful/new.atom
+			[19023] image ''
+		[19033] group ''
+			[19035] DisclosureTriangle 'Hide this forum' expanded: False
+		[19056] heading 'Toolbox'
+		[19063] link 'Bans' url: http://100.95.81.103:9999/f/dataisbeautiful/bans
+		[19069] link 'Moderation log' url: http://100.95.81.103:9999/f/dataisbeautiful/moderation_log

@@ -1,0 +1,29 @@
+Tab 0 (current): Search | Tab 1: Rudolph the Red-Nosed Reindeer: The Movie | Tab 2: Sports - Sports & Outdoors
+
+[4819] RootWebArea 'Search' focused: True url: http://100.95.81.103:9999/search?q=%2Ff%2Faww+
+	[4873] sectionheader ''
+		[4875] link 'Home' url: http://100.95.81.103:9999/
+			[4883] StaticText 'Postmill'
+	[4899] link 'Forums' url: http://100.95.81.103:9999/forums
+	[4905] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[4928] searchbox 'Search query'
+		[5178] StaticText '/f/aww '
+	[4936] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[4940] image ''
+	[4947] link 'Submit' url: http://100.95.81.103:9999/submit
+		[4951] image ''
+	[4961] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[4965] image ''
+	[5074] main ''
+		[5076] heading 'Search'
+		[5084] StaticText 'Search query'
+		[5086] searchbox 'Search query'
+			[5179] StaticText '/f/aww '
+		[5093] button 'Search'
+		[5098] heading 'No results for /f/aww'
+			[5100] emphasis ''
+		[5105] StaticText 'There are no entries to display.'
+	[5111] contentinfo ''
+		[5116] StaticText 'Running '
+		[5117] link 'Postmill' url: https://postmill.xyz/

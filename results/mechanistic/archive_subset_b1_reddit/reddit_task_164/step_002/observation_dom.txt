@@ -1,0 +1,27 @@
+Tab 0 (current): All pages | Tab 1: Digging
+
+[3261] RootWebArea 'All pages' focused: True url: http://100.95.81.103:9999/wiki/_all
+	[3317] sectionheader ''
+		[3319] link 'Home' url: http://100.95.81.103:9999/
+			[3327] StaticText 'Postmill'
+	[3343] link 'Forums' url: http://100.95.81.103:9999/forums
+	[3349] link 'Wiki' url: http://100.95.81.103:9999/wiki
+	[3373] searchbox 'Search query'
+	[3381] link 'Notifications (0)' url: http://100.95.81.103:9999/notifications
+		[3385] image ''
+	[3392] link 'Submit' url: http://100.95.81.103:9999/submit
+		[3396] image ''
+	[3406] button 'MarvelsGrantMan136' hasPopup: menu expanded: False
+		[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"
+		[3410] image ''
+	[3519] main ''
+		[3521] heading 'All pages'
+		[3527] StaticText 'There are no entries to display.'
+	[3531] complementary ''
+		[3535] heading 'Navigation'
+		[3542] link '• All pages' url: http://100.95.81.103:9999/wiki/_all
+		[3549] link 'Recent changes' url: http://100.95.81.103:9999/wiki/_recent
+		[3555] link 'Create new page' url: http://100.95.81.103:9999/wiki/_create
+	[3563] contentinfo ''
+		[3568] StaticText 'Running '
+		[3569] link 'Postmill' url: https://postmill.xyz/
