@@ -35,7 +35,10 @@ GRADES = ("paper-grade", "paper-grade-pre-bug", "in-flight", "archived")
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PHASE1_ROOT = REPO_ROOT / "results/visualwebarena/phase1"
 DEFAULT_MANIFEST = REPO_ROOT / "results/phantom_paper/run_manifest.yaml"
-DEFAULT_GRADE_FILTER: list[Grade] = ["paper-grade", "paper-grade-pre-bug"]
+DEFAULT_GRADE_FILTER: list[Grade] = ["paper-grade"]
+# F01 audit fix 2026-05-09: pre-bug cells excluded by default. Pass
+# `grade=["paper-grade", "paper-grade-pre-bug"]` explicitly for Appendix-D
+# robustness check; never as default.
 
 
 @dataclass(frozen=True)

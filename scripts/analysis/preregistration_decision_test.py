@@ -1,19 +1,36 @@
-"""Preregistration decision test — H1 / H3 / TOST canonical implementation.
+"""Preregistration decision test — H1 / H3 K-of-N transparency check (NOT primary detection).
 
-Single source of truth for the paper §5 / Table 5 decision rules.
-Once advisor's email reply confirms thresholds (K_h1 / K_h3 / TOST δ),
-this script takes 16-cell SR data + emits deterministic pass/fail JSON.
+⚠️ F32 audit 2026-05-09 — STATUS REFRAMED PER B9 LOCK:
+    Per `preregistration.md §4` B9 row (lock 2026-05-09), the K-of-N
+    family-wise rule (K_h1=12/16, K_h3=11/16) is **secondary transparency
+    only**, NOT the primary detection mechanism for H1/H3 paper claims.
+
+    PRIMARY detection (per B8 lock + power_analysis.md):
+    - DerSimonian-Laird random-effects meta-analysis on cells with N≥10
+      (`aggregate_phantom_meta.py`)
+    - TOST equivalence on N=910 pooled task set, δ=1.0pp
+      (`aggregate_phantom_lift.py`)
+
+    This script's K-of-N output should be **reported alongside** the
+    primary tests as a transparency check — at observed effect sizes
+    (1-5pp), K-of-N family power is < 10% (see
+    `docs/analysis/cross_sites/power_analysis.md` §3-§5). Do NOT gate
+    paper claims on this script's pass/fail.
+
+Single source of truth for the paper §5 / Table 5 *transparency* rules.
 
 Tied to:
-- preregistration.md (commitment text)
+- preregistration.md (commitment text + B9 K-of-N reframe lock)
 - osf_lock_manifest.md (lock SHA chain)
 - run_manifest.yaml (cell scope)
 - 笔记 §114 (provenance hardening)
+- power_analysis.md (B9 family-power calculation)
 
-Hypotheses:
+Hypotheses (transparency only — see PRIMARY detection above):
 - H1: Phantom-SoM ≥ best (DOM, SoM, Vision) in ≥ K_h1 cells
 - H3: Drop-one oracle lift from Phantom-SoM ≥ <delta_pp> in ≥ K_h3 cells
-- TOST: |cost(P-SoM) - cost(DOM)| < δ (equivalence test)
+- TOST: |cost(P-SoM) - cost(DOM)| < δ (cost-equivalence — distinct from
+  phantom-lift TOST in `aggregate_phantom_lift.py`)
 
 Usage:
     # With actual data:

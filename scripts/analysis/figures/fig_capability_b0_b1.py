@@ -98,8 +98,12 @@ def main() -> None:
                 fontsize=8,
             )
 
+    # F41 audit fix 2026-05-09: derive annotation from parsed `shift`
+    # value rather than hardcoding "+43.7 pp" (B9 stale-claim pattern —
+    # source data and figure can drift).
+    highlight_shift = float(shift[highlight])
     ax.annotate(
-        "+43.7 pp",
+        f"{highlight_shift:+.1f} pp",
         xy=(highlight + width / 2, b1[highlight]),
         xytext=(highlight + 0.75, b1[highlight] + 9),
         arrowprops={"arrowstyle": "->", "color": "#b91c1c", "lw": 1.6},

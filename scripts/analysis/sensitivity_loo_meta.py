@@ -39,7 +39,10 @@ import math
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-DEFAULT_INPUT = REPO / "results/phantom_paper/meta_phantom_lift.csv"
+# F11 audit fix 2026-05-09: DEFAULT_INPUT points to per-cell forest CSV
+# (`phantom_lift.csv`), not the pooled meta CSV. The LOO computation
+# requires per-cell theta+SE; meta_phantom_lift.csv only has pooled.
+DEFAULT_INPUT = REPO / "results/phantom_paper/phantom_lift.csv"
 DEFAULT_OUTPUT = REPO / "docs/analysis/cross_sites/sensitivity_loo_meta.md"
 
 
@@ -100,8 +103,12 @@ def parse_forest_csv(path: Path) -> dict[str, list[dict]]:
 
     Returns: {arm_label: [{cell, theta, se, ci_lo, ci_hi}, ...]}
     """
+    # F11 audit fix 2026-05-09: honor the path argument; previously
+    # ignored and always read phantom_lift.csv.
     arms: dict[str, list[dict]] = {}
-    forest_csv = REPO / "results/phantom_paper/phantom_lift.csv"
+    forest_csv = Path(path) if path is not None else (
+        REPO / "results/phantom_paper/phantom_lift.csv"
+    )
     if not forest_csv.exists():
         return arms
 

@@ -206,7 +206,7 @@ def bootstrap_unique_count_ci(in_a: np.ndarray, in_b: np.ndarray,
 
 
 def bootstrap_tost_p(in_a: np.ndarray, in_b: np.ndarray,
-                     delta_pp: float = 0.5, B: int = 1000, seed: int = 42
+                     delta_pp: float = 1.0, B: int = 1000, seed: int = 42
                      ) -> Optional[float]:
     """Bootstrap TOST (Two One-Sided Tests) p-value for paired binary lift.
 
@@ -215,8 +215,8 @@ def bootstrap_tost_p(in_a: np.ndarray, in_b: np.ndarray,
     TOST p = max(p_lower, p_upper). If max < α, equivalence at margin δ rejected
     (effect is *practically nonzero* relative to δ).
 
-    For phantom_lift, δ defaults to 0.5pp (≈ 1 task in N=234), which is the
-    paper's pre-registered minimum-meaningful magnitude.
+    F03 audit fix 2026-05-09: δ default = 1.0pp (was 0.5). Matches
+    `preregistration.md §4` lock "TOST equivalence margin δ = 1.0pp".
     """
     if len(in_a) != len(in_b):
         return None
