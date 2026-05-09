@@ -90,20 +90,38 @@ def per_direction_layer_test(
     is_distance_metric = metric.startswith("ld_")
     alt_direction = "greater" if is_distance_metric else "less"
 
+    rng = np.random.default_rng(seed=42)
+    n_boot = 10000
+
     rows = []
     raw_pvals = []
     for L in TEST_LAYERS:
         layer_vals = grid[:, L]
         diff = layer_vals - baseline
-        # Paired t-test (use scipy's built-in alternative= for clarity)
-        t_stat, t_p_one = stats.ttest_rel(layer_vals, baseline, alternative=alt_direction)
 
-        # Wilcoxon signed-rank (non-parametric backup)
-        try:
-            w_stat, w_p_one = stats.wilcoxon(layer_vals, baseline,
-                                             zero_method="wilcox", alternative=alt_direction)
-        except ValueError:
+        # C9 fix: handle constant-column edge case (e.g. cell D L0 has all 1.0
+        # → 0 variance → NaN t-stat). Skip test, mark as null.
+        if np.std(diff, ddof=1) < 1e-12 if n_tasks > 1 else True:
+            t_stat, t_p_one = float("nan"), 1.0
             w_stat, w_p_one = float("nan"), 1.0
+            ci_lo, ci_hi = float(diff.mean()), float(diff.mean())
+        else:
+            # Paired t-test (use scipy's built-in alternative= for clarity)
+            t_stat, t_p_one = stats.ttest_rel(layer_vals, baseline, alternative=alt_direction)
+
+            # Wilcoxon signed-rank (non-parametric backup)
+            try:
+                w_stat, w_p_one = stats.wilcoxon(layer_vals, baseline,
+                                                 zero_method="wilcox", alternative=alt_direction)
+            except ValueError:
+                w_stat, w_p_one = float("nan"), 1.0
+
+            # C3 fix: bootstrap percentile 95% CI on mean diff (resample tasks)
+            boot_means = np.empty(n_boot)
+            for b in range(n_boot):
+                idx = rng.integers(0, n_tasks, size=n_tasks)
+                boot_means[b] = diff[idx].mean()
+            ci_lo, ci_hi = float(np.percentile(boot_means, 2.5)), float(np.percentile(boot_means, 97.5))
 
         rows.append({
             "layer": L,
@@ -111,6 +129,8 @@ def per_direction_layer_test(
             "mean_baseline": float(baseline.mean()),
             "mean_diff": float(diff.mean()),
             "std_diff": float(diff.std(ddof=1)) if n_tasks > 1 else 0.0,
+            "ci_lo_95": ci_lo,
+            "ci_hi_95": ci_hi,
             "t_stat": float(t_stat),
             "t_p_one_sided": float(t_p_one),
             "wilcoxon_p_one_sided": float(w_p_one),
@@ -193,12 +213,13 @@ def render_markdown(
         out.append(f"## {direction_results['label']} — metric: `{direction_results['metric']}`")
         out.append(f"N tasks: {direction_results['n_tasks']}, baseline layer: L{direction_results['baseline_layer']}")
         out.append("")
-        out.append("| Layer | mean(L) | mean(L35) | Δ mean | Δ std | t-stat | p (raw) | p (Holm) | reject H0 |")
-        out.append("|---|---|---|---|---|---|---|---|---|")
+        out.append("| Layer | mean(L) | mean(L35) | Δ mean | Δ std | 95% CI (boot) | t-stat | p (raw) | p (Holm) | reject H0 |")
+        out.append("|---|---|---|---|---|---|---|---|---|---|")
         for r in direction_results["rows"]:
+            ci_str = f"[{r.get('ci_lo_95', 0.0):+.3f}, {r.get('ci_hi_95', 0.0):+.3f}]"
             out.append(
                 f"| L{r['layer']:>2} | {r['mean_layer']:.3f} | {r['mean_baseline']:.3f} | "
-                f"{r['mean_diff']:+.3f} | {r['std_diff']:.3f} | {r['t_stat']:+.2f} | "
+                f"{r['mean_diff']:+.3f} | {r['std_diff']:.3f} | {ci_str} | {r['t_stat']:+.2f} | "
                 f"{fmt_p(r['t_p_one_sided'])} | {fmt_p(r['t_p_holm_adj'])} | "
                 f"{'✓ Yes' if r['holm_reject_h0'] else '✗ No'} |"
             )
@@ -237,32 +258,50 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--fwd-results", default="results/mechanistic/stage2b_curated_b1_cls_myriad/patching_continuation_results.json")
     p.add_argument("--rev-results", default="results/mechanistic/stage2c_reverse_curated_b1_cls_myriad/patching_continuation_results.json")
+    p.add_argument("--cellc-results", default="results/mechanistic/stage2b_2x2_fwd_revtasks_myriad/patching_continuation_results.json",
+                   help="Cell C: forward direction × reverse-tier 15 tasks (2x2 control)")
+    p.add_argument("--celld-results", default="results/mechanistic/stage2c_2x2_rev_strongtasks_myriad/patching_continuation_results.json",
+                   help="Cell D: reverse direction × strong-tier 24 tasks (2x2 control)")
     p.add_argument("--output", default=None,
                    help="Output markdown path. Default: results/mechanistic/layer_significance_<date>.md")
     args = p.parse_args()
 
     fwd_cfg, fwd_per_task = load_per_task_results(Path(args.fwd_results))
     rev_cfg, rev_per_task = load_per_task_results(Path(args.rev_results))
+    cellc_per_task = []
+    celld_per_task = []
+    if Path(args.cellc_results).exists():
+        _, cellc_per_task = load_per_task_results(Path(args.cellc_results))
+    if Path(args.celld_results).exists():
+        _, celld_per_task = load_per_task_results(Path(args.celld_results))
 
-    print(f"Forward: N={len(fwd_per_task)} tasks (config tier deduced from --reverse=False, default 'strong')")
-    print(f"Reverse: N={len(rev_per_task)} tasks (config tier deduced from --reverse=True, default 'reverse')")
+    print(f"Cell A (fwd × strong):    N={len(fwd_per_task)} tasks")
+    print(f"Cell B (rev × reverse):   N={len(rev_per_task)} tasks")
+    print(f"Cell C (fwd × reverse):   N={len(cellc_per_task)} tasks")
+    print(f"Cell D (rev × strong):    N={len(celld_per_task)} tasks")
 
-    fwd_overlap = per_direction_layer_test(
-        "Forward (som→phantom_som) — overlap_to_target",
-        fwd_per_task, metric="token_overlap_to_target",
-    )
-    fwd_ld = per_direction_layer_test(
-        "Forward (som→phantom_som) — Levenshtein dist to target",
-        fwd_per_task, metric="ld_to_target",
-    )
-    rev_overlap = per_direction_layer_test(
-        "Reverse (phantom_som→som) — overlap_to_target",
-        rev_per_task, metric="token_overlap_to_target",
-    )
-    rev_ld = per_direction_layer_test(
-        "Reverse (phantom_som→som) — Levenshtein dist to target",
-        rev_per_task, metric="ld_to_target",
-    )
+    cells = [
+        ("Cell A: forward × strong-tier (24)", fwd_per_task),
+        ("Cell B: reverse × reverse-tier (15)", rev_per_task),
+        ("Cell C: forward × reverse-tier (15)", cellc_per_task),
+        ("Cell D: reverse × strong-tier (24)", celld_per_task),
+    ]
+    cell_results_overlap = []
+    cell_results_ld = []
+    for label, ptasks in cells:
+        if not ptasks:
+            continue
+        cell_results_overlap.append(per_direction_layer_test(
+            f"{label} — overlap_to_target", ptasks, metric="token_overlap_to_target",
+        ))
+        cell_results_ld.append(per_direction_layer_test(
+            f"{label} — LD_to_target", ptasks, metric="ld_to_target",
+        ))
+    # Keep legacy names for renderer
+    fwd_overlap = cell_results_overlap[0] if cell_results_overlap else None
+    rev_overlap = cell_results_overlap[1] if len(cell_results_overlap) > 1 else None
+    fwd_ld = cell_results_ld[0] if cell_results_ld else None
+    rev_ld = cell_results_ld[1] if len(cell_results_ld) > 1 else None
     # Note for LD: higher = more disruption (output further from target). The
     # directionality of "less than baseline" inverts. We flip sign of diff
     # internally via the metric name handling — but the test is paired so the
@@ -280,6 +319,24 @@ def main():
 
     md = render_markdown(fwd_overlap, fwd_ld, rev_overlap, rev_ld,
                          cross_overlap_l17, cross_ld_l17)
+    # Append all 4-cell tables after the legacy 2-cell layout (back-compat)
+    extra = ["\n## All cells (2x2 expanded)\n"]
+    for r in cell_results_overlap + cell_results_ld:
+        extra.append(f"### {r['label']}")
+        extra.append(f"N={r['n_tasks']}, baseline L{r['baseline_layer']}")
+        extra.append("")
+        extra.append("| Layer | mean(L) | mean(L35) | Δ mean | Δ std | 95% CI (boot) | t-stat | p (raw) | p (Holm) | reject H0 |")
+        extra.append("|---|---|---|---|---|---|---|---|---|---|")
+        for row in r["rows"]:
+            ci_str = f"[{row.get('ci_lo_95', 0.0):+.3f}, {row.get('ci_hi_95', 0.0):+.3f}]"
+            extra.append(
+                f"| L{row['layer']:>2} | {row['mean_layer']:.3f} | {row['mean_baseline']:.3f} | "
+                f"{row['mean_diff']:+.3f} | {row['std_diff']:.3f} | {ci_str} | {row['t_stat']:+.2f} | "
+                f"{fmt_p(row['t_p_one_sided'])} | {fmt_p(row['t_p_holm_adj'])} | "
+                f"{'✓ Yes' if row['holm_reject_h0'] else '✗ No'} |"
+            )
+        extra.append("")
+    md = md + "\n".join(extra)
 
     if args.output:
         out_path = Path(args.output)

@@ -179,7 +179,27 @@ def main():
              "any non-zero injection. Expected null at all layers if mechanism is "
              "source-content-specific.",
     )
+    p.add_argument(
+        "--random-seed", type=int, default=42,
+        help="Seed for --random-inject Gaussian noise (paper-grade reproducibility). "
+             "Same seed + same input = same noise = byte-identical re-runs. Default 42.",
+    )
     args = p.parse_args()
+
+    # C8 fix: seed all RNGs when random-inject is on, for paper-grade
+    # reproducibility. Affects torch.randn_like in patching_grid_continuation.
+    if args.random_inject:
+        import random as _rnd
+        import numpy as _np
+        import torch as _t
+        _rnd.seed(args.random_seed)
+        _np.random.seed(args.random_seed)
+        _t.manual_seed(args.random_seed)
+        if _t.cuda.is_available():
+            _t.cuda.manual_seed_all(args.random_seed)
+        # Note: cell E (job 335404) is currently running with NO seed (commit
+        # before this fix). That run is one valid realization; future paper-
+        # grade re-runs will be byte-reproducible with --random-seed 42.
 
     suffix = "_reverse" if args.reverse else ""
     out_dir = Path(args.output_dir) if args.output_dir else REPO_ROOT / f"results/mechanistic/stage2b_continuation_b1_{args.site}_pilot{suffix}"
