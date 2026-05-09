@@ -224,6 +224,41 @@ The following analyses are exploratory and cannot be used to gate paper claims. 
 - Any post-hoc cell subsetting beyond H1-H8 family scope
 - Any analysis added after `data_lock_until` timestamp in this preregistration's frontmatter
 
+### §5.X Post-hoc Layer Selection Disclosure (Stage 2 Mechanism, audit G5)
+
+Stage 2 mechanistic activation patching identified mid-layer disruption peaking
+at **L17** (3 of 4 cells Holm-significant on `token_overlap_to_target`, p_Holm <
+0.05; cell D L11+L17 strongest p_Holm = 0.006/0.008 \*\*). The L11/L17 layer
+selection has the following **explicit pre-vs-post-hoc structure**:
+
+| Stage | Layer rationale | Status |
+|---|---|---|
+| **Stage 2A logit_shift pilot** (5-task aggregate, 笔记 §111.5) | L17 emerged as peak in independent `logit_shift` metric | **Hypothesis-generating** — first-pass discovery |
+| **§111 task-0 single-task patching** | L11 flipped 93% match in N=1 task | **Hypothesis-generating** — distribution outlier (acknowledged 笔记 §117.4) |
+| **Stage 2B 24-task aggregate (cell A)** | L17 Holm-significant (p_Holm = 0.011 \*\*) — confirmed Stage 2A peak | **Confirmatory** — independent metric agreement |
+| **Stage 2C reverse 15-task (cell B)** | L11 + L17 Holm-significant — direction-paired confirmation | **Confirmatory** |
+| **Cell D (rev × strong-tier 24)** | L11 + L17 strongest (p_Holm = 0.006/0.008 \*\*) | **Confirmatory** — cross-tier replication |
+
+**Disclosure**: Layers L11 and L17 were not pre-registered before Stage 2 data
+collection; they emerged from Stage 2A pilot (the *hypothesis-generating* phase)
+and were confirmed by Stage 2B/2C scaled-up data (the *confirmatory* phase). To
+mitigate the multiple-comparison concern, all per-direction tests use Holm-
+Bonferroni correction across the canonical layer grid (L0/5/11/17/23/29 vs L35
+baseline) — this catches the "any layer might pop" multiple-testing concern.
+
+**Reviewer-defense**: We do NOT claim pre-registered layer prediction. We claim
+that the **same** mid-layer region (L11-L17) emerges across (a) Stage 2A
+logit_shift, (b) Stage 2B forward overlap-to-target, (c) Stage 2C reverse,
+(d) Cell D cross-tier rev-on-strong. Convergence across 4 independent analysis
+paths constitutes confirmatory evidence even without pre-registered layer
+prediction. Cell E random-injection control (G6) further demonstrates content-
+specificity, ruling out generic-injection alternative explanations.
+
+**Future paper-grade improvement** (deferred to next iteration): full **leave-
+one-out layer-selection** robustness — re-run patching on per-cell holdout
+that excludes the layer that informed selection on the training cell, then
+report the mid-layer pattern under that holdout.
+
 ---
 
 ## §6 Witness Mechanism
