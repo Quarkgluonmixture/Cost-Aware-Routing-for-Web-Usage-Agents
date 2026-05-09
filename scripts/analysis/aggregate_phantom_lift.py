@@ -86,6 +86,9 @@ def load(d: Path) -> tuple[set[int], set[int]]:
     s, o = set(), set()
     if not d.exists():
         return s, o
+    # F05 audit fix 2026-05-09: track corrupt summary count instead of
+    # silently dropping; warn at end of cell. Set P79_STRICT=1 to fail.
+    n_corrupt = 0
     for p in sorted(d.glob("*_summary_v2.json")):
         m = re.search(r"task_(\d+)", p.name)
         if not m:
@@ -94,10 +97,19 @@ def load(d: Path) -> tuple[set[int], set[int]]:
         o.add(tid)
         try:
             rec = json.loads(p.read_text())
-        except Exception:
+        except Exception as _e:
+            n_corrupt += 1
             continue
         if rec.get("adjusted_success", rec.get("success", False)):
             s.add(tid)
+    if n_corrupt > 0:
+        msg = (
+            f"  [F05] {d}: {n_corrupt} corrupt summary file(s) skipped "
+            "(could change oracle union + pp lift). Set P79_STRICT=1 to fail."
+        )
+        if os.environ.get("P79_STRICT", "").lower() in ("1", "true", "yes"):
+            raise RuntimeError(msg)
+        print(f"WARNING: {msg}")
     return s, o
 
 

@@ -78,20 +78,29 @@ If everything looks fine, output `verdict: OK`. If anything suspicious, `WARN`. 
         {"role": "user", "content": prompt},
     ]
 
+    # F37 audit fix 2026-05-09: previously every GLM-side failure
+    # (network, JSON, parse) returned `True, ...` allowing the launch.
+    # Now: paper-grade default = fail-closed. P79_ALLOW_GLM_FAIL=1
+    # restores the legacy permissive behaviour for in-flight / dev runs.
+    import os as _os
+    permissive = _os.environ.get("P79_ALLOW_GLM_FAIL", "").lower() in ("1", "true", "yes")
+    fail_default = (True if permissive else False)
+    fail_suffix = "ALLOWING launch (P79_ALLOW_GLM_FAIL=1)" if permissive else "BLOCKING launch (paper-grade default)"
+
     try:
         raw = _call_glm_chat(glm_cfg, messages, timeout_s=60)
     except Exception as e:
-        return True, f"(GLM call failed: {e}, allowing launch)"
+        return fail_default, f"(GLM call failed: {e}, {fail_suffix})"
 
     # Extract JSON
     m = re.search(r"\{.*?\}", raw, re.DOTALL)
     if not m:
-        return True, f"(GLM unparseable, raw={raw[:200]})"
+        return fail_default, f"(GLM unparseable, raw={raw[:200]}, {fail_suffix})"
 
     try:
         parsed = json.loads(m.group())
     except json.JSONDecodeError:
-        return True, f"(JSON decode failed, raw={raw[:200]})"
+        return fail_default, f"(JSON decode failed, raw={raw[:200]}, {fail_suffix})"
 
     verdict = parsed.get("verdict", "OK")
     reason = parsed.get("reason", "")

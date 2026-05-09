@@ -92,9 +92,35 @@ def push_ntfy(title: str, body: str, priority: str = "default") -> None:
 
 
 def main() -> int:
+    # F36 audit fix 2026-05-09: persist consecutive SSH failure count
+    # and notify after 3 failures. Previously exited 0 silently which
+    # could hide hours of broken SSH chain.
+    SSH_FAIL_FILE = STATE_FILE.with_suffix(".ssh_fail_count")
     stdout = ssh_chain("qstat -u ucab352")
     if stdout is None:
+        try:
+            n_fail = int(SSH_FAIL_FILE.read_text().strip()) if SSH_FAIL_FILE.exists() else 0
+        except Exception:
+            n_fail = 0
+        n_fail += 1
+        try:
+            SSH_FAIL_FILE.write_text(str(n_fail))
+        except Exception:
+            pass
+        if n_fail >= 3:
+            push_ntfy(
+                title=f"Myriad SSH chain broken ({n_fail} consecutive)",
+                body="DGX → quark → Myriad SSH failed. Check Tailscale + Cisco. "
+                     f"State file: {STATE_FILE}; fail counter: {SSH_FAIL_FILE}",
+                priority="high",
+            )
         return 0
+    # Reset failure counter on success
+    if SSH_FAIL_FILE.exists():
+        try:
+            SSH_FAIL_FILE.unlink()
+        except Exception:
+            pass
 
     new_state = parse_qstat(stdout)
     old_state = {}
