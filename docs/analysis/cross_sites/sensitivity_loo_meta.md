@@ -4,48 +4,50 @@
 
 Companion to `meta_phantom_lift.md`. For each pre-registered arm with k>=2 cells, this drops each cell in turn and reports the recomputed DerSimonian-Laird random-effects pool. Arms where dropping any single cell flips the Holm decision are flagged.
 
+**Holm correction (F10 fix 2026-05-09)**: SECONDARY family Holm correction is applied across the 3 phantom drop-in arms (P-text / P-SoM / P-prompt) within each LOO scenario before the per-arm `holm_pass` decision. PRIMARY family (3→5-mode oracle lift) is m=1, no within-family correction needed.
+
 **Generated**: 2026-05-09. Re-run after 16-cell paper-grade rerun completes.
 
 ---
 
-## Arm: 3→5-mode oracle lift (k=3 cells)
+## Arm: 3→5-mode oracle lift (k=3 cells, family=PRIMARY)
 
-| Dropped cell | k remaining | θ_re (pp) | 95% CI | p (1-sided) | Holm-pass at α=0.05 |
-|---|---:|---:|---|---:|:---:|
-| (none — all cells) | 3 | +3.88 | [2.15, 5.61] | 0.0000 | ✅ |
-| B0 classifieds | 2 | +3.68 | [1.10, 6.27] | 0.0026 | ✅ |
-| B0 reddit | 2 | +3.39 | [1.35, 5.43] | 0.0006 | ✅ |
-| B1 classifieds | 2 | +4.96 | [2.97, 6.96] | 0.0000 | ✅ |
+| Dropped cell | k remaining | θ_re (pp) | 95% CI | p (raw 1-sided) | p (1-sided) | Pass at α=0.05 |
+|---|---:|---:|---|---:|---:|:---:|
+| (none — all cells) | 3 | +3.88 | [2.15, 5.61] | 0.0000 | 0.0000 | ✅ |
+| B0 classifieds | 2 | +3.68 | [1.10, 6.27] | 0.0026 | 0.0026 | ✅ |
+| B0 reddit | 2 | +3.39 | [1.35, 5.43] | 0.0006 | 0.0006 | ✅ |
+| B1 classifieds | 2 | +4.96 | [2.97, 6.96] | 0.0000 | 0.0000 | ✅ |
 
 **Robust**: Holm decision unchanged under any single-cell removal.
 
-## Arm: P-text drop-in (k=3 cells)
+## Arm: P-text drop-in (k=3 cells, family=SECONDARY)
 
-| Dropped cell | k remaining | θ_re (pp) | 95% CI | p (1-sided) | Holm-pass at α=0.05 |
-|---|---:|---:|---|---:|:---:|
-| (none — all cells) | 3 | +2.44 | [0.32, 4.56] | 0.0121 | ✅ |
-| B0 classifieds | 2 | +2.08 | [-0.77, 4.93] | 0.0765 | ❌ |
-| B0 reddit | 2 | +1.91 | [-0.56, 4.39] | 0.0648 | ❌ |
-| B1 classifieds | 2 | +3.59 | [1.84, 5.35] | 0.0000 | ✅ |
+| Dropped cell | k remaining | θ_re (pp) | 95% CI | p (raw 1-sided) | p_Holm (m=3) | Pass at α=0.05 |
+|---|---:|---:|---|---:|---:|:---:|
+| (none — all cells) | 3 | +2.44 | [0.32, 4.56] | 0.0121 | 0.0121 | ✅ |
+| B0 classifieds | 2 | +2.08 | [-0.77, 4.93] | 0.0765 | 0.0765 | ❌ |
+| B0 reddit | 2 | +1.91 | [-0.56, 4.39] | 0.0648 | 0.0648 | ❌ |
+| B1 classifieds | 2 | +3.59 | [1.84, 5.35] | 0.0000 | 0.0001 | ✅ |
 
 **FRAGILE**: dropping ['B0 classifieds', 'B0 reddit'] flips Holm to non-significant. Per-cell influence is high.
 
-## Arm: P-SoM drop-in (k=3 cells)
+## Arm: P-SoM drop-in (k=3 cells, family=SECONDARY)
 
-| Dropped cell | k remaining | θ_re (pp) | 95% CI | p (1-sided) | Holm-pass at α=0.05 |
-|---|---:|---:|---|---:|:---:|
-| (none — all cells) | 3 | +2.34 | [1.30, 3.37] | 0.0000 | ✅ |
-| B0 classifieds | 2 | +2.33 | [0.78, 3.88] | 0.0016 | ✅ |
-| B0 reddit | 2 | +2.03 | [0.85, 3.22] | 0.0004 | ✅ |
-| B1 classifieds | 2 | +2.91 | [1.47, 4.34] | 0.0000 | ✅ |
+| Dropped cell | k remaining | θ_re (pp) | 95% CI | p (raw 1-sided) | p_Holm (m=3) | Pass at α=0.05 |
+|---|---:|---:|---|---:|---:|:---:|
+| (none — all cells) | 3 | +2.34 | [1.30, 3.37] | 0.0000 | 0.0000 | ✅ |
+| B0 classifieds | 2 | +2.33 | [0.78, 3.88] | 0.0016 | 0.0031 | ✅ |
+| B0 reddit | 2 | +2.03 | [0.85, 3.22] | 0.0004 | 0.0008 | ✅ |
+| B1 classifieds | 2 | +2.91 | [1.47, 4.34] | 0.0000 | 0.0001 | ✅ |
 
 **Robust**: Holm decision unchanged under any single-cell removal.
 
-## Arm: P-prompt drop-in (k=1 cells)
+## Arm: P-prompt drop-in (k=1 cells, family=SECONDARY)
 
-| Dropped cell | k remaining | θ_re (pp) | 95% CI | p (1-sided) | Holm-pass at α=0.05 |
-|---|---:|---:|---|---:|:---:|
-| (none — all cells) | 1 | +2.86 | [0.71, 5.00] | 0.0045 | ✅ |
+| Dropped cell | k remaining | θ_re (pp) | 95% CI | p (raw 1-sided) | p_Holm (m=3) | Pass at α=0.05 |
+|---|---:|---:|---|---:|---:|:---:|
+| (none — all cells) | 1 | +2.86 | [0.71, 5.00] | 0.0045 | 0.0090 | ✅ |
 
 **Robust**: Holm decision unchanged under any single-cell removal.
 

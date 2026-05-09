@@ -157,34 +157,50 @@ def i_squared_label(I2: float) -> str:
     return "considerable"
 
 
-def load_per_cell_data(arm_code: str) -> list[dict]:
-    """Per-cell point + SE for a given arm.
+# F08 audit fix 2026-05-09: B8 preregistration lock requires N_common >= 10
+# per cell for inclusion in random-effects meta. Cells below floor are
+# excluded with reason logged. See `preregistration.md §4` row "Heterogeneity
+# (random-effects, Q, I², τ²) pre-spec".
+MIN_N_COMMON_FOR_META = 10
 
-    SE_i derived from bootstrap CI: SE = (CI_hi - CI_lo) / (2 * 1.96).
+
+def load_per_cell_data(arm_code: str) -> tuple[list[dict], list[dict]]:
+    """Per-cell point + SE for a given arm, with B8 N>=10 floor enforced.
+
+    Returns (included, excluded) cell-row dicts. SE_i derived from bootstrap
+    CI: SE = (CI_hi - CI_lo) / (2 * 1.96).
     """
     if not CSV_IN.exists():
         raise SystemExit(f"missing {CSV_IN}; run aggregate_phantom_lift.py first")
-    rows = []
+    included, excluded = [], []
     with CSV_IN.open() as f:
         reader = csv.DictReader(f)
         for r in reader:
             theta = _f(r.get(f"lift_{arm_code}_pp"))
             ci_lo = _f(r.get(f"lift_{arm_code}_ci95_lo_pp"))
             ci_hi = _f(r.get(f"lift_{arm_code}_ci95_hi_pp"))
+            n_common = _f(r.get("n_common"))
+            cell_label = f"{r.get('baseline','?')} {r.get('site','?')}"
             if theta is None or ci_lo is None or ci_hi is None:
                 continue
             se = (ci_hi - ci_lo) / (2 * 1.96)
             if se <= 0:
                 continue
-            rows.append({
+            row = {
                 "baseline": r["baseline"],
                 "site": r["site"],
+                "n_common": int(n_common) if n_common is not None else None,
                 "theta": theta,
                 "se": se,
                 "ci_lo": ci_lo,
                 "ci_hi": ci_hi,
-            })
-    return rows
+            }
+            if n_common is not None and n_common < MIN_N_COMMON_FOR_META:
+                row["exclude_reason"] = f"N_common={int(n_common)} < {MIN_N_COMMON_FOR_META} (B8 lock)"
+                excluded.append(row)
+                continue
+            included.append(row)
+    return included, excluded
 
 
 def main() -> int:
@@ -197,9 +213,17 @@ def main() -> int:
 
     meta_rows = []
     arm_per_cell: dict = {}
+    arm_excluded: dict = {}  # F08: track B8 N>=10 floor exclusions
     for code, label, family in ARMS:
-        cells = load_per_cell_data(code)
+        cells, excluded = load_per_cell_data(code)
         arm_per_cell[code] = cells
+        arm_excluded[code] = excluded
+        if excluded:
+            for ex in excluded:
+                print(
+                    f"  [B8 floor] arm={code} excluded "
+                    f"{ex['baseline']} {ex['site']}: {ex['exclude_reason']}"
+                )
         if not cells:
             continue
         meta = derslong_laird_meta(
@@ -214,6 +238,10 @@ def main() -> int:
             "family": family,
             "k_cells": meta["k"],
             "cells": "; ".join(f"{c['baseline']} {c['site']}" for c in cells),
+            "excluded_b8": "; ".join(
+                f"{c['baseline']} {c['site']} (N={c['n_common']})"
+                for c in excluded
+            ) or "none",
             **{k: round(v, 6) if isinstance(v, float) else v
                for k, v in meta.items() if k != "k"},
         })

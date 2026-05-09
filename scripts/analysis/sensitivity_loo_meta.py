@@ -170,6 +170,53 @@ def loo_table(arm_label: str, cells_data: list[dict], holm_alpha: float = 0.05) 
     return rows
 
 
+# F10 audit fix 2026-05-09: SECONDARY family for Holm correction is the
+# 3 phantom drop-in arms (P-text / P-SoM / P-prompt). Within each LOO
+# scenario, raw per-arm p-values are Holm-corrected across this family
+# of m=3 before the `holm_pass` decision. PRIMARY family (3→5-mode
+# oracle lift) is m=1 and needs no within-family correction.
+SECONDARY_ARMS = ["P-text drop-in", "P-SoM drop-in", "P-prompt drop-in"]
+PRIMARY_ARMS = ["3→5-mode oracle lift"]
+
+
+def holm_correct(ps: list[float]) -> list[float]:
+    """Holm-Bonferroni step-down adjustment for a list of one-sided p-values."""
+    if not ps:
+        return []
+    indexed = sorted(enumerate(ps), key=lambda x: x[1])
+    m = len(ps)
+    adjusted = [None] * m
+    running_max = 0.0
+    for rank, (orig_idx, p) in enumerate(indexed):
+        adj = min(1.0, (m - rank) * p)
+        running_max = max(running_max, adj)
+        adjusted[orig_idx] = running_max
+    return adjusted
+
+
+def apply_holm_within_family(arm_rows: dict[str, list[dict]],
+                             family_arms: list[str],
+                             alpha: float = 0.05) -> None:
+    """For each LOO scenario (baseline + each dropped cell), gather the
+    family arms' raw p-values, apply Holm across the family, and update
+    each row's `holm_pass` + add a `p_holm` field. Mutates `arm_rows`.
+    """
+    present_arms = [a for a in family_arms if arm_rows.get(a)]
+    if not present_arms:
+        return
+    # Index rows by dropped_cell
+    by_cell: dict[str, list[tuple[str, dict]]] = {}
+    for arm in present_arms:
+        for r in arm_rows[arm]:
+            by_cell.setdefault(r["dropped_cell"], []).append((arm, r))
+    for cell_key, arm_row_pairs in by_cell.items():
+        ps = [pair[1].get("p_one_sided", 1.0) for pair in arm_row_pairs]
+        adj = holm_correct(ps)
+        for (arm, row), p_h in zip(arm_row_pairs, adj):
+            row["p_holm_secondary"] = p_h
+            row["holm_pass"] = (p_h is not None and p_h < alpha)
+
+
 def render_md(arms: dict[str, list[dict]], output: Path) -> None:
     lines = [
         "# F4 Sensitivity — Leave-one-cell-out (LOO) Meta-analysis",
@@ -178,42 +225,55 @@ def render_md(arms: dict[str, list[dict]], output: Path) -> None:
         "",
         "Companion to `meta_phantom_lift.md`. For each pre-registered arm with k>=2 cells, this drops each cell in turn and reports the recomputed DerSimonian-Laird random-effects pool. Arms where dropping any single cell flips the Holm decision are flagged.",
         "",
+        "**Holm correction (F10 fix 2026-05-09)**: SECONDARY family Holm correction is applied across the 3 phantom drop-in arms (P-text / P-SoM / P-prompt) within each LOO scenario before the per-arm `holm_pass` decision. PRIMARY family (3→5-mode oracle lift) is m=1, no within-family correction needed.",
+        "",
         "**Generated**: 2026-05-09. Re-run after 16-cell paper-grade rerun completes.",
         "",
         "---",
         "",
     ]
 
-    for arm_label in [
-        "3→5-mode oracle lift",
-        "P-text drop-in",
-        "P-SoM drop-in",
-        "P-prompt drop-in",
-    ]:
+    # First compute per-arm LOO rows, then apply Holm within secondary family
+    arm_rows: dict[str, list[dict]] = {}
+    for arm_label in PRIMARY_ARMS + SECONDARY_ARMS:
         cells = arms.get(arm_label, [])
         if not cells:
+            arm_rows[arm_label] = []
+            continue
+        arm_rows[arm_label] = loo_table(arm_label, cells)
+
+    # F10: Holm-correct SECONDARY family per LOO scenario
+    apply_holm_within_family(arm_rows, SECONDARY_ARMS)
+
+    for arm_label in PRIMARY_ARMS + SECONDARY_ARMS:
+        rows = arm_rows[arm_label]
+        cells = arms.get(arm_label, [])
+        if not rows:
             lines.append(f"## Arm: {arm_label} — no cell forest data")
             lines.append("")
             continue
-        rows = loo_table(arm_label, cells)
+        is_secondary = arm_label in SECONDARY_ARMS
+        p_col_label = "p_Holm (m=3)" if is_secondary else "p (1-sided)"
         lines += [
-            f"## Arm: {arm_label} (k={len(cells)} cells)",
+            f"## Arm: {arm_label} (k={len(cells)} cells, family={'SECONDARY' if is_secondary else 'PRIMARY'})",
             "",
-            "| Dropped cell | k remaining | θ_re (pp) | 95% CI | p (1-sided) | Holm-pass at α=0.05 |",
-            "|---|---:|---:|---|---:|:---:|",
+            f"| Dropped cell | k remaining | θ_re (pp) | 95% CI | p (raw 1-sided) | {p_col_label} | Pass at α=0.05 |",
+            "|---|---:|---:|---|---:|---:|:---:|",
         ]
         for r in rows:
             ci_str = f"[{r.get('ci_lo', 0):.2f}, {r.get('ci_hi', 0):.2f}]"
             holm_str = "✅" if r.get("holm_pass") else "❌"
+            p_raw = r.get("p_one_sided", 1.0)
+            p_corrected = r.get("p_holm_secondary") if is_secondary else p_raw
+            p_corrected_str = f"{p_corrected:.4f}" if p_corrected is not None else "—"
             lines.append(
                 f"| {r['dropped_cell']} | {r['k_remaining']} | "
                 f"{r.get('theta_re', 0):+.2f} | {ci_str} | "
-                f"{r.get('p_one_sided', 1.0):.4f} | {holm_str} |"
+                f"{p_raw:.4f} | {p_corrected_str} | {holm_str} |"
             )
 
-        # Robustness verdict
-        all_pass = all(r.get("holm_pass") for r in rows)
-        any_flip = any(not r.get("holm_pass") for r in rows[1:])  # exclude baseline
+        # Robustness verdict (now based on Holm-corrected pass)
+        any_flip = any(not r.get("holm_pass") for r in rows[1:])
         baseline_pass = rows[0].get("holm_pass")
         if baseline_pass and not any_flip:
             verdict = "**Robust**: Holm decision unchanged under any single-cell removal."
@@ -221,7 +281,7 @@ def render_md(arms: dict[str, list[dict]], output: Path) -> None:
             flipped = [r["dropped_cell"] for r in rows[1:] if not r.get("holm_pass")]
             verdict = f"**FRAGILE**: dropping {flipped} flips Holm to non-significant. Per-cell influence is high."
         else:
-            verdict = "**Underpowered**: baseline does not pass Holm."
+            verdict = "**Underpowered**: baseline does not pass Holm at α=0.05 (with secondary-family correction)."
         lines += ["", verdict, ""]
 
     lines += [
