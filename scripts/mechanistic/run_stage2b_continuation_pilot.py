@@ -69,7 +69,7 @@ def load_intents(site: str, n_tasks: int) -> list[tuple[int, str]]:
     json_files = sorted(config_dir.glob("*.json"), key=lambda p: int(p.stem))
     intents = []
     for jf in json_files[:n_tasks]:
-        d = json.loads(jf.read_text())
+        d = json.loads(jf.read_text(encoding="utf-8"))
         if d.get("intent"):
             intents.append((int(jf.stem), d["intent"]))
     return intents
@@ -78,7 +78,7 @@ def load_intents(site: str, n_tasks: int) -> list[tuple[int, str]]:
 def load_intents_from_subset_manifest(manifest_path: Path, tier: str, n_tasks: int) -> list[tuple[int, str]]:
     """Load intents from archive_subset manifest.json (cross-machine paper-grade
     dataset). Used on Myriad / A100 where VWA submodule isn't init'd."""
-    manifest = json.loads(manifest_path.read_text())
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     entries = manifest.get(tier, [])[:n_tasks]
     return [(int(e["task_id"]), e["intent"]) for e in entries]
 
@@ -195,7 +195,7 @@ def main():
         if not obs_file.exists() or not screenshot_annotated.exists():
             logger.warning(f"task {task_id}: missing artifacts, skip")
             continue
-        obs_text = obs_file.read_text()
+        obs_text = obs_file.read_text(encoding="utf-8")
         som_marks_text = build_som_marks(obs_text)
 
         source_inputs_orig = build_inputs(extractor, intent, args.source_mode, som_marks_text, str(screenshot_annotated))

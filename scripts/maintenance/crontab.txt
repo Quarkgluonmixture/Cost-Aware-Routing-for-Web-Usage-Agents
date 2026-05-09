@@ -30,3 +30,9 @@ NTFY_TOPIC=p79-exp-dgx-spark
 
 # every Sunday 00:00: dead link scan, output report to logs (don't notify on this — it always exits 1 if links found)
 0 0 * * 0 cd $REPO && make check-links > logs/cron/dead_links_$(date +\%Y\%m\%d).log 2>&1
+
+# every 5 min: poll Myriad qstat via SSH chain (DGX → quark Tailscale → myriad);
+# diff against logs/cron/myriad_state.json and push ntfy on transitions
+# (qw→r, r→GONE/finished). On GONE includes tail of .err for context.
+# SSH chain failures exit 0 silently (transient blip, watchdog handles persistent).
+*/5 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "myriad-watcher" -- python3 scripts/maintenance/glm/myriad_watcher.py >> logs/cron/myriad_watcher.log 2>&1

@@ -1300,10 +1300,10 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 
 ---
 
-### B-81. Myriad HPC porting — 6-class failure umbrella (笔记 §116.16, 2026-05-08 → 2026-05-09)
+### B-81. Myriad HPC porting — 7-class failure umbrella (笔记 §116.16, 2026-05-08 → 2026-05-09)
 
 - **Origin**: Stage 2B/2C launch wave on UCL Myriad HPC, jobs 324666 → 325178/325179 → 334692/334693
-- **Status**: 🛠️ FIXED (6/6 sub-classes resolved by 2026-05-09)
+- **Status**: 🛠️ FIXED (7/7 sub-classes resolved by 2026-05-09)
 - **Severity**: Operational (not paper-grade scientific) but blocks mechanistic Stage 2B/2C compute path
 - **Domain**: HPC environment porting — RHEL 7 login + compute nodes, SGE batch, module-loaded PyTorch
 - **Pattern**: Each class only surfaces under specific HPC constraint (firewall / module versioning / pre-built torch / Home quota / login-vs-compute env divergence). Collectively they are the **HPC textbook gotcha checklist** for HuggingFace transformer + activation patching workloads.
@@ -1345,7 +1345,14 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 - **Files**: `scripts/setup/myriad_bootstrap.sh` (heredoc shim updated to factor `_try_patch_pytree` + `_try_patch_compiler` + `_do_patches` umbrella) + live `$PYTHONUSERBASE/lib/python3.9/site-packages/sitecustomize.py` (atomic replace via base64 → tmp → mv)
 - **Why timing matters**: Initial naive shim gated `is_compiling` patch on `torch.utils._pytree` being already imported, but `torch.compiler` is a sub-module that may not load until first reference. Fix: eagerly `import torch.compiler` inside hook so shim fires unconditionally on any `torch*` import.
 
-**Reproducibility & paper §3 cite**: B-81 umbrella catalogues the canonical HPC porting checklist for HuggingFace transformer + activation-patching mechanistic workloads on RHEL 7 + SGE + module-pytorch HPC clusters. Future replicators on similar clusters (Myriad, Iridis, ARC, etc.) will hit subsets of these 6 classes; this catalog entry serves as paper §3 reproducibility-statement reference.
+#### B-81g — RHEL 7 default `LANG=C` ASCII codec on `Path.read_text()`
+- **Symptom**: Job 334693 (stage2c) crashed at task 4 reverse with `UnicodeDecodeError: 'ascii' codec can't decode byte 0xc2 in position 1973` from `obs_file.read_text()`. Job 334692 (stage2b) had not hit the same path yet (pure luck — depends on which task's observation contains non-ASCII characters first).
+- **Cause**: Myriad RHEL 7 default locale in non-interactive ssh shell is `LANG=C` (POSIX/ASCII). Python `pathlib.Path.read_text()` without explicit `encoding=` argument falls back to `locale.getpreferredencoding()` which returns ASCII under `LANG=C`. VWA observation files contain UTF-8 (e.g., `0xc2` byte sequences from `&nbsp;` HTML entities, accented characters, etc.). DGX Ubuntu defaults to UTF-8 so this never surfaces locally.
+- **Fix**: Add explicit `encoding="utf-8"` to all `Path.read_text()` calls in `run_stage2b_continuation_pilot.py` (3 sites: line 72 task config loader, line 81 manifest loader, line 198 obs_file reader). This is also a portability hardening for any non-UTF-8 locale.
+- **Files**: `scripts/mechanistic/run_stage2b_continuation_pilot.py:72,81,198`
+- **Alternative considered & rejected**: setting `export LANG=en_US.UTF-8` in qsub script. Rejected because (a) en_US.UTF-8 may not be in `/usr/lib/locale/locale-archive` on all Myriad nodes, (b) explicit encoding in code is more portable + makes intent clear at point of use.
+
+**Reproducibility & paper §3 cite**: B-81 umbrella catalogues the canonical HPC porting checklist for HuggingFace transformer + activation-patching mechanistic workloads on RHEL 7 + SGE + module-pytorch HPC clusters. Future replicators on similar clusters (Myriad, Iridis, ARC, etc.) will hit subsets of these 7 classes; this catalog entry serves as paper §3 reproducibility-statement reference.
 
 ---
 
@@ -1358,7 +1365,7 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 | ⚠️ **DISPUTED** | 0 | — |
 | ❌ **NOT_A_BUG** | 4 | B-12 / B-13 / B-14 / B-27 |
 | 🔄 **UNVERIFIED** | 0 | All Phase A entries CONFIRMED via static read |
-| 🛠️ **FIXED** | ~51 | B-10 (§105) + B-26 (NOT FIXED BY DESIGN) + B-28 (MITIGATED) + B-29 (NOT FIXED BY DESIGN) + B-38 (§116) + B-81a-f (HPC porting umbrella, 6 sub-classes) + Phase 0 historical (B-39 to B-80, including umbrella sub-entries) + Phase A patches via commits 3c15cd7 onwards |
+| 🛠️ **FIXED** | ~52 | B-10 (§105) + B-26 (NOT FIXED BY DESIGN) + B-28 (MITIGATED) + B-29 (NOT FIXED BY DESIGN) + B-38 (§116) + B-81a-g (HPC porting umbrella, 7 sub-classes) + Phase 0 historical (B-39 to B-80, including umbrella sub-entries) + Phase A patches via commits 3c15cd7 onwards |
 
 **Pre-rerun rule reaffirmed**: All 🛠️ FIXED bugs must have their fix in code at HEAD before
 16-cell rerun launch (笔记 §116 / pre_rerun_audit.md §F). UNVERIFIED entries have been
