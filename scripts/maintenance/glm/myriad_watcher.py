@@ -41,6 +41,21 @@ GONE_HOOKS: dict[str, tuple[str, str]] = {
         "stage2c_cellg_rev_reddit_reverse_myriad",
         "docs/checkpoints/_status/cells/cell_b1_red_stage2_cellg.md",
     ),
+    # cellcr reddit fwd × reverse-tier (2x2 selection-bias control)
+    "cellcr_": (
+        "stage2b_cellcr_reddit_fwd_revtier_myriad",
+        "",
+    ),
+    # celldr reddit rev × strong-tier (2x2 selection-bias control)
+    "celldr_": (
+        "stage2c_celldr_reddit_rev_strongtier_myriad",
+        "",
+    ),
+    # celler reddit fwd × strong × random injection (negative control)
+    "celler_": (
+        "stage2b_celler_reddit_fwd_random_myriad",
+        "",
+    ),
     # 16-cell rerun cells: register here as launched. Pattern:
     # "cellX_<descr>": ("<remote_subdir>", "<cell_md_relpath>"),
 }
