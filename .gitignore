@@ -74,3 +74,13 @@ docs/checkpoints/PLAYBOOK.md
 # sr_raw/last_run_id/pid/history). Manual semantic fields (blocker/eta/
 # priority) edited on DGX via VSCode Remote-SSH; Windows is read-only viewer.
 docs/checkpoints/_status/cells/*.md
+
+# Weekly reports + dashboard React app — local advisor-share + dev workspace,
+# not paper-grade artifacts. Heavy churn (npm, generated HTML), and the source
+# weekly markdowns can be re-derived from 笔记 chronicle if needed. Keep on
+# disk for advisor email use, just not in git.
+docs/checkpoints/周报/
+
+# Defense-in-depth: any node_modules anywhere (subdir .gitignore handles this
+# for known dirs but a top-level rule prevents future accidents)
+node_modules/
