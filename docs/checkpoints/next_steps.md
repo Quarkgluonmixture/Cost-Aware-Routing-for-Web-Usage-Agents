@@ -271,7 +271,7 @@ p79/mechanistic/extract_hidden_states.py           🆕 HF revision pinned (Gap 
 results/provenance/env_dgx_baseline.json           DGX baseline lock value
 results/provenance/vwa_dgx_via_quark.json          VWA stack fingerprint
 results/provenance/preregistration_smoke_*.json    decision rule smoke tests
-docs/checkpoints/osf_lock_manifest.md              8-step DOI workflow
+docs/checkpoints/pre_run/osf_lock_manifest.md              8-step DOI workflow
 ```
 
 ---

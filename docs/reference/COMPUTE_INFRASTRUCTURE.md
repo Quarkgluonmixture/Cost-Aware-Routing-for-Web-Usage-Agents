@@ -468,7 +468,7 @@ DGX                  Quark                   A100/Myriad
 **Cross-references**:
 - `docs/checkpoints/实验笔记.md §110-§113` — chronicles 5/5+5/6+5/7
 - `docs/checkpoints/advisor_sync_5_5_outcomes.md §A.8` — compute path original 5/5 sync table
-- `docs/checkpoints/preregistration.md` — paper-grade gating
+- `docs/checkpoints/pre_run/preregistration.md` — paper-grade gating
 - `docs/reference/MYRIAD_SMOKE_REPORT.md` — historical CGNAT investigation (now partly obsolete per §1.2)
 - `docs/reference/RUNPOD_ONBOARDING.md` — deprecated by Tier 0
 - `docs/reference/DGX_SPARK_MACHINE_QUIRKS.md` — DGX-specific quirks (sm_121 nvrtc fallback, etc.)

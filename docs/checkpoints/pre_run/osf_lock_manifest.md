@@ -34,7 +34,7 @@ drives the 8-step DOI workflow (笔记 §110 + ADVISOR_SYNC §F).
 | Artefact | Path | Git ref @ lock | Captured |
 |---|---|---|---|
 | Repository HEAD | `master` branch | `<TBD>` | TBD |
-| Pre-registration text | `docs/checkpoints/preregistration.md` | `<TBD commit-SHA>` | TBD |
+| Pre-registration text | `docs/checkpoints/pre_run/preregistration.md` | `<TBD commit-SHA>` | TBD |
 | Run manifest YAML | `results/phantom_paper/run_manifest.yaml` | `<TBD commit-SHA>` | TBD |
 | Paper drafts (locked snapshot) | `docs/checkpoints/paper_drafts_locked/` | `<TBD commit-SHA>` | TBD |
 | Bibliography (57 entries) | `docs/checkpoints/paper_drafts/paper.bib` | `<TBD commit-SHA>` | TBD |

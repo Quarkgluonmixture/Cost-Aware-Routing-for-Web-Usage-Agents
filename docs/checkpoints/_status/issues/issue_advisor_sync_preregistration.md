@@ -10,7 +10,7 @@ updated: 2026-05-06
 
 # Advisor sync + pre-registration lock
 
-Pre-registration framework reframed 2026-05-03 (Hero + Structural + Framing-rule R1-R5) — `docs/checkpoints/preregistration.md` is `status: draft` pending advisor email witness reply.
+Pre-registration framework reframed 2026-05-03 (Hero + Structural + Framing-rule R1-R5) — `docs/checkpoints/pre_run/preregistration.md` is `status: draft` pending advisor email witness reply.
 
 ## 5/5 sync outcome (partial)
 
@@ -62,7 +62,7 @@ Follow-up doc: `advisor_sync_5_5_followup.md` Q1-Q11 sent 5/5 evening:
 
 ## Refs
 
-- `docs/checkpoints/preregistration.md` (status:draft, frontmatter `data_lock_until: <pending 16-cell rerun completion>`)
+- `docs/checkpoints/pre_run/preregistration.md` (status:draft, frontmatter `data_lock_until: <pending 16-cell rerun completion>`)
 - `docs/checkpoints/advisor_sync_5_5_followup.md` (Q1-Q11 邮件主体, sent 5/5 evening)
 - `docs/checkpoints/advisor_sync_5_5_outcomes.md` (sync registry §A-§F + OSF workflow)
 - `docs/reference/transcript.md` (5/5 sync 完整逐字稿)

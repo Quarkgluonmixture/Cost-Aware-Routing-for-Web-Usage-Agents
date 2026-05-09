@@ -347,7 +347,7 @@ Paper rigor vs cost 是真 trade-off. A 全 dim clean, paper 不需要 disclose 
 
 ## Reference (开会查阅)
 
-**Pre-registration**: `docs/checkpoints/preregistration.md` (status:draft, lock 5 件 commit 后 flip locked)
+**Pre-registration**: `docs/checkpoints/pre_run/preregistration.md` (status:draft, lock 5 件 commit 后 flip locked)
 
 **Visualizations 开会现场打开**:
 - `docs/checkpoints/paper_section2_framework.canvas` — phantom space + 别扭 framework 主 canvas (§1)

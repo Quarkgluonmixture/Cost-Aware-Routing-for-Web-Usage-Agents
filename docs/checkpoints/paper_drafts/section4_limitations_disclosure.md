@@ -5,7 +5,7 @@ master_bug_catalog.md entry by ID. Reviewer-defensible: bugs are CONFIRMED but b
 bounded; mitigations or paper-§3 disclosure rather than retraction.
 
 **Source**: `docs/reference/master_bug_catalog.md` B-15 / B-20 / B-21 / B-22 / B-26 / B-28 +
-`docs/checkpoints/preregistration.md` §A1/A3 design asymmetries.
+`docs/checkpoints/pre_run/preregistration.md` §A1/A3 design asymmetries.
 
 ---
 
@@ -190,6 +190,6 @@ sensitivity check is in §5 Appendix and does not gate the main mechanism claim.
 ## References
 
 - `docs/reference/master_bug_catalog.md` — full bug catalog (~80 entries)
-- `docs/checkpoints/preregistration.md` §3-§4 — locked analysis choices including FP filter
-- `docs/checkpoints/evaluator_change_protocol.md` — Protocol A Tier classification
+- `docs/checkpoints/pre_run/preregistration.md` §3-§4 — locked analysis choices including FP filter
+- `docs/checkpoints/pre_run/evaluator_change_protocol.md` — Protocol A Tier classification
 - 笔记 §95 (FP reform) / §107 (Phase A wave) / §114 (provenance) / §116 (audit) / §116.X user prompts

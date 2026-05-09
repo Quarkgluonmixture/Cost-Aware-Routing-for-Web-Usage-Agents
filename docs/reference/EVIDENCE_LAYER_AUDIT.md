@@ -54,7 +54,7 @@ audience: self + advisor
 | # | Stats gap | Paired viz gap | Tier | ETA |
 |---|---|---|---|---|
 | **A1** | **Multiple-comparison correction columns** in `phantom_lift.md`: Bonferroni p / Holm-Bonferroni p / BH FDR q. Comparison family explicit. | **Forest plot per phantom arm** showing raw 95% CI vs Holm-adjusted CI (`fig_forest_drop_one.py`) | **T0** | 3h stats + 1h viz |
-| **A2** | **Pre-registration doc** `docs/checkpoints/preregistration.md` — primary H1 / secondary H2-Hn / disconfirmation conditions / multiple-comparison family / decision rule. Git commit timestamp = registration time. | **Hypothesis × outcome confirmation matrix** (filled post-rerun): hypothesis row × cell column × {pass/fail/inconclusive} cell coloring (`fig_hypothesis_matrix.py`) | **T0** | 2h doc (need user-decided H list) + 1h viz scaffold |
+| **A2** | **Pre-registration doc** `docs/checkpoints/pre_run/preregistration.md` — primary H1 / secondary H2-Hn / disconfirmation conditions / multiple-comparison family / decision rule. Git commit timestamp = registration time. | **Hypothesis × outcome confirmation matrix** (filled post-rerun): hypothesis row × cell column × {pass/fail/inconclusive} cell coloring (`fig_hypothesis_matrix.py`) | **T0** | 2h doc (need user-decided H list) + 1h viz scaffold |
 | **A3** | **Cross-cell meta-analysis**: random-effect (DerSimonian-Laird) pooled drop-one per arm + I² heterogeneity statistic. New `aggregate_phantom_meta.py` + `meta_phantom_lift.md`. | **Forest plot pooled estimate** (`fig_meta_forest.py`) — per arm: cells listed vertically + pooled diamond at bottom + I² annotation | **T0** | 4h stats + 2h viz |
 | **A4** | **TOST equivalence test** for "effect ≈ 0" reverse-claim ability — per-arm vs equivalence margin δ=0.5pp, two one-sided tests. | **Equivalence bound viz** (`fig_tost_bounds.py`) — CI bar with ±δ shaded region overlay, per arm | T1 | 2h stats + 1h viz |
 | **A5** | **Effect-size standardization 跨连续 outcome**: Cohen's d (cost / latency 连续) + Cliff's δ (AUROC non-parametric) + CI for Cohen's h (currently point estimate only) | **Effect-size CI panel** (`fig_effect_size_panel.py`) — h / d / δ as 3-panel forest, per arm | T1 | 2h stats + 1h viz |
@@ -119,7 +119,7 @@ audience: self + advisor
 
 ## §2 Pre-registration template (T0e, blocks rerun launch)
 
-> **创建** `docs/checkpoints/preregistration.md` **with this skeleton**, advisor sync 时 lock + sign. Git commit SHA + timestamp = registration time. OSF DOI (optional, paper submission 前 1 周上传) = third-party witness.
+> **创建** `docs/checkpoints/pre_run/preregistration.md` **with this skeleton**, advisor sync 时 lock + sign. Git commit SHA + timestamp = registration time. OSF DOI (optional, paper submission 前 1 周上传) = third-party witness.
 >
 > **Epistemic 结构** (核心 design move 2026-05-03 reframe):
 > - **Hero claim** (P-SoM as deployment routing arm) — pre-registered strict
@@ -289,7 +289,7 @@ R5 IF (H1 fails: pooled meta sig fails Holm OR < K_h1 cells individually sig):
 - [x] **T0b — A1 paired viz** (2026-05-03): `scripts/analysis/figures/fig_forest_drop_one.py` 3-panel forest (P-text / P-SoM / P-prompt) × per-cell point + raw 95% CI errorbar + Holm-sig marker fill + TOST equivalence band ±0.5pp. Output `fig_forest_drop_one.png`.
 - [x] **T0c — A3 cross-cell meta** (2026-05-03): `scripts/analysis/aggregate_phantom_meta.py` (DerSimonian-Laird random-effect) per arm × all cells. SE_i derived from bootstrap CI. Reports k / FE / RE / 95% CI / Cochran's Q / df / p_Q / τ² / I² + per-family Holm-Bonferroni gating. Output `meta_phantom_lift.{md,csv}`.
 - [x] **T0d — A3 paired viz** (2026-05-03): `fig_meta_forest.py` classical forest with weight-sized squares per cell + pooled diamond + I²/Q/τ² annotation + TOST band. Output `fig_meta_forest.png`.
-- [ ] **T0e — A2 pre-registration doc**: 写 `docs/checkpoints/preregistration.md` (上方 §2 template). 需要 user lock H1-H5 specifics + advisor 见证. _ETA 2h_
+- [ ] **T0e — A2 pre-registration doc**: 写 `docs/checkpoints/pre_run/preregistration.md` (上方 §2 template). 需要 user lock H1-H5 specifics + advisor 见证. _ETA 2h_
 - [ ] **T0f — A2 paired viz scaffold**: `fig_hypothesis_matrix.py` 骨架 (post-rerun fill). _ETA 1h_
 
 **T0 total: ~13h work** (≈ 2 个 focused day) — **T0a-T0d done (4/6); T0e blocked on user H-list decision**

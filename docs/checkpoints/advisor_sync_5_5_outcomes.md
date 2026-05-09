@@ -298,7 +298,7 @@ OSF 上传**之前**必须把以下 doc state freeze (确保 OSF snapshot 跟 gi
 
 - **Transcript**: `docs/reference/transcript.md` (5/5 sync 完整逐字稿, 网卡断点已标注)
 - **Followup doc** (发学长邮件主体): `docs/checkpoints/advisor_sync_5_5_followup.md`
-- **Pre-registration source**: `docs/checkpoints/preregistration.md` (16-cell synced)
+- **Pre-registration source**: `docs/checkpoints/pre_run/preregistration.md` (16-cell synced)
 - **Sync prep snapshot** (现 partly historical): `docs/checkpoints/ADVISOR_SYNC.md` (顶部加了 post-5/5 status note)
 - **Forward action**: `docs/checkpoints/next_steps.md` §0
 - **Strategy notebook**: `docs/checkpoints/paper_planning.md` §19 decision log + §22 multi-register inventory

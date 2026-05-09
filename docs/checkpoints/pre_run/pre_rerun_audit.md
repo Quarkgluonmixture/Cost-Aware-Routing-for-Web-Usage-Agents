@@ -650,11 +650,11 @@ Phase 4 post-rerun analysis:
 
 ## §References
 
-- `docs/checkpoints/preregistration.md` (canonical commitment)
+- `docs/checkpoints/pre_run/preregistration.md` (canonical commitment)
 - `docs/checkpoints/ADVISOR_SYNC.md` / `advisor_sync_5_5_outcomes.md` / `advisor_sync_5_5_followup.md`
-- `docs/checkpoints/osf_lock_manifest.md` (8-step DOI workflow)
-- `docs/checkpoints/evaluator_change_protocol.md` (Protocol A — Tier classification)
-- `docs/checkpoints/reeval_audit_protocol.md` (Protocol B — episode audit trail)
+- `docs/checkpoints/pre_run/osf_lock_manifest.md` (8-step DOI workflow)
+- `docs/checkpoints/pre_run/evaluator_change_protocol.md` (Protocol A — Tier classification)
+- `docs/checkpoints/pre_run/reeval_audit_protocol.md` (Protocol B — episode audit trail)
 - `docs/checkpoints/paper_drafts/section4_limitations_disclosure.md` (created 5/8 — 10 prose drafts)
 - `docs/reference/master_bug_catalog.md` (~80 catalog entries, post §116.9 backfill)
 - `docs/reference/PAPER_STRATEGY_OPEN_QUESTIONS.md` (Q1-Q9)

@@ -60,7 +60,7 @@ Then framing rule R1-R5 fires → paper hook locks → codex #11/#13 prose.
 
 ## Refs
 
-- `docs/checkpoints/preregistration.md` (`data_lock_until: <pending 16-cell rerun completion>`)
+- `docs/checkpoints/pre_run/preregistration.md` (`data_lock_until: <pending 16-cell rerun completion>`)
 - `docs/checkpoints/advisor_sync_5_5_followup.md` (Q1-Q11 邮件主体)
 - `docs/checkpoints/advisor_sync_5_5_outcomes.md` §A.8 (compute path, Tier 0 A100)
 - `docs/checkpoints/实验笔记.md §112` (A100 allocation chronicle)

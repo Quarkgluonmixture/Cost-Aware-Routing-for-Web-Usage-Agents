@@ -61,7 +61,7 @@ check_gates() {
   local errors=0
 
   log "=== Gate 1: preregistration.md threshold lock ==="
-  if grep -q "K_h1.*TBD\|K_h3.*TBD\|TOST.*TBD" docs/checkpoints/preregistration.md 2>/dev/null; then
+  if grep -q "K_h1.*TBD\|K_h3.*TBD\|TOST.*TBD" docs/checkpoints/pre_run/preregistration.md 2>/dev/null; then
     log "  FAIL: preregistration.md still has TBD threshold values."
     log "        Wait for advisor email reply, then update preregistration.md."
     errors=$((errors+1))
@@ -220,7 +220,7 @@ case "$MODE" in
     log "  make analysis              # full pipeline"
     log "  python3 scripts/analysis/preregistration_decision_test.py \\"
     log "      --cells-csv results/phantom_paper/cells_aggregated.csv \\"
-    log "      --K_h1 \$(cat docs/checkpoints/preregistration.md | grep K_h1 | head -1) \\"
+    log "      --K_h1 \$(cat docs/checkpoints/pre_run/preregistration.md | grep K_h1 | head -1) \\"
     log "      --out results/phantom_paper/preregistration_test_results.json"
     ;;
   *)
