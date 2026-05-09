@@ -27,18 +27,51 @@ OUT = ROOT / "results/phantom_paper/figures/fig1ab_cascade_diamond.png"
 EXPECTED_N = {"reddit": 210, "classifieds": 234}
 SITE_SHORT = {"reddit": "red", "classifieds": "cls"}
 
-STEP_DIRS = {
-    "reddit": {
-        "DOM": RESULTS / "B0_3mode_reddit_20260422/phase1_dom_router_0/episodes",
-        "P-text": RESULTS / "B0_phantom_text_reddit_20260427/phase1_phantom_dom_router_0/episodes",
-        "P-SoM": RESULTS / "B0_phantom_som_reddit_20260428/phase1_phantom_som_router_0/episodes",
-    },
-    "classifieds": {
-        "DOM": RESULTS / "B0_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-        "P-text": RESULTS / "B0_phantom_text_classifieds_20260427/phase1_phantom_dom_router_0/episodes",
-        "P-SoM": RESULTS / "B0_phantom_som_classifieds_20260426/phase1_phantom_som_router_0/episodes",
-    },
-}
+# F40 audit fix 2026-05-09: STEP_DIRS now resolved via run_registry,
+# not hardcoded archived run paths. Previously the figure pulled from
+# 202604* directories regardless of whether those cells were re-run as
+# paper-grade or remained pre-bug → cross-grade contamination risk
+# matching F01. Default registry filter is ["paper-grade"]; pass
+# `--include-pre-bug` to opt in to legacy data for sensitivity figures.
+import sys as _sys
+_sys.path.insert(0, str(ROOT / "scripts/analysis"))
+from lib.run_registry import get_cells as _get_cells  # noqa: E402
+
+# Mode keys (paper-canonical) that this figure visualises.
+_MODES = {"DOM": "dom", "P-text": "phantom_text", "P-SoM": "phantom_som"}
+
+
+def _resolve_step_dirs(grade: list[str] | None = None):
+    """Map (site → mode display label → episodes Path) using run_registry.
+
+    Raises ``RuntimeError`` if any of the figure's required cells are
+    missing — fail-closed mirrors F02 phantom-lift refusal pattern.
+    """
+    out: dict[str, dict[str, Path]] = {}
+    missing: list[str] = []
+    for site in ("reddit", "classifieds"):
+        out[site] = {}
+        for label, canonical_mode in _MODES.items():
+            cells = _get_cells(
+                baseline="B0", site=site, mode=canonical_mode, grade=grade
+            )
+            if not cells:
+                missing.append(f"B0 {site} {canonical_mode}")
+                continue
+            out[site][label] = cells[0].episodes_dir
+    if missing:
+        raise RuntimeError(
+            "fig1ab_cascade_diamond: missing paper-grade cells "
+            f"{missing}. Update run_manifest.yaml or pass "
+            "`grade=['paper-grade', 'paper-grade-pre-bug']` for legacy "
+            "sensitivity figure."
+        )
+    return out
+
+
+# NOTE: STEP_DIRS resolved lazily inside main() / call sites so that
+# `import` doesn't fail when paper-grade cells are absent (e.g. during
+# import-time tests / linting). Use `_resolve_step_dirs()` at runtime.
 
 SEARCH_MARKERS = {"reddit": ("/search",), "classifieds": ("page=search", "/search")}
 
@@ -182,9 +215,13 @@ def main() -> None:
     ax.text(0.70, 4.45, "AXTree obs", ha="center", rotation=90, fontsize=12, fontweight="bold")
     ax.text(0.70, 2.05, "[SOM_MARKS] obs", ha="center", rotation=90, fontsize=12, fontweight="bold")
 
+    # F40 audit fix 2026-05-09: STEP_DIRS resolved lazily here at runtime
+    # rather than import-time so the module can be imported without
+    # paper-grade cells being present.
+    step_dirs = _resolve_step_dirs()
     metrics = {
         site: {mode: mode_metrics(site, ep_dir) for mode, ep_dir in modes.items()}
-        for site, modes in STEP_DIRS.items()
+        for site, modes in step_dirs.items()
     }
     prompt_lines = []
     prompt_real: dict[str, dict[str, float | int | None]] = {}

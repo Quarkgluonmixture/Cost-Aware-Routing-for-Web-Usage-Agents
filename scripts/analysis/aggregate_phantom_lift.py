@@ -218,18 +218,37 @@ def bootstrap_unique_count_ci(in_a: np.ndarray, in_b: np.ndarray,
     return observed, float(np.quantile(counts, alpha)), float(np.quantile(counts, 1 - alpha))
 
 
-def bootstrap_tost_p(in_a: np.ndarray, in_b: np.ndarray,
-                     delta_pp: float = 1.0, B: int = 1000, seed: int = 42
-                     ) -> Optional[float]:
-    """Bootstrap TOST (Two One-Sided Tests) p-value for paired binary lift.
+def bootstrap_tost_equivalence_p(in_a: np.ndarray, in_b: np.ndarray,
+                                  delta_pp: float = 1.0, B: int = 1000, seed: int = 42
+                                  ) -> Optional[float]:
+    """Bootstrap TOST (Two One-Sided Tests) p-value for **equivalence** test.
 
-    H0_lower: lift ≤ -δ   →   reject if bootstrap dist mostly above -δ
-    H0_upper: lift ≥ +δ   →   reject if bootstrap dist mostly below +δ
-    TOST p = max(p_lower, p_upper). If max < α, equivalence at margin δ rejected
-    (effect is *practically nonzero* relative to δ).
+    H0: |true lift| >= δ          (effect is meaningful in either direction)
+    H1: |true lift| < δ           (effect equivalent to zero within margin)
+
+    Two one-sided tests:
+      H0_lower:  lift <= -δ  → reject if bootstrap dist mostly above -δ
+                              p_lower = P(boot_lift <= -δ); small p_lower
+                              ⇒ evidence rejects "effect <= -δ"
+      H0_upper:  lift >= +δ  → reject if bootstrap dist mostly below +δ
+                              p_upper = P(boot_lift >= +δ); small p_upper
+                              ⇒ evidence rejects "effect >= +δ"
+
+    TOST p = max(p_lower, p_upper).
+    **If max(p_lower, p_upper) < α, equivalence is ACCEPTED** — both
+    one-sided tests reject, so the effect is bounded inside (-δ, +δ).
 
     F03 audit fix 2026-05-09: δ default = 1.0pp (was 0.5). Matches
     `preregistration.md §4` lock "TOST equivalence margin δ = 1.0pp".
+
+    F04 audit fix 2026-05-09: renamed from `bootstrap_tost_p`; clarified
+    docstring (previous wording said "equivalence rejected when max < α"
+    which inverts the conclusion). Strong positive lift gives p_upper≈1
+    correctly (effect is outside +δ equivalence margin), so equivalence
+    is correctly NOT accepted.
+
+    For the **nonzero / one-sided directional** test (the phantom-lift
+    hypothesis "lift > 0"), use `bootstrap_one_sided_nonzero_p()` below.
     """
     if len(in_a) != len(in_b):
         return None
@@ -244,6 +263,46 @@ def bootstrap_tost_p(in_a: np.ndarray, in_b: np.ndarray,
     p_lower = float(np.mean(lifts <= -delta_pp))
     p_upper = float(np.mean(lifts >= delta_pp))
     return max(p_lower, p_upper)
+
+
+# F04 audit fix 2026-05-09: alias preserves backward-compat callers; new
+# code should use the renamed `bootstrap_tost_equivalence_p()`.
+bootstrap_tost_p = bootstrap_tost_equivalence_p
+
+
+def bootstrap_one_sided_nonzero_p(in_a: np.ndarray, in_b: np.ndarray,
+                                   B: int = 1000, seed: int = 42,
+                                   alternative: str = "greater"
+                                   ) -> Optional[float]:
+    """Bootstrap one-sided p-value for the directional phantom-lift claim.
+
+    H0: lift = 0     (no phantom-routing benefit)
+    H1: lift > 0     (alternative='greater', default — primary paper claim)
+       or lift < 0   (alternative='less')
+
+    p = fraction of bootstrap resamples where lift contradicts H1
+        (alternative='greater' → fraction with lift <= 0)
+        (alternative='less' → fraction with lift >= 0)
+
+    F04 audit fix 2026-05-09: added as the correct test for the paper's
+    phantom-lift > 0 claim; the equivalence-style TOST in
+    `bootstrap_tost_equivalence_p()` is for the separate "lift is bounded
+    inside ±δ" claim and should NOT be substituted for nonzero detection.
+    """
+    if len(in_a) != len(in_b) or len(in_a) == 0:
+        return None
+    n = len(in_a)
+    rng = np.random.default_rng(seed)
+    lifts = np.empty(B)
+    for b in range(B):
+        idx = rng.integers(0, n, size=n)
+        lifts[b] = 100 * (int(in_b[idx].sum()) - int(in_a[idx].sum())) / n
+    if alternative == "greater":
+        return float(np.mean(lifts <= 0.0))
+    elif alternative == "less":
+        return float(np.mean(lifts >= 0.0))
+    else:
+        raise ValueError(f"alternative must be 'greater' or 'less', got {alternative}")
 
 
 def bonferroni_adjust(pvals: list) -> list:

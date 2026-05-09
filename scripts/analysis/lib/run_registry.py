@@ -196,7 +196,10 @@ def _as_list(value):
 def get_all_cells(grade_filter: list[Grade] | None = None) -> list[CellSpec]:
     """All cells in manifest.
 
-    grade_filter defaults to ['paper-grade', 'paper-grade-pre-bug'].
+    grade_filter defaults to ['paper-grade'] only (post-F01 audit
+    2026-05-09). Pass ['paper-grade', 'paper-grade-pre-bug'] explicitly
+    for Appendix-D legacy robustness; ['archived'] / ['in-flight'] for
+    sensitivity analyses.
     """
     grades = DEFAULT_GRADE_FILTER if grade_filter is None else grade_filter
     return [cell for cell in _all_cells_unfiltered() if cell.grade in grades]
