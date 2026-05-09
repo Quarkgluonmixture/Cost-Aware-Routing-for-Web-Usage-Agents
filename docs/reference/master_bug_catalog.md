@@ -1300,10 +1300,10 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 
 ---
 
-### B-81. Myriad HPC porting — 7-class failure umbrella (笔记 §116.16, 2026-05-08 → 2026-05-09)
+### B-81. Myriad HPC porting — 8-class failure umbrella (笔记 §116.16+§117, 2026-05-08 → 2026-05-09)
 
-- **Origin**: Stage 2B/2C launch wave on UCL Myriad HPC, jobs 324666 → 325178/325179 → 334692/334693
-- **Status**: 🛠️ FIXED (7/7 sub-classes resolved by 2026-05-09)
+- **Origin**: Stage 2B/2C launch wave on UCL Myriad HPC, jobs 324666 → 325178/325179 → 334692/334693 → 335339/335340
+- **Status**: 🛠️ FIXED (8/8 sub-classes resolved by 2026-05-09)
 - **Severity**: Operational (not paper-grade scientific) but blocks mechanistic Stage 2B/2C compute path
 - **Domain**: HPC environment porting — RHEL 7 login + compute nodes, SGE batch, module-loaded PyTorch
 - **Pattern**: Each class only surfaces under specific HPC constraint (firewall / module versioning / pre-built torch / Home quota / login-vs-compute env divergence). Collectively they are the **HPC textbook gotcha checklist** for HuggingFace transformer + activation patching workloads.
@@ -1352,7 +1352,21 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 - **Files**: `scripts/mechanistic/run_stage2b_continuation_pilot.py:72,81,198`
 - **Alternative considered & rejected**: setting `export LANG=en_US.UTF-8` in qsub script. Rejected because (a) en_US.UTF-8 may not be in `/usr/lib/locale/locale-archive` on all Myriad nodes, (b) explicit encoding in code is more portable + makes intent clear at point of use.
 
-**Reproducibility & paper §3 cite**: B-81 umbrella catalogues the canonical HPC porting checklist for HuggingFace transformer + activation-patching mechanistic workloads on RHEL 7 + SGE + module-pytorch HPC clusters. Future replicators on similar clusters (Myriad, Iridis, ARC, etc.) will hit subsets of these 7 classes; this catalog entry serves as paper §3 reproducibility-statement reference.
+#### B-81h — `cutlassF: no kernel found to launch!` on V100/sm_70 nodes
+- **Symptom**: Cell C (job 335339, fwd × reverse-tier 15) crashed at vision encoder attention (`modeling_qwen3_vl.py:267` → `attention_interface(...)` → `sdpa_attention.py:96`) with `RuntimeError: cutlassF: no kernel found to launch!`. Same script + same model + same dtype that ran cleanly on cells A/B/D. Difference: cell C SGE-assigned to `node-e00a-003` which is **Tesla V100-PCIE-32GB** (sm_70 architecture), cells A/B/D landed on V/U-type nodes with **A100 80GB** (sm_80).
+- **Cause**: PyTorch's SDPA dispatcher selects between flash / memory-efficient (cutlass) / math backends. The bf16 cutlass kernels only ship for sm_80+ (A100/H100). On V100 / T4 / older GPUs with bf16 inputs, the dispatcher tries cutlass, finds no kernel, and **raises** instead of falling back. SGE qsub doesn't pin GPU type by default (the `-ac allow=L,U,V` syntax is broken — comma parsed as separator, see qsub script comments). So cell selection was random → bad luck V100.
+- **Fix**: Force SDPA math backend at script init (top of `run_stage2b_continuation_pilot.py`):
+  ```python
+  if os.environ.get("FORCE_MATH_SDP", "1") != "0":
+      torch.backends.cuda.enable_flash_sdp(False)
+      torch.backends.cuda.enable_mem_efficient_sdp(False)
+      torch.backends.cuda.enable_math_sdp(True)
+  ```
+  Math backend is GPU-agnostic (works on any CUDA arch + any dtype), only ~2-3x slower than cutlass on A100. For 24-task patching pilot total compute is +5-10 min, immaterial to paper-grade timeline.
+- **Files**: `scripts/mechanistic/run_stage2b_continuation_pilot.py` (top-of-file SDPA backend force).
+- **Alternative considered**: pin GPU type in qsub (`-l gpu_type=A100` or similar). Rejected because (a) Myriad SGE syntax for this is unclear/buggy per existing comments, (b) limits GPU pool slot availability, (c) code-side fix is GPU-portable for future A100/V100/T4 cluster moves.
+
+**Reproducibility & paper §3 cite**: B-81 umbrella catalogues the canonical HPC porting checklist for HuggingFace transformer + activation-patching mechanistic workloads on RHEL 7 + SGE + module-pytorch HPC clusters. Future replicators on similar clusters (Myriad, Iridis, ARC, etc.) will hit subsets of these 8 classes; this catalog entry serves as paper §3 reproducibility-statement reference.
 
 ---
 
@@ -1365,7 +1379,7 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 | ⚠️ **DISPUTED** | 0 | — |
 | ❌ **NOT_A_BUG** | 4 | B-12 / B-13 / B-14 / B-27 |
 | 🔄 **UNVERIFIED** | 0 | All Phase A entries CONFIRMED via static read |
-| 🛠️ **FIXED** | ~52 | B-10 (§105) + B-26 (NOT FIXED BY DESIGN) + B-28 (MITIGATED) + B-29 (NOT FIXED BY DESIGN) + B-38 (§116) + B-81a-g (HPC porting umbrella, 7 sub-classes) + Phase 0 historical (B-39 to B-80, including umbrella sub-entries) + Phase A patches via commits 3c15cd7 onwards |
+| 🛠️ **FIXED** | ~53 | B-10 (§105) + B-26 (NOT FIXED BY DESIGN) + B-28 (MITIGATED) + B-29 (NOT FIXED BY DESIGN) + B-38 (§116) + B-81a-h (HPC porting umbrella, 8 sub-classes) + Phase 0 historical (B-39 to B-80, including umbrella sub-entries) + Phase A patches via commits 3c15cd7 onwards |
 
 **Pre-rerun rule reaffirmed**: All 🛠️ FIXED bugs must have their fix in code at HEAD before
 16-cell rerun launch (笔记 §116 / pre_rerun_audit.md §F). UNVERIFIED entries have been

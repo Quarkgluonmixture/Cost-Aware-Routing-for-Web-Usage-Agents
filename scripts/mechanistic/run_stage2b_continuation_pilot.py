@@ -38,8 +38,24 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 from pathlib import Path
+
+# B-81h workaround (笔记 §117): force SDPA math backend so the script runs on
+# any GPU architecture. PyTorch's flash + memory-efficient SDPA backends only
+# have bf16 cutlass kernels for sm_80+ (A100/H100). On V100 (sm_70) or T4
+# (sm_75) Myriad nodes, SDPA dispatcher raises "cutlassF: no kernel found to
+# launch!" instead of falling back. The math backend always works (slower
+# ~2-3x but correct on any GPU). Disabled via FORCE_MATH_SDP=0 to opt back in.
+if os.environ.get("FORCE_MATH_SDP", "1") != "0":
+    try:
+        import torch as _torch_for_sdp_setup
+        _torch_for_sdp_setup.backends.cuda.enable_flash_sdp(False)
+        _torch_for_sdp_setup.backends.cuda.enable_mem_efficient_sdp(False)
+        _torch_for_sdp_setup.backends.cuda.enable_math_sdp(True)
+    except Exception:
+        pass
 
 import numpy as np
 
