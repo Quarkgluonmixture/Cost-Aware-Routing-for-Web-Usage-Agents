@@ -34,7 +34,15 @@ def get_transformer_layers(model) -> torch.nn.ModuleList:
 
 
 class ActivationPatcher:
-    """Cache + patch interface for transformer layer outputs."""
+    """Cache + patch interface for transformer layer outputs.
+
+    F16 audit clarification 2026-05-09: layers L0..L_{n-1} are transformer
+    BLOCK OUTPUTS (post-attention + ffn + residual + post-norm). L0 is the
+    output of the first decoder layer, NOT the embedding output. To get
+    embedding output, hook `model.model.language_model.embed_tokens`
+    separately. Paper §5 prose should call these "block indices" or "B0..B35"
+    to avoid confusion with the embedding.
+    """
 
     def __init__(self, model, processor):
         self.model = model

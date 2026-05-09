@@ -1591,12 +1591,21 @@ class ExperimentRunner:
             episode_summary["fp_reason"] = str(_fp)
             episode_summary["has_effective_action"] = bool(_has_eff)
         except Exception as _adj_exc:
-            logger.warning(
+            # F23 audit fix 2026-05-09: previously logged warning + wrote
+            # adjusted_success=None and fp_reason="" silently. Downstream
+            # aggregators fell back to raw `success`, bypassing the FP
+            # filter for that episode. Now: log error + tag fp_reason
+            # with "adjustment_error" so the F22 batch validator catches
+            # it on the next read and forces a recompute. Set strict
+            # P79_STRICT=1 to make this fatal during paper-grade runs.
+            logger.error(
                 "Failed to compute adjusted_success for site=%s task=%s: %s",
                 task.site, task.task_id, _adj_exc,
             )
-            episode_summary.setdefault("adjusted_success", None)
-            episode_summary.setdefault("fp_reason", "")
+            episode_summary["adjusted_success"] = None
+            episode_summary["fp_reason"] = "adjustment_error"
             episode_summary.setdefault("has_effective_action", False)
+            if os.environ.get("P79_STRICT", "").lower() in ("1", "true", "yes"):
+                raise
 
         return episode_summary

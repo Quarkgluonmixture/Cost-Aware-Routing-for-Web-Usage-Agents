@@ -28,8 +28,18 @@ import numpy as np
 from scipy import stats
 
 
-# Tested layers (vs L35 baseline). L0 is embedding output (often near-target);
-# L35 is final post-block (output should == target by construction).
+# F12 audit fix 2026-05-09: L0-L35 are **transformer block outputs**, NOT
+# embedding output. The patching hooks (`activation_patching.py`
+# `register_forward_hook` on each `Qwen3VLTextDecoderLayer`) capture the
+# output of block i, so:
+#   L0  = output of block 0 (first decoder layer post-norm). Often
+#         near-target because only one block has transformed the
+#         embedding; NOT the embedding itself.
+#   L35 = output of block 35 (final block). Output ≈ target by
+#         construction since only final_norm + lm_head remain to produce
+#         target tokens.
+# If you need true embedding output (n_layers+1 indexing), add a hook to
+# `model.model.language_model.embed_tokens` instead.
 TEST_LAYERS = [0, 5, 11, 17, 23, 29]
 BASELINE_LAYER = 35
 

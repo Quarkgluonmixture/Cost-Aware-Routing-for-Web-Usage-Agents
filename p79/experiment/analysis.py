@@ -77,10 +77,18 @@ def compute_adjusted_success(
         if agent_finished:
             return (True, "")
         return (False, "na_fp")
+    # F20 audit fix 2026-05-09: multi-eval tasks encode `eval_type` as
+    # pipe-delimited (e.g. "string_match|program_html") in runner +
+    # diagnostics. Split into set and test membership instead of exact
+    # match, otherwise eval FPs survive into adjusted SR.
     if agent_finished is not None and not agent_finished:
-        if eval_type == "string_match":
+        eval_types_set = (
+            set(s.strip() for s in eval_type.split("|") if s.strip())
+            if eval_type else set()
+        )
+        if "string_match" in eval_types_set:
             return (False, "eval_fp")
-        if eval_type == "program_html":
+        if "program_html" in eval_types_set:
             hea = has_effective_action if has_effective_action is not None else True
             if not hea:
                 return (False, "eval_fp")
@@ -98,25 +106,53 @@ def compute_adjusted_success_batch(ep_df, benchmark_site: str, benchmark: str = 
     The runner is the single source of truth; this batch path is kept for
     backward compatibility with episode summaries written before §97.
     """
+    # F22 audit fix 2026-05-09: fast-path now validates fp_reason values
+    # against the locked set {'', 'na_fp', 'eval_fp'} (preregistration §4
+    # primary FP filter). If any row has an unknown fp_reason (e.g. legacy
+    # 'visual_fp', 'adjustment_error'), recompute from scratch instead of
+    # trusting runner output.
+    ALLOWED_FP_REASONS = {"", "na_fp", "eval_fp"}
     if (
         not ep_df.empty
         and "adjusted_success" in ep_df.columns
         and "fp_reason" in ep_df.columns
         and ep_df["adjusted_success"].notna().all()
     ):
-        # Already populated by runner — skip O(N) lambda apply.
-        return ep_df
+        observed_reasons = set(
+            (str(v) if v is not None else "") for v in ep_df["fp_reason"].fillna("")
+        )
+        unknown_reasons = observed_reasons - ALLOWED_FP_REASONS
+        if not unknown_reasons:
+            return ep_df
+        # Unknown fp_reason found — fall through and recompute.
+        import warnings as _warnings
+        _warnings.warn(
+            f"compute_adjusted_success_batch: dropping cached adjusted_success "
+            f"because fp_reason contains unknown values {sorted(unknown_reasons)}; "
+            "recomputing from raw fields. (F22 audit guard)",
+            stacklevel=2,
+        )
 
     na_ids = _load_na_task_ids(benchmark_site, benchmark)
+
+    # F21 audit fix 2026-05-09: do not coerce missing `agent_finished` to
+    # True. `bool(NaN)` is True in Python which would bypass na_fp/eval_fp
+    # downstream. Use pd.notna check first; pass None when missing.
+    import pandas as _pd
+
+    def _safe_bool(value):
+        if value is None or _pd.isna(value):
+            return None
+        return bool(value)
 
     adj_results = ep_df.apply(
         lambda r: compute_adjusted_success(
             int(r["task_id"]), benchmark_site,
             bool(r["success"]),
             na_task_ids=na_ids,
-            agent_finished=bool(r["agent_finished"]) if "agent_finished" in r.index else None,
-            eval_type=str(r["eval_type"]) if "eval_type" in r.index else None,
-            has_effective_action=bool(r["has_effective_action"]) if "has_effective_action" in r.index else None,
+            agent_finished=_safe_bool(r["agent_finished"]) if "agent_finished" in r.index else None,
+            eval_type=str(r["eval_type"]) if ("eval_type" in r.index and _pd.notna(r["eval_type"])) else None,
+            has_effective_action=_safe_bool(r["has_effective_action"]) if "has_effective_action" in r.index else None,
         ),
         axis=1,
     )
