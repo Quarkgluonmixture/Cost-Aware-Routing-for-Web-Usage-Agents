@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections import Counter
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -74,15 +75,38 @@ def aggregate_cell(baseline: str, site: str, mode: str, ep_dir: Path) -> dict[st
     fp_count = 0
     fp_breakdown: Counter[str] = Counter()
 
+    # F26 audit fix 2026-05-09: track rows missing `adjusted_success` so
+    # SR aggregation never silently substitutes raw success for the
+    # locked adjusted SR. Strict mode (env P79_STRICT=1) raises; default
+    # warns + counts in fp_breakdown.
+    n_missing_adjusted = 0
+    strict = os.environ.get("P79_STRICT", "").lower() in ("1", "true", "yes")
+
     for row in rows.values():
         raw = bool(row.get("success", False))
-        adjusted = bool(row.get("adjusted_success", row.get("success", False)))
+        if "adjusted_success" not in row or row.get("adjusted_success") is None:
+            n_missing_adjusted += 1
+            adjusted = raw  # legacy fallback, but flagged
+        else:
+            adjusted = bool(row["adjusted_success"])
         n_raw_success += int(raw)
         n_adjusted_success += int(adjusted)
         if raw and not adjusted:
             fp_count += 1
             reason = str(row.get("fp_reason") or "").strip() if "fp_reason" in row else ""
             fp_breakdown[reason or "unspecified"] += 1
+
+    if n_missing_adjusted > 0:
+        msg = (
+            f"[{baseline}/{site}/{mode}] {n_missing_adjusted}/{n_total} "
+            "rows missing `adjusted_success` field — fell back to raw success. "
+            "This violates preregistration §4 FP filter lock. "
+            "Set P79_STRICT=1 to fail-closed."
+        )
+        if strict:
+            raise RuntimeError(msg)
+        else:
+            print(f"WARNING: {msg}")
 
     return {
         "baseline": baseline,

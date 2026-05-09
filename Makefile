@@ -130,9 +130,12 @@ validate-strict:
 # preregistration.md §4 stopping rule (a). Exit non-zero on any failure.
 pre-launch-check:
 	@echo "=== Pre-launch invariant checks ==="
-	@echo "1. Git working tree clean..."
-	@git diff-index --quiet HEAD -- 2>/dev/null || (echo "❌ git working tree has uncommitted changes"; exit 1)
-	@echo "   ✓ clean"
+	@echo "1. Git working tree clean (incl. untracked)..."
+	@git diff-index --quiet HEAD -- 2>/dev/null || (echo "❌ git working tree has uncommitted tracked changes"; exit 1)
+	@# F38 audit fix 2026-05-09: also reject untracked files that could
+	@# affect a paper-grade run (config / scripts / cells lying around).
+	@test -z "$$(git status --porcelain --untracked-files=all)" || (echo "❌ untracked files present (run: git status --porcelain --untracked-files=all)"; exit 1)
+	@echo "   ✓ clean (no tracked diffs, no untracked files)"
 	@echo "2. VWA submodule SHA matches lock..."
 	@LOCK_SHA="832f037e2cc7ebda4a41831443a3fc9b79d06cd6"; \
 	 ACTUAL=$$(git -C external/visualwebarena rev-parse HEAD 2>/dev/null); \

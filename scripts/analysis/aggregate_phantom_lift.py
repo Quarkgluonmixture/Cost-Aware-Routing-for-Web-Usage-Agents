@@ -35,6 +35,7 @@ import argparse
 import csv
 import json
 import math
+import os
 import re
 import warnings
 from pathlib import Path
@@ -619,6 +620,21 @@ def main() -> int:
         holm = holm_bonferroni_adjust(ps)
         for r, p_h in zip(rows, holm):
             r[f"{axis_key}_holm"] = round(p_h, 6) if p_h is not None else None
+
+    # F02 audit fix 2026-05-09: refuse to clobber phantom_lift.csv with
+    # an empty result (would silently erase input to all paper figures).
+    # Set P79_ALLOW_EMPTY=1 only for explicit dry-runs.
+    if not rows:
+        msg = (
+            f"No paper-grade cells available (skipped: {skipped or 'none'}). "
+            "Refusing to write empty phantom_lift.csv. "
+            "Check `results/phantom_paper/run_manifest.yaml` and "
+            "`scripts/analysis/lib/run_registry.py` filters."
+        )
+        if os.environ.get("P79_ALLOW_EMPTY", "") in ("1", "true"):
+            print(f"WARNING (P79_ALLOW_EMPTY=1): {msg}")
+        else:
+            raise SystemExit(f"ERROR: {msg}")
 
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
