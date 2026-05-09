@@ -20,7 +20,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -36,6 +38,13 @@ PATTERNS = [
     ("traceback",    re.compile(r"^Traceback \(most recent call last\):", re.MULTILINE), 80),
     ("not_logged_in", re.compile(r"NOT[_ ]LOGGED[_ ]IN|auth_refresh.*(?:fail|error)|session.*expired", re.IGNORECASE), 75),
     ("watchdog_alert", re.compile(r"watchdog.*(?:ALERT|FAILURE|abort)", re.IGNORECASE), 70),
+    # Audit (G) 2026-05-09: P79-specific scaffold-bug patterns from
+    # master_bug_catalog.md (B-22 / B-81h / B-81i / F23) — these would
+    # otherwise hide as generic Tracebacks and not get prioritised.
+    ("magento_redirect_loop", re.compile(r"302.*?metis|Magento.*?302.*?redirect|base_url.*?cycle", re.IGNORECASE), 88),
+    ("cutlass_kernel_miss", re.compile(r"cutlassF: no kernel found|cutlass.*?launch.*?fail", re.IGNORECASE), 85),
+    ("nvrtc_arch", re.compile(r"nvrtc:.*?invalid value for --gpu-architecture|sm_121.*?(?:not|invalid)", re.IGNORECASE), 85),
+    ("fp_adjust_error", re.compile(r"fp_reason.*?adjustment_error|Failed to compute adjusted_success", re.IGNORECASE), 82),
     ("notify_fail",  re.compile(r"❌ P79 cron (?:fail|error)|cron failed", re.IGNORECASE), 60),
     ("timeout",      re.compile(r"TimeoutError|asyncio\.TimeoutError|read timed out", re.IGNORECASE), 55),
     ("http5xx",      re.compile(r"HTTPError.*5\d{2}|5\d{2} (?:Server Error|Bad Gateway|Service Unavailable)"), 50),
@@ -98,10 +107,114 @@ def scan_file(path: Path, cutoff: datetime) -> list[dict]:
     return hits
 
 
+# Audit (E) 2026-05-09: system-level health checks.
+DISK_FREE_GB_THRESHOLD = 50  # ntfy if repo partition has < 50 GB free
+TAILSCALE_FAIL_FILE = REPO / "logs" / "cron" / "tailscale_fail_count"
+DISK_FAIL_FILE = REPO / "logs" / "cron" / "disk_fail_count"
+NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "p79-exp-dgx-spark")
+
+
+def _push_ntfy(title: str, body: str, priority: str = "default") -> None:
+    """Local ntfy push (avoids importing watchdog module)."""
+    try:
+        import urllib.request as _ureq
+        _ureq.urlopen(_ureq.Request(
+            f"https://ntfy.sh/{NTFY_TOPIC}",
+            data=body.encode("utf-8"),
+            headers={"Title": title, "Priority": priority},
+        ), timeout=10).read()
+    except Exception:
+        pass
+
+
+def _check_disk() -> dict:
+    """Return {free_gb, total_gb, pct_free, alert}. ntfy if below threshold."""
+    import shutil
+    usage = shutil.disk_usage(REPO)
+    free_gb = usage.free / (1024 ** 3)
+    total_gb = usage.total / (1024 ** 3)
+    pct_free = 100.0 * usage.free / usage.total
+    alert = free_gb < DISK_FREE_GB_THRESHOLD
+    if alert:
+        try:
+            n_fail = int(DISK_FAIL_FILE.read_text().strip()) if DISK_FAIL_FILE.exists() else 0
+        except Exception:
+            n_fail = 0
+        n_fail += 1
+        try:
+            DISK_FAIL_FILE.write_text(str(n_fail))
+        except Exception:
+            pass
+        if n_fail >= 2:  # alert on 2 consecutive (5min × 2 = 10min) below
+            _push_ntfy(
+                "Disk free low",
+                f"Repo partition free={free_gb:.1f}GB / total={total_gb:.1f}GB "
+                f"({pct_free:.1f}%) — below {DISK_FREE_GB_THRESHOLD}GB threshold "
+                f"({n_fail} consecutive ticks). Prune logs/ artifacts/.",
+                priority="high",
+            )
+    elif DISK_FAIL_FILE.exists():
+        try:
+            DISK_FAIL_FILE.unlink()
+        except Exception:
+            pass
+    return {"free_gb": round(free_gb, 1), "total_gb": round(total_gb, 1),
+            "pct_free": round(pct_free, 1), "alert": alert}
+
+
+def _check_tailscale() -> dict:
+    """Return {status, peers_online, alert}. ntfy if tailscale appears down."""
+    try:
+        out = subprocess.run(
+            ["tailscale", "status", "--json"],
+            capture_output=True, text=True, timeout=8,
+        )
+        if out.returncode != 0:
+            return {"status": "unreachable", "peers_online": 0, "alert": True}
+        data = json.loads(out.stdout)
+        # BackendState 'Running' = OK; 'Stopped' / 'NoState' = down
+        backend = data.get("BackendState", "Unknown")
+        peers = data.get("Peer", {}) or {}
+        online = sum(1 for p in peers.values() if p.get("Online"))
+        alert = backend != "Running"
+        result = {"status": backend, "peers_online": online, "alert": alert}
+    except FileNotFoundError:
+        # tailscale CLI not installed — skip silently
+        return {"status": "tailscale_cli_absent", "peers_online": 0, "alert": False}
+    except Exception as e:
+        result = {"status": f"probe_error:{type(e).__name__}", "peers_online": 0, "alert": True}
+
+    if result["alert"]:
+        try:
+            n_fail = int(TAILSCALE_FAIL_FILE.read_text().strip()) if TAILSCALE_FAIL_FILE.exists() else 0
+        except Exception:
+            n_fail = 0
+        n_fail += 1
+        try:
+            TAILSCALE_FAIL_FILE.write_text(str(n_fail))
+        except Exception:
+            pass
+        if n_fail >= 3:  # 3 × 5min = 15min sustained
+            _push_ntfy(
+                "Tailscale state non-running",
+                f"BackendState={result['status']} peers_online={result['peers_online']} "
+                f"({n_fail} consecutive). Myriad SSH chain at risk.",
+                priority="high",
+            )
+    elif TAILSCALE_FAIL_FILE.exists():
+        try:
+            TAILSCALE_FAIL_FILE.unlink()
+        except Exception:
+            pass
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--hours", type=int, default=24, help="lookback window (default 24h)")
     parser.add_argument("--print", action="store_true", help="print JSON to stdout (default also writes to logs/cron/error_scan.json)")
+    parser.add_argument("--skip-system-checks", action="store_true",
+                        help="skip disk + tailscale probes (audit E)")
     args = parser.parse_args()
 
     cutoff = datetime.now(timezone.utc) - timedelta(hours=args.hours)
@@ -127,12 +240,23 @@ def main():
     # Re-sort by mtime desc for output (most recent first)
     all_hits.sort(key=lambda h: h["mtime"], reverse=True)
 
+    # Audit (E) 2026-05-09: system-level health probes. Run once per
+    # tick (5min cron); ntfy is rate-limited internally via consecutive-
+    # fail counters in _check_disk / _check_tailscale.
+    system_health = {}
+    if not args.skip_system_checks:
+        system_health = {
+            "disk": _check_disk(),
+            "tailscale": _check_tailscale(),
+        }
+
     payload = {
         "scanned_at": datetime.now(timezone.utc).isoformat(timespec="minutes"),
         "lookback_hours": args.hours,
         "n_files_scanned": len(candidates),
         "n_errors": len(all_hits),
         "errors": all_hits,
+        "system_health": system_health,
     }
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)

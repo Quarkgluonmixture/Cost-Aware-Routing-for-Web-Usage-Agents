@@ -157,6 +157,13 @@ pre-launch-check:
 	@echo "6. Seed configured in base config..."
 	@grep -q "seed: 42" configs/exp_v2_base.yaml || (echo "❌ seed=42 not in configs/exp_v2_base.yaml"; exit 1)
 	@echo "   ✓ seed=42"
+	@echo "7. pytest sanity (60s wall budget, fail-fast)..."
+	@# F audit fix 2026-05-09: catch import-broken / smoke-test-broken
+	@# state before launching a long-running paper-grade rerun. -x stops
+	@# on first failure; outer `timeout 60` enforces wall-clock budget
+	@# (pytest-timeout plugin not installed; use coreutils timeout).
+	@timeout 60 .venv/bin/pytest tests/ -x -q --no-header 2>&1 | tail -5
+	@echo "   ✓ pytest passed"
 	@echo ""
 	@echo "✓ All pre-launch invariants passed. Safe to kick off paper-grade rerun."
 

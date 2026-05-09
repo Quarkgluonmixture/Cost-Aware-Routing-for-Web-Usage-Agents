@@ -354,6 +354,31 @@ def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> 
         new_fm["finalized_at"] = datetime.now(timezone.utc).date().isoformat()
         new_fm.pop("pid", None)
         changed_fields.append("status→done")
+        # Audit (B) 2026-05-09: fire `make analysis FAST=1` in background
+        # when a cell flips active→done so paper figures stay synced
+        # with the latest paper-grade cell. Best-effort; never blocks
+        # cron tick. Log under logs/cron/post_finalize_analysis.log.
+        try:
+            repo_root = cell_path.resolve().parents[3]
+            log_path = repo_root / "logs" / "cron" / "post_finalize_analysis.log"
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            cell_id = cell_path.stem
+            with log_path.open("a") as _lf:
+                _lf.write(
+                    f"[{datetime.now(timezone.utc).isoformat()}] "
+                    f"trigger make analysis FAST=1 (cell {cell_id} done)\n"
+                )
+            subprocess.Popen(
+                ["nohup", "make", "-C", str(repo_root), "analysis", "FAST=1"],
+                stdout=log_path.open("a"),
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+            changed_fields.append("trigger:make-analysis-FAST")
+        except Exception as _e:
+            # Cron never blocks on best-effort hooks.
+            print(f"[autoupdate] make analysis trigger failed: {_e}",
+                  file=sys.stderr)
     elif episodes < expected_n and new_fm.get("status") == "pending":
         new_fm["status"] = "active"
         changed_fields.append("status→active")

@@ -19,10 +19,56 @@ import subprocess
 import sys
 import urllib.request
 from pathlib import Path
+from typing import Optional
 
 REPO = Path(__file__).resolve().parents[3]
 STATE_FILE = REPO / "logs" / "cron" / "myriad_state.json"
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "p79-exp-dgx-spark")
+
+# Audit (A) 2026-05-09: GONE_HOOKS dispatch — when a Myriad job
+# transitions to GONE (finished/killed), look up its name prefix here
+# and fire the auto_pull script. Each entry maps prefix → (remote_dir,
+# cell_md_path). Add new entries as cells get qsub'd; missing prefix
+# falls through to ntfy-only (no SCP).
+GONE_HOOKS: dict[str, tuple[str, str]] = {
+    # cellf forward × reddit strong (336423 already pulled manually)
+    "cellf_fwd_": (
+        "stage2b_cellf_fwd_reddit_strong_myriad",
+        "docs/checkpoints/_status/cells/cell_b1_red_stage2_cellf.md",
+    ),
+    # cellg reverse × reddit reverse-tier (336424 in flight)
+    "cellg_rev_": (
+        "stage2c_cellg_rev_reddit_reverse_myriad",
+        "docs/checkpoints/_status/cells/cell_b1_red_stage2_cellg.md",
+    ),
+    # 16-cell rerun cells: register here as launched. Pattern:
+    # "cellX_<descr>": ("<remote_subdir>", "<cell_md_relpath>"),
+}
+AUTO_PULL_SCRIPT = REPO / "scripts" / "maintenance" / "auto_pull_myriad_cell.sh"
+
+
+def _dispatch_gone_hook(jid: str, name: str) -> Optional[str]:
+    """If `name` matches a GONE_HOOKS prefix, fire auto_pull script
+    in background and return the matched prefix; else None.
+    """
+    for prefix, (remote_dir, cell_md) in GONE_HOOKS.items():
+        if name.startswith(prefix):
+            try:
+                subprocess.Popen(
+                    [
+                        "bash", str(AUTO_PULL_SCRIPT),
+                        jid, name, remote_dir, cell_md,
+                    ],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+                return prefix
+            except OSError as e:
+                print(f"[myriad_watcher] auto_pull dispatch failed for {jid}/{name}: {e}",
+                      file=sys.stderr)
+                return None
+    return None
 
 DGX_KEY = os.path.expanduser("~/.ssh/vwa_windows")
 QUARK_USER = "Quark"
@@ -134,6 +180,10 @@ def main() -> int:
 
     if events:
         body_lines = list(events)
+        # Audit (A) 2026-05-09: dispatch GONE_HOOKS auto_pull for
+        # finalized jobs. Append dispatched-prefix info to ntfy body so
+        # the user knows whether SCP+validate fired or just an alert.
+        dispatched = []
         for jid, info in old_state.items():
             if jid in new_state:
                 continue
@@ -144,6 +194,11 @@ def main() -> int:
             if err_tail and err_tail.strip():
                 snippet = err_tail.strip()[-500:]
                 body_lines.append(f"\n--- {jid}.err tail ---\n{snippet}")
+            hooked = _dispatch_gone_hook(jid, info.get("name", ""))
+            if hooked:
+                dispatched.append(f"{jid}/{info.get('name','?')} → auto_pull[{hooked}]")
+        if dispatched:
+            body_lines.append("\n--- auto_pull dispatched ---\n" + "\n".join(dispatched))
         push_ntfy("Myriad state change", "\n".join(body_lines))
 
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)

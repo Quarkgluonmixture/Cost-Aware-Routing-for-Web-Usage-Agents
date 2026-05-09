@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -368,9 +369,45 @@ def call_glm(context: str, section: str = "both") -> Optional[tuple[Optional[str
                   file=sys.stderr)
             if attempt < 2:
                 time.sleep(backoff)
+    # Audit (D) 2026-05-09: persist consecutive GLM-fail count and
+    # ntfy at 3 consecutive failures (mirrors F36 SSH chain pattern).
+    # File: logs/cron/glm_fail_count.json with {section: count}.
+    GLM_FAIL_FILE = REPO / "logs" / "cron" / "glm_fail_count.json"
+    try:
+        prev = json.loads(GLM_FAIL_FILE.read_text()) if GLM_FAIL_FILE.exists() else {}
+    except Exception:
+        prev = {}
     if raw is None:
-        print(f"⚠️  GLM call failed after 3 attempts: {last_err}", file=sys.stderr)
+        prev[section] = int(prev.get(section, 0)) + 1
+        try:
+            GLM_FAIL_FILE.parent.mkdir(parents=True, exist_ok=True)
+            GLM_FAIL_FILE.write_text(json.dumps(prev, indent=2))
+        except Exception:
+            pass
+        if prev[section] >= 3:
+            try:
+                import urllib.request as _ureq
+                ntfy_topic = os.environ.get("NTFY_TOPIC", "p79-exp-dgx-spark")
+                _ureq.urlopen(_ureq.Request(
+                    f"https://ntfy.sh/{ntfy_topic}",
+                    data=(
+                        f"GLM API failed {prev[section]}x consecutive (section={section}). "
+                        f"PLAYBOOK §1+§2 stale; check .auth/glm key + 智谱 quota."
+                    ).encode("utf-8"),
+                    headers={"Title": "GLM API down", "Priority": "high"},
+                ), timeout=10).read()
+            except Exception:
+                pass
+        print(f"⚠️  GLM call failed after 3 attempts: {last_err} "
+              f"(consecutive count: {prev[section]})", file=sys.stderr)
         return None
+    # Reset failure count on success.
+    if prev.get(section, 0) > 0:
+        prev[section] = 0
+        try:
+            GLM_FAIL_FILE.write_text(json.dumps(prev, indent=2))
+        except Exception:
+            pass
 
     s1_body, s2_body = None, None
     if section in ("1", "both"):

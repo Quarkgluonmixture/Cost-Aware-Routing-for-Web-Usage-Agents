@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# auto_pull_myriad_cell.sh — pulled by myriad_watcher.py GONE_HOOKS dispatch.
+#
+# Audit (A)+(C) 2026-05-09:
+#   When a Myriad job disappears from qstat (state went r → gone), the
+#   watcher cron looks up the job's name in GONE_HOOKS and fires this
+#   script to:
+#     1. SCP results from Myriad to DGX (via DGX → quark → Myriad chain)
+#     2. Run validate_run.py --strict if the cell has a paper-grade
+#        Phase 1 condition_summary_v2.json (paper hygiene gate)
+#     3. Update the matching _status/cells/cell_*.md frontmatter
+#     4. ntfy push with cell summary + validation verdict
+#
+# Usage (called by myriad_watcher only; not interactive):
+#   bash scripts/maintenance/auto_pull_myriad_cell.sh \
+#     <job_id> <job_name> <remote_dir_basename> [<cell_md_relpath>]
+#
+# Example invocation:
+#   bash scripts/maintenance/auto_pull_myriad_cell.sh \
+#     336424 cellg_rev_ stage2c_cellg_rev_reddit_reverse_myriad
+#
+# Env (override defaults):
+#   QUARK_KEY=~/.ssh/vwa_windows
+#   QUARK_HOST=Quark@100.95.81.103
+#   MYRIAD_USER=ucab352
+#   MYRIAD_REMOTE_BASE=/home/ucab352/Scratch/p79/results/mechanistic
+#   NTFY_TOPIC=p79-exp-dgx-spark
+#   P79_SKIP_ANALYSIS=1     skip make analysis trigger (B chain)
+#   P79_SKIP_VALIDATE=1     skip validate-strict (C chain)
+
+set -euo pipefail
+
+if [ "$#" -lt 3 ]; then
+    echo "Usage: $0 <job_id> <job_name> <remote_dir_basename> [<cell_md_relpath>]" >&2
+    exit 64
+fi
+
+JOB_ID="$1"
+JOB_NAME="$2"
+REMOTE_BASENAME="$3"
+CELL_MD="${4:-}"
+
+REPO="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$REPO"
+
+LOG="logs/cron/auto_pull_${JOB_ID}_$(date +%Y%m%d_%H%M%S).log"
+mkdir -p logs/cron
+exec > >(tee -a "$LOG") 2>&1
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] auto_pull_myriad_cell job=$JOB_ID name=$JOB_NAME remote=$REMOTE_BASENAME"
+
+QUARK_KEY="${QUARK_KEY:-$HOME/.ssh/vwa_windows}"
+QUARK_HOST="${QUARK_HOST:-Quark@100.95.81.103}"
+MYRIAD_USER="${MYRIAD_USER:-ucab352}"
+MYRIAD_REMOTE_BASE="${MYRIAD_REMOTE_BASE:-/home/ucab352/Scratch/p79/results/mechanistic}"
+NTFY_TOPIC="${NTFY_TOPIC:-p79-exp-dgx-spark}"
+LOCAL_DIR="$REPO/results/mechanistic/$REMOTE_BASENAME"
+
+mkdir -p "$LOCAL_DIR"
+
+push_ntfy() {
+    local title="$1"
+    local body="$2"
+    local prio="${3:-default}"
+    curl -sS --max-time 10 -d "$body" \
+        -H "Title: $title" -H "Priority: $prio" -H "Tags: gear" \
+        "https://ntfy.sh/$NTFY_TOPIC" >/dev/null 2>&1 || true
+}
+
+# Phase 1: SCP via SSH chain (cat | base64 because direct scp DGX→Myriad
+# doesn't go through Tailscale)
+echo "Phase 1: pulling artifacts via DGX → quark → Myriad chain"
+PULLED=0
+FAILED=()
+for FILE in env_snapshot.json patching_continuation_results.json \
+            pilot_summary.md run_manifest.json patching_continuation_curves.png \
+            condition_summary_v2.json; do
+    REMOTE_PATH="$MYRIAD_REMOTE_BASE/$REMOTE_BASENAME/$FILE"
+    LOCAL_PATH="$LOCAL_DIR/$FILE"
+    ssh -i "$QUARK_KEY" -o BatchMode=yes -o ConnectTimeout=30 "$QUARK_HOST" \
+        "ssh -i \$env:USERPROFILE\\.ssh\\id_rsa_myriad ${MYRIAD_USER}@myriad.rc.ucl.ac.uk \"cat $REMOTE_PATH 2>/dev/null | base64 -w0\"" \
+        2>/dev/null | tail -1 | base64 -d > "$LOCAL_PATH" 2>/dev/null || true
+    SIZE=$(stat -c%s "$LOCAL_PATH" 2>/dev/null || echo "0")
+    if [ "$SIZE" -gt 0 ]; then
+        echo "  $FILE → $SIZE bytes"
+        PULLED=$((PULLED + 1))
+    else
+        # Not all cells write all files; missing is OK if at least summary exists
+        rm -f "$LOCAL_PATH"
+        FAILED+=("$FILE")
+    fi
+done
+
+if [ "$PULLED" -eq 0 ]; then
+    push_ntfy "auto_pull FAIL: $JOB_NAME" \
+        "job=$JOB_ID remote=$REMOTE_BASENAME → 0 files pulled. SSH chain or remote path issue." \
+        "high"
+    echo "ERROR: 0 files pulled, abort"
+    exit 2
+fi
+
+# Phase 2: validate-strict gate (audit C)
+VALIDATE_VERDICT="skipped"
+if [ "${P79_SKIP_VALIDATE:-0}" != "1" ] && [ -f "$LOCAL_DIR/condition_summary_v2.json" ]; then
+    echo "Phase 2: validate-strict gate"
+    set +e
+    .venv/bin/python3 scripts/analysis/validate_run.py --run-dir "$LOCAL_DIR" --strict \
+        --output "$LOCAL_DIR/validation_report.json" 2>&1 | tail -10
+    VALIDATE_RC=$?
+    set -e
+    if [ "$VALIDATE_RC" -eq 0 ]; then
+        VALIDATE_VERDICT="✅ pass"
+    else
+        VALIDATE_VERDICT="❌ FAIL (quarantine)"
+    fi
+fi
+
+# Phase 3: cell frontmatter status update + analysis trigger (audit B)
+if [ -n "$CELL_MD" ] && [ -f "$REPO/$CELL_MD" ]; then
+    echo "Phase 3: updating cell note $CELL_MD"
+    if [[ "$VALIDATE_VERDICT" == *"FAIL"* ]]; then
+        # Add quarantined flag (manual review required before paper-grade promotion)
+        .venv/bin/python3 -c "
+import sys, yaml
+from pathlib import Path
+p = Path('$REPO/$CELL_MD')
+text = p.read_text()
+parts = text.split('---', 2)
+if len(parts) >= 3:
+    fm = yaml.safe_load(parts[1]) or {}
+    fm['status'] = 'quarantined'
+    fm['quarantine_reason'] = 'validate-strict failed post-pull'
+    fm['quarantine_at'] = '$(date -u +%Y-%m-%dT%H:%M:%SZ)'
+    body = parts[2]
+    new_fm = '\n'.join(f'{k}: {v!r}' if isinstance(v, str) and (':' in v or v == '') else f'{k}: {v}' for k, v in fm.items())
+    p.write_text('---\n' + new_fm + '\n---' + body)
+    print(f'Marked $CELL_MD quarantined')
+" 2>&1 || echo "  (cell md update failed, skip)"
+    fi
+fi
+
+# Phase 4: trigger make analysis (audit B chain)
+if [ "${P79_SKIP_ANALYSIS:-0}" != "1" ]; then
+    echo "Phase 4: trigger make analysis FAST=1 (background)"
+    nohup bash -c "cd '$REPO' && make analysis FAST=1 > logs/cron/post_pull_analysis_${JOB_ID}.log 2>&1" \
+        >/dev/null 2>&1 &
+    disown
+    echo "  triggered analysis pipeline in background"
+fi
+
+# Phase 5: notify
+SUMMARY_LINE=""
+if [ -f "$LOCAL_DIR/pilot_summary.md" ]; then
+    SUMMARY_LINE=$(grep -m1 "Best layer\|Holm\|p_Holm\|Significance" "$LOCAL_DIR/pilot_summary.md" 2>/dev/null | head -1 | tr '|' ' ' | cut -c-120)
+fi
+push_ntfy "Cell pulled: $JOB_NAME" \
+    "job=$JOB_ID files=$PULLED validate=$VALIDATE_VERDICT $SUMMARY_LINE" \
+    "default"
+
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] auto_pull DONE pulled=$PULLED validate=$VALIDATE_VERDICT"
+exit 0
