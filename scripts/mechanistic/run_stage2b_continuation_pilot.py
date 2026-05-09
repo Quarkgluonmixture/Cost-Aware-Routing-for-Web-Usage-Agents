@@ -188,6 +188,8 @@ def main():
 
     # C8 fix: seed all RNGs when random-inject is on, for paper-grade
     # reproducibility. Affects torch.randn_like in patching_grid_continuation.
+    # Default seed=42 means re-running with same data + code produces
+    # byte-identical noise + byte-identical patched outputs.
     if args.random_inject:
         import random as _rnd
         import numpy as _np
@@ -197,6 +199,11 @@ def main():
         _t.manual_seed(args.random_seed)
         if _t.cuda.is_available():
             _t.cuda.manual_seed_all(args.random_seed)
+        # Defense-in-depth visibility (防忘): log prominently + this seed
+        # value also flows to env_snapshot.json + pilot_summary.md (below).
+        print(f"\n{'=' * 60}\n[RANDOM-INJECT SEED] {args.random_seed} "
+              f"(reproducibility — see pilot_summary.md + env_snapshot.json)\n"
+              f"{'=' * 60}\n", flush=True)
         # Note: cell E (job 335404) is currently running with NO seed (commit
         # before this fix). That run is one valid realization; future paper-
         # grade re-runs will be byte-reproducible with --random-seed 42.
@@ -211,7 +218,19 @@ def main():
         from scripts.provenance.snapshot_env import capture_env_snapshot
         capture_env_snapshot(
             out_dir / "env_snapshot.json",
-            extra={"stage": "stage2b_curated", "reverse": args.reverse, "site": args.site},
+            extra={
+                "stage": "stage2b_curated",
+                "site": args.site,
+                "reverse": args.reverse,
+                "tier": args.tier or ("reverse" if args.reverse else "strong"),
+                "random_inject": args.random_inject,
+                "random_seed": args.random_seed,
+                "n_tasks_requested": args.n_tasks,
+                "step": args.step,
+                "max_new_tokens": args.max_new_tokens,
+                "source_mode": args.source_mode,
+                "target_mode": args.target_mode,
+            },
         )
     except Exception as e:
         logger.warning(f"Env snapshot failed (non-fatal): {e}")
@@ -369,7 +388,10 @@ def main():
 - Model: {args.model_path}
 - Site: {args.site}, N task: {len(per_task_results)} × step_{args.step:03d}
 - Source: `{args.source_mode}` (with image — clean) / Target: `{args.target_mode}` (no image — mirage)
-- max_new_tokens: {args.max_new_tokens} (greedy continuation)
+- Direction: {"reverse (target→source)" if args.reverse else "forward (source→target)"}
+- Tier: {args.tier or ("reverse" if args.reverse else "strong")}
+- max_new_tokens: {args.max_new_tokens} (greedy continuation, deterministic)
+- Random injection: {"YES, seed=" + str(args.random_seed) + " (paper-grade reproducible)" if args.random_inject else "NO (real source hidden injected)"}
 - Archived: {args.archived_run_dir}
 
 ## Result (per-layer mean across tasks)
