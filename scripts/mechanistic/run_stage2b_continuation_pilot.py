@@ -281,9 +281,15 @@ def main():
         ax.set_title(titles[m], fontsize=10)
         ax.grid(alpha=0.3)
         ax.legend(fontsize=8, loc="best")
+    if args.reverse:
+        direction_label = f"{args.target_mode}→{args.source_mode} (reverse)"
+    else:
+        direction_label = f"{args.source_mode}→{args.target_mode} (forward)"
+    tier_label = args.tier if args.tier else ("reverse" if args.reverse else "strong")
     fig.suptitle(
-        f"Stage 2B Continuation Activation Patching — {args.source_mode}→{args.target_mode} "
-        f"({args.site} N={len(per_task_results)} task × step_{args.step:03d}, max_new_tokens={args.max_new_tokens})",
+        f"Stage 2B Continuation Activation Patching — {direction_label} "
+        f"({args.site} N={len(per_task_results)} {tier_label}-tier task × step_{args.step:03d}, "
+        f"max_new_tokens={args.max_new_tokens})",
         fontsize=12,
     )
     fig.tight_layout()
