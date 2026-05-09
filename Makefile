@@ -117,6 +117,46 @@ validate:
 	@test -n "$(RUN)" || (echo "ERROR: RUN=<run_dir> required"; exit 1)
 	$(PYTHON) scripts/analysis/validate_run.py --run-dir $(RUN)
 
+# C10 audit gate: strict validation as required paper-grade promotion gate.
+# Exit code 0 = ✓ paper-grade (all 27 checks pass + warnings treated as failures),
+# 2 = strict-fail (warnings or failures present). Wire into queue scripts via:
+#   make validate-strict RUN=<run> || { echo 'NOT paper-grade'; exit 1; }
+validate-strict:
+	@test -n "$(RUN)" || (echo "ERROR: RUN=<run_dir> required"; exit 1)
+	$(PYTHON) scripts/analysis/validate_run.py --run-dir $(RUN) --strict --output $(RUN)/validation_report.json
+
+# C10/A5/F8/B7 pre-launch gate: verify version locks + git working tree clean +
+# pre-launch invariants before kicking off a paper-grade rerun. Required by
+# preregistration.md §4 stopping rule (a). Exit non-zero on any failure.
+pre-launch-check:
+	@echo "=== Pre-launch invariant checks ==="
+	@echo "1. Git working tree clean..."
+	@git diff-index --quiet HEAD -- 2>/dev/null || (echo "❌ git working tree has uncommitted changes"; exit 1)
+	@echo "   ✓ clean"
+	@echo "2. VWA submodule SHA matches lock..."
+	@LOCK_SHA="832f037e2cc7ebda4a41831443a3fc9b79d06cd6"; \
+	 ACTUAL=$$(git -C external/visualwebarena rev-parse HEAD 2>/dev/null); \
+	 test "$$ACTUAL" = "$$LOCK_SHA" || (echo "❌ VWA SHA mismatch: expected $$LOCK_SHA, got $$ACTUAL"; exit 1); \
+	 echo "   ✓ $$LOCK_SHA"
+	@echo "3. HF model snapshot exists..."
+	@HF_REV="ebb281ec70b05090aa6165b016eac8ec08e71b17"; \
+	 HF_DIR="$$HOME/.cache/huggingface/hub/models--Qwen--Qwen3-VL-4B-Instruct/snapshots/$$HF_REV"; \
+	 test -f "$$HF_DIR/config.json" || (echo "❌ HF model not at $$HF_DIR"; exit 1); \
+	 echo "   ✓ $$HF_REV"
+	@echo "4. Playwright version matches lock..."
+	@PW_VER=$$(.venv/bin/pip show playwright 2>/dev/null | grep ^Version: | awk '{print $$2}'); \
+	 test "$$PW_VER" = "1.58.0" || (echo "❌ Playwright version mismatch: expected 1.58.0, got $$PW_VER"; exit 1); \
+	 echo "   ✓ $$PW_VER"
+	@echo "5. Disk free > 20GB..."
+	@FREE_GB=$$(df --output=avail -BG . | tail -1 | tr -d 'G '); \
+	 test "$$FREE_GB" -ge 20 || (echo "❌ Disk free $${FREE_GB}GB < 20GB"; exit 1); \
+	 echo "   ✓ $$FREE_GB GB"
+	@echo "6. Seed configured in base config..."
+	@grep -q "seed: 42" configs/exp_v2_base.yaml || (echo "❌ seed=42 not in configs/exp_v2_base.yaml"; exit 1)
+	@echo "   ✓ seed=42"
+	@echo ""
+	@echo "✓ All pre-launch invariants passed. Safe to kick off paper-grade rerun."
+
 gallery:
 	@test -n "$(RUN)" || (echo "ERROR: RUN=<run_dir> required"; exit 1)
 	$(PYTHON) scripts/maintenance/generate_gallery.py --run-dir $(RUN)
