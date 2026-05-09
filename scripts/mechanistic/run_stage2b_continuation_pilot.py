@@ -294,13 +294,34 @@ def main():
         result["intent"] = intent
         per_task_results.append(result)
 
-        # Incremental save
+        # F18 audit fix 2026-05-09: include reverse / tier / random_inject /
+        # random_seed in incremental JSON so downstream stage2 stat scripts
+        # can reconstruct which causal/control cell produced these numbers.
+        # (Previously only env_snapshot.json carried these; analysis scripts
+        # consume the results JSON directly.)
+        # F19 audit fix 2026-05-09: source_mode/target_mode reported here
+        # are the role labels AFTER the reverse swap (i.e. what was actually
+        # patched into what), matching the per-task INFO log line above.
+        if args.reverse:
+            logged_source_mode = args.target_mode
+            logged_target_mode = args.source_mode
+        else:
+            logged_source_mode = args.source_mode
+            logged_target_mode = args.target_mode
+
         with (out_dir / "patching_continuation_results.json").open("w") as f:
             json.dump({
                 "config": {
                     "site": args.site, "n_tasks": args.n_tasks, "step": args.step,
                     "max_new_tokens": args.max_new_tokens,
-                    "source_mode": args.source_mode, "target_mode": args.target_mode,
+                    "source_mode": logged_source_mode,
+                    "target_mode": logged_target_mode,
+                    "source_mode_raw": args.source_mode,
+                    "target_mode_raw": args.target_mode,
+                    "reverse": args.reverse,
+                    "tier": args.tier or ("reverse" if args.reverse else "strong"),
+                    "random_inject": args.random_inject,
+                    "random_seed": args.random_seed,
                     "archived_run_dir": str(archived_dir),
                     "model_path": args.model_path,
                     "n_layers": patcher.n_layers,

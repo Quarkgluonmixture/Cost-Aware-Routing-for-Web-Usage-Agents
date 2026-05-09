@@ -164,6 +164,21 @@ pre-launch-check:
 	@# (pytest-timeout plugin not installed; use coreutils timeout).
 	@timeout 60 .venv/bin/pytest tests/ -x -q --no-header 2>&1 | tail -5
 	@echo "   ✓ pytest passed"
+	@echo "8. Manifest paper-grade cells present..."
+	@# Manifest grade promotion check (post-F01 prerequisite, see
+	@# docs/reference/launch_checklist.md §1). Warn if 0 paper-grade
+	@# cells in run_manifest.yaml — a paper-grade rerun cannot
+	@# produce figures without manifest entries. P79_ALLOW_NO_PAPER_GRADE=1
+	@# bypasses this check (e.g. for the very first cell of a rerun batch).
+	@N_PG=$$(.venv/bin/python3 -c "from scripts.analysis.lib.run_registry import get_all_cells; print(len(get_all_cells()))" 2>/dev/null || echo 0); \
+	 if [ "$$N_PG" = "0" ] && [ "$${P79_ALLOW_NO_PAPER_GRADE:-0}" != "1" ]; then \
+	   echo "❌ run_manifest.yaml has 0 paper-grade cells. Add an entry per launch_checklist.md §1 OR set P79_ALLOW_NO_PAPER_GRADE=1 to bypass."; \
+	   exit 1; \
+	 elif [ "$$N_PG" = "0" ]; then \
+	   echo "   ⚠️  0 paper-grade cells (bypassed via P79_ALLOW_NO_PAPER_GRADE=1)"; \
+	 else \
+	   echo "   ✓ $$N_PG paper-grade cell(s) registered"; \
+	 fi
 	@echo ""
 	@echo "✓ All pre-launch invariants passed. Safe to kick off paper-grade rerun."
 

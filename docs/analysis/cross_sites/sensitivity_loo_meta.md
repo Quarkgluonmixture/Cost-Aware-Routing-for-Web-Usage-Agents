@@ -25,9 +25,9 @@ Companion to `meta_phantom_lift.md`. For each pre-registered arm with k>=2 cells
 
 | Dropped cell | k remaining | θ_re (pp) | 95% CI | p (raw 1-sided) | p_Holm (m=3) | Pass at α=0.05 |
 |---|---:|---:|---|---:|---:|:---:|
-| (none — all cells) | 3 | +2.44 | [0.32, 4.56] | 0.0121 | 0.0121 | ✅ |
+| (none — all cells) | 3 | +2.44 | [0.32, 4.56] | 0.0121 | 0.0140 | ✅ |
 | B0 classifieds | 2 | +2.08 | [-0.77, 4.93] | 0.0765 | 0.0765 | ❌ |
-| B0 reddit | 2 | +1.91 | [-0.56, 4.39] | 0.0648 | 0.0648 | ❌ |
+| B0 reddit | 2 | +1.91 | [-0.56, 4.39] | 0.0648 | 0.0930 | ❌ |
 | B1 classifieds | 2 | +3.59 | [1.84, 5.35] | 0.0000 | 0.0001 | ✅ |
 
 **FRAGILE**: dropping ['B0 classifieds', 'B0 reddit'] flips Holm to non-significant. Per-cell influence is high.
@@ -38,18 +38,20 @@ Companion to `meta_phantom_lift.md`. For each pre-registered arm with k>=2 cells
 |---|---:|---:|---|---:|---:|:---:|
 | (none — all cells) | 3 | +2.34 | [1.30, 3.37] | 0.0000 | 0.0000 | ✅ |
 | B0 classifieds | 2 | +2.33 | [0.78, 3.88] | 0.0016 | 0.0031 | ✅ |
-| B0 reddit | 2 | +2.03 | [0.85, 3.22] | 0.0004 | 0.0008 | ✅ |
+| B0 reddit | 2 | +2.03 | [0.85, 3.22] | 0.0004 | 0.0011 | ✅ |
 | B1 classifieds | 2 | +2.91 | [1.47, 4.34] | 0.0000 | 0.0001 | ✅ |
 
 **Robust**: Holm decision unchanged under any single-cell removal.
 
-## Arm: P-prompt drop-in (k=1 cells, family=SECONDARY)
+## Arm: P-prompt drop-in (k=2 cells, family=SECONDARY)
 
 | Dropped cell | k remaining | θ_re (pp) | 95% CI | p (raw 1-sided) | p_Holm (m=3) | Pass at α=0.05 |
 |---|---:|---:|---|---:|---:|:---:|
-| (none — all cells) | 1 | +2.86 | [0.71, 5.00] | 0.0045 | 0.0090 | ✅ |
+| (none — all cells) | 2 | +1.88 | [0.38, 3.37] | 0.0070 | 0.0140 | ✅ |
+| B0 reddit | 1 | +1.28 | [-0.21, 2.78] | 0.0465 | 0.0930 | ❌ |
+| B1 classifieds | 1 | +2.86 | [0.71, 5.00] | 0.0045 | 0.0045 | ✅ |
 
-**Robust**: Holm decision unchanged under any single-cell removal.
+**FRAGILE**: dropping ['B0 reddit'] flips Holm to non-significant. Per-cell influence is high.
 
 ---
 

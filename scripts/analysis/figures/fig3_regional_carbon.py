@@ -33,22 +33,47 @@ COLORS = {
     "P-text": "#e45756",
     "Phantom-prompt": "#9467bd",
 }
-RUNS = {
-    "classifieds": {
-        "expected": 234,
-        "label": "Classifieds (N=234)",
-        "DOM": RESULTS / "B1_3mode_classifieds_20260413/phase1_dom_router_0/episodes",
-        "SoM": RESULTS / "B1_3mode_classifieds_20260413/phase1_som_router_0/episodes",
-        "Vision": RESULTS / "B1_3mode_classifieds_20260413/phase1_vision_router_0/episodes",
-    },
-    "reddit": {
-        "expected": 210,
-        "label": "Reddit (N=210)",
-        "DOM": RESULTS / "B1_3mode_reddit_20260413/phase1_dom_router_0/episodes",
-        "SoM": RESULTS / "B1_3mode_reddit_20260413/phase1_som_router_0/episodes",
-        "Vision": RESULTS / "B1_3mode_reddit_20260413/phase1_vision_router_0/episodes",
-    },
-}
+# F40 audit fix 2026-05-09: RUNS resolved via run_registry instead of
+# hardcoded archived run paths. Lazy at runtime so import doesn't fail
+# when paper-grade cells absent.
+import os as _os
+import sys as _sys
+_sys.path.insert(0, str(ROOT / "scripts/analysis"))
+from lib.run_registry import get_cells as _get_cells  # noqa: E402
+
+_SITE_LABELS = {"classifieds": "Classifieds (N=234)", "reddit": "Reddit (N=210)"}
+_SITE_N = {"classifieds": 234, "reddit": 210}
+
+
+def _resolve_runs(grade: list | None = None) -> dict:
+    """Map (site → {expected, label, DOM, SoM, Vision episodes}) using
+    run_registry. Raises RuntimeError if any required B1 cell missing.
+    """
+    out: dict[str, dict] = {}
+    missing: list[str] = []
+    if grade is None:
+        env_grade = _os.environ.get("P79_AGGREGATOR_GRADE", "")
+        grade = [g.strip() for g in env_grade.split(",") if g.strip()] or None
+    for site in ("classifieds", "reddit"):
+        site_entry = {"expected": _SITE_N[site], "label": _SITE_LABELS[site]}
+        for mode in ("DOM", "SoM", "Vision"):
+            cells = _get_cells(baseline="B1", site=site, mode=mode, grade=grade)
+            if not cells:
+                missing.append(f"B1 {site} {mode}")
+                continue
+            site_entry[mode] = cells[0].episodes_dir
+        out[site] = site_entry
+    if missing:
+        raise RuntimeError(
+            "fig3_regional_carbon: missing paper-grade cells "
+            f"{missing}. Update run_manifest.yaml or set "
+            "P79_AGGREGATOR_GRADE=archived for legacy sensitivity."
+        )
+    return out
+
+
+# Lazy module-level placeholder; populated by main() at runtime.
+RUNS: dict[str, dict] = {}
 DISPLAY_NAME = {
     "norway": "Norway",
     "france": "France",
@@ -185,6 +210,10 @@ def draw_site(ax: plt.Axes, site: str, items: list[tuple[str, float]], energies:
 
 
 def main() -> None:
+    # F40 audit 2026-05-09: resolve RUNS at runtime via run_registry.
+    global RUNS
+    RUNS = _resolve_runs()
+
     items = region_items()
     print(
         f"Loaded {len(REGION_INTENSITY_G_PER_KWH)} carbon-intensity entries "

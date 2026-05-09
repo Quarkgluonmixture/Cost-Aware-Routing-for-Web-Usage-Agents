@@ -60,11 +60,14 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 # Cell registry: (baseline, site, expected_N, run_paths_per_mode)
-def _build_cells() -> list[dict]:
+def _build_cells(grade_filter: list | None = None) -> list[dict]:
+    """Build aggregator cell list. F01 audit: respects grade_filter
+    (default = `paper-grade` only). Pass a list to override (e.g. for
+    legacy `archived` data in Appendix-D sensitivity figure)."""
     out: list[dict] = []
     for baseline in ("B0", "B1"):
         for site in ("classifieds", "reddit"):
-            specs = get_cells(baseline=baseline, site=site)
+            specs = get_cells(baseline=baseline, site=site, grade=grade_filter)
             if not specs:
                 continue
             out.append({
@@ -76,7 +79,12 @@ def _build_cells() -> list[dict]:
     return out
 
 
-CELLS = _build_cells()
+# F01 audit 2026-05-09: env override `P79_AGGREGATOR_GRADE` lets the
+# Appendix-D legacy sensitivity figure pull `archived` data while the
+# default `paper-grade` filter remains the paper-claim path.
+_GRADE_OVERRIDE = os.environ.get("P79_AGGREGATOR_GRADE", "")
+_GRADE_LIST = [g.strip() for g in _GRADE_OVERRIDE.split(",") if g.strip()] or None
+CELLS = _build_cells(_GRADE_LIST)
 
 MIN_EP_FOR_CELL = 50  # skip cells where any present mode has < 50 ep (too partial)
 
@@ -377,31 +385,71 @@ def analyze_cell(cell: dict) -> Optional[dict]:
     has_pdom = "P-text" in succ
     has_pprompt = "P-prompt" in succ
 
-    # Common observed universe (intersection across all present modes)
-    common = set.intersection(*obs.values())
+    # F07 audit fix 2026-05-09: per-comparison universe — each oracle
+    # contrast uses ONLY the arms it compares, not a global intersection
+    # across all present modes. Previously a partial P-prompt arm could
+    # shrink the 3-vs-5 denominator even though P-prompt is not in that
+    # estimand. Universes:
+    #   universe_psom_only:    obs(DOM, SoM, Vision, P-SoM)
+    #   universe_pdom_only:    obs(DOM, SoM, Vision, P-text)
+    #   universe_pprompt_only: obs(DOM, SoM, Vision, P-prompt)
+    #   universe_5:            obs(DOM, SoM, Vision, P-text, P-SoM)   ← 3-vs-5 denominator
+    #   universe_6:            obs(DOM, SoM, Vision, P-text, P-SoM, P-prompt)
+    # `n_common` reported in the CSV = |universe_5| if P-text present,
+    # else |universe_psom_only| (closest match to historical semantics).
+
+    def _universe(arms: list) -> set:
+        return set.intersection(*[obs[a] for a in arms if a in obs])
+
+    universe_psom_only = _universe(["DOM", "SoM", "Vision", "P-SoM"])
+    universe_pdom_only = _universe(["DOM", "SoM", "Vision", "P-text"]) if has_pdom else set()
+    universe_pprompt_only = _universe(["DOM", "SoM", "Vision", "P-prompt"]) if has_pprompt else set()
+    if has_pdom:
+        universe_5 = _universe(["DOM", "SoM", "Vision", "P-text", "P-SoM"])
+    else:
+        universe_5 = universe_psom_only
+    if has_pdom and has_pprompt:
+        universe_6 = _universe(["DOM", "SoM", "Vision", "P-text", "P-SoM", "P-prompt"])
+    else:
+        universe_6 = set()
+
+    common = universe_5 if has_pdom else universe_psom_only
     n = len(common)
     if n < MIN_EP_FOR_CELL:
         return None
 
-    # Restrict each mode's success set to common universe
+    # Restrict each mode's success set to its own comparison's universe
+    # at use site (not globally as before).
+    def _restrict_set(arms: list) -> tuple[set, dict]:
+        u = _universe(arms)
+        return u, {a: succ[a] & u for a in arms if a in succ}
+
+    # P-SoM only (3 → 4_psom)
+    u_psom, succ_r_psom = _restrict_set(["DOM", "SoM", "Vision", "P-SoM"])
+    union_3_psom_only = succ_r_psom["DOM"] | succ_r_psom["SoM"] | succ_r_psom["Vision"]
+    union_4_psom = union_3_psom_only | succ_r_psom["P-SoM"]
+    sr_3_psom_only = 100 * len(union_3_psom_only) / max(1, len(u_psom))
+    sr_4_psom = 100 * len(union_4_psom) / max(1, len(u_psom))
+    universe_psom = sorted(u_psom)
+    in_3_psom = np.array([t in union_3_psom_only for t in universe_psom], dtype=bool)
+    in_4_psom = np.array([t in union_4_psom for t in universe_psom], dtype=bool)
+
+    # CSV-reported sr_3 / union_3 use universe_5 (paper-grade primary
+    # denominator when P-text present; same as universe_psom otherwise).
     succ_r = {m: s & common for m, s in succ.items()}
-
-    # 3-mode + 4-mode (P-SoM alone). 4-mode P-text and 5-mode only when P-text present.
     union_3 = succ_r["DOM"] | succ_r["SoM"] | succ_r["Vision"]
-    union_4_psom = union_3 | succ_r["P-SoM"]
     sr_3 = 100 * len(union_3) / n
-    sr_4_psom = 100 * len(union_4_psom) / n
-
     universe = sorted(common)
+    # Backward-compat aliases for downstream 5-mode / H3 axis tests
+    # which use in_3 indexed against universe_5.
     in_3 = np.array([t in union_3 for t in universe], dtype=bool)
-    in_4_psom = np.array([t in union_4_psom for t in universe], dtype=bool)
 
-    # Single-P-SoM lift CI
-    ci_lo_psom, ci_hi_psom = bootstrap_lift_ci(in_3, in_4_psom)
-    h_4psom_vs_3 = cohen_h(sr_4_psom / 100, sr_3 / 100)
-    wstat_psom, wp_psom = wilcoxon_signed_rank(in_3, in_4_psom)
-    mc_p_psom = mcnemar_exact_one_sided(in_3, in_4_psom)
-    tost_p_psom = bootstrap_tost_p(in_3, in_4_psom)
+    # Single-P-SoM lift CI (uses P-SoM-specific universe per F07)
+    ci_lo_psom, ci_hi_psom = bootstrap_lift_ci(in_3_psom, in_4_psom)
+    h_4psom_vs_3 = cohen_h(sr_4_psom / 100, sr_3_psom_only / 100)
+    wstat_psom, wp_psom = wilcoxon_signed_rank(in_3_psom, in_4_psom)
+    mc_p_psom = mcnemar_exact_one_sided(in_3_psom, in_4_psom)
+    tost_p_psom = bootstrap_tost_p(in_3_psom, in_4_psom)
 
     psom_adds = succ_r["P-SoM"] - union_3
 
@@ -447,29 +495,51 @@ def analyze_cell(cell: dict) -> Optional[dict]:
 
     # P-prompt 4-mode lift + 6-mode oracle (when present)
     if has_pprompt:
-        union_4_pprompt = union_3 | succ_r["P-prompt"]
-        sr_4_pprompt = 100 * len(union_4_pprompt) / n
-        in_4_pprompt = np.array([t in union_4_pprompt for t in universe], dtype=bool)
-        ci_lo_pprompt, ci_hi_pprompt = bootstrap_lift_ci(in_3, in_4_pprompt)
-        h_4pprompt_vs_3 = cohen_h(sr_4_pprompt / 100, sr_3 / 100)
-        wstat_pprompt, wp_pprompt = wilcoxon_signed_rank(in_3, in_4_pprompt)
-        mc_p_pprompt = mcnemar_exact_one_sided(in_3, in_4_pprompt)
-        tost_p_pprompt = bootstrap_tost_p(in_3, in_4_pprompt)
+        # F07 audit fix 2026-05-09: P-prompt-only comparison uses
+        # universe_pprompt_only (DOM ∩ SoM ∩ Vision ∩ P-prompt), NOT the
+        # 5-mode universe — otherwise the denominator drops by tasks
+        # missing in P-text/P-SoM that have nothing to do with this arm.
+        u_pprompt, succ_r_pprompt = _restrict_set(["DOM", "SoM", "Vision", "P-prompt"])
+        union_3_pprompt_only = succ_r_pprompt["DOM"] | succ_r_pprompt["SoM"] | succ_r_pprompt["Vision"]
+        union_4_pprompt = union_3_pprompt_only | succ_r_pprompt["P-prompt"]
+        sr_3_pprompt_only = 100 * len(union_3_pprompt_only) / max(1, len(u_pprompt))
+        sr_4_pprompt = 100 * len(union_4_pprompt) / max(1, len(u_pprompt))
+        u_pprompt_sorted = sorted(u_pprompt)
+        in_3_pprompt = np.array([t in union_3_pprompt_only for t in u_pprompt_sorted], dtype=bool)
+        in_4_pprompt = np.array([t in union_4_pprompt for t in u_pprompt_sorted], dtype=bool)
+        ci_lo_pprompt, ci_hi_pprompt = bootstrap_lift_ci(in_3_pprompt, in_4_pprompt)
+        h_4pprompt_vs_3 = cohen_h(sr_4_pprompt / 100, sr_3_pprompt_only / 100)
+        wstat_pprompt, wp_pprompt = wilcoxon_signed_rank(in_3_pprompt, in_4_pprompt)
+        mc_p_pprompt = mcnemar_exact_one_sided(in_3_pprompt, in_4_pprompt)
+        tost_p_pprompt = bootstrap_tost_p(in_3_pprompt, in_4_pprompt)
         pprompt_adds = succ_r["P-prompt"] - union_3
         if has_pdom:
-            union_6 = union_5 | succ_r["P-prompt"]
-            sr_6 = 100 * len(union_6) / n
-            in_6 = np.array([t in union_6 for t in universe], dtype=bool)
-            ci_lo_6, ci_hi_6 = bootstrap_lift_ci(in_3, in_6)
-            ci_lo_6v5, ci_hi_6v5 = bootstrap_lift_ci(in_5, in_6)
-            h_6_vs_3 = cohen_h(sr_6 / 100, sr_3 / 100)
-            h_6_vs_5 = cohen_h(sr_6 / 100, sr_5 / 100)
-            _, wp_6 = wilcoxon_signed_rank(in_3, in_6)
-            _, wp_6v5 = wilcoxon_signed_rank(in_5, in_6)
-            mc_p_6 = mcnemar_exact_one_sided(in_3, in_6)
-            mc_p_6v5 = mcnemar_exact_one_sided(in_5, in_6)
-            tost_p_6 = bootstrap_tost_p(in_3, in_6)
-            tost_p_6v5 = bootstrap_tost_p(in_5, in_6)
+            # F07 audit fix 2026-05-09: 6-mode oracle and 6-vs-5
+            # incremental tests must use universe_6 (DOM ∩ SoM ∩
+            # Vision ∩ P-text ∩ P-SoM ∩ P-prompt). Previously used
+            # universe_5 which can include tasks where P-prompt was
+            # not observed → treats missing as failed.
+            u6_sorted = sorted(universe_6)
+            succ_r_u6 = {m: s & universe_6 for m, s in succ.items()}
+            union_3_u6 = succ_r_u6["DOM"] | succ_r_u6["SoM"] | succ_r_u6["Vision"]
+            union_5_u6 = union_3_u6 | succ_r_u6["P-text"] | succ_r_u6["P-SoM"]
+            union_6 = union_5_u6 | succ_r_u6["P-prompt"]
+            sr_3_u6 = 100 * len(union_3_u6) / max(1, len(universe_6))
+            sr_5_u6 = 100 * len(union_5_u6) / max(1, len(universe_6))
+            sr_6 = 100 * len(union_6) / max(1, len(universe_6))
+            in_3_u6 = np.array([t in union_3_u6 for t in u6_sorted], dtype=bool)
+            in_5_u6 = np.array([t in union_5_u6 for t in u6_sorted], dtype=bool)
+            in_6 = np.array([t in union_6 for t in u6_sorted], dtype=bool)
+            ci_lo_6, ci_hi_6 = bootstrap_lift_ci(in_3_u6, in_6)
+            ci_lo_6v5, ci_hi_6v5 = bootstrap_lift_ci(in_5_u6, in_6)
+            h_6_vs_3 = cohen_h(sr_6 / 100, sr_3_u6 / 100)
+            h_6_vs_5 = cohen_h(sr_6 / 100, sr_5_u6 / 100)
+            _, wp_6 = wilcoxon_signed_rank(in_3_u6, in_6)
+            _, wp_6v5 = wilcoxon_signed_rank(in_5_u6, in_6)
+            mc_p_6 = mcnemar_exact_one_sided(in_3_u6, in_6)
+            mc_p_6v5 = mcnemar_exact_one_sided(in_5_u6, in_6)
+            tost_p_6 = bootstrap_tost_p(in_3_u6, in_6)
+            tost_p_6v5 = bootstrap_tost_p(in_5_u6, in_6)
         else:
             sr_6 = None
             ci_lo_6 = ci_hi_6 = ci_lo_6v5 = ci_hi_6v5 = None
