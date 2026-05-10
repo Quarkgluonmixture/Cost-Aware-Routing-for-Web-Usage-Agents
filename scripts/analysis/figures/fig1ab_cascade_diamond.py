@@ -218,7 +218,28 @@ def main() -> None:
     # F40 audit fix 2026-05-09: STEP_DIRS resolved lazily here at runtime
     # rather than import-time so the module can be imported without
     # paper-grade cells being present.
-    step_dirs = _resolve_step_dirs()
+    # 2026-05-10: support P79_AGGREGATOR_GRADE env override (matches
+    # fig_phantom_structure_venn / fig0c_drop_one_oracle pattern) so
+    # `make figures` doesn't crash when manifest has only archived cells.
+    import os as _os
+    _grade_override = _os.environ.get("P79_AGGREGATOR_GRADE")
+    _grade = [_grade_override] if _grade_override else None
+    try:
+        step_dirs = _resolve_step_dirs(grade=_grade)
+    except RuntimeError as e:
+        # Fail-soft placeholder: emit a "data pending" PNG instead of crashing
+        # the whole `make figures` chain when paper-grade cells are absent.
+        plt.close("all")
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.text(0.5, 0.5, f"fig1ab_cascade_diamond\n\n[data pending]\n\n{str(e)[:200]}",
+                ha="center", va="center", fontsize=10, color="gray")
+        ax.set_axis_off()
+        out_path = ROOT / "results/phantom_paper/figures/fig1ab_cascade_diamond.png"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(out_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        print(f"[fig1ab_cascade_diamond] placeholder written → {out_path} (no paper-grade cells; set P79_AGGREGATOR_GRADE=archived to override)")
+        return
     metrics = {
         site: {mode: mode_metrics(site, ep_dir) for mode, ep_dir in modes.items()}
         for site, modes in step_dirs.items()

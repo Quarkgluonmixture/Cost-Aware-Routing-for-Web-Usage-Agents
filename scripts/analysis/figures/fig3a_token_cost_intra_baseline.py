@@ -179,7 +179,20 @@ def draw_panel(ax: plt.Axes, baseline: str, site: str, cells: list[Cell]) -> Non
 def main() -> None:
     cells = [c for c in (load_cell(b, s, m, sub, n) for b, s, m, sub, n in SPECS) if c is not None]
     if not cells:
-        sys.exit("no cells loaded")
+        # 2026-05-10: fail-soft placeholder so make figures chain doesn't crash
+        # when no cells loaded (typical when source aggregator outputs empty
+        # post-F01 manifest grade chain).
+        from pathlib import Path
+        out = Path(__file__).resolve().parents[3] / "results/phantom_paper/figures/fig3a_token_cost_intra_baseline.png"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.text(0.5, 0.5, "fig3a_token_cost_intra_baseline\n\n[data pending]\n\nno cells loaded — run aggregators first",
+                ha="center", va="center", fontsize=11, color="gray")
+        ax.set_axis_off()
+        fig.savefig(out, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        print(f"[fig3a] placeholder written → {out}")
+        return
 
     plt.rcParams.update({"font.size": 9.5, "figure.dpi": 150})
     fig, axes = plt.subplots(1, 4, figsize=(22, 6))

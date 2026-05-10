@@ -189,7 +189,18 @@ def main() -> None:
     cost_table = load_cost_per_mode()
     points = [p for spec in SPECS if (p := load_point(spec, cost_table)) is not None]
     if not points:
-        sys.exit("no points loaded")
+        # 2026-05-10: fail-soft placeholder so make figures chain doesn't crash
+        from pathlib import Path
+        out = Path(__file__).resolve().parents[3] / "results/phantom_paper/figures/fig3d_cost_sr_frontier.png"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.text(0.5, 0.5, "fig3d_cost_sr_frontier\n\n[data pending]\n\nno cost+SR points loaded",
+                ha="center", va="center", fontsize=11, color="gray")
+        ax.set_axis_off()
+        fig.savefig(out, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        print(f"[fig3d] placeholder written → {out}")
+        return
 
     plt.rcParams.update({"font.size": 10, "figure.dpi": 150})
     fig, axes = plt.subplots(1, 2, figsize=(13.5, 6.0), sharey=False)
