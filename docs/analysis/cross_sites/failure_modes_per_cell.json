@@ -1,0 +1,675 @@
+{
+  "method": "fine-grained reason_bucket \u2192 5-bucket paper taxonomy (taxonomy doc: docs/analysis/phantom_paper/phantom_dom_vs_som_diagnostic.md \u00a74)",
+  "paper_taxonomy": {
+    "early-finish/wrong-commit": [
+      "fail_early_finish",
+      "fail_finish_claim_missing",
+      "fail_finish_empty_answer",
+      "fail_finish_eval_mismatch",
+      "fail_finish_wrong_url_left_target",
+      "fail_finish_wrong_url_not_found",
+      "fail_finish_wrong_url_price_mismatch"
+    ],
+    "search-loop": [
+      "fail_max_steps_search_repeat"
+    ],
+    "visual-hijack/click-loop": [
+      "fail_max_steps_click_back_loop"
+    ],
+    "element-misground": [
+      "fail_max_steps_target_unreachable"
+    ],
+    "missing-context": [
+      "fail_incomplete_or_stuck",
+      "fail_no_progress"
+    ],
+    "max-steps-other": [
+      "fail_max_steps"
+    ],
+    "error/noise": [
+      "fail_benchmark_noise",
+      "fail_env_error",
+      "fail_parse_error",
+      "fail_summary_error"
+    ]
+  },
+  "unmapped_fine_buckets": {},
+  "cells": {
+    "B0/classifieds/DOM": {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "DOM",
+      "total_episodes": 234,
+      "success_count": 35,
+      "failed_count": 199,
+      "buckets": {
+        "missing-context": {
+          "count": 69,
+          "pct_of_failed": 34.67336683417086,
+          "pct_of_total": 29.48717948717949
+        },
+        "early-finish/wrong-commit": {
+          "count": 100,
+          "pct_of_failed": 50.25125628140703,
+          "pct_of_total": 42.73504273504273
+        },
+        "element-misground": {
+          "count": 14,
+          "pct_of_failed": 7.035175879396985,
+          "pct_of_total": 5.982905982905983
+        },
+        "visual-hijack/click-loop": {
+          "count": 11,
+          "pct_of_failed": 5.527638190954774,
+          "pct_of_total": 4.700854700854701
+        },
+        "search-loop": {
+          "count": 3,
+          "pct_of_failed": 1.507537688442211,
+          "pct_of_total": 1.282051282051282
+        },
+        "max-steps-other": {
+          "count": 2,
+          "pct_of_failed": 1.0050251256281406,
+          "pct_of_total": 0.8547008547008548
+        }
+      },
+      "source_runs": [
+        "B0_3mode_classifieds_20260413"
+      ]
+    },
+    "B0/classifieds/P-SoM": {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "P-SoM",
+      "total_episodes": 234,
+      "success_count": 37,
+      "failed_count": 197,
+      "buckets": {
+        "missing-context": {
+          "count": 69,
+          "pct_of_failed": 35.025380710659896,
+          "pct_of_total": 29.48717948717949
+        },
+        "early-finish/wrong-commit": {
+          "count": 89,
+          "pct_of_failed": 45.17766497461929,
+          "pct_of_total": 38.034188034188034
+        },
+        "search-loop": {
+          "count": 19,
+          "pct_of_failed": 9.644670050761421,
+          "pct_of_total": 8.11965811965812
+        },
+        "visual-hijack/click-loop": {
+          "count": 15,
+          "pct_of_failed": 7.614213197969544,
+          "pct_of_total": 6.41025641025641
+        },
+        "max-steps-other": {
+          "count": 5,
+          "pct_of_failed": 2.5380710659898478,
+          "pct_of_total": 2.1367521367521367
+        }
+      },
+      "source_runs": [
+        "B0_phantom_som_classifieds_20260426"
+      ]
+    },
+    "B0/classifieds/SoM": {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "SoM",
+      "total_episodes": 234,
+      "success_count": 54,
+      "failed_count": 180,
+      "buckets": {
+        "early-finish/wrong-commit": {
+          "count": 135,
+          "pct_of_failed": 75.0,
+          "pct_of_total": 57.692307692307686
+        },
+        "missing-context": {
+          "count": 21,
+          "pct_of_failed": 11.666666666666666,
+          "pct_of_total": 8.974358974358974
+        },
+        "element-misground": {
+          "count": 15,
+          "pct_of_failed": 8.333333333333332,
+          "pct_of_total": 6.41025641025641
+        },
+        "max-steps-other": {
+          "count": 5,
+          "pct_of_failed": 2.7777777777777777,
+          "pct_of_total": 2.1367521367521367
+        },
+        "visual-hijack/click-loop": {
+          "count": 4,
+          "pct_of_failed": 2.2222222222222223,
+          "pct_of_total": 1.7094017094017095
+        }
+      },
+      "source_runs": [
+        "B0_3mode_classifieds_20260413"
+      ]
+    },
+    "B0/classifieds/Vision": {
+      "baseline": "B0",
+      "site": "classifieds",
+      "mode": "Vision",
+      "total_episodes": 234,
+      "success_count": 37,
+      "failed_count": 197,
+      "buckets": {
+        "missing-context": {
+          "count": 114,
+          "pct_of_failed": 57.868020304568525,
+          "pct_of_total": 48.717948717948715
+        },
+        "early-finish/wrong-commit": {
+          "count": 74,
+          "pct_of_failed": 37.56345177664975,
+          "pct_of_total": 31.62393162393162
+        },
+        "element-misground": {
+          "count": 5,
+          "pct_of_failed": 2.5380710659898478,
+          "pct_of_total": 2.1367521367521367
+        },
+        "max-steps-other": {
+          "count": 3,
+          "pct_of_failed": 1.5228426395939088,
+          "pct_of_total": 1.282051282051282
+        },
+        "search-loop": {
+          "count": 1,
+          "pct_of_failed": 0.5076142131979695,
+          "pct_of_total": 0.4273504273504274
+        }
+      },
+      "source_runs": [
+        "B0_3mode_classifieds_20260413"
+      ]
+    },
+    "B0/reddit/DOM": {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "DOM",
+      "total_episodes": 210,
+      "success_count": 24,
+      "failed_count": 186,
+      "buckets": {
+        "early-finish/wrong-commit": {
+          "count": 86,
+          "pct_of_failed": 46.236559139784944,
+          "pct_of_total": 40.95238095238095
+        },
+        "missing-context": {
+          "count": 62,
+          "pct_of_failed": 33.33333333333333,
+          "pct_of_total": 29.523809523809526
+        },
+        "search-loop": {
+          "count": 29,
+          "pct_of_failed": 15.591397849462366,
+          "pct_of_total": 13.80952380952381
+        },
+        "visual-hijack/click-loop": {
+          "count": 9,
+          "pct_of_failed": 4.838709677419355,
+          "pct_of_total": 4.285714285714286
+        }
+      },
+      "source_runs": [
+        "B0_3mode_reddit_20260422"
+      ]
+    },
+    "B0/reddit/P-SoM": {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-SoM",
+      "total_episodes": 210,
+      "success_count": 30,
+      "failed_count": 180,
+      "buckets": {
+        "missing-context": {
+          "count": 88,
+          "pct_of_failed": 48.888888888888886,
+          "pct_of_total": 41.904761904761905
+        },
+        "early-finish/wrong-commit": {
+          "count": 67,
+          "pct_of_failed": 37.22222222222222,
+          "pct_of_total": 31.9047619047619
+        },
+        "search-loop": {
+          "count": 17,
+          "pct_of_failed": 9.444444444444445,
+          "pct_of_total": 8.095238095238095
+        },
+        "visual-hijack/click-loop": {
+          "count": 7,
+          "pct_of_failed": 3.888888888888889,
+          "pct_of_total": 3.3333333333333335
+        },
+        "max-steps-other": {
+          "count": 1,
+          "pct_of_failed": 0.5555555555555556,
+          "pct_of_total": 0.4761904761904762
+        }
+      },
+      "source_runs": [
+        "B0_phantom_som_reddit_20260428"
+      ]
+    },
+    "B0/reddit/P-prompt": {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "P-prompt",
+      "total_episodes": 210,
+      "success_count": 22,
+      "failed_count": 188,
+      "buckets": {
+        "missing-context": {
+          "count": 63,
+          "pct_of_failed": 33.51063829787234,
+          "pct_of_total": 30.0
+        },
+        "early-finish/wrong-commit": {
+          "count": 89,
+          "pct_of_failed": 47.340425531914896,
+          "pct_of_total": 42.38095238095238
+        },
+        "search-loop": {
+          "count": 18,
+          "pct_of_failed": 9.574468085106384,
+          "pct_of_total": 8.571428571428571
+        },
+        "visual-hijack/click-loop": {
+          "count": 15,
+          "pct_of_failed": 7.9787234042553195,
+          "pct_of_total": 7.142857142857142
+        },
+        "max-steps-other": {
+          "count": 3,
+          "pct_of_failed": 1.5957446808510638,
+          "pct_of_total": 1.4285714285714286
+        }
+      },
+      "source_runs": [
+        "B0_phantom_prompt_reddit_20260429"
+      ]
+    },
+    "B0/reddit/SoM": {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "SoM",
+      "total_episodes": 210,
+      "success_count": 25,
+      "failed_count": 185,
+      "buckets": {
+        "missing-context": {
+          "count": 73,
+          "pct_of_failed": 39.45945945945946,
+          "pct_of_total": 34.76190476190476
+        },
+        "early-finish/wrong-commit": {
+          "count": 93,
+          "pct_of_failed": 50.27027027027027,
+          "pct_of_total": 44.285714285714285
+        },
+        "visual-hijack/click-loop": {
+          "count": 10,
+          "pct_of_failed": 5.405405405405405,
+          "pct_of_total": 4.761904761904762
+        },
+        "search-loop": {
+          "count": 8,
+          "pct_of_failed": 4.324324324324325,
+          "pct_of_total": 3.8095238095238098
+        },
+        "max-steps-other": {
+          "count": 1,
+          "pct_of_failed": 0.5405405405405406,
+          "pct_of_total": 0.4761904761904762
+        }
+      },
+      "source_runs": [
+        "B0_3mode_reddit_20260422"
+      ]
+    },
+    "B0/reddit/Vision": {
+      "baseline": "B0",
+      "site": "reddit",
+      "mode": "Vision",
+      "total_episodes": 210,
+      "success_count": 18,
+      "failed_count": 192,
+      "buckets": {
+        "missing-context": {
+          "count": 111,
+          "pct_of_failed": 57.8125,
+          "pct_of_total": 52.85714285714286
+        },
+        "early-finish/wrong-commit": {
+          "count": 80,
+          "pct_of_failed": 41.66666666666667,
+          "pct_of_total": 38.095238095238095
+        },
+        "search-loop": {
+          "count": 1,
+          "pct_of_failed": 0.5208333333333333,
+          "pct_of_total": 0.4761904761904762
+        }
+      },
+      "source_runs": [
+        "B0_3mode_reddit_20260422"
+      ]
+    },
+    "B0/shopping/DOM": {
+      "baseline": "B0",
+      "site": "shopping",
+      "mode": "DOM",
+      "total_episodes": 465,
+      "success_count": 77,
+      "failed_count": 388,
+      "buckets": {
+        "missing-context": {
+          "count": 194,
+          "pct_of_failed": 50.0,
+          "pct_of_total": 41.72043010752688
+        },
+        "early-finish/wrong-commit": {
+          "count": 169,
+          "pct_of_failed": 43.55670103092783,
+          "pct_of_total": 36.344086021505376
+        },
+        "search-loop": {
+          "count": 11,
+          "pct_of_failed": 2.8350515463917527,
+          "pct_of_total": 2.3655913978494625
+        },
+        "visual-hijack/click-loop": {
+          "count": 7,
+          "pct_of_failed": 1.804123711340206,
+          "pct_of_total": 1.5053763440860215
+        },
+        "max-steps-other": {
+          "count": 7,
+          "pct_of_failed": 1.804123711340206,
+          "pct_of_total": 1.5053763440860215
+        }
+      },
+      "source_runs": [
+        "B0_dom_shopping_20260428"
+      ]
+    },
+    "B1/classifieds/DOM": {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "DOM",
+      "total_episodes": 234,
+      "success_count": 26,
+      "failed_count": 208,
+      "buckets": {
+        "missing-context": {
+          "count": 91,
+          "pct_of_failed": 43.75,
+          "pct_of_total": 38.88888888888889
+        },
+        "element-misground": {
+          "count": 27,
+          "pct_of_failed": 12.980769230769232,
+          "pct_of_total": 11.538461538461538
+        },
+        "early-finish/wrong-commit": {
+          "count": 72,
+          "pct_of_failed": 34.61538461538461,
+          "pct_of_total": 30.76923076923077
+        },
+        "visual-hijack/click-loop": {
+          "count": 11,
+          "pct_of_failed": 5.288461538461538,
+          "pct_of_total": 4.700854700854701
+        },
+        "search-loop": {
+          "count": 7,
+          "pct_of_failed": 3.3653846153846154,
+          "pct_of_total": 2.9914529914529915
+        }
+      },
+      "source_runs": [
+        "B1_3mode_classifieds_20260413"
+      ]
+    },
+    "B1/classifieds/P-SoM": {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "P-SoM",
+      "total_episodes": 230,
+      "success_count": 24,
+      "failed_count": 206,
+      "buckets": {
+        "missing-context": {
+          "count": 112,
+          "pct_of_failed": 54.36893203883495,
+          "pct_of_total": 48.69565217391305
+        },
+        "visual-hijack/click-loop": {
+          "count": 21,
+          "pct_of_failed": 10.194174757281553,
+          "pct_of_total": 9.130434782608695
+        },
+        "early-finish/wrong-commit": {
+          "count": 59,
+          "pct_of_failed": 28.640776699029125,
+          "pct_of_total": 25.65217391304348
+        },
+        "search-loop": {
+          "count": 11,
+          "pct_of_failed": 5.339805825242718,
+          "pct_of_total": 4.782608695652174
+        },
+        "max-steps-other": {
+          "count": 3,
+          "pct_of_failed": 1.4563106796116505,
+          "pct_of_total": 1.3043478260869565
+        }
+      },
+      "source_runs": [
+        "B1_phantom_som_classifieds_20260428"
+      ]
+    },
+    "B1/classifieds/SoM": {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "SoM",
+      "total_episodes": 234,
+      "success_count": 41,
+      "failed_count": 193,
+      "buckets": {
+        "missing-context": {
+          "count": 92,
+          "pct_of_failed": 47.66839378238342,
+          "pct_of_total": 39.31623931623932
+        },
+        "early-finish/wrong-commit": {
+          "count": 75,
+          "pct_of_failed": 38.860103626943,
+          "pct_of_total": 32.05128205128205
+        },
+        "element-misground": {
+          "count": 18,
+          "pct_of_failed": 9.32642487046632,
+          "pct_of_total": 7.6923076923076925
+        },
+        "visual-hijack/click-loop": {
+          "count": 5,
+          "pct_of_failed": 2.5906735751295336,
+          "pct_of_total": 2.1367521367521367
+        },
+        "max-steps-other": {
+          "count": 2,
+          "pct_of_failed": 1.0362694300518136,
+          "pct_of_total": 0.8547008547008548
+        },
+        "search-loop": {
+          "count": 1,
+          "pct_of_failed": 0.5181347150259068,
+          "pct_of_total": 0.4273504273504274
+        }
+      },
+      "source_runs": [
+        "B1_3mode_classifieds_20260413"
+      ]
+    },
+    "B1/classifieds/Vision": {
+      "baseline": "B1",
+      "site": "classifieds",
+      "mode": "Vision",
+      "total_episodes": 234,
+      "success_count": 26,
+      "failed_count": 208,
+      "buckets": {
+        "missing-context": {
+          "count": 152,
+          "pct_of_failed": 73.07692307692307,
+          "pct_of_total": 64.95726495726495
+        },
+        "early-finish/wrong-commit": {
+          "count": 52,
+          "pct_of_failed": 25.0,
+          "pct_of_total": 22.22222222222222
+        },
+        "element-misground": {
+          "count": 3,
+          "pct_of_failed": 1.4423076923076923,
+          "pct_of_total": 1.282051282051282
+        },
+        "visual-hijack/click-loop": {
+          "count": 1,
+          "pct_of_failed": 0.4807692307692308,
+          "pct_of_total": 0.4273504273504274
+        }
+      },
+      "source_runs": [
+        "B1_3mode_classifieds_20260413"
+      ]
+    },
+    "B1/reddit/DOM": {
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "DOM",
+      "total_episodes": 210,
+      "success_count": 21,
+      "failed_count": 189,
+      "buckets": {
+        "missing-context": {
+          "count": 71,
+          "pct_of_failed": 37.56613756613756,
+          "pct_of_total": 33.80952380952381
+        },
+        "search-loop": {
+          "count": 48,
+          "pct_of_failed": 25.396825396825395,
+          "pct_of_total": 22.857142857142858
+        },
+        "early-finish/wrong-commit": {
+          "count": 47,
+          "pct_of_failed": 24.867724867724867,
+          "pct_of_total": 22.380952380952383
+        },
+        "visual-hijack/click-loop": {
+          "count": 20,
+          "pct_of_failed": 10.582010582010582,
+          "pct_of_total": 9.523809523809524
+        },
+        "max-steps-other": {
+          "count": 3,
+          "pct_of_failed": 1.5873015873015872,
+          "pct_of_total": 1.4285714285714286
+        }
+      },
+      "source_runs": [
+        "B1_3mode_reddit_20260413"
+      ]
+    },
+    "B1/reddit/SoM": {
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "SoM",
+      "total_episodes": 210,
+      "success_count": 17,
+      "failed_count": 193,
+      "buckets": {
+        "missing-context": {
+          "count": 118,
+          "pct_of_failed": 61.13989637305699,
+          "pct_of_total": 56.19047619047619
+        },
+        "early-finish/wrong-commit": {
+          "count": 50,
+          "pct_of_failed": 25.906735751295333,
+          "pct_of_total": 23.809523809523807
+        },
+        "visual-hijack/click-loop": {
+          "count": 11,
+          "pct_of_failed": 5.699481865284974,
+          "pct_of_total": 5.238095238095238
+        },
+        "search-loop": {
+          "count": 8,
+          "pct_of_failed": 4.145077720207254,
+          "pct_of_total": 3.8095238095238098
+        },
+        "max-steps-other": {
+          "count": 6,
+          "pct_of_failed": 3.1088082901554404,
+          "pct_of_total": 2.857142857142857
+        }
+      },
+      "source_runs": [
+        "B1_3mode_reddit_20260413"
+      ]
+    },
+    "B1/reddit/Vision": {
+      "baseline": "B1",
+      "site": "reddit",
+      "mode": "Vision",
+      "total_episodes": 210,
+      "success_count": 10,
+      "failed_count": 200,
+      "buckets": {
+        "missing-context": {
+          "count": 166,
+          "pct_of_failed": 83.0,
+          "pct_of_total": 79.04761904761905
+        },
+        "early-finish/wrong-commit": {
+          "count": 30,
+          "pct_of_failed": 15.0,
+          "pct_of_total": 14.285714285714285
+        },
+        "max-steps-other": {
+          "count": 2,
+          "pct_of_failed": 1.0,
+          "pct_of_total": 0.9523809523809524
+        },
+        "search-loop": {
+          "count": 1,
+          "pct_of_failed": 0.5,
+          "pct_of_total": 0.4761904761904762
+        },
+        "visual-hijack/click-loop": {
+          "count": 1,
+          "pct_of_failed": 0.5,
+          "pct_of_total": 0.4761904761904762
+        }
+      },
+      "source_runs": [
+        "B1_3mode_reddit_20260413"
+      ]
+    }
+  }
+}

@@ -240,10 +240,14 @@ _aggregate:
 	$(MAKE) analyze-mechanism
 	$(PYTHON) scripts/analysis/axis_effect_size.py
 	$(PYTHON) scripts/analysis/axis1_microbehavior.py
+	$(PYTHON) scripts/analysis/aggregate_failure_modes.py
 	$(MAKE) compare-b0-b1-all
 
 # All figures (depends on aggregator output)
 _figures:
+	$(PYTHON) scripts/analysis/figures/fig0a_sr_per_mode_heatmap.py
+	$(PYTHON) scripts/analysis/figures/fig0b_fp_rate_per_mode.py
+	$(PYTHON) scripts/analysis/figures/fig0b_extra_confidence_calibration.py
 	$(PYTHON) scripts/analysis/figures/fig0c_drop_one_oracle.py
 	$(PYTHON) scripts/analysis/figures/fig0c_phantom_lift_bars.py
 	$(PYTHON) scripts/analysis/figures/fig0d_taskpool_jaccard.py
@@ -259,13 +263,14 @@ _figures:
 	$(PYTHON) scripts/analysis/figures/fig2e_cross_site_validity.py
 	$(PYTHON) scripts/analysis/figures/fig2f_first_divergence.py
 	$(PYTHON) scripts/analysis/figures/fig3a_token_cost_intra_baseline.py
+	$(PYTHON) scripts/analysis/figures/fig3b_image_token_gap.py
 	$(PYTHON) scripts/analysis/figures/fig3c_latency_per_step.py
 	$(PYTHON) scripts/analysis/figures/fig3d_cost_sr_frontier.py
 	$(PYTHON) scripts/analysis/figures/fig3_regional_carbon.py
-	$(PYTHON) scripts/analysis/figures/fig_capability_b0_b1.py
 	$(PYTHON) scripts/analysis/figures/fig_forest_drop_one.py
 	$(PYTHON) scripts/analysis/figures/fig_meta_forest.py
 	$(PYTHON) scripts/analysis/figures/fig_phantom_structure_venn.py
+	$(PYTHON) scripts/analysis/figures/fig_failure_modes_per_cell.py
 
 # Live evidence status snapshot (read-only summary of aggregator outputs)
 _status:
@@ -392,25 +397,9 @@ compare-b0-b1-all:
 #   - Narrow ad-hoc diagnostics (analyze_*selflink_loop, b0_vision_coordinate_*,
 #     analyze_search_over_browse, diag_pattern_match) — invoke individually
 
-# Regenerate paper figures (12 PNGs in results/phantom_paper/figures/).
-# fig0c_phantom_lift_bars/fig0g_routing_auroc_heatmap depend on phantom_lift.csv / auroc_cross_condition.csv —
-# automatically regenerated upstream by `make analysis`.
-figures:
-	$(PYTHON) scripts/analysis/figures/fig0d_taskpool_jaccard.py
-	$(PYTHON) scripts/analysis/figures/fig0c_drop_one_oracle.py
-	$(PYTHON) scripts/analysis/figures/fig1c_strategy_gradient.py
-	$(PYTHON) scripts/analysis/figures/fig1ab_cascade_diamond.py
-	$(PYTHON) scripts/analysis/figures/fig0e_category_mode_heatmap.py
-	$(PYTHON) scripts/analysis/figures/fig_capability_b0_b1.py
-	$(PYTHON) scripts/analysis/figures/fig3d_cost_sr_frontier.py
-	$(PYTHON) scripts/analysis/figures/fig0f_overlap_stacked_bar.py
-	$(PYTHON) scripts/analysis/figures/fig3_regional_carbon.py
-	$(PYTHON) scripts/analysis/figures/fig0c_phantom_lift_bars.py
-	$(PYTHON) scripts/analysis/figures/fig0g_routing_auroc_heatmap.py
-	$(PYTHON) scripts/analysis/figures/fig2_micro_divergence_heatmap.py
-	$(PYTHON) scripts/analysis/figures/fig_forest_drop_one.py
-	$(PYTHON) scripts/analysis/figures/fig_meta_forest.py
-	$(PYTHON) scripts/analysis/figures/fig_phantom_structure_venn.py
+# Public-facing alias — same as internal `_figures` target. Use `make figures`
+# from CLI; `make analysis` calls `_figures` internally.
+figures: _figures
 	@echo "Figures regenerated → results/phantom_paper/figures/"
 
 # ---- Background tasks ----
