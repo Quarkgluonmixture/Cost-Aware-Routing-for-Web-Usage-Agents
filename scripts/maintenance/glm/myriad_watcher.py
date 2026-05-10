@@ -78,6 +78,11 @@ GONE_HOOKS: dict[str, tuple[str, str]] = {
         "stage3_cellhd_cls_fwd_dom_myriad",
         "",
     ),
+    # Stage 4 Method 4.2 multimode hidden state extraction (PCA cosine gap)
+    "stage4mm_cls": (
+        "stage4_multimode_b1_cls",
+        "",
+    ),
     # 16-cell rerun cells: register here as launched. Pattern:
     # "cellX_<descr>": ("<remote_subdir>", "<cell_md_relpath>"),
 }

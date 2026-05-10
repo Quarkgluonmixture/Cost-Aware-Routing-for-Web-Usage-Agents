@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-05-07
+updated: 2026-05-10
 ---
 
 # Next Steps — Forward Action Ledger
@@ -25,10 +25,74 @@ updated: 2026-05-07
 
 **Paper hook**: → [[paper_planning#§1]] (canonical, 3 arms / 4-fold drop-in)
 
-> [!todo] Top 3 forward actions (priority order, 2026-05-07 evening update — Myriad SSH unlock changes path)
-> 1. **Mechanistic Stage 2B+2C launch on Myriad** ⭐⭐⭐ NOW (passwordless SSH ready 5/7 evening) — `bash scripts/setup/myriad_bootstrap.sh` (~30-45 min one-shot) → `qsub scripts/queues/qsub_stage2b_myriad.sh` (forward 24 task, ~24h) + `qsub scripts/queues/qsub_stage2c_myriad.sh` (reverse 15 task, ~12h, parallel). **Doesn't wait for A100** — pure archived-data forward pass. Paper §5 mechanism upgrade from N=3 pilot to N=24+15 paper-grade in ~36h.
+> [!todo] Top 3 forward actions (priority order, 2026-05-10 evening update — Stage 3 mechanism attribution + new methods unlocked)
+> 1. **Stage 4 mechanism methods queue** ⭐⭐⭐ — paper §5 升级路径; 详 §0a 新加. Cell H-d-cls (DOM target 2x2 closure, job 344623 qw on Myriad) 数据回来后 trigger §124 笔记 + decide Method 1/3/4 顺序. Method 1 (PCA cosine gap, Tool Calling Linear Circuit replicate on B1=Qwen3-VL-4B) is highest-leverage Zoom 4 self-probe — **可立即跑 partial** on existing Stage 1 hidden state cache (3 modes × 26 tasks). Full 6-mode requires Myriad hidden state extraction (DGX 96% util currently).
 > 2. **Quark SSH cert → A100 SSH verify** ⭐⭐ — needed for 16-cell rerun (VWA self-host on A100). Portal cert (id_arc + id_arc.signed) + ~/.ssh/config. ETA 10 min once user has time.
 > 3. **Advisor email reply wait** (~2-5d, passive) — Q1-Q11 in [[advisor_sync_5_5_followup]]. K_h1=12 / K_h3=11 / TOST δ=1.0pp threshold lock + paper split 3v4. Reply triggers OSF DOI 8-step lock + 16-cell launch gate clearance.
+
+---
+
+## §0a Stage 4 mechanism methods queue (added 2026-05-10 after Q1/Q2/Q3 deep critique)
+
+**Trigger**: post-Stage 3 attribution (H-text + H-prompt cells) showed mid-layer L11/L17 disruption locus is real but no robust fusion under Spearman; user critique forced reframe of paper §5 from "fusion" → "disruption + attribution". To strengthen mechanism story beyond disruption-only, queue 4 methods (Zoom 4 model-internal probes, all feasible on B1=Qwen3-VL-4B).
+
+**Existing methods used**: linear probe (§111 trivial), activation patching with token-overlap + LD (Stage 2/3, 12 valid cells; Spearman robust check shows no clean transfer).
+
+### Stage 4.1: Cell H-d-cls (2x2 additivity closure) ⏳ in flight
+
+- Job 344623 qw on Myriad, cls fwd × strong × source=som × target=dom × N=24
+- Pre-registered prediction: Δ_to_target @ L11 ≈ +10.74 (= Ht_cls + Hp_cls − Cell A = 9.04 + 5.62 − 3.92)
+- Falsifies if observed outside ±2pp of prediction → prompt × text interaction at mid-layer
+- Bg monitor `bh702x73i` auto-computes observed Δ + ntfy on completion
+- ETA 30-90 min A100 / 1.5-2.5h V100 once it leaves qw
+
+### Stage 4.2: PCA cosine gap (Tool Calling Linear Circuit replicate, B1=Qwen3-VL-4B) ⭐ next priority
+
+**Method**: at L11/L17/L23, PCA on hidden states across 6 modes (DOM/P-text/P-prompt/P-SoM/SoM/Vision), measure (a) cosine gap between mode-mean vectors, (b) AUROC for binary mode classification via cosine to mode mean, (c) % variance captured in top-k PCA dims (Tool Calling found 15 tools → 10 PCA dims = 90.2% var on Qwen3-4B).
+
+**Why this answers "is it just prompt engineering"**: linear probe trivial ≠ PCA gap trivial. Even when classifier can't separate, mode means may differ on low-rank subspace (Tool Calling Linear Circuit demonstrated this on architectural cousin Qwen3-4B). If AUROC ≥ 0.8 at L11/L17 → phantom space is real representational structure; if ≈ 0.5 → paper §5 stays disruption-only.
+
+**Existing data (already on disk, no new compute)**:
+- `results/mechanistic/stage1B_archived_b1_classifieds_pilot/hidden_states.npz` — P-prompt + P-SoM, 96 examples × 37 layers × 2560 dim (cls, 26 tasks × 2 steps)
+- `results/mechanistic/stage1C_image_axis_b1_cls_pilot/hidden_states.npz` — SoM + P-SoM, 96 examples × 37 layers × 2560 dim
+
+**Immediate (today)**: 3-mode partial PCA cosine gap on existing cache (CPU-only, ~5 min) — answers "is there ANY mid-layer mode-specific structure?" using SoM/P-prompt/P-SoM.
+
+**Full 6-mode (next 1-2 days)**: extract DOM + P-text + Vision hidden states for same 26 cls tasks. DGX is at 96% util (don't run there) → **launch as Myriad qsub** parallel to Cell H-d-cls. ~1-2h forward pass on A100, ~3-5h on V100.
+
+**Decision tree post Method 4.2**:
+- AUROC ≥ 0.8 + clean cosine gap → §5 upgrade to "phantom-mode-specific subspace at L11-L17" with figure (cosine heatmap × layer)
+- AUROC ≈ 0.5 → §5 stays "disruption-only" honest framing; pivot to Method 4.3 (logit-level KL during patching) for transfer evidence
+
+### Stage 4.3: Logit-level KL during patching ⭐ (paper §5 transfer hypothesis decisive)
+
+**Method**: modify `p79/mechanistic/activation_patching.py` to dump first-token logit distribution at each patched layer position. Compute KL(patched ‖ source) and KL(patched ‖ target) per layer per task. Bypasses greedy decoding lock-in issue that masked transfer in token-overlap metric.
+
+**Why**: greedy decoding can lock first-token deterministically even if logit distribution shifted toward source. Token-overlap metric misses this. Logit KL is direct distribution-level measure.
+
+**Effort**: ~half day infra mod + 1 cell re-run on Myriad to verify. Then post-hoc on existing 12 patching cells if infra captures all needed data.
+
+### Stage 4.4: Counterfactual activation steering (Causal proof of phantom direction)
+
+**Method**: from Method 4.2 PCA, extract "phantom direction" = h_PSoM_mean - h_DOM_mean. During DOM forward pass, ADD this direction to L17 hidden state. Does output switch from DOM behavior to P-SoM behavior?
+
+**Why**: tool calling circuit showed L23+ steering 80-93% accuracy switch. If our phantom direction has similar steering effect → causal proof phantom space is mechanism-level (not just correlation).
+
+**Effort**: 1 day (re-use patching infra with vector add instead of full replace). Requires Method 4.2 to find the direction first.
+
+### Stage 4.5: Path patching (lower priority, paper §8 future work)
+
+**Method**: patch attention head OR MLP output specifically (not full layer). Identify sub-component carrying phantom info.
+
+**Effort**: 2-3 days infra. Reserve for paper-2 follow-up unless Method 4.2-4.4 leave open questions.
+
+### Routing decision (DGX vs Myriad for Stage 4 work)
+
+- **DGX 96% GPU util currently** (other user 31GB, seonglae 5GB; 96% compute) → **don't run new GPU work on DGX**
+- **Myriad available** but queue wait variable (3-9h observed today on V100/A100 mix)
+- **Method 4.2 partial (3-mode existing data)**: run on DGX CPU NOW (5 min, no GPU)
+- **Method 4.2 full (6-mode extraction)**: launch Myriad qsub parallel to Cell H-d-cls
+- **Method 4.3/4.4**: launch Myriad qsub when ready (no DGX competition)
 
 ---
 
