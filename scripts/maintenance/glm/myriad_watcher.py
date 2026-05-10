@@ -73,6 +73,11 @@ GONE_HOOKS: dict[str, tuple[str, str]] = {
         "stage3_cellhp_red_fwd_prompt_myriad",
         "",
     ),
+    # Cell H-d (DOM target) — closes 2x2 mechanism additivity test
+    "cellhd_cls": (
+        "stage3_cellhd_cls_fwd_dom_myriad",
+        "",
+    ),
     # 16-cell rerun cells: register here as launched. Pattern:
     # "cellX_<descr>": ("<remote_subdir>", "<cell_md_relpath>"),
 }
