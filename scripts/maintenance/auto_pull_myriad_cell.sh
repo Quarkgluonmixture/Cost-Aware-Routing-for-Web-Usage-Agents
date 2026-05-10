@@ -5,6 +5,10 @@
 #   When a Myriad job disappears from qstat (state went r → gone), the
 #   watcher cron looks up the job's name in GONE_HOOKS and fires this
 #   script to:
+#     0. (NEW 2026-05-10) Probe remote for done-sentinel (pilot_summary.md
+#        OR condition_summary_v2.json). If missing → abort + low-priority
+#        ntfy (job qdel'd / crashed; do NOT pull partial incremental writes).
+#        Override: P79_SKIP_SENTINEL=1.
 #     1. SCP results from Myriad to DGX (via DGX → quark → Myriad chain)
 #     2. Run validate_run.py --strict if the cell has a paper-grade
 #        Phase 1 condition_summary_v2.json (paper hygiene gate)
@@ -27,6 +31,8 @@
 #   NTFY_TOPIC=p79-exp-dgx-spark
 #   P79_SKIP_ANALYSIS=1     skip make analysis trigger (B chain)
 #   P79_SKIP_VALIDATE=1     skip validate-strict (C chain)
+#   P79_SKIP_SENTINEL=1     skip Phase 0 done-sentinel check (paper-grade
+#                           rerun forensic edge cases; default OFF)
 
 set -euo pipefail
 
@@ -65,6 +71,41 @@ push_ntfy() {
         -H "Title: $title" -H "Priority: $prio" -H "Tags: gear" \
         "https://ntfy.sh/$NTFY_TOPIC" >/dev/null 2>&1 || true
 }
+
+# Phase 0 (added 2026-05-10 after qdel pollution incident): require done-sentinel
+# on remote before pulling. Stage 2/3 mech runs write pilot_summary.md as the
+# LAST step; Phase 1 paper-grade cells write condition_summary_v2.json. If
+# neither exists, the job either qdel'd mid-run or crashed → partial incremental
+# writes (24-tasks JSON written task-by-task per F18+F19 audit) would otherwise
+# get SCP'd and pollute the local dir, masquerading as valid data.
+#
+# Bypass: P79_SKIP_SENTINEL=1 (paper-grade rerun edge cases where pull-anyway
+# is preferred for forensics; default OFF).
+if [ "${P79_SKIP_SENTINEL:-0}" != "1" ]; then
+    echo "Phase 0: probing remote for done-sentinel (pilot_summary.md OR condition_summary_v2.json)"
+    SENTINEL_CHECK=$(ssh -i "$QUARK_KEY" -o BatchMode=yes -o ConnectTimeout=30 "$QUARK_HOST" \
+        "ssh -i \$env:USERPROFILE\\.ssh\\id_rsa_myriad ${MYRIAD_USER}@myriad.rc.ucl.ac.uk \"\
+            test -s '$MYRIAD_REMOTE_BASE/$REMOTE_BASENAME/pilot_summary.md' && echo SENTINEL_OK_PILOT && exit 0; \
+            test -s '$MYRIAD_REMOTE_BASE/$REMOTE_BASENAME/condition_summary_v2.json' && echo SENTINEL_OK_CONDITION && exit 0; \
+            echo SENTINEL_MISSING\"" \
+        2>/dev/null | tail -1 | tr -d '[:space:]')
+    case "$SENTINEL_CHECK" in
+        SENTINEL_OK_PILOT|SENTINEL_OK_CONDITION)
+            echo "  $SENTINEL_CHECK — proceeding with pull"
+            ;;
+        SENTINEL_MISSING)
+            push_ntfy "auto_pull SKIP (no sentinel): $JOB_NAME" \
+                "job=$JOB_ID remote=$REMOTE_BASENAME → no pilot_summary.md / condition_summary_v2.json on remote. Likely qdel'd / crashed. Skipping SCP to avoid polluting local dir with partial data." \
+                "low"
+            echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] auto_pull SKIP: no done-sentinel on remote (job likely qdel'd or crashed). Set P79_SKIP_SENTINEL=1 to override."
+            exit 0
+            ;;
+        *)
+            # SSH probe failed — fall through to Phase 1 (existing pull-anyway behavior preserves backward compatibility on transient SSH blips)
+            echo "  WARN: sentinel probe inconclusive ('$SENTINEL_CHECK') — falling through to Phase 1 attempt"
+            ;;
+    esac
+fi
 
 # Phase 1: SCP via SSH chain (cat | base64 because direct scp DGX→Myriad
 # doesn't go through Tailscale)
