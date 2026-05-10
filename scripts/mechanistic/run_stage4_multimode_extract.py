@@ -80,17 +80,31 @@ def main():
             break
     logger.info(f"Selected {len(selected)} tasks (target {args.n_tasks})")
 
-    # Load intents
+    # Load intents — use same path as run_stage1_pilot.py (external/visualwebarena/config_files/vwa/test_<site>)
+    REPO_ROOT = Path(__file__).resolve().parents[2]
+    SITE_TO_CONFIG_DIR = {
+        "classifieds": REPO_ROOT / "external/visualwebarena/config_files/vwa/test_classifieds",
+        "reddit": REPO_ROOT / "external/visualwebarena/config_files/vwa/test_reddit",
+        "shopping": REPO_ROOT / "external/visualwebarena/config_files/vwa/test_shopping",
+    }
     intents_by_tid = {}
-    config_dir_map = {"classifieds": "VWA-classifieds", "reddit": "VWA-reddit", "shopping": "VWA-shopping"}
-    cfg_dir = Path("data/visualwebarena_official_seeds") / config_dir_map.get(args.site, args.site)
-    if cfg_dir.exists():
+    cfg_dir = SITE_TO_CONFIG_DIR.get(args.site)
+    if cfg_dir and cfg_dir.exists():
         for jf in cfg_dir.glob("*.json"):
             try:
                 d = json.load(open(jf))
-                intents_by_tid[int(d["task_id"])] = d.get("intent", "")
-            except Exception:
+                # filename is <task_id>.json (stage1 convention); also fallback to d["task_id"]
+                try:
+                    tid = int(jf.stem)
+                except ValueError:
+                    tid = int(d.get("task_id", -1))
+                intent = d.get("intent", "")
+                if intent and tid >= 0:
+                    intents_by_tid[tid] = intent
+            except Exception as e:
+                logger.warning(f"failed to load {jf}: {e}")
                 continue
+    logger.info(f"Loaded {len(intents_by_tid)} intents from {cfg_dir}")
 
     extractor = HiddenStateExtractor(model_path=args.model_path)
     logger.info("Model loaded")
