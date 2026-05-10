@@ -56,6 +56,23 @@ GONE_HOOKS: dict[str, tuple[str, str]] = {
         "stage2b_celler_reddit_fwd_random_myriad",
         "",
     ),
+    # Stage 3 mechanism attribution: SoM ↔ P-text / P-prompt patching
+    "cellht_cls": (
+        "stage3_cellht_cls_fwd_text_myriad",
+        "",
+    ),
+    "cellhp_cls": (
+        "stage3_cellhp_cls_fwd_prompt_myriad",
+        "",
+    ),
+    "cellht_red": (
+        "stage3_cellht_red_fwd_text_myriad",
+        "",
+    ),
+    "cellhp_red": (
+        "stage3_cellhp_red_fwd_prompt_myriad",
+        "",
+    ),
     # 16-cell rerun cells: register here as launched. Pattern:
     # "cellX_<descr>": ("<remote_subdir>", "<cell_md_relpath>"),
 }
