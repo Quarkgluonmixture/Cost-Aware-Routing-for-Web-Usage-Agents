@@ -272,8 +272,21 @@ def main():
         obs_text = obs_file.read_text(encoding="utf-8")
         som_marks_text = build_som_marks(obs_text)
 
-        source_inputs_orig = build_inputs(extractor, intent, args.source_mode, som_marks_text, str(screenshot_annotated))
-        target_inputs_orig = build_inputs(extractor, intent, args.target_mode, som_marks_text, None)
+        # 2026-05-10 bug fix: text payload depends on observation mode.
+        # phantom_prompt = SoM prompt + AXTree (no marks); previously hardcoded som_marks_text
+        # for all modes, which made phantom_prompt byte-identical to phantom_som (Cell F vs
+        # H-prompt-red 24/24 patched_text identical, confirming bug).
+        text_payload_for = lambda mode: (
+            som_marks_text if mode in ("som", "phantom_som", "phantom_text")
+            else obs_text  if mode in ("phantom_prompt", "dom", "phantom_dom")
+            else ""        if mode == "vision"
+            else som_marks_text
+        )
+        source_text = text_payload_for(args.source_mode)
+        target_text = text_payload_for(args.target_mode)
+
+        source_inputs_orig = build_inputs(extractor, intent, args.source_mode, source_text, str(screenshot_annotated))
+        target_inputs_orig = build_inputs(extractor, intent, args.target_mode, target_text, None)
 
         # --reverse: swap roles. patch target's hidden into source run = "remove image content"
         if args.reverse:
