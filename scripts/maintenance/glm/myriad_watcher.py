@@ -83,6 +83,11 @@ GONE_HOOKS: dict[str, tuple[str, str]] = {
         "stage4_multimode_b1_cls",
         "",
     ),
+    # Stage 4 H1 test: text format variation across 8 industry-relevant indexed-list styles
+    "stage4fv_cls": (
+        "stage4_format_variation_b1_cls",
+        "",
+    ),
     # 16-cell rerun cells: register here as launched. Pattern:
     # "cellX_<descr>": ("<remote_subdir>", "<cell_md_relpath>"),
 }
