@@ -82,20 +82,21 @@ push_ntfy() {
 # Bypass: P79_SKIP_SENTINEL=1 (paper-grade rerun edge cases where pull-anyway
 # is preferred for forensics; default OFF).
 if [ "${P79_SKIP_SENTINEL:-0}" != "1" ]; then
-    echo "Phase 0: probing remote for done-sentinel (pilot_summary.md OR condition_summary_v2.json)"
+    echo "Phase 0: probing remote for done-sentinel (pilot_summary.md OR condition_summary_v2.json OR hidden_states.npz)"
     SENTINEL_CHECK=$(ssh -i "$QUARK_KEY" -o BatchMode=yes -o ConnectTimeout=30 "$QUARK_HOST" \
         "ssh -i \$env:USERPROFILE\\.ssh\\id_rsa_myriad ${MYRIAD_USER}@myriad.rc.ucl.ac.uk \"\
             test -s '$MYRIAD_REMOTE_BASE/$REMOTE_BASENAME/pilot_summary.md' && echo SENTINEL_OK_PILOT && exit 0; \
             test -s '$MYRIAD_REMOTE_BASE/$REMOTE_BASENAME/condition_summary_v2.json' && echo SENTINEL_OK_CONDITION && exit 0; \
+            test -s '$MYRIAD_REMOTE_BASE/$REMOTE_BASENAME/hidden_states.npz' && echo SENTINEL_OK_HIDDEN_STATES && exit 0; \
             echo SENTINEL_MISSING\"" \
         2>/dev/null | tail -1 | tr -d '[:space:]')
     case "$SENTINEL_CHECK" in
-        SENTINEL_OK_PILOT|SENTINEL_OK_CONDITION)
+        SENTINEL_OK_PILOT|SENTINEL_OK_CONDITION|SENTINEL_OK_HIDDEN_STATES)
             echo "  $SENTINEL_CHECK — proceeding with pull"
             ;;
         SENTINEL_MISSING)
             push_ntfy "auto_pull SKIP (no sentinel): $JOB_NAME" \
-                "job=$JOB_ID remote=$REMOTE_BASENAME → no pilot_summary.md / condition_summary_v2.json on remote. Likely qdel'd / crashed. Skipping SCP to avoid polluting local dir with partial data." \
+                "job=$JOB_ID remote=$REMOTE_BASENAME → no pilot_summary.md / condition_summary_v2.json / hidden_states.npz on remote. Likely qdel'd / crashed. Skipping SCP to avoid polluting local dir with partial data." \
                 "low"
             echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] auto_pull SKIP: no done-sentinel on remote (job likely qdel'd or crashed). Set P79_SKIP_SENTINEL=1 to override."
             exit 0
