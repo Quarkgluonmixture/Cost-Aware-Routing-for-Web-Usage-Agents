@@ -79,6 +79,8 @@ def main():
         if len(selected) >= args.n_tasks:
             break
     logger.info(f"Selected {len(selected)} tasks (target {args.n_tasks})")
+    if not selected:
+        raise SystemExit("no archived tasks selected; check --site/--steps/--archived-run-dir")
 
     # Load intents — use same path as run_stage1_pilot.py (external/visualwebarena/config_files/vwa/test_<site>)
     REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -105,6 +107,25 @@ def main():
                 logger.warning(f"failed to load {jf}: {e}")
                 continue
     logger.info(f"Loaded {len(intents_by_tid)} intents from {cfg_dir}")
+    if not intents_by_tid:
+        manifest_path = archive_dir / "manifest.json"
+        if manifest_path.exists():
+            try:
+                manifest = json.load(open(manifest_path))
+                for bucket in ("strong", "reverse"):
+                    for item in manifest.get(bucket, []):
+                        tid = int(item.get("task_id", -1))
+                        intent = item.get("intent", "")
+                        if tid >= 0 and intent:
+                            intents_by_tid[tid] = intent
+                logger.info(f"Loaded {len(intents_by_tid)} intents from {manifest_path}")
+            except Exception as e:
+                logger.warning(f"failed to load intents from {manifest_path}: {e}")
+    if not intents_by_tid:
+        raise SystemExit(
+            "no intents loaded from external config or archive manifest; "
+            "cannot extract hidden states"
+        )
 
     extractor = HiddenStateExtractor(model_path=args.model_path)
     logger.info("Model loaded")
@@ -141,6 +162,8 @@ def main():
                 except Exception as e:
                     logger.error(f"task {tid} step {step} mode {mode} failed: {e}")
 
+    if not all_hs:
+        raise SystemExit("no hidden states extracted; all selected tasks/modes failed")
     H = np.stack(all_hs)
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
