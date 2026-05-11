@@ -527,9 +527,43 @@
   author = {Wu, Zekun and Wang, Ze and Cho, Seonglae and Yang, Yufei and Koshiyama, Adriano and Bulathwela, Sahan and Perez-Ortiz, Maria},
   year = {2026},
   month = may,
+  eprint = {2605.07990},
   archivePrefix = {arXiv},
   primaryClass = {cs.CL},
-  note = {Mean-difference activation steering at second-to-last layer switches tool selection at 77--100\% accuracy (93--100\% at 4B+) across 12 instruction-tuned models including Qwen 3 4B (architectural cousin to our B1 Qwen3-VL-4B). PCA: 15 tool means fit in $\sim$10 directions (91\% var). Causal localization on Gemma 3 4B: L17 H0+H1 attention heads dominate. Cited in our paper \S 5 Zoom 4 as the method backbone our Method 4.2/4.4 (multimodal Qwen3-VL-4B web agent extension) ports from. arXiv eprint TBD pending camera-ready.}
+  note = {Mean-difference activation steering at second-to-last layer switches tool selection at 77--100\% accuracy (93--100\% at 4B+) across 12 instruction-tuned models including Qwen 3 4B (architectural cousin to our B1 Qwen3-VL-4B). PCA: 15 tool means fit in $\sim$10 directions (91\% var). Causal localization on Gemma 3 4B: L17 H0+H1 attention heads dominate. Cited in our paper \S 5 Zoom 4 as the method backbone our Method 4.2/4.4 (multimodal Qwen3-VL-4B web agent extension) ports from.}
+}
+
+@misc{peale2026flexibleRouting,
+  title = {Flexible Routing via Uncertainty Decomposition},
+  author = {Peale, Charlotte and Devic, Siddartha and Gopalan, Parikshit and Wieder, Udi and Gollakota, Aravind},
+  year = {2026},
+  month = may,
+  eprint = {2605.07805},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG},
+  note = {Decomposes total uncertainty into reducible + irreducible via higher-order predictors (Ahdritz et al. 2025). Routes to oracle when reducible uncertainty is high, abstains when irreducible. Strong theoretical regret bound vs optimal task-specific routers. Provides theoretical anchor for our paper \S 6 cost-aware routing claim: phantom mode signal AUROC = reducible uncertainty proxy; 4-fold drop-in property maps onto Peale et al.'s "predict / route / abstain" trichotomy. Stronger than purely empirical baselines (RouteLLM, FrugalGPT) because of regret bound.}
+}
+
+@misc{khorasani2026hdmi,
+  title = {Inference Time Causal Probing in {LLMs}},
+  author = {Khorasani, Sadegh and Salehkaleybar, Saber and Kiyavash, Negar and Grossglauser, Matthias},
+  year = {2026},
+  month = may,
+  eprint = {2605.07631},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  note = {Proposes HDMI (Hidden-state Driven Margin Intervention): probe-free gradient-based hidden state steering using margin objective on model output distribution. LA-HDMI variant backpropagates through softmax embeddings for multi-step text editing. Evaluation framework introduces completeness (target property changes) $\times$ selectivity (unrelated properties preserved) $\to$ harmonic mean reliability. Validated on Meta-Llama-3-8B-Instruct + Pythia-70M on LGD agreement corpus + CausalGym benchmark. Cited in our paper \S 5 as (a) alternative-to-mean-diff steering method (Wu et al. 2026 backbone), and (b) source of evaluation framework for Method 4.4 v2 (completeness $\times$ selectivity harmonic mean is what we report, not crude "shifted toward target" rate).}
+}
+
+@misc{linLiu2026disclosure,
+  title = {Position: Mechanistic Interpretability Must Disclose Identification Assumptions for Causal Claims},
+  author = {Lin, Zezheng and Liu, Fengming},
+  year = {2026},
+  month = may,
+  eprint = {2605.08012},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG},
+  note = {Position paper: MI papers invoke causal vocabulary (circuits, mediators, causal abstraction, monosemanticity) without disclosing identification assumptions. Audit of 10 papers across 4 methodological strands finds 0 dedicated identification sections; validation metrics (faithfulness, completeness, ablation effects) routinely substituted for identification. Proposes 5-step disclosure norm: (1) state whether claim is causal, (2) name identification strategy, (3) enumerate assumptions, (4) stress-test at least one, (5) separate validation from identification. Cited in our paper \S 5 to structure the "Identification Assumptions" subsection. Our methodology adopts the protocol explicitly: Method 4.2 (probe) and Stage 2/3 (patching) are paired as identification strategy, with assumptions listed and Cell E random-injection control as stress-test.}
 }
 
 @misc{maRui2026planning,
