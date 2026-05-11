@@ -88,6 +88,21 @@ GONE_HOOKS: dict[str, tuple[str, str]] = {
         "stage4_format_variation_b1_cls",
         "",
     ),
+    # P4: H1 on cls reverse-tier (selection-bias defense)
+    "stage4fv_clsrev": (
+        "stage4_format_variation_b1_cls_reverse",
+        "",
+    ),
+    # P5a: H1 on reddit strong-tier (cross-site defense)
+    "stage4fv_red": (
+        "stage4_format_variation_b1_reddit",
+        "",
+    ),
+    # P5b: Method 4.2 multimode on reddit strong-tier (cross-site Mirage signature)
+    "stage4mm_red": (
+        "stage4_multimode_b1_reddit",
+        "",
+    ),
     # 16-cell rerun cells: register here as launched. Pattern:
     # "cellX_<descr>": ("<remote_subdir>", "<cell_md_relpath>"),
 }
