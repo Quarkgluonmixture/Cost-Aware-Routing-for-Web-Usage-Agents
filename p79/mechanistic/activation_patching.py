@@ -122,6 +122,62 @@ class ActivationPatcher:
         return out.sequences[0, input_len:]
 
     @torch.no_grad()
+    def steered_generate(
+        self,
+        layer_idx: int,
+        direction: torch.Tensor,
+        alpha: float,
+        max_new_tokens: int = 15,
+        **inputs,
+    ) -> torch.Tensor:
+        """Add alpha * direction to last-token hidden at layer_idx on first forward, generate.
+
+        Variant of patched_generate: instead of substituting hidden with source's, we
+        ADD a direction vector with magnitude alpha. Used for Method 4.4 counterfactual
+        activation steering (Tool Calling Linear Steerable Circuit, Anonymous 2026 ACL).
+
+        Args:
+            layer_idx: which transformer block
+            direction: (hidden_dim,) vector — typically (mean_A - mean_B) at layer_idx
+            alpha: scalar magnitude. 0 = no steering. 1 = unit direction. Larger = stronger push.
+            max_new_tokens: generation length
+            **inputs: target run inputs
+
+        Returns:
+            Generated token IDs (1D tensor, only generated portion)
+        """
+        layer = self.layers[layer_idx]
+        dir_vec = direction.to(self.model.device).to(self.model.dtype if hasattr(self.model, "dtype") else torch.bfloat16)
+        scaled = (alpha * dir_vec)
+        fire_count = [0]
+
+        def hook(module, layer_input, layer_output):
+            fire_count[0] += 1
+            if fire_count[0] > 1:
+                return None
+            hs = layer_output[0] if isinstance(layer_output, tuple) else layer_output
+            hs_steered = hs.clone()
+            hs_steered[:, -1, :] = hs_steered[:, -1, :] + scaled.to(hs.dtype)
+            if isinstance(layer_output, tuple):
+                return (hs_steered,) + layer_output[1:]
+            return hs_steered
+
+        h = layer.register_forward_hook(hook)
+        try:
+            out = self.model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                do_sample=False,
+                return_dict_in_generate=True,
+                use_cache=True,
+            )
+        finally:
+            h.remove()
+
+        input_len = inputs["input_ids"].shape[1]
+        return out.sequences[0, input_len:]
+
+    @torch.no_grad()
     def patched_forward(
         self,
         layer_idx: int,

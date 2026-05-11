@@ -522,10 +522,23 @@
   note = {Multi-faceted hallucination = visual attention decay in middle layers + language prior dominance during decoding (paper §5 mechanism dual-cause anchor)}
 }
 
-@inproceedings{anon2026toolcalling,
-  title = {Tool Calling is a Linear, Steerable Circuit},
-  author = {Anonymous},
-  booktitle = {Proceedings of the 2026 Annual Meeting of the Association for Computational Linguistics (ACL)},
+@misc{wu2026toolcalling,
+  title = {Tool Calling is Linearly Readable and Steerable in Language Models},
+  author = {Wu, Zekun and Wang, Ze and Cho, Seonglae and Yang, Yufei and Koshiyama, Adriano and Bulathwela, Sahan and Perez-Ortiz, Maria},
   year = {2026},
-  note = {Validated on Qwen3-4B: 15 tools $\to$ 10 directions (PCA 90.2\%); cosine gap captures 92\% of action-selection errors; L23+ steering 80--93\% accuracy switches tool; ``knows but cannot say'' (hidden state 77--89\% correct, output layer 3--61\%). Used in paper \S 8 Zoom 4 future-work anchor for B1-side mechanistic probe (architectural cousin to our Qwen3-VL-4B). TODO: confirm arxiv eprint after camera-ready release.}
+  month = may,
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  note = {Mean-difference activation steering at second-to-last layer switches tool selection at 77--100\% accuracy (93--100\% at 4B+) across 12 instruction-tuned models including Qwen 3 4B (architectural cousin to our B1 Qwen3-VL-4B). PCA: 15 tool means fit in $\sim$10 directions (91\% var). Causal localization on Gemma 3 4B: L17 H0+H1 attention heads dominate. Cited in our paper \S 5 Zoom 4 as the method backbone our Method 4.2/4.4 (multimodal Qwen3-VL-4B web agent extension) ports from. arXiv eprint TBD pending camera-ready.}
+}
+
+@misc{maRui2026planning,
+  title = {Where's the Plan? Locating Latent Planning in Language Models with Lightweight Mechanistic Interventions},
+  author = {Ma and Rui},
+  year = {2026},
+  month = may,
+  eprint = {2605.07984},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  note = {Establishes probe-vs-causal-use distinction on rhyme couplet planning. Linear probe identifies planning-compatible representations at newline position across model families (Qwen3, Gemma 3, Llama 3.1, 270M--70B); activation patching shows only Gemma-3-27B causally uses newline as planning site (corrupt-rhyme rate 67\% [57, 75] at L33), while Qwen3-32B (1\%) and Llama-3.1-70B (2\%) remain at original rhyme word. Sparse 5-attention-head localization in Gemma-3-27B. Cited in our paper \S 5 as theoretical anchor for distinguishing Method 4.2 (planning-compatible representation, AUROC 1.000 across all 540 layer-pair tests) from Method 4.4 (causally active planning site, partial). Our Qwen3-VL-4B Method 4.4 results align with the Qwen3-family pattern (probe works, causal patching weaker than Gemma).}
 }
