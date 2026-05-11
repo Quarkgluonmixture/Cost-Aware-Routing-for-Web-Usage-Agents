@@ -12,8 +12,10 @@ This script measures the dose-response surface:
 
 Per (task, step, layer, α):
   - token overlap to DOM baseline / P-SoM baseline (Jaccard)
-  - shifted_toward_psom: overlap_psom > overlap_dom
-  - JSON valid: starts with '{' or '{ "' (envelope preserved)
+  - completeness = shifted_toward_psom rate (overlap_psom > overlap_dom)
+  - selectivity = JSON valid rate (envelope preserved; starts with '{' or '{ "')
+  - reliability = harmonic mean of completeness × selectivity
+    (HDMI framework, Khorasani et al. 2026 arXiv:2605.07631)
 
 Direction at patcher.layers[L] ←→ npz[:, L+1, :]
 (extract_hidden_states stores HF outputs.hidden_states with embedding at idx 0).
@@ -192,12 +194,20 @@ def main():
             for r in per_task:
                 v = r["per_layer"][str(L)][str(alpha)]
                 cells.append(v)
+            completeness = float(np.mean([c["shifted_toward_psom"] for c in cells]))
+            selectivity = float(np.mean([c["json_valid"] for c in cells]))
+            # HDMI reliability metric (Khorasani et al. 2026, arXiv:2605.07631):
+            # harmonic mean penalizes "shift target but break structure" failure mode
+            hmean = 2 * completeness * selectivity / (completeness + selectivity + 1e-9) if (completeness + selectivity) > 0 else 0.0
             agg[f"L{L:02d}_a{alpha}"] = {
                 "n": len(cells),
                 "mean_overlap_dom": float(np.mean([c["overlap_dom"] for c in cells])),
                 "mean_overlap_psom": float(np.mean([c["overlap_psom"] for c in cells])),
-                "shifted_rate": float(np.mean([c["shifted_toward_psom"] for c in cells])),
-                "json_valid_rate": float(np.mean([c["json_valid"] for c in cells])),
+                "completeness": completeness,       # shifted_toward_psom rate
+                "selectivity": selectivity,           # json_valid rate
+                "reliability": hmean,                  # HDMI harmonic mean
+                "shifted_rate": completeness,         # alias for backward compat
+                "json_valid_rate": selectivity,
                 "first_token_psom_match_rate": float(np.mean([c["first_token_psom_match"] for c in cells])),
             }
     final = {
@@ -218,25 +228,39 @@ def write_md(d, out, layers, alphas):
     lines.append(f"**Direction norms per layer**: " + ", ".join(f"L{k}={v:.2f}" for k, v in d['config']['direction_norms'].items()))
     lines.append("")
 
-    lines.append("## Shifted-toward-P-SoM rate (overlap_psom > overlap_dom)")
+    lines.append("## HDMI Reliability — harmonic mean (completeness × selectivity)")
+    lines.append("")
+    lines.append("Following Khorasani et al. 2026 (arXiv:2605.07631): reliability = 2·c·s/(c+s).")
+    lines.append("Penalizes \"shift target but break envelope\" failure mode. Higher = better.")
     lines.append("")
     lines.append("| Layer \\ α | " + " | ".join(f"α={a}" for a in alphas) + " |")
     lines.append("|---|" + "|".join(["---"] * len(alphas)) + "|")
     for L in layers:
         row = [f"L{L:02d}"]
         for a in alphas:
-            row.append(f"{d['aggregate'][f'L{L:02d}_a{a}']['shifted_rate']:.0%}")
+            row.append(f"**{d['aggregate'][f'L{L:02d}_a{a}']['reliability']:.2f}**")
         lines.append("| " + " | ".join(row) + " |")
     lines.append("")
 
-    lines.append("## JSON envelope valid rate (steered output still starts with `{`)")
+    lines.append("## Completeness (shifted-toward-P-SoM rate: overlap_psom > overlap_dom)")
     lines.append("")
     lines.append("| Layer \\ α | " + " | ".join(f"α={a}" for a in alphas) + " |")
     lines.append("|---|" + "|".join(["---"] * len(alphas)) + "|")
     for L in layers:
         row = [f"L{L:02d}"]
         for a in alphas:
-            row.append(f"{d['aggregate'][f'L{L:02d}_a{a}']['json_valid_rate']:.0%}")
+            row.append(f"{d['aggregate'][f'L{L:02d}_a{a}']['completeness']:.0%}")
+        lines.append("| " + " | ".join(row) + " |")
+    lines.append("")
+
+    lines.append("## Selectivity (JSON envelope valid rate: steered output still starts with `{`)")
+    lines.append("")
+    lines.append("| Layer \\ α | " + " | ".join(f"α={a}" for a in alphas) + " |")
+    lines.append("|---|" + "|".join(["---"] * len(alphas)) + "|")
+    for L in layers:
+        row = [f"L{L:02d}"]
+        for a in alphas:
+            row.append(f"{d['aggregate'][f'L{L:02d}_a{a}']['selectivity']:.0%}")
         lines.append("| " + " | ".join(row) + " |")
     lines.append("")
 
