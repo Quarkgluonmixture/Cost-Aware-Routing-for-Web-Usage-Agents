@@ -2,7 +2,7 @@
 name: mechanism plan
 description: Full mechanism workspace — theory, lit anchor stack, methods, identification protocol, current findings, open questions, advisor sync, roadmap. Specialized companion to paper_planning §2; not a duplicate.
 type: workspace_plan
-last_substantive_update: 2026-05-11
+last_substantive_update: 2026-05-12
 ---
 
 # Mechanism Plan — paper §5
@@ -27,6 +27,35 @@ last_substantive_update: 2026-05-11
 | Prompt-axis (SoM-prompt vs DOM-prompt alone) | 0.007 | L36 | **1×** |
 
 → Mechanism magnitude image >> text > prompt. Validates `project_phantom_space_axes_format_not_information.md` memory: P-SoM closest mode at every layer is **P-text** (text-axis sibling, L17 cosine 0.0028 vs P-SoM↔SoM 0.0412 = 14.7× more distant).
+
+### 1.3 Image-axis peak-layer dichotomy (Mirage mechanism signature)
+
+Method 4.2 reveals image-axis cosine-gap peak shifts based on text format of the no-image side. Clean dichotomy, zero overlap across 8 image-axis pairs:
+
+| No-image side text | Peak layer | Pairs |
+|---|---|---|
+| AXTree (hierarchical) | **L04** | DOM↔Vision, DOM↔SoM, P-prompt↔Vision, P-prompt↔SoM |
+| [SOM_MARKS] / flat | **L17–L36** | P-text↔Vision, P-text↔SoM, P-SoM↔Vision, P-SoM↔SoM |
+
+### 1.4 H1 test confirms broader: flat-list (not just indexed) triggers shortcut (2026-05-12)
+
+Format variation extraction (Myriad job 352998, `stage4_format_variation_b1_cls`, 450 hidden states = 45 task-step × 10 modes). For each text format V, compute image-axis cosine gap V↔som per layer; peak layer reveals shortcut activation:
+
+| Format | Peak layer | Verdict |
+|---|---|---|
+| **AXTree hierarchical (DOM)** | **L04** | **SOLE format defeating shortcut** |
+| `"a, b, c, ..."` plain sentence | L17 | mid-level trigger |
+| `[N] role 'label'` (SoM standard) | L36 | strong trigger |
+| `@N label` (Browser Use) | L36 | strong trigger |
+| `id_N: label` (AppAgent) | L36 | strong trigger |
+| `[BN:r:l]` (Tarsier) | L36 | strong trigger |
+| `N. label` (numbered) | L36 | strong trigger |
+| `<el_N>label</el_N>` (XML) | L36 | strong trigger |
+| `#hash label` (control: no integer) | L36 | **still triggers!** |
+
+**Refined H1 verdict**: trigger is **flat element listing**, not "indexed list pattern". Even integer-free hash IDs and pure-sentence variants engage the shortcut. AXTree hierarchical depth is the **unique format** that defeats shortcut activation.
+
+Paper §5 implication: SoM-family web agents (Browser Use, AppAgent, Tarsier, OmniParser, etc.) **all** implicitly exploit the same flat-list-element-grounding shortcut from VLM training distribution. P79 phantom routing space makes this systematic and routes accordingly.
 
 ## 2. Literature anchor stack (5 anchors, all 2026-05-08 except Sclar 2024)
 
@@ -137,32 +166,46 @@ Cell E random-injection control: replacing source hidden with Gaussian noise (sa
 | Er | reddit | random injection | ~0 (uniform) | ✓ |
 | H-d-cls | cls | DOM target (2x2 additivity) | -0.33 | ✓ |
 
-### 5.3 Stage 4 Method 4.4 v2 (in flight, 8/48 cells)
+### 5.3 Stage 4 Method 4.4 v2 (FULL 45/48 cells, finalized 2026-05-11 22:00)
 
-H-mean reliability (HDMI framework) per (layer, α):
+H-mean reliability (HDMI framework) per (layer, α). **L17 α=5 smoke claim REFUTED by full sweep**; actual sweet spot at L33 α=10:
 
-| Layer \ α | α=5 | α=10 | α=20 |
-|---|---|---|---|
-| L11 | 0.25 | 0.00 | 0.00 |
-| **L17** | **0.44** ⭐ | 0.25 | 0.25 |
-| L23 | 0.00 | 0.25 | 0.00 |
-| L29 | 0.00 | 0.00 | 0.14 |
-| L33 | 0.00 | 0.23 | 0.00 |
-| L34 | 0.00 | 0.00 | 0.00 |
+| Layer \ α | α=1 | α=2 | α=5 | α=10 | α=20 |
+|---|---|---|---|---|---|
+| L11 | 0.04 | 0.09 | 0.20 | 0.12 | 0.12 |
+| L17 | 0.00 | 0.12 | **0.16** (was 0.44 smoke) | 0.12 | 0.09 |
+| L23 | 0.00 | 0.09 | 0.09 | 0.16 | 0.00 |
+| L29 | 0.00 | 0.00 | 0.00 | 0.04 | 0.04 |
+| **L33** | 0.04 | 0.00 | 0.00 | **0.33** ⭐ | 0.00 |
+| L34 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
 
-→ L17 α=5 current sweet spot. Stable after full 48-cell sweep completes.
+**Layer-specialization** (probe-causal dissociation):
+- Mid-layer (L11-L23): **selectivity 100%** at all α (JSON envelope preserved), but completeness 0-11% (modest shift)
+- Late-layer (L33): completeness 38% (highest), but selectivity drops to 29% (over-steers JSON)
+- L33 α=10 H-mean 0.33 = max reliability cell
+
+**Smoke variance lesson** (笔记 §126 + §127): 4-cell smoke H-mean 0.44 on L17 was statistical artifact (1/4 hit = inflated rate). Full 45-cell H-mean 0.16 is true rate. Future mechanism findings require n ≥ 30 cells before "sweet spot" claims.
+
+### 5.4 Image-axis peak-layer dichotomy (Method 4.2, 8 pairs)
+
+`docs/checkpoints/mechanism/results/layer_axis_emergence.md`. AXTree-no-image side → L04 peak (4/4); [SOM_MARKS]-no-image side → L17–L36 peak (4/4). Zero overlap. Mirage Effect mechanism signature.
+
+### 5.5 H1 test: flat-list format variation (Method 4.2 extension, 2026-05-12)
+
+`docs/checkpoints/mechanism/results/format_variation_h1_test.md`. 8 industry-relevant text formats + 2 controls. AXTree hierarchical (DOM) is **unique format** preserving L04 image-axis peak; all 8 flat-list variants (SoM standard, Browser Use @, AppAgent id_, Tarsier typed, plain numbered, XML tagged, hash-ID control, plain-sentence control) shift peak to L17–L36. Trigger is flat element listing, not specific token pattern.
 
 ## 6. Open questions (paper-grade gaps)
 
-| Q | Gravity | Next action |
+| Q | Status | Next action |
 |---|---|---|
-| Method 4.4 v2 full 48-cell sweep — does L17 α=5 H-mean 0.44 hold or shift? | High | Wait for bg sweep (~23:00 BST 2026-05-11) |
-| Reverse-tier 15 tasks vs strong-tier 24 — does L17 finding generalize beyond selection bias? | Med-High | Re-run Stage 4 multimode + Method 4.4 v2 with --tier reverse |
-| Cross-site Method 4.2 — does cls Method 4.2 result replicate on reddit? | High | qsub Stage 4 multimode on B1 reddit (1 cell, ~1h on Myriad) |
-| LA-HDMI vs mean-diff on Qwen3-VL-4B — does gradient steering beat 0.44 ceiling? | Med | Pending Zekun discussion of attribution before committing GPU |
-| SAE feature steering feasibility — is 1-2 week self-training Qwen3-VL-4B SAE worth it? | Low-Med | Depends on Zekun reply + paper review feedback timeline |
-| B0 (proxy API, no internals) — is paper §5 mechanism story Qwen-specific or generalizable? | Low | Cannot test directly on B0; cite Wu et al. cross-family generality as proxy |
-| Per-task variability across 24 tasks — is L17 finding driven by 1-2 cell types? | Med | Already analyzed (Stage 4 robustness Test B: 100% positive). May need stratification by task type |
+| ✅ Method 4.4 v2 full 48-cell sweep — sweet spot stable? | **Closed 2026-05-11 22:00**: L17 α=5 smoke 0.44 → full 0.16 (smoke variance artifact). **Real sweet spot L33 α=10 H-mean 0.33** | — |
+| ✅ H1 test: do all flat-list formats trigger shortcut? | **Closed 2026-05-12 00:00**: YES, including hash-ID + plain-sentence controls. AXTree-DOM is sole defeating format | — |
+| Reverse-tier 15 tasks vs strong-tier 24 — does L33 + H1 finding generalize beyond selection bias? | Med-High | qsub Stage 4 multimode + format variation with --tier reverse |
+| Cross-site Method 4.2 — does cls finding replicate on reddit? | High | qsub Stage 4 multimode on B1 reddit (1 cell, ~1h on Myriad) |
+| LA-HDMI vs mean-diff — does gradient steering beat 0.33 ceiling? | Med | Pending Zekun reply + attribution decision |
+| SAE feature steering feasibility — is 1-2 week self-training Qwen3-VL-4B SAE worth it? | Low-Med | Depends on Zekun reply + paper §8 prose direction |
+| B0 (proxy API) — paper §5 Qwen-specific or generalizable? | Low | Cannot test on B0; cite Wu et al. cross-family generality as proxy |
+| AXTree-defeats-shortcut mechanism — *why* hierarchy beats flat? Cross-modal attention specific to indentation tokens? | High (paper §5 supplement) | Activation patching at L4 with hierarchical-text vs flat-text → see which attention heads pre-disrupt image embedding |
 
 ## 7. Advisor sync state — Zekun (Wu et al. 2026 first author = lab member)
 
@@ -176,13 +219,47 @@ H-mean reliability (HDMI framework) per (layer, α):
 
 **Net**: Zekun explicitly invited mechanism extension. Method 4.4 multimodal port is on his recommendation; SAE Method 4.5 is his next-step suggestion.
 
-### 7.2 Message draft (paste-ready after v2 full sweep completes)
+### 7.2 Message draft (v3, paste-ready 2026-05-12)
 
-See `docs/checkpoints/实验笔记.md` §125.10 for current draft. Key revisions from earlier:
-- ❌ Removed: "Method 4.4 null fills your §6 multi-turn limitation" (was wrong — v1 null was α calibration bug)
-- ✓ Added: HDMI H-mean reliability table showing L17 α=5 = 0.44 as sweet spot
-- ✓ Added: Ma & Rui Qwen3-family positioning (50% between Wu 93% and Ma & Rui Qwen3 1%)
-- ✓ Three explicit asks: attribution decision / mid-vs-late layer ablation question / SAE Method 4.5 GPU commitment
+Updated after v2 full sweep + H1 test. Key revisions from §125.10 draft:
+- ❌ Removed: "L17 α=5 H-mean 0.44 mid-layer sweet spot" (smoke variance artifact, full data refutes)
+- ✓ Added: **L33 α=10 H-mean 0.33** = matches your second-to-last-layer choice; multi-step JSON selectivity drop explains 38% vs your 93% gap
+- ✓ Added: H1 test finding — flat-list format universally triggers shortcut (8/8 variants), only AXTree hierarchical defeats; implication for industry SoM-family agents
+- ✓ Three asks: (a) attribution co-author vs cite + independent; (b) your ablation on mid- vs late-layer (we see selectivity tradeoff); (c) SAE direction priority given mean-diff ceiling
+
+Final message (Chinese, casual WeChat tone):
+
+> Zekun 早, 你那篇 Tool Calling 上 arxiv 我看了, 恭喜! 我前几天按你说的开始 mechanism work, 跑出来一些东西想跟你 sync 一下, 顺便问几个方向问题。
+>
+> # Context
+> P79 paper 在做 VisualWebArena 的 phantom routing space — agent 6 种 obs mode (DOM 文本/SoM 标注图/Vision 裸图 + 3 个 phantom 变体). 模型 Qwen3-VL-4B, 你 Qwen 3 4B 同 base LM。
+>
+> # 1. Method 4.2 PCA cosine gap port 到 6 modes
+> 24 cls strong-tier × 2 step × 6 mode = 288 hidden states, 37 layer × 2560 dim。全 540 pair × layer AUROC = 1.000 (perm baseline 0.629, real 9.8σ above). 你方法在 multimodal Qwen 上 readable transfer 干净。
+>
+> # 2. Method 4.4 mean-diff steering (HDMI metric)
+> 45 task-step × 6 layer × 5 α full sweep. 用 HDMI completeness×selectivity → H-mean 评估:
+>
+>   - **L33 α=10 H-mean 0.33** (sweet spot, c=38% s=29%) ← matches 你 paper second-to-last-layer
+>   - Mid-layer (L11-L23) selectivity 100% 但 completeness 0-11% — readable but not effectively steerable
+>   - 你 paper Qwen 3 4B 93% switch vs 我 38% — 我猜原因是 multi-step JSON gen 的 selectivity 是真约束 (你 single-token tool decision selectivity 自动 1.0)
+>
+> # 3. H1 test: flat-list format variation (Myriad)
+> 测了 8 个 industry-relevant text format (Browser Use @, AppAgent id_, Tarsier typed, numbered, XML, hash-ID, plain-sentence + SoM baseline) vs AXTree-DOM:
+>
+>   - 全 8 flat variants peak L17/L36 (= 都触发 shortcut)
+>   - **AXTree hierarchical 是唯一保留 L04 peak 的 format**
+>   - 包括 hash-ID (no integer) + plain-sentence (no list) 都触发
+>   - = SoM-family agents 全 implicit exploit 同一 VLM shortcut, AXTree 是 sole exception
+>
+> # 三个 ask
+> (1) Attribution: paper §5 mechanism 这块 — cite 你 + 我独立 framing 比较合理, 还是 co-author 一篇 multimodal extension 比较好? 都 OK, 想听你意见。
+>
+> (2) 你 ablation 里有跑过 mid- vs late-layer 对比吗? 我 mid-layer selectivity 100% 但 shift 弱, late-layer shift 强但 envelope 破 — 不知道你 tool calling 上是不是也有这种 tradeoff。
+>
+> (3) 你之前 advisor 录音里建议 SAE feature steering, 我也写进 future work 了。现在 mean-diff ceiling ~0.33, 是不是 SAE 这条路更有差异化? Qwen3-VL-4B SAE 没公开, 自训成本 1-2 周, 你觉得值得 commit GPU 吗?
+>
+> 不急, 你忙完回我就行. paper 写得真漂亮.
 
 ### 7.3 Decisions pending
 
