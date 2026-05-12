@@ -100,6 +100,15 @@ GONE_HOOKS: dict[str, tuple[str, str]] = {
         "stage3_cellhprompt_red_fwd_ptext_rand_myriad",
         "",
     ),
+    # Exp 5 axis-2 task-shuffled content-specificity control (codex audit Bug 6 / G3)
+    "cellhprm_cls_tsh": (
+        "stage3_cellhprompt_cls_fwd_ptext_taskshuf_myriad",
+        "",
+    ),
+    "cellhprm_red_tsh": (
+        "stage3_cellhprompt_red_fwd_ptext_taskshuf_myriad",
+        "",
+    ),
     # Stage 4 Method 4.2 multimode hidden state extraction (PCA cosine gap)
     "stage4mm_cls": (
         "stage4_multimode_b1_cls",
@@ -140,17 +149,49 @@ GONE_HOOKS: dict[str, tuple[str, str]] = {
 AUTO_PULL_SCRIPT = REPO / "scripts" / "maintenance" / "auto_pull_myriad_cell.sh"
 
 
+def _resolve_full_job_name(jid: str, fallback: str) -> str:
+    """Probe Myriad for the full job_name via `qstat -j JOB_ID`. qstat -u
+    truncates display name to 10 chars (cellhprm_c vs cellhprm_cls_rand),
+    making startswith() prefix matching fail for any prefix > 10 chars.
+
+    Bug fix 2026-05-12 late: previously _dispatch_gone_hook called
+    name.startswith(prefix) on the truncated 10-char display name → all
+    GONE_HOOKS prefixes longer than 10 chars (cellhprm_cls / cellhprm_red /
+    cellhprm_cls_rand / cellhprm_red_rand / stage4mm_cls_v2 / etc.)
+    silently failed to dispatch auto_pull. Now we do one extra SSH chain
+    call when a GONE event needs hook dispatch, parsing the `job_name:`
+    line out of `qstat -j JOB_ID`.
+
+    Returns the full name on success, otherwise `fallback` (the 10-char
+    truncated name from `qstat -u`).
+    """
+    out = ssh_chain(f"qstat -j {jid} 2>/dev/null | grep '^job_name:'", timeout=15)
+    if out is None:
+        return fallback
+    # Expected line: `job_name:                  cellhprm_cls_rand`
+    for line in out.splitlines():
+        if line.startswith("job_name:"):
+            full = line.split(":", 1)[1].strip()
+            if full:
+                return full
+    return fallback
+
+
 def _dispatch_gone_hook(jid: str, name: str) -> Optional[str]:
     """If `name` matches a GONE_HOOKS prefix, fire auto_pull script
     in background and return the matched prefix; else None.
+
+    First resolve the FULL job name via `qstat -j JOB_ID` because the
+    `name` passed in is the qstat-truncated 10-char display name.
     """
+    full_name = _resolve_full_job_name(jid, fallback=name)
     for prefix, (remote_dir, cell_md) in GONE_HOOKS.items():
-        if name.startswith(prefix):
+        if full_name.startswith(prefix):
             try:
                 subprocess.Popen(
                     [
                         "bash", str(AUTO_PULL_SCRIPT),
-                        jid, name, remote_dir, cell_md,
+                        jid, full_name, remote_dir, cell_md,
                     ],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
@@ -158,7 +199,7 @@ def _dispatch_gone_hook(jid: str, name: str) -> Optional[str]:
                 )
                 return prefix
             except OSError as e:
-                print(f"[myriad_watcher] auto_pull dispatch failed for {jid}/{name}: {e}",
+                print(f"[myriad_watcher] auto_pull dispatch failed for {jid}/{full_name}: {e}",
                       file=sys.stderr)
                 return None
     return None

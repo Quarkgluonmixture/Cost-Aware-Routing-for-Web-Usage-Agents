@@ -184,7 +184,28 @@ def main():
         help="Seed for --random-inject Gaussian noise (paper-grade reproducibility). "
              "Same seed + same input = same noise = byte-identical re-runs. Default 42.",
     )
+    p.add_argument(
+        "--task-shuffle", action="store_true",
+        help="Task-shuffled content-specificity control (codex methodology audit "
+             "2026-05-12 Bug: Gaussian random-injection is a WEAK specificity baseline "
+             "because variance-matched noise breaks residual normalization regardless "
+             "of axis content). Task-shuffle replaces SOURCE intent + obs + screenshot "
+             "with those of a DIFFERENT task while preserving source mode (= same "
+             "residual-stream statistics, different content). If patching effect is "
+             "content-specific, task-shuffled should produce MUCH SMALLER displacement "
+             "than real-source same-task. Incompatible with --random-inject (they are "
+             "alternative controls).",
+    )
+    p.add_argument(
+        "--task-shuffle-seed", type=int, default=42,
+        help="Seed for --task-shuffle deterministic permutation (reproducibility).",
+    )
     args = p.parse_args()
+    if args.task_shuffle and args.random_inject:
+        raise SystemExit(
+            "--task-shuffle and --random-inject are mutually exclusive controls. "
+            "Pick one — they measure different specificity dimensions."
+        )
 
     # C8 fix: seed all RNGs when random-inject is on, for paper-grade
     # reproducibility. Affects torch.randn_like in patching_grid_continuation.
@@ -225,6 +246,8 @@ def main():
                 "tier": args.tier or ("reverse" if args.reverse else "strong"),
                 "random_inject": args.random_inject,
                 "random_seed": args.random_seed,
+                "task_shuffle": args.task_shuffle,
+                "task_shuffle_seed": args.task_shuffle_seed,
                 "n_tasks_requested": args.n_tasks,
                 "step": args.step,
                 "max_new_tokens": args.max_new_tokens,
@@ -261,6 +284,36 @@ def main():
     patcher = ActivationPatcher(extractor.model, extractor.processor)
     logger.info(f"Model loaded; n_layers={patcher.n_layers}")
 
+    # Task-shuffled control (codex methodology audit 2026-05-12 Bug 6/G3 follow-up):
+    # build a deterministic permutation so that target task T_i uses source artifacts
+    # from a DIFFERENT task T_j (j != i). Preserves residual-stream statistics (same
+    # source mode = same variance), breaks content correspondence.
+    target_to_source_task: dict[int, int] = {}
+    if args.task_shuffle:
+        import random as _rnd
+        task_ids_ordered = [tid for tid, _ in intents]
+        intent_by_tid = dict(intents)
+        rng = _rnd.Random(args.task_shuffle_seed)
+        shuffled = list(task_ids_ordered)
+        # Derangement: no fixed point. Simple swap-based: rotate by 1, then random
+        # swaps that preserve the no-fixed-point property.
+        if len(shuffled) > 1:
+            shuffled = shuffled[1:] + shuffled[:1]  # rotation guarantees no fixed point
+            # Optional: a few random swaps that maintain derangement
+            for _ in range(len(shuffled)):
+                i = rng.randrange(len(shuffled))
+                j = rng.randrange(len(shuffled))
+                if (task_ids_ordered[i] != shuffled[j] and
+                        task_ids_ordered[j] != shuffled[i]):
+                    shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+        target_to_source_task = dict(zip(task_ids_ordered, shuffled))
+        for tt, ss in list(target_to_source_task.items())[:5]:
+            logger.info(f"task-shuffle: target task {tt} → source task {ss}")
+        # Sanity: no fixed point
+        n_fixed = sum(1 for k, v in target_to_source_task.items() if k == v)
+        if n_fixed > 0:
+            logger.warning(f"task-shuffle: {n_fixed} tasks are fixed points (should be 0); shuffle weak")
+
     per_task_results = []
     for task_id, intent in intents:
         step_dir = artifacts_dir / f"{args.site}_task_{task_id}" / f"step_{args.step:03d}"
@@ -282,10 +335,43 @@ def main():
             else ""        if mode == "vision"
             else som_marks_text
         )
-        source_text = text_payload_for(args.source_mode)
+
+        # SOURCE side: by default same task as target; if --task-shuffle, use
+        # a different task's artifacts (intent + obs + screenshot) for source.
+        if args.task_shuffle:
+            source_task_id = target_to_source_task[task_id]
+            source_step_dir = artifacts_dir / f"{args.site}_task_{source_task_id}" / f"step_{args.step:03d}"
+            source_obs_file = source_step_dir / "observation_dom.txt"
+            source_screenshot = source_step_dir / "screenshot_annotated.png"
+            if not source_obs_file.exists() or not source_screenshot.exists():
+                logger.warning(f"task-shuffle: target {task_id} → source {source_task_id} "
+                                "missing artifacts, falling back to same-task source")
+                source_intent = intent
+                source_obs_text = obs_text
+                source_som_marks = som_marks_text
+                source_screenshot_path = str(screenshot_annotated)
+            else:
+                source_intent = intent_by_tid.get(source_task_id, intent)
+                source_obs_text = source_obs_file.read_text(encoding="utf-8")
+                source_som_marks = build_som_marks(source_obs_text)
+                source_screenshot_path = str(source_screenshot)
+            logger.info(f"task {task_id}: SHUFFLED source = task {source_task_id}")
+        else:
+            source_intent = intent
+            source_obs_text = obs_text
+            source_som_marks = som_marks_text
+            source_screenshot_path = str(screenshot_annotated)
+
+        source_text_payload_for = lambda mode: (
+            source_som_marks if mode in ("som", "phantom_som", "phantom_text")
+            else source_obs_text if mode in ("phantom_prompt", "dom", "phantom_dom")
+            else ""              if mode == "vision"
+            else source_som_marks
+        )
+        source_text = source_text_payload_for(args.source_mode)
         target_text = text_payload_for(args.target_mode)
 
-        source_inputs_orig = build_inputs(extractor, intent, args.source_mode, source_text, str(screenshot_annotated))
+        source_inputs_orig = build_inputs(extractor, source_intent, args.source_mode, source_text, source_screenshot_path)
         target_inputs_orig = build_inputs(extractor, intent, args.target_mode, target_text, None)
 
         # --reverse: swap roles. patch target's hidden into source run = "remove image content"
@@ -335,6 +421,12 @@ def main():
                     "tier": args.tier or ("reverse" if args.reverse else "strong"),
                     "random_inject": args.random_inject,
                     "random_seed": args.random_seed,
+                    "task_shuffle": args.task_shuffle,
+                    "task_shuffle_seed": args.task_shuffle_seed,
+                    "task_shuffle_map": (
+                        {str(k): v for k, v in target_to_source_task.items()}
+                        if args.task_shuffle else None
+                    ),
                     "archived_run_dir": str(archived_dir),
                     "model_path": args.model_path,
                     "n_layers": patcher.n_layers,
