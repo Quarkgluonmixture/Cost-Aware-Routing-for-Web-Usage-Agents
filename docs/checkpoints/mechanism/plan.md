@@ -358,6 +358,27 @@ Reddit cross-site replicates: P-text↔P-SoM L23 = 0.0098 (vs cls 0.0114), same 
 
 → Paper §5.7 重写为 "Layered Three-Axis Mechanism Hierarchy" (commit pending).
 
+### 7.3.0b Axis-2 per-task fragility check (2026-05-12 21:50 — /stress W2 defuse)
+
+`axis2_per_task_fragility.md` + `fig_axis2_per_task_fragility.png`. /stress reviewer 第一次 invocation W2 attack: 怀疑 axis-2 cosine 0.0114 mean 由 2-3 outlier 主导, 类比 h1_per_task_fragility 11% strict per-task. Defuse 实验:
+
+| Pair | Site | Mean | Median | IQR | % > 0.010 |
+|---|---|---|---|---|---|
+| **Axis-2 flat (P-text↔P-SoM)** | cls | 0.0132 | 0.0131 | [0.012, 0.014] | **100%** |
+| **Axis-2 flat (P-text↔P-SoM)** | reddit | 0.0121 | 0.0120 | [0.011, 0.013] | **100%** |
+| Axis-1 ref (DOM↔P-text) | cls | 0.0287 | 0.0280 | [0.025, 0.031] | 100% |
+| Axis-1 ref (DOM↔P-text) | reddit | 0.0260 | 0.0263 | [0.023, 0.031] | 100% |
+| Axis-3 image (P-SoM↔SoM) | cls | 0.0407 | 0.0415 | [0.035, 0.044] | 100% |
+
+**3 findings**:
+1. **Mean ≈ median** both sites → distribution **NOT right-skewed**, **NOT outlier-driven**
+2. **IQR 极窄** (0.002-0.003 wide), 全部 24 task 在 0.010-0.018 范围, zero outlier
+3. **Cross-site rank stable** + magnitude near-identical (0.0132 cls vs 0.0121 reddit, < 9% diff)
+
+**/stress W2 attack defused completely**: axis-2 cosine gap 是 uniform per-task signature, 不是 aggregate artifact. 这与 H1 binary dichotomy 11% strict per-task fragile 形成对比 — H1 因为问 layer-comparison 离散问题易 fragile, axis-2 cosine 是 continuous mode-pair distance 即使 magnitude 小也 robust per-task.
+
+**Paper §5.7 增强**: 加入 per-task fragility 段, 明确每个 task 都贡献 axis-2 signal, 不是 2-3 outlier mean artifact.
+
 ### 7.3.0a Exp 3 logit lens 输出层 amplification (2026-05-12 21:02)
 
 `axis2_logit_lens.md` + `fig_axis2_logit_lens.png`. 应用 Qwen3-VL-4B `model.model.language_model.norm` + `model.lm_head` to per-layer per-mode mean hidden states, 算 KL across 37 层.
