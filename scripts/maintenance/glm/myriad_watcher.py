@@ -82,6 +82,15 @@ GONE_HOOKS: dict[str, tuple[str, str]] = {
         "stage3_cellhd_red_fwd_dom_myriad",
         "",
     ),
+    # Exp 5 axis-2 prompt-only patching (P-SoM → P-text, same flat text)
+    "cellhprm_cls": (
+        "stage3_cellhprompt_cls_fwd_ptext_myriad",
+        "",
+    ),
+    "cellhprm_red": (
+        "stage3_cellhprompt_red_fwd_ptext_myriad",
+        "",
+    ),
     # Stage 4 Method 4.2 multimode hidden state extraction (PCA cosine gap)
     "stage4mm_cls": (
         "stage4_multimode_b1_cls",
