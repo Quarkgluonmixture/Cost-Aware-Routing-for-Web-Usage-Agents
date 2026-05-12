@@ -125,6 +125,15 @@ GONE_HOOKS: dict[str, tuple[str, str]] = {
         "stage4_multimode_b1_reddit",
         "",
     ),
+    # Stage 4 v2 fixed extracts (Bug 1 + Bug 2 + Bug 5 fix, 2026-05-12 codex methodology audit)
+    "stage4mm_cls_v2": (
+        "stage4_multimode_b1_cls",
+        "",
+    ),
+    "stage4mm_red_v2": (
+        "stage4_multimode_b1_reddit",
+        "",
+    ),
     # 16-cell rerun cells: register here as launched. Pattern:
     # "cellX_<descr>": ("<remote_subdir>", "<cell_md_relpath>"),
 }

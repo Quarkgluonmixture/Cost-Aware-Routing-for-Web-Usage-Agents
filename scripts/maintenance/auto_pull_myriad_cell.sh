@@ -115,7 +115,8 @@ PULLED=0
 FAILED=()
 for FILE in env_snapshot.json patching_continuation_results.json \
             pilot_summary.md run_manifest.json patching_continuation_curves.png \
-            condition_summary_v2.json hidden_states.npz; do
+            condition_summary_v2.json hidden_states.npz \
+            hidden_states_v2_fixed.npz hidden_states_v2_fixed.provenance.json; do
     REMOTE_PATH="$MYRIAD_REMOTE_BASE/$REMOTE_BASENAME/$FILE"
     LOCAL_PATH="$LOCAL_DIR/$FILE"
     ssh -i "$QUARK_KEY" -o BatchMode=yes -o ConnectTimeout=30 "$QUARK_HOST" \

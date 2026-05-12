@@ -43,16 +43,24 @@ logger = logging.getLogger(__name__)
 ALL_6_MODES = ["dom", "phantom_text", "phantom_prompt", "phantom_som", "som", "vision"]
 
 
-def build_som_marks(obs_text: str) -> str:
-    """Extract [SOM_MARKS] block from observation_dom.txt — copy of Stage 2B logic.
+def build_som_marks(obs_text: str, max_marks: int = 200) -> str:
+    """Extract [SOM_MARKS] block from observation_dom.txt — production-aligned.
 
-    AXTree dump contains lines like `[N] role 'label'`; we keep those and elide
-    the rest.
+    Bug 2 fix (2026-05-12, /codex-stress methodology audit v2): the previous
+    implementation used `re.compile(r"^\[\d+\]\s+\w+").findall(obs_text)` which
+    keeps only the bracket-id + role-token, drops labels and options, and
+    closes with a `[end of som marks]` sentinel that does NOT match Stage 2B
+    or production. Method 4.2 / Exp 1 / Exp 3 / Exp 5 hidden-state cosine
+    geometry was therefore computed on a different text payload than the
+    agent and the patching code path see. This function is now byte-identical
+    to `scripts/mechanistic/run_stage2b_continuation_pilot.py:build_som_marks`
+    so Stage 4 NPZ extraction matches Stage 2B injection exactly.
     """
-    import re
-    pattern = re.compile(r"^\[\d+\]\s+\w+", re.MULTILINE)
-    keep = pattern.findall(obs_text)
-    return "\n".join(keep) + "\n[end of som marks]\n"
+    from p79.experiment.som import _extract_text_marks
+    marks = _extract_text_marks(obs_text, max_marks=max_marks)
+    if not marks:
+        return "[SOM_MARKS]\n[/SOM_MARKS]"
+    return "\n".join(["[SOM_MARKS]"] + [f"[id={m['id']}] {m['label']}" for m in marks] + ["[/SOM_MARKS]"])
 
 
 def text_payload_for(mode: str, obs_text: str, som_marks_text: str) -> str:
@@ -75,28 +83,66 @@ def main():
                         help="archive_subset_b1_<site>/ dir with per-task observation snapshots")
     parser.add_argument("--output", required=True, help="output .npz path")
     parser.add_argument("--model-path", default="Qwen/Qwen3-VL-4B-Instruct")
+    parser.add_argument(
+        "--model-revision",
+        default="ebb281ec70b05090aa6165b016eac8ec08e71b17",
+        help="HF revision SHA. Must match Stage 2B / agent extraction (Bug 5 fix).",
+    )
     parser.add_argument("--modes", nargs="+", default=ALL_6_MODES,
                         help="modes to extract (default: all 6)")
+    parser.add_argument(
+        "--tier", choices=["strong", "reverse", "all"], default="strong",
+        help="Filter archive by manifest tier (Bug 1 fix). Default strong "
+             "matches Stage 2/3 patching tier. Use 'all' to ignore manifest "
+             "and reproduce legacy lexicographic-glob behavior (NOT recommended).",
+    )
     args = parser.parse_args()
 
     archive_dir = Path(args.archived_run_dir)
     if not archive_dir.exists():
         raise SystemExit(f"archive dir missing: {archive_dir}")
 
-    # Pick first n-tasks task IDs that have artifacts at all requested steps
+    # Bug 1 fix (2026-05-12, /codex-stress methodology audit v2): previous
+    # implementation used `sorted(archive_dir.glob(...))` lexicographic
+    # selection, ignoring `manifest.json` tier buckets, so the "24 strong-
+    # tier" claim in paper §5 was not what the code ran when archives
+    # contained mixed strong + reverse tasks. Now load tier from manifest;
+    # fall back to legacy behavior only when --tier=all is explicit.
+    manifest_path = archive_dir / "manifest.json"
+    tier_task_ids: set[int] | None = None
+    if args.tier != "all" and manifest_path.exists():
+        try:
+            manifest = json.load(open(manifest_path))
+            tier_task_ids = {int(item["task_id"]) for item in manifest.get(args.tier, [])
+                             if "task_id" in item}
+            logger.info(f"Manifest tier '{args.tier}': {len(tier_task_ids)} task IDs")
+        except Exception as e:
+            logger.warning(f"failed to parse manifest tier '{args.tier}': {e}")
+            tier_task_ids = None
+    if tier_task_ids is not None and not tier_task_ids:
+        raise SystemExit(
+            f"Manifest contains no tasks under tier '{args.tier}'. "
+            "Use --tier=all to bypass tier filter (legacy behavior, NOT recommended)."
+        )
+
     task_dirs = sorted(archive_dir.glob(f"{args.site}_task_*"))
     selected = []
+    skipped_off_tier = 0
     for td in task_dirs:
+        tid = int(td.name.rsplit("_", 1)[1])
+        if tier_task_ids is not None and tid not in tier_task_ids:
+            skipped_off_tier += 1
+            continue
         if all((td / f"step_{s:03d}" / "observation_dom.txt").exists() and
                (td / f"step_{s:03d}" / "screenshot_annotated.png").exists()
                for s in args.steps):
-            tid = int(td.name.rsplit("_", 1)[1])
             selected.append((tid, td))
         if len(selected) >= args.n_tasks:
             break
-    logger.info(f"Selected {len(selected)} tasks (target {args.n_tasks})")
+    logger.info(f"Selected {len(selected)} tasks (target {args.n_tasks}); "
+                f"skipped {skipped_off_tier} off-tier")
     if not selected:
-        raise SystemExit("no archived tasks selected; check --site/--steps/--archived-run-dir")
+        raise SystemExit("no archived tasks selected; check --site/--steps/--tier/--archived-run-dir")
 
     # Load intents — use same path as run_stage1_pilot.py (external/visualwebarena/config_files/vwa/test_<site>)
     REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -143,8 +189,11 @@ def main():
             "cannot extract hidden states"
         )
 
-    extractor = HiddenStateExtractor(model_path=args.model_path)
-    logger.info("Model loaded")
+    extractor = HiddenStateExtractor(
+        model_path=args.model_path,
+        model_revision=args.model_revision,
+    )
+    logger.info(f"Model loaded (revision pinned: {args.model_revision[:12]}...)")
 
     # Iterate
     all_hs, all_modes, all_tids, all_steps, all_labels = [], [], [], [], []
@@ -191,6 +240,68 @@ def main():
                         mode_labels_str=np.array(all_modes, dtype="<U16"))
     logger.info(f"Saved {len(all_hs)} examples → {out} ({H.nbytes / 1e6:.1f} MB before compression)")
     logger.info(f"Modes: {dict(zip(*np.unique(all_modes, return_counts=True)))}")
+
+    # Provenance sidecar (added 2026-05-12 after /codex-stress methodology
+    # audit v2: previously only the .npz array was written, with no command,
+    # git SHA, model revision, archive path, tier, selected task IDs, or
+    # formatter hash. All Method 4.2 / Exp 1 / Exp 3 / Exp 5 analyses
+    # consume this NPZ, so provenance traceability is paper-grade required.
+    import hashlib
+    import subprocess
+    import sys
+    sidecar = out.with_suffix(".provenance.json")
+    try:
+        git_sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=Path(__file__).resolve().parents[2],
+            stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except Exception:
+        git_sha = "unknown"
+    try:
+        git_dirty = bool(subprocess.check_output(
+            ["git", "status", "--porcelain"],
+            cwd=Path(__file__).resolve().parents[2],
+            stderr=subprocess.DEVNULL,
+        ).decode().strip())
+    except Exception:
+        git_dirty = None
+    # Hash of the build_som_marks source so future audits can verify the
+    # formatter has not silently drifted. Includes the function source +
+    # the imported _extract_text_marks source for full byte-identity check.
+    formatter_src = build_som_marks.__code__.co_consts
+    try:
+        from p79.experiment import som as _som_mod
+        upstream_src = open(_som_mod.__file__, "rb").read()
+        formatter_hash = hashlib.sha256(
+            (repr(formatter_src) + upstream_src.decode("utf-8", errors="replace")).encode()
+        ).hexdigest()
+    except Exception:
+        formatter_hash = "unknown"
+    provenance = {
+        "command": " ".join(sys.argv),
+        "git_sha": git_sha,
+        "git_dirty": git_dirty,
+        "model_path": args.model_path,
+        "model_revision": args.model_revision,
+        "archive_dir": str(archive_dir.resolve()),
+        "tier": args.tier,
+        "tier_task_ids_from_manifest": (
+            sorted(tier_task_ids) if tier_task_ids is not None else None
+        ),
+        "selected_task_ids": [tid for tid, _ in selected],
+        "n_tasks_target": args.n_tasks,
+        "n_tasks_selected": len(selected),
+        "modes": args.modes,
+        "steps": args.steps,
+        "formatter_hash": formatter_hash,
+        "formatter_source_module": "p79.experiment.som._extract_text_marks",
+        "npz_path": str(out.resolve()),
+        "n_examples_saved": len(all_hs),
+        "hidden_state_shape": list(H.shape),
+    }
+    sidecar.write_text(json.dumps(provenance, indent=2, default=str))
+    logger.info(f"Provenance → {sidecar}")
 
 
 if __name__ == "__main__":

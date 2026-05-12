@@ -55,27 +55,15 @@ Before writing the review, read enough to form an opinion that survives author r
 
 If the paper makes a claim you cannot trace to a specific file / line / number, that itself is a finding ("Claim X is unsourced").
 
-## Mental backdrop — gaps frequently missed in this subfield
+## Setting your own attack vectors (do NOT use a checklist)
 
-These are the typical lines of attack a hostile reviewer takes in mechanistic interpretability + multimodal agent papers. Use them as **starting points for adversarial reading**, NOT as a checklist to mechanically tick:
+**Design rule (set 2026-05-12 evening after empirical evidence)**: Earlier versions of this skill enumerated 15 specific "common subfield attack lines" as starting points. Today's /stress + /codex-stress comparison showed that **5/6 weak claims codex caught were OUTSIDE that 15-line list** — the enumeration was creating "checked 15 boxes = audit complete" false confidence and a corresponding 15-shaped blind spot.
 
-- **Single-family illusion**: "all 4 models you tested share the same pretraining corpus / vision encoder lineage — this is not a family-independent claim"
-- **Cherry-picked layer**: "you report L17 cosine peak but show no full-37-layer profile — is L17 actually the peak or just where the story is cleanest?"
-- **Aggregate mean hides task-level chaos**: "your 24-task mean of 0.011 — what's the per-task distribution? If 23 are zero and 1 is 0.26, your mean is an artifact"
-- **Mechanism necessary vs sufficient conflation**: "you claim mechanism X explains behavior Y, but mechanism X is identical between mode A (hero) and mode B (not hero) — your mechanism is necessary at most"
-- **Residual stream ≠ causal use**: "cosine gap is geometric, not causal — patching shows L11-L17 displaces output, but how do you rule out that the patched representation is downstream of where the real decision is made?"
-- **Output amplification trivial**: "10-25x cosine-to-KL amplification by lm_head is algebraic — your bf16 linear projection on a 0.011 vector geometrically must produce something; what's the random baseline?"
-- **Negative control too easy**: "Cell E random injection at -0.03 vs real-source -0.33 is 10x, but Gaussian noise matched to source variance is a weak baseline — what about content-matched but task-randomized?"
-- **Sclar 2024 prompt-format absorbs the finding**: "your axis-1 'flat-text triggers shortcut' is exactly Sclar 2024 prompt format sensitivity on a multimodal setting — what's left as novel?"
-- **Wu et al. tool calling absorbs the method**: "your method 4.2 / 4.4 IS Wu et al.'s tool calling toolkit. You renamed cosine readout and mean-diff steering. Where's the methodological contribution?"
-- **Hero status confound**: "P-SoM has SoM prompt + flat text + no image. P-text has DOM prompt + flat text + no image. The drop-one difference could be entirely the prompt; you haven't isolated which axis drives drop-one"
-- **48-cell sweep that became 45 cells**: "you reported 45/48 — what failed in the 3? Selection bias?"
-- **Boundary peak as 'late-layer mechanism'**: "your cls marks-like all peaked at L36, which is the last decoder layer — this is a monotonic curve hitting its endpoint, not a 'L36 mechanism'"
-- **Confounding variables not enumerated**: "task selection (strong-tier via composite score) preselects tasks where SoM beats DOM — your mechanism findings might be conditional on this filter"
-- **Sample size for steering**: "Method 4.4 H-mean 0.33 from 45 cells × N tasks each — what's the per-cell N and the bootstrap CI on H-mean?"
-- **Reproducibility of P-SoM hero across runs**: "is the +3.33pp reddit P-SoM hero CI strictly above zero, or does it cross zero in the per-seed bootstrap?"
+You have full reviewer experience (200+ papers in mechinterp + multimodal agents). **Use it.** Read this paper's claims, evidence files, and code adversarially. Set your own attack vectors based on what you see — internal contradictions across sections, data inconsistencies across files, claim-evidence mismatch, missing controls, weak baselines, layer-indexing or layer-claim drift, statistical procedure issues, multimodal-specific gotchas, novelty-vs-prior-work overlaps, anything that would land in a real review.
 
-This list is illustrative not exhaustive. **Read adversarially** for new lines of attack the data itself suggests.
+**Do not restrict your audit to typical subfield pitfalls.** Common pitfalls exist (single-family illusion, residual-stream-vs-causal conflation, layer cherry-picking, prompt-format-absorbs-finding, hero-status confound, etc.) — you know them, you do not need a list to remind you. Today's miss pattern is direct evidence that listing them narrows attention rather than broadens it.
+
+If a claim cannot be traced to a specific file / line / number, that itself is a finding ("Claim X is unsourced").
 
 ## Distance to top-tier framing
 
@@ -174,3 +162,5 @@ Manual invocation (`/xray`): user wants to stress-test current state at any deci
 Versioning: xray v2 (2026-05-12) — reframed from PRA-10 checklist to hostile reviewer persona per user feedback. The checklist version was too mechanical; reviewer-mode is what catches the gaps that data already shows.
 
 xray v3 (2026-05-12 evening) — Mode B auto-chain to /codex-stress on milestones added.
+
+xray v4 (2026-05-12 late evening) — "Mental backdrop" 15-line attack list removed. Empirical: 5/6 codex catches in 2026-05-12 audit were outside that 15-line space → list creating "checked 15 boxes = complete" false confidence + corresponding list-shaped blind spot. Lean-prompt principle: trust reviewer experience, set own attack vectors based on artifacts. See `~/.claude/projects/.../memory/feedback_lean_audit_prompts.md`.
