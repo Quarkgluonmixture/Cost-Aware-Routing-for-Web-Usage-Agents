@@ -123,15 +123,7 @@ Manual invocation (`/xray`): user wants to stress-test current state at any deci
 
 **Why**: Single-AI self-audit has systematic blind spots. 2026-05-12 evidence: Claude /stress missed 5/6 weak claims that codex /codex-stress caught independently on the same paper (internal §5 proximity-vs-separation contradiction, deployment-time logprob overclaim, plan.md L17-planning-site staleness, §4 P-text data inconsistency, §6/§7 draft absence). Cross-AI diff is the highest-leverage paper-grade check we have.
 
-**When**: After Claude's /stress review completes and BEFORE returning the final user-visible message, automatically dispatch /codex-stress on the same scope. Treat the resulting cross-AI diff as part of /stress output.
-
-**Trigger conditions for Mode B chain** (subset of /stress auto-triggers — paper-grade milestone only, not every spot-check):
-
-1. User signals milestone: "done" / "wrap up" / "收尾" / "all land" / "paper-grade" / "ready to commit/push" / "evidence layer complete" / "submission ready" / "顶刊水准了"
-2. About to commit paper prose (`docs/checkpoints/paper_drafts/section*.md`)
-3. About to push accumulated paper-related commits
-4. About to declare "paper §N done" / "paper §5 paper-grade"
-5. Before codex prose round / advisor sync / interview prep / ultrareview
+**When**: After Claude's /stress review completes and BEFORE returning the final user-visible message, **always** dispatch /codex-stress on the same scope (Mode B = default behavior for every /stress invocation, milestone or spot-check). Treat the resulting cross-AI diff as part of /stress output. User has codex credit allowance and explicitly set 2026-05-12 evening that every /stress should chain to codex.
 
 **Bypass condition** (Mode B only — not the whole /stress): user explicitly says "skip codex" / "claude only" / "no cross-AI" → Claude /stress alone, no chain.
 
