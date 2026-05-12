@@ -298,7 +298,7 @@ After per-task fragility revealed 11% strict dichotomy (aggregate statistical, n
 | **P1** | Per-task fragility audit (24 cls strong) | DGX | ✅ done | `results/h1_per_task_fragility.md` |
 | **P2** | Cross-family (Phi-3.5-Vision 4.2B) | DGX | ❌ deferred (HF cas-bridge throttling) | `stage4_h1_phi35_cls/pilot_summary.md` |
 | **P3** | Within-family bigger (Qwen2-VL-7B, H1' capacity test) | DGX | ❌ deferred (HF cas-bridge throttling) | `stage4_h1_qwen2vl7b_cls/pilot_summary.md` |
-| **P4** | cls reverse-tier (selection-bias defense) | Myriad 353763 | qw 16h+ | `stage4_format_variation_b1_cls_reverse/` |
+| **P4** | cls reverse-tier (selection-bias defense) | Myriad 353763 | ✅ **done 18:50:46** — shape (260, 37, 2560), 10 modes, 46 MB pulled. Same pattern as cls strong-tier (L36 marks-like + L04 dom). Selection-bias defended | `stage4_format_variation_b1_cls_reverse/hidden_states.npz` |
 | **P5a** | reddit format variation (cross-site H1) | Myriad **354382** (3rd attempt) | ✅ **done 08:09:38** — shape (430, 37, 2560), 10 modes, 76 MB pulled | `stage4_format_variation_b1_reddit/hidden_states.npz` |
 | **P5b** | reddit Method 4.2 multimode (cross-site Mirage) | Myriad 353890 | ✅ **done 07:31:14** — 288 examples, 6 modes, 51 MB pulled | `stage4_multimode_b1_reddit/hidden_states.npz` |
 
@@ -355,6 +355,17 @@ Caveats: small n (24×2=48/mode) makes 2/6 marks-like falling to L04 (appagent_i
 1. P-SoM mid-layer mechanism (4-fold drop-one) — cls + reddit replicated ✓
 2. Indexed-list format → shortcut activation — directional consistency cls ↔ reddit ✓
 3. Mirage signature geometric structure — cls + reddit replicated ✓
+
+**P4 selection-bias defense (2026-05-12 18:50)** — cls reverse-tier H1 (`format_variation_h1_test_cls_reverse.md`):
+
+| Variant | strong-tier cls | reverse-tier cls | reddit |
+|---|---|---|---|
+| 6 marks-like | L36 monotonic | **L36 monotonic** ✓ same | L17 (4/6 真 peak) |
+| hash_id_control | L36 (failed control) | **L36** ✓ same | L04 ✓ proper control |
+| plain_sentence | L17 | **L22** close to L17 | L17 |
+| dom baseline | L04 ✓ | **L04** ✓ | L04 ✓ |
+
+H1 mechanism in cls is **not tier selection artifact** (strong vs reverse both replicate). Reddit data paradoxically cleaner reveal of true L17 mid-layer fusion locus (cls L36 is monotonic-boundary artifact).
 
 ### 7.4 Decisions pending
 
