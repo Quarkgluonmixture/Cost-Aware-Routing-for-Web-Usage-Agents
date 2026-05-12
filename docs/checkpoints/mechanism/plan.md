@@ -333,6 +333,31 @@ After per-task fragility revealed 11% strict dichotomy (aggregate statistical, n
 - P4 reverse-tier holds → not tier-selection-bias
 - P5a reddit holds → cross-site universal
 
+### 7.3.0 Exp 1 axis-2 layer profile (2026-05-12 21:00 — three-axis hierarchy)
+
+`axis2_layer_profile.md` + `fig_axis2_prompt_layer_profile.png`. Re-examine residual stream geometry per axis-isolated pair, full 37-layer cosine curves on `stage4_multimode_b1_{cls,reddit}` (288 ex each).
+
+Cls site peak layers + magnitudes:
+
+| Pair | Group | L17 | L23 | L36 | Peak L | Peak gap |
+|---|---|---:|---:|---:|---:|---:|
+| P-SoM↔SoM (image-axis ref) | axis-3 | 0.0412 | 0.0400 | 0.0411 | **L17** | 0.0412 |
+| DOM↔P-text (text fmt) | axis-1 | 0.0120 | 0.0254 | 0.0201 | **L23** | 0.0254 |
+| P-prompt↔P-SoM (text fmt) | axis-1 | 0.0113 | 0.0292 | 0.0201 | **L23** | 0.0292 |
+| P-text↔P-SoM (prompt fam, flat) | axis-2 | 0.0028 | **0.0114** | 0.0089 | L23 | 0.0114 |
+| DOM↔P-prompt (prompt fam, hier) | axis-2 | 0.0013 | 0.0050 | 0.0067 | L36 | 0.0067 |
+
+Reddit cross-site replicates: P-text↔P-SoM L23 = 0.0098 (vs cls 0.0114), same rank-order, same peak layer.
+
+**Three regularities**:
+1. **Distinct peak layers**: image L17 (fast sharp), text-format L23 (slower late-mid), prompt-family L23 (same timing as text-format on flat-text)
+2. **Distinct magnitudes**: image ~0.04, text-format ~0.03, prompt-family ~0.01 — 4:3:1 ratio
+3. **Cross-site rank stable**: reddit identical pattern
+
+**Reframe**: Axis-2 prompt-family is NOT null at residual stream. It's 3-4x weaker than axis-1 + peaks at L23 not L17. Method 4.2 plan §5.1 L17 snapshot 错失它. New paper §5 framing: layered three-axis hierarchy, image-axis dominant at L17 Mirage locus, text-format + prompt-family late-mid build at L23 parallel.
+
+→ Paper §5.7 重写为 "Layered Three-Axis Mechanism Hierarchy" (commit pending).
+
 ### 7.3.1 Reddit cross-site results (2026-05-12 16:30 — P5a + P5b analyses landed)
 
 **P5a — Format variation H1 test on reddit** (`format_variation_h1_test_reddit.md`):
