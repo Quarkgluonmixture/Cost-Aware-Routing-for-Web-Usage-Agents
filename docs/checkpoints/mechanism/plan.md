@@ -189,7 +189,7 @@ Cell E random-injection control: replacing source hidden with Gaussian noise (sa
 | H-t-cls | cls | SoM → P-text | L28 (0.164) | -0.25 | `stage3_cellht_cls_fwd_text_myriad/` |
 | H-p-red | reddit | SoM → P-prompt | L20 (0.209) | -0.19 | `stage3_cellhp_red_fwd_prompt_myriad/` |
 | H-t-red | reddit | SoM → P-text | L01 (0.194) | -0.24 | `stage3_cellht_red_fwd_text_myriad/` |
-| **H-d-red** | reddit | SoM → DOM | **gap — not yet run** | — | (closes Stage 3 reddit 2x2) |
+| **H-d-red** | reddit | SoM → DOM | **Myriad 358831 qw** (submitted 2026-05-12 17:59) | — | `stage3_cellhd_red_fwd_dom_myriad/` (closes Stage 3 reddit 2x2) |
 
 **Stage 3 interpretation**: All 4 H-t/H-p cells show mid-layer (L11-L20) disruption -0.19 to -0.25 Δoverlap→tgt. Magnitude < Cell H-d-cls (-0.33) but well above random injection control (Cell E -0.03). **Mechanism additivity confirmed**: image-feature axis is shared substrate across DOM / P-text / P-prompt arms — single SoM→{any-no-image-arm} patching displaces target prediction toward source. Cross-site: cls + reddit both replicate (paper §5 universal mid-layer fusion locus).
 
