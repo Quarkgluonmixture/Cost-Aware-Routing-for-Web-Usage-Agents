@@ -63,6 +63,7 @@ def main() -> None:
     d = np.load(NPZ, allow_pickle=True)
     H = d["hidden_states"]
     mode_labels = d["mode_labels_str"]
+    task_ids = d["task_ids"] if "task_ids" in d.files else None
     n_layers = H.shape[1]
     print(f"[stage4] loaded {H.shape[0]} examples × {n_layers} layers × {H.shape[2]} dim")
 
@@ -70,9 +71,16 @@ def main() -> None:
     means = {m: states[m].mean(axis=0) for m in MODES}  # each (37, 2560)
     print(f"[stage4] per-mode counts: " + ", ".join(f"{m}={len(states[m])}" for m in MODES))
 
+    # Per-mode task_id mapping for leave-one-task-out (Bug 3 fix, codex
+    # methodology audit 2026-05-12: previous AUROC fit direction on the
+    # same examples used to evaluate → inflated, not held-out decodability).
+    mode_task_ids = {m: task_ids[mode_labels == m] if task_ids is not None else None
+                     for m in MODES}
+
     pairs = list(combinations(MODES, 2))
     cos_gap = np.zeros((len(pairs), n_layers))
-    auroc = np.zeros((len(pairs), n_layers))
+    auroc_in_sample = np.zeros((len(pairs), n_layers))
+    auroc_lototask = np.zeros((len(pairs), n_layers))  # leave-one-task-out CV
     for pi, (m1, m2) in enumerate(pairs):
         for L in range(n_layers):
             c1, c2 = means[m1][L], means[m2][L]
@@ -83,9 +91,46 @@ def main() -> None:
             y = np.concatenate([np.ones(len(s1)), np.zeros(len(s2))])
             scores = np.concatenate([s1, s2])
             try:
-                auroc[pi, L] = roc_auc_score(y, scores)
+                auroc_in_sample[pi, L] = roc_auc_score(y, scores)
             except Exception:
-                auroc[pi, L] = 0.5
+                auroc_in_sample[pi, L] = 0.5
+
+            # Leave-one-task-out CV — only when task_ids are available
+            tids_m1 = mode_task_ids[m1]
+            tids_m2 = mode_task_ids[m2]
+            if tids_m1 is None or tids_m2 is None:
+                auroc_lototask[pi, L] = np.nan
+                continue
+            # Tasks that appear in BOTH modes (paper-grade design has all
+            # tasks in all modes, so this is usually all 24)
+            common_tasks = sorted(set(tids_m1.tolist()) & set(tids_m2.tolist()))
+            if len(common_tasks) < 3:
+                auroc_lototask[pi, L] = np.nan
+                continue
+            fold_aurocs = []
+            for held_out_tid in common_tasks:
+                # Train: all examples whose task_id != held_out_tid
+                train_mask_m1 = tids_m1 != held_out_tid
+                train_mask_m2 = tids_m2 != held_out_tid
+                test_mask_m1 = tids_m1 == held_out_tid
+                test_mask_m2 = tids_m2 == held_out_tid
+                if (train_mask_m1.sum() == 0 or train_mask_m2.sum() == 0 or
+                        test_mask_m1.sum() == 0 or test_mask_m2.sum() == 0):
+                    continue
+                train_c1 = states[m1][train_mask_m1, L, :].mean(0)
+                train_c2 = states[m2][train_mask_m2, L, :].mean(0)
+                train_dir = (train_c1 - train_c2) / (np.linalg.norm(train_c1 - train_c2) + 1e-9)
+                test_s1 = states[m1][test_mask_m1, L, :] @ train_dir
+                test_s2 = states[m2][test_mask_m2, L, :] @ train_dir
+                test_y = np.concatenate([np.ones(len(test_s1)), np.zeros(len(test_s2))])
+                test_scores = np.concatenate([test_s1, test_s2])
+                if len(np.unique(test_y)) < 2:
+                    continue
+                try:
+                    fold_aurocs.append(roc_auc_score(test_y, test_scores))
+                except Exception:
+                    pass
+            auroc_lototask[pi, L] = float(np.mean(fold_aurocs)) if fold_aurocs else np.nan
 
     pca_var = np.zeros((len(MODES), n_layers))
     for mi, mode in enumerate(MODES):
@@ -98,25 +143,47 @@ def main() -> None:
     peak = {}
     for pi, (m1, m2) in enumerate(pairs):
         L = int(np.argmax(cos_gap[pi]))
-        peak[f"{m1}_vs_{m2}"] = {"layer": L, "gap": float(cos_gap[pi, L]),
-                                  "auroc_at_peak": float(auroc[pi, L])}
+        peak[f"{m1}_vs_{m2}"] = {
+            "layer": L,
+            "gap": float(cos_gap[pi, L]),
+            "auroc_in_sample_at_peak": float(auroc_in_sample[pi, L]),
+            "auroc_lototask_at_peak": (
+                float(auroc_lototask[pi, L])
+                if not np.isnan(auroc_lototask[pi, L]) else None
+            ),
+        }
+
+    # Replace NaN with None for JSON serializability
+    def _nan_to_none(arr):
+        return [None if np.isnan(x) else float(x) for x in arr]
 
     metrics = {
         "n_examples": int(H.shape[0]), "n_layers": int(n_layers), "n_modes": len(MODES),
         "modes": MODES, "n_per_mode": {m: int(len(states[m])) for m in MODES},
         "pairwise_cosine_gap": {f"{m1}_vs_{m2}": cos_gap[pi].tolist()
                                   for pi, (m1, m2) in enumerate(pairs)},
-        "pairwise_auroc": {f"{m1}_vs_{m2}": auroc[pi].tolist()
-                             for pi, (m1, m2) in enumerate(pairs)},
+        "pairwise_auroc_in_sample": {f"{m1}_vs_{m2}": auroc_in_sample[pi].tolist()
+                                       for pi, (m1, m2) in enumerate(pairs)},
+        "pairwise_auroc_lototask": {f"{m1}_vs_{m2}": _nan_to_none(auroc_lototask[pi])
+                                      for pi, (m1, m2) in enumerate(pairs)},
         "pca_top10_var_ratio": {m: pca_var[mi].tolist() for mi, m in enumerate(MODES)},
         "peak_disruption_layers": peak,
+        "auroc_protocol_note": (
+            "auroc_in_sample fits mode-mean direction on all examples and scores those "
+            "same examples (inflated, NOT held-out decodability). auroc_lototask is "
+            "leave-one-task-out cross-validation: for each held-out task, fit direction "
+            "on the remaining tasks' means, then score the held-out task's examples. "
+            "Report lototask as the paper-grade linear-readability metric; in-sample is "
+            "kept for descriptive comparison only. Bug 3 fix per codex methodology audit "
+            "2026-05-12."
+        ),
     }
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(metrics, indent=2))
     print(f"[stage4] metrics → {OUT_JSON}")
 
     write_summary(metrics, OUT_MD)
-    plot(cos_gap, auroc, pairs, pca_var, OUT_FIG)
+    plot(cos_gap, auroc_lototask, pairs, pca_var, OUT_FIG)
 
 
 def write_summary(m: dict, out: Path) -> None:
@@ -128,26 +195,39 @@ def write_summary(m: dict, out: Path) -> None:
         f"**Data**: {m['n_examples']} examples × {m['n_layers']} layers × {m['n_modes']} modes (Qwen3-VL-4B B1 cls)",
         f"**Per-mode n**: " + ", ".join(f"{DISPLAY[k]}={v}" for k, v in m['n_per_mode'].items()),
         "",
+        "**AUROC protocol** (Bug 3 fix, codex methodology audit 2026-05-12): paper-grade "
+        "metric is `auroc_lototask` = leave-one-task-out cross-validation (fit mode-mean "
+        "direction on training tasks, score held-out task). `auroc_in_sample` (fit + score "
+        "on same examples) is reported for descriptive comparison only; treat any in-sample "
+        "≥0.95 as expected algebraic separability, NOT held-out linear-readability.",
+        "",
         "## Peak disruption layer per mode pair",
         "",
         "Sorted by cosine gap magnitude (= geometric distance between mode means in hidden space):",
         "",
-        "| Mode pair | Peak layer | Cosine gap | AUROC at peak |",
-        "|---|---|---|---|",
+        "| Mode pair | Peak layer | Cosine gap | AUROC (in-sample) | AUROC (lototask) |",
+        "|---|---|---|---|---|",
     ]
     for k, v in sorted_pairs:
         m1, m2 = k.split("_vs_")
-        lines.append(f"| {DISPLAY[m1]} vs {DISPLAY[m2]} | L{v['layer']:02d} | {v['gap']:.4f} | {v['auroc_at_peak']:.3f} |")
+        lototask_val = v.get("auroc_lototask_at_peak")
+        lototask_str = f"{lototask_val:.3f}" if lototask_val is not None else "n/a"
+        lines.append(
+            f"| {DISPLAY[m1]} vs {DISPLAY[m2]} | L{v['layer']:02d} | {v['gap']:.4f} | "
+            f"{v['auroc_in_sample_at_peak']:.3f} | {lototask_str} |"
+        )
 
     # Mid-layer (L17) snapshot — paper §5 disruption locus
     L17_section = ["", "## L17 cosine gap snapshot (paper §5 disruption locus)", ""]
-    L17_section.append("| Mode pair | L17 cosine gap | L17 AUROC |")
-    L17_section.append("|---|---|---|")
+    L17_section.append("| Mode pair | L17 cosine gap | L17 AUROC in-sample | L17 AUROC lototask |")
+    L17_section.append("|---|---|---|---|")
     pairs = list(combinations(MODES, 2))
     for pi, (m1, m2) in enumerate(pairs):
         gap = m["pairwise_cosine_gap"][f"{m1}_vs_{m2}"][17]
-        a = m["pairwise_auroc"][f"{m1}_vs_{m2}"][17]
-        L17_section.append(f"| {DISPLAY[m1]} vs {DISPLAY[m2]} | {gap:.4f} | {a:.3f} |")
+        a_in = m["pairwise_auroc_in_sample"][f"{m1}_vs_{m2}"][17]
+        a_lo = m["pairwise_auroc_lototask"][f"{m1}_vs_{m2}"][17]
+        a_lo_str = f"{a_lo:.3f}" if a_lo is not None else "n/a"
+        L17_section.append(f"| {DISPLAY[m1]} vs {DISPLAY[m2]} | {gap:.4f} | {a_in:.3f} | {a_lo_str} |")
     lines.extend(L17_section)
 
     # Phantom-arm specific anchor — P-SoM cosine to each baseline mode at L17
