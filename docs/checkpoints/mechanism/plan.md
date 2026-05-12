@@ -261,7 +261,42 @@ Final message (Chinese, casual WeChat tone):
 >
 > 不急, 你忙完回我就行. paper 写得真漂亮.
 
-### 7.3 Decisions pending
+### 7.3 H1 generalization in-flight (2026-05-12 night)
+
+After per-task fragility revealed 11% strict dichotomy (aggregate statistical, not deterministic), launched 5-priority defense matrix to triangulate H1 across **(tier × site × family/size)**:
+
+| Pri | Test | Where | Status @ 06:25 | Sentinel |
+|---|---|---|---|---|
+| **P1** | Per-task fragility audit (24 cls strong) | DGX | ✅ done | `results/h1_per_task_fragility.md` |
+| **P2** | Cross-family (Phi-3.5-Vision 4.2B) | DGX | ❌ deferred (HF cas-bridge throttling) | `stage4_h1_phi35_cls/pilot_summary.md` |
+| **P3** | Within-family bigger (Qwen2-VL-7B, H1' capacity test) | DGX | ❌ deferred (HF cas-bridge throttling) | `stage4_h1_qwen2vl7b_cls/pilot_summary.md` |
+| **P4** | cls reverse-tier (selection-bias defense) | Myriad 353763 | qw 16h+ | `stage4_format_variation_b1_cls_reverse/` |
+| **P5a** | reddit format variation (cross-site H1) | Myriad **354382** (3rd attempt) | ✅ **done 08:09:38** — shape (430, 37, 2560), 10 modes, 76 MB pulled | `stage4_format_variation_b1_reddit/hidden_states.npz` |
+| **P5b** | reddit Method 4.2 multimode (cross-site Mirage) | Myriad 353890 | ✅ **done 07:31:14** — 288 examples, 6 modes, 51 MB pulled | `stage4_multimode_b1_reddit/hidden_states.npz` |
+
+**P5a bug history** (3 attempts):
+1. Myriad 353764 (00:48) — `no hidden states extracted` after 105 task skips. Root cause: hardcoded `classifieds_task_{tid}` prefix in `run_stage4_format_variation_extract.py:177`, archive uses `reddit_task_*`
+2. Myriad 353889 (06:26) — same failure, same root cause
+3. Myriad **354382** (07:26) — fixed via commit 3d41953 (add `--site reddit` arg, default classifieds for backcompat)
+
+**P2/P3 deferred** (2026-05-12 00:31 → 06:30, 3 attempts each):
+- `snapshot_download` `thread_map` 8-worker concurrent download hits cas-bridge throttling/timeout
+- Each attempt: get `HTTP 206 Partial Content` then concurrent.futures `result_iterator` raises (underlying worker exception masked)
+- Cleanup 4×2.3G incomplete blobs to reclaim disk
+- **Recovery plan**: tomorrow morning, single-thread CLI:
+  ```bash
+  HF_HUB_DOWNLOAD_TIMEOUT=600 huggingface-cli download Qwen/Qwen2-VL-7B-Instruct --max-workers 1
+  HF_HUB_DOWNLOAD_TIMEOUT=600 huggingface-cli download microsoft/Phi-3.5-vision-instruct --max-workers 1
+  ```
+- Paper §5 generalization claim still defensible via P4 (selection-bias) + P5a/P5b (cross-site). P2/P3 are nice-to-have (family/size triangulation), not paper-critical.
+
+**Expected verdict matrix** (most paper-grade interesting):
+- P3 7B per-task variability < 4B per-task variability → H1' capacity-limit partially confirmed (training-distribution still creates shortcut, but consistency increases with size)
+- P2 cross-family dichotomy holds → H1 is cross-family universal training prior
+- P4 reverse-tier holds → not tier-selection-bias
+- P5a reddit holds → cross-site universal
+
+### 7.4 Decisions pending
 
 | Decision | Owner | Trigger |
 |---|---|---|
