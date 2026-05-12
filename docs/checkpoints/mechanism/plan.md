@@ -193,12 +193,14 @@ Cell E random-injection control: replacing source hidden with Gaussian noise (sa
 
 **Stage 3 interpretation (6/6 cells complete 2026-05-12)**: All forward SoM→{no-image-arm} patching cells show mid-layer L11-L17 disruption -0.19 to -0.33 Δoverlap→tgt. Magnitude > random injection control (Cell E -0.03) at all 6. **Mechanism additivity confirmed**: image-feature axis is shared substrate across DOM / P-text / P-prompt arms — single SoM→{any-no-image-arm} patching displaces target prediction toward source. Cross-site cls + reddit both replicate (paper §5 universal mid-layer fusion locus); reddit fusion locus slightly earlier (L11 vs cls L17), magnitude identical.
 
-Stage 3 cross-site DOM-axis additivity table:
+Stage 3 cross-site DOM-axis additivity table (paired-test Δoverlap-to-target from `patching_continuation_results.json`):
 
-| Site | SoM→DOM | SoM→P-text | SoM→P-prompt | mid-layer Δ range |
+| Site | SoM→DOM | SoM→P-text | SoM→P-prompt | best-L Δ range |
 |---|---|---|---|---|
-| cls | H-d-cls **-0.33** @ L17 | H-t-cls **-0.25** @ L17 | H-p-cls **-0.22** @ L17 | [-0.33, -0.22] |
-| reddit | H-d-red **-0.33** @ L11 / -0.26 @ L17 | H-t-red **-0.24** @ L11/L17 | H-p-red **-0.19** @ L11 | [-0.33, -0.19] |
+| cls | H-d-cls L17 -0.309 / L18 **-0.352** best | H-t-cls L17 -0.255 / L12 **-0.270** best | H-p-cls L17 -0.223 / L13 **-0.273** best | [-0.273, -0.352] |
+| reddit | H-d-red L11 -0.335 / L17 -0.255 / L14 **-0.338** best | H-t-red L11 -0.244 / L17 -0.236 / L15 **-0.330** best | H-p-red L11 -0.233 / L17 -0.191 / L14 **-0.322** best | [-0.322, -0.338] |
+
+All 6 cells best layer 落在 **L12-L18 mid-layer 窗口** (tight 7-layer band), Δ range [-0.27, -0.35]. Cross-site / cross-arm 一致, mid-layer fusion locus 不是 single layer index 而是稳定窗口.
 
 ### 5.3 Stage 4 Method 4.4 v2 (FULL 45/48 cells, finalized 2026-05-11 22:00)
 
