@@ -40,6 +40,12 @@ DEFAULT_RED_NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_reddit/hidden_
 DEFAULT_MD = ROOT / "docs/checkpoints/mechanism/results/axis2_logit_lens.md"
 DEFAULT_FIG = ROOT / "results/phantom_paper/figures/fig_axis2_logit_lens.png"
 MODEL_PATH = "Qwen/Qwen3-VL-4B-Instruct"
+# Bug 5 fix (/codex-stress methodology audit 2026-05-12): pin HF revision
+# to match HiddenStateExtractor + Stage 2B / Stage 4 v2 extraction. Previously
+# unpinned, so logit lens KL applied `norm + lm_head` from an arbitrary cached
+# revision to hidden states extracted under a pinned revision — making KL
+# magnitudes non-reproducible across machines or cache states.
+MODEL_REVISION = "ebb281ec70b05090aa6165b016eac8ec08e71b17"
 
 AXIS_2_PAIRS = [
     ("phantom_text", "phantom_som", "P-text vs P-SoM  (axis-2 flat-text)"),
@@ -56,10 +62,13 @@ def load_lm_head_and_norm(device="cuda"):
     import os
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
     os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
-    print(f"  loading Qwen3VLForConditionalGeneration (lm_head + norm only)")
+    tokenizer = AutoTokenizer.from_pretrained(
+        MODEL_PATH, revision=MODEL_REVISION, trust_remote_code=True
+    )
+    print(f"  loading Qwen3VLForConditionalGeneration (lm_head + norm only, revision={MODEL_REVISION[:12]}...)")
     model = Qwen3VLForConditionalGeneration.from_pretrained(
-        MODEL_PATH, dtype=torch.bfloat16, device_map=device, trust_remote_code=True,
+        MODEL_PATH, revision=MODEL_REVISION, dtype=torch.bfloat16,
+        device_map=device, trust_remote_code=True,
     )
     # Qwen3-VL structure (verified via p79/mechanistic/activation_patching.py):
     #   model.model.language_model.layers  (36 decoder layers, no embedding included)
