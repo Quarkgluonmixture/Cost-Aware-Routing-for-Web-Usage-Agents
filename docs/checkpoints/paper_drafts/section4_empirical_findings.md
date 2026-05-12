@@ -34,7 +34,7 @@ The single-mode success rates show a site-modulated effect. On classifieds, full
 | Reddit | DOM | 9.52 | $0.052 | 73.6s | N=210 |
 | Reddit | SoM | 10.48 | $0.041 | 58.9s | N=210 |
 | Reddit | Vision | 6.67 | $0.023 | 55.6s | N=210 |
-| Reddit | P-text | 11.90 | $0.046 | 58.1s | N=210 |
+| Reddit | P-text | 12.38 | $0.046 | 58.1s | N=210 |
 | Reddit | Phantom-SoM | **13.81** | $0.038 | 51.4s | N=210 |
 
 The classifieds result is the expected sanity check: when tasks benefit from visual page layout and product imagery, the marked screenshot adds useful grounding and full SoM is clearly best (**SoM 21.37 vs Phantom-SoM 14.53; N=234; adjusted**). Phantom-SoM is close to DOM on classifieds (**14.53 vs 14.10**), but this is not a dominance claim; it is inside the noise floor and far below full SoM.

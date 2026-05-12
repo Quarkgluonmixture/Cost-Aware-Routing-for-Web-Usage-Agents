@@ -122,16 +122,18 @@ Decision pending Method 4.4 v2 full sweep + Zekun sync.
 
 Following Lin & Liu Position paper, paper §5 must explicitly state:
 
-### 4.1 Causal claim
+### 4.1 Causal claim (revised after /codex-stress methodology audit 2026-05-12)
 
-> Mid-layer L17 hidden state at last-token position is the causally active planning site for phantom routing space mode selection in Qwen3-VL-4B web agents.
+> The patch-sensitive continuation window L11-L17 (block-output index convention) at the last-input-token position is causally consequential for phantom routing space mode selection in Qwen3-VL-4B web agents, under final-token-replacement activation patching. Separately, the prompt-family axis (P-text ↔ P-SoM) signature is most readable in cosine geometry at the LATER layer L23 (signature layer ≠ decision layer; mechanistic-interpretability standard finding cf. Wang et al. 2023 IOI).
+
+The previous "L17 singular planning site" framing is **stale** and was inaccurate: (a) cosine peak for prompt-family axis is L23 not L17 (Exp 1 three-axis hierarchy, 2026-05-12); (b) patching causal peak is the L11-L17 *window*, not a single layer; (c) Method 4.4 steering full sweep (45 cells) lowered the L17 α=5 H-mean from the smoke result 0.44 to 0.16, and the highest cell is now L33 α=10 H-mean 0.33 with poor selectivity (not a single sweet spot at L17). Treat L17 as one peak within the L11-L17 window, not THE site.
 
 ### 4.2 Identification strategy
 
 Triangulation of 3 evidence types:
-1. **Probe-level** (Method 4.2 PCA cosine gap, AUROC 1.000 across 540 tests)
-2. **Replacement patching** (Stage 2/3 Cell A-H, L17 disruption peak, 8/8 Holm-sig)
-3. **Additive steering** (Method 4.4 v2, mid-layer L17 α=5 H-mean reliability 0.44)
+1. **Probe-level** (Method 4.2 PCA cosine gap; AUROC reported as both `in_sample` and held-out `leave-one-task-out` after 2026-05-12 Bug 3 fix; v1 buggy NPZ data invalidated, v2 NPZ in flight: Myriad 359736 cls + 359737 reddit)
+2. **Replacement patching** (Stage 2/3 Cell A-H, L11-L17 window disruption, Holm-significant per layer; baseline empirically equals unpatched at L35 final-block patching position since overlap→target ≈ 1.00 at L35 across all forward cells)
+3. **Additive steering** (Method 4.4 v2 full sweep 45 cells: layer-α tradeoff; mid-layer L11-L17 preserves JSON envelope but low completeness, late-layer L33 produces largest output shifts but over-steers — H-mean ceiling 0.33 indicates probe-causal dissociation, not a single sweet-spot validation)
 
 ### 4.3 Identification assumptions
 
