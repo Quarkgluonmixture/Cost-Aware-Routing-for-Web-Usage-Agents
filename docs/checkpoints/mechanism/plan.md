@@ -189,9 +189,16 @@ Cell E random-injection control: replacing source hidden with Gaussian noise (sa
 | H-t-cls | cls | SoM → P-text | L28 (0.164) | -0.25 | `stage3_cellht_cls_fwd_text_myriad/` |
 | H-p-red | reddit | SoM → P-prompt | L20 (0.209) | -0.19 | `stage3_cellhp_red_fwd_prompt_myriad/` |
 | H-t-red | reddit | SoM → P-text | L01 (0.194) | -0.24 | `stage3_cellht_red_fwd_text_myriad/` |
-| **H-d-red** | reddit | SoM → DOM | **Myriad 358831 qw** (submitted 2026-05-12 17:59) | — | `stage3_cellhd_red_fwd_dom_myriad/` (closes Stage 3 reddit 2x2) |
+| **H-d-red** | reddit | SoM → DOM | L28 (0.204) | **L11 -0.33 / L17 -0.26** | `stage3_cellhd_red_fwd_dom_myriad/` ✅ done 2026-05-12 19:57 |
 
-**Stage 3 interpretation**: All 4 H-t/H-p cells show mid-layer (L11-L20) disruption -0.19 to -0.25 Δoverlap→tgt. Magnitude < Cell H-d-cls (-0.33) but well above random injection control (Cell E -0.03). **Mechanism additivity confirmed**: image-feature axis is shared substrate across DOM / P-text / P-prompt arms — single SoM→{any-no-image-arm} patching displaces target prediction toward source. Cross-site: cls + reddit both replicate (paper §5 universal mid-layer fusion locus).
+**Stage 3 interpretation (6/6 cells complete 2026-05-12)**: All forward SoM→{no-image-arm} patching cells show mid-layer L11-L17 disruption -0.19 to -0.33 Δoverlap→tgt. Magnitude > random injection control (Cell E -0.03) at all 6. **Mechanism additivity confirmed**: image-feature axis is shared substrate across DOM / P-text / P-prompt arms — single SoM→{any-no-image-arm} patching displaces target prediction toward source. Cross-site cls + reddit both replicate (paper §5 universal mid-layer fusion locus); reddit fusion locus slightly earlier (L11 vs cls L17), magnitude identical.
+
+Stage 3 cross-site DOM-axis additivity table:
+
+| Site | SoM→DOM | SoM→P-text | SoM→P-prompt | mid-layer Δ range |
+|---|---|---|---|---|
+| cls | H-d-cls **-0.33** @ L17 | H-t-cls **-0.25** @ L17 | H-p-cls **-0.22** @ L17 | [-0.33, -0.22] |
+| reddit | H-d-red **-0.33** @ L11 / -0.26 @ L17 | H-t-red **-0.24** @ L11/L17 | H-p-red **-0.19** @ L11 | [-0.33, -0.19] |
 
 ### 5.3 Stage 4 Method 4.4 v2 (FULL 45/48 cells, finalized 2026-05-11 22:00)
 
@@ -229,7 +236,7 @@ H-mean reliability (HDMI framework) per (layer, α). **L17 α=5 smoke claim REFU
 | ✅ H1 test: do all flat-list formats trigger shortcut? | **Closed 2026-05-12 00:00**: YES, including hash-ID + plain-sentence controls. AXTree-DOM is sole defeating format | — |
 | Reverse-tier 15 tasks vs strong-tier 24 — does L33 + H1 finding generalize beyond selection bias? | Med-High | qsub Stage 4 multimode + format variation with --tier reverse |
 | ✅ Cross-site Method 4.2 — does cls finding replicate on reddit? | **Closed 2026-05-12 16:30**: P-SoM↔DOM L17=0.0098 + P-SoM↔SoM L17=0.0423, AUROC 1.0 → Mirage signature replicated. See §7.3.1 | — |
-| Stage 3 reddit 2x2 closure — SoM→DOM reddit cell (H-d-red) missing | Med (paper §5 mechanism additivity completeness) | qsub `qsub_stage3_h_dom_red_myriad.sh` ~3h on Myriad |
+| ✅ Stage 3 reddit 2x2 closure — H-d-red | **Closed 2026-05-12 19:57** (Myriad 358831). L11 Δ=-0.33 / L17 Δ=-0.26. Cross-site additivity confirmed — see §5.2 Stage 3 table | — |
 | LA-HDMI vs mean-diff — does gradient steering beat 0.33 ceiling? | Med | Pending Zekun reply + attribution decision |
 | SAE feature steering feasibility — is 1-2 week self-training Qwen3-VL-4B SAE worth it? | Low-Med | Depends on Zekun reply + paper §8 prose direction |
 | B0 (proxy API) — paper §5 Qwen-specific or generalizable? | Low | Cannot test on B0; cite Wu et al. cross-family generality as proxy |
