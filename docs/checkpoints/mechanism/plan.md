@@ -358,6 +358,25 @@ Reddit cross-site replicates: P-text↔P-SoM L23 = 0.0098 (vs cls 0.0114), same 
 
 → Paper §5.7 重写为 "Layered Three-Axis Mechanism Hierarchy" (commit pending).
 
+### 7.3.0a Exp 3 logit lens 输出层 amplification (2026-05-12 21:02)
+
+`axis2_logit_lens.md` + `fig_axis2_logit_lens.png`. 应用 Qwen3-VL-4B `model.model.language_model.norm` + `model.lm_head` to per-layer per-mode mean hidden states, 算 KL across 37 层.
+
+| Pair | Site | Peak L (KL) | Peak KL | Exp 1 cosine peak | 放大倍数 |
+|---|---|---|---|---|---|
+| P-text↔P-SoM (axis-2 flat) | cls | **L23** | 0.162 | 0.011 | ~14x |
+| DOM↔P-prompt (axis-2 hier) | cls | L25 | 0.044 | 0.007 | ~7x |
+| DOM↔P-text (axis-1) | cls | L23 | 0.551 | 0.025 | 22x |
+| P-prompt↔P-SoM (axis-1) | cls | L23 | 0.695 | 0.029 | 24x |
+| Cross-site reddit | | L23-L25 | 0.13-0.62 | preserved | preserved |
+
+**3 findings**:
+1. Axis-2 prompt-family **IS in output distribution** — KL 0.16 at L23, NOT null. Exp 1 cosine 0.011 is not the end of the story.
+2. **lm_head 10-25x amplification of cosine → KL** but axis-agnostic ratio preserved (axis-1/axis-2 ratio ~4.3 cls, ~4.9 reddit, vs cosine ratio ~3 — slight amplification of stronger axis but not breaking 3-4x rank).
+3. **KL @ L36 ≈ 0 paradox**: 因 mean hidden state at last layer collapse to common JSON format header. Mode-distinct signal concentrated in **L23-L25 decoding window** (not final embedding). This is the "knows but says differently" structural mirror of Wu et al. tool calling.
+
+**Paper §5.7 follow-up paragraph** added: 三轴 hierarchy persists at output distribution with same rank-order. Deployment routing (paper-2) should treat L23-L25 logit-lens features as cheapest highest-signal mode-axis discriminator.
+
 ### 7.3.1 Reddit cross-site results (2026-05-12 16:30 — P5a + P5b analyses landed)
 
 **P5a — Format variation H1 test on reddit** (`format_variation_h1_test_reddit.md`):

@@ -32,7 +32,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoTokenizer, Qwen3VLForConditionalGeneration
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CLS_NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states.npz"
@@ -57,18 +57,17 @@ def load_lm_head_and_norm(device="cuda"):
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
     os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
     tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
-    print(f"  loading model (lm_head + norm only)")
-    model = AutoModelForCausalLM.from_pretrained(
-        MODEL_PATH, torch_dtype=torch.bfloat16, device_map=device, trust_remote_code=True,
+    print(f"  loading Qwen3VLForConditionalGeneration (lm_head + norm only)")
+    model = Qwen3VLForConditionalGeneration.from_pretrained(
+        MODEL_PATH, dtype=torch.bfloat16, device_map=device, trust_remote_code=True,
     )
-    # Qwen3-VL nests under .model.language_model
-    if hasattr(model, "language_model"):
-        norm = model.language_model.model.norm
-    elif hasattr(model.model, "norm"):
-        norm = model.model.norm
-    else:
-        raise RuntimeError(f"cannot locate final norm in {type(model).__name__}")
+    # Qwen3-VL structure (verified via p79/mechanistic/activation_patching.py):
+    #   model.model.language_model.layers  (36 decoder layers, no embedding included)
+    #   model.model.language_model.norm    (final RMSNorm, sibling of layers)
+    #   model.lm_head                       (top-level projection)
+    norm = model.model.language_model.norm
     lm_head = model.lm_head
+    print(f"  norm: {type(norm).__name__}, lm_head: {type(lm_head).__name__}")
     return tokenizer, lm_head, norm, model
 
 
