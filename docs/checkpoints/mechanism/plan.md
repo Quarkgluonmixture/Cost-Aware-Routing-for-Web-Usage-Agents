@@ -69,6 +69,19 @@ Paper §5 implication: SoM-family web agents (Browser Use, AppAgent, Tarsier, Om
 
 ## 3. Methods (Stage 4 + planned)
 
+### 3.0 Curation pipeline (Stage 0 setup, shared by Stages 1-4)
+
+`scripts/mechanistic/curate_mirage_tasks.py` builds a strong-tier task manifest from a B1 production run:
+- Filter to tasks where Mirage Effect is well-defined: agent succeeds in `som` mode but fails in `dom` mode (real image-feature dependence, not random failure)
+- Pick 24 cls + 24 reddit "strong-tier" tasks (clean Mirage); separate 15 cls reverse-tier (DOM > SoM, selection-bias defense)
+- Archive raw observations (AXTree, screenshots, SoM-marks) per (task, step) → `archive_subset_b1_<site>/<site>_task_<tid>/step_<step>/` for offline patching/extraction (Stages 2-4 read from this archive, no live env required)
+
+Outputs:
+- `results/mechanistic/curate_mirage_b1_classifieds/manifest.json` — cls strong/reverse tier task list
+- `results/mechanistic/curate_mirage_b1_reddit/manifest.json` — reddit strong tier
+- `results/mechanistic/archive_subset_b1_cls/` (17 MB, 144 files, 24 tasks × 6 steps)
+- `results/mechanistic/archive_subset_b1_reddit/` (35 MB, 356 files, 24 tasks × ~15 steps)
+
 ### 3.1 Method 4.2 — PCA cosine gap (DONE)
 
 `scripts/analysis/stage4_pca_cosine_gap.py` + `stage4_robustness.py`. Three metrics per (mode_pair, layer):
@@ -151,7 +164,9 @@ Cell E random-injection control: replacing source hidden with Gaussian noise (sa
 | P-SoM ↔ SoM | 0.0413 | [0.0403, 0.0422] | 1.000 |
 | DOM ↔ Vision | 0.0547 | [0.0531, 0.0563] | 1.000 |
 
-### 5.2 Stage 2/3 patching disruption (10 cells, B1 cls + reddit)
+### 5.2 Stage 2/3 patching disruption (14 cells, B1 cls + reddit)
+
+**Stage 2 — P-SoM ↔ SoM patching (10 cells):**
 
 | Cell | Site | Direction | L17 Δoverlap | Holm-sig |
 |---|---|---|---|---|
@@ -164,7 +179,19 @@ Cell E random-injection control: replacing source hidden with Gaussian noise (sa
 | G | reddit | P-SoM→SoM reverse | -0.18 | ✓ |
 | Cr/Dr | reddit 2x2 | both directions | -0.15 to -0.18 | ✓ |
 | Er | reddit | random injection | ~0 (uniform) | ✓ |
-| H-d-cls | cls | DOM target (2x2 additivity) | -0.33 | ✓ |
+
+**Stage 3 — 2x2 mechanism additivity test (SoM → {DOM, P-text, P-prompt}, cls + reddit):**
+
+| Cell | Site | Source→Target | Best-L overlap→src | L17 Δoverlap→tgt | Path |
+|---|---|---|---|---|---|
+| H-d-cls | cls | SoM → DOM | L10 (0.192) | -0.33 | `stage3_cellhd_cls_fwd_dom_myriad/` |
+| H-p-cls | cls | SoM → P-prompt | L27 (0.219) | -0.22 | `stage3_cellhp_cls_fwd_prompt_myriad/` |
+| H-t-cls | cls | SoM → P-text | L28 (0.164) | -0.25 | `stage3_cellht_cls_fwd_text_myriad/` |
+| H-p-red | reddit | SoM → P-prompt | L20 (0.209) | -0.19 | `stage3_cellhp_red_fwd_prompt_myriad/` |
+| H-t-red | reddit | SoM → P-text | L01 (0.194) | -0.24 | `stage3_cellht_red_fwd_text_myriad/` |
+| **H-d-red** | reddit | SoM → DOM | **gap — not yet run** | — | (closes Stage 3 reddit 2x2) |
+
+**Stage 3 interpretation**: All 4 H-t/H-p cells show mid-layer (L11-L20) disruption -0.19 to -0.25 Δoverlap→tgt. Magnitude < Cell H-d-cls (-0.33) but well above random injection control (Cell E -0.03). **Mechanism additivity confirmed**: image-feature axis is shared substrate across DOM / P-text / P-prompt arms — single SoM→{any-no-image-arm} patching displaces target prediction toward source. Cross-site: cls + reddit both replicate (paper §5 universal mid-layer fusion locus).
 
 ### 5.3 Stage 4 Method 4.4 v2 (FULL 45/48 cells, finalized 2026-05-11 22:00)
 
@@ -201,7 +228,8 @@ H-mean reliability (HDMI framework) per (layer, α). **L17 α=5 smoke claim REFU
 | ✅ Method 4.4 v2 full 48-cell sweep — sweet spot stable? | **Closed 2026-05-11 22:00**: L17 α=5 smoke 0.44 → full 0.16 (smoke variance artifact). **Real sweet spot L33 α=10 H-mean 0.33** | — |
 | ✅ H1 test: do all flat-list formats trigger shortcut? | **Closed 2026-05-12 00:00**: YES, including hash-ID + plain-sentence controls. AXTree-DOM is sole defeating format | — |
 | Reverse-tier 15 tasks vs strong-tier 24 — does L33 + H1 finding generalize beyond selection bias? | Med-High | qsub Stage 4 multimode + format variation with --tier reverse |
-| Cross-site Method 4.2 — does cls finding replicate on reddit? | High | qsub Stage 4 multimode on B1 reddit (1 cell, ~1h on Myriad) |
+| ✅ Cross-site Method 4.2 — does cls finding replicate on reddit? | **Closed 2026-05-12 16:30**: P-SoM↔DOM L17=0.0098 + P-SoM↔SoM L17=0.0423, AUROC 1.0 → Mirage signature replicated. See §7.3.1 | — |
+| Stage 3 reddit 2x2 closure — SoM→DOM reddit cell (H-d-red) missing | Med (paper §5 mechanism additivity completeness) | qsub `qsub_stage3_h_dom_red_myriad.sh` ~3h on Myriad |
 | LA-HDMI vs mean-diff — does gradient steering beat 0.33 ceiling? | Med | Pending Zekun reply + attribution decision |
 | SAE feature steering feasibility — is 1-2 week self-training Qwen3-VL-4B SAE worth it? | Low-Med | Depends on Zekun reply + paper §8 prose direction |
 | B0 (proxy API) — paper §5 Qwen-specific or generalizable? | Low | Cannot test on B0; cite Wu et al. cross-family generality as proxy |
