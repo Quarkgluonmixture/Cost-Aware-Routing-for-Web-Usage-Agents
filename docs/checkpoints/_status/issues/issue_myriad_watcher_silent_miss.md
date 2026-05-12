@@ -1,9 +1,10 @@
 ---
 name: myriad-watcher-silent-miss
 type: issue
-status: open
+status: patched
 severity: medium
 discovered: 2026-05-12
+patched: 2026-05-12-late
 file_paths:
   - scripts/maintenance/glm/myriad_watcher.py
   - logs/cron/myriad_state.json
@@ -31,6 +32,38 @@ GONE_HOOKS 的 prefix-match 完全不依赖, 直接基于 result-dir manifest �
 
 ## Workaround (until fix)
 P5a + P5b 已手动 base64 chain pull. P4 (353763 qw 16h+) 在 watcher 视线内, 完成时 GONE_HOOK 会正常 fire (前提: SSH chain 不再 down).
+
+---
+
+## Update 2026-05-12 late — 第二次复发 + 真根因发现 + patch
+
+**2nd recurrence**: Exp 5 cellhprompt cls (359511) + red (359512) Myriad jobs submitted 同 day, 完成 21:42 + 21:54, state.json 显示 `{}`, GONE_HOOK 未触发. 同 yesterday 的 P5a/P5b 完全 same symptom.
+
+**Deeper diagnosis**:
+- `ssh_fail_count` file **不存在** → SSH chain 没 None-fail (yesterday's hypothesis 的 "ssh timeout" 路径没被走过)
+- `myriad_watcher.log` 0 字节 → watcher 一直 print 不出 error
+- State.json mtime fresh → watcher 在每 5 min 写新 state.json
+- 但 state.json 是 `{}` → **qstat 返回空但 ssh_chain returned 非 None**
+
+**真根因**: `ssh_chain()` line 156-172 — outer ssh `subprocess.run(... )` returncode=0 但 stdout=空, 因为 **inner ssh (quark→myriad) silent-fail (Cisco VPN drop / 内层 hang)** 时, PowerShell on Windows quark **不 propagate inner exit code 到 outer ssh exit code**. Python parse `parse_qstat("")` → `{}`. State.json overwrite with `{}`. Watcher 视野中 jobs 从未存在.
+
+(yesterday 的 "SSH down → state.json 未触" 假设是错的; 真情况是 outer ssh always returned 0 with empty stdout → state.json **被** 触, 写成 `{}`)
+
+## Fix applied (commit 即将 push)
+`scripts/maintenance/glm/myriad_watcher.py`:
+1. **Sentinel guard** — `_qstat_with_sentinel()` wrapper: 加 `&& echo __QSTAT_OK__` 到 qstat 命令; stdout 不含 sentinel → 视为 None (chain failure), preserve old_state, 进 SSH_FAIL_FILE 计数路径
+2. **Double-probe guard** — `old_state` 非空 + `new_state` 空 → 立即 2nd ssh_chain probe; 第 2 次 None → ntfy high + preserve old_state; 第 2 次 empty → accept
+
+Syntax validated. 不影响 normal qw/r/GONE 流, 只在 silent-fail edge case fire guard.
+
+**Manual recovery 2nd time**:
+- `bash scripts/maintenance/auto_pull_myriad_cell.sh 359511 cellhprm_cls stage3_cellhprompt_cls_fwd_ptext_myriad`
+- `bash scripts/maintenance/auto_pull_myriad_cell.sh 359512 cellhprm_red stage3_cellhprompt_red_fwd_ptext_myriad`
+- Both SENTINEL_OK_PILOT, 5 files / cell, ~1.5 MB
+
+**Status → patched**, monitor 接下来几个 Myriad cycle 看 sentinel guard 是否 work. 如果 SSH chain 再 silent-fail, `ssh_fail_count` 应该 increment 而不是 state.json `{}`.
+
+(post-hoc cron sentinel_scan idea from earlier 还可以作 belt-and-suspenders, 但 sentinel + double-probe patch 应该 cover 主要 silent-fail case)
 
 ## References
 - commit `00a5ea8` plan.md "P5a + P5b done"

@@ -212,12 +212,31 @@ def push_ntfy(title: str, body: str, priority: str = "default") -> None:
         print(f"ntfy push failed: {e}", file=sys.stderr)
 
 
+def _qstat_with_sentinel() -> str | None:
+    """Run qstat via ssh_chain with stdout sentinel guard.
+
+    Fix 2026-05-12 silent-miss bug: inner ssh (quark→myriad) can fail
+    (Cisco VPN drop / hung session) while outer ssh (DGX→quark)
+    returns exit 0 with empty stdout — powershell on quark doesn't
+    propagate inner exit code. We append `&& echo __QSTAT_OK__`; if
+    the sentinel is absent from stdout, qstat itself didn't run →
+    treat as None (chain failure) instead of writing {} and losing
+    GONE events for in-flight jobs.
+    """
+    stdout = ssh_chain("qstat -u ucab352 && echo __QSTAT_OK__")
+    if stdout is None:
+        return None
+    if "__QSTAT_OK__" not in stdout:
+        return None
+    return stdout.replace("__QSTAT_OK__", "").rstrip()
+
+
 def main() -> int:
     # F36 audit fix 2026-05-09: persist consecutive SSH failure count
     # and notify after 3 failures. Previously exited 0 silently which
     # could hide hours of broken SSH chain.
     SSH_FAIL_FILE = STATE_FILE.with_suffix(".ssh_fail_count")
-    stdout = ssh_chain("qstat -u ucab352")
+    stdout = _qstat_with_sentinel()
     if stdout is None:
         try:
             n_fail = int(SSH_FAIL_FILE.read_text().strip()) if SSH_FAIL_FILE.exists() else 0
@@ -250,6 +269,28 @@ def main() -> int:
             old_state = json.loads(STATE_FILE.read_text())
         except Exception:
             old_state = {}
+
+    # Double-probe guard 2026-05-12: silent-miss bug postmortem. If we
+    # had jobs last tick and now claim ZERO, re-probe before believing
+    # — sentinel-passing-but-truncated qstat could still hide real jobs
+    # under rare powershell pipe edge cases. Only accept empty result
+    # when 2nd probe also confirms. Otherwise log + preserve old_state.
+    if old_state and not new_state:
+        stdout_recheck = _qstat_with_sentinel()
+        if stdout_recheck is None:
+            push_ntfy(
+                title="Myriad qstat empty after non-empty + recheck failed",
+                body=f"Last tick had {len(old_state)} jobs; this tick qstat empty; "
+                     f"recheck SSH chain failed. Preserving old_state to avoid silent GONE-miss. "
+                     f"Jobs: {sorted(old_state.keys())}",
+                priority="high",
+            )
+            return 0
+        recheck_state = parse_qstat(stdout_recheck)
+        if recheck_state:
+            # 2nd probe disagreed — real jobs still there
+            new_state = recheck_state
+        # else: 2nd probe also empty → accept; jobs really finished
 
     events = diff_states(old_state, new_state)
 
