@@ -143,7 +143,9 @@ def find_archive_dir(p79_root: Path) -> Path:
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--archived-run-dir", required=True, help="Path to archive_subset_b1_cls")
+    p.add_argument("--archived-run-dir", required=True, help="Path to archive_subset_b1_<site>")
+    p.add_argument("--site", default="classifieds",
+                   help="Task dir prefix in archive: <site>_task_<tid>/. classifieds (default) or reddit.")
     p.add_argument("--output", default=None)
     p.add_argument("--model-path", default="Qwen/Qwen3-VL-4B-Instruct")
     p.add_argument("--tier", default="strong")
@@ -174,7 +176,7 @@ def main():
     for tid in sorted(intents_by_tid):
         intent = intents_by_tid[tid]
         for step in steps:
-            task_dir = archive_dir / f"classifieds_task_{tid}" / f"step_{step:03d}"
+            task_dir = archive_dir / f"{args.site}_task_{tid}" / f"step_{step:03d}"
             obs_path = task_dir / "observation_dom.txt"
             if not obs_path.exists():
                 logger.warning(f"missing {obs_path}; skip")

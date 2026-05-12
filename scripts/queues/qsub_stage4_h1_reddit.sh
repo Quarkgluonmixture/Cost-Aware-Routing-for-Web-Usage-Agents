@@ -32,6 +32,7 @@ mkdir -p "$OUT_DIR"
 
 python3 scripts/mechanistic/run_stage4_format_variation_extract.py \
     --archived-run-dir "$REPO_DIR/results/mechanistic/archive_subset_b1_reddit" \
+    --site reddit \
     --output "$OUT_DIR/hidden_states.npz" \
     --tier strong \
     --n-tasks 24 \
