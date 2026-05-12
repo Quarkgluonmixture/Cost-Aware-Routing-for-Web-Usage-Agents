@@ -296,6 +296,38 @@ After per-task fragility revealed 11% strict dichotomy (aggregate statistical, n
 - P4 reverse-tier holds → not tier-selection-bias
 - P5a reddit holds → cross-site universal
 
+### 7.3.1 Reddit cross-site results (2026-05-12 16:30 — P5a + P5b analyses landed)
+
+**P5a — Format variation H1 test on reddit** (`format_variation_h1_test_reddit.md`):
+
+| Variant | Peak L (reddit) | Peak L (cls baseline) |
+|---|---|---|
+| som_standard / browser_use_at / tarsier_typed / xml_tagged | **L17** | L36 (last) |
+| appagent_id / plain_numbered | **L04** | L36 |
+| hash_id_control | **L04** ✓ (acts as control) | L36 (control failed) |
+| plain_sentence | **L17** | L17 |
+| dom (baseline) | **L04** ✓ | L04 ✓ |
+
+**Reddit nuance — cleaner mid-layer fusion**: Reddit 上 marks-like 4/6 真 peak 在 L17 (mid-layer), cls 上 L36 是 monotonic increasing artifact (peak hit boundary). Reddit hash_id_control L04 acts as proper "no integer" control (cls 上失败). Reddit data supports Q5 mid-layer fusion hypothesis better than cls.
+
+Caveats: small n (24×2=48/mode) makes 2/6 marks-like falling to L04 (appagent_id, plain_numbered) plausible as sampling noise; plain_sentence triggering L17 on reddit (not cls) suggests reddit narrative comments may pattern-match list semantics.
+
+**P5b — Mirage signature on reddit** (`stage4_method42_results_reddit.md`):
+
+| Test | Value at L17 | cls baseline |
+|---|---|---|
+| P-SoM ↔ DOM | **0.0098** (nearly 0) | similar (text-axis sibling) |
+| P-SoM ↔ SoM | **0.0423** | similar (image-axis split) |
+| P-SoM ↔ Vision | 0.0457 | similar |
+| DOM ↔ Vision peak | L04 = 0.0687 (AUROC=1.0) | L04 similar |
+
+→ **Cross-site Mirage replication ✓**: P-SoM behaves as text-axis sibling of DOM at L17 (image-feature reduction), not as image-axis sibling of SoM. paper §5 4-fold (d) drop-one mechanism holds on reddit.
+
+**Paper §5 cross-site evidence stack now complete**:
+1. P-SoM mid-layer mechanism (4-fold drop-one) — cls + reddit replicated ✓
+2. Indexed-list format → shortcut activation — directional consistency cls ↔ reddit ✓
+3. Mirage signature geometric structure — cls + reddit replicated ✓
+
 ### 7.4 Decisions pending
 
 | Decision | Owner | Trigger |

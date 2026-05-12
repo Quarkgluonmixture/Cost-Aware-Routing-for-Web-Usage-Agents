@@ -17,6 +17,7 @@ Outputs:
 """
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -24,9 +25,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
-NPZ = ROOT / "results/mechanistic/stage4_format_variation_b1_cls/hidden_states.npz"
-OUT_MD = ROOT / "docs/checkpoints/mechanism/results/format_variation_h1_test.md"
-OUT_FIG = ROOT / "results/phantom_paper/figures/fig_stage4_format_variation_h1.png"
+DEFAULT_NPZ = ROOT / "results/mechanistic/stage4_format_variation_b1_cls/hidden_states.npz"
+DEFAULT_OUT_MD = ROOT / "docs/checkpoints/mechanism/results/format_variation_h1_test.md"
+DEFAULT_OUT_FIG = ROOT / "results/phantom_paper/figures/fig_stage4_format_variation_h1.png"
 
 # Order: 6 marks-like variants + 2 controls + 2 baselines
 VARIANTS = ["som_standard", "browser_use_at", "appagent_id", "tarsier_typed",
@@ -67,15 +68,21 @@ def cosine_gap(a, b):
 
 
 def main():
-    d = np.load(NPZ, allow_pickle=True)
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser.add_argument("--input", type=Path, default=DEFAULT_NPZ,
+                        help="hidden_states.npz path (default: cls)")
+    parser.add_argument("--output-md", type=Path, default=DEFAULT_OUT_MD)
+    parser.add_argument("--output-fig", type=Path, default=DEFAULT_OUT_FIG)
+    args = parser.parse_args()
+
+    d = np.load(args.input, allow_pickle=True)
     H = d["hidden_states"]
     ml = d["mode_labels_str"]
     n_layers = H.shape[1]
-    print(f"loaded {H.shape}, n modes = {len(set(ml.tolist()))}")
+    print(f"loaded {H.shape} from {args.input}, n modes = {len(set(ml.tolist()))}")
 
     means = {m: H[ml == m].mean(axis=0) for m in VARIANTS}
 
-    # Test: for each variant V (skip "som"), compute V↔som per-layer cosine gap
     results = {}
     for v in VARIANTS:
         if v == "som":
@@ -86,8 +93,8 @@ def main():
         results[v] = {"curve": curve, "peak_L": peak_L, "peak_gap": peak_gap}
         print(f"  {v:20s} | peak L{peak_L:02d} = {peak_gap:.4f} | class = {H1_CLASS[v]}")
 
-    write_md(results, OUT_MD)
-    plot(results, OUT_FIG, n_layers)
+    write_md(results, args.output_md)
+    plot(results, args.output_fig, n_layers)
 
 
 def write_md(results, out):

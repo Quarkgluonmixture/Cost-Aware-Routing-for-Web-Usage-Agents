@@ -27,10 +27,10 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import roc_auc_score
 
 ROOT = Path(__file__).resolve().parents[2]
-NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states.npz"
-OUT_JSON = ROOT / "results/mechanistic/stage4_multimode_b1_cls/method42_metrics.json"
-OUT_MD = ROOT / "docs/checkpoints/stage4_method42_results.md"
-OUT_FIG = ROOT / "results/phantom_paper/figures/fig_stage4_pca_cosine_gap.png"
+DEFAULT_NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states.npz"
+DEFAULT_OUT_JSON = ROOT / "results/mechanistic/stage4_multimode_b1_cls/method42_metrics.json"
+DEFAULT_OUT_MD = ROOT / "docs/checkpoints/stage4_method42_results.md"
+DEFAULT_OUT_FIG = ROOT / "results/phantom_paper/figures/fig_stage4_pca_cosine_gap.png"
 
 MODES = ["dom", "phantom_text", "phantom_prompt", "phantom_som", "som", "vision"]
 DISPLAY = {"dom": "DOM", "phantom_text": "P-text", "phantom_prompt": "P-prompt",
@@ -48,6 +48,18 @@ def pair_key(a: str, b: str) -> str:
 
 
 def main() -> None:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", type=Path, default=DEFAULT_NPZ)
+    parser.add_argument("--output-json", type=Path, default=DEFAULT_OUT_JSON)
+    parser.add_argument("--output-md", type=Path, default=DEFAULT_OUT_MD)
+    parser.add_argument("--output-fig", type=Path, default=DEFAULT_OUT_FIG)
+    args = parser.parse_args()
+    NPZ = args.input
+    OUT_JSON = args.output_json
+    OUT_MD = args.output_md
+    OUT_FIG = args.output_fig
+
     d = np.load(NPZ, allow_pickle=True)
     H = d["hidden_states"]
     mode_labels = d["mode_labels_str"]
