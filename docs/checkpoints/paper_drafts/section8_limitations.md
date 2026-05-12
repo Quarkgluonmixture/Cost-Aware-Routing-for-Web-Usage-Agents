@@ -26,4 +26,5 @@ The activation-patching effect is sparse: at L17, four of five completed cells h
 
 Compute and carbon accounting are approximate because runs span DGX Spark, UCL Condense A100, and UCL Myriad V100/A100 profiles. The blast radius is absolute energy reporting: the per-cell table reports GPU-hours, proxy-API USD cost, and kg-CO2 estimates with hardware provenance, but cross-machine power variation limits precision \citep{qiu2025modserve}. Relative comparisons inside a cell remain valid because modes share the same hardware, benchmark site, and evaluator path. This affects the cost part of the four-fold drop-in claim: token/API cost and latency comparisons are primary, while carbon totals are disclosed as bounded estimates rather than a fine-grained lifecycle assessment.
 
-NEEDS_BIB_ENTRY: `lipton2018troubling`, `neurips2024checklist`, `holm1979sequentially`, `wang2023interpretability`, `zhang2024patching`.
+<!-- Bibkey audit 2026-05-12: lipton2018troubling, neurips2024checklist, holm1979sequentially, wang2023interpretability, zhang2024patching all verified present in paper.bib. -->
+
