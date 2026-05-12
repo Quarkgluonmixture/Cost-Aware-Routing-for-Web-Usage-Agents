@@ -131,4 +131,46 @@ Manual invocation (`/xray`): user wants to stress-test current state at any deci
 - Not a process audit (NEEDS_BIB markers, missing citations) — those are mechanical scans that other tools do.
 - Not a cheerleader. Not a project manager. Not a writing coach. You are specifically an adversarial scientific peer.
 
+## Auto-chain to /codex-stress (Mode B — paranoid milestone audit)
+
+**Why**: Single-AI self-audit has systematic blind spots. 2026-05-12 evidence: Claude /stress missed 5/6 weak claims that codex /codex-stress caught independently on the same paper (internal §5 proximity-vs-separation contradiction, deployment-time logprob overclaim, plan.md L17-planning-site staleness, §4 P-text data inconsistency, §6/§7 draft absence). Cross-AI diff is the highest-leverage paper-grade check we have.
+
+**When**: After Claude's /stress review completes and BEFORE returning the final user-visible message, automatically dispatch /codex-stress on the same scope. Treat the resulting cross-AI diff as part of /stress output.
+
+**Trigger conditions for Mode B chain** (subset of /stress auto-triggers — paper-grade milestone only, not every spot-check):
+
+1. User signals milestone: "done" / "wrap up" / "收尾" / "all land" / "paper-grade" / "ready to commit/push" / "evidence layer complete" / "submission ready" / "顶刊水准了"
+2. About to commit paper prose (`docs/checkpoints/paper_drafts/section*.md`)
+3. About to push accumulated paper-related commits
+4. About to declare "paper §N done" / "paper §5 paper-grade"
+5. Before codex prose round / advisor sync / interview prep / ultrareview
+
+**Bypass condition** (Mode B only — not the whole /stress): user explicitly says "skip codex" / "claude only" / "no cross-AI" → Claude /stress alone, no chain.
+
+**How** (step-by-step at end of Claude /stress execution):
+
+1. Claude completes its /stress review (verdict + strong + weak + gaps + distance + one-tonight-fix).
+2. Assemble codex scope: paper drafts + mechanism plan + recent evidence files in `docs/checkpoints/mechanism/results/` + git log since last codex_outputs/codex_stress_*.md.
+3. Generate codex prompt from `.claude/skills/codex-stress/prompt_template.md` substituting `{DATE}`, `{RECENT_RESULTS}`, `{RECENT_COMMITS}`. Write to `docs/checkpoints/codex_prompts/codex_stress_<date>.md`.
+4. Invoke codex foreground with PID monitor (Tier 3 per CLAUDE.md long-task rule):
+   ```bash
+   codex exec --sandbox danger-full-access < docs/checkpoints/codex_prompts/codex_stress_<date>.md \
+     > docs/checkpoints/codex_outputs/codex_stress_<date>.md 2>&1 &
+   CODEX_PID=$!
+   ```
+   Arm Monitor with `until ! kill -0 $CODEX_PID 2>/dev/null; do sleep 30; done` and `timeout_ms` 1800000 (30 min).
+5. When codex completes, read its output. Produce 3-section diff inside user-facing response:
+   - **What codex found that I missed** (codex weak claims / gaps absent from Claude review) — high-value section
+   - **What I found that codex missed** (sanity check; usually empty if codex thorough)
+   - **Where we agree** (overlap = highest-confidence weak claims; prioritize defuse)
+6. Final user response = Claude review + codex diff section.
+7. Per 阶段性成果 rule: /stress + /codex-stress completion is itself a milestone → append `docs/checkpoints/实验笔记.md` under § with `[infra]` tag including diff summary.
+
+**Operational notes**:
+- Codex typically 5-12 min; total Mode B chain ≈ 12-20 min over Mode A
+- If codex output absent / empty when monitor fires → fall back to Claude review alone + notify user codex chain failed
+- Diff section is informational — do NOT auto-edit paper drafts from codex output without user approval
+
 Versioning: xray v2 (2026-05-12) — reframed from PRA-10 checklist to hostile reviewer persona per user feedback. The checklist version was too mechanical; reviewer-mode is what catches the gaps that data already shows.
+
+xray v3 (2026-05-12 evening) — Mode B auto-chain to /codex-stress on milestones added.
