@@ -185,8 +185,20 @@ def _dispatch_gone_hook(jid: str, name: str) -> Optional[str]:
     `name` passed in is the qstat-truncated 10-char display name.
     """
     full_name = _resolve_full_job_name(jid, fallback=name)
-    for prefix, (remote_dir, cell_md) in GONE_HOOKS.items():
-        if full_name.startswith(prefix):
+    # Bug fix 2026-05-13 01:25: dispatch must prefer LONGEST matching prefix.
+    # Otherwise `cellhprm_red_tsh` (taskshuf) is consumed by the shorter
+    # `cellhprm_red` prefix in dict insertion order → wrong remote_dir →
+    # 359769 taskshuf data overwrote 359512 cellhprm_red data in
+    # stage3_cellhprompt_red_fwd_ptext_myriad/. Same bug imminent for
+    # 359768 cls_tsh. Sort prefixes descending by length and require
+    # exact-or-boundary match (next char after prefix must be '_' or EOS).
+    sorted_prefixes = sorted(GONE_HOOKS.keys(), key=len, reverse=True)
+    for prefix in sorted_prefixes:
+        remote_dir, cell_md = GONE_HOOKS[prefix]
+        if full_name == prefix or (
+            full_name.startswith(prefix)
+            and full_name[len(prefix):len(prefix) + 1] == "_"
+        ):
             try:
                 subprocess.Popen(
                     [
