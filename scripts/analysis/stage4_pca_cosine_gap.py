@@ -65,6 +65,12 @@ def main() -> None:
     mode_labels = d["mode_labels_str"]
     task_ids = d["task_ids"] if "task_ids" in d.files else None
     n_layers = H.shape[1]
+    # Pipeline audit P1-7 fix (2026-05-13): layer-index convention assertion.
+    # H[:, 0, :] = embedding; H[:, L+1, :] = decoder block L output.
+    # Total = embedding + 36 decoder blocks = 37 layers for Qwen3-VL-4B.
+    # Method 4.4 patcher.layers[L] ↔ H[:, L+1, :] (off-by-one vs analysis
+    # scripts which index H[:, L, :] directly). See plan.md §1.4.
+    assert n_layers == 37, f"expected 37 layers (embed + 36 blocks), got {n_layers}"
     print(f"[stage4] loaded {H.shape[0]} examples × {n_layers} layers × {H.shape[2]} dim")
 
     states = {m: H[mode_labels == m] for m in MODES}

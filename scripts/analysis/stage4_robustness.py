@@ -204,6 +204,10 @@ def main() -> None:
     mode_labels = d["mode_labels_str"]
     task_ids = d["task_ids"]
     step_indices = d["step_indices"]
+    # Pipeline audit P1-7 fix (2026-05-13): layer-index convention assertion.
+    # H[:, 0, :] = embedding; H[:, L+1, :] = decoder block L output.
+    # See plan.md §1.4 for the off-by-one with Method 4.4 patcher convention.
+    assert H.shape[1] == 37, f"expected 37 layers (embed + 36 blocks), got {H.shape[1]}"
     print(f"[robustness] loaded {H.shape}, {len(set(task_ids.tolist()))} tasks, steps={sorted(set(step_indices.tolist()))}")
 
     states = {m: H[mode_labels == m] for m in MODES}

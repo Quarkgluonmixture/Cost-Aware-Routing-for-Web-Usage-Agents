@@ -152,6 +152,12 @@ def main():
     p.add_argument("--n-tasks", type=int, default=24)
     p.add_argument("--steps", default="2,5")
     p.add_argument("--min-free-vram-gb", type=float, default=0.0)
+    p.add_argument(
+        "--allow-partial", action="store_true",
+        help="Pipeline audit P0-2 fix (2026-05-13): post-extraction grid check "
+             "raises SystemExit if (task × step × mode) cells are missing. "
+             "Pass --allow-partial to override and ship ragged NPZ anyway.",
+    )
     args = p.parse_args()
 
     steps = [int(x) for x in args.steps.split(",")]
@@ -229,6 +235,32 @@ def main():
 
     if not all_hidden:
         raise SystemExit("no hidden states extracted")
+
+    # Pipeline audit P0-2 fix (2026-05-13): post-extraction grid check.
+    # Same pattern as run_stage4_multimode_extract.py P0-2 fix.
+    expected_grid = []
+    for tid in sorted(intents_by_tid):
+        for step in steps:
+            for mode in ALL_MODES:
+                expected_grid.append((int(tid), int(step), mode))
+    actual_grid = [(int(m[0]), int(m[1]), m[2]) for m in all_meta]
+    missing = sorted(set(expected_grid) - set(actual_grid))
+    extra = sorted(set(actual_grid) - set(expected_grid))
+    n_expected = len(expected_grid)
+    n_actual = len(actual_grid)
+    if missing or extra:
+        msg = (
+            f"P0-2 grid check FAIL: expected {n_expected} extractions "
+            f"(tasks={len(intents_by_tid)} × steps={len(steps)} × modes={len(ALL_MODES)}), "
+            f"got {n_actual}. missing={len(missing)} extra={len(extra)}. "
+            f"First 5 missing: {missing[:5]}. "
+        )
+        if args.allow_partial:
+            logger.warning(msg + "Proceeding (--allow-partial).")
+        else:
+            raise SystemExit(msg + "Pass --allow-partial to override.")
+    else:
+        logger.info(f"P0-2 grid check OK: {n_actual}/{n_expected} extractions complete")
 
     H = np.stack(all_hidden)  # (N, n_layers+1, hidden_dim)
     task_ids = np.array([m[0] for m in all_meta])

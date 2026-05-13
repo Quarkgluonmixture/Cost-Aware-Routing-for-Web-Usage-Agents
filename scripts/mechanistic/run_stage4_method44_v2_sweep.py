@@ -108,6 +108,14 @@ def main():
     d = np.load(NPZ, allow_pickle=True)
     H = d["hidden_states"]
     ml = d["mode_labels_str"]
+    # Pipeline audit P1-7 fix (2026-05-13): layer-index convention assertion.
+    # H[:, 0, :] = embedding; H[:, L+1, :] = decoder block L output.
+    # CRITICAL: this script uses patcher.layers[L] ↔ H[:, L+1, :] (off-by-one
+    # vs analysis scripts which index H[:, L, :] directly). E.g., "L17 steering"
+    # here means patcher.layers[17] hook = H[:, 18, :], which is decoder block 17
+    # output. In cosine_gap / logit_lens / layer_profile scripts, "L17" means
+    # H[:, 17, :] = decoder block 16 output. See plan.md §1.4.
+    assert H.shape[1] == 37, f"expected 37 layers (embed + 36 blocks), got {H.shape[1]}"
 
     # Precompute direction per patcher layer: layers[L] hook output ↔ npz[L+1]
     directions = {}

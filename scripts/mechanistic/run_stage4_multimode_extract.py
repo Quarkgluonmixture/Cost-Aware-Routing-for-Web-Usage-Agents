@@ -96,6 +96,14 @@ def main():
              "matches Stage 2/3 patching tier. Use 'all' to ignore manifest "
              "and reproduce legacy lexicographic-glob behavior (NOT recommended).",
     )
+    parser.add_argument(
+        "--allow-partial", action="store_true",
+        help="Pipeline audit P0-2 fix (2026-05-13): post-extraction grid check "
+             "raises SystemExit if (task × step × mode) cells are missing. "
+             "Pass --allow-partial to override and ship ragged NPZ anyway. "
+             "Without this flag, silent per-mode failures from earlier in the "
+             "loop will abort the script BEFORE writing NPZ.",
+    )
     args = parser.parse_args()
 
     archive_dir = Path(args.archived_run_dir)
@@ -229,6 +237,41 @@ def main():
 
     if not all_hs:
         raise SystemExit("no hidden states extracted; all selected tasks/modes failed")
+
+    # Pipeline audit P0-2 fix (2026-05-13): post-extraction grid check.
+    # Previous behavior: per-mode/per-step failures logged at ERROR but
+    # NPZ silently shipped with ragged (task × step × mode) coverage.
+    # Downstream cosine/logit-lens/steering analyses became uninterpretable
+    # without warning. Now: compute expected grid, diff against actual,
+    # raise SystemExit unless --allow-partial was passed.
+    expected_grid = []
+    for tid, _ in selected:
+        for step in args.steps:
+            for mode in args.modes:
+                expected_grid.append((int(tid), int(step), mode))
+    actual_grid = list(zip(
+        (int(t) for t in all_tids),
+        (int(s) for s in all_steps),
+        all_modes,
+    ))
+    missing = sorted(set(expected_grid) - set(actual_grid))
+    extra = sorted(set(actual_grid) - set(expected_grid))
+    n_expected = len(expected_grid)
+    n_actual = len(actual_grid)
+    if missing or extra:
+        msg = (
+            f"P0-2 grid check FAIL: expected {n_expected} extractions "
+            f"(tasks={len(selected)} × steps={len(args.steps)} × modes={len(args.modes)}), "
+            f"got {n_actual}. missing={len(missing)} extra={len(extra)}. "
+            f"First 5 missing: {missing[:5]}. "
+        )
+        if args.allow_partial:
+            logger.warning(msg + "Proceeding (--allow-partial).")
+        else:
+            raise SystemExit(msg + "Pass --allow-partial to override.")
+    else:
+        logger.info(f"P0-2 grid check OK: {n_actual}/{n_expected} extractions complete")
+
     H = np.stack(all_hs)
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -299,6 +342,19 @@ def main():
         "npz_path": str(out.resolve()),
         "n_examples_saved": len(all_hs),
         "hidden_state_shape": list(H.shape),
+        # Pipeline audit P0-2 fix (2026-05-13): grid check status. Future
+        # audits can verify NPZ completeness from provenance alone.
+        "grid_check": {
+            "n_expected": n_expected,
+            "n_actual": n_actual,
+            "n_missing": len(missing),
+            "n_extra": len(extra),
+            "missing_first_20": [list(m) for m in missing[:20]],
+            "allow_partial": bool(args.allow_partial),
+            "status": "OK" if not (missing or extra) else (
+                "PARTIAL (--allow-partial)" if args.allow_partial else "FAIL"
+            ),
+        },
     }
     sidecar.write_text(json.dumps(provenance, indent=2, default=str))
     logger.info(f"Provenance → {sidecar}")
