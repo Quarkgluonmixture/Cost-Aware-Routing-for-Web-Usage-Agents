@@ -167,7 +167,11 @@ Outputs:
 - Selectivity = % tasks where JSON envelope preserved (starts with `{`)
 - Reliability = 2 · c · s / (c + s)
 
-**Current smoke (8/48 cells)**: L17 α=5 = **0.44** sweet spot (29% shift + 100% JSON valid). L33 α=10 = 0.23 (57% shift but JSON breaks).
+**Final v2 split sweep (Myriad 366792 land 2026-05-13 20:27)**: 16-train / 8-eval @ seed 20260513.
+- **Held-out best**: L33 α=20 = **H-mean 0.12** (completeness 7%, selectivity 100%). All other 29/30 held-out cells = 0.00.
+- **In-sample best** (reviewer comparison only): L11 α=20 = **0.29** (completeness 17%, selectivity 100%). Best peak at *different layer* than held-out.
+- **Generalization gap**: +0.16 in absolute H-mean ⇒ direction does NOT transfer.
+- **Reviewer-3 flag triggered** (gap > 0.10): mean-difference steering is a property of the training-cohort fit, not the mid-layer mechanism. §5.3 hero downgraded; §5.4 patching remains load-bearing causal claim.
 
 ### 3.3 Method 4.5 — LA-HDMI / SAE (future work, paper §8)
 
@@ -188,7 +192,7 @@ Following Lin & Liu Position paper, paper §5 must explicitly state:
 Three stale framings retracted with v2 evidence:
 - ❌ "L17 singular planning site" → corrected to **L11-L17 window** (Stage 2/3 6/6 cells)
 - ❌ "Three-axis hierarchy 4:3:1 magnitude ratio" → corrected to **image-dominant ~5-10× + axis-1 ≤ axis-2 both sub-permille** (v2 NPZ §1.2/§5.1/§7.3.0)
-- ❌ "L17 α=5 H-mean 0.44 sweet spot" (Method 4.4 smoke) → corrected to **L33 α=10 H-mean 0.33** (full 45-cell sweep, probe-causal dissociation §5.3)
+- ❌ "L17 α=5 H-mean 0.44 sweet spot" (Method 4.4 smoke) → corrected to **L33 α=20 held-out H-mean 0.12** (Myriad 366792 v2 split sweep 2026-05-13; in-sample 0.29 at L11 α=20, gap +0.16 — reviewer-3 transferability fail. §5.3 reframed: direction is cohort-fit, not transferable mechanism)
 
 New core paper §5 hero claim: **cosine-causal disjoint** — three converging numbers (cosine 0.5-1% / KL 5-9% / patching Δoverlap 20-30%) anchor "geometry underestimates causal" framing. Not a single layer / single magnitude claim.
 
@@ -197,14 +201,14 @@ New core paper §5 hero claim: **cosine-causal disjoint** — three converging n
 Triangulation of 3 evidence types:
 1. **Probe-level** (Method 4.2 PCA cosine gap; AUROC reported as both `in_sample` and held-out `leave-one-task-out` after 2026-05-12 Bug 3 fix; v1 buggy NPZ data invalidated, v2 NPZ in flight: Myriad 359736 cls + 359737 reddit)
 2. **Replacement patching** (Stage 2/3 Cell A-H, L11-L17 window disruption, Holm-significant per layer; baseline empirically equals unpatched at L35 final-block patching position since overlap→target ≈ 1.00 at L35 across all forward cells)
-3. **Additive steering** (Method 4.4 v2 full sweep 45 cells: layer-α tradeoff; mid-layer L11-L17 preserves JSON envelope but low completeness, late-layer L33 produces largest output shifts but over-steers — H-mean ceiling 0.33 indicates probe-causal dissociation, not a single sweet-spot validation)
+3. **Additive steering** (Method 4.4 v2 split sweep, Myriad 366792 2026-05-13: 16-train / 8-eval @ seed 20260513. Held-out best L33 α=20 H-mean 0.12; in-sample best L11 α=20 H-mean 0.29; gap +0.16 reviewer-3 threshold exceeded. Mean-difference direction is task-cohort-fit, NOT a transferable mechanism. §5.3 reframed: probe-causal-steering trichotomy — Method 4.2 readable + §5.4 patching causal but Method 4.4 single-direction steering does not transfer)
 
 ### 4.3 Identification assumptions
 
 | # | Assumption | Stress-test |
 |---|---|---|
 | A1 | L17 last-token hidden state mediates action selection (not earlier obs token positions) | Stage 2/3 swept all layers, L17 is peak |
-| A2 | Mean-difference direction approximates causal axis (Wu et al. hypothesis) | Method 4.4 v2 H-mean 0.44 partial — assumption holds weakly; LA-HDMI would test |
+| A2 | Mean-difference direction approximates causal axis (Wu et al. hypothesis) | **A2 REJECTED at held-out margin** — Method 4.4 v2 split sweep (Myriad 366792, 2026-05-13): held-out H-mean 0.12 vs in-sample 0.29 (gap +0.16, peak cell migrates L11 → L33). Mean-direction assumption fails to transfer; SAE / LA-HDMI per-input adaptive direction would be needed. §5.3 reframed |
 | A3 | 24 strong-tier tasks generalize to broader VWA distribution | Stage 4 robustness Test B: 100% per-task positive, but tier-selection bias possible. Reverse-tier 15 tasks pending |
 | A4 | Qwen3-VL-4B mechanism transfers to other VLM sizes/architectures | Not tested. Wu et al. shows family generality on tool-only; multimodal+multi-step unknown |
 | A5 | Replacement patching faithfully simulates "natural" model read of the representation | Cell E random-injection control rules out non-specific disruption — content-specific causation confirmed |
