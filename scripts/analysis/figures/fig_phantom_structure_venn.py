@@ -129,7 +129,7 @@ def draw_panel(ax: plt.Axes, baseline: str, site: str, title: str) -> None:
     # Restrict to common universe
     sets_r = {m: s & common for m, s in sets.items()}
 
-    if optional in sets_r and sets_r[optional]:
+    if optional in sets_r:
         # 3-circle Venn
         v = venn3([sets_r["P-text"], sets_r["P-SoM"], sets_r[optional]],
                   set_labels=("P-text", "P-SoM", optional),
@@ -184,7 +184,8 @@ def main() -> None:
         "(axis decomposition not empirical). If unique regions are non-trivial "
         "(≥2 tasks per axis, H3 commit floor) → phantom space is multi-region (M1/M2 "
         "axis decomposition empirically validated). 2-circle Venn = P-prompt data "
-        "pending for that cell.",
+        "absent for that cell; measured zero-success P-prompt is still rendered as "
+        "a 3-circle panel.",
         ha="center", fontsize=9.0, color="#555555", wrap=True,
     )
     fig.tight_layout(rect=(0, 0.05, 1, 0.96))

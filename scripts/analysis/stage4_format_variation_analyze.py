@@ -79,19 +79,30 @@ def main():
     H = d["hidden_states"]
     ml = d["mode_labels_str"]
     n_layers = H.shape[1]
+    assert n_layers == 37, f"expected L0-L36 hidden-state convention, got {n_layers} layers"
     print(f"loaded {H.shape} from {args.input}, n modes = {len(set(ml.tolist()))}")
 
-    means = {m: H[ml == m].mean(axis=0) for m in VARIANTS}
+    tids = d["task_ids"]
+    steps = d["step_indices"]
+    by_key = {}
+    for i, (mode, tid, step) in enumerate(zip(ml.tolist(), tids.tolist(), steps.tolist())):
+        by_key.setdefault((int(tid), int(step)), {})[mode] = H[i]
 
     results = {}
     for v in VARIANTS:
         if v == "som":
             continue
-        curve = np.array([cosine_gap(means[v][L], means["som"][L]) for L in range(n_layers)])
+        paired = [(hs[v], hs["som"]) for hs in by_key.values() if v in hs and "som" in hs]
+        if not paired:
+            raise RuntimeError(f"no paired task/step rows for {v} vs som")
+        curve = np.array([
+            np.mean([cosine_gap(a[L], b[L]) for a, b in paired])
+            for L in range(n_layers)
+        ])
         peak_L = int(np.argmax(curve))
         peak_gap = float(curve[peak_L])
-        results[v] = {"curve": curve, "peak_L": peak_L, "peak_gap": peak_gap}
-        print(f"  {v:20s} | peak L{peak_L:02d} = {peak_gap:.4f} | class = {H1_CLASS[v]}")
+        results[v] = {"curve": curve, "peak_L": peak_L, "peak_gap": peak_gap, "n_pairs": len(paired)}
+        print(f"  {v:20s} | n={len(paired):3d} | peak L{peak_L:02d} = {peak_gap:.4f} | class = {H1_CLASS[v]}")
 
     write_md(results, args.output_md)
     plot(results, args.output_fig, n_layers)
@@ -105,17 +116,17 @@ def write_md(results, out):
         "Test refined H1 hypothesis (pretraining co-occurrence shortcut):",
         "*\"input contains mark-like indexed region list → activates visual-grounding pathway\"*",
         "",
-        "**Method**: For each variant V (= different text format applied to same observation), compute per-layer cosine gap between V hidden state mean and SoM (marks+image) baseline hidden state mean. Peak layer indicates **when image-axis divergence emerges**:",
+        "**Method**: For each variant V (= different text format applied to same observation), compute per-layer cosine gap against the paired SoM (marks+image) baseline for the same task/step, then average the paired gaps. Peak layer indicates **when image-axis divergence emerges**:",
         "- Peak L04: image-presence detected freshly early → variant does NOT trigger marks-shortcut (behaves like AXTree-DOM)",
         "- Peak L17+: image-axis divergence delayed → variant DOES trigger marks-shortcut",
         "",
         "## Result table (sorted by peak layer)",
         "",
-        "| Variant | Format example | H1 class | Peak layer | Peak cosine gap |",
-        "|---|---|---|---|---|",
+        "| Variant | Format example | H1 class | Paired n | Peak layer | Peak cosine gap |",
+        "|---|---|---:|---:|---:|---:|",
     ]
     for v, r in sorted(results.items(), key=lambda x: x[1]["peak_L"]):
-        lines.append(f"| {v} | `{DISPLAY[v]}` | {H1_CLASS[v]} | **L{r['peak_L']:02d}** | {r['peak_gap']:.4f} |")
+        lines.append(f"| {v} | `{DISPLAY[v]}` | {H1_CLASS[v]} | {r['n_pairs']} | **L{r['peak_L']:02d}** | {r['peak_gap']:.4f} |")
     lines.append("")
 
     # Group by H1 class
@@ -141,8 +152,8 @@ def write_md(results, out):
     marks_like_peaks = [r["peak_L"] for v, r in results.items() if H1_CLASS[v] == "marks-like"]
     control_peaks = [r["peak_L"] for v, r in results.items() if H1_CLASS[v].startswith("control")]
     dom_peak = results["dom"]["peak_L"]
-    lines.append(f"- **6 marks-like variants**: mean peak layer = {np.mean(marks_like_peaks):.0f}, range L{min(marks_like_peaks):02d}-L{max(marks_like_peaks):02d}")
-    lines.append(f"- **2 control variants** (no integer / no list): mean peak layer = {np.mean(control_peaks):.0f}, range L{min(control_peaks):02d}-L{max(control_peaks):02d}")
+    lines.append(f"- **{len(marks_like_peaks)} marks-like variants**: mean peak layer = {np.mean(marks_like_peaks):.0f}, range L{min(marks_like_peaks):02d}-L{max(marks_like_peaks):02d}")
+    lines.append(f"- **{len(control_peaks)} control variants** (no integer / no list): mean peak layer = {np.mean(control_peaks):.0f}, range L{min(control_peaks):02d}-L{max(control_peaks):02d}")
     lines.append(f"- **AXTree-DOM baseline**: peak L{dom_peak:02d}")
     lines.append("")
     if np.mean(marks_like_peaks) > 15 and np.mean(control_peaks) <= 10:
@@ -184,7 +195,7 @@ def plot(results, out, n_layers):
                     "early fresh image-axis detection", fontsize=10, fontweight="bold")
     ax_a.grid(alpha=0.3)
 
-    # Panel (b): 8 flat-list variants — all peak L36 (mostly)
+    # Panel (b): flat-list variants
     flat_variants = ["som_standard", "browser_use_at", "appagent_id", "tarsier_typed",
                        "plain_numbered", "xml_tagged", "hash_id_control", "plain_sentence"]
     flat_colors = plt.cm.viridis(np.linspace(0, 0.85, len(flat_variants)))
@@ -196,10 +207,11 @@ def plot(results, out, n_layers):
                       marker="*", zorder=5, edgecolor="black", linewidth=0.5)
     ax_b.axvline(4, color="gray", linestyle=":", alpha=0.3)
     ax_b.axvline(17, color="gray", linestyle="--", alpha=0.4)
-    ax_b.axvline(36, color="gray", linestyle="--", alpha=0.6)
-    ax_b.text(33, 0.005, "L36\nlate peak", color="gray", fontsize=9)
+    last_layer = n_layers - 1
+    ax_b.axvline(last_layer, color="gray", linestyle="--", alpha=0.6)
+    ax_b.text(max(0, last_layer - 3), 0.005, f"L{last_layer:02d}\nlast layer", color="gray", fontsize=9)
     ax_b.set_xlabel("Layer index")
-    ax_b.set_title("(b) 8 flat-list formats — L17/L36 PEAK\n"
+    ax_b.set_title(f"(b) {len(flat_variants)} flat-list formats — paired task/step gaps\n"
                     "(SoM / Browser Use / AppAgent / Tarsier / numbered / XML\n"
                     "+ hash_id_control + plain_sentence)", fontsize=10, fontweight="bold")
     ax_b.legend(loc="lower right", fontsize=7, framealpha=0.85, ncol=2)
@@ -227,9 +239,9 @@ def plot(results, out, n_layers):
     ax_c.set_yticklabels(labels, fontsize=9)
     ax_c.invert_yaxis()
     ax_c.axvline(4, color="#888888", linestyle="--", alpha=0.5, label="L4 (AXTree-DOM peak)")
-    ax_c.axvline(36, color="#4477aa", linestyle="--", alpha=0.5, label="L36 (flat-list peak)")
+    ax_c.axvline(last_layer, color="#4477aa", linestyle="--", alpha=0.5, label=f"L{last_layer:02d} (last layer)")
     ax_c.set_xlabel("Peak layer of image-axis cosine gap to SoM baseline")
-    ax_c.set_title("(c) Peak layer per format — AXTree (L04) vs flat-list (L17/L36)",
+    ax_c.set_title("(c) Peak layer per format — AXTree vs flat-list",
                      fontsize=10, fontweight="bold")
     ax_c.set_xlim(-1, n_layers + 7)
     ax_c.grid(alpha=0.3, axis="x")

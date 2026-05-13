@@ -23,8 +23,8 @@ NPZ = ROOT / "results/mechanistic/stage4_format_variation_b1_cls/hidden_states.n
 OUT_MD = ROOT / "docs/checkpoints/mechanism/results/h1_per_task_fragility.md"
 
 MARKS_LIKE = ["som_standard", "browser_use_at", "appagent_id", "tarsier_typed",
-               "plain_numbered", "xml_tagged", "hash_id_control"]  # 7 flat-list (incl no-int control)
-CONTROL_NO_LIST = ["plain_sentence"]
+              "plain_numbered", "xml_tagged"]
+CONTROLS = ["hash_id_control", "plain_sentence"]
 AXTREE = "dom"
 BASELINE = "som"
 
@@ -52,7 +52,7 @@ def main():
         if BASELINE not in hs:
             continue
         som_h = hs[BASELINE]
-        for v in MARKS_LIKE + CONTROL_NO_LIST + [AXTREE]:
+        for v in MARKS_LIKE + CONTROLS + [AXTREE]:
             if v not in hs:
                 continue
             curve = np.array([cosine_gap(hs[v][L], som_h[L]) for L in range(n_layers)])
@@ -64,7 +64,7 @@ def main():
 
     # Verdict 1: AXTree-DOM peak ≤ L10 (early peak) per task?
     dom_early = sum(1 for v in per_task_peaks.values() if v.get(AXTREE, 99) <= 10)
-    # Verdict 2: ≥ 4/7 marks-like variants peak ≥ L20 (late) per task?
+    # Verdict 2: ≥ 4/6 marks-like variants peak ≥ L20 (late) per task?
     marks_late = 0
     for v in per_task_peaks.values():
         n_late = sum(1 for m in MARKS_LIKE if v.get(m, 0) >= 20)
@@ -101,13 +101,13 @@ def write_md(n, dom_early, marks_late, both, dom_peaks, marks_avg_peaks, per_tas
         "## Aggregate verdict per individual (task, step) pair",
         "",
         f"- **AXTree-DOM peak ≤ L10** (early image-axis peak): {dom_early}/{n} = **{100*dom_early/n:.0f}%**",
-        f"- **≥4/7 marks-like variants peak ≥ L20** (late image-axis peak): {marks_late}/{n} = **{100*marks_late/n:.0f}%**",
+        f"- **≥4/6 marks-like variants peak ≥ L20** (late image-axis peak): {marks_late}/{n} = **{100*marks_late/n:.0f}%**",
         f"- **BOTH conditions** (strict dichotomy per task): {both}/{n} = **{100*both/n:.0f}%**",
         "",
         "## Per-task peak-layer distribution",
         "",
         f"AXTree-DOM peak layer: mean = **{np.mean(dom_peaks):.1f}**, std = {np.std(dom_peaks):.1f}, range L{min(dom_peaks):02d}-L{max(dom_peaks):02d}",
-        f"Marks-like (avg across 7) peak layer: mean = **{np.mean(marks_avg_peaks):.1f}**, std = {np.std(marks_avg_peaks):.1f}",
+        f"Marks-like (avg across 6) peak layer: mean = **{np.mean(marks_avg_peaks):.1f}**, std = {np.std(marks_avg_peaks):.1f}",
         f"**Separation** = marks - dom = **{np.mean(marks_avg_peaks) - np.mean(dom_peaks):+.1f} layers**",
         "",
         "## Verdict",
@@ -150,7 +150,7 @@ def write_md(n, dom_early, marks_late, both, dom_peaks, marks_avg_peaks, per_tas
     print(f"summary → {OUT_MD}")
     print(f"\n=== KEY VERDICT ===")
     print(f"  AXTree-DOM peak ≤ L10: {100*dom_early/n:.0f}%")
-    print(f"  ≥4/7 marks-like peak ≥ L20: {100*marks_late/n:.0f}%")
+    print(f"  ≥4/6 marks-like peak ≥ L20: {100*marks_late/n:.0f}%")
     print(f"  BOTH (strict dichotomy per task): {100*both/n:.0f}%")
     print(f"  Mean separation: {np.mean(marks_avg_peaks) - np.mean(dom_peaks):+.1f} layers")
 

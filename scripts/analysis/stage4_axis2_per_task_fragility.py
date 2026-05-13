@@ -60,11 +60,16 @@ def compute_per_task_cosine(npz_path: Path, layer: int):
     """
     d = np.load(npz_path, allow_pickle=True)
     H = d["hidden_states"]  # (N, L, D)
+    assert H.shape[1] == 37, f"expected L0-L36 hidden-state convention, got {H.shape[1]} layers"
+    if not 0 <= layer < H.shape[1]:
+        raise ValueError(f"layer {layer} out of range for H.shape[1]={H.shape[1]}")
     ml = d["mode_labels_str"]
     tids = d["task_ids"]
+    steps = d["step_indices"]
 
     unique_tasks = sorted(set(int(t) for t in tids))
     unique_modes = sorted(set(ml.tolist()))
+    steps_by_task = {t: sorted(set(int(s) for s in steps[tids == t])) for t in unique_tasks}
 
     # For each (task, mode), average hidden state across steps at target layer
     task_mode_mean = {}  # (task_id, mode) -> hidden (D,)
@@ -83,7 +88,7 @@ def compute_per_task_cosine(npz_path: Path, layer: int):
                 per_task[t] = cosine_gap(task_mode_mean[(t, a)], task_mode_mean[(t, b)])
         per_pair[label] = {"per_task": per_task, "axis": axis}
 
-    return per_pair, unique_tasks
+    return per_pair, unique_tasks, steps_by_task
 
 
 def summarize(per_pair: dict, layer: int):
@@ -112,17 +117,25 @@ def summarize(per_pair: dict, layer: int):
     return summary
 
 
-def write_md(cls_sum: dict, red_sum: dict, layer: int, out: Path):
+def write_md(cls_sum: dict, red_sum: dict, layer: int, out: Path,
+             cls_tasks: list[int], red_tasks: list[int],
+             cls_steps: dict[int, list[int]], red_steps: dict[int, list[int]]):
     out.parent.mkdir(parents=True, exist_ok=True)
+
+    def sample_line(site: str, tasks: list[int], steps_by_task: dict[int, list[int]]) -> str:
+        step_counts = sorted(set(len(v) for v in steps_by_task.values()))
+        step_desc = str(step_counts[0]) if len(step_counts) == 1 else "/".join(str(x) for x in step_counts)
+        return f"## {site} ({len(tasks)} tasks; {step_desc} step(s)/task observed)"
+
     lines = [
         "# Axis-2 per-task fragility check",
         "",
         f"Per-task cosine gap distribution at L{layer} (axis-2 peak per §5.7 / Exp 1).",
-        f"Each task averaged across its 2 steps; cosine gap computed between mode pairs.",
+        f"Each task averaged across its observed step(s); cosine gap computed between mode pairs.",
         "",
         "**Defuse target**: /stress W2 attack — axis-2 mean 0.0114 might be dominated by 2-3 outlier tasks.",
         "",
-        "## Classifieds (24 tasks)",
+        sample_line("Classifieds", cls_tasks, cls_steps),
         "",
         "| Pair | Axis | Mean | Median | IQR | min | max | % > 0.005 | % > 0.010 | % > 0.020 |",
         "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
@@ -136,7 +149,7 @@ def write_md(cls_sum: dict, red_sum: dict, layer: int, out: Path):
         )
     lines += [
         "",
-        "## Reddit (24 tasks)",
+        sample_line("Reddit", red_tasks, red_steps),
         "",
         "| Pair | Axis | Mean | Median | IQR | min | max | % > 0.005 | % > 0.010 | % > 0.020 |",
         "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
@@ -177,8 +190,8 @@ def write_md(cls_sum: dict, red_sum: dict, layer: int, out: Path):
         "## Verdict",
         "",
         f"Read the `% > 0.010` column for the axis-2 P-text↔P-SoM pair:",
-        f"- cls: **{cls_sum[main_label]['frac_gt_010']:.0%}** of 24 tasks above the L23 axis-2 mean magnitude",
-        f"- reddit: **{red_sum[main_label]['frac_gt_010']:.0%}** of 24 tasks above",
+        f"- cls: **{cls_sum[main_label]['frac_gt_010']:.0%}** of {len(cls_tasks)} tasks above the L23 axis-2 mean magnitude",
+        f"- reddit: **{red_sum[main_label]['frac_gt_010']:.0%}** of {len(red_tasks)} tasks above",
         "",
         f"Interpretation tree:",
         f"- If both ≥ 50% → axis-2 signal **broad**, /stress W2 attack defused, §5.7 framing OK",
@@ -260,17 +273,17 @@ def main():
 
     np.random.seed(0)
     print(f"Loading cls: {args.cls_npz}")
-    cls_per_pair, cls_tasks = compute_per_task_cosine(args.cls_npz, args.layer)
+    cls_per_pair, cls_tasks, cls_steps = compute_per_task_cosine(args.cls_npz, args.layer)
     print(f"  {len(cls_per_pair)} pairs, {len(cls_tasks)} tasks")
 
     print(f"Loading reddit: {args.red_npz}")
-    red_per_pair, red_tasks = compute_per_task_cosine(args.red_npz, args.layer)
+    red_per_pair, red_tasks, red_steps = compute_per_task_cosine(args.red_npz, args.layer)
     print(f"  {len(red_per_pair)} pairs, {len(red_tasks)} tasks")
 
     cls_sum = summarize(cls_per_pair, args.layer)
     red_sum = summarize(red_per_pair, args.layer)
 
-    write_md(cls_sum, red_sum, args.layer, args.output_md)
+    write_md(cls_sum, red_sum, args.layer, args.output_md, cls_tasks, red_tasks, cls_steps, red_steps)
     plot(cls_sum, red_sum, args.layer, cls_per_pair, red_per_pair, args.output_fig)
 
 

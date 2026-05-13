@@ -50,6 +50,15 @@ def main():
                 "first_token_psom_match_rate": float(np.mean([c["first_token_psom_match"] for c in cells])),
             }
 
+    missing = [f"L{L:02d}_a{alpha}" for L in layers for alpha in alphas
+               if f"L{L:02d}_a{alpha}" not in agg]
+    if missing:
+        raise RuntimeError(
+            "Missing Method 4.4 v2 aggregate cells; refusing to render absent "
+            f"layer/alpha cells as 0.0: {', '.join(missing[:20])}"
+            + (" ..." if len(missing) > 20 else "")
+        )
+
     # Also save back to JSON so other tools see H-mean
     d["aggregate"] = agg
     JSON_PATH.write_text(json.dumps(d, indent=2))
@@ -60,6 +69,13 @@ def main():
 def write_md(d, out, layers, alphas):
     cfg = d["config"]
     n_cells = len(d["results"])
+
+    def metric(L, a, name):
+        key = f"L{L:02d}_a{a}"
+        if key not in d["aggregate"]:
+            raise KeyError(f"missing aggregate cell {key}")
+        return d["aggregate"][key][name]
+
     lines = [
         "# Stage 4 Method 4.4 v2: Layer × α Sweep (HDMI reliability framework)",
         "",
@@ -77,7 +93,7 @@ def write_md(d, out, layers, alphas):
     for L in layers:
         row = [f"L{L:02d}"]
         for a in alphas:
-            v = d["aggregate"].get(f"L{L:02d}_a{a}", {}).get("reliability", 0.0)
+            v = metric(L, a, "reliability")
             row.append(f"**{v:.2f}**")
         lines.append("| " + " | ".join(row) + " |")
     lines.append("")
@@ -89,7 +105,7 @@ def write_md(d, out, layers, alphas):
     for L in layers:
         row = [f"L{L:02d}"]
         for a in alphas:
-            v = d["aggregate"].get(f"L{L:02d}_a{a}", {}).get("completeness", 0.0)
+            v = metric(L, a, "completeness")
             row.append(f"{v:.0%}")
         lines.append("| " + " | ".join(row) + " |")
     lines.append("")
@@ -101,7 +117,7 @@ def write_md(d, out, layers, alphas):
     for L in layers:
         row = [f"L{L:02d}"]
         for a in alphas:
-            v = d["aggregate"].get(f"L{L:02d}_a{a}", {}).get("selectivity", 0.0)
+            v = metric(L, a, "selectivity")
             row.append(f"{v:.0%}")
         lines.append("| " + " | ".join(row) + " |")
     lines.append("")
@@ -113,7 +129,7 @@ def write_md(d, out, layers, alphas):
     for L in layers:
         row = [f"L{L:02d}"]
         for a in alphas:
-            v = d["aggregate"].get(f"L{L:02d}_a{a}", {}).get("mean_overlap_dom", 0.0)
+            v = metric(L, a, "mean_overlap_dom")
             row.append(f"{v:.2f}")
         lines.append("| " + " | ".join(row) + " |")
     lines.append("")
@@ -125,7 +141,7 @@ def write_md(d, out, layers, alphas):
     for L in layers:
         row = [f"L{L:02d}"]
         for a in alphas:
-            v = d["aggregate"].get(f"L{L:02d}_a{a}", {}).get("mean_overlap_psom", 0.0)
+            v = metric(L, a, "mean_overlap_psom")
             row.append(f"{v:.2f}")
         lines.append("| " + " | ".join(row) + " |")
     lines.append("")
