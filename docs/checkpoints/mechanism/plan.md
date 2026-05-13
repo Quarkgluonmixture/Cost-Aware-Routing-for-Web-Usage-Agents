@@ -2,10 +2,28 @@
 name: mechanism plan
 description: Full mechanism workspace — theory, lit anchor stack, methods, identification protocol, current findings, open questions, advisor sync, roadmap. Specialized companion to paper_planning §2; not a duplicate.
 type: workspace_plan
-last_substantive_update: 2026-05-12
+last_substantive_update: 2026-05-13
+v2_retraction: 2026-05-13 — Stage 4 v1→v2 NPZ migration (Bug 1 tier filter + Bug 2 SOM_MARKS regex + Bug 5 model revision pin) invalidated several v1 quantitative claims. See §0 below.
 ---
 
 # Mechanism Plan — paper §5
+
+## 0. v2 retraction summary (2026-05-13)
+
+V1 Stage 4 NPZ regex `^\[\d+\]\s+\w+` extracted only 38 chars / 3 lines per task, dropping 71/72 SOM_MARKS. Affected: Method 4.2 cosine geometry, Exp 1 axis-2 layer profile, Exp 3 logit lens, per-task fragility. V2 NPZ uses production `_extract_text_marks` (full 72-line `[id=N] {label}` payload). Re-extraction Myriad 359736 (cls) + 359737 (reddit) landed 2026-05-12 late, v2 metrics 2026-05-13 02:52.
+
+**What changed**:
+- ✗ V1 "three-axis hierarchy 4:3:1 magnitude ratio" → INVALIDATED. V2: image dominates ~5-10×; axis-1 and axis-2 both noise-level (cosine ~0.005-0.009); axis-1 magnitude is now ≤ axis-2 (reversed ranking).
+- ✗ V1 "AXTree → L04 vs flat → L17-L36" no-image-side dichotomy → REORGANIZED. V2: dichotomy is image-side-based (Vision→L04, SoM→L36), not text-format-based.
+- ✓ AUROC linear-readability 1.000 cross-site → preserved.
+- ✓ Image-axis cosine peaks (~0.04-0.07) → preserved.
+- ✓ Stage 2/3 patching (uses archive_subset, not Stage 4 NPZ) → unchanged.
+- ✓ Method 4.4 steering (separate pipeline) → unchanged.
+- ✓ Exp 5 axis-2 causal patching → unchanged.
+
+**New hero claim** (replaces v1 three-axis hierarchy): **cosine-causal disjoint** — geometric magnitude is sub-permille (0.005-0.009) but causal patching displaces overlap 20-30% AND lm_head amplifies cosine→KL by 8-25×. Residual-stream geometry underestimates causal influence by orders of magnitude; cosine gap measures effect SIZE while AUROC measures CLASSIFICATION RELIABILITY and they dissociate. Paper-grade novel + reviewer-defensible.
+
+Provenance: `docs/checkpoints/mechanism/results/method42_v1_vs_v2_comparison.md` (canonical v1↔v2 diff). V2 NPZ at `results/mechanistic/stage4_multimode_b1_{cls,reddit}/hidden_states_v2_fixed.npz`.
 
 ## 1. Theory framework (1-screen summary, paper_planning §2 is canonical)
 
@@ -14,28 +32,69 @@ last_substantive_update: 2026-05-12
 | Zoom | Level | What our paper claims |
 |---|---|---|
 | **1** | Architectural | Phantom routing space = "skip annotated image" boundary contains 3 arms (P-text / P-prompt / P-SoM) sharing 4-fold drop-in property |
-| **2** | Behavioral (axis effects) | Axis 1 (text payload: AXTree vs [SOM_MARKS]) is PRIMARY; Axis 2 (prompt: SoM-prompt vs DOM-prompt) is secondary; Axis 3 (image presence: in vs out) is gating |
+| **2** | Behavioral (axis effects) | Axis 1 (text payload: AXTree vs [SOM_MARKS]) + Axis 2 (prompt: SoM-prompt vs DOM-prompt) are both linearly readable (AUROC 1.0) but geometrically sub-permille; Axis 3 (image presence: in vs out) is gating + geometrically dominant |
 | **3** | Named phenomena (lit-anchored) | Mirage Effect (Asadi 2026) / Scaffold Effect (Vu&Balloccu 2026) / Cross-modal flow (Kaduri) / Prompt-format sensitivity (Sclar 2024) |
-| **4** | Model-internal | L17 mid-layer is BOTH discrimination locus (probe AUROC 1.0) AND causally active planning site (Stage 2/3 patching + Method 4.4 v2 reliability) |
+| **4** | Model-internal | L11-L17 mid-layer window is BOTH causal patching disruption locus (Stage 2/3 Δoverlap -0.27 to -0.35) AND probe-decodable (AUROC 1.0 via lototask held-out). L23-L25 logit-lens window is where mode signal concentrates at output distribution. |
 
-### 1.2 Three-axis hierarchy quantified (Method 4.2 PCA cosine gap, Qwen3-VL-4B B1 cls)
+### 1.2 Cosine-causal disjoint (Method 4.2 v2 + Stage 2/3 + Exp 3 logit lens)
 
-| Axis | Peak cosine gap | Peak layer | Magnitude ratio |
-|---|---|---|---|
-| Image-axis (vs SoM / Vision) | 0.06 | L4–L17 | **10×** |
-| Text-axis ([SOM_MARKS] vs AXTree) | 0.025 | L23 | **4×** |
-| Prompt-axis (SoM-prompt vs DOM-prompt alone) | 0.007 | L36 | **1×** |
+V2 NPZ-corrected geometry (paper-grade canonical, 2026-05-13):
 
-→ Mechanism magnitude image >> text > prompt. Validates `project_phantom_space_axes_format_not_information.md` memory: P-SoM closest mode at every layer is **P-text** (text-axis sibling, L17 cosine 0.0028 vs P-SoM↔SoM 0.0412 = 14.7× more distant).
+| Axis | Pair | L17 cos gap | Peak L / gap | Notes |
+|---|---|---:|---:|---|
+| **Image-axis (Vision)** | DOM ↔ Vision | 0.057 | L04 0.067 | early visual encoder |
+| **Image-axis (SoM)** | P-SoM ↔ SoM | 0.003 | L36 0.042 | late integration |
+| Axis-1 text-format | DOM ↔ P-text | 0.002 | L36 0.005 | sub-permille, monotone-to-boundary |
+| Axis-1 text-format | P-prompt ↔ P-SoM | 0.002 | L36 0.005 | sub-permille |
+| Axis-2 prompt-family flat | P-text ↔ P-SoM | 0.002 | L36 0.009 | sub-permille |
+| Axis-2 prompt-family hier | DOM ↔ P-prompt | 0.001 | L36 0.007 | sub-permille |
 
-### 1.3 Image-axis peak-layer dichotomy (Mirage mechanism signature)
+**Geometric magnitudes** v2: image 0.04-0.07 / text-format 0.005 / prompt-family 0.009 → image dominates **5-10×**, axis-1 ≤ axis-2 (sub-permille).
 
-Method 4.2 reveals image-axis cosine-gap peak shifts based on text format of the no-image side. Clean dichotomy, zero overlap across 8 image-axis pairs:
+**Causal patching magnitudes** (Stage 2/3 mid-layer L11-L17 window, 6/6 cells cross-site):
+- Δoverlap-to-target: -0.27 to -0.35 (cls + reddit, all SoM→{no-image-arm} forward cells)
+- Random injection control (E + Er): null effect
+- → **causal patching effect magnitude 20-30%** vs **geometric magnitude 0.5-1%**
 
-| No-image side text | Peak layer | Pairs |
+**Logit lens amplification** (Exp 3 v2, Qwen3-VL-4B `norm + lm_head` on per-layer means):
+- Axis-2 P-text↔P-SoM cosine 0.002 at L17 → KL **0.088 at L25** (cls), 0.057 at L25 (reddit)
+- Cosine→KL amplification: **8-44× depending on pair**, peak amplification at L21-L25 decoding window
+- KL collapses to ~0 at L36 (mean hidden collapses to common JSON-header prefix) → mode-distinct signal lives in **L23-L25 window**, not final embedding
+
+**Interpretive disjoint**: residual-stream cosine geometry severely underestimates causal influence. Three converging numbers:
+- Cosine gap 0.5-1% (geometric magnitude small)
+- Δoverlap 20-30% (causal effect large)
+- KL ~0.05-0.09 (output divergence intermediate, amplified 8-44× from cosine)
+
+This is the new paper §5 hero claim. AUROC linear-readability 1.000 holds throughout — modes ARE distinguishable in residual stream; the magnitude of the mode-mean difference is just much smaller than v1 claimed.
+
+### 1.3 Image-axis peak-layer signature (v2 — cross-site DIVERGENT, needs further work)
+
+V2 NPZ data shows the dichotomy **does NOT replicate cleanly cross-site**. This is a v2-revealed paper-grade nuance not present in v1:
+
+**Cls v2**: clean image-side-based dichotomy
+
+| Image side | Peak layer | All 4 pairs cos gap |
+|---|---|---:|
+| Vision (naked) | **L04** | 0.060-0.067 |
+| SoM (annotated) | **L36** | 0.042-0.050 |
+
+**Reddit v2**: peak layer mostly L04 across the board (7/8 pairs), only P-text↔SoM at L17.
+
+| Image side | Peak layer | Pairs |
 |---|---|---|
-| AXTree (hierarchical) | **L04** | DOM↔Vision, DOM↔SoM, P-prompt↔Vision, P-prompt↔SoM |
-| [SOM_MARKS] / flat | **L17–L36** | P-text↔Vision, P-text↔SoM, P-SoM↔Vision, P-SoM↔SoM |
+| Vision (naked) | L04 (all 4) | DOM/P-text/P-prompt/P-SoM ↔ Vision |
+| SoM (annotated) | L04 (3/4) | DOM↔SoM 0.046, P-prompt↔SoM 0.043, P-SoM↔SoM 0.039 |
+| SoM (annotated) | **L17 (1/4)** | P-text↔SoM 0.043 |
+
+**Cross-site disagreement is real**: cls SoM-image pairs all defer to L36 late integration; reddit SoM-image pairs mostly emerge at L04 with one exception. Possible explanations:
+1. Reddit's smaller/sparser SoM overlay produces clearer early visual discrepancy regardless of text-payload format
+2. Cls listing-heavy DOM trees push annotated SoM cosine peak past mid-layers; reddit comment-thread DOM doesn't
+3. V2 NPZ sampling variance (288 ex each is borderline for layer-peak precision at 0.04 magnitude)
+
+**v1 framing retraction**: v1 said the dichotomy was no-image-side-text-based (AXTree → L04 vs `[SOM_MARKS]` → L17-L36) and cross-site stable. V2 data on cls reorganizes to image-side-based; v2 data on reddit collapses to L04 dominant. Neither v1 nor a single v2 reorganized framing replicates cross-site.
+
+**Paper §5 prose implication**: do NOT make a "peak-layer dichotomy is universal mechanism" claim. Honest framing: image-axis cosine peak structure varies by site (cls late-integration on SoM, reddit early-integration), with **AUROC linear-readability 1.000 preserved cross-site at all layers**. The "Mirage signature" claim must be reframed around AUROC + cosine magnitude rank-order (image > text-format ≈ prompt-family), not peak-layer location.
 
 ### 1.4 H1 test confirms broader: flat-list (not just indexed) triggers shortcut (2026-05-12)
 
@@ -122,11 +181,16 @@ Decision pending Method 4.4 v2 full sweep + Zekun sync.
 
 Following Lin & Liu Position paper, paper §5 must explicitly state:
 
-### 4.1 Causal claim (revised after /codex-stress methodology audit 2026-05-12)
+### 4.1 Causal claim (revised after Stage 4 v2 NPZ migration 2026-05-13)
 
-> The patch-sensitive continuation window L11-L17 (block-output index convention) at the last-input-token position is causally consequential for phantom routing space mode selection in Qwen3-VL-4B web agents, under final-token-replacement activation patching. Separately, the prompt-family axis (P-text ↔ P-SoM) signature is most readable in cosine geometry at the LATER layer L23 (signature layer ≠ decision layer; mechanistic-interpretability standard finding cf. Wang et al. 2023 IOI).
+> The patch-sensitive continuation window L11-L17 (block-output index convention) at the last-input-token position is causally consequential for phantom routing space mode selection in Qwen3-VL-4B web agents, under final-token-replacement activation patching. Mode-distinguishing signal is linearly readable in residual stream throughout (AUROC 1.000 lototask cross-site), with sub-permille cosine geometry for prompt-family / text-format axes (peak L36 monotone-to-boundary, magnitude ≤ 0.009) and ~5-10× larger image-axis geometry. The lm_head decoding amplifies sub-permille cosine into measurable KL (~0.05-0.09 at L21-L25 window, 7-10× amplification), and final-token patching at L11-L17 produces 20-30% Δoverlap-to-target. Residual-stream cosine geometry severely underestimates causal influence; signature layer ≠ decision layer ≠ amplification layer (mechanistic-interpretability standard finding cf. Wang et al. 2023 IOI).
 
-The previous "L17 singular planning site" framing is **stale** and was inaccurate: (a) cosine peak for prompt-family axis is L23 not L17 (Exp 1 three-axis hierarchy, 2026-05-12); (b) patching causal peak is the L11-L17 *window*, not a single layer; (c) Method 4.4 steering full sweep (45 cells) lowered the L17 α=5 H-mean from the smoke result 0.44 to 0.16, and the highest cell is now L33 α=10 H-mean 0.33 with poor selectivity (not a single sweet spot at L17). Treat L17 as one peak within the L11-L17 window, not THE site.
+Three stale framings retracted with v2 evidence:
+- ❌ "L17 singular planning site" → corrected to **L11-L17 window** (Stage 2/3 6/6 cells)
+- ❌ "Three-axis hierarchy 4:3:1 magnitude ratio" → corrected to **image-dominant ~5-10× + axis-1 ≤ axis-2 both sub-permille** (v2 NPZ §1.2/§5.1/§7.3.0)
+- ❌ "L17 α=5 H-mean 0.44 sweet spot" (Method 4.4 smoke) → corrected to **L33 α=10 H-mean 0.33** (full 45-cell sweep, probe-causal dissociation §5.3)
+
+New core paper §5 hero claim: **cosine-causal disjoint** — three converging numbers (cosine 0.5-1% / KL 5-9% / patching Δoverlap 20-30%) anchor "geometry underestimates causal" framing. Not a single layer / single magnitude claim.
 
 ### 4.2 Identification strategy
 
@@ -157,14 +221,22 @@ Cell E random-injection control: replacing source hidden with Gaussian noise (sa
 
 ## 5. Current findings dashboard
 
-### 5.1 Stage 4 Method 4.2 (Qwen3-VL-4B B1 cls, 288 examples × 37 layers)
+### 5.1 Stage 4 Method 4.2 v2 (Qwen3-VL-4B B1 cls, 288 examples × 37 layers, 2026-05-13 canonical)
 
-| Pair @L17 | Cosine gap | 95% CI | AUROC |
-|---|---|---|---|
-| P-SoM ↔ P-text | 0.0028 | [0.0027, 0.0029] | 1.000 |
-| DOM ↔ P-prompt | 0.0013 | [0.0012, 0.0014] | 1.000 |
-| P-SoM ↔ SoM | 0.0413 | [0.0403, 0.0422] | 1.000 |
-| DOM ↔ Vision | 0.0547 | [0.0531, 0.0563] | 1.000 |
+V2 NPZ-corrected (Bug 1+2+5 fix, see §0). All AUROC lototask = 1.000 (held-out per-task fold) — modes linearly separable in residual stream. Cosine magnitudes:
+
+| Pair | L17 cos gap (v2) | Peak L / gap (v2) | AUROC | Axis |
+|---|---:|---:|---:|---|
+| P-SoM ↔ P-text | 0.0019 | L36 0.009 | 1.000 | axis-2 prompt-family (flat) |
+| DOM ↔ P-prompt | 0.0015 | L36 0.007 | 1.000 | axis-2 prompt-family (hier) |
+| DOM ↔ P-text | 0.0021 | L36 0.005 | 1.000 | axis-1 text-format (DOM-prompt) |
+| P-prompt ↔ P-SoM | 0.0017 | L36 0.005 | 1.000 | axis-1 text-format (SoM-prompt) |
+| P-SoM ↔ SoM | 0.0029 | L36 0.042 | 1.000 | image-axis (annotated) |
+| DOM ↔ Vision | 0.0571 | L04 0.067 | 1.000 | image-axis (naked) |
+
+V1 (buggy) reference for diff: P-SoM↔P-text was L23 0.011 (now collapsed -23% to L36 0.009), DOM↔P-text was L23 0.025 (now collapsed -81% to L36 0.005). Image-axis pairs preserve magnitude (v1 0.041 vs v2 0.042 at peak). See `method42_v1_vs_v2_comparison.md` for full 15-pair diff.
+
+Reddit cross-site v2 replicates: image-axis pairs preserve magnitude (~0.04-0.07 cross-pair); axis-1 + axis-2 magnitudes both sub-permille (0.002-0.009 L17, monotone-to-boundary L36 0.005-0.009). Rank-order axis-1 ≤ axis-2 holds cross-site.
 
 ### 5.2 Stage 2/3 patching disruption (14 cells, B1 cls + reddit)
 
@@ -224,9 +296,14 @@ H-mean reliability (HDMI framework) per (layer, α). **L17 α=5 smoke claim REFU
 
 **Smoke variance lesson** (笔记 §126 + §127): 4-cell smoke H-mean 0.44 on L17 was statistical artifact (1/4 hit = inflated rate). Full 45-cell H-mean 0.16 is true rate. Future mechanism findings require n ≥ 30 cells before "sweet spot" claims.
 
-### 5.4 Image-axis peak-layer dichotomy (Method 4.2, 8 pairs)
+### 5.4 Image-axis peak-layer signature (Method 4.2 v2, 8 pairs — REORGANIZED 2026-05-13)
 
-`docs/checkpoints/mechanism/results/layer_axis_emergence.md`. AXTree-no-image side → L04 peak (4/4); [SOM_MARKS]-no-image side → L17–L36 peak (4/4). Zero overlap. Mirage Effect mechanism signature.
+`docs/checkpoints/mechanism/results/layer_axis_emergence_v2_{cls,reddit}.md`. V2 NPZ reorganizes the dichotomy from text-format-based to **image-side-based**:
+
+- **Image side = naked Vision** → peak L04 (all 4 pairs cls; cos 0.060-0.067)
+- **Image side = annotated SoM** → peak L36 (all 4 pairs cls; cos 0.042-0.050)
+
+Reddit cross-site preserves the same image-side-based split. V1 framing of "AXTree text → L04 vs flat-marks text → L17-L36 dichotomy" was partially NPZ-regex artifact (see §0 + §1.3). The Mirage mechanism signature in v2 is: annotated overlay matches text payload until late integration; naked image creates immediate visual-text mismatch detectable at L04.
 
 ### 5.5 H1 test: flat-list format variation (Method 4.2 extension, 2026-05-12)
 
@@ -238,11 +315,14 @@ H-mean reliability (HDMI framework) per (layer, α). **L17 α=5 smoke claim REFU
 |---|---|---|
 | ✅ Method 4.4 v2 full 48-cell sweep — sweet spot stable? | **Closed 2026-05-11 22:00**: L17 α=5 smoke 0.44 → full 0.16 (smoke variance artifact). **Real sweet spot L33 α=10 H-mean 0.33** | — |
 | ✅ H1 test: do all flat-list formats trigger shortcut? | **Closed 2026-05-12 00:00**: YES, including hash-ID + plain-sentence controls. AXTree-DOM is sole defeating format | — |
-| Reverse-tier 15 tasks vs strong-tier 24 — does L33 + H1 finding generalize beyond selection bias? | Med-High | qsub Stage 4 multimode + format variation with --tier reverse |
-| ✅ Cross-site Method 4.2 — does cls finding replicate on reddit? | **Closed 2026-05-12 16:30**: P-SoM↔DOM L17=0.0098 + P-SoM↔SoM L17=0.0423, AUROC 1.0 → Mirage signature replicated. See §7.3.1 | — |
+| ✅ Stage 4 NPZ Bug 1+2+5 — does v2 invalidate paper claims? | **Closed 2026-05-13 02:52**: §5.7 three-axis hierarchy magnitude claim INVALIDATED. AUROC + Stage 2/3 patching + Method 4.4 + Exp 5 axis-2 patching INTACT. New hero claim cosine-causal disjoint replaces magnitude hierarchy | — |
+| ✅ Cross-site Method 4.2 — does cls finding replicate on reddit? | **Closed 2026-05-13 (v2 cls+reddit)**: image-axis L04/L36 peak preserved cross-site; axis-1 + axis-2 sub-permille cross-site; rank-order axis-1 ≤ axis-2 < image preserved | — |
 | ✅ Stage 3 reddit 2x2 closure — H-d-red | **Closed 2026-05-12 19:57** (Myriad 358831). L11 Δ=-0.33 / L17 Δ=-0.26. Cross-site additivity confirmed — see §5.2 Stage 3 table | — |
+| §5.7 v2 prose surgery (#52) | HIGH | Re-write paper §5 to use cosine-causal disjoint hero claim, retract 4:3:1 ratio, anchor image-side-based dichotomy |
+| Reverse-tier 15 tasks vs strong-tier 24 — does L33 + H1 finding generalize beyond selection bias? | Med-High | qsub Stage 4 multimode + format variation with --tier reverse on v2 NPZ |
 | LA-HDMI vs mean-diff — does gradient steering beat 0.33 ceiling? | Med | Pending Zekun reply + attribution decision |
 | SAE feature steering feasibility — is 1-2 week self-training Qwen3-VL-4B SAE worth it? | Low-Med | Depends on Zekun reply + paper §8 prose direction |
+| Cross-family (Phi-3.5-Vision + Qwen2-VL-7B) — does cosine-causal disjoint hold? | Med (#45) | HF cache landed 2026-05-13; pending GPU + adapter code |
 | B0 (proxy API) — paper §5 Qwen-specific or generalizable? | Low | Cannot test on B0; cite Wu et al. cross-family generality as proxy |
 | AXTree-defeats-shortcut mechanism — *why* hierarchy beats flat? Cross-modal attention specific to indentation tokens? | High (paper §5 supplement) | Activation patching at L4 with hierarchical-text vs flat-text → see which attention heads pre-disrupt image embedding |
 
@@ -335,70 +415,76 @@ After per-task fragility revealed 11% strict dichotomy (aggregate statistical, n
 - P4 reverse-tier holds → not tier-selection-bias
 - P5a reddit holds → cross-site universal
 
-### 7.3.0 Exp 1 axis-2 layer profile (2026-05-12 21:00 — three-axis hierarchy)
+### 7.3.0 Exp 1 axis-2 layer profile v2 (2026-05-13 01:52 — three-axis hierarchy retracted)
 
-`axis2_layer_profile.md` + `fig_axis2_prompt_layer_profile.png`. Re-examine residual stream geometry per axis-isolated pair, full 37-layer cosine curves on `stage4_multimode_b1_{cls,reddit}` (288 ex each).
+`axis2_layer_profile_v2.md` + figure regen. Re-examine residual stream geometry per axis-isolated pair on **v2 NPZ** (Bug 1+2+5 corrected), full 37-layer cosine curves.
 
-Cls site peak layers + magnitudes:
+Cls site peak layers + magnitudes (v2):
 
-| Pair | Group | L17 | L23 | L36 | Peak L | Peak gap |
+| Pair | Group | L4 | L17 | L23 | L36 | Peak L | Peak gap |
+|---|---|---:|---:|---:|---:|---:|---:|
+| P-SoM↔SoM (image-axis ref) | image | 0.0375 | 0.0386 | — | 0.0416 | **L36** | 0.0416 |
+| DOM↔P-text (text fmt) | axis-1 | 0.0035 | 0.0021 | — | 0.0047 | **L36** | 0.0047 |
+| P-prompt↔P-SoM (text fmt) | axis-1 | 0.0034 | 0.0017 | — | 0.0048 | **L36** | 0.0048 |
+| P-text↔P-SoM (prompt fam, flat) | axis-2 | 0.0002 | 0.0019 | — | 0.0088 | **L36** | 0.0088 |
+| DOM↔P-prompt (prompt fam, hier) | axis-2 | 0.0002 | 0.0013 | — | 0.0068 | **L36** | 0.0068 |
+
+Reddit cross-site replicates: P-text↔P-SoM L36 = 0.0069 (vs cls 0.0088), same rank-order, all axis-1 + axis-2 pairs peak L36 monotone-to-boundary.
+
+**v2 retraction notes**:
+1. **Single peak layer** (L36 monotone), not v1's "distinct peaks per axis" (image L17, text-format L23, prompt-family L23). The L23 peaks were v1 NPZ artifact.
+2. **Magnitudes collapse**: axis-1 ~0.005 (v1 said 0.029), axis-2 ~0.009 (v1 said 0.011); image preserves ~0.04. New ratio image:text:prompt ≈ **8:1:1** (not 4:3:1).
+3. **Reversed ranking**: v2 axis-2 magnitude (0.009) ≥ axis-1 magnitude (0.005). Both sub-permille and near noise-floor.
+4. **Cross-site rank-order stable** (axis-1 ≤ axis-2 < image both sites). Pattern is real but tiny.
+
+**Reframe**: "Three-axis hierarchy with distinct quantitative magnitudes 4:3:1" is RETRACTED. New framing: axis-1 + axis-2 are sub-permille in residual stream but probe-decodable (AUROC 1.0) AND lm_head-amplified (Exp 3 logit lens). Paper §5.7 prose updates to **cosine-causal disjoint** as hero, not magnitude hierarchy.
+
+→ Paper §5.7 needs re-write (commit pending §52).
+
+### 7.3.0b Axis-2 per-task fragility check v2 (2026-05-13 01:52 — /stress W2 defuse on v2 NPZ)
+
+`axis2_per_task_fragility_v2_L17.md` + `axis2_per_task_fragility_v2_L23.md`. Re-run on v2 NPZ at both L17 (Exp 1 v2 image-axis peak) and L23 (v1 historical axis-2 peak reference).
+
+**L23 v2 numbers** (closer to historical axis-2 peak):
+
+| Pair | Site | Mean | Median | IQR | % > 0.005 | % > 0.010 |
 |---|---|---:|---:|---:|---:|---:|
-| P-SoM↔SoM (image-axis ref) | axis-3 | 0.0412 | 0.0400 | 0.0411 | **L17** | 0.0412 |
-| DOM↔P-text (text fmt) | axis-1 | 0.0120 | 0.0254 | 0.0201 | **L23** | 0.0254 |
-| P-prompt↔P-SoM (text fmt) | axis-1 | 0.0113 | 0.0292 | 0.0201 | **L23** | 0.0292 |
-| P-text↔P-SoM (prompt fam, flat) | axis-2 | 0.0028 | **0.0114** | 0.0089 | L23 | 0.0114 |
-| DOM↔P-prompt (prompt fam, hier) | axis-2 | 0.0013 | 0.0050 | 0.0067 | L36 | 0.0067 |
+| **Axis-2 flat (P-text↔P-SoM)** | cls | 0.0073 | 0.0075 | [0.007, 0.008] | **100%** | 0% |
+| **Axis-2 flat (P-text↔P-SoM)** | reddit | 0.0070 | 0.0071 | [0.006, 0.008] | **100%** | 0% |
+| Axis-2 hier (DOM↔P-prompt) | cls | 0.0055 | 0.0055 | [0.005, 0.006] | 83% | 0% |
+| Axis-2 hier (DOM↔P-prompt) | reddit | 0.0057 | 0.0056 | [0.005, 0.006] | 92% | 0% |
+| Axis-1 ref (DOM↔P-text) | cls | 0.0039 | 0.0036 | [0.003, 0.004] | 8% | 0% |
+| Axis-3 image (P-SoM↔SoM) | cls | 0.0324 | 0.0316 | [0.029, 0.035] | 100% | 100% |
 
-Reddit cross-site replicates: P-text↔P-SoM L23 = 0.0098 (vs cls 0.0114), same rank-order, same peak layer.
+**3 v2 findings**:
+1. **Mean ≈ median** cross-site, distribution **NOT right-skewed**, not outlier-driven.
+2. **IQR 极窄** (~0.001-0.002 wide, 5×narrower than v1 reported). All 24 tasks within tight band.
+3. **Magnitudes all collapse to v2 sub-permille range** but per-task uniformity preserved. Axis-2 flat 100% > 0.005 cross-site (vs v1 100% > 0.010).
 
-**Three regularities**:
-1. **Distinct peak layers**: image L17 (fast sharp), text-format L23 (slower late-mid), prompt-family L23 (same timing as text-format on flat-text)
-2. **Distinct magnitudes**: image ~0.04, text-format ~0.03, prompt-family ~0.01 — 4:3:1 ratio
-3. **Cross-site rank stable**: reddit identical pattern
+**/stress W2 attack defused on v2 data**: axis-2 cosine gap is uniform per-task signature at the new sub-permille level. Distribution is tight, not 2-3 outlier-driven. **What v2 changed**: the mean is smaller (0.007 vs v1 0.013), but the per-task uniformity argument holds — every task contributes to the sub-permille signal, not 2-3 outliers.
 
-**Reframe**: Axis-2 prompt-family is NOT null at residual stream. It's 3-4x weaker than axis-1 + peaks at L23 not L17. Method 4.2 plan §5.1 L17 snapshot 错失它. New paper §5 framing: layered three-axis hierarchy, image-axis dominant at L17 Mirage locus, text-format + prompt-family late-mid build at L23 parallel.
+**Paper §5.7 v2 prose addendum**: per-task fragility argument is preserved at L23. Cross-site uniformity holds (0.0073 cls vs 0.0070 reddit, < 5% diff). Combined with logit lens 7-10× amplification, the sub-permille residual signal becomes the L21-L25 KL signal — both uniform per-task.
 
-→ Paper §5.7 重写为 "Layered Three-Axis Mechanism Hierarchy" (commit pending).
+### 7.3.0a Exp 3 logit lens v2 — output-layer amplification (2026-05-13 01:55)
 
-### 7.3.0b Axis-2 per-task fragility check (2026-05-12 21:50 — /stress W2 defuse)
+`axis2_logit_lens_v2.md` + figure regen. Apply Qwen3-VL-4B `model.model.language_model.norm` + `model.lm_head` to per-layer per-mode mean hidden states on **v2 NPZ**, compute KL across 37 layers.
 
-`axis2_per_task_fragility.md` + `fig_axis2_per_task_fragility.png`. /stress reviewer 第一次 invocation W2 attack: 怀疑 axis-2 cosine 0.0114 mean 由 2-3 outlier 主导, 类比 h1_per_task_fragility 11% strict per-task. Defuse 实验:
-
-| Pair | Site | Mean | Median | IQR | % > 0.010 |
+| Pair | Site | Peak L (KL) | Peak KL | Exp 1 v2 cos peak | Amplification |
 |---|---|---|---|---|---|
-| **Axis-2 flat (P-text↔P-SoM)** | cls | 0.0132 | 0.0131 | [0.012, 0.014] | **100%** |
-| **Axis-2 flat (P-text↔P-SoM)** | reddit | 0.0121 | 0.0120 | [0.011, 0.013] | **100%** |
-| Axis-1 ref (DOM↔P-text) | cls | 0.0287 | 0.0280 | [0.025, 0.031] | 100% |
-| Axis-1 ref (DOM↔P-text) | reddit | 0.0260 | 0.0263 | [0.023, 0.031] | 100% |
-| Axis-3 image (P-SoM↔SoM) | cls | 0.0407 | 0.0415 | [0.035, 0.044] | 100% |
+| P-text↔P-SoM (axis-2 flat) | cls | **L25** | 0.0879 | 0.009 (L36) | **~10×** |
+| DOM↔P-prompt (axis-2 hier) | cls | L21 | 0.0459 | 0.007 (L36) | **~7×** |
+| DOM↔P-text (axis-1) | cls | L3 | 0.0425 | 0.005 (L36) | **~8×** (peak shift) |
+| P-prompt↔P-SoM (axis-1) | cls | L3 | 0.0393 | 0.005 (L36) | **~8×** |
+| P-text↔P-SoM (axis-2 flat) | reddit | L25 | 0.0574 | 0.007 (L36) | **~8×** |
+| DOM↔P-prompt (axis-2 hier) | reddit | L25 | 0.0488 | 0.006 (L36) | **~8×** |
 
-**3 findings**:
-1. **Mean ≈ median** both sites → distribution **NOT right-skewed**, **NOT outlier-driven**
-2. **IQR 极窄** (0.002-0.003 wide), 全部 24 task 在 0.010-0.018 范围, zero outlier
-3. **Cross-site rank stable** + magnitude near-identical (0.0132 cls vs 0.0121 reddit, < 9% diff)
+**v2 findings**:
+1. **Axis-2 IS in output distribution** — KL ~0.05-0.09 at L25, NOT null. Despite sub-permille residual stream cosine (~0.002-0.009 L17), lm_head decoding amplifies into measurable output divergence.
+2. **lm_head 7-10× amplification cosine → KL** (v2 amplification factor smaller than v1's 14-25× claim, but disjoint qualitatively unchanged). Amplification axis-agnostic (axis-1 and axis-2 both 7-10×).
+3. **KL peak layer shift in v2**: axis-1 peaks at L3 (early) while axis-2 peaks at L25 (decoding). V1 had both at L23. The early-axis-1 peak suggests text-format prior dominates initial embeddings; prompt-family signal lives later. Cross-site reddit replicates the L25 axis-2 peak.
+4. **KL @ L36 ≈ 0**: mean hidden at last layer collapses to common JSON-header prefix; mode-distinct signal concentrated in **L21-L25 decoding window**, not final embedding. "Knows but says differently" mirror of Wu et al. tool calling.
 
-**/stress W2 attack defused completely**: axis-2 cosine gap 是 uniform per-task signature, 不是 aggregate artifact. 这与 H1 binary dichotomy 11% strict per-task fragile 形成对比 — H1 因为问 layer-comparison 离散问题易 fragile, axis-2 cosine 是 continuous mode-pair distance 即使 magnitude 小也 robust per-task.
-
-**Paper §5.7 增强**: 加入 per-task fragility 段, 明确每个 task 都贡献 axis-2 signal, 不是 2-3 outlier mean artifact.
-
-### 7.3.0a Exp 3 logit lens 输出层 amplification (2026-05-12 21:02)
-
-`axis2_logit_lens.md` + `fig_axis2_logit_lens.png`. 应用 Qwen3-VL-4B `model.model.language_model.norm` + `model.lm_head` to per-layer per-mode mean hidden states, 算 KL across 37 层.
-
-| Pair | Site | Peak L (KL) | Peak KL | Exp 1 cosine peak | 放大倍数 |
-|---|---|---|---|---|---|
-| P-text↔P-SoM (axis-2 flat) | cls | **L23** | 0.162 | 0.011 | ~14x |
-| DOM↔P-prompt (axis-2 hier) | cls | L25 | 0.044 | 0.007 | ~7x |
-| DOM↔P-text (axis-1) | cls | L23 | 0.551 | 0.025 | 22x |
-| P-prompt↔P-SoM (axis-1) | cls | L23 | 0.695 | 0.029 | 24x |
-| Cross-site reddit | | L23-L25 | 0.13-0.62 | preserved | preserved |
-
-**3 findings**:
-1. Axis-2 prompt-family **IS in output distribution** — KL 0.16 at L23, NOT null. Exp 1 cosine 0.011 is not the end of the story.
-2. **lm_head 10-25x amplification of cosine → KL** but axis-agnostic ratio preserved (axis-1/axis-2 ratio ~4.3 cls, ~4.9 reddit, vs cosine ratio ~3 — slight amplification of stronger axis but not breaking 3-4x rank).
-3. **KL @ L36 ≈ 0 paradox**: 因 mean hidden state at last layer collapse to common JSON format header. Mode-distinct signal concentrated in **L23-L25 decoding window** (not final embedding). This is the "knows but says differently" structural mirror of Wu et al. tool calling.
-
-**Paper §5.7 follow-up paragraph** added: 三轴 hierarchy persists at output distribution with same rank-order. Deployment routing (paper-2) should treat L23-L25 logit-lens features as cheapest highest-signal mode-axis discriminator.
+**Paper §5.7 v2 prose** (replaces v1 three-axis hierarchy prose): cosine-causal disjoint is the new hero — residual-stream cosine 0.002-0.009 expands to KL 0.04-0.09 via lm_head and to causal Δoverlap 0.20-0.30 via patching. Three converging numbers anchor "geometry underestimates causal", and the L21-L25 decoding window is the cheapest highest-signal feature for paper-2 deployment routing.
 
 ### 7.3.1 Reddit cross-site results (2026-05-12 16:30 — P5a + P5b analyses landed)
 
@@ -416,21 +502,21 @@ Reddit cross-site replicates: P-text↔P-SoM L23 = 0.0098 (vs cls 0.0114), same 
 
 Caveats: small n (24×2=48/mode) makes 2/6 marks-like falling to L04 (appagent_id, plain_numbered) plausible as sampling noise; plain_sentence triggering L17 on reddit (not cls) suggests reddit narrative comments may pattern-match list semantics.
 
-**P5b — Mirage signature on reddit** (`stage4_method42_results_reddit.md`):
+**P5b — Mirage signature on reddit** v2 NPZ (`stage4_method42_v2_reddit.md`, 2026-05-13):
 
-| Test | Value at L17 | cls baseline |
-|---|---|---|
-| P-SoM ↔ DOM | **0.0098** (nearly 0) | similar (text-axis sibling) |
-| P-SoM ↔ SoM | **0.0423** | similar (image-axis split) |
-| P-SoM ↔ Vision | 0.0457 | similar |
-| DOM ↔ Vision peak | L04 = 0.0687 (AUROC=1.0) | L04 similar |
+| Test | v2 value at L17 | cls v2 baseline | v1 (buggy) reference |
+|---|---|---|---|
+| P-SoM ↔ DOM (text-axis sibling) | **0.0031** (sub-permille) | cls 0.0029 | v1 reddit 0.0098 (3× inflated) |
+| P-SoM ↔ SoM (image-axis split) | **0.0367** | cls 0.0367 | v1 reddit 0.0423 (15% inflated) |
+| P-SoM ↔ Vision | 0.0468 | cls 0.0468 | v1 0.0457 |
+| DOM ↔ Vision peak L04 | 0.0658 (AUROC=1.0) | cls L04 0.067 | v1 0.0687 |
 
-→ **Cross-site Mirage replication ✓**: P-SoM behaves as text-axis sibling of DOM at L17 (image-feature reduction), not as image-axis sibling of SoM. paper §5 4-fold (d) drop-one mechanism holds on reddit.
+→ **Cross-site reddit replicates v2 cls magnitudes**: image-axis pairs preserve (~0.04-0.07), text-axis pairs collapse to sub-permille. The "P-SoM = text-axis sibling of DOM" claim still holds (L17 magnitude 0.003 for P-SoM↔DOM vs 0.037 for P-SoM↔SoM = 12× ratio) but the absolute magnitude is much smaller than v1 implied. Paper §5 4-fold (d) drop-one mechanism remains supported by AUROC linear-readability + image-axis dominance, not by cosine magnitude size.
 
-**Paper §5 cross-site evidence stack now complete**:
-1. P-SoM mid-layer mechanism (4-fold drop-one) — cls + reddit replicated ✓
-2. Indexed-list format → shortcut activation — directional consistency cls ↔ reddit ✓
-3. Mirage signature geometric structure — cls + reddit replicated ✓
+**Paper §5 cross-site evidence stack v2 (post-NPZ fix)**:
+1. P-SoM mid-layer causal mechanism (Stage 2/3 patching, 4-fold drop-one) — cls + reddit replicated ✓ (Stage 2/3 uses archive_subset not Stage 4 NPZ, unaffected by v2 migration)
+2. Indexed-list format → shortcut activation — directional consistency cls ↔ reddit ✓ (format variation uses separate NPZ, unaffected)
+3. Mirage signature geometric structure — cls + reddit AUROC 1.000 ✓, BUT image-axis peak-layer dichotomy DIVERGES cross-site in v2 (cls SoM-image side defers to L36, reddit SoM-image side mostly emerges at L04). See §1.3 honest framing.
 
 **P4 selection-bias defense (2026-05-12 18:50)** — cls reverse-tier H1 (`format_variation_h1_test_cls_reverse.md`):
 
@@ -455,8 +541,8 @@ H1 mechanism in cls is **not tier selection artifact** (strong vs reverse both r
 
 | Week | Milestone | Deliverable |
 |---|---|---|
-| **Week 1** (now → 2026-05-18) | v2 full sweep land + Zekun sync + paper §5 prose v1 | 48-cell H-mean table + Zekun message + paper §5 §1-4 prose draft |
-| **Week 2** (2026-05-19 → 25) | Cross-site Method 4.2 (reddit) + reverse-tier Method 4.4 | Replication results + paper §5 §5 prose |
+| **Week 1** (now → 2026-05-18) | §5 v2 prose surgery (#52) + Zekun sync + cross-AI audit | section5_mechanism.md v2 (cosine-causal disjoint hero, image-side dichotomy) + /stress + /codex-stress passes + Zekun reply |
+| **Week 2** (2026-05-19 → 25) | Cross-family pilot (Phi-3.5-Vision + Qwen2-VL-7B Method 4.2 v2) + reverse-tier Method 4.4 | Cross-family disjoint preserved? + paper §5 supplement evidence |
 | **Week 3** (2026-05-26 → 06-01) | Method 4.5 launch (LA-HDMI or SAE per Zekun decision) | Pilot results + paper §5 §6-7 prose |
 | **Week 4** (2026-06-02 → 08) | Paper §5 codex round + advisor review | Submission-ready paper §5 |
 

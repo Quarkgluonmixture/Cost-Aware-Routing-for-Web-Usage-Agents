@@ -1,0 +1,8 @@
+# Removed 2026-05-13 (real-GLM-call auto-cron → manual hermes invocation).
+# Scope: only real GLM calls. check-links + cell sync + error-scan + myriad-watcher
+# remain in active crontab (they're deterministic / log-scan, not GLM API calls).
+# To re-install, append these lines to scripts/maintenance/crontab.txt
+# and re-run `crontab scripts/maintenance/crontab.txt`.
+
+15,45 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "glm-refresh-playbook-s2" -- make glm-refresh-playbook APPLY=1 SECTION=2 >> logs/cron/glm_playbook_s2.log 2>&1
+0 */2 * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "glm-refresh-playbook" -- make glm-refresh-playbook APPLY=1 >> logs/cron/glm_playbook.log 2>&1

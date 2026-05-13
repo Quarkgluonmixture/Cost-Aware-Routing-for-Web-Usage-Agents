@@ -21,12 +21,12 @@ NTFY_TOPIC=p79-exp-dgx-spark
 # NOT_LOGGED_IN / Timeout. Output JSON consumed by §2.5 active-errors subsection.
 */5 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "error-scan" -- make error-scan >> logs/cron/error_scan.log 2>&1
 
-# every 30 min (15+45 to avoid colliding with full refresh on 0): fast §2 automation-status
-# refresh (cron health / changelog / dead-links / ntfy). SECTION=2 skips `make active`.
-15,45 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "glm-refresh-playbook-s2" -- make glm-refresh-playbook APPLY=1 SECTION=2 >> logs/cron/glm_playbook_s2.log 2>&1
-
-# every 2 hours: full §1 + §2 refresh (critical path narrative + automation status, dual GLM call)
-0 */2 * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "glm-refresh-playbook" -- make glm-refresh-playbook APPLY=1 >> logs/cron/glm_playbook.log 2>&1
+# PLAYBOOK §1+§2 refresh: REMOVED 2026-05-13. Replaced by manual hermes agent
+# invocation. See `docs/checkpoints/hermes_prompts/playbook_refresh.md` for the
+# prompt. Reason: auto-cron always-on burned GLM tokens whether user read or not;
+# manual on-demand is live (vs 30min/2h-stale snapshot) and zero idle cost.
+#
+# (Removed entries archived in scripts/maintenance/_archive/crontab_glm_playbook.txt)
 
 # every Sunday 00:00: dead link scan, output report to logs (don't notify on this — it always exits 1 if links found)
 0 0 * * 0 cd $REPO && make check-links > logs/cron/dead_links_$(date +\%Y\%m\%d).log 2>&1
