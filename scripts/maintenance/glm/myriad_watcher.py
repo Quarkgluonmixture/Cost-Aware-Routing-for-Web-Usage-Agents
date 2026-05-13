@@ -152,6 +152,13 @@ GONE_HOOKS: dict[str, tuple[str, str]] = {
         "stage4_multimode_b1_reddit",
         "",
     ),
+    # P0-4 Method 4.4 train/eval split sweep (2026-05-13 pipeline audit). Output:
+    # method44_v2_sweep.json + DGX/docs/checkpoints/stage4_method44_v2_results.md
+    # Sentinel: method44_v2_sweep_DONE.marker
+    "stage4mm44_cls_v2": (
+        "stage4_multimode_b1_cls",
+        "",
+    ),
     # 16-cell rerun cells: register here as launched. Pattern:
     # "cellX_<descr>": ("<remote_subdir>", "<cell_md_relpath>"),
 }
