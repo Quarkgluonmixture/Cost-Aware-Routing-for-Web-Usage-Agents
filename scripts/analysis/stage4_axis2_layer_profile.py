@@ -33,8 +33,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_NPZ_CLS = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states.npz"
-DEFAULT_NPZ_RED = ROOT / "results/mechanistic/stage4_multimode_b1_reddit/hidden_states.npz"
+DEFAULT_NPZ_CLS = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states_v2_fixed.npz"
+DEFAULT_NPZ_RED = ROOT / "results/mechanistic/stage4_multimode_b1_reddit/hidden_states_v2_fixed.npz"
 DEFAULT_OUT_MD = ROOT / "docs/checkpoints/mechanism/results/axis2_layer_profile.md"
 DEFAULT_OUT_FIG = ROOT / "results/phantom_paper/figures/fig_axis2_prompt_layer_profile.png"
 

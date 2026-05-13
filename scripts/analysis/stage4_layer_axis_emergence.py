@@ -30,7 +30,7 @@ import numpy as np
 import argparse
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states.npz"
+DEFAULT_NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states_v2_fixed.npz"
 DEFAULT_OUT_MD = ROOT / "docs/checkpoints/mechanism/results/layer_axis_emergence.md"
 DEFAULT_OUT_FIG = ROOT / "results/phantom_paper/figures/fig_stage4_image_axis_layer_split.png"
 

@@ -27,7 +27,7 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import roc_auc_score
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states.npz"
+DEFAULT_NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states_v2_fixed.npz"
 DEFAULT_OUT_JSON = ROOT / "results/mechanistic/stage4_multimode_b1_cls/method42_metrics.json"
 DEFAULT_OUT_MD = ROOT / "docs/checkpoints/stage4_method42_results.md"
 DEFAULT_OUT_FIG = ROOT / "results/phantom_paper/figures/fig_stage4_pca_cosine_gap.png"
