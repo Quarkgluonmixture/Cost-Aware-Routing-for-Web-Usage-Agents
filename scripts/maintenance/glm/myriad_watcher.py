@@ -109,6 +109,15 @@ GONE_HOOKS: dict[str, tuple[str, str]] = {
         "stage3_cellhprompt_red_fwd_ptext_taskshuf_myriad",
         "",
     ),
+    # Exp 5 axis-2 reverse-direction asymmetry test (paper §5.4 control)
+    "cellhprm_cls_rev": (
+        "stage3_cellhprompt_cls_rev_psom_myriad",
+        "",
+    ),
+    "cellhprm_red_rev": (
+        "stage3_cellhprompt_red_rev_psom_myriad",
+        "",
+    ),
     # Stage 4 Method 4.2 multimode hidden state extraction (PCA cosine gap)
     "stage4mm_cls": (
         "stage4_multimode_b1_cls",

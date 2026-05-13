@@ -27,10 +27,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+import argparse
+
 ROOT = Path(__file__).resolve().parents[2]
-NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states.npz"
-OUT_MD = ROOT / "docs/checkpoints/mechanism/results/layer_axis_emergence.md"
-OUT_FIG = ROOT / "results/phantom_paper/figures/fig_stage4_image_axis_layer_split.png"
+DEFAULT_NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states.npz"
+DEFAULT_OUT_MD = ROOT / "docs/checkpoints/mechanism/results/layer_axis_emergence.md"
+DEFAULT_OUT_FIG = ROOT / "results/phantom_paper/figures/fig_stage4_image_axis_layer_split.png"
 
 MODES = ["dom", "phantom_text", "phantom_prompt", "phantom_som", "som", "vision"]
 DISPLAY = {"dom": "DOM", "phantom_text": "P-text", "phantom_prompt": "P-prompt",
@@ -52,7 +54,15 @@ def cosine_gap(a, b):
 
 
 def main():
-    d = np.load(NPZ, allow_pickle=True)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--npz", type=Path, default=DEFAULT_NPZ)
+    ap.add_argument("--output-md", type=Path, default=DEFAULT_OUT_MD)
+    ap.add_argument("--output-fig", type=Path, default=DEFAULT_OUT_FIG)
+    ap.add_argument("--site-label", type=str, default="cls",
+                    help="Site label embedded in figure title (cls or reddit)")
+    args = ap.parse_args()
+
+    d = np.load(args.npz, allow_pickle=True)
     H = d["hidden_states"]
     ml = d["mode_labels_str"]
     n_layers = H.shape[1]
@@ -79,8 +89,8 @@ def main():
             "has_img_text": META[has_img][0],
         }
 
-    write_md(pair_curves, OUT_MD)
-    plot(pair_curves, OUT_FIG, n_layers)
+    write_md(pair_curves, args.output_md)
+    plot(pair_curves, args.output_fig, n_layers, site_label=args.site_label)
     print("Peak layer per image-axis pair:")
     for k, v in sorted(pair_curves.items(), key=lambda x: x[1]["peak_L"]):
         no_img, has_img = k
@@ -132,7 +142,7 @@ def write_md(pair_curves, out):
     print(f"summary → {out}")
 
 
-def plot(pair_curves, out, n_layers):
+def plot(pair_curves, out, n_layers, site_label="cls"):
     plt.rcParams.update({"font.size": 9, "figure.dpi": 150})
     fig, ax = plt.subplots(figsize=(11, 6))
 
@@ -151,9 +161,9 @@ def plot(pair_curves, out, n_layers):
     ax.text(4, 0.07, " L4 = AXTree-text\n image-axis peak\n (fresh check)", color="#cc4444", fontsize=8.5, va="top")
     ax.text(17, 0.045, " L17 = [SOM_MARKS]-text\n image-axis peak shifts\n (marks-primed delay)", color="#4477aa", fontsize=8.5, va="top")
 
-    ax.set_xlabel("Layer index (Qwen3-VL-4B B1 cls)")
+    ax.set_xlabel(f"Layer index (Qwen3-VL-4B B1 {site_label})")
     ax.set_ylabel("Cosine gap between mode means")
-    ax.set_title("Image-axis peak-layer shift — Mirage Effect signature\n(Method 4.2, 24 cls strong-tier tasks × 2 steps)",
+    ax.set_title(f"Image-axis peak-layer shift — Mirage Effect signature\n(Method 4.2, 24 {site_label} strong-tier tasks × 2 steps)",
                   fontsize=11, fontweight="bold")
     ax.legend(loc="upper right", fontsize=7.5, framealpha=0.9)
     ax.grid(alpha=0.3)
