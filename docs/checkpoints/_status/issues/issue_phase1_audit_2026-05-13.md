@@ -1,12 +1,23 @@
 ---
 type: issue
-id: phase1-audit-2026-05-13
+category: paper-grade-bug
+status: active
+priority: high
+action: Defuse 6 codex+Claude findings (5 still-open + 1 fixed). ~3h before next paper-grade rerun. See "Recommended fix order" below.
 created: 2026-05-13
-severity: HIGH
-status: open
+updated: 2026-05-13
 paper_section: "§1 + §4"
 audit_source: codex_full_prerun + claude_parallel
-defuse_eta: 2026-05-13 (~3h prose+code work)
+file_paths:
+  - scripts/queues/queue_16cell_paper_grade.sh
+  - scripts/maintenance/glm/glm_pre_launch_check.py
+  - scripts/maintenance/launch.sh
+  - scripts/analysis/figures/fig_meta_forest.py
+  - scripts/analysis/figures/fig_forest_drop_one.py
+  - scripts/analysis/lib/run_registry.py
+  - results/phantom_paper/run_manifest.yaml
+  - scripts/analysis/validate_run.py
+  - docs/checkpoints/paper_drafts/section5_mechanism.md
 related: [stage4-bug-pattern, codex-stress-wrap-2026-05-13]
 ---
 
