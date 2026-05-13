@@ -166,8 +166,13 @@ def main():
     extractor = HiddenStateExtractor(model_path=args.model_path, min_free_vram_gb=args.min_free_vram_gb)
     logger.info(f"Model loaded: {args.model_path}")
 
-    # Plus the 2 reused baselines: 'dom' (AXTree) and 'som' (image + marks)
-    BASELINES = ["dom", "som"]
+    # Pipeline audit P0-3 fix (2026-05-13, codex Phase 1 audit OOB callout):
+    # Docstring lines 9-11 claim variants should cluster with baseline P-text /
+    # baseline DOM, but original BASELINES = ["dom", "som"] omitted phantom_text
+    # and phantom_som. H1 test "marks-like variants cluster with P-text" cannot
+    # be verified without P-text in NPZ. Added phantom_text + phantom_som as
+    # baselines (matches Stage 4 multimode extraction modes).
+    BASELINES = ["dom", "som", "phantom_text", "phantom_som"]
     ALL_MODES = list(VARIANTS.keys()) + BASELINES
 
     all_hidden = []
@@ -204,6 +209,17 @@ def main():
                     img_path = screenshot if screenshot.exists() else None
                     h = extractor.extract(intent=intent, mode="som",
                                             observation_text=marks_text, image_path=img_path)
+                elif mode == "phantom_text":
+                    # P0-3 (2026-05-13): baseline P-text — marks text + DOM-prompt + NO image
+                    # Matches run_stage4_multimode_extract.py text_payload_for("phantom_text")
+                    marks_text = fmt_som_standard(obs_text)
+                    h = extractor.extract(intent=intent, mode="dom",
+                                            observation_text=marks_text, image_path=None)
+                elif mode == "phantom_som":
+                    # P0-3 (2026-05-13): baseline P-SoM — marks text + SoM-prompt + NO image
+                    marks_text = fmt_som_standard(obs_text)
+                    h = extractor.extract(intent=intent, mode="som",
+                                            observation_text=marks_text, image_path=None)
                 else:
                     continue
 

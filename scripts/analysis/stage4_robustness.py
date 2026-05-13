@@ -22,9 +22,12 @@ import numpy as np
 from sklearn.metrics import roc_auc_score, silhouette_score
 
 ROOT = Path(__file__).resolve().parents[2]
-NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states.npz"
-OUT_JSON = ROOT / "results/mechanistic/stage4_multimode_b1_cls/method42_robustness.json"
-OUT_MD = ROOT / "docs/checkpoints/stage4_method42_robustness.md"
+# Pipeline audit P0-6 fix (2026-05-13): was hidden_states.npz (v1 buggy).
+# §5 paper-grade "robustness 5/5 pass" cited from v1 data; re-run on v2 NPZ
+# to validate v2 retraction claims still pass robustness suite.
+NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states_v2_fixed.npz"
+OUT_JSON = ROOT / "results/mechanistic/stage4_multimode_b1_cls/method42_robustness_v2.json"
+OUT_MD = ROOT / "docs/checkpoints/stage4_method42_robustness_v2.md"
 
 MODES = ["dom", "phantom_text", "phantom_prompt", "phantom_som", "som", "vision"]
 DISPLAY = {"dom": "DOM", "phantom_text": "P-text", "phantom_prompt": "P-prompt",

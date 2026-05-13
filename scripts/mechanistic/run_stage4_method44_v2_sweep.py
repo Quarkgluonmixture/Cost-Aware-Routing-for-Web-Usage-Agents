@@ -52,7 +52,11 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [stage4mm44v2] %(lev
 logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parents[2]
-NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states.npz"
+# Pipeline audit P0-5 fix (2026-05-13): was hidden_states.npz (v1 buggy SOM_MARKS
+# regex dropping 71/72 marks). Other Stage 4 scripts default to v2_fixed; Method
+# 4.4 was incoherent cross-pipeline. Steering direction now computed on same NPZ
+# that cosine_gap / logit_lens / layer_profile read.
+NPZ = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states_v2_fixed.npz"
 ARCHIVE = ROOT / "results/mechanistic/archive_subset_b1_cls"
 MANIFEST = ARCHIVE / "manifest.json"
 OUT_JSON = ROOT / "results/mechanistic/stage4_multimode_b1_cls/method44_v2_sweep.json"
