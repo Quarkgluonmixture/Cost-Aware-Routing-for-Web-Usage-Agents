@@ -36,7 +36,7 @@ ARMS = [
     ("4pprompt", "P-prompt", "#9467bd"),
 ]
 
-TOST_DELTA_PP = 0.5
+TOST_DELTA_PP = 1.0  # locked by preregistration.md §4; was 0.5 (codex audit 2026-05-13)
 SIG_ALPHA = 0.05
 
 

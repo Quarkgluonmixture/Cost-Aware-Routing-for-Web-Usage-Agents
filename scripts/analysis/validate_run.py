@@ -49,11 +49,22 @@ _EXPECTED_CONDITIONS = [
     "phase1_dom_router_0",
     "phase1_som_router_0",
     "phase1_vision_router_0",
+    # Phantom variants added 2026-05-13 (codex audit P1):
+    # validate_run was gating phantom cell paper-grade promotion at the
+    # condition-ID level. Without these, any phantom_* run failed validation.
+    "phase1_phantom_dom_router_0",
+    "phase1_phantom_som_router_0",
+    "phase1_phantom_text_router_0",
+    "phase1_phantom_prompt_router_0",
 ]
 _MODE_FROM_CONDITION = {
     "phase1_dom_router_0": "dom",
     "phase1_som_router_0": "som",
     "phase1_vision_router_0": "vision",
+    "phase1_phantom_dom_router_0": "phantom_dom",
+    "phase1_phantom_som_router_0": "phantom_som",
+    "phase1_phantom_text_router_0": "phantom_text",
+    "phase1_phantom_prompt_router_0": "phantom_prompt",
 }
 
 # ---------------------------------------------------------------------------

@@ -53,7 +53,7 @@ ROLE_DIAMOND_STYLE = {
     "ABLATION": dict(facecolor="#cccccc", edgecolor="#444444", linewidth=1.0, alpha=0.7),
 }
 
-TOST_DELTA_PP = 0.5
+TOST_DELTA_PP = 1.0  # locked by preregistration.md §4; was 0.5 (codex audit 2026-05-13)
 
 
 def _f(x):

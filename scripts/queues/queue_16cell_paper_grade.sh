@@ -65,6 +65,14 @@ check_gates() {
     log "  FAIL: preregistration.md still has TBD threshold values."
     log "        Wait for advisor email reply, then update preregistration.md."
     errors=$((errors+1))
+  elif ! grep -q "^status: locked" docs/checkpoints/pre_run/preregistration.md 2>/dev/null; then
+    # Gate 1b added 2026-05-13 (codex audit HIGH-1): launch_checklist.md
+    # requires prereg `status: locked` before paper-grade rerun. Previously
+    # only TBD threshold was checked; status=draft could pass.
+    log "  FAIL: preregistration.md status is not 'locked' (still draft / pending advisor)."
+    log "        Once advisor signs, flip 'status: draft' → 'status: locked' in"
+    log "        docs/checkpoints/pre_run/preregistration.md before paper-grade launch."
+    errors=$((errors+1))
   else
     log "  OK"
   fi
