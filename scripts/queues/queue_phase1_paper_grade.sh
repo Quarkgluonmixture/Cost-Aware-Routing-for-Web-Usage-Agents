@@ -283,9 +283,10 @@ case "$MODE" in
     log "Post-completion analysis:"
     log "  make analysis              # full pipeline"
     log "  python3 scripts/analysis/preregistration_decision_test.py \\"
-    log "      --cells-csv results/phantom_paper/cells_aggregated.csv \\"
-    log "      --primary-gate drop_one_pooled_meta_TOST \\"
-    log "      --transparency K_h1_3_of_4,K_h3_3_of_4 \\"
+    log "      --per-task-csv results/phantom_paper/per_task_sr.csv \\"
+    log "      --primary-gate drop_one_pooled_meta_superiority \\"
+    log "      --TOST-delta-pp 1.0 --H1-magnitude-pp 1.0 \\"
+    log "      --transparency-K_h1 3 --transparency-K_h3 3 \\"
     log "      --out results/phantom_paper/preregistration_test_results.json"
     ;;
   *)

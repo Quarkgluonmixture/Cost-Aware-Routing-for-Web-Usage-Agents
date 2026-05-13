@@ -48,12 +48,12 @@ drives the 8-step DOI workflow (笔记 §110 + ADVISOR_SYNC §F).
 
 | Threshold | Pre-reg value | Advisor confirmed? | Notes |
 |---|---|---|---|
-| H1 PRIMARY gate (P-SoM drop-one oracle ceiling lift) | Pooled DerSimonian-Laird meta Holm α=0.05 sig on N=4 (site, model) cells + pooled magnitude θ_RE ≥ 1.0pp + TOST equivalence reject at δ=1.0pp | ⏳ pending | Drop-one = oracle SR over {6 modes} − oracle SR over {5 modes drop P-SoM} per task, paired bootstrap per cell, pooled across 4 cells |
+| H1 PRIMARY gate (P-SoM drop-one oracle ceiling lift) | Pooled DerSimonian-Laird meta Holm α=0.05 sig on N=4 (site, model) cells + pooled magnitude θ_RE ≥ 1.0pp + one-sided superiority test (H0: θ ≤ +1.0pp vs H1: θ > +1.0pp) rejected at α=0.05 (TOST as informational secondary report only) | ⏳ pending | Drop-one = oracle SR over {6 modes} − oracle SR over {5 modes drop P-SoM} per task, paired bootstrap per cell, pooled across 4 cells. H1(ii) superiority threshold replaced TOST 2026-05-13 due to semantic ambiguity (see preregistration.md Appendix A) |
 | H3 PRIMARY gate axis-1 (P-text \ P-SoM) | Pooled axis-1 DerSimonian-Laird meta Holm α=0.05 sig on N=4 cells | ⏳ pending | Per-cell bootstrap CI on unique-task count, then pooled meta |
 | H3 PRIMARY gate axis-2 (P-prompt \ P-SoM) | Same as axis-1 | ⏳ pending | Requires P-prompt mode (re-included 2026-05-13) |
 | K_h1 transparency ratio (NOT a gate) | 0.75 → 3 of 4 cells individually Holm-sig on drop-one | ⏳ pending | Reclassified gate → transparency 2026-05-13 (power analysis dysfunction at <7pp effects); reported alongside pooled meta as per-cell consistency check |
 | K_h3 transparency ratio (NOT a gate) | 0.67 → 3 of 4 cells individually CI > 0 | ⏳ pending | Same reclassification rationale |
-| TOST equivalence δ (SR-margin) | 1.0pp | ⏳ pending | SR percentage-point margin for H1(iii) drop-one effect size; distinct from H2(a) cost ±10% relative margin |
+| H1(ii) superiority threshold δ (SR-margin) — also TOST informational margin | 1.0pp | ⏳ pending | SR percentage-point margin for H1(ii) one-sided superiority test (primary) + TOST equivalence informational secondary; distinct from H2(a) cost ±10% relative margin |
 | Cell scope (Phase 1a operational) | 24 conditions = 2 sites (cls, red) × 2 models (B0, B1) × 6 modes (DOM, SoM, Vision, P-text, P-prompt, P-SoM) | ⏳ pending | Replaces prior 16/18-cell phantom-only scope (codex Flaw 1+5 fix 2026-05-13) |
 | Cell scope (Phase 1a statistical) | 4 cells = (site, model) tuples | ⏳ pending | One drop-one number per cell; pooled meta input |
 | Cell scope (Phase 1b deferred) | +12 conditions = shop × B0+B1 × 6 modes | ⏳ pending | Main-paper expansion lever; not part of Phase 1a workshop submission |

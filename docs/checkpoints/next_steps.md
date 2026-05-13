@@ -134,9 +134,10 @@ updated: 2026-05-10
 ```bash
 make analysis                                    # rerun all aggregators + figures
 python3 scripts/analysis/preregistration_decision_test.py \
-    --cells-csv results/phantom_paper/cells_aggregated.csv \
-    --primary-gate drop_one_pooled_meta_TOST \
-    --transparency-K_h1 3 --transparency-K_h3 3 --TOST-delta 1.0 \
+    --per-task-csv results/phantom_paper/per_task_sr.csv \
+    --primary-gate drop_one_pooled_meta_superiority \
+    --H1-magnitude-pp 1.0 --TOST-delta-pp 1.0 \
+    --transparency-K_h1 3 --transparency-K_h3 3 \
     --out results/phantom_paper/preregistration_test_results.json
 ```
 Output → paper §5 Table 5 quotable JSON.

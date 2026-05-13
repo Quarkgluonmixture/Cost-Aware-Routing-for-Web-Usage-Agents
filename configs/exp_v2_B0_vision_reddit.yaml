@@ -1,0 +1,47 @@
+# B0 vision reddit — Phase 1a paper-grade baseline (post 2026-05-13 codex stress audit)
+# Single-mode launch via queue_baseline.sh. Part of 24-condition Phase 1a scope
+# (2 sites × 2 models × 6 modes). See preregistration.md §4 N_conditions row.
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B0_vision_reddit"
+
+task:
+  include_sites: ["reddit"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["vision"]
+
+backends:
+  default_backend: "api_strong"
+  api_strong:
+    type: "api_proxy"
+    api_name: "qwen.qwen3-vl-235b-a22b"
+    base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
+    temperature: 0.0
+    max_new_tokens: 4096
+    max_image_payload_bytes: 5242880
+    image_max_size: 1280
+    max_obs_chars: 12000
+    dom_mode: "llm"
+    mock_mode: false
+    use_glm_fallback: true
+    glm_config: ".auth/glm"
+
+metrics:
+  cost_api:
+    input_cost_per_1k: 0.001
+    output_cost_per_1k: 0.005
+  energy:
+    enabled: false
+
+baselines:
+  run_b0: false

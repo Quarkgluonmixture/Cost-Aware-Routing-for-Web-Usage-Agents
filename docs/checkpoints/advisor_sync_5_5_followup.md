@@ -13,7 +13,7 @@
 > **Rerun scope 2026-05-13 revised (post codex stress audit)**: 之前 follow-up 里写的 "16 cell (B0 × {cls,red,shop} × 3 phantom + B1 × {cls,red,shop} × 3 phantom)" 实际算数有歧义 (3 sites × 3 phantom × 2 baselines = 18, 不是 16). 而且 phantom-only scope **缺 fresh DOM/SoM/Vision baseline rerun**, drop-one CI 无法 paper-grade (codex audit Flaw 1).
 >
 > 我重新组织成两阶段:
-> - **Phase 1a (workshop-targeted, immediate launch)**: 24 operational conditions = 2 sites (cls + red) × 2 models (B0 + B1) × 6 modes (DOM / SoM / Vision / P-text / P-prompt / P-SoM). 统计分析 4 个 cell (= (site, model) tuple), pooled DerSimonian-Laird meta + TOST primary gate. 投 workshop 这一档.
+> - **Phase 1a (workshop-targeted, immediate launch)**: 24 operational conditions = 2 sites (cls + red) × 2 models (B0 + B1) × 6 modes (DOM / SoM / Vision / P-text / P-prompt / P-SoM). 统计分析 4 个 cell (= (site, model) tuple), pooled DerSimonian-Laird meta + one-sided superiority test (H0: θ ≤ +1.0pp) primary gate. 投 workshop 这一档.
 > - **Phase 1b (main paper expansion, post-workshop)**: 额外 12 conditions = shop × 2 models × 6 modes. 跑完 1a 投完 workshop 再跑这个, 看 shop 是不是 replicate cls+red phantom-SoM 4-fold property, 决定 main paper §1 hook 是 R3 (cls+red only) 还是 R1 (升级到 3-site).
 >
 > 我 5/12-6/1 考试, 这两天能 lock 完我就 launch Phase 1a 然后专心复习, 麻烦您扫一眼回个 email 即可!
@@ -154,7 +154,7 @@ forest plot 当时 Slack 没传过去您没看到. 我会 commit + push 完发�
 - Power analysis (`docs/analysis/cross_sites/power_analysis.md`, pre-data): K-of-N family power at observed 1-3pp effect sizes (phenomenon 实际 magnitude) < 10%, calibrated 只 for ≥7pp effects
 - N=4 cells × per-cell power ≈ 0.30 at 1.5pp → P(≥3 of 4 sig) ≈ 8%, K-as-gate 设计上必 fail 即使 phenomenon 真实
 - N=4 太小 K-of-N 退化 (只 5 个 outcome state)
-- **Primary H1 gate** = (i) pooled DerSimonian-Laird random-effects meta on 4 cells 在 Holm α=0.05 显著 + (ii) pooled magnitude θ_RE ≥ 1.0pp + TOST δ=1.0pp reject equivalence
+- **Primary H1 gate** = (i) pooled DerSimonian-Laird random-effects meta on 4 cells 在 Holm α=0.05 显著 + (ii) pooled magnitude θ_RE ≥ 1.0pp + 单边 superiority test (H0: θ ≤ +1.0pp vs H1: θ > +1.0pp) 在 α=0.05 reject (TOST 作为 informational secondary report)
 
 **Pre-data reclassification timestamp**: 2026-05-13 commit predates Phase 1a launch, OSF DOI 见证 audit trail 显示 reclass 在 unblind 之前 (防 reviewer 攻击 "你看了数据再 weaken gate").
 
@@ -174,9 +174,9 @@ forest plot 当时 Slack 没传过去您没看到. 我会 commit + push 完发�
 
 Same reclassification rationale as K_h1.
 
-#### (c) TOST δ = 1.0pp — Equivalence margin (single canonical interpretation)
+#### (c) δ = 1.0pp — One-sided superiority threshold (primary) + TOST margin (informational)
 
-**测什么**: 用作 H1(ii) drop-one effect-size equivalence margin (pooled drop-one lift 是 ≥ 1.0pp 而不是 ≈ 0). H1(iii) 的 TOST reject equivalence at δ=1.0pp 意思是 "drop-one lift 显著 > 1pp, 不是统计噪声".
+**测什么 (2026-05-13 revised wording)**: 用作 H1(ii) drop-one effect-size 的**一边 superiority test** threshold (primary gate): test H0: θ ≤ +1.0pp vs H1: θ > +1.0pp，在 α=0.05 reject H0 意思 "pooled drop-one lift 显著 > +1.0pp, 不只是 noise". 同时也 retained 作为 TOST equivalence margin (informational secondary report only, NOT gating).
 
 **注意 (2026-05-13 disambiguation, codex probable concern)**: 这个 δ=1.0pp 是 **SR percentage-point margin**, 不是 cost equivalence margin. H2(a) "cost ≈ DOM" 用另一个 margin ±10% relative cost (不复用同一个 δ). 之前 prereg 跟 advisor follow-up 这两处单位有混淆, 现在显式区分.
 
@@ -193,7 +193,7 @@ Same reclassification rationale as K_h1.
 
 GitHub 链接我 push 完发您, 您扫 `preregistration.md` (含 2026-05-13 codex stress audit 6 fix 的 propagated 更新 + Appendix A decision log 2026-05-13 entry) + 3 张 forest figure, email 回:
 
-> "I have reviewed the pre-registration revision (K_h1=0.75 transparency-only / K_h3=0.67 transparency-only / TOST δ=1.0pp SR-margin / Phase 1a 24 conditions across 4 cells: cls+red × B0+B1 × 6 modes / Phase 1b shop deferred / outcome-independent smoke gate / pooled DerSimonian-Laird meta + TOST primary gating) on \<date\> and witness them as committed before Phase 1a data unblinding."
+> "I have reviewed the pre-registration revision (K_h1=0.75 transparency-only / K_h3=0.67 transparency-only / δ=1.0pp SR-margin used as one-sided superiority threshold for H1(ii) primary gate + TOST informational secondary / Phase 1a 24 conditions across 4 cells: cls+red × B0+B1 × 6 modes / Phase 1b shop deferred / outcome-independent smoke gate / pooled DerSimonian-Laird meta + one-sided superiority primary gating) on \<date\> and witness them as committed before Phase 1a data unblinding."
 
 (您可以加任何 condition, e.g. "subject to my final review of the rerun protocol", 都 OK. 关键是 timestamp + explicit acknowledge 留 audit trail.)
 

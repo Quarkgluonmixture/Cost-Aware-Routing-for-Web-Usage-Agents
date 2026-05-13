@@ -2,7 +2,7 @@
 
 ⚠️ REWRITTEN 2026-05-13 to align with preregistration.md revisions (codex stress audit
    Flaws 2 + 3 fix):
-   - PRIMARY GATE = pooled DerSimonian-Laird random-effects meta + TOST equivalence
+   - PRIMARY GATE = pooled DerSimonian-Laird random-effects meta + one-sided superiority
    - K-of-N reclassified gate → transparency consistency check (per pre-data 2026-05-13
      reclassification, see `preregistration.md` §4 audit B9 + Appendix A 2026-05-13)
    - H1 formula = P-SoM drop-one oracle ceiling lift (NOT P-SoM ≥ best single mode)
@@ -16,11 +16,14 @@ Definitions (per preregistration.md §2 + §4):
   - Drop-one per cell: oracle ceiling SR over {6 modes} − oracle ceiling SR over
     {5 modes drop P-SoM}, per task, averaged across task pool. Paired bootstrap CI.
   - Pooled meta: DerSimonian-Laird random-effects across 4 cell effect estimates.
-  - TOST: two one-sided tests for H0 |θ| ≥ δ rejected vs H1 |θ| < δ at δ=1.0pp.
+  - One-sided superiority test (PRIMARY for H1(ii)): H0: θ ≤ +δ vs H1: θ > +δ at α=0.05.
+  - TOST equivalence (INFORMATIONAL secondary for H1): two one-sided tests for
+    H0 |θ| ≥ δ vs H1 |θ| < δ at δ=1.0pp. Reported in JSON output but NOT gating.
 
 PRIMARY GATES (gate paper hook framing R1-R5):
   H1(i)  pooled DL meta on P-SoM drop-one, Holm α=0.05 sig (m=1)
-  H1(ii) pooled magnitude θ_RE ≥ 1.0pp + TOST equivalence rejected at δ=1.0pp
+  H1(ii) pooled magnitude θ_RE ≥ 1.0pp AND one-sided superiority test
+         (H0: θ ≤ +1.0pp vs H1: θ > +1.0pp) rejected at α=0.05 (m=1)
   H3(i)  pooled DL meta on |P-text \ P-SoM| axis-1, Holm α=0.05 sig (m=1)
   H3(ii) pooled DL meta on |P-prompt \ P-SoM| axis-2, Holm α=0.05 sig (m=1)
   H2(a)  median cost(P-SoM) within ±10% of median cost(DOM) per cell, replicated
@@ -94,8 +97,12 @@ ALL_MODE_KEYS = BASELINE_MODE_KEYS + PHANTOM_MODE_KEYS
 # ---------------------------------------------------------------------------
 
 def _oracle_per_task(task_row: dict, mode_keys: list[str]) -> int:
-    """Oracle ceiling for one task = 1 if ANY mode in mode_keys solved it, else 0."""
-    return 1 if any(int(task_row[k]) >= 1 for k in mode_keys) else 0
+    """Oracle ceiling for one task = 1 if ANY mode in mode_keys solved it, else 0.
+
+    A5 fix 2026-05-13: cast via float() first to handle CSV string SR values like
+    "0.0" / "1.0" (int("0.0") raises ValueError; int(float("0.0")) works).
+    """
+    return 1 if any(int(float(task_row[k])) >= 1 for k in mode_keys) else 0
 
 
 def _drop_one_lift_per_cell(cell_tasks: list[dict], drop_mode: str = "sr_psom") -> float:
@@ -116,9 +123,10 @@ def _unique_count_per_cell(cell_tasks: list[dict], axis_mode: str, ref_mode: str
     """|axis_mode \\ ref_mode| = number of tasks where axis_mode solved but ref_mode didn't.
 
     Used for H3 axis-1 (axis_mode=sr_ptext) and H3 axis-2 (axis_mode=sr_pprompt).
+    A5 fix 2026-05-13: float() coercion for CSV string SR values.
     """
     return sum(1 for t in cell_tasks
-               if int(t[axis_mode]) >= 1 and int(t[ref_mode]) < 1)
+               if int(float(t[axis_mode])) >= 1 and int(float(t[ref_mode])) < 1)
 
 
 def _paired_bootstrap(cell_tasks: list[dict], statistic_fn, n_resamples: int = 1000,
@@ -183,9 +191,11 @@ def dersimonian_laird_meta(effects: list[float], variances: list[float]) -> dict
     tau_sq_den = sum_w - (sum_w_sq / sum_w)
     tau_sq = max(0.0, tau_sq_num / max(tau_sq_den, 1e-12))
 
-    w_re = [1.0 / (v + tau_sq) for v in variances]
+    # Guard against degenerate variance=0 (e.g., bootstrap SE=0 when all per-task
+    # values identical, occurs in r5_fail synthetic when drop-one ≡ 0 for all tasks)
+    w_re = [1.0 / max(v + tau_sq, 1e-12) for v in variances]
     theta_re = sum(w * t for w, t in zip(w_re, effects)) / sum(w_re)
-    se_re = math.sqrt(1.0 / sum(w_re))
+    se_re = math.sqrt(1.0 / max(sum(w_re), 1e-12))
     ci_lo = theta_re - 1.96 * se_re
     ci_hi = theta_re + 1.96 * se_re
 
@@ -319,7 +329,8 @@ def evaluate_h1(cells_by_id: dict[str, list[dict]], delta_pp: float = 1.0,
     """H1: P-SoM drop-one oracle ceiling lift > 0, pooled across cells.
 
     PRIMARY: pooled DL meta sig at Holm α=0.05 (m=1) + θ_RE ≥ magnitude_threshold_pp
-             + TOST equivalence rejected at δ=delta_pp.
+             + one-sided superiority test rejected at α=alpha (H0: θ ≤ +magnitude_threshold_pp).
+             TOST equivalence test computed for informational reporting (NOT gating).
     TRANSPARENCY: K_h1 = transparency_K_h1 of N cells individually Holm-sig (m=N).
     """
     per_cell = {}
@@ -519,27 +530,80 @@ def evaluate_h2_cost(cells_by_id: dict[str, list[dict]], cost_margin_pct: float 
 # Framing rule R1-R5 mapper
 # ---------------------------------------------------------------------------
 
-def apply_framing_rule(h1: dict, h2: dict, h3_axis1: dict, h3_axis2: dict) -> dict:
-    """Apply preregistration §2 R1-R5 framing rule to test outcomes."""
+def apply_framing_rule(h1: dict, h2: dict, h3_axis1: dict, h3_axis2: dict,
+                        heterogeneity_threshold_pct: float = 75.0) -> dict:
+    """Apply preregistration §2 R1-R5 framing rule to test outcomes.
+
+    T3 fix 2026-05-13 (codex Round A + Round C): added heterogeneity-conditional
+    branch per prereg "Heterogeneity-conditional rule (added 2026-05-13)" — if
+    pooled H1 meta I² > 75%, do NOT use pooled gate; map to per-cell direction
+    consistency for R framing.
+
+    Heterogeneity-branch rule (matches prereg §2 R5 trigger update):
+      - I² > 75% AND ≥3 of 4 cells direction-positive AND ≥2 individually Holm sig
+        → R3-grade hook (per-cell consistency without pooling)
+      - I² > 75% AND consistency check fails → R4 (heterogeneity AND inconsistency)
+      - I² ≤ 75% → normal R1-R5 mapping on pooled gates
+    """
+    # Step 1: check H1 pooled meta heterogeneity
+    h1_meta = h1.get("primary_gate", {}).get("pooled_meta", {})
+    i_squared = h1_meta.get("I_squared_pct")
+
+    if i_squared is not None and i_squared > heterogeneity_threshold_pct:
+        # Heterogeneity override: per-cell direction consistency replaces pooled gate
+        per_cell = h1.get("per_cell", {})
+        n_direction_positive = sum(1 for c in per_cell.values()
+                                    if c.get("drop_one_lift_pp", 0.0) > 0)
+        n_individually_holm_sig = sum(1 for c in per_cell.values()
+                                       if c.get("individually_holm_sig", False))
+        n_cells = len(per_cell)
+        if n_direction_positive >= 3 and n_individually_holm_sig >= 2:
+            return {
+                "rule": "R3",
+                "framing": "Heterogeneity-conditional R3: per-cell direction consistency replaces pooled gate (I² > 75%)",
+                "hook_power": "MODERATE",
+                "heterogeneity_override": True,
+                "I_squared_pct": i_squared,
+                "n_direction_positive": n_direction_positive,
+                "n_individually_holm_sig": n_individually_holm_sig,
+                "n_cells": n_cells,
+            }
+        return {
+            "rule": "R4_or_R5",
+            "framing": f"Heterogeneity I² = {i_squared:.1f}% > 75% AND per-cell consistency fails: ≥3 direction-positive required ({n_direction_positive}/{n_cells} observed), ≥2 individually Holm sig required ({n_individually_holm_sig}/{n_cells} observed)",
+            "hook_power": "WEAK",
+            "heterogeneity_override": True,
+            "I_squared_pct": i_squared,
+            "n_direction_positive": n_direction_positive,
+            "n_individually_holm_sig": n_individually_holm_sig,
+            "n_cells": n_cells,
+        }
+
+    # Step 2: normal R1-R5 mapping (heterogeneity ≤ 75%)
     h1_pass = h1["primary_gate"]["decision"] == "PASS"
-    h2_pass = h2["h2a_cost_equivalence"]["consistent"]
+    h2a_cost_pass = h2["h2a_cost_equivalence"]["consistent"]  # H2(a) only per 2026-05-13 T2 scope
     h3_axis1_pass = h3_axis1["primary_gate"]["decision"] == "PASS"
     h3_axis2_pass = h3_axis2["primary_gate"]["decision"] == "PASS"
 
-    if h1_pass and h2_pass and h3_axis1_pass and h3_axis2_pass:
+    if h1_pass and h2a_cost_pass and h3_axis1_pass and h3_axis2_pass:
         return {"rule": "R1", "framing": "Phantom routing space (2-axis empirical structure)",
-                "hook_power": "STRONGEST"}
-    if h1_pass and h2_pass and (h3_axis1_pass or h3_axis2_pass):
+                "hook_power": "STRONGEST", "heterogeneity_override": False,
+                "I_squared_pct": i_squared}
+    if h1_pass and h2a_cost_pass and (h3_axis1_pass or h3_axis2_pass):
         return {"rule": "R2", "framing": "Phantom routing space (single-axis empirical structure)",
-                "hook_power": "MODERATE-STRONG"}
-    if h1_pass and h2_pass and not h3_axis1_pass and not h3_axis2_pass:
+                "hook_power": "MODERATE-STRONG", "heterogeneity_override": False,
+                "I_squared_pct": i_squared}
+    if h1_pass and h2a_cost_pass and not h3_axis1_pass and not h3_axis2_pass:
         return {"rule": "R3", "framing": "Phantom-SoM is hidden 4th routing arm (workshop-grade R3)",
-                "hook_power": "MODERATE"}
-    if h1_pass and not h2_pass:
-        return {"rule": "R4", "framing": "Phantom-SoM partial drop-in (cost/latency equivalence fails on some site)",
-                "hook_power": "WEAK"}
+                "hook_power": "MODERATE", "heterogeneity_override": False,
+                "I_squared_pct": i_squared}
+    if h1_pass and not h2a_cost_pass:
+        return {"rule": "R4", "framing": "Phantom-SoM partial drop-in (H2(a) cost equivalence fails)",
+                "hook_power": "WEAK", "heterogeneity_override": False,
+                "I_squared_pct": i_squared}
     return {"rule": "R5", "framing": "Paper death scenario — pivot to VWA bug audit OR abandon",
-            "hook_power": "n/a"}
+            "hook_power": "n/a", "heterogeneity_override": False,
+            "I_squared_pct": i_squared}
 
 
 # ---------------------------------------------------------------------------
@@ -572,15 +636,24 @@ def generate_synthetic_per_task(seed: int = 42, n_tasks_per_cell: int = 200,
                                   scenario: str = "r1_pass") -> dict[str, list[dict]]:
     """Generate Phase 1a 4-cell × n_tasks per-task data.
 
+    A6 fix 2026-05-13: scenarios with H1/H3 failure modes now enforce per-task
+    correlation (NOT independent Bernoulli) so the test fixture actually exhibits
+    the failure mode. Prior generator's independent-Bernoulli design meant even
+    "fail" scenarios accidentally passed (codex Round A Flaw A6).
+
     Scenarios:
-      - r1_pass:   H1 strong (drop-one lift ~2pp pooled), H2 cost equiv hold, H3 both axes pass
-      - r3_pass:   H1 holds, H3 both axes fail (workshop fallback framing)
-      - r5_fail:   H1 fails (pooled near 0)
+      - r1_pass:   H1 strong (drop-one ~2pp pooled), H2(a) cost equiv hold, H3 both axes pass.
+                   Independent Bernoulli + favorable base rates.
+      - r3_pass:   H1 holds (P-SoM ⊋ {DOM ∪ SoM ∪ Vision} on some tasks → drop-one > 0)
+                   AND H3 fails BOTH axes (P-text ⊆ P-SoM AND P-prompt ⊆ P-SoM by construction).
+      - r5_fail:   H1 fails (P-SoM ⊆ {DOM ∪ SoM ∪ Vision} on ALL tasks → drop-one = 0).
+                   Also H3 fails by similar subset construction.
+      - heterogeneity_test: H1 pooled magnitude OK but I² > 75% from injected cell variance.
     """
     import random
     rng = random.Random(seed)
     cells_by_id = {}
-    for site, model in PHASE_1A_CELLS:
+    for cell_idx, (site, model) in enumerate(PHASE_1A_CELLS):
         cell_id = f"{site}_{model}"
         # Base per-task SR rates (per mode)
         base_rate = {"sr_dom": 0.30, "sr_som": 0.32, "sr_vision": 0.20,
@@ -588,23 +661,50 @@ def generate_synthetic_per_task(seed: int = 42, n_tasks_per_cell: int = 200,
         # Capability adjustment
         if model == "B1":
             base_rate = {k: v * 0.6 for k, v in base_rate.items()}
-        # Scenario
-        if scenario == "r5_fail":
-            base_rate["sr_psom"] = base_rate["sr_dom"] - 0.01  # nullify hero
-        elif scenario == "r3_pass":
-            # Hero passes but axes collapse: ptext/pprompt similar to psom
-            base_rate["sr_ptext"] = base_rate["sr_psom"] - 0.005
-            base_rate["sr_pprompt"] = base_rate["sr_psom"] - 0.005
+        # Cell-level effect-size variance for heterogeneity test
+        if scenario == "heterogeneity_test":
+            cell_shift = [+0.10, -0.08, +0.02, -0.04][cell_idx]
+            base_rate["sr_psom"] = max(0.0, base_rate["sr_psom"] + cell_shift)
 
         rows = []
         for i in range(n_tasks_per_cell):
-            # Per-task latent solvability bias
+            # Per-task latent solvability bias (correlates modes within task)
             bias = rng.uniform(-0.1, 0.1)
             row = {"cell_id": cell_id, "site": site, "model": model,
                    "task_id": f"{cell_id}_t{i:04d}"}
-            for mode_key, rate in base_rate.items():
-                eff_rate = max(0.0, min(1.0, rate + bias))
+
+            # Sample baseline modes (DOM/SoM/Vision) independently per task
+            for mode_key in ("sr_dom", "sr_som", "sr_vision"):
+                eff_rate = max(0.0, min(1.0, base_rate[mode_key] + bias))
                 row[mode_key] = 1 if rng.random() < eff_rate else 0
+
+            baseline_union = 1 if any(row[k] for k in ("sr_dom", "sr_som", "sr_vision")) else 0
+
+            # Sample phantom modes per scenario logic
+            if scenario == "r5_fail":
+                # H1 fails: P-SoM strict subset of baseline union → drop-one = 0
+                # P-SoM = baseline_union AND p_psom_subset_rate
+                p_psom_subset_rate = 0.85
+                row["sr_psom"] = baseline_union * (1 if rng.random() < p_psom_subset_rate else 0)
+                # H3 also fails: P-text/P-prompt ⊆ P-SoM
+                row["sr_ptext"] = row["sr_psom"] * (1 if rng.random() < 0.95 else 0)
+                row["sr_pprompt"] = row["sr_psom"] * (1 if rng.random() < 0.95 else 0)
+            elif scenario == "r3_pass":
+                # H1 holds: P-SoM independent of baseline → drop-one > 0
+                eff_psom = max(0.0, min(1.0, base_rate["sr_psom"] + bias))
+                row["sr_psom"] = 1 if rng.random() < eff_psom else 0
+                # H3 fails: P-text + P-prompt are SPARSE subsets of P-SoM. When P-SoM
+                # solves, P-text fires ~30% of the time (so 70% of P-SoM-solved tasks
+                # have psom-unique contribution = drop-one > 0). H3 axis-1 unique = 0
+                # because ptext=1 only when psom=1 (sparse subset by construction).
+                row["sr_ptext"] = row["sr_psom"] * (1 if rng.random() < 0.30 else 0)
+                row["sr_pprompt"] = row["sr_psom"] * (1 if rng.random() < 0.30 else 0)
+            else:
+                # r1_pass and heterogeneity_test: independent per-mode Bernoulli
+                for mode_key in ("sr_ptext", "sr_pprompt", "sr_psom"):
+                    eff_rate = max(0.0, min(1.0, base_rate[mode_key] + bias))
+                    row[mode_key] = 1 if rng.random() < eff_rate else 0
+
             # Cost: P-SoM ~ DOM cost (regex filter property)
             row["cost_dom"] = 0.040 + rng.uniform(-0.005, 0.005)
             row["cost_psom"] = row["cost_dom"] * (1.0 + rng.uniform(-0.05, 0.05))
@@ -624,7 +724,7 @@ def main():
     p.add_argument("--synthetic", action="store_true",
                    help="Run smoke test on synthetic 4-cell × 200-task data")
     p.add_argument("--scenario", default="r1_pass",
-                   choices=["r1_pass", "r3_pass", "r5_fail"])
+                   choices=["r1_pass", "r3_pass", "r5_fail", "heterogeneity_test"])
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--primary-gate", default="drop_one_pooled_meta_TOST",
                    help="Primary gate flavor (informational; method is fixed in this rewrite)")
@@ -695,7 +795,7 @@ def main():
         "cell_ids": list(cells_by_id.keys()),
         "input_data_sha256": input_sha,
         "thresholds": {
-            "primary_gate_method": "pooled_DerSimonian_Laird_meta + TOST + magnitude",
+            "primary_gate_method": "pooled_DerSimonian_Laird_meta + one_sided_superiority + magnitude (TOST informational)",
             "TOST_delta_pp": args.TOST_delta_pp,
             "H1_magnitude_pp": args.H1_magnitude_pp,
             "H2_cost_margin_pct": args.H2_cost_margin_pct,
