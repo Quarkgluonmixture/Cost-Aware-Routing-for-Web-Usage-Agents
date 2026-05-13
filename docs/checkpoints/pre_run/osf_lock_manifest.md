@@ -12,11 +12,15 @@ drives the 8-step DOI workflow (笔记 §110 + ADVISOR_SYNC §F).
 
 ## §1 Pre-lock checklist (everything must be done before OSF DOI mint)
 
-- [ ] Advisor email reply received (K_h1=0.75, K_h3=0.67, TOST δ=1.0pp confirmed
-      OR alternative thresholds noted)
-- [ ] `preregistration.md` final text edit committed + pushed
-- [ ] `run_manifest.yaml` archived rows verified (16-cell scope, all
-      `grade=archived` for pre-rerun cells, `grade=paper-grade` post-rerun cells)
+- [ ] Advisor email reply received (K_h1=0.75 transparency / K_h3=0.67 transparency /
+      TOST δ=1.0pp SR-margin / Phase 1a 24-condition 4-cell scope confirmed
+      OR alternative noted)
+- [ ] `preregistration.md` final text edit committed + pushed (incl. 2026-05-13
+      codex stress audit propagation: K-of-N transparency-only + 24/4 scope +
+      drop-one H1 formula + outcome-independent smoke gate + Appendix A 2026-05-13)
+- [ ] `run_manifest.yaml` archived rows verified (Phase 1a 24-condition scope = 2 sites
+      × 2 models × 6 modes; all `grade=archived` for pre-fix cells, `grade=paper-grade`
+      for Phase 1a post-fix rerun cells; Phase 1b shop deferred rows separately tagged)
 - [ ] All paper draft sections section1-8 + paper.bib (57 entries) snapshot to
       `docs/checkpoints/paper_drafts_locked/` directory (immutable copy)
 - [ ] `env_snapshot.json` of latest run on each machine (DGX, A100, Myriad if
@@ -40,13 +44,19 @@ drives the 8-step DOI workflow (笔记 §110 + ADVISOR_SYNC §F).
 | Bibliography (57 entries) | `docs/checkpoints/paper_drafts/paper.bib` | `<TBD commit-SHA>` | TBD |
 | Mechanistic 24+15 candidates | `results/mechanistic/archive_subset_b1_cls/manifest.json` | `<TBD commit-SHA>` | TBD |
 
-### 2.2 Hypothesis thresholds (advisor email confirmed)
+### 2.2 Hypothesis thresholds (advisor email confirmed) — REVISED 2026-05-13
 
 | Threshold | Pre-reg value | Advisor confirmed? | Notes |
 |---|---|---|---|
-| K_h1 (Phantom-SoM ≥ best DOM/SoM/Vision) | ≥ 12/16 cells | ⏳ pending | Cell scope = 16 (B0×{cls,red,shop} × 3 phantom-flavours × 2 if cell=site×phantom_axis) |
-| K_h3 (drop-one oracle pp lift) | ≥ 11/16 cells | ⏳ pending | Original pre-reg was 14-cell with K_h3≥10/14 |
-| TOST equivalence δ | 1.0pp | ⏳ pending | Equivalence margin for "cost ≈ DOM" claim |
+| H1 PRIMARY gate (P-SoM drop-one oracle ceiling lift) | Pooled DerSimonian-Laird meta Holm α=0.05 sig on N=4 (site, model) cells + pooled magnitude θ_RE ≥ 1.0pp + TOST equivalence reject at δ=1.0pp | ⏳ pending | Drop-one = oracle SR over {6 modes} − oracle SR over {5 modes drop P-SoM} per task, paired bootstrap per cell, pooled across 4 cells |
+| H3 PRIMARY gate axis-1 (P-text \ P-SoM) | Pooled axis-1 DerSimonian-Laird meta Holm α=0.05 sig on N=4 cells | ⏳ pending | Per-cell bootstrap CI on unique-task count, then pooled meta |
+| H3 PRIMARY gate axis-2 (P-prompt \ P-SoM) | Same as axis-1 | ⏳ pending | Requires P-prompt mode (re-included 2026-05-13) |
+| K_h1 transparency ratio (NOT a gate) | 0.75 → 3 of 4 cells individually Holm-sig on drop-one | ⏳ pending | Reclassified gate → transparency 2026-05-13 (power analysis dysfunction at <7pp effects); reported alongside pooled meta as per-cell consistency check |
+| K_h3 transparency ratio (NOT a gate) | 0.67 → 3 of 4 cells individually CI > 0 | ⏳ pending | Same reclassification rationale |
+| TOST equivalence δ (SR-margin) | 1.0pp | ⏳ pending | SR percentage-point margin for H1(iii) drop-one effect size; distinct from H2(a) cost ±10% relative margin |
+| Cell scope (Phase 1a operational) | 24 conditions = 2 sites (cls, red) × 2 models (B0, B1) × 6 modes (DOM, SoM, Vision, P-text, P-prompt, P-SoM) | ⏳ pending | Replaces prior 16/18-cell phantom-only scope (codex Flaw 1+5 fix 2026-05-13) |
+| Cell scope (Phase 1a statistical) | 4 cells = (site, model) tuples | ⏳ pending | One drop-one number per cell; pooled meta input |
+| Cell scope (Phase 1b deferred) | +12 conditions = shop × B0+B1 × 6 modes | ⏳ pending | Main-paper expansion lever; not part of Phase 1a workshop submission |
 
 ### 2.3 Environment fingerprints (per-machine snapshots)
 

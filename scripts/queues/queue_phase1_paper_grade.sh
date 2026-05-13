@@ -1,42 +1,58 @@
 #!/usr/bin/env bash
-# queue_16cell_paper_grade.sh — Master orchestrator for the 16-cell post-advisor-sync
-# rerun scope. Spec: B0×{cls,red}×3 phantom + B1×{cls,red}×3 phantom + B0 shop×2 + B1 shop×2.
+# queue_phase1_paper_grade.sh — Master orchestrator for Phase 1 paper-grade rerun.
+# (Renamed 2026-05-13 from queue_16cell_paper_grade.sh; old name reflected prior
+# 16-cell phantom-only scope that codex stress audit identified as incomplete.)
+#
+# Scope (revised 2026-05-13 post codex stress audit):
+#   Phase 1a (THIS SCRIPT default): 24 operational conditions = 2 sites (cls, red)
+#     × 2 models (B0, B1) × 6 modes (DOM, SoM, Vision, P-text, P-prompt, P-SoM).
+#     Statistical analysis: 4 (site, model) cells, pooled DerSimonian-Laird meta + TOST.
+#     Target: workshop submission. Replaces prior 16-cell phantom-only scope which
+#     lacked DOM/SoM/Vision baseline rerun (codex Flaw 1).
+#   Phase 1b (deferred, requires explicit 'launch phase1b shop'): 12 additional
+#     conditions = shop × 2 models × 6 modes. Feeds main paper R3→R1 framing
+#     decision post-workshop submission.
 #
 # **Hard rule: Same site, B0 XOR B1 only**. queue_chain wraps reset+watchdog+idempotent.
-# Splits into 3 parallel chains (cls / red / shop), each chain is internally sequential.
+# Splits into 2 parallel chains (cls / red) for Phase 1a, each chain internally sequential.
 #
 # Pre-launch gates (must all pass):
-#   - Advisor email reply received → K_h1 / K_h3 / TOST_delta locked in preregistration.md
+#   - Advisor email reply received → preregistration.md status `draft` → `locked`
 #   - A100 SSH connectivity verified ('ssh condense-a100 nvidia-smi' returns OK)
 #   - VWA stack running on chosen host (DGX→quark Tailscale OR A100 self-host)
 #   - env_snapshot baseline committed (results/provenance/env_<host>_baseline.json)
 #   - VWA snapshot baseline committed (results/provenance/vwa_<host>_baseline.json)
 #
 # Usage:
-#   bash scripts/queues/queue_16cell_paper_grade.sh dry-run             # preview, no launch
-#   bash scripts/queues/queue_16cell_paper_grade.sh launch              # actual launch (3 parallel chains)
-#   bash scripts/queues/queue_16cell_paper_grade.sh launch cls          # only classifieds chain
-#   bash scripts/queues/queue_16cell_paper_grade.sh launch red          # only reddit chain
-#   bash scripts/queues/queue_16cell_paper_grade.sh launch shop         # only shopping chain
+#   bash scripts/queues/queue_phase1_paper_grade.sh dry-run            # preview, no launch
+#   bash scripts/queues/queue_phase1_paper_grade.sh launch             # Phase 1a (cls+red, 24 conditions)
+#   bash scripts/queues/queue_phase1_paper_grade.sh launch cls         # only classifieds Phase 1a chain (12 conditions)
+#   bash scripts/queues/queue_phase1_paper_grade.sh launch red         # only reddit Phase 1a chain (12 conditions)
+#   bash scripts/queues/queue_phase1_paper_grade.sh launch phase1b     # Phase 1b shop chain (12 conditions, deferred to post-workshop)
 #
-# Cells (16 total — confirmed post-5/5 sync, see preregistration.md):
-#   - B0 cls × {P-text, P-SoM, P-prompt}  (3)
-#   - B0 red × {P-text, P-SoM, P-prompt}  (3)
-#   - B1 cls × {P-text, P-SoM, P-prompt}  (3)
-#   - B1 red × {P-text, P-SoM, P-prompt}  (3)
-#   - B0 shop × {P-text, P-SoM}  (2)  — shopping skip P-prompt (advisor-confirmed scope cut)
-#   - B1 shop × {P-text, P-SoM}  (2)
+# Phase 1a conditions (24 total):
+#   cls chain (12 conditions, B0 → B1 sequential):
+#     - B0 cls × {DOM, SoM, Vision, P-text, P-SoM, P-prompt}  (6)
+#     - B1 cls × {DOM, SoM, Vision, P-text, P-SoM, P-prompt}  (6)
+#   red chain (12 conditions, B0 → B1 sequential):
+#     - B0 red × {DOM, SoM, Vision, P-text, P-SoM, P-prompt}  (6)
+#     - B1 red × {DOM, SoM, Vision, P-text, P-SoM, P-prompt}  (6)
+#
+# Phase 1b conditions (12 total, deferred main-paper expansion):
+#     - B0 shop × {DOM, SoM, Vision, P-text, P-SoM, P-prompt}  (6)
+#     - B1 shop × {DOM, SoM, Vision, P-text, P-SoM, P-prompt}  (6)
 #
 # Chain dependency:
 #   cls and red can run in parallel (different sites = no resource contention beyond A100 GPU).
-#   shop runs after cls + red because B0/B1 shop has historical bug surface (Magento FPC).
 #   Within each chain B0 → B1 sequential (same-site B0/B1 share user account login).
+#   Phase 1b shop launched separately after workshop submission to avoid Magento FPC bug
+#   surface co-occurring with Phase 1a critical path.
 #
 # ETA estimates (A100 40GB, post-advisor lock):
-#   cls chain: B0 (~12h) → B1 (~24h) = 36h
-#   red chain: B0 (~10h) → B1 (~20h) = 30h
-#   shop chain: B0 (~16h) → B1 (~32h) = 48h
-#   Total wallclock with 3 parallel chains = max(36, 30, 48) = ~48h ≈ 2 days
+#   cls chain (12 conditions): B0 (~24h) → B1 (~48h) = 72h ≈ 3 days
+#   red chain (12 conditions): B0 (~20h) → B1 (~40h) = 60h ≈ 2.5 days
+#   Total Phase 1a wallclock with 2 parallel chains = max(72, 60) ≈ 3 days
+#   Phase 1b shop chain (12 conditions): B0 (~32h) → B1 (~64h) = 96h ≈ 4 days (deferred)
 #
 # Sentinel files (used by chain to detect completion):
 #   results/visualwebarena/phase1/<run_id>/<condition_id>/condition_summary_v2.json
@@ -124,10 +140,17 @@ check_gates() {
 # ---------------------------------------------------------------------------
 
 build_cls_chain() {
+  # Phase 1a classifieds: 6 modes per model, B0 → B1 sequential = 12 conditions
   cat <<EOF
+queue_baseline.sh B0 dom classifieds
+queue_baseline.sh B0 som classifieds
+queue_baseline.sh B0 vision classifieds
 queue_phantom_text.sh B0 classifieds
 queue_phantom_som.sh B0 classifieds
 queue_phantom_prompt.sh B0 classifieds
+queue_baseline.sh B1 dom classifieds
+queue_baseline.sh B1 som classifieds
+queue_baseline.sh B1 vision classifieds
 queue_phantom_text.sh B1 classifieds
 queue_phantom_som.sh B1 classifieds
 queue_phantom_prompt.sh B1 classifieds
@@ -135,10 +158,17 @@ EOF
 }
 
 build_red_chain() {
+  # Phase 1a reddit: 6 modes per model, B0 → B1 sequential = 12 conditions
   cat <<EOF
+queue_baseline.sh B0 dom reddit
+queue_baseline.sh B0 som reddit
+queue_baseline.sh B0 vision reddit
 queue_phantom_text.sh B0 reddit
 queue_phantom_som.sh B0 reddit
 queue_phantom_prompt.sh B0 reddit
+queue_baseline.sh B1 dom reddit
+queue_baseline.sh B1 som reddit
+queue_baseline.sh B1 vision reddit
 queue_phantom_text.sh B1 reddit
 queue_phantom_som.sh B1 reddit
 queue_phantom_prompt.sh B1 reddit
@@ -146,11 +176,22 @@ EOF
 }
 
 build_shop_chain() {
+  # Phase 1b deferred: shop × 6 modes per model, B0 → B1 sequential = 12 conditions
+  # NOT launched as part of default `launch` (which is Phase 1a cls + red).
+  # Launch via explicit `launch phase1b` after workshop submission.
   cat <<EOF
+queue_baseline.sh B0 dom shopping
+queue_baseline.sh B0 som shopping
+queue_baseline.sh B0 vision shopping
 queue_phantom_text.sh B0 shopping
 queue_phantom_som.sh B0 shopping
+queue_phantom_prompt.sh B0 shopping
+queue_baseline.sh B1 dom shopping
+queue_baseline.sh B1 som shopping
+queue_baseline.sh B1 vision shopping
 queue_phantom_text.sh B1 shopping
 queue_phantom_som.sh B1 shopping
+queue_phantom_prompt.sh B1 shopping
 EOF
 }
 
@@ -161,24 +202,30 @@ EOF
 dry_run() {
   log "DRY RUN — no launches will occur."
   log ""
-  log "Cls chain (6 cells):"
+  log "=== Phase 1a (default, workshop-target) ==="
+  log ""
+  log "Cls chain (12 conditions, 6 modes × B0+B1):"
   build_cls_chain | sed 's/^/  /'
   log ""
-  log "Red chain (6 cells):"
+  log "Red chain (12 conditions, 6 modes × B0+B1):"
   build_red_chain | sed 's/^/  /'
   log ""
-  log "Shop chain (4 cells):"
+  log "Phase 1a total: 24 operational conditions across 4 statistical cells (= (site, model) tuples)."
+  log ""
+  log "=== Phase 1b (deferred, main paper expansion) ==="
+  log ""
+  log "Shop chain (12 conditions, 6 modes × B0+B1):"
   build_shop_chain | sed 's/^/  /'
   log ""
-  log "Total: 16 cells across 3 chains."
+  log "Phase 1b total: 12 conditions (launch separately via 'launch phase1b shop' post-workshop)."
   log ""
-  log "Run with 'launch [site]' to actually launch."
+  log "Run with 'launch' for Phase 1a default, or 'launch phase1b shop' for shop expansion."
 }
 
 launch_chain() {
   local label=$1
   local builder=$2
-  local logfile="logs/queue_16cell_${label}.log"
+  local logfile="logs/queue_phase1_${label}.log"
   mkdir -p logs
 
   # Convert chain commands to space-quoted args
@@ -193,7 +240,7 @@ launch_chain() {
     > "$logfile" 2>&1 &
   local pid=$!
   log "  PID $pid, log $logfile"
-  echo "$pid" > "logs/queue_16cell_${label}.pid"
+  echo "$pid" > "logs/queue_phase1_${label}.pid"
 }
 
 # ---------------------------------------------------------------------------
@@ -208,19 +255,28 @@ case "$MODE" in
     check_gates
     case "$SITE_FILTER" in
       all)
+        # Default = Phase 1a (cls + red only). Phase 1b shop requires explicit launch.
         launch_chain "cls" build_cls_chain
         launch_chain "red" build_red_chain
-        launch_chain "shop" build_shop_chain
         ;;
       cls)  launch_chain "cls" build_cls_chain ;;
       red)  launch_chain "red" build_red_chain ;;
-      shop) launch_chain "shop" build_shop_chain ;;
-      *) fail "Unknown site filter: $SITE_FILTER (expected: all|cls|red|shop)" ;;
+      shop)
+        log "WARN: 'launch shop' requested directly. shop is Phase 1b (main-paper expansion)."
+        log "      Default Phase 1a does NOT include shop. Proceeding only if you confirm."
+        log "      Use 'launch phase1b' to launch shop explicitly as Phase 1b."
+        fail "Use 'launch phase1b' for shop chain (Phase 1b main-paper expansion)."
+        ;;
+      phase1b)
+        log "=== Phase 1b launch (main-paper shop expansion) ==="
+        launch_chain "shop" build_shop_chain
+        ;;
+      *) fail "Unknown site filter: $SITE_FILTER (expected: all|cls|red|phase1b)" ;;
     esac
     log ""
-    log "16-cell rerun launched. Monitor:"
-    log "  - PIDs: cat logs/queue_16cell_*.pid"
-    log "  - Logs: tail -f logs/queue_16cell_*.log"
+    log "Phase 1a rerun launched (24 conditions, cls + red × B0+B1 × 6 modes). Monitor:"
+    log "  - PIDs: cat logs/queue_phase1_*.pid"
+    log "  - Logs: tail -f logs/queue_phase1_*.log"
     log "  - Cells: open Obsidian Bases view 'cells.base' (cron 10min refresh)"
     log "  - Active: make active"
     log ""
@@ -228,7 +284,8 @@ case "$MODE" in
     log "  make analysis              # full pipeline"
     log "  python3 scripts/analysis/preregistration_decision_test.py \\"
     log "      --cells-csv results/phantom_paper/cells_aggregated.csv \\"
-    log "      --K_h1 \$(cat docs/checkpoints/pre_run/preregistration.md | grep K_h1 | head -1) \\"
+    log "      --primary-gate drop_one_pooled_meta_TOST \\"
+    log "      --transparency K_h1_3_of_4,K_h3_3_of_4 \\"
     log "      --out results/phantom_paper/preregistration_test_results.json"
     ;;
   *)

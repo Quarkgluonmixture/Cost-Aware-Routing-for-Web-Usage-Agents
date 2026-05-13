@@ -53,27 +53,52 @@ Its observation is identical to Phantom-SoM: `[SOM_MARKS]` text only, no page sc
 
 This cell separates representation from prompt wording. If P-text behaves like Phantom-SoM, the flat marks text is driving behavior. If it behaves like DOM, the prompt is doing more of the work.
 
-### 3.4 The 2x2 Ablation Matrix and Excluded Hybrid
+### 3.4 The Complete 2×2 Ablation Matrix and the P-prompt Fourth Cell
 
-The core ablation is a prompt-by-representation matrix:
+The core ablation is a complete prompt-by-representation matrix:
 
 | | DOM prompt | SoM prompt |
 |---|---|---|
-| AXTree obs | DOM | *excluded — see below* |
+| AXTree obs | DOM | **P-prompt** |
 | `[SOM_MARKS]` obs | P-text | Phantom-SoM |
 
-Full SoM is adjacent to this 2x2: it uses the SoM prompt, the same `[SOM_MARKS]` text, and the marked screenshot. Vision is a separate screenshot-only baseline.
+Full SoM is adjacent to this 2×2: it uses the SoM prompt, the same `[SOM_MARKS]` text, and the marked screenshot. Vision is a separate screenshot-only baseline. Together with the 2×2 above, this yields the six modes we evaluate empirically: DOM, P-text, P-prompt, Phantom-SoM, full SoM, and Vision.
 
-The fourth cell — AXTree observation paired with the SoM prompt — is intentionally excluded from Paper 1 because it is not a self-consistent design point. The SoM system prompt instructs the agent to interact via `[SOM_MARKS]` IDs (e.g. `click [42]` referring to the SoM-marked element 42), but AXTree text uses an independent accessibility-tree ID space; an action like `click [42]` becomes parsing-ambiguous when the two ID systems do not match. This hybrid mode (i) has no clean LLM mechanism, (ii) confounds the prompt-effect ablation with mismatched-ID parsing failure, and (iii) does not reduce token cost relative to P-text. We treat the 5-mode set (DOM, P-text, Phantom-SoM, full SoM, plus Vision as a separate screenshot-only arm) as the diagonal axis-by-axis path through the 2×2×2 (text-payload-structure × prompt × image) design cube; the four mismatched-prompt-representation hybrids are excluded for the same reason.
+### 3.4.1 P-prompt (AXTree observation + SoM prompt)
+
+**P-prompt** is the fourth cell of the 2×2:
+
+```text
+P-prompt(page) =
+  prompt = SoM prompt
+  text   = AXTree(page)
+  image  = None
+```
+
+The agent receives the AXTree accessibility-tree text the DOM baseline already consumes, but under the SoM system prompt — i.e. the model is told to act on an annotated screenshot with numeric IDs even though no such image is present and the text is hierarchical AXTree, not the flat `[SOM_MARKS]` form. In code, `_system_prompts["phantom_prompt"]` maps to the SoM prompt family and the observation channel passes through the unmodified AXTree text (no `[SOM_MARKS]` filter applied).
+
+This cell is intentionally a mismatched-format-against-prompt design point. The SoM system prompt expects flat indexed `[N]` references to elements, while AXTree text uses an independent hierarchical accessibility-tree ID space; the two ID systems do not in general agree on a given element's identifier. There are three substantive reasons we include P-prompt rather than excluding it as a malformed hybrid:
+
+(i) **The 2×2 isolates the prompt-format axis independently of the text-representation axis.** Without P-prompt, the prompt wording effect can only be measured along `[SOM_MARKS]` text (P-text vs Phantom-SoM). P-prompt gives the corresponding contrast on AXTree text (DOM vs P-prompt), so the 2×2 is identified at both rows rather than only at one.
+
+(ii) **The "mismatched ID parsing failure" is an empirical question, not a design exclusion.** Modern multimodal LLMs handle prompt-vs-text disagreement by their own parser fallbacks — Section 4 reports whether P-prompt accuracy collapses (consistent with mismatched-ID failure) or partially holds (consistent with the model adapting prompt instructions to the AXTree ID space). Either outcome is informative for the phantom-space framing. Pre-excluding P-prompt would force this question into a no-evidence appendix.
+
+(iii) **P-prompt anchors the H3 axis-2 structural claim.** The pre-registered H3(ii) hypothesis (`preregistration.md` §2) tests whether |P-prompt ∖ P-SoM| unique-task contribution is non-zero — i.e., whether the SoM-style prompt elicits behavior P-SoM does not when paired with hierarchical text. Without P-prompt cell data, H3 axis-2 cannot be tested, and the paper's structural claim collapses to a single-axis (R2) framing.
+
+We acknowledge that under naive evaluation P-prompt may show degraded `[SOM_MARKS]`-style action parsing. Our pre-registered analysis treats this as a feature, not a confound: the cell tests whether prompt instructions can elicit task behavior on a representation the prompt does not literally match. Section 4 reports P-prompt's SR alongside its action-parse-success rate as transparency.
+
+### 3.4.2 Contrast Logic
 
 Each contrast isolates a different factor:
 
 - **DOM vs P-text** holds the prompt family fixed at DOM and changes the text-payload structure from AXTree to `[SOM_MARKS]`.
-- **Phantom-SoM vs P-text** holds the text observation fixed and changes only the prompt family.
+- **DOM vs P-prompt** holds the text observation fixed at AXTree and changes only the prompt family.
+- **P-text vs Phantom-SoM** holds the text observation fixed at `[SOM_MARKS]` and changes only the prompt family. Together with DOM vs P-prompt, this gives two independent measurements of the prompt-format axis.
+- **DOM vs Phantom-SoM** changes both axes — text-payload structure AND prompt — measuring the combined within-phantom diagonal.
 - **Full SoM vs Phantom-SoM** holds prompt and marks text fixed and adds the implemented marked-image channel.
 - **Full SoM vs DOM** measures the combined effect of SoM prompt, marks text, and marked screenshot relative to the standard text baseline.
 
-The 2x2 is not a routing policy by itself. It is a causal scaffold for Section 5: text-payload structure shapes exploration, while prompt wording tunes commitment confidence. Section 6 promotes this scaffold to a token-monotonic cascade — DOM → P-text (axis 1, text-payload swap, no token increase) → Phantom-SoM (axis 2, system-prompt swap, no data-token increase) → full SoM (axis 3, image embedding cost) — so a routing trigger never has to "add then remove" tokens.
+The 2×2 is not a routing policy by itself. It is a causal scaffold for Section 5: text-payload structure shapes exploration, while prompt wording tunes commitment confidence. Section 6 promotes this scaffold to a token-monotonic cascade — DOM → P-text (axis 1, text-payload swap, no token increase) → Phantom-SoM (axis 2, system-prompt swap, no data-token increase) → full SoM (axis 3, image embedding cost). P-prompt sits off this monotonic path as the diagonal cell that completes the prompt-format identification.
 
 ### 3.5 Implementation and Measurement Protocol
 

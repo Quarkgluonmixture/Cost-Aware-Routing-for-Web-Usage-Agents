@@ -1,63 +1,63 @@
-"""Preregistration decision test — H1 / H3 K-of-N transparency check (NOT primary detection).
+"""Preregistration decision test — Phase 1a 24-condition / 4-cell H1 / H3 / H2 evaluation.
 
-⚠️ F32 audit 2026-05-09 — STATUS REFRAMED PER B9 LOCK:
-    Per `preregistration.md §4` B9 row (lock 2026-05-09), the K-of-N
-    family-wise rule (K_h1=12/16, K_h3=11/16) is **secondary transparency
-    only**, NOT the primary detection mechanism for H1/H3 paper claims.
+⚠️ REWRITTEN 2026-05-13 to align with preregistration.md revisions (codex stress audit
+   Flaws 2 + 3 fix):
+   - PRIMARY GATE = pooled DerSimonian-Laird random-effects meta + TOST equivalence
+   - K-of-N reclassified gate → transparency consistency check (per pre-data 2026-05-13
+     reclassification, see `preregistration.md` §4 audit B9 + Appendix A 2026-05-13)
+   - H1 formula = P-SoM drop-one oracle ceiling lift (NOT P-SoM ≥ best single mode)
+   - H3 family = axis-1 (P-text \ P-SoM) + axis-2 (P-prompt \ P-SoM), both pooled
+   - Scope = 4 (site, model) statistical cells, each with 6 modes' per-task SR data
 
-    PRIMARY detection (per B8 lock + power_analysis.md):
-    - DerSimonian-Laird random-effects meta-analysis on cells with N≥10
-      (`aggregate_phantom_meta.py`)
-    - TOST equivalence on N=910 pooled task set, δ=1.0pp
-      (`aggregate_phantom_lift.py`)
+Definitions (per preregistration.md §2 + §4):
+  - cell = 1 (site, model) statistical stratification unit. Phase 1a N=4 cells:
+    (cls, B0), (cls, B1), (red, B0), (red, B1).
+  - condition = 1 (site, model, mode) operational launch unit. Phase 1a N=24.
+  - Drop-one per cell: oracle ceiling SR over {6 modes} − oracle ceiling SR over
+    {5 modes drop P-SoM}, per task, averaged across task pool. Paired bootstrap CI.
+  - Pooled meta: DerSimonian-Laird random-effects across 4 cell effect estimates.
+  - TOST: two one-sided tests for H0 |θ| ≥ δ rejected vs H1 |θ| < δ at δ=1.0pp.
 
-    This script's K-of-N output should be **reported alongside** the
-    primary tests as a transparency check — at observed effect sizes
-    (1-5pp), K-of-N family power is < 10% (see
-    `docs/analysis/cross_sites/power_analysis.md` §3-§5). Do NOT gate
-    paper claims on this script's pass/fail.
+PRIMARY GATES (gate paper hook framing R1-R5):
+  H1(i)  pooled DL meta on P-SoM drop-one, Holm α=0.05 sig (m=1)
+  H1(ii) pooled magnitude θ_RE ≥ 1.0pp + TOST equivalence rejected at δ=1.0pp
+  H3(i)  pooled DL meta on |P-text \ P-SoM| axis-1, Holm α=0.05 sig (m=1)
+  H3(ii) pooled DL meta on |P-prompt \ P-SoM| axis-2, Holm α=0.05 sig (m=1)
+  H2(a)  median cost(P-SoM) within ±10% of median cost(DOM) per cell, replicated
+         in ≥3 of 4 cells (transparency K_h2)
 
-Single source of truth for the paper §5 / Table 5 *transparency* rules.
-
-Tied to:
-- preregistration.md (commitment text + B9 K-of-N reframe lock)
-- osf_lock_manifest.md (lock SHA chain)
-- run_manifest.yaml (cell scope)
-- 笔记 §114 (provenance hardening)
-- power_analysis.md (B9 family-power calculation)
-
-Hypotheses (transparency only — see PRIMARY detection above):
-- H1: Phantom-SoM ≥ best (DOM, SoM, Vision) in ≥ K_h1 cells
-- H3: Drop-one oracle lift from Phantom-SoM ≥ <delta_pp> in ≥ K_h3 cells
-- TOST: |cost(P-SoM) - cost(DOM)| < δ (cost-equivalence — distinct from
-  phantom-lift TOST in `aggregate_phantom_lift.py`)
+TRANSPARENCY (NOT gating, reported alongside primary):
+  K_h1 = 3 of 4 cells individually Holm-sig on drop-one
+  K_h3 axis-1 = 3 of 4 cells individually CI > 0
+  K_h3 axis-2 = same
 
 Usage:
-    # With actual data:
+    # With actual per-task data:
     python3 scripts/analysis/preregistration_decision_test.py \\
-        --cells-csv results/phantom_paper/cells_aggregated.csv \\
-        --thresholds K_h1=12 K_h3=11 TOST_delta=1.0 \\
+        --per-task-csv results/phantom_paper/per_task_sr.csv \\
+        --primary-gate drop_one_pooled_meta_TOST \\
+        --TOST-delta-pp 1.0 \\
+        --transparency-K_h1 3 --transparency-K_h3 3 \\
         --out results/phantom_paper/preregistration_test_results.json
 
     # Smoke test on synthetic data:
-    python3 scripts/analysis/preregistration_decision_test.py --synthetic --seed 0
+    python3 scripts/analysis/preregistration_decision_test.py --synthetic --seed 42
 
-Inputs (CSV schema):
-    cell_id,baseline,site,phantom_axis,sr_dom,sr_som,sr_vision,sr_phantom_som,
-        sr_phantom_text,sr_phantom_prompt,oracle_3mode,oracle_drop_one_psom,
+Input CSV schema (per-task wide format, one row per (cell_id, task_id)):
+    cell_id,site,model,task_id,sr_dom,sr_som,sr_vision,sr_ptext,sr_pprompt,sr_psom,
         cost_dom,cost_psom
+    cls_B0,classifieds,B0,task_0001,0.0,1.0,0.0,1.0,0.0,1.0,0.043,0.044
+    ...
 
-Outputs (JSON):
-    {
-      "captured_at": "...",
-      "n_cells": 16,
-      "thresholds": {"K_h1": 12, "K_h3": 11, "TOST_delta_pp": 1.0},
-      "H1": {"per_cell_winners": [...], "n_pass": 12, "decision": "PASS|FAIL", "p_binomial": ...},
-      "H3": {"per_cell_lift_pp": [...], "n_pass": 10, "decision": "PASS|FAIL"},
-      "TOST": {"observed_delta_pp": 0.7, "ci_95": [-0.4, 1.8], "decision": "PASS|FAIL"},
-      "overall_decision": "...",
-      "input_data_sha256": "..."
-    }
+Each SR cell ∈ {0, 1} (binary per-task evaluator verdict, post-FP-filter).
+Costs in any consistent unit (token-normalized $); only ratio used.
+
+Tied to:
+- preregistration.md §2 (H1/H3 hypotheses) + §4 (locked analysis choices) +
+  Appendix A 2026-05-13 (codex stress audit propagation)
+- osf_lock_manifest.md §2.2 (canonical threshold table)
+- run_manifest.yaml (cell scope = 4 Phase 1a cells)
+- 笔记 §132 (codex stress audit + scope reframe chronicle)
 """
 
 from __future__ import annotations
@@ -68,144 +68,492 @@ import hashlib
 import json
 import logging
 import math
+import statistics
 import sys
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 logger = logging.getLogger("preregistration-test")
 
+# Phase 1a canonical cells (must match preregistration.md §4 N_cells row)
+PHASE_1A_CELLS = [
+    ("classifieds", "B0"),
+    ("classifieds", "B1"),
+    ("reddit", "B0"),
+    ("reddit", "B1"),
+]
+PHANTOM_MODE_KEYS = ["sr_psom", "sr_ptext", "sr_pprompt"]
+BASELINE_MODE_KEYS = ["sr_dom", "sr_som", "sr_vision"]
+ALL_MODE_KEYS = BASELINE_MODE_KEYS + PHANTOM_MODE_KEYS
+
 
 # ---------------------------------------------------------------------------
-# H1: Phantom-SoM ≥ best of (DOM, SoM, Vision) per cell
+# Per-cell drop-one + unique-count computation (paired bootstrap)
 # ---------------------------------------------------------------------------
 
-def evaluate_h1(cells: list[dict], k_threshold: int) -> dict:
-    """For each cell, count if SR_phantom_som >= max(SR_dom, SR_som, SR_vision)."""
-    per_cell = []
-    for c in cells:
-        psom = float(c["sr_phantom_som"])
-        baselines = [float(c["sr_dom"]), float(c["sr_som"]), float(c["sr_vision"])]
-        best_baseline = max(baselines)
-        winner = psom >= best_baseline
-        per_cell.append({
-            "cell_id": c["cell_id"],
-            "sr_phantom_som": psom,
-            "best_baseline_sr": best_baseline,
-            "delta_pp": (psom - best_baseline) * 100.0,  # in percentage points
-            "phantom_som_wins": winner,
-        })
-    n_pass = sum(1 for r in per_cell if r["phantom_som_wins"])
-    n_total = len(per_cell)
+def _oracle_per_task(task_row: dict, mode_keys: list[str]) -> int:
+    """Oracle ceiling for one task = 1 if ANY mode in mode_keys solved it, else 0."""
+    return 1 if any(int(task_row[k]) >= 1 for k in mode_keys) else 0
 
-    # Two-sided binomial p-value under H0: p = 0.5 (random tie-breaking)
-    p_binomial = _binomial_test_two_sided(n_pass, n_total, 0.5)
+
+def _drop_one_lift_per_cell(cell_tasks: list[dict], drop_mode: str = "sr_psom") -> float:
+    """Drop-one oracle ceiling lift for a cell.
+
+    Returns the mean over the cell's task pool of:
+        oracle({all 6 modes}, task) − oracle({all 6 modes} \\ {drop_mode}, task)
+
+    Result is in [0, 1] (probability units; multiply by 100 for pp).
+    """
+    full = ALL_MODE_KEYS
+    reduced = [k for k in full if k != drop_mode]
+    deltas = [_oracle_per_task(t, full) - _oracle_per_task(t, reduced) for t in cell_tasks]
+    return sum(deltas) / max(1, len(deltas))
+
+
+def _unique_count_per_cell(cell_tasks: list[dict], axis_mode: str, ref_mode: str = "sr_psom") -> int:
+    """|axis_mode \\ ref_mode| = number of tasks where axis_mode solved but ref_mode didn't.
+
+    Used for H3 axis-1 (axis_mode=sr_ptext) and H3 axis-2 (axis_mode=sr_pprompt).
+    """
+    return sum(1 for t in cell_tasks
+               if int(t[axis_mode]) >= 1 and int(t[ref_mode]) < 1)
+
+
+def _paired_bootstrap(cell_tasks: list[dict], statistic_fn, n_resamples: int = 1000,
+                       seed: int = 42) -> tuple[float, float, float, float]:
+    """1000-resample paired task-level bootstrap.
+
+    Returns (point_estimate, ci_lo_95, ci_hi_95, bootstrap_se).
+    Resamples task rows with replacement (preserves all modes' SR for that task → paired).
+    """
+    import random
+    rng = random.Random(seed)
+    point = statistic_fn(cell_tasks)
+    n = len(cell_tasks)
+    boot_vals = []
+    for _ in range(n_resamples):
+        resample = [cell_tasks[rng.randrange(n)] for _ in range(n)]
+        boot_vals.append(statistic_fn(resample))
+    boot_vals.sort()
+    ci_lo = boot_vals[int(0.025 * n_resamples)]
+    ci_hi = boot_vals[int(0.975 * n_resamples)]
+    se = statistics.stdev(boot_vals) if len(boot_vals) > 1 else 0.0
+    return point, ci_lo, ci_hi, se
+
+
+# ---------------------------------------------------------------------------
+# DerSimonian-Laird random-effects meta-analysis
+# ---------------------------------------------------------------------------
+
+def dersimonian_laird_meta(effects: list[float], variances: list[float]) -> dict:
+    """Pool effect estimates across cells via DerSimonian-Laird random-effects.
+
+    Args:
+        effects: per-cell effect estimates (same scale, e.g., pp or unique-count)
+        variances: per-cell variance estimates (= SE^2 from bootstrap)
+
+    Returns dict with: pooled_effect, pooled_se, pooled_ci_95, Q, I_squared, tau_squared,
+                       p_value_two_sided.
+
+    Method (Higgins & Thompson 2002; DerSimonian & Laird 1986):
+      1. Fixed-effects pooled mean θ_FE = Σ(w_i × θ_i) / Σw_i where w_i = 1 / v_i
+      2. Q = Σw_i × (θ_i − θ_FE)^2
+      3. τ^2 = max(0, (Q − (k − 1)) / (Σw_i − Σw_i^2 / Σw_i))
+      4. Random-effects weights w*_i = 1 / (v_i + τ^2)
+      5. Pooled θ_RE = Σ(w*_i × θ_i) / Σw*_i; SE_RE = sqrt(1 / Σw*_i)
+      6. I^2 = max(0, (Q − (k − 1)) / Q) × 100  (% heterogeneity)
+    """
+    k = len(effects)
+    if k < 2:
+        return {"pooled_effect": effects[0] if effects else 0.0,
+                "pooled_se": math.sqrt(variances[0]) if variances else 0.0,
+                "pooled_ci_95": [None, None],
+                "Q": None, "I_squared_pct": None, "tau_squared": None,
+                "p_value_two_sided": None, "k": k,
+                "note": "k<2: pooling undefined"}
+
+    w_fe = [1.0 / max(v, 1e-12) for v in variances]
+    theta_fe = sum(w * t for w, t in zip(w_fe, effects)) / sum(w_fe)
+    Q = sum(w * (t - theta_fe) ** 2 for w, t in zip(w_fe, effects))
+    sum_w = sum(w_fe)
+    sum_w_sq = sum(w * w for w in w_fe)
+    tau_sq_num = Q - (k - 1)
+    tau_sq_den = sum_w - (sum_w_sq / sum_w)
+    tau_sq = max(0.0, tau_sq_num / max(tau_sq_den, 1e-12))
+
+    w_re = [1.0 / (v + tau_sq) for v in variances]
+    theta_re = sum(w * t for w, t in zip(w_re, effects)) / sum(w_re)
+    se_re = math.sqrt(1.0 / sum(w_re))
+    ci_lo = theta_re - 1.96 * se_re
+    ci_hi = theta_re + 1.96 * se_re
+
+    z = theta_re / max(se_re, 1e-12)
+    # Two-sided p from standard normal (using error function approximation)
+    p_two_sided = 2.0 * (1.0 - _phi(abs(z)))
+
+    i_sq = max(0.0, (Q - (k - 1)) / Q) * 100.0 if Q > 0 else 0.0
 
     return {
-        "n_cells": n_total,
-        "n_pass": n_pass,
-        "k_threshold": k_threshold,
-        "decision": "PASS" if n_pass >= k_threshold else "FAIL",
-        "p_binomial_h0_random": p_binomial,
+        "pooled_effect": theta_re,
+        "pooled_se": se_re,
+        "pooled_ci_95": [ci_lo, ci_hi],
+        "Q": Q,
+        "Q_df": k - 1,
+        "I_squared_pct": i_sq,
+        "tau_squared": tau_sq,
+        "p_value_two_sided": p_two_sided,
+        "z_statistic": z,
+        "k": k,
+    }
+
+
+def _phi(z: float) -> float:
+    """Standard normal CDF using erf approximation."""
+    return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
+
+
+# ---------------------------------------------------------------------------
+# TOST equivalence test
+# ---------------------------------------------------------------------------
+
+def superiority_test(pooled_effect: float, pooled_se: float, threshold: float,
+                      alpha: float = 0.05) -> dict:
+    """One-sided superiority test: H0: θ ≤ threshold vs H1: θ > threshold.
+
+    Used for H1(ii) per prereg 2026-05-13 wording revision: "effect is significantly
+    ABOVE the +threshold substantive-effect floor". Reject H0 when pooled effect is
+    significantly larger than threshold (z = (θ̂ - threshold)/SE > z_α).
+
+    Args:
+        pooled_effect: pooled effect estimate (same units as threshold)
+        pooled_se: pooled SE
+        threshold: substantive-effect floor (positive; e.g., 1.0pp)
+        alpha: one-sided significance level (default 0.05)
+
+    Returns dict with: z, p_one_sided, threshold, decision.
+
+    Note: This replaces prior TOST-rejection logic which had ambiguous semantic
+    direction ("TOST equivalence rejected" could mean either equivalence-demonstrated
+    OR equivalence-not-demonstrated). One-sided superiority is the unambiguous test
+    for "effect substantively exceeds threshold".
+    """
+    z = (pooled_effect - threshold) / max(pooled_se, 1e-12)
+    p_one_sided = 1.0 - _phi(z)
+    return {
+        "threshold": threshold,
+        "alpha": alpha,
+        "pooled_effect": pooled_effect,
+        "pooled_se": pooled_se,
+        "z_statistic": z,
+        "p_one_sided": p_one_sided,
+        "decision": "reject_H0_substantively_above_threshold" if p_one_sided < alpha else "fail_reject",
+    }
+
+
+def tost_equivalence(pooled_effect: float, pooled_se: float, delta: float,
+                      alpha: float = 0.05) -> dict:
+    """Two one-sided tests for equivalence (Schuirmann 1987).
+
+    Tests H0: |θ| ≥ δ (effect non-equivalent) vs H1: |θ| < δ (effect equivalent).
+    Both one-sided tests must reject H0 to demonstrate equivalence.
+
+    Used in P79 paper-1 as **informational only** (reported alongside H1 superiority
+    test, NOT used for H1 PRIMARY gating per 2026-05-13 prereg revision).
+    """
+    t_lo = (pooled_effect - (-delta)) / max(pooled_se, 1e-12)  # tests θ > -δ
+    t_hi = ((+delta) - pooled_effect) / max(pooled_se, 1e-12)  # tests θ < +δ
+    p_lo = 1.0 - _phi(t_lo)
+    p_hi = 1.0 - _phi(t_hi)
+    max_p = max(p_lo, p_hi)
+    equivalence_demonstrated = (p_lo < alpha) and (p_hi < alpha)
+    return {
+        "delta": delta,
+        "alpha_per_side": alpha,
+        "pooled_effect": pooled_effect,
+        "pooled_se": pooled_se,
+        "p_lower_bound_test": p_lo,
+        "p_upper_bound_test": p_hi,
+        "max_p_value": max_p,
+        "equivalence_demonstrated": equivalence_demonstrated,
+        "decision": "equivalence_demonstrated" if equivalence_demonstrated else "equivalence_not_demonstrated",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Holm-Bonferroni correction
+# ---------------------------------------------------------------------------
+
+def holm_correct(p_values: list[float], alpha: float = 0.05) -> list[dict]:
+    """Holm-Bonferroni step-down correction for a family of m tests.
+
+    Returns list of dicts (in original order) with: p_raw, p_holm, rejected.
+    """
+    m = len(p_values)
+    if m == 0:
+        return []
+    indexed = sorted(enumerate(p_values), key=lambda x: x[1])
+    results = [None] * m
+    prev_adj = 0.0
+    for rank, (orig_idx, p) in enumerate(indexed):
+        adj = (m - rank) * p
+        adj = max(adj, prev_adj)
+        adj = min(adj, 1.0)
+        results[orig_idx] = {
+            "p_raw": p,
+            "p_holm": adj,
+            "rejected": adj < alpha,
+        }
+        prev_adj = adj
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Hypothesis evaluators
+# ---------------------------------------------------------------------------
+
+def evaluate_h1(cells_by_id: dict[str, list[dict]], delta_pp: float = 1.0,
+                 magnitude_threshold_pp: float = 1.0, alpha: float = 0.05,
+                 transparency_K_h1: int = 3, bootstrap_seed: int = 42) -> dict:
+    """H1: P-SoM drop-one oracle ceiling lift > 0, pooled across cells.
+
+    PRIMARY: pooled DL meta sig at Holm α=0.05 (m=1) + θ_RE ≥ magnitude_threshold_pp
+             + TOST equivalence rejected at δ=delta_pp.
+    TRANSPARENCY: K_h1 = transparency_K_h1 of N cells individually Holm-sig (m=N).
+    """
+    per_cell = {}
+    effects_pp = []
+    variances_pp = []  # variances of per-cell drop-one in pp^2
+    per_cell_p_values = []
+
+    for cell_id, tasks in cells_by_id.items():
+        point, ci_lo, ci_hi, se = _paired_bootstrap(
+            tasks,
+            statistic_fn=lambda t: _drop_one_lift_per_cell(t, drop_mode="sr_psom"),
+            seed=bootstrap_seed,
+        )
+        # Convert to pp
+        effect_pp = point * 100.0
+        se_pp = se * 100.0
+        # Two-sided p from bootstrap normal approx
+        z = effect_pp / max(se_pp, 1e-12)
+        p_cell = 2.0 * (1.0 - _phi(abs(z)))
+        per_cell[cell_id] = {
+            "drop_one_lift_pp": effect_pp,
+            "ci_95_pp": [ci_lo * 100.0, ci_hi * 100.0],
+            "se_pp": se_pp,
+            "p_value_two_sided": p_cell,
+            "n_tasks": len(tasks),
+        }
+        effects_pp.append(effect_pp)
+        variances_pp.append(se_pp ** 2)
+        per_cell_p_values.append(p_cell)
+
+    # PRIMARY: pooled DL meta + magnitude + superiority test
+    meta = dersimonian_laird_meta(effects_pp, variances_pp)
+    superiority = superiority_test(meta["pooled_effect"], meta["pooled_se"],
+                                     threshold=magnitude_threshold_pp, alpha=alpha)
+    # TOST kept for informational reporting (NOT used in H1 gating decision)
+    tost_info = tost_equivalence(meta["pooled_effect"], meta["pooled_se"],
+                                  delta=delta_pp, alpha=alpha)
+
+    pooled_sig = meta["p_value_two_sided"] is not None and meta["p_value_two_sided"] < alpha
+    magnitude_pass = meta["pooled_effect"] >= magnitude_threshold_pp
+    superiority_pass = superiority["decision"] == "reject_H0_substantively_above_threshold"
+
+    primary_h1_pass = pooled_sig and magnitude_pass and superiority_pass
+
+    # TRANSPARENCY: K-of-N Holm
+    holm_per_cell = holm_correct(per_cell_p_values, alpha=alpha)
+    for (cell_id, _), h in zip(per_cell.items(), holm_per_cell):
+        per_cell[cell_id]["holm_p"] = h["p_holm"]
+        per_cell[cell_id]["individually_holm_sig"] = h["rejected"]
+    n_individually_sig = sum(1 for h in holm_per_cell if h["rejected"])
+    transparency_pass = n_individually_sig >= transparency_K_h1
+
+    return {
+        "primary_gate": {
+            "pooled_meta": meta,
+            "magnitude_check": {"pooled_pp": meta["pooled_effect"],
+                                 "threshold_pp": magnitude_threshold_pp,
+                                 "pass": magnitude_pass},
+            "superiority_test": superiority,
+            "tost_informational": tost_info,
+            "decision": "PASS" if primary_h1_pass else "FAIL",
+        },
+        "transparency_K_h1": {
+            "K": transparency_K_h1,
+            "N": len(cells_by_id),
+            "n_individually_holm_sig": n_individually_sig,
+            "consistent": transparency_pass,
+            "note": "transparency-only, NOT a gate on H1 (per prereg 2026-05-13 reclassification)",
+        },
+        "per_cell": per_cell,
+    }
+
+
+def evaluate_h3_axis(cells_by_id: dict[str, list[dict]], axis_mode_key: str,
+                      ref_mode_key: str = "sr_psom", min_unique_count: int = 2,
+                      alpha: float = 0.05, transparency_K_h3: int = 3,
+                      bootstrap_seed: int = 42) -> dict:
+    """H3 axis test: |axis_mode \\ ref_mode| > 0, pooled across cells.
+
+    axis_mode_key examples: sr_ptext (axis-1), sr_pprompt (axis-2).
+
+    PRIMARY: pooled DL meta on unique-count, CI excluding 0 at Holm α=0.05 (m=1).
+    TRANSPARENCY: K_h3 of N cells with bootstrap CI > 0 AND unique-count ≥ min_unique_count.
+    """
+    per_cell = {}
+    effects = []
+    variances = []
+    per_cell_p_values = []
+    per_cell_ci_excludes_zero = []
+
+    for cell_id, tasks in cells_by_id.items():
+        # Statistic: count of tasks where axis solved but ref did not, normalized by task count
+        # (using count as the statistic per prereg H3 wording)
+        count, ci_lo, ci_hi, se = _paired_bootstrap(
+            tasks,
+            statistic_fn=lambda t: float(_unique_count_per_cell(t, axis_mode_key, ref_mode_key)),
+            seed=bootstrap_seed,
+        )
+        # Per-cell pass: CI > 0 AND count ≥ min_unique_count (≥2 floor for noise)
+        ci_excludes_zero = ci_lo > 0
+        count_above_floor = count >= min_unique_count
+        per_cell_pass = ci_excludes_zero and count_above_floor
+        # Per-cell p from normal approx on count statistic (testing > 0)
+        z = count / max(se, 1e-12)
+        p_cell = 1.0 - _phi(z)  # one-sided
+        per_cell[cell_id] = {
+            "unique_count": count,
+            "ci_95": [ci_lo, ci_hi],
+            "se": se,
+            "p_value_one_sided": p_cell,
+            "ci_excludes_zero": ci_excludes_zero,
+            "count_above_min": count_above_floor,
+            "per_cell_pass": per_cell_pass,
+            "n_tasks": len(tasks),
+        }
+        effects.append(count)
+        variances.append(se ** 2)
+        per_cell_p_values.append(p_cell)
+        per_cell_ci_excludes_zero.append(per_cell_pass)
+
+    # PRIMARY: pooled meta
+    meta = dersimonian_laird_meta(effects, variances)
+    pooled_ci_lo = meta["pooled_ci_95"][0] if meta["pooled_ci_95"][0] is not None else None
+    primary_pass = (meta["p_value_two_sided"] is not None and
+                    meta["p_value_two_sided"] < alpha and
+                    pooled_ci_lo is not None and pooled_ci_lo > 0)
+
+    # TRANSPARENCY
+    holm_per_cell = holm_correct(per_cell_p_values, alpha=alpha)
+    for (cell_id, _), h in zip(per_cell.items(), holm_per_cell):
+        per_cell[cell_id]["holm_p"] = h["p_holm"]
+        per_cell[cell_id]["individually_holm_sig"] = h["rejected"]
+    n_per_cell_pass = sum(per_cell_ci_excludes_zero)
+    transparency_pass = n_per_cell_pass >= transparency_K_h3
+
+    return {
+        "axis_mode": axis_mode_key,
+        "ref_mode": ref_mode_key,
+        "primary_gate": {
+            "pooled_meta": meta,
+            "ci_excludes_zero": pooled_ci_lo is not None and pooled_ci_lo > 0,
+            "decision": "PASS" if primary_pass else "FAIL",
+        },
+        "transparency_K_h3": {
+            "K": transparency_K_h3,
+            "N": len(cells_by_id),
+            "n_cells_pass": n_per_cell_pass,
+            "consistent": transparency_pass,
+            "note": "transparency-only, NOT a gate on H3 (per prereg 2026-05-13 reclassification)",
+        },
+        "per_cell": per_cell,
+    }
+
+
+def evaluate_h2_cost(cells_by_id: dict[str, list[dict]], cost_margin_pct: float = 10.0,
+                      transparency_K_h2: int = 3) -> dict:
+    """H2(a): median cost(P-SoM) within ±cost_margin_pct% of median cost(DOM) per cell,
+    replicated in ≥ transparency_K_h2 of N cells.
+
+    H2(a) test margin is a RELATIVE PERCENTAGE (e.g., ±10% of DOM cost), distinct from
+    H1 TOST δ which is an SR percentage-point margin (codex probable concern disambig).
+    """
+    per_cell = {}
+    pass_count = 0
+    for cell_id, tasks in cells_by_id.items():
+        cost_dom_vals = [float(t["cost_dom"]) for t in tasks if t["cost_dom"]]
+        cost_psom_vals = [float(t["cost_psom"]) for t in tasks if t["cost_psom"]]
+        if not cost_dom_vals or not cost_psom_vals:
+            per_cell[cell_id] = {"per_cell_pass": False, "reason": "missing cost data"}
+            continue
+        med_dom = statistics.median(cost_dom_vals)
+        med_psom = statistics.median(cost_psom_vals)
+        rel_diff_pct = (med_psom - med_dom) / max(med_dom, 1e-12) * 100.0
+        within_band = abs(rel_diff_pct) <= cost_margin_pct
+        per_cell[cell_id] = {
+            "median_cost_dom": med_dom,
+            "median_cost_psom": med_psom,
+            "relative_diff_pct": rel_diff_pct,
+            "margin_pct": cost_margin_pct,
+            "per_cell_pass": within_band,
+        }
+        if within_band:
+            pass_count += 1
+    return {
+        "h2a_cost_equivalence": {
+            "K": transparency_K_h2,
+            "N": len(cells_by_id),
+            "n_cells_pass": pass_count,
+            "consistent": pass_count >= transparency_K_h2,
+            "margin_pct": cost_margin_pct,
+        },
         "per_cell": per_cell,
     }
 
 
 # ---------------------------------------------------------------------------
-# H3: Drop-one oracle lift from Phantom-SoM ≥ <delta_pp> in K_h3 cells
+# Framing rule R1-R5 mapper
 # ---------------------------------------------------------------------------
 
-def evaluate_h3(cells: list[dict], k_threshold: int, lift_pp_min: float = 0.5) -> dict:
-    """Drop-one oracle lift: oracle_with_psom - oracle_3mode (DOM/SoM/Vision)
-    expressed in percentage points; pass if lift >= lift_pp_min for K_h3 cells."""
-    per_cell = []
-    for c in cells:
-        oracle_3 = float(c["oracle_3mode"])
-        oracle_drop_one = float(c["oracle_drop_one_psom"])
-        # Drop-one: oracle 4-mode - oracle 4-mode-without-PSoM
-        # Convention here: oracle_drop_one_psom = oracle 4-mode lift attributable to PSoM
-        # i.e., the marginal SR contribution if you remove PSoM from oracle bag
-        lift_pp = oracle_drop_one * 100.0
-        passes = lift_pp >= lift_pp_min
-        per_cell.append({
-            "cell_id": c["cell_id"],
-            "oracle_3mode_sr": oracle_3,
-            "drop_one_lift_pp": lift_pp,
-            "passes_min_lift": passes,
-        })
-    n_pass = sum(1 for r in per_cell if r["passes_min_lift"])
+def apply_framing_rule(h1: dict, h2: dict, h3_axis1: dict, h3_axis2: dict) -> dict:
+    """Apply preregistration §2 R1-R5 framing rule to test outcomes."""
+    h1_pass = h1["primary_gate"]["decision"] == "PASS"
+    h2_pass = h2["h2a_cost_equivalence"]["consistent"]
+    h3_axis1_pass = h3_axis1["primary_gate"]["decision"] == "PASS"
+    h3_axis2_pass = h3_axis2["primary_gate"]["decision"] == "PASS"
 
-    return {
-        "n_cells": len(cells),
-        "n_pass": n_pass,
-        "k_threshold": k_threshold,
-        "min_lift_pp": lift_pp_min,
-        "decision": "PASS" if n_pass >= k_threshold else "FAIL",
-        "per_cell": per_cell,
-    }
+    if h1_pass and h2_pass and h3_axis1_pass and h3_axis2_pass:
+        return {"rule": "R1", "framing": "Phantom routing space (2-axis empirical structure)",
+                "hook_power": "STRONGEST"}
+    if h1_pass and h2_pass and (h3_axis1_pass or h3_axis2_pass):
+        return {"rule": "R2", "framing": "Phantom routing space (single-axis empirical structure)",
+                "hook_power": "MODERATE-STRONG"}
+    if h1_pass and h2_pass and not h3_axis1_pass and not h3_axis2_pass:
+        return {"rule": "R3", "framing": "Phantom-SoM is hidden 4th routing arm (workshop-grade R3)",
+                "hook_power": "MODERATE"}
+    if h1_pass and not h2_pass:
+        return {"rule": "R4", "framing": "Phantom-SoM partial drop-in (cost/latency equivalence fails on some site)",
+                "hook_power": "WEAK"}
+    return {"rule": "R5", "framing": "Paper death scenario — pivot to VWA bug audit OR abandon",
+            "hook_power": "n/a"}
 
 
 # ---------------------------------------------------------------------------
-# TOST: equivalence test for cost(P-SoM) ≈ cost(DOM)
+# Data loading
 # ---------------------------------------------------------------------------
 
-def evaluate_tost(cells: list[dict], delta_pp: float) -> dict:
-    """TOST (two one-sided tests) for cost equivalence within ±delta_pp.
-    Compute mean cost difference + 95% CI, check if CI ⊂ [-delta_pp, +delta_pp].
-    Cost expressed in percentage units (e.g., relative tokens or relative latency)."""
-    diffs = []
-    for c in cells:
-        cost_dom = float(c["cost_dom"])
-        cost_psom = float(c["cost_psom"])
-        if cost_dom == 0:
-            continue  # avoid div-by-zero
-        rel_diff_pp = (cost_psom - cost_dom) / cost_dom * 100.0
-        diffs.append(rel_diff_pp)
-
-    if not diffs:
-        return {"decision": "FAIL", "reason": "no valid diffs"}
-
-    n = len(diffs)
-    mean_diff = sum(diffs) / n
-    var = sum((d - mean_diff) ** 2 for d in diffs) / max(1, n - 1)
-    sd = math.sqrt(var)
-    sem = sd / math.sqrt(n)
-    # 95% CI using t-distribution approx (df = n-1, t_0.975 ≈ 1.96 for n>=30, ~2.13 for n=16)
-    t_crit = 2.131 if n <= 16 else 1.96
-    ci_lo = mean_diff - t_crit * sem
-    ci_hi = mean_diff + t_crit * sem
-
-    inside_band = (ci_lo > -delta_pp) and (ci_hi < delta_pp)
-
-    return {
-        "n_cells": n,
-        "delta_pp": delta_pp,
-        "mean_diff_pp": mean_diff,
-        "ci_95": [ci_lo, ci_hi],
-        "decision": "PASS" if inside_band else "FAIL",
-        "interpretation": (
-            f"95% CI [{ci_lo:.2f}, {ci_hi:.2f}] {'⊂' if inside_band else '⊄'} "
-            f"[-{delta_pp:.1f}, +{delta_pp:.1f}]"
-        ),
-        "raw_diffs_pp": diffs,
-    }
-
-
-# ---------------------------------------------------------------------------
-# Stats helpers
-# ---------------------------------------------------------------------------
-
-def _binomial_test_two_sided(k: int, n: int, p: float) -> float:
-    """Two-sided binomial p-value for k successes in n trials under H0: P(success)=p.
-    Sums tail probabilities ≤ observed."""
-    from math import comb
-    obs_p = comb(n, k) * (p ** k) * ((1 - p) ** (n - k))
-    total = 0.0
-    for kk in range(0, n + 1):
-        pp = comb(n, kk) * (p ** kk) * ((1 - p) ** (n - kk))
-        if pp <= obs_p + 1e-15:
-            total += pp
-    return min(1.0, total)
+def load_per_task_csv(csv_path: Path) -> dict[str, list[dict]]:
+    """Load per-task CSV, return dict of cell_id → list of task rows."""
+    cells_by_id: dict[str, list[dict]] = defaultdict(list)
+    with csv_path.open() as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            cells_by_id[row["cell_id"]].append(row)
+    return dict(cells_by_id)
 
 
 def _file_sha256(path: Path) -> str:
@@ -217,64 +565,52 @@ def _file_sha256(path: Path) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Synthetic data generator (smoke test, no actual data needed)
+# Synthetic data generator (24-condition / 4-cell smoke test)
 # ---------------------------------------------------------------------------
 
-def generate_synthetic_cells(seed: int = 0, n_cells: int = 16, scenario: str = "h1_pass") -> list[dict]:
-    """Generate 16-cell synthetic data for smoke test.
+def generate_synthetic_per_task(seed: int = 42, n_tasks_per_cell: int = 200,
+                                  scenario: str = "r1_pass") -> dict[str, list[dict]]:
+    """Generate Phase 1a 4-cell × n_tasks per-task data.
+
     Scenarios:
-      - h1_pass: PSoM wins in 13/16 cells (above K_h1=12)
-      - h1_fail: PSoM wins in 8/16 cells
-      - tost_pass: cost diff ~0.5pp ± 0.3 (inside band 1.0pp)
-      - tost_fail: cost diff ~3pp (outside band)
+      - r1_pass:   H1 strong (drop-one lift ~2pp pooled), H2 cost equiv hold, H3 both axes pass
+      - r3_pass:   H1 holds, H3 both axes fail (workshop fallback framing)
+      - r5_fail:   H1 fails (pooled near 0)
     """
     import random
     rng = random.Random(seed)
-    sites = ["classifieds", "reddit", "shopping"]
-    baselines = ["B0", "B1"]
-    phantom_axes = ["P-SoM", "P-text", "P-prompt"]
+    cells_by_id = {}
+    for site, model in PHASE_1A_CELLS:
+        cell_id = f"{site}_{model}"
+        # Base per-task SR rates (per mode)
+        base_rate = {"sr_dom": 0.30, "sr_som": 0.32, "sr_vision": 0.20,
+                     "sr_ptext": 0.31, "sr_pprompt": 0.28, "sr_psom": 0.34}
+        # Capability adjustment
+        if model == "B1":
+            base_rate = {k: v * 0.6 for k, v in base_rate.items()}
+        # Scenario
+        if scenario == "r5_fail":
+            base_rate["sr_psom"] = base_rate["sr_dom"] - 0.01  # nullify hero
+        elif scenario == "r3_pass":
+            # Hero passes but axes collapse: ptext/pprompt similar to psom
+            base_rate["sr_ptext"] = base_rate["sr_psom"] - 0.005
+            base_rate["sr_pprompt"] = base_rate["sr_psom"] - 0.005
 
-    cells = []
-    cell_id = 0
-    for b in baselines:
-        for s in sites:
-            for p in phantom_axes:
-                if cell_id >= n_cells:
-                    break
-                # Base SR levels
-                base_sr = 0.3 + rng.uniform(-0.05, 0.10)
-                sr_dom = base_sr + rng.uniform(-0.02, 0.02)
-                sr_som = base_sr + rng.uniform(-0.02, 0.05)
-                sr_vision = base_sr + rng.uniform(-0.05, 0.02)
-
-                if scenario == "h1_pass":
-                    # PSoM wins in most cells
-                    sr_psom = max(sr_dom, sr_som, sr_vision) + rng.uniform(-0.005, 0.04)
-                else:  # h1_fail
-                    sr_psom = base_sr + rng.uniform(-0.04, 0.01)
-
-                # Cost
-                cost_dom = 1.0  # normalized
-                if scenario == "tost_pass":
-                    cost_psom = 1.0 + rng.uniform(-0.005, 0.005)  # ±0.5%
-                elif scenario == "tost_fail":
-                    cost_psom = 1.03 + rng.uniform(-0.005, 0.005)  # +3%
-                else:
-                    cost_psom = 1.0 + rng.uniform(-0.008, 0.008)  # within band
-
-                cells.append({
-                    "cell_id": f"{b}_{s}_{p}_{cell_id}",
-                    "baseline": b, "site": s, "phantom_axis": p,
-                    "sr_dom": sr_dom, "sr_som": sr_som, "sr_vision": sr_vision,
-                    "sr_phantom_som": sr_psom,
-                    "sr_phantom_text": sr_psom * 0.97,
-                    "sr_phantom_prompt": sr_psom * 0.95,
-                    "oracle_3mode": max(sr_dom, sr_som, sr_vision),
-                    "oracle_drop_one_psom": rng.uniform(0.005, 0.025),  # 0.5-2.5pp lift
-                    "cost_dom": cost_dom, "cost_psom": cost_psom,
-                })
-                cell_id += 1
-    return cells[:n_cells]
+        rows = []
+        for i in range(n_tasks_per_cell):
+            # Per-task latent solvability bias
+            bias = rng.uniform(-0.1, 0.1)
+            row = {"cell_id": cell_id, "site": site, "model": model,
+                   "task_id": f"{cell_id}_t{i:04d}"}
+            for mode_key, rate in base_rate.items():
+                eff_rate = max(0.0, min(1.0, rate + bias))
+                row[mode_key] = 1 if rng.random() < eff_rate else 0
+            # Cost: P-SoM ~ DOM cost (regex filter property)
+            row["cost_dom"] = 0.040 + rng.uniform(-0.005, 0.005)
+            row["cost_psom"] = row["cost_dom"] * (1.0 + rng.uniform(-0.05, 0.05))
+            rows.append(row)
+        cells_by_id[cell_id] = rows
+    return cells_by_id
 
 
 # ---------------------------------------------------------------------------
@@ -283,77 +619,111 @@ def generate_synthetic_cells(seed: int = 0, n_cells: int = 16, scenario: str = "
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--cells-csv", help="Path to cells_aggregated.csv (skip if --synthetic)")
+    p.add_argument("--per-task-csv",
+                   help="Per-task CSV path (cell_id, site, model, task_id, sr_*, cost_*)")
     p.add_argument("--synthetic", action="store_true",
-                   help="Run smoke test on synthetic data (no real data needed)")
-    p.add_argument("--scenario", default="h1_pass",
-                   choices=["h1_pass", "h1_fail", "tost_pass", "tost_fail"],
-                   help="Synthetic data scenario (only with --synthetic)")
-    p.add_argument("--seed", type=int, default=0)
-    p.add_argument("--K_h1", type=int, default=12,
-                   help="H1 threshold (cells where PSoM wins). Pre-registration default 12.")
-    p.add_argument("--K_h3", type=int, default=11,
-                   help="H3 threshold (cells with drop-one lift ≥ min). Pre-registration default 11.")
-    p.add_argument("--TOST-delta", type=float, default=1.0,
-                   help="TOST equivalence margin in pp. Pre-registration default 1.0.")
-    p.add_argument("--H3-min-lift-pp", type=float, default=0.5,
-                   help="H3 per-cell minimum drop-one lift in pp.")
+                   help="Run smoke test on synthetic 4-cell × 200-task data")
+    p.add_argument("--scenario", default="r1_pass",
+                   choices=["r1_pass", "r3_pass", "r5_fail"])
+    p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--primary-gate", default="drop_one_pooled_meta_TOST",
+                   help="Primary gate flavor (informational; method is fixed in this rewrite)")
+    p.add_argument("--TOST-delta-pp", type=float, default=1.0,
+                   help="TOST equivalence margin in SR pp (default 1.0 per prereg lock)")
+    p.add_argument("--H1-magnitude-pp", type=float, default=1.0,
+                   help="H1 pooled magnitude threshold (default 1.0pp per prereg lock)")
+    p.add_argument("--H2-cost-margin-pct", type=float, default=10.0,
+                   help="H2(a) cost equivalence margin in % (default 10%% per prereg lock)")
+    p.add_argument("--H3-min-unique-count", type=int, default=2,
+                   help="H3 per-cell unique-count noise floor (default 2 tasks)")
+    p.add_argument("--transparency-K_h1", type=int, default=3,
+                   help="K_h1 transparency ratio cells count (default 3 of 4)")
+    p.add_argument("--transparency-K_h3", type=int, default=3,
+                   help="K_h3 transparency ratio cells count per axis (default 3 of 4)")
+    p.add_argument("--transparency-K_h2", type=int, default=3,
+                   help="H2 transparency cells count (default 3 of 4)")
+    p.add_argument("--alpha", type=float, default=0.05)
     p.add_argument("--out", default="-", help="Output JSON path (- = stdout)")
     args = p.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-    # Load cells
+    # Load data
     if args.synthetic:
-        cells = generate_synthetic_cells(seed=args.seed, scenario=args.scenario)
-        input_sha = "synthetic"
-        logger.info(f"Synthetic mode: {len(cells)} cells, scenario={args.scenario}")
+        cells_by_id = generate_synthetic_per_task(seed=args.seed, scenario=args.scenario)
+        input_sha = f"synthetic:{args.scenario}:{args.seed}"
+        logger.info(f"Synthetic mode: {len(cells_by_id)} cells, scenario={args.scenario}")
     else:
-        if not args.cells_csv:
-            logger.error("Must provide --cells-csv or --synthetic")
+        if not args.per_task_csv:
+            logger.error("Must provide --per-task-csv or --synthetic")
             sys.exit(2)
-        csv_path = Path(args.cells_csv)
-        with csv_path.open() as f:
-            reader = csv.DictReader(f)
-            cells = list(reader)
+        csv_path = Path(args.per_task_csv)
+        cells_by_id = load_per_task_csv(csv_path)
         input_sha = _file_sha256(csv_path)
-        logger.info(f"Loaded {len(cells)} cells from {csv_path} (sha256={input_sha[:12]}...)")
+        logger.info(f"Loaded {len(cells_by_id)} cells from {csv_path} (sha256={input_sha[:12]}...)")
 
-    # Run hypothesis tests
-    h1 = evaluate_h1(cells, k_threshold=args.K_h1)
-    h3 = evaluate_h3(cells, k_threshold=args.K_h3, lift_pp_min=args.H3_min_lift_pp)
-    tost = evaluate_tost(cells, delta_pp=args.TOST_delta)
+    if len(cells_by_id) < 2:
+        logger.error(f"Need ≥2 cells for pooled meta; got {len(cells_by_id)}")
+        sys.exit(2)
 
-    overall = "PASS" if (h1["decision"] == "PASS" and h3["decision"] == "PASS"
-                          and tost["decision"] == "PASS") else "PARTIAL_OR_FAIL"
+    # Evaluate hypotheses
+    h1 = evaluate_h1(cells_by_id, delta_pp=args.TOST_delta_pp,
+                      magnitude_threshold_pp=args.H1_magnitude_pp,
+                      alpha=args.alpha, transparency_K_h1=args.transparency_K_h1,
+                      bootstrap_seed=args.seed)
+    h2 = evaluate_h2_cost(cells_by_id, cost_margin_pct=args.H2_cost_margin_pct,
+                           transparency_K_h2=args.transparency_K_h2)
+    h3_axis1 = evaluate_h3_axis(cells_by_id, axis_mode_key="sr_ptext",
+                                  ref_mode_key="sr_psom",
+                                  min_unique_count=args.H3_min_unique_count,
+                                  alpha=args.alpha,
+                                  transparency_K_h3=args.transparency_K_h3,
+                                  bootstrap_seed=args.seed)
+    h3_axis2 = evaluate_h3_axis(cells_by_id, axis_mode_key="sr_pprompt",
+                                  ref_mode_key="sr_psom",
+                                  min_unique_count=args.H3_min_unique_count,
+                                  alpha=args.alpha,
+                                  transparency_K_h3=args.transparency_K_h3,
+                                  bootstrap_seed=args.seed)
+    framing = apply_framing_rule(h1, h2, h3_axis1, h3_axis2)
 
     result = {
         "captured_at": datetime.now(timezone.utc).isoformat(),
-        "n_cells": len(cells),
-        "thresholds": {
-            "K_h1": args.K_h1,
-            "K_h3": args.K_h3,
-            "TOST_delta_pp": args.TOST_delta,
-            "H3_min_lift_pp": args.H3_min_lift_pp,
-        },
+        "scope": "Phase 1a 24-condition / 4-cell statistical analysis",
+        "n_cells": len(cells_by_id),
+        "n_tasks_total": sum(len(t) for t in cells_by_id.values()),
+        "cell_ids": list(cells_by_id.keys()),
         "input_data_sha256": input_sha,
-        "H1": h1,
-        "H3": h3,
-        "TOST": tost,
-        "overall_decision": overall,
-        "summary_paper_table5": {
-            "H1_text": f"H1: Phantom-SoM ≥ best baseline in {h1['n_pass']}/{h1['n_cells']} cells "
-                      f"(threshold {h1['k_threshold']}, decision {h1['decision']})",
-            "H3_text": f"H3: drop-one oracle lift ≥ {h3['min_lift_pp']:.1f}pp in {h3['n_pass']}/{h3['n_cells']} cells "
-                      f"(threshold {h3['k_threshold']}, decision {h3['decision']})",
-            "TOST_text": f"TOST: cost equivalence δ=±{tost.get('delta_pp', 'N/A')}pp, "
-                        f"observed {tost.get('mean_diff_pp', 'N/A'):.2f}pp, "
-                        f"CI95 {tost.get('ci_95', 'N/A')}, decision {tost['decision']}"
-                        if tost.get("ci_95") else f"TOST: {tost.get('reason', 'N/A')}",
+        "thresholds": {
+            "primary_gate_method": "pooled_DerSimonian_Laird_meta + TOST + magnitude",
+            "TOST_delta_pp": args.TOST_delta_pp,
+            "H1_magnitude_pp": args.H1_magnitude_pp,
+            "H2_cost_margin_pct": args.H2_cost_margin_pct,
+            "H3_min_unique_count": args.H3_min_unique_count,
+            "transparency_K_h1": args.transparency_K_h1,
+            "transparency_K_h3": args.transparency_K_h3,
+            "transparency_K_h2": args.transparency_K_h2,
+            "alpha": args.alpha,
+        },
+        "H1_psom_drop_one": h1,
+        "H2_cost_equivalence": h2,
+        "H3_axis1_ptext_unique": h3_axis1,
+        "H3_axis2_pprompt_unique": h3_axis2,
+        "framing_rule": framing,
+        "primary_gate_summary": {
+            "H1": h1["primary_gate"]["decision"],
+            "H2": "PASS" if h2["h2a_cost_equivalence"]["consistent"] else "FAIL",
+            "H3_axis1": h3_axis1["primary_gate"]["decision"],
+            "H3_axis2": h3_axis2["primary_gate"]["decision"],
+        },
+        "transparency_summary": {
+            "K_h1": f"{h1['transparency_K_h1']['n_individually_holm_sig']}/{h1['transparency_K_h1']['N']} ≥ {h1['transparency_K_h1']['K']}?  {'YES' if h1['transparency_K_h1']['consistent'] else 'NO'}",
+            "K_h3_axis1": f"{h3_axis1['transparency_K_h3']['n_cells_pass']}/{h3_axis1['transparency_K_h3']['N']} ≥ {h3_axis1['transparency_K_h3']['K']}?  {'YES' if h3_axis1['transparency_K_h3']['consistent'] else 'NO'}",
+            "K_h3_axis2": f"{h3_axis2['transparency_K_h3']['n_cells_pass']}/{h3_axis2['transparency_K_h3']['N']} ≥ {h3_axis2['transparency_K_h3']['K']}?  {'YES' if h3_axis2['transparency_K_h3']['consistent'] else 'NO'}",
         },
     }
 
-    payload = json.dumps(result, indent=2)
+    payload = json.dumps(result, indent=2, default=float)
     if args.out == "-":
         print(payload)
     else:
@@ -361,10 +731,19 @@ def main():
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(payload)
         logger.info(f"Result → {out_path}")
-        logger.info(f"Overall decision: {overall}")
-        logger.info(f"  H1: {h1['decision']} ({h1['n_pass']}/{h1['n_cells']}, p_binomial={h1['p_binomial_h0_random']:.4f})")
-        logger.info(f"  H3: {h3['decision']} ({h3['n_pass']}/{h3['n_cells']})")
-        logger.info(f"  TOST: {tost['decision']}")
+        logger.info(f"Framing rule: {framing['rule']} — {framing['framing']} (hook power: {framing['hook_power']})")
+        logger.info(f"  H1: {h1['primary_gate']['decision']} (pooled drop-one {h1['primary_gate']['pooled_meta']['pooled_effect']:.2f}pp, "
+                    f"superiority p={h1['primary_gate']['superiority_test']['p_one_sided']:.4f}, "
+                    f"TOST equiv {h1['primary_gate']['tost_informational']['decision']})")
+        logger.info(f"  H2: {'PASS' if h2['h2a_cost_equivalence']['consistent'] else 'FAIL'} "
+                    f"({h2['h2a_cost_equivalence']['n_cells_pass']}/{h2['h2a_cost_equivalence']['N']} cells within ±{args.H2_cost_margin_pct}% cost)")
+        logger.info(f"  H3 axis-1 (P-text): {h3_axis1['primary_gate']['decision']} "
+                    f"(pooled unique={h3_axis1['primary_gate']['pooled_meta']['pooled_effect']:.2f})")
+        logger.info(f"  H3 axis-2 (P-prompt): {h3_axis2['primary_gate']['decision']} "
+                    f"(pooled unique={h3_axis2['primary_gate']['pooled_meta']['pooled_effect']:.2f})")
+        logger.info(f"  Transparency K_h1: {result['transparency_summary']['K_h1']}")
+        logger.info(f"  Transparency K_h3 axis-1: {result['transparency_summary']['K_h3_axis1']}")
+        logger.info(f"  Transparency K_h3 axis-2: {result['transparency_summary']['K_h3_axis2']}")
 
 
 if __name__ == "__main__":

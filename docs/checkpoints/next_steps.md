@@ -96,39 +96,47 @@ updated: 2026-05-10
 
 ---
 
-## §1 16-cell rerun launch sequence (post advisor email + A100 SSH)
+## §1 Phase 1 paper-grade rerun launch sequence (post advisor email + A100 SSH)
 
-**Scope** (post-5/5 sync, student-decided 16 cells):
-- B0×{cls, red}×3 phantom (P-text / P-SoM / P-prompt) = 6
-- B1×{cls, red}×3 phantom = 6
-- B0×shop×{P-text, P-SoM} = 2 (P-prompt scope cut, advisor confirmed)
-- B1×shop×{P-text, P-SoM} = 2
-- **Total: 16 cells**
+**Scope revised 2026-05-13 post codex stress audit** (replaces prior 16-cell phantom-only scope):
 
-**Orchestrator**: `bash scripts/queues/queue_16cell_paper_grade.sh dry-run` (preview) → `... launch` (3 parallel chains: cls / red / shop).
+**Phase 1a (workshop-targeted, immediate launch)** — 24 operational conditions across 4 statistical cells:
+- B0 × cls × {DOM, SoM, Vision, P-text, P-SoM, P-prompt} = 6
+- B0 × red × {DOM, SoM, Vision, P-text, P-SoM, P-prompt} = 6
+- B1 × cls × {DOM, SoM, Vision, P-text, P-SoM, P-prompt} = 6
+- B1 × red × {DOM, SoM, Vision, P-text, P-SoM, P-prompt} = 6
+- **Total: 24 conditions = 2 sites × 2 models × 6 modes, 4 statistical (site, model) cells**
+
+**Phase 1b (main paper expansion, deferred to post-workshop)** — 12 conditions:
+- B0 × shop × {DOM, SoM, Vision, P-text, P-SoM, P-prompt} = 6
+- B1 × shop × {DOM, SoM, Vision, P-text, P-SoM, P-prompt} = 6
+- Feeds R3 → R1 / Option D framing decision for main paper
+
+**Orchestrator**: `bash scripts/queues/queue_phase1_paper_grade.sh dry-run` (preview) → `... launch` (Phase 1a default = cls + red parallel chains). Phase 1b launches via `launch phase1b shop`.
 
 **Pre-launch gates** (orchestrator auto-checks):
-1. `preregistration.md` no `TBD` in K_h1 / K_h3 / TOST_delta lines
+1. `preregistration.md` status `locked` + no `TBD` in threshold lines (incl. 2026-05-13 K-of-N transparency reclassification propagated)
 2. `results/provenance/env_<host>_baseline.json` committed
 3. `results/provenance/vwa_<host>_baseline.json` committed
 4. `bash scripts/preflight_v2.sh` passes
 5. GPU CUDA available (smoke `python3 -c "import torch; print(torch.cuda.is_available())"`)
 6. No conflicting active runs (`pgrep -f run_experiment` ≤ existing approved chains)
 
-**ETA on A100 40GB** (post-advisor lock):
-| Chain | Cells | ETA |
+**ETA on A100 40GB** (Phase 1a, post-advisor lock):
+| Chain | Conditions | ETA |
 |---|---|---|
-| cls | 6 (B0 12h → B1 24h) | 36h |
-| red | 6 (B0 10h → B1 20h) | 30h |
-| shop | 4 (B0 16h → B1 32h) | 48h |
-| **Total wallclock (parallel)** | 16 | **~48h ≈ 2 days** |
+| cls | 12 (B0 24h → B1 48h) | 72h ≈ 3 days |
+| red | 12 (B0 20h → B1 40h) | 60h ≈ 2.5 days |
+| **Phase 1a wallclock (parallel)** | 24 | **~72h ≈ 3 days** |
+| Phase 1b shop (post-workshop) | 12 (B0 32h → B1 64h) | 96h ≈ 4 days |
 
 **Post-completion**:
 ```bash
 make analysis                                    # rerun all aggregators + figures
 python3 scripts/analysis/preregistration_decision_test.py \
     --cells-csv results/phantom_paper/cells_aggregated.csv \
-    --K_h1 12 --K_h3 11 --TOST-delta 1.0 \
+    --primary-gate drop_one_pooled_meta_TOST \
+    --transparency-K_h1 3 --transparency-K_h3 3 --TOST-delta 1.0 \
     --out results/phantom_paper/preregistration_test_results.json
 ```
 Output → paper §5 Table 5 quotable JSON.
@@ -221,7 +229,7 @@ From 2026-05-07 pipeline audit (笔记 §114 follow-up):
 | 🟡 R2 | A100 cron / live status setup (cells.base / PLAYBOOK) | 1 h | A100 SSH + crontab dump |
 | 🟡 R3 | Energy tracking pynvml test on A100 | 15 min | A100 SSH |
 | 🟡 R4 | Stage 2B `--resume` flag for reboot recovery | 10 min | Independent (can do on DGX) |
-| 🟡 R6 | `check_evaluator_consistency.py` (Gate 7 in `queue_16cell_paper_grade.sh`) — verify all cells' most-recent `rederive_metadata.evaluator_code_sha` == lock-time SHA | 30 min | OSF DOI lock prep (笔记 §115 Protocol B §6) |
+| 🟡 R6 | `check_evaluator_consistency.py` (Gate 7 in `queue_phase1_paper_grade.sh`) — verify all conditions' most-recent `rederive_metadata.evaluator_code_sha` == lock-time SHA | 30 min | OSF DOI lock prep (笔记 §115 Protocol B §6) |
 | 🟢 N1 | Bonferroni correction paper §3 paragraph | 10 min | Paper write phase |
 | 🟢 N2 | Power analysis script | 30 min | Paper write phase |
 | 🟢 N3 | Phantom variant FP rules | 1 h | Post 16-cell rerun |
@@ -315,7 +323,7 @@ docs/analysis/B1_capability_profile.md
 ### Key infra paths
 ```
 configs/exp_v2_*.yaml                              per-site experiment configs
-scripts/queues/queue_16cell_paper_grade.sh         🆕 16-cell orchestrator (post-advisor)
+scripts/queues/queue_phase1_paper_grade.sh         🆕 Phase 1 paper-grade orchestrator (Phase 1a 24-cond default + Phase 1b shop deferred)
 scripts/queues/queue_chain.sh                      sequential chain wrapper
 scripts/queues/queue_phantom_*.sh                  per-cell launch
 scripts/maintenance/reset_vwa_sites.sh             DGX→quark PowerShell reset

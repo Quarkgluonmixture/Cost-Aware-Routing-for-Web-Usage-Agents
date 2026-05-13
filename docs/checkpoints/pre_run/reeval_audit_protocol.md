@@ -121,7 +121,7 @@ At OSF DOI lock (Protocol A §3, `osf_lock_manifest.md` 8-step workflow):
 2. The most recent `evaluator_code_sha` across all locked cells must match the lock-time `evaluator_code.combined_sha256` from `env_snapshot.json`
 3. If any cell has an `evaluator_code_sha` that differs from the lock-time SHA → MUST re-derive that cell pre-lock, OR document the discrepancy in `osf_lock_manifest.md` §2.5 with rationale
 
-**Lock-time check script** (paper-grade gate, to be added to `queue_16cell_paper_grade.sh` Gate 7):
+**Lock-time check script** (paper-grade gate, to be added to `queue_phase1_paper_grade.sh` Gate 7):
 ```bash
 python3 scripts/provenance/check_evaluator_consistency.py --manifest run_manifest.yaml \
   --lock-snapshot results/provenance/env_<host>_lock.json
@@ -162,4 +162,4 @@ diverging SHA in the post-lock entry is the immutable evidence.
 - `docs/checkpoints/pre_run/evaluator_change_protocol.md` (Protocol A — Tier classification)
 - `docs/checkpoints/pre_run/osf_lock_manifest.md` (lock-time SHA capture)
 - `docs/checkpoints/pre_run/preregistration.md` (FP filter primary commitment)
-- Pre-launch gate: `scripts/queues/queue_16cell_paper_grade.sh` Gate 7 (TODO)
+- Pre-launch gate: `scripts/queues/queue_phase1_paper_grade.sh` Gate 7 (TODO)

@@ -8,9 +8,15 @@
 > - **Part 2**: paper 拆分 + Mechanistic 该独立还是 nested 这块想跟您 confirm
 > - **Part 3**: 来不及讨论的 + 需 email 回的 (主要是 pre-reg threshold)
 >
-> 已 confirmed 的不重列: early-stop A 全 cancel / GPU 走您 5090 + Rancher / **rerun 16 cell** (我 decide 这个, B0 × {cls,red,shop} × 3 phantom + B1 × {cls,red,shop} × 3 phantom).
+> 已 confirmed 的不重列: early-stop A 全 cancel / GPU 走您 5090 + Rancher.
 >
-> 我 5/12-6/1 考试, 这两天能 lock 完我就 launch 实验然后专心复习, 麻烦您扫一眼回个 email 即可!
+> **Rerun scope 2026-05-13 revised (post codex stress audit)**: 之前 follow-up 里写的 "16 cell (B0 × {cls,red,shop} × 3 phantom + B1 × {cls,red,shop} × 3 phantom)" 实际算数有歧义 (3 sites × 3 phantom × 2 baselines = 18, 不是 16). 而且 phantom-only scope **缺 fresh DOM/SoM/Vision baseline rerun**, drop-one CI 无法 paper-grade (codex audit Flaw 1).
+>
+> 我重新组织成两阶段:
+> - **Phase 1a (workshop-targeted, immediate launch)**: 24 operational conditions = 2 sites (cls + red) × 2 models (B0 + B1) × 6 modes (DOM / SoM / Vision / P-text / P-prompt / P-SoM). 统计分析 4 个 cell (= (site, model) tuple), pooled DerSimonian-Laird meta + TOST primary gate. 投 workshop 这一档.
+> - **Phase 1b (main paper expansion, post-workshop)**: 额外 12 conditions = shop × 2 models × 6 modes. 跑完 1a 投完 workshop 再跑这个, 看 shop 是不是 replicate cls+red phantom-SoM 4-fold property, 决定 main paper §1 hook 是 R3 (cls+red only) 还是 R1 (升级到 3-site).
+>
+> 我 5/12-6/1 考试, 这两天能 lock 完我就 launch Phase 1a 然后专心复习, 麻烦您扫一眼回个 email 即可!
 
 ---
 
@@ -138,63 +144,56 @@ forest plot 当时 Slack 没传过去您没看到. 我会 commit + push 完发�
 
 **为什么必须 pre-commit**: paper §1 footnote 会 cite "**pre-registered with advisor email witness on \<date\>, git commit \<SHA\>, OSF DOI**". 数据没出来前 commit, 数据出来后改不了. Reviewer 看到这个 footnote 就不会攻击 "你 cherry-pick 阈值 to make hero pass". 这是 paper rigor 关键, 也是为什么需要您 email 见证 — git commit 时间戳一个人能改, email + OSF 双层 audit trail 改不了.
 
-#### (a) K_h1 = 75% — Hero claim 通过率
+#### (a) K_h1 = 0.75 transparency ratio — Hero claim per-cell consistency (NOT gate, 2026-05-13 reclassified)
 
-**测什么**: P-SoM 在多少 % 的 cell 里 Holm-corrected p < 0.05 显著, 才算 hero claim 通过.
+**测什么**: P-SoM drop-one oracle ceiling lift > 0 在多少 % 的 statistical cell 里 individually Holm-significant. **现在是 transparency consistency check, NOT a gate on H1 paper claim**.
 
-**16-cell rerun 下**: 至少 **12/16 (=75%) cell** 必须 P-SoM 显著, hero claim (paper §1 R1 strongest framing) 才 hold. 不到 → 退到 R3 framing ("P-SoM 是 hidden 4th routing arm" 弱版本) 或 R5 (paper death pivot to VWA bug audit).
+**Phase 1a 24-condition / 4-cell scope 下**: ⌈0.75 × 4⌉ = **3 of 4 cells** individually clear Holm α=0.05 (报在 §4 per-cell table 作为 reviewer transparency consistency 行).
 
-**为什么 75% 而不是 50% 或 90%**:
-- 50% → 8/16 cell pass 就算赢, 太弱, hero claim 几乎 trivially 成立, reviewer 一眼看穿
-- 90% → 14/16 cell 必须 hold, 1-2 个 noise cell 就 fail, paper 死太容易
-- **75%** → 容忍 4 个 outlier, 但要求 majority strong. 是 NeurIPS / ICLR 这种 venue reviewer 接受的 norm
+**为什么 reclassify 成 transparency 而不是 gate (2026-05-13 codex audit Flaw 2)**:
+- Power analysis (`docs/analysis/cross_sites/power_analysis.md`, pre-data): K-of-N family power at observed 1-3pp effect sizes (phenomenon 实际 magnitude) < 10%, calibrated 只 for ≥7pp effects
+- N=4 cells × per-cell power ≈ 0.30 at 1.5pp → P(≥3 of 4 sig) ≈ 8%, K-as-gate 设计上必 fail 即使 phenomenon 真实
+- N=4 太小 K-of-N 退化 (只 5 个 outcome state)
+- **Primary H1 gate** = (i) pooled DerSimonian-Laird random-effects meta on 4 cells 在 Holm α=0.05 显著 + (ii) pooled magnitude θ_RE ≥ 1.0pp + TOST δ=1.0pp reject equivalence
 
-**Expected outlier 来源 (在 4 个容忍范围内)**:
-- B1 shop SR 极低 (~5%), statistical power 不足
-- B1 cls capability-modulated reversal (B0 cls hero pattern 在 B1 反转, post-hoc N=4 已观察到)
-- Cell-level cross-mode correlated noise (random seed × site × mode)
+**Pre-data reclassification timestamp**: 2026-05-13 commit predates Phase 1a launch, OSF DOI 见证 audit trail 显示 reclass 在 unblind 之前 (防 reviewer 攻击 "你看了数据再 weaken gate").
 
-**选错风险**: 选低 → hero claim 弱; 选高 → 1 noise cell 破 paper.
+#### (b) K_h3 = 0.67 transparency ratio — Structural claim per-cell consistency (NOT gate)
 
-#### (b) K_h3 = 67% — Structural claim 通过率
-
-**测什么**: phantom space 不是塌成 1 个点, 是 **2-axis 结构** — P-text (text-flattening axis) 跟 P-prompt (SoM-prompt axis) 各自有 P-SoM 解不了的 unique tasks.
+**测什么**: phantom space 是 2-axis 结构 — P-text (text-flattening axis) 跟 P-prompt (SoM-prompt axis) 各自有 P-SoM 解不了的 unique tasks.
 
 **计算方式 per cell**:
 - |P-text ∖ P-SoM| = P-text 解出但 P-SoM 没解出的 task 数
 - |P-prompt ∖ P-SoM| = P-prompt 解出但 P-SoM 没解出的 task 数
 - Bootstrap (resample tasks with replacement, 1000 次) → 95% CI on each count
-- **Cell pass = 两个 CI 下界都 > 0** (P-text + P-prompt 各自 unique-task count 都统计上非零, 同时 ≥ 2 tasks 防 1-task 噪声)
+- **Cell pass = CI 下界 > 0** + ≥ 2 tasks (1 task 是 noise floor)
 
-**16-cell 下**: 至少 **11/16 (=67%) cell pass**, structural claim 才 hold. Fail → paper hook framing 退到 R3 (P-SoM hero only, 不分 axis).
+**Phase 1a 4-cell 下**: ⌈0.67 × 4⌉ = **3 of 4 cells** per axis 作为 transparency 行.
 
-**为什么 67% 而不是 75%**:
-- Structural 是 **supporting** contribution (axis decomposition), 比 hero deployment claim 弱 commit
-- P-text + P-prompt 数据 noisier than P-SoM (single-axis 别扭, performance variance 大)
-- 67% (=2/3) 是 "majority of cells but not strict" 的 conventional cutoff, 跟 NeurIPS pre-reg 范例一致
+**Primary H3 gate** = pooled axis-1 + axis-2 DerSimonian-Laird meta Holm α=0.05 (两个 axis 独立 sub-family, 各 m=1).
 
-**选错风险**: 选高 → 容易退回 R3, paper claim 弱化; 选低 → structural claim 不 trivial.
+Same reclassification rationale as K_h1.
 
-#### (c) TOST δ = 1.0pp — Equivalence margin (drop-in property a)
+#### (c) TOST δ = 1.0pp — Equivalence margin (single canonical interpretation)
 
-**测什么**: "P-SoM cost ≈ DOM" (4-fold drop-in 第 (a) 项). 这是 **equivalence claim** ("cost 没有 substantive difference"), 不是 difference claim (常规 t-test). 所以用 TOST (Two One-Sided Tests for equivalence).
+**测什么**: 用作 H1(ii) drop-one effect-size equivalence margin (pooled drop-one lift 是 ≥ 1.0pp 而不是 ≈ 0). H1(iii) 的 TOST reject equivalence at δ=1.0pp 意思是 "drop-one lift 显著 > 1pp, 不是统计噪声".
 
-**δ 是什么**: equivalence 边界. effect 在 [−δ, +δ] 内算 equivalent (i.e. cost 差异 ≤ ±1pp 就算 ≈).
+**注意 (2026-05-13 disambiguation, codex probable concern)**: 这个 δ=1.0pp 是 **SR percentage-point margin**, 不是 cost equivalence margin. H2(a) "cost ≈ DOM" 用另一个 margin ±10% relative cost (不复用同一个 δ). 之前 prereg 跟 advisor follow-up 这两处单位有混淆, 现在显式区分.
 
 **为什么 1.0pp 而不是 0.5pp 或 3pp**:
-- N=234 (cls) / 210 (red) / 466 (shop), 单 task ≈ 0.43pp / 0.48pp / 0.21pp
-- Bootstrap iteration noise + cell-level correlated error 实测约 0.7-1.0pp (paper §4 disclosure 已用 archived 数据估)
-- δ = 0.5pp → 比 noise floor 还小, TOST 永远测不出 equivalence (Type II error 高)
-- δ = 3pp → 太松, 任何接近 cost 都被 declare equivalent, equivalence claim 太 cheap
+- N=234 (cls) / 210 (red), 单 task ≈ 0.43pp / 0.48pp
+- Bootstrap iteration noise + cell-level correlated error 实测约 0.7-1.0pp
+- δ = 0.5pp → 比 noise floor 还小, TOST 永远测不出 (Type II error 高)
+- δ = 3pp → 太松, equivalence claim 太 cheap
 - **δ = 1.0pp ≈ 2 tasks @ N=234**, noise floor 上方安全 margin
 
-**选错风险**: 选小 → 测不出 (drop-in (a) 实际 hold 但 statistically can't claim); 选大 → 容易 reject equivalence, claim 太 weak.
+**选错风险**: 选小 → drop-one 实际 hold 但 statistically can't claim; 选大 → claim 太 weak.
 
 #### Email confirm 模板
 
-GitHub 链接我 push 完发您, 您扫 `preregistration.md` + 3 张 forest figure (`fig_meta_forest.png` / `fig_forest_drop_one.png` / `fig_phantom_structure_venn.png`), email 回:
+GitHub 链接我 push 完发您, 您扫 `preregistration.md` (含 2026-05-13 codex stress audit 6 fix 的 propagated 更新 + Appendix A decision log 2026-05-13 entry) + 3 张 forest figure, email 回:
 
-> "I have reviewed the pre-registration thresholds (K_h1=0.75, K_h3=0.67, TOST δ=1.0pp at 16-cell rerun scope) on \<date\> and witness them as committed before data unblinding."
+> "I have reviewed the pre-registration revision (K_h1=0.75 transparency-only / K_h3=0.67 transparency-only / TOST δ=1.0pp SR-margin / Phase 1a 24 conditions across 4 cells: cls+red × B0+B1 × 6 modes / Phase 1b shop deferred / outcome-independent smoke gate / pooled DerSimonian-Laird meta + TOST primary gating) on \<date\> and witness them as committed before Phase 1a data unblinding."
 
 (您可以加任何 condition, e.g. "subject to my final review of the rerun protocol", 都 OK. 关键是 timestamp + explicit acknowledge 留 audit trail.)
 
