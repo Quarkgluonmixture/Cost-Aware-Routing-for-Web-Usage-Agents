@@ -27,10 +27,17 @@ Outputs:
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+# Pipeline audit P0-7 fix (2026-05-13): shared paired helpers
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _paired_npz_helpers import (  # noqa: E402
+    load_v2_npz, paired_rows, paired_cosine_gap_per_layer, task_bootstrap_ci,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_NPZ_CLS = ROOT / "results/mechanistic/stage4_multimode_b1_cls/hidden_states_v2_fixed.npz"
@@ -48,80 +55,110 @@ PAIRS = [
 ]
 
 
-def cosine_gap(a: np.ndarray, b: np.ndarray) -> float:
-    return float(1.0 - np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-9))
+def compute_pair_curves(npz_path: Path, n_boot: int = 1000) -> tuple[dict, int]:
+    """Per-task paired cosine gap per layer with bootstrap CI band.
 
+    P0-7 fix (2026-05-13): Previously computed `means[m] = H[mask].mean(axis=0)` then
+    `cosine_gap(means[a][L], means[b][L])` — single cosine between two pooled means.
+    That mixes task-content variance into the "layer profile" claim. Now uses
+    (task_id, step) inner-join via `_paired_npz_helpers.paired_rows` then averages
+    per-task cosine gap, plus task-level bootstrap CI (1000 resamples) for the
+    paper-grade peak-layer precision claim (P1-6 freebie).
+    """
+    npz = load_v2_npz(npz_path)
+    n_layers = npz["H"].shape[1]
+    assert n_layers == 37, f"expected 37 layers (embed + 36 blocks), got {n_layers}"
 
-def compute_pair_curves(npz_path: Path) -> tuple[dict, int, dict]:
-    d = np.load(npz_path, allow_pickle=True)
-    H = d["hidden_states"]
-    ml = d["mode_labels_str"]
-    n_layers = H.shape[1]
-    means = {}
-    for m in {p[0] for p in PAIRS} | {p[1] for p in PAIRS}:
-        mask = ml == m
-        if mask.sum() == 0:
-            continue
-        means[m] = H[mask].mean(axis=0)
-
+    rng = np.random.default_rng(seed=20260513)
     curves = {}
     for a, b, label, group, color, ls in PAIRS:
-        if a not in means or b not in means:
+        try:
+            Ha, Hb, keys = paired_rows(npz, a, b)
+        except (KeyError, ValueError) as e:
+            print(f"  skip {label}: {e}")
             continue
-        curve = np.array([cosine_gap(means[a][L], means[b][L]) for L in range(n_layers)])
+        if len(keys) == 0:
+            continue
+        point, ci_lo, ci_hi = task_bootstrap_ci(
+            Ha, Hb, keys, paired_cosine_gap_per_layer,
+            n_boot=n_boot, rng=rng,
+        )
         curves[label] = {
-            "curve": curve,
+            "curve": point.astype(np.float64),
+            "ci_lo": ci_lo.astype(np.float64),
+            "ci_hi": ci_hi.astype(np.float64),
+            "n_paired": len(keys),
+            "n_unique_tasks": len(set(k[0] for k in keys)),
             "group": group,
             "color": color,
             "linestyle": ls,
             "mode_a": a,
             "mode_b": b,
-            "peak_L": int(np.argmax(curve)),
-            "peak_gap": float(curve.max()),
-            "L17": float(curve[17]) if n_layers > 17 else None,
-            "L4": float(curve[4]) if n_layers > 4 else None,
-            "L0": float(curve[0]),
-            "L_last": float(curve[-1]),
+            "peak_L": int(np.argmax(point)),
+            "peak_gap": float(point.max()),
+            "peak_ci_lo": float(ci_lo[int(np.argmax(point))]),
+            "peak_ci_hi": float(ci_hi[int(np.argmax(point))]),
+            "L17": float(point[17]) if n_layers > 17 else None,
+            "L17_ci_lo": float(ci_lo[17]) if n_layers > 17 else None,
+            "L17_ci_hi": float(ci_hi[17]) if n_layers > 17 else None,
+            "L4": float(point[4]) if n_layers > 4 else None,
+            "L0": float(point[0]),
+            "L_last": float(point[-1]),
         }
-    return curves, n_layers, means
+    return curves, n_layers
+
+
+def _site_rows(curves: dict, n_layers: int) -> list[str]:
+    out = [
+        f"| Pair | Group | L0 | L4 | L17 [CI] | L{n_layers-1} | Peak L | Peak gap [95% CI] | n_paired |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for label, info in curves.items():
+        out.append(
+            f"| {label} | {info['group']} | {info['L0']:.4f} | {info['L4']:.4f} | "
+            f"{info['L17']:.4f} [{info['L17_ci_lo']:.4f}, {info['L17_ci_hi']:.4f}] | "
+            f"{info['L_last']:.4f} | **L{info['peak_L']}** | "
+            f"{info['peak_gap']:.4f} [{info['peak_ci_lo']:.4f}, {info['peak_ci_hi']:.4f}] | "
+            f"{info['n_paired']} |"
+        )
+    return out
 
 
 def write_md(curves_cls: dict, curves_red: dict, n_layers: int, out: Path):
     out.parent.mkdir(parents=True, exist_ok=True)
+    # Dynamic N from curves (P2-1 fix: was hardcoded "288 ex")
+    n_cls = next(iter(curves_cls.values()))["n_paired"] if curves_cls else 0
+    n_red = next(iter(curves_red.values()))["n_paired"] if curves_red else 0
+    n_tasks_cls = next(iter(curves_cls.values()))["n_unique_tasks"] if curves_cls else 0
+    n_tasks_red = next(iter(curves_red.values()))["n_unique_tasks"] if curves_red else 0
     lines = [
-        "# Exp 1 — Axis-2 (prompt-family) layer profile",
+        "# Exp 1 — Axis-2 (prompt-family) layer profile — per-task paired (v2 NPZ)",
         "",
-        "**Question**: Method 4.2 at L17 shows prompt-family makes ~0 geometric contribution to residual stream",
-        "(P-SoM↔P-text 0.0028, DOM↔P-prompt 0.0013). But forest plot drop-one places P-SoM as unique hero,",
-        "implying axis-2 (prompt) contributes behaviorally. **Where in the model does axis-2 act?**",
+        "**P0-7 + P1-6 fix (2026-05-13)**: per-task paired cosine gap per layer with",
+        "task-level bootstrap 95% CI (1000 resamples). Previous version computed cosine",
+        "of pooled mode-means — mixed task-content variance into 'layer profile' claim.",
+        "Now uses (task_id, step) inner-join via `_paired_npz_helpers.paired_rows` then",
+        "averages per-task cosine gap. CI is from resampling tasks (NOT (task,step) rows)",
+        "with replacement, preserving within-task step paired structure.",
         "",
-        "**Method**: For each prompt-only pair (text format fixed, prompt swap), compute full 37-layer cosine gap.",
-        "Overlay axis-1-only (text swap, prompt fixed) + image-axis P-SoM↔SoM reference curves to calibrate scale.",
+        "**Question**: Method 4.2 at L17 shows prompt-family makes ~0 geometric contribution to residual stream.",
+        "But forest plot drop-one places P-SoM as unique hero, implying axis-2 (prompt) contributes",
+        "behaviorally. **Where in the model does axis-2 act?**",
         "",
-        "## Results — classifieds site (stage4_multimode_b1_cls, 288 ex)",
+        "**Method**: For each prompt-only pair (text format fixed, prompt swap), compute paired",
+        "per-task cosine gap across 37 layers. Overlay axis-1-only (text swap, prompt fixed) +",
+        "image-axis P-SoM↔SoM reference curves to calibrate scale.",
         "",
-        f"| Pair | Group | L0 | L4 | L17 | L{n_layers-1} | Peak L | Peak gap |",
-        f"|---|---|---:|---:|---:|---:|---:|---:|",
+        f"## Results — classifieds site (stage4_multimode_b1_cls, {n_cls} paired rows across {n_tasks_cls} unique tasks)",
+        "",
     ]
-    for label, info in curves_cls.items():
-        lines.append(
-            f"| {label} | {info['group']} | {info['L0']:.4f} | {info['L4']:.4f} | {info['L17']:.4f} | "
-            f"{info['L_last']:.4f} | **L{info['peak_L']}** | {info['peak_gap']:.4f} |"
-        )
-
+    lines += _site_rows(curves_cls, n_layers)
     lines += [
         "",
-        "## Results — reddit site (stage4_multimode_b1_reddit, 288 ex)",
+        f"## Results — reddit site (stage4_multimode_b1_reddit, {n_red} paired rows across {n_tasks_red} unique tasks)",
         "",
-        f"| Pair | Group | L0 | L4 | L17 | L{n_layers-1} | Peak L | Peak gap |",
-        f"|---|---|---:|---:|---:|---:|---:|---:|",
     ]
-    for label, info in curves_red.items():
-        lines.append(
-            f"| {label} | {info['group']} | {info['L0']:.4f} | {info['L4']:.4f} | {info['L17']:.4f} | "
-            f"{info['L_last']:.4f} | **L{info['peak_L']}** | {info['peak_gap']:.4f} |"
-        )
-
+    lines += _site_rows(curves_red, n_layers)
     lines += [
         "",
         "## Interpretation",
@@ -132,7 +169,8 @@ def write_md(curves_cls: dict, curves_red: dict, n_layers: int, out: Path):
         "2. **Late-layer spike** — axis-2 pair curves spike at L25+ but flat at mid-layer. Prompt prior re-emerges at output decoding. → Next: Exp 5 late-layer patching.",
         "3. **Early-layer spike absorbed** — axis-2 pair curves spike at L0-L5 then collapse to ~0. Prompt embedding effect absorbed by mid-layer fusion. → Next: Exp 3 logit lens to verify if it re-emerges in output distribution.",
         "",
-        "Compare peak layers above against axis-1 (text-format) pairs (the established mechanism with L17 peak) and image-axis reference (~0.04 magnitude). If axis-2 pair peak < 0.01 at all layers, hypothesis 1 holds.",
+        "Compare peak layers above against axis-1 (text-format) pairs and image-axis reference (~0.04 magnitude).",
+        "If axis-2 pair peak CI overlaps 0, hypothesis 1 holds; if CI lower-bound > 0.005, hypothesis 2 or 3.",
     ]
     out.write_text("\n".join(lines) + "\n")
     print(f"summary → {out}")
@@ -149,10 +187,13 @@ def plot(curves_cls: dict, curves_red: dict, n_layers: int, out: Path):
             alpha = 1.0 if info["group"] == "axis-2" else 0.7
             ax.plot(layers, info["curve"], color=info["color"], linestyle=info["linestyle"],
                     linewidth=lw, alpha=alpha, label=label)
+            # P1-6 fix (2026-05-13): bootstrap CI band, lighter shade per pair
+            ax.fill_between(layers, info["ci_lo"], info["ci_hi"],
+                            color=info["color"], alpha=0.15, linewidth=0)
         ax.axhline(0.01, color="gray", linestyle=":", linewidth=0.8, alpha=0.5)
         ax.axvline(17, color="gray", linestyle=":", linewidth=0.8, alpha=0.5)
         ax.set_xlabel("Layer index (L0 = embedding, L36 = final block)")
-        ax.set_title(f"{title}  (axis-2 = solid, axis-1 = dashed, image = dotted)", fontsize=10)
+        ax.set_title(f"{title}  (axis-2 = solid, axis-1 = dashed, image = dotted, 95% CI band)", fontsize=10)
         ax.grid(True, alpha=0.3)
         ax.legend(fontsize=7, loc="upper left")
 
@@ -173,11 +214,11 @@ def main():
     args = p.parse_args()
 
     print(f"Loading cls: {args.cls_npz}")
-    curves_cls, n_layers_cls, _ = compute_pair_curves(args.cls_npz)
+    curves_cls, n_layers_cls = compute_pair_curves(args.cls_npz)
     print(f"  {len(curves_cls)} pairs, {n_layers_cls} layers")
 
     print(f"Loading reddit: {args.red_npz}")
-    curves_red, n_layers_red, _ = compute_pair_curves(args.red_npz)
+    curves_red, n_layers_red = compute_pair_curves(args.red_npz)
     print(f"  {len(curves_red)} pairs, {n_layers_red} layers")
 
     assert n_layers_cls == n_layers_red, f"layer count mismatch cls={n_layers_cls} red={n_layers_red}"
