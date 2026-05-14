@@ -1438,8 +1438,18 @@ output: `docs/checkpoints/codex_outputs/prefire_pipeline_FINAL_2026-05-14.md`.
 
 | B# | Finding | Severity | Task | Note |
 |---|---|---|---|---|
-| B-85 | `has_effective_action` FP filter only counts `type`/`select_option`, not `click` → click-causal `program_html` tasks mis-downgraded | P0 | #67 | data-altering (changes SR definition) — deep研究 first, user decides |
 | B-86 | parse-error recovery scaffold asymmetry: B0-only GLM fallback + B1 `max_new_tokens=384` below parse-safe floor; codex confirmed it flows into `compute_adjusted_success` via `agent_finished` | P1 | #68 | advisor question asked 2026-05-14 (clean structured API data?) — awaiting reply; + ensure disclosure fields recorded pre-fire |
+
+### §139 FP-architecture restructure (2026-05-14) — replace post-hoc adjustment with source-level fixes
+
+Claude + codex cross-research (笔记 §139, codex outputs `b85_fp_filter_FINAL` + `vwa_eval_fp_search_FINAL`) established that the entire `compute_adjusted_success` post-hoc layer can be retired in favour of source-level fixes. Four pieces:
+
+1. **B-91 (na_fp + string_match eval_fp) 🛠️ FIXED** — evaluator-level empty-prediction guard (see entry below).
+2. **program_html eval_fp branch → DROP** — the `has_effective_action` heuristic (formerly B-85) has no defensible boundary and doesn't scale to WA + 6 sites; the contamination it targets is prevented upstream by the `RESET_BEFORE` protocol. Branch deleted from `analysis.py`; `has_effective_action` computation deleted from `runner/main.py`. *(in progress)*
+3. **N/A tasks → excluded from primary SR** — declared in preregistration + applied at task-selection (not post-hoc), citing WebArena-Verified / WONDERBREAD precedent (the VWA N/A evaluator cannot distinguish a reasoned unachievable judgement from an early exit). *(in progress)*
+4. **`adjusted_success` retired** — after 1-3, `adjusted_success ≡ success`; sweep downstream readers (analysis / figures / aggregators) to `success`. *(in progress)*
+
+**B-85** (`has_effective_action` only counts `type`/`select_option`) — 🔄 **SUPERSEDED** by this restructure (piece 2). Claude+codex research: of 13 archived episodes the current logic would eval_fp-downgrade, only 4 are legitimately click-only (vote/delete) and 8 are stale comment-task FPs the narrow filter accidentally caught — confirming the heuristic is unfixable in a scalable way. Resolution = drop the branch, not patch the heuristic.
 
 ### B-88. reference images in phantom "no-image" modes ❌ NOT_A_BUG
 
@@ -1461,6 +1471,17 @@ output: `docs/checkpoints/codex_outputs/prefire_pipeline_FINAL_2026-05-14.md`.
 - **Status**: 🛠️ **FIXED** (code). 2026-05-14.
 - **Fix**: `analysis.py` adds `cost_efficiency_ratio_adjusted` to `cond_df` (computed from `ep_df["adjusted_success"]` × `total_cost_usd`, guarded on column presence) in the same block that overrides `success_rate`; raw `cost_efficiency_ratio` kept untouched; `metrics.py` comment updated to point at the adjusted field. py_compile clean; smoke confirms the grouped ratio (c1 0.667 / c2 0.200).
 - **Paper impact**: adjusted-success cost tables can now use a matching adjusted ratio instead of silently mixing bases.
+
+### B-91. VWA evaluator credits empty-answer predictions — na_fp + string_match eval_fp root cause 🛠️ FIXED
+
+- **Origin**: Claude /stress B-85 follow-up → Claude code-read + codex cross-investigation (2026-05-14, 笔记 §139). codex outputs `b85_fp_filter_FINAL` + `vwa_eval_fp_search_FINAL`.
+- **Files**: `external/visualwebarena/evaluation_harness/helper_functions.py` (`llm_fuzzy_match` + `llm_ua_match`). VWA submodule commit `f0c835b` on branch `p79-patches`.
+- **Mechanism**: `StringEvaluator.__call__` takes `pred = last_action["answer"]` (`evaluators.py:212-213`). When the agent never submits a real finish, VWA `run.py:425-427` and the P79 runner (`runner/main.py:1426-1432`) both append a fake stop action with `answer=""`. The empty `pred` then reaches the LLM judges — `llm_fuzzy_match` (fuzzy `string_match`, `evaluators.py:274`) and `llm_ua_match` (N/A tasks, `evaluators.py:266`) — neither of which guarded against an empty prediction. GPT-4o-mini handed an empty answer can return `'correct'` / `'same'` → false-positive success. The deterministic string approaches (`exact_match` / `must_include` / `one_of` / `required_values`) already return 0 on empty `pred` — only the two LLM-judge paths FP. **na_fp and string_match eval_fp share this single root cause.**
+- **Literature context**: a known severe VWA/WebArena issue — WebArena-Verified classifies N/A scoring as an "evaluation mechanism issue" (the harness credits `"N/A"`, cannot distinguish a reasoned unachievable judgement from an early exit); PAE reports ~50% of WebArena "successes" are evaluator false positives; WONDERBREAD filters impossible tasks. No upstream VWA fix exists (`git log` on `evaluators.py`/`helper_functions.py` confirms).
+- **Status**: 🛠️ **FIXED** (code, VWA submodule). 2026-05-14.
+- **Fix**: deterministic `if not pred or not pred.strip(): return 0.0` guard at the top of both `llm_fuzzy_match` and `llm_ua_match` — return 0.0 before the LLM call. Source-level, deterministic, no judge-prompt change. py_compile clean; guard logic verified (empty/whitespace/None → 0.0; real answer / `"N/A"` → falls through). Strictly more correct than the prior post-hoc `compute_adjusted_success` na_fp/string_match downgrade: it also catches "agent finished but with an empty answer", which the old `¬agent_finished` keying missed.
+- **Supersedes**: P79's post-hoc `na_fp` + `eval_fp(string_match)` downgrade in `compute_adjusted_success` (part of the §139 FP-architecture restructure — `adjusted_success` retired once all 4 pieces land).
+- **Paper impact**: `success` is correct at the evaluator boundary; FP handling moves from a post-hoc adjustment layer to a documented source-level fix, defensible by citing the WebArena-Verified / PAE literature.
 
 Non-bug verify item ✅ VERIFIED (task #73, 2026-05-14): `phantom_text` config uses legacy
 `observation_mode: phantom_dom` → `condition_id = phase1_phantom_dom_router_0`. Confirmed safe:
