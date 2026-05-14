@@ -145,10 +145,8 @@ class EpisodeSummaryV2:
     # (single source of truth, eliminates 5 downstream re-computations).
     # adjusted_success: True iff raw success and not flagged as a false positive.
     # fp_reason: "" / "na_fp" / "eval_fp" — reason raw was downgraded.
-    # has_effective_action: any step had type/select_option (used by eval_fp).
     adjusted_success: Optional[bool] = None
     fp_reason: str = ""
-    has_effective_action: bool = False
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)

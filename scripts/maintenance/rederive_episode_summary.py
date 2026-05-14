@@ -61,7 +61,6 @@ class EpisodeRederiveResult:
     energy_step_complete_count: int
     n_steps: int
     n_finish_steps_excluded: int
-    has_effective_action: bool = False
     adjusted_success: Optional[bool] = None
     fp_reason: str = ""
 
@@ -76,18 +75,17 @@ def _action_type(step: Dict[str, Any]) -> str:
     return str(step.get("action_type", "") or "").lower()
 
 
-def _rederive_one(steps: List[Dict[str, Any]]) -> Tuple[float, bool, int, int, bool]:
+def _rederive_one(steps: List[Dict[str, Any]]) -> Tuple[float, bool, int, int]:
     """Compute (page_unchanged_rate, energy_partial, energy_step_complete_count,
-    n_finish_steps_excluded, has_effective_action) from raw step records."""
+    n_finish_steps_excluded) from raw step records."""
     if not steps:
-        return 0.0, False, 0, 0, False
+        return 0.0, False, 0, 0
     n_total = len(steps)
     # page_unchanged_rate excludes finish/stop steps from numerator AND denominator
     # would be ideal, but to stay consistent with the runner's new fix (which only
     # excludes from numerator), we mirror that exact formula.
     unchanged = 0
     n_finish = 0
-    has_effective_action = False
     for s in steps:
         at = _action_type(s)
         if at in _FINISH_TYPES:
@@ -95,8 +93,6 @@ def _rederive_one(steps: List[Dict[str, Any]]) -> Tuple[float, bool, int, int, b
             continue
         if not bool(s.get("page_changed", False)):
             unchanged += 1
-        if at in ("type", "select_option"):
-            has_effective_action = True
     page_unchanged_rate = unchanged / n_total if n_total else 0.0
 
     # Energy completeness
@@ -105,7 +101,7 @@ def _rederive_one(steps: List[Dict[str, Any]]) -> Tuple[float, bool, int, int, b
         if isinstance(s.get("energy"), dict) and s["energy"].get("kwh") is not None
     )
     energy_partial = energy_complete < n_total
-    return page_unchanged_rate, energy_partial, energy_complete, n_finish, has_effective_action
+    return page_unchanged_rate, energy_partial, energy_complete, n_finish
 
 
 def _process_episode(
@@ -136,7 +132,7 @@ def _process_episode(
         return None
 
     steps = read_jsonl_dedup(steps_path)
-    new_pur, energy_partial, energy_complete, n_finish, has_eff = _rederive_one(steps)
+    new_pur, energy_partial, energy_complete, n_finish = _rederive_one(steps)
 
     # §95 adjusted_success — re-derive for old data using runner's canonical
     # logic (Step 2 of plan). agent_finished is read from summary if present;
@@ -164,7 +160,6 @@ def _process_episode(
             na_task_ids=_na_ids,
             agent_finished=af,
             eval_type=et,
-            has_effective_action=has_eff,
         )
         adj_success = bool(adj_success_val)
         fp_reason = str(fp_val)
@@ -181,7 +176,6 @@ def _process_episode(
         energy_step_complete_count=energy_complete,
         n_steps=len(steps),
         n_finish_steps_excluded=n_finish,
-        has_effective_action=has_eff,
         adjusted_success=adj_success,
         fp_reason=fp_reason,
     )
@@ -212,7 +206,6 @@ def _process_episode(
     if "adjusted_success" in rewrite_set and adj_success is not None:
         summary["adjusted_success"] = adj_success
         summary["fp_reason"] = fp_reason
-        summary["has_effective_action"] = has_eff
 
     # Paper-grade audit trail (笔记 §115, reeval_audit_protocol.md): every
     # rederive invocation appends to summary['rederive_metadata'] history list.

@@ -1583,21 +1583,15 @@ class ExperimentRunner:
                 else []
             )
             _eval_type_str = "|".join(str(x) for x in _eval_types) if _eval_types else ""
-            _has_eff = any(
-                str((s.get("action") or {}).get("action_type", "")).lower() in ("type", "select_option")
-                for s in step_records
-            )
             _na_ids = self._na_ids_cache.get(task.site, set())
             _adj, _fp = compute_adjusted_success(
                 task.task_id, task.site, success,
                 na_task_ids=_na_ids,
                 agent_finished=_agent_finished,
                 eval_type=_eval_type_str,
-                has_effective_action=_has_eff,
             )
             episode_summary["adjusted_success"] = bool(_adj)
             episode_summary["fp_reason"] = str(_fp)
-            episode_summary["has_effective_action"] = bool(_has_eff)
         except Exception as _adj_exc:
             # F23 audit fix 2026-05-09: previously logged warning + wrote
             # adjusted_success=None and fp_reason="" silently. Downstream
@@ -1612,7 +1606,6 @@ class ExperimentRunner:
             )
             episode_summary["adjusted_success"] = None
             episode_summary["fp_reason"] = "adjustment_error"
-            episode_summary.setdefault("has_effective_action", False)
             if os.environ.get("P79_STRICT", "").lower() in ("1", "true", "yes"):
                 raise
 

@@ -55,21 +55,20 @@ def compute_adjusted_success(
     na_task_ids: set | None = None,
     agent_finished: bool | None = None,
     eval_type: str | None = None,
-    has_effective_action: bool | None = None,
 ) -> tuple:
     """Return (adjusted_success, fp_reason). fp_reason: '' / 'na_fp' / 'eval_fp'.
 
-    Priority (§95 simplified):
+    Priority (§95; §139.8 dropped the program_html eval_fp branch):
     1. raw_success=False → (False, '')
-    2. N/A FP: task in na_task_ids and raw_success
-       - If agent actively finished (not fallback) → true positive, keep
-       - Otherwise → (False, 'na_fp')  (coincidental match)
-    3. Eval FP: success + ~agent_finished + eligible eval_type
-       - string_match: always E-FP (empty answer GPT-4o-mini误判)
-       - program_html + ~has_effective_action: E-FP (no meaningful action → pre-existing state)
-       - url_match excluded: navigating to correct page without finish is legitimate
-       → (False, 'eval_fp')
-    4. Otherwise → (raw_success, '')
+    2. N/A FP: task in na_task_ids + raw_success + ~agent_finished → (False, 'na_fp')
+    3. string_match eval_fp: success + ~agent_finished → (False, 'eval_fp')
+
+    §139.8: the program_html eval_fp branch is removed — the `has_effective_action`
+    heuristic had no scalable boundary; program_html contamination is prevented
+    upstream by the RESET_BEFORE protocol. na_fp + string_match are also fixed at
+    the evaluator now (master bug B-91), so raw_success is already correct for
+    post-B-91 runs; branches 2-3 are kept only for re-deriving archived pre-B-91
+    summaries and retire with the full FP-architecture restructure.
     """
     if not raw_success:
         return (False, "")
@@ -88,10 +87,6 @@ def compute_adjusted_success(
         )
         if "string_match" in eval_types_set:
             return (False, "eval_fp")
-        if "program_html" in eval_types_set:
-            hea = has_effective_action if has_effective_action is not None else True
-            if not hea:
-                return (False, "eval_fp")
     return (raw_success, "")
 
 
@@ -152,7 +147,6 @@ def compute_adjusted_success_batch(ep_df, benchmark_site: str, benchmark: str = 
             na_task_ids=na_ids,
             agent_finished=_safe_bool(r["agent_finished"]) if "agent_finished" in r.index else None,
             eval_type=str(r["eval_type"]) if ("eval_type" in r.index and _pd.notna(r["eval_type"])) else None,
-            has_effective_action=_safe_bool(r["has_effective_action"]) if "has_effective_action" in r.index else None,
         ),
         axis=1,
     )

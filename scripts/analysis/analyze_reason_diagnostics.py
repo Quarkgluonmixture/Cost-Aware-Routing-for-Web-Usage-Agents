@@ -1975,11 +1975,6 @@ def main() -> None:
             # ── URL revisit & action diversity signals ──
             url_revisit_count, url_unique_count, url_revisit_max = _url_revisit_metrics(steps)
             action_diversity, action_unique_types = _action_diversity_metrics(steps)
-            _effective_types = {"type", "select_option"}
-            has_effective_action = any(
-                str((s.get("action") or {}).get("action_type", "")).lower() in _effective_types
-                for s in steps
-            )
 
             reason_bucket = _classify_reason(
                 success=success,
@@ -2008,7 +2003,6 @@ def main() -> None:
                 na_task_ids=_na_ids,
                 agent_finished=_is_agent_finished,
                 eval_type=eval_type,
-                has_effective_action=has_effective_action,
             )
             if adjusted_success != success:
                 adjusted_reason_bucket = _classify_reason(
@@ -2107,7 +2101,6 @@ def main() -> None:
                 "url_revisit_max": url_revisit_max,
                 "action_diversity": round(action_diversity, 4),
                 "action_unique_types": action_unique_types,
-                "has_effective_action": has_effective_action,
                 "require_reset": require_reset,
                 "answer_in_intent_price_range": answer_in_intent_price_range,
                 "reference_answers_json": json.dumps(ref_answers, ensure_ascii=False) if ref_answers is not None else "",
@@ -2232,7 +2225,6 @@ def main() -> None:
         "url_revisit_max",
         "action_diversity",
         "action_unique_types",
-        "has_effective_action",
         "require_reset",
         "answer_in_intent_price_range",
         "reference_answers_json",

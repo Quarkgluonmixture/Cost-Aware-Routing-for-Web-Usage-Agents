@@ -60,7 +60,8 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     "energy_step_complete_count": 0,         # §97 RU-5
     "adjusted_success": None,                # §97 Step-2
     "fp_reason": "",                         # §97 Step-2
-    "has_effective_action": False,           # §97 Step-2
+    # has_effective_action removed §139.8 — eval_fp program_html branch dropped;
+    # archived pre-§139.8 summaries may still carry the key (harmless, unread).
 }
 
 

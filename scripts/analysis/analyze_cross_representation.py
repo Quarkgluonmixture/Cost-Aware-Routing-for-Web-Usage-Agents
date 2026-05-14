@@ -337,7 +337,7 @@ def build_task_pivot(
     base = df.drop_duplicates(subset=["site", "task_id"])[available_task_cols].copy()
 
     # Per-mode columns
-    per_mode_fields = ["success", "reason_bucket", "steps", "final_action_type", "fallback_finish", "page_unchanged_rate", "has_effective_action", "url_unique_count"]
+    per_mode_fields = ["success", "reason_bucket", "steps", "final_action_type", "fallback_finish", "page_unchanged_rate", "url_unique_count"]
     for mode in modes:
         mode_df = df[df["mode"] == mode][["site", "task_id"] + per_mode_fields].copy()
         mode_df = mode_df.rename(columns={f: f"{mode}_{f}" for f in per_mode_fields})
@@ -367,9 +367,10 @@ def _mark_false_positives(
     """Add is_na_task + {mode}_na_fp + {mode}_eval_fp + {mode}_success_adj columns.
 
     N/A FP: any mode + N/A task + raw success + ~agent_finished.
-    Eval FP (§95 simplified):
-      string_match + success + ~agent_finished → always E-FP
-      program_html + success + ~agent_finished + ~has_effective_action → E-FP
+    Eval FP (§95; §139.8 dropped the program_html eval_fp branch):
+      string_match + success + ~agent_finished → E-FP
+      program_html eval_fp removed §139.8 — has_effective_action heuristic had
+      no scalable boundary; contamination prevented upstream by RESET_BEFORE.
       url_match excluded: navigating to correct page without finish is legitimate.
     """
     from p79.experiment.analysis import _load_na_task_ids
@@ -420,11 +421,9 @@ def _mark_false_positives(
     eval_fp_count: Dict[str, int] = {}
 
     _is_string_match = pd.Series(False, index=pivot.index)
-    _is_program_html = pd.Series(False, index=pivot.index)
     if "eval_type" in pivot.columns:
         _et = pivot["eval_type"].astype(str)
         _is_string_match = _et.str.contains("string_match", na=False)
-        _is_program_html = _et.str.contains("program_html", na=False)
 
     for m in modes:
         scol = f"{m}_success"
@@ -436,12 +435,10 @@ def _mark_false_positives(
         if scol not in pivot.columns:
             continue
         pivot[nfp_col] = pivot["is_na_task"] & (pivot[scol] == True) & ~pivot[af_col]
-        # Eval FP: string_match always; program_html + ~has_effective_action.
-        # Gate on af_known to avoid over-flagging when agent_finished can't be
-        # determined from data (matches canonical compute_adjusted_success).
-        _hea_col = f"{m}_has_effective_action"
-        _hea = pivot[_hea_col].fillna(True).astype(bool) if _hea_col in pivot.columns else pd.Series(True, index=pivot.index)
-        _efp_eligible_m = _is_string_match | (_is_program_html & ~_hea)
+        # Eval FP: string_match only (§139.8 dropped the program_html eval_fp
+        # branch). Gate on af_known to avoid over-flagging when agent_finished
+        # can't be determined from data (matches canonical compute_adjusted_success).
+        _efp_eligible_m = _is_string_match
         pivot[efp_col] = (
             _efp_eligible_m
             & (pivot[scol] == True)
