@@ -49,6 +49,34 @@ def _load_na_task_ids(site: str, benchmark: str = "visualwebarena") -> set:
         return set()
 
 
+def scored_task_count(site: str, benchmark: str = "visualwebarena") -> int:
+    """Number of tasks in the SCORED set for (site, benchmark).
+
+    §139.8 single source of truth for "EXPECTED_N": total tasks in the site
+    config minus the N/A (unanswerable) tasks excluded at load time
+    (`task.exclude_na_tasks`, see `tasks.py::load_tasks`). Replaces the
+    hardcoded `EXPECTED_N = {classifieds: 234, ...}` dicts scattered across
+    analysis + maintenance scripts — those pre-exclusion counts are stale
+    once N/A tasks are excluded. Returns 0 if the config cannot be read.
+    """
+    config_dir = _get_config_dir(benchmark)
+    config_path = config_dir / f"test_{site}.json"
+    if not config_path.exists():
+        config_path = config_dir / f"test_{site}.raw.json"
+    if not config_path.exists():
+        logger.warning("scored_task_count: config not found for site=%s benchmark=%s", site, benchmark)
+        return 0
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            tasks = json.load(f)
+    except Exception as exc:
+        logger.warning("scored_task_count: failed to read %s: %s", config_path, exc)
+        return 0
+    n_total = len(tasks)
+    n_na = len(_load_na_task_ids(site, benchmark))
+    return max(0, n_total - n_na)
+
+
 def compute_adjusted_success(
     task_id: int, benchmark_site: str,
     raw_success: bool, *,

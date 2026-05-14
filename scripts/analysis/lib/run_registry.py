@@ -27,7 +27,11 @@ LEGACY_MODE_ALIAS = {
 }
 SITES = ["classifieds", "reddit", "shopping"]
 BASELINES = ["B0", "B1"]
-EXPECTED_N = {"classifieds": 234, "reddit": 210, "shopping": 466}
+# §139.8: scored task counts (total − N/A tasks excluded at load time) from the
+# single source of truth. Pre-exclusion counts were classifieds 234 / reddit
+# 210 / shopping 466. A manifest entry's explicit `expected_n` still overrides.
+from p79.experiment.analysis import scored_task_count as _scored_task_count
+EXPECTED_N = {_s: _scored_task_count(_s, "visualwebarena") for _s in SITES}
 
 Grade = Literal["paper-grade", "paper-grade-pre-bug", "in-flight", "archived"]
 GRADES = ("paper-grade", "paper-grade-pre-bug", "in-flight", "archived")

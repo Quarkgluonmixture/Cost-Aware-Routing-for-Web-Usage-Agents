@@ -74,14 +74,18 @@ SITE_NORM = {
     "shopping": "shopping",
     "shopping_admin": "shopping_admin",
 }
-# Expected N keyed by (benchmark, site) — VWA reddit 210 ≠ WA reddit 106
+# Expected N keyed by (benchmark, site) — VWA reddit 210 ≠ WA reddit 106.
+# §139.8: scored counts (total − N/A tasks excluded at load time) from the
+# single source of truth. Pre-exclusion: vwa 234/210/466, wa 106/192/182.
+from p79.experiment.analysis import scored_task_count as _scored_task_count
+
+_BENCH_FULL = {"vwa": "visualwebarena", "wa": "webarena"}
 EXPECTED_N = {
-    ("vwa", "classifieds"): 234,
-    ("vwa", "reddit"): 210,
-    ("vwa", "shopping"): 466,
-    ("wa", "reddit"): 106,
-    ("wa", "shopping"): 192,
-    ("wa", "shopping_admin"): 182,
+    (_b, _s): _scored_task_count(_s, _BENCH_FULL[_b])
+    for _b, _s in (
+        ("vwa", "classifieds"), ("vwa", "reddit"), ("vwa", "shopping"),
+        ("wa", "reddit"), ("wa", "shopping"), ("wa", "shopping_admin"),
+    )
 }
 
 

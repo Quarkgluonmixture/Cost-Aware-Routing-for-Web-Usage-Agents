@@ -24,15 +24,20 @@ ROOT = Path(__file__).resolve().parents[2]
 RESULTS_VWA = ROOT / "results/visualwebarena/phase1"
 RESULTS_WA = ROOT / "results/webarena/phase1"
 
+# §139.8: scored task counts (total − N/A tasks excluded at load time) from the
+# single source of truth `scored_task_count`. Pre-exclusion counts were
+# vwa 234/210/466, wa 106/192/182.
+from p79.experiment.analysis import scored_task_count as _scored_task_count
+
 EXPECTED_N = {
     # VWA
-    "classifieds": 234,
-    "reddit": 210,
-    "shopping": 466,
+    "classifieds": _scored_task_count("classifieds", "visualwebarena"),
+    "reddit": _scored_task_count("reddit", "visualwebarena"),
+    "shopping": _scored_task_count("shopping", "visualwebarena"),
     # WA (cross-bench, prefix wa_*)
-    "wa_reddit": 106,
-    "wa_shopping": 192,
-    "wa_shopping_admin": 182,
+    "wa_reddit": _scored_task_count("reddit", "webarena"),
+    "wa_shopping": _scored_task_count("shopping", "webarena"),
+    "wa_shopping_admin": _scored_task_count("shopping_admin", "webarena"),
 }
 
 
