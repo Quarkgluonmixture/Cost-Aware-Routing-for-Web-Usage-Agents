@@ -1440,9 +1440,17 @@ output: `docs/checkpoints/codex_outputs/prefire_pipeline_FINAL_2026-05-14.md`.
 |---|---|---|---|---|
 | B-85 | `has_effective_action` FP filter only counts `type`/`select_option`, not `click` → click-causal `program_html` tasks mis-downgraded | P0 | #67 | data-altering (changes SR definition) — deep研究 first, user decides |
 | B-86 | parse-error recovery scaffold asymmetry: B0-only GLM fallback + B1 `max_new_tokens=384` below parse-safe floor; codex confirmed it flows into `compute_adjusted_success` via `agent_finished` | P1 | #68 | advisor question (clean API data?) + ensure disclosure fields recorded pre-fire |
-| B-88 | reference images injected into phantom "no-image" modes regardless of mode | P2 | #70 | image axis not clean on ref-image tasks |
-| B-89 | `cost_efficiency_ratio` stays raw-success based while `success_rate` is overwritten to adjusted | P2 | #71 | codex finding — mixes raw economics + adjusted conclusions |
+| B-88 | reference images injected into phantom "no-image" modes regardless of mode | P2 | #70 | image axis not clean on ref-image tasks — needs a design decision (drop ref images vs redefine image axis) |
 | B-90 | `_extract_text_marks` uses `re.search` (any-position `[N]` match) — over-inclusion, flagged in prior audits, still unfixed | P2 | #72 | evaluate impact on v2 `[SOM_MARKS]` payload |
+
+### B-89. `cost_efficiency_ratio` stays raw while `success_rate` is overridden to adjusted 🛠️ FIXED
+
+- **Origin**: codex Mode B C6 (2026-05-14, 笔记 §139).
+- **Files**: `p79/experiment/analysis.py` (`analyze_experiment` adjusted-override block), `p79/experiment/metrics.py` (comment).
+- **Mechanism**: `metrics.py::aggregate_condition_metrics` computes `cost_efficiency_ratio` from raw `success`. `analysis.py` overrides `cond_df["success_rate"]` to adjusted-success but never recomputes the ratio → any cost table using `cost_efficiency_ratio` mixes raw-success economics with adjusted-success SR conclusions.
+- **Status**: 🛠️ **FIXED** (code). 2026-05-14.
+- **Fix**: `analysis.py` adds `cost_efficiency_ratio_adjusted` to `cond_df` (computed from `ep_df["adjusted_success"]` × `total_cost_usd`, guarded on column presence) in the same block that overrides `success_rate`; raw `cost_efficiency_ratio` kept untouched; `metrics.py` comment updated to point at the adjusted field. py_compile clean; smoke confirms the grouped ratio (c1 0.667 / c2 0.200).
+- **Paper impact**: adjusted-success cost tables can now use a matching adjusted ratio instead of silently mixing bases.
 
 Non-bug verify item: `phantom_text` config uses legacy `observation_mode: phantom_dom` →
 `condition_id = phase1_phantom_dom_router_0`; confirm downstream mode-string aggregation

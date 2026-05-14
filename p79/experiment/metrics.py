@@ -379,9 +379,10 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             [float(x.get("wasted_energy_kwh", 0.0)) for x in episode_summaries]
         )),
         # Fraction of total cost spent on successful episodes (RAW success).
-        # NOTE: This uses raw `success` not adjusted (§95). Downstream
-        # analysis.py overrides condition success_rate to adjusted but does
-        # NOT recompute this ratio — caveat for paper interpretation.
+        # NOTE: This uses raw `success` not adjusted (§95). B-89: analysis.py
+        # adds a `cost_efficiency_ratio_adjusted` (adjusted-success based) to
+        # cond_df; use that for adjusted-success cost tables. This raw field
+        # is kept for raw-economics comparisons.
         "cost_efficiency_ratio": (
             sum(float(x.get("total_cost_usd", 0.0)) for x in episode_summaries if x.get("success"))
             / max(sum(float(x.get("total_cost_usd", 0.0)) for x in episode_summaries), 1e-12)

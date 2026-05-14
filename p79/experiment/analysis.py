@@ -1226,6 +1226,26 @@ def analyze_run(run_dir: str) -> Path:
             cond_df["success_rate"] = cond_df["success_rate_adj"].fillna(cond_df["success_rate"])
             cond_df.drop(columns=["success_rate_adj"], inplace=True)
 
+            # B-89: metrics.py's `cost_efficiency_ratio` is raw-success based and
+            # is NOT recomputed when success_rate is overridden to adjusted. Add
+            # an adjusted-success counterpart so cost tables don't silently mix
+            # raw economics with adjusted-success conclusions. The raw field is
+            # kept untouched as `cost_efficiency_ratio`.
+            if "total_cost_usd" in ep_df.columns:
+                def _cost_efficiency_ratio_adjusted(g):
+                    total = float(g["total_cost_usd"].astype(float).sum())
+                    succ = float(
+                        g.loc[g["adjusted_success"].astype(bool), "total_cost_usd"]
+                        .astype(float).sum()
+                    )
+                    return succ / max(total, 1e-12)
+                ratio_adj = (
+                    ep_df.groupby("condition_id")
+                    .apply(_cost_efficiency_ratio_adjusted)
+                    .reset_index(name="cost_efficiency_ratio_adjusted")
+                )
+                cond_df = cond_df.merge(ratio_adj, on="condition_id", how="left")
+
         # Inject adjusted success into episode_rows for _analyze_condition
         adj_map = ep_df.set_index(["condition_id", "task_id"])["adjusted_success"].to_dict()
         for r in episode_rows:
