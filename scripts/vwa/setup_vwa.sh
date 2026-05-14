@@ -185,8 +185,12 @@ download_shopping_image() {
     return 0
   fi
 
-  echo "Downloading shopping image..."
-  python_hf_download "webarena/Shopping" "shopping_final_0712.tar"
+  # HF dataset webarena/Shopping no longer exists (404 RepositoryNotFound,
+  # verified 2026-05-14). Use the CMU mirror from environment_docker/README.md
+  # (~68GB; wget -c resumes a partial download).
+  echo "Downloading shopping image (CMU mirror, ~68GB)..."
+  wget -c --tries=3 -O shopping_final_0712.tar \
+    "http://metis.lti.cs.cmu.edu/webarena-images/shopping_final_0712.tar"
   docker load < shopping_final_0712.tar
   rm -f shopping_final_0712.tar
 }
@@ -204,8 +208,10 @@ download_forum_image() {
     return 0
   fi
 
-  echo "Downloading forum image..."
-  python_hf_download "webarena/Reddit" "postmill-populated-exposed-withimg.tar"
+  # HF dataset webarena/Reddit no longer exists — CMU mirror (~53GB).
+  echo "Downloading forum image (CMU mirror, ~53GB)..."
+  wget -c --tries=3 -O postmill-populated-exposed-withimg.tar \
+    "http://metis.lti.cs.cmu.edu/webarena-images/postmill-populated-exposed-withimg.tar"
   docker load < postmill-populated-exposed-withimg.tar
   rm -f postmill-populated-exposed-withimg.tar
 }
@@ -221,9 +227,11 @@ download_wikipedia_data() {
     return 0
   fi
 
-  echo "Downloading Wikipedia ZIM..."
-  python_hf_download "webarena/Wikipedia" "wikipedia_en_all_maxi_2022-05.zim"
-  mv wikipedia_en_all_maxi_2022-05.zim "${wiki_file}"
+  # HF dataset webarena/Wikipedia no longer exists — CMU mirror (~90GB).
+  # wget -c writes straight to the final path and resumes a partial download.
+  echo "Downloading Wikipedia ZIM (CMU mirror, ~90GB)..."
+  wget -c --tries=3 -O "${wiki_file}" \
+    "http://metis.lti.cs.cmu.edu/webarena-images/wikipedia_en_all_maxi_2022-05.zim"
 }
 
 download_classifieds_data() {
@@ -236,10 +244,13 @@ download_classifieds_data() {
     return 0
   fi
 
-  echo "Downloading classifieds dataset..."
-  python_hf_download "webarena/Classifieds" "classifieds.tar.gz"
-  tar -xzf classifieds.tar.gz -C "${ENV_DIR}"
-  rm -f classifieds.tar.gz
+  # HF dataset webarena/Classifieds no longer exists — archive.org hosts
+  # classifieds_docker_compose.zip (a .zip, not .tar.gz; ~25MB).
+  echo "Downloading classifieds dataset (archive.org, ~25MB)..."
+  wget -c --tries=3 -O classifieds_docker_compose.zip \
+    "https://archive.org/download/classifieds_docker_compose/classifieds_docker_compose.zip"
+  unzip -o -q classifieds_docker_compose.zip -d "${ENV_DIR}"
+  rm -f classifieds_docker_compose.zip
 }
 
 main() {
