@@ -16,7 +16,7 @@
 #
 # 用法:
 #   bash scripts/queues/queue_baseline.sh <baseline> <mode> <site> [benchmark]
-#   - baseline:  B0 | B1
+#   - baseline:  B0 | B1 | B2
 #   - mode:      dom | som | vision
 #   - site:      classifieds | reddit | shopping | shopping_admin
 #   - benchmark: vwa (默认) | wa
@@ -40,7 +40,7 @@ REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_DIR}"
 
 if [[ $# -lt 3 ]]; then
-  echo "Usage: $0 <baseline:B0|B1> <mode:dom|som|vision> <site> [benchmark:vwa|wa]" >&2
+  echo "Usage: $0 <baseline:B0|B1|B2> <mode:dom|som|vision> <site> [benchmark:vwa|wa]" >&2
   echo "  e.g. bash $0 B0 dom shopping" >&2
   echo "       bash $0 B0 vision shopping wa" >&2
   exit 2
@@ -50,8 +50,8 @@ BASELINE="$1"; MODE="$2"; SITE="$3"
 BENCHMARK="${4:-vwa}"
 
 # Validation
-if [[ "${BASELINE}" != "B0" && "${BASELINE}" != "B1" ]]; then
-  echo "Invalid baseline: ${BASELINE} (expected B0 or B1)" >&2; exit 2
+if [[ "${BASELINE}" != "B0" && "${BASELINE}" != "B1" && "${BASELINE}" != "B2" ]]; then
+  echo "Invalid baseline: ${BASELINE} (expected B0, B1 or B2)" >&2; exit 2
 fi
 if [[ "${MODE}" != "dom" && "${MODE}" != "som" && "${MODE}" != "vision" ]]; then
   echo "Invalid mode: ${MODE} (expected dom/som/vision)" >&2; exit 2

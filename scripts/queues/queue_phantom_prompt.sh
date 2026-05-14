@@ -10,7 +10,7 @@
 #
 # Usage:
 #   bash scripts/queues/queue_phantom_prompt.sh <baseline> <site> [benchmark]
-#   - baseline:  B0 | B1
+#   - baseline:  B0 | B1 | B2
 #   - site:      classifieds | reddit | shopping (vwa)
 #   - benchmark: vwa (默认) | wa (only B0 right now)
 #
@@ -26,7 +26,7 @@ REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_DIR}"
 
 if [[ $# -lt 2 ]]; then
-  echo "Usage: $0 <baseline:B0|B1> <site> [benchmark:vwa|wa]" >&2
+  echo "Usage: $0 <baseline:B0|B1|B2> <site> [benchmark:vwa|wa]" >&2
   echo "  Example: bash $0 B0 classifieds" >&2
   echo "  RESET_BEFORE=1 bash $0 B0 classifieds     # reset shopping-style site before launch" >&2
   exit 2
@@ -36,8 +36,8 @@ BASELINE="$1"; SITE="$2"
 BENCHMARK="${3:-vwa}"
 
 # Validation
-if [[ "${BASELINE}" != "B0" && "${BASELINE}" != "B1" ]]; then
-  echo "Invalid baseline: ${BASELINE} (expected B0 or B1)" >&2; exit 2
+if [[ "${BASELINE}" != "B0" && "${BASELINE}" != "B1" && "${BASELINE}" != "B2" ]]; then
+  echo "Invalid baseline: ${BASELINE} (expected B0, B1 or B2)" >&2; exit 2
 fi
 if [[ "${BENCHMARK}" != "vwa" && "${BENCHMARK}" != "wa" ]]; then
   echo "Invalid benchmark: ${BENCHMARK} (expected vwa or wa)" >&2; exit 2
