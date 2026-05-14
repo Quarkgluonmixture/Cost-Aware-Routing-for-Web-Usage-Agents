@@ -2,11 +2,27 @@ from __future__ import annotations
 
 import copy
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, List
 
 from p79.experiment.types import TaskSpec
+
+logger = logging.getLogger(__name__)
+
+
+def _is_na_task(task: Dict[str, Any]) -> bool:
+    """True if the task's reference answer is N/A (unanswerable task) — §139.8.
+
+    N/A tasks (all `string_match` + `reference_answers.fuzzy_match == "N/A"`
+    across all VWA + WA sites) are excluded from the scored set: under the
+    no-N/A-exit agent prompt they are un-passable (zero discriminative signal),
+    and the VWA evaluator cannot distinguish a reasoned N/A judgement from an
+    early exit (WebArena-Verified). Pre-registered exclusion.
+    """
+    ref = (task.get("eval") or {}).get("reference_answers") or {}
+    return isinstance(ref, dict) and ref.get("fuzzy_match") == "N/A"
 
 
 PLACEHOLDER_DEFAULTS = {
@@ -85,6 +101,10 @@ def load_tasks(cfg: Dict[str, Any], output_dir: Path) -> List[TaskSpec]:
     include_sites = [s.lower() for s in task_cfg.get("include_sites", [])]
     task_ids_map = task_cfg.get("task_ids", {}) or {}
     max_tasks_per_site = task_cfg.get("max_tasks_per_site")
+    # §139.8: exclude N/A (unanswerable) tasks from the scored set at load time.
+    # Pre-registered scope decision — see preregistration.md. Set False only for
+    # a dedicated N/A-capability study.
+    exclude_na_tasks = bool(task_cfg.get("exclude_na_tasks", True))
 
     site_configs = task_cfg.get("site_configs", {})
     if not site_configs and task_cfg.get("config_file"):
@@ -108,12 +128,21 @@ def load_tasks(cfg: Dict[str, Any], output_dir: Path) -> List[TaskSpec]:
         selected_ids = set(task_ids_map.get(site, []))
 
         selected: List[Dict[str, Any]] = []
+        n_na_excluded = 0
         for t in tasks:
             if selected_ids and int(t.get("task_id", -1)) not in selected_ids:
                 continue
             if not _site_matches(site, t):
                 continue
+            if exclude_na_tasks and _is_na_task(t):
+                n_na_excluded += 1
+                continue
             selected.append(t)
+        if n_na_excluded:
+            logger.info(
+                "load_tasks[%s]: excluded %d N/A task(s) from scored set (§139.8)",
+                site, n_na_excluded,
+            )
 
         if max_tasks_per_site is not None:
             selected = selected[: int(max_tasks_per_site)]

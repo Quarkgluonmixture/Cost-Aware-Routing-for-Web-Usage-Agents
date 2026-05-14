@@ -166,6 +166,10 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     task_cfg.setdefault("include_sites", ["shopping", "reddit", "classifieds"])
     task_cfg.setdefault("max_tasks_per_site", None)
     task_cfg.setdefault("task_ids", {})
+    # §139.8: N/A (unanswerable) tasks excluded from the scored set by default —
+    # pre-registered scope decision (see preregistration.md). Set False only for
+    # a dedicated N/A-capability study.
+    task_cfg.setdefault("exclude_na_tasks", True)
 
     backends = cfg.setdefault("backends", {})
     if not backends:
