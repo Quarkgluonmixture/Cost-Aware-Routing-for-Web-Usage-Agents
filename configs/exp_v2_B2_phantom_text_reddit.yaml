@@ -1,0 +1,33 @@
+# B2 (Gemma3-VL) phantom_text reddit — Phase 1a paper-grade baseline
+# Cross-family 3rd baseline: google/gemma-3-4b-it (advisor 2026-05-14, 笔记 §138).
+# Mirrors the B1 per-condition config family exactly; only the backend differs.
+# observation_mode value = "phantom_dom" (filename mode = phantom_text;
+# phantom_text -> "phantom_dom" legacy alias, kept parallel to B1 so condition_id
+# and analysis bucketing line up across all 3 baselines).
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B2_phantom_text_reddit"
+
+task:
+  include_sites: ["reddit"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["phantom_dom"]
+
+backends:
+  default_backend: "local_gemma"
+  local_gemma:
+    max_new_tokens: 384
+    min_free_vram_gb: 0
+
+baselines:
+  run_b0: false
