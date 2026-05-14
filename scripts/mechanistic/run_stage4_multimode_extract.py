@@ -44,23 +44,17 @@ ALL_6_MODES = ["dom", "phantom_text", "phantom_prompt", "phantom_som", "som", "v
 
 
 def build_som_marks(obs_text: str, max_marks: int = 200) -> str:
-    """Extract [SOM_MARKS] block from observation_dom.txt — production-aligned.
+    """Canonical [SOM_MARKS] builder — delegates to the single source of truth.
 
-    Bug 2 fix (2026-05-12, /codex-stress methodology audit v2): the previous
-    implementation used `re.compile(r"^\[\d+\]\s+\w+").findall(obs_text)` which
-    keeps only the bracket-id + role-token, drops labels and options, and
-    closes with a `[end of som marks]` sentinel that does NOT match Stage 2B
-    or production. Method 4.2 / Exp 1 / Exp 3 / Exp 5 hidden-state cosine
-    geometry was therefore computed on a different text payload than the
-    agent and the patching code path see. This function is now byte-identical
-    to `scripts/mechanistic/run_stage2b_continuation_pilot.py:build_som_marks`
-    so Stage 4 NPZ extraction matches Stage 2B injection exactly.
+    master bug B-82 fix (2026-05-14): the prior local implementation called
+    `_extract_text_marks` directly and DROPPED the `_options_map` recovery
+    pass, so dropdown `[OPTIONS]` lines (present in 66-81% of archive obs and
+    in the production agent SoM) were silently missing from the v2 NPZ. Now
+    delegates to `p79.experiment.som.build_som_text_from_obs_text`, byte-
+    identical to the production agent SoM text path.
     """
-    from p79.experiment.som import _extract_text_marks
-    marks = _extract_text_marks(obs_text, max_marks=max_marks)
-    if not marks:
-        return "[SOM_MARKS]\n[/SOM_MARKS]"
-    return "\n".join(["[SOM_MARKS]"] + [f"[id={m['id']}] {m['label']}" for m in marks] + ["[/SOM_MARKS]"])
+    from p79.experiment.som import build_som_text_from_obs_text
+    return build_som_text_from_obs_text(obs_text, max_marks=max_marks)
 
 
 def text_payload_for(mode: str, obs_text: str, som_marks_text: str) -> str:

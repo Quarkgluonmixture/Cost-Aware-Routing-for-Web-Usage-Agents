@@ -35,6 +35,51 @@ def _extract_text_marks(obs_text: str, max_marks: int = 200) -> List[Dict[str, A
     return marks
 
 
+def build_som_text_from_obs_text(obs_text: str, max_marks: int = 200) -> str:
+    """Canonical [SOM_MARKS] text builder from an AXTree obs_text string.
+
+    SINGLE SOURCE OF TRUTH for SoM text construction. `_build_som_result`
+    (production agent path) and every mechanistic extractor MUST call this so
+    the hidden-state NPZ / patching SoM text is byte-identical to the SoM text
+    the deployed agent saw.
+
+    Includes the `_options_map` recovery pass: `_inject_select_options` /
+    `_inject_css_dropdown_options` write `[OPTIONS]` / `[DROPDOWN OPTIONS]`
+    lines into obs_text, but `_extract_text_marks` strips them (they carry no
+    `[N]` element id). This re-scans obs_text and re-attaches them under their
+    owning mark.
+
+    History: phantom-mode mechanistic extractors (run_stage4_*) re-implemented
+    a marks-only builder that DROPPED this options recovery — master bug
+    catalog B-82. The dropdown fix (B-06 / §51) predates phantom modes, so the
+    omission was a phantom-design oversight, not a B-06 regression.
+    """
+    text_marks = _extract_text_marks(obs_text, max_marks=max_marks)
+    if len(text_marks) == 0:
+        return "[SOM_MARKS]\n[/SOM_MARKS]"
+    _options_map: Dict[int, str] = {}
+    _obs_lines = (obs_text or "").splitlines()
+    for _i, _line in enumerate(_obs_lines):
+        _m = re.search(r"\[(\d+)\]", _line)
+        if not _m:
+            continue
+        _eid = int(_m.group(1))
+        for _j in range(_i + 1, min(_i + 3, len(_obs_lines))):
+            _stripped = _obs_lines[_j].strip()
+            if _stripped.startswith("[OPTIONS") or _stripped.startswith("[DROPDOWN OPTIONS"):
+                _options_map[_eid] = _stripped
+                break
+            if re.search(r"\[(\d+)\]", _obs_lines[_j]):
+                break  # next element reached
+    mark_lines = []
+    for _mark in text_marks:
+        _entry = f"[id={_mark['id']}] {_mark['label']}"
+        if _mark["id"] in _options_map:
+            _entry += f"\n    {_options_map[_mark['id']]}"
+        mark_lines.append(_entry)
+    return "\n".join(["[SOM_MARKS]"] + mark_lines + ["[/SOM_MARKS]"])
+
+
 def _collect_bbox_map(raw: Any, bbox_map: Dict[int, List[float]]) -> None:
     if isinstance(raw, dict):
         maybe_id = None
@@ -219,34 +264,13 @@ def _build_som_result(
             mark_count=0,
         )
 
-    # Build options map: eid -> annotation line (e.g. '[OPTIONS] "a","b"' or
-    # '[OPTIONS: currently selected="x"] ...' or '[DROPDOWN OPTIONS] ...').
-    # _inject_select_options / _inject_css_dropdown_options already wrote these
-    # into obs_text (the full AXTree), but _extract_text_marks strips them because
-    # they have no [N] element id.  Re-scan obs_text to recover them.
-    _options_map: Dict[int, str] = {}
-    _obs_lines = (obs_text or "").splitlines()
-    for _i, _line in enumerate(_obs_lines):
-        _m = re.search(r"\[(\d+)\]", _line)
-        if not _m:
-            continue
-        _eid = int(_m.group(1))
-        for _j in range(_i + 1, min(_i + 3, len(_obs_lines))):
-            _stripped = _obs_lines[_j].strip()
-            if _stripped.startswith("[OPTIONS") or _stripped.startswith("[DROPDOWN OPTIONS"):
-                _options_map[_eid] = _stripped
-                break
-            if re.search(r"\[(\d+)\]", _obs_lines[_j]):
-                break  # next element reached
-
-    mark_lines = []
-    for _mark in text_marks:
-        _entry = f"[id={_mark['id']}] {_mark['label']}"
-        if _mark["id"] in _options_map:
-            _entry += f"\n    {_options_map[_mark['id']]}"
-        mark_lines.append(_entry)
-
-    som_header = "\n".join(["[SOM_MARKS]"] + mark_lines + ["[/SOM_MARKS]"])
+    # SoM text construction delegated to the canonical single-source builder
+    # (master bug B-82 fix, 2026-05-14). build_som_text_from_obs_text does the
+    # _extract_text_marks + _options_map recovery + [SOM_MARKS] wrapper; every
+    # mechanistic extractor shares it so NPZ / patching SoM text is byte-
+    # identical to this production path. text_marks is still computed above for
+    # the empty-marks degradation check + bbox drawing + mark_count below.
+    som_header = build_som_text_from_obs_text(obs_text)
     som_text = f"{som_header}\n\n{obs_text}" if include_full_axtree else som_header
 
     bbox_map: Dict[int, List[float]] = {}

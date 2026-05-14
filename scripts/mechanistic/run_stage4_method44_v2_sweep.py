@@ -66,9 +66,18 @@ DEFAULT_LAYERS = [11, 17, 23, 29, 33, 34]
 DEFAULT_ALPHAS = [1.0, 2.0, 5.0, 10.0, 20.0]
 
 
-def build_som_marks(obs_text):
-    return "\n".join(s for line in obs_text.split("\n")
-                      if (s := line.strip()).startswith("[") and "]" in s[:6])
+def build_som_marks(obs_text, max_marks: int = 200):
+    """Canonical [SOM_MARKS] builder — delegates to the single source of truth.
+
+    master bug B-82 fix (2026-05-14): the prior local impl was a crude AXTree
+    line-grep (`startswith("[") and "]" in s[:6]`) — not production SoM text,
+    no `[SOM_MARKS]` wrapper, no `[id=N]` syntax, dropped dropdown `[OPTIONS]`,
+    and silently lost any element with a >=6-char bracket id. The P-SoM eval
+    baseline built from it was off-axis. Now delegates to the production
+    builder. NOTE: existing method44_v2 sweep outputs are invalid — re-run.
+    """
+    from p79.experiment.som import build_som_text_from_obs_text
+    return build_som_text_from_obs_text(obs_text, max_marks=max_marks)
 
 
 def build_inputs(extractor, intent, mode, obs_text):

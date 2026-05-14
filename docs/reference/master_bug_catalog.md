@@ -1370,6 +1370,22 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 
 ---
 
+## §136 Mechanistic /stress audit findings (2026-05-14)
+
+### B-82. Phantom-mode SoM text drops `[OPTIONS]` dropdown recovery 🛠️ FIXED
+
+- **Origin**: `/stress` v6 mechanistic pipeline audit + `/codex-stress` Mode B cross-AI (2026-05-14, 笔记 §136). codex C1 flagged "production-aligned" `build_som_marks` is not production-identical; Claude verified the code chain.
+- **Files**: `scripts/mechanistic/{run_stage4_multimode_extract, run_stage2b_continuation_pilot, run_stage4_method44_v2_sweep, run_stage4_method44_steering, diag_stage4_method44_layer_check, curate_mirage_tasks, run_stage2_patching_pilot, run_stage1_pilot, run_stage4_format_variation_extract}.py` — 9 mechanistic scripts.
+- **Mechanism**: production SoM text (`p79/experiment/som.py:_build_som_result`) runs a second `_options_map` pass that recovers the `[OPTIONS]` / `[DROPDOWN OPTIONS]` lines — `_extract_text_marks` strips them because they carry no `[N]` id. The 9 mechanistic extractors re-implemented a local `build_som_marks` that called `_extract_text_marks` only (5 scripts) or a crude AXTree line-grep `startswith("[") and "]" in s[:6]` (4 scripts) — **both omit the `_options_map` recovery**. So the SoM text feeding hidden-state NPZ / patching / steering had no dropdown options.
+- **Relationship to B-06**: NOT a B-06 regression. B-06's `_inject_select_options` / `_options_map` mitigation (§51, 2026-04-14) predates the phantom-mode mechanistic pipeline. When phantom modes were designed, the local `build_som_marks` re-implementations simply never replicated the options-recovery pass. **Phantom-design oversight, not a regression.**
+- **Blast radius**: archive_subset observations with dropdown markers — cls **47/71 (66%)** + reddit **144/177 (81%)**. `text_payload_for` routes options-presence collinearly with text-format (AXTree modes `dom`/`phantom_prompt` keep options inline; marks modes `som`/`phantom_som`/`phantom_text` lose them). **→ confounds the axis-1 (text-format) measurement** in Method 4.2 cosine gap, Exp 3 logit lens, and Method 4.4 direction: the axis-1 cosine gap / KL / steering effect conflates real format difference with an artifactual missing-options-text difference. axis-2 + image-axis are clean (options-presence symmetric on both sides).
+- **Status**: 🛠️ **FIXED** (code). Single source of truth `build_som_text_from_obs_text` added to `p79/experiment/som.py`; `_build_som_result` refactored to call it; all 9 mechanistic scripts delegate to it. py_compile clean; functional smoke confirms `[DROPDOWN OPTIONS]` recovery.
+- **Fix**: `p79/experiment/som.py::build_som_text_from_obs_text` (canonical) + 9 scripts delegate. 2026-05-14.
+- **Re-extraction required (NOT YET DONE)**: all v2 NPZ (`hidden_states_v2_fixed.npz` cls + reddit) + Method 4.4 sweep + format-variation outputs were produced with the options-less builder → must re-extract before axis-1 mechanism claims are paper-grade. Tracked as post-fix compute task.
+- **Paper impact**: §5 mechanism — axis-1 findings (incl. the reddit axis-1 logit-lens "3.95× surprise") need re-examination post re-extraction; axis-2 + image-axis findings unaffected; Method 4.4 already pending (independent codex F1/C2/C3 findings).
+
+---
+
 ## Updated Status Counts (post-§116 audit + Phase 0 backfill)
 
 | Tag | Count | Notes |

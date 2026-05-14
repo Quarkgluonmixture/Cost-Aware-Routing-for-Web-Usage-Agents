@@ -55,13 +55,14 @@ MANIFEST = ARCHIVE / "manifest.json"
 ALPHA = 50.0  # extreme, force any hook-firing to show up
 
 
-def build_som_marks(obs_text: str) -> str:
-    lines = []
-    for line in obs_text.split("\n"):
-        s = line.strip()
-        if s.startswith("[") and "]" in s[:6]:
-            lines.append(s)
-    return "\n".join(lines)
+def build_som_marks(obs_text: str, max_marks: int = 200) -> str:
+    """Canonical [SOM_MARKS] builder — delegates to the single source of truth.
+
+    master bug B-82 fix (2026-05-14): prior local impl was a crude AXTree
+    line-grep. Now delegates to `p79.experiment.som.build_som_text_from_obs_text`.
+    """
+    from p79.experiment.som import build_som_text_from_obs_text
+    return build_som_text_from_obs_text(obs_text, max_marks=max_marks)
 
 
 def build_inputs(extractor, intent, mode, obs_text):

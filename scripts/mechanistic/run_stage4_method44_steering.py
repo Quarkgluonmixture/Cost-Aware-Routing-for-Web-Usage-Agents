@@ -60,13 +60,16 @@ OUT_JSON = ROOT / "results/mechanistic/stage4_multimode_b1_cls/method44_steering
 OUT_MD = ROOT / "docs/checkpoints/stage4_method44_results.md"
 
 
-def build_som_marks(obs_text: str) -> str:
-    lines = []
-    for line in obs_text.split("\n"):
-        s = line.strip()
-        if s.startswith("[") and "]" in s[:6]:
-            lines.append(s)
-    return "\n".join(lines)
+def build_som_marks(obs_text: str, max_marks: int = 200) -> str:
+    """Canonical [SOM_MARKS] builder — delegates to the single source of truth.
+
+    master bug B-82 fix (2026-05-14): prior local impl was a crude AXTree
+    line-grep, not production SoM text. Now delegates to the production
+    builder. NOTE: this legacy steering script also has an off-by-one layer
+    bug (codex Mode B C4) — outputs invalid until both are fixed + re-run.
+    """
+    from p79.experiment.som import build_som_text_from_obs_text
+    return build_som_text_from_obs_text(obs_text, max_marks=max_marks)
 
 
 def build_inputs(extractor: HiddenStateExtractor, intent: str, mode: str, obs_text: str):

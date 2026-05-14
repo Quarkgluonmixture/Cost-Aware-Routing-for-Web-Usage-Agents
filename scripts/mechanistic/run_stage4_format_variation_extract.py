@@ -80,9 +80,18 @@ def hash_id(n: int) -> str:
 
 # Format transformers — each takes obs_text, returns text payload string
 def fmt_som_standard(obs_text):
-    """Baseline [SOM_MARKS] — same as run_stage2b build_som_marks."""
-    return "\n".join(line.strip() for line in obs_text.split("\n")
-                      if line.strip().startswith("[") and "]" in line.strip()[:6])
+    """Baseline [SOM_MARKS] — canonical production SoM text.
+
+    master bug B-82 fix (2026-05-14): prior impl was a crude AXTree line-grep
+    that was NOT the same as run_stage2b and dropped dropdown `[OPTIONS]`. Now
+    delegates to `p79.experiment.som.build_som_text_from_obs_text` — the true
+    production baseline. The other fmt_* variants below intentionally use
+    different mark formats (that is the point of format-variation); only this
+    baseline must match production. NOTE: existing format-variation outputs
+    used the old baseline — re-run.
+    """
+    from p79.experiment.som import build_som_text_from_obs_text
+    return build_som_text_from_obs_text(obs_text)
 
 
 def fmt_browser_use_at(obs_text):

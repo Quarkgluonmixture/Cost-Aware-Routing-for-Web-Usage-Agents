@@ -87,17 +87,15 @@ def load_task_intents(site: str, n_tasks: int) -> list[tuple[int, str]]:
 
 
 def _build_som_marks_text(obs_text: str, max_marks: int = 200) -> str:
-    """Build [SOM_MARKS] text from raw AXTree (regex-filter via p79.experiment.som).
+    """Canonical [SOM_MARKS] builder — delegates to the single source of truth.
 
-    Note: production `_build_som_result` ALSO injects dropdown OPTIONS via
-    `_options_map`. We skip that here (slight prompt drift, paper §X disclose).
+    master bug B-82 fix (2026-05-14): the prior local impl explicitly skipped
+    the `_options_map` dropdown-options recovery ("slight prompt drift" — it
+    was NOT slight: 66-81% of archive obs carry dropdowns). Now delegates to
+    `p79.experiment.som.build_som_text_from_obs_text`.
     """
-    from p79.experiment.som import _extract_text_marks
-    marks = _extract_text_marks(obs_text, max_marks=max_marks)
-    if not marks:
-        return "[SOM_MARKS]\n[/SOM_MARKS]"
-    mark_lines = [f"[id={m['id']}] {m['label']}" for m in marks]
-    return "\n".join(["[SOM_MARKS]"] + mark_lines + ["[/SOM_MARKS]"])
+    from p79.experiment.som import build_som_text_from_obs_text
+    return build_som_text_from_obs_text(obs_text, max_marks=max_marks)
 
 
 def _find_artifacts_dir(run_dir: Path) -> Path:

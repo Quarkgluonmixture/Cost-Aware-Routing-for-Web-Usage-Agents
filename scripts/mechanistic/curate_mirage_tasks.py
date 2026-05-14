@@ -92,11 +92,14 @@ def find_artifacts_dir(run_dir: Path) -> Path:
 
 
 def build_som_marks(obs_text: str, max_marks: int = 200) -> str:
-    from p79.experiment.som import _extract_text_marks
-    marks = _extract_text_marks(obs_text, max_marks=max_marks)
-    if not marks:
-        return "[SOM_MARKS]\n[/SOM_MARKS]"
-    return "\n".join(["[SOM_MARKS]"] + [f"[id={m['id']}] {m['label']}" for m in marks] + ["[/SOM_MARKS]"])
+    """Canonical [SOM_MARKS] builder — delegates to the single source of truth.
+
+    master bug B-82 fix (2026-05-14): prior local impl dropped the
+    `_options_map` dropdown-options recovery. Now delegates to
+    `p79.experiment.som.build_som_text_from_obs_text`.
+    """
+    from p79.experiment.som import build_som_text_from_obs_text
+    return build_som_text_from_obs_text(obs_text, max_marks=max_marks)
 
 
 def build_inputs(extractor: HiddenStateExtractor, intent: str, mode: str, obs_text: str, image_path):
