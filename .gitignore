@@ -93,11 +93,9 @@ docs/checkpoints/周报/
 # for known dirs but a top-level rule prevents future accidents)
 node_modules/
 
-# Codex audit trace logs — raw reasoning + bash exec dumps, 100K-1.5M each, only
-# valuable for live debugging. Final assistant review writes atomically to a
-# parallel `*_FINAL_*.md` via codex exec -o flag (see .claude/skills/stress/
-# SKILL.md v5 Mode B). Trace logs gitignored to keep git history lean.
-docs/checkpoints/codex_outputs/*_trace*.log
-docs/checkpoints/codex_outputs/*_trace*.md
-docs/checkpoints/codex_outputs/*_run.log
-docs/checkpoints/codex_outputs/*_full_trace*.log
+# Codex prompts + outputs — local cross-AI audit scratch space, not paper-grade
+# artifacts. Prompts are regenerated per task from conversation context; outputs
+# (incl. *_FINAL_*.md reviews + raw trace logs) are consumed into 实验笔记 /
+# paper drafts and don't need independent version history. Kept on disk, not git.
+docs/checkpoints/codex_prompts/
+docs/checkpoints/codex_outputs/
