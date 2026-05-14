@@ -66,12 +66,12 @@ upgrade, which is treated as a T0 evaluator-relevant change per
 Recorded automatically per run via `snapshot_env.py` → `env_snapshot.json`
 `extra.hf_model_revision_pinned`.
 
-### B0 — proxy API Qwen3-Omni-235B-Thinking
+### B0 — proxy API Qwen3-VL-235B-A22B
 
 | Component | Pin |
 |---|---|
 | Provider | Internal HolisticAI proxy → upstream Qwen API |
-| Model name | `qwen3-omni-235b-thinking` |
+| Model name | `qwen3-vl-235b-a22b` (proxy `api_name`: `qwen.qwen3-vl-235b-a22b`) |
 | Decoding | `temperature=0`, `max_tokens` per task |
 | Stochasticity | Server-side determinism best-effort under `temperature=0` (not strictly guaranteed; see `preregistration.md §7` reproducibility scope) |
 

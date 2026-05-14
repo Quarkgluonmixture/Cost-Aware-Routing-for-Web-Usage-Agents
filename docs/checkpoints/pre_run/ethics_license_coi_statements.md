@@ -36,7 +36,7 @@ supervised by faculty in the UCL AI Centre. Compute resources were provided by:
 - DGX Spark workstation (NVIDIA GB10) — shared research workstation, HolisticAI lab
 - Tailscale (Personal Plan) for cross-machine networking
 
-Model API costs (B0 proxy access to Qwen3-Omni-235B) were covered by lab
+Model API costs (B0 proxy access to Qwen3-VL-235B-A22B) were covered by lab
 research budget. No external industry funding, no consulting relationships
 with model providers, no equity in benchmark / agent-framework companies.
 

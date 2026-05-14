@@ -9,16 +9,16 @@ their full identity / capability / limitation cards.
 
 ---
 
-## B0 — Qwen3-Omni-235B-Thinking (proxy API)
+## B0 — Qwen3-VL-235B-A22B (proxy API)
 
 ### Identity
 
 | Field | Value |
 |---|---|
 | Provider | HolisticAI internal proxy → upstream Qwen API |
-| Model name | `qwen3-omni-235b-thinking` |
-| Architecture | Mixture-of-Experts (235B total params, ~22B active) |
-| Modality | Multimodal: text, image, audio (we use text + image only) |
+| Model name | `qwen3-vl-235b-a22b` (proxy `api_name`: `qwen.qwen3-vl-235b-a22b`) |
+| Architecture | Mixture-of-Experts (235B total params, ~22B active — the "A22B" suffix) |
+| Modality | Vision-language: text + image |
 | Access | Closed-weight, API-only via HolisticAI proxy at `${PROXY_BASE_URL}` (gitignored) |
 | Authentication | `${PROXY_API_KEY}` env var, sourced from `.env` (gitignored) |
 | Cost (per token) | Subsidized by HolisticAI lab budget; replicators with separate Qwen API access pay vendor rates |
