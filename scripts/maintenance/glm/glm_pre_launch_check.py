@@ -9,7 +9,7 @@ Usage:
 Catches (examples):
 - baseline / site / mode 不匹配 in queue script call
 - 漏 RESET_BEFORE=1 (paper-grade contamination risk)
-- 同 site B0+B1 同时跑 (cross-contam)
+- 同 site 多 baseline 同时跑 (B0/B1/B2 任意两个 → cross-contam)
 - config benchmark 跟 site 不一致
 
 Exit 0 = OK to launch / Exit 1 = WARN human review / Exit 2 = error
@@ -55,7 +55,7 @@ def call_glm_review(launch_summary: str) -> tuple[bool, str]:
 Review the proposed launch + current state, flag if anything is suspicious.
 
 KEY HARD RULES (violations = paper-grade contamination):
-1. **Same-site B0 XOR B1** — never run B0 + B1 on same site simultaneously (account/cart/session race)
+1. **Same-site single baseline** — never run more than one of B0/B1/B2 on the same site simultaneously (shared docker container + account/cart/session race)
 2. **RESET_BEFORE=1 mandatory** for paper-grade runs (state pollute risk)
 3. queue script baseline must match site reset semantics
 4. WA reset NOT YET IMPLEMENTED (queue scripts skip wa reset; OK only if not paper-grade)
@@ -116,7 +116,7 @@ If everything looks fine, output `verdict: OK`. If anything suspicious, `WARN`. 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--queue", help="queue script name (e.g. queue_phantom_som.sh)")
-    parser.add_argument("--baseline", help="B0 / B1 / Claude")
+    parser.add_argument("--baseline", help="B0 / B1 / B2")
     parser.add_argument("--site", help="classifieds / reddit / shopping / wa_*")
     parser.add_argument("--mode", help="dom / som / vision / phantom_*")
     parser.add_argument("--reset", action="store_true", help="RESET_BEFORE=1 set")
