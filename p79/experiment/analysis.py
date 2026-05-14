@@ -1362,15 +1362,28 @@ def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path, ep_df=None) -> None
     if "observation_mode" not in cond_df.columns or "success_rate" not in cond_df.columns:
         return
 
-    mode_order = [m for m in ["dom", "som", "vision"] if m in cond_df["observation_mode"].values]
+    # B-87: 6-mode order (was hardcoded ["dom","som","vision"] — silently dropped
+    # the 3 phantom arms from the headline plot). phantom_dom is the legacy alias
+    # for phantom_text; accept both. Unknown modes are appended + warned, never dropped.
+    _canonical_order = ["dom", "phantom_text", "phantom_dom", "phantom_prompt",
+                        "phantom_som", "som", "vision"]
+    _present = list(cond_df["observation_mode"].values)
+    mode_order = [m for m in _canonical_order if m in _present]
+    _unknown = sorted(set(_present) - set(_canonical_order))
+    if _unknown:
+        logger.warning("_plot_phase1: observation_mode(s) outside canonical order, "
+                       "appended to plot rather than dropped: %s", _unknown)
+        mode_order += _unknown
 
     success = [
         float(cond_df.loc[cond_df["observation_mode"] == m, "success_rate"].mean())
         for m in mode_order
     ]
 
-    fig, ax = plt.subplots(figsize=(6, 4))
-    bars = ax.bar(mode_order, success, color=["#4C72B0", "#DD8452", "#55A868"][:len(mode_order)])
+    fig, ax = plt.subplots(figsize=(max(6, len(mode_order) * 1.1), 4))
+    _palette = ["#4C72B0", "#DD8452", "#55A868", "#C44E52", "#8172B2", "#937860", "#DA8BC3"]
+    bars = ax.bar(mode_order, success,
+                  color=[_palette[i % len(_palette)] for i in range(len(mode_order))])
     ax.set_ylim(0.0, 1.0)
     ax.set_ylabel("Success Rate")
     ax.set_title("Phase 1 Representation Screening (adjusted)")

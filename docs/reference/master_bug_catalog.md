@@ -1425,13 +1425,21 @@ output: `docs/checkpoints/codex_outputs/prefire_pipeline_FINAL_2026-05-14.md`.
 - **Fix**: removed `max_obs_chars` truncation from both agents (+ removed the now-dead `max_obs_chars` key from both backend wrappers — subsumes the Bug-8 dead-`8000`-default cleanup); `_extract_text_marks` + `build_som_text_from_obs_text` default `max_marks=None` (no cap, explicit cap still honored if passed); 8 mechanistic delegates' `max_marks` default → `None` so mechanistic SoM stays byte-identical to production (sibling-propagation per /stress v6). py_compile clean ×13; functional smoke confirms 250-mark input passes uncapped + explicit `max_marks=50` still honored. Provenance metadata (viewport flag + per-step `obs_text_chars`) — separate follow-up, not blocking.
 - **Paper impact**: axis-1 is now clean by construction — no truncation/cap asymmetry, no "0.2%" caveat needed in §1/§3.
 
+### B-87. `_plot_phase1` headline plot silently drops 3 phantom modes 🛠️ FIXED
+
+- **Origin**: codex Mode B C5 (2026-05-14, 笔记 §139).
+- **Files**: `p79/experiment/analysis.py::_plot_phase1`.
+- **Mechanism**: `mode_order` was hardcoded `["dom","som","vision"]`. The CSV table is complete, but the headline "Phase 1 Representation Screening" PNG silently excluded `phantom_som` / `phantom_text` / `phantom_prompt` — a 24-condition / 6-mode fire would produce a selection-biased figure if read from the PNG.
+- **Status**: 🛠️ **FIXED** (code). 2026-05-14.
+- **Fix**: `mode_order` now built from a canonical 6-mode list (`dom / phantom_text / phantom_dom / phantom_prompt / phantom_som / som / vision` — both the `phantom_text` name and the legacy `phantom_dom` alias accepted); modes outside the canonical list are appended + `logger.warning`-ed rather than silently dropped; 7-colour palette with safe cycling; figure width scales with mode count. py_compile clean; smoke confirms a 6-mode cond_df (incl. legacy alias) yields all 6 in order.
+- **Paper impact**: headline Phase 1 figure now shows all 6 arms — no selection bias.
+
 ### Open findings from this audit (tracked as tasks, not yet fixed)
 
 | B# | Finding | Severity | Task | Note |
 |---|---|---|---|---|
 | B-85 | `has_effective_action` FP filter only counts `type`/`select_option`, not `click` → click-causal `program_html` tasks mis-downgraded | P0 | #67 | data-altering (changes SR definition) — deep研究 first, user decides |
 | B-86 | parse-error recovery scaffold asymmetry: B0-only GLM fallback + B1 `max_new_tokens=384` below parse-safe floor; codex confirmed it flows into `compute_adjusted_success` via `agent_finished` | P1 | #68 | advisor question (clean API data?) + ensure disclosure fields recorded pre-fire |
-| B-87 | `analysis.py::_plot_phase1` hardcodes `mode_order=["dom","som","vision"]` → headline plot silently drops 3 phantom modes | P1 | #69 | codex finding |
 | B-88 | reference images injected into phantom "no-image" modes regardless of mode | P2 | #70 | image axis not clean on ref-image tasks |
 | B-89 | `cost_efficiency_ratio` stays raw-success based while `success_rate` is overwritten to adjusted | P2 | #71 | codex finding — mixes raw economics + adjusted conclusions |
 | B-90 | `_extract_text_marks` uses `re.search` (any-position `[N]` match) — over-inclusion, flagged in prior audits, still unfixed | P2 | #72 | evaluate impact on v2 `[SOM_MARKS]` payload |
