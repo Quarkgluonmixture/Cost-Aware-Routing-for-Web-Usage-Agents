@@ -79,7 +79,7 @@ def read_successes(ep_dir: Path) -> dict[int, bool]:
     for path in sorted(ep_dir.glob("*_summary_v2.json")):
         tid = task_id(path, "summary")
         rec = json.loads(path.read_text())
-        out[tid] = bool(rec.get("adjusted_success", rec.get("success", False)))
+        out[tid] = bool(rec.get("success", False))  # §139.8: adjusted_success retired
     return out
 
 

@@ -77,7 +77,7 @@ def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
             record = json.load(f)
         tid = task_id(path)
         observed.add(tid)
-        if bool(record.get("adjusted_success", record.get("success", False))):
+        if bool(record.get("success", False)):  # §139.8: adjusted_success retired
             successes.add(tid)
     return successes, observed
 
@@ -197,7 +197,7 @@ def draw_panel(ax: plt.Axes, panel: dict) -> None:
 
     ax.set_title(f"{panel['title']} (N={panel['expected']}, K={k})", fontsize=12, fontweight="bold")
     ax.set_xticks(range(len(MODE_ORDER)), MODE_LABELS)
-    ax.set_ylabel("Solved tasks (adjusted_success)")
+    ax.set_ylabel("Solved tasks")
     ax.set_ylim(0, max_total + max(8, max_total * 0.20))
     ax.grid(axis="y", color="#dddddd", linewidth=0.8)
     ax.set_axisbelow(True)

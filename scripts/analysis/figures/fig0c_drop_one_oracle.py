@@ -9,7 +9,7 @@ Supporting visualization for oracle/drop-one solve-pool evidence.
 
 Drop-one oracle loss for B0/B1 VWA observation arms.
 
-All available cells are computed from episode-level ``adjusted_success`` sets.
+All available cells are computed from episode-level ``success`` sets.
 B0 Phantom-SoM/P-text use fresh paper-grade clean re-run; B1 Phantom-SoM is
 drawn as unavailable pending re-run.
 """
@@ -106,7 +106,7 @@ def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
             record = json.load(f)
         tid = task_id(path)
         observed.add(tid)
-        if bool(record.get("adjusted_success", record.get("success", False))):
+        if bool(record.get("success", False)):  # §139.8: adjusted_success retired
             successes.add(tid)
     return successes, observed
 

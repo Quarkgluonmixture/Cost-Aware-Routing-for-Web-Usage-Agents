@@ -79,7 +79,7 @@ def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
             print(f"[warn] duplicate summary ignored in count: {path}", file=sys.stderr)
             continue
         observed.add(tid)
-        if bool(record.get("adjusted_success", record.get("success", False))):
+        if bool(record.get("success", False)):  # §139.8: adjusted_success retired
             successes.add(tid)
     return successes, observed
 

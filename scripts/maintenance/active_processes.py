@@ -235,7 +235,8 @@ def episode_stats(cond_dir: Path) -> tuple[int, int, int, float | None]:
         n += 1
         if data.get("success"):
             succ += 1
-        if data.get("adjusted_success", data.get("success", False)):
+        # §139.8: adjusted_success retired — `success` is canonical
+        if data.get("success", False):
             adj += 1
         m = f.stat().st_mtime
         last_mtime = m if last_mtime is None else max(last_mtime, m)

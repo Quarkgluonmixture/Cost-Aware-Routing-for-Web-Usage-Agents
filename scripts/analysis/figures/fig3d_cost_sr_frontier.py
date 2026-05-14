@@ -113,7 +113,7 @@ def episode_adj_sr(condition_dir: Path) -> tuple[float, int]:
             continue
         seen.add(tid)
         rec = json.loads(path.read_text())
-        succ += bool(rec.get("adjusted_success", rec.get("success", False)))
+        succ += bool(rec.get("success", False))  # §139.8: adjusted_success retired
     n = len(seen)
     return (100.0 * succ / n if n else 0.0, n)
 

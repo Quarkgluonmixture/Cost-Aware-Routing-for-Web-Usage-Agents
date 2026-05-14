@@ -206,11 +206,10 @@ def infer_single_mode(run_dir: Path) -> str | None:
 
 
 def summary_success(summary_path: Path) -> bool | None:
+    # §139.8: reads canonical `success` — adjusted_success post-hoc layer retired
     if not summary_path.exists():
         return None
     row = read_json(summary_path)
-    if "adjusted_success" in row:
-        return bool(row["adjusted_success"])
     if "success" in row:
         return bool(row["success"])
     return None

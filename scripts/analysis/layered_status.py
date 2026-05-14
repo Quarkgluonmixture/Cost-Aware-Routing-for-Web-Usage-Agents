@@ -181,9 +181,11 @@ def task_id(row: dict[str, Any]) -> int | None:
 def mode_stats(condition_dir: Path) -> dict[str, Any]:
     rows = episode_summaries(condition_dir)
     n = len(rows)
+    # §139.8: adjusted_success retired — `success` is canonical. The
+    # `adjusted_*` output keys are kept (== raw) for schema stability.
     raw_s = sum(1 for r in rows if bool(r.get("success")))
-    adj_s = sum(1 for r in rows if bool(r.get("adjusted_success", r.get("success"))))
-    tasks = {task_id(r) for r in rows if bool(r.get("adjusted_success", r.get("success")))}
+    adj_s = raw_s
+    tasks = {task_id(r) for r in rows if bool(r.get("success"))}
     tasks.discard(None)
     condition_summary = read_json(condition_dir / "condition_summary_v2.json") or {}
     tokens_per_step = []
@@ -245,7 +247,7 @@ def category_table(site: str, site_stats: dict[str, dict[str, Any]]) -> dict[str
             tid = task_id(row)
             if tid is None or tid not in cats:
                 continue
-            by_cat[cats[tid]].append(bool(row.get("adjusted_success", row.get("success"))))
+            by_cat[cats[tid]].append(bool(row.get("success")))
         out[mode] = {
             cat: (sum(vals) / len(vals) if vals else None)
             for cat, vals in sorted(by_cat.items())

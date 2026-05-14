@@ -100,7 +100,7 @@ def load_cell(baseline: str, site: str, mode: str, cond_dir: Path, expected_n: i
             continue
         seen.add(tid)
         rec = json.loads(path.read_text())
-        succ += bool(rec.get("adjusted_success", rec.get("success", False)))
+        succ += bool(rec.get("success", False))  # §139.8: adjusted_success retired
     n = len(seen)
     if n < expected_n * 0.9:
         print(f"[warn] {baseline} {site} {mode}: partial n={n}/{expected_n}", file=sys.stderr)

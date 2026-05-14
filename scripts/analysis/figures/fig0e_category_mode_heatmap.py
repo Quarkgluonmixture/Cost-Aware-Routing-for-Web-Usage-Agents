@@ -87,7 +87,7 @@ def load_successes(ep_dir: Path) -> tuple[set[int], set[int]]:
             record = json.load(f)
         tid = task_id(path)
         observed.add(tid)
-        if bool(record.get("adjusted_success", record.get("success", False))):
+        if bool(record.get("success", False)):  # §139.8: adjusted_success retired
             successes.add(tid)
     return successes, observed
 

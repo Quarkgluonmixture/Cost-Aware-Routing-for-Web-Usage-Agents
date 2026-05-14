@@ -77,7 +77,7 @@ def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
             continue
         tid = task_id(path)
         obs.add(tid)
-        if bool(rec.get("adjusted_success", rec.get("success", False))):
+        if bool(rec.get("success", False)):  # §139.8: adjusted_success retired
             succ.add(tid)
     return succ, obs
 

@@ -11,7 +11,7 @@ The reviewer demands per-seed bootstrap 95% CI on the pairwise comparison
 and on the drop-one oracle, with strict-positive lower bound or downgrade
 the prose.
 
-This script loads B0 reddit per-task adjusted_success for all 6 completed
+This script loads B0 reddit per-task `success` for all 6 completed
 modes (DOM, SoM, Vision, P-SoM, P-text, P-prompt), bootstraps 10000 task
 resamples (N=210 with replacement), and reports for each comparison:
   - Point estimate
@@ -57,8 +57,12 @@ SITES = {
 }
 
 
-def load_adjusted_success(episodes_dir: Path) -> dict[int, bool]:
-    """Load per-task adjusted_success bool from episodes/*_summary_v2.json files."""
+def load_success(episodes_dir: Path) -> dict[int, bool]:
+    """Load per-task `success` bool from episodes/*_summary_v2.json files.
+
+    §139.8: reads canonical `success` directly — the adjusted_success
+    post-hoc layer is retired (na_fp / eval_fp fixed at the source).
+    """
     out = {}
     if not episodes_dir.exists():
         return out
@@ -72,9 +76,7 @@ def load_adjusted_success(episodes_dir: Path) -> dict[int, bool]:
             rec = json.loads(p.read_text())
         except Exception:
             continue
-        # adjusted_success preferred; fall back to success
-        v = rec.get("adjusted_success", rec.get("success", False))
-        out[tid] = bool(v)
+        out[tid] = bool(rec.get("success", False))
     return out
 
 
@@ -84,7 +86,7 @@ def build_success_matrix(site: str) -> tuple[np.ndarray, list[int], list[str]]:
     per_mode = {}
     for mode, rel in mode_dirs.items():
         epi_dir = ROOT / "results/visualwebarena/phase1" / rel / "episodes"
-        per_mode[mode] = load_adjusted_success(epi_dir)
+        per_mode[mode] = load_success(epi_dir)
     # same-task subset: tasks present in ALL modes
     task_sets = [set(d.keys()) for d in per_mode.values()]
     common_tasks = sorted(set.intersection(*task_sets)) if task_sets else []

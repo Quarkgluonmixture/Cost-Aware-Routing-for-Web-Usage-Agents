@@ -108,7 +108,8 @@ def load(d: Path) -> tuple[set[int], set[int]]:
         except Exception as _e:
             n_corrupt += 1
             continue
-        if rec.get("adjusted_success", rec.get("success", False)):
+        # §139.8: adjusted_success retired — `success` is canonical
+        if rec.get("success", False):
             s.add(tid)
     if n_corrupt > 0:
         msg = (
