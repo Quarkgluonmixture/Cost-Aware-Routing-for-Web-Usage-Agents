@@ -22,7 +22,6 @@ import hashlib
 import json
 import logging
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -40,21 +39,15 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+# v6 /stress 2026-05-14 — Bug 2 + F1 fix propagation. Previously this script
+# reimplemented private MARK_LINE_RE (v1 buggy regex) and dropped production
+# system prompt. Now uses substrate.
+from p79.experiment.som import _extract_text_marks  # noqa: E402
+from p79.agents.qwen3vl_agent import Qwen3VLAgent  # noqa: E402
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [stage4_h1_qwen2vl] %(levelname)s: %(message)s",
                     datefmt="%H:%M:%S")
 logger = logging.getLogger(__name__)
-
-# Format transformers — copy from run_stage4_format_variation_extract.py
-MARK_LINE_RE = re.compile(r"^\s*\[(\d+)\]\s+(\S+)\s+'([^']*)'")
-
-
-def extract_marks(obs_text):
-    out = []
-    for line in obs_text.split("\n"):
-        m = MARK_LINE_RE.match(line.strip())
-        if m:
-            out.append((int(m.group(1)), m.group(2), m.group(3)))
-    return out
 
 
 def hash_id(n):
@@ -63,36 +56,36 @@ def hash_id(n):
 
 
 def fmt_som_standard(obs_text):
-    return "\n".join(line.strip() for line in obs_text.split("\n")
-                      if line.strip().startswith("[") and "]" in line.strip()[:6])
+    return "\n".join(f"[{m['id']}] {m['label']}" for m in _extract_text_marks(obs_text))
 
 
 def fmt_browser_use_at(obs_text):
-    return "\n".join(f"@{n} {label}" for n, role, label in extract_marks(obs_text))
+    return "\n".join(f"@{m['id']} {m['label']}" for m in _extract_text_marks(obs_text))
 
 
 def fmt_appagent_id(obs_text):
-    return "\n".join(f"id_{n}: {label}" for n, role, label in extract_marks(obs_text))
+    return "\n".join(f"id_{m['id']}: {m['label']}" for m in _extract_text_marks(obs_text))
 
 
 def fmt_tarsier_typed(obs_text):
-    return "\n".join(f"[B{n}:{role}:{label}]" for n, role, label in extract_marks(obs_text))
+    # NOTE: production SoM payload has no explicit role; tarsier variant uses id + label only
+    return "\n".join(f"[B{m['id']}:{m['label']}]" for m in _extract_text_marks(obs_text))
 
 
 def fmt_plain_numbered(obs_text):
-    return "\n".join(f"{n}. {label}" for n, role, label in extract_marks(obs_text))
+    return "\n".join(f"{m['id']}. {m['label']}" for m in _extract_text_marks(obs_text))
 
 
 def fmt_xml_tagged(obs_text):
-    return "\n".join(f'<el_{n} role="{role}">{label}</el_{n}>' for n, role, label in extract_marks(obs_text))
+    return "\n".join(f'<el_{m["id"]}>{m["label"]}</el_{m["id"]}>' for m in _extract_text_marks(obs_text))
 
 
 def fmt_hash_id_control(obs_text):
-    return "\n".join(f"#{hash_id(n)} {label}" for n, role, label in extract_marks(obs_text))
+    return "\n".join(f"#{hash_id(m['id'])} {m['label']}" for m in _extract_text_marks(obs_text))
 
 
 def fmt_plain_sentence(obs_text):
-    return ", ".join(label for n, role, label in extract_marks(obs_text))
+    return ", ".join(m["label"] for m in _extract_text_marks(obs_text))
 
 
 VARIANTS = {
@@ -107,18 +100,26 @@ VARIANTS = {
 }
 
 
-def extract_qwen2vl_hidden(model, processor, intent, observation_text):
-    """Text-only forward pass for Qwen2-VL. Returns (n_layers+1, hidden_dim) tensor."""
-    # Qwen2-VL chat template: same pattern as Qwen3-VL
-    user_text = f"Task: {intent}\n[observation]\n{observation_text}"
+def _build_user_text(intent: str, mode: str, observation_text: str, dom_prompt: str, som_prompt: str) -> str:
+    """v6 /stress 2026-05-14 — F1 fix. Replicate substrate `_build_user_text`."""
+    som_modes = {"som", "som_standard", "browser_use_at", "appagent_id", "tarsier_typed",
+                 "plain_numbered", "xml_tagged", "hash_id_control", "plain_sentence"}
+    sys_prompt = som_prompt if mode in som_modes else dom_prompt
+    text = f"Task: {intent}\nSystem: {sys_prompt}\n"
+    if observation_text:
+        text += observation_text
+    return text
+
+
+def extract_qwen2vl_hidden(model, processor, intent, mode, observation_text, dom_prompt, som_prompt):
+    """Text-only forward pass for Qwen2-VL. v6 fix: mode-conditional system prompt."""
+    user_text = _build_user_text(intent, mode, observation_text, dom_prompt, som_prompt)
     messages = [{"role": "user", "content": [{"type": "text", "text": user_text}]}]
     text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     inputs = processor(text=[text], padding=True, return_tensors="pt")
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
     with torch.no_grad():
         outputs = model(**inputs, output_hidden_states=True, use_cache=False, return_dict=True)
-    # outputs.hidden_states: tuple of (n_layers+1) tensors (batch, seq, hidden)
-    # Take last-token of each layer
     hidden = torch.stack(
         [h[0, -1, :].detach().float().cpu() for h in outputs.hidden_states],
         dim=0,
@@ -129,8 +130,12 @@ def extract_qwen2vl_hidden(model, processor, intent, observation_text):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--archived-run-dir", default="results/mechanistic/archive_subset_b1_cls")
-    p.add_argument("--output", default="results/mechanistic/stage4_h1_qwen2vl7b_cls/hidden_states.npz")
+    p.add_argument("--output", default="results/mechanistic/stage4_h1_qwen2vl7b_cls/hidden_states_v2_fixed.npz")
     p.add_argument("--model-id", default="Qwen/Qwen2-VL-7B-Instruct")
+    # v6 /stress 2026-05-14 — F3 fix (Bug 5 propagation). Pin revision for reproducibility.
+    p.add_argument("--model-revision", default=None,
+                   help="HF revision SHA to pin (paper-grade reproducibility). "
+                        "Default None = use HF Hub current; first run records SHA in provenance.")
     p.add_argument("--tier", default="strong")
     p.add_argument("--n-tasks", type=int, default=24)
     p.add_argument("--steps", default="2,5")
@@ -144,13 +149,24 @@ def main():
     tasks = manifest[args.tier][:args.n_tasks]
     logger.info(f"loaded {len(tasks)} tasks (tier={args.tier})")
 
-    logger.info(f"loading {args.model_id} (this may take a few minutes on first run)")
-    model = Qwen2VLForConditionalGeneration.from_pretrained(
-        args.model_id, torch_dtype=torch.bfloat16, device_map="cuda",
-    )
+    # v6 F1 fix — load production system prompts
+    dom_prompt = Qwen3VLAgent._make_dom_prompt(None)
+    som_prompt = Qwen3VLAgent._make_som_prompt(None)
+    logger.info(f"loaded production prompts: DOM={len(dom_prompt)}c, SoM={len(som_prompt)}c")
+
+    logger.info(f"loading {args.model_id} revision={args.model_revision or '(latest)'}")
+    model_kwargs = dict(torch_dtype=torch.bfloat16, device_map="cuda")
+    if args.model_revision:
+        model_kwargs["revision"] = args.model_revision
+    model = Qwen2VLForConditionalGeneration.from_pretrained(args.model_id, **model_kwargs)
     model.eval()
-    processor = AutoProcessor.from_pretrained(args.model_id)
-    logger.info(f"model loaded — n_layers = {len(model.model.layers)}")
+    proc_kwargs = {}
+    if args.model_revision:
+        proc_kwargs["revision"] = args.model_revision
+    processor = AutoProcessor.from_pretrained(args.model_id, **proc_kwargs)
+    n_layers = len(model.model.layers)
+    actual_revision = getattr(model.config, "_commit_hash", args.model_revision or "(unknown)")
+    logger.info(f"model loaded — n_layers = {n_layers}, revision={actual_revision}")
 
     ALL_MODES = list(VARIANTS.keys()) + ["dom"]  # 8 variants + AXTree baseline (no image, no som)
 
@@ -174,7 +190,8 @@ def main():
                 else:
                     variant_text = VARIANTS[mode](obs_text)
                 try:
-                    h = extract_qwen2vl_hidden(model, processor, intent, variant_text)
+                    h = extract_qwen2vl_hidden(model, processor, intent, mode, variant_text,
+                                                 dom_prompt, som_prompt)
                 except Exception as e:
                     logger.error(f"task {tid} step {step} mode {mode} failed: {e}")
                     continue
@@ -197,13 +214,39 @@ def main():
                           task_ids=task_ids, step_indices=step_indices, mode_labels_str=mode_labels)
     logger.info(f"saved: {out_path}  shape={H.shape}  modes={ALL_MODES}")
 
+    # v6 /stress 2026-05-14 — provenance sidecar (Bug 5 fix propagation)
+    import subprocess
+    try:
+        git_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    except Exception:
+        git_sha = "(unknown)"
+    provenance = out_path.parent / "provenance.json"
+    provenance.write_text(json.dumps({
+        "script": "run_stage4_h1_qwen2vl.py",
+        "model_id": args.model_id,
+        "model_revision_arg": args.model_revision,
+        "model_revision_actual": actual_revision,
+        "tier": args.tier,
+        "n_tasks": args.n_tasks,
+        "steps": steps,
+        "modes": ALL_MODES,
+        "n_layers": n_layers,
+        "shape": list(H.shape),
+        "task_ids_unique": sorted(set(task_ids.tolist())),
+        "git_sha": git_sha,
+        "som_extractor": "p79.experiment.som._extract_text_marks (production, Bug 2 fix)",
+        "system_prompts": "Qwen3VLAgent._make_{dom,som}_prompt (cross-arch canonical)",
+    }, indent=2))
+    logger.info(f"provenance: {provenance}")
+
     summary = out_path.parent / "pilot_summary.md"
     summary.write_text(
         f"# Qwen2-VL-7B P3 extraction\n\n"
         f"Shape: {H.shape}\n"
         f"Modes: {ALL_MODES}\n"
         f"Tasks: {len(set(task_ids.tolist()))}\n"
-        f"Note: text-only (no som baseline). For H1' capacity-limit test.\n"
+        f"Model: {args.model_id} @ {actual_revision}\n"
+        f"Note: text-only (no som baseline). For H1' capacity-limit test. v6 fix landed 2026-05-14.\n"
     )
     logger.info(f"sentinel: {summary}")
 
