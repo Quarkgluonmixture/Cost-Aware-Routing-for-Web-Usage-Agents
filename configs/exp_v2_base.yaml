@@ -119,13 +119,12 @@ backends:
   local_gemma:
     type: "local_gemma"
     path: "google/gemma-3-4b-it"
-    # Paper-grade revision pin: "main" is a non-null placeholder — MUST be
-    # replaced with the gemma-3-4b-it HF HEAD SHA (captured by the first A100
-    # model download) before paper-grade runs. NOT left null on purpose: the
-    # runner's B-83 logic forwards the top-level (Qwen-specific) model.revision
-    # into any backend whose revision is None — "main" prevents Gemma from
+    # Paper-grade revision pin: gemma-3-4b-it HF HEAD SHA captured 2026-05-14
+    # (HF account Gluons1, verified on A100). Non-null on purpose: the runner's
+    # B-83 logic forwards the top-level (Qwen-specific) model.revision into any
+    # backend whose revision is None — an explicit SHA here prevents Gemma from
     # being mis-pinned to the Qwen SHA. Cross-family 3rd baseline, 2026-05-14.
-    revision: "main"
+    revision: "093f9f388b31de276ce2de164bdc2081324b9767"
     quantization: "none"
     device: "cuda"
     max_new_tokens: 4096
