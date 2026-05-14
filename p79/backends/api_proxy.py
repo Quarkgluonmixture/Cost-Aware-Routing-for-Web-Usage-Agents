@@ -43,7 +43,8 @@ class ApiProxyBackend:
                 },
                 "agent": {
                     "image_max_size": config.get("image_max_size", 1024),
-                    "max_obs_chars": config.get("max_obs_chars", 12000),
+                    # B-84: max_obs_chars removed — the agent no longer truncates
+                    # obs_text (viewport filter is the real bound).
                     "max_image_payload_bytes": config.get("max_image_payload_bytes", 5 * 1024 * 1024),
                 },
             }

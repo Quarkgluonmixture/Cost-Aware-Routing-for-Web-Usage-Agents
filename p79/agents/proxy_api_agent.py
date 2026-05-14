@@ -501,9 +501,10 @@ Action Schema:
         obs_text = ""
         if hasattr(obs, "text") and obs.text:
             obs_text = obs.text
-            max_chars = self.config.get("agent", {}).get("max_obs_chars", 8000)
-            if len(obs_text) > max_chars:
-                obs_text = obs_text[:max_chars] + "\n[TRUNCATED]"
+        # B-84: no max_obs_chars truncation. It fired on ~0.2% of steps but only
+        # on AXTree modes (marks modes derive from the untruncated text), an
+        # axis-1 page-coverage asymmetry. The viewport filter is the real input
+        # bound (empirically median 3306 / p99 7656 / max 46592 chars).
 
         history_text = self._format_history(history or [])
 

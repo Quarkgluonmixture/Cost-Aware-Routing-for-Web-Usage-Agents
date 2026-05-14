@@ -60,7 +60,7 @@ OUT_JSON = ROOT / "results/mechanistic/stage4_multimode_b1_cls/method44_steering
 OUT_MD = ROOT / "docs/checkpoints/stage4_method44_results.md"
 
 
-def build_som_marks(obs_text: str, max_marks: int = 200) -> str:
+def build_som_marks(obs_text: str, max_marks=None) -> str:
     """Canonical [SOM_MARKS] builder — delegates to the single source of truth.
 
     master bug B-82 fix (2026-05-14): prior local impl was a crude AXTree

@@ -21,7 +21,10 @@ class SomResult:
     mark_count: int
 
 
-def _extract_text_marks(obs_text: str, max_marks: int = 200) -> List[Dict[str, Any]]:
+def _extract_text_marks(obs_text: str, max_marks: Optional[int] = None) -> List[Dict[str, Any]]:
+    # B-84: max_marks defaults to None (no cap). The former 200 cap fired on
+    # ~0.03% of steps but only on marks modes — an axis-1 asymmetry vs the
+    # uncapped AXTree modes. The viewport filter bounds element count in practice.
     marks: List[Dict[str, Any]] = []
     for line in (obs_text or "").splitlines():
         m = re.search(r"\[(\d+)\]", line)
@@ -30,12 +33,12 @@ def _extract_text_marks(obs_text: str, max_marks: int = 200) -> List[Dict[str, A
         eid = int(m.group(1))
         label = re.sub(r"\[(\d+)\]", "", line).strip()
         marks.append({"id": eid, "label": label})
-        if len(marks) >= max_marks:
+        if max_marks is not None and len(marks) >= max_marks:
             break
     return marks
 
 
-def build_som_text_from_obs_text(obs_text: str, max_marks: int = 200) -> str:
+def build_som_text_from_obs_text(obs_text: str, max_marks: Optional[int] = None) -> str:
     """Canonical [SOM_MARKS] text builder from an AXTree obs_text string.
 
     SINGLE SOURCE OF TRUTH for SoM text construction. `_build_som_result`

@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 ALL_6_MODES = ["dom", "phantom_text", "phantom_prompt", "phantom_som", "som", "vision"]
 
 
-def build_som_marks(obs_text: str, max_marks: int = 200) -> str:
+def build_som_marks(obs_text: str, max_marks=None) -> str:
     """Canonical [SOM_MARKS] builder — delegates to the single source of truth.
 
     master bug B-82 fix (2026-05-14): the prior local implementation called

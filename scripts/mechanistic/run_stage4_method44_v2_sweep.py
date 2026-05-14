@@ -66,7 +66,7 @@ DEFAULT_LAYERS = [11, 17, 23, 29, 33, 34]
 DEFAULT_ALPHAS = [1.0, 2.0, 5.0, 10.0, 20.0]
 
 
-def build_som_marks(obs_text, max_marks: int = 200):
+def build_som_marks(obs_text, max_marks=None):
     """Canonical [SOM_MARKS] builder — delegates to the single source of truth.
 
     master bug B-82 fix (2026-05-14): the prior local impl was a crude AXTree

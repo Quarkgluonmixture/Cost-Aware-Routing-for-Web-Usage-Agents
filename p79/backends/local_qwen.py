@@ -22,6 +22,10 @@ class LocalQwenBackend:
             agent_cfg = {
                 "model": {
                     "path": config.get("path", "Qwen/Qwen3-VL-4B-Instruct"),
+                    # B-83 fix: forward HF revision SHA so the agent loads the
+                    # pinned weights instead of its hard-coded default. None when
+                    # absent → qwen3vl_agent falls back to its default + warns.
+                    "revision": config.get("revision"),
                     "quantization": config.get("quantization", "none"),
                     "device": config.get("device", "cuda"),
                     # Default raised 512 → 4096 (§45 alignment, §97 audit):
@@ -40,7 +44,8 @@ class LocalQwenBackend:
                 },
                 "agent": {
                     "image_max_size": config.get("image_max_size", 1024),
-                    "max_obs_chars": config.get("max_obs_chars", 12000),
+                    # B-84: max_obs_chars removed — the agent no longer truncates
+                    # obs_text (viewport filter is the real bound).
                 },
             }
             self._agent = Qwen3VLAgent(agent_cfg)

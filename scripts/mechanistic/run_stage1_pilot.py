@@ -86,7 +86,7 @@ def load_task_intents(site: str, n_tasks: int) -> list[tuple[int, str]]:
     return intents
 
 
-def _build_som_marks_text(obs_text: str, max_marks: int = 200) -> str:
+def _build_som_marks_text(obs_text: str, max_marks=None) -> str:
     """Canonical [SOM_MARKS] builder — delegates to the single source of truth.
 
     master bug B-82 fix (2026-05-14): the prior local impl explicitly skipped

@@ -55,7 +55,7 @@ MANIFEST = ARCHIVE / "manifest.json"
 ALPHA = 50.0  # extreme, force any hook-firing to show up
 
 
-def build_som_marks(obs_text: str, max_marks: int = 200) -> str:
+def build_som_marks(obs_text: str, max_marks=None) -> str:
     """Canonical [SOM_MARKS] builder — delegates to the single source of truth.
 
     master bug B-82 fix (2026-05-14): prior local impl was a crude AXTree

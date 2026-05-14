@@ -1386,6 +1386,62 @@ backfilled into catalog. Paper bug-fix chapter cites these entries; each individ
 
 ---
 
+## §139 Pre-fire pipeline audit findings (2026-05-14)
+
+`/stress` v6 pre-fire scope (13 files) + `/codex-stress` Mode B (reproducibility-auditor
+persona, data-pipeline side: `vwa_wrapper.py` + `analysis.py`). Audited the **production
+experiment path** before Phase 1a paper-grade rerun (24 conditions). 笔记 §139. codex
+output: `docs/checkpoints/codex_outputs/prefire_pipeline_FINAL_2026-05-14.md`.
+
+### B-83. `model.revision` dead-config — pin never reaches the agent 🛠️ FIXED
+
+- **Origin**: Claude `/stress` F2 (2026-05-14, 笔记 §139). The twin of B-82 — a `/stress`
+  fix (codex C8, 2026-05-14) that was believed to work but whose wiring was never connected.
+- **Files**: `p79/experiment/runner/main.py::_get_backend`, `p79/backends/local_qwen.py`,
+  `p79/agents/qwen3vl_agent.py`.
+- **Mechanism**: `exp_v2_base.yaml:96-103` added a top-level `model: revision: <SHA>` block
+  with the stated purpose "every run's merged config proves the loaded SHA". But the runner
+  passes ONLY the backend sub-config (`backends.local_4b`) to `create_backend`; `local_qwen.py`
+  hand-builds `agent_cfg["model"]` WITHOUT a `revision` key; so `qwen3vl_agent.py` always hit
+  its hard-coded default. The top-level `model:` block never reached the agent — merged config
+  decoupled from the actually-loaded SHA. Functionally "correct" only by luck (hard-coded
+  default == base.yaml value). A secondary bug: `.get("revision", default)` returns None (not
+  the default) when the wrapper passes an explicit `revision=None` key.
+- **Status**: 🛠️ **FIXED** (code). 2026-05-14.
+- **Fix**: (1) `_get_backend` forwards `cfg["model"]["revision"]` into `backend_cfg`; (2)
+  `local_qwen.py` adds `"revision": config.get("revision")` to `agent_cfg["model"]`; (3)
+  `qwen3vl_agent.py` uses `.get("revision") or _DEFAULT` (handles None) + warns on fallback so
+  it is never silent. py_compile clean; trace test confirms merged-cfg → backend_cfg →
+  agent_cfg → `agent.model_revision` all equal (FLOWS CORRECTLY).
+- **Paper impact**: provenance — OSF lock can now genuinely prove the loaded SHA from config.
+
+### B-84. axis-1 `max_obs_chars` truncation + `max_marks` cap — DOM-vs-marks page-coverage asymmetry 🛠️ FIXED
+
+- **Origin**: Claude `/stress` F1 (2026-05-14, 笔记 §139), refined by codex Mode B C1/C2.
+- **Files**: `p79/agents/qwen3vl_agent.py`, `p79/agents/proxy_api_agent.py`, `p79/experiment/som.py`, `p79/backends/local_qwen.py`, `p79/backends/api_proxy.py`, + 8 mechanistic delegate scripts (`diag_stage4_method44_layer_check`, `run_stage1_pilot`, `curate_mirage_tasks`, `run_stage4_method44_steering`, `run_stage2_patching_pilot`, `run_stage2b_continuation_pilot`, `run_stage4_multimode_extract`, `run_stage4_method44_v2_sweep`).
+- **Mechanism**: dom / phantom_prompt obs went through agent-side `obs_text[:max_obs_chars]` (12000) truncation; som / phantom_som / phantom_text built `[SOM_MARKS]` via `_extract_text_marks(max_marks=200)` from the **untruncated** AXTree. On pages exceeding the cap the two paths saw different page subsets — an asymmetry on paper-1's main axis-1 (text-format), not "same information, different format".
+- **Empirical severity (task #64)**: measured 57435 archived `observation_dom.txt` — `>12000` chars fires on **0.207%** of steps, `>200` marks on **0.028%**. The viewport filter (`current_viewport_only=True`) is the real input bound (median 3306 / p99 7656 / max 46592 chars). → downgraded P0 → P1: real asymmetry, negligible frequency.
+- **Status**: 🛠️ **FIXED** (code). 2026-05-14. User-confirmed: delete both redundant caps rather than refactor truncation order.
+- **Fix**: removed `max_obs_chars` truncation from both agents (+ removed the now-dead `max_obs_chars` key from both backend wrappers — subsumes the Bug-8 dead-`8000`-default cleanup); `_extract_text_marks` + `build_som_text_from_obs_text` default `max_marks=None` (no cap, explicit cap still honored if passed); 8 mechanistic delegates' `max_marks` default → `None` so mechanistic SoM stays byte-identical to production (sibling-propagation per /stress v6). py_compile clean ×13; functional smoke confirms 250-mark input passes uncapped + explicit `max_marks=50` still honored. Provenance metadata (viewport flag + per-step `obs_text_chars`) — separate follow-up, not blocking.
+- **Paper impact**: axis-1 is now clean by construction — no truncation/cap asymmetry, no "0.2%" caveat needed in §1/§3.
+
+### Open findings from this audit (tracked as tasks, not yet fixed)
+
+| B# | Finding | Severity | Task | Note |
+|---|---|---|---|---|
+| B-85 | `has_effective_action` FP filter only counts `type`/`select_option`, not `click` → click-causal `program_html` tasks mis-downgraded | P0 | #67 | data-altering (changes SR definition) — deep研究 first, user decides |
+| B-86 | parse-error recovery scaffold asymmetry: B0-only GLM fallback + B1 `max_new_tokens=384` below parse-safe floor; codex confirmed it flows into `compute_adjusted_success` via `agent_finished` | P1 | #68 | advisor question (clean API data?) + ensure disclosure fields recorded pre-fire |
+| B-87 | `analysis.py::_plot_phase1` hardcodes `mode_order=["dom","som","vision"]` → headline plot silently drops 3 phantom modes | P1 | #69 | codex finding |
+| B-88 | reference images injected into phantom "no-image" modes regardless of mode | P2 | #70 | image axis not clean on ref-image tasks |
+| B-89 | `cost_efficiency_ratio` stays raw-success based while `success_rate` is overwritten to adjusted | P2 | #71 | codex finding — mixes raw economics + adjusted conclusions |
+| B-90 | `_extract_text_marks` uses `re.search` (any-position `[N]` match) — over-inclusion, flagged in prior audits, still unfixed | P2 | #72 | evaluate impact on v2 `[SOM_MARKS]` payload |
+
+Non-bug verify item: `phantom_text` config uses legacy `observation_mode: phantom_dom` →
+`condition_id = phase1_phantom_dom_router_0`; confirm downstream mode-string aggregation
+accepts the alias (task #73).
+
+---
+
 ## Updated Status Counts (post-§116 audit + Phase 0 backfill)
 
 | Tag | Count | Notes |

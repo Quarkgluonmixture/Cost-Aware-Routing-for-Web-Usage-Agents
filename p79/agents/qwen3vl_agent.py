@@ -52,9 +52,18 @@ class Qwen3VLAgent:
         self.model_path = config.get("model", {}).get("path", "Qwen/Qwen3-VL-4B-Instruct")
         # Paper-grade: pin HF revision SHA (see env_snapshot.json + osf_lock_manifest.md)
         # Default = revision captured 2026-05-07 in DGX baseline lock (笔记 §114).
-        self.model_revision = config.get("model", {}).get(
-            "revision", "ebb281ec70b05090aa6165b016eac8ec08e71b17"
-        )
+        # B-83 fix: `.get("revision", default)` returned None when the backend
+        # wrapper passed an explicit `revision=None` key (key present, value None),
+        # so the default never fired. Use `or` so missing OR None both fall back,
+        # and warn so a fallback is never silent (the prior bug masked it).
+        _DEFAULT_REVISION = "ebb281ec70b05090aa6165b016eac8ec08e71b17"
+        self.model_revision = config.get("model", {}).get("revision") or _DEFAULT_REVISION
+        if config.get("model", {}).get("revision") is None:
+            logger.warning(
+                "model.revision not provided by config — falling back to hard-coded "
+                "default %s. Run provenance cannot prove the loaded SHA from config.",
+                _DEFAULT_REVISION[:12],
+            )
         self.device = config.get("model", {}).get("device", "cuda")
         self.quantization = config.get("model", {}).get("quantization", "none")
 
@@ -419,9 +428,10 @@ CRITICAL:
         obs_text = ""
         if hasattr(obs, "text") and obs.text:
             obs_text = obs.text
-            max_chars = self.config.get("agent", {}).get("max_obs_chars", 8000)
-            if len(obs_text) > max_chars:
-                obs_text = obs_text[:max_chars] + "\n[TRUNCATED]"
+        # B-84: no max_obs_chars truncation. It fired on ~0.2% of steps but only
+        # on AXTree modes (marks modes derive from the untruncated text), an
+        # axis-1 page-coverage asymmetry. The viewport filter is the real input
+        # bound (empirically median 3306 / p99 7656 / max 46592 chars).
 
         system_prompt = self._system_prompts.get(observation_mode, self._system_prompts["dom"])
 

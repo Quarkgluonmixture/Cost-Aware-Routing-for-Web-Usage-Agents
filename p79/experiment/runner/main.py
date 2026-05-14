@@ -157,6 +157,14 @@ class ExperimentRunner:
         backend_cfg = dict(backend_cfg)  # shallow copy to avoid mutating self.cfg
         if backend_cfg.get("seed") is None:
             backend_cfg["seed"] = int(self.seed)
+        # B-83 fix: forward top-level `model.revision` into the backend cfg.
+        # The runner passes ONLY the backend sub-config to create_backend, so
+        # the `model:` block in exp_v2_base.yaml never reached the agent — the
+        # local_qwen wrapper had no `revision` key and qwen3vl_agent silently
+        # used its hard-coded default (merged config decoupled from loaded SHA).
+        _model_revision = self.cfg.get("model", {}).get("revision")
+        if _model_revision and backend_cfg.get("revision") is None:
+            backend_cfg["revision"] = _model_revision
         backend = create_backend(backend_id, backend_cfg)
         self._backends[backend_id] = backend
         return backend

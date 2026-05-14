@@ -75,7 +75,7 @@ def find_artifacts_dir(run_dir: Path) -> Path:
     raise FileNotFoundError(f"No condition subdir with artifacts/ in {run_dir}")
 
 
-def build_som_marks(obs_text: str, max_marks: int = 200) -> str:
+def build_som_marks(obs_text: str, max_marks=None) -> str:
     """Canonical [SOM_MARKS] builder — delegates to the single source of truth.
 
     master bug B-82 fix (2026-05-14): prior local impl dropped the
