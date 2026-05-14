@@ -14,9 +14,11 @@ scope_revision_2026_05_13: cls+red × B0+B1 × 6 modes = 24 operational conditio
 
 # Phantom-SoM Pre-Registration (Draft)
 
-> **Status: draft** — pending advisor sync lock. Once advisor signs (single-line email or co-authored commit), `status` flips to `locked`, `registered_git_sha` records the commit at lock time, and `witnessed_by` records advisor name + lock timestamp. `data_lock_until` records when 16-cell rerun finishes — between lock-time and completion-time, NO additional analyses may be added to gating-family tests.
+> **Status: draft** — pending advisor sync lock. Once advisor signs (single-line email or co-authored commit), `status` flips to `locked`, `registered_git_sha` records the commit at lock time, and `witnessed_by` records advisor name + lock timestamp. `data_lock_until` records when the Phase 1a 24-condition rerun finishes — between lock-time and completion-time, NO additional analyses may be added to gating-family tests.
 >
-> **Reading order**: §1 epistemic structure (why this framework) → §2 hypotheses (H1-H6 + framing rule) → §3 multiple-comparison family declaration → §4 locked analysis choices → §5 exploratory disclosure → §6 witness mechanism.
+> **Scope of this DOI claim**: Phase 1a only — 24 operational conditions (2 sites cls+red × 2 models B0+B1 × 6 modes) across 4 statistical cells. The gating hypotheses are **H1 (hero) + H2 (drop-in) + H3 (structural)**. H5/H6 (post-hoc theory) and H7/H8 (router, Phase 2) are retained as **deferred forward stubs in Appendix B — NOT part of this DOI claim**. Mechanism layer-selection disclosure (Stage 2) is in Appendix C.
+>
+> **Reading order**: §1 epistemic structure → §2 hypotheses (H1-H3 gating + framing rule) → §3 multiple-comparison family declaration → §4 locked analysis choices → §5 exploratory disclosure → §6 witness mechanism → §7 reproducibility → Appendix A decision log → Appendix B deferred hypotheses (H5-H8) → Appendix C mechanism disclosure.
 >
 > **Companion docs**:
 > - `docs/reference/EVIDENCE_LAYER_AUDIT.md` §2 — template + meta-rationale
@@ -49,36 +51,87 @@ This structure compresses garden-of-forking-paths degree-of-freedom to a small, 
 
 #### H1 — Hero deployment claim (P-SoM is hidden routing arm)
 
-P-SoM drop-one oracle ceiling lift > 0 across statistical cells (each cell = one (site, model) stratum), satisfying ALL two PRIMARY sub-conditions:
+**Estimand (locked 2026-05-14, decision "3A")**: H1 estimates the **fixed-effects
+inverse-variance-weighted average P-SoM drop-one oracle ceiling lift over the 4
+*planned* (site, model) cells** — (cls,B0), (cls,B1), (red,B0), (red,B1). The 4
+cells are NOT a random sample from a larger universe of site/model conditions;
+they are the specific conditions this study characterizes. Therefore the estimand
+is the average effect across *exactly these 4 cells*, not the mean μ of a
+hypothetical population. **No between-cell variance τ² is in the estimand** — this
+is a deliberate choice (see Appendix A 2026-05-14): it avoids estimating τ² at
+k=4 (where DerSimonian-Laird τ² is downward-biased and random-effects Wald CIs are
+anti-conservative, per Veroniki et al. 2016 / IntHout et al. 2014), which the prior
+random-effects framing required.
 
-- **H1(i)** Pooled DerSimonian-Laird random-effect meta-analysis on N=4 (site, model) cells reaches significance at Holm α=0.05 (PRIMARY family m=1 test, no within-family correction needed).
-- **H1(ii)** Pooled magnitude θ_RE ≥ 1.0pp AND one-sided **superiority test** rejects H0: θ ≤ 1.0pp at α=0.05 (i.e., effect is significantly ABOVE the +1.0pp substantive-effect threshold; commit-locked). Note 2026-05-13: replaces prior "TOST equivalence rejected at δ" wording which was ambiguous in direction; one-sided superiority is the unambiguous statistical test for "effect substantively > δ".
+**H1 — single PRIMARY gate**: the fixed-effects pooled drop-one effect θ_FE
+**significantly exceeds the +1.0pp substantive-effect threshold** via a one-sided
+superiority test: reject H0: θ_FE ≤ +1.0pp at α=0.05 (PRIMARY family m=1, no
+within-family correction).
 
-**Drop-one definition (operational)**: For each (site, model) cell containing all 6 modes (DOM, SoM, Vision, P-text, P-prompt, P-SoM), compute oracle ceiling SR over {6 modes} minus oracle ceiling SR over {5 modes drop P-SoM} per task, then average across the cell's task pool. Paired 1000-resample task-level bootstrap CI per cell; pooled DerSimonian-Laird across 4 cells.
+This single test implies both (a) θ_FE ≠ 0 and (b) θ_FE point estimate > +1.0pp;
+the prior H1(i) "pooled meta ≠ 0" and the separate "magnitude ≥ 1.0pp" check were
+redundant with it and have been folded in (2026-05-14 simplification).
 
-**Transparency consistency check (NOT gating, reported alongside H1)**: K_h1 = ⌈0.75 × 4⌉ = 3 of 4 cells individually clear Holm α=0.05 within the per-cell P-SoM sub-family (m = 4). **K-of-N reclassified pre-data 2026-05-13** from gating threshold to transparency consistency check, based on power analysis (`docs/analysis/cross_sites/power_analysis.md`) showing per-cell power at observed 1-3pp effect sizes is < 10% — calibrated only for ≥7pp effects, smaller than reasonable phenomenon effect size, so K-as-gate is statistically dysfunctional. See §4 audit B9 row + Appendix A 2026-05-13 entry.
+**Pooling (operational)**: For each (site, model) cell containing all 6 modes (DOM,
+SoM, Vision, P-text, P-prompt, P-SoM), compute oracle ceiling SR over {6 modes}
+minus oracle ceiling SR over {5 modes drop P-SoM} per task, then average across the
+cell's task pool → per-cell effect θ_i with paired 1000-resample task-level
+bootstrap SE_i. Pool via fixed-effects inverse-variance weighting: w_i = 1/SE_i²,
+θ_FE = Σ(w_i·θ_i)/Σw_i, SE_FE = sqrt(1/Σw_i). The one-sided superiority z-statistic
+is z = (θ_FE − 1.0) / SE_FE. **Why FE Wald is sound at k=4 here**: each per-cell
+θ_i is approximately normal (CLT on ~210-234 paired tasks); θ_FE is a linear
+combination of 4 approximately-normal estimates → approximately normal. The k=4
+fragility of the *prior* design came from τ² estimation, which is now absent.
+
+**Heterogeneity (reported descriptively, NOT in the estimator)**: Cochran's Q, I²,
+and a DerSimonian-Laird τ² estimate are computed and reported for transparency
+("are the 4 cells consistent?"), and a random-effects pooled estimate is shown as
+an Appendix sensitivity row. But they do NOT enter the H1 gate — see the
+heterogeneity-conditional rule in the §2 framing-rule block for how high I²
+affects *interpretation* (not the FE point estimate).
+
+**Transparency consistency check (NOT gating, reported alongside H1)**: report the
+**count of cells (out of 4) whose per-cell drop-one bootstrap CI excludes 0** and
+the count individually Holm-significant. No fixed K threshold (at N=4 a "K%
+threshold" is fake precision — ⌈0.75×4⌉ = ⌈0.67×4⌉ = 3; the prior K_h1/K_h3
+percentages collapsed). A descriptive benchmark "3 of 4 = strong per-cell
+consistency" may be used in prose, but it is NOT a decision rule. See §4 + Appendix A.
 
 #### H2 — Drop-in property (P-SoM specifically)
 
-**Scope revision 2026-05-13 (codex stress audit T2 fix)**: H2 primary gate (gating R1
-framing rule) is **cost equivalence only** — H2(a). H2(b) latency and H2(c) signal
-AUROC are demoted to **EXPLORATORY transparency reports** (NOT gating R1). H2(d)
-drop-one magnitude is already covered by H1(ii) magnitude check. Rationale:
+**Scope (revised 2026-05-13 codex stress audit T2; refined 2026-05-14 decision "3A")**:
+The R1 framing rule depends on **H2(a) cost** only, and H2(a) is a *by-construction
+property with a falsification check* (not a statistical gate — see below). H2(b)
+latency and H2(c) signal AUROC are **EXPLORATORY transparency reports** (NOT gating
+R1). H2(d) drop-one magnitude is already covered by the H1 superiority gate. Rationale:
 
-- (a) is a model-property test (regex filter ≡ no image tokens), measurable per-cell with
-  bootstrap CI, properly gating
+- (a) is a by-construction model property (regex filter ≡ no image tokens), verified
+  by a falsification check, not a sampling-theory hypothesis test
 - (b) latency depends on serving infrastructure (DGX vs A100 vs proxy), not a model
   property; should be characterized but not gated
 - (c) signal AUROC depends on routing-signal universe choice (`aggregate_routing_auroc.py`
   top-1 selection), which is exploratory characterization per §5 — including AUROC
   in R1 gating would force a circular dependency
-- (d) folded into H1(ii) magnitude+superiority gate
+- (d) folded into the H1 superiority gate
 
-**H2(a) — PRIMARY GATE (cost equivalence)**:
-median cost(P-SoM) within ±10% of median cost(DOM) per cell, replicated in
-≥ K_h2 = 3 of 4 cells (transparency consistency check). Tested empirically per cell.
-This reflects the by-construction property that `[SOM_MARKS]` is an AXTree regex
-filter (no image embedding tokens).
+**H2(a) — BY-CONSTRUCTION property with falsification check (locked 2026-05-14, decision "3A")**:
+P-SoM cost ≈ DOM cost is **not an empirical hypothesis to be gated by a statistical
+test** — it is a *by-construction* property. P-SoM's observation is `[SOM_MARKS]` =
+a regex filter over the *same* VWA accessibility-tree text the DOM baseline already
+consumes, plus *no image tokens*. The token count therefore cannot be substantially
+higher than DOM by construction; it is bounded by DOM cost + a regex-pass overhead
+that is provably negligible. Running a sampling-theory equivalence test (TOST) or a
+K-of-N count on a near-deterministic token-count quantity would be a category error.
+
+- **By-construction argument**: stated in paper §3.2 (regex-filter derivation).
+- **Empirical falsification check (pre-registered)**: report observed median cost
+  ratio cost(P-SoM)/cost(DOM) per condition in §4. **Falsification threshold**: if
+  ANY condition shows median cost ratio > **1.20×**, the by-construction claim is
+  contradicted and must be investigated (regex not filtering / hidden overhead /
+  tokenizer surprise) before H2(a) can be asserted. The check is a *falsification*
+  test, not a confirmation test — passing it (all ratios ≤ 1.20×) does not "prove"
+  equivalence, it fails to falsify the by-construction derivation.
+- **No K_h2 threshold** — H2(a) is not a per-cell-counted hypothesis test.
 
 **H2(b) — EXPLORATORY transparency report (NOT gating)**:
 median latency(P-SoM) ≤ 0.6 × median latency(SoM). Reflects skipping image inference
@@ -100,11 +153,11 @@ Each phantom-space axis (axis 1 = text payload via P-text; axis 2 = SoM-style pr
 
 H3 statistical cells = 4 (one per (site, model)). H3 axis-1 and axis-2 are tested separately within each cell.
 
-- **H3(i) PRIMARY GATE** axis 1: pooled across N=4 cells, mean |P-text ∖ P-SoM| > 0 with DerSimonian-Laird random-effects meta CI excluding 0 (Holm α=0.05, m=1 within axis-1 sub-family).
-- **H3(ii) PRIMARY GATE** axis 2: same as H3(i) for |P-prompt ∖ P-SoM|.
+- **H3(i) STRUCTURAL GATE** axis 1: fixed-effects inverse-variance pooled mean |P-text ∖ P-SoM| over the 4 planned cells, FE CI excludes 0 (one-sided, α=0.05, m=1 within axis-1 sub-family). Same FE estimand as H1 (decision "3A" 2026-05-14): the 4 cells are the study design, not a population sample; no τ².
+- **H3(ii) STRUCTURAL GATE** axis 2: same as H3(i) for |P-prompt ∖ P-SoM|.
 - **H3(iii)** Per-cell unique-count noise floor: ≥ 2 tasks (≈ 1pp at N=234 to N=210); 1 task is noise floor, excluded from cell-level pass.
 
-**Transparency consistency check (NOT gating)**: K_h3 = ⌈0.67 × 4⌉ = 3 of 4 cells individually with bootstrap 95% CI excluding 0 (m=4 per axis). Same K-of-N reclassification rationale as H1 (see §4 audit B9 + Appendix A 2026-05-13 entry).
+**Transparency consistency check (NOT gating)**: report count of cells (out of 4) whose per-cell unique-count bootstrap CI excludes 0, per axis. No fixed K threshold (see H1 transparency check + §4 K-of-N row — at N=4 a K% is fake precision). Archive caveat (`meta_phantom_lift.md`): P-text drop-in I²=71% and LOO-fragile (one-cell-drop flips Holm) — H3 axes are genuinely more heterogeneous than P-SoM; if descriptive I² > 75%, the heterogeneity-conditional rule caps the hook at R3.
 
 **Test details**:
 - Primary gating: bootstrap CI on unique-count, 1000 resamples.
@@ -123,7 +176,7 @@ Paper §4 prose **must** explicitly flag: "exploratory analysis; not pre-registe
 
 #### H5 — 别扭 (mismatch) framework predictions
 
-The 4 distinguishing predictions in 实验笔记 §108.16 are tested against 16-cell data. The framework was developed after observing N=4 pre-Phase-A cells; this is **post-hoc**.
+The 4 distinguishing predictions in 实验笔记 §108.16 are tested against the Phase 1a 24-condition / 4-cell data. The framework was developed after observing pre-Phase-A archive cells; this is **post-hoc**.
 
 Paper §5 prose **must** explicitly flag: "post-hoc theoretical framework, validated on the same data motivating it; no formal significance gating."
 
@@ -133,7 +186,14 @@ B0 vs B1 ranking direction on text-axis vs image-axis drop-one tested via B0 × 
 
 Paper §7 prose **must** explicitly flag: "post-hoc finding; no pre-registered prediction."
 
-### ROUTER family (gates Section 6 routing claim — **pending advisor 5/5 lock**: paper-1 PRIMARY vs paper-2 deferred)
+### ROUTER family — H7/H8 — ⚠️ DEFERRED, NOT PART OF THIS DOI CLAIM (logical Appendix B)
+
+> **⚠️ Scope banner (2026-05-14 decision "3A")**: H7/H8 require Phase 2 router data
+> that does not exist. They are **not gating the Phase 1a workshop DOI claim** and
+> are **not tested in Phase 1a**. They are retained here as a forward stub for a
+> future paper-2 preregistration. A reviewer should read H1-H3 (above) as the
+> complete gating set for this DOI; H7/H8 below carry no claim weight. (Physical
+> relocation to a standalone paper-2 prereg is a follow-up cleanup item.)
 
 #### H7 — Tier 1 oracle router lift over best-single-mode baseline (offline supervised)
 
@@ -168,25 +228,54 @@ The paper §1 hook framing maps to data outcomes as follows:
 
 | Rule | Conditions | Paper hook framing | Hook power |
 |---|---|---|---|
-| **R1** | H1 holds AND H2(a) cost holds AND H3(i) holds AND H3(ii) holds (H2(b) latency + H2(c) AUROC reported as exploratory transparency, NOT gating) | "Phantom routing space (M1/M2 2-axis empirical structure); P-SoM as deployment hero, P-text/P-prompt as structural ablation arms validating axis decomposition." | STRONGEST |
-| **R2** | H1 holds AND H2(a) cost holds AND only one of H3(i)/(ii) holds | "Phantom routing space (single-axis empirical structure) with P-SoM as deployment hero; remaining axis decomposition theoretical (Zoom 1 architectural argument only)." | MODERATE-STRONG |
-| **R3** | H1 holds AND H2(a) cost holds AND neither H3(i)/(ii) holds | "Phantom-SoM is hidden 4th routing arm; M1/M2 axis decomposition supported by Zoom 1 architectural argument only, not empirically validated by ablation." | MODERATE (= 04-30 fallback; workshop-grade) |
-| **R4** | H1 holds AND H2(a) cost fails (latency / AUROC reported but not gating, so R4 triggers only on cost failure) | "Phantom-SoM partial drop-in (cost equivalence fails)" + §4 disclosure of failed sub-claim. | WEAK; substantial revision |
-| **R5** | H1 fails (pooled DerSimonian-Laird meta Holm α=0.05 fails OR pooled magnitude θ_RE < 1.0pp OR one-sided **superiority test** fails reject H0: θ ≤ +1.0pp at α=0.05) | Paper death scenario: pivot to VWA bug audit paper (§107 4-cluster fix as primary) OR abandon. Decision deferred to advisor sync at fail time. | n/a |
+| **R1** | H1 holds AND H2(a) by-construction property not falsified AND H3(i) holds AND H3(ii) holds (H2(b) latency + H2(c) AUROC reported as exploratory transparency, NOT gating) | "Phantom routing space (M1/M2 2-axis empirical structure); P-SoM as deployment hero, P-text/P-prompt as structural ablation arms validating axis decomposition." | STRONGEST |
+| **R2** | H1 holds AND H2(a) not falsified AND only one of H3(i)/(ii) holds | "Phantom routing space (single-axis empirical structure) with P-SoM as deployment hero; remaining axis decomposition theoretical (Zoom 1 architectural argument only)." | MODERATE-STRONG |
+| **R3** | H1 holds AND H2(a) not falsified AND neither H3(i)/(ii) holds | "Phantom-SoM is hidden 4th routing arm; M1/M2 axis decomposition supported by Zoom 1 architectural argument only, not empirically validated by ablation." | MODERATE (= 04-30 fallback; workshop-grade) |
+| **R4** | H1 holds AND H2(a) **falsified** (median cost ratio P-SoM/DOM > 1.20× in some condition) | "Phantom-SoM partial drop-in (cost-equivalence by-construction claim contradicted by data)" + §4 disclosure + investigation of the falsification. | WEAK; substantial revision |
+| **R5** | H1 fails — one-sided **superiority test** fails to reject H0: θ_FE ≤ +1.0pp at α=0.05 (θ_FE = fixed-effects pooled drop-one over 4 planned cells) | Paper death scenario: pivot to VWA bug audit paper (§107 4-cluster fix as primary) OR abandon. Decision deferred to advisor sync at fail time. | n/a |
 
-**Trigger rule update 2026-05-13**: R5 no longer fires on `< K_h1` (K-of-N reclassified to transparency-only). Pooled meta + one-sided superiority test primary gate only (TOST replaced 2026-05-13 due to semantic ambiguity, see Appendix A). K-of-N consistency reported in §4 per-cell table as descriptive transparency row.
+**Trigger rule update (2026-05-13 → refined 2026-05-14 decision "3A")**: R5 fires only on the single H1 superiority gate failing — no `< K_h1` trigger (K-of-N is transparency-only), no separate "pooled meta ≠ 0" or "magnitude ≥ 1pp" sub-gates (folded into the one superiority test). The estimator is fixed-effects inverse-variance pooling over the 4 planned cells (no DL, no REML, no τ²).
 
-**Heterogeneity-conditional rule (added 2026-05-13 to resolve §4 audit B8 ↔ H1(i) conflict)**: If pre-specified I² > 75% from random-effects meta (per §4 audit B8 thresholds), do NOT pool — primary inference reverts to per-cell forest + meta-regression by site / model. R1-R5 framing in this branch maps to per-cell direction-consistency: ≥3 of 4 cells direction-positive + ≥2 individually Holm sig → R3-grade hook; otherwise R4/R5.
+**Heterogeneity-conditional rule (reframed 2026-05-14 under the fixed-effects estimand)**: Under the FE estimand, high heterogeneity does NOT block pooling — the FE average over the 4 planned cells is well-defined regardless of I². But high I² makes "the average" a *less meaningful summary* of 4 genuinely-different cells. Rule: if descriptive I² > 75%, the H1 superiority gate still runs and still determines R5-vs-not, BUT the paper hook is **capped at R3** (cannot claim R1/R2 "empirical structure") and §4 prose must lead with the per-cell forest, presenting θ_FE as a secondary summary. I² ≤ 75% → normal R1-R5 mapping. (This replaces the prior "I²>75% → do not pool" rule, which was incoherent with a superiority test that needs a pooled estimate.)
+
+### §2.4 Power acknowledgment (added 2026-05-14, in-doc per codex prereg-structure review)
+
+Phase 1a has **4 statistical cells** (2 sites × 2 models). This is a small design and the preregistration acknowledges it explicitly:
+
+- **Per-cell power is modest.** Per `power_analysis.md`, at observed phantom-mode effect sizes (1-5pp) and observed adjusted-SR levels (8-15%), per-cell statistical power is ≈ 0.30 — minimum detectable effect at 80% per-cell power is 5-7pp. This is *why* per-cell K-of-N is transparency-only, not a gate.
+- **The fixed-effects estimand is the mitigation.** By estimating the average over exactly the 4 planned cells (not a population mean), the design needs no τ² estimation — the k=4 fragility of random-effects τ² (Veroniki et al. 2016) and anti-conservative random-effects Wald CIs (IntHout et al. 2014) do not apply. The FE pooled SE = sqrt(1/Σw_i) aggregates 4 well-powered per-cell estimates (each from 210-234 paired tasks).
+- **Honest scope.** The claim is "P-SoM drop-one averaged over cls/red × B0/B1", NOT "P-SoM helps universally". Cross-site / cross-model generalization is Phase 1b (shop) + future work. The per-cell forest is always shown so the reader sees the 4 cells, never just the average.
+
+### §2.5 H1 PASS/FAIL decision flow (added 2026-05-14)
+
+```
+1. Compute per-cell drop-one θ_i + paired-bootstrap SE_i for each of the 4 cells.
+2. Fixed-effects pool: θ_FE = Σ(w_i·θ_i)/Σw_i,  SE_FE = sqrt(1/Σw_i),  w_i = 1/SE_i².
+3. Compute descriptive Q, I², τ² (for transparency + the heterogeneity branch).
+4. One-sided superiority test: z = (θ_FE − 1.0) / SE_FE,  p = 1 − Φ(z).
+   ├─ p ≥ 0.05  → H1 FAILS → R5 (paper-death / pivot).
+   └─ p < 0.05  → H1 PASSES → continue.
+5. H2(a) falsification check: any condition with median cost ratio > 1.20×?
+   ├─ yes → H2(a) falsified → R4.
+   └─ no  → continue.
+6. H3 axis-1 + axis-2 FE superiority tests (CI excludes 0):
+   ├─ both pass → R1 candidate.
+   ├─ one passes → R2 candidate.
+   └─ neither   → R3 candidate.
+7. Heterogeneity cap: if descriptive I²(H1) > 75% → cap candidate at R3
+   (lead §4 prose with per-cell forest; θ_FE is a secondary summary).
+8. Final R-rule = the (possibly capped) candidate. Transparency: report
+   n-of-4 per-cell CI>0 counts alongside, with NO threshold.
+```
 
 ---
 
 ## §3 Multiple-Comparison Family Declaration
 
-**PRIMARY family** (gating paper hook) — UPDATED 2026-05-13 (K-of-N → transparency-only):
-- H1(i) pooled meta on N=4 statistical cells: m = 1 (no within-family correction).
-- H1(ii) pooled magnitude θ_RE ≥ 1.0pp AND one-sided superiority test (H0: θ ≤ +1.0pp vs H1: θ > +1.0pp) rejected at α=0.05: m = 1.
-- H2(a) cost equivalence per cell (PRIMARY): m = 4 statistical cells. H2(b) latency + H2(c) AUROC + H2(d) drop-one folded reported as exploratory transparency (NOT gating, not in this PRIMARY family m count). Scope revision 2026-05-13 codex stress audit T2 fix.
-- Method: Holm-Bonferroni step-down per H-sub-family (Holm 1979).
+**PRIMARY family** (gating paper hook) — UPDATED 2026-05-14 (decision "3A"):
+- **H1**: one-sided fixed-effects superiority test (H0: θ_FE ≤ +1.0pp vs H1: θ_FE > +1.0pp) rejected at α=0.05 — **m = 1, single test** (the prior H1(i) "pooled meta ≠ 0" + separate "magnitude ≥ 1.0pp" sub-tests were redundant with this and have been folded in).
+- **H2(a)** is NOT in this family m-count — it is a *by-construction property with a falsification check* (median cost ratio > 1.20× in any condition → falsified), not a sampling-theory hypothesis test. See §2 H2(a).
+- Method: PRIMARY family has m = 1; no within-family Holm correction needed.
 
 **STRUCTURAL family** (gating phantom-space framing) — UPDATED 2026-05-13:
 - H3(i) pooled axis-1 meta on N=4 cells: m = 1.
@@ -194,12 +283,10 @@ The paper §1 hook framing maps to data outcomes as follows:
 - Method: Holm-Bonferroni step-down per axis sub-family.
 - Rationale: structural claim is weaker than deployment, separate family avoids inflating PRIMARY family m count.
 
-**TRANSPARENCY family** (NOT gating, reported in §4 per-cell table for reviewer transparency):
-- K_h1 = ⌈0.75 × 4⌉ = 3 of 4 cells individually Holm-significant on P-SoM drop-one (m=4 per cell).
-- K_h3 axis-1 = ⌈0.67 × 4⌉ = 3 of 4 cells individually with bootstrap CI excluding 0.
-- K_h3 axis-2 = same as axis-1.
-- Method: Holm-Bonferroni within transparency sub-family (m=4 per K-test).
-- **Rationale for transparency-only reclassification**: power analysis (`docs/analysis/cross_sites/power_analysis.md`, pre-data) shows K-of-N family power at observed 1-3pp effect sizes is < 10%, calibrated only for ≥7pp effects. Per-cell N=234 (cls) / 210 (red) bootstrap power at 1.5pp effect ≈ 0.30. P(≥3 of 4 cells sig | p_cell=0.30) ≈ 8%. K-as-gate is statistically dysfunctional in this regime; K-as-transparency provides per-cell consistency check value alongside pooled meta. See Appendix A 2026-05-13 entry.
+**TRANSPARENCY reporting** (NOT gating, NOT a family with thresholds — reported in §4 per-cell table for reviewer transparency):
+- For H1 and for each H3 axis, report the **count of cells (out of 4)** whose per-cell bootstrap CI excludes 0, and the count individually Holm-significant.
+- **No fixed K threshold** — at N=4, a "K%" threshold is fake precision (⌈0.75×4⌉ = ⌈0.67×4⌉ = 3; the prior K_h1=0.75 / K_h3=0.67 distinction collapses). A descriptive prose benchmark "3 of 4 = strong per-cell consistency" may be used, but it is not a decision rule.
+- **Rationale**: power analysis (`docs/analysis/cross_sites/power_analysis.md`, pre-data) shows per-cell power at observed 1-3pp effect sizes is ~0.30; a K-of-N gate would be statistically dysfunctional in this regime. The PRIMARY gate is the fixed-effects superiority test (m=1); per-cell counts are pure transparency. See Appendix A 2026-05-13 + 2026-05-14 entries.
 
 **ROUTER family** (gates Section 6 routing claim — pending advisor 5/5 paper-1-vs-paper-2 lock):
 - H7(i) pooled meta lift: m = 1 (no within-family correction).
@@ -234,9 +321,8 @@ The paper §1 hook framing maps to data outcomes as follows:
 | **Sig threshold** | Holm α=0.05 within respective family | FWER control |
 | **Effect size (binary)** | Cohen's h with bootstrap CI | Standard for proportion comparisons |
 | **Effect size (continuous)** | Cohen's d with bootstrap CI | For cost/latency H2(a)(b) |
-| **H1(ii) superiority threshold δ** (also informational TOST margin) | **1.0pp** | Used as H0 threshold for one-sided superiority test (H0: θ ≤ +1.0pp, primary gate per H1(ii) revision 2026-05-13) AND as informational TOST equivalence margin (informational secondary report only). ≈ 2 tasks in N=234, matches per-cell bootstrap SE; smaller is within sampling noise floor |
-| **H1 K_h1 transparency ratio** | **0.75** (= 3/4 cells; **transparency-only, not gating** per 2026-05-13 reclassification) | Reports per-cell consistency alongside pooled meta; not a gate on H1 |
-| **H3 K_h3 transparency ratio** | **0.67** (= 3/4 cells; **transparency-only**) | Same as K_h1 reclassification rationale |
+| **H1 superiority threshold δ** | **1.0pp** | H0 threshold for the one-sided fixed-effects superiority test (H0: θ_FE ≤ +1.0pp). Archive `meta_phantom_lift.md` P-SoM pooled drop-one +2.34pp clears δ=1.0pp (z≈2.5) but LOO-borderline (one-cell-drop p≈0.044-0.046) — δ=1.0pp is the floor, not raisable. ≈ 2 tasks in N=234, matches per-cell bootstrap SE; smaller is within sampling noise floor. Decision "3A" 2026-05-14 |
+| **K-of-N per-cell consistency** | **Transparency count, NO threshold** | Report count of cells (out of 4) with per-cell CI excluding 0 + count individually Holm-sig, for H1 and each H3 axis. At N=4 a K% threshold is fake precision (⌈0.75×4⌉=⌈0.67×4⌉=3) — prior K_h1=0.75 / K_h3=0.67 ratios retired 2026-05-14. Descriptive benchmark "3/4 = strong consistency" allowed in prose, not a decision rule |
 | **H3 unique-count floor** | **≥ 2 tasks per cell** | 1 task is sampling noise; 2 tasks ≈ 1pp at N=234 |
 | **Cell inclusion (Phase 1a main)** | Phase A post-fix only (commit ≥ 3c15cd7), cls + red sites only, all 6 modes per (site, model) cell freshly rerun | Bug-clean rerun + workshop-target scope (shop deferred to Phase 1b) |
 | **Cell inclusion (Phase 1b main paper)** | Phase A post-fix rerun of shop × B0+B1 × 6 modes (12 conditions added on top of Phase 1a 24 conditions) | Cross-site expansion lever for main paper, post-data R1 vs Option D framing decision |
@@ -250,13 +336,13 @@ The paper §1 hook framing maps to data outcomes as follows:
 | **Router train/test split** | 5-fold site-stratified CV on cls+red post-Phase-A task pool, seed=42, min test fold ≥ 40 tasks | Reproducible split via `scripts/analysis/router_split.py` (TBD). **Test fold predictions use ONLY train-fold mode rankings** to prevent oracle leak. Pending advisor 5/5 sync alternative: leave-one-site-out (LOSO) — test cls hold-out trained on red, vice versa |
 | **Failure-mode classification rubric** | 5-bucket: `early_finish` / `wrong_commit` / `visual_hijack` / `click_loop` / `persistent_error` per `docs/analysis/disagreement_clusters.md` decision tree | Pre-data inter-annotator agreement target Cohen κ ≥ 0.7 on 30-task pilot (codex prompt + 1 human spot-check). Buckets remain in the rubric but the paper §1 "+43.7pp B0/B1 capability shift" prose was dropped 2026-05-09 (third contribution cut from paper). Failure-mode classification still used for §8 limitations and supplement S.X if needed. |
 | **N_conditions Phase 1a (operational)** | **24 conditions** = 2 sites (cls, red) × 2 models (B0, B1) × 6 modes (DOM, SoM, Vision, P-text, P-prompt, P-SoM). Each condition launched fresh post-fix via `scripts/queues/queue_phase1_paper_grade.sh` (renamed 2026-05-13 from `queue_16cell_paper_grade.sh`; current scope = 24 conditions Phase 1a + 12 conditions Phase 1b deferred). Sequence: B0 → B1 per site (shared user account); cls + red parallel chains | ✅ **Student-decided 2026-05-13** post-codex stress audit. Workshop-targeted (cls + red only, shop deferred to Phase 1b for main paper). Replaces prior 16-cell phantom-only scope that lacked baseline DOM/SoM/Vision rerun (codex Flaw 1) |
-| **N_cells statistical (H1/H3 stratification)** | **4 cells** = (site, model) tuples: (cls, B0), (cls, B1), (red, B0), (red, B1). Drop-one is computed per cell using all 6 modes; pooled DerSimonian-Laird random-effects meta across 4 cells | Cell = paired-test stratification unit (one per (site, model)), distinct from "condition" (one per (site, model, mode)). 4 cells × 6 modes = 24 conditions. Distinction propagated to all prose / queue / docs 2026-05-13 |
+| **N_cells statistical (H1/H3 stratification)** | **4 cells** = (site, model) tuples: (cls, B0), (cls, B1), (red, B0), (red, B1). Drop-one computed per cell using all 6 modes; pooled via **fixed-effects inverse-variance weighting** over the 4 planned cells (decision "3A" 2026-05-14 — NOT random-effects DL/REML; the 4 cells are the design, not a population sample, so no τ²) | Cell = paired-test stratification unit (one per (site, model)), distinct from "condition" (one per (site, model, mode)). 4 cells × 6 modes = 24 conditions |
 | **N_conditions Phase 1b (main paper, deferred)** | **+12 conditions** = shop × 2 models × 6 modes. Launches after Phase 1a workshop submission to feed main paper R1 / Option D framing decision. N_cells statistical becomes 6 (= 3 sites × 2 models) when Phase 1b lands | Phase 1b is additive; workshop §1 hook does NOT depend on Phase 1b. Main paper §1 hook upgrade R3 → R1 conditional on shop replicating P-SoM 4-fold within ±2pp tolerance |
 | **Best-single-mode baseline (H7/H8 anchor)** | Per cell: mode with highest mean adjusted-SR on train fold | Used as comparison anchor for router lift; **train/test split-stratified** to prevent test leak |
 | **Missing-data / crashed-episode policy** (audit B6) | (a) Crashed episodes (uncaught exception, OOM, timeout > 30 min, browser crash) **excluded from paired-N denominators**, **NOT imputed** to success or failure. (b) Episodes with `not_logged_in` or `auth_drift` flag at termination excluded after watchdog refresh fails 3 retries (per `experiment_watchdog.py`). (c) Missing artifacts (no `obs.txt` / `screenshot_annotated.png` at step k) excluded from per-step analyses, NOT imputed. (d) Per-cell exclusion count + reason histogram reported in Appendix C. | Listwise deletion only; mean imputation introduces bias for SR proportions, hot-deck imputation breaks paired-N pairing. Crashed-episode imputation as success/failure would inflate Type I/II error. Lock 2026-05-09. |
 | **Stopping rules / contamination halt criteria** (audit B7, REVISED 2026-05-13 to remove outcome-dependent bias per codex Flaw 6) | (a) **Pre-launch**: `make pre-launch-check` validates seed configured + HF SHA pinned + git working tree clean + GPU available + disk free > 20GB; failure halts launch (per audit C10). (b) **Smoke-test gate (outcome-INDEPENDENT)**: first 10 episodes per condition must show auth-state `logged_in=True` on all 10 AND ≥ 9 of 10 episodes produced complete artifact bundle (`obs.txt` + `screenshot.png` + `condition_summary_v2` increment + JSONL flush) AND evaluator returned a parseable verdict (success / failure / `ua_match` N/A — any of these is fine, **success rate itself is NOT checked**). Failures halt for auth refresh / artifact pipeline debug, NOT for low SR observation. Rationale: outcome-dependent smoke gate biases low-SR cells upward (a true 5-10% SR cell has 35-60% probability of "0 successes in first 10" by binomial chance and would be invalidly restarted). (c) **Auth/site contamination halt**: ≥ 5 consecutive episodes with `not_logged_in` ⇒ stop cell, refresh auth, archive partial run as `_dirty_partial`, restart fresh. (d) **Eval drift halt**: if rerun on identical archived episode produces SR delta > 5pp via `validate_run.py --strict`, freeze cell + investigate evaluator code. (e) **OOM / hardware halt**: 3 consecutive job failures ⇒ stop cell, document hardware in incident log, manually re-queue with diagnostic output. | Halt rules protect data purity; halted cells restarted only after root-cause documented in `master_bug_catalog.md` + bug fix committed. Lock 2026-05-09; smoke gate revised 2026-05-13 to outcome-independent variant. |
-| **Heterogeneity (random-effects, Q, I², τ²) pre-spec** (audit B8) | (a) **Primary estimator**: random-effects DerSimonian-Laird via `aggregate_phantom_meta.py` (already implemented). (b) **Heterogeneity reporting**: report Cochran Q (chi² test of homogeneity), I² (% of total variance attributable to between-cell heterogeneity), τ² (between-cell variance). (c) **Interpretation thresholds (pre-specified)**: I² < 25% = "low heterogeneity, pooled mean is primary"; 25%-50% = "moderate, report both pooled + per-cell"; 50%-75% = "high, per-cell estimates are primary, pooled is summary"; > 75% = "very high, do not pool — report only per-cell + heterogeneity-source analysis (site / model / task-pool)". (d) **Heterogeneity-source decomposition**: when I² > 50%, report meta-regression by site (cls / red / shop) and by model (B0 / B1) to identify dominant variance source. | Higgins & Thompson 2002 (I² thresholds). Per-cell estimates always shown alongside pooled, so heterogeneity is never averaged away. Lock 2026-05-09. |
-| **K-of-N rule scope** (audit B9 power-corrected, REPROPAGATED 2026-05-13 to H1/H3/R5/§6/Appendix A) | The **K_h1=3/4 / K_h3=3/4** ratios (under 24-condition / 4-cell Phase 1a scope) are **transparency consistency checks** (count of cells *individually* clearing α=0.05 Holm), **NOT gates on H1/H3 paper claims**. **Primary gate** = (a) DerSimonian-Laird random-effects meta-analysis on N=4 (site, model) cells + (b) one-sided superiority test on pooled drop-one effect (H0: θ ≤ +1.0pp vs H1: θ > +1.0pp) at α=0.05. Per `docs/analysis/cross_sites/power_analysis.md` §3-§5, K-of-N family power at observed 1-3pp effect sizes is < 10%; the rule is calibrated for ≥7pp effects (1.5pp per-cell power ≈ 0.30; P(≥3 of 4 cells sig) ≈ 8%). K-as-gate is statistically dysfunctional in this effect-size regime. **2026-05-13 propagation**: prior prereg text in H1(ii) / H3(i) / H3(ii) / R5 / §6 still gated K-of-N → fixed to "transparency consistency check, reported alongside but NOT gating". This is **pre-data reclassification**: power analysis commit predates Phase 1a launch; reclassification timestamp recorded for OSF witness audit trail. | Original audit B9 lock 2026-05-09 introduced framing but did not propagate to H1/H3/R5/§6 prose (codex stress audit 2026-05-13 Flaw 2 surfaced internal contradiction). Repropagation 2026-05-13 reconciles all references. |
+| **Pooling estimator + heterogeneity pre-spec** (audit B8, REVISED 2026-05-14 decision "3A") | (a) **Primary estimator**: **fixed-effects inverse-variance weighted average over the 4 *planned* (site, model) cells** — w_i = 1/SE_i², θ_FE = Σ(w_i·θ_i)/Σw_i, SE_FE = sqrt(1/Σw_i). The 4 cells are the study's design, NOT a random sample from a population; the estimand is the average over exactly these cells, so no between-cell variance τ² is in the estimand. This avoids estimating τ² at k=4 (DerSimonian-Laird τ² downward-biased + random-effects Wald CIs anti-conservative at k<10 per Veroniki et al. 2016 / IntHout et al. 2014). (b) **Heterogeneity reporting (descriptive only, NOT in estimator)**: report Cochran Q, I², a DL τ² estimate, and a random-effects pooled estimate as an Appendix sensitivity row — all for transparency, none entering the H1 gate. (c) **Interpretation thresholds**: I² < 25% = "pooled FE average is a meaningful summary"; 25-75% = "report FE average + per-cell forest together"; > 75% = "FE average is a weak summary of 4 genuinely-different cells — §4 prose leads with per-cell forest, hook capped at R3 (see §2 heterogeneity-conditional rule); the FE superiority gate still runs and still determines R5-vs-not". (d) when I² > 50%, report meta-regression by site / by model. | Estimand-first design (codex prereg-structure review 2026-05-14): choose the estimand (FE average over planned cells) before the estimator. Fixed-effects pooling is valid at k=4 because θ_FE is a linear combination of 4 approximately-normal per-cell estimates; the k=4 fragility was a τ²-estimation artifact, now absent. Per-cell forest always shown. |
+| **K-of-N rule scope** (audit B9, RETIRED-AS-THRESHOLD 2026-05-14 decision "3A") | K-of-N is a **pure transparency count with no threshold** — report "n of 4 cells with per-cell CI > 0" + "n of 4 individually Holm-sig" for H1 and each H3 axis. It is NOT a gate, NOT a family with an m-count, NOT a pass/fail rule. **Primary gate** = the single one-sided fixed-effects superiority test (H0: θ_FE ≤ +1.0pp at α=0.05). Per `power_analysis.md` §3-§5, per-cell power at observed 1-3pp effects ≈ 0.30 → any K-of-N gate is dysfunctional; and at N=4 the K_h1=0.75 / K_h3=0.67 ratios are indistinguishable (both ⌈·×4⌉=3). The prior 0.75/0.67 values are retired; only the descriptive count remains. | Audit B9 (2026-05-09) first reframed K-of-N as transparency; 2026-05-13 propagated it; 2026-05-14 decision "3A" retires the percentage thresholds entirely (fake precision at N=4) — only the raw count is reported. Pre-data; recorded for OSF witness audit trail. |
 
 ---
 
@@ -276,7 +362,13 @@ The following analyses are exploratory and cannot be used to gate paper claims. 
 - Any post-hoc cell subsetting beyond H1-H8 family scope
 - Any analysis added after `data_lock_until` timestamp in this preregistration's frontmatter
 
-### §5.X Post-hoc Layer Selection Disclosure (Stage 2 Mechanism, audit G5)
+### §5.X Post-hoc Layer Selection Disclosure (Stage 2 Mechanism, audit G5) — ⚠️ DEFERRED (logical Appendix C)
+
+> **⚠️ Scope banner (2026-05-14 decision "3A")**: This Stage 2 mechanism
+> layer-selection disclosure is **not part of the Phase 1a phantom-space-phenomenon
+> DOI claim** (which is H1-H3). It is retained here as the mechanism-paper
+> disclosure stub; the Phase 1a workshop prereg gates on H1-H3 only. (Physical
+> relocation to a standalone mechanism-paper prereg is a follow-up cleanup item.)
 
 Stage 2 mechanistic activation patching identified mid-layer disruption peaking
 at **L17** (3 of 4 cells Holm-significant on `token_overlap_to_target`, p_Holm <
@@ -317,30 +409,29 @@ report the mid-layer pattern under that holdout.
 
 ### (a) Internal witness — Git commit + advisor email
 
-1. Advisor sync session: lock **9 commit decisions** (expanded 5/4 audit + 2026-05-13 revisions):
-   - (1) **K_h1=0.75 transparency ratio** (= 3/4 cells; reclassified gate → transparency-only 2026-05-13)
-   - (2) **K_h3=0.67 transparency ratio** (= 3/4 cells; reclassified gate → transparency-only 2026-05-13)
-   - (3) **δ=1.0pp** — one-sided superiority threshold for H1(ii) primary gate AND informational TOST margin secondary report. SR drop-one effect-size margin, distinct from H2(a) cost ±10% margin — see §4 lock row
+1. Advisor sync session: lock **9 commit decisions** (expanded 5/4 audit + 2026-05-13 + 2026-05-14 "3A" revisions):
+   - (1) **Estimand = fixed-effects average over 4 planned (site, model) cells** (decision "3A" 2026-05-14). The 4 cells are the study design, not a population sample → no τ², no DerSimonian-Laird, no REML. Dissolves the k=4 random-effects fragility.
+   - (2) **K-of-N = pure transparency count, NO threshold** (2026-05-14). Prior K_h1=0.75 / K_h3=0.67 ratios retired (at N=4, ⌈0.75×4⌉=⌈0.67×4⌉=3 — fake precision). Report n-of-4 per-cell CI>0 counts descriptively.
+   - (3) **δ=1.0pp** — H0 threshold for the one-sided fixed-effects superiority test (H0: θ_FE ≤ +1.0pp). H1 is this single test (prior H1(i)+magnitude folded in). H2(a) cost is a by-construction property + falsification check (>1.20× cost ratio), distinct from δ.
    - (4) **Cell inclusion**: Phase 1a = cls + red × B0+B1 × 6 modes (Phase A post-fix only); Phase 1b shop deferred
    - (5) **Witness mechanism**: Git + advisor email + OSF DOI
    - (6) **N_conditions Phase 1a final scope**: **24 operational conditions** (= 2 sites × 2 models × 6 modes) across **4 statistical cells** (= (site, model) tuples) — student-decided 2026-05-13 post-codex stress audit, replaces prior 16-cell phantom-only scope. Advisor email witness pending
    - (7) **Smoke-gate revision** (2026-05-13): outcome-independent (auth + artifact + evaluator parseability only), no SR-based restart
-   - (8) **Router paper-1-vs-paper-2 decision**: H7-H8 PRIMARY (paper-1) or SECONDARY-informational (paper-2 deferred)
-   - (9) **Train/test split protocol**: 5-fold site-stratified CV vs leave-one-site-out (LOSO)
-   - Plus lock H-list (H1-H8 family declaration final).
+   - (8) **Router H7/H8 = DEFERRED** (paper-2, not part of this DOI claim — see §2 ROUTER-family banner / Appendix B)
+   - (9) **Train/test split protocol** (paper-2 router scope): 5-fold site-stratified CV vs leave-one-site-out (LOSO)
+   - Plus lock gating H-list: **H1-H3 only** for this DOI; H5/H6 post-hoc disclosure + H7/H8 deferred.
 2. Update this file frontmatter: `status: draft` → `status: locked`, fill `registered_at`, `registered_git_sha`, `witnessed_by`.
 3. Git commit this file.
-4. Advisor sends single-line confirmation email: "I witness pre-registration of phantom-SoM hypotheses (H1-H8) and 8 lock decisions as of <git SHA> <date>." Email archived in `.witness/preregistration_witness.eml` (gitignored, local-only).
+4. Advisor sends single-line confirmation email: "I witness pre-registration of phantom-SoM gating hypotheses (H1-H3) and the 9 lock decisions as of <git SHA> <date>." Email archived in `.witness/preregistration_witness.eml` (gitignored, local-only).
 
 ### (b) External witness — OSF DOI (optional, paper-time)
 
-Approximately 1 week before paper submission:
-
-1. Create free OSF account (if not exists) at osf.io.
-2. New project: "Phantom-SoM 16-cell pre-registration witness."
-3. Upload this `preregistration.md` (locked version) + companion EVIDENCE_LAYER_AUDIT.md §2 + ADVISOR_SYNC.md §1.4 (lock decisions).
-4. OSF generates DOI + permanent timestamp.
-5. Paper §1 footnote cites the DOI: "Hypotheses pre-registered prior to 16-cell rerun (OSF DOI X.YYYY/osf.io/zzzz, Git SHA abc123, witnessed by [advisor name] on YYYY-MM-DD)."
+Approximately 1 week before paper submission. The detailed 8-step DOI workflow +
+artifact-freeze registry is in **`osf_lock_manifest.md` §3** — not re-listed here to
+avoid drift. Summary: upload the locked `preregistration.md` + companion docs, mint
+the OSF DOI, paper §1 footnote cites "Gating hypotheses (H1-H3) pre-registered prior
+to the Phase 1a 24-condition rerun (OSF DOI X.YYYY/osf.io/zzzz, Git SHA abc123,
+witnessed by [advisor name] on YYYY-MM-DD)."
 
 ---
 
@@ -381,4 +472,6 @@ Approximately 1 week before paper submission:
 | 2026-05-05 | Advisor sync 5/5 partial outcome — early-stop A locked (cancel全 mechanism); compute path locked (advisor 5090 → Rancher H100 → RunPod backup); paper split direction discussed but Mechanistic-nested-vs-independent + threshold detail not finalized due to network drop | Advisor explicit confirm early-stop cancel + compute paths; paper split + threshold lock deferred to email follow-up via `docs/checkpoints/advisor_sync_5_5_followup.md` |
 | 2026-05-05 | **N_cells = 16** (student-decided post-5/5 sync, advisor email witness pending) | 14 (pre-sync default) → 16 to add B1 shop × {phantom_text, phantom_som} 2 cells for cross-capability shop coverage. K_h1 threshold count: ⌈0.75 × 16⌉ = 12. K_h3 threshold count: ⌈0.67 × 16⌉ = 11 |
 | 2026-05-13 | **Codex stress audit triggered 6 paper-grade design fixes** (pre-launch): (a) scope reframe 16-cell phantom-only → 24-condition / 4-cell Phase 1a (cls+red×B0+B1×6modes), Phase 1b shop deferred to main paper; (b) K-of-N reclassified gate → transparency-only (power analysis showing dysfunction at < 7pp effects, re-propagated to H1/H3/R5/§6); (c) H1 drop-one definition disambiguated (oracle ceiling lift with-vs-without P-SoM, per (site, model) cell paired bootstrap); (d) smoke-gate B7 revised outcome-independent (no SR-based restart bias); (e) cell terminology disambiguated ("cell" = 4 statistical strata for K-of-N/meta input, "condition" = 24 operational launch units); (f) Phase 1b shop scope-expansion lever for main paper R3→R1 framing decision | Codex CLI hostile reviewer audit (`docs/checkpoints/codex_outputs/codex_stress_16cell_design_2026-05-13.md`, lean prompt no-enumeration, cross-AI complementary to prior Claude reviews); 6 HIGH severity findings + 3 probable concerns. Workshop-targeted Phase 1a launch this week; main paper Phase 1b after workshop submission |
+| 2026-05-14 | **Decision "3A" — estimand + H2(a) reframe** (student-decided after Claude + codex cross-think on bug-fix-pre archive data). **3 = H2(a) by-construction**: P-SoM cost ≈ DOM is a by-construction token-accounting property (regex-filtered AXTree subset, no image tokens) verified by a falsification check (>1.20× cost ratio → falsified), NOT a sampling-theory gate. **A = fixed-effects estimand**: H1/H3 pool drop-one via fixed-effects inverse-variance weighting over the 4 *planned* cells (the cells are the design, not a population sample) → no τ², no DerSimonian-Laird, no REML — dissolves the k=4 random-effects fragility (Veroniki et al. 2016 τ² bias; IntHout et al. 2014 anti-conservative RE Wald CI) that codex /stress v6 F1/F2 surfaced. **Knock-on cleanups**: H1 simplified to a single one-sided FE superiority test (prior H1(i) pooled-meta-≠0 + magnitude check were redundant, folded in); K-of-N percentage thresholds (K_h1=0.75/K_h3=0.67) retired — pure transparency counts only (at N=4 the ratios are indistinguishable); heterogeneity-conditional rule reframed (I²>75% caps hook at R3, does not block FE pooling); H7/H8 router + §5.X mechanism disclosure bannered as DEFERRED (Appendix B/C, not part of this DOI claim); §2.4 in-doc power acknowledgment + §2.5 H1 PASS/FAIL decision flow added; §6(b) OSF workflow → reference osf_lock_manifest.md §3. | Claude /stress v6 + 2 codex cross-think rounds (`threshold_rethink_FINAL_2026-05-14.md` + `prereg_structure_review_FINAL_2026-05-14.md`); archive data (`meta_phantom_lift.md` P-SoM I²=0% pooled +2.34pp; `power_analysis.md` per-cell power ≈0.30 at 1-5pp) grounds the calibration. Estimand-first principle: choose what you estimate before choosing the estimator. |
+| \<pending advisor sync\> | \<witness 9 lock decisions per §6 — incl. estimand=FE-over-4-planned-cells, K-of-N transparency-count-no-threshold, δ=1.0pp FE superiority, H2(a) by-construction, H1-H3 gating only, H7/H8 deferred\> | \<advisor email reply timestamp + Git SHA at lock\> |
 | \<pending advisor email follow-up\> | \<witness K_h1=0.75 transparency / K_h3=0.67 transparency / TOST δ=1.0pp / N_conditions=24 (Phase 1a) / N_cells=4 / split protocol / paper split / Phase 1b shop / outcome-indep smoke gate / per follow-up doc Q1-Q11\> | \<email reply timestamp + Git SHA at lock\> |
