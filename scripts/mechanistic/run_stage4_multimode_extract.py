@@ -151,6 +151,11 @@ def main():
                 f"skipped {skipped_off_tier} off-tier")
     if not selected:
         raise SystemExit("no archived tasks selected; check --site/--steps/--tier/--archived-run-dir")
+    if len(selected) < args.n_tasks and not args.allow_partial:
+        raise SystemExit(
+            f"selected only {len(selected)} tasks, target was {args.n_tasks}. "
+            "This would ship a smaller-than-claimed NPZ. Pass --allow-partial to override."
+        )
 
     # Load intents — use same path as run_stage1_pilot.py (external/visualwebarena/config_files/vwa/test_<site>)
     REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -258,11 +263,13 @@ def main():
     extra = sorted(set(actual_grid) - set(expected_grid))
     n_expected = len(expected_grid)
     n_actual = len(actual_grid)
-    if missing or extra:
+    duplicate = n_actual != len(set(actual_grid))
+    if missing or extra or duplicate or n_actual != n_expected:
         msg = (
             f"P0-2 grid check FAIL: expected {n_expected} extractions "
             f"(tasks={len(selected)} × steps={len(args.steps)} × modes={len(args.modes)}), "
             f"got {n_actual}. missing={len(missing)} extra={len(extra)}. "
+            f"duplicate={duplicate}. "
             f"First 5 missing: {missing[:5]}. "
         )
         if args.allow_partial:

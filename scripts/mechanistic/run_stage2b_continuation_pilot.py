@@ -156,6 +156,11 @@ def main():
     p.add_argument("--archived-run-dir", required=True)
     p.add_argument("--output-dir", default=None)
     p.add_argument("--model-path", default="Qwen/Qwen3-VL-4B-Instruct")
+    p.add_argument(
+        "--model-revision",
+        default="ebb281ec70b05090aa6165b016eac8ec08e71b17",
+        help="HF revision SHA. Must match Stage 4 v2 extraction.",
+    )
     p.add_argument("--source-mode", default="som")
     p.add_argument("--target-mode", default="phantom_som")
     p.add_argument("--min-free-vram-gb", type=float, default=0.0)
@@ -253,6 +258,8 @@ def main():
                 "max_new_tokens": args.max_new_tokens,
                 "source_mode": args.source_mode,
                 "target_mode": args.target_mode,
+                "model_path": args.model_path,
+                "model_revision": args.model_revision,
             },
         )
     except Exception as e:
@@ -280,9 +287,13 @@ def main():
     artifacts_dir = find_artifacts_dir(archived_dir)
     logger.info(f"Archived artifacts: {artifacts_dir}")
 
-    extractor = HiddenStateExtractor(model_path=args.model_path, min_free_vram_gb=args.min_free_vram_gb)
+    extractor = HiddenStateExtractor(
+        model_path=args.model_path,
+        model_revision=args.model_revision,
+        min_free_vram_gb=args.min_free_vram_gb,
+    )
     patcher = ActivationPatcher(extractor.model, extractor.processor)
-    logger.info(f"Model loaded; n_layers={patcher.n_layers}")
+    logger.info(f"Model loaded (revision={args.model_revision[:12]}...); n_layers={patcher.n_layers}")
 
     # Task-shuffled control (codex methodology audit 2026-05-12 Bug 6/G3 follow-up):
     # build a deterministic permutation so that target task T_i uses source artifacts
@@ -429,7 +440,9 @@ def main():
                     ),
                     "archived_run_dir": str(archived_dir),
                     "model_path": args.model_path,
+                    "model_revision": args.model_revision,
                     "n_layers": patcher.n_layers,
+                    "layer_index_convention": "patcher layer L = decoder block L output; Stage 4 NPZ block L is H[:, L+1, :]",
                 },
                 "per_task": per_task_results,
             }, f, indent=2)
@@ -468,7 +481,7 @@ def main():
         std = np.array(agg[f"{m}_std"])
         ax.plot(layers_x, mean, marker="o", lw=1.5, label=f"mean (N={len(per_task_results)})")
         ax.fill_between(layers_x, mean - std, mean + std, alpha=0.25, label="±1 std")
-        ax.set_xlabel("Layer index (0=embedding, ≥1=post-block)")
+        ax.set_xlabel("Block index (B0=decoder block 0 output; no embedding hook)")
         ax.set_title(titles[m], fontsize=10)
         ax.grid(alpha=0.3)
         ax.legend(fontsize=8, loc="best")
@@ -505,13 +518,14 @@ def main():
         qualitative.append(f"  target: {t['target_text']!r}")
         for L in [0, 5, 11, 17, 23, 29, 35]:
             r = t["per_layer"][L]
-            qualitative.append(f"  L{L:2d} patched: {r['patched_text']!r}  (overlap→src={r['token_overlap_to_source']:.2f}, LD→src={r['ld_to_source']})")
+            qualitative.append(f"  B{L:2d} patched: {r['patched_text']!r}  (overlap→src={r['token_overlap_to_source']:.2f}, LD→src={r['ld_to_source']})")
     qual_block = "\n".join(qualitative)
 
     summary = f"""# Stage 2B Continuation Activation Patching — Summary
 
 ## Setup
 - Model: {args.model_path}
+- Model revision: {args.model_revision}
 - Site: {args.site}, N task: {len(per_task_results)} × step_{args.step:03d}
 - Source: `{args.source_mode}` (with image — clean) / Target: `{args.target_mode}` (no image — mirage)
 - Direction: {"reverse (target→source)" if args.reverse else "forward (source→target)"}
@@ -520,20 +534,20 @@ def main():
 - Random injection: {"YES, seed=" + str(args.random_seed) + " (paper-grade reproducible)" if args.random_inject else "NO (real source hidden injected)"}
 - Archived: {args.archived_run_dir}
 
-## Result (per-layer mean across tasks)
-- Best layer for **token overlap → source**: L{best_overlap_layer} (overlap {overlap_src[best_overlap_layer]:.3f})
-- Best layer for **min Levenshtein → source**: L{best_ld_layer} (LD {ld_src[best_ld_layer]:.2f})
+## Result (per-block mean across tasks)
+- Best block for **token overlap → source**: B{best_overlap_layer} (overlap {overlap_src[best_overlap_layer]:.3f})
+- Best block for **min Levenshtein → source**: B{best_ld_layer} (LD {ld_src[best_ld_layer]:.2f})
 
-## Layer-resolved curves (source-side metrics):
-| Layer | overlap→src | overlap→tgt | LD→src | LD→tgt |
+## Block-resolved curves (source-side metrics):
+| Block | overlap→src | overlap→tgt | LD→src | LD→tgt |
 |---|---|---|---|---|
-| L0  | {overlap_src[0]:.2f} | {overlap_tgt[0]:.2f} | {ld_src[0]:.1f} | {ld_tgt[0]:.1f} |
-| L5  | {overlap_src[5]:.2f} | {overlap_tgt[5]:.2f} | {ld_src[5]:.1f} | {ld_tgt[5]:.1f} |
-| L11 | {overlap_src[11]:.2f} | {overlap_tgt[11]:.2f} | {ld_src[11]:.1f} | {ld_tgt[11]:.1f} |
-| L17 | {overlap_src[17]:.2f} | {overlap_tgt[17]:.2f} | {ld_src[17]:.1f} | {ld_tgt[17]:.1f} |
-| L23 | {overlap_src[23]:.2f} | {overlap_tgt[23]:.2f} | {ld_src[23]:.1f} | {ld_tgt[23]:.1f} |
-| L29 | {overlap_src[29]:.2f} | {overlap_tgt[29]:.2f} | {ld_src[29]:.1f} | {ld_tgt[29]:.1f} |
-| L35 | {overlap_src[35]:.2f} | {overlap_tgt[35]:.2f} | {ld_src[35]:.1f} | {ld_tgt[35]:.1f} |
+| B0  | {overlap_src[0]:.2f} | {overlap_tgt[0]:.2f} | {ld_src[0]:.1f} | {ld_tgt[0]:.1f} |
+| B5  | {overlap_src[5]:.2f} | {overlap_tgt[5]:.2f} | {ld_src[5]:.1f} | {ld_tgt[5]:.1f} |
+| B11 | {overlap_src[11]:.2f} | {overlap_tgt[11]:.2f} | {ld_src[11]:.1f} | {ld_tgt[11]:.1f} |
+| B17 | {overlap_src[17]:.2f} | {overlap_tgt[17]:.2f} | {ld_src[17]:.1f} | {ld_tgt[17]:.1f} |
+| B23 | {overlap_src[23]:.2f} | {overlap_tgt[23]:.2f} | {ld_src[23]:.1f} | {ld_tgt[23]:.1f} |
+| B29 | {overlap_src[29]:.2f} | {overlap_tgt[29]:.2f} | {ld_src[29]:.1f} | {ld_tgt[29]:.1f} |
+| B35 | {overlap_src[35]:.2f} | {overlap_tgt[35]:.2f} | {ld_src[35]:.1f} | {ld_tgt[35]:.1f} |
 
 ## Interpretation
 - overlap→src curve climbs monotonically with depth → mirage info accumulates layer-by-layer (deep layer wins)
@@ -545,7 +559,7 @@ def main():
 {qual_block}
 
 ## Next steps
-- If mid-layer peak emerges (e.g. L17-L25) → consistent with Stage 2A logit_shift L17 finding ✓
+- If mid-block peak emerges (e.g. B17-B25) → consistent with Stage 2A logit_shift block-window finding ✓
 - If late-layer monotone climb → mirage signature is residual-stream cumulative, no single causal layer
 - Scale up: 5 task × max_new_tokens=20 (~75 min) for tighter mean ± std
 - Then Stage 2C: reverse direction (target→source patching) for asymmetry check
@@ -570,7 +584,9 @@ def main():
         },
         "model": {
             "path": args.model_path,
+            "revision": args.model_revision,
             "n_layers": int(patcher.n_layers),
+            "layer_index_convention": "patcher layer L = decoder block L output; Stage 4 NPZ block L is H[:, L+1, :]",
         },
         "input_dataset": {
             "archived_run_dir": str(archived_dir),

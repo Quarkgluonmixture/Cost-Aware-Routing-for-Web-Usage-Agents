@@ -33,6 +33,7 @@ import json
 import logging
 import os
 import re
+import subprocess
 import sys
 import hashlib
 from pathlib import Path
@@ -148,6 +149,11 @@ def main():
                    help="Task dir prefix in archive: <site>_task_<tid>/. classifieds (default) or reddit.")
     p.add_argument("--output", default=None)
     p.add_argument("--model-path", default="Qwen/Qwen3-VL-4B-Instruct")
+    p.add_argument(
+        "--model-revision",
+        default="ebb281ec70b05090aa6165b016eac8ec08e71b17",
+        help="HF revision SHA. Must match Stage 4 multimode / Stage 2B runs.",
+    )
     p.add_argument("--tier", default="strong")
     p.add_argument("--n-tasks", type=int, default=24)
     p.add_argument("--steps", default="2,5")
@@ -166,11 +172,20 @@ def main():
     manifest = json.loads(manifest_path.read_text())
     tasks = manifest[args.tier][:args.n_tasks]
     logger.info(f"Loaded {len(tasks)} tasks (tier={args.tier})")
+    if len(tasks) < args.n_tasks and not args.allow_partial:
+        raise SystemExit(
+            f"manifest tier {args.tier!r} has only {len(tasks)} tasks, target was {args.n_tasks}. "
+            "This would ship a smaller-than-claimed NPZ. Pass --allow-partial to override."
+        )
 
     intents_by_tid = {int(t["task_id"]): t["intent"] for t in tasks}
 
-    extractor = HiddenStateExtractor(model_path=args.model_path, min_free_vram_gb=args.min_free_vram_gb)
-    logger.info(f"Model loaded: {args.model_path}")
+    extractor = HiddenStateExtractor(
+        model_path=args.model_path,
+        model_revision=args.model_revision,
+        min_free_vram_gb=args.min_free_vram_gb,
+    )
+    logger.info(f"Model loaded: {args.model_path} (revision={args.model_revision[:12]}...)")
 
     # Pipeline audit P0-3 fix (2026-05-13, codex Phase 1 audit OOB callout):
     # Docstring lines 9-11 claim variants should cluster with baseline P-text /
@@ -248,11 +263,13 @@ def main():
     extra = sorted(set(actual_grid) - set(expected_grid))
     n_expected = len(expected_grid)
     n_actual = len(actual_grid)
-    if missing or extra:
+    duplicate = n_actual != len(set(actual_grid))
+    if missing or extra or duplicate or n_actual != n_expected:
         msg = (
             f"P0-2 grid check FAIL: expected {n_expected} extractions "
             f"(tasks={len(intents_by_tid)} × steps={len(steps)} × modes={len(ALL_MODES)}), "
             f"got {n_actual}. missing={len(missing)} extra={len(extra)}. "
+            f"duplicate={duplicate}. "
             f"First 5 missing: {missing[:5]}. "
         )
         if args.allow_partial:
@@ -280,6 +297,60 @@ def main():
         mode_labels_str=mode_labels,
     )
     logger.info(f"saved: {out_path}  shape={H.shape}  modes={ALL_MODES}")
+
+    try:
+        git_sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=Path(__file__).resolve().parents[2],
+            stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except Exception:
+        git_sha = "unknown"
+    try:
+        git_dirty = bool(subprocess.check_output(
+            ["git", "status", "--porcelain"],
+            cwd=Path(__file__).resolve().parents[2],
+            stderr=subprocess.DEVNULL,
+        ).decode().strip())
+    except Exception:
+        git_dirty = None
+    try:
+        formatter_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    except Exception:
+        formatter_hash = "unknown"
+    sidecar = out_path.with_suffix(".provenance.json")
+    sidecar.write_text(json.dumps({
+        "command": " ".join(sys.argv),
+        "git_sha": git_sha,
+        "git_dirty": git_dirty,
+        "model_path": args.model_path,
+        "model_revision": args.model_revision,
+        "archive_dir": str(archive_dir.resolve()),
+        "tier": args.tier,
+        "selected_task_ids": sorted(intents_by_tid),
+        "n_tasks_target": args.n_tasks,
+        "n_tasks_selected": len(intents_by_tid),
+        "steps": steps,
+        "modes": ALL_MODES,
+        "formatter_hash": formatter_hash,
+        "formatter_hash_kind": "sha256(run_stage4_format_variation_extract.py source)",
+        "npz_path": str(out_path.resolve()),
+        "n_examples_saved": int(len(all_hidden)),
+        "hidden_state_shape": list(H.shape),
+        "grid_check": {
+            "n_expected": n_expected,
+            "n_actual": n_actual,
+            "n_missing": len(missing),
+            "n_extra": len(extra),
+            "duplicate": duplicate,
+            "missing_first_20": [list(m) for m in missing[:20]],
+            "allow_partial": bool(args.allow_partial),
+            "status": "OK" if not (missing or extra or duplicate or n_actual != n_expected) else (
+                "PARTIAL (--allow-partial)" if args.allow_partial else "FAIL"
+            ),
+        },
+    }, indent=2, default=str))
+    logger.info(f"provenance: {sidecar}")
 
     # Quick pilot_summary marker so auto_pull Phase 0 sentinel passes
     summary_path = out_path.parent / "pilot_summary.md"
