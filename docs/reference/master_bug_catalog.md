@@ -1439,9 +1439,19 @@ output: `docs/checkpoints/codex_outputs/prefire_pipeline_FINAL_2026-05-14.md`.
 | B# | Finding | Severity | Task | Note |
 |---|---|---|---|---|
 | B-85 | `has_effective_action` FP filter only counts `type`/`select_option`, not `click` → click-causal `program_html` tasks mis-downgraded | P0 | #67 | data-altering (changes SR definition) — deep研究 first, user decides |
-| B-86 | parse-error recovery scaffold asymmetry: B0-only GLM fallback + B1 `max_new_tokens=384` below parse-safe floor; codex confirmed it flows into `compute_adjusted_success` via `agent_finished` | P1 | #68 | advisor question (clean API data?) + ensure disclosure fields recorded pre-fire |
-| B-88 | reference images injected into phantom "no-image" modes regardless of mode | P2 | #70 | image axis not clean on ref-image tasks — needs a design decision (drop ref images vs redefine image axis) |
-| B-90 | `_extract_text_marks` uses `re.search` (any-position `[N]` match) — over-inclusion, flagged in prior audits, still unfixed | P2 | #72 | evaluate impact on v2 `[SOM_MARKS]` payload |
+| B-86 | parse-error recovery scaffold asymmetry: B0-only GLM fallback + B1 `max_new_tokens=384` below parse-safe floor; codex confirmed it flows into `compute_adjusted_success` via `agent_finished` | P1 | #68 | advisor question asked 2026-05-14 (clean structured API data?) — awaiting reply; + ensure disclosure fields recorded pre-fire |
+
+### B-88. reference images in phantom "no-image" modes ❌ NOT_A_BUG
+
+- **Origin**: Claude `/stress` F5 (2026-05-14, 笔记 §139); reclassified after user review.
+- **Why not a bug**: `qwen3vl_agent.py` / `proxy_api_agent.py` inject `reference_images` unconditionally (not mode-gated) — so DOM mode receives them too, not just phantom modes. Reference images are **task-spec inputs** (the product photo for a "find this item" task — the task is unachievable without them in any mode), not page observations. They are uniformly present across all 6 modes and are therefore orthogonal to the image axis (which is strictly about page-screenshot present/absent). No asymmetry exists. F5 mis-framed it by overlooking that DOM also receives reference images.
+- **Action**: paper-prose clarification only — define the image axis as "page screenshot present/absent" and state reference images are uniform task-spec inputs outside the axis. No code change.
+
+### B-90. `_extract_text_marks` `re.search` any-position `[N]` match — over-inclusion 📊 EVALUATED, no fix
+
+- **Origin**: flagged in prior audits; re-evaluated for §139 (task #72).
+- **Evaluation (2026-05-14)**: measured 3000 sampled archived `observation_dom.txt` — of 155771 lines matched by the current `re.search(r"\[(\d+)\]")`, **155770 are also matched by an anchored `^\s*\[(\d+)\]`**. Over-inclusion = **1 line = 0.001%** (a tab title ending in `[7]`). VWA AXTree element lines reliably carry `[N]` at line start.
+- **Status**: 📊 **EVALUATED → no fix** (user decision 2026-05-14). Over-inclusion is empirically negligible; tightening to an anchored regex would change the fire path for a 1-in-155771 effect — not worth it. Documented as known-negligible.
 
 ### B-89. `cost_efficiency_ratio` stays raw while `success_rate` is overridden to adjusted 🛠️ FIXED
 
@@ -1452,9 +1462,15 @@ output: `docs/checkpoints/codex_outputs/prefire_pipeline_FINAL_2026-05-14.md`.
 - **Fix**: `analysis.py` adds `cost_efficiency_ratio_adjusted` to `cond_df` (computed from `ep_df["adjusted_success"]` × `total_cost_usd`, guarded on column presence) in the same block that overrides `success_rate`; raw `cost_efficiency_ratio` kept untouched; `metrics.py` comment updated to point at the adjusted field. py_compile clean; smoke confirms the grouped ratio (c1 0.667 / c2 0.200).
 - **Paper impact**: adjusted-success cost tables can now use a matching adjusted ratio instead of silently mixing bases.
 
-Non-bug verify item: `phantom_text` config uses legacy `observation_mode: phantom_dom` →
-`condition_id = phase1_phantom_dom_router_0`; confirm downstream mode-string aggregation
-accepts the alias (task #73).
+Non-bug verify item ✅ VERIFIED (task #73, 2026-05-14): `phantom_text` config uses legacy
+`observation_mode: phantom_dom` → `condition_id = phase1_phantom_dom_router_0`. Confirmed safe:
+`run_registry.canonical_mode()` resolves both `phantom_dom` and `phantom_text` → `P-text` at
+the registry boundary; the primary Phase 1a behavioral aggregator (`aggregate_sr_fp_per_mode.py`)
+operates entirely in canonical `PAPER_MODES` space, so the raw alias never leaks. (Minor,
+non-blocking: a few mechanistic NPZ analysis scripts hardcode `phantom_text` — separate from
+the behavioral fire.)
+
+### §139 audit status (2026-05-14): B-83 / B-84 / B-87 / B-89 🛠️ FIXED · B-88 ❌ NOT_A_BUG · B-90 📊 EVALUATED no-fix · B-85 / B-86 open
 
 ---
 
