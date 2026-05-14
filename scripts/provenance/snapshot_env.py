@@ -43,7 +43,7 @@ from typing import Any
 # Files whose content materially affects scoring (paper-grade evaluator SHA).
 # Add new files here when introducing new score-affecting modules.
 EVALUATOR_SOURCE_FILES = [
-    "p79/experiment/analysis.py",      # compute_adjusted_success + FP rules
+    "p79/experiment/analysis.py",      # Pareto / scored_task_count / analyze_run
     "p79/experiment/environment.py",   # VwaEvaluator wrapper
     "p79/experiment/metrics.py",       # aggregate_condition_metrics (SR roll-up)
 ]

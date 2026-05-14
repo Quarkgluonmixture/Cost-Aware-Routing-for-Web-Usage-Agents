@@ -545,53 +545,12 @@ def test_router_backward_compat_default_modes():
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
-# analysis: compute_adjusted_success — eval_fp program_html supplementary rule
+# §139.8: tests for `compute_adjusted_success` were removed — the post-hoc
+# na_fp / eval_fp filter layer is retired. Those FPs are now fixed at the
+# source: empty-pred guard in the VWA evaluator (master bug B-91, tested in
+# the visualwebarena submodule) + N/A task exclusion at load time
+# (`tasks.py::load_tasks`, `task.exclude_na_tasks`).
 # ---------------------------------------------------------------------------
-
-from p79.experiment.analysis import compute_adjusted_success
-
-
-def test_eval_fp_program_html_no_effective_action():
-    """program_html + ~agent_finished + ~has_effective_action → E-FP (§95 simplified rule)."""
-    ok, reason = compute_adjusted_success(
-        69, "reddit", True,
-        agent_finished=False, eval_type="program_html",
-        has_effective_action=False,
-    )
-    assert ok is False
-    assert reason == "eval_fp"
-
-
-def test_eval_fp_program_html_effective_action_safe():
-    """program_html + ~agent_finished + effective=True → NOT E-FP."""
-    ok, reason = compute_adjusted_success(
-        160, "reddit", True,
-        agent_finished=False, eval_type="program_html",
-        has_effective_action=True,
-    )
-    assert ok is True
-    assert reason == ""
-
-
-def test_eval_fp_program_html_backward_compat_none():
-    """has_effective_action=None defaults True → NOT E-FP."""
-    ok, reason = compute_adjusted_success(
-        42, "reddit", True,
-        agent_finished=False, eval_type="program_html",
-        has_effective_action=None,
-    )
-    assert ok is True
-    assert reason == ""
-
-
-def test_no_visual_fp_layer():
-    """Confirm visual_fp reason no longer exists (§95)."""
-    ok, reason = compute_adjusted_success(
-        100, "classifieds", True,
-        agent_finished=True,
-    )
-    assert ok is True
-    assert reason != "visual_fp"
 
 
 def test_detect_benchmark_noise_site_infra_error():

@@ -58,10 +58,10 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     "agent_finished": None,                  # original v2 (§78)
     "energy_partial": False,                 # §97 RU-5
     "energy_step_complete_count": 0,         # §97 RU-5
-    "adjusted_success": None,                # §97 Step-2
-    "fp_reason": "",                         # §97 Step-2
-    # has_effective_action removed §139.8 — eval_fp program_html branch dropped;
-    # archived pre-§139.8 summaries may still carry the key (harmless, unread).
+    # adjusted_success / fp_reason / has_effective_action removed §139.8 —
+    # post-hoc na_fp / eval_fp filter layer retired (fixed at the source:
+    # B-91 evaluator guard + N/A exclusion at load). Archived pre-§139.8
+    # summaries may still carry these keys (harmless, unread).
 }
 
 

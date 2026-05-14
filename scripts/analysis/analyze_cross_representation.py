@@ -364,98 +364,30 @@ def _infer_benchmark(run_dir: Optional[Path]) -> str:
 def _mark_false_positives(
     pivot: pd.DataFrame, modes: List[str], *, run_dir: Optional[Path] = None,
 ) -> pd.DataFrame:
-    """Add is_na_task + {mode}_na_fp + {mode}_eval_fp + {mode}_success_adj columns.
+    """Add {mode}_success_adj (== {mode}_success) + zeroed FP columns.
 
-    N/A FP: any mode + N/A task + raw success + ~agent_finished.
-    Eval FP (§95; §139.8 dropped the program_html eval_fp branch):
-      string_match + success + ~agent_finished → E-FP
-      program_html eval_fp removed §139.8 — has_effective_action heuristic had
-      no scalable boundary; contamination prevented upstream by RESET_BEFORE.
-      url_match excluded: navigating to correct page without finish is legitimate.
+    §139.8: the post-hoc na_fp / eval_fp filter layer is retired — those FPs
+    are fixed at the source now (B-91 evaluator empty-pred guard + N/A task
+    exclusion at load time). This function used to mirror the canonical
+    `compute_adjusted_success`; it is now a thin alias-setter so the rest of
+    this script's "adjusted" code paths (a2 / a3 / a5 / a6 / oracle) keep
+    working without schema disruption — they simply no longer diverge from
+    the raw success columns. `na_fp` / `eval_fp` columns and counts are kept
+    as all-False / 0 for output-schema stability.
     """
-    from p79.experiment.analysis import _load_na_task_ids
-
-    # episode_reason_rows.csv does not currently carry a `benchmark`
-    # column, so this almost always falls through to path-based
-    # inference; left here in case the schema gains the column later.
-    _bm = "visualwebarena"
-    if "benchmark" in pivot.columns and not pivot.empty:
-        _bm = str(pivot["benchmark"].iloc[0])
-    elif run_dir is not None:
-        _bm = _infer_benchmark(run_dir)
-    na_ids_by_site: Dict[str, set] = {}
-    for site in pivot["site"].unique():
-        na_ids_by_site[site] = _load_na_task_ids(str(site), _bm)
-
-    pivot["is_na_task"] = pivot.apply(
-        lambda r: int(r["task_id"]) in na_ids_by_site.get(r["site"], set()),
-        axis=1,
-    )
-
-    # Compute agent_finished per mode (active finish, not fallback).
-    # Mirror canonical p79.experiment.analysis.compute_adjusted_success:
-    #   - na_fp is strict: missing/unknown agent_finished → flag as FP
-    #     (we accomplish this by setting af_col=False when data missing,
-    #      which makes nfp_col = is_na & success & ~False = True)
-    #   - eval_fp is permissive: missing/unknown → skip (don't flag)
-    #     (gated by af_known_col below)
-    for m in modes:
-        fat_col = f"{m}_final_action_type"
-        ff_col = f"{m}_fallback_finish"
-        af_col = f"{m}_agent_finished"
-        af_known_col = f"{m}_agent_finished_known"
-        if fat_col in pivot.columns and ff_col in pivot.columns:
-            ff_series = pivot[ff_col].fillna(False).astype(bool)
-            pivot[af_col] = (
-                pivot[fat_col].astype(str).str.lower().isin(["finish", "stop"])
-                & ~ff_series
-            )
-            pivot[af_known_col] = pivot[fat_col].notna()
-        else:
-            # Missing schema → treat as "agent_finished unknown".
-            pivot[af_col] = False  # strict for na_fp
-            pivot[af_known_col] = False  # blocks eval_fp
-
-    # Mark false positives and build adjusted success columns
+    pivot["is_na_task"] = False
     na_fp_count: Dict[str, int] = {}
     eval_fp_count: Dict[str, int] = {}
-
-    _is_string_match = pd.Series(False, index=pivot.index)
-    if "eval_type" in pivot.columns:
-        _et = pivot["eval_type"].astype(str)
-        _is_string_match = _et.str.contains("string_match", na=False)
-
     for m in modes:
         scol = f"{m}_success"
-        nfp_col = f"{m}_na_fp"
-        efp_col = f"{m}_eval_fp"
-        adj_col = f"{m}_success_adj"
-        af_col = f"{m}_agent_finished"
-        af_known_col = f"{m}_agent_finished_known"
         if scol not in pivot.columns:
             continue
-        pivot[nfp_col] = pivot["is_na_task"] & (pivot[scol] == True) & ~pivot[af_col]
-        # Eval FP: string_match only (§139.8 dropped the program_html eval_fp
-        # branch). Gate on af_known to avoid over-flagging when agent_finished
-        # can't be determined from data (matches canonical compute_adjusted_success).
-        _efp_eligible_m = _is_string_match
-        pivot[efp_col] = (
-            _efp_eligible_m
-            & (pivot[scol] == True)
-            & pivot[af_known_col]
-            & ~pivot[af_col]
-            & ~pivot[nfp_col]
-        )
-        pivot[adj_col] = pivot[scol].copy()
-        pivot.loc[pivot[nfp_col] | pivot[efp_col], adj_col] = False
-        na_fp_count[m] = int(pivot[nfp_col].sum())
-        eval_fp_count[m] = int(pivot[efp_col].sum())
-
-    n_na = int(pivot["is_na_task"].sum())
-    fp_na_total = sum(na_fp_count.values())
-    fp_eval_total = sum(eval_fp_count.values())
-    print(f"  N/A FP: {n_na} N/A tasks, {fp_na_total} false positives {na_fp_count}")
-    print(f"  Eval FP: {fp_eval_total} false positives {eval_fp_count}")
+        pivot[f"{m}_na_fp"] = False
+        pivot[f"{m}_eval_fp"] = False
+        pivot[f"{m}_success_adj"] = pivot[scol].copy()
+        na_fp_count[m] = 0
+        eval_fp_count[m] = 0
+    print("  §139.8: adjusted_success retired — *_success_adj aliased to raw *_success")
     return pivot, na_fp_count, eval_fp_count
 
 

@@ -133,16 +133,10 @@ class ExperimentRunner:
         self._auth_episode_counts: Dict[str, int] = {}  # per-site counter for auth refresh
         # B-35 fix (笔记 §116.9): also track last refresh timestamp for time-based threshold
         self._auth_last_refresh_ts: Dict[str, float] = {}
-        # Per-site N/A task IDs cache — used by §95 adjusted_success computation
-        # in _run_episode. Pre-loaded once to avoid repeated config file reads.
-        self._na_ids_cache: Dict[str, set] = {}
-        try:
-            from p79.experiment.analysis import _load_na_task_ids
-            _benchmark = self.cfg.get("experiment", {}).get("benchmark", "visualwebarena")
-            for _site in self.cfg.get("task", {}).get("include_sites", []):
-                self._na_ids_cache[str(_site)] = _load_na_task_ids(str(_site), _benchmark)
-        except Exception as _exc:
-            logger.warning("Failed to pre-load N/A task IDs: %s", _exc)
+        # §139.8: the per-site N/A task IDs cache was removed — it only fed the
+        # retired post-hoc `compute_adjusted_success` call in `_run_episode`.
+        # N/A tasks are now excluded at load time (`tasks.py::load_tasks`,
+        # `task.exclude_na_tasks`), so the runner never sees them.
 
     def _get_backend(self, backend_id: str):
         if backend_id in self._backends:
@@ -1572,41 +1566,11 @@ class ExperimentRunner:
         _agent_finished = (_last_at in ("finish", "stop")) and not _last_fb
         episode_summary["agent_finished"] = _agent_finished
 
-        # §95 adjusted_success — compute here as single source of truth.
-        # Downstream analysis scripts read this field directly instead of
-        # re-deriving it (was scattered across 5 locations pre-§97 audit).
-        try:
-            from p79.experiment.analysis import compute_adjusted_success
-            _eval_types = (
-                (task.raw_task.get("eval") or {}).get("eval_types") or []
-                if hasattr(task, "raw_task") and isinstance(task.raw_task, dict)
-                else []
-            )
-            _eval_type_str = "|".join(str(x) for x in _eval_types) if _eval_types else ""
-            _na_ids = self._na_ids_cache.get(task.site, set())
-            _adj, _fp = compute_adjusted_success(
-                task.task_id, task.site, success,
-                na_task_ids=_na_ids,
-                agent_finished=_agent_finished,
-                eval_type=_eval_type_str,
-            )
-            episode_summary["adjusted_success"] = bool(_adj)
-            episode_summary["fp_reason"] = str(_fp)
-        except Exception as _adj_exc:
-            # F23 audit fix 2026-05-09: previously logged warning + wrote
-            # adjusted_success=None and fp_reason="" silently. Downstream
-            # aggregators fell back to raw `success`, bypassing the FP
-            # filter for that episode. Now: log error + tag fp_reason
-            # with "adjustment_error" so the F22 batch validator catches
-            # it on the next read and forces a recompute. Set strict
-            # P79_STRICT=1 to make this fatal during paper-grade runs.
-            logger.error(
-                "Failed to compute adjusted_success for site=%s task=%s: %s",
-                task.site, task.task_id, _adj_exc,
-            )
-            episode_summary["adjusted_success"] = None
-            episode_summary["fp_reason"] = "adjustment_error"
-            if os.environ.get("P79_STRICT", "").lower() in ("1", "true", "yes"):
-                raise
+        # §139.8: the runner no longer computes `adjusted_success` / `fp_reason`.
+        # The post-hoc na_fp / eval_fp filter layer is retired — those FPs are
+        # fixed at the source now (empty-pred guard in the VWA evaluator,
+        # master bug B-91, + N/A task exclusion at load time). `success` above
+        # is already the canonical paper-grade outcome. `agent_finished` is
+        # still recorded above as a standalone diagnostic.
 
         return episode_summary

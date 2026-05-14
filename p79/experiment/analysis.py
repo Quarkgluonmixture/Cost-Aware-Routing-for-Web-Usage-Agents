@@ -77,110 +77,13 @@ def scored_task_count(site: str, benchmark: str = "visualwebarena") -> int:
     return max(0, n_total - n_na)
 
 
-def compute_adjusted_success(
-    task_id: int, benchmark_site: str,
-    raw_success: bool, *,
-    na_task_ids: set | None = None,
-    agent_finished: bool | None = None,
-    eval_type: str | None = None,
-) -> tuple:
-    """Return (adjusted_success, fp_reason). fp_reason: '' / 'na_fp' / 'eval_fp'.
-
-    Priority (§95; §139.8 dropped the program_html eval_fp branch):
-    1. raw_success=False → (False, '')
-    2. N/A FP: task in na_task_ids + raw_success + ~agent_finished → (False, 'na_fp')
-    3. string_match eval_fp: success + ~agent_finished → (False, 'eval_fp')
-
-    §139.8: the program_html eval_fp branch is removed — the `has_effective_action`
-    heuristic had no scalable boundary; program_html contamination is prevented
-    upstream by the RESET_BEFORE protocol. na_fp + string_match are also fixed at
-    the evaluator now (master bug B-91), so raw_success is already correct for
-    post-B-91 runs; branches 2-3 are kept only for re-deriving archived pre-B-91
-    summaries and retire with the full FP-architecture restructure.
-    """
-    if not raw_success:
-        return (False, "")
-    if na_task_ids and task_id in na_task_ids:
-        if agent_finished:
-            return (True, "")
-        return (False, "na_fp")
-    # F20 audit fix 2026-05-09: multi-eval tasks encode `eval_type` as
-    # pipe-delimited (e.g. "string_match|program_html") in runner +
-    # diagnostics. Split into set and test membership instead of exact
-    # match, otherwise eval FPs survive into adjusted SR.
-    if agent_finished is not None and not agent_finished:
-        eval_types_set = (
-            set(s.strip() for s in eval_type.split("|") if s.strip())
-            if eval_type else set()
-        )
-        if "string_match" in eval_types_set:
-            return (False, "eval_fp")
-    return (raw_success, "")
-
-
-def compute_adjusted_success_batch(ep_df, benchmark_site: str, benchmark: str = "visualwebarena"):
-    """Add adjusted_success + fp_reason columns to ep_df.
-
-    Requires columns: task_id, success.
-    Returns ep_df with new columns added in-place.
-
-    Fast-path (§97 audit Step 2): if ep_df already carries `adjusted_success`
-    AND `fp_reason` columns (runner-computed since §97), skip recomputation.
-    The runner is the single source of truth; this batch path is kept for
-    backward compatibility with episode summaries written before §97.
-    """
-    # F22 audit fix 2026-05-09: fast-path now validates fp_reason values
-    # against the locked set {'', 'na_fp', 'eval_fp'} (preregistration §4
-    # primary FP filter). If any row has an unknown fp_reason (e.g. legacy
-    # 'visual_fp', 'adjustment_error'), recompute from scratch instead of
-    # trusting runner output.
-    ALLOWED_FP_REASONS = {"", "na_fp", "eval_fp"}
-    if (
-        not ep_df.empty
-        and "adjusted_success" in ep_df.columns
-        and "fp_reason" in ep_df.columns
-        and ep_df["adjusted_success"].notna().all()
-    ):
-        observed_reasons = set(
-            (str(v) if v is not None else "") for v in ep_df["fp_reason"].fillna("")
-        )
-        unknown_reasons = observed_reasons - ALLOWED_FP_REASONS
-        if not unknown_reasons:
-            return ep_df
-        # Unknown fp_reason found — fall through and recompute.
-        import warnings as _warnings
-        _warnings.warn(
-            f"compute_adjusted_success_batch: dropping cached adjusted_success "
-            f"because fp_reason contains unknown values {sorted(unknown_reasons)}; "
-            "recomputing from raw fields. (F22 audit guard)",
-            stacklevel=2,
-        )
-
-    na_ids = _load_na_task_ids(benchmark_site, benchmark)
-
-    # F21 audit fix 2026-05-09: do not coerce missing `agent_finished` to
-    # True. `bool(NaN)` is True in Python which would bypass na_fp/eval_fp
-    # downstream. Use pd.notna check first; pass None when missing.
-    import pandas as _pd
-
-    def _safe_bool(value):
-        if value is None or _pd.isna(value):
-            return None
-        return bool(value)
-
-    adj_results = ep_df.apply(
-        lambda r: compute_adjusted_success(
-            int(r["task_id"]), benchmark_site,
-            bool(r["success"]),
-            na_task_ids=na_ids,
-            agent_finished=_safe_bool(r["agent_finished"]) if "agent_finished" in r.index else None,
-            eval_type=str(r["eval_type"]) if ("eval_type" in r.index and _pd.notna(r["eval_type"])) else None,
-        ),
-        axis=1,
-    )
-    ep_df["adjusted_success"] = [r[0] for r in adj_results]
-    ep_df["fp_reason"] = [r[1] for r in adj_results]
-    return ep_df
+# §139.8: `compute_adjusted_success` + `compute_adjusted_success_batch` were
+# retired here. The post-hoc na_fp / eval_fp filter layer is replaced by
+# source-level fixes — empty-pred guard in the VWA evaluator (master bug
+# B-91) + N/A task exclusion at load time (`tasks.py::load_tasks`,
+# `task.exclude_na_tasks`). The runner's `success` is now the canonical
+# paper-grade outcome; nothing downstream re-derives an "adjusted" variant.
+# See 实验笔记 §139.8 + master_bug_catalog.md §139.8 piece 4.
 
 
 def _compute_pareto_front(points: List[Dict[str, float]], maximize: str, minimize: str) -> List[int]:
@@ -1196,87 +1099,15 @@ def analyze_run(run_dir: str) -> Path:
     else:
         ep_df["is_na_reference"] = False
 
-    # --- Compute adjusted success (N/A FP + eval FP removal; visual_fp removed in §95) ---
-    if not ep_df.empty and "benchmark_site" in ep_df.columns and "success" in ep_df.columns:
-        adj_parts = []
-        for site in ep_df["benchmark_site"].unique():
-            site_mask = ep_df["benchmark_site"] == site
-            site_ep = ep_df[site_mask].copy()
-            compute_adjusted_success_batch(site_ep, str(site), _benchmark)
-            adj_parts.append(site_ep[["adjusted_success", "fp_reason"]])
-        if adj_parts:
-            adj_combined = pd.concat(adj_parts)
-            ep_df["adjusted_success"] = adj_combined["adjusted_success"]
-            ep_df["fp_reason"] = adj_combined["fp_reason"]
-            logger.info(
-                "Computed adjusted success: %d FPs removed (%d na_fp, %d eval_fp)",
-                int((ep_df["fp_reason"] != "").sum()),
-                int((ep_df["fp_reason"] == "na_fp").sum()),
-                int((ep_df["fp_reason"] == "eval_fp").sum()),
-            )
-
-    # Adjusted wasted cost (§97 audit, M-5): an episode that is FP (raw
-    # success=True but adjusted=False) has its full step cost recorded as
-    # `wasted_cost_usd=0` by the runner (raw success path). Re-derive an
-    # adjusted version so downstream "wasted budget" stats reflect §95 FP
-    # filtering. Original raw stays in `wasted_cost_usd`.
-    if not ep_df.empty and "adjusted_success" in ep_df.columns and "total_cost_usd" in ep_df.columns:
-        import numpy as _np
-        ep_df["wasted_cost_usd_adjusted"] = _np.where(
-            ep_df["adjusted_success"].astype(bool),
-            0.0,
-            ep_df["total_cost_usd"].astype(float),
-        )
-
-    # Override success with adjusted values for all downstream analysis
-    if not ep_df.empty and "adjusted_success" in ep_df.columns:
+    # --- §139.8: post-hoc adjusted_success layer retired ---
+    # na_fp + eval_fp are now fixed at the source — empty-pred guard in the
+    # VWA evaluator (master bug B-91) + N/A task exclusion at load time
+    # (`tasks.py::load_tasks`, `task.exclude_na_tasks`). The runner's
+    # `success` is already the canonical paper-grade outcome, so there is no
+    # post-hoc override. `raw_success` is kept as an alias (== `success`) for
+    # backward compatibility with downstream readers that still reference it.
+    if not ep_df.empty and "success" in ep_df.columns:
         ep_df["raw_success"] = ep_df["success"].copy()
-
-        # Update cond_df success_rate to adjusted (used by all downstream
-        # plotting / Pareto / etc.). Preserve the original raw value as
-        # `success_rate_raw` so callers can opt back in. Documented behavior:
-        # by default the project reports adjusted success rates per §95.
-        if not cond_df.empty and "condition_id" in cond_df.columns:
-            cond_df["success_rate_raw"] = cond_df["success_rate"].copy()
-            adj_sr = (
-                ep_df.groupby("condition_id")["adjusted_success"]
-                .apply(lambda s: s.astype(float).fillna(0).mean())
-                .reset_index()
-                .rename(columns={"adjusted_success": "success_rate_adj"})
-            )
-            cond_df = cond_df.merge(adj_sr, on="condition_id", how="left")
-            cond_df["success_rate"] = cond_df["success_rate_adj"].fillna(cond_df["success_rate"])
-            cond_df.drop(columns=["success_rate_adj"], inplace=True)
-
-            # B-89: metrics.py's `cost_efficiency_ratio` is raw-success based and
-            # is NOT recomputed when success_rate is overridden to adjusted. Add
-            # an adjusted-success counterpart so cost tables don't silently mix
-            # raw economics with adjusted-success conclusions. The raw field is
-            # kept untouched as `cost_efficiency_ratio`.
-            if "total_cost_usd" in ep_df.columns:
-                def _cost_efficiency_ratio_adjusted(g):
-                    total = float(g["total_cost_usd"].astype(float).sum())
-                    succ = float(
-                        g.loc[g["adjusted_success"].astype(bool), "total_cost_usd"]
-                        .astype(float).sum()
-                    )
-                    return succ / max(total, 1e-12)
-                ratio_adj = (
-                    ep_df.groupby("condition_id")
-                    .apply(_cost_efficiency_ratio_adjusted)
-                    .reset_index(name="cost_efficiency_ratio_adjusted")
-                )
-                cond_df = cond_df.merge(ratio_adj, on="condition_id", how="left")
-
-        # Inject adjusted success into episode_rows for _analyze_condition
-        adj_map = ep_df.set_index(["condition_id", "task_id"])["adjusted_success"].to_dict()
-        for r in episode_rows:
-            key = (r.get("condition_id"), r.get("task_id"))
-            if key in adj_map:
-                r["success"] = adj_map[key]
-
-        # Replace ep_df success column
-        ep_df["success"] = ep_df["adjusted_success"]
 
     # --- Per-condition (per-session) analysis ---
     cond_ids = [row.get("condition_id") for row in condition_rows if row.get("condition_id")]
@@ -1354,15 +1185,11 @@ def analyze_run(run_dir: str) -> Path:
     if not ep_df.empty:
         _analyze_per_site(ep_df, ov_plots, ov_tables)
 
-    # Note: A previous "exclude all N/A reference tasks" double-filter
-    # (`na_adjusted` dict) lived here. It applied a second pass on top of
-    # the §95 `compute_adjusted_success_batch` result above, producing a
-    # different "adjusted SR" with a non-canonical meaning. Removed in §97
-    # cleanup — the canonical adjusted SR now flows through `ep_df["success"]`
-    # (overwritten earlier with §95 adjusted_success) and `cond_df["success_rate"]`,
-    # while raw values are preserved as `cond_df["success_rate_raw"]` and
-    # `ep_df["raw_success"]`. Reported per-condition na_fp counts come from
-    # `cross_representation_summary.json` / `episode_reason_rows.csv:fp_reason`.
+    # Note: §139.8 retired the post-hoc adjusted_success layer entirely
+    # (was: `compute_adjusted_success_batch` + a second `na_adjusted`
+    # double-filter pass, both removed). `ep_df["success"]` is now the
+    # runner's canonical outcome with no override; `is_na_reference`
+    # remains only as a diagnostic flag for the noise-report CSV.
     na_total = int(ep_df["is_na_reference"].sum()) if (
         not ep_df.empty and "is_na_reference" in ep_df.columns
     ) else 0

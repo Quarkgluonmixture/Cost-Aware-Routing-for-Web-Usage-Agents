@@ -2189,7 +2189,8 @@ def main() -> None:
     parser.add_argument("--mode", default=None,
                         help="Filter to a single observation mode (dom/som/vision)")
     parser.add_argument("--no-adjust", action="store_true",
-                        help="Disable adjusted labels (keep raw success as-is)")
+                        help="DEPRECATED no-op (§139.8 retired the adjusted_success "
+                             "layer; `success` is now canonical). Kept for CLI compat.")
     args = parser.parse_args()
 
     run_dir = Path(args.run_dir).expanduser().resolve()
@@ -2224,68 +2225,17 @@ def main() -> None:
     step_df = _build_step_df(step_records)
     print(f"  {len(ep_df)} episodes, {len(step_df)} steps with confidence")
 
-    # ── Adjusted labels ──
-    use_adjusted = not args.no_adjust
-    label_mode = "adjusted" if use_adjusted else "raw"
-    if use_adjusted and not ep_df.empty:
-        from p79.experiment.analysis import compute_adjusted_success_batch
-        # Detect benchmark from run_dir path (visualwebarena vs webarena).
-        # Previously hardcoded "visualwebarena" → wrong na_task_ids loaded for WA.
-        benchmark = "webarena" if any(p == "webarena" for p in run_dir.parts) else "visualwebarena"
-        # Detect benchmark_site from summaries
-        sites = set()
-        for (_, _), s in summaries.items():
-            bs = s.get("benchmark_site") or s.get("site") or ""
-            if bs:
-                sites.add(bs)
-
-        if not sites:
-            # No site info — abort adjusting rather than silently using a
-            # wrong default site (was: hardcoded fallback to 'classifieds').
-            print("  ⚠ Cannot detect benchmark_site from summaries; skipping adjustment.")
-            ep_df["raw_success"] = ep_df["success"]
-            ep_df["adjusted_success"] = ep_df["success"]
-            ep_df["fp_reason"] = ""
-            label_mode = "raw_no_site_info"
-        elif len(sites) == 1:
-            bsite = next(iter(sites))
-            ep_df["raw_success"] = ep_df["success"]
-            compute_adjusted_success_batch(ep_df, bsite, benchmark)
-            n_adjusted = int((ep_df["raw_success"] != ep_df["adjusted_success"]).sum())
-            ep_df["success"] = ep_df["adjusted_success"]
-            print(f"  Adjusted labels ({bsite}, benchmark={benchmark}): {n_adjusted} episodes changed")
-        else:
-            # Multi-site: per-site batch (was: hardcoded fallback to 'classifieds').
-            print(f"  ⚠ Multi-site run detected: {sorted(sites)}. Adjusting per-site.")
-            ep_df["raw_success"] = ep_df["success"]
-            bs_map = {
-                (s.get("condition_id", ""), int(s.get("task_id", -1))):
-                (s.get("benchmark_site") or s.get("site") or "")
-                for (_, _), s in summaries.items()
-            }
-            ep_df["_bsite"] = ep_df.apply(
-                lambda r: bs_map.get((r["condition_id"], int(r["task_id"])), ""), axis=1
-            )
-            adj_parts = []
-            for site in sorted(sites):
-                site_ep = ep_df[ep_df["_bsite"] == site].copy()
-                if site_ep.empty:
-                    continue
-                compute_adjusted_success_batch(site_ep, site, benchmark)
-                adj_parts.append(site_ep[["adjusted_success", "fp_reason"]])
-            if adj_parts:
-                import pandas as _pd
-                adj_combined = _pd.concat(adj_parts)
-                ep_df["adjusted_success"] = adj_combined["adjusted_success"]
-                ep_df["fp_reason"] = adj_combined["fp_reason"]
-            n_adjusted = int((ep_df["raw_success"] != ep_df["adjusted_success"]).sum())
-            ep_df["success"] = ep_df["adjusted_success"]
-            ep_df.drop(columns=["_bsite"], inplace=True)
-            print(f"  Adjusted labels (multi-site, benchmark={benchmark}): {n_adjusted} episodes changed")
-    else:
-        ep_df["raw_success"] = ep_df["success"]
-        ep_df["adjusted_success"] = ep_df["success"]
-        ep_df["fp_reason"] = ""
+    # ── §139.8: adjusted_success layer retired — `success` is canonical ──
+    # The post-hoc na_fp / eval_fp adjustment is gone, replaced by
+    # source-level fixes (B-91 evaluator empty-pred guard + N/A task
+    # exclusion at load time). `success` is the paper-grade label.
+    # `raw_success` / `adjusted_success` are kept as == aliases so this
+    # script's JSON output schema (`label_mode` / `n_adjusted` /
+    # `n_success_raw`) is unchanged for downstream consumers.
+    label_mode = "canonical"
+    ep_df["raw_success"] = ep_df["success"]
+    ep_df["adjusted_success"] = ep_df["success"]
+    ep_df["fp_reason"] = ""
 
     if args.mode:
         print(f"  Filtering to mode: {args.mode}")

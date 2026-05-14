@@ -1993,36 +1993,16 @@ def main() -> None:
                 final_answer_in_intent_price_range=answer_in_intent_price_range,
             )
 
-            # ── Adjusted success (N/A FP + eval FP; visual_fp removed in §95) ──
-            from p79.experiment.analysis import compute_adjusted_success, _load_na_task_ids
-            _benchmark = "webarena" if any(p == "webarena" for p in run_dir.parts) else "visualwebarena"
-            _na_ids = _load_na_task_ids(site, benchmark=_benchmark)
-            _is_agent_finished = _is_finish(final_action_type) and not fallback_finish
-            adjusted_success, fp_reason = compute_adjusted_success(
-                task_id, site, success,
-                na_task_ids=_na_ids,
-                agent_finished=_is_agent_finished,
-                eval_type=eval_type,
-            )
-            if adjusted_success != success:
-                adjusted_reason_bucket = _classify_reason(
-                    success=adjusted_success,
-                    summary_error=summary.get("error"),
-                    final_action_type=final_action_type,
-                    final_error_category=final_error_category,
-                    final_answer=final_answer,
-                    eval_type=eval_type,
-                    early_finish=early_finish,
-                    hit_max_steps=hit_max_steps,
-                    click_back_pairs=int(loop_metrics["click_back_pairs"]),
-                    max_search_query_repeat=int(loop_metrics["max_search_query_repeat"]),
-                    target_item_ever_visible=target_item_ever_visible,
-                    final_url_match=final_url_match,
-                    ever_visited_reference_url=ever_visited_ref_url,
-                    final_answer_in_intent_price_range=answer_in_intent_price_range,
-                )
-            else:
-                adjusted_reason_bucket = reason_bucket
+            # ── §139.8: adjusted_success retired — `success` is canonical ──
+            # The post-hoc na_fp / eval_fp filter layer is gone, replaced by
+            # source-level fixes (B-91 evaluator empty-pred guard + N/A task
+            # exclusion at load time). `adjusted_success` / `fp_reason` /
+            # `adjusted_reason_bucket` are kept here as == aliases of their
+            # raw counterparts so this script's CSV output schema is unchanged
+            # for downstream consumers; they no longer diverge from the raw.
+            adjusted_success = success
+            fp_reason = ""
+            adjusted_reason_bucket = reason_bucket
 
             collection_overlap_score = _collection_overlap_score(final_answer, ref_answers)
             stuck_subtype = _classify_stuck_subtype(

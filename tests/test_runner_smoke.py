@@ -1,8 +1,7 @@
 """Runner smoke test: protects §97 audit invariants + future refactors.
 
 This is a lighter-weight cousin of `test_runner_integration.py` that focuses
-on the schema invariants introduced by the §97 audit and the upcoming
-adjusted_success refactor (Step 2 of the improvement plan). It runs ONE
+on the schema invariants introduced by the §97 audit. It runs ONE
 condition × ONE task in mock mode and asserts:
 
   1. Runner.run() succeeds and writes the canonical files.
@@ -124,7 +123,8 @@ def test_smoke_episode_summary_audit_fields(tmp_path):
     assert "energy_partial" in summary, "RU-5: energy_partial missing"
     assert "energy_step_complete_count" in summary, "RU-5: energy_step_complete_count missing"
     assert isinstance(summary["energy_partial"], bool)
-    # agent_finished (used by §95 adjusted_success)
+    # agent_finished — standalone diagnostic (§139.8: no longer feeds an
+    # adjusted_success layer; that post-hoc layer is retired)
     assert "agent_finished" in summary
     # Existing fields still present
     assert "wasted_cost_usd" in summary

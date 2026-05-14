@@ -61,8 +61,6 @@ class EpisodeRederiveResult:
     energy_step_complete_count: int
     n_steps: int
     n_finish_steps_excluded: int
-    adjusted_success: Optional[bool] = None
-    fp_reason: str = ""
 
 
 def _action_type(step: Dict[str, Any]) -> str:
@@ -134,38 +132,10 @@ def _process_episode(
     steps = read_jsonl_dedup(steps_path)
     new_pur, energy_partial, energy_complete, n_finish = _rederive_one(steps)
 
-    # §95 adjusted_success — re-derive for old data using runner's canonical
-    # logic (Step 2 of plan). agent_finished is read from summary if present;
-    # otherwise derived from the last step's action_type + fallback_finish.
-    adj_success: Optional[bool] = None
-    fp_reason = ""
-    try:
-        from p79.experiment.analysis import compute_adjusted_success, _load_na_task_ids
-        # Determine benchmark from run_dir path.
-        _bench = "webarena" if any(p == "webarena" for p in summary_path.parts) else "visualwebarena"
-        _na_ids = _load_na_task_ids(site, _bench)
-        # agent_finished: prefer summary field; fall back to step-derived.
-        if "agent_finished" in summary and summary["agent_finished"] is not None:
-            af = bool(summary["agent_finished"])
-        elif steps:
-            _last_at = str((steps[-1].get("action") or {}).get("action_type", "")).lower()
-            _last_fb = bool(steps[-1].get("fallback_finish", False))
-            af = (_last_at in ("finish", "stop")) and not _last_fb
-        else:
-            af = None
-        # eval_type from summary or empty (older data may not have it).
-        et = str(summary.get("eval_type", "") or "")
-        adj_success_val, fp_val = compute_adjusted_success(
-            task_id, site, bool(summary.get("success", False)),
-            na_task_ids=_na_ids,
-            agent_finished=af,
-            eval_type=et,
-        )
-        adj_success = bool(adj_success_val)
-        fp_reason = str(fp_val)
-    except Exception as exc:
-        print(f"  [WARN] adjusted_success derive failed for {site} task {task_id}: {exc}",
-              file=sys.stderr)
+    # §139.8: rederive no longer re-derives `adjusted_success` / `fp_reason`.
+    # The post-hoc na_fp / eval_fp filter layer is retired — `success` from
+    # the (B-91-corrected) evaluator is the canonical outcome and is preserved
+    # verbatim here.
 
     result = EpisodeRederiveResult(
         site=site,
@@ -176,8 +146,6 @@ def _process_episode(
         energy_step_complete_count=energy_complete,
         n_steps=len(steps),
         n_finish_steps_excluded=n_finish,
-        adjusted_success=adj_success,
-        fp_reason=fp_reason,
     )
 
     if dry_run:
@@ -202,10 +170,6 @@ def _process_episode(
         # it's clear this is "unknown / pre-fix" rather than "no busy waits".
         summary["busy_wait_total_ms"] = 0.0
         summary["busy_wait_total_ms_unknown_pre_fix"] = True
-    # §95 adjusted_success fields (Step 2): always update if derivation succeeded.
-    if "adjusted_success" in rewrite_set and adj_success is not None:
-        summary["adjusted_success"] = adj_success
-        summary["fp_reason"] = fp_reason
 
     # Paper-grade audit trail (笔记 §115, reeval_audit_protocol.md): every
     # rederive invocation appends to summary['rederive_metadata'] history list.
@@ -360,8 +324,8 @@ def main() -> None:
     parser.add_argument(
         "--rederive-fields",
         type=str,
-        default="page_unchanged_rate,energy_partial,energy_step_complete_count,busy_wait_total_ms,adjusted_success",
-        help="Comma-separated subset of fields to rewrite. Default: all five.",
+        default="page_unchanged_rate,energy_partial,energy_step_complete_count,busy_wait_total_ms",
+        help="Comma-separated subset of fields to rewrite. Default: all four.",
     )
     parser.add_argument("--no-condition-aggregate", action="store_true",
                         help="Skip rebuilding condition_summary_v2.json after episode rewrites")
@@ -369,8 +333,7 @@ def main() -> None:
 
     rewrite_set = set(x.strip() for x in args.rederive_fields.split(",") if x.strip())
     valid_fields = {"page_unchanged_rate", "energy_partial",
-                    "energy_step_complete_count", "busy_wait_total_ms",
-                    "adjusted_success"}
+                    "energy_step_complete_count", "busy_wait_total_ms"}
     unknown = rewrite_set - valid_fields
     if unknown:
         print(f"[ERROR] unknown rederive-fields: {unknown}", file=sys.stderr)

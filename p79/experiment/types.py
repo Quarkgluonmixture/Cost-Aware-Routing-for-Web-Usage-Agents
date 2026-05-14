@@ -141,12 +141,11 @@ class EpisodeSummaryV2:
     # the episode lacks an energy reading (NVML probe failed mid-episode).
     energy_partial: bool = False
     energy_step_complete_count: int = 0
-    # §95 adjusted success — computed by runner at episode finalization
-    # (single source of truth, eliminates 5 downstream re-computations).
-    # adjusted_success: True iff raw success and not flagged as a false positive.
-    # fp_reason: "" / "na_fp" / "eval_fp" — reason raw was downgraded.
-    adjusted_success: Optional[bool] = None
-    fp_reason: str = ""
+    # §139.8: `adjusted_success` / `fp_reason` were removed — the post-hoc
+    # na_fp / eval_fp filter layer is retired (fixed at the source: B-91
+    # evaluator empty-pred guard + N/A task exclusion at load time). `success`
+    # is now the canonical paper-grade outcome. Archived pre-§139.8 summaries
+    # may still carry these keys on disk (harmless, unread).
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
