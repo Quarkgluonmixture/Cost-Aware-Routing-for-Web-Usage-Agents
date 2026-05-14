@@ -124,20 +124,48 @@ for cmd in "$@"; do
     fi
   fi
 
-  # Launch via the queue script (idempotent — picks up existing or fresh+reset)
-  out=$(RESET_BEFORE="${RESET_FLAG}" bash "${SCRIPT_DIR}/${script_name}" \
+  # Launch via the queue script (idempotent — picks up existing or fresh+reset).
+  # FORCE_NEW propagated explicitly (codex stress v6 C1) — paper-grade master chain
+  # exports FORCE_NEW=1 so each cell gets a fresh timestamped run_id, never resumes
+  # a pre-fix archived dir.
+  out=$(FORCE_NEW="${FORCE_NEW:-0}" RESET_BEFORE="${RESET_FLAG}" bash "${SCRIPT_DIR}/${script_name}" \
         ${cmd#${script_name} } 2>&1 || true)
   echo "$out" | sed 's/^/    /'
 
-  # Extract run_id from queue script output
+  # Extract run_id + condition_id from queue script output
   run_id=$(echo "$out" | grep -oP 'run_id=\K\S+' | tail -1)
   if [[ -z "$run_id" ]]; then
     log "  [error] could not extract run_id from queue script output, aborting"
     exit 1
   fi
-  log "  watching run_id=${run_id}"
+  cond_id=$(echo "$out" | grep -oP 'condition=\K\S+' | tail -1)
+  if [[ -z "$cond_id" ]]; then
+    log "  [error] could not extract condition id from queue script output, aborting"
+    exit 1
+  fi
+  log "  watching run_id=${run_id} condition=${cond_id}"
 
   wait_for_runner_done "$run_id" "[${idx}/$#] $cmd"
+
+  # ---- C3 completion sentinel (codex stress v6, 2026-05-14) ----
+  # Runner process gone != success. A mid-run crash also makes pgrep empty.
+  # Require condition_summary_v2.json to exist, else the cell produced no
+  # paper-grade data and the chain must abort (not silently advance).
+  summary_found=""
+  for base in results/visualwebarena/phase1 results/webarena/phase1; do
+    cand="${REPO_DIR}/${base}/${run_id}/${cond_id}/condition_summary_v2.json"
+    if [[ -f "${cand}" ]]; then summary_found="${cand}"; break; fi
+  done
+  if [[ -z "${summary_found}" ]]; then
+    log "  [error] ${run_id}/${cond_id} — runner exited but NO condition_summary_v2.json found"
+    log "  runner likely crashed mid-run; aborting chain to prevent silent missing-cell data"
+    if command -v curl > /dev/null; then
+      curl -d "queue_chain ABORT: ${run_id}/${cond_id} no condition_summary (runner crash)" \
+        "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
+    fi
+    exit 1
+  fi
+  log "  ${run_id}: completion sentinel OK (${summary_found})"
 done
 
 log ""

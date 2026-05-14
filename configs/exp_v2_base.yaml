@@ -93,6 +93,15 @@ checklist:
 state_change:
   similarity_threshold: 0.95
 
+# Paper-grade HF model revision pin (codex /stress v6 C8, 2026-05-14).
+# qwen3vl_agent.py reads config["model"]["revision"]; previously this block was
+# absent so the agent silently fell back to its hard-coded default. Making it
+# explicit here means every run's merged config + run metadata proves the loaded
+# SHA. All B1 (local_4b) configs inherit this via exp_v2_base.yaml.
+# SHA captured 2026-05-07 in DGX baseline lock (笔记 §114); matches HF HEAD.
+model:
+  revision: "ebb281ec70b05090aa6165b016eac8ec08e71b17"
+
 backends:
   default_backend: "local_4b"
   local_4b:

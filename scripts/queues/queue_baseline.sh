@@ -130,13 +130,21 @@ else
   PHASE_DIR="${REPO_DIR}/results/visualwebarena/phase1"
 fi
 
-EXISTING="$(ls -dt "${PHASE_DIR}/${CFG_NAME}_"[0-9]* 2>/dev/null | head -1 || true)"
-if [[ -n "${EXISTING}" ]]; then
-  RUN_ID="$(basename "${EXISTING}")"
-  echo "[baseline] resuming existing run_id=${RUN_ID}"
+# FORCE_NEW=1 (paper-grade fresh rerun): always timestamped run_id, never resume-glob.
+# Prevents silently reusing pre-fix archived run dirs (codex stress v6 C1, 2026-05-14).
+# Crash recovery: omit FORCE_NEW to allow resume-by-glob of an in-progress run.
+if [[ "${FORCE_NEW:-0}" == "1" ]]; then
+  RUN_ID="${CFG_NAME}_${TS_FULL}"
+  echo "[baseline] FORCE_NEW=1 → fresh timestamped run_id=${RUN_ID} (resume-glob skipped)"
 else
-  RUN_ID="${CFG_NAME}_${TS_DATE}"
-  echo "[baseline] new run_id=${RUN_ID}"
+  EXISTING="$(ls -dt "${PHASE_DIR}/${CFG_NAME}_"[0-9]* 2>/dev/null | head -1 || true)"
+  if [[ -n "${EXISTING}" ]]; then
+    RUN_ID="$(basename "${EXISTING}")"
+    echo "[baseline] resuming existing run_id=${RUN_ID}"
+  else
+    RUN_ID="${CFG_NAME}_${TS_DATE}"
+    echo "[baseline] new run_id=${RUN_ID}"
+  fi
 fi
 
 RUN_DIR="${PHASE_DIR}/${RUN_ID}"
@@ -239,7 +247,13 @@ else
   if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
     echo "[baseline] watchdog pid=$(pgrep -f "experiment_watchdog.*${RUN_ID}" | head -1)"
   else
-    echo "[baseline][warn] watchdog failed to start — check ${WATCHDOG_LOG}" >&2
+    # codex stress v6 C5: watchdog failure is now FATAL for paper-grade launch.
+    # Without watchdog, mid-run auth drift / crashes produce silent missing data
+    # (no reactive auth_refresh, no idle alert, no auto-clean). Combined with the
+    # queue_chain completion sentinel (C3), a watchdog-less cell is paper-grade-dirty.
+    echo "[baseline][error] watchdog failed to start — check ${WATCHDOG_LOG}" >&2
+    echo "[baseline][error] aborting: paper-grade launch requires watchdog (auth refresh + auto-clean)." >&2
+    exit 1
   fi
 fi
 

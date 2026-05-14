@@ -71,63 +71,68 @@ def _f(x):
 def derslong_laird_meta(thetas: list, ses: list) -> Optional[dict]:
     """DerSimonian-Laird random-effect meta-analysis.
 
-    Args:
-        thetas: per-cell point estimates (pp scale)
-        ses: per-cell SEs (matched to thetas)
+    F5 fix 2026-05-14 (codex /stress v6): this is now a THIN ADAPTER over the
+    CANONICAL DL estimator `preregistration_decision_test.dersimonian_laird_meta`.
+    Previously this module carried a parallel hand-rolled DL implementation —
+    two implementations of the same estimator that could silently drift. The
+    canonical version (used by the paper §1 framing-rule decision script) is now
+    the single source of truth for τ² / Q / I² / RE weights / pooled CI.
 
-    Returns dict with k / theta_fe / se_fe / theta_re / se_re / ci_lo / ci_hi /
-    Q / df / p_Q / tau2 / I2, or None if no data.
+    This adapter preserves THIS module's API contract:
+      - input: (thetas, ses) — per-cell SEs (canonical takes variances; converted here)
+      - output keys: k / theta_fe / se_fe / theta_re / se_re / ci_lo / ci_hi /
+        z_re / p_re_one_sided / Q / df / p_Q / tau2 / I2
+      - p_re_one_sided is ONE-SIDED (canonical reports two-sided; recomputed here)
+
+    Returns None if no valid data.
     """
     paired = [(t, s) for t, s in zip(thetas, ses) if t is not None and s is not None and s > 0]
     if len(paired) == 0:
         return None
-    thetas_arr = np.array([t for t, _ in paired])
-    ses_arr = np.array([s for _, s in paired])
+    thetas_list = [t for t, _ in paired]
+    variances = [s * s for _, s in paired]  # SE → variance for canonical API
     k = len(paired)
 
-    # Fixed-effect (inverse-variance weighted)
-    var_i = ses_arr ** 2
-    w_i = 1.0 / var_i
-    theta_fe = float(np.sum(w_i * thetas_arr) / np.sum(w_i))
+    # Import canonical DL estimator (sibling script in scripts/analysis/).
+    # Import is function-local to avoid module-load circular-import + to keep
+    # this adapter self-contained.
+    import sys as _sys
+    from pathlib import Path as _Path
+    _this_dir = str(_Path(__file__).resolve().parent)
+    if _this_dir not in _sys.path:
+        _sys.path.insert(0, _this_dir)
+    from preregistration_decision_test import dersimonian_laird_meta as _canonical_dl
+
+    m = _canonical_dl(thetas_list, variances)
+    theta_re = m["pooled_effect"]
+    se_re = m["pooled_se"]
+    Q = m["Q"]
+    df = m["Q_df"] if m.get("Q_df") is not None else (k - 1)
+    tau2 = m["tau_squared"] if m.get("tau_squared") is not None else 0.0
+    I2 = m["I_squared_pct"] if m.get("I_squared_pct") is not None else 0.0
+    if m.get("pooled_ci_95") and m["pooled_ci_95"][0] is not None:
+        ci_lo, ci_hi = m["pooled_ci_95"]
+    else:
+        ci_lo, ci_hi = theta_re - 1.96 * se_re, theta_re + 1.96 * se_re
+
+    # Fixed-effect (backward-compat keys; not in canonical return)
+    var_arr = np.array(variances)
+    w_i = 1.0 / np.maximum(var_arr, 1e-12)
+    theta_fe = float(np.sum(w_i * np.array(thetas_list)) / np.sum(w_i))
     se_fe = float(math.sqrt(1.0 / np.sum(w_i)))
 
-    # Cochran's Q (heterogeneity test statistic)
-    Q = float(np.sum(w_i * (thetas_arr - theta_fe) ** 2))
-    df = k - 1
-    if HAS_SCIPY and df > 0:
-        p_Q = float(1 - sp_stats.chi2.cdf(Q, df))
-    else:
-        p_Q = None
-
-    # τ² (between-study variance, DL estimator)
-    if df > 0:
-        sum_w = float(np.sum(w_i))
-        sum_w2 = float(np.sum(w_i ** 2))
-        C = sum_w - sum_w2 / sum_w
-        tau2 = max(0.0, (Q - df) / C) if C > 0 else 0.0
-    else:
-        tau2 = 0.0
-
-    # I² (% variation due to heterogeneity, Higgins & Thompson 2002)
-    if Q > 0 and df > 0:
-        I2 = max(0.0, (Q - df) / Q) * 100.0
-    else:
-        I2 = 0.0
-
-    # Random-effect estimate (using w*_i = 1 / (var_i + tau2))
-    var_star = var_i + tau2
-    w_star = 1.0 / var_star
-    theta_re = float(np.sum(w_star * thetas_arr) / np.sum(w_star))
-    se_re = float(math.sqrt(1.0 / np.sum(w_star)))
-    ci_lo = theta_re - 1.96 * se_re
-    ci_hi = theta_re + 1.96 * se_re
-
-    # RE vs 0 z-test (single-side: pooled effect > 0)
+    # THIS module's p-value convention: ONE-SIDED (pooled effect > 0).
     z = theta_re / se_re if se_re > 0 else None
     if HAS_SCIPY and z is not None:
         p_re = float(1 - sp_stats.norm.cdf(z))
+    elif z is not None:
+        p_re = 0.5 * (1.0 - math.erf(z / math.sqrt(2.0)))  # erf fallback (matches canonical)
     else:
         p_re = None
+    if HAS_SCIPY and Q is not None and df > 0:
+        p_Q = float(1 - sp_stats.chi2.cdf(Q, df))
+    else:
+        p_Q = None
 
     return {
         "k": k,

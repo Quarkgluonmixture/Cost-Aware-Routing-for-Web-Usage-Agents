@@ -66,7 +66,7 @@ cd "${REPO_DIR}"
 MODE="${1:-dry-run}"
 SITE_FILTER="${2:-all}"
 
-log() { echo "[16cell $(date '+%H:%M:%S')] $*"; }
+log() { echo "[phase1 $(date '+%H:%M:%S')] $*"; }
 fail() { log "FAIL: $*"; exit 1; }
 
 # ---------------------------------------------------------------------------
@@ -109,24 +109,85 @@ check_gates() {
     log "  OK ($(ls results/provenance/vwa_*.json | head -3 | tr '\n' ' '))"
   fi
 
+  # Gate 4 — BLOCKING (codex stress v6 C2): preflight exit code now captured.
+  # Strict ports for actual paper-grade fire (--no-strict-ports dropped).
   log "=== Gate 4: VWA reachability ==="
   if [ -f scripts/preflight_v2.sh ]; then
-    bash scripts/preflight_v2.sh --no-strict-ports 2>&1 | tail -5 | sed 's/^/    /'
+    preflight_out=$(bash scripts/preflight_v2.sh 2>&1)
+    preflight_rc=$?
+    echo "$preflight_out" | tail -8 | sed 's/^/    /'
+    if [ "$preflight_rc" -ne 0 ]; then
+      log "  FAIL: preflight_v2.sh exited rc=$preflight_rc — paper-grade fire requires all preflight checks pass"
+      errors=$((errors+1))
+    else
+      log "  OK"
+    fi
   else
-    log "  WARN: scripts/preflight_v2.sh not found"
+    log "  FAIL: scripts/preflight_v2.sh not found"
+    errors=$((errors+1))
   fi
 
+  # Gate 5 — BLOCKING (codex stress v6 C2 sibling): CUDA availability now gates launch.
   log "=== Gate 5: GPU + model load smoke ==="
   if command -v .venv/bin/python3 &>/dev/null; then
-    .venv/bin/python3 -c "import torch; print(f'  CUDA: {torch.cuda.is_available()}, GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"N/A\"}')" 2>&1 | sed 's/^/  /'
+    cuda_ok=$(.venv/bin/python3 -c "import torch; print('YES' if torch.cuda.is_available() else 'NO')" 2>/dev/null)
+    if [ "$cuda_ok" = "YES" ]; then
+      log "  OK ($(.venv/bin/python3 -c "import torch; print(torch.cuda.get_device_name(0))" 2>/dev/null))"
+    else
+      log "  FAIL: CUDA not available — paper-grade B1 local inference requires GPU"
+      errors=$((errors+1))
+    fi
+  else
+    log "  FAIL: .venv/bin/python3 not found"
+    errors=$((errors+1))
   fi
 
+  # Gate 6 — BLOCKING (codex stress v6 C6): active-run detection now fatal.
+  # RESET_BEFORE=1 in launch_chain would reset site state under any active
+  # same-site runner. Set ALLOW_ACTIVE_RUNS=1 only after verifying no collision.
   log "=== Gate 6: No conflicting active runs ==="
   active=$(pgrep -f "run_experiment.*--config" | wc -l)
   log "  Active run_experiment processes: $active"
   if [ "$active" -gt 0 ]; then
-    log "  WARN: Existing runs detected. Verify no same-site B0+B1 conflict before launch."
     pgrep -af "run_experiment.*--config" | sed 's/^/    /'
+    if [ "${ALLOW_ACTIVE_RUNS:-0}" == "1" ]; then
+      log "  WARN: $active existing run(s) detected but ALLOW_ACTIVE_RUNS=1 — proceeding."
+      log "        You are responsible for verifying no same-site B0+B1 collision."
+    else
+      log "  FAIL: $active existing run_experiment process(es) detected."
+      log "        Phase 1a fire with RESET_BEFORE=1 would reset site state under any active same-site runner."
+      log "        Stop conflicting runs, OR set ALLOW_ACTIVE_RUNS=1 if you verified no site collision."
+      errors=$((errors+1))
+    fi
+  else
+    log "  OK (no active runs)"
+  fi
+
+  # Gate 7 — BLOCKING (codex stress v6 C9): every chain config must exist on disk.
+  # Prevents advertising a chain that fails mid-run on a missing config.
+  log "=== Gate 7: All chain configs exist ==="
+  local missing_cfg=0
+  local builders_to_check
+  case "${SITE_FILTER}" in
+    all|cls|red) builders_to_check="build_cls_chain build_red_chain" ;;
+    phase1b)     builders_to_check="build_shop_chain" ;;
+    *)           builders_to_check="build_cls_chain build_red_chain" ;;
+  esac
+  for builder in ${builders_to_check}; do
+    while IFS= read -r cmd; do
+      [ -z "$cmd" ] && continue
+      cfg_path="$(config_for_cmd "$cmd")"
+      if [ -n "$cfg_path" ] && [ ! -f "$cfg_path" ]; then
+        log "  FAIL: missing config $cfg_path  (for: $cmd)"
+        missing_cfg=$((missing_cfg+1))
+      fi
+    done < <($builder)
+  done
+  if [ "$missing_cfg" -gt 0 ]; then
+    log "  $missing_cfg chain config(s) missing — cannot launch"
+    errors=$((errors+1))
+  else
+    log "  OK (all chain configs present)"
   fi
 
   if [ "$errors" -gt 0 ]; then
@@ -138,6 +199,26 @@ check_gates() {
 # ---------------------------------------------------------------------------
 # Chain definitions
 # ---------------------------------------------------------------------------
+
+# Map a chain command to its config file path. Mirrors the CFG_NAME convention
+# in queue_baseline.sh / queue_phantom_*.sh (codex stress v6 C9).
+config_for_cmd() {
+  local cmd="$1"
+  local parts=( $cmd )
+  local script="${parts[0]}"
+  local baseline="${parts[1]}"
+  case "$script" in
+    queue_baseline.sh)        # <baseline> <mode> <site>
+      echo "configs/exp_v2_${baseline}_${parts[2]}_${parts[3]}.yaml" ;;
+    queue_phantom_som.sh)     # <baseline> <site>
+      echo "configs/exp_v2_${baseline}_phantom_${parts[2]}.yaml" ;;
+    queue_phantom_text.sh)    # <baseline> <site>
+      echo "configs/exp_v2_${baseline}_phantom_text_${parts[2]}.yaml" ;;
+    queue_phantom_prompt.sh)  # <baseline> <site>
+      echo "configs/exp_v2_${baseline}_phantom_prompt_${parts[2]}.yaml" ;;
+    *) echo "" ;;
+  esac
+}
 
 build_cls_chain() {
   # Phase 1a classifieds: 6 modes per model, B0 → B1 sequential = 12 conditions
@@ -236,7 +317,10 @@ launch_chain() {
   done < <($builder)
 
   log "Launching $label chain (${#args[@]} cells) → $logfile"
-  RESET_BEFORE=1 nohup bash scripts/queues/queue_chain.sh "${args[@]}" \
+  # FORCE_NEW=1: paper-grade fresh rerun — each cell gets a timestamped run_id,
+  # never resumes a pre-fix archived dir (codex stress v6 C1, 2026-05-14).
+  # RESET_BEFORE=1: each condition resets site state for fair ablation.
+  FORCE_NEW=1 RESET_BEFORE=1 nohup bash scripts/queues/queue_chain.sh "${args[@]}" \
     > "$logfile" 2>&1 &
   local pid=$!
   log "  PID $pid, log $logfile"

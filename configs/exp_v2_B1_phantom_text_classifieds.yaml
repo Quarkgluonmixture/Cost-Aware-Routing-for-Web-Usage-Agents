@@ -1,0 +1,40 @@
+# B1 P-text ablation (§25 / §100/§101) — classifieds
+# P-text = DOM prompt + SoM marks 文本 + 无图（disambiguate prompt vs representation）
+# B1 4B 本地推理；与 B1_phantom_<site> 仅差 system prompt（DOM vs SoM）
+#
+# Created 2026-05-14 (codex /stress v6 C7): canonical phantom_text name for cls.
+# Previously queue_phantom_text.sh fell back to legacy exp_v2_B1_phantom_dom_classifieds.yaml,
+# leaving run_id/config name as phantom_dom — provenance confusion. This file is the
+# canonical phantom_text classifieds config; legacy phantom_dom alias retained for
+# back-compat run-dir resolution but new fires use this name.
+#
+# Note: observation_mode value kept as "phantom_dom" (legacy mode alias) so
+# condition_id stays phase1_phantom_dom_router_0 — paper-grade run dirs already
+# use this path. The mode alias != the config name.
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B1_phantom_text_classifieds"
+
+task:
+  include_sites: ["classifieds"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["phantom_dom"]
+
+backends:
+  default_backend: "local_4b"
+  local_4b:
+    max_new_tokens: 384
+    min_free_vram_gb: 0
+
+baselines:
+  run_b0: false

@@ -1,4 +1,4 @@
-"""Preregistration decision test — Phase 1a 24-condition / 4-cell H1 / H3 / H2 evaluation.
+r"""Preregistration decision test — Phase 1a 24-condition / 4-cell H1 / H3 / H2 evaluation.
 
 ⚠️ REWRITTEN 2026-05-13 to align with preregistration.md revisions (codex stress audit
    Flaws 2 + 3 fix):
@@ -339,10 +339,14 @@ def evaluate_h1(cells_by_id: dict[str, list[dict]], delta_pp: float = 1.0,
     per_cell_p_values = []
 
     for cell_id, tasks in cells_by_id.items():
+        # F7 fix 2026-05-14 (codex /stress v6): per-call seed stratification so
+        # each (cell, statistic) bootstrap draws an independent resample sequence.
+        # Prior shared seed=42 made same-cell H1/H3 bootstrap CIs correlated.
+        cell_seed = bootstrap_seed + (hash((cell_id, "h1_drop_one")) % 100000)
         point, ci_lo, ci_hi, se = _paired_bootstrap(
             tasks,
             statistic_fn=lambda t: _drop_one_lift_per_cell(t, drop_mode="sr_psom"),
-            seed=bootstrap_seed,
+            seed=cell_seed,
         )
         # Convert to pp
         effect_pp = point * 100.0
@@ -424,10 +428,12 @@ def evaluate_h3_axis(cells_by_id: dict[str, list[dict]], axis_mode_key: str,
     for cell_id, tasks in cells_by_id.items():
         # Statistic: count of tasks where axis solved but ref did not, normalized by task count
         # (using count as the statistic per prereg H3 wording)
+        # F7 fix 2026-05-14: per-call seed stratification (see evaluate_h1).
+        cell_seed = bootstrap_seed + (hash((cell_id, f"h3_{axis_mode_key}")) % 100000)
         count, ci_lo, ci_hi, se = _paired_bootstrap(
             tasks,
             statistic_fn=lambda t: float(_unique_count_per_cell(t, axis_mode_key, ref_mode_key)),
-            seed=bootstrap_seed,
+            seed=cell_seed,
         )
         # Per-cell pass: CI > 0 AND count ≥ min_unique_count (≥2 floor for noise)
         ci_excludes_zero = ci_lo > 0
@@ -530,80 +536,108 @@ def evaluate_h2_cost(cells_by_id: dict[str, list[dict]], cost_margin_pct: float 
 # Framing rule R1-R5 mapper
 # ---------------------------------------------------------------------------
 
+def _effective_gate_pass(gate_result: dict, gate_kind: str,
+                          heterogeneity_threshold_pct: float) -> tuple[bool, bool, dict]:
+    """Determine whether a primary gate effectively passes, accounting for heterogeneity.
+
+    F3 fix 2026-05-14 (codex /stress v6 + Round C M3): heterogeneity check now applies
+    to EVERY primary gate (H1, H3 axis-1, H3 axis-2), not just H1. Prior version only
+    checked H1 I² — selective check biased toward R1 framing when H3 axes were
+    heterogeneous but H1 was not.
+
+    Returns (passes, heterogeneous, detail):
+      - If pooled meta I² ≤ threshold: passes = pooled primary gate PASS decision.
+      - If pooled meta I² > threshold: do NOT trust pooled gate; passes via per-cell
+        consistency (≥3 of 4 cells direction-positive AND ≥2 individually significant).
+
+    gate_kind ∈ {"h1", "h3_axis"} selects the per-cell field names.
+    """
+    meta = gate_result.get("primary_gate", {}).get("pooled_meta", {})
+    i_sq = meta.get("I_squared_pct")
+    per_cell = gate_result.get("per_cell", {})
+    n_cells = len(per_cell)
+
+    if i_sq is not None and i_sq > heterogeneity_threshold_pct:
+        # Heterogeneous — pooled gate untrustworthy, use per-cell consistency
+        if gate_kind == "h1":
+            n_pos = sum(1 for c in per_cell.values() if c.get("drop_one_lift_pp", 0.0) > 0)
+            n_sig = sum(1 for c in per_cell.values() if c.get("individually_holm_sig", False))
+        else:  # h3_axis
+            n_pos = sum(1 for c in per_cell.values() if c.get("unique_count", 0.0) > 0)
+            n_sig = sum(1 for c in per_cell.values() if c.get("per_cell_pass", False))
+        passes = (n_pos >= 3 and n_sig >= 2)
+        return passes, True, {
+            "I_squared_pct": i_sq, "n_direction_positive": n_pos,
+            "n_consistent": n_sig, "n_cells": n_cells,
+            "via": "per_cell_consistency (pooled meta I² > threshold)",
+        }
+    passes = gate_result["primary_gate"]["decision"] == "PASS"
+    return passes, False, {"I_squared_pct": i_sq, "via": "pooled_meta"}
+
+
 def apply_framing_rule(h1: dict, h2: dict, h3_axis1: dict, h3_axis2: dict,
                         heterogeneity_threshold_pct: float = 75.0) -> dict:
     """Apply preregistration §2 R1-R5 framing rule to test outcomes.
 
-    T3 fix 2026-05-13 (codex Round A + Round C): added heterogeneity-conditional
-    branch per prereg "Heterogeneity-conditional rule (added 2026-05-13)" — if
-    pooled H1 meta I² > 75%, do NOT use pooled gate; map to per-cell direction
-    consistency for R framing.
+    F3 fix 2026-05-14 (codex /stress v6): heterogeneity check now applies to ALL
+    primary gates via `_effective_gate_pass()`, not just H1. If ANY primary gate
+    has pooled meta I² > 75%, the pooled "2-axis empirical structure" claim is not
+    supported — hook caps at R3 (heterogeneity-conditional per-cell consistency).
 
-    Heterogeneity-branch rule (matches prereg §2 R5 trigger update):
-      - I² > 75% AND ≥3 of 4 cells direction-positive AND ≥2 individually Holm sig
-        → R3-grade hook (per-cell consistency without pooling)
-      - I² > 75% AND consistency check fails → R4 (heterogeneity AND inconsistency)
-      - I² ≤ 75% → normal R1-R5 mapping on pooled gates
+    Rationale: R1/R2 framing claims a pooled empirical structure. I² > 75% on any
+    component gate means that gate's effect is NOT consistent across cells →
+    pooling is invalid for that gate → the structural claim it underwrites cannot
+    be made at pooled-meta strength. R3 (per-cell consistency) is the ceiling.
     """
-    # Step 1: check H1 pooled meta heterogeneity
-    h1_meta = h1.get("primary_gate", {}).get("pooled_meta", {})
-    i_squared = h1_meta.get("I_squared_pct")
+    h1_pass, h1_het, h1_det = _effective_gate_pass(h1, "h1", heterogeneity_threshold_pct)
+    h3a_pass, h3a_het, h3a_det = _effective_gate_pass(h3_axis1, "h3_axis", heterogeneity_threshold_pct)
+    h3b_pass, h3b_het, h3b_det = _effective_gate_pass(h3_axis2, "h3_axis", heterogeneity_threshold_pct)
+    h2a_cost_pass = h2["h2a_cost_equivalence"]["consistent"]  # H2(a) only per 2026-05-13 T2 scope
 
-    if i_squared is not None and i_squared > heterogeneity_threshold_pct:
-        # Heterogeneity override: per-cell direction consistency replaces pooled gate
-        per_cell = h1.get("per_cell", {})
-        n_direction_positive = sum(1 for c in per_cell.values()
-                                    if c.get("drop_one_lift_pp", 0.0) > 0)
-        n_individually_holm_sig = sum(1 for c in per_cell.values()
-                                       if c.get("individually_holm_sig", False))
-        n_cells = len(per_cell)
-        if n_direction_positive >= 3 and n_individually_holm_sig >= 2:
+    any_heterogeneous = h1_het or h3a_het or h3b_het
+    heterogeneity_detail = {"h1": h1_det, "h3_axis1": h3a_det, "h3_axis2": h3b_det}
+
+    # Heterogeneity branch: ≥1 primary gate had I² > threshold → pooled 2-axis
+    # structure claim not supported; hook caps at R3 (per-cell consistency).
+    if any_heterogeneous:
+        if h1_pass and h2a_cost_pass:
             return {
                 "rule": "R3",
-                "framing": "Heterogeneity-conditional R3: per-cell direction consistency replaces pooled gate (I² > 75%)",
+                "framing": "Heterogeneity-conditional R3 — ≥1 primary gate had pooled I² > 75%; "
+                           "per-cell consistency used, pooled 2-axis structure claim not supported",
                 "hook_power": "MODERATE",
                 "heterogeneity_override": True,
-                "I_squared_pct": i_squared,
-                "n_direction_positive": n_direction_positive,
-                "n_individually_holm_sig": n_individually_holm_sig,
-                "n_cells": n_cells,
+                "heterogeneity_detail": heterogeneity_detail,
             }
         return {
             "rule": "R4_or_R5",
-            "framing": f"Heterogeneity I² = {i_squared:.1f}% > 75% AND per-cell consistency fails: ≥3 direction-positive required ({n_direction_positive}/{n_cells} observed), ≥2 individually Holm sig required ({n_individually_holm_sig}/{n_cells} observed)",
+            "framing": "Heterogeneity override (≥1 gate I² > 75%) AND H1 or H2(a) per-cell "
+                       "consistency fails — paper hook not supported",
             "hook_power": "WEAK",
             "heterogeneity_override": True,
-            "I_squared_pct": i_squared,
-            "n_direction_positive": n_direction_positive,
-            "n_individually_holm_sig": n_individually_holm_sig,
-            "n_cells": n_cells,
+            "heterogeneity_detail": heterogeneity_detail,
         }
 
-    # Step 2: normal R1-R5 mapping (heterogeneity ≤ 75%)
-    h1_pass = h1["primary_gate"]["decision"] == "PASS"
-    h2a_cost_pass = h2["h2a_cost_equivalence"]["consistent"]  # H2(a) only per 2026-05-13 T2 scope
-    h3_axis1_pass = h3_axis1["primary_gate"]["decision"] == "PASS"
-    h3_axis2_pass = h3_axis2["primary_gate"]["decision"] == "PASS"
-
-    if h1_pass and h2a_cost_pass and h3_axis1_pass and h3_axis2_pass:
+    # Normal R1-R5 mapping (all primary gates pooled cleanly, I² ≤ threshold)
+    if h1_pass and h2a_cost_pass and h3a_pass and h3b_pass:
         return {"rule": "R1", "framing": "Phantom routing space (2-axis empirical structure)",
                 "hook_power": "STRONGEST", "heterogeneity_override": False,
-                "I_squared_pct": i_squared}
-    if h1_pass and h2a_cost_pass and (h3_axis1_pass or h3_axis2_pass):
+                "heterogeneity_detail": heterogeneity_detail}
+    if h1_pass and h2a_cost_pass and (h3a_pass or h3b_pass):
         return {"rule": "R2", "framing": "Phantom routing space (single-axis empirical structure)",
                 "hook_power": "MODERATE-STRONG", "heterogeneity_override": False,
-                "I_squared_pct": i_squared}
-    if h1_pass and h2a_cost_pass and not h3_axis1_pass and not h3_axis2_pass:
+                "heterogeneity_detail": heterogeneity_detail}
+    if h1_pass and h2a_cost_pass and not h3a_pass and not h3b_pass:
         return {"rule": "R3", "framing": "Phantom-SoM is hidden 4th routing arm (workshop-grade R3)",
                 "hook_power": "MODERATE", "heterogeneity_override": False,
-                "I_squared_pct": i_squared}
+                "heterogeneity_detail": heterogeneity_detail}
     if h1_pass and not h2a_cost_pass:
         return {"rule": "R4", "framing": "Phantom-SoM partial drop-in (H2(a) cost equivalence fails)",
                 "hook_power": "WEAK", "heterogeneity_override": False,
-                "I_squared_pct": i_squared}
+                "heterogeneity_detail": heterogeneity_detail}
     return {"rule": "R5", "framing": "Paper death scenario — pivot to VWA bug audit OR abandon",
             "hook_power": "n/a", "heterogeneity_override": False,
-            "I_squared_pct": i_squared}
+            "heterogeneity_detail": heterogeneity_detail}
 
 
 # ---------------------------------------------------------------------------
@@ -658,13 +692,17 @@ def generate_synthetic_per_task(seed: int = 42, n_tasks_per_cell: int = 200,
         # Base per-task SR rates (per mode)
         base_rate = {"sr_dom": 0.30, "sr_som": 0.32, "sr_vision": 0.20,
                      "sr_ptext": 0.31, "sr_pprompt": 0.28, "sr_psom": 0.34}
-        # Capability adjustment
-        if model == "B1":
+        # Capability adjustment. r1_pass is the deliberately-homogeneous happy-path
+        # fixture (all 4 cells identical distribution) so it demonstrably routes R1;
+        # the B1 0.6× capability multiplier is applied only to scenarios that are
+        # NOT testing the clean-pooled path (it induces genuine B0/B1 heterogeneity).
+        if model == "B1" and scenario != "r1_pass":
             base_rate = {k: v * 0.6 for k, v in base_rate.items()}
-        # Cell-level effect-size variance for heterogeneity test
+        # Cell-level effect-size variance for heterogeneity test — large bimodal
+        # shift so between-cell variance >> within-cell bootstrap SE → I² > 75%.
         if scenario == "heterogeneity_test":
-            cell_shift = [+0.10, -0.08, +0.02, -0.04][cell_idx]
-            base_rate["sr_psom"] = max(0.0, base_rate["sr_psom"] + cell_shift)
+            cell_shift = [+0.25, -0.20, +0.25, -0.20][cell_idx]
+            base_rate["sr_psom"] = max(0.0, min(1.0, base_rate["sr_psom"] + cell_shift))
 
         rows = []
         for i in range(n_tasks_per_cell):

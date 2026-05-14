@@ -1,0 +1,30 @@
+# B1 Phantom-prompt (P-prompt §105) — VWA shopping
+# SoM prompt + AXTree text + 无图。Created 2026-05-14 (codex /stress v6 C9) —
+# completes Phase 1b shop chain configs.
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B1_phantom_prompt_shopping"
+
+task:
+  include_sites: ["shopping"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["phantom_prompt"]
+
+backends:
+  default_backend: "local_4b"
+  local_4b:
+    max_new_tokens: 384
+    min_free_vram_gb: 0
+
+baselines:
+  run_b0: false

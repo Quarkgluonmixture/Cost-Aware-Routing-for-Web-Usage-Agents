@@ -659,7 +659,10 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         "mcnemar_4pprompt_vs_3_p": mc_p_pprompt,
         "mcnemar_6_vs_3_p": mc_p_6,
         "mcnemar_6_vs_5_p": mc_p_6v5,
-        # TOST equivalence p (bootstrap, δ=0.5pp; rejects equivalence if max < α)
+        # TOST equivalence p (bootstrap, δ=1.0pp per preregistration.md §4 lock;
+        # max(p_lower, p_upper) < α ⇒ equivalence ACCEPTED, effect bounded within ±δ).
+        # NOTE: this is the separate "lift bounded" test, NOT the H1(ii) primary
+        # gate (H1(ii) uses one-sided superiority per 2026-05-13 prereg revision).
         "tost_5_vs_3_p":      tost_p_5,
         "tost_4pdom_vs_3_p":  tost_p_pdom,
         "tost_4psom_vs_3_p":  tost_p_psom,
@@ -820,7 +823,9 @@ def main() -> int:
         "- **BH q** (Benjamini-Hochberg 1995) — FDR control, informational.",
         "- **Bonf** — Bonferroni FWER (PRIMARY only, conservative reference).",
         "- **TOST p** — Two One-Sided Test for equivalence at δ=1.0pp (commit-locked).",
-        "  TOST p < α rejects equivalence (effect *practically nonzero*).",
+        "  TOST p = max(p_lower, p_upper); p < α ⇒ equivalence ACCEPTED (effect bounded",
+        "  within ±δ). This is the separate 'lift bounded' test — NOT the H1(ii) primary",
+        "  gate, which uses one-sided superiority per 2026-05-13 preregistration revision.",
         "",
         "Primary p-value going through correction: **McNemar exact one-sided**",
         "(directly maps to H1: phantom adds tasks). Wilcoxon two-sided is reported",
@@ -898,7 +903,8 @@ def main() -> int:
         "",
         f"Holm-Bonferroni step-down across m = {n_secondary} tests (cells × 3 arms).",
         "BH q-value is FDR-adjusted (informational). TOST p tests equivalence at",
-        "δ=0.5pp; max(p_lower, p_upper) < α rejects equivalence.",
+        "δ=1.0pp (preregistration.md §4 lock); max(p_lower, p_upper) < α ⇒ equivalence",
+        "ACCEPTED (effect bounded within ±δ). Separate from H1(ii) superiority gate.",
         "",
         "| Baseline | Site | Arm | Lift | 95% CI | McNemar p | Holm p | BH q | TOST p | sig (Holm 0.05) | TOST sig (0.05) |",
         "|---|---|---|---:|---|---:|---:|---:|---:|:---:|:---:|",

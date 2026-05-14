@@ -1,0 +1,29 @@
+# B1 vision shopping — Phase 1b paper-grade baseline
+# Created 2026-05-14 (codex /stress v6 C9) — completes Phase 1b shop chain configs.
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B1_vision_shopping"
+
+task:
+  include_sites: ["shopping"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["vision"]
+
+backends:
+  default_backend: "local_4b"
+  local_4b:
+    max_new_tokens: 384
+    min_free_vram_gb: 0
+
+baselines:
+  run_b0: false

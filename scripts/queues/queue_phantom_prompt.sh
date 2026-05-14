@@ -110,13 +110,20 @@ else
   PHASE_DIR="${REPO_DIR}/results/visualwebarena/phase1"
 fi
 
-EXISTING="$(ls -dt "${PHASE_DIR}/${CFG_NAME}_"[0-9]* 2>/dev/null | head -1 || true)"
-if [[ -n "${EXISTING}" ]]; then
-  RUN_ID="$(basename "${EXISTING}")"
-  echo "[phantom_prompt] resuming existing run_id=${RUN_ID}"
+# FORCE_NEW=1 (paper-grade fresh rerun): always timestamped run_id, never resume-glob.
+# Prevents silently reusing pre-fix archived run dirs (codex stress v6 C1, 2026-05-14).
+if [[ "${FORCE_NEW:-0}" == "1" ]]; then
+  RUN_ID="${CFG_NAME}_${TS_FULL}"
+  echo "[phantom_prompt] FORCE_NEW=1 → fresh timestamped run_id=${RUN_ID} (resume-glob skipped)"
 else
-  RUN_ID="${CFG_NAME}_${TS_DATE}"
-  echo "[phantom_prompt] new run_id=${RUN_ID}"
+  EXISTING="$(ls -dt "${PHASE_DIR}/${CFG_NAME}_"[0-9]* 2>/dev/null | head -1 || true)"
+  if [[ -n "${EXISTING}" ]]; then
+    RUN_ID="$(basename "${EXISTING}")"
+    echo "[phantom_prompt] resuming existing run_id=${RUN_ID}"
+  else
+    RUN_ID="${CFG_NAME}_${TS_DATE}"
+    echo "[phantom_prompt] new run_id=${RUN_ID}"
+  fi
 fi
 
 RUN_DIR="${PHASE_DIR}/${RUN_ID}"
@@ -170,11 +177,14 @@ sys.exit(0 if refresh_site_auth('${SITE}', Path('${REPO_DIR}/.auth')) else 1)
 
   RUNNER_LOG="${LOG_DIR}/${CFG_NAME}_resume_${TS_FULL}.log"
   echo "[phantom_prompt] launching runner → ${RUNNER_LOG}"
+  # codex stress v6 C4: redirect runner stdout/stderr to RUNNER_LOG (was /dev/null).
+  # Python logging goes to stderr — /dev/null discarded all phantom runner logs,
+  # making mid-run crash debug impossible + paper-grade audit trail incomplete.
   setsid nohup "${PYTHON_BIN}" scripts/run_experiment.py \
     --config "${CONFIG}" \
     --run_id "${RUN_ID}" \
     --log_path "${RUNNER_LOG}" \
-    > /dev/null 2>&1 < /dev/null &
+    > "${RUNNER_LOG}" 2>&1 < /dev/null &
   disown
   sleep 3
   if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
