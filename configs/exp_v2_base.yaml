@@ -116,6 +116,22 @@ backends:
     temperature: 0.1
     dom_mode: "llm"
     mock_mode: false
+  local_gemma:
+    type: "local_gemma"
+    path: "google/gemma-3-4b-it"
+    # Paper-grade revision pin: MUST be set before paper-grade runs. Left null
+    # until the first A100 model download captures the HF HEAD SHA; the Gemma
+    # agent passes revision only when set (no silent hard-coded default — unlike
+    # the historical Qwen path). Cross-family 3rd baseline, advisor 2026-05-14.
+    revision: null
+    quantization: "none"
+    device: "cuda"
+    max_new_tokens: 4096
+    temperature: 0.0       # greedy (do_sample=False in the agent); kept for config symmetry
+    mock_mode: false
+    # Cost: Gemma3-VL is a local ~4B model — reuses the `metrics.cost` local
+    # GPU-amortization profile (same size class as B1). A per-model cost review
+    # (A100 throughput) is a Tier-3 analysis follow-up, not gating runs.
   api_strong:
     type: "api_proxy"
     api_name: "qwen.qwen3-vl-235b-a22b"
