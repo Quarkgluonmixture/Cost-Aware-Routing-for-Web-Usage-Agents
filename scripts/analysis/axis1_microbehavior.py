@@ -114,7 +114,10 @@ AXIS_CONTRASTS = {
     "endpoint_dom_to_som": ("DOM", "SoM"),
 }
 
-EXPECTED_N = {"reddit": 210, "classifieds": 234}
+# §139.8: scored-set sizes (total − N/A excluded at load) from the single
+# source of truth, not pre-exclusion 234/210.
+from p79.experiment.analysis import scored_task_count as _scored_task_count
+EXPECTED_N = {_s: _scored_task_count(_s, "visualwebarena") for _s in ("reddit", "classifieds")}
 REPORT_CASE_REDDIT = [23, 30, 4]
 
 

@@ -75,7 +75,12 @@ def main():
     p.add_argument("--output", default="-", help="Output markdown path (- = stdout)")
     args = p.parse_args()
 
-    # Site task counts
+    # Site task counts. §139.8: intentionally the *pre-exclusion* design N —
+    # this is a pre-registered design-time power computation and the
+    # preregistration power section is locked to these numbers. Post-#76 the
+    # scored set is ~4% smaller (N/A tasks excluded — see
+    # `analysis.scored_task_count`); the MDE shift is negligible and updating
+    # here would desync the committed prereg, so this stays hardcoded.
     sites = [
         ("classifieds", 234),
         ("reddit", 210),

@@ -40,6 +40,8 @@ import re
 from pathlib import Path
 from typing import Optional
 
+from p79.experiment.analysis import scored_task_count
+
 ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "results/visualwebarena/phase1"
 OUT_JSON = ROOT / "docs/analysis/cross_sites/axis_effect_size.json"
@@ -469,7 +471,9 @@ def main() -> None:
         },
         "results": {},
         "validation": {
-            "expected_n": {"reddit": 210, "classifieds": 234},
+            # §139.8: scored-set sizes (total − N/A excluded at load) from the
+            # single source of truth, not pre-exclusion 234/210.
+            "expected_n": {_s: scored_task_count(_s, "visualwebarena") for _s in ("reddit", "classifieds")},
             "non_negligible_thresholds": {"cohen_d_z_abs_gt": 0.1, "cohen_h_abs_gt": 0.1},
             "n_checks": {},
             "consistency_checks": {},
