@@ -44,8 +44,16 @@ class Gemma3VLAgent:
         self.model_path = model_cfg.get("path", "google/gemma-3-4b-it")
         # No hard-coded revision default: the revision must be pinned in the
         # backend config and forwarded by the backend (local_gemma.py). This
-        # avoids the silent-default provenance trap that affects the Qwen path.
+        # avoids the silent-default provenance trap that affected the Qwen path
+        # (now also fixed there — B-83). Warn (never silent) if it is unset.
         self.model_revision = model_cfg.get("revision")
+        if not self.model_revision:
+            logger.warning(
+                "model.revision not set — loading %s at HF HEAD. Run provenance "
+                "cannot prove the loaded SHA from config; pin a SHA before "
+                "paper-grade runs.",
+                self.model_path,
+            )
         self.device = model_cfg.get("device", "cuda")
         self.quantization = model_cfg.get("quantization", "none")
 
@@ -125,9 +133,10 @@ class Gemma3VLAgent:
         obs_text = ""
         if hasattr(obs, "text") and obs.text:
             obs_text = obs.text
-            max_chars = self.config.get("agent", {}).get("max_obs_chars", 8000)
-            if len(obs_text) > max_chars:
-                obs_text = obs_text[:max_chars] + "\n[TRUNCATED]"
+        # B-84: no max_obs_chars truncation — it created an axis-1 page-coverage
+        # asymmetry (AXTree modes truncated while marks modes derive from the
+        # untruncated text). The viewport filter is the real input bound. Kept
+        # in lockstep with the Qwen agent so the 3 baselines stay comparable.
 
         system_prompt = self._system_prompts.get(
             observation_mode, self._system_prompts["dom"]

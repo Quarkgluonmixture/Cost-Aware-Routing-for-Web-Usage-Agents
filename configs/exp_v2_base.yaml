@@ -119,11 +119,13 @@ backends:
   local_gemma:
     type: "local_gemma"
     path: "google/gemma-3-4b-it"
-    # Paper-grade revision pin: MUST be set before paper-grade runs. Left null
-    # until the first A100 model download captures the HF HEAD SHA; the Gemma
-    # agent passes revision only when set (no silent hard-coded default — unlike
-    # the historical Qwen path). Cross-family 3rd baseline, advisor 2026-05-14.
-    revision: null
+    # Paper-grade revision pin: "main" is a non-null placeholder — MUST be
+    # replaced with the gemma-3-4b-it HF HEAD SHA (captured by the first A100
+    # model download) before paper-grade runs. NOT left null on purpose: the
+    # runner's B-83 logic forwards the top-level (Qwen-specific) model.revision
+    # into any backend whose revision is None — "main" prevents Gemma from
+    # being mis-pinned to the Qwen SHA. Cross-family 3rd baseline, 2026-05-14.
+    revision: "main"
     quantization: "none"
     device: "cuda"
     max_new_tokens: 4096
