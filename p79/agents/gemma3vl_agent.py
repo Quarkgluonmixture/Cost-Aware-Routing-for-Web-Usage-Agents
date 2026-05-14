@@ -1,0 +1,279 @@
+from __future__ import annotations
+
+import logging
+import time
+from typing import Any, Dict, List, Optional, Tuple
+
+import torch
+from PIL import Image
+from transformers import AutoProcessor, Gemma3ForConditionalGeneration
+
+from p79.agents.qwen3vl_agent import Qwen3VLAgent, _wait_for_vram
+from p79.backends.action_utils import parse_action_text
+from p79.utils.torch_cuda_workarounds import apply_nvrtc_prod_fallback_if_needed
+
+logger = logging.getLogger(__name__)
+
+# Gemma 3 normalizes every input image to 896x896 and encodes it to a fixed
+# 256 tokens (Gemma 3 technical report / HF model card). Unlike Qwen3-VL's
+# variable patch count, this is constant per image.
+GEMMA3_IMAGE_TOKENS = 256
+
+# Observation-mode system prompts are reused verbatim from the Qwen agent so
+# every baseline (B0 / B1 / Gemma3-VL) sees byte-identical prompts — a hard
+# paper-grade requirement for cross-model comparison. Reusing the bound methods
+# (rather than copying the strings) makes prompt drift structurally impossible.
+_DOM_PROMPT = Qwen3VLAgent._make_dom_prompt(None)
+_SOM_PROMPT = Qwen3VLAgent._make_som_prompt(None)
+_VISION_PROMPT = Qwen3VLAgent._make_vision_prompt(None)
+
+
+class Gemma3VLAgent:
+    """Local Gemma 3 vision-language agent — the cross-family third baseline.
+
+    Mirrors Qwen3VLAgent's ``step()`` contract (identical action/meta shape) so
+    the backend and runner stay model-agnostic. Gemma-specific differences are
+    isolated here: the model class, a single-step processor call (Gemma's
+    AutoProcessor handles vision preprocessing — no qwen_vl_utils), and fixed
+    256-token-per-image accounting.
+    """
+
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+        model_cfg = config.get("model", {})
+        self.model_path = model_cfg.get("path", "google/gemma-3-4b-it")
+        # No hard-coded revision default: the revision must be pinned in the
+        # backend config and forwarded by the backend (local_gemma.py). This
+        # avoids the silent-default provenance trap that affects the Qwen path.
+        self.model_revision = model_cfg.get("revision")
+        self.device = model_cfg.get("device", "cuda")
+        self.quantization = model_cfg.get("quantization", "none")
+
+        # DGX Spark GB10 (sm_121) NVRTC arch fallback — harmless no-op on A100.
+        apply_nvrtc_prod_fallback_if_needed()
+
+        min_free_gb = float(model_cfg.get("min_free_vram_gb", 0))
+        if min_free_gb > 0:
+            _wait_for_vram(min_free_gb)
+
+        quantization_config = None
+        model_dtype: Any = torch.bfloat16
+        if self.quantization == "4bit":
+            from transformers import BitsAndBytesConfig
+
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_quant_type="nf4",
+            )
+            model_dtype = "auto"
+        elif self.quantization == "8bit":
+            from transformers import BitsAndBytesConfig
+
+            quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+            model_dtype = "auto"
+
+        rev = self.model_revision
+        logger.info(
+            "Loading Gemma3 model %s (revision=%s, quantization=%s)",
+            self.model_path,
+            (rev[:12] + "...") if rev else "<unset>",
+            self.quantization,
+        )
+        load_kwargs: Dict[str, Any] = {
+            "torch_dtype": model_dtype,
+            "device_map": "auto",
+            "quantization_config": quantization_config,
+        }
+        if rev:
+            load_kwargs["revision"] = rev
+        try:
+            self.model = Gemma3ForConditionalGeneration.from_pretrained(
+                self.model_path, **load_kwargs
+            ).eval()
+            self.processor = AutoProcessor.from_pretrained(
+                self.model_path, **({"revision": rev} if rev else {})
+            )
+        except Exception as e:
+            logger.error("Failed to load Gemma3 model: %s", e)
+            raise
+
+        # bf16 input cast only when running unquantized (matches loaded dtype);
+        # quantized loads manage input dtype internally.
+        self._input_dtype = torch.bfloat16 if quantization_config is None else None
+
+        self._system_prompts = {
+            "dom": _DOM_PROMPT,
+            "som": _SOM_PROMPT,
+            "phantom_som": _SOM_PROMPT,     # P-SoM: SoM prompt + [SOM_MARKS] text, no image
+            "phantom_dom": _DOM_PROMPT,     # P-text (legacy alias)
+            "phantom_text": _DOM_PROMPT,    # P-text (current name)
+            "phantom_prompt": _SOM_PROMPT,  # P-prompt: SoM prompt + AXTree text, no image
+            "vision": _VISION_PROMPT,
+        }
+        self.system_prompt = self._system_prompts["dom"]
+
+    def step(
+        self,
+        instruction: str,
+        obs: Any,
+        history: Optional[List[Dict[str, Any]]] = None,
+        observation_mode: str = "dom",
+        reference_images: Optional[List[Any]] = None,
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        image = getattr(obs, "image", None)
+        obs_text = ""
+        if hasattr(obs, "text") and obs.text:
+            obs_text = obs.text
+            max_chars = self.config.get("agent", {}).get("max_obs_chars", 8000)
+            if len(obs_text) > max_chars:
+                obs_text = obs_text[:max_chars] + "\n[TRUNCATED]"
+
+        system_prompt = self._system_prompts.get(
+            observation_mode, self._system_prompts["dom"]
+        )
+
+        # Mode -> text-section labelling, identical to the Qwen agent.
+        if observation_mode == "vision":
+            obs_section = ""
+        elif observation_mode in ("som", "phantom_som", "phantom_dom", "phantom_text"):
+            obs_section = obs_text if obs_text else ""
+        else:  # "dom" or "phantom_prompt": full AXTree text
+            obs_section = f"Accessibility Tree:\n{obs_text}"
+
+        history_text = Qwen3VLAgent._format_history(history or [])
+
+        # The system prompt is embedded in the user turn's text — NOT a separate
+        # `system` role — even though Gemma 3 supports system roles natively.
+        # This keeps prompt structure identical to B0/B1 (project guard rail:
+        # prompt placement must not vary across baselines).
+        content: List[Dict[str, Any]] = [
+            {
+                "type": "text",
+                "text": (
+                    f"Task: {instruction}\nSystem: {system_prompt}\n"
+                    f"{history_text}{obs_section}"
+                ),
+            }
+        ]
+
+        max_size = self.config.get("agent", {}).get("image_max_size", 1024)
+        if reference_images:
+            for idx, ref_img in enumerate(reference_images):
+                if max(ref_img.size) > max_size:
+                    ratio = max_size / max(ref_img.size)
+                    ref_img = ref_img.resize(
+                        (int(ref_img.size[0] * ratio), int(ref_img.size[1] * ratio)),
+                        Image.Resampling.LANCZOS,
+                    )
+                content.append(
+                    {
+                        "type": "text",
+                        "text": (
+                            f"[Reference image {idx + 1}] This image shows the "
+                            f"target item described in the task. Use it to "
+                            f"identify which element to interact with."
+                        ),
+                    }
+                )
+                content.append({"type": "image", "image": ref_img})
+
+        if image is not None:
+            if max(image.size) > max_size:
+                ratio = max_size / max(image.size)
+                image = image.resize(
+                    (int(image.size[0] * ratio), int(image.size[1] * ratio)),
+                    Image.Resampling.LANCZOS,
+                )
+            if reference_images:
+                content.append({"type": "text", "text": "[Current screenshot]"})
+                content.append({"type": "image", "image": image})
+            else:
+                content.insert(0, {"type": "image", "image": image})
+
+        messages = [{"role": "user", "content": content}]
+
+        # Gemma's AutoProcessor handles all vision preprocessing in a single
+        # apply_chat_template call — no separate process_vision_info step.
+        preprocess_start = time.time()
+        inputs = self.processor.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            tokenize=True,
+            return_dict=True,
+            return_tensors="pt",
+        )
+        if self._input_dtype is not None:
+            inputs = inputs.to(self.model.device, dtype=self._input_dtype)
+        else:
+            inputs = inputs.to(self.model.device)
+        preprocess_ms = (time.time() - preprocess_start) * 1000.0
+
+        # Image-token accounting. Gemma 3 = fixed 256 tokens/image; prefer an
+        # exact count from the processor's image-token id when it is exposed.
+        n_images = (1 if image is not None else 0) + (
+            len(reference_images) if reference_images else 0
+        )
+        image_token_count = n_images * GEMMA3_IMAGE_TOKENS
+        img_tok_id = getattr(self.processor, "image_token_id", None)
+        if img_tok_id is not None:
+            image_token_count = int((inputs["input_ids"] == img_tok_id).sum().item())
+
+        max_new_tokens = int(self.config.get("model", {}).get("max_new_tokens", 4096))
+        gen_kwargs = {
+            "max_new_tokens": max_new_tokens,
+            "do_sample": False,
+            "return_dict_in_generate": True,
+            "output_scores": True,
+        }
+
+        # Per-step seed reset for strict greedy reproducibility (mirrors the
+        # B-37 fix in the Qwen agent).
+        _seed = self.config.get("model", {}).get("seed")
+        if _seed is not None:
+            torch.manual_seed(int(_seed))
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(int(_seed))
+
+        generate_start = time.time()
+        gen_output = self.model.generate(**inputs, **gen_kwargs)
+        generate_ms = (time.time() - generate_start) * 1000.0
+
+        input_len = inputs["input_ids"].shape[1]
+        generated_ids_trimmed = [seq[input_len:] for seq in gen_output.sequences]
+        output_text = self.processor.batch_decode(
+            generated_ids_trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )[0]
+
+        confidence_metrics = Qwen3VLAgent._compute_confidence(gen_output.scores)
+
+        action, valid, fail_reason = parse_action_text(output_text)
+
+        # Enforce a trailing newline on search-query typing (identical to the
+        # Qwen agent's behaviour).
+        if action.get("action_type") == "type":
+            typed = action.get("text", "") or ""
+            thought = (action.get("thought") or "").lower()
+            if (
+                ("search" in thought or "find" in thought or "look for" in thought)
+                and not typed.endswith("\n")
+            ):
+                action["text"] = typed + "\n"
+                logger.info("Auto-appended newline to search query: %r", action["text"])
+
+        meta = {
+            "raw_output": output_text,
+            "valid": valid,
+            "failure_reason": fail_reason,
+            "input_tokens": input_len,
+            "input_image_tokens": image_token_count,
+            "input_text_tokens": input_len - image_token_count,
+            "output_tokens": len(generated_ids_trimmed[0]),
+            "preprocess_ms": preprocess_ms,
+            "generate_ms": generate_ms,
+            **confidence_metrics,
+        }
+
+        return action, meta

@@ -34,6 +34,9 @@ def create_backend(backend_id: str, cfg: Dict[str, Any]):
     backend_type = cfg.get("type", "local_qwen")
     if backend_type == "local_qwen":
         return LocalQwenBackend(backend_id, cfg)
+    if backend_type == "local_gemma":
+        from p79.backends.local_gemma import LocalGemmaBackend
+        return LocalGemmaBackend(backend_id, cfg)
     if backend_type == "api_proxy":
         from p79.backends.api_proxy import ApiProxyBackend
         return ApiProxyBackend(backend_id, cfg)
