@@ -20,10 +20,17 @@ hallucinated rationale, and length-dependent confidence). Static audit of 87 N/A
 episodes (笔记 §95) showed the judge's binary verdict varies on ~12% of borderline cases when
 re-queried with temperature ≥0.
 
-**Mitigation in this work**: We pin judge `temperature=0` for all evaluations and report all
-ua_match-affected tasks as part of the `na_fp` exclusion class (preregistration.md §3 FP filter).
-Sensitivity analysis (Appendix D) shows our H1/H3 conclusions hold under three FP filter
-variants (raw / +na_fp / +na_fp+eval_fp), so judge drift cannot flip the paper's hero claim.
+**Mitigation in this work (revised 2026-05-14 §139.8 FP-architecture restructure)**: The root
+cause — GPT-4o-mini scoring an empty prediction as correct — is now fixed at the **VWA evaluator**
+itself (B-91 patch in submodule branch `p79-patches` commit `f0c835b`: empty-prediction guard
+on `llm_fuzzy_match` / `llm_ua_match`). With this upstream guard, `na_fp` no longer needs a
+post-hoc filter class; raw `success` from the (fixed) evaluator is correct at the boundary.
+Additionally, N/A tasks are excluded at task-load time (`exclude_na_tasks: true` default; 73
+N/A tasks across VWA+WA, 5.3% of 1390), eliminating the un-passable-task FP vector entirely.
+Judge temperature is pinned at `temperature=0`. The prior post-hoc `compute_adjusted_success`
+layer and 3-variant sensitivity ladder (raw / +na_fp / +na_fp+eval_fp) are retired; canonical
+metric is raw `success`. Appendix D retains the pre-§139.8 ladder for archive contamination
+disclosure only.
 
 **Residual concern**: If a future reviewer re-runs the evaluator with a newer GPT-4o-mini
 snapshot, single-task labels may flip. The aggregate per-cell SR is robust to this within
@@ -59,15 +66,20 @@ match site-skin-dependent layout. When the site's CSS skin updates between evalu
 authoring time (2024) and our experimental deployment (2026), selectors can match the
 wrong DOM node or miss the intended element entirely.
 
-**Per-cell quantification**: We measure selector hit-rate parity in our archive — for each
-program_html task, we count post-action DOM nodes matching the reference selector. A pre/post
-ratio outside 0.95-1.05 across modes within the same task is flagged (~3% of program_html
-tasks); these are excluded from H1/H3 per the preregistered FP filter `eval_fp` rule.
+**Per-cell quantification + mitigation (revised 2026-05-14 §139.8 FP-architecture restructure)**:
+The post-hoc `eval_fp` filter class is retired. The dominant program_html FP root cause was
+site-state contamination across cells (cart accumulation, posted listings persisting across
+modes), which is now prevented upstream by the `RESET_BEFORE=1` per-cell reset protocol —
+contamination is not an after-the-fact filtering problem, it is prevented by clean per-cell
+start state. The remaining selector-skin-drift residual is bounded: per-cell selector-hit-rate
+parity is monitored in `validate_run.py --strict` (target pre/post ratio 0.95-1.05); flagged
+selectors are listed in Appendix D for transparency but no longer trigger a separate FP class
+in the primary metric.
 
 **Cannot-fix scope**: Patching all 562 brittle selectors requires authoring a parallel
-evaluator harness, which is out of scope for this paper. We retain VWA's evaluator unchanged
-(reviewer-defensible upstream parity per §3 evaluator independence) and bound the impact
-via the FP filter sensitivity ladder (Appendix D).
+evaluator harness, which is out of scope for this paper. We retain VWA's evaluator with the
+B-91 source-level patch only; selector-skin-drift impact is disclosed in Appendix D rather
+than absorbed into a post-hoc FP filter.
 
 ---
 
@@ -79,11 +91,13 @@ this as a scaffold bug; subsequent self-replay (笔记 §95 reform) showed it is
 reasoning error** — the agent decides to terminate prematurely or with partial completion,
 not a runner / dispatch / observation failure.
 
-**Treatment**: This is captured in our `eval_fp` filter rule (preregistration.md §3): if
-`agent_finished=True` but evaluator returns success and the agent has no effective action
-in the trajectory, we mark the episode as `eval_fp`. The agent error itself is not a paper
-limitation — different baselines and modes can succeed or fail at terminating decisions, and
-our paired-design comparison absorbs this into per-task variance.
+**Treatment (revised 2026-05-14 §139.8 FP-architecture restructure)**: The post-hoc `eval_fp`
+filter rule is retired. The `agent_finished=True with no effective action` pattern is captured
+behaviorally in the agent's trajectory data (`finish` step + zero `click` / `type` / `scroll`
+between page-load and finish), not as an FP-filter exclusion. Reviewers can audit this pattern
+directly in released JSONL traces. The agent error itself is not a paper limitation — different
+baselines and modes can succeed or fail at terminating decisions, and our paired-design comparison
+absorbs this into per-task variance.
 
 ---
 
@@ -159,7 +173,7 @@ does not flip top-1 logit comparisons; aggregate SR claims are unaffected.
 
 ## §4.X.9 Pre-Phase-A vs post-Phase-A asymmetry (B-01 to B-37 family)
 
-The 16-cell rerun (preregistration.md §4 cell inclusion) uses post-Phase-A code only
+The 36-condition / 6-cell Phase 1a rerun (preregistration.md §4 cell inclusion) uses post-Phase-A code only
 (commit ≥ `3c15cd7`, dispatch + page_changed + cycle + RNG fixes deployed). Pre-Phase-A
 data is retained as Appendix D robustness check (preregistration.md `Cell inclusion (Appendix D)`).
 For mechanistic Stage 2B/2C input artifacts, we use pre-Phase-A archived observations

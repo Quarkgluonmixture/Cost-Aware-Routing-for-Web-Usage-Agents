@@ -111,16 +111,24 @@ Per `pyproject.toml` + `.venv/bin/pip show <pkg>`:
 
 Full transitive lock recorded in `env_snapshot.json` `libraries` field per run.
 
-## Evaluator code
+## Evaluator code (RESTRUCTURED 2026-05-14 — post-hoc adjusted_success layer retired in favour of source-level fixes; see preregistration.md §4 "FP filter architecture" row + Appendix A 2026-05-14 entry)
 
 | Component | Pin | Hash |
 |---|---|---|
-| `evaluation_harness/helper_functions.py` | per `evaluator_code.combined_sha256` in `env_snapshot.json` | Recorded automatically per run |
-| Adjusted SR computation | `p79.experiment.analysis.compute_adjusted_success` | Pinned at git commit SHA |
-| FP filter | `na_fp + eval_fp combined` per `preregistration.md §4` | Code path: `compute_adjusted_success()` returns `fp_reason ∈ {'', 'na_fp', 'eval_fp'}` |
+| `evaluation_harness/helper_functions.py` | per `evaluator_code.combined_sha256` in `env_snapshot.json` (VWA submodule branch `p79-patches` commit `f0c835b` post-B-91 fix) | Recorded automatically per run |
+| **Primary metric** | **raw `success` from evaluator** (canonical, single metric post-§139.8) | `adjusted_success ≡ success` post-fix; legacy `compute_adjusted_success` retained ONLY for Appendix D pre-§139.8 archive contamination disclosure (paper-grade rerun does not use it) |
+| **Source-level FP fixes** | (B-91) `llm_fuzzy_match` / `llm_ua_match` evaluator-level empty-prediction guard | VWA submodule `p79-patches` branch commit `f0c835b` adds `if not pred or not pred.strip(): return 0.0` upstream guard. Closes na_fp at the evaluator boundary. |
+| **N/A task exclusion** | At task-load time (`task.exclude_na_tasks: true`, `p79/experiment/tasks.py::load_tasks`) | 73 N/A tasks excluded across VWA+WA (5.3% of 1390) — pre-registered scope decision, NOT post-hoc denominator drop |
+| **`scored_task_count`** | Replaces hardcoded `EXPECTED_N` per benchmark / site (cls 224 / red 205 / shop 435 post-N/A-exclusion) | Computed at run time from in-scope task pool |
+| **program_html eval_fp branch** | **DROPPED** entirely (no scalable boundary across WA+6 sites; contamination prevented upstream by `RESET_BEFORE` protocol) | `has_effective_action` heuristic removed |
+| **`visual_fp`** | **RETIRED** earlier (2026-05-09, boundary-undecidable, over-filtered 95.3% VWA tasks) | Replaced by manually-audited non-visual subset (43 VWA + 480 WA = 523 tasks) for Appendix D robustness |
+
+**Pre-§139.8 history (retained for Appendix D contamination disclosure only)**: The post-hoc `compute_adjusted_success` FP filter returned `fp_reason ∈ {'', 'na_fp', 'eval_fp'}`; 3-variant sensitivity ladder (raw / +na_fp / +na_fp+eval_fp) was the paper-grade reporting protocol. Retired 2026-05-14 in favor of the source-level fixes above — see `memory/reference_fp_architecture_2026-05-14.md` (canonical) + 笔记 §139.8 + master_bug_catalog §139 B-83~B-91.
 
 T0/T1/T2/T3 changes governed by `evaluator_change_protocol.md`. Same paper
-must dual-report under any post-lock T0 fix per protocol.
+must dual-report under any post-lock T0 fix per protocol. The B-91 source-level
+fix itself is a T0 change applied **pre-lock** (paper-grade rerun has not happened
+yet under §139.8 architecture); locking happens after the A100 rerun completes.
 
 ## Hardware / Host substrate (added 2026-05-15)
 

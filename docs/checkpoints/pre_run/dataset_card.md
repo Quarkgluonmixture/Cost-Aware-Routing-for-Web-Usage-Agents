@@ -47,27 +47,30 @@ All in-scope VWA tasks (Phase 1a = cls + red = 444 tasks; Phase 1b deferred adds
 - Per-cell N inclusion floor ≥ 100 episodes
 - All 6 modes per (site, baseline) cell: DOM / SoM / Vision / P-text / P-prompt / P-SoM
 
-### Exclusion (post-FP-filter)
+### Exclusion (RESTRUCTURED 2026-05-14 — post-hoc FP filter retired in favour of source-level fixes)
 
-Per `preregistration.md §4` FP filter primary spec (`na_fp + eval_fp` combined),
-per-task exclusions are:
+Per `preregistration.md §4` row "FP filter architecture" (revised 2026-05-14):
+the post-hoc `compute_adjusted_success` layer with `fp_reason ∈ {'', 'na_fp', 'eval_fp'}`
+is **retired**. Replaced by source-level fixes at the evaluator + task-load layers:
 
-| Filter | What it excludes | Rationale | Audited at |
+| Layer | Mechanism | What it does | Audited at |
 |---|---|---|---|
-| `na_fp` | Tasks marked N/A by ground truth where agent emitted `finish.answer="X"` (non-N/A) and was scored success by mistake | Mirage prevention; agent overconfidence on impossible tasks should not be rewarded | 笔记 §78a |
-| `eval_fp` | Tasks where evaluator's program_html / string_match scoring is logged as ambiguous-pass (e.g., URL prefix match where agent navigated past target) | Evaluator-reliability defense | 笔记 §95 |
-| `visual_fp` | **DEPRECATED** — boundary-undecidable, over-filters 95.3% VWA tasks | Removed per evaluator change protocol T2 simplification | `evaluator_change_protocol.md §7` |
+| **VWA evaluator (B-91 fix, upstream)** | `llm_fuzzy_match` / `llm_ua_match` empty-prediction guard | Returns 0.0 when prediction empty/whitespace — fixes the GPT-4o-mini-scoring-empty-as-correct root cause that was the dominant FP source. Patch in VWA submodule branch `p79-patches` commit `f0c835b`. | 笔记 §139.8 + master_bug_catalog §139 B-91 |
+| **N/A task-load exclusion** | `task.exclude_na_tasks: true` default in `p79/experiment/tasks.py::load_tasks` | 73 N/A tasks (cls 10 / red 5 / shop 31 / wa-shop 19 / wa-admin 6 / wa-red 2 = 5.3% of 1390) excluded at selection time — pre-registered scope decision, NOT post-hoc denominator drop. WONDERBREAD precedent for filtering impossible workflows. | preregistration.md §4 row "N/A task exclusion" |
+| **program_html eval_fp branch** | **DROPPED entirely** | `has_effective_action` heuristic had no scalable boundary across WA+6 sites; contamination prevented upstream by `RESET_BEFORE=1` per-cell reset protocol. | 笔记 §139.8 |
+| **`visual_fp`** | **RETIRED 2026-05-09** (boundary-undecidable, over-filtered 95.3% VWA tasks) | Replaced by manually-audited non-visual subset (43 VWA + 480 WA = 523 tasks) for Appendix D robustness | `evaluator_change_protocol.md §7` |
 
-### Robustness sensitivity
+### Robustness sensitivity (post-§139.8)
 
-Per `preregistration.md §4` FP filter sensitivity ladder, **3 variants reported**
-in paper appendix:
+Post-§139.8, **`adjusted_success ≡ success`** — raw `success` from the (fixed)
+evaluator is the single primary metric. The prior 3-variant sensitivity ladder
+(raw / +na_fp / +na_fp+eval_fp) collapses to one variant. The pre-§139.8 ladder
+is retained ONLY for Appendix D pre-§139.8 archived data contamination disclosure
+(does NOT apply to canonical post-fix A100 rerun).
 
-1. `raw_SR` (no FP filter)
-2. `+na_fp only` (just N/A exclusion)
-3. `+na_fp+eval_fp combined` (primary)
-
-H1/H3 conclusions must hold under all 3 variants (paper §3 sensitivity disclosure).
+`scored_task_count` (cls 224 / red 205 / shop 435 post-N/A-exclusion) replaces
+the prior hardcoded `EXPECTED_N` per benchmark. See `memory/reference_fp_architecture_2026-05-14.md`
+for the canonical framework.
 
 ### Manual non-visual subset (Appendix D robustness)
 
