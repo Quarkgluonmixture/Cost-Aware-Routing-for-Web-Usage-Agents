@@ -72,6 +72,14 @@ external_code/
 .claude/
 Claude_code/
 
+# VWA setup transient artifacts (setup_vwa.sh wget -O writes to caller CWD;
+# normally rm'd post `docker load`, but interrupted runs leave 50-90GB files
+# in repo root — explicit guard to prevent accidental commit).
+/shopping_final_*.tar
+/postmill-populated-*.tar
+/wikipedia_en_all_*.zim
+/classifieds_docker_compose.zip
+
 # Live state — synced via Tailscale rsync, NOT git
 # (PLAYBOOK is regenerated every 30min/2h by GLM cron; pushing through git
 # would spam history with 60+ commits/day; Windows-side Task Scheduler scp
