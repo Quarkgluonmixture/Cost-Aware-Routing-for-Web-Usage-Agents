@@ -146,9 +146,29 @@ class ProxyApiAgent:
         # GLM fallback for parse-error recovery (Solution B).
         # Reads .auth/glm (3-line file: endpoint, model, api_key).
         # Cost is NOT counted in experiment metrics — purely scaffold overhead.
+        #
+        # ⚠️ DEPRECATED — MARKED FOR FULL RETIRE (B-145, /stress A1.2 v8, 2026-05-16).
+        # Cross-baseline cost-fairness violation: B1/B2 have no equivalent
+        # recovery model, so enabling GLM gives B0 a unique "free retry" that
+        # invalidates paper §1 cost-fair comparison. Default is now
+        # ``use_glm_fallback: false`` (configs/exp_v2_base.yaml:160). This block
+        # is preserved only as a fallback during the transition window pending
+        # advisor sync on the Qwen official API channel (which exposes
+        # tool_choice and removes the parse-error root cause). Once that lands,
+        # delete this entire ``_glm_config`` / ``_call_glm_extract`` / Solution-B
+        # codepath; the corresponding config key in exp_v2_base.yaml is removed
+        # simultaneously.
         self._glm_config: Optional[Dict[str, str]] = None
         glm_cfg_path = model_cfg.get("glm_config", ".auth/glm")
         if model_cfg.get("use_glm_fallback", False):
+            import warnings
+            warnings.warn(
+                "GLM fallback (Solution B) is deprecated and marked for retire; "
+                "enabling it violates paper §1 cross-baseline cost-fairness. Set "
+                "use_glm_fallback: false (now the default) for any paper-grade run.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             self._glm_config = self._load_glm_config(glm_cfg_path)
 
         self._system_prompts = self._get_system_prompts()

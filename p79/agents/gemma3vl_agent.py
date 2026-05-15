@@ -8,7 +8,20 @@ import torch
 from PIL import Image
 from transformers import AutoProcessor, Gemma3ForConditionalGeneration
 
-from p79.agents.qwen3vl_agent import Qwen3VLAgent, _wait_for_vram
+# B-146 (/stress A1.2 v8 codex B4, 2026-05-16): cross-baseline VL helpers
+# moved from Qwen3VLAgent classmethods into ``_shared_vl_utils`` so this
+# module no longer transitively pulls in Qwen3VLAgent's heavy deps
+# (``transformers.Qwen3VLForConditionalGeneration`` + ``qwen_vl_utils``).
+# Cross-baseline byte-identical prompts + identical confidence schema are
+# still enforced — single source of truth is the shared module.
+from p79.agents._shared_vl_utils import (
+    compute_confidence as _shared_compute_confidence,
+    format_history as _shared_format_history,
+    make_dom_prompt as _shared_make_dom_prompt,
+    make_som_prompt as _shared_make_som_prompt,
+    make_vision_prompt as _shared_make_vision_prompt,
+    wait_for_vram as _wait_for_vram,
+)
 from p79.backends.action_utils import parse_action_text
 from p79.utils.torch_cuda_workarounds import apply_nvrtc_prod_fallback_if_needed
 
@@ -19,15 +32,9 @@ logger = logging.getLogger(__name__)
 # variable patch count, this is constant per image.
 GEMMA3_IMAGE_TOKENS = 256
 
-# Observation-mode system prompts are reused verbatim from the Qwen agent so
-# every baseline (B0 / B1 / Gemma3-VL) sees byte-identical prompts — a hard
-# paper-grade requirement for cross-model comparison. The Qwen methods are
-# @staticmethod (not bound to an instance) so this reuse does not depend on
-# `self=None` happening to work in the method body — an invariant test guards
-# against future regression (tests/test_agents_prompt_parity.py).
-_DOM_PROMPT = Qwen3VLAgent._make_dom_prompt()
-_SOM_PROMPT = Qwen3VLAgent._make_som_prompt()
-_VISION_PROMPT = Qwen3VLAgent._make_vision_prompt()
+_DOM_PROMPT = _shared_make_dom_prompt()
+_SOM_PROMPT = _shared_make_som_prompt()
+_VISION_PROMPT = _shared_make_vision_prompt()
 
 
 class Gemma3VLAgent:
@@ -161,7 +168,7 @@ class Gemma3VLAgent:
         else:  # "dom" or "phantom_prompt": full AXTree text
             obs_section = f"Accessibility Tree:\n{obs_text}"
 
-        history_text = Qwen3VLAgent._format_history(history or [])
+        history_text = _shared_format_history(history or [])
 
         # The system prompt is embedded in the user turn's text — NOT a separate
         # `system` role — even though Gemma 3 supports system roles natively.
@@ -294,7 +301,7 @@ class Gemma3VLAgent:
             clean_up_tokenization_spaces=False,
         )[0]
 
-        confidence_metrics = Qwen3VLAgent._compute_confidence(gen_output.scores)
+        confidence_metrics = _shared_compute_confidence(gen_output.scores)
 
         action, valid, fail_reason = parse_action_text(output_text)
 

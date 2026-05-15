@@ -6,6 +6,20 @@ from typing import Any, Dict
 
 from PIL import Image
 
+# B-155 (/stress A1.2 v8 Claude A7, 2026-05-16): import-time pin check.
+# ``Image.Resampling.LANCZOS`` (used below at line 55) is PIL ≥9.1 enum API;
+# older PIL has only ``Image.LANCZOS`` direct attribute. Mixed PIL across
+# DGX / Condenser / Myriad → different resize kernel + boundary padding →
+# image bytes diverge → paper-grade reproducibility impossible. pyproject
+# pins ``pillow>=10.0,<12.0``; this assert catches a manually-overridden
+# venv (e.g. older pillow accidentally installed via a sibling package).
+import PIL
+_PIL_VERSION_PARTS = tuple(int(x) for x in PIL.__version__.split(".")[:2])
+assert _PIL_VERSION_PARTS >= (10, 0), (
+    f"PIL/Pillow version too old for paper-grade reproducibility: "
+    f"got {PIL.__version__}, need ≥10.0 (see pyproject.toml + B-155)"
+)
+
 
 # Adapted from external_code/image.py (Aiden Yiliu Li, Apache-2.0)
 DEFAULT_MAX_IMAGE_PAYLOAD_BYTES = 5 * 1024 * 1024

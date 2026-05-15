@@ -9,7 +9,33 @@ from p79.backends.base import BackendStepContext
 from p79.backends.heuristic import HeuristicDomBackend
 
 
+# B-148 (/stress A1.2 v8 gemini C4, 2026-05-16): allowlist of env-var names the
+# yaml is allowed to point ``api_key_env`` at. Without this guard a malicious
+# or accidentally-copied yaml could request, e.g., ``AWS_SECRET_ACCESS_KEY``;
+# any subsequent verbose log of the agent config would then echo the secret
+# into stdout / git-committed logs. Allowlist is intentionally narrow — extend
+# only when adding a new vetted API surface.
+_ALLOWED_API_KEY_ENVS = frozenset({
+    "PROXY_API_KEY",     # P79 AWS API Gateway → Bedrock proxy (B0)
+    "DASHSCOPE_API_KEY", # Qwen official API (pending advisor migration)
+    "GLM_API_KEY",       # GLM-5.1 fallback (deprecated, marked for retire)
+})
+
+
 class ApiProxyBackend:
+    @staticmethod
+    def _validate_api_key_env(name: str) -> str:
+        # B-148: surface bad yaml early with a clear message instead of letting
+        # the agent quietly read whatever env var the config requested.
+        if name not in _ALLOWED_API_KEY_ENVS:
+            raise ValueError(
+                f"api_key_env={name!r} is not in the allowlist "
+                f"{sorted(_ALLOWED_API_KEY_ENVS)}; security boundary violation. "
+                f"Add to ``_ALLOWED_API_KEY_ENVS`` in p79/backends/api_proxy.py "
+                f"after explicit review if this is a legitimate new API surface."
+            )
+        return name
+
     def __init__(self, backend_id: str, config: Dict[str, Any]):
         self.backend_id = backend_id
         self.config = config
@@ -25,7 +51,14 @@ class ApiProxyBackend:
                 "model": {
                     "api_name": config.get("api_name", config.get("name", "qwen.qwen3-vl-235b-a22b")),
                     "base_url": config.get("base_url"),
-                    "max_new_tokens": config.get("max_new_tokens", 512),
+                    # B-147 (/stress A1.2 v8 Claude A1, 2026-05-16): default
+                    # aligned 512 → 4096 to match local_qwen / local_gemma
+                    # wrappers + agent layer's own default (B-135). Previously
+                    # the wrapper masked the agent's 4096 with stale 512 — yaml
+                    # had to set explicitly to avoid silent truncation of the
+                    # ~400-1500 tok thought + JSON envelope. Defense-in-depth
+                    # alignment so future config refactor cannot regress this.
+                    "max_new_tokens": config.get("max_new_tokens", 4096),
                     # B-37 fix: defaults 0.1→0 (greedy), 0.9→1.0 (no nucleus pruning).
                     # yaml configs may still override but new default is reproducibility-first.
                     "temperature": config.get("temperature", 0.0),
@@ -35,7 +68,12 @@ class ApiProxyBackend:
                     "timeout": config.get("timeout", 120),
                     # API format: "anthropic" (proxy) or "openai" (DashScope)
                     "api_format": config.get("api_format", "anthropic"),
-                    "api_key_env": config.get("api_key_env", "PROXY_API_KEY"),
+                    # B-148 (/stress A1.2 v8 gemini C4, 2026-05-16): allowlist
+                    # guard against config-injected env-var redirection (see
+                    # ``_ALLOWED_API_KEY_ENVS`` at module level for rationale).
+                    "api_key_env": self._validate_api_key_env(
+                        config.get("api_key_env", "PROXY_API_KEY"),
+                    ),
                     # Plan A/B: tool_use + GLM fallback (§67)
                     "use_tool_calling": config.get("use_tool_calling", False),
                     "use_glm_fallback": config.get("use_glm_fallback", False),
@@ -55,17 +93,25 @@ class ApiProxyBackend:
             return self._heuristic.step(instruction, obs, context)
 
         if self.mock_mode:
+            # B-149 (/stress A1.2 v8 Claude A3 + gemini C5, 2026-05-16):
+            # mock action aligned with local_qwen / local_gemma / MockBackend
+            # mock_mode (all emit scroll [0, 0.8]). Previously this returned
+            # click element_id=1, breaking the "Mock Parity" invariant — tests
+            # asserting that swapping mocked backends preserves action shape
+            # silently failed only on api_proxy. factory.py:15-18 comment
+            # marks scroll as canonical.
             action = {
-                "action_type": "click",
-                "element_id": 1,
+                "action_type": "scroll",
+                "delta": [0, 0.8],
+                "coordinate_type": "normalized",
                 "thought": "Mock API proxy backend action.",
             }
             return action, {
                 "raw_output": action,
                 "valid": True,
                 "failure_reason": None,
-                "input_tokens": 2,
-                "output_tokens": 2,
+                "input_tokens": 1,
+                "output_tokens": 1,
                 "model_calls": 1,
                 "backend_type": "api_proxy_mock",
             }

@@ -22,7 +22,13 @@ dependencies = [
     "accelerate>=0.26.0",
     "bitsandbytes>=0.42.0",
     "qwen-vl-utils",
-    "pillow",
+    # B-155 (/stress A1.2 v8 Claude A7, 2026-05-16): pinned ≥10 for
+    # ``Image.Resampling.LANCZOS`` enum API used by image_utils.py; bounded
+    # <12 so a future major release cannot silently change resize kernel
+    # behaviour. Bit-identical cross-host image bytes require uniform PIL
+    # across DGX / Condenser / Myriad — pip install -e . enforces uniform
+    # version when the venv is built from this pyproject.
+    "pillow>=10.0,<12.0",
     "numpy",
     "pyyaml",
     "openai>=1.0.0",

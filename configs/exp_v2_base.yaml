@@ -156,8 +156,14 @@ backends:
     mock_mode: false
     # Plan A: tool_use — disabled (proxy does not forward tools/tool_choice to Bedrock)
     use_tool_calling: false
-    # Plan B: GLM-5.1 fallback for parse_error recovery (§67)
-    use_glm_fallback: true
+    # B-145 (/stress A1.2 v8, 2026-05-16): GLM-5.1 fallback DISABLED by default.
+    # Plan B path was a paper-grade cross-baseline cost-fairness violation
+    # (B1/B2 have no equivalent recovery model, so B0 alone got "free" parse-error
+    # retries on a second model). The fallback module is marked for full retire
+    # pending advisor sync on the Qwen official API channel (which exposes
+    # tool_choice and removes the parse-error root cause). Set explicitly per-yaml
+    # ONLY when investigating proxy parse-rate; never enable for paper-grade runs.
+    use_glm_fallback: false
     glm_config: ".auth/glm"
 
 baselines:

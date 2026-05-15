@@ -22,9 +22,12 @@ class LocalQwenBackend:
             agent_cfg = {
                 "model": {
                     "path": config.get("path", "Qwen/Qwen3-VL-4B-Instruct"),
-                    # B-83 fix: forward HF revision SHA so the agent loads the
-                    # pinned weights instead of its hard-coded default. None when
-                    # absent → qwen3vl_agent falls back to its default + warns.
+                    # B-83 + B-136: forward HF revision SHA so the agent loads
+                    # the pinned weights. Post-B-136 strict mode: missing
+                    # revision raises ``RuntimeError`` at agent init (the
+                    # previous "falls back to default + warns" behavior was
+                    # retired so paper-grade reproducibility cannot silently
+                    # regress).
                     "revision": config.get("revision"),
                     "quantization": config.get("quantization", "none"),
                     "device": config.get("device", "cuda"),

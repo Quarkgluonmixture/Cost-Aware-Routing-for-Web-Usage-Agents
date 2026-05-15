@@ -29,7 +29,13 @@ class MockBackend:
             "input_tokens": 1,
             "output_tokens": 1,
             "model_calls": 1,
-            "backend_type": "mock",
+            # B-154 (/stress A1.2 v8 Claude A6, 2026-05-16): tag with the
+            # actual backend_id so test_runner_smoke / cross-baseline mock
+            # invariants can distinguish mock_B0 vs mock_B1 vs mock_B2
+            # vs the bare factory.MockBackend default. Pre-fix: all mocks
+            # reported backend_type="mock" so tests couldn't tell which
+            # baseline they were exercising.
+            "backend_type": f"mock_{self.backend_id}",
         }
         return action, meta
 

@@ -129,7 +129,17 @@ class ExperimentRunner:
         self.energy_tracker = LightweightEnergyTracker(cfg.get("metrics", {}).get("energy", {}))
         self.diagnostic_controls = cfg.get("diagnostic_controls", {}) or {}
 
-        self._backends: Dict[str, Any] = {}
+        # B-144 (/stress A1.2 v8 codex B1, 2026-05-16): cache key is
+        # ``(backend_id, seed)`` — previously a single ``backend_id`` key froze
+        # the first seed into the agent cfg at construction, so seed-loop
+        # updates to ``self.seed`` (main.py:333-334) never propagated to the
+        # cached agent. Multi-seed runs (``experiment.seed: [42, 43, ...]``)
+        # produced distinct ``condition_meta.seed`` rows but identical
+        # model-side seed → mislabeled same-seed duplicates. Per-seed cache
+        # means each seed switch reconstructs the agent with the correct
+        # backend_cfg["seed"]; for local backends this re-imports the model
+        # (one extra HF load per seed, paper-grade necessary).
+        self._backends: Dict[Tuple[str, int], Any] = {}
         self._auth_episode_counts: Dict[str, int] = {}  # per-site counter for auth refresh
         # B-35 fix (笔记 §116.9): also track last refresh timestamp for time-based threshold
         self._auth_last_refresh_ts: Dict[str, float] = {}
@@ -139,8 +149,12 @@ class ExperimentRunner:
         # `task.exclude_na_tasks`), so the runner never sees them.
 
     def _get_backend(self, backend_id: str):
-        if backend_id in self._backends:
-            return self._backends[backend_id]
+        # B-144 (/stress A1.2 v8 codex B1, 2026-05-16): cache key includes seed
+        # so seed-loop reconstructs the agent on switch. See ``__init__`` for
+        # the multi-seed reproducibility rationale.
+        cache_key = (backend_id, int(self.seed))
+        if cache_key in self._backends:
+            return self._backends[cache_key]
 
         backend_cfg = self.cfg.get("backends", {}).get(backend_id)
         if not backend_cfg:
@@ -180,7 +194,7 @@ class ExperimentRunner:
         ):
             backend_cfg["revision"] = _model_revision
         backend = create_backend(backend_id, backend_cfg)
-        self._backends[backend_id] = backend
+        self._backends[cache_key] = backend
         return backend
 
     def _write_run_meta(self) -> None:
