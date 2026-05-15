@@ -39,23 +39,64 @@ Better: use `find docs/ -name 'section4*'` to **discover** real file names inste
 
 ## Invocation
 
+### Filename convention v7.1 (HHMMSS for concurrent-session safety)
+
+Empirical 2026-05-15: parallel `/stress` sessions observed (commits `b1a31a2` + `1a2ff9b` ran while we worked). Date-only would collide. **Use HHMMSS**:
+
 ```bash
-DATE=$(date +%Y-%m-%d)
+DATE=$(date +%Y-%m-%d_%H%M%S)
 PROMPT=docs/checkpoints/gemini_prompts/<scope>_${DATE}.md
 OUTPUT=docs/checkpoints/gemini_outputs/<scope>_${DATE}.md
+DEBUG=docs/checkpoints/gemini_outputs/<scope>_${DATE}.debug.log
+```
 
+### Smoke test (v7.1, 2026-05-15)
+
+Before dispatch verify CLI + auth + quota healthy:
+
+```bash
+echo "" | timeout 15 gemini -p "Reply exactly OK" --approval-mode plan 2>&1 | grep -qE "^OK\b"
+if [ $? -ne 0 ]; then
+  echo "⚠️  gemini CLI unhealthy — Mode C skipped, surface to user"
+  echo "Continue with Claude /stress + Mode B (codex) if applicable"
+  exit 1
+fi
+```
+
+### Dispatch
+
+```bash
 # Preflight: path-existence check (see above)
+# Smoke test: see above
 
-# Dispatch — backgrounded, harness will notify on completion
-gemini --approval-mode plan -p "$(cat "$PROMPT")" > "$OUTPUT" 2>&1 &
+# Dispatch — backgrounded; --debug captures routing info for model identification
+gemini --approval-mode plan --debug -p "$(cat "$PROMPT")" > "$OUTPUT" 2> "$DEBUG" &
 GEMINI_PID=$!
 ```
 
-Use `run_in_background: true` on the Bash call so harness tracks completion automatically. **Do NOT poll** — harness notifies when done.
+Use `run_in_background: true` on the Bash call so harness notifies on completion. **Do NOT poll.**
+
+### Parallel with Mode B
+
+When chained from master `/stress`, Mode C + Mode B dispatch in **parallel** (two separate `run_in_background: true` Bash calls). Total wallclock = **max(B, C), not sum**.
 
 ### Why `--approval-mode plan` (not `--yolo`)
 
 `plan` mode = read-only. Gemini can read project files via its tools but cannot write to working tree. For audit (read prose, output critique to stdout), this is the correct minimum permission. `--yolo` is for agent tasks that need to edit.
+
+### Model identification + silent-fallback warning (v7.1)
+
+**Default routing**: `--approval-mode plan` auto-routes to Pro tier. Verified 2026-05-15: `gemini-3.1-pro-preview` per debug log line "[Routing] Selected model: gemini-3.1-pro-preview (Source: agent-router/approval-mode)".
+
+**Record actual model**:
+
+```bash
+grep -m1 "Selected model:" "$DEBUG" | head -1 >> "$OUTPUT.meta"
+```
+
+**Don't pass `-m`** unless you've verified the model name via `--debug` first. Silent fallback observed 2026-05-15: `-m gemini-3-pro-preview` (no dot between `3` and `1`) silently downgrades to `gemini-2.5-pro` **without error**. Typo → quality degradation no one sees.
+
+If `-m` is needed, run a 1-line smoke first: `gemini --debug -m <name> -p "say ok" 2>&1 | grep "Selected model:"` to confirm the requested name is honored.
 
 ### Auth
 
@@ -65,7 +106,7 @@ User OAuth via `GOOGLE_GENAI_USE_GCA=true gemini` (once, persists to `~/.gemini/
 
 Gemini prompt MUST:
 
-1. **Establish persona** — top-tier ML/NLP reviewer (NeurIPS/ICML/ACL/ICLR), implements methodology rigorously, debugs students' pipelines
+1. **Establish persona** — top-tier ML/NLP reviewer (NeurIPS/ICML/ACL/ICLR), implements methodology rigorously, debugs students' pipelines. **No rotation menu** (unlike Mode B codex which has 4 personas). Empirical 2026-05-15 pilot: Gemini's strength = broad framing reasoning across §A2 surfaces. Persona rotation would narrow that breadth. If user wants deep persona-specific dive → invoke /codex-stress with rotation menu instead.
 2. **Establish cold-read constraint** — explicitly: "You have NOT seen any prior Claude or codex analysis"
 3. **Name artifacts to read** — file paths verified by preflight; tell Gemini to use its file tools
 4. **Force read-prose-not-code** — "Do not read code. This is claim-audit, not code-audit. Implementation audit is a separate pass."
@@ -173,11 +214,21 @@ If Claude /stress did NOT run (Gemini standalone invocation), produce 1-section 
 
 ## Auto-chain via Mode B+C
 
-When invoked inside `/stress`:
-- Master `/stress` skill (Claude self-review) → auto-chain `/codex-stress` (Mode B) AND `/gemini-stress` (Mode C) by default
-- Bypass with: "skip gemini" / "skip codex" / "claude only" / "no cross-AI"
-- Bypass with: "code only" → skip Mode C (Gemini); keep Mode B (codex code-audit)
-- Bypass with: "prose only" → skip Mode B (codex); keep Mode C (Gemini prose-audit)
+When invoked inside `/stress`, master `/stress` skill (Claude self-review) → auto-chain `/codex-stress` (Mode B) AND `/gemini-stress` (Mode C) **in parallel** by default. Master /stress orchestrates 3-way diff after both verifications pass.
+
+## Chronicle trigger
+
+Per memory `feedback_chronicle_on_milestone.md` trigger 4: completion of `/gemini-stress` (alongside `/stress` + `/codex-stress`) is itself a milestone — append to `实验笔记.md` under `[infra]` tag if new findings surface.
+
+## Bypass conditions
+
+→ **Canonical at `.claude/skills/stress/SKILL.md` "Bypass conditions (canonical, v7.1)"** (master /stress). If this skill's bypass refs drift from master, **master wins**.
+
+Quick reference (mirror only):
+- "skip gemini" / "no gemini" → Mode C skipped
+- "prose only" → keep C, skip B
+- "claude only" / "no cross-AI" → Mode C skipped
+- gemini smoke test failed → Mode C skipped, surface
 
 ## What this skill is NOT
 
@@ -196,3 +247,4 @@ When invoked inside `/stress`:
 ## Versioning
 
 - v1 (2026-05-15): Initial. Mode C standalone + auto-chain from /stress. Built atop user 2026-05-14 advisor 收口 (router + Phase 1 critical path) + Gemini subscription. Pilot empirical 2026-05-15 §A2 design-layer audit caught 4 P0/P1 attacks Claude+codex missed in 7-day audit history. Post-flight verification protocol mandatory from v1 (user directive 2026-05-15 after pilot exposed silent partial-audit risk via section4_findings.md path typo).
+- **v7.1 (2026-05-15 reflexive audit, parity with master v7.1)**: HHMMSS filename convention for concurrent-session safety / smoke test pre-dispatch / `--debug` model identification + record routing line / silent-fallback warning for `-m` typo (e.g. `gemini-3-pro-preview` no-dot → `gemini-2.5-pro` silent) / parallel-with-Mode-B explicit / persona "no rotation by design" (empirical Gemini broad-framing strength) / bypass conditions delegated to master canonical / chronicle trigger 4 referenced. Driver: user "整体审计下 skill" 2026-05-15 → /stress-on-skill reflexive audit caught 3-skill component family version-sync gaps.
