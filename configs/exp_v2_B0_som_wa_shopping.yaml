@@ -1,0 +1,49 @@
+# B0 som — WA shopping
+# Generated 2026-05-15: WA 6-mode parity with VWA (was: phantom + phantom_text only).
+# Mirrors the VWA per-condition pattern; defaults to wa_base for DATASET=webarena.
+
+defaults:
+  - configs/exp_v2_wa_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B0_som_wa_shopping"
+
+task:
+  include_sites: ["shopping"]
+  site_configs:
+    shopping: "external/visualwebarena/config_files/wa/test_shopping.raw.json"
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["som"]
+
+backends:
+  default_backend: "api_strong"
+  api_strong:
+    type: "api_proxy"
+    api_name: "qwen.qwen3-vl-235b-a22b"
+    base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
+    temperature: 0.0
+    max_new_tokens: 4096
+    max_image_payload_bytes: 5242880
+    image_max_size: 1280
+    max_obs_chars: 12000
+    dom_mode: "llm"
+    mock_mode: false
+    use_glm_fallback: true
+    glm_config: ".auth/glm"
+
+metrics:
+  cost_api:
+    input_cost_per_1k: 0.001
+    output_cost_per_1k: 0.005
+  energy:
+    enabled: false
+
+baselines:
+  run_b0: false
