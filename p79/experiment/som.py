@@ -76,6 +76,13 @@ def build_som_text_from_obs_text(obs_text: str, max_marks: Optional[int] = None)
     text_marks = _extract_text_marks(obs_text, max_marks=max_marks)
     if len(text_marks) == 0:
         return "[SOM_MARKS]\n[/SOM_MARKS]"
+    # /stress A1.4 F3 backlog sweep (2026-05-15): the look-ahead window
+    # previously capped at `min(_i + 3, len(_obs_lines))` (= 2 lines), which
+    # was design-fragile if vwa_wrapper's injector ever interleaved property
+    # lines between trigger and [OPTIONS]. The only correct boundary is
+    # "until the next mark id" — capped only at end-of-file. Removing the
+    # fixed-distance cap closes the cross-file silent contract (som.py
+    # look-ahead distance vs vwa_wrapper.py inject distance).
     _options_map: Dict[int, str] = {}
     _obs_lines = (obs_text or "").splitlines()
     for _i, _line in enumerate(_obs_lines):
@@ -83,13 +90,13 @@ def build_som_text_from_obs_text(obs_text: str, max_marks: Optional[int] = None)
         if not _m:
             continue
         _eid = int(_m.group(1))
-        for _j in range(_i + 1, min(_i + 3, len(_obs_lines))):
+        for _j in range(_i + 1, len(_obs_lines)):
             _stripped = _obs_lines[_j].strip()
             if _stripped.startswith("[OPTIONS") or _stripped.startswith("[DROPDOWN OPTIONS"):
                 _options_map[_eid] = _stripped
                 break
             if re.search(r"\[(\d+)\]", _obs_lines[_j]):
-                break  # next element reached
+                break  # next element reached — sole boundary
     mark_lines = []
     for _mark in text_marks:
         _entry = f"[id={_mark['id']}] {_mark['label']}"
@@ -99,7 +106,29 @@ def build_som_text_from_obs_text(obs_text: str, max_marks: Optional[int] = None)
     return "\n".join(["[SOM_MARKS]"] + mark_lines + ["[/SOM_MARKS]"])
 
 
-def _collect_bbox_map(raw: Any, bbox_map: Dict[int, List[float]]) -> None:
+# /stress A1.4 F4 backlog sweep (2026-05-15): _collect_bbox_map walks raw
+# observation dicts recursively to harvest legacy-format bbox entries. Without
+# a visited set or depth cap, a cyclic reference (uncommon but some custom
+# accessibility-tree wrappers serialize back-edges) would infinite-recurse
+# until Python RecursionError. The cap is generous (50 levels) but bounded.
+_BBOX_TRAVERSAL_MAX_DEPTH = 50
+
+
+def _collect_bbox_map(
+    raw: Any,
+    bbox_map: Dict[int, List[float]],
+    _visited: Optional[set] = None,
+    _depth: int = 0,
+) -> None:
+    if _depth > _BBOX_TRAVERSAL_MAX_DEPTH:
+        logger.debug("_collect_bbox_map depth cap hit (%d) — stopping descent", _depth)
+        return
+    if _visited is None:
+        _visited = set()
+    # Guard against cyclic references by tracking object identity (id()).
+    obj_id = id(raw)
+    if obj_id in _visited:
+        return
     if isinstance(raw, dict):
         maybe_id = None
         for id_key in ("id", "node_id", "nodeId", "element_id"):
@@ -120,13 +149,22 @@ def _collect_bbox_map(raw: Any, bbox_map: Dict[int, List[float]]) -> None:
         if maybe_id is not None and bbox is not None:
             bbox_map[maybe_id] = bbox
 
+        _visited.add(obj_id)
         for v in raw.values():
-            _collect_bbox_map(v, bbox_map)
+            _collect_bbox_map(v, bbox_map, _visited, _depth + 1)
     elif isinstance(raw, list):
+        _visited.add(obj_id)
         for v in raw:
-            _collect_bbox_map(v, bbox_map)
+            _collect_bbox_map(v, bbox_map, _visited, _depth + 1)
 
 
+# /stress A1.4 F5 backlog sweep (2026-05-15): _FONT_CACHE is module-level
+# by design — fonts are immutable resources, the size→font mapping is
+# stable for the process lifetime, and Pillow font objects are not
+# threadsafe for mutation but ARE safe for concurrent read after load.
+# Memory bound: per-process cache holds at most ~3 font sizes (mark-label
+# label_h overlay paths), each ~50 KB → 150 KB upper bound. No eviction
+# needed. Not a leak per session.
 _FONT_CACHE: Dict[int, Any] = {}
 
 _CANDIDATE_FONTS = [
@@ -372,7 +410,22 @@ def apply_som(
     artifact_dir: Path,
     step_idx: int,
 ) -> SomResult:
-    """Backward-compatible function. Prefer prepare_observation_for_mode for new code."""
+    """Backward-compatible function. Prefer prepare_observation_for_mode for new code.
+
+    /stress A1.4 F6 backlog sweep (2026-05-15): emits a DeprecationWarning so
+    any forgotten internal caller / third-party reuse surfaces at runtime
+    instead of silently invoking the legacy `include_full_axtree=True` path
+    (different from production behavior).
+    """
+    import warnings
+    warnings.warn(
+        "apply_som() is deprecated since 2026-05-15. Use "
+        "prepare_observation_for_mode(obs, mode, artifact_dir, step_idx) instead. "
+        "The legacy `include_full_axtree=True` path here differs from production "
+        "behavior (which uses [SOM_MARKS] only without trailing AXTree).",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     obs_text = getattr(obs, "text", "") or ""
     if not som_on:
         return SomResult(som_text=obs_text, marked_image_path=None, marked_image=None, degraded_som=False, mark_count=0)

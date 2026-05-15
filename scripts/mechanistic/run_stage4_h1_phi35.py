@@ -40,6 +40,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 # `[N] role 'text'` strict format, which dropped 71/72 marks per task on cls).
 # Now imports the production extractor — matches Stage 4 v2 multimode NPZ
 # extraction protocol, no separate vintage from main pipeline.
+# /stress A1.4 F1 backlog doc (2026-05-15): intentional direct import of
+# `_extract_text_marks` — see sibling `run_stage4_h1_qwen2vl.py` header
+# comment for full rationale. Summary: format-variation test needs raw
+# marks without `[SOM_MARKS]` wrapper, so `_options_map` dropdown-recovery
+# (B-82) is intentionally skipped. Documented divergence from canonical
+# `build_som_text_from_obs_text`. Mechanism §5 paused per advisor §138.
 from p79.experiment.som import _extract_text_marks  # noqa: E402
 # v6 /stress 2026-05-14 — Bug F1 fix. Previously cross-family scripts dropped
 # the production system prompt entirely (user_text = f"Task: ...\n[observation]\n...")

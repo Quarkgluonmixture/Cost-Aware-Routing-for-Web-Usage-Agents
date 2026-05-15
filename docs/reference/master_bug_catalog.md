@@ -1534,6 +1534,14 @@ Three audit surfaces, 14+ findings filed, 7 fixed in code, parse/GLM-touching it
 - **B-107** A1.3 F4 ARIA actionable role accept list extended — added `menuitemradio` / `switch` / `treeitem` / `gridcell` / `radio` / `checkbox` (non-native) / `combobox` / `slider` to `_ACTIONABLE_ARIA_ROLES_JS` constant. Modern web apps using ARIA-only widgets no longer fall through to bbox-center fallback. 🛠️ **FIXED commit `<pending>`**. Tests: `test_click_resolver_accepts_extended_aria_roles`.
 - A1.3 F5 catalog B-03 prose self-correction (locator.clear → fill('')) — inline above in B-03 entry. 🛠️ DONE.
 
+#### A1.4 backlog sweep (2026-05-15) — per user "都要修" policy
+
+- **B-108** A1.4 F3 `_options_map` look-ahead window 2-line cap → next-mark-id boundary only 🛠️ **FIXED commit `<pending>`** — `build_som_text_from_obs_text` (som.py:79-92) loop now scans until next mark id appears, removing the fixed 2-line distance cap. Closes the cross-file silent contract between vwa_wrapper inject distance and som.py recovery distance. Tests: `test_options_map_lookahead_is_unbounded_by_distance` + `test_options_map_boundary_is_next_mark_id`.
+- **B-109** A1.4 F4 `_collect_bbox_map` cyclic-reference / depth guard 🛠️ **FIXED commit `<pending>`** — adds `_visited: set` (by id()) + `_depth` cap (`_BBOX_TRAVERSAL_MAX_DEPTH = 50`). Cyclic raw obs dicts no longer RecursionError. Tests: `test_collect_bbox_map_handles_cyclic_reference` + `test_collect_bbox_map_respects_depth_cap`.
+- **B-110** A1.4 F6 `apply_som` legacy DeprecationWarning 🛠️ **FIXED commit `<pending>`** — any caller still routing through the legacy `include_full_axtree=True` path surfaces at runtime. Test: `test_apply_som_emits_deprecation_warning`.
+- A1.4 F1 cross-family `_options_map` skip — **documented as intentional design choice** (commit `<pending>`): cross-family scripts test format variation; raw marks without `[SOM_MARKS]` wrapper is the goal; `_options_map` recovery would re-introduce wrapper. Header comments added in `run_stage4_h1_qwen2vl.py` + `run_stage4_h1_phi35.py` explaining the tradeoff. Mechanism §5 paused per advisor §138; if §5 re-activates, cross-family scripts must either switch to canonical wrappers (accepting format-loss) or inject `[OPTIONS]` per-formatter. Not a code fix.
+- A1.4 F5 `_FONT_CACHE` documented as module-level by design — bounded ~150KB upper bound, no eviction needed. Inline comment added. Not a code fix.
+
 #### A1.3 (envs — `p79/envs/`) — Claude /stress (codex Mode B incomplete twice)
 
 - locator_dispatch.py F1 (handle dispose leak in action-raise path) + F6 (walk-fail reason category in error field) — pending land per user 2026-05-15 sequence.

@@ -42,6 +42,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 # v6 /stress 2026-05-14 — Bug 2 + F1 fix propagation. Previously this script
 # reimplemented private MARK_LINE_RE (v1 buggy regex) and dropped production
 # system prompt. Now uses substrate.
+#
+# /stress A1.4 F1 backlog doc (2026-05-15): this cross-family script
+# INTENTIONALLY imports `_extract_text_marks` directly rather than the
+# canonical `build_som_text_from_obs_text`. Reason: this script tests format
+# variation across cross-family models (Phi-3.5 / Qwen2-VL) by emitting raw
+# marks under 8 different formatters (`[N] label`, `@N label`, `id_N: label`,
+# etc.) — those format variants do NOT use the `[SOM_MARKS]...[/SOM_MARKS]`
+# wrapper. As a side effect the `_options_map` recovery for dropdown `[OPTIONS]`
+# lines (per master bug B-82) is NOT applied here, so cross-family inputs may
+# differ from production SoM input on pages with select / dropdown elements.
+# This is a known design tradeoff; mechanism §5 is paused per advisor §138
+# (frozen archive, no re-activation planned) so the divergence is documented
+# rather than corrected. If §5 ever re-activates, cross-family scripts should
+# either (a) switch to canonical wrappers and accept format-loss, or (b)
+# explicitly inject the [OPTIONS] lines per-formatter.
 from p79.experiment.som import _extract_text_marks  # noqa: E402
 from p79.agents.qwen3vl_agent import Qwen3VLAgent  # noqa: E402
 

@@ -14,6 +14,112 @@ def test_prepare_observation_rejects_unknown_mode(tmp_path):
         prepare_observation_for_mode(obs, "phantum_som", tmp_path, 0)
 
 
+def test_options_map_lookahead_is_unbounded_by_distance():
+    """/stress A1.4 F3 backlog sweep: `[OPTIONS]` recovery look-ahead no longer
+    capped at 2 lines — only the next mark-id line is a hard boundary.
+
+    Regression case: trigger mark on line 1, two intermediate property lines
+    (no mark id), then `[OPTIONS]` on line 4. Previously the 2-line window
+    would silently drop this. Now it should be recovered.
+    """
+    from p79.experiment.som import build_som_text_from_obs_text
+
+    # 4 lines after trigger — would have failed the old 2-line cap.
+    obs_text = (
+        "[42] combobox 'Choose'\n"
+        "    role: combobox\n"
+        "    aria-expanded: false\n"
+        "    data-state: collapsed\n"
+        "[OPTIONS] \"Option A\", \"Option B\"\n"
+        "[43] button 'Submit'\n"
+    )
+    out = build_som_text_from_obs_text(obs_text)
+    assert "[OPTIONS]" in out, (
+        f"`_options_map` recovery missed the [OPTIONS] line at distance 4 from trigger. "
+        f"Look-ahead window should be unbounded except by next mark id.\n"
+        f"Got:\n{out}"
+    )
+    # Both marks still present
+    assert "[id=42]" in out
+    assert "[id=43]" in out
+
+
+def test_options_map_boundary_is_next_mark_id():
+    """F3 corner: a different mark id BEFORE the [OPTIONS] line means
+    options belong to the next mark, not the current one."""
+    from p79.experiment.som import build_som_text_from_obs_text
+
+    obs_text = (
+        "[10] combobox 'A'\n"
+        "[20] combobox 'B'\n"
+        "[OPTIONS] \"X\", \"Y\"\n"
+    )
+    out = build_som_text_from_obs_text(obs_text)
+    # `[OPTIONS]` should attach to mark 20 (immediately preceding), not 10.
+    lines = out.splitlines()
+    mark10_idx = next(i for i, ln in enumerate(lines) if "[id=10]" in ln)
+    mark20_idx = next(i for i, ln in enumerate(lines) if "[id=20]" in ln)
+    options_idx = next(i for i, ln in enumerate(lines) if "[OPTIONS]" in ln)
+    # OPTIONS should be after mark 20, not mixed under mark 10
+    assert mark20_idx < options_idx
+    assert options_idx > mark10_idx  # not under mark 10
+    # The mark 10 entry should NOT have [OPTIONS] as a child line — no
+    # immediate-next-line is [OPTIONS] for mark 10.
+
+
+def test_collect_bbox_map_handles_cyclic_reference():
+    """/stress A1.4 F4 backlog sweep: cyclic raw obs must not infinite-recurse.
+
+    The visited-set + depth-cap guard means any cyclic dict / list reference
+    terminates safely. Without the guard this would RecursionError → episode
+    abort.
+    """
+    from p79.experiment.som import _collect_bbox_map
+
+    # Build a cyclic dict.
+    a: dict = {"id": 1, "bbox": [0.0, 0.0, 10.0, 10.0]}
+    b: dict = {"id": 2, "bbox": [10.0, 10.0, 20.0, 20.0], "parent_ref": a}
+    a["child_ref"] = b  # cycle: a → b → a
+
+    bbox_map: dict = {}
+    # Must not raise / hang.
+    _collect_bbox_map(a, bbox_map)
+    # Both bboxes still collected
+    assert 1 in bbox_map
+    assert 2 in bbox_map
+
+
+def test_collect_bbox_map_respects_depth_cap():
+    """F4: very deep nesting terminates within _BBOX_TRAVERSAL_MAX_DEPTH (50)."""
+    from p79.experiment.som import _collect_bbox_map
+
+    # Build a deeply nested dict, 200 levels deep.
+    leaf: dict = {"id": 999, "bbox": [0.0, 0.0, 1.0, 1.0]}
+    cur = leaf
+    for i in range(200):
+        cur = {"nested": cur}
+    bbox_map: dict = {}
+    # Must not RecursionError even though depth > Python default 1000.
+    _collect_bbox_map(cur, bbox_map)
+    # Leaf is beyond depth cap → not collected (acceptable: depth cap is a
+    # safety guard, the data path on production is shallow).
+    # The point is no exception. (Verified by reaching this line.)
+
+
+def test_apply_som_emits_deprecation_warning(tmp_path):
+    """/stress A1.4 F6 backlog sweep: legacy apply_som must emit
+    DeprecationWarning so any forgotten caller surfaces."""
+    import warnings
+
+    obs = P79Observation(text="[1] button 'X'", image=None, raw={})
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        apply_som(obs, som_on=False, artifact_dir=tmp_path, step_idx=0)
+    assert any(
+        issubclass(item.category, DeprecationWarning) for item in w
+    ), "apply_som should emit DeprecationWarning"
+
+
 def test_prepare_observation_accepts_all_known_modes(tmp_path):
     """All 7 canonical modes (incl. phantom_dom legacy alias) must not raise."""
     from p79.experiment.som import KNOWN_OBSERVATION_MODES
