@@ -43,7 +43,7 @@ All in-scope VWA tasks (Phase 1a = cls + red = 444 tasks; Phase 1b deferred adds
 
 - Phase A post-fix code only (commit ≥ `3c15cd7`)
 - **A100 self-hosted Docker canonical** (DGX→quark archive pre-2026-05-15 reference only, NO cross-host comparison)
-- **3 baselines**: B0 Qwen3-VL-235B-A22B (proxy API) / B1 Qwen3-VL-4B (local) / **B2 Gemma3-VL `google/gemma-3-4b-it`** (local, matched-capability cross-family control, added 2026-05-14)
+- **3 baselines**: B0 Qwen3-VL-235B-A22B (proxy API) / B1 Qwen3-VL-4B (local) / **B2 Gemma3-VL `google/gemma-3-4b-it`** (local, cross-family robustness check at 4B parity, added 2026-05-14)
 - Per-cell N inclusion floor ≥ 100 episodes
 - All 6 modes per (site, baseline) cell: DOM / SoM / Vision / P-text / P-prompt / P-SoM
 

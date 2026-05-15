@@ -80,7 +80,7 @@ API version drift is a known risk — disclosed in `preregistration.md §7`
 spot-check via `validate_run.py --strict` re-evaluation of N=20 archived
 B0 episodes (audit F2 sensitivity) detects upstream model drift.
 
-### B2 — local Gemma3-VL `google/gemma-3-4b-it` (added 2026-05-14, matched-capability cross-family control vs B1)
+### B2 — local Gemma3-VL `google/gemma-3-4b-it` (added 2026-05-14, cross-family robustness check (4B parity) vs B1)
 
 | Component | Pin |
 |---|---|

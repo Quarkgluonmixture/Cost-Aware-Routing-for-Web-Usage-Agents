@@ -6,7 +6,7 @@
 
 This paper studies **three web-agent baselines**: **B0** (Qwen3-VL-235B-A22B
 proxy API), **B1** (Qwen3-VL-4B local), and **B2** (Gemma3-VL `google/gemma-3-4b-it`
-local, added 2026-05-14 as a cross-family matched-capability control vs B1 at
+local, added 2026-05-14 as a cross-family robustness-check (4B parity) control vs B1 at
 4B parity). Below are their full identity / capability / limitation cards.
 
 ---
@@ -108,7 +108,7 @@ local, added 2026-05-14 as a cross-family matched-capability control vs B1 at
 | Access | **Open weights** — fully reproducible, replicators download from HuggingFace |
 | License | Gemma Terms of Use (per HF model card) |
 | Storage | bf16 fits A100-PCIE-40GB unquantized |
-| Capability rationale | 4B params parity with B1 → **matched-capability cross-family control** (Google Gemma vs Alibaba Qwen lineage at matched scale); advisor discussion 2026-05-14 |
+| Capability rationale | 4B params parity with B1 → **cross-family robustness check at 4B-parameter parity** (Google Gemma vs Alibaba Qwen lineage at matched scale); advisor discussion 2026-05-14 |
 
 ### Decoding
 
@@ -154,10 +154,10 @@ local, added 2026-05-14 as a cross-family matched-capability control vs B1 at
 
 The **B0 vs B1 vs B2 design**: B0 supplies the high-capability behavioral
 characterization (Qwen-family 235B); B1 supplies the open-weight matched 4B
-within-family comparison; **B2 supplies the cross-family matched-capability
+within-family comparison; **B2 supplies the cross-family robustness-check (4B parity)
 control at 4B parity with B1** (Google Gemma vs Alibaba Qwen lineage). Together
 the 3 baselines disambiguate (a) capability scale effects (B0 vs B1) from (b)
-family effects at matched capability (B1 vs B2). Mechanism analysis is paper-2
+family-level differences at the same 4B parameter scale (B1 vs B2 — note: 4B parity is parameter count only, not full capability anchor; no MMMU/VQA zero-shot benchmark established at preregistration time, so this is a robustness check rather than a strict matched-capability control. See model_card §"Capability rationale" 2026-05-15 downgrade note per gemini Mode C P0-5). Mechanism analysis is paper-2
 scope per advisor 2026-05-14.
 
 ## References
