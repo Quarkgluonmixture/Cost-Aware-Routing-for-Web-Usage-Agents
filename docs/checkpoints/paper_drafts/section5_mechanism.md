@@ -1,4 +1,15 @@
-# 5. Mechanism Interpretability
+---
+type: paper-draft
+status: paper-2-working-draft
+paper_scope: paper-2 (mechanism); NOT part of paper-1 main DOI claim
+deferred_reason: advisor discussion 2026-05-14 — paper-1 contribution scope locked at (phenomenon) + (router); mechanism §5 (patching / layer probe / logit lens / SAE) deferred to follow-up paper-2
+last_revised: 2026-05-13
+note: This draft is retained as the paper-2 mechanism working document. Paper-1 (current workshop/main submission) does NOT cite Section 5 mechanism claims. See preregistration.md §5.X "DEFERRED" banner + Appendix A 2026-05-14 entry + paper_planning §19 + 笔记 §142.
+---
+
+# 5. Mechanism Interpretability — ⚠️ PAPER-2 WORKING DRAFT (not part of paper-1 main submission)
+
+> **Scope marker (added 2026-05-15)**: Per advisor discussion 2026-05-14, mechanism §5 is **deferred entirely to a follow-up paper-2**. Paper-1 (current workshop submission) covers (1) phenomenon — phantom routing space + 4-fold drop-in property — and (2) cost-aware router. This file is retained as the paper-2 working draft; paper-1 `section1_intro.md` no longer cites Section 5 mechanism claims. Do NOT include this section in paper-1 prose builds / pandoc renders.
 
 ## 5.1 Overview and Theoretical Framing
 
