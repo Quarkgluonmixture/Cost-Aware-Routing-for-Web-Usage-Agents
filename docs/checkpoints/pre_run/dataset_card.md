@@ -21,10 +21,15 @@ privacy + reproducibility).
 
 | Site | N tasks | Task-pool sha256 | Site type | Hosted at |
 |---|---|---|---|---|
-| **classifieds** | 234 | `d36a20c1eaa1f5da...` | Visual-rich product listings (Magento-based) | DGX Tailscale → quark Docker container `:9980` (cf. `memory/MEMORY.md` "Docker 容器端口") |
-| **reddit** | 210 | `ecd4ed4370740fd6...` | Text-dominated forum threads (Postmill) | DGX Tailscale → quark `:9999` |
-| **shopping** | 466 | `07889e3646ee10e3...` | Mixed text + image product pages (Magento) | DGX Tailscale → quark `:7770` |
+| **classifieds** | 234 | `d36a20c1eaa1f5da...` | Visual-rich product listings (Magento-based) | **Canonical 2026-05-15+**: self-hosted on A100 (Condenser VM `a100-jiaming-test`) `:9980`. Archive (pre-2026-05-15): DGX Tailscale → quark Docker `:9980` |
+| **reddit** | 210 | `ecd4ed4370740fd6...` | Text-dominated forum threads (Postmill) | **Canonical 2026-05-15+**: self-hosted on A100 `:9999`. Archive (pre-2026-05-15): DGX Tailscale → quark `:9999` |
+| **shopping** | 466 | `07889e3646ee10e3...` | Mixed text + image product pages (Magento) | **Canonical 2026-05-15+ (Phase 1b deferred)**: self-hosted on A100 `:7770`. Archive (pre-2026-05-15): DGX Tailscale → quark `:7770` |
 | **Total** | **910** | — | | |
+
+**Host migration (2026-05-15)**: VWA Docker stack migrated from DGX→quark Tailscale tunnel
+to A100 (Condenser VM) self-hosted Docker. Cross-host comparison NOT made per
+`preregistration.md` Infrastructure migration note + Appendix A 2026-05-15 entry.
+#11 A100 VM VWA Docker bring-up gates canonical Phase 1a launch.
 
 WebArena (480 tasks across shopping/shopping_admin/reddit) is **out of scope**
 for this paper per `preregistration.md §7` external validity scope. Cross-bench
@@ -34,13 +39,13 @@ generalization is explicit future work.
 
 ### Inclusion
 
-All 910 VWA tasks are **included by default** in the locked 16-cell rerun
-(per `preregistration.md §4` cell inclusion criteria):
+All in-scope VWA tasks (Phase 1a = cls + red = 444 tasks; Phase 1b deferred adds shop = 466 tasks) are **included by default** in the locked **36-condition Phase 1a rerun** (3 baselines × 2 sites × 6 modes per `preregistration.md §4` cell inclusion criteria):
 
 - Phase A post-fix code only (commit ≥ `3c15cd7`)
+- **A100 self-hosted Docker canonical** (DGX→quark archive pre-2026-05-15 reference only, NO cross-host comparison)
+- **3 baselines**: B0 Qwen3-VL-235B-A22B (proxy API) / B1 Qwen3-VL-4B (local) / **B2 Gemma3-VL `google/gemma-3-4b-it`** (local, matched-capability cross-family control, added 2026-05-14)
 - Per-cell N inclusion floor ≥ 100 episodes
-- All locked modes per cell (DOM / SoM / Vision / phantom_som / phantom_dom
-  for B0/B1, plus phantom_text / phantom_prompt for select cells)
+- All 6 modes per (site, baseline) cell: DOM / SoM / Vision / P-text / P-prompt / P-SoM
 
 ### Exclusion (post-FP-filter)
 

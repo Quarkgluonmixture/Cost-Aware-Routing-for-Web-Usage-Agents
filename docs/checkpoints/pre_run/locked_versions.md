@@ -80,6 +80,21 @@ API version drift is a known risk — disclosed in `preregistration.md §7`
 spot-check via `validate_run.py --strict` re-evaluation of N=20 archived
 B0 episodes (audit F2 sensitivity) detects upstream model drift.
 
+### B2 — local Gemma3-VL `google/gemma-3-4b-it` (added 2026-05-14, matched-capability cross-family control vs B1)
+
+| Component | Pin |
+|---|---|
+| **HF revision SHA** | ⏳ **pending lock** (matching B1 protocol — pin at A100 bring-up time, recorded into env_snapshot.json) |
+| HF model name | `google/gemma-3-4b-it` |
+| Dtype | `torch.bfloat16` (fits A100-PCIE-40GB unquantized) |
+| Decoding | greedy (`do_sample=False`), `max_new_tokens` per task |
+| Seed | 42 (`configs/exp_v2_base.yaml` — shared with B1) |
+| Capability rationale | 4B params parity with B1 (4B Qwen3-VL); cross-family control (Google Gemma vs Alibaba Qwen lineage) at matched scale; advisor discussion 2026-05-14 (see `preregistration.md` Appendix A 2026-05-14 entry + 笔记 §138 + §142) |
+
+Recorded automatically per run via `snapshot_env.py` → `env_snapshot.json`
+`extra.hf_model_revision_pinned`. HF SHA lock pending #11 A100 VM VWA
+Docker bring-up + first B2 smoke run.
+
 ## Python / library substrate
 
 Per `pyproject.toml` + `.venv/bin/pip show <pkg>`:
@@ -107,12 +122,23 @@ Full transitive lock recorded in `env_snapshot.json` `libraries` field per run.
 T0/T1/T2/T3 changes governed by `evaluator_change_protocol.md`. Same paper
 must dual-report under any post-lock T0 fix per protocol.
 
+## Hardware / Host substrate (added 2026-05-15)
+
+| Component | Pin |
+|---|---|
+| **Canonical paper-grade rerun host** | **A100 (Condenser VM `a100-jiaming-test` @ 10.134.51.2, A100-PCIE-40GB)** with self-hosted VWA Docker stack on A100 (no Tailscale tunnel) |
+| Pre-2026-05-15 archive host (reference only) | DGX Spark (`spark-9ea3` aarch64 GB10) with VWA Docker on remote (quark Windows home) via Tailscale tunnel |
+| Migration date | 2026-05-15 (see `preregistration.md` Appendix A 2026-05-15 entry; #11 A100 VM VWA Docker bring-up gates canonical launch per `phase1_plan.md §B0`) |
+| Cross-host comparison policy | **NOT made** — archive vs canonical-run on different hardware/network stacks; archive retained for §139.8 FP sensitivity + Appendix D contamination disclosure only |
+| CUDA toolkit | A100 PCIE 40GB host — pending CUDA pin at bring-up |
+| Docker runtime | Self-hosted on A100 (no Tailscale dependency); image SHA + container fingerprint snapshot pending |
+
 ## Git lock
 
 | Component | Pin |
 |---|---|
 | **p79 repo HEAD at lock** | filled at advisor witness time → `preregistration.md` frontmatter `registered_git_sha` |
-| Git tag | `paper-grade-rerun-launch-{date}` (TBD when 16-cell launches) |
+| Git tag | `paper-grade-rerun-launch-{date}` (TBD when 36-condition Phase 1a launches on A100) |
 
 ## Verification command (planned, audit C10)
 
@@ -143,3 +169,10 @@ When a pin changes (intentional upgrade or unavoidable drift):
 
 - **2026-05-09**: Initial lock at VWA `832f037e`, Playwright 1.58.0, Chromium 1208,
   HF Qwen3-VL-4B `ebb281ec70b0...`, transformers 4.57.6 + Myriad shims (B-81 umbrella).
+- **2026-05-14**: B2 = Gemma3-VL `google/gemma-3-4b-it` added as 3rd baseline (matched-capability
+  cross-family control vs B1 4B). HF SHA pin pending A100 bring-up; preregistration §4 cell scope
+  expanded from 24 cond / 4 cells → 36 cond / 6 cells.
+- **2026-05-15**: Canonical paper-grade rerun host migrated DGX Spark → A100 Condenser VM
+  `a100-jiaming-test` (A100-PCIE-40GB, self-hosted VWA Docker). DGX→quark Tailscale stack retained
+  for pre-2026-05-15 archive reference only. New Hardware/Host substrate section added above. #11
+  A100 VM VWA Docker bring-up gates canonical launch.

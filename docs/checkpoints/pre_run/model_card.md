@@ -4,8 +4,10 @@
 > audit constraint **A12** (model-card-like disclosure for B0/B1 model
 > identity, access, decoding, and limitations).
 
-This paper studies two web-agent baselines, **B0** and **B1**. Below are
-their full identity / capability / limitation cards.
+This paper studies **three web-agent baselines**: **B0** (Qwen3-VL-235B-A22B
+proxy API), **B1** (Qwen3-VL-4B local), and **B2** (Gemma3-VL `google/gemma-3-4b-it`
+local, added 2026-05-14 as a cross-family matched-capability control vs B1 at
+4B parity). Below are their full identity / capability / limitation cards.
 
 ---
 
@@ -92,23 +94,71 @@ their full identity / capability / limitation cards.
 
 ---
 
+## B2 — Gemma3-VL `google/gemma-3-4b-it` (local, added 2026-05-14)
+
+### Identity
+
+| Field | Value |
+|---|---|
+| Provider | Google (Gemma team) |
+| Model name | `google/gemma-3-4b-it` |
+| HuggingFace revision SHA | ⏳ **pending lock** (pin at A100 bring-up time, matching B1 protocol; recorded into `env_snapshot.json`) |
+| Architecture | Dense decoder-only transformer (4B params) + vision encoder (multimodal) |
+| Modality | Multimodal text + image |
+| Access | **Open weights** — fully reproducible, replicators download from HuggingFace |
+| License | Gemma Terms of Use (per HF model card) |
+| Storage | bf16 fits A100-PCIE-40GB unquantized |
+| Capability rationale | 4B params parity with B1 → **matched-capability cross-family control** (Google Gemma vs Alibaba Qwen lineage at matched scale); advisor discussion 2026-05-14 |
+
+### Decoding
+
+| Parameter | Value |
+|---|---|
+| Decoding mode | **Greedy** (`do_sample=False`), bitwise deterministic per (HF SHA + seed + GPU class) |
+| Temperature | n/a (greedy) |
+| max_new_tokens | per-task (matching B1 protocol) |
+| Seed | **42** (`configs/exp_v2_base.yaml` — shared with B0/B1) |
+| Numerical determinism | bitwise across A100 PCIE-40GB (canonical host); cross-architecture portability TBD per first run |
+
+### Capability profile
+
+- Same VWA agent role as B0/B1 (DOM / SoM / Vision / phantom_som / phantom_dom / phantom_text / phantom_prompt modes)
+- Cross-family control at matched 4B capability — comparison to B1 (4B Qwen) tests **family** effect at controlled scale
+- Open-weights enables future mechanism analysis (paper-2 scope per advisor 2026-05-14; not part of paper-1)
+
+### Limitations
+
+- **HF SHA pin pending** — lock at A100 bring-up time per phase1_plan §B0 #11 prereq
+- **Smaller model**: SR is expected lower than B0; failure mode patterns TBD (Phantom-SoM cross-family hold rate is one of the empirical questions)
+- **No system role** (paper-grade convention) — same as B0/B1
+- **Mechanism §5 paper-2 deferred per advisor 2026-05-14** — section5_mechanism.md remains paper-2 working draft, mechanism extension to B2 future work
+- **GPU dependency**: bf16 inference requires sm_70+ A100/V100 class; CPU inference too slow for paper-scale runs
+- **Host migration interaction**: B2 only runs on canonical A100 stack (no DGX pre-fix archive); cross-host comparison N/A by design
+
+---
+
 ## Summary Comparison
 
-| Dimension | B0 (API) | B1 (local) |
-|---|---|---|
-| Open weights | ❌ | ✓ |
-| Reproducibility | Verifiable from traces | **Byte-identical** |
-| Mechanism analysis | Not possible (closed) | Stage 2 patching available |
-| SR (typical) | Higher | Lower |
-| Cost per episode | $0.01-0.10 | ~free (local compute) |
-| Latency | Network-bound (~5-20s) | GPU-bound (~2-10s on A100) |
-| Determinism | Best-effort (server-side) | Bitwise (greedy + seed) |
-| In-scope for paper §5 mechanism | ❌ Future work (Zoom 4) | ✓ Primary |
+| Dimension | B0 (API) | B1 (local) | B2 (local, added 2026-05-14) |
+|---|---|---|---|
+| Open weights | ❌ | ✓ | ✓ |
+| Reproducibility | Verifiable from traces | **Byte-identical** | **Byte-identical** (pending HF SHA pin) |
+| Mechanism analysis (paper-2 scope) | Not possible (closed) | Stage 2 patching available | Stage 2 future work (open weights enable) |
+| SR (typical) | Higher | Lower | TBD (cross-family control) |
+| Cost per episode | $0.01-0.10 | ~free (local compute) | ~free (local compute) |
+| Latency | Network-bound (~5-20s) | GPU-bound (~2-10s on A100) | GPU-bound TBD on A100 |
+| Determinism | Best-effort (server-side) | Bitwise (greedy + seed) | Bitwise (greedy + seed) |
+| In-scope for paper §5 mechanism | ❌ Future work | ⏸️ Paper-2 deferred (advisor 2026-05-14) | ⏸️ Paper-2 future work |
+| Family | Alibaba Qwen | Alibaba Qwen | **Google Gemma** (cross-family) |
+| Param scale | 235B (A22B MoE) | 4B | 4B (matched with B1) |
 
-The **B0 vs B1 asymmetry is part of the scientific design**: B0 supplies the
-high-capability behavioral characterization, B1 supplies the open-weight
-mechanism evidence. Cross-validating mechanism findings on B0 is future
-work pending open-weight 235B class models or proxy access to B0 internals.
+The **B0 vs B1 vs B2 design**: B0 supplies the high-capability behavioral
+characterization (Qwen-family 235B); B1 supplies the open-weight matched 4B
+within-family comparison; **B2 supplies the cross-family matched-capability
+control at 4B parity with B1** (Google Gemma vs Alibaba Qwen lineage). Together
+the 3 baselines disambiguate (a) capability scale effects (B0 vs B1) from (b)
+family effects at matched capability (B1 vs B2). Mechanism analysis is paper-2
+scope per advisor 2026-05-14.
 
 ## References
 
