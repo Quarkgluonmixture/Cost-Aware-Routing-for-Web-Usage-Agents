@@ -64,8 +64,11 @@ def _build_cells(grade_filter: list | None = None) -> list[dict]:
     """Build aggregator cell list. F01 audit: respects grade_filter
     (default = `paper-grade` only). Pass a list to override (e.g. for
     legacy `archived` data in Appendix-D sensitivity figure)."""
+    # Pull baseline list from the central registry so B2 (and any future
+    # baseline) flows through automatically without touching this file.
+    from scripts.analysis.lib.run_registry import BASELINES as _BASELINES
     out: list[dict] = []
-    for baseline in ("B0", "B1"):
+    for baseline in _BASELINES:
         for site in ("classifieds", "reddit"):
             specs = get_cells(baseline=baseline, site=site, grade=grade_filter)
             if not specs:
