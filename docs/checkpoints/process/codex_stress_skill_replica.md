@@ -133,6 +133,12 @@ The codex prompt MUST:
    - **Verdict line** (one sentence on current state)
    - **Strong claims (survive attack)** — 1-3 things that hold up
    - **Weak claims (would tank under attack)** — claim quoted + attack + defuse evidence + effort estimate + P0/P1/P2 severity
+   - **Bug Table (REQUIRED v7.2, 2026-05-15)** — consolidated user-facing actionable summary after Weak claims. **3 cols only** grouped by severity (P0/P1/P2):
+     - `# | Bug | Blast Radius | Launch 卡?`
+     - **Bug**: short id (`Pn-i`) + `file:line` + 1-sentence diagnosis
+     - **Blast Radius** (人话, 2-4 sentences): (a) what this thing does in pipeline / paper, (b) what happens concretely if user proceeds without fix (specific command + specific error / reviewer reaction), (c) which downstream step is corrupted. For abstract bugs include 1-line analogy.
+     - **Launch 卡?**: `不卡` / `YES — 启动卡死` / `不卡 launch,卡 <post-launch step>` / `不卡 launch,block OSF lock`
+     - Rationale: severity tag alone (P0/P1/P2) is not actionable; Bug Table converts each finding to "this is what will happen to your experiment if you don't fix this"
    - **Honest gaps** — things not in paper that reviewer expects
    - **Distance to top-tier** — current-tier / dominant gap / unblock plan
    - **ONE highest-leverage move** (24h)

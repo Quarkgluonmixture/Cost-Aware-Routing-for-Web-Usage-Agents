@@ -206,6 +206,35 @@ Current paper-grade state in one line.
 - **Defuse** — specific experiment / re-compute / additional control that would resolve
 - **Effort** — hours (most defuses) / days (re-run analysis) / weeks (new data extraction)
 
+### Bug Table — user-facing actionable summary (REQUIRED v7.2, 2026-05-15)
+
+After **Weak claims** detailed section, output a consolidated **Bug Table** that surfaces findings as actionable bug entries for the user. Group by severity (P0 → P1 → P2). Each row has **3 columns** — no more (no Stage column, no Source column — those are encoded in finding context).
+
+```markdown
+### 🔴 P0 (lock 前必须 fix)
+| # | Bug | Blast Radius | Launch 卡? |
+|---|---|---|---|
+| P0-1 | `<file:line>` <1-sentence what's broken> | <2-4 sentences 人话> | <不卡 / YES — 启动卡死 / 不卡 launch,卡 <step>> |
+
+### 🟠 P1 (paper-grade quality)
+| # | Bug | Blast Radius | Launch 卡? |
+...
+
+### 🟡 P2 (defer-able)
+| # | Bug | Blast Radius | Launch 卡? |
+...
+```
+
+- **Bug column**: short id (`Pn-i`) + `file:line` + 1-sentence diagnosis (which const / which line / which wording is broken)
+- **Blast Radius column** (the human-readable handoff): 2-4 sentences in 人话 covering (a) what this thing does in the pipeline / paper, (b) what happens concretely if user proceeds without fix (specific command + specific error / specific reviewer reaction), (c) which downstream step / paper section / OSF artifact is corrupted. For abstract methodology bugs (e.g. statistical estimand), include a 1-line generalization analogy.
+- **Launch 卡? column**: One of `不卡` / `YES — 启动卡死` / `不卡 launch,卡 <post-launch step>` / `不卡 launch,block OSF lock`. Lets user triage at-a-glance — fix-before-launch vs fix-before-data vs fix-before-paper-write vs defer-cosmetic.
+
+**Why required**: severity tag alone (P0/P1/P2) is not actionable — user can't tell from "P2 power_analysis.py 16-cell K rules" whether to fix now or defer. Blast Radius column converts each finding into "this is what will happen to your experiment if you don't fix this", separating launch-blockers from paper-confusion bugs.
+
+The Bug Table is the **canonical user-facing handoff**. After this table, optionally output Honest gaps / Distance / "One thing to fix tonight" as before — but the Bug Table is the actionable contract; without it the audit output is not consumable.
+
+Driver: 2026-05-15 user feedback after Mode B+C audit returned 15 findings with severity tags but no "which part of my experiment does this affect" column. User: "blast能不能更人话一点" + "去掉stage和source,Blast Radius讲的详细点就行" → spec evolved to **3-col only** (Bug / Blast Radius / Launch 卡), grouped by P0/P1/P2.
+
 ### Honest gaps (missing not weak)
 Things absent that a reviewer would expect. Distinguish from above: weak claim = something is there but wrong; gap = something isn't there at all.
 

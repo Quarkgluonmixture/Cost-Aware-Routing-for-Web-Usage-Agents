@@ -111,7 +111,19 @@ Gemini prompt MUST:
 3. **Name artifacts to read** — file paths verified by preflight; tell Gemini to use its file tools
 4. **Force read-prose-not-code** — "Do not read code. This is claim-audit, not code-audit. Implementation audit is a separate pass."
 5. **DO NOT enumerate attack categories** — per `feedback_lean_audit_prompts`, listing "check power / check confounds / check framing" creates list-shaped blind spot. Let Gemini find what's actually there.
-6. **Force output structure** — Top-N weakest claims (P0/P1/P2) + cross-cutting concerns + distance-to-top-tier + ONE highest-leverage move
+6. **Force output structure** — Top-N weakest claims (P0/P1/P2) + **Bug Table (REQUIRED v7.2, 2026-05-15)** + cross-cutting concerns + distance-to-top-tier + ONE highest-leverage move
+
+   **Bug Table spec** (consolidated user-facing actionable summary after Weak claims, 3 cols only grouped by severity P0/P1/P2):
+
+   ```markdown
+   ### 🔴 P0 (lock 前必须 fix)
+   | # | Bug | Blast Radius | Launch 卡? |
+   ```
+
+   - **Bug**: short id (`Pn-i`) + `file:line` (paper draft section + line) + 1-sentence diagnosis (which wording / claim / framing is broken)
+   - **Blast Radius** (人话, 2-4 sentences): (a) what role this prose / claim / preregistration field plays in the paper, (b) what happens concretely if reviewer reads paper without this fix (specific reviewer attack quoted), (c) which paper section / OSF artifact is corrupted. For abstract methodology bugs (statistical estimand / experimental design) include 1-line generalization analogy.
+   - **Launch 卡?**: `不卡` / `不卡 launch,block OSF lock` / `不卡 launch,卡 paper write` (Mode C bugs rarely block actual launch — usually block OSF lock cleanliness or paper-grade claim defensibility)
+   - Rationale: severity tag alone (P0/P1/P2) not actionable; Bug Table converts each finding into "this is what reviewer will catch if you submit without this fix"
 7. **Independence reminder at end** — "Your value = blind spots the other two miss. Don't try to be comprehensive; try to be independent."
 
 Output language: 中文为主双语 (per project rule); technical critique specifics in English.
