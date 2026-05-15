@@ -17,6 +17,18 @@ Architecture (per docs/analysis/cross_sites/cluster1_locator_route_design.md):
 
 Falls back to framework dispatch (existing `mouse.click(center)`) if walk-up
 fails — safe, preserves current behavior for unrecognized targets.
+
+/stress A1.3 (2026-05-15):
+- F1 fix: handle + as_element disposed in `finally` regardless of return / raise
+  path. Previously the outer `except` branch silently leaked both. Playwright
+  JSHandle is a V8 reference; episode-level page-reset gates the blast radius
+  but the leak is paper-grade hygiene gap.
+- F6 fix: standardize the walk-fail `error` field to a `walk_fail:<category>`
+  format prefix so downstream telemetry aggregation can group by failure type
+  rather than fuzzy-matching free-text strings. The category currently
+  collapses to `no_actionable_within_walk` (no subcategorization); future
+  calibration runs can extend the diagnostic JS to distinguish e.g.
+  `no_href_anchor` / `walk_exhausted` / `aria_unknown` / `no_element_at_point`.
 """
 from __future__ import annotations
 
@@ -94,6 +106,16 @@ def _bbox_center(union_bound: Optional[list]) -> Optional[tuple]:
     return (float(x) + float(w) / 2.0, float(y) + float(h) / 2.0)
 
 
+def _dispose_all(*handles) -> None:
+    """Dispose any Playwright JSHandles, suppressing exceptions individually."""
+    for h in handles:
+        if h is not None:
+            try:
+                h.dispose()
+            except Exception:
+                pass
+
+
 def dispatch_id_based_click(
     page: Any,
     obs_nodes_info: Optional[Dict[str, Any]],
@@ -115,29 +137,24 @@ def dispatch_id_based_click(
         return {"success": False, "fallback_used": True, "target_tag": None,
                 "error": "invalid union_bound shape"}
     cx, cy = center
+    handle = None
+    as_element = None
     try:
         handle = page.evaluate_handle(_JS_RESOLVE_CLICK, [cx, cy])
-        # JSHandle resolves to None if no match
         as_element = handle.as_element() if handle is not None else None
         if as_element is None:
-            try:
-                handle.dispose()
-            except Exception:
-                pass
             return {"success": False, "fallback_used": True, "target_tag": None,
-                    "error": "no actionable ancestor within walk-up depth"}
+                    "error": "walk_fail:no_actionable_within_walk"}
         target_tag = as_element.evaluate("el => el.tagName")
         as_element.click(timeout=5000)
         if sleep_after_ms > 0:
             page.wait_for_timeout(int(sleep_after_ms))
-        try:
-            as_element.dispose()
-        except Exception:
-            pass
         return {"success": True, "fallback_used": False, "target_tag": str(target_tag), "error": None}
     except Exception as e:
         return {"success": False, "fallback_used": True, "target_tag": None,
                 "error": f"{type(e).__name__}: {str(e)[:160]}"}
+    finally:
+        _dispose_all(as_element, handle)
 
 
 def dispatch_id_based_type(
@@ -167,30 +184,26 @@ def dispatch_id_based_type(
     if fill_text.endswith("\n"):
         fill_text = fill_text[:-1]
         press_enter = True
+    handle = None
+    as_element = None
     try:
         handle = page.evaluate_handle(_JS_RESOLVE_INPUT, [cx, cy])
         as_element = handle.as_element() if handle is not None else None
         if as_element is None:
-            try:
-                handle.dispose()
-            except Exception:
-                pass
             return {"success": False, "fallback_used": True, "target_tag": None,
-                    "error": "no input ancestor within walk-up depth"}
+                    "error": "walk_fail:no_input_within_walk"}
         target_tag = as_element.evaluate("el => el.tagName")
         as_element.fill(fill_text, timeout=5000)
         if press_enter:
             as_element.press("Enter", timeout=5000)
         if sleep_after_ms > 0:
             page.wait_for_timeout(int(sleep_after_ms))
-        try:
-            as_element.dispose()
-        except Exception:
-            pass
         return {"success": True, "fallback_used": False, "target_tag": str(target_tag), "error": None}
     except Exception as e:
         return {"success": False, "fallback_used": True, "target_tag": None,
                 "error": f"{type(e).__name__}: {str(e)[:160]}"}
+    finally:
+        _dispose_all(as_element, handle)
 
 
 def dispatch_id_based_hover(
@@ -210,28 +223,24 @@ def dispatch_id_based_hover(
         return {"success": False, "fallback_used": True, "target_tag": None,
                 "error": "invalid union_bound shape"}
     cx, cy = center
+    handle = None
+    as_element = None
     try:
         handle = page.evaluate_handle(_JS_RESOLVE_CLICK, [cx, cy])
         as_element = handle.as_element() if handle is not None else None
         if as_element is None:
-            try:
-                handle.dispose()
-            except Exception:
-                pass
             return {"success": False, "fallback_used": True, "target_tag": None,
-                    "error": "no hover target within walk-up depth"}
+                    "error": "walk_fail:no_hover_target_within_walk"}
         target_tag = as_element.evaluate("el => el.tagName")
         as_element.hover(timeout=5000)
         if sleep_after_ms > 0:
             page.wait_for_timeout(int(sleep_after_ms))
-        try:
-            as_element.dispose()
-        except Exception:
-            pass
         return {"success": True, "fallback_used": False, "target_tag": str(target_tag), "error": None}
     except Exception as e:
         return {"success": False, "fallback_used": True, "target_tag": None,
                 "error": f"{type(e).__name__}: {str(e)[:160]}"}
+    finally:
+        _dispose_all(as_element, handle)
 
 
 def dispatch_id_based_clear(
@@ -264,25 +273,21 @@ def dispatch_id_based_upload(
         return {"success": False, "fallback_used": True, "target_tag": None,
                 "error": "invalid union_bound shape"}
     cx, cy = center
+    handle = None
+    as_element = None
     try:
         handle = page.evaluate_handle(_JS_RESOLVE_UPLOAD, [cx, cy])
         as_element = handle.as_element() if handle is not None else None
         if as_element is None:
-            try:
-                handle.dispose()
-            except Exception:
-                pass
             return {"success": False, "fallback_used": True, "target_tag": None,
-                    "error": "no file input within walk-up depth"}
+                    "error": "walk_fail:no_file_input_within_walk"}
         target_tag = as_element.evaluate("el => el.tagName")
         as_element.set_input_files(file_path, timeout=5000)
         if sleep_after_ms > 0:
             page.wait_for_timeout(int(sleep_after_ms))
-        try:
-            as_element.dispose()
-        except Exception:
-            pass
         return {"success": True, "fallback_used": False, "target_tag": str(target_tag), "error": None}
     except Exception as e:
         return {"success": False, "fallback_used": True, "target_tag": None,
                 "error": f"{type(e).__name__}: {str(e)[:160]}"}
+    finally:
+        _dispose_all(as_element, handle)
