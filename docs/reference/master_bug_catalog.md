@@ -378,14 +378,15 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
 
 ---
 
-### B-28. §50 scroll direction confusion — agent prompt limitation 🛠️ MITIGATED
+### B-28. §50 scroll direction confusion — agent prompt limitation 🛠️ MITIGATED (schema only)
 
 - **Origin**: §50 (2026-04-14), 实验笔记 `[bug][finding]` + `B0_DOM_digest.md:98`
 - **Mechanism**: 235B model 经常猜错 scroll `delta=[dx, dy]` 的方向（`dy<0` 向上 vs 向下），连续 3 次 scroll page_changed=False 触发 cycle 截断。原始 schema 暴露 `delta` 数值 → model 按自然语言理解（不一致）。
 - **Mitigation (already shipped)**: §67 — Tool schema 把 `delta: [dx, dy]` 替换成 `scroll_direction: enum("up", "down")`. Mitigated but **not eliminated** (B0/B1 schema 不完全对称, B0 仍可能受影响).
-- **Status**: 🛠️ **MITIGATED** (paper-disclosed limitation, B0_DOM_digest.md §6)
-- **Paper impact**: Section 4 limitation table cite — B0 SR partial loss to scroll-direction confusion is acknowledged design choice, all conditions affected uniformly.
-- **Note**: This is **agent prompt schema** issue, not scaffold bug. Listed for completeness (有据可查 per user instruction).
+- **Status**: 🛠️ **MITIGATED — schema only** (paper-disclosed limitation, B0_DOM_digest.md §6)
+- **⚠️ Sharpened by /stress A1.1 2026-05-15**: schema fix 没解决**effective action vocabulary asymmetry**。`proxy_api_agent.py:749-752` 在 model 输出后 hard-code `scroll_direction → delta=[0, ±0.8]`，B0 实际 scroll 步长 binary `±0.8` 不可调；B1/B2 prompt 仍教 `delta=[dx, dy]` (`qwen3vl_agent.py:181`)，model 自由出任意 dy magnitude → continuous space。Cross-baseline SR 比较 (尤其 reddit search-loop / scroll-heavy 任务)：B0 SR 若 ≠ B1/B2，无法区分 "capability gap" vs "binary scroll vocab 残废"。Paper §3 footnote 需 disclose: "B0 effective scroll = {up, down} binary at ±0.8 magnitude (post-process clamp); B1/B2 effective scroll = continuous `dy ∈ [-1, 1]`. Cross-baseline scroll behavior is not byte-equivalent at action-space level."
+- **Paper impact**: Section 4 limitation table cite — 需补 "effective action vocab asymmetry on scroll axis" 段。Either disclose (0 effort) 或修代码 (B1/B2 也 clamp 到 ±0.8 + 重跑 Phase 1a 数据)。User decision pending — disclosure 推荐 default。
+- **Note**: This is **agent prompt schema + post-process clamp** issue, not scaffold bug. /stress A1.1 finding F2 触发此 status sharpening。
 
 ---
 

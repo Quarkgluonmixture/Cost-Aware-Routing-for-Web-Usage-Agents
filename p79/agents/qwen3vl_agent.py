@@ -135,7 +135,8 @@ class Qwen3VLAgent:
     # Mode-specific system prompts
     # ------------------------------------------------------------------
 
-    def _make_dom_prompt(self) -> str:
+    @staticmethod
+    def _make_dom_prompt() -> str:
         return """You are a precise web navigation agent.
 Output ONLY valid JSON. No markdown blocks, no explanations.
 
@@ -199,7 +200,8 @@ CRITICAL:
 - Avoid repeating the same action. Change strategy if stuck.
 """
 
-    def _make_som_prompt(self) -> str:
+    @staticmethod
+    def _make_som_prompt() -> str:
         return """You are a precise web navigation agent.
 Output ONLY valid JSON. No markdown blocks, no explanations.
 
@@ -269,7 +271,8 @@ CRITICAL:
 - Avoid repeating the same action. Change strategy if stuck.
 """
 
-    def _make_vision_prompt(self) -> str:
+    @staticmethod
+    def _make_vision_prompt() -> str:
         return """You are a precise web navigation agent.
 Output ONLY valid JSON. No markdown blocks, no explanations.
 

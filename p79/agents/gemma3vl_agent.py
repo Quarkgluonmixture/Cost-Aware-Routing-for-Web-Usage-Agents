@@ -21,11 +21,13 @@ GEMMA3_IMAGE_TOKENS = 256
 
 # Observation-mode system prompts are reused verbatim from the Qwen agent so
 # every baseline (B0 / B1 / Gemma3-VL) sees byte-identical prompts — a hard
-# paper-grade requirement for cross-model comparison. Reusing the bound methods
-# (rather than copying the strings) makes prompt drift structurally impossible.
-_DOM_PROMPT = Qwen3VLAgent._make_dom_prompt(None)
-_SOM_PROMPT = Qwen3VLAgent._make_som_prompt(None)
-_VISION_PROMPT = Qwen3VLAgent._make_vision_prompt(None)
+# paper-grade requirement for cross-model comparison. The Qwen methods are
+# @staticmethod (not bound to an instance) so this reuse does not depend on
+# `self=None` happening to work in the method body — an invariant test guards
+# against future regression (tests/test_agents_prompt_parity.py).
+_DOM_PROMPT = Qwen3VLAgent._make_dom_prompt()
+_SOM_PROMPT = Qwen3VLAgent._make_som_prompt()
+_VISION_PROMPT = Qwen3VLAgent._make_vision_prompt()
 
 
 class Gemma3VLAgent:
