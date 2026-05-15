@@ -47,6 +47,7 @@ def encode_image_data_url(
     normalized = _normalize_image(image)
     last_img = normalized
 
+    last_quality = COMPRESSION_PRESETS[-1][0]
     for quality, scale in COMPRESSION_PRESETS:
         if scale < 1.0:
             w = max(1, int(normalized.width * scale))
@@ -64,15 +65,28 @@ def encode_image_data_url(
                 "compressed": quality < quality_start or scale < 1.0,
                 "width": img.width,
                 "height": img.height,
+                "over_cap": False,
             }
 
-    # Last-resort payload, even if above target limit.
-    b64 = _encode_jpeg_base64(last_img, quality=min_quality)
+    # Last-resort payload — no preset fit within max_payload_bytes. /stress
+    # A1.2 F1 fix: avoid the redundant double-encode that happened under the
+    # default config (`min_quality=20` == `COMPRESSION_PRESETS[-1][0]` → the
+    # loop's last iteration had already produced exactly this JPEG). We
+    # reuse the loop tail's b64 in that common case and only re-encode when
+    # the caller explicitly asked for a different floor quality. The
+    # `over_cap=True` flag surfaces the condition so caller telemetry can
+    # audit it instead of silently shipping an over-budget payload.
+    if min_quality == last_quality:
+        final_quality = last_quality  # b64 already holds the right encoding
+    else:
+        b64 = _encode_jpeg_base64(last_img, quality=min_quality)
+        final_quality = min_quality
     return {
         "data_url": f"data:image/jpeg;base64,{b64}",
         "payload_bytes": len(b64.encode("utf-8")),
-        "quality": min_quality,
+        "quality": final_quality,
         "compressed": True,
         "width": last_img.width,
         "height": last_img.height,
+        "over_cap": True,
     }

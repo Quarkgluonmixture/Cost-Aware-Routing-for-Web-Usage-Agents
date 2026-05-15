@@ -569,6 +569,19 @@ Action Schema:
                     new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
                     image = image.resize(new_size, Image.Resampling.LANCZOS)
                 image_payload = self._image_to_data_url(image)
+                # /stress A1.2 F1: warn loudly when the cap was exceeded so the
+                # over-budget payload is auditable from logs as well as meta.
+                if image_payload.get("over_cap"):
+                    logger.warning(
+                        "Image payload exceeded max_payload_bytes cap "
+                        "(payload_bytes=%d, quality=%d, %dx%d). "
+                        "Shipping over-budget JPEG to the proxy; downstream "
+                        "audit should check meta['image_over_cap'].",
+                        image_payload.get("payload_bytes", -1),
+                        image_payload.get("quality", -1),
+                        image_payload.get("width", -1),
+                        image_payload.get("height", -1),
+                    )
                 data_url: str = image_payload["data_url"]
                 if reference_images:
                     # With reference images: append screenshot at end with label
@@ -780,6 +793,10 @@ Action Schema:
             "image_payload_bytes": image_payload.get("payload_bytes") if image_payload else None,
             "image_quality": image_payload.get("quality") if image_payload else None,
             "image_compressed": image_payload.get("compressed") if image_payload else None,
+            # /stress A1.2 F1: surface the over-cap condition through meta so
+            # downstream audit can detect images that exceeded the payload limit
+            # (previously the encoder silently returned an over-budget payload).
+            "image_over_cap": image_payload.get("over_cap", False) if image_payload else None,
             "reasoning_content": reasoning_text,
             "enable_thinking": False,
             "tool_calling": self._use_tool_calling,
