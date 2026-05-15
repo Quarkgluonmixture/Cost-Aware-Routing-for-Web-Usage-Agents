@@ -131,3 +131,50 @@ def test_runner_revision_forward_is_qwen_class_gated():
         "runner.main revision-forward conditional no longer checks backend "
         "type — C4 fix partially reverted; leak path re-opened."
     )
+
+
+# ---------------------------------------------------------------------------
+# B-116 — cross-baseline max_new_tokens parity (2026-05-15 evening)
+# ---------------------------------------------------------------------------
+
+
+def test_configs_b0_b1_b2_max_new_tokens_parity():
+    """B-116: All `exp_v2_*.yaml` configs must declare max_new_tokens=4096.
+
+    Previously B0=4096 vs B1/B2=384 — a 12x cap asymmetry that codex Mode B
+    Q2 quantified at 0.017% silent truncation on B1, but a paper-grade
+    cross-baseline parse_fail comparison should not have ANY truncation
+    delta. The retired guard rail "B0/B1 设计不对称是已知论文披露即可代码不改"
+    no longer applies after the 学长 logprob / official API negotiation
+    began (Class 1 inherent vs Class 2 historical code sloppy split — see
+    实验笔记 §142). All configs now run at the same cap.
+
+    If anyone re-introduces a per-baseline cap delta, paper §3.5.1 owes a
+    fresh disclosure block + this test should be the first canary to fail.
+    """
+    from pathlib import Path
+    repo = Path(__file__).resolve().parent.parent
+    configs = sorted((repo / "configs").glob("exp_v2_*.yaml"))
+    assert len(configs) > 0, "No exp_v2_*.yaml configs found — path wrong?"
+
+    drift: list[str] = []
+    for cfg in configs:
+        for i, line in enumerate(cfg.read_text().splitlines(), start=1):
+            # match lines like `    max_new_tokens: 384` (or any non-4096)
+            stripped = line.strip()
+            if stripped.startswith("max_new_tokens:"):
+                # parse the value (strip inline comments)
+                val_str = stripped.split(":", 1)[1].split("#", 1)[0].strip()
+                try:
+                    val = int(val_str)
+                except ValueError:
+                    drift.append(f"{cfg.name}:{i}: cannot parse value {val_str!r}")
+                    continue
+                if val != 4096:
+                    drift.append(f"{cfg.name}:{i}: max_new_tokens={val} (expected 4096)")
+
+    assert not drift, (
+        "Cross-baseline max_new_tokens parity broken — at least one config "
+        "drifted from the unified 4096 cap. /stress A1.1 F3 fix B-116 (§142) "
+        "regression. Drift list:\n  " + "\n  ".join(drift)
+    )
