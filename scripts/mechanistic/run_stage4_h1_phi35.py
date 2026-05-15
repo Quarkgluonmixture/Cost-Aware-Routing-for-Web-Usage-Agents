@@ -108,9 +108,13 @@ VARIANTS = {
 
 def _build_user_text(intent: str, mode: str, observation_text: str, dom_prompt: str, som_prompt: str) -> str:
     """v6 /stress 2026-05-14 — F1 fix.
-    Replicate substrate `_build_user_text` from `p79.mechanistic.extract_hidden_states:96`:
-      f"Task: {intent}\\nSystem: {system_prompt}\\n{observation_text}"
+    Replicate substrate `_build_user_text` from `p79.mechanistic.extract_hidden_states`.
     DOM prompt for `dom`/`phantom_text` etc. (AXTree-style), SoM prompt for `som`/marks-like.
+
+    /stress A1.4 B-103 fix (2026-05-15): production agent prepends
+    `Accessibility Tree:\\n` for DOM-style modes (qwen3vl_agent.py:441-450);
+    cross-family scripts were missing this prefix. Mechanism §5 paused per
+    advisor §138 but byte-divergence is corrected here for code consistency.
     """
     # Mode → prompt mapping mirrors substrate _mode_to_prompt
     som_modes = {"som", "som_standard", "browser_use_at", "appagent_id", "tarsier_typed",
@@ -118,7 +122,11 @@ def _build_user_text(intent: str, mode: str, observation_text: str, dom_prompt: 
     sys_prompt = som_prompt if mode in som_modes else dom_prompt
     text = f"Task: {intent}\nSystem: {sys_prompt}\n"
     if observation_text:
-        text += observation_text
+        # DOM-style modes (= not in som_modes) carry the "Accessibility Tree:" header.
+        if mode not in som_modes:
+            text += f"Accessibility Tree:\n{observation_text}"
+        else:
+            text += observation_text
     return text
 
 
@@ -175,9 +183,11 @@ def main():
     tasks = manifest[args.tier][:args.n_tasks]
     logger.info(f"loaded {len(tasks)} tasks (tier={args.tier})")
 
-    # v6 F1 fix — load production system prompts (mode-conditional in `_build_user_text`)
-    dom_prompt = Qwen3VLAgent._make_dom_prompt(None)
-    som_prompt = Qwen3VLAgent._make_som_prompt(None)
+    # v6 F1 fix — load production system prompts (mode-conditional in `_build_user_text`).
+    # /stress A1.1 B-92 propagation (2026-05-15): _make_*_prompt are @staticmethod
+    # since commit 11d6fd9, so `(None)` argument now raises TypeError. Drop the arg.
+    dom_prompt = Qwen3VLAgent._make_dom_prompt()
+    som_prompt = Qwen3VLAgent._make_som_prompt()
     logger.info(f"loaded production prompts: DOM={len(dom_prompt)}c, SoM={len(som_prompt)}c")
 
     logger.info(f"loading {args.model_id} revision={args.model_revision or '(latest)'}")

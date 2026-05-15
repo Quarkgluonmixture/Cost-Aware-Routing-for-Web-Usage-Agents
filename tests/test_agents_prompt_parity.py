@@ -71,6 +71,55 @@ def test_gemma_module_constants_match_qwen_staticmethod_output():
     assert gemma3vl_agent._VISION_PROMPT == Qwen3VLAgent._make_vision_prompt()
 
 
+def test_no_legacy_self_or_none_prompt_callsites():
+    """/stress A1.1 B-92 propagation: no caller may pass `self` or `None` to
+    the @staticmethod prompt methods anywhere in p79/ or scripts/.
+
+    The original A1.1 B-92 fix swept agents but missed mechanistic files —
+    `extract_hidden_states.py:73-82` + cross-family scripts at lines
+    `run_stage4_h1_qwen2vl.py:153-154` and `run_stage4_h1_phi35.py:179-180`
+    still passed `self` / `None`, which would now TypeError on instantiation
+    (Mechanism §5 is paused so this stayed latent, but
+    /stress A1.4 caught it).
+    """
+    import re
+    from pathlib import Path
+    repo = Path(__file__).resolve().parent.parent
+    pattern = re.compile(r"_make_(dom|som|vision)_prompt\((self|None)\)")
+    hits: list[str] = []
+    for root in [repo / "p79", repo / "scripts"]:
+        for path in root.rglob("*.py"):
+            for i, line in enumerate(open(path), start=1):
+                if pattern.search(line):
+                    hits.append(f"{path.relative_to(repo)}:{i}: {line.rstrip()}")
+    assert not hits, (
+        "Legacy `_make_*_prompt(self|None)` callsites must be removed — these "
+        "would TypeError against the @staticmethod descriptor:\n  "
+        + "\n  ".join(hits)
+    )
+
+
+def test_mechanistic_build_user_text_has_accessibility_tree_prefix():
+    """/stress A1.4 B-103 fix: mechanistic / cross-family `_build_user_text`
+    must prepend `Accessibility Tree:\\n` for DOM-style modes so NPZ input
+    is byte-identical to production agent (qwen3vl_agent.py:441-450).
+    """
+    from pathlib import Path
+    repo = Path(__file__).resolve().parent.parent
+    files = [
+        repo / "p79" / "mechanistic" / "extract_hidden_states.py",
+        repo / "scripts" / "mechanistic" / "run_stage4_h1_qwen2vl.py",
+        repo / "scripts" / "mechanistic" / "run_stage4_h1_phi35.py",
+    ]
+    for f in files:
+        src = f.read_text()
+        assert "Accessibility Tree:" in src, (
+            f"{f.relative_to(repo)}: missing 'Accessibility Tree:' prefix — "
+            f"NPZ input would not be byte-identical to production agent "
+            f"for `dom` / `phantom_prompt` modes (B-103 regression)."
+        )
+
+
 def test_agent_layer_strict_rejects_unknown_mode():
     """/stress A1.4 F2 defense-in-depth: agent step() must raise on typo mode.
 

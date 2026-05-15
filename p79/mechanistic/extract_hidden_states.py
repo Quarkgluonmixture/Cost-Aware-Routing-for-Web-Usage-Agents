@@ -69,9 +69,12 @@ class HiddenStateExtractor:
         self.model_revision = model_revision
 
         # Load system prompts from the agent — single source of truth.
+        # /stress A1.1 B-92 propagation fix (2026-05-15): _make_*_prompt are
+        # @staticmethod since commit 11d6fd9, so the previous `(self)` argument
+        # would raise TypeError. Drop the arg.
         from p79.agents.qwen3vl_agent import Qwen3VLAgent
-        self._dom_prompt = Qwen3VLAgent._make_dom_prompt(self)
-        self._som_prompt = Qwen3VLAgent._make_som_prompt(self)
+        self._dom_prompt = Qwen3VLAgent._make_dom_prompt()
+        self._som_prompt = Qwen3VLAgent._make_som_prompt()
         self._mode_to_prompt = {
             "dom": self._dom_prompt,
             "som": self._som_prompt,
@@ -79,7 +82,7 @@ class HiddenStateExtractor:
             "phantom_text": self._dom_prompt,
             "phantom_dom": self._dom_prompt,
             "phantom_prompt": self._som_prompt,
-            "vision": Qwen3VLAgent._make_vision_prompt(self),
+            "vision": Qwen3VLAgent._make_vision_prompt(),
         }
 
     def _build_user_text(
@@ -88,14 +91,30 @@ class HiddenStateExtractor:
         mode: str,
         observation_text: str = "",
     ) -> str:
-        """Replicate agent's user content text format (qwen3vl_agent.py:436).
+        """Replicate agent's user content text format (qwen3vl_agent.py:441-450).
 
-        Format: f"Task: {instruction}\\nSystem: {system_prompt}\\n[observation if any]"
+        Format: f"Task: {instruction}\\nSystem: {system_prompt}\\n[obs_section]"
+        where obs_section is mode-conditional:
+          - vision: ""
+          - som / phantom_som / phantom_dom / phantom_text: obs_text (no
+            prefix — text already wrapped in [SOM_MARKS]...[/SOM_MARKS])
+          - dom / phantom_prompt: "Accessibility Tree:\\n" + obs_text
+
+        /stress A1.4 B-103 fix (2026-05-15): the `Accessibility Tree:\\n`
+        prefix for DOM-style modes was missing, so NPZ extraction for
+        `dom` and `phantom_prompt` modes was not byte-identical to the
+        production agent input. Mechanism §5 is paused per advisor §138
+        (frozen archive, not future-scheduled) but the byte-divergence is
+        fixed in place so any non-mechanism reuse of this builder stays
+        production-consistent.
         """
         system_prompt = self._mode_to_prompt.get(mode, self._dom_prompt)
         text = f"Task: {intent}\nSystem: {system_prompt}\n"
         if observation_text:
-            text += observation_text
+            if mode in ("dom", "phantom_prompt"):
+                text += f"Accessibility Tree:\n{observation_text}"
+            else:
+                text += observation_text
         return text
 
     @staticmethod
