@@ -84,7 +84,7 @@ STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
         },
     },
 }
-BASELINES = ["B0", "B1"]
+BASELINES = ["B0", "B1", "B2"]
 SITES_LIST = ["reddit", "classifieds"]
 
 MODE_LABELS = {

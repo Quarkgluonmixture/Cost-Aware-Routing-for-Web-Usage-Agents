@@ -38,7 +38,7 @@ def _summary_dirs_from_registry() -> dict[str, dict[str, dict[str, Path]]]:
     return out
 
 
-BASELINE_ORDER = ["B0", "B1"]
+BASELINE_ORDER = ["B0", "B1", "B2"]
 SITE_ORDER = ["reddit", "classifieds"]
 SUMMARY_DIRS = _summary_dirs_from_registry()
 MODE_ORDER = PAPER_MODES

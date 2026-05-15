@@ -89,7 +89,7 @@ STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
         },
     },
 }
-BASELINES = ["B0", "B1"]
+BASELINES = ["B0", "B1", "B2"]
 SITES = ["reddit", "classifieds"]
 SEARCH_MARKERS = {"reddit": ("/search",), "classifieds": ("page=search", "/search")}
 SELFCORR_TOKENS = ("mistake", "wrong", "try again", "go back")

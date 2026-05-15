@@ -59,7 +59,7 @@ def _step_dirs_from_registry(baseline: str) -> dict[str, dict[str, Path]]:
 def _conf_runs_from_registry() -> list[tuple[str, str, Path]]:
     out: list[tuple[str, str, Path]] = []
     seen: set[tuple[str, str, Path]] = set()
-    for baseline in ("B0", "B1"):
+    for baseline in ("B0", "B1", "B2"):
         for site in ("classifieds", "reddit"):
             for cell in get_cells(baseline=baseline, site=site):
                 key = (baseline, site, cell.run_dir)

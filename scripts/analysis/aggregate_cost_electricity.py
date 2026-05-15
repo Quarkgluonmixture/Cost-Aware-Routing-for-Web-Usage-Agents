@@ -50,7 +50,7 @@ def _condition_subpath(cell) -> str:
 
 def _runs_from_registry() -> dict[str, dict[str, dict[str, str]]]:
     runs: dict[str, dict[str, dict[str, str]]] = {}
-    for baseline in ("B0", "B1"):
+    for baseline in ("B0", "B1", "B2"):
         runs[baseline] = {}
         for site in ("reddit", "classifieds"):
             specs = get_cells(baseline=baseline, site=site)
