@@ -1667,7 +1667,7 @@ User re-fired /stress on `p79/agents/` (A1.1) with full Claude+codex+gemini 3-AI
 | 🛠️ **FIXED Commit A** | 7 | B-131 / B-132 / B-133 / B-134 / B-135 / B-136 / B-137 |
 | 🛠️ **FIXED Commit B** | 6 | B-138 / B-139 / B-140 / B-141 / B-142 / B-143 |
 | ⏳ **PARKING LOT** (advisor sync) | 5 | P0-2 / P0-7 / P0-9 full audit / P1-1 / P1-4 |
-| 📝 **DISCLOSURE** (paper-side) | 2 | P0-1 prereg §2.6 (landed Commit A) / P2-1 paper §3.4.1 (Commit C pending) |
+| 📝 **DISCLOSURE** (paper-side) | 2 | P0-1 prereg §2.6 (landed Commit A) / P2-1 paper §3.4.1 (landed Commit C, commit pending) |
 
 **Cross-AI verification chronicle**: Mode B (codex, ~4min, 8 findings / 5 OOB / reproducibility-auditor persona) — PASS Phase 1+2+3 sanity; Mode C (gemini, ~23min, 5 findings / 3 OOB / broad-reviewer persona) — PASS Phase 1+2+3. Cross-AI agreement: 1 3-AI overlap (P0-5 image-encode lenient — Claude F1 + codex C5 angle + gemini G4 different angle, all same root); 1 2-AI overlap (P0-7 confidence meta — Claude F2 + codex C4 schema angle); 17 1-AI unique catches (5 Claude / 6 codex / 5 gemini). **Gemini standout**: 80% of findings unique catch; G2 reference_images "leak" attack initially flagged as P0 but user confirmed it's intentional design (DOM also has ref_img; cost ≈ DOM stays fair) → routed to prereg §2.6 disclosure instead of code fix. P2-1 (P-prompt header contradiction) also user-confirmed intentional manipulation → routed to paper §3.4.1 disclosure (Commit C deferred).
 
