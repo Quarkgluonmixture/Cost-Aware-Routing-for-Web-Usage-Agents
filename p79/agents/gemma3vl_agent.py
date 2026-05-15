@@ -252,13 +252,19 @@ class Gemma3VLAgent:
 
         # Image-token accounting. Gemma 3 = fixed 256 tokens/image; prefer an
         # exact count from the processor's image-token id when it is exposed.
+        # B-139 (/stress A1.1 v8 Claude F6, 2026-05-15): track which method
+        # the processor allowed so silent transformers-version drift between
+        # estimate-256/img and exact-id-match doesn't change cost-accounting
+        # semantics without an audit trail. Meta emits the chosen method.
         n_images = (1 if image is not None else 0) + (
             len(reference_images) if reference_images else 0
         )
         image_token_count = n_images * GEMMA3_IMAGE_TOKENS
+        image_token_count_method = "estimate_256_per_image"
         img_tok_id = getattr(self.processor, "image_token_id", None)
         if img_tok_id is not None:
             image_token_count = int((inputs["input_ids"] == img_tok_id).sum().item())
+            image_token_count_method = "exact_id_match"
 
         max_new_tokens = int(self.config.get("model", {}).get("max_new_tokens", 4096))
         gen_kwargs = {
@@ -319,6 +325,13 @@ class Gemma3VLAgent:
             # Persisted via runner step_record.image_meta (B-112 wiring).
             # aggregate_*.py MUST symmetric-exclude image_encode_error > 0.
             "image_encode_error": _image_encode_error_count if _image_encode_error_count else None,
+            # B-139 (/stress A1.1 v8 Claude F6, 2026-05-15): which method
+            # gave image_token_count above. "exact_id_match" = transformers
+            # exposed processor.image_token_id and we counted token instances;
+            # "estimate_256_per_image" = older transformers, n_images*256
+            # static cost. Reviewer auditing cost ≈ DOM hero claim across
+            # transformers versions needs to see the method, not just the count.
+            "image_token_count_method": image_token_count_method,
             **confidence_metrics,
         }
 

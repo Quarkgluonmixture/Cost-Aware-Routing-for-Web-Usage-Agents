@@ -303,3 +303,112 @@ def test_base_yaml_three_baselines_temperature_uniform_zero():
             f"parity regression. Code uses do_sample=False but yaml is the "
             f"reviewer-visible run_meta source."
         )
+
+
+# ---------------------------------------------------------------------------
+# /stress A1.1 v8 — Commit B round (B-138 / B-139 / B-140 / B-143)
+# ---------------------------------------------------------------------------
+
+
+def test_b2_image_token_count_method_emitted_in_meta():
+    """B-139 (/stress A1.1 v8 Claude F6, 2026-05-15): gemma3vl_agent must
+    emit image_token_count_method enum ("exact_id_match" vs
+    "estimate_256_per_image") so silent method switch on transformers
+    version upgrade doesn't silently change cost-accounting semantics.
+    """
+    src = (REPO_ROOT / "p79" / "agents" / "gemma3vl_agent.py").read_text()
+    assert "image_token_count_method" in src, (
+        "gemma3vl_agent missing image_token_count_method meta field — "
+        "B-139 audit-trail regression."
+    )
+    assert '"exact_id_match"' in src, (
+        "gemma3vl_agent missing exact_id_match enum value — B-139 regression."
+    )
+    assert '"estimate_256_per_image"' in src, (
+        "gemma3vl_agent missing estimate_256_per_image enum value — B-139 regression."
+    )
+
+
+def test_runner_image_meta_is_mandatory_dict():
+    """B-140 (/stress A1.1 v8 codex F5, 2026-05-15): image_meta is now
+    MANDATORY in step_record (always emitted, fields=None when N/A).
+    Schema change: previous conditional `if _image_meta_payload:` is
+    replaced with unconditional assignment + `pipeline` label.
+    """
+    src = (REPO_ROOT / "p79" / "experiment" / "runner" / "main.py").read_text()
+    # Old conditional gone (or doesn't gate the assignment)
+    assert 'step_record["image_meta"] = _image_meta_payload' in src, (
+        "runner.main no longer writes image_meta unconditionally — B-140 "
+        "mandatory schema regressed."
+    )
+    # New pipeline enum
+    assert '"pipeline":' in src or "pipeline\": _image_pipeline" in src, (
+        "runner.main image_meta missing `pipeline` enum field — B-140 "
+        "regression. proxy_jpeg_data_url vs hf_processor_pil label needed."
+    )
+    # Pipeline mapping exists for all 3 backend types
+    for backend_type in ("api_proxy", "local_qwen", "local_gemma"):
+        assert f'"{backend_type}"' in src, (
+            f"runner.main image_meta pipeline mapping missing `{backend_type}` "
+            f"key — B-140 regression."
+        )
+
+
+def test_proxy_agent_emits_network_retry_meta():
+    """B-143 (/stress A1.1 v8 Claude F7, 2026-05-15): proxy_api_agent must
+    emit network_retry_count + network_retry_wait_ms in meta so runner can
+    compute latency_ms_minus_retry. Without these fields the B0 retry
+    overhead (10-70s scaffold) is conflated with model inference latency
+    in cross-baseline comparisons.
+    """
+    src = (REPO_ROOT / "p79" / "agents" / "proxy_api_agent.py").read_text()
+    assert '"network_retry_count"' in src, (
+        "ProxyApiAgent meta missing network_retry_count — B-143 regression."
+    )
+    assert '"network_retry_wait_ms"' in src, (
+        "ProxyApiAgent meta missing network_retry_wait_ms — B-143 regression."
+    )
+    # Counter increment must happen in both retry paths (network exc + status code)
+    import re as _re
+    increments = _re.findall(r"_retry_count \+= 1", src)
+    assert len(increments) >= 2, (
+        f"ProxyApiAgent _retry_count incremented in {len(increments)} place(s) "
+        f"— expected 2 (network exception path + HTTP status retryable path). "
+        f"B-143 partial regression: one retry path silently drops the count."
+    )
+
+
+def test_runner_emits_latency_ms_minus_retry():
+    """B-143: runner step_record latency_ms dict must include
+    `total_minus_retry` for cross-baseline-fair latency comparison.
+    """
+    src = (REPO_ROOT / "p79" / "experiment" / "runner" / "main.py").read_text()
+    assert '"total_minus_retry"' in src, (
+        "runner.main latency_ms missing total_minus_retry field — B-143 "
+        "cross-baseline fair-latency contract regressed."
+    )
+
+
+def test_b138_probe_script_exists_and_compiles():
+    """B-138 (/stress A1.1 v8 Claude F4, 2026-05-15): T=0 greedy
+    consistency probe script must exist as a runnable cheap probe (no
+    VWA dep) for paper-§3.5 reproducibility audit. Full audit deferred
+    to advisor; this probe is the quick-win lightweight verification.
+    """
+    probe = REPO_ROOT / "scripts" / "maintenance" / "probe_b0_greedy_consistency.py"
+    assert probe.exists(), (
+        "B-138 probe script missing — paper §3.5 reproducibility audit "
+        "lightweight verification cannot be performed."
+    )
+    import py_compile
+    try:
+        py_compile.compile(str(probe), doraise=True)
+    except py_compile.PyCompileError as exc:
+        raise AssertionError(f"B-138 probe script does not compile: {exc}")
+    # Sanity: script declares its 3-tier verdict labels (mechanical / semantic / nondet)
+    src = probe.read_text()
+    for label in ("MECHANICAL_GREEDY", "SEMANTIC_GREEDY_WITH_NOISE", "NON_DETERMINISTIC"):
+        assert label in src, (
+            f"B-138 probe verdict label `{label}` missing — paper §3.5 "
+            f"disclosure decision tree depends on all 3 labels being emitted."
+        )

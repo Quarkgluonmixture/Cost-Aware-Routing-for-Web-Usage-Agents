@@ -542,9 +542,19 @@ class ProxyApiAgent:
                 "Content-Type": "application/json",
             }
 
+        # B-143 (/stress A1.1 v8 Claude F7, 2026-05-15): track retry count
+        # and total wait time so runner can emit `latency_ms_minus_retry`
+        # for cross-baseline fair comparison. B0 retry adds 10-70s to step
+        # latency (10s base × 2^attempt backoff, 3 attempts) — B1/B2 have
+        # no equivalent (local inference, no network retry). Without this
+        # separation, §C router latency feature is asymmetric across
+        # baselines and paper §1 latency claim cannot be reported fairly.
+        # Retry overhead is scaffold-level — NOT counted in agent cost.
         _retryable_codes = {429, 500, 502, 503, 504}
         _max_retries = 3
         _backoff = 10  # seconds; doubles each attempt
+        _retry_count = 0
+        _retry_wait_ms_total = 0.0
         resp = None
         for _attempt in range(_max_retries + 1):
             try:
@@ -562,6 +572,8 @@ class ProxyApiAgent:
                     "API network error %s (attempt %d/%d), retrying in %ds...",
                     net_exc, _attempt + 1, _max_retries, wait,
                 )
+                _retry_count += 1
+                _retry_wait_ms_total += wait * 1000.0
                 time.sleep(wait)
                 continue
             if resp.status_code not in _retryable_codes or _attempt == _max_retries:
@@ -571,6 +583,8 @@ class ProxyApiAgent:
                 "API %s (attempt %d/%d), retrying in %ds...",
                 resp.status_code, _attempt + 1, _max_retries, wait,
             )
+            _retry_count += 1
+            _retry_wait_ms_total += wait * 1000.0
             time.sleep(wait)
         assert resp is not None, "API request failed: resp is None after all retries"
         resp.raise_for_status()
@@ -713,6 +727,13 @@ class ProxyApiAgent:
             # Proxy-specific fields for analysis.
             "proxy_cost": usage.get("cost"),
             "proxy_remaining_quota": metadata.get("remaining_quota"),
+            # B-143 (/stress A1.1 v8 Claude F7, 2026-05-15): network retry
+            # accounting — scaffold-level overhead NOT counted in agent
+            # cost, but included in raw step wallclock latency. Runner
+            # emits latency_ms_minus_retry for cross-baseline-fair latency
+            # comparison (B1/B2 have no network retry equivalent).
+            "network_retry_count": _retry_count if _retry_count else None,
+            "network_retry_wait_ms": _retry_wait_ms_total if _retry_count else None,
         }
 
         return action, meta

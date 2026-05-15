@@ -1283,6 +1283,12 @@ class ExperimentRunner:
                     "backend_infer": float(meta.get("infer_ms", backend_latency_ms)),
                     "env_step": env_step_ms,
                     "router_decision": float(overhead.get("router_decision_ms", 0.0)),
+                    # B-143 (/stress A1.1 v8 Claude F7, 2026-05-15): B0
+                    # proxy network retry adds 10-70s scaffold overhead;
+                    # subtract for cross-baseline fair latency comparison
+                    # (B1/B2 have no equivalent). Always emitted; 0 when
+                    # no retries fired or for B1/B2 local backends.
+                    "total_minus_retry": total_latency_ms - float(meta.get("network_retry_wait_ms") or 0.0),
                 },
                 tokens={
                     "input": input_tokens,
@@ -1346,18 +1352,32 @@ class ExperimentRunner:
             # from JSONL alone (previously meta had over_cap / payload_bytes /
             # quality / compressed but runner dropped them — Q5 was structurally
             # impossible). C2 fix piggybacks via `encode_error`.
-            _image_meta_payload: Dict[str, Any] = {}
-            for _img_key in (
-                "image_over_cap",
-                "image_payload_bytes",
-                "image_quality",
-                "image_compressed",
-                "image_encode_error",
-            ):
-                if _img_key in meta and meta.get(_img_key) is not None:
-                    _image_meta_payload[_img_key] = meta.get(_img_key)
-            if _image_meta_payload:
-                step_record["image_meta"] = _image_meta_payload
+            # B-140 (/stress A1.1 v8 codex F5, 2026-05-15): image_meta is now
+            # MANDATORY (always present in step_record), not optional. This
+            # closes the "unsupported vs missing vs failed extraction"
+            # ambiguity — analysis can no longer distinguish "no image"
+            # from "image but no telemetry" from "image but failed encode"
+            # if missingness is just absence. Now: image_meta always emitted
+            # with `pipeline` label (proxy_jpeg_data_url vs hf_processor_pil)
+            # + all 5 telemetry fields (None when N/A). Schema fixed.
+            _backend_type = self.cfg.get("backends", {}).get(condition.backend_id, {}).get("type", "unknown")
+            _image_pipeline = {
+                "api_proxy": "proxy_jpeg_data_url",
+                "local_qwen": "hf_processor_pil",
+                "local_gemma": "hf_processor_pil",
+            }.get(_backend_type, "unknown")
+            _image_meta_payload: Dict[str, Any] = {
+                "pipeline": _image_pipeline,
+                "image_over_cap": meta.get("image_over_cap"),
+                "image_payload_bytes": meta.get("image_payload_bytes"),
+                "image_quality": meta.get("image_quality"),
+                "image_compressed": meta.get("image_compressed"),
+                "image_encode_error": meta.get("image_encode_error"),
+                # B-139 piggyback: image_token_count_method (B2 only emits
+                # the field; None for B0/B1 where pipeline ≠ Gemma3 token id)
+                "image_token_count_method": meta.get("image_token_count_method"),
+            }
+            step_record["image_meta"] = _image_meta_payload
             # Confidence metrics (optional, from logprobs extraction)
             if meta.get("mean_logprob") is not None:
                 step_record["confidence"] = {

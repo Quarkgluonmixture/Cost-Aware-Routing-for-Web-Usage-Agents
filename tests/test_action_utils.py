@@ -65,9 +65,13 @@ def test_parse_valid_json_click_no_target():
 
 
 def test_parse_repaired_regex_valid():
+    """B-141 (/stress A1.1 v8 codex F6, 2026-05-15): repair label changed
+    from "repaired_regex" → "repaired_raw_decode" since parser now uses
+    json.JSONDecoder().raw_decode() scan instead of greedy `\\{.*\\}` regex.
+    Behavior preserved (valid JSON object embedded in prose still repairs)."""
     action, valid, reason = parse_action_text('thinking... {"action_type":"scroll","direction":"down"}')
     assert valid is True
-    assert reason == "repaired_regex"
+    assert reason == "repaired_raw_decode"
 
 
 def test_parse_repaired_regex_invalid_action():
@@ -109,3 +113,161 @@ def test_parse_total_failure():
     assert action["action_type"] == "wait"
     # thought preserves raw model output for diagnostics
     assert action.get("thought") == "gibberish"
+
+
+# ---------------------------------------------------------------------------
+# B-141 (/stress A1.1 v8 codex F6, 2026-05-15) — robust JSON repair
+# ---------------------------------------------------------------------------
+
+
+def test_parse_fenced_json_block_repair():
+    """Fenced ```json {...} ``` block should be repair-preferred over raw
+    scan — models often echo "Output ONLY valid JSON" instruction by
+    wrapping it in markdown fence anyway."""
+    text = '''
+    Let me think about this.
+
+    ```json
+    {"action_type": "click", "element_id": 42}
+    ```
+    '''
+    action, valid, reason = parse_action_text(text)
+    assert valid is True
+    assert action["action_type"] == "click"
+    assert action["element_id"] == 42
+    assert reason == "repaired_fenced"
+
+
+def test_parse_multiple_identical_actions_repairs_to_one():
+    """Model repetition (same action emitted twice) should collapse to one
+    valid action, not flag as ambiguity."""
+    text = '''
+    {"action_type":"scroll","scroll_direction":"down"}
+    {"action_type":"scroll","scroll_direction":"down"}
+    '''
+    action, valid, reason = parse_action_text(text)
+    assert valid is True
+    assert action["action_type"] == "scroll"
+    assert reason == "repaired_multiple_identical"
+
+
+def test_parse_multiple_distinct_actions_flags_ambiguity():
+    """Two genuinely different actions in same output should NOT silently
+    pick the first one (previous greedy regex behavior). Surface as
+    parse_valid=False with explicit failure_reason="multiple_actions"."""
+    text = '''
+    Option A: {"action_type":"click","element_id":42}
+    Option B: {"action_type":"type","element_id":7,"text":"hello"}
+    '''
+    action, valid, reason = parse_action_text(text)
+    assert valid is False
+    assert reason == "multiple_actions"
+
+
+def test_parse_invalid_action_after_raw_decode_emits_repaired_invalid():
+    """raw_decode finds a JSON object but validate_action rejects the
+    action_type → emit invalid_action_repaired (distinguishable from
+    parse_failed where no JSON was found at all)."""
+    text = 'I will {"action_type":"NUKE","target":"all"}'
+    action, valid, reason = parse_action_text(text)
+    assert valid is False
+    assert reason == "invalid_action_repaired"
+
+
+def test_parse_no_json_at_all_falls_to_parse_failed():
+    """No JSON anywhere → parse_failed (no candidates found)."""
+    action, valid, reason = parse_action_text("just prose with no JSON")
+    assert valid is False
+    assert reason == "parse_failed"
+
+
+# ---------------------------------------------------------------------------
+# B-142 (/stress A1.1 v8 codex F7, 2026-05-15) — coord/delta shape check
+# ---------------------------------------------------------------------------
+
+
+def test_validate_click_rejects_malformed_coord_pair():
+    """Previously {"action_type":"click","coordinate":[2,"x"]} validated
+    True (only `coord is None` check). Now coord shape + numeric type
+    enforced: reject malformed payload."""
+    action, valid = validate_action({"action_type": "click", "coordinate": [2, "x"]})
+    assert valid is False
+    assert action == {"action_type": "wait"}
+
+
+def test_validate_click_rejects_wrong_coord_length():
+    """Coord must be exactly 2 elements (x, y). Reject [0.5] / [0.5,0.6,0.7]."""
+    for bad_coord in ([0.5], [0.5, 0.6, 0.7], []):
+        action, valid = validate_action({"action_type": "click", "coordinate": bad_coord})
+        assert valid is False, f"coord {bad_coord!r} should be rejected"
+
+
+def test_validate_click_rejects_nan_inf_coord():
+    """NaN / inf in coord → reject (not a meaningful screen position)."""
+    for bad_coord in ([float("nan"), 0.5], [0.5, float("inf")], [float("-inf"), 0.5]):
+        action, valid = validate_action({"action_type": "click", "coordinate": bad_coord})
+        assert valid is False, f"coord {bad_coord!r} should be rejected"
+
+
+def test_validate_click_accepts_valid_normalized_coord():
+    """Sanity: valid coord (no element_id) should pass."""
+    action, valid = validate_action({"action_type": "click", "coordinate": [0.5, 0.7]})
+    assert valid is True
+    assert action["coordinate_type"] == "normalized"
+
+
+def test_validate_click_accepts_valid_pixel_coord():
+    """Pixel coords (>1) accepted as long as non-negative finite (vision
+    mode may emit pixel coordinates)."""
+    action, valid = validate_action({"action_type": "click", "coordinate": [120, 350]})
+    assert valid is True
+
+
+def test_validate_scroll_rejects_malformed_delta():
+    """Scroll delta must be 2 finite floats."""
+    for bad_delta in (None, [0.5], "down", [float("nan"), 0.1], ["x", "y"]):
+        a = {"action_type": "scroll"}
+        if bad_delta is not None:
+            a["delta"] = bad_delta
+        action, valid = validate_action(a)
+        if bad_delta is None:
+            # No delta at all — scroll still valid (env applies default).
+            assert valid is True, "scroll without delta should remain valid"
+        else:
+            assert valid is False, f"scroll delta {bad_delta!r} should be rejected"
+
+
+def test_validate_scroll_accepts_valid_delta():
+    action, valid = validate_action({"action_type": "scroll", "delta": [0, 0.8]})
+    assert valid is True
+    action, valid = validate_action({"action_type": "scroll", "delta": [0, -0.5]})
+    assert valid is True
+
+
+def test_validate_tab_focus_requires_int_page_number():
+    """tab_focus needs page_number int. Previously no check at all."""
+    for bad in (None, "1", 1.5, -1):
+        a = {"action_type": "tab_focus"}
+        if bad is not None:
+            a["page_number"] = bad
+        action, valid = validate_action(a)
+        assert valid is False, f"tab_focus page_number {bad!r} should be rejected"
+    action, valid = validate_action({"action_type": "tab_focus", "page_number": 2})
+    assert valid is True
+
+
+def test_validate_select_option_rejects_non_int_element_id():
+    """select_option element_id must be int (was: any truthy value)."""
+    action, valid = validate_action({
+        "action_type": "select_option",
+        "element_id": "42",  # string, not int
+        "option_label": "Red",
+    })
+    assert valid is False
+    # Sanity: int element_id passes
+    action, valid = validate_action({
+        "action_type": "select_option",
+        "element_id": 42,
+        "option_label": "Red",
+    })
+    assert valid is True
