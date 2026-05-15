@@ -10,12 +10,21 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+# Import the canonical runtime constant so the `schema_version` default below
+# matches what the runner actually writes (`types.SCHEMA_VERSION_V2 = "2.0"`).
+# /stress A1.2 codex Mode B C1 fix: previously the default was the literal
+# string "v2" while the runtime constant is "2.0", which would have caused
+# `fill_defaults()` to silently mis-tag old episode records when the v3
+# migration eventually lands. Aligning the source of truth here closes the
+# latent schema-identity split before v3 work begins.
+from p79.experiment.types import SCHEMA_VERSION_V2
+
 # Canonical episode-summary v2 field defaults. Used by:
 #   1. `migrate("v2", "v3")` future migration to fill defaults.
 #   2. validation / linting scripts to detect missing fields in old data.
 EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     # --- core (required, no default) ---
-    "schema_version": "v2",
+    "schema_version": SCHEMA_VERSION_V2,  # "2.0" — matches what runner writes
     "run_id": "",
     "condition_id": "",
     "benchmark": "",

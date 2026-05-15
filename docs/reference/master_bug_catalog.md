@@ -1500,6 +1500,42 @@ the behavioral fire.)
 
 ---
 
+### §141 /stress A1.1+A1.2+A1.3 audit wave (2026-05-15)
+
+Three audit surfaces, 14+ findings filed, 7 fixed in code, parse/GLM-touching items routed to `parse_advisor_pending.md` parking lot.
+
+#### A1.1 (agent layer — `p79/agents/`) — Claude /stress + codex Mode B
+
+- **B-92** Gemma3-VL prompt parity import-time fragility 🛠️ **FIXED commit `11d6fd9`** — `Qwen3VLAgent._make_*_prompt` converted to `@staticmethod`; Gemma callsites drop `(None)` bound-method-on-None pattern; 4 invariant tests in `test_agents_prompt_parity.py`.
+- **B-93** B0 scroll vocab effective binary vs B1/B2 continuous (B-28 schema-only mitigation sharpener) 🛠️ **DISCLOSED** — paper §3.5.1 disclosure in commit `11d6fd9`; B-28 catalog entry updated to "MITIGATED schema only".
+- **B-94** B0 `input_image_tokens` absent → "cost ≈ DOM" paper hero (4-fold drop-in property a) not apples-to-apples 🛠️ **DISCLOSED** — paper §3.5.1 footnote in commit `11d6fd9`; cross-baseline cost comparison should use `Δusage_between_modes` not absolute proxy `input_tokens`.
+- **A1.1 Claude F3 / Codex C3 / Codex C2 sub-axes** — parse / GLM-related; routed to `parse_advisor_pending.md`.
+
+#### A1.2 (backends — `p79/backends/`) — Claude /stress + codex Mode B (reproducibility auditor)
+
+- **B-95** image_utils last-resort fallback redundant double-encode under default config 🛠️ **FIXED commit `2a05e9a`** — `encode_image_data_url` adds `over_cap` field to return dict; default-config fallback reuses loop tail's b64 instead of re-encoding identical JPEG; logger.warning when over_cap fires; 5 invariant tests in `test_image_utils_over_cap.py`.
+- **B-96** factory backend dispatch silent default to LocalQwen on missing `type` key 🛠️ **FIXED commit `9316c8a`** — `factory.create_backend` raises ValueError on missing `type`; verified Phase 1a configs all explicit.
+- **B-97** HeuristicDomBackend cfg-drop in factory dispatch 🛠️ **FIXED commit `9316c8a`** — `HeuristicDomBackend.__init__` now accepts `(backend_id, config)` like other backends; factory dispatches via normal constructor; class-level `backend_id` default removed (dead code).
+- **B-98** MockBackend scroll delta mismatch with LocalQwen/Gemma mock_mode 🛠️ **FIXED commit `9316c8a`** — `factory.MockBackend.step` delta 0.5 → 0.8; 5 invariant tests in `test_factory_dispatch.py`.
+- **B-99** schema_version identity split: `EPISODE_SUMMARY_V2_DEFAULTS["schema_version"] = "v2"` vs runtime `SCHEMA_VERSION_V2 = "2.0"` 🛠️ **FIXED commit `<pending>`** — v2.py imports `SCHEMA_VERSION_V2` so fill_defaults backfill uses the runtime constant; 1 invariant test in `test_som_and_schema.py`. Latent (fill_defaults currently 0 callers) but closed before v3 migration.
+- **A1.2 Codex C2/C4** silent zero-fill in backend meta — covers `glm_fallback_used` axis (parse) + `image_payload_bytes` already (commit `2a05e9a`) + timing decomposition / confidence not yet. **Backend meta contract design pending advisor** since `glm_fallback_used` axis tied to GLM decision — see `parse_advisor_pending.md` §3 Option B aggregator changes. Hold.
+
+#### A1.3 (envs — `p79/envs/`) — Claude /stress (codex Mode B incomplete twice)
+
+- locator_dispatch.py F1 (handle dispose leak in action-raise path) + F6 (walk-fail reason category in error field) — pending land per user 2026-05-15 sequence.
+- F2 (walk-up depth 6 hardcoded, no telemetry) + F3 (`<a>` no-href + `<button type=reset>` boundary) + F4 (ARIA role accept list incomplete) — backlog.
+- F5 (catalog B-03 prose "locator.clear()" vs code `fill('')` mismatch) — catalog prose 2-min fix.
+
+#### Status counts increment
+
+| Audit | New entries | FIXED in commits | DISCLOSED to paper | Parking lot | Pending fix |
+|---|---|---|---|---|---|
+| A1.1 | 5 | 1 (B-92) | 2 (B-93, B-94) | 2 (Claude F3, Codex C3, Codex C2 GLM axis) | 0 |
+| A1.2 | 5 | 4 (B-95, B-96, B-97, B-98, B-99) | 0 | 1 (Codex C2/C4 backend meta contract) | 0 |
+| A1.3 | 6 | 0 (in progress) | 0 | 0 | 6 (F1/F2/F3/F4/F5/F6) |
+
+---
+
 ## Updated Status Counts (post-§116 audit + Phase 0 backfill)
 
 | Tag | Count | Notes |

@@ -2,8 +2,22 @@ import pytest
 from PIL import Image
 
 from p79.envs.vwa_wrapper import P79Observation
+from p79.experiment.schema_migrations.v2 import EPISODE_SUMMARY_V2_DEFAULTS
 from p79.experiment.som import apply_som, prepare_observation_for_mode
 from p79.experiment.types import SCHEMA_VERSION_V2, validate_step_record_v2
+
+
+def test_episode_defaults_schema_version_matches_runtime_constant():
+    """/stress A1.2 codex C1: prevent schema identity split.
+
+    `EPISODE_SUMMARY_V2_DEFAULTS["schema_version"]` (used by `fill_defaults()`
+    to backfill old data) must match `SCHEMA_VERSION_V2` (what the runner
+    writes for new data). Previously the default was the literal "v2" while
+    the runtime constant was "2.0" — would have caused fill_defaults to
+    silently mis-tag records once the v3 migration lands.
+    """
+    assert EPISODE_SUMMARY_V2_DEFAULTS["schema_version"] == SCHEMA_VERSION_V2
+    assert SCHEMA_VERSION_V2 == "2.0"
 
 
 def test_som_degrades_without_bbox(tmp_path):
