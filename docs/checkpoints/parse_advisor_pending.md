@@ -1,10 +1,12 @@
-# Parse / GLM parking lot — pending advisor decision
+# Advisor-pending parking lot (parse / GLM + statistical estimand + future)
 
-> **Purpose**: collect every parse-related finding / fix / disclosure that needs the advisor's outcome on the "GLM-5.1 fallback vs clean structured-API B0 path" question before it can land.
+> **Purpose**: canonical parking lot for findings / fixes / disclosures that need an advisor decision before they can land. Originally scoped to the GLM-5.1 fallback question (2026-05-14, B-86); broadened 2026-05-15 to cover the Decision 3A FE vs RE estimand question (B-130) + any future blocked-on-advisor items.
 >
-> **Status**: open since 2026-05-14 advisor sync (B-86 question asked); awaiting advisor reply.
+> **Status**: 2 open threads as of 2026-05-15:
+> - **Thread 1 (GLM, B-86)**: open since 2026-05-14 advisor sync (sections §1-§5 + §7 below)
+> - **Thread 2 (Decision 3A FE vs RE, B-130)**: open since 2026-05-15 cross-AI Mode C audit (section §8 below)
 >
-> **Rule**: any future `/stress A1.x` finding that touches the parse / GLM area lands here, **not in the live catalog or fix queue**. Move out of parking only after advisor decision.
+> **Rule**: any future `/stress A1.x` / `/stress A2.x` / cross-AI finding that is **blocked on advisor decision** (cannot be unilaterally landed because the choice is methodology / scope / locked-decision territory) lands here under its thread, **not in the live catalog or fix queue**. Move out of parking only after the relevant advisor reply.
 
 ---
 
@@ -128,21 +130,156 @@ Any new finding from `/stress` audits that:
 
 ## 6. Decision log
 
-| Date | Decision | By |
-|---|---|---|
-| 2026-05-14 | Advisor sync — question asked about clean structured API path; B-86 open | user + advisor |
-| 2026-05-15 | User directive: do not delete GLM yet; parking lot established | user |
-| 2026-05-15 | A1.1+A1.2 findings sorted into Option A / Option B branches above | claude /stress |
-| (advisor reply date TBD) | Option A / B / C selected → trigger code+paper fix per branch | advisor |
+| Date | Thread | Decision | By |
+|---|---|---|---|
+| 2026-05-14 | GLM (B-86) | Advisor sync — question asked about clean structured API path; B-86 open | user + advisor |
+| 2026-05-15 | GLM (B-86) | User directive: do not delete GLM yet; parking lot established | user |
+| 2026-05-15 | GLM (B-86) | A1.1+A1.2 findings sorted into Option A / Option B branches above | claude /stress |
+| 2026-05-15 | FE/RE (B-130) | Gemini Mode C P0-2 attack on Decision 3A; 3-option escalation drafted (§8 below) | claude /stress + gemini cross-AI |
+| (TBD GLM) | GLM (B-86) | Option A / B / C selected → trigger code+paper fix per branch | advisor |
+| (TBD FE/RE) | FE/RE (B-130) | Option (a) keep FE / (b) RE+Knapp-Hartung / (c) report both — selection → trigger §8 fix per branch | advisor |
 
 ---
 
 ## 7. Cross-references
 
-- Catalog: `docs/reference/master_bug_catalog.md` B-86
-- Paper draft: `docs/checkpoints/paper_drafts/section3_definition.md` §3.5.1
+- Catalog: `docs/reference/master_bug_catalog.md` B-86 (GLM thread) + B-130 (FE/RE thread, §143 audit batch)
+- Paper drafts:
+  - GLM: `docs/checkpoints/paper_drafts/section3_definition.md` §3.5.1
+  - FE/RE: `docs/checkpoints/paper_drafts/section1_intro.md` (§1 hero hook generalization wording) + §8 statistical methods (`section8_limitations.md` §8.5 if added) + `preregistration.md` §2 estimand / §2.4 power / §4 pooling row / Appendix A Decision 3A entry / `osf_lock_manifest.md` §2.2
 - Advisor sync: `docs/checkpoints/_status/issues/issue_advisor_sync_2026-05-14.md` (ADVISOR_SYNC.md retired 2026-05-15, commit `f64bc9d`)
-- Audit chronicle: `docs/checkpoints/实验笔记.md` (pending §141 from this session)
-- Codex outputs:
+- Audit chronicle: `docs/checkpoints/实验笔记.md` §142 (B-111~B-116 fix batch + Mode B+C v7) + §143 (this audit + cross-AI Mode C P0-2 chronicle)
+- Codex outputs (GLM thread):
   - `docs/checkpoints/codex_outputs/A1_1_FINAL_2026-05-15.md` — A1.1 cross-validate confirming GLM filter gap
   - `docs/checkpoints/codex_outputs/A1_2_trace_2026-05-15.log` — A1.2 codex full synthesis (stdout, `-o` was empty)
+- Cross-AI outputs (FE/RE thread):
+  - `docs/checkpoints/codex_outputs/post_batch5_FINAL_2026-05-15_201813.md` — Mode B 10 findings (code-anchored, none on FE/RE — code-only audit didn't reach methodology layer)
+  - `docs/checkpoints/gemini_outputs/post_batch5_2026-05-15_201813.md` — Mode C 7 findings incl. P0-2 attack on Decision 3A
+
+---
+
+## 8. Statistical estimand — Decision 3A FE vs RE rollback (B-130)
+
+**Thread**: FE vs RE meta-analysis estimand (B-130, opened 2026-05-15 evening).
+
+### 8.1 Context — what got locked 2026-05-14 (Decision 3A)
+
+Per `preregistration.md §2.4` + §4 row "Pooling estimator + heterogeneity pre-spec" + Appendix A 2026-05-14 entry:
+
+- **Estimand**: fixed-effects inverse-variance pooled average θ_FE over the 4 (now 6 per B2) *planned* (site, model) cells. The cells are the design, not a population sample → no between-cell variance τ² in the estimand → no DerSimonian-Laird, no REML.
+- **Rationale (Claude v6 + codex cross-think)**: avoids DL τ² downward bias + RE Wald anti-conservatism at k<10 (Veroniki et al. 2016 / IntHout et al. 2014). FE is sound at any k under CLT on per-cell θ_i.
+- **Witness**: paper_planning §19 + 实验笔记 §142 — advisor email pending lock.
+
+### 8.2 Gemini Mode C P0-2 attack 2026-05-15 (cold cross-AI, prose-anchored)
+
+> **Quote**: `osf_lock_manifest.md` "Fixed-effects inverse-variance pooled average... (decision '3A' 2026-05-14 — NOT DerSimonian-Laird; the cells are the design not a population, so no τ²)."
+>
+> **Attack**: 这是一个致命的统计学自杀 (statistical trap). 放弃 Random Effects (REML+HK/DL) 转而使用 Fixed-Effects (FE) 意味着你假设所有 6 个 cells 存在**唯一真实的 effect size**. 这在统计学上直接剥夺了论文 generalizability 的合法性. Reviewer 会攻击: FE 只能证明 "在这 3 个特定模型和 2 个特定网站上有效", 无法泛化到 "Web Agents" 这一 broader population.
+>
+> **Defuse**: 立即推翻 Decision 3A,回滚到 Random Effects meta-analysis. 即便 k=6 较小,RE 配合 Knapp-Hartung 调整也远比强制假设同质性的 FE 更符合顶级会议的统计严谨性标准.
+>
+> **Severity**: P0. **Effort**: 2h (重写 `aggregate_phantom_meta.py` 的 pooling 逻辑) + advisor email lock (1 day).
+
+### 8.3 Why this is real (not just model-disagreement)
+
+The FE-vs-RE choice is **estimand definition**, not estimator tuning:
+
+- **FE estimand**: "average drop-one over EXACTLY these 6 planned cells (cls/red × B0/B1/B2)". Inference scope = these 6 cells, period.
+- **RE estimand**: "average drop-one over a HYPOTHETICAL population of (site, model) cells, with the 6 observed cells as a sample". Inference scope = "Web Agents on VWA-style tasks" broadly.
+
+Paper §1 hero hook currently says:
+> "We characterize the **phantom routing space**: configurations on the 'skip annotated image' boundary..."
+
+The implicit-generalization framing ("phantom routing space exists for Qwen+Gemma agents on VWA-style tasks") is RE-shaped, not FE-shaped. If the estimator says "we only learned about these 6 cells", the hook overpromises.
+
+Veroniki/IntHout fragility is real at k<10, but **it does not vanish by switching to FE**:
+- DL τ² downward-biased at k=4 → eases (but not gone) at k=6
+- RE Wald anti-conservative at k=4 → eases (but not gone) at k=6
+- Knapp-Hartung adjustment uses t-distribution at k-1 df (5 at k=6), restoring conservativeness
+
+Gemini's recommendation (RE+Knapp-Hartung at k=6) is **statistically more conservative** than the 2026-05-14 FE choice while preserving generalization-claim language.
+
+### 8.4 Decision branches — what changes when advisor replies
+
+#### Option (a) — Keep Decision 3A FE + soften paper §1 generalization wording
+
+**Code changes**: minimal. `aggregate_phantom_meta.py` still needs migration DL → FE to match prereg (current code↔prose drift). `preregistration_decision_test.py` similarly DL → FE.
+
+**Paper changes**:
+- §1 hero hook: rephrase to scope-explicit "characterizes phantom routing space on cls + red × B0/B1/B2" (drop "is a generalizable property" / "Web Agents broadly" framing)
+- §8 limitations: add explicit FE-estimand scope statement
+
+**Effort**: 4-6h paper rewrite + 2h code FE migration.
+
+---
+
+#### Option (b) — Roll back to RE+Knapp-Hartung at k=6 (Gemini recommendation)
+
+**Code changes**:
+- Rewrite `aggregate_phantom_meta.py` pooling: DerSimonian-Laird τ² estimation + Knapp-Hartung t-based CI at k-1=5 df
+- Rewrite `preregistration_decision_test.py` H1/H3 estimand sections to match
+- Update `osf_lock_manifest §2.2` H1 row from FE → RE+HK
+
+**Paper changes**:
+- preregistration §2.4 + §4 + Appendix A 2026-05-14 entry: amend to note Decision 3A reversed 2026-05-15+; cite Knapp-Hartung 2003 + reasoning re k<10 fragility mitigation
+- §1 hero hook: retains generalization language under RE estimand
+
+**Effort**: 2-4h code + 4h paper text + advisor email lock (1 day).
+
+---
+
+#### Option (c) — Report both FE + RE (primary + sensitivity)
+
+**Code changes**: aggregator produces both FE and RE+HK outputs.
+
+**Paper changes**:
+- §4 main text: primary = (chosen by advisor); the other = sensitivity row in Appendix
+- §8 limitations: full disclosure of estimand-choice sensitivity
+
+**Effort**: 4h code + 6h paper text — most defensive but doubles §1+§4 prose.
+
+### 8.5 Tradeoff matrix
+
+| Estimator | Pros | Cons | Reviewer attack |
+|---|---|---|---|
+| **FE (Decision 3A, 2026-05-14)** | Sound at any k; no τ² estimation needed; clean | Inference limited to 6 cells; generalization claim 受限 | "你只测了 3 模型 × 2 站点,凭什么 claim 'phantom routing space is generalizable property'?" |
+| **RE+Knapp-Hartung (Gemini P0-2 recommend)** | Restores generalization claim; HK adjustment fixes anti-conservativeness at k<10 | Still has DL τ² downward bias at k=6; FE vs RE point estimate may diverge if I² > 25% | "你用 RE 在 k=6 上 pool — IntHout 2014 / Veroniki 2016 都说 k<10 时 RE 不稳" |
+| **DL random-effects** (current script impl) | What `aggregate_phantom_meta.py` actually computes today; matches archive | Most fragile at k<10; both biases active | "你 prereg 说 FE,代码跑 DL — code↔prose mismatch" (B-130 sub-finding) |
+
+**Third bug exposed**: prereg says FE (Decision 3A), but `aggregate_phantom_meta.py` + `preregistration_decision_test.py` actually compute DL — code↔prose drift independent of FE/RE question.
+
+### 8.6 Suggested advisor email/sync agenda
+
+> Post-Batch-1-5 cross-AI audit surfaced a Decision 3A challenge from an angle our 2026-05-14 lock didn't cover:
+>
+> Gemini Mode C (independent prose audit): "FE estimand 把 paper §1 generalization claim 阉割了 — RE+Knapp-Hartung at k=6 才能保留 'phantom routing space is generalizable' 这种顶会 framing"
+>
+> Three options (§8.4):
+>   (a) Keep Decision 3A FE + paper §1 hook 软化到 "characterizes phantom routing space on these 6 cells"
+>   (b) Roll back to RE+Knapp-Hartung at k=6 (Gemini recommendation) — restore generalization-claim framing
+>   (c) Report both as primary + sensitivity
+>
+> Need advisor decision before OSF DOI lock email goes out.
+
+### 8.7 Affected gates
+
+- 🔴 OSF lock email — locks estimand choice into DOI artifact; cannot send until decision
+- 🔴 `aggregate_phantom_meta.py` — currently runs DL (matches no prereg version cleanly)
+- 🔴 `scripts/analysis/preregistration_decision_test.py` — same DL-vs-FE-vs-RE inconsistency
+- 🟠 `osf_lock_manifest.md §2.2` — was updated 2026-05-15 Batch 4 to FE wording; will need rewrite if (b) or (c)
+- 🟠 Paper §1 hero claim language — generalization-claim coupling
+
+### 8.8 Forward append rule for FE/RE thread
+
+Any new finding from `/stress` / cross-AI that:
+- references FE vs RE / DerSimonian-Laird / Knapp-Hartung / τ² / between-cell variance
+- touches `aggregate_phantom_meta.py` pooling code OR `preregistration_decision_test.py` meta block
+- challenges paper §1 hook generalization scope
+
+→ append to this §8 instead of acting on it. Will not modify estimator unilaterally — Decision 3A advisor-witness-locked.
+
+### 8.9 Status
+
+⏳ **Open** — pending advisor sync / email lock decision (a)/(b)/(c).
+
+After advisor decision lands → update preregistration §2.4 + §4 + Appendix A + `osf_lock_manifest §2.2` + the 2 affected analysis scripts + §6 Decision log row above → status: decided/closed.
