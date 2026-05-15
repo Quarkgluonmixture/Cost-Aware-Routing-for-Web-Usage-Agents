@@ -9,16 +9,80 @@
 #   reset_vwa_sites shopping
 #   reset_vwa_sites shopping_admin   # WA shopping_admin (Magento admin)
 #
+# 部署模式（VWA_RESET_MODE，默认 auto）：
+#   remote  — DGX→quark→Windows PowerShell（默认 SSH 私钥存在时）
+#   local   — A100 自托管 docker，本机操作（SSH 私钥不存在时 fallback）
+#   auto    — 按 SSH 私钥存在与否自动选择
+#
 # 环境变量覆盖：
-#   VWA_RESET_SSH_KEY   私钥路径（默认 ~/.ssh/vwa_windows）
-#   VWA_RESET_SSH_HOST  目标主机（默认 quark@100.95.81.103）
-#   VWA_RESET_SCRIPT    Windows PowerShell 脚本路径（默认 C:\vwa\reset_vwa.ps1）
+#   VWA_RESET_MODE      remote | local | auto
+#   VWA_RESET_SSH_KEY   私钥路径（默认 ~/.ssh/vwa_windows）— remote 模式用
+#   VWA_RESET_SSH_HOST  目标主机（默认 quark@100.95.81.103）— remote 模式用
+#   VWA_RESET_SCRIPT    Windows PowerShell 脚本路径（默认 C:\vwa\reset_vwa.ps1）— remote 模式用
 #   VWA_RESET_ENABLE    设为 0 可禁用 reset（dry-run/本地调试用）
+#   CLASSIFIEDS_RESET_TOKEN  cls reset endpoint token — local 模式用
 
+VWA_RESET_MODE="${VWA_RESET_MODE:-auto}"
 VWA_RESET_SSH_KEY="${VWA_RESET_SSH_KEY:-${HOME}/.ssh/vwa_windows}"
 VWA_RESET_SSH_HOST="${VWA_RESET_SSH_HOST:-quark@100.95.81.103}"
 VWA_RESET_SCRIPT="${VWA_RESET_SCRIPT:-C:\\vwa\\reset_vwa.ps1}"
 VWA_RESET_ENABLE="${VWA_RESET_ENABLE:-1}"
+
+# --- A100 self-host local-mode helpers ----------------------------------------
+
+# reset_vwa_local_classifieds — HTTP reset endpoint（OSClass / jykoh image）
+# Why: jykoh/classifieds bakes a /index.php?page=reset_database endpoint that
+# restores from osclass_craigslist.sql in ~5-10s. Faster than docker rm + recreate.
+_reset_vwa_local_classifieds() {
+    local label="$1"
+    local token="${CLASSIFIEDS_RESET_TOKEN:-4b61655535e7ed388f0d40a93600254c}"
+    local url="http://localhost:9980/index.php?page=reset_database&token=${token}"
+    local code
+    code=$(curl -sS -o /dev/null --max-time 60 -w "%{http_code}" "${url}" 2>/dev/null || echo "000")
+    if [[ "${code}" == "200" ]]; then
+        echo "[${label}][reset_vwa][local] classifieds OK (http=${code})"
+        return 0
+    else
+        echo "[${label}][reset_vwa][local] classifieds FAIL (http=${code}, url=${url})" >&2
+        return 1
+    fi
+}
+
+# reset_vwa_local_reddit — docker rm + run（postmill image seeds itself）
+# Why: postmill-populated-exposed-withimg has the seed DB built in; recreate
+# = fresh state. ~30-60s warm-up after run.
+_reset_vwa_local_reddit() {
+    local label="$1"
+    docker rm -f vwa-reddit 2>/dev/null || true
+    if ! docker run -d --name vwa-reddit -p 9999:80 postmill-populated-exposed-withimg >/dev/null; then
+        echo "[${label}][reset_vwa][local] reddit docker run FAILED" >&2
+        return 1
+    fi
+    # warm-up wait — postmill cold-start ~60-120s (DB init slower than expected).
+    # Poll for HTTP 200 (not just connection-up; 500 = still initializing).
+    local i code
+    for i in $(seq 1 60); do
+        code=$(curl -sS -o /dev/null --max-time 5 -w "%{http_code}" \
+            http://localhost:9999/ 2>/dev/null || echo "000")
+        if [[ "${code}" == "200" ]]; then
+            echo "[${label}][reset_vwa][local] reddit OK (warm-up=$((i*3))s)"
+            return 0
+        fi
+        sleep 3
+    done
+    echo "[${label}][reset_vwa][local] reddit warm-up TIMEOUT after 180s (last http=${code})" >&2
+    return 1
+}
+
+# reset_vwa_local_shopping — placeholder for Phase 1b
+# Why: Magento DB reset on the shopping_final_0712 image needs a SQL-restore
+# path inside the container (TBD when shopping image lands via wave-2). Stub
+# returns 0 (no-op) so Phase 1a cls+red runs don't block on it.
+_reset_vwa_local_shopping() {
+    local label="$1"
+    echo "[${label}][reset_vwa][local] shopping reset NOT YET IMPLEMENTED — Phase 1b (no-op)" >&2
+    return 0
+}
 
 # reset_vwa_sites <site> [label]
 #   site:  all | classifieds | reddit | shopping | shopping_admin
@@ -32,12 +96,45 @@ reset_vwa_sites() {
         return 0
     fi
 
+    # Auto-detect mode: SSH key present → remote (DGX→quark); absent → local (A100 self-host)
+    local mode="${VWA_RESET_MODE}"
+    if [[ "${mode}" == "auto" ]]; then
+        if [[ -f "${VWA_RESET_SSH_KEY}" ]]; then
+            mode="remote"
+        else
+            mode="local"
+        fi
+    fi
+
+    # Local mode: dispatch per site via _reset_vwa_local_* helpers
+    if [[ "${mode}" == "local" ]]; then
+        echo "[${label}][reset_vwa] mode=local，开始 reset site=${site}..."
+        local rc=0
+        case "${site}" in
+            all)
+                _reset_vwa_local_classifieds "${label}" || rc=$?
+                _reset_vwa_local_reddit "${label}" || rc=$?
+                _reset_vwa_local_shopping "${label}" || rc=$?
+                ;;
+            classifieds)         _reset_vwa_local_classifieds "${label}" || rc=$? ;;
+            reddit)              _reset_vwa_local_reddit "${label}" || rc=$? ;;
+            shopping|shopping_admin)
+                                 _reset_vwa_local_shopping "${label}" || rc=$? ;;
+            *)
+                echo "[${label}][reset_vwa] unknown site=${site}" >&2
+                return 2
+                ;;
+        esac
+        return ${rc}
+    fi
+
+    # Remote mode: DGX→quark→Windows PowerShell (original path)
     if [[ ! -f "${VWA_RESET_SSH_KEY}" ]]; then
         echo "[${label}][reset_vwa] WARNING: SSH 私钥不存在: ${VWA_RESET_SSH_KEY}，跳过 reset"
         return 1
     fi
 
-    echo "[${label}][reset_vwa] 开始 reset site=${site}..."
+    echo "[${label}][reset_vwa] mode=remote，开始 reset site=${site}..."
     ssh -i "${VWA_RESET_SSH_KEY}" \
         -o StrictHostKeyChecking=no \
         -o ConnectTimeout=30 \
