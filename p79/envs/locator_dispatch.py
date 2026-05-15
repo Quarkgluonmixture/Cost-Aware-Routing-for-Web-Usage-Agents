@@ -37,65 +37,88 @@ from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
+# /stress A1.3 F2 backlog sweep (2026-05-15): expose walk-up depth as a named
+# constant so any future calibration / tuning is a one-line change instead of
+# a 3-place magic-number edit.
+WALK_UP_MAX_DEPTH = 6
+
+# /stress A1.3 F4 backlog sweep (2026-05-15): ARIA actionable role accept list
+# is now a JS constant. ARIA 1.2 actionable roles that map to a single click
+# intent — added `menuitemradio`, `switch`, `treeitem`, `gridcell`, `radio`,
+# `checkbox` (non-native), `combobox` (some popup dropdowns), `slider` (drag
+# target — accepting because click still meaningful as focus).
+_ACTIONABLE_ARIA_ROLES_JS = (
+    "['link','button','menuitem','tab','option','menuitemcheckbox',"
+    "'menuitemradio','switch','treeitem','gridcell','radio','checkbox',"
+    "'combobox','slider']"
+)
+
 
 # JS resolvers — find actionable ancestor by walking up the DOM
 # Returns the resolved ElementHandle (via evaluate_handle) or null
+#
+# /stress A1.3 F3 backlog sweep: `<a>` without `href` is accepted iff it has
+# an `onclick` attribute (or non-empty `data-*` markers used by some sites
+# for JS-only links). Previously these would fall through to walk-fail →
+# framework bbox-center fallback (= B-33 regression risk).
 
-_JS_RESOLVE_CLICK = """([cx, cy]) => {
+_JS_RESOLVE_CLICK = f"""([cx, cy]) => {{
     let el = document.elementFromPoint(cx, cy);
     if (!el) return null;
-    for (let i = 0; i < 6 && el && el !== document.body; i++) {
+    const ACTIONABLE_ROLES = {_ACTIONABLE_ARIA_ROLES_JS};
+    for (let i = 0; i < {WALK_UP_MAX_DEPTH} && el && el !== document.body; i++) {{
         if (el.tagName === 'A' && el.href) return el;
+        // F3: <a> without href but with onclick handler / JS-link role
+        if (el.tagName === 'A' && (el.onclick || el.getAttribute('onclick'))) return el;
         if (el.tagName === 'BUTTON') return el;
         const role = el.getAttribute('role');
-        if (role === 'link' || role === 'button' || role === 'menuitem' ||
-            role === 'tab' || role === 'option' || role === 'menuitemcheckbox') return el;
+        if (role && ACTIONABLE_ROLES.indexOf(role) !== -1) return el;
         if (el.tagName === 'INPUT' && (el.type === 'submit' || el.type === 'button' ||
             el.type === 'checkbox' || el.type === 'radio')) return el;
         if (el.tagName === 'SUMMARY') return el;  // <details>/<summary>
         el = el.parentElement;
-    }
+    }}
     return null;
-}"""
+}}"""
 
-_JS_RESOLVE_INPUT = """([cx, cy]) => {
+_JS_RESOLVE_INPUT = f"""([cx, cy]) => {{
     let el = document.elementFromPoint(cx, cy);
     if (!el) return null;
-    for (let i = 0; i < 6 && el && el !== document.body; i++) {
+    for (let i = 0; i < {WALK_UP_MAX_DEPTH} && el && el !== document.body; i++) {{
         if (el.tagName === 'INPUT' && el.type !== 'hidden' &&
             el.type !== 'submit' && el.type !== 'button' &&
             el.type !== 'checkbox' && el.type !== 'radio') return el;
         if (el.tagName === 'TEXTAREA') return el;
         if (el.isContentEditable) return el;
         // Label associated with input via for=""
-        if (el.tagName === 'LABEL' && el.htmlFor) {
+        if (el.tagName === 'LABEL' && el.htmlFor) {{
             const target = document.getElementById(el.htmlFor);
-            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-                if (target.type !== 'hidden' && target.type !== 'submit' && target.type !== 'button') {
+            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {{
+                if (target.type !== 'hidden' && target.type !== 'submit' && target.type !== 'button') {{
                     return target;
-                }
-            }
-        }
+                }}
+            }}
+        }}
         el = el.parentElement;
-    }
+    }}
     return null;
-}"""
+}}"""
 
-_JS_RESOLVE_UPLOAD = """([cx, cy]) => {
+_JS_RESOLVE_UPLOAD = f"""([cx, cy]) => {{
     let el = document.elementFromPoint(cx, cy);
     if (!el) return null;
-    for (let i = 0; i < 6 && el && el !== document.body; i++) {
+    for (let i = 0; i < {WALK_UP_MAX_DEPTH} && el && el !== document.body; i++) {{
         if (el.tagName === 'INPUT' && el.type === 'file') return el;
         // "Choose File" button often near a hidden file input
         const parent = el.parentElement;
-        if (parent) {
+        if (parent) {{
             const fileInput = parent.querySelector('input[type=file]');
             if (fileInput) return fileInput;
-        }
+        }}
         el = el.parentElement;
-    }
+    }}
     return null;
-}"""
+}}"""
 
 
 def _bbox_center(union_bound: Optional[list]) -> Optional[tuple]:

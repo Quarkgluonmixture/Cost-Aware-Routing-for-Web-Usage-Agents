@@ -157,3 +157,49 @@ def test_invalid_union_bound_unchanged():
     page = MagicMock()
     r = dispatch_id_based_click(page, {"42": {"union_bound": []}}, 42)
     assert r["error"] == "invalid union_bound shape"
+
+
+# ---------------------------------------------------------------------------
+# A1.3 backlog sweep — F2/F3/F4 invariants
+# ---------------------------------------------------------------------------
+
+
+def test_walk_up_max_depth_is_named_constant():
+    """F2: walk-up depth is exposed as named constant, not buried magic 6."""
+    from p79.envs.locator_dispatch import WALK_UP_MAX_DEPTH, _JS_RESOLVE_CLICK
+
+    assert isinstance(WALK_UP_MAX_DEPTH, int)
+    assert WALK_UP_MAX_DEPTH == 6  # current value; change requires audit
+    # Interpolated into all three resolvers
+    from p79.envs.locator_dispatch import _JS_RESOLVE_INPUT, _JS_RESOLVE_UPLOAD
+    for js_name, js in [("CLICK", _JS_RESOLVE_CLICK), ("INPUT", _JS_RESOLVE_INPUT), ("UPLOAD", _JS_RESOLVE_UPLOAD)]:
+        assert f"i < {WALK_UP_MAX_DEPTH}" in js, f"{js_name} resolver missing depth constant"
+
+
+def test_click_resolver_accepts_anchor_without_href_with_onclick():
+    """F3: <a> without href but with onclick handler is treated as actionable."""
+    from p79.envs.locator_dispatch import _JS_RESOLVE_CLICK
+
+    # Source check — the resolver must inspect el.onclick / onclick attribute
+    assert "el.onclick" in _JS_RESOLVE_CLICK
+    assert "getAttribute('onclick')" in _JS_RESOLVE_CLICK
+
+
+def test_click_resolver_accepts_extended_aria_roles():
+    """F4: ARIA accept list extended beyond original 6 roles."""
+    from p79.envs.locator_dispatch import _JS_RESOLVE_CLICK
+
+    expected_added_roles = {
+        "menuitemradio",  # ARIA 1.1
+        "switch",          # ARIA 1.1
+        "treeitem",        # ARIA 1.0
+        "gridcell",        # ARIA 1.0 interactive
+        "radio",           # ARIA-only (not native input)
+        "checkbox",        # ARIA-only (not native input)
+        "combobox",        # popup dropdowns
+        "slider",          # focusable interactive
+    }
+    for role in expected_added_roles:
+        assert f"'{role}'" in _JS_RESOLVE_CLICK, (
+            f"ARIA role {role!r} missing from _JS_RESOLVE_CLICK accept list"
+        )
