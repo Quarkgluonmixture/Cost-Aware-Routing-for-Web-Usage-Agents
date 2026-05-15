@@ -1439,7 +1439,7 @@ output: `docs/checkpoints/codex_outputs/prefire_pipeline_FINAL_2026-05-14.md`.
 
 | B# | Finding | Severity | Task | Note |
 |---|---|---|---|---|
-| B-86 | parse-error recovery scaffold asymmetry: B0-only GLM fallback + B1 `max_new_tokens=384` below parse-safe floor; codex confirmed it flows into `compute_adjusted_success` via `agent_finished` | P1 | #68 | advisor question asked 2026-05-14 (clean structured API data?) — awaiting reply; + ensure disclosure fields recorded pre-fire |
+| B-86 | parse-error recovery scaffold asymmetry: B0-only GLM fallback + B1 `max_new_tokens=384` below parse-safe floor; codex confirmed it flows into `compute_adjusted_success` via `agent_finished` | P1 | #68 | advisor question asked 2026-05-14 (clean structured API data?) — awaiting reply; + ensure disclosure fields recorded pre-fire. **Parking lot for all parse/GLM-related findings and pending fixes: `docs/checkpoints/parse_advisor_pending.md`** — Option A (retire GLM) vs Option B (keep + filter) branches drafted there with empirical rescue-rate data + per-aggregator fix points; future `/stress` findings touching parse/GLM land in §4 of that doc. |
 
 ### §139 FP-architecture restructure (2026-05-14) — replace post-hoc adjustment with source-level fixes
 
