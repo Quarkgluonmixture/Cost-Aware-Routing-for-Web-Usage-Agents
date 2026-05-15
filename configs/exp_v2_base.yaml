@@ -113,7 +113,13 @@ backends:
     # thought+JSON envelope. Per-experiment configs may override (e.g.
     # B1 baseline uses 384 for GPU-time tradeoff).
     max_new_tokens: 4096
-    temperature: 0.1
+    # B-137 (/stress A1.1 v8 codex F8, 2026-05-15): aligned 0.1 → 0.0 to
+    # match B0 + B2 (both already 0.0). Code path uses do_sample=False so
+    # this value never reached generate(); but run_meta records yaml field
+    # verbatim → reviewer reading metadata would have seen B1 0.1 vs
+    # B0/B2 0.0 as cross-baseline decoding asymmetry (false alarm but
+    # paper-grade contract drift). All 3 baselines now 0.0 in metadata.
+    temperature: 0.0
     dom_mode: "llm"
     mock_mode: false
   local_gemma:
@@ -137,7 +143,11 @@ backends:
     type: "api_proxy"
     api_name: "qwen.qwen3-vl-235b-a22b"
     base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
-    temperature: 0.1
+    # B-137 (/stress A1.1 v8 codex F8, 2026-05-15): 0.1 → 0.0 to match
+    # B1 + B2 (all 3 baselines now greedy T=0 in metadata). Per-condition
+    # B0 configs already override to 0.0; base default aligned for
+    # any future config that omits the key.
+    temperature: 0.0
     # B0 default raised 512 → 4096 (§97 QV-9/LQ-1). Per-site B0 configs
     # already override to 4096 explicitly (configs/exp_v2_B0_3mode_*.yaml).
     max_new_tokens: 4096

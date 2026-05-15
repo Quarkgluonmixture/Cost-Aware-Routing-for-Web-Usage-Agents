@@ -502,7 +502,14 @@ class ProxyApiAgent:
         payload = {
             "model": self.model_name,
             "messages": messages,
-            "max_tokens": gen_cfg.get("max_new_tokens", 512),
+            # B-135 (/stress A1.1 v8 Claude F3, 2026-05-15): default 512 → 4096
+            # to match B1/B2 (`qwen3vl_agent.py:538` + `gemma3vl_agent.py:240`).
+            # Current 107 active configs explicit-set this (codex Mode B Q2
+            # scan); the stale default was a defense-in-depth leak surface
+            # for future configs missing the key. 512 silently truncates
+            # typical thought+JSON envelope (~400-1500 tok) → parse_error →
+            # GLM fallback fires → cross-baseline parse_fail rate asymmetric.
+            "max_tokens": gen_cfg.get("max_new_tokens", 4096),
             # B-37 fix: default 0.1 → 0 for paper-grade reproducibility. T=0 is
             # greedy decoding (top-1 token deterministic given prefix). Override
             # via config only if mode-collapse signature appears in pilot.

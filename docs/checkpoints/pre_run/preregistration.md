@@ -271,6 +271,20 @@ Phase 1a has **6 statistical cells** (2 sites × 3 models = (cls/red) × (B0/B1/
    n-of-6 per-cell CI>0 counts alongside, with NO threshold (⌈0.75×6⌉=⌈0.67×6⌉=5; per-cell K% threshold remains fake-precision at k=6).
 ```
 
+### §2.6 Observation-mode scope clarification (added 2026-05-15 evening, /stress A1.1 v8 Mode C catch)
+
+**Phantom modes (P-SoM / P-text / P-prompt) strip the page screenshot only; task-supplied reference_images are preserved across ALL observation_modes including DOM.**
+
+Rationale:
+- Some VWA tasks (classifieds + shopping "find this item" / "buy this product" tasks) are accompanied by reference_image(s) — typically a product photo or target item picture. These are part of the task spec, not part of the observation pipeline.
+- Without the reference_image, these tasks are **literally impossible** (the model has no way to know what "this item" refers to). Stripping reference_images from phantom modes would change the **task tractability floor**, not just the observation modality.
+- Cross-mode comparability: DOM mode also receives reference_images (added before/after the page screenshot per `proxy_api_agent.py:432-453` / `qwen3vl_agent.py:478-491` / `gemma3vl_agent.py:179-197`). Therefore the "cost ≈ DOM" claim in §1 hero (4-fold drop-in property) is fair — both DOM and Phantom modes encode the same task-supplied reference_image payload, so the marginal image-token cost is identical between them.
+- Concretely: the "no image" terminology in §1 hero means **"no page screenshot"**, not "zero image tokens". Paper §3 prose will use the precise phrasing.
+
+This disclosure is intentional design transparency for reviewers who might read "phantom = text-only" and expect zero image tokens in phantom episodes. The reviewer-facing prose in §1 / §3 should be tightened to clarify "no page screenshot" instead of "no image".
+
+Provenance: /stress A1.1 v8 (2026-05-15 evening) Mode C (gemini) P0-1 attack initially flagged this as a paper-grade leak; user clarification confirmed (a) DOM mode also has reference_images so cost-comparability holds, (b) phantom modes intentionally keep reference_images to maintain task tractability across the modality dimension.
+
 ---
 
 ## §3 Multiple-Comparison Family Declaration

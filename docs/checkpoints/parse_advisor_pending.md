@@ -106,6 +106,16 @@ E.g. "use structured API where supported, keep GLM only as last-resort with a st
 
 - **Codex C2/C4 (A1.2)** — silent zero-fill of meta fields. **The `glm_fallback_used` field is one axis** of this finding (alongside timing decomposition + image-token + confidence). Under Option A the field disappears entirely; under Option B it stays and the backend meta contract must include it as a required-on-B0 field.
 
+### From `/stress A1.1` 3-AI round (2026-05-15 evening) — Claude + codex + gemini
+
+User explicitly routed these to advisor-pending parking lot; do NOT act unilaterally.
+
+- **P0-2 (gemini G1)** — B0 `use_tool_calling=True` in `proxy_api_agent.py:112-117` replaces system prompt `"Output ONLY valid JSON..."` with `"Use the web_action tool..."` + injects `tools` + `tool_choice` into payload. Plan A (tool-use API) dormant since dashscope proxy era; Plan B (GLM fallback) active. **User decision pending**: advisor sync on **official Qwen API channel** — if accessible, structured-output reliability becomes paper-grade comparable; if not, Plan A stays dormant + CI assert `use_tool_calling=False` for paper-grade configs. Currently `configs/exp_v2_base.yaml` has `use_tool_calling: false`, no active config overrides.
+- **P0-7 (Claude F2 + codex C4)** — B0 meta dict missing `mean_logprob / min_logprob / mean_margin / min_margin / mean_entropy / max_entropy` 6 fields vs B1/B2 emit all 6 via `_compute_confidence`. §C learned router cross-baseline input space asymmetric. **User decision pending**: advisor sync on whether **DashScope OpenAI-format proxy** exposes token-level logprobs (it can in principle); if yes, `proxy_api_agent.step` can enable `logprobs=True, top_logprobs=2` and reuse `Qwen3VLAgent._compute_confidence` algebra on Python list. If no, declare in preregistration §3 as known cross-baseline asymmetry.
+- **P0-9 partial defer (Claude F4 + Gemini concurrent angle)** — T=0/top_p=1 on proxy ≠ HF `do_sample=False`. **API probe verification script** (B-125, this round) measures step-level consistency cheaply (~30min, no VWA dep). **Full T=0 reproducibility audit** (paper-grade VWA-task-level consistency over N=10 same-(task,seed) runs) deferred to advisor sync to confirm scope budget.
+- **P1-1 (gemini G3)** — GLM-5.1 scaffold `_call_glm_extract` rescues invalid JSON for B0 only; B1/B2 lack equivalent. **User decision pending**: advisor sync on whether to **drop parse_error rescue entirely** vs keep + transparently report pre-fallback rate. Tied to Plan A vs Plan B (parse_advisor_pending.md §1 master question).
+- **P1-4 (codex C4)** — Confidence schema currently `confidence: Optional[Dict[str, Any]] = None` in `types.py:80-83`. Should become mandatory dict with fixed keys (`mean_logprob` etc) + `confidence_supported / confidence_extraction_error / confidence_source` audit fields. **Paired with P0-7** — both unlock at advisor decision on logprob availability.
+
 ### From paper drafts (already prose-staged)
 
 - `paper_drafts/section3_definition.md` §3.5.1 — third paragraph "Parse-error recovery scaffold (provisional)" is a **placeholder**. Current text disclosed advisor-pending status + measured rescue rate. Replace with Option A or Option B final wording on advisor reply.

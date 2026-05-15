@@ -50,19 +50,22 @@ class Qwen3VLAgent:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.model_path = config.get("model", {}).get("path", "Qwen/Qwen3-VL-4B-Instruct")
-        # Paper-grade: pin HF revision SHA (see env_snapshot.json + osf_lock_manifest.md)
-        # Default = revision captured 2026-05-07 in DGX baseline lock (笔记 §114).
-        # B-83 fix: `.get("revision", default)` returned None when the backend
-        # wrapper passed an explicit `revision=None` key (key present, value None),
-        # so the default never fired. Use `or` so missing OR None both fall back,
-        # and warn so a fallback is never silent (the prior bug masked it).
-        _DEFAULT_REVISION = "ebb281ec70b05090aa6165b016eac8ec08e71b17"
-        self.model_revision = config.get("model", {}).get("revision") or _DEFAULT_REVISION
-        if config.get("model", {}).get("revision") is None:
-            logger.warning(
-                "model.revision not provided by config — falling back to hard-coded "
-                "default %s. Run provenance cannot prove the loaded SHA from config.",
-                _DEFAULT_REVISION[:12],
+        # B-136 (/stress A1.1 v8 Claude F5, 2026-05-15): revision STRICT mode.
+        # Removed _DEFAULT_REVISION hardcoded fallback. yaml is the single
+        # source-of-truth for paper-grade reproducibility — silent default
+        # (even with logger.warning) is a provenance lie:run_meta records
+        # the SHA but config does not, so OSF artifact ≠ commit history.
+        # Now: explicit revision required; missing key raises immediately.
+        # B-83 historical context: backend wrapper sometimes passes
+        # `revision=None` literally (key present, value None); `or` handles
+        # both missing-key and explicit-None as "unset" → strict raise.
+        self.model_revision = config.get("model", {}).get("revision")
+        if not self.model_revision:
+            raise RuntimeError(
+                "model.revision must be pinned in config for paper-grade "
+                "reproducibility. Expected an HF SHA (e.g. "
+                "'ebb281ec70b05090aa6165b016eac8ec08e71b17'). See "
+                "configs/exp_v2_base.yaml model.revision."
             )
         self.device = config.get("model", {}).get("device", "cuda")
         self.quantization = config.get("model", {}).get("quantization", "none")
@@ -473,35 +476,61 @@ CRITICAL:
             }
         ]
 
-        # Inject task reference images (e.g. product photos) before the screenshot
+        # B-133 (/stress A1.1 v8 3-AI overlap P0-5, 2026-05-15): cross-baseline
+        # image-encode lenient alignment. Previously B0 wrapped encode in
+        # try/except + counted + continued text-only, while B1/B2 raised →
+        # same root cause (corrupt PIL / OOM during resize) produced
+        # asymmetric episode outcomes (B0 SoM step degraded to P-SoM step
+        # vs B1/B2 episode-killed). All 3 baselines now match: log + count
+        # + continue without that image. `aggregate_*.py` must
+        # symmetric-exclude steps with image_encode_error > 0 (paper-grade
+        # contamination flag, watchdog-auto-clean parallel).
         max_size = self.config.get("agent", {}).get("image_max_size", 1024)
+        _image_encode_error_count = 0
+
+        # Inject task reference images (e.g. product photos) before the screenshot
         if reference_images:
             for idx, ref_img in enumerate(reference_images):
-                if max(ref_img.size) > max_size:
-                    ratio = max_size / max(ref_img.size)
-                    new_size = (int(ref_img.size[0] * ratio), int(ref_img.size[1] * ratio))
-                    ref_img = ref_img.resize(new_size, Image.Resampling.LANCZOS)
-                label = (
-                    f"[Reference image {idx + 1}] "
-                    f"This image shows the target item described in the task. "
-                    f"Use it to identify which element to interact with."
-                )
-                content.append({"type": "text", "text": label})
-                content.append({"type": "image", "image": ref_img})
+                try:
+                    if max(ref_img.size) > max_size:
+                        ratio = max_size / max(ref_img.size)
+                        new_size = (int(ref_img.size[0] * ratio), int(ref_img.size[1] * ratio))
+                        ref_img = ref_img.resize(new_size, Image.Resampling.LANCZOS)
+                    label = (
+                        f"[Reference image {idx + 1}] "
+                        f"This image shows the target item described in the task. "
+                        f"Use it to identify which element to interact with."
+                    )
+                    content.append({"type": "text", "text": label})
+                    content.append({"type": "image", "image": ref_img})
+                except Exception:
+                    _image_encode_error_count += 1
+                    logger.warning(
+                        "B1 failed to encode reference image %d; skipping.",
+                        idx + 1, exc_info=True,
+                    )
 
         if image is not None:
-            # Resize if necessary
-            if max(image.size) > max_size:
-                ratio = max_size / max(image.size)
-                new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
-                image = image.resize(new_size, Image.Resampling.LANCZOS)
-            if reference_images:
-                # With reference images: append screenshot at end with label
-                content.append({"type": "text", "text": "[Current screenshot]"})
-                content.append({"type": "image", "image": image})
-            else:
-                # No reference images: preserve original position (before text)
-                content.insert(0, {"type": "image", "image": image})
+            try:
+                # Resize if necessary
+                if max(image.size) > max_size:
+                    ratio = max_size / max(image.size)
+                    new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
+                    image = image.resize(new_size, Image.Resampling.LANCZOS)
+                if reference_images:
+                    # With reference images: append screenshot at end with label
+                    content.append({"type": "text", "text": "[Current screenshot]"})
+                    content.append({"type": "image", "image": image})
+                else:
+                    # No reference images: preserve original position (before text)
+                    content.insert(0, {"type": "image", "image": image})
+            except Exception:
+                _image_encode_error_count += 1
+                logger.warning(
+                    "B1 failed to encode screenshot; continuing without image.",
+                    exc_info=True,
+                )
+                image = None  # ensure downstream image-bool checks see None
 
         messages = [{"role": "user", "content": content}]
 
@@ -594,7 +623,14 @@ CRITICAL:
             "output_tokens": len(generated_ids_trimmed[0]),  # Exact count
             "preprocess_ms": preprocess_ms,
             "generate_ms": generate_ms,
+            # B-133 (/stress A1.1 v8 3-AI overlap P0-5, 2026-05-15): align
+            # with B0 + B2 — count of image-encode failures this step
+            # (0 = clean; >0 = N images silently dropped). Persisted via
+            # runner step_record.image_meta (B-112 wiring). aggregate_*.py
+            # MUST symmetric-exclude steps with image_encode_error > 0 for
+            # paper-grade cross-baseline SR comparability.
+            "image_encode_error": _image_encode_error_count if _image_encode_error_count else None,
             **confidence_metrics,
         }
-        
+
         return action, meta

@@ -100,18 +100,24 @@ def test_proxy_agent_meta_carries_image_encode_error_field():
 
 
 def test_runner_revision_forward_is_qwen_class_gated():
-    """C4: top-level cfg.model.revision is a Qwen-specific historical
-    convention (paper-grade lock manifest pins the Qwen SHA there).
-    Forwarding into a Gemma3 backend with revision=None would silently
-    overwrite the B2 base model SHA — codex Mode B Q3 caught this leak.
+    """B-115 (Gemma3 leak) + B-131 (api_proxy leak): top-level
+    cfg.model.revision is a Qwen-local-4B-specific historical convention
+    (paper-grade lock manifest pins the B1 local Qwen SHA there).
+    Forwarding into Gemma3 (B-115) or api_proxy (B-131) backends would
+    silently inject the wrong base-model SHA — both leak vectors closed
+    by gating injection to {"local_qwen"} only. B-131 attack: codex
+    Mode B F2 caught that the B-115 fix only dropped local_gemma but
+    left api_proxy in the injection set, leaving B0 235B's
+    condition_meta.json reporting a B1 4B SHA.
     """
     src = (REPO_ROOT / "p79" / "experiment" / "runner" / "main.py").read_text()
     # The gating set must be present.
     assert "_QWEN_CLASS_BACKEND_TYPES" in src, (
-        "runner.main missing _QWEN_CLASS_BACKEND_TYPES gate — C4 fix "
-        "reverted. Top-level Qwen revision could leak into local_gemma."
+        "runner.main missing _QWEN_CLASS_BACKEND_TYPES gate — B-115/B-131 "
+        "fixes reverted. Top-level Qwen revision could leak into other backends."
     )
-    # The set must contain exactly the two Qwen-class backends.
+    # The set must contain ONLY local_qwen (B-131 closed the api_proxy leak;
+    # B-115 had previously closed the local_gemma leak).
     set_decl = re.search(
         r"_QWEN_CLASS_BACKEND_TYPES\s*=\s*\{([^}]*)\}", src
     )
@@ -121,15 +127,16 @@ def test_runner_revision_forward_is_qwen_class_gated():
         for s in set_decl.group(1).split(",")
         if s.strip()
     }
-    assert types_seen == {"local_qwen", "api_proxy"}, (
+    assert types_seen == {"local_qwen"}, (
         f"_QWEN_CLASS_BACKEND_TYPES drifted to {types_seen!r}; expected "
-        f"{{'local_qwen', 'api_proxy'}}. Adding more types here re-opens "
-        f"the cross-backend revision leak surface."
+        f"{{'local_qwen'}} (B-131 fix). Adding api_proxy back re-opens the "
+        f"B0 fake-revision-pin leak; adding local_gemma back re-opens "
+        f"B-115 leak."
     )
     # The conditional must include the backend-type check.
     assert "_backend_type in _QWEN_CLASS_BACKEND_TYPES" in src, (
         "runner.main revision-forward conditional no longer checks backend "
-        "type — C4 fix partially reverted; leak path re-opened."
+        "type — B-115/B-131 fix partially reverted; leak path re-opened."
     )
 
 
@@ -178,3 +185,121 @@ def test_configs_b0_b1_b2_max_new_tokens_parity():
         "drifted from the unified 4096 cap. /stress A1.1 F3 fix B-116 (§142) "
         "regression. Drift list:\n  " + "\n  ".join(drift)
     )
+
+
+
+# ---------------------------------------------------------------------------
+# /stress A1.1 v8 — Commit A round (B-133 / B-134 / B-135 / B-136 / B-137)
+# ---------------------------------------------------------------------------
+
+
+def test_b1_b2_image_encode_lenient_cross_baseline_align():
+    """B-133 (/stress A1.1 v8 3-AI overlap P0-5, 2026-05-15): all 3 agents
+    must have lenient try/except around image encoding + emit
+    image_encode_error count to meta. Previously B0 was lenient but B1/B2
+    raised, producing asymmetric episode outcomes for the same root cause.
+    """
+    b1_src = (REPO_ROOT / "p79" / "agents" / "qwen3vl_agent.py").read_text()
+    b2_src = (REPO_ROOT / "p79" / "agents" / "gemma3vl_agent.py").read_text()
+    b0_src = (REPO_ROOT / "p79" / "agents" / "proxy_api_agent.py").read_text()
+
+    for label, src in [("B0 (proxy)", b0_src), ("B1 (qwen3vl)", b1_src), ("B2 (gemma3vl)", b2_src)]:
+        assert "_image_encode_error_count" in src, (
+            f"{label} missing _image_encode_error_count counter — B-133 "
+            f"cross-baseline lenient alignment regressed."
+        )
+        assert '"image_encode_error"' in src, (
+            f"{label} meta dict missing image_encode_error field — "
+            f"runner.image_meta payload would be asymmetric across baselines."
+        )
+
+
+def test_runner_validate_action_bool_saved_into_parse_valid():
+    """B-134 (/stress A1.1 v8 codex F3, 2026-05-15): runner must save the
+    validate_action bool and combine it with agent meta.valid into
+    parse_valid. Previously the bool was discarded (action, _ =
+    validate_action(action)), splitting schema source-of-truth between
+    agent self-report and runner-rescued action.
+    """
+    src = (REPO_ROOT / "p79" / "experiment" / "runner" / "main.py").read_text()
+    assert "runner_valid_post_backend" in src, (
+        "runner.main missing runner_valid_post_backend — B-134 bool-save "
+        "regressed; runner is back to discarding validate_action result."
+    )
+    assert '"runner_invalid_action"' in src, (
+        "runner.main missing 'runner_invalid_action' failure_reason — "
+        "B-134 failure taxonomy expansion regressed."
+    )
+    assert "parse_valid = agent_parse_valid and runner_valid_post_backend" in src, (
+        "runner.main parse_valid computation no longer ANDs agent + runner "
+        "validity — B-134 contract regressed."
+    )
+
+
+def test_qwen_gemma_revision_strict_mode():
+    """B-136 (/stress A1.1 v8 Claude F5, 2026-05-15): qwen3vl + gemma3vl
+    must raise RuntimeError on missing model.revision (paper-grade strict
+    mode). Previously B1 fell back to a hard-coded SHA (silent provenance
+    lie) and B2 warned-and-loaded-HF-HEAD. Single cross-baseline policy:
+    revision MUST be explicit in yaml.
+    """
+    qwen_src = (REPO_ROOT / "p79" / "agents" / "qwen3vl_agent.py").read_text()
+    gemma_src = (REPO_ROOT / "p79" / "agents" / "gemma3vl_agent.py").read_text()
+
+    # Hardcoded fallback constant assignment must be gone. (Comments
+    # mentioning the historical name are OK; we look for the active
+    # ASSIGNMENT pattern at column 0/indented-block level.)
+    import re as _re
+    assignment_pattern = _re.compile(
+        r"^\s+_DEFAULT_REVISION\s*=", _re.MULTILINE
+    )
+    assert assignment_pattern.search(qwen_src) is None, (
+        "qwen3vl_agent still has an active `_DEFAULT_REVISION = ...` "
+        "assignment — B-136 strict mode regressed; silent provenance "
+        "fallback re-opened."
+    )
+
+    # Both agents must raise on missing revision.
+    for label, src in [("qwen3vl_agent", qwen_src), ("gemma3vl_agent", gemma_src)]:
+        assert "model.revision must be pinned" in src, (
+            f"{label} no longer raises strict-mode message on missing "
+            f"revision — B-136 regression."
+        )
+        assert "raise RuntimeError" in src, (
+            f"{label} missing RuntimeError raise for unpinned revision — "
+            f"B-136 strict-mode regression."
+        )
+
+
+def test_base_yaml_three_baselines_temperature_uniform_zero():
+    """B-137 (/stress A1.1 v8 codex F8, 2026-05-15): base yaml temperature
+    must be 0.0 for all 3 baseline backend blocks (local_4b / local_gemma /
+    api_strong). Code uses do_sample=False so the value never reaches
+    generate(), but run_meta records it verbatim — reviewer reading the
+    metadata sees cross-baseline decoding config asymmetry if any drift.
+    """
+    cfg_text = (REPO_ROOT / "configs" / "exp_v2_base.yaml").read_text()
+
+    import re as _re
+    # Find every backend block's temperature line by walking backend names.
+    for backend in ("local_4b", "local_gemma", "api_strong"):
+        # Match e.g. `  local_4b:\n ... temperature: <value>` (allow any
+        # interleaved lines until next backend block or top-level key).
+        pattern = _re.compile(
+            rf"^\s{{2}}{backend}:\s*\n"  # backend header (2-space indent)
+            r"((?:\s{4,}.*\n)+?)"          # inner block (indented lines)
+            r"^\s{4}temperature:\s*([\d.]+)",
+            _re.MULTILINE,
+        )
+        m = pattern.search(cfg_text)
+        assert m is not None, (
+            f"exp_v2_base.yaml: could not locate temperature line under "
+            f"backend `{backend}:` — block layout drifted from B-137 fix."
+        )
+        temp_val = float(m.group(2))
+        assert temp_val == 0.0, (
+            f"exp_v2_base.yaml backend `{backend}` temperature drifted to "
+            f"{temp_val} (expected 0.0). B-137 cross-baseline T=0 metadata "
+            f"parity regression. Code uses do_sample=False but yaml is the "
+            f"reviewer-visible run_meta source."
+        )

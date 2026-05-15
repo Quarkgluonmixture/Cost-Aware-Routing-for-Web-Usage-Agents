@@ -44,17 +44,19 @@ class Gemma3VLAgent:
         self.config = config
         model_cfg = config.get("model", {})
         self.model_path = model_cfg.get("path", "google/gemma-3-4b-it")
-        # No hard-coded revision default: the revision must be pinned in the
-        # backend config and forwarded by the backend (local_gemma.py). This
-        # avoids the silent-default provenance trap that affected the Qwen path
-        # (now also fixed there — B-83). Warn (never silent) if it is unset.
+        # B-136 (/stress A1.1 v8 Claude F5, 2026-05-15): revision STRICT mode
+        # aligned with B-136 in qwen3vl_agent.py. Previously this agent
+        # warned-and-loaded-HEAD on missing revision; now matches Qwen path
+        # by raising. Single cross-baseline policy: paper-grade configs MUST
+        # pin revision explicitly; no silent default / no HF-HEAD fallback.
         self.model_revision = model_cfg.get("revision")
         if not self.model_revision:
-            logger.warning(
-                "model.revision not set — loading %s at HF HEAD. Run provenance "
-                "cannot prove the loaded SHA from config; pin a SHA before "
-                "paper-grade runs.",
-                self.model_path,
+            raise RuntimeError(
+                "model.revision must be pinned in config for paper-grade "
+                "reproducibility. Loading at HF HEAD breaks the OSF lock "
+                "manifest — run_meta records the loaded SHA but config does "
+                "not, so reviewers cannot replay. See "
+                "configs/exp_v2_base.yaml local_gemma.revision."
             )
         self.device = model_cfg.get("device", "cuda")
         self.quantization = model_cfg.get("quantization", "none")
@@ -175,39 +177,60 @@ class Gemma3VLAgent:
             }
         ]
 
+        # B-133 (/stress A1.1 v8 3-AI overlap P0-5, 2026-05-15): cross-baseline
+        # image-encode lenient alignment. See qwen3vl_agent.py for full
+        # rationale — paper-grade requirement is "same root cause yields same
+        # cross-baseline outcome". B2 now matches B0 + B1 lenient pattern.
         max_size = self.config.get("agent", {}).get("image_max_size", 1024)
+        _image_encode_error_count = 0
+
         if reference_images:
             for idx, ref_img in enumerate(reference_images):
-                if max(ref_img.size) > max_size:
-                    ratio = max_size / max(ref_img.size)
-                    ref_img = ref_img.resize(
-                        (int(ref_img.size[0] * ratio), int(ref_img.size[1] * ratio)),
-                        Image.Resampling.LANCZOS,
+                try:
+                    if max(ref_img.size) > max_size:
+                        ratio = max_size / max(ref_img.size)
+                        ref_img = ref_img.resize(
+                            (int(ref_img.size[0] * ratio), int(ref_img.size[1] * ratio)),
+                            Image.Resampling.LANCZOS,
+                        )
+                    content.append(
+                        {
+                            "type": "text",
+                            "text": (
+                                f"[Reference image {idx + 1}] This image shows the "
+                                f"target item described in the task. Use it to "
+                                f"identify which element to interact with."
+                            ),
+                        }
                     )
-                content.append(
-                    {
-                        "type": "text",
-                        "text": (
-                            f"[Reference image {idx + 1}] This image shows the "
-                            f"target item described in the task. Use it to "
-                            f"identify which element to interact with."
-                        ),
-                    }
-                )
-                content.append({"type": "image", "image": ref_img})
+                    content.append({"type": "image", "image": ref_img})
+                except Exception:
+                    _image_encode_error_count += 1
+                    logger.warning(
+                        "B2 failed to encode reference image %d; skipping.",
+                        idx + 1, exc_info=True,
+                    )
 
         if image is not None:
-            if max(image.size) > max_size:
-                ratio = max_size / max(image.size)
-                image = image.resize(
-                    (int(image.size[0] * ratio), int(image.size[1] * ratio)),
-                    Image.Resampling.LANCZOS,
+            try:
+                if max(image.size) > max_size:
+                    ratio = max_size / max(image.size)
+                    image = image.resize(
+                        (int(image.size[0] * ratio), int(image.size[1] * ratio)),
+                        Image.Resampling.LANCZOS,
+                    )
+                if reference_images:
+                    content.append({"type": "text", "text": "[Current screenshot]"})
+                    content.append({"type": "image", "image": image})
+                else:
+                    content.insert(0, {"type": "image", "image": image})
+            except Exception:
+                _image_encode_error_count += 1
+                logger.warning(
+                    "B2 failed to encode screenshot; continuing without image.",
+                    exc_info=True,
                 )
-            if reference_images:
-                content.append({"type": "text", "text": "[Current screenshot]"})
-                content.append({"type": "image", "image": image})
-            else:
-                content.insert(0, {"type": "image", "image": image})
+                image = None  # ensure downstream image-bool checks see None
 
         messages = [{"role": "user", "content": content}]
 
@@ -291,6 +314,11 @@ class Gemma3VLAgent:
             "output_tokens": len(generated_ids_trimmed[0]),
             "preprocess_ms": preprocess_ms,
             "generate_ms": generate_ms,
+            # B-133 (/stress A1.1 v8 3-AI overlap P0-5, 2026-05-15): align
+            # with B0 + B1 — count of image-encode failures this step.
+            # Persisted via runner step_record.image_meta (B-112 wiring).
+            # aggregate_*.py MUST symmetric-exclude image_encode_error > 0.
+            "image_encode_error": _image_encode_error_count if _image_encode_error_count else None,
             **confidence_metrics,
         }
 

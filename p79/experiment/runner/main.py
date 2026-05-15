@@ -157,13 +157,20 @@ class ExperimentRunner:
         # local_qwen wrapper had no `revision` key and qwen3vl_agent silently
         # used its hard-coded default (merged config decoupled from loaded SHA).
         #
-        # /stress A1.1 codex Mode B C4 fix (2026-05-15): only forward into the
-        # Qwen-class backends (the top-level `model.revision` field is Qwen-
-        # specific by historical convention — see configs/exp_v2_base.yaml).
-        # Previously a Gemma3 (`local_gemma`) backend with `revision=None`
-        # could silently inherit the top-level Qwen SHA, leaving B2 loading at
-        # HF HEAD or worse, the wrong base model SHA, with no log trail.
-        _QWEN_CLASS_BACKEND_TYPES = {"local_qwen", "api_proxy"}
+        # /stress A1.1 codex Mode B (2026-05-15) — B-131 fix: api_proxy
+        # (B0 235B) MUST NOT inherit the top-level `model.revision` SHA,
+        # which by historical convention pins B1's local Qwen 4B revision
+        # (ebb281ec... — recorded in configs/exp_v2_base.yaml). Injecting a
+        # 4B SHA into B0's `condition_meta.json` is paper-grade reproducibility
+        # theatre: the proxy serves a 235B model whose provider snapshot is
+        # unrelated to the HF 4B revision. Codex F2 attack (post-B-115 sibling
+        # propagation): the prior fix dropped `local_gemma` from the injection
+        # list, but missed `api_proxy` — same disease, same partial sweep.
+        #
+        # B0 provider provenance: TODO (separate `provider_snapshot_id` /
+        # `api_model_version` field, requires proxy API support) — out of
+        # B-131 scope, tracked in master_bug_catalog A1.1 F2 follow-up.
+        _QWEN_CLASS_BACKEND_TYPES = {"local_qwen"}
         _model_revision = self.cfg.get("model", {}).get("revision")
         _backend_type = backend_cfg.get("type")
         if (
@@ -590,7 +597,10 @@ class ExperimentRunner:
             effective_cid, current_seed, condition.backend_id, task.site, task.task_id,
         )
         try:
-            summary = self._run_episode(condition, task, backend, condition_logger, condition_dir)
+            summary = self._run_episode(
+                condition, task, backend, condition_logger, condition_dir,
+                effective_cid=effective_cid,
+            )
         except BaseException as exc:
             if isinstance(exc, (KeyboardInterrupt, SystemExit)):
                 raise
@@ -675,7 +685,18 @@ class ExperimentRunner:
         backend: Any,
         condition_logger: LoggerV2,
         condition_dir: Path,
+        effective_cid: Optional[str] = None,
     ) -> Dict[str, Any]:
+        # B-132 (codex F1 fix 2026-05-15): multi-seed schema drift —
+        # `condition_dir` and `condition_meta.json` use `effective_cid`
+        # (= condition.condition_id + "_seedN" when len(seeds) > 1), but
+        # step JSONL + episode summary previously wrote `condition.condition_id`
+        # unchanged, causing silent join/aggregate collision when multi-seed
+        # mode activates. Default to `condition.condition_id` so single-seed
+        # mode (current Phase 1a) is byte-identical; explicit effective_cid
+        # threading via `_run_and_record_episode` for multi-seed correctness.
+        if effective_cid is None:
+            effective_cid = condition.condition_id
         # ── Auth refresh check (before browser context creation) ──
         site = task.site
         self._auth_episode_counts.setdefault(site, 0)
@@ -930,7 +951,18 @@ class ExperimentRunner:
             action, meta = backend.step(instruction, obs_for_backend, context)
             backend_latency_ms = (time.time() - backend_start) * 1000.0
 
-            action, _ = validate_action(action)
+            # B-134 (/stress A1.1 v8 codex F3, 2026-05-15): save runner-side
+            # validate_action result instead of discarding the bool. When
+            # backend returns a malformed action (e.g. unknown action_type
+            # like "clik"), validate_action rescues to {"action_type":"wait"}
+            # but previously runner threw away the bool, leaving JSONL with
+            # parse_valid=True / parse_failure_reason=None. That split the
+            # schema source-of-truth between "agent's self-reported validity"
+            # and "what runner actually executed", silently inflating
+            # parse_success rate across baselines. Now record both and emit
+            # a dedicated failure_reason so failure taxonomy can distinguish
+            # agent-side invalid from runner-rescued no-ops.
+            action, runner_valid_post_backend = validate_action(action)
             action = apply_secondary_modules(action, obs.text or "", condition.modules.as_dict())
             if bool(self.diagnostic_controls.get("enabled", False)):
                 diag_notes: List[str] = []
@@ -964,7 +996,12 @@ class ExperimentRunner:
                     )
                     if note:
                         diag_notes.append(note)
-                action, _ = validate_action(action)
+                # B-134: same bool-save pattern after diagnostic-controls
+                # mutation. If diagnostic controls mutate to an invalid
+                # action, the runner-rescue must be visible in failure
+                # taxonomy.
+                action, runner_valid_post_diag = validate_action(action)
+                runner_valid_post_backend = runner_valid_post_backend and runner_valid_post_diag
                 if diag_notes:
                     logger.info(
                         "Diagnostic controls applied site=%s task=%s step=%d notes=%s action=%s",
@@ -1164,8 +1201,19 @@ class ExperimentRunner:
             # Fold obs_prepare CPU cost into unified cost scalar (for router decisions)
             obs_prepare_cost = obs_prepare_ms * float(router_cfg.get("overhead_cost_per_ms", 0.0))
             step_total_cost = token_cost["total"] + router_overhead_cost + obs_prepare_cost
+            # B-134 (/stress A1.1 v8 codex F3, 2026-05-15): parse_valid is
+            # AND of agent self-report AND runner-side validate_action bool.
+            # If backend reported valid=True but runner had to rescue to
+            # wait (action_type unknown / coordinate missing / etc), this
+            # is a "runner_invalid_action" failure mode — explicit in the
+            # taxonomy, not silently absorbed into "valid wait action".
+            agent_parse_valid = bool(meta.get("valid", True))
+            parse_valid = agent_parse_valid and runner_valid_post_backend
             failure_reason = meta.get("failure_reason")
-            parse_valid = bool(meta.get("valid", True))
+            if not runner_valid_post_backend and agent_parse_valid:
+                # Backend self-reported valid but runner found malformed
+                # action; surface as its own failure mode.
+                failure_reason = "runner_invalid_action"
             fallback_finish = (
                 action_type_lower == "finish"
                 and (not parse_valid)
@@ -1204,7 +1252,7 @@ class ExperimentRunner:
             step_record = StepRecordV2(
                 schema_version=SCHEMA_VERSION_V2,
                 run_id=self.cfg["experiment"]["run_id"],
-                condition_id=condition.condition_id,
+                condition_id=effective_cid,
                 benchmark=task.benchmark,
                 benchmark_site=task.site,
                 task_id=task.task_id,
@@ -1531,7 +1579,7 @@ class ExperimentRunner:
         episode_summary = EpisodeSummaryV2(
             schema_version=SCHEMA_VERSION_V2,
             run_id=self.cfg["experiment"]["run_id"],
-            condition_id=condition.condition_id,
+            condition_id=effective_cid,
             benchmark=task.benchmark,
             benchmark_site=task.site,
             task_id=task.task_id,
