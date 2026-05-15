@@ -16,7 +16,8 @@ usage() {
 Usage: bash scripts/vwa/start_vwa_docker.sh [options]
 
 Options:
-  --sites <list>       Comma-separated sites: all|shopping|reddit|wikipedia|classifieds|homepage
+  --sites <list>       Comma-separated sites: all|shopping|shopping_admin|reddit|wikipedia|classifieds|homepage
+                       (shopping_admin shares the shopping container, adds host port 7780 → same Magento)
   --auto-setup         Run scripts/vwa/setup_vwa.sh automatically when required assets are missing
   --hostname <value>   Hostname used to patch VWA templates (default: localhost)
   --check-only         Only validate prerequisites, do not start services
@@ -108,7 +109,7 @@ check_prerequisites() {
     missing=1
   fi
 
-  if contains_site "shopping"; then
+  if contains_site "shopping" || contains_site "shopping_admin"; then
     if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^shopping_final_0712:latest$'; then
       echo "[MISSING] shopping_final_0712:latest image" >&2
       missing=1
@@ -160,7 +161,13 @@ check_prerequisites() {
 }
 
 start_shopping() {
-  echo "[START] shopping (http://${HOSTNAME_VALUE}:7770)"
+  local want_admin=0
+  contains_site "shopping_admin" && want_admin=1
+  if (( want_admin == 1 )); then
+    echo "[START] shopping (http://${HOSTNAME_VALUE}:7770) + shopping_admin (http://${HOSTNAME_VALUE}:7780 → same container)"
+  else
+    echo "[START] shopping (http://${HOSTNAME_VALUE}:7770)"
+  fi
   local container_name=""
   container_name="$(find_running_container vwa-shopping shopping || true)"
   if [[ -n "${container_name}" ]]; then
@@ -171,7 +178,9 @@ start_shopping() {
       docker start "${container_name}" >/dev/null 2>&1
     else
       container_name="vwa-shopping"
-      docker run --name "${container_name}" -p 7770:80 -d shopping_final_0712 >/dev/null
+      local port_args="-p 7770:80"
+      (( want_admin == 1 )) && port_args="${port_args} -p 7780:80"
+      docker run --name "${container_name}" ${port_args} -d shopping_final_0712 >/dev/null
     fi
     sleep 10
   fi
@@ -260,7 +269,7 @@ main() {
     exit 0
   fi
 
-  contains_site "shopping" && start_shopping
+  { contains_site "shopping" || contains_site "shopping_admin"; } && start_shopping
   contains_site "reddit" && start_reddit
   contains_site "wikipedia" && start_wikipedia
   contains_site "classifieds" && start_classifieds
