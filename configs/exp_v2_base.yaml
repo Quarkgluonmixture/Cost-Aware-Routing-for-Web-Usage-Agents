@@ -76,7 +76,7 @@ metrics:
     enabled: true
     kwh_per_step: null
     co2e_kg_per_kwh: null
-    hardware_profile: "dgx_spark"
+    hardware_profile: "a100_pcie_40gb"  # B-118 (2026-05-15): canonical paper-grade rerun host = A100 Condenser VM; dgx_spark profile retired per A100 migration
     region: "uk"
     carbon_intensity_g_per_kwh: 220  # UK grid average 2024
     use_psutil: true

@@ -13,7 +13,7 @@
 
 | Component | Pin | Source |
 |---|---|---|
-| **VWA submodule SHA** | **`832f037e2cc7ebda4a41831443a3fc9b79d06cd6`** | `git -C external/visualwebarena rev-parse HEAD` (locked 2026-05-09) |
+| **VWA submodule SHA** | **`f0c835b35191e2ff8d46993d9279674a0956ef14`** (branch `p79-patches`, B-91 source-level FP guard) | `git -C external/visualwebarena rev-parse HEAD` (locked 2026-05-15; supersedes 2026-05-09 lock `832f037e` after B-91 patch land) |
 | Repo URL | https://github.com/web-arena-x/visualwebarena | Submodule URL in `.gitmodules` |
 | WebArena upstream | (not used in this paper, scoped out per audit F3 / preregistration §7) | — |
 
@@ -155,7 +155,7 @@ make verify-version-locks
 ```
 
 This will:
-1. Check `git -C external/visualwebarena rev-parse HEAD` matches `832f037e2cc7ebda4a41831443a3fc9b79d06cd6`
+1. Check `git -C external/visualwebarena rev-parse HEAD` matches `f0c835b35191e2ff8d46993d9279674a0956ef14` (branch `p79-patches`)
 2. Hash each per-site task pool and compare to entries above
 3. Check `pip show playwright` is `1.58.0`
 4. Check `~/.cache/ms-playwright/chromium-1208/` exists
@@ -184,3 +184,7 @@ When a pin changes (intentional upgrade or unavoidable drift):
   `a100-jiaming-test` (A100-PCIE-40GB, self-hosted VWA Docker). DGX→quark Tailscale stack retained
   for pre-2026-05-15 archive reference only. New Hardware/Host substrate section added above. #11
   A100 VM VWA Docker bring-up gates canonical launch.
+- **2026-05-15 (B-117 fix per codex Mode B P0-2)**: VWA submodule SHA pin updated from `832f037e`
+  → `f0c835b35191e2ff8d46993d9279674a0956ef14` (branch `p79-patches`) to reflect B-91 source-level
+  FP guard. `make pre-launch-check` no longer fails when verifying against the actual submodule HEAD.
+  Old `832f037e` retained in changelog as pre-B-91 reference.

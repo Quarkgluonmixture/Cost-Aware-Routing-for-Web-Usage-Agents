@@ -46,12 +46,18 @@ EVALUATOR_SOURCE_FILES = [
     "p79/experiment/analysis.py",      # Pareto / scored_task_count / analyze_run
     "p79/experiment/environment.py",   # VwaEvaluator wrapper
     "p79/experiment/metrics.py",       # aggregate_condition_metrics (SR roll-up)
+    # B-119 (2026-05-15, codex Mode B P1-2): include external VWA evaluator helper
+    # so the combined_sha256 catches B-91 source-level FP guard regressions.
+    "external/visualwebarena/evaluation_harness/helper_functions.py",  # llm_fuzzy_match / llm_ua_match (B-91 empty-prediction guard)
 ]
 
 logger = logging.getLogger("snapshot-env")
 
+# B-119 (2026-05-15): default models cover all 3 baselines (B0 = proxy API,
+# no HF SHA; B1 = Qwen3-VL-4B-Instruct local; B2 = Gemma3-VL local).
 DEFAULT_MODELS = [
-    "Qwen/Qwen3-VL-4B-Instruct",
+    "Qwen/Qwen3-VL-4B-Instruct",        # B1
+    "google/gemma-3-4b-it",             # B2 (added 2026-05-14 cross-family matched-capability control)
 ]
 
 

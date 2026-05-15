@@ -42,17 +42,21 @@ def main() -> None:
         cfg.setdefault("runtime", {})["max_steps"] = args.max_steps
 
     runner = ExperimentRunner(cfg)
-    out_dir = runner.run()
 
-    # Paper-grade provenance: dump env snapshot once per run (Gap 1, 笔记 §114)
+    # Paper-grade provenance: dump env snapshot BEFORE runner.run() so crashed
+    # runs still have provenance (B-119 fix 2026-05-15 per codex Mode B P1-2c —
+    # previously snapshot ran post-run, crashed runs landed with no env_snapshot.json).
+    # output_root is set in ExperimentRunner.__init__, available before run().
     try:
         from scripts.provenance.snapshot_env import capture_env_snapshot
-        snap_path = Path(out_dir) / "env_snapshot.json"
+        runner.output_root.mkdir(parents=True, exist_ok=True)
+        snap_path = runner.output_root / "env_snapshot.json"
         capture_env_snapshot(snap_path, extra={"run_id": cfg["experiment"]["run_id"], "config_path": args.config})
-        logging.info("Env snapshot dumped: %s", snap_path)
+        logging.info("Env snapshot dumped pre-run: %s", snap_path)
     except Exception as e:
         logging.warning("Env snapshot failed (non-fatal): %s", e)
 
+    out_dir = runner.run()
     logging.info("Experiment completed: %s", out_dir)
 
 
