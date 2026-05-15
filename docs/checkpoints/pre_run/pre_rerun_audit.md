@@ -35,7 +35,7 @@ philosophy warns against (CLAUDE.md "don't hardcode what changes; reference it")
 ## Pre-fire checklist (the actual gate — run this)
 
 ```bash
-bash scripts/queues/queue_phase1_paper_grade.sh dry-run    # preview 24-condition chains
+bash scripts/queues/queue_phase1_paper_grade.sh dry-run    # preview 36-condition chains (B-132 2026-05-15: was "24-condition" pre-B2 addition)
 bash scripts/queues/queue_phase1_paper_grade.sh launch     # Gate 1-7 block on any failure
 ```
 

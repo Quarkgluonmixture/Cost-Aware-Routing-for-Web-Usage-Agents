@@ -53,13 +53,13 @@
 - [x] `p79/` (agent + experiment + analysis modules)
 - [x] `configs/exp_v2_*.yaml` (locked seed=42 + per-site configs)
 - [x] `pyproject.toml` (dep declarations)
-- [x] `external/visualwebarena/` submodule SHA pinned
+- [x] `external/visualwebarena/` submodule SHA pinned (`p79-patches` branch `f0c835b` post-B-91)
 - [x] `docs/checkpoints/pre_run/` (preregistration + locked versions + audit + cards)
-- [x] `docs/checkpoints/paper_drafts/` (camera-ready prose)
-- [x] `results/mechanistic/archive_subset_b1_{cls,reddit}/` (curated mirage subsets, 16.5MB+35MB)
-- [x] `results/mechanistic/curate_mirage_b1_{classifieds,reddit}/candidates.{jsonl,md}` (paper-cite-able)
-- [x] `results/provenance/` (env snapshots, evaluator fingerprints)
-- [x] `master_bug_catalog.md` (full 80+ entries, status + commit SHA per fix)
+- [x] `docs/checkpoints/paper_drafts/` (camera-ready prose — paper-1 only; section5_mechanism.md is paper-2 working draft, NOT released in paper-1 DOI)
+- [ ] ~~`results/mechanistic/archive_subset_b1_{cls,reddit}/`~~ **EXCLUDED from paper-1 release (B-132 fix per pre_run/ residual audit 2026-05-15 evening)** — mechanism §5 deferred to paper-2 per advisor 2026-05-14; archive mirage subsets will not be re-cited in paper-1. User will re-run mechanism with new data for paper-2 own release (option α 2026-05-15)
+- [ ] ~~`results/mechanistic/curate_mirage_b1_{classifieds,reddit}/candidates.{jsonl,md}`~~ **EXCLUDED from paper-1 release (B-132)** — same rationale; paper-2 will mint fresh mirage curation on new data
+- [x] `results/provenance/` (env snapshots, evaluator fingerprints — A100 self-host canonical post-2026-05-15)
+- [x] `master_bug_catalog.md` (full ~130 entries through §143, status + commit SHA per fix)
 
 ## Verification command (planned)
 

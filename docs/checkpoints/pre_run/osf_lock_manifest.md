@@ -18,9 +18,9 @@ drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision
 - [ ] `preregistration.md` final text edit committed + pushed (incl. 2026-05-13
       codex stress audit propagation: K-of-N transparency-only + 24/4 scope +
       drop-one H1 formula + outcome-independent smoke gate + Appendix A 2026-05-13)
-- [ ] `run_manifest.yaml` archived rows verified (Phase 1a 36-condition scope = 2 sites × 3 models (B0+B1+B2) × 6 modes
-      × 2 models × 6 modes; all `grade=archived` for pre-fix cells, `grade=paper-grade`
-      for Phase 1a post-fix rerun cells; Phase 1b shop deferred rows separately tagged)
+- [ ] `run_manifest.yaml` archived rows verified (Phase 1a 36-condition scope = 2 sites × 3 models (B0+B1+B2) × 6 modes;
+      all `grade=archived` for pre-fix cells, `grade=paper-grade` for Phase 1a post-fix rerun cells on A100 self-host;
+      Phase 1b shop deferred rows separately tagged — B-132 cleanup 2026-05-15 removed dangling "× 2 models × 6 modes" residual from Batch 4 edit)
 - [ ] All paper draft sections section1-8 + paper.bib (57 entries) snapshot to
       `docs/checkpoints/paper_drafts_locked/` directory (immutable copy)
 - [ ] `env_snapshot.json` of latest run on each machine (DGX, A100, Myriad if
@@ -62,9 +62,10 @@ drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision
 
 | Machine | env_snapshot.json | vwa_snapshot.json | Locked at |
 |---|---|---|---|
-| DGX `spark-9ea3` (Phase 1 baseline) | `results/provenance/env_lock_dgx.json` | `results/provenance/vwa_dgx_via_quark.json` | TBD |
-| A100 `condense` (Phase 2 rerun + mechanistic) | `results/provenance/env_lock_a100.json` | `results/provenance/vwa_a100_self_host.json` | TBD |
-| Myriad (cross-arch backup, optional) | `results/provenance/env_lock_myriad.json` | N/A (no VWA use case) | TBD if used |
+| **A100 `a100-jiaming-test` (paper-1 CANONICAL Phase 1a + Phase 1b post-2026-05-15)** | `results/provenance/env_lock_a100.json` | `results/provenance/vwa_a100_self_host.json` | TBD (gates OSF lock) |
+| DGX `spark-9ea3` (pre-2026-05-15 archive reference only — NOT paper-1 canonical, retained for §139.8 FP sensitivity ladder + Appendix D contamination disclosure) | `results/provenance/env_lock_dgx.json` | `results/provenance/vwa_dgx_via_quark.json` | TBD (archive baseline; cross-host comparison NOT made per §7 Infrastructure migration note) |
+| Myriad (cross-arch numerical-determinism check, optional — paper-2 / Appendix F6) | `results/provenance/env_lock_myriad.json` | N/A (no VWA use case) | TBD if used |
+| ~~A100 "Phase 2 mechanistic"~~ | RETIRED 2026-05-15 (B-132): mechanism §5 deferred to paper-2 per advisor 2026-05-14; mechanism-specific A100 provenance moves to paper-2 OSF manifest | — | retired |
 
 Each `env_snapshot.json` captures: torch / transformers / Python / git commit /
 HuggingFace model revision SHA (Qwen3-VL-4B + Llama-3.2-Vision if used) /
@@ -84,8 +85,8 @@ GPU compute capability / hostname / nvidia-smi output.
 
 1. **Receive advisor reply** → save email PDF + extract Gmail message-id
 2. **Update `preregistration.md`** with confirmed thresholds + decision log entry
-3. **Run `python3 scripts/provenance/snapshot_env.py`** on DGX + A100 (+ Myriad
-   if used), commit results under `results/provenance/env_lock_<host>.json`
+3. **Run `python3 scripts/provenance/snapshot_env.py`** on **A100 (paper-1 canonical, mandatory)** + DGX (archive reference) + Myriad (optional cross-arch),
+   commit results under `results/provenance/env_lock_<host>.json` (B-132 2026-05-15: A100 is canonical, DGX is archive-only per §7 Infrastructure migration note)
 4. **Run `bash scripts/provenance/snapshot_vwa.sh`** on each VWA-bearing host,
    commit results
 5. **Snapshot paper drafts** → `cp -r paper_drafts paper_drafts_locked` + commit

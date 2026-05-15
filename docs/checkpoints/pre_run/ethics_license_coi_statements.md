@@ -11,13 +11,21 @@ under the **MIT License**, consistent with VisualWebArena (Koh et al. 2024)
 and WebArena (Zhou et al. 2024) licensing. The released artifact includes:
 
 - All experiment scripts at the locked git commit SHA
-- Configuration YAMLs with seed=42 and inference parameters
-- Curated mirage task subsets (`results/mechanistic/archive_subset_b1_{cls,reddit}/`)
-  for cross-machine mechanistic replication
-- Analysis pipeline: `stage2_layer_significance.py` (Holm + bootstrap),
-  `aggregate_phantom_lift.py` (paired McNemar), `power_analysis.py` (MDE)
+- Configuration YAMLs with seed=42 and inference parameters (3 baselines:
+  B0 Qwen3-VL-235B-A22B via proxy API, B1 Qwen3-VL-4B local, B2 Gemma3-VL
+  `google/gemma-3-4b-it` local)
+- Analysis pipeline: `aggregate_phantom_lift.py` (paired bootstrap),
+  `power_analysis.py` (MDE at k=6), `preregistration_decision_test.py`
+  (H1+H3 R1-R5 framing rule verdict at 6 statistical cells),
+  `generate_per_task_sr.py` (wide-format CSV producer for decision test)
 - Pre-registration document (`preregistration.md`) with locked git SHA and OSF DOI
   (filled at advisor witness time)
+- **NOT included** (B-132 fix per pre_run/ residual audit 2026-05-15 evening):
+  mechanism §5 artifacts (`results/mechanistic/archive_subset_b1_*` + curated
+  mirage candidates + `stage2_layer_significance.py` outputs). Mechanism §5
+  deferred to paper-2 per advisor 2026-05-14; paper-1 OSF DOI does NOT cite
+  paper-2 forward stub artifacts. User will mint fresh mirage curation +
+  Stage 2 outputs on new data for paper-2 own release.
 
 The released artifact does **not** include:
 - B0 proxy API credentials (`scripts/vwa_env_remote.sh`, `.env` — gitignored)
@@ -31,10 +39,10 @@ The authors declare **no conflicts of interest**. This research was conducted
 as part of the lead author's MSc thesis at University College London (UCL),
 supervised by faculty in the UCL AI Centre. Compute resources were provided by:
 
-- UCL Myriad HPC cluster (mixed V100/A100 nodes) — institutional research allocation
-- UCL Condense A100 (40GB dedicated allocation) — institutional research allocation
-- DGX Spark workstation (NVIDIA GB10) — shared research workstation, HolisticAI lab
-- Tailscale (Personal Plan) for cross-machine networking
+- **UCL Condense A100 (A100-PCIE-40GB dedicated allocation, VM `a100-jiaming-test`)** — institutional research allocation; canonical paper-grade rerun host post-2026-05-15 (self-hosted VWA Docker, no Tailscale)
+- UCL Myriad HPC cluster (mixed V100/A100 nodes) — institutional research allocation; used for cross-arch numerical determinism check (audit F6)
+- DGX Spark workstation (NVIDIA GB10) — shared research workstation, HolisticAI lab; **archive-only post-2026-05-15** (pre-fix Phase 1a archive data was DGX→quark Tailscale → VWA Docker stack; canonical paper-grade run migrated to A100 self-host)
+- Tailscale (Personal Plan) for cross-machine networking — used for DGX→quark archive era only; A100 canonical run no longer uses Tailscale
 
 Model API costs (B0 proxy access to Qwen3-VL-235B-A22B) were covered by lab
 research budget. No external industry funding, no consulting relationships
@@ -85,7 +93,8 @@ web-agent research has known dual-use risks worth disclosing:
 3. **Web-agent benchmark contamination risk**: Cheap inference-time routing
    could accelerate gaming of public benchmarks (VWA / WA / Mind2Web /
    AgentBench leaderboards). We disclose this risk; our paper does not
-   benchmark-game (we report all 16 cells per locked preregistration, not
+   benchmark-game (we report all 36 conditions / 6 statistical cells per
+   locked preregistration — Phase 1a B0+B1+B2 × cls+red × 6 modes — not
    cherry-picked), but readers building on our work should be aware that
    benchmark selection bias is a documented hazard in this space.
 
@@ -104,10 +113,13 @@ arguments are not a license to deploy without domain-specific safety eval.
 ## Provenance + Reproducibility (audit A14 cross-reference)
 
 See `preregistration.md §7` for the full reproducibility scope statement
-covering 6 component tiers (B1 byte-identical / B1 mechanistic / B0
-verifiable from traces / VWA env / Evaluator / Stage 2 analysis). All
-B1-driven mechanistic claims in paper §5 are byte-identical reproducible
-under the released artifact + HF model SHA + seed=42.
+covering paper-1 component tiers (B1 byte-identical / B2 byte-identical /
+B0 verifiable from traces / VWA env A100 self-host / Evaluator p79-patches
+f0c835b). Paper §5 mechanism analysis (Stage 2 activation patching, layer
+probes, logit lens) is **paper-2 scope** per advisor 2026-05-14 — paper-1
+OSF DOI does NOT cover mechanism §5 reproducibility; paper-2 will mint
+its own DOI for fresh mirage curation + Stage 2 outputs (B-132 per
+pre_run/ residual audit 2026-05-15).
 
 ## References
 

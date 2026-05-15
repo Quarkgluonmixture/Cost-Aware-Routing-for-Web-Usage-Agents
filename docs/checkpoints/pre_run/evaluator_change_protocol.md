@@ -1,15 +1,36 @@
 # Evaluator Change Protocol
 
-**Purpose**: Codify how to handle changes to scoring code (`compute_adjusted_success`,
-VWA evaluator wrappers, FP rules). Without an explicit policy, post-lock evaluator
-edits become indistinguishable from p-hacking. With this policy, every change is
-classified into a tier with a corresponding workflow.
+**Purpose**: Codify how to handle changes to scoring code (VWA evaluator wrappers,
+FP rules, source-level evaluator patches like B-91). Without an explicit policy,
+post-lock evaluator edits become indistinguishable from p-hacking. With this
+policy, every change is classified into a tier with a corresponding workflow.
 
-**Tied to**: `preregistration.md` (commits to FP filter primary = na_fp + eval_fp,
-§95 reform); `osf_lock_manifest.md` (8-step DOI lock); `reeval_audit_protocol.md`
+**Tied to**: `preregistration.md` §4 "FP filter architecture" row (REVISED
+2026-05-14 — §139.8 source-level fix supersedes the post-hoc `na_fp + eval_fp`
+ladder); `osf_lock_manifest.md` (8-step DOI lock); `reeval_audit_protocol.md`
 (per-episode audit trail).
 
-**Status**: 🟢 Active (effective from 笔记 §115, 2026-05-07).
+**Status**: 🟢 Active (effective from 笔记 §115, 2026-05-07; B-134 banner update
+2026-05-15 for §139.8 FP-architecture retire context).
+
+⚠️ **B-134 update 2026-05-15 — current FP framework is source-level, not post-hoc**:
+The Tier classification (T0/T1/T2/T3) framework below remains valid. **However**:
+the protocol's body still references the OBSOLETE post-hoc `compute_adjusted_success`
+layer + `na_fp + eval_fp + visual_fp` 3-layer ladder — per §139.8 (preregistration.md
+§4 + Appendix A 2026-05-14) all three are retired:
+- na_fp fixed at the **VWA evaluator boundary** (B-91 empty-prediction guard
+  on `llm_fuzzy_match` / `llm_ua_match`, submodule `p79-patches` branch `f0c835b`)
+- eval_fp `program_html` branch dropped (no scalable boundary; contamination
+  prevented upstream by `RESET_BEFORE`)
+- visual_fp retired earlier (2026-05-09, boundary-undecidable)
+- N/A tasks excluded at task-load (`task.exclude_na_tasks: true` default)
+- `compute_adjusted_success` retired from `p79/experiment/analysis.py` — raw
+  `success` is canonical post-fix
+
+Tier definitions below (§2) and the §95 reform precedent are retained for
+**historical context + future evaluator changes**. Any new evaluator-code
+modification still goes through this Tier classification — e.g., the B-91
+patch itself was a **T0** post-§95-reform change applied pre-lock.
 
 ---
 

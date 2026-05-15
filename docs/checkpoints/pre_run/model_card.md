@@ -64,7 +64,7 @@ local, added 2026-05-14 as a cross-family robustness-check (4B parity) control v
 | Model name | `Qwen/Qwen3-VL-4B-Instruct` |
 | HuggingFace revision SHA | **`ebb281ec70b05090aa6165b016eac8ec08e71b17`** (pinned, see `locked_versions.md`) |
 | Architecture | Dense decoder-only transformer (4B params) + vision encoder (~700M params for image embedding) |
-| Modality | Multimodal text + image (used for both VWA agent + Stage 2 mechanistic analysis) |
+| Modality | Multimodal text + image (paper-1: VWA agent role; Stage 2 mechanistic analysis is **paper-2 scope** per advisor 2026-05-14, B-132 banner update 2026-05-15) |
 | Access | **Open weights** — fully reproducible, replicators download from HuggingFace |
 | License | Apache 2.0 (per HF model card) |
 | Storage | ~10GB bf16 weights cached at `~/.cache/huggingface/hub/models--Qwen--Qwen3-VL-4B-Instruct/snapshots/ebb281ec.../` |

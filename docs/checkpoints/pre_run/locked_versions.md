@@ -53,15 +53,17 @@ upgrade, which is treated as a T0 evaluator-relevant change per
 
 ## Model substrate
 
-### B1 — local Qwen3-VL-4B (mechanistic + B1 baseline)
+### B1 — local Qwen3-VL-4B (paper-1 within-family local baseline)
 
 | Component | Pin |
 |---|---|
 | **HF revision SHA** | **`ebb281ec70b05090aa6165b016eac8ec08e71b17`** |
 | HF model name | `Qwen/Qwen3-VL-4B-Instruct` |
 | Dtype | `torch.bfloat16` |
-| Decoding | greedy (`do_sample=False`), `max_new_tokens` per task / 50 for Stage 2 |
+| Decoding | greedy (`do_sample=False`), `max_new_tokens=4096` (B-116 unified B1+B2 from 384, commit `9f70b4e`) |
 | Seed | 42 (`configs/exp_v2_base.yaml`) |
+| Paper-1 role | Within-family scale comparison vs B0 (Qwen3-VL 235B vs 4B) |
+| ⚠️ Mechanism §5 / Stage 2 patching | **paper-2 scope** per advisor 2026-05-14 (B-132 banner update 2026-05-15); previous `/ 50 for Stage 2` decoding override retired from this paper-1 lock |
 
 Recorded automatically per run via `snapshot_env.py` → `env_snapshot.json`
 `extra.hf_model_revision_pinned`.

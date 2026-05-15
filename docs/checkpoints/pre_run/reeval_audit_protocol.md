@@ -1,15 +1,30 @@
 # Re-evaluation Audit Protocol
 
 **Purpose**: Codify the audit trail every `make rederive` invocation must leave
-behind, so a reviewer asking "this episode's adjusted_SR was re-derived how many
+behind, so a reviewer asking "this episode's success was re-derived how many
 times, by which evaluator code SHA, when, and why?" has a deterministic answer
 from `summary.json` alone.
 
 **Tied to**: `evaluator_change_protocol.md` (Protocol A — Tier classification);
-`osf_lock_manifest.md` (lock-time SHA capture); `preregistration.md` (FP filter
-primary spec).
+`osf_lock_manifest.md` (lock-time SHA capture); `preregistration.md` §4
+"FP filter architecture" row (revised 2026-05-14 §139.8 — post-hoc layer retired).
 
-**Status**: 🟢 Active (effective from 笔记 §115, 2026-05-07).
+**Status**: 🟢 Active (effective from 笔记 §115, 2026-05-07; B-133 banner update
+2026-05-15 for §139.8 FP-architecture retire).
+
+⚠️ **B-133 update 2026-05-15 — §139.8 FP-architecture retire context**:
+The example JSON snippets and `rewrite_set` lists below reference `adjusted_success`
+and `fp_reason` — these are **archive-era schema fields** (pre-2026-05-14). Per
+§139.8 FP restructure (preregistration.md §4 + Appendix A 2026-05-14):
+- `adjusted_success ≡ success` (the post-hoc `compute_adjusted_success` layer
+  is retired; raw `success` from the fixed evaluator is canonical)
+- `fp_reason` no longer written (na_fp fixed at evaluator via B-91 patch in
+  VWA submodule `p79-patches` branch `f0c835b`; eval_fp branch dropped;
+  N/A tasks excluded at task-load time)
+- This protocol still applies to **archive data re-derivation** (Phase 1a
+  pre-fix episodes, Appendix D contamination disclosure). For post-§139.8
+  canonical A100 rerun, `rederive_metadata` records evaluator SHA only
+  (no `adjusted_success` / `fp_reason` rewrite_set entries).
 
 ---
 
