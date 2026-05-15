@@ -25,7 +25,7 @@ scope_revision_2026_05_15: experimental host migrated DGX Spark (via quark Tails
 > **Companion docs**:
 > - `docs/reference/EVIDENCE_LAYER_AUDIT.md` §2 — template + meta-rationale
 > - `docs/checkpoints/paper_planning.md` §1 + §2 — paper hook + theory framework
-> - `docs/checkpoints/ADVISOR_SYNC.md` §1 — advisor sync prep, lock decision questions
+> - `docs/checkpoints/_status/issues/issue_advisor_sync_2026-05-14.md` + `paper_planning.md §19` decision log (ADVISOR_SYNC.md retired 2026-05-15, commit `f64bc9d`; replaced by frontmatter-driven Bases view)
 
 ---
 

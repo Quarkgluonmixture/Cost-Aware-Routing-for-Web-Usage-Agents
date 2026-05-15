@@ -14,7 +14,7 @@ updated: 2026-05-15
 > - 过去 chronicle → [[实验笔记]] (latest §140)
 > - Strategy / theory → [[paper_planning]]
 > - **Phase 1 执行计划 + audit checklist** → [[phase1_plan]] ⭐ canonical
-> - Advisor sync prep → [[ADVISOR_SYNC]] + [[followup]]
+> - Advisor sync prep → [[issue_advisor_sync_2026-05-14]] + [[followup]]
 > - OSF DOI lock workflow → [[osf_lock_manifest]]
 > - Compute infrastructure → [[COMPUTE_INFRASTRUCTURE]]
 >
@@ -171,8 +171,8 @@ Train/test split protocol → 倾向 5-fold site-stratified CV (vs LOSO)。设�
 
 ## §9 Advisor align
 
-详 [[ADVISOR_SYNC]] + [[followup]] (2026-05-14 sync — Part 1 novelty + Part 2 决策点). Sync 后:
-decision log 写 [[paper_planning]] + framing decisions register → ADVISOR_SYNC status open → discussed.
+详 [[issue_advisor_sync_2026-05-14]] + [[followup]] (2026-05-14 sync — Part 1 novelty + Part 2 决策点). Sync 后:
+decision log 写 [[paper_planning]] + framing decisions register → [[issue_advisor_sync_2026-05-14]] status open → discussed (ADVISOR_SYNC.md retired 2026-05-15).
 
 ---
 

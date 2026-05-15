@@ -3,7 +3,7 @@
 **Purpose**: Codify the artefacts whose SHA-256 / git ref get frozen at the
 moment of OSF preregistration DOI minting. Once advisor's email reply arrives
 (post 5/5 sync) confirming K_h1 / K_h3 / TOST δ thresholds, this checklist
-drives the 8-step DOI workflow (笔记 §110 + ADVISOR_SYNC §F).
+drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision log + `osf_lock_manifest.md §3`; ADVISOR_SYNC.md retired 2026-05-15, commit `f64bc9d`, replaced by `_status/issues/issue_advisor_sync_2026-05-14.md` frontmatter + Bases view).
 
 **Status**: 🟡 Draft — fields populate at lock moment.
 **Lock blocker**: ⏳ advisor email reply (Q1-Q11 in `advisor_sync_5_5_followup.md`)
@@ -13,12 +13,12 @@ drives the 8-step DOI workflow (笔记 §110 + ADVISOR_SYNC §F).
 ## §1 Pre-lock checklist (everything must be done before OSF DOI mint)
 
 - [ ] Advisor email reply received (K_h1=0.75 transparency / K_h3=0.67 transparency /
-      TOST δ=1.0pp SR-margin / Phase 1a 24-condition 4-cell scope confirmed
+      TOST δ=1.0pp SR-margin / Phase 1a 36-condition 6-cell scope (B0+B1+B2 added 2026-05-14) confirmed
       OR alternative noted)
 - [ ] `preregistration.md` final text edit committed + pushed (incl. 2026-05-13
       codex stress audit propagation: K-of-N transparency-only + 24/4 scope +
       drop-one H1 formula + outcome-independent smoke gate + Appendix A 2026-05-13)
-- [ ] `run_manifest.yaml` archived rows verified (Phase 1a 24-condition scope = 2 sites
+- [ ] `run_manifest.yaml` archived rows verified (Phase 1a 36-condition scope = 2 sites × 3 models (B0+B1+B2) × 6 modes
       × 2 models × 6 modes; all `grade=archived` for pre-fix cells, `grade=paper-grade`
       for Phase 1a post-fix rerun cells; Phase 1b shop deferred rows separately tagged)
 - [ ] All paper draft sections section1-8 + paper.bib (57 entries) snapshot to
@@ -48,14 +48,14 @@ drives the 8-step DOI workflow (笔记 §110 + ADVISOR_SYNC §F).
 
 | Threshold | Pre-reg value | Advisor confirmed? | Notes |
 |---|---|---|---|
-| H1 PRIMARY gate (P-SoM drop-one oracle ceiling lift) | Pooled DerSimonian-Laird meta Holm α=0.05 sig on N=4 (site, model) cells + pooled magnitude θ_RE ≥ 1.0pp + one-sided superiority test (H0: θ ≤ +1.0pp vs H1: θ > +1.0pp) rejected at α=0.05 (TOST as informational secondary report only) | ⏳ pending | Drop-one = oracle SR over {6 modes} − oracle SR over {5 modes drop P-SoM} per task, paired bootstrap per cell, pooled across 4 cells. H1(ii) superiority threshold replaced TOST 2026-05-13 due to semantic ambiguity (see preregistration.md Appendix A) |
-| H3 PRIMARY gate axis-1 (P-text \ P-SoM) | Pooled axis-1 DerSimonian-Laird meta Holm α=0.05 sig on N=4 cells | ⏳ pending | Per-cell bootstrap CI on unique-task count, then pooled meta |
+| H1 PRIMARY gate (P-SoM drop-one oracle ceiling lift) | **Fixed-effects inverse-variance pooled** average θ_FE over the **6 *planned* (site, model) cells** + one-sided superiority test (H0: θ_FE ≤ +1.0pp vs H1: θ_FE > +1.0pp) rejected at α=0.05 (single test m=1; prior H1(i) meta-≠-0 + magnitude folded in per decision "3A" 2026-05-14) | ⏳ pending | Drop-one = oracle SR over {6 modes} − oracle SR over {5 modes drop P-SoM} per task, paired bootstrap per cell, pooled via FE inverse-variance weighting over 6 cells (decision "3A" 2026-05-14 — NOT DerSimonian-Laird; the cells are the design not a population, so no τ²). DerSimonian-Laird retired 2026-05-14; cell count expanded 4 → 6 per B2 addition 2026-05-14. K-of-N retired as gate 2026-05-14 (transparency-only count). See preregistration.md §2 + §4 + Appendix A. |
+| H3 PRIMARY gate axis-1 (P-text \ P-SoM) | **Fixed-effects** pooled axis-1 meta over **6 cells**, FE CI excludes 0 (one-sided, α=0.05, m=1 within axis-1 sub-family) | ⏳ pending | Per-cell bootstrap CI on unique-task count, then FE pooled meta over 6 cells (decision "3A" 2026-05-14, NOT DerSimonian-Laird). Cell count expanded 4 → 6 per B2 addition 2026-05-14. |
 | H3 PRIMARY gate axis-2 (P-prompt \ P-SoM) | Same as axis-1 | ⏳ pending | Requires P-prompt mode (re-included 2026-05-13) |
-| K_h1 transparency ratio (NOT a gate) | 0.75 → 3 of 4 cells individually Holm-sig on drop-one | ⏳ pending | Reclassified gate → transparency 2026-05-13 (power analysis dysfunction at <7pp effects); reported alongside pooled meta as per-cell consistency check |
-| K_h3 transparency ratio (NOT a gate) | 0.67 → 3 of 4 cells individually CI > 0 | ⏳ pending | Same reclassification rationale |
+| K-of-N transparency count (NOT a gate, NO threshold) | Report n of 6 cells with per-cell CI > 0 + n individually Holm-sig, for H1 + each H3 axis (decision "3A" 2026-05-14: K_h1=0.75 / K_h3=0.67 ratios retired — at both N=4 and N=6 the ratios are indistinguishable, ⌈0.75×6⌉=⌈0.67×6⌉=5; fake precision) | ⏳ pending | Reclassified gate → transparency 2026-05-13 (power analysis dysfunction at <7pp effects); cell count expanded 4 → 6 per B2 addition 2026-05-14. Reported alongside pooled FE meta as per-cell consistency check; no decision rule. |
+| ~~K_h3 transparency ratio~~ (RETIRED — folded into K-of-N transparency count row above) | — | — | Retired 2026-05-14 (same fake-precision argument as K_h1 at both N=4 and N=6) |
 | H1(ii) superiority threshold δ (SR-margin) — also TOST informational margin | 1.0pp | ⏳ pending | SR percentage-point margin for H1(ii) one-sided superiority test (primary) + TOST equivalence informational secondary; distinct from H2(a) cost ±10% relative margin |
-| Cell scope (Phase 1a operational) | 24 conditions = 2 sites (cls, red) × 2 models (B0, B1) × 6 modes (DOM, SoM, Vision, P-text, P-prompt, P-SoM) | ⏳ pending | Replaces prior 16/18-cell phantom-only scope (codex Flaw 1+5 fix 2026-05-13) |
-| Cell scope (Phase 1a statistical) | 4 cells = (site, model) tuples | ⏳ pending | One drop-one number per cell; pooled meta input |
+| Cell scope (Phase 1a operational) | **36 conditions** = 2 sites (cls, red) × **3 models (B0, B1, B2)** × 6 modes (DOM, SoM, Vision, P-text, P-prompt, P-SoM) | ⏳ pending | Replaces prior 16/18-cell phantom-only scope (codex Flaw 1+5 fix 2026-05-13: 24/4); B2 = Gemma3-VL `google/gemma-3-4b-it` added 2026-05-14 → 36/6 |
+| Cell scope (Phase 1a statistical) | **6 cells** = (site, model) tuples: (cls, B0), (cls, B1), (cls, B2), (red, B0), (red, B1), (red, B2) | ⏳ pending | One drop-one number per cell; pooled FE meta input (decision "3A" 2026-05-14, FE not DL); k=4 → k=6 per B2 addition 2026-05-14 |
 | Cell scope (Phase 1b deferred) | +12 conditions = shop × B0+B1 × 6 modes | ⏳ pending | Main-paper expansion lever; not part of Phase 1a workshop submission |
 
 ### 2.3 Environment fingerprints (per-machine snapshots)
@@ -123,7 +123,7 @@ revision when data warrants.
 - 笔记 §113 (24+15 candidates curation)
 - 笔记 §114 (this provenance hardening)
 - `docs/checkpoints/paper_planning.md` §19 (decision log)
-- `docs/checkpoints/ADVISOR_SYNC.md` §F (OSF DOI workflow detail)
+- `docs/checkpoints/_status/issues/issue_advisor_sync_2026-05-14.md` + `docs/checkpoints/paper_planning.md §19` decision log (ADVISOR_SYNC.md retired 2026-05-15, commit `f64bc9d`; OSF DOI workflow detail consolidated into `osf_lock_manifest.md §3` + paper_planning §19)
 - `docs/checkpoints/advisor_sync_5_5_followup.md` (Q1-Q11 pending email)
 - `scripts/provenance/snapshot_env.py` / `snapshot_vwa.sh` /
   `numerical_determinism_check.py`

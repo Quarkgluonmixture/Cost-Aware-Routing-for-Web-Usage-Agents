@@ -1806,7 +1806,7 @@ Post run:
 ```
 ✅ paper_planning §19 decision log: append timestamped row
 ✅ paper_planning §9 advisor align checklist: tick off items
-✅ ADVISOR_SYNC §2 framing decisions: status open → discussed → decided
+✅ `_status/issues/issue_advisor_sync_<date>.md` frontmatter + paper_planning §19: status open → discussed → decided (ADVISOR_SYNC.md retired 2026-05-15)
 ✅ 实验笔记: append decision entry with rationale
 🟡 paper_planning §5/§6/§7 (final scope / risks / cascade): if scope decision changes
 🟡 paper_planning §16 authorship: if authorship order finalized
@@ -1854,7 +1854,7 @@ Post run:
 - **Weekly** → paper_planning.md (strategy notebook, when finding/decision emerges)
 - **Append-only** → 实验笔记.md (chronicle, never overwrite, append §)
 - **Stable until prose write** → paper drafts (only update when Section X prose batch written)
-- **Per-meeting** → ADVISOR_SYNC.md (sync prep + post-meeting decision register)
+- **Per-meeting** → `_status/issues/issue_advisor_sync_<date>.md` (sync prep + post-meeting decision register; ADVISOR_SYNC.md retired 2026-05-15, frontmatter-driven Bases view replaces inline table)
 
 ### Quick mental check before update
 
@@ -1864,7 +1864,7 @@ Mark current status? → next_steps + _status/*.md frontmatter
 Add new strategic finding? → paper_planning
 Record what happened (history)? → 实验笔记 append §
 Modify final paper text? → paper drafts (only when prose batch writing)
-Advisor decision context? → ADVISOR_SYNC
+Advisor decision context? → `_status/issues/issue_advisor_sync_*.md` + paper_planning §19 (ADVISOR_SYNC.md retired 2026-05-15)
 ```
 
 ---
@@ -2451,7 +2451,7 @@ Paper §21 / §8 (Discussion + Future Work) should explicit prose:
 |---|---|---|---|
 | ☆ | (II) **Zoom 4 mechanistic anchor B0** (SteerMoE Fayyaz 2026 ICLR, **same Qwen3-VL-235B-A22B backbone**) | ✅ paper §8 future, lit anchored | 笔记 §108.9 |
 | ☆ | (JJ) **Zoom 4 mechanistic anchor B1** (Tool Calling Linear Circuit ACL 2026 **Qwen3-4B**) | ✅ paper §8 future, lit anchored | 笔记 §19 + §108.6 |
-| ☆ | (KK) **Env-side pilot → paper 2 NLWeb-style server emit** (substrate-independence test) | 🟡 dual_track canvas + ADVISOR_SYNC §4 advisor lock pending | 笔记 §109 |
+| ☆ | (KK) **Env-side pilot → paper 2 NLWeb-style server emit** (substrate-independence test) | 🟡 dual_track canvas + `_status/issues/issue_advisor_sync_2026-05-14.md` advisor lock pending (ADVISOR_SYNC §4 retired 2026-05-15) | 笔记 §109 |
 | · | (LL) **Hardened reset + watchdog + manifest discipline** as standalone "VWA paper-grade execution discipline" short paper | (NEW, 5/4 audit add) — execution-discipline novelty | run_manifest.yaml + watchdog protocol |
 
 ### §22.3 Audit gaps surfaced 5/4 — 哪些 documented elsewhere 但 paper §1 hook 没 surface

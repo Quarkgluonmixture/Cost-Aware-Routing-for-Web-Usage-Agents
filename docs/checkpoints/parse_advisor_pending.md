@@ -141,7 +141,7 @@ Any new finding from `/stress` audits that:
 
 - Catalog: `docs/reference/master_bug_catalog.md` B-86
 - Paper draft: `docs/checkpoints/paper_drafts/section3_definition.md` §3.5.1
-- Advisor sync: `docs/checkpoints/ADVISOR_SYNC.md` 2026-05-14 entry
+- Advisor sync: `docs/checkpoints/_status/issues/issue_advisor_sync_2026-05-14.md` (ADVISOR_SYNC.md retired 2026-05-15, commit `f64bc9d`)
 - Audit chronicle: `docs/checkpoints/实验笔记.md` (pending §141 from this session)
 - Codex outputs:
   - `docs/checkpoints/codex_outputs/A1_1_FINAL_2026-05-15.md` — A1.1 cross-validate confirming GLM filter gap

@@ -109,7 +109,7 @@ B0 infra prereq ──┘                                      └──→ C ro
 - [ ] **A2.3** Statistical design — N=6 cells + 观测 effect size 1-3pp 的 power; DL meta vs REML+HK at k=6; K-of-N transparency-only 重分类合理性; TOST δ=1.0pp 来源 + 与文献对齐; Bonferroni / Holm 是否够 (artifacts: `pre_run/preregistration.md` §2.4 / §3 / §4 + `power_analysis.py` 注释)
 - [ ] **A2.4** Evidence-claim coupling — 4-dim × 4 cross-X = 16 sub-cell 是否真支撑 paper §1 hero?cross-site axis 只 cls+red 2 site 够不够支撑 generalization claim?cross-model 3 baseline 中 B0 是 API 异类、B1/B2 同 deployment-class — 这对 cross-model claim 意味着什么 (artifacts: [[paper_planning]] §3 + §21)
 - [ ] **A2.5** Operationalization — rule-based router 的 "task 属性" 定义边界 + leak risk (用 task description 训练 → test 时 leak);learned classifier 的 feature set (TF-IDF + binary + browser meta) 信号源 vs leak 边界;5-fold site-stratified CV 是否解决 site leak (artifacts: [[paper_planning]] §8 + `p79/experiment/router.py`)
-- [ ] **A2.6** Scope / external validity — Phase 1a 只有 cls + red → R3 framing risk;"phantom space" 概念领域 (VWA-specific / web-agent-general / LLM-general?);Phase 1b shop 推迟 + WA 缺席的下游影响 (artifacts: [[paper_planning]] §6 R1-R5 + `pre_run/preregistration.md` §7 reproducibility scope)
+- [ ] **A2.6** Scope / external validity — Phase 1a 只有 cls + red → R3 framing risk;"phantom space" 概念领域 (VWA-specific / web-agent-general / LLM-general?);Phase 1b shop 推迟 + WA 缺席的下游影响 (artifacts: [[paper_planning]] **§5 顶刊概率 R1-R5 conditional tree** + [[paper_planning]] §6 Critical Risks + `pre_run/preregistration.md` §2 framing decision rule + §7 reproducibility scope) — pointer corrected 2026-05-15: R1-R5 framing rule lives in paper_planning §5, NOT §6 (§6 is critical risks)
 - [ ] **A2.7** Confound register / known asymmetries — B0 (API) vs B1/B2 (local) deployment 异类;B0 max_new_tokens / GLM parse fallback / quantization 非对称;A100 docker stack vs DGX→quark stack 切换的实验环境变化 (artifacts: CLAUDE.md Guard Rails + [[实验笔记]] §139 B-86 + memory `project_paper_hook.md`)
 - [ ] **A2.8** Pre-registration completeness — H1-H8 primary/exploratory/post-hoc/deferred 族 declaration 边界;§4 locked analysis choices 全覆盖;§6 witness mechanism (Git commit + advisor email + OSF DOI) 防 post-hoc 修改的强度 (artifacts: `pre_run/preregistration.md` 全文 + `pre_run/osf_lock_manifest.md`)
 
@@ -117,7 +117,7 @@ B0 infra prereq ──┘                                      └──→ C ro
 
 - ⏳ advisor 确认 K_h1 / K_h3 / TOST δ + DL vs REML+HK meta 方法 (sync 后才能 preregistration lock)
 - ⏳ Gemma3-VL matched-capability 论证 (vs B1) — 当前只有 4B 参数对齐,是否够 (A2.2 直接攻击)
-- 详细 framing decision log → [[paper_planning]] §19 + [[ADVISOR_SYNC]]
+- 详细 framing decision log → [[paper_planning]] §19 + [[issue_advisor_sync_2026-05-14]] (ADVISOR_SYNC.md retired 2026-05-15, commit `f64bc9d`)
 
 ---
 
