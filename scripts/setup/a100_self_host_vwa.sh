@@ -15,6 +15,39 @@
 #   bash scripts/setup/a100_self_host_vwa.sh classifieds  # only cls
 #
 # Idempotent: re-running detects existing containers + skips already-done steps.
+#
+# ============================================================================
+# KNOWN ISSUES (discovered 2026-05-15, chronicled in 实验笔记 §140.11):
+#
+# 1. VWA HF dataset 404
+#    `webarena/{Shopping,Reddit,Wikipedia,Classifieds}` HF repos no longer
+#    exist. setup_vwa.sh now pulls from CMU metis + archive.org mirrors:
+#      - shopping_final_0712.tar  (~67GB, http://metis.lti.cs.cmu.edu/...)
+#      - postmill-...withimg.tar  (~53GB, http://metis.lti.cs.cmu.edu/...)
+#      - wikipedia_en_all_maxi_2022-05.zim  (~90GB, CMU)
+#      - classifieds_docker_compose.zip     (~25MB, archive.org)
+#
+# 2. Docker 29.x + containerd-snapshotter pulls jykoh/classifieds DEADLOCK
+#    Symptom: `docker compose up` (or `docker pull jykoh/classifieds:latest`)
+#    hangs forever at layer ec57d9f250af extraction, dockerd logs
+#    `failed to cleanup extract-XXX: NotFound`. Stale lease 持久化 8h.
+#    Workaround: DGX `docker save jykoh/classifieds:latest | ssh condense-a100
+#    'docker load'` (streams over SSH, bypasses A100's containerd extraction
+#    pipeline). Requires DGX-side image cache.
+#    DO NOT run `docker rm` on partial-extracted container — leaves locked
+#    snapshot in containerd meta that survives `systemctl restart docker`.
+#
+# 3. `pip install -r external/visualwebarena/requirements.txt` is destructive
+#    VWA pinned versions (torch==2.0.1+cu117, transformers==4.34.0) downgrade
+#    the p79 venv. MUST use `pip install -e external/visualwebarena/ --no-deps`
+#    so only the webarena package metadata installs; let p79 pyproject control
+#    deps.
+#
+# 4. Reset wrapper: VWA_RESET_MODE=local auto-detected from SSH key absence
+#    scripts/maintenance/reset_vwa_sites.sh now supports A100-local reset
+#    (cls = curl reset endpoint ~0.1s, reddit = docker rm + run ~58s,
+#    shop = stub pending Phase 1b SQL-restore). RESET_BEFORE=1 works.
+# ============================================================================
 
 set -euo pipefail
 
