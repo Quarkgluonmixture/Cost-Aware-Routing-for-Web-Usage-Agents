@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-05-14
+updated: 2026-05-15
 ---
 
 # Next Steps — Forward Action Ledger
@@ -11,8 +11,9 @@ updated: 2026-05-14
 > - Real-time active runs / GPU → `make active` CLI
 > - Cell snapshot (active 跑中 / pending / done) → `cells.base`
 > - Paper section progress → `status.base`
-> - 过去 chronicle → [[实验笔记]] (latest §134)
+> - 过去 chronicle → [[实验笔记]] (latest §140)
 > - Strategy / theory → [[paper_planning]]
+> - **Phase 1 执行计划 + audit checklist** → [[phase1_plan]] ⭐ canonical
 > - Advisor sync prep → [[ADVISOR_SYNC]] + [[followup]]
 > - OSF DOI lock workflow → [[osf_lock_manifest]]
 > - Compute infrastructure → [[COMPUTE_INFRASTRUCTURE]]
@@ -25,14 +26,19 @@ updated: 2026-05-14
 
 **Paper hook**: → [[paper_planning#§1]] (canonical, phantom routing space 3 arms / 4-fold drop-in)
 
-> [!todo] Top 3 forward actions (priority order, 2026-05-14 — advisor sync day; mechanism v2 landed; Phase 1a infra audited)
-> 1. **Advisor sync 今天** ⭐⭐⭐ — [[followup]] 已备 (Part 1 novelty 重列 + Part 2 决策点). 需拿到的决策: (a) paper 分配 (几篇 / 以哪篇为主), (b) SAE 是否进 paper-1, (c) pre-reg 三阈值 K_h1 / K_h3 / TOST δ, (d) routing train/test split (5-fold vs LOSO), (e) mechanistic scope (B1-only vs cross-arch), (f) DL meta k=4 → REML+Hartung-Knapp vs DL+disclose. 周报 dashboard 已重建 (`周报_5.14.md` + weekly-dashboard/dist).
-> 2. **Fire Phase 1a 24-condition 干净重跑** ⭐⭐⭐ — §134 已 audit+fix 全部 queue infra (13 fix: C1 FORCE_NEW / C2 preflight gate / C3 chain crash detect / C6 active-run fatal 等). Gated on: advisor pre-reg lock → OSF DOI lock → launch. 详 §1.
-> 3. **OSF DOI 8-step lock** ⭐⭐ — advisor 确认阈值后立即跑. 详 §3.
+> [!todo] Top forward actions (priority order, 2026-05-14 收口 — advisor discussion done; mechanism 暂搁; router 升 Phase 1 核心)
+> 1. **审查 bug + pipeline (两层 stress)** ⭐⭐⭐ — §A1 实现层 + §A2 设计层 audit, clean run 前置. 详 [[phase1_plan]] §A1+§A2.
+> 2. **cls + red baseline 干净 clean run** ⭐⭐⭐ — 3 模型 (B0/B1/B2=Gemma3-VL) = **36 conditions / 6 cells**. Gemma3-VL pipeline 已 land ([[实验笔记]] §140). 详 [[phase1_plan]] §B.
+> 3. **同步做 router (双路线)** ⭐⭐⭐ — (a) rule-based 按 task 属性区分; (b) learned classifier routing. 从 paper-2 deferred 升为 Phase 1 核心. 详 [[phase1_plan]] §C + §5.
+> 4. **独立 bug 研究 paper** ⭐ — cross-benchmark bug 聚合研究 (e.g. agisdk), 可单独投 workshop. 详 §11.
+>
+> **重大变化 (2026-05-14 收口, 见 [[实验笔记]] §138)**: mechanism (§5/§0a) 整个暂搁; Gemma3-VL 正式入 baseline; venue cascade = EMNLP (5/25) → workshop → NeurIPS. 学长: 论文写作交 advisor, 学生 focus = experiment execution.
 
 ---
 
-## §0a Mechanism (§5) — v2 landed, remaining forward items
+## §0a Mechanism (§5) — ⏸️ 暂搁 (advisor discussion 2026-05-14)
+
+> ⏸️ **2026-05-14 收口**: 学长 "mechanism 部分先不要管了". 整个 §5 (activation patching / layer probe / logit lens / SAE) 暂搁; 下面 forward items 全部冻结, **不进当前 paper scope**. §133/§136 已 land 的 mechanism v2 工作存档保留 (见 [[实验笔记]] §138.3). 以下内容保留作未来 paper-2 / 解冻参考.
 
 **DONE (2026-05-11 → 05-14, 见 [[实验笔记]] §125-§133)**: Stage 4 全部 4 方法 land —
 Method 4.2 PCA cosine gap (AUROC 1.000) / activation patching Exp 5 cellhprompt (L11-L17 displacement 0.20-0.30) /
@@ -51,40 +57,20 @@ v2 NPZ re-extraction done. Pipeline audit + 5 paper-grade fix commits.
 
 ---
 
-## §1 Phase 1a paper-grade rerun launch sequence
+## §1 Phase 1a paper-grade rerun → [[phase1_plan]]
 
-**Scope** (2026-05-13 codex stress audit 定): 24 operational conditions / 4 statistical cells.
-"condition" = 1 (site, model, mode) launch unit; "cell" = 1 (site, model) stratification unit. **不要混用**.
+**Scope** (2026-05-14 advisor 收口, [[实验笔记]] §138): **36 conditions / 6 cells** = (cls + red) × {B0, B1, B2 = Gemma3-VL} × 6 modes。旧 24/4 已废 (B2 入 baseline)。
+**Phase 1b** (post-workshop deferred) = + shop × 3 × 6 = 18 cond, feeds R3 → R1 / Option D framing decision。
 
-**Phase 1a (workshop-targeted, immediate)** — 24 conditions:
-- {B0, B1} × {cls, red} × {DOM, SoM, Vision, P-text, P-SoM, P-prompt} = 24 conditions, 4 cells
+**Terminology hard rule**: "condition" = 1 (site, model, mode) launch unit; "cell" = 1 (site, model) stratification unit. **不要混用**。
 
-**Phase 1b (main paper expansion, deferred post-workshop)** — 12 conditions:
-- {B0, B1} × shop × 6 modes. Feeds R3 → R1 / Option D framing decision.
+**Canonical 执行 checklist + critical path + milestones + pre-launch gates + post-completion**: → [[phase1_plan]] §0 + §A + §B + §E
 
-**Orchestrator**: `bash scripts/queues/queue_phase1_paper_grade.sh dry-run` → `... launch` (Phase 1a = cls + red parallel chains). `FORCE_NEW=1` 自动 export (§134 C1 fix — 不复用 pre-fix archived dirs).
-
-**Pre-launch gates** (orchestrator auto-checks, §134 已 harden):
-1. `preregistration.md` status `locked` + no `TBD` (含 K-of-N transparency-only 2026-05-13 reclassification)
-2. `results/provenance/env_<host>_baseline.json` + `vwa_<host>_baseline.json` committed
-3. Gate 4: `preflight_v2.sh` exit code captured (§134 C2 fix — 不再 theatrical)
-4. Gate 5: GPU/CUDA available (blocking)
-5. Gate 6: 无 conflicting active runs — fatal unless `ALLOW_ACTIVE_RUNS=1` (§134 C6 fix)
-6. Gate 7: config-existence check 全 Phase 1a + 1b configs (§134 C9 fix)
-
-**ETA (A100 40GB, Phase 1a parallel)**: ~72h ≈ 3 days (cls 12 cond 72h / red 12 cond 60h). Phase 1b shop +96h post-workshop.
-
-**Post-completion**:
-```bash
-make analysis                                    # rerun all aggregators + figures
-python3 scripts/analysis/preregistration_decision_test.py \
-    --per-task-csv results/phantom_paper/per_task_sr.csv \
-    --primary-gate drop_one_pooled_meta_superiority \
-    --H1-magnitude-pp 1.0 --TOST-delta-pp 1.0 \
-    --transparency-K_h1 3 --transparency-K_h3 3 \
-    --out results/phantom_paper/preregistration_test_results.json
-```
-Output → paper §1 hero numbers replace 现有 `(provisional)` archived 数 + paper §5 Table quotable JSON.
+**当前 launch 主 blockers (snapshot)**:
+- ⏳ #11 A100 VM VWA docker bring-up (gates launch, [[phase1_plan]] §B0)
+- ⏳ #10 analysis 层 3-model 改造 (gates §D 不 gate launch)
+- ⏳ `preregistration.md` status `draft → locked` (gates §B1, 待 advisor)
+- ⏳ B-86 GLM parse fallback scaffold (B0-only paper-grade disclosure or fix, 待学长)
 
 **Post-data-lands doc updates** (笔记 §133.6): §4 P-prompt column / §1 hero numbers / §8 limitations "two sites + Phase 1b deferred" + model name fix "Qwen3-VL-235B" / paper.bib DL+Higgins refs / §6§7 section files.
 
@@ -134,15 +120,18 @@ From §133 codex Round C + §134 /stress v6:
 
 ---
 
-## §5 Router experiments (Section 6 / paper-2, post Phase 1a)
+## §5 Router — ⭐ Phase 1 并行核心线 (advisor 2026-05-14 收口)
 
-| Cell | Blocker | Implementation |
-|---|---|---|
-| **Tier 1 oracle router** (TF-IDF + LR, ~3 d) | Phase 1a rerun done | `p79/experiment/router.py::RuleBasedRouter` 扩展 |
-| **Tier 2 first-step trigger** (~7-10 d) | Tier 1 done + step-1 trigger features | 新增 cascade runner config |
-| Routing signal infra | ✅ ready | `confidence_summary.json` per-condition |
+> ⭐ **2026-05-14 收口**: router 从 "Section 6 / paper-2 deferred" 升为 **Phase 1 并行核心 contribution**. 两条基础路线并行做, 与 cls+red baseline clean run 同步.
+>
+> **执行 checklist + blockers + 完成判定** → [[phase1_plan]] §C
 
-Train/test split protocol → advisor sync 决策 (5-fold site-stratified CV vs LOSO; 倾向 5-fold). 详 [[paper_planning#§8]].
+**路线 (a) rule-based router** — 根据 task 属性 / 任务区分来 route。
+**路线 (b) learned router** — 训练一个 classifier 做 routing。
+**未来扩展** — 根据不同 mode 的行为模式 route。
+
+Routing signal infra (✅ ready): `confidence_summary.json` per-condition。
+Train/test split protocol → 倾向 5-fold site-stratified CV (vs LOSO)。设计细节 → [[paper_planning#§8]]。
 
 ---
 
@@ -189,6 +178,9 @@ decision log 写 [[paper_planning]] + framing decisions register → ADVISOR_SYN
 
 ## §10 References + quick links
 
+### Phase 1 canonical
+- [[phase1_plan]] — 统领性 audit/execute checklist (§A1 实现层 stress + §A2 设计层 stress + §B clean run + §C router + §D evidence + §E milestones)
+
 ### Paper drafts (final prose)
 ```
 docs/checkpoints/paper_drafts/
@@ -227,6 +219,17 @@ results/provenance/vwa_dgx_via_quark.json          VWA stack fingerprint
 docs/checkpoints/pre_run/osf_lock_manifest.md      8-step DOI workflow
 docs/checkpoints/pre_run/preregistration.md        R1-R5 framing rule + K-of-N transparency-only
 ```
+
+---
+
+## §11 独立 bug 研究 paper (workshop-targeted)
+
+> advisor 2026-05-14 收口: bug 部分可**单独再发一篇 paper** 投 workshop — 独立于主 paper, **不替换**主 paper 的 workshop 节点.
+
+**方向**: cross-benchmark bug 聚合研究, 针对现有 web agent benchmark.
+**参考**: agisdk (https://github.com/agi-inc/agisdk).
+**素材基础**: 项目 dual-track environment / VWA bug fix 工作 ([[实验笔记]] §109 dual-track 9-cell taxonomy / B-82 / `master_bug_catalog.md` 37+ bugs).
+**状态**: 方向已 locked; 具体 scope + benchmark 选型 + 时间线待 planning.
 
 ---
 
