@@ -1,13 +1,26 @@
 """Power analysis for paper §3 — minimum detectable effect (MDE) at α=0.05, β=0.20.
 
+⚠️ RESCOPED 2026-05-15 (B-126 fix per codex Mode B P2-2):
+   - Phase 1a scope: 16-cell (pre-2026-05-13) → 6-cell (post-B2 addition 2026-05-14).
+   - K-of-N rule RETIRED 2026-05-14 as gate per preregistration.md §4 Decision 3A —
+     K_h1=12/16 / K_h3=11/16 hard-gate framing is OBSOLETE. K-of-N is now a
+     transparency-only descriptive count (n-of-6 cells individually Holm-sig
+     with NO threshold; at k=6 the ratios remain indistinguishable —
+     ⌈0.75×6⌉=⌈0.67×6⌉=5 — same fake-precision argument as at k=4).
+   - The PRIMARY gate is now the single one-sided FE / RE (advisor TBD)
+     superiority test (H0: θ ≤ +1.0pp at α=0.05, m=1).
+
 For binary success rate comparisons (P-SoM vs best-baseline), computes:
-- MDE in percentage points at observed N per site
+- MDE in percentage points at observed N per site (post-§139.8 scored counts:
+  cls 224 / red 205 / shop 435)
 - Per-cell power for assumed effect sizes (1pp / 2pp / 3pp / 5pp)
-- Family-wise power for K-of-N pass rule (H1: K_h1=12 of 16 cells, H3: K_h3=11 of 16)
+- Descriptive transparency count power: probability of n-of-6 cells
+  individually Holm-sig at observed effects (informational, NOT a gate)
 
 Method: paired-design McNemar-equivalent normal approximation (within-cell tasks
-are paired across modes since same task gets all modes). Power computed via
-exact binomial for K-of-N family rule.
+are paired across modes since same task gets all modes). Transparency power
+computed via exact binomial across 6 cells (no threshold applied — for
+descriptive 4-5/6 = strong-consistency benchmark per preregistration).
 
 Usage:
     python3 scripts/analysis/power_analysis.py

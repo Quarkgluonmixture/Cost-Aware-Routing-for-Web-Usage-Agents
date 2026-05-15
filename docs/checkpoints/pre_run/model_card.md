@@ -47,7 +47,8 @@ local, added 2026-05-14 as a cross-family robustness-check (4B parity) control v
 - **Stochasticity**: server-side may drift on identical input (see decoding above)
 - **Action grammar**: VWA verbose action format; agent occasionally emits malformed action JSON requiring fallback to no-op
 - **No system role**: paper-grade convention uses user-role-only chat template (`memory/MEMORY.md` guard rail) — preserves hundreds of episode comparison consistency
-- **Cost asymmetry vs B1**: B0 is API-only, scales with usage; B1 is fully local. Asymmetry disclosed as design constraint per `paper_planning.md` and `preregistration.md` (no remediation, intended scientific design)
+- **Cost asymmetry vs B1**: B0 is API-only, scales with usage; B1 is fully local. Asymmetry disclosed as design constraint per `paper_planning.md` and `preregistration.md`
+- **⚠️ B0 vs B1/B2 deployment-stack confounder (B-127 disclosure 2026-05-15 per gemini Mode C P2-4)**: The B0 (API) vs B1/B2 (local) split is more than just a scale comparison — B0 has a GLM-5.1 parse-error rescue scaffold (`proxy_api_agent.py::_call_glm_extract`, enabled by `use_glm_fallback: true`) that converts malformed B0 responses into valid actions; B1 + B2 have no such fallback path. This is a hidden infrastructure confounder for any B0-vs-B1 scale claim — observed SR differences mix capability-scale with API-scaffold rescue. Section 8 (limitations) explicitly admits this confounder; scale claims in paper §1 are appropriately softened. (See also section3 §3.5.1 cross-baseline disclosure.)
 - **Closed weights**: cannot probe internals (logits / attention / hidden states); SteerMoE-style mechanism analysis deferred to future work (see `negative_results_registry.md` entry #9)
 - **Proxy availability**: API endpoint may degrade or sunset post-publication; replicators verify via released traces (`preregistration.md §7` reproducibility tier)
 
