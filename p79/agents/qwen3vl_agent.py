@@ -436,7 +436,16 @@ CRITICAL:
         # axis-1 page-coverage asymmetry. The viewport filter is the real input
         # bound (empirically median 3306 / p99 7656 / max 46592 chars).
 
-        system_prompt = self._system_prompts.get(observation_mode, self._system_prompts["dom"])
+        # /stress A1.4 F2: strict mode validation (was silent .get(mode, dom_default)).
+        # som.py's prepare_observation_for_mode already raises on unknown mode at the
+        # observation-pipeline entry; this is defense-in-depth for any code path that
+        # reaches the agent directly with a typo'd mode.
+        if observation_mode not in self._system_prompts:
+            raise ValueError(
+                f"Unknown observation_mode {observation_mode!r}; expected one of "
+                f"{sorted(self._system_prompts)}"
+            )
+        system_prompt = self._system_prompts[observation_mode]
 
         # Label the text section according to mode
         if observation_mode == "vision":

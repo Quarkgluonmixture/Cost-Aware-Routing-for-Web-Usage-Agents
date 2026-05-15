@@ -140,9 +140,16 @@ class Gemma3VLAgent:
         # untruncated text). The viewport filter is the real input bound. Kept
         # in lockstep with the Qwen agent so the 3 baselines stay comparable.
 
-        system_prompt = self._system_prompts.get(
-            observation_mode, self._system_prompts["dom"]
-        )
+        # /stress A1.4 F2: strict mode validation (was silent .get(mode, dom_default)).
+        # som.py's prepare_observation_for_mode already raises on unknown mode at the
+        # observation-pipeline entry; this is defense-in-depth for any code path that
+        # reaches the agent directly with a typo'd mode.
+        if observation_mode not in self._system_prompts:
+            raise ValueError(
+                f"Unknown observation_mode {observation_mode!r}; expected one of "
+                f"{sorted(self._system_prompts)}"
+            )
+        system_prompt = self._system_prompts[observation_mode]
 
         # Mode -> text-section labelling, identical to the Qwen agent.
         if observation_mode == "vision":

@@ -71,6 +71,33 @@ def test_gemma_module_constants_match_qwen_staticmethod_output():
     assert gemma3vl_agent._VISION_PROMPT == Qwen3VLAgent._make_vision_prompt()
 
 
+def test_agent_layer_strict_rejects_unknown_mode():
+    """/stress A1.4 F2 defense-in-depth: agent step() must raise on typo mode.
+
+    Layer 1 (som.py.prepare_observation_for_mode) catches typo modes first,
+    but if any code path bypasses som.py and calls agent.step directly with
+    a typo'd observation_mode, the agent must also raise rather than silently
+    fall through to the DOM prompt. This test verifies the strict-mode check
+    is in the agent step body for all 3 baselines by inspecting source.
+    """
+    import p79.agents.qwen3vl_agent as qwen
+    import p79.agents.proxy_api_agent as proxy
+    import p79.agents.gemma3vl_agent as gemma
+
+    for mod, name in [(qwen, "qwen3vl_agent"), (proxy, "proxy_api_agent"), (gemma, "gemma3vl_agent")]:
+        src = open(mod.__file__).read()
+        # Must contain the explicit raise on unknown mode
+        assert "Unknown observation_mode" in src, (
+            f"{name}: missing strict mode-validation raise. "
+            f"silent .get(mode, dom_default) is paper-grade defense gap (/stress A1.4 F2)."
+        )
+        # Must NOT still have the silent .get(observation_mode, ..."dom"]) pattern
+        assert '_system_prompts.get(observation_mode' not in src, (
+            f"{name}: still uses silent .get fallback for system_prompts dispatch — "
+            f"replace with strict raise on unknown mode."
+        )
+
+
 def test_b0_b1_b2_mode_dispatch_keys_identical():
     """All three baselines must dispatch the same 7 observation modes.
 

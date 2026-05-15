@@ -521,7 +521,16 @@ Action Schema:
             # (set above) but the obs payload is AXTree (no [SOM_MARKS] markers).
             obs_section = f"Accessibility Tree:\n{obs_text}"
 
-        system_prompt = self._system_prompts.get(observation_mode, self._system_prompts["dom"])
+        # /stress A1.4 F2: strict mode validation (was silent .get(mode, dom_default)).
+        # som.py's prepare_observation_for_mode already raises on unknown mode at the
+        # observation-pipeline entry; this is defense-in-depth for any code path that
+        # reaches the agent directly with a typo'd mode.
+        if observation_mode not in self._system_prompts:
+            raise ValueError(
+                f"Unknown observation_mode {observation_mode!r}; expected one of "
+                f"{sorted(self._system_prompts)}"
+            )
+        system_prompt = self._system_prompts[observation_mode]
 
         # Build user message content (Anthropic Messages style).
         user_content: List[Dict[str, Any]] = [

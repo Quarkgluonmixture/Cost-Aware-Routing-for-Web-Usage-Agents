@@ -7,6 +7,25 @@ from p79.experiment.som import apply_som, prepare_observation_for_mode
 from p79.experiment.types import SCHEMA_VERSION_V2, validate_step_record_v2
 
 
+def test_prepare_observation_rejects_unknown_mode(tmp_path):
+    """/stress A1.4 F2: typo modes must raise, not silently fall through to DOM-like."""
+    obs = P79Observation(text="[1] something", image=None, raw={})
+    with pytest.raises(ValueError, match=r"Unknown observation_mode"):
+        prepare_observation_for_mode(obs, "phantum_som", tmp_path, 0)
+
+
+def test_prepare_observation_accepts_all_known_modes(tmp_path):
+    """All 7 canonical modes (incl. phantom_dom legacy alias) must not raise."""
+    from p79.experiment.som import KNOWN_OBSERVATION_MODES
+
+    expected = {"dom", "som", "vision", "phantom_som", "phantom_dom", "phantom_text", "phantom_prompt"}
+    assert set(KNOWN_OBSERVATION_MODES) == expected
+    obs = P79Observation(text="[1] something", image=None, raw={})
+    for mode in expected:
+        # Should not raise — concrete output not checked here, just call invariance.
+        prepare_observation_for_mode(obs, mode, tmp_path, 0)
+
+
 def test_episode_defaults_schema_version_matches_runtime_constant():
     """/stress A1.2 codex C1: prevent schema identity split.
 

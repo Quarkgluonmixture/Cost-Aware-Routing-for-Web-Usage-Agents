@@ -21,6 +21,22 @@ class SomResult:
     mark_count: int
 
 
+# /stress A1.4 F2 fix: explicit known-modes set so unknown / typo modes raise
+# instead of silently falling through to the DOM-like branch. Previously a
+# config typo like 'phantum_som' would silently run the DOM observation path
+# while the runner's metadata recorded the typo'd condition_id, producing
+# paper-grade data that mixed phantom-mode rows with secretly-DOM rows.
+KNOWN_OBSERVATION_MODES = frozenset({
+    "dom",
+    "som",
+    "vision",
+    "phantom_som",
+    "phantom_dom",     # legacy alias for phantom_text
+    "phantom_text",
+    "phantom_prompt",
+})
+
+
 def _extract_text_marks(obs_text: str, max_marks: Optional[int] = None) -> List[Dict[str, Any]]:
     # B-84: max_marks defaults to None (no cap). The former 200 cap fired on
     # ~0.03% of steps but only on marks modes — an axis-1 asymmetry vs the
@@ -199,6 +215,17 @@ def prepare_observation_for_mode(
                               prompt × text axes; isolates prompt swap effect on AXTree text).
     mode == "vision":         Empty text, raw screenshot as image.
     """
+    # /stress A1.4 F2: strict mode validation. Previously the `if mode != "som"`
+    # fallback at the bottom silently accepted any string and behaved like DOM,
+    # producing paper-grade data with secretly-DOM rows under a typo'd
+    # condition_id label. The agent layer also has `.get(mode, dom_default)`
+    # secondary silent-fallback — this raise closes both layers at the entry.
+    if mode not in KNOWN_OBSERVATION_MODES:
+        raise ValueError(
+            f"Unknown observation_mode {mode!r}; expected one of "
+            f"{sorted(KNOWN_OBSERVATION_MODES)}"
+        )
+
     obs_text = getattr(obs, "text", "") or ""
 
     if mode == "vision":
