@@ -89,13 +89,13 @@ Most reviewers (including your past self) read paper prose first, then check evi
 
 Read enough to identify: averaging strategy, sampling, normalization, masking, layer-indexing convention, missing control branches.
 
-### v6 — Sibling-script propagation check (NEW)
+### Sibling-script propagation check
 
-For each bug/finding you spot in one script, **ask: did a recent fix touch this code class? If yes, audit every sibling that uses the same primitive.** Today's audit (2026-05-14) caught Bug 2 + Bug 5 propagation defects ONLY because Mode B codex coincidentally happened to read format-variation + Stage 2B. v6 makes this systematic:
+For each bug/finding you spot in one script, **ask: did a recent fix touch this code class? If yes, audit every sibling that uses the same primitive.**
 
 - If a `Bug N fix` is documented in `master_bug_catalog.md` or recent commit, **grep all scripts using the same primitive** before declaring scope complete.
-- Example: Bug 2 (SOM regex) → `grep -l "MARK_LINE_RE\|fmt_som_standard" scripts/` → check each match for production `_extract_text_marks` import.
-- Example: Bug 5 (model revision) → `grep -L "model_revision\|--model-revision" scripts/mechanistic/run_stage4_*` → flag any extractor missing the pin.
+- Example: SOM regex fix → `grep -l "MARK_LINE_RE\|fmt_som_standard" scripts/` → check each match for production `_extract_text_marks` import.
+- Example: model revision pin fix → `grep -L "model_revision\|--model-revision" scripts/mechanistic/run_stage4_*` → flag any extractor missing the pin.
 
 The pattern is: **localized bug fixes leak — your audit must check the sibling set, not just the touched file.**
 
@@ -130,7 +130,7 @@ Examples of NOT-out-of-box (downgrade these):
 - Honest about strength — acknowledge what survives. Calibrates the author against over-correction.
 - No hedging on broken — "this is broken because X" not "this could be improved"
 
-## Language (中文为主双语) — v6 enforcement
+## Language (中文为主双语)
 
 **Spec**:
 - Headers + framework + recommendations → **中文**
@@ -189,6 +189,89 @@ Forbidden: 全英文 attack 段落 (user 头大); 纯中文丢 specificity.
 
 Bilingual 是 spec, 不是 suggestion. Fail check 失败 → 重写至少 attack + defuse 段落.
 
+## 🚫 HARD CONSTRAINT — Present unified 3-AI bug list BEFORE any fix work (v7.3, 2026-05-15)
+
+> User directive 2026-05-15: "三家BC gemini，codex都做完了吗？做完应该先给我呈现bug list啊" — Claude must NEVER start fix work after only Mode A (or only A+B) — full multi-lineage 3-AI cycle must complete, the **unified bug list must be presented to the user**, and the user **must confirm fix scope** before any code edit.
+
+### The rule
+
+After `/stress` invocation, the workflow is **strictly sequential**:
+
+1. **Mode A** Claude /stress completes (own findings + Phase 0 self-audit)
+2. **Mode B** /codex-stress completes (verification PASS) — IF scope warrants (default-chain at spot/milestone/submission; pre-fire = B only)
+3. **Mode C** /gemini-stress completes (verification PASS) — IF scope warrants (default-chain at spot/milestone/submission; skip at pre-fire by default)
+4. **Unified bug list presentation** — Claude assembles a single user-facing bug list integrating all 3 lineages: tagged by AI source (A/B/C), severity (P0/P1/P2), OOB status, agreement (1-AI / 2-AI / 3-AI overlap), and proposed fix scope
+5. **User confirms fix scope** — user picks which bugs to fix in this round, defers others to backlog or next session
+6. **Only THEN** Claude applies fixes — file edits, py_compile, tests, master_bug_catalog + 实验笔记 entries, commit
+
+### Why this is hard-constrained
+
+- **Anti-jumping-the-gun**: Claude has empirical tendency to skip B/C dispatch or to fix immediately after Mode A — both violate the cross-AI value proposition (catching what one lineage's blind spot misses)
+- **User authority on fix scope**: Some findings are paper-grade P0 unblockers; others are P1 backlog. Only user knows current cell launch timing, advisor sync state, and which bugs to defer. Auto-fix all P0 risks burning user's review budget on low-priority churn
+- **Cross-AI verification gate**: Bug list presentation forces Claude to actually READ the cross-AI output (not just dispatch + assume). Empirical 2026-05-15: silent-partial-audit caught only because Phase 1+2 verification required structured read
+
+### Bypass
+
+Only when user explicitly says one of (must precede /stress invocation OR appear in user message mid-stress):
+- "skip presentation" / "no bug list" / "just fix it" — Claude proceeds to fix directly after own discretion on scope
+- "fix only P0" / "fix only OOB" — Claude proceeds with that filter, no bug-list presentation
+- "claude only" (Mode A solo) — skips B+C, presents Mode A list only before fix (still hard-constrained presentation step)
+
+In ALL other cases the bug-list presentation step is **mandatory**.
+
+### Self-check before applying ANY edit
+
+Before each Edit / Write tool call inside a /stress workflow, ask:
+1. Have all dispatched lineages completed verification (Phase 1+2+3 PASS)?
+2. Has the unified bug list been presented to the user in a user-facing message?
+3. Has the user confirmed which bugs to fix?
+
+If ANY answer is no → STOP. Either dispatch missing lineage, present bug list, or ask user.
+
+### Bug list format
+
+**Follows v7.2 Bug Table canonical 3-column spec** (Bug / Blast Radius / Launch 卡?) grouped by P0/P1/P2. Source + OOB + Agreement encoded into the `Pn-i` id column suffix (e.g. `P0-1-ABC` = 3-AI overlap; `P0-2-C*` = gemini unique OOB; `P0-3-B` = codex unique non-OOB). DO NOT add Source / OOB / Agreement as separate columns — that violates v7.2 actionable 3-column rule.
+
+`Pn-i-<suffix>` suffix legend:
+- Letters = AI lineage who caught it: `A` Claude, `B` codex, `C` gemini (concat for multi-AI overlap, e.g. `AB` / `BC` / `ABC`)
+- Trailing `*` = OOB attack (catch hidden behind specialized expertise)
+- Example: `P0-1-ABC*` = 3-AI overlap OOB; `P0-2-C*` = gemini-unique OOB; `P1-3-A` = Claude-unique non-OOB
+
+```markdown
+## 🐛 A1.X Unified Bug Table — Mode A + B + C consolidated
+
+**Verification status**: A (Claude self) PASS · B (codex `/codex-stress`) PASS / RETRY x N / FAIL · C (gemini `/gemini-stress`) PASS / RETRY x N / FAIL
+
+### 🔴 P0 (lock 前必须 fix)
+| # | Bug | Blast Radius | Launch 卡? |
+|---|---|---|---|
+| P0-1-<suffix> | `<file:line>` <1-sentence what's broken> | <2-4 sentences 人话> | <不卡 / YES — 启动卡死 / 不卡 launch,卡 <step>> |
+
+### 🟠 P1 (paper-grade quality)
+| # | Bug | Blast Radius | Launch 卡? |
+| P1-1-<suffix> | ... | ... | ... |
+
+### 🟡 P2 (defer-able)
+| # | Bug | Blast Radius | Launch 卡? |
+| P2-1-<suffix> | ... | ... | ... |
+
+### 🤝 Cross-AI agreement summary (1 paragraph, optional)
+- 3-AI overlap: N bugs (highest confidence)
+- 2-AI overlap: N bugs
+- 1-AI unique: N bugs (lineage-specific OOB catches)
+
+### 📋 Proposed fix scope for this round
+- Already landed: <ids>
+- Recommended this round: <ids>
+- Defer next session: <ids>
+
+**Awaiting user confirmation on fix scope before applying any edit.**
+```
+
+- **Bug column**: `Pn-i-<suffix>` + `file:line` + 1-sentence diagnosis. Source/OOB/Agreement folded into suffix.
+- **Blast Radius column**: 2-4 sentences in 人话 covering (a) what this thing does in pipeline/paper, (b) what happens concretely if user proceeds without fix (specific command + specific error / specific reviewer reaction), (c) which downstream step / paper section / OSF artifact is corrupted.
+- **Launch 卡? column**: `不卡` / `YES — 启动卡死` / `不卡 launch, 卡 <step>` / `不卡 launch, block OSF lock`.
+
 ## Output format
 
 ### Verdict (one sentence)
@@ -207,6 +290,8 @@ Current paper-grade state in one line.
 - **Effort** — hours (most defuses) / days (re-run analysis) / weeks (new data extraction)
 
 ### Bug Table — user-facing actionable summary (REQUIRED v7.2, 2026-05-15)
+
+> **Disambiguation vs v7.3 cross-AI unified bug list**: This v7.2 Bug Table is **per-/stress-invocation** — one AI lineage's own findings, summarized at the end of that AI's output. The v7.3 "Unified Bug List" defined earlier in this file is **cross-AI consolidation** assembled by Claude AFTER all 3 lineages (A + B + C) complete, presented to user BEFORE any fix work. Both required when applicable; v7.2 feeds v7.3.
 
 After **Weak claims** detailed section, output a consolidated **Bug Table** that surfaces findings as actionable bug entries for the user. Group by severity (P0 → P1 → P2). Each row has **3 columns** — no more (no Stage column, no Source column — those are encoded in finding context).
 
@@ -351,7 +436,7 @@ To avoid redundancy with Claude review:
 
 This way codex's cross-AI value is **complementary depth**, not duplicate review.
 
-### v6 — Mode A → Mode B context handoff (NEW)
+### Mode A → Mode B context handoff
 
 Before firing codex Mode B, Claude must write a **scope tracker** so codex sees what Claude already covered. Without this, codex repeats Claude's work OR misses cross-validate opportunities.
 
@@ -376,7 +461,7 @@ Format: `docs/checkpoints/codex_prompts/<scope>_handoff_<date>.md` (gitignored a
 
 Then the codex prompt **must include**: `Read the handoff at <path> first.` This makes Mode B's complementary scope structurally enforced, not hand-written.
 
-### v6 — Persona rotation (NEW)
+### Persona rotation
 
 Default: **mechinterp implementer** (someone who's built activation patching / steering / logit lens). 适合 codex 跟 Claude 都是 paper §5 mechanism scripts.
 
@@ -389,7 +474,7 @@ But for diversification, Mode B codex prompt **may use a rotated persona** when 
 | **Stats methodologist** | Analysis scripts producing tables | Bootstrap target, multiple comparisons, posthoc threshold |
 | **Reproducibility auditor** | Cross-pipeline coherence audit | Model revision pin, formatter hash, NPZ schema drift, provenance |
 
-Pick by what Claude's persona DIDN'T cover. Today (2026-05-14): Claude was implementer; codex could have been reproducibility auditor → would catch revision-pin propagation pattern directly. v6 enforces this rotation as an option, not random.
+Pick by what Claude's persona DIDN'T cover.
 
 ### Mode B procedure (when smoke test passes)
 
@@ -441,7 +526,7 @@ Failure modes for which `-o` file may be empty: (a) codex CLI auth/credit issue;
    - **What I caught that codex missed** — sanity check
    - **Where we agree** — highest-confidence weak claims, prioritize defuse
 
-7. **v6 — Fix-verification mandate (NEW)**: For each inline fix codex applied:
+7. **Fix-verification mandate**: For each inline fix codex applied:
    - Run `python3 -m py_compile <fixed_file>` — error → revert the fix, document as "fix attempt failed"
    - For data-altering fixes, codex must NOT auto-apply — document only
    - For non-data-altering (e.g., grid check tightening, label fix, provenance add), codex applies + you verify with `git diff --check` (no whitespace errors) + `py_compile`
@@ -449,7 +534,7 @@ Failure modes for which `-o` file may be empty: (a) codex CLI auth/credit issue;
 
 8. Per `阶段性成果` rule: append /stress + /codex-stress completion to `docs/checkpoints/实验笔记.md` under `[infra]` tag.
 
-### v6 — Retrospective hook (NEW)
+### Retrospective hook
 
 Within **7 days** after each /stress audit, append to `docs/checkpoints/实验笔记.md` under the parent §:
 
@@ -464,15 +549,9 @@ Within **7 days** after each /stress audit, append to `docs/checkpoints/实验�
 
 This is what tells us whether /stress is paper-grade ROI or theater. Without the retro, the spec evolves toward "feel principled" instead of "catches real bugs".
 
-## Auto-chain to /gemini-stress (Mode C, v7 2026-05-15)
+## Auto-chain to /gemini-stress (Mode C)
 
-User added Gemini CLI subscription 2026-05-15 → third AI lineage (Google) available. Mode C runs `/gemini-stress` alongside Mode B (codex) for **prose / design-layer** scope where Anthropic+OpenAI two-lineage may share blind spots Google doesn't.
-
-**Empirical pilot 2026-05-15** on P79 §A2 design-layer audit caught 4 P0/P1 attacks Claude+codex 7-day audit history missed:
-- Self-Oracle baseline (stochastic-noise floor for drop-one oracle in low-SR regime)
-- FE meta-pooling on opposing mechanisms (estimand uninterpretability)
-- Trajectory total-cost confound vs per-step token equality
-- P-prompt graceful-degradation (may not be a real routing axis)
+Mode C runs `/gemini-stress` (Google lineage) alongside Mode B (codex) for **prose / design-layer** scope where Anthropic+OpenAI two-lineage may share blind spots Google doesn't.
 
 ### Scope discipline by AI lineage
 
@@ -500,29 +579,27 @@ GEMINI_PID=$!
 - **pre-fire** (code-heavy audit): Mode B only by default — Gemini empirically weaker on code; user can opt-in `+gemini` if they want extra prose pass
 - **submission-ready**: Mode B + C both, exhaustive scope
 
-### Mode C model + silent-fallback warning (v7.1)
+### Mode C model + silent-fallback warning
 
 - **Default routing**: `--approval-mode plan` auto-routes to Pro tier. Current verified 2026-05-15: `gemini-3.1-pro-preview` per `--debug` log "[Routing] Selected model: ... (Source: agent-router/approval-mode)".
 - **Don't pass `-m`** unless verified via `--debug` first. Silent fallback observed 2026-05-15: `-m gemini-3-pro-preview` (no dot) silently downgrades to `gemini-2.5-pro` **without error**. Typo → quality degradation no one sees.
 - **Record model in output frontmatter** via `--debug 2>/tmp/gemini.debug.log` + tail "[Routing] Selected model:" line → metadata file. Protects audit reproducibility if Google changes routing.
 
-### Mode C persona (v7.1, no rotation by design)
+### Mode C persona (no rotation by design)
 
-Unlike Mode B codex (4-persona menu: mechinterp / systems / stats / reproducibility), Mode C Gemini uses **single broad-reviewer persona**. Empirical 2026-05-15 pilot: Gemini's strength = broad framing reasoning across §A2 surfaces (research question / control rigor / statistical design / external validity). Persona rotation would narrow that breadth. If user wants deep persona-specific dive → invoke /codex-stress with rotation menu instead.
+Unlike Mode B codex (4-persona menu: mechinterp / systems / stats / reproducibility), Mode C Gemini uses **single broad-reviewer persona** — strength is broad framing reasoning across §A2 surfaces (research question / control rigor / statistical design / external validity). Persona rotation would narrow that breadth. If user wants deep persona-specific dive → invoke /codex-stress with rotation menu instead.
 
 ### Bypass conditions
 
 → **Canonical at end of this file** ("## Bypass conditions (canonical, components reference here)"). Components codex-stress / gemini-stress reference back here; if drift, **master wins**.
 
-## Post-flight verification (Mode B + Mode C, MANDATORY v7 2026-05-15)
-
-> User directive 2026-05-15: "gemini, codex 每次 stress 都需要看是不是完备 / 没 bug。如果不行就针对某一个部分重试。"
+## Post-flight verification (Mode B + Mode C, MANDATORY)
 
 **Claude must verify cross-AI output BEFORE producing user-facing diff. No silent partial-audit surfacing.**
 
-### Filename convention v7.1 (HHMMSS for concurrent-session safety)
+### Filename convention (HHMMSS for concurrent-session safety)
 
-Empirical 2026-05-15: parallel `/stress` sessions observed (commits `b1a31a2` + `1a2ff9b` ran while we worked here). Date-only filename `<scope>_<YYYY-MM-DD>.md` would collide. **Use HHMMSS**:
+Parallel `/stress` sessions can run concurrently (multiple Claude sessions on same repo). Date-only filename `<scope>_<YYYY-MM-DD>.md` collides — **use HHMMSS**:
 
 ```bash
 DATE=$(date +%Y-%m-%d_%H%M%S)
@@ -530,7 +607,7 @@ PROMPT=docs/checkpoints/{codex,gemini}_prompts/<scope>_${DATE}.md
 OUTPUT=docs/checkpoints/{codex,gemini}_outputs/<scope>_${DATE}.md
 ```
 
-### Mode B + C parallel dispatch (v7.1)
+### Mode B + C parallel dispatch
 
 When master `/stress` chains both Mode B and Mode C, **dispatch them in parallel** via two separate `run_in_background: true` Bash calls. No reason to serialize — they're independent (no shared context required between codex and Gemini). Total wallclock = **max(B, C), not sum**. Harness notifies each independently.
 
@@ -538,7 +615,7 @@ Exception: if user requests serial (rare — e.g. quota concern), state explicit
 
 ### Preflight — verify paths BEFORE dispatch
 
-Empirical 2026-05-15: a single wrong file path (`section4_findings.md` vs `section4_empirical_findings.md`) caused Gemini to silently audit only 5 of 6 intended artifacts. Hard rule:
+A single wrong file path in the prompt causes the cross-AI to silently audit a subset of intended artifacts (no error surfaces — just missing findings). Hard rule:
 
 ```bash
 PROMPT=docs/checkpoints/{codex,gemini}_prompts/<scope>_<HHMMSS-date>.md
@@ -635,9 +712,11 @@ Each verification pass (PASS / RETRY / FAIL) is logged in the user-facing diff s
 
 Per `阶段性成果` rule (memory `feedback_chronicle_on_milestone` trigger 4 — covers /stress + /codex-stress + /gemini-stress completion), if any retry fired or final FAIL, append to 实验笔记 §retro entry. Repeated failure patterns → spec-drift candidate for vN+1.
 
-## Bypass conditions (canonical, v7.1 — components reference here)
+## Bypass conditions (canonical, v7.3 — components reference here)
 
-> **Canonical source** for Mode B + C bypass. `codex-stress/SKILL.md` + `gemini-stress/SKILL.md` reference this section. **If they drift, master wins.**
+> **Canonical source** for Mode B + C bypass AND v7.3 unified-bug-list-presentation bypass. `codex-stress/SKILL.md` + `gemini-stress/SKILL.md` reference this section. **If they drift, master wins.**
+
+### Cross-AI dispatch bypass (Mode B / Mode C skip)
 
 User explicitly says one of:
 - "skip codex" / "no codex" → Mode B skipped, keep C if applicable
@@ -648,11 +727,20 @@ User explicitly says one of:
 - codex smoke test failed → Mode B skipped, surface; continue with Claude + (C if applicable)
 - gemini smoke test failed → Mode C skipped, surface; continue with Claude + (B if applicable)
 
+### v7.3 unified bug-list presentation bypass (skip presentation step)
+
+User explicitly says one of (must precede /stress invocation OR appear in user message mid-stress):
+- "skip presentation" / "no bug list" / "just fix it" → Claude proceeds to fix directly after own discretion on scope (still runs all dispatched lineages, but skips unified-list presentation step)
+- "fix only P0" → Claude proceeds with P0 filter, no presentation step (P1/P2 deferred to backlog)
+- "fix only OOB" → Claude proceeds with OOB-tagged filter, no presentation step
+
+In ALL other cases the v7.3 presentation step is **mandatory** — Claude must present unified 3-AI bug list to user and await fix-scope confirmation BEFORE any Edit/Write tool call inside /stress workflow.
+
 ### All-fail fallback semantics
 
 If BOTH Mode B + C fail verification 3× each (6 retries total fired), fall back to Claude /stress alone + Phase 0 self-audit result. Surface "Cross-AI unavailable; Claude self-audit only" prominently in user-facing summary. **Don't fake a 3-way diff.**
 
-### Retry option (b) "swap model" mechanics (v7.1)
+### Retry option (b) "swap model" mechanics
 
 When user picks option (b) on a failed cross-AI: regenerate prompt adapted to swap target's strengths:
 - codex → gemini: emphasize **prose paths** (paper_drafts / preregistration / planning §) — gemini's strength
@@ -662,10 +750,14 @@ Same scope file lineup may not be optimal for the new lineage. Brief prompt rege
 
 ## Versioning
 
-- v2 (2026-05-12): PRA-10 checklist → hostile reviewer persona
-- v3 (2026-05-12 evening): Mode B auto-chain added
-- v4 (2026-05-12 late): "Mental backdrop" 15-line list removed (created blind spot)
-- v5 (2026-05-13): persona shift from "generic reviewer 200+ papers" to "implementer of these methods"; reading order reversed (scripts first); out-of-box hard constraint; pre-flight smoke test + output triage for Mode B; scope-split (Claude/codex read different scripts to complement, not duplicate). Driver: user feedback that today's 6 findings included 2/6 mechanical fact-check (not what /stress is for) and 4/6 principled methodology (what /stress should hit). User wants 3/3 principled, ≥1 out-of-box.
-- **v6 (2026-05-14)**: scope calibration (spot-check / milestone / pre-fire / submission with different depth budgets); bilingual exemplar + FAIL CHECK (v5 spec was too tersely specified, Claude side regressed to all-English); sibling-script propagation check (after Bug N fix, audit all siblings using same primitive — caught by 2026-05-14 pre-fire audit where Bug 2 + Bug 5 fixes had leaked); Mode A → Mode B context handoff (scope tracker file makes complementary coverage structurally enforced); persona rotation menu (4 personas: mechinterp implementer / ML systems engineer / stats methodologist / reproducibility auditor); fix-verification mandate (py_compile + diff-check post inline fix); retrospective hook (within 7 days, verify findings actually surfaced real bugs). Driver: user feedback 2026-05-14 — pre-fire audit only read 7 files for whole §5 pipeline, missed ~5 sibling scripts with same propagated bugs. v5 sufficient for spot-check; v6 calibrated for pre-fire.
-- **v7 (2026-05-15)**: Mode C (`/gemini-stress`) cross-AI third lineage (Google) added — pilot 2026-05-15 §A2 design-layer audit caught 4 P0/P1 attacks Claude+codex 7-day history missed (Self-Oracle baseline / FE meta on opposing mechanisms / trajectory total-cost / P-prompt graceful-degradation). Default chain Mode B + C at spot-check/milestone/submission scope; Mode B only at pre-fire (code-heavy). **Post-flight verification protocol MANDATORY** (Phase 1 I/O sanity / Phase 2 depth+scope / Phase 3 runtime) + preflight path-existence check before dispatch + retry decision matrix + 2-retry budget. Driver: user directive 2026-05-15 "gemini, codex 每次 stress 都需要看是不是完备" + empirical 2026-05-15 silent partial-audit (section4_findings.md path typo → 1 file missed → silent partial output).
-- **v7.1 (2026-05-15 reflexive audit)**: Self-/stress 全套 skill 反射性审计 → 11-issue fix pack: (1) Phase 0 self-audit for Claude /stress own output (closes asymmetric blind spot — cross-AI verification didn't cover Claude self); (2) HHMMSS filename convention to prevent concurrent-session collision (2026-05-15 observed parallel /stress runs); (3) Mode B+C parallel dispatch declared explicit (wallclock = max not sum); (4) Bypass conditions section consolidated to master canonical (was duplicated 2x in v7 with drift risk); (5) all-fail fallback semantics ("cross-AI unavailable, claude self-audit only", don't fake 3-way); (6) retry option (b) "swap model" mechanics (regen prompt for swap target's strengths); (7) Gemini model identification via --debug routing line for reproducibility; (8) Gemini silent model-name fallback warning (`-m gemini-3-pro-preview` typo → 2.5 silent downgrade); (9) Gemini persona "no rotation by design" explicit; (10) codex-stress SKILL.md v1→v7 parity sync (was fossilized at v1, 3 direct contradictions with master); (11) chronicle trigger 4 extended to /gemini-stress completion. Driver: user "整体审计下 skill" + "我感觉其他的你说的也全都应该修复". Cross-cutting: bypass canonical-source-of-truth governance + version sync across 3-skill component family.
+> Drivers + empirical retrospectives live in commit history (`git log .claude/skills/stress/SKILL.md`) and 实验笔记. This section is a 1-liner change index only.
+
+- v2 (2026-05-12): hostile reviewer persona (was PRA-10 checklist)
+- v3 (2026-05-12): Mode B (`/codex-stress`) auto-chain added
+- v4 (2026-05-12): "Mental backdrop" 15-line attack list removed (list-shaped blind spot)
+- v5 (2026-05-13): implementer persona; scripts-first reading order; out-of-box hard constraint; Mode B pre-flight smoke + output triage; scope-split Claude/codex
+- v6 (2026-05-14): scope calibration table; bilingual FAIL CHECK; sibling-script propagation check; Mode A→B handoff file; Mode B persona rotation menu; fix-verification mandate; retrospective hook
+- v7 (2026-05-15): Mode C (`/gemini-stress`) third AI lineage added; post-flight verification protocol MANDATORY (Phase 1+2+3); preflight path-existence check; 2-retry budget
+- v7.1 (2026-05-15): Phase 0 self-audit on Claude /stress own output; HHMMSS filename convention; Mode B+C parallel dispatch; Bypass section consolidated canonical; all-fail fallback semantics; retry option (b) swap-model mechanics; Gemini `--debug` model verification; Gemini silent model-name fallback warning; Gemini persona no-rotation; codex-stress SKILL.md parity sync; chronicle trigger 4 extended to Mode C
+- v7.2 (2026-05-15): Bug Table per-/stress-output mandatory (P0/P1/P2 × 3-column actionable summary)
+- v7.3 (2026-05-15): **HARD CONSTRAINT — cross-AI unified bug list presentation BEFORE fix work**; sequential workflow A→B→C→present→user-confirm→fix; bypass keywords "skip presentation" / "just fix it" / "fix only P0" / "fix only OOB"; 3-question self-check before any Edit/Write inside /stress workflow
