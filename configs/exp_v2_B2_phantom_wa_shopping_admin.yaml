@@ -1,0 +1,32 @@
+# B2 Phantom-SoM — WA shopping_admin (Magento admin panel)
+# Cross-family 3rd baseline: google/gemma-3-4b-it (advisor 2026-05-14, 笔记 §138).
+# Mirrors B1 phantom_wa_shopping_admin; only backend differs.
+
+defaults:
+  - configs/exp_v2_wa_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B2_phantom_wa_shopping_admin"
+
+task:
+  include_sites: ["shopping_admin"]
+  site_configs:
+    shopping_admin: "external/visualwebarena/config_files/wa/test_shopping_admin.raw.json"
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["phantom_som"]
+
+backends:
+  default_backend: "local_gemma"
+  local_gemma:
+    max_new_tokens: 384
+    min_free_vram_gb: 0
+
+baselines:
+  run_b0: false

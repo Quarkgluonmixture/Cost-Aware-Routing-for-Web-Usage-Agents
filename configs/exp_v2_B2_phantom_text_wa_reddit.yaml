@@ -1,0 +1,33 @@
+# B2 P-text ablation — WA reddit
+# DOM prompt + SoM marks 文本 + 无图;与 B2 phantom_som wa_reddit 唯一差: system prompt
+# Note: observation_mode = "phantom_dom" (legacy alias) so condition_id stays
+# phase1_phantom_dom_router_0 — paper-grade run dirs already use this path.
+
+defaults:
+  - configs/exp_v2_wa_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B2_phantom_text_wa_reddit"
+
+task:
+  include_sites: ["reddit"]
+  site_configs:
+    reddit: "external/visualwebarena/config_files/wa/test_reddit.raw.json"
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["phantom_dom"]
+
+backends:
+  default_backend: "local_gemma"
+  local_gemma:
+    max_new_tokens: 384
+    min_free_vram_gb: 0
+
+baselines:
+  run_b0: false
