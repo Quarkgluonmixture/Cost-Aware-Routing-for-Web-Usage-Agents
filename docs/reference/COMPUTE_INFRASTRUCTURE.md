@@ -2,7 +2,7 @@
 type: reference
 status: live
 created: 2026-05-07
-last_updated: 2026-05-07
+last_updated: 2026-05-14
 audience: self + advisor sync prep
 ---
 
@@ -10,7 +10,7 @@ audience: self + advisor sync prep
 
 > **Living document** — update when compute access changes (new accounts, network policy, deprecations).
 >
-> **Last major update**: 2026-05-07 evening. UCL Condense A100 allocated 5/6 + Myriad HPC account activated 5/6 evening + GPU attached to A100 5/7 morning + Myriad **passwordless SSH working 5/7 evening** (VSCode Remote-SSH ❌ glibc 2.17 vs required 2.28+, terminal-only workflow on Myriad). A100 SSH path via condenser bastion still pending cert generation on quark.
+> **Last major update**: 2026-05-14. **Condenser A100 now operational** — VM `a100-jiaming-test` @ `10.134.51.2` (replaces earlier `a100-jiaming-mech` @ `10.52.6.89`), Ubuntu 22.04.5, SSH user `ubuntu`, PyTorch smoke test passed (`torch 2.11.0+cu128`, cuda True, capability (8,0), driver 580.126.20 / CUDA 13.0). GPU confirmed **A100-PCIE-40GB** (NOT 80GB). Access: quark → UCL VPN → condenser bastion (`cloud-user`, key `id_condenser_private_fixed` + cert `id_condenser_new.signed`) → VM (`ssh condense-a100`). Earlier (2026-05-07): Myriad passwordless SSH working (VSCode Remote-SSH ❌ glibc 2.17), Myriad HPC account activated.
 
 ---
 
@@ -18,7 +18,7 @@ audience: self + advisor sync prep
 
 | Tier | Platform | Status | Use case |
 |---|---|---|---|
-| **0** | UCL Condense **A100 40GB dedicated** | ✅ allocated 5/6 / GPU attached 5/7 by Steve / SSH path pending cert | **Paper-grade primary**: Stage 2B scale-up + Llama-4 cross-arch (small variants only, 40GB constraint) + 16-cell rerun (pending VWA Tailscale path) |
+| **0** | UCL Condenser **A100 40GB dedicated** | ✅ **operational 2026-05-14** (VM `a100-jiaming-test` @ `10.134.51.2`, PyTorch verified) | **Paper-grade primary**: Stage 2B scale-up + Llama-4 cross-arch (small variants only, 40GB constraint) + 16-cell rerun (pending VWA reach path) |
 | **1** | UCL **Myriad HPC** (V/U-type 4× A100 80GB / L-type 4× A100 40GB / E/F-type 2× V100) | ✅ account activated 5/6 / **passwordless SSH 5/7 evening** / ⚠️ VSCode Remote-SSH NOT viable (RHEL 7 glibc 2.17 < required 2.28) | Terminal-only batch + cross-arch (qsub on V/U-type) + future SAE training (4-GPU data-parallel). Workflow: dev on quark/A100 → git push → ssh myriad git pull → qsub. |
 | **2** | **DGX Spark** (`spark-9ea3`) shared lab | ✅ stable, no admin/sudo, lab Tailscale `981526092.github` | Archived data source / VWA Docker Tailscale bridge / curation done (笔记 §113) |
 | **3** | Advisor 5090 (post AI Center 搬运) | ⏳ pending | Backup if Condense fails, advisor offered 5/5 sync |
@@ -29,15 +29,36 @@ audience: self + advisor sync prep
 
 ## §1 Platforms Detail
 
-### §1.1 UCL Condense A100 40GB dedicated ⭐ Tier 0
+### §1.1 UCL Condenser A100 40GB dedicated ⭐ Tier 0
 
-**Provider**: UCL ARC Condense (Harvester KubeVirt over Rancher).
+**Status (2026-05-14)**: ✅ **operational** — PyTorch smoke test passed (`torch 2.11.0+cu128`, `cuda available: True`, device `NVIDIA A100-PCIE-40GB`, capability `(8, 0)`, CUDA matmul OK).
+**Provider**: UCL ARC Condenser (Harvester KubeVirt over Rancher).
 **Namespace**: `arc-proj-webarena-ns`.
-**VM**: `a100-jiaming-mech` — 16 CPU, 64 GB RAM, 500 GB disk, Ubuntu 22.04 cloud image, KeyPair `jiaming-dgx-spark` (fingerprint `26:53:bb:2f:26:e8:6c:9b:56:ff:14:aa:2a:3a:fe:fe`).
-**GPU**: 1× NVIDIA A100 **40GB** (PCI passthrough, attached by Steve 5/7 morning after VM created — VM moved to host with GPU, IP changed 10.52.12.75 → **10.52.6.89**). 40GB confirmed by user 5/7.
+**VM**: `a100-jiaming-test` — IP **`10.134.51.2`**, Ubuntu 22.04.5 LTS, SSH user `ubuntu`, 500 GB disk persistent. (Supersedes earlier `a100-jiaming-mech` @ `10.52.6.89`.)
+**GPU**: 1× NVIDIA **A100-PCIE-40GB** (40960 MiB) — driver `580.126.20`, CUDA 13.0, MIG disabled, persistence mode enabled. **40GB, NOT 80GB** — correct any old "80GB" notes.
 **Cost**: $0 (UCL allocation, NOT student-funded; supersedes RunPod budget plan).
 **Wallclock**: unlimited (dedicated, single-tenant, no queue).
 **Persistent state**: 500 GB disk persistent.
+
+**Access path** (current, 2026-05-14): quark (Windows) → UCL VPN → condenser bastion `ssh.condenser.arc.ucl.ac.uk` → VM. From quark: `ssh condense-a100` (alias `condense-test` also points at `10.134.51.2`). quark `~/.ssh/config`:
+```
+Host condenser
+    HostName ssh.condenser.arc.ucl.ac.uk
+    User cloud-user
+    IdentityFile ~/.ssh/id_condenser_private_fixed
+    CertificateFile ~/.ssh/id_condenser_new.signed
+    StrictHostKeyChecking accept-new
+Host condense-a100        # (and alias condense-test)
+    HostName 10.134.51.2
+    User ubuntu
+    IdentityFile ~/.ssh/id_ed25519_dgx
+    ProxyJump condenser
+    StrictHostKeyChecking accept-new
+    ConnectTimeout 20
+```
+From DGX: `ssh -i ~/.ssh/vwa_windows Quark@100.95.81.103 'ssh condense-a100 "<cmd>"'`.
+
+**TODO**: set up P79 repo + venv on VM; confirm whether VWA site access (Tailscale to quark) works from inside the Condenser VM; decide which workloads to migrate from DGX/Myriad.
 
 **40GB capacity analysis** (paper-strategic):
 | Model | Params | bf16 size | fp16+activations buffer | Fits 40GB? |

@@ -66,11 +66,11 @@ created: 2026-05-06
 
 ## Compute path
 
-⭐ **UCL Condense A100 dedicated** (allocated 5/6, pending Steve SSH info verify, 笔记 §112). 80GB VRAM 余量 8× for B1 4B / 2-3× for Llama-4 ~10B class. Cell-parallel feasible.
+⭐ **UCL Condenser A100 dedicated** — ✅ operational 2026-05-14 (VM `a100-jiaming-test` @ `10.134.51.2`, PyTorch smoke test passed). GPU is A100-PCIE-**40GB** (NOT 80GB): B1 Qwen3-VL-4B ~10GB fits comfortably; Llama-3.2-11B-Vision fits tight; Llama-4 Scout ~17B borderline (4-bit). See memory `reference_compute_resources.md` + `docs/reference/COMPUTE_INFRASTRUCTURE.md`.
 
 ## Blocks
 
-- A100 SSH verify (Steve admin info pending)
+- ~~A100 SSH verify~~ ✅ resolved 2026-05-14 — A100 operational. (Note: paper §5 mechanism scope itself 暂搁 per advisor discussion 2026-05-14 — this issue's followups frozen, not compute-blocked.)
 
 ## Unblocks (after delivery)
 

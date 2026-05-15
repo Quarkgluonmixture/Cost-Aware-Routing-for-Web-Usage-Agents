@@ -28,9 +28,11 @@ K_h1 threshold: 0.75 → ≥ 12/16 cells pass; K_h3: 0.67 → ≥ 11/16. See `pr
 
 | Path | Wallclock | Cost | Status |
 |---|---|---|---|
-| ⭐ **UCL Condense A100 dedicated** (allocated 5/6) | ~3-5 d (cell-parallel feasible, 80GB VRAM 8× headroom) | $0 (UCL allocation, NOT student-funded) | pending Steve SSH info |
+| ⭐ **UCL Condenser A100 dedicated** (VM `a100-jiaming-test` @ `10.134.51.2`) | ~3-5 d (B1 4B ~10GB fits 40GB w/ headroom; cell-parallel feasible) | $0 (UCL allocation, NOT student-funded) | ✅ operational 2026-05-14 (PyTorch smoke test passed) |
 | DGX shared (fallback) | ~3 weeks (seonglae sweep contention) | $0 | available |
 | RunPod 4090 (deprecated by A100) | ~1 week | $70-115 | NOT NEEDED |
+
+⚠️ GPU is A100-PCIE-**40GB**, not 80GB — earlier docs/issues saying "80GB 8× headroom" are wrong. B1 4B still fits comfortably. **VWA reach caveat**: A100 cannot directly reach quark VWA Docker — 16-cell rerun needs either VWA self-host on the VM or Tailscale-to-quark setup (still TODO). See memory `reference_compute_resources.md`.
 
 **A100 unblocks paper writing 1-2 weeks** — see 笔记 §112.
 
@@ -45,7 +47,7 @@ K_h1 threshold: 0.75 → ≥ 12/16 cells pass; K_h3: 0.67 → ≥ 11/16. See `pr
 
 ## Unblocked by
 
-1. **A100 SSH verify** (Steve approval done, dashboard node + SSH info pending) — eliminates compute blocker
+1. ~~**A100 SSH verify**~~ ✅ done 2026-05-14 — A100 operational (VM `a100-jiaming-test` @ `10.134.51.2`), compute blocker eliminated. Remaining: VWA reach from A100 (self-host or Tailscale).
 2. **Advisor email reply** to `advisor_sync_5_5_followup.md` Q1-Q11 — locks threshold (K_h1=0.75 / K_h3=0.67 / TOST δ=1.0pp) per `preregistration.md`
 3. Pre-registration `status: locked` flip — happens after (2)
 
