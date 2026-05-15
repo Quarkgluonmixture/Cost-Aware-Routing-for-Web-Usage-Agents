@@ -375,11 +375,167 @@ Within **7 days** after each /stress audit, append to `docs/checkpoints/实验�
 
 This is what tells us whether /stress is paper-grade ROI or theater. Without the retro, the spec evolves toward "feel principled" instead of "catches real bugs".
 
+## Auto-chain to /gemini-stress (Mode C, v7 2026-05-15)
+
+User added Gemini CLI subscription 2026-05-15 → third AI lineage (Google) available. Mode C runs `/gemini-stress` alongside Mode B (codex) for **prose / design-layer** scope where Anthropic+OpenAI two-lineage may share blind spots Google doesn't.
+
+**Empirical pilot 2026-05-15** on P79 §A2 design-layer audit caught 4 P0/P1 attacks Claude+codex 7-day audit history missed:
+- Self-Oracle baseline (stochastic-noise floor for drop-one oracle in low-SR regime)
+- FE meta-pooling on opposing mechanisms (estimand uninterpretability)
+- Trajectory total-cost confound vs per-step token equality
+- P-prompt graceful-degradation (may not be a real routing axis)
+
+### Scope discipline by AI lineage
+
+| AI | Empirical strength | Default scope |
+|---|---|---|
+| Claude (this skill, self-review) | methodology pipeline + sibling propagation + code↔prose mismatch | full code+prose, scope-calibrated |
+| codex `/codex-stress` (Mode B) | reproducibility code-audit + pipeline correctness + data manipulation | code-heavy + pipeline |
+| Gemini `/gemini-stress` (Mode C) | prose claim-audit + framing + statistical design + external validity reasoning | prose / design-layer §A2-style |
+
+### Mode C invocation
+
+Mirror of Mode B but with Gemini CLI. See `.claude/skills/gemini-stress/SKILL.md` for full skill details. Quick form:
+
+```bash
+gemini --approval-mode plan -p "$(cat $PROMPT)" > $OUTPUT 2>&1 &
+GEMINI_PID=$!
+```
+
+`--approval-mode plan` = read-only by construction (safer than codex `--sandbox danger-full-access`). Use `run_in_background: true` so harness notifies on completion. **Do NOT poll.**
+
+### Mode C decision: when to chain
+
+- **spot-check** (user "stress me"): Mode B + C both (cheap, both lineages fast)
+- **milestone** (paper commit / push): Mode B + C both (full coverage)
+- **pre-fire** (code-heavy audit): Mode B only by default — Gemini empirically weaker on code; user can opt-in `+gemini` if they want extra prose pass
+- **submission-ready**: Mode B + C both, exhaustive scope
+
+### Bypass conditions (updated v7)
+
+User explicitly says one of:
+- "skip codex" / "no codex" → Mode B skipped, keep C
+- "skip gemini" / "no gemini" → Mode C skipped, keep B
+- "claude only" / "no cross-AI" → both B + C skipped
+- "code only" → keep B (code-audit lineage), skip C (prose lineage)
+- "prose only" → keep C (prose lineage), skip B
+- codex smoke test failed → Mode B skipped, surface; continue with C + Claude
+- gemini smoke test failed → Mode C skipped, surface; continue with B + Claude
+
+## Post-flight verification (Mode B + Mode C, MANDATORY v7 2026-05-15)
+
+> User directive 2026-05-15: "gemini, codex 每次 stress 都需要看是不是完备 / 没 bug。如果不行就针对某一个部分重试。"
+
+**Claude must verify cross-AI output BEFORE producing user-facing diff. No silent partial-audit surfacing.**
+
+### Preflight — verify paths BEFORE dispatch
+
+Empirical 2026-05-15: a single wrong file path (`section4_findings.md` vs `section4_empirical_findings.md`) caused Gemini to silently audit only 5 of 6 intended artifacts. Hard rule:
+
+```bash
+PROMPT=docs/checkpoints/{codex,gemini}_prompts/<scope>_<date>.md
+BAD=0
+grep -oE 'docs/[a-zA-Z0-9_/.-]+\.md' "$PROMPT" | sort -u | while read path; do
+  [ ! -f "$path" ] && { echo "✗ MISSING: $path"; BAD=1; }
+done
+[ "$BAD" = 1 ] && { echo "Fix paths in prompt before dispatch"; exit 2; }
+```
+
+Better: use `find docs/ -name '<pattern>'` to **discover** real file names instead of hardcoding from memory.
+
+### Phase 1 — I/O sanity (automated, cheap)
+
+```bash
+OUT=docs/checkpoints/{codex,gemini}_outputs/<scope>_<date>.md
+SIZE=$(stat -c%s "$OUT" 2>/dev/null || echo 0)
+ISSUES=""
+
+# Too small → likely early termination / auth fail
+[ "$SIZE" -lt 2000 ] && ISSUES+="output <2KB (likely failure); "
+
+# File-read errors inside output → missing artifacts
+grep -iE "File not found|Error executing tool|cannot read|permission denied|No such file" "$OUT" \
+  && ISSUES+="file-read errors in output; "
+
+# Truncation (ends mid-sentence)
+LAST=$(tail -c 200 "$OUT" | tr -d '\n' | tail -c 1)
+echo "$LAST" | grep -qE "[.!?。！？\]\)）」』]" || ISSUES+="ends mid-sentence (truncation); "
+
+# Structure markers (severity tags + required sections)
+grep -qE "P0|P1|P2|Severity" "$OUT" || ISSUES+="no severity tags; "
+grep -qE "Distance to top.?tier|distance-to-top-tier|leverage|highest.?leverage" "$OUT" \
+  || ISSUES+="missing required output sections; "
+```
+
+### Phase 2 — depth/scope sanity (Claude reads + judges)
+
+| Scope | Finding count min | OOB count min |
+|---|---|---|
+| spot-check | 3 | 1 |
+| milestone | 5 | 2 |
+| pre-fire | 7 | 3 |
+| submission-ready | 10 | exhaustive |
+
+Also check:
+- **Specificity**: claims quote file:line or specific numbers, not generic "could be improved"
+- **Persona drift**: friendly summary instead of attack = fail. Gemini sometimes drifts to code generation; codex sometimes drifts to summary mode.
+- **Cold-read integrity**: cross-AI output should NOT reference Claude's prior analysis (would indicate prior audit file leaked into context)
+
+### Phase 3 — runtime sanity
+
+| Scope | Expected wallclock |
+|---|---|
+| spot-check | 1-5 min |
+| milestone | 3-10 min |
+| pre-fire | 8-20 min |
+| submission-ready | 15-40 min |
+
+- <1 min on any scope = near-certain auth / quota / model error → re-run as-is
+- >30 min on smaller scope = potential hang, check partial output
+
+### Retry decision matrix
+
+| Failure mode | Retry strategy |
+|---|---|
+| Single missing-file in output | Find correct path via `find docs/ -name <pattern>` → patch prompt → rerun (cheap, 1 retry) |
+| Truncation | Continuation prompt: "Continue from finding #N. Output ended mid-sentence; pick up where you left off." → append output |
+| Persona drift / off-topic | Re-prompt with stronger persona anchor + explicit "this is hostile claim-audit, not summary" + restate scope at top |
+| Too few findings | Re-prompt with explicit "Required: N findings (≥M OOB). Previous found K. Continue finding more." |
+| Suspicious-fast (<1 min) | Re-run as-is (transient error). If persists, check auth/quota |
+| Scope undeclared | Re-prompt asking to declare scope at top + restate output structure |
+| Numerical hallucination (Gemini specifically) | Flag in user-facing diff as "Gemini cited number X but cross-AI lineage shows Y — verify manually" |
+
+### Retry budget
+
+**Max 2 retries per cross-AI invocation.** After 2 failed retries, surface failure mode to user:
+
+> ⚠️ /<codex|gemini>-stress failed verification 3× (mode: <failure>). Options:
+> (a) try different scope band (e.g. shrink milestone → spot-check)
+> (b) swap to /<other>-stress (different lineage may handle this better)
+> (c) accept partial output (Phase 1 passed, Phase 2 marginal)
+> (d) manual review
+
+### Verification chronicle
+
+Each verification pass (PASS / RETRY / FAIL) is logged in the user-facing diff section header:
+
+```markdown
+### Mode B (codex) — PASS / RETRY x1 / FAIL after 2 retries
+### Mode C (gemini) — PASS / RETRY x1 / FAIL after 2 retries
+```
+
+Per `阶段性成果` rule, if any retry fired or final FAIL, append to 实验笔记 §retro entry. Repeated failure patterns → spec-drift candidate for vN+1.
+
 ### Bypass conditions
 
 User explicitly says one of:
-- "skip codex" / "claude only" / "no cross-AI" → Claude /stress alone
-- codex smoke test failed → fall back to Claude /stress + note codex unavailable
+- "skip codex" / "no codex" → Mode B skipped, keep C if applicable
+- "skip gemini" / "no gemini" → Mode C skipped, keep B if applicable
+- "claude only" / "no cross-AI" → Claude /stress alone, both B + C skipped
+- "code only" → keep B, skip C (prose-only lineage)
+- "prose only" → keep C, skip B (code-only lineage)
+- codex smoke test failed → Mode B skipped, surface; continue with Claude + (C if applicable)
+- gemini smoke test failed → Mode C skipped, surface; continue with Claude + (B if applicable)
 
 ## Versioning
 
@@ -388,3 +544,4 @@ User explicitly says one of:
 - v4 (2026-05-12 late): "Mental backdrop" 15-line list removed (created blind spot)
 - v5 (2026-05-13): persona shift from "generic reviewer 200+ papers" to "implementer of these methods"; reading order reversed (scripts first); out-of-box hard constraint; pre-flight smoke test + output triage for Mode B; scope-split (Claude/codex read different scripts to complement, not duplicate). Driver: user feedback that today's 6 findings included 2/6 mechanical fact-check (not what /stress is for) and 4/6 principled methodology (what /stress should hit). User wants 3/3 principled, ≥1 out-of-box.
 - **v6 (2026-05-14)**: scope calibration (spot-check / milestone / pre-fire / submission with different depth budgets); bilingual exemplar + FAIL CHECK (v5 spec was too tersely specified, Claude side regressed to all-English); sibling-script propagation check (after Bug N fix, audit all siblings using same primitive — caught by 2026-05-14 pre-fire audit where Bug 2 + Bug 5 fixes had leaked); Mode A → Mode B context handoff (scope tracker file makes complementary coverage structurally enforced); persona rotation menu (4 personas: mechinterp implementer / ML systems engineer / stats methodologist / reproducibility auditor); fix-verification mandate (py_compile + diff-check post inline fix); retrospective hook (within 7 days, verify findings actually surfaced real bugs). Driver: user feedback 2026-05-14 — pre-fire audit only read 7 files for whole §5 pipeline, missed ~5 sibling scripts with same propagated bugs. v5 sufficient for spot-check; v6 calibrated for pre-fire.
+- **v7 (2026-05-15)**: Mode C (`/gemini-stress`) cross-AI third lineage (Google) added — pilot 2026-05-15 §A2 design-layer audit caught 4 P0/P1 attacks Claude+codex 7-day history missed (Self-Oracle baseline / FE meta on opposing mechanisms / trajectory total-cost / P-prompt graceful-degradation). Default chain Mode B + C at spot-check/milestone/submission scope; Mode B only at pre-fire (code-heavy). **Post-flight verification protocol MANDATORY** (Phase 1 I/O sanity / Phase 2 depth+scope / Phase 3 runtime) + preflight path-existence check before dispatch + retry decision matrix + 2-retry budget. Driver: user directive 2026-05-15 "gemini, codex 每次 stress 都需要看是不是完备" + empirical 2026-05-15 silent partial-audit (section4_findings.md path typo → 1 file missed → silent partial output).

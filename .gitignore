@@ -93,9 +93,11 @@ docs/checkpoints/周报/
 # for known dirs but a top-level rule prevents future accidents)
 node_modules/
 
-# Codex prompts + outputs — local cross-AI audit scratch space, not paper-grade
-# artifacts. Prompts are regenerated per task from conversation context; outputs
-# (incl. *_FINAL_*.md reviews + raw trace logs) are consumed into 实验笔记 /
-# paper drafts and don't need independent version history. Kept on disk, not git.
+# Cross-AI audit scratch space (codex + gemini) — local prompts/outputs, not
+# paper-grade artifacts. Prompts regenerated per task from conversation context;
+# outputs (incl. *_FINAL_*.md reviews + raw trace logs) feed 实验笔记 / paper
+# drafts and don't need independent version history. Kept on disk, not git.
 docs/checkpoints/codex_prompts/
 docs/checkpoints/codex_outputs/
+docs/checkpoints/gemini_prompts/
+docs/checkpoints/gemini_outputs/
