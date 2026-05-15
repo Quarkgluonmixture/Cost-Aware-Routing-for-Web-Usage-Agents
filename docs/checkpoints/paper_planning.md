@@ -177,7 +177,7 @@ Axis M2 (Flat-list activation):
 
 ### Zoom 2.5 (reverse explanation, NEW 2026-05-01 evening): 别扭 framework + Capability-modulated effect
 
-> **⏸️ Provisional**: 现有数据 N=4 cells (B0 cls/red 含 phantom + B1 cls 5-mode + B1 red 3-mode), 全部 Phase A bug fix 之前 (commit `3c15cd7` 之前). 16-cell rerun 后 statistical commit, 现 framework 标 "provisional pending 16-cell rerun + cross-VLM-family validation"。详 笔记 §108.16。
+> **⏸️ Provisional**: 现有数据 N=4 cells (B0 cls/red 含 phantom + B1 cls 5-mode + B1 red 3-mode), 全部 Phase A bug fix 之前 (commit `3c15cd7` 之前). **Phase 1a 36-condition / 6-cell rerun** (cls+red × B0+B1+B2 × 6 modes) on A100 self-host Docker 后 statistical commit, 现 framework 标 "provisional pending Phase 1a 36-condition rerun + cross-VLM-family validation"。Scope 演变:14/16 (pre-2026-05-13) → 24/4 (2026-05-13 codex stress audit) → 36/6 (2026-05-14 B2 = Gemma3-VL addition)。详 笔记 §108.16 + §138 + §142。
 
 **Insight**: M1/M2 framework 是 **forward causal upstream** ("what input change happens"). 别扭 framework 是 **reverse causal downstream** ("what gap between expectation and reality"). 两者描述同一现象的不同 layer, 但 别扭 在 phantom space 内提供更 mechanism-aligned 解释。
 

@@ -100,8 +100,8 @@ From §133 codex Round C + §134 /stress v6:
 
 | Item | Question | 倾向 |
 |---|---|---|
-| C-M1 / F1 | DL meta τ² biased at k=4 (Veroniki 2016) → REML / Paule-Mandel? | advisor 拍板 |
-| C-M2 / F2 | Wald 1.96 CI anti-conservative at k=4 → Hartung-Knapp t_{k-1}=3.18? | advisor 拍板 |
+| C-M1 / F1 | DL meta τ² biased at k<10 (Veroniki 2016) — preregistration `decision 3A` 2026-05-14 retired DL in favor of FE estimand (no τ² needed). k=4 → k=6 per B2 addition 2026-05-14 eases but does not eliminate k<10 fragility under any RE estimator | RESOLVED via FE estimand (no advisor decision needed for DL replacement); k=6 power numbers ⏳ pending advisor lock |
+| C-M2 / F2 | Wald 1.96 CI anti-conservative at k<10 (IntHout 2014) — FE estimand side-steps (FE Wald is sound at any k under CLT on per-cell θ_i). No Hartung-Knapp needed since no RE estimator in primary gate | RESOLVED via FE estimand 2026-05-14 |
 | C-M2 | `power_analysis.md` rewrite for 4-cell Phase 1a scope (现仍 12/16 + N≥10 mismatch) | post-sync |
 | C-1 / F4 | `aggregate_phantom_lift.py` denominator inconsistency (sr_3 universe_5 vs u_psom) — archived-data analysis, 影响 Appendix D | post-Phase-1a |
 | C-2 | `aggregate_phantom_lift.py` H3 axis-2 universe — 可能 flip H3(ii) false negative | post-Phase-1a |
@@ -202,7 +202,7 @@ docs/checkpoints/paper_drafts/
 ### Key infra paths
 ```
 configs/exp_v2_*.yaml                              per-site experiment configs (含 12 baseline configs §133 A4)
-scripts/queues/queue_phase1_paper_grade.sh         Phase 1a 24-cond orchestrator (§134 harden)
+scripts/queues/queue_phase1_paper_grade.sh         Phase 1a 36-cond orchestrator (§134 harden; expanded 24 → 36 per B2 addition 2026-05-14)
 scripts/queues/queue_chain.sh                      sequential chain (§134 C3 crash-detect)
 scripts/queues/queue_{baseline,phantom_*}.sh       per-condition launch (§134 FORCE_NEW)
 scripts/analysis/preregistration_decision_test.py  H1/H3/TOST canonical (§133 T3 heterogeneity branch)

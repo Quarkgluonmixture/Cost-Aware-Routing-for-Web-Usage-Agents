@@ -147,12 +147,7 @@ but B0 still inherits proxy-side stochasticity for which the API has no `seed` p
 Cross-run trajectory variance for B0 is bounded by single-step branching at ties; aggregate
 SR is stable (laughs at our N=234+210+466 sampling).
 
-**A3 — Token budget**: B0 has `max_new_tokens=4096`; B1 has `max_new_tokens=384`. The
-asymmetry stems from B0's verbose thought + JSON output requirement; B1's parser is more
-robust to compact outputs. In rare cases (~0.15%), B1's compact budget causes truncated JSON →
-parse_failure → `wait` action. We retain this asymmetry as a B1-specific structural
-limitation rather than artificially inflate B1's budget; the impact is bounded and disclosed
-in §3 baseline configuration table.
+**A3 — Token budget (RESOLVED 2026-05-15 per commit `9f70b4e` / B-116 fix)**: Previously B0 used `max_new_tokens=4096` while B1 used `max_new_tokens=384`. The 12× asymmetry was identified by codex /stress F3 as a paper-grade contamination vector — under the agent's thought+JSON envelope (~400-1500 tokens typical), the 384 cap caused silent truncation on B1/B2 and parse failures that B0's GLM rescue scaffold could mask. **B-116 unified B1 and B2 to `max_new_tokens=4096` to match B0** (commit `9f70b4e fix(configs): B-116 unify B1/B2 max_new_tokens 384→4096 — §142 F3 close`), eliminating the asymmetry. The A100 canonical rerun runs all 3 baselines at 4096; no truncation-rate sensitivity check needed. **Note**: a parse-error recovery scaffold asymmetry (B0 GLM rescue, B1/B2 none) remains an open item; see §3.5.1 cross-baseline disclosure + master_bug_catalog B-86.
 
 ---
 
