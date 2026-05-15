@@ -115,6 +115,7 @@ for cmd in "$@"; do
     this_site="${cmd_args[2]:-}"    # 3rd token (script bash site)
   fi
   if [[ -n "${this_baseline}" && -n "${this_site}" ]]; then
+    # Cross-baseline collision (different baseline on same site)
     for other_baseline in B0 B1 B2; do
       [[ "${other_baseline}" == "${this_baseline}" ]] && continue
       if pgrep -f "run_experiment.*${other_baseline}_.*_${this_site}_" > /dev/null 2>&1; then
@@ -127,6 +128,24 @@ for cmd in "$@"; do
         log "  ${other_baseline} ${this_site} finished; proceeding with ${this_baseline}"
       fi
     done
+
+    # B-129 fix 2026-05-15 (codex Mode B P1-3): same-baseline + same-site
+    # mode collision check (e.g. B0_dom_reddit + B0_som_reddit launched
+    # concurrently outside the master gate). Same reddit user account =
+    # RESET_BEFORE between modes wipes the other's session. Master gate
+    # `queue_phase1_paper_grade.sh` already blocks any active run before
+    # launching new chains, so this check defends against manual bypass.
+    # Skip our own PID to avoid self-match (we're not yet calling
+    # run_experiment from this script — only orchestrating queue scripts).
+    if pgrep -f "run_experiment.*${this_baseline}_.*_${this_site}_" > /dev/null 2>&1; then
+      log "  [collision] same-baseline ${this_baseline} runner already active on site=${this_site} (different mode)"
+      log "  paper-grade hard rule: same baseline same site = shared docker user account + RESET_BEFORE race"
+      log "  waiting for existing ${this_baseline} ${this_site} run to finish before launching new mode..."
+      while pgrep -f "run_experiment.*${this_baseline}_.*_${this_site}_" > /dev/null 2>&1; do
+        sleep 60
+      done
+      log "  same-baseline ${this_baseline} ${this_site} finished; proceeding"
+    fi
   fi
 
   # Launch via the queue script (idempotent — picks up existing or fresh+reset).

@@ -1,0 +1,32 @@
+# B2 (Gemma3-VL) som shopping — Phase 1b paper-grade baseline
+# Created 2026-05-15 (B-128 fix per codex Mode B P2-1) — completes Phase 1b
+# B2 shop VWA chain (previously only WA shop B2 existed; VWA shop B2 was missing).
+# Cross-family 3rd baseline: google/gemma-3-4b-it (advisor 2026-05-14, 笔记 §138).
+# Mirrors the B1 per-condition config family exactly; only the backend differs.
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B2_som_shopping"
+
+task:
+  include_sites: ["shopping"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    observation_mode: ["som"]
+
+backends:
+  default_backend: "local_gemma"
+  local_gemma:
+    max_new_tokens: 4096
+    min_free_vram_gb: 0
+
+baselines:
+  run_b0: false
