@@ -26,7 +26,7 @@ LEGACY_MODE_ALIAS = {
     "phantom_som": "P-SoM",
 }
 SITES = ["classifieds", "reddit", "shopping"]
-BASELINES = ["B0", "B1"]
+BASELINES = ["B0", "B1", "B2"]
 # §139.8: scored task counts (total − N/A tasks excluded at load time) from the
 # single source of truth. Pre-exclusion counts were classifieds 234 / reddit
 # 210 / shopping 466. A manifest entry's explicit `expected_n` still overrides.

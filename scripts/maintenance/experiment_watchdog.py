@@ -677,8 +677,8 @@ def _run_post_condition_analysis(run_dir: Path) -> str:
 # ---------------------------------------------------------------------------
 # Cross-run analysis (跨 site 聚合 / 跨 baseline 对比)
 # ---------------------------------------------------------------------------
-# Naming convention: results/{benchmark}/phase1/{B0|B1}_(?:wa_)?3mode_{site}_{YYYYMMDD}
-_RUN_ID_RE = re.compile(r"^(B[01])_(?:wa_)?3mode_(.+?)_(\d{8})$")
+# Naming convention: results/{benchmark}/phase1/{B0|B1|B2}_(?:wa_)?3mode_{site}_{YYYYMMDD}
+_RUN_ID_RE = re.compile(r"^(B[012])_(?:wa_)?3mode_(.+?)_(\d{8})$")
 
 
 def _parse_run_id(run_dir: Path) -> Optional[Dict[str, str]]:
@@ -767,14 +767,26 @@ def _run_cross_run_analysis(run_dir: Path) -> Optional[str]:
     scripts_dir = Path(__file__).resolve().parent.parent / "analysis"
     statuses: List[str] = []
 
-    # 1) compare_b0_b1: same site, other baseline
-    other_b = "B1" if info["baseline"] == "B0" else "B0"
-    sib = _find_sibling_runs(phase_dir, other_b, site=info["site"], exclude=run_dir)
-    sib_run = sib.get(info["site"])
+    # 1) Pairwise baseline compare (3-baseline aware: B0/B1/B2)
+    # For each OTHER baseline with a sibling run on the same site, trigger
+    # compare_b0_b1.py. Labels still say b0/b1 (script not yet renamed) but
+    # data wiring picks the lexicographically-lower baseline as "b0" so the
+    # output is deterministic. Future: rename to compare_baselines.py.
+    ALL_BASELINES = ("B0", "B1", "B2")
+    self_b = info["baseline"]
     cmp_script = scripts_dir / "compare_b0_b1.py"
-    if sib_run and cmp_script.exists():
-        b0_dir = run_dir if info["baseline"] == "B0" else sib_run
-        b1_dir = run_dir if info["baseline"] == "B1" else sib_run
+    for other_b in ALL_BASELINES:
+        if other_b == self_b or not cmp_script.exists():
+            continue
+        sib = _find_sibling_runs(phase_dir, other_b, site=info["site"], exclude=run_dir)
+        sib_run = sib.get(info["site"])
+        if not sib_run:
+            continue
+        # Deterministic ordering: alphabetically-lower baseline → b0 slot
+        if self_b < other_b:
+            b0_dir, b1_dir, b0_label, b1_label = run_dir, sib_run, self_b, other_b
+        else:
+            b0_dir, b1_dir, b0_label, b1_label = sib_run, run_dir, other_b, self_b
         try:
             r = subprocess.run(
                 [sys.executable, str(cmp_script),
@@ -783,15 +795,15 @@ def _run_cross_run_analysis(run_dir: Path) -> Optional[str]:
                  "--site", info["site"]],
                 capture_output=True, text=True, timeout=300,
             )
-            tag = f"compare_b0_b1[{info['site']}]"
+            tag = f"compare_{b0_label}_{b1_label}[{info['site']}]"
             statuses.append(f"{tag}:{'ok' if r.returncode == 0 else 'failed'}")
             if r.returncode != 0:
                 print(f"[watchdog][CROSS-RUN] {tag} failed: {r.stderr[-200:]}")
         except subprocess.TimeoutExpired:
-            statuses.append(f"compare_b0_b1[{info['site']}]:timeout")
+            statuses.append(f"compare_{b0_label}_{b1_label}[{info['site']}]:timeout")
         except Exception as exc:
-            statuses.append(f"compare_b0_b1[{info['site']}]:error")
-            print(f"[watchdog][CROSS-RUN] compare_b0_b1 error: {exc}")
+            statuses.append(f"compare_{b0_label}_{b1_label}[{info['site']}]:error")
+            print(f"[watchdog][CROSS-RUN] compare {b0_label}/{b1_label} error: {exc}")
 
     # 2) aggregate_cross_site: same baseline, ≥2 distinct sites
     same_b = _find_sibling_runs(phase_dir, info["baseline"], exclude=None)
@@ -934,9 +946,9 @@ def _regenerate_unified_gallery(
     Triggers when *prefix* belongs to a known unified family (B0_3mode,
     B0_phantom, B1_3mode, B1_phantom). Output: results/<baseline>_unified/.
     """
-    # Map any known component prefix to its baseline letter
+    # Map any known component prefix to its baseline letter (B0/B1/B2)
     baseline = None
-    for b in ("B0", "B1"):
+    for b in ("B0", "B1", "B2"):
         if prefix in (f"{b}_3mode", f"{b}_wa_3mode", f"{b}_phantom", f"{b}_wa_phantom"):
             baseline = b
             break
