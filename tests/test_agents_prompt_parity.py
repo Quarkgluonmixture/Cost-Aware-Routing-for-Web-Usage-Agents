@@ -15,12 +15,13 @@ future regressions surface as CI failures instead of silent paper-grade drift:
 2. Gemma3VLAgent's module-level _DOM/_SOM/_VISION_PROMPT constants are
    byte-identical to Qwen3VLAgent's @staticmethod outputs.
 
-3. ProxyApiAgent (B0) is structurally independent (its _get_system_prompts
-   builds its own copies) — we only check the *high-level shape* across B0
-   vs B1/B2: the same set of mode keys exists in each. Byte-equality on the
-   prompt text between B0 and B1/B2 does NOT hold (B0 prompt was authored
-   separately, with documented differences — see paper §3 disclosure footnote)
-   so we only assert the mode dispatch keys match, not the prompt bodies.
+3. ProxyApiAgent (B0) reuses Qwen3VLAgent's @staticmethod prompt builders
+   directly (/stress A1.1 F1 fix, 2026-05-15) — B0/B1/B2 are now byte-identical
+   prompt-for-prompt across all 7 modes. The legacy B0 prompt had shopping-
+   specific examples ("Blankets & Throws" / "Home & Kitchen" / "Electronics" /
+   "Jewelry & Watches") that leaked a shopping-domain prior into the cross-
+   baseline comparison on classifieds + reddit. The fix removes the leak by
+   making B0 share the same source-of-truth as B1/B2.
 """
 
 from __future__ import annotations
@@ -148,13 +149,7 @@ def test_agent_layer_strict_rejects_unknown_mode():
 
 
 def test_b0_b1_b2_mode_dispatch_keys_identical():
-    """All three baselines must dispatch the same 7 observation modes.
-
-    Byte-equality of prompt TEXT does not hold between B0 (proxy) and B1/B2
-    (local) — B0 prompts are authored separately (see paper §3 footnote).
-    But the mode dispatch table keys must agree: any baseline missing a mode
-    key silently degrades to the DOM fallback.
-    """
+    """All three baselines must dispatch the same 7 observation modes."""
     from p79.agents.proxy_api_agent import ProxyApiAgent
 
     expected_modes = {
@@ -162,12 +157,8 @@ def test_b0_b1_b2_mode_dispatch_keys_identical():
         "phantom_som", "phantom_dom", "phantom_text", "phantom_prompt",
     }
 
-    # B0 — instantiate ProxyApiAgent's static _get_system_prompts via a minimal
-    # config that won't trigger any network / model load. _get_system_prompts is
-    # an instance method but uses no instance state; we call it via __get__.
-    proxy_prompts = ProxyApiAgent._get_system_prompts.__get__(
-        type("_StubProxy", (), {})()
-    )()
+    # B0 — _get_system_prompts is @staticmethod after F1 fix, callable directly.
+    proxy_prompts = ProxyApiAgent._get_system_prompts()
     assert set(proxy_prompts.keys()) == expected_modes, (
         f"B0 mode dispatch missing keys: {expected_modes - set(proxy_prompts.keys())}"
     )
@@ -184,3 +175,66 @@ def test_b0_b1_b2_mode_dispatch_keys_identical():
     for mode in expected_modes:
         assert f'"{mode}":' in qwen_src, f"B1 (Qwen) source missing mode key {mode!r}"
         assert f'"{mode}":' in gemma_src, f"B2 (Gemma) source missing mode key {mode!r}"
+
+
+def test_b0_prompts_byte_identical_to_b1_b2():
+    """/stress A1.1 F1 fix invariant: B0/B1/B2 system prompts must be byte-
+    identical per observation mode after 2026-05-15.
+
+    Previously B0 had its own shopping-specific f-string-templated prompt body
+    (cf. ``proxy_api_agent.py:_get_system_prompts`` legacy implementation)
+    with leaked examples like "Blankets & Throws" / "Home & Kitchen" /
+    "Electronics" / "Jewelry & Watches". On the Phase 1a classifieds + reddit
+    workload these injected a shopping-domain prior into the B0 baseline
+    alone, breaking the cross-baseline prompt-parity invariant asserted at
+    ``gemma3vl_agent.py:23-27``.
+
+    The fix collapses B0's prompts to ``Qwen3VLAgent._make_*_prompt()`` so
+    all three baselines see the same source-of-truth prompt body. This test
+    guards against silent regression — if anyone re-introduces a B0-only
+    prompt branch, CI fails before paper-grade data lands.
+    """
+    from p79.agents.proxy_api_agent import ProxyApiAgent
+    from p79.agents.qwen3vl_agent import Qwen3VLAgent
+
+    proxy_prompts = ProxyApiAgent._get_system_prompts()
+
+    # DOM, SoM, Vision must be byte-identical to the Qwen3 source-of-truth.
+    assert proxy_prompts["dom"] == Qwen3VLAgent._make_dom_prompt(), (
+        "B0 DOM prompt drifted from B1 — re-check ProxyApiAgent._get_system_prompts"
+    )
+    assert proxy_prompts["som"] == Qwen3VLAgent._make_som_prompt(), (
+        "B0 SoM prompt drifted from B1 — re-check ProxyApiAgent._get_system_prompts"
+    )
+    assert proxy_prompts["vision"] == Qwen3VLAgent._make_vision_prompt(), (
+        "B0 vision prompt drifted from B1 — re-check ProxyApiAgent._get_system_prompts"
+    )
+
+    # Phantom mode dispatch must mirror B1's choices: phantom_dom/phantom_text
+    # share the DOM prompt, phantom_som/phantom_prompt share the SoM prompt.
+    assert proxy_prompts["phantom_dom"] == proxy_prompts["dom"]
+    assert proxy_prompts["phantom_text"] == proxy_prompts["dom"]
+    assert proxy_prompts["phantom_som"] == proxy_prompts["som"]
+    assert proxy_prompts["phantom_prompt"] == proxy_prompts["som"]
+
+
+def test_b0_prompts_have_no_shopping_specific_examples():
+    """/stress A1.1 F1 fix invariant: B0 prompts must not contain the legacy
+    shopping-domain examples that leaked a baseline-specific prior on the
+    classifieds + reddit Phase 1a workload.
+    """
+    from p79.agents.proxy_api_agent import ProxyApiAgent
+
+    proxy_prompts = ProxyApiAgent._get_system_prompts()
+    legacy_leaks = (
+        "Blankets & Throws",
+        "Home & Kitchen",
+        "Jewelry & Watches",
+    )
+    for mode, prompt in proxy_prompts.items():
+        for leak in legacy_leaks:
+            assert leak not in prompt, (
+                f"B0 prompt for mode {mode!r} still contains legacy shopping "
+                f"example {leak!r} — F1 leak re-introduced. See "
+                f"/stress A1.1 cross-AI diff 2026-05-15."
+            )

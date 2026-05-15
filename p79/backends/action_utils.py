@@ -54,17 +54,19 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
         except json.JSONDecodeError:
             pass
 
-    # Keyword fallback: try to salvage thought from raw text for annotation/debug.
+    # Keyword fallback: salvage thought from raw text for annotation/debug only.
+    # The action itself falls through to `wait` — keyword scroll/back fallback
+    # was removed by /stress A1.1 codex Mode B C3 (2026-05-15):
+    #
+    # `_action` returned with `valid=False` but `action_type` set to `scroll` /
+    # `back` was still executed downstream (runner records `parse_valid=False`
+    # but does NOT skip env.step). Cross-validate Q4 confirmed archived runs
+    # contain `keyword_scroll/back` episodes with `action_success=True` — silent
+    # partial automation where ~1.5% of fp-population steps were substring-match
+    # driven, not model-action driven. Behaviour mirrors §67 `keyword_finish`
+    # removal (incidental "finish"/"stop" in unparseable text is not an action).
+    # Now ALL parse failures fall through to wait with valid=False.
     thought = _extract_fallback_thought(text)
-
-    if "scroll" in lowered:
-        return {"action_type": "scroll", "delta": [0, 0.8], "coordinate_type": "normalized", "thought": thought}, False, "keyword_scroll"
-    if "back" in lowered:
-        return {"action_type": "back", "thought": thought}, False, "keyword_back"
-    # NOTE: keyword_finish removed (§67 follow-up).  "finish"/"stop" appearing
-    # in unparseable verbose text is almost always incidental, not intentional.
-    # Genuine finish actions produce valid JSON and are handled above.
-    # Falling through to wait keeps the episode alive.
 
     return {"action_type": "wait", "thought": thought}, False, "parse_failed"
 

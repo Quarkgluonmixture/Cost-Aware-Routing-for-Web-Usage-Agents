@@ -156,8 +156,21 @@ class ExperimentRunner:
         # the `model:` block in exp_v2_base.yaml never reached the agent — the
         # local_qwen wrapper had no `revision` key and qwen3vl_agent silently
         # used its hard-coded default (merged config decoupled from loaded SHA).
+        #
+        # /stress A1.1 codex Mode B C4 fix (2026-05-15): only forward into the
+        # Qwen-class backends (the top-level `model.revision` field is Qwen-
+        # specific by historical convention — see configs/exp_v2_base.yaml).
+        # Previously a Gemma3 (`local_gemma`) backend with `revision=None`
+        # could silently inherit the top-level Qwen SHA, leaving B2 loading at
+        # HF HEAD or worse, the wrong base model SHA, with no log trail.
+        _QWEN_CLASS_BACKEND_TYPES = {"local_qwen", "api_proxy"}
         _model_revision = self.cfg.get("model", {}).get("revision")
-        if _model_revision and backend_cfg.get("revision") is None:
+        _backend_type = backend_cfg.get("type")
+        if (
+            _model_revision
+            and backend_cfg.get("revision") is None
+            and _backend_type in _QWEN_CLASS_BACKEND_TYPES
+        ):
             backend_cfg["revision"] = _model_revision
         backend = create_backend(backend_id, backend_cfg)
         self._backends[backend_id] = backend
@@ -1280,6 +1293,23 @@ class ExperimentRunner:
                 step_record["glm_fallback_used"] = True
                 step_record["glm_fallback_latency_ms"] = meta.get("glm_fallback_latency_ms")
                 step_record["glm_original_fail_reason"] = meta.get("glm_original_fail_reason")
+            # /stress A1.1 codex Mode B C1 fix: persist B0 image telemetry into the
+            # step record so paper-grade audit can recover image-encode behaviour
+            # from JSONL alone (previously meta had over_cap / payload_bytes /
+            # quality / compressed but runner dropped them — Q5 was structurally
+            # impossible). C2 fix piggybacks via `encode_error`.
+            _image_meta_payload: Dict[str, Any] = {}
+            for _img_key in (
+                "image_over_cap",
+                "image_payload_bytes",
+                "image_quality",
+                "image_compressed",
+                "image_encode_error",
+            ):
+                if _img_key in meta and meta.get(_img_key) is not None:
+                    _image_meta_payload[_img_key] = meta.get(_img_key)
+            if _image_meta_payload:
+                step_record["image_meta"] = _image_meta_payload
             # Confidence metrics (optional, from logprobs extraction)
             if meta.get("mean_logprob") is not None:
                 step_record["confidence"] = {

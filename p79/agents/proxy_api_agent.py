@@ -288,166 +288,40 @@ class ProxyApiAgent:
 
     # ---- system prompts (per observation mode) ----
 
-    def _get_system_prompts(self) -> Dict[str, str]:
-        _COMMON_RULES = """Core Rules:
-1) Do NOT answer or finish immediately. You MUST navigate to find the item.
-2) You are logged in as a user. For tasks involving your own content (e.g., "my listing", "my post", "my message"),
-   navigate to account/profile sections instead of searching publicly.
-3) If the target category (e.g., "Blankets & Throws") is not visible, look for a parent category (e.g., "Home & Kitchen") or use the search bar.
-4) NEVER give up early. If you don't see the item, SEARCH for it using the search bar.
-5) Only use "finish" when you have successfully completed the task (e.g., found the item, placed order) or if you have searched everywhere and are 100% sure it's missing.
-6) For single-item tasks (find and navigate to ONE specific item/page), you MUST open that item's detail page before "finish".
-   For collection tasks (return links/info for MULTIPLE items), you MAY "finish" from a list/search page
-   after recording the required items in your answer.
-7) If you are on the homepage, DO NOT go back. Start by searching or clicking a category.
-8) If you are stuck, use scroll or try a different category/search."""
+    @staticmethod
+    def _get_system_prompts() -> Dict[str, str]:
+        """Build the per-mode system-prompt dispatch table for B0.
 
-        _COMMON_RESPONSE_FORMAT = """{
-  "thought": "Brief reasoning about what to do next. Why are you choosing this action? What is your plan?",
-  "confidence": 0.7,
-  "action_type": "click" | "type" | "select_option" | "scroll" | "wait" | "back" | "forward" | "finish" | "tab_focus",
-  ... (other action parameters) ...
-}"""
+        /stress A1.1 F1 fix (2026-05-15): B0 now reuses Qwen3VLAgent's
+        @staticmethod prompt builders verbatim — byte-identical to B1/B2.
 
-        _COMMON_SCROLL_AND_NAV = """3. Scroll: {"action_type": "scroll", "scroll_direction": "down"}
-   - "down" reveals content below the current view, "up" reveals content above. Use "up" when the target is above.
-4. Wait: {"action_type": "wait"}
-5. Back: {"action_type": "back"}
-   - WARNING: Do NOT use "back" if you are on the first page (homepage). Going back from the first page leads to a blank page (about:blank) and you will be stuck.
-6. Forward: {"action_type": "forward"}
-7. Finish: {"action_type": "finish", "answer": "optional string"}
-8. Tab focus: {"action_type": "tab_focus", "page_number": int}"""
+        Previously B0 maintained its own f-string-templated prompt body that
+        contained shopping-specific examples ("Blankets & Throws",
+        "Home & Kitchen", "Electronics", "Jewelry & Watches"). On the
+        classifieds + reddit Phase 1a workload those examples leaked a
+        shopping-domain prior into the B0 baseline only, breaking the
+        cross-baseline byte-identical-prompts requirement asserted in
+        ``gemma3vl_agent.py:23-27``. Reusing the Qwen builders here closes
+        that leak in one place; ``tests/test_agents_prompt_parity.py`` now
+        asserts B0 == B1 == B2 byte-for-byte so future drift surfaces in CI.
+        """
+        # Local import to avoid module-level circular import at package load.
+        from p79.agents.qwen3vl_agent import Qwen3VLAgent
 
-        _COMMON_TAB_RULE = """Tab Rule:
-- Multi-site tasks may open multiple websites in different tabs. If the target site is in another tab, switch via tab_focus first.
-- Element IDs are page-local to the current tab. Do NOT reuse IDs from a different tab/site.
-- Do NOT search for a cross-site navigation link on the current page when the target site is already in another tab."""
-
-        _COMMON_CRITICAL = """CRITICAL:
-- You MUST include a "thought" field to explain your reasoning.
-- "confidence" is a float 0.0-1.0 reflecting your certainty about this action being correct.
-- DO NOT use "finish" to report failure. "finish" is ONLY for success or after EXHAUSTIVE search (at least 3 different search queries/attempts).
-- Do NOT output literal newlines inside JSON strings. Use \\n for newline.
-- Avoid repeating the same search query or action. If something doesn't work, change your strategy."""
-
-        dom_prompt = f"""You are a precise web navigation agent.
-Output ONLY valid JSON. No markdown blocks, no explanations.
-
-Observation: You receive an Accessibility Tree (plain text) describing the page structure and interactive elements.
-
-{_COMMON_RULES}
-
-Response Format (JSON):
-{_COMMON_RESPONSE_FORMAT}
-
-Action Schema:
-1. Click: {{"action_type": "click", "element_id": N}}
-   - N is the numeric ID from the Accessibility Tree (e.g., [175] link 'Comments' -> element_id: 175).
-   - This is the PREFERRED way to click. Use element IDs from the Accessibility Tree.
-   - Alternative (only if no element ID): {{"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}} with x, y as floats 0.0-1.0.
-2. Type: {{"action_type": "type", "text": "string", "element_id": N}}
-   - ALWAYS specify element_id to target the correct input field.
-   - To submit a search or form, append "\\n" to the text (e.g., "red blanket\\n").
-   - Without element_id, text goes to whatever is focused, which is often WRONG.
-2.5. Select Option: {{"action_type": "select_option", "element_id": N, "option_label": "Option Name"}}
-   - Use ONLY for <select> dropdown elements (shown as "combobox" in the Accessibility Tree).
-   - Clicking a combobox does NOT open the dropdown. Use select_option instead.
-   - option_label must match the visible option text exactly (e.g., "Electronics", "Jewelry & Watches").
-{_COMMON_SCROLL_AND_NAV}
-
-{_COMMON_TAB_RULE}
-- If the Accessibility Tree lists tabs like "Tab 0" / "Tab 1", use tab_focus to switch to the tab that matches the site you need. Do NOT click random coordinates to switch tabs.
-
-{_COMMON_CRITICAL}
-- ALWAYS use element_id from the Accessibility Tree for click and type actions. Do NOT guess coordinates or type blindly.
-- If you are in the wrong category, use the search bar or click a navigation link. Avoid "back" unless you are sure it won't lead to about:blank.
-- PREFER clicking on Categories over searching if search results are poor.
-"""
-
-        som_prompt = f"""You are a precise web navigation agent.
-Output ONLY valid JSON. No markdown blocks, no explanations.
-
-Observation: You receive a [SOM_MARKS]...[/SOM_MARKS] list of labeled elements (each with an element_id and description) AND an annotated screenshot with numbered bounding boxes overlaid on the page. Use element_id from the marks for interaction; use normalized coordinates only when no element_id is available.
-
-Note: If [SOM_MARKS] is empty (no elements detected), no bounding boxes will appear in the screenshot. In that case, fall back to coordinate-based interaction using what you can see in the screenshot.
-
-{_COMMON_RULES}
-
-Response Format (JSON):
-{_COMMON_RESPONSE_FORMAT}
-
-Action Schema:
-1. Click: {{"action_type": "click", "element_id": N}}
-   - N is the numeric ID from the SOM_MARKS list (e.g., [42] button 'Submit' -> element_id: 42).
-   - This is the PREFERRED way to click. Use element IDs from SOM_MARKS.
-   - Alternative (only if no element ID in marks): {{"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}} with x, y as floats 0.0-1.0.
-2. Type: {{"action_type": "type", "text": "string", "element_id": N}}
-   - ALWAYS specify element_id from SOM_MARKS to target the correct input field.
-   - To submit a search or form, append "\\n" to the text (e.g., "red blanket\\n").
-2.5. Select Option: {{"action_type": "select_option", "element_id": N, "option_label": "Option Name"}}
-   - Use ONLY for <select> dropdown elements (shown as "combobox" in the SOM_MARKS list).
-   - Clicking a combobox does NOT open the dropdown. Use select_option instead.
-   - option_label must match the visible option text exactly (e.g., "Electronics", "Jewelry & Watches").
-{_COMMON_SCROLL_AND_NAV}
-
-{_COMMON_TAB_RULE}
-- If the screenshot shows multiple tabs, use tab_focus to switch to the correct tab.
-
-{_COMMON_CRITICAL}
-- ALWAYS use element_id from SOM_MARKS for click and type. Use coordinates only as fallback when no ID is available.
-- The annotated screenshot shows numbered boxes — match element_id numbers to the boxes in the image.
-- If you are stuck, look at the screenshot carefully for visual cues not captured in SOM_MARKS.
-"""
-
-        vision_prompt = f"""You are a precise web navigation agent.
-Output ONLY valid JSON. No markdown blocks, no explanations.
-
-Observation: You receive ONLY a screenshot of the page. There is NO text-based element list. You must rely entirely on the visual content to navigate. Use normalized coordinates [x, y] (floats 0.0-1.0, origin top-left) for all click and type interactions.
-
-{_COMMON_RULES}
-
-Response Format (JSON):
-{_COMMON_RESPONSE_FORMAT}
-
-Action Schema:
-1. Click: {{"action_type": "click", "coordinate": [x, y], "coordinate_type": "normalized"}}
-   - x, y are floats 0.0-1.0 (e.g., center of screen is [0.5, 0.5]).
-   - Estimate coordinates from the screenshot carefully. Click the center of the target element.
-2. Type: {{"action_type": "type", "text": "string", "coordinate": [x, y], "coordinate_type": "normalized"}}
-   - This action automatically clicks the target coordinate to focus it, then types the text.
-   - ALWAYS use "type" (not "click") when you want to enter text into an input field.
-   - To submit a search or form, append "\\n" to the text.
-2.5. Select Option: {{"action_type": "select_option", "coordinate": [x, y], "option_label": "Option Name"}}
-   - Use ONLY for <select> dropdown visible in the screenshot.
-   - Clicking a dropdown does NOT open it. Use select_option to set the value directly.
-   - option_label must match the visible option text exactly.
-{_COMMON_SCROLL_AND_NAV}
-
-{_COMMON_TAB_RULE}
-- If the screenshot shows multiple tabs at the top, use tab_focus to switch tabs.
-
-{_COMMON_CRITICAL}
-- You MUST use normalized coordinates for all click/type actions. There are no element IDs.
-- Look carefully at the screenshot to identify buttons, links, input fields, and other interactive elements by their visual appearance.
-- If you are stuck, scroll to reveal more content or try a different visual element.
-"""
+        dom_prompt = Qwen3VLAgent._make_dom_prompt()
+        som_prompt = Qwen3VLAgent._make_som_prompt()
+        vision_prompt = Qwen3VLAgent._make_vision_prompt()
 
         return {
             "dom": dom_prompt,
             "som": som_prompt,
-            # P-SoM (Phantom-SoM, §25): SoM prompt + [SOM_MARKS] text + no image.
-            # Image-mismatched: prompt promises screenshot but agent receives none.
+            # P-SoM (§25): SoM prompt + [SOM_MARKS] text + no image.
             "phantom_som": som_prompt,
-            # P-text ablation: DOM prompt + [SOM_MARKS] text + no image.
-            # Text-mismatched: prompt expects AXTree but obs is [SOM_MARKS].
-            # phantom_dom is the legacy mode value (paper-grade run dirs use it);
-            # phantom_text is the current name. Both dispatch identically.
+            # P-text: DOM prompt + [SOM_MARKS] text + no image.
+            # phantom_dom = legacy alias preserved for archived run dirs.
             "phantom_dom": dom_prompt,
             "phantom_text": dom_prompt,
-            # P-prompt: SoM prompt + AXTree text + no image. Symmetric counterpart of
-            # phantom_text — only the prompt axis is swapped from DOM. Lets us measure
-            # the prompt effect in AXTree-text context (current cascade only measures
-            # it in [SOM_MARKS]-text context via P-text -> P-SoM).
+            # P-prompt: SoM prompt + AXTree text + no image.
             "phantom_prompt": som_prompt,
             "vision": vision_prompt,
         }
@@ -547,6 +421,13 @@ Action Schema:
 
         max_size = self.config.get("agent", {}).get("image_max_size", 1024)
 
+        # /stress A1.1 codex Mode B C2: track image-encode failures so meta can
+        # surface them to the step record (audit-able from JSONL) instead of the
+        # silent text-only-episode contamination pattern. B1/B2 raise on encode
+        # failure; B0 keeps lenient try/except (proxy-side transient errors) but
+        # the meta flag lets downstream symmetric-exclude / paper-grade audit.
+        _image_encode_error_count = 0
+
         # Inject task reference images (e.g. product photos) before the screenshot.
         # Mirrors qwen3vl_agent.py reference_images handling.
         if reference_images:
@@ -568,6 +449,7 @@ Action Schema:
                         "image_url": {"url": ref_payload["data_url"]},
                     })
                 except Exception:
+                    _image_encode_error_count += 1
                     logger.warning("Failed to encode reference image %d; skipping.", idx + 1, exc_info=True)
 
         image_payload = None
@@ -606,6 +488,7 @@ Action Schema:
                         "image_url": {"url": data_url},
                     })
             except Exception:
+                _image_encode_error_count += 1
                 logger.warning("Failed to encode image; continuing without image.", exc_info=True)
                 image_payload = None
 
@@ -806,6 +689,12 @@ Action Schema:
             # downstream audit can detect images that exceeded the payload limit
             # (previously the encoder silently returned an over-budget payload).
             "image_over_cap": image_payload.get("over_cap", False) if image_payload else None,
+            # /stress A1.1 codex Mode B C2: count of image-encode failures in
+            # this step. Persisted via runner step_record.image_meta so paper-
+            # grade audit can detect silent text-only episodes (B0 lenient path)
+            # without grepping warning logs. 0 = clean step; >0 = N images
+            # silently dropped (1 screenshot + N reference images attempted).
+            "image_encode_error": _image_encode_error_count if _image_encode_error_count else None,
             "reasoning_content": reasoning_text,
             "enable_thinking": False,
             "tool_calling": self._use_tool_calling,

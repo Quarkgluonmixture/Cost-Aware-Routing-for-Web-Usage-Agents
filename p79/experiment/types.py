@@ -88,6 +88,12 @@ class StepRecordV2:
     # form_value_changed / dom_complexity_changed / text_length_changed which
     # fire on form edits not visible in obs_text (B-09 root cause).
     agent_visible_changed: Optional[bool] = None
+    # /stress A1.1 codex Mode B C1 fix: B0 image telemetry (over_cap, payload_bytes,
+    # quality, compressed) lives in agent meta but was dropped in runner step_record
+    # — Q5 audit of B0 image_over_cap fire rate was structurally impossible.
+    # Image encode failure (C2) also surfaced here so cross-baseline missingness is
+    # auditable from JSONL without grepping logs.
+    image_meta: Optional[Dict[str, Any]] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)

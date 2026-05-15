@@ -178,7 +178,7 @@ Action Schema:
 2.5. Select Option: {"action_type": "select_option", "element_id": N, "option_label": "Option Name"}
    - Use ONLY for <select> dropdown elements (shown as "combobox" in the Accessibility Tree).
    - Clicking a combobox does NOT open the dropdown. Use select_option instead.
-   - option_label must match the visible option text exactly (e.g., "Electronics", "Jewelry & Watches").
+   - option_label must match the visible option text exactly.
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
    - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
 4. Wait: {"action_type": "wait"}
@@ -249,7 +249,7 @@ Action Schema:
 3.5. Select Option: {"action_type": "select_option", "element_id": N, "option_label": "Option Name"}
    - Use ONLY for <select> dropdown elements (shown as "combobox" in the SOM_MARKS list).
    - Clicking a combobox does NOT open the dropdown. Use select_option instead.
-   - option_label must match the visible option text exactly (e.g., "Electronics", "Jewelry & Watches").
+   - option_label must match the visible option text exactly.
 4. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
    - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
 5. Wait: {"action_type": "wait"}

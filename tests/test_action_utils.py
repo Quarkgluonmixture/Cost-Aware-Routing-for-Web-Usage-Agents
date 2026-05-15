@@ -76,11 +76,30 @@ def test_parse_repaired_regex_invalid_action():
     assert reason == "invalid_action_repaired"
 
 
-def test_parse_keyword_fallback():
+def test_parse_unparseable_with_scroll_word_falls_to_wait():
+    """/stress A1.1 codex Mode B C3 fix (2026-05-15): keyword scroll fallback
+    removed. Previously this returned ``action_type=scroll`` with valid=False,
+    but the runner executed the scroll anyway because it does not gate env.step
+    on parse_valid. Cross-validate Q4 confirmed archived runs with
+    ``keyword_scroll`` actions had ``action_success=True`` — silent partial
+    automation driven by substring match, not by model action. Behaviour now
+    mirrors §67 ``keyword_finish`` removal: incidental keywords in unparseable
+    text are not actions.
+    """
     action, valid, reason = parse_action_text("let me scroll down")
     assert valid is False
-    assert reason == "keyword_scroll"
-    assert action["action_type"] == "scroll"
+    assert reason == "parse_failed"
+    assert action["action_type"] == "wait"
+
+
+def test_parse_unparseable_with_back_word_falls_to_wait():
+    """/stress A1.1 codex Mode B C3 fix: same as scroll — `back` keyword
+    fallback removed. Falls through to wait with valid=False.
+    """
+    action, valid, reason = parse_action_text("Let me go back to the previous page")
+    assert valid is False
+    assert reason == "parse_failed"
+    assert action["action_type"] == "wait"
 
 
 def test_parse_total_failure():
