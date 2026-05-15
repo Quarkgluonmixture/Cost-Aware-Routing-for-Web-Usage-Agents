@@ -24,7 +24,10 @@
 #    exist. setup_vwa.sh now pulls from CMU metis + archive.org mirrors:
 #      - shopping_final_0712.tar  (~67GB, http://metis.lti.cs.cmu.edu/...)
 #      - postmill-...withimg.tar  (~53GB, http://metis.lti.cs.cmu.edu/...)
-#      - wikipedia_en_all_maxi_2022-05.zim  (~90GB, CMU)
+#      - wikipedia_en_all_maxi_2025-08.zim  (~95GB, kiwix.org —
+#        NOT VWA upstream 2022-05 because P79 queue scripts hardcode
+#        WIKIPEDIA_ZIM_VERSION=2025-08 (笔记 §81 Kiwix-VWA version drift fix).
+#        Prod quark Windows docker also runs 2025-08.)
 #      - classifieds_docker_compose.zip     (~25MB, archive.org)
 #
 # 2. Docker 29.x + containerd-snapshotter pulls jykoh/classifieds DEADLOCK

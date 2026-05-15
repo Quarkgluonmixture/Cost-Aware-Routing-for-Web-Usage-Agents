@@ -124,8 +124,8 @@ check_prerequisites() {
   fi
 
   if contains_site "wikipedia"; then
-    if [[ ! -f "${ENV_DIR}/data/wikipedia_en_all_maxi_2022-05.zim" ]]; then
-      echo "[MISSING] wikipedia ZIM file" >&2
+    if [[ ! -f "${ENV_DIR}/data/wikipedia_en_all_maxi_2025-08.zim" ]]; then
+      echo "[MISSING] wikipedia ZIM file (2025-08; P79 queue scripts hardcode this version, see 笔记 §81)" >&2
       missing=1
     fi
   fi
@@ -216,7 +216,7 @@ start_wikipedia() {
     if [[ -n "${container_name}" ]]; then
       docker start "${container_name}" >/dev/null 2>&1
     else
-      docker run -d --name vwa-wikipedia --volume="${ENV_DIR}/data/:/data" -p 8888:80 ghcr.io/kiwix/kiwix-serve:3.3.0 wikipedia_en_all_maxi_2022-05.zim >/dev/null
+      docker run -d --name vwa-wikipedia --volume="${ENV_DIR}/data/:/data" -p 8888:80 ghcr.io/kiwix/kiwix-serve:3.3.0 wikipedia_en_all_maxi_2025-08.zim >/dev/null
     fi
   fi
 }

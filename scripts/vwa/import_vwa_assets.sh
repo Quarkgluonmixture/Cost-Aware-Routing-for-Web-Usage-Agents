@@ -20,7 +20,7 @@ Usage: bash scripts/vwa/import_vwa_assets.sh [options]
 Import offline VWA assets from another machine:
   - shopping_final_0712.tar
   - postmill-populated-exposed-withimg.tar
-  - wikipedia_en_all_maxi_2022-05.zim
+  - wikipedia_en_all_maxi_2025-08.zim
   - classifieds_docker_compose.tar.gz
 
 Options:
@@ -77,9 +77,9 @@ done
 
 SHOPPING_TAR="${IMPORTS_DIR}/shopping_final_0712.tar"
 REDDIT_TAR="${IMPORTS_DIR}/postmill-populated-exposed-withimg.tar"
-WIKI_ZIM_SRC="${IMPORTS_DIR}/wikipedia_en_all_maxi_2022-05.zim"
+WIKI_ZIM_SRC="${IMPORTS_DIR}/wikipedia_en_all_maxi_2025-08.zim"
 CLASSIFIEDS_TAR="${IMPORTS_DIR}/classifieds_docker_compose.tar.gz"
-WIKI_ZIM_DST="${ENV_DIR}/data/wikipedia_en_all_maxi_2022-05.zim"
+WIKI_ZIM_DST="${ENV_DIR}/data/wikipedia_en_all_maxi_2025-08.zim"
 
 check_file() {
   local file_path="$1"

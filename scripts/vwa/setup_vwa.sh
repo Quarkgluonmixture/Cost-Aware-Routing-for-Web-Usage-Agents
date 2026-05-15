@@ -221,17 +221,20 @@ download_wikipedia_data() {
     return 0
   fi
   mkdir -p "${DATA_DIR}"
-  local wiki_file="${DATA_DIR}/wikipedia_en_all_maxi_2022-05.zim"
+  # ZIM version 2025-08 (not VWA upstream 2022-05): P79 queue scripts
+  # hardcode WIKIPEDIA_ZIM_VERSION=2025-08 (笔记 §81 fix for Kiwix-newer-than-
+  # VWA-config mismatch). Prod (quark Windows docker) also runs 2025-08, so
+  # A100 self-host must match — otherwise all wiki URLs return 404.
+  local wiki_file="${DATA_DIR}/wikipedia_en_all_maxi_2025-08.zim"
   if [[ -f "${wiki_file}" ]]; then
     echo "Wikipedia ZIM already exists."
     return 0
   fi
 
-  # HF dataset webarena/Wikipedia no longer exists — CMU mirror (~90GB).
-  # wget -c writes straight to the final path and resumes a partial download.
-  echo "Downloading Wikipedia ZIM (CMU mirror, ~90GB)..."
+  # CMU metis only mirrors 2022-05; pull 2025-08 from kiwix.org canonical.
+  echo "Downloading Wikipedia ZIM 2025-08 (kiwix.org, ~95GB)..."
   wget -c --tries=3 -O "${wiki_file}" \
-    "http://metis.lti.cs.cmu.edu/webarena-images/wikipedia_en_all_maxi_2022-05.zim"
+    "https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_maxi_2025-08.zim"
 }
 
 download_classifieds_data() {
