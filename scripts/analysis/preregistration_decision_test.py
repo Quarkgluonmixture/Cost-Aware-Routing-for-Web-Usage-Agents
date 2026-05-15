@@ -1,38 +1,52 @@
-r"""Preregistration decision test — Phase 1a 24-condition / 4-cell H1 / H3 / H2 evaluation.
+r"""Preregistration decision test — Phase 1a 36-condition / 6-cell H1 / H3 / H2 evaluation.
 
-⚠️ REWRITTEN 2026-05-13 to align with preregistration.md revisions (codex stress audit
-   Flaws 2 + 3 fix):
+⚠️ RESCOPED 2026-05-15 (B-120 fix per codex Mode B P0-1):
+   - Phase 1a scope: 24-cond / 4-cell (B0+B1 only) → 36-cond / 6-cell (B0+B1+B2)
+   - B2 = Gemma3-VL `google/gemma-3-4b-it` added 2026-05-14 as cross-family
+     matched-capability control vs B1 4B (see preregistration.md Appendix A
+     2026-05-14 entry + 笔记 §142)
+   - k=4 → k=6 propagates to H1/H3/H5/H6 estimand
+   - Decision 3A 2026-05-14 specified FE inverse-variance pooling over the 6
+     planned cells (NOT DerSimonian-Laird). **Note**: current implementation
+     below uses DL random-effects from earlier scaffolding — FE migration is
+     pending advisor review (gemini Mode C P0-2 2026-05-15 challenges
+     Decision 3A back toward RE+Knapp-Hartung; advisor confirmation pending
+     before estimator finalization). Until advisor lock, both DL output and
+     FE-equivalent superiority test are reported for transparency.
+
+⚠️ REWRITTEN 2026-05-13 (historical):
    - PRIMARY GATE = pooled DerSimonian-Laird random-effects meta + one-sided superiority
-   - K-of-N reclassified gate → transparency consistency check (per pre-data 2026-05-13
-     reclassification, see `preregistration.md` §4 audit B9 + Appendix A 2026-05-13)
+   - K-of-N reclassified gate → transparency consistency check
    - H1 formula = P-SoM drop-one oracle ceiling lift (NOT P-SoM ≥ best single mode)
    - H3 family = axis-1 (P-text \ P-SoM) + axis-2 (P-prompt \ P-SoM), both pooled
-   - Scope = 4 (site, model) statistical cells, each with 6 modes' per-task SR data
 
 Definitions (per preregistration.md §2 + §4):
-  - cell = 1 (site, model) statistical stratification unit. Phase 1a N=4 cells:
-    (cls, B0), (cls, B1), (red, B0), (red, B1).
-  - condition = 1 (site, model, mode) operational launch unit. Phase 1a N=24.
+  - cell = 1 (site, model) statistical stratification unit. Phase 1a N=6 cells:
+    (cls, B0), (cls, B1), (cls, B2), (red, B0), (red, B1), (red, B2).
+  - condition = 1 (site, model, mode) operational launch unit. Phase 1a N=36.
   - Drop-one per cell: oracle ceiling SR over {6 modes} − oracle ceiling SR over
     {5 modes drop P-SoM}, per task, averaged across task pool. Paired bootstrap CI.
-  - Pooled meta: DerSimonian-Laird random-effects across 4 cell effect estimates.
+  - Pooled meta (current impl): DerSimonian-Laird random-effects across 6 cell estimates.
+    (Decision 3A specifies FE; advisor lock pending — see banner above.)
   - One-sided superiority test (PRIMARY for H1(ii)): H0: θ ≤ +δ vs H1: θ > +δ at α=0.05.
   - TOST equivalence (INFORMATIONAL secondary for H1): two one-sided tests for
     H0 |θ| ≥ δ vs H1 |θ| < δ at δ=1.0pp. Reported in JSON output but NOT gating.
 
 PRIMARY GATES (gate paper hook framing R1-R5):
-  H1(i)  pooled DL meta on P-SoM drop-one, Holm α=0.05 sig (m=1)
-  H1(ii) pooled magnitude θ_RE ≥ 1.0pp AND one-sided superiority test
+  H1(i)  pooled meta on P-SoM drop-one, Holm α=0.05 sig (m=1)
+  H1(ii) pooled magnitude θ ≥ 1.0pp AND one-sided superiority test
          (H0: θ ≤ +1.0pp vs H1: θ > +1.0pp) rejected at α=0.05 (m=1)
-  H3(i)  pooled DL meta on |P-text \ P-SoM| axis-1, Holm α=0.05 sig (m=1)
-  H3(ii) pooled DL meta on |P-prompt \ P-SoM| axis-2, Holm α=0.05 sig (m=1)
-  H2(a)  median cost(P-SoM) within ±10% of median cost(DOM) per cell, replicated
-         in ≥3 of 4 cells (transparency K_h2)
+  H3(i)  pooled meta on |P-text \ P-SoM| axis-1, Holm α=0.05 sig (m=1)
+  H3(ii) pooled meta on |P-prompt \ P-SoM| axis-2, Holm α=0.05 sig (m=1)
+  H2(a)  median cost(P-SoM) within ±20% of median cost(DOM) per cell (by-construction
+         falsification check — see preregistration.md §2 H2(a) revision 2026-05-14)
 
-TRANSPARENCY (NOT gating, reported alongside primary):
-  K_h1 = 3 of 4 cells individually Holm-sig on drop-one
-  K_h3 axis-1 = 3 of 4 cells individually CI > 0
-  K_h3 axis-2 = same
+TRANSPARENCY (NOT gating, reported alongside primary; B-120 2026-05-15 — K-ratios
+retired per Decision 3A 2026-05-14 fake-precision argument, see preregistration.md
+§4 K-of-N row. Default thresholds retained as descriptive benchmarks only):
+  n-of-6 cells individually Holm-sig on drop-one (descriptive; "4-5/6 = strong")
+  n-of-6 cells with axis-1 CI > 0 (descriptive)
+  n-of-6 cells with axis-2 CI > 0 (descriptive)
 
 Usage:
     # With actual per-task data:
@@ -40,7 +54,7 @@ Usage:
         --per-task-csv results/phantom_paper/per_task_sr.csv \\
         --primary-gate drop_one_pooled_meta_TOST \\
         --TOST-delta-pp 1.0 \\
-        --transparency-K_h1 3 --transparency-K_h3 3 \\
+        --transparency-K_h1 4 --transparency-K_h3 4 \\
         --out results/phantom_paper/preregistration_test_results.json
 
     # Smoke test on synthetic data:
@@ -52,15 +66,20 @@ Input CSV schema (per-task wide format, one row per (cell_id, task_id)):
     cls_B0,classifieds,B0,task_0001,0.0,1.0,0.0,1.0,0.0,1.0,0.043,0.044
     ...
 
-Each SR cell ∈ {0, 1} (binary per-task evaluator verdict, post-FP-filter).
+Each SR cell ∈ {0, 1} (binary per-task evaluator verdict, post-source-level
+FP fix — B-91 patch in VWA submodule p79-patches branch f0c835b, see
+preregistration.md §4 FP-filter-architecture row 2026-05-14).
 Costs in any consistent unit (token-normalized $); only ratio used.
 
 Tied to:
 - preregistration.md §2 (H1/H3 hypotheses) + §4 (locked analysis choices) +
-  Appendix A 2026-05-13 (codex stress audit propagation)
+  Appendix A 2026-05-13 (codex stress audit propagation) + 2026-05-14 (Decision
+  3A FE estimand + B2 baseline addition + §139.8 FP retire) + 2026-05-15 (A100
+  host migration + this script B-120 rescope)
 - osf_lock_manifest.md §2.2 (canonical threshold table)
-- run_manifest.yaml (cell scope = 4 Phase 1a cells)
-- 笔记 §132 (codex stress audit + scope reframe chronicle)
+- run_manifest.yaml (cell scope = 6 Phase 1a cells)
+- 笔记 §132 (codex stress audit), §138/§142 (2026-05-14 advisor scope收口 + B2
+  addition), §143 (this rescope batch)
 """
 
 from __future__ import annotations
@@ -81,11 +100,15 @@ from typing import Optional
 logger = logging.getLogger("preregistration-test")
 
 # Phase 1a canonical cells (must match preregistration.md §4 N_cells row)
+# B-120 (2026-05-15, codex Mode B P0-1): k=4 → k=6 per B2 addition 2026-05-14.
+# Cells = (site, model) tuples for 2 sites (cls, red) × 3 baselines (B0, B1, B2).
 PHASE_1A_CELLS = [
     ("classifieds", "B0"),
     ("classifieds", "B1"),
+    ("classifieds", "B2"),  # Gemma3-VL google/gemma-3-4b-it (added 2026-05-14)
     ("reddit", "B0"),
     ("reddit", "B1"),
+    ("reddit", "B2"),       # Gemma3-VL google/gemma-3-4b-it (added 2026-05-14)
 ]
 PHANTOM_MODE_KEYS = ["sr_psom", "sr_ptext", "sr_pprompt"]
 BASELINE_MODE_KEYS = ["sr_dom", "sr_som", "sr_vision"]

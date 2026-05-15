@@ -391,11 +391,16 @@ case "$MODE" in
     log ""
     log "Post-completion analysis:"
     log "  make analysis              # full pipeline"
+    log "  # Step 1: produce per_task_sr.csv (B-122 producer, 2026-05-15):"
+    log "  python3 scripts/analysis/generate_per_task_sr.py \\"
+    log "      --run-manifest results/phantom_paper/run_manifest.yaml \\"
+    log "      --out results/phantom_paper/per_task_sr.csv"
+    log "  # Step 2: decision test (B-120 6-cell K=6, 2026-05-15):"
     log "  python3 scripts/analysis/preregistration_decision_test.py \\"
     log "      --per-task-csv results/phantom_paper/per_task_sr.csv \\"
     log "      --primary-gate drop_one_pooled_meta_superiority \\"
     log "      --TOST-delta-pp 1.0 --H1-magnitude-pp 1.0 \\"
-    log "      --transparency-K_h1 3 --transparency-K_h3 3 \\"
+    log "      --transparency-K_h1 4 --transparency-K_h3 4 \\"
     log "      --out results/phantom_paper/preregistration_test_results.json"
     ;;
   *)

@@ -19,6 +19,30 @@
 #     decision, flip cells back to grade=paper-grade or paper-grade-pre-bug
 #     per the actual rerun-vs-archive decision.
 # ─────────────────────────────────────────────────────────────────────
+# 2026-05-15 SCOPE UPDATE + B-121 fix per codex Mode B P0-3:
+#   Phase 1a canonical rerun expanded 24-cond / 4-cell (B0+B1) → 36-cond /
+#   6-cell (B0+B1+B2) per 2026-05-14 advisor scope收口 (see preregistration.md
+#   Appendix A 2026-05-14 B2 entry + 笔记 §138/§142/§143).
+#
+#   Canonical paper-grade run host migrated DGX→quark Tailscale → A100
+#   Condenser VM `a100-jiaming-test` (A100-PCIE-40GB, self-hosted VWA
+#   Docker). #11 A100 VM VWA Docker bring-up gates launch.
+#
+#   Paper-grade promotion (when A100 rerun completes):
+#     - Add 36 new cells: 2 sites × {B0, B1, B2} × 6 modes
+#     - Each entry: baseline / site / mode / run_dir / condition_subdir /
+#       expected_n (or omit — registry uses dynamic scored_task_count) /
+#       grade: paper-grade / notes: "A100 self-host Docker, post-§139.8 FP fix"
+#     - Run scripts/analysis/generate_per_task_sr.py to produce wide-format
+#       per_task_sr.csv input for preregistration_decision_test.py (B-122)
+#
+#   ⚠️ EXPECTED_N for archived B0/B1 entries below uses pre-N/A-exclusion
+#   counts (cls 234 / red 210 / shop 466). Post-§139.8 scored task counts
+#   are dynamic via `p79.experiment.analysis.scored_task_count` —
+#   classifieds 224 / reddit 205 / shopping 435 (N/A excluded at task-load
+#   per `task.exclude_na_tasks: true` default). Registry uses dynamic value;
+#   manifest `expected_n` is reference-only for archived data.
+# ─────────────────────────────────────────────────────────────────────
 
 cells:
   # B0 classifieds
