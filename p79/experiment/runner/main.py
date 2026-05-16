@@ -322,27 +322,71 @@ class ExperimentRunner:
         page_changed: bool,
         env_error: Optional[str] = None,
     ) -> Optional[str]:
+        """B-165 (/stress A1.4a v8 Claude F3 expanded scope, 2026-05-16):
+        expanded from 5 categories to 10 + unknown_failure bucket.
+
+        Pre-B-165, any failure_reason not matching parse/keyword OR
+        timeout/network keywords fell through to "invalid_action" catch-all,
+        silently contaminating paper §3.5 cross-baseline error taxonomy.
+        Now distinguishes structural validation sub-categories emitted by
+        ``validate_action_detailed`` (`p79/backends/action_utils.py`):
+
+        - invalid_action_type: agent emitted unknown action_type
+        - invalid_element_id: click/type/select missing element_id and coord
+        - invalid_coord: malformed coord/delta (NaN, wrong shape, out of range)
+        - invalid_select_option: select_option without option label/value/index
+        - invalid_schema: structural dict-shape gap (non-dict, page_number, etc.)
+        - runner_invalid_action: backend reported valid but runner rescued (B-134)
+        - parse_error: backend JSON parse failed (with or without keyword rescue)
+        - env_error: playwright/network/timeout failure
+        - benchmark_noise: known noisy VWA error patterns
+        - no_progress: action structurally succeeded but page didn't change
+        - unknown_failure: future-proof catch-all (was silent invalid_action)
+
+        Router-aware escalation policy (per-category target mode mapping)
+        deferred to Phase 2 / paper-2 scope. Paper §3.5 disclosure added.
+        """
         if env_error:
             is_noise, _ = detect_benchmark_noise(env_error)
             return "benchmark_noise" if is_noise else "env_error"
 
         reason = str(failure_reason or "").strip().lower()
         if reason:
-            if any(
-                key in reason
-                for key in (
-                    "parse",
-                    "json",
-                    "keyword_",
-                    "repaired_regex",
-                )
-            ):
+            # Order: specific structural reasons before generic keyword tokens
+            if "runner_invalid_action" in reason:
+                return "runner_invalid_action"
+            # Parse-layer failures (backend-side JSON / keyword rescue)
+            if any(k in reason for k in (
+                "parse_failed", "multiple_actions",
+                "repaired_fenced", "repaired_raw_decode",
+                "repaired_multiple_identical", "repaired_regex",
+                "keyword_", "json",
+            )):
                 return "parse_error"
-            if any(key in reason for key in ("invalid", "schema", "element_id", "action_type")):
-                return "invalid_action"
-            if any(key in reason for key in ("timeout", "playwright", "browser", "connection", "network", "env")):
+            # Env-layer failures
+            if any(k in reason for k in (
+                "timeout", "playwright", "browser",
+                "connection", "network", "env_error",
+            )):
                 return "env_error"
-            return "invalid_action"
+            # Structural sub-categories from validate_action_detailed
+            if reason == "invalid_action_type":
+                return "invalid_action_type"
+            if reason == "invalid_element_id":
+                return "invalid_element_id"
+            if reason == "invalid_coord":
+                return "invalid_coord"
+            if reason == "invalid_select_option":
+                return "invalid_select_option"
+            if reason in ("invalid_schema_dict", "invalid_schema"):
+                return "invalid_schema"
+            # Legacy catch (Path 2b raw_decode candidates all invalid)
+            if reason == "invalid_action_repaired":
+                return "invalid_schema"
+            # Bare "invalid_action" string from legacy callers
+            if reason == "invalid_action":
+                return "invalid_schema"
+            return "unknown_failure"
 
         if not action_success and not page_changed:
             return "no_progress"
@@ -1729,6 +1773,19 @@ class ExperimentRunner:
         # aggregation can report `trajectory_incomplete_rate` as a transparency
         # metric (paper §3.5). Always emitted to keep schema invariant.
         episode_summary["trajectory_incomplete"] = trajectory_incomplete
+
+        # B-165 (/stress A1.4a v8 Claude F3 expanded scope, 2026-05-16):
+        # unknown_failure_reasons Counter exposes any failure_reason that
+        # fell through to ``unknown_failure`` category. Acts as a paper-grade
+        # tripwire — if a previously-unseen backend error string appears
+        # frequently, Counter surfaces it for catalog inclusion in the next
+        # taxonomy bump. Empty dict when no unknown failures.
+        _unknown_reasons = Counter(
+            s.get("parse_failure_reason") for s in step_records
+            if s.get("error_category") == "unknown_failure"
+            and s.get("parse_failure_reason")
+        )
+        episode_summary["unknown_failure_reasons"] = dict(_unknown_reasons)
 
         # §139.8: the runner no longer computes `adjusted_success` / `fp_reason`.
         # The post-hoc na_fp / eval_fp filter layer is retired — those FPs are

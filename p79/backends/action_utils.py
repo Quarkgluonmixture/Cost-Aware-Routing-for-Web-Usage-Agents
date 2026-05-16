@@ -68,10 +68,14 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
     # Path 1: whole text is one valid JSON object (clean case).
+    # B-165 (/stress A1.4a v8, 2026-05-16): use validate_action_detailed so the
+    # sub-category reason (invalid_action_type / invalid_element_id /
+    # invalid_coord / invalid_text / invalid_schema_dict / invalid_select_option)
+    # surfaces in failure_reason instead of the catch-all "invalid_action".
     try:
         parsed = json.loads(text)
-        action, is_valid = validate_action(parsed)
-        return action, is_valid, None if is_valid else "invalid_action"
+        action, is_valid, detail_reason = validate_action_detailed(parsed)
+        return action, is_valid, None if is_valid else detail_reason
     except json.JSONDecodeError:
         pass
 
@@ -187,44 +191,71 @@ def _is_valid_delta_pair(delta: Any) -> bool:
     return True
 
 
-def validate_action(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
+def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bool, Optional[str]]:
+    """B-165 (/stress A1.4a v8 Claude F3 expanded scope, 2026-05-16): detailed
+    validation that emits a sub-category failure_reason. Pre-B-165
+    ``validate_action`` returned only ``(action, valid)`` — runner had no way
+    to distinguish *why* the action was invalid (action_type unknown vs
+    element_id missing vs coord malformed vs schema gap), so paper §3.5
+    error taxonomy collapsed every invalid emission into ``invalid_action``.
+
+    Returns:
+        (action, valid, reason)
+        - valid=True → reason=None
+        - valid=False → reason ∈ {"invalid_schema_dict",
+            "invalid_action_type", "invalid_element_id", "invalid_coord",
+            "invalid_text", "invalid_select_option"}
+
+    Mapped by runner ``_normalize_error_category`` into the corresponding
+    error_category enum. Router-aware escalation policy (per-category
+    target mode) deferred to Phase 2 / paper-2 scope.
+    """
     if not isinstance(action, dict):
-        return {"action_type": "wait"}, False
+        return {"action_type": "wait"}, False, "invalid_schema_dict"
 
     action_type = str(action.get("action_type", "wait")).lower().strip()
     if action_type == "stop":
         action_type = "finish"
     if action_type not in ALLOWED_ACTION_TYPES:
-        return {"action_type": "wait"}, False
+        return {"action_type": "wait"}, False, "invalid_action_type"
 
     action["action_type"] = action_type
 
     if action_type == "select_option":
         has_id = "element_id" in action and isinstance(action.get("element_id"), int)
         coord = action.get("coordinate")
-        has_coord = coord is not None and _is_valid_coordinate_pair(coord)
-        if not has_id and not has_coord:
-            return {"action_type": "wait"}, False
+        coord_present = coord is not None
+        coord_valid_shape = coord_present and _is_valid_coordinate_pair(coord)
+        # B-165: priority — if agent INTENDED to use coord (supplied) but it's
+        # malformed, surface as invalid_coord even when element_id is also
+        # missing. Pre-fix the "neither id nor valid coord" branch fired first,
+        # collapsing the specific coord-shape failure into invalid_element_id.
+        if coord_present and not coord_valid_shape:
+            return {"action_type": "wait"}, False, "invalid_coord"
+        if not has_id and not coord_valid_shape:
+            return {"action_type": "wait"}, False, "invalid_element_id"
         has_option = bool(
             action.get("option_label") or action.get("option_value")
             or (isinstance(action.get("option_index"), int))
         )
         if not has_option:
-            return {"action_type": "wait"}, False
-        if has_coord and "coordinate_type" not in action:
+            return {"action_type": "wait"}, False, "invalid_select_option"
+        if coord_valid_shape and "coordinate_type" not in action:
             action["coordinate_type"] = "normalized"
 
     if action_type == "click":
         coord = action.get("coordinate")
         elem_id = action.get("element_id")
         has_id = elem_id is not None and isinstance(elem_id, int)
-        has_coord = coord is not None and _is_valid_coordinate_pair(coord)
-        if not has_id and not has_coord:
-            return {"action_type": "wait"}, False
-        if coord is not None and not has_coord:
-            # coord supplied but malformed — reject (was: silently accepted)
-            return {"action_type": "wait"}, False
-        if has_coord and "coordinate_type" not in action:
+        coord_present = coord is not None
+        coord_valid_shape = coord_present and _is_valid_coordinate_pair(coord)
+        # B-165: priority — coord-present-but-malformed → invalid_coord
+        # regardless of element_id presence. Specific reason beats generic.
+        if coord_present and not coord_valid_shape:
+            return {"action_type": "wait"}, False, "invalid_coord"
+        if not has_id and not coord_valid_shape:
+            return {"action_type": "wait"}, False, "invalid_element_id"
+        if coord_valid_shape and "coordinate_type" not in action:
             action["coordinate_type"] = "normalized"
 
     if action_type == "type":
@@ -232,25 +263,36 @@ def validate_action(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
         # Vision mode may supply a coordinate to indicate which input field to target.
         coord = action.get("coordinate")
         if coord is not None and not _is_valid_coordinate_pair(coord):
-            return {"action_type": "wait"}, False
+            return {"action_type": "wait"}, False, "invalid_coord"
         if coord is not None and "coordinate_type" not in action:
             action["coordinate_type"] = "normalized"
 
     if action_type == "scroll":
         delta = action.get("delta")
         if delta is not None and not _is_valid_delta_pair(delta):
-            return {"action_type": "wait"}, False
+            return {"action_type": "wait"}, False, "invalid_coord"
 
     if action_type == "tab_focus":
         page_no = action.get("page_number")
         if not isinstance(page_no, int) or page_no < 0:
-            return {"action_type": "wait"}, False
+            return {"action_type": "wait"}, False, "invalid_schema_dict"
 
     if action_type in ("finish", "stop"):
         answer = action.get("answer", "")
         action["answer"] = "" if answer is None else str(answer)
 
-    return action, True
+    return action, True, None
+
+
+def validate_action(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
+    """Backward-compat 2-tuple wrapper around ``validate_action_detailed``.
+
+    Existing callers (tests, proxy_api_agent, runner) keep their 2-tuple
+    unpacking; new callsites that need the failure_reason discriminator
+    call ``validate_action_detailed`` directly.
+    """
+    action, valid, _reason = validate_action_detailed(action)
+    return action, valid
 
 
 def first_element_id_by_keyword(obs_text: str, keywords: Tuple[str, ...]) -> Optional[int]:
