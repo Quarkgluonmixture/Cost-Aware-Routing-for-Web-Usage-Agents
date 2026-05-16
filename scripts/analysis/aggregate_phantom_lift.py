@@ -596,25 +596,37 @@ def analyze_cell(cell: dict) -> Optional[dict]:
     # one-sided. CI lower bound > 0 evidences axis contributes tasks P-SoM
     # doesn't solve (i.e., axis is empirically distinct from compound center,
     # phantom space is multi-region not collapsed point).
-    in_psom_raw = np.array([t in succ_r["P-SoM"] for t in universe], dtype=bool)
-
-    if has_pdom:
-        in_pdom_raw = np.array([t in succ_r["P-text"] for t in universe], dtype=bool)
+    #
+    # B-330 (/stress A1.9 Mode B F4 OOB + user H3 framing 2026-05-16):
+    # universe switched from universe_5 (DOM ∩ SoM ∩ Vision ∩ P-text ∩ P-SoM)
+    # to universe_6 (six-arm complete-case: + P-prompt). Per user paper §1
+    # framing — P-text and P-prompt are co-equal axis-decomposition arms
+    # (not asymmetric "P-prompt is THE axis"), so the natural universe for
+    # both axis1 + axis2 is six-arm intersection. Pre-fix universe_5 did
+    # NOT require P-prompt coverage → axis2 estimand drift when P-prompt
+    # missing on some tasks in universe_5. Trade-off: smaller N (six-arm
+    # intersection is the strictest), but estimand interpretable as
+    # "phantom-arm structural distinctness on jointly-observed tasks".
+    if has_pdom and has_pprompt:
+        # Six-arm complete-case: only tasks where ALL 6 arms have data.
+        universe6_sorted = sorted(universe_6)
+        succ_r_6 = {m: succ[m] & universe_6 for m in succ}
+        in_psom_raw = np.array([t in succ_r_6["P-SoM"] for t in universe6_sorted], dtype=bool)
+        in_pdom_raw = np.array([t in succ_r_6["P-text"] for t in universe6_sorted], dtype=bool)
+        in_pprompt_raw = np.array([t in succ_r_6["P-prompt"] for t in universe6_sorted], dtype=bool)
         h3_axis1_count, h3_axis1_ci_lo, h3_axis1_ci_hi = bootstrap_unique_count_ci(
             in_pdom_raw, in_psom_raw)
         # mcnemar_exact_one_sided(a, b) tests H1: b > a (b adds tasks a misses)
-        # Set a=P-SoM, b=P-text → H1 asymmetric: P-text adds tasks P-SoM misses
-        # more often than vice versa (directional structural asymmetry test).
         h3_axis1_mcnemar_p = mcnemar_exact_one_sided(in_psom_raw, in_pdom_raw)
-    else:
-        h3_axis1_count = h3_axis1_ci_lo = h3_axis1_ci_hi = h3_axis1_mcnemar_p = None
-
-    if has_pprompt:
-        in_pprompt_raw = np.array([t in succ_r["P-prompt"] for t in universe], dtype=bool)
         h3_axis2_count, h3_axis2_ci_lo, h3_axis2_ci_hi = bootstrap_unique_count_ci(
             in_pprompt_raw, in_psom_raw)
         h3_axis2_mcnemar_p = mcnemar_exact_one_sided(in_psom_raw, in_pprompt_raw)
     else:
+        # universe_6 unavailable (e.g. P-prompt or P-text cell incomplete);
+        # report None rather than fall back to mis-aligned universe_5 estimand.
+        # Pre-B-330 fallback to universe_5 silently changed denominator.
+        in_psom_raw = np.array([t in succ_r["P-SoM"] for t in universe], dtype=bool)
+        h3_axis1_count = h3_axis1_ci_lo = h3_axis1_ci_hi = h3_axis1_mcnemar_p = None
         h3_axis2_count = h3_axis2_ci_lo = h3_axis2_ci_hi = h3_axis2_mcnemar_p = None
 
     is_partial = (any(len(o) < cell["n_expected"] for o in obs.values()) or not has_pdom
