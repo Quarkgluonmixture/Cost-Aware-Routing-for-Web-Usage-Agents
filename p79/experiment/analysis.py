@@ -1188,6 +1188,11 @@ def analyze_run(run_dir: str) -> Path:
     # B-174: reset parse-failure collector at start of each run; emitted to
     # analysis/parse_failures.csv at the end so silent JSON drops become audit-visible.
     _TO_MAPPING_PARSE_FAILURES.clear()
+    # B-196 (/stress A1.4b-ii codex B-ii-4): reset JSONL integrity counter
+    # so corrupt-line + dedup-discarded + identity-mismatch counts can be
+    # emitted to `analysis/jsonl_integrity_report.csv` at end of run.
+    from p79.experiment.io_utils import _JSONL_INTEGRITY_LOG
+    _JSONL_INTEGRITY_LOG.clear()
 
     run_summary_path = root / "run_summary_v2.json"
     if run_summary_path.exists():
@@ -1387,6 +1392,22 @@ def analyze_run(run_dir: str) -> Path:
             "analyze_run: %d _to_mapping parse failures recorded → %s",
             len(_TO_MAPPING_PARSE_FAILURES), analysis_dir / "parse_failures.csv",
         )
+
+    # B-196: emit JSONL integrity report — paper §3 reviewers can verify
+    # denominator transparency (how many lines / how many corrupt / how
+    # many identity mismatches across the canonical analysis run).
+    if _JSONL_INTEGRITY_LOG:
+        ig_df = pd.DataFrame(_JSONL_INTEGRITY_LOG)
+        ig_df.to_csv(analysis_dir / "jsonl_integrity_report.csv", index=False)
+        total_corrupt = int(ig_df["corrupt_lines"].sum())
+        total_mismatch = int(ig_df["summary_identity_mismatch"].sum())
+        if total_corrupt > 0 or total_mismatch > 0:
+            logger.warning(
+                "analyze_run: JSONL integrity report — %d files scanned, "
+                "%d total corrupt lines dropped, %d summary identity mismatches → %s",
+                len(_JSONL_INTEGRITY_LOG), total_corrupt, total_mismatch,
+                analysis_dir / "jsonl_integrity_report.csv",
+            )
 
     with open(analysis_dir / "analysis_summary.json", "w", encoding="utf-8") as f:
         json.dump(

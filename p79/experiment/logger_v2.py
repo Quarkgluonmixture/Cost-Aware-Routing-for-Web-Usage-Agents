@@ -6,6 +6,25 @@ from pathlib import Path
 from typing import Any, Dict
 
 
+def _fsync_dir(directory: Path) -> None:
+    """B-198 (/stress A1.4b-ii Claude D6): fsync the directory entry after
+    `os.replace` so the rename hits stable storage on the next journal
+    cycle. Pre-fix: `os.replace` is atomic at the inode level, but the
+    directory entry update sits in ext4 journal up to ~30s before flush.
+    DGX crash between rename + flush → reboot sees pre-rename state, paper
+    runs may silently lose just-written summaries. Best-effort: on platforms
+    where dir fsync raises (NFS, FAT), swallow the error — atomicity is
+    still better than nothing."""
+    try:
+        fd = os.open(str(directory), os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+    except OSError:
+        pass  # platform doesn't support dir fsync; not a hard failure
+
+
 class LoggerV2:
     def __init__(self, condition_dir: Path):
         self.condition_dir = condition_dir
@@ -21,6 +40,7 @@ class LoggerV2:
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp_path, path)  # atomic on same filesystem
+        _fsync_dir(path.parent)  # B-198 flush dir entry to disk
 
     def step_log_path(self, site: str, task_id: int) -> Path:
         return self.episodes_dir / f"{site}_task_{task_id}_steps_v2.jsonl"
@@ -45,6 +65,7 @@ class LoggerV2:
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp_path, path)  # atomic on same filesystem
+        _fsync_dir(path.parent)  # B-198 flush dir entry to disk
 
     def condition_summary_path(self) -> Path:
         return self.condition_dir / "condition_summary_v2.json"
@@ -58,3 +79,4 @@ class LoggerV2:
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp_path, path)  # atomic on same filesystem
+        _fsync_dir(path.parent)  # B-198 flush dir entry to disk

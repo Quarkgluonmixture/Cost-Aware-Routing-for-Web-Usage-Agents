@@ -59,6 +59,19 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
         return False, None
 
     msg = error_message.lower()
+    # B-199 (/stress A1.4b-ii codex B-ii-7, P2): added `api_rate_limit` and
+    # `auth_expired_or_session_invalid` categories. Pre-fix these errors fell
+    # through to "False, None" → counted as real agent failure in paper §3.4
+    # noise denominator (forward-risk; current scan shows 0 production
+    # contamination but Phase 1a may produce these).
+    #
+    # Order matters — more-specific patterns first so they don't get
+    # shadowed by generic `navigation_error` etc.
+    if any(k in msg for k in ("429", "rate limit", "too many requests")):
+        return True, "api_rate_limit"
+    if any(k in msg for k in ("auth expired", "login expired", "session expired",
+                              "401 unauthorized", "403 forbidden auth")):
+        return True, "auth_expired_or_session_invalid"
     # Proxy API transient errors (503/502/timeout). 403 quota exhaustion
     # is caught earlier by runner as fatal (re-raised), never reaches here.
     if any(k in msg for k in ("model-api", "execute-api")):
@@ -74,9 +87,13 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
         "page closed", "context closed", "frame was detached",
     )):
         return True, "playwright_error"
+    # B-199: `ERR_CONNECTION_REFUSED` is now matched here BEFORE the generic
+    # navigation pattern so connection-class errors classify as `connection_error`
+    # rather than `navigation_error` (codex B-ii-7 order-overlap concern).
     if any(k in msg for k in (
         "econnrefused", "econnreset", "epipe", "connection reset",
         "connection refused", "network error", "fetch failed",
+        "err_connection_refused",
     )):
         return True, "connection_error"
     if any(k in msg for k in ("docker", "container", "service unavailable", "502", "503")):
@@ -91,11 +108,23 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
 
 
 def p95(values: List[float]) -> float:
-    if not values:
+    """Linear-interp P95 (matches numpy default `method="linear"`).
+
+    B-200 (/stress A1.4b-ii codex B-ii-6, P2): strict policy on None / NaN.
+    Pre-fix `p95([None, None, 0, 0])` raised `TypeError` deep in `sorted`;
+    `p95([NaN, 1, 2])` silently returned 1.9 (NaN ignored by sort but tail
+    misleading). Now: filter None + NaN explicitly + return 0.0 on empty
+    valid set (matches the existing empty-input contract). Callers that
+    want strict mode should filter upstream + assert no missing values.
+    """
+    import math as _math
+    valid = [float(v) for v in values
+             if v is not None and not (isinstance(v, float) and _math.isnan(v))]
+    if not valid:
         return 0.0
-    if len(values) == 1:
-        return float(values[0])
-    ordered = sorted(values)
+    if len(valid) == 1:
+        return valid[0]
+    ordered = sorted(valid)
     k = 0.95 * (len(ordered) - 1)
     f = int(k)
     c = min(f + 1, len(ordered) - 1)
@@ -244,6 +273,21 @@ def compute_wasted_energy(episode_summaries: List[Dict[str, Any]]) -> Optional[f
     return float(sum(vals)) if vals else None
 
 
+def _compute_cost_efficiency_ratio(episode_summaries: List[Dict[str, Any]]) -> Optional[float]:
+    """B-197: return None when no cost data, else `cost_on_success / total_cost`."""
+    if not episode_summaries:
+        return None
+    total_cost = sum(float(x.get("total_cost_usd", 0.0)) for x in episode_summaries)
+    if total_cost < 1e-9:
+        # All-zero cost (B1 local, no API spend) → ratio undefined
+        return None
+    cost_on_success = sum(
+        float(x.get("total_cost_usd", 0.0))
+        for x in episode_summaries if x.get("success")
+    )
+    return cost_on_success / total_cost
+
+
 def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict[str, Any]:
     if not episode_summaries:
         return {
@@ -283,6 +327,8 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             "partial_recovery_episode_count": 0,
             "partial_recovery_rate": 0.0,
             "unknown_failure_reason_distribution": {},
+            # B-199 noise category distribution default:
+            "benchmark_noise_category_distribution": {},
         }
 
     success_rate = sum(1 for x in episode_summaries if x.get("success")) / len(episode_summaries)
@@ -367,6 +413,18 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
         # only — net_saving_latency does NOT subtract this (already in routed total).
         "avg_router_overhead_ms": _avg("total_router_overhead_ms"),
         "avg_obs_prepare_cost_usd": _avg("total_obs_prepare_cost_usd"),
+        # B-195 (/stress A1.4b-ii gemini v1 G1, P1 OOB): per-cell avg of the
+        # per-episode obs-prepare cost. Paper §3 currently cites
+        # "~30 ms median obs-prepare latency" but pre-fix the aggregate layer
+        # exposed only the SUM (`avg_total_obs_prepare_cost_usd`), not the
+        # per-step distribution needed to verify a median latency claim. The
+        # cost-USD aggregate is still emitted above; for the latency claim
+        # paper §3 should now cite `avg_total_obs_prepare_cost_usd` per cell
+        # + per-step latency must be sourced from `step_metrics.csv` (which
+        # analysis.py already dumps from raw JSONL). Issue: B-195 closes
+        # the cost-aggregate; B-195b (deferred) — emit median+p95 obs-prepare
+        # ms separately if paper §3 wants that exact metric — pending
+        # decision on whether step_metrics.csv pivot is sufficient.
         "avg_input_cost_usd": _avg("total_input_cost_usd"),
         "avg_output_cost_usd": _avg("total_output_cost_usd"),
         "avg_total_energy_kwh": (float(statistics.mean(energy_vals)) if energy_vals else None),
@@ -384,6 +442,16 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             float(statistics.mean(checklist_failed_flags)) if checklist_failed_flags else None
         ),
         "benchmark_noise_rate": float(statistics.mean(benchmark_noise_flags)),
+        # B-199 (/stress A1.4b-ii gemini v1 G3): per-cell category distribution.
+        # Pre-fix the 10-category breakdown produced by `detect_benchmark_noise`
+        # was flattened to a single rate, losing site-specific infrastructure
+        # insight (e.g., is reddit noise = captcha or rate_limit?). Paper §3.4
+        # appendix can now cite this dict directly.
+        "benchmark_noise_category_distribution": dict(Counter(
+            str(x.get("benchmark_noise_category"))
+            for x in episode_summaries
+            if x.get("benchmark_noise") and x.get("benchmark_noise_category")
+        )),
         "wasted_energy_kwh": compute_wasted_energy(episode_summaries),
         "avg_wasted_cost_usd": float(statistics.mean(
             [float(x.get("wasted_cost_usd", 0.0)) for x in episode_summaries]
@@ -396,10 +464,14 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
         # canonical paper-grade outcome (na_fp / eval_fp fixed at the source),
         # so this single ratio is the paper-grade ratio. No `*_adjusted`
         # counterpart is produced anymore.
-        "cost_efficiency_ratio": (
-            sum(float(x.get("total_cost_usd", 0.0)) for x in episode_summaries if x.get("success"))
-            / max(sum(float(x.get("total_cost_usd", 0.0)) for x in episode_summaries), 1e-12)
-        ),
+        #
+        # B-197 (/stress A1.4b-ii Claude D4 + gemini G4, P1): when ALL
+        # episodes have cost=0 (B1 local model + no API), the previous
+        # `max(..., 1e-12)` floor produced ratio=0.0 silently misleading
+        # paper §3 readers as "0% cost efficiency". Now: return None when
+        # no actual cost data is available, so downstream prose can show
+        # "N/A — no cost data" rather than a fake-zero.
+        "cost_efficiency_ratio": _compute_cost_efficiency_ratio(episode_summaries),
         # §97 audit additions:
         "avg_busy_wait_total_ms": _avg("busy_wait_total_ms"),
         "energy_partial_episode_count": energy_partial_count,
