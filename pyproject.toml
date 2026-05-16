@@ -48,6 +48,17 @@ mechanistic = [
 dev = [
     "pytest>=7.0.0",
 ]
+# /stress A1.12 P1-8 fix (2026-05-16): aggregate extras for `make test`
+# paper-grade CI. `[analysis]` extras (pandas/matplotlib/scipy) are
+# required to exercise analyze_run end-to-end; without them ~6 test files
+# silently `pytest.importorskip`. The `[test]` aggregate keeps `make test`
+# honest by making pandas/matplotlib/scipy first-class test deps.
+test = [
+    "pytest>=7.0.0",
+    "pandas",
+    "matplotlib",
+    "scipy",
+]
 
 [project.scripts]
 run-experiment = "p79.cli.run_experiment:main"
@@ -56,3 +67,18 @@ analyze-experiment = "p79.cli.analyze_experiment:main"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+# /stress A1.12 P1-4 fix (2026-05-16): minimal hygiene flags.
+# - `--strict-markers` fails on typo'd mark (so `@pytest.mark.local_dat` is
+#   caught before silently always-running);
+# - `-ra` shows short summary of (a)ll non-pass outcomes, complementing the
+#   `Makefile test:` target where `-x` was removed in the same batch so full
+#   failure picture surfaces (vs old fail-fast hiding remaining 4/5 failures).
+# - `-rs` reports skipped tests with reason (so `pytest.importorskip("pandas")`
+#   silent skip becomes visible — paper-grade analysis path can't silently
+#   un-execute).
+# `markers` registry below pre-declares custom marks so strict-markers passes.
+addopts = "--strict-markers -ra -rs"
+markers = [
+    "local_data: tests that depend on local results/* and run_manifest.yaml (skipped by default in CI; run with `pytest -m local_data`)",
+    "external: tests that exercise external systems (VWA browser_env, evaluator_router, live docker); skipped by default",
+]

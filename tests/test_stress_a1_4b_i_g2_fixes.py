@@ -10,8 +10,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pandas as pd
 import pytest
+
+# /stress A1.12 P1-8 fix (2026-05-16): module-level importorskip — see
+# test_stress_a1_4b_i_g1_fixes for rationale.
+pd = pytest.importorskip("pandas")
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ANALYSIS_PY = REPO_ROOT / "p79" / "experiment" / "analysis.py"

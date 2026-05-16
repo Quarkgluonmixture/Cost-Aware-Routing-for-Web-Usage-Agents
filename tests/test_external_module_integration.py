@@ -1,3 +1,15 @@
+"""IN-PROCESS pipeline component integration tests.
+
+⚠️ Despite the historical filename, this file does NOT exercise external
+systems (no VWA browser_env, no docker, no evaluator_router, no live auth).
+All tests run in-process against pure helpers + dataclasses. /stress A1.12
+P1-7 (2026-05-16) caught the name-vs-scope mismatch; filename preserved to
+keep git blame coherent.
+
+For genuine external smoke (VWA submodule import + browser_env + dry-run
+VWAWrapper), see `tests/test_external_vwa_smoke.py` (marked `external`,
+skipped by default; run with `pytest -m external`).
+"""
 import math
 
 from PIL import Image

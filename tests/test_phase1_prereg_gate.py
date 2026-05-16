@@ -37,14 +37,22 @@ from scripts.analysis.aggregate_phase1_prereg_gate import (
 # ─── Synthetic cell builder helpers ────────────────────────────────────────
 def _make_episodes_dir(tmp_root: Path, mode_name: str, success_task_ids: set[int],
                        observed_task_ids: set[int]) -> Path:
-    """Create a fake episode dir matching the `load()` reader contract:
-    files named `task_<id>_summary_v2.json` with `success: true/false`."""
+    """Create a fake episode dir matching `load_episode_summary_strict[lenient]`.
+
+    /stress A1.12 P0-1 (2026-05-16): fixture must carry `schema_version` (str)
+    in addition to `success` (bool) + `task_id` (int) — without these B-283
+    strict-load downgrades the summary to corrupt-skip → θ collapses to 0.
+    """
     ep_dir = tmp_root / mode_name
     ep_dir.mkdir(parents=True, exist_ok=True)
     for tid in observed_task_ids:
         d = ep_dir
         f = d / f"task_{tid}_summary_v2.json"
-        f.write_text(json.dumps({"task_id": tid, "success": tid in success_task_ids}))
+        f.write_text(json.dumps({
+            "schema_version": "2.0",
+            "task_id": tid,
+            "success": tid in success_task_ids,
+        }))
     return ep_dir
 
 
@@ -186,14 +194,20 @@ def test_fe_pool_returns_none_at_k1():
 
 
 def test_fe_pool_handles_zero_se_via_floor():
-    """SE=0 would blow up weights; we replace with 1e-9 floor."""
+    """SE=0 floored to 1.0pp (P0-9 codex/gemini pre-fire #10/#9 fix).
+
+    /stress A1.12 P1-1 (2026-05-16): legacy expectation was `θ_FE ≈ 2.0`
+    (1e-9 floor → zero-SE row dominates). Current implementation floors to
+    1.0pp so degenerate cells cannot hijack the pool: weights = [1/1², 1/0.5²]
+    = [1, 4]; θ_FE = (1·2 + 4·3) / 5 = 14/5 = 2.8.
+    """
     per_cell = [
         {"theta_pp": 2.0, "se_pp": 0.0},
         {"theta_pp": 3.0, "se_pp": 0.5},
     ]
     fe = _fe_pool(per_cell)
-    # Zero-SE row dominates pool; θ_FE ≈ 2.0
-    assert fe["theta_FE_pp"] == pytest.approx(2.0, abs=1e-6)
+    assert fe["theta_FE_pp"] == pytest.approx(2.8, abs=1e-6)
+    assert fe["n_zero_se_floored_cells"] == 1
 
 
 # ─── build_gate end-to-end ──────────────────────────────────────────────────
@@ -206,11 +220,17 @@ def test_build_gate_empty_cells():
 
 
 def test_build_gate_six_cells_passes(tmp_path):
-    """6 cells all with strong P-SoM effect → gate PASSES."""
+    """6 cells all with strong P-SoM effect → gate PASSES.
+
+    /stress A1.12 P0-2 (2026-05-16): cell topology aligned to Phase 1a
+    canonical = {B0, B1, B2} × {cls, red} = 6 cells. Legacy fixture used
+    B0+B1 × cls+red+shop which mismatched Phase 1a scope (B2 missing, shop
+    deferred to Phase 1b).
+    """
     cells = [
         _make_synthetic_cell(tmp_path / f"{b}_{s}", b, s,
                              psom_only_count=10, common_count=100)
-        for b in ["B0", "B1"] for s in ["classifieds", "reddit", "shopping"]
+        for b in ["B0", "B1", "B2"] for s in ["classifieds", "reddit"]
     ]
     payload = build_gate(cells)
     assert payload["gate_status"] == "PASS"
@@ -222,11 +242,14 @@ def test_build_gate_six_cells_passes(tmp_path):
 
 
 def test_build_gate_six_cells_at_threshold_fails(tmp_path):
-    """6 cells all at exactly δ=1.0pp → gate FAILS (one-sided)."""
+    """6 cells all at exactly δ=1.0pp → gate FAILS (one-sided).
+
+    /stress A1.12 P0-2 (2026-05-16): Phase 1a canonical topology.
+    """
     cells = [
         _make_synthetic_cell(tmp_path / f"{b}_{s}", b, s,
                              psom_only_count=1, common_count=100)
-        for b in ["B0", "B1"] for s in ["classifieds", "reddit", "shopping"]
+        for b in ["B0", "B1", "B2"] for s in ["classifieds", "reddit"]
     ]
     payload = build_gate(cells)
     fe = payload["pooled_fe"]
@@ -250,10 +273,11 @@ def test_build_gate_partial_data_three_cells(tmp_path):
 
 # ─── output writers ─────────────────────────────────────────────────────────
 def test_write_csv_per_cell_and_pooled_rows(tmp_path):
+    """/stress A1.12 P0-2 (2026-05-16): Phase 1a canonical topology."""
     cells = [
         _make_synthetic_cell(tmp_path / f"{b}_{s}", b, s,
                              psom_only_count=10, common_count=100)
-        for b in ["B0", "B1"] for s in ["classifieds", "reddit", "shopping"]
+        for b in ["B0", "B1", "B2"] for s in ["classifieds", "reddit"]
     ]
     payload = build_gate(cells)
     out_csv = tmp_path / "phase1_prereg_gate.csv"
@@ -281,10 +305,11 @@ def test_write_json_round_trips(tmp_path):
 
 
 def test_write_md_renders(tmp_path):
+    """/stress A1.12 P0-2 (2026-05-16): Phase 1a canonical topology."""
     cells = [
         _make_synthetic_cell(tmp_path / f"{b}_{s}", b, s,
                              psom_only_count=10, common_count=100)
-        for b in ["B0", "B1"] for s in ["classifieds", "reddit", "shopping"]
+        for b in ["B0", "B1", "B2"] for s in ["classifieds", "reddit"]
     ]
     payload = build_gate(cells)
     out_md = tmp_path / "phase1_prereg_gate.md"

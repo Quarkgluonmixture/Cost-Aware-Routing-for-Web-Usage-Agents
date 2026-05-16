@@ -2829,3 +2829,71 @@ B0 proxy short error `"503 Service Unavailable"` (no AWS gateway URL) was unifor
 ### B-341. RAPLReader `open` no `errors=` (A1.8 B-288 sibling propagation) 🛠️ FIXED
 
 `energy_tracker.py:181` bare `open(self._energy_file, "r")` could raise `UnicodeDecodeError` on kernel mid-write race for `/sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj` → outer bare `except Exception` swallowed → silent None → fallback to broken profile path. Fix: `open(..., errors="replace")` mirror A1.8 B-288. `int()` on result still fails fast on non-digit; UnicodeDecodeError path closed.
+
+### B-342. `test_phase1_prereg_gate.py` fixture missing `schema_version` → 5 tests FAILED 🛠️ FIXED (A1.12 P0-1 ABC* 3-AI overlap)
+
+`tests/test_phase1_prereg_gate.py:38 _make_episodes_dir` writes only `{"task_id": tid, "success": ...}` to fixture summaries. B-283 `load_episode_summary_strict[lenient]` requires `schema_version` (str) per `io_utils.py:61`. Without it: all 100 mock summaries treated as corrupt-skip → `theta_pp` collapses to 0.0 → `assert theta_pp == 5.0` fail. 5/17 tests red → `make pre-launch-check` step 7 `pytest -x -q` exits ≠ 0 → Phase 1a launch hard-blocked. Fix: add `"schema_version": "2.0"` to fixture dict. **3-AI overlap**: Claude verified via pytest, codex P0-1, gemini P0-1.
+
+### B-343. `test_phase1_prereg_gate.py` 6-cell topology drift (B0+B1 × shop vs Phase 1a B0+B1+B2 × cls+red) 🛠️ FIXED (A1.12 P0-2 A unique)
+
+`test_build_gate_six_cells_passes:212-214` + 3 sibling tests (`_at_threshold_fails`, `test_write_csv_per_cell_and_pooled_rows`, `test_write_md_renders`) construct 6-cell fixture via `for b in ["B0", "B1"] for s in ["classifieds", "reddit", "shopping"]`. Phase 1a canonical scope = `{B0, B1, B2} × {cls, red}` (CLAUDE.md + phase1_plan.md). Wrong topology: (a) shopping is Phase 1b deferred, (b) B2 Gemma3-VL missing despite 2026-05-14 advisor decision. Fix: 4 sites changed to `for b in ["B0", "B1", "B2"] for s in ["classifieds", "reddit"]`.
+
+### B-344. `p79.experiment.io_utils.load_episode_summary_strict` + `read_jsonl_dedup` ZERO direct tests 🛠️ FIXED (A1.12 P0-3 A unique)
+
+The very B-283 strict-load module that caused B-342 launch-blocker had no direct test. `read_jsonl_dedup` (B-180 identity tuple / B-196 integrity log / B-287 step_idx monotonic / B-288 UnicodeDecodeError / B-293 Optional[bool] semantic) was only indirectly exercised via `test_stress_a1_4b_ii_g4_fixes:B-196 end-to-end`. Any future refactor of strict/lenient boundary, identity-tuple keys, or integrity-log shape could silently degrade aggregator behaviour. Fix: new `tests/test_io_utils_strict_load.py` (14 tests) covering valid/lenient/strict + JSON corrupt + identity mismatch detection + monotonic step_idx + empty file handling.
+
+### B-345. `tests/` ZERO shell-script smoke tests (B-303/B-304/B-224 no net) 🛠️ FIXED (A1.12 P0-4 C* OOB)
+
+Paper-grade shell layer (`_lib_paper_grade_gates.sh`, `queue_phase1_paper_grade.sh`, `queue_chain.sh`, `queue_baseline.sh`, `queue_phantom_*.sh`, `scripts/preflight_v2.sh`) had no regression net despite A1.13/A1.14 batch fixing B-303 chain leakage / B-304 resume discontinuity / B-224 auth gate hard-fail propagation in shell. Pass-1 1-2 week run + Phase 1b shopping reruns at risk for silent shell regression. Fix: new `tests/test_paper_grade_gates_shell.py` (14 tests): `bash -n` syntax across 9 scripts + lib `declare -F` function-export contract + `mint_run_id` FORCE_NEW happy path + back-to-back nanosec collision defense (A1.13 P1-2) + 3-baseline collision check presence in queue_chain.
+
+### B-346. VWA submodule B-91 evaluator empty-prediction guard ZERO test 🛠️ FIXED (A1.12 P0-5 AC)
+
+B-91 fix in `external/visualwebarena/evaluation_harness/helper_functions.py:589 + :677` (both `llm_fuzzy_match` + `llm_ua_match`) returns 0.0 on `pred=""` or whitespace-only. Submodule SHA pin (eb5cbd8) catches file content drift but not behavior; preflight SHA check is OSF lock layer, no unit test. If submodule got `git reset` / merge from upstream main, guard could vanish + N/A task SR inflated by FP. Fix: new `tests/test_vwa_evaluator_b91_guard.py` (6 tests): direct runtime exercise of guard with `pred=""` / `pred="   "` for both fuzzy + ua matchers + cross-check on submodule SHA == A1.18 lock + B-91 guard source-grep at ≥2 callsites.
+
+### B-347. `test_fe_pool_handles_zero_se_via_floor` locks stale 1e-9 floor semantics (impl uses 1pp) 🛠️ FIXED (A1.12 P1-1 B)
+
+`tests/test_phase1_prereg_gate.py:188` docstring says "1e-9 floor" + expects `θ_FE ≈ 2.0`. Current `scripts/analysis/aggregate_phase1_prereg_gate.py:187 _fe_pool` uses `np.where(ses <= 0, 1.0, ses)` (1.0pp floor) — the prereg-disclosure decision preventing degenerate cells from hijacking pool. With 1pp floor: ses=[1.0, 0.5] → weights=[1, 4] → θ_FE = (2 + 12)/5 = 2.8 ≠ 2.0. Test↔implementation drift baked. Fix: update expected to 2.8 + add `n_zero_se_floored_cells == 1` assertion + docstring rewrite citing prereg disclosure.
+
+### B-348. 13 `test_stress_a1_*_fixes.py` source-regex哨兵替代 behavior testing 🛠️ PARTIAL FIX (A1.12 P1-2 AB renatrofit 3 files)
+
+14 stress regression files (~3000 LOC) ~50%+ tests use `re.search` / `read_text` / `in src` source-grep instead of runtime behavior assertion. Failure mode: (a) comment containing `DeprecationWarning` string passes without `warnings.warn` ever firing, (b) `image_meta` built but never attached in runtime path, (c) benign refactor renaming variable breaks regex but behavior intact. Pattern empirically caught by codex P1-4. **Partial fix**: new `tests/test_stress_behavioral_retrofit.py` (5 tests) adds runtime PAIR tests for B-145 GLM DeprecationWarning + B-340 paper_grade hard-block + B-146 Gemma sys.modules decoupling + B-92 Qwen prompt @staticmethod runtime callable + B-144 backend cache (seed) key-distinguishing. Source-grep tests retained for refactor-time string drift; behavior tests for runtime semantic regressions. Full audit of remaining 14 files deferred.
+
+### B-349. `p79.backends.{local_qwen, local_gemma, api_proxy}` ZERO direct tests 🛠️ FIXED (A1.12 P1-3 A unique)
+
+3 production backend classes (B0 proxy / B1 LocalQwen / B2 LocalGemma) had no direct invariant test. `test_agents_prompt_parity` covered prompt-string equality; `test_factory_dispatch:test_mock_backends_agree_on_scroll_delta` covered only LocalQwen (B1). LocalGemma (B2, added 2026-05-14) and ApiProxy (B0) zero coverage at backend layer. Mock-mode contract drift could land B2 launch OOM / B0 401-handling regression with no test signal. Fix: new `tests/test_backends_mock_dispatch_parity.py` (11 tests): 3-backend mock_mode step()  parity (action_type/delta/coordinate_type identical) + factory dispatch + `_agent is None` mock_mode confirmation + missing-key contract.
+
+### B-350. pytest config hygiene gaps (no strict-markers / no filterwarnings / no conftest / Makefile `-x` fail-fast hides failures) 🛠️ FIXED (A1.12 P1-4 A unique)
+
+`pyproject.toml [tool.pytest.ini_options]` had only `testpaths` + `pythonpath`. Missing `strict-markers` → typo'd `@pytest.mark.local_dat` silently always-runs. No `-rs` → `pytest.importorskip("pandas")` silent skip never surfaces. `Makefile test:` used `-x -q` fail-fast → user sees only first fail (hid 4/5 of A1.12 P0-1 batch). No `conftest.py` or `tests/__init__.py` → no shared cleanup of `_JSONL_INTEGRITY_LOG` / `_GLOBAL_REGISTRY` module globals. Fix: `addopts = "--strict-markers -ra -rs"` + `markers = ["local_data: ...", "external: ..."]` + Makefile `-x` removed + `--tb=short`.
+
+### B-351. `tests/analysis/test_run_registry.py` depends on live workspace `results/` + manifest (fresh clone fails) 🛠️ FIXED (A1.12 P1-5 B)
+
+`test_load_manifest_succeeds:14` asserts `len(manifest["cells"]) >= 10` hardcoded; `test_episodes_dir_exists:41` asserts `complete[0].episodes_dir.exists()`. Fresh OSF clone / new contributor / CI without local `results/` → fail even if registry code is correct. Stale local results can let broken path resolution silently pass. Fix: split into (a) 3 pure-logic tests (canonical_mode dict lookup + missing baseline returns None) — always run; (b) 4 `@pytest.mark.local_data + skipif RUN_LOCAL_DATA_TESTS!=1` probes for legacy local-host assertions.
+
+### B-352. `p79.policies.learned_router` Pass-2 entry point ZERO test 🚧 DEFERRED (A1.12 P1-6 B → T1-4=B Pass-1 land 后再加)
+
+`runner/main.py:1017` dispatches `condition.observation_mode == "learned"` to `p79.policies.learned_router`; `load_lr_pipeline:156` + `extract_task_features:172` + `predict_mode:209` untested. Pass-1 (36 baseline conditions) launches without router → not blocked. Pass-2 (6 router conditions) fires 3-5 days after Pass-1, then feature column order / missing pickle / M3 retry could regress with no pytest signal. T1-4=B decision: defer test to Pass-1 land + 1 week before Pass-2 fire (deadline-driven, avoid stale LR pipeline schema).
+
+### B-353. `test_external_module_integration.py` 名实不符 (no actual external integration) 🛠️ FIXED (A1.12 P1-7 B)
+
+File name implies VWA / browser_env / evaluator integration but all tests use in-process `P79Observation` + PIL images + pure helpers — 0 hits on `create_environment` / `VWAWrapper` live / `evaluator_router` / auth gate. Misleading scope hides real integration test gap. Fix: (a) clarifying docstring header on existing file (filename preserved for git blame), (b) new `tests/test_external_vwa_smoke.py` (4 tests) with `pytest.mark.external + skipif RUN_EXTERNAL_TESTS!=1`: VWA browser_env import + evaluator_router callable + P79Observation/VWAWrapper class import + runner can import VWA pathway.
+
+### B-354. Optional deps policy contradiction: `[analysis]` not in `[dev]` + top-level pandas import 🛠️ FIXED (A1.12 P1-8 B)
+
+`pyproject.toml [analysis]` = `pandas/matplotlib/scipy` but `[dev]` = only `pytest`. `test_stress_a1_4b_i_g1_fixes.py:21` + `test_stress_a1_4b_i_g2_fixes.py:13` have top-level `import pandas as pd` → fresh CI install `pip install -e ".[dev]"` collection-time ImportError. Same CI host with `[analysis]` extras → 6 files `pytest.importorskip("pandas/matplotlib/scipy")` silent skip critical analysis end-to-end. Fix: new `[test]` aggregate extras (pytest + pandas + matplotlib + scipy) + 2 top-level imports converted to `pd = pytest.importorskip("pandas")` module-level + `addopts -rs` surfaces silent skip.
+
+### B-355. `p79.experiment.config.normalize_config` / DEFAULT_CONFIG merge ZERO direct test 📋 NOTED (A1.12 P2-1 A defer)
+
+Only spot-checked via `test_fp_architecture_invariants:test_exclude_na_tasks_default_true`. Full DEFAULT_CONFIG merge / YAML override / nested-key precedence untested. Not blocking; flagged for backlog.
+
+### B-356. `p79.utils.auth_refresh` (watchdog auth-clear) ZERO test 📋 NOTED (A1.12 P2-2 A defer)
+
+Paper-grade clean-run 6-layer defense core. Pass-1 1-2 week run will trigger auth_expired_or_session_invalid; auth_refresh regression would cause silent episode failure with wrong benchmark_noise category. Not blocking; flagged for backlog.
+
+### B-357. `test_step_record_validation` only covers `success/score/steps` negative type — misses cost/tokens/latency 📋 NOTED (A1.12 P2-3 B defer)
+
+`validate_episode_summary_v2` could accept `total_cost_usd="0.10"` (str not float) → downstream aggregation crash or coerce weirdly. Paper cost-efficiency + wasted-cost tables = downstream corruption surface. Not blocking; flagged for backlog.
+
+### B-358. `test_smoke_page_unchanged_rate_excludes_finish` vacuous on zero-step runner output 📋 NOTED (A1.12 P2-4 B defer)
+
+`if n_total == 0: return` early-return bypasses invariant. Low probability (other smoke checks file existence), but not enforcing minimum schema shape. Not blocking; flagged for backlog.

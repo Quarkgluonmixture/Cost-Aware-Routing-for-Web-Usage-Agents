@@ -18,8 +18,13 @@ import json
 import re
 from pathlib import Path
 
-import pandas as pd
 import pytest
+
+# /stress A1.12 P1-8 fix (2026-05-16): top-level `import pandas as pd`
+# would collection-time error on fresh CI without `[analysis]` / `[test]`
+# extras. Module-level importorskip cleanly skips the whole file when
+# pandas absent, instead of breaking the entire test collection.
+pd = pytest.importorskip("pandas")
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ANALYSIS_PY = REPO_ROOT / "p79" / "experiment" / "analysis.py"

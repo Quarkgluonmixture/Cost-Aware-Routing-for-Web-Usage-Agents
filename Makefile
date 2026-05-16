@@ -65,7 +65,13 @@ active:
 
 # ---- Tests ----
 test:
-	$(PYTEST) tests/ -x -q
+	@# /stress A1.12 P1-4 fix (2026-05-16): `-x` (fail-fast) removed so full
+	@# failure picture surfaces in one run instead of hiding remaining failures
+	@# behind the first. `--tb=short` keeps output digestible while still
+	@# showing assert location. `pyproject.toml [tool.pytest.ini_options]` now
+	@# sets `--strict-markers -ra -rs` so silent importorskip / typo'd marker
+	@# bugs no longer hide.
+	$(PYTEST) tests/ --tb=short -q
 
 smoke:
 	$(PYTEST) tests/test_runner_smoke.py tests/test_runner_integration.py -v

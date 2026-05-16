@@ -79,7 +79,7 @@ B0 infra prereq ──┘                                                       
 - [ ] **A1.9** `p79/experiment/{metrics.py, energy_tracker.py, environment.py}` — cost / energy / env wrapper
 - [ ] **A1.10** `p79/experiment/{router.py, modules.py, state_change.py, checklist_module.py, tasks.py, config.py}` — utility 模块 cluster
 - [ ] **A1.11** `p79/{utils/, cli/, logging/}` — 辅助 (CUDA workaround / CLI 入口 / structured logging)
-- [ ] **A1.12** `tests/` — pytest 覆盖度 + invariant 测试是否对得上当前实现
+- [x] **A1.12** `tests/` — pytest 覆盖度 + invariant 测试是否对得上当前实现 (2026-05-16: 17 findings B-342~B-358, §166; key fixes = B-342 prereg gate fixture schema_version + B-343 cell topology Phase 1a drift + B-344 io_utils invariant net + B-345 shell-script smoke + B-346 B-91 evaluator guard test + B-347 zero-SE floor stale + B-348 source-grep behavioral retrofit + B-349 backends parity + B-350 pytest config hygiene + B-351 registry fixture split + B-353 external smoke + B-354 [test] extras; suite 333 → 398 GREEN; **B-352 learned router test DEFER** to Pass-2 fire − 1 week per T1-4=B)
 
 #### A1-管线 (`scripts/`)
 
