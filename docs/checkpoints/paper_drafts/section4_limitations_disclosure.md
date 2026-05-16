@@ -130,6 +130,18 @@ not rely on the upstream operator-precedence bug as a confound source. The pre-f
 (`docs/archive/analysis_pre_2026-05-15/`) is retained for sensitivity reference only and
 must not be mixed with Phase 1a clean-run numbers.
 
+**Downstream consequence — rule-based router numeric thresholds rendered dead by the
+viewport fix (A1.10 P0-1-ABC* cross-reference 2026-05-16).** The `in_viewport_ratio`
+correction collapses typical AXTree text length from the pre-fix ~12-20k char regime
+(full-DOM intuition) to the post-fix ~3 k char regime (cleaned viewport-only AXTree).
+The router constants `dom_size_threshold = 12000`, `dom_complexity_trigger = 500`,
+`text_length_trigger = 12000` in `p79/experiment/router.py` were inherited from the
+pre-fix regime and were **not** recalibrated to the post-fix distribution; they fire
+< 0.5 % empirically on the Phase 1a clean-run archive (full disclosure in §3.5 router
+thresholds paragraph). Paper-1 reports the streak-driven routing decision and defers
+threshold recalibration to paper-2; §4 rollups should be read accordingly when the
+trigger-distribution table shows ~0 fires for the three numeric triggers.
+
 ---
 
 ## §4.X.6 scroll direction confusion (B-28)
@@ -264,9 +276,14 @@ than rewrite history because the Phase 1a archive was produced under these confi
 reach `100.95.81.103`. To reproduce, the reproducer must (a) bring up the VWA Docker
 container set on their own host, (b) rewrite `100.95.81.103` to that host's address in
 both `external/visualwebarena/config_files/vwa/test_*.json` and the chromium launch arg in
-`browser_env/envs.py`, or set `VWA_HOST_RESOLVER_RULES` / per-site `*_BASE_URL` env vars
-(P79 wrapper `scripts/vwa_env_remote.sh`-style). The P79 self-host fire on the A100 host
-applies the same substitution before launch.
+`browser_env/envs.py`, or set `VWA_HOST_RESOLVER_RULES` plus the per-site env vars
+**`REDDIT` / `SHOPPING` / `SHOPPING_ADMIN` / `CLASSIFIEDS` / `GITLAB` / `WIKIPEDIA` / `MAP` / `HOMEPAGE`**
+read by `p79/experiment/tasks.py::_placeholder_mapping` (lines 55-62) — note these are
+**bare site names without a `_BASE_URL` suffix** (corrected via A1.10 P1-10-C* prose fix
+2026-05-16, replacing the earlier incorrect `*_BASE_URL` hint that would have silently
+fallen back to localhost defaults rather than redirecting to the reproducer's host).
+The P79 wrapper `scripts/vwa_env_remote.sh` exports these same names. The P79 self-host
+fire on the A100 host applies the same substitution before launch.
 
 This is an OSF lock-time disclosure rather than a code fix: the Phase 1a archive cannot be
 re-keyed without re-running, so we document the propagation here and recommend reproducers
