@@ -43,17 +43,15 @@ def compute_router_overhead_cost(router_overhead_ms: float, router_cfg: Dict[str
     return float(router_overhead_ms) * rate
 
 
-def compute_energy_step(metrics_cfg: Dict[str, Any]) -> Dict[str, Optional[float]]:
-    energy_cfg = metrics_cfg.get("energy", {})
-    if not energy_cfg.get("enabled", False):
-        return {"kwh": None, "co2e_kg": None}
-
-    kwh = energy_cfg.get("kwh_per_step")
-    co2_per_kwh = energy_cfg.get("co2e_kg_per_kwh")
-    if kwh is None:
-        return {"kwh": None, "co2e_kg": None}
-    co2 = None if co2_per_kwh is None else float(kwh) * float(co2_per_kwh)
-    return {"kwh": float(kwh), "co2e_kg": co2}
+# B-187 (/stress A1.4b-ii gemini v5 #1 + codex B-ii-5, P2): deleted
+# `compute_energy_step()` — 0 production callers. Real energy/CO2 pipeline
+# is `p79/experiment/energy_tracker.py::LightweightEnergyTracker.estimate_step`
+# (used by `runner/main.py:1472`). The deleted helper read the wrong YAML
+# key (`co2e_kg_per_kwh: null`) instead of `carbon_intensity_g_per_kwh: 220`
+# that EnergyTracker actually uses, which would have produced silent
+# co2e_kg=None if any caller existed. Live production data verified
+# CO2 telemetry is correct (UK grid 220 g/kWh = 0.22 kg/kWh ratio
+# empirically across episode summaries).
 
 
 def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional[str]]:
@@ -193,18 +191,17 @@ def estimate_step_flops(
 def compute_wasted_cost(
     step_records: List[Dict[str, Any]],
     success: bool,
-    *,
-    adjusted_success: Optional[bool] = None,
 ) -> Dict[str, float]:
     """For failed episodes, all step cost is wasted; for successful ones, wasted is 0.
 
-    `adjusted_success` (optional, §95): when provided and False, the episode
-    is treated as wasted even if raw `success` is True (FP episodes that
-    coincidentally matched the evaluator without the agent finishing the task).
+    B-188 (/stress A1.4b-ii Claude D5, P2): removed legacy `adjusted_success`
+    keyword arg. §139.8 retired the post-hoc na_fp / eval_fp filter layer
+    (B-91 evaluator empty-pred guard at source + N/A task exclusion at load).
+    `success` is now the canonical paper-grade outcome and the only argument
+    this function needs. Empirical: 0 production callers passed
+    `adjusted_success=`.
     """
-    # Use adjusted_success when provided; otherwise fall back to raw.
-    is_real_success = adjusted_success if adjusted_success is not None else success
-    if is_real_success:
+    if success:
         return {"wasted_cost_usd": 0.0, "wasted_energy_kwh": 0.0}
     # Defensive: cost_usd / energy may be explicitly None on partial rows.
     total_cost = sum(float((s.get("cost_usd") or {}).get("total", 0)) for s in step_records)
@@ -212,30 +209,17 @@ def compute_wasted_cost(
     return {"wasted_cost_usd": total_cost, "wasted_energy_kwh": total_energy}
 
 
-def compute_waste_breakdown(step_records: List[Dict[str, Any]], success: bool) -> Dict[str, float]:
-    """Break down cost into no-op, page-unchanged, and total components.
+# B-188 (/stress A1.4b-ii gemini v5 #4 + codex B-ii-8, P2): deleted
+# `compute_waste_breakdown()` — 0 production callers (paper §3 fine-grained
+# waste analysis lives in `scripts/analysis/analyze_reason_diagnostics.py:
+# 764-794`, which has a richer impl with `loop_cost_usd` + `effective_cost_usd`
+# not present here). The deleted helper had a math invariant violation
+# (success episode → wasted_cost_usd=0 but no_op_cost / page_unchanged_cost
+# unconditionally sum across all steps, so parts could exceed total). Per
+# user decision 2026-05-16 "选 A": keep the analyzer impl as the
+# fine-grained source of truth; binary `compute_wasted_cost` above is the
+# canonical aggregator-level wasted metric.
 
-    Unlike compute_wasted_cost (binary: all-or-nothing), this provides
-    fine-grained cost attribution useful for post-hoc analysis scripts.
-    """
-    total_cost = 0.0
-    no_op_cost = 0.0
-    page_unchanged_cost = 0.0
-    for s in step_records:
-        # Defensive: cost_usd may be explicitly None on partial/error rows.
-        step_cost = float((s.get("cost_usd") or {}).get("total", 0))
-        total_cost += step_cost
-        if s.get("action_success") is False:
-            no_op_cost += step_cost
-        action_type = str((s.get("action") or {}).get("action_type", "") or "").lower()
-        if s.get("page_changed") is False and action_type not in ("finish", "stop"):
-            page_unchanged_cost += step_cost
-    return {
-        "total_cost_usd": total_cost,
-        "no_op_cost_usd": no_op_cost,
-        "page_unchanged_cost_usd": page_unchanged_cost,
-        "wasted_cost_usd": total_cost if not success else 0.0,
-    }
 
 
 def compute_component_breakdown(step_records: List[Dict[str, Any]]) -> Dict[str, float]:
