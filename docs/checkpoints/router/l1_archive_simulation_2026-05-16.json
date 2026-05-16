@@ -1,0 +1,161 @@
+{
+  "run_date": "2026-05-16T11:07:07.786940Z",
+  "n_total": 444,
+  "label_distribution": {
+    "dom": 366,
+    "phantom_prompt": 4,
+    "phantom_som": 4,
+    "phantom_text": 15,
+    "som": 39,
+    "vision": 16
+  },
+  "features": [
+    "site_cls",
+    "has_image",
+    "color_intent",
+    "search_intent",
+    "compare_intent",
+    "nav_intent",
+    "intent_tok_count",
+    "axtree_elements"
+  ],
+  "variants": {
+    "A_uniform": {
+      "agg": {
+        "overall_sr": 13.288288288288289,
+        "overall_ci": [
+          12.342342342342343,
+          14.34740990990991
+        ],
+        "per_site": {
+          "classifieds": {
+            "sr": 14.957264957264957,
+            "n": 2340,
+            "ci95": [
+              13.547008547008547,
+              16.41025641025641
+            ]
+          },
+          "reddit": {
+            "sr": 11.428571428571429,
+            "n": 2100,
+            "ci95": [
+              10.047619047619047,
+              12.761904761904763
+            ]
+          }
+        },
+        "n": 4440
+      },
+      "predictions": {
+        "dom": 4440
+      }
+    },
+    "B_balanced": {
+      "agg": {
+        "overall_sr": 14.285714285714285,
+        "overall_ci": [
+          13.249211356466878,
+          15.34474988733664
+        ],
+        "per_site": {
+          "classifieds": {
+            "sr": 17.835757057313945,
+            "n": 2338,
+            "ci95": [
+              16.29597946963216,
+              19.41830624465355
+            ]
+          },
+          "reddit": {
+            "sr": 10.333333333333334,
+            "n": 2100,
+            "ci95": [
+              9.047619047619047,
+              11.666666666666666
+            ]
+          }
+        },
+        "n": 4438
+      },
+      "predictions": {
+        "dom": 797,
+        "phantom_som": 362,
+        "vision": 808,
+        "som": 786,
+        "phantom_text": 950,
+        "phantom_prompt": 735,
+        "invalid_phantom_prompt": 2
+      }
+    },
+    "C_binary": {
+      "agg": {
+        "overall_sr": 13.04054054054054,
+        "overall_ci": [
+          12.07150900900901,
+          14.121621621621621
+        ],
+        "per_site": {
+          "classifieds": {
+            "sr": 14.700854700854702,
+            "n": 2340,
+            "ci95": [
+              13.290598290598291,
+              16.112179487179485
+            ]
+          },
+          "reddit": {
+            "sr": 11.190476190476192,
+            "n": 2100,
+            "ci95": [
+              9.903571428571428,
+              12.523809523809524
+            ]
+          }
+        },
+        "n": 4440
+      },
+      "predictions": {
+        "dom": 2510,
+        "phantom_som": 1200,
+        "som": 730
+      }
+    }
+  },
+  "baselines": {
+    "always_dom": {
+      "classifieds": {
+        "sr": 14.957264957264957,
+        "n": 234
+      },
+      "reddit": {
+        "sr": 11.428571428571429,
+        "n": 210
+      }
+    },
+    "always_som": {
+      "classifieds": {
+        "sr": 23.076923076923077,
+        "n": 234
+      },
+      "reddit": {
+        "sr": 11.904761904761903,
+        "n": 210
+      }
+    },
+    "always_phantom_som": {
+      "classifieds": {
+        "sr": 15.81196581196581,
+        "n": 234
+      },
+      "reddit": {
+        "sr": 14.285714285714285,
+        "n": 210
+      }
+    }
+  },
+  "verdict": {
+    "best_variant": "A",
+    "best_min_delta_pp": -2.857142857142856
+  }
+}

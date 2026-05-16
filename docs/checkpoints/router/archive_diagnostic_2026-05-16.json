@@ -1,0 +1,124 @@
+{
+  "run_date": "2026-05-16T08:29:14.649775Z",
+  "cells": {
+    "B0_classifieds": {
+      "n_common_tasks": 234,
+      "modes_retained": [
+        "dom",
+        "som",
+        "vision",
+        "phantom_text",
+        "phantom_som"
+      ],
+      "modes_skipped": [
+        "phantom_prompt: only 4 ep (< 50) \u2014 partial/aborted archive"
+      ],
+      "g1_label_entropy": {
+        "n_tasks": 234,
+        "label_histogram": {
+          "dom": 185,
+          "phantom_text": 7,
+          "vision": 11,
+          "som": 29,
+          "phantom_som": 2
+        },
+        "entropy": 0.7339453883731417,
+        "entropy_threshold_log2": 0.6931471805599453,
+        "p2_viable": true,
+        "majority_mode": "dom",
+        "majority_baseline_sr_pct": 14.957264957264957
+      },
+      "g2_anchor_stability": {
+        "n_resamples": 100,
+        "n_folds": 5,
+        "full_dataset_best_single_mode": "som",
+        "full_dataset_mode_rank": [
+          "som",
+          "phantom_text",
+          "vision",
+          "phantom_som",
+          "dom"
+        ],
+        "kendall_tau_mean": 0.6964000000000001,
+        "kendall_tau_stable": false,
+        "anchor_winner_counts": {
+          "som": 500
+        },
+        "majority_winner": "som",
+        "majority_winner_fraction": 1.0,
+        "anchor_flicker_fallback_needed": true
+      },
+      "g4_noise_sd": {
+        "n_bootstrap": 1000,
+        "anchor_mode": "som",
+        "oracle_lift_mean_pp": 12.793162393162394,
+        "oracle_lift_sd_pp": 2.234975536865293,
+        "oracle_lift_p5_pp": 8.974358974358976,
+        "oracle_lift_p95_pp": 16.666666666666668,
+        "delta_h9_h10_calibrated_pp": 4.469951073730586,
+        "delta_raise_needed": true
+      }
+    },
+    "B0_reddit": {
+      "n_common_tasks": 210,
+      "modes_retained": [
+        "dom",
+        "som",
+        "vision",
+        "phantom_text",
+        "phantom_prompt",
+        "phantom_som"
+      ],
+      "modes_skipped": [],
+      "g1_label_entropy": {
+        "n_tasks": 210,
+        "label_histogram": {
+          "dom": 181,
+          "som": 10,
+          "phantom_text": 8,
+          "phantom_prompt": 4,
+          "phantom_som": 2,
+          "vision": 5
+        },
+        "entropy": 0.6063074960019279,
+        "entropy_threshold_log2": 0.6931471805599453,
+        "p2_viable": false,
+        "majority_mode": "dom",
+        "majority_baseline_sr_pct": 11.428571428571429
+      },
+      "g2_anchor_stability": {
+        "n_resamples": 100,
+        "n_folds": 5,
+        "full_dataset_best_single_mode": "phantom_som",
+        "full_dataset_mode_rank": [
+          "phantom_som",
+          "phantom_text",
+          "som",
+          "dom",
+          "phantom_prompt",
+          "vision"
+        ],
+        "kendall_tau_mean": 0.8405333333333334,
+        "kendall_tau_stable": true,
+        "anchor_winner_counts": {
+          "phantom_som": 292,
+          "phantom_text": 199,
+          "som": 9
+        },
+        "majority_winner": "phantom_som",
+        "majority_winner_fraction": 0.584,
+        "anchor_flicker_fallback_needed": false
+      },
+      "g4_noise_sd": {
+        "n_bootstrap": 1000,
+        "anchor_mode": "phantom_som",
+        "oracle_lift_mean_pp": 10.815714285714286,
+        "oracle_lift_sd_pp": 2.1743443498174053,
+        "oracle_lift_p5_pp": 7.142857142857142,
+        "oracle_lift_p95_pp": 14.285714285714288,
+        "delta_h9_h10_calibrated_pp": 4.348688699634811,
+        "delta_raise_needed": true
+      }
+    }
+  }
+}

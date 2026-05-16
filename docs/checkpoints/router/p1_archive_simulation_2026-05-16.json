@@ -1,0 +1,257 @@
+{
+  "run_date": "2026-05-16T09:21:15.511002Z",
+  "cells": {
+    "B0_classifieds": {
+      "n_tasks": 234,
+      "modes_retained": [
+        "dom",
+        "som",
+        "vision",
+        "phantom_text",
+        "phantom_som"
+      ],
+      "modes_skipped": [
+        "phantom_prompt: only 4 ep (< 50)"
+      ],
+      "results": {
+        "P1_v3_6mode": {
+          "sr_pct": 15.811965811965813,
+          "n_eval": 234,
+          "routed_counts": {
+            "dom": 111,
+            "phantom_som": 123
+          },
+          "per_mode_sr": {
+            "dom": [
+              16.216216216216218,
+              111
+            ],
+            "phantom_som": [
+              15.447154471544716,
+              123
+            ]
+          },
+          "missing_mode_count": 0
+        },
+        "P1_3mode": {
+          "sr_pct": 14.957264957264957,
+          "n_eval": 234,
+          "routed_counts": {
+            "dom": 234
+          },
+          "per_mode_sr": {
+            "dom": [
+              14.957264957264957,
+              234
+            ]
+          },
+          "missing_mode_count": 0
+        },
+        "always_dom": {
+          "sr_pct": 14.957264957264957,
+          "n_eval": 234,
+          "routed_counts": {
+            "dom": 234
+          },
+          "per_mode_sr": {
+            "dom": [
+              14.957264957264957,
+              234
+            ]
+          },
+          "missing_mode_count": 0
+        },
+        "always_som": {
+          "sr_pct": 23.076923076923077,
+          "n_eval": 234,
+          "routed_counts": {
+            "som": 234
+          },
+          "per_mode_sr": {
+            "som": [
+              23.076923076923077,
+              234
+            ]
+          },
+          "missing_mode_count": 0
+        },
+        "always_phantom_som": {
+          "sr_pct": 15.811965811965813,
+          "n_eval": 234,
+          "routed_counts": {
+            "phantom_som": 234
+          },
+          "per_mode_sr": {
+            "phantom_som": [
+              15.811965811965813,
+              234
+            ]
+          },
+          "missing_mode_count": 0
+        },
+        "oracle": {
+          "sr_pct": 35.8974358974359,
+          "n_eval": 234,
+          "routed_counts": {
+            "dom": 185,
+            "phantom_text": 7,
+            "vision": 11,
+            "som": 29,
+            "phantom_som": 2
+          },
+          "per_mode_sr": {
+            "dom": [
+              18.91891891891892,
+              185
+            ],
+            "phantom_text": [
+              100.0,
+              7
+            ],
+            "vision": [
+              100.0,
+              11
+            ],
+            "som": [
+              100.0,
+              29
+            ],
+            "phantom_som": [
+              100.0,
+              2
+            ]
+          },
+          "missing_mode_count": 0
+        }
+      }
+    },
+    "B0_reddit": {
+      "n_tasks": 210,
+      "modes_retained": [
+        "dom",
+        "som",
+        "vision",
+        "phantom_text",
+        "phantom_prompt",
+        "phantom_som"
+      ],
+      "modes_skipped": [],
+      "results": {
+        "P1_v3_6mode": {
+          "sr_pct": 14.285714285714286,
+          "n_eval": 210,
+          "routed_counts": {
+            "dom": 54,
+            "phantom_som": 156
+          },
+          "per_mode_sr": {
+            "dom": [
+              16.666666666666668,
+              54
+            ],
+            "phantom_som": [
+              13.461538461538462,
+              156
+            ]
+          },
+          "missing_mode_count": 0
+        },
+        "P1_3mode": {
+          "sr_pct": 11.428571428571429,
+          "n_eval": 210,
+          "routed_counts": {
+            "dom": 210
+          },
+          "per_mode_sr": {
+            "dom": [
+              11.428571428571429,
+              210
+            ]
+          },
+          "missing_mode_count": 0
+        },
+        "always_dom": {
+          "sr_pct": 11.428571428571429,
+          "n_eval": 210,
+          "routed_counts": {
+            "dom": 210
+          },
+          "per_mode_sr": {
+            "dom": [
+              11.428571428571429,
+              210
+            ]
+          },
+          "missing_mode_count": 0
+        },
+        "always_som": {
+          "sr_pct": 11.904761904761905,
+          "n_eval": 210,
+          "routed_counts": {
+            "som": 210
+          },
+          "per_mode_sr": {
+            "som": [
+              11.904761904761905,
+              210
+            ]
+          },
+          "missing_mode_count": 0
+        },
+        "always_phantom_som": {
+          "sr_pct": 14.285714285714286,
+          "n_eval": 210,
+          "routed_counts": {
+            "phantom_som": 210
+          },
+          "per_mode_sr": {
+            "phantom_som": [
+              14.285714285714286,
+              210
+            ]
+          },
+          "missing_mode_count": 0
+        },
+        "oracle": {
+          "sr_pct": 25.238095238095237,
+          "n_eval": 210,
+          "routed_counts": {
+            "dom": 181,
+            "som": 10,
+            "phantom_text": 8,
+            "phantom_prompt": 4,
+            "phantom_som": 2,
+            "vision": 5
+          },
+          "per_mode_sr": {
+            "dom": [
+              13.259668508287293,
+              181
+            ],
+            "som": [
+              100.0,
+              10
+            ],
+            "phantom_text": [
+              100.0,
+              8
+            ],
+            "phantom_prompt": [
+              100.0,
+              4
+            ],
+            "phantom_som": [
+              100.0,
+              2
+            ],
+            "vision": [
+              100.0,
+              5
+            ]
+          },
+          "missing_mode_count": 0
+        }
+      }
+    }
+  }
+}
