@@ -1,17 +1,16 @@
-# B0 Phantom-SoM (§103) — WA reddit (106 task)
-# Generalization test: representation routing 在 text-only WA benchmark 是否生效
+# B0 Phantom-SoM (§103) — WA shopping_admin (182 task)
 
 defaults:
   - configs/exp_v2_wa_base.yaml
 
 experiment:
   phase: "phase1"
-  name: "B0_phantom_wa_reddit"
+  name: "B0_phantom_wa_shopping_admin"
 
 task:
-  include_sites: ["reddit"]
+  include_sites: ["shopping_admin"]
   site_configs:
-    reddit: "external/visualwebarena/config_files/wa/test_reddit.raw.json"
+    shopping_admin: "external/visualwebarena/config_files/wa/test_shopping_admin.raw.json"
 
 runtime:
   max_steps: 30
@@ -44,5 +43,3 @@ metrics:
   energy:
     enabled: false
 
-baselines:
-  run_b0: false

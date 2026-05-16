@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
-# queue_pilot_t0.sh — B-37 Phase A pilot launcher (T=0 + RNG seeding sanity gate)
+# queue_pilot_t0.sh — DEPRECATED (B-266 fix 2026-05-16, A1.7)
+#
+# Pilot abandoned per user directive 2026-05-16 — pilot superseded by Phase 1a
+# fresh fire on A100 self-host. Pilot config yamls (exp_v2_B0_dom_pilot_T0_*.yaml)
+# deleted. This script refuses to fire to prevent accidental pilot re-launch.
+# Archive pilot data on results/visualwebarena/phase1/B0_*_pilot_T0_* preserved.
+echo "[queue_pilot_t0.sh] DEPRECATED (B-266, A1.7) — pilot yamls deleted 2026-05-16."
+echo "                    Pilot superseded by Phase 1a fresh fire (Pass-1 36 cond + Pass-2 6 router)."
+echo "                    Archive pilot results preserved at results/.../B0_*_pilot_T0_*; do not re-fire."
+exit 2
+
+# --- legacy launcher body (unreachable, kept for git blame trace) ---
+# B-37 Phase A pilot launcher (T=0 + RNG seeding sanity gate)
 #
 # Runs B0 DOM pilot on subset (30 tasks/site) with new T=0 + torch seed code path.
 # Compares pilot SR vs existing paper-grade DOM SR to decide:

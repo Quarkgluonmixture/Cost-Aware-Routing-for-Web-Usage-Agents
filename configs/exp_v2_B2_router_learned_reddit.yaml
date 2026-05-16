@@ -1,5 +1,11 @@
 # B2 (Gemma3-VL 4B local cross-family) learned router reddit — Phase 1a Pass-2
 # v7 walk-back 2026-05-16. See `exp_v2_B0_router_learned_classifieds.yaml` header.
+#
+# 🚧 LR ARTIFACT BLOCKED (B-268 audit 2026-05-16, A1.7): B2 (Gemma3-VL) lr_model_path
+# artifact MISSING. To unblock: run
+#   .venv/bin/python3 scripts/analysis/train_l1_router.py --baseline B2 --site reddit
+# after Pass-1 B2 cells land. Runner dispatch logic ready (main.py:1017-1059); B0/B1
+# artifacts already exist (May 16 12:28 land).
 
 defaults:
   - configs/exp_v2_base.yaml
@@ -34,7 +40,5 @@ backends:
   default_backend: "local_gemma"
   local_gemma:
     max_new_tokens: 4096
-    min_free_vram_gb: 0
+    temperature: 0.0  # B-271 (2026-05-16, A1.7): explicit pin for paper-grade audit parity with B0
 
-baselines:
-  run_b0: false

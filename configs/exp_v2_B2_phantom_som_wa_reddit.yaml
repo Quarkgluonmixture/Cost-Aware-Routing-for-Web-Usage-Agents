@@ -1,18 +1,18 @@
-# B2 Phantom-SoM — WA shopping
+# B2 Phantom-SoM — WA reddit
 # Cross-family 3rd baseline: google/gemma-3-4b-it (advisor 2026-05-14, 笔记 §138).
-# Mirrors B1 phantom_wa_shopping; only backend differs.
+# Mirrors B1 phantom_wa_reddit; only backend differs.
 
 defaults:
   - configs/exp_v2_wa_base.yaml
 
 experiment:
   phase: "phase1"
-  name: "B2_phantom_wa_shopping"
+  name: "B2_phantom_wa_reddit"
 
 task:
-  include_sites: ["shopping"]
+  include_sites: ["reddit"]
   site_configs:
-    shopping: "external/visualwebarena/config_files/wa/test_shopping.raw.json"
+    reddit: "external/visualwebarena/config_files/wa/test_reddit.raw.json"
 
 runtime:
   max_steps: 30
@@ -26,7 +26,5 @@ backends:
   default_backend: "local_gemma"
   local_gemma:
     max_new_tokens: 4096
-    min_free_vram_gb: 0
+    temperature: 0.0  # B-271 (2026-05-16, A1.7): explicit pin for paper-grade audit parity with B0
 
-baselines:
-  run_b0: false

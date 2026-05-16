@@ -54,16 +54,16 @@ SCORED_COUNT[reddit]=208
 RESULTS_ROOT="results/visualwebarena/phase1"
 
 # Per-mode → condition_id mapping (P79 internal labels).
-# dom/som/vision → phase1_{mode}_router_0
-# phantom_text → phase1_phantom_dom_router_0 (legacy alias per configs)
-# phantom_som  → phase1_phantom_som_router_0
-# phantom_prompt → phase1_phantom_prompt_router_0
+# Post B-261 fix (2026-05-16, A1.7): phantom_text is canonical; phantom_dom
+# legacy alias retired from conditions.py + yaml. Archive run dirs named
+# phase1_phantom_dom_router_0/ stay historical; new fires write phantom_text.
+# Lookup: dom/som/vision → phase1_{mode}_router_0
+#         phantom_text → phase1_phantom_text_router_0  (B-261: canonical)
+#         phantom_som  → phase1_phantom_som_router_0
+#         phantom_prompt → phase1_phantom_prompt_router_0
 condition_id_for_mode() {
   local m=$1
-  case "$m" in
-    phantom_text) echo "phase1_phantom_dom_router_0" ;;
-    *)            echo "phase1_${m}_router_0" ;;
-  esac
+  echo "phase1_${m}_router_0"
 }
 
 count_episodes() {

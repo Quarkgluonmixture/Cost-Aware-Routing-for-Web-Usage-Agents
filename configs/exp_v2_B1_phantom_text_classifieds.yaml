@@ -3,13 +3,8 @@
 # B1 4B 本地推理；与 B1_phantom_<site> 仅差 system prompt（DOM vs SoM）
 #
 # Created 2026-05-14 (codex /stress v6 C7): canonical phantom_text name for cls.
-# Previously queue_phantom_text.sh fell back to legacy exp_v2_B1_phantom_dom_classifieds.yaml,
-# leaving run_id/config name as phantom_dom — provenance confusion. This file is the
-# canonical phantom_text classifieds config; legacy phantom_dom alias retained for
 # back-compat run-dir resolution but new fires use this name.
 #
-# Note: observation_mode value kept as "phantom_dom" (legacy mode alias) so
-# condition_id stays phase1_phantom_dom_router_0 — paper-grade run dirs already
 # use this path. The mode alias != the config name.
 
 defaults:
@@ -28,13 +23,11 @@ runtime:
 
 variables:
   primary:
-    observation_mode: ["phantom_dom"]
+    observation_mode: ["phantom_text"]
 
 backends:
   default_backend: "local_4b"
   local_4b:
     max_new_tokens: 4096
-    min_free_vram_gb: 0
+    temperature: 0.0  # B-271 (2026-05-16, A1.7): explicit pin for paper-grade audit parity with B0
 
-baselines:
-  run_b0: false

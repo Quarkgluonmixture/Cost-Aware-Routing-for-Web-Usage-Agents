@@ -62,28 +62,18 @@ if [[ "${BENCHMARK}" == "wa" && "${SITE}" != "reddit" && "${SITE}" != "shopping"
   echo "Invalid WA site: ${SITE}" >&2; exit 2
 fi
 
-# Build config name. Prefer the new phantom_text YAML; fall back to phantom_dom
-# YAML if the rename hasn't propagated yet (e.g. live run still on disk under
-# the legacy name).
+# Build config name. Post B-261 fix (2026-05-16, A1.7): phantom_text is canonical;
+# legacy phantom_dom yaml retired. Fallback removed since conditions.py now raises
+# ValueError on phantom_dom (fail-loud), and the legacy yaml has been deleted.
 # VWA: exp_v2_<baseline>_phantom_text_<site>.yaml
 # WA:  exp_v2_<baseline>_phantom_text_wa_<site>.yaml
-CFG_BASE_NEW="${BASELINE}_phantom_text"
-CFG_BASE_LEGACY="${BASELINE}_phantom_dom"
-[[ "${BENCHMARK}" == "wa" ]] && CFG_BASE_NEW="${CFG_BASE_NEW}_wa" && CFG_BASE_LEGACY="${CFG_BASE_LEGACY}_wa"
-CFG_NAME_NEW="${CFG_BASE_NEW}_${SITE}"
-CFG_NAME_LEGACY="${CFG_BASE_LEGACY}_${SITE}"
-CONFIG_NEW="${REPO_DIR}/configs/exp_v2_${CFG_NAME_NEW}.yaml"
-CONFIG_LEGACY="${REPO_DIR}/configs/exp_v2_${CFG_NAME_LEGACY}.yaml"
+CFG_NAME="${BASELINE}_phantom_text"
+[[ "${BENCHMARK}" == "wa" ]] && CFG_NAME="${CFG_NAME}_wa"
+CFG_NAME="${CFG_NAME}_${SITE}"
+CONFIG="${REPO_DIR}/configs/exp_v2_${CFG_NAME}.yaml"
 
-if [[ -f "${CONFIG_NEW}" ]]; then
-  CONFIG="${CONFIG_NEW}"
-  CFG_NAME="${CFG_NAME_NEW}"
-elif [[ -f "${CONFIG_LEGACY}" ]]; then
-  CONFIG="${CONFIG_LEGACY}"
-  CFG_NAME="${CFG_NAME_LEGACY}"
-  echo "[phantom_text] using legacy phantom_dom config: ${CONFIG_LEGACY}"
-else
-  echo "[phantom_text][error] Config not found: ${CONFIG_NEW} or ${CONFIG_LEGACY}" >&2
+if [[ ! -f "${CONFIG}" ]]; then
+  echo "[phantom_text][error] Config not found: ${CONFIG}" >&2
   exit 1
 fi
 

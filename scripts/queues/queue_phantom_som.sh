@@ -56,7 +56,7 @@ fi
 # Build config name
 # VWA: exp_v2_<baseline>_phantom_som_<site>.yaml
 # WA:  exp_v2_<baseline>_phantom_som_wa_<site>.yaml
-# B-243 fix (2026-05-16, A1.7): renamed phantom_<site>.yaml → phantom_som_<site>.yaml
+# B-272 fix (2026-05-16, A1.7): renamed phantom_<site>.yaml → phantom_som_<site>.yaml
 # to align with sibling phantom_text / phantom_prompt naming pattern.
 CFG_NAME="${BASELINE}_phantom_som"
 [[ "${BENCHMARK}" == "wa" ]] && CFG_NAME="${CFG_NAME}_wa"

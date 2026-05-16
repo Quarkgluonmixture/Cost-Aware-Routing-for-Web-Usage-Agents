@@ -1,8 +1,6 @@
 # B0 P-text ablation (§103) — WA reddit (106 task)
 # Generalization test: representation routing 在 text-only WA benchmark 是否生效
 
-# Note: observation_mode value kept as "phantom_dom" (legacy alias) so condition_id
-# stays phase1_phantom_dom_router_0 — paper-grade run dirs already use this path.
 
 defaults:
   - configs/exp_v2_wa_base.yaml
@@ -22,7 +20,7 @@ runtime:
 
 variables:
   primary:
-    observation_mode: ["phantom_dom"]
+    observation_mode: ["phantom_text"]
 
 backends:
   default_backend: "api_strong"
@@ -47,5 +45,3 @@ metrics:
   energy:
     enabled: false
 
-baselines:
-  run_b0: false

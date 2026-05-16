@@ -2,8 +2,6 @@
 # DOM prompt + SoM marks 文本 + 无图，与 phantom_som 唯一差: system prompt
 # 用于 disambiguate prompt vs representation 在 cls 上是否成立 H2'
 
-# Note: observation_mode value kept as "phantom_dom" (legacy alias) so condition_id
-# stays phase1_phantom_dom_router_0 — paper-grade run dirs already use this path.
 
 defaults:
   - configs/exp_v2_base.yaml
@@ -21,7 +19,7 @@ runtime:
 
 variables:
   primary:
-    observation_mode: ["phantom_dom"]
+    observation_mode: ["phantom_text"]
 
 backends:
   default_backend: "api_strong"
@@ -46,5 +44,3 @@ metrics:
   energy:
     enabled: false
 
-baselines:
-  run_b0: false

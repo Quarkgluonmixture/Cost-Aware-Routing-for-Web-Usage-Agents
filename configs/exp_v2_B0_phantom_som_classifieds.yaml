@@ -1,16 +1,16 @@
-# B-37 Pilot: B0 DOM shopping 30 tasks at T=0 + RNG seeding
-# Sister config to exp_v2_B0_dom_pilot_T0_classifieds.yaml.
+# B0 Phantom-SoM (§25 / §100/§101) — classifieds
+# Phantom-SoM = SoM prompt + SoM marks 文本 + 无图（试 mirage effect）
+# 与 B0_3mode_classifieds.yaml 配套：仅跑 phantom_som condition
 
 defaults:
   - configs/exp_v2_base.yaml
 
 experiment:
   phase: "phase1"
-  name: "B0_dom_pilot_T0_shopping"
+  name: "B0_phantom_classifieds"
 
 task:
-  include_sites: ["shopping"]
-  max_tasks_per_site: 30
+  include_sites: ["classifieds"]
 
 runtime:
   max_steps: 30
@@ -18,7 +18,7 @@ runtime:
 
 variables:
   primary:
-    observation_mode: ["dom"]
+    observation_mode: ["phantom_som"]
 
 backends:
   default_backend: "api_strong"
@@ -27,7 +27,6 @@ backends:
     api_name: "qwen.qwen3-vl-235b-a22b"
     base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
     temperature: 0.0
-    top_p: 1.0
     max_new_tokens: 4096
     max_image_payload_bytes: 5242880
     image_max_size: 1280
@@ -44,5 +43,3 @@ metrics:
   energy:
     enabled: false
 
-baselines:
-  run_b0: false

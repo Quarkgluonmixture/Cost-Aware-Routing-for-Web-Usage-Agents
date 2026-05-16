@@ -109,6 +109,11 @@ backends:
     path: "Qwen/Qwen3-VL-4B-Instruct"
     quantization: "none"
     device: "cuda"
+    # B-270 fix (2026-05-16, A1.7): default OOM safety gate. Pre-fix B1 per-yamls
+    # all set 0 (disable) → silent OOM mid-episode contamination risk. 4B-class
+    # model bf16 ~10GB; A100-PCIE-40GB margin 12GB allows VWA Docker + watchdog
+    # headroom. Per-condition override allowed but discouraged.
+    min_free_vram_gb: 12
     # Default raised 512 → 4096 (§97 QV-9/LQ-1): 512 truncates typical
     # thought+JSON envelope. Per-experiment configs may override (e.g.
     # B1 baseline uses 384 for GPU-time tradeoff).
@@ -133,6 +138,8 @@ backends:
     revision: "093f9f388b31de276ce2de164bdc2081324b9767"
     quantization: "none"
     device: "cuda"
+    # B-270 fix (2026-05-16, A1.7): parity with local_4b min_free_vram_gb default.
+    min_free_vram_gb: 12
     max_new_tokens: 4096
     temperature: 0.0       # greedy (do_sample=False in the agent); kept for config symmetry
     mock_mode: false
@@ -166,7 +173,3 @@ backends:
     use_glm_fallback: false
     glm_config: ".auth/glm"
 
-baselines:
-  run_b0: false
-  b0_backend: "api_strong"
-  b0_observation_mode: "som"

@@ -46,5 +46,3 @@ metrics:
   energy:
     enabled: false
 
-baselines:
-  run_b0: false

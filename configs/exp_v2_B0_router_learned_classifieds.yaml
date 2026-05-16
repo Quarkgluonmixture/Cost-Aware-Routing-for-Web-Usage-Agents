@@ -3,9 +3,9 @@
 # This config emits 1 router condition per cell (vs 6 per-mode in baseline pass).
 # obs_mode="learned" sentinel signals runner to dispatch through LR predictor.
 #
-# ⚠️ RUNTIME LR INTEGRATION TODO: runner must accept observation_mode="learned"
-# and route through trained LR per task. See `proposals_v7.md` §3 + TODO in
-# `p79/experiment/runner/main.py` (pending separate session).
+# ✅ RUNTIME LR INTEGRATION DONE (B-268 verify 2026-05-16, A1.7): runner main.py:1017 accepts observation_mode="learned"
+# and routes through trained LR per task. See `proposals_v7.md` §3 + runner main.py:1011-1059 dispatch logic. Prerequisite
+# train_l1_router.py artifact verified at lr_model_path (May 16 12:28 land).
 #
 # Launch via: bash scripts/queues/queue_router_learned.sh B0 classifieds
 # Orchestrated by: queue_phase1_router_paper_grade.sh
@@ -39,7 +39,7 @@ router:
   enabled: true
   kind: "learned"
   # LR train artifact (must exist before Pass-2 launch); generated post-Pass-1
-  # from per-cell oracle labels via scripts/analysis/train_l1_router.py (TODO).
+  # from per-cell oracle labels via scripts/analysis/train_l1_router.py (✅ artifact exists 2026-05-16).
   lr_model_path: "results/phantom_paper/l1_router/B0_classifieds_lr.pkl"
   # Safe fallback if LR predicts mode not in observed cell archive (e.g.
   # phantom_prompt on cls); paper §6 reports invalid predictions separately.
@@ -69,5 +69,3 @@ metrics:
   energy:
     enabled: false
 
-baselines:
-  run_b0: false

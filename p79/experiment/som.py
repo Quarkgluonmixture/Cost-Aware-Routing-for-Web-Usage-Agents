@@ -267,10 +267,24 @@ def prepare_observation_for_mode(
     obs_text = getattr(obs, "text", "") or ""
 
     if mode == "vision":
+        # B-265 fix (2026-05-16, A1.7): paper §3 contract "vision = raw screenshot
+        # only" is paper-grade-defensible ONLY if vision episodes provably contained
+        # an image. Pre-fix the obs.image=None silent path made vision a text-shaped
+        # mode whenever screenshot capture failed (empty viewport / VWA Docker
+        # latency / payload drop). Fail-loud — episode marked image_missing; reviewer
+        # audit can prove image-only contract via condition_meta + step_record.
+        image = getattr(obs, "image", None)
+        if image is None:
+            raise ValueError(
+                "Vision mode requires image observation but obs.image is None. "
+                "Paper §3 'vision = raw screenshot only' contract violated. "
+                "Diagnose: screenshot capture / empty viewport / VWA Docker latency "
+                "/ payload drop. Episode will fail fast (B-265 fix 2026-05-16)."
+            )
         return SomResult(
             som_text="",
             marked_image_path=None,
-            marked_image=getattr(obs, "image", None),
+            marked_image=image,
             degraded_som=False,
             mark_count=0,
         )

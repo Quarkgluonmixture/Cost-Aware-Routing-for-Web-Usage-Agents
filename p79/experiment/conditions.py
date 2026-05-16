@@ -78,10 +78,43 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
     conditions: List[ConditionSpec] = []
 
     if phase == "phase1":
-        # Flat 3-mode design: dom / som / vision (+ phantom_text / phantom_prompt / phantom_som).
+        # Flat 6-mode design: dom / som / vision / phantom_som / phantom_text / phantom_prompt.
         # "som" implies SOM_MARKS + marked image; "vision" implies raw screenshot only.
-        # som_on is derived (True only when mode == "som").
+        # som_on is derived (True only when mode == "som"). phantom_* modes are non-SoM
+        # variants probing the phantom routing space sibling-arm property (paper §3 hook).
+        # B-261 fix (2026-05-16, A1.7): legacy alias "phantom_dom" deprecated → canonical
+        # "phantom_text". Reading phantom_dom from yaml raises ValueError to fail-loud and
+        # prevent resume:true × legacy alias silent overwrite of phantom_text data (the
+        # cross-AI cycle attack vector). Existing archive run_dirs named
+        # phase1_phantom_dom_router_0 stay historical; new fires use phantom_text canonical.
         obs_values = [str(x) for x in primary.get("observation_mode", ["dom", "som", "vision"])]
+        _VALID_OBS_MODES = {
+            "dom", "som", "vision",
+            "phantom_som", "phantom_text", "phantom_prompt",
+            "learned",  # v7 sentinel for learned router dispatch (runner main.py:1017)
+        }
+        _DEPRECATED_OBS_MODES = {
+            "phantom_dom": "phantom_text",  # B-261 (2026-05-16): legacy alias retired
+            "dom_only": None,  # B-263 (2026-05-16): Phase 1 v1 router design, never paper-1
+            "hybrid": None,    # B-263 (2026-05-16): Phase 1 v1 router design, never paper-1
+        }
+        for _mode in obs_values:
+            if _mode in _DEPRECATED_OBS_MODES:
+                _replacement = _DEPRECATED_OBS_MODES[_mode]
+                _hint = (
+                    f"use canonical '{_replacement}' instead"
+                    if _replacement
+                    else "this mode was retired and has no replacement in paper-1 scope"
+                )
+                raise ValueError(
+                    f"observation_mode '{_mode}' is deprecated/retired in conditions.py; {_hint}. "
+                    f"Valid modes: {sorted(_VALID_OBS_MODES)}"
+                )
+            if _mode not in _VALID_OBS_MODES:
+                raise ValueError(
+                    f"Unknown observation_mode '{_mode}'. "
+                    f"Valid: {sorted(_VALID_OBS_MODES)}"
+                )
 
         # Extract model_name from backend config for condition metadata (helps distinguish B0/B1/B2).
         backend_cfg = cfg.get("backends", {}).get(backend_id, {})
@@ -262,8 +295,21 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
     else:
         raise ValueError(f"Unsupported experiment.phase={phase}, expected one of phase1/phase2/phase3")
 
+    # B-269 fix (2026-05-16, A1.7): `baselines.run_b0` is dead code in paper-1
+    # 3-baseline architecture (B0/B1/B2 as top-level cells). It was a Phase 1 v1
+    # design artifact ("B1-only + B0 strong upper bound"). Raise on True to prevent
+    # accidental fire from stale yaml or copy-paste error producing duplicate
+    # b0_strong_upper_bound conditions alongside the regular B0 cell.
     baselines = cfg.get("baselines", {})
     if baselines.get("run_b0", False):
+        if phase == "phase1":
+            raise ValueError(
+                "baselines.run_b0=True is retired for Phase 1a 3-baseline "
+                "architecture (B0/B1/B2 as top-level cells). The flag was a "
+                "Phase 1 v1 design artifact. Use per-condition yamls per "
+                "baseline instead (configs/exp_v2_B0_*.yaml, B1_*, B2_*)."
+            )
+        # Phase 2/3 may still want the b0 upper-bound condition (paper-2 substrate).
         b0_backend = baselines.get("b0_backend", "api_strong")
         conditions.append(
             ConditionSpec(
