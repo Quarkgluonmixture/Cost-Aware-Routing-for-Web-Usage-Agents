@@ -79,7 +79,11 @@ def _mock_cfg(tmp_path: Path) -> dict:
             "local_4b": {
                 "type": "local_qwen",
                 "mock_mode": True,
-                "dom_mode": "heuristic",
+                # B-408 (/stress A1.2 v8 Mode A+B+C P1-1 3-AI overlap OOB,
+                # 2026-05-16): canonical "heuristic_only" (was: "heuristic"
+                # → silently no-op on B0/B1 because backends only matched
+                # the full string). Factory now enforces enum at dispatch.
+                "dom_mode": "heuristic_only",
             },
         },
         "baselines": {"run_b0": False},

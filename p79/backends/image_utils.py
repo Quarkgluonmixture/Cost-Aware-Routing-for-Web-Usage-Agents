@@ -58,6 +58,12 @@ def encode_image_data_url(
     quality_start: int = 85,
     min_quality: int = 20,
 ) -> Dict[str, Any]:
+    # B-416 (/stress A1.2 v8 Mode A P2-4, 2026-05-16): remove redundant
+    # `.encode("utf-8")` on hot path. `b64` is already an ASCII-only string
+    # (`_encode_jpeg_base64` returns `bytes.decode("ascii")`), so
+    # `len(b64.encode("utf-8")) == len(b64)`. Removing the redundant encode
+    # saves ~6-8 per-step calls × ~80k steps per condition = ~640k allocs
+    # across a Phase 1a fire. No behavior change.
     normalized = _normalize_image(image)
     last_img = normalized
 
@@ -71,10 +77,11 @@ def encode_image_data_url(
             img = normalized
         b64 = _encode_jpeg_base64(img, quality=quality)
         last_img = img
-        if len(b64.encode("utf-8")) <= max_payload_bytes:
+        b64_bytes = len(b64)  # ASCII string → byte length == char length
+        if b64_bytes <= max_payload_bytes:
             return {
                 "data_url": f"data:image/jpeg;base64,{b64}",
-                "payload_bytes": len(b64.encode("utf-8")),
+                "payload_bytes": b64_bytes,
                 "quality": quality,
                 "compressed": quality < quality_start or scale < 1.0,
                 "width": img.width,
@@ -97,7 +104,7 @@ def encode_image_data_url(
         final_quality = min_quality
     return {
         "data_url": f"data:image/jpeg;base64,{b64}",
-        "payload_bytes": len(b64.encode("utf-8")),
+        "payload_bytes": len(b64),  # B-416: ASCII → no .encode("utf-8")
         "quality": final_quality,
         "compressed": True,
         "width": last_img.width,

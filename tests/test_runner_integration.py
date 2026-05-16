@@ -96,12 +96,14 @@ def test_runner_and_analysis_end_to_end_with_mock_env(tmp_path):
             "local_4b": {
                 "type": "local_qwen",
                 "mock_mode": True,
-                "dom_mode": "heuristic",
+                # B-408 (/stress A1.2): canonical "heuristic_only" enum
+                "dom_mode": "heuristic_only",
             },
             "api_strong": {
                 "type": "api_proxy",
                 "mock_mode": True,
-                "dom_mode": "heuristic",
+                # B-408 (/stress A1.2): canonical "heuristic_only" enum
+                "dom_mode": "heuristic_only",
             },
         },
         # B-269 fix (2026-05-16, A1.7): baselines.run_b0=True retired for phase1.

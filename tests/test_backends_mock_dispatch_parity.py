@@ -44,13 +44,19 @@ def test_local_qwen_mock_mode_emits_canonical_scroll():
 
 
 def test_local_gemma_mock_mode_emits_canonical_scroll():
-    """B2 mock step contract — added 2026-05-14 advisor decision."""
+    """B2 mock step contract — added 2026-05-14 advisor decision.
+
+    B-415 (/stress A1.2 v8 Mode A P2-3, 2026-05-16): canonical
+    `mock_<backend_id>` naming replaces hardcoded `local_gemma_mock`.
+    Cross-baseline mock invariance tests now grep one pattern across
+    factory.MockBackend / local_qwen / local_gemma / api_proxy.
+    """
     backend = LocalGemmaBackend("b2_mock", {"type": "local_gemma", "mock_mode": True})
     action, meta = backend.step("any", obs=None, context=_ctx())
     assert action["action_type"] == "scroll"
     assert action["delta"] == [0, 0.8]
     assert meta["valid"] is True
-    assert meta["backend_type"] == "local_gemma_mock"
+    assert meta["backend_type"] == "mock_b2_mock"
 
 
 def test_api_proxy_mock_mode_emits_canonical_scroll():

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 import time
 from typing import Any, Dict, Tuple
 
 from p79.backends.base import BackendStepContext
 from p79.backends.heuristic import HeuristicDomBackend
+
+logger = logging.getLogger(__name__)
 
 
 class LocalQwenBackend:
@@ -15,6 +18,26 @@ class LocalQwenBackend:
         self.dom_mode = config.get("dom_mode", "llm")
         self._heuristic = HeuristicDomBackend()
         self._agent = None
+
+        # B-410 (/stress A1.2 v8 Mode A P1-3, 2026-05-16): yaml temperature /
+        # top_p are dead config on B1 (qwen3vl_agent.py:299 hardcodes
+        # do_sample=False). Warn loud when yaml deviates so a stale yaml temp
+        # cannot silently land. See local_gemma.py for B2 mirror.
+        _temp = config.get("temperature", 0.0)
+        _topp = config.get("top_p", 1.0)
+        if _temp != 0.0:
+            logger.warning(
+                "LocalQwenBackend yaml temperature=%s ignored — agent "
+                "hardcodes do_sample=False (greedy). Cross-baseline drift "
+                "risk: B0 (proxy) honors yaml temperature, B1/B2 don't. "
+                "Set temperature=0.0 to remove the asymmetry.", _temp,
+            )
+        if _topp != 1.0:
+            logger.warning(
+                "LocalQwenBackend yaml top_p=%s ignored — agent hardcodes "
+                "do_sample=False. Same cross-baseline drift as temperature.",
+                _topp,
+            )
 
         if not self.mock_mode:
             from p79.agents.qwen3vl_agent import Qwen3VLAgent
@@ -50,6 +73,12 @@ class LocalQwenBackend:
                     # B-84: max_obs_chars removed — the agent no longer truncates
                     # obs_text (viewport filter is the real bound).
                 },
+                # B-411 (/stress A1.2 v8 Mode A P1-4, 2026-05-16):
+                # defense-in-depth — forward paper_grade flag so any future
+                # paper-grade gate added inside Qwen3VLAgent can fire.
+                # Currently inert at the agent layer; the wire matches
+                # api_proxy.py:94 contract.
+                "paper_grade": bool(config.get("paper_grade", False)),
             }
             self._agent = Qwen3VLAgent(agent_cfg)
 
@@ -71,7 +100,12 @@ class LocalQwenBackend:
                 "input_tokens": 1,
                 "output_tokens": 1,
                 "model_calls": 1,
-                "backend_type": "local_qwen_mock",
+                # B-415 (/stress A1.2 v8 Mode A P2-3, 2026-05-16): canonical
+                # `mock_<backend_id>` naming (was: "local_qwen_mock"). See
+                # factory.MockBackend + local_gemma + api_proxy for sibling
+                # alignment. Cross-baseline mock invariance tests now grep
+                # one pattern.
+                "backend_type": f"mock_{self.backend_id}",
             }
 
         assert self._agent is not None

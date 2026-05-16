@@ -120,7 +120,11 @@ class ApiProxyBackend:
                 "input_tokens": 1,
                 "output_tokens": 1,
                 "model_calls": 1,
-                "backend_type": "api_proxy_mock",
+                # B-415 (/stress A1.2 v8 Mode A P2-3, 2026-05-16): canonical
+                # `mock_<backend_id>` naming (was: "api_proxy_mock"). Aligned
+                # with factory.MockBackend + local_qwen + local_gemma so
+                # cross-baseline mock invariance tests grep one pattern.
+                "backend_type": f"mock_{self.backend_id}",
             }
 
         assert self._agent is not None
