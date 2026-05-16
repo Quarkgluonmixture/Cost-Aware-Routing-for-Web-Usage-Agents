@@ -367,14 +367,14 @@ Sorted by **(severity × paper-impact)**. Each entry: claim → evidence → sta
 
 ---
 
-### B-26. `current_viewport_only` 0.6 overlap operator precedence bug (§80)
+### B-26. `current_viewport_only` 0.6 overlap operator precedence bug (§80) 🛠️ **FIXED 2026-04-19**
 
 - **Origin**: §80 in 实验笔记 + CLAUDE.md project knowledge
 - **File**: `external/visualwebarena/browser_env/processors.py:218` (in_viewport_ratio)
-- **Mechanism**: `overlap_w * overlap_h / w * h` 实际是 `((ow*oh)/w)*h` (operator precedence) — 阈值 0.6 形同虚设, 任何部分可见元素都被保留并给出**完整文本**.
+- **Mechanism**: upstream `overlap_w * overlap_h / w * h` 实际是 `((ow*oh)/w)*h` (operator precedence) — 阈值 0.6 形同虚设, 任何部分可见元素都被保留并给出**完整文本**.
 - **Blast radius**: affects all DOM/SoM 模式 (Vision 不受影响 — 不靠 AXTree).
-- **Status**: 🛠️ **NOT FIXED BY DESIGN** (CLAUDE.md "不修(上游代码 + 无完美阈值 + 不影响纵向对比)")
-- **Paper impact**: Section 4 cite as known DOM information advantage source; explains why DOM SR > Vision SR partly artifact-driven.
+- **Status**: 🛠️ **FIXED 2026-04-19** (commit `3f9ceca` on VWA submodule branch `p79-patches`). One-line paren fix: `ratio = (overlap_w * overlap_h) / (width * height)`. All B0+B1 DOM/SoM conditions re-run after fix (§80 decision). Earlier classification "NOT_FIXED_BY_DESIGN" superseded by /stress A1.18 audit 2026-05-16 (gemini OOB catch confirmed by codex F8): code had been fixed but paper §4.X.5 prose + this catalog row remained stale until A1.18 sweep.
+- **Paper impact**: Section 4.X.5 prose rewritten 2026-05-16 to reflect FIXED status; §1 hero claim no longer depends on viewport bug as DOM-advantage confound source.
 
 ---
 
@@ -614,7 +614,7 @@ Hover and Clear actions had 0 cases collected (VWA agents almost never use these
 | B-14 AXTree drift same URL | ❌ self-verified | (scroll viewport prune) | — | — | **NONE** |
 | B-19 cross-step anomaly | ⚠️ redundant | 353 ep (overlap B-11) | (de-dup) | — | **NONE** |
 | B-24/25/27 design notes | ✅ static | — | — | Section 4 cite | **NONE** |
-| B-26 §80 in_viewport_ratio | 🛠️ NO_FIX | all DOM | (upstream) | Section 4 cite | **NONE** |
+| B-26 §80 in_viewport_ratio | 🛠️ **FIXED 2026-04-19** | all DOM/SoM | commit `3f9ceca` | Section 4.X.5 (rewritten 2026-05-16) | **DONE** |
 | B-28 scroll direction | 🛠️ MITIGATED (§67) | partial B0 | (schema fix done) | Section 4 cite | **NONE** |
 | B-29 delete signal missing | 🛠️ NO_FIX | ~10% cls | (require_reset+program_html mitigates) | Section 4 cite | **NONE** |
 | B-30 searchbox-no-type | ⚠️ partial retract → B-33c | 19.4% click-loop | shared with B-01 (Cluster 1) | Section 4 cite | **A via B-33c** |
@@ -1614,7 +1614,7 @@ Codex 10 findings (4 P0 / 3 P1 / 3 P2). Gemini 7 findings (2 P0 / 2 P1 / 1 P2 + 
 | ⚠️ **DISPUTED** | 0 | — |
 | ❌ **NOT_A_BUG** | 4 | B-12 / B-13 / B-14 / B-27 |
 | 🔄 **UNVERIFIED** | 0 | All Phase A entries CONFIRMED via static read |
-| 🛠️ **FIXED** | ~53 | B-10 (§105) + B-26 (NOT FIXED BY DESIGN) + B-28 (MITIGATED) + B-29 (NOT FIXED BY DESIGN) + B-38 (§116) + B-81a-h (HPC porting umbrella, 8 sub-classes) + Phase 0 historical (B-39 to B-80, including umbrella sub-entries) + Phase A patches via commits 3c15cd7 onwards |
+| 🛠️ **FIXED** | ~54 | B-10 (§105) + B-26 (FIXED 2026-04-19 commit `3f9ceca`) + B-28 (MITIGATED) + B-29 (NOT FIXED BY DESIGN) + B-38 (§116) + B-81a-h (HPC porting umbrella, 8 sub-classes) + Phase 0 historical (B-39 to B-80, including umbrella sub-entries) + Phase A patches via commits 3c15cd7 onwards |
 
 **Pre-rerun rule reaffirmed**: All 🛠️ FIXED bugs must have their fix in code at HEAD before
 16-cell rerun launch (笔记 §116 / pre_rerun_audit.md §F). UNVERIFIED entries have been
@@ -2392,3 +2392,118 @@ These 5 bugs are paper-1 out-of-scope (mechanism deferred); if paper-2 mechanism
 **Next available B-number**: B-280+.
 
 **Phase 1a fire green-light (per user Q11)**: all 12 P0+P1 fix landed + smoke verified (pytest 16/16 + conditions.py enum + som.py vision raise + base.yaml deep-merge inheritance)。Remaining advisor blocker: B-262 (glm_fallback) per `parse_advisor_pending.md` Thread 1。
+
+---
+
+## /stress A1.8 fix-batch — schema + JSONL + dedup substrate (2026-05-16)
+
+Phase 1a fire prep audit per phase1_plan §A1 ladder item 8。3-AI cross-AI cycle (Claude Mode A 9 + codex Mode B 7 + gemini Mode C 4 / 18 unique after dedupe) → 18 fix-tagged entries B-280~B-297。User Q-all directive "全推荐" 2026-05-16: all defaults accepted。Chronicle: 实验笔记 §161。
+
+### B-280. `validate_step_record_v2` shallow → dataclass-derive + per-field type + critical optionals 🛠️ FIXED
+- **Source**: A1.7 Mode A F1 + Mode C G3 cross-validate
+- **Code**: `p79/experiment/types.py:195-231` pre-fix 25 hardcoded REQUIRED + schema_version equality only;无 type check + 12 optionals 漏(`parse_valid`/`image_meta`/`locator_route_meta`...)
+- **Attack**: malformed step record `{"som": null, "latency_ms": "0", "image_meta": "not-dict"}` 静默通过 → paper §3 evidence layer 数据基础 reviewer-defensible 度低
+- **Fix**: 重写 `validate_step_record_v2` 用 `dataclasses.fields(StepRecordV2)` 派生 REQUIRED + per-field `_STEP_FIELD_TYPES` mapping + `PAPER_GRADE_STEP_OPTIONAL_KEYS` 必 present-or-None。Plus new `validate_episode_summary_v2` + `validate_run_summary_v2` 同设计
+
+### B-281. `REQUIRED_STEP_FIELDS_V2` hand-maintained set drifts from dataclass 🛠️ FIXED (subsumed in B-280)
+- **Source**: A1.7 Mode A F2 + Mode B F1
+- **Fix**: `_required_field_names(cls)` helper 派生 frozenset from dataclasses.fields with MISSING defaults。Now StepRecordV2 / EpisodeSummaryV2 / RunSummaryV2 各自动 derived
+
+### B-282. SCHEMA_VERSION_V2 "2.0" vs `_CHAIN=["v2"]` — v3 migration latent broken 🛠️ FIXED
+- **Source**: A1.7 Mode A F3 (Claude-unique OOB)
+- **Code**: `types.py:6` `SCHEMA_VERSION_V2 = "2.0"`(semver)vs `schema_migrations/__init__.py:43` `_CHAIN = ["v2"]`(short)
+- **Attack**: V3 work land 时,migrate("2.0", "3.0") raise unknown version,**任意 v3 work 启动即引爆**
+- **Fix**: 全 unify semver `_CHAIN = ["2.0"]` + docstring example 更新 + future `_CHAIN.append("3.0")` 路径 documented。Archive `schema_version="2.0"` 兼容
+
+### B-283. `bool(row.get("success", False))` truthy on string "false" 🛠️ FIXED (paper §1 hero protection)
+- **Source**: A1.7 Mode B F3 (codex-unique OOB, Mode A + C 完全 missed)
+- **Code**: `aggregate_sr_fp_per_mode.py:77-80` + `aggregate_phantom_lift.py:109-116` 用 `bool(...)`
+- **Attack**: **Paper §1 hero SR 静默抬高 vector** — JSON string "false" Python truthy,missing field default False → SR 静默压低
+- **Fix**: 新 `p79/experiment/io_utils.py::load_episode_summary_strict(path, mode)` — strict mode raise on `success != bool` / `task_id != int`;lenient mode log + return None。2 个 paper-1 aggregator 切 strict (Phase 1a fire ENV P79_STRICT=1 启用)
+
+### B-284. "Ghost fields" runner-write off-catalog → 加 5 field to dataclass + DEFAULTS 🛠️ FIXED
+- **Source**: A1.7 Mode C G1 (gemini-unique OOB)
+- **Code**: `runner/main.py:1663-1669` 写 `retry_action_applied` / `retry_action_type` / `glm_fallback_used` / `glm_fallback_latency_ms` / `glm_original_fail_reason`;但 **不在 dataclass + DEFAULTS**
+- **Attack**: paper §3.5.1 cite 这些 field 做 GLM de-biasing 但 catalog 找不到 → "黑户字段"
+- **Fix**: 5 field 加 `StepRecordV2` dataclass + `STEP_RECORD_V2_DEFAULTS`(均 Optional[T] = None default)。Dataclass + DEFAULTS 现 43=43 fully synced。`fill_step_defaults` 现 backfill 这 5 field,archive backward-compat
+
+### B-285. EpisodeSummaryV2 无 validator function 🛠️ FIXED
+- **Source**: A1.7 Mode A F4 + Mode B F2 cross-validate
+- **Fix**: 新 `validate_episode_summary_v2(record)` — REQUIRED 27 fields + per-field type check on hero fields (`success: bool` / `score: int|float` / `steps: int` / `task_id: int`)。LoggerV2.write_episode_summary 入口 caller 应 invoke(未自动 wire,paper-1 fire 后 add)
+
+### B-286. rederive_episode_summary.py 不验 step ↔ summary identity 🛠️ FIXED
+- **Source**: A1.7 Mode B F6 (codex-unique OOB)
+- **Code**: `scripts/maintenance/rederive_episode_summary.py:132` `read_jsonl_dedup(steps_path)` 不传 summary_path → 跳过 B-180 identity check
+- **Attack**: restart/crash 留下 mismatched files → rederive 用 task B steps 覆盖 task A summary,无 audit log → **paper-grade evidence 不可逆 corruption**
+- **Fix**: 改为 `read_jsonl_dedup(steps_path, summary_path=summary_path)`;mismatch flag → skip rederive + log。Rederive 比 analysis read stricter (mutates evidence)
+
+### B-287. `dedup_restart_lines` 文件无 step_idx=0 silent keep-all 🛠️ FIXED
+- **Source**: A1.7 Mode A F5 + Mode B F5 cross-validate
+- **Code**: `io_utils.py:32-35` 找 LAST `step_idx==0`,若不存在则 `last_run_start=0` → keep all
+- **Attack**: First-step crash + restart 续写 → dedup 不识别 restart → 双 run 数据混入
+- **Fix**: 加 decrement-boundary fallback(若无 step_idx=0,扫描 prev > curr 边界 as restart);新 `_assert_step_idx_monotonic()` invariant post-dedup 推断 corruption + 写 integrity log `step_idx_non_monotonic: bool` flag
+
+### B-288. `read_jsonl_dedup` 不 catch UnicodeDecodeError 🛠️ FIXED
+- **Source**: A1.7 Mode A F11 + Mode B F4 (downstream cascade)
+- **Code**: `io_utils.py:64` `open(path, "r", encoding="utf-8")` — UnicodeDecodeError 不在 catch 范围
+- **Attack**: 单个 invalid UTF-8 byte → analyze pipeline crash → paper §3 整 cell skip
+- **Fix**: `open(..., errors="replace")` in `io_utils.py` + 4 places in `scripts/analysis/validate_run.py:545/581/645/765`
+
+### B-289. LoggerV2.__init__ 不 fsync condition_dir 🛠️ FIXED
+- **Source**: A1.7 Mode A F7 (Claude-unique OOB)
+- **Code**: `logger_v2.py:31-32` `episodes_dir.mkdir(parents=True)` — 无 _fsync_dir
+- **Attack**: Mirror B-198: mkdir 后 crash → reboot 见不到 episodes/ → run data partial visible
+- **Fix**: `_fsync_dir(self.condition_dir) + _fsync_dir(self.episodes_dir)` in __init__
+
+### B-290. dedup discarded earlier segments 无 audit trail 🛠️ DEFERRED (sidecar archive)
+- **Source**: A1.7 Mode A F8 (Claude-unique)
+- **Status**: Integrity log entry 新增 `discarded_segments_archive: Optional[str]` field(currently None);完整 sidecar `.restart_archive.jsonl` 写实现 deferred(non-blocker,Phase 1a fire 不影响)
+- **Fix**: Schema-level prep land,write-side 待 future audit demand
+
+### B-291. `image_meta=None` 语义二义性 → `image_meta_recorded: bool` 加 separator 🛠️ FIXED
+- **Source**: A1.7 Mode C G2 (gemini-unique OOB)
+- **Code**: `schema_migrations/v2.py:134` `image_meta: None` default → vision-mode-no-image vs old-data-missing 不区分
+- **Fix**: `StepRecordV2` 加 `image_meta_recorded: bool = False`;DEFAULTS 加 False(archive lineage flag)。Paper §3 image_over_cap claim 现可证 archive vs new fire 区别
+
+### B-292. write_step fsync ~14min/Phase 1a overhead 🛠️ DISCLOSED (no code change)
+- **Source**: A1.7 Mode A F6 (Claude-unique)
+- **Status**: B-198 hero design (per-step crash atomicity) — 不动 code
+- **Fix**: `docs/checkpoints/paper_drafts/section3_definition.md` "Schema integrity guarantees" 段加 paragraph: "Per-step fsync is intentional ... 14 minutes of disk-flush time ... we do not subtract this from latency_ms.total because all 3 baselines incur equal overhead ... reviewers should account for durability-first write path"
+
+### B-293. read_jsonl_dedup `summary_path=None` 时 `summary_identity_mismatch=False` 误导 🛠️ FIXED
+- **Source**: A1.7 Mode A F9 (Claude-unique)
+- **Code**: `io_utils.py:79-80` pre-fix `identity_mismatch=False`(无 summary 也写 False)
+- **Fix**: `Optional[bool] = None` — None = "未检",False/True = "检了+matched/mismatch"。`jsonl_integrity_report.csv` reviewer audit 现可 filter `is True` 拿到真 mismatch
+
+### B-294. `schema_migrations.migrate()` dead code (0 callers) 🛠️ FIXED (tests added)
+- **Source**: A1.7 Mode A F10 (Claude-unique)
+- **Fix**: 新 `tests/test_schema_migrations.py` 6 tests: SCHEMA_VERSION align _CHAIN + migrate identity + unknown version raise + downgrade refuse + mock v2→vtest chain + deepcopy + idempotency。Future v3 work 可信 framework + test gate
+
+### B-295. Step schema tests 不覆盖 type drift / drift 🛠️ FIXED
+- **Source**: A1.7 Mode B F1
+- **Fix**: 新 `tests/test_step_record_validation.py` 35 tests parametrized:
+  - 9 type-mismatch cases (som=None / latency_ms=str / task_id=str / seed=float / action_success=str / page_changed=int / reward=str / tokens=list / som=str)
+  - 5 critical-optional-missing cases (per `PAPER_GRADE_STEP_OPTIONAL_KEYS`)
+  - 7 episode-summary string-truthy success cases ("false"/"true"/"0"/0/1/None/1.0)
+  - 2 episode-summary other-type cases (steps=str / score=str)
+  - 2 run-summary type cases (condition_metrics=dict / assumptions=list)
+  - 3 happy-path cases (valid step / episode / run summary)
+  - 2 schema_version cases ("v2" / "1.0" / float 2.0)
+
+### B-296. RunSummaryV2 无 validator function 🛠️ FIXED
+- **Source**: A1.7 Mode A G1 (Claude-unique gap)
+- **Fix**: 新 `validate_run_summary_v2(record)` — REQUIRED 8 fields + `condition_metrics: list` + `assumptions: dict` + `total_episodes: int`。runner main.py write run_summary 入口 future wire (paper-1 fire 后 add)
+
+### B-297. `aggregate_failure_modes.py` regex `B[01]` 漏 B2 + COND_MODE_MAP 漏 phantom_dom 🛠️ FIXED
+- **Source**: A1.7 Mode B F7 (codex-unique OOB)
+- **Code**: `scripts/analysis/aggregate_failure_modes.py:74` regex hardcoded `B[01]`;line 86-93 mode map 无 phantom_dom
+- **Attack**: Phase 1a 3-baseline B2 (Gemma3-VL) failure data + archive phantom_dom failure (3 现存 dir) silent vanish
+- **Fix**: regex `B[0-2]` + COND_MODE_MAP 加 `"phantom_dom": "P-text"`(B-261 alias backward-compat)
+
+**B-numbers consumed**: B-280 through B-297 (18 contiguous, no collisions with A1.16 B-273~B-279)。Cumulative session A1.4a+b-i+b-ii+c + A1.5 + A1.13+14 + A1.6 + A1.7 + A1.16 + A1.8 = B-140 through B-297 = ~158 unique entries。
+
+**Next available B-number**: B-298+.
+
+**Smoke verification**: pytest 316/316 PASS (= 281 baseline A1.7 + 35 new A1.8 negative tests)。
+
+**Phase 1a fire green-light**: schema substrate fully paper-grade-defensible post-A1.8。剩 advisor blocker: B-262 (GLM fallback per parse_advisor_pending.md Thread 1); B-130 (FE/RE estimand per Thread 2); B-268 B2 LR artifact (Pass-2 B2 router cells 待 Pass-1 B2 fire 后 train via `train_l1_router.py --baseline B2`)。
