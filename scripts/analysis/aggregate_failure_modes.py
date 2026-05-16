@@ -70,8 +70,10 @@ def fine_to_paper(fine: str) -> str:
     return "other-failure"
 
 
-# baseline + site from run_id
-RUN_RE = re.compile(r"^(B[01])_(?:3mode_|phantom_[a-z]+_|[a-z]+_)?(classifieds|reddit|shopping)")
+# B-297 fix (2026-05-16, A1.8): regex `B[01]` previously skipped B2 (Gemma3-VL,
+# added 2026-05-14 per advisor) → B2 failure data structurally vanished from
+# cross-site evidence. `B[0-2]` includes all 3 baselines.
+RUN_RE = re.compile(r"^(B[0-2])_(?:3mode_|phantom_[a-z]+_|[a-z]+_)?(classifieds|reddit|shopping)")
 
 
 def parse_run(run_id: str):
@@ -89,6 +91,10 @@ COND_MODE_MAP = {
     "vision": "Vision",
     "phantom_som": "P-SoM",
     "phantom_text": "P-text",
+    # B-297 fix (2026-05-16, A1.8): legacy alias `phantom_dom` maps to P-text
+    # for archive backward-compat (B-261 fix retired phantom_dom obs_mode but
+    # 3 existing run dirs are still named `phase1_phantom_dom_router_0/`).
+    "phantom_dom": "P-text",
     "phantom_prompt": "P-prompt",
 }
 

@@ -5,9 +5,68 @@ import json
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 logger = logging.getLogger(__name__)
+
+
+# B-283 fix (2026-05-16, A1.8): paper-grade-strict episode summary loader for
+# outcome aggregators. Pre-fix `aggregate_sr_fp_per_mode.py:77` +
+# `aggregate_phantom_lift.py:109` used `bool(row.get("success", False))` —
+# JSON literal `"success": "false"` (string) is Python truthy → SR inflated.
+# Strict loader requires bool-typed success / int task_id / non-None schema
+# version so the headline paper §1 hero number is type-safe at the boundary.
+StrictMode = Literal["strict", "lenient"]
+
+
+def load_episode_summary_strict(
+    path: Path,
+    *,
+    mode: StrictMode = "strict",
+) -> Optional[Dict[str, Any]]:
+    """Load an episode summary JSON with paper-grade type-safety enforcement.
+
+    Args:
+        path: path to `*_summary_v2.json`.
+        mode: "strict" raises on type mismatch (default for paper aggregators);
+              "lenient" logs warning + returns None (for diagnostic tools that
+              want to survey all archives without crashing).
+
+    Returns:
+        dict on success, None on lenient-mode soft failure.
+
+    Raises:
+        ValueError in strict mode on type mismatch.
+        FileNotFoundError if `path` does not exist.
+
+    Paper-grade contract: callers consuming `success` for SR / lift computation
+    MUST use strict mode. Pre-fix aggregators that did `bool(d.get("success"))`
+    would have accepted `"success": "false"` as truthy (paper §1 hero risk).
+    """
+    if not path.exists():
+        raise FileNotFoundError(f"Episode summary not found: {path}")
+    with open(path, "r", encoding="utf-8", errors="replace") as f:
+        try:
+            payload = json.load(f)
+        except json.JSONDecodeError as exc:
+            if mode == "strict":
+                raise ValueError(f"Corrupt JSON in {path}: {exc}") from exc
+            logger.warning("B-283 load_episode_summary_strict[lenient] corrupt JSON %s: %s", path, exc)
+            return None
+    bad: List[str] = []
+    if not isinstance(payload.get("success"), bool):
+        bad.append(f"success={payload.get('success')!r} (type={type(payload.get('success')).__name__}), expected bool")
+    if not isinstance(payload.get("task_id"), int):
+        bad.append(f"task_id={payload.get('task_id')!r} (type={type(payload.get('task_id')).__name__}), expected int")
+    if not isinstance(payload.get("schema_version"), str):
+        bad.append(f"schema_version={payload.get('schema_version')!r}, expected str")
+    if bad:
+        msg = f"Paper-grade type mismatch in {path}: " + "; ".join(bad)
+        if mode == "strict":
+            raise ValueError(msg)
+        logger.warning("B-283 load_episode_summary_strict[lenient] %s", msg)
+        return None
+    return payload
 
 
 # B-196 (/stress A1.4b-ii codex B-ii-4, P1): module-level corruption counter
@@ -26,6 +85,12 @@ def dedup_restart_lines(file_lines: List[Dict[str, Any]]) -> List[Dict[str, Any]
     restarts a task, earlier runs' steps remain in the file.  We detect
     restarts by step_idx resetting to 0 and keep lines from the last run
     (matching the authoritative summary_v2.json which is overwritten).
+
+    B-287 fix (2026-05-16, A1.8): when no `step_idx=0` boundary exists in the
+    file (legitimate edge: first step lost to crash before flush, or corrupt
+    first line), fall back to the minimum step_idx position as boundary —
+    rather than the pre-fix silent "keep entire file" behaviour that mixes
+    earlier-run + later-run records into a single segment.
     """
     if not file_lines:
         return file_lines
@@ -33,11 +98,34 @@ def dedup_restart_lines(file_lines: List[Dict[str, Any]]) -> List[Dict[str, Any]
     for i, rec in enumerate(file_lines):
         if i > 0 and rec.get("step_idx", -1) == 0:
             last_run_start = i
+    if last_run_start == 0 and len(file_lines) > 1:
+        # B-287: no step_idx=0 boundary in tail — find the LAST position where
+        # step_idx decreased relative to its predecessor (= restart edge).
+        for i in range(1, len(file_lines)):
+            prev = file_lines[i - 1].get("step_idx", -1)
+            curr = file_lines[i].get("step_idx", -1)
+            if isinstance(prev, int) and isinstance(curr, int) and curr < prev:
+                last_run_start = i
     if last_run_start > 0:
         logger.debug(
             "Dedup: discarded %d lines from earlier run(s)", last_run_start
         )
     return file_lines[last_run_start:]
+
+
+def _assert_step_idx_monotonic(segment: List[Dict[str, Any]]) -> bool:
+    """B-287 helper: return True if post-dedup segment has monotonic step_idx.
+
+    Used by the integrity log to flag suspected restart-pattern corruption that
+    dedup did not catch (paper-grade analysis pipeline must know).
+    """
+    last = -1
+    for rec in segment:
+        idx = rec.get("step_idx")
+        if not isinstance(idx, int) or idx <= last:
+            return False
+        last = idx
+    return True
 
 
 def read_jsonl_dedup(
@@ -61,7 +149,12 @@ def read_jsonl_dedup(
     file_lines: List[Dict[str, Any]] = []
     corrupt_count = 0
     total_lines = 0
-    with open(path, "r", encoding="utf-8") as f:
+    # B-288 fix (2026-05-16, A1.8): catch UnicodeDecodeError so a single invalid
+    # UTF-8 byte (e.g. broken screenshot path / encoding mishap in obs.text)
+    # doesn't crash the whole analyze pipeline. `errors="replace"` substitutes
+    # the bad byte with U+FFFD and continues; corrupt lines fall through the
+    # JSONDecodeError handler below.
+    with open(path, "r", encoding="utf-8", errors="replace") as f:
         for line_num, line in enumerate(f, 1):
             line = line.strip()
             if not line:
@@ -76,9 +169,18 @@ def read_jsonl_dedup(
     last_segment = dedup_restart_lines(file_lines)
     dedup_discarded = max(0, len(file_lines) - len(last_segment))
 
-    identity_mismatch = False
+    # B-293 fix (2026-05-16, A1.8): semantic Optional[bool] — None means
+    # "not checked" (summary_path was None); False = "checked and matched";
+    # True = "checked and mismatch". Pre-fix all rows logged False even when
+    # validator did not run → reviewer audit could not distinguish.
+    identity_mismatch: Optional[bool] = None
     if summary_path is not None and last_segment:
         identity_mismatch = _validate_against_summary(path, last_segment, summary_path)
+
+    # B-287: post-dedup invariant — step_idx must be monotonic. If not, the
+    # last_segment still has restart artifact bleed-through; surface to the
+    # integrity log so reviewer audit catches what dedup missed.
+    step_idx_non_monotonic = (not _assert_step_idx_monotonic(last_segment)) if last_segment else False
 
     # B-196: record per-file integrity stats; consumed by analysis.py
     _JSONL_INTEGRITY_LOG.append({
@@ -87,6 +189,11 @@ def read_jsonl_dedup(
         "corrupt_lines": corrupt_count,
         "dedup_discarded": dedup_discarded,
         "summary_identity_mismatch": identity_mismatch,
+        # B-287: flag if dedup did not produce a clean monotonic segment.
+        "step_idx_non_monotonic": step_idx_non_monotonic,
+        # B-290: pointer to where discarded earlier-segment data was archived
+        # (sidecar). None when no segments discarded; analysis can audit.
+        "discarded_segments_archive": None,
     })
 
     return last_segment

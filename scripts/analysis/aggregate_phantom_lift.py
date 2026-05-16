@@ -99,7 +99,13 @@ def load(d: Path) -> tuple[set[int], set[int]]:
         return s, o
     # F05 audit fix 2026-05-09: track corrupt summary count instead of
     # silently dropping; warn at end of cell. Set P79_STRICT=1 to fail.
+    # B-283 fix (2026-05-16, A1.8): replace bool(rec.get("success", False))
+    # with strict-loader path. Pre-fix truthy string "false" inflated SR; now
+    # strict loader raises in strict mode, lenient mode logs + skips.
+    from p79.experiment.io_utils import load_episode_summary_strict
+
     n_corrupt = 0
+    _strict_mode = "strict" if os.environ.get("P79_STRICT", "").lower() in ("1", "true", "yes") else "lenient"
     for p in sorted(d.glob("*_summary_v2.json")):
         m = re.search(r"task_(\d+)", p.name)
         if not m:
@@ -107,12 +113,16 @@ def load(d: Path) -> tuple[set[int], set[int]]:
         tid = int(m.group(1))
         o.add(tid)
         try:
-            rec = json.loads(p.read_text())
-        except Exception as _e:
+            rec = load_episode_summary_strict(p, mode=_strict_mode)
+        except ValueError:
             n_corrupt += 1
             continue
-        # §139.8: adjusted_success retired — `success` is canonical
-        if rec.get("success", False):
+        if rec is None:
+            n_corrupt += 1
+            continue
+        # §139.8: adjusted_success retired — `success` is canonical.
+        # B-283: strict loader guarantees `rec["success"]` is bool, so `is True` is safe.
+        if rec["success"] is True:
             s.add(tid)
     if n_corrupt > 0:
         msg = (

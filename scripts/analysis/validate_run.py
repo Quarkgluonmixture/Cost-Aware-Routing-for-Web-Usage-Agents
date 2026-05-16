@@ -542,7 +542,7 @@ def check_jsonl_corrupt_lines(run_dir: Path) -> CheckResult:
         for stf in _list_steps_files(cond_dir):
             total_files += 1
             n_corrupt = 0
-            with open(stf, "r", encoding="utf-8") as f:
+            with open(stf, "r", encoding="utf-8", errors="replace") as f:
                 for line_num, line in enumerate(f, 1):
                     line = line.strip()
                     if not line:
@@ -578,7 +578,7 @@ def check_restart_dedup(run_dir: Path) -> CheckResult:
         for stf in _list_steps_files(cond_dir):
             total_files += 1
             step0_count = 0
-            with open(stf, "r", encoding="utf-8") as f:
+            with open(stf, "r", encoding="utf-8", errors="replace") as f:
                 for line in f:
                     line = line.strip()
                     if not line:
@@ -642,7 +642,7 @@ def check_parse_valid_distribution(run_dir: Path) -> CheckResult:
         total_steps = 0
         parse_invalid = 0
         for stf in _list_steps_files(cond_dir):
-            with open(stf, "r", encoding="utf-8") as f:
+            with open(stf, "r", encoding="utf-8", errors="replace") as f:
                 for line in f:
                     line = line.strip()
                     if not line:
@@ -762,7 +762,7 @@ def check_cross_baseline_symmetry(
             total_steps = 0
             parse_errors = 0
             for stf in _list_steps_files(cond_dir):
-                with open(stf, "r", encoding="utf-8") as f:
+                with open(stf, "r", encoding="utf-8", errors="replace") as f:
                     for line in f:
                         line = line.strip()
                         if not line:

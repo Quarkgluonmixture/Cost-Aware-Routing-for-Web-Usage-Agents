@@ -20,7 +20,7 @@ Usage
     from p79.experiment.schema_migrations import migrate, current_version
 
     record = json.load(open("episode_summary_v2.json"))
-    migrated = migrate(record, from_v=record.get("schema_version", "v2"),
+    migrated = migrate(record, from_v=record.get("schema_version", "2.0"),
                        to_v=current_version())
 
 Design
@@ -39,8 +39,13 @@ from typing import Callable, Dict, List, Tuple
 # Migration registry: (from_version, to_version) -> migration function
 _REGISTRY: Dict[Tuple[str, str], Callable[[dict], dict]] = {}
 
-# Canonical chain — order matters (used by `migrate` to find a path).
-_CHAIN: List[str] = ["v2"]
+# B-282 fix (2026-05-16, A1.8): canonical chain uses semver matching
+# `types.SCHEMA_VERSION_V2 = "2.0"`. Pre-fix `_CHAIN = ["v2"]` did not match
+# what the runner writes to disk; any migrate("2.0", "3.0") call would have
+# raised "Unknown schema version". Now both forms live as semver strings;
+# v3 lands as "3.0" via `_CHAIN.append("3.0")` + register a `("2.0", "3.0")`
+# migration function.
+_CHAIN: List[str] = ["2.0"]
 
 
 def register(from_v: str, to_v: str):
@@ -48,7 +53,7 @@ def register(from_v: str, to_v: str):
 
     Example::
 
-        @register("v2", "v3")
+        @register("2.0", "3.0")
         def upgrade_v2_to_v3(rec: dict) -> dict:
             rec["new_field"] = rec.get("new_field", default_value)
             return rec

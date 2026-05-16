@@ -129,7 +129,23 @@ def _process_episode(
     except (TypeError, ValueError):
         return None
 
-    steps = read_jsonl_dedup(steps_path)
+    # B-286 fix (2026-05-16, A1.8): pass `summary_path` so B-180 identity check
+    # runs. Pre-fix `read_jsonl_dedup(steps_path)` skipped identity validation
+    # → if crash/restart left task A summary.json beside task B steps.jsonl,
+    # rederive computed metrics from B's steps and overwrote A's summary with
+    # zero audit trail. Now the identity tuple (site/task_id/run_id/condition_id)
+    # is verified before recompute; mismatch logs warning to integrity report.
+    steps = read_jsonl_dedup(steps_path, summary_path=summary_path)
+    # B-286: hard-skip if identity check flagged a mismatch — rederive must be
+    # stricter than analysis readers because it MUTATES evidence.
+    from p79.experiment.io_utils import _JSONL_INTEGRITY_LOG
+    if _JSONL_INTEGRITY_LOG and _JSONL_INTEGRITY_LOG[-1].get("summary_identity_mismatch") is True:
+        print(
+            f"  [SKIP B-286] identity mismatch step↔summary for {summary_path.name}; "
+            f"refusing to overwrite (run `validate_run.py` to investigate)",
+            file=sys.stderr,
+        )
+        return None
     new_pur, energy_partial, energy_complete, n_finish = _rederive_one(steps)
 
     # §139.8: rederive no longer re-derives `adjusted_success` / `fp_reason`.

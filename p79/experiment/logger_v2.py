@@ -30,6 +30,15 @@ class LoggerV2:
         self.condition_dir = condition_dir
         self.episodes_dir = self.condition_dir / "episodes"
         self.episodes_dir.mkdir(parents=True, exist_ok=True)
+        # B-289 fix (2026-05-16, A1.8): fsync the parent of `episodes_dir` so
+        # the directory entry hits stable storage at construction time. Pre-fix
+        # the `mkdir(parents=True)` left the entry in ext4 journal up to ~30s;
+        # a Spark crash between mkdir and the first write_step would leave the
+        # parent dir entry unflushed → reboot sees no episodes/ → subsequent
+        # writes go to a recreated dir but run_meta references the missing
+        # original path. Same B-198 lineage as write_episode_summary.
+        _fsync_dir(self.condition_dir)
+        _fsync_dir(self.episodes_dir)
 
     def write_condition_meta(self, meta: Dict[str, Any]) -> None:
         self.condition_dir.mkdir(parents=True, exist_ok=True)

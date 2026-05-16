@@ -132,7 +132,19 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     "confidence": None,
     "agent_visible_changed": None,
     "image_meta": None,
+    # B-291 fix (2026-05-16, A1.8): separator between vision-mode-no-image
+    # and old-data-missing-field. Old data gets False (archive lineage flag).
+    "image_meta_recorded": False,
     "locator_route_meta": None,
+    # B-284 fix (2026-05-16, A1.8): retire ghost-field status by registering
+    # the 5 GLM/retry de-biasing fields in the schema catalog. Old data lacks
+    # them → fill_step_defaults backfills None → downstream aggregators see
+    # consistent shape regardless of when the JSONL was written.
+    "retry_action_applied": None,
+    "retry_action_type": None,
+    "glm_fallback_used": None,
+    "glm_fallback_latency_ms": None,
+    "glm_original_fail_reason": None,
 }
 
 

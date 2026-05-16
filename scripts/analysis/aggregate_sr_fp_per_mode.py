@@ -68,16 +68,29 @@ def pct(num: int, den: int) -> float:
 
 
 def aggregate_cell(baseline: str, site: str, mode: str, ep_dir: Path) -> dict[str, Any]:
+    # B-283 fix (2026-05-16, A1.8): use strict loader to guard against the
+    # `bool("false")` truthy attack (codex Mode B F3). Pre-fix path was
+    # `bool(row.get("success", False))` — JSON string "false" is Python truthy
+    # → SR inflated silently. Strict loader raises on type mismatch at boundary.
+    from p79.experiment.io_utils import load_episode_summary_strict
+
     rows: dict[int, dict[str, Any]] = {}
     for path in sorted(ep_dir.glob("*_summary_v2.json")):
         tid = task_id(path)
         if tid in rows:
             print(f"[warn] duplicate task summary ignored for {baseline}/{site}/{mode}: {path}", file=sys.stderr)
             continue
-        rows[tid] = read_json(path)
+        # Lenient mode in aggregator: log + skip (don't crash whole pipeline);
+        # strict-mode escalation lives in validate_run.py for paper-grade gate.
+        loaded = load_episode_summary_strict(path, mode="lenient")
+        if loaded is None:
+            continue  # corrupt or type-mismatch — already logged by loader
+        rows[tid] = loaded
 
     n_total = len(rows)
-    n_success = sum(1 for row in rows.values() if bool(row.get("success", False)))
+    # Post-strict: every row has `success: bool`. The defensive `== True` keeps
+    # the intent crystal clear (paper §1 hero number rides on this line).
+    n_success = sum(1 for row in rows.values() if row.get("success") is True)
     expected_n = scored_task_count(site, "visualwebarena")
     complete = expected_n > 0 and n_total >= expected_n
 
