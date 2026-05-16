@@ -1849,4 +1849,40 @@ phase1_plan A1.4 拆 3 chunks (A1.4a orchestrator / A1.4b data plane / A1.4c aux
 
 **Pattern (cross §142-§150)**: paper §3 evidence-layer canonical producer (`analysis.py`) blast radius higher than orchestrator core because every paper figure / table / prose claim flows through here. Cross-AI value compounded: 3 AIs caught 17 unique findings vs single-AI ≤9. Codex reproducibility-auditor persona empirically high-value for stats/analysis scripts (caught 8 vs 5 from Claude). Gemini broad-reviewer persona high-value for paper ↔ code mismatch (caught C1 prose drift that I had not surfaced as paper-grade). User Q&A continues to be necessary 4th layer (saved ~6-9h on B-184/B-185/B-186 by punting from "fix now" to "issue tracker").
 
-**Next available B-number**: B-187+ (B-184 landed; B-185/B-186 reserved by issue file but not yet built).
+**Next available B-number**: ~~B-187+~~ — superseded by §152 below (B-187 ~ B-200 landed).
+
+---
+
+### §152 /stress A1.4b-ii — `p79/experiment/` data plane (2026-05-16 evening)
+
+- **B-187** delete dead `compute_energy_step` 🛠️ **FIXED commit `2c2bd41`** (gemini v5 #1 + codex B-ii-5 + user spot-check, P2) — 0 production callers. Real CO2 pipeline via `LightweightEnergyTracker.estimate_step` (`runner/main.py:1472`); empirical co2e/kwh = 0.22 kg/kWh = UK 220 g/kWh verified across 5 episode samples. Deleted helper read wrong YAML key (`co2e_kg_per_kwh: null` vs `carbon_intensity_g_per_kwh: 220`).
+- **B-188** delete dead `compute_waste_breakdown` + dead `adjusted_success=` kwarg 🛠️ **FIXED commit `2c2bd41`** (gemini v5 #4 + codex B-ii-8 + Claude D5, P2) — 0 callers, math invariant violation (success episode wasted=0 but no_op/page_unchanged unconditionally summed). Per user "选 A": keep `compute_wasted_cost` binary as canonical, fine-grained richer impl in `analyze_reason_diagnostics.py`. §139.8 `adjusted_success` retired.
+- **B-189** paper §3.5 seed=42 + B=1000 prose disclosure 🛠️ **FIXED commit `2c2bd41`** (gemini v1 G5, P2 OOB) — names 3 sharing scripts (`_compute_statistical_tests`, `aggregate_phantom_lift`, `aggregate_phase1_prereg_gate`).
+- **B-190** `STEP_RECORD_V2_DEFAULTS` catalog 🛠️ **FIXED commit `add14ed`** (Claude D1 + codex B-ii-1, P0 OOB) — mirrors EpisodeSummary catalog; 5 paper-grade-critical step optionals (`parse_valid` / `parse_failure_reason` / `fallback_finish` / `image_meta` / `locator_route_meta`) explicit defaults; `fill_step_defaults()` helper.
+- **B-191** `schema_migrations.migrate` `deepcopy(record)` 🛠️ **FIXED commit `add14ed`** (Claude D3, P0 OOB) — same defensive class as B-164. Nested dicts isolated from caller.
+- **B-192** wire `fill_defaults` into `_collect_episode_summaries` 🛠️ **FIXED commit `add14ed`** (Claude D2, P1 OOB) — framework not dead infra anymore. Legacy summaries get baseline-typed defaults per user "历史归档" decision.
+- **B-193** trajectory telemetry → EpisodeSummaryV2 + aggregator emit rates 🛠️ **FIXED commit `d7850bb`** (codex B-ii-2, P1 OOB, **biggest catch**) — A1.4a B-166/B-167/B-168 runner-stamped telemetry was never aggregated. `EpisodeSummaryV2` + defaults catalog + `aggregate_condition_metrics` now emit `trajectory_incomplete_rate` / `partial_recovery_rate` / `unknown_failure_reason_distribution`. Paper §3.5 transparency claim now structurally producible.
+- **B-194** exception path `wasted_cost = total` not 0 🛠️ **FIXED commit `d7850bb`** (codex B-ii-3, P1 OOB) — force-zero was inconsistent with `compute_wasted_cost(success=False)` canonical semantic + B-168 recovered partial cost wasted in vain.
+- **B-195** obs_prepare cost field comment 🛠️ **FIXED commit `fdd06cd`** (gemini v1 G1, P1 OOB) — aggregator now annotated; step-level latency pivot is in `step_metrics.csv` (B-195b emit median+p95 obs-prepare ms deferred pending paper §3 decision).
+- **B-196** JSONL integrity report 🛠️ **FIXED commit `fdd06cd`** (codex B-ii-4, P1) — `_JSONL_INTEGRITY_LOG` module-level counter; `analyze_run` emits `analysis/jsonl_integrity_report.csv` with corrupt_lines + dedup_discarded + summary_identity_mismatch per file. Closes paper §3 denominator transparency gap.
+- **B-197** `cost_efficiency_ratio` → None when no cost 🛠️ **FIXED commit `fdd06cd`** (Claude D4 + gemini G4, P1) — B1 local condition (cost=0) no longer silently emits "0% efficiency".
+- **B-198** `logger_v2._fsync_dir` 3 callsites 🛠️ **FIXED commit `fdd06cd`** (Claude D6, P1) — dir entry fsync after `os.replace` (best-effort, swallows OSError on unsupported FS).
+- **B-199** `detect_benchmark_noise` + 2 categories + category distribution 🛠️ **FIXED commit `fdd06cd`** (codex B-ii-7 + gemini G3, P1/P2) — `api_rate_limit` + `auth_expired_or_session_invalid` 加入 (forward-risk), `ERR_CONNECTION_REFUSED` 重排到 connection_error 之前避免 navigation_error shadow. Aggregator emits `benchmark_noise_category_distribution`.
+- **B-200** `p95` filters None + NaN 🛠️ **FIXED commit `fdd06cd`** (codex B-ii-6, P2) — pre-fix `p95([None, None, 0, 0])` raised TypeError; `p95([NaN, 1, 2])` silently returned 1.9. Now: filter, return 0.0 on empty valid.
+
+#### §152 audit status
+
+| Tag | Count | Notes |
+|---|---|---|
+| 🛠️ **FIXED G1** | 3 | B-187/B-188/B-189 — dead-code cleanup |
+| 🛠️ **FIXED G2** | 3 | B-190/B-191/B-192 — schema integrity |
+| 🛠️ **FIXED G3** | 2 | B-193/B-194 — trajectory telemetry aggregator + exception wasted fix |
+| 🛠️ **FIXED G4** | 6 | B-195~B-200 — defensive validators (obs_prepare / JSONL integrity / cost_eff None / dir fsync / noise categories / p95 policy) |
+| ⏳ **DEFER (analyzer source-of-truth promotion)** | 0 | wasted_cost richer breakdown stayed in `analyze_reason_diagnostics.py` (B-188 user选A) |
+| 🟢 **PASSED defuse** | 3 | codex B-ii-5 (compute_energy_step 0 caller) / B-ii-8 (compute_waste_breakdown 0 caller) / B2 cost split (current 0 mixed-backend run dirs) |
+
+**Cross-AI verification chronicle**: Mode A (Claude inline /stress, 7 findings 3 OOB) — PASS. Mode B (codex repro-auditor, 8 findings + 3 strong-defuse + 3 quantification sections, 16.3KB) — PASS. Mode C (gemini broad-reviewer) — chatter failure on direct dispatch; **fixed via Path C wrapper** (commit `202421d` `scripts/maintenance/gemini_stress_clean.sh` + 3-rule prompt discipline). gemini v5 wrapper-clean dispatch surfaced 4 findings 2 OOB; 2 of those (CO2e key mismatch / wasted_cost paradox) downgraded to P2 after user "carbon 我记得是有计算的吧" spot-check confirmed both target dead code.
+
+**B-numbers consumed**: B-187 through B-200 (14 contiguous, no collisions).
+
+**Next available B-number**: B-201+. B-185/B-186 still reserved by `_status/issues/issue_phase1_canonical_artifacts_2026-05-16.md` follow-up issue but not yet built.
