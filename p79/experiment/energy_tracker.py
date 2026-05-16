@@ -178,7 +178,14 @@ class RAPLReader:
         if not self.available or self._energy_file is None:
             return None
         try:
-            with open(self._energy_file, "r") as f:
+            # B-341 (/stress A1.9 Mode A F10, 2026-05-16): A1.8 B-288 sibling
+            # — kernel mid-write race could leave the /sys/class/powercap
+            # energy_uj file with non-UTF-8 bytes; bare `open(.., "r")`
+            # raises UnicodeDecodeError → caught by outer `except` and
+            # silently returns None → fallback to broken profile path.
+            # `errors="replace"` makes the read robust to transient kernel
+            # bytes; `int()` on the result still fails fast if non-digit.
+            with open(self._energy_file, "r", errors="replace") as f:
                 energy_uj = int(f.read().strip())
             now = time.monotonic()
             if self._last_energy is not None and self._last_ts is not None:

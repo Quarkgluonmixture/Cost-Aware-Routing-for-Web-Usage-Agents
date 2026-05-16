@@ -205,6 +205,10 @@ class ExperimentRunner:
             and _backend_type in _QWEN_CLASS_BACKEND_TYPES
         ):
             backend_cfg["revision"] = _model_revision
+        # B-340 (/stress A1.9 Mode C F4 defense-in-depth, 2026-05-16):
+        # propagate top-level `paper_grade` flag into backend cfg so
+        # api_proxy → ProxyApiAgent hard-block on use_glm_fallback can fire.
+        backend_cfg.setdefault("paper_grade", bool(self.cfg.get("paper_grade", False)))
         backend = create_backend(backend_id, backend_cfg)
         self._backends[cache_key] = backend
         return backend

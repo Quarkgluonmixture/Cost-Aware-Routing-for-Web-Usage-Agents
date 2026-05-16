@@ -302,6 +302,9 @@ def _validate_required_and_version(
         )
 
 
+_COST_USD_REQUIRED_KEYS = frozenset({"input", "output", "model", "router_overhead", "total"})
+
+
 def validate_step_record_v2(record: Dict[str, Any]) -> None:
     """Paper-grade step record validator (B-280 / B-281 fix 2026-05-16, A1.8).
 
@@ -312,6 +315,13 @@ def validate_step_record_v2(record: Dict[str, Any]) -> None:
       4. Paper-grade critical optional KEYS (PAPER_GRADE_STEP_OPTIONAL_KEYS) must
          be present even if value is None — explicit None vs missing distinction
          is paper §3 evidence-layer contract (B-280).
+      5. B-338 (/stress A1.9 Mode B F7, 2026-05-16): `cost_usd` nested keys
+         must include all of {input, output, model, router_overhead, total}
+         (paper §3.5 cost breakdown disclosure depends on these). Pre-fix
+         validator checked `cost_usd is dict` only, leaving silent drift
+         possible (runner could rename "model" → "llm" → `compute_component_
+         breakdown.get("model", 0)` silently zeros out paper §3 model
+         cost number).
 
     Raises:
         ValueError on any contract violation. Callers (runner write boundary,
@@ -336,6 +346,16 @@ def validate_step_record_v2(record: Dict[str, Any]) -> None:
             f"StepRecordV2 missing paper-grade critical optional keys (value may be None): "
             f"{missing_critical}. Paper §3 evidence-layer contract requires presence."
         )
+    # B-338: nested cost_usd key validation.
+    cost = record.get("cost_usd", {})
+    if isinstance(cost, dict):
+        missing_cost_keys = sorted(_COST_USD_REQUIRED_KEYS - set(cost.keys()))
+        if missing_cost_keys:
+            raise ValueError(
+                f"StepRecordV2.cost_usd missing required nested keys "
+                f"{missing_cost_keys}. Paper §3.5 cost breakdown depends on "
+                "{input, output, model, router_overhead, total} all present."
+            )
 
 
 def validate_episode_summary_v2(record: Dict[str, Any]) -> None:

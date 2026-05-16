@@ -102,10 +102,12 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
     # docker_service_error even when error was from B0 proxy API short
     # response (no AWS gateway URL in error string) → paper §3.4 noise
     # breakdown mis-categorized API transient as docker container issue.
-    # Specific container/URL signatures still classify as docker_service_error.
-    if any(k in msg for k in ("docker", "container", "service unavailable")):
+    # Specific container signatures still classify as docker_service_error;
+    # "service unavailable" is a generic HTTP 503 phrase (not docker-
+    # specific), so it now falls through to unclassified_5xx.
+    if any(k in msg for k in ("docker", "container")):
         return True, "docker_service_error"
-    if any(k in msg for k in ("502", "503")):
+    if any(k in msg for k in ("502", "503", "service unavailable")):
         return True, "unclassified_5xx"
     if "start_url_content_error" in msg:
         return True, "start_url_content_error"
