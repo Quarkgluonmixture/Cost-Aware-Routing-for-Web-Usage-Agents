@@ -74,13 +74,76 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
 }
 
 
+# B-190 (/stress A1.4b-ii Claude D1 + codex B-ii-1, P0 OOB): mirror catalog
+# for `StepRecordV2`. Previously only `EpisodeSummaryV2` had a defaults dict,
+# so step-level JSONL rows lacked any `fill_defaults` path → readers either
+# raised KeyError on missing optional fields OR silently saw None. The 5
+# paper-grade-critical optionals (`parse_valid`, `parse_failure_reason`,
+# `fallback_finish`, `image_meta`, `locator_route_meta`) MUST exist for
+# §3 evidence layer claims (B-167 invalid_action taxonomy, B-156 locator
+# route ON_TARGET rate, A1.1 codex C1 image_over_cap audit, B-165
+# fallback_finish reward override guard). New step records will carry them;
+# legacy JSONL is back-filled by `fill_defaults(record, STEP_RECORD_V2_DEFAULTS)`.
+STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
+    # --- core (required, no default — fail if missing) ---
+    "schema_version": SCHEMA_VERSION_V2,
+    "run_id": "",
+    "condition_id": "",
+    "benchmark": "",
+    "benchmark_site": "",
+    "task_id": -1,
+    "seed": 42,
+    "step_idx": 0,
+    "som": {},
+    "observation_mode": "unknown",
+    "router": {},
+    "module_flags": {},
+    "action_type": "",
+    "action": {},
+    "action_success": False,
+    "page_changed": False,
+    "latency_ms": {},
+    "tokens": {},
+    "cost_usd": {},
+    "energy": {},
+    "retry_count": 0,
+    "error_category": None,
+    "artifact_paths": {},
+    "reward": 0.0,
+    "done": False,
+    # --- optional (default-filled when absent in old data) ---
+    "page_change_reasons": [],
+    "text_similarity": None,
+    "checklist": None,
+    "state_digest": None,
+    "obs_url": None,
+    # paper-grade critical optionals (B-167, A1.1 codex C1, B-156, B-09):
+    "parse_valid": None,
+    "parse_failure_reason": None,
+    "fallback_finish": None,
+    "confidence": None,
+    "agent_visible_changed": None,
+    "image_meta": None,
+    "locator_route_meta": None,
+}
+
+
 def fill_defaults(record: dict, defaults: Optional[Dict[str, Any]] = None) -> dict:
     """Return a copy of `record` with missing keys filled from `defaults`.
 
     Used by old-data readers that need a stable schema regardless of when
     the file was written. Does NOT overwrite existing keys.
+
+    Pass `defaults=EPISODE_SUMMARY_V2_DEFAULTS` for episode summaries (the
+    backward-compat default when no `defaults` is supplied) or
+    `defaults=STEP_RECORD_V2_DEFAULTS` for step-record JSONL rows.
     """
     d = defaults if defaults is not None else EPISODE_SUMMARY_V2_DEFAULTS
     out = dict(d)  # start with all defaults
     out.update(record)  # overlay actuals (existing values win)
     return out
+
+
+def fill_step_defaults(record: dict) -> dict:
+    """B-190 convenience: fill step-record defaults explicitly."""
+    return fill_defaults(record, STEP_RECORD_V2_DEFAULTS)

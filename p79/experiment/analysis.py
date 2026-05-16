@@ -116,10 +116,26 @@ def _compute_pareto_front(points: List[Dict[str, float]], maximize: str, minimiz
 
 
 def _collect_episode_summaries(run_dir: Path) -> List[Dict[str, Any]]:
+    # B-192 (/stress A1.4b-ii Claude D2, P1): actively exercise the
+    # schema_migrations framework by running every loaded episode summary
+    # through `fill_defaults`. Pre-fix the framework was dead infrastructure
+    # (only 1 test referenced its constants for alignment check, ZERO
+    # production callers); v3 schema bump would have cold-started under
+    # pressure. Now: legacy summaries written before B-166/B-167/B-168
+    # telemetry was added receive default-typed values for the new fields,
+    # so downstream `aggregate_condition_metrics` (B-193 emits trajectory
+    # rates) never sees KeyError. User chose "历史归档" → defaults are
+    # baseline-typed (False / empty dict / 0), legacy rows count as
+    # "no trajectory_incomplete / no partial_recovery" by convention.
+    from p79.experiment.schema_migrations.v2 import (
+        EPISODE_SUMMARY_V2_DEFAULTS,
+        fill_defaults,
+    )
     rows: List[Dict[str, Any]] = []
     for summary_path in run_dir.glob("*/episodes/*_summary_v2.json"):
         with open(summary_path, "r", encoding="utf-8") as f:
-            rows.append(json.load(f))
+            raw = json.load(f)
+        rows.append(fill_defaults(raw, EPISODE_SUMMARY_V2_DEFAULTS))
     return rows
 
 

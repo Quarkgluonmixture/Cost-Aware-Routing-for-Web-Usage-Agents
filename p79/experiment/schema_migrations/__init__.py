@@ -33,6 +33,7 @@ Design
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Callable, Dict, List, Tuple
 
 # Migration registry: (from_version, to_version) -> migration function
@@ -70,9 +71,16 @@ def migrate(record: dict, from_v: str, to_v: str) -> dict:
 
     Returns a NEW dict (does not mutate input). Raises if no migration path
     exists between the requested versions.
+
+    B-191 (/stress A1.4b-ii Claude D3, P0 OOB): use `deepcopy` not the
+    shallow `dict(record)` at entry — nested dicts (`trigger_distribution`,
+    `state_change_reason_distribution`, `module_flags`, etc.) would otherwise
+    share references with the caller's source data, and any future migration
+    that mutates a nested dict in-place would silently corrupt caller state.
+    Same defensive class as B-164 in `runner/main.py`.
     """
     if from_v == to_v:
-        return dict(record)
+        return deepcopy(record)
 
     try:
         i_from = _CHAIN.index(from_v)
@@ -83,7 +91,7 @@ def migrate(record: dict, from_v: str, to_v: str) -> dict:
     if i_to < i_from:
         raise ValueError(f"Downgrade not supported: {from_v} -> {to_v}")
 
-    out = dict(record)
+    out = deepcopy(record)
     for i in range(i_from, i_to):
         f, t = _CHAIN[i], _CHAIN[i + 1]
         if (f, t) not in _REGISTRY:
