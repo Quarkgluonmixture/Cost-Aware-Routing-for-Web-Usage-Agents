@@ -78,29 +78,102 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
     conditions: List[ConditionSpec] = []
 
     if phase == "phase1":
-        # Flat 3-mode design: dom / som / vision.
+        # Flat 3-mode design: dom / som / vision (+ phantom_text / phantom_prompt / phantom_som).
         # "som" implies SOM_MARKS + marked image; "vision" implies raw screenshot only.
         # som_on is derived (True only when mode == "som").
         obs_values = [str(x) for x in primary.get("observation_mode", ["dom", "som", "vision"])]
 
-        # Extract model_name from backend config for condition metadata (helps distinguish B0/B1).
+        # Extract model_name from backend config for condition metadata (helps distinguish B0/B1/B2).
         backend_cfg = cfg.get("backends", {}).get(backend_id, {})
         model_name = backend_cfg.get("api_name") or backend_cfg.get("path") or backend_cfg.get("model_path", "unknown")
 
+        # Phase 1a v6 (2026-05-16): `phase1.variant` enum controls which conditions to spawn,
+        # enabling A100 sequential launch protocol (baseline pass first → router pass second)
+        # per `proposals_v6.md` D3 + user-confirmed Phase 1a execution model 2026-05-16.
+        # Values:
+        #   "baseline" (default, backward-compat) — 6 baseline conditions/cell, no router
+        #   "router"   — router-variant conditions/cell (count depends on router_kind), no baseline
+        #   "both"     — baseline + router interleaved for single-launch
+        # Legacy flag `include_router_variants` kept for backward-compat (True ≡ "both").
+        #
+        # v7 walk-back 2026-05-16 (Q3 drop cascade per user): `phase1.router_kind` subfield:
+        #   "learned" (default v7+) — 1 router cond/cell with obs_mode="learned" sentinel;
+        #                             LR predicts mode per task at runtime; no per-mode loop
+        #   "cascade" — 6 router cond/cell (one per initial_mode) for v6 cascade L1+L2 design;
+        #               DEFERRED to paper-2 per Q3 decision 2026-05-16
+        phase1_cfg = cfg.get("variables", {}).get("phase1", {})
+        if "variant" in phase1_cfg:
+            variant_mode = str(phase1_cfg["variant"]).lower()
+        elif phase1_cfg.get("include_router_variants", False):
+            variant_mode = "both"
+        else:
+            variant_mode = "baseline"
+        if variant_mode not in ("baseline", "router", "both"):
+            raise ValueError(
+                f"phase1.variant must be 'baseline'|'router'|'both', got: {variant_mode}"
+            )
+        emit_baseline = variant_mode in ("baseline", "both")
+        emit_router = variant_mode in ("router", "both")
+        router_kind = str(phase1_cfg.get("router_kind", "learned")).lower()
+        if router_kind not in ("learned", "cascade"):
+            raise ValueError(
+                f"phase1.router_kind must be 'learned'|'cascade', got: {router_kind}"
+            )
+
         for obs_mode in obs_values:
             som_on = obs_mode == "som"
-            cid = f"phase1_{obs_mode}_router_0"
+            if emit_baseline:
+                cid = f"phase1_{obs_mode}_router_0"
+                conditions.append(
+                    ConditionSpec(
+                        condition_id=cid,
+                        phase="phase1",
+                        backend_id=backend_id,
+                        som_on=som_on,
+                        observation_mode=obs_mode,
+                        router_on=False,
+                        modules=ModuleFlags(),
+                        label=f"Phase1 {obs_mode.upper()} mode",
+                        metadata={"model_name": model_name, "router_variant": "baseline"},
+                    )
+                )
+            if emit_router and router_kind == "cascade":
+                cid_routed = f"phase1_{obs_mode}_router_v6"
+                conditions.append(
+                    ConditionSpec(
+                        condition_id=cid_routed,
+                        phase="phase1",
+                        backend_id=backend_id,
+                        som_on=som_on,
+                        observation_mode=obs_mode,
+                        router_on=True,
+                        modules=ModuleFlags(),
+                        label=f"Phase1 {obs_mode.upper()} mode + v6 router",
+                        metadata={
+                            "model_name": model_name,
+                            "router_variant": "v6_pareto_cascade",
+                            "initial_mode": obs_mode,
+                        },
+                    )
+                )
+        if emit_router and router_kind == "learned":
+            # v7 learned-only: 1 router condition per cell (not per-mode); LR picks mode
+            # per task at runtime. obs_mode="learned" sentinel signals runner to query LR.
             conditions.append(
                 ConditionSpec(
-                    condition_id=cid,
+                    condition_id="phase1_learned_router",
                     phase="phase1",
                     backend_id=backend_id,
-                    som_on=som_on,
-                    observation_mode=obs_mode,
-                    router_on=False,
+                    som_on=False,  # LR may pick som per-task; per-condition som_on n/a
+                    observation_mode="learned",
+                    router_on=True,
                     modules=ModuleFlags(),
-                    label=f"Phase1 {obs_mode.upper()} mode",
-                    metadata={"model_name": model_name},
+                    label="Phase1 learned router (LR over phantom-augmented mode set)",
+                    metadata={
+                        "model_name": model_name,
+                        "router_variant": "v7_learned",
+                        "mode_set": obs_values,
+                    },
                 )
             )
 

@@ -16,6 +16,9 @@ class RouterState:
     text_length_history: List[int] = field(default_factory=list)
     current_mode: str = "dom"
     success_streak: int = 0
+    # v6 cascade fallback latch (proposals_v6.md §1 D2): once fired, route stays at
+    # safe_fallback_target for remainder of episode; prevents oscillation.
+    fallback_latched: bool = False
 
 
 class RuleBasedRouter:
@@ -41,6 +44,15 @@ class RuleBasedRouter:
         self.text_length_trigger = int(thresholds.get("text_length_trigger", 12000))
         self.deescalation_streak = int(thresholds.get("deescalation_streak", 3))
         self.history_window = int(thresholds.get("history_window", 5))
+
+        # v6 cascade fallback (proposals_v6.md §1 D2):
+        # - safe_fallback_target: mode to switch to when a v6 cascade trigger fires.
+        # - latch_after_fallback: when True, RouterState.fallback_latched is set and
+        #   subsequent decide() calls force-route to safe_fallback_target.
+        # Backward-compat default: target=phantom_som (v6 archive empirical default winner),
+        # latch=False (preserves v3/v4/v5 escalate-deescalate behavior unless opted in).
+        self.safe_fallback_target = str(router_cfg.get("safe_fallback_target", "phantom_som"))
+        self.latch_after_fallback = bool(router_cfg.get("latch_after_fallback", False))
 
     def decide(
         self,
@@ -115,15 +127,25 @@ class RuleBasedRouter:
 
         if not router_enabled:
             decision = preferred_mode
+        elif self.latch_after_fallback and state.fallback_latched:
+            # v6 cascade: once a fallback fired, force-route to safe target for
+            # remainder of episode regardless of new triggers.
+            decision = self.safe_fallback_target
         else:
             if triggers:
-                # Escalate: pick the next more expensive mode from modes list
-                current_idx = (
-                    self.modes.index(state.current_mode)
-                    if state.current_mode in self.modes
-                    else 0
-                )
-                decision = self.modes[min(current_idx + 1, len(self.modes) - 1)]
+                if self.latch_after_fallback:
+                    # v6 cascade semantics: trigger → switch to safe fallback target + latch
+                    decision = self.safe_fallback_target
+                    state.fallback_latched = True
+                    triggers.append("v6_cascade_fallback_latched")
+                else:
+                    # Legacy v3/v4/v5: escalate to next more expensive mode
+                    current_idx = (
+                        self.modes.index(state.current_mode)
+                        if state.current_mode in self.modes
+                        else 0
+                    )
+                    decision = self.modes[min(current_idx + 1, len(self.modes) - 1)]
             elif state.success_streak >= self.deescalation_streak and state.current_mode != self.modes[0]:
                 # De-escalate after sustained success
                 current_idx = (
