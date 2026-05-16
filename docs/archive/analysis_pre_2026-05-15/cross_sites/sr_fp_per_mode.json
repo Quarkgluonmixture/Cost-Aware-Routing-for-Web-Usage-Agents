@@ -1,0 +1,6 @@
+{
+  "method": "aggregate raw/adjusted SR + FP from per-task summary_v2.json (B0 5-mode + B1 partial)",
+  "data_source": "paper-grade B0 5-mode runs + B1 3-mode + B1 cls Phantom-SoM (FRESH 04-29)",
+  "cells": {},
+  "summary_table": []
+}
