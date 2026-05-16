@@ -165,7 +165,7 @@ class ExperimentRunner:
         # propagation to LLM payload (proxy `seed` param) and torch generation.
         # Uses self.seed which was set per (condition, seed) pair in run().
         #
-        # B-162 (/stress A1.4a v8 codex B5, 2026-05-16): deep copy not shallow.
+        # B-164 (/stress A1.4a v8 codex B5, 2026-05-16): deep copy not shallow.
         # Previously ``dict(backend_cfg)`` shared nested dicts/lists (e.g.
         # ``generation``, ``model_kwargs``, ``headers``, ``safety``) with
         # ``self.cfg``, so any agent constructor side effect that mutated a
@@ -318,11 +318,11 @@ class ExperimentRunner:
 
     @staticmethod
     def _aggregate_partial_steps(partial_steps: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """B-166 (/stress A1.4a v8 codex B1, 2026-05-16): aggregate metrics
+        """B-168 (/stress A1.4a v8 codex B1, 2026-05-16): aggregate metrics
         from partial JSONL rows so a mid-episode crash doesn't erase the
         tokens/cost/latency already incurred.
 
-        Pre-B-166 the runner ``except`` path emitted ``steps=0, total_tokens=0,
+        Pre-B-168 the runner ``except`` path emitted ``steps=0, total_tokens=0,
         total_cost=0`` even after 12 step JSONL rows were already on disk,
         creating a JSONL-vs-summary divergence: same episode wrote two
         incompatible histories. ``read_jsonl_dedup`` already handles restart
@@ -389,10 +389,10 @@ class ExperimentRunner:
         loaded: Dict[str, Any],
         expected: Dict[str, Any],
     ) -> Optional[Dict[str, Tuple[Any, Any]]]:
-        """B-167 (/stress A1.4a v8 codex B2, 2026-05-16): validate that a
+        """B-169 (/stress A1.4a v8 codex B2, 2026-05-16): validate that a
         loaded summary on disk actually belongs to the current run.
 
-        Pre-B-167 the resume gate accepted ANY file at the expected path —
+        Pre-B-169 the resume gate accepted ANY file at the expected path —
         if output_root was reused with changed ``run_id``/``seed``/
         ``include_sites``/``max_tasks_per_site``, stale summaries silently
         ingested into the new aggregate. Identity tuple:
@@ -416,10 +416,10 @@ class ExperimentRunner:
         page_changed: bool,
         env_error: Optional[str] = None,
     ) -> Optional[str]:
-        """B-165 (/stress A1.4a v8 Claude F3 expanded scope, 2026-05-16):
+        """B-167 (/stress A1.4a v8 Claude F3 expanded scope, 2026-05-16):
         expanded from 5 categories to 10 + unknown_failure bucket.
 
-        Pre-B-165, any failure_reason not matching parse/keyword OR
+        Pre-B-167, any failure_reason not matching parse/keyword OR
         timeout/network keywords fell through to "invalid_action" catch-all,
         silently contaminating paper §3.5 cross-baseline error taxonomy.
         Now distinguishes structural validation sub-categories emitted by
@@ -520,7 +520,7 @@ class ExperimentRunner:
                             with open(summary_file, "r", encoding="utf-8") as f:
                                 loaded = json.load(f)
 
-                            # B-167 (/stress A1.4a v8 codex B2, 2026-05-16):
+                            # B-169 (/stress A1.4a v8 codex B2, 2026-05-16):
                             # identity tuple check. Pre-fix the resume gate
                             # accepted any file at the expected path — if
                             # output_root was reused with different
@@ -550,7 +550,7 @@ class ExperimentRunner:
                                 try:
                                     shutil.move(str(summary_file), str(_quarantine_path))
                                     logger.warning(
-                                        "B-167 resume identity mismatch site=%s task=%s — "
+                                        "B-169 resume identity mismatch site=%s task=%s — "
                                         "quarantined %s → %s. Mismatches: %s",
                                         task.site, task.task_id,
                                         summary_file.name, _quarantine_path.name,
@@ -558,7 +558,7 @@ class ExperimentRunner:
                                     )
                                 except OSError as _q_exc:
                                     logger.error(
-                                        "B-167 quarantine move failed for %s: %s — re-running anyway",
+                                        "B-169 quarantine move failed for %s: %s — re-running anyway",
                                         summary_file, _q_exc,
                                     )
                                 # Fall through to re-run; do NOT continue
@@ -834,7 +834,7 @@ class ExperimentRunner:
             )
             noise, noise_cat = detect_benchmark_noise(str(exc))
 
-            # B-166 (/stress A1.4a v8 codex B1, 2026-05-16): partial-step
+            # B-168 (/stress A1.4a v8 codex B1, 2026-05-16): partial-step
             # crash recovery. Try to read any JSONL rows already written
             # before the exception fired, so the summary's
             # steps/tokens/cost/latency reflect what actually happened
@@ -849,7 +849,7 @@ class ExperimentRunner:
                     _partial_steps = read_jsonl_dedup(_jsonl_path)
             except Exception as _read_exc:
                 logger.warning(
-                    "B-166 partial-JSONL read failed for site=%s task=%s: %s — "
+                    "B-168 partial-JSONL read failed for site=%s task=%s: %s — "
                     "falling back to zero-step error summary",
                     task.site, task.task_id, _read_exc,
                 )
@@ -893,7 +893,7 @@ class ExperimentRunner:
                 "router_overhead_usd": _agg["total_router_overhead_cost_usd"],
                 "total_energy_kwh": 0.0,
             }
-            # B-164 propagation: error summaries also flagged incomplete
+            # B-166 propagation: error summaries also flagged incomplete
             summary["trajectory_incomplete"] = True
             summary["unknown_failure_reasons"] = {}
             summary["partial_recovery_step_count"] = _agg["steps"]
@@ -1760,7 +1760,7 @@ class ExperimentRunner:
         # When the agent never stopped (max-steps / cycle), trajectory ends with an obs dict
         # which lacks "answer", causing KeyError: 'answer'.  Append a fake stop action.
         #
-        # B-164 (/stress A1.4a v8 Claude F4, 2026-05-16): trajectory_incomplete
+        # B-166 (/stress A1.4a v8 Claude F4, 2026-05-16): trajectory_incomplete
         # telemetry. The fake stop action's empty answer is fed to VWA's
         # string_match evaluator, which compares "" vs ground-truth ("$19.99",
         # etc.) → score=0 for all max-steps-timeout episodes regardless of
@@ -1792,7 +1792,7 @@ class ExperimentRunner:
         # Override only when the agent issued a finish/stop and VWA reward
         # agrees — never override after cycle early-stop (agent did not finish).
         #
-        # B-163 (/stress A1.4a v8 Claude F2 + codex B3 dual-catch, 2026-05-16):
+        # B-165 (/stress A1.4a v8 Claude F2 + codex B3 dual-catch, 2026-05-16):
         # fallback_finish guard. Previously the keyword-rescue 'finish' (where
         # backend parsed gibberish output to action_type='finish' via keyword
         # scan, recorded as fallback_finish=True + parse_valid=False) ALSO
@@ -1933,13 +1933,13 @@ class ExperimentRunner:
         _agent_finished = (_last_at in ("finish", "stop")) and not _last_fb
         episode_summary["agent_finished"] = _agent_finished
 
-        # B-164 (/stress A1.4a v8 Claude F4, 2026-05-16): trajectory_incomplete
+        # B-166 (/stress A1.4a v8 Claude F4, 2026-05-16): trajectory_incomplete
         # — see the fake stop-action block above. Recorded here so per-cell
         # aggregation can report `trajectory_incomplete_rate` as a transparency
         # metric (paper §3.5). Always emitted to keep schema invariant.
         episode_summary["trajectory_incomplete"] = trajectory_incomplete
 
-        # B-165 (/stress A1.4a v8 Claude F3 expanded scope, 2026-05-16):
+        # B-167 (/stress A1.4a v8 Claude F3 expanded scope, 2026-05-16):
         # unknown_failure_reasons Counter exposes any failure_reason that
         # fell through to ``unknown_failure`` category. Acts as a paper-grade
         # tripwire — if a previously-unseen backend error string appears

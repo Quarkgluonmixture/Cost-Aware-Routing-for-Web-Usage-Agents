@@ -1,4 +1,4 @@
-"""Invariant tests for /stress A1.4a v8 Commit G2 (B-165) — invalid_action
+"""Invariant tests for /stress A1.4a v8 Commit G2 (B-167) — invalid_action
 sub-category 细分 + unknown_failure bucket + paper §3.5 informative error
 taxonomy.
 """
@@ -181,7 +181,7 @@ def test_normalize_env_error_still_env():
 
 
 def test_normalize_unknown_failure_bucket_for_new_reasons():
-    """B-165 critical: any UNKNOWN failure_reason (not in any whitelist)
+    """B-167 critical: any UNKNOWN failure_reason (not in any whitelist)
     falls to ``unknown_failure``, not silent ``invalid_action`` catch-all.
 
     This is the future-proof tripwire — if a new backend emits a novel
@@ -196,7 +196,7 @@ def test_normalize_unknown_failure_bucket_for_new_reasons():
             action_success=False, page_changed=False,
         )
         assert cat == "unknown_failure", (
-            f"B-165 regression: novel reason {novel_reason!r} collapsed to {cat!r} "
+            f"B-167 regression: novel reason {novel_reason!r} collapsed to {cat!r} "
             f"instead of unknown_failure (silently lost to invalid_action catch-all?)"
         )
 
@@ -222,12 +222,12 @@ def test_episode_summary_has_unknown_failure_reasons_field():
     surfaces it for catalog inclusion."""
     src = (REPO_ROOT / "p79/experiment/runner/main.py").read_text(encoding="utf-8")
     assert 'episode_summary["unknown_failure_reasons"]' in src, (
-        "B-165 episode_summary missing unknown_failure_reasons Counter field"
+        "B-167 episode_summary missing unknown_failure_reasons Counter field"
     )
     # Counter is built from step_records filtered by error_category=='unknown_failure'
     assert 'error_category") == "unknown_failure"' in src or \
         '"error_category"] == "unknown_failure"' in src, (
-        "B-165 Counter must filter step_records by error_category=='unknown_failure'"
+        "B-167 Counter must filter step_records by error_category=='unknown_failure'"
     )
 
 

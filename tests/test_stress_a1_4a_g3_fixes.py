@@ -1,4 +1,4 @@
-"""Invariant tests for /stress A1.4a v8 Commit G3 (B-166 + B-167) — JSONL /
+"""Invariant tests for /stress A1.4a v8 Commit G3 (B-168 + B-169) — JSONL /
 resume hardening: partial-step crash recovery + resume identity check.
 """
 from __future__ import annotations
@@ -16,13 +16,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 # ---------------------------------------------------------------------------
-# B-166 — Partial-step crash recovery: _aggregate_partial_steps
+# B-168 — Partial-step crash recovery: _aggregate_partial_steps
 # ---------------------------------------------------------------------------
 
 
 def test_aggregate_partial_steps_empty_returns_zero_summary():
     """Empty step list (no JSONL on disk before crash) → zero-step summary
-    (preserves pre-B-166 behavior as defensive fallback)."""
+    (preserves pre-B-168 behavior as defensive fallback)."""
     agg = ExperimentRunner._aggregate_partial_steps([])
     assert agg["steps"] == 0
     assert agg["total_tokens"] == 0
@@ -31,7 +31,7 @@ def test_aggregate_partial_steps_empty_returns_zero_summary():
 
 
 def test_aggregate_partial_steps_sums_tokens_and_costs():
-    """B-166 critical: 12 partial JSONL rows on disk → summary aggregates
+    """B-168 critical: 12 partial JSONL rows on disk → summary aggregates
     them, not zero-step erasure. Paper-grade evidence layer no longer
     splits between JSONL truth and summary truth on mid-episode crash."""
     partial = [
@@ -59,7 +59,7 @@ def test_aggregate_partial_steps_sums_tokens_and_costs():
 
 
 def test_aggregate_partial_steps_handles_missing_fields():
-    """B-166 robustness: rows from older schema versions / corrupt-but-
+    """B-168 robustness: rows from older schema versions / corrupt-but-
     parsed JSONL may lack fields. Helper must not KeyError, treats missing
     as zero. Otherwise the catch-all except path would mask a recoverable
     crash with its own crash."""
@@ -91,7 +91,7 @@ def test_aggregate_partial_steps_no_op_and_unchanged_rates():
 
 
 # ---------------------------------------------------------------------------
-# B-167 — Resume identity check: _validate_resume_identity
+# B-169 — Resume identity check: _validate_resume_identity
 # ---------------------------------------------------------------------------
 
 
@@ -111,7 +111,7 @@ def test_validate_resume_identity_returns_none_on_match():
 
 
 def test_validate_resume_identity_catches_run_id_drift():
-    """Pre-B-167 critical scenario: output_root reused, run_id changed
+    """Pre-B-169 critical scenario: output_root reused, run_id changed
     (e.g. yesterday's run vs today's). Loaded summary belongs to old run.
     Resume gate must detect via run_id mismatch."""
     expected = {
@@ -210,7 +210,7 @@ def test_validate_resume_identity_missing_field_counts_as_mismatch():
 
 
 # ---------------------------------------------------------------------------
-# Code-level invariants (B-166 + B-167 wired into runner.run / _run_and_record_episode)
+# Code-level invariants (B-168 + B-169 wired into runner.run / _run_and_record_episode)
 # ---------------------------------------------------------------------------
 
 
@@ -222,13 +222,13 @@ def test_runner_except_path_calls_aggregate_partial_steps():
     # The except block must read partial JSONL via read_jsonl_dedup AND
     # call _aggregate_partial_steps
     assert "from p79.experiment.io_utils import read_jsonl_dedup" in src, (
-        "B-166 missing read_jsonl_dedup import in runner"
+        "B-168 missing read_jsonl_dedup import in runner"
     )
     assert "read_jsonl_dedup(_jsonl_path)" in src, (
-        "B-166 except path must call read_jsonl_dedup on JSONL"
+        "B-168 except path must call read_jsonl_dedup on JSONL"
     )
     assert "self._aggregate_partial_steps" in src, (
-        "B-166 except path must call _aggregate_partial_steps"
+        "B-168 except path must call _aggregate_partial_steps"
     )
     # Error summary now uses _agg values instead of zero-step literals
     assert 'steps=_agg["steps"]' in src
@@ -240,12 +240,12 @@ def test_runner_resume_gate_uses_identity_check():
     just exists() check)."""
     src = (REPO_ROOT / "p79/experiment/runner/main.py").read_text(encoding="utf-8")
     assert "_validate_resume_identity" in src, (
-        "B-167 missing _validate_resume_identity call in run() resume gate"
+        "B-169 missing _validate_resume_identity call in run() resume gate"
     )
     # Quarantine path must be set up under episodes/quarantine/
     assert "quarantine" in src
     assert 'shutil.move(' in src or "shutil.move" in src, (
-        "B-167 quarantine path must move file (not just rename) for cross-fs safety"
+        "B-169 quarantine path must move file (not just rename) for cross-fs safety"
     )
 
 

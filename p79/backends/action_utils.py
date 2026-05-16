@@ -68,7 +68,7 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
     # Path 1: whole text is one valid JSON object (clean case).
-    # B-165 (/stress A1.4a v8, 2026-05-16): use validate_action_detailed so the
+    # B-167 (/stress A1.4a v8, 2026-05-16): use validate_action_detailed so the
     # sub-category reason (invalid_action_type / invalid_element_id /
     # invalid_coord / invalid_text / invalid_schema_dict / invalid_select_option)
     # surfaces in failure_reason instead of the catch-all "invalid_action".
@@ -192,8 +192,8 @@ def _is_valid_delta_pair(delta: Any) -> bool:
 
 
 def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bool, Optional[str]]:
-    """B-165 (/stress A1.4a v8 Claude F3 expanded scope, 2026-05-16): detailed
-    validation that emits a sub-category failure_reason. Pre-B-165
+    """B-167 (/stress A1.4a v8 Claude F3 expanded scope, 2026-05-16): detailed
+    validation that emits a sub-category failure_reason. Pre-B-167
     ``validate_action`` returned only ``(action, valid)`` — runner had no way
     to distinguish *why* the action was invalid (action_type unknown vs
     element_id missing vs coord malformed vs schema gap), so paper §3.5
@@ -226,7 +226,7 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
         coord = action.get("coordinate")
         coord_present = coord is not None
         coord_valid_shape = coord_present and _is_valid_coordinate_pair(coord)
-        # B-165: priority — if agent INTENDED to use coord (supplied) but it's
+        # B-167: priority — if agent INTENDED to use coord (supplied) but it's
         # malformed, surface as invalid_coord even when element_id is also
         # missing. Pre-fix the "neither id nor valid coord" branch fired first,
         # collapsing the specific coord-shape failure into invalid_element_id.
@@ -249,7 +249,7 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
         has_id = elem_id is not None and isinstance(elem_id, int)
         coord_present = coord is not None
         coord_valid_shape = coord_present and _is_valid_coordinate_pair(coord)
-        # B-165: priority — coord-present-but-malformed → invalid_coord
+        # B-167: priority — coord-present-but-malformed → invalid_coord
         # regardless of element_id presence. Specific reason beats generic.
         if coord_present and not coord_valid_shape:
             return {"action_type": "wait"}, False, "invalid_coord"

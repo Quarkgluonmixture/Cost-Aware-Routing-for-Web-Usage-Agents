@@ -52,7 +52,7 @@ def test_parse_valid_json_valid_action():
 def test_parse_valid_json_invalid_action_type():
     """JSON parses OK but action_type is not allowed → valid=False.
 
-    B-165 (/stress A1.4a, 2026-05-16): the failure_reason is now the specific
+    B-167 (/stress A1.4a, 2026-05-16): the failure_reason is now the specific
     sub-category ``invalid_action_type`` (was generic ``invalid_action``)
     so paper §3.5 error taxonomy can distinguish action-type-typo failures
     from structural-schema failures, element-id failures, etc.
@@ -66,7 +66,7 @@ def test_parse_valid_json_invalid_action_type():
 def test_parse_valid_json_click_no_target():
     """JSON parses OK but click has no coordinate or element_id → valid=False.
 
-    B-165 (/stress A1.4a, 2026-05-16): specific sub-category
+    B-167 (/stress A1.4a, 2026-05-16): specific sub-category
     ``invalid_element_id`` (was generic ``invalid_action``).
     """
     action, valid, reason = parse_action_text('{"action_type":"click"}')

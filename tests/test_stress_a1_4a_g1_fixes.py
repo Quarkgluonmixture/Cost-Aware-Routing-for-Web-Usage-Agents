@@ -1,4 +1,4 @@
-"""Invariant tests for /stress A1.4a v8 Commit G1 quick-wins (B-162 ~ B-164).
+"""Invariant tests for /stress A1.4a v8 Commit G1 quick-wins (B-164 ~ B-166).
 
 Each test pins one specific contract that, once it regresses, would break
 paper §3 evidence layer (cross-baseline SR fairness) or multi-seed
@@ -16,19 +16,19 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 # ---------------------------------------------------------------------------
-# B-162 — backend cfg deep copy (multi-seed isolation, /stress codex B5)
+# B-164 — backend cfg deep copy (multi-seed isolation, /stress codex B5)
 # ---------------------------------------------------------------------------
 
 
 def test_backend_cfg_uses_deepcopy_not_shallow_dict():
     """``_get_backend`` must ``copy.deepcopy`` backend_cfg to prevent nested
     mutation leakage across (condition, seed) iterations through self.cfg.
-    Pre-B-162 ``dict(backend_cfg)`` shared nested ``generation`` /
+    Pre-B-164 ``dict(backend_cfg)`` shared nested ``generation`` /
     ``model_kwargs`` / ``headers`` references; constructor side effects
     poisoned subsequent seed runs even with cache key tuple (B-144) correct.
     """
     src = (REPO_ROOT / "p79/experiment/runner/main.py").read_text(encoding="utf-8")
-    assert "import copy" in src, "B-162 missing `import copy` at module top"
+    assert "import copy" in src, "B-164 missing `import copy` at module top"
     # Inside _get_backend the shallow dict() must be retired
     get_backend_start = src.find("def _get_backend(self")
     assert get_backend_start >= 0, "_get_backend not found"
@@ -38,31 +38,31 @@ def test_backend_cfg_uses_deepcopy_not_shallow_dict():
         if not line.strip().startswith("#")
     )
     assert "backend_cfg = copy.deepcopy(backend_cfg)" in code_lines, (
-        "B-162 _get_backend must use copy.deepcopy(backend_cfg)"
+        "B-164 _get_backend must use copy.deepcopy(backend_cfg)"
     )
     assert "backend_cfg = dict(backend_cfg)" not in code_lines, (
-        "B-162 regression: shallow dict(backend_cfg) still in code"
+        "B-164 regression: shallow dict(backend_cfg) still in code"
     )
 
 
 # ---------------------------------------------------------------------------
-# B-163 — fallback_finish reward override guard (Claude F2 + codex B3 dual)
+# B-165 — fallback_finish reward override guard (Claude F2 + codex B3 dual)
 # ---------------------------------------------------------------------------
 
 
 def test_reward_override_requires_real_finish_not_fallback():
     """Reward override (score 0→1 when env reward>0) must require a REAL
-    agent finish (parse_valid AND not fallback_finish). Pre-B-163 it only
+    agent finish (parse_valid AND not fallback_finish). Pre-B-165 it only
     checked action_type==finish, so keyword-rescue fallbacks (B1/B2 frequent,
     B0 rare) silently triggered SR inflation differentially → paper-grade
     cross-baseline contamination.
     """
     src = (REPO_ROOT / "p79/experiment/runner/main.py").read_text(encoding="utf-8")
     # Must define _real_finish guard
-    assert "_real_finish" in src, "B-163 missing _real_finish guard variable"
+    assert "_real_finish" in src, "B-165 missing _real_finish guard variable"
     # The guard must check both fallback_finish AND parse_valid
     assert "fallback_finish" in src and "parse_valid" in src, (
-        "B-163 guard must verify both fallback_finish flag and parse_valid"
+        "B-165 guard must verify both fallback_finish flag and parse_valid"
     )
     # Reward override block must reference _real_finish, not direct action_type check
     override_idx = src.find("score = 1.0")
@@ -70,16 +70,16 @@ def test_reward_override_requires_real_finish_not_fallback():
     # Find the if-condition just before this override (preceding 30 lines)
     pre_override = src[max(0, override_idx - 1500):override_idx]
     assert "_real_finish" in pre_override, (
-        "B-163 reward override must use _real_finish guard"
+        "B-165 reward override must use _real_finish guard"
     )
     # Confirm the old loose check pattern is gone from the guard block
     assert 'step_records[-1].get("action_type", "") in ("finish", "stop")' not in pre_override, (
-        "B-163 regression: old action_type-only check still gates reward override"
+        "B-165 regression: old action_type-only check still gates reward override"
     )
 
 
 # ---------------------------------------------------------------------------
-# B-164 — trajectory_incomplete telemetry (Claude F4, paper §3.5 disclosure)
+# B-166 — trajectory_incomplete telemetry (Claude F4, paper §3.5 disclosure)
 # ---------------------------------------------------------------------------
 
 
@@ -92,15 +92,15 @@ def test_trajectory_incomplete_field_set_when_no_explicit_finish():
     src = (REPO_ROOT / "p79/experiment/runner/main.py").read_text(encoding="utf-8")
     # Flag must be defined before the fake-stop block
     assert "trajectory_incomplete = False" in src, (
-        "B-164 missing trajectory_incomplete initialization to False"
+        "B-166 missing trajectory_incomplete initialization to False"
     )
     # Inside the "no answer at trajectory tail" branch, flag must be set True
     assert "trajectory_incomplete = True" in src, (
-        "B-164 missing trajectory_incomplete=True assignment in fake-stop branch"
+        "B-166 missing trajectory_incomplete=True assignment in fake-stop branch"
     )
     # Must propagate to episode_summary
     assert 'episode_summary["trajectory_incomplete"] = trajectory_incomplete' in src, (
-        "B-164 episode_summary must stamp trajectory_incomplete telemetry"
+        "B-166 episode_summary must stamp trajectory_incomplete telemetry"
     )
 
 
