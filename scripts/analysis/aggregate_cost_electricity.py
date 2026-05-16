@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""[Efficiency 3a + 3d] Efficiency dimension — principled cost aggregation across B0/B1.
+"""[Efficiency 3a + 3d] Efficiency dimension — principled cost aggregation across B0/B1/B2.
+
+v6 update 2026-05-16: B2 (Gemma3-VL local 4B, added 2026-05-14) added to electricity-
+equivalent cost class alongside B1. See cell-level branch + paper §6 disclosure.
 
 B0 cost = API token cost (avg_total_cost_usd from Qwen3-VL-235B-A22B per-token rates)
 B1 cost = electricity-equivalent (avg_total_energy_kwh × electricity price)
@@ -101,13 +104,22 @@ def collect_cell(baseline: str, site: str, mode: str, sub: str) -> dict:
     if baseline == "B0":
         cell["paper_cost_usd"] = avg_token_cost  # paid API dollars
         cell["paper_cost_class"] = "API_token_dollars"
-    else:  # B1
+    elif baseline in ("B1", "B2"):
+        # v6 fix (P1-13, codex pre-fire #11): B2 (Gemma3-VL local 4B inference, added
+        # 2026-05-14) belongs to same "electricity-equivalent" cost class as B1 (Qwen3-VL
+        # local 4B). Previously fell into else branch (treated as B1) but docstring +
+        # markdown reporting only declared B0/B1 — paper §6 B2 cost story was structurally
+        # absent. Now explicit branch + class label.
         cell["paper_cost_usd"] = (
             None
             if avg_energy_kwh is None
             else avg_energy_kwh * ELECTRICITY_USD_PER_KWH
         )
         cell["paper_cost_class"] = "electricity_equivalent"
+    else:
+        # Unknown baseline (e.g., legacy "?") — skip cost assignment, paper §6 must exclude
+        cell["paper_cost_usd"] = None
+        cell["paper_cost_class"] = "unknown_baseline"
     return cell
 
 

@@ -47,9 +47,22 @@ DEFAULT_RUNS = get_run_dirs_paper_vwa()
 
 
 def parse_run_id(run_dir: Path) -> tuple[str, str]:
-    """Extract (baseline, site) from a paper run id."""
+    """Extract (baseline, site) from a paper run id.
+
+    v6 fix (P1-9, codex pre-fire #8): B2 (Gemma3-VL, added 2026-05-14) baseline parsing
+    added. Previously B2-prefixed runs silently parsed as "?" leading to dropped or
+    misattributed AUROC rows in the cross-condition table — paper §6 cross-baseline
+    cost-aware evidence was structurally incomplete on B2 cells.
+    """
     name = run_dir.name
-    baseline = "B0" if name.startswith("B0") else ("B1" if name.startswith("B1") else "?")
+    if name.startswith("B0"):
+        baseline = "B0"
+    elif name.startswith("B1"):
+        baseline = "B1"
+    elif name.startswith("B2"):
+        baseline = "B2"
+    else:
+        baseline = "?"
     for site in ("classifieds", "reddit", "shopping_admin", "shopping"):
         if f"_{site}_" in name or name.endswith(f"_{site}"):
             return baseline, site
