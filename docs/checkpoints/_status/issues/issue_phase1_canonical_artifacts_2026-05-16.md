@@ -91,9 +91,9 @@ per (site, model) cell + pooled. Producer reads `phantom_lift.csv` +
 ## Status
 
 - [x] Issue file created (this file)
-- [ ] B-184: build phase1_prereg_gate.{csv,json,md} producer script
-- [ ] B-184: wire into Makefile `_aggregate` chain
-- [ ] B-184: paper §1 hero prose update to cite new gate artifact
+- [x] **B-184: build phase1_prereg_gate.{csv,json,md} producer** — landed commit (see chronicle §150.8). `scripts/analysis/aggregate_phase1_prereg_gate.py` + 17 unit tests. Live run currently emits `gate_status=INSUFFICIENT_DATA` (no cell has all 6 modes yet; Phase 1a rerun in flight). Producer gracefully degrades.
+- [x] **B-184: wire into Makefile `_aggregate` chain** — runs BEFORE `phantom-lift` so canonical gate lands first; `phantom-lift` retained as appendix-exploratory.
+- [ ] B-184: paper §1 hero prose update to cite new gate artifact (defer until Phase 1a data lands and gate produces non-INSUFFICIENT_DATA status)
 - [ ] B-185: build claim_manifest.json producer
 - [ ] B-185: emit input_file_sha256 for all aggregator inputs
 - [ ] B-186: build hero_metrics.json producer

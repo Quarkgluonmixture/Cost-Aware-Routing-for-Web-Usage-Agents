@@ -231,6 +231,7 @@ _per_run_all:
 # Cross-condition aggregators (depends on per-run output)
 _aggregate:
 	$(MAKE) aggregate-sr-fp
+	$(MAKE) phase1-prereg-gate
 	$(MAKE) phantom-lift
 	$(MAKE) phantom-meta
 	$(MAKE) routing-auroc
@@ -297,7 +298,18 @@ summary-collect:
 routing-auroc:
 	$(PYTHON) scripts/analysis/aggregate_routing_auroc.py
 
-# Phantom routing lift — Section 1/4 paper hook evidence
+# B-184: Phase 1 PRIMARY gate (preregistration.md §1 lock).
+# FE inverse-variance pooled P-SoM drop-one over 6 planned (site, model) cells,
+# one-sided superiority test against δ=1.0pp at α=0.05. This is the
+# CANONICAL paper §1 H1 source-of-truth — every paper §1 hero number should
+# trace back to results/phantom_paper/phase1_prereg_gate.{csv,json,md}.
+# `phantom-lift` (below) computes the legacy 3→5 lift estimand and is now
+# appendix-exploratory only (codex B2 catch — different estimand than prereg).
+phase1-prereg-gate:
+	$(PYTHON) scripts/analysis/aggregate_phase1_prereg_gate.py
+
+# Phantom routing lift — appendix exploratory (was Section 1/4 paper hook,
+# demoted to appendix per B-184 — different estimand from prereg PRIMARY).
 # (3-mode oracle vs 5-mode oracle ceiling lift + bootstrap CI + decomposition
 #  + Bonferroni/Holm/BH/TOST per pre-registered family, T0a)
 phantom-lift:
