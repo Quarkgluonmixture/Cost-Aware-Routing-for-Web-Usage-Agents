@@ -2,6 +2,18 @@
 
 Extracted from scripts/maintenance/experiment_watchdog.py so that both the watchdog
 and the experiment runner can reuse the same login routine.
+
+A1.5 refactor (2026-05-16, B-211 + B-212 + B-220/221/224):
+- Credentials moved to env vars (B-211 double-leak cleanup); no plaintext in tracked code.
+  Required env: VWA_<SITE>_USER + VWA_<SITE>_PASS for each site. See scripts/vwa_env_remote.sh
+  template (gitignored by design per CLAUDE.md hard rule).
+- LOGIN_FAILED detection replaced from URL substring to urlparse path-equal + login_qs subset
+  match (B-212); pre-fix substring match systematically false-positived on shopping_admin
+  (every post-login URL contains "/admin/*" substring) and was fragile on reddit ("/login").
+- New `auth_required_gate(site, auth_dir, benchmark)` raises on failure (B-220/221/224 fail-cascade
+  closure); use at queue post-reset / runner pre-episode / watchdog launch where stale session
+  is paper-grade unacceptable. Retains existing `refresh_site_auth(...) -> bool` for soft-fail
+  consumers that already handle the False return.
 """
 from __future__ import annotations
 
@@ -9,15 +21,33 @@ import logging
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
+from typing import Tuple
 
 logger = logging.getLogger(__name__)
 
-_ACCOUNTS = {
-    "classifieds":    ("blake.sullivan@gmail.com", "Password.123"),
-    "reddit":         ("MarvelsGrantMan136",       "test1234"),
-    "shopping":       ("emma.lopez@gmail.com",     "Password.123"),
-    "shopping_admin": ("admin",                    "admin1234"),
+
+class AuthRefreshConfigError(Exception):
+    """Raised when required env vars (VWA_<SITE>_USER/PASS) are missing."""
+
+
+class AuthRefreshFailure(Exception):
+    """Raised by auth_required_gate when refresh fails after retries.
+
+    Callers (queue / runner / watchdog) should let this propagate to abort
+    the current launch path — paper-grade contamination prevention.
+    """
+
+
+# B-211 (2026-05-16): credentials loaded from env vars, NOT hardcoded.
+# Layout matches the canonical VWA reference test accounts; the env file
+# scripts/vwa_env_remote.sh (gitignored) is the runtime source.
+_ACCOUNT_ENV_KEYS = {
+    "classifieds":    ("VWA_CLASSIFIEDS_USER",    "VWA_CLASSIFIEDS_PASS"),
+    "reddit":         ("VWA_REDDIT_USER",         "VWA_REDDIT_PASS"),
+    "shopping":       ("VWA_SHOPPING_USER",       "VWA_SHOPPING_PASS"),
+    "shopping_admin": ("VWA_SHOPPING_ADMIN_USER", "VWA_SHOPPING_ADMIN_PASS"),
 }
 
 _DEFAULT_BASE_URLS = {
@@ -48,6 +78,26 @@ _ENV_KEYS = {
 }
 
 
+def _load_account(site: str) -> Tuple[str, str]:
+    """Load (username, password) from env. Raise AuthRefreshConfigError on missing.
+
+    B-211 (2026-05-16): replaces the hardcoded _ACCOUNTS table. Set env via
+    `scripts/vwa_env_remote.sh` (gitignored). Missing creds → fail loud rather
+    than silent fallback to canonical demo accounts.
+    """
+    if site not in _ACCOUNT_ENV_KEYS:
+        raise AuthRefreshConfigError(f"unknown site {site!r}")
+    user_var, pass_var = _ACCOUNT_ENV_KEYS[site]
+    user = os.environ.get(user_var)
+    pwd = os.environ.get(pass_var)
+    if not user or not pwd:
+        raise AuthRefreshConfigError(
+            f"VWA credentials for {site!r} missing — set both {user_var} and {pass_var} "
+            f"(template in scripts/vwa_env_remote.sh; gitignored by design)"
+        )
+    return user, pwd
+
+
 def refresh_site_auth(
     site: str,
     auth_dir: Path,
@@ -61,14 +111,20 @@ def refresh_site_auth(
     the runner's own Playwright instance is not affected.
 
     Returns True on success, False on any failure (logged as warning).
+    Callers needing hard-fail semantics should use ``auth_required_gate()``.
     """
-    if site not in _ACCOUNTS:
+    if site not in _ACCOUNT_ENV_KEYS:
         logger.warning("auth_refresh: unknown site %r", site)
         return False
 
     auth_dir = Path(auth_dir)
     auth_file = auth_dir / f"{site}_state.json"
-    username, password = _ACCOUNTS[site]
+
+    try:
+        username, password = _load_account(site)
+    except AuthRefreshConfigError as exc:
+        logger.error("auth_refresh: %s", exc)
+        return False
 
     if base_urls and site in base_urls:
         base_url = base_urls[site]
@@ -95,8 +151,15 @@ def refresh_site_auth(
     if _resolver_ip == "localhost":
         _resolver_ip = "127.0.0.1"
 
+    # B-212 fix (2026-05-16): LOGIN_FAILED detection — replace URL substring match
+    # with urlparse-based path-equal + login_qs subset. Pre-fix substring match
+    # systematically false-positived on shopping_admin (every "/admin/*" post-login
+    # URL contained "/admin" marker substring). For classifieds with query-bearing
+    # login (e.g. /index.php?page=login), require post-login query to also retain
+    # the login key for "still on login" to be true. See A1.5 §5 explanation.
     script = f"""
 import sys, time
+from urllib.parse import urlparse, parse_qs
 sys.path.insert(0, {str(repo_dir / 'external' / 'visualwebarena')!r})
 from playwright.sync_api import sync_playwright
 cm = sync_playwright()
@@ -123,20 +186,26 @@ elif site == 'shopping_admin':
     page.locator('#login').fill({password!r})
     page.get_by_role('button', name='Sign in').click()
 time.sleep(2)
-# Verify login actually succeeded BEFORE writing storage_state.
-# Was: storage_state written unconditionally → empty/stale cookies on failed
-# login → caller (watchdog) believed auth was refreshed but next episode
-# still NOT-LOGGED-IN. Heuristic: post-login URL no longer on login page.
+# B-212 (2026-05-16): structured login-success check via urlparse.
+# Path-equal + login-query subset = "still on login" gate.
+# Examples (verified A1.5 §5):
+#   classifieds login=/index.php?page=login; user-page=/index.php?page=user → path same,
+#     query 'page' differs → NOT still on login → success
+#   shopping_admin login=/admin; dashboard=/admin/dashboard/index → path differs (after rstrip)
+#     → NOT still on login → success (pre-fix substring approach false-positived 100% of time)
+#   reddit login=/login; redirected post-login=/f/foo → path differs → success
 final_url = page.url
-# Bug fix (2026-04-26): previous code did `.split('?')[0]` which collapsed
-# `/index.php?page=login` to `/index.php` for OSClass classifieds — this matches
-# ALL OSClass pages (including the post-login dashboard at
-# /index.php?page=user&action=items), causing every successful login to be
-# misclassified as LOGIN_FAILED. Fix: keep the full login path (with query)
-# when checking for "still on login page".
-login_marker = {login_path!r}.lower().rstrip('/')
-still_on_login = bool(login_marker) and login_marker in final_url.lower()
-if still_on_login:
+_parsed_final = urlparse(final_url)
+_parsed_login = urlparse({(base_url + login_path)!r})
+_final_qs = parse_qs(_parsed_final.query)
+_login_qs = parse_qs(_parsed_login.query)
+_final_path = _parsed_final.path.rstrip('/').lower()
+_login_path_norm = _parsed_login.path.rstrip('/').lower()
+_still_on_login = (
+    _final_path == _login_path_norm
+    and all(_final_qs.get(_k) == _v for _k, _v in _login_qs.items())
+)
+if _still_on_login:
     cm.__exit__(None, None, None)
     print('LOGIN_FAILED ->', final_url)
     sys.exit(2)  # distinct exit code so caller knows it's a login failure
@@ -150,12 +219,21 @@ print('ok ->', final_url)
         dataset = "webarena"
     else:
         dataset = "visualwebarena"
+
+    # B-214 (2026-05-16, deferred): minimal env propagation would drop LLM API
+    # keys + GITHUB_TOKEN from subprocess. Currently kept on for backwards-
+    # compatibility with Playwright env (HOME, PATH, DISPLAY, etc.). Future
+    # tightening: filter to {PATH, DATASET, VWA_REMOTE_HOST, HOME, USER,
+    # DISPLAY, PLAYWRIGHT_*}.
     env = {**os.environ, "DATASET": dataset}
+
+    # B-217 (2026-05-16, deferred): timeout override via AUTH_REFRESH_TIMEOUT.
+    _timeout = int(os.environ.get("AUTH_REFRESH_TIMEOUT", "30"))
 
     try:
         r = subprocess.run(
             [sys.executable, "-c", script],
-            capture_output=True, text=True, timeout=30, env=env,
+            capture_output=True, text=True, timeout=_timeout, env=env,
         )
         if r.returncode == 0 and auth_file.exists():
             logger.info("auth_refresh: %s refreshed: %s", site, r.stdout.strip())
@@ -177,6 +255,69 @@ print('ok ->', final_url)
     except Exception as exc:
         logger.warning("auth_refresh: %s error: %s", site, exc)
         return False
+
+
+def auth_required_gate(
+    site: str,
+    auth_dir: Path,
+    *,
+    base_urls: dict | None = None,
+    benchmark: str = "",
+    retry_count: int = 1,
+    retry_sleep_s: float = 2.0,
+) -> None:
+    """Hard-fail variant of refresh_site_auth: raise AuthRefreshFailure on persistent failure.
+
+    Use at paper-grade gate points where stale session contamination is unacceptable:
+    - queue post-reset launch (queue_baseline.sh) — first task starting clean
+    - runner pre-episode (runner/main.py) — periodic mid-condition refresh
+    - watchdog reactive launch (experiment_watchdog.py) — after session-loss-streak
+
+    B-220 / B-221 / B-224 (2026-05-16): closes the three-layer fail-cascade where
+    auth refresh failure was silently logged-warning + continue, leading to
+    NOT-LOGGED-IN episodes contaminating condition_summary_v2.json.
+
+    Args:
+      site, auth_dir, base_urls, benchmark — same as refresh_site_auth
+      retry_count — additional retries after first attempt (default 1 → 2 total attempts)
+      retry_sleep_s — sleep between attempts (default 2.0s)
+
+    Raises:
+      AuthRefreshFailure — wraps the last error after exhausting retries
+      AuthRefreshConfigError — propagated immediately (no retry on config error)
+    """
+    if site not in _ACCOUNT_ENV_KEYS:
+        raise AuthRefreshConfigError(f"unknown site {site!r}")
+
+    # Validate creds early — config errors don't benefit from retry
+    _load_account(site)  # raises AuthRefreshConfigError on missing env
+
+    attempts = retry_count + 1
+    last_error: str | None = None
+    for i in range(attempts):
+        try:
+            ok = refresh_site_auth(
+                site, auth_dir, base_urls=base_urls, benchmark=benchmark
+            )
+            if ok:
+                if i > 0:
+                    logger.info(
+                        "auth_required_gate(%s) succeeded on attempt %d/%d after retry",
+                        site, i + 1, attempts,
+                    )
+                return
+            last_error = f"refresh_site_auth returned False (attempt {i + 1}/{attempts})"
+        except Exception as exc:
+            last_error = f"{exc} (attempt {i + 1}/{attempts})"
+        if i < attempts - 1:
+            time.sleep(retry_sleep_s)
+
+    raise AuthRefreshFailure(
+        f"auth_required_gate({site!r}) FAILED after {attempts} attempts: {last_error}. "
+        f"NOT proceeding — paper-grade contamination prevented. "
+        f"Check VWA_REMOTE_HOST env, .auth/ writable, site reachability, "
+        f"and VWA_{site.upper()}_USER / VWA_{site.upper()}_PASS env vars."
+    )
 
 
 def should_refresh(

@@ -72,7 +72,15 @@ def main() -> int:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="只显示将要删除的内容，不实际删除",
+        help="只显示将要删除的内容，不实际删除 (B-213, 现 dry_run 是默认行为)",
+    )
+    parser.add_argument(
+        "--confirm",
+        action="store_true",
+        help="B-213 (A1.5 Item 4): 必须显式 --confirm 才会真正删除文件。"
+             " 否则即使 --dry-run 未设也强制 dry-run。这是 destructive 操作的"
+             " safety gate (`cleanup_all` 会 rmtree `results/run_*` > 90d,"
+             " paper-1 archive baseline 数据会灭失)。",
     )
     parser.add_argument(
         "--dir",
@@ -89,11 +97,18 @@ def main() -> int:
     
     args = parser.parse_args()
     
+    # B-213 (2026-05-16, A1.5 Item 4): dry_run is now default UNLESS --confirm passed.
+    # --dry-run flag retained for backward-compat but functionally redundant
+    # post-fix (everything is dry-run unless --confirm).
+    _effective_dry_run = (not args.confirm) or args.dry_run
+    if args.confirm and args.dry_run:
+        print("[cleanup_logs][warn] --dry-run takes precedence over --confirm; "
+              "no actual deletes performed.", file=sys.stderr)
     config = LogCleanupConfig(
         max_log_age_days=args.max_age,
         max_log_size_mb=args.max_size,
         max_log_count=args.max_count,
-        dry_run=args.dry_run,
+        dry_run=_effective_dry_run,
     )
     
     if args.usage_only:
@@ -111,8 +126,9 @@ def main() -> int:
         return 0
     
     if args.dir == "all":
-        # 清理所有
-        cleanup_all(project_root, config)
+        # 清理所有 — B-213: pass confirmed=args.confirm explicitly,所以即使
+        # config.dry_run=False (--dry-run 未设) 也需 --confirm 才执行删除。
+        cleanup_all(project_root, config, confirmed=args.confirm and not args.dry_run)
     elif args.dir == "logs":
         # 只清理日志
         logs_dir = project_root / "logs"

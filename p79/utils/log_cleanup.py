@@ -200,23 +200,44 @@ def print_disk_usage(path: Path) -> None:
 def cleanup_all(
     project_root: Path,
     config: Optional[LogCleanupConfig] = None,
+    *,
+    confirmed: bool = False,
 ) -> None:
     """清理所有日志和临时文件
-    
+
     Args:
         project_root: 项目根目录
-        config: 清理配置，如果为None则使用默认配置
+        config: 清理配置，如果为None则使用默认配置 (dry_run=True 默认)
+        confirmed: 必须显式 ``confirmed=True`` 才会执行实际删除。否则强制
+            dry_run 即使 config.dry_run=False。
+
+    B-213 fix (2026-05-16, A1.5 Item 4): default behavior is now NON-DESTRUCTIVE.
+    Pre-fix: default config.dry_run=False + max_run_age_days=90 →误调一次
+    ``cleanup_all(project_root)`` 永久 ``shutil.rmtree(results/.../run_*)`` > 90d,
+    paper-1 archive baseline 数据会灭失。Post-fix: 默认 config.dry_run=True;
+    caller 必须显式 ``cleanup_all(root, config, confirmed=True)`` 才真删。
+    CLI ``scripts/maintenance/cleanup_logs.py`` 加 ``--confirm`` flag 才会传 True。
     """
     if config is None:
         config = LogCleanupConfig(
             max_log_age_days=30,
             max_log_size_mb=1000,  # 1GB
             max_log_count=100,
-            dry_run=False,
+            dry_run=True,  # B-213: default to dry-run; opt-in to destructive via confirmed=True
         )
-    
+
+    # B-213 safety gate: even if caller passed dry_run=False explicitly,
+    # require confirmed=True kwarg as a second safeguard.
+    if not config.dry_run and not confirmed:
+        logger.warning(
+            "cleanup_all called with dry_run=False but confirmed=False — "
+            "forcing dry_run=True (B-213 safety gate, A1.5 Item 4). "
+            "Pass confirmed=True to actually delete."
+        )
+        config.dry_run = True
+
     logger.info("=" * 60)
-    logger.info("开始清理日志和临时文件")
+    logger.info("开始清理日志和临时文件 (dry_run=%s)", config.dry_run)
     logger.info("=" * 60)
     
     # 清理 logs/ 目录

@@ -960,19 +960,43 @@ class ExperimentRunner:
             # (runner → experiment → p79 → REPO_ROOT). Bug fix 2026-04-26.
             auth_dir = Path(__file__).resolve().parent.parent.parent.parent / ".auth"
             benchmark = self.cfg.get("experiment", {}).get("benchmark", "")
-            ok = refresh_site_auth(site, auth_dir, benchmark=benchmark)
-            if ok:
+            # B-220 fix (2026-05-16, A1.5 Item 19): replace warning-only with
+            # auth_required_gate. Pre-fix: refresh failure → logger.warning +
+            # continue → NOT-LOGGED-IN session lands in step_record + condition_summary.
+            # Post-fix: AuthRefreshFailure raised → episode aborts; outer
+            # `_run_episode_safe` catches it (sentinel-style raise per
+            # PaperGradeAbortError contract below) → condition records the
+            # episode as auth-aborted, watchdog picks up via state + retries.
+            try:
+                from p79.utils.auth_refresh import auth_required_gate, AuthRefreshFailure
+                auth_required_gate(site, auth_dir, benchmark=benchmark)
                 self._auth_episode_counts[site] = 0
                 self._auth_last_refresh_ts[site] = _now
-                logger.info("Auth refreshed for %s (seconds_since=%.0f)", site, _seconds_since)
-            else:
-                logger.warning("Auth refresh failed for %s — continuing with stale session", site)
+                logger.info("Auth gate passed for %s (seconds_since=%.0f)", site, _seconds_since)
+            except AuthRefreshFailure as _exc:
+                # Record + propagate so outer episode-safe wrapper logs +
+                # surfaces to condition_summary. Watchdog state will see the
+                # pattern + retry the condition after backoff.
+                logger.error(
+                    "Auth gate FAILED for %s — NOT proceeding with episode "
+                    "(paper-grade contamination prevention): %s",
+                    site, _exc,
+                )
+                raise
 
         episode_dir = condition_dir / "artifacts" / f"{task.site}_task_{task.task_id}"
         if episode_dir.exists():
             shutil.rmtree(episode_dir)
             logger.info("Cleared stale artifacts for %s task %s", task.site, task.task_id)
         episode_dir.mkdir(parents=True, exist_ok=True)
+        # B-222 (2026-05-16, A1.5 Item 6): in-progress marker for watchdog
+        # orphan-cleanup safety. Watchdog will skip pruning this artifact dir
+        # while the marker file is present (see experiment_watchdog.py
+        # orphan-cleanup block). Marker removed by post-episode cleanup below.
+        try:
+            (episode_dir / ".in_progress").touch()
+        except OSError:
+            pass  # filesystem ro / mkdir race; runner can still proceed
 
         # Clear stale JSONL from previous (interrupted) run
         stale_jsonl = condition_logger.step_log_path(task.site, task.task_id)
@@ -2020,5 +2044,16 @@ class ExperimentRunner:
         # master bug B-91, + N/A task exclusion at load time). `success` above
         # is already the canonical paper-grade outcome. `agent_finished` is
         # still recorded above as a standalone diagnostic.
+
+        # B-222 (2026-05-16, A1.5 Item 6): episode 完成 — 移除 .in_progress
+        # marker so watchdog orphan-cleanup may safely prune this artifact dir
+        # if its summary doesn't land (e.g. summary-write crash). The marker
+        # was touched after episode_dir.mkdir(parents=True, exist_ok=True).
+        try:
+            _marker = episode_dir / ".in_progress"
+            if _marker.exists():
+                _marker.unlink()
+        except OSError:
+            pass  # filesystem ro / race; downstream gallery handles missing marker
 
         return episode_summary

@@ -190,19 +190,36 @@ else
         echo "[baseline] reset OK; sleeping 15s for site to settle..."
         sleep 15
         # Refresh .auth/<site>_state.json post-reset — server-side session was wiped,
-        # so the runner's first task would otherwise hit NOT-LOGGED-IN (watchdog only
-        # reactively refreshes after streak=3, costing 3 dirty episodes).
-        echo "[baseline] refreshing .auth/${SITE}_state.json post-reset..."
+        # so the runner's first task would otherwise hit NOT-LOGGED-IN.
+        # B-224 fix (2026-05-16, A1.5 Item 19 default): switched from soft warn-and-continue
+        # to auth_required_gate hard-fail. Pre-fix: post-reset refresh failure was logged
+        # as [warn] + queue proceeded → first 1-3 tasks ran NOT-LOGGED-IN before watchdog
+        # reactive cleanup caught up → paper-grade contamination in step_record. Post-fix:
+        # auth_required_gate raises AuthRefreshFailure → queue exits 1 → user retries
+        # explicitly after fixing root cause (creds / site reachability / .auth/ writable).
+        echo "[baseline] gating .auth/${SITE}_state.json post-reset via auth_required_gate..."
         if "${PYTHON_BIN}" -c "
 import sys
 sys.path.insert(0, '${REPO_DIR}')
 from pathlib import Path
-from p79.utils.auth_refresh import refresh_site_auth
-sys.exit(0 if refresh_site_auth('${SITE}', Path('${REPO_DIR}/.auth')) else 1)
+from p79.utils.auth_refresh import auth_required_gate, AuthRefreshFailure, AuthRefreshConfigError
+try:
+    auth_required_gate('${SITE}', Path('${REPO_DIR}/.auth'))
+    print('[baseline][gate] auth_required_gate PASS')
+    sys.exit(0)
+except (AuthRefreshFailure, AuthRefreshConfigError) as exc:
+    print(f'[baseline][gate][FATAL] {exc}', file=sys.stderr)
+    sys.exit(1)
 " 2>&1; then
-          echo "[baseline] auth refresh OK — runner task=0 will be LOGGED IN"
+          echo "[baseline] auth gate PASS — runner task=0 will be LOGGED IN"
         else
-          echo "[baseline][warn] post-reset auth refresh failed; watchdog will retry reactively after streak=3" >&2
+          echo "[baseline][error] post-reset auth gate FAILED — aborting launch to prevent paper-grade contamination." >&2
+          echo "[baseline][error] Fix: (a) VWA_REMOTE_HOST env, (b) .auth/ dir writable, (c) site reachable, (d) VWA_${SITE^^}_USER/PASS env vars set." >&2
+          echo "[baseline][error] To bypass (paper-grade dirty, watchdog reactive only), set AUTH_GATE_BYPASS=1." >&2
+          if [[ "${AUTH_GATE_BYPASS:-0}" != "1" ]]; then
+            exit 1
+          fi
+          echo "[baseline][warn] AUTH_GATE_BYPASS=1 set — proceeding without auth gate; first 1-3 tasks at risk." >&2
         fi
       else
         rc=$?

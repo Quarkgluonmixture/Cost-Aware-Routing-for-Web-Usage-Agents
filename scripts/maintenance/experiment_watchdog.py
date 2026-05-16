@@ -111,102 +111,35 @@ def _get_observation_mode(condition_dir: Path, cache: Dict[str, str]) -> str:
 def _auto_refresh_auth(site: str, *, benchmark: str = "") -> bool:
     """Re-login to site and refresh .auth/{site}_state.json using Playwright.
 
-    Delegates to shared module p79.utils.auth_refresh; falls back to inline
-    implementation if the import fails (e.g. running outside the venv).
+    Thin wrapper that delegates to shared module ``p79.utils.auth_refresh``.
+
+    A1.5 cleanup (2026-05-16, B-211 + B-225 per Item 8): the inline-fallback
+    ``_ACCOUNTS`` + ``_BASE_URLS`` + ``_LOGIN_PATHS`` duplicate block (previously
+    ImportError fallback) is DELETED. Two reasons:
+      (a) double-leak of plaintext credentials in tracked code (B-211)
+      (b) hardcoded ``100.95.81.103`` IP defeated ``VWA_REMOTE_HOST`` env override (B-225)
+    If ``p79.utils.auth_refresh`` import fails, fail loud with a helpful
+    diagnostic — silent fallback is the worse outcome (writes wrong-domain
+    storage state, contaminates downstream episodes).
     """
     try:
         from p79.utils.auth_refresh import refresh_site_auth
-        repo_dir = Path(__file__).resolve().parent.parent.parent
-        auth_dir = repo_dir / ".auth"
-        ok = refresh_site_auth(site, auth_dir, benchmark=benchmark)
-        if ok:
-            print(f"[watchdog][SESSION] {site} auth auto-refreshed")
-        else:
-            print(f"[watchdog][SESSION][warn] {site} auto-refresh failed")
-        return ok
-    except ImportError:
-        pass
-
-    # ── Inline fallback (kept for robustness if p79 not installed) ──
-    import os as _os
-    _ACCOUNTS = {
-        "classifieds":    ("blake.sullivan@gmail.com", "Password.123"),
-        "reddit":         ("MarvelsGrantMan136",         "test1234"),
-        "shopping":       ("emma.lopez@gmail.com",        "Password.123"),
-        "shopping_admin": ("admin",                       "admin1234"),
-    }
-    _BASE_URLS = {
-        "classifieds":    _os.environ.get("CLASSIFIEDS",    "http://100.95.81.103:9980"),
-        "reddit":         _os.environ.get("REDDIT",         "http://100.95.81.103:9999"),
-        "shopping":       _os.environ.get("SHOPPING",       "http://100.95.81.103:7770"),
-        "shopping_admin": _os.environ.get("SHOPPING_ADMIN", "http://100.95.81.103:7780"),
-    }
-    _LOGIN_PATHS = {
-        "classifieds":    "/index.php?page=login",
-        "reddit":         "/login",
-        "shopping":       "/customer/account/login/",
-        "shopping_admin": "/admin",
-    }
-    if site not in _ACCOUNTS:
-        print(f"[watchdog][SESSION] auto-refresh: unknown site {site!r}")
+    except ImportError as exc:
+        print(
+            f"[watchdog][SESSION][FATAL] cannot import p79.utils.auth_refresh: {exc}. "
+            f"Watchdog requires the project venv; activate with `source .venv/bin/activate` "
+            f"or run `pip install -e .` then retry. NOT silently falling back to inline "
+            f"credentials — that path was deleted 2026-05-16 (A1.5 B-211 / B-225 cleanup)."
+        )
         return False
     repo_dir = Path(__file__).resolve().parent.parent.parent
-    auth_file = repo_dir / ".auth" / f"{site}_state.json"
-    username, password = _ACCOUNTS[site]
-    base_url = _BASE_URLS[site]
-    login_path = _LOGIN_PATHS[site]
-    # Build inline Python script for Playwright (avoids importing in watchdog process)
-    script = f"""
-import sys, time
-sys.path.insert(0, {str(repo_dir / 'external' / 'visualwebarena')!r})
-from playwright.sync_api import sync_playwright
-cm = sync_playwright()
-pw = cm.__enter__()
-browser = pw.chromium.launch(headless=True, args=['--host-resolver-rules=MAP metis.lti.cs.cmu.edu 100.95.81.103'])
-ctx = browser.new_context()
-page = ctx.new_page()
-page.goto({(base_url + login_path)!r})
-site = {site!r}
-if site == 'classifieds':
-    page.locator('#email').fill({username!r})
-    page.locator('#password').fill({password!r})
-    page.get_by_role('button', name='Log in').click()
-elif site == 'reddit':
-    page.get_by_label('Username').fill({username!r})
-    page.get_by_label('Password').fill({password!r})
-    page.get_by_role('button', name='Log in').click()
-elif site == 'shopping':
-    page.get_by_label('Email', exact=True).fill({username!r})
-    page.get_by_label('Password', exact=True).fill({password!r})
-    page.get_by_role('button', name='Sign In').click()
-elif site == 'shopping_admin':
-    page.locator('#username').fill({username!r})
-    page.locator('#login').fill({password!r})
-    page.get_by_role('button', name='Sign in').click()
-time.sleep(2)
-ctx.storage_state(path={str(auth_file)!r})
-cm.__exit__(None, None, None)
-print('ok ->', page.url)
-"""
-    # Infer dataset: explicit benchmark > shopping_admin heuristic > default VWA
-    if benchmark == "webarena" or site == "shopping_admin":
-        dataset = "webarena"
+    auth_dir = repo_dir / ".auth"
+    ok = refresh_site_auth(site, auth_dir, benchmark=benchmark)
+    if ok:
+        print(f"[watchdog][SESSION] {site} auth auto-refreshed")
     else:
-        dataset = "visualwebarena"
-    env = {**_os.environ, "DATASET": dataset}
-    try:
-        r = subprocess.run(
-            [sys.executable, "-c", script],
-            capture_output=True, text=True, timeout=30, env=env,
-        )
-        if r.returncode == 0 and auth_file.exists():
-            print(f"[watchdog][SESSION] {site} auth auto-refreshed: {r.stdout.strip()}")
-            return True
-        print(f"[watchdog][SESSION][warn] {site} auto-refresh failed rc={r.returncode}: {r.stderr[-300:]}")
-        return False
-    except Exception as exc:
-        print(f"[watchdog][SESSION][warn] {site} auto-refresh error: {exc}")
-        return False
+        print(f"[watchdog][SESSION][warn] {site} auto-refresh failed")
+    return ok
 
 
 def _purge_digest_records(digest_dir: Path, condition_id: str, task_id: int, obs_mode: str) -> int:
@@ -1035,7 +968,28 @@ def _save_state(
         "session_contaminated": session_contaminated_serializable,
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    # B-223 (2026-05-16, A1.5 Item 7): atomic write via tmp + os.replace +
+    # fsync_dir to prevent corrupt-mid-write JSON on watchdog crash.
+    # Pre-fix: ``path.write_text(...)`` is non-atomic — crash between open()
+    # and final flush leaves a truncated file, ``_load_state`` then returns
+    # ``{}`` silently (line 548-564), losing ``error_retry_counts`` +
+    # ``session_contaminated`` + ``seen_keys`` history. Matches the
+    # LoggerV2._fsync_dir pattern per B-198.
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp_path, "w", encoding="utf-8") as _f:
+        json.dump(payload, _f, ensure_ascii=False, indent=2)
+        _f.flush()
+        os.fsync(_f.fileno())
+    os.replace(tmp_path, path)
+    # fsync directory entry so the rename hits stable storage
+    try:
+        _dir_fd = os.open(str(path.parent), os.O_RDONLY)
+        try:
+            os.fsync(_dir_fd)
+        finally:
+            os.close(_dir_fd)
+    except OSError:
+        pass  # platform doesn't support dir fsync; not a hard failure
 
 
 # ---------------------------------------------------------------------------
@@ -1197,40 +1151,70 @@ def main() -> int:
             print(f"[watchdog] Pruned {len(stale_keys)} stale keys (files deleted since last run)")
         print(f"[watchdog] Restored {len(all_records)} episodes from state")
 
-    # Prune orphan artifacts and steps files (exist but no summary file).
-    # Skip items modified within the last 10 minutes — may belong to in-progress episodes.
+    # B-222 fix (2026-05-16, A1.5 Item 6): orphan cleanup now requires BOTH
+    # mtime > 10min AND no live-runner process. Pre-fix: 10min mtime alone is
+    # not safe for long episodes (image render hang / browser stuck) — a
+    # runner still actively writing artifacts could have its files nuked.
+    # Live-runner detection via `pgrep run_experiment.*${run_dir basename}`:
+    # if any active runner targets the same run_dir, skip all pruning for
+    # this watchdog cycle. The mtime guard is kept as secondary defence.
     _orphan_count = 0
     _orphan_cutoff = time.time() - 10 * 60
-    _cond_dirs_to_scan = (
-        [run_dir / args.condition] if args.condition
-        else [p for p in run_dir.iterdir() if p.is_dir() and p.name not in _EXCLUDED_DIRS]
-    )
-    for _cdir in _cond_dirs_to_scan:
-        _art_root = _cdir / "artifacts"
-        _ep_root = _cdir / "episodes"
-        # Orphan artifact directories
-        if _art_root.exists():
-            for _art in _art_root.iterdir():
-                if not _art.is_dir():
-                    continue
-                if (_ep_root / f"{_art.name}_summary_v2.json").exists():
-                    continue
-                if _art.stat().st_mtime > _orphan_cutoff:
-                    continue
-                shutil.rmtree(_art)
-                _orphan_count += 1
-        # Orphan steps files (steps JSONL without summary)
-        if _ep_root.exists():
-            for _sf in _ep_root.glob("*_steps_v2.jsonl"):
-                _summary = _ep_root / _sf.name.replace("_steps_v2.jsonl", "_summary_v2.json")
-                if _summary.exists():
-                    continue
-                if _sf.stat().st_mtime > _orphan_cutoff:
-                    continue
-                _sf.unlink()
-                _orphan_count += 1
-    if _orphan_count:
-        print(f"[watchdog] Pruned {_orphan_count} orphan item(s) (artifact dirs / steps files without summary)")
+    # Step 1: probe for live runner attached to this run_dir
+    try:
+        _live_runner = subprocess.run(
+            ["pgrep", "-fa", f"run_experiment.*{run_dir.name}"],
+            capture_output=True, text=True, timeout=5,
+        )
+        _has_live_runner = _live_runner.returncode == 0 and _live_runner.stdout.strip()
+    except Exception:
+        _has_live_runner = False  # pgrep unavailable → fall back to mtime-only
+    if _has_live_runner:
+        print(
+            "[watchdog] live runner detected for run_dir="
+            f"{run_dir.name} — skipping orphan cleanup this cycle "
+            "(B-222 guard: prevents deletion of artifacts currently being written)"
+        )
+    else:
+        _cond_dirs_to_scan = (
+            [run_dir / args.condition] if args.condition
+            else [p for p in run_dir.iterdir() if p.is_dir() and p.name not in _EXCLUDED_DIRS]
+        )
+        for _cdir in _cond_dirs_to_scan:
+            _art_root = _cdir / "artifacts"
+            _ep_root = _cdir / "episodes"
+            # Orphan artifact directories
+            if _art_root.exists():
+                for _art in _art_root.iterdir():
+                    if not _art.is_dir():
+                        continue
+                    if (_ep_root / f"{_art.name}_summary_v2.json").exists():
+                        continue
+                    if _art.stat().st_mtime > _orphan_cutoff:
+                        continue
+                    # B-222 secondary guard: check for per-episode .in_progress marker.
+                    # Runner writes this when it starts an episode + removes on completion;
+                    # if present, episode is mid-flight even if mtime suggests stale.
+                    if (_art / ".in_progress").exists():
+                        continue
+                    shutil.rmtree(_art)
+                    _orphan_count += 1
+            # Orphan steps files (steps JSONL without summary)
+            if _ep_root.exists():
+                for _sf in _ep_root.glob("*_steps_v2.jsonl"):
+                    _summary = _ep_root / _sf.name.replace("_steps_v2.jsonl", "_summary_v2.json")
+                    if _summary.exists():
+                        continue
+                    if _sf.stat().st_mtime > _orphan_cutoff:
+                        continue
+                    # B-222: same per-episode marker check (marker lives in artifacts/<task_id>/)
+                    _ep_stem = _sf.name.replace("_steps_v2.jsonl", "")
+                    if (_cdir / "artifacts" / _ep_stem / ".in_progress").exists():
+                        continue
+                    _sf.unlink()
+                    _orphan_count += 1
+        if _orphan_count:
+            print(f"[watchdog] Pruned {_orphan_count} orphan item(s) (artifact dirs / steps files without summary)")
 
     # Session-loss tracking: per-site streak counters.
     # §97 audit: restore from persisted state so watchdog restarts don't

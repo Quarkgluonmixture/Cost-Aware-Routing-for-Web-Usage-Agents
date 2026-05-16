@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -240,7 +241,31 @@ def main() -> int:
                 if args.dry_run:
                     print(f"  [dry-run] remove {removed_here} records from {jsonl_file.name}")
                 else:
-                    jsonl_file.write_text("\n".join(keep) + ("\n" if keep else ""), encoding="utf-8")
+                    # B-226 fix (2026-05-16, A1.5 Item 10): atomic temp-write + fsync
+                    # + os.replace to prevent half-written digest after partial crash.
+                    # Pre-fix: jsonl_file.write_text(...) is non-atomic — crash mid-write
+                    # leaves digest 半写或残留旧记录 (episode files 已 unlink at line 203).
+                    # Post-fix: write to .tmp, fsync, atomic rename — followers see either
+                    # old or new digest, never partial.
+                    _new_content = "\n".join(keep) + ("\n" if keep else "")
+                    _tmp_path = jsonl_file.with_suffix(jsonl_file.suffix + ".tmp")
+                    with open(_tmp_path, "w", encoding="utf-8") as _f:
+                        _f.write(_new_content)
+                        _f.flush()
+                        try:
+                            os.fsync(_f.fileno())
+                        except OSError:
+                            pass
+                    os.replace(_tmp_path, jsonl_file)
+                    # fsync dir entry so rename hits stable storage
+                    try:
+                        _dir_fd = os.open(str(jsonl_file.parent), os.O_RDONLY)
+                        try:
+                            os.fsync(_dir_fd)
+                        finally:
+                            os.close(_dir_fd)
+                    except OSError:
+                        pass
                 digest_cleaned += removed_here
 
     # --- Remove stale condition_summary if episodes are now incomplete ---
