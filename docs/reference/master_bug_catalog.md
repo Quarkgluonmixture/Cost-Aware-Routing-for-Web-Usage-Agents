@@ -2242,3 +2242,90 @@ Audit: Mode A (Claude) F1-F9 + Mode B (codex reproducibility-auditor) F10-F17 + 
 - Mode C B-119 B-91 whitespace bypass — defer (待 Phase 1a clean-run pred 分布数据)
 - Mode C B-121 B-86 GLM asymmetry — defer (待 advisor 2026-05-14 question reply)
 - Mode C B-120 preregistration "lock" 2026-05-14 timing prose — defer (paper §3 prose decision)
+
+---
+
+## /stress A1.7 fix-batch — `conditions.py` + `configs/*.yaml` (2026-05-16)
+
+Phase 1a fire prep audit per phase1_plan §A1 ladder item 7。3-AI cross-AI cycle (Mode A Claude + Mode B codex ML-systems / Mode C gemini reproducibility) → 17 unique findings → 12 fix-tagged entries B-261~B-272 (+ 2 subsumed)。User Q11 directive: "所有 P0+P1 全修再 fire"。Chronicle entry: 实验笔记 §159。
+
+### B-261. phantom_dom legacy alias retired → phantom_text canonical 🛠️ FIXED
+- **Source**: A1.7 Mode A F1 + Mode B F1 ext + Mode C F2 cross-validate (3-AI confirmed). User explicit fix directive 2026-05-16.
+- **Code**: `configs/exp_v2_B*_phantom_*.yaml` (×19 files) had `observation_mode: ["phantom_dom"]` + `B1_phantom_dom_classifieds.yaml` dup with `B1_phantom_text_classifieds.yaml` → same `condition_id=phase1_phantom_dom_router_0` (per `conditions.py:126`); + `resume: true` (line 17) enabled silent episode reuse across paper-§3-named arms.
+- **Attack**: paper §3 P-text figure 底层数据可能是 phantom_dom 旧 episode 数据 (resume:true ×legacy alias × shared condition_id);Mode B codex 升级 attack vector vs Claude original silent-overwrite framing.
+- **Fix**: (a) 19 yaml `obs_mode` sed `phantom_dom → phantom_text` + 删 legacy alias comment + rm dup `B1_phantom_dom_classifieds.yaml`;(b) `conditions.py:84-103` 加 obs_mode enum guard + `_DEPRECATED_OBS_MODES` dict `phantom_dom → phantom_text` raise (fail-loud);(c) `phase1a_status.sh:60-66` 改 phantom_text → `phase1_phantom_text_router_0` (canonical);(d) `queue_phantom_text.sh` 删 legacy fallback (legacy yaml 已删,fail-loud)。Archive `phase1_phantom_dom_router_0/` dirs historical (3 pre-A1.7 instances) — run_registry.py 已 backward-compat `phantom_dom + phantom_text → "P-text"` (line 23-24)
+
+### B-262. B0 use_glm_fallback per-yaml override base B-145 fix 📋 ADVISOR PENDING
+- **Source**: A1.7 Mode A F2 + Mode B F2 + Mode C cross-validate (~41 B0 per-yaml). User directive 2026-05-16: write to `docs/checkpoints/parse_advisor_pending.md`.
+- **Code**: `configs/exp_v2_base.yaml:166` B-145 fix `use_glm_fallback: false` + "never enable for paper-grade runs"。**~41 B0 per-yaml** override `use_glm_fallback: true` (cls/red/shop/wa-* × 6 modes + pilot)。Empirical GLM rescue trigger rate 1.488% (453/30437 archive steps per `parse_advisor_pending.md §2`).
+- **Blast**: Cross-baseline cost-fairness violation;B0 effective backend = Qwen3-VL-235B + GLM-5.1 recovery;B1/B2 single model only。Reviewer 拿 run_meta `use_glm_fallback=true` 看到 paper §3 "B-145 fix" 与 effective config 矛盾.
+- **Status**: routed to `parse_advisor_pending.md §4` Thread 1 (B-86 GLM thread, opened 2026-05-14)。Option A/B/C decision pending advisor sync on Qwen official API channel (exposes `tool_choice` → removes parse-error root cause → GLM rescue auto-defuses)。
+- **Fix path**: see `parse_advisor_pending.md` §3 Decision branches — code-align (Option B) is 5min sed when advisor signals。Not unilateral.
+
+### B-263. configs/exp_v2_phase1.yaml master dead modes retired 🛠️ FIXED
+- **Source**: A1.7 Mode A F3 + Mode C F3 cross-validate.
+- **Code**: `configs/exp_v2_phase1.yaml:7-10` had `primary.som: [false, true]` + `primary.observation_mode: ["dom_only", "hybrid"]` (Phase 1 v1 router design artifacts,不在 paper-1 6-mode enum)。CLAUDE.md:45 + README.md:37 列为"实验入口"。`conditions.py:84` 无 enum validation → silent generation `phase1_dom_only_router_0` / `phase1_hybrid_router_0` invalid mode tags propagating downstream.
+- **Attack**: Latent footgun: 新人 / fallback automation 用 `--config configs/exp_v2_phase1.yaml` → results/episodes/condition_meta 全部 invalid mode tag → aggregator filter `LIKE 'phase1_dom_router_0'` silent drop OR 误分类入 paper §1。
+- **Fix**: (a) rm `configs/exp_v2_phase1.yaml`;(b) CLAUDE.md:45 + README.md:37 redirect to per-condition yaml + footnote "master phase1.yaml retired B-263 2026-05-16";(c) `conditions.py:85-103` `_DEPRECATED_OBS_MODES` 显式 raise on `dom_only` / `hybrid` (fail-loud + 错误信息引用 valid enum)。
+
+### B-264. N_conditions "三头案" Contract Drift unified → 42 🛠️ FIXED
+- **Source**: A1.7 Mode C G1 (gemini-specific OOB,Mode A F4 升级版)。User directive 2026-05-16 "preregistration.md 没有OSF 公开，是pending，应该是42"。
+- **Code**: 三 doc 三数字: yaml header 40+ files "24-condition Phase 1a scope (2 sites × 2 models × 6 modes)" / `preregistration.md §4 N_conditions` row "36 operational conditions" / `phase1_plan §A` "42 conditions = 36 Pass-1 baseline + 6 Pass-2 router"。3 来源互相矛盾,reviewer 不论拿哪个 doc 都跟其他 2 doc 矛盾。
+- **Attack**: Contract integrity 致命。Phase 1a fire 之后 reviewer audit 现场暴露 = trust loss + post-hoc 嫌疑 (H10 router 在 §2 描述但 §4 数字没算 → 像 fire 完才决定加 H10)。preregistration 是 pre-OSF pending → 可 amend。
+- **Fix**: (a) 12 yaml header sed → "42-condition Phase 1a scope: Pass-1 baseline 36 (2 sites × 3 models × 6 modes; Gemma3-VL added 2026-05-14) + Pass-2 learned router 6";(b) `preregistration.md §4 N_conditions row` 改为 42 split Pass-1/Pass-2;(c) DOI scope claim §1 updated;(d) `scope_revision_2026_05_16` entry added 解释 accounting fix (H10 was already §2 gating hypothesis,no new experimental scope)。**B-267 subsumed by this unification**。
+
+### B-265. vision mode silent text-fallback on missing image 🛠️ FIXED
+- **Source**: A1.7 Mode B F4 (NEW codex-specific OOB).
+- **Code**: `p79/experiment/som.py:269-276` (pre-fix) vision branch `marked_image=getattr(obs, "image", None)` — None silently 传到 agent → vision mode 变 text-shaped when screenshot capture failed / payload drop。Yaml 层无 `require_image` knob;step_record 无 `image_present` field。
+- **Attack**: paper §3 "vision = raw screenshot only" claim 不能从 config 或 step trace 证明。Reviewer "你 vision condition 我怎么知道不是被 force-fallback 成 dom 跑的?" 无 defuse。
+- **Fix**: `som.py:269-289` vision branch 加 fail-loud raise `if image is None: raise ValueError("Vision mode requires image observation but obs.image is None. Paper §3 ... contract violated.")` (B-265 fix)。Failed episode 被 runner outer try/except 捕获 → marked `image_missing` reason → step_record audit trail。Reviewer 可证 "image-only contract enforced"。
+
+### B-266. pilot T0 yamls abandoned 🛠️ DELETED
+- **Source**: A1.7 Mode B F8 + user explicit "pilot放弃" 2026-05-16.
+- **Code**: `configs/exp_v2_B0_dom_pilot_T0_{classifieds,reddit,shopping}.yaml` (Apr 30 pilot); pilot header claim "T=0 + RNG seeding" 但 yaml 无 explicit `seed` field + `use_glm_fallback: true` (B-262 family); `queue_pilot_t0.sh` + `compare_pilot_t0_vs_paper_grade.py` 引用。
+- **Attack**: pilot purpose (isolate T=0 vs T=0.1 effect) 被 GLM fallback 污染;paper §3 引 pilot 数据 reviewer 一查 yaml 立即 invalidate。Pilot superseded by Phase 1a fresh fire on A100。
+- **Fix**: `git rm` 3 pilot yamls + `queue_pilot_t0.sh` 加 deprecation banner + `exit 2` (refuses launch); archive pilot results preserved at `results/visualwebarena/phase1/B0_*_pilot_T0_*/` (historical reference,not paper-grade)。
+
+### B-267. H10 learned router in preregistration §2 但 §4 count omit 📋 SUBSUMED by B-264
+- **Source**: A1.7 Mode C G2 (gemini-specific).
+- **Code**: `docs/checkpoints/pre_run/preregistration.md §2` 详描 H10 hypothesis testing;`§4 N_conditions` table 只列 36 baseline,不含 H10 的 6 router conditions。
+- **Attack**: "Post-hoc 嫌疑": reviewer 看 §2 H10 preregistered → §4 condition count 没匹配数字 → "你跑完 baseline 才决定加 H10?" Pre-registration breach (weak version)。
+- **Fix**: Subsumed by B-264 unified 42 = 36 + 6 (H10 row now explicit in §4 + scope_revision_2026_05_16 entry explains accounting fix not new scope)。
+
+### B-268. router_learned yaml TODO ↔ runner main.py:1017 dispatch land drift 🛠️ FIXED
+- **Source**: A1.7 Mode A F5 (Claude-unique).
+- **Code**: `configs/exp_v2_B*_router_learned_*.yaml:5-8` 注释 "⚠️ RUNTIME LR INTEGRATION TODO ... pending separate session"。但 `p79/experiment/runner/main.py:1011-1059` 已实现 `obs_mode == "learned"` dispatch (commit `5c33103` 2026-05-16 by parallel router session)。文档 stale。
+- **Attack**: Documentation drift → launch operator 信 TODO 注释 → 延迟 Pass-2 fire OR 不知 `lr_model_path` artifact 必须存在前置。
+- **Fix**: (a) B0/B1 cls/red 4 yaml 注释更新 "✅ RUNTIME LR INTEGRATION DONE (B-268 verify 2026-05-16)" + 引用 `runner main.py:1011-1059` + `train_l1_router.py artifact verified at lr_model_path (May 16 12:28 land)`;(b) **B2 (Gemma3-VL) artifact MISSING**: 2 B2 yaml 注释 "🚧 LR ARTIFACT BLOCKED — `B2_classifieds_lr.pkl` / `B2_reddit_lr.pkl` 未生成 (Pass-1 B2 数据 land 后 train via `train_l1_router.py --baseline B2`)"。Phase 1a Pass-2 fire 6 cell → 实际 4 cell available + 2 BLOCKED 待 B2 train.
+
+### B-269. baselines.run_b0 dead-code retired 🛠️ FIXED
+- **Source**: A1.7 Mode A F6 + Mode B F7 cross-validate.
+- **Code**: `conditions.py:298-312` `if baselines.get("run_b0", False)` 追加 extra `b0_strong_upper_bound` condition (Phase 1 v1 "B1-only + B0 upper bound" design)。119 yaml 末尾携带 `baselines: run_b0: false` block。
+- **Attack**: Dead-code perpetuation + misleading framing (reviewer 误以为 Phase 1a B1-only + B0 disabled);risk accident set True → 跑出 duplicate b0_strong_upper_bound condition 跟 phase1_dom_router_0 同 run_dir。
+- **Fix**: (a) sed delete `baselines:\n  run_b0: false` block 跨 119 yaml;(b) `conditions.py:298-312` 加 `if phase == "phase1" and baselines.get("run_b0"): raise ValueError` (Phase 2/3 仍 allow,paper-2 substrate);(c) error message 引导 user 用 per-baseline yaml。
+
+### B-270. min_free_vram_gb=0 disable OOM safety in B1/B2 per-yaml 🛠️ FIXED
+- **Source**: A1.7 Mode A F7 + Mode B F3 cross-validate.
+- **Code**: 全 B1/B2 per-yaml 显式 `min_free_vram_gb: 0` (76 files 受影响);base.yaml 无 default → 0 disables safety gate.
+- **Attack**: Shared GPU mid-experiment OOM → silent failure 看起来像 model weakness。A100-PCIE-40GB self-hosted VWA Docker 共占,leeway 紧。
+- **Fix**: (a) `configs/exp_v2_base.yaml:107-130` `local_4b` + `local_gemma` 加 `min_free_vram_gb: 12` default (4B model bf16 ~10GB + VWA Docker margin);(b) sed delete 76 per-yaml `min_free_vram_gb: 0` override (deep-merge inherits 12 from base);(c) per-condition override allowed but discouraged via comment。
+
+### B-271. B1/B2 per-yaml decoding fields not explicitly pinned 🛠️ FIXED (defense in depth)
+- **Source**: A1.7 Mode B F6 (NEW codex-specific).
+- **Code**: Pre-fix B0 per-yaml 显式 `temperature: 0.0`;B1/B2 per-yaml 只 set `max_new_tokens: 4096`,decoding fields 全 inherit base。`config.py:95-104` `_merge_dict` is **deep merge** → defused current bug,but hypothetical: if base.yaml 改 default,B1/B2 drift but B0 不动.
+- **Attack**: cost-aware paper 最怕 success/cost differences = decoding-policy differences hidden in default inheritance。
+- **Fix**: sed insert `temperature: 0.0  # B-271 (2026-05-16, A1.7): explicit pin for paper-grade audit parity with B0` after `max_new_tokens: 4096` 跨 40 B1/B2 cls/red/shop/wa per-yaml。Defense in depth — base.yaml 已 0.0 但 per-yaml 显式 pin 让 run_meta 三 baseline 完全 symmetric record。
+
+### B-272. phantom_<site>.yaml filename asym → phantom_som_<site>.yaml 🛠️ FIXED
+- **Source**: A1.7 Mode A F9 (Claude-unique).
+- **Code**: Pre-fix filenames asym: `phantom_classifieds.yaml` (= phantom_som,content `obs_mode="phantom_som"`) vs sibling `phantom_text_classifieds.yaml` / `phantom_prompt_classifieds.yaml` (有 mode 后缀)。Glob `exp_v2_B0_phantom_*_classifieds.yaml` miss phantom_som。
+- **Attack**: 视觉混淆 + 自动化 glob skip phantom_som condition。
+- **Fix**: (a) git mv 18 yamls `B*_phantom_<site>.yaml` → `B*_phantom_som_<site>.yaml` (跨 3 站 × 3 模型 × WA);(b) `queue_phantom_som.sh:59` `CFG_NAME="${BASELINE}_phantom"` → `"${BASELINE}_phantom_som"`;(c) `rsync_results_from_hub.sh` comment refresh (just doc reference). 现 3 phantom arms 全有 mode 后缀对称: phantom_som / phantom_text / phantom_prompt。
+
+**B-numbers consumed**: B-261 through B-272 (12 contiguous + 2 subsumed: B-267 → B-264, namespace overlap → B-261)。Cumulative session work A1.4a+A1.4b-i+A1.4b-ii+A1.4c+A1.5+A1.13+A1.6+A1.7 = B-140 through B-272 = ~126 unique entries. Gap B-254~B-260 reserved (in case A1.6 amendments).
+
+**Next available B-number**: B-273+.
+
+**Renumber drama** (chronicle §159.4): initial draft B-230~B-243 → conflict A1.13+A1.14; second pass B-237~B-249 → conflict A1.6 uncommitted; final B-261~B-272 safe gap above all parallel sessions。Lesson: pre-batch grep `git diff HEAD docs/reference/master_bug_catalog.md | grep "^+### B-"` 加 sequential allocator (future cron 实现)。
+
+**Phase 1a fire green-light (per user Q11)**: all 12 P0+P1 fix landed + smoke verified (pytest 16/16 + conditions.py enum + som.py vision raise + base.yaml deep-merge inheritance)。Remaining advisor blocker: B-262 (glm_fallback) per `parse_advisor_pending.md` Thread 1。
