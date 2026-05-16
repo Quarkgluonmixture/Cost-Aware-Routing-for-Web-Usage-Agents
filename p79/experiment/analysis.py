@@ -92,6 +92,15 @@ def _compute_pareto_front(points: List[Dict[str, float]], maximize: str, minimiz
     Sweep order: by `maximize` desc, then `minimize` asc. A point joins the
     front only when its `minimize` is strictly less than the running best —
     `<=` would let dominated points (same minimize, lower maximize) sneak in.
+
+    B-173 (/stress A1.4b-i Claude A8 + gemini C5): when two conditions have
+    EXACTLY equal `maximize` AND equal `minimize`, the sort-order winner is
+    kept and the tied loser is dropped (because `<` is strict). The standard
+    Pareto definition would include both (neither dominates the other). For
+    paper figures, this means: if 2 conditions share the same SR and the same
+    cost (rare at observed N>=24 cells but possible after rounding), only one
+    point is plotted on the front. Callers (paper figure captions) should
+    disclose "ties broken by sort order".
     """
     indexed = list(enumerate(points))
     indexed.sort(key=lambda x: (-x[1].get(maximize, 0.0), x[1].get(minimize, 0.0)))
@@ -237,7 +246,15 @@ def _collect_step_records(run_dir: Path) -> List[Dict[str, Any]]:
     return rows
 
 
-def _to_mapping(value: Any) -> Dict[str, Any]:
+_TO_MAPPING_PARSE_FAILURES: List[Dict[str, Any]] = []
+
+
+def _to_mapping(value: Any, context: Optional[str] = None) -> Dict[str, Any]:
+    # B-174 (/stress A1.4b-i Claude A9, OOB): pre-fix swallowed `json.loads`
+    # exceptions silently → pivot tables for trigger_distribution /
+    # state_change_reason_distribution showed zero counts when input was
+    # malformed JSON-string, reader 误读为 "no trigger fired". Log + collect
+    # so audit can see what got dropped; `analyze_run` emits parse_failures.csv.
     if isinstance(value, dict):
         return value
     if isinstance(value, str):
@@ -245,7 +262,26 @@ def _to_mapping(value: Any) -> Dict[str, Any]:
             parsed = json.loads(value)
             if isinstance(parsed, dict):
                 return parsed
-        except Exception:
+            logger.warning(
+                "_to_mapping: parsed JSON is not a dict (got %s); context=%s",
+                type(parsed).__name__, context or "(unspecified)",
+            )
+            _TO_MAPPING_PARSE_FAILURES.append({
+                "context": context or "(unspecified)",
+                "reason": f"non_dict_{type(parsed).__name__}",
+                "value_snippet": value[:120],
+            })
+            return {}
+        except Exception as exc:
+            logger.warning(
+                "_to_mapping: JSON parse failed (%s); context=%s",
+                exc, context or "(unspecified)",
+            )
+            _TO_MAPPING_PARSE_FAILURES.append({
+                "context": context or "(unspecified)",
+                "reason": f"json_parse_error:{type(exc).__name__}",
+                "value_snippet": value[:120] if isinstance(value, str) else repr(value)[:120],
+            })
             return {}
     return {}
 
@@ -258,7 +294,11 @@ def _flatten_state_change_reasons(cond_df) -> Any:
         return pd.DataFrame(columns=["condition_id", "reason", "count"])
 
     for _, row in cond_df.iterrows():
-        dist = _to_mapping(row.get("state_change_reason_distribution", {}))
+        cid = row.get("condition_id", "?")
+        dist = _to_mapping(
+            row.get("state_change_reason_distribution", {}),
+            context=f"state_change_reason_distribution@cond={cid}",
+        )
         for reason, count in dist.items():
             try:
                 rows.append(
@@ -284,7 +324,11 @@ def _flatten_trigger_distribution(cond_df) -> Any:
         return pd.DataFrame(columns=["condition_id", "trigger", "count"])
 
     for _, row in cond_df.iterrows():
-        dist = _to_mapping(row.get("trigger_distribution", {}))
+        cid = row.get("condition_id", "?")
+        dist = _to_mapping(
+            row.get("trigger_distribution", {}),
+            context=f"trigger_distribution@cond={cid}",
+        )
         for trigger, count in dist.items():
             try:
                 rows.append(
@@ -542,7 +586,7 @@ def _analyze_condition(
         ax.set_xlabel("Task ID")
         ax.set_ylabel("Cumulative Success Rate")
         ax.set_ylim(0, 1)
-        ax.set_title(f"Success Rate (adjusted) — {cond_id}")
+        ax.set_title(f"Success Rate (N/A excluded at task-load) — {cond_id}")
         ax.grid(alpha=0.3)
         fig.tight_layout()
         fig.savefig(plots_dir / "cumulative_success_rate.png")
@@ -813,6 +857,11 @@ def _compute_statistical_tests(
     results: Dict[str, Any] = {"bootstrap_ci": {}, "mcnemar": {}, "wilcoxon": {}, "notes": []}
     flat_rows: List[Dict[str, Any]] = []
 
+    # B-176 (/stress A1.4b-i codex B9): bootstrap RNG seed pinned to 42 +
+    # B=10_000 for run-to-run reproducibility. Paper §3.5 should disclose
+    # ("All bootstrap CIs use task-level resampling with B=10000 and
+    # analysis RNG seed 42; scripts/analysis/aggregate_phantom_lift.py +
+    # aggregate_phantom_meta.py share the same default seed.").
     rng = np.random.default_rng(42)
     n_boot = 10_000
 
@@ -844,13 +893,22 @@ def _compute_statistical_tests(
         })
 
     # b) McNemar's exact test and c) Wilcoxon signed-rank (per condition-pair)
+    # B-170 (/stress A1.4b-i Claude A1, OOB): cls/red/shop task_id ranges all
+    # overlap [0, 209] empirically — `merge(on="task_id")` alone cross-pairs
+    # tasks across sites, silently corrupting McNemar contingency. Always
+    # include `benchmark_site` in the join key so a pair is unique to one site.
+    pair_cols = ["task_id", "success", "total_cost_usd", "p95_step_latency_ms"]
+    has_site = "benchmark_site" in ep_df.columns
+    if has_site:
+        pair_cols = ["benchmark_site"] + pair_cols
+    join_on = ["benchmark_site", "task_id"] if has_site else ["task_id"]
     if len(cond_ids) >= 2 and "task_id" in ep_df.columns:
         for i in range(len(cond_ids)):
             for j in range(i + 1, len(cond_ids)):
                 cid_a, cid_b = cond_ids[i], cond_ids[j]
-                df_a = ep_df[ep_df["condition_id"] == cid_a][["task_id", "success", "total_cost_usd", "p95_step_latency_ms"]].copy()
-                df_b = ep_df[ep_df["condition_id"] == cid_b][["task_id", "success", "total_cost_usd", "p95_step_latency_ms"]].copy()
-                merged = df_a.merge(df_b, on="task_id", suffixes=("_a", "_b"))
+                df_a = ep_df[ep_df["condition_id"] == cid_a][pair_cols].copy()
+                df_b = ep_df[ep_df["condition_id"] == cid_b][pair_cols].copy()
+                merged = df_a.merge(df_b, on=join_on, suffixes=("_a", "_b"))
                 if merged.empty:
                     results["notes"].append(f"No paired tasks for {cid_a} vs {cid_b}")
                     continue
@@ -906,7 +964,23 @@ def _compute_statistical_tests(
                     # Align by index
                     common_idx = a_vals.index.intersection(b_vals.index)
                     if len(common_idx) < 5:
+                        # B-172 (/stress A1.4b-i Claude A6): silent skip writing only to
+                        # `results["notes"]` made downstream readers of `statistical_tests.csv`
+                        # see a missing row + assume "no diff". Emit a CSV row with
+                        # p_value=None + reason so auditors can re-discover skipped pairs.
+                        skip_reason = f"insufficient_paired_samples_n{len(common_idx)}"
                         results["notes"].append(f"Wilcoxon {metric} {pair_key}: too few paired samples ({len(common_idx)})")
+                        flat_rows.append({
+                            "comparison": pair_key,
+                            "metric": metric,
+                            "test": "wilcoxon_signed_rank",
+                            "statistic": None,
+                            "p_value": None,
+                            "significant_05": None,
+                            "ci_lower": None,
+                            "ci_upper": None,
+                            "skipped_reason": skip_reason,
+                        })
                         continue
                     try:
                         wres = scipy_stats.wilcoxon(
@@ -1039,6 +1113,10 @@ def analyze_run(run_dir: str) -> Path:
     noise_dir = analysis_dir / "benchmark_noise"
     results_dir.mkdir(parents=True, exist_ok=True)
     noise_dir.mkdir(parents=True, exist_ok=True)
+
+    # B-174: reset parse-failure collector at start of each run; emitted to
+    # analysis/parse_failures.csv at the end so silent JSON drops become audit-visible.
+    _TO_MAPPING_PARSE_FAILURES.clear()
 
     run_summary_path = root / "run_summary_v2.json"
     if run_summary_path.exists():
@@ -1194,6 +1272,15 @@ def analyze_run(run_dir: str) -> Path:
         not ep_df.empty and "is_na_reference" in ep_df.columns
     ) else 0
 
+    # B-174: emit collected JSON-parse failures so audit can see what got dropped.
+    if _TO_MAPPING_PARSE_FAILURES:
+        pf_df = pd.DataFrame(_TO_MAPPING_PARSE_FAILURES)
+        pf_df.to_csv(analysis_dir / "parse_failures.csv", index=False)
+        logger.warning(
+            "analyze_run: %d _to_mapping parse failures recorded → %s",
+            len(_TO_MAPPING_PARSE_FAILURES), analysis_dir / "parse_failures.csv",
+        )
+
     with open(analysis_dir / "analysis_summary.json", "w", encoding="utf-8") as f:
         json.dump(
             {
@@ -1203,6 +1290,7 @@ def analyze_run(run_dir: str) -> Path:
                 "episode_count": int(len(ep_df)),
                 "step_count": int(len(step_df)),
                 "na_reference_task_count": na_total,
+                "parse_failure_count": len(_TO_MAPPING_PARSE_FAILURES),
             },
             f,
             indent=2,
@@ -1255,7 +1343,10 @@ def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path, ep_df=None) -> None
                   color=[_palette[i % len(_palette)] for i in range(len(mode_order))])
     ax.set_ylim(0.0, 1.0)
     ax.set_ylabel("Success Rate")
-    ax.set_title("Phase 1 Representation Screening (adjusted)")
+    # B-171 (/stress A1.4b-i Claude A5 + gemini C1): "(adjusted)" prose
+    # remnant from pre-§139.8 era retired post-hoc layer. `success` is canonical
+    # now; only N/A tasks are excluded (at task-load, see `tasks.py::load_tasks`).
+    ax.set_title("Phase 1 Representation Screening (N/A excluded at task-load)")
     for bar, val in zip(bars, success):
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01, f"{val:.2f}", ha="center", va="bottom")
     fig.tight_layout()
@@ -1288,7 +1379,7 @@ def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path, ep_df=None) -> None
             [pivot_sorted.index[i] for i in range(0, len(pivot_sorted), max(1, len(pivot_sorted) // 20))],
             fontsize=7,
         )
-        ax_h.set_title("Phase 1: Per-Task Success Heatmap (adjusted)")
+        ax_h.set_title("Phase 1: Per-Task Success Heatmap (N/A excluded at task-load)")
         fig_h.colorbar(im, ax=ax_h, label="Success (1=yes, 0=no, gray=N/A)")
         fig_h.tight_layout()
         fig_h.savefig(plots_dir / "phase1_success_heatmap.png", dpi=150)
@@ -1334,7 +1425,7 @@ def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path, ep_df=None) -> None
             ax.set_ylim(*ylim)
         ax.grid(alpha=0.3, axis="y")
 
-    fig.suptitle("Phase 1 Multi-Metric Comparison (adjusted)", fontsize=13)
+    fig.suptitle("Phase 1 Multi-Metric Comparison (N/A excluded at task-load)", fontsize=13)
     fig.tight_layout()
     fig.savefig(plots_dir / "phase1_comparison_overview.png")
     plt.close(fig)

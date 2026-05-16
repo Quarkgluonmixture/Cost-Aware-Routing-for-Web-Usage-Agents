@@ -910,8 +910,18 @@ def main() -> int:
         "δ=1.0pp (preregistration.md §4 lock); max(p_lower, p_upper) < α ⇒ equivalence",
         "ACCEPTED (effect bounded within ±δ). Separate from H1(ii) superiority gate.",
         "",
-        "| Baseline | Site | Arm | Lift | 95% CI | McNemar p | Holm p | BH q | TOST p | sig (Holm 0.05) | TOST sig (0.05) |",
+        # B-175 (/stress A1.4b-i codex B4): column header "TOST sig" placed next
+        # to "sig (Holm 0.05)" invited inversion misreading ("TOST sig=✓ means
+        # positive lift" is WRONG — it means equivalence accepted = bounded near
+        # zero, the OPPOSITE of lift significance). Rename + footnote-style hint
+        # to make the semantic explicit.
+        "| Baseline | Site | Arm | Lift | 95% CI | McNemar p | Holm p | BH q | TOST p | sig_lift (Holm 0.05) | equiv_within_1pp (TOST 0.05) |",
         "|---|---|---|---:|---|---:|---:|---:|---:|:---:|:---:|",
+        "",
+        "_Note: `equiv_within_1pp ✅` means the effect is statistically bounded near zero;"
+        " it is NOT evidence of positive lift. `sig_lift ✅` and `equiv_within_1pp ✅` can"
+        " coexist only for the smallest effects within the ±δ band — they are not opposites._",
+        "",
     ]
     arm_meta = [
         ("4pdom", "P-text", "lift_4pdom_vs_3"),
