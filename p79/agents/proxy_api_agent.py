@@ -169,6 +169,21 @@ class ProxyApiAgent:
                 DeprecationWarning,
                 stacklevel=2,
             )
+            # B-340 (/stress A1.9 Mode C F4 defense-in-depth, 2026-05-16):
+            # paper-grade mode hard-blocks GLM fallback enable (defense
+            # against config drift / accidental yaml override). The
+            # DeprecationWarning above is easy to miss in noisy log; this
+            # explicit raise makes any paper-grade run with GLM enabled
+            # fail at construction rather than silently corrupting cost-
+            # fairness mid-fire. Set `paper_grade: false` for dev/legacy.
+            if config.get("paper_grade", False):
+                raise RuntimeError(
+                    "use_glm_fallback=true is forbidden in paper-grade mode "
+                    "(B-340). GLM fallback gives B0 an asymmetric 'free parse-"
+                    "error rescue' service that B1/B2 do not have → "
+                    "violates cross-baseline cost-fairness in paper §1. "
+                    "Set `use_glm_fallback: false` or `paper_grade: false`."
+                )
             self._glm_config = self._load_glm_config(glm_cfg_path)
 
         self._system_prompts = self._get_system_prompts()

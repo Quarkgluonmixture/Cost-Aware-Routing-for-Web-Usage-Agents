@@ -85,6 +85,13 @@ class ApiProxyBackend:
                     # obs_text (viewport filter is the real bound).
                     "max_image_payload_bytes": config.get("max_image_payload_bytes", 5 * 1024 * 1024),
                 },
+                # B-340 (/stress A1.9 Mode C F4 defense-in-depth, 2026-05-16):
+                # forward paper_grade flag to agent layer so the GLM-fallback
+                # hard-block in `ProxyApiAgent.__init__` can fire. Pre-fix
+                # agent_cfg was a strict subset that dropped top-level config
+                # keys; paper_grade flag would always read False in agent →
+                # B-340 raise inert.
+                "paper_grade": bool(config.get("paper_grade", False)),
             }
             self._agent = ProxyApiAgent(agent_cfg)
 

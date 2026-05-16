@@ -230,7 +230,12 @@ def test_step_schema_validation_required_fields():
         "page_changed": False,
         "latency_ms": {"total": 0.0},
         "tokens": {"input": 0, "output": 0, "total": 0},
-        "cost_usd": {"total": 0.0},
+        # B-338 (/stress A1.9 Mode B F7, 2026-05-16): cost_usd nested
+        # key validator requires {input, output, model, router_overhead, total}.
+        "cost_usd": {
+            "input": 0.0, "output": 0.0, "model": 0.0,
+            "router_overhead": 0.0, "total": 0.0,
+        },
         "energy": {"kwh": None, "co2e_kg": None},
         "retry_count": 0,
         "error_category": None,

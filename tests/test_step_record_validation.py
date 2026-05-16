@@ -34,7 +34,14 @@ def _valid_step_record():
         "router": {}, "module_flags": {},
         "action_type": "wait", "action": {},
         "action_success": False, "page_changed": False,
-        "latency_ms": {}, "tokens": {}, "cost_usd": {}, "energy": {},
+        "latency_ms": {}, "tokens": {},
+        # B-338 (/stress A1.9 Mode B F7, 2026-05-16): cost_usd nested key
+        # validator now requires {input, output, model, router_overhead, total}.
+        "cost_usd": {
+            "input": 0.0, "output": 0.0, "model": 0.0,
+            "router_overhead": 0.0, "total": 0.0,
+        },
+        "energy": {},
         "retry_count": 0, "error_category": None,
         "artifact_paths": {}, "reward": 0.0, "done": False,
     }

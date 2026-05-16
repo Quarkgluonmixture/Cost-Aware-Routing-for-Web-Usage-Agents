@@ -185,6 +185,25 @@ class VwaEvaluator:
         except Exception:
             pass
 
+        # B-329 (/stress A1.9 Mode A F6 OOB, 2026-05-16): skip fresh_page
+        # retry for `program_html` eval_types. program_html validates the
+        # DOM state from the agent's final navigation chain — fresh_page
+        # (`page.context.new_page() + goto(target)`) produces a stateless
+        # server-side render lacking the agent's uncommitted form values /
+        # JS-mutated DOM / open dropdowns → retry false-negative on tasks
+        # where the agent actually succeeded (paper §1 SR silent
+        # under-quote). url_match / string_match / ua_match are unaffected:
+        # url_match cares only about page.url (target same); string_match
+        # is finish-answer-based; ua_match uses LLM judge on the answer.
+        _is_program_html_task = False
+        try:
+            with open(config_file) as _ef:
+                _cfg = json.load(_ef)
+            _eval_types_for_retry = _cfg.get("eval", {}).get("eval_types", [])
+            _is_program_html_task = "program_html" in _eval_types_for_retry
+        except Exception:
+            pass
+
         max_eval_retries = 3
         page = env._env.page  # noqa: SLF001 - VWA evaluator requires underlying page
         eval_page = page  # first attempt uses agent's page
@@ -208,6 +227,22 @@ class VwaEvaluator:
                         "target closed", "page closed",
                     ))
                     if is_nav_error and attempt < max_eval_retries - 1:
+                        if _is_program_html_task:
+                            # B-329: do NOT swap to fresh_page for program_html
+                            # — DOM state would be lost. Bail out as
+                            # evaluator_error so paper §1 SR analyzer can
+                            # exclude (denominator-side) rather than counting
+                            # as false agent failure.
+                            logger.warning(
+                                "Evaluator nav error on program_html task; "
+                                "skipping retry (B-329) to avoid DOM-state "
+                                "loss on fresh_page. err=%s",
+                                str(exc).split('\n')[0][:120],
+                            )
+                            return EpisodeEvalResult(
+                                score=0.0,
+                                error=f"evaluator_nav_error_program_html:{exc}",
+                            )
                         logger.warning(
                             "Evaluator navigation error (attempt %d/%d), retrying with fresh page in 5s: %s",
                             attempt + 1, max_eval_retries, str(exc).split('\n')[0][:120],

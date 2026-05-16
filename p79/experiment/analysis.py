@@ -154,10 +154,27 @@ def _collect_episode_summaries(run_dir: Path) -> List[Dict[str, Any]]:
         EPISODE_SUMMARY_V2_DEFAULTS,
         fill_defaults,
     )
+    # B-322 (/stress A1.9 Mode A F3 + Mode B F5 OOB, 2026-05-16): use strict
+    # loader to enforce bool type on `success` field at load boundary.
+    # Pre-fix `json.load(f)` returned whatever JSON literal was on disk
+    # (`"false"` string → Python `bool("false") = True` → paper §1 SR
+    # inflated when downstream `astype(bool).astype(int)` coerced).
+    # Pairs with `aggregate_condition_metrics` entry strict-type-check
+    # (B-322 metrics.py) for defense-in-depth — analysis.py 3-way coercion
+    # drift (line 596 pd.to_numeric / line 715 astype(bool) / line 1148
+    # pd.to_numeric) all now operate on already-validated bool source.
+    from p79.experiment.io_utils import load_episode_summary_strict
     rows: List[Dict[str, Any]] = []
     for summary_path in run_dir.glob("*/episodes/*_summary_v2.json"):
-        with open(summary_path, "r", encoding="utf-8") as f:
-            raw = json.load(f)
+        try:
+            raw = load_episode_summary_strict(summary_path, mode="lenient")
+        except Exception:
+            # Fallback to raw json for legacy/partial summaries (lenient mode
+            # already handles corrupt; this catches unexpected loader errors).
+            with open(summary_path, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+        if raw is None:
+            continue
         rows.append(fill_defaults(raw, EPISODE_SUMMARY_V2_DEFAULTS))
     return rows
 

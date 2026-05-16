@@ -2741,3 +2741,91 @@ Chunk 2 of A1.17 audit cycle (Chunk 1 = launch-blockers, this Chunk = paper-grad
 **Cross-AI value summary (combined Chunks 1+2)**: 22 attacks consolidated across 3 AI lineages (Mode A Claude self / Mode B codex / Mode C gemini). 17 fixes landed (9 in Chunk 1 + 8 in Chunk 2). Most-critical 1-AI unique catches: codex P0-4 (B-302 LAUNCH BLOCKER schema mismatch) + gemini × 3 OOB (B-309 TZ + B-310 disk + B-311 indexer) + user cross-talk insight (Option K generalization). **Paper-grade integrity sweep: Phase 1a launch-readiness post-Chunk 1 confirmed; paper-grade quality post-Chunk 2; Tier 1 analysis-layer fixes (paper §3 reframe + GLMM + Fisher) deferred to paper §4 codex round + post-data analysis**.
 
 **Next available B-number**: B-315+.
+
+### B-320. HARDWARE_PROFILES dict 缺 `"a100_pcie_40gb"` key → silent m2 fallback 🛠️ FIXED (OOB, 3-AI overlap)
+
+Config `exp_v2_base.yaml:79` canonical key `"a100_pcie_40gb"` not in `p79/experiment/energy_tracker.py:HARDWARE_PROFILES` dict (only `"a100"`). `.get(key, HARDWARE_PROFILES["m2"])` fallback → laptop m2 profile (5W/22W) reported for paper-grade A100 fire whenever pynvml unavailable / sampling thread cold-start / `kwh_per_step` unset → ~14× energy/CO2 under-quote (load 22W vs 300W). 3-AI overlap (Mode A F1 + Mode C #2 explicit OOB + Mode B implicit). Fix: alias key `"a100_pcie_40gb"` (same value as `"a100"` baseline; PCIe variant TDP unchanged) + fail-loud `ValueError` in `__init__` on unknown profile when energy enabled.
+
+### B-321. `_average_measured_power` window 混 pre-step idle samples → fast-step energy under-quote 🛠️ FIXED (OOB)
+
+`energy_tracker.py:302-313` sampling thread does not know step boundary → `cutoff = now - duration - 1s` returns mean over ALL samples in window. Fast step (200ms B0 latency, 500ms sample interval) → window mostly pre-step idle → step power averaged with idle, biased toward A100 idle 50W not inference 300W. Total energy ≠ Σ(per_step_energy). Fix: add `step_start_monotonic` param to `estimate_step` + strict `[step_start, step_start+duration]` window bound + emit `window_sample_count` + `energy_window_partial` flag. Legacy callers (None) fall back to pre-fix sliding window (zero behavior change). Runner wires `time.monotonic()` at step start.
+
+### B-322. `aggregate_condition_metrics` entry string-truthy attack (A1.8 B-283 sibling propagation) 🛠️ FIXED (OOB)
+
+A1.8 B-283 fixed string-truthy at `load_episode_summary_strict()`, but `aggregate_condition_metrics` was called from 3 sites (`runner/main.py:636`, `rederive_episode_summary.py:280`, `analysis.py:200`) passing raw dicts bypassing strict loader → defense-in-depth violation. JSON literal `"success": "false"` → Python `bool("false") = True` → paper §1 SR inflated. Fix: `_assert_strict_aggregator_types()` entry guard checks `success` / `benchmark_noise` / `score` types; `_collect_episode_summaries` switched to `load_episode_summary_strict(mode="lenient")` at load boundary; `analysis.py` 3-way coercion drift (`pd.to_numeric` / `astype(bool)` / etc) now operates on bool-validated source.
+
+### B-323. `runner/main.py:911` swallows `write_episode_summary` failure → memory/disk split-brain 🛠️ FIXED (OOB)
+
+`try/except + logger.error` ate disk-write failures → in-memory aggregate counted episode, but `episodes/*_summary_v2.json` missing on disk → `analyze_run()` re-scan path produced different denominators than runner live path → paper §1/§3 disk-vs-memory split-brain on NFS / crash / disk-full. Fix: paper-grade mode (`cfg.paper_grade=True`) raises `RuntimeError`; dev mode still swallows + logs for backwards compat.
+
+### B-324. `image_meta_recorded` schema ghost: A1.8 加 field 但 runner 不写 🛠️ FIXED (OOB)
+
+`p79/experiment/types.py:191` + `schema_migrations/v2.py` STEP_RECORD_V2_DEFAULTS include `image_meta_recorded: bool` per A1.8 B-291 separator design, but `grep -c image_meta_recorded p79/experiment/runner = 0` → runner never wrote → A1.8 schema separator structurally inert → paper §3 image-axis telemetry disclosure layer broken. Fix: runner sets `image_meta_recorded = bool(decision_mode in {"som","vision","phantom_som"} AND image_payload_bytes present AND no encode_error)`.
+
+### B-325. `aggregate_phantom_lift.load()` lenient corrupt rows → §1 oracle lift denominator pollution 🛠️ FIXED (OOB)
+
+Pre-fix `o.add(tid)` before load attempt → corrupt JSON task_id counted as observed failure in drop-one oracle denominator → paper §1 hero "Phantom-SoM +3.33pp reddit drop-one oracle lift" silently polluted by corrupt rows. Fix: strict-by-default flipped (default `P79_STRICT=1`). Corrupt → EXCLUDED from BOTH observed + success sets (corrupt = missing-data, not failure). Legacy `P79_STRICT=0` env override preserved for lenient legacy inspection mode.
+
+### B-326. Paper §1 hero `B=10000 task resamples` vs prereg §81/409 `B=1000` + code `PREREG_B=1000` 🛠️ FIXED (3-way alignment)
+
+`docs/checkpoints/paper_drafts/section1_intro.md:7` prose declared `B=10000 task resamples` for hero P=0.998 CI, but `scripts/analysis/aggregate_phase1_prereg_gate.py:68` had `PREREG_B = 1000` (B-176 prereg lock) + preregistration §81+409 declared `1000-resample`. 3-way mismatch → reviewer replication would get P=0.99 (not 0.998) → paper §1 hero fabricated precision by 10× resamples. Mode C (gemini) unique catch (Claude+codex missed cross-prose/code/prereg alignment). Fix: paper §1:7 prose `B=10000` → `B=1000` to align with prereg + code (prereg remains pending → no advisor sync required). Hero P-value will re-compute at B=1000 after Phase 1a re-fire.
+
+### B-327. `success_rate` denominator includes `benchmark_noise=True` → SR conflated with infra stability 🛠️ FIXED
+
+`metrics.py:334` `success_rate = sum(success) / len(episode_summaries)` raw counted api_rate_limit / playwright crash / auth expired episodes as task failures. Reddit (high noise rate) → mid-pp SR moves between Phantom-SoM and full SoM look like real gains but may be infra-stability variance. Fix: emit `clean_success_rate = sum(success ∧ ¬noise) / sum(¬noise)` field; appendix discloses raw_SR; paper §1 hero will use clean_SR per Q8 (A).
+
+### B-328. `estimate_step_flops` formula `2 N d² L × 4` ~3× under-estimate vs Hoffmann standard 🛠️ FIXED (delete dead helper)
+
+Hand-wave "4× multiplier" cover QKVO+FFN = 8 N d²/layer vs Hoffmann standard 24 N d² (SwiGLU 28). 0 production callers (`grep -r estimate_step_flops p79 scripts tests | wc -l = 1` = self-definition only). Paper §3 does not quote FLOPs/step. Mode A F4 + Mode B F8 both flag formula wrong + dead code. Fix: delete dead helper + replace with comment block explaining standard transformer FLOPs decomposition for future implementers.
+
+### B-329. `VwaEvaluator.evaluate` retry with `fresh_page` 丢 program_html DOM state 🛠️ FIXED (OOB)
+
+`environment.py:220` retry uses `page.context.new_page() + goto(target)` → stateless server-side render. For `eval_types: program_html` (VWA classifieds ~30%+ tasks), DOM state (cart count, posted listing, modified field) NOT preserved → retry false-negative when agent actually succeeded but original page nav error → paper §1 SR silently under-quoted. url_match / string_match / ua_match unaffected (target URL / answer-text-based). Fix: program_html tasks skip retry entirely; bail as `evaluator_nav_error_program_html` so aggregator can exclude from denominator (consistent with N/A task-load exclusion).
+
+### B-330. H3 axis2 universe `universe_5` → `universe_6` (six-arm complete-case) 🛠️ FIXED (OOB)
+
+Pre-fix `aggregate_phantom_lift.py:599-621` H3 axis1+axis2 effect indexed against `universe = sorted(common)` = `universe_5` (DOM ∩ SoM ∩ Vision ∩ P-text ∩ P-SoM) → axis2 estimand drift when P-prompt missing on tasks in universe_5. Per user paper §1 framing 2026-05-16: P-text + P-prompt are co-equal axis-decomposition arms (not asymmetric "P-prompt is THE axis"). Fix: switch H3 axis1+axis2 to `universe_6` (six-arm complete-case: DOM ∩ SoM ∩ Vision ∩ P-text ∩ P-SoM ∩ P-prompt). Strictest denominator (smallest N) but estimand matches H3 claim precisely. Fallback to None (not universe_5) when universe_6 unavailable (prevents silent estimand drift on partial cells).
+
+### B-331. `run_summary_v2.json` write 不走 LoggerV2 atomic+fsync chain 🛠️ FIXED (OOB)
+
+`runner/main.py:710` plain `json.dump` could truncate on crash mid-write while `condition_summary` (`logger_v2.py:86-91`) used atomic+fsync → asymmetric durability across writers (paper §1 data inconsistency on post-run crash). Fix: extract shared `write_run_summary_atomic(path, payload)` helper in logger_v2.py (tmp + flush + os.fsync + os.replace + fsync_dir chain matching condition_summary). Runner calls helper instead of plain `json.dump`.
+
+### B-332. `p50_obs_prepare_ms` / `p95_obs_prepare_ms` 结构性 missing 🛠️ FIXED (OOB)
+
+Paper §3.2 quotes `"~30ms median obs-prepare latency"` but `aggregate_condition_metrics` emits only USD aggregate (`avg_total_obs_prepare_cost_usd`), no ms quantile → paper §3.2 number structurally not producible from current pipeline (B-195b deferred). Fix: aggregate p50/p95 across each episode's `obs_prepare_latency_ms_list` field if present. Field assumed populated by runner per-step `latency_ms.obs_prepare` aggregation at episode close.
+
+### B-333. Scroll vocabulary asymmetry: B0 semantic `scroll_direction → ±0.8 fixed` vs B1/B2 free `delta [dx, dy]` 🛠️ DISCLOSED (paper §1 footnote)
+
+B0 (`proxy_api_agent.py:69-696`) emits `scroll_direction ∈ {up, down}` → agent layer pop+converts to fixed magnitude `[0, ±0.8]`. B1/B2 (`_shared_vl_utils.py:117/188/251`) emit `delta: [dx, dy]` predicted per-step by VLM (variable magnitude). Reddit (scroll-heavy site) B0 vs B1/B2 SR delta confounded: capability vs action-vocab flexibility. Mode C catch + Q14 spot-check confirms schema asymmetry. Fix: paper §1 disclosure paragraph (B-333 + paper §3.5.1 cross-baseline asymmetry). Not standardize — proxy-as-deployed semantics preserved; reviewer attack documented.
+
+### B-334. Energy/CO2 platform asymmetry (aarch64 RAPL=0 silent) 🛠️ DISCLOSED (paper §3.5.1)
+
+`p79/experiment/energy_tracker.py:294-299` `total_w = gpu_w + (rapl_w or 0.0)`. RAPL Intel/AMD-only `/sys/class/powercap/intel-rapl/`; aarch64 (NVIDIA Grace ARM) → RAPL unavailable → CPU power=0 silent → cross-platform comparability broken. DGX Spark dev numbers (Grace CPU) not directly comparable to A100 paper-grade fire (Intel host RAPL fires). Fix: paper §3.5.1 footnote disclosure + chronicle entries labelled DGX-dev (excluded from §4 totals). Phase 1a fire host all A100/Intel.
+
+### B-335. `detect_benchmark_noise` 503 misclassified to docker_service_error (no URL context) 🛠️ FIXED
+
+B0 proxy short error `"503 Service Unavailable"` (no AWS gateway URL) was uniformly bucketed to `docker_service_error` → paper §3.4 noise breakdown wrong attribution. Fix: split bare "502"/"503"/"service unavailable" out of docker bucket into new `unclassified_5xx` category. Specific `docker`/`container` URL signatures still classify as docker_service_error.
+
+### B-336. `kwh_per_step` mode duration-blind, paper §3 contract violation 🛠️ FIXED (deprecation raise)
+
+`energy_tracker.py:358-367` `if self.kwh_per_step is not None: kwh = float(...)` returns same kwh regardless of step duration → 5s vs 60s step report same energy → incompatible with paper §3 per-step energy claim (which implies duration-proportional). Fix: `kwh_per_step is not None` paths raise in `__init__` (deprecation hard-block). Config key remains in DEFAULT_CONFIG + yaml schema at value None for backwards compat.
+
+### B-337. `NullEvaluator` score=0 indistinguishable from real failure 🛠️ DEFER (low blast, Q18B)
+
+`environment.py:63-65/176-177` evaluator_unavailable returns `score=0.0, error="evaluator_unavailable"` → runner derives success=False → counted as task failure in SR aggregate → paper §1 SR silently under-quoted if evaluator infra fails. Per Q18B defer until evaluator infra empirically fails in prod (current VWA install OK). Future: aggregator filter `evaluator_error` non-empty episodes from denominator (consistent with N/A task-load exclusion B-91).
+
+### B-338. `cost_usd` nested key validation gap 🛠️ FIXED
+
+`validate_step_record_v2` checked `cost_usd is dict` only; runner writer drift (e.g. rename `"model"` → `"llm"`) would silently zero out `compute_component_breakdown.get("model", 0)` paper §3 model cost number. Fix: validator requires `cost_usd` to contain {input, output, model, router_overhead, total} nested keys. Two existing test fixtures updated to include the 5 keys.
+
+### B-339. `_estimate_power_watts` profile_fallback uniform 0.6 utilization 🛠️ DISCLOSED (paper §3 footnote)
+
+`energy_tracker.py:388` `power = idle + (load - idle) * 0.6` assumes fixed 0.6 util on profile_fallback path, ignoring mode-specific load (vision ViT heavier than DOM). Per Q20B disclose-only (profile_fallback rare in paper-grade fire because pynvml available); paper §3 footnote documents assumption. Mode-specific util multiplier deferred.
+
+### B-340. B0 GLM fallback fail-loud in paper_grade mode 🛠️ FIXED (defense-in-depth)
+
+`use_glm_fallback: false` is yaml default + DeprecationWarning fires when enabled, but warning easy to miss in noisy log. Fix: `ProxyApiAgent.__init__` `RuntimeError` raise when `paper_grade=True AND use_glm_fallback=True`. Required propagating `paper_grade` flag through 3 layers: runner → backend factory → `ApiProxyBackend` → `ProxyApiAgent`. Defense-in-depth against config drift / accidental yaml override during paper-grade fire. Mode C catch was stale (didn't see config default) but defense-in-depth still valuable.
+
+### B-341. RAPLReader `open` no `errors=` (A1.8 B-288 sibling propagation) 🛠️ FIXED
+
+`energy_tracker.py:181` bare `open(self._energy_file, "r")` could raise `UnicodeDecodeError` on kernel mid-write race for `/sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj` → outer bare `except Exception` swallowed → silent None → fallback to broken profile path. Fix: `open(..., errors="replace")` mirror A1.8 B-288. `int()` on result still fails fast on non-digit; UnicodeDecodeError path closed.

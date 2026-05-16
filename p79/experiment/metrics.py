@@ -96,8 +96,19 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
         "err_connection_refused",
     )):
         return True, "connection_error"
-    if any(k in msg for k in ("docker", "container", "service unavailable", "502", "503")):
+    # B-335 (/stress A1.9 Mode A F5, 2026-05-16): split bare "502"/"503"
+    # (short messages without container/proxy URL context) into
+    # `unclassified_5xx`. Pre-fix bare HTTP 503 was uniformly bucketed to
+    # docker_service_error even when error was from B0 proxy API short
+    # response (no AWS gateway URL in error string) → paper §3.4 noise
+    # breakdown mis-categorized API transient as docker container issue.
+    # Specific container signatures still classify as docker_service_error;
+    # "service unavailable" is a generic HTTP 503 phrase (not docker-
+    # specific), so it now falls through to unclassified_5xx.
+    if any(k in msg for k in ("docker", "container")):
         return True, "docker_service_error"
+    if any(k in msg for k in ("502", "503", "service unavailable")):
+        return True, "unclassified_5xx"
     if "start_url_content_error" in msg:
         return True, "start_url_content_error"
     if "site_infra_error" in msg:
@@ -176,45 +187,18 @@ def net_saving_energy(
     return _net_saving(energy_baseline_kwh, energy_routed_kwh, overhead)
 
 
-def estimate_step_flops(
-    input_text_tokens: int,
-    input_image_tokens: int,
-    output_tokens: int,
-    model_profile: str = "qwen3vl_4b",
-) -> Dict[str, float]:
-    """Estimate FLOPs per step based on token counts and model architecture.
-
-    Uses the standard 2*N*d^2 approximation for transformer layers
-    (covering Q/K/V/O projections + FFN ≈ 4x multiplier per layer).
-    """
-    profiles = {
-        "qwen3vl_4b": {
-            "d_model": 2560,
-            "n_layers_llm": 36,
-            "vit_d_model": 1280,
-            "vit_layers": 32,
-        },
-    }
-    p = profiles[model_profile]
-    d, L = p["d_model"], p["n_layers_llm"]
-    vit_d, vit_L = p["vit_d_model"], p["vit_layers"]
-
-    # ViT encoder: 2 * tokens * d^2 * layers * 4 (attention + FFN)
-    vit_flops = 2.0 * input_image_tokens * (vit_d ** 2) * vit_L * 4
-
-    # LLM prefill: 2 * total_input * d^2 * layers * 4
-    total_input = input_text_tokens + input_image_tokens
-    llm_prefill_flops = 2.0 * total_input * (d ** 2) * L * 4
-
-    # LLM decode: 2 * output * d^2 * layers * 4
-    llm_decode_flops = 2.0 * output_tokens * (d ** 2) * L * 4
-
-    return {
-        "vit_encoder": vit_flops,
-        "llm_prefill": llm_prefill_flops,
-        "llm_decode": llm_decode_flops,
-        "total": vit_flops + llm_prefill_flops + llm_decode_flops,
-    }
+# B-328 (/stress A1.9 Mode A F4 + Mode B F8 OOB, 2026-05-16): deleted
+# `estimate_step_flops()` — 0 production callers (`grep -r estimate_step_flops
+# p79 scripts tests | wc -l = 1` = self-definition only) AND formula was
+# ~3× under-estimate of standard transformer FLOPs (`2*N*d²*L*4` =
+# 8 N d² per layer vs Hoffmann standard 24 N d² for QKVO attention +
+# FFN; SwiGLU pushes to ~28 N d²/layer). Paper §3 does not quote
+# FLOPs/step numerically; if future work needs FLOPs, implement
+# per-architecture formulas with attention(8 N d²) + FFN(depends on
+# activation: ReLU/GeLU 16 N d², SwiGLU 24 N d²) split + per-model
+# d_model / n_layers / FFN_mult from architecture config. Until then
+# this dead-and-wrong helper is removed to prevent future citation
+# of a broken formula.
 
 
 def compute_wasted_cost(
@@ -288,6 +272,40 @@ def _compute_cost_efficiency_ratio(episode_summaries: List[Dict[str, Any]]) -> O
     return cost_on_success / total_cost
 
 
+def _assert_strict_aggregator_types(episode_summaries: List[Dict[str, Any]]) -> None:
+    """B-322 (/stress A1.9 Mode A F3 + Mode B F5 OOB, 2026-05-16): aggregator
+    entry strict-type-check on hero fields. A1.8 B-283 fixed string-truthy at
+    `load_episode_summary_strict()`, but `aggregate_condition_metrics` was
+    called from 3 sites (runner/main.py:636, rederive_episode_summary.py:280,
+    analysis.py:200) passing raw dicts bypassing the strict loader.
+    Defense-in-depth: enforce bool/numeric types at aggregator entry so any
+    future schema regression (`"success": "false"` literal string,
+    `"benchmark_noise": "True"`, `"score": "0.0"`) raises here rather than
+    silently inflating paper §1 hero SR via Python's `bool('false') = True`.
+    """
+    for idx, ep in enumerate(episode_summaries):
+        if "success" in ep and not isinstance(ep["success"], bool):
+            raise ValueError(
+                f"aggregate_condition_metrics episode[{idx}]: success type "
+                f"mismatch — got {type(ep['success']).__name__!s} "
+                f"(value={ep['success']!r}), expected bool. JSON literal "
+                "string-truthy attack vector → paper §1 hero SR inflation."
+            )
+        if "benchmark_noise" in ep and not isinstance(ep["benchmark_noise"], bool):
+            raise ValueError(
+                f"aggregate_condition_metrics episode[{idx}]: benchmark_noise "
+                f"type mismatch — got {type(ep['benchmark_noise']).__name__!s} "
+                f"(value={ep['benchmark_noise']!r}), expected bool."
+            )
+        score = ep.get("score")
+        if score is not None and not isinstance(score, (int, float)):
+            raise ValueError(
+                f"aggregate_condition_metrics episode[{idx}]: score type "
+                f"mismatch — got {type(score).__name__!s} (value={score!r}), "
+                "expected int/float."
+            )
+
+
 def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict[str, Any]:
     if not episode_summaries:
         return {
@@ -329,7 +347,14 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             "unknown_failure_reason_distribution": {},
             # B-199 noise category distribution default:
             "benchmark_noise_category_distribution": {},
+            # B-327 (/stress A1.9 Mode C F3 OOB, 2026-05-16): clean SR
+            # excluding benchmark_noise episodes from numerator+denominator.
+            "clean_success_rate": None,
+            "clean_episode_count": 0,
         }
+
+    # B-322 (/stress A1.9): defense-in-depth strict-type-check on entry.
+    _assert_strict_aggregator_types(episode_summaries)
 
     success_rate = sum(1 for x in episode_summaries if x.get("success")) / len(episode_summaries)
     step_latencies = [float(x.get("p95_step_latency_ms", 0.0)) for x in episode_summaries]
@@ -413,6 +438,34 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
         # only — net_saving_latency does NOT subtract this (already in routed total).
         "avg_router_overhead_ms": _avg("total_router_overhead_ms"),
         "avg_obs_prepare_cost_usd": _avg("total_obs_prepare_cost_usd"),
+        # B-332 (/stress A1.9 Mode C F6 OOB, 2026-05-16): paper §3.2 quotes
+        # "~30ms median obs-prepare latency" but pre-fix aggregator emitted
+        # only USD aggregate (`avg_total_obs_prepare_cost_usd`), no latency
+        # quantile → paper §3.2 number was structurally not producible from
+        # this pipeline alone (required manual step_metrics.csv pivot).
+        # Now: aggregate p50/p95 across each episode's
+        # `obs_prepare_latency_ms_list` if present (runner emits per-step
+        # obs_prepare latency in step record; episode summary may pre-aggregate).
+        "p50_obs_prepare_ms": (
+            float(statistics.median(
+                [float(v) for x in episode_summaries
+                 for v in (x.get("obs_prepare_latency_ms_list", []) or [])
+                 if v is not None]
+            )) if any(
+                x.get("obs_prepare_latency_ms_list")
+                for x in episode_summaries
+            ) else None
+        ),
+        "p95_obs_prepare_ms": (
+            p95([
+                float(v) for x in episode_summaries
+                for v in (x.get("obs_prepare_latency_ms_list", []) or [])
+                if v is not None
+            ]) if any(
+                x.get("obs_prepare_latency_ms_list")
+                for x in episode_summaries
+            ) else None
+        ),
         # B-195 (/stress A1.4b-ii gemini v1 G1, P1 OOB): per-cell avg of the
         # per-episode obs-prepare cost. Paper §3 currently cites
         # "~30 ms median obs-prepare latency" but pre-fix the aggregate layer
@@ -442,6 +495,35 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             float(statistics.mean(checklist_failed_flags)) if checklist_failed_flags else None
         ),
         "benchmark_noise_rate": float(statistics.mean(benchmark_noise_flags)),
+        # B-327 (/stress A1.9 Mode C F3 OOB, 2026-05-16): clean_success_rate
+        # = SR over episodes excluding benchmark_noise=True (api_rate_limit /
+        # auth_expired / playwright_crash / docker_service_error etc).
+        # `success_rate` (raw) conflates "agent capability" with "infrastructure
+        # stability" — reddit api_rate_limit抖动 → mid-pp SR moves look like
+        # real Phantom gains. Paper §1 hero should report clean_SR;
+        # appendix discloses raw_SR for transparency. Returns None if all
+        # episodes are noise (denominator=0) so prose can show "N/A — all
+        # episodes were infra noise" rather than fake-zero.
+        "clean_success_rate": (
+            float(
+                sum(
+                    1 for x in episode_summaries
+                    if x.get("success") and not bool(x.get("benchmark_noise", False))
+                )
+            ) / max(
+                sum(
+                    1 for x in episode_summaries
+                    if not bool(x.get("benchmark_noise", False))
+                ),
+                1,
+            )
+            if any(not bool(x.get("benchmark_noise", False)) for x in episode_summaries)
+            else None
+        ),
+        "clean_episode_count": sum(
+            1 for x in episode_summaries
+            if not bool(x.get("benchmark_noise", False))
+        ),
         # B-199 (/stress A1.4b-ii gemini v1 G3): per-cell category distribution.
         # Pre-fix the 10-category breakdown produced by `detect_benchmark_noise`
         # was flattened to a single rate, losing site-specific infrastructure

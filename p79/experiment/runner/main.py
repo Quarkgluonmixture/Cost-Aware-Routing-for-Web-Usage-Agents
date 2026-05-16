@@ -205,6 +205,10 @@ class ExperimentRunner:
             and _backend_type in _QWEN_CLASS_BACKEND_TYPES
         ):
             backend_cfg["revision"] = _model_revision
+        # B-340 (/stress A1.9 Mode C F4 defense-in-depth, 2026-05-16):
+        # propagate top-level `paper_grade` flag into backend cfg so
+        # api_proxy → ProxyApiAgent hard-block on use_glm_fallback can fire.
+        backend_cfg.setdefault("paper_grade", bool(self.cfg.get("paper_grade", False)))
         backend = create_backend(backend_id, backend_cfg)
         self._backends[cache_key] = backend
         return backend
@@ -707,8 +711,14 @@ class ExperimentRunner:
             assumptions=assumptions,
         ).as_dict()
 
-        with open(self.output_root / "run_summary_v2.json", "w", encoding="utf-8") as f:
-            json.dump(run_summary, f, indent=2, ensure_ascii=False)
+        # B-331 (/stress A1.9 Mode B F6 OOB, 2026-05-16): atomic + fsync
+        # write via shared helper. Pre-fix plain `json.dump` could truncate
+        # on crash mid-write while condition_summary used atomic+fsync —
+        # asymmetric durability across writers.
+        from p79.experiment.logger_v2 import write_run_summary_atomic
+        write_run_summary_atomic(
+            self.output_root / "run_summary_v2.json", run_summary
+        )
 
         self._create_latest_symlink()
         self.environment.close()
@@ -911,6 +921,23 @@ class ExperimentRunner:
         try:
             condition_logger.write_episode_summary(task.site, task.task_id, summary)
         except Exception as write_exc:
+            # B-323 (/stress A1.9 Mode B F1 OOB, 2026-05-16): paper-grade mode
+            # raises on episode summary disk-write failure. Pre-fix the bare
+            # `try/except + log` swallowed NFS / disk-full / permission errors
+            # → in-memory aggregate counted the episode while
+            # `episodes/*_summary_v2.json` was missing on disk → `analyze_run()`
+            # re-scan path produced different denominators than runner's live
+            # path → paper §1 / §3 disk-vs-memory split-brain. Now: paper-grade
+            # mode (`paper_grade: true` in yaml) fails loud; dev mode still
+            # swallows + logs for backwards compat.
+            paper_grade = bool(self.cfg.get("paper_grade", False))
+            if paper_grade:
+                raise RuntimeError(
+                    f"paper-grade write_episode_summary FAILED site={task.site} "
+                    f"task={task.task_id}: {write_exc!r}. Fail-loud per B-323; "
+                    "in-memory aggregate vs disk evidence split-brain unacceptable "
+                    "for paper-grade fire."
+                ) from write_exc
             logger.error(
                 "Failed to write episode summary for site=%s task=%s: %s",
                 task.site, task.task_id, write_exc, exc_info=True,
@@ -1161,6 +1188,12 @@ class ExperimentRunner:
         busy_wait_total_ms = 0.0
         while step_idx < self.max_steps:
             step_start = time.time()
+            # B-321 (/stress A1.9 Mode A F2 OOB, 2026-05-16): capture monotonic
+            # step boundary so EnergyTracker can strictly bound pynvml sample
+            # window to inference period. Wall-clock `step_start` above can
+            # drift on NTP sync; monotonic is the only reliable boundary for
+            # window arithmetic.
+            step_start_monotonic = time.monotonic()
 
             # ── Early busy-page guard ─────────────────────────────────────
             # If the DOM is still loading (busy marker = 1), skip the LLM call
@@ -1555,7 +1588,11 @@ class ExperimentRunner:
             )
 
             total_latency_ms = (time.time() - step_start) * 1000.0
-            energy = self.energy_tracker.estimate_step(duration_seconds=total_latency_ms / 1000.0)
+            # B-321: pass step_start_monotonic for strict pynvml sample window.
+            energy = self.energy_tracker.estimate_step(
+                duration_seconds=total_latency_ms / 1000.0,
+                step_start_monotonic=step_start_monotonic,
+            )
 
             checklist_snapshot = None
             if checklist_manager is not None:
@@ -1698,6 +1735,21 @@ class ExperimentRunner:
                 "image_token_count_method": meta.get("image_token_count_method"),
             }
             step_record["image_meta"] = _image_meta_payload
+            # B-324 (/stress A1.9 Mode B F2 OOB, 2026-05-16): image_meta_recorded
+            # separator flag. A1.8 B-291 added `image_meta_recorded: bool` to
+            # `StepRecordV2` + `STEP_RECORD_V2_DEFAULTS` but runner never wrote
+            # it (`grep -c image_meta_recorded p79/experiment/runner = 0`)
+            # → A1.8 schema separator was structurally inert. Now: explicitly
+            # tag whether image_meta payload reflects a real image step
+            # (mode ∈ {som, vision, phantom_som} AND image actually rendered)
+            # vs DOM-only step where image_meta is uniformly None by design.
+            # Paper §3 image-axis disclosure can now distinguish "no image
+            # input by design" from "image expected but missing telemetry".
+            step_record["image_meta_recorded"] = bool(
+                decision_mode in {"som", "vision", "phantom_som"}
+                and _image_meta_payload.get("image_encode_error") is None
+                and _image_meta_payload.get("image_payload_bytes") is not None
+            )
             # B-156 (/stress A1.3 v8 Claude F5 + codex P2-B7 dual catch, 2026-05-16):
             # locator-route dispatch telemetry from VWA wrapper info dict.
             # None when step did not invoke locator-route (scroll / wait / coord-only
