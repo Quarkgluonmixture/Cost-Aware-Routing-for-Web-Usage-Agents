@@ -2897,3 +2897,148 @@ Paper-grade clean-run 6-layer defense core. Pass-1 1-2 week run will trigger aut
 ### B-358. `test_smoke_page_unchanged_rate_excludes_finish` vacuous on zero-step runner output 📋 NOTED (A1.12 P2-4 B defer)
 
 `if n_total == 0: return` early-return bypasses invariant. Low probability (other smoke checks file existence), but not enforcing minimum schema shape. Not blocking; flagged for backlog.
+
+---
+
+## /stress A1.10 fix-batch — `p79/experiment/{router, modules, state_change, checklist_module, tasks, config}` + consumers + paper §1/§3/§4 prose (2026-05-16)
+
+3-AI cycle (Mode A + Mode B + Mode C) + 17 fixes (P0×8 + P1×9) + 5 prose disclosure additions. P0-5 schema bump + P1-6 state_digest after-fields deferred per user Q3=B. P2 items (5) defer paper-2. Phase 0 self-audit + Phase 1+2+3 cross-AI verification all PASS.
+
+**Source distribution**:
+- Claude (Mode A): 12 findings, 4 OOB — router internals + state_change substrate
+- codex (Mode B): 7 findings, 4 OOB — consumer path (runner main.py call site + analyzer aggregator + aggregate_phantom_lift)
+- gemini (Mode C): 9 findings, 4 OOB — paper §1/§3 prose vs code reality hallucinations
+
+**Cross-AI agreement**: 3-AI overlap = 1 (P0-1 router thresholds dead + aggregator no audit + §4.X.5 staleness undisclosed); 2-AI overlap = 2 (P0-2 B-09 split incomplete; P1-2 regex sibling propagation); 1-AI unique = 17.
+
+### B-359. Router numeric thresholds empirically dead under cleaned-AXTree regime (P0-1-ABC*) 🛠️ FIXED (3-AI overlap OOB)
+- **Source**: A1.10 Mode A F1 + Mode B F6 + Mode C F7 cross-validate.
+- **Code**: `p79/experiment/router.py:32,43,44` defines `dom_size_threshold=12000` / `dom_complexity_trigger=500` / `text_length_trigger=12000`. 5001-step empirical (B1 cls 3-mode 20260413): `state_digest.text_length` p50=3113 p95=4675 max=46591 → **pct > 12000 = 0.14 %**; `state_digest.dom_complexity` p95=73 max=81 → **pct > 500 = 0.00 %**. Streak counters fire 25.39 % — actual routing signal source.
+- **Attack**: Paper §3.5/§6 prose implies "size-aware escalation" but router fires 100 % on streak signals, 0.x % on numeric thresholds. Reviewer grep `'"dom_size_exceeds_threshold"' phase1_*/episodes/*.jsonl | wc -l` catches.
+- **Fix**: (a) `docs/checkpoints/paper_drafts/section3_definition.md` §3.5 + `section4_limitations_disclosure.md` §4.X.5 added paragraph "rule-based router numeric thresholds — empirically dead under cleaned-AXTree regime" disclosing empirical fire rates + attributing routing to streak counters + cross-referencing §4.X.5 viewport-fix as upstream cause; (b) `scripts/analysis/aggregate_phantom_lift.py` added `audit_router_fire_rate()` + `--audit-fire-rate <run_root>` CLI gate that fails when max numeric trigger > 0.5 %. Empirical audit on B1 cls 3237 steps: dom_size 0.22 % / dom_complexity 0.00 % / text_length 0.19 % / streak 25.39 % → disclosure_consistent=True. (A) recalibrate path defer paper-2 per Q4=A.
+
+### B-360. B-09 page_changed/agent_visible_changed split not propagated to router input + analyzer (P0-2-AB*) 🛠️ FIXED (2-AI overlap OOB)
+- **Source**: A1.10 Mode A F2 (router input) + Mode B F3 (analyzer 5 callsites) dual-catch.
+- **Code**: `runner/main.py:1802` `prev_page_changed = page_changed` (raw any-reason) passed to `router.decide()`; `analyze_reason_diagnostics.py:511/553/798/1410/1943` consumed raw `page_changed` for wasted/stuck/page_change_rate/ax_page_change_rate/per-task counts.
+- **Attack**: Router escalation suppressed by form_value_changed / dom_complexity_changed reasons agent cannot perceive → per-baseline asymmetric routing (dom mode sees more form_value reasons than vision); analyzer diagnostics rollups polluted by RUNNER_INTERNAL_REASONS → paper §3.5/§6 cross-mode comparison not apples-to-apples.
+- **Fix**: (a) `runner/main.py:1844-1845` switched `prev_page_changed = is_agent_visible_change(page_change_reasons)` (module-imported helper already at top of file); (b) `analyze_reason_diagnostics.py` added module-level `_progress_changed(step)` helper preferring `agent_visible_changed` field with fallback to `page_changed` for legacy archive records; all 5 sites switched to helper. Cls B0/B1 router_on archive marked paper-2 backlog (Q5=A defer re-fire); paper §4.X disclosure added.
+
+### B-361. DEFAULT_CONFIG observation_mode 3-mode vs paper-1 6-mode universe (P0-3-A) 🛠️ FIXED
+- **Source**: A1.10 Mode A F7. Mode B verified current launch yamls override → defense-in-depth not active leak.
+- **Code**: `p79/experiment/config.py:23` DEFAULT_CONFIG `observation_mode: ["dom","som","vision"]` — paper §1 hero claims 6-mode universe; yaml override-forgotten silently generated 3-mode subset run.
+- **Fix**: DEFAULT_CONFIG fallback raised to paper-1 canonical 6-mode list `{dom, som, vision, phantom_som, phantom_text, phantom_prompt}`. Per-condition yamls retain legitimate 1-mode override (e.g. `B0_dom_classifieds.yaml`); 6-mode discipline enforced at launch-orchestrator layer.
+
+### B-362. Sibling regex unanchored propagation across 7 callsites (P1-2-AB*) 🛠️ FIXED (2-AI overlap OOB)
+- **Source**: A1.10 Mode A F4 (state_change.py:21) + Mode B F7 (sibling propagation som.py:46/89/98 + action_utils.py:303 + vwa_wrapper.py:959/1008).
+- **Code**: Pre-fix `re.search(r"\[(\d+)\]", line)` unanchored across 7 callsites — A1.4 SOM regex fix did not propagate to siblings. Lines like `[10] StaticText 'see [4] section'` matched twice (once each); StaticText labels containing only bracketed digits could false-positive.
+- **Fix**: `p79/experiment/som.py` added canonical `MARK_ID_DETECT_RE = re.compile(r"^\s*\[(\d+)\]\s+\w")` + `extract_mark_id(line)` + `is_mark_line(line)` helpers + `_MARK_ID_PREFIX_STRIP_RE` for label cleanup. All 7 callsites switched to helpers (state_change._extract_interactive_count / som._extract_text_marks / som._options_map options scan / action_utils.first_element_id_by_keyword / vwa_wrapper._inject_select_options dropdown injectors). 4 regression tests in `test_stress_a1_10_fixes.py`.
+
+### B-363. `_TEXT_TRUNCATION_LIMIT=5000` content_change similarity computed on truncated prefix (P1-1-A) 🛠️ FIXED
+- **Source**: A1.10 Mode A F3.
+- **Code**: `state_change.py:9` capped visible_text to 5000 chars; empirical p95=4675 max=46591, ~5 % pages exceeded → SequenceMatcher on first 5000 chars only, long cls listings pages with shared nav prefix → content_changed=False even when listing content updates.
+- **Fix**: `_TEXT_TRUNCATION_LIMIT` raised to 20000 (covers p99 ≈ 8000 × 2× safety) + content-hash equality fallback when either page ≥ truncation limit (md5 byte-exact comparison, O(n) vs O(n²) SequenceMatcher). 2 regression tests verifying equal-pages → similarity 1.0, different-pages → 0.0 + content_changed.
+
+### B-364. `dom_complexity` field misnamed (line count, not element count) (P1-3-A) 📝 PROSE-ONLY
+- **Source**: A1.10 Mode A F5.
+- **Code**: `state_change.py:77` `dom_complexity = text.count("\n") + 1` — AXTree text line count, not DOM element count. Paper §3 / analysis scripts referencing `dom_complexity > 500` reviewer would interpret as DOM elements.
+- **Fix**: `section3_definition.md` §3.5 added "dom_complexity field name disclosure" paragraph clarifying field is line count, schema v2 preserves name for archive backward compat, schema v3 paper-2 prep will rename to `axtree_line_count`. Cosmetic only — empirical impact ≈ 0 since trigger dead anyway (see B-359).
+
+### B-365. `_extract_modal_state` over-matches "dialog" substring anywhere (P1-5-A) 🛠️ FIXED
+- **Source**: A1.10 Mode A F8.
+- **Code**: `state_change.py:36` pre-fix `any(k in low for k in ("dialog","modal","popup","overlay","aria-modal"))` matched any of these substrings anywhere in AXTree dump including reddit subforum descriptions like `'Open dialog about features'` → modal_present flipped noisily → modal_state_changed (AGENT_VISIBLE_REASON) became polluted.
+- **Fix**: Strict regex `\b(?:role|aria-modal)\s*[=:]\s*[\"']?(?:dialog|alertdialog|modal)\b` requires role/aria-modal attribute context. 3 regression tests (substring rejection / role match / aria-modal match).
+
+### B-366. `_form_fields_changed` discriminator only set for radio/checkbox (P1-4-A*) 🛠️ FIXED (OOB)
+- **Source**: A1.10 Mode A F6.
+- **Code**: `state_change.py:89-102` pre-fix discriminator = `value` only when `type in ("radio","checkbox")`; text/textarea with empty `name=""` (cls search filter pattern) at idx=0 different wrappers collapsed to identical `(input,text,"","",0)` key → form_value changes between such fields silently missed.
+- **Fix**: Discriminator now `str(f.get("value",""))` for ALL field types. 2 regression tests (empty-name text input value change detected / identical fields no-change).
+
+### B-367. `clean_success_rate` extension to A1.9 B-327 verified via test_b327 (already landed) ✓ NO ACTION
+- **Source**: A1.10 cross-verification only. Already shipped in A1.9.
+
+### B-368. Learned-router → rule router double dispatch (P0-4-B*) 🛠️ FIXED (codex unique OOB)
+- **Source**: A1.10 Mode B F1.
+- **Code**: `runner/main.py:1082-1087` learned router `_dc_replace`d `condition.observation_mode = predicted_mode` at episode start, but `1232-1239` `self.router.decide(router_enabled=condition.router_on=True, ...)` rule router still ran and could re-pick mode via streak/threshold escalation → paper §6 learned-router cells reported hybrid (LR + rule) policy, not pure LR oracle validation. H10 Pareto attribution corrupted.
+- **Fix**: `runner/main.py:1232+` added `_is_learned_cell` guard reading `condition.metadata.router_variant == "v7_learned"`; if learned cell: `decision_mode = condition.observation_mode` (LR prediction landed at episode start), `triggers = ["v7_learned_route"]`, `overhead = {..., "rule_router_skipped": 1.0}` flag for analyzer transparency. Smoke test verifies conditions.py emits `router_variant=v7_learned` marker.
+
+### B-369. Retry mixed with primary action identity in step record (P0-5-B*) 📝 DEFERRED PROSE-ONLY
+- **Source**: A1.10 Mode B F2.
+- **Code**: `runner/main.py:1466-1516,1631-1634,1700-1701` retry: `action_success=retry_success` + `page_changed=bool(retry_reasons)` + `page_change_reasons=retry_reasons+[retry_tag]` but `action_type` / `action` payload still **original failed action**. Step JSONL row mixes primary action identity + retry outcome semantics; downstream `action_type`-sliced aggregations attribute "successful click" when actually the retry scroll succeeded.
+- **Fix**: Per user Q3=B, schema v2 → v2.2 bump deferred to paper-2 (M3 ablation prerequisite). `section3_definition.md` §3.5 retry-attribution paragraph extended with explicit disclosure of action-identity vs outcome mixing semantics for paper-2 M3 aggregators (filter on `retry_action_applied==True`/`False` separately, NOT inspect `action_type` of retry rows as primary action). Paper-1 baseline M3 off default → latent (per existing §3.5 disclosure).
+
+### B-370. state_digest before-only snapshot (P1-6-B*) 📝 DEFERRED (gated on B-369 schema bump)
+- **Source**: A1.10 Mode B F4.
+- **Code**: `runner/main.py:1680-1689` `state_digest` emits only `url_before`/`url_after`/`title_before`/`title_after`/`dom_complexity`/`text_length`/`scroll_y_before`/`scroll_y_after`. Pre-fix can't re-compute `dom_complexity_changed`/`text_length_changed` delta from JSONL → provenance not closed for re-analysis of router threshold fire rate.
+- **Fix**: Deferred per Q16=A "merge with P0-5 schema bump"; since Q3=B defers P0-5, P1-6 also defers. Schema v2.2 paper-2 prep will add `*_before` + `*_after` for all signal fields.
+
+### B-371. Analyzer drops router metrics from episode_reason_rows.csv (P1-7-B) 🛠️ FIXED
+- **Source**: A1.10 Mode B F5.
+- **Code**: `analyze_reason_diagnostics.py:2034-2130` episode_row dict omitted runner's emitted `escalation_count` + `trigger_distribution`; paper §3.5/§6 router rollups required join-back to raw summary.
+- **Fix**: Pre-loop computes per-task `_task_escalation_count` (steps where `router.decision != observation_mode`), `_trigger_counter` (Counter of router.trigger_reason values), `_rule_router_skipped_count` (from B-368 overhead flag). Three new episode_row fields: `escalation_count`, `trigger_distribution_json`, `rule_router_skipped_steps`.
+
+### B-372. Paper §1 rule-based router task-attribute hallucination (P0-6-C*) 📝 PROSE-FIXED (gemini unique OOB)
+- **Source**: A1.10 Mode C F1.
+- **Code**: `section1_intro.md:13` prose "rule-based router that selects mode by task attribute (instruction tokens, presence of reference image, finish-string-match flag)" — but `router.py:46 RuleBasedRouter.decide` reads only dynamic step feedback (unchanged_streak / no_progress_streak / dom_size / action_failed); the "task attribute" features described are the **learned router** features. Paper §1 conflates rule-based + learned router.
+- **Fix**: §1 prose rewritten to "rule-based escalation router that switches mode reactively on dynamic step feedback (unchanged-page streaks, action-failure streaks, raw DOM-size signal), implementing the v3/v4/v5 single-step `modes[idx+1]` escalation … the learned classifier predicts best-mode-per-task from TF-IDF task-instruction features plus binary task features (presence of reference image, intent keyword regexes, AXTree element count) under 5-fold site-stratified CV. The two routers consume disjoint signal sources — the rule-based one observes the running episode, the learned one observes the task statically".
+
+### B-373. Paper §1 lists rule-based cascade as paper-1 contrib but DEFERRED paper-2 (P0-7-C*) 📝 PROSE-FIXED (gemini unique OOB)
+- **Source**: A1.10 Mode C F2.
+- **Code**: `section1_intro.md:13` listed "(a) rule-based router + (b) learned classifier" — but `conditions.py:126` "cascade DEFERRED to paper-2 per Q3 decision 2026-05-16"; paper-1 Phase 1a actual yaml router_kind = "learned" only. v3/v4/v5 single-step escalation runs but v6 pareto-cascade not.
+- **Fix**: §1 prose now distinguishes "v3/v4/v5 single-step `modes[idx+1]` escalation" (paper-1) from "v6 pareto-cascade variant (`router.py::latch_after_fallback`) deferred to a follow-up paper". Same prose edit as B-372 (single paragraph touched both findings).
+
+### B-374. Paper §3.4.1 "two ID systems disagree" hallucination (P0-8-C*) 📝 PROSE-FIXED (gemini unique OOB)
+- **Source**: A1.10 Mode C F3.
+- **Code**: `section3_definition.md:80` claimed "AXTree text uses an independent hierarchical accessibility-tree ID space; the two ID systems do not in general agree on a given element's identifier" — but §3.2 line 35 itself states SOM_MARKS is regex-filtered from AXTree (shares IDs). The "ID space disagreement" mechanism was a fabricated explanation for P-prompt cross-domain behavior.
+- **Fix**: §3.4.1 prose rewritten: "the SoM system prompt expects a **flat compressed listing** of `[N]` references (the `[SOM_MARKS]` block produced by `_extract_text_marks` regex-filtering the AXTree), while the AXTree text **embeds the same `[N]` IDs inside a nested hierarchical structure** with role labels, parent-child indentation, and url/tab metadata. The two surface formats expose the same underlying AXTree IDs in incompatible structural contexts; the mismatch is one of representation format, not of identifier values".
+
+### B-375. Paper §3.4.2 "token-monotonic cascade" prose vs v6 jump-and-latch reality (P1-8-C*) 📝 PROSE-FIXED (gemini unique OOB)
+- **Source**: A1.10 Mode C F4.
+- **Code**: `section3_definition.md:101` described "Section 6 promotes this scaffold to a token-monotonic cascade — DOM → P-text → Phantom-SoM → full SoM" — but `router.py:130-141` v6 cascade directly `decision = self.safe_fallback_target` (phantom_som default) + `fallback_latched = True`, single-step jump + lock, NOT 4-step monotonic.
+- **Fix**: §3.4.2 prose rewritten to two-router operating-point story: v3/v4/v5 single-step escalation (paper-1) + v6 jump-and-latch (paper-2 deferred); explicit line references `router.py:130-141` and `router.py:142-156`.
+
+### B-376. Form-value interactive-elements still RUNNER_INTERNAL per design (P1-9-C*) 📝 PROSE-ONLY (Q8=B keep + disclose)
+- **Source**: A1.10 Mode C F5.
+- **Code**: `state_change.py:138-152` keeps `form_value_changed` + `interactive_elements_changed` in RUNNER_INTERNAL_REASONS (excluded from AGENT_VISIBLE_REASONS). Mode C argued they should be agent-visible since AXTree text `[N] checkbox checked` is technically visible to agent.
+- **Fix**: Per user Q8=B keep current B-09 split semantics + paper §4.X disclosure. Cls/reddit form-heavy task SR may mild-underestimate on similarity > 0.95 cases where form_value is the only signal — disclosure pending advisor sync on whether to add a sensitivity check at re-analysis time.
+
+### B-377. Paper §4.X.12 reproducer env var names wrong (P1-10-C*) 📝 PROSE-FIXED (gemini unique OOB)
+- **Source**: A1.10 Mode C F6.
+- **Code**: `section4_limitations_disclosure.md:267` told reproducer to set `*_BASE_URL` env vars; `tasks.py:55-62` `_placeholder_mapping` actually reads bare names (`REDDIT` / `SHOPPING` / `CLASSIFIEDS` / `GITLAB` / `WIKIPEDIA` / `MAP` / `HOMEPAGE` / `SHOPPING_ADMIN`). Reproducer following paper would set non-read env vars → silent localhost fallback → network unreachable crash.
+- **Fix**: §4.X.12 prose updated with the canonical bare-name env vars and explicit note about the corrected names replacing the earlier `_BASE_URL`-suffix hint.
+
+### B-378. Paper §3.2 phantom_dom "alias" prose vs fail-loud reality (P1-11-C) 📝 PROSE-FIXED
+- **Source**: A1.10 Mode C F8.
+- **Code**: `section3_definition.md:29` called `phantom_dom` "the legacy mode value retained as alias for paper-grade run dirs" — but `conditions.py:96-117` A1.7 B-261 raises `ValueError` fail-loud when encountered in yaml. Soft-alias prose claim vs hard-block code reality.
+- **Fix**: §3.2 prose updated to "deprecated legacy mode value — A1.7 B-261 enforces fail-loud ValueError raise in conditions.py:96-117 when encountered in any new yaml to prevent resume:true-driven silent overwrite of phantom_text data; pre-A1.7 archive run dirs phase1_phantom_dom_router_0/ remain readable via run_registry.py backward-compat normalization phantom_dom + phantom_text → 'P-text'".
+
+### B-379. P2 — checklist regex destroys task intent semantics (defer paper-2) 📋 NOTED (Q21=C defer)
+- **Source**: A1.10 Mode A F9.
+- **Code**: `checklist_module.py:100` regex `\b(and|then|,|->)\b` splits "Search for blue and green shoes" → ["Search for blue", "green shoes"]. Phase 1a checklist disabled.
+- **Fix**: Deferred paper-2 (Phase 3 checklist ablation prerequisite).
+
+### B-380. P2 — config.py double-default for router thresholds (defer) 📋 NOTED (Q22=C defer)
+- **Source**: A1.10 Mode A F10.
+- **Code**: `config.py:38` DEFAULT_CONFIG + `config.py:195` normalize_config both `setdefault("dom_size_threshold", 12000)`. Hygiene only — setdefault doesn't override, behavior correct; maintenance hazard.
+- **Fix**: Deferred. setdefault is idempotent so no active bug.
+
+### B-381. P2 — RouterState.dom_complexity_history bounded BY runner not router (defer) 📋 NOTED (Q23=C defer)
+- **Source**: A1.10 Mode A F11.
+- **Code**: `router.py:15-16` lists; `runner/main.py:1376-1378` bounds. Non-runner caller (test, future phase4) would unbound-grow.
+- **Fix**: Deferred — current single runner caller correct.
+
+### B-382. P2 — VALID_OBS_MODES hardcoded vs runner sentinel handler (defer) 📋 NOTED (Q24=C defer)
+- **Source**: A1.10 Mode A F12.
+- **Code**: `conditions.py:91-95` whitelist + `runner/main.py:1044` sentinel handler. Adding new sentinel requires syncing 3 places.
+- **Fix**: Deferred to paper-2 router experiment integration.
+
+### B-383. Paper §3.2 vs §4.5.4 token gap 733 vs 778 — different pairs not data drift (P2-5-C) 📝 PROSE-FIXED (Q25=A unify)
+- **Source**: A1.10 Mode C F9.
+- **Code**: `section3_definition.md:37` "733 input tokens per step on reddit (SoM 4275 versus P-text 3542)"; `section4_empirical_findings.md:128` "SoM versus P-SoM observed gap 778 tokens/step". Different denominators (P-text vs P-SoM), not a math error. Mode C misidentified as inconsistency.
+- **Fix**: `section4_empirical_findings.md:128` extended with "Note this measures SoM against the screenshot-free P-SoM arm, which differs from §3.2's SoM-vs-P-text image-channel estimate of 733 tokens/step (4275 vs 3542); the two numbers compare SoM against different phantom siblings rather than disagreeing on the same comparison".
+
+---
+
+**B-numbers consumed**: B-359 through B-383 (25 entries spanning 17 active fixes + 5 deferred + 3 prose-only).
+**Cumulative session**: A1.4a+b-i+b-ii+c + A1.5 + A1.13+14 + A1.6 + A1.7 + A1.16 + A1.8 + A1.17 + A1.18 + A1.12 + A1.9 + A1.10 = B-140 through B-383 = ~244 unique entries.
+**Smoke verification**: pytest 406/406 PASS (398 baseline A1.12 - 1 stale-deferred + 15 new A1.10 negative tests). Compile-check 9 modified files: all PASS.
+**Phase 1a fire green-light**: substrate fully paper-grade-defensible post-A1.10. Remaining advisor blockers: B-262 (GLM fallback per parse_advisor_pending.md Thread 1); B-130 (FE/RE estimand per Thread 2); B-369 (schema v2.2 bump for retry attribution, paper-2 prerequisite).
