@@ -3042,3 +3042,87 @@ Paper-grade clean-run 6-layer defense core. Pass-1 1-2 week run will trigger aut
 **Cumulative session**: A1.4a+b-i+b-ii+c + A1.5 + A1.13+14 + A1.6 + A1.7 + A1.16 + A1.8 + A1.17 + A1.18 + A1.12 + A1.9 + A1.10 = B-140 through B-383 = ~244 unique entries.
 **Smoke verification**: pytest 406/406 PASS (398 baseline A1.12 - 1 stale-deferred + 15 new A1.10 negative tests). Compile-check 9 modified files: all PASS.
 **Phase 1a fire green-light**: substrate fully paper-grade-defensible post-A1.10. Remaining advisor blockers: B-262 (GLM fallback per parse_advisor_pending.md Thread 1); B-130 (FE/RE estimand per Thread 2); B-369 (schema v2.2 bump for retry attribution, paper-2 prerequisite).
+
+---
+
+## A1.15 /stress audit (2026-05-16) — B-384 to B-394 (11 entries; Pre-fire 闭环 batch, all FIXED)
+
+Scope: watchdog stack + 6-layer auto-clean protocol (`experiment_watchdog.py` 1773 LOC + 3 control scripts). 3-AI cycle (Mode A Claude 11 findings 3 OOB / Mode B codex 9 findings 6 OOB / Mode C gemini 10 findings 5 OOB) = 22 unique attack vectors → 4 P0 + 11 P1 + 6 P2. Pre-fire 闭环 batch lands 11 fixes (5 P0 + 4 P1 + 2 substrate) closing Option K Trajectory Event Log critical path (B-313+B-314 schema laid down A1.17; value-extraction half deferred until this batch).
+
+Cross-AI value (A1.15-specific): codex unique P0 = **B-385 session auto-clean missing trajectory hook** (separate code path from retry; B-314 only covered retry → paper §4 covariate trail systematically false-negative on connected NOT-LOGGED-IN waves) + **B-391 `_run_auto_digest` silent dead path** (`scripts_dir = .parent` resolves to nonexistent `scripts/maintenance/analysis/`). Gemini unique P1 = scan_summaries O(N) glob + restart_watchdog /proc race + 5000-char DOM read limit. Claude unique P0 OOB = **B-387 reddit DOM regex inert** (empirically verified 5/5 reddit DOM 0 match for `link 'Logout'`; Postmill uses dropdown menu) + outcome-dependent retry SR-bias disclosure (T5, paper §3 stub). User strategic decision T8=(a) "Pre-fire 闭环" commits to trajectory_events.jsonl → aggregator covariate trail before fire.
+
+### B-384. `experiment_watchdog.py:1759+` Option K Hook C — session-cleanup path emit `task_auto_cleared` [P0 — codex unique OOB] 🛠️ FIXED
+- **Attack**: B-314 (A1.17 Chunk 2) added trajectory event hook to the retry path (L1411-1432), but the `session_contaminated[site]` mass-cleanup loop (L1494-1525, high-frequency auth-loss class entry point) had ZERO `log_trajectory_event_external` call. Codex caught this in A1.15 grep — `log_trajectory_event_external` only appeared once in watchdog. Session-loss waves clear connected/correlated tasks (not white noise) → paper §4 GLMM `had_auth_clear` covariate systematically false-negative with directional bias.
+- **Cascade**: 14 reddit cells × N session-loss waves during Phase 1a = potentially dozens of unrecorded auto-clean events; aggregator output omits `had_auth_clear` for affected episodes → §4 GLMM regression coefficient biased toward zero → main treatment effect contaminated by uncontrolled-for auth-clear perturbation.
+- **Fix**: Per-task emit inside session cleanup loop with wave-context metadata (`is_auth_loss=True`, `cleared_in_session_wave=True`, `wave_size`, `wave_task_index`, `is_noise=True`, `site`). Best-effort try/except wrapper per T2'=(a) decision. Distinguishes from retry-path emit via `cleared_in_session_wave` bool.
+
+### B-385. `p79/experiment/logger_v2.py:106-134` Option K schema doc update + P0-4 reframe note [Schema clarification + codex P0-4 reframe] 🛠️ FIXED
+- **Attack**: Schema doc listed event_type `"auth_clear_task"` but actual hook emits `"task_auto_cleared"` (mismatch from B-314 implementation). P0-4 condition_finalize race (codex unique OOB at A1.15) lacked schema guidance — runner-side `condition_finalizing.lock` would have been heavy fix.
+- **Fix**: Updated schema event_type enum to actual emit values; added metadata key catalog; documented post-hoc race detection (aggregator intersection of condition_summary task_ids with `task_auto_cleared` events = race-cleared episodes, no new event_type needed). Race fully resolved via aggregator covariate `had_finalize_race_clear` rather than via runner mutex primitive — best-effort emit substrate sufficient.
+
+### B-386. `experiment_watchdog.py:1621-1657` Option K race-ordering disclosure + paper §4.X.13 stub [P0 — 2-AI A+B race window] 🛠️ FIXED (best-effort + disclosure per T2'=a)
+- **Attack**: B-314 event write happens AFTER destructive ops (`unlink` + `rmtree` + `_purge_digest_records` + `_persist_state`). `restart_watchdog.sh kill -9` race window (2-3s) drops event while filesystem mutation persists → paper §4 covariate undercount.
+- **Decision T2'=(a)**: Best-effort + paper §3 disclose (vs 2-phase commit which would add 1.5h with marginal ROI given mode-symmetric drop direction).
+- **Fix**: Enhanced inline comment explicitly documenting race window + paper §3 disclosure pointer + `cleared_in_session_wave: False` metadata addition (distinguishes from B-384 session path). Paper §4.X.13 stub added to `section4_limitations_disclosure.md` documenting best-effort enrichment + sensitivity analysis Supp Table S-trajectory-loss planned post-data.
+
+### B-387. `experiment_watchdog.py:34-91, 303-317` Reddit DOM regex inert — per-site `_SITE_AUTH_REGEX` dict [P0 — Claude unique OOB, empirically verified] 🛠️ FIXED
+- **Attack**: Pre-fix single `_LOGIN_PRESENT_RE = link\s+'(?:Logout|Log out|Sign Out)'` designed for OSClass/Magento DOM serializer format. Reddit Postmill DOM uses dropdown menu structure (`"Profile"`, `"My account"`, `"User settings"`, `"Block list"`) rather than explicit `link 'Logout'`. **Empirically verified 2026-05-16**: 5/5 reddit step_000 DOM files (6.9-7.2KB, sample from `B0_phantom_som_reddit_20260428`) matched neither old regex → `_check_session_health` returned `None` for ALL reddit tasks → `session_loss_streak[reddit]` never incremented → session_contaminated never accumulated → auto-clean protocol completely inert for 14 reddit cells. Paper §4 "auto-clean protects all 42 cells" claim audit replay falsified.
+- **Fix**: Per-site `_SITE_AUTH_REGEX: Dict[str, Tuple[Pattern, Pattern]]` with site-specific (logged-out, logged-in) markers — classifieds = OSClass `link 'Login/Logout'`, shopping = Magento `link 'Sign In/Sign Out/My Account'`, shopping_admin = `link 'Login/Account'`, reddit = `link 'Log in/Sign up'` for logged-out + `DROPDOWN OPTIONS|"My account"|"User settings"|"Block list"|link 'Profile'` for logged-in. `_check_session_health` dispatches via site key with classifieds fallback.
+- **Smoke verified**: 5/5 reddit DOM files now correctly detected as logged-in (was 0/5).
+
+### B-388. `p79/experiment/logger_v2.py:190+` runner-side staging pickup helper `merge_staging_trajectory_events` [Merge (i) — closes deferred follow-up from B-314] 🛠️ FIXED
+- **Attack**: B-314 reset gate writes `reset_post_interrupt` events to `${repo_root}/logs/trajectory_events_staging/RUN_${RUN_ID}.jsonl` because condition_dir doesn't exist yet. Without pickup the staging file accumulated events but never made it into per-condition `trajectory_events.jsonl` → paper §4 aggregator received zero events from reset class → Option K Tier 1 stack analysis layer was effectively dead for reset perturbation.
+- **Fix**: New module helper `merge_staging_trajectory_events(condition_dir, run_id, repo_root)`. Idempotent via "fresh-dir-only" guard. Cell-level events duplicated across each condition_dir under same RUN_ID by design (each condition's covariate view sees its own copy). Preserves original wallclock_ts + adds `merged_from_staging=True` + `staging_run_id` metadata. Atomic per-event append + fsync.
+- **Call site**: Runner `p79/experiment/runner/main.py:513-540` immediately after `condition_dir.mkdir(parents=True, exist_ok=True)`. Best-effort try/except — failure surfaces warning but does not abort.
+
+### B-389. `scripts/analysis/aggregate_trajectory_covariates.py` (NEW) Option K covariate aggregator [Aggregator (iii) — closes deferred follow-up] 🛠️ FIXED
+- **Attack**: Without aggregator implementation, trajectory_events.jsonl files would accumulate during Phase 1a fire but never feed into paper §4 GLMM — making the entire Option K substrate dead artifacts.
+- **Fix**: New script `aggregate_trajectory_covariates.py` (~233 LOC). Reads `trajectory_events.jsonl` + `condition_summary_v2.json` per condition_dir; emits per-episode JSONL + CSV at `<condition_dir>/analysis/trajectory_covariates.{jsonl,csv}` with columns: `is_after_reset` / `had_auth_clear` / `had_finalize_race_clear` (post-hoc race detection per B-385) / `cleared_in_session_wave` / `session_wave_size` / `prior_event_count` / `n_task_events` / `ep_wallclock_start`. Defensive schema parsing handles both v2 (`episode_summaries: list`) and legacy (`episodes: int` count → filesystem scan fallback). CLI: `--run-dir <run> [--condition <cid>]`.
+
+### B-390. End-to-end Pre-fire 闭环 smoke test (B-313~B-389 chain) [Substrate verification] 🛠️ FIXED
+- **Test**: Fake condition_dir → write staging file with `reset_post_interrupt` → `merge_staging_trajectory_events` (B-388) pickup → emit 4 `task_auto_cleared` events (1 retry-path + 3 session-wave per B-384 metadata) → write `condition_summary_v2.json` with 5-task episode list → run aggregator (B-389) → verify all 5 covariate column values + idempotency (re-merge returns 0) + race detection (4 tasks with `had_finalize_race_clear=True`, 1 clean task False) + legacy schema fallback on archived run.
+- **All assertions PASS**: covariate columns correct; idempotent re-merge; archived run (`episodes: int(3)`) aggregator does not crash (3 episodes emit via filesystem scan).
+
+### B-391. `experiment_watchdog.py:1191, 305-435, 1218` `_run_auto_digest` silent dead path [P1 — codex unique OOB, empirically confirmed] 🛠️ FIXED
+- **Attack**: Pre-fix `scripts_dir = Path(__file__).parent` resolved to `scripts/maintenance/`, but L1005 looked for `scripts/maintenance/analysis/analyze_reason_diagnostics.py` — directory doesn't exist (verified `ls`). `diag_script.exists()` permanently False → silent return None → watchdog `_run_auto_digest` dead path through entire Phase 1a wall. `_run_post_condition_analysis` (L532) correctly uses `.parent.parent = scripts/` — sibling inconsistency from §99 reorg. Additionally `_DIGEST_MODES = ("dom","som","vision")` hardcoded didn't include Phase 1a phantom modes (P-text/P-prompt/P-SoM).
+- **Fix**: (a) `_run_auto_digest` scripts_dir = `.parent.parent` mirror L532; (b) `digest_script = scripts_dir / "maintenance" / "glm" / "glm_batch_digest.py"` (post-2026-05-02 GLM sidecar reorg); (c) new helper `_get_active_digest_modes(run_dir, ...)` runtime-derives modes from `condition_meta.json["observation_mode"]` to cover all 6 Phase 1a modes.
+
+### B-392. `experiment_watchdog.py:145-280, 1791+` `_purge_digest_records_batch` + fsync [P1 — 2-AI A+C purge perf+durability] 🛠️ FIXED
+- **Attack**: (a) gemini OOB: pre-fix `_purge_digest_records` called per-task in session cleanup loop B-384 → O(N·M) read+filter+rewrite (100 records × multi-MB digest = ~200MB I/O) → watchdog hangs minutes during session-restore mass cleanup. (b) Claude: rename `tmp_file.replace(digest_file)` no fsync — durability sibling inconsistency with `_save_state` atomic+fsync+dirsync pattern.
+- **Fix**: New `_purge_digest_records_batch(digest_dir, obs_mode, keys_to_remove: Set[Tuple[str, int]])` reads once, filters by set membership, writes once with fsync+replace+dirsync. Session cleanup loop collects `_purge_keys_by_mode: Dict[str, Set]` during destructive op pass then runs ONE batch purge per mode after the loop. Single-key `_purge_digest_records` retained as thin wrapper for retry-path B-314 call site. Idempotent: empty keys or no matches returns 0 without touching disk.
+
+### B-393. `experiment_watchdog.py:618-700, 1308-1316` `_load_state` fail-closed on corrupt state [P1 — 2-AI B+C corrupt state silent reset] 🛠️ FIXED
+- **Attack**: Pre-fix `except Exception: return {}` silently reset on ANY parse/I/O error → `error_retry_counts` cleared (= "已耗尽 retry 任务被重新调度") + `session_contaminated` cleared (= "受损 episode 永留在 result set"). B-223 (A1.5) landed atomic write via `_save_state`; read-side never matched → durability sibling inconsistency.
+- **Fix**: Distinguish `FileNotFoundError` (OK return {} — clean first launch) from `JSONDecodeError/OSError/UnicodeDecodeError` (rename `path.with_suffix(".corrupt.<ts>")` + urgent ntfy + raise SystemExit unless caller passed `reset_state=True`). Forwarded `reset_state` parameter through main(). Fail-closed default is paper-grade-correct; operator can opt-in to discard via `--reset-state`.
+
+### B-394. `scripts/maintenance/wait_for_reddit_then_rederive.sh` DELETED + Makefile `watch-reddit` target retired [P1 — 3-AI overlap, T6=(a) decision] 🛠️ FIXED
+- **Attack**: 3-AI overlap finding. Header L14 comment claimed "Step 5: Does NOT auto-start B1 shopping queue" but body L52-62 actually DOES auto-launch `queue_b1_with_reset.sh`. Hardcoded `B1` baseline + `RUN_DIR=20260413` (April-specific). B2 Gemma3-VL joined baseline set 2026-05-14 → script stale + cross-baseline collision risk (CLAUDE.md "B0 XOR B1 XOR B2 同 site" hard rule violation).
+- **Decision T6=(a)**: Delete (vs generic refactor which would preserve problematic pattern).
+- **Fix**: `git rm scripts/maintenance/wait_for_reddit_then_rederive.sh`; Makefile `watch-reddit` target body replaced with retirement comment + .PHONY removed + header doc comment updated; `schedule-list` target pgrep pattern updated (removed `wait_for_reddit`, added `queue_b2|queue_chain` for B2 + chain coverage); `scripts/maintenance/README.md` entry strikethroughed. Paper-grade reddit workflow uses `queue_chain.sh` (3-baseline aware, collision-safe).
+
+**B-numbers consumed**: B-384 through B-394 (11 contiguous, latest-checked from master HEAD `ddc29ff` at chunk start; reverse-pass renumbered from initial B-315~B-325 after detecting parallel A1.9/A1.10/A1.12 occupation of B-315~B-383).
+
+**Smoke verification**:
+- py_compile PASS: `experiment_watchdog.py` / `logger_v2.py` / `runner/main.py` / `aggregate_trajectory_covariates.py`
+- Makefile syntax PASS (`make -n schedule-list` / `make -n help` / `make watch-reddit` correctly errors "No rule")
+- B-387 empirical: 5/5 reddit DOM 0→5 logged-in detection ✓
+- B-390 end-to-end smoke: 5 covariate rows correct + idempotency + race detection + archived sanity ✓
+
+**Worktree**: `/home/jiaming/workspace/p79-a1.15` branched from master `057f7aa` on branch `a1.15-stress`. Merged in master `ddc29ff` (= parallel A1.9+A1.10+A1.12 land) before docs append; 1 conflict in `logger_v2.py` (B-331 atomic + B-388 helper both at file tail) — resolved keeping both. Merge back to master via `git merge --no-ff a1.15-stress` (per A1.17 worktree workflow §163.5).
+
+**Pre-fire 闭环 completion status**:
+- ✅ Schema (B-313 prior + B-385 doc update)
+- ✅ API (B-313 prior + B-388 staging-merge helper)
+- ✅ Hook A retry path (B-314 prior + B-386 race-window comment)
+- ✅ Hook B reset gate (B-314 prior)
+- ✅ Hook C session-cleanup path 🆕 (B-384)
+- ✅ Hook D race-window detection — post-hoc via aggregator 🆕 (B-385)
+- ✅ Merge runner-side staging pickup 🆕 (B-388)
+- ✅ Aggregator covariate emission 🆕 (B-389 + B-390 smoke)
+- 🟡 Paper §3 Multi-Epoch reframe (deferred (ii), codex round + advisor sync)
+- 🟡 Paper §4 GLMM regression (deferred (iii) downstream, post-data, reads aggregator output)
+- 🟡 Fisher rebuttal (deferred (iv), post-data)
+
+**Cumulative session**: A1.4a+b-i+b-ii+c + A1.5 + A1.13+14 + A1.6 + A1.7 + A1.16 + A1.8 + A1.17 + A1.18 + A1.12 + A1.9 + A1.10 + A1.15 = B-140 through B-394 = ~255 unique entries.
+**Phase 1a fire green-light unchanged**: substrate paper-grade post-A1.15 Pre-fire 闭环 land. Remaining advisor blockers unchanged: B-262 (GLM fallback Thread 1); B-130 (FE/RE estimand Thread 2); B-369 (schema v2.2 retry attribution, paper-2 prerequisite).
+**Next available B-number**: B-395+.
