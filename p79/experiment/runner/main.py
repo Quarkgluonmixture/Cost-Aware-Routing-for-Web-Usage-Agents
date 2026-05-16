@@ -29,6 +29,7 @@ from p79.experiment.conditions import generate_conditions
 from p79.experiment.config import resolve_output_root
 from p79.experiment.energy_tracker import LightweightEnergyTracker
 from p79.experiment.environment import create_environment, create_evaluator
+from p79.experiment.io_utils import read_jsonl_dedup
 from p79.experiment.logger_v2 import LoggerV2
 from p79.experiment.metrics import (
     aggregate_condition_metrics,
@@ -316,6 +317,99 @@ class ExperimentRunner:
             logger.warning("Failed to create latest symlink %s: %s", latest_link, exc)
 
     @staticmethod
+    def _aggregate_partial_steps(partial_steps: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """B-166 (/stress A1.4a v8 codex B1, 2026-05-16): aggregate metrics
+        from partial JSONL rows so a mid-episode crash doesn't erase the
+        tokens/cost/latency already incurred.
+
+        Pre-B-166 the runner ``except`` path emitted ``steps=0, total_tokens=0,
+        total_cost=0`` even after 12 step JSONL rows were already on disk,
+        creating a JSONL-vs-summary divergence: same episode wrote two
+        incompatible histories. ``read_jsonl_dedup`` already handles restart
+        dedup and corrupt-line skipping; this helper computes the sums.
+        Returns a dict of {steps, retries, total_tokens, total_*_cost_usd,
+        total_latency_ms, p95_step_latency_ms, escalation_count, ...}.
+        """
+        if not partial_steps:
+            return {
+                "steps": 0, "retries": 0,
+                "no_op_rate": 0.0, "page_unchanged_rate": 0.0,
+                "total_latency_ms": 0.0, "p95_step_latency_ms": 0.0,
+                "total_tokens": 0, "total_model_cost_usd": 0.0,
+                "total_cost_usd": 0.0,
+                "total_router_overhead_cost_usd": 0.0,
+                "total_router_overhead_ms": 0.0,
+                "escalation_count": 0,
+            }
+        from p79.experiment.metrics import p95 as _p95
+        n = len(partial_steps)
+        step_latencies = [float(s.get("latency_ms", {}).get("total", 0.0)) for s in partial_steps]
+        total_latency = sum(step_latencies)
+        total_tokens = sum(int(s.get("tokens", {}).get("total", 0)) for s in partial_steps)
+        total_model_cost = sum(float(s.get("cost_usd", {}).get("model", 0.0)) for s in partial_steps)
+        total_router_overhead_cost = sum(
+            float(s.get("cost_usd", {}).get("router_overhead", 0.0)) for s in partial_steps
+        )
+        total_obs_prepare_cost = sum(
+            float(s.get("cost_usd", {}).get("obs_prepare", 0.0)) for s in partial_steps
+        )
+        total_cost = total_model_cost + total_router_overhead_cost + total_obs_prepare_cost
+        total_router_overhead_ms = sum(
+            float(s.get("router", {}).get("overhead_ms", {}).get("router_decision_ms", 0.0))
+            + float(s.get("router", {}).get("overhead_ms", {}).get("extra_dom_parse_ms", 0.0))
+            + float(s.get("router", {}).get("overhead_ms", {}).get("extra_screenshot_ms", 0.0))
+            for s in partial_steps
+        )
+        retries = sum(int(s.get("retry_count", 0)) for s in partial_steps)
+        no_op_count = sum(1 for s in partial_steps if not bool(s.get("action_success", False)))
+        unchanged_count = sum(
+            1 for s in partial_steps
+            if not bool(s.get("page_changed", False))
+            and str((s.get("action") or {}).get("action_type", "")).lower() not in ("finish", "stop")
+        )
+        # escalation_count: count router decisions that differ from
+        # condition.observation_mode. Without router_on we set 0.
+        return {
+            "steps": n,
+            "retries": retries,
+            "no_op_rate": (no_op_count / n) if n else 0.0,
+            "page_unchanged_rate": (unchanged_count / n) if n else 0.0,
+            "total_latency_ms": total_latency,
+            "p95_step_latency_ms": _p95(step_latencies),
+            "total_tokens": total_tokens,
+            "total_model_cost_usd": total_model_cost,
+            "total_cost_usd": total_cost,
+            "total_router_overhead_cost_usd": total_router_overhead_cost,
+            "total_router_overhead_ms": total_router_overhead_ms,
+            "escalation_count": 0,  # cannot reconstruct without state context
+        }
+
+    @staticmethod
+    def _validate_resume_identity(
+        loaded: Dict[str, Any],
+        expected: Dict[str, Any],
+    ) -> Optional[Dict[str, Tuple[Any, Any]]]:
+        """B-167 (/stress A1.4a v8 codex B2, 2026-05-16): validate that a
+        loaded summary on disk actually belongs to the current run.
+
+        Pre-B-167 the resume gate accepted ANY file at the expected path —
+        if output_root was reused with changed ``run_id``/``seed``/
+        ``include_sites``/``max_tasks_per_site``, stale summaries silently
+        ingested into the new aggregate. Identity tuple:
+        ``(schema_version, run_id, condition_id, seed, benchmark_site, task_id)``.
+
+        Returns:
+            None if identity matches (accept resume), or
+            dict of mismatched_field → (loaded_value, expected_value).
+        """
+        mismatches: Dict[str, Tuple[Any, Any]] = {}
+        for field, expected_value in expected.items():
+            loaded_value = loaded.get(field)
+            if loaded_value != expected_value:
+                mismatches[field] = (loaded_value, expected_value)
+        return mismatches if mismatches else None
+
+    @staticmethod
     def _normalize_error_category(
         failure_reason: Optional[str],
         action_success: bool,
@@ -425,24 +519,68 @@ class ExperimentRunner:
                         try:
                             with open(summary_file, "r", encoding="utf-8") as f:
                                 loaded = json.load(f)
-                            has_steps = int(loaded.get("steps", 0)) > 0
-                            has_error = bool(loaded.get("error"))
 
-                            if has_steps or not has_error:
+                            # B-167 (/stress A1.4a v8 codex B2, 2026-05-16):
+                            # identity tuple check. Pre-fix the resume gate
+                            # accepted any file at the expected path — if
+                            # output_root was reused with different
+                            # run_id/seed/site/task_id (manual mv, watchdog
+                            # rename, archived rerun), stale summaries
+                            # silently ingested into the new aggregate. Now
+                            # validate (schema_version, run_id, condition_id,
+                            # seed, benchmark_site, task_id) match expected;
+                            # mismatch → quarantine + re-run.
+                            _expected = {
+                                "schema_version": SCHEMA_VERSION_V2,
+                                "run_id": self.cfg["experiment"]["run_id"],
+                                "condition_id": effective_cid,
+                                "seed": current_seed,
+                                "benchmark_site": task.site,
+                                "task_id": task.task_id,
+                            }
+                            _mismatches = self._validate_resume_identity(loaded, _expected)
+                            if _mismatches:
+                                # Quarantine to <episodes>/quarantine/ for forensic audit
+                                _quarantine_dir = condition_logger.episodes_dir / "quarantine"
+                                _quarantine_dir.mkdir(parents=True, exist_ok=True)
+                                _quarantine_path = (
+                                    _quarantine_dir
+                                    / f"{summary_file.stem}.{int(time.time())}.json"
+                                )
+                                try:
+                                    shutil.move(str(summary_file), str(_quarantine_path))
+                                    logger.warning(
+                                        "B-167 resume identity mismatch site=%s task=%s — "
+                                        "quarantined %s → %s. Mismatches: %s",
+                                        task.site, task.task_id,
+                                        summary_file.name, _quarantine_path.name,
+                                        _mismatches,
+                                    )
+                                except OSError as _q_exc:
+                                    logger.error(
+                                        "B-167 quarantine move failed for %s: %s — re-running anyway",
+                                        summary_file, _q_exc,
+                                    )
+                                # Fall through to re-run; do NOT continue
+                            else:
+                                has_steps = int(loaded.get("steps", 0)) > 0
+                                has_error = bool(loaded.get("error"))
+
+                                if has_steps or not has_error:
+                                    episode_summaries.append(loaded)
+                                    continue
+
+                                # Zero-step error: skip — watchdog handles all retries
+                                # with MAX_NOISE_RETRIES / MAX_CODE_BUG_RETRIES limits.
+                                # Runner's retry pass (line 544) will re-run if watchdog
+                                # has already deleted the summary.
+                                logger.info(
+                                    "Skipping zero-step error episode site=%s task=%s (watchdog handles retry): %s",
+                                    task.site, task.task_id,
+                                    str(loaded.get("error", ""))[:120],
+                                )
                                 episode_summaries.append(loaded)
                                 continue
-
-                            # Zero-step error: skip — watchdog handles all retries
-                            # with MAX_NOISE_RETRIES / MAX_CODE_BUG_RETRIES limits.
-                            # Runner's retry pass (line 544) will re-run if watchdog
-                            # has already deleted the summary.
-                            logger.info(
-                                "Skipping zero-step error episode site=%s task=%s (watchdog handles retry): %s",
-                                task.site, task.task_id,
-                                str(loaded.get("error", ""))[:120],
-                            )
-                            episode_summaries.append(loaded)
-                            continue
                         except Exception:
                             pass  # Corrupted summary — fall through to re-run
 
@@ -695,6 +833,29 @@ class ExperimentRunner:
                 exc_info=True,
             )
             noise, noise_cat = detect_benchmark_noise(str(exc))
+
+            # B-166 (/stress A1.4a v8 codex B1, 2026-05-16): partial-step
+            # crash recovery. Try to read any JSONL rows already written
+            # before the exception fired, so the summary's
+            # steps/tokens/cost/latency reflect what actually happened
+            # rather than zero-step erasure. Pre-fix the except path
+            # emitted ``steps=0,total_cost=0`` for crashes that occurred
+            # after 12+ step JSONL writes, creating same-episode JSONL
+            # vs summary divergence (paper-grade evidence layer split).
+            _partial_steps: List[Dict[str, Any]] = []
+            try:
+                _jsonl_path = condition_logger.step_log_path(task.site, task.task_id)
+                if _jsonl_path.exists():
+                    _partial_steps = read_jsonl_dedup(_jsonl_path)
+            except Exception as _read_exc:
+                logger.warning(
+                    "B-166 partial-JSONL read failed for site=%s task=%s: %s — "
+                    "falling back to zero-step error summary",
+                    task.site, task.task_id, _read_exc,
+                )
+                _partial_steps = []
+            _agg = self._aggregate_partial_steps(_partial_steps)
+
             summary = EpisodeSummaryV2(
                 schema_version=SCHEMA_VERSION_V2,
                 run_id=self.cfg["experiment"]["run_id"],
@@ -705,20 +866,20 @@ class ExperimentRunner:
                 seed=self.seed,
                 success=False,
                 score=0.0,
-                steps=0,
-                retries=0,
-                no_op_rate=0.0,
-                page_unchanged_rate=0.0,
-                total_latency_ms=0.0,
-                p95_step_latency_ms=0.0,
-                total_tokens=0,
-                total_model_cost_usd=0.0,
-                total_cost_usd=0.0,
-                total_router_overhead_cost_usd=0.0,
-                total_router_overhead_ms=0.0,
+                steps=_agg["steps"],
+                retries=_agg["retries"],
+                no_op_rate=_agg["no_op_rate"],
+                page_unchanged_rate=_agg["page_unchanged_rate"],
+                total_latency_ms=_agg["total_latency_ms"],
+                p95_step_latency_ms=_agg["p95_step_latency_ms"],
+                total_tokens=_agg["total_tokens"],
+                total_model_cost_usd=_agg["total_model_cost_usd"],
+                total_cost_usd=_agg["total_cost_usd"],
+                total_router_overhead_cost_usd=_agg["total_router_overhead_cost_usd"],
+                total_router_overhead_ms=_agg["total_router_overhead_ms"],
                 total_energy_kwh=None,
                 total_co2e_kg=None,
-                escalation_count=0,
+                escalation_count=_agg["escalation_count"],
                 trigger_distribution={},
                 benchmark_noise=noise,
                 benchmark_noise_category=noise_cat,
@@ -728,10 +889,14 @@ class ExperimentRunner:
             summary["wasted_cost_usd"] = 0.0
             summary["wasted_energy_kwh"] = 0.0
             summary["component_breakdown"] = {
-                "model_cost_usd": 0.0,
-                "router_overhead_usd": 0.0,
+                "model_cost_usd": _agg["total_model_cost_usd"],
+                "router_overhead_usd": _agg["total_router_overhead_cost_usd"],
                 "total_energy_kwh": 0.0,
             }
+            # B-164 propagation: error summaries also flagged incomplete
+            summary["trajectory_incomplete"] = True
+            summary["unknown_failure_reasons"] = {}
+            summary["partial_recovery_step_count"] = _agg["steps"]
 
         try:
             condition_logger.write_episode_summary(task.site, task.task_id, summary)
