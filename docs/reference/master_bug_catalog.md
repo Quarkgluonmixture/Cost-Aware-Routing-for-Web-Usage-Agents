@@ -2502,8 +2502,81 @@ Phase 1a fire prep audit per phase1_plan §A1 ladder item 8。3-AI cross-AI cycl
 
 **B-numbers consumed**: B-280 through B-297 (18 contiguous, no collisions with A1.16 B-273~B-279)。Cumulative session A1.4a+b-i+b-ii+c + A1.5 + A1.13+14 + A1.6 + A1.7 + A1.16 + A1.8 = B-140 through B-297 = ~158 unique entries。
 
-**Next available B-number**: B-298+.
+**Next available B-number**: ~~B-298+~~ → superseded by A1.17 Chunk 1 below.
 
 **Smoke verification**: pytest 316/316 PASS (= 281 baseline A1.7 + 35 new A1.8 negative tests)。
 
 **Phase 1a fire green-light**: schema substrate fully paper-grade-defensible post-A1.8。剩 advisor blocker: B-262 (GLM fallback per parse_advisor_pending.md Thread 1); B-130 (FE/RE estimand per Thread 2); B-268 B2 LR artifact (Pass-2 B2 router cells 待 Pass-1 B2 fire 后 train via `train_l1_router.py --baseline B2`)。
+
+---
+
+## /stress A1.17 Chunk 1 — VWA setup + RESET_BEFORE protocol launch-blocker batch (2026-05-16)
+
+3-AI cross-AI cycle (Mode A Claude + Mode B codex + Mode C gemini) on `scripts/vwa/` + `RESET_BEFORE` protocol pre-fire audit. **22 attacks consolidated, Chunk 1 lands 9 P0 + glm-absorb-P1 fixes for Phase 1a launch readiness; Chunk 2 (12 P1 + Option K Trajectory Event Log) deferred to subsequent session per user split-scope decision** (memory `feedback_split_large_scope`).
+
+Cross-AI agreement: 1 3-AI overlap (cls reset sentinel narrow — Chunk 2), 6 2-AI overlaps, 15 1-AI uniques. Codex Mode B critical unique catch = B-302 (queue_chain schema mismatch, LAUNCH BLOCKER — would abort chain after cell 1 完成). Gemini Mode C unique OOB = TZ drift / disk underestimate / Magento indexer race (all Chunk 2).
+
+### B-298. `_lib_paper_grade_gates.sh:50-61` A100 URL-locality preflight hostname pattern miss [P0 — 2-AI overlap A+B OOB] 🛠️ FIXED
+- **Attack**: Pre-fix predicate `hostname == *condense* OR -d /home/ubuntu/workspace/p79` fails on canonical target VM `a100-jiaming-test` (hostname has no "condense" substring); only directory fallback held, fragile to user/repo-path layout changes.
+- **Cascade**: BUG-2 (B-225) URL-locality preflight 静默不激活 on canonical A100 → quark Tailscale URL leaks through → paper-grade run 数据来自非 A100 站点 → cross-host contam silent into OSF artifact.
+- **Fix**: 5-way predicate `*a100* OR *condense* OR P79_PAPER_GRADE_HOST=1 OR cwd=*workspace/p79* OR -d /home/ubuntu/workspace/p79`. Adds explicit `[preflight] gate ACTIVE on host=$HOSTNAME` stderr log proving gate ran. Also adds HOMEPAGE to checked var list (was missing, P2-5 absorbed).
+
+### B-299. `reset_vwa_sites.sh:91-99` shopping reset stub silently returns 0 [P0 — 2-AI overlap A+B] 🛠️ FIXED
+- **Attack**: `_reset_vwa_local_shopping` body = `echo "NOT YET IMPLEMENTED"; return 0` → gate at `_lib_paper_grade_gates.sh:143` treats rc==0 as success → Phase 1b shopping fires proceed against dirty Magento (cart/session/search-cache from prior condition).
+- **Cascade**: B0/B1/B2 + dom/som/vision/phantom 差异混入 cart 残留 → OSF artifact "reset-clean" but actually cross-condition state accumulation.
+- **Fix**: Return 78 (sentinel "not implemented" rc); `_lib_paper_grade_gates.sh:reset_and_auth_gate` branches on rc==78 with specific operator-facing message "implement reset_vwa_local_${site} body before paper-grade Phase 1b launch". Phase 1a unaffected (cls+red don't call shopping stub).
+
+### B-300. `reset_vwa_sites.sh:113-120` Reset auto mode SSH-key routing flip [P0 — 2-AI overlap A+B OOB] 🛠️ FIXED
+- **Attack**: Pre-fix auto detect `[[ -f ~/.ssh/vwa_windows ]]` → remote; A100 VM with legacy SSH key from dotfiles/rsync silently routes to quark Windows PowerShell reset rather than local A100 docker.
+- **Cascade**: BUG-3 OSClass POST endpoint + mutation sentinel 全跳过 → cls 容器没真 reset → paper-grade condition 从前一 condition 的 dirty state 继续跑.
+- **Fix**: Hostname-first auto-detect: `*a100*` / `*condense*` / `P79_PAPER_GRADE_HOST=1` / `/home/ubuntu/workspace/p79` → force `mode=local` regardless of SSH key presence. SSH key heuristic only kicks in on non-A100 hosts. Resolved mode logged to stderr.
+
+### B-301. `queue_chain.sh:178-180` `|| true` masks queue script reset/auth failure [P1 — codex OOB unique] 🛠️ FIXED
+- **Attack**: Pre-fix `out=$(... 2>&1 || true)` discarded queue script rc; reset/auth FATAL was hidden because run_id had been printed before reset → chain proceeded to `wait_for_runner_done` finding no runner → declared "runner done" instantly → fell through to silent sentinel check.
+- **Cascade**: Cascades with B-302 schema sentinel mismatch → silent partial-data advancement; reset failure looks like normal idempotent skip.
+- **Fix**: `set +e; out=$(...); queue_rc=$?; set -e` explicit rc capture. rc!=0 + no run_id minted → FATAL + full output dump + abort. rc!=0 + run_id minted (legacy idempotent-skip case) → warn + continue.
+
+### B-302. `queue_chain.sh:217-219` completion sentinel schema mismatch [P0 — codex OOB unique LAUNCH BLOCKER] 🛠️ FIXED
+- **Attack**: Pre-fix sentinel queried `total_tasks / num_tasks / scored_task_count` — empirically verified 2026-05-16 across 5 sample `condition_summary_v2.json` files: top-level schema has `episodes: int` (234/210 cls/red task count) + `condition_id` + 30+ metric keys but **NONE of total_tasks / num_tasks / scored_task_count**. All three .get() return None → total=0 → fail validation → chain abort.
+- **Cascade**: Phase 1a launch → cell 1 finishes → sentinel reject "no valid condition_summary_v2.json" → user 被迫 `--no-reset` manual relaunch → cross-condition contam risk soars. **Without this catch, Phase 1a fire would self-abort on first cell completion.**
+- **Fix**: Use `episodes` as canonical field + `expected_n` hardcoded per site (cls=234 / red=210 / shop=466 / wa_*) parsed from `run_id` pattern. Validation: `episodes > 0` AND `episodes >= 90% of expected_n` (allows interrupt+resume partial cells, rejects smoke/early-fail). Legacy fallbacks kept for forward-compat. 3 case smoke tested: valid 234→exit 0, ep=0→exit 3, 100/234=43%→exit 4.
+
+### B-303. `phase1a_relaunch_missing.sh:117-122` FORCE_NEW chain-level leakage [P0 — 2-AI overlap A+C] 🛠️ FIXED
+- **Attack**: Pre-fix any single PARTIAL condition in chain pulled `force_new=0` for ALL conditions in that chain → PENDING (fresh) conditions went through `mint_run_id` resume-by-glob branch, potentially inheriting stale partial dirs from prior fires.
+- **Cascade**: PENDING 应 fresh 的 condition 被静默降级为 resume → JSONL 掺杂两次 fire 的 episodes → paper-grade integrity violation.
+- **Fix**: Split each site chain into 2 sub-chains via new `split_by_resume()` helper. Fresh sub-chain: FORCE_NEW=1 + RESET_BEFORE=1 (paper-grade clean launch). Resume sub-chain: FORCE_NEW=0 + RESET_BEFORE=0 (see B-304). Up to 4 sub-chains total (cls_fresh / cls_resume / red_fresh / red_resume).
+
+### B-304. `phase1a_relaunch_missing.sh:125` resume+reset trajectory discontinuity [P1 — codex OOB unique, P1-5-B Tier 1 α'] 🛠️ FIXED
+- **Attack**: Pre-fix combined `FORCE_NEW=0` (resume from existing run_dir at episode 120) with `RESET_BEFORE=1` (queue_chain default — wipes site state) → episodes 0-119 ran on cumulative dirty trajectory; episodes 120-233 ran on fresh-reset trajectory; same `condition_summary_v2.json` aggregated both as if single condition. Within-cell state trajectory discontinuity.
+- **Cascade**: VWA tasks are NOT i.i.d. — "comment on listing I posted yesterday" type tasks see clean cls in episode 120+ but agent expects mutations from episodes 0-119; SR estimate biased toward state-independent task types post-interrupt.
+- **Fix**: Per user 3-AI brainstorm decision (Tier 1 α' = code fix B + paper §3 reframe + GLMM covariate + Fisher homogeneity), resume sub-chains now use `RESET_BEFORE=0` — preserves trajectory continuity. Paper §3 disclosure: "PARTIAL cells resumed without additional reset; trajectory continuity preserved; fresh cells reset before launch."
+- **Deferred to Chunk 2**: Option K Trajectory Event Log schema (unified perturbation event tracking for both reset interrupts AND auth-loss/auto-clear events per user cross-talk insight — generalizes Tier 1 stack to auth-loss problem at zero additional cost).
+
+### B-305. `launch.sh:30` help text stale "B0 | B1 | Claude" [P2 — Claude unique] 🛠️ FIXED
+- **Attack**: Help text lists `BASELINE: B0 | B1 | Claude`; CLAUDE.md baseline scope updated 2026-05-14 to B2=Gemma3-VL (跨族第三 model). New users following help text run `BASELINE=Claude` → case match fail → exit 65 confusion.
+- **Fix**: Updated to `BASELINE: B0 | B1 | B2`.
+
+### B-306. `glm_pre_launch_check.py` retirement + deterministic shell asserts in launch.sh [P1 absorbed (P1-3+P1-10+P1-11) — Claude+codex] 🛠️ FIXED (file DELETED)
+- **Attack**: 3 cascading bugs in single file:
+  - P1-3 (Claude+codex): `glm_pre_launch_check.py:152-155` returns 0/1 only (never 2); `launch.sh:130` expected BLOCK=exit 2 → BLOCK verdicts from GLM collapsed to WARN+y/N prompt → paper-grade hard rule violations operator-y-bypassable.
+  - P1-10 (Claude unique): `:96` non-greedy regex `r"\{.*?\}"` picks shortest brace pair → JSON parse failure on nested GLM responses → fail_default.
+  - P1-11 (Claude unique): `:47-50` GLM config missing → `return True` (fail-open) asymmetric with line 87-88 fail-closed → fresh A100 clone silently skips pre-launch check.
+- **Fix decision** (per user 2026-05-16): retire entire file + replace with deterministic shell asserts in `launch.sh:113-160`. Rationale: 4/5 hard rules already deterministically enforced upstream (queue_chain.sh:142-171 3-way collision / queue_chain.sh:7-9 RESET default / queue_chain.sh:117-122 script-existence / queue_baseline.sh BENCHMARK branch); only rule unique to glm_pre_launch_check was config-↔-site benchmark match (now `grep "benchmark: ${EXPECTED_BENCH}" ${cfg}`). GLM dependency removed = LLM variance / API outage / non-deterministic gate eliminated from paper-grade launch path. Per codex C-8 defuse "GLM should be advisory only".
+- **Files touched**: deleted `scripts/maintenance/glm/glm_pre_launch_check.py` (159 LOC); updated `launch.sh:113-160` (deterministic 3-rule check); removed `Makefile:35,527-536` target + .PHONY entry; struck through `scripts/maintenance/README.md:15` table row.
+
+**B-numbers consumed**: B-298 through B-306 (9 contiguous, no collisions with A1.8 B-280~B-297)。
+
+**Deferred to A1.17 Chunk 2** (~11h investment, separate commit):
+- P1-1 (3-AI overlap) cls reset sentinel multi-table expansion (`oc_t_item + comment + user`)
+- P1-2 (A+B) `a100_self_host_vwa.sh` deploy_reddit/shopping bad compose paths
+- P1-6 (gemini OOB unique) reddit reset `docker run` missing `-e TZ` flag
+- P1-7 (gemini OOB unique) `REQ_GB=130` → 250 (217GB actual)
+- P1-8 (gemini OOB unique) Magento `indexer:reindex` async no-wait poll
+- P1-12 (Claude unique) BUG-5 sibling: cls DB seed `|| true` strip
+- **Option K Trajectory Event Log** (user cross-talk insight): `p79/experiment/logger_v2.py` `log_trajectory_event()` API + hooks in `experiment_watchdog.py` (auth-clear) + `_lib_paper_grade_gates.sh` (reset event). Generalizes Tier 1 stack to cover BOTH P1-5-B reset events AND auth-loss/auto-clear events at zero analysis-cost — ~2-3h additional schema work.
+
+**Smoke verification**: bash -n PASS all 5 scripts (`_lib_paper_grade_gates.sh` / `queue_chain.sh` / `reset_vwa_sites.sh` / `phase1a_relaunch_missing.sh` / `launch.sh`). Makefile help target compiles. B-302 sentinel python 3-case smoke (valid 234 / ep=0 / partial 100/234=43%) all exit-codes correct.
+
+**Phase 1a fire green-light post-Chunk 1**: launch path now produces correct sentinel validation (B-302 schema fix is the critical unblocker). Remaining advisor blockers still B-262 (GLM fallback) + B-130 (FE/RE estimand). Chunk 2 fixes are paper-grade quality, NOT launch blockers — Phase 1a can fire on Chunk 1 alone.
+
+**Next available B-number**: B-307+.

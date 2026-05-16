@@ -27,7 +27,9 @@ cd "$REPO"
 
 if [ "$#" -lt 3 ]; then
   echo "Usage: $0 BASELINE SITE MODE [TARGET_SECTION] [PRIORITY]" >&2
-  echo "  BASELINE: B0 | B1 | Claude" >&2
+  # B-305 (A1.17 P2-2): help text updated to reflect 3-baseline reality
+  # (B2=Gemma3-VL nominated 2026-05-14, advisor discussion §138).
+  echo "  BASELINE: B0 | B1 | B2" >&2
   echo "  SITE:     classifieds | reddit | shopping | wa_shopping | wa_shopping_admin | wa_reddit" >&2
   echo "  MODE:     dom | som | vision | phantom_text | phantom_som | phantom_prompt" >&2
   exit 64
@@ -110,34 +112,62 @@ else
   echo "✓ Cell note exists: $(basename "$CELL_FILE")"
 fi
 
-# ---- Step 2: pre-launch sanity (paper-grade contamination defense) ----
+# ---- Step 2: pre-launch sanity (B-306 A1.17 P1-3+P1-10+P1-11 absorbed) ----
+# B-306 (A1.17 2026-05-16): replaced glm_pre_launch_check.py with deterministic
+# shell asserts. Rationale:
+#   - 4/5 hard rules (same-site collision / RESET / queue-script match / WA reset)
+#     already deterministically enforced in queue_chain.sh + queue_baseline.sh +
+#     _lib_paper_grade_gates.sh:reset_and_auth_gate; GLM layer redundant.
+#   - Only rule unique to glm_pre_launch_check was config-↔-site benchmark match;
+#     now covered by the YAML-grep below.
+#   - GLM dependency removed (LLM variance / API outage / non-deterministic gate
+#     in paper-grade launch path = anti-pattern). Per codex Mode B C-8 defuse
+#     "GLM should be advisory only".
+# Pre-fix bugs absorbed: P1-3 BLOCK→WARN exit-code collapse / P1-10 non-greedy
+# regex / P1-11 config-missing fail-open asymmetric — all obsolete because file
+# itself deleted.
 if [ "$FORCE_NO_CHECK" != "1" ]; then
   echo ""
-  echo "🔍 Running pre-launch sanity check..."
-  PRECHECK_ARGS="--queue $QUEUE --baseline $BASELINE --site $SITE --mode $MODE"
-  if [ "$RESET" = "1" ]; then PRECHECK_ARGS="$PRECHECK_ARGS --reset"; fi
+  echo "🔍 Running deterministic pre-launch sanity..."
 
   if [ "$DRY" = "1" ]; then
-    echo "  (DRY — would run: .venv/bin/python scripts/maintenance/glm/glm_pre_launch_check.py $PRECHECK_ARGS)"
-    PRECHECK_RC=0
+    echo "  (DRY — deterministic checks skipped)"
   else
-    set +e
-    .venv/bin/python scripts/maintenance/glm/glm_pre_launch_check.py $PRECHECK_ARGS
-    PRECHECK_RC=$?
-    set -e
-  fi
+    # Rule #1 — Same-site single baseline (3-way collision, paper-grade hard rule)
+    for OTHER in B0 B1 B2; do
+      [ "$OTHER" = "$BASELINE" ] && continue
+      if pgrep -f "run_experiment.*${OTHER}_.*_${SITE}_" >/dev/null 2>&1; then
+        echo "❌ BLOCK: ${OTHER} already running on site=${SITE} (paper-grade hard rule §106)" >&2
+        echo "  shared docker container + user account → cross-contamination" >&2
+        exit 2
+      fi
+    done
 
-  if [ "$PRECHECK_RC" = "2" ]; then
-    echo "❌ Pre-launch BLOCK (hard rule violation). Aborting." >&2
-    exit 2
-  elif [ "$PRECHECK_RC" = "1" ]; then
-    echo ""
-    echo "⚠️  Pre-launch WARN — review concerns above. Proceed? [y/N]" >&2
-    read -r ans
-    if [ "$ans" != "y" ] && [ "$ans" != "Y" ]; then
-      echo "Aborted by user." >&2
-      exit 1
+    # Rule #2 — RESET_BEFORE for paper-grade (allow override via env)
+    if [ "$RESET" != "1" ] && [ "${P79_ALLOW_NO_RESET:-0}" != "1" ]; then
+      echo "❌ BLOCK: RESET=0 + paper-grade default" >&2
+      echo "  set P79_ALLOW_NO_RESET=1 for dev rerun (NOT paper-grade)" >&2
+      exit 2
     fi
+
+    # Rule #5 — config ↔ site benchmark match (was glm-unique catch)
+    CFG_CANDIDATES=(
+      "configs/exp_v2_${BASELINE}_${MODE}_${SITE}.yaml"
+      "configs/exp_v2_${BASELINE}_${SITE}_${MODE}.yaml"
+    )
+    for cfg in "${CFG_CANDIDATES[@]}"; do
+      if [ -f "$cfg" ]; then
+        EXPECTED_BENCH="visualwebarena"
+        [[ "$SITE" == wa_* ]] && EXPECTED_BENCH="webarena"
+        if ! grep -q "benchmark:[[:space:]]*${EXPECTED_BENCH}" "$cfg"; then
+          echo "❌ BLOCK: ${cfg} benchmark mismatch (expected ${EXPECTED_BENCH})" >&2
+          exit 2
+        fi
+        break
+      fi
+    done
+
+    echo "✓ Deterministic pre-launch sanity passed"
   fi
 fi
 

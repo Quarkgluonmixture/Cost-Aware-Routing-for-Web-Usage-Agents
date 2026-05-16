@@ -40,17 +40,30 @@ init_paper_grade_env() {
   export WIKIPEDIA_ZIM_VERSION="${WIKIPEDIA_ZIM_VERSION:-wikipedia_en_all_maxi_2025-08}"
 }
 
-# ---------- 2. A100 URL-locality preflight (Bug 2 fix) ----------
+# ---------- 2. A100 URL-locality preflight (Bug 2 fix; B-298 A1.17 P0-1 hardening) ----------
 # assert_a100_url_locality
-#   On A100 self-hosted docker hosts (hostname matches *condense* OR
-#   /home/ubuntu/workspace/p79 exists), refuse launch if any site URL is non-local.
-#   Paper-grade target = A100 self-hosted; non-local URL = silent prod substitution
-#   (codex CodexOnly-2 root cause description). On DGX dev sessions this check
-#   harmlessly does nothing.
+#   On A100 self-hosted docker hosts, refuse launch if any site URL is non-local.
+#   Paper-grade target = A100 self-hosted; non-local URL = silent prod substitution.
+#
+#   B-298 (A1.17 2026-05-16 cross-AI 2-AI overlap A+B P0 OOB): previous predicate
+#   `hostname == *condense* OR -d /home/ubuntu/workspace/p79` failed on canonical
+#   target VM `a100-jiaming-test` (hostname has no "condense" substring); only
+#   directory fallback held, and only when user=ubuntu + canonical repo path.
+#   New predicate broadens to (a) `*a100*` hostname (canonical VM name match),
+#   (b) `P79_PAPER_GRADE_HOST=1` explicit env override (CI / future hostnames),
+#   (c) cwd contains `workspace/p79` (user-agnostic), (d) legacy `*condense*` +
+#   ubuntu path retained for back-compat.
+#   On DGX dev sessions ($(hostname) = spark-9ea3, cwd = /home/jiaming/...)
+#   none of (a)-(d) match → check harmlessly skips, no behavior change.
 assert_a100_url_locality() {
-  if [[ "$(hostname)" == *condense* ]] || [[ -d /home/ubuntu/workspace/p79 ]]; then
+  if [[ "$(hostname)" == *a100* ]] \
+     || [[ "$(hostname)" == *condense* ]] \
+     || [[ "${P79_PAPER_GRADE_HOST:-0}" == "1" ]] \
+     || [[ "$(pwd)" == *workspace/p79* ]] \
+     || [[ -d /home/ubuntu/workspace/p79 ]]; then
+    echo "[preflight] A100 URL-locality gate ACTIVE on host=$(hostname), cwd=$(pwd)" >&2
     local _v
-    for _v in CLASSIFIEDS REDDIT SHOPPING WIKIPEDIA; do
+    for _v in CLASSIFIEDS REDDIT SHOPPING WIKIPEDIA HOMEPAGE; do
       case "${!_v:-}" in
         *localhost*|*127.0.0.1*|"") ;;
         *) echo "✗ FATAL preflight: \$${_v}=${!_v} not local on A100 host; refusing launch" >&2; exit 2 ;;
@@ -172,7 +185,15 @@ except (AuthRefreshFailure, AuthRefreshConfigError) as exc:
     fi
   else
     local rc=$?
-    echo "[${log_prefix}][error] reset failed (rc=${rc}); aborting to preserve paper-grade integrity." >&2
+    # B-299 (A1.17 P0-3): rc=78 is the "not implemented" sentinel from
+    # _reset_vwa_local_shopping stub. Surface specific reason rather than generic
+    # "reset failed" so Phase 1b launch operator knows what to implement.
+    if [[ "${rc}" == "78" ]]; then
+      echo "[${log_prefix}][error] reset NOT IMPLEMENTED for site=${site} (rc=78 sentinel)." >&2
+      echo "[${log_prefix}][error] Implement reset_vwa_local_${site} body before paper-grade Phase 1b launch." >&2
+    else
+      echo "[${log_prefix}][error] reset failed (rc=${rc}); aborting to preserve paper-grade integrity." >&2
+    fi
     echo "[${log_prefix}][error] To bypass reset (paper-grade dirty), explicitly set RESET_BEFORE=0." >&2
     exit 1
   fi

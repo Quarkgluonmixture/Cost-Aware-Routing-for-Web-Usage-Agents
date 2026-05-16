@@ -87,7 +87,7 @@ B0 infra prereq ──┘                                                       
 - [ ] **A1.14** `scripts/queues/queue_phase1_paper_grade.sh` + `scripts/preflight_v2.sh` — orchestrator + pre-launch gates
 - [ ] **A1.15** `scripts/maintenance/experiment_watchdog.py` + `scripts/maintenance/glm/*.py` — watchdog auto-clean + cron sidecars (glm_cell_autoupdate / myriad_watcher / glm_pre_launch_check / batch_digest)
 - [ ] **A1.16** `scripts/provenance/snapshot_*` — env + VWA fingerprint
-- [ ] **A1.17** `scripts/vwa/` + `RESET_BEFORE` protocol — site setup + reset race-safety
+- [~] **A1.17** `scripts/vwa/` + `RESET_BEFORE` protocol — Chunk 1 ✅ landed 2026-05-16 (B-298~B-306, §162: 5 P0 + glm-absorb-P1 + P2-2); Chunk 2 deferred ~11h (P1 quality + Option K)
 
 #### A1-外部 (VWA submodule)
 
@@ -106,6 +106,8 @@ B0 infra prereq ──┘                                                       
 - ⏳ #10 analysis 层 3-model 改造 — gate §D 不 gate launch
 - ⏸ **A1.16-mechanism subset deferred per paper-2 scope** (set 2026-05-16, advisor 2026-05-14 mechanism defer): `scripts/provenance/numerical_determinism_check.py` 内 5 bugs (D-1 TF32 matmul blindness gemini-OOB P0 / D-2 dtype non-determinism gemini-OOB P0 / D-3 `external_code` typo P1 / D-4 threshold 1e-2 vs 1e-3 mismatch P1 / D-5 input not SHA-pinned codex-OOB P1). Paper-1 不依赖 (mechanism quote 暂搁); paper-2 mechanism resumes 时是 hard gate. Full bug list → [[master_bug_catalog]] A1.16 batch tail (B-273~B-279 + DEFER list)。
 - ⏸ **B-275 runner-side enforce** — `from_pretrained(model_id, revision=<pinned_sha>)` 强制拒绝 stale cache 跟 `pre_run/locked_versions.md` 联动。B-275 snapshot-side capture 已 land (双字段 `loaded_revision` + `registry_head` + `divergence`); runner-side enforce 是 downstream change (touches `p79/backends/local_qwen.py` + `local_gemma.py`), 单独 fix slice 处理。
+- ⏸ **A1.17 Chunk 2 — paper-grade quality + Option K Trajectory Event Log** (set 2026-05-16, ~11h investment): P1-1 cls reset sentinel multi-table (3-AI overlap) / P1-2 a100_self_host_vwa.sh deploy_reddit+shopping bad paths / P1-6 reddit reset missing `-e TZ` (gemini OOB) / P1-7 REQ_GB 130→250 (gemini OOB) / P1-8 Magento `indexer:reindex` async poll (gemini OOB) / P1-12 cls DB seed `|| true` strip BUG-5 sibling propagation。**Option K Trajectory Event Log** (user cross-talk insight 2026-05-16): unified `trajectory_events: [{event_type, task_index, wallclock_ts, metadata}]` schema 在 `p79/experiment/logger_v2.py` 加 `log_trajectory_event()` API + hooks in `experiment_watchdog.py` (auth-clear) + `_lib_paper_grade_gates.sh` (reset event) — generalizes P1-5-B Tier 1 stack 到 auth-loss/auto-clear class 同时 cover, ~2-3h additional schema work。Full bug list → [[master_bug_catalog]] A1.17 Chunk 1 batch tail (B-298~B-306) Deferred section。
+- ⏸ **P1-5-B advisor sync items** (set 2026-05-16, post-§162 Tier 1 stack): (2-gemini) Paper §3 "Multi-Epoch Sequential Benchmark Protocol" reframe (1h prose, codex round 时加) / (1-gemini) GLMM with `is_after_reset + had_auth_clear` covariate (4h, Phase 1a 数据落地后跑 via `scripts/analysis/aggregate_sr_mixed_effects.py`) / (4-gemini) Fisher's exact homogeneity rebuttal (3h, Phase 1a 数据落地后)。Tier 2 unconventional alternatives 跨 paper-1/paper-2: (D-codex) Prefix Action Replay 2-4d / (E-codex) Coarse checkpoint K=25 2-3d / (F-codex) Per-cell disposable site namespace 1-2w (paper-2 quality)。Code fix (B) `--no-reset` on resume **已 Chunk 1 land** as B-304。
 - 详细 9-bug 表 → `master_bug_catalog.md` §139 / [[实验笔记]] §139
 
 ---

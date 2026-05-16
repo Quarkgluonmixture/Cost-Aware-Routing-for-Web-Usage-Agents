@@ -97,43 +97,74 @@ if [[ "${MODE}" == "dry-run" ]]; then
   exit 0
 fi
 
-# Launch each chain in background
-launch_chain() {
+# Launch each chain — split by resume-vs-fresh to fix B-303 (A1.17 P0-5 A+C)
+# and B-304 (A1.17 P1-5-B codex OOB).
+#
+# B-303 (FORCE_NEW leakage): pre-fix bundled all conditions in a single
+# queue_chain with chain-level FORCE_NEW = 0 if ANY condition was PARTIAL.
+# This let PENDING (fresh) conditions go through resume-by-glob and possibly
+# inherit stale partial dirs. Now split: PENDING conditions → fresh chain with
+# FORCE_NEW=1; PARTIAL conditions → resume chain with FORCE_NEW=0.
+#
+# B-304 (resume+reset trajectory discontinuity P1-5-B α'): resume chains
+# additionally run with RESET_BEFORE=0 — preserves trajectory continuity per
+# 3-AI brainstorm Tier 1 stack decision. Fresh chains keep RESET_BEFORE=1.
+# Paper §3 disclosure: "PARTIAL cells resumed without additional reset;
+# trajectory continuity preserved; fresh cells reset before launch."
+launch_chain_homogeneous() {
   local label=$1
-  shift
-  local resume_arr_name=$1
-  shift
+  local force_new=$2     # 1 = fresh, 0 = resume
+  local reset_before=$3  # 1 = reset, 0 = no-reset (resume case)
+  shift 3
   local cmds=("$@")
   [[ "${#cmds[@]}" -eq 0 ]] && { echo "(${label} chain empty)"; return 0; }
 
   local logfile="logs/queue_phase1a_relaunch_${label}.log"
   mkdir -p logs
 
-  # Build queue_chain invocation. We must respect per-condition FORCE_NEW.
-  # queue_chain takes one FORCE_NEW for whole chain. Compromise: if any
-  # condition is RESUME, set FORCE_NEW=0 for whole chain; queue_chain
-  # idempotent skip + per-condition resume-by-glob handle the rest.
-  # (Fresh conditions with no prior run_dir get a new timestamp anyway.)
-  local force_new=1
-  local resume_arr
-  declare -n resume_arr=$resume_arr_name
-  for v in "${resume_arr[@]}"; do
-    [[ "$v" == "1" ]] && { force_new=0; break; }
-  done
-
-  echo "Launching ${label} chain (${#cmds[@]} cells, FORCE_NEW=${force_new}) → ${logfile}"
-  FORCE_NEW=${force_new} RESET_BEFORE=1 nohup bash scripts/queues/queue_chain.sh "${cmds[@]}" \
+  echo "Launching ${label} chain (${#cmds[@]} cells, FORCE_NEW=${force_new}, RESET_BEFORE=${reset_before}) → ${logfile}"
+  FORCE_NEW=${force_new} RESET_BEFORE=${reset_before} nohup bash scripts/queues/queue_chain.sh "${cmds[@]}" \
     > "${logfile}" 2>&1 &
   local pid=$!
   echo "  PID ${pid}"
   echo "${pid}" > "logs/queue_phase1a_relaunch_${label}.pid"
 }
 
-launch_chain "cls" CLS_RESUME "${CLS_CHAIN[@]}"
-launch_chain "red" RED_RESUME "${RED_CHAIN[@]}"
+# Split each site chain into PENDING (fresh) + PARTIAL (resume) subgroups
+split_by_resume() {
+  local cmds_var=$1
+  local resume_var=$2
+  local fresh_out=$3
+  local resume_out=$4
+  declare -n cmds=$cmds_var
+  declare -n resume_arr=$resume_var
+  declare -n fresh_list=$fresh_out
+  declare -n resume_list=$resume_out
+  fresh_list=()
+  resume_list=()
+  for i in "${!cmds[@]}"; do
+    if [[ "${resume_arr[$i]}" == "1" ]]; then
+      resume_list+=("${cmds[$i]}")
+    else
+      fresh_list+=("${cmds[$i]}")
+    fi
+  done
+}
+
+declare -a CLS_FRESH CLS_RESUMES RED_FRESH RED_RESUMES
+split_by_resume CLS_CHAIN CLS_RESUME CLS_FRESH CLS_RESUMES
+split_by_resume RED_CHAIN RED_RESUME RED_FRESH RED_RESUMES
+
+# Fresh chains: FORCE_NEW=1 + RESET_BEFORE=1 (paper-grade clean launch)
+launch_chain_homogeneous "cls_fresh" 1 1 "${CLS_FRESH[@]}"
+launch_chain_homogeneous "red_fresh" 1 1 "${RED_FRESH[@]}"
+# Resume chains: FORCE_NEW=0 + RESET_BEFORE=0 (trajectory continuity preserved)
+launch_chain_homogeneous "cls_resume" 0 0 "${CLS_RESUMES[@]}"
+launch_chain_homogeneous "red_resume" 0 0 "${RED_RESUMES[@]}"
 
 echo
-echo "Phase 1a relaunch fired (${#CLS_CHAIN[@]} cls + ${#RED_CHAIN[@]} red = $((${#CLS_CHAIN[@]} + ${#RED_CHAIN[@]})) conditions). Monitor:"
+echo "Phase 1a relaunch fired (${#CLS_CHAIN[@]} cls + ${#RED_CHAIN[@]} red = $((${#CLS_CHAIN[@]} + ${#RED_CHAIN[@]})) conditions, split into up to 4 sub-chains). Monitor:"
 echo "  - PIDs: cat logs/queue_phase1a_relaunch_*.pid"
 echo "  - Logs: tail -f logs/queue_phase1a_relaunch_*.log"
 echo "  - Status: bash scripts/maintenance/phase1a_status.sh"
+echo "  - Split logic (A1.17 B-303+B-304): cls_fresh/red_fresh = FORCE_NEW=1 RESET=1; cls_resume/red_resume = FORCE_NEW=0 RESET=0 (trajectory continuity)"

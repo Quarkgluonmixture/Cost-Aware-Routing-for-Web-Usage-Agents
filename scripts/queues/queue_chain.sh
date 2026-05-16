@@ -175,17 +175,41 @@ for cmd in "$@"; do
   # FORCE_NEW propagated explicitly (codex stress v6 C1) — paper-grade master chain
   # exports FORCE_NEW=1 so each cell gets a fresh timestamped run_id, never resumes
   # a pre-fix archived dir.
+  #
+  # B-301 (A1.17 P1-4, codex OOB unique): pre-fix `out=$(... || true)` discarded
+  # queue script rc; reset/auth gate failure was hidden because run_id had been
+  # printed before reset → chain proceeded to wait_for_runner_done finding no
+  # runner → declared "done" instantly → fell through to silent sentinel check.
+  # New behavior: capture rc explicitly; nonzero rc + no run_id printed → fatal;
+  # nonzero rc + run_id printed (idempotent-skip case where queue script already
+  # had complete data) → continue (legacy path).
+  set +e
   out=$(FORCE_NEW="${FORCE_NEW:-0}" RESET_BEFORE="${RESET_FLAG}" bash "${SCRIPT_DIR}/${script_name}" \
-        ${cmd#${script_name} } 2>&1 || true)
+        ${cmd#${script_name} } 2>&1)
+  queue_rc=$?
+  set -e
   echo "$out" | sed 's/^/    /'
 
   # Extract run_id + condition_id from queue script output
   run_id=$(echo "$out" | grep -oP 'run_id=\K\S+' | tail -1)
+  cond_id=$(echo "$out" | grep -oP 'condition=\K\S+' | tail -1)
+
+  # B-301 P1-4: nonzero queue rc + no run_id minted = reset/auth FATAL or
+  # arg-parse error. Surface + abort. Nonzero rc + run_id minted = legacy
+  # idempotent-skip with stale run_dir; allow through but warn.
+  if [[ "${queue_rc}" != "0" ]]; then
+    if [[ -z "${run_id}" ]]; then
+      log "  [FATAL] queue script rc=${queue_rc}, no run_id minted — reset/auth/arg error"
+      log "  full output above; aborting chain"
+      exit 1
+    fi
+    log "  [warn] queue script rc=${queue_rc} but run_id=${run_id} minted (idempotent-skip path?)"
+  fi
+
   if [[ -z "$run_id" ]]; then
     log "  [error] could not extract run_id from queue script output, aborting"
     exit 1
   fi
-  cond_id=$(echo "$out" | grep -oP 'condition=\K\S+' | tail -1)
   if [[ -z "$cond_id" ]]; then
     log "  [error] could not extract condition id from queue script output, aborting"
     exit 1
@@ -201,6 +225,27 @@ for cmd in "$@"; do
   # 0-byte / truncated JSON / wrong-condition data. A1.13 P0-3 (3-AI overlap):
   # validate (a) file non-empty, (b) JSON parsable, (c) condition_id matches,
   # (d) total_tasks > 0 before accepting cell completion.
+  # B-302 (A1.17 P0-4, codex OOB unique LAUNCH BLOCKER): pre-fix sentinel queried
+  # `total_tasks / num_tasks / scored_task_count` — none exist in actual
+  # condition_summary_v2.json schema (verified empirically 2026-05-16 on 5 sample
+  # summaries: top-level has `episodes: int` and `condition_id`, NOT total_tasks).
+  # Pre-fix every cell completion failed validation → chain aborted after cell 1.
+  # New: use `episodes` field (the canonical count) + compare against expected_n
+  # per site (sources of truth: launch.sh:67-70 SITE_N table); accept ≥90%
+  # completion as valid (allows interrupt+resume partial cells), reject below.
+  declare -A SITE_EXPECTED_N=(
+    [classifieds]=234 [reddit]=210 [shopping]=466
+    [wa_shopping]=192 [wa_shopping_admin]=182 [wa_reddit]=106
+  )
+  # Extract site from cond_id (formats like `phase1_dom_router_0` won't have site;
+  # but full run_id pattern is e.g. `B0_dom_classifieds_20260516_...`)
+  expected_n=0
+  for site_key in classifieds reddit shopping wa_shopping wa_shopping_admin wa_reddit; do
+    if [[ "${run_id}" == *"_${site_key}_"* ]]; then
+      expected_n="${SITE_EXPECTED_N[${site_key}]}"; break
+    fi
+  done
+
   summary_found=""
   for base in results/visualwebarena/phase1 results/webarena/phase1; do
     cand="${REPO_DIR}/${base}/${run_id}/${cond_id}/condition_summary_v2.json"
@@ -214,9 +259,14 @@ except Exception as e:
 cid = d.get('condition_id', '')
 if cid and cid != '${cond_id}':
     print(f'condition_id mismatch: got {cid!r}, expected ${cond_id!r}', file=sys.stderr); sys.exit(2)
-total = d.get('total_tasks', d.get('num_tasks', d.get('scored_task_count', 0)))
-if not isinstance(total, int) or total <= 0:
-    print(f'total_tasks invalid: {total!r}', file=sys.stderr); sys.exit(3)
+# B-302 (A1.17 P0-4): canonical field is 'episodes' (int count); legacy
+# fallbacks kept for forward-compat if schema ever rev'd.
+ep = d.get('episodes', d.get('total_tasks', d.get('num_tasks', d.get('scored_task_count', 0))))
+if not isinstance(ep, int) or ep <= 0:
+    print(f'episodes invalid: {ep!r}', file=sys.stderr); sys.exit(3)
+expected = ${expected_n:-0}
+if expected > 0 and ep < expected * 0.9:
+    print(f'partial completion {ep}/{expected} = {ep/expected:.1%} < 90% threshold', file=sys.stderr); sys.exit(4)
 sys.exit(0)
 " 2>/tmp/queue_chain_sentinel_err; then
         summary_found="${cand}"; break

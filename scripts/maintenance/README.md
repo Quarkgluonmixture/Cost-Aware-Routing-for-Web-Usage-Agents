@@ -12,7 +12,7 @@ to avoid breaking external references; only `glm/` moved into subdir
 | `glm/glm_batch_digest.py` | Batch failure digest (existing) | post-condition |
 | `glm/glm_cell_autoupdate.py` | Sync `_status/cells/*.md` frontmatter from condition_summary | `make glm-update-cells` / cron |
 | `glm/glm_playbook_refresh.py` | Synthesize PLAYBOOK §6 critical path | `make glm-refresh-playbook` / cron |
-| `glm/glm_pre_launch_check.py` | GLM reviews queue launch for hard-rule violations | manual / queue script hook |
+| ~~`glm/glm_pre_launch_check.py`~~ | RETIRED 2026-05-16 (A1.17 B-306). Deterministic shell asserts in `launch.sh:113-160` replace LLM-judge gate. | — |
 
 ## 🔬 One-off Probes / Audits (top-level, frequently cited in docs)
 

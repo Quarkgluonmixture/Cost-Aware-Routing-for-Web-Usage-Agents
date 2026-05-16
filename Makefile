@@ -32,7 +32,7 @@ PYTEST ?= .venv/bin/pytest
         analyze-layer0 analyze-layer1 analyze-layer2 analyze-layer3 analyze-layered \
         aggregate-sr-fp fig12-micro-heatmap aggregate-cost-electricity analyze-mechanism \
         analysis _per_run_all _aggregate _figures _status active \
-        glm-update-cells glm-refresh-playbook glm-pre-launch-check check-links
+        glm-update-cells glm-refresh-playbook check-links
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
@@ -524,16 +524,11 @@ glm-refresh-playbook:
 error-scan:
 	@.venv/bin/python scripts/maintenance/glm/error_scan.py $(if $(HOURS),--hours $(HOURS),)
 
-# glm-pre-launch-check: GLM reviews proposed launch before queue script
-#   Usage: make glm-pre-launch-check QUEUE=queue_phantom_som.sh BASELINE=B0 SITE=reddit RESET=1
-glm-pre-launch-check:
-	@.venv/bin/python scripts/maintenance/glm/glm_pre_launch_check.py \
-	  $(if $(QUEUE),--queue $(QUEUE),) \
-	  $(if $(BASELINE),--baseline $(BASELINE),) \
-	  $(if $(SITE),--site $(SITE),) \
-	  $(if $(MODE),--mode $(MODE),) \
-	  $(if $(RESET),--reset,) \
-	  $(if $(CONFIG),--config $(CONFIG),)
+# glm-pre-launch-check: RETIRED 2026-05-16 (A1.17 B-306).
+# Deterministic shell asserts in launch.sh:113-160 replace the LLM-judge gate.
+# Rationale: 4/5 hard rules already deterministically enforced upstream;
+# GLM dependency removed (LLM variance / API outage / non-deterministic gate
+# in paper-grade launch path = anti-pattern).
 
 # check-links: scan all docs for broken path-based + wikilink references
 check-links:

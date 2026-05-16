@@ -17,14 +17,14 @@
 # 环境变量覆盖：
 #   VWA_RESET_MODE      remote | local | auto
 #   VWA_RESET_SSH_KEY   私钥路径（默认 ~/.ssh/vwa_windows）— remote 模式用
-#   VWA_RESET_SSH_HOST  目标主机（默认 quark@100.95.81.103）— remote 模式用
+#   VWA_RESET_SSH_HOST  目标主机（默认 必须设置 e.g., quark@YOUR_HOST_IP）— remote 模式用
 #   VWA_RESET_SCRIPT    Windows PowerShell 脚本路径（默认 C:\vwa\reset_vwa.ps1）— remote 模式用
 #   VWA_RESET_ENABLE    设为 0 可禁用 reset（dry-run/本地调试用）
 #   CLASSIFIEDS_RESET_TOKEN  cls reset endpoint token — local 模式用
 
 VWA_RESET_MODE="${VWA_RESET_MODE:-auto}"
 VWA_RESET_SSH_KEY="${VWA_RESET_SSH_KEY:-${HOME}/.ssh/vwa_windows}"
-VWA_RESET_SSH_HOST="${VWA_RESET_SSH_HOST:-quark@100.95.81.103}"
+VWA_RESET_SSH_HOST="${VWA_RESET_SSH_HOST:?VWA_RESET_SSH_HOST must be set (e.g., quark@YOUR_HOST_IP); see scripts/vwa_env_remote.sh}"
 VWA_RESET_SCRIPT="${VWA_RESET_SCRIPT:-C:\\vwa\\reset_vwa.ps1}"
 VWA_RESET_ENABLE="${VWA_RESET_ENABLE:-1}"
 
@@ -89,13 +89,17 @@ _reset_vwa_local_reddit() {
 }
 
 # reset_vwa_local_shopping — placeholder for Phase 1b
-# Why: Magento DB reset on the shopping_final_0712 image needs a SQL-restore
-# path inside the container (TBD when shopping image lands via wave-2). Stub
-# returns 0 (no-op) so Phase 1a cls+red runs don't block on it.
+# B-299 (A1.17 2026-05-16 cross-AI A+B P0): pre-fix returned `return 0` which the
+# reset_and_auth_gate treated as success → Phase 1b shopping fires would silently
+# proceed against dirty Magento state (cart/customer/session/search-cache from prior
+# condition). Now returns 78 ("not implemented" sentinel rc); gate translates to
+# hard-fail unless AUTH_GATE_BYPASS=1 explicitly set. Phase 1a (cls+red only) is
+# unaffected because it never calls _reset_vwa_local_shopping.
 _reset_vwa_local_shopping() {
     local label="$1"
-    echo "[${label}][reset_vwa][local] shopping reset NOT YET IMPLEMENTED — Phase 1b (no-op)" >&2
-    return 0
+    echo "[${label}][reset_vwa][local] shopping reset NOT YET IMPLEMENTED — Phase 1b launch blocked" >&2
+    echo "[${label}][reset_vwa][local] implement Magento SQL-restore + cache flush + cart truncate before Phase 1b" >&2
+    return 78
 }
 
 # reset_vwa_sites <site> [label]
@@ -110,15 +114,26 @@ reset_vwa_sites() {
         return 0
     fi
 
-    # Auto-detect mode: SSH key present → remote (DGX→quark); absent → local (A100 self-host)
+    # Auto-detect mode (B-300 A1.17 2026-05-16 cross-AI A+B P0 OOB):
+    # pre-fix used only `[[ -f ${SSH_KEY} ]]` as proxy for "remote path available";
+    # broken when A100 VM has legacy SSH key from dotfiles/rsync + paper-grade target
+    # is local docker. Now hostname-first: A100 indicators force local, regardless
+    # of SSH key presence. Remote only when explicitly DGX-shaped session.
     local mode="${VWA_RESET_MODE}"
     if [[ "${mode}" == "auto" ]]; then
-        if [[ -f "${VWA_RESET_SSH_KEY}" ]]; then
+        if [[ "$(hostname)" == *a100* ]] \
+           || [[ "$(hostname)" == *condense* ]] \
+           || [[ "${P79_PAPER_GRADE_HOST:-0}" == "1" ]] \
+           || [[ -d /home/ubuntu/workspace/p79 ]]; then
+            mode="local"
+            echo "[${label}][reset_vwa] auto-detect: A100 indicator matched → mode=local (ignoring SSH key presence)" >&2
+        elif [[ -f "${VWA_RESET_SSH_KEY}" ]]; then
             mode="remote"
         else
             mode="local"
         fi
     fi
+    echo "[${label}][reset_vwa] resolved mode=${mode} for site=${site}" >&2
 
     # Local mode: dispatch per site via _reset_vwa_local_* helpers
     if [[ "${mode}" == "local" ]]; then
@@ -171,7 +186,7 @@ reset_vwa_sites() {
             [[ "${site}" != "all" && "${site}" != "${shop_site}" ]] && continue
             local port="7770"
             [[ "${shop_site}" == "shopping_admin" ]] && port="7780"
-            local url="http://100.95.81.103:${port}/"
+            local url="${VWA_HOST_URL:-http://localhost}:${port}/"
             local redirect
             redirect=$(curl -sS -o /dev/null --max-time 10 -w "%{redirect_url}" -I "${url}" 2>/dev/null || echo "")
             if [[ "${redirect}" == *metis* ]]; then
