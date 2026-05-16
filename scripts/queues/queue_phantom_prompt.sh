@@ -67,64 +67,26 @@ PYTHON_BIN="${REPO_DIR}/.venv/bin/python3"
 LOG_DIR="${REPO_DIR}/logs"
 mkdir -p "${LOG_DIR}"
 
-# ---------- DGX Spark CUDA workaround ----------
-export PYTORCH_NVML_BASED_CUDA_CHECK=1
-export CUDA_MPS_PIPE_DIRECTORY=""
-export CUDA_MPS_LOG_DIRECTORY=""
-
-# ---------- VWA 远程站点 env ----------
-if [[ -f "${REPO_DIR}/scripts/vwa_env_remote.sh" ]]; then
-  # shellcheck disable=SC1091
-  source "${REPO_DIR}/scripts/vwa_env_remote.sh"
-fi
-
-# ---------- WIKIPEDIA ZIM 版本 ----------
-export WIKIPEDIA_ZIM_VERSION="${WIKIPEDIA_ZIM_VERSION:-wikipedia_en_all_maxi_2025-08}"
+# ---------- A1.13 lib (2026-05-16): shared paper-grade gates ----------
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/_lib_paper_grade_gates.sh"
+init_paper_grade_env "${REPO_DIR}"
+assert_a100_url_locality
 
 # ---------- B0 PROXY API key 加载 ----------
 if [[ "${BASELINE}" == "B0" ]]; then
-  if [[ -z "${PROXY_API_KEY:-}" ]]; then
-    AUTH_FILE="${REPO_DIR}/.auth/qwen_api"
-    if [[ -f "${AUTH_FILE}" ]]; then
-      raw_key="$(grep -m1 '^rp_' "${AUTH_FILE}" | tr -d '[:space:]')"
-      if [[ -n "${raw_key}" ]]; then
-        export PROXY_API_KEY="${raw_key}"
-        export QWEN_API_KEY="${raw_key}"
-        export DASHSCOPE_API_KEY="${raw_key}"
-        echo "[phantom_prompt] Loaded PROXY_API_KEY from ${AUTH_FILE}"
-      else
-        echo "[phantom_prompt][error] ${AUTH_FILE} 存在但无 rp_ key" >&2; exit 1
-      fi
-    else
-      echo "[phantom_prompt][error] ${AUTH_FILE} 不存在，且 PROXY_API_KEY 未设置" >&2; exit 1
-    fi
-  fi
+  load_proxy_api_key "${REPO_DIR}" "phantom_prompt"
 fi
 
 # ---------- 决定 run_id + run_dir ----------
-TS_DATE="$(date +%Y%m%d)"
-TS_FULL="$(date +%Y%m%d_%H%M%S)"
 if [[ "${BENCHMARK}" == "wa" ]]; then
   PHASE_DIR="${REPO_DIR}/results/webarena/phase1"
 else
   PHASE_DIR="${REPO_DIR}/results/visualwebarena/phase1"
 fi
 
-# FORCE_NEW=1 (paper-grade fresh rerun): always timestamped run_id, never resume-glob.
-# Prevents silently reusing pre-fix archived run dirs (codex stress v6 C1, 2026-05-14).
-if [[ "${FORCE_NEW:-0}" == "1" ]]; then
-  RUN_ID="${CFG_NAME}_${TS_FULL}"
-  echo "[phantom_prompt] FORCE_NEW=1 → fresh timestamped run_id=${RUN_ID} (resume-glob skipped)"
-else
-  EXISTING="$(ls -dt "${PHASE_DIR}/${CFG_NAME}_"[0-9]* 2>/dev/null | head -1 || true)"
-  if [[ -n "${EXISTING}" ]]; then
-    RUN_ID="$(basename "${EXISTING}")"
-    echo "[phantom_prompt] resuming existing run_id=${RUN_ID}"
-  else
-    RUN_ID="${CFG_NAME}_${TS_DATE}"
-    echo "[phantom_prompt] new run_id=${RUN_ID}"
-  fi
-fi
+mint_run_id "${CFG_NAME}" "${PHASE_DIR}" "phantom_prompt"
+TS_FULL="$(date +%Y%m%d_%H%M%S)"  # retained for runner log naming only
 
 RUN_DIR="${PHASE_DIR}/${RUN_ID}"
 echo "[phantom_prompt] config=${CONFIG}"
@@ -137,40 +99,10 @@ if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
   echo "[phantom_prompt] (RESET_BEFORE skipped — runner already attached to current site state)"
 else
   # ---------- Optional: site reset before launch ----------
-  # IMPORTANT: reset is AFTER the idempotent runner check — resetting while
-  # a runner is attached destroys site state under it (race condition fixed
-  # 2026-04-28 — see 实验笔记 §104).
+  # IMPORTANT: reset AFTER idempotent runner check (race fixed 2026-04-28 §104).
+  # A1.13 P0-1 (2026-05-16) propagated B-224 hard-fail via reset_and_auth_gate.
   if [[ "${RESET_BEFORE:-0}" == "1" && "${BENCHMARK}" != "wa" ]]; then
-    if [[ -f "${REPO_DIR}/scripts/maintenance/reset_vwa_sites.sh" ]]; then
-      # shellcheck disable=SC1091
-      source "${REPO_DIR}/scripts/maintenance/reset_vwa_sites.sh"
-      echo "[phantom_prompt] RESET_BEFORE=1 → resetting site=${SITE}..."
-      if reset_vwa_sites "${SITE}" "phantom_prompt_${SITE}"; then
-        echo "[phantom_prompt] reset OK; sleeping 15s for site to settle..."
-        sleep 15
-        echo "[phantom_prompt] refreshing .auth/${SITE}_state.json post-reset..."
-        if "${PYTHON_BIN}" -c "
-import sys
-sys.path.insert(0, '${REPO_DIR}')
-from pathlib import Path
-from p79.utils.auth_refresh import refresh_site_auth
-sys.exit(0 if refresh_site_auth('${SITE}', Path('${REPO_DIR}/.auth')) else 1)
-" 2>&1; then
-          echo "[phantom_prompt] auth refresh OK — runner task=0 will be LOGGED IN"
-        else
-          echo "[phantom_prompt][warn] post-reset auth refresh failed; watchdog will retry reactively after streak=3" >&2
-        fi
-      else
-        rc=$?
-        echo "[phantom_prompt][error] reset failed (rc=${rc}); aborting to preserve paper-grade integrity." >&2
-        echo "[phantom_prompt][error] To bypass reset (paper-grade dirty), explicitly set RESET_BEFORE=0." >&2
-        exit 1
-      fi
-    else
-      echo "[phantom_prompt][error] reset_vwa_sites.sh not found but RESET_BEFORE=1; aborting." >&2
-      echo "[phantom_prompt][error] To bypass reset (paper-grade dirty), explicitly set RESET_BEFORE=0." >&2
-      exit 1
-    fi
+    reset_and_auth_gate "${SITE}" "${REPO_DIR}" "${PYTHON_BIN}" "phantom_prompt" "phantom_prompt_${SITE}"
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
     echo "[phantom_prompt] RESET_BEFORE=1 but BENCHMARK=wa — WA reset+auth refresh uses different mechanism, skipping"
   fi

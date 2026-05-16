@@ -87,85 +87,39 @@ PYTHON_BIN="${REPO_DIR}/.venv/bin/python3"
 LOG_DIR="${REPO_DIR}/logs"
 mkdir -p "${LOG_DIR}"
 
-# ---------- DGX Spark CUDA workaround ----------
-export PYTORCH_NVML_BASED_CUDA_CHECK=1
-export CUDA_MPS_PIPE_DIRECTORY=""
-export CUDA_MPS_LOG_DIRECTORY=""
+# ---------- A1.13 lib (2026-05-16): shared paper-grade gates ----------
+# Centralizes env init + A100 URL locality preflight + auth gate + RUN_ID mint
+# across queue_baseline + queue_phantom_{som,text,prompt}. Prevents future
+# sibling-propagation drift (P0-1 + P0-2 + P1-2 fixes).
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/_lib_paper_grade_gates.sh"
+init_paper_grade_env "${REPO_DIR}"
+assert_a100_url_locality
 
-# ---------- VWA 远程站点 env ----------
-if [[ -f "${REPO_DIR}/scripts/vwa_env_remote.sh" ]]; then
-  # shellcheck disable=SC1091
-  source "${REPO_DIR}/scripts/vwa_env_remote.sh"
-fi
-
-# ---------- WIKIPEDIA ZIM 版本 ----------
-export WIKIPEDIA_ZIM_VERSION="${WIKIPEDIA_ZIM_VERSION:-wikipedia_en_all_maxi_2025-08}"
-
-# ---------- TZ ALIGN (BUG-6 fix, 3-AI agree 2026-05-16) ----------
-# A100 host = UTC, quark Windows host = GMT Standard Time (Europe/London).
-# Postmill timestamps render in container TZ → reddit task `must_include:
-# ["08-11-2023"]` evals break across midnight boundary. 1-2pp drift.
-export QUARK_TZ="${QUARK_TZ:-Europe/London}"
-
-# ---------- BUG-2 preflight: assert all site URLs are local on A100 ----------
-# vwa_env_remote.sh may use ${VAR:-localhost} default-expansion; inherited
-# shell env can override silently → A100 runner hits quark prod (worst-case
-# 100% silent deployment substitution per codex CodexOnly-2).
-if [[ "$(hostname)" == *condense* ]] || [[ -d /home/ubuntu/workspace/p79 ]]; then
-  for _v in CLASSIFIEDS REDDIT SHOPPING WIKIPEDIA; do
-    case "${!_v:-}" in
-      *localhost*|*127.0.0.1*|"") ;;
-      *) echo "✗ FATAL preflight: \$${_v}=${!_v} not local on A100 host; refusing launch" >&2; exit 2 ;;
-    esac
-  done
-  unset _v
-fi
+# ---------- BUG-6 NOTE (2026-05-16 A1.13 audit P1-4-A): vestigial QUARK_TZ removed ----------
+# Pre-2026-05-14: paper-grade fired DGX→quark, container TZ rendering crossed midnight
+# boundary for reddit `must_include` date tasks. Original fix attempt: export `QUARK_TZ`
+# on runner client. A1.13 audit (Claude OOB) showed client-side export does not influence
+# docker container TZ → no-op cargo cult. Post-2026-05-14: paper-grade fires on A100
+# self-hosted docker (memory `project_paper_grade_target_host`); A100 host + container
+# both default UTC, no quark in loop. Residual cross-midnight relative-timestamp drift
+# bounded to ~5/210 reddit tasks; disclosed in paper §限制 (not code-fixable here).
 
 # ---------- B0 PROXY API key 加载 ----------
 if [[ "${BASELINE}" == "B0" ]]; then
-  if [[ -z "${PROXY_API_KEY:-}" ]]; then
-    AUTH_FILE="${REPO_DIR}/.auth/qwen_api"
-    if [[ -f "${AUTH_FILE}" ]]; then
-      raw_key="$(grep -m1 '^rp_' "${AUTH_FILE}" | tr -d '[:space:]')"
-      if [[ -n "${raw_key}" ]]; then
-        export PROXY_API_KEY="${raw_key}"
-        export QWEN_API_KEY="${raw_key}"
-        export DASHSCOPE_API_KEY="${raw_key}"
-        echo "[baseline] Loaded PROXY_API_KEY from ${AUTH_FILE}"
-      else
-        echo "[baseline][error] ${AUTH_FILE} 存在但无 rp_ key" >&2; exit 1
-      fi
-    else
-      echo "[baseline][error] ${AUTH_FILE} 不存在，且 PROXY_API_KEY 未设置" >&2; exit 1
-    fi
-  fi
+  load_proxy_api_key "${REPO_DIR}" "baseline"
 fi
 
 # ---------- 决定 run_id + run_dir ----------
-TS_DATE="$(date +%Y%m%d)"
-TS_FULL="$(date +%Y%m%d_%H%M%S)"
 if [[ "${BENCHMARK}" == "wa" ]]; then
   PHASE_DIR="${REPO_DIR}/results/webarena/phase1"
 else
   PHASE_DIR="${REPO_DIR}/results/visualwebarena/phase1"
 fi
 
-# FORCE_NEW=1 (paper-grade fresh rerun): always timestamped run_id, never resume-glob.
-# Prevents silently reusing pre-fix archived run dirs (codex stress v6 C1, 2026-05-14).
-# Crash recovery: omit FORCE_NEW to allow resume-by-glob of an in-progress run.
-if [[ "${FORCE_NEW:-0}" == "1" ]]; then
-  RUN_ID="${CFG_NAME}_${TS_FULL}"
-  echo "[baseline] FORCE_NEW=1 → fresh timestamped run_id=${RUN_ID} (resume-glob skipped)"
-else
-  EXISTING="$(ls -dt "${PHASE_DIR}/${CFG_NAME}_"[0-9]* 2>/dev/null | head -1 || true)"
-  if [[ -n "${EXISTING}" ]]; then
-    RUN_ID="$(basename "${EXISTING}")"
-    echo "[baseline] resuming existing run_id=${RUN_ID}"
-  else
-    RUN_ID="${CFG_NAME}_${TS_DATE}"
-    echo "[baseline] new run_id=${RUN_ID}"
-  fi
-fi
+mint_run_id "${CFG_NAME}" "${PHASE_DIR}" "baseline"
+# TS_FULL retained for runner log naming (no longer used in RUN_ID since A1.13 P1-2).
+TS_FULL="$(date +%Y%m%d_%H%M%S)"
 
 RUN_DIR="${PHASE_DIR}/${RUN_ID}"
 echo "[baseline] config=${CONFIG}"
@@ -180,58 +134,10 @@ else
   # ---------- Optional: site reset before launch ----------
   # IMPORTANT: reset is AFTER the idempotent runner check — resetting while
   # a runner is attached destroys site state under it (race condition fixed
-  # 2026-04-28 — see 实验笔记 §104).
+  # 2026-04-28 — see 实验笔记 §104). reset_and_auth_gate (in lib) enforces
+  # B-224 hard-fail (no soft-warn fallthrough).
   if [[ "${RESET_BEFORE:-0}" == "1" && "${BENCHMARK}" != "wa" ]]; then
-    if [[ -f "${REPO_DIR}/scripts/maintenance/reset_vwa_sites.sh" ]]; then
-      # shellcheck disable=SC1091
-      source "${REPO_DIR}/scripts/maintenance/reset_vwa_sites.sh"
-      echo "[baseline] RESET_BEFORE=1 → resetting site=${SITE}..."
-      if reset_vwa_sites "${SITE}" "baseline_${MODE}_${SITE}"; then
-        echo "[baseline] reset OK; sleeping 15s for site to settle..."
-        sleep 15
-        # Refresh .auth/<site>_state.json post-reset — server-side session was wiped,
-        # so the runner's first task would otherwise hit NOT-LOGGED-IN.
-        # B-224 fix (2026-05-16, A1.5 Item 19 default): switched from soft warn-and-continue
-        # to auth_required_gate hard-fail. Pre-fix: post-reset refresh failure was logged
-        # as [warn] + queue proceeded → first 1-3 tasks ran NOT-LOGGED-IN before watchdog
-        # reactive cleanup caught up → paper-grade contamination in step_record. Post-fix:
-        # auth_required_gate raises AuthRefreshFailure → queue exits 1 → user retries
-        # explicitly after fixing root cause (creds / site reachability / .auth/ writable).
-        echo "[baseline] gating .auth/${SITE}_state.json post-reset via auth_required_gate..."
-        if "${PYTHON_BIN}" -c "
-import sys
-sys.path.insert(0, '${REPO_DIR}')
-from pathlib import Path
-from p79.utils.auth_refresh import auth_required_gate, AuthRefreshFailure, AuthRefreshConfigError
-try:
-    auth_required_gate('${SITE}', Path('${REPO_DIR}/.auth'))
-    print('[baseline][gate] auth_required_gate PASS')
-    sys.exit(0)
-except (AuthRefreshFailure, AuthRefreshConfigError) as exc:
-    print(f'[baseline][gate][FATAL] {exc}', file=sys.stderr)
-    sys.exit(1)
-" 2>&1; then
-          echo "[baseline] auth gate PASS — runner task=0 will be LOGGED IN"
-        else
-          echo "[baseline][error] post-reset auth gate FAILED — aborting launch to prevent paper-grade contamination." >&2
-          echo "[baseline][error] Fix: (a) VWA_REMOTE_HOST env, (b) .auth/ dir writable, (c) site reachable, (d) VWA_${SITE^^}_USER/PASS env vars set." >&2
-          echo "[baseline][error] To bypass (paper-grade dirty, watchdog reactive only), set AUTH_GATE_BYPASS=1." >&2
-          if [[ "${AUTH_GATE_BYPASS:-0}" != "1" ]]; then
-            exit 1
-          fi
-          echo "[baseline][warn] AUTH_GATE_BYPASS=1 set — proceeding without auth gate; first 1-3 tasks at risk." >&2
-        fi
-      else
-        rc=$?
-        echo "[baseline][error] reset failed (rc=${rc}); aborting to preserve paper-grade integrity." >&2
-        echo "[baseline][error] To bypass reset (paper-grade dirty), explicitly set RESET_BEFORE=0." >&2
-        exit 1
-      fi
-    else
-      echo "[baseline][error] reset_vwa_sites.sh not found but RESET_BEFORE=1; aborting." >&2
-      echo "[baseline][error] To bypass reset (paper-grade dirty), explicitly set RESET_BEFORE=0." >&2
-      exit 1
-    fi
+    reset_and_auth_gate "${SITE}" "${REPO_DIR}" "${PYTHON_BIN}" "baseline" "baseline_${MODE}_${SITE}"
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
     echo "[baseline] RESET_BEFORE=1 but BENCHMARK=wa — WA reset+auth refresh uses different mechanism, skipping"
   fi

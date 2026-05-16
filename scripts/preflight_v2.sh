@@ -340,6 +340,50 @@ PY
   pass "Torch CUDA runtime is available (${py_output})"
 }
 
+check_vwa_submodule_lock() {
+  # A1.13 P1-3 fix (2026-05-16, 3-AI overlap): preflight now pins VWA submodule
+  # to the p79-patches branch + commit f0c835b (B-91 LLM judge `pred=""` guard).
+  # Pre-fix: `evaluator_router` import succeeded on any branch; reviewers'
+  # OSF reproducibility run (default main branch) would silently miss B-91 fix
+  # → visual_fp regression ~2-3pp on N/A tasks. Aligned with Makefile
+  # `verify-version-locks` target.
+  local vwa_dir="${PROJECT_DIR}/external/visualwebarena"
+  if [[ ! -d "${vwa_dir}/.git" && ! -f "${vwa_dir}/.git" ]]; then
+    if [[ "${ALLOW_MISSING_EVALUATOR}" == "1" ]]; then
+      warn "VWA submodule dir not initialized: ${vwa_dir}"
+    else
+      fail "VWA submodule not initialized at ${vwa_dir} (run: git submodule update --init)"
+    fi
+    return
+  fi
+  local expected_sha="f0c835b35191e2ff8d46993d9279674a0956ef14"
+  local expected_branch="p79-patches"
+  local actual_sha actual_branch
+  actual_sha="$(git -C "${vwa_dir}" rev-parse HEAD 2>/dev/null)"
+  actual_branch="$(git -C "${vwa_dir}" rev-parse --abbrev-ref HEAD 2>/dev/null)"
+  if [[ "${actual_branch}" != "${expected_branch}" ]]; then
+    fail "VWA submodule on wrong branch: ${actual_branch} (expected ${expected_branch})"
+    return
+  fi
+  if [[ "${actual_sha}" != "${expected_sha}" ]]; then
+    fail "VWA submodule SHA mismatch: ${actual_sha} (expected ${expected_sha} / B-91 fix)"
+    return
+  fi
+  # Inline grep confirms the B-91 guard code body is actually present (not just
+  # an empty file or refactor that dropped the guard); the SHA pin already
+  # covers this but the grep gives an extra layer + better error message.
+  local hf="${vwa_dir}/evaluation_harness/helper_functions.py"
+  # B-91 guard form: `if not pred or not pred.strip():` followed by `return 0.0` on next line.
+  # Verified upstream form 2026-05-16 (grep at f0c835b: helper_functions.py:589 + :634, 2 occurrences).
+  local guard_count
+  guard_count="$(grep -cP '^\s*if not pred or not pred\.strip\(\):' "${hf}" 2>/dev/null || echo 0)"
+  if [[ "${guard_count}" -lt 2 ]]; then
+    fail "VWA submodule missing B-91 LLM judge guard in ${hf} (expected 2 occurrences, got ${guard_count})"
+    return
+  fi
+  pass "VWA submodule locked at ${expected_branch}@${expected_sha:0:8} (B-91 guard present)"
+}
+
 check_vwa_evaluator_import() {
   if [[ -z "${PYTHON_BIN:-}" ]]; then
     fail "Skipping evaluator import check because no Python was found"
@@ -394,6 +438,7 @@ main() {
   check_python_modules
   check_playwright_browser
   check_torch_cuda
+  check_vwa_submodule_lock
   check_vwa_evaluator_import
 
   if (( EXIT_CODE == 0 )); then

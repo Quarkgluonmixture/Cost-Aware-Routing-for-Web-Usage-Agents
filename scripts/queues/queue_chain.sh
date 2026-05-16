@@ -64,6 +64,17 @@ if [[ $# -lt 1 ]]; then
 fi
 
 # ---------- helpers ----------
+# wait_for_runner_done blocks until the runner exits cleanly OR aborts the chain
+# if the watchdog dies mid-run (A1.13 P0-4, 2026-05-16).
+#
+# Watchdog liveness invariant: queue_baseline.sh:288-296 declares watchdog FATAL
+# at launch ("paper-grade launch requires watchdog (auth refresh + auto-clean)").
+# Pre-fix wait loop only watched runner PID — watchdog death mid-run was silent,
+# losing reactive auth refresh + idle alerts + auto-clean for the rest of the run
+# (multi-day chain weekend runs at highest risk). Q2 A decision: abort chain on
+# watchdog death — paper-grade > compute reclaim. User triggers manual restart
+# after addressing watchdog root cause (typical: ntfy curl SIGPIPE, OOM, glm
+# config bug, NPE on bad state JSON).
 wait_for_runner_done() {
   local pattern="$1"
   local label="$2"
@@ -71,8 +82,20 @@ wait_for_runner_done() {
   while pgrep -f "run_experiment.py.*${pattern}" > /dev/null; do
     sleep 60
     elapsed=$((elapsed + 60))
+    # A1.13 P0-4: watchdog liveness check
+    if ! pgrep -f "experiment_watchdog.*${pattern}" > /dev/null; then
+      log "  [FATAL] ${label}: watchdog died mid-run (runner still alive after ${elapsed}s)"
+      log "  paper-grade contamination risk: no reactive auth refresh + no auto-clean + no idle alert"
+      log "  Q2 A decision (A1.13 audit 2026-05-16): abort chain, kill runner, notify user"
+      pkill -f "run_experiment.py.*${pattern}" 2>/dev/null || true
+      if command -v curl > /dev/null; then
+        curl -d "queue_chain ABORT (${label}): watchdog died after ${elapsed}s; runner killed. Restart after root cause." \
+          "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
+      fi
+      exit 1
+    fi
     if (( elapsed % 1800 == 0 )); then
-      log "  ${label}: still running (${elapsed}s elapsed)..."
+      log "  ${label}: still running (${elapsed}s elapsed; watchdog alive)..."
       pgrep -af "run_experiment.py.*${pattern}" | head -1 | sed 's/^/    /'
     fi
   done
@@ -171,20 +194,46 @@ for cmd in "$@"; do
 
   wait_for_runner_done "$run_id" "[${idx}/$#] $cmd"
 
-  # ---- C3 completion sentinel (codex stress v6, 2026-05-14) ----
+  # ---- C3 completion sentinel (codex stress v6, 2026-05-14; A1.13 P0-3 upgraded 2026-05-16) ----
   # Runner process gone != success. A mid-run crash also makes pgrep empty.
-  # Require condition_summary_v2.json to exist, else the cell produced no
-  # paper-grade data and the chain must abort (not silently advance).
+  # File-presence alone was insufficient: same-second FORCE_NEW collision, mid-write
+  # SIGKILL, or stale prior-run summary can all pass a `-f` check yet contain
+  # 0-byte / truncated JSON / wrong-condition data. A1.13 P0-3 (3-AI overlap):
+  # validate (a) file non-empty, (b) JSON parsable, (c) condition_id matches,
+  # (d) total_tasks > 0 before accepting cell completion.
   summary_found=""
   for base in results/visualwebarena/phase1 results/webarena/phase1; do
     cand="${REPO_DIR}/${base}/${run_id}/${cond_id}/condition_summary_v2.json"
-    if [[ -f "${cand}" ]]; then summary_found="${cand}"; break; fi
+    if [[ -s "${cand}" ]]; then
+      if python3 -c "
+import json, sys
+try:
+    d = json.load(open('${cand}'))
+except Exception as e:
+    print(f'invalid JSON: {e}', file=sys.stderr); sys.exit(1)
+cid = d.get('condition_id', '')
+if cid and cid != '${cond_id}':
+    print(f'condition_id mismatch: got {cid!r}, expected ${cond_id!r}', file=sys.stderr); sys.exit(2)
+total = d.get('total_tasks', d.get('num_tasks', d.get('scored_task_count', 0)))
+if not isinstance(total, int) or total <= 0:
+    print(f'total_tasks invalid: {total!r}', file=sys.stderr); sys.exit(3)
+sys.exit(0)
+" 2>/tmp/queue_chain_sentinel_err; then
+        summary_found="${cand}"; break
+      else
+        err="$(cat /tmp/queue_chain_sentinel_err 2>/dev/null || true)"
+        log "  [error] ${cand} present but FAILED validation: ${err}"
+        log "  treating as missing summary — paper-grade aborts on invalid content"
+      fi
+    fi
   done
   if [[ -z "${summary_found}" ]]; then
-    log "  [error] ${run_id}/${cond_id} — runner exited but NO condition_summary_v2.json found"
-    log "  runner likely crashed mid-run; aborting chain to prevent silent missing-cell data"
+    log "  [error] ${run_id}/${cond_id} — no valid condition_summary_v2.json"
+    log "  failure modes: runner crash mid-write / FORCE_NEW same-second collision /"
+    log "                 schema-version mismatch / stale prior-run dir / disk full"
+    log "  aborting chain to prevent silent partial-data advancement"
     if command -v curl > /dev/null; then
-      curl -d "queue_chain ABORT: ${run_id}/${cond_id} no condition_summary (runner crash)" \
+      curl -d "queue_chain ABORT: ${run_id}/${cond_id} sentinel validation failed" \
         "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
     fi
     exit 1

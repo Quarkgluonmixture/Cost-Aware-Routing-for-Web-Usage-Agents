@@ -2069,4 +2069,58 @@ phase1_plan A1.4 拆 3 chunks (A1.4a orchestrator / A1.4b data plane / A1.4c aux
 
 **B-numbers consumed**: B-211 through B-229 (19 contiguous, no collisions). Cumulative session work (A1.4a+A1.4b-i+A1.4b-ii+A1.4c+A1.5) = B-140 through B-229 = 90 unique entries (some defused / deferred / disclosed; the rest fixed in code).
 
-**Next available B-number**: B-230+.
+**Next available B-number**: B-237+ (after A1.13 batch below).
+
+
+---
+
+## A1.13 + A1.14 /stress audit (2026-05-16) — B-230 to B-236 (7 entries; 7 fixed, 0 deferred, 0 disclosed-only)
+
+> Cross-AI: Mode A Claude 8 findings / 5 OOB + Mode B codex retry 8 findings / 0 OOB labels (conservative) + Mode C gemini 6 findings / 3 OOB = 22 attack vectors collapsed to 10 unique (5 Q-options) → 7 fixed this batch. Scope = 7 queue/orchestrator/preflight scripts (`queue_baseline.sh` + `queue_chain.sh` + `queue_phantom_{som,text,prompt}.sh` + `queue_phase1_paper_grade.sh` + `preflight_v2.sh`). Q4 user decision: lib extraction over inline copy → `scripts/queues/_lib_paper_grade_gates.sh` (174 LOC) centralizes 5 helpers; 4 queue scripts shrink -274 LOC (-26%). Sibling-propagation defect class definitively closed.
+
+### B-230. Auth gate hard-fail not propagated to phantom queue scripts 🛠️ FIXED (sibling propagation)
+- **Source**: Claude Mode A Finding A1 + codex C-1 + gemini G-1 (3-AI overlap, P0)
+- **Code**: `scripts/queues/queue_phantom_som.sh:155-166` + `queue_phantom_text.sh:194-205` + `queue_phantom_prompt.sh:151-162` — pre-fix soft `refresh_site_auth` + `[warn] post-reset auth refresh failed; watchdog will retry reactively after streak=3`
+- **Attack**: B-224 fix (`auth_required_gate` hard-fail) only landed in `queue_baseline.sh`; 18 phantom conditions (50% of Phase 1a 36-cond matrix = P-text + P-prompt + P-SoM × 6 cells) shipped with the pre-fix soft-warn → first 1-3 phantom tasks ran NOT-LOGGED-IN post-reset before watchdog reactive cleanup (streak=3 ≈ 3-5 min). Paper §1 phantom-vs-baseline SR delta partially confounded by auth state, not by observation mode alone — disentangle 不可能。
+- **Fix**: `reset_and_auth_gate()` helper centralized in `scripts/queues/_lib_paper_grade_gates.sh:114-160`. All 4 queue scripts source the lib + call this single function in the RESET_BEFORE branch. Q4 A decision (lib over inline copy) prevents future sibling drift on subsequent gate additions.
+- **Files**: `scripts/queues/_lib_paper_grade_gates.sh` (new) + `queue_baseline.sh` (refactored) + `queue_phantom_som.sh` + `queue_phantom_text.sh` + `queue_phantom_prompt.sh`. 0 leftover `refresh_site_auth` references in phantom scripts post-fix (verified `grep -c refresh_site_auth` returns 0/0/0).
+
+### B-231. BUG-2 A100 URL-locality preflight not propagated to phantom queue scripts 🛠️ FIXED (sibling propagation)
+- **Source**: Claude Mode A Finding A1 + codex C-2 + gemini G-1 (3-AI overlap, P0)
+- **Code**: `scripts/queues/queue_baseline.sh:114-122` had `BUG-2 preflight: assert all site URLs are local on A100` block (codex stress v6 C2 fix); `queue_phantom_{som,text,prompt}.sh` had no equivalent.
+- **Attack**: Empirical `grep -c "BUG-2 preflight" scripts/queues/queue_phantom_*.sh` returned 0/0/0. 18 phantom conditions on A100 with stale prod URLs in env (e.g. user switched sessions DGX → A100 without updating `vwa_env_remote.sh`) would silently hit quark prod docker via Tailscale → 50% silent deployment substitution. Memory `project_paper_grade_target_host` (2026-05-14 standing decision) defines paper-grade target = A100 self-hosted docker exclusively.
+- **Fix**: `assert_a100_url_locality()` helper in `_lib_paper_grade_gates.sh:38-50`. Same `*condense*` hostname / `/home/ubuntu/workspace/p79` dir detection; on A100 hosts, refuses launch if any of `CLASSIFIEDS/REDDIT/SHOPPING/WIKIPEDIA` non-local. Called from all 4 queue scripts post-`init_paper_grade_env`. Verification: 4-script `grep -c assert_a100_url_locality` returns 1/1/1/1.
+
+### B-232. queue_chain.sh C3 sentinel file-existence-only (no content validity) 🛠️ FIXED
+- **Source**: Claude Mode A Finding A2 + codex C-3 + gemini G-3 (3-AI overlap, P0 OOB)
+- **Code**: `scripts/queues/queue_chain.sh:178-182` (pre-fix `if [[ -f "${cand}" ]]; then summary_found="${cand}"; break; fi`)
+- **Attack**: File-presence alone insufficient. Three concrete failure modes: (a) FORCE_NEW=1 same-second collision (pre-B-234 1-second timestamp precision) → second launcher sees first's partial JSON → sentinel pass → chain advance with empty cell. (b) Mid-write SIGKILL (OOM / sysadmin reboot) → JSON truncated → `read_jsonl_dedup` silently skips bad rows → aggregator reads 0 tasks → paper §1 numbers based on partial data. (c) Stale prior-run dir reused at same `run_id/cond_id` path.
+- **Fix**: `queue_chain.sh:178-204` now validates (a) `[[ -s file ]]` non-empty, (b) `json.load(open(cand))` parses, (c) `condition_id` field matches expected `${cond_id}`, (d) `total_tasks` (with fallback to `num_tasks` / `scored_task_count`) is `int > 0`. Validation failure → log + abort chain + ntfy "queue_chain ABORT: sentinel validation failed" (distinguishable from prior "no summary" message). Smoke: in-line Python heredoc runs on every cell completion before advancing.
+
+### B-233. Watchdog liveness invariant not enforced in queue_chain wait loop 🛠️ FIXED
+- **Source**: Claude Mode A Finding A3 + codex C-4 + gemini G-6 (3-AI overlap, P0)
+- **Code**: `scripts/queues/queue_chain.sh:67-80` (pre-fix `wait_for_runner_done` watched runner PID only)
+- **Attack**: `queue_baseline.sh:270-278` codex stress v6 C5 declares "watchdog FATAL for paper-grade launch" — but invariant enforced ONLY at launch time. Mid-run watchdog death (typical roots: ntfy curl SIGPIPE, OOM, glm config bug, NPE on bad state JSON) silent: runner continues, chain wait loop continues polling runner PID, C3 sentinel passes when runner finishes, cell marked done. But watchdog-dead window (potentially 24-48h on weekend chain runs) loses reactive auth refresh + idle alerts + auto-clean → mid-run auth drift → NOT-LOGGED-IN tasks → adjusted_success bias. Multi-day chain failure mode is paper-grade-fatal.
+- **Fix**: `queue_chain.sh:wait_for_runner_done` (updated 67-93) adds watchdog liveness check inside polling loop. If watchdog dead while runner alive: log FATAL + `pkill -f run_experiment.py.*${pattern}` (kill runner) + ntfy "queue_chain ABORT (${label}): watchdog died after ${elapsed}s" + `exit 1`. Q2 A decision (abort over restart): paper-grade > compute reclaim. User triggers manual restart after diagnosing watchdog root cause.
+
+### B-234. FORCE_NEW=1 same-second RUN_ID collision risk 🛠️ FIXED
+- **Source**: codex C-5 + gemini G-2 (2-AI overlap; Claude A missed). P1 OOB.
+- **Code**: pre-fix 5 queue scripts used `TS_FULL="$(date +%Y%m%d_%H%M%S)"` (1-second precision)
+- **Attack**: master orchestrator `queue_phase1_paper_grade.sh` fires cls + red chains via `nohup ... &` near-simultaneously. Manual retry / re-fire in tight loop also susceptible. Two launchers in same second → identical RUN_ID → identical `run_dir` / runner log / watchdog state JSON → two runners attached to same docker user account → session race + log overwrite.
+- **Fix**: `mint_run_id()` helper in `_lib_paper_grade_gates.sh:74-105`. Format: `${CFG_NAME}_YYYYMMDD_HHMMSS_PIDxxxx_Rxxxxx` (PID = `$$`, R = `$RANDOM` 0-32767). Same-second 3-call empirical smoke test (2026-05-16 15:49:02 PID 3598120) produced 3 distinct RUN_IDs `R20797 / R17648 / R25754` — collision probability ~1/32767² ≈ 10⁻⁹ even within same second + same PID.
+
+### B-235. Preflight skips VWA submodule branch / commit / B-91 patch verification 🛠️ FIXED
+- **Source**: Claude Mode A Finding A6 + codex C-6 + gemini G-4 (3-AI overlap, P1 OOB)
+- **Code**: pre-fix `scripts/preflight_v2.sh:343-376` `check_vwa_evaluator_import` only `from evaluation_harness import evaluator_router`; Makefile `verify-version-locks` target had SHA pin but queue path didn't enforce it.
+- **Attack**: user `git submodule update --remote` accidentally switches to `main` branch → loses B-91 fix (LLM judge `pred=""` guard) → N/A tasks revert to old judge → visual_fp ~2-3pp regression. Preflight passes (import works on any branch). OSF reproducibility audit: reviewer `git submodule init` defaults to `main` → reproduction fails silently.
+- **Fix**: `preflight_v2.sh:343-381` new `check_vwa_submodule_lock()` function. Verifies (a) submodule dir is git repo, (b) branch = `p79-patches`, (c) SHA = `f0c835b35191e2ff8d46993d9279674a0956ef14`, (d) `grep -cP '^\s*if not pred or not pred\.strip\(\):' evaluation_harness/helper_functions.py` = 2 (the B-91 guard form, both LLM-judge functions in `helper_functions.py:589 + :634`). Wired into `main()` between `check_torch_cuda` and `check_vwa_evaluator_import`. Verified smoke: current state (branch `p79-patches`, SHA matches, guard count = 2) passes.
+
+### B-236. queue_baseline.sh QUARK_TZ export vestigial dead code 🛠️ REMOVED
+- **Source**: Claude Mode A Finding A4 (Claude-unique OOB; codex C-2 / gemini G-1 raised propagation gap but missed correctness gap)
+- **Code**: `scripts/queues/queue_baseline.sh:104-108` (pre-fix `export QUARK_TZ="${QUARK_TZ:-Europe/London}"` with comment "BUG-6 fix, 3-AI agree 2026-05-16. Postmill timestamps render in container TZ → reddit task must_include break across midnight boundary")
+- **Attack**: Client-side `export QUARK_TZ` does NOT influence docker container TZ (container TZ controlled by `docker-compose TZ:` flag or `/etc/timezone` in image). Empirical: `grep -r "QUARK_TZ" p79/ scripts/` returns single-line hit only (the export itself; no runner consumer). Variable name "QUARK_TZ" also outdated: paper-grade fires on A100 self-hosted docker (memory `project_paper_grade_target_host`, standing decision 2026-05-14) — no quark in launch path. Two failure modes: (a) cargo-cult fix attribution: paper §139 BUG-6 entry mistakenly marked fixed; (b) misleading future audits — next reviewer asks "why is this here, who reads QUARK_TZ?" and gets no answer.
+- **Fix**: 5 lines deleted (`queue_baseline.sh:104-108` QUARK_TZ block), replaced with 8-line `BUG-6 NOTE` audit-trail comment explaining pre/post-2026-05-14 era + A100 host UTC reality + residual cross-midnight relative-timestamp drift bounded to ~5/210 reddit tasks (disclose-only in paper §限制, not code-fixable here). Memory file `project_paper_grade_target_host.md` documents the broader vestigial-marker class for future audits.
+
+**B-numbers consumed**: B-230 through B-236 (7 contiguous, no collisions). Cumulative session work (A1.4a+A1.4b-i+A1.4b-ii+A1.4c+A1.5+A1.13) = B-140 through B-236 = 97 unique entries.
+
+**Next available B-number**: B-237+.
