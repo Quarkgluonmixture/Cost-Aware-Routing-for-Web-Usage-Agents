@@ -34,7 +34,7 @@ make analyze RUN=results/visualwebarena/phase1/<RUN_ID>  # 全分析管线
 make compare B0=<b0_run> B1=<b1_run> SITE=classifieds    # B0 vs B1 对比
 
 # 底层命令
-python3 scripts/run_experiment.py --config configs/exp_v2_phase1.yaml
+python3 scripts/run_experiment.py --config configs/exp_v2_B0_dom_classifieds.yaml   # per-condition yaml (master phase1.yaml retired B-232 2026-05-16)
 python3 scripts/analysis/analyze_experiment.py --run_dir results/visualwebarena/phase1/<RUN_ID>
 pytest tests/                                      # 81 测试
 ```

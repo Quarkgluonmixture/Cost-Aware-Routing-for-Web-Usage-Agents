@@ -116,6 +116,13 @@ User explicitly routed these to advisor-pending parking lot; do NOT act unilater
 - **P1-1 (gemini G3)** — GLM-5.1 scaffold `_call_glm_extract` rescues invalid JSON for B0 only; B1/B2 lack equivalent. **User decision pending**: advisor sync on whether to **drop parse_error rescue entirely** vs keep + transparently report pre-fallback rate. Tied to Plan A vs Plan B (parse_advisor_pending.md §1 master question).
 - **P1-4 (codex C4)** — Confidence schema currently `confidence: Optional[Dict[str, Any]] = None` in `types.py:80-83`. Should become mandatory dict with fixed keys (`mean_logprob` etc) + `confidence_supported / confidence_extraction_error / confidence_source` audit fields. **Paired with P0-7** — both unlock at advisor decision on logprob availability.
 
+### From `/stress A1.7` (2026-05-16) — 3-AI cross-AI cycle, B-262
+
+- **Mode A Claude F2 + Mode B codex F2 + Mode C gemini cross-validate** — confirmed propagation of `use_glm_fallback: true` override across **~41 B0 per-yaml** (cls/red/shop/wa-* × 6 modes + pilot T0). Base.yaml B-145 fix (line 159-167, `use_glm_fallback: false` + "never enable for paper-grade runs") effectively defeated at per-condition layer. Reading `run_meta.json` for any B0 paper-grade fire shows `use_glm_fallback=true` → cross-baseline cost-fairness violation surfaces in metadata even though base default says it shouldn't. Empirical rate 1.488 % (§2 above) so blast non-trivial.
+- **Severity**: P0 OOB (paper-grade fire blocker per /stress A1.7 verdict). Routed to Option A/B/C selection above (this thread). User directive 2026-05-16: write to this advisor-pending doc, do not unilaterally fix.
+- **Catalog entry**: `docs/reference/master_bug_catalog.md` B-262 (pending append to this round's batch).
+- **Companion entry B-229 (parse error taxonomy)**: already filed previous round (A1.5 Item 12 carry-over); see §3 of this doc for M/P/S/R source decomposition design.
+
 ### From paper drafts (already prose-staged)
 
 - `paper_drafts/section3_definition.md` §3.5.1 — third paragraph "Parse-error recovery scaffold (provisional)" is a **placeholder**. Current text disclosed advisor-pending status + measured rescue rate. Replace with Option A or Option B final wording on advisor reply.
