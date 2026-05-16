@@ -198,9 +198,39 @@ start_shopping() {
     return 1
   fi
   docker exec "${container_name}" /var/www/magento2/bin/magento cache:flush >/dev/null 2>&1
-  # BUG-13 fix (Claude NEW4): ES indexes baked with metis URLs; need reindex post base_url change
+  # BUG-13 fix (Claude NEW4): ES indexes baked with metis URLs; need reindex post base_url change.
+  # B-311 (A1.17 P1-8, gemini OOB unique): pre-fix `indexer:reindex` was fire-and-forget;
+  # reindex takes 5-10min on 68GB shopping image. Script returned before completion;
+  # if agent runner started immediately, search-autocomplete / category-update tasks
+  # would silently fail (no model error, just empty results) → SR confounded by
+  # infra not model. Now poll `indexer:status` until all "Ready" or 10min timeout.
   docker exec "${container_name}" /var/www/magento2/bin/magento indexer:reindex >/dev/null 2>&1 || \
-    echo "[START] ⚠️  Magento indexer:reindex failed (may need manual rerun for shop search-autocomplete tasks)" >&2
+    echo "[START] ⚠️  Magento indexer:reindex command returned non-zero (continuing to poll status)" >&2
+
+  # Poll indexer:status — each row format "Indexer_Name: Status" where Status ∈ {Ready, Reindex required, Processing}
+  # Done = ALL non-empty rows say "Ready".
+  local poll_max=60  # 60 * 10s = 10min max
+  local poll_i
+  for poll_i in $(seq 1 ${poll_max}); do
+    local idx_status
+    idx_status=$(docker exec "${container_name}" /var/www/magento2/bin/magento indexer:status 2>/dev/null || echo "ERROR")
+    if [[ "${idx_status}" == "ERROR" ]]; then
+      echo "[START] ⚠️  Magento indexer:status query failed at poll ${poll_i}" >&2
+      sleep 10
+      continue
+    fi
+    # Count rows NOT in "Ready" state
+    local non_ready
+    non_ready=$(echo "${idx_status}" | grep -E ":" | grep -vE "Ready|^$" | wc -l)
+    if (( non_ready == 0 )); then
+      echo "[START] Magento indexer all Ready after $((poll_i*10))s"
+      break
+    fi
+    sleep 10
+  done
+  if (( poll_i >= poll_max )); then
+    echo "[START] ⚠️  Magento indexer:reindex did NOT reach all-Ready within 10min — shop search/autocomplete tasks may fail" >&2
+  fi
 }
 
 start_reddit() {
@@ -277,7 +307,28 @@ start_classifieds() {
   (cd "${compose_dir}" && docker compose up --build -d)
   if (( classifieds_running == 0 )); then
     sleep 15
-    docker exec classifieds_db mysql -u root -ppassword osclass -e 'source docker-entrypoint-initdb.d/osclass_craigslist.sql' >/dev/null 2>&1 || true
+    # B-312 (A1.17 P1-12, BUG-5 sibling-propagation): pre-fix had `|| true` swallowing
+    # SQL load failure → empty cls DB → all cls tasks 0% SR. BUG-5 fix stripped
+    # `|| true` from shopping Magento patches (line 190-191) but cls DB seed missed
+    # propagation. Now: retry up to 3 times with 5s sleep (DB warming race), then
+    # FATAL return 1 if all retries fail. Aborts startup loudly rather than silently
+    # leaving cls site broken.
+    local seed_rc=0 seed_retry
+    for seed_retry in 1 2 3; do
+      docker exec classifieds_db mysql -u root -ppassword osclass \
+        -e 'source docker-entrypoint-initdb.d/osclass_craigslist.sql' >/dev/null 2>&1
+      seed_rc=$?
+      if (( seed_rc == 0 )); then
+        echo "[START] classifieds DB seed OK (attempt ${seed_retry})"
+        break
+      fi
+      echo "[START] classifieds DB seed attempt ${seed_retry} failed (rc=${seed_rc}), retrying in 5s..." >&2
+      sleep 5
+    done
+    if (( seed_rc != 0 )); then
+      echo "[START] ✗ FATAL: classifieds DB seed failed after 3 retries; cls site will be empty (all cls tasks would 0% SR)" >&2
+      return 1
+    fi
   fi
 }
 

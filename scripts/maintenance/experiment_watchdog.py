@@ -1400,6 +1400,37 @@ def main() -> int:
                         f"task {task_id} ({reason}) retry {retries_so_far + 1}/{max_for_type}"
                     )
                     _persist_state()
+
+                    # B-314 (A1.17 Option K Trajectory Event Log hook,
+                    # 2026-05-16): log auto-clean event to trajectory_events.jsonl
+                    # so analysis aggregator can build per-episode
+                    # `had_auth_clear` / `prior_clear_count` covariates for
+                    # paper §4 GLMM bias absorption (Tier 1 stack (1)-gemini).
+                    # Generalizes P1-5-B reset event tracking to auth-loss /
+                    # noise-clean class (user cross-talk insight 2026-05-16).
+                    try:
+                        from p79.experiment.logger_v2 import log_trajectory_event_external
+                        log_trajectory_event_external(
+                            condition_dir=condition_dir,
+                            event_type="task_auto_cleared",
+                            task_index=task_id,
+                            metadata={
+                                "reason": reason,
+                                "retry_attempt": retries_so_far + 1,
+                                "max_retries": max_for_type,
+                                "is_noise": is_noise,
+                                "is_auth_loss": bool(reason.startswith("error(session") or reason.startswith("error(auth")),
+                                "purged_digest_records": purged,
+                            },
+                        )
+                    except Exception as _trajectory_log_exc:
+                        # Non-fatal — trajectory event log is a paper-§4 covariate
+                        # enrichment, not a blocking step. Best-effort.
+                        print(
+                            f"[watchdog][trajectory-event][warn] failed to log "
+                            f"task_auto_cleared event for task {task_id}: {_trajectory_log_exc}"
+                        )
+
                     # Do NOT add to seen_keys/all_records — treat as never happened
                     continue
 

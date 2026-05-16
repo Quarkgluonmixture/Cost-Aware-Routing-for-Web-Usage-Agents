@@ -87,7 +87,7 @@ B0 infra prereq ──┘                                                       
 - [ ] **A1.14** `scripts/queues/queue_phase1_paper_grade.sh` + `scripts/preflight_v2.sh` — orchestrator + pre-launch gates
 - [ ] **A1.15** `scripts/maintenance/experiment_watchdog.py` + `scripts/maintenance/glm/*.py` — watchdog auto-clean + cron sidecars (glm_cell_autoupdate / myriad_watcher / glm_pre_launch_check / batch_digest)
 - [ ] **A1.16** `scripts/provenance/snapshot_*` — env + VWA fingerprint
-- [~] **A1.17** `scripts/vwa/` + `RESET_BEFORE` protocol — Chunk 1 ✅ landed 2026-05-16 (B-298~B-306, §162: 5 P0 + glm-absorb-P1 + P2-2); Chunk 2 deferred ~11h (P1 quality + Option K)
+- [x] **A1.17** `scripts/vwa/` + `RESET_BEFORE` protocol — Chunk 1 ✅ 2026-05-16 (B-298~B-306, §162: 5 P0 + glm-absorb-P1 + P2-2); Chunk 2 ✅ 2026-05-16 late (B-307~B-314, §163: 6 P1 quality + Option K Trajectory Event Log schema/API/hooks)
 
 #### A1-外部 (VWA submodule)
 

@@ -49,16 +49,48 @@ _reset_vwa_local_classifieds() {
         echo "[${label}][reset_vwa][local] classifieds HTTP FAIL (http=${code})" >&2
         return 1
     fi
-    # Mutation sentinel — verify reset actually executed (HTTP 200 alone is fake-safe
-    # for OSClass; only docker-exec DB query confirms SQL ran). Codex's debug method.
-    local count
-    count=$(docker exec classifieds_db mysql -uroot -ppassword osclass -sN -e \
+    # Multi-table mutation sentinel (B-307 A1.17 P1-1, 3-AI overlap A+B+C OOB):
+    # pre-fix queried only `oc_t_item_comment` — narrow; OSClass reset endpoint
+    # regression could clear comments but leave `oc_t_item` (listings),
+    # `oc_t_user` (added users), `oc_t_item_meta` (modified metadata) → sentinel
+    # passes while ablation surface remains contaminated. P79 cls task mix includes
+    # search-listing / post-listing / user-profile types, which would see prior
+    # episode's residual state (3-5pp drift per gemini estimate, 0.2-0.8pp bounded
+    # per codex on require_reset subset). Now verify 3 highest-mutation-surface
+    # tables; failure on any → reset rejected.
+    local comments_count items_count user_count
+    comments_count=$(docker exec classifieds_db mysql -uroot -ppassword osclass -sN -e \
             "SELECT COUNT(*) FROM oc_t_item_comment WHERE b_active=1;" 2>/dev/null || echo "?")
-    if [[ "${count}" != "0" ]]; then
-        echo "[${label}][reset_vwa][local] classifieds reset SQL did not execute (oc_t_item_comment count=${count}, expected 0)" >&2
+    items_count=$(docker exec classifieds_db mysql -uroot -ppassword osclass -sN -e \
+            "SELECT COUNT(*) FROM oc_t_item WHERE b_active=1 AND fk_i_user_id > 0;" 2>/dev/null || echo "?")
+    # Exclude seed/admin users (`s_username IN ('admin','user_seed')` etc. — keep
+    # broad exclusion via `b_active=1 AND s_username NOT LIKE '%admin%'`).
+    user_count=$(docker exec classifieds_db mysql -uroot -ppassword osclass -sN -e \
+            "SELECT COUNT(*) FROM oc_t_user WHERE b_active=1 AND s_username NOT LIKE '%admin%';" 2>/dev/null || echo "?")
+
+    # Each table independently asserted; report all failures in one pass.
+    local failed=0
+    if [[ "${comments_count}" != "0" ]]; then
+        echo "[${label}][reset_vwa][local] cls sentinel FAIL: oc_t_item_comment=${comments_count} (expected 0)" >&2
+        failed=1
+    fi
+    if [[ "${items_count}" != "0" ]]; then
+        echo "[${label}][reset_vwa][local] cls sentinel FAIL: oc_t_item (user-posted) = ${items_count} (expected 0)" >&2
+        failed=1
+    fi
+    # User table: VWA classifieds seeds a fixed set of seed users; reset should
+    # leave only those. Empirically the seed user list is small (~5-10); >20 user
+    # accounts post-reset = previous episode's user creates persisted. Heuristic
+    # threshold 20 (conservative; tighten when seed user count known).
+    if [[ "${user_count}" =~ ^[0-9]+$ ]] && (( user_count > 20 )); then
+        echo "[${label}][reset_vwa][local] cls sentinel FAIL: oc_t_user non-admin count=${user_count} > 20 (seed expected ~5-10)" >&2
+        failed=1
+    fi
+    if (( failed == 1 )); then
+        echo "[${label}][reset_vwa][local] classifieds reset SQL incomplete (multi-table sentinel rejected)" >&2
         return 1
     fi
-    echo "[${label}][reset_vwa][local] classifieds OK (http=200, sentinel verified)"
+    echo "[${label}][reset_vwa][local] classifieds OK (http=200, multi-table sentinel verified: comments=${comments_count}, items=${items_count}, users=${user_count})"
     return 0
 }
 
@@ -68,7 +100,16 @@ _reset_vwa_local_classifieds() {
 _reset_vwa_local_reddit() {
     local label="$1"
     docker rm -f vwa-reddit 2>/dev/null || true
-    if ! docker run -d --name vwa-reddit -p 9999:80 postmill-populated-exposed-withimg >/dev/null; then
+    # B-309 (A1.17 P1-6, gemini OOB unique): docker run must include -e TZ to
+    # match start_vwa_docker.sh:217 (initial container start). Pre-fix reset
+    # produced container with TZ=UTC (Docker default); initial start used
+    # Europe/London. Tasks with relative-time semantics ("within the last hour"
+    # types in reddit) saw different system time before vs after reset → systematic
+    # noise in ablation. VWA_REDDIT_TZ env override defaulting to Europe/London
+    # (was QUARK_TZ legacy name; harmless on A100 self-host but rename improves clarity).
+    if ! docker run -d --name vwa-reddit \
+            -e TZ="${VWA_REDDIT_TZ:-${QUARK_TZ:-Europe/London}}" \
+            -p 9999:80 postmill-populated-exposed-withimg >/dev/null; then
         echo "[${label}][reset_vwa][local] reddit docker run FAILED" >&2
         return 1
     fi

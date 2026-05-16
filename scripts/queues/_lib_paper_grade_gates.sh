@@ -156,6 +156,27 @@ reset_and_auth_gate() {
   if reset_vwa_sites "${site}" "${reset_label}"; then
     echo "[${log_prefix}] reset OK; sleeping 15s for site to settle..."
     sleep 15
+
+    # B-314 (A1.17 Option K Trajectory Event Log hook for reset events,
+    # 2026-05-16): emit "reset_post_interrupt" event to a STAGING file that
+    # the runner picks up on startup + merges into condition_dir/trajectory_events.jsonl.
+    # Reason for staging: condition_dir doesn't exist at gate time (runner creates it).
+    # Path: ${repo_dir}/logs/trajectory_events_staging/RUN_${RUN_ID:-unknown}.jsonl
+    # Runner-side pickup is documented in [[phase1_plan]] §A1 follow-up.
+    # Best-effort — failure does NOT block reset gate (event log is paper-§4
+    # enrichment, not paper-grade integrity gate).
+    if [[ -n "${RUN_ID:-}" ]]; then
+      local _staging_dir="${repo_dir}/logs/trajectory_events_staging"
+      mkdir -p "${_staging_dir}" 2>/dev/null || true
+      local _staging_file="${_staging_dir}/RUN_${RUN_ID}.jsonl"
+      local _ts
+      _ts="$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)"
+      # Simple JSON line — no jq dependency. Manual escaping of double-quotes
+      # in site / reset_label assumed safe (controlled inputs from queue scripts).
+      echo "{\"event_type\":\"reset_post_interrupt\",\"task_index\":null,\"wallclock_ts\":\"${_ts}\",\"metadata\":{\"site\":\"${site}\",\"reset_label\":\"${reset_label}\",\"source\":\"_lib_paper_grade_gates.reset_and_auth_gate\"}}" \
+        >> "${_staging_file}" 2>/dev/null || true
+      echo "[${log_prefix}] trajectory-event[reset]: staged at ${_staging_file}" >&2
+    fi
     # B-224 hard-fail (2026-05-16 A1.13 P0-1, applied to ALL queue scripts):
     # post-reset auth refresh failure now aborts launch. Pre-fix soft-warn
     # let phantom paths start with NOT-LOGGED-IN tasks → step_record contamination.
