@@ -200,6 +200,16 @@ class EpisodeSummaryV2:
     trajectory_incomplete: bool = False
     unknown_failure_reasons: Dict[str, int] = field(default_factory=dict)
     partial_recovery_step_count: int = 0
+    # B-403 (/stress A1.1 v8 Mode B P1-9, 2026-05-16): per-episode count of
+    # steps with `image_meta.image_encode_error > 0`. Agent comments at
+    # `qwen3vl_agent.py:355-363` + `gemma3vl_agent.py:330-336` mandated
+    # "aggregate_*.py MUST symmetric-exclude steps with image_encode_error
+    # > 0" for paper-grade cross-baseline SR comparability. Pre-fix the
+    # contract existed in comments only — no aggregator implemented the
+    # exclusion. Now: runner stamps the per-episode count here, episode-
+    # level aggregators can either filter (drop infra-failed episodes) or
+    # annotate (disclosure column) without re-reading step JSONL.
+    image_encode_error_step_count: int = 0
     # §139.8: `adjusted_success` / `fp_reason` were removed — the post-hoc
     # na_fp / eval_fp filter layer is retired (fixed at the source: B-91
     # evaluator empty-pred guard + N/A task exclusion at load time). `success`

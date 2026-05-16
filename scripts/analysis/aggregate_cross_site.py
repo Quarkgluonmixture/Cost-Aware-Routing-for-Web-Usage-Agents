@@ -156,7 +156,20 @@ def _get_adjusted_sr(
     cross_rep_per_site: Optional[Dict[str, Dict[str, float]]] = None,
     site: Optional[str] = None,
 ) -> Optional[float]:
-    """Extract adjusted SR from condition_summary, handling stubs.
+    """Legacy archive-only adjusted SR extractor.
+
+    B-405 (/stress A1.1 v8 Mode B P2-4, 2026-05-16): the post-hoc
+    `adjusted_success` / `compute_adjusted_success` layer was retired in
+    §139.8 — `success` is now the canonical paper-grade outcome (N/A
+    exclusion happens at task load via `task.exclude_na_tasks=true`
+    default + upstream B-91 evaluator empty-pred guard fix). This helper
+    is preserved for **archive-only** reading of pre-§139.8
+    `cross_representation_summary.json` artifacts and stub notes — any
+    post-§139.8 run will see `cross_rep_per_site=None` and stub-less
+    summaries, so this function returns None for all current data.
+    Output column `adjusted_sr` is therefore label-as-legacy in
+    `aggregate_run_dir`. Do NOT re-introduce post-hoc FP adjustment as
+    a paper claim.
 
     Non-stub conditions don't carry adjusted SR in condition_summary_v2.json
     (it's computed by analyze_cross_representation.py separately). Look it up
@@ -198,11 +211,28 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
         if is_stub:
             print(f"  [STUB] site={site} mode={mode} raw_sr={raw_sr:.3f} adj_sr={adj_sr}")
 
+        # B-405 (/stress A1.1 v8 Mode B P2-4, 2026-05-16): post-§139.8 the
+        # `adjusted_success` post-hoc FP-filter layer is retired (paper-grade
+        # canonical = `success`; N/A excluded at task-load; B-91 evaluator
+        # guard at source). `adjusted_sr` here is an archive-only field for
+        # pre-§139.8 run dirs; surface a one-line warning when populated so
+        # paper-grade callers cannot accidentally cite it without notice.
+        if adj_sr is not None:
+            print(
+                f"  [B-405 legacy-archive] site={site} mode={mode} "
+                f"adjusted_sr={adj_sr:.4f} sourced from pre-§139.8 archive "
+                f"(do NOT cite in paper §1/§3 — `raw_sr` is canonical)",
+                file=sys.stderr,
+            )
         rows.append({
             "label": label,
             "site": site,
             "mode": mode,
             "raw_sr": round(raw_sr, 4),
+            # B-405: `adjusted_sr` retained for archive comparison only.
+            # Paper-grade post-§139.8 cite `raw_sr`. Future v3 schema bump
+            # can drop the column entirely once cross_representation_summary
+            # legacy artifacts no longer need to round-trip.
             "adjusted_sr": round(adj_sr, 4) if adj_sr is not None else None,
             "avg_cost_usd": round(float(cond.get("avg_total_cost_usd", 0.0)), 6),
             "avg_steps": round(float(cond.get("avg_steps", 0.0)), 2),

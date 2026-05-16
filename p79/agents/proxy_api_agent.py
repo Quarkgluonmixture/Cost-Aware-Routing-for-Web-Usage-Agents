@@ -327,25 +327,35 @@ class ProxyApiAgent:
     def _get_system_prompts() -> Dict[str, str]:
         """Build the per-mode system-prompt dispatch table for B0.
 
-        /stress A1.1 F1 fix (2026-05-15): B0 now reuses Qwen3VLAgent's
-        @staticmethod prompt builders verbatim — byte-identical to B1/B2.
+        /stress A1.1 F1 fix (2026-05-15): B0 reuses the canonical prompt
+        builders byte-identical to B1/B2 (test_agents_prompt_parity.py
+        invariant). Previously B0 had shopping-specific examples that
+        leaked a domain prior into the cross-baseline comparison on the
+        classifieds + reddit Phase 1a workload.
 
-        Previously B0 maintained its own f-string-templated prompt body that
-        contained shopping-specific examples ("Blankets & Throws",
-        "Home & Kitchen", "Electronics", "Jewelry & Watches"). On the
-        classifieds + reddit Phase 1a workload those examples leaked a
-        shopping-domain prior into the B0 baseline only, breaking the
-        cross-baseline byte-identical-prompts requirement asserted in
-        ``gemma3vl_agent.py:23-27``. Reusing the Qwen builders here closes
-        that leak in one place; ``tests/test_agents_prompt_parity.py`` now
-        asserts B0 == B1 == B2 byte-for-byte so future drift surfaces in CI.
+        B-402 (/stress A1.1 v8 Mode A P1-4, 2026-05-16): import directly
+        from `_shared_vl_utils` instead of through `Qwen3VLAgent`. The
+        previous indirection (`from qwen3vl_agent import Qwen3VLAgent` →
+        `Qwen3VLAgent._make_*_prompt()`) transitively imported the heavy
+        Qwen3-VL deps (`transformers.Qwen3VLForConditionalGeneration` +
+        `qwen_vl_utils.process_vision_info`) even though B0 is a pure
+        network-call agent that needs none of that. This contradicted
+        the B-146 _shared_vl_utils extraction intent ("Gemma3VLAgent runs
+        failed at first launch in environments without Qwen deps" —
+        same failure mode for any future B0-only / lighter A100 setup).
+        Direct import keeps prompts byte-identical (tests still pass via
+        the shared module being the single source of truth) AND drops
+        the transitive dependency leak.
         """
-        # Local import to avoid module-level circular import at package load.
-        from p79.agents.qwen3vl_agent import Qwen3VLAgent
+        from p79.agents._shared_vl_utils import (
+            make_dom_prompt,
+            make_som_prompt,
+            make_vision_prompt,
+        )
 
-        dom_prompt = Qwen3VLAgent._make_dom_prompt()
-        som_prompt = Qwen3VLAgent._make_som_prompt()
-        vision_prompt = Qwen3VLAgent._make_vision_prompt()
+        dom_prompt = make_dom_prompt()
+        som_prompt = make_som_prompt()
+        vision_prompt = make_vision_prompt()
 
         return {
             "dom": dom_prompt,

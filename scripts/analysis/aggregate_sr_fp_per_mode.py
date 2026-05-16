@@ -94,6 +94,30 @@ def aggregate_cell(baseline: str, site: str, mode: str, ep_dir: Path) -> dict[st
     expected_n = scored_task_count(site, "visualwebarena")
     complete = expected_n > 0 and n_total >= expected_n
 
+    # B-403 (/stress A1.1 v8 Mode B P1-9, 2026-05-16): image_encode_error
+    # symmetric-exclude transparency column. Agent comments at
+    # `qwen3vl_agent.py:355-363` + `gemma3vl_agent.py:330-336` mandated
+    # exclusion of steps with `image_encode_error > 0` for paper-grade
+    # cross-baseline SR comparability. Pre-fix: no aggregator implemented
+    # this — infra failures (PIL decode / base64 OOM on B0 proxy) were
+    # silently scored as model/task failures. EpisodeSummaryV2 now stamps
+    # per-episode count (B-403 in runner). Aggregator emits 3 columns:
+    #   n_image_encode_error_episodes: episodes with ≥1 bad-image step
+    #   image_encode_error_episode_rate: ratio for disclosure
+    #   sr_pct_clean: SR computed excluding bad-image episodes
+    # Reviewer can compare `sr_pct` vs `sr_pct_clean`: gap >> 0 indicates
+    # infra-failure contamination biased the headline.
+    n_bad_image = sum(
+        1 for row in rows.values()
+        if int(row.get("image_encode_error_step_count", 0) or 0) > 0
+    )
+    clean_rows = [
+        row for row in rows.values()
+        if int(row.get("image_encode_error_step_count", 0) or 0) == 0
+    ]
+    n_clean = len(clean_rows)
+    n_success_clean = sum(1 for row in clean_rows if row.get("success") is True)
+
     return {
         "baseline": baseline,
         "site": site,
@@ -104,6 +128,12 @@ def aggregate_cell(baseline: str, site: str, mode: str, ep_dir: Path) -> dict[st
         "completeness_ratio": round(n_total / expected_n, 6) if expected_n else 0.0,
         "n_success": n_success,
         "sr_pct": round(pct(n_success, n_total), 6),
+        # B-403 (P1-9): image_encode_error symmetric-exclude transparency
+        "n_image_encode_error_episodes": n_bad_image,
+        "image_encode_error_episode_rate": round(pct(n_bad_image, n_total), 6),
+        "n_clean": n_clean,
+        "n_success_clean": n_success_clean,
+        "sr_pct_clean": round(pct(n_success_clean, n_clean), 6),
         "source_dir": str(ep_dir.relative_to(ROOT)),
     }
 

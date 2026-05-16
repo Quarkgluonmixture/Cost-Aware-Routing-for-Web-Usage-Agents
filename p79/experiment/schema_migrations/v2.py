@@ -75,6 +75,10 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     "trajectory_incomplete": False,
     "unknown_failure_reasons": {},
     "partial_recovery_step_count": 0,
+    # B-403 (/stress A1.1 v8 Mode B P1-9, 2026-05-16): per-episode count of
+    # image_encode_error steps (legacy summaries default 0 — assumed clean
+    # absent telemetry; aggregator readers will see 0 and skip exclusion).
+    "image_encode_error_step_count": 0,
     # adjusted_success / fp_reason / has_effective_action removed §139.8 —
     # post-hoc na_fp / eval_fp filter layer retired (fixed at the source:
     # B-91 evaluator guard + N/A exclusion at load). Archived pre-§139.8
