@@ -110,54 +110,55 @@ log "=== Step 2: Disk space check ==="
 AVAIL_GB=$(df --output=avail -BG / | tail -1 | tr -d ' G')
 log "Free disk: ${AVAIL_GB} GB"
 
-REQ_GB=130
+# B-310 (A1.17 P1-7, gemini OOB unique): pre-fix REQ_GB=130 severely underestimated.
+# Empirically derived from setup_vwa.sh wget comments: shopping 68 + reddit 53 +
+# wikipedia 95 + classifieds 0.025 = ~216 GB raw download. Plus ~30GB docker layer
+# decompression overhead during `docker load` = ~246GB. REQ_GB=250 with ~5GB safety
+# margin. FATAL on shortage (was WARN-and-continue) because partial wget + docker
+# load mid-fail leaves corrupted images that crash containers at runtime — paper-grade
+# integrity demands fail-fast.
+REQ_GB=250
 if [ "${AVAIL_GB}" -lt "${REQ_GB}" ]; then
-  log "WARN: Free disk ${AVAIL_GB} GB < required ${REQ_GB} GB for full VWA stack"
-  log "      Continuing — may fail mid-setup. Free space first if possible."
+  log "FATAL: Free disk ${AVAIL_GB} GB < required ${REQ_GB} GB for full VWA stack"
+  log "       (shopping 68 + reddit 53 + wikipedia 95 + cls 0.025 + ~30 docker overhead)"
+  log "       Free space before continuing — partial download leaves corrupt images."
+  exit 1
 fi
 
 # ---------------------------------------------------------------------------
 # Step 3: Deploy each site
 # ---------------------------------------------------------------------------
 
+# B-308 (A1.17 P1-2, 2-AI A+B): pre-fix deploy_reddit/shopping looked up
+# ${VWA_DIR}/reddit and ${VWA_DIR}/shopping which DON'T EXIST — VWA reddit
+# uses postmill `docker run` from loaded image (no compose dir), shopping
+# uses `shopping_final_0712` `docker run` similarly. Pre-fix would always
+# return 1 + smoke `|| true` would swallow + script would print "DONE"
+# falsely. Now: classifieds uses its real compose dir (correct); reddit +
+# shopping delegate to start_vwa_docker.sh which has the verified
+# docker-run logic + Magento base_url DB-side verify + indexer poll
+# (B-311). Single source of truth = start_vwa_docker.sh.
+
 deploy_classifieds() {
   log "  Deploying classifieds (port 9980, OSClass + MySQL)..."
-  cd "${VWA_DIR}/classifieds_docker_compose"
-  if [ ! -d "./mysql" ]; then
-    log "  WARN: ./mysql/ DB init dir not found. Check VWA repo state."
+  if [ ! -d "${VWA_DIR}/classifieds_docker_compose" ]; then
+    log "  ✗ FATAL: classifieds_docker_compose dir missing at ${VWA_DIR}"
+    return 1
   fi
-  ${DOCKER_COMPOSE} up -d
-  cd "${REPO_ROOT}"
+  bash "${REPO_ROOT}/scripts/vwa/start_vwa_docker.sh" --sites classifieds --hostname localhost
 }
 
 deploy_reddit() {
   log "  Deploying reddit (port 9999, Postmill)..."
-  # NOTE: reddit/postmill compose path varies by VWA version; adapt as needed
-  REDDIT_DIR="${VWA_DIR}/reddit"  # may need adjustment
-  if [ ! -d "${REDDIT_DIR}" ]; then
-    log "  Reddit compose dir not found at ${REDDIT_DIR}"
-    log "  Manual: docker run --name vwa-reddit -p 9999:80 -d <postmill-pop-image>"
-    log "  See Phase 1 quark setup; image used was 'postmill-pop:latest'"
-    return 1
-  fi
-  cd "${REDDIT_DIR}"
-  ${DOCKER_COMPOSE} up -d
-  cd "${REPO_ROOT}"
+  # Uses docker run from loaded `postmill-populated-exposed-withimg` image (no compose dir).
+  bash "${REPO_ROOT}/scripts/vwa/start_vwa_docker.sh" --sites reddit --hostname localhost
 }
 
 deploy_shopping() {
   log "  Deploying shopping (port 7770, Magento + DB)..."
-  SHOP_DIR="${VWA_DIR}/shopping"  # may need adjustment
-  if [ ! -d "${SHOP_DIR}" ]; then
-    log "  Shopping compose dir not found at ${SHOP_DIR}"
-    log "  Manual: docker run --name vwa-shopping -p 7770:80 -d <magento-image>"
-    log "  See Phase 1 quark setup. NOTE: Magento needs base_url config matching"
-    log "  A100 VM IP / 127.0.0.1 — different from quark Phase 1 (was 10.x.x.x)"
-    return 1
-  fi
-  cd "${SHOP_DIR}"
-  ${DOCKER_COMPOSE} up -d
-  cd "${REPO_ROOT}"
+  # Uses docker run from loaded `shopping_final_0712` image (no compose dir).
+  # start_vwa_docker.sh handles Magento base_url patch + cache flush + indexer poll.
+  bash "${REPO_ROOT}/scripts/vwa/start_vwa_docker.sh" --sites shopping --hostname localhost
 }
 
 log "=== Step 3: Deploy VWA sites ==="
@@ -178,6 +179,11 @@ done
 
 log "=== Step 4: Smoke check (wait up to 120s) ==="
 
+# B-308 (A1.17 P1-2 cont): pre-fix `check_url ... || true` swallowed smoke failures
+# → script would print "=== A100 self-host VWA setup DONE ===" even when sites
+# never came up. Aggregate smoke failures and exit 1 if any. This catches the
+# pathological case where deploy returned 0 but the site is internally broken
+# (e.g. Magento DB seed failed silently — B-312 sibling propagation defect).
 check_url() {
   local url=$1
   local name=$2
@@ -192,13 +198,18 @@ check_url() {
   return 1
 }
 
+smoke_failed=0
 for site in ${SITES_TO_DEPLOY[@]}; do
   case "$site" in
-    classifieds) check_url "http://localhost:9980" "classifieds" || true ;;
-    reddit)      check_url "http://localhost:9999" "reddit" || true ;;
-    shopping)    check_url "http://localhost:7770" "shopping" || true ;;
+    classifieds) check_url "http://localhost:9980/robots.txt" "classifieds" || smoke_failed=1 ;;
+    reddit)      check_url "http://localhost:9999/robots.txt" "reddit"      || smoke_failed=1 ;;
+    shopping)    check_url "http://localhost:7770/robots.txt" "shopping"    || smoke_failed=1 ;;
   esac
 done
+if (( smoke_failed == 1 )); then
+  log "✗ FATAL: at least one site failed smoke check; runbook ABORTING (vs pre-fix which printed DONE)"
+  exit 1
+fi
 
 # ---------------------------------------------------------------------------
 # Step 5: Magento base_url adjustment (shopping only)
@@ -230,10 +241,16 @@ log "  Repeat for each site. Auth files saved to .auth/ on A100."
 # ---------------------------------------------------------------------------
 
 log "=== Step 7: Cross-environment HTML byte-equivalence check ==="
-log "  To verify A100 deployment matches Phase 1 quark deployment:"
-log "  1. From DGX: curl http://YOUR_HOST:9980 | sha256sum"
-log "  2. From A100: curl http://localhost:9980 | sha256sum"
-log "  3. Hashes should match (modulo timestamp / session-cookie deltas)."
+log "  To verify A100 deployment matches Phase 1 quark deployment, use static-asset"
+log "  probe paths (NOT bare '/') — B-273 sibling-propagation note (A1.16): bare /"
+log "  is session-stateful (CSRF / cart / personalization tokens drift between"
+log "  captures), so byte-equivalence sha256 won't match across hosts even for same"
+log "  VWA build. Use /robots.txt or other static-asset URL per snapshot_vwa.sh fix."
+log "  (Merge note 2026-05-16: IP placeholder YOUR_HOST per A1.18 SBOM sanitation"
+log "  commit c44cf62; combined with B-273 path fix from A1.17 Chunk 2.)"
+log "  1. From DGX: curl http://YOUR_HOST:9980/robots.txt | sha256sum"
+log "  2. From A100: curl http://localhost:9980/robots.txt | sha256sum"
+log "  3. Hashes should now match for matched VWA submodule SHA + Dockerfile fingerprint."
 log "  Document results in paper §3 / Appendix D."
 
 log ""

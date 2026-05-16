@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import datetime
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 
 def _fsync_dir(directory: Path) -> None:
@@ -89,3 +90,76 @@ class LoggerV2:
             os.fsync(f.fileno())
         os.replace(tmp_path, path)  # atomic on same filesystem
         _fsync_dir(path.parent)  # B-198 flush dir entry to disk
+
+    # B-313 (A1.17 P1-5-B Tier 1 α' + auth-loss generalization, 2026-05-16):
+    # Option K Trajectory Event Log — unified schema covering ALL mid-trajectory
+    # state-perturbing events (reset interrupts, auth-loss + auto-clear, watchdog
+    # auth-refresh, runner restart). User cross-talk insight 2026-05-16: P1-5-B
+    # reset-discontinuity and auth-loss/auto-clear are isomorphic bug classes —
+    # both cause JSONL ↔ site state inconsistency, just in opposite directions.
+    # Tier 1 analysis-layer fixes ((1)-gemini GLMM / (4)-gemini Fisher / §3 reframe)
+    # generalize to both at zero additional cost by absorbing `is_after_reset`
+    # AND `had_auth_clear` covariates.
+    #
+    # Schema: append-only JSONL at condition_dir/trajectory_events.jsonl. Each
+    # event = single line {event_type, task_index, wallclock_ts, metadata}.
+    # event_type values: "reset_post_interrupt" / "auth_clear_task" /
+    # "auth_refresh_no_clear" / "runner_restart" / "watchdog_intervention".
+    # task_index = episode/task index at event time; None for cell-level events.
+    # metadata = event-specific dict (e.g. reset rc, auth_refresh_method,
+    # cleared_task_count). Aggregator emits per-episode `is_after_reset` /
+    # `had_auth_clear` / `prior_event_count` columns for GLMM covariate
+    # adjustment in paper §4.
+    def log_trajectory_event(
+        self,
+        event_type: str,
+        task_index: Optional[int] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Append a trajectory perturbation event to trajectory_events.jsonl.
+
+        See Option K Trajectory Event Log spec (B-313 A1.17). Used by reset gate,
+        watchdog auth-clear, runner restart paths. Append-only, atomic append +
+        fsync. No batching — each event is a separate line, recoverable from
+        partial writes via the dedup primitive in `io_utils.read_jsonl_dedup`.
+        """
+        if metadata is None:
+            metadata = {}
+        event = {
+            "event_type": event_type,
+            "task_index": task_index,
+            "wallclock_ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "metadata": metadata,
+        }
+        path = self.condition_dir / "trajectory_events.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(event, ensure_ascii=False) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+
+
+# B-313 module-level helper for shell-side / out-of-band callers (reset gate
+# bash heredoc, watchdog Python script) that may not have a LoggerV2 instance.
+# Constructs a transient logger pointing at the given condition_dir.
+def log_trajectory_event_external(
+    condition_dir: Path,
+    event_type: str,
+    task_index: Optional[int] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Out-of-band trajectory event logger for callers without a LoggerV2 instance.
+
+    Used by:
+      - scripts/queues/_lib_paper_grade_gates.sh:reset_and_auth_gate (reset event)
+      - scripts/maintenance/experiment_watchdog.py (auth-clear / refresh)
+      - phase1a_relaunch_missing.sh future hook (resume event)
+
+    If condition_dir doesn't exist yet (e.g., reset event before runner creates
+    dir), no-op silently — runner will create dir on first write_step and any
+    later events will land. This degrades gracefully and never raises in the
+    hot path.
+    """
+    if not condition_dir.exists():
+        return
+    LoggerV2(condition_dir).log_trajectory_event(event_type, task_index, metadata)

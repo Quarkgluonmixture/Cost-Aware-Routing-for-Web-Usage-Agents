@@ -2680,3 +2680,64 @@ Cross-AI agreement: 1 3-AI overlap (cls reset sentinel narrow — Chunk 2), 6 2-
 
 **Deferred (per user 2026-05-16 decision)**:
 - B-256 (eval model) gpt-4-1106-preview availability test — user-runnable 1-line test deferred; disclosure-only path applied handles both deprecated and cost cases
+
+---
+
+---
+
+## /stress A1.17 Chunk 2 — paper-grade quality + Option K Trajectory Event Log (2026-05-16)
+
+Chunk 2 of A1.17 audit cycle (Chunk 1 = launch-blockers, this Chunk = paper-grade quality + Option K user-insight generalization). Worked in `git worktree add ../p79-a1.17-chunk2` per user worktree-per-session protocol decision 2026-05-16 (avoid B-#/§-race + working-tree pathspec friction across parallel Claude audit sessions). Just-in-time check from `master:docs/reference/master_bug_catalog.md` confirmed B-306 latest header → Chunk 2 starts B-307.
+
+### B-307. `reset_vwa_sites.sh:55-56` cls reset sentinel narrow (single-table) [P1 — 3-AI overlap A+B+C OOB] 🛠️ FIXED
+- **Attack**: Pre-fix verified only `oc_t_item_comment` (`b_active=1` count==0). OSClass reset endpoint regression could clear comments but leave `oc_t_item` (listings posted by prior episodes), `oc_t_user` (registered users), `oc_t_item_meta` — sentinel passes while ablation surface still contaminated.
+- **Cascade**: P79 cls task mix includes search-listing / post-listing / user-profile types; prior episode's listing residual = next episode's search returns stale data → 3-5pp SR drift (gemini est) / 0.2-0.8pp bounded (codex on require_reset subset).
+- **Fix**: Multi-table sentinel — query 3 highest-mutation-surface tables (`oc_t_item_comment` + `oc_t_item` filter `fk_i_user_id > 0` = user-posted only + `oc_t_user` filter `NOT LIKE '%admin%'` = non-admin only with conservative `>20` threshold). All 3 must pass; aggregate failure report in single pass.
+
+### B-308. `a100_self_host_vwa.sh:133-156 + 195-200` deploy_reddit/shopping bad compose paths + smoke `|| true` [P1 — 2-AI A+B] 🛠️ FIXED
+- **Attack**: Pre-fix `deploy_reddit` and `deploy_shopping` looked up `${VWA_DIR}/reddit/` + `${VWA_DIR}/shopping/` which DON'T EXIST — VWA reddit uses postmill `docker run` from loaded image (no compose dir), shopping uses `shopping_final_0712` `docker run` similarly. Pre-fix: return 1 + smoke `|| true` swallow + script still prints "=== A100 self-host VWA setup DONE ===".
+- **Cascade**: A100 first-time bring-up runbook unusable; operator goes manual debug + may fallback to quark Tailscale URLs → cascade to B-298 hostname-locality bypass risk.
+- **Fix**: deploy_classifieds / deploy_reddit / deploy_shopping all delegate to `bash scripts/vwa/start_vwa_docker.sh --sites <site> --hostname localhost` (single source of truth, leverages B-311 indexer poll + B-312 cls DB seed retry + Magento base_url DB-side verify). Smoke check: aggregate failures into `smoke_failed` boolean; exit 1 if any site failed (vs pre-fix swallowing). Smoke probe path switched to `/robots.txt` per B-273 sibling-propagation note.
+
+### B-309. `reset_vwa_sites.sh:71` reddit reset missing `-e TZ` flag [P1 — gemini OOB unique] 🛠️ FIXED
+- **Attack**: Pre-fix `docker run -d --name vwa-reddit -p 9999:80 postmill-...` did NOT pass `-e TZ`; `start_vwa_docker.sh:217` initial start DID pass `-e TZ="${QUARK_TZ:-Europe/London}"`. Reset-recreated container ran in UTC.
+- **Cascade**: Reddit task mix contains relative-time tasks ("within the last hour" type); reset before vs after = system time changes by Europe/London offset (typically ±1h vs UTC) → ablation 严谨性 broken + systematic noise.
+- **Fix**: Added `-e TZ="${VWA_REDDIT_TZ:-${QUARK_TZ:-Europe/London}}"` to docker run command (parity with initial start; renamed env var to `VWA_REDDIT_TZ` for clarity, fallback to legacy `QUARK_TZ` for back-compat).
+
+### B-310. `a100_self_host_vwa.sh:113` REQ_GB=130 vs actual ~217GB needed [P1 — gemini OOB unique] 🛠️ FIXED
+- **Attack**: Pre-fix `REQ_GB=130` + WARN-and-continue on shortage. Empirical from `setup_vwa.sh` wget comments: shopping 68 + reddit 53 + wikipedia 95 + classifieds 0.025 = ~216GB raw download. Plus ~30GB docker layer decompression overhead → ~246GB needed.
+- **Cascade**: 130-217GB disk free → pre-flight WARN-continues → wget mid-download ENOSPC → corrupted tar/zim files → docker load may silently succeed with missing layers → containers fail at runtime with cryptic errors. Current A100 VM has 485GB free so not currently blocking, but blocks future host migrations.
+- **Fix**: REQ_GB=250 (217 + 30 + 3 safety) + WARN → FATAL `exit 1` (paper-grade fail-fast over mid-setup ENOSPC corruption).
+
+### B-311. `start_vwa_docker.sh:202-203` Magento `indexer:reindex` async no-wait [P1 — gemini OOB unique] 🛠️ FIXED
+- **Attack**: Pre-fix command `magento indexer:reindex >/dev/null 2>&1 || echo WARN` was fire-and-forget. Reindex on 68GB shopping image takes 5-10min; script returned immediately. If agent runner started before reindex completed, search-autocomplete / category-update tasks would return empty results (no model error, just silent empty data) → SR confounded by infra not model behavior.
+- **Cascade**: Phase 1b shop critical — any cls site agnostic task type that depends on category indexing or search-autocomplete behavior would silently fail until reindex completed in background.
+- **Fix**: Poll `magento indexer:status` until all rows say "Ready" or 10min timeout (60 × 10s iter). Log timing on success ("all Ready after Xs"); WARN if timeout reached. Maintains backward-compat with pre-fix command (still issued, just now followed by status poll).
+
+### B-312. `start_vwa_docker.sh:280` cls DB seed `|| true` swallows SQL failure (BUG-5 sibling) [P1 — Claude unique] 🛠️ FIXED
+- **Attack**: Pre-fix `docker exec classifieds_db mysql ... osclass_craigslist.sql >/dev/null 2>&1 || true` had the BUG-5 anti-pattern that shopping Magento patches (line 190-191) already had stripped. Sibling-propagation defect: same `|| true` in cls DB seed → SQL load failure (e.g. DB warming race) silently swallowed → empty cls DB → all cls tasks 0% SR.
+- **Fix**: Strip `|| true`; 3-retry with 5s sleep between attempts (handles DB warm-up race); after 3 retries fail → FATAL return 1 with explicit message "cls site will be empty (all cls tasks would 0% SR)" + abort startup loudly rather than silent broken site.
+
+### B-313. Option K Trajectory Event Log `p79/experiment/logger_v2.py` schema + API [Schema extension — user cross-talk insight 2026-05-16] 🛠️ FIXED
+- **Spec**: Append-only JSONL at `condition_dir/trajectory_events.jsonl`. Each event = single line: `{event_type, task_index, wallclock_ts, metadata}`. event_type values: `"reset_post_interrupt"` / `"task_auto_cleared"` / `"auth_refresh_no_clear"` / `"runner_restart"` / `"watchdog_intervention"`. task_index = episode/task index at event time; None for cell-level events. metadata = event-specific dict (reset rc, auth_refresh_method, cleared_task_count, etc.).
+- **Why**: P1-5-B reset-discontinuity and auth-loss/auto-clear are isomorphic bug classes — both cause JSONL ↔ site state inconsistency, just in opposite directions. Unified event log enables paper §4 GLMM bias absorption: aggregator emits per-episode `is_after_reset` + `had_auth_clear` + `prior_event_count` columns from this trail. Tier 1 stack (1-gemini GLMM / 4-gemini Fisher / 2-gemini §3 reframe) generalizes to BOTH perturbation classes at zero additional analysis cost (user cross-talk insight 2026-05-16).
+- **API**: `LoggerV2.log_trajectory_event(event_type, task_index, metadata)` instance method + module-level `log_trajectory_event_external(condition_dir, event_type, task_index, metadata)` helper for out-of-band callers (bash heredoc / watchdog / future runner-side reset hook). External helper gracefully no-ops when condition_dir doesn't exist yet (e.g., reset gate before runner creates dir).
+- **Smoke verified**: missing dir → silent no-op; existing dir → JSONL written with correct schema (2 events test).
+
+### B-314. Option K hooks — `experiment_watchdog.py` auth-clear + `_lib_paper_grade_gates.sh` reset event [Schema integration — user cross-talk insight] 🛠️ FIXED (partial — runner-side reset pickup deferred)
+- **Hook 1 (watchdog auto-clean)**: `experiment_watchdog.py:1402+` after `_persist_state()` — logs `task_auto_cleared` event with metadata (`reason` = classified error type, `retry_attempt`, `is_noise`, `is_auth_loss` bool flag, `purged_digest_records`). Best-effort import + try/except — failure is non-fatal (paper-§4 enrichment, not blocking). Captures ALL auto-clean paths: code_bug, noise, session, auth — `is_auth_loss` bool flag differentiates auth-loss subset.
+- **Hook 2 (reset gate staging)**: `_lib_paper_grade_gates.sh:reset_and_auth_gate` after successful reset+sleep — writes `reset_post_interrupt` event to STAGING file at `${repo_dir}/logs/trajectory_events_staging/RUN_${RUN_ID}.jsonl` (condition_dir doesn't exist yet at gate time). Staging-file approach documented; runner-side pickup + merge into final `condition_dir/trajectory_events.jsonl` deferred to follow-up (see phase1_plan §A1 pending).
+- **Deferred to follow-up**: (i) runner-side staging pickup on startup; (ii) paper §3 reframe to "Multi-Epoch Sequential Benchmark Protocol" (2-gemini, 1h); (iii) aggregator covariate emission in `aggregate_sr_fp.py` (4h, post Phase 1a data land); (iv) Fisher homogeneity rebuttal script (3h).
+
+**B-numbers consumed**: B-307 through B-314 (8 contiguous, latest-checked from master HEAD at chunk start).
+
+**Smoke verification**:
+- bash -n PASS: `_lib_paper_grade_gates.sh` / `reset_vwa_sites.sh` / `start_vwa_docker.sh` / `a100_self_host_vwa.sh`
+- py_compile PASS: `logger_v2.py` / `experiment_watchdog.py`
+- API end-to-end: `log_trajectory_event_external` 2-event JSONL write verified (graceful no-op on missing dir + correct schema on present dir)
+
+**Worktree**: `/home/jiaming/workspace/p79-a1.17-chunk2` branched from master `3e3ac8f` (Chunk 1 commit) on branch `a1.17-chunk2`. Merge back to master post-commit + worktree cleanup.
+
+**Cross-AI value summary (combined Chunks 1+2)**: 22 attacks consolidated across 3 AI lineages (Mode A Claude self / Mode B codex / Mode C gemini). 17 fixes landed (9 in Chunk 1 + 8 in Chunk 2). Most-critical 1-AI unique catches: codex P0-4 (B-302 LAUNCH BLOCKER schema mismatch) + gemini × 3 OOB (B-309 TZ + B-310 disk + B-311 indexer) + user cross-talk insight (Option K generalization). **Paper-grade integrity sweep: Phase 1a launch-readiness post-Chunk 1 confirmed; paper-grade quality post-Chunk 2; Tier 1 analysis-layer fixes (paper §3 reframe + GLMM + Fisher) deferred to paper §4 codex round + post-data analysis**.
+
+**Next available B-number**: B-315+.
