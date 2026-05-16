@@ -2,7 +2,9 @@
 type: phase-plan
 status: active
 phase: 1
-updated: 2026-05-15
+updated: 2026-05-16
+router_design: v7 learned-only (cascade deferred paper-2 per Q3 decision 2026-05-16)
+phase1a_conditions: 42 = 36 baseline + 6 learned router (sequential 2-pass A100 launch)
 ---
 
 # Phase 1 执行计划 — VWA cls+red × 3 模型 × 6 模式
@@ -30,21 +32,27 @@ updated: 2026-05-15
 - **6 mode**: DOM / SoM / Vision / P-text / P-prompt / P-SoM
 - **Phase 1a** (本文档主体) = cls + red ‖ **Phase 1b** (post-workshop deferred) = + shopping
 
-### Condition / cell 规模 (terminology hard rule)
+### Condition / cell 规模 (terminology hard rule, v7 2026-05-16 walk-back update)
 
-- **condition** = 1 (site, model, mode) launch unit ‖ **cell** = 1 (site, model) 统计 stratification unit
-- **Phase 1a = 36 conditions / 6 cells** = (cls + red) × {B0, B1, B2} × 6 modes
-- Phase 1b = + 18 conditions = shop × {B0, B1, B2} × 6 modes
+- **condition** = 1 (site, model, mode, router_kind) launch unit ‖ **cell** = 1 (site, model) 统计 stratification unit
+- **Phase 1a total = 42 conditions / 6 cells**, 分两个 pass sequential A100 launch (per `proposals_v7.md` D3 + user Q1/Q2 confirmation 2026-05-16):
+  - **Pass 1 (baseline)**: 36 conditions = (cls + red) × {B0, B1, B2} × 6 modes — paper §1 hook data source. A100 wallclock ~1-2 weeks
+  - **Pass 2 (router)**: 6 conditions = (cls + red) × {B0, B1, B2} × **1 learned router/cell** (LR over phantom-augmented mode set, obs_mode="learned" sentinel; per-task mode 由 LR runtime decide) — paper §6 H10 Pareto data source. A100 wallclock ~3-5 days
+  - Cells (statistical strata) unchanged at 6 across both passes
+- Phase 1b = + 21 conditions = shop × {B0, B1, B2} × (6 baseline + 1 router) modes (deferred to post-workshop, mirrors Phase 1a 2-pass protocol)
+- **Cascade router (v6) 6 router-cond/cell variant** = paper-2 forward stub, `phase1.router_kind: cascade` enum value 保留 但 paper-1 不用
 
-### Critical path
+### Critical path (v7 2026-05-16 sequential 2-pass)
 
 ```
-A1 实现层 audit ──┐                                      ┌──→ D 四层 evidence ──→ paper §1/§4 hero
-                  │                                      │
-A2 设计层 audit ──┼──→ B clean run (gated on A1+A2+B0) ──┤
-                  │                                      │
-B0 infra prereq ──┘                                      └──→ C router 双路线
+A1 实现层 audit ──┐                                                                            ┌──→ D 4-layer evidence ──→ paper §1 hook
+                  │                                                                            │
+A2 设计层 audit ──┼──→ §B-baseline launch (36 cond, 1-2 weeks A100) ──→ §B-router launch ──┤
+                  │   (gated on A1+A2+B0)                                (6 cond, 3-5 days)    │
+B0 infra prereq ──┘                                                                            └──→ §C learned router → paper §6 H10
 ```
+
+**Pass-1 (baseline) → Pass-2 (router) sequential**: baseline pass data must land first (paper §1 hook + §C learned router train fold labels via per-task oracle), router pass runs second on same A100 host. v7 walk-back drops cascade ↔ paper-2 — paper-1 §C 只 learned classifier 路线。
 
 ---
 
@@ -130,71 +138,106 @@ B0 infra prereq ──┘                                      └──→ C ro
 
 ---
 
-## §B — cls+red × 3 模型 × 6 模式 clean run checklist
+## §B — cls+red × 3 模型 × 6 模式 clean run checklist (v7 2-pass split)
 
-### B0. Infra prereq (launch 前必须)
+### B0. Infra prereq (Pass-1 launch 前必须)
 
 - [x] Gemma3-VL Tier 1-3 接入 — agent / backend / factory / 12 configs / queue / orchestration / A100 smoke ALL PASS ([[实验笔记]] §140)
 - [x] A100 venv 全栈 dep
-- [ ] **#11 A100 VM VWA docker bring-up** — ⭐ gates launch
+- [ ] **#11 A100 VM VWA docker bring-up** — ⭐ gates Pass-1 launch
 - [ ] A100 playwright install
-- [ ] **#10 analysis 层 3-model 改造** — gates §D,不 gate launch
+- [ ] **#10 analysis 层 3-model 改造** — gates §D, 不 gate launch
 
-### B1. Pre-run lock 文档 (= launch gate,引 `pre_run/` 不复制)
+### B1. Pre-run lock 文档 (= launch gate, 引 `pre_run/` 不复制)
 
-- [ ] `preregistration.md` status `draft → locked` (待 advisor 确认 A2.3)
+- [ ] `preregistration.md` status `draft → locked` (待 advisor 确认 A2.3 + v7 walk-back H9/H11 DEFER + Pareto reformulation)
 - [ ] `locked_versions.md` / `model_card.md` / `dataset_card.md` — B2 三模型对齐
 - [ ] env + vwa provenance snapshot on A100 host
 - [ ] `pre_rerun_audit.md` + `reeval_audit_protocol.md` 走查
 - [ ] `osf_lock_manifest.md` 8-step (可 launch 后并行)
 
-### B2. Launch
+### B-baseline. Pass-1 Launch (36 cond, paper §1 hook 数据源)
 
 - [ ] `bash scripts/queues/queue_phase1_paper_grade.sh dry-run`
 - [ ] `bash scripts/queues/queue_phase1_paper_grade.sh launch`
+  - Default `phase1.variant: baseline` (per `conditions.py` v7 enum) → emit 6 cond/cell × 6 cells = 36 cond
 - [ ] watchdog + done-monitor 配好
+- A100 wallclock estimate ~1-2 weeks (`B0 → B1 → B2` per-site sequential, same-site one-baseline-only rule enforced by `queue_chain.sh`)
 
-### B3. 完成判定
+### B-baseline. 完成判定 (= gate for Pass-2)
 
-- [ ] 36 conditions 全 done
+- [ ] 36 baseline conditions 全 done
 - [ ] 每 cell `validate_run.py` pass
 - [ ] watchdog auto-clean 0 污染确认
-- [ ] 输出 → per-task SR + `confidence_summary.json` → 喂 §C + §D
+- [ ] 输出 → per-task SR + `condition_summary_v2.json` (`success` 字段 canonical post-§139.8) → 喂 §C learned router train-fold + §D evidence
+- [ ] **Mid-pass paper §1 prose round candidate** — Pass-1 数据够写 §1 hook (phantom 4-fold drop-in), Pass-2 期间可平行 prose round
 
-### Hard rules (paper-grade)
+### B-router. Pass-2 Launch (6 cond, paper §6 H10 数据源, gated on Pass-1 done)
+
+- [ ] **新建 queue script** OR env override path: `bash scripts/queues/queue_phase1_router_paper_grade.sh launch` OR `PHASE1_VARIANT=router PHASE1_ROUTER_KIND=learned bash queue_phase1_paper_grade.sh launch`
+  - Config 设 `variables.phase1.variant: router` + `variables.phase1.router_kind: learned` → emit 1 cond/cell × 6 cells = 6 cond (obs_mode="learned" sentinel, LR runtime predict)
+- [ ] LR train pipeline: per-task oracle-best label assignment from Pass-1 → 5-fold site-stratified CV (within-cell) → balanced class weight LR → cell-stratified predictions
+- [ ] LOCO (Leave-One-Cell-Out) train protocol implementation: train on 5 cells, test on 6th, repeat 6 times — paper §6 main number source per Q4 decision
+- [ ] watchdog + done-monitor for Pass-2
+- A100 wallclock estimate ~3-5 days
+
+### B-router. 完成判定
+
+- [ ] 6 router conditions 全 done
+- [ ] 每 router cell `condition_summary_v2.json` 含 (Cost, SR, Latency) 三 metric
+- [ ] Pareto non-dominance H10 paired bootstrap per cell (vs 5 single-mode baselines from Pass-1)
+- [ ] LOCO 6-fold cross-cell SR + (Cost, SR) Pareto frontier
+- [ ] 输出 → paper §6 H10 verdict + figure (per-cell Pareto scatter)
+
+### Hard rules (paper-grade) — applies to BOTH passes
 
 - 同 site 单 baseline (B0 XOR B1 XOR B2) — `queue_chain.sh` 自动 sequential
-- `RESET_BEFORE=1` 或 chain auto-reset
+- `RESET_BEFORE=1` 或 chain auto-reset (含 router conditions)
 - 禁止裸用 `run_experiment.py` — 必须 queue script
+- Pass-1 + Pass-2 **不能并行** 在同 site (A100 共享 VWA Docker, account contamination 风险) — 必须 Pass-1 完全 done 之后 Pass-2 launch
 
 ---
 
-## §C — router 双路线 checklist
+## §C — learned router single-path checklist (v7 walk-back 2026-05-16)
 
-> Gated on §B done。设计细节 [[paper_planning]] §8。
+> Gated on §B-baseline done (per-task oracle labels needed for LR train fold). 设计细节 [[proposals_v7]] §1 + [[paper_planning]] §8.
+>
+> **v7 walk-back**: §C 从 "双路线 (rule-based + learned)" 缩到 **单路线 learned**. Rule-based router 经 P1 archive sim 实证 degenerate (P1 v3 ≡ always_phantom_som); 跟 cascade L2 + H9 + H11 一起 DEFERRED paper-2. Paper-1 §6 contribution = single learned router with Pareto non-dominance H10 gate + site-asymmetric viability finding.
 
-### C1. 路线 (a) rule-based — 按 task 属性
+### C1. 路线 (DEFERRED to paper-2)
 
-- [ ] per-task SR ready
-- [ ] task 属性 feature 定义
-- [ ] `p79/experiment/router.py::RuleBasedRouter` 扩展
-- [ ] baseline 对比 (random / best-single-mode / oracle / rule)
+- ❌ ~~Rule-based router (route by task attribute) — 缩到 paper-2 cascade router scope~~ (v7 walk-back)
+- ❌ ~~Cascade L1 + L2 (cycle + phantom-verbose) — 缩到 paper-2~~ (v7 walk-back)
 
-### C2. 路线 (b) learned classifier
+### C2. Learned classifier (paper-1 §6 sole router)
 
-- [ ] feature extraction (TF-IDF + binary + browser meta)
-- [ ] 5-fold site-stratified CV split
-- [ ] classifier 训练 + feature ablation
-- [ ] vs rule-based + vs baseline
+- [ ] Feature extraction: 8-dim (site one-hot, capability_tier one-hot B0/B1/B2, has_reference_image, intent_color_regex, intent_compare_regex, intent_search_regex, intent_token_count, axtree_element_count from step-0)
+- [ ] 5-fold site-stratified CV split (within-cell, seed=42 per preregistration §354)
+- [ ] LR training: multinomial 6-class, balanced class_weight, in-fold StandardScaler on numeric features (per `l1_archive_simulation.py:117-129` Pipeline pattern, P1-11 fix)
+- [ ] **LOCO (Leave-One-Cell-Out) cross-cell validation**: train on 5 cells (~1000 tasks), test on 6th cell (~200 tasks), repeat 6 times — paper §6 main number source per Q4 user decision 2026-05-16
+- [ ] Pareto non-dominance H10 paired bootstrap on (Cost, SR) per cell vs 5 single-mode baselines from §B-baseline
+- [ ] Latency dominance secondary check (router latency ≤ 1.10 × best-single-mode latency per cell)
+- [ ] Random baseline comparison: Tier-0a uniform / Tier-0b train-fold-frequency-weighted / Tier-0c top-3-modes-per-cell uniform (paper §6 disclosure rows, not gating)
 
-### C3. 未来扩展 (本 Phase 不做)
+### C3. Archive sim development sanity (supplementary, NOT paper-grade)
 
-- behavior-level route (按 mode 行为模式而非 task 属性) — 留 follow-up
+- [x] `scripts/analysis/l1_archive_simulation.py` repeated stratified 5-fold × 10 repeats (Q4 fix landed 2026-05-16)
+- Archive cls Variant B: 17.84% [16.30, 19.42] (+2.02pp vs always_phantom_som 15.81%) — robust 50-pair estimate
+- Archive red Variant B: 10.33% [9.05, 11.67] (-3.95pp vs always_phantom_som 14.29%) — collapsed to majority on text-dominated cell
+- 用途: development sanity check only; paper §6 main number 等 Phase 1a LOCO
 
-### C4. 完成判定
+### C4. 未来扩展 (paper-2 forward stub)
 
-- [ ] 两路线各出 vs-baseline 对比 + ablation
-- [ ] 输出 → paper §6 routing section
+- Rule-based router with cascade L2 (cycle + phantom-verbose) — v6 design preserved at [[proposals_v6]] for paper-2
+- Behavior-level route (按 mode 行为模式而非 task 属性) — 留 paper-2 advanced router
+- Cross-VLM-family routing transfer (B0 ↔ B1 ↔ B2 capability tier interactions) — paper-2 advanced
+
+### C5. 完成判定 (paper-1 §6 lock)
+
+- [ ] Learned router LOCO 6-fold + within-cell 5-fold × 10 repeats reported
+- [ ] H10 Pareto non-dominance verdict (cells pass / total cells)
+- [ ] Site-asymmetric viability empirical finding written up (paper §6 main narrative — cls visual-rich vs red text-dominated routing behavior contrast)
+- [ ] 输出 → paper §6 routing section + Pareto scatter figure (per-cell with 95% confidence regions)
 
 ---
 
@@ -223,29 +266,37 @@ B0 infra prereq ──┘                                      └──→ C ro
 
 ---
 
-## §E 里程碑
+## §E 里程碑 (v7 2-pass split 2026-05-16)
 
-| M | 判定 | gated on |
-|---|---|---|
-| M0 infra ready | §B0 全勾 (重点 #11) | — |
-| M1a 实现层 audit 放行 | §A1 全勾 (或 open item disclosed) | — |
-| M1b 设计层 audit 放行 | §A2 全勾 + preregistration locked | advisor sync |
-| M2 clean run done | §B3 全勾 | M0 + M1a + M1b |
-| M3 evidence 分析 done | §D3 全勾 | M2 + #10 |
-| M4 router done | §C4 全勾 | M2 |
-| M5 workshop-ready | M3 + M4 | — |
+| M | 判定 | gated on | A100 wallclock |
+|---|---|---|---|
+| M0 infra ready | §B0 全勾 (重点 #11) | — | — |
+| M1a 实现层 audit 放行 | §A1 全勾 (或 open item disclosed) | — | — |
+| M1b 设计层 audit 放行 | §A2 全勾 + preregistration locked (incl. v7 H9/H11 DEFER + Pareto reformulation) | advisor sync | — |
+| **M2-baseline clean run done** | §B-baseline 全勾 (36 cond, paper §1 hook 数据) | M0 + M1a + M1b | **~1-2 weeks** |
+| M3 evidence 分析 done (paper §1 hook) | §D3 全勾 | M2-baseline + #10 | mostly parallel to M2-router |
+| **M2-router clean run done** | §B-router 全勾 (6 cond, paper §6 H10 数据) | M2-baseline (per-task oracle labels needed for LR train fold) | **~3-5 days** |
+| M4 learned router done | §C5 全勾 (LOCO + within-cell CV + Pareto H10 verdict) | M2-router + #10 | post-M2-router |
+| M5 workshop-ready | M3 + M4 | — | ~1.5-2.5 weeks total |
 
-**Phase 1b** = shop × 3 × 6 = 18 cond, post-workshop deferred。
+**Wallclock savings vs v6 cascade**: v6 2-pass 72-cond = 2-4 weeks A100; v7 2-pass 42-cond = **1.5-2.5 weeks A100** (~5-7 days saved). Critical path 缩 mostly on M2-router (cascade 6 cond/cell × 6 cells = 36 router-cond → learned 1 cond/cell × 6 cells = 6 router-cond).
+
+**Phase 1b** = shop × {B0, B1, B2} × (6 baseline + 1 learned router) = **21 cond**, post-workshop deferred. Mirrors Phase 1a 2-pass protocol.
 
 ---
 
 ## §F Refs
 
 - **Scope**: [[issue_advisor_sync_2026-05-14]]
-- **Bug 全表**: `master_bug_catalog.md` §139 + [[实验笔记]] §139 + §139.8 + [[issue_phase1_audit_2026-05-13]]
+- **Bug 全表**: `master_bug_catalog.md` §139 + [[实验笔记]] §139 + §139.8 + §153 (v6 cross-AI audit) + §154 (v7 walk-back) + [[issue_phase1_audit_2026-05-13]]
 - **Framework**: [[paper_planning]] §3 (evidence) + §8 (router) + §14 (reviewer attack) + §19 (decision log)
-- **Pre-run lock**: `docs/checkpoints/pre_run/` 全 folder
-- **Launch**: `scripts/queues/queue_phase1_paper_grade.sh` + `docs/reference/launch_checklist.md`
-- **Compute**: `docs/reference/COMPUTE_INFRASTRUCTURE.md`
+- **Router design trajectory** (v3 → v7 chronicle, latest LOCKED v7 2026-05-16):
+  - [[proposals_v7]] — **paper-1 §6 LOCKED** (learned-only)
+  - [[proposals_v6]] — paper-2 forward stub (cascade L1+L2 design preserved)
+  - [[proposals_v3]] / [[proposals_v4]] / [[proposals_v5]] — historical (v3 rule-based, v4 Option C, v5 cascade 2-layer)
+  - [[l1_archive_simulation_2026-05-16]] / [[l2_partial_traj_auroc_2026-05-16]] — empirical sims
+- **Pre-run lock**: `docs/checkpoints/pre_run/` 全 folder + Appendix A 2026-05-16 v7 entry
+- **Launch**: `scripts/queues/queue_phase1_paper_grade.sh` (Pass-1 baseline) + **新 queue or env override for Pass-2 router** (TODO) + `docs/reference/launch_checklist.md`
+- **Compute**: `docs/reference/COMPUTE_INFRASTRUCTURE.md` (A100 Condenser VM)
 - **/stress + /codex-stress 流程**: `.claude/skills/stress/SKILL.md` + `docs/checkpoints/process/stress_skill_replica.md`
 </content>
