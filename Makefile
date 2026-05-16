@@ -10,8 +10,11 @@
 #   make analyze RUN=...                         # rederive → reason_diag → cross_rep → analyze_run → confidence
 #   make compare B0=<b0_run> B1=<b1_run> SITE=classifieds
 #   make clean-tasks RUN=<run> COND=phase1_som_router_0 SITE=shopping TASKS=0-465
-#   make watch-reddit                            # launch the reddit-then-rederive watch script
 #   make schedule-list                           # list active background watch processes
+# (B-394 / A1.15 C3 T6=(a), 2026-05-16): `make watch-reddit` retired —
+# wait_for_reddit_then_rederive.sh deleted (April-specific hardcoded helper,
+# B1-only baseline, cross-baseline collision risk after B2 Gemma3-VL joined
+# 2026-05-14 baseline set). Paper-grade chain uses `queue_chain.sh`.
 #
 # Variables (override on command line):
 #   RUN  — run directory (required for rederive/analyze)
@@ -25,7 +28,7 @@ PYTHON ?= .venv/bin/python3
 PYTEST ?= .venv/bin/pytest
 
 .PHONY: help test smoke smoke-only rederive rederive-all analyze cross-rep error-scan \
-        confidence compare reason-diag clean-tasks watch-reddit schedule-list \
+        confidence compare reason-diag clean-tasks schedule-list \
         validate gallery rsync-to-hub rsync-from-hub rsync-artifacts-from-hub \
         aggregate-cross-site summary-collect routing-auroc analyze-paper \
         analyze-paper-per-run compare-b0-b1-all phantom-lift \
@@ -421,10 +424,7 @@ figures: _figures
 	@echo "Figures regenerated → results/phantom_paper/figures/"
 
 # ---- Background tasks ----
-watch-reddit:
-	setsid nohup bash scripts/maintenance/wait_for_reddit_then_rederive.sh \
-	    > logs/wait_reddit_followup.log 2>&1 < /dev/null &
-	@sleep 1 && pgrep -af wait_for_reddit_then_rederive | head -1 || echo "(watch may have exited)"
+# (B-394 / A1.15 C3 T6=(a), 2026-05-16): `watch-reddit` retired — see header.
 
 # Phantom (§102/§103) — start/resume one cell. Idempotent: skips if already running.
 # Usage: make phantom B=B0 M=som S=reddit          (phantom_som on VWA reddit)
@@ -489,7 +489,7 @@ phantom-all: phantom-vwa-all
 
 schedule-list:
 	@echo "Active P79 background processes:"
-	@pgrep -af "wait_for_reddit|experiment_watchdog|run_experiment|queue_b1|queue_b0|queue_phantom" | head -20 || echo "(none)"
+	@pgrep -af "experiment_watchdog|run_experiment|queue_b1|queue_b0|queue_b2|queue_phantom|queue_chain" | head -20 || echo "(none)"
 
 # ---- Cross-host results sync (hub-spoke, default hub = DGX) ----
 # Tier B (episodes/*.jsonl + condition/run summary + analysis) by default.

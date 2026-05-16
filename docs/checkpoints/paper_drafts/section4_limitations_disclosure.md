@@ -291,9 +291,74 @@ treat the IP as a `VWA_HOST` placeholder.
 
 ---
 
+## §4.X.13 Trajectory event log — best-effort enrichment, race-window event drop
+
+**Stub (B-386 A1.15 C1, 2026-05-16) — full prose post-data; current placeholder for reviewer audit trail.**
+
+Phase 1a fire writes `trajectory_events.jsonl` (Option K, B-313~B-384) per condition_dir,
+recording all auto-clean / auto-refresh / reset perturbation events. Paper §4 uses this
+log to emit per-episode covariates (`is_after_reset` / `had_auth_clear` /
+`had_finalize_race_clear`) for GLMM fixed-effect adjustment. Event writes are
+**best-effort post-hoc enrichment** rather than 2-phase committed transactional audit
+trail: in `scripts/maintenance/experiment_watchdog.py` the event write happens AFTER the
+destructive op (`unlink` + `rmtree` + `_purge_digest_records`), creating a ~2-3s race
+window in which SIGKILL/OOM/`restart_watchdog.sh kill -9` drops the event while the
+filesystem mutation persists.
+
+**Bias direction**: dropped events → covariate column undercounts true perturbation rate
+→ GLMM fixed effect underestimates. The drop mechanism (SIGKILL during a fixed-size race
+window) is mode-symmetric so direction of P-SoM drop-one effect is preserved but
+magnitude estimate is conservative. Supplementary Table S-trajectory-loss (planned
+post-data) bounds event-drop rate by intersection of `condition_summary_v2.json` episode
+list with `trajectory_events.jsonl` event list.
+
+**Why not 2-phase commit**: see decision T2'=(a) in A1.15 audit (Pre-fire 闭环 effort
+budget ~8.5h; 2-phase commit adds +1.5h with marginal ROI given mode-symmetric drop).
+Future tightening to 2-phase available as Tier 2 hardening (schema B-313 already supports
+`task_auto_clear_intent` + `task_auto_cleared` 2-event pair).
+
+---
+
+## §4.X.14 Outcome-dependent auto-retry policy — SR upward bias disclosure
+
+**Stub (T5=(b) short disclose, A1.15 C1, 2026-05-16) — full prose + Supp Table S-retry
+post-data; current placeholder.**
+
+Episodes whose initial outcome is classified as benchmark-noise (`benchmark_noise=True`)
+or transient runtime error (`error(session|auth|connection|timeout|noise)` etc.) are
+automatically retried up to **N=3** times by `experiment_watchdog.py`
+(`MAX_NOISE_RETRIES`); episodes failing as `error(code_bug)` retry up to **N=2**
+(`MAX_CODE_BUG_RETRIES`). Episodes classified as `fail` or `max_steps` are **NOT
+retried**. This is **outcome-dependent retry**: retry probability conditional on initial
+outcome → P(success | noise+retry) > P(success | first-try-only) for the noise subset,
+pulling overall SR estimate upward by the retry-eligible subset's per-mode retry
+conversion rate.
+
+**Rationale**: episodes that fail evaluator gates (`error(evaluator)`) or exceed step
+budget (`max_steps`) represent genuine model/task incapability, not infrastructure noise;
+retrying them measures a different quantity (persistence under fixed prompt) and is
+excluded to keep SR an estimate of single-attempt task-solving rate conditional on clean
+infrastructure.
+
+**Bias direction per mode**: P-SoM uses a regex-extracted SOM_MARKS payload that may
+elicit different `error(*)` rates than baseline modes (DOM/SoM/Vision) — if P-SoM noise
+rate is higher → P-SoM SR is retry-inflated relative to baseline. The 1.7-3.3 pp drop-one
+effect may be partly retry artifact rather than phantom-routing signal. Supplementary
+Table S-retry (planned post-data) reports per-mode retry rates `(noise_retries,
+code_bug_retries, clean_first_try)` so reviewers can assess retry-bias direction.
+
+**Why disclose vs change policy**: changing retry policy mid-fire violates data integrity;
+disclosing + reporting per-mode retry rates lets reviewers compute a conservative
+drop-one bound. Full prose draft + Supp Table generation deferred to post-fire data land
+(T5=(b) decision, A1.15 C1).
+
+---
+
 ## References
 
 - `docs/reference/master_bug_catalog.md` — full bug catalog (~80 entries)
 - `docs/checkpoints/pre_run/preregistration.md` §3-§4 — locked analysis choices including FP filter
 - `docs/checkpoints/pre_run/evaluator_change_protocol.md` — Protocol A Tier classification
 - 笔记 §95 (FP reform) / §107 (Phase A wave) / §114 (provenance) / §116 (audit) / §116.X user prompts
+- 笔记 §163.3 + §163.4 (Option K trajectory event schema + cross-talk insight 2026-05-16)
+- 笔记 §165 (A1.15 C1 chronicle, planned post-merge)
