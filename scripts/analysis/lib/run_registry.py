@@ -27,11 +27,13 @@ LEGACY_MODE_ALIAS = {
 }
 SITES = ["classifieds", "reddit", "shopping"]
 BASELINES = ["B0", "B1", "B2"]
-# §139.8: scored task counts (total − N/A tasks excluded at load time) from the
-# single source of truth. Pre-exclusion counts were classifieds 234 / reddit
-# 210 / shopping 466. A manifest entry's explicit `expected_n` still overrides.
+# §139.8 + /stress A1.6 (2026-05-16): paper-grade EXPECTED_N (total − N/A
+# excluded at load time). Pre-exclusion was classifieds 234 / reddit 210 /
+# shopping 466; post-exclusion = 224 / 205 / 435. `strict=True` fails loud
+# on missing VWA config — silent 0-fallback used to mark missing cells as
+# `is_complete == True` (n=0 >= expected=0).
 from p79.experiment.analysis import scored_task_count as _scored_task_count
-EXPECTED_N = {_s: _scored_task_count(_s, "visualwebarena") for _s in SITES}
+EXPECTED_N = {_s: _scored_task_count(_s, "visualwebarena", strict=True) for _s in SITES}
 
 Grade = Literal["paper-grade", "paper-grade-pre-bug", "in-flight", "archived"]
 GRADES = ("paper-grade", "paper-grade-pre-bug", "in-flight", "archived")
@@ -75,6 +77,10 @@ class CellSpec:
 
     @property
     def is_complete(self) -> bool:
+        # /stress A1.6 (2026-05-16): expected_n must be positive or the
+        # "actual >= 0" tautology silently marks missing data as complete.
+        if self.expected_n <= 0:
+            return False
         return self.actual_n >= self.expected_n
 
 

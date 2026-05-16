@@ -144,30 +144,11 @@ def main():
         powers = [per_cell_power_at_effect(n, eff, args.baseline_sr) for eff in [1, 2, 3, 5]]
         lines.append(f"| {site} | {n} | {powers[0]:.2f} | {powers[1]:.2f} | {powers[2]:.2f} | {powers[3]:.2f} |")
 
-    lines += [
-        "",
-        "## Family-wise power (K-of-N rule)",
-        "",
-        "Pre-registration: H1 K_h1 ≥ 12/16 cells, H3 K_h3 ≥ 11/16 cells.",
-        "Family-wise power assumes per-cell power is uniform (averaged across sites).",
-        "",
-        "| K threshold | Per-cell power 0.50 | 0.65 | 0.80 | 0.90 |",
-        "|---|---|---|---|---|",
-    ]
-
-    for k in [11, 12, 13, 14]:
-        line = f"| K={k} of 16 |"
-        for pcp in [0.50, 0.65, 0.80, 0.90]:
-            line += f" {k_of_n_power(16, k, pcp):.3f} |"
-        lines.append(line)
-
-    # Read per-cell power for typical effect sizes (3pp on smallest site as proxy)
-    pcp_3pp_red = per_cell_power_at_effect(210, 3, args.baseline_sr)
-    pcp_5pp_red = per_cell_power_at_effect(210, 5, args.baseline_sr)
-    fwp_k12_at_3pp = k_of_n_power(16, 12, pcp_3pp_red)
-    fwp_k12_at_5pp = k_of_n_power(16, 12, pcp_5pp_red)
-    fwp_k11_at_3pp = k_of_n_power(16, 11, pcp_3pp_red)
-    fwp_k11_at_5pp = k_of_n_power(16, 11, pcp_5pp_red)
+    # §A1.6 (2026-05-16): K-of-N body retired per preregistration.md §4
+    # Decision 3A (K-of-N is transparency-only at k=6, NOT a gate). The
+    # body below previously emitted "H1 K_h1 ≥ 12/16 cells, H3 K_h3 ≥ 11/16"
+    # which contradicts the file header's retired-status statement and the
+    # active Phase 1a 6-cell scope.
 
     lines += [
         "",
@@ -175,17 +156,14 @@ def main():
         "",
         f"- At baseline SR={args.baseline_sr:.2f}, smallest site (reddit N=210) detects effects ≥ {per_site_mde['reddit']*100:.1f}pp at 80% power per cell.",
         f"- Largest site (shopping N=466) detects effects ≥ {per_site_mde['shopping']*100:.1f}pp at 80% power per cell.",
-        f"- At 3pp true effect, **per-cell power ≈ {pcp_3pp_red:.2f}** (smallest site) → K_h1=12/16 family power = {fwp_k12_at_3pp:.3f}, K_h3=11/16 family power = {fwp_k11_at_3pp:.3f}.",
-        f"- At 5pp true effect, **per-cell power ≈ {pcp_5pp_red:.2f}** → K_h1=12/16 family power = {fwp_k12_at_5pp:.3f}, K_h3=11/16 = {fwp_k11_at_5pp:.3f}.",
-        f"- **K_h1=12/16 is calibrated for ≥5pp effects.** For 2-3pp mechanism effects, K_h3=11/16 is the operative threshold; below ~3pp, neither K-of-N rule has paper-grade power and the paper relies on **TOST equivalence on pooled data** (N=234+210+466).",
+        "- For 2-3pp mechanism effects, the paper relies on **TOST equivalence on pooled data** (pre-exclusion design N=234+210+466 — locked at prereg time).",
         "- TOST equivalence (δ=1.0pp) is the tightest test; relies on cross-cell pooling for adequate CI width.",
         "",
         "## Reviewer-defensible claim",
         "",
         f"\"Power analysis (α=0.05, β=0.20, baseline SR={args.baseline_sr:.2f}, paired design) shows ",
         f"per-cell MDE = [{per_site_mde['classifieds']*100:.1f}, {per_site_mde['reddit']*100:.1f}, {per_site_mde['shopping']*100:.1f}]pp ",
-        f"for cls/red/shop respectively. The K_h1=12/16 family-wise rule has {fwp_k12_at_5pp*100:.0f}% power for 5pp effects ",
-        f"and {fwp_k12_at_3pp*100:.0f}% for 3pp effects (smallest site as proxy); for sub-3pp effects we rely on TOST equivalence on pooled data.\"",
+        "for cls/red/shop respectively (pre-exclusion design N, prereg-locked). For sub-3pp effects we rely on TOST equivalence on pooled data; K-of-N is transparency-only per prereg §4 Decision 3A.\"",
     ]
 
     payload = "\n".join(lines)

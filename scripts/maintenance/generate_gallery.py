@@ -127,8 +127,8 @@ def _build_action_summary(step: Dict[str, Any]) -> str:
 def _load_reason_rows(source_run_dirs: List[Path]) -> Dict[str, Dict[str, Any]]:
     """Load reason diagnostics CSV for each source run dir.
 
-    Returns dict keyed by ``{condition_id}__{site}_task_{tid}`` with fields:
-    reason_bucket, task_type, adjusted_success, fp_reason.
+    Post-§139.8 + A1.6 (2026-05-16): `adjusted_success` / `fp_reason` aliases
+    retired; only `reason_bucket` + `task_type` consumed here.
     """
     result: Dict[str, Dict[str, Any]] = {}
     for run_dir in source_run_dirs:
@@ -145,15 +145,9 @@ def _load_reason_rows(source_run_dirs: List[Path]) -> Dict[str, Dict[str, Any]]:
                     if not (cond and site and tid):
                         continue
                     key = f"{cond}__{site}_task_{tid}"
-                    adj = row.get("adjusted_success", "")
                     result[key] = {
                         "reason_bucket": row.get("reason_bucket", ""),
                         "task_type": row.get("task_type", ""),
-                        "adjusted_success": (
-                            True if adj == "True" else
-                            False if adj == "False" else None
-                        ),
-                        "fp_reason": row.get("fp_reason", ""),
                     }
         except Exception:
             continue
@@ -351,8 +345,6 @@ def _build_groups(
             "final_answer": ep.get("final_answer", ""),
             "task_type": ep.get("task_type", ""),
             "reason_bucket": ep.get("reason_bucket", ""),
-            "adjusted_success": ep.get("adjusted_success"),
-            "fp_reason": ep.get("fp_reason", ""),
         })
 
     groups = []
@@ -613,8 +605,6 @@ def _collect_episodes(
                     "final_answer": final_answer,
                     "task_type": reason_info.get("task_type", ""),
                     "reason_bucket": reason_info.get("reason_bucket", ""),
-                    "adjusted_success": reason_info.get("adjusted_success"),
-                    "fp_reason": reason_info.get("fp_reason", ""),
                 })
 
     episodes.sort(
@@ -813,7 +803,7 @@ img.zoomed{{
 .reason-default{{ background:#424242; color:#bbb; }}
 
 .ref-text{{ font-size:11px; color:#888; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block; vertical-align:middle; }}
-.fp-indicator{{ color:#ff9800; font-size:10px; margin-left:2px; }}
+/* .fp-indicator CSS retired with FP-badge JS (§139.8 + A1.6 2026-05-16). */
 #intent-tooltip{{
   display:none; position:fixed; z-index:500; padding:4px;
   background:#0f1a30; border:1px solid #2a2a4a; border-radius:6px;
@@ -911,12 +901,12 @@ function renderHome(){{
       var ra=e.reference_answer||'';
       var ra30=ra.length>30?ra.substring(0,27)+'...':ra;
       var rb=e.reason_bucket||'';
-      var fpLabel=e.fp_reason==='na_fp'?'N-FP':e.fp_reason==='eval_fp'?'E-FP':e.fp_reason?'FP':'';
-      var fpTag=fpLabel?'<span class="fp-indicator" title="'+escA(e.fp_reason)+'">'+fpLabel+'</span>':'';
+      /* §139.8 + A1.6 (2026-05-16): FP-badge JS retired — N-FP/E-FP/V-FP
+         indicators dropped. `success` is canonical. */
       h+='<tr class="ep-row'+lv+'" data-key="'+escA(e.key)+'">'
         +'<td>'+esc(e.label)+'</td>'
         +'<td style="color:#bbb;font-size:12px" title="'+escA(it)+'">'+(e.intent_image?'<span class="intent-has-img" data-img="'+escA(e.intent_image)+'">'+esc(it60)+'</span>':esc(it60))+'</td>'
-        +'<td><span class="badge '+c+'">'+sl+'</span>'+fpTag+'</td>'
+        +'<td><span class="badge '+c+'">'+sl+'</span></td>'
         +'<td>'+e.total_steps+'</td>'
         +'<td>'+sc2+'</td>'
         +'<td>'+etb+(ra?'<span class="ref-text" title="'+escA(ra)+'">'+esc(ra30)+'</span>':'')+'</td>'
@@ -964,10 +954,7 @@ function renderEp(k){{
     +'<span style="background:'+mc+';color:#fff;padding:1px 8px;border-radius:8px;font-size:11px;font-weight:600">'+esc(gm.toUpperCase())+'</span>'
     +'<span class="badge '+c+'">'+sl+'</span>';
   if(e.reason_bucket) h+='<span class="reason-badge '+reasonClass(e.reason_bucket)+'" title="'+escA(e.reason_bucket)+'">'+esc(shortReason(e.reason_bucket))+'</span>';
-  if(e.fp_reason){{
-    var fpl=e.fp_reason==='na_fp'?'N-FP':e.fp_reason==='eval_fp'?'E-FP':'FP';
-    h+='<span class="fp-indicator" title="'+escA(e.fp_reason)+'">'+fpl+'</span>';
-  }}
+  /* §139.8 + A1.6 (2026-05-16): fp_reason badge retired. */
   /* ---- spacer + step dots + nav (all inline in row1) ---- */
   var si=Math.min(S.step, e.steps.length-1);
   if(si<0) si=0;

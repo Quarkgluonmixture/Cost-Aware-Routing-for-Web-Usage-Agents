@@ -24,11 +24,12 @@ RESULTS = ROOT / "results/visualwebarena/phase1"
 AXIS_JSON = ROOT / "docs/analysis/cross_sites/axis_effect_size.json"
 OUT = ROOT / "results/phantom_paper/figures/fig1ab_cascade_diamond.png"
 
-# §139.8: scored-set sizes (total − N/A excluded at load) from the single
-# source of truth, not pre-exclusion 234/210. A manifest entry's explicit
-# expected_n still overrides downstream (see _resolve_step_dirs).
+# §139.8 + /stress A1.6 (2026-05-16): scored-set sizes from the single
+# source of truth (total − N/A). `strict=True` because the prompt_status
+# completion test below (`min(200, expected)`) silently maps expected=0 to
+# "complete" on n=0, which would mark missing data as paper-grade-done.
 from p79.experiment.analysis import scored_task_count as _scored_task_count
-EXPECTED_N = {_s: _scored_task_count(_s, "visualwebarena") for _s in ("reddit", "classifieds")}
+EXPECTED_N = {_s: _scored_task_count(_s, "visualwebarena", strict=True) for _s in ("reddit", "classifieds")}
 SITE_SHORT = {"reddit": "red", "classifieds": "cls"}
 
 # F40 audit fix 2026-05-09: STEP_DIRS now resolved via run_registry,
@@ -149,6 +150,9 @@ def prompt_status(site: str) -> tuple[str, dict[str, float | int | None] | None]
     files = sorted(ep_dir.glob(f"{site}_task_*_summary_v2.json")) if ep_dir.exists() else []
     n = len({task_id(path, "summary") for path in files})
     expected = EXPECTED_N[site]
+    # /stress A1.6 (2026-05-16): assert positive expected — n=0/expected=0
+    # used to short-circuit to "complete".
+    assert expected > 0, f"EXPECTED_N[{site}]={expected} must be positive"
     if n >= min(200, expected):
         return "complete", mode_metrics(site, ep_dir)
     if n > 0:

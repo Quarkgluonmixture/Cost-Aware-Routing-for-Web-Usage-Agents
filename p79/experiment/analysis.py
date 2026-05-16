@@ -19,37 +19,57 @@ def _get_config_dir(benchmark: str = "visualwebarena") -> Path:
     return _CONFIG_BASE / "vwa"
 
 
-def _load_na_task_ids(site: str, benchmark: str = "visualwebarena") -> set:
-    """Return task_ids whose reference answer is N/A (unanswerable tasks)."""
+def _resolve_site_config(site: str, benchmark: str) -> Optional[Path]:
+    """Return the per-site VWA / WA test config path, or None if missing."""
     config_dir = _get_config_dir(benchmark)
     config_path = config_dir / f"test_{site}.json"
-    if not config_path.exists():
-        config_path = config_dir / f"test_{site}.raw.json"
-    if not config_path.exists():
-        logger.warning(
-            "N/A task config not found for site=%s benchmark=%s (looked under %s); "
-            "na_fp detection will be silently disabled for this site",
-            site, benchmark, config_dir,
-        )
-        return set()
+    if config_path.exists():
+        return config_path
+    config_path = config_dir / f"test_{site}.raw.json"
+    if config_path.exists():
+        return config_path
+    return None
+
+
+def _load_site_tasks(site: str, benchmark: str) -> Optional[list]:
+    """Read the per-site VWA / WA test config JSON. Returns None on any error."""
+    config_path = _resolve_site_config(site, benchmark)
+    if config_path is None:
+        return None
     try:
         with open(config_path, "r", encoding="utf-8") as f:
-            tasks = json.load(f)
-        na_ids = set()
-        for t in tasks:
-            ref = t.get("eval", {}).get("reference_answers", {})
-            if isinstance(ref, dict) and ref.get("fuzzy_match") == "N/A":
-                na_ids.add(t["task_id"])
-        return na_ids
+            return json.load(f)
     except Exception as exc:
         logger.warning(
-            "Failed to parse N/A task config %s: %s; na_fp detection disabled",
+            "Failed to parse task config %s: %s",
             config_path, exc,
         )
+        return None
+
+
+def _load_na_task_ids(site: str, benchmark: str = "visualwebarena") -> set:
+    """Return task_ids whose reference answer is N/A (unanswerable tasks).
+
+    Post-§139.8 + /stress A1.6 (2026-05-16): N/A definition is single-sourced
+    via `p79.experiment.tasks._is_na_task` to avoid DRY drift across the
+    task-load exclusion path and the analysis-time fallback path.
+    """
+    from p79.experiment.tasks import _is_na_task  # local import to avoid cycle
+
+    tasks = _load_site_tasks(site, benchmark)
+    if tasks is None:
+        logger.warning(
+            "N/A task config not found / unreadable for site=%s benchmark=%s; "
+            "scored_task_count will fall back to 0 unless strict=True",
+            site, benchmark,
+        )
         return set()
+    return {int(t["task_id"]) for t in tasks if _is_na_task(t)}
 
 
-def scored_task_count(site: str, benchmark: str = "visualwebarena") -> int:
+def scored_task_count(
+    site: str, benchmark: str = "visualwebarena", *, strict: bool = False,
+) -> int:
     """Number of tasks in the SCORED set for (site, benchmark).
 
     §139.8 single source of truth for "EXPECTED_N": total tasks in the site
@@ -57,20 +77,23 @@ def scored_task_count(site: str, benchmark: str = "visualwebarena") -> int:
     (`task.exclude_na_tasks`, see `tasks.py::load_tasks`). Replaces the
     hardcoded `EXPECTED_N = {classifieds: 234, ...}` dicts scattered across
     analysis + maintenance scripts — those pre-exclusion counts are stale
-    once N/A tasks are excluded. Returns 0 if the config cannot be read.
+    once N/A tasks are excluded. Post-exclusion: cls=224, red=205, shop=435,
+    wa-shop=173, wa-admin=176, wa-red=104.
+
+    Post-§A1.6 (2026-05-16): `strict=True` raises FileNotFoundError when the
+    site config cannot be read, replacing the silent 0-fallback that caused
+    paper-grade completion checks to silently mark missing data as complete
+    (`run_registry.is_complete`, `fig1ab_cascade_diamond` 200-or-expected
+    threshold). Paper-grade paths should pass `strict=True`.
     """
-    config_dir = _get_config_dir(benchmark)
-    config_path = config_dir / f"test_{site}.json"
-    if not config_path.exists():
-        config_path = config_dir / f"test_{site}.raw.json"
-    if not config_path.exists():
+    tasks = _load_site_tasks(site, benchmark)
+    if tasks is None:
+        if strict:
+            raise FileNotFoundError(
+                f"scored_task_count: config not found for site={site} "
+                f"benchmark={benchmark}; strict mode refuses to fall back to 0"
+            )
         logger.warning("scored_task_count: config not found for site=%s benchmark=%s", site, benchmark)
-        return 0
-    try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            tasks = json.load(f)
-    except Exception as exc:
-        logger.warning("scored_task_count: failed to read %s: %s", config_path, exc)
         return 0
     n_total = len(tasks)
     n_na = len(_load_na_task_ids(site, benchmark))
@@ -579,7 +602,7 @@ def _analyze_condition(
         ax.set_xlabel("Task ID")
         ax.set_ylabel("Cumulative Success Rate")
         ax.set_ylim(0, 1)
-        ax.set_title(f"Success Rate (N/A excluded at task-load) — {cond_id}")
+        ax.set_title(f"Success Rate — {cond_id}")
         ax.grid(alpha=0.3)
         fig.tight_layout()
         fig.savefig(plots_dir / "cumulative_success_rate.png")
@@ -1181,9 +1204,10 @@ def analyze_run(run_dir: str) -> Path:
     analysis_dir = root / "analysis"
     analysis_dir.mkdir(parents=True, exist_ok=True)
     results_dir = analysis_dir / "results"
-    noise_dir = analysis_dir / "benchmark_noise"
     results_dir.mkdir(parents=True, exist_ok=True)
-    noise_dir.mkdir(parents=True, exist_ok=True)
+    # §139.8 + A1.6 (2026-05-16): `analysis/benchmark_noise/` dir retired —
+    # used only to host `na_reference_tasks.csv`, which is now obsolete
+    # (N/A tasks excluded at task-load time).
 
     # B-174: reset parse-failure collector at start of each run; emitted to
     # analysis/parse_failures.csv at the end so silent JSON drops become audit-visible.
@@ -1267,37 +1291,16 @@ def analyze_run(run_dir: str) -> Path:
 
     _benchmark = _infer_benchmark(ep_df, root)
 
-    # Mark N/A reference tasks (unanswerable — reference answer is "N/A")
-    if not ep_df.empty and "benchmark_site" in ep_df.columns and "task_id" in ep_df.columns:
-        import pandas as _pd
-        na_ids_by_site: Dict[str, set] = {}
-        for site in ep_df["benchmark_site"].unique():
-            na_ids_by_site[site] = _load_na_task_ids(str(site), _benchmark)
-        ep_df["is_na_reference"] = ep_df.apply(
-            lambda r: (
-                False
-                if _pd.isna(r["task_id"])
-                else int(r["task_id"]) in na_ids_by_site.get(r["benchmark_site"], set())
-            ),
-            axis=1,
-        )
-        na_count = int(ep_df["is_na_reference"].sum())
-        if na_count > 0:
-            logger.info("Flagged %d episodes as N/A reference tasks", na_count)
-            na_summary = ep_df[ep_df["is_na_reference"]][["benchmark_site", "task_id", "condition_id", "success"]].copy()
-            na_summary.to_csv(noise_dir / "na_reference_tasks.csv", index=False)
-    else:
-        ep_df["is_na_reference"] = False
+    # §139.8 + /stress A1.6 (2026-05-16) hard-delete: `is_na_reference` flag
+    # + `na_reference_tasks.csv` emission removed. N/A tasks are excluded at
+    # task-load time (`tasks.py::load_tasks`, `task.exclude_na_tasks` default
+    # True), so episodes never contain N/A rows. The post-hoc per-episode
+    # marker layer is dead code.
 
-    # --- §139.8: post-hoc adjusted_success layer retired ---
-    # na_fp + eval_fp are now fixed at the source — empty-pred guard in the
-    # VWA evaluator (master bug B-91) + N/A task exclusion at load time
-    # (`tasks.py::load_tasks`, `task.exclude_na_tasks`). The runner's
-    # `success` is already the canonical paper-grade outcome, so there is no
-    # post-hoc override. `raw_success` is kept as an alias (== `success`) for
-    # backward compatibility with downstream readers that still reference it.
-    if not ep_df.empty and "success" in ep_df.columns:
-        ep_df["raw_success"] = ep_df["success"].copy()
+    # §139.8 retire layer: `success` is canonical; `raw_success` /
+    # `adjusted_success` aliases removed in /stress A1.6 hard-delete sweep
+    # (2026-05-16). Selective-retain-for-schema-stability policy overruled —
+    # downstream readers should reference `success` directly.
 
     # --- Per-condition (per-session) analysis ---
     cond_ids = [row.get("condition_id") for row in condition_rows if row.get("condition_id")]
@@ -1375,14 +1378,9 @@ def analyze_run(run_dir: str) -> Path:
     if not ep_df.empty:
         _analyze_per_site(ep_df, ov_plots, ov_tables)
 
-    # Note: §139.8 retired the post-hoc adjusted_success layer entirely
-    # (was: `compute_adjusted_success_batch` + a second `na_adjusted`
-    # double-filter pass, both removed). `ep_df["success"]` is now the
-    # runner's canonical outcome with no override; `is_na_reference`
-    # remains only as a diagnostic flag for the noise-report CSV.
-    na_total = int(ep_df["is_na_reference"].sum()) if (
-        not ep_df.empty and "is_na_reference" in ep_df.columns
-    ) else 0
+    # §139.8 + /stress A1.6 (2026-05-16) hard-delete: post-hoc adjusted layer
+    # + `is_na_reference` diagnostic both retired. `ep_df["success"]` is the
+    # canonical outcome; N/A tasks are excluded at task-load time.
 
     # B-174: emit collected JSON-parse failures so audit can see what got dropped.
     if _TO_MAPPING_PARSE_FAILURES:
@@ -1417,7 +1415,6 @@ def analyze_run(run_dir: str) -> Path:
                 "condition_count": int(len(cond_df)),
                 "episode_count": int(len(ep_df)),
                 "step_count": int(len(step_df)),
-                "na_reference_task_count": na_total,
                 "parse_failure_count": len(_TO_MAPPING_PARSE_FAILURES),
             },
             f,

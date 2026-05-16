@@ -247,7 +247,7 @@ _aggregate:
 # All figures (depends on aggregator output)
 _figures:
 	$(PYTHON) scripts/analysis/figures/fig0a_sr_per_mode_heatmap.py
-	$(PYTHON) scripts/analysis/figures/fig0b_fp_rate_per_mode.py
+	# fig0b_fp_rate_per_mode retired §139.8 + /stress A1.6 (2026-05-16)
 	$(PYTHON) scripts/analysis/figures/fig0b_extra_confidence_calibration.py
 	$(PYTHON) scripts/analysis/figures/fig0c_drop_one_oracle.py
 	$(PYTHON) scripts/analysis/figures/fig0c_phantom_lift_bars.py

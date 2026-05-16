@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-"""[Outcome 0a + 0b] Outcome dimension — aggregate SR + FP per mode.
+"""[Outcome 0a] Outcome dimension — aggregate SR per mode.
 
 Outputs:
-- docs/analysis/cross_sites/sr_fp_per_mode.json
-- docs/analysis/cross_sites/sr_fp_per_mode.md
+- docs/analysis/cross_sites/sr_per_mode.json
+- docs/analysis/cross_sites/sr_per_mode.md
+
+§139.8 + /stress A1.6 (2026-05-16): FP post-hoc layer retired entirely.
+`success` is canonical; no na_fp / eval_fp / visual_fp / adjusted_success
+emission. Filename retained as `sr_fp_per_mode` for callers; new schema only
+emits canonical `n_success` / `sr_pct` plus completeness ratio against the
+N/A-excluded `scored_task_count`.
 """
 
 from __future__ import annotations
 
-from collections import Counter
 import json
 import re
 import sys
@@ -21,10 +26,13 @@ except ModuleNotFoundError:  # pragma: no cover - supports direct script executi
     sys.path.append(str(Path(__file__).resolve().parents[2]))
     from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
 
+from p79.experiment.analysis import scored_task_count
+
 ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "results/visualwebarena/phase1"
-OUT_JSON = ROOT / "docs/analysis/cross_sites/sr_fp_per_mode.json"
-OUT_MD = ROOT / "docs/analysis/cross_sites/sr_fp_per_mode.md"
+OUT_JSON = ROOT / "docs/analysis/cross_sites/sr_per_mode.json"
+OUT_MD = ROOT / "docs/analysis/cross_sites/sr_per_mode.md"
+
 
 def _summary_dirs_from_registry() -> dict[str, dict[str, dict[str, Path]]]:
     out: dict[str, dict[str, dict[str, Path]]] = {}
@@ -69,29 +77,20 @@ def aggregate_cell(baseline: str, site: str, mode: str, ep_dir: Path) -> dict[st
         rows[tid] = read_json(path)
 
     n_total = len(rows)
-    # §139.8: the adjusted_success post-hoc layer is retired — `success` is the
-    # canonical paper-grade outcome (na_fp / eval_fp fixed at the source: B-91
-    # evaluator empty-pred guard + N/A task exclusion at load). Raw SR ==
-    # adjusted SR; FP count is structurally 0. The dual-SR output keys are kept
-    # (== each other) so the JSON / MD schema stays stable for downstream.
     n_success = sum(1 for row in rows.values() if bool(row.get("success", False)))
-    n_raw_success = n_success
-    n_adjusted_success = n_success
-    fp_count = 0
-    fp_breakdown: Counter[str] = Counter()
+    expected_n = scored_task_count(site, "visualwebarena")
+    complete = expected_n > 0 and n_total >= expected_n
 
     return {
         "baseline": baseline,
         "site": site,
         "mode": mode,
         "n_total": n_total,
-        "n_raw_success": n_raw_success,
-        "n_adjusted_success": n_adjusted_success,
-        "raw_sr_pct": round(pct(n_raw_success, n_total), 6),
-        "adjusted_sr_pct": round(pct(n_adjusted_success, n_total), 6),
-        "fp_count": fp_count,
-        "fp_rate_pct": round(pct(fp_count, n_total), 6),
-        "fp_breakdown": dict(sorted(fp_breakdown.items())),
+        "expected_n": expected_n,
+        "complete": complete,
+        "completeness_ratio": round(n_total / expected_n, 6) if expected_n else 0.0,
+        "n_success": n_success,
+        "sr_pct": round(pct(n_success, n_total), 6),
         "source_dir": str(ep_dir.relative_to(ROOT)),
     }
 
@@ -102,43 +101,43 @@ def fmt_pct(value: float) -> str:
 
 def write_markdown(summary_table: list[dict[str, Any]]) -> None:
     lines: list[str] = []
-    lines.append("# SR + FP per Mode")
+    lines.append("# SR per Mode")
     lines.append("")
-    lines.append("Standalone Outcome 0a/0b aggregation from paper-grade per-task `summary_v2.json` files (B0 + B1).")
+    lines.append("Standalone Outcome aggregation from paper-grade per-task `summary_v2.json` files.")
     lines.append("")
     lines.append("## Main Table")
     lines.append("")
-    lines.append("| baseline | site | mode | n | raw SR | adjusted SR | FP count | FP rate | FP breakdown |")
-    lines.append("|---|---|---|---:|---:|---:|---:|---:|---|")
+    lines.append("| baseline | site | mode | n | expected | complete | SR |")
+    lines.append("|---|---|---|---:|---:|:---:|---:|")
     for row in summary_table:
-        breakdown = ", ".join(f"{reason}={count}" for reason, count in row["fp_breakdown"].items()) or "none"
+        complete_marker = "✓" if row["complete"] else f"{row['completeness_ratio']:.0%}"
         lines.append(
             f"| {row['baseline']} | {row['site']} | {row['mode']} | {row['n_total']} | "
-            f"{fmt_pct(row['raw_sr_pct'])} | {fmt_pct(row['adjusted_sr_pct'])} | "
-            f"{row['fp_count']} | {fmt_pct(row['fp_rate_pct'])} | {breakdown} |"
+            f"{row['expected_n']} | {complete_marker} | "
+            f"{fmt_pct(row['sr_pct'])} |"
         )
 
     lines.append("")
-    lines.append("## FP rate ranking per (baseline, site)")
+    lines.append("## SR ranking per (baseline, site)")
     lines.append("")
     for baseline in BASELINE_ORDER:
         for site in SITE_ORDER:
             rows = [row for row in summary_table if row["baseline"] == baseline and row["site"] == site]
             if not rows:
                 continue
-            rows.sort(key=lambda row: (row["fp_rate_pct"], row["mode"]))
-            ranking = " < ".join(f"{row['mode']} {fmt_pct(row['fp_rate_pct'])}" for row in rows)
+            rows.sort(key=lambda row: (-row["sr_pct"], row["mode"]))
+            ranking = " > ".join(f"{row['mode']} {fmt_pct(row['sr_pct'])}" for row in rows)
             lines.append(f"- {baseline} {site}: {ranking}")
 
     lines.append("")
     lines.append("## Method")
     lines.append("")
     lines.append(
-        "§139.8: the adjusted_success post-hoc layer is retired — `success` is the "
-        "canonical paper-grade outcome (na_fp / eval_fp fixed at the source: B-91 "
-        "evaluator empty-pred guard + N/A task exclusion at load). Raw SR == adjusted SR; "
-        "FP count is structurally 0. The dual columns are kept for schema stability. "
-        "B1 phantom data is partial: only B1 classifieds Phantom-SoM is available (P-text pending, B1 reddit phantom pending)."
+        "§139.8 + /stress A1.6 (2026-05-16) hard-delete: post-hoc `adjusted_success` / "
+        "`na_fp` / `eval_fp` / `visual_fp` layer fully retired. `success` is canonical "
+        "(N/A excluded at task-load, B-91 LLM-judge empty-pred guard). `expected_n` "
+        "comes from `scored_task_count(site)`; cells with `complete == false` are not "
+        "headline data and downstream meta-analysis should drop them."
     )
     OUT_MD.write_text("\n".join(lines).rstrip() + "\n")
 
@@ -155,8 +154,6 @@ def main() -> None:
                 if ep_dir is None:
                     continue
                 if not ep_dir.exists():
-                    # Path resolved (e.g. P-prompt glob) but the run dir does
-                    # not exist yet — cell pending, skip silently.
                     continue
                 cell = aggregate_cell(baseline, site, mode, ep_dir)
                 if cell["n_total"] == 0:
@@ -165,8 +162,9 @@ def main() -> None:
                 summary_table.append(cell)
 
     out = {
-        "method": "aggregate raw/adjusted SR + FP from per-task summary_v2.json (B0 5-mode + B1 partial)",
-        "data_source": "paper-grade B0 5-mode runs + B1 3-mode + B1 cls Phantom-SoM (FRESH 04-29)",
+        "method": "canonical SR (success) aggregation from per-task summary_v2.json; "
+                  "expected_n from scored_task_count; no post-hoc FP adjustment",
+        "schema_version": "v2-2026-05-16-fp-retire",
         "cells": cells,
         "summary_table": summary_table,
     }

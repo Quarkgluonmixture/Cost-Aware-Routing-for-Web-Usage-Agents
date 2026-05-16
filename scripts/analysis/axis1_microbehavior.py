@@ -117,7 +117,7 @@ AXIS_CONTRASTS = {
 # §139.8: scored-set sizes (total − N/A excluded at load) from the single
 # source of truth, not pre-exclusion 234/210.
 from p79.experiment.analysis import scored_task_count as _scored_task_count
-EXPECTED_N = {_s: _scored_task_count(_s, "visualwebarena") for _s in ("reddit", "classifieds")}
+EXPECTED_N = {_s: _scored_task_count(_s, "visualwebarena", strict=True) for _s in ("reddit", "classifieds")}
 REPORT_CASE_REDDIT = [23, 30, 4]
 
 
@@ -710,12 +710,18 @@ def main() -> None:
     lines.append("")
     b0_red_n = out["validation"]["axis1_n_checks"].get("B0/reddit", {}).get("observed", 0)
     b0_cls_n = out["validation"]["axis1_n_checks"].get("B0/classifieds", {}).get("observed", 0)
+    # §139.8 + /stress A1.6 (2026-05-16): denominator is now post-N/A-exclusion
+    # `EXPECTED_N` (cls 224 / red 205), not the legacy pre-exclusion 234/210.
+    red_n_expected = EXPECTED_N["reddit"]
+    cls_n_expected = EXPECTED_N["classifieds"]
+    red_target_n = out['validation']['target_extraction']['reddit']['target_url_extracted_n']
+    cls_target_n = out['validation']['target_extraction']['classifieds']['target_url_extracted_n']
     lines.append("Validation checks: B0 axis-1 N is "
-                 f"reddit {b0_red_n}/210 and "
-                 f"classifieds {b0_cls_n}/234. "
+                 f"reddit {b0_red_n}/{red_n_expected} and "
+                 f"classifieds {b0_cls_n}/{cls_n_expected}. "
                  f"Target URLs were extracted for reddit "
-                 f"{out['validation']['target_extraction']['reddit']['target_url_extracted_n']}/210 and classifieds "
-                 f"{out['validation']['target_extraction']['classifieds']['target_url_extracted_n']}/234 tasks. "
+                 f"{red_target_n}/{red_n_expected} and classifieds "
+                 f"{cls_target_n}/{cls_n_expected} tasks. "
                  "B1 axis-1 (P-text minus DOM) cannot be computed yet because B1 P-text data is pending; "
                  "B1 compound (DOM ↔ P-SoM) is computed for cls only.")
     lines.append("")

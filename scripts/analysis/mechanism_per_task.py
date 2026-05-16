@@ -100,7 +100,7 @@ ACTION_TYPES = [
 # §139.8: scored-set sizes (total − N/A excluded at load) from the single
 # source of truth, not pre-exclusion 234/210.
 from p79.experiment.analysis import scored_task_count as _scored_task_count
-EXPECTED_N = {_s: _scored_task_count(_s, "visualwebarena") for _s in ("reddit", "classifieds")}
+EXPECTED_N = {_s: _scored_task_count(_s, "visualwebarena", strict=True) for _s in ("reddit", "classifieds")}
 MAX_STEPS = 30
 
 

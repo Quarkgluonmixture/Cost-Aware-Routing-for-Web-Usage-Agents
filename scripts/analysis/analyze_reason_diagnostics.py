@@ -1485,12 +1485,15 @@ def _write_action_execution_summary(
 def _write_state_change_by_outcome(
     episode_rows: List[Dict[str, Any]], output_dir: Path,
 ) -> None:
-    """Cross-tab of state_change metrics by (condition, adjusted_success)."""
+    """Cross-tab of state_change metrics by (condition, success).
+
+    Post-§139.8 + A1.6 (2026-05-16): `adjusted_success` alias retired —
+    cross-tab now uses canonical `success`.
+    """
     rows_out: List[Dict[str, Any]] = []
     cond_groups: Dict[str, Dict[bool, list]] = defaultdict(lambda: defaultdict(list))
     for row in episode_rows:
-        adj = bool(row.get("adjusted_success", row.get("success", False)))
-        cond_groups[row["condition_id"]][adj].append(row)
+        cond_groups[row["condition_id"]][bool(row.get("success", False))].append(row)
 
     def _proper_median(vs):
         if not vs:
@@ -1507,11 +1510,9 @@ def _write_state_change_by_outcome(
             pcr = [float(r.get("ax_page_change_rate") or 0) for r in subset]
             rows_out.append({
                 "condition_id": cid,
-                "adjusted_success": outcome,
+                "success": outcome,
                 "n_episodes": len(subset),
                 "page_change_rate_mean": round(sum(pcr) / len(pcr), 4) if pcr else None,
-                # Use proper even-length median (avg of two middle values),
-                # not sorted[len//2] which only returns the upper-middle.
                 "page_change_rate_median": _proper_median(pcr),
                 "avg_steps": round(sum(int(r.get("steps", 0)) for r in subset) / len(subset), 1),
             })
@@ -1519,7 +1520,7 @@ def _write_state_change_by_outcome(
     _write_csv(
         output_dir / "state_change_by_outcome.csv",
         rows_out,
-        ["condition_id", "adjusted_success", "n_episodes",
+        ["condition_id", "success", "n_episodes",
          "page_change_rate_mean", "page_change_rate_median", "avg_steps"],
     )
     print(f"  State change by outcome → {output_dir / 'state_change_by_outcome.csv'}")
@@ -1618,7 +1619,7 @@ def _plot_intent_feature_sr(plt, rows, plots_dir):
         for mode in modes:
             subset = [r for r in rows if r.get("observation_mode") == mode and r.get(ik) is True]
             if len(subset) >= 3:
-                sr = sum(1 for r in subset if r.get("adjusted_success")) / len(subset) * 100
+                sr = sum(1 for r in subset if r.get("success")) / len(subset) * 100
             else:
                 sr = float("nan")
             row_vals.append(sr)
@@ -1638,7 +1639,7 @@ def _plot_intent_feature_sr(plt, rows, plots_dir):
             v = arr[i, j]
             if not np.isnan(v):
                 ax.text(j, i, f"{v:.1f}", ha="center", va="center", fontsize=8)
-    ax.set_title("Adjusted SR (%) by Intent Feature x Mode")
+    ax.set_title("SR (%) by Intent Feature x Mode")
     fig.colorbar(im, ax=ax, label="SR %")
     fig.tight_layout()
     fig.savefig(plots_dir / "intent_feature_sr.png", dpi=150)
@@ -1658,7 +1659,7 @@ def _plot_task_type_mode_sr(plt, rows, plots_dir):
         for mode in modes:
             subset = [r for r in rows if r.get("observation_mode") == mode and r.get("task_type") == tt]
             if len(subset) >= 3:
-                sr = sum(1 for r in subset if r.get("adjusted_success")) / len(subset) * 100
+                sr = sum(1 for r in subset if r.get("success")) / len(subset) * 100
             else:
                 sr = float("nan")
             row_vals.append(sr)
@@ -1677,7 +1678,7 @@ def _plot_task_type_mode_sr(plt, rows, plots_dir):
             v = arr[i, j]
             if not np.isnan(v):
                 ax.text(j, i, f"{v:.1f}", ha="center", va="center", fontsize=8)
-    ax.set_title("Adjusted SR (%) by Task Type x Mode")
+    ax.set_title("SR (%) by Task Type x Mode")
     fig.colorbar(im, ax=ax, label="SR %")
     fig.tight_layout()
     fig.savefig(plots_dir / "task_type_mode_sr.png", dpi=150)
@@ -1737,16 +1738,16 @@ def _plot_temporal_sr(plt, rows, plots_dir):
             start = i * bin_size
             end = start + bin_size if i < n_bins - 1 else len(cond_rows)
             segment = cond_rows[start:end]
-            sr = sum(1 for r in segment if r.get("adjusted_success")) / len(segment) * 100
+            sr = sum(1 for r in segment if r.get("success")) / len(segment) * 100
             srs.append(sr)
             csv_rows.append({
                 "condition_id": cid, "quintile": i + 1,
-                "adjusted_sr_pct": round(sr, 2), "n": len(segment),
+                "sr_pct": round(sr, 2), "n": len(segment),
             })
         ax.plot(range(1, n_bins + 1), srs, marker="o", label=cid.split("_")[1])
 
     ax.set_xlabel("Task ID Quintile (1=earliest, 5=latest)")
-    ax.set_ylabel("Adjusted SR (%)")
+    ax.set_ylabel("SR (%)")
     ax.set_title("Temporal Success Rate Trend")
     ax.legend()
     ax.set_xticks(range(1, n_bins + 1))
@@ -1759,7 +1760,7 @@ def _plot_temporal_sr(plt, rows, plots_dir):
         csv_dir = plots_dir.parent  # reason_diagnostics/
         _write_csv(
             csv_dir / "temporal_sr.csv", csv_rows,
-            ["condition_id", "quintile", "adjusted_sr_pct", "n"],
+            ["condition_id", "quintile", "sr_pct", "n"],
         )
         print(f"  Temporal SR CSV → {csv_dir / 'temporal_sr.csv'}")
 
@@ -1993,16 +1994,9 @@ def main() -> None:
                 final_answer_in_intent_price_range=answer_in_intent_price_range,
             )
 
-            # ── §139.8: adjusted_success retired — `success` is canonical ──
-            # The post-hoc na_fp / eval_fp filter layer is gone, replaced by
-            # source-level fixes (B-91 evaluator empty-pred guard + N/A task
-            # exclusion at load time). `adjusted_success` / `fp_reason` /
-            # `adjusted_reason_bucket` are kept here as == aliases of their
-            # raw counterparts so this script's CSV output schema is unchanged
-            # for downstream consumers; they no longer diverge from the raw.
-            adjusted_success = success
-            fp_reason = ""
-            adjusted_reason_bucket = reason_bucket
+            # §139.8 + /stress A1.6 (2026-05-16) hard-delete: post-hoc
+            # `adjusted_success` / `fp_reason` / `adjusted_reason_bucket`
+            # alias trio removed; `success` + `reason_bucket` are canonical.
 
             collection_overlap_score = _collection_overlap_score(final_answer, ref_answers)
             stuck_subtype = _classify_stuck_subtype(
@@ -2042,10 +2036,7 @@ def main() -> None:
                 "site": site,
                 "task_id": task_id,
                 "success": success,
-                "adjusted_success": adjusted_success,
-                "fp_reason": fp_reason,
                 "reason_bucket": reason_bucket,
-                "adjusted_reason_bucket": adjusted_reason_bucket,
                 "eval_type": eval_type,
                 "steps": steps_count,
                 "hit_max_steps": hit_max_steps,
@@ -2166,10 +2157,7 @@ def main() -> None:
         "site",
         "task_id",
         "success",
-        "adjusted_success",
-        "fp_reason",
         "reason_bucket",
-        "adjusted_reason_bucket",
         "eval_type",
         "steps",
         "hit_max_steps",
@@ -2293,21 +2281,12 @@ def main() -> None:
     cond_rows: List[Dict[str, Any]] = []
     for cid in sorted(per_condition_total.keys()):
         total = per_condition_total[cid]
-        adj_success_count = sum(
-            1 for x in episode_rows if x["condition_id"] == cid and bool(x.get("adjusted_success", x["success"]))
-        )
-        fp_count = sum(
-            1 for x in episode_rows if x["condition_id"] == cid and x.get("fp_reason", "")
-        )
         cond_rows.append(
             {
                 "condition_id": cid,
                 "episodes": total,
                 "success_count": per_condition_success[cid],
                 "success_rate": _safe_ratio(per_condition_success[cid], total),
-                "adjusted_success_count": adj_success_count,
-                "adjusted_success_rate": _safe_ratio(adj_success_count, total),
-                "fp_count": fp_count,
                 "early_finish_fail_count": sum(
                     1
                     for x in episode_rows
@@ -2326,9 +2305,6 @@ def main() -> None:
             "episodes",
             "success_count",
             "success_rate",
-            "adjusted_success_count",
-            "adjusted_success_rate",
-            "fp_count",
             "early_finish_fail_count",
             "fallback_finish_count",
         ],

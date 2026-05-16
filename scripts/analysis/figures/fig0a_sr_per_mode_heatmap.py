@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """[Outcome 0a] SR per mode heatmap — paper §1 main hook citation figure.
 
-Reads docs/analysis/cross_sites/sr_fp_per_mode.json (produced by
+Reads docs/analysis/cross_sites/sr_per_mode.json (produced by
 scripts/analysis/aggregate_sr_fp_per_mode.py) and emits a 2D heatmap with:
   - rows: (baseline, site) tuples (B0 cls / B0 reddit / B1 cls / B1 reddit / etc.)
   - cols: observation modes (DOM / SoM / Vision / P-text / P-prompt / P-SoM)
-  - cell value: adjusted SR%
+  - cell value: canonical SR%
 
-Cell annotations show: raw SR / adjusted SR / N tasks / FP count.
+Cell annotations show: SR / N tasks / completeness.
+
+§139.8 + /stress A1.6 (2026-05-16) hard-delete: retired adjusted/raw/FP
+annotation triple — single canonical SR shown.
 
 Empty-data fallback (P79_ALLOW_EMPTY=1 or no rows): emits a placeholder PNG
 with "data pending" text so make analysis FAST=1 doesn't fail.
@@ -25,7 +28,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[3]
-SRC = ROOT / "docs/analysis/cross_sites/sr_fp_per_mode.json"
+SRC = ROOT / "docs/analysis/cross_sites/sr_per_mode.json"
 OUT = ROOT / "results/phantom_paper/figures/fig0a_sr_per_mode_heatmap.png"
 OUT.parent.mkdir(parents=True, exist_ok=True)
 
@@ -52,14 +55,14 @@ def main():
         emit_placeholder("summary_table empty — run `make aggregate-sr-fp` after baseline runs")
         return
 
-    # Build cell grid: row_keys=(baseline, site), col=mode → adj_sr_pct
+    # Build cell grid: row_keys=(baseline, site), col=mode → sr_pct
     seen_rows = {}
     for r in rows:
         baseline = r.get("baseline", "?")
         site = r.get("site", "?")
         mode = r.get("mode", "?")
-        adj = r.get("adjusted_sr_pct", r.get("adj_sr_pct"))
-        if adj is None:
+        sr = r.get("sr_pct")
+        if sr is None:
             continue
         key = (baseline, site)
         seen_rows.setdefault(key, {})[mode] = r
@@ -76,16 +79,13 @@ def main():
             r = seen_rows[rk].get(m)
             if r is None:
                 continue
-            adj = r.get("adjusted_sr_pct", r.get("adj_sr_pct"))
-            grid[i, j] = adj
-            raw = r.get("raw_sr_pct", r.get("raw_sr_pct"))
-            n = r.get("n", r.get("n_tasks"))
-            fp = r.get("fp_count", 0)
-            annot[i][j] = (
-                f"{adj:.1f}%\n"
-                f"({raw:.1f}% raw)\n"
-                f"N={n}, fp={fp}"
-            )
+            sr = r.get("sr_pct")
+            grid[i, j] = sr
+            n = r.get("n_total", 0)
+            expected = r.get("expected_n", 0)
+            complete = r.get("complete", False)
+            mark = "✓" if complete else f"{n}/{expected}"
+            annot[i][j] = f"{sr:.1f}%\nN={n} ({mark})"
 
     fig, ax = plt.subplots(figsize=(11.0, max(3.5, 0.8 * len(row_keys) + 2)))
     cmap = plt.get_cmap("YlGnBu")
@@ -98,17 +98,17 @@ def main():
                 ax.text(j, i, "—", ha="center", va="center", color="gray", fontsize=9)
             else:
                 color = "white" if grid[i, j] > 12 else "black"
-                ax.text(j, i, annot[i][j], ha="center", va="center", color=color, fontsize=7.5)
+                ax.text(j, i, annot[i][j], ha="center", va="center", color=color, fontsize=8)
 
     ax.set_xticks(range(len(MODES)))
     ax.set_xticklabels(MODES, fontsize=10)
     ax.set_yticks(range(len(row_keys)))
     ax.set_yticklabels([f"{b} · {s}" for b, s in row_keys], fontsize=10)
-    ax.set_title("Adjusted success rate (%) per (baseline, site) × mode\npaper §1 0a — main hook",
+    ax.set_title("Success rate (%) per (baseline, site) × mode\npaper §1 0a — main hook",
                  fontsize=12)
-    fig.colorbar(im, ax=ax, label="Adjusted SR (%)", fraction=0.025, pad=0.02)
+    fig.colorbar(im, ax=ax, label="SR (%)", fraction=0.025, pad=0.02)
     fig.text(0.01, 0.005,
-             f"Source: {SRC.relative_to(ROOT)}  |  raw SR / N / FP count shown per cell",
+             f"Source: {SRC.relative_to(ROOT)}  |  N / completeness shown per cell",
              fontsize=6.5, color="gray")
     fig.tight_layout()
     fig.savefig(OUT, dpi=150, bbox_inches="tight")

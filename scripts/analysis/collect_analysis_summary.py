@@ -12,8 +12,12 @@ See docs/checkpoints/paper_planning.md §3 Efficiency dimension framework.
 Collect all key analysis outputs into a single consolidated JSON.
 
 Replaces 10+ manual Read calls in write-analysis/report SKILLs by gathering
-adjusted SR, FP counts, McNemar p-values, condition metrics, oracle ceiling,
+canonical SR, McNemar p-values, condition metrics, oracle ceiling,
 reason distribution, and signal AUROC into one file.
+
+§139.8 + /stress A1.6 (2026-05-16) hard-delete: retired adjusted SR / FP
+count keys (`adjusted_success_rates` / `na_fp_count` / `eval_fp_count` /
+`*_adjusted` / `raw_success_rate`) removed from the collector.
 
 Usage:
   python scripts/analysis/collect_analysis_summary.py \
@@ -88,17 +92,15 @@ def collect_run(run_dir: Path) -> Dict[str, Any]:
         "run_id": run_dir.name,
     }
 
-    # --- 1. analysis_summary.json (adjusted SR, FP counts) ---
+    # --- 1. analysis_summary.json (run-level counts) ---
     summary = _read_json(a / "analysis_summary.json")
     if summary:
-        result["adjusted_success_rates"] = summary.get("adjusted_success_rates", {})
         result["episode_count"] = summary.get("episode_count")
         result["step_count"] = summary.get("step_count")
-        result["na_reference_task_count"] = summary.get("na_reference_task_count")
     else:
         result["_missing"] = result.get("_missing", []) + ["analysis_summary.json"]
 
-    # --- 2. condition_metrics.csv (per-condition: raw_sr, avg_steps, cost, latency) ---
+    # --- 2. condition_metrics.csv (per-condition: SR, avg_steps, cost, latency) ---
     metrics_rows = _read_csv_dicts(a / "results/_overview/tables/condition_metrics.csv")
     if metrics_rows:
         metrics = {}
@@ -106,7 +108,7 @@ def collect_run(run_dir: Path) -> Dict[str, Any]:
             cid = row.get("condition_id", "")
             metrics[cid] = {
                 k: _safe_float(row.get(k)) for k in [
-                    "raw_success_rate", "avg_steps", "avg_total_cost_usd",
+                    "success_rate", "avg_steps", "avg_total_cost_usd",
                     "avg_total_latency_ms", "p95_step_latency_ms",
                     "avg_total_tokens", "no_op_rate",
                 ]
@@ -134,11 +136,6 @@ def collect_run(run_dir: Path) -> Dict[str, Any]:
                 "oracle_ceiling": sdata.get("oracle_ceiling"),
                 "routing_headroom": sdata.get("routing_headroom"),
                 "per_mode_sr": sdata.get("per_mode_sr"),
-                "per_mode_sr_adjusted": sdata.get("per_mode_sr_adjusted"),
-                "oracle_ceiling_adjusted": sdata.get("oracle_ceiling_adjusted"),
-                "routing_headroom_adjusted": sdata.get("routing_headroom_adjusted"),
-                "na_fp_count": sdata.get("na_fp_count"),
-                "eval_fp_count": sdata.get("eval_fp_count"),
             }
         result["cross_representation"] = cross
     else:
@@ -197,20 +194,12 @@ def collect_run(run_dir: Path) -> Dict[str, Any]:
     if cross_mode_auroc:
         result["cross_mode_auroc"] = cross_mode_auroc
 
-    # --- 7. FP lists (compact) ---
-    na_tasks = _read_csv_dicts(a / "benchmark_noise/na_reference_tasks.csv")
-    if na_tasks:
-        result["na_task_count"] = len(na_tasks)
-        result["na_task_ids"] = sorted(set(
-            int(r.get("task_id", -1)) for r in na_tasks if r.get("task_id")
-        ))
-
-    # --- 8. Exclusive sets (adjusted) ---
-    excl_adj = _read_csv_dicts(
-        a / "results/cross_representation/tables/A3_exclusive_sets_summary_adjusted.csv"
+    # --- 8. Exclusive sets (canonical) ---
+    excl = _read_csv_dicts(
+        a / "results/cross_representation/tables/A3_exclusive_sets_summary.csv"
     )
-    if excl_adj:
-        result["exclusive_sets_adjusted"] = excl_adj
+    if excl:
+        result["exclusive_sets"] = excl
 
     # --- 9. Oracle decomposition ---
     oracle = _read_json(a / "results/cross_representation/R3_oracle_decomposition.json")
@@ -285,17 +274,17 @@ def collect_run(run_dir: Path) -> Dict[str, Any]:
             }
         result["reason_diagnostics_cost"] = reason_cost
 
-        # Intent feature SR
+        # Intent feature SR (canonical success post-§139.8)
         intent_keys = [k for k in episode_rows[0].keys() if k.startswith("intent_")]
         if intent_keys:
             intent_sr: Dict[str, Dict[str, Optional[float]]] = {}
             for ik in intent_keys:
                 positives = [r for r in episode_rows if str(r.get(ik, "")).lower() in ("true", "1")]
                 if len(positives) >= 3:
-                    sr = sum(1 for r in positives if str(r.get("adjusted_success", "")).lower() in ("true", "1")) / len(positives)
-                    intent_sr[ik] = {"count": len(positives), "adjusted_sr": round(sr, 4)}
+                    sr = sum(1 for r in positives if str(r.get("success", "")).lower() in ("true", "1")) / len(positives)
+                    intent_sr[ik] = {"count": len(positives), "sr": round(sr, 4)}
                 else:
-                    intent_sr[ik] = {"count": len(positives), "adjusted_sr": None}
+                    intent_sr[ik] = {"count": len(positives), "sr": None}
             result["intent_feature_sr"] = intent_sr
 
     # List diagnostic plots

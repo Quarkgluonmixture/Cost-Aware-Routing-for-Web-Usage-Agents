@@ -44,7 +44,7 @@ from lib.run_registry import get_cells as _get_cells  # noqa: E402
 # §139.8: scored-set sizes (total − N/A excluded at load) from the single
 # source of truth, not pre-exclusion 234/210. Labels derive from the count.
 from p79.experiment.analysis import scored_task_count as _scored_task_count
-_SITE_N = {_s: _scored_task_count(_s, "visualwebarena") for _s in ("classifieds", "reddit")}
+_SITE_N = {_s: _scored_task_count(_s, "visualwebarena", strict=True) for _s in ("classifieds", "reddit")}
 _SITE_LABELS = {
     "classifieds": f"Classifieds (N={_SITE_N['classifieds']})",
     "reddit": f"Reddit (N={_SITE_N['reddit']})",

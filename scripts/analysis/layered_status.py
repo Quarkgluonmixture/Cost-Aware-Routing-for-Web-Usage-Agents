@@ -181,10 +181,10 @@ def task_id(row: dict[str, Any]) -> int | None:
 def mode_stats(condition_dir: Path) -> dict[str, Any]:
     rows = episode_summaries(condition_dir)
     n = len(rows)
-    # §139.8: adjusted_success retired — `success` is canonical. The
-    # `adjusted_*` output keys are kept (== raw) for schema stability.
-    raw_s = sum(1 for r in rows if bool(r.get("success")))
-    adj_s = raw_s
+    # §139.8 + /stress A1.6 (2026-05-16) hard-delete: post-hoc FP layer
+    # retired; `success` is canonical. `raw_*` / `adjusted_*` / `fp_rate`
+    # legacy output keys removed.
+    n_success = sum(1 for r in rows if bool(r.get("success")))
     tasks = {task_id(r) for r in rows if bool(r.get("success"))}
     tasks.discard(None)
     condition_summary = read_json(condition_dir / "condition_summary_v2.json") or {}
@@ -196,11 +196,8 @@ def mode_stats(condition_dir: Path) -> dict[str, Any]:
             tokens_per_step.append(float(tokens) / float(steps))
     return {
         "n": n,
-        "raw_successes": raw_s,
-        "adjusted_successes": adj_s,
-        "raw_sr": raw_s / n if n else None,
-        "adjusted_sr": adj_s / n if n else None,
-        "fp_rate": (raw_s - adj_s) / n if n else None,
+        "n_success": n_success,
+        "sr": n_success / n if n else None,
         "success_tasks": tasks,
         "condition_summary": condition_summary,
         "median_tokens_per_step": statistics.median(tokens_per_step) if tokens_per_step else None,
@@ -313,22 +310,15 @@ def render_layer0(lines: list[str], stats: dict[str, dict[str, dict[str, Any]]])
             if mode not in stats[site]:
                 continue
             s = stats[site][mode]
-            parts.append(f"{mode} raw {fmt_pct(s['raw_sr'])} / adj **{fmt_pct(s['adjusted_sr'])}**")
+            parts.append(f"{mode} **{fmt_pct(s['sr'])}**")
         lines.append(f"- {site}: " + "; ".join(parts))
     lines.append(f"- source: `results/visualwebarena/phase1/B0_*/*/episodes/*_summary_v2.json` (live); last update: {max_timestamp([p for modes in MODE_SPECS.values() for d in modes.values() for p in (d / 'episodes').glob('*_summary_v2.json')])}")
     lines.append(f"- standalone cite source: `{rel(sr_fp_md)}` | last update: {timestamp(sr_fp_md)}")
     lines.append("")
 
-    lines += ["### 0b FP rate (raw success - adjusted success)", ""]
-    for site in ["reddit", "classifieds"]:
-        parts = [
-            f"{mode} {fmt_pct(stats[site][mode]['fp_rate'])}"
-            for mode in ["DOM", "P-text", "P-prompt", "P-SoM", "SoM", "Vision"]
-            if mode in stats[site]
-        ]
-        lines.append(f"- {site}: " + "; ".join(parts))
-    lines.append(f"- source: same live episode `summary_v2.json` files as 0a; standalone `{rel(sr_fp_md)}` | last update: {timestamp(sr_fp_md)}")
-    lines.append("")
+    # §139.8 + /stress A1.6 (2026-05-16): the "0b FP rate" block is retired —
+    # post-hoc adjusted/raw FP rate is structurally 0 after the upstream
+    # B-91 guard + N/A task-load exclusion.
 
     mechanism_json = CROSS / "mechanism_per_task.json"
     mechanism = read_json(mechanism_json) or {}

@@ -2188,9 +2188,6 @@ def main() -> None:
                         help="Output dir (default: <run_dir>/analysis/confidence)")
     parser.add_argument("--mode", default=None,
                         help="Filter to a single observation mode (dom/som/vision)")
-    parser.add_argument("--no-adjust", action="store_true",
-                        help="DEPRECATED no-op (§139.8 retired the adjusted_success "
-                             "layer; `success` is now canonical). Kept for CLI compat.")
     args = parser.parse_args()
 
     run_dir = Path(args.run_dir).expanduser().resolve()
@@ -2225,17 +2222,10 @@ def main() -> None:
     step_df = _build_step_df(step_records)
     print(f"  {len(ep_df)} episodes, {len(step_df)} steps with confidence")
 
-    # ── §139.8: adjusted_success layer retired — `success` is canonical ──
-    # The post-hoc na_fp / eval_fp adjustment is gone, replaced by
-    # source-level fixes (B-91 evaluator empty-pred guard + N/A task
-    # exclusion at load time). `success` is the paper-grade label.
-    # `raw_success` / `adjusted_success` are kept as == aliases so this
-    # script's JSON output schema (`label_mode` / `n_adjusted` /
-    # `n_success_raw`) is unchanged for downstream consumers.
-    label_mode = "canonical"
-    ep_df["raw_success"] = ep_df["success"]
-    ep_df["adjusted_success"] = ep_df["success"]
-    ep_df["fp_reason"] = ""
+    # §139.8 + /stress A1.6 (2026-05-16) hard-delete: `success` is canonical.
+    # Retired `raw_success` / `adjusted_success` / `fp_reason` aliases plus
+    # downstream JSON fields (`label_mode` / `n_adjusted` / `n_success_raw` /
+    # `n_success_adjusted`) removed; consumers should read `n_success` only.
 
     if args.mode:
         print(f"  Filtering to mode: {args.mode}")
@@ -2352,10 +2342,7 @@ def main() -> None:
     # ── Write summary JSON ──
     summary: Dict[str, Any] = {
         "mode_filter": args.mode,
-        "label_mode": label_mode,
-        "n_adjusted": int((ep_df_filt["fp_reason"] != "").sum()) if "fp_reason" in ep_df_filt.columns else 0,
-        "n_success_raw": int(ep_df_filt["raw_success"].sum()) if "raw_success" in ep_df_filt.columns else None,
-        "n_success_adjusted": int(ep_df_filt["success"].sum()),
+        "n_success": int(ep_df_filt["success"].sum()),
         "coverage": cov_df.to_dict(orient="records"),
         "calibration": cal_metrics,
         "routing_readiness": readiness,

@@ -24,20 +24,22 @@ ROOT = Path(__file__).resolve().parents[2]
 RESULTS_VWA = ROOT / "results/visualwebarena/phase1"
 RESULTS_WA = ROOT / "results/webarena/phase1"
 
-# §139.8: scored task counts (total − N/A tasks excluded at load time) from the
-# single source of truth `scored_task_count`. Pre-exclusion counts were
-# vwa 234/210/466, wa 106/192/182.
+# §139.8 + /stress A1.6 (2026-05-16): scored task counts (total − N/A
+# excluded at load) from single source of truth. Pre-exclusion counts were
+# vwa 234/210/466, wa 106/192/182. `strict=True` fails loud on missing
+# config — silent 0-fallback used to make `make active` print 0/0 progress
+# masking the underlying CLI failure.
 from p79.experiment.analysis import scored_task_count as _scored_task_count
 
 EXPECTED_N = {
     # VWA
-    "classifieds": _scored_task_count("classifieds", "visualwebarena"),
-    "reddit": _scored_task_count("reddit", "visualwebarena"),
-    "shopping": _scored_task_count("shopping", "visualwebarena"),
+    "classifieds": _scored_task_count("classifieds", "visualwebarena", strict=True),
+    "reddit": _scored_task_count("reddit", "visualwebarena", strict=True),
+    "shopping": _scored_task_count("shopping", "visualwebarena", strict=True),
     # WA (cross-bench, prefix wa_*)
-    "wa_reddit": _scored_task_count("reddit", "webarena"),
-    "wa_shopping": _scored_task_count("shopping", "webarena"),
-    "wa_shopping_admin": _scored_task_count("shopping_admin", "webarena"),
+    "wa_reddit": _scored_task_count("reddit", "webarena", strict=True),
+    "wa_shopping": _scored_task_count("shopping", "webarena", strict=True),
+    "wa_shopping_admin": _scored_task_count("shopping_admin", "webarena", strict=True),
 }
 
 
