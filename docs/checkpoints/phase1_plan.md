@@ -73,31 +73,39 @@ B0 infra prereq ──┘                                                       
 - [ ] **A1.3** `p79/envs/` — VWA wrapper + locator dispatch + observation pipeline
 - [ ] **A1.4** `p79/experiment/som.py` + mark 抽取链 — SoM + phantom mark layer
 - [ ] **A1.5** `p79/experiment/runner/` — main orchestrator (`main.py` + `helpers.py`)
-- [x] **A1.6** `p79/experiment/analysis.py` — FP architecture + `scored_task_count` + adjusted_success 退役痕迹 (2026-05-16: 17 findings B-237~B-253; hard-delete sweep retract selective-retain-for-output-schema-stability; chronicle §158)
-- [ ] **A1.7** `p79/experiment/conditions.py` + `configs/exp_v2_*.yaml` — condition matrix 生成 + 36-cond config 全家
-- [ ] **A1.8** `p79/experiment/{types.py, schema_migrations/, io_utils.py, logger_v2.py}` — schema + JSONL + dedup
-- [ ] **A1.9** `p79/experiment/{metrics.py, energy_tracker.py, environment.py}` — cost / energy / env wrapper
+- [ ] **A1.6** `p79/experiment/analysis.py` — FP architecture + `scored_task_count` + adjusted_success 退役痕迹 (2026-05-16: 17 findings B-237~B-253; hard-delete sweep retract selective-retain-for-output-schema-stability; chronicle §158)
+- [ ] **A1.7** `p79/experiment/conditions.py` + `configs/exp_v2_*.yaml` — condition matrix 生成 + 36-cond config 全家 (2026-05-16: 3-AI cycle 17 findings, 12 fixes B-261~B-269 + B-262 advisor-pending, §159; key fixes = B-261 phantom_dom legacy alias retire (resume:true × shared condition_id silent overwrite) + B-263 dead modes retire (`dom_only`/`hybrid` v1 artifact) + B-264 三头案 N_conditions 统一 42 + B-265 vision require_image guard + B-266 pilot T0 abandon + B-268 router_learned doc↔code drift + B-269 baselines.run_b0 retire)
+- [ ] **A1.8** `p79/experiment/{types.py, schema_migrations/, io_utils.py, logger_v2.py}` — schema + JSONL + dedup (2026-05-16: 3-AI cycle 18 fixes B-280~B-297, §161; key fixes = B-283 string-truthy `bool("false")=True` paper §1 SR inflation guard + B-289 episodes_dir fsync at construction + B-291 image_meta_recorded schema separator + B-288 errors='replace' RAPL race + B-313 Option K Trajectory Event Log (A1.17 cross-talk insight); pytest 281→316 GREEN)
+- [ ] **A1.9** `p79/experiment/{metrics.py, energy_tracker.py, environment.py}` — cost / energy / env wrapper (2026-05-16 late: 3-AI cycle 22 fixes B-320~B-341, §165; key fixes = B-320 HARDWARE_PROFILES `a100_pcie_40gb` alias + fail-loud + B-321 `_average_measured_power` step boundary fix + `window_sample_count` + B-322 strict-aggregator-types entry guard (B-283 sibling) + B-326 paper §1 `B=10000→1000` mismatch + B-327 `clean_success_rate` excluding benchmark_noise + B-329 program_html eval skip retry + B-330 H3 axis universe → universe_6 + B-336 kwh_per_step deprecation raise + B-338 cost_usd nested-key validator + B-340 paper_grade flag propagation hard-block GLM rescue; merged via worktree `../p79-a1.9` → master `3a2fc70`)
 - [ ] **A1.10** `p79/experiment/{router.py, modules.py, state_change.py, checklist_module.py, tasks.py, config.py}` — utility 模块 cluster
 - [ ] **A1.11** `p79/{utils/, cli/, logging/}` — 辅助 (CUDA workaround / CLI 入口 / structured logging)
-- [x] **A1.12** `tests/` — pytest 覆盖度 + invariant 测试是否对得上当前实现 (2026-05-16: 17 findings B-342~B-358, §166; key fixes = B-342 prereg gate fixture schema_version + B-343 cell topology Phase 1a drift + B-344 io_utils invariant net + B-345 shell-script smoke + B-346 B-91 evaluator guard test + B-347 zero-SE floor stale + B-348 source-grep behavioral retrofit + B-349 backends parity + B-350 pytest config hygiene + B-351 registry fixture split + B-353 external smoke + B-354 [test] extras; suite 333 → 398 GREEN; **B-352 learned router test DEFER** to Pass-2 fire − 1 week per T1-4=B)
+- [ ] **A1.12** `tests/` — pytest 覆盖度 + invariant 测试是否对得上当前实现 (2026-05-16: 17 findings B-342~B-358, §166; key fixes = B-342 prereg gate fixture schema_version + B-343 cell topology Phase 1a drift + B-344 io_utils invariant net + B-345 shell-script smoke + B-346 B-91 evaluator guard test + B-347 zero-SE floor stale + B-348 source-grep behavioral retrofit + B-349 backends parity + B-350 pytest config hygiene + B-351 registry fixture split + B-353 external smoke + B-354 [test] extras; suite 333 → 398 GREEN; **B-352 learned router test DEFER** to Pass-2 fire − 1 week per T1-4=B)
 
 #### A1-管线 (`scripts/`)
 
-- [x] **A1.13** `scripts/queues/queue_{baseline,phantom_*,chain}.sh` — launch + 3-way collision (2026-05-16: combined batch with A1.14, commit `3cd23f2`, §157, B-230~B-236; key fixes = B-224 auth gate hard-fail propagation + Bug 2 URL-locality preflight + RUN_ID nanos+PID+RANDOM collision defense + sibling-propagation defect class closed via `_lib_paper_grade_gates.sh` extraction)
-- [x] **A1.14** `scripts/queues/queue_phase1_paper_grade.sh` + `scripts/preflight_v2.sh` — orchestrator + pre-launch gates (2026-05-16: combined commit with A1.13 `3cd23f2`, §157; B-91 VWA submodule lock check + preflight 触发 paper-grade gates)
-- [~] **A1.15** `scripts/maintenance/experiment_watchdog.py` + `scripts/maintenance/glm/*.py` — **partial only via A1.17 side effects** (NOT full audit): A1.17 Chunk 1 deleted `glm_pre_launch_check.py` (B-306, replaced by deterministic shell asserts in `launch.sh`); A1.17 Chunk 2 added `experiment_watchdog.py:1402+` Option K trajectory event hook (B-314). Remaining un-audited: `glm_cell_autoupdate.py` / `myriad_watcher.py` / `batch_digest.py` / full watchdog 6-layer auto-clean protocol audit.
-- [x] **A1.16** `scripts/provenance/snapshot_*` — env + VWA fingerprint (2026-05-16: commit `5e11721`, §160, B-273~B-279; 7 fixes incl. probe URL static-asset / HF loaded SHA double-field / evaluator hash canonical + Gemma3-VL gated hard-fail / scope expansion + docker source SHA; mechanism-script subset 5 bugs D-1..D-5 deferred per paper-2 scope)
-- [x] **A1.17** `scripts/vwa/` + `RESET_BEFORE` protocol — Chunk 1 ✅ 2026-05-16 (B-298~B-306, §162: 5 P0 + glm-absorb-P1 + P2-2); Chunk 2 ✅ 2026-05-16 late (B-307~B-314, §163: 6 P1 quality + Option K Trajectory Event Log schema/API/hooks)
+- [ ] **A1.13** `scripts/queues/queue_{baseline,phantom_*,chain}.sh` — launch + 3-way collision (2026-05-16: combined batch with A1.14, commit `3cd23f2`, §157, B-230~B-236; key fixes = B-224 auth gate hard-fail propagation + Bug 2 URL-locality preflight + RUN_ID nanos+PID+RANDOM collision defense + sibling-propagation defect class closed via `_lib_paper_grade_gates.sh` extraction)
+- [ ] **A1.14** `scripts/queues/queue_phase1_paper_grade.sh` + `scripts/preflight_v2.sh` — orchestrator + pre-launch gates (2026-05-16: combined commit with A1.13 `3cd23f2`, §157; B-91 VWA submodule lock check + preflight 触发 paper-grade gates)
+- [ ] **A1.15** `scripts/maintenance/experiment_watchdog.py` + `scripts/maintenance/glm/*.py` — **partial only via A1.17 side effects** (NOT full audit): A1.17 Chunk 1 deleted `glm_pre_launch_check.py` (B-306, replaced by deterministic shell asserts in `launch.sh`); A1.17 Chunk 2 added `experiment_watchdog.py:1402+` Option K trajectory event hook (B-314). Remaining un-audited: `glm_cell_autoupdate.py` / `myriad_watcher.py` / `batch_digest.py` / full watchdog 6-layer auto-clean protocol audit.
+- [ ] **A1.16** `scripts/provenance/snapshot_*` — env + VWA fingerprint (2026-05-16: commit `5e11721`, §160, B-273~B-279; 7 fixes incl. probe URL static-asset / HF loaded SHA double-field / evaluator hash canonical + Gemma3-VL gated hard-fail / scope expansion + docker source SHA; mechanism-script subset 5 bugs D-1..D-5 deferred per paper-2 scope)
+- [ ] **A1.17** `scripts/vwa/` + `RESET_BEFORE` protocol — Chunk 1 ✅ 2026-05-16 (B-298~B-306, §162: 5 P0 + glm-absorb-P1 + P2-2); Chunk 2 ✅ 2026-05-16 late (B-307~B-314, §163: 6 P1 quality + Option K Trajectory Event Log schema/API/hooks)
 
 #### A1-外部 (VWA submodule)
 
-- [x] **A1.18** VWA submodule `p79-patches` branch — evaluator + helper_functions + LLM-judge guard (2026-05-16: 15 findings B-254~B-268; gemini OOB P0-1 viewport paradox catch + codex F10 IP 794-hit deepening; full clean: 913 task configs IP→placeholder + paper §3.5/§4.X.11/§4.X.12 disclosure + 3-layer SBOM lock + 5 P1 code fixes; chronicle §159; memory `reference_vwa_submodule_p79_patches.md`)
+- [ ] **A1.18** VWA submodule `p79-patches` branch — evaluator + helper_functions + LLM-judge guard (2026-05-16: 15 findings B-254~B-268; gemini OOB P0-1 viewport paradox catch + codex F10 IP 794-hit deepening; full clean: 913 task configs IP→placeholder + paper §3.5/§4.X.11/§4.X.12 disclosure + 3-layer SBOM lock + 5 P1 code fixes; chronicle §159; memory `reference_vwa_submodule_p79_patches.md`)
 
 #### A1-分析管线 (clean-run 下游, 但 code 本身是 pre-data audit)
 
 - [ ] **A1.19** `scripts/analysis/aggregate_*.py` — aggregator 层 (sr_fp / phantom_lift / cross_site / routing_auroc / failure_modes / cost_electricity)
 - [ ] **A1.20** `scripts/analysis/figures/*.py` — figure 脚本全家 (fig0a-3d + mechanism + venn)
 - [ ] **A1.21** `scripts/analysis/preregistration_decision_test.py` + `scripts/analysis/lib/run_registry.py` + `results/phantom_paper/run_manifest.yaml` — decision test + registry + paper-grade promotion
+
+#### A1-横向 (cross-cutting — 跨文件 class / contract 层)
+
+> 这些 surface **不属于** 单文件 audit 范畴, 用 /stress code-audit mode 时显式指定 "spans multiple files, audit contract not implementation"。Memory `feedback_split_large_scope` 不适用 (因为 cross-cutting 才是它们的 scope 本身)。
+
+- [ ] **A1.22** Cross-baseline 输出契约 (B0 / B1 / B2 step_record + condition_summary 对称性) — 跑同 condition 1 task on B0/B1/B2, diff `step_record` 字段集 + value type + value range, 找 silent asymmetry。Memory 2026-05-15 retract "B0/B1 设计不对称 disclose 即可"作废, 全 align by default → paper §1 hero number 跨 3 model 平均的安全性 gate。Artifacts: `p79/agents/{proxy_api_agent,qwen3vl_agent,gemma3vl_agent}.py` + `p79/backends/{api_proxy,local_qwen,local_gemma}.py` + `p79/experiment/types.py`
+- [ ] **A1.23** Concurrency + race contract (launch × watchdog × cron sidecar interaction) — "同 site 单 baseline" hard rule **runtime enforcement** (queue_chain.sh launch-time check 不够, runner mid-flight 多 PID 起来怎么办); watchdog `auth_refresh` × runner page navigation race; A1.17 Chunk 2 Option K Trajectory Event Log 已收一部分但 cross-cutting "concurrency contract test" 没单独 audit。Artifacts: `scripts/queues/queue_chain.sh` + `scripts/maintenance/experiment_watchdog.py` + `scripts/maintenance/glm/myriad_watcher.py` + `p79/experiment/runner/main.py` + `p79/experiment/logger_v2.py:log_trajectory_event`
+- [ ] **A1.24** `scripts/maintenance/clear_tasks.py` + 半删 recovery 协议 — CLAUDE.md hard rule "删除 task 结果统一用 clear_tasks.py" 的官方入口, partial-clean bug (summary 删了 steps 没删 / artifacts 残留) → rerun 拉到污染数据 silent 风险; A1.15 partial 边缘覆盖但 single-purpose surface 重要性高
 
 #### §A1 已知未结项 (pointer — 不复制)
 
@@ -116,14 +124,19 @@ B0 infra prereq ──┘                                                       
 
 > 用法: 挑一个 `[ ]` → `/stress A2.x` → /stress 读对应 paper_drafts / preregistration / paper_planning section,**不读 SCRIPTS**。攻击 claim / framing / methodology,不查 bug。
 
-- [ ] **A2.1** Research question framing — "phantom routing space" 假设是否良构 + falsifiable; "4-fold drop-in property" 是 1 个 property 还是 4 个独立 claim 包成一个 (artifacts: `paper_drafts/section1` + [[paper_planning]] §1)
+- [ ] **A2.1** Research question framing — "phantom routing space" 假设是否良构 + falsifiable; "4-fold drop-in property" 是 1 个 property 还是 4 个独立 claim 包成一个; phantom 概念与文献 (cascade / routing-mix / mixture-of-experts) boundary 在哪 (reviewer R1 originality 攻击) (artifacts: `paper_drafts/section1` + [[paper_planning]] §1 + memory `project_phantom_space_axes_format_not_information`)
 - [ ] **A2.2** Comparison rigor / control design — B0 / B1 / B2 是哪条轴的 control (capability / family / deployment-class)? B2 与 B1 "matched-capability cross-family" 在 4B 参数对齐外是否还有别的对齐要求 (训练数据 / alignment 配方 / instruction tuning)? (artifacts: [[paper_planning]] §15 prior-work table + [[实验笔记]] §138)
-- [ ] **A2.3** Statistical design — N=6 cells + 观测 effect size 1-3pp 的 power; DL meta vs REML+HK at k=6; K-of-N transparency-only 重分类合理性; TOST δ=1.0pp 来源 + 与文献对齐; Bonferroni / Holm 是否够 (artifacts: `pre_run/preregistration.md` §2.4 / §3 / §4 + `power_analysis.py` 注释)
-- [ ] **A2.4** Evidence-claim coupling — 4-dim × 4 cross-X = 16 sub-cell 是否真支撑 paper §1 hero?cross-site axis 只 cls+red 2 site 够不够支撑 generalization claim?cross-model 3 baseline 中 B0 是 API 异类、B1/B2 同 deployment-class — 这对 cross-model claim 意味着什么 (artifacts: [[paper_planning]] §3 + §21)
+- [ ] **A2.3a** Statistical design — **power + sample** — N=6 cells × 观测 effect size 1-3pp 的 power 计算 (per-cell + pooled meta); MDE (min detectable effect) at α=0.05 / 80% power; cell-level vs task-level unit-of-analysis 边界 (artifacts: `pre_run/preregistration.md` §2.4 + `pre_run/power_analysis.py` 注释)
+- [ ] **A2.3b** Statistical design — **meta method** — DerSimonian-Laird vs REML + Hartung-Knapp at k=6 cells; small-k DL bias well-known, REML+HK 是否更稳; per-site fixed-effect alternative (artifacts: `pre_run/preregistration.md` §3 + advisor sync confirm)
+- [ ] **A2.3c** Statistical design — **multi-test correction + equivalence** — H1-H8 family-wise Bonferroni / Holm / BH-FDR 选择依据; TOST δ=1.0pp 来源 + 文献对齐 (Lakens 2017 / Wellek 2010); K-of-N transparency-only 重分类的 prereg trail 强度 (artifacts: `pre_run/preregistration.md` §4 + Appendix A 2026-05-13 K-of-N entry)
+- [ ] **A2.4a** Evidence-claim coupling — **within-axis** — 4 层 (Outcome / Macro / Micro / Efficiency) × 4 cross-X (task / mode / site / model) = 16 sub-cell 是否真支撑 paper §1 hero; 单 sub-cell NaN 时 hero 数字 fallback 协议 (artifacts: [[paper_planning]] §3 + `analyze_run` template)
+- [ ] **A2.4b** Evidence-claim coupling — **cross-axis generalization** — cross-site 2 site (cls+red) 够不够撑 generalization claim (R3 sensitivity); cross-model 3 baseline 中 B0 API 异类 vs B1/B2 同 deployment-class 对 cross-model claim 的影响 (artifacts: [[paper_planning]] §3 + §21 + §5 R1-R5 framing)
 - [ ] **A2.5** Operationalization — rule-based router 的 "task 属性" 定义边界 + leak risk (用 task description 训练 → test 时 leak);learned classifier 的 feature set (TF-IDF + binary + browser meta) 信号源 vs leak 边界;5-fold site-stratified CV 是否解决 site leak (artifacts: [[paper_planning]] §8 + `p79/experiment/router.py`)
-- [ ] **A2.6** Scope / external validity — Phase 1a 只有 cls + red → R3 framing risk;"phantom space" 概念领域 (VWA-specific / web-agent-general / LLM-general?);Phase 1b shop 推迟 + WA 缺席的下游影响 (artifacts: [[paper_planning]] **§5 顶刊概率 R1-R5 conditional tree** + [[paper_planning]] §6 Critical Risks + `pre_run/preregistration.md` §2 framing decision rule + §7 reproducibility scope) — pointer corrected 2026-05-15: R1-R5 framing rule lives in paper_planning §5, NOT §6 (§6 is critical risks)
+- [ ] **A2.6a** Scope / external validity — **Phase 1a 集**: 只有 cls + red → R3 framing risk; Phase 1b shop 推迟 + WA 缺席的下游影响; sequential 2-pass 不能并行 site 是否削弱 fairness claim (artifacts: [[paper_planning]] §5 R1-R5 conditional tree + §6 Critical Risks + `pre_run/preregistration.md` §2 framing decision rule)
+- [ ] **A2.6b** Scope / external validity — **phantom 概念域**: phantom space 是 VWA-specific / web-agent-general / LLM-general? Reviewer R5 跨族外推攻击边界; "无 annotated image" boundary 在 LLM-general 上的可外推性 (artifacts: [[paper_planning]] §5 + memory `project_phantom_space_axes_format_not_information`)
 - [ ] **A2.7** Confound register / known asymmetries — B0 (API) vs B1/B2 (local) deployment 异类;B0 max_new_tokens / GLM parse fallback / quantization 非对称;A100 docker stack vs DGX→quark stack 切换的实验环境变化 (artifacts: CLAUDE.md Guard Rails + [[实验笔记]] §139 B-86 + memory `project_paper_hook.md`)
-- [ ] **A2.8** Pre-registration completeness — H1-H8 primary/exploratory/post-hoc/deferred 族 declaration 边界;§4 locked analysis choices 全覆盖;§6 witness mechanism (Git commit + advisor email + OSF DOI) 防 post-hoc 修改的强度 (artifacts: `pre_run/preregistration.md` 全文 + `pre_run/osf_lock_manifest.md`)
+- [ ] **A2.8** Pre-registration completeness — H1-H8 primary/exploratory/post-hoc/deferred 族 declaration 边界;§4 locked analysis choices 全覆盖;§6 witness mechanism (Git commit + advisor email + OSF DOI) 防 post-hoc 修改的强度; **§C5 "site-asymmetric viability empirical finding" 是 H10 之内的 pre-registered subhypothesis 还是 post-hoc descriptive finding** (cross-link C5, archive sim pre-fire 已知 cls+2.02pp / red-3.95pp → narrative pre-registered 边界必须明确) (artifacts: `pre_run/preregistration.md` 全文 + `pre_run/osf_lock_manifest.md`)
+- [ ] **A2.9** Reporting + ethics — **NeurIPS / ICML 2025+ requirement**: compute cost statement (A100 wallclock × 3 model × 6 mode × cls+red + Phase 1b); broader impact + ethics statement; data-rights disclosure (VWA submodule data 来源 / Google `gemma-3-4b-it` 用法 / GPT-4o-mini judge usage). Submission-ready scope 不卡 Pass-1 launch (artifacts: NeurIPS 2025 checklist + paper_drafts 末尾 reporting section TBD)
 
 #### §A2 已知未结项 (pointer)
 
@@ -146,19 +159,20 @@ B0 infra prereq ──┘                                                       
 
 ### B0. Infra prereq (Pass-1 launch 前必须)
 
-- [x] Gemma3-VL Tier 1-3 接入 — agent / backend / factory / 12 configs / queue / orchestration / A100 smoke ALL PASS ([[实验笔记]] §140)
-- [x] A100 venv 全栈 dep
+- [ ] Gemma3-VL Tier 1-3 接入 — agent / backend / factory / 12 configs / queue / orchestration / A100 smoke ALL PASS ([[实验笔记]] §140)
+- [ ] A100 venv 全栈 dep
 - [ ] **#11 A100 VM VWA docker bring-up** — ⭐ gates Pass-1 launch
 - [ ] A100 playwright install
 - [ ] **#10 analysis 层 3-model 改造** — gates §D, 不 gate launch
 
 ### B1. Pre-run lock 文档 (= launch gate, 引 `pre_run/` 不复制)
 
-- [ ] `preregistration.md` status `draft → locked` (待 advisor 确认 A2.3 + v7 walk-back H9/H11 DEFER + Pareto reformulation)
+- [ ] `preregistration.md` status `draft → locked` (待 advisor 确认 A2.3a/b/c + v7 walk-back H9/H11 DEFER + Pareto reformulation)
 - [ ] `locked_versions.md` / `model_card.md` / `dataset_card.md` — B2 三模型对齐
 - [ ] env + vwa provenance snapshot on A100 host
 - [ ] `pre_rerun_audit.md` + `reeval_audit_protocol.md` 走查
 - [ ] `osf_lock_manifest.md` 8-step (可 launch 后并行)
+- [ ] **§C LR feature step-0 schema dry-run** — 跑 1 task per (3 baseline × 6 mode) = 18 mini-runs, 抽 `step_record[0]` verify §C2 8-dim LR feature 全字段 capture (site_one_hot / capability_tier_one_hot / has_reference_image / intent_color_regex / intent_compare_regex / intent_search_regex / intent_token_count / axtree_element_count). **Why**: §B-baseline 完成判定只 verify `condition_summary_v2.json` per-cond aggregate, 不 verify step-record-level fields — 如果 B0 step-0 没 `axtree_element_count` 或字段名 drift 或 vision mode step-0 null, Pass-1 跑完 1-2 周才发现 → Pass-2 LR pipeline 整 cell drop。Gates **§B-baseline launch**。Artifacts: `p79/experiment/types.py:StepRecordV2` + `p79/experiment/logger_v2.py` write path + `scripts/analysis/feature_extract_*.py` (TODO if missing)
 
 ### B-baseline. Pass-1 Launch (36 cond, paper §1 hook 数据源)
 
@@ -225,7 +239,7 @@ B0 infra prereq ──┘                                                       
 
 ### C3. Archive sim development sanity (supplementary, NOT paper-grade)
 
-- [x] `scripts/analysis/l1_archive_simulation.py` repeated stratified 5-fold × 10 repeats (Q4 fix landed 2026-05-16)
+- [ ] `scripts/analysis/l1_archive_simulation.py` repeated stratified 5-fold × 10 repeats (Q4 fix landed 2026-05-16)
 - Archive cls Variant B: 17.84% [16.30, 19.42] (+2.02pp vs always_phantom_som 15.81%) — robust 50-pair estimate
 - Archive red Variant B: 10.33% [9.05, 11.67] (-3.95pp vs always_phantom_som 14.29%) — collapsed to majority on text-dominated cell
 - 用途: development sanity check only; paper §6 main number 等 Phase 1a LOCO
@@ -240,7 +254,7 @@ B0 infra prereq ──┘                                                       
 
 - [ ] Learned router LOCO 6-fold + within-cell 5-fold × 10 repeats reported
 - [ ] H10 Pareto non-dominance verdict (cells pass / total cells)
-- [ ] Site-asymmetric viability empirical finding written up (paper §6 main narrative — cls visual-rich vs red text-dominated routing behavior contrast)
+- [ ] Site-asymmetric viability empirical finding written up (paper §6 main narrative — cls visual-rich vs red text-dominated routing behavior contrast) — **⚠️ pre/post-hoc framing status 必须在 A2.8 prereg lock 中明确**: archive sim 2026-05-16 pre-fire 已知 cls Variant B +2.02pp / red -3.95pp → 此 narrative 是 H10 之内 pre-registered subhypothesis (confirmatory) 还是 post-hoc descriptive (exploratory)? Reviewer R3 经典攻击点, prereg.md 必须二选一并 Git/OSF witness lock
 - [ ] 输出 → paper §6 routing section + Pareto scatter figure (per-cell with 95% confidence regions)
 
 ---
@@ -272,18 +286,20 @@ B0 infra prereq ──┘                                                       
 
 ## §E 里程碑 (v7 2-pass split 2026-05-16)
 
-| M | 判定 | gated on | A100 wallclock |
+| M | 判定 | gated on | A100 wallclock (happy / realistic) |
 |---|---|---|---|
 | M0 infra ready | §B0 全勾 (重点 #11) | — | — |
 | M1a 实现层 audit 放行 | §A1 全勾 (或 open item disclosed) | — | — |
-| M1b 设计层 audit 放行 | §A2 全勾 + preregistration locked (incl. v7 H9/H11 DEFER + Pareto reformulation) | advisor sync | — |
-| **M2-baseline clean run done** | §B-baseline 全勾 (36 cond, paper §1 hook 数据) | M0 + M1a + M1b | **~1-2 weeks** |
+| M1b 设计层 audit 放行 | §A2 全勾 + preregistration locked (incl. v7 H9/H11 DEFER + Pareto reformulation) | advisor sync (hard 卡 A2.2 + A2.3a/b/c + A2.8; A2.1/A2.4/A2.5/A2.6/A2.7/A2.9 可 Claude self-audit + advisor batch confirm) | — |
+| **M2-baseline clean run done** | §B-baseline 全勾 (36 cond, paper §1 hook 数据) | M0 + M1a + M1b | **~1-2w happy / 2-3w realistic** |
 | M3 evidence 分析 done (paper §1 hook) | §D3 全勾 | M2-baseline + #10 | mostly parallel to M2-router |
-| **M2-router clean run done** | §B-router 全勾 (6 cond, paper §6 H10 数据) | M2-baseline (per-task oracle labels needed for LR train fold) | **~3-5 days** |
+| **M2-router clean run done** | §B-router 全勾 (6 cond, paper §6 H10 数据) | M2-baseline (per-task oracle labels needed for LR train fold) | **~3-5d happy / 5-7d realistic** |
 | M4 learned router done | §C5 全勾 (LOCO + within-cell CV + Pareto H10 verdict) | M2-router + #10 | post-M2-router |
-| M5 workshop-ready | M3 + M4 | — | ~1.5-2.5 weeks total |
+| M5 workshop-ready | M3 + M4 | — | **~1.5-2.5w happy / 2.5-4w realistic** |
 
-**Wallclock savings vs v6 cascade**: v6 2-pass 72-cond = 2-4 weeks A100; v7 2-pass 42-cond = **1.5-2.5 weeks A100** (~5-7 days saved). Critical path 缩 mostly on M2-router (cascade 6 cond/cell × 6 cells = 36 router-cond → learned 1 cond/cell × 6 cells = 6 router-cond).
+**Wallclock 估计协议** — `happy` = 36-cond × per-cond happy-path × sequential 3-baseline; `realistic` = happy × **1.3-1.5×** historical overhead band 含: (a) watchdog auto-clean 重跑 ~5-15% episode (Bug-9 stack 实证), (b) GLM fallback parse-error 重跑 (B-86 open, B0 cond 影响最大), (c) sequential 3-baseline 中任一 baseline lag 顺延全 site, (d) A100 docker stack random hiccup, (e) Phase 1a 数据 land 后发现 schema drift → partial re-extract。Real-world fire 中位 = `realistic`, M5 user-facing ETA 报 `realistic` 边界对齐心理预期。
+
+**Wallclock savings vs v6 cascade**: v6 2-pass 72-cond = 2-4 weeks A100; v7 2-pass 42-cond = **1.5-2.5 weeks A100 happy / 2.5-4 weeks realistic** (~5-7 days saved on happy-path). Critical path 缩 mostly on M2-router (cascade 6 cond/cell × 6 cells = 36 router-cond → learned 1 cond/cell × 6 cells = 6 router-cond).
 
 **Phase 1b** = shop × {B0, B1, B2} × (6 baseline + 1 learned router) = **21 cond**, post-workshop deferred. Mirrors Phase 1a 2-pass protocol.
 
