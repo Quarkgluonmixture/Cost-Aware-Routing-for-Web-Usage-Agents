@@ -67,6 +67,14 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     "agent_finished": None,                  # original v2 (§78)
     "energy_partial": False,                 # §97 RU-5
     "energy_step_complete_count": 0,         # §97 RU-5
+    # B-193 (/stress A1.4b-ii codex B-ii-2): paper §3.5 transparency
+    # telemetry — runner stamps these in normal + exception paths
+    # (`runner/main.py:1936-1953` + `:896-899`). Legacy summaries (pre-A1.4a
+    # B-166/B-167/B-168) lack these; fill_defaults backfills them so
+    # `aggregate_condition_metrics` always has a value to read.
+    "trajectory_incomplete": False,
+    "unknown_failure_reasons": {},
+    "partial_recovery_step_count": 0,
     # adjusted_success / fp_reason / has_effective_action removed §139.8 —
     # post-hoc na_fp / eval_fp filter layer retired (fixed at the source:
     # B-91 evaluator guard + N/A exclusion at load). Archived pre-§139.8

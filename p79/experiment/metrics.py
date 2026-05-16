@@ -277,6 +277,12 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             "avg_busy_wait_total_ms": 0.0,
             "energy_partial_episode_count": 0,
             "energy_partial_episode_rate": 0.0,
+            # B-193 transparency telemetry defaults (empty-episode case):
+            "trajectory_incomplete_episode_count": 0,
+            "trajectory_incomplete_rate": 0.0,
+            "partial_recovery_episode_count": 0,
+            "partial_recovery_rate": 0.0,
+            "unknown_failure_reason_distribution": {},
         }
 
     success_rate = sum(1 for x in episode_summaries if x.get("success")) / len(episode_summaries)
@@ -321,6 +327,29 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
     energy_partial_count = sum(
         1 for x in episode_summaries if bool(x.get("energy_partial", False))
     )
+
+    # B-193 (/stress A1.4b-ii codex B-ii-2, P1 OOB): aggregate the 3 paper §3.5
+    # transparency telemetry fields stamped by runner per A1.4a B-166/B-167/B-168.
+    # Pre-fix: these fields were written to per-episode summary JSON but never
+    # consumed by aggregator → paper §3.5 `trajectory_incomplete_rate per cell`
+    # claim was structurally unproducible. Now: per-cell counts + rates emitted
+    # so paper §3.5 can cite them directly.
+    trajectory_incomplete_count = sum(
+        1 for x in episode_summaries if bool(x.get("trajectory_incomplete", False))
+    )
+    partial_recovery_episode_count = sum(
+        1 for x in episode_summaries
+        if int(x.get("partial_recovery_step_count", 0) or 0) > 0
+    )
+    unknown_failure_aggregated: Counter = Counter()
+    for ep in episode_summaries:
+        ufr = ep.get("unknown_failure_reasons", {}) or {}
+        if isinstance(ufr, dict):
+            for k, v in ufr.items():
+                try:
+                    unknown_failure_aggregated[str(k)] += int(v)
+                except Exception:
+                    continue
     return {
         "episodes": len(episode_summaries),
         "success_rate": success_rate,
@@ -377,4 +406,16 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
         "energy_partial_episode_rate": (
             float(energy_partial_count) / len(episode_summaries) if episode_summaries else 0.0
         ),
+        # B-193 paper §3.5 transparency telemetry (A1.4a B-166/B-167/B-168 → aggregate):
+        "trajectory_incomplete_episode_count": trajectory_incomplete_count,
+        "trajectory_incomplete_rate": (
+            float(trajectory_incomplete_count) / len(episode_summaries)
+            if episode_summaries else 0.0
+        ),
+        "partial_recovery_episode_count": partial_recovery_episode_count,
+        "partial_recovery_rate": (
+            float(partial_recovery_episode_count) / len(episode_summaries)
+            if episode_summaries else 0.0
+        ),
+        "unknown_failure_reason_distribution": dict(unknown_failure_aggregated),
     }

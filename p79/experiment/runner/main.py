@@ -886,7 +886,17 @@ class ExperimentRunner:
                 artifacts_dir=str(condition_dir),
                 error=str(exc),
             ).as_dict()
-            summary["wasted_cost_usd"] = 0.0
+            # B-194 (/stress A1.4b-ii codex B-ii-3, P1 OOB): exception-path
+            # MUST mirror canonical `compute_wasted_cost(steps, success=False)`
+            # semantics — failed episode → wasted = total. Pre-fix this path
+            # force-zeroed `wasted_cost_usd` even though `_agg["total_cost_usd"]`
+            # was already recovered from JSONL (B-168), creating a systematic
+            # under-report: `success=False AND total_cost>0 AND wasted_cost=0`
+            # contradicts the paper §3.6 definition that all cost on a failed
+            # episode is wasted. Now: wasted = total (recovered from partial
+            # JSONL), wasted_energy carries forward from the runner-side total
+            # if available (else 0.0; energy not always populated on crash).
+            summary["wasted_cost_usd"] = float(_agg.get("total_cost_usd", 0.0))
             summary["wasted_energy_kwh"] = 0.0
             summary["component_breakdown"] = {
                 "model_cost_usd": _agg["total_model_cost_usd"],

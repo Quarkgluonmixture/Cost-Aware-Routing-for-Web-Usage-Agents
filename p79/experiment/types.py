@@ -156,6 +156,17 @@ class EpisodeSummaryV2:
     # the episode lacks an energy reading (NVML probe failed mid-episode).
     energy_partial: bool = False
     energy_step_complete_count: int = 0
+    # B-193 (/stress A1.4b-ii codex B-ii-2, P1 OOB): runner stamps these
+    # 3 paper §3.5 transparency fields in normal + exception paths
+    # (`runner/main.py:1936-1953` + `:896-899`) per A1.4a B-166/B-167/B-168.
+    # Pre-fix: the dataclass + `aggregate_condition_metrics` ignored them
+    # entirely, so paper §3.5 claims `trajectory_incomplete_rate per cell`
+    # but the aggregate layer could not produce that rate (transparency
+    # metric structurally unproducible). Now they are part of the schema,
+    # downstream aggregator (B-193 metrics.py) emits per-cell rates.
+    trajectory_incomplete: bool = False
+    unknown_failure_reasons: Dict[str, int] = field(default_factory=dict)
+    partial_recovery_step_count: int = 0
     # §139.8: `adjusted_success` / `fp_reason` were removed — the post-hoc
     # na_fp / eval_fp filter layer is retired (fixed at the source: B-91
     # evaluator empty-pred guard + N/A task exclusion at load time). `success`
