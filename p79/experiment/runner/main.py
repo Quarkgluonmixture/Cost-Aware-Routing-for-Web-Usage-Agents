@@ -983,6 +983,58 @@ class ExperimentRunner:
         obs, info = self.environment.reset(task.config_file)
         current_info = info or {}
 
+        # ── v7 learned router runtime dispatch (paper-1 §6 LR predictor) ─
+        # When condition.observation_mode == "learned" (sentinel from
+        # conditions.py v7 phase1.router_kind=learned), load the trained LR
+        # pickle once per condition + predict per-task mode from features.
+        # The predicted mode replaces condition.observation_mode for THIS
+        # episode only; downstream step JSONL records the predicted mode for
+        # paper-grade tracking. Fallback to safe_fallback_target on any error.
+        if condition.observation_mode == "learned":
+            from p79.policies.learned_router import (
+                load_lr_pipeline,
+                load_task_image_field,
+                predict_mode,
+            )
+            # Lazy-load LR pickle once per condition (cached on runner attribute)
+            if not hasattr(self, "_lr_router_cache"):
+                self._lr_router_cache = {}
+            router_cfg = self.cfg.get("router", {})
+            lr_path = router_cfg.get("lr_model_path", "")
+            if lr_path not in self._lr_router_cache:
+                self._lr_router_cache[lr_path] = load_lr_pipeline(lr_path)
+            lr_pipeline = self._lr_router_cache.get(lr_path)
+
+            # Extract per-task features
+            task_intent = task.raw_task.get("intent", "") if hasattr(task, "raw_task") else ""
+            task_has_image = load_task_image_field(task.config_file)
+            axtree_element_count = (obs.text or "").count("\n") + 1 if obs.text else 0
+            safe_fallback = str(router_cfg.get("safe_fallback_target", "phantom_som"))
+            predicted_mode = predict_mode(
+                lr_pipeline,
+                task_intent=task_intent,
+                task_has_image=task_has_image,
+                site=task.site,
+                axtree_element_count=axtree_element_count,
+                fallback_mode=safe_fallback,
+            )
+            logger.info(
+                "[v7 learned router] task=%s/%s site=%s predicted=%s "
+                "(intent_tok=%d, axtree_lines=%d)",
+                task.site, task.task_id, task.site, predicted_mode,
+                len(task_intent.split()), axtree_element_count,
+            )
+            # Derive per-task condition with predicted observation_mode. Keep
+            # condition_id stable (analysis groups by condition_id, not mode)
+            # so per-task mode predictions are recorded via step JSONL
+            # observation_mode field (set inside the router decision below).
+            from dataclasses import replace as _dc_replace
+            condition = _dc_replace(
+                condition,
+                observation_mode=predicted_mode,
+                som_on=(predicted_mode == "som"),
+            )
+
         # ── Start-URL tab health check ──────────────────────────────────
         _error_title_patterns = (
             "content not found", "not found", "404", "page not found",
