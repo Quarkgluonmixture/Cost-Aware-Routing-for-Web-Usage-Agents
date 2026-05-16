@@ -209,6 +209,8 @@ def test_phantom_som_text_differs_from_dom(tmp_path):
 
 
 def test_step_schema_validation_required_fields():
+    # B-280 fix (2026-05-16, A1.8): test record now includes paper-grade
+    # critical optional KEYS (value may be None) — validator requires presence.
     record = {
         "schema_version": SCHEMA_VERSION_V2,
         "run_id": "run_x",
@@ -235,6 +237,12 @@ def test_step_schema_validation_required_fields():
         "artifact_paths": {},
         "reward": 0.0,
         "done": False,
+        # B-280 critical optionals (must be present, value may be None):
+        "parse_valid": None,
+        "parse_failure_reason": None,
+        "image_meta": None,
+        "locator_route_meta": None,
+        "agent_visible_changed": None,
     }
 
     validate_step_record_v2(record)

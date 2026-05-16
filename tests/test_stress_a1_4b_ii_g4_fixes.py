@@ -36,7 +36,10 @@ def test_b196_integrity_log_records_corrupt_lines(tmp_path):
     rec = _JSONL_INTEGRITY_LOG[0]
     assert rec["lines_read"] == 5
     assert rec["corrupt_lines"] == 2
-    assert rec["summary_identity_mismatch"] is False
+    # B-293 fix (2026-05-16, A1.8): summary_path=None → identity_mismatch=None
+    # (was False pre-fix, semantically misleading "checked + matched"). None
+    # means "not checked"; False/True means "checked + matched/mismatch".
+    assert rec["summary_identity_mismatch"] is None
 
 
 def test_b196_integrity_report_emitted_by_analyze_run(tmp_path):
