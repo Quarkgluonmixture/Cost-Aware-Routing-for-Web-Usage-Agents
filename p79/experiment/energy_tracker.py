@@ -253,6 +253,21 @@ class LightweightEnergyTracker:
                 "Add an entry to HARDWARE_PROFILES or fix the yaml key. "
                 "Silent fallback to m2 laptop profile is paper-grade-broken."
             )
+        # B-336 (/stress A1.9 Mode A F7, 2026-05-16): `kwh_per_step` mode is
+        # duration-blind — returns the same kwh value regardless of step
+        # latency. Paper §3 reports energy as a function of step inference
+        # work; duration-blind fixed-rate is incompatible. Deprecated:
+        # explicit `kwh_per_step` config raises here (paper-grade fail-loud)
+        # rather than silently producing duration-independent numbers.
+        # Backward compat: config keys remain in DEFAULT_CONFIG + yaml schema
+        # at value None (no behavior change for default null).
+        if self.enabled and self.kwh_per_step is not None:
+            raise ValueError(
+                f"kwh_per_step={self.kwh_per_step!r} is deprecated per B-336. "
+                "Mode was duration-blind (returned same kWh regardless of step "
+                "latency), incompatible with paper §3 per-step energy claim. "
+                "Set kwh_per_step: null in yaml + use pynvml-based measurement."
+            )
         self.use_psutil = bool(energy_cfg.get("use_psutil", True))
         self.region = str(energy_cfg.get("region", "world")).lower()
 

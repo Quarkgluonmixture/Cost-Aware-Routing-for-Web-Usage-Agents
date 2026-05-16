@@ -707,8 +707,14 @@ class ExperimentRunner:
             assumptions=assumptions,
         ).as_dict()
 
-        with open(self.output_root / "run_summary_v2.json", "w", encoding="utf-8") as f:
-            json.dump(run_summary, f, indent=2, ensure_ascii=False)
+        # B-331 (/stress A1.9 Mode B F6 OOB, 2026-05-16): atomic + fsync
+        # write via shared helper. Pre-fix plain `json.dump` could truncate
+        # on crash mid-write while condition_summary used atomic+fsync —
+        # asymmetric durability across writers.
+        from p79.experiment.logger_v2 import write_run_summary_atomic
+        write_run_summary_atomic(
+            self.output_root / "run_summary_v2.json", run_summary
+        )
 
         self._create_latest_symlink()
         self.environment.close()

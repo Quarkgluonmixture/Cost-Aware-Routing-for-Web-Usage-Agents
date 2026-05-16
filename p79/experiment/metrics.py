@@ -96,8 +96,17 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
         "err_connection_refused",
     )):
         return True, "connection_error"
-    if any(k in msg for k in ("docker", "container", "service unavailable", "502", "503")):
+    # B-335 (/stress A1.9 Mode A F5, 2026-05-16): split bare "502"/"503"
+    # (short messages without container/proxy URL context) into
+    # `unclassified_5xx`. Pre-fix bare HTTP 503 was uniformly bucketed to
+    # docker_service_error even when error was from B0 proxy API short
+    # response (no AWS gateway URL in error string) → paper §3.4 noise
+    # breakdown mis-categorized API transient as docker container issue.
+    # Specific container/URL signatures still classify as docker_service_error.
+    if any(k in msg for k in ("docker", "container", "service unavailable")):
         return True, "docker_service_error"
+    if any(k in msg for k in ("502", "503")):
+        return True, "unclassified_5xx"
     if "start_url_content_error" in msg:
         return True, "start_url_content_error"
     if "site_infra_error" in msg:
@@ -176,45 +185,18 @@ def net_saving_energy(
     return _net_saving(energy_baseline_kwh, energy_routed_kwh, overhead)
 
 
-def estimate_step_flops(
-    input_text_tokens: int,
-    input_image_tokens: int,
-    output_tokens: int,
-    model_profile: str = "qwen3vl_4b",
-) -> Dict[str, float]:
-    """Estimate FLOPs per step based on token counts and model architecture.
-
-    Uses the standard 2*N*d^2 approximation for transformer layers
-    (covering Q/K/V/O projections + FFN ≈ 4x multiplier per layer).
-    """
-    profiles = {
-        "qwen3vl_4b": {
-            "d_model": 2560,
-            "n_layers_llm": 36,
-            "vit_d_model": 1280,
-            "vit_layers": 32,
-        },
-    }
-    p = profiles[model_profile]
-    d, L = p["d_model"], p["n_layers_llm"]
-    vit_d, vit_L = p["vit_d_model"], p["vit_layers"]
-
-    # ViT encoder: 2 * tokens * d^2 * layers * 4 (attention + FFN)
-    vit_flops = 2.0 * input_image_tokens * (vit_d ** 2) * vit_L * 4
-
-    # LLM prefill: 2 * total_input * d^2 * layers * 4
-    total_input = input_text_tokens + input_image_tokens
-    llm_prefill_flops = 2.0 * total_input * (d ** 2) * L * 4
-
-    # LLM decode: 2 * output * d^2 * layers * 4
-    llm_decode_flops = 2.0 * output_tokens * (d ** 2) * L * 4
-
-    return {
-        "vit_encoder": vit_flops,
-        "llm_prefill": llm_prefill_flops,
-        "llm_decode": llm_decode_flops,
-        "total": vit_flops + llm_prefill_flops + llm_decode_flops,
-    }
+# B-328 (/stress A1.9 Mode A F4 + Mode B F8 OOB, 2026-05-16): deleted
+# `estimate_step_flops()` — 0 production callers (`grep -r estimate_step_flops
+# p79 scripts tests | wc -l = 1` = self-definition only) AND formula was
+# ~3× under-estimate of standard transformer FLOPs (`2*N*d²*L*4` =
+# 8 N d² per layer vs Hoffmann standard 24 N d² for QKVO attention +
+# FFN; SwiGLU pushes to ~28 N d²/layer). Paper §3 does not quote
+# FLOPs/step numerically; if future work needs FLOPs, implement
+# per-architecture formulas with attention(8 N d²) + FFN(depends on
+# activation: ReLU/GeLU 16 N d², SwiGLU 24 N d²) split + per-model
+# d_model / n_layers / FFN_mult from architecture config. Until then
+# this dead-and-wrong helper is removed to prevent future citation
+# of a broken formula.
 
 
 def compute_wasted_cost(
@@ -454,6 +436,34 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
         # only — net_saving_latency does NOT subtract this (already in routed total).
         "avg_router_overhead_ms": _avg("total_router_overhead_ms"),
         "avg_obs_prepare_cost_usd": _avg("total_obs_prepare_cost_usd"),
+        # B-332 (/stress A1.9 Mode C F6 OOB, 2026-05-16): paper §3.2 quotes
+        # "~30ms median obs-prepare latency" but pre-fix aggregator emitted
+        # only USD aggregate (`avg_total_obs_prepare_cost_usd`), no latency
+        # quantile → paper §3.2 number was structurally not producible from
+        # this pipeline alone (required manual step_metrics.csv pivot).
+        # Now: aggregate p50/p95 across each episode's
+        # `obs_prepare_latency_ms_list` if present (runner emits per-step
+        # obs_prepare latency in step record; episode summary may pre-aggregate).
+        "p50_obs_prepare_ms": (
+            float(statistics.median(
+                [float(v) for x in episode_summaries
+                 for v in (x.get("obs_prepare_latency_ms_list", []) or [])
+                 if v is not None]
+            )) if any(
+                x.get("obs_prepare_latency_ms_list")
+                for x in episode_summaries
+            ) else None
+        ),
+        "p95_obs_prepare_ms": (
+            p95([
+                float(v) for x in episode_summaries
+                for v in (x.get("obs_prepare_latency_ms_list", []) or [])
+                if v is not None
+            ]) if any(
+                x.get("obs_prepare_latency_ms_list")
+                for x in episode_summaries
+            ) else None
+        ),
         # B-195 (/stress A1.4b-ii gemini v1 G1, P1 OOB): per-cell avg of the
         # per-episode obs-prepare cost. Paper §3 currently cites
         # "~30 ms median obs-prepare latency" but pre-fix the aggregate layer

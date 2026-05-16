@@ -89,3 +89,23 @@ class LoggerV2:
             os.fsync(f.fileno())
         os.replace(tmp_path, path)  # atomic on same filesystem
         _fsync_dir(path.parent)  # B-198 flush dir entry to disk
+
+
+def write_run_summary_atomic(run_summary_path: Path, payload: Dict[str, Any]) -> None:
+    """B-331 (/stress A1.9 Mode B F6 OOB, 2026-05-16): atomic + fsync write
+    for run_summary_v2.json. Pre-fix runner/main.py:710 used plain
+    `json.dump` → crash mid-write → run_summary truncated. condition_summary
+    already uses the LoggerV2 atomic+fsync chain (line 86-91); this helper
+    extends the same durability contract to the run-level summary.
+
+    Standalone function (not a LoggerV2 method) because run_summary lives at
+    output_root, not at any single condition_dir.
+    """
+    run_summary_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = run_summary_path.with_suffix(".json.tmp")
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_path, run_summary_path)
+    _fsync_dir(run_summary_path.parent)
