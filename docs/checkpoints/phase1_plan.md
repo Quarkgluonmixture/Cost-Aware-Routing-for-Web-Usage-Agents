@@ -83,10 +83,10 @@ B0 infra prereq ──┘                                                       
 
 #### A1-管线 (`scripts/`)
 
-- [ ] **A1.13** `scripts/queues/queue_{baseline,phantom_*,chain}.sh` — launch + 3-way collision
-- [ ] **A1.14** `scripts/queues/queue_phase1_paper_grade.sh` + `scripts/preflight_v2.sh` — orchestrator + pre-launch gates
-- [ ] **A1.15** `scripts/maintenance/experiment_watchdog.py` + `scripts/maintenance/glm/*.py` — watchdog auto-clean + cron sidecars (glm_cell_autoupdate / myriad_watcher / glm_pre_launch_check / batch_digest)
-- [ ] **A1.16** `scripts/provenance/snapshot_*` — env + VWA fingerprint
+- [x] **A1.13** `scripts/queues/queue_{baseline,phantom_*,chain}.sh` — launch + 3-way collision (2026-05-16: combined batch with A1.14, commit `3cd23f2`, §157, B-230~B-236; key fixes = B-224 auth gate hard-fail propagation + Bug 2 URL-locality preflight + RUN_ID nanos+PID+RANDOM collision defense + sibling-propagation defect class closed via `_lib_paper_grade_gates.sh` extraction)
+- [x] **A1.14** `scripts/queues/queue_phase1_paper_grade.sh` + `scripts/preflight_v2.sh` — orchestrator + pre-launch gates (2026-05-16: combined commit with A1.13 `3cd23f2`, §157; B-91 VWA submodule lock check + preflight 触发 paper-grade gates)
+- [~] **A1.15** `scripts/maintenance/experiment_watchdog.py` + `scripts/maintenance/glm/*.py` — **partial only via A1.17 side effects** (NOT full audit): A1.17 Chunk 1 deleted `glm_pre_launch_check.py` (B-306, replaced by deterministic shell asserts in `launch.sh`); A1.17 Chunk 2 added `experiment_watchdog.py:1402+` Option K trajectory event hook (B-314). Remaining un-audited: `glm_cell_autoupdate.py` / `myriad_watcher.py` / `batch_digest.py` / full watchdog 6-layer auto-clean protocol audit.
+- [x] **A1.16** `scripts/provenance/snapshot_*` — env + VWA fingerprint (2026-05-16: commit `5e11721`, §160, B-273~B-279; 7 fixes incl. probe URL static-asset / HF loaded SHA double-field / evaluator hash canonical + Gemma3-VL gated hard-fail / scope expansion + docker source SHA; mechanism-script subset 5 bugs D-1..D-5 deferred per paper-2 scope)
 - [x] **A1.17** `scripts/vwa/` + `RESET_BEFORE` protocol — Chunk 1 ✅ 2026-05-16 (B-298~B-306, §162: 5 P0 + glm-absorb-P1 + P2-2); Chunk 2 ✅ 2026-05-16 late (B-307~B-314, §163: 6 P1 quality + Option K Trajectory Event Log schema/API/hooks)
 
 #### A1-外部 (VWA submodule)
