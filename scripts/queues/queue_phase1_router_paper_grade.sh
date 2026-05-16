@@ -56,6 +56,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_DIR}"
 
+# B-395 (/stress A1.1 v8 3-AI overlap P0-1, 2026-05-16): paper_grade env wire.
+# See `queue_phase1_paper_grade.sh` for full rationale — B-340 GLM hard-block
+# reachability gate. Pass-2 router fire is part of paper-grade scope so
+# same flag must propagate.
+export P79_PAPER_GRADE=1
+
 MODE="${1:-dry-run}"
 SITE_FILTER="${2:-all}"
 

@@ -35,7 +35,7 @@ backends:
     max_obs_chars: 12000
     dom_mode: "llm"
     mock_mode: false
-    use_glm_fallback: true
+    use_glm_fallback: false  # B-396 (/stress A1.1 P0-1 3-AI overlap, 2026-05-16): paper-grade hard-off (was true)
     glm_config: ".auth/glm"
 
 metrics:

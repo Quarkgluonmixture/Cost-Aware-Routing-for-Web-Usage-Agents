@@ -127,6 +127,12 @@ class StepRecordV2:
     # writing, paper §3.5.1 prose retires).
     retry_action_applied: Optional[bool] = None
     retry_action_type: Optional[str] = None
+    # B-398 (/stress A1.1 v8 Mode A+B P0-3 overlap, 2026-05-16): explicit
+    # `attempted` field so attempted-but-failed GLM cases are distinguishable
+    # from never-tried (both used to collapse to `used=None`). Runner now
+    # emits `attempted=True` whenever the proxy invoked GLM regardless of
+    # success/failure outcome.
+    glm_fallback_attempted: Optional[bool] = None
     glm_fallback_used: Optional[bool] = None
     glm_fallback_latency_ms: Optional[float] = None
     glm_original_fail_reason: Optional[str] = None

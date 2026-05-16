@@ -68,6 +68,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_DIR}"
 
+# B-395 (/stress A1.1 v8 3-AI overlap P0-1, 2026-05-16): export P79_PAPER_GRADE
+# so `p79/experiment/config.py:normalize_config` sets top-level
+# `cfg["paper_grade"] = True` → runner propagates to backend cfg → B0
+# `ApiProxyBackend` forwards to agent → B-340 GLM hard-block at
+# `proxy_api_agent.py:179-186` raises if any yaml still has
+# `use_glm_fallback: true`. Defense-in-depth: (a) all B0 paper-1 yamls
+# explicit `use_glm_fallback: false` (B-396), (b) this env wire makes
+# B-340 hard-block reachable, (c) B-340 RuntimeError fail-fast at init.
+export P79_PAPER_GRADE=1
+
 MODE="${1:-dry-run}"
 SITE_FILTER="${2:-all}"
 

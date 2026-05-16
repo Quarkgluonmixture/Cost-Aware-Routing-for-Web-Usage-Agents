@@ -462,6 +462,15 @@ class ProxyApiAgent:
         # failure; B0 keeps lenient try/except (proxy-side transient errors) but
         # the meta flag lets downstream symmetric-exclude / paper-grade audit.
         _image_encode_error_count = 0
+        # B-400 (/stress A1.1 v8 Mode A+C overlap P1-2, 2026-05-16): track
+        # reference-image payload bytes so cost reporting includes the full
+        # B0 egress, not only the screenshot. Pre-fix: meta emitted only
+        # screenshot `image_payload_bytes`; tasks with N reference images
+        # (each ~30-100KB) silently under-reported absolute cost. Mode A
+        # F5 + Mode C F7 (Gemini) two-AI overlap. Backward-compat: existing
+        # `image_payload_bytes` retained = screenshot bytes; new
+        # `image_payload_bytes_ref` + `image_payload_bytes_total` exposed.
+        _ref_payload_bytes_total = 0
 
         # Inject task reference images (e.g. product photos) before the screenshot.
         # Mirrors qwen3vl_agent.py reference_images handling.
@@ -478,6 +487,8 @@ class ProxyApiAgent:
                         f"Use it to identify which element to interact with."
                     )
                     ref_payload = self._image_to_data_url(ref_img)
+                    # B-400: accumulate ref bytes for paper §1 cost claim.
+                    _ref_payload_bytes_total += int(ref_payload.get("payload_bytes") or 0)
                     user_content.append({"type": "text", "text": ref_label})
                     user_content.append({
                         "type": "image_url",
@@ -590,8 +601,16 @@ class ProxyApiAgent:
         _backoff = 10  # seconds; doubles each attempt
         _retry_count = 0
         _retry_wait_ms_total = 0.0
+        # B-399 (/stress A1.1 v8 Mode A P1-1, 2026-05-16): accumulate the
+        # failed-attempt elapsed (not only the sleep) into the retry-wait
+        # total so `total_minus_retry` truly reflects "what the request
+        # would have cost without scaffold overhead". Pre-fix: a 120s
+        # timeout + 10s sleep + 30s success scored 150s fair-latency while
+        # the actual no-scaffold cost was 30s — retry-frequent sites were
+        # systematically inflated.
         resp = None
         for _attempt in range(_max_retries + 1):
+            _attempt_start = time.time()
             try:
                 resp = requests.post(
                     self.endpoint,
@@ -600,26 +619,33 @@ class ProxyApiAgent:
                     timeout=self.timeout,
                 )
             except (requests.Timeout, requests.ConnectionError) as net_exc:
+                _attempt_elapsed_ms = (time.time() - _attempt_start) * 1000.0
                 if _attempt == _max_retries:
                     raise
                 wait = _backoff * (2 ** _attempt)
                 logger.warning(
-                    "API network error %s (attempt %d/%d), retrying in %ds...",
-                    net_exc, _attempt + 1, _max_retries, wait,
+                    "API network error %s (attempt %d/%d, %.0fms), retrying in %ds...",
+                    net_exc, _attempt + 1, _max_retries, _attempt_elapsed_ms, wait,
                 )
                 _retry_count += 1
-                _retry_wait_ms_total += wait * 1000.0
+                # B-399: charge failed-attempt elapsed + sleep to scaffold.
+                _retry_wait_ms_total += _attempt_elapsed_ms + wait * 1000.0
                 time.sleep(wait)
                 continue
+            _attempt_elapsed_ms = (time.time() - _attempt_start) * 1000.0
             if resp.status_code not in _retryable_codes or _attempt == _max_retries:
+                # Success path (or last-attempt 5xx that we surface up):
+                # this attempt's elapsed is the LEGITIMATE network cost,
+                # NOT scaffold. Do not accumulate.
                 break
             wait = _backoff * (2 ** _attempt)
             logger.warning(
-                "API %s (attempt %d/%d), retrying in %ds...",
-                resp.status_code, _attempt + 1, _max_retries, wait,
+                "API %s (attempt %d/%d, %.0fms), retrying in %ds...",
+                resp.status_code, _attempt + 1, _max_retries, _attempt_elapsed_ms, wait,
             )
             _retry_count += 1
-            _retry_wait_ms_total += wait * 1000.0
+            # B-399: failed-status attempt (will be retried) → scaffold cost.
+            _retry_wait_ms_total += _attempt_elapsed_ms + wait * 1000.0
             time.sleep(wait)
         assert resp is not None, "API request failed: resp is None after all retries"
         resp.raise_for_status()
@@ -738,7 +764,34 @@ class ProxyApiAgent:
                 or usage.get("completion_tokens")
             ),
             "thinking_tokens": None,
+            # B-401 (/stress A1.1 v8 Mode A P1-3, 2026-05-16): explicit None
+            # for latency-split fields B0 cannot expose at the API boundary.
+            # Pre-fix the keys were absent; runner default 0.0 made B0
+            # latency-split rows look like "preprocessing=0, generate=0,
+            # backend_infer=full_network" — visually different from B1/B2
+            # but not principled (B0 internal preprocess + generate exist
+            # inside the proxy/provider, just not surfaced). None is the
+            # honest contract; runner now records None instead of 0 and
+            # paper §3 latency-split disclosure can document the asymmetry.
+            "preprocess_ms": None,
+            "generate_ms": None,
             "image_payload_bytes": image_payload.get("payload_bytes") if image_payload else None,
+            # B-400 (/stress A1.1 v8 Mode A+C overlap P1-2, 2026-05-16):
+            # separate screenshot-only + ref-only + total payload bytes so
+            # paper §1 absolute cost claim covers full B0 egress. Old field
+            # `image_payload_bytes` retained for backward compat = screenshot
+            # bytes (matches legacy semantic). Aggregator should prefer
+            # `image_payload_bytes_total` for cross-task cost comparison.
+            "image_payload_bytes_screenshot": (
+                image_payload.get("payload_bytes") if image_payload else None
+            ),
+            "image_payload_bytes_ref": (
+                _ref_payload_bytes_total if _ref_payload_bytes_total else None
+            ),
+            "image_payload_bytes_total": (
+                (image_payload.get("payload_bytes") if image_payload else 0)
+                + _ref_payload_bytes_total
+            ) or None,
             "image_quality": image_payload.get("quality") if image_payload else None,
             "image_compressed": image_payload.get("compressed") if image_payload else None,
             # /stress A1.2 F1: surface the over-cap condition through meta so

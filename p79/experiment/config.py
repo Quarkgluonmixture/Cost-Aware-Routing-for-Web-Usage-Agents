@@ -150,6 +150,22 @@ def load_experiment_config(config_path: str) -> Dict[str, Any]:
 def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     cfg = copy.deepcopy(cfg)
 
+    # B-395 (/stress A1.1 v8 3-AI overlap P0-1, 2026-05-16): paper_grade flag
+    # wires top-level → backends → agent so the B-340 GLM hard-block at
+    # `proxy_api_agent.py:179-186` is reachable. Source priority:
+    #   1. env var P79_PAPER_GRADE=1 (paper-grade queue scripts export this)
+    #   2. yaml top-level `paper_grade: true` (explicit override)
+    #   3. default False (dev session / mock runs)
+    # Without this wire B-340 raise is unreachable → GLM scaffold can
+    # silently enable on B0 paper-grade fire and contaminate paper §1
+    # cost-fairness. Codex Mode B F1 + Gemini Mode C P0-5 + Claude Mode A
+    # P0-1 three-AI overlap (highest confidence finding in A1.1 batch).
+    _paper_grade_env = os.environ.get("P79_PAPER_GRADE", "").strip().lower()
+    if _paper_grade_env in ("1", "true", "yes", "on"):
+        cfg["paper_grade"] = True
+    else:
+        cfg.setdefault("paper_grade", False)
+
     experiment = cfg.setdefault("experiment", {})
     experiment.setdefault("name", "p79_experiment")
     experiment.setdefault("benchmark", "visualwebarena")

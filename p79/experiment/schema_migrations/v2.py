@@ -142,6 +142,11 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     # consistent shape regardless of when the JSONL was written.
     "retry_action_applied": None,
     "retry_action_type": None,
+    # B-398 (/stress A1.1 v8 Mode A+B P0-3 overlap, 2026-05-16): explicit
+    # attempted flag so attempted-but-failed cases are not silently merged
+    # with never-tried. See `types.py:glm_fallback_attempted` for full
+    # rationale.
+    "glm_fallback_attempted": None,
     "glm_fallback_used": None,
     "glm_fallback_latency_ms": None,
     "glm_original_fail_reason": None,

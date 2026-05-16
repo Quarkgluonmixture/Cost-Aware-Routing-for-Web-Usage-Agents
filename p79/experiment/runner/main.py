@@ -1666,8 +1666,21 @@ class ExperimentRunner:
                 latency_ms={
                     "total": total_latency_ms,
                     "obs_prepare": obs_prepare_ms,
-                    "preprocessing": float(meta.get("preprocess_ms", 0.0)),
-                    "generate": float(meta.get("generate_ms", 0.0)),
+                    # B-401 (/stress A1.1 v8 Mode A P1-3, 2026-05-16): preserve
+                    # None semantics for B0 (proxy API has no preprocess/
+                    # generate boundary exposable). Default-0.0 made B0 rows
+                    # look like "preprocessing=0, generate=0" which was
+                    # dishonest schema-level — None is correct.
+                    "preprocessing": (
+                        float(meta["preprocess_ms"])
+                        if meta.get("preprocess_ms") is not None
+                        else None
+                    ),
+                    "generate": (
+                        float(meta["generate_ms"])
+                        if meta.get("generate_ms") is not None
+                        else None
+                    ),
                     "backend_infer": float(meta.get("infer_ms", backend_latency_ms)),
                     "env_step": env_step_ms,
                     "router_decision": float(overhead.get("router_decision_ms", 0.0)),
@@ -1731,8 +1744,24 @@ class ExperimentRunner:
             step_record["retry_action_applied"] = retry_was_applied
             step_record["retry_action_type"] = retry_action_type_str
             # GLM fallback tracking (§67 Plan B)
-            if meta.get("glm_fallback_used"):
-                step_record["glm_fallback_used"] = True
+            # B-398 (/stress A1.1 v8 Mode A+B P0-3 overlap, 2026-05-16):
+            # persist ALL attempted-fallback steps, not only the succeeded
+            # ones. Pre-fix `if meta.get("glm_fallback_used"):` (truthy
+            # check) meant failed-attempt steps (`attempted=True, used=
+            # False`) collapsed to the same JSONL shape as "never tried"
+            # (all 4 fields default None per `STEP_RECORD_V2_DEFAULTS`).
+            # Downstream could not compute true GLM hit-rate from JSONL —
+            # e.g. 20 success / 10 fail / 70 no-attempt rendered as
+            # 20/100=20% instead of 20/30=67% (off by ~47%). Paper §3
+            # GLM-disclosure audit-trail structurally unrecoverable.
+            # Post-fix: emit on attempted, capture used + reason + latency
+            # regardless of outcome. Combined with B-395 paper_grade hard-
+            # block + B-396 yaml flip, paper-grade fire should hit zero
+            # attempts (use_glm_fallback=false), but if any non-paper-
+            # grade pilot/dev run uses GLM, the audit-trail is intact.
+            if meta.get("glm_fallback_attempted"):
+                step_record["glm_fallback_attempted"] = True
+                step_record["glm_fallback_used"] = bool(meta.get("glm_fallback_used"))
                 step_record["glm_fallback_latency_ms"] = meta.get("glm_fallback_latency_ms")
                 step_record["glm_original_fail_reason"] = meta.get("glm_original_fail_reason")
             # /stress A1.1 codex Mode B C1 fix: persist B0 image telemetry into the
@@ -1758,6 +1787,14 @@ class ExperimentRunner:
                 "pipeline": _image_pipeline,
                 "image_over_cap": meta.get("image_over_cap"),
                 "image_payload_bytes": meta.get("image_payload_bytes"),
+                # B-400 (/stress A1.1 v8 Mode A+C overlap P1-2, 2026-05-16):
+                # ref + total payload bytes piggyback. B0 emits the new
+                # fields; B1/B2 leave them None (HF processor path has no
+                # JPEG payload concept). Aggregator should prefer
+                # `image_payload_bytes_total` for cross-task cost claim.
+                "image_payload_bytes_screenshot": meta.get("image_payload_bytes_screenshot"),
+                "image_payload_bytes_ref": meta.get("image_payload_bytes_ref"),
+                "image_payload_bytes_total": meta.get("image_payload_bytes_total"),
                 "image_quality": meta.get("image_quality"),
                 "image_compressed": meta.get("image_compressed"),
                 "image_encode_error": meta.get("image_encode_error"),
@@ -1769,17 +1806,36 @@ class ExperimentRunner:
             # B-324 (/stress A1.9 Mode B F2 OOB, 2026-05-16): image_meta_recorded
             # separator flag. A1.8 B-291 added `image_meta_recorded: bool` to
             # `StepRecordV2` + `STEP_RECORD_V2_DEFAULTS` but runner never wrote
-            # it (`grep -c image_meta_recorded p79/experiment/runner = 0`)
-            # → A1.8 schema separator was structurally inert. Now: explicitly
-            # tag whether image_meta payload reflects a real image step
-            # (mode ∈ {som, vision, phantom_som} AND image actually rendered)
-            # vs DOM-only step where image_meta is uniformly None by design.
-            # Paper §3 image-axis disclosure can now distinguish "no image
-            # input by design" from "image expected but missing telemetry".
+            # it → A1.8 schema separator was structurally inert. Tag whether
+            # image_meta payload reflects a real image step (mode declares
+            # image AND image actually rendered AND encoding OK) vs no-image
+            # step where image_meta is uniformly None by design.
+            #
+            # B-397 (/stress A1.1 v8 Mode A+B P0-2 overlap, 2026-05-16):
+            # backend-aware truth source fix. Pre-fix:
+            #   (a) image-mode set was {"som", "vision", "phantom_som"}, but
+            #       per `p79/experiment/som.py:322-323` phantom_som strips
+            #       image (P-SoM = SoM-prompt + [SOM_MARKS] text + NO image).
+            #       Including it inflated the "image-expected" denominator.
+            #   (b) truth source was `image_payload_bytes is not None`, but
+            #       only B0 (`proxy_api_agent.py:741`) emits that field — it
+            #       comes from B0's base64 JPEG pipeline. B1/B2 (HF processor
+            #       PIL path) have no `image_payload_bytes` key → meta.get()
+            #       returns None → image_meta_recorded permanently False on
+            #       all B1/B2 SoM/vision steps. Any downstream aggregator
+            #       filter on `image_meta_recorded == True` would silently
+            #       exclude all B1/B2 image-axis data.
+            # Post-fix: image-mode set = {"som", "vision"} only; truth source
+            # is OR over backend-aware signals (B1/B2 via input_image_tokens,
+            # B0 via image_payload_bytes). All 3 baselines now consistent.
+            _image_mode = decision_mode in {"som", "vision"}
+            _encode_ok = _image_meta_payload.get("image_encode_error") is None
+            _image_sent = (
+                int(meta.get("input_image_tokens") or 0) > 0
+                or _image_meta_payload.get("image_payload_bytes") is not None
+            )
             step_record["image_meta_recorded"] = bool(
-                decision_mode in {"som", "vision", "phantom_som"}
-                and _image_meta_payload.get("image_encode_error") is None
-                and _image_meta_payload.get("image_payload_bytes") is not None
+                _image_mode and _encode_ok and _image_sent
             )
             # B-156 (/stress A1.3 v8 Claude F5 + codex P2-B7 dual catch, 2026-05-16):
             # locator-route dispatch telemetry from VWA wrapper info dict.
