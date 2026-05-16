@@ -3126,3 +3126,76 @@ Cross-AI value (A1.15-specific): codex unique P0 = **B-385 session auto-clean mi
 **Cumulative session**: A1.4a+b-i+b-ii+c + A1.5 + A1.13+14 + A1.6 + A1.7 + A1.16 + A1.8 + A1.17 + A1.18 + A1.12 + A1.9 + A1.10 + A1.15 = B-140 through B-394 = ~255 unique entries.
 **Phase 1a fire green-light unchanged**: substrate paper-grade post-A1.15 Pre-fire 闭环 land. Remaining advisor blockers unchanged: B-262 (GLM fallback Thread 1); B-130 (FE/RE estimand Thread 2); B-369 (schema v2.2 retry attribution, paper-2 prerequisite).
 **Next available B-number**: B-395+.
+
+---
+
+## A1.1 batch (B-395~B-405, 3-AI cross-audit, 2026-05-16)
+
+3-AI cross-AI /stress cycle (Claude Mode A + codex Mode B + gemini Mode C) on `p79/agents/` step contract. User Phase A directive: 永远最 clean paper grade; GLM rescue paper-grade run 全禁。 Commits: `0f3a7c2` (batch 1: B-395~B-401) + `d765dbf` (batch 2: B-402/403/405).
+
+### B-395. `paper_grade` flag end-to-end wire — 3-AI overlap P0-1 [A+B+C — highest confidence] 🛠️ FIXED commit `0f3a7c2`
+- **Attack**: B-340 hard-block at `proxy_api_agent.py:179-186` raises iff `config["paper_grade"]=True`, but no upstream path ever sets the flag (0 grep hits across `configs/`, `scripts/queues/*.sh`, env-var exports). `runner/main.py:209` setdefault'd to `False`. Claude Mode A code-trace + codex Mode B grep (`configs/exp_v2_B0_som_reddit.yaml:36 use_glm_fallback:true` + 39 sibling configs) + gemini Mode C paper-§3 fairness rhetoric attack all converged on same root.
+- **Fix**: `config.py:normalize_config` merges env `P79_PAPER_GRADE` (1/true/yes/on) → top-level `cfg["paper_grade"]=True`. `queue_phase1_paper_grade.sh:67` + `queue_phase1_router_paper_grade.sh:58` export the env. Reaches existing B-340 raise; agent fail-fast at init if any yaml still has `use_glm_fallback:true`.
+
+### B-396. 39 live B0 yaml configs `use_glm_fallback: true → false` (P0-1 defense-in-depth sibling) 🛠️ FIXED commit `0f3a7c2`
+- **Attack**: All 39 paper-grade B0 yamls (cls/red/shop/WA × 6 modes incl. `exp_v2_B0_router_learned_classifieds.yaml:62`) explicitly opt-in to GLM fallback at config layer, masking B-395 fix.
+- **Fix**: `sed -i 's/use_glm_fallback: true/use_glm_fallback: false/'` mass-flip + per-line audit comment "B-396 (/stress A1.1 P0-1 3-AI overlap, 2026-05-16): paper-grade hard-off (was true)". `configs/exp_v2_base.yaml:173 use_glm_fallback: false` (default) unchanged. Defense-in-depth: config-off + B-395 hard-block reachable + B-340 RuntimeError raise.
+
+### B-397. `image_meta_recorded` cross-baseline asymmetry — 2-AI A+B overlap P0-2 🛠️ FIXED commit `0f3a7c2`
+- **Attack**: B-324 truth source `image_payload_bytes is not None` only fires on B0 (proxy JPEG pipeline); B1/B2 HF-processor PIL path has no payload_bytes → `image_meta_recorded` permanently False on ALL B1/B2 SoM/vision steps. Image-mode set also incorrectly included `phantom_som` (per `som.py:322-323` phantom_som strips image). Any aggregator filter on `image_meta_recorded == True` silently excludes B1/B2 image-axis data.
+- **Fix**: `runner/main.py:1768-1785` backend-aware OR — `input_image_tokens > 0` (B1/B2) ∨ `image_payload_bytes is not None` (B0); image-mode set narrowed to `{"som", "vision"}` only (phantom_som excluded — no image by design).
+
+### B-398. `glm_fallback_attempted` unconditional persistence — 2-AI A+B overlap P0-3 🛠️ FIXED commit `0f3a7c2`
+- **Attack**: `runner/main.py:1703 if meta.get("glm_fallback_used"):` truthy-check skipped attempted-but-failed cases. JSONL collapsed `attempted=True, used=False` → same shape as `never tried` (both default None per `STEP_RECORD_V2_DEFAULTS`). Reviewer audit "GLM hit rate" returned 20/100=20% instead of 20/30=67% — off by ~47%.
+- **Fix**: New field `glm_fallback_attempted: Optional[bool]` in `types.py:135` + `STEP_RECORD_V2_DEFAULTS:149`. Runner emits all 4 fields when `attempted=True` regardless of success/failure (`runner/main.py:1722-1735`). Audit trail fully reconstructable from JSONL.
+
+### B-399. `total_minus_retry` failed-attempt elapsed accounting — Mode A unique P1-1 🛠️ FIXED commit `0f3a7c2`
+- **Attack**: `proxy_api_agent.py:592` retry loop accumulated only `wait * 1000.0` (sleep time) into `_retry_wait_ms_total`. Pre-fix: 120s timeout + 10s sleep + 30s success → total=160s, network_retry_wait_ms=10s, `total_minus_retry=150s` — true scaffold overhead was 130s. Retry-frequent sites systematically inflated.
+- **Fix**: Capture `_attempt_start = time.time()` per retry; failed attempts (`Timeout/ConnectionError` OR retryable status code) accumulate `(time.time() - _attempt_start) * 1000 + wait * 1000` to `_retry_wait_ms_total`. Success path attempt's elapsed remains LEGITIMATE network cost (not scaffold) — not accumulated.
+
+### B-400. `image_payload_bytes_{total,ref,screenshot}` cost field — 2-AI A+C overlap P1-2 🛠️ FIXED commit `0f3a7c2`
+- **Attack**: B0 meta `image_payload_bytes` (line 767) tracked screenshot ONLY; reference-image payloads (1-3 product photos × 30-100KB each) were silently omitted. Paper §1 cost claim under-reported B0 absolute egress for any task with reference images. Mode A F5 + Mode C F7 (Gemini) two-AI overlap.
+- **Fix**: `proxy_api_agent.py` `_ref_payload_bytes_total` accumulator over ref-image loop; meta emits 3 fields: `image_payload_bytes_screenshot` (back-compat = old field semantic), `image_payload_bytes_ref`, `image_payload_bytes_total` (sum). Runner `_image_meta_payload` (`main.py:1769-1773`) pipes all 3 to step_record. Aggregator should prefer `_total` for cross-task cost comparison.
+
+### B-401. B0 latency-split honest `None` — Mode A unique P1-3 🛠️ FIXED commit `0f3a7c2`
+- **Attack**: B0 meta did not emit `preprocess_ms` or `generate_ms` keys (API boundary has no preprocess/generate split exposed). `runner/main.py:1638 float(meta.get("preprocess_ms", 0.0))` default-coerced to 0.0 → B0 latency rows looked like "preprocessing=0, generate=0, backend_infer=full_network" while B1/B2 had real numbers. Schema-dishonest.
+- **Fix**: B0 meta explicit `"preprocess_ms": None, "generate_ms": None` (`proxy_api_agent.py:766-770`). Runner records `None` instead of default 0.0 (`runner/main.py:1672-1683`). Paper §3 latency-split disclosure can now honestly note "B0 API boundary not exposed; latency-split N/A".
+
+### B-402. B0 prompt builders direct import from `_shared_vl_utils` — Mode A unique P1-4 🛠️ FIXED commit `d765dbf`
+- **Attack**: `proxy_api_agent.py:344 from p79.agents.qwen3vl_agent import Qwen3VLAgent` transitively imported `transformers.Qwen3VLForConditionalGeneration` + `qwen_vl_utils.process_vision_info` heavy deps. B0 is a pure network-call agent that needs none of them. Contradicts B-146 _shared_vl_utils extraction intent ("Gemma3VLAgent failed at first launch in environments without Qwen deps").
+- **Fix**: Direct `from p79.agents._shared_vl_utils import make_dom_prompt, make_som_prompt, make_vision_prompt`. `test_agents_prompt_parity` (9/9 PASS) confirms byte-identical via shared SOT.
+
+### B-403. `image_encode_error_step_count` symmetric-exclude — Mode B unique P1-9 🛠️ FIXED commit `d765dbf`
+- **Attack**: Agent comments (`qwen3vl_agent.py:355-363` + `gemma3vl_agent.py:330-336`) mandated "aggregate_*.py MUST symmetric-exclude steps with image_encode_error > 0" for paper-grade cross-baseline SR comparability. Pre-fix: 0 aggregator implemented exclusion. `aggregate_sr_fp_per_mode.py:78` + `aggregate_phantom_lift.py:117` consumed only `success` from condition summary — infra failures (PIL decode / base64 OOM on B0 proxy) silently scored as model/task failures.
+- **Fix**: `EpisodeSummaryV2.image_encode_error_step_count: int = 0` field (`types.py:213`) + STEP_RECORD_V2_DEFAULTS mirrored (`schema_migrations/v2.py:79`). Runner sums step_records image_meta image_encode_error per episode (`runner/main.py:2169-2174`). `aggregate_sr_fp_per_mode.aggregate_cell` emits 5 new transparency columns: `n_image_encode_error_episodes`, `image_encode_error_episode_rate`, `n_clean`, `n_success_clean`, `sr_pct_clean`. Reviewer can compare `sr_pct` vs `sr_pct_clean` — gap >> 0 = infra-failure contamination.
+
+### B-404. P2-3 `phantom_dom` alias paper §3 disclosure 🟢 ALREADY SATISFIED — no action
+- **Attack** (Gemini Mode C F3): code has `phantom_dom` + `phantom_text` (two mode names, identical dispatch) but prereg收敛 "3 arms" → reviewer audit could read as "4 names → 3 structures, author 注水"
+- **Status**: `section3_definition.md:29` already explicitly discloses: "`phantom_dom` is the deprecated legacy mode value — A1.7 B-261 enforces fail-loud `ValueError` raise in `conditions.py:96-117` ... `phantom_text` is the current canonical name". Additionally `pre_run/preregistration.md:39` proactively rejects "3-arm strict" framing ("Phantom space is a structural claim, not a 3-arm deployment claim"). No additional prose change required; recorded as defused-by-existing-disclosure.
+
+### B-405. `aggregate_cross_site._get_adjusted_sr` archive-only warning — Mode B unique P2-4 🛠️ FIXED commit `d765dbf`
+- **Attack**: `aggregate_cross_site.py:154` `_get_adjusted_sr()` helper + line 205 output row `adjusted_sr` column survived §139.8 retirement of post-hoc adjusted_success layer. Old cross-site tables silently re-introduced retired FP-filter framework if user re-ran old script.
+- **Fix**: Helper docstring labels archive-only-path; populated values now log `[B-405 legacy-archive]` warning to stderr; output column retained for back-compat with `cross_representation_summary` archives. Paper-grade callers reading the warning know to cite `raw_sr` not `adjusted_sr`. Future v3 schema bump can drop the column entirely.
+
+**B-numbers consumed**: B-395 through B-405 (11 contiguous; gap B-384~B-394 reserved per user directive 2026-05-16 mid-batch renumber for parallel chunk allocation).
+
+**Smoke verification**:
+- py_compile PASS: `config.py` / `runner/main.py` / `types.py` / `schema_migrations/v2.py` / `proxy_api_agent.py` / `aggregate_sr_fp_per_mode.py` / `aggregate_cross_site.py`
+- Tests 39/39 PASS: `test_agents_prompt_parity` (9) + `test_stress_a1_2_fixes` (16) + `test_stress_a1_4b_ii_g2_fixes` (6) + `test_runner_smoke` (7) + `test_runner_integration` (1)
+- B-395 + B-396 defense-in-depth verification: 39 yaml configs `use_glm_fallback:false` post-flip + B-395 env wire reaches B-340 raise
+
+**Cross-AI overlap summary** (paper-grade signal calibration):
+- 3-AI overlap (Mode A+B+C): B-395 (paper_grade inert) + Mode A F8 ↔ Mode B F2 ↔ Mode C F4 (B0 determinism gap, prose-only disclosure deferred next codex round)
+- 2-AI A+B overlap: B-397 (image_meta_recorded) + B-398 (glm_attempted lost)
+- 2-AI A+C overlap: B-400 (image_payload_bytes excludes ref)
+- Mode A unique (code-only): B-399 (total_minus_retry bias), B-401 (preprocess/generate=0), B-402 (transitive import)
+- Mode B unique (sys-engineer reproducibility): B-403 (image_encode_error no aggregator), B-405 (adjusted_sr leak)
+- Mode C unique (paper-prose): P0-4 (rule router §1 dead-trigger), P0-6 (FP-gap behavioral overinterpretation), P1-5 (tokenizer-level byte identity), P1-6 (B0 determinism §3 move) — **DEFERRED to next codex round**
+- Mode B 2 paper-2-scope catches (cross-family `--model-revision` default None + NVRTC fallback no telemetry) → defer to paper-2 mechanism resume per Phase A scope discipline
+
+**Deferred to next session**:
+- Mode C prose codex round (P0-4 / P0-5 / P0-6 / P1-5 / P1-6) — paper §1 + §3 prose edits + codex round verification
+- Mode B paper-2 scope (P1-7 cross-family revision, P1-8 NVRTC telemetry, P1-10 confidence in summary) — paper-2 mechanism resume hard gate
+
+**Phase 1a fire green-light**: substrate paper-grade post-A1.1 batch (3-AI cross-audit). GLM hard-block fully reachable (B-395 + B-396 + B-340 stacked); cross-baseline schema asymmetries closed (B-397/398/400/401); audit-trail intact (B-398/403/405). Phase A "永远最 clean paper grade" directive satisfied for §A1.1 scope.
+**Next available B-number**: B-406+.

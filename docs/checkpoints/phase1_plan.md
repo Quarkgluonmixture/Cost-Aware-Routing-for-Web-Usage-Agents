@@ -68,7 +68,7 @@ B0 infra prereq ──┘                                                       
 
 #### A1-代码 (`p79/`)
 
-- [ ] **A1.1** `p79/agents/` — agent 层 (`proxy_api_agent` / `qwen3vl_agent` / `gemma3vl_agent` + step contract)
+- [x] **A1.1** `p79/agents/` — agent 层 (`proxy_api_agent` / `qwen3vl_agent` / `gemma3vl_agent` + step contract) (2026-05-16: 3-AI cross-audit Mode A+B+C, 16 findings → 10 fixed + 1 defused-by-existing-disclosure + 4 Mode C prose deferred next codex round + 3 paper-2 scope; commits `0f3a7c2`+`d765dbf`; B-395~B-405; key fixes = B-395 paper_grade flag end-to-end wire (3-AI overlap P0-1) + B-396 39 yaml use_glm_fallback flip (paper-grade hard-off defense-in-depth) + B-397 image_meta_recorded backend-aware (2-AI A+B P0-2) + B-398 glm_fallback_attempted unconditional persistence (2-AI A+B P0-3) + B-399 total_minus_retry failed-attempt elapsed + B-400 image_payload_bytes_total ref+screenshot (2-AI A+C) + B-401 B0 latency split None + B-402 B0 _shared_vl_utils direct import + B-403 image_encode_error symmetric-exclude aggregator + B-405 adjusted_sr archive warning; user Phase A directive "永远最 clean paper grade, GLM rescue paper-grade 全禁" 满足)
 - [ ] **A1.2** `p79/backends/` — backend 层 (`api_proxy` / `local_qwen` / `local_gemma` + `factory` + `base` + `action_utils` + `image_utils` + `heuristic`)
 - [ ] **A1.3** `p79/envs/` — VWA wrapper + locator dispatch + observation pipeline
 - [ ] **A1.4** `p79/experiment/som.py` + mark 抽取链 — SoM + phantom mark layer
