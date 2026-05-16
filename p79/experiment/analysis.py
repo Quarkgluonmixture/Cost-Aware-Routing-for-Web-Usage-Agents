@@ -129,6 +129,23 @@ def _synthesize_condition_summary(
     """Build a condition summary from condition_meta + episode summaries.
 
     Used for in-progress conditions that haven't finished yet.
+
+    B-179 (/stress A1.4b-i Claude A3 + codex B6 + gemini C4, P0 triple-cross):
+    The pre-§A1.4b-i implementation hand-aggregated success_rate / avg_steps /
+    p95_latency / cost / energy with `e.get(k, 0) or 0` (silent None→0 →
+    B0 cost / energy systematic underestimation) AND was schema-incomplete vs
+    `aggregate_condition_metrics` (`metrics.py:263-396`): missing
+    `avg_total_latency_ms`, `avg_obs_prepare_cost_usd`, `avg_input_cost_usd`,
+    `avg_output_cost_usd`, `avg_busy_wait_total_ms`, `energy_partial_*`. It
+    also hard-zeroed `avg_router_overhead_cost_usd` / `wasted_*` /
+    `benchmark_noise_rate` / `cost_efficiency_ratio` → partial-condition rows
+    looked artificially clean. Headline `_plot_phase1` consumed mixed
+    partial+complete rows with no visual distinction.
+
+    Fix: delegate aggregation to the same `aggregate_condition_metrics` the
+    runner uses on completion, then overlay condition_meta + the `_synthesized`
+    flag (so downstream plotters can visually distinguish; see B-179 plot edit
+    in `_plot_phase1`).
     """
     meta_path = cond_dir / "condition_meta.json"
     if not meta_path.exists():
@@ -136,40 +153,14 @@ def _synthesize_condition_summary(
     with open(meta_path, "r", encoding="utf-8") as f:
         meta = json.load(f)
 
-    n = len(ep_summaries)
-    if n == 0:
+    if not ep_summaries:
         return {}
 
-    successes = sum(1 for e in ep_summaries if e.get("success"))
-    steps = [e.get("steps", 0) or e.get("total_steps", 0) or 0 for e in ep_summaries]
-    costs = [e.get("total_cost_usd", 0) or 0 for e in ep_summaries]
-    model_costs = [e.get("total_model_cost_usd", 0) or 0 for e in ep_summaries]
-    energies = [e.get("total_energy_kwh", 0) or 0 for e in ep_summaries]
-    co2es = [e.get("total_co2e_kg", 0) or 0 for e in ep_summaries]
-    # p95 latency: use per-episode p95, then take overall p95
-    ep_p95s = [e.get("p95_step_latency_ms", 0) or 0 for e in ep_summaries]
-    import numpy as _np
-    p95_lat = float(_np.percentile(ep_p95s, 95)) if ep_p95s else 0.0
-    # Retries, no_op, page_unchanged
-    retries = [e.get("retries", 0) or 0 for e in ep_summaries]
-    no_ops = [e.get("no_op_rate", 0) or 0 for e in ep_summaries]
-    page_unch = [e.get("page_unchanged_rate", 0) or 0 for e in ep_summaries]
+    # Canonical aggregator path: identical schema to completed condition_summary_v2.
+    from p79.experiment.metrics import aggregate_condition_metrics
+    canonical = aggregate_condition_metrics(ep_summaries)
 
-    # Aggregate trigger_distribution and state_change_reason_distribution
-    from collections import Counter
-    trigger_agg: Counter = Counter()
-    state_change_agg: Counter = Counter()
-    for e in ep_summaries:
-        td = e.get("trigger_distribution")
-        if isinstance(td, dict):
-            trigger_agg.update({str(k): int(v) for k, v in td.items()})
-        scr = e.get("state_change_reason_distribution")
-        if isinstance(scr, dict):
-            state_change_agg.update({str(k): int(v) for k, v in scr.items()})
-
-    modules = meta.get("modules", {})
-
-    return {
+    payload = {
         "condition_id": meta.get("condition_id", cond_dir.name),
         "seed": meta.get("seed", 42),
         "phase": meta.get("phase", "phase1"),
@@ -177,31 +168,11 @@ def _synthesize_condition_summary(
         "som_on": meta.get("som_on", False),
         "observation_mode": meta.get("observation_mode", "unknown"),
         "router_on": meta.get("router_on", False),
-        "module_flags": modules,
-        "episodes": n,
-        "success_rate": successes / n,
-        "avg_steps": sum(steps) / n,
-        "p95_step_latency_ms": p95_lat,
-        "avg_total_model_cost_usd": sum(model_costs) / n,
-        "avg_total_cost_usd": sum(costs) / n,
-        "avg_router_overhead_cost_usd": 0.0,
-        "avg_total_energy_kwh": sum(energies) / n,
-        "avg_total_co2e_kg": sum(co2es) / n,
-        "avg_retries": sum(retries) / n,
-        "avg_no_op_rate": sum(no_ops) / n,
-        "avg_page_unchanged_rate": sum(page_unch) / n,
-        "avg_escalation_count": 0.0,
-        "trigger_distribution": dict(trigger_agg),
-        "state_change_reason_distribution": dict(state_change_agg),
-        "avg_checklist_completion_rate": None,
-        "checklist_failure_episode_rate": None,
-        "benchmark_noise_rate": 0.0,
-        "wasted_energy_kwh": 0.0,
-        "avg_wasted_cost_usd": 0.0,
-        "avg_wasted_energy_kwh": 0.0,
-        "cost_efficiency_ratio": 0.0,
-        "_synthesized": True,  # mark as not from runner
+        "module_flags": meta.get("modules", {}),
+        **canonical,
+        "_synthesized": True,  # B-179: downstream plotters MUST honor this flag.
     }
+    return payload
 
 
 def _collect_condition_summaries(run_dir: Path) -> List[Dict[str, Any]]:
@@ -240,9 +211,15 @@ def _collect_condition_summaries(run_dir: Path) -> List[Dict[str, Any]]:
 
 
 def _collect_step_records(run_dir: Path) -> List[Dict[str, Any]]:
+    # B-180 (codex B7): pass sibling summary_v2.json for identity check.
+    # `*_steps_v2.jsonl` ↔ `*_summary_v2.json` naming convention is
+    # established by `runner/main.py::_run_and_record_episode`; the
+    # identity check warns (does not raise) on mismatch so analysis can
+    # still proceed but audit can see restart-crash divergence.
     rows: List[Dict[str, Any]] = []
     for step_path in run_dir.glob("*/episodes/*_steps_v2.jsonl"):
-        rows.extend(read_jsonl_dedup(step_path))
+        summary_path = step_path.with_name(step_path.name.replace("_steps_v2.jsonl", "_summary_v2.json"))
+        rows.extend(read_jsonl_dedup(step_path, summary_path=summary_path))
     return rows
 
 
@@ -1410,14 +1387,34 @@ def _plot_phase1(cond_df, plots_dir: Path, tables_dir: Path, ep_df=None) -> None
 
     fig, ax = plt.subplots(figsize=(max(6, len(mode_order) * 1.1), 4))
     _palette = ["#4C72B0", "#DD8452", "#55A868", "#C44E52", "#8172B2", "#937860", "#DA8BC3"]
-    bars = ax.bar(mode_order, success,
-                  color=[_palette[i % len(_palette)] for i in range(len(mode_order))])
+    # B-179 (Claude A3 + codex B6 + gemini C4): mark mode bars whose source
+    # contains ≥1 partial/synthesized condition with a hatch pattern so paper
+    # readers can visually distinguish "complete data" from "in-progress mix".
+    # Pre-fix, partial conditions were silently averaged in with no visual cue.
+    has_synth_col = "_synthesized" in cond_df.columns
+    is_partial_per_mode = []
+    for m in mode_order:
+        if has_synth_col:
+            sub = cond_df.loc[cond_df["observation_mode"] == m]
+            any_synth = bool(sub.get("_synthesized", pd.Series(dtype=bool)).fillna(False).any())
+        else:
+            any_synth = False
+        is_partial_per_mode.append(any_synth)
+    bars = ax.bar(
+        mode_order, success,
+        color=[_palette[i % len(_palette)] for i in range(len(mode_order))],
+        hatch=["//" if partial else None for partial in is_partial_per_mode],
+        edgecolor="black",
+    )
     ax.set_ylim(0.0, 1.0)
     ax.set_ylabel("Success Rate")
     # B-171 (/stress A1.4b-i Claude A5 + gemini C1): "(adjusted)" prose
     # remnant from pre-§139.8 era retired post-hoc layer. `success` is canonical
     # now; only N/A tasks are excluded (at task-load, see `tasks.py::load_tasks`).
-    ax.set_title("Phase 1 Representation Screening (N/A excluded at task-load)")
+    _title_extra = " — partial conditions hatched (//)" if any(is_partial_per_mode) else ""
+    ax.set_title(
+        f"Phase 1 Representation Screening (N/A excluded at task-load){_title_extra}"
+    )
     for bar, val in zip(bars, success):
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01, f"{val:.2f}", ha="center", va="bottom")
     fig.tight_layout()

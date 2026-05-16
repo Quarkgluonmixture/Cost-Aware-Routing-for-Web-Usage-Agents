@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +30,24 @@ def dedup_restart_lines(file_lines: List[Dict[str, Any]]) -> List[Dict[str, Any]
     return file_lines[last_run_start:]
 
 
-def read_jsonl_dedup(path: Path) -> List[Dict[str, Any]]:
-    """Read a single JSONL file, deduplicating restart artifacts."""
+def read_jsonl_dedup(
+    path: Path,
+    summary_path: Optional[Path] = None,
+) -> List[Dict[str, Any]]:
+    """Read a single JSONL file, deduplicating restart artifacts.
+
+    B-180 (/stress A1.4b-i codex B7): when ``summary_path`` is provided, the
+    last JSONL segment is validated against the summary's authoritative
+    fields ((schema_version, run_id, condition_id, seed, benchmark_site,
+    task_id, steps)). If the segment doesn't match, log a warning + still
+    return the last-segment lines (caller decides whether to consume) so
+    audit can see the divergence without crashing analysis. Pre-fix: a
+    restart that wrote ``step_idx=0`` and then crashed before summary
+    overwrite would have the old complete summary co-exist with the new
+    partial segment; the dedup unconditionally kept the partial, breaking
+    step-level cost/latency diagnostics while episode-level summaries
+    pointed at the old run.
+    """
     file_lines: List[Dict[str, Any]] = []
     with open(path, "r", encoding="utf-8") as f:
         for line_num, line in enumerate(f, 1):
@@ -43,4 +59,59 @@ def read_jsonl_dedup(path: Path) -> List[Dict[str, Any]]:
             except json.JSONDecodeError:
                 logger.warning("Dropped corrupt JSONL line %d in %s: %.100s", line_num, path, line)
                 continue
-    return dedup_restart_lines(file_lines)
+    last_segment = dedup_restart_lines(file_lines)
+
+    if summary_path is not None and last_segment:
+        _validate_against_summary(path, last_segment, summary_path)
+
+    return last_segment
+
+
+def _validate_against_summary(
+    jsonl_path: Path,
+    last_segment: List[Dict[str, Any]],
+    summary_path: Path,
+) -> None:
+    """B-180 helper: emit warning if last JSONL segment doesn't match summary.
+
+    Identity tuple checked: (schema_version, run_id, condition_id, seed,
+    benchmark_site, task_id). Cardinality: len(last_segment) vs summary
+    `steps` field. All mismatches are logged + caller may inspect; not raised
+    because in-progress data is legitimately mid-flight.
+    """
+    if not summary_path.exists():
+        return
+    try:
+        with open(summary_path, "r", encoding="utf-8") as f:
+            summary = json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning(
+            "B-180 read_jsonl_dedup: cannot read summary %s for identity check: %s",
+            summary_path, exc,
+        )
+        return
+
+    first = last_segment[0]
+    identity_keys = ("schema_version", "run_id", "condition_id", "seed",
+                     "benchmark_site", "task_id")
+    mismatches = []
+    for k in identity_keys:
+        s_val = summary.get(k)
+        l_val = first.get(k)
+        if s_val is None or l_val is None:
+            continue  # field not stamped in either side; skip
+        if s_val != l_val:
+            mismatches.append(f"{k}: summary={s_val!r} vs jsonl={l_val!r}")
+    if mismatches:
+        logger.warning(
+            "B-180 identity mismatch %s ↔ %s: %s",
+            jsonl_path, summary_path, "; ".join(mismatches),
+        )
+
+    summary_steps = summary.get("steps")
+    if isinstance(summary_steps, int) and summary_steps != len(last_segment):
+        logger.warning(
+            "B-180 step count mismatch %s: summary.steps=%d vs jsonl_segment=%d "
+            "(may indicate restart-crash; summary points to older run)",
+            jsonl_path, summary_steps, len(last_segment),
+        )
