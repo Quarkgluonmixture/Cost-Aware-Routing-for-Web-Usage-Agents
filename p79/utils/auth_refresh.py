@@ -21,10 +21,16 @@ _ACCOUNTS = {
 }
 
 _DEFAULT_BASE_URLS = {
-    "classifieds":    "http://100.95.81.103:9980",
-    "reddit":         "http://100.95.81.103:9999",
-    "shopping":       "http://100.95.81.103:7770",
-    "shopping_admin": "http://100.95.81.103:7780",
+    # BUG-14 fix (2026-05-16, Claude NEW2): defaults changed from quark Tailscale
+    # IP (100.95.81.103) to localhost. CLAUDE.md hard rule #3 already mandates
+    # going through queue scripts which source vwa_env_remote.sh setting env vars
+    # — so this fallback is 0pp on hot path. But if anyone bypasses queue and
+    # invokes bare python, loud-fail (localhost not running anything on DGX) is
+    # safer than silent-route-to-quark-prod (could pollute prod state).
+    "classifieds":    "http://localhost:9980",
+    "reddit":         "http://localhost:9999",
+    "shopping":       "http://localhost:7770",
+    "shopping_admin": "http://localhost:7780",
 }
 
 _LOGIN_PATHS = {
