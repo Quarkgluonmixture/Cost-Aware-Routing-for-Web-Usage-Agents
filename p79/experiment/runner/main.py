@@ -1392,6 +1392,13 @@ class ExperimentRunner:
                 "image_token_count_method": meta.get("image_token_count_method"),
             }
             step_record["image_meta"] = _image_meta_payload
+            # B-156 (/stress A1.3 v8 Claude F5 + codex P2-B7 dual catch, 2026-05-16):
+            # locator-route dispatch telemetry from VWA wrapper info dict.
+            # None when step did not invoke locator-route (scroll / wait / coord-only
+            # click); otherwise {success, fallback_used, target_tag, error, action_kind}
+            # so Phase 1a clean run can be audited for Cluster 1 ON_TARGET rate (paper
+            # §3 evidence layer for B-01/02/33 fix).
+            step_record["locator_route_meta"] = next_info.get("locator_route_meta")
             # Confidence metrics (optional, from logprobs extraction)
             if meta.get("mean_logprob") is not None:
                 step_record["confidence"] = {

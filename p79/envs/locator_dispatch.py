@@ -53,6 +53,39 @@ _ACTIONABLE_ARIA_ROLES_JS = (
     "'combobox','slider']"
 )
 
+# B-161 (/stress A1.3 v8 gemini C4, 2026-05-16): shadow-DOM penetration helper.
+# ``document.elementFromPoint`` returns the *shadow host* (e.g. ``<custom-search>``)
+# instead of the inner ``<button>``/``<a>`` when the page uses Shadow DOM (Reddit
+# redesign, modern SPAs, web components). Pre-fix the walk-up loop hit the host
+# without an actionable ancestor, fell through to walk_fail → framework
+# bbox-center fallback (= the B-33 buggy path Cluster 1 was meant to retire).
+# Recursive descent: if the hit element has a ``shadowRoot`` and its inner
+# ``elementFromPoint`` returns a *different* element, follow into that. Depth
+# capped at 5 (deeply nested shadow tree is exotic — most are 1-2 levels).
+_JS_SHADOW_DESCENT_FN = """
+function _shadowDescend(root, cx, cy, depth) {
+    if (!root || depth >= 5) return null;
+    const inner = (root.elementFromPoint ? root.elementFromPoint(cx, cy) : null);
+    if (!inner) return null;
+    // If this inner element has its own shadow, recurse one level deeper.
+    if (inner.shadowRoot) {
+        const deeper = _shadowDescend(inner.shadowRoot, cx, cy, depth + 1);
+        if (deeper && deeper !== inner) return deeper;
+    }
+    return inner;
+}
+function _pierceElementFromPoint(cx, cy) {
+    let el = document.elementFromPoint(cx, cy);
+    if (!el) return null;
+    // If the top-level hit is a shadow host, pierce into it.
+    if (el.shadowRoot) {
+        const pierced = _shadowDescend(el.shadowRoot, cx, cy, 1);
+        if (pierced && pierced !== el) return pierced;
+    }
+    return el;
+}
+"""
+
 
 # JS resolvers — find actionable ancestor by walking up the DOM
 # Returns the resolved ElementHandle (via evaluate_handle) or null
@@ -63,7 +96,8 @@ _ACTIONABLE_ARIA_ROLES_JS = (
 # framework bbox-center fallback (= B-33 regression risk).
 
 _JS_RESOLVE_CLICK = f"""([cx, cy]) => {{
-    let el = document.elementFromPoint(cx, cy);
+    {_JS_SHADOW_DESCENT_FN}
+    let el = _pierceElementFromPoint(cx, cy);
     if (!el) return null;
     const ACTIONABLE_ROLES = {_ACTIONABLE_ARIA_ROLES_JS};
     for (let i = 0; i < {WALK_UP_MAX_DEPTH} && el && el !== document.body; i++) {{
@@ -76,13 +110,17 @@ _JS_RESOLVE_CLICK = f"""([cx, cy]) => {{
         if (el.tagName === 'INPUT' && (el.type === 'submit' || el.type === 'button' ||
             el.type === 'checkbox' || el.type === 'radio')) return el;
         if (el.tagName === 'SUMMARY') return el;  // <details>/<summary>
-        el = el.parentElement;
+        // B-161: traverse out of shadow roots when walking up (parentElement
+        // stops at shadow-root boundary; need ``getRootNode().host`` to escape).
+        const next = el.parentElement || (el.getRootNode && el.getRootNode().host) || null;
+        el = next;
     }}
     return null;
 }}"""
 
 _JS_RESOLVE_INPUT = f"""([cx, cy]) => {{
-    let el = document.elementFromPoint(cx, cy);
+    {_JS_SHADOW_DESCENT_FN}
+    let el = _pierceElementFromPoint(cx, cy);
     if (!el) return null;
     for (let i = 0; i < {WALK_UP_MAX_DEPTH} && el && el !== document.body; i++) {{
         if (el.tagName === 'INPUT' && el.type !== 'hidden' &&
@@ -99,13 +137,15 @@ _JS_RESOLVE_INPUT = f"""([cx, cy]) => {{
                 }}
             }}
         }}
-        el = el.parentElement;
+        const next = el.parentElement || (el.getRootNode && el.getRootNode().host) || null;
+        el = next;
     }}
     return null;
 }}"""
 
 _JS_RESOLVE_UPLOAD = f"""([cx, cy]) => {{
-    let el = document.elementFromPoint(cx, cy);
+    {_JS_SHADOW_DESCENT_FN}
+    let el = _pierceElementFromPoint(cx, cy);
     if (!el) return null;
     for (let i = 0; i < {WALK_UP_MAX_DEPTH} && el && el !== document.body; i++) {{
         if (el.tagName === 'INPUT' && el.type === 'file') return el;
@@ -115,7 +155,8 @@ _JS_RESOLVE_UPLOAD = f"""([cx, cy]) => {{
             const fileInput = parent.querySelector('input[type=file]');
             if (fileInput) return fileInput;
         }}
-        el = el.parentElement;
+        const next = el.parentElement || (el.getRootNode && el.getRootNode().host) || null;
+        el = next;
     }}
     return null;
 }}"""

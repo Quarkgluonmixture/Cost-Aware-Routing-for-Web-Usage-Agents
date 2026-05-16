@@ -94,6 +94,15 @@ class StepRecordV2:
     # Image encode failure (C2) also surfaced here so cross-baseline missingness is
     # auditable from JSONL without grepping logs.
     image_meta: Optional[Dict[str, Any]] = None
+    # B-156 (/stress A1.3 v8 Claude F5 + codex P2-B7 dual catch, 2026-05-16):
+    # locator-route dispatch result (Cluster 1 B-01/02/33 fix). Without this
+    # field, paper §3 evidence layer cannot quantify locator-route ON_TARGET
+    # rate from JSONL alone — the Tier 10 sweep 94.4% off-target → >80%
+    # ON_TARGET goal becomes structurally unverifiable. Schema:
+    #   {success, fallback_used, target_tag, error, action_kind}
+    # action_kind ∈ {click, type, hover, upload, clear}. None when step did
+    # not invoke locator-route (e.g. scroll / wait / coord-only click).
+    locator_route_meta: Optional[Dict[str, Any]] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)

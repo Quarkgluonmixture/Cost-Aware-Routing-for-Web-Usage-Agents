@@ -1732,3 +1732,33 @@ Continuation of §144 audit cadence: A1.1 (p79/agents/) wrapped, this round audi
 **B-number collision avoidance**: parallel session §145 used B-150 / B-151 / B-152; this round skipped those numbers, landing P2 polish on B-153 / B-154 / B-155.
 
 **Pattern (cross §142 / §143 / §144 / §145 / §146)**: §146 confirms /stress is iterative — `p79/backends/` had a first-pass round 7 days prior (F1-F6 fixes) but second-pass after A1.1 land still surfaced 10 new findings (5 OOB) including paper-grade multi-seed cache blocker missed in first pass. Implication: each round of upstream changes (B-131~B-143) can produce new sibling-propagation gaps; periodic second-pass /stress is structural, not redundant.
+
+---
+
+### §147 — /stress A1.3 v8 `p79/envs/` second-pass 3-AI audit + Commit F (2026-05-16)
+
+Continuation of /stress cadence: A1.2 (`p79/backends/`) wrapped, this round audits VWA env wrapper layer (`vwa_wrapper.py` 939 LOC + `locator_dispatch.py` 316 LOC). Prior A1.3 round (`131949b` / `9fb9b38` / `b1a31a2`) had landed F1-F6 + B-105~B-107 on locator_dispatch; this round surfaced 19 distinct findings (11 OOB), 6 fixes after user Q&A scope review.
+
+- **B-156** locator-route telemetry → step_record 🛠️ **FIXED commit `<TBD>`** — `StepRecordV2.locator_route_meta: Optional[Dict[str, Any]]` field added; vwa_wrapper.py click + type branches stamp `_lr_result` (with `action_kind` discriminator) into `info["locator_route_meta"]`; runner step_record reads `next_info.get("locator_route_meta")`. Paper §3 evidence-layer audit of Cluster 1 (B-01/02/33) ON_TARGET rate previously structurally impossible from JSONL alone. Source: Claude F5-A + codex P2-B7 dual catch.
+- **B-157** locator-route new-tab handling 🛠️ **FIXED commit `<TBD>`** — pre-fix: locator-route real click + `create_none_action()` skipped VWA framework's `num_tabs_now > num_tabs_before` tab-switch (browser_env/actions.py:1417-1421), so element-id clicks opening `target=_blank` / `window.open` left observation bound to the old page. Fix: snapshot `_num_tabs_before` before dispatch; on success detect new tab + `bring_to_front()` + `self._env.page = pages[-1]` mirroring VWA framework. Source: codex P1-B1 (OOB).
+- **B-158** dialog handler context-level registration 🛠️ **FIXED commit `<TBD>`** — `_dialog_registered_page` (per-page) → `_dialog_registered_context` (per-context); `ctx.on("page", lambda new_page: new_page.on("dialog", _on_dialog))` ensures every new tab (including B-157 switched-to ones) inherits the auto-handler. Classifieds delete confirm() dialogs on new-tab paths no longer hang. Source: codex P1-B2 (OOB).
+- **B-159** asyncio loop fail-loud guard 🛠️ **FIXED commit `<TBD>`** — `_lazy_init()` + `reset()` `_asyncio.get_running_loop()` no longer silently passes through on detection; raises `RuntimeError` with actionable message ("Run wrapper in subprocess; pytest-asyncio / notebook contexts must isolate"). Replaces cryptic "Sync API inside the asyncio loop" mid-init crash. Phase 1a queue scripts unaffected. Source: codex P1-B3 (OOB).
+- **B-160** navigate_to URL injection vector closed 🛠️ **FIXED commit `<TBD>`** — `create_playwright_action(f'page.goto("{url}")')` → `create_playwright_action(f"page.goto({json.dumps(url)})")`. VWA `create_playwright_action` evaluates action_str as Python code against `page`; pre-fix any `"` in url broke out of the string literal → arbitrary Python code execution. `json.dumps` emits a safe Python string literal. Phase 1a callers trusted (URLs from config files); architectural hardening. Source: Claude F1-A (OOB).
+- **B-161** Shadow DOM elementFromPoint penetration 🛠️ **FIXED commit `<TBD>`** — `_JS_SHADOW_DESCENT_FN` helper + `_pierceElementFromPoint(cx, cy)` recursively descends into shadow roots (depth ≤ 5) when first hit is a shadow host; 3 `_JS_RESOLVE_*` resolvers all use the pierced lookup. Walk-up adds `el.parentElement || el.getRootNode().host` to escape shadow boundaries. Reddit redesign / modern SPA / web components no longer fall back to framework bbox-center (B-33 buggy path). Phase 1a (cls/red 旧站非 shadow) 不变; Phase 1b cross-family / future site expansion 受惠。 Source: gemini C4 (OOB).
+
+#### §147 audit status (2026-05-16 evening, Commit F batch)
+
+| Tag | Count | Notes |
+|---|---|---|
+| 🛠️ **FIXED Commit F** | 6 | B-156 ~ B-161 |
+| ⚠️ **DISSOLVED by-design** | 3 | C1 invisible turn (paper §3 semantics) / F2+B4 coord normalize (heuristic is intentional) / F3 inject_options regex (dict double-guard already covers) |
+| ↓ **DEMOTED P2 latent debt** | 1 | C2 select stale coord (framework-level, all element_id actions, not select-specific) |
+| ⏳ **DEFER P2 polish** | 9 | F4 horizontal scroll / F6 silent swallow / F7 fuzzy threshold / C3 asyncio hijack (Phase 2 future) / C5 hover/upload dead code / C6 P79Observation polymorphism / C7 select redundant env.step / P2-B5 form 200-byte truncation / P2-B6 native select empty-value filter |
+
+**Cross-AI verification chronicle**: Mode B (codex, ~5min, 7 findings / 4 OOB / reproducibility-auditor) — PASS Phase 1+2+3; Mode C (gemini, ~6min, 7 findings / 3 OOB / broad-reviewer) — PASS Phase 1+2+3. Cross-AI agreement: 1 dual-AI overlap (Claude F5 + codex B7 telemetry), 18 unique. Codex caught Claude+gemini missed: B-157 new-tab loss + B-158 multi-tab dialog handler + B-159 asyncio passthrough (all mid-fire-rate paper-grade bugs). Gemini caught Claude+codex missed: B-161 shadow DOM penetration (cross-family expansion blocker) + C1/C2/C5/C6/C7 architecture/contract issues. Claude caught Claude-only: B-160 navigate_to injection (architectural security) + dropdown regex (turned out dict-double-guarded).
+
+**User Q&A as audit layer**: 4 of my findings (C1 invisible turn / F2+B4 coord / F3 regex / C2 select coord) were challenged by user; 3 dissolved by-design and 1 demoted P2. User-level design intent review is **structurally distinct** from cross-AI consensus — cross-AI can amplify "this looks broken" but only user can answer "this is intentional". By-decision dissolution + demotion saved ~3-4h speculative fix effort.
+
+**B-number coordination**: Continuous gap past §146 (B-155). Next available: B-162+.
+
+**Pattern (cross §142 / §143 / §144 / §145 / §146 / §147)**: Three-pass /stress audit value confirmed — `p79/envs/` had first-pass 6 fixes 7 days ago, second-pass 6 new P1 fixes today, plus 3 dissolved by user review. Each pass surfaces a different layer: first-pass = correctness primitives (dispose / regex / ARIA roles), second-pass = cross-baseline parity + multi-tab + security architecture, user-layer = design intent vs accidental behavior. All three needed for paper-grade lock readiness.

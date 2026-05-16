@@ -92,8 +92,15 @@ class VWAWrapper:
         self._env = None  # lazy init
         # 保存上一次 obs 的 obs_nodes_info，供 select_option element_id 路径使用
         self._last_obs_nodes_info: Optional[Dict[str, Any]] = None
-        # 跟踪已注册 dialog 监听器的 page 对象，避免跨 episode 重复注册
-        self._dialog_registered_page: Optional[Any] = None
+        # B-158 (/stress A1.3 v8 codex P1-B2, 2026-05-16): dialog handler is
+        # now registered at the BrowserContext level (auto-fires for every
+        # new Page in the context) instead of per-Page. Previously the
+        # ``_dialog_registered_page`` per-page tracker only attached the
+        # listener to the initial page; new tabs opened via
+        # ``target=_blank`` / ``window.open`` left their ``Page.dialog``
+        # events unhandled → confirm/alert blocked navigation until timeout
+        # (Classifieds delete operations hit this hard).
+        self._dialog_registered_context: Optional[Any] = None
 
     def _lazy_init(self) -> None:
         if self._env is not None:
@@ -121,14 +128,27 @@ class VWAWrapper:
         # evaluators or HuggingFace hub (both use asyncio/httpx).
         # Use get_running_loop() — it only returns a loop if one is *actively*
         # running, unlike get_event_loop() which returns closed/idle loops too.
+        # B-159 (/stress A1.3 v8 codex P1-B3, 2026-05-16): if a loop is
+        # actively running we now fail loud with an actionable error message
+        # instead of falling through into VWA's ``sync_playwright().__enter__()``
+        # and getting a cryptic "Sync API inside the asyncio loop" RuntimeError
+        # mid-init. Phase 1a callers (queue scripts → run_experiment.py) never
+        # have an active loop; this guard mostly catches pytest-asyncio /
+        # notebook / service-runner contexts that should isolate via subprocess.
         import asyncio as _asyncio
         try:
             _asyncio.get_running_loop()
-            # A loop is actively running — cannot safely replace it.
-            # Playwright sync API will likely raise; no safe workaround here.
         except RuntimeError:
-            # No running loop — always install a fresh one before Playwright.
+            # No running loop — install a fresh one for Playwright sync API.
             _asyncio.set_event_loop(_asyncio.new_event_loop())
+        else:
+            raise RuntimeError(
+                "VWAWrapper._lazy_init() detected an active asyncio loop on this "
+                "thread; Playwright sync API will fail. Run the wrapper in a "
+                "subprocess (or a thread without a running loop) — e.g. "
+                "pytest-asyncio / notebook / service-runner contexts must isolate. "
+                "See p79/envs/vwa_wrapper.py:_lazy_init for the upstream root cause."
+            )
 
         from browser_env import ScriptBrowserEnv  # provided by (Visual)WebArena package
 
@@ -153,11 +173,18 @@ class VWAWrapper:
         # _lazy_init() only runs it on first init, but VWA program_html evaluators
         # (httpx/asyncio) can leave a stale loop that causes Playwright sync API to
         # raise "Sync API inside the asyncio loop" on subsequent resets.
+        # B-159: same fail-loud contract as _lazy_init — if a loop is running we
+        # cannot safely proceed.
         import asyncio as _asyncio
         try:
             _asyncio.get_running_loop()
         except RuntimeError:
             _asyncio.set_event_loop(_asyncio.new_event_loop())
+        else:
+            raise RuntimeError(
+                "VWAWrapper.reset() detected an active asyncio loop; Playwright "
+                "sync API will fail. See B-159 in _lazy_init for context."
+            )
 
         try:
             obs, info = self._env.reset(options={"config_file": config_file})
@@ -168,14 +195,24 @@ class VWAWrapper:
 
         # Auto-accept confirm/alert dialogs (e.g. Classifieds delete operations use
         # onclick="return confirm(...)" which blocks navigation if not dismissed).
-        # Register once per page object to avoid listener accumulation across episodes.
+        # B-158 (/stress A1.3 v8 codex P1-B2, 2026-05-16): register at the
+        # BrowserContext level so every Page (including newly-opened tabs via
+        # window.open / target=_blank from B-157) inherits the dialog handler
+        # automatically. Identity-check guards against accumulating duplicate
+        # listeners across episode resets (same context reused → skip).
         try:
-            page = self._env.page
-            if page is not self._dialog_registered_page:
-                page.on("dialog", self._on_dialog)
-                self._dialog_registered_page = page
+            ctx = self._env.context
+            if ctx is not self._dialog_registered_context:
+                # Existing pages (the initial reset page)
+                for _p in ctx.pages:
+                    _p.on("dialog", self._on_dialog)
+                # Future pages: ``context.on("page")`` fires on each new tab,
+                # we attach the dialog listener there so the chain stays
+                # current without manual per-step bookkeeping.
+                ctx.on("page", lambda new_page: new_page.on("dialog", self._on_dialog))
+                self._dialog_registered_context = ctx
         except Exception as _e:
-            logger.warning("Failed to register dialog handler: %s", _e)
+            logger.warning("Failed to register dialog handler at context level: %s", _e)
 
         p79_obs = self._to_p79_obs(obs, info)
         self._last_obs_nodes_info = p79_obs.obs_nodes_info
@@ -215,6 +252,12 @@ class VWAWrapper:
         action_type = (action_json.get("action_type") or "").lower().strip()
         action = None
         _type_needs_enter = False
+        # B-156 (/stress A1.3 v8 Claude F5 + codex P2-B7, 2026-05-16):
+        # locator-route dispatch result is captured here so it survives into
+        # the post-step ``info`` dict (and from there into StepRecordV2 via
+        # the runner). Paper §3 evidence layer (locator-route ON_TARGET rate)
+        # depends on this telemetry being audit-able from JSONL alone.
+        _locator_route_meta: Optional[Dict[str, Any]] = None
 
         if action_type == "click" and "element_id" in action_json:
             # Prefer element_id click (id-based action via AXTree node)
@@ -229,15 +272,46 @@ class VWAWrapper:
                 # event + actionability check). Falls back to framework path
                 # if walk-up fails (preserves existing behavior on edge cases).
                 from p79.envs.locator_dispatch import dispatch_id_based_click as _lr_click
+                # B-157 (/stress A1.3 v8 codex P1-B1, 2026-05-16): snapshot
+                # context.pages count BEFORE the click so we can mimic VWA
+                # framework's "switch to last opened tab" logic after a
+                # successful locator-route dispatch. Pre-fix path used
+                # ``create_none_action()`` to skip framework dispatch entirely,
+                # which also bypassed VWA's `num_tabs_now > num_tabs_before`
+                # tab-switch check (browser_env/actions.py:1417-1421) →
+                # observation stayed bound to the old page when an
+                # element-id click opened ``target=_blank`` / window.open.
+                _num_tabs_before = 0
+                try:
+                    _num_tabs_before = len(self._env.context.pages)
+                except Exception:
+                    pass
                 _lr_result = _lr_click(
                     self._env.page,
                     self._last_obs_nodes_info,
                     eid,
                     sleep_after_ms=int(self.sleep_after_execution * 1000),
                 )
+                # B-156: capture for step_record telemetry
+                _locator_route_meta = dict(_lr_result)
+                _locator_route_meta["action_kind"] = "click"
                 if _lr_result.get("success"):
+                    # B-157: switch to newly opened tab if click triggered one
+                    # (window.open / target=_blank). Mirrors VWA framework
+                    # `execute_action` tab-switch block at
+                    # browser_env/actions.py:1417-1421.
+                    try:
+                        _pages_now = self._env.context.pages
+                        if len(_pages_now) > _num_tabs_before:
+                            _new_page = _pages_now[-1]
+                            _new_page.bring_to_front()
+                            self._env.page = _new_page
+                            _locator_route_meta["new_tab_switched"] = True
+                    except Exception as _e:
+                        logger.warning("locator-route new-tab switch failed: %s", _e)
                     # JS dispatch already ran + slept. Skip framework dispatch
-                    # via NONE action — env.step(NONE) just refreshes observation.
+                    # via NONE action — env.step(NONE) just refreshes observation
+                    # (now from the new page if a tab was opened).
                     action = create_none_action()
                 else:
                     logger.debug(
@@ -366,6 +440,9 @@ class VWAWrapper:
                     sleep_after_ms=int(self.sleep_after_execution * 1000),
                     press_enter=_type_needs_enter,
                 )
+                # B-156: capture for step_record telemetry
+                _locator_route_meta = dict(_lr_result)
+                _locator_route_meta["action_kind"] = "type"
                 if _lr_result.get("success"):
                     action = create_none_action()
                     # Locator dispatch already pressed Enter if text ended with
@@ -579,6 +656,11 @@ class VWAWrapper:
         if action_type in ("finish", "stop"):
             terminated = True
         info["raw_action"] = action  # Expose the raw VWA action for trajectory recording
+        # B-156: surface locator-route dispatch telemetry into info so the
+        # runner can persist it into StepRecordV2 (paper §3 evidence layer).
+        # None when the step did not invoke locator-route (scroll, wait,
+        # coord-only click, etc.).
+        info["locator_route_meta"] = _locator_route_meta
         p79_obs = self._to_p79_obs(obs, info)
         self._last_obs_nodes_info = p79_obs.obs_nodes_info
         return p79_obs, float(reward), bool(terminated), bool(truncated), info
@@ -588,14 +670,24 @@ class VWAWrapper:
         self._lazy_init()
         assert self._env is not None
         from browser_env import create_playwright_action
-        action = create_playwright_action(f'page.goto("{url}")')
+        # B-160 (/stress A1.3 v8 Claude F1, 2026-05-16): VWA upstream
+        # ``create_playwright_action`` evaluates the action_str as Python code
+        # against the Playwright Page; previously the f-string ``f'page.goto("{url}")'``
+        # broke out of the string literal if ``url`` contained a ``"`` character,
+        # opening an arbitrary-Python-code injection vector. ``json.dumps`` emits a
+        # JSON string literal which doubles as a syntactically-safe Python string
+        # literal (escapes ``"``/``\``/control chars), closing the injection path.
+        # Current Phase 1a callers pass trusted URLs from config files; this is
+        # architectural hardening for any future caller that accepts arbitrary URLs.
+        import json as _json
+        action = create_playwright_action(f"page.goto({_json.dumps(url)})")
         obs, reward, terminated, truncated, info = self._env.step(action)
         p79_obs = self._to_p79_obs(obs, info)
         self._last_obs_nodes_info = p79_obs.obs_nodes_info
         return p79_obs, float(reward), bool(terminated), bool(truncated), info
 
     def close(self) -> None:
-        self._dialog_registered_page = None
+        self._dialog_registered_context = None  # B-158 (context-level handler)
         if self._env is not None:
             env = self._env
             self._env = None  # clear first to prevent re-entry
