@@ -16,6 +16,27 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 SUMMARY_RE = re.compile(r"^(?P<site>.+)_task_(?P<task_id>\d+)_summary_v2\.json$")
 
+
+# /stress A1.10 P0-2-AB* (2026-05-16): canonical progress signal for analyzer.
+# Diagnostics rollups (wasted scroll, stuck, page-change-rate, ax_page_change_rate)
+# semantically want "did the agent perceive progress?" — agent_visible_changed,
+# not raw runner-internal page_changed (which fires on form_value_changed /
+# dom_complexity_changed / text_length_changed / interactive_elements_changed /
+# form_fields_changed reasons agents cannot see). Pre-fix all sites used raw
+# page_changed → diagnostics rollups polluted by RUNNER_INTERNAL_REASONS noise.
+# Post-fix: prefer agent_visible_changed when present (current runner emits it
+# per runner/main.py:1710); fall back to page_changed for legacy archive
+# records that pre-date the B-09 split. Mode B F3 catch.
+def _progress_changed(step: Dict[str, Any]) -> bool:
+    """Return the agent-perceivable page-change boolean for a step record,
+    falling back to runner-internal page_changed for legacy records that
+    pre-date the B-09 agent_visible_changed split.
+    """
+    av = step.get("agent_visible_changed")
+    if av is not None:
+        return bool(av)
+    return bool(step.get("page_changed", False))
+
 NO_RESULT_PATTERNS = (
     "no result",
     "not available",
@@ -508,7 +529,8 @@ def _scroll_direction_stats(steps: List[Dict[str, Any]]) -> Dict[str, Any]:
             direction_flips += 1
         prev_direction = direction
 
-        if not bool(s.get("page_changed", False)):
+        # /stress A1.10 P0-2-AB* — agent-visible progress for scroll-wasted attribution.
+        if not _progress_changed(s):
             wasted += 1
 
     return {
@@ -528,7 +550,8 @@ def _page_unchanged_signals(steps: List[Dict[str, Any]]) -> Tuple[int, int, int]
 
     for s in steps:
         step_idx = int(s.get("step_idx", -1))
-        changed = bool(s.get("page_changed", False))
+        # /stress A1.10 P0-2-AB* — agent-visible progress for stuck-detection.
+        changed = _progress_changed(s)
         if not changed:
             if stuck_first_step == -1:
                 stuck_first_step = step_idx
@@ -773,7 +796,8 @@ def _compute_step_cost_breakdown(steps: List[Dict[str, Any]], loop_metrics: Dict
         if s.get("action_success") is False:
             no_op_cost += step_cost
         action_type = str((s.get("action") or {}).get("action_type", "") or "").lower()
-        if s.get("page_changed") is False and action_type not in ("finish", "stop"):
+        # /stress A1.10 P0-2-AB* — agent-visible progress for page-unchanged cost attribution.
+        if not _progress_changed(s) and action_type not in ("finish", "stop"):
             page_unchanged_cost += step_cost
     # Loop cost: estimate from loop_pattern
     loop_pattern = str(loop_metrics.get("loop_pattern", "") or "")
@@ -1385,7 +1409,8 @@ def _compute_action_execution_stats(steps: List[Dict[str, Any]]) -> Dict[str, An
         if err_cat == "parse_error":
             parse_error_count += 1
 
-        if rec.get("page_changed") is True:
+        # /stress A1.10 P0-2-AB* — agent-visible progress for ax_page_change_rate.
+        if _progress_changed(rec):
             page_changed_count += 1
 
         if success is False:
@@ -1918,7 +1943,8 @@ def main() -> None:
 
             success = bool(summary.get("success", False))
             steps_count = len(steps)
-            page_change_count = sum(1 for s in steps if bool(s.get("page_changed", False)))
+            # /stress A1.10 P0-2-AB* — agent-visible progress for per-task page_change_count.
+            page_change_count = sum(1 for s in steps if _progress_changed(s))
             search_attempts = sum(
                 1
                 for s in steps
@@ -2031,6 +2057,39 @@ def main() -> None:
             # Intent features
             _intent_features = _extract_intent_features(task_intent, task_meta)
 
+            # /stress A1.10 P1-7-B (2026-05-16): per-task router metric rollups
+            # from step records. Pre-fix runner condition_summary_v2.json had
+            # escalation_count + trigger_distribution but diagnostics CSV
+            # (episode_reason_rows.csv) dropped them — paper §3.5/§6 router
+            # rollups required join-back to raw summary. Post-fix emits both
+            # per-task fields so any failure-bucket / task-type slicing of
+            # router behavior is direct from the CSV. Trigger distribution is
+            # JSON-serialised because CSV is flat.
+            _router_decisions = []
+            _trigger_counter = Counter()
+            _rule_router_skipped_count = 0
+            for _s in steps:
+                _r = _s.get("router") or {}
+                _decision = str(_r.get("decision", "") or "")
+                if _decision:
+                    _router_decisions.append(_decision)
+                # trigger_reason may be a list of strings, a single string, or absent
+                _tr = _r.get("trigger_reason")
+                if isinstance(_tr, list):
+                    for _t in _tr:
+                        if _t:
+                            _trigger_counter[str(_t)] += 1
+                elif _tr:
+                    _trigger_counter[str(_tr)] += 1
+                # rule_router_skipped is emitted as a flag in overhead dict by
+                # P0-4-B* learned-router skip path (runner main.py).
+                _overhead = _r.get("overhead") or {}
+                if _overhead.get("rule_router_skipped"):
+                    _rule_router_skipped_count += 1
+            _task_escalation_count = sum(
+                1 for _d in _router_decisions if _d and _d != observation_mode
+            )
+
             episode_row: Dict[str, Any] = {
                 "condition_id": condition_id,
                 "site": site,
@@ -2059,6 +2118,10 @@ def main() -> None:
                 "search_attempts": search_attempts,
                 "page_unchanged_rate": summary.get("page_unchanged_rate"),
                 "max_repeat_streak": max_repeat_streak,
+                # /stress A1.10 P1-7-B router metric rollups
+                "escalation_count": _task_escalation_count,
+                "trigger_distribution_json": json.dumps(dict(_trigger_counter), ensure_ascii=False),
+                "rule_router_skipped_steps": _rule_router_skipped_count,
                 "task_intent": task_intent,
                 "task_type": task_type,
                 "observation_mode": observation_mode,

@@ -1229,15 +1229,46 @@ class ExperimentRunner:
             _size_probe = prepare_observation_for_mode(obs, condition.observation_mode, episode_dir, step_idx)
             router_obs_text = _size_probe.som_text if condition.observation_mode != "vision" else (obs.text or "")
 
-            decision_mode, triggers, overhead, router_state = self.router.decide(
-                router_enabled=condition.router_on,
-                preferred_mode=condition.observation_mode,
-                obs_text=router_obs_text,
-                state=router_state,
-                prev_action_success=prev_action_success,
-                prev_page_changed=prev_page_changed,
-                checklist_status=latest_checklist_status,
+            # /stress A1.10 P0-4-B* (2026-05-16): learned-router cells skip
+            # the rule-based router decision step. Pre-fix: learned router
+            # `_dc_replace`d `condition.observation_mode` with the LR-predicted
+            # mode at episode start (lines ~1082-1087 above), but the
+            # rule-based `RuleBasedRouter.decide()` then still ran with
+            # `router_enabled=condition.router_on=True` and could *re-pick*
+            # the mode mid-episode via streak/threshold escalation. Result:
+            # paper §6 learned-router cells reported a hybrid (LR + rule)
+            # policy rather than pure LR-on-task oracle validation, breaking
+            # the H10 Pareto non-dominance attribution. Post-fix: when the
+            # condition is the v7 learned-router cell, mark routing as
+            # already-decided (decision_mode = condition.observation_mode =
+            # the LR prediction landed at episode start), emit a single
+            # learned-route trigger, and zero out router overhead.
+            _is_learned_cell = (
+                condition.metadata.get("router_variant") == "v7_learned"
+                if condition.metadata
+                else False
             )
+            if _is_learned_cell:
+                decision_mode = condition.observation_mode
+                triggers = ["v7_learned_route"]
+                overhead = {
+                    "router_decision_ms": 0.0,
+                    "extra_dom_parse_ms": 0.0,
+                    "extra_screenshot_ms": 0.0,
+                    "extra_model_calls": 0.0,
+                    "routing_retry_count": 0.0,
+                    "rule_router_skipped": 1.0,
+                }
+            else:
+                decision_mode, triggers, overhead, router_state = self.router.decide(
+                    router_enabled=condition.router_on,
+                    preferred_mode=condition.observation_mode,
+                    obs_text=router_obs_text,
+                    state=router_state,
+                    prev_action_success=prev_action_success,
+                    prev_page_changed=prev_page_changed,
+                    checklist_status=latest_checklist_status,
+                )
             trigger_distribution.update(triggers)
 
             if condition.router_on and decision_mode != condition.observation_mode:
@@ -1799,7 +1830,19 @@ class ExperimentRunner:
             obs = next_obs
             current_info = safe_next_info
             prev_action_success = action_success
-            prev_page_changed = page_changed
+            # /stress A1.10 P0-2-AB* (2026-05-16): router input now consumes
+            # the **agent-visible** page-change signal, not raw runner-internal
+            # page_changed (any-reason). Pre-fix the B-09 split landed only at
+            # SR derivation but routing decision still saw form_value_changed
+            # / dom_complexity_changed / text_length_changed / form_fields_changed
+            # / interactive_elements_changed → router reset unchanged_streak on
+            # signals the agent cannot perceive, suppressing legitimate
+            # escalation. AGENT_VISIBLE_REASONS = {url_changed, title_changed,
+            # content_changed, scroll_changed, modal_state_changed}. The
+            # `page_changed` runner-internal field is retained on the step
+            # record for unchanged retry/cycle-detection paths.
+            # (`is_agent_visible_change` is module-imported at the top of this file.)
+            prev_page_changed = is_agent_visible_change(page_change_reasons)
 
             if terminated or truncated:
                 break

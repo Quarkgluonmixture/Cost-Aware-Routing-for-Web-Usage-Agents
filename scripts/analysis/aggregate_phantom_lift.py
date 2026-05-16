@@ -39,7 +39,7 @@ import os
 import re
 import warnings
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -744,10 +744,92 @@ def analyze_cell(cell: dict) -> Optional[dict]:
     }
 
 
+# /stress A1.10 P0-1-ABC* (2026-05-16): router trigger fire-rate audit.
+# Paper §3.5 + §4.X.5 disclosure now records that the three numeric router
+# triggers (dom_size_threshold=12000 / dom_complexity_trigger=500 /
+# text_length_trigger=12000) empirically fire < 0.5 % under cleaned-AXTree
+# regime. This helper lets a reviewer or future paper-2 author validate the
+# disclosure against any run dir without joining raw step records by hand.
+# It is intentionally opt-in (--audit-fire-rate flag) so it doesn't slow the
+# default oracle-lift aggregation pipeline.
+_NUMERIC_ROUTER_TRIGGERS = (
+    "dom_size_exceeds_threshold",
+    "dom_complexity_high",
+    "text_length_high",
+)
+
+
+def audit_router_fire_rate(run_root: Path) -> Dict[str, Any]:
+    """Scan all step JSONLs under a run_root and report per-trigger fire rate.
+    Returns a dict {trigger_name: {count, total_steps, rate_pct}} plus a
+    `disclosure_consistent` boolean indicating whether numeric triggers fire
+    below the paper §3.5 disclosure threshold (< 0.5 %).
+    """
+    counts: Dict[str, int] = {t: 0 for t in _NUMERIC_ROUTER_TRIGGERS}
+    counts["__streak_or_action_failed__"] = 0
+    total_steps = 0
+    for jsonl in sorted(run_root.rglob("*_steps_v2.jsonl")):
+        with open(jsonl, "r", encoding="utf-8") as f:
+            for line in f:
+                try:
+                    rec = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                total_steps += 1
+                r = rec.get("router") or {}
+                tr = r.get("trigger_reason")
+                triggers_list = tr if isinstance(tr, list) else ([tr] if tr else [])
+                for t in triggers_list:
+                    t_str = str(t)
+                    if t_str in counts:
+                        counts[t_str] += 1
+                    elif t_str in (
+                        "action_failed", "page_unchanged_streak",
+                        "no_progress_streak", "checklist_progress_stalled",
+                        "checklist_has_failed_items", "v6_cascade_fallback_latched",
+                        "v7_learned_route",
+                    ):
+                        counts["__streak_or_action_failed__"] += 1
+    report: Dict[str, Any] = {
+        "run_root": str(run_root),
+        "total_steps": total_steps,
+        "triggers": {},
+    }
+    max_numeric_pct = 0.0
+    for t, c in counts.items():
+        pct = (c / total_steps * 100.0) if total_steps else 0.0
+        report["triggers"][t] = {"count": c, "rate_pct": round(pct, 4)}
+        if t in _NUMERIC_ROUTER_TRIGGERS:
+            max_numeric_pct = max(max_numeric_pct, pct)
+    report["max_numeric_trigger_rate_pct"] = round(max_numeric_pct, 4)
+    report["disclosure_consistent"] = max_numeric_pct < 0.5  # paper §3.5
+    return report
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--output", default=str(REPO / "results/phantom_paper/phantom_lift.csv"))
+    ap.add_argument(
+        "--audit-fire-rate", metavar="RUN_ROOT", default=None,
+        help="Run router trigger fire-rate audit on the given run dir and exit "
+             "(P0-1-ABC* audit gate; validates paper §3.5 / §4.X.5 disclosure)."
+    )
     args = ap.parse_args()
+
+    if args.audit_fire_rate:
+        report = audit_router_fire_rate(Path(args.audit_fire_rate))
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        if not report["disclosure_consistent"]:
+            print(
+                "WARNING: max numeric trigger fire rate "
+                f"{report['max_numeric_trigger_rate_pct']:.3f} % exceeds the "
+                "paper §3.5 disclosure threshold of 0.5 %. Either the router "
+                "is firing more than disclosed (good — update the disclosure) "
+                "or the audit ran on legacy archive data with mixed thresholds.",
+                file=__import__("sys").stderr,
+            )
+            return 1
+        return 0
 
     rows = []
     skipped = []
