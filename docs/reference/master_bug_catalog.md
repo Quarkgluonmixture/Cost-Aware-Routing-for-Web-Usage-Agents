@@ -3198,4 +3198,80 @@ Cross-AI value (A1.15-specific): codex unique P0 = **B-385 session auto-clean mi
 - Mode B paper-2 scope (P1-7 cross-family revision, P1-8 NVRTC telemetry, P1-10 confidence in summary) — paper-2 mechanism resume hard gate
 
 **Phase 1a fire green-light**: substrate paper-grade post-A1.1 batch (3-AI cross-audit). GLM hard-block fully reachable (B-395 + B-396 + B-340 stacked); cross-baseline schema asymmetries closed (B-397/398/400/401); audit-trail intact (B-398/403/405). Phase A "永远最 clean paper grade" directive satisfied for §A1.1 scope.
-**Next available B-number**: B-406+.
+
+---
+
+## /stress A1.2 batch — `p79/backends/` cross-baseline contract (2026-05-16 late-night)
+
+3-AI cycle: Mode A Claude (5 findings, 3 OOB) / Mode B codex (7 findings, 5 OOB, 15135 bytes) / Mode C gemini (5 findings, 3 OOB, 7069 bytes) = 16 unified findings → 11 code fixes landed (4 prose deferred to next codex round per user Q&A `disclose-only` decisions).
+
+**Cross-AI agreement signal**:
+- 3-AI overlap: 1 finding (`heuristic_only` B2 missing branch, B-408)
+- 2-AI A+B overlap: 1 (B-406 coord_type=normalized but pixel coord, 851 empirical rows match)
+- 2-AI A+C overlap: 1 (`tokens.input_image` B0=0 / B1=1280 asymmetry, P0-4 deferred prose)
+- 1-AI unique: 12 findings unique to each lineage (Mode A 4 / Mode B 5 / Mode C 3)
+
+### B-406. `_is_valid_coordinate_pair` coord_type-aware strict enforcement — 2-AI A+B P0 OOB 🛠️ FIXED commit `4c559d2`
+- **Attack**: `p79/backends/action_utils.py:140` pre-fix `allow_pixel=True` (default) accepted any non-negative finite pair, even when `coordinate_type="normalized"`. Mode A empirical spot-check + Mode B independent jq query both confirmed 851/3561 (24%) normalized-declared rows with coord >1; B0 15.6% / B1 35.3% (2.3× cross-baseline asymmetry); all parse_valid=true. env wrapper `vwa_wrapper.py:336` silent auto-normalize → schema violation collapsed into env behavior → paper §3.5 error taxonomy contaminated + §1 hero number cross-baseline averaging biased.
+- **Fix**: `_is_valid_coordinate_pair(coord, coordinate_type=None, allow_pixel=True)` 加第 2 形参; `coordinate_type="normalized"` → strict [0,1] enforcement; `coordinate_type="pixel"` → non-negative finite; None falls back legacy. Click / type / select_option all propagate `coordinate_type` from action dict.
+
+### B-407. `type` action target required — 1-AI Mode B P0 OOB 🛠️ FIXED commit `4c559d2`
+- **Attack**: `p79/backends/action_utils.py:261` pre-fix `type` branch only checked `text`, accepted `{"action_type":"type","text":"\n"}` parse_valid=true. Empirical 23 rows in archive (B0 cls task 204 step 1 etc.). env wrapper cannot execute targetless type → schema-violation silently grouped under no_progress → paper §3.5 taxonomy + cross-baseline SR contaminated.
+- **Fix**: type branch end `if not (has_id or coord_valid_shape): return invalid_element_id`.
+
+### B-408. `dom_mode` canonical enum + B2 fail-loud — 3-AI A+B+C P1 OOB 🛠️ FIXED commit `abb0900`
+- **Attack**: 3-AI overlap finding. Pre-fix 3 drift sources: (1) `tests/test_runner_smoke.py:80` 用 `"heuristic"` (no _only) / (2) `api_proxy.py:99` + `local_qwen.py:57` 只匹配 `"heuristic_only"` → silent no-op for `"heuristic"` / (3) `local_gemma.py:21` comment "No dom_mode/heuristic branch" — B2 has no branch at all. Same primitive 3 semantics across baselines.
+- **Fix**: `p79/backends/factory.py:_ALLOWED_DOM_MODES = {"llm", "heuristic_only"}` enum validated at dispatch for local_qwen/local_gemma/api_proxy. B2 `local_gemma.py.__init__` raises `NotImplementedError` on heuristic_only (B2 has no HeuristicDomBackend wrapper). 4 test files updated to canonical `"heuristic_only"` (test_runner_smoke / test_stress_behavioral_retrofit / test_runner_integration / test_backends_mock_dispatch_parity).
+
+### B-409. `multiple_actions` dedup signature widened — 1-AI Mode B P1 OOB 🛠️ FIXED commit `4c559d2`
+- **Attack**: `action_utils.py:111` pre-fix dedup key `(action_type, element_id, text)` collapsed two different-coord clicks as "identical" → executed first → system bias toward first hallucinated candidate (vision-mode especially exposed).
+- **Fix**: Per user Q2=A "full-field" signature; dedup key now includes coordinate / coordinate_type / delta / scroll_direction / answer / option_label / option_value / option_index / page_number (12 fields total).
+
+### B-410. Yaml `temperature/top_p` dead-config warning B1/B2 — 1-AI Mode A P1 🛠️ FIXED commit `abb0900`
+- **Attack**: `local_qwen.py:42` + `local_gemma.py:42` forward yaml `temperature` to agent, but `qwen3vl_agent.py:299` + `gemma3vl_agent.py:279` hardcode `do_sample=False` → yaml temp silently dead on B1/B2. B0 `proxy_api_agent.py:572` honors yaml temp. If yaml drifts to `temperature: 0.7`, only B0 goes non-deterministic → cross-baseline reproducibility asymmetric, no fail-fast guard.
+- **Fix**: LocalQwen / LocalGemma `__init__` emit `logger.warning` if temp != 0.0 or top_p != 1.0.
+
+### B-411. `paper_grade` flag wire-through to local backends — 1-AI Mode A P1 🛠️ FIXED commit `abb0900`
+- **Attack**: `api_proxy.py:94` forwards `paper_grade` to ProxyApiAgent (consumed at line 179 for B-340 GLM hard-block); `local_qwen.py:22-52` + `local_gemma.py:34-52` agent_cfg DROP paper_grade. Currently inert (local agents have no paper_grade gate yet), but **latent contract gap** for future paper-grade-only guards (`torch.use_deterministic_algorithms` / `CUBLAS_WORKSPACE_CONFIG` / cuDNN benchmark off / revision drift fail-fast).
+- **Fix**: `local_qwen.py:62` + `local_gemma.py:75` agent_cfg add `"paper_grade": bool(config.get("paper_grade", False))`. Defense-in-depth wire-up; no current behavior change.
+
+### B-412. Naked scroll require targeting field — 1-AI Mode B P1 🛠️ FIXED commit `4c559d2`
+- **Attack**: `action_utils.py:270` pre-fix `{"action_type":"scroll"}` parse_valid=true (delta None branch fell through). VWA env `vwa_wrapper.py:356` requires `delta` OR `scroll_direction` to execute. Empirical 2 rows in archive (B1 cls task_174 step_1). B0 `proxy_api_agent.py:745` had `scroll_direction→delta` conversion, B1/B2 lacked it → cross-baseline asymmetric.
+- **Fix**: Validator now requires at least one of `delta` / `scroll_direction in {up,down}` / `direction in {up,down,left,right}` (WebArena-legacy alias kept for cross-benchmark compat via `vwa_wrapper.py:800` consumer). Single source of truth at validator.
+
+### B-413. Repair path detailed reason propagation — 1-AI Mode B P1 🛠️ FIXED commit `4c559d2`
+- **Attack**: `action_utils.py:86` + `:106` repair path (fenced JSON / raw_decode) used 2-tuple `validate_action()` and discarded reason → all sub-category failures collapsed to generic `invalid_action_repaired`. Markdown/prose-wrapped JSON case (common VLM output pattern) hid real sub-category from paper §3.5 taxonomy.
+- **Fix**: Repair path now uses 3-tuple `validate_action_detailed()` and stores `(action, is_valid, reason)`. Invalid-only fallback propagates FIRST candidate's specific reason (`invalid_action_type` / `invalid_element_id` / etc.) instead of generic.
+
+### B-414. `first_element_id_by_keyword` role-anchored — 1-AI Mode B P2 OOB 🛠️ FIXED commit `4c559d2`
+- **Attack**: `action_utils.py:306` pre-fix substring match against whole line; `[12] StaticText 'click the blue button'` matched "button" → returned eid=12 (StaticText not clickable). Sibling propagation: 7 callsites (heuristic.py x2, modules.py M1, runner/helpers M2, ...) inherited the bug from single primitive.
+- **Fix**: Parse role token after `[N]` via anchored regex `_ROLE_RE = re.compile(r"\[\s*\d+\s*\]\s+(\S+)")`. Match keyword ONLY against whitespace/underscore-normalized role string. Single-source fix propagates to 7 callsites.
+
+### B-415. MockBackend tag canonical naming — 1-AI Mode A P2 🛠️ FIXED commit `abb0900`
+- **Attack**: 4 mock naming schemes (factory `mock_<id>` / local_qwen `local_qwen_mock` / local_gemma `local_gemma_mock` / api_proxy `api_proxy_mock`) → cross-baseline mock invariance tests grepping one pattern miss the other 3.
+- **Fix**: All 4 emit `f"mock_{self.backend_id}"`. `test_local_gemma_mock_mode_emits_canonical_scroll` updated to assert `mock_b2_mock`.
+
+### B-416. `image_utils.encode_image_data_url` `.encode("utf-8")` redundant — 1-AI Mode A P2 🛠️ FIXED commit `abb0900`
+- **Attack**: `b64` is already ASCII (line 52 `base64.b64encode().decode("ascii")`), so `len(b64.encode("utf-8")) == len(b64)`. Per-loop redundant encode call.
+- **Fix**: Replace `len(b64.encode("utf-8"))` → `len(b64)`. ~6-8 presets × ~80k step calls/condition = ~640k allocs saved per Phase 1a fire. No behavior change.
+
+**B-numbers consumed (A1.2)**: B-406 through B-416 (11 contiguous; 4 deferred prose B-IDs reserved B-417~B-420).
+
+**Smoke verification**:
+- py_compile PASS: `action_utils.py` / `factory.py` / `local_qwen.py` / `local_gemma.py` / `api_proxy.py` / `image_utils.py`
+- Tests 414/414 PASS (411 prior + 3 new: test_validate_scroll_accepts_direction_aliases new; B-412 + B-413 + B-415 + B-408 4 tests updated to new contracts)
+
+### Deferred to next codex prose round (paper §3.5 + §4 disclosure batch)
+
+- **P0-3 (Mode A) max_image_payload_bytes asymmetric**: 39 B0 yamls set 5MB cap / 0 B1+B2 yamls. B0 path `image_utils.encode_image_data_url` JPEG base64; B1/B2 path direct PIL → HF processor unbounded. User Q1=A disclose-only. Paper §3.5 disclose + §4 cost-figure caption update. ~30 min codex round.
+- **P0-4 (Mode A+C 2-AI) tokens.input_image asymmetry**: Empirical B0 som task_167 step_0 `input_image=0`, `input=4749` includes image; B1 same task `input_text=2636, input_image=1280` explicit split. User Q3=A disclose-only. Paper §3.5 + §4 cost-fairness explicit "B0 image tokens not observable; cross-baseline cost only valid at total tokens layer". ~25 min codex round.
+- **P1-7 (Mode C) historical B0 GLM rescue framing**: paper §1 + §3.5.1 figure caption explicit "data source = post-A1.1 paper-grade re-fire (P79_PAPER_GRADE=1, GLM hard-block), legacy 20260413 archive 不进 main figure". ~30 min codex round.
+- **P2-2 (Mode C) invalid-action sub-category paper §3.5/§4 figure**: paper §4 mechanism add sub-category pie chart leveraging `validate_action_detailed` 6 sub-reason. ~4 hour analysis + figure work (P2 defer-able).
+
+### Deferred to test infra round
+
+- **P2-5 (Mode C) MockBackend `mock_strategy` parameter**: smoke test "False Stability" — mock all emit 0.8 but live LLM free `[dx, dy]`. Adding `mock_strategy` param for dynamic vs fixed scroll. ~2h test infra (low ROI 当前).
+
+**Phase 1a fire green-light reaffirmed**: A1.2 substrate post-A1.1+A1.2 batches (3-AI cross-audit). Cross-baseline validator strict (B-406/407/409/412/413); contract symmetric (B-408/410/411); cleanup landed (B-414/415/416). Phase A "永远最 clean paper grade" directive satisfied for §A1.2 scope.
+
+**Next available B-number**: B-417+.
