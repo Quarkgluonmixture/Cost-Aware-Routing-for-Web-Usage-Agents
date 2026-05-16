@@ -73,7 +73,7 @@ B0 infra prereq ──┘                                                       
 - [ ] **A1.3** `p79/envs/` — VWA wrapper + locator dispatch + observation pipeline
 - [ ] **A1.4** `p79/experiment/som.py` + mark 抽取链 — SoM + phantom mark layer
 - [ ] **A1.5** `p79/experiment/runner/` — main orchestrator (`main.py` + `helpers.py`)
-- [ ] **A1.6** `p79/experiment/analysis.py` — FP architecture + `scored_task_count` + adjusted_success 退役痕迹
+- [x] **A1.6** `p79/experiment/analysis.py` — FP architecture + `scored_task_count` + adjusted_success 退役痕迹 (2026-05-16: 17 findings B-237~B-253; hard-delete sweep retract selective-retain-for-output-schema-stability; chronicle §158)
 - [ ] **A1.7** `p79/experiment/conditions.py` + `configs/exp_v2_*.yaml` — condition matrix 生成 + 36-cond config 全家
 - [ ] **A1.8** `p79/experiment/{types.py, schema_migrations/, io_utils.py, logger_v2.py}` — schema + JSONL + dedup
 - [ ] **A1.9** `p79/experiment/{metrics.py, energy_tracker.py, environment.py}` — cost / energy / env wrapper

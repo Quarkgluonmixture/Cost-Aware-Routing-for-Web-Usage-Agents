@@ -2124,3 +2124,121 @@ phase1_plan A1.4 拆 3 chunks (A1.4a orchestrator / A1.4b data plane / A1.4c aux
 **B-numbers consumed**: B-230 through B-236 (7 contiguous, no collisions). Cumulative session work (A1.4a+A1.4b-i+A1.4b-ii+A1.4c+A1.5+A1.13) = B-140 through B-236 = 97 unique entries.
 
 **Next available B-number**: B-237+.
+
+## §158 /stress A1.6 `p79/experiment/analysis.py` — FP architecture hard-delete sweep (2026-05-16)
+
+Audit: Mode A (Claude) F1-F9 + Mode B (codex reproducibility-auditor) F10-F17 + Mode C (gemini broad-reviewer) B-118~B-124 = 17 findings. User overrule "selective-retain-for-output-schema-stability" policy (2026-05-14) → hard-delete all retired-layer remnants. `docs/analysis/` archived to `docs/archive/analysis_pre_2026-05-15/`. Chronicle: 实验笔记 §158.
+
+### B-237. `aggregate_sr_fp_per_mode.py` emits dual `n_raw_success` + `n_adjusted_success` (恒等 post-§139.8) 🛠️ FIXED
+- **Source**: Mode A F5 + Mode B F10 (collector advertise gap) — 2-AI overlap
+- **Code**: `scripts/analysis/aggregate_sr_fp_per_mode.py:78-90, 117` emit `n_raw_success = n_success` + `n_adjusted_success = n_success` + `raw_sr_pct` + `adjusted_sr_pct` 双列;markdown table L117 `{raw_sr_pct} | {adjusted_sr_pct}` 渲染恒等双列
+- **Attack**: Reviewer 看到 sr_fp_per_mode.json 两 SR field 恒等会疑似 pipeline bug 或冗余记账。Paper §3.5 disclosure "post-hoc retired" 与 schema 两 SR field 矛盾
+- **Fix**: 整 file rewrite → 单列 `n_success` + `sr_pct` + 新增 `expected_n` / `complete` / `completeness_ratio` (Q9 partial-cell handling piggy)。Output path `sr_fp_per_mode.json` → `sr_per_mode.json`;`schema_version: v2-2026-05-16-fp-retire`
+
+### B-238. `analyze_cross_representation._mark_false_positives` thin alias-setter (0-emit cargo cult) 🛠️ FIXED
+- **Source**: Mode A F6 + Mode B F14 — 2-AI overlap
+- **Code**: `scripts/analysis/analyze_cross_representation.py:370-391, 546-549, 1338, 1575-1576, 1731-1736` `_mark_false_positives` 自 docstring 标 "thin alias-setter for output-schema stability";emit `*_na_fp = False` / `*_eval_fp = False` / `na_fp_count = 0` / `eval_fp_count = 0`;a2/a3/a5/a6/r2/r3 都有 `has_adj` mirror branches
+- **Attack**: Output schema 13 处恒 0/False emit + 整 `_success_adj` 路径 mirror raw 路径,readers grep 找 FP detection 看到一个 "always returns 0" 的函数 → cargo-cult perception
+- **Fix**: `_mark_false_positives` 函数整删 + `_compute_set_metrics` / `_compute_exclusive_sets` / `_build_oracle_rows` `success_suffix` 参数整删 + a2/a3/a5/a6/r2/r3 `has_adj` mirror branches 全清 + `write_summary` `*_adjusted` keys + caller site `_mark_false_positives` 调用整删
+
+### B-239. `collect_analysis_summary.py` 顶层 collector 读已 retired keys → JSON null/missing 😵 🛠️ FIXED
+- **Source**: Mode B F10 (Claude+gemini 漏) — codex-unique OOB
+- **Code**: `scripts/analysis/collect_analysis_summary.py:14-16, 91-97, 125-142, 201, 295` reads `adjusted_success_rates` / `na_fp_count` / `eval_fp_count` / `na_reference_tasks.csv` / `adjusted_success`(L295 字面 sum)。Source `analysis.py:1412-1422` (post-§139.8) 不再写这些 key → collector 输出全是 null
+- **Attack**: Reviewer 拿 paper-grade consolidated JSON 看到 null 字段无法分辨 "已 retire" vs "pipeline 失败" → credibility 损失
+- **Fix**: Hard-drop 4 retired field reads + `raw_success_rate` → `success_rate` + `intent_feature_sr` 内 `adjusted_success` → `success` + `exclusive_sets_adjusted` → `exclusive_sets`
+
+### B-240. `analyze_confidence_calibration.py` in-memory alias 漂移 🛠️ FIXED
+- **Source**: Mode A F5 (Claude-unique)
+- **Code**: `scripts/analysis/analyze_confidence_calibration.py:2228-2238` set `ep_df["raw_success"] = ep_df["success"]` + `ep_df["adjusted_success"] = ep_df["success"]` + `ep_df["fp_reason"] = ""` + emit `label_mode` / `n_adjusted` / `n_success_raw` / `n_success_adjusted` JSON fields;`--no-adjust` CLI flag (documented no-op)
+- **Attack**: Downstream consumer 看 `n_success_raw` / `n_success_adjusted` 两 field 恒等 = 疑似 bug 或冗余。`--no-adjust` flag 出现在 `--help` 表暗示 "可选 adjust",实际 retire 后无意义
+- **Fix**: 3 alias columns 整删 + 4 JSON output keys 整删 → 单 `n_success`;`--no-adjust` argparse 行整删
+
+### B-241. `analyze_reason_diagnostics.py` episode_reason_rows.csv 仍 emit `adjusted_success` / `fp_reason` 列 🛠️ FIXED
+- **Source**: Mode A F1 + downstream
+- **Code**: `scripts/analysis/analyze_reason_diagnostics.py:2003-2005, 2045-2046, 2159-2162` set `adjusted_success = success` + `fp_reason = ""` + `adjusted_reason_bucket = reason_bucket` + 写入 episode_reason_rows.csv;L2293-2335 `condition_overview.csv` emit `adjusted_success_count` / `adjusted_success_rate` / `fp_count`(后者读 `fp_reason` 恒空 → 恒 0);L1488-1525 `state_change_by_outcome.csv` group by `adjusted_success`;L1612-1755 `intent_feature_sr` / `task_type_mode_sr` / `temporal_sr` 计算 `r.get("adjusted_success")` 恒等 raw
+- **Attack**: CSV 输出 schema 含恒等 / 恒空 alias 列让 reviewer 误读为 "fp_count=0 是 paper-grade 结论",实际是 silent retire emission
+- **Fix**: 3 alias variable + 4 CSV column emit (`adjusted_success` / `fp_reason` / `adjusted_reason_bucket` / `adjusted_success_count` / `adjusted_success_rate` / `fp_count`) + state_change_by_outcome `adjusted_success` → `success` + intent/task/temporal SR 读 `success`;`temporal_sr.csv` `adjusted_sr_pct` → `sr_pct`
+
+### B-242. `layered_status.py` mode_stats 双 emit `raw_successes` / `adjusted_successes` + "0b FP rate" markdown section 🛠️ FIXED
+- **Source**: Mode A F5 + Mode B F14
+- **Code**: `scripts/analysis/layered_status.py:181-209` mode_stats emit `raw_successes`/`adjusted_successes`/`raw_sr`/`adjusted_sr`/`fp_rate` keys (5 dual);L300-328 markdown write "0b FP rate (raw success - adjusted success)" section emit 恒 0% rate
+- **Attack**: layered_evidence_status.md "0b" section paper §3 layered-evidence 渲染恒 0 → reviewer "FP rate 全 0,这数据可信吗?"
+- **Fix**: mode_stats 单 emit `n_success` + `sr`;markdown "0b FP rate" 整 section 删除 + 注释 trace
+
+### B-243. `figures/fig0a_sr_per_mode_heatmap.py` annotation prints adjusted SR + raw SR + `fp=` 🛠️ FIXED
+- **Source**: Mode B F14
+- **Code**: `scripts/analysis/figures/fig0a_sr_per_mode_heatmap.py:79-87` cell annotation `{adj:.1f}%\n({raw:.1f}% raw)\nN={n}, fp={fp}`;title "Adjusted success rate (%)"
+- **Attack**: paper §1 hero figure 三元注释训练 reviewer 把 adjusted / raw / fp 当 active quantity,与 paper §3.5 retire 声明矛盾
+- **Fix**: annotation 简化为 `{sr:.1f}%\nN={n} ({mark})` 其中 mark = "✓" if complete else "{n}/{expected}";title "Success rate (%)";source path 切到 `sr_per_mode.json` (B-237 联动);colorbar label "SR (%)"
+
+### B-244. `figures/fig0b_fp_rate_per_mode.py` 整 figure 围绕已退役 FP rate (always 0 post-§139.8) 🛠️ DELETED
+- **Source**: Mode B F14 + Claude F6
+- **Code**: `scripts/analysis/figures/fig0b_fp_rate_per_mode.py` 整 file (docstring + title + footnote 都定义 FP rate = raw - adjusted)
+- **Attack**: figure 永远画全 0 条 → reviewer 第一眼问 "为啥所有 mode FP=0?";paper §1/§4 无引用 (`grep -rn "fig0b_fp_rate" docs/checkpoints/paper_drafts/` 空)
+- **Fix**: 整 file `git rm`;`Makefile:250` line 删除 + comment "retired §139.8 + /stress A1.6"
+
+### B-245. `generate_gallery.py` FP-badge JS (V-FP/N-FP/E-FP coloring) inert 但 render 🛠️ FIXED
+- **Source**: Mode A F6
+- **Code**: `scripts/maintenance/generate_gallery.py:131-156, 354-355, 614-617, 904-905, 957-960` FP-badge JS + CSS `.fp-indicator` + episode payload `adjusted_success` / `fp_reason` 字段
+- **Attack**: Gallery HTML output 仍尝试 render FP-badge (post-§139.8 inert because `fp_reason` 恒空) → JS dead code + readers 疑惑 fp-indicator 何时显示
+- **Fix**: `_load_reason_rows` 内 `adjusted_success` / `fp_reason` 字段读 + 2 处 dict payload 字段 + Home table cell `fpTag` 注释化 + Episode view `if(e.fp_reason)` 块整删 + CSS `.fp-indicator` rule 注释化
+
+### B-246. `analysis.py::_load_na_task_ids` warning text "na_fp detection will be silently disabled" 🛠️ FIXED
+- **Source**: Claude F7
+- **Code**: `p79/experiment/analysis.py:29-33, 45-49` warning literally references 已 retire "na_fp detection" 功能
+- **Attack**: Operator 读 log "na_fp detection disabled" 去找 code 找不到 → 困惑;warning 文案 lifespan 比功能本身还久 = stale-comment 病
+- **Fix**: 改 "scored_task_count: N/A config not found ... will fall back to 0" (与 strict mode 协同)
+
+### B-247. `analysis.py` `is_na_reference` 计算块 + `na_reference_tasks.csv` 写出 + `na_reference_task_count` JSON field 🛠️ FIXED
+- **Source**: Claude F2
+- **Code**: `p79/experiment/analysis.py:1271-1291, 1383-1385, 1401, 582` — `is_na_reference` per-episode flag + CSV emit + JSON summary field + cumulative_success_rate caption "N/A excluded at task-load"
+- **Attack**: `exclude_na_tasks=True` default → episodes 不含 N/A → CSV 恒空。Caption 写死 "N/A excluded" 与 CSV 存在矛盾 (一个 surface 暗示 N/A 已排除,另一个 surface 在记录 N/A) → reviewer 比对立刻 catch invariant violation
+- **Fix**: is_na_reference 计算块整删 (含 fallback `ep_df["is_na_reference"] = False`) + `na_reference_tasks.csv` emit 删 + `na_reference_task_count` JSON field 删 + dead `noise_dir` mkdir 删 (now empty dir) + caption 简化为 "Success Rate — {cond_id}"
+
+### B-248. `analysis.py` `raw_success` in-memory alias 浪费 + downstream `n_success_raw` 误读 🛠️ FIXED
+- **Source**: Claude F5
+- **Code**: `p79/experiment/analysis.py:1297-1300` `ep_df["raw_success"] = ep_df["success"].copy()` 保留 alias for backward-compat
+- **Attack**: 历史 raw_success = "未 adjusted",§139.8 后 == canonical → `analyze_confidence_calibration.py:2357` emit `n_success_raw` 字段下游 consumer 看到与 `n_success` 恒等会疑似 bug。Alias 保留是 cargo-cult 而非 backward-compat (no current reader expects different semantics)
+- **Fix**: 列整删 (sweep readers in B-240)
+
+### B-249. `scored_task_count` silent 0-fallback → 假阳性 "complete" propagation 🛠️ FIXED
+- **Source**: Mode A F4 + Mode B F11/F12 — 2-AI overlap (codex 加 specific call-sites)
+- **Code**: `p79/experiment/analysis.py:60-77` return 0 on missing config (silent + warning);propagation: `run_registry.py:152` `is_complete = actual_n >= expected_n` (`0 >= 0 = True`);`fig1ab_cascade_diamond.py:146-153` `if n >= min(200, expected): return "complete"` (expected=0 → n=0 也 complete);`active_processes.py:34-40` 同款 fallback (`make active` 显示 0/0)
+- **Attack**: Phase 1a launch 后任何 config drift / Docker mount 错 → silent 把 missing cells 标 "complete" → paper-grade promote 通过 empty data。比 fail-loud 危险 = fail-silent + false-positive on completeness
+- **Fix**: `scored_task_count(strict=True)` kwarg 加 → raise FileNotFoundError;paper-grade callers (7 个文件 EXPECTED_N module-level) 全切 strict;`run_registry.is_complete` 加 `expected_n > 0` guard;`fig1ab_cascade_diamond.prompt_status` 加 `assert expected > 0`
+
+### B-250. N/A 定义 DRY drift — `_load_na_task_ids` 与 `_is_na_task` 重复 🛠️ FIXED
+- **Source**: Claude F3
+- **Code**: `p79/experiment/analysis.py:40-43` 与 `p79/experiment/tasks.py:24-25` 双重定义 `eval.reference_answers.fuzzy_match == "N/A"`
+- **Attack**: 改 N/A definition (e.g., 加 `exact_match == "N/A"` 覆盖)单改一处 → exclusion-at-load 与 analysis-time 集合 silent 差一。Future-refactor entrance for bug。
+- **Fix**: extract `_resolve_site_config` + `_load_site_tasks` helpers;`_load_na_task_ids` 从 `tasks.py` import `_is_na_task` 复用 (local-import 避免 cycle);测试 `test_na_definition_single_sourced` guard 防 future regression
+
+### B-251. Denominator transition gap (3-AI overlap) — docstring / report prose / paper §4 三 surface 仍 pre-exclusion 234/210 🛠️ FIXED
+- **Source**: Mode A F8 + Mode B F16 + Mode C B-118 — **3-AI overlap (highest paper-grade confidence)**
+- **Code**: `p79/experiment/analysis.py:57-58` docstring quote `EXPECTED_N = {classifieds: 234, ...}` (pre-exclusion);`scripts/analysis/axis1_microbehavior.py:713-718` report prose 仍 hardcode `/210` `/234`;`section4_empirical_findings.md:23` paper §4 hero table N=234/210
+- **Attack**: §139.8 sweep 时只清了 12 个执行路径,3 surface 的 narrative footprint 没改 → reviewer 看 §4 hero table 写 "Cls SR = 38/234 = 16.2%",但 prereg + N/A exclusion 说 N=224 → 算 38/224 = 16.96% → 立刻拒。3-AI 互验 = 真 paper-grade P0
+- **Fix**: (a) `analysis.py:55-69` `scored_task_count` docstring 加 "Post-exclusion: cls=224, red=205, shop=435" 明确 + 引用 strict mode rationale;(b) `axis1_microbehavior.py:711-723` report prose 改用动态 `EXPECTED_N[site]` 替换 hardcode (这次会 emit 224/205);(c) **Paper §4 hero table** defer 等 Phase 1a clean-run data land 后一次性重算 (numbers will change anyway)
+
+### B-252. `power_analysis.py` K-of-16 body section obsolete prose (header retired vs body 矛盾) 🛠️ FIXED
+- **Source**: Mode B F17
+- **Code**: `scripts/analysis/power_analysis.py:147-180` body still emit "## Family-wise power (K-of-N rule)" table with K_h1=12/16 / K_h3=11/16 + family-wise power calculations;但 file header L5-11 已声明 "K-of-N rule RETIRED 2026-05-14 as gate per preregistration.md §4 Decision 3A"
+- **Attack**: Self-contradicting file (header retired-status statement vs body emit retired prose) → reviewer 看 appendix generator output 看到 "K=12/16" decision rule 复活 → 信度受损
+- **Fix**: body L147-170 (K-of-N table + family-wise power calculations + K_h1/K_h3 interpretation) 整段删 + L164-167 reviewer-defensible claim 重写去 K-of-N reference + 注释 trace。**保留** 234/210/466 pre-exclusion design N (prereg-locked,故意 desync 风险 > MDE 位移)
+
+### B-253. test coverage gap for FP architecture invariants 🛠️ FIXED
+- **Source**: Mode A F9 (Claude-unique)
+- **Code**: 无 invariant 测试 — 重构任何 silent drift 无拦截网
+- **Attack**: Future refactor (advisor 改 N/A definition / 改 prereg / lazy refactor 顺手加 alias) 没 fail-loud signal
+- **Fix**: `tests/test_fp_architecture_invariants.py` NEW with 9 invariants: scored_task_count post-exclusion values / strict raise / non-strict fallback / N/A single-source / `_is_na_task` contract / `EpisodeSummaryV2` 无 retired fields / `analysis.py` 无 `compute_adjusted_success*` / `analyze_cross_representation` 无 `_mark_false_positives` / `exclude_na_tasks` default True。`pytest` 全 9 pass
+
+**B-numbers consumed**: B-237 through B-253 (17 contiguous, no collisions). Cumulative session work A1.4a+A1.4b-i+A1.4b-ii+A1.4c+A1.5+A1.13+A1.6 = B-140 through B-253 = 114 unique entries.
+
+**Next available B-number**: B-254+.
+
+**Deferred (per user 2026-05-16 decision)**:
+- Mode A F1 (mechanism_per_task `adjusted_success` key emit) — §5 advisor-defer 2026-05-14
+- Mode B F15 (mechanism `B1_STEP_DIRS` unused) — §5 deferred
+- Mode C B-122 visual_fp 删除影响 — user explicit "不需要考虑"
+- Mode C B-119 B-91 whitespace bypass — defer (待 Phase 1a clean-run pred 分布数据)
+- Mode C B-121 B-86 GLM asymmetry — defer (待 advisor 2026-05-14 question reply)
+- Mode C B-120 preregistration "lock" 2026-05-14 timing prose — defer (paper §3 prose decision)
