@@ -2324,8 +2324,71 @@ Phase 1a fire prep audit per phase1_plan §A1 ladder item 7。3-AI cross-AI cycl
 
 **B-numbers consumed**: B-261 through B-272 (12 contiguous + 2 subsumed: B-267 → B-264, namespace overlap → B-261)。Cumulative session work A1.4a+A1.4b-i+A1.4b-ii+A1.4c+A1.5+A1.13+A1.6+A1.7 = B-140 through B-272 = ~126 unique entries. Gap B-254~B-260 reserved (in case A1.6 amendments).
 
-**Next available B-number**: B-273+.
+**Next available B-number**: B-280+ (after A1.16 batch below).
 
 **Renumber drama** (chronicle §159.4): initial draft B-230~B-243 → conflict A1.13+A1.14; second pass B-237~B-249 → conflict A1.6 uncommitted; final B-261~B-272 safe gap above all parallel sessions。Lesson: pre-batch grep `git diff HEAD docs/reference/master_bug_catalog.md | grep "^+### B-"` 加 sequential allocator (future cron 实现)。
+
+
+---
+
+## A1.16 /stress audit (2026-05-16) — B-273 to B-279 (7 entries; 7 fixed, 0 deferred, 5 mechanism-script-deferred per Q16 user decision)
+
+> Cross-AI: Mode A Claude 8 findings / 5 OOB + Mode B codex retry 9 findings / 2 OOB labels + Mode C gemini 7 findings / 2 OOB + 2 P0 unique attack vectors = 22 raw → **11 unique** after dedup. Scope = `scripts/provenance/snapshot_*` (3 files / 519 LOC paper §3 reproducibility anchors). User Q1 Option A (paper-1 critical, 7 fix); Q16 (i) mechanism `numerical_determinism_check.py` 5 deferred bugs (P0-2/P0-3/P1-5/P1-6/P1-7) tracked via `phase1_plan.md` §A1 pointer per advisor 2026-05-14 mechanism defer.
+
+### B-273. snapshot_vwa.sh `/` probe → session-stateful body_sha256 🛠️ FIXED
+- **Source**: Claude Mode A A-1 + codex C-6 + gemini G-5 (3-AI overlap, P0)
+- **Code**: `scripts/provenance/snapshot_vwa.sh:88-91` pre-fix `url = f"http://${VWA_HOST}:{port}/"` then `curl ... | sha256sum`
+- **Attack**: Magento `/` 含 cart token + Postmill `/` 含 user feed + OSClass `/` 含 last_login → 同站同脚本两次 capture body_sha256 都不同。Paper §3 Appendix D "byte-equivalence" claim 在 byte 一层就站不住,reviewer diff snapshot.json 永远 mismatch → "你这论文不可复现"。
+- **Fix**: 改 probe path 到 `/robots.txt` (server-config static,no session cookies,deterministic for given VWA submodule source)。配 3 env override (`VWA_PROBE_PATH_CLS/RED/SHOP`) + `-b /dev/null -c /dev/null` disable cookies。`probe_kind: "static-asset"` 写进 snap["sites"] 标识当前 probe 类型 (paper-2 reviewer 可读 schema)。
+
+### B-274. snapshot_vwa.sh bash heredoc command injection vector 🛠️ FIXED
+- **Source**: Claude Mode A A-2 + codex C-5 + gemini G-6 (3-AI overlap, severity split P0/P1/P2)
+- **Code**: `scripts/provenance/snapshot_vwa.sh:39, 54-56, 88` pre-fix `python3 - <<PYEOF` + `"host": "$HOST"` 等 bash interpolation
+- **Attack**: `VWA_HOST='x";import os;os.system("evil");#'` → Python source 执行任意代码。Paper-grade OSF reviewer 跑 untrusted env 才有 real risk 但开源代码 lint signal 弱;3-AI 严重性分歧 (Claude P0 / codex P1 / gemini P2),P2 接受 (paper-grade lint not real attack surface)。
+- **Fix**: heredoc 改 `<<'PYEOF'` quoted form (closes bash interpolation) + env export 全 host vars + Python 内 `os.environ.get()` 取值。所有外部值 typed-validated (`int(os.environ["CLS_PORT"])`)。
+
+### B-275. snapshot_env.py HF SHA captures registry HEAD, not loaded cache 🛠️ FIXED
+- **Source**: Claude Mode A A-3 + codex C-1 + gemini G-1 (3-AI overlap, P1)
+- **Code**: `scripts/provenance/snapshot_env.py:123-130` pre-fix `HfApi().model_info(model_id).sha`
+- **Attack**: HF 滚 main 分支 → snapshot 记 NEW SHA, runner 用 cache OLD SHA. Paper §3 "model SHA pinned at launch" misleading — pinned 的是 registry HEAD 不是 actually-used revision. Reviewer `from_pretrained(model_id, revision=<paper-SHA>)` 拉到 new weights → SR 不匹配 paper 数字。
+- **Fix**: 新 `_loaded_revision_from_cache(model_id)` 用 `huggingface_hub.scan_cache_dir()` 读 local cache 最 recent revision。`_capture_model_revisions()` 输出双字段: `loaded_revision` (PRIMARY) + `registry_head` (SECONDARY) + `divergence` 字段 `match | runner_used_stale_cache | registry_unavailable | no_local_cache | gated_no_token`. Smoke verified: B1 Qwen3-VL-4B-Instruct loaded=`ebb281ec70b05090...` matches registry HEAD → `divergence: match`。
+- **Note**: runner-side enforce (`from_pretrained(model_id, revision=<pinned_sha>)`) tracked separately in phase1_plan §A1 pointer (downstream change in runner, not snapshot scope)。
+
+### B-276. snapshot_env.py Gemma gated → silent "unavailable" 🛠️ FIXED
+- **Source**: Claude Mode A A-4 + codex C-2 (Claude+codex 2-AI, gemini missed)
+- **Code**: `scripts/provenance/snapshot_env.py:58-61` `DEFAULT_MODELS` 含 `google/gemma-3-4b-it` (gated); `:124, 128-131` pre-fix `HfApi()` 无 token + `_safe` 静默 → "unavailable"
+- **Attack**: B2 model SHA 永远 unavailable, paper §3 / Appendix D B2 anchor 缺失。Reviewer 不能 verify B2 → "凭啥说你 B2 真用了 gemma-3-4b-it?" Cross-family claim 失锚。
+- **Fix**: 新 `DEFAULT_GATED_MODELS` list (paper-baseline gated)。`_capture_model_revisions()` 检查 `HF_TOKEN`/`HUGGING_FACE_HUB_TOKEN` env, 缺失 + gated 模型 → 立即 set `_critical_error` + errors entry + log.error()。`--strict` CLI flag enables exit non-zero for paper-grade Phase 1a launch wrap (caller `bash queue_phase1_paper_grade.sh` 可加 `snapshot_env --strict` 在 fire 前 gate)。Smoke: B2 missing token → `divergence: gated_no_token` + 1 errors entry surfaced。
+
+### B-277. snapshot_env.py evaluator combined_sha256 silent MISSING + order-sensitive 🛠️ FIXED
+- **Source**: Claude Mode A A-5 + codex C-3 + C-4 + gemini G-3 (3-AI overlap, P1)
+- **Code**: `scripts/provenance/snapshot_env.py:139-152` pre-fix `if not f.exists(): per_file[rel_path]="MISSING"; continue` + `for rel_path in EVALUATOR_SOURCE_FILES` (list-order iteration)
+- **Attack**: (1) Reviewer 没 `git submodule init` → `helper_functions.py` MISSING → silent skip → `combined_sha256` 用剩 3 文件计算 → reviewer 跟 paper 的 hash 对不上 **不报错**. (2) Future PR 重排 list → hash 改 byte 不变 → false-positive regression alert。
+- **Fix**: 新 `_evaluator_combined_sha()` (a) `raise FileNotFoundError` on MISSING (paper-grade fail-loud) (b) `EVALUATOR_SOURCE_FILES = sorted([...])` 强制 canonical order (c) hash form: `sha256(rel_path \0 byte_len \0 content \0)` path-aware sentinel-delimited (defeats rename-but-same-content attack + size-detect)。`schema_version: "2026-05-16-canonical-v2"` 字段标记新格式。
+
+### B-278. snapshot_env.py evaluator scope 过窄 (configs + utils missing) 🛠️ FIXED
+- **Source**: gemini Mode C G-3 (gemini-unique OOB attack vector)
+- **Code**: `scripts/provenance/snapshot_env.py:45-52` pre-fix 4-file list (analysis + environment + metrics + helper_functions)
+- **Attack**: YAML `max_steps` 改 → SR 基准变, 但 `combined_sha256` 不变 → paper §3 "scoring logic pinnable" 失效。`p79/utils/auth_refresh.py` 决定 N/A task 跑没跑也直接影响 SR。
+- **Fix**: list 扩展到 6 explicit files + `EVALUATOR_CONFIG_GLOB = "configs/exp_v2_*.yaml"` 加 119 config files + 新 `evaluators.py` (string_match / url_match / program_html) + `auth_refresh.py` (auth gate task-level)。Plus inline `pip_freeze_lock` 全 deps lock 进 snap (Q6 option C 推荐) — paper §3 full env reproducibility. Smoke verified: 6 core + 119 configs = 125 files captured。
+
+### B-279. snapshot_vwa.sh docker image_id non-portable + VWA source SHA missing 🛠️ FIXED
+- **Source**: Claude Mode A A-8 + codex C-7 (Claude+codex 2-AI, P1)
+- **Code**: `scripts/provenance/snapshot_vwa.sh:69` pre-fix `docker inspect --format={{.Image}} ${cid}` returns local layer storage hash (non-portable across hosts); 完全无 VWA submodule SHA / Dockerfile / docker-compose fingerprint
+- **Attack**: (1) image_id mismatch 跨 dgx vs a100 even with same registry pull → reviewer 以为 deploy 不同实际 manifest 一致。(2) Rebuild docker with same tag but new VWA source → snap looks unchanged, evaluator code 实际不同 → byte-equivalence claim broken。
+- **Fix**: (a) `repo_digests` 升级为 PRIMARY (registry-canonical, portable) + `image_id_full` 标 "local-only, non-portable" comment;(b) 新 `snap["vwa_source"]` section: `submodule_sha` + `submodule_branch` + `submodule_dirty` (含 dirty_files list) + `dockerfile_combined_sha256` (canonical sha256 over sorted Dockerfile + docker-compose*.yml files); rglob covers nested dirs。
+
+**B-numbers consumed**: B-273 through B-279 (7 contiguous, no collisions). Cumulative session work (A1.4a+A1.4b-i+A1.4b-ii+A1.4c+A1.5+A1.13+A1.6+A1.7+A1.16) = B-140 through B-279 = ~133 unique entries.
+
+**Mechanism-script bugs DEFERRED** (Q16 user decision =留 + pointer): 5 bugs in `scripts/provenance/numerical_determinism_check.py` 跟 paper §5 cross-machine mechanism quote 绑定; advisor 2026-05-14 显式 defer mechanism。Bug list tracked via `phase1_plan.md §A1` pointer "A1.16-mechanism subset deferred per paper-2 scope":
+- (D-1) TF32 matmul blindness (gemini G-2, P0) — `numerical_determinism_check.py:79-81` 不设 `torch.backends.cuda.matmul.allow_tf32`
+- (D-2) Model loading dtype non-determinism (gemini G-4, P0) — `:75` `HiddenStateExtractor` 不传 `torch_dtype`
+- (D-3) `external_code` path typo (Claude A-6, P1) — `:67` silent fallback to episode summary intent
+- (D-4) pass_threshold default 1e-2 vs docstring 1e-3 (Claude A-7 + codex C-8, P1) — `:201-202`
+- (D-5) Capture input not SHA-pinned across machines (codex C-9, P1 OOB) — `:59-77`
+
+These 5 bugs are paper-1 out-of-scope (mechanism deferred); if paper-2 mechanism work resumes, this batch becomes paper-grade gate for cross-machine determinism quotes.
+
+**Next available B-number**: B-280+.
 
 **Phase 1a fire green-light (per user Q11)**: all 12 P0+P1 fix landed + smoke verified (pytest 16/16 + conditions.py enum + som.py vision raise + base.yaml deep-merge inheritance)。Remaining advisor blocker: B-262 (glm_fallback) per `parse_advisor_pending.md` Thread 1。

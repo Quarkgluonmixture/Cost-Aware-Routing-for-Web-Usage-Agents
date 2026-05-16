@@ -104,6 +104,8 @@ B0 infra prereq ──┘                                                       
 - ⏳ B-86 B0 GLM parse-error fallback scaffold — 待学长回应
 - 🟢 FP-restructure piece 4d cosmetic — 低优
 - ⏳ #10 analysis 层 3-model 改造 — gate §D 不 gate launch
+- ⏸ **A1.16-mechanism subset deferred per paper-2 scope** (set 2026-05-16, advisor 2026-05-14 mechanism defer): `scripts/provenance/numerical_determinism_check.py` 内 5 bugs (D-1 TF32 matmul blindness gemini-OOB P0 / D-2 dtype non-determinism gemini-OOB P0 / D-3 `external_code` typo P1 / D-4 threshold 1e-2 vs 1e-3 mismatch P1 / D-5 input not SHA-pinned codex-OOB P1). Paper-1 不依赖 (mechanism quote 暂搁); paper-2 mechanism resumes 时是 hard gate. Full bug list → [[master_bug_catalog]] A1.16 batch tail (B-273~B-279 + DEFER list)。
+- ⏸ **B-275 runner-side enforce** — `from_pretrained(model_id, revision=<pinned_sha>)` 强制拒绝 stale cache 跟 `pre_run/locked_versions.md` 联动。B-275 snapshot-side capture 已 land (双字段 `loaded_revision` + `registry_head` + `divergence`); runner-side enforce 是 downstream change (touches `p79/backends/local_qwen.py` + `local_gemma.py`), 单独 fix slice 处理。
 - 详细 9-bug 表 → `master_bug_catalog.md` §139 / [[实验笔记]] §139
 
 ---
