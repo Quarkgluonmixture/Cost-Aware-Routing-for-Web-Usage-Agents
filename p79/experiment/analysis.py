@@ -1013,6 +1013,77 @@ def _compute_statistical_tests(
     else:
         results["notes"].append("Fewer than 2 conditions — pairwise tests skipped")
 
+    # B-178 (/stress A1.4b-i Claude A2 + gemini C2): apply Holm-Bonferroni
+    # step-down per (test_family, metric) family to the raw pairwise p-values
+    # produced above. The preregistration §3.6 declares Holm-corrected paired
+    # tests for cross-condition comparisons; pre-fix `_compute_statistical_tests`
+    # output ONLY raw p-values so any reader of `statistical_tests.json` /
+    # `statistical_tests.csv` who paste those into the paper directly inflated
+    # FWER for 36 conditions × 630 pairs. Holm is applied within each
+    # (test, metric) sub-family (McNemar success / Wilcoxon cost / Wilcoxon
+    # latency) so the family size is len(cond_ids)*(len(cond_ids)-1)/2 each.
+    def _holm_correct(p_values: List[Optional[float]]) -> List[Optional[float]]:
+        """Holm-Bonferroni step-down. Preserves None for skipped rows."""
+        # Filter out None for the correction; reinject in-place at original idx.
+        finite_idx = [i for i, p in enumerate(p_values) if p is not None]
+        finite_p = [float(p_values[i]) for i in finite_idx]
+        m = len(finite_p)
+        if m == 0:
+            return list(p_values)
+        # Sort by p ascending; rank j (1-indexed) gets multiplier (m - j + 1)
+        order = sorted(range(m), key=lambda j: finite_p[j])
+        adj = [0.0] * m
+        running_max = 0.0
+        for rank, src_j in enumerate(order, start=1):
+            scaled = min(1.0, finite_p[src_j] * (m - rank + 1))
+            running_max = max(running_max, scaled)  # monotone non-decreasing
+            adj[src_j] = running_max
+        out: List[Optional[float]] = list(p_values)
+        for slot, src_j in enumerate(finite_idx):
+            out[src_j] = adj[slot]
+        return out
+
+    # Group flat_rows by (test, metric) and apply Holm within each family.
+    if flat_rows:
+        from collections import defaultdict as _dd
+        families: Dict[Any, List[int]] = _dd(list)
+        for idx, row in enumerate(flat_rows):
+            test = row.get("test")
+            metric = row.get("metric")
+            if test in ("mcnemar_exact", "wilcoxon_signed_rank") and row.get("p_value") is not None:
+                families[(test, metric)].append(idx)
+            # rows with p_value=None (skipped) get holm_p=None automatically
+        for family_key, idx_list in families.items():
+            family_p = [flat_rows[i]["p_value"] for i in idx_list]
+            family_holm = _holm_correct(family_p)
+            for slot, i in enumerate(idx_list):
+                flat_rows[i]["p_value_holm"] = family_holm[slot]
+                flat_rows[i]["significant_05_holm"] = (
+                    family_holm[slot] is not None and family_holm[slot] < 0.05
+                )
+                flat_rows[i]["holm_family"] = f"{family_key[0]}_{family_key[1]}"
+                flat_rows[i]["holm_family_m"] = len(idx_list)
+        # rows that didn't enter a family (bootstrap_ci / skipped) get explicit None
+        for row in flat_rows:
+            row.setdefault("p_value_holm", None)
+            row.setdefault("significant_05_holm", None)
+            row.setdefault("holm_family", None)
+            row.setdefault("holm_family_m", None)
+
+        # Also stamp on the JSON side under a separate `holm` key for symmetry.
+        results["holm_corrected"] = {
+            "families": {
+                f"{k[0]}_{k[1]}": {
+                    "m": len(v),
+                    "method": "holm-bonferroni step-down (within-family)",
+                }
+                for k, v in families.items()
+            },
+            "note": "Raw p_values are preserved in mcnemar/wilcoxon blocks; "
+                    "Holm-adjusted values are in `statistical_tests.csv` columns "
+                    "p_value_holm + significant_05_holm. Paper §3.6 reads Holm.",
+        }
+
     with open(reports_dir / "statistical_tests.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
 
@@ -1444,15 +1515,18 @@ def _plot_phase2(cond_df, plots_dir: Path, tables_dir: Path, reports_dir: Path) 
         else:
             work_df["avg_total_model_cost_usd"] = 0.0
 
-    plot_df = work_df[
-        [
-            "condition_id",
-            "success_rate",
-            "avg_total_model_cost_usd",
-            "avg_router_overhead_cost_usd",
-            "avg_total_cost_usd",
-        ]
-    ].copy()
+    # B-177 carries `avg_obs_prepare_cost_usd` when present (legacy summaries
+    # may lack it); downstream net-saving decomposition reads it from `routed`.
+    pareto_cols = [
+        "condition_id",
+        "success_rate",
+        "avg_total_model_cost_usd",
+        "avg_router_overhead_cost_usd",
+        "avg_total_cost_usd",
+    ]
+    if "avg_obs_prepare_cost_usd" in work_df.columns:
+        pareto_cols.append("avg_obs_prepare_cost_usd")
+    plot_df = work_df[pareto_cols].copy()
     plot_df.to_csv(tables_dir / "phase2_pareto_metrics.csv", index=False)
 
     # Pareto front: success vs cost
@@ -1536,16 +1610,44 @@ def _plot_phase2(cond_df, plots_dir: Path, tables_dir: Path, reports_dir: Path) 
     fixed = plot_df[plot_df["condition_id"] == "phase2_fixed_best"]
     routed = plot_df[plot_df["condition_id"] == "phase2_routed"]
     if not fixed.empty and not routed.empty:
+        # B-177 (/stress A1.4b-i codex B1, OOB): runner cost decomposition is
+        # `total = model + router_overhead + obs_prepare` (see
+        # `runner/main.py:1837-1839`, `aggregate_condition_metrics` emits
+        # `avg_obs_prepare_cost_usd` at `metrics.py:356`). Pre-fix `_plot_phase2`
+        # reconstructed routed_total_cost from only 2 of those 3 components, so
+        # every Phase 2 net-saving JSON / CSV was biased UPWARD by exactly the
+        # routed obs-prepare cost. Now use the canonical `avg_total_cost_usd`
+        # directly (it already includes obs_prepare) and emit the full 4-way
+        # decomposition so downstream readers can audit components.
         fixed_cost = float(fixed.iloc[0]["avg_total_cost_usd"])
+        routed_total_cost = float(routed.iloc[0]["avg_total_cost_usd"])
         routed_model_cost = float(routed.iloc[0]["avg_total_model_cost_usd"])
         routed_overhead = float(routed.iloc[0]["avg_router_overhead_cost_usd"])
-        routed_total_cost = routed_model_cost + routed_overhead
-        ns = net_saving(fixed_cost, routed_model_cost, routed_overhead)
+        # obs_prepare may be absent on legacy summaries (pre-§97); default to 0.
+        routed_obs_prepare = float(
+            routed.iloc[0].get("avg_obs_prepare_cost_usd", 0.0) or 0.0
+        )
+        # Net saving is baseline minus the canonical routed total (which
+        # includes obs_prepare). Direct subtraction; do NOT use the legacy
+        # `net_saving(baseline, model, overhead)` 2-component reconstruction.
+        ns = fixed_cost - routed_total_cost
+        # Sanity invariant: reconstructed sum should match canonical total within
+        # rounding (catches future schema drift). Tolerate 1e-9 USD slack.
+        recon = routed_model_cost + routed_overhead + routed_obs_prepare
+        if abs(recon - routed_total_cost) > 1e-9:
+            logger.warning(
+                "_plot_phase2: routed cost decomposition mismatch — "
+                "components sum %.9f USD but avg_total_cost_usd=%.9f USD "
+                "(Δ=%.2e). Likely additional cost component not in {model, "
+                "router_overhead, obs_prepare}. Net saving still uses canonical total.",
+                recon, routed_total_cost, recon - routed_total_cost,
+            )
 
         payload = {
             "baseline_total_cost": fixed_cost,
             "routed_model_cost": routed_model_cost,
             "routed_router_overhead_cost": routed_overhead,
+            "routed_obs_prepare_cost": routed_obs_prepare,
             "routed_total_cost": routed_total_cost,
             "net_saving": ns,
         }
@@ -1559,6 +1661,7 @@ def _plot_phase2(cond_df, plots_dir: Path, tables_dir: Path, reports_dir: Path) 
                 {"component": "baseline_total_cost", "value": fixed_cost},
                 {"component": "routed_model_cost", "value": routed_model_cost},
                 {"component": "routed_router_overhead_cost", "value": routed_overhead},
+                {"component": "routed_obs_prepare_cost", "value": routed_obs_prepare},
                 {"component": "routed_total_cost", "value": routed_total_cost},
                 {"component": "net_saving", "value": ns},
             ]
