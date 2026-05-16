@@ -1,0 +1,73 @@
+# B0 learned router classifieds — Phase 1a Pass-2 paper-grade
+# v7 walk-back 2026-05-16 (per proposals_v7.md D3 + user Q3/Q2 confirmation):
+# This config emits 1 router condition per cell (vs 6 per-mode in baseline pass).
+# obs_mode="learned" sentinel signals runner to dispatch through LR predictor.
+#
+# ⚠️ RUNTIME LR INTEGRATION TODO: runner must accept observation_mode="learned"
+# and route through trained LR per task. See `proposals_v7.md` §3 + TODO in
+# `p79/experiment/runner/main.py` (pending separate session).
+#
+# Launch via: bash scripts/queues/queue_router_learned.sh B0 classifieds
+# Orchestrated by: queue_phase1_router_paper_grade.sh
+
+defaults:
+  - configs/exp_v2_base.yaml
+
+experiment:
+  phase: "phase1"
+  name: "B0_router_learned_classifieds"
+
+task:
+  include_sites: ["classifieds"]
+
+runtime:
+  max_steps: 30
+  resume: true
+
+variables:
+  primary:
+    # v7 learned router: 6-mode candidate set; LR picks per task
+    observation_mode: ["learned"]
+  phase1:
+    variant: "router"
+    router_kind: "learned"
+    # Candidate mode set LR predicts over
+    candidate_modes: ["dom", "som", "vision", "phantom_text", "phantom_prompt", "phantom_som"]
+
+router:
+  # v7 learned router config (no cascade L2 — paper-2 deferred)
+  enabled: true
+  kind: "learned"
+  # LR train artifact (must exist before Pass-2 launch); generated post-Pass-1
+  # from per-cell oracle labels via scripts/analysis/train_l1_router.py (TODO).
+  lr_model_path: "results/phantom_paper/l1_router/B0_classifieds_lr.pkl"
+  # Safe fallback if LR predicts mode not in observed cell archive (e.g.
+  # phantom_prompt on cls); paper §6 reports invalid predictions separately.
+  safe_fallback_target: "phantom_som"
+  latch_after_fallback: false  # learned router, no cascade
+
+backends:
+  default_backend: "api_strong"
+  api_strong:
+    type: "api_proxy"
+    api_name: "qwen.qwen3-vl-235b-a22b"
+    base_url: "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke"
+    temperature: 0.0
+    max_new_tokens: 4096
+    max_image_payload_bytes: 5242880
+    image_max_size: 1280
+    max_obs_chars: 12000
+    dom_mode: "llm"
+    mock_mode: false
+    use_glm_fallback: true
+    glm_config: ".auth/glm"
+
+metrics:
+  cost_api:
+    input_cost_per_1k: 0.001
+    output_cost_per_1k: 0.005
+  energy:
+    enabled: false
+
+baselines:
+  run_b0: false
