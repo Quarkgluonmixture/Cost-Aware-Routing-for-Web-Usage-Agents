@@ -184,9 +184,23 @@ start_shopping() {
     fi
     sleep 10
   fi
-  docker exec "${container_name}" /var/www/magento2/bin/magento setup:store-config:set --base-url="http://${HOSTNAME_VALUE}:7770" >/dev/null 2>&1 || true
-  docker exec "${container_name}" mysql -u magentouser -pMyPassword magentodb -e "UPDATE core_config_data SET value='http://${HOSTNAME_VALUE}:7770/' WHERE path IN ('web/unsecure/base_url', 'web/secure/base_url');" >/dev/null 2>&1 || true
-  docker exec "${container_name}" /var/www/magento2/bin/magento cache:flush >/dev/null 2>&1 || true
+  # BUG-5 fix (2026-05-16, codex Attack 2): strip `|| true` from Magento patches.
+  # Silently swallowing failures was masking patch-not-applied bugs → image-baked
+  # metis URL stays active → BUG-4 hang cascade for Phase 1b shop.
+  docker exec "${container_name}" /var/www/magento2/bin/magento setup:store-config:set --base-url="http://${HOSTNAME_VALUE}:7770" >/dev/null 2>&1
+  docker exec "${container_name}" mysql -u magentouser -pMyPassword magentodb -e "UPDATE core_config_data SET value='http://${HOSTNAME_VALUE}:7770/' WHERE path IN ('web/unsecure/base_url', 'web/secure/base_url');" >/dev/null 2>&1
+  # Verify DB-side base_url actually patched (config:set caches stale via app/etc; SQL UPDATE is authoritative)
+  local actual_url
+  actual_url=$(docker exec "${container_name}" mysql -u magentouser -pMyPassword magentodb -sN -e \
+               "SELECT value FROM core_config_data WHERE path='web/unsecure/base_url';" 2>/dev/null || echo "?")
+  if [[ "${actual_url}" != "http://${HOSTNAME_VALUE}:7770/" ]]; then
+    echo "[START] ✗ Magento base_url patch FAILED: got '${actual_url}' want 'http://${HOSTNAME_VALUE}:7770/'" >&2
+    return 1
+  fi
+  docker exec "${container_name}" /var/www/magento2/bin/magento cache:flush >/dev/null 2>&1
+  # BUG-13 fix (Claude NEW4): ES indexes baked with metis URLs; need reindex post base_url change
+  docker exec "${container_name}" /var/www/magento2/bin/magento indexer:reindex >/dev/null 2>&1 || \
+    echo "[START] ⚠️  Magento indexer:reindex failed (may need manual rerun for shop search-autocomplete tasks)" >&2
 }
 
 start_reddit() {
