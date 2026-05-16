@@ -1950,3 +1950,123 @@ phase1_plan A1.4 拆 3 chunks (A1.4a orchestrator / A1.4b data plane / A1.4c aux
 - **User Q&A defuse**: User confirmed `paper §3/§4 figures + tables` do not actually reference `checklist_completion_rate`; metric exists in code (`analysis.py:357-420`) and `condition_summary_v2.json` schema but not in any published claim. Therefore reviewer attack lacks bite — there's nothing to attack.
 - **Status**: DEFUSED. Checklist code retained as latent infrastructure for paper-2 Phase 3 M4 ablation; no paper-1 remediation needed.
 
+
+---
+
+## A1.5 /stress audit (2026-05-16) — B-211 to B-229 (19 entries; 9 fixed, 5 deferred, 5 disclosed-only)
+
+> Cross-AI: Mode A Claude 9 findings / 3 OOB + Mode B codex 7 findings / 5 OOB + Mode C gemini 5 findings / 2 OOB = 21 unique attack vectors (B-211~B-229 here; 2 already-tracked per A1.4c not re-counted). Cumulative session work touched 8 files: `p79/utils/auth_refresh.py` (rewrite) / `p79/utils/log_cleanup.py` (dry_run default) / `p79/experiment/runner/main.py` (auth gate + in-progress marker) / `scripts/maintenance/experiment_watchdog.py` (delete ImportError fallback + atomic state + PID guard) / `scripts/maintenance/cleanup_logs.py` (--confirm flag) / `scripts/maintenance/clear_tasks.py` (atomic digest) / `scripts/queues/queue_baseline.sh` (auth gate).
+
+### B-211. Plaintext VWA credentials in tracked code 双点 leak 🛠️ FIXED
+- **Source**: Claude Mode A Finding 1 (OOB-A) + codex CV-1 strengthens
+- **Code**: `p79/utils/auth_refresh.py:16-21` + `scripts/maintenance/experiment_watchdog.py:132-136`
+- **Attack**: OWASP "hardcoded credentials" — `_ACCOUNTS` plaintext in tracked files (Phase 1a credentials = `Password.123` / `test1234` / `admin1234`). Subprocess `python -c "<script>"` 把 password 嵌入 cmdline → `ps -ef` / `/proc/<pid>/cmdline` 可见. Even though VWA reference test accounts (no real prod creds), reviewer optics is OWASP red flag.
+- **Fix**: `_ACCOUNT_ENV_KEYS` dict mapping site → (USER, PASS) env var names; `_load_account()` raises `AuthRefreshConfigError` on missing env. Watchdog ImportError fallback ENTIRELY DELETED (Item 8 default: silent fallback dangerous). Required env vars: `VWA_<SITE>_USER` + `VWA_<SITE>_PASS` for each of {classifieds, reddit, shopping, shopping_admin}, set via gitignored `scripts/vwa_env_remote.sh`.
+
+### B-212. LOGIN_FAILED URL substring false-positive 🛠️ FIXED
+- **Source**: Claude Mode A Finding 2 (OOB-B) + codex CV-2 weak-defuse (pre-fix archive evidence)
+- **Code**: `p79/utils/auth_refresh.py:130-141` (pre-fix substring `login_marker in final_url.lower()`)
+- **Attack**: substring match systematically false-positives where marker is a path prefix of post-login URL. shopping_admin marker `/admin` matches `/admin/dashboard/index/*` → 永远误判 LOGIN_FAILED. reddit `/login` matches `/login_success?next=...`. classifieds pre-2026-04-26 fix was `/index.php` after `.split('?')[0]` → matched every post-login user page.
+- **Fix**: structured `urlparse` + path-equal AND login_qs-subset check. Examples: cls (`path=/index.php`, query `page=login`) — post-login user page has same path but different `page` value → NOT still on login. shopping_admin (`path=/admin`) — dashboard has `path=/admin/dashboard/index` after rstrip → path differs → NOT still on login. Implementation inlined into subprocess script literal at `auth_refresh.py:155-200`.
+
+### B-213. `cleanup_all` destructive `dry_run=False` default 🛠️ FIXED
+- **Source**: Claude Mode A Finding 3 + codex CV-3 disagree-defuse (`cleanup_all` IS reachable via CLI)
+- **Code**: `p79/utils/log_cleanup.py:200-215` (default `dry_run=False`) + `scripts/maintenance/cleanup_logs.py:115` (passes config without confirmation)
+- **Attack**: `python scripts/maintenance/cleanup_logs.py` (default `--dir all`) runs `cleanup_all → cleanup_results(max_run_age=90) → shutil.rmtree(run_dir)` 不可逆. Paper-1 archive baseline runs > 90d 全删 → paper §4 figure source 灭失. Trigger = manual CLI invocation (no cron / no Makefile auto-trigger), but documented in README so误调路径 active.
+- **Fix**: `cleanup_all` 默认 `dry_run=True` + 新加 `confirmed: bool = False` kwarg; even if caller sets `config.dry_run=False`,需 `confirmed=True` 才真删 (B-213 safety gate). CLI 加 `--confirm` flag,只有 `--confirm and not --dry-run` 才传 `confirmed=True`. `--dry-run` retained for backward-compat.
+
+### B-214. env propagation leaks parent env into login subprocess 📋 DEFERRED
+- **Source**: Claude Mode A Finding 4 (OOB-C)
+- **Code**: `p79/utils/auth_refresh.py:153` `env = {**os.environ, "DATASET": dataset}`
+- **Attack**: subprocess inherits `OPENAI_API_KEY` / `PROXY_API_KEY` / `AWS_*` / `GITHUB_TOKEN`. crash → stack trace 或 `/proc/<pid>/environ` 可读.
+- **Status**: DEFERRED per user Q9. theoretical leak,无 incident 实证. comment added at code site documenting future tightening to minimal env.
+
+### B-215. asyncio locale-fragile English pattern match 📋 DEFERRED
+- **Source**: Claude Mode A Finding 5 (OOB-D)
+- **Code**: `p79/utils/asyncio_workarounds.py:32` literal `"future exception was never retrieved"`
+- **Attack**: Python upstream message change → filter 静默失败 → logs flooded with TargetClosedError.
+- **Status**: DEFERRED per default (Q13). upstream message 稳定多年.
+
+### B-216. `episode_*.jsonl` cleanup pattern naming-collision 📋 DEFERRED
+- **Source**: Claude Mode A Finding 6
+- **Code**: `p79/utils/log_cleanup.py:237-239` `temp_patterns = ["episode_*.jsonl", ...]`
+- **Status**: DEFERRED per default (Q14). 0-impact currently — production JSONL is `<site>_task_<n>_steps_v2.jsonl`, no `episode_*.jsonl` producer in tree.
+
+### B-217. `auth_refresh.py` subprocess timeout=30s marginal 📋 DEFERRED
+- **Source**: Claude Mode A Finding 7
+- **Code**: `auth_refresh.py:155-159`
+- **Status**: DEFERRED per default (Q15). `AUTH_REFRESH_TIMEOUT` env override added preemptively as documented field (default 30s, opt-in 60s+ for slow networks).
+
+### B-218. torch_cuda_workarounds patch guard lost on `importlib.reload(torch)` 📋 DEFERRED
+- **Source**: Claude Mode A Finding 8
+- **Code**: `p79/utils/torch_cuda_workarounds.py:60`
+- **Status**: DEFERRED per default (Q16). paper-1 workflow 不用 jupyter reload.
+
+### B-219. env_snapshot.json overwrite race with same-run_id resume 📋 DEFERRED
+- **Source**: Claude Mode A Finding 9
+- **Code**: `p79/cli/run_experiment.py:50-57`
+- **Status**: DEFERRED per default (Q17). resume case 罕见.
+
+### B-220. Runner auth-refresh failure non-blocking 🛠️ FIXED
+- **Source**: codex Mode B OOB-01
+- **Code**: `p79/experiment/runner/main.py:953-969` (pre-fix `if ok: ... else: logger.warning("...continuing with stale session")`)
+- **Attack**: refresh failure 仅 log warning + 继续 `environment.reset()` + episode → NOT-LOGGED-IN session 进 step_record + condition_summary_v2.json. SR 在未登录 session 上算 → cross-mode 差异不可解释.
+- **Fix**: replaced soft `refresh_site_auth(...) -> ok/warn` with `auth_required_gate(...)` (new helper in `auth_refresh.py`). Raises `AuthRefreshFailure` after retry-budget exhausted → episode aborts → outer episode-safe wrapper records as auth-aborted → watchdog picks up via state + retries condition.
+
+### B-221. Watchdog contamination cleanup conditional on later positive login 📋 DOCUMENTED (architectural, not code-fix scope)
+- **Source**: codex Mode B OOB-02
+- **Code**: `scripts/maintenance/experiment_watchdog.py:1434-1510`
+- **Attack**: `if session_ok is True: contaminated = session_contaminated.pop(site, [])` — vision/SoM modes 难触发 session_ok=True. condition 完成前无 positive signal → contaminated list 永驻不清.
+- **Status**: partial mitigation via B-220 (runner-side gate prevents new contaminated episodes from accumulating in first place). True "condition finalization gate" (failing condition with unresolved contamination) is queued for paper-2 prep — current B-220 + B-224 closure substantially reduces contamination rate.
+
+### B-222. Watchdog orphan-cleanup 10min mtime 无 runner-liveness check 🛠️ FIXED
+- **Source**: codex Mode B OOB-03
+- **Code**: `scripts/maintenance/experiment_watchdog.py:1154-1187` + `p79/experiment/runner/main.py:971-996`
+- **Attack**: 长 episode (image render hang / browser stuck) 或挂住的 episode 容易 > 10min mtime,watchdog restart 把 runner 正在写的 artifacts 当 orphan 删 → episode 中段 state inconsistent + summary 不一致.
+- **Fix**: (a) primary guard — watchdog `pgrep -fa "run_experiment.*${run_dir.name}"` probe; live runner detected → SKIP all orphan cleanup this cycle; (b) secondary guard — runner writes `.in_progress` marker at `episode_dir.mkdir` time (after auth gate passes) + removes at successful `episode_summary` return; watchdog orphan-pruning skips dirs/files where corresponding `.in_progress` marker exists.
+
+### B-223. Watchdog state non-atomic write + silent reset on corrupt JSON 🛠️ FIXED
+- **Source**: codex Mode B OOB-04
+- **Code**: `scripts/maintenance/experiment_watchdog.py:927-971`
+- **Attack**: crash mid `path.write_text(json.dumps(...))` → truncated file → next `_load_state` `except Exception: return {}` → retry budget + contamination memory + seen_keys 全丢.
+- **Fix**: atomic write pattern (tmp + fsync + `os.replace` + dir fsync). Same pattern as `LoggerV2._fsync_dir` per B-198.
+
+### B-224. Queue post-reset auth-refresh failure warn-only 🛠️ FIXED
+- **Source**: codex Mode B OOB-05
+- **Code**: `scripts/queues/queue_baseline.sh:192-206`
+- **Attack**: post-reset `refresh_site_auth` 失败仅 `echo "[warn]"` + `setsid nohup ... run_experiment.py` 照样启 → 前 3 task 极可能未登录.
+- **Fix**: replaced with `auth_required_gate` call via embedded Python heredoc. Failure → `exit 1` (abort launch). `AUTH_GATE_BYPASS=1` env var available as explicit opt-out (paper-grade dirty, watchdog reactive only).
+
+### B-225. Watchdog inline fallback hardcoded `100.95.81.103` 🛠️ FIXED
+- **Source**: codex Mode B OOB-06
+- **Code**: `scripts/maintenance/experiment_watchdog.py:138-142, 165` (pre-fix)
+- **Attack**: literal IP 跟 quark Tailscale 老 IP 绑定. A100 / 换 Tailscale IP / quark IP 变动时 fallback 跑错域 → 写错的 storage state 进 `.auth/` → 后续 episode 用错 cookies NOT-LOGGED-IN.
+- **Fix**: per Item 8 user decision, entire `experiment_watchdog._auto_refresh_auth` ImportError fallback block (~92 lines) DELETED. ImportError now → fatal print + return False (loud fail). B-211 + B-225 closed simultaneously via single deletion (双点 cleanup).
+
+### B-226. `clear_tasks.py` digest non-atomic rewrite after delete 🛠️ FIXED
+- **Source**: codex Mode B OOB-07
+- **Code**: `scripts/maintenance/clear_tasks.py:243`
+- **Attack**: `f.unlink()` + `shutil.rmtree(d)` 先删 episode files,再 `jsonl_file.write_text(...)` 覆盖 digest. crash 中 → digest 半写或残留旧记录 + episode 已 gone → 后续 gallery/analysis 不一致.
+- **Fix**: atomic temp-write + fsync + `os.replace` + dir fsync (same pattern as B-198 / B-223).
+
+### B-227. Evaluator integrity via `p79-patches` proprietary fork 📋 DEFERRED (companion bug paper)
+- **Source**: gemini Mode C OOB-F
+- **Code**: paper §3.5 line 113 + VWA submodule branch `p79-patches` commit `f0c835b`
+- **Attack**: paper claims VWA SR but actual evaluator is forked + patched (empty-prediction → 0.0 guard). Reviewer "evaluator-hacking" attack: even with legitimate motivation (fixes GPT-4o-mini empty-pred误判), paper-grade評測 must publish patch scope + SBOM + 原 VWA 对照 sample.
+- **Status**: per user Item 1 decision — DEFERRED to **independent bug研究 paper** (workshop-targeted, agisdk-style cross-benchmark bug aggregation per `next_steps.md §11`). Companion paper hosts complete Appendix-style disclosure (patch list + diff + before-after sample retest + cross-link to B-91 / B-01/02/33 / B-90 / B-209 fixes). Main paper §3.5 prose already references `f0c835b` commit + branch name as in-paper reproducibility pointer; full SBOM is companion-paper substrate.
+
+### B-228. PUE=1.0 carbon greenwashing attack 📋 DEFERRED (70% pre-defused)
+- **Source**: gemini Mode C #4
+- **Code**: paper §8.7 (per B-206 commit `a2962fd`)
+- **Attack**: PUE=1.0 "physically impossible". Real university HPC PUE 1.3-1.5.
+- **Status**: DEFERRED per user Q11. B-206 prose already discloses "PUE=1.0 (dock-power only); typical 1.3-1.5" as lower-bound caveat. Gemini missed the framing. 30% gap = paper §1/§4 not明示 "carbon estimate is lower bound, multiply by 1.3-1.5 PUE for facility-effective" but defer accepted.
+
+### B-229. Parse error taxonomy needs source decomposition 📋 DEFERRED (paper-grade analysis, post-Phase-1a)
+- **Source**: gemini Mode C #5 + user Item 12 refinement
+- **Code**: `p79/backends/action_utils.py::validate_action_detailed` + `step_record.parse_failure_reason` (single-axis classification)
+- **Attack**: current `parse_failure_reason` doesn't separate (M) model output error / (P) B0 proxy API corruption / (S) scaffold parsing error / (R) scaffold-recoverable rejection. Reviewer integrity-report meta-attack: "你 corrupt-line 标准是什么? 跨 mode 不均匀 = cherry-picking".
+- **Status**: DEFERRED to dedicated archive analysis task. Plan: extend `validate_action_detailed` with `model_output_class` + `scaffold_recoverable` fields; add `scripts/analysis/parse_error_taxonomy.py` cross-archive distribution analysis by (backend, mode, site). Output lives in companion bug paper (B-227 family). Effort: 2-3h script + 0.5h schema fields.
+
+**B-numbers consumed**: B-211 through B-229 (19 contiguous, no collisions). Cumulative session work (A1.4a+A1.4b-i+A1.4b-ii+A1.4c+A1.5) = B-140 through B-229 = 90 unique entries (some defused / deferred / disclosed; the rest fixed in code).
+
+**Next available B-number**: B-230+.
