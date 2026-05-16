@@ -93,43 +93,58 @@ MIN_EP_FOR_CELL = 50  # skip cells where any present mode has < 50 ep (too parti
 
 
 def load(d: Path) -> tuple[set[int], set[int]]:
-    """Returns (succ_set, observed_set)."""
+    """Returns (succ_set, observed_set).
+
+    B-325 (/stress A1.9 Mode B F3 OOB, 2026-05-16): strict-by-default flipped
+    for paper-grade defensibility. Pre-fix lenient default added corrupt
+    summary task_ids to `observed` set → treated as "observed failure" in
+    drop-one oracle denominator → paper §1 hero "Phantom-SoM +3.33pp reddit
+    drop-one oracle lift" silently polluted if any JSONL has corrupt row.
+    Now: default strict (raises ValueError on corrupt + excludes task_id from
+    BOTH observed and success sets — corrupt rows are missing-data, not
+    failures). Legacy lenient inspection mode via `P79_STRICT=0` env override.
+    """
     s, o = set(), set()
     if not d.exists():
         return s, o
-    # F05 audit fix 2026-05-09: track corrupt summary count instead of
-    # silently dropping; warn at end of cell. Set P79_STRICT=1 to fail.
-    # B-283 fix (2026-05-16, A1.8): replace bool(rec.get("success", False))
-    # with strict-loader path. Pre-fix truthy string "false" inflated SR; now
-    # strict loader raises in strict mode, lenient mode logs + skips.
     from p79.experiment.io_utils import load_episode_summary_strict
 
     n_corrupt = 0
-    _strict_mode = "strict" if os.environ.get("P79_STRICT", "").lower() in ("1", "true", "yes") else "lenient"
+    # B-325: strict is now the default. P79_STRICT=0 explicitly opts into
+    # lenient mode for legacy data inspection (was: strict required opt-in).
+    _strict_env = os.environ.get("P79_STRICT", "1").lower()
+    _strict_mode = "lenient" if _strict_env in ("0", "false", "no") else "strict"
     for p in sorted(d.glob("*_summary_v2.json")):
         m = re.search(r"task_(\d+)", p.name)
         if not m:
             continue
         tid = int(m.group(1))
-        o.add(tid)
         try:
             rec = load_episode_summary_strict(p, mode=_strict_mode)
         except ValueError:
+            # B-325: corrupt → exclude from BOTH observed and success.
+            # Pre-fix the `o.add(tid)` ran BEFORE the load attempt → corrupt
+            # task counted as observed failure (drop-one denominator pollution).
             n_corrupt += 1
             continue
         if rec is None:
             n_corrupt += 1
             continue
+        # Only add to observed AFTER successful load (B-325 strict-by-default).
+        o.add(tid)
         # §139.8: adjusted_success retired — `success` is canonical.
         # B-283: strict loader guarantees `rec["success"]` is bool, so `is True` is safe.
         if rec["success"] is True:
             s.add(tid)
     if n_corrupt > 0:
         msg = (
-            f"  [F05] {d}: {n_corrupt} corrupt summary file(s) skipped "
-            "(could change oracle union + pp lift). Set P79_STRICT=1 to fail."
+            f"  [B-325] {d}: {n_corrupt} corrupt summary file(s) excluded "
+            "from both observed + success sets (was: silently counted as "
+            "observed failures → paper §1 oracle lift denominator pollution). "
+            "Set P79_STRICT=0 to revert to lenient legacy inspection mode."
         )
-        if os.environ.get("P79_STRICT", "").lower() in ("1", "true", "yes"):
+        if _strict_mode == "strict":
+            # B-325: strict default → raise hard so caller sees corrupt count.
             raise RuntimeError(msg)
         print(f"WARNING: {msg}")
     return s, o

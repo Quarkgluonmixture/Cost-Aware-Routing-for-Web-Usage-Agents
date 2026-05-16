@@ -24,6 +24,14 @@ HARDWARE_PROFILES = {
     "cpu_amd_5900x": {"idle": 10.0, "load": 100.0},
     "rtx_4090": {"idle": 30.0, "load": 400.0},
     "a100": {"idle": 50.0, "load": 300.0},
+    # B-320 (/stress A1.9 Mode A F1 + Mode C #2 OOB, 2026-05-16): config yaml
+    # canonical key "a100_pcie_40gb" was not in this dict pre-fix → silent
+    # `.get(key, HARDWARE_PROFILES["m2"])` fallback → laptop m2 profile (22W
+    # load) reported for A100 paper-grade fire (300W load) → ~14× energy/CO2
+    # under-quote on profile_fallback path. PCIe variant idle/load aligned
+    # with "a100" baseline (PCIe TDP is the same 300W as SXM4 40GB; only
+    # SXM4-80GB raises to 400W). See `configs/exp_v2_base.yaml:79`.
+    "a100_pcie_40gb": {"idle": 50.0, "load": 300.0},
     "h100": {"idle": 60.0, "load": 500.0},
     # DGX Spark (GB10 Grace Blackwell): ~300W GPU TDP + ~65W Grace CPU
     "dgx_spark": {"idle": 40.0, "load": 365.0},
@@ -232,6 +240,19 @@ class LightweightEnergyTracker:
         self.co2e_kg_per_kwh = energy_cfg.get("co2e_kg_per_kwh")
         self.fixed_power_watts = energy_cfg.get("fixed_power_watts")
         self.hardware_profile = str(energy_cfg.get("hardware_profile", "m2"))
+        # B-320 (/stress A1.9 Mode A F1 + Mode C #2 OOB, 2026-05-16): fail-loud
+        # on unknown hardware_profile when energy is enabled. Pre-fix the
+        # `.get(key, HARDWARE_PROFILES["m2"])` fallback path in
+        # `_estimate_power_watts` silently coerced any unknown key to m2
+        # laptop profile (22W vs A100 300W → ~14× energy under-quote). A
+        # mis-typed yaml key would land in production undetected.
+        if self.enabled and self.hardware_profile not in HARDWARE_PROFILES:
+            raise ValueError(
+                f"hardware_profile={self.hardware_profile!r} not in "
+                f"HARDWARE_PROFILES (known keys: {sorted(HARDWARE_PROFILES.keys())}). "
+                "Add an entry to HARDWARE_PROFILES or fix the yaml key. "
+                "Silent fallback to m2 laptop profile is paper-grade-broken."
+            )
         self.use_psutil = bool(energy_cfg.get("use_psutil", True))
         self.region = str(energy_cfg.get("region", "world")).lower()
 
@@ -299,18 +320,43 @@ class LightweightEnergyTracker:
                     self._power_samples.append((t, total_w))
             time.sleep(self._sample_interval)
 
-    def _average_measured_power(self, duration_seconds: float) -> Optional[float]:
-        """Average sampled power over the last `duration_seconds + 1s` window.
+    def _average_measured_power(
+        self,
+        duration_seconds: float,
+        step_start_monotonic: Optional[float] = None,
+    ) -> Tuple[Optional[float], int]:
+        """Average sampled power over the step window.
 
-        Returns None if no samples fall in the window (e.g. first step before
-        thread has fired), in which case the caller falls back to profile estimation.
+        B-321 (/stress A1.9 Mode A F2 OOB, 2026-05-16): when
+        `step_start_monotonic` is provided, the window is strictly bound to
+        `[step_start, step_start + duration_seconds]` — covers only samples
+        taken DURING inference. Pre-fix `cutoff = now - duration - 1` returned
+        mean over ALL samples in window regardless of whether the step was
+        actually running, so a fast step (200ms latency, 500ms sample
+        interval) averaged mostly pre-step idle samples → A100 inference
+        burst (~300W) reported as idle (~50W) → paper §3 per-step energy
+        decomposition systematically biased toward idle.
+
+        Returns (avg_power, sample_count). `sample_count` lets caller emit
+        `energy_window_partial` flag when sample density too low.
+
+        Legacy callers (no `step_start_monotonic`) fall back to pre-fix
+        sliding window for backwards compat (zero behavior change).
         """
-        cutoff = time.monotonic() - max(duration_seconds, 0.0) - 1.0
-        with self._sample_lock:
-            recent = [w for ts, w in self._power_samples if ts >= cutoff]
+        if step_start_monotonic is not None:
+            # B-321 strict window bound: only samples during [start, end].
+            end = step_start_monotonic + max(duration_seconds, 0.0)
+            with self._sample_lock:
+                recent = [w for ts, w in self._power_samples
+                          if step_start_monotonic <= ts <= end]
+        else:
+            # Legacy path (pre-B-321 behavior).
+            cutoff = time.monotonic() - max(duration_seconds, 0.0) - 1.0
+            with self._sample_lock:
+                recent = [w for ts, w in self._power_samples if ts >= cutoff]
         if not recent:
-            return None
-        return sum(recent) / len(recent)
+            return None, 0
+        return sum(recent) / len(recent), len(recent)
 
     # ------------------------------------------------------------------
     # Profile-based fallback
@@ -348,8 +394,21 @@ class LightweightEnergyTracker:
     # Public API
     # ------------------------------------------------------------------
 
-    def estimate_step(self, duration_seconds: float) -> Dict[str, Any]:
-        """Return energy estimate for one step of `duration_seconds` seconds."""
+    def estimate_step(
+        self,
+        duration_seconds: float,
+        step_start_monotonic: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Return energy estimate for one step of `duration_seconds` seconds.
+
+        B-321 (/stress A1.9 Mode A F2 OOB, 2026-05-16): `step_start_monotonic`
+        param added. When provided (recommended for paper-grade fire), the
+        pynvml sample window is strictly bound to inference period — fixes
+        fast-step idle-sample contamination. When None (legacy callers), the
+        pre-fix sliding window is used for backwards compat (zero behavior
+        change for legacy paths). Emits `window_sample_count` +
+        `energy_window_partial` for paper §3 transparency.
+        """
         if not self.enabled:
             return EnergyEstimate(
                 kwh=None, co2e_kg=None, power_watts=None, source="disabled"
@@ -367,7 +426,10 @@ class LightweightEnergyTracker:
             ).as_dict()
 
         # Try real measurement first; fall back to profile estimation.
-        measured_watts = self._average_measured_power(duration_seconds)
+        # B-321: pass step_start_monotonic for strict window bound.
+        measured_watts, sample_count = self._average_measured_power(
+            duration_seconds, step_start_monotonic=step_start_monotonic
+        )
         if measured_watts is not None:
             power_watts = measured_watts
             source = "pynvml"
@@ -375,6 +437,7 @@ class LightweightEnergyTracker:
             power_est = self._estimate_power_watts()
             power_watts = float(power_est.power_watts or 0.0)
             source = power_est.source
+            sample_count = 0
 
         duration_hours = max(float(duration_seconds), 0.0) / 3600.0
         kwh = power_watts * duration_hours / 1000.0
@@ -384,9 +447,17 @@ class LightweightEnergyTracker:
             else kwh * self.carbon_intensity_g_per_kwh / 1000.0
         )
 
-        return EnergyEstimate(
+        out = EnergyEstimate(
             kwh=kwh, co2e_kg=co2, power_watts=power_watts, source=source
         ).as_dict()
+        # B-321: paper §3 transparency — flag window sample density so
+        # downstream analyzer can compute `energy_window_partial_rate`
+        # per cell + filter low-density steps from energy comparisons.
+        out["window_sample_count"] = int(sample_count)
+        out["energy_window_partial"] = bool(
+            source == "pynvml" and sample_count < 2
+        )
+        return out
 
     @property
     def gpu_info(self) -> Optional[Dict[str, Any]]:

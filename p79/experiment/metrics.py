@@ -288,6 +288,40 @@ def _compute_cost_efficiency_ratio(episode_summaries: List[Dict[str, Any]]) -> O
     return cost_on_success / total_cost
 
 
+def _assert_strict_aggregator_types(episode_summaries: List[Dict[str, Any]]) -> None:
+    """B-322 (/stress A1.9 Mode A F3 + Mode B F5 OOB, 2026-05-16): aggregator
+    entry strict-type-check on hero fields. A1.8 B-283 fixed string-truthy at
+    `load_episode_summary_strict()`, but `aggregate_condition_metrics` was
+    called from 3 sites (runner/main.py:636, rederive_episode_summary.py:280,
+    analysis.py:200) passing raw dicts bypassing the strict loader.
+    Defense-in-depth: enforce bool/numeric types at aggregator entry so any
+    future schema regression (`"success": "false"` literal string,
+    `"benchmark_noise": "True"`, `"score": "0.0"`) raises here rather than
+    silently inflating paper §1 hero SR via Python's `bool('false') = True`.
+    """
+    for idx, ep in enumerate(episode_summaries):
+        if "success" in ep and not isinstance(ep["success"], bool):
+            raise ValueError(
+                f"aggregate_condition_metrics episode[{idx}]: success type "
+                f"mismatch — got {type(ep['success']).__name__!s} "
+                f"(value={ep['success']!r}), expected bool. JSON literal "
+                "string-truthy attack vector → paper §1 hero SR inflation."
+            )
+        if "benchmark_noise" in ep and not isinstance(ep["benchmark_noise"], bool):
+            raise ValueError(
+                f"aggregate_condition_metrics episode[{idx}]: benchmark_noise "
+                f"type mismatch — got {type(ep['benchmark_noise']).__name__!s} "
+                f"(value={ep['benchmark_noise']!r}), expected bool."
+            )
+        score = ep.get("score")
+        if score is not None and not isinstance(score, (int, float)):
+            raise ValueError(
+                f"aggregate_condition_metrics episode[{idx}]: score type "
+                f"mismatch — got {type(score).__name__!s} (value={score!r}), "
+                "expected int/float."
+            )
+
+
 def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict[str, Any]:
     if not episode_summaries:
         return {
@@ -329,7 +363,14 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             "unknown_failure_reason_distribution": {},
             # B-199 noise category distribution default:
             "benchmark_noise_category_distribution": {},
+            # B-327 (/stress A1.9 Mode C F3 OOB, 2026-05-16): clean SR
+            # excluding benchmark_noise episodes from numerator+denominator.
+            "clean_success_rate": None,
+            "clean_episode_count": 0,
         }
+
+    # B-322 (/stress A1.9): defense-in-depth strict-type-check on entry.
+    _assert_strict_aggregator_types(episode_summaries)
 
     success_rate = sum(1 for x in episode_summaries if x.get("success")) / len(episode_summaries)
     step_latencies = [float(x.get("p95_step_latency_ms", 0.0)) for x in episode_summaries]
@@ -442,6 +483,35 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             float(statistics.mean(checklist_failed_flags)) if checklist_failed_flags else None
         ),
         "benchmark_noise_rate": float(statistics.mean(benchmark_noise_flags)),
+        # B-327 (/stress A1.9 Mode C F3 OOB, 2026-05-16): clean_success_rate
+        # = SR over episodes excluding benchmark_noise=True (api_rate_limit /
+        # auth_expired / playwright_crash / docker_service_error etc).
+        # `success_rate` (raw) conflates "agent capability" with "infrastructure
+        # stability" — reddit api_rate_limit抖动 → mid-pp SR moves look like
+        # real Phantom gains. Paper §1 hero should report clean_SR;
+        # appendix discloses raw_SR for transparency. Returns None if all
+        # episodes are noise (denominator=0) so prose can show "N/A — all
+        # episodes were infra noise" rather than fake-zero.
+        "clean_success_rate": (
+            float(
+                sum(
+                    1 for x in episode_summaries
+                    if x.get("success") and not bool(x.get("benchmark_noise", False))
+                )
+            ) / max(
+                sum(
+                    1 for x in episode_summaries
+                    if not bool(x.get("benchmark_noise", False))
+                ),
+                1,
+            )
+            if any(not bool(x.get("benchmark_noise", False)) for x in episode_summaries)
+            else None
+        ),
+        "clean_episode_count": sum(
+            1 for x in episode_summaries
+            if not bool(x.get("benchmark_noise", False))
+        ),
         # B-199 (/stress A1.4b-ii gemini v1 G3): per-cell category distribution.
         # Pre-fix the 10-category breakdown produced by `detect_benchmark_noise`
         # was flattened to a single rate, losing site-specific infrastructure
