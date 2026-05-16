@@ -1,0 +1,37 @@
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql_version
+8.1.0
+Variable_name	Value
+collation_connection	latin1_swedish_ci
+collation_database	utf8mb4_0900_ai_ci
+collation_server	utf8mb4_0900_ai_ci
+Variable_name	Value
+sql_mode	ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+Variable_name	Value
+version	8.1.0
+version_comment	MySQL Community Server - GPL
+version_compile_machine	x86_64
+version_compile_os	Linux
+version_compile_zlib	1.2.13
+REPOSITORY   TAG       IMAGE ID                                                                  CREATED       SIZE
+mysql        8.1       sha256:f61944ff3f2961363a4d22913b2ac581523273679d7e14dd26e8db8c9f571a7e   2 years ago   795MB
+
+# A100 deployment baseline (recorded 2026-05-16 pre Phase 1a fire)
+# 
+# Source: docker exec classifieds_db mysql query on A100 condense VM.
+# 
+# Critical observations:
+# - mysql:8.1 image digest = sha256:f61944ff3f2961363a4d22913b2ac581523273679d7e14dd26e8db8c9f571a7e (~2 years old)
+# - MySQL 8.1.0 / x86_64 Linux / GPL Community
+# - collation_database = collation_server = utf8mb4_0900_ai_ci
+# - collation_connection = latin1_swedish_ci (! mismatch with db/server — historical default; OSClass tables likely use utf8mb4)
+# - sql_mode = ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+# 
+# BUG-8 (codex CodexOnly-3): docker-compose.yml uses mutable tag `mysql:8.1`
+# which may differ from quark digest. This file records A100 state pre-fire
+# as paper-grade provenance. Digest pin to docker-compose.yml deferred to
+# post-fire (submodule edit + commit in p79-patches branch).
+# 
+# Paper §3 deployment disclosure recommended:
+# "A100 self-host classifieds DB: mysql:8.1@sha256:f61944ff3f2961363a4d22913b2ac581523273679d7e14dd26e8db8c9f571a7e
+#  (MySQL 8.1.0 Community), collation utf8mb4_0900_ai_ci. Pinned for Phase 1a fire."
