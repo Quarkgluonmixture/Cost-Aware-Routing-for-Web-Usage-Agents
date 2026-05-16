@@ -31,21 +31,35 @@ VWA_RESET_ENABLE="${VWA_RESET_ENABLE:-1}"
 # --- A100 self-host local-mode helpers ----------------------------------------
 
 # reset_vwa_local_classifieds — HTTP reset endpoint（OSClass / jykoh image）
-# Why: jykoh/classifieds bakes a /index.php?page=reset_database endpoint that
-# restores from osclass_craigslist.sql in ~5-10s. Faster than docker rm + recreate.
+# BUG-3 fix (2026-05-16, codex Attack 6 + gemini NEW-OOB-2): OSClass controller
+# at /usr/src/myapp/oc-includes/osclass/controller/reset.php expects POST + page=reset
+# (NOT GET page=reset_database — that has no controller, OSClass silently swallows
+# returning homepage 200 → wrapper false-positive; 0 SQL executed across entire
+# Phase 1a run; cls DB state contaminated cross-episode). Codex verified live via
+# `docker exec mysql query oc_t_item_comment` — 2 stale comments persisted post-"reset".
+# 3-5pp drift (gemini estimate) / 0.2-0.8pp bounded (codex on require_reset subset).
 _reset_vwa_local_classifieds() {
     local label="$1"
     local token="${CLASSIFIEDS_RESET_TOKEN:-4b61655535e7ed388f0d40a93600254c}"
-    local url="http://localhost:9980/index.php?page=reset_database&token=${token}"
     local code
-    code=$(curl -sS -o /dev/null --max-time 60 -w "%{http_code}" "${url}" 2>/dev/null || echo "000")
-    if [[ "${code}" == "200" ]]; then
-        echo "[${label}][reset_vwa][local] classifieds OK (http=${code})"
-        return 0
-    else
-        echo "[${label}][reset_vwa][local] classifieds FAIL (http=${code}, url=${url})" >&2
+    code=$(curl -sS -o /dev/null --max-time 60 -w "%{http_code}" \
+           -X POST -d "token=${token}" \
+           "http://localhost:9980/index.php?page=reset" 2>/dev/null || echo "000")
+    if [[ "${code}" != "200" ]]; then
+        echo "[${label}][reset_vwa][local] classifieds HTTP FAIL (http=${code})" >&2
         return 1
     fi
+    # Mutation sentinel — verify reset actually executed (HTTP 200 alone is fake-safe
+    # for OSClass; only docker-exec DB query confirms SQL ran). Codex's debug method.
+    local count
+    count=$(docker exec classifieds_db mysql -uroot -ppassword osclass -sN -e \
+            "SELECT COUNT(*) FROM oc_t_item_comment WHERE b_active=1;" 2>/dev/null || echo "?")
+    if [[ "${count}" != "0" ]]; then
+        echo "[${label}][reset_vwa][local] classifieds reset SQL did not execute (oc_t_item_comment count=${count}, expected 0)" >&2
+        return 1
+    fi
+    echo "[${label}][reset_vwa][local] classifieds OK (http=200, sentinel verified)"
+    return 0
 }
 
 # reset_vwa_local_reddit — docker rm + run（postmill image seeds itself）

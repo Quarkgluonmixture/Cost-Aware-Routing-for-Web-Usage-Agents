@@ -180,7 +180,7 @@ start_shopping() {
       container_name="vwa-shopping"
       local port_args="-p 7770:80"
       (( want_admin == 1 )) && port_args="${port_args} -p 7780:80"
-      docker run --name "${container_name}" ${port_args} -d shopping_final_0712 >/dev/null
+      docker run --name "${container_name}" -e TZ="${QUARK_TZ:-Europe/London}" ${port_args} -d shopping_final_0712 >/dev/null
     fi
     sleep 10
   fi
@@ -200,7 +200,7 @@ start_reddit() {
     if [[ -n "${container_name}" ]]; then
       docker start "${container_name}" >/dev/null 2>&1
     else
-      docker run --name vwa-reddit -p 9999:80 -d postmill-populated-exposed-withimg >/dev/null
+      docker run --name vwa-reddit -e TZ="${QUARK_TZ:-Europe/London}" -p 9999:80 -d postmill-populated-exposed-withimg >/dev/null
     fi
   fi
 }
@@ -216,7 +216,7 @@ start_wikipedia() {
     if [[ -n "${container_name}" ]]; then
       docker start "${container_name}" >/dev/null 2>&1
     else
-      docker run -d --name vwa-wikipedia --volume="${ENV_DIR}/data/:/data" -p 8888:80 ghcr.io/kiwix/kiwix-serve:3.3.0 wikipedia_en_all_maxi_2025-08.zim >/dev/null
+      docker run -d --name vwa-wikipedia -e TZ="${QUARK_TZ:-Europe/London}" --volume="${ENV_DIR}/data/:/data" -p 8888:80 ghcr.io/kiwix/kiwix-serve:3.3.0 wikipedia_en_all_maxi_2025-08.zim >/dev/null
     fi
   fi
 }

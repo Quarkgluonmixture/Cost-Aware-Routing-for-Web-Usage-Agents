@@ -82,6 +82,12 @@ def refresh_site_auth(
     # Resolve host IP for --host-resolver-rules from env (default = legacy
     # value). Lets users with different Tailscale IPs override without code edit.
     _resolver_ip = os.environ.get("VWA_REMOTE_HOST", "100.95.81.103")
+    # BUG-4 fix (2026-05-16, gemini NEW-OOB-3): Chromium --host-resolver-rules
+    # MAP syntax requires IP, not hostname. Literal "localhost" causes silent
+    # 30s DNS hang in resolver-rules pipeline → Playwright page.goto timeout.
+    # Phase 1a 0pp impact, Phase 1b shop 100pp auth-refresh dead.
+    if _resolver_ip == "localhost":
+        _resolver_ip = "127.0.0.1"
 
     script = f"""
 import sys, time

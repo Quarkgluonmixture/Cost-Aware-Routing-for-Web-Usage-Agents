@@ -101,6 +101,26 @@ fi
 # ---------- WIKIPEDIA ZIM 版本 ----------
 export WIKIPEDIA_ZIM_VERSION="${WIKIPEDIA_ZIM_VERSION:-wikipedia_en_all_maxi_2025-08}"
 
+# ---------- TZ ALIGN (BUG-6 fix, 3-AI agree 2026-05-16) ----------
+# A100 host = UTC, quark Windows host = GMT Standard Time (Europe/London).
+# Postmill timestamps render in container TZ → reddit task `must_include:
+# ["08-11-2023"]` evals break across midnight boundary. 1-2pp drift.
+export QUARK_TZ="${QUARK_TZ:-Europe/London}"
+
+# ---------- BUG-2 preflight: assert all site URLs are local on A100 ----------
+# vwa_env_remote.sh may use ${VAR:-localhost} default-expansion; inherited
+# shell env can override silently → A100 runner hits quark prod (worst-case
+# 100% silent deployment substitution per codex CodexOnly-2).
+if [[ "$(hostname)" == *condense* ]] || [[ -d /home/ubuntu/workspace/p79 ]]; then
+  for _v in CLASSIFIEDS REDDIT SHOPPING WIKIPEDIA; do
+    case "${!_v:-}" in
+      *localhost*|*127.0.0.1*|"") ;;
+      *) echo "✗ FATAL preflight: \$${_v}=${!_v} not local on A100 host; refusing launch" >&2; exit 2 ;;
+    esac
+  done
+  unset _v
+fi
+
 # ---------- B0 PROXY API key 加载 ----------
 if [[ "${BASELINE}" == "B0" ]]; then
   if [[ -z "${PROXY_API_KEY:-}" ]]; then
