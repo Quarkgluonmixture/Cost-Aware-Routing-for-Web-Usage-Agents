@@ -78,9 +78,9 @@ ACCOUNTS = {
     'shopping':    ('emma.lopez@gmail.com',       'Password.123'),
 }
 base_urls = {
-    'classifieds': os.environ.get('CLASSIFIEDS', 'http://100.95.81.103:9980'),
-    'reddit':      os.environ.get('REDDIT',      'http://100.95.81.103:9999'),
-    'shopping':    os.environ.get('SHOPPING',    'http://100.95.81.103:7770'),
+    'classifieds': os.environ.get('CLASSIFIEDS', 'http://localhost:9980'),
+    'reddit':      os.environ.get('REDDIT',      'http://localhost:9999'),
+    'shopping':    os.environ.get('SHOPPING',    'http://localhost:7770'),
 }
 login_paths = {
     'classifieds': '/index.php?page=login',
@@ -93,7 +93,10 @@ login_path = login_paths[site]
 
 cm = sync_playwright()
 playwright = cm.__enter__()
-browser = playwright.chromium.launch(headless=True, args=['--host-resolver-rules=MAP metis.lti.cs.cmu.edu 100.95.81.103'])
+# /stress A1.18 P0-2 (2026-05-16): chromium launch args env-driven; reproducers
+# set VWA_CHROMIUM_LAUNCH_ARGS to override DNS for their own VWA Docker host.
+_chromium_args = [a for a in os.environ.get('VWA_CHROMIUM_LAUNCH_ARGS', '').split() if a]
+browser = playwright.chromium.launch(headless=True, args=_chromium_args)
 context = browser.new_context()
 page = context.new_page()
 page.goto(base_url + login_path)

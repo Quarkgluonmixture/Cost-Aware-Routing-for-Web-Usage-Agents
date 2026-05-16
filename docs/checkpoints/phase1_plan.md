@@ -91,7 +91,7 @@ B0 infra prereq ──┘                                                       
 
 #### A1-外部 (VWA submodule)
 
-- [ ] **A1.18** VWA submodule `p79-patches` branch — evaluator + helper_functions + LLM-judge guard
+- [x] **A1.18** VWA submodule `p79-patches` branch — evaluator + helper_functions + LLM-judge guard (2026-05-16: 15 findings B-254~B-268; gemini OOB P0-1 viewport paradox catch + codex F10 IP 794-hit deepening; full clean: 913 task configs IP→placeholder + paper §3.5/§4.X.11/§4.X.12 disclosure + 3-layer SBOM lock + 5 P1 code fixes; chronicle §159; memory `reference_vwa_submodule_p79_patches.md`)
 
 #### A1-分析管线 (clean-run 下游, 但 code 本身是 pre-data audit)
 

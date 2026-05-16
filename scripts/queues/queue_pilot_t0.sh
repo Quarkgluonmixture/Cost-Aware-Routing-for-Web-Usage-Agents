@@ -102,18 +102,20 @@ export PYTORCH_NVML_BASED_CUDA_CHECK=1
 export CUDA_MPS_PIPE_DIRECTORY=""
 export CUDA_MPS_LOG_DIRECTORY=""
 
-# Wikipedia ZIM (legacy compat)
-export WIKIPEDIA_BASE_URL="${WIKIPEDIA_BASE_URL:-http://100.95.81.103:8888}"
+# Wikipedia ZIM (legacy compat) — /stress A1.18 P0-2 2026-05-16: localhost default;
+# reproducers set WIKIPEDIA_BASE_URL or source scripts/vwa_env_remote.sh to override.
+export WIKIPEDIA_BASE_URL="${WIKIPEDIA_BASE_URL:-http://localhost:8888}"
 
 # Site reset BEFORE pilot launches (paper-grade hard rule)
 if [[ "${RESET_BEFORE:-1}" == "1" ]]; then
     case "$SITE" in
         classifieds)
-            curl -s -m 30 "http://100.95.81.103:9980/setup_db.sh" >/dev/null 2>&1 || \
+            # /stress A1.18 P0-2 (2026-05-16): env-driven base URL
+            curl -s -m 30 "${CLASSIFIEDS:-http://localhost:9980}/setup_db.sh" >/dev/null 2>&1 || \
                 echo "[$(date +%H:%M:%S)] WARN: classifieds reset failed (non-fatal)"
             ;;
         reddit)
-            curl -s -m 30 "http://100.95.81.103:9999/setup_db.sh" >/dev/null 2>&1 || \
+            curl -s -m 30 "${REDDIT:-http://localhost:9999}/setup_db.sh" >/dev/null 2>&1 || \
                 echo "[$(date +%H:%M:%S)] WARN: reddit reset failed (non-fatal)"
             ;;
         shopping)

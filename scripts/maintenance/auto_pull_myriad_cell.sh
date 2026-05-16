@@ -25,7 +25,7 @@
 #
 # Env (override defaults):
 #   QUARK_KEY=~/.ssh/vwa_windows
-#   QUARK_HOST=Quark@100.95.81.103
+#   QUARK_HOST=Quark@YOUR_HOST_IP
 #   MYRIAD_USER=ucab352
 #   MYRIAD_REMOTE_BASE=/home/ucab352/Scratch/p79/results/mechanistic
 #   NTFY_TOPIC=p79-exp-dgx-spark
@@ -55,7 +55,7 @@ exec > >(tee -a "$LOG") 2>&1
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] auto_pull_myriad_cell job=$JOB_ID name=$JOB_NAME remote=$REMOTE_BASENAME"
 
 QUARK_KEY="${QUARK_KEY:-$HOME/.ssh/vwa_windows}"
-QUARK_HOST="${QUARK_HOST:-Quark@100.95.81.103}"
+QUARK_HOST="${QUARK_HOST:?QUARK_HOST must be set, e.g. Quark@YOUR_HOST_IP}"
 MYRIAD_USER="${MYRIAD_USER:-ucab352}"
 MYRIAD_REMOTE_BASE="${MYRIAD_REMOTE_BASE:-/home/ucab352/Scratch/p79/results/mechanistic}"
 NTFY_TOPIC="${NTFY_TOPIC:-p79-exp-dgx-spark}"

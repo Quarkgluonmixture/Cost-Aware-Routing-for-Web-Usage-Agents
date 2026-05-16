@@ -2580,3 +2580,103 @@ Cross-AI agreement: 1 3-AI overlap (cls reset sentinel narrow — Chunk 2), 6 2-
 **Phase 1a fire green-light post-Chunk 1**: launch path now produces correct sentinel validation (B-302 schema fix is the critical unblocker). Remaining advisor blockers still B-262 (GLM fallback) + B-130 (FE/RE estimand). Chunk 2 fixes are paper-grade quality, NOT launch blockers — Phase 1a can fire on Chunk 1 alone.
 
 **Next available B-number**: B-307+.
+
+## §159 /stress A1.18 VWA submodule `p79-patches` — 3-AI audit + full sweep (2026-05-16)
+
+15 findings across Mode A (Claude F1-F7) + Mode B (codex F8-F15) + Mode C (gemini P0-1, P0-2, P1-1, P1-2, P2-1, P2-2 + F6 OOB). 3-AI overlap on P0-4 networkidle asymmetric timing (highest confidence). 2-AI overlaps on P0-1 viewport paradox (BC*), P0-2 IP propagation (AB*, codex deepened 1→913 hits), P0-3 eval model swap (AB*), P0-5 composite commit (AB*), P0-6 SBOM (BC), P0-7 Meta+A — user clarified intentional design (A), P1-5 float coercion (AB).
+
+### B-254. Viewport paradox: paper §4.X.5 "we do not fix" vs code FIXED 🛠️ DOC-FIXED (B-26 + chronicle §80 stale-doc closure)
+- **Source**: Mode C gemini P0-1 (OOB) + Mode B codex F8 (confirm) — Mode A Claude missed (saw file:line match in disclosure but didn't read prose body)
+- **Code**: `external/visualwebarena/browser_env/processors.py:218` HEAD `f0c835b`: `ratio = (overlap_w * overlap_h) / (width * height)` (FIXED by commit `3f9ceca` 2026-04-19); paper `section4_limitations_disclosure.md:113-115` said "We do **not** fix this bug"
+- **Attack**: paper §1 hero claim invariance defense uses "DOM systematically helps from no-op viewport filter" as confound source disclosure; if reviewer git-show §218 sees the fix, the entire §4.X.5 framing collapses
+- **Fix**: §4.X.5 rewritten (title "FIXED 2026-04-19" + prose reflects fix applied + 0.6 threshold math + all DOM/SoM re-run after fix); master_bug_catalog B-26 status flipped 🛠️ NO_FIX → 🛠️ FIXED + commit `3f9ceca` reference. §80 chronicle decision had landed; paper §4 + catalog metadata never updated until A1.18.
+
+### B-255. Hardcoded Quark Tailscale IP propagation across 913 task configs + 8 scripts 🛠️ FIXED (full clean for A100 reproducibility)
+- **Source**: Mode A Claude F1 (single-point framing) + Mode B codex F10 (OOB deepening, 794 hits in test_shopping.json alone)
+- **Code**: `external/visualwebarena/config_files/vwa/test_*.json` 913 files / 3882 total IP occurrences + `envs.py:145` chromium launch arg + 8 P79 scripts (`scripts/maintenance/{retry_b1_single_task.sh,reset_vwa_sites.sh,glm/myriad_watcher.py,auto_pull_myriad_cell.sh,experiment_watchdog.py}` / `scripts/queues/queue_pilot_t0.sh` / `scripts/myriad/{smoke_compute.qsub,smoke_login.sh}` / `scripts/setup/a100_self_host_vwa.sh` / `scripts/provenance/snapshot_vwa.sh` / `p79/utils/auth_refresh.py`)
+- **Attack**: Phase 1a 在 A100 跑 → quark Tailscale 私 IP 不可达 → 任何 task config `start_url` field 直接指向不可达地址 → reset 站点必失败,reproduce killer for any host outside Tailscale net
+- **Fix**: 913 task configs rewritten with `__SHOPPING__/__CLASSIFIEDS__/__REDDIT__/__WIKIPEDIA__` placeholder substitution (`tasks.py::_placeholder_mapping()` already infra-ready); `envs.py:143-156` env-driven via `VWA_CHROMIUM_LAUNCH_ARGS`; 8 scripts converted to env-required / localhost defaults / `${VAR:?...}` fail-loud / placeholder examples. **Zero tracked-file IP hits remaining** (excluding `_deprecated/` + gitignored `scripts/vwa_env_remote.sh`).
+
+### B-256. Eval model `gpt-4-1106-preview` → `gpt-4o-mini` silently undisclosed 🛠️ DOC-DISCLOSED (test deferred)
+- **Source**: Mode A Claude F2 (OOB) + Mode C gemini P2-1
+- **Code**: `external/visualwebarena/evaluation_harness/helper_functions.py:603-607, 654-658` `eval_model = ... or "gpt-4o-mini"` (default); upstream VWA was `gpt-4-1106-preview`. Commit `3f9ceca` body just says "default gpt-4o-mini" with no rationale
+- **Attack**: Cross-paper SR (VWA / WebArena-Verified / PAE 都用 gpt-4-turbo) 不可直接比;judge differential 1-3pp 估算
+- **Fix (disclosure)**: paper §3.5 加 "LLM-judge model disclosure" paragraph 明确 swap + cross-paper comparability scope; paper §8.2 retract "canonical" → "internal-P79 paper-grade outcome". **Deferred**: user wants test gpt-4-1106-preview availability first (session permission-blocked, user-runnable 1-line test in chronicle §159.6)
+
+### B-257. Asymmetric `networkidle` wait — Image processor only, Text processor not, plus internal ordering bug 🛠️ FIXED (3-AI overlap)
+- **Source**: Mode A Claude F4 + Mode C gemini P0-2 + Mode B codex F14 deepening (internal-ordering within ImageObservationProcessor too)
+- **Code**: `external/visualwebarena/browser_env/processors.py:1118-1124` ImageObservationProcessor `process()` waited 2s networkidle; TextObservationProcessor didn't wait at all. Plus codex F14: within ImageObservationProcessor `browser_info` captured L1113 BEFORE wait L1121 → image-internal async (metadata vs screenshot from different render states)
+- **Attack**: paper §3 "comparable observations of same page state" claim fails. DOM/SoM AXTree pre-idle + Vision screenshot post-idle + SoM image post-idle. P-SoM 1.7-3.3pp lift could be partly mode-timing confound
+- **Fix**: Single shared barrier — moved `page.wait_for_load_state("networkidle", timeout=2000)` to `ObservationHandler.get_observation` BEFORE both text + image processors; removed local ImageObservationProcessor wait. All processors observe same post-idle state.
+
+### B-258. Composite-commit `3f9ceca` selective disclosure (6 fix in 1 commit, paper §4 lists 1) 🛠️ DOC-FIXED
+- **Source**: Mode A Claude F1 (composite-commit angle) + Mode C gemini P1-2
+- **Code**: Commit `3f9ceca` body lists 5 piece (processors / envs / actions float / helper_functions VWA_EVAL_MODEL / openai_utils lazy init); actual diff also includes 6th piece (Meta+A clear-before-type to 5 type sites). Paper §4.X.5 pre-A1.18 only disclose 1 piece (viewport, also stale per B-254). DGX routing + NumPy actions + eval model swap + lazy init + Meta+A all undisclosed
+- **Attack**: reviewer git log shows commit lists 5, paper lists 1 → selective bias signal undermines paper §3 reproducibility claim
+- **Fix**: paper §4.X.11 NEW full disclosure table — 5 commits × Subject × Behavioural impact × Affected files × Paper §-disclosure pointer. §4.X.12 NEW hardcoded IP propagation specific disclosure (793 task config hits documented).
+
+### B-259. SBOM/OSF lock missing diff-hash + per-commit behavioural fingerprint 🛠️ FIXED
+- **Source**: Mode B codex F9 (computed sha256 `5ca914c7...`) + Mode C gemini P1-1
+- **Code**: `preregistration.md:545` records SHA at lock time, `osf_lock_manifest.md:38` table no VWA submodule row, `locked_versions.md:16` HEAD only no diff hash. SHA + branch name mutable under force-push; diff sha256 immutable witness
+- **Attack**: reviewer asks "how do you guarantee B-91 was the only evaluator change" — no SBOM-level answer
+- **Fix**: `locked_versions.md` VisualWebArena table 4 new rows (HEAD + upstream base SHA + diff sha256 + 5-commit list); `osf_lock_manifest.md §2.1` 3 new rows; `preregistration.md §7` 3-layer hard rule (HEAD match + upstream base resolves + diff sha matches), enforced per Phase 1a run
+
+### B-260. Meta+A clear-before-type behavioral extension undisclosed (B-01 wrapper-layer override missing from paper) 🛠️ DOC-DISCLOSED (intentional design per user rationale)
+- **Source**: Mode A Claude F3 (OOB) + Mode C gemini F6
+- **Code**: `external/visualwebarena/browser_env/actions.py:1346-1521` `Meta+A + Backspace` clear-before-type 加 to 5 type sites (sync element_id / sync element_role+name / sync pw_code / async element_role+name / async pw_code) by commit `3f9ceca`. Commit body 不 list Meta+A. P79 wrapper `vwa_wrapper.py` Cluster 1 fix overrides with `locator.fill()` atomic clear-and-type, bypassing the Meta+A path (paper-grade data unaffected). Submodule fallback retained for raw-VWA reproducers
+- **User rationale** (clarification 2026-05-16): "agent 在编辑时看不到输入框的文本,重复输入会接在上一次后面;backspace 不是全选变蓝原因,是 meta-a" → Meta+A clear-before-type is **intentional P79 design** (clear-before-retry semantics) + wrapper `locator.fill()` is canonical implementation (avoids 全选变蓝 side effect when click misses input)
+- **Fix (disclosure)**: paper §3.5 "Type-action clear-before-type behaviour" paragraph documents double-layer (wrapper canonical + submodule fallback for raw-VWA reproducibility) + cross-paper VWA comparability scope
+
+### B-261. Softened `assert "correct" in response` → silent return 0 + substring FP risk 🛠️ FIXED (tighten + log)
+- **Source**: Mode A Claude F5
+- **Code**: `external/visualwebarena/evaluation_harness/helper_functions.py:619-624, 668-672` upstream was `assert "correct" in response, response` (crash-loud); P79 patch softened to `elif: 1.0 else: return 0.0` silent. Substring "the correct answer is X but student wrote Y" passes → FP; "n/a" / "skipped" responses silent 0 → FN; lost evaluator diagnostic signal
+- **Fix**: Tighten match (still primarily "correct" in response but log unexpected response cases to `evaluator_unexpected_response_log.csv` via new `_log_unexpected_judge_response()` helper, gitignored runtime artifact for post-hoc audit)
+
+### B-262. Lazy OpenAI client init unlocked + no env-drift check 🛠️ FIXED
+- **Source**: Mode B codex F11
+- **Code**: `external/visualwebarena/llms/providers/openai_utils.py:15-32` `_require_openai_clients()` mutates module globals (client, aclient) without lock; if `OPENAI_BASE_URL` changes between calls, last-writer-wins
+- **Attack**: concurrent thread / proxy endpoint drift mixes old/new clients → batch judge poison
+- **Fix**: threading.Lock + sha256(api_key + base_url) fingerprint stored as `_clients_env_fingerprint`; reinit on env change
+
+### B-263. Async OpenAI response-shape mismatch — caller dict-indexes SDK objects 🛠️ FIXED (OOB)
+- **Source**: Mode B codex F12 (OOB)
+- **Code**: `external/visualwebarena/llms/providers/openai_utils.py:96` (completion async returns SDK object), `:151` (caller `x["choices"][0]["text"]` dict indexing); fallback `:111` returns chat-shaped dict missing `"text"`. Symmetric issue in chat helpers `:213-236, :276`
+- **Attack**: async batch judge path crashes on success (SDK obj not subscriptable) or on fallback (missing key); non-deterministic evaluator failure invisible to caller
+- **Fix**: Throttlers (`_throttled_openai_completion_acreate` + `_throttled_openai_chat_completion_acreate`) return `str` directly on both success (`resp.choices[0].text` / `.message.content`) and fallback (`""`); callers use plain list construction
+
+### B-264. Async action dispatcher signature lacks `obseration_processor` + UPLOAD factory misset 🛠️ FIXED (OOB)
+- **Source**: Mode B codex F13 (OOB)
+- **Code**: `external/visualwebarena/browser_env/actions.py:1427-1449` `aexecute_action(action, page, browser_ctx)` signature lacks `obseration_processor` param but body L1448 (CLEAR) + L1572 (UPLOAD) reference it → `NameError` at runtime. Also L1449 `await execute_mouse_click(...)` awaiting sync function. Plus `create_upload_action:697-715` sets `ActionTypes.TYPE` not `UPLOAD` → UPLOAD branch in dispatcher unreachable (uploads silently executed as text-entry)
+- **Attack**: any async VWA execution path through CLEAR/UPLOAD crashes; any upload task on async path silently misbehaves
+- **Fix**: `aexecute_action` signature added `obseration_processor: ObservationProcessor | None = None` param + branches `raise RuntimeError` when missing for CLEAR/UPLOAD + use `aexecute_mouse_click` / `aexecute_key_press` truly async primitives; `create_upload_action` set `ActionTypes.UPLOAD`
+
+### B-265. Float coercion sibling propagation gap — async hover + async upload not cast 🛠️ FIXED
+- **Source**: Mode A Claude F6 + Mode B codex F15
+- **Code**: `external/visualwebarena/browser_env/actions.py:949` async `aexecute_mouse_hover` passes raw `left * viewport_size["width"]` (no float()); `:993` async `aexecute_upload` same. Commit `3f9ceca` only added float() cast to 4 sync sites
+- **Attack**: NumPy 2.0 env where np.float32 leaks in → Playwright JSON serializer silent fail on async-only path
+- **Fix**: 2 sites wrapped `float(left * viewport_size["width"])`
+
+### B-266. `prepare.sh` python resolver Unix-only — Quark = Windows host fail 🛠️ FIXED
+- **Source**: Mode A Claude F7
+- **Code**: `external/visualwebarena/prepare.sh:7-30` resolve_python tries `.venv/bin/python` → `python3` → `python` only
+- **Attack**: Windows reproducer (Quark itself is Windows!) / conda env without Unix python fails
+- **Fix**: Added Windows `py -3` fallback (last in resolution chain)
+
+### B-267. Paper §8.2 "canonical" wording overclaims cross-paper comparability 🛠️ DOC-FIXED
+- **Source**: Mode C gemini P2-1
+- **Code**: `section8_limitations.md:7` "raw `success` from the fixed evaluator is canonical"
+- **Attack**: "canonical" implies cross-paper comparability; B-91 fixes empty-pred FP but does NOT bridge gpt-4-turbo→gpt-4o-mini capability drift
+- **Fix**: "canonical" → "internal-P79 paper-grade outcome" + explicit cross-paper SR comparison scope statement
+
+### B-268. Hardcoded private IP in launched chromium ID (envs.py launch arg only — single-point, separate from B-255 task config propagation) 🛠️ FIXED
+- **Source**: Mode A Claude F1 (single-point framing, deepened by codex to B-255 multi-site)
+- **Code**: `external/visualwebarena/browser_env/envs.py:144-145` chromium.launch `args=["--host-resolver-rules=MAP metis.lti.cs.cmu.edu 100.95.81.103"]`
+- **Attack**: chromium launch arg leaks private IP into committed code (separately from task config data leak B-255); soft privacy concern + cross-host portability blocker
+- **Fix**: env-driven via `VWA_CHROMIUM_LAUNCH_ARGS` (space-separated arg list, default empty); reproducers set their own `--host-resolver-rules` MAP rule
+
+**B-numbers consumed**: B-254 through B-268 (15 contiguous, no collisions). Cumulative session work A1.4a+A1.4b-i+A1.4b-ii+A1.4c+A1.5+A1.13+A1.6+A1.18 = B-140 through B-268 = 129 unique entries.
+
+**Next available B-number**: B-269+.
+
+**Deferred (per user 2026-05-16 decision)**:
+- B-256 (eval model) gpt-4-1106-preview availability test — user-runnable 1-line test deferred; disclosure-only path applied handles both deprecated and cost cases

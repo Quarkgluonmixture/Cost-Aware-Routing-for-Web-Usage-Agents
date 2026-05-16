@@ -14,7 +14,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TS="$(date +%Y%m%d_%H%M%S)"
 LOG="${HOME}/p79_myriad_smoke_login_${TS}.log"
 
-VWA_HOST="100.95.81.103"           # quark Tailscale IP
+VWA_HOST="${VWA_HOST:?VWA_HOST must be set (e.g. quark Tailscale IP)}"
 VWA_PORTS=(9980 7770 9999 4399)    # cls / shop / reddit / homepage
 DGX_HOST="spark-9ea3"              # README §181 hub host
 

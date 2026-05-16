@@ -10,7 +10,7 @@
 # Usage:
 #   bash scripts/provenance/snapshot_vwa.sh                          # default out path
 #   bash scripts/provenance/snapshot_vwa.sh /custom/out.json         # custom path
-#   VWA_HOST=100.95.81.103 bash scripts/provenance/snapshot_vwa.sh   # remote host (Tailscale)
+#   VWA_HOST=YOUR_HOST_IP bash scripts/provenance/snapshot_vwa.sh   # remote host (Tailscale)
 #
 # Environment variables:
 #   VWA_HOST    — host IP/name for HTTP probes (default: localhost)

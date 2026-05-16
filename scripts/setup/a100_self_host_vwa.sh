@@ -207,7 +207,7 @@ done
 if [[ " ${SITES_TO_DEPLOY[@]} " =~ " shopping " ]]; then
   log "=== Step 5: Magento base_url note ==="
   log "  Magento internal base_url MUST match how the agent will access it."
-  log "  Phase 1 used http://100.95.81.103:7770 (quark Tailscale IP)."
+  log "  Phase 1 used http://YOUR_HOST:7770 (e.g. quark Tailscale IP)."
   log "  A100 self-host: agent uses http://localhost:7770 OR http://127.0.0.1:7770."
   log "  If 302 redirect loops occur, run inside container:"
   log "    docker exec -it vwa-shopping bash -c \"php /var/www/magento2/bin/magento setup:store-config:set --base-url=http://127.0.0.1:7770/\""
@@ -231,7 +231,7 @@ log "  Repeat for each site. Auth files saved to .auth/ on A100."
 
 log "=== Step 7: Cross-environment HTML byte-equivalence check ==="
 log "  To verify A100 deployment matches Phase 1 quark deployment:"
-log "  1. From DGX: curl http://100.95.81.103:9980 | sha256sum"
+log "  1. From DGX: curl http://YOUR_HOST:9980 | sha256sum"
 log "  2. From A100: curl http://localhost:9980 | sha256sum"
 log "  3. Hashes should match (modulo timestamp / session-cookie deltas)."
 log "  Document results in paper §3 / Appendix D."

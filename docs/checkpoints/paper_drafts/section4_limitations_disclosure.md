@@ -101,23 +101,34 @@ absorbs this into per-task variance.
 
 ---
 
-## §4.X.5 in_viewport_ratio operator precedence (B-26)
+## §4.X.5 in_viewport_ratio operator precedence (B-26, **FIXED 2026-04-19**)
 
-In `external/visualwebarena/browser_env/processors.py:218`, the `in_viewport_ratio`
-calculation `overlap_w * overlap_h / w * h` is parsed by Python as
+In upstream VWA `external/visualwebarena/browser_env/processors.py:218`, the
+`in_viewport_ratio` calculation `overlap_w * overlap_h / w * h` is parsed by Python as
 `((overlap_w * overlap_h) / w) * h` — multiplication-first then division — instead of the
-intended ratio `(overlap_w * overlap_h) / (w * h)`. The result is that the 0.6 viewport-overlap
-threshold (`current_viewport_only=True`) is effectively bypassed, allowing partially-visible
-elements to remain in the AXTree with their full text content even when they are visually
-truncated.
+intended ratio `(overlap_w * overlap_h) / (w * h)`. With the upstream formula the 0.6
+viewport-overlap threshold (`current_viewport_only=True`) is effectively bypassed, allowing
+partially-visible elements to remain in the AXTree with their full text content even when
+they are visually truncated.
 
-**Implication for our claims**: This bug exists in upstream VWA and is documented in our
-CLAUDE.md as "DOM has structural information advantage." It systematically helps DOM mode
-relative to Vision/SoM modes by exposing element text that is visually clipped. We do **not**
-fix this bug because: (a) it's upstream code; (b) any threshold value would be debatable;
-(c) it does not affect our **paired** comparisons (P-SoM uses the same DOM-derived
-`[SOM_MARKS]` text), so our hero claims (P-SoM ≥ best of DOM/SoM/Vision) are invariant to
-this asymmetry. We disclose the asymmetry source for cross-mode interpretation.
+**Fix applied** (2026-04-19, commit `3f9ceca` on VWA submodule branch `p79-patches`):
+we parenthesise the ratio as `(overlap_w * overlap_h) / (width * height)`. After the fix
+the 0.6 threshold is mathematically meaningful — `ratio ≥ 0.6` implies the element centre
+lies inside the 1280 × 720 viewport (`center_y ≤ 720 − 0.1h < 720`), so partially-visible
+elements whose centre falls outside the viewport are excluded from the AXTree rather than
+exposed with their full text. All B0+B1 DOM and SoM conditions across all sites were re-run
+after the fix (decision recorded in 实验笔记 §80; Vision modes are unaffected by viewport
+filtering and were not re-run). Paper-grade Phase 1a uses the fixed scaffold throughout.
+
+**Implication for our claims** (post-fix): the previously-feared "DOM has structural
+text-exposure advantage from a no-op viewport filter" pathway is closed by the fix. DOM mode
+no longer receives full text for visually-truncated elements whose centre falls outside the
+viewport; SoM and Phantom-SoM read from the same fixed AXTree, so paired comparisons
+(P-SoM ↔ DOM, P-SoM ↔ SoM) remain mutually consistent at the text-payload layer. The §1
+hero claim (P-SoM ≥ best of DOM/SoM/Vision) is supported under the fixed scaffold and does
+not rely on the upstream operator-precedence bug as a confound source. The pre-fix archive
+(`docs/archive/analysis_pre_2026-05-15/`) is retained for sensitivity reference only and
+must not be mixed with Phase 1a clean-run numbers.
 
 ---
 
@@ -193,6 +204,73 @@ mirage finding is therefore Phase-A-vintage-independent.
 For full robustness, we pre-specify a post-Phase-A spot-check (5-10 tasks from a clean
 post-`3c15cd7` cell) where we re-run Stage 2B and verify L11 causal layer holds. This
 sensitivity check is in §5 Appendix and does not gate the main mechanism claim.
+
+---
+
+## §4.X.11 VWA submodule `p79-patches` branch — full disclosure table
+
+We run paper-grade experiments against a forked VisualWebArena submodule pinned to branch
+`p79-patches`, HEAD `eb5cbd8932ee2362eedd1010fce7c5f8f0ceaf42`. Upstream base is
+`89f5af29305c3d1e9f97ce4421462060a70c9a03` on `main`. The full set of behavioural patches
+between the upstream base and our pinned HEAD is reproduced below for OSF reproducibility
+review and cross-paper comparability. The combined diff has SHA-256
+`9c562a3ab0234a7d50f81acc883d7d533f1c6bdf35f660b80a91c97813bc1be4`.
+
+| Commit (short) | Subject | Behavioural impact | Affected files | Paper §-disclosure |
+|---|---|---|---|---|
+| `e9c63b7` | wait for networkidle before screenshot | Lazy-loaded images settle before screenshot; superseded by `eb5cbd8` single-barrier fix (wait moved to `ObservationHandler.get_observation` shared barrier) | `browser_env/processors.py` (`ImageObservationProcessor.process` local wait, now removed) | §3.5 LLM-judge / observation-timing paragraph |
+| `3f9ceca` | composite runtime patches | (a) viewport-ratio operator-precedence fix (B-26); (b) Chromium `--host-resolver-rules` for Tailscale DNS (later replaced by `eb5cbd8` env-driven `VWA_CHROMIUM_LAUNCH_ARGS`); (c) `float()` cast on Playwright mouse coords for NumPy 2.0 compatibility (sync sites only — async sites cast added by `eb5cbd8`); (d) `VWA_EVAL_MODEL` env var (default `gpt-4o-mini`, upstream default was deprecated `gpt-4-1106-preview`); (e) lazy OpenAI client init (later wrapped in `threading.Lock` + env-fingerprint check by `eb5cbd8`); (f) `Meta+A`+`Backspace` clear-before-type added to all 5 `execute_type` / `aexecute_type` dispatch paths (commit body omitted (f); disclosed retroactively here and superseded by P79 wrapper `vwa_wrapper.py::locator.fill()` for canonical paper-grade path) | `browser_env/processors.py`, `browser_env/envs.py`, `browser_env/actions.py`, `evaluation_harness/helper_functions.py`, `llms/providers/openai_utils.py` | §4.X.5 (viewport, FIXED), §3.5 (judge model + clear-before-type), §4.X.12 (host-resolver) |
+| `16b60d7` | setup script + extra task configs | `prepare.sh` defensive Python resolver (later extended with Windows `py -3` fallback by `eb5cbd8`); WebArena homepage placeholder replaced with `localhost`; VWA shopping task pool committed (later substituted with VWA-canonical `__SHOPPING__` / `__CLASSIFIEDS__` / `__REDDIT__` / `__WIKIPEDIA__` placeholders by `eb5cbd8`); WA non-visual task configs committed | `prepare.sh`, `environment_docker/webarena-homepage/templates/index.html`, `config_files/vwa/test_shopping.json`, `config_files/wa/test_*.raw.json` | §3.5 (task pool source); §4.X.12 (private IP propagation into task configs, now closed) |
+| `832f037` | `.gitignore` runtime data | Wikipedia ZIM dump and classifieds compose state excluded from git tracking; data fetched separately per host | `.gitignore` only | none required (no behavioural impact on agent / evaluator) |
+| `f0c835b` | B-91 empty-prediction guard | `llm_fuzzy_match` / `llm_ua_match` return `0.0` deterministically on empty / whitespace-only `pred`; closes the dominant FP source for string_match and N/A tasks. Match-after-LLM-judge logic tightened in `eb5cbd8` to also log unexpected judge responses for audit | `evaluation_harness/helper_functions.py` | §3.5 (FP source-level fix); see also `reference_fp_architecture_2026-05-14.md` |
+| `eb5cbd8` | /stress A1.18 full sweep (15 findings) | (a) 913 VWA task config files rewritten to canonical `__SHOPPING__` / `__CLASSIFIEDS__` / `__REDDIT__` / `__WIKIPEDIA__` placeholders, closing the private-IP-in-config-data propagation (793-hit baseline reduced to 0 tracked-file hits); (b) `envs.py` chromium launch args env-driven via `VWA_CHROMIUM_LAUNCH_ARGS` (no hardcoded private IP); (c) `processors.py` networkidle wait moved to single shared barrier in `ObservationHandler.get_observation`, removing the asymmetric pre-fix where text observation never waited; (d) `helper_functions.py` softened-assert tightened to log unexpected judge responses to `evaluator_unexpected_response_log.csv` (gitignored); (e) `openai_utils.py` lazy client wrapped in `threading.Lock` with sha256(api_key + base_url) env-fingerprint check; (f) async OpenAI throttlers return `str` directly (caller dict-indexing path normalized); (g) `aexecute_action` signature now includes `obseration_processor` param, CLEAR/UPLOAD branches use truly async primitives; (h) `create_upload_action` sets `ActionTypes.UPLOAD` (was `TYPE`, making the UPLOAD branch unreachable); (i) async `aexecute_mouse_hover` + `aexecute_upload` wrap coords in `float()` (sibling propagation completion); (j) `prepare.sh` adds Windows `py -3` fallback | `browser_env/{actions.py, envs.py, processors.py}`, `evaluation_harness/helper_functions.py`, `llms/providers/openai_utils.py`, `prepare.sh`, `config_files/vwa/test_shopping.json` + 912 gitignored per-task config files | §4.X.5 (viewport stale-doc closure), §3.5 (judge / clear-before-type / observation timing), §4.X.12 (IP propagation closed), this §4.X.11 row |
+
+**OSF reproducibility verification commands** (run inside the cloned P79 repo):
+
+```bash
+cd external/visualwebarena
+git rev-parse HEAD                                 # must match eb5cbd8932ee2362eedd1010fce7c5f8f0ceaf42
+git rev-parse origin/main                          # upstream base; if not present, fetch
+git diff 89f5af29305c3d1e9f97ce4421462060a70c9a03..HEAD | sha256sum
+# must match 9c562a3ab0234a7d50f81acc883d7d533f1c6bdf35f660b80a91c97813bc1be4
+```
+
+These three hashes are also locked in `docs/checkpoints/pre_run/osf_lock_manifest.md` and
+re-stated in `docs/checkpoints/pre_run/locked_versions.md`; any divergence indicates the
+submodule has drifted from the paper-grade pin.
+
+**Composite commit caveat**: commit `3f9ceca` bundles six logically independent changes
+(letters a–f above). For paper-grade hygiene we are migrating to atomic per-fix commits in
+future submodule edits, and `3f9ceca` retains its multi-fix form only because its content
+has already been used to produce the Phase 1a archive that the paper depends on. The full
+behavioural list (a–f) above closes the disclosure gap that previously omitted (b), (c),
+(d), (e), and (f) from §4.
+
+---
+
+## §4.X.12 Hardcoded Tailscale IP in VWA submodule + task configs
+
+For Phase 1a we run the VWA Docker container set on a Windows host inside our private
+Tailscale network (IP `100.95.81.103`, hostname `quark`). To make the Chromium browser
+launched by the VWA scaffold resolve the upstream CMU seed URLs to that host, commit
+`3f9ceca` adds `--host-resolver-rules=MAP metis.lti.cs.cmu.edu 100.95.81.103` to
+`browser_env/envs.py`. In addition, the committed `config_files/vwa/test_*.json` task
+configs (added by `16b60d7`) inline `http://100.95.81.103:{9980,9999,7770,8888}/...` URLs
+into individual task `start_url` fields, propagating the private IP into the task pool
+itself rather than into a single chromium launch flag. We disclose the propagation rather
+than rewrite history because the Phase 1a archive was produced under these configs.
+
+**Reproducer impact**: a third party cloning the repo outside our Tailscale network cannot
+reach `100.95.81.103`. To reproduce, the reproducer must (a) bring up the VWA Docker
+container set on their own host, (b) rewrite `100.95.81.103` to that host's address in
+both `external/visualwebarena/config_files/vwa/test_*.json` and the chromium launch arg in
+`browser_env/envs.py`, or set `VWA_HOST_RESOLVER_RULES` / per-site `*_BASE_URL` env vars
+(P79 wrapper `scripts/vwa_env_remote.sh`-style). The P79 self-host fire on the A100 host
+applies the same substitution before launch.
+
+This is an OSF lock-time disclosure rather than a code fix: the Phase 1a archive cannot be
+re-keyed without re-running, so we document the propagation here and recommend reproducers
+treat the IP as a `VWA_HOST` placeholder.
 
 ---
 

@@ -42,6 +42,9 @@ drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision
 | Run manifest YAML | `results/phantom_paper/run_manifest.yaml` | `<TBD commit-SHA>` | TBD |
 | Paper drafts (locked snapshot) | `docs/checkpoints/paper_drafts_locked/` | `<TBD commit-SHA>` | TBD |
 | Bibliography (57 entries) | `docs/checkpoints/paper_drafts/paper.bib` | `<TBD commit-SHA>` | TBD |
+| **VWA submodule HEAD** | `external/visualwebarena` (branch `p79-patches`) | `eb5cbd8932ee2362eedd1010fce7c5f8f0ceaf42` | locked 2026-05-16 (/stress A1.18 P0-6) |
+| **VWA upstream base** | `external/visualwebarena` (upstream `main`) | `89f5af29305c3d1e9f97ce4421462060a70c9a03` | locked 2026-05-16 |
+| **VWA patch-bundle diff SHA-256** | `git diff 89f5af2..HEAD` over submodule | `9c562a3ab0234a7d50f81acc883d7d533f1c6bdf35f660b80a91c97813bc1be4` | locked 2026-05-16; 5 commits enumerated in `locked_versions.md` + paper §4.X.11 disclosure table |
 | ~~Mechanistic 24+15 candidates~~ | RETIRED 2026-05-15 (B-124 phantom-limb purge per gemini Mode C P1-5) — mechanism §5 deferred to paper-2 per advisor 2026-05-14; this lock-artifact moves to paper-2 OSF manifest, NOT included in paper-1 DOI | — | retired |
 
 ### 2.2 Hypothesis thresholds (advisor email confirmed) — REVISED 2026-05-13

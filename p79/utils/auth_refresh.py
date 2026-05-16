@@ -52,7 +52,7 @@ _ACCOUNT_ENV_KEYS = {
 
 _DEFAULT_BASE_URLS = {
     # BUG-14 fix (2026-05-16, Claude NEW2): defaults changed from quark Tailscale
-    # IP (100.95.81.103) to localhost. CLAUDE.md hard rule #3 already mandates
+    # IP (private Tailscale IP) to localhost. CLAUDE.md hard rule #3 already mandates
     # going through queue scripts which source vwa_env_remote.sh setting env vars
     # — so this fallback is 0pp on hot path. But if anyone bypasses queue and
     # invokes bare python, loud-fail (localhost not running anything on DGX) is
@@ -141,9 +141,10 @@ def refresh_site_auth(
     # Resolve repo root for VWA sys.path injection
     repo_dir = Path(__file__).resolve().parent.parent.parent
 
-    # Resolve host IP for --host-resolver-rules from env (default = legacy
-    # value). Lets users with different Tailscale IPs override without code edit.
-    _resolver_ip = os.environ.get("VWA_REMOTE_HOST", "100.95.81.103")
+    # Resolve host IP for --host-resolver-rules from env. /stress A1.18 P0-2
+    # (2026-05-16): default to 127.0.0.1 so committed code doesn't leak any
+    # private Tailscale IP; reproducers set VWA_REMOTE_HOST to their host.
+    _resolver_ip = os.environ.get("VWA_REMOTE_HOST", "127.0.0.1")
     # BUG-4 fix (2026-05-16, gemini NEW-OOB-3): Chromium --host-resolver-rules
     # MAP syntax requires IP, not hostname. Literal "localhost" causes silent
     # 30s DNS hang in resolver-rules pipeline → Playwright page.goto timeout.

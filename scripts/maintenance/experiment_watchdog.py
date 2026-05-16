@@ -117,7 +117,7 @@ def _auto_refresh_auth(site: str, *, benchmark: str = "") -> bool:
     ``_ACCOUNTS`` + ``_BASE_URLS`` + ``_LOGIN_PATHS`` duplicate block (previously
     ImportError fallback) is DELETED. Two reasons:
       (a) double-leak of plaintext credentials in tracked code (B-211)
-      (b) hardcoded ``100.95.81.103`` IP defeated ``VWA_REMOTE_HOST`` env override (B-225)
+      (b) hardcoded private-Tailscale IP defeated ``VWA_REMOTE_HOST`` env override (B-225)
     If ``p79.utils.auth_refresh`` import fails, fail loud with a helpful
     diagnostic — silent fallback is the worse outcome (writes wrong-domain
     storage state, contaminates downstream episodes).

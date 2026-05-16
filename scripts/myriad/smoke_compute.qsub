@@ -20,7 +20,7 @@
 
 set -uo pipefail
 
-VWA_HOST="100.95.81.103"
+VWA_HOST="${VWA_HOST:?VWA_HOST must be set (e.g. quark Tailscale IP)}"
 VWA_PORTS=(9980 7770 9999 4399)    # cls / shop / reddit / homepage
 DGX_HOST="spark-9ea3"
 
