@@ -103,13 +103,35 @@ class LoggerV2:
     #
     # Schema: append-only JSONL at condition_dir/trajectory_events.jsonl. Each
     # event = single line {event_type, task_index, wallclock_ts, metadata}.
-    # event_type values: "reset_post_interrupt" / "auth_clear_task" /
-    # "auth_refresh_no_clear" / "runner_restart" / "watchdog_intervention".
+    # event_type values (B-313 + B-384/B-385 update, 2026-05-16 A1.15 C1):
+    #   - "reset_post_interrupt"   (cell-level, from reset_and_auth_gate post-reset)
+    #   - "task_auto_cleared"      (per-task, from watchdog auto-clean retry path
+    #                                AND session-cleanup wave path — distinguish via
+    #                                metadata.cleared_in_session_wave bool)
+    #   - "auth_refresh_no_clear"  (cell-level, watchdog auth refresh w/o cleanup)
+    #   - "runner_restart"         (cell-level, planned for future runner audit)
+    #   - "watchdog_intervention"  (cell-level, generic catch-all)
     # task_index = episode/task index at event time; None for cell-level events.
-    # metadata = event-specific dict (e.g. reset rc, auth_refresh_method,
-    # cleared_task_count). Aggregator emits per-episode `is_after_reset` /
-    # `had_auth_clear` / `prior_event_count` columns for GLMM covariate
-    # adjustment in paper §4.
+    # metadata = event-specific dict. Standard keys:
+    #   reason / is_auth_loss / is_noise / cleared_in_session_wave / wave_size /
+    #   wave_task_index / retry_attempt / max_retries / purged_digest_records /
+    #   site / auth_refresh_method / reset_rc.
+    #
+    # B-385 (A1.15 C1 P0-4 reframe, 2026-05-16): condition_finalize race
+    # (runner writes condition_summary AFTER watchdog reads `.exists()=False`
+    # AND BEFORE watchdog destructive op completes) is detected post-hoc by
+    # aggregator, NOT via a separate event_type. Aggregator intersection:
+    # {task_id in condition_summary_v2.json["episode_ids"]} ∩ {task_id with
+    # `task_auto_cleared` event in trajectory_events.jsonl} = race-cleared
+    # episodes (denominator counted them, source files deleted). Emit derived
+    # covariate `had_finalize_race_clear: bool` per episode in aggregator
+    # output. No watchdog code change needed for race detection — best-effort
+    # event emission already provides the data substrate (P0-3 hook C completes
+    # the session path coverage at B-384).
+    #
+    # Aggregator emits per-episode `is_after_reset` / `had_auth_clear` /
+    # `had_finalize_race_clear` / `prior_event_count` columns for GLMM
+    # covariate adjustment in paper §4 (deferred (iii) -> C2 B-389).
     def log_trajectory_event(
         self,
         event_type: str,
@@ -183,3 +205,95 @@ def write_run_summary_atomic(run_summary_path: Path, payload: Dict[str, Any]) ->
         os.fsync(f.fileno())
     os.replace(tmp_path, run_summary_path)
     _fsync_dir(run_summary_path.parent)
+
+
+# B-388 (A1.15 C2 Merge (i), 2026-05-16): runner-side staging pickup.
+# Pre-fix: B-314 Hook B wrote `reset_post_interrupt` events to
+# `${repo_root}/logs/trajectory_events_staging/RUN_${RUN_ID}.jsonl` because
+# condition_dir doesn't exist yet at reset gate time. Without pickup the
+# staging file accumulated events but never made it into per-condition
+# trajectory_events.jsonl → paper §4 aggregator (B-389) had no `is_after_reset`
+# covariate data → Option K Tier 1 stack analysis layer received zero events
+# from reset class. Runner calls this once per condition_dir at creation.
+# Idempotent via "fresh dir only" guard: if condition_dir already contains
+# trajectory_events.jsonl (resume case), pickup is skipped and existing events
+# preserved.
+def merge_staging_trajectory_events(
+    condition_dir: Path,
+    run_id: str,
+    repo_root: Optional[Path] = None,
+) -> int:
+    """Pickup + merge per-RUN_ID staging file into condition_dir/trajectory_events.jsonl.
+
+    Args:
+      condition_dir: target condition_dir (must exist).
+      run_id: the RUN_ID matching the staging file naming convention.
+      repo_root: project root for staging dir location; auto-detected from
+        condition_dir.parents if None (handles results/<bench>/<phase>/<run>/<cond>).
+
+    Returns:
+      Number of events merged. 0 if staging file absent, condition_dir already
+      has events (resume case), or staging file empty.
+
+    Idempotency: skipped silently if condition_dir/trajectory_events.jsonl
+    already exists (treat as resume — prior pickup or runner-side events
+    already in flight). Cell-level events (e.g. reset_post_interrupt) are
+    duplicated across each condition_dir under the same RUN_ID by design —
+    each condition's covariate-emission view sees its own copy.
+    """
+    if not condition_dir.exists():
+        return 0
+    target = condition_dir / "trajectory_events.jsonl"
+    if target.exists():
+        # Resume case: preserve existing events, skip pickup.
+        return 0
+    if repo_root is None:
+        # Auto-detect: condition_dir = <repo_root>/results/<bench>/<phase>/<run>/<cond>
+        # so repo_root = condition_dir.parents[4]
+        try:
+            repo_root = condition_dir.resolve().parents[4]
+        except (IndexError, OSError):
+            return 0
+    staging_file = repo_root / "logs" / "trajectory_events_staging" / f"RUN_{run_id}.jsonl"
+    if not staging_file.exists():
+        return 0
+    try:
+        with open(staging_file, "r", encoding="utf-8") as src:
+            lines = [ln.strip() for ln in src if ln.strip()]
+    except OSError:
+        return 0
+    if not lines:
+        return 0
+    # Append each event line into condition_dir/trajectory_events.jsonl.
+    # We re-emit via LoggerV2.log_trajectory_event so the wallclock_ts is
+    # preserved from the staging file (parse, re-write); each event gets
+    # added metadata `merged_from_staging=True` for aggregator awareness.
+    logger = LoggerV2(condition_dir)
+    merged = 0
+    for line in lines:
+        try:
+            ev = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        meta = ev.get("metadata") or {}
+        if not isinstance(meta, dict):
+            meta = {}
+        meta = {**meta, "merged_from_staging": True, "staging_run_id": run_id}
+        # Use the LoggerV2 helper but preserve the original wallclock_ts:
+        # we write directly rather than via log_trajectory_event because the
+        # helper sets wallclock_ts=now. Preserving the original ts is
+        # important so paper §4 covariate `is_after_reset` correctly orders
+        # events relative to per-episode wallclock.
+        preserved_ts = ev.get("wallclock_ts") or datetime.datetime.now(datetime.timezone.utc).isoformat()
+        event = {
+            "event_type": ev.get("event_type", "unknown"),
+            "task_index": ev.get("task_index"),
+            "wallclock_ts": preserved_ts,
+            "metadata": meta,
+        }
+        with open(target, "a", encoding="utf-8") as f:
+            f.write(json.dumps(event, ensure_ascii=False) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+        merged += 1
+    return merged

@@ -32,7 +32,7 @@ to avoid breaking external references; only `glm/` moved into subdir
 | `active_processes.py` | `make active` real-time scan |
 | `restart_watchdog.sh` | Restart watchdog after change |
 | `trigger_watchdog_status.sh` | Manual watchdog trigger |
-| `wait_for_reddit_then_rederive.sh` | Reddit completion → auto rederive |
+| ~~`wait_for_reddit_then_rederive.sh`~~ | RETIRED 2026-05-16 (A1.15 C3 B-394 T6=(a)). April-specific hardcoded helper deleted; B1-only baseline + cross-baseline collision risk after B2 Gemma3-VL joined 2026-05-14. Paper-grade chain uses `queue_chain.sh`. |
 
 ## 📊 Data Operations
 

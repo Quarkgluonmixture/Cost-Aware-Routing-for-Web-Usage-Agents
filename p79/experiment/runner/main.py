@@ -514,6 +514,35 @@ class ExperimentRunner:
                 cond_meta["seed"] = current_seed
                 condition_logger.write_condition_meta(cond_meta)
 
+                # B-388 (A1.15 C2 Merge (i), 2026-05-16): Option K staging pickup.
+                # Reset gate (`_lib_paper_grade_gates.sh:reset_and_auth_gate`)
+                # writes `reset_post_interrupt` events to
+                # `logs/trajectory_events_staging/RUN_${RUN_ID}.jsonl` because
+                # condition_dir doesn't exist yet at reset time. Now that
+                # condition_dir is created we pick up + merge any staging
+                # events for this RUN_ID. Idempotent via "fresh dir only"
+                # guard inside `merge_staging_trajectory_events` (resume case
+                # keeps prior events). Best-effort: any merge failure
+                # surfaces a warning but does not abort the runner.
+                try:
+                    from p79.experiment.logger_v2 import merge_staging_trajectory_events
+                    _staging_run_id = str(self.cfg["experiment"].get("run_id", ""))
+                    if _staging_run_id:
+                        _merged = merge_staging_trajectory_events(
+                            condition_dir=condition_dir,
+                            run_id=_staging_run_id,
+                        )
+                        if _merged:
+                            print(
+                                f"[runner][trajectory-events] merged {_merged} "
+                                f"staging events into {effective_cid}/trajectory_events.jsonl"
+                            )
+                except Exception as _trajectory_merge_exc:
+                    print(
+                        f"[runner][trajectory-events][warn] staging merge "
+                        f"failed for {effective_cid}: {_trajectory_merge_exc}"
+                    )
+
                 episode_summaries: List[Dict[str, Any]] = []
                 backend = self._get_backend(condition.backend_id)
 

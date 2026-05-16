@@ -30,9 +30,52 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 SUMMARY_RE = re.compile(r"^(?P<site>.+)_task_(?P<task_id>\d+)_summary_v2\.json$")
 
-# Session-health heuristics: patterns in step_000 DOM that indicate login state
-_LOGIN_ABSENT_RE = re.compile(r"link\s+'(?:Login|Log in|Sign In)'", re.IGNORECASE)
-_LOGIN_PRESENT_RE = re.compile(r"link\s+'(?:Logout|Log out|Sign Out)'", re.IGNORECASE)
+# Session-health heuristics: patterns in step_000 DOM that indicate login state.
+#
+# B-387 (A1.15 C1 P0-1, 2026-05-16): per-site regex tuple.
+# Pre-fix: single regex `link\s+'Logout'` designed for OSClass (classifieds) /
+# Magento (shopping) DOM serializer format. Empirically (5/5 reddit step_000
+# DOM files, 6.9-7.2KB each, spot-checked 2026-05-16) Postmill (reddit) DOM
+# uses dropdown menu structure rather than explicit `link 'Logout'`:
+#   `[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"`
+# is shown when logged-in. The single-regex check returned None ("unknown")
+# for ALL reddit tasks → session_loss_streak never incremented → auto-clean
+# protocol completely inert for Phase 1a 14 reddit cells. Per-site dispatch
+# fixes by routing each site to its DOM format's actual login markers.
+#
+# Tuple format per site: (logged_out_marker_re, logged_in_marker_re).
+# `_check_session_health` searches both; logged_in wins on overlap.
+_SITE_AUTH_REGEX: Dict[str, "tuple[re.Pattern[str], re.Pattern[str]]"] = {
+    # OSClass (classifieds): standard `link 'Login' / 'Logout'` markers.
+    "classifieds": (
+        re.compile(r"link\s+'(?:Login|Log in|Sign In)'", re.IGNORECASE),
+        re.compile(r"link\s+'(?:Logout|Log out|Sign Out)'", re.IGNORECASE),
+    ),
+    # Magento (shopping): "Sign In" / "Sign Out" / "My Account" canonical markers.
+    "shopping": (
+        re.compile(r"link\s+'(?:Sign In|Login|Log in)'", re.IGNORECASE),
+        re.compile(r"link\s+'(?:Sign Out|Logout|Log out|My Account)'", re.IGNORECASE),
+    ),
+    # Magento admin: "Sign in" / "Account" markers.
+    "shopping_admin": (
+        re.compile(r"link\s+'(?:Login|Sign In|Log in)'", re.IGNORECASE),
+        re.compile(r"link\s+'(?:Logout|Log Out|Sign Out|Account)'", re.IGNORECASE),
+    ),
+    # Postmill (reddit): NO explicit `link 'Logout'`. Logged-in detection uses
+    # the user-dropdown menu options string emitted by the AXTree serializer:
+    #   `[DROPDOWN OPTIONS] "Profile", "My account", "User settings", "Block list"`
+    # Logged-out detection: top-right "Log in" / "Sign up" links.
+    "reddit": (
+        re.compile(r"link\s+'(?:Log in|Sign up|Login)'", re.IGNORECASE),
+        re.compile(
+            r'(?:DROPDOWN\s+OPTIONS|"My account"|"User settings"|"Block list"|link\s+\'(?:My account|User settings|Block list|Profile)\')',
+            re.IGNORECASE,
+        ),
+    ),
+}
+# Backwards-compat default (e.g. unknown site name): fall back to OSClass-style.
+_LOGIN_ABSENT_RE = _SITE_AUTH_REGEX["classifieds"][0]
+_LOGIN_PRESENT_RE = _SITE_AUTH_REGEX["classifieds"][1]
 _SESSION_ALERT_THRESHOLD = 3  # consecutive tasks w/o login before alerting
 
 # Directories inside run_dir that are NOT condition directories
@@ -145,16 +188,43 @@ def _auto_refresh_auth(site: str, *, benchmark: str = "") -> bool:
 def _purge_digest_records(digest_dir: Path, condition_id: str, task_id: int, obs_mode: str) -> int:
     """Remove records matching (condition_id, task_id) from digest_{obs_mode}.jsonl.
 
-    Returns number of records removed.
+    Returns number of records removed. Thin wrapper around the batch primitive
+    for single-key removal (retry path B-314).
     """
-    if not digest_dir.exists():
+    return _purge_digest_records_batch(digest_dir, obs_mode, {(condition_id, task_id)})
+
+
+def _purge_digest_records_batch(
+    digest_dir: Path,
+    obs_mode: str,
+    keys_to_remove: Set[Tuple[str, int]],
+) -> int:
+    """Batch-remove records matching ANY (condition_id, task_id) in keys_to_remove.
+
+    B-392 (A1.15 C3 P1-4, 2026-05-16): batch + fsync upgrade.
+
+    Pre-fix `_purge_digest_records` was called in a loop during session-restore
+    mass cleanup (`session_contaminated[site].pop()` wave, watchdog L1494-1525
+    @B-384) — each call read+filter+rewrite the WHOLE digest_*.jsonl file.
+    For 100-task session-loss waves on a multi-MB digest file → O(N·M) I/O
+    = death-spiral hang during recovery (gemini OOB finding A1.15). Also
+    pre-fix the rename via `tmp_file.replace(digest_file)` skipped fsync,
+    diverging from `_save_state` (L979-993) which has tmp+fsync+replace+dirsync
+    — durability sibling inconsistency.
+
+    Batch version reads once, filters by set membership, writes once,
+    fsync+replace+dirsync. Idempotent: if `keys_to_remove` is empty or no
+    records match, returns 0 without touching disk.
+    """
+    if not digest_dir.exists() or not keys_to_remove:
         return 0
     digest_file = digest_dir / f"digest_{obs_mode}.jsonl"
     if not digest_file.exists():
         return 0
     try:
         lines = digest_file.read_text(encoding="utf-8").splitlines()
-        keep, removed = [], 0
+        keep: List[str] = []
+        removed = 0
         for line in lines:
             line = line.strip()
             if not line:
@@ -162,7 +232,18 @@ def _purge_digest_records(digest_dir: Path, condition_id: str, task_id: int, obs
             try:
                 rec = json.loads(line)
                 cid = rec.get("condition_id", "")
-                if rec.get("task_id") == task_id and (not cid or cid == condition_id):
+                tid = rec.get("task_id")
+                # Match if (cid, tid) in keys_to_remove OR (no cid AND tid match)
+                # for legacy records w/o condition_id (P2-6).
+                matched = False
+                if isinstance(tid, int):
+                    if (cid, tid) in keys_to_remove:
+                        matched = True
+                    elif not cid:
+                        # legacy record: match if any key has this tid
+                        if any(t == tid for (_, t) in keys_to_remove):
+                            matched = True
+                if matched:
                     removed += 1
                     continue
             except Exception:
@@ -170,11 +251,24 @@ def _purge_digest_records(digest_dir: Path, condition_id: str, task_id: int, obs
             keep.append(line)
         if removed:
             tmp_file = digest_file.with_suffix(".jsonl.tmp")
-            tmp_file.write_text("\n".join(keep) + ("\n" if keep else ""), encoding="utf-8")
-            tmp_file.replace(digest_file)  # atomic on same filesystem
+            # B-392 fsync upgrade: mirror _save_state L979-993 atomic-with-fsync.
+            with open(tmp_file, "w", encoding="utf-8") as _f:
+                _f.write("\n".join(keep) + ("\n" if keep else ""))
+                _f.flush()
+                os.fsync(_f.fileno())
+            os.replace(tmp_file, digest_file)
+            # fsync directory entry so the rename hits stable storage.
+            try:
+                _dir_fd = os.open(str(digest_dir), os.O_RDONLY)
+                try:
+                    os.fsync(_dir_fd)
+                finally:
+                    os.close(_dir_fd)
+            except OSError:
+                pass
         return removed
     except Exception as exc:
-        print(f"[watchdog][warn] purge_digest task {task_id}: {exc}")
+        print(f"[watchdog][warn] purge_digest_batch keys={len(keys_to_remove)} mode={obs_mode}: {exc}")
         return 0
 
 
@@ -206,8 +300,17 @@ def _check_session_health(condition_dir: Path, site: str, task_id: int) -> Optio
     expected_kws = _SITE_TAB_KW.get(site, [])
     if expected_kws and active_tab_part.startswith("tab ") and not any(kw in active_tab_part for kw in expected_kws):
         return None  # active tab belongs to another site; skip
-    has_login_link = bool(_LOGIN_ABSENT_RE.search(text))
-    has_logout_link = bool(_LOGIN_PRESENT_RE.search(text))
+    # B-387 (A1.15 C1 P0-1): per-site regex dispatch. Pre-fix used a single
+    # OSClass-style regex pair that returned None for ALL reddit tasks (Postmill
+    # DOM uses dropdown menu rather than `link 'Logout'`). See _SITE_AUTH_REGEX
+    # docstring at top of file for empirical justification.
+    regex_pair = _SITE_AUTH_REGEX.get(site)
+    if regex_pair is None:
+        # Unknown site — fall back to OSClass-style (cls/shopping default).
+        regex_pair = _SITE_AUTH_REGEX["classifieds"]
+    logged_out_re, logged_in_re = regex_pair
+    has_login_link = bool(logged_out_re.search(text))
+    has_logout_link = bool(logged_in_re.search(text))
     if has_logout_link:
         return True
     if has_login_link:
@@ -303,7 +406,41 @@ _ANALYSIS_MARKERS = {
 }
 
 # Digest modes to track (matches digest_{mode}.jsonl naming)
+#
+# B-391 (A1.15 C3 P1-1, 2026-05-16): runtime-derived from condition_meta.json
+# rather than hardcoded tuple. Pre-fix: only ("dom", "som", "vision") tracked,
+# missing Phase 1a phantom modes ("phantom_text", "phantom_prompt",
+# "phantom_som") → paper §4 failure taxonomy systematically biased away from
+# paper §1 novelty modes. The hardcoded tuple is kept as the OSClass/Magento
+# baseline fallback; runtime helper extends it.
 _DIGEST_MODES = ("dom", "som", "vision")
+
+
+def _get_active_digest_modes(
+    run_dir: Path,
+    condition_filter: Optional[str],
+    condition_mode_cache: Dict[str, str],
+) -> Tuple[str, ...]:
+    """Return tuple of observation_modes seen across this run's conditions.
+
+    B-391: derives modes from each condition_meta.json["observation_mode"] so
+    phantom modes (P-text / P-prompt / P-SoM) are tracked in addition to the
+    three baseline modes. Falls back to `_DIGEST_MODES` if no condition_meta
+    files are readable yet (early in run lifecycle).
+    """
+    modes: Set[str] = set()
+    if condition_filter:
+        cond_dirs = [run_dir / condition_filter]
+    else:
+        cond_dirs = [
+            p for p in run_dir.iterdir()
+            if p.is_dir() and p.name not in _EXCLUDED_DIRS
+        ]
+    for cdir in cond_dirs:
+        modes.add(_get_observation_mode(cdir, condition_mode_cache))
+    if not modes:
+        return _DIGEST_MODES
+    return tuple(sorted(modes))
 
 
 def _check_analysis_outputs(
@@ -478,14 +615,30 @@ def _prune_stale_condition_completions(
 _STATE_SCHEMA_VERSION = "v2"
 
 
-def _load_state(path: Optional[Path]) -> Dict[str, Any]:
-    """Load watchdog state. Returns {} if missing/corrupt.
+def _load_state(
+    path: Optional[Path],
+    *,
+    reset_state: bool = False,
+    ntfy_topic: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Load watchdog state. Returns {} if missing.
 
-    Forward-compatible: callers use `state.get(key, default)` so adding new
-    fields in newer schema versions does not break loading old state files.
+    B-393 (A1.15 C3 P1-7, 2026-05-16): fail-closed on corrupt state.
+
+    Pre-fix `except Exception: return {}` silently reset on ANY parse / I/O
+    error, losing `error_retry_counts` (= "已耗尽 retry 任务被重新调度") +
+    `session_contaminated` (= "受损 episode 永留在 result set"). B-223
+    landed atomic write but read-side never matched — sibling inconsistency
+    flagged by codex+gemini in A1.15. Fix: distinguish FileNotFoundError
+    (OK return {}) from JSONDecodeError/OSError (rename `*.corrupt.<ts>`,
+    urgent ntfy, raise SystemExit unless caller passed `reset_state=True`).
+    Also emits `watchdog_state_lost` if state path implies a run_dir we can
+    surface (deferred; current implementation only renames + raises).
     """
-    if not path or not path.exists():
+    if not path:
         return {}
+    if not path.exists():
+        return {}  # FileNotFoundError equivalent — clean first launch.
     try:
         d = json.loads(path.read_text(encoding="utf-8"))
         # Migration: pre-v2 state files have no _schema_version. Treat as v1
@@ -493,8 +646,45 @@ def _load_state(path: Optional[Path]) -> Dict[str, Any]:
         if isinstance(d, dict):
             d.setdefault("_schema_version", "v1")
         return d if isinstance(d, dict) else {}
-    except Exception:
-        return {}
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
+        # Corrupt state path — paper-grade fail-closed.
+        backup_path = path.with_suffix(path.suffix + f".corrupt.{int(time.time())}")
+        try:
+            shutil.move(str(path), str(backup_path))
+        except OSError as _move_exc:
+            # If we can't even rename, escalate with the original error.
+            print(
+                f"[watchdog][FATAL] corrupt state at {path} (could not rename "
+                f"to {backup_path}: {_move_exc}); original error: {exc}"
+            )
+            if reset_state:
+                return {}
+            raise SystemExit(
+                f"Watchdog state corrupt + unrenamable: {path}. "
+                f"Pass --reset-state to discard, or manually inspect."
+            )
+        msg = (
+            f"Watchdog state corrupt: {path} ({type(exc).__name__}: {exc}). "
+            f"Backed up to {backup_path}."
+        )
+        print(f"[watchdog][FATAL] {msg}")
+        if ntfy_topic:
+            try:
+                _post_ntfy(
+                    ntfy_topic,
+                    "P79 WATCHDOG STATE CORRUPT",
+                    msg + "\nPass --reset-state to discard and continue.",
+                    priority="urgent",
+                )
+            except Exception:
+                pass
+        if reset_state:
+            # Operator explicitly accepted the reset — return clean state.
+            return {}
+        raise SystemExit(
+            f"Watchdog state corrupt: {path} → backed up to {backup_path}. "
+            f"Rerun with --reset-state to discard, OR manually inspect + repair the file."
+        )
 
 
 def _annotate_screenshots(run_dir: Path, condition: Optional[str] = None) -> str:
@@ -998,7 +1188,14 @@ def _save_state(
 
 def _run_auto_digest(run_dir: Path, glm_config: Path, digest_dir: Path, site: Optional[str] = None) -> Optional[str]:
     """Run reason diagnostics → batch digest pipeline. Returns status string or None on skip."""
-    scripts_dir = Path(__file__).parent
+    # B-391 (A1.15 C3 P1-1, 2026-05-16): scripts_dir was `Path(__file__).parent`
+    # = `scripts/maintenance/`, but `diag_script = scripts_dir / "analysis" / ...`
+    # resolves to non-existent `scripts/maintenance/analysis/...` → silent
+    # return None on every cycle → digest pipeline NEVER ran from watchdog
+    # for the entire Phase 1a wall. Mirror L532 `_run_post_condition_analysis`
+    # which correctly uses `.parent.parent` (= `scripts/`). Sibling
+    # propagation defect from §99 reorg (笔記 §99 maintenance/ split out).
+    scripts_dir = Path(__file__).resolve().parent.parent
     python = sys.executable
 
     # 1. Update reason diagnostics CSV
@@ -1018,7 +1215,11 @@ def _run_auto_digest(run_dir: Path, glm_config: Path, digest_dir: Path, site: Op
         return "diagnostics_timeout"
 
     # 2. Run batch digest (auto-resumes, writes to digest_dir/digest_{mode}.jsonl)
-    digest_script = scripts_dir / "glm_batch_digest.py"
+    # B-391 (cont): glm_batch_digest.py lives at scripts/maintenance/glm/
+    # after the 2026-05-02 sidecar reorg (笔记 §99). Pre-fix scripts_dir/
+    # glm_batch_digest.py resolved (post-B-391 scripts_dir fix) to
+    # scripts/glm_batch_digest.py = nonexistent. Use the explicit subdir.
+    digest_script = scripts_dir / "maintenance" / "glm" / "glm_batch_digest.py"
     if not digest_script.exists() or not glm_config.exists():
         return None
     try:
@@ -1104,8 +1305,16 @@ def main() -> int:
         state_file.unlink()
         print(f"[watchdog] --reset-state: cleared {state_file}")
 
-    # Load persisted state
-    saved = _load_state(state_file)
+    # Load persisted state (B-393: fail-closed on corrupt state unless
+    # --reset-state). At this point a clean unlink has already happened above
+    # if reset_state was set, so _load_state will see no file and return {};
+    # the reset_state parameter is forwarded so that any corrupt-state path
+    # encountered for any reason still respects the operator's intent.
+    saved = _load_state(
+        state_file,
+        reset_state=bool(getattr(args, "reset_state", False)),
+        ntfy_topic=args.ntfy_topic,
+    )
     seen_keys: Set[str] = set(saved.get("seen_keys", []))
     seen_completions: Set[str] = set(saved.get("seen_completions", []))
     seen_analysis: Dict[str, float] = saved.get("seen_analysis", {})
@@ -1408,6 +1617,21 @@ def main() -> int:
                     # paper §4 GLMM bias absorption (Tier 1 stack (1)-gemini).
                     # Generalizes P1-5-B reset event tracking to auth-loss /
                     # noise-clean class (user cross-talk insight 2026-05-16).
+                    #
+                    # B-386 (A1.15 C1 P0-2 race ordering, T2'=a best-effort,
+                    # 2026-05-16): event write happens AFTER destructive ops
+                    # at L1369-1402 (intentional — keeps destructive path
+                    # uncluttered; trajectory log is post-hoc covariate
+                    # enrichment, not transactional audit trail). Race
+                    # window 2-3s between unlink/rmtree completion and this
+                    # try block: SIGKILL/OOM in window → event dropped, paper
+                    # §4 GLMM `had_auth_clear` covariate undercount for
+                    # affected episode. Paper §3 reproducibility section
+                    # discloses this as "best-effort enrichment, sensitivity
+                    # analysis (Supp Table S-trajectory-loss) bounds event-
+                    # drop rate" — see docs/checkpoints/paper_drafts/section3_*.
+                    # Race ordering NOT 2-phase-commit per T2'=(a) — best-
+                    # effort wins on Pre-fire 闭环 effort budget.
                     try:
                         from p79.experiment.logger_v2 import log_trajectory_event_external
                         log_trajectory_event_external(
@@ -1420,12 +1644,13 @@ def main() -> int:
                                 "max_retries": max_for_type,
                                 "is_noise": is_noise,
                                 "is_auth_loss": bool(reason.startswith("error(session") or reason.startswith("error(auth")),
+                                "cleared_in_session_wave": False,  # B-384 distinguishes from session-wave path
                                 "purged_digest_records": purged,
                             },
                         )
                     except Exception as _trajectory_log_exc:
                         # Non-fatal — trajectory event log is a paper-§4 covariate
-                        # enrichment, not a blocking step. Best-effort.
+                        # enrichment, not a blocking step. Best-effort (T2'=a).
                         print(
                             f"[watchdog][trajectory-event][warn] failed to log "
                             f"task_auto_cleared event for task {task_id}: {_trajectory_log_exc}"
@@ -1495,6 +1720,15 @@ def main() -> int:
                         if contaminated:
                             _ddir = run_dir / "analysis" / "digest"
                             cleaned = 0
+                            wave_size = len(contaminated)
+                            # B-392 (A1.15 C3 P1-4): batch digest purge.
+                            # Collect (cond_id, task_id) keys per obs_mode and
+                            # run ONE purge per mode after the destructive-op
+                            # loop. Pre-fix called `_purge_digest_records` per
+                            # task → O(N·M) I/O on multi-MB digest files →
+                            # watchdog hangs minutes during session-restore
+                            # mass cleanup. See _purge_digest_records_batch.
+                            _purge_keys_by_mode: Dict[str, Set[Tuple[str, int]]] = defaultdict(set)
                             for (cond_id, cond_dir, ctask_id, csite, ckey) in contaminated:
                                 # Delete episode files
                                 for p in [
@@ -1510,9 +1744,9 @@ def main() -> int:
                                     if cart.exists(): shutil.rmtree(cart)
                                 except OSError:
                                     pass
-                                # Clean digest
+                                # Collect digest purge key (deferred to batch below)
                                 cmode = _get_observation_mode(cond_dir, condition_mode_cache)
-                                _purge_digest_records(_ddir, cond_id, ctask_id, cmode)
+                                _purge_keys_by_mode[cmode].add((cond_id, ctask_id))
                                 # Remove from in-memory tracking
                                 all_records[:] = [
                                     r for r in all_records
@@ -1521,6 +1755,51 @@ def main() -> int:
                                 seen_keys.discard(ckey)
                                 reported_keys.discard(ckey)
                                 cleaned += 1
+
+                                # B-384 (A1.15 C1 P0-3, 2026-05-16): Option K Hook C
+                                # session-cleanup path emit. Pre-fix: B-314 hook only
+                                # in retry path (L1411-1432); session_contaminated
+                                # cleanup wave (highest-frequency auth-loss class
+                                # entry point) had ZERO trajectory log call. Paper
+                                # §4 GLMM `had_auth_clear` covariate systematically
+                                # false-negative on connected NOT-LOGGED-IN waves.
+                                # Per-task emit inside loop with wave context in
+                                # metadata. Best-effort (T2'=a) — race window
+                                # disclosed in paper §3 (see top-of-file docstring).
+                                try:
+                                    from p79.experiment.logger_v2 import log_trajectory_event_external
+                                    log_trajectory_event_external(
+                                        condition_dir=cond_dir,
+                                        event_type="task_auto_cleared",
+                                        task_index=ctask_id,
+                                        metadata={
+                                            "reason": "session_not_logged_in",
+                                            "is_auth_loss": True,
+                                            "cleared_in_session_wave": True,
+                                            "wave_size": wave_size,
+                                            "wave_task_index": cleaned,  # 1-based within wave
+                                            "is_noise": True,
+                                            "site": csite,
+                                        },
+                                    )
+                                except Exception as _trajectory_log_exc:
+                                    print(
+                                        f"[watchdog][trajectory-event][warn] failed "
+                                        f"to log session-cleanup event for task "
+                                        f"{ctask_id}: {_trajectory_log_exc}"
+                                    )
+                            # B-392 batch digest purge: one read+filter+rewrite
+                            # per obs_mode (instead of N inside the loop).
+                            _purge_total = 0
+                            for _pmode, _pkeys in _purge_keys_by_mode.items():
+                                _r = _purge_digest_records_batch(_ddir, _pmode, _pkeys)
+                                _purge_total += _r
+                            if _purge_total:
+                                print(
+                                    f"[watchdog][SESSION] {site} batch-purged "
+                                    f"{_purge_total} digest record(s) across "
+                                    f"{len(_purge_keys_by_mode)} mode(s)"
+                                )
                             print(f"[watchdog][SESSION] {site} auto-cleaned {cleaned} NOT-LOGGED-IN episodes")
                             _persist_state()
                             if args.ntfy_topic:
