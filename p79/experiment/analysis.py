@@ -608,9 +608,16 @@ def _analyze_condition(
             fig, ax = plt.subplots(figsize=(7, 4))
             ax.hist(lat_series, bins=20, edgecolor="black", alpha=0.75, color="#55A868")
             ax.axvline(lat_series.mean(), color="red", linestyle="--", label=f"mean={lat_series.mean():.1f}s")
-            ax.set_xlabel("P95 Step Latency per Episode (s)")
-            ax.set_ylabel("Count")
-            ax.set_title(f"Latency Distribution — {cond_id}")
+            # B-183 (/stress A1.4b-i Claude A7): each x-axis value is the
+            # per-episode P95, NOT a per-step latency. The histogram shows
+            # distribution OF episode-P95s, not all step latencies — Jensen-like
+            # inequality means this is generally larger than overall p95 of all
+            # steps. See `metrics.py:344-347` docstring for the rationale;
+            # `avg_total_latency_ms` is the proper per-episode end-to-end
+            # measure subtractable across conditions for net-saving claims.
+            ax.set_xlabel("Per-episode P95 step latency (s)\n(NOT per-step distribution)")
+            ax.set_ylabel("Episode count")
+            ax.set_title(f"Per-episode P95 Latency Distribution — {cond_id}")
             ax.legend()
             ax.grid(alpha=0.3)
             fig.tight_layout()
@@ -1190,6 +1197,42 @@ def analyze_run(run_dir: str) -> Path:
     cond_df = pd.DataFrame(condition_rows)
     ep_df = pd.DataFrame(episode_rows)
     step_df = pd.DataFrame(step_rows)
+
+    # B-181 (/stress A1.4b-i codex B5, P1): fail-closed phase-consistency
+    # validator. Pre-fix: re-launching Phase 2 into a Phase 1 run dir made
+    # `analyze_run` silently consume mixed-phase rows (Phase 1 flat arms
+    # leaking into Phase 2 Pareto plots, or vice versa). Now: every
+    # condition_id must match the selected phase prefix (`phase{1,2,3}_*`);
+    # mismatches → write diagnostic + skip the heterogeneous rows so plotters
+    # see a clean single-phase cond_df.
+    if not cond_df.empty and "condition_id" in cond_df.columns:
+        cid_phases = []
+        for cid in cond_df["condition_id"].dropna():
+            cid_str = str(cid)
+            if cid_str.startswith("phase1_"):
+                cid_phases.append("phase1")
+            elif cid_str.startswith("phase2_"):
+                cid_phases.append("phase2")
+            elif cid_str.startswith("phase3_"):
+                cid_phases.append("phase3")
+            else:
+                cid_phases.append("unknown")
+        unique_phases = set(cid_phases) - {"unknown"}
+        if len(unique_phases) > 1:
+            mismatch_msg = (
+                f"B-181 phase mix detected in {root}: cond_df contains "
+                f"{sorted(unique_phases)} but selected phase={phase}. "
+                "Likely a re-launch into an existing run dir. Dropping rows "
+                "outside the selected phase from cross-condition plots."
+            )
+            logger.warning(mismatch_msg)
+            (analysis_dir / "phase_mix_warning.txt").write_text(
+                mismatch_msg, encoding="utf-8"
+            )
+            cond_df["_inferred_phase"] = cid_phases
+            cond_df = cond_df[cond_df["_inferred_phase"].isin([phase, "unknown"])].drop(
+                columns=["_inferred_phase"]
+            ).reset_index(drop=True)
 
     # Infer benchmark from episode data or run_dir path
     def _infer_benchmark(ep_df, run_dir_path: Path) -> str:

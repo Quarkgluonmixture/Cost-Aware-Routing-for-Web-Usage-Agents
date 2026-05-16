@@ -282,10 +282,26 @@ def main() -> int:
         f"Cells included per arm — see `cells` col. Arms: {n_arms} pooled "
         f"(PRIMARY={n_primary}, SECONDARY={n_secondary}, TERTIARY={n_tertiary}).",
         "",
+        # B-182 (/stress A1.4b-i codex B3, P1): clarify family scope + gating
+        # status. Pre-fix prose said "Pre-registered family gating" with Holm
+        # over the SECONDARY pooled tests (m=3), but `preregistration.md:292-320`
+        # declares PRIMARY family m=1 (single FE superiority test) — the RE
+        # meta in THIS script is appendix sensitivity-only, NOT a paper gate.
+        # H4 exploratory family is `m = 2 × N_cells` per-cell drop-one, distinct
+        # from this 3-arm pooled Holm. Make the family labels explicit so
+        # methods reviewer can answer "Holm over what family?".
+        "**Family scoping clarification (B-182)**: this table reports RE meta-pooled",
+        "estimates per arm. The PRIMARY paper gate is the FE one-sided superiority",
+        "test (H0: θ_FE ≤ +1.0pp) computed separately by `phase1_prereg_gate.csv`",
+        "(currently MISSING — see issue tracker for B-185 follow-up). The Holm-corrected",
+        "p_re_holm column below is family-corrected WITHIN this 3-arm SECONDARY family",
+        "(`family_scope=APPENDIX_RE_SENSITIVITY_m3`, NOT `H1_PRIMARY`). Treat",
+        "`sig` symbols as appendix sensitivity signal, not paper gate verdict.",
+        "",
         "## Pooled estimates per arm",
         "",
-        "| Family | Arm | k cells | Random-effect pp | 95% CI | SE | z | p (1-sided) | I² | τ² | Q | df | p_Q | sig (Holm-corrected family) |",
-        "|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|:---:|",
+        "| Family | family_scope | gating_status | Arm | k cells | Random-effect pp | 95% CI | SE | z | p (1-sided) | I² | τ² | Q | df | p_Q | p_re_holm (within family) | sig |",
+        "|---|---|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|",
     ]
 
     # Apply Holm-Bonferroni within each family for the meta-pooled p-value
@@ -313,21 +329,38 @@ def main() -> int:
             return "—"
         return f"{v:{spec}}"
 
+    # B-182: family_scope + gating_status are derived from the family label
+    # already attached to each meta_row. PRIMARY family in this RE script is
+    # appendix sensitivity, not a paper gate — the paper PRIMARY (FE
+    # superiority) lives in `phase1_prereg_gate.csv` (currently MISSING per
+    # B-185 follow-up issue).
+    family_scope_map = {
+        "PRIMARY":   ("APPENDIX_RE_SENSITIVITY_m1", "appendix-only"),
+        "SECONDARY": ("APPENDIX_RE_SENSITIVITY_m3", "appendix-only"),
+        "TERTIARY":  ("APPENDIX_RE_SENSITIVITY_m2", "exploratory"),
+    }
     for r in meta_rows:
         sig = "✅" if (r.get("p_re_holm") is not None and r["p_re_holm"] < 0.05) else "❌"
         i2_lab = i_squared_label(r["I2"]) if r["k_cells"] > 1 else "n/a (k=1)"
         p_re_holm_str = _fmt(r.get("p_re_holm")) if r["k_cells"] >= 1 else "—"
+        f_scope, gating = family_scope_map.get(
+            r["family"], (f"UNKNOWN_FAMILY_{r['family']}", "—")
+        )
+        # B-182: stamp family_scope + gating_status onto the row so downstream
+        # CSV / JSON consumers also see the disambiguation.
+        r["family_scope"] = f_scope
+        r["gating_status"] = gating
         lines.append(
-            f"| {r['family']} | {r['arm_label']} | {r['k_cells']} | "
+            f"| {r['family']} | {f_scope} | {gating} | {r['arm_label']} | {r['k_cells']} | "
             f"+{r['theta_re']:.2f}pp | "
             f"[{r['ci_lo']:.2f}, {r['ci_hi']:.2f}] | "
             f"{_fmt(r['se_re'], '.3f')} | "
             f"{_fmt(r['z_re'], '.2f')} | "
-            f"{_fmt(r['p_re_one_sided'])} → Holm {p_re_holm_str} | "
+            f"{_fmt(r['p_re_one_sided'])} | "
             f"{r['I2']:.1f}% ({i2_lab}) | "
             f"{_fmt(r['tau2'], '.3f')} | "
             f"{_fmt(r['Q'], '.2f')} | {r['df']} | "
-            f"{_fmt(r['p_Q'])} | {sig} |"
+            f"{_fmt(r['p_Q'])} | {p_re_holm_str} | {sig} |"
         )
 
     lines += [
