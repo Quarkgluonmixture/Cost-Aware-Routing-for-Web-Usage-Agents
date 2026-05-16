@@ -7,7 +7,6 @@ from p79.envs.vwa_wrapper import P79Observation
 from p79.experiment.checklist_module import ChecklistManagerLite
 from p79.experiment.energy_tracker import LightweightEnergyTracker
 from p79.experiment.state_change import (
-    _extract_focused_tag,
     build_page_state,
     detect_page_state_change,
 )
@@ -62,26 +61,6 @@ def test_lightweight_energy_tracker_fixed_power():
 
 
 # ---------------------------------------------------------------------------
-# state_change: _extract_focused_tag
-# ---------------------------------------------------------------------------
-
-
-def test_extract_focused_tag_with_focused_element():
-    text = '[10] textbox "Search" focused input\n[11] button "Go"'
-    assert _extract_focused_tag(text) == "input"
-
-
-def test_extract_focused_tag_no_focus():
-    text = '[10] textbox "Search"\n[11] button "Go"'
-    assert _extract_focused_tag(text) is None
-
-
-def test_extract_focused_tag_empty():
-    assert _extract_focused_tag("") is None
-    assert _extract_focused_tag(None) is None
-
-
-# ---------------------------------------------------------------------------
 # state_change: build_page_state new fields
 # ---------------------------------------------------------------------------
 
@@ -93,7 +72,6 @@ def test_build_page_state_has_new_fields():
 
     assert state["dom_complexity"] == 4  # 3 newlines + 1
     assert state["text_length"] == len(text)
-    assert state["active_element_tag"] is None
 
 
 def test_build_page_state_empty_text():
@@ -102,17 +80,6 @@ def test_build_page_state_empty_text():
 
     assert state["dom_complexity"] == 1  # "".count("\n") + 1 = 1
     assert state["text_length"] == 0
-    assert state["active_element_tag"] is None
-
-
-def test_build_page_state_with_focused():
-    text = '[5] textbox "Email" focused input\n[6] button "Login"'
-    obs = P79Observation(text=text, image=None)
-    state = build_page_state(obs, {})
-
-    assert state["active_element_tag"] == "input"
-    assert state["dom_complexity"] == 2
-    assert state["text_length"] == len(text)
 
 
 # ---------------------------------------------------------------------------

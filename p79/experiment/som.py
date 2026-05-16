@@ -404,29 +404,3 @@ def _build_som_result(
     )
 
 
-def apply_som(
-    obs: Any,
-    som_on: bool,
-    artifact_dir: Path,
-    step_idx: int,
-) -> SomResult:
-    """Backward-compatible function. Prefer prepare_observation_for_mode for new code.
-
-    /stress A1.4 F6 backlog sweep (2026-05-15): emits a DeprecationWarning so
-    any forgotten internal caller / third-party reuse surfaces at runtime
-    instead of silently invoking the legacy `include_full_axtree=True` path
-    (different from production behavior).
-    """
-    import warnings
-    warnings.warn(
-        "apply_som() is deprecated since 2026-05-15. Use "
-        "prepare_observation_for_mode(obs, mode, artifact_dir, step_idx) instead. "
-        "The legacy `include_full_axtree=True` path here differs from production "
-        "behavior (which uses [SOM_MARKS] only without trailing AXTree).",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    obs_text = getattr(obs, "text", "") or ""
-    if not som_on:
-        return SomResult(som_text=obs_text, marked_image_path=None, marked_image=None, degraded_som=False, mark_count=0)
-    return _build_som_result(obs, obs_text, artifact_dir, step_idx, include_full_axtree=True)

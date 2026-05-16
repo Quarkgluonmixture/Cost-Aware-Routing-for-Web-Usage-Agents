@@ -1886,3 +1886,67 @@ phase1_plan A1.4 拆 3 chunks (A1.4a orchestrator / A1.4b data plane / A1.4c aux
 **B-numbers consumed**: B-187 through B-200 (14 contiguous, no collisions).
 
 **Next available B-number**: B-201+. B-185/B-186 still reserved by `_status/issues/issue_phase1_canonical_artifacts_2026-05-16.md` follow-up issue but not yet built.
+
+---
+
+## A1.4c /stress audit (2026-05-16) — B-202 to B-210 (10 entries)
+
+### B-202. `_extract_focused_tag` regex empirically dead on real AXTree 🛠️ FIXED
+- **Source**: A1.4c Mode A Finding 2 (Claude)
+- **Code**: `p79/experiment/state_change.py:32-37` (DELETED 2026-05-16)
+- **Attack**: Regex `r"focused.*?\b(\w+)(?:\s|$)"` requires a word char AFTER `focused`, but real AXTree puts `focused` at line end (`[14] textbox 'Search' focused`). Empirical: 30/30 production step records in `B2_dom_reddit_20260516/.../reddit_task_2_steps_v2.jsonl` had `active_element_tag = None`.
+- **Test false-positive**: `test_build_page_state_with_focused` used synthetic `"focused input"` string (not real AXTree) to make regex match — classic "test validates with synthetic data, production never triggers" anti-pattern.
+- **Fix**: Deleted `_extract_focused_tag` + 4 dependent tests + `active_element_tag` field emission (see B-204).
+
+### B-203. `apply_som` deprecated 0-caller dead code 🛠️ FIXED
+- **Source**: A1.4c Mode A Finding 11 (Claude)
+- **Code**: `p79/experiment/som.py:407-432` (DELETED 2026-05-16)
+- **Attack**: `apply_som` was 0-caller in production (grep confirmed only `tests/test_som_and_schema.py` referenced it). F6 had earlier added a DeprecationWarning expecting a forgotten caller to surface, but the only "caller" was the test that verified the warning fired — circular dead code.
+- **Fix**: Deleted function + `test_apply_som_emits_deprecation_warning` + replaced `test_som_degrades_without_bbox` to use `prepare_observation_for_mode` (canonical path).
+
+### B-204. `active_element_tag` field structurally always None in production 🛠️ FIXED
+- **Source**: A1.4c Mode A Finding 2 (Claude, downstream of B-202)
+- **Code**: `p79/experiment/state_change.py:87` (DELETED 2026-05-16) + downstream
+- **Attack**: Field emitted by `build_page_state` but no `scripts/analysis/` consumer (grep confirmed); test was the only reader, and `_extract_focused_tag` always returned None on real AXTree (B-202). Dead-field exposure.
+- **Fix**: Removed from `build_page_state` state dict; updated 3 tests (test_external_module_integration, test_state_change).
+
+### B-205. Wrapper `--approval-mode plan` silently degrades audit on shell-read prompts 🛠️ FIXED
+- **Source**: A1.4c Q4 empirical 3-trial cross-AI test
+- **Code**: `scripts/maintenance/gemini_stress_clean.sh:93` (REWRITTEN 2026-05-16)
+- **Attack**: 2026-05-16 10:02 wrapper rewrite set `--approval-mode plan` default. Plan-mode silently blocks gemini's shell/Read tools — when prompt asks gemini to `cat docs/checkpoints/paper_drafts/*.md`, tool calls return `Unauthorized` and gemini hallucinates "I read X and produced N findings saved to Y" meta-summary into `.response`. Wrapper extracts the meta-summary into the audit output file (1488 B vs 6699 B on the same prompt with `--yolo`).
+- **Trial empirical**: A (plan): 326ms / 0 tokens (cache hit ⚠️) / 2343B; B (yolo direct): 2207B; C (yolo wrapper): 1523ms / 4940 tokens real / 2266B. Winner = Trial C — same wrapper interface + real model call + clean format.
+- **Fix**: Ship Trial C — `--yolo` default + `GEMINI_APPROVAL_MODE=plan` env opt-in for inline-context-only prompts + comment line 73-84 rewritten to reflect memory 2026-05-16 retract directive (`gemini --yolo -p ≡ codex --sandbox danger-full-access`).
+- **Diagnostic lesson**: `Unauthorized/Blocked/Tool not found` keywords → debug PERMISSION before CAPABILITY (per memory `feedback_cross_ai_audit.md`).
+
+### B-206. Carbon emission provenance missing in paper §3/§8 🛠️ FIXED (prose disclosure)
+- **Source**: A1.4c Mode A Finding 4 + Mode C F2 (convergent)
+- **Code**: `docs/checkpoints/paper_drafts/section8_limitations.md` §8.7 (EDITED 2026-05-16)
+- **Attack**: §8.7 mentioned "kg-CO2 estimates" but did not disclose carbon intensity value, formula, region, or PUE. Reviewer attack: "greenwashing" — non-reproducible CO2 numbers. Double-source: `REGION_INTENSITY_G_PER_KWH["uk"] = 257` in `energy_tracker.py:49` vs explicit `carbon_intensity_g_per_kwh: 220` in `configs/exp_v2_base.yaml:81` (the 220 wins via priority chain at `energy_tracker.py:238-243`).
+- **Fix**: §8.7 added: formula `co2e_kg = total_energy_kwh × 0.220`, region `UK national grid 2024 average`, decorative-vs-active explanation of 257-vs-220, PUE=1.0 (dock-power only) caveat with `strubell2019energy` cite.
+
+### B-207. Paper §4 "Adjusted SR" semantic collision with §139.8 FP-retire 🛠️ FIXED (paper-wide rename)
+- **Source**: A1.4c Mode A Finding 7 + Mode C F3 (convergent, gemini upgraded to P0)
+- **Code**: `docs/checkpoints/paper_drafts/section{1, 4}_*.md` (EDITED 2026-05-16)
+- **Attack**: §4 line 5 defined 3-tier "Raw SR / Adjusted SR / Same-task adjusted SR", but §3.5 / §8.2 retired post-hoc `compute_adjusted_success` (per §139.8 lab notes). Reviewer attack: term carries "adjustment" connotation suggesting data manipulation; semantic double-standard between §4 and §8.
+- **Fix**: §4 line 5 collapse 3-tier definition → single canonical `VWA-Success (N/A excluded)`; 6 inline rename occurrences in §4 + 2 in §1; §4 line 48 + line 75 inline-flag the FP-decomposition paragraphs as pre-§139.8 archive analysis retained for Appendix D.
+
+### B-208. M3 / baseline retry stale action attribution 📋 DISCLOSED (prose-only, paper-1 latent)
+- **Source**: A1.4c Mode B OOB-2 (codex)
+- **Code**: `p79/experiment/runner/main.py:1357-1407` + `step_record.action` field semantics
+- **Attack**: When M3 fallback retry (`module_flags.m3_failure_trigger_retry`) or `runtime.baseline_retry_on_no_progress` triggers, runner adopts retry's `next_obs/reward/state_after` and sets `action_success = retry_success`, but `step_record.action` keeps the original (failed) action. Any aggregator computing per-action-type success rate without filtering on `retry_action_applied=True` attributes retry-scroll success to the original click.
+- **Scope re-evaluation (User Q&A defuse)**: Phase 1a runs neither flag enabled by default (`modules.py:54` M3 flag default False + `config.py:213` baseline_retry default False) → retry never fires in paper-1 → step_record.action_success bug is structurally latent on Phase 1a data. Active only in paper-2 Phase 3 M3 ablation studies.
+- **Fix**: Paper §3.5.1 prose disclosure added (defines `action_success` semantics under optional retry + filtering rule); schema fix `executed_action_chain` field queued as paper-2 prerequisite, not paper-1 remediation.
+
+### B-209. SoM degradation 2 paths conflated under single `degraded_som=True` bool 📋 DEFERRED
+- **Source**: A1.4c Mode A Finding 5 + Mode C F5 (convergent)
+- **Code**: `p79/experiment/som.py:322-333` (zero-marks → raw image fallback) vs `som.py:390-397` (image render fail → no image)
+- **Attack**: Both code paths set `degraded_som=True` but give qualitatively different signals to the agent (raw image still consumed in zero-marks path; no image at all in render-fail path). Paper §3 does not distinguish; degradation rate per path not disclosed. Reviewer attack: SoM SR table could be contaminated by vision-fallback in zero-marks path.
+- **Status**: DEFERRED to schema fix (add `degraded_som_zero_marks_count` + `degraded_som_render_fail_count` separate fields + paper §3 Table column "% Degraded Steps"). Scope too large for the 0.5h A1.4c remediation budget; queue for Phase 1a data review.
+
+### B-210. ChecklistManagerLite `update_after_action` is step-success counter, not semantic decomposition tracker ✅ DEFUSED by paper-scope
+- **Source**: A1.4c Mode A OOB-A + Mode C F1 (convergent construct-validity attack)
+- **Code**: `p79/experiment/checklist_module.py:139-159`
+- **Attack**: `update_after_action(action_success=bool)` advances first pending → in_progress → completed regardless of whether the action semantically achieved any checklist item. Empirical reproducer: 5 sequential `action_success=True` calls promote 2 checklist items to completed (counter pattern: every 2 successes complete 1 item, in **reverse** order due to a `target_idx` overwrite bug at line 141-146). Gemini construct-validity attack: paper claims "task understanding" but metric is "step-success-counter / item-count".
+- **User Q&A defuse**: User confirmed `paper §3/§4 figures + tables` do not actually reference `checklist_completion_rate`; metric exists in code (`analysis.py:357-420`) and `condition_summary_v2.json` schema but not in any published claim. Therefore reviewer attack lacks bite — there's nothing to attack.
+- **Status**: DEFUSED. Checklist code retained as latent infrastructure for paper-2 Phase 3 M4 ablation; no paper-1 remediation needed.
+

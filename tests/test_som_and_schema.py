@@ -3,7 +3,7 @@ from PIL import Image
 
 from p79.envs.vwa_wrapper import P79Observation
 from p79.experiment.schema_migrations.v2 import EPISODE_SUMMARY_V2_DEFAULTS
-from p79.experiment.som import apply_som, prepare_observation_for_mode
+from p79.experiment.som import prepare_observation_for_mode
 from p79.experiment.types import SCHEMA_VERSION_V2, validate_step_record_v2
 
 
@@ -106,20 +106,6 @@ def test_collect_bbox_map_respects_depth_cap():
     # The point is no exception. (Verified by reaching this line.)
 
 
-def test_apply_som_emits_deprecation_warning(tmp_path):
-    """/stress A1.4 F6 backlog sweep: legacy apply_som must emit
-    DeprecationWarning so any forgotten caller surfaces."""
-    import warnings
-
-    obs = P79Observation(text="[1] button 'X'", image=None, raw={})
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        apply_som(obs, som_on=False, artifact_dir=tmp_path, step_idx=0)
-    assert any(
-        issubclass(item.category, DeprecationWarning) for item in w
-    ), "apply_som should emit DeprecationWarning"
-
-
 def test_prepare_observation_accepts_all_known_modes(tmp_path):
     """All 7 canonical modes (incl. phantom_dom legacy alias) must not raise."""
     from p79.experiment.som import KNOWN_OBSERVATION_MODES
@@ -146,13 +132,17 @@ def test_episode_defaults_schema_version_matches_runtime_constant():
 
 
 def test_som_degrades_without_bbox(tmp_path):
+    """Production path: marks present in text but no bbox info → image render
+    cannot draw boxes → degraded_som=True. Uses prepare_observation_for_mode
+    after apply_som was deleted (A1.4c cleanup, 2026-05-16; was 0-caller dead
+    code emitting a DeprecationWarning that nobody listened to)."""
     obs = P79Observation(
         text="[1] Search textbox\n[2] Submit button",
         image=Image.new("RGB", (200, 100), color="white"),
         raw={"text": "no bbox here"},
     )
 
-    result = apply_som(obs=obs, som_on=True, artifact_dir=tmp_path, step_idx=0)
+    result = prepare_observation_for_mode(obs, "som", tmp_path, step_idx=0)
     assert result.mark_count >= 1
     assert result.degraded_som is True
 

@@ -21,7 +21,6 @@ def _state(form_fields):
         "client_height": 720,
         "dom_complexity": 1,
         "text_length": 1,
-        "active_element_tag": None,
         "form_field_values": form_fields,
     }
 

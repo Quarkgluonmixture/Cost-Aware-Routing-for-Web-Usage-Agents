@@ -70,18 +70,23 @@ fi
 
 mkdir -p "$(dirname "$OUTPUT_PATH")"
 
-# IMPORTANT — choice of approval mode (`--approval-mode plan` vs `--yolo`):
-#   plan  → read-only. Gemini can `read_file`, `glob`, `grep` but CANNOT
-#           use `write_file` / `edit_file`. For audit (read prompt artifacts,
-#           output critique in `.response`), this is the CORRECT minimum
-#           permission. Also auto-routes to `gemini-3.1-pro-preview` (Pro
-#           tier) — empirically stronger than --yolo's flash-lite routing.
-#   yolo  → full write access. Empirically (2026-05-16 A1.4b-ii test)
-#           gemini will USE file-write tools to dump structured output to a
-#           path mentioned in the prompt (e.g., "Write to: docs/.../<out>.md")
-#           and return only a brief summary in `.response`. This sidesteps
-#           the wrapper's `.response` extraction. Use `plan` mode to force
-#           gemini back to writing into the response payload.
+# IMPORTANT — choice of approval mode (`--yolo` vs `--approval-mode plan`):
+#   yolo  → full shell + read/write tools. DEFAULT (set 2026-05-16 per
+#           memory feedback_cross_ai_audit.md retract). Empirically required
+#           when the prompt asks gemini to read multiple paper-drafts or
+#           handoff artifacts: plan-mode silently blocks tool calls and the
+#           wrapper extracts a hallucinated meta-summary from `.response`
+#           (observed 2026-05-16 A1.4c first run: 1488 B vs 6699 B with --yolo
+#           on the same prompt; Trial C Q4 empirical: 4940 tokens real call
+#           vs Trial A plan-mode `326 ms / 0 tokens` suspicious cache hit).
+#           This matches the memory retract: "gemini --yolo -p ≡ codex
+#           --sandbox danger-full-access = full shell".
+#   plan  → read-only (no write_file / edit_file). Retained as OPT-IN via
+#           GEMINI_APPROVAL_MODE=plan env var for prompts that fully inline
+#           context AND want gemini to write structured output via the
+#           `.response` payload only. Auto-routes to `gemini-3.1-pro-preview`
+#           in plan mode per Google CLI defaults, so the option survives if
+#           a future audit prefers Pro-tier routing with inline-only context.
 #
 # IMPORTANT (cont) — yargs argument-parsing order:
 #   --output-format BEFORE --prompt. yargs consumes the next token after
@@ -90,8 +95,13 @@ mkdir -p "$(dirname "$OUTPUT_PATH")"
 TMP_RAW=$(mktemp /tmp/gemini_stress_clean.XXXXXX.json)
 trap 'rm -f "$TMP_RAW"' EXIT
 
-APPROVAL_MODE="${GEMINI_APPROVAL_MODE:-plan}"
-if ! gemini --approval-mode "$APPROVAL_MODE" --output-format json "${MODEL_FLAG[@]}" \
+APPROVAL_MODE="${GEMINI_APPROVAL_MODE:-yolo}"
+if [ "$APPROVAL_MODE" = "yolo" ]; then
+  GEMINI_FLAGS=(--yolo)
+else
+  GEMINI_FLAGS=(--approval-mode "$APPROVAL_MODE")
+fi
+if ! gemini "${GEMINI_FLAGS[@]}" --output-format json "${MODEL_FLAG[@]}" \
        --prompt "$PROMPT_BODY" > "$TMP_RAW" 2>&1; then
   echo "ERROR: gemini CLI exit code != 0" >&2
   tail -30 "$TMP_RAW" >&2

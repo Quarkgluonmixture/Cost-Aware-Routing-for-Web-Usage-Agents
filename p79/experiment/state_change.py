@@ -29,14 +29,6 @@ def _extract_form_fields_count(text: str) -> int:
     return sum(low.count(m) for m in markers)
 
 
-def _extract_focused_tag(text: str) -> Optional[str]:
-    """Extract the tag/role of the focused element from AXTree text."""
-    if not text:
-        return None
-    m = re.search(r"focused.*?\b(\w+)(?:\s|$)", text, re.IGNORECASE)
-    return m.group(1) if m else None
-
-
 def _extract_modal_state(text: str) -> bool:
     if not text:
         return False
@@ -84,7 +76,6 @@ def build_page_state(
         "client_height": int(fs.get("client_height", 0) or 0),
         "dom_complexity": text.count("\n") + 1,
         "text_length": len(text),
-        "active_element_tag": _extract_focused_tag(text),
         "form_field_values": fs.get("fields", []),
     }
     return state
