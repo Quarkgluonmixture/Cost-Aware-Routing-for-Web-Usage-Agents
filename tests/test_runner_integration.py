@@ -104,10 +104,11 @@ def test_runner_and_analysis_end_to_end_with_mock_env(tmp_path):
                 "dom_mode": "heuristic",
             },
         },
+        # B-269 fix (2026-05-16, A1.7): baselines.run_b0=True retired for phase1.
+        # The integration test runs on phase1; B0 is now a top-level baseline via
+        # per-condition yaml, not an additive flag. Remove this block.
         "baselines": {
-            "run_b0": True,
-            "b0_backend": "api_strong",
-            "b0_observation_mode": "som",
+            "run_b0": False,
         },
     }
 
@@ -120,7 +121,7 @@ def test_runner_and_analysis_end_to_end_with_mock_env(tmp_path):
     with open(run_summary_path, "r", encoding="utf-8") as f:
         run_summary = json.load(f)
 
-    assert run_summary["total_conditions"] == 4  # 3 phase1 modes + 1 b0
+    assert run_summary["total_conditions"] == 3  # 3 phase1 modes (b0 upper-bound removed B-269 2026-05-16, A1.7)
     assert run_summary["total_episodes"] > 0
 
     step_logs = list(run_dir.glob("*/episodes/*_steps_v2.jsonl"))

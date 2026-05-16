@@ -61,7 +61,11 @@ def test_phase3_enforces_one_module_at_a_time():
 
 
 def test_b0_is_added_when_enabled():
-    cfg = _base_cfg("phase1")
+    """B-269 fix (2026-05-16, A1.7): `baselines.run_b0` is retired for Phase 1a
+    3-baseline architecture but kept for Phase 2/3 paper-2 substrate. Test
+    on phase2 since phase1 now raises on run_b0=True.
+    """
+    cfg = _base_cfg("phase2")
     cfg["baselines"] = {
         "run_b0": True,
         "b0_backend": "api_strong",
@@ -71,3 +75,16 @@ def test_b0_is_added_when_enabled():
 
     conditions = generate_conditions(cfg)
     assert any(c.condition_id == "b0_strong_upper_bound" for c in conditions)
+
+
+def test_b0_run_b0_raises_in_phase1():
+    """B-269 fix (2026-05-16, A1.7): paper-1 3-baseline architecture means
+    `baselines.run_b0=True` in phase1 is a configuration error (would create
+    duplicate b0_strong_upper_bound condition alongside per-baseline B0 cell).
+    """
+    import pytest as _pytest
+    cfg = _base_cfg("phase1")
+    cfg["baselines"] = {"run_b0": True, "b0_backend": "api_strong"}
+    cfg["backends"]["api_strong"] = {"type": "mock"}
+    with _pytest.raises(ValueError, match="baselines.run_b0=True is retired"):
+        generate_conditions(cfg)

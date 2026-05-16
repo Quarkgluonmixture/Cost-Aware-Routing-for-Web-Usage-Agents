@@ -107,15 +107,34 @@ def test_collect_bbox_map_respects_depth_cap():
 
 
 def test_prepare_observation_accepts_all_known_modes(tmp_path):
-    """All 7 canonical modes (incl. phantom_dom legacy alias) must not raise."""
+    """All 7 canonical modes (incl. phantom_dom legacy alias) must not raise
+    for non-vision modes. Vision mode requires obs.image to be non-None per
+    B-265 fix (2026-05-16, A1.7) — paper §3 contract "vision = raw screenshot
+    only" must be defensible at the observation-preparation boundary.
+    """
     from p79.experiment.som import KNOWN_OBSERVATION_MODES
 
     expected = {"dom", "som", "vision", "phantom_som", "phantom_dom", "phantom_text", "phantom_prompt"}
     assert set(KNOWN_OBSERVATION_MODES) == expected
-    obs = P79Observation(text="[1] something", image=None, raw={})
-    for mode in expected:
-        # Should not raise — concrete output not checked here, just call invariance.
-        prepare_observation_for_mode(obs, mode, tmp_path, 0)
+    # Non-vision modes accept obs.image=None (text-only paths)
+    obs_no_image = P79Observation(text="[1] something", image=None, raw={})
+    for mode in expected - {"vision"}:
+        prepare_observation_for_mode(obs_no_image, mode, tmp_path, 0)
+    # Vision mode requires non-None image (B-265). Pass a tiny PIL.Image-shaped
+    # placeholder; the function only checks `is None`, not type.
+    obs_with_image = P79Observation(text="", image="<dummy-image-placeholder>", raw={})
+    prepare_observation_for_mode(obs_with_image, "vision", tmp_path, 0)
+
+
+def test_vision_mode_raises_on_missing_image(tmp_path):
+    """B-265 fix (2026-05-16, A1.7): vision mode must fail-fast on None image
+    so paper §3 'vision = raw screenshot only' contract is enforced at the
+    observation-preparation boundary (not silently degraded to text-only).
+    """
+    import pytest as _pytest
+    obs_no_image = P79Observation(text="some text", image=None, raw={})
+    with _pytest.raises(ValueError, match="Vision mode requires image"):
+        prepare_observation_for_mode(obs_no_image, "vision", tmp_path, 0)
 
 
 def test_episode_defaults_schema_version_matches_runtime_constant():
