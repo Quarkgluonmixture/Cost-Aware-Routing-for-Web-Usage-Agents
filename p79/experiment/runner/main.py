@@ -6,6 +6,7 @@ ExperimentRunner` import path is preserved via `runner/__init__.py`.
 """
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -162,7 +163,17 @@ class ExperimentRunner:
         # B-37 fix: inject experiment seed into backend cfg for downstream
         # propagation to LLM payload (proxy `seed` param) and torch generation.
         # Uses self.seed which was set per (condition, seed) pair in run().
-        backend_cfg = dict(backend_cfg)  # shallow copy to avoid mutating self.cfg
+        #
+        # B-162 (/stress A1.4a v8 codex B5, 2026-05-16): deep copy not shallow.
+        # Previously ``dict(backend_cfg)`` shared nested dicts/lists (e.g.
+        # ``generation``, ``model_kwargs``, ``headers``, ``safety``) with
+        # ``self.cfg``, so any agent constructor side effect that mutated a
+        # nested key (defaults injection, header normalization) leaked into
+        # subsequent (condition, seed) iterations through ``self.cfg``. Symptom:
+        # seed=42 single-run ≠ seed=[42,43] runs[0] even though backend cache
+        # key tuple was correct (B-144). ``copy.deepcopy`` isolates each
+        # call.
+        backend_cfg = copy.deepcopy(backend_cfg)
         if backend_cfg.get("seed") is None:
             backend_cfg["seed"] = int(self.seed)
         # B-83 fix: forward top-level `model.revision` into the backend cfg.
@@ -1539,7 +1550,19 @@ class ExperimentRunner:
         # VWA evaluator expects trajectory to end with an Action dict having "answer" key.
         # When the agent never stopped (max-steps / cycle), trajectory ends with an obs dict
         # which lacks "answer", causing KeyError: 'answer'.  Append a fake stop action.
+        #
+        # B-164 (/stress A1.4a v8 Claude F4, 2026-05-16): trajectory_incomplete
+        # telemetry. The fake stop action's empty answer is fed to VWA's
+        # string_match evaluator, which compares "" vs ground-truth ("$19.99",
+        # etc.) → score=0 for all max-steps-timeout episodes regardless of
+        # actual capability. B1/B2 4B baselines time out far more than B0 235B
+        # → cross-baseline SR rank contains a non-capability timeout-rate
+        # confound. Disclosure path (Path A): SR remains canonical (no
+        # adjustment); `trajectory_incomplete=True` recorded as a transparency
+        # metric for paper §3.5 + cross-cell aggregation.
+        trajectory_incomplete = False
         if not trajectory or not isinstance(trajectory[-1], dict) or "answer" not in trajectory[-1]:
+            trajectory_incomplete = True
             try:
                 from browser_env.actions import create_stop_action  # type: ignore
                 trajectory.append(create_stop_action(""))
@@ -1559,12 +1582,28 @@ class ExperimentRunner:
 
         # Override only when the agent issued a finish/stop and VWA reward
         # agrees — never override after cycle early-stop (agent did not finish).
+        #
+        # B-163 (/stress A1.4a v8 Claude F2 + codex B3 dual-catch, 2026-05-16):
+        # fallback_finish guard. Previously the keyword-rescue 'finish' (where
+        # backend parsed gibberish output to action_type='finish' via keyword
+        # scan, recorded as fallback_finish=True + parse_valid=False) ALSO
+        # triggered reward override because action_type literally == 'finish'.
+        # Paper-grade cross-baseline contamination: B0 235B rarely needs
+        # keyword rescue, B1/B2 4B frequently does → B1/B2 SR systematically
+        # inflated by fallback_finish-driven reward override differential.
+        # Now requires a REAL agent finish (parse_valid AND not fallback).
+        _last = step_records[-1] if step_records else {}
+        _real_finish = (
+            str(_last.get("action_type", "")).lower() in ("finish", "stop")
+            and not bool(_last.get("fallback_finish", False))
+            and bool(_last.get("parse_valid", True))
+        )
         if (
             score == 0.0
             and step_records
-            and step_records[-1].get("reward", 0.0) > 0
+            and _last.get("reward", 0.0) > 0
             and not cycle_early_stop
-            and step_records[-1].get("action_type", "") in ("finish", "stop")
+            and _real_finish
         ):
             score = 1.0
             logger.warning(
@@ -1684,6 +1723,12 @@ class ExperimentRunner:
         _last_fb = bool(step_records[-1].get("fallback_finish", False)) if step_records else False
         _agent_finished = (_last_at in ("finish", "stop")) and not _last_fb
         episode_summary["agent_finished"] = _agent_finished
+
+        # B-164 (/stress A1.4a v8 Claude F4, 2026-05-16): trajectory_incomplete
+        # — see the fake stop-action block above. Recorded here so per-cell
+        # aggregation can report `trajectory_incomplete_rate` as a transparency
+        # metric (paper §3.5). Always emitted to keep schema invariant.
+        episode_summary["trajectory_incomplete"] = trajectory_incomplete
 
         # §139.8: the runner no longer computes `adjusted_success` / `fp_reason`.
         # The post-hoc na_fp / eval_fp filter layer is retired — those FPs are
