@@ -221,6 +221,13 @@ start_reddit() {
 
 start_wikipedia() {
   echo "[START] wikipedia (http://${HOSTNAME_VALUE}:8888)"
+  # BUG-16 fix (2026-05-16, Claude NEW7): refuse start while wget still writing
+  # zim file. kiwix-serve RW-mounts data dir; concurrent wget append + kiwix
+  # read = potential fs race / corrupt response. Sequence: wget exit → start.
+  if pgrep -af "wget.*wikipedia_en_all_maxi.*\.zim" >/dev/null 2>&1; then
+    echo "[START] ✗ refusing kiwix-serve start: wget still downloading ZIM (race risk)" >&2
+    return 1
+  fi
   local container_name=""
   container_name="$(find_running_container vwa-wikipedia wikipedia || true)"
   if [[ -n "${container_name}" ]]; then
@@ -230,7 +237,23 @@ start_wikipedia() {
     if [[ -n "${container_name}" ]]; then
       docker start "${container_name}" >/dev/null 2>&1
     else
-      docker run -d --name vwa-wikipedia -e TZ="${QUARK_TZ:-Europe/London}" --volume="${ENV_DIR}/data/:/data" -p 8888:80 ghcr.io/kiwix/kiwix-serve:3.3.0 wikipedia_en_all_maxi_2025-08.zim >/dev/null
+      # Symlink-trick support: if host data dir contains symlinks (e.g. zim file →
+       # /mnt/scratch/... when host /home filled up), container needs the target
+      # path bind-mounted at the same location for symlink to resolve. Else
+      # kiwix-serve sees symlink, follows to /mnt/scratch/... inside container
+      # namespace, fails to find the file, Exits(0). Auto-detect + add mount.
+      local extra_mounts=""
+      if [[ -L "${ENV_DIR}/data/wikipedia_en_all_maxi_2025-08.zim" ]]; then
+        local symtarget
+        symtarget=$(readlink -f "${ENV_DIR}/data/wikipedia_en_all_maxi_2025-08.zim")
+        local symdir
+        symdir=$(dirname "${symtarget}")
+        if [[ "${symdir}" != "${ENV_DIR}/data" ]]; then
+          echo "[START] wikipedia: symlink → ${symtarget}; bind-mounting ${symdir} into container"
+          extra_mounts="--volume=${symdir}:${symdir}:ro"
+        fi
+      fi
+      docker run -d --name vwa-wikipedia -e TZ="${QUARK_TZ:-Europe/London}" --volume="${ENV_DIR}/data/:/data" ${extra_mounts} -p 8888:80 ghcr.io/kiwix/kiwix-serve:3.3.0 wikipedia_en_all_maxi_2025-08.zim >/dev/null
     fi
   fi
 }
