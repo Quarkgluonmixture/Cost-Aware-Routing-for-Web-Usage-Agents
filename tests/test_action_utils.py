@@ -85,9 +85,15 @@ def test_parse_repaired_regex_valid():
 
 
 def test_parse_repaired_regex_invalid_action():
+    """B-413 (/stress A1.2 v8 Mode B P1-6, 2026-05-16): repair path now
+    surfaces specific sub-category reason instead of generic
+    `invalid_action_repaired`. `{"action_type":"DESTROY"}` → repair path
+    finds candidate via raw_decode → validate_action_detailed returns
+    `invalid_action_type` → propagated to parse_action_text caller.
+    """
     action, valid, reason = parse_action_text('thinking... {"action_type":"DESTROY"}')
     assert valid is False
-    assert reason == "invalid_action_repaired"
+    assert reason == "invalid_action_type"
 
 
 def test_parse_unparseable_with_scroll_word_falls_to_wait():
@@ -174,14 +180,17 @@ def test_parse_multiple_distinct_actions_flags_ambiguity():
     assert reason == "multiple_actions"
 
 
-def test_parse_invalid_action_after_raw_decode_emits_repaired_invalid():
-    """raw_decode finds a JSON object but validate_action rejects the
-    action_type → emit invalid_action_repaired (distinguishable from
-    parse_failed where no JSON was found at all)."""
+def test_parse_invalid_action_after_raw_decode_emits_specific_reason():
+    """B-413 (/stress A1.2 v8 Mode B P1-6, 2026-05-16): raw_decode finds a
+    JSON object but validate_action_detailed rejects it → emit specific
+    sub-category reason (here `invalid_action_type`) rather than the old
+    generic `invalid_action_repaired`. Distinguishable from `parse_failed`
+    (no JSON at all) because we still got a parseable JSON object, but
+    schema-invalid. Paper §3.5 taxonomy now sees the real reason."""
     text = 'I will {"action_type":"NUKE","target":"all"}'
     action, valid, reason = parse_action_text(text)
     assert valid is False
-    assert reason == "invalid_action_repaired"
+    assert reason == "invalid_action_type"
 
 
 def test_parse_no_json_at_all_falls_to_parse_failed():
@@ -234,17 +243,31 @@ def test_validate_click_accepts_valid_pixel_coord():
 
 
 def test_validate_scroll_rejects_malformed_delta():
-    """Scroll delta must be 2 finite floats."""
-    for bad_delta in (None, [0.5], "down", [float("nan"), 0.1], ["x", "y"]):
-        a = {"action_type": "scroll"}
-        if bad_delta is not None:
-            a["delta"] = bad_delta
+    """Scroll delta must be 2 finite floats. B-412 (/stress A1.2 v8 Mode B
+    P1-5, 2026-05-16): naked scroll (no delta + no scroll_direction + no
+    direction alias) now rejected — pre-fix the validator silently passed
+    naked scroll and VWA env couldn't execute it (`vwa_wrapper.py:356`
+    required `delta` or `scroll_direction`)."""
+    for bad_delta in ([0.5], "down", [float("nan"), 0.1], ["x", "y"]):
+        a = {"action_type": "scroll", "delta": bad_delta}
         action, valid = validate_action(a)
-        if bad_delta is None:
-            # No delta at all — scroll still valid (env applies default).
-            assert valid is True, "scroll without delta should remain valid"
-        else:
-            assert valid is False, f"scroll delta {bad_delta!r} should be rejected"
+        assert valid is False, f"scroll delta {bad_delta!r} should be rejected"
+
+    # B-412: naked scroll without targeting field → invalid_schema_dict.
+    action, valid = validate_action({"action_type": "scroll"})
+    assert valid is False, "naked scroll without delta/direction now invalid"
+
+
+def test_validate_scroll_accepts_direction_aliases():
+    """B-412: scroll with WebArena-legacy `direction` field stays valid
+    for cross-benchmark compat (`vwa_wrapper.py:800` reads this field).
+    Also accept tool-calling-schema `scroll_direction`."""
+    for direction in ("up", "down"):
+        action, valid = validate_action({"action_type": "scroll", "scroll_direction": direction})
+        assert valid is True, f"scroll_direction={direction} should be valid"
+    for direction in ("up", "down", "left", "right"):
+        action, valid = validate_action({"action_type": "scroll", "direction": direction})
+        assert valid is True, f"direction={direction} (WA alias) should be valid"
 
 
 def test_validate_scroll_accepts_valid_delta():
