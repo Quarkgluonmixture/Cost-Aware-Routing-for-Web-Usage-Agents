@@ -37,17 +37,48 @@ KNOWN_OBSERVATION_MODES = frozenset({
 })
 
 
+# /stress A1.10 P1-2-AB* canonical anchored mark-id parser (2026-05-16).
+# Pre-fix: 7 callsites across som.py / state_change.py / action_utils.py /
+# vwa_wrapper.py each used unanchored `re.search(r"\[(\d+)\]", line)` which
+# matches **any** bracketed digit in the line (including footnote references
+# like "see [4] below" inside StaticText labels) — paper-grade contamination
+# vector (A1.4 SOM regex fix lineage; Mode B F7 + Mode A F4 dual-catch).
+# Post-fix: anchored detection `^\s*\[(\d+)\]\s+\w` requires the bracketed
+# digit to be the **first non-whitespace token** on the line followed by a
+# word character (the AXTree role label) — canonical AXTree node line format.
+# StaticText labels with bracketed digits in their content no longer match.
+# The strip prefix regex (used by extract_mark_label) does NOT capture the
+# trailing word character, so the role label survives intact after strip.
+MARK_ID_DETECT_RE = re.compile(r"^\s*\[(\d+)\]\s+\w")
+_MARK_ID_PREFIX_STRIP_RE = re.compile(r"^\s*\[\d+\]\s+")
+
+
+def extract_mark_id(line: str) -> Optional[int]:
+    """Return the leading AXTree mark id on a line, or None if the line is not
+    a mark line. Canonical replacement for unanchored `re.search(r"\\[(\\d+)\\]", line)`
+    sibling pattern landed via /stress A1.10 P1-2-AB*.
+    """
+    m = MARK_ID_DETECT_RE.match(line)
+    return int(m.group(1)) if m else None
+
+
+def is_mark_line(line: str) -> bool:
+    """True if a line is an AXTree node line (anchored bracketed-digit prefix)."""
+    return MARK_ID_DETECT_RE.match(line) is not None
+
+
 def _extract_text_marks(obs_text: str, max_marks: Optional[int] = None) -> List[Dict[str, Any]]:
     # B-84: max_marks defaults to None (no cap). The former 200 cap fired on
     # ~0.03% of steps but only on marks modes — an axis-1 asymmetry vs the
     # uncapped AXTree modes. The viewport filter bounds element count in practice.
     marks: List[Dict[str, Any]] = []
     for line in (obs_text or "").splitlines():
-        m = re.search(r"\[(\d+)\]", line)
-        if not m:
+        eid = extract_mark_id(line)
+        if eid is None:
             continue
-        eid = int(m.group(1))
-        label = re.sub(r"\[(\d+)\]", "", line).strip()
+        # Strip only the leading anchored mark prefix from the label so that
+        # bracketed digits inside the label content (e.g. "see [4]") survive.
+        label = _MARK_ID_PREFIX_STRIP_RE.sub("", line, count=1).strip()
         marks.append({"id": eid, "label": label})
         if max_marks is not None and len(marks) >= max_marks:
             break
@@ -86,16 +117,15 @@ def build_som_text_from_obs_text(obs_text: str, max_marks: Optional[int] = None)
     _options_map: Dict[int, str] = {}
     _obs_lines = (obs_text or "").splitlines()
     for _i, _line in enumerate(_obs_lines):
-        _m = re.search(r"\[(\d+)\]", _line)
-        if not _m:
+        _eid = extract_mark_id(_line)
+        if _eid is None:
             continue
-        _eid = int(_m.group(1))
         for _j in range(_i + 1, len(_obs_lines)):
             _stripped = _obs_lines[_j].strip()
             if _stripped.startswith("[OPTIONS") or _stripped.startswith("[DROPDOWN OPTIONS"):
                 _options_map[_eid] = _stripped
                 break
-            if re.search(r"\[(\d+)\]", _obs_lines[_j]):
+            if is_mark_line(_obs_lines[_j]):
                 break  # next element reached — sole boundary
     mark_lines = []
     for _mark in text_marks:

@@ -952,13 +952,20 @@ class VWAWrapper:
         if not injections:
             return axtree
 
+        # /stress A1.10 P1-2-AB* (2026-05-16): anchored mark-id extraction
+        # via canonical helper from som.py, replacing unanchored
+        # `re.search(r'\[(\d+)\]', line)`. Pre-fix the regex matched any
+        # bracketed digit in the line including text-content references,
+        # which could mis-inject [DROPDOWN OPTIONS] after a StaticText that
+        # mentioned `[N]` rather than after the actual element row.
+        from p79.experiment.som import extract_mark_id
         lines = axtree.splitlines()
         out = []
         for line in lines:
             out.append(line)
-            m = re.search(r'\[(\d+)\]', line)
-            if m and m.group(1) in injections:
-                opts = injections[m.group(1)]
+            eid = extract_mark_id(line)
+            if eid is not None and str(eid) in injections:
+                opts = injections[str(eid)]
                 indent = len(line) - len(line.lstrip('\t'))
                 prefix = '\t' * (indent + 1)
                 opts_str = ', '.join(f'"{o}"' for o in opts)
@@ -998,6 +1005,9 @@ class VWAWrapper:
         if not select_data:
             return axtree
 
+        # /stress A1.10 P1-2-AB* sibling propagation (2026-05-16): use canonical
+        # anchored extractor instead of unanchored bracket-digit search.
+        from p79.experiment.som import extract_mark_id
         lines = axtree.splitlines()
         out = []
         for line in lines:
@@ -1005,10 +1015,10 @@ class VWAWrapper:
             # Only process combobox lines that have an element id
             if 'combobox' not in line.lower():
                 continue
-            m = re.search(r'\[(\d+)\]', line)
-            if not m:
+            eid_int = extract_mark_id(line)
+            if eid_int is None:
                 continue
-            eid = m.group(1)
+            eid = str(eid_int)
             node = obs_nodes_info.get(eid)
             if not node or 'union_bound' not in node:
                 continue

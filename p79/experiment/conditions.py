@@ -93,6 +93,19 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
             "phantom_som", "phantom_text", "phantom_prompt",
             "learned",  # v7 sentinel for learned router dispatch (runner main.py:1017)
         }
+        # /stress A1.10 P0-3-A (2026-05-16): paper-1 6-mode canonical universe.
+        # DEFAULT_CONFIG in config.py:23 historically shipped 3-mode
+        # ["dom","som","vision"] which fell back silently when a yaml did NOT
+        # override the field — risking incomplete Phase 1a runs missing
+        # phantom cells. The fix is at DEFAULT_CONFIG (config.py:23) raising
+        # the canonical fallback to the full 6-mode list. Per-condition yamls
+        # still legitimately override to a 1-mode subset (e.g.
+        # B0_dom_classifieds.yaml uses ["dom"] for a single-cell fire) — that
+        # path is intended and not asserted here. The 6-mode discipline is
+        # enforced at the Phase 1a launch-orchestrator layer
+        # (queue_phase1_paper_grade.sh iterates all 6 modes); we leave
+        # generate_conditions permissive so partial fires (e.g. resume one
+        # mode) work without configuration gymnastics.
         _DEPRECATED_OBS_MODES = {
             "phantom_dom": "phantom_text",  # B-261 (2026-05-16): legacy alias retired
             "dom_only": None,  # B-263 (2026-05-16): Phase 1 v1 router design, never paper-1

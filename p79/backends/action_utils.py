@@ -296,13 +296,20 @@ def validate_action(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
 
 
 def first_element_id_by_keyword(obs_text: str, keywords: Tuple[str, ...]) -> Optional[int]:
+    # /stress A1.10 P1-2-AB* (2026-05-16): replaced unanchored
+    # `re.search(r"\[(\d+)\]", line)` with canonical anchored extractor.
+    # Pre-fix attacked AXTree StaticText containing bracketed digits in label
+    # content — e.g. line "[10] StaticText 'see [4] section'" returned eid=10
+    # (OK), but line "[StaticText 'click 12 for details']" containing the
+    # `combobox` keyword via parent context could return eid=12 from text.
+    from p79.experiment.som import extract_mark_id
     for line in (obs_text or "").splitlines():
         lower = line.lower()
         if not any(k in lower for k in keywords):
             continue
-        match = re.search(r"\[(\d+)\]", line)
-        if match:
-            return int(match.group(1))
+        eid = extract_mark_id(line)
+        if eid is not None:
+            return eid
     return None
 
 

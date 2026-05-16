@@ -1,12 +1,34 @@
 from __future__ import annotations
 
+import hashlib
 import re
 from difflib import SequenceMatcher
 from typing import Any, Dict, List, Optional, Tuple
 
 from p79.envs.vwa_wrapper import P79Observation
+from p79.experiment.som import MARK_ID_DETECT_RE  # /stress A1.10 P1-2-AB* canonical regex
 
-_TEXT_TRUNCATION_LIMIT = 5000
+# /stress A1.10 P1-1-A (2026-05-16): raised from 5000 to 20000.
+# Empirical text_length distribution (5001-step B1 cls sample): p95=4675,
+# max=46591 — pre-fix ~5% of pages exceeded the 5000-char prefix used by
+# SequenceMatcher similarity, masking real content_change on long pages
+# (cls search-results pages with 30+ listings). 20000 covers the empirical
+# p99 (~8000) with 2× safety margin. Long pages > 20000 chars fall back to
+# content-hash equality (cheap O(n) md5) instead of O(n²) SequenceMatcher.
+_TEXT_TRUNCATION_LIMIT = 20000
+
+
+# /stress A1.10 P1-5-A (2026-05-16): tightened modal-state detection.
+# Pre-fix: `any(k in low for k in ("dialog","modal","popup",...))` matched
+# any of these substrings anywhere in AXTree text — reddit subforum
+# descriptions containing the word "dialog" caused modal_present to flip
+# noisily, polluting modal_state_changed (an AGENT_VISIBLE_REASON).
+# Post-fix: require the strings to appear inside role/aria-modal attribute
+# context, which is the canonical accessibility-tree dialog signal.
+_MODAL_STATE_RE = re.compile(
+    r"\b(?:role|aria-modal)\s*[=:]\s*[\"']?(?:dialog|alertdialog|modal)\b",
+    re.IGNORECASE,
+)
 
 
 # Adapted from external_code/page_state_utils.py (Aiden Yiliu Li, Apache-2.0)
@@ -17,8 +39,12 @@ def _safe_str(value: Any) -> str:
 def _extract_interactive_count(text: str) -> int:
     if not text:
         return 0
-    # AXTree lines typically contain [id] markers for interactable nodes.
-    return len(re.findall(r"\[(\d+)\]", text))
+    # /stress A1.10 P1-2-AB* (2026-05-16): use canonical anchored mark regex
+    # from som.py. Pre-fix `re.findall(r"\[(\d+)\]", text)` counted any
+    # bracketed digit anywhere in the AXTree dump including footnote
+    # references inside StaticText labels — Mode A F4 + Mode B F7 dual-catch
+    # of A1.4 SOM regex sibling propagation defect.
+    return sum(1 for line in text.splitlines() if MARK_ID_DETECT_RE.match(line))
 
 
 def _extract_form_fields_count(text: str) -> int:
@@ -32,8 +58,7 @@ def _extract_form_fields_count(text: str) -> int:
 def _extract_modal_state(text: str) -> bool:
     if not text:
         return False
-    low = text.lower()
-    return any(k in low for k in ("dialog", "modal", "popup", "overlay", "aria-modal"))
+    return bool(_MODAL_STATE_RE.search(text))
 
 
 def _extract_title_from_html(html: str) -> str:
@@ -87,17 +112,19 @@ def _form_fields_changed(before_fields: List[Dict[str, Any]], after_fields: List
         return False
 
     def _key(f: Dict[str, Any]) -> Tuple[str, str, str, str, int]:
-        # For radio/checkbox in same-name groups, each radio is typically the
-        # sole child of its wrapper (idx=0 for all), so include value to keep
-        # group members individually addressable. See
-        # docs/analysis/cross_sites/swatch_form_change_audit.md.
+        # /stress A1.10 P1-4-A* (2026-05-16): discriminator now includes value
+        # for ALL field types, not just radio/checkbox. Pre-fix: text/textarea
+        # with empty `name=""` (cls search filters frequently use unnamed
+        # inputs) collapsed to identical `(tag, type, "", "", idx)` keys when
+        # wrapper-relative idx collided, causing form_value_changed to miss
+        # real edits. Including value as a sub-discriminator for all types
+        # restores per-field addressability across the empty-name regime.
         ftype = str(f.get("type", ""))
-        discriminator = str(f.get("value", "")) if ftype in ("radio", "checkbox") else ""
         return (
             str(f.get("tag", "")),
             ftype,
             str(f.get("name", "")),
-            discriminator,
+            str(f.get("value", "")),
             int(f.get("idx", 0)),
         )
 
@@ -183,9 +210,26 @@ def detect_page_state_change(
     text_after = _safe_str(after.get("visible_text"))
 
     if text_before and text_after:
-        similarity = SequenceMatcher(None, text_before, text_after).ratio()
-        if similarity < similarity_threshold:
-            changes.append("content_changed")
+        # /stress A1.10 P1-1-A (2026-05-16): long-page hash-equality fallback.
+        # SequenceMatcher.ratio() is O(n²) and gets expensive past ~10k chars.
+        # For pages exceeding the truncation limit on either side, fall back
+        # to cheap O(n) md5 hash equality. Hash-equal pages report similarity
+        # 1.0 (no content_change); hash-different pages report 0.0 (changed).
+        # This trades the soft similarity threshold for a hard equality on
+        # long pages, which is more conservative (fewer false-positive matches
+        # because identical hash requires byte-exact text).
+        if len(text_before) >= _TEXT_TRUNCATION_LIMIT or len(text_after) >= _TEXT_TRUNCATION_LIMIT:
+            h_before = hashlib.md5(text_before.encode("utf-8", errors="replace")).digest()
+            h_after = hashlib.md5(text_after.encode("utf-8", errors="replace")).digest()
+            if h_before == h_after:
+                similarity = 1.0
+            else:
+                similarity = 0.0
+                changes.append("content_changed")
+        else:
+            similarity = SequenceMatcher(None, text_before, text_after).ratio()
+            if similarity < similarity_threshold:
+                changes.append("content_changed")
     elif not text_before and not text_after:
         similarity = 1.0  # both empty — genuinely unchanged (e.g. blank page)
     else:

@@ -20,7 +20,16 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     },
     "variables": {
         "primary": {
-            "observation_mode": ["dom", "som", "vision"],
+            # /stress A1.10 P0-3-A (2026-05-16): canonical fallback is the
+            # paper-1 6-mode universe per paper §1 hero claim. Per-condition
+            # yamls may override to a subset (e.g. 1 mode for resume-one-cell
+            # workflow) but the unspecified-fallback is the full canonical
+            # set so a yaml omitting this field generates the complete
+            # phantom routing space rather than a silent 3-mode subset.
+            "observation_mode": [
+                "dom", "som", "vision",
+                "phantom_som", "phantom_text", "phantom_prompt",
+            ],
             "router": [False, True],
         },
         "secondary": {
