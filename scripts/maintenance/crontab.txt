@@ -36,3 +36,10 @@ NTFY_TOPIC=p79-exp-dgx-spark
 # (qw→r, r→GONE/finished). On GONE includes tail of .err for context.
 # SSH chain failures exit 0 silently (transient blip, watchdog handles persistent).
 */5 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "myriad-watcher" -- python3 scripts/maintenance/glm/myriad_watcher.py >> logs/cron/myriad_watcher.log 2>&1
+
+# every 15 min: rsync A100 Phase 1a results → DGX local + trigger incremental analysis.
+# WHY: Phase 1a fire runs on condense-a100 (results in /mnt/scratch/), but P79 GLM
+# Phase 2 sidecars (glm-update-cells, error-scan) read DGX-local results/. Without
+# bridge, 18-day fire = DGX monitoring stack stale entire run. See M1 in
+# docs/checkpoints/process/cross_system_docker_audit_3way_diff_2026-05-15.md.
+*/15 * * * * cd $REPO && bash scripts/maintenance/notify_on_fail.sh "sync-a100" -- bash scripts/maintenance/sync_a100_results.sh >> logs/cron/sync_a100_results.log 2>&1
