@@ -234,7 +234,7 @@ def _dispatch_gone_hook(jid: str, name: str) -> Optional[str]:
 
 DGX_KEY = os.path.expanduser("~/.ssh/vwa_windows")
 QUARK_USER = "Quark"
-QUARK_HOST = os.environ.get("QUARK_HOST", "127.0.0.1")  # /stress A1.18 P0-2 2026-05-16: env-driven
+QUARK_HOST = os.environ.get("QUARK_HOST", "100.95.81.103")  # quark Tailscale IP (default); env override for tests
 MYRIAD_USER = "ucab352"
 MYRIAD_HOST = "myriad.rc.ucl.ac.uk"
 LOG_DIR_REMOTE = "/home/ucab352/Scratch/p79/logs"
