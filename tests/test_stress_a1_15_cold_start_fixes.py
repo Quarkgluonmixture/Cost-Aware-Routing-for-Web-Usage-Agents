@@ -225,3 +225,221 @@ def test_b743_glm_batch_digest_preserved_as_standalone():
         "B-743: glm_batch_digest.py removed by mistake — should remain as standalone "
         "operator manual tool (only watchdog auto-trigger was retired)"
     )
+
+
+# ---------------------------------------------------------------------------
+# B-761 — pgrep self-match fix (Path B)
+# ---------------------------------------------------------------------------
+
+def _load_watchdog():
+    """Direct-load watchdog module with sys.modules registration so @dataclass works."""
+    import importlib.util
+    import sys as _sys
+    spec = importlib.util.spec_from_file_location(
+        "ew_module",
+        REPO / "scripts" / "maintenance" / "experiment_watchdog.py",
+    )
+    mod = importlib.util.module_from_spec(spec)
+    _sys.modules["ew_module"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_b744_no_pgrep_in_orphan_cleanup():
+    """B-761: orphan cleanup no longer calls pgrep (self-match bug source)."""
+    wd_text = (REPO / "scripts" / "maintenance" / "experiment_watchdog.py").read_text()
+    # The pgrep call for live-runner detection in orphan cleanup must be gone.
+    # (pgrep MAY still appear elsewhere — that's fine, we only care about orphan-cleanup path)
+    # Check: B-761 marker present + no `pgrep -fa run_experiment` pattern.
+    assert "B-761" in wd_text, "B-761 fix marker missing"
+    # The specific buggy pgrep pattern (with f-string for run_dir.name) should be removed
+    assert 'pgrep", "-fa", f"run_experiment.*{run_dir.name}"' not in wd_text, (
+        "B-761: pgrep self-match pattern still present in orphan cleanup"
+    )
+
+
+def test_b744_runner_pid_path_preferred():
+    """B-761: orphan cleanup uses `args.runner_pid` + `os.kill(pid, 0)` instead of pgrep."""
+    wd_text = (REPO / "scripts" / "maintenance" / "experiment_watchdog.py").read_text()
+    # Look for the explicit `args.runner_pid is not None` check in B-761 region
+    assert "args.runner_pid is not None" in wd_text, (
+        "B-761: orphan cleanup must check args.runner_pid first (Path B)"
+    )
+    # `os.kill(args.runner_pid, 0)` is the liveness probe (matches B-761 fix path).
+    assert "os.kill(args.runner_pid, 0)" in wd_text, (
+        "B-761: must use os.kill(args.runner_pid, 0) for liveness probe"
+    )
+
+
+# ---------------------------------------------------------------------------
+# B-762 — --reset-state amnesia + --recover-and-quarantine
+# ---------------------------------------------------------------------------
+
+def test_b745_recover_and_quarantine_flag_present():
+    """B-762: argparse must register --recover-and-quarantine flag."""
+    wd_text = (REPO / "scripts" / "maintenance" / "experiment_watchdog.py").read_text()
+    assert '"--recover-and-quarantine"' in wd_text, (
+        "B-762: --recover-and-quarantine flag not registered"
+    )
+
+
+def test_b745_attempt_partial_state_recovery_present():
+    """B-762: `_attempt_partial_state_recovery` helper function exists."""
+    mod = _load_watchdog()
+    assert hasattr(mod, "_attempt_partial_state_recovery"), (
+        "B-762: _attempt_partial_state_recovery helper missing"
+    )
+
+
+def test_b745_partial_recovery_salvages_session_contaminated(tmp_path):
+    """B-762: partial recovery salvages session_contaminated from corrupt JSON."""
+    mod = _load_watchdog()
+    # Simulate corrupt state file: valid prefix, truncated mid-value
+    corrupt = tmp_path / "state.json.corrupt.123"
+    corrupt.write_text(
+        '{\n'
+        '  "_schema_version": "v2",\n'
+        '  "seen_keys": ["a", "b"],\n'
+        '  "session_contaminated": {"reddit": [["cid1", "/path/cdir", 5, "reddit", "key1"]]},\n'
+        '  "error_retry_counts": {"cid1/reddit_task_5": 2},\n'
+        '  "session_loss_streak": {"reddit": 3},\n'
+        '  "TRUNCATED_HERE'  # corrupt
+    )
+    recovered = mod._attempt_partial_state_recovery(corrupt)
+    assert "session_contaminated" in recovered, "B-762: session_contaminated should salvage"
+    assert "error_retry_counts" in recovered, "B-762: error_retry_counts should salvage"
+    assert "session_loss_streak" in recovered, "B-762: session_loss_streak should salvage"
+    # Verify content correctness
+    assert recovered["session_contaminated"]["reddit"][0][2] == 5
+    assert recovered["error_retry_counts"]["cid1/reddit_task_5"] == 2
+    assert recovered["session_loss_streak"]["reddit"] == 3
+
+
+def test_b745_emit_state_reset_event_helper_present():
+    """B-762: `_emit_state_reset_event` helper exists and emits Option K event."""
+    mod = _load_watchdog()
+    assert hasattr(mod, "_emit_state_reset_event"), (
+        "B-762: _emit_state_reset_event helper missing"
+    )
+
+
+# ---------------------------------------------------------------------------
+# B-763 — _classify_episode retry-classification code fix (Q1=A)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "err_str,expected_cat",
+    [
+        # Session
+        ("Session expired", "session"),
+        ("Not logged in to site", "session"),
+        ("login required for /admin", "session"),
+        # Auth (after session check)
+        ("AUTH_REQUIRED: please relogin", "auth"),
+        ("HTTP 401 Unauthorized", "auth"),
+        ("HTTP 403 Forbidden access denied", "auth"),
+        ("Invalid credentials", "auth"),
+        # Connection
+        ("Connection refused at endpoint:9980", "connection"),
+        ("ECONNREFUSED 127.0.0.1:7770", "connection"),
+        ("DNS resolution failed", "connection"),
+        # Timeout
+        ("Request timed out after 30s", "timeout"),
+        ("ETIMEDOUT on Playwright nav", "timeout"),
+        ("Deadline exceeded for click", "timeout"),
+        # Noise
+        ("NavigationError: ERR_ABORTED", "noise"),
+        ("Page closed unexpectedly", "noise"),
+        ("Playwright Target closed", "noise"),
+        # Should NOT match (fall-through to code_bug)
+        ("Generic ValueError", None),
+        ("TypeError: unsupported", None),
+        ("AttributeError: foo", None),
+    ],
+)
+def test_b746_classify_error_string(err_str, expected_cat):
+    """B-763: substring classifier returns expected noise category or None."""
+    mod = _load_watchdog()
+    got = mod._classify_error_string(err_str)
+    assert got == expected_cat, (
+        f"B-763: _classify_error_string({err_str!r}) → {got!r}, expected {expected_cat!r}"
+    )
+
+
+def test_b746_classify_episode_session_dispatches_to_error_session():
+    """B-763: _classify_episode now returns `error(session)` not `error(code_bug)` for session errors."""
+    mod = _load_watchdog()
+    reason = mod._classify_episode(
+        {"error": "Session expired during login"}, {}, max_steps=30
+    )
+    assert reason == "error(session)", (
+        f"B-763: session-class error must classify as error(session), got {reason!r}"
+    )
+
+
+def test_b746_classify_episode_code_bug_fallthrough_preserved():
+    """B-763: non-noise errors still fall through to error(code_bug)."""
+    mod = _load_watchdog()
+    reason = mod._classify_episode(
+        {"error": "Generic TypeError: unsupported operand"}, {}, max_steps=30
+    )
+    assert reason == "error(code_bug)", (
+        f"B-763: non-noise error must still classify as error(code_bug), got {reason!r}"
+    )
+
+
+def test_b746_classify_episode_evaluator_error_preserved():
+    """B-763: evaluator_error prefix takes precedence over noise substring."""
+    mod = _load_watchdog()
+    # `evaluator_error: connection refused` — contains "connection" substring,
+    # but evaluator prefix should win (paper §3 estimand purity).
+    reason = mod._classify_episode(
+        {"error": "evaluator_error: connection refused"}, {}, max_steps=30
+    )
+    assert reason == "error(evaluator)", (
+        f"B-763: evaluator_error prefix must take precedence, got {reason!r}"
+    )
+
+
+def test_b746_classify_episode_benchmark_noise_preserved():
+    """B-763: benchmark_noise=True path still wins over substring match."""
+    mod = _load_watchdog()
+    reason = mod._classify_episode(
+        {
+            "error": "Connection refused (noise marker)",
+            "benchmark_noise": True,
+            "benchmark_noise_category": "magento_302",
+        },
+        {}, max_steps=30,
+    )
+    assert reason == "error(magento_302)", (
+        f"B-763: benchmark_noise=True must take precedence with category, got {reason!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# B-764 — SIGUSR1 fail-loud on registration failure
+# ---------------------------------------------------------------------------
+
+def test_b747_sigusr1_fail_loud():
+    """B-764: SIGUSR1 register failure must SystemExit(2), not silently pass."""
+    wd_text = (REPO / "scripts" / "maintenance" / "experiment_watchdog.py").read_text()
+    assert "B-764" in wd_text, "B-764 marker missing"
+    # The except block should NO LONGER be `except Exception: pass`
+    assert "except (OSError, ValueError)" in wd_text, (
+        "B-764: SIGUSR1 except clause must catch OSError/ValueError specifically"
+    )
+    # The block should raise SystemExit(2)
+    assert "raise SystemExit(2)" in wd_text, (
+        "B-764: SIGUSR1 fail path must `raise SystemExit(2)` not silently pass"
+    )
+    # Must NOT contain the old silent pass pattern
+    silent_pass_pattern = (
+        "signal.signal(signal.SIGUSR1, _on_force_report_signal)\n"
+        "    except Exception:\n"
+        "        # Some environments may not support SIGUSR1 registration.\n"
+        "        pass"
+    )
+    assert silent_pass_pattern not in wd_text, (
+        "B-764: old silent-pass pattern still present (must be removed)"
+    )

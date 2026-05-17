@@ -249,6 +249,46 @@ def _check_session_health(condition_dir: Path, site: str, task_id: int) -> Optio
     return None
 
 
+# B-763 (/stress A1.15 cold-start P1-3-B codex F6, 2026-05-17, Q1=A code-fix path):
+# Error-string substring → noise bucket mapping. §4.X.14 disclosure declares
+# `error(session|auth|connection|timeout|noise)` get MAX_NOISE_RETRIES=3 retry
+# budget, but pre-fix `_classify_episode` returned every non-benchmark-noise
+# `error()` as `error(code_bug)` → MAX_CODE_BUG_RETRIES=2 retry. Plus L1623
+# `is_auth_loss` check `reason.startswith("error(session"|"error(auth")` was
+# always False because reasons were never tagged that way → Option K
+# `is_auth_loss` flag systematically under-counted in trajectory event metadata.
+# Fix: substring-match raw error string into 5 noise categories before fall-through
+# to code_bug. Now disclosure → code consistent: session/auth/connection/timeout
+# (substring match on err_str.lower()) → `error(<cat>)` → triggers N=3 noise retry
+# + `is_auth_loss=True` for session/auth/timeout categories. Q1=A user-confirmed
+# acceptance of retroactive data-behavior change (Phase 1a未跑 cells use new
+# policy; §4.X.14 disclosure prose synced in Chunk c).
+_NOISE_ERROR_SUBSTRINGS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
+    # (category, list of substrings that classify into this category)
+    ("session", ("session", "not.logged.in", "not logged in", "auth.expired", "login required")),
+    ("auth", ("auth", "401", "403", "unauthorized", "forbidden", "credentials")),
+    ("connection", ("connection", "connect.refused", "econnrefused", "econnreset",
+                    "network.unreachable", "dns", "name resolution")),
+    ("timeout", ("timeout", "timed out", "etimedout", "deadline exceeded")),
+    ("noise", ("err_aborted", "navigation_aborted", "page closed",
+               "target closed", "browser disconnected", "playwright")),
+)
+
+
+def _classify_error_string(err_str: str) -> Optional[str]:
+    """B-763: substring-match raw error string into a noise category, or None
+    if no match (caller falls through to `error(code_bug)`).
+
+    Match is case-insensitive substring. Earlier categories take precedence
+    (e.g. "auth_expired" → session, not auth).
+    """
+    s = err_str.lower()
+    for cat, substrs in _NOISE_ERROR_SUBSTRINGS:
+        if any(sub in s for sub in substrs):
+            return cat
+    return None
+
+
 def _classify_episode(
     summary: Dict[str, Any],
     task_meta: Dict[str, Any],
@@ -263,6 +303,12 @@ def _classify_episode(
         err_str = str(summary.get("error", ""))
         if err_str.startswith("evaluator_error:"):
             return "error(evaluator)"
+        # B-763: substring-match raw error string before fall-through to code_bug.
+        # Aligns code with §4.X.14 disclosure that lists noise categories
+        # session/auth/connection/timeout/noise getting MAX_NOISE_RETRIES=3.
+        noise_cat = _classify_error_string(err_str)
+        if noise_cat is not None:
+            return f"error({noise_cat})"
         return "error(code_bug)"
     steps = int(summary.get("steps", 0) or 0)
     if steps >= max_steps:
@@ -461,7 +507,9 @@ def _load_state(
     path: Optional[Path],
     *,
     reset_state: bool = False,
+    recover_and_quarantine: bool = False,
     ntfy_topic: Optional[str] = None,
+    run_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """Load watchdog state. Returns {} if missing.
 
@@ -476,6 +524,23 @@ def _load_state(
     urgent ntfy, raise SystemExit unless caller passed `reset_state=True`).
     Also emits `watchdog_state_lost` if state path implies a run_dir we can
     surface (deferred; current implementation only renames + raises).
+
+    B-762 (/stress A1.15 cold-start P1-1-AC Claude+gemini 2-AI, 2026-05-17):
+    `--reset-state` recovery path was an **amnesia trap** — discarding state
+    silently loses `session_contaminated` (already-detected polluted episodes
+    永久残留 in result set) + `session_loss_streak` (current detection state)
+    + `error_retry_counts` (exhausted-retry tasks restart loop). Per Gemini F6
+    + Claude A9: "通过删除证据来恢复" turns recoverable transient I/O hiccup
+    into permanent dataset contamination. Fixes:
+    1. NEW `recover_and_quarantine` path: load partial state from `.corrupt.<ts>`
+       file via best-effort line-by-line / `ast.literal_eval` salvage, preserve
+       at minimum `session_contaminated` + `error_retry_counts`.
+    2. When `reset_state=True` is set AND state was discarded, emit cell-level
+       Option K `state_reset_discarded` trajectory event so paper §4 GLMM
+       aggregator sees that this run's covariate trail is **incomplete**
+       (analyst can filter or annotate).
+    3. Error message updated: warn against `--reset-state` default; recommend
+       `--recover-and-quarantine` first.
     """
     if not path:
         return {}
@@ -515,18 +580,150 @@ def _load_state(
                 _post_ntfy(
                     ntfy_topic,
                     "P79 WATCHDOG STATE CORRUPT",
-                    msg + "\nPass --reset-state to discard and continue.",
+                    msg + "\nRecover via `--recover-and-quarantine` to salvage "
+                    "session_contaminated + error_retry_counts (preferred), "
+                    "OR `--reset-state` to discard (LOSES history; quarantine "
+                    "all in-flight contaminated tasks).",
                     priority="urgent",
                 )
             except Exception:
                 pass
+        # B-762: recover-and-quarantine path tries best-effort partial state load.
+        if recover_and_quarantine:
+            recovered = _attempt_partial_state_recovery(backup_path)
+            print(
+                f"[watchdog][RECOVER] partial state salvaged from {backup_path}: "
+                f"keys={sorted(recovered.keys()) if recovered else 'NONE'}"
+            )
+            # Emit Option K cell-level event so paper §4 aggregator knows this
+            # run's covariate trail is partially incomplete.
+            _emit_state_reset_event(
+                run_dir=run_dir,
+                mode="recover_and_quarantine",
+                backup_path=backup_path,
+                recovered_keys=sorted(recovered.keys()) if recovered else [],
+            )
+            return recovered or {}
         if reset_state:
-            # Operator explicitly accepted the reset — return clean state.
+            # B-762: operator explicitly accepted amnesia — emit Option K event
+            # so paper §4 covariate trail is flagged as discontinuous.
+            print(
+                f"[watchdog][WARN] --reset-state discards corrupt state at {path}. "
+                "Pre-existing session_contaminated + error_retry_counts LOST; "
+                "any pre-detected polluted episodes will persist in dataset until "
+                "manually cleaned. Emitting Option K `state_reset_discarded` event."
+            )
+            _emit_state_reset_event(
+                run_dir=run_dir,
+                mode="reset_state_discard",
+                backup_path=backup_path,
+                recovered_keys=[],
+            )
             return {}
         raise SystemExit(
-            f"Watchdog state corrupt: {path} → backed up to {backup_path}. "
-            f"Rerun with --reset-state to discard, OR manually inspect + repair the file."
+            f"Watchdog state corrupt: {path} → backed up to {backup_path}.\n"
+            f"RECOMMENDED: rerun with `--recover-and-quarantine` to salvage "
+            f"session_contaminated + error_retry_counts (preferred path).\n"
+            f"ONLY if salvage impossible: rerun with `--reset-state` to discard "
+            f"(WARNING: loses contamination history; paper §4 covariate trail "
+            f"flagged as incomplete via Option K `state_reset_discarded` event)."
         )
+
+
+def _attempt_partial_state_recovery(backup_path: Path) -> Dict[str, Any]:
+    """B-762: best-effort partial state recovery from corrupt `.corrupt.<ts>` backup.
+
+    Tries (1) full JSON parse, (2) raw_decode (parse-until-first-error),
+    (3) regex extraction of `session_contaminated` + `error_retry_counts` blobs.
+    Returns whatever fields could be salvaged (empty dict if nothing).
+    """
+    try:
+        text = backup_path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        print(f"[watchdog][RECOVER] cannot read backup {backup_path}: {exc}")
+        return {}
+    # Tier 1: try full parse one more time (sometimes the rename happened
+    # mid-write and the file is actually now complete).
+    try:
+        d = json.loads(text)
+        if isinstance(d, dict):
+            print(f"[watchdog][RECOVER] full parse succeeded on backup")
+            return d
+    except (json.JSONDecodeError, ValueError):
+        pass
+    # Tier 2: raw_decode — parse up to first error, may recover prefix.
+    try:
+        decoder = json.JSONDecoder()
+        d, _idx = decoder.raw_decode(text)
+        if isinstance(d, dict):
+            print(f"[watchdog][RECOVER] partial JSON prefix parsed (raw_decode)")
+            return d
+    except (json.JSONDecodeError, ValueError):
+        pass
+    # Tier 3: regex-extract critical keys only. We focus on session_contaminated
+    # + error_retry_counts because those have largest blast radius if lost.
+    salvaged: Dict[str, Any] = {}
+    # Try to find session_contaminated dict via balanced-brace extraction
+    for key in ("session_contaminated", "error_retry_counts", "session_loss_streak"):
+        m = re.search(rf'"{key}"\s*:\s*(\{{)', text)
+        if not m:
+            continue
+        # Scan forward, balancing braces, to find matching close brace
+        depth = 0
+        start = m.start(1)
+        end = start
+        for i in range(start, len(text)):
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    end = i + 1
+                    break
+        if depth != 0:
+            continue
+        blob = text[start:end]
+        try:
+            salvaged[key] = json.loads(blob)
+        except json.JSONDecodeError:
+            continue
+    if salvaged:
+        print(f"[watchdog][RECOVER] regex salvaged keys: {sorted(salvaged.keys())}")
+    return salvaged
+
+
+def _emit_state_reset_event(
+    *,
+    run_dir: Optional[Path],
+    mode: str,
+    backup_path: Path,
+    recovered_keys: List[str],
+) -> None:
+    """B-762: emit Option K `state_reset_discarded` event so paper §4 GLMM
+    aggregator knows this run's covariate trail is incomplete."""
+    if run_dir is None or not run_dir.exists():
+        return
+    # Pick first existing condition_dir as event recipient (cell-level event).
+    cond_dirs = [p for p in run_dir.iterdir()
+                 if p.is_dir() and p.name not in _EXCLUDED_DIRS]
+    if not cond_dirs:
+        return
+    target_dir = cond_dirs[0]
+    try:
+        from p79.experiment.logger_v2 import log_trajectory_event_external
+        log_trajectory_event_external(
+            condition_dir=target_dir,
+            event_type="state_reset_discarded",
+            task_index=None,
+            metadata={
+                "mode": mode,  # "reset_state_discard" or "recover_and_quarantine"
+                "backup_path": str(backup_path),
+                "recovered_keys": recovered_keys,
+                "covariate_trail_complete": False,  # paper §4 aggregator flag
+            },
+        )
+    except Exception as exc:
+        print(f"[watchdog][trajectory-event][warn] failed to log state_reset_discarded: {exc}")
 
 
 def _annotate_screenshots(run_dir: Path, condition: Optional[str] = None) -> str:
@@ -1051,7 +1248,7 @@ def build_parser() -> argparse.ArgumentParser:
     # B-743 (digest retire 2026-05-17): `--glm-config` + `--digest-dir` removed.
     # Watchdog no longer auto-triggers GLM batch digest. Operator can invoke
     # `scripts/maintenance/glm/glm_batch_digest.py` standalone if needed.
-    # Queue scripts (B-744) updated to no longer pass these flags.
+    # Queue scripts (B-761) updated to no longer pass these flags.
     p.add_argument(
         "--notify-completion",
         action="store_true",
@@ -1067,7 +1264,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--aggregate-prefix", default="B1_3mode",
                     help="Prefix used for aggregate gallery regeneration (default: B1_3mode)")
     p.add_argument("--reset-state", action="store_true",
-                   help="Clear state file before starting (full watchdog state reset)")
+                   help="Clear state file before starting (full watchdog state reset). "
+                        "WARNING (B-762, 2026-05-17): on CORRUPT state path this is an "
+                        "amnesia trap that loses session_contaminated history. Prefer "
+                        "`--recover-and-quarantine` for corrupt-state recovery.")
+    # B-762 (/stress A1.15 cold-start P1-1-AC, 2026-05-17): new partial-recovery flag.
+    p.add_argument("--recover-and-quarantine", action="store_true",
+                   help="On corrupt state file, attempt best-effort partial state "
+                        "recovery (preserves session_contaminated + error_retry_counts) "
+                        "instead of discarding. Emits Option K `state_reset_discarded` "
+                        "trajectory event so paper §4 GLMM aggregator knows covariate "
+                        "trail is partially incomplete.")
     return p
 
 
@@ -1093,10 +1300,14 @@ def main() -> int:
     # if reset_state was set, so _load_state will see no file and return {};
     # the reset_state parameter is forwarded so that any corrupt-state path
     # encountered for any reason still respects the operator's intent.
+    # B-762 (2026-05-17): pass run_dir + recover_and_quarantine flag so partial
+    # state recovery can emit Option K `state_reset_discarded` trajectory event.
     saved = _load_state(
         state_file,
         reset_state=bool(getattr(args, "reset_state", False)),
+        recover_and_quarantine=bool(getattr(args, "recover_and_quarantine", False)),
         ntfy_topic=args.ntfy_topic,
+        run_dir=run_dir,
     )
     seen_keys: Set[str] = set(saved.get("seen_keys", []))
     seen_completions: Set[str] = set(saved.get("seen_completions", []))
@@ -1148,25 +1359,41 @@ def main() -> int:
     # mtime > 10min AND no live-runner process. Pre-fix: 10min mtime alone is
     # not safe for long episodes (image render hang / browser stuck) — a
     # runner still actively writing artifacts could have its files nuked.
-    # Live-runner detection via `pgrep run_experiment.*${run_dir basename}`:
-    # if any active runner targets the same run_dir, skip all pruning for
-    # this watchdog cycle. The mtime guard is kept as secondary defence.
+    #
+    # B-761 (/stress A1.15 cold-start P0-2-B codex F1 OOB, 2026-05-17, Path B per
+    # Q3=B): pgrep self-match bug — the `pgrep -fa f"run_experiment.*{run_dir.name}"`
+    # call's own argv contains the literal `run_experiment` + `run_dir.name` string
+    # → pgrep matches its OWN /proc/<pid>/cmdline → returncode 0 → `_has_live_runner`
+    # always True → orphan cleanup branch L1180-1230 **silently dead** during all
+    # production runs. V1 empirically verified: `pgrep -fa run_experiment.*FAKE_RUNDIR`
+    # against nonexistent run_dir returned rc=0 + pgrep's own argv. Pre-fix orphan
+    # cleanup layer existed in code but never executed → polluted artifacts persist.
+    #
+    # Path B fix: prefer `args.runner_pid` + `os.kill(pid, 0)` (matches L2022-2033
+    # self-exit path style). If runner_pid not provided, fallback assumes NO live
+    # runner (= allow cleanup) — the per-item B-222 secondary guards below (mtime
+    # > 10min AND `.in_progress` marker) provide finer-grained protection against
+    # mid-flight artifact deletion, so a missing runner_pid does not risk data loss.
     _orphan_count = 0
     _orphan_cutoff = time.time() - 10 * 60
-    # Step 1: probe for live runner attached to this run_dir
-    try:
-        _live_runner = subprocess.run(
-            ["pgrep", "-fa", f"run_experiment.*{run_dir.name}"],
-            capture_output=True, text=True, timeout=5,
-        )
-        _has_live_runner = _live_runner.returncode == 0 and _live_runner.stdout.strip()
-    except Exception:
-        _has_live_runner = False  # pgrep unavailable → fall back to mtime-only
+    # Step 1: probe for live runner via explicit --runner-pid (B-761 path B).
+    _has_live_runner = False
+    if args.runner_pid is not None:
+        try:
+            os.kill(args.runner_pid, 0)
+            _has_live_runner = True
+        except ProcessLookupError:
+            _has_live_runner = False
+        except PermissionError:
+            # Process exists but owned by another uid → still alive (conservative)
+            _has_live_runner = True
+        except OSError:
+            _has_live_runner = True  # err on safe side
     if _has_live_runner:
         print(
-            "[watchdog] live runner detected for run_dir="
-            f"{run_dir.name} — skipping orphan cleanup this cycle "
-            "(B-222 guard: prevents deletion of artifacts currently being written)"
+            "[watchdog] live runner detected (pid="
+            f"{args.runner_pid}, run_dir={run_dir.name}) — skipping orphan cleanup "
+            "this cycle (B-222 guard via B-761 explicit --runner-pid path)"
         )
     else:
         _cond_dirs_to_scan = (
@@ -1301,11 +1528,42 @@ def main() -> int:
             sig_name = str(sig_num)
         print(f"[watchdog][MANUAL] Received {sig_name}; scheduling immediate status cycle.")
 
+    # B-764 (/stress A1.15 cold-start P1-9-C gemini F9, 2026-05-17):
+    # SIGUSR1 default action = Term (verified V8 `man 7 signal` table:
+    # `SIGUSR1 P1990 Term User-defined signal 1`). Pre-fix
+    # `except Exception: pass` silently swallowed registration failure → if
+    # `signal.signal()` failed (e.g., not main thread, restricted Docker, Windows),
+    # `trigger_watchdog_status.sh` sending SIGUSR1 would **silently Term-kill** the
+    # watchdog while the trigger script reported "sent SIGUSR1" success. Fix:
+    # fail-loud with prominent diagnostic + ntfy alert. Linux + main thread = the
+    # production path = registration always succeeds, so fail-loud rarely fires
+    # but when it does, operator gets immediate signal instead of a watchdog
+    # zombie + lost mid-fire data.
     try:
         signal.signal(signal.SIGUSR1, _on_force_report_signal)
-    except Exception:
-        # Some environments may not support SIGUSR1 registration.
-        pass
+    except (OSError, ValueError) as _sig_exc:
+        # ValueError = not called from main thread; OSError = restricted env.
+        # Either way: SIGUSR1 default = Term, so `trigger_watchdog_status.sh`
+        # would silently kill us. Surface this loudly so operator knows.
+        _critical_msg = (
+            f"[watchdog][CRITICAL] SIGUSR1 handler registration FAILED ({type(_sig_exc).__name__}: "
+            f"{_sig_exc}). trigger_watchdog_status.sh would Term-kill this process instead "
+            f"of triggering status. NOT continuing in deceptively broken state. "
+            f"If you need this watchdog to run, ensure it's started in main thread of "
+            f"main process on a SIGUSR1-supporting OS (Linux)."
+        )
+        print(_critical_msg)
+        if args.ntfy_topic:
+            try:
+                _post_ntfy(
+                    args.ntfy_topic,
+                    "P79 WATCHDOG SIGUSR1 REGISTER FAILED",
+                    _critical_msg,
+                    priority="urgent",
+                )
+            except Exception:
+                pass
+        raise SystemExit(2)
 
     while True:
         now = time.time()
