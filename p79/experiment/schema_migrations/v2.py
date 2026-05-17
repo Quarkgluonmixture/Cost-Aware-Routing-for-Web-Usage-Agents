@@ -101,6 +101,17 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     # identity gate sees `None != current_hash` mismatch → quarantine +
     # rerun, consistent with paper-grade rerun protocol.
     "resume_fingerprint": None,
+    # B-554 (/stress A1.5 P1-4-AB* Claude+codex OOB, 2026-05-17): archive
+    # cohort sentinel for reward-override retirement. Post-B-545 (A1.5b
+    # Phase 2 commit `7832008`) episodes carry
+    # `evaluator_authority_mode="post_B545_vwa_score_only"` + `reward_override
+    # _applied=False` (mechanism retired); legacy archive summaries default
+    # None for both. Aggregator stratification rule: mixed pre/post archives
+    # must filter or annotate by these fields, otherwise SR estimand mixes
+    # two semantically different `success` definitions. See
+    # `types.py:EpisodeSummaryV2` for full docstring.
+    "evaluator_authority_mode": None,
+    "reward_override_applied": None,
 }
 
 

@@ -405,6 +405,24 @@ class EpisodeSummaryV2:
     # Pre-fix legacy summaries have `None` → mismatch triggers from-scratch
     # paper-grade rerun (Phase 1a 还没 fire, no real loss).
     resume_fingerprint: Optional[str] = None
+    # B-554 (/stress A1.5 P1-4-AB* Claude+codex OOB, 2026-05-17): archive
+    # cohort sentinel for reward-override retirement.
+    #   - `evaluator_authority_mode`: enum {"post_B545_vwa_score_only",
+    #     None}. Post-B-545 (A1.5b Phase 2 commit `7832008`) episodes carry
+    #     "post_B545_vwa_score_only" semantic: `success = bool(score >= 1.0)`
+    #     from VWA evaluator with NO post-hoc adjustment. Legacy archive
+    #     summaries from before B-545 lack the field → None default →
+    #     downstream consumer reads None as "pre-B545 legacy cohort"
+    #     (success was potentially override-baked per B-165 narrowing).
+    #   - `reward_override_applied`: enum {False, None}. Post-B-545 always
+    #     False (mechanism retired). Legacy archive reads None.
+    # Mixed pre/post-B-545 archive aggregation MUST stratify by these
+    # fields. Codex Weak claim #6 + Claude F5 cross-validation; closes
+    # paper §3 estimand mixed-cohort vulnerability (top-tier reviewer
+    # would attack archive aggregation as estimand schizophrenia
+    # otherwise).
+    evaluator_authority_mode: Optional[str] = None
+    reward_override_applied: Optional[bool] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)

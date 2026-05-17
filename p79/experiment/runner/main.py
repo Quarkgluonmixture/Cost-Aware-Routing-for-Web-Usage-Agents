@@ -1335,6 +1335,13 @@ class ExperimentRunner:
                 # gate ingests success=False as "complete" → task never
                 # re-evaluated → SR systematic under-report.
                 needs_reevaluation=True,
+                # B-554 (/stress A1.5 P1-4-AB* Claude+codex OOB, 2026-05-17):
+                # cohort sentinel — even exception-path summaries stamp
+                # the post-B-545 authority semantic so consumers can
+                # distinguish "legacy archive (None)" from "post-B545
+                # exception path (post_B545_vwa_score_only)".
+                evaluator_authority_mode="post_B545_vwa_score_only",
+                reward_override_applied=False,
             ).as_dict()
             # B-194 (/stress A1.4b-ii codex B-ii-3, P1 OOB): exception-path
             # MUST mirror canonical `compute_wasted_cost(steps, success=False)`
@@ -1839,6 +1846,21 @@ class ExperimentRunner:
             # parse_success rate across baselines. Now record both and emit
             # a dedicated failure_reason so failure taxonomy can distinguish
             # agent-side invalid from runner-rescued no-ops.
+            #
+            # B-552 (/stress A1.5 P1-2-AB* Claude+codex OOB, 2026-05-17):
+            # snapshot the agent's RAW action emit BEFORE validate_action
+            # mutates it (rescue path turns "clik" → wait). Pre-fix the only
+            # snapshot of pre-mutation action was `_control_original_action`
+            # at L1865, which captured action POST-validate_action and
+            # PRE-diagnostic-control — so "agent self-emission" in paper §3
+            # taxonomy was muddled (rescued actions read as agent-emit).
+            # Recording `_agent_raw_action` separately lets paper §3
+            # taxonomy properly distinguish:
+            #   - raw_action: literal backend emit (subject to rescue)
+            #   - control_intervention.original_action: post-validate +
+            #     pre-control (what backend got after rescue)
+            #   - action: what executed (post-validate + post-control)
+            _agent_raw_action = dict(action) if isinstance(action, dict) else None
             action, runner_valid_post_backend = validate_action(action)
             # B-425: apply_secondary_modules (M1/M2) call retired — 0/53924
             # archive rows had m1_dom_select_fallback or m2_dom_first_input
@@ -1857,11 +1879,18 @@ class ExperimentRunner:
             # `results/visualwebarena/phase1/*/*/episodes/*.jsonl` found
             # `hits=0` for `control_intervention`. Schema fake → paper §3
             # disclosure unsubstantiated.
-            # Snapshot the agent's pre-control action so step_record can
-            # carry both forms: `action` (post-control, what executed) +
-            # `control_intervention.original_action` (pre-control, agent
-            # self-emitted). When controls fire, taxonomy can distinguish
-            # synthetic fallback from agent emission per paper §3.
+            # Snapshot the action AFTER validate_action rescue but BEFORE
+            # diagnostic controls fire. paper §3 action taxonomy can then
+            # distinguish 3 layers via step_record:
+            #   (a) raw_action: literal backend emit (B-552, may be invalid)
+            #   (b) control_intervention.original_action: post-validate +
+            #       pre-control (what backend got after rescue, but before
+            #       any diagnostic-control mutation)
+            #   (c) action: post-validate + post-control (what executed)
+            # B-552 clarification 2026-05-17: comment previously claimed
+            # `original_action` = "pre-control agent self-emitted", but
+            # validate_action already mutated by here. Three-layer model
+            # restores faithful semantic.
             _control_original_action = dict(action) if isinstance(action, dict) else None
             _control_fires: List[Dict[str, Any]] = []
             if bool(self.diagnostic_controls.get("enabled", False)):
@@ -2591,6 +2620,14 @@ class ExperimentRunner:
             # also auditable from disk alone.
             step_record["action_executed"] = next_info.get("action_executed")
             step_record["action_executed_primary"] = _primary_action_executed
+            # B-552 (/stress A1.5 P1-2-AB* Claude+codex OOB, 2026-05-17):
+            # agent's RAW pre-validate action emit. Paper §3 taxonomy 3-layer
+            # model (raw_action / control_intervention.original_action /
+            # action) — see L1842-1860 + L1875 comments. Reviewer can grep
+            # `raw_action.action_type` differing from `action.action_type`
+            # to count cross-baseline rescue rate (B0 235B → B1/B2 4B
+            # differential is exactly the B-134 contamination vector).
+            step_record["raw_action"] = _agent_raw_action
             # B-546 (/stress A1.5b Phase 2 P1-6-AB Claude F2 + codex B-541):
             # control_intervention write path. None when no control fired or
             # diagnostic_controls.enabled=False (Phase 1a default). Dict
@@ -2909,6 +2946,15 @@ class ExperimentRunner:
             checklist_completion_rate=checklist_completion_rate,
             checklist_failed_items=checklist_failed_items,
             error=eval_result.error,
+            # B-554 (/stress A1.5 P1-4-AB* Claude+codex OOB, 2026-05-17):
+            # archive cohort sentinel. Post-B-545 (A1.5b Phase 2 commit
+            # `7832008`) episodes carry pure-evaluator semantic.
+            # `evaluator_authority_mode` enum allows future B-545-style
+            # estimand migrations to add new tags without breaking legacy
+            # consumers. `reward_override_applied=False` makes the absence
+            # of override explicit in JSONL (vs missing-field ambiguity).
+            evaluator_authority_mode="post_B545_vwa_score_only",
+            reward_override_applied=False,
         ).as_dict()
 
         # Enrich with wasted cost and component breakdown for cost-aware analysis
