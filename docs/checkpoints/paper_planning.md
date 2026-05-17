@@ -642,7 +642,7 @@ EXPLANATION LAYER (因果假说, 1D organize: zoom scale)
 | **cross-task** | mode + site + model | task | §3/§4 evidence aggregation 基础 | ✅ 234 cls / 210 reddit per cell |
 | **cross-mode** ⭐ | task + site + model | mode (4 phantom + 2 image-on/only) | §4/§5 phantom space 主分析 | 🟡 B0 cls/red 5-mode done, B1 phantom 跑中, shop missing |
 | **cross-site** | task + mode + model | site (cls/red/shop/WA) | §7 generalization | 🔴 B0 5-mode shop missing, WA 全 missing |
-| **cross-model** | task + mode + site | model (B0/B1/Claude) | §7 cross-capability | 🔴 cross-model 数据稀薄, B1 phantom 跑中, Claude 0 |
+| **cross-model** | task + mode + site | model (B0/B1/B2) | §7 cross-capability | 🟡 cross-model = B0+B1 archive + B2=Gemma3-VL Phase 1a 36-cond rerun pending (笔记 §138 advisor 2026-05-14 收口) |
 
 **Paper §7 (generalization) 当前 ~40% 因为 cross-site + cross-model 两 axis 数据稀薄**, 不是 §7 prose 写作问题 — 是 cross-X saturation 不够。16-cell rerun 后 cross-mode + cross-model partially fill, 但 cross-site 仍需 shop + WA 数据 (Tier 2 expansion)。
 
@@ -847,7 +847,7 @@ P-prompt 是必需的，因为它是 **axis 2 在 AXTree-text context 下的唯�
 | B1 P-prompt cls/red (Tier 2) | Diamond axis 2 in B1 capability — Section 7 cross-capability |
 | B0/B1 shopping 6-mode | Outcome 0e per-category（shopping-rich audit categories）+ all dimensions shopping cells |
 | WA B0/B1 6 sites × 5 modes | Cross-benchmark generalization (Section 7 main) |
-| Claude Opus 4.7 5-mode | Cross-model boundary check (Section 7) |
+| Gemma3-VL 6-mode (cls+red Phase 1a 36-cond rerun) | Cross-family boundary check (Section 7) per advisor 2026-05-14 §138 |
 | 其他 benchmark | Same scaffold, no rework |
 
 `make analyze-layered` 是 idempotent 的——新数据 commit 后跑一遍 `layered_status.py` 自动 regenerate `layered_evidence_status.md` + 所有 figures。CLI alias 保留 (`analyze-layered`, `layered_status`, `layered_evidence_status.md`) 是 backward compat — paper-facing 命名是 4-dimension。
@@ -925,7 +925,7 @@ Section 5 (顶刊版) 期望证据 stack:
 | 2 Background + paper.bib | ✅ 已写 (1514w, 16 entries) | done `206cd93` | 待 codex #10 expand to ~38; **加 NLWeb/OmniParser-v2/Magma/ScribeAgent/AppAgent-v2/UI-TARS citations** | §21.5 differentiator table per system |
 | 3 Definition + Ablation | ✅ 已写 (863w, token re-estimate corrected) | done `13b9608` `4d63c9f` `48db047` | **Pending**: §3 evaluation methodology footnote acknowledge 9+ environmental scaffolding interventions (Appendix D), cite WebAIM 2026 + Mind2Web 2 WebJudge taxonomy | §21.6 counter-evidence stack |
 | 4 Empirical Findings | 🟡 80% (figures FRESH ✅ + B0 5-mode FRESH, prose 待 update) | data ready | codex #11 fresh prose (~30K) | §21.6 cost/latency anchors (241K vs 47-140K tokens) for §1/§6 quantitative positioning |
-| 5 Mechanism | 🟡 90% evidence (3-axis × 8-channel × bidirectional × §100) | data 完整 | codex #13 prose (~50K, 待 #10 lit); **Pending**: shared ceiling argument 用 (iii)×L2 7 条 § 共享 root-cause finding | §21.3 (iii)×L2 self-perception 7 条 § |
+| 5 Mechanism | ❌ deferred to follow-up paper per advisor scope-flip §138.3 2026-05-14 (was 🟡 90% pre-§138; §5 activation-patching/layer-probe/logit-lens/SAE 整个暂搁) | data 完整 (archive 冻结) | — | — |
 | **6 Routing (Tier 1+2)** ⭐ NEW | 🟡 40% (signal AUROC ≥ baseline `9d7e99f`, infra scaffold) | scaffold ready | Tier 1 prototype (~3 天) + Tier 2 first-step trigger (~7-10 天) | §21.5 CoAct-1 OSWorld 60.76% task-class routing precedent; §21.6 cost anchors |
 | 7 Generalization | 🟡 40% (B1 capability profile done) | partial | shopping (跑中) + WA + cross-model (Claude); **Pending advisor sync 5/5**: 加 §7.x env-side pilot section (Sweet Spot NLWeb-style emit hidden select options) | §21.7 pending decision #2 (env-side pilot) |
 | 8 Discussion + Implications (含 sustainability + 4-fold drop-in summary) | ❌ 未写 | end-stage | 全部 data done; **加** IDPI security taxonomy + paper 2 future direction (live web / NLWeb-style env affordance) | §21.6 IDPI security findings + §21.7 paper-2 path |
@@ -1004,8 +1004,8 @@ paper Section 6 不是 Section 7 Generalization 的子部分, 是**独立 contri
 ```
 Benchmark: VWA 3 站 (cls 234 + red 210 + shop 466) + WA 3 站 (red 106 + shop 192 + sa 182)
            = 6 sites, ~1390 task per condition
-Models:    B0 (Qwen3-VL-235B proxy) + B1 (Qwen3-VL-4B local) + Claude Opus 4.7
-           = 3 model families
+Models:    B0 (Qwen3-VL-235B proxy) + B1 (Qwen3-VL-4B local) + B2 (Gemma3-VL `google/gemma-3-4b-it` local)
+           = 3 baselines (Qwen 235B / Qwen 4B / Gemma 4B; 4B-parity cross-family per advisor 2026-05-14 §138)
 Modes:     DOM / SoM / Vision / Phantom-SoM / P-text = 5 modes
 Cells:     6 sites × 3 models × 5 modes = ~90 cells (~125K episode total)
 + Router:  Tier 1+2 (oracle + first-step trigger), 实际 deploy on agent
@@ -1048,7 +1048,7 @@ Cells:     6 sites × 3 models × 5 modes = ~90 cells (~125K episode total)
 
 #### Caveats (-)
 
-- **Cross-family generalization**: Single backbone (Qwen3-VL) 即使跟 Magma/ScribeAgent same base, reviewer 仍可能要 Claude Opus cls+red 12 cells (`paper_planning §16` advisor-input). 如果延期 → 全条目 -1-2%.
+- **Cross-family generalization**: B2 = Gemma3-VL (4B-parity vs B1) Phase 1a 36-cond rerun 提供 cross-family 第三轴 (§138 advisor 收口 2026-05-14); 跟 Magma/ScribeAgent Qwen-same-base 仍可能被 reviewer 挑额外 model family — Phase 1b 后再 weight. 如果 Phase 1a Gemma3-VL 延期 → 全条目 -1-2%.
 - **VWA only**: Mind2Web 2 (newer benchmark) reviewer 可能挑. Marginal -1%.
 - **Early-stop choice**: Option A (full cancel) → 数据全 dim clean; B/C → paper §4 disclosure overhead, -1-2%.
 
@@ -1208,7 +1208,7 @@ Total: ~3-4 周
 | 决策 | Options | 推荐 | 影响 |
 |---|---|---|---|
 | Router scope | (a) Tier 1 only / (b) Tier 1+2 / (c) Tier 1+2+3 | (b) Tier 1+2 | paper main contribution 强度 |
-| Cross-model | (a) Skip / (b) Claude Opus 4.7 only / (c) + GPT-4o/Gemini | (b) Claude only | $70 budget vs scope |
+| Cross-model (historical row, superseded by §138) | (a) Skip / (b) Claude Opus 4.7 only / (c) + GPT-4o/Gemini | ~~(b) Claude only~~ → **Gemma3-VL** (advisor 2026-05-14 §138 收口, B2=`google/gemma-3-4b-it` 4B-parity cross-family check) | 0 budget (local A100) vs scope |
 | 单 paper vs 双 paper | (a) Integrated (Paper 1 含 router) / (b) Split (Paper 2 router) | **(a) Integrated** (毕设决策) | publication count vs paper depth |
 | Authorship 预期 | TBD with advisor + Zekun | — | first paper credit |
 | Investment timing | NeurIPS 2026 ~5 月 / MLSys 2027 ~9 月 / ICLR 2027 ~9 月 | MLSys safer | timeline 紧或松 |
@@ -1218,7 +1218,7 @@ Total: ~3-4 周
 | 决策 | Options | 推荐 |
 |---|---|---|
 | Paper venue (Round 1) | NeurIPS / ICLR / ACL / **MLSys** | **MLSys** (drop-in framing 完美 fit) |
-| Section 6 Generalization 范围 | VWA + WA + Claude / + Mind2Web | VWA + WA + Claude 够 |
+| Section 6 Generalization 范围 (historical row, B2 replaces Claude per §138) | VWA + WA + Claude / + Mind2Web | VWA + WA + B2=Gemma3-VL 够 (advisor 2026-05-14 §138) |
 | 投稿 timing | ASAP vs polish 1-2 周 | polish 后 stable submit |
 
 ### 关键 strategic 问题 (advisor align 时主动问)
@@ -1227,7 +1227,7 @@ Total: ~3-4 周
 2. Holistic AI Zekun 推荐 industry track?
 3. Paper review timing: 投稿前 advisor read pass 1 周, 改完 submit
 4. 是否要做 Mind2Web pilot (advisor 偏好)
-5. Claude Opus 预算: $70 上限 OK?
+5. ~~Claude Opus 预算: $70 上限 OK?~~ → SUPERSEDED §138: B2=Gemma3-VL local A100 (0 API cost, 4B-parity cross-family)
 
 ---
 
@@ -1457,9 +1457,9 @@ ef29add  drop-in deployment punchline
 
 | Attack | Likely Reviewer Concern | Our Response | Evidence |
 |---|---|---|---|
-| **Sample size too small** | "VWA cls 234 + red 210 = 444 task, single benchmark" | Final scope = 6 sites × 3 models × 5 modes ≈ 1390 task per condition. Cross-site (cls + red + shopping × VWA + WA), cross-model (Qwen 235B + 4B + Claude Opus 4.7) | §5 Final scope; §3.1 B0 5-mode SR table |
+| **Sample size too small** | "VWA cls 234 + red 210 = 444 task, single benchmark" | Final scope = 6 sites × 3 models × 5 modes ≈ 1390 task per condition. Cross-site (cls + red + shopping × VWA + WA), cross-model (Qwen 235B + Qwen 4B + Gemma3-VL 4B per §138 advisor 2026-05-14) | §5 Final scope; §3.1 B0 5-mode SR table |
 | **Single benchmark family** | "VWA only, no Mind2Web/WebVoyager validation" | + WA (Postmill / Magento / shopping_admin) cross-stack validation. Mind2Web out of scope per advisor align (Plan B) | §7 generalization + paper §6 |
-| **Single model family (Qwen)** | "Effect Qwen-specific?" | + Claude Opus 4.7 cross-model after advisor align (~$70). B0 (235B) + B1 (4B) shows capability-dependent shift (+50/+33pp cross-site, §101.九 lazy minimization) | §2 capability layer + cross_site_pattern_consolidation.md |
+| **Single model family (Qwen)** | "Effect Qwen-specific?" | B2 = Gemma3-VL `google/gemma-3-4b-it` (4B-parity cross-family) per advisor 2026-05-14 §138 (0 API cost, local A100). B0 (235B) + B1 (4B) shows capability-dependent shift (+50/+33pp cross-site, §101.九 lazy minimization); B2 4B-parity test cross-family robustness | §2 capability layer + cross_site_pattern_consolidation.md |
 | **Phantom is just a degraded SoM** | "Why not collapse to DOM if no image?" | Theory C (codex 5821387) verifies prompt knob: cls P-text = Phantom-SoM SR 14.53% but Jaccard 0.447 (task pool 显著 disjoint). Same SR ≠ same routing pool | paper §5; codex `5821387` |
 | **Effect size small (drop-one 1.7-3.3pp)** | "Statistically marginal" | (i) Pre-registered Hero (P-SoM) requires pooled magnitude ≥ 1.0pp + TOST equivalence at δ=1.0pp rejected. (ii) P-text/P-prompt are framed as **structural ablation evidence** (low-threshold non-overlap proves phantom space is multi-region 2D), NOT as deployment routing arms — so deployment magnitude bar doesn't apply to them. (iii) Holm-Bonferroni multi-comparison correction applied per pre-registered family. | §1 paper hook (data-conditional R1-R5) + `preregistration.md` H1+H3 + `phantom_lift.md` Holm/TOST cols |
 | **Post-hoc hypothesis cherry-picking** ⭐ NEW pre-rebuttal | "你 H-list 是数据进来后 fit 的" | Pre-registration locked before 16-cell rerun via Git SHA + advisor email witness + OSF DOI (paper-time public). Multi-comparison family declared explicitly. Exploratory analyses (H4/H5/H6) marked "post-hoc" in paper prose with explicit non-gating disclosure. Framing decision rule R1-R5 maps data outcome to hook framing transparently — reviewer can verify framing-to-data mapping is deterministic, not chosen post-hoc. | `docs/checkpoints/pre_run/preregistration.md` + `EVIDENCE_LAYER_AUDIT.md` §2 |
@@ -1488,8 +1488,8 @@ paper Section 2 必备 explicit table (review 加分项):
 | **Routing arms** | 1 (single SoM) | 1 (per mode) | 1 (single SoM) | 1 (text prune) | model-level routing | **5-mode** (DOM/SoM/Vision/Phantom-SoM/P-text) ⭐ |
 | **Cost-aware Pareto** | ❌ | ❌ | ❌ | ✅ token cost | ✅ model cost | ✅ **multi-metric** (cost+latency+carbon) ⭐ |
 | **Cross-site validation** | 4 task domains | 3 sites (cls+red+shop) | 1 site | 2 sites | n/a | **6 sites** (VWA+WA) ⭐ |
-| **Cross-model** | 4 models (multimodal) | 6 models (api+local) | 4 models | 1-2 | many (text-only LLM) | 3 models (Qwen 235B+4B + Claude Opus) |
-| **Mechanism analysis** | ❌ effect-only | ❌ partial | ❌ baseline | partial (text size effect) | ❌ effect-only | ✅ **3-axis × 8-channel × bidirectional** ⭐ |
+| **Cross-model** | 4 models (multimodal) | 6 models (api+local) | 4 models | 1-2 | many (text-only LLM) | 3 models (Qwen 235B + Qwen 4B + Gemma 4B-it) per §138 advisor 2026-05-14 |
+| **Mechanism analysis** | ❌ effect-only | ❌ partial | ❌ baseline | partial (text size effect) | ❌ effect-only | ❌ deferred to follow-up paper per advisor scope-flip §138.3 2026-05-14 |
 | **Drop-in deployment** | ❌ | ❌ | ❌ | partial | partial | ✅ **4-fold property** (cost/latency/signal/oracle) ⭐ |
 | **Carbon report** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ **Differentiator** ⭐ |
 | **Failure mode taxonomy** | none | 3 categories | none | none | none | **9 categories** + 8-channel image (codex diags) |
@@ -1554,7 +1554,8 @@ Key first-paper considerations:
 预 draft (Section 8 Acknowledgments):
 - Compute: DGX Spark (UCL AI4SD) + remote VWA Docker (Tailscale) + Myriad GPU pending
 - Data: VWA + WA benchmarks (open source, properly cited)
-- API: Qwen3-VL-235B-A22B (proxy via internal infra), Claude Opus 4.7 (advisor budget)
+- API: Qwen3-VL-235B-A22B (B0 proxy via internal infra; GLM-5.1 rescue retired 2026-05-17 per OpenAI-style tool_choice empirical capability — §138 advisor + B-901 batch)
+- Local models: Qwen3-VL-4B (B1, bf16 A100), Gemma3-VL `google/gemma-3-4b-it` (B2, bf16 A100, 4B-parity cross-family per §138 advisor 2026-05-14)
 - Discussions: advisor + co-supervisor + UCL AI4SD group
 - COI: Holistic AI industry collab acknowledged
 ```
@@ -2438,7 +2439,7 @@ Paper §21 / §8 (Discussion + Future Work) should explicit prose:
 |---|---|---|---|
 | ⭐ | (BB) **9-cell intervention taxonomy + dual-track** (3 spectrum × 3 layer, 12+ verified industry instances 西方+中国) | ✅ §21 + dual_track_taxonomy.canvas | §21 |
 | ⭐ | (CC) **Three-tier novelty hierarchy framing** (framework / artifact / research, 5/4 refine) | ✅ §21.5 重写 5/4 commit | 5/4 surface |
-| ⭐ | (DD) **Cross-X generalization** (cross-site cls/red, cross-model B0/B1, cross-size 235B/4B, planned cross-family Claude Opus) | 🟡 §7 partial — Claude Opus pending | 用户列举 (F) |
+| ⭐ | (DD) **Cross-X generalization** (cross-site cls/red, cross-model B0/B1/B2, cross-size Qwen 235B/4B, cross-family Gemma3-VL 4B per §138 advisor 2026-05-14) | 🟡 §7 partial — B2=Gemma3-VL Phase 1a 36-cond rerun pending | 用户列举 (F) |
 | ☆ | (EE) **Industry-deployment-vs-research-characterization epistemic distinction** (industry deploys at artifact level, paper provides characterization at research level) | ✅ §21.5 | 笔记 §109.17 |
 | ☆ | (FF) **SE-engineering vs cognitive-routing scope-defense** (站点指纹库 / 短 grammar / FPC fix 不是 paper 主张, 是 deployment optimization) | ✅ §21.6.5 | 笔记 §109.19 |
 | ☆ | (GG) **Observation-axis vs action-axis scope honesty** (paper covers obs-axis only, action-grammar `click @7` is future work) | ✅ §21.6.6 | 笔记 §109.19 |

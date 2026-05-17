@@ -6064,3 +6064,50 @@ This is **the first §A2 design-layer audit** — pivot from §A1 code-layer (A1
 **B-numbers consumed**: B-892 through B-900 (9 IDs; 9 fixes filed: 5 P0 + 4 P1; gap B-891 unused for future). Next available: B-901+.
 
 **Parallel-session B-### collision absorbed**: 10th in 2 days. parallel A1.24 reserved through B-890 + B-891 watermark line; A2.1 took B-892~B-900 to avoid overlap. If parallel resumes, recommend B-902+ for next batch.
+
+---
+
+## /stress A2.2 control-design + multi-session collide + cold-start (2026-05-17 deep-night, B-901~B-920 reserved)
+
+> Full chronicle: `docs/checkpoints/实验笔记.md` §208. 3-AI cycle 21 findings (Claude=7, codex=7, gemini=7), 13 OOB, 2 cross-AI overlap (A∩C stale Claude prose; A∩B GLM cold-start race). Phase 4 spot-check 4/4 sampled verified, no hallucination. User pivots: (1) 没 paper-grade in-flight → wait-fix-all default; (2) GLM rescue 完整 retire per OpenAI-style tool_choice empirical (concurrent session 改 proxy code); (3) gemini Mode C parallel rejected another session's Anthropic-style migration plan — chronicle preserved as audit trail.
+
+### Tier 1 landed (B-901 + B-902, prose + GLM retire)
+
+| ID | Sev | Source | OOB | File:Line | One-liner |
+|---|---|---|---|---|---|
+| B-901 | P0 | A∩C | * | `paper_drafts/section3_definition.md:147` + 45 active `configs/exp_v2_B0_*.yaml` (already off via B-396 2026-05-16) + `paper_planning.md` 13 stale prose | **GLM-5.1 rescue full retire prose + config alignment.** Earlier B0 archive routed proxy parse failures via `_call_glm_extract` (rescue rate ≈ 1.49% steps). User 实测 2026-05-17: proxy accepts OpenAI-style `tool_choice` returning clean `tool_calls[0].function.arguments` + per-token `logprobs` + `top_logprobs[2]`. Capability gap was at P79 payload layer (Anthropic-style 400-reject), not proxy. Retire prose: archive 1.49% disclosed; B-396 already disabled `use_glm_fallback`; B-901 retires code path entirely (concurrent session lands `_WEB_ACTION_TOOL` OpenAI-style + Path-1 parser); strict-SR sensitivity vacuous on Phase 1a clean substrate, retained Appendix-D only. Also paper_planning 13 stale "Claude Opus" / "3-axis × 8-channel × bidirectional" mechanism brag → "Gemma3-VL" + "deferred to follow-up paper per advisor scope-flip §138.3" propagation. |
+| B-902 | P1 | C | | `paper_drafts/section1_intro.md:27` | **§1 baseline disclosure causal-overclaim降级 + action-vocab "disclosure → execution-layer threat" 升级.** "B0-vs-B1 disambiguates capability-scale effects; B1-vs-B2 disambiguates family-level differences" → "B0-vs-B1 contrasts a high-capability commercial-proxy anchor against an open-weight local baseline (joint deployment-class × capability-scale comparison, not pure capability ablation)" + "B1-vs-B2 contrasts open-weight family-level differences at the same 4B parameter scale (parameter-parity robustness check, not full matched-capability anchor)". Scroll-action vocab "asymmetry, not a confound" → "execution-layer threat" (P1-13-C + P1-15-C combined). |
+
+### Tier 2 reserved (B-903~B-906, operational lock + sibling drift) — pending commit
+
+- **B-903 P0-2-A***: `launch.sh:139` collision pgrep pattern 加 date anchor + WA exclusion (sibling-propagation drift vs queue_chain.sh:208 + lib:544)
+- **B-904 P0-3-A***: `launch.sh:25` source `_lib_paper_grade_gates.sh` + use init/assert/acquire APIs; `P79_ALLOW_NO_RESET` → `P79_PAPER_GRADE=0` naming alignment
+- **B-905 P0-4-A***: `_lib_paper_grade_gates.sh:91` delete `P79_CHAIN_LOCK_HELD` env-bypass shortcut (Option C — kernel-level flock only)
+- **B-906 P1-8-AB**: `launch.sh:200` GLM PLAYBOOK hook `sleep 30` → `sleep 300` (Option A quick fix; P1-11-B* sentinel infra in Tier 3)
+
+### Tier 3 reserved (B-907~B-915, state race) — pending commit
+
+- **B-907 P0-5-B***: per-RUN_ID watchdog flock + WD_STATE `.tmp.$PID`
+- **B-908 P0-6-B***: `.auth/${site}_state.json.tmp.$PID` + `.auth/${site}.lock`
+- **B-909 P1-10-B***: watchdog self-exit require seen_completions
+- **B-910 P1-11-B***: GLM latest_match in-flight > finalized when mtime newer
+- **B-911 P1-12-B**: make active multi-PID render
+- B-912~B-915 reserved for Option C sentinel infra (if landed)
+
+### Tier 4 reserved (B-916~B-920, paper §3+§8 prose depth) — pending commit
+
+- **B-916 P1-14-C***: §3 model card B1 vs B2 IT 格式 + System Prompt 差异具体化; §8 alignment 深度
+- **B-917 P1-16-C***: §3 tokenizer caveat (Qwen3 BPE vs Gemma3 SentencePiece)
+- **B-918 P1-17-C***: §3 + §8 Vision Encoder resolution / patching strategy 差异 disclosure
+
+### Deferred
+
+- **P2-18-B***: experiment_watchdog `os.kill(pid, 0)` PID-reuse race (low probability)
+
+### Phase 0 self-audit + Verification status
+
+- Mode A (Claude) PASS — Phase 0 4/4 ✓, 10 artifacts, 7 findings, 5 OOB
+- Mode B (codex) PASS — 188s, 7 findings 4 OOB, Phase 4 4/4 sampled ✓
+- Mode C (gemini) PASS — 235s, 7 findings 4 OOB attacks, Phase 4 2/2 sampled ✓; 0 fabrications
+
+**B-numbers consumed (Tier 1)**: B-901 + B-902. **Reserved (Tier 2/3/4)**: B-903~B-920. Next available after A2.2 closure: B-921+.
