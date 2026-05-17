@@ -38,22 +38,30 @@ class P79Observation:
 # Fuzzy match JS function for select_option: exact → case-insensitive → keyword overlap.
 # Injected into page.evaluate() calls to handle label mismatches between model output
 # and actual option text (e.g. "Price: Low to High" vs "Lower price first").
+#
+# B-481 (/stress A1.25 GRL Chunk 2 P0-2-AB* + P1-1-BC* + parallel A1.4 B-453,
+# 2026-05-17): `_fuzzyFind` now returns `{match, stage}` instead of bare
+# candidate so the dispatch wrapper above can surface which fuzzy tier
+# fired. Pre-fix the callsite couldn't distinguish exact / case-insensitive /
+# keyword-overlap matches from a no-match fallthrough — paper §3.5 evidence
+# layer couldn't audit prompt-vs-runtime "exact-text" contract drift.
+# Stage tokens: 'exact' | 'ci' | 'fuzzy' | 'none' (paired with `match=null`).
 _FUZZY_MATCH_JS = """
 const _fuzzyFind = (candidates, label) => {
-    // 1. Exact match (current behavior)
+    // 1. Exact match
     const exact = candidates.find(c => c.text === label || (c.value && c.value === label));
-    if (exact) return exact;
+    if (exact) return {match: exact, stage: 'exact'};
     // 2. Case-insensitive
     const lower = label.toLowerCase().trim();
     const ci = candidates.find(c =>
         c.text.toLowerCase().trim() === lower || (c.value && c.value.toLowerCase() === lower));
-    if (ci) return ci;
+    if (ci) return {match: ci, stage: 'ci'};
     // 3. Keyword overlap
     const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\\s+/g, ' ').trim();
     const stops = new Set(['the','a','an','to','by','of','in','on','for','and','or','is','it']);
     const kw = s => norm(s).split(' ').filter(w => w.length > 1 && !stops.has(w));
     const lkw = kw(label);
-    if (!lkw.length) return null;
+    if (!lkw.length) return {match: null, stage: 'none'};
     let best = null, bestS = 0;
     for (const c of candidates) {
         const ckw = kw(c.text);
@@ -68,7 +76,7 @@ const _fuzzyFind = (candidates, label) => {
         }
         if (s > bestS) { bestS = s; best = c; }
     }
-    return bestS >= 2 ? best : null;
+    return bestS >= 2 ? {match: best, stage: 'fuzzy'} : {match: null, stage: 'none'};
 };
 """
 
@@ -555,10 +563,24 @@ class VWAWrapper:
             # `locator_route_meta` and gets stamped into info dict so the
             # runner can persist it into StepRecordV2 (paper §3.5
             # select_option sub-taxonomy).
+            # B-481 (/stress A1.25 GRL Chunk 2 P0-2-AB* + P1-1-BC* + parallel
+            # A1.4 B-453 carry, 2026-05-17): expanded telemetry slots so
+            # `success` carries the post-fix semantic ("an option matched and
+            # was selected/clicked") rather than the legacy "JS evaluate did
+            # not throw" — and downstream aggregators can compute true
+            # ON_OPTION rates plus fuzzy-tier share per (site, model, mode).
+            # `match_stage` ∈ {None, "exact", "ci", "fuzzy", "index", "none"};
+            # `target_type` ∈ {None, "select", "css"}.
             _select_option_meta: Dict[str, Any] = {
                 "action_kind": "select_option",
                 "dispatch_path": None,  # "element_id" | "coordinate" | "missing_obs"
                 "success": None,
+                "matched": None,            # B-481: true iff a candidate was matched + dispatched
+                "match_stage": None,        # B-481: which fuzzy tier (or 'index' / 'none')
+                "target_type": None,        # B-481: 'select' (native) | 'css' (custom) | None
+                "selected_text_before": None,  # B-481: native-select state-change evidence
+                "selected_text_after": None,
+                "clicked_text": None,       # B-481: CSS-menu state-change evidence
                 "error": None,
             }
 
@@ -590,23 +612,46 @@ class VWAWrapper:
                     else:
                         x_px = ub[0] + ub[2] / 2
                         y_px = ub[1] + ub[3] / 2
-                        self._env.page.evaluate(
+                        # B-481: JS now returns structured
+                        # {matched, match_stage, target_type, selected_text_before,
+                        #  selected_text_after, clicked_text, error}
+                        # so Python populates `_select_option_meta` from the result
+                        # instead of blindly stamping `success=True` post-evaluate.
+                        _js_result = self._env.page.evaluate(
                             _FUZZY_MATCH_JS + """([x, y, label, idx]) => {
                             const el = document.elementFromPoint(x, y);
                             // 1. Native <select> path
                             if (el && el.tagName === 'SELECT') {
+                                const beforeOpt = el.options[el.selectedIndex];
+                                const beforeText = beforeOpt ? beforeOpt.text.trim() : null;
                                 if (idx !== null) {
                                     el.selectedIndex = idx;
-                                } else {
-                                    const cands = Array.from(el.options).map(o => ({text: o.text.trim(), value: o.value, el: o}));
-                                    const match = _fuzzyFind(cands, label);
-                                    if (match) { el.value = match.value; }
+                                    el.dispatchEvent(new Event('change', {bubbles: true}));
+                                    const afterOpt = el.options[el.selectedIndex];
+                                    return {matched: true, match_stage: 'index', target_type: 'select',
+                                            selected_text_before: beforeText,
+                                            selected_text_after: afterOpt ? afterOpt.text.trim() : null,
+                                            clicked_text: null, error: null};
                                 }
-                                el.dispatchEvent(new Event('change', {bubbles: true}));
-                                return;
+                                const cands = Array.from(el.options).map(o => ({text: o.text.trim(), value: o.value, el: o}));
+                                const result = _fuzzyFind(cands, label);
+                                if (result && result.match) {
+                                    el.value = result.match.value;
+                                    el.dispatchEvent(new Event('change', {bubbles: true}));
+                                    const afterOpt = el.options[el.selectedIndex];
+                                    return {matched: true, match_stage: result.stage, target_type: 'select',
+                                            selected_text_before: beforeText,
+                                            selected_text_after: afterOpt ? afterOpt.text.trim() : null,
+                                            clicked_text: null, error: null};
+                                }
+                                return {matched: false, match_stage: 'none', target_type: 'select',
+                                        selected_text_before: beforeText, selected_text_after: beforeText,
+                                        clicked_text: null, error: 'no_match_in_select'};
                             }
                             // 2. CSS custom dropdown fallback: scan hidden <ul>s near (x, y)
-                            if (!label) return;
+                            if (!label) return {matched: false, match_stage: 'none', target_type: null,
+                                                selected_text_before: null, selected_text_after: null,
+                                                clicked_text: null, error: 'no_label_no_select'};
                             for (const ul of document.querySelectorAll('ul')) {
                                 const rect = ul.getBoundingClientRect();
                                 if (rect.width > 0 || rect.height > 0) continue;
@@ -624,32 +669,50 @@ class VWAWrapper:
                                 const items = Array.from(
                                     ul.querySelectorAll(':scope > li > a, :scope > li > button'));
                                 const cands2 = items.map(i => ({text: i.textContent.trim(), el: i}));
-                                const match2 = _fuzzyFind(cands2, label);
-                                const opt = match2 ? match2.el : null;
-                                if (opt) {
+                                const result = _fuzzyFind(cands2, label);
+                                if (result && result.match) {
                                     const oldDisplay = ul.style.display;
                                     const oldVisibility = ul.style.visibility;
                                     ul.style.display = 'block';
                                     ul.style.visibility = 'visible';
-                                    opt.click();
+                                    result.match.el.click();
                                     ul.style.display = oldDisplay;
                                     ul.style.visibility = oldVisibility;
-                                    return;
+                                    return {matched: true, match_stage: result.stage, target_type: 'css',
+                                            selected_text_before: null, selected_text_after: null,
+                                            clicked_text: result.match.text, error: null};
                                 }
                             }
+                            return {matched: false, match_stage: 'none', target_type: 'css',
+                                    selected_text_before: null, selected_text_after: null,
+                                    clicked_text: null, error: 'no_match_in_css_menus'};
                         }""",
                             [x_px, y_px, option_label, option_index],
                         )
                         self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
-                        # B-420: JS evaluate completed without raise (success
-                        # determination is best-effort — actual option match
-                        # outcome is silently `return;` from JS). Recording
-                        # "dispatched" rather than "matched" since the
-                        # current JS does not surface match-vs-no-match.
-                        _select_option_meta["success"] = True
+                        # B-481: populate from structured JS result. `success`
+                        # now means "matched and dispatched", not "JS didn't
+                        # throw". Reviewer / aggregator can audit fuzzy-tier
+                        # share + match_stage breakdown via paper §3 evidence
+                        # layer.
+                        if isinstance(_js_result, dict):
+                            _select_option_meta["matched"] = bool(_js_result.get("matched"))
+                            _select_option_meta["match_stage"] = _js_result.get("match_stage")
+                            _select_option_meta["target_type"] = _js_result.get("target_type")
+                            _select_option_meta["selected_text_before"] = _js_result.get("selected_text_before")
+                            _select_option_meta["selected_text_after"] = _js_result.get("selected_text_after")
+                            _select_option_meta["clicked_text"] = _js_result.get("clicked_text")
+                            _select_option_meta["success"] = bool(_js_result.get("matched"))
+                            if not _js_result.get("matched"):
+                                _select_option_meta["error"] = _js_result.get("error") or "no_match"
+                        else:
+                            _select_option_meta["success"] = False
+                            _select_option_meta["matched"] = False
+                            _select_option_meta["error"] = "js_returned_non_dict"
                 except Exception as _e:
                     logger.warning("select_option (element_id=%s) failed: %s", action_json.get("element_id"), _e)
                     _select_option_meta["success"] = False
+                    _select_option_meta["matched"] = False
                     _select_option_meta["error"] = f"{type(_e).__name__}: {str(_e)[:160]}"
             elif "coordinate" in action_json:
                 _select_option_meta["dispatch_path"] = "coordinate"
@@ -659,18 +722,28 @@ class VWAWrapper:
                     x_norm, y_norm = float(coord[0]), float(coord[1])
                     x_px = x_norm * self.viewport_width if x_norm <= 1.0 else x_norm
                     y_px = y_norm * self.viewport_height if y_norm <= 1.0 else y_norm
-                    self._env.page.evaluate(
+                    # B-481: structured JS return mirrors element_id path above.
+                    _js_result = self._env.page.evaluate(
                         _FUZZY_MATCH_JS + """([x, y, label]) => {
                             // 1. Native <select> path
                             const el = document.elementFromPoint(x, y);
                             if (el && el.tagName === 'SELECT') {
+                                const beforeOpt = el.options[el.selectedIndex];
+                                const beforeText = beforeOpt ? beforeOpt.text.trim() : null;
                                 const cands = Array.from(el.options).map(o => ({text: o.text.trim(), value: o.value, el: o}));
-                                const match = _fuzzyFind(cands, label);
-                                if (match) {
-                                    el.value = match.value;
+                                const result = _fuzzyFind(cands, label);
+                                if (result && result.match) {
+                                    el.value = result.match.value;
                                     el.dispatchEvent(new Event('change', {bubbles: true}));
+                                    const afterOpt = el.options[el.selectedIndex];
+                                    return {matched: true, match_stage: result.stage, target_type: 'select',
+                                            selected_text_before: beforeText,
+                                            selected_text_after: afterOpt ? afterOpt.text.trim() : null,
+                                            clicked_text: null, error: null};
                                 }
-                                return;
+                                return {matched: false, match_stage: 'none', target_type: 'select',
+                                        selected_text_before: beforeText, selected_text_after: beforeText,
+                                        clicked_text: null, error: 'no_match_in_select'};
                             }
                             // 2. CSS custom dropdown fallback: scan hidden <ul>s near (x, y)
                             for (const ul of document.querySelectorAll('ul')) {
@@ -690,27 +763,46 @@ class VWAWrapper:
                                 const items = Array.from(
                                     ul.querySelectorAll(':scope > li > a, :scope > li > button'));
                                 const cands2 = items.map(i => ({text: i.textContent.trim(), el: i}));
-                                const match2 = _fuzzyFind(cands2, label);
-                                const opt = match2 ? match2.el : null;
-                                if (opt) {
+                                const result = _fuzzyFind(cands2, label);
+                                if (result && result.match) {
                                     const oldDisplay = ul.style.display;
                                     const oldVisibility = ul.style.visibility;
                                     ul.style.display = 'block';
                                     ul.style.visibility = 'visible';
-                                    opt.click();
+                                    result.match.el.click();
                                     ul.style.display = oldDisplay;
                                     ul.style.visibility = oldVisibility;
-                                    return;
+                                    return {matched: true, match_stage: result.stage, target_type: 'css',
+                                            selected_text_before: null, selected_text_after: null,
+                                            clicked_text: result.match.text, error: null};
                                 }
                             }
+                            return {matched: false, match_stage: 'none', target_type: 'css',
+                                    selected_text_before: null, selected_text_after: null,
+                                    clicked_text: null, error: 'no_match_in_css_menus'};
                         }""",
                         [x_px, y_px, option_label],
                     )
                     self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
-                    _select_option_meta["success"] = True
+                    # B-481: populate from structured JS result (same as element_id path).
+                    if isinstance(_js_result, dict):
+                        _select_option_meta["matched"] = bool(_js_result.get("matched"))
+                        _select_option_meta["match_stage"] = _js_result.get("match_stage")
+                        _select_option_meta["target_type"] = _js_result.get("target_type")
+                        _select_option_meta["selected_text_before"] = _js_result.get("selected_text_before")
+                        _select_option_meta["selected_text_after"] = _js_result.get("selected_text_after")
+                        _select_option_meta["clicked_text"] = _js_result.get("clicked_text")
+                        _select_option_meta["success"] = bool(_js_result.get("matched"))
+                        if not _js_result.get("matched"):
+                            _select_option_meta["error"] = _js_result.get("error") or "no_match"
+                    else:
+                        _select_option_meta["success"] = False
+                        _select_option_meta["matched"] = False
+                        _select_option_meta["error"] = "js_returned_non_dict"
                 except Exception as _e:
                     logger.warning("select_option (coordinate) failed: %s", _e)
                     _select_option_meta["success"] = False
+                    _select_option_meta["matched"] = False
                     _select_option_meta["error"] = f"{type(_e).__name__}: {str(_e)[:160]}"
             action = create_none_action()
         elif action_type == "wait":
@@ -1099,8 +1191,19 @@ class VWAWrapper:
         if not node_centers:
             return axtree
 
-        # For each dropdown trigger, find nearest AXTree node (any type)
-        injections: dict = {}  # eid -> list[str]
+        # B-479 (/stress A1.25 GRL Chunk 2 P1-5-B carry of B-455, 2026-05-17):
+        # accumulate menus per-eid instead of overwriting. Pre-fix
+        # `injections: dict = {}` + `injections[best_eid] = dd['options']`
+        # silently dropped all-but-last menu when multiple hidden `<ul>`s
+        # clustered near one trigger (common: classifieds + reddit nav with
+        # main + breadcrumb menus). Post-fix renders one `[DROPDOWN OPTIONS]`
+        # line per accumulated menu so all options reach the agent. Parallel
+        # A1.4 codex Mode B P1-5-B catch deferred to this session via commit
+        # `901956d`; closes B-455 from the parallel-session deferral list.
+        from collections import defaultdict
+        # B-479: keys preserve original VWA `obs_nodes_info` str format
+        # (str(element_id)) so `str(eid) in injections` lookup below matches.
+        injections: Dict[str, list] = defaultdict(list)  # eid_str -> list[list[str]]
         for dd in dropdown_data:
             best_eid = min(
                 node_centers,
@@ -1111,7 +1214,7 @@ class VWAWrapper:
             # B-422: named CSS dropdown threshold (was: inline 150).
             if dist > _INJECT_DISTANCE_CSS_DROPDOWN_PX:
                 continue
-            injections[best_eid] = dd['options']
+            injections[best_eid].append(dd['options'])
 
         if not injections:
             return axtree
@@ -1129,11 +1232,13 @@ class VWAWrapper:
             out.append(line)
             eid = extract_mark_id(line)
             if eid is not None and str(eid) in injections:
-                opts = injections[str(eid)]
                 indent = len(line) - len(line.lstrip('\t'))
                 prefix = '\t' * (indent + 1)
-                opts_str = ', '.join(f'"{o}"' for o in opts)
-                out.append(f"{prefix}[DROPDOWN OPTIONS] {opts_str}")
+                # B-479: one `[DROPDOWN OPTIONS]` line per accumulated menu so
+                # the agent sees all clustered menus rather than only the last.
+                for opts in injections[str(eid)]:
+                    opts_str = ', '.join(f'"{o}"' for o in opts)
+                    out.append(f"{prefix}[DROPDOWN OPTIONS] {opts_str}")
         return '\n'.join(out)
 
     def _inject_select_options(self, axtree: str, obs_nodes_info: Optional[Dict[str, Any]]) -> str:

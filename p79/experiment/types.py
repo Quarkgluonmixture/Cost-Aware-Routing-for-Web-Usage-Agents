@@ -439,17 +439,47 @@ def validate_step_record_v2(record: Dict[str, Any]) -> None:
                 f"StepRecordV2.{meta_key}.action_kind unexpected value: "
                 f"{meta['action_kind']!r}"
             )
-    sel_meta = record.get("select_option_meta")
-    if sel_meta is not None:
+    # B-480 (/stress A1.25 GRL Chunk 2 P1-4-B*, 2026-05-17): nested validator
+    # now loops over all three select_option_meta variants (legacy + primary
+    # + retry) mirroring the locator_route_meta loop above. Pre-fix only
+    # `select_option_meta` got the nested success-bool check — the `_primary`
+    # / `_retry` fields could carry malformed payloads silently.
+    # B-481 (/stress A1.25 GRL Chunk 2 P0-2-AB*, 2026-05-17): also validate
+    # the new structured fields `matched` (bool), `match_stage` (enum),
+    # `target_type` (enum). Closes the "success=True but actually no_match"
+    # silent-pipeline-corruption that codex Mode B + Claude Mode A + parallel
+    # A1.4 codex (B-453) all caught independently.
+    _SELECT_MATCH_STAGES = {None, "exact", "ci", "fuzzy", "index", "none"}
+    _SELECT_TARGET_TYPES = {None, "select", "css"}
+    for sel_key in ("select_option_meta", "select_option_meta_primary",
+                    "select_option_meta_retry"):
+        sel_meta = record.get(sel_key)
+        if sel_meta is None:
+            continue
         if not isinstance(sel_meta, dict):
             raise ValueError(
-                f"StepRecordV2.select_option_meta expected dict-or-None, got "
+                f"StepRecordV2.{sel_key} expected dict-or-None, got "
                 f"{type(sel_meta).__name__}={sel_meta!r}"
             )
         if "success" in sel_meta and not isinstance(sel_meta["success"], (bool, type(None))):
             raise ValueError(
-                f"StepRecordV2.select_option_meta.success expected bool-or-None, got "
+                f"StepRecordV2.{sel_key}.success expected bool-or-None, got "
                 f"{type(sel_meta['success']).__name__}={sel_meta['success']!r}"
+            )
+        if "matched" in sel_meta and not isinstance(sel_meta["matched"], (bool, type(None))):
+            raise ValueError(
+                f"StepRecordV2.{sel_key}.matched expected bool-or-None, got "
+                f"{type(sel_meta['matched']).__name__}={sel_meta['matched']!r}"
+            )
+        if "match_stage" in sel_meta and sel_meta["match_stage"] not in _SELECT_MATCH_STAGES:
+            raise ValueError(
+                f"StepRecordV2.{sel_key}.match_stage unexpected value: "
+                f"{sel_meta['match_stage']!r} (expected {sorted(s for s in _SELECT_MATCH_STAGES if s is not None)})"
+            )
+        if "target_type" in sel_meta and sel_meta["target_type"] not in _SELECT_TARGET_TYPES:
+            raise ValueError(
+                f"StepRecordV2.{sel_key}.target_type unexpected value: "
+                f"{sel_meta['target_type']!r} (expected {sorted(s for s in _SELECT_TARGET_TYPES if s is not None)})"
             )
     # B-338: nested cost_usd key validation.
     cost = record.get("cost_usd", {})

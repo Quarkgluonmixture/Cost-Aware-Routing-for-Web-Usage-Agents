@@ -111,8 +111,8 @@ Action Schema:
    - ALWAYS specify element_id to target the correct input field.
    - To submit, append "\\n" to the text.
 2.5. Select Option: {"action_type": "select_option", "element_id": N, "option_label": "Option Name"}
-   - Use ONLY for <select> dropdown elements (shown as "combobox" in the Accessibility Tree).
-   - Clicking a combobox does NOT open the dropdown. Use select_option instead.
+   - Use for native <select> dropdowns (shown as "combobox" in the Accessibility Tree) and for custom dropdowns/menus annotated with [DROPDOWN OPTIONS] under their trigger element.
+   - Clicking a combobox or [DROPDOWN OPTIONS]-annotated trigger does NOT open the menu — use select_option instead so the value is set directly.
    - option_label must match the visible option text exactly.
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
    - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
@@ -182,8 +182,8 @@ Action Schema:
    - "click" is for buttons, links, and navigation only — it cannot enter text.
    - Prefer element_id. To submit, append "\\n" to the text.
 3.5. Select Option: {"action_type": "select_option", "element_id": N, "option_label": "Option Name"}
-   - Use ONLY for <select> dropdown elements (shown as "combobox" in the SOM_MARKS list).
-   - Clicking a combobox does NOT open the dropdown. Use select_option instead.
+   - Use for native <select> dropdowns (shown as "combobox" in the SOM_MARKS list) and for custom dropdowns/menus annotated with [DROPDOWN OPTIONS] under their trigger mark.
+   - Clicking a combobox or [DROPDOWN OPTIONS]-annotated trigger does NOT open the menu — use select_option instead so the value is set directly.
    - option_label must match the visible option text exactly.
 4. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
    - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
@@ -295,8 +295,8 @@ Action Schema:
    - "click" is for buttons, links, and navigation only — it cannot enter text.
    - Include coordinate to specify the input field location. To submit, append "\\n" to the text.
 2.5. Select Option: {"action_type": "select_option", "coordinate": [x, y], "option_label": "Option Name"}
-   - Use ONLY for <select> dropdown visible in the screenshot.
-   - Clicking a dropdown does NOT open it. Use select_option to set the value directly.
+   - Use for native <select> dropdowns and custom dropdowns/menus visible in the screenshot.
+   - Clicking a dropdown does NOT open it — use select_option to set the value directly.
    - option_label must match the visible option text exactly.
 3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
    - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.

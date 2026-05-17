@@ -281,3 +281,97 @@ def test_step_schema_validation_required_fields():
     broken.pop("router")
     with pytest.raises(ValueError):
         validate_step_record_v2(broken)
+
+
+def test_b481_select_option_meta_structured_fields_validator():
+    """B-481 (/stress A1.25 GRL Chunk 2 P0-2-AB* + P1-1-BC*, 2026-05-17):
+    validator accepts structured {matched, match_stage, target_type}
+    payloads on all three select_option_meta variants (legacy / primary /
+    retry) and rejects bad enum / type values.
+    """
+    # Helper to spin a minimal valid step record (mirror the fixture above
+    # but parameterize the select_option_meta dict under test).
+    def _record_with_sel_meta(sel_meta_payload, key="select_option_meta_primary"):
+        rec = {
+            "schema_version": SCHEMA_VERSION_V2,
+            "run_id": "run_x", "condition_id": "c1",
+            "benchmark": "visualwebarena", "benchmark_site": "shopping",
+            "task_id": 0, "seed": 42, "step_idx": 0,
+            "som": {}, "observation_mode": "dom",
+            "router": {}, "module_flags": {},
+            "action_type": "select_option",
+            "action": {"action_type": "select_option"},
+            "action_success": False, "page_changed": False,
+            "latency_ms": {"total": 0.0},
+            "tokens": {"input": 0, "output": 0, "total": 0},
+            "cost_usd": {"input": 0.0, "output": 0.0, "model": 0.0,
+                         "router_overhead": 0.0, "total": 0.0},
+            "energy": {"kwh": None, "co2e_kg": None},
+            "retry_count": 0, "error_category": None,
+            "artifact_paths": {}, "reward": 0.0, "done": False,
+            "parse_valid": None, "parse_failure_reason": None,
+            "image_meta": None, "locator_route_meta": None,
+            "locator_route_meta_primary": None,
+            "locator_route_meta_retry": None,
+            "select_option_meta": None,
+            "select_option_meta_primary": None,
+            "select_option_meta_retry": None,
+            "agent_visible_changed": None,
+        }
+        rec[key] = sel_meta_payload
+        return rec
+
+    # Happy path: full structured payload, all 3 stages and both target_types
+    for stage in ("exact", "ci", "fuzzy", "index", "none"):
+        for target in ("select", "css"):
+            validate_step_record_v2(_record_with_sel_meta({
+                "action_kind": "select_option",
+                "dispatch_path": "element_id",
+                "success": True, "matched": True,
+                "match_stage": stage, "target_type": target,
+                "selected_text_before": "old", "selected_text_after": "new",
+                "clicked_text": None, "error": None,
+            }))
+
+    # Happy path on _retry field (B-480 closure verification)
+    validate_step_record_v2(_record_with_sel_meta({
+        "action_kind": "select_option",
+        "success": False, "matched": False,
+        "match_stage": "none", "target_type": "select",
+        "error": "no_match_in_select",
+    }, key="select_option_meta_retry"))
+
+    # Reject: match_stage with bad value
+    import pytest as _pytest
+    with _pytest.raises(ValueError, match="match_stage unexpected"):
+        validate_step_record_v2(_record_with_sel_meta({
+            "action_kind": "select_option",
+            "success": True, "matched": True,
+            "match_stage": "approximate",  # not in enum
+            "target_type": "select",
+        }))
+
+    # Reject: target_type with bad value
+    with _pytest.raises(ValueError, match="target_type unexpected"):
+        validate_step_record_v2(_record_with_sel_meta({
+            "action_kind": "select_option",
+            "success": True, "matched": True,
+            "match_stage": "exact",
+            "target_type": "iframe",  # not in enum
+        }))
+
+    # Reject: matched as string instead of bool
+    with _pytest.raises(ValueError, match="matched expected bool-or-None"):
+        validate_step_record_v2(_record_with_sel_meta({
+            "action_kind": "select_option",
+            "success": True, "matched": "true",  # string not bool
+            "match_stage": "exact", "target_type": "select",
+        }))
+
+    # Reject: success as string (legacy B-444 sibling check)
+    with _pytest.raises(ValueError, match="success expected bool-or-None"):
+        validate_step_record_v2(_record_with_sel_meta({
+            "action_kind": "select_option",
+            "success": "false",  # string not bool
+            "matched": False, "match_stage": "none",
+        }))

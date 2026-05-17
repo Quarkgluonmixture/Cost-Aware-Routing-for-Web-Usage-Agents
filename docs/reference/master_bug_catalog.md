@@ -3646,4 +3646,48 @@ submodule).
 
 **Phase 1a fire green-light extended (post-A1.20)**: substrate paper-grade after A1.1+A1.2+A1.3 v9+A1.4+A1.19+A1.20 + parallel GRL chunks = **68+ fixes** across multi-session 6-day audit sprint. Analysis pipeline + figure layer paper-§1-hero gate cleansed of OSF-lock blockers. Paper §1 intro prose now footnotes the "no image" semantic correction + the 4-mode-vs-6-mode estimand caveat (will be cleanly cited from `phase1_prereg_gate.{csv,md}` after Phase 1a data lands). Shared `scripts/analysis/figures/lib/panels.py` infrastructure closes B2-sibling-propagation reservoir for future baseline additions. Remaining advisor blockers: B-262 GLM channel + B-130 FE/RE estimand + B-369 schema v2.2 retry + A1.19 advisor batch (B-426 SE floor protocol + B-428 cost_margin amend) + A1.20 sibling (B-470 quantile-CI SE).
 
-**Next available B-number**: B-478+.
+**Next available B-number**: B-478+ (B-478 left unclaimed for any concurrent parallel-session reservation timing; A1.25 GRL Chunk 2 jumps to B-479+ below).
+
+---
+
+## A1.25 GRL (Generated Runtime Layer) audit — Chunk 2 batch (observation enrichment + select_option dispatch, 2026-05-17 deep night)
+
+**Scope**: `p79/envs/vwa_wrapper.py` 1206 LOC observation enrichment region (lines 41-73 `_FUZZY_MATCH_JS`, 543-714 select_option dispatch, 980-1137 `_to_p79_obs` + `_inject_*` enrichment passes) + `_shared_vl_utils.py` 3 prompt blocks + runner/main.py + types.py validator + paper §3.5 disclosure.
+
+**3-AI cycle**: Mode A (Claude, my Chunk 2 audit) PASS · Mode B (codex `/codex-stress`) FAIL @02:03 (usage limit) → AUTO-RETRY @03:24 reset (detached worker + Tier 3 monitor) → PASS @03:27 (6 findings, 3 OOB, 8226 bytes) · Mode C (gemini `/gemini-stress`) PASS @02:11 (5 findings, 2 OOB, 6405 bytes). Aggregated 12 unique findings (after 3-AI dedup + 4-AI cross-batch with parallel A1.4 session's deferred B-453+B-455 carries). User triage (Q1=a disclosure-only, Q2=Soften, Q3=a §3.5.3 location, Q4=b stagger, Q5-Q16 全 auto-default) → 6 fixes launch-blocking land now; 3 P1 (P1-2 enrichment_meta telemetry + P1-6 native-vs-CSS selected-state + P1-7 §3.5.1 dom_size prose recalibration) deferred to Phase 1b prep window per Q2=Soften.
+
+### B-479. CSS dropdown injection same-eid menu overwrite — codex A1.4 carry of B-455 → A1.25 GRL Chunk 2 P1-5 🛠️ FIXED commit `<TBD>`
+- **Attack**: `vwa_wrapper.py:1102-1114` pre-fix `injections: dict = {}` + `injections[best_eid] = dd['options']` overwrote — multiple hidden `<ul>` menus near same trigger (classifieds + reddit nav: main + breadcrumb often cluster) all but last dropped.
+- **Fix**: `injections: defaultdict(list)` accumulate; renderer emits one `[DROPDOWN OPTIONS]` line per accumulated menu. Closes parallel-session A1.4 codex Mode B P1-5-B (B-455).
+
+### B-480. `select_option_meta_retry` symmetric write — codex Chunk 2 Mode B F6 P1-4 OOB 🛠️ FIXED commit `<TBD>`
+- **Attack**: `runner/main.py:1939-1940` wrote `select_option_meta` + `_primary` but NEVER wrote `_retry`. Validator (`types.py:442-453`) only checked legacy. Dataclass + `schema_migrations/v2.py` defaults listed all three fields → ghost field always None. B-450 (A1.4 P0-3-B) added the schema slot 6h prior; runner-side write was half-landed.
+- **Fix**: Mirror B-440 `locator_route_meta_retry` pattern at line ~1944: write `_retry = next_info["select_option_meta"] if retry_was_applied else None`. Validator loops over all three variants.
+
+### B-481. `select_option_meta.success=True` structured-return semantic fix (closes B-453) — 4-AI overlap P0-2-AB* + parallel A1.4 codex B-453 🛠️ FIXED commit `<TBD>`
+- **Attack**: `vwa_wrapper.py:594-650/662-710` JS dispatch returned bare `return;` for no-label / no-element / no-match / successful-click alike. Python set `_select_option_meta["success"] = True` whenever `page.evaluate()` didn't throw. Field semantics = "JS didn't crash", not "an option was selected" — paper §3.5 select_option sub-taxonomy evidence layer hole (mirror B-440 walk_success vs ON_TARGET lesson). 4-AI overlap (Mode A C2-A1 + my Mode B F2 + Mode C indirect via F2 fuzzy-grounding + parallel A1.4 codex B-453 reservation deferred to this session).
+- **Fix**: JS returns structured `{matched, match_stage ∈ {exact, ci, fuzzy, index, none}, target_type ∈ {select, css, null}, selected_text_before, selected_text_after, clicked_text, error}`. Python populates `select_option_meta` from result; `success = matched`. `_fuzzyFind` JS helper also refactored to return `{match, stage}`. Validator extends nested check to `matched` (bool) + `match_stage` / `target_type` enums on all three legacy/primary/retry variants. P1-1-BC* (fuzzy contract drift) closed in same patch — `match_stage='fuzzy'` count per cell is the new evidence-layer signal.
+
+### B-482. NEW `aggregate_select_option_dispatch.py` per (site, model, mode) aggregator — A1.25 Chunk 2 P0-2 evidence layer 🛠️ FIXED commit `<TBD>`
+- **Attack**: Paper §3.5 select_option sub-taxonomy needs per-cell ON_OPTION + fuzzy-tier-share numbers; no aggregator existed (mirror B-448 locator_route_metrics gap). Reviewer running `grep '"select_option_meta"' phase1_*/episodes/*.jsonl | wc -l` couldn't compute cross-baseline match rate.
+- **Fix**: New script reads B-450 split schema (prefer `_primary`, fallback legacy), classifies via post-B-481 structured fields, emits per (site, model, mode) `{invoked, matched_true, matched_false, match_stage breakdown, target_type breakdown, error_taxonomy, dispatched paths, match_rate, fuzzy_share_of_matched, pre_b481_unknown_matched count}`. Pre-B-481 archive rows surface under `pre_b481_unknown_matched` bucket so operators can quantify legacy-semantics share. Markdown table output for paper §3.5.3.
+
+### B-483. Action-schema prompts — CSS dropdown affordance allowance (closes runtime↔prompt contradiction) — codex Chunk 2 Mode B F5 P1-3 OOB 🛠️ FIXED commit `<TBD>`
+- **Attack**: `_shared_vl_utils.py:113-116/184-187/297-300` (3 prompt blocks: DOM/SoM/vision schemas) said `select_option` is "for `<select>` dropdown elements only". But `vwa_wrapper.py:1035-1044/1131-1136` exposes CSS custom dropdowns under `[DROPDOWN OPTIONS]` annotations, and dispatch (lines 618-647 / 684-713) implements CSS-menu scan inside `select_option`. Action-choice statistics not interpretable as schema-compliance — agent following prompt literally clicks CSS trigger, ignoring prompt exploits hidden path.
+- **Fix**: 3 prompt blocks now read "Use for native `<select>` dropdowns and for custom dropdowns/menus annotated with `[DROPDOWN OPTIONS]` under their trigger" so action-schema matches runtime affordance.
+
+### B-484. Paper §3.5.3 — Observation enrichment surface disclosure — A1.25 Chunk 2 P1-0 (downgrade from P0-1-ABC* per user Q1=a reframing) 🛠️ FIXED commit `<TBD>`
+- **Attack**: Paper §3.2/§3.5 pre-A1.25 said phantom_som / P-text "is a regex filter over the AXTree text — no new data path". Spot-check `B1_phantom_prompt_classifieds_20260501/` (3069 step records): 77.6% obs carry `[OPTIONS]` or `[DROPDOWN OPTIONS]` enrichment from `_inject_*` passes that run BEFORE mode dispatch. Mode B F1 framed as paper-grade unblocker; user reframed (Q1=a): drop-down enrichment is **standard VWA agent practice** (Aviator-Web et al. same wrapper-layer hack — model interface cannot directly observe hidden `<ul>`/`<select>` options); cost compare paper §1 is DOM+SoM internal so vision asymmetry doesn't break the claim. Disclosure-only sufficient.
+- **Fix**: New §3.5.3 "Observation enrichment surface — `[OPTIONS]` / `[DROPDOWN OPTIONS]` and `select_option` dispatch" disclosure section after §3.5.2. Lists `_inject_select_options` + `_inject_css_dropdown_options` effects, fuzzy-match soft contract, evidence layer (B-481 + B-482), schema↔runtime alignment (B-483), multi-menu accumulation (B-479), cross-benchmark deferral to follow-up workshop paper. Framing: "standard VWA agent practice", not "honest about hidden mechanism".
+
+**B-numbers consumed (A1.25 GRL Chunk 2)**: B-479~B-484 (6 contiguous; B-478 gap left unclaimed for any concurrent parallel-session reservation timing).
+
+**Smoke verification (A1.25 Chunk 2)**:
+- py_compile PASS: vwa_wrapper.py + runner/main.py + types.py + _shared_vl_utils.py + aggregate_select_option_dispatch.py
+- Tests **413/413 PASS** (8 skipped intentional; 6 deselected; +1 new `test_b481_select_option_meta_structured_fields_validator` happy-path × 5 stages × 2 targets + 4 rejection cases). Zero regression vs pre-Chunk-2 baseline (412 passed at A1.25 GRL Chunk 1 commit `5d8fc2f`).
+
+**Deferred to Phase 1b prep window (per user Q2=Soften)**: P1-2 observation_enrichment_meta full telemetry + P1-6 native vs CSS selected-state asymmetry + P1-7 paper §3.5.1 dom_size_threshold prose recalibration (0.5→0.6 + per-cell stratification). All P2 deferred per auto-default.
+
+**Cross-batch context (last 6h)**: A1.25 GRL Chunk 1 (B-439~B-448, my commit `5d8fc2f`) + parallel A1.4 Chunks 1-4 (B-449~B-458, commits `3a2d204` / `e5af0e7` / `901956d` / `0e7b4a9`) + A1.20 (B-459~B-477, `e4a5428`) + this A1.25 GRL Chunk 2 (B-479~B-484) = **39 paper-grade fixes** across 4 distinct /stress audit scopes in a single overnight session via concurrent multi-Claude + multi-AI-lineage (Claude + codex + gemini) audit pipeline.
+
+**Next available B-number**: B-485+.

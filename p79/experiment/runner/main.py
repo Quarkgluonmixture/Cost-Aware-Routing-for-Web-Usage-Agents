@@ -1938,6 +1938,16 @@ class ExperimentRunner:
             # post-retry semantics.
             step_record["select_option_meta"] = next_info.get("select_option_meta")
             step_record["select_option_meta_primary"] = _primary_select_option_meta
+            # B-480 (/stress A1.25 GRL Chunk 2 P1-4-B* codex OOB, 2026-05-17):
+            # close `select_option_meta_retry` ghost-field hole — schema /
+            # dataclass / defaults (B-450) all declared the field but the
+            # runner never wrote it. Symmetric to `locator_route_meta_retry`
+            # at line ~1929; only populated when retry actually fired (so
+            # archive aggregators can distinguish "no retry" from
+            # "retry-overwrite reconstructable").
+            step_record["select_option_meta_retry"] = (
+                next_info.get("select_option_meta") if retry_was_applied else None
+            )
             # Confidence metrics (optional, from logprobs extraction)
             if meta.get("mean_logprob") is not None:
                 step_record["confidence"] = {
