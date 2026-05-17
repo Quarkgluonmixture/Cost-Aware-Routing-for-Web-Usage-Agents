@@ -138,7 +138,7 @@ else
   # 2026-04-28 — see 实验笔记 §104). reset_and_auth_gate (in lib) enforces
   # B-224 hard-fail (no soft-warn fallthrough).
   if [[ "${RESET_BEFORE:-0}" == "1" && "${BENCHMARK}" != "wa" ]]; then
-    reset_and_auth_gate "${SITE}" "${REPO_DIR}" "${PYTHON_BIN}" "baseline" "baseline_${MODE}_${SITE}"
+    reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "baseline" --reset-label "baseline_${MODE}_${SITE}"
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
     echo "[baseline] RESET_BEFORE=1 but BENCHMARK=wa — WA reset+auth refresh uses different mechanism, skipping"
   fi
@@ -179,7 +179,7 @@ else
     --condition "${COND_ID}" \
     --poll-secs 30 \
     --idle-alert-mins 30 \
-    --ntfy-topic p79-exp-dgx-spark \
+    --ntfy-topic "${NTFY_TOPIC:-p79-exp-dgx-spark}" \
     --state-file "${WATCHDOG_STATE}" \
     --aggregate-prefix "${BASELINE}_3mode" \
     --glm-config .auth/glm \

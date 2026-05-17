@@ -75,9 +75,22 @@ assert_a100_url_locality() {
     echo "[preflight] A100 URL-locality gate ACTIVE on host=$(hostname), cwd=$(pwd)" >&2
     local _v
     for _v in CLASSIFIEDS REDDIT SHOPPING WIKIPEDIA HOMEPAGE; do
+      # B-590 (A1.13 P1-8 Claude OOB, 2026-05-17): empty URL no longer silent
+      # passes. Pre-fix `case "${!_v:-}" in *localhost*|*127.0.0.1*|"") ;; *) FATAL` —
+      # empty string in the OK set meant `vwa_env_remote.sh` source failure (file
+      # missing / syntax error) silently passed gate; runner then attempted
+      # default fallback URLs (possibly prod via Tailscale). Post-fix: empty
+      # URL = explicit FATAL with diagnostic hint at this env-loading layer.
       case "${!_v:-}" in
-        *localhost*|*127.0.0.1*|"") ;;
-        *) echo "✗ FATAL preflight: \$${_v}=${!_v} not local on A100 host; refusing launch" >&2; exit 2 ;;
+        *localhost*|*127.0.0.1*) ;;
+        "")
+          echo "✗ FATAL preflight: \$${_v} is EMPTY on A100 host; vwa_env_remote.sh may have failed to source. Check ${repo_dir:-scripts}/scripts/vwa_env_remote.sh" >&2
+          exit 2
+          ;;
+        *)
+          echo "✗ FATAL preflight: \$${_v}=${!_v} not local on A100 host; refusing launch" >&2
+          exit 2
+          ;;
       esac
     done
     unset _v
@@ -180,11 +193,34 @@ mint_run_id() {
 #   auth_required_gate. Hard-fail on auth gate failure unless AUTH_GATE_BYPASS=1.
 #   Caller responsible for guarding with RESET_BEFORE=1 + BENCHMARK!=wa.
 reset_and_auth_gate() {
-  local site="$1"
-  local repo_dir="$2"
-  local python_bin="$3"
-  local log_prefix="$4"
-  local reset_label="$5"
+  # B-592 (A1.13 P1-12 gemini G9, 2026-05-17): named args. Pre-fix 5 positional
+  # args (site, repo, python, log_prefix, reset_label); caller swap-order bugs
+  # silently propagated wrong reset_label → trajectory event tags
+  # cross-baseline-confused. Post-fix: both forms accepted (named when $1 starts
+  # with `--`; legacy positional otherwise for back-compat) — new code should
+  # use named form. Form 4 callers in queue_baseline / queue_phantom_{som,text,
+  # prompt} migrated to named in this commit.
+  local site="" repo_dir="" python_bin="" log_prefix="" reset_label=""
+  if [[ "${1:-}" == --* ]]; then
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --site)         site="$2"; shift 2 ;;
+        --repo|--repo-dir) repo_dir="$2"; shift 2 ;;
+        --python|--python-bin) python_bin="$2"; shift 2 ;;
+        --log-prefix)   log_prefix="$2"; shift 2 ;;
+        --reset-label)  reset_label="$2"; shift 2 ;;
+        --) shift; break ;;
+        *) echo "[reset_and_auth_gate][error] unknown arg: $1" >&2; return 2 ;;
+      esac
+    done
+  else
+    # Legacy positional form (deprecated; use --site/--repo/--python/--log-prefix/--reset-label).
+    site="$1"
+    repo_dir="$2"
+    python_bin="$3"
+    log_prefix="$4"
+    reset_label="$5"
+  fi
 
   if [[ ! -f "${repo_dir}/scripts/maintenance/reset_vwa_sites.sh" ]]; then
     echo "[${log_prefix}][error] reset_vwa_sites.sh not found but RESET_BEFORE=1; aborting." >&2
@@ -194,7 +230,29 @@ reset_and_auth_gate() {
   # shellcheck disable=SC1091
   source "${repo_dir}/scripts/maintenance/reset_vwa_sites.sh"
   echo "[${log_prefix}] RESET_BEFORE=1 → resetting site=${site}..."
-  if reset_vwa_sites "${site}" "${reset_label}"; then
+  # B-589 (A1.13 P1-5 codex F8 OOB, 2026-05-17): wrap reset_vwa_sites with
+  # timeout to defend against hangs (reset script SSH stall / Docker compose
+  # hang / Tailscale stall). Without timeout, hang at this stage blocks chain
+  # with no watchdog yet attached + no runner pid + no ntfy → chain wedged
+  # invisibly. 120s is generous (typical reset 5-15s); on timeout: ntfy +
+  # abort gate with explicit FATAL surface so operator knows where it stuck.
+  # reset_vwa_sites invoked in sub-bash since `timeout` operates on processes;
+  # the sourced function is re-sourced in the sub-bash for isolation.
+  local _reset_rc
+  timeout 120s bash -c "
+    source '${repo_dir}/scripts/maintenance/reset_vwa_sites.sh'
+    reset_vwa_sites '${site}' '${reset_label}'
+  "
+  _reset_rc=$?
+  if [[ "${_reset_rc}" -eq 124 ]]; then
+    echo "[${log_prefix}][FATAL] reset_vwa_sites timed out after 120s (B-589)" >&2
+    if command -v curl > /dev/null; then
+      curl -d "queue ABORT: ${site} reset_vwa_sites timeout 120s; investigate SSH/Docker/Tailscale" \
+        "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
+    fi
+    exit 1
+  fi
+  if [[ "${_reset_rc}" -eq 0 ]]; then
     echo "[${log_prefix}] reset OK; sleeping 15s for site to settle..."
     sleep 15
 
@@ -222,7 +280,12 @@ reset_and_auth_gate() {
     # post-reset auth refresh failure now aborts launch. Pre-fix soft-warn
     # let phantom paths start with NOT-LOGGED-IN tasks → step_record contamination.
     echo "[${log_prefix}] gating .auth/${site}_state.json post-reset via auth_required_gate..."
-    if "${python_bin}" -c "
+    # B-589 (A1.13 P1-5, 2026-05-17): wrap auth_required_gate with timeout to
+    # defend against Playwright hangs (browser stall / network stall). 60s is
+    # generous (typical auth refresh ~5-15s); timeout 124 → treat as auth FAIL
+    # (handled by the outer else branch). Re-uses existing FATAL surface so
+    # operator sees same error class.
+    if timeout 60s "${python_bin}" -c "
 import sys
 sys.path.insert(0, '${repo_dir}')
 from pathlib import Path
@@ -240,13 +303,41 @@ except (AuthRefreshFailure, AuthRefreshConfigError) as exc:
       echo "[${log_prefix}][error] post-reset auth gate FAILED — aborting launch to prevent paper-grade contamination." >&2
       echo "[${log_prefix}][error] Fix: (a) VWA_REMOTE_HOST env, (b) .auth/ dir writable, (c) site reachable, (d) VWA_${site^^}_USER/PASS env vars set." >&2
       echo "[${log_prefix}][error] To bypass (paper-grade dirty, watchdog reactive only), set AUTH_GATE_BYPASS=1." >&2
+      # B-586 (A1.13 P1-3 codex F6 + gemini G2 2-AI, 2026-05-17): paper-grade
+      # mode hard-blocks AUTH_GATE_BYPASS. Pre-fix a stray `AUTH_GATE_BYPASS=1`
+      # in operator's .bashrc / dev session env could silently dissolve every
+      # paper-grade gate with no log surface marking the cell dirty. Two-layer
+      # defense: (1) under `P79_PAPER_GRADE=1` env (set by orchestrator), the
+      # bypass is REFUSED — runs must abort + operator must investigate auth.
+      # (2) when bypass IS legitimately set (dev session), emit a paper-grade
+      # bypass audit log entry + ntfy alert so the bypass leaves a permanent
+      # trail (reviewer / advisor / OSF audit-trail can grep for these).
+      if [[ "${P79_PAPER_GRADE:-0}" == "1" && "${AUTH_GATE_BYPASS:-0}" == "1" ]]; then
+        echo "[${log_prefix}][FATAL] AUTH_GATE_BYPASS=1 is FORBIDDEN under P79_PAPER_GRADE=1 — paper-grade requires hard-fail auth gate." >&2
+        echo "[${log_prefix}][FATAL] Unset AUTH_GATE_BYPASS or unset P79_PAPER_GRADE (dirty/dev mode)." >&2
+        exit 1
+      fi
       if [[ "${AUTH_GATE_BYPASS:-0}" != "1" ]]; then
         exit 1
       fi
+      # B-586: AUTH_GATE_BYPASS audit log + ntfy alert.
+      local _bypass_log="${repo_dir}/logs/paper_grade_bypass_audit.log"
+      local _bypass_ts
+      _bypass_ts="$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)"
+      mkdir -p "${repo_dir}/logs" 2>/dev/null || true
+      echo "${_bypass_ts} AUTH_GATE_BYPASS=1 site=${site} reset_label=${reset_label} run_id=${RUN_ID:-unknown} log_prefix=${log_prefix} hostname=$(hostname) user=$(whoami)" \
+        >> "${_bypass_log}" 2>/dev/null || true
+      if command -v curl > /dev/null; then
+        curl -d "AUTH_GATE_BYPASS active: site=${site} run=${RUN_ID:-unknown} (paper-grade dirty trail at ${_bypass_log})" \
+          "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
+      fi
       echo "[${log_prefix}][warn] AUTH_GATE_BYPASS=1 set — proceeding without auth gate; first 1-3 tasks at risk." >&2
+      echo "[${log_prefix}][warn] Audit trail appended to ${_bypass_log} (B-586)." >&2
     fi
   else
-    local rc=$?
+    # B-589 (2026-05-17): _reset_rc captured from timeout-wrapped sub-bash above
+    # (was `local rc=$?` pre-B-589 when reset_vwa_sites ran in current shell).
+    local rc="${_reset_rc}"
     # B-299 (A1.17 P0-3): rc=78 is the "not implemented" sentinel from
     # _reset_vwa_local_shopping stub. Surface specific reason rather than generic
     # "reset failed" so Phase 1b launch operator knows what to implement.

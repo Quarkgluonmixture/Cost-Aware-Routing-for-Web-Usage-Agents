@@ -1266,13 +1266,22 @@ def generate_aggregate_gallery(
     else:
         gallery_dir = phase_dir
     gallery_path = gallery_dir / "gallery.html"
-    # Special "baseline alias" semantics: prefix `B0_3mode` / `B1_3mode` aggregates
-    # ALL runs of that baseline (3mode + dom + phantom + phantom_text + ...).
+    # Special "baseline alias" semantics: prefix `B0_3mode` / `B1_3mode` / `B2_3mode`
+    # aggregates ALL runs of that baseline (3mode + dom + phantom + phantom_text + ...).
     # This lets queue scripts share one unified gallery URL per baseline while
     # keeping the legacy `B0_3mode/` / `B1_3mode/` paths the user already
     # bookmarked. Other prefix values (e.g. `B0_phantom`) keep exact match.
-    is_baseline_alias = prefix_filter in {"B0_3mode", "B1_3mode"}
-    baseline_label = prefix_filter.split("_", 1)[0] if is_baseline_alias else None
+    # B-585 (A1.13 P1-2 Claude + codex F3 2-AI, 2026-05-17): generalize from
+    # hardcoded {"B0_3mode", "B1_3mode"} to baseline-prefix detection. Pre-fix
+    # `B2_3mode` (Gemma3-VL, advisor-confirmed 2026-05-14) fell to exact match
+    # → B2_phantom_* run-dirs orphaned from B2_3mode aggregate gallery → Phase
+    # 1a B2 evidence-layer missing in unified gallery navigation. New form:
+    # any `B[0-9]_3mode` baseline qualifies — future baselines (B3/B4) need 0
+    # code change.
+    import re as _re
+    _baseline_match = _re.match(r"^(B[0-9]+)_3mode$", prefix_filter or "")
+    is_baseline_alias = _baseline_match is not None
+    baseline_label = _baseline_match.group(1) if is_baseline_alias else None
 
     source_run_dirs: List[Path] = []
     for cand in sorted(phase_dir.iterdir()):

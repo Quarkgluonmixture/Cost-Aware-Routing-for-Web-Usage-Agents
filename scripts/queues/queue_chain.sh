@@ -133,19 +133,58 @@ for cmd in "$@"; do
   cmd_args=( ${cmd} )
   this_baseline="${cmd_args[1]:-}"  # B0 / B1 / B2
   if [[ "${script_name}" == queue_baseline.sh ]]; then
-    this_site="${cmd_args[3]:-}"    # 4th token (script bash mode site)
+    this_site="${cmd_args[3]:-}"            # 4th token (script bash mode site)
+    this_benchmark="${cmd_args[4]:-vwa}"    # 5th token (default vwa)
   else
-    this_site="${cmd_args[2]:-}"    # 3rd token (script bash site)
+    this_site="${cmd_args[2]:-}"            # 3rd token (script bash site)
+    this_benchmark="${cmd_args[3]:-vwa}"    # 4th token (default vwa)
   fi
+  # B-584 (A1.13 P1-1 Claude + gemini G10 2-AI, 2026-05-17): regex anchor.
+  # Pre-fix pgrep `_${this_site}_` substring overlap problems:
+  #   (a) `_shopping_` substring-matched `_shopping_admin_` → VWA shopping
+  #       waited for WA shopping_admin to finish (unrelated docker stack).
+  #   (b) VWA `_shopping_` substring-matched WA `_wa_shopping_` AND vice
+  #       versa → cross-benchmark wait loop even though docker stacks separate.
+  # Fix: build benchmark-aware site pattern that anchors on the 8-digit date
+  # token after the site name (which is structural — mint_run_id always inserts
+  # YYYYMMDD right after CFG_NAME). For VWA: `_${this_site}_[0-9]{8}_` plus
+  # `grep -v _wa_` exclusion to suppress WA processes. For WA: prefix `_wa_`
+  # required. Empirical:
+  #   `_shopping_[0-9]{8}_` does NOT match `B0_dom_shopping_admin_20260517_X`
+  #   (because `_shopping_` is followed by `admin_`, not 8 digits).
+  if [[ "${this_benchmark}" == "wa" ]]; then
+    this_site_pattern="_wa_${this_site}_[0-9]{8}_"
+  else
+    # VWA pattern: match `_<site>_<date>_` but exclude `_wa_<site>_<date>_`.
+    # Done with grep -v at call site since pgrep ERE lacks negative lookbehind.
+    this_site_pattern="_${this_site}_[0-9]{8}_"
+  fi
+  # Helper: returns 0 if any process matches site pattern for given baseline,
+  # 1 otherwise. Excludes WA processes when this_benchmark=vwa.
+  _collision_match() {
+    local baseline_pat="$1"
+    local out
+    out="$(pgrep -af "run_experiment.*${baseline_pat}.*${this_site_pattern}" 2>/dev/null || true)"
+    if [[ -z "${out}" ]]; then
+      return 1
+    fi
+    if [[ "${this_benchmark}" == "vwa" ]]; then
+      # Exclude WA processes captured by substring overlap.
+      out="$(echo "${out}" | grep -v "_wa_" || true)"
+      [[ -z "${out}" ]] && return 1
+    fi
+    return 0
+  }
+
   if [[ -n "${this_baseline}" && -n "${this_site}" ]]; then
     # Cross-baseline collision (different baseline on same site)
     for other_baseline in B0 B1 B2; do
       [[ "${other_baseline}" == "${this_baseline}" ]] && continue
-      if pgrep -f "run_experiment.*${other_baseline}_.*_${this_site}_" > /dev/null 2>&1; then
-        log "  [collision] ${other_baseline} runner already active on site=${this_site}"
+      if _collision_match "${other_baseline}_"; then
+        log "  [collision] ${other_baseline} runner already active on site=${this_site} (benchmark=${this_benchmark})"
         log "  paper-grade hard rule: only one baseline may run on a site at a time"
         log "  waiting for ${other_baseline} ${this_site} to finish before launching ${this_baseline}..."
-        while pgrep -f "run_experiment.*${other_baseline}_.*_${this_site}_" > /dev/null 2>&1; do
+        while _collision_match "${other_baseline}_"; do
           sleep 60
         done
         log "  ${other_baseline} ${this_site} finished; proceeding with ${this_baseline}"
@@ -158,13 +197,11 @@ for cmd in "$@"; do
     # RESET_BEFORE between modes wipes the other's session. Master gate
     # `queue_phase1_paper_grade.sh` already blocks any active run before
     # launching new chains, so this check defends against manual bypass.
-    # Skip our own PID to avoid self-match (we're not yet calling
-    # run_experiment from this script — only orchestrating queue scripts).
-    if pgrep -f "run_experiment.*${this_baseline}_.*_${this_site}_" > /dev/null 2>&1; then
-      log "  [collision] same-baseline ${this_baseline} runner already active on site=${this_site} (different mode)"
+    if _collision_match "${this_baseline}_"; then
+      log "  [collision] same-baseline ${this_baseline} runner already active on site=${this_site} (different mode, benchmark=${this_benchmark})"
       log "  paper-grade hard rule: same baseline same site = shared docker user account + RESET_BEFORE race"
       log "  waiting for existing ${this_baseline} ${this_site} run to finish before launching new mode..."
-      while pgrep -f "run_experiment.*${this_baseline}_.*_${this_site}_" > /dev/null 2>&1; do
+      while _collision_match "${this_baseline}_"; do
         sleep 60
       done
       log "  same-baseline ${this_baseline} ${this_site} finished; proceeding"

@@ -110,7 +110,7 @@ else
   # 实验笔记 §104). A1.13 P0-1 (2026-05-16) propagated B-224 hard-fail to phantom:
   # reset_and_auth_gate aborts on auth failure unless AUTH_GATE_BYPASS=1.
   if [[ "${RESET_BEFORE:-0}" == "1" && "${BENCHMARK}" != "wa" ]]; then
-    reset_and_auth_gate "${SITE}" "${REPO_DIR}" "${PYTHON_BIN}" "phantom_som" "phantom_som_${SITE}"
+    reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "phantom_som" --reset-label "phantom_som_${SITE}"
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
     echo "[phantom_som] RESET_BEFORE=1 but BENCHMARK=wa — WA reset+auth refresh uses different mechanism, skipping"
   fi
@@ -156,7 +156,7 @@ else
     --run-dir "${RUN_DIR}" \
     --condition "${COND_ID}" \
     --poll-secs 30 --idle-alert-mins 30 \
-    --ntfy-topic p79-exp-dgx-spark \
+    --ntfy-topic "${NTFY_TOPIC:-p79-exp-dgx-spark}" \
     --state-file "${WD_STATE}" \
     --aggregate-prefix "${AGGREGATE_PREFIX}" \
     --glm-config .auth/glm \
