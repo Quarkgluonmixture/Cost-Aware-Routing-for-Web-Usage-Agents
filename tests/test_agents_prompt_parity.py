@@ -149,7 +149,18 @@ def test_agent_layer_strict_rejects_unknown_mode():
 
 
 def test_b0_b1_b2_mode_dispatch_keys_identical():
-    """All three baselines must dispatch the same 7 observation modes."""
+    """All three baselines must dispatch the same 7 observation modes.
+
+    B-451 (/stress A1.4 P0-5-A* OOB, 2026-05-17): B0/B1/B2 + mechanistic
+    extractor now consume the canonical dispatch table from
+    ``_shared_vl_utils.build_mode_prompt_dispatch_table()`` — the 7-key
+    mode → prompt mapping is built in one place, not re-listed locally.
+    Pre-B-451 each agent's source contained the literal ``"phantom_text":``
+    strings, which is the static-grep invariant this test originally checked.
+    Post-B-451 the canonical dispatch table is what we verify (callable at
+    test time without instantiating any agent / loading any model).
+    """
+    from p79.agents._shared_vl_utils import build_mode_prompt_dispatch_table
     from p79.agents.proxy_api_agent import ProxyApiAgent
 
     expected_modes = {
@@ -157,24 +168,40 @@ def test_b0_b1_b2_mode_dispatch_keys_identical():
         "phantom_som", "phantom_dom", "phantom_text", "phantom_prompt",
     }
 
-    # B0 — _get_system_prompts is @staticmethod after F1 fix, callable directly.
+    # Canonical dispatch table — single source of truth across all 3 baselines.
+    canonical = build_mode_prompt_dispatch_table()
+    assert set(canonical.keys()) == expected_modes, (
+        f"Canonical dispatch table missing keys: "
+        f"{expected_modes - set(canonical.keys())}"
+    )
+
+    # B0 — _get_system_prompts is @staticmethod, returns the canonical dict.
     proxy_prompts = ProxyApiAgent._get_system_prompts()
     assert set(proxy_prompts.keys()) == expected_modes, (
         f"B0 mode dispatch missing keys: {expected_modes - set(proxy_prompts.keys())}"
     )
+    # B0 must produce byte-identical dict to canonical (= single source of truth).
+    assert proxy_prompts == canonical, (
+        "B0 dispatch table drifted from canonical — re-check "
+        "ProxyApiAgent._get_system_prompts vs build_mode_prompt_dispatch_table."
+    )
 
-    # B1 / B2 — their _system_prompts dict is built in __init__ which loads a
-    # model, so we cannot instantiate here. Instead verify the dict-build
-    # source code statically by reading the module — the mode-key list is the
-    # invariant we guard against silent removal.
+    # B1 / B2 — instance __init__ assigns self._system_prompts =
+    # build_mode_prompt_dispatch_table(). We verify the construction by reading
+    # the agent source (still grep-friendly), because actually instantiating
+    # B1/B2 requires loading the model. The invariant we guard against is
+    # silent removal of the canonical-build call.
     import p79.agents.qwen3vl_agent as qwen_mod
     import p79.agents.gemma3vl_agent as gemma_mod
 
     qwen_src = open(qwen_mod.__file__).read()
     gemma_src = open(gemma_mod.__file__).read()
-    for mode in expected_modes:
-        assert f'"{mode}":' in qwen_src, f"B1 (Qwen) source missing mode key {mode!r}"
-        assert f'"{mode}":' in gemma_src, f"B2 (Gemma) source missing mode key {mode!r}"
+    for mod_name, src in [("Qwen", qwen_src), ("Gemma", gemma_src)]:
+        assert "_shared_build_mode_prompt_dispatch_table()" in src, (
+            f"{mod_name} agent must call _shared_build_mode_prompt_dispatch_table() "
+            f"to build _system_prompts (B-451 canonical source of truth). "
+            f"Local re-listing of the 7-key dict is forbidden."
+        )
 
 
 def test_b0_prompts_byte_identical_to_b1_b2():

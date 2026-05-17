@@ -327,49 +327,25 @@ class ProxyApiAgent:
     def _get_system_prompts() -> Dict[str, str]:
         """Build the per-mode system-prompt dispatch table for B0.
 
-        /stress A1.1 F1 fix (2026-05-15): B0 reuses the canonical prompt
-        builders byte-identical to B1/B2 (test_agents_prompt_parity.py
-        invariant). Previously B0 had shopping-specific examples that
-        leaked a domain prior into the cross-baseline comparison on the
-        classifieds + reddit Phase 1a workload.
+        B-451 (/stress A1.4 P0-5-A* OOB, 2026-05-17): use the canonical
+        `build_mode_prompt_dispatch_table` so B0/B1/B2 + mechanistic
+        extractor consume the same 7-key dict from one place. Pre-B-451
+        each consumer re-listed the same dict locally; B-103 (DOM/phantom_prompt
+        missing `Accessibility Tree:\\n` prefix in mechanistic path) was caused
+        by exactly this drift surface.
 
-        B-402 (/stress A1.1 v8 Mode A P1-4, 2026-05-16): import directly
-        from `_shared_vl_utils` instead of through `Qwen3VLAgent`. The
-        previous indirection (`from qwen3vl_agent import Qwen3VLAgent` →
-        `Qwen3VLAgent._make_*_prompt()`) transitively imported the heavy
-        Qwen3-VL deps (`transformers.Qwen3VLForConditionalGeneration` +
-        `qwen_vl_utils.process_vision_info`) even though B0 is a pure
-        network-call agent that needs none of that. This contradicted
-        the B-146 _shared_vl_utils extraction intent ("Gemma3VLAgent runs
-        failed at first launch in environments without Qwen deps" —
-        same failure mode for any future B0-only / lighter A100 setup).
-        Direct import keeps prompts byte-identical (tests still pass via
-        the shared module being the single source of truth) AND drops
-        the transitive dependency leak.
+        Historical context retained for reviewers tracing prompt parity:
+        - /stress A1.1 F1 (2026-05-15): B0 reuses canonical builders from
+          `_shared_vl_utils` (was diverged with shopping-specific examples
+          leaking domain prior into cross-baseline comparison).
+        - B-402 (/stress A1.1 v8 Mode A P1-4, 2026-05-16): direct import from
+          `_shared_vl_utils` (was: `Qwen3VLAgent._make_*_prompt()` indirection
+          which transitively pulled heavy Qwen-VL deps into pure-network B0).
+        - B-451 (current): consolidate to single dispatch-table factory.
         """
-        from p79.agents._shared_vl_utils import (
-            make_dom_prompt,
-            make_som_prompt,
-            make_vision_prompt,
-        )
+        from p79.agents._shared_vl_utils import build_mode_prompt_dispatch_table
 
-        dom_prompt = make_dom_prompt()
-        som_prompt = make_som_prompt()
-        vision_prompt = make_vision_prompt()
-
-        return {
-            "dom": dom_prompt,
-            "som": som_prompt,
-            # P-SoM (§25): SoM prompt + [SOM_MARKS] text + no image.
-            "phantom_som": som_prompt,
-            # P-text: DOM prompt + [SOM_MARKS] text + no image.
-            # phantom_dom = legacy alias preserved for archived run dirs.
-            "phantom_dom": dom_prompt,
-            "phantom_text": dom_prompt,
-            # P-prompt: SoM prompt + AXTree text + no image.
-            "phantom_prompt": som_prompt,
-            "vision": vision_prompt,
-        }
+        return build_mode_prompt_dispatch_table()
 
     # ---- history formatting ----
 

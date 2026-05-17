@@ -207,6 +207,56 @@ CRITICAL:
 """
 
 
+# ----------------------------------------------------------------------
+# Canonical mode → prompt dispatch table (single source of truth)
+# ----------------------------------------------------------------------
+
+
+def build_mode_prompt_dispatch_table() -> Dict[str, str]:
+    """Single source of truth for the 7-key mode → system-prompt dispatch.
+
+    B-451 (/stress A1.4 P0-5-A* OOB, 2026-05-17): pre-fix each of B0
+    (`proxy_api_agent.py::_get_system_prompts`), B1 (`qwen3vl_agent.py::
+    __init__._system_prompts`), B2 (`gemma3vl_agent.py::__init__._system_prompts`),
+    and the mechanistic extractor (`p79/mechanistic/extract_hidden_states.py::
+    __init__._mode_to_prompt`) hand-rolled the same 7-key dict locally. Four
+    copies of the same string mapping = four silent-drift surfaces. If the
+    agent dispatch grew a new key (e.g. a future `phantom_axtree_random_perm`
+    paper-2 arm), the extractor's `.get(mode, dom_prompt)` would silently
+    fall back — NPZ extraction prompt diverges from production agent prompt
+    without any error surface. B-103 (the `Accessibility Tree:\\n` prefix
+    missing fix) was exactly this class of drift, caught only after
+    mechanistic NPZ data had already been generated. This function makes
+    the dispatch byte-identical at the function-call boundary; consumers
+    that need a customized variant should override AFTER the canonical
+    base call rather than re-listing the keys.
+
+    Mode semantics:
+      - "dom":             DOM prompt + AXTree text + no image
+      - "som":             SoM prompt + [SOM_MARKS] text + marked screenshot
+      - "phantom_som":     SoM prompt + [SOM_MARKS] text + NO image (P-SoM)
+      - "phantom_dom":     DOM prompt + [SOM_MARKS] text + NO image (legacy
+                           alias of phantom_text; archive run dirs still use)
+      - "phantom_text":    DOM prompt + [SOM_MARKS] text + NO image (P-text,
+                           current canonical name)
+      - "phantom_prompt":  SoM prompt + AXTree text + NO image (P-prompt,
+                           symmetric prompt-axis swap from DOM)
+      - "vision":          Vision prompt + empty text + raw screenshot
+    """
+    dom_prompt = make_dom_prompt()
+    som_prompt = make_som_prompt()
+    vision_prompt = make_vision_prompt()
+    return {
+        "dom": dom_prompt,
+        "som": som_prompt,
+        "phantom_som": som_prompt,     # P-SoM: SoM prompt + [SOM_MARKS] text + no image
+        "phantom_dom": dom_prompt,     # P-text (legacy alias)
+        "phantom_text": dom_prompt,    # P-text (current canonical name)
+        "phantom_prompt": som_prompt,  # P-prompt: SoM prompt + AXTree text + no image
+        "vision": vision_prompt,
+    }
+
+
 def make_vision_prompt() -> str:
     return """You are a precise web navigation agent.
 Output ONLY valid JSON. No markdown blocks, no explanations.

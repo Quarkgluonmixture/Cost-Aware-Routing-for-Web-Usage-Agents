@@ -12,6 +12,7 @@ from p79.backends.action_utils import parse_action_text
 # consume them without transitively importing this module's heavy
 # ``transformers.Qwen3VLForConditionalGeneration`` + ``qwen_vl_utils`` deps.
 from p79.agents._shared_vl_utils import (
+    build_mode_prompt_dispatch_table as _shared_build_mode_prompt_dispatch_table,
     compute_confidence as _shared_compute_confidence,
     format_history as _shared_format_history,
     make_dom_prompt as _shared_make_dom_prompt,
@@ -93,21 +94,15 @@ class Qwen3VLAgent:
             logger.error(f"Failed to load model: {e}")
             raise e
 
-        # Prompts are selected per observation mode at inference time.
-        # Phantom-SoM (§25): same SoM prompt + same SoM marks text, but no image.
-        # Tests whether the model can complete tasks using SoM textual labels alone
-        # (a.k.a. "mirage" mode — preserves prompt that mentions screenshot).
-        som_prompt = self._make_som_prompt()
-        dom_prompt = self._make_dom_prompt()
-        self._system_prompts = {
-            "dom": dom_prompt,
-            "som": som_prompt,
-            "phantom_som": som_prompt,     # P-SoM: SoM prompt + [SOM_MARKS] text + no image (image-mismatched)
-            "phantom_dom": dom_prompt,     # P-text (legacy alias): DOM prompt + [SOM_MARKS] text + no image (text-mismatched)
-            "phantom_text": dom_prompt,    # P-text (current name): same dispatch as phantom_dom
-            "phantom_prompt": som_prompt,  # P-prompt: SoM prompt + AXTree text + no image (prompt-only swap from DOM)
-            "vision": self._make_vision_prompt(),
-        }
+        # B-451 (/stress A1.4 P0-5-A* OOB, 2026-05-17): use the canonical
+        # dispatch table from `_shared_vl_utils` so the 7-key mode → prompt
+        # mapping is byte-identical with B0 (`proxy_api_agent`), B2
+        # (`gemma3vl_agent`), and the mechanistic extractor (`extract_hidden_states`).
+        # Pre-fix each consumer re-listed the dict locally; B-103 (DOM/phantom_prompt
+        # missing `Accessibility Tree:\n` prefix in mechanistic path) was caused by
+        # exactly this drift surface. Phantom-SoM (§25) semantics: SoM prompt +
+        # same [SOM_MARKS] marks text, but no image.
+        self._system_prompts = _shared_build_mode_prompt_dispatch_table()
         # Default (backward compat / unknown mode)
         self.system_prompt = self._system_prompts["dom"]
 

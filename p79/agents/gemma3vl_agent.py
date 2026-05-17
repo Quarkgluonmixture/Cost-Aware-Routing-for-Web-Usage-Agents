@@ -15,6 +15,7 @@ from transformers import AutoProcessor, Gemma3ForConditionalGeneration
 # Cross-baseline byte-identical prompts + identical confidence schema are
 # still enforced — single source of truth is the shared module.
 from p79.agents._shared_vl_utils import (
+    build_mode_prompt_dispatch_table as _shared_build_mode_prompt_dispatch_table,
     compute_confidence as _shared_compute_confidence,
     format_history as _shared_format_history,
     make_dom_prompt as _shared_make_dom_prompt,
@@ -121,15 +122,12 @@ class Gemma3VLAgent:
         # quantized loads manage input dtype internally.
         self._input_dtype = torch.bfloat16 if quantization_config is None else None
 
-        self._system_prompts = {
-            "dom": _DOM_PROMPT,
-            "som": _SOM_PROMPT,
-            "phantom_som": _SOM_PROMPT,     # P-SoM: SoM prompt + [SOM_MARKS] text, no image
-            "phantom_dom": _DOM_PROMPT,     # P-text (legacy alias)
-            "phantom_text": _DOM_PROMPT,    # P-text (current name)
-            "phantom_prompt": _SOM_PROMPT,  # P-prompt: SoM prompt + AXTree text, no image
-            "vision": _VISION_PROMPT,
-        }
+        # B-451 (/stress A1.4 P0-5-A* OOB, 2026-05-17): use the canonical
+        # dispatch table from `_shared_vl_utils` (single source of truth across
+        # B0/B1/B2 + mechanistic extractor). Module-level `_DOM_PROMPT` / `_SOM_PROMPT`
+        # / `_VISION_PROMPT` constants retained for backwards-compat callers /
+        # external imports but the agent now consumes the canonical dict directly.
+        self._system_prompts = _shared_build_mode_prompt_dispatch_table()
         self.system_prompt = self._system_prompts["dom"]
 
     def step(

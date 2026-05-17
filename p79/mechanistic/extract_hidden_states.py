@@ -68,22 +68,28 @@ class HiddenStateExtractor:
         self.device = device
         self.model_revision = model_revision
 
-        # Load system prompts from the agent — single source of truth.
-        # /stress A1.1 B-92 propagation fix (2026-05-15): _make_*_prompt are
-        # @staticmethod since commit 11d6fd9, so the previous `(self)` argument
-        # would raise TypeError. Drop the arg.
-        from p79.agents.qwen3vl_agent import Qwen3VLAgent
-        self._dom_prompt = Qwen3VLAgent._make_dom_prompt()
-        self._som_prompt = Qwen3VLAgent._make_som_prompt()
-        self._mode_to_prompt = {
-            "dom": self._dom_prompt,
-            "som": self._som_prompt,
-            "phantom_som": self._som_prompt,
-            "phantom_text": self._dom_prompt,
-            "phantom_dom": self._dom_prompt,
-            "phantom_prompt": self._som_prompt,
-            "vision": Qwen3VLAgent._make_vision_prompt(),
-        }
+        # B-451 (/stress A1.4 P0-5-A* OOB, 2026-05-17): use the canonical
+        # `build_mode_prompt_dispatch_table` from `_shared_vl_utils` so the
+        # 7-key mode → prompt mapping is byte-identical with the production
+        # agent (B0 `proxy_api_agent`, B1 `qwen3vl_agent`, B2 `gemma3vl_agent`).
+        # Pre-fix this module hand-rolled its own `_mode_to_prompt` dict, which
+        # is the exact drift surface B-103 (`Accessibility Tree:\n` prefix
+        # missing in mechanistic path) was caught at — only after NPZ data
+        # had already been extracted. Now: any new mode added to the agent
+        # dispatch table is automatically inherited by mechanistic extraction.
+        #
+        # Mechanism §5 is currently frozen per advisor §138 (实验笔记 2026-05-14);
+        # this consolidation is forward-investment for paper-2 unfreeze, not a
+        # paper-1 dependency. The `Qwen3VLAgent` staticmethod delegates
+        # (`_make_dom_prompt` / `_make_som_prompt` / `_make_vision_prompt`) are
+        # preserved separately for backward-compat with `test_agents_prompt_parity`
+        # and any external script that imported them directly.
+        from p79.agents._shared_vl_utils import build_mode_prompt_dispatch_table
+        self._mode_to_prompt = build_mode_prompt_dispatch_table()
+        # Keep the 2 most-used entries as named attributes for legacy callers
+        # (e.g. `_build_user_text` reads `self._dom_prompt` as fallback).
+        self._dom_prompt = self._mode_to_prompt["dom"]
+        self._som_prompt = self._mode_to_prompt["som"]
 
     def _build_user_text(
         self,
