@@ -74,26 +74,17 @@ _VALID_SITES = {"classifieds", "reddit", "shopping"}
 re-firing runner over stale episodes."""
 
 
-def safe_unlink(path: Path) -> bool:
-    """B-858 (/stress A1.24 P0-4-AB*, 2026-05-17): idempotent unlink that
-    tolerates concurrent watchdog cleanup. Returns True if file was deleted
-    by this caller, False if already gone (or path didn't exist)."""
-    try:
-        path.unlink()
-        return True
-    except FileNotFoundError:
-        return False
-
-
-def safe_rmtree(path: Path) -> bool:
-    """B-858 (/stress A1.24 P0-4-AB*, 2026-05-17): idempotent rmtree.
-    Companion to `safe_unlink` — returns True if this caller did the
-    deletion, False if path already gone (concurrent watchdog race)."""
-    try:
-        shutil.rmtree(path)
-        return True
-    except FileNotFoundError:
-        return False
+# B-862 (/stress A1.24 P0-7-C*, 2026-05-17): import canonical safe_unlink /
+# safe_rmtree + clear_task_files from `p79.experiment.cleanup` shared module.
+# Pre-fix: clear_tasks defined these locally + watchdog L1830-1850 inlined
+# bare shutil.rmtree/unlink → code-path divergence (gemini "structural lie"
+# framing). Now: single canonical source. clear_tasks.py keeps local thin
+# alias for downstream tests / external scripts that may still import here.
+from p79.experiment.cleanup import (
+    clear_task_files,
+    safe_rmtree,
+    safe_unlink,
+)
 
 
 def _run_lock_path(run_dir: Path) -> Path:
@@ -250,57 +241,10 @@ def _ntfy_force_alert(run_dir: Path, condition: str, site: str, tasks: List[int]
         pass  # ntfy is best-effort, never blocks deletion
 
 
-def _emit_manual_clear_event(
-    cond_dir: Path,
-    site: str,
-    task_id: int,
-    *,
-    force: bool,
-    dry_run: bool,
-    operator_pid: int,
-    reason: str,
-) -> None:
-    """B-863 (/stress A1.24 P0-8-C*, 2026-05-17): Option K event log entry
-    for manual clear_tasks deletion. Parity with watchdog auto-clean event
-    at experiment_watchdog.py:1697 + :1860 (`event_type="task_auto_cleared"`).
-
-    Pre-fix: clear_tasks deleted episodes silently, leaving zero audit trail
-    in `trajectory_events.jsonl` — reviewer/OSF audit could not verify if a
-    100% SR run was first-pass success vs after N manual cleanups. Watchdog
-    auto-clean emits B-314 + B-384 events; manual path now emits symmetric
-    `event_type="manual_task_cleared"` event.
-
-    Best-effort (T2'=a per B-314 convention) — import / fs failures swallow
-    so deletion path stays robust. `log_trajectory_event_external` itself
-    no-ops silently if `cond_dir` doesn't exist yet.
-
-    `reason` ← env `CLEAR_REASON` (operator-set 2-3 word annotation), default
-    `"unspecified"`. Operator workflow:
-        CLEAR_REASON='login_lost wave' clear_tasks.py --tasks 85-131 ...
-    """
-    try:
-        # NOTE: import here so module-import doesn't pull p79.* (clear_tasks
-        # may be invoked outside venv during recovery). Best-effort guard.
-        from p79.experiment.logger_v2 import log_trajectory_event_external
-        log_trajectory_event_external(
-            condition_dir=cond_dir,
-            event_type="manual_task_cleared",
-            task_index=task_id,
-            metadata={
-                "site": site,
-                "reason": reason,
-                "force": force,
-                "dry_run": dry_run,
-                "operator_pid": operator_pid,
-            },
-        )
-    except Exception as _ev_exc:
-        # Best-effort — print warn but never block deletion.
-        print(
-            f"[clear_tasks][trajectory-event][warn] failed to log "
-            f"manual_task_cleared event for task {task_id}: {_ev_exc}",
-            file=sys.stderr,
-        )
+# B-862 / B-863: `_emit_manual_clear_event` removed — Option K event log is
+# now centralized in `p79.experiment.cleanup.clear_task_files` (called below
+# in per-task loop). Single emit-site eliminates fix-one-forget-other drift
+# (lesson: A1.4 B-451 `_shared_vl_utils` 4-consumer drift).
 
 
 def _clean_orphan_artifacts(
@@ -570,47 +514,43 @@ def main() -> int:
                 in_progress_skipped += 1
                 continue
 
-        files = [summary_file, steps_file]
-        dirs = [artifact_dir]
-
-        # B-858 (/stress A1.24 P0-4-AB*): use safe_unlink/safe_rmtree to
-        # tolerate concurrent watchdog cleanup race. found_any is True iff
-        # this caller actually performed the deletion (not just observed
-        # pre-existing absence).
-        found_any = False
-        for f in files:
-            if f.exists():
-                if args.dry_run:
+        # B-862 (/stress A1.24 P0-7-C*): per-task deletion now via shared
+        # `clear_task_files` API (safe_unlink/safe_rmtree + Option K event
+        # emission rolled into single call). Dry-run output handled inline
+        # because shared API's dry_run=True returns False and skips deletion;
+        # we still need operator-visible "[dry-run] rm ..." lines here.
+        if args.dry_run:
+            files = [summary_file, steps_file]
+            dirs = [artifact_dir]
+            found_any = False
+            for f in files:
+                if f.exists():
                     found_any = True
                     print(f"  [dry-run] rm {f.relative_to(run_dir)}")
-                else:
-                    if safe_unlink(f):
-                        found_any = True
-        for d in dirs:
-            if d.exists():
-                if args.dry_run:
+            for d in dirs:
+                if d.exists():
                     found_any = True
                     print(f"  [dry-run] rm -rf {d.relative_to(run_dir)}")
-                else:
-                    if safe_rmtree(d):
-                        found_any = True
-
-        if found_any:
-            deleted += 1
-            if not args.dry_run:
-                print(f"  deleted {prefix}")
-                # B-863 P0-8-C*: Option K event log (parity watchdog auto-clean)
-                _emit_manual_clear_event(
-                    cond_dir=cond_dir,
-                    site=site,
-                    task_id=tid,
-                    force=args.force,
-                    dry_run=False,
-                    operator_pid=os.getpid(),
-                    reason=os.environ.get("CLEAR_REASON", "unspecified"),
-                )
+            if found_any:
+                deleted += 1
+            else:
+                skipped += 1
         else:
-            skipped += 1
+            did_delete = clear_task_files(
+                condition_dir=cond_dir,
+                site=site,
+                task_id=tid,
+                event_type="manual_task_cleared",
+                reason=os.environ.get("CLEAR_REASON", "unspecified"),
+                force=args.force,
+                dry_run=False,
+                operator_pid=os.getpid(),
+            )
+            if did_delete:
+                deleted += 1
+                print(f"  deleted {prefix}")
+            else:
+                skipped += 1
 
     # B-872 (/stress A1.24 P1-8-C, 2026-05-17): `.cleaning` flag wrapping
     # digest + cond_summary operations. Pre-fix: digest atomic write
@@ -631,6 +571,17 @@ def main() -> int:
             _cleaning_flag = None  # best-effort; never block cleanup
 
     # --- Clean digest records for deleted tasks ---
+    #
+    # B-864 (/stress A1.24 P1-1-A* disclose-only, 2026-05-17): digest layer
+    # is fully RETIRED — empirical 2026-05-17 scan finds zero digest_*.jsonl
+    # files on filesystem + zero `aggregate_*.py` consumers (B-743 retired
+    # watchdog write path; aggregators followed). `validate_run.py:920-936`
+    # remains as defensive "skip" check. This task-mode digest cleanup block
+    # is therefore dead code in practice but harmless (early return at L218
+    # if `digest_dir` absent). The corresponding orphan-mode gap (original
+    # P1-1 finding "`--clean-orphan-artifacts` doesn't clean digest") is
+    # MOOT — no digest to clean. Block retained for legacy archive runs
+    # that may still have stale digest_*.jsonl from pre-B-743 era.
     digest_cleaned = 0
     task_id_set: Set[int] = set(task_ids)
     digest_dir = run_dir / "analysis" / "digest"

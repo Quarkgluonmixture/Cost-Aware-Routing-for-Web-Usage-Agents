@@ -209,7 +209,15 @@ def _check_session_health(condition_dir: Path, site: str, task_id: int) -> Optio
     if not dom_path.exists():
         return None
     try:
-        text = dom_path.read_text(encoding="utf-8", errors="replace")[:5000]
+        # B-871 (/stress A1.23 P2-15 A, 2026-05-17): prefix 5000 → 15000 char.
+        # Pre-fix [:5000] missed Postmill reddit dropdown markers when AXTree
+        # serializer placed them past byte 5000 (empirical: reddit task DOM
+        # 7-10KB, dropdown often at byte 6000+ when user-menu sits in
+        # non-viewport region). Result: _check_session_health returned None →
+        # session_loss_streak never incremented → auth-loss 6-layer
+        # auto-clean dead. Raising to 15000 covers observed reddit DOMs +
+        # leaves room for SoM/AXTree growth without scanning entire file.
+        text = dom_path.read_text(encoding="utf-8", errors="replace")[:15000]
     except Exception:
         return None
     # Cross-site tasks may start on a different site's tab.  Detect via the
@@ -1826,20 +1834,33 @@ def main() -> int:
                             # to maintain `digest_*.jsonl` consistency (digest pipeline
                             # retired from watchdog auto-call path).
                             for (cond_id, cond_dir, ctask_id, csite, ckey) in contaminated:
-                                # Delete episode files
-                                for p in [
-                                    cond_dir / "episodes" / f"{csite}_task_{ctask_id}_summary_v2.json",
-                                    cond_dir / "episodes" / f"{csite}_task_{ctask_id}_steps_v2.jsonl",
-                                ]:
-                                    try:
-                                        if p.exists(): p.unlink()
-                                    except OSError:
-                                        pass
-                                cart = cond_dir / "artifacts" / f"{csite}_task_{ctask_id}"
-                                try:
-                                    if cart.exists(): shutil.rmtree(cart)
-                                except OSError:
-                                    pass
+                                # B-862 (/stress A1.24 P0-7-C*, 2026-05-17):
+                                # call shared `clear_task_files` API (same
+                                # function clear_tasks.py uses) — single
+                                # source of truth for file deletion + Option K
+                                # event emit. Pre-fix: inline shutil.rmtree
+                                # + unlink + separate event call → code-path
+                                # divergence with clear_tasks (gemini
+                                # "structural lie" framing). Now: both paths
+                                # converge on `p79.experiment.cleanup`.
+                                # `event_type="task_auto_cleared"` preserves
+                                # B-384 / B-314 schema for paper §4 GLMM
+                                # `had_auth_clear` covariate.
+                                from p79.experiment.cleanup import clear_task_files
+                                clear_task_files(
+                                    condition_dir=cond_dir,
+                                    site=csite,
+                                    task_id=ctask_id,
+                                    event_type="task_auto_cleared",
+                                    reason="session_not_logged_in",
+                                    extra_metadata={
+                                        "is_auth_loss": True,
+                                        "cleared_in_session_wave": True,
+                                        "wave_size": wave_size,
+                                        "wave_task_index": cleaned + 1,  # 1-based
+                                        "is_noise": True,
+                                    },
+                                )
                                 # Remove from in-memory tracking
                                 all_records[:] = [
                                     r for r in all_records
@@ -1848,39 +1869,6 @@ def main() -> int:
                                 seen_keys.discard(ckey)
                                 reported_keys.discard(ckey)
                                 cleaned += 1
-
-                                # B-384 (A1.15 C1 P0-3, 2026-05-16): Option K Hook C
-                                # session-cleanup path emit. Pre-fix: B-314 hook only
-                                # in retry path (L1411-1432); session_contaminated
-                                # cleanup wave (highest-frequency auth-loss class
-                                # entry point) had ZERO trajectory log call. Paper
-                                # §4 GLMM `had_auth_clear` covariate systematically
-                                # false-negative on connected NOT-LOGGED-IN waves.
-                                # Per-task emit inside loop with wave context in
-                                # metadata. Best-effort (T2'=a) — race window
-                                # disclosed in paper §3 (see top-of-file docstring).
-                                try:
-                                    from p79.experiment.logger_v2 import log_trajectory_event_external
-                                    log_trajectory_event_external(
-                                        condition_dir=cond_dir,
-                                        event_type="task_auto_cleared",
-                                        task_index=ctask_id,
-                                        metadata={
-                                            "reason": "session_not_logged_in",
-                                            "is_auth_loss": True,
-                                            "cleared_in_session_wave": True,
-                                            "wave_size": wave_size,
-                                            "wave_task_index": cleaned,  # 1-based within wave
-                                            "is_noise": True,
-                                            "site": csite,
-                                        },
-                                    )
-                                except Exception as _trajectory_log_exc:
-                                    print(
-                                        f"[watchdog][trajectory-event][warn] failed "
-                                        f"to log session-cleanup event for task "
-                                        f"{ctask_id}: {_trajectory_log_exc}"
-                                    )
                             # B-743 (digest retire 2026-05-17): batch digest purge removed.
                             print(f"[watchdog][SESSION] {site} auto-cleaned {cleaned} NOT-LOGGED-IN episodes")
                             _persist_state()
