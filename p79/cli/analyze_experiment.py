@@ -2,8 +2,20 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
+from pathlib import Path
 
-from p79.experiment.analysis import analyze_run
+# B-718 (/stress A1.11 P0-2 B* OOB, 2026-05-17): bootstrap repo root into sys.path
+# BEFORE p79.* imports. Pre-fix this file had ZERO bootstrap — absolute-path
+# invocation died with `ModuleNotFoundError: No module named 'p79'`. Watchdog
+# auto-analysis path + manual recovery dispatch through scripts/analysis shim
+# OR via pyproject entry point, but absolute-path invocation is the cold-start
+# default if pip install -e . has not been run.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from p79.experiment.analysis import analyze_run  # noqa: E402
 
 
 def main() -> None:

@@ -118,12 +118,20 @@ def refresh_site_auth(
         return False
 
     auth_dir = Path(auth_dir)
+    # B-726 (/stress A1.11 P1-10 B, 2026-05-17): auto-create auth_dir so cold-start /
+    # clean workspace / unmounted .auth/ does not collapse a successful login into a
+    # storage_state.json write failure (caller would mis-diagnose as cred problem).
+    try:
+        auth_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        logger.warning("auth_refresh: %s outcome=dir_not_writable %s (%s)", site, auth_dir, exc)
+        return False
     auth_file = auth_dir / f"{site}_state.json"
 
     try:
         username, password = _load_account(site)
     except AuthRefreshConfigError as exc:
-        logger.error("auth_refresh: %s", exc)
+        logger.error("auth_refresh: %s outcome=env_missing %s", site, exc)
         return False
 
     if base_urls and site in base_urls:
@@ -148,56 +156,86 @@ def refresh_site_auth(
     # BUG-4 fix (2026-05-16, gemini NEW-OOB-3): Chromium --host-resolver-rules
     # MAP syntax requires IP, not hostname. Literal "localhost" causes silent
     # 30s DNS hang in resolver-rules pipeline → Playwright page.goto timeout.
-    # Phase 1a 0pp impact, Phase 1b shop 100pp auth-refresh dead.
     if _resolver_ip == "localhost":
         _resolver_ip = "127.0.0.1"
 
-    # B-212 fix (2026-05-16): LOGIN_FAILED detection — replace URL substring match
-    # with urlparse-based path-equal + login_qs subset. Pre-fix substring match
-    # systematically false-positived on shopping_admin (every "/admin/*" post-login
-    # URL contained "/admin" marker substring). For classifieds with query-bearing
-    # login (e.g. /index.php?page=login), require post-login query to also retain
-    # the login key for "still on login" to be true. See A1.5 §5 explanation.
+    # B-725 (/stress A1.11 P1-9 C, 2026-05-17): per-site positive login-success
+    # selector. AND-combined with negative login-page check below.
+    _positive_selectors = {
+        "classifieds":    'a[href*="logout"]',
+        "reddit":         'a[href*="logout"]',
+        "shopping":       'a[href*="customer/account/logout"]',
+        "shopping_admin": '.admin-user-account-text, a[href*="admin/auth/logout"]',
+    }
+    _positive_selector = _positive_selectors.get(site, "")
+
+    _login_url_full = base_url + login_path
+    from urllib.parse import urlparse as _urlparse
+    _login_path_norm = _urlparse(_login_url_full).path.rstrip("/").lower() or "/"
+    _wait_js = (
+        "window.location.pathname.replace(/\\/+$/, '').toLowerCase() !== "
+        + repr(_login_path_norm)
+    )
+
+    # B-717 (/stress A1.11 P0-1 AC* OOB, 2026-05-17): credentials are read from env
+    # inside the subprocess instead of f-string interpolated into the `-c` argv.
+    # Pre-fix `ps auxe` on shared multi-user DGX exposed plaintext password in the
+    # subprocess argv during the ~2-30s refresh window. The script body below is
+    # NON-SECRET — only base_url / site name / login path are interpolated.
+    # B-212 (2026-05-16): structured login-success check via urlparse (path-equal +
+    # login_qs subset).
+    # B-719 (/stress A1.11 P0-3 ABC* OOB, 2026-05-17): replace fixed `time.sleep(2)`
+    # with Playwright-native wait_for_load_state + wait_for_function. Pre-fix: slow
+    # VWA host / cold-start browser / network jitter could exceed 2s, post-sleep
+    # page.url still on login path triggered false LOGIN_FAILED → fail-cascade.
     script = f"""
-import sys, time
+import sys, os
 from urllib.parse import urlparse, parse_qs
 sys.path.insert(0, {str(repo_dir / 'external' / 'visualwebarena')!r})
 from playwright.sync_api import sync_playwright
+
+_user = os.environ.get('P79_AUTH_USER')
+_pwd = os.environ.get('P79_AUTH_PASS')
+if not _user or not _pwd:
+    print('LOGIN_FAILED (env_missing) -> P79_AUTH_USER/P79_AUTH_PASS not set in subprocess')
+    sys.exit(3)
+
 cm = sync_playwright()
 pw = cm.__enter__()
 browser = pw.chromium.launch(headless=True, args=['--host-resolver-rules=MAP metis.lti.cs.cmu.edu {_resolver_ip}'])
 ctx = browser.new_context()
 page = ctx.new_page()
-page.goto({(base_url + login_path)!r})
+page.goto({_login_url_full!r})
 site = {site!r}
 if site == 'classifieds':
-    page.locator('#email').fill({username!r})
-    page.locator('#password').fill({password!r})
+    page.locator('#email').fill(_user)
+    page.locator('#password').fill(_pwd)
     page.get_by_role('button', name='Log in').click()
 elif site == 'reddit':
-    page.get_by_label('Username').fill({username!r})
-    page.get_by_label('Password').fill({password!r})
+    page.get_by_label('Username').fill(_user)
+    page.get_by_label('Password').fill(_pwd)
     page.get_by_role('button', name='Log in').click()
 elif site == 'shopping':
-    page.get_by_label('Email', exact=True).fill({username!r})
-    page.get_by_label('Password', exact=True).fill({password!r})
+    page.get_by_label('Email', exact=True).fill(_user)
+    page.get_by_label('Password', exact=True).fill(_pwd)
     page.get_by_role('button', name='Sign In').click()
 elif site == 'shopping_admin':
-    page.locator('#username').fill({username!r})
-    page.locator('#login').fill({password!r})
+    page.locator('#username').fill(_user)
+    page.locator('#login').fill(_pwd)
     page.get_by_role('button', name='Sign in').click()
-time.sleep(2)
-# B-212 (2026-05-16): structured login-success check via urlparse.
-# Path-equal + login-query subset = "still on login" gate.
-# Examples (verified A1.5 §5):
-#   classifieds login=/index.php?page=login; user-page=/index.php?page=user → path same,
-#     query 'page' differs → NOT still on login → success
-#   shopping_admin login=/admin; dashboard=/admin/dashboard/index → path differs (after rstrip)
-#     → NOT still on login → success (pre-fix substring approach false-positived 100% of time)
-#   reddit login=/login; redirected post-login=/f/foo → path differs → success
+
+try:
+    page.wait_for_load_state('networkidle', timeout=10000)
+except Exception:
+    pass
+try:
+    page.wait_for_function({_wait_js!r}, timeout=10000)
+except Exception:
+    pass
+
 final_url = page.url
 _parsed_final = urlparse(final_url)
-_parsed_login = urlparse({(base_url + login_path)!r})
+_parsed_login = urlparse({_login_url_full!r})
 _final_qs = parse_qs(_parsed_final.query)
 _login_qs = parse_qs(_parsed_login.query)
 _final_path = _parsed_final.path.rstrip('/').lower()
@@ -206,10 +244,22 @@ _still_on_login = (
     _final_path == _login_path_norm
     and all(_final_qs.get(_k) == _v for _k, _v in _login_qs.items())
 )
-if _still_on_login:
+
+_positive_sel = {_positive_selector!r}
+_positive_ok = False
+try:
+    if _positive_sel:
+        _positive_ok = page.locator(_positive_sel).first.is_visible(timeout=2000)
+    else:
+        _positive_ok = True
+except Exception:
+    _positive_ok = False
+
+if _still_on_login or not _positive_ok:
     cm.__exit__(None, None, None)
-    print('LOGIN_FAILED ->', final_url)
-    sys.exit(2)  # distinct exit code so caller knows it's a login failure
+    _reason = 'still_on_login' if _still_on_login else 'no_logout_marker'
+    print('LOGIN_FAILED (' + _reason + ') ->', final_url)
+    sys.exit(2)
 ctx.storage_state(path={str(auth_file)!r})
 cm.__exit__(None, None, None)
 print('ok ->', final_url)
@@ -221,40 +271,80 @@ print('ok ->', final_url)
     else:
         dataset = "visualwebarena"
 
-    # B-214 (2026-05-16, deferred): minimal env propagation would drop LLM API
-    # keys + GITHUB_TOKEN from subprocess. Currently kept on for backwards-
-    # compatibility with Playwright env (HOME, PATH, DISPLAY, etc.). Future
-    # tightening: filter to {PATH, DATASET, VWA_REMOTE_HOST, HOME, USER,
-    # DISPLAY, PLAYWRIGHT_*}.
-    env = {**os.environ, "DATASET": dataset}
+    # B-720 (/stress A1.11 P1-4 ABC* OOB, 2026-05-17): subprocess env whitelist instead
+    # of full inheritance. Pre-fix: LLM API keys / GITHUB_TOKEN / AWS creds leaked into
+    # Playwright Chromium subprocess (Chromium crash dump / debug log / same-UID
+    # inspector extend secret exposure surface). Closes B-214 deferred.
+    _env_whitelist = (
+        "PATH", "HOME", "USER", "DISPLAY", "LANG", "LC_ALL", "TZ",
+        "XAUTHORITY", "DBUS_SESSION_BUS_ADDRESS",
+        "VWA_REMOTE_HOST",
+    )
+    env = {k: os.environ[k] for k in _env_whitelist if k in os.environ}
+    env["DATASET"] = dataset
+    # B-717 (/stress A1.11 P0-1 AC*): credentials passed via env, not argv. Subprocess
+    # reads `P79_AUTH_USER` / `P79_AUTH_PASS` via os.environ.get (see script above).
+    env["P79_AUTH_USER"] = username
+    env["P79_AUTH_PASS"] = password
+    # Pass through any PLAYWRIGHT_* / VWA_* tunables by prefix (still no secrets).
+    for _k, _v in os.environ.items():
+        if _k.startswith(("PLAYWRIGHT_", "VWA_")) and _k not in env:
+            env[_k] = _v
 
-    # B-217 (2026-05-16, deferred): timeout override via AUTH_REFRESH_TIMEOUT.
-    _timeout = int(os.environ.get("AUTH_REFRESH_TIMEOUT", "30"))
+    # B-727 (/stress A1.11 P1-11 B, 2026-05-17): AUTH_REFRESH_TIMEOUT parse must not
+    # escape — soft-fail contract demands False on misconfig. Pre-fix: typo'd value
+    # (e.g. AUTH_REFRESH_TIMEOUT=abc) raised ValueError past the try block, breaking
+    # the watchdog/auth_required_gate retry decision contract.
+    try:
+        _timeout = int(os.environ.get("AUTH_REFRESH_TIMEOUT", "30"))
+        if _timeout <= 0:
+            raise ValueError(f"must be > 0, got {_timeout}")
+    except (ValueError, TypeError) as _err:
+        logger.warning(
+            "auth_refresh: %s outcome=misconfig invalid AUTH_REFRESH_TIMEOUT (%s) — refusing",
+            site, _err,
+        )
+        return False
 
+    # B-728 (/stress A1.11 P1-12 A, 2026-05-17): outcome= log tag on every return path
+    # so downstream caller (watchdog / auth_required_gate / manual grep) can distinguish
+    # cred_wrong vs network vs playwright_crash vs timeout vs env_missing without
+    # changing the bool return API. Pre-fix: 4 failure modes collapsed to single False.
     try:
         r = subprocess.run(
             [sys.executable, "-c", script],
             capture_output=True, text=True, timeout=_timeout, env=env,
         )
         if r.returncode == 0 and auth_file.exists():
-            logger.info("auth_refresh: %s refreshed: %s", site, r.stdout.strip())
+            logger.info("auth_refresh: %s outcome=ok %s", site, r.stdout.strip())
             return True
-        # rc=2 → script detected login failure (still on login page, no
-        # storage_state written). Distinguish for clearer logging.
+        # rc=2 → script detected login failure (still on login page OR no logout marker).
         if r.returncode == 2:
             logger.warning(
-                "auth_refresh: %s LOGIN VERIFICATION FAILED (still on login page) — "
-                "credentials wrong, site down, or page structure changed: %s",
+                "auth_refresh: %s outcome=cred_wrong (login verification failed) — "
+                "credentials, site state, or page structure changed: %s",
+                site, r.stdout.strip(),
+            )
+            return False
+        # rc=3 → script could not read P79_AUTH_USER/P79_AUTH_PASS from subprocess env.
+        # B-717/B-720 contract: should never happen post-fix since refresh_site_auth
+        # builds env. If it does, surface clearly so misconfig is loud.
+        if r.returncode == 3:
+            logger.warning(
+                "auth_refresh: %s outcome=env_missing subprocess could not read creds: %s",
                 site, r.stdout.strip(),
             )
             return False
         logger.warning(
-            "auth_refresh: %s failed rc=%d: %s",
+            "auth_refresh: %s outcome=playwright_error rc=%d: %s",
             site, r.returncode, r.stderr[-300:],
         )
         return False
+    except subprocess.TimeoutExpired:
+        logger.warning("auth_refresh: %s outcome=timeout (%ss)", site, _timeout)
+        return False
     except Exception as exc:
-        logger.warning("auth_refresh: %s error: %s", site, exc)
+        logger.warning("auth_refresh: %s outcome=playwright_crash %s", site, exc)
         return False
 
 

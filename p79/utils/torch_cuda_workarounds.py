@@ -67,6 +67,14 @@ def apply_nvrtc_prod_fallback_if_needed() -> bool:
     original_torch_prod = torch.prod
 
     def _cpu_prod_tensor(tensor: torch.Tensor, *args, **kwargs):
+        # B-730 (/stress A1.11 P1-14 BC* OOB, 2026-05-17): increment fallback counter so
+        # `scripts/provenance/snapshot_env.py` can record `nvrtc_fallback_fired_count`
+        # in env_snapshot.json. Pre-fix paper-grade run had no way to know that a
+        # CUDA→CPU fallback happened mid-run — bit-reproducibility audit lacks the
+        # required signal. Only invoked when NVRTC arch error fires (see wrappers below).
+        torch._p79_nvrtc_prod_fallback_count = getattr(
+            torch, "_p79_nvrtc_prod_fallback_count", 0
+        ) + 1
         if kwargs.get("out", None) is not None:
             # Keep semantics predictable; do not emulate out= across devices.
             raise RuntimeError("CPU prod fallback does not support out= argument")
@@ -79,7 +87,12 @@ def apply_nvrtc_prod_fallback_if_needed() -> bool:
                 cast = cpu_tensor.float()
                 out = original_tensor_prod(cast, *args, **kwargs)
                 if isinstance(out, torch.Tensor):
-                    out = out.to(dtype=tensor.dtype)
+                    # B-730 dtype contract: caller's `kwargs["dtype"]` takes precedence
+                    # over input tensor's dtype. Pre-fix unconditionally cast back to
+                    # `tensor.dtype`, silently violating user's `dtype=` request when
+                    # they wanted higher precision on the result.
+                    _target_dtype = kwargs.get("dtype", tensor.dtype)
+                    out = out.to(dtype=_target_dtype)
             else:
                 raise
         if isinstance(out, torch.Tensor):

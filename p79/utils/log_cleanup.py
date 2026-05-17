@@ -23,8 +23,16 @@ class LogCleanupConfig:
         max_log_age_days: int = 30,
         max_log_size_mb: Optional[int] = None,
         max_log_count: Optional[int] = None,
-        dry_run: bool = False,
+        dry_run: bool = True,
     ):
+        # B-724 (/stress A1.11 P1-8 AB* OOB, 2026-05-17): dry_run default changed to
+        # True. Pre-fix `LogCleanupConfig()` paired with `cleanup_logs()` /
+        # `cleanup_results()` recursively rmtree'd results/run_* > max_run_age_days,
+        # nuking paper-grade历史 forensic evidence. `cleanup_all()` had a B-213 second
+        # safety gate, but `cleanup_logs` / `cleanup_results` direct callers (notebook,
+        # interactive shell, maintenance script with explicit config) bypassed it.
+        # Explicit opt-in to destructive ops: pass `dry_run=False` AND use
+        # `cleanup_logs(..., confirmed=True)` / `cleanup_results(..., confirmed=True)`.
         self.max_log_age_days = max_log_age_days
         self.max_log_size_mb = max_log_size_mb
         self.max_log_count = max_log_count
@@ -54,28 +62,45 @@ def cleanup_logs(
     log_dir: Path,
     config: LogCleanupConfig,
     pattern: str = "*.log",
+    *,
+    confirmed: bool = False,
 ) -> Tuple[List[Path], List[Path], float]:
     """清理日志文件
-    
+
+    B-724 (/stress A1.11 P1-8 AB*, 2026-05-17): `confirmed=True` required to actually
+    delete even when `config.dry_run=False`. Mirrors `cleanup_all` safety gate.
+    B-723 (/stress A1.11 P1-7 AC*, 2026-05-17): `unlink(missing_ok=True)` so TOCTOU
+    file-already-deleted between glob and unlink does not crash the whole cleanup
+    sweep (was: FileNotFoundError → cleanup_logs raises → 后续 cleanup skip → 磁盘满).
+
     Args:
         log_dir: 日志目录路径
         config: 清理配置
         pattern: 文件匹配模式
-        
+        confirmed: 必须显式 True 才会真删 (paper-grade safety gate)
+
     Returns:
         (已删除的文件列表, 保留的文件列表, 释放的空间MB)
     """
     deleted_files: List[Path] = []
     kept_files: List[Path] = []
     freed_space_mb = 0.0
-    
+
     if not log_dir.exists():
         logger.info(f"日志目录不存在: {log_dir}")
         return deleted_files, kept_files, freed_space_mb
-    
+
+    # B-724 safety gate: even if config.dry_run=False, require confirmed=True kwarg.
+    _effective_dry_run = config.dry_run or not confirmed
+    if not config.dry_run and not confirmed:
+        logger.warning(
+            "cleanup_logs called with dry_run=False but confirmed=False — forcing dry_run "
+            "(B-724 A1.11 P1-8 safety gate). Pass confirmed=True to actually delete."
+        )
+
     # 获取所有匹配的日志文件
     log_files = sorted(log_dir.glob(pattern), key=lambda p: p.stat().st_mtime)
-    
+
     # 按年龄清理
     if config.max_log_age_days > 0:
         for log_file in log_files[:]:
@@ -84,13 +109,13 @@ def cleanup_logs(
                 size_mb = get_log_size_mb(log_file)
                 deleted_files.append(log_file)
                 freed_space_mb += size_mb
-                if not config.dry_run:
-                    log_file.unlink()
+                if not _effective_dry_run:
+                    log_file.unlink(missing_ok=True)
                     logger.info(f"删除过期日志: {log_file} (年龄: {age_days:.1f}天, 大小: {size_mb:.2f}MB)")
                 else:
                     logger.info(f"[DRY RUN] 将删除过期日志: {log_file} (年龄: {age_days:.1f}天, 大小: {size_mb:.2f}MB)")
                 log_files.remove(log_file)
-    
+
     # 按数量清理
     if config.max_log_count is not None and len(log_files) > config.max_log_count:
         # 删除最旧的文件
@@ -99,13 +124,13 @@ def cleanup_logs(
             size_mb = get_log_size_mb(log_file)
             deleted_files.append(log_file)
             freed_space_mb += size_mb
-            if not config.dry_run:
-                log_file.unlink()
+            if not _effective_dry_run:
+                log_file.unlink(missing_ok=True)
                 logger.info(f"删除多余日志: {log_file} (大小: {size_mb:.2f}MB)")
             else:
                 logger.info(f"[DRY RUN] 将删除多余日志: {log_file} (大小: {size_mb:.2f}MB)")
             log_files.remove(log_file)
-    
+
     # 按总大小清理
     if config.max_log_size_mb is not None:
         total_size_mb = sum(get_log_size_mb(f) for f in log_files)
@@ -116,16 +141,16 @@ def cleanup_logs(
             deleted_files.append(oldest_file)
             freed_space_mb += size_mb
             total_size_mb -= size_mb
-            if not config.dry_run:
-                oldest_file.unlink()
+            if not _effective_dry_run:
+                oldest_file.unlink(missing_ok=True)
                 logger.info(f"删除超大小限制日志: {oldest_file} (大小: {size_mb:.2f}MB)")
             else:
                 logger.info(f"[DRY RUN] 将删除超大小限制日志: {oldest_file} (大小: {size_mb:.2f}MB)")
-    
+
     kept_files = log_files
-    
+
     logger.info(f"日志清理完成: 删除 {len(deleted_files)} 个文件, 保留 {len(kept_files)} 个文件, 释放 {freed_space_mb:.2f}MB")
-    
+
     return deleted_files, kept_files, freed_space_mb
 
 
@@ -133,42 +158,59 @@ def cleanup_results(
     results_dir: Path,
     config: LogCleanupConfig,
     max_run_age_days: int = 90,
+    *,
+    confirmed: bool = False,
 ) -> Tuple[List[Path], float]:
     """清理旧的实验结果目录
-    
+
+    B-724 (/stress A1.11 P1-8 AB*, 2026-05-17): `confirmed=True` required to actually
+    rmtree even when `config.dry_run=False`. Most destructive helper — recursive
+    rmtree of `results/.../run_*` > max_run_age_days = paper-grade历史 forensic
+    evidence elimination. Mirrors `cleanup_all` safety gate.
+
     Args:
         results_dir: 结果目录路径
         config: 清理配置
         max_run_age_days: 实验运行目录的最大年龄（天）
-        
+        confirmed: 必须显式 True 才会真删 (paper-grade safety gate)
+
     Returns:
         (已删除的目录列表, 释放的空间MB)
     """
     deleted_dirs: List[Path] = []
     freed_space_mb = 0.0
-    
+
     if not results_dir.exists():
         logger.info(f"结果目录不存在: {results_dir}")
         return deleted_dirs, freed_space_mb
-    
+
+    _effective_dry_run = config.dry_run or not confirmed
+    if not config.dry_run and not confirmed:
+        logger.warning(
+            "cleanup_results called with dry_run=False but confirmed=False — forcing "
+            "dry_run (B-724 A1.11 P1-8 safety gate). Pass confirmed=True to actually rmtree."
+        )
+
     # 获取所有运行目录
     for run_dir in results_dir.rglob("run_*"):
         if not run_dir.is_dir():
             continue
-        
+
         age_days = get_file_age_days(run_dir)
         if age_days > max_run_age_days:
             size_mb = get_log_size_mb(run_dir)
             deleted_dirs.append(run_dir)
             freed_space_mb += size_mb
-            if not config.dry_run:
-                shutil.rmtree(run_dir)
+            if not _effective_dry_run:
+                # B-723 (/stress A1.11 P1-7 AC*, 2026-05-17): tolerate concurrent
+                # removal between rglob and rmtree (another watchdog/cleanup process).
+                shutil.rmtree(run_dir, ignore_errors=True)
                 logger.info(f"删除过期实验结果: {run_dir} (年龄: {age_days:.1f}天, 大小: {size_mb:.2f}MB)")
             else:
                 logger.info(f"[DRY RUN] 将删除过期实验结果: {run_dir} (年龄: {age_days:.1f}天, 大小: {size_mb:.2f}MB)")
-    
+
     logger.info(f"实验结果清理完成: 删除 {len(deleted_dirs)} 个目录, 释放 {freed_space_mb:.2f}MB")
-    
+
     return deleted_dirs, freed_space_mb
 
 
@@ -245,29 +287,32 @@ def cleanup_all(
     if logs_dir.exists():
         logger.info(f"\n清理日志目录: {logs_dir}")
         print_disk_usage(logs_dir)
-        cleanup_logs(logs_dir, config, pattern="*.log")
-    
+        # B-724 (/stress A1.11 P1-8): propagate `confirmed` to per-helper safety gates.
+        cleanup_logs(logs_dir, config, pattern="*.log", confirmed=confirmed)
+
     # 清理 results/ 目录中的旧实验
     results_dir = project_root / "results"
     if results_dir.exists():
         logger.info(f"\n清理实验结果目录: {results_dir}")
         print_disk_usage(results_dir)
-        cleanup_results(results_dir, config, max_run_age_days=90)
-    
+        cleanup_results(results_dir, config, max_run_age_days=90, confirmed=confirmed)
+
     # 清理临时文件
     temp_patterns = [
         "temp_task_*.json",
         "temp_smoke_config.json",
         "episode_*.jsonl",
     ]
-    
+
     logger.info(f"\n清理临时文件")
     for pattern in temp_patterns:
         for temp_file in project_root.glob(pattern):
             if temp_file.is_file():
                 size_mb = get_log_size_mb(temp_file)
                 if not config.dry_run:
-                    temp_file.unlink()
+                    # B-723 (/stress A1.11 P1-7 AC*, 2026-05-17): tolerate concurrent
+                    # removal between glob and unlink (another cleanup process).
+                    temp_file.unlink(missing_ok=True)
                     logger.info(f"删除临时文件: {temp_file} ({size_mb:.2f}MB)")
                 else:
                     logger.info(f"[DRY RUN] 将删除临时文件: {temp_file} ({size_mb:.2f}MB)")
