@@ -457,7 +457,116 @@ Awaiting harness notification. Trace log path: `docs/checkpoints/codex_outputs/g
 
 ## 7. Cross-link
 
-- Chronicle (笔记 §N to be appended after this audit completes)
-- Phase 1 plan §A1 ladder (item 8+ — adds GRL audit as ladder step)
-- Master bug catalog gap allocation: reserved B-439~B-448 (38 IDs) for this audit's findings
-- Future: this tracker becomes the workshop sub-paper substrate (item buckets A/B from user table map directly to "VWA upstream bug" vs "P79 net-add capability scaffold" framing)
+- Chronicle §173 (Chunk 1) + §175 (Chunk 2) + §176 (Chunk 3) + §178 (Chunk 4) + §179 (synthesis, this section)
+- Phase 1 plan §A1.25 GRL audit (item 8 — closed 2026-05-17 morning)
+- Master bug catalog: actual claim B-439~B-448 (Chunk 1) + B-479~B-484 (Chunk 2) + B-506~B-511 (Chunk 3) + B-535~B-541 (Chunk 4) = **29 fixes** across 4 commits (`5d8fc2f` + `87874f2` + `01d45cf` + `25191a9`)
+- Workshop sub-paper substrate: see §8.2 below for viability decision
+
+---
+
+## 8. Cross-chunk synthesis (CLOSURE 2026-05-17 ~11:30 BST)
+
+### 8.1 Unified bug list summary — 29 fixes by severity + paper §-disclosure
+
+| Severity | Count | Examples |
+|---|---|---|
+| **P0** (paper-grade emergency / launch-blocking) | 6 | B-439 hover/clear/upload dead-code retire; B-440 locator_route_meta retry-split; B-481 select_option structured fuzzy return (4-AI overlap); B-506 element_id strict reject; **B-535 LLM judge polarity inversion** (paper-grade emergency, codex Mode B F1 unique); B-536 SBOM全栈 re-lock |
+| **P1** (paper-grade quality) | ~19 | B-441 walk-up extension to AREA/contenteditable; B-446/B-538 sync+async SELECT_OPTION args forward; B-447 UPLOAD parser+factory + B-539 field decouple; B-479 CSS dropdown multi-menu accumulate; B-480 select_option_meta_retry symmetric write; B-507 anti_repeat hard-block disclose; B-508 coord dual-format disclose (user reframe); B-509 dialog telemetry; B-510 runtime_sleep_ms field; B-511 option_index bounds; B-541 P79 wrapper reliability disclosure; ... |
+| **P2** (defer-able to Phase 1b prep) | ~4 | DOM/Vision dispatch fallback; start-URL health-check fail-open; auto tab-switch framing; is_editable guard symmetric |
+
+**Paper §-disclosure coverage** (post-A1.25):
+- §3.5 GRL action-layer (B-445/446/447/535/538/539/540 commit fields populated)
+- §3.5.1 cross-baseline asymmetry — 12+ items disclosed (incl. +6 new from A1.25: coord dual-format, dialog telemetry, runtime_sleep, anti_repeat disclose, P79 wrapper reliability, evaluator-patch policy)
+- §3.5.3 **NEW** Observation enrichment surface — `[OPTIONS]` / `[DROPDOWN OPTIONS]` / fuzzy match / select_option dispatch (Chunk 2)
+- §4.X.11 VWA submodule SBOM patch table — extended with 2 rows (c1765ee + 1c3a615), 8 commits total
+- Catalog cross-references all updated; only Chunk 3 shared-files (runner/main.py + types.py + schema_migrations/v2.py + section3) retain draft B-485-B-490 inline labels with catalog cross-reference disclosure
+
+### 8.2 Workshop sub-paper viability decision
+
+**Original framing** (user kickoff): 15 GRL items split into **bucket A (workshop sub-paper)** = walk-up click 94.4% off-target family + select_option/UPLOAD dispatch fixes + shadow-DOM pierce + tab switch + viewport ratio + asyncio + navigate JSON; **bucket B (paper-1 disclosure)** = options injection + fuzzy match + is_editable + coord normalize + dialog accept + sleep + form snapshot + extract_candidate.
+
+**Post-A1.25 viability assessment**:
+
+| Workshop sub-paper component | Post-A1.25 status | Viability |
+|---|---|---|
+| **Walk-up click ON_TARGET fix family** (B-01/02/33 cluster + B-439~B-448 + B-445/446/447 + B-538/539) | ✅ Comprehensive — 8+ B-### entries, evidence layer B-440 + B-448 aggregator + paper §3.5.2 disclosure | **HIGH** — most coherent workshop story |
+| **Cross-benchmark generalizability of observation enrichment** | Paper-1 §3.5.3 disclose as "standard VWA agent practice"; cross-benchmark deferred to workshop per user Chunk 2 Q1 reframing | **MEDIUM** — needs cross-benchmark data fire |
+| **LLM judge polarity bug** (B-91 + B-535) | Paper-1 §3.5 evaluator-patch policy disclosure | **HIGH** — single-finding workshop "VWA evaluator bug worth republishing across VWA-derived papers" |
+| **Action policy + safety primitives** (dialog telemetry, runtime_sleep, anti_repeat hard-block) | Paper-1 §3.5.1 disclosure; no separable workshop story | **LOW** — too embedded in paper-1 cross-baseline framing |
+| **VWA submodule SBOM machinery** (lock files, preflight, OSF reproducibility) | Paper-1 §4.X.11; meta-infrastructure | **LOW** — process paper, not research result |
+
+**推荐 workshop sub-paper scope** (high-viability only):
+- **Track A (primary)**: GRL walk-up click ON_TARGET fix family + paper-grade evidence layer (B-440 split + B-448 aggregator) + cross-mode coverage analysis. ~3-4K word workshop paper.
+- **Track B (auxiliary)**: VWA LLM judge polarity bug (B-91 + B-535) as standalone short paper / workshop note. ~1.5K word.
+- **Track A + B co-submit** to same workshop OR distribute across 2 (different audiences: walk-up click is methodology-paper venue; LLM judge bug is evaluation-systems venue).
+
+**推荐 NOT in workshop**: cross-benchmark generalizability (lacks data), action policy / safety primitives (too tangled with paper-1), SBOM machinery (process, not result).
+
+### 8.3 Phase 1a launch trigger criteria + go/no-go
+
+Per user Q2=Soften + Q3=(a) "continue per Q2=Soften → final synthesis then Phase 1a fire":
+
+**Required pre-launch checks** (all must PASS):
+
+| # | Check | Status | Action if FAIL |
+|---|---|---|---|
+| 1 | All A1.25 GRL Chunks 1-4 committed | ✅ PASS (4 commits) | — |
+| 2 | All Chunks' P0 + launch-blocking P1 fixes landed (Q2=Soften) | ✅ PASS (6 P0 + ~13 P1 = ~19 launch-blocking lands) | — |
+| 3 | py_compile + pytest all clean (zero regression) | ✅ PASS (421/421 PASS) | Debug + re-land |
+| 4 | Submodule SBOM re-locked + lock files synced | ✅ PASS (B-536) | Re-sed sweep |
+| 5 | Paper §3.5.3 + §3.5.1 + §4.X.11 disclosures landed | ✅ PASS (B-484/B-507/B-508/B-509/B-541/B-537) | Add prose |
+| 6 | Memory `reference_vwa_submodule_p79_patches.md` updated | ✅ PASS | Re-write |
+| 7 | preflight_v2.sh full execution at launch time | ⏳ NOT-RUN (runs at launch script) | Investigate failure |
+| 8 | Quark Tailscale / A100 VM connectivity verified | ⏳ NOT-RUN | Restore connection |
+| 9 | `make active` shows no concurrent paper-grade fire | ⏳ Should be 0 | Wait for any active to finish |
+
+**Go/no-go assessment**: **GO** for Phase 1a launch trigger per Q2=Soften criteria. Items 7-9 are runtime checks executed by the launch script itself (e.g. `make launch BASELINE=B0 SITE=classifieds MODE=dom` runs preflight_v2.sh as first step), not pre-commit checks.
+
+**Residual concerns (Phase 1b prep window)**:
+- P2-1-C* DOM/Vision dispatch fallback asymmetry (Chunk 3) — audit-able from Phase 1a JSONL post-fire
+- P2-2-B start-URL health-check fail-open (Chunk 3)
+- P2-3-C* auto tab-switch framing §3.5.2 (Chunk 3)
+- P1-2 observation_enrichment_meta telemetry (Chunk 2 deferred)
+- P1-6 native-vs-CSS selected-state asymmetry (Chunk 2 deferred)
+- P1-7 §3.5.1 dom_size prose recalibration (Chunk 2 deferred)
+
+**Phase 1a launch invocation** (per launch_checklist.md): `make launch BASELINE=<B0|B1|B2> SITE=<classifieds|reddit> MODE=<dom|som|vision|phantom_*>` per condition; 36 conditions / 6 cells total. Recommended order: B0 first (lowest local resource footprint per CLAUDE.md hard rule "same site only one baseline at a time") → B1 → B2.
+
+### 8.4 Cross-batch learnings — institutionalize for next /stress
+
+**Concurrent multi-session protocol learnings (3 collision events this sprint)**:
+
+1. **B-### reservation race** (Chunks 2→4 cumulative):
+   - Chunk 2: B-478 gap left for parallel timing (no actual collision avoided)
+   - Chunk 3: B-485-B-490 draft collided with parallel A1.5b's B-485-B-505 (mid-fix-apply discovery, sed-rename safe files + catalog cross-reference for shared)
+   - Chunk 4: avoided collision by re-grep "Next available" IMMEDIATELY before inline tagging (no collision occurred)
+   - **Institutional fix**: stress SKILL.md add "Phase 0.5: re-grep Next available B-number IMMEDIATELY BEFORE inline reference tagging; do NOT use Phase-0-recon B-numbers if any /stress is concurrently active". Or stronger: atomic claim via touch `tmp/B-### reservation` lockfile.
+
+2. **§ chronicle race** (3 duplicate § events):
+   - §173 duplicate (me A1.25 Chunk 1 + parallel A1.20)
+   - §175 duplicate (me A1.25 Chunk 2 + parallel A1.5b Phase 1 Chunk 5b)
+   - **Institutional fix**: same as B-### — re-grep latest § immediately before append.
+
+3. **Codex usage limit recovery pattern** (Chunk 2 only, didn't recur):
+   - Codex 5h-window quota exhausted mid-Chunk-2; auto-retry pattern via `setsid nohup` + Tier 1 file marker + ntfy → saved Chunk 2's 6 paper-grade findings
+   - **Institutional fix**: stress SKILL.md add Mode B retry fallback section documenting the detached-worker pattern.
+
+4. **User Q1 reframing pattern** (Chunk 2 + Chunk 3 + Chunk 4):
+   - Chunk 2 Q1: "phantom enrichment = standard VWA practice" (downgrade P0→P1 disclosure-only)
+   - Chunk 3 Q3: "coord dual-format = intentional design" (drop wrapper-as-authoritative refactor)
+   - Chunk 4 Q1: "LLM judge consistent with B-91 precedent → fix + disclose" (initial Mode A wrong, user precedent argument)
+   - **Institutional fix**: stress SKILL.md add Phase 0.4 "check existing P79 precedents for analogous fix" before triage — Mode A would have caught B-91 precedent for Chunk 4 without user intervention.
+
+5. **Mode B retry success rate**: 1/1 (Chunk 2 only retry-fire; saved 6 findings). Pattern is solid.
+
+**Mode B / Mode C OOB catch stats this sprint** (~29 fixes total):
+- Mode B unique OOB catches: ~12 fixes (e.g. B-481 select_option semantic + B-509 dialog + B-510 sleep + B-511 option_index + B-535 LLM judge polarity)
+- Mode C unique OOB catches: ~6 fixes (e.g. B-507 anti_repeat + B-541 wrapper reliability + Chunk 4 SBOM)
+- 3-AI overlap (Mode A + B + C): ~6 fixes (high-confidence cross-validation, P0-1 Chunk 2 + P0-2 Chunk 3 + P0-2 Chunk 4)
+- Single-AI unique (Mode A only): ~5 fixes (smaller P2 items)
+
+**Cross-AI ROI = strong**: each chunk's Mode B/C OOB catches save 1-3 paper-grade unblockers Mode A solo would have missed.
+
+---
+
+**A1.25 GRL audit batch — CLOSED**. Ready for Phase 1a launch trigger per Q3=(a) timeline (expected fire @ 5/17 evening BST).
