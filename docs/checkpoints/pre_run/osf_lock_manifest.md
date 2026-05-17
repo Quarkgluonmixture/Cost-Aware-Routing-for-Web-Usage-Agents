@@ -42,6 +42,9 @@ drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision
 | Run manifest YAML | `results/phantom_paper/run_manifest.yaml` | `<TBD commit-SHA>` | TBD |
 | Paper drafts (locked snapshot) | `docs/checkpoints/paper_drafts_locked/` | `<TBD commit-SHA>` | TBD |
 | Bibliography (57 entries) | `docs/checkpoints/paper_drafts/paper.bib` | `<TBD commit-SHA>` | TBD |
+| Power analysis script (B-954 /stress A2.3a P1-7-B 2026-05-17) | `scripts/analysis/power_analysis.py` | `<TBD commit-SHA — after A2.3a fix landed>` | TBD |
+| Power analysis output (B-954) | `docs/analysis/cross_sites/power_analysis.md` | `<TBD commit-SHA>` | TBD; generated via `.venv/bin/python3 scripts/analysis/power_analysis.py --baseline-sr 0.10 --output docs/analysis/cross_sites/power_analysis.md` (one-sided z_α=1.645 per prereg §2.5 default) |
+| FE-pool empirical SE source (B-954) | `results/phantom_paper/meta_phantom_lift.csv` (`4psom_vs_3` row: `theta_fe=2.336`, `se_fe=0.529`, k_cells=3) | `<regenerable via aggregate_phantom_meta.py; gitignored but reproducible from condition_summary_v2.json>` | empirical SE_FE = 0.529pp at k=3 archive ground truth for power section §2.4 |
 | **VWA submodule HEAD** | `external/visualwebarena` (branch `p79-patches`) | `1c3a615308fd9f17c73a9d33a96cf29ec6807d48` | re-locked 2026-05-17 (/stress A1.25 GRL Chunks 1+4 — supersedes 2026-05-16 A1.18 lock at `eb5cbd8`) |
 | **VWA upstream base** | `external/visualwebarena` (upstream `main`) | `89f5af29305c3d1e9f97ce4421462060a70c9a03` | locked 2026-05-16 |
 | **VWA patch-bundle diff SHA-256** | `git diff 89f5af2..HEAD` over submodule | `f1315dc49a33c4b5e8d7d3958974d26f4e6ad330b15b8ce01a6eb8b80a958b1a` | re-locked 2026-05-17; 8 commits enumerated in `locked_versions.md` + paper §4.X.11 disclosure table (post A1.25 GRL Chunks 1+4) |
