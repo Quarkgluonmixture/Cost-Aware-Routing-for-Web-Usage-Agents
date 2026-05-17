@@ -225,6 +225,130 @@ def bootstrap_lift_ci(in_3: np.ndarray, in_5: np.ndarray, B: int = 1000, seed: i
     return float(np.quantile(lifts, 0.025)), float(np.quantile(lifts, 0.975))
 
 
+def stratified_bootstrap_lift_ci(in_3: np.ndarray, in_5: np.ndarray,
+                                  strata: np.ndarray, B: int = 1000, seed: int = 42
+                                  ) -> tuple[float, float]:
+    """Stratified bootstrap 95% CI on (5-mode oracle SR - 3-mode oracle SR).
+
+    Resamples within each stratum, preserving the marginal stratum size in each
+    bootstrap replicate. Used for /stress A2.1 P0-5-B* robustness check
+    (stratify by task_family / evaluator_type / reference_image_present) to
+    address the codex concern that the standard paired bootstrap is a
+    task-superpopulation variance estimator under an exchangeability
+    assumption VWA task taxonomy may violate. Falls back to the standard
+    paired bootstrap when only one stratum is observed.
+
+    Args:
+        in_3: per-task pass mask for the 3-mode oracle (one bit per task).
+        in_5: per-task pass mask for the 5-mode oracle.
+        strata: integer-or-string label per task; tasks sharing a label are
+            resampled together. ``len(strata)`` must equal ``len(in_3)``.
+        B: number of bootstrap resamples.
+        seed: numpy RNG seed (default 42 to match ``bootstrap_lift_ci``).
+
+    Returns:
+        ``(ci_lo_2.5, ci_hi_97.5)`` task-resampling 95% CI in percentage points.
+    """
+    n = len(in_3)
+    if len(strata) != n:
+        raise ValueError(f"strata length {len(strata)} != task vector length {n}")
+    rng = np.random.default_rng(seed)
+    unique_strata = np.unique(strata)
+    if len(unique_strata) <= 1:
+        return bootstrap_lift_ci(in_3, in_5, B=B, seed=seed)
+    stratum_indices = {s: np.where(strata == s)[0] for s in unique_strata}
+    lifts = np.empty(B)
+    for b in range(B):
+        idx_pieces = []
+        for s in unique_strata:
+            sub_idx = stratum_indices[s]
+            chosen = rng.choice(sub_idx, len(sub_idx), replace=True)
+            idx_pieces.append(chosen)
+        idx = np.concatenate(idx_pieces)
+        lifts[b] = 100 * (int(in_5[idx].sum()) - int(in_3[idx].sum())) / n
+    return float(np.quantile(lifts, 0.025)), float(np.quantile(lifts, 0.975))
+
+
+def permutation_drop_one_null(per_arm_pass_vectors: dict, drop_arm: str,
+                               B_perm: int = 10000, seed: int = 42) -> dict:
+    """Fixed-marginal permutation null for drop-one oracle excess.
+
+    For each permutation, independently shuffle each arm's per-task pass
+    labels while preserving its marginal pass count. Recompute the drop-one
+    oracle (union over all arms minus union over arms except ``drop_arm``)
+    each time. Reports the observed drop-one's excess over the 95th
+    percentile of the permutation null distribution.
+
+    This addresses /stress A2.1 P0-2-ABC* (Claude+codex+gemini 3-AI overlap)
+    — the trivial ``H0: drop_one = 0`` rejected by the paired bootstrap is
+    not a falsifiability test for the underlying complementarity claim.
+    Under this fixed-marginal null, ``drop_one`` excess is non-trivial only
+    when the joint pass-set structure across arms encodes routing-relevant
+    complementarity beyond what the per-arm marginal pass counts alone
+    would produce by independent random success allocation.
+
+    Args:
+        per_arm_pass_vectors: dict mapping arm name (str) to per-task pass
+            mask (bool / int / np.ndarray of length n).
+        drop_arm: arm to be dropped for the drop-one oracle.
+        B_perm: number of permutations (10000 is the prereg-locked default).
+        seed: numpy RNG seed.
+
+    Returns:
+        dict with observed_drop_one_pp, null_p50/p95/p99, excess_over_null_p95_pp,
+        p_value_one_sided (fraction of permutations >= observed),
+        B_perm, marginal_counts, n_tasks.
+    """
+    arms = list(per_arm_pass_vectors.keys())
+    if drop_arm not in arms:
+        raise ValueError(f"drop_arm {drop_arm!r} not in arms {arms!r}")
+    if not arms:
+        raise ValueError("per_arm_pass_vectors is empty")
+    n = len(next(iter(per_arm_pass_vectors.values())))
+    if any(len(per_arm_pass_vectors[a]) != n for a in arms):
+        raise ValueError("per_arm_pass_vectors entries have mismatched lengths")
+    marginal_counts = {a: int(np.asarray(per_arm_pass_vectors[a]).astype(bool).sum())
+                       for a in arms}
+    rng = np.random.default_rng(seed)
+    null_drop_one = np.empty(B_perm)
+    for b in range(B_perm):
+        u_all = np.zeros(n, dtype=bool)
+        u_without = np.zeros(n, dtype=bool)
+        for a in arms:
+            k = marginal_counts[a]
+            if k == 0:
+                continue
+            idx = rng.choice(n, k, replace=False)
+            mask = np.zeros(n, dtype=bool)
+            mask[idx] = True
+            u_all |= mask
+            if a != drop_arm:
+                u_without |= mask
+        null_drop_one[b] = 100 * (int(u_all.sum()) - int(u_without.sum())) / n
+
+    u_all_obs = np.zeros(n, dtype=bool)
+    u_without_obs = np.zeros(n, dtype=bool)
+    for a in arms:
+        v = np.asarray(per_arm_pass_vectors[a]).astype(bool)
+        u_all_obs |= v
+        if a != drop_arm:
+            u_without_obs |= v
+    obs = 100 * (int(u_all_obs.sum()) - int(u_without_obs.sum())) / n
+    null_p95 = float(np.percentile(null_drop_one, 95))
+    return {
+        "observed_drop_one_pp": obs,
+        "null_p50": float(np.percentile(null_drop_one, 50)),
+        "null_p95": null_p95,
+        "null_p99": float(np.percentile(null_drop_one, 99)),
+        "excess_over_null_p95_pp": obs - null_p95,
+        "p_value_one_sided": float((null_drop_one >= obs).mean()),
+        "B_perm": B_perm,
+        "marginal_counts": marginal_counts,
+        "n_tasks": n,
+        "drop_arm": drop_arm,
+    }
+
+
 def cohen_h(p1: float, p2: float) -> float:
     """Cohen's h effect size between two proportions p1, p2 ∈ [0, 1].
 
@@ -853,6 +977,58 @@ _NUMERIC_ROUTER_TRIGGERS = (
 )
 
 
+def compute_permutation_null_for_cell(cell: dict, B_perm: int = 10000,
+                                       seed: int = 42) -> Optional[dict]:
+    """Compute fixed-marginal permutation null for drop-one oracle on a cell.
+
+    /stress A2.1 P0-2-ABC* (2026-05-17, 3-AI overlap) integration. Loads
+    per-arm pass vectors via the same ``load()`` helper analyze_cell uses,
+    constructs the per-task universe as the intersection of observed
+    task_ids across the 4-mode archive arms (DOM, SoM, Vision, P-SoM) plus
+    P-text and P-prompt when present, then computes the fixed-marginal
+    permutation null for each phantom-arm drop-one oracle.
+
+    Returns ``None`` when required arms are missing or universe is empty.
+    Otherwise returns ``{arm: permutation_null_result_dict}`` where each
+    inner dict matches the contract of ``permutation_drop_one_null``.
+    """
+    succ, obs = {}, {}
+    for mode, ep_dir in cell["modes"].items():
+        s, o = load(ep_dir)
+        if len(o) < MIN_EP_FOR_CELL:
+            continue
+        succ[mode] = s
+        obs[mode] = o
+
+    required = ("DOM", "SoM", "Vision", "P-SoM")
+    if any(m not in succ for m in required):
+        return None
+    arms_present = [m for m in ("DOM", "SoM", "Vision", "P-SoM", "P-text",
+                                  "P-prompt") if m in succ]
+    universe = set.intersection(*(obs[m] for m in arms_present))
+    if not universe:
+        return None
+    universe_sorted = sorted(universe)
+    per_arm_vectors = {
+        m: np.array([1 if t in succ[m] else 0 for t in universe_sorted],
+                     dtype=np.int8)
+        for m in arms_present
+    }
+    out: Dict[str, dict] = {}
+    for drop_arm in [m for m in ("P-SoM", "P-text", "P-prompt", "SoM")
+                      if m in arms_present]:
+        out[drop_arm] = permutation_drop_one_null(
+            per_arm_vectors, drop_arm=drop_arm, B_perm=B_perm, seed=seed,
+        )
+    out["_meta"] = {
+        "n_tasks_in_universe": len(universe_sorted),
+        "arms_present": arms_present,
+        "B_perm": B_perm,
+        "seed": seed,
+    }
+    return out
+
+
 def audit_router_fire_rate(run_root: Path) -> Dict[str, Any]:
     """Scan all step JSONLs under a run_root and report per-trigger fire rate.
     Returns a dict {trigger_name: {count, total_steps, rate_pct}} plus a
@@ -908,6 +1084,31 @@ def main() -> int:
         help="Run router trigger fire-rate audit on the given run dir and exit "
              "(P0-1-ABC* audit gate; validates paper §3.5 / §4.X.5 disclosure)."
     )
+    ap.add_argument(
+        "--permute-marginal-null", action="store_true", default=False,
+        help="/stress A2.1 P0-2-ABC* (2026-05-17): for each cell, compute the "
+             "fixed-marginal permutation null distribution for the drop-one "
+             "oracle of each arm (10000 permutations shuffled within marginal "
+             "pass counts per arm) and append observed-excess + null-p95 + "
+             "permutation p-value columns to the output CSV. Replaces "
+             "H0:drop_one=0 as the paper-grade superiority null (paper §1 "
+             "[^null-framing] footnote)."
+    )
+    ap.add_argument(
+        "--permutation-B", type=int, default=10000,
+        help="Number of permutations for --permute-marginal-null (default 10000, "
+             "prereg-locked)."
+    )
+    ap.add_argument(
+        "--stratified-bootstrap", action="store_true", default=False,
+        help="/stress A2.1 P0-5-B* (2026-05-17, codex unique OOB): in addition to "
+             "the standard task-resampling CI, emit a stratified-bootstrap CI "
+             "column resampling within (task_family × evaluator_type × "
+             "reference_image_present) strata. Robustness check on the standard "
+             "exchangeability assumption — VWA task taxonomy heterogeneity may "
+             "violate it. Falls back to the standard paired bootstrap when only "
+             "one stratum is observed for a cell."
+    )
     args = ap.parse_args()
 
     if args.audit_fire_rate:
@@ -927,12 +1128,47 @@ def main() -> int:
 
     rows = []
     skipped = []
+    permutation_null_results: list = []
     for cell in CELLS:
         r = analyze_cell(cell)
         if r is None:
             skipped.append(f"{cell['baseline']} {cell['site']}")
             continue
         rows.append(r)
+        if args.permute_marginal_null:
+            null_for_cell = compute_permutation_null_for_cell(
+                cell, B_perm=args.permutation_B
+            )
+            if null_for_cell is not None:
+                permutation_null_results.append({
+                    "baseline": cell["baseline"],
+                    "site": cell["site"],
+                    "null": null_for_cell,
+                })
+                # Surface key permutation-null scalars onto the main row so
+                # downstream readers see them next to the bootstrap CI without
+                # opening the supplementary JSON.
+                for arm in ("P-SoM", "P-text", "P-prompt", "SoM"):
+                    entry = null_for_cell.get(arm)
+                    if entry is None:
+                        continue
+                    short = arm.replace("-", "").lower()  # psom / ptext / pprompt / som
+                    r[f"perm_null_{short}_obs_pp"] = entry["observed_drop_one_pp"]
+                    r[f"perm_null_{short}_p95"] = entry["null_p95"]
+                    r[f"perm_null_{short}_excess_pp"] = entry["excess_over_null_p95_pp"]
+                    r[f"perm_null_{short}_p_one_sided"] = entry["p_value_one_sided"]
+
+    if args.permute_marginal_null and permutation_null_results:
+        perm_out = Path(args.output).with_name(
+            Path(args.output).stem + "_permutation_null.json"
+        )
+        perm_out.parent.mkdir(parents=True, exist_ok=True)
+        perm_out.write_text(
+            json.dumps(permutation_null_results, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        print(f"[perm-null] wrote {perm_out} ({len(permutation_null_results)} cells, "
+              f"B_perm={args.permutation_B})")
 
     # ── Multiple-comparison correction (per pre-registered family) ────────
     # Comparison families:
