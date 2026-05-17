@@ -188,12 +188,26 @@ def _get_adjusted_sr(
     return None
 
 
+def _detect_baseline_from_run_dir(run_dir: Path) -> str:
+    """A1.21 P1-2 fix (B-500): infer baseline from run_dir name prefix (B0/B1/B2).
+
+    Naming convention: `B0_3mode_classifieds_<date>` / `B1_phantom_som_reddit_<date>` etc.
+    Returns 'unknown' if no canonical prefix detected.
+    """
+    name = run_dir.name
+    for b in ("B0", "B1", "B2"):
+        if name.startswith(f"{b}_"):
+            return b
+    return "unknown"
+
+
 def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, Any]]:
     """Extract per-mode rows from a single run_dir."""
     summaries = load_condition_summaries(run_dir)
     if not summaries:
         print(f"  [WARN] No condition summaries in {run_dir}")
         return []
+    baseline = _detect_baseline_from_run_dir(run_dir)  # A1.21 P1-2
 
     # Load cross_representation_summary.json for adjusted_sr — it's where the
     # §95 FP-filtered numbers live (condition_summary_v2.json only carries raw).
@@ -226,6 +240,7 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             )
         rows.append({
             "label": label,
+            "baseline": baseline,  # A1.21 P1-2 (B-500): baseline propagation
             "site": site,
             "mode": mode,
             "raw_sr": round(raw_sr, 4),
@@ -369,12 +384,18 @@ def main() -> None:
     # --- cross_site_aggregation.csv ---
     print("[2/4] Writing cross_site_aggregation.csv...")
     sr_col = "adjusted_sr" if use_adjusted else "raw_sr"
+    # A1.21 P1-2 fix (B-500, codex unique OOB): add `baseline` field to all rows so
+    # B0/B1/B2 don't collide on (site, mode) key. Pre-fix: cross-site tables had no
+    # baseline column → reviewer/aggregator couldn't tell whether `reddit/DOM` was
+    # B0, B1, or B2; downstream `per_site` lookup via `next(r["mode"]==m)` picked
+    # the first matching row by mode only → silent baseline misattribution.
     aggregation_rows = []
     for r in all_rows:
         sr_val = r.get("adjusted_sr") if use_adjusted else r.get("raw_sr")
         if sr_val is None:
             sr_val = r.get("raw_sr")  # fallback
         aggregation_rows.append({
+            "baseline": r.get("baseline", "unknown"),  # A1.21 P1-2: was missing
             "site": r["site"],
             "mode": r["mode"],
             "raw_sr": r["raw_sr"],
@@ -414,19 +435,27 @@ def main() -> None:
     # --- cross_site_summary.json ---
     print("[4/4] Writing summary JSON...")
     sites = sorted(set(r["site"] for r in all_rows))
+    # A1.21 P1-2 fix (B-500): per_site now groups by (baseline, site, mode) to prevent
+    # B0/B1/B2 row collision. Output is per_site[site][baseline][mode] = {...}.
     per_site: Dict[str, Any] = {}
+    baselines = sorted({r.get("baseline", "unknown") for r in all_rows})
     for site in sites:
         site_rows = [r for r in all_rows if r["site"] == site]
-        per_site[site] = {
-            m: {
-                "raw_sr": next((r["raw_sr"] for r in site_rows if r["mode"] == m), None),
-                "adjusted_sr": next((r.get("adjusted_sr") for r in site_rows if r["mode"] == m), None),
-                "avg_cost_usd": next((r["avg_cost_usd"] for r in site_rows if r["mode"] == m), None),
-                "avg_steps": next((r["avg_steps"] for r in site_rows if r["mode"] == m), None),
+        per_site[site] = {}
+        for baseline in baselines:
+            baseline_rows = [r for r in site_rows if r.get("baseline") == baseline]
+            if not baseline_rows:
+                continue
+            per_site[site][baseline] = {
+                m: {
+                    "raw_sr": next((r["raw_sr"] for r in baseline_rows if r["mode"] == m), None),
+                    "adjusted_sr": next((r.get("adjusted_sr") for r in baseline_rows if r["mode"] == m), None),
+                    "avg_cost_usd": next((r["avg_cost_usd"] for r in baseline_rows if r["mode"] == m), None),
+                    "avg_steps": next((r["avg_steps"] for r in baseline_rows if r["mode"] == m), None),
+                }
+                for m in MODES
+                if any(r["mode"] == m for r in baseline_rows)
             }
-            for m in MODES
-            if any(r["mode"] == m for r in site_rows)
-        }
 
     # Weighted-average SR across sites (equal weight per site)
     weighted_sr: Dict[str, List[float]] = {}

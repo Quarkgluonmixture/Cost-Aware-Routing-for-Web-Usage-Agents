@@ -89,6 +89,27 @@ _GRADE_OVERRIDE = os.environ.get("P79_AGGREGATOR_GRADE", "")
 _GRADE_LIST = [g.strip() for g in _GRADE_OVERRIDE.split(",") if g.strip()] or None
 CELLS = _build_cells(_GRADE_LIST)
 
+
+def get_aggregator_cells(grade_filter: list | None = None,
+                          manifest_path: 'Path | None' = None) -> list[dict]:
+    """Live registry view (re-evaluates each call).
+
+    A1.21 P1-3 fix (B-499, Claude P2-1 + codex F8 2-AI overlap): CELLS module-level
+    constant frozen at import time. Long-running orchestration (notebooks / cron
+    sidecars / multi-aggregator chains) where env var or yaml changes after first
+    import don't propagate → silent stale cell selection. Use this fn for lazy
+    re-evaluation. Default behavior unchanged for callers using `CELLS` constant.
+
+    Caller migration: replace `from aggregate_phantom_lift import CELLS` with
+    `from aggregate_phantom_lift import get_aggregator_cells; cells = get_aggregator_cells()`
+    when re-evaluation matters (paper-grade audit reproducibility).
+    """
+    if grade_filter is None:
+        # Honor env var override at call time (was frozen at module import pre-fix)
+        env_override = os.environ.get("P79_AGGREGATOR_GRADE", "")
+        grade_filter = [g.strip() for g in env_override.split(",") if g.strip()] or None
+    return _build_cells(grade_filter)
+
 MIN_EP_FOR_CELL = 50  # skip cells where any present mode has < 50 ep (too partial)
 
 

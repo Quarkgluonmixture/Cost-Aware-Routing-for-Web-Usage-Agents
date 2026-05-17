@@ -330,6 +330,11 @@ phase1-prereg-gate:
 phase1-full-prereg-decision:
 	$(PYTHON) scripts/analysis/aggregate_phase1_full_prereg_decision.py
 
+# A1.21 P0-8 (B-494): validate run_manifest.yaml schema/disk/scope correctness.
+# Default reports all errors (exit 2 on any); --strict fails fast on first error.
+validate-run-manifest:
+	$(PYTHON) scripts/analysis/validate_run_manifest.py
+
 # Phantom routing lift — appendix exploratory (was Section 1/4 paper hook,
 # demoted to appendix per B-184 — different estimand from prereg PRIMARY).
 # (3-mode oracle vs 5-mode oracle ceiling lift + bootstrap CI + decomposition

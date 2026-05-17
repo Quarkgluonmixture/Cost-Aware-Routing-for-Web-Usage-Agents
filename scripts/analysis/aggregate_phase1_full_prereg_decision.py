@@ -58,7 +58,10 @@ sys.path.insert(0, str(REPO))
 # Reuse the same cell enumeration + H1 FE pool + Q/I² helpers from B-184.
 # This guarantees H1 numbers are bit-identical between phase1_prereg_gate
 # (H1-only legacy) and phase1_full_prereg_decision (canonical full).
-from scripts.analysis.aggregate_phantom_lift import CELLS, MIN_EP_FOR_CELL  # noqa: E402
+from scripts.analysis.aggregate_phantom_lift import (  # noqa: E402
+    MIN_EP_FOR_CELL,
+    get_aggregator_cells,  # A1.21 P1-3 (B-499): lazy fn, was frozen CELLS constant
+)
 from scripts.analysis.aggregate_phase1_prereg_gate import (  # noqa: E402
     _cell_drop_one_theta_se,
     _fe_pool,
@@ -734,9 +737,8 @@ def main() -> int:
     ap.add_argument("--output-md", default=str(DEFAULT_OUT_MD))
     args = ap.parse_args()
 
-    # CELLS comes from aggregate_phantom_lift (module-level frozen). P1-3 freeze
-    # bug is fixed in a separate Chunk 2 patch. For now, use the existing CELLS.
-    cells_to_use = CELLS
+    # A1.21 P1-3 (B-499): lazy fn re-evaluates env var + manifest at call time
+    cells_to_use = get_aggregator_cells()
 
     payload = build_full_decision(cells_to_use)
     manifest_path = (Path(args.run_manifest) if args.run_manifest

@@ -147,9 +147,14 @@ def main() -> None:
             "electricity), so the paper presents both side-by-side, not a single ratio."
         ),
         "electricity_usd_per_kwh": ELECTRICITY_USD_PER_KWH,
+        # A1.21 P1-4 fix (B-501, codex F7): B2 cost class added — was structurally
+        # absent from reviewer-facing metadata despite being collected (loop on L56-59).
         "cost_classes": {
             "B0": "API_token_dollars (Qwen3-VL-235B-A22B per DashScope pricing)",
             "B1": "electricity_equivalent (DGX Spark, UK industrial rate)",
+            "B2": "electricity_equivalent (DGX Spark, UK industrial rate; "
+                  "Gemma3-VL google/gemma-3-4b-it local 4B inference, same "
+                  "deployment class as B1 — added 2026-05-14 advisor lock)",
         },
         "paper_caveat": (
             "The qualitative cost gap between API and local inference is large "
@@ -225,6 +230,36 @@ def main() -> None:
     lines.append("|---|---|---:|---:|---:|---:|")
     for site in ("reddit", "classifieds"):
         for mode, cell in cells["B1"][site].items():
+            if not cell.get("available"):
+                lines.append(f"| {site} | {mode} | n/a | n/a | n/a | n/a (pending) |")
+                continue
+            steps = cell.get("avg_steps")
+            steps_str = f"{steps:.1f}" if isinstance(steps, (int, float)) else "n/a"
+            kwh = cell.get("avg_energy_kwh")
+            kwh_str = f"{kwh:.5f}" if isinstance(kwh, (int, float)) else "n/a"
+            co2 = cell.get("avg_co2e_kg")
+            co2_str = f"{co2:.5f}" if isinstance(co2, (int, float)) else "n/a"
+            usd = cell.get("paper_cost_usd")
+            usd_str = (
+                f"${usd:.6f}"
+                if isinstance(usd, (int, float))
+                else "n/a (run not yet complete)"
+            )
+            lines.append(f"| {site} | {mode} | {steps_str} | {kwh_str} | {co2_str} | {usd_str} |")
+    lines.append("")
+
+    # A1.21 P1-4 fix (B-501, codex F7): B2 cost markdown section added — was
+    # structurally absent from reviewer-facing report despite data collection.
+    lines.append("## B2 — electricity equivalent ($/ep, Gemma3-VL local 4B)\n")
+    lines.append(
+        f"Computed as `avg_total_energy_kwh × ${ELECTRICITY_USD_PER_KWH:.2f}/kWh` "
+        "(DGX Spark, UK industrial rate per `metrics.energy.region: uk` in B2 yaml). "
+        "Same deployment class as B1 (per advisor §138 B2 ≈ B1 matched-capability lock).\n"
+    )
+    lines.append("| site | mode | avg_steps | avg_energy_kwh | avg_co2e_kg | avg_electricity_usd ($/ep) |")
+    lines.append("|---|---|---:|---:|---:|---:|")
+    for site in ("reddit", "classifieds"):
+        for mode, cell in cells.get("B2", {}).get(site, {}).items():
             if not cell.get("available"):
                 lines.append(f"| {site} | {mode} | n/a | n/a | n/a | n/a (pending) |")
                 continue

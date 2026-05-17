@@ -13,12 +13,12 @@ drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision
 ## §1 Pre-lock checklist (everything must be done before OSF DOI mint)
 
 - [ ] Advisor email reply received (K_h1=0.75 transparency / K_h3=0.67 transparency /
-      TOST δ=1.0pp SR-margin / Phase 1a 36-condition 6-cell scope (B0+B1+B2 added 2026-05-14) confirmed
+      TOST δ=1.0pp SR-margin / Phase 1a 42-condition 6-cell scope (36 baseline + 6 router; A1.21 P1-5 align 2026-05-17) confirmed
       OR alternative noted)
 - [ ] `preregistration.md` final text edit committed + pushed (incl. 2026-05-13
       codex stress audit propagation: K-of-N transparency-only + 24/4 scope +
       drop-one H1 formula + outcome-independent smoke gate + Appendix A 2026-05-13)
-- [ ] `run_manifest.yaml` archived rows verified (Phase 1a 36-condition scope = 2 sites × 3 models (B0+B1+B2) × 6 modes;
+- [ ] `run_manifest.yaml` archived rows verified (Phase 1a 42-condition scope = 36 baseline (2 sites × 3 models × 6 modes) + 6 router (2 sites × 3 models × 1 learned router/cell);
       all `grade=archived` for pre-fix cells, `grade=paper-grade` for Phase 1a post-fix rerun cells on A100 self-host;
       Phase 1b shop deferred rows separately tagged — B-132 cleanup 2026-05-15 removed dangling "× 2 models × 6 modes" residual from Batch 4 edit)
 - [ ] All paper draft sections section1-8 + paper.bib (57 entries) snapshot to
@@ -57,7 +57,7 @@ drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision
 | K-of-N transparency count (NOT a gate, NO threshold) | Report n of 6 cells with per-cell CI > 0 + n individually Holm-sig, for H1 + each H3 axis (decision "3A" 2026-05-14: K_h1=0.75 / K_h3=0.67 ratios retired — at both N=4 and N=6 the ratios are indistinguishable, ⌈0.75×6⌉=⌈0.67×6⌉=5; fake precision) | ⏳ pending | Reclassified gate → transparency 2026-05-13 (power analysis dysfunction at <7pp effects); cell count expanded 4 → 6 per B2 addition 2026-05-14. Reported alongside pooled FE meta as per-cell consistency check; no decision rule. |
 | ~~K_h3 transparency ratio~~ (RETIRED — folded into K-of-N transparency count row above) | — | — | Retired 2026-05-14 (same fake-precision argument as K_h1 at both N=4 and N=6) |
 | H1(ii) superiority threshold δ (SR-margin) — also TOST informational margin | 1.0pp | ⏳ pending | SR percentage-point margin for H1(ii) one-sided superiority test (primary) + TOST equivalence informational secondary; distinct from H2(a) cost ±10% relative margin |
-| Cell scope (Phase 1a operational) | **36 conditions** = 2 sites (cls, red) × **3 models (B0, B1, B2)** × 6 modes (DOM, SoM, Vision, P-text, P-prompt, P-SoM) | ⏳ pending | Replaces prior 16/18-cell phantom-only scope (codex Flaw 1+5 fix 2026-05-13: 24/4); B2 = Gemma3-VL `google/gemma-3-4b-it` added 2026-05-14 → 36/6 |
+| Cell scope (Phase 1a operational) | **42 conditions** = **Pass-1 baseline 36** (2 sites × 3 models × 6 modes) + **Pass-2 learned router 6** (2 sites × 3 models × 1 router cond/cell, `obs_mode="learned"` sentinel) | ⏳ pending | A1.21 P1-5 fix 2026-05-17 (B-502, codex F10): aligned with prereg §4 L438 "42 conditions" scope expansion 2026-05-16 (B-264+B-267 /stress A1.7 cross-AI cycle for §2 H10 Pass-2 router parity with gating-hypothesis registration). Replaces prior "36 operational" entry which was Pass-1-only and mismatched preregistration since 2026-05-16 |
 | Cell scope (Phase 1a statistical) | **6 cells** = (site, model) tuples: (cls, B0), (cls, B1), (cls, B2), (red, B0), (red, B1), (red, B2) | ⏳ pending | One drop-one number per cell; pooled FE meta input (decision "3A" 2026-05-14, FE not DL); k=4 → k=6 per B2 addition 2026-05-14 |
 | Cell scope (Phase 1b deferred) | +12 conditions = shop × B0+B1 × 6 modes | ⏳ pending | Main-paper expansion lever; not part of Phase 1a workshop submission |
 
