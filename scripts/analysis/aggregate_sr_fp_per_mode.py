@@ -82,9 +82,25 @@ def aggregate_cell(baseline: str, site: str, mode: str, ep_dir: Path) -> dict[st
             continue
         # Lenient mode in aggregator: log + skip (don't crash whole pipeline);
         # strict-mode escalation lives in validate_run.py for paper-grade gate.
-        loaded = load_episode_summary_strict(path, mode="lenient")
+        # B-549 (/stress A1.5 P0-2-AB* Claude+codex OOB sibling propagation,
+        # 2026-05-17): add `reject_needs_reevaluation=True` to close B-486
+        # quarantine leak into paper §1 SR canonical producer. A1.5b Phase 2
+        # B-542 added the strict-loader kwarg + propagated to
+        # `aggregate_phase1_full_prereg_decision._load_cell_per_task` +
+        # `aggregate_phantom_lift.load()`, but missed THIS paper §1 SR
+        # canonical producer (codex OOB Bug Table P0-1). Current archive 0
+        # quarantined episodes verified (5100 summaries), but ANY Phase 1a
+        # `_run_and_record_episode` exception path writes
+        # `needs_reevaluation=True` → quarantined episodes would silently
+        # enter denominator as `success=False` → paper §1 SR table polluted.
+        # Lenient mode + reject_quarantine → loader returns None for
+        # quarantined rows → skipped here. Strict-mode escalation lives in
+        # `validate_run.py`.
+        loaded = load_episode_summary_strict(
+            path, mode="lenient", reject_needs_reevaluation=True,
+        )
         if loaded is None:
-            continue  # corrupt or type-mismatch — already logged by loader
+            continue  # corrupt or type-mismatch or B-486 quarantine — already logged
         rows[tid] = loaded
 
     n_total = len(rows)

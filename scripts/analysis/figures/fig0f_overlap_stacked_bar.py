@@ -65,6 +65,12 @@ def task_id(path: Path) -> int:
 
 
 def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
+    # B-549 (/stress A1.5 P0-2-AB* Claude+codex OOB sibling propagation,
+    # 2026-05-17): switch plain `json.load()` → strict loader + reject
+    # quarantine. Same rationale as `fig0c_drop_one_oracle.load_success_set`
+    # — paper figure 0f overlap stacked bar must not count B-486 quarantined
+    # episodes as observed failures.
+    from p79.experiment.io_utils import load_episode_summary_strict
     files = sorted(ep_dir.glob("*_summary_v2.json"))
     if not files:
         print(f"[warn] no episode summaries under {ep_dir}", file=sys.stderr)
@@ -72,8 +78,11 @@ def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
     successes: set[int] = set()
     observed: set[int] = set()
     for path in files:
-        with path.open() as f:
-            record = json.load(f)
+        record = load_episode_summary_strict(
+            path, mode="lenient", reject_needs_reevaluation=True,
+        )
+        if record is None:
+            continue  # corrupt / type-mismatch / B-486 quarantine
         tid = task_id(path)
         observed.add(tid)
         # /stress A1.20 P1-2-AB (2026-05-17, B-283 sibling): strict `is True`.

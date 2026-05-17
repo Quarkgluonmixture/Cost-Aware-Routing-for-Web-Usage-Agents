@@ -1906,7 +1906,26 @@ def main() -> None:
             if not steps_path.exists():
                 continue
 
-            summary = _read_json(summary_path)
+            # B-549 (/stress A1.5 P0-2-AB* Claude+codex OOB sibling
+            # propagation, 2026-05-17): switch summary read from plain
+            # `_read_json` → `load_episode_summary_strict(reject_needs_
+            # reevaluation=True)`. Pre-fix B-486 quarantined episodes
+            # (crash-before-evaluator) would enter the reason-diagnostics
+            # stage-level distribution as `success=False` with empty/missing
+            # final_step → mis-categorized as "agent failure" rather than
+            # "infra failure". paper §3 reason-diagnostics taxonomy table
+            # was therefore polluted by infrastructure failures attributed
+            # to model behavior. Lenient mode + reject_quarantine → loader
+            # returns None for both quarantined rows AND type-mismatch
+            # rows; skip both. Other `_read_json` call sites (L225 task
+            # cfg, L1873 run_meta) read non-episode-summary files and
+            # retain plain loader.
+            from p79.experiment.io_utils import load_episode_summary_strict
+            summary = load_episode_summary_strict(
+                summary_path, mode="lenient", reject_needs_reevaluation=True,
+            )
+            if summary is None:
+                continue  # corrupt / type-mismatch / B-486 quarantine
             steps = _sort_steps_by_idx(_read_jsonl(steps_path))
             if not steps:
                 continue
