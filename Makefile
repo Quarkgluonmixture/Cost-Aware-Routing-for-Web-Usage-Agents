@@ -235,9 +235,16 @@ else
 	$(MAKE) _figures
 	$(MAKE) _status
 endif
-	@echo "[analysis] post-hook: triggering PLAYBOOK refresh in background..."
-	@nohup bash -c "sleep 5 && $(MAKE) glm-update-cells APPLY=1 && $(MAKE) glm-refresh-playbook APPLY=1" \
-	  >> logs/cron/glm_playbook.log 2>&1 < /dev/null & disown ; true
+	@echo "[analysis] post-hook: triggering cells.base sync in background..."
+	@# B-842 (A1.15b P0-2 + P1-5): N-times-fire amplification fix. crontab.txt
+	@# 2026-05-13 explicitly removed glm-refresh-playbook cron entry because it
+	@# "burned GLM tokens whether user read or not"; this post-hook was firing
+	@# the same glm-refresh-playbook chain on every `make analysis`, making the
+	@# 2026-05-13 cost-saving decision structurally unfulfilled. Trim chain to
+	@# keep cells.base sync (lightweight, no GLM call) but drop PLAYBOOK refresh
+	@# (GLM call). PLAYBOOK §1+§2 retire planned; this is the align step.
+	@nohup bash -c "sleep 5 && $(MAKE) glm-update-cells APPLY=1" \
+	  >> logs/cron/glm_update_cells.log 2>&1 < /dev/null & disown ; true
 
 # Per-run pipeline for all paper-grade VWA runs (loop over registry)
 _per_run_all:

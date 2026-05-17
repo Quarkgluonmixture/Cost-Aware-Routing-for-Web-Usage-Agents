@@ -54,11 +54,19 @@ SUMMARY_BEFORE=$(find "${DGX_RESULTS}" -maxdepth 4 -name "condition_summary_v2.j
 #  -z  compress over network
 #  --partial  keep partial files on transfer fail (resume next run)
 #  --append-verify  resume large files via append + checksum verify
+#  --delete-after  B-841 (A1.15b P0-1): propagate A100-side deletions to DGX
+#    AFTER successful transfer. If operator runs clear_tasks.py on A100 for
+#    paper-grade re-fire, stale finalized run must NOT persist on DGX mirror,
+#    otherwise glm_cell_autoupdate.latest_match (mtime-based) picks the stale
+#    finalized over the fresh in-flight → cells.base shows wrong state → user
+#    decides re-launch based on corrupt signal. --delete-after (vs --delete)
+#    only fires after rsync transfer completes successfully — safer if SSH
+#    chain drops mid-sync (no data loss on transient failure).
 #  --delete-excluded  drop locally-cached files matching exclude patterns
 #  --exclude artifacts/  large screenshot dir (sync only summaries first, artifacts opt-in)
 #  --exclude episodes/*/step_*.png  (image-only excludes; keep step JSONLs)
 log "rsync ${A100_HOST}:${A100_RESULTS} → ${DGX_RESULTS}"
-RSYNC_OPTS=(-az --partial --append-verify --info=stats1)
+RSYNC_OPTS=(-az --partial --append-verify --delete-after --info=stats1)
 if [[ "${DRY_RUN}" == "1" ]]; then
   RSYNC_OPTS+=(--dry-run)
   log "DRY-RUN mode (no actual transfer)"

@@ -5488,3 +5488,85 @@ Substrate: `p79/experiment/{types.py, io_utils.py, logger_v2.py, schema_migratio
 5. **8th parallel-session B-# collision (B-799~B-821 vs A1.2 cold-start)** — initial reserve B-799~B-816 collided with A1.2 cold-start commit (landed 1-2h before A1.16-re cycle started); atomic high-to-low sed rebase B-816→B-839 / ... / B-799→B-822 across 9 files in single batch via 18-substitution sed. Reserve buffer should now be ≥30 (was 25) given 8-collision empirical base rate.
 
 **B-numbers consumed**: B-822 through B-839 (18 IDs; A1.16 cold-start re-audit). Next available: B-840+.
+
+---
+
+## A1.15b — GLM sidecar cluster Chunk α (2026-05-17)
+
+Pre-fire `/stress` 3-AI cycle on `scripts/maintenance/glm/` + `sync_a100_results.sh` + `Makefile` post-hook + `restart_watchdog.sh` post-A1.15-retire residue. Mode A Claude 12 findings (3 OOB) + Mode B codex 8 findings (3 OOB) + Mode C gemini 7 findings (4 OOB) = 22 unique after dedup. User v7.7 picks:
+- Q1=B fix all 4 P0 (~3-4h)
+- Q2 PLAYBOOK retire-soon → P0-4 dissolves (no paper §4 disclosure needed for retiring substrate)
+- Q3 推荐 default (A) — delete Makefile L239 glm-refresh-playbook chain
+- Q4 推荐 default (A) — wait push until A1.15b chunks fully landed
+
+Chunk α scope = 3 P0 + 1 bonus P1 (B-841~B-844). P0-2/P1-2~P1-11/P2 deferred to Chunk β (TBD) or post-workshop.
+
+### B-841 `sync_a100_results.sh:69` rsync 缺 `--delete-after` flag — silent A100→DGX mirror contamination
+
+**Origin**: A1.15b /stress Mode A P0-1 / Mode B cross-validate (codex confirmed L69 in own scope) / Mode C cross-validate (gemini G2 added heartbeat angle).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD (this chunk).
+**Code site**: `scripts/maintenance/sync_a100_results.sh:69 RSYNC_OPTS=(-az --partial --append-verify --info=stats1)` → added `--delete-after` flag.
+**Failure mechanism**: A100 operator runs `clear_tasks.py` for paper-grade re-fire cleanup → A100-side run_dir or condition_dir deleted. DGX rsync at next 15min tick has NO `--delete` → stale finalized run + freshly-launched in-flight run BOTH present on DGX. `glm_cell_autoupdate.py:208 latest_match` picks by mtime → stale finalized often wins → `cells.base` Obsidian view shows wrong cell status → user makes wrong re-launch / advisor sync / paper §4 disclosure decision.
+**Fix**: `--delete-after` (chosen over `--delete`) — deletion fires only AFTER successful transfer completes. If SSH chain drops mid-sync, no data lost on transient failure.
+**Paper-grade impact**: Phase 1a 18-day re-fire monitor reliability. Cross-AI 3-AI overlap = highest-confidence paper-grade bug in this cycle.
+**Deferred sub-fix**: heartbeat probe (A100-side cron writing `.heartbeat` + DGX-side check `mtime < 5min`) deferred — requires A100-side deploy, not pure DGX-side code edit.
+
+### B-842 `Makefile:238-240` `make analysis` post-hook fires `glm-refresh-playbook APPLY=1` — defeats 2026-05-13 cron-removal cost-saving decision
+
+**Origin**: A1.15b /stress Mode A P0-2 / Mode B cross-validate (codex traced same chain) / Mode C cross-validate (gemini G3 quantified "800%" derived).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Code site**: `Makefile:238-240`:
+```makefile
+@echo "[analysis] post-hook: triggering PLAYBOOK refresh in background..."
+@nohup bash -c "sleep 5 && $(MAKE) glm-update-cells APPLY=1 && $(MAKE) glm-refresh-playbook APPLY=1" \
+  >> logs/cron/glm_playbook.log 2>&1 < /dev/null & disown ; true
+```
+**Failure mechanism**: crontab.txt:23-29 commented 2026-05-13 explicitly removed glm-refresh-playbook cron entry "because it burned GLM tokens whether user read or not". But Makefile post-hook fires glm-refresh-playbook on every `make analysis` invocation → same GLM burn returns via different code path. Compound with N-times-fire chain (B-841 sync_a100_results.sh:95 fires `make analysis FAST=1` per new summary; `glm_cell_autoupdate.py:362-380` fires `make analysis FAST=1` per cell `active→done` flip) = ~36+ cron+autoupdate fires per Phase 1a × full make analysis post-hook chain = 100s of redundant GLM calls + figure regenerations over 18-day fire.
+**Fix**: Trim post-hook chain — keep `glm-update-cells APPLY=1` (lightweight, no GLM call) but drop `glm-refresh-playbook APPLY=1` (the GLM call). cells.base still syncs after `make analysis`; PLAYBOOK §1+§2 GLM refresh no longer triggers from make analysis post-hook.
+**Aligned with P0-4 PLAYBOOK retire direction** — user 2026-05-17 confirmed "PLAYBOOK 不用管,这个最后会 ignore 掉的". This trim is the alignment step (drops the heaviest GLM burn path while PLAYBOOK substrate continues retire).
+**Paper-grade impact**: GLM cost honesty + figure regeneration concurrency safety (concurrent N-times-fire could overlap-write same paper figure PNG).
+
+### B-843 `error_scan.py:48` `fp_adjust_error` regex hunts RETIRED `compute_adjusted_success` error pattern
+
+**Origin**: A1.15b /stress Mode A P0-3 (Claude unique).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Code site (pre-fix)**: `scripts/maintenance/glm/error_scan.py:48`:
+```python
+("fp_adjust_error", re.compile(r"fp_reason.*?adjustment_error|Failed to compute adjusted_success", re.IGNORECASE), 82),
+```
+**Failure mechanism**: Per memory `reference_fp_architecture_2026-05-14` + 笔记 §139.8, post-hoc `compute_adjusted_success` layer fully retired 2026-05-14 (`scored_task_count` replaces `EXPECTED_N`; `success` is canonical; N/A excluded at task-load). The regex pattern hunts an error message that can no longer be emitted in post-2026-05-14 code paths. Legacy logs (from 2026-04 ~ 2026-05-13 era) still contain those strings → error-scan cron @5min dredges them up → PLAYBOOK §2.5 surfaces them as severity-82 "🔴 Active errors" → user reads daily, wastes triage cycles diagnosing a ghost.
+**Fix**: Delete the pattern tuple from `PATTERNS` list (L48). 11 patterns remain.
+**Verification**: smoke test `python3 scripts/maintenance/glm/error_scan.py --hours 24 --skip-system-checks` → `0 errors found` (matches expected post-retire state).
+**Paper-grade impact**: daily decision substrate signal-to-noise — PLAYBOOK §2.5 noisy with retired-bug ghosts confuses fresh-issue triage. Auto-default to "everything is on fire" desensitizes user to real alerts.
+
+### B-844 `restart_watchdog.sh:97-120` still injects `--glm-config` + `--digest-dir` flags into rebuilt watchdog args — argparse failure on restart
+
+**Origin**: A1.15b /stress Mode B codex unique P1-8.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Code site (pre-fix)**: `restart_watchdog.sh:85-86,97-98,119-120` parsed `glm_config` + `digest_dir` env + rehydrated `--glm-config` + `--digest-dir` into rebuild args.
+**Failure mechanism**: A1.15 Chunk a (B-743, commit `263ef0e`) removed `--glm-config` + `--digest-dir` from `experiment_watchdog.py` argparser. `restart_watchdog.sh` was missed in the sibling-script propagation sweep (which covered 6 queue scripts but not restart). On `restart_watchdog.sh` invocation against a live watchdog PID, it rebuilt new args including the now-retired flags → `experiment_watchdog.py` argparse rejects → restart aborts with cryptic `error: unrecognized arguments: --glm-config ...`.
+**Fix**: Delete `glm_config=""` + `digest_dir=""` init (L85-86), delete case branches L97-98, delete rebuild lines L119-120. 6-line shell delete.
+**Paper-grade impact**: watchdog restart workflow blocker (initial launch unaffected; ops chains using `restart_watchdog.sh` break silently). A1.15-retire propagation completeness.
+
+**B-numbers consumed**: B-841 through B-844 (4 IDs; A1.15b Chunk α). Next available: B-845+.
+
+**A1.15b Chunk α reviewer lessons distilled (3)**:
+1. **Cross-cycle sibling-prop check requires deeper scope than original retire batch** — A1.15 Chunk a swept 6 queue scripts for `--glm-config`/`--digest-dir` flag strip but missed `restart_watchdog.sh`. The propagation matrix should be wider (any script that REBUILDS watchdog argv, not just CALLS watchdog). Future flag-retire patterns: `grep -lE '(--glm-config|--digest-dir|--retired-flag)' scripts/` then `--glm-config` ALSO check rebuild patterns `new_args+=(--<flag>)` in shell scripts.
+2. **User cost-saving decisions propagate through multiple code paths** — crontab.txt 2026-05-13 removal of `glm-refresh-playbook` cron was 1 of 3 paths firing it. Hidden paths: Makefile post-hook (B-842) + indirect chain via sync_a100/cell_autoupdate → make analysis → post-hook. **Single-point fix is rarely sufficient** when burning resource (GLM tokens) is the side-effect; full grep of `<retired-target>` across Makefile + scripts + sub-scripts required.
+3. **Mode C (gemini) paper-integrity reframing changes fix priority** — Claude flagged GLM 建议 as P1 quality issue; Gemini reframed as P0 paper integrity. User picked "PLAYBOOK retire" as the resolution, sidestepping the disclosure question entirely. This pattern (re-rank via paper-integrity framing) is gemini Mode C's structural strength — paper-prose-impact assessment that code-side AI doesn't naturally generate.
+
+**Deferred to Chunk β (TBD) or post-workshop**:
+- P0-2 partial (PLAYBOOK refresh retire propagation across `glm_cell_autoupdate.py:362-380` `make analysis FAST=1` chain — defer until full PLAYBOOK retire decision lands)
+- P0-4 SKIPPED per user PLAYBOOK exclusion
+- P1-1 ntfy topic rotation (22-file batch sed + env file rotation)
+- P1-2 phantom mode normalize (1h, central function)
+- P1-3 reference image path `parents[3]` fix (15min, paper §3 prose accuracy)
+- P1-4 incremental scan processed-set tracking (2h refactor)
+- P1-6 glm_client.py extraction (30min)
+- P1-7 200KB → 2MB tail bump (5min, low-risk operational quality)
+- P1-9 GLM rfind nested JSON balanced-brace fix (30min)
+- P1-10 atomic state/digest writes + mandatory locks (45min)
+- P1-11 auto_pull skip analysis on validate-fail (10min)
+- 7 P2 items (~30min total)
+
+Total Chunk α: 4 fixes, ~30min. Total deferred: 17 P1+P2 items, ~6-8h.

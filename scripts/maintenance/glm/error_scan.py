@@ -44,7 +44,12 @@ PATTERNS = [
     ("magento_redirect_loop", re.compile(r"302.*?metis|Magento.*?302.*?redirect|base_url.*?cycle", re.IGNORECASE), 88),
     ("cutlass_kernel_miss", re.compile(r"cutlassF: no kernel found|cutlass.*?launch.*?fail", re.IGNORECASE), 85),
     ("nvrtc_arch", re.compile(r"nvrtc:.*?invalid value for --gpu-architecture|sm_121.*?(?:not|invalid)", re.IGNORECASE), 85),
-    ("fp_adjust_error", re.compile(r"fp_reason.*?adjustment_error|Failed to compute adjusted_success", re.IGNORECASE), 82),
+    # B-843 (A1.15b P0-3): `fp_adjust_error` regex removed. Post-hoc
+    # `compute_adjusted_success` framework retired 2026-05-14 (memory
+    # `reference_fp_architecture_2026-05-14`, 笔记 §139.8); pattern hunted a
+    # ghost. Legacy logs still contain the strings → cron @5min was
+    # surfacing them as severity-82 "🔴 Active errors" in PLAYBOOK §2.5 →
+    # daily decision noise.
     ("notify_fail",  re.compile(r"❌ P79 cron (?:fail|error)|cron failed", re.IGNORECASE), 60),
     ("timeout",      re.compile(r"TimeoutError|asyncio\.TimeoutError|read timed out", re.IGNORECASE), 55),
     ("http5xx",      re.compile(r"HTTPError.*5\d{2}|5\d{2} (?:Server Error|Bad Gateway|Service Unavailable)"), 50),

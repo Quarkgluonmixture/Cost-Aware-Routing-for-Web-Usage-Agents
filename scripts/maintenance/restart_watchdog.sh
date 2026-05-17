@@ -82,10 +82,15 @@ for pid in "${watchdog_pids[@]}"; do
   state_file=""
   poll_secs=""
   idle_alert_mins=""
-  glm_config=""
-  digest_dir=""
   aggregate_prefix=""
   notify_completion=0
+  # B-844 (A1.15b P1-8): `--glm-config` + `--digest-dir` removed. A1.15
+  # Chunk a (B-743, commit 263ef0e) removed these flags from
+  # experiment_watchdog.py argparser; restart_watchdog still parsed +
+  # rehydrated them → on watchdog restart, new args contained flags the
+  # watchdog argparser now explicitly removes → argparse failure → restart
+  # aborts with cryptic error. Strip to match post-A1.15 watchdog
+  # argparser surface.
   for ((i = 0; i < ${#args[@]} - 1; i++)); do
     case "${args[$i]}" in
       --run-dir)       run_dir="${args[$((i + 1))]}" ;;
@@ -94,8 +99,6 @@ for pid in "${watchdog_pids[@]}"; do
       --state-file)    state_file="${args[$((i + 1))]}" ;;
       --poll-secs)     poll_secs="${args[$((i + 1))]}" ;;
       --idle-alert-mins) idle_alert_mins="${args[$((i + 1))]}" ;;
-      --glm-config)    glm_config="${args[$((i + 1))]}" ;;
-      --digest-dir)    digest_dir="${args[$((i + 1))]}" ;;
       --aggregate-prefix) aggregate_prefix="${args[$((i + 1))]}" ;;
       --notify-completion) notify_completion=1 ;;
     esac
@@ -109,15 +112,14 @@ for pid in "${watchdog_pids[@]}"; do
     continue
   fi
 
-  # Build new command
+  # Build new command. B-844 (A1.15b P1-8): --glm-config + --digest-dir
+  # rebuild lines removed (matched watchdog argparser drop in A1.15 B-743).
   new_args=(-u "${WATCHDOG_SCRIPT}" --run-dir "${run_dir}")
   [[ -n "${condition}" ]]      && new_args+=(--condition "${condition}")
   [[ -n "${ntfy_topic}" ]]     && new_args+=(--ntfy-topic "${ntfy_topic}")
   [[ -n "${poll_secs}" ]]      && new_args+=(--poll-secs "${poll_secs}")
   [[ -n "${state_file}" ]]     && new_args+=(--state-file "${state_file}")
   [[ -n "${idle_alert_mins}" ]] && new_args+=(--idle-alert-mins "${idle_alert_mins}")
-  [[ -n "${glm_config}" ]]     && new_args+=(--glm-config "${glm_config}")
-  [[ -n "${digest_dir}" ]]     && new_args+=(--digest-dir "${digest_dir}")
   [[ -n "${aggregate_prefix}" ]] && new_args+=(--aggregate-prefix "${aggregate_prefix}")
   [[ "${notify_completion}" -eq 1 ]] && new_args+=(--notify-completion)
 
