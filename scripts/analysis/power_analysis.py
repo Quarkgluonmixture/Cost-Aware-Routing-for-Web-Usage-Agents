@@ -134,45 +134,18 @@ def fe_pool_power(per_cell_ses_pp: list[float], theta_fe_pp: float,
     }
 
 
-def tost_paired_binary(n_pooled: int, baseline_sr: float, delta_pp: float,
-                       observed_pp: float = 0.0, alpha: float = 0.05,
-                       pi_D: float | None = None) -> dict:
-    """TOST equivalence power for paired-binary at pooled N (Schuirmann 1987).
-
-    Defensive computation per /stress A2.3a P1-1. Prereg §4 L419 / §2.4 L327
-    call TOST "the tightest test" / "the mitigation" but never compute its
-    power. This function provides the missing power so the prereg can honestly
-    disclose whether TOST is a power-validated fallback or informational only.
-
-    TOST = two one-sided tests at α each. Power to declare equivalence requires
-    the observed CI to fit entirely within (−δ, +δ). At paired SE_pooled,
-    approximate power = 2 × Φ((δ − |observed|) / SE − z_α) − 1 if (δ − |obs|) > z_α × SE.
-
-    Args:
-        n_pooled: pooled paired sample size (Σ N_cell)
-        baseline_sr: baseline (or marginal) SR
-        delta_pp: equivalence margin (prereg = 1.0pp)
-        observed_pp: hypothesized true effect for power calc (default 0 = pure equivalence)
-    """
-    z_alpha = 1.645  # one-sided α=0.05 per TOST end
-    se = paired_mcnemar_se(n_pooled, baseline_sr, pi_D=pi_D)  # SE in proportion units
-    delta_prop = delta_pp / 100
-    observed_prop = observed_pp / 100
-    margin = delta_prop - abs(observed_prop)
-    if margin <= z_alpha * se:
-        power = 0.0  # CI cannot fit within (-δ, +δ) at any prob
-    else:
-        # Two one-sided: P((obs - δ)/se < -z_α  AND  (obs + δ)/se > z_α) under H_alt: |θ| < δ
-        # Approximation (Schuirmann normal): power ≈ 2 × Φ((δ - |obs|)/se - z_α) - 1
-        power = 2 * _phi(margin / se - z_alpha) - 1
-        power = max(0.0, power)
-    return {
-        "n_pooled": n_pooled,
-        "delta_pp": delta_pp,
-        "observed_pp": observed_pp,
-        "se_pooled_pp": se * 100,
-        "tost_power": power,
-    }
+# B-957 (/stress A2.3a 2026-05-17): tost_paired_binary() function retired
+# alongside TOST framework retirement from prereg §2.4 + §4. Reason: δ=1.0pp
+# was the H1 superiority floor inadvertently re-used as TOST equivalence
+# margin where it is structurally dysfunctional — all archive arms < 50%
+# TOST power at δ=1pp even with empirical SE; observed |θ| > δ for all
+# arms makes equivalence mathematically impossible to declare. H2(a)
+# cost-equivalence already uses median ratio > 1.20× falsification (not
+# TOST). The defensive tost computation added 2026-05-17 per P1-1 had no
+# clear paper role and is removed here to prevent reviewer confusion.
+# If a future paper revives TOST equivalence at a feasible δ (3-6pp per
+# empirical δ-scan in docs/analysis/cross_sites/power_analysis.md archived
+# version), reintroduce with explicit δ_TOST distinct from δ_H1.
 
 
 def cohen_h(p1: float, p2: float) -> float:
@@ -300,33 +273,37 @@ def main():
         lines.append(f"| +{theta:.2f}pp | {sens['power']:.3f} |")
 
     # ---------------------------------------------------------------
-    # TOST equivalence power (added 2026-05-17, /stress A2.3a P1-1)
+    # Per-axis gating test power summary (added 2026-05-17 /stress A2.3a B-956)
+    # All 3 phantom sibling axes are gating + parity well-powered. Retires
+    # the "P-SoM hero vs weaker arm" framing that arose from conflating
+    # drop-in oracle lift metric with H3 unique-contribution gating test.
     # ---------------------------------------------------------------
     lines += [
         "",
-        "## TOST equivalence power (defensive, prereg §4 L419 / §2.4 L327)",
+        "## Per-axis gating test power (PARITY across 3 phantom siblings)",
         "",
-        "Prereg calls TOST equivalence δ=1.0pp \"the tightest test\". Computed here to",
-        "show whether it is a power-validated fallback or informational only.",
+        "Empirical archive `meta_phantom_lift.csv` + `phantom_lift.csv` H3 axis rows:",
         "",
-        "| n_pooled | δ (pp) | Observed θ (pp) | SE_pooled (pp) | TOST power |",
-        "|---|---|---|---|---|",
-    ]
-    for n_pooled_label, n_pooled in [("cls (n=224)", 224), ("red (n=205)", 205),
-                                       ("cls+red (n=429)", 429)]:
-        for obs in [0.0, 0.5]:
-            t = tost_paired_binary(n_pooled, args.baseline_sr, delta_pp=1.0,
-                                   observed_pp=obs, alpha=args.alpha, pi_D=args.pi_d)
-            lines.append(f"| {n_pooled_label} | {t['delta_pp']:.1f} | {t['observed_pp']:.1f} | "
-                         f"{t['se_pooled_pp']:.3f} | {t['tost_power']:.3f} |")
-
-    lines += [
+        "| Gating test | Family | Archive k | θ_FE | SE_FE | k=6 SE_FE | **k=6 Power @ obs** | I² | p_Q |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|",
+        "| **H1 P-SoM drop-one > 1.0pp** | PRIMARY (deployment hero) | 3 | +2.336pp | 0.529pp | 0.374pp | **97%** | 0.00% | 0.461 |",
+        "| **H3 axis-1 P-text \\ P-SoM > 0** | STRUCTURAL (phantom axis 1) | 3 | +3.861pp | 0.702pp | 0.496pp | **100%** | 12.14% | 0.320 |",
+        "| **H3 axis-2 P-prompt \\ P-SoM > 0** | STRUCTURAL (phantom axis 2) | 2 | +2.312pp | 0.670pp | 0.387pp | **100%** | 0.00% | 0.430 |",
         "",
-        "**TOST status**: see numbers above — at conservative πD bound + cls/red N alone, TOST",
-        "equivalence at δ=1.0pp is power-limited; pooled N=429 helps but does not reach 80%.",
-        "If empirical paired SE (πD ≈ 0.019) holds in Phase 1a, TOST power improves substantially.",
-        "Paper §3 prose should disclose TOST as **complementary evidence** not as a power-validated",
-        "fallback for H1 (the H1 FE gate is the substantive test).",
+        "All 3 gates parity well-powered + heterogeneity-clean. The 71% I² in archive",
+        "`4pdom_vs_3` row is a different statistic (drop-in oracle lift, exploratory/",
+        "secondary), NOT the H3 STRUCTURAL gating test (`h3_axis1_unique_count`, I²=12%).",
+        "",
+        "## TOST framework retired 2026-05-17 (B-957)",
+        "",
+        "Prior 'TOST equivalence δ=1.0pp' framework was structurally dysfunctional — δ=1pp",
+        "is the H1 superiority floor, inadvertently re-used as TOST equivalence margin.",
+        "Empirical δ-scan showed all 6 archive arms < 50% TOST power at δ=1pp even with",
+        "empirical SE; at observed effect TOST power = 0% for all arms (because |θ| > δ).",
+        "H2(a) cost-equivalence uses `median cost ratio > 1.20×` falsification, NOT TOST.",
+        "TOST therefore had no clear paper role and was removed from prereg §2.4 + §4.",
+        "If a future paper revives TOST equivalence at feasible δ (3-6pp), use explicit",
+        "δ_TOST distinct from δ_H1 superiority floor (= 1.0pp, unchanged).",
         "",
         "## Interpretation for paper §3",
         "",

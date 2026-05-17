@@ -55,25 +55,30 @@ which Phase 1a clean rerun will add for k=6 total).
 | +2.34pp | 0.973 |
 | +3.00pp | 1.000 |
 
-## TOST equivalence power (defensive, prereg §4 L419 / §2.4 L327)
+## Per-axis gating test power (PARITY across 3 phantom siblings)
 
-Prereg calls TOST equivalence δ=1.0pp "the tightest test". Computed here to
-show whether it is a power-validated fallback or informational only.
+Empirical archive `meta_phantom_lift.csv` + `phantom_lift.csv` H3 axis rows:
 
-| n_pooled | δ (pp) | Observed θ (pp) | SE_pooled (pp) | TOST power |
-|---|---|---|---|---|
-| cls (n=224) | 1.0 | 0.0 | 2.988 | 0.000 |
-| cls (n=224) | 1.0 | 0.5 | 2.988 | 0.000 |
-| red (n=205) | 1.0 | 0.0 | 3.123 | 0.000 |
-| red (n=205) | 1.0 | 0.5 | 3.123 | 0.000 |
-| cls+red (n=429) | 1.0 | 0.0 | 2.159 | 0.000 |
-| cls+red (n=429) | 1.0 | 0.5 | 2.159 | 0.000 |
+| Gating test | Family | Archive k | θ_FE | SE_FE | k=6 SE_FE | **k=6 Power @ obs** | I² | p_Q |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| **H1 P-SoM drop-one > 1.0pp** | PRIMARY (deployment hero) | 3 | +2.336pp | 0.529pp | 0.374pp | **97%** | 0.00% | 0.461 |
+| **H3 axis-1 P-text \ P-SoM > 0** | STRUCTURAL (phantom axis 1) | 3 | +3.861pp | 0.702pp | 0.496pp | **100%** | 12.14% | 0.320 |
+| **H3 axis-2 P-prompt \ P-SoM > 0** | STRUCTURAL (phantom axis 2) | 2 | +2.312pp | 0.670pp | 0.387pp | **100%** | 0.00% | 0.430 |
 
-**TOST status**: see numbers above — at conservative πD bound + cls/red N alone, TOST
-equivalence at δ=1.0pp is power-limited; pooled N=429 helps but does not reach 80%.
-If empirical paired SE (πD ≈ 0.019) holds in Phase 1a, TOST power improves substantially.
-Paper §3 prose should disclose TOST as **complementary evidence** not as a power-validated
-fallback for H1 (the H1 FE gate is the substantive test).
+All 3 gates parity well-powered + heterogeneity-clean. The 71% I² in archive
+`4pdom_vs_3` row is a different statistic (drop-in oracle lift, exploratory/
+secondary), NOT the H3 STRUCTURAL gating test (`h3_axis1_unique_count`, I²=12%).
+
+## TOST framework retired 2026-05-17 (B-957)
+
+Prior 'TOST equivalence δ=1.0pp' framework was structurally dysfunctional — δ=1pp
+is the H1 superiority floor, inadvertently re-used as TOST equivalence margin.
+Empirical δ-scan showed all 6 archive arms < 50% TOST power at δ=1pp even with
+empirical SE; at observed effect TOST power = 0% for all arms (because |θ| > δ).
+H2(a) cost-equivalence uses `median cost ratio > 1.20×` falsification, NOT TOST.
+TOST therefore had no clear paper role and was removed from prereg §2.4 + §4.
+If a future paper revives TOST equivalence at feasible δ (3-6pp), use explicit
+δ_TOST distinct from δ_H1 superiority floor (= 1.0pp, unchanged).
 
 ## Interpretation for paper §3
 
