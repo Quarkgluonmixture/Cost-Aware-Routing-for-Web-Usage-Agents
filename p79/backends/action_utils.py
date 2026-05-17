@@ -18,6 +18,25 @@ ALLOWED_ACTION_TYPES = {
 }
 
 
+def _is_strict_int(value: Any) -> bool:
+    """B-799 (/stress A1.2 cold-start P0-1-B* codex OOB, 2026-05-17): strict
+    int test that REJECTS Python ``bool`` (which is an ``int`` subclass).
+
+    Pre-fix the per-action validators used ``isinstance(x, int)``, so a JSON
+    payload like ``{"action_type":"click","element_id":true}`` validated:
+    Python evaluates ``isinstance(True, int) == True`` then ``True > 0 ==
+    True`` → silently dispatched to element_id=1. Same pattern at
+    ``tab_focus page_number``, ``select_option option_index``, and inside
+    coord/delta lists (``isinstance(False, (int,float))``). Empirical codex
+    probe 4/4 attack surfaces returned ``valid=True``; paper §3.5 sub-
+    category enum (parse_valid + invalid_element_id) cannot honestly
+    report this without strict typing.
+
+    Use this helper at every integer-schema gate.
+    """
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
 def _extract_fallback_thought(text: str, max_len: int = 500) -> str:
     """Extract thought from raw model output when JSON parsing fails.
 
@@ -65,7 +84,12 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
     # Strip <think>...</think> blocks emitted by extended-thinking models (e.g. Qwen3-235B).
     # Must happen before any JSON extraction so the regex below doesn't greedily capture
     # JSON fragments embedded inside the thinking block.
-    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+    # B-800 (/stress A1.2 cold-start P2-5-B codex, 2026-05-17): add IGNORECASE
+    # so `<THINK>` / `<Think>` (uppercase or mixed) are also stripped. Pre-fix
+    # case-sensitive regex left such blocks intact → JSON fragments inside
+    # them surfaced as candidate actions to _iter_json_objects → spurious
+    # multiple_actions classification on rare model emit pattern.
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
 
     # Path 1: whole text is one valid JSON object (clean case).
     # B-167 (/stress A1.4a v8, 2026-05-16): use validate_action_detailed so the
@@ -80,21 +104,55 @@ def parse_action_text(text: str) -> Tuple[Dict[str, Any], bool, Optional[str]]:
         pass
 
     # B-141 (/stress A1.1 v8 codex F6, 2026-05-15): parser robust repair.
-    # Path 2a: prefer fenced ```json {...} ``` block (common when models echo
+    # Path 2a: prefer fenced ```json {...} ``` blocks (common when models echo
     # the system-prompt "Output ONLY valid JSON" with markdown despite the
-    # instruction). Pick first fenced block that validates.
+    # instruction).
     # B-413 (/stress A1.2 v8 Mode B P1-6, 2026-05-16): use detailed validator
     # so repair path failures carry sub-category reason (was: 2-tuple
     # validate_action() dropped reason, fenced/raw_decode failures collapsed
     # to generic `invalid_action_repaired`).
+    # B-801 (/stress A1.2 cold-start P0-4-B* codex OOB, 2026-05-17): collect
+    # ALL fenced candidates and route through the same multiple_actions
+    # ambiguity guard as raw_decode Path 2b. Pre-fix `return ...` on first
+    # valid fenced block bypassed the guard entirely → empirical codex
+    # probe: model emit two fenced `{click,eid=1}` and `{click,eid=2}` →
+    # silent dispatch to eid=1 with reason="repaired_fenced", paper §3.5
+    # multiple_actions disclosure contract false-negative on fenced path.
+    fenced_candidates = []
     for m in _FENCED_JSON_RE.finditer(text):
         try:
             parsed = json.loads(m.group(1))
         except json.JSONDecodeError:
             continue
-        action, is_valid, _reason = validate_action_detailed(parsed)
-        if is_valid:
-            return action, True, "repaired_fenced"
+        fenced_action, fenced_valid, fenced_reason = validate_action_detailed(parsed)
+        fenced_candidates.append((fenced_action, fenced_valid, fenced_reason))
+    fenced_valid_actions = [c for c in fenced_candidates if c[1]]
+    if len(fenced_valid_actions) == 1:
+        return fenced_valid_actions[0][0], True, "repaired_fenced"
+    if len(fenced_valid_actions) >= 2:
+        # Ambiguity logic shared with raw_decode Path 2b: identical full-field
+        # signature → repaired_multiple_identical; otherwise multiple_actions.
+        _sig = lambda a: (
+            a.get("action_type"),
+            tuple(a.get("coordinate")) if isinstance(a.get("coordinate"), (list, tuple)) else None,
+            a.get("coordinate_type"),
+            a.get("element_id"),
+            a.get("text", ""),
+            tuple(a.get("delta")) if isinstance(a.get("delta"), (list, tuple)) else None,
+            a.get("scroll_direction"),
+            a.get("answer", ""),
+            a.get("option_label", ""),
+            a.get("option_value", ""),
+            a.get("option_index"),
+            a.get("page_number"),
+        )
+        sigs = {_sig(a) for a, _v, _r in fenced_valid_actions}
+        if len(sigs) == 1:
+            return fenced_valid_actions[0][0], True, "repaired_multiple_identical"
+        thought = _extract_fallback_thought(text)
+        first_action = fenced_valid_actions[0][0]
+        first_action["thought"] = thought
+        return first_action, False, "multiple_actions"
 
     # Path 2b: scan for ALL valid JSON objects in the text via raw_decode.
     # Previously the greedy regex `\{.*\}` captured first-{ to last-} which
@@ -199,6 +257,14 @@ def _is_valid_coordinate_pair(
         return False
     if len(coord) != 2:
         return False
+    # B-799 (/stress A1.2 cold-start P0-1-B* codex OOB, 2026-05-17): reject
+    # bool components BEFORE float coercion. Python `bool` is `int` subclass
+    # → `float(True) == 1.0` silently succeeds → coord=[True, False] passed
+    # the legacy shape check, then `x=1.0, y=0.0` slipped through the
+    # normalized [0,1] gate. Cross-baseline action-shape aggregator counted
+    # bool-typed coords as valid clicks at (1,0). Reject early.
+    if isinstance(coord[0], bool) or isinstance(coord[1], bool):
+        return False
     try:
         x = float(coord[0])
         y = float(coord[1])
@@ -208,6 +274,14 @@ def _is_valid_coordinate_pair(
     if not (x == x) or not (y == y):
         return False
     if x in (float("inf"), float("-inf")) or y in (float("inf"), float("-inf")):
+        return False
+    # B-802 (/stress A1.2 cold-start P1-2-B codex non-OOB, 2026-05-17):
+    # unknown coordinate_type enum must reject, not silently fall to pixel.
+    # Pre-fix `coordinate_type="screen"` / `"css"` / typos passed via the
+    # `allow_pixel` legacy fallback path → bogus enum survived into step
+    # JSONL audit trail → paper §3.5 schema-taxonomy false expansion. Only
+    # the canonical 2 enum members + `None` (legacy unset) are accepted.
+    if coordinate_type is not None and coordinate_type not in ("normalized", "pixel"):
         return False
     # B-406: explicit coordinate_type enforcement (new strict path).
     if coordinate_type == "normalized":
@@ -257,10 +331,21 @@ def _is_valid_delta_pair(delta: Any) -> bool:
     direction; magnitude usually 0-1 normalized but pixel deltas are
     allowed for backward compat. Reject NaN / inf / non-numeric / wrong
     shape.
+
+    B-799 (/stress A1.2 cold-start P0-1-B* codex OOB, 2026-05-17): also
+    reject bool components — same JSON bool-as-int slip as coord path.
+    B-803 (/stress A1.2 cold-start P1-5-B* codex OOB, 2026-05-17): also
+    reject zero delta [0,0]. Pre-fix `delta:[0,0]` passed shape gate and
+    the scroll canonicalizer at L476 then inferred `down` from `dy=0 > 0`
+    being False → silent `scroll_direction="up"` valid record. paper §3
+    action-distribution counted no-op scrolls as up-scrolls.
     """
     if not isinstance(delta, (list, tuple)):
         return False
     if len(delta) != 2:
+        return False
+    # B-799: reject bool components before float coerce.
+    if isinstance(delta[0], bool) or isinstance(delta[1], bool):
         return False
     try:
         dx = float(delta[0])
@@ -270,6 +355,10 @@ def _is_valid_delta_pair(delta: Any) -> bool:
     if not (dx == dx) or not (dy == dy):
         return False
     if dx in (float("inf"), float("-inf")) or dy in (float("inf"), float("-inf")):
+        return False
+    # B-803: zero-magnitude both-axes = no-op scroll. Reject so canonicalizer
+    # cannot synthesize a fake direction enum.
+    if dx == 0.0 and dy == 0.0:
         return False
     return True
 
@@ -318,10 +407,16 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
     _eid_raw = action.get("element_id")
     if isinstance(_eid_raw, str) and _eid_raw.strip():
         _eid_stripped = _eid_raw.strip()
-        # B-572: regex match int-only — accept "12" / "+12", reject "0" / "-1"
-        # at the per-action branch (still > 0 requirement preserved). Floats
-        # ("1.0"), scientific notation, hex, leading-zero ("007") all rejected.
-        if _eid_stripped.lstrip("+").isdigit():
+        # B-572 + B-804 (/stress A1.2 cold-start P1-4-A* Claude OOB,
+        # 2026-05-17): strict regex match int-only — accept "12" / "+12",
+        # reject "0" / "-1" / "007" / "1.0" / "1e3" / "0x12".
+        # Pre-B-804 the inline comment claimed "leading-zero (007) all
+        # rejected" but the actual implementation used
+        # `lstrip("+").isdigit()` which returns True for "007" → silent
+        # coerce to int 7. comment lied → paper §3.5 element_id_coerced_
+        # from_string disclosure miscounted "007" as legitimate coercion
+        # rather than malformed emission.
+        if re.match(r"^\+?[1-9][0-9]*$", _eid_stripped):
             try:
                 action["element_id"] = int(_eid_stripped)
                 # Provenance flag so paper §3.5 parse_valid disclosure can
@@ -340,7 +435,10 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
         # with no actual element_id-based dispatch. Closes paper §3
         # action-primitive evidence-layer hole.
         _eid = action.get("element_id")
-        has_id = isinstance(_eid, int) and _eid > 0
+        # B-799 (/stress A1.2 cold-start P0-1-B* codex OOB, 2026-05-17):
+        # strict-int helper rejects bool. Same fix at click/type/tab_focus
+        # branches + option_index below.
+        has_id = _is_strict_int(_eid) and _eid > 0
         coord = action.get("coordinate")
         coord_present = coord is not None
         # B-406: pass declared coordinate_type into validator so normalized
@@ -359,7 +457,7 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
             return {"action_type": "wait"}, False, "invalid_element_id"
         has_option = bool(
             action.get("option_label") or action.get("option_value")
-            or (isinstance(action.get("option_index"), int))
+            or _is_strict_int(action.get("option_index"))
         )
         if not has_option:
             return {"action_type": "wait"}, False, "invalid_select_option"
@@ -375,7 +473,9 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
         coord = action.get("coordinate")
         elem_id = action.get("element_id")
         # B-506 (/stress A1.25 GRL Chunk 3 P0-1-B*): element_id must be int > 0.
-        has_id = isinstance(elem_id, int) and elem_id > 0
+        # B-799 (/stress A1.2 cold-start P0-1-B* codex OOB, 2026-05-17): strict
+        # int helper rejects bool (was: isinstance(int) accepted True/False).
+        has_id = _is_strict_int(elem_id) and elem_id > 0
         coord_present = coord is not None
         coord_ctype = action.get("coordinate_type")
         coord_valid_shape = coord_present and _is_valid_coordinate_pair(
@@ -401,7 +501,9 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
         coord = action.get("coordinate")
         elem_id = action.get("element_id")
         # B-506 (/stress A1.25 GRL Chunk 3 P0-1-B*): element_id must be int > 0.
-        has_id = isinstance(elem_id, int) and elem_id > 0
+        # B-799 (/stress A1.2 cold-start P0-1-B* codex OOB, 2026-05-17): strict
+        # int helper rejects bool.
+        has_id = _is_strict_int(elem_id) and elem_id > 0
         coord_ctype = action.get("coordinate_type")
         coord_valid_shape = coord is not None and _is_valid_coordinate_pair(
             coord, coordinate_type=coord_ctype
@@ -442,9 +544,18 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
         if delta is not None and not _is_valid_delta_pair(delta):
             return {"action_type": "wait"}, False, "invalid_coord"
         wa_direction = action.get("direction")  # WA legacy alias
+        # B-805 (/stress A1.2 cold-start P0-3-AB* Claude+codex 2-AI OOB,
+        # 2026-05-17): entry validator must accept the FULL canonical enum
+        # `{up,down,left,right}` (was `{up,down}` only). Pre-fix
+        # `scroll_direction:"left"` was rejected as invalid_schema_dict
+        # while `direction:"left"` (legacy alias) was accepted and
+        # canonicalized to `scroll_direction:"left"` at L464 — same
+        # semantic intent, two validity outcomes depending on field name.
+        # Reviewer 5-line probe could cancel paper §3 action-taxonomy
+        # claim. Align entry gate to canonical enum.
         if (
             delta is None
-            and scroll_dir not in {"up", "down"}
+            and scroll_dir not in {"up", "down", "left", "right"}
             and (wa_direction or "").lower() not in {"up", "down", "left", "right"}
         ):
             return {"action_type": "wait"}, False, "invalid_schema_dict"
@@ -481,7 +592,9 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
 
     if action_type == "tab_focus":
         page_no = action.get("page_number")
-        if not isinstance(page_no, int) or page_no < 0:
+        # B-799 (/stress A1.2 cold-start P0-1-B* codex OOB, 2026-05-17): strict
+        # int helper rejects bool. Pre-fix `page_number:true` validated to 1.
+        if not _is_strict_int(page_no) or page_no < 0:
             return {"action_type": "wait"}, False, "invalid_schema_dict"
 
     if action_type in ("finish", "stop"):
@@ -497,7 +610,21 @@ def validate_action(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
     Existing callers (tests, proxy_api_agent, runner) keep their 2-tuple
     unpacking; new callsites that need the failure_reason discriminator
     call ``validate_action_detailed`` directly.
+
+    B-806 (/stress A1.2 cold-start P1-8-A Claude, 2026-05-17): the 2-tuple
+    shim silently drops ``failure_reason``. Re-validation callsites
+    (runner/env wrapper round-trip checks) lose the sub-category enum →
+    paper §3.5 disclosure does not see those failures. DeprecationWarning
+    fires once per process at first call so the audit trail surfaces
+    remaining callsites; migration target is ``validate_action_detailed``.
     """
+    import warnings
+    warnings.warn(
+        "validate_action() drops failure_reason — migrate to "
+        "validate_action_detailed() to preserve paper §3.5 sub-category enum",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     action, valid, _reason = validate_action_detailed(action)
     return action, valid
 
@@ -540,6 +667,17 @@ def first_element_id_by_keyword(obs_text: str, keywords: Tuple[str, ...]) -> Opt
 
 
 def extract_candidate_query(instruction: str) -> str:
+    """Extract a fallback search query string from a task instruction.
+
+    B-807 (/stress A1.2 cold-start P2-9-A Claude, 2026-05-17): removed
+    silent 80-char truncation. Pre-fix shop/WA instructions with 200+ char
+    target descriptions had the latter half silently dropped → fallback
+    `no_progress` misclassification when the long context contained the
+    distinguishing search keyword. Truncation was load-bearing only for
+    the historical no-quoted-keyword-no-recognized-prefix fallback; the
+    full string is acceptable downstream and any downstream length cap
+    should be enforced explicitly at the consumer (not silently here).
+    """
     quoted = re.findall(r"['\"]([^'\"]+)['\"]", instruction or "")
     if quoted:
         return quoted[0].strip()
@@ -548,4 +686,4 @@ def extract_candidate_query(instruction: str) -> str:
     for prefix in ("find", "search for", "look for", "buy", "add"):
         if instruction.lower().startswith(prefix):
             return instruction[len(prefix):].strip(" .")
-    return instruction[:80].strip()
+    return instruction.strip()

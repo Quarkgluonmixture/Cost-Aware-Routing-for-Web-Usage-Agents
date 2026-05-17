@@ -27,10 +27,16 @@ class MockBackend:
         # LocalGemmaBackend mock_mode (both emit 0.8). Previously 0.5 here
         # silently broke any cross-baseline parity test that used factory.MockBackend
         # alongside the local-backend mock_mode paths.
+        # B-808 (/stress A1.2 cold-start P2-2-AC Claude+gemini, 2026-05-17):
+        # removed dead `coordinate_type:"normalized"` field — scroll uses
+        # `delta`, not `coordinate`, so coordinate_type was never consumed
+        # by the env wrapper but DID leak into downstream aggregator slices
+        # that filter on coordinate_type semantics (paper §3.5 coord-type
+        # distribution figure). Aligns mock to action_utils canonical scroll
+        # shape: {action_type, delta, scroll_direction(canonicalized)}.
         action = {
             "action_type": "scroll",
             "delta": [0, 0.8],
-            "coordinate_type": "normalized",
             "thought": f"Mock backend {self.backend_id}",
         }
         meta = {
@@ -61,6 +67,22 @@ def create_backend(backend_id: str, cfg: Dict[str, Any]):
         raise ValueError(
             f"Backend cfg missing required 'type' field (backend_id={backend_id}). "
             f"Explicit dispatch only — see configs/exp_v2_base.yaml for examples."
+        )
+    # B-809 (/stress A1.2 cold-start P2-1-A* Claude OOB, 2026-05-17): `dom_mode`
+    # field defense parity with retired heuristic_dom backend. Pre-fix only
+    # `type:"heuristic_dom"` raised; `dom_mode:"heuristic_only"` (the field-
+    # level path that yaml configs use) was silently ignored by the per-
+    # baseline wrappers post-B-425 retirement. The 41 paper-grade yamls all
+    # currently set `dom_mode:"llm"`, but future drift (operator edits yaml
+    # to "heuristic_only" mid-experiment) would silently no-op rather than
+    # fail loud. Validate at the single dispatch gate.
+    dom_mode = cfg.get("dom_mode", "llm")
+    if dom_mode != "llm":
+        raise ValueError(
+            f"dom_mode={dom_mode!r} unsupported — heuristic_dom backend family "
+            f"retired 2026-05-17 (B-425). Only 'llm' is accepted; resurrect "
+            f"HeuristicDomBackend from git history if paper-2 module ablation "
+            f"resumes. (backend_id={backend_id})"
         )
     backend_type = cfg["type"]
     if backend_type == "local_qwen":
