@@ -3476,3 +3476,72 @@ User-invoked /stress on full GRL surface (P79 runtime 容错层 on top of VWA up
 **Chunks 2-4 pending**: per Q5=B (wait-fix-all) Phase 1a launches AFTER all 4 chunks audited + fixed. Tracker: `docs/checkpoints/stress_grl_audit_2026-05-17.md`.
 
 **Next available B-number**: B-449+.
+
+---
+
+## /stress A1.4 SoM extraction chain unified bug batch (2026-05-17)
+
+3-AI cross-audit (Mode A Claude + Mode B codex + Mode C gemini, scope SoM
+extraction chain `som.py` + agents + mechanistic extractor + schema +
+paper §3 prose). Verification status: A PASS / B PASS (B4 hallucinated test
+failure noted) / C PASS (C2 framing overstated, but core finding verified).
+
+User picks (5 P0+P1 triage Q):
+- Q1 paper-1 没 rule-based router → P0-4-C* (gemini router framing) **DROPPED**
+- Q2 reference images 所有 mode 都该有 (paper §3.5 line 107 已 disclose) → P0-1-B* (codex) **DROPPED**
+- Q3 degraded_som 是否真的需要 → **no, delete** (B-449)
+- Q4 fire timing → wait-all-fix before Phase 1a
+- Q5 P0-5 cross-pipeline coherence → pre-fire 修 (B-451)
+
+Auto-defer: P1-2-B (select_option JS contract) + P1-5-B (CSS dropdown multi-menu)
+**DEFERRED to user parallel /stress A1.25 GRL session** — both touch
+injection/dispatch layer where user is actively working (B-445~B-447 in VWA
+submodule).
+
+### B-449. Delete `degraded_som` schema field (overloaded 3-meaning bool) — Claude+Gemini overlap P0-2-A*+C* OOB 🛠️ FIXED commit `3a2d204`
+- **Attack**: `SomResult.degraded_som` single bool encoded three semantically distinct states: (a) zero-marks vision-fallback; (b) PIL render-fail phantom-fallback; (c) phantom-mode inheriting (b) where "no image" is design intent. Paper §3.5 line 109 prose committed to "split Path A / Path B if B2 SoM degraded rate > 5%" but schema had no field to split on. Empirical 0/6471 archive fires (the bool carried zero production signal).
+- **Fix**: Delete `degraded_som` from `SomResult` + `step_record.som`. Aggregator-side `mark_count == 0` derives Path A (zero-marks); PIL render-fail Path B is logged via `logger.warning` only — empirical 0/6471 means no signal lost. `analyze_reason_diagnostics.py` updated to count SoM-mode steps with `mark_count == 0`. Paper §3.5 line 109 prose rewritten to reference the new canonical signals.
+
+### B-450. Add `select_option_meta_primary` + `select_option_meta_retry` schema fields — Codex Mode B P0-3 🛠️ FIXED commit `3a2d204`
+- **Attack**: `runner/main.py:1941` writes `step_record["select_option_meta_primary"]`, but `StepRecordV2` dataclass / `STEP_RECORD_V2_DEFAULTS` / `PAPER_GRADE_STEP_OPTIONAL_KEYS` only listed `select_option_meta`. Codex grep: schema 0 / types 0 / runner 1 mention — ghost field outside canonical schema. `fill_step_defaults` did not backfill; archive readers could not produce per-step primary/retry split for paper §3.5 select_option sub-taxonomy. Asymmetric vs the locator_route_meta full-landed primary/retry pair (B-440).
+- **Fix**: Add `select_option_meta_primary: Optional[Dict[str, Any]] = None` + `select_option_meta_retry: Optional[Dict[str, Any]] = None` to `StepRecordV2`; add both keys to `STEP_RECORD_V2_DEFAULTS` + `PAPER_GRADE_STEP_OPTIONAL_KEYS`. Test fixture (`test_som_and_schema.py`) updated.
+
+### B-451. Cross-pipeline mode→prompt dispatch coherence — Claude P0-5-A* OOB 🛠️ FIXED commit `e5af0e7`
+- **Attack**: B0 (`proxy_api_agent._get_system_prompts`), B1 (`qwen3vl_agent.__init__._system_prompts`), B2 (`gemma3vl_agent.__init__._system_prompts`), and mechanistic extractor (`extract_hidden_states.__init__._mode_to_prompt`) each hand-rolled the same 7-key mode → prompt dispatch dict locally. Four copies = four silent-drift surfaces. B-103 (DOM/phantom_prompt missing `Accessibility Tree:\n` prefix in mechanistic path) was caused by exactly this drift, caught only after NPZ data was already extracted. Mechanism §5 frozen per advisor §138; this is forward-investment for paper-2 unfreeze.
+- **Fix**: New canonical factory `_shared_vl_utils.build_mode_prompt_dispatch_table()` returns the canonical 7-key dict. All 4 consumers replaced with single call. Test `test_b0_b1_b2_mode_dispatch_keys_identical` updated to verify canonical table directly + grep source for `_shared_build_mode_prompt_dispatch_table()` call.
+
+### B-452. Undeclared coordinate_type stamped "normalized" for pixel inputs — Codex Mode B P1-1-B OOB 🛠️ FIXED commit `901956d`
+- **Attack**: `action_utils.py:299/317/345` "auto-add coordinate_type when missing" branch stamped `coordinate_type="normalized"` for every valid positive-finite coord — including obvious pixel pairs like `[100, 200]`. env wrapper `vwa_wrapper.py:352-358` then silently auto-normalizes by viewport division, but step JSONL audit trail claimed "normalized". Cross-baseline coord-failure analysis + paper §3 error-taxonomy mislabeled.
+- **Fix**: New helper `_infer_coordinate_type(coord)` returns `"pixel"` when any component > 1.0 else `"normalized"`. The 3 auto-stamp branches (click / type / select_option) now use the inferred type. Explicit declaration is preserved (no inference override). Regression test `test_undeclared_coord_infers_pixel_not_blind_normalized` covers all 3 branches + explicit-declaration preservation.
+
+### B-453. Select_option JS dispatch success semantics — Codex Mode B P1-2-B OOB 🛠️ DEFERRED (user A1.25 GRL session)
+- **Attack**: `vwa_wrapper.py:593-606/644-649/662-710` `_FUZZY_MATCH_JS` evaluate branches mostly `return;` without `{matched: bool}`. Python sets `_select_option_meta["success"] = True` after `page.evaluate()` completes. Paper §3.5 select_option dispatch sub-taxonomy uses this field as evidence layer — no-match / wrong-match / native-select-absent all logged as success.
+- **Deferral rationale**: User's parallel /stress A1.25 GRL session (commits B-445~B-447 in VWA submodule) is actively working on the dispatch/injection layer. Avoiding mid-edit collision; B-453 stays open until that session lands.
+
+### B-454. `_collect_bbox_map` bbox unit contract docstring — Claude P1-3-A OOB 🛠️ FIXED commit `901956d`
+- **Attack**: `_normalize_bbox` heuristic `max(|x|) <= 1.0` → normalized→pixel scale. Production path (`obs.obs_nodes_info[*].union_bound`, pixel) bypasses `_collect_bbox_map`; legacy fallback path bbox source unit was undocumented. Future cross-benchmark integration with normalized bboxes would silently scale up.
+- **Fix**: Add docstring contract to `_collect_bbox_map` declaring pixel-coordinate expectation + describing `_normalize_bbox` as defensive fallback. Doc-only; no behavior change.
+
+### B-455. CSS dropdown injection same-eid menu overwrite — Codex Mode B P1-5-B 🛠️ DEFERRED (user A1.25 GRL session)
+- **Attack**: `vwa_wrapper.py:1076-1088` `injections: dict = {}` assignment `injections[best_eid] = dd['options']` (overwrite-not-append) — multiple hidden `<ul>` menus mapped to one trigger lose all but the last. classifieds + reddit nav often has clustered hidden menus.
+- **Deferral rationale**: Same as B-453 — user's parallel GRL session owns injection layer.
+
+### B-456. `p95(empty)=0.0` opt-in strict mode for figure renderers — Gemini Mode C P1-8 OOB 🛠️ FIXED commit `901956d`
+- **Attack**: `metrics.py::p95` returns 0.0 on empty valid set (B-200 legacy contract). Paper §4 "Latency P95 robustness" disclosure says "per-arm p95=0.0 indicates catastrophic empty input". But cross-arm/cross-mode aggregator (e.g. fig_latency_scatter mean(p95)) mathematically treats 0.0 as "fast" — falsely advantaging the most-failing arm in fleet average.
+- **Fix**: New `strict: bool = False` keyword on `p95(values, *, strict=...)`. `strict=True` raises ValueError on empty so renderers explicitly handle "N/A". Default `strict=False` preserves legacy 0.0 contract (no caller change). Regression test `test_b456_p95_strict_mode_raises_on_empty`.
+
+### B-457. Paper §3.5 line 105 regex anchoring prose precision — Claude P1-4 🛠️ FIXED commit `<TBD>`
+- **Attack**: Paper §3.5 line 105 described `_extract_text_marks` as "keeps each line whose label matches `\[\d+\]`" (unanchored). Production regex is `^\s*\[(\d+)\]\s+\w` (anchored line-start + word-prefix), defined as `MARK_ID_DETECT_RE` in `som.py:52` per /stress A1.10 P1-2 sibling propagation. Empirical current archive: 59 == 59 (unanchored coincides with anchored on indented AXTree) but prose underspecified. Reviewer running paper-stated regex on future cross-benchmark data could get different mark counts.
+- **Fix**: Paper §3.5 line 105 prose rewritten to specify "first non-whitespace token is the bracketed numeric id followed by a role label — the canonical anchored regex `^\s*\[(\d+)\]\s+\w` defined as `MARK_ID_DETECT_RE`" + explicit `[N]`-embedded-in-StaticText exclusion clause.
+
+### B-458. `condition_map.md` missing phantom condition_ids — Gemini Mode C P1-6 OOB 🛠️ FIXED commit `<TBD>`
+- **Attack**: `docs/reference/condition_map.md` hardcoded `condition_id` to 3 baseline values (`phase1_dom_router_0` / `phase1_som_router_0` / `phase1_vision_router_0`) — completely missing all 4 phantom condition_ids (paper §3 hero P-SoM/P-text/P-prompt). `diag` / `write-analysis` / `report` skills consume this as single source of truth; all phantom-mode runs silently treated as unknown by automated pipeline status aggregation.
+- **Fix**: condition_map.md updated to list 7-mode universe: 3 baseline + 4 phantom (`phantom_som` / `phantom_text` / `phantom_dom` legacy alias / `phantom_prompt`). Inline disclosure paragraph added.
+
+**B-numbers consumed (A1.4 batch)**: B-449~B-458 (10 contiguous; B-453 + B-455 DEFERRED to A1.25 GRL session, rest FIXED).
+
+**Smoke verification (A1.4 batch)**:
+- py_compile PASS: som.py + types.py + schema_migrations/v2.py + runner/main.py + analyze_reason_diagnostics.py + _shared_vl_utils.py + qwen3vl_agent.py + gemma3vl_agent.py + proxy_api_agent.py + extract_hidden_states.py + action_utils.py + metrics.py
+- Tests **412/412 PASS** (8 skipped intentional; 6 deselected — `test_vwa_evaluator_b91_guard.py` excluded due to environmental SHA drift from user A1.25 GRL session, NOT related to A1.4 batch; +2 new tests from B-452 + B-456)
+
+**Next available B-number**: B-459+.

@@ -8,8 +8,12 @@ diag / write-analysis / report 三个 SKILL 共用的 condition → 路径映射
 results/{benchmark}/phase1/{run_id}/{condition_id}/episodes/{site}_task_{task_id}_steps_v2.jsonl
 ```
 
-- `condition_id` 固定三值：`phase1_dom_router_0` / `phase1_som_router_0` / `phase1_vision_router_0`
+- `condition_id` 当前 paper-1 universe = 7 modes:
+    - 3 baseline: `phase1_dom_router_0` / `phase1_som_router_0` / `phase1_vision_router_0`
+    - 4 phantom (paper §3 hero): `phase1_phantom_som_router_0` / `phase1_phantom_text_router_0` / `phase1_phantom_dom_router_0` (legacy alias of `phantom_text`, pre-A1.7 archive dirs only) / `phase1_phantom_prompt_router_0`
 - `site` 前缀：classifieds → `classifieds_task_`，reddit → `reddit_task_`，shopping → `shopping_task_`
+
+> B-458 (/stress A1.4 P1-6-C gemini OOB, 2026-05-17): 4 phantom condition_ids 加入. Pre-fix this file 只列 3 baseline conditions, 所有 phantom-mode runs (paper §3 hero P-SoM/P-text/P-prompt) 都被 `diag` / `write-analysis` / `report` SKILL 当作 unknown condition 静默漏掉 — automated pipeline status aggregation 看不到 paper §3 数据.
 
 ## VWA (VisualWebArena)
 
