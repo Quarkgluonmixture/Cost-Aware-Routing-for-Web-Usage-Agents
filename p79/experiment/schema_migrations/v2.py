@@ -222,6 +222,12 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     "cost_unit_basis": None,
     "cost_total_mixed_unit_warn": None,
     "element_bbox": None,
+    # B-569 (/stress A1.22 P1-11-A, 2026-05-17): persist B0 network retry
+    # telemetry. Pre-A1.22 archive rows lack these → fill None ("baseline
+    # has no retry concept" or "archived lineage, telemetry unavailable").
+    # B1/B2 always None even post-fix; B0 0 when no retries this step.
+    "network_retry_count": None,
+    "network_retry_wait_ms": None,
 }
 
 

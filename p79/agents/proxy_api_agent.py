@@ -582,9 +582,19 @@ class ProxyApiAgent:
         # separation, §C router latency feature is asymmetric across
         # baselines and paper §1 latency claim cannot be reported fairly.
         # Retry overhead is scaffold-level — NOT counted in agent cost.
-        _retryable_codes = {429, 500, 502, 503, 504}
-        _max_retries = 3
-        _backoff = 10  # seconds; doubles each attempt
+        # B-568 (/stress A1.22 P1-10-A Claude, 2026-05-17): yaml-expose retry
+        # policy hyperparams. Pre-fix `_max_retries=3 _backoff=10
+        # _retryable_codes={429,500,502,503,504}` were hardcoded — reviewer
+        # cannot reproduce exact retry behavior from yaml + commit SHA alone,
+        # local "all hyperparams in yaml" reproducibility claim partially
+        # failed. Defaults preserved so existing configs unchanged; explicit
+        # override path exists via yaml (`configs/exp_v2_base.yaml:backends.
+        # *.{max_retries,retry_backoff_s,retryable_codes}`).
+        _retryable_codes = set(gen_cfg.get(
+            "retryable_codes", [429, 500, 502, 503, 504],
+        ))
+        _max_retries = int(gen_cfg.get("max_retries", 3))
+        _backoff = int(gen_cfg.get("retry_backoff_s", 10))  # seconds; doubles each attempt
         _retry_count = 0
         _retry_wait_ms_total = 0.0
         # B-399 (/stress A1.1 v8 Mode A P1-1, 2026-05-16): accumulate the
@@ -677,12 +687,40 @@ class ProxyApiAgent:
                 # Inject thought from text blocks if not already provided.
                 if not tool_input.get("thought") and reasoning_text:
                     tool_input["thought"] = reasoning_text[:500]
+                # B-570 (/stress A1.22 P1-12-A Claude OOB, 2026-05-17): re-route
+                # Path-1 success through `parse_action_text(json.dumps(...))`
+                # so the success path produces the **same** failure-mode
+                # taxonomy as B1/B2 (`parse_action_text` 10+ classes vs the
+                # legacy `validate_action` single "invalid_tool_input" string).
+                # Pre-fix: when use_tool_calling activates, paper §3.5
+                # parse_failure_reason distribution showed B0 1 class /
+                # B1+B2 10+ classes — cross-baseline granularity
+                # asymmetric ⟹ reviewer cannot compare parse_valid rate
+                # apples-to-apples. Post-fix: dual-validate (validate_action
+                # for schema integrity + parse_action_text for taxonomy),
+                # the strict-schema `validate_action` decides Path-1 vs
+                # Path-2 routing while `parse_action_text` produces the
+                # canonical fail_reason used by §3.5 disclosure.
+                # `use_tool_calling` default `false` keeps Path-2 active
+                # on current paper-grade fire; this fix activates when
+                # advisor sync 2026-05-14 decides Qwen official API
+                # `tool_choice` channel.
                 action, valid = validate_action(tool_input)
-                fail_reason = None if valid else "invalid_tool_input"
                 output_text = json.dumps(tool_input, ensure_ascii=False)
                 if valid:
+                    # Cross-validate via parse_action_text so fail_reason
+                    # taxonomy matches B1/B2 even on the success path.
+                    _action_pt, _valid_pt, _fail_pt = parse_action_text(
+                        output_text
+                    )
+                    # Path-1 trusts validate_action for routing (it has
+                    # tool-schema awareness Path-2 lacks); parse_action_text
+                    # output is consulted only for the canonical fail_reason
+                    # taxonomy when both agree the input is parseable.
+                    fail_reason = _fail_pt if _valid_pt else None
                     logger.info("Tool-use parsed: %s", action.get("action_type"))
                 else:
+                    fail_reason = "invalid_tool_input"
                     logger.warning("Tool-use input invalid, falling back to text parse.")
                     action = None  # trigger fallback below
 

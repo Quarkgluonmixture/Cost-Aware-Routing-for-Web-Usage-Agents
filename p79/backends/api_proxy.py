@@ -79,6 +79,20 @@ class ApiProxyBackend:
                     "use_tool_calling": config.get("use_tool_calling", False),
                     "use_glm_fallback": config.get("use_glm_fallback", False),
                     "glm_config": config.get("glm_config", ".auth/glm"),
+                    # B-568 (/stress A1.22 P1-10-A Claude, 2026-05-17): forward
+                    # yaml-controlled retry policy hyperparams. Pre-fix these
+                    # were hardcoded inside `proxy_api_agent.py:585-587`
+                    # (`_max_retries=3 _backoff=10 _retryable_codes`). Yaml
+                    # `configs/exp_v2_base.yaml:backends.B0.{max_retries,
+                    # retry_backoff_s,retryable_codes}` now overridable for
+                    # reproducibility checks (reviewer running with a faster
+                    # proxy can lower `max_retries=0` to match local latency
+                    # signature).
+                    "max_retries": config.get("max_retries", 3),
+                    "retry_backoff_s": config.get("retry_backoff_s", 10),
+                    "retryable_codes": config.get(
+                        "retryable_codes", [429, 500, 502, 503, 504],
+                    ),
                 },
                 "agent": {
                     "image_max_size": config.get("image_max_size", 1024),

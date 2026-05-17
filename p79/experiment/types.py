@@ -262,6 +262,18 @@ class StepRecordV2:
     # and for B0 rows where local scaffold cost happens to be 0 (router off,
     # zero-cost obs_prepare). None for archived pre-A1.22 rows.
     cost_total_mixed_unit_warn: Optional[bool] = None
+    # B-569 (/stress A1.22 P1-11-A Claude, 2026-05-17): network retry
+    # telemetry persist. Pre-fix `proxy_api_agent.py:809-810` emitted
+    # `network_retry_count` + `network_retry_wait_ms` into meta but runner
+    # only consumed `network_retry_wait_ms` for the `total_minus_retry`
+    # arithmetic — fields themselves were dropped at the runner→JSONL
+    # boundary. Paper §3.5 "B0 network retry rate per cell" disclosure
+    # column structurally unreproducible from raw JSONL. Now persisted
+    # as discrete step_record fields; B1/B2 always None (no equivalent
+    # network retry — Optional typed so None is honest contract, not
+    # 0-cast that would suggest "retried 0 times" vs "no retry concept").
+    network_retry_count: Optional[int] = None
+    network_retry_wait_ms: Optional[float] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -451,6 +463,14 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "element_bbox",
     "cost_unit_basis",
     "cost_total_mixed_unit_warn",
+    # B-569 (/stress A1.22 P1-11-A): persist B0 network retry telemetry
+    # as discrete fields (was meta-only, dropped at JSONL boundary). B1/B2
+    # always None; B0 0 when no retries, >0 with count + accumulated wait
+    # ms. Validator KEY-presence enforced so reviewer grepping JSONL for
+    # `network_retry_count` finds the field on every row (None ≡ baseline
+    # has no retry concept, not "0 retries").
+    "network_retry_count",
+    "network_retry_wait_ms",
 })
 
 

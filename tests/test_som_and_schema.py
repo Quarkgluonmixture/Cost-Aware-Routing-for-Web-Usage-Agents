@@ -282,6 +282,17 @@ def test_step_schema_validation_required_fields():
         # B-512 (/stress A1.5b Phase 2 P0-1-C gemini OOB, 2026-05-17): wrapper-
         # normalized canonical action form — None when no scroll normalization.
         "action_executed": None,
+        # B-563/B-564/B-565/B-566/B-569 (/stress A1.22 P0-1/2/5 + P1-11,
+        # 2026-05-17): cross-baseline contract sealing — cost_unit_basis,
+        # cost_total_mixed_unit_warn, element_bbox, fallback_finish, plus
+        # network_retry telemetry. Validator now requires KEY presence;
+        # value may be None for archived/mock paths.
+        "cost_unit_basis": None,
+        "cost_total_mixed_unit_warn": None,
+        "element_bbox": None,
+        "fallback_finish": None,
+        "network_retry_count": None,
+        "network_retry_wait_ms": None,
     }
 
     validate_step_record_v2(record)
@@ -332,6 +343,13 @@ def test_b481_select_option_meta_structured_fields_validator():
             "dialog_meta": None,
             # B-512 (/stress A1.5b Phase 2, 2026-05-17): action_executed.
             "action_executed": None,
+            # B-563~B-569 (/stress A1.22, 2026-05-17): cross-baseline contract.
+            "cost_unit_basis": None,
+            "cost_total_mixed_unit_warn": None,
+            "element_bbox": None,
+            "fallback_finish": None,
+            "network_retry_count": None,
+            "network_retry_wait_ms": None,
         }
         rec[key] = sel_meta_payload
         return rec

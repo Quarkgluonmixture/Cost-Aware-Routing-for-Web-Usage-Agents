@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple
@@ -158,6 +159,8 @@ def _assert_step_idx_monotonic(segment: List[Dict[str, Any]]) -> bool:
 def read_jsonl_dedup(
     path: Path,
     summary_path: Optional[Path] = None,
+    *,
+    strict_identity: bool = False,
 ) -> List[Dict[str, Any]]:
     """Read a single JSONL file, deduplicating restart artifacts.
 
@@ -172,6 +175,16 @@ def read_jsonl_dedup(
     partial segment; the dedup unconditionally kept the partial, breaking
     step-level cost/latency diagnostics while episode-level summaries
     pointed at the old run.
+
+    B-571 (/stress A1.22 P1-13-B* codex OOB, 2026-05-17): `strict_identity`
+    kwarg added. When True AND `summary_path` is provided AND the validator
+    reports `identity_mismatch=True`, raise ValueError instead of silently
+    returning the partial tail. Default False preserves the legacy
+    transparency-only behavior (analysis pipeline can still inspect
+    `_JSONL_INTEGRITY_LOG`). Paper-grade analysis call sites should pass
+    `strict_identity=True` to fail-loud on restart-crash silent tail
+    pollution — cross-baseline asymmetric (slow B1/B2 more prone to
+    partial/restart than B0 quick API calls).
     """
     file_lines: List[Dict[str, Any]] = []
     corrupt_count = 0
@@ -203,6 +216,24 @@ def read_jsonl_dedup(
     identity_mismatch: Optional[bool] = None
     if summary_path is not None and last_segment:
         identity_mismatch = _validate_against_summary(path, last_segment, summary_path)
+        # B-571 (/stress A1.22 P1-13-B* codex OOB, 2026-05-17): strict mode
+        # — paper-grade analysis call sites pass strict_identity=True to
+        # fail-loud on restart-crash silent tail pollution. Pre-fix the
+        # mismatched tail was returned silently; only `_JSONL_INTEGRITY_LOG`
+        # carried the warning, which `analysis.py:269-279` did not read.
+        # Lenient default preserves legacy transparency-only behavior;
+        # `P79_STRICT_READ_JSONL=1` env opts strict-mode into ALL call
+        # sites for paper-grade fire-blocker check.
+        if identity_mismatch and (
+            strict_identity or os.environ.get("P79_STRICT_READ_JSONL", "") == "1"
+        ):
+            raise ValueError(
+                f"read_jsonl_dedup: summary identity mismatch for {path} "
+                f"vs {summary_path}; strict_identity=True refuses to return "
+                f"the partial tail (paper-grade fail-loud). Set "
+                f"P79_STRICT_READ_JSONL=0 OR drop strict_identity kwarg for "
+                f"lenient transparency-only mode."
+            )
 
     # B-287: post-dedup invariant — step_idx must be monotonic. If not, the
     # last_segment still has restart artifact bleed-through; surface to the

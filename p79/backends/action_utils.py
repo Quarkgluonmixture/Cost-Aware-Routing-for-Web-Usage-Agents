@@ -304,6 +304,33 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
 
     action["action_type"] = action_type
 
+    # B-572 (/stress A1.22 P1-14-B* codex OOB, 2026-05-17): element_id
+    # digit-string → int canonicalization. LLM text-JSON output commonly
+    # emits `"element_id": "12"` (quoted by JSON formatter habit). Pre-fix
+    # `isinstance(int)` checks in the per-action branches rejected this as
+    # `invalid_element_id` even though semantically identical to int 12.
+    # B0 tool_use Path-1 uses `validate_action` which coerces via tool
+    # schema → typed int; B1+B2 text JSON path through `parse_action_text
+    # → json.loads → str/int as emitted` → asymmetric rejection rate
+    # treating serialization style as capability. Coerce digit-string here
+    # (BEFORE per-action validation) + record provenance via inline flag.
+    # Reject only outside int range (negative, zero, non-digit).
+    _eid_raw = action.get("element_id")
+    if isinstance(_eid_raw, str) and _eid_raw.strip():
+        _eid_stripped = _eid_raw.strip()
+        # B-572: regex match int-only — accept "12" / "+12", reject "0" / "-1"
+        # at the per-action branch (still > 0 requirement preserved). Floats
+        # ("1.0"), scientific notation, hex, leading-zero ("007") all rejected.
+        if _eid_stripped.lstrip("+").isdigit():
+            try:
+                action["element_id"] = int(_eid_stripped)
+                # Provenance flag so paper §3.5 parse_valid disclosure can
+                # report "B1/B2 element_id coerced from string" count per
+                # cell — measures the gap relative to B0 tool_use.
+                action.setdefault("element_id_coerced_from_string", True)
+            except (ValueError, TypeError):
+                pass  # leave raw; per-action validator will reject
+
     if action_type == "select_option":
         # B-506 (/stress A1.25 GRL Chunk 3 P0-1-B* codex OOB, 2026-05-17):
         # element_id must be `int > 0`. Pre-fix `isinstance(int)` alone
@@ -421,6 +448,36 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
             and (wa_direction or "").lower() not in {"up", "down", "left", "right"}
         ):
             return {"action_type": "wait"}, False, "invalid_schema_dict"
+        # B-573 (/stress A1.22 P1-15-B* codex OOB, 2026-05-17): scroll
+        # action shape canonicalization. Pre-fix step_record `action` could
+        # carry `scroll_direction:"down"` (B0 tool-schema) OR `direction:
+        # "down"` (WA legacy alias used by B1/B2 free-form JSON) OR
+        # `delta:[0,0.8]` (B1/B2 native VLM emit). Three shapes for the
+        # same semantic intent → cross-baseline action-shape aggregator
+        # (paper §3 action-taxonomy) groups by ANY ONE shape misses the
+        # others. Now: validator emits canonical `scroll_direction` enum
+        # `{up,down,left,right}` (`down` default for legacy delta with
+        # `dy>0`). Legacy `direction` field preserved as
+        # `direction_raw_alias` so reviewer can audit which baseline
+        # emitted which form; canonical `scroll_direction` is the
+        # cross-baseline-stable consumer field.
+        if "scroll_direction" not in action or action["scroll_direction"] not in {"up", "down", "left", "right"}:
+            _canonical: Optional[str] = None
+            if isinstance(wa_direction, str) and wa_direction.lower() in {
+                "up", "down", "left", "right"
+            }:
+                _canonical = wa_direction.lower()
+                # Preserve WA-legacy alias for reviewer audit; canonical
+                # field is `scroll_direction`.
+                action["direction_raw_alias"] = wa_direction
+            elif isinstance(delta, (list, tuple)) and len(delta) == 2:
+                try:
+                    _dy = float(delta[1])
+                    _canonical = "down" if _dy > 0 else "up"
+                except (ValueError, TypeError):
+                    _canonical = None
+            if _canonical is not None:
+                action["scroll_direction"] = _canonical
 
     if action_type == "tab_focus":
         page_no = action.get("page_number")

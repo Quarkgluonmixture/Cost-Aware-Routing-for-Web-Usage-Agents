@@ -290,20 +290,53 @@ def test_validate_tab_focus_requires_int_page_number():
 
 
 def test_validate_select_option_rejects_non_int_element_id():
-    """select_option element_id must be int (was: any truthy value)."""
+    """select_option element_id must resolve to int > 0.
+
+    B-572 (/stress A1.22 P1-14-B* codex OOB, 2026-05-17): digit-string
+    element_id like `"42"` is now canonicalized to int(42) BEFORE per-action
+    validation — closes the B0 tool_use vs B1/B2 text JSON asymmetry where
+    quoted-int element_id was rejected on text path but accepted on tool
+    path. Non-digit strings, floats ("1.0"), negative, and zero are still
+    rejected. Test updated to match the new contract:
+      - `"42"` → coerce to int(42) → valid
+      - `"hello"` → not coerced → invalid (per-action `isinstance(int)` fails)
+      - `0` and `-1` → still invalid (per-action `> 0` requirement)
+    Provenance flag `element_id_coerced_from_string` records the coercion.
+    """
+    # B-572: digit-string is now coerced; was rejected pre-B-572.
     action, valid = validate_action({
         "action_type": "select_option",
-        "element_id": "42",  # string, not int
+        "element_id": "42",  # string-digit, coerced to int(42)
+        "option_label": "Red",
+    })
+    assert valid is True
+    assert action.get("element_id") == 42
+    assert action.get("element_id_coerced_from_string") is True
+
+    # Non-digit string still rejected.
+    action, valid = validate_action({
+        "action_type": "select_option",
+        "element_id": "hello",
         "option_label": "Red",
     })
     assert valid is False
-    # Sanity: int element_id passes
+
+    # Sanity: int element_id passes unchanged + no coercion flag.
     action, valid = validate_action({
         "action_type": "select_option",
         "element_id": 42,
         "option_label": "Red",
     })
     assert valid is True
+    assert action.get("element_id_coerced_from_string") is None
+
+    # Zero / negative int still rejected (per-action `> 0`).
+    action, valid = validate_action({
+        "action_type": "select_option",
+        "element_id": 0,
+        "option_label": "Red",
+    })
+    assert valid is False
 
 
 def test_undeclared_coord_infers_pixel_not_blind_normalized():

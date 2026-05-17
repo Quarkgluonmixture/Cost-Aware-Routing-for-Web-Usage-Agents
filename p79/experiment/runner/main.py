@@ -2267,6 +2267,25 @@ class ExperimentRunner:
                         else None
                     ),
                     "backend_infer": float(meta.get("infer_ms", backend_latency_ms)),
+                    # B-567 (/stress A1.22 P1-8-AC* 2-AI overlap, 2026-05-17,
+                    # Claude F4 + Gemini F6): cross-baseline-fair backend_infer.
+                    # `backend_infer` above measures `time.time()` around the
+                    # entire `agent.step()` call which on B0 includes the inner
+                    # `_max_retries × _backoff` retry+sleep loop (the network
+                    # retry is internal to `proxy_api_agent.py:585-635`). B1/B2
+                    # have no equivalent retry → their `backend_infer` is pure
+                    # inference. Pre-fix: paper §3 mean step latency 跨 baseline
+                    # 跑会因 B0 transient retry spike inflate by 10-70s/step
+                    # while B1/B2 unchanged — apples-to-apples violated. B-143
+                    # `total_minus_retry` only corrected `latency.total`, not
+                    # `backend_infer`. Now emit both side-by-side: legacy
+                    # `backend_infer` retained for archive compat, new
+                    # `backend_infer_minus_retry` is the cross-baseline-fair
+                    # source field for paper §3 latency table consumers.
+                    "backend_infer_minus_retry": (
+                        float(meta.get("infer_ms", backend_latency_ms))
+                        - float(meta.get("network_retry_wait_ms") or 0.0)
+                    ),
                     "env_step": env_step_ms,
                     "router_decision": float(overhead.get("router_decision_ms", 0.0)),
                     # B-143 (/stress A1.1 v8 Claude F7, 2026-05-15): B0
@@ -2412,6 +2431,15 @@ class ExperimentRunner:
                     or float(obs_prepare_cost or 0) > 0
                 )
             )
+            # B-569 (/stress A1.22 P1-11-A Claude, 2026-05-17): persist B0
+            # network retry telemetry as discrete step_record fields. Pre-fix
+            # `meta["network_retry_count"]` + `meta["network_retry_wait_ms"]`
+            # were dropped at runner→JSONL boundary (only consumed for
+            # `latency.total_minus_retry` arithmetic). B1/B2 always None
+            # (no network retry equivalent — Optional typed so absence is
+            # honest "baseline does not retry" not 0-cast "retried 0 times").
+            step_record["network_retry_count"] = meta.get("network_retry_count")
+            step_record["network_retry_wait_ms"] = meta.get("network_retry_wait_ms")
             # GLM fallback tracking (§67 Plan B)
             # B-398 (/stress A1.1 v8 Mode A+B P0-3 overlap, 2026-05-16):
             # persist ALL attempted-fallback steps, not only the succeeded

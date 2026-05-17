@@ -101,10 +101,34 @@ DEFAULT_CONFIG: Dict[str, Any] = {
 }
 
 
+# B-574 (/stress A1.22 P1-16-B codex, 2026-05-17): explicit-clear sentinel
+# for yaml-driven config override. Pre-fix `_merge_dict` skipped any
+# `v is None` key during merge, which meant yaml `revision: null` (a
+# legitimate "clear inherited value" expression) silently fell through →
+# inherited value retained → reviewer reading the normalized config sees
+# "inherited revision SHA" believing override applied. Especially
+# dangerous for cross-baseline asymmetric overrides (one yaml clears
+# `use_glm_fallback` for B0, expects null but gets inherited true →
+# paper-grade GLM rescue contamination). Sentinel `{"__delete__": true}`
+# is the explicit clear; yaml writes `revision: {__delete__: true}` to
+# wipe an inherited key.
+_DELETE_SENTINEL = "__delete__"
+
+
 def _merge_dict(base: Dict[str, Any], update: Dict[str, Any]) -> Dict[str, Any]:
     merged = copy.deepcopy(base)
     for k, v in (update or {}).items():
+        # B-574: explicit delete sentinel — yaml `key: {__delete__: true}`
+        # removes the inherited key entirely. Without this, yaml authors
+        # have no way to "unset" a base-config default short of forking the
+        # whole config.
+        if isinstance(v, dict) and v.get(_DELETE_SENTINEL) is True:
+            merged.pop(k, None)
+            continue
         if v is None:
+            # B-574: still skip plain `None` to preserve legacy semantics
+            # (most yamls use `key:` for "no override" rather than "delete").
+            # Authors who truly want delete must use the explicit sentinel.
             continue
         if isinstance(v, dict) and isinstance(merged.get(k), dict):
             merged[k] = _merge_dict(merged[k], v)
