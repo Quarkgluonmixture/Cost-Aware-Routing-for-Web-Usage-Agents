@@ -17,8 +17,16 @@ class SomResult:
     som_text: str
     marked_image_path: Optional[str]
     marked_image: Optional[Any]  # PIL Image with bounding boxes drawn, None if unavailable
-    degraded_som: bool
     mark_count: int
+    # /stress A1.4 P0-2 (2026-05-17): `degraded_som` bool field DELETED.
+    # Pre-deletion this single bool overloaded three semantically distinct
+    # states: (a) zero-marks vision-fallback; (b) PIL render-fail
+    # phantom-fallback; (c) phantom-mode inheriting (b) where "no image" is
+    # the design intent. Empirical 0/6471 archive fires (paper §3.5 line 109
+    # pre-delete) means the signal carried no production weight. Canonical
+    # replacement: aggregator-side `mark_count == 0` derives Path A; PIL
+    # render-fail (Path B) is logged via `logger.warning` only — no schema
+    # field. Paper §3.5 prose updated in parallel.
 
 
 # /stress A1.4 F2 fix: explicit known-modes set so unknown / typo modes raise
@@ -315,7 +323,6 @@ def prepare_observation_for_mode(
             som_text="",
             marked_image_path=None,
             marked_image=image,
-            degraded_som=False,
             mark_count=0,
         )
 
@@ -328,7 +335,6 @@ def prepare_observation_for_mode(
             som_text=result.som_text,
             marked_image_path=result.marked_image_path,  # keep artifact for inspection
             marked_image=None,                           # model receives no image
-            degraded_som=result.degraded_som,
             mark_count=result.mark_count,
         )
 
@@ -336,11 +342,11 @@ def prepare_observation_for_mode(
         # P-prompt: AXTree text (same as DOM mode) + no image, but SoM prompt (set in agent).
         # Symmetric ablation of phantom_text: only the prompt axis is swapped from DOM.
         return SomResult(som_text=obs_text, marked_image_path=None, marked_image=None,
-                         degraded_som=False, mark_count=0)
+                         mark_count=0)
 
     if mode != "som":
         # "dom" mode or any unknown mode — full AXTree, no image
-        return SomResult(som_text=obs_text, marked_image_path=None, marked_image=None, degraded_som=False, mark_count=0)
+        return SomResult(som_text=obs_text, marked_image_path=None, marked_image=None, mark_count=0)
 
     # --- "som" mode: SOM_MARKS compressed index + marked image ---
     return _build_som_result(obs, obs_text, artifact_dir, step_idx)
@@ -368,11 +374,12 @@ def _build_som_result(
         # system prompt and expects [SOM_MARKS] format. An empty block signals
         # "no interactive elements detected" while keeping prompt/input consistent.
         # Fall back to the raw (unmarked) screenshot so the model can still use vision.
+        # /stress A1.4 P0-2 (2026-05-17): aggregator-side `mark_count == 0` is
+        # canonical Path A (zero-marks vision-fallback) signal; no schema bool.
         return SomResult(
             som_text="[SOM_MARKS]\n[/SOM_MARKS]",
             marked_image_path=None,
             marked_image=getattr(obs, "image", None),
-            degraded_som=True,
             mark_count=0,
         )
 
@@ -436,14 +443,16 @@ def _build_som_result(
             marked_image_path = None
             marked_image = None
 
-    # degraded_som=True here means marks were extracted but image rendering failed.
-    # Zero-mark complete degradation is handled in the early return above.
-    degraded = marked_image is None
+    # /stress A1.4 P0-2 (2026-05-17): no `degraded_som` field. PIL render-fail
+    # (Path B) is signaled only by `marked_image is None` + `logger.warning`
+    # above; aggregator-side `mark_count > 0 && marked_image_path is None`
+    # would detect Path B, but empirical 0/6471 means no production signal
+    # was being read. Path A (zero-marks vision-fallback) is detected via
+    # `mark_count == 0` aggregator-side.
     return SomResult(
         som_text=som_text,
         marked_image_path=marked_image_path,
         marked_image=marked_image,
-        degraded_som=degraded,
         mark_count=len(text_marks),
     )
 

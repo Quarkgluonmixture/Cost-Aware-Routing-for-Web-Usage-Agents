@@ -1724,7 +1724,6 @@ class ExperimentRunner:
                 step_idx=step_idx,
                 som={
                     "enabled": (decision_mode == "som"),
-                    "degraded_som": bool(obs_prep.degraded_som),
                     "mark_count": obs_prep.mark_count,
                 },
                 observation_mode=decision_mode,

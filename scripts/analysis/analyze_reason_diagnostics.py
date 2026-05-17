@@ -1995,8 +1995,19 @@ def main() -> None:
             ax_stats = _compute_action_execution_stats(steps)
             page_type_seq = _page_type_sequence(steps)
             observation_mode = str(steps[0].get("observation_mode", "") or summary.get("observation_mode", "") or "").strip()
+            # /stress A1.4 P0-2 (2026-05-17): canonical Path A signal is
+            # `mark_count == 0` (zero-marks vision-fallback). Pre-fix the
+            # `degraded_som` bool field was deleted from schema because it
+            # overloaded three semantically distinct states (zero-marks /
+            # render-fail / phantom inherit). Aggregator now counts on
+            # SoM-mode steps where the extractor returned no marks; PIL
+            # render-fail (Path B) is no longer schema-visible (logged via
+            # logger.warning only — empirical 0/6471 archive fires).
             degraded_som_steps = sum(
-                1 for s in steps if bool((s.get("som") or {}).get("degraded_som", False))
+                1
+                for s in steps
+                if str(s.get("observation_mode", "") or "").strip() == "som"
+                and int((s.get("som") or {}).get("mark_count", 0) or 0) == 0
             )
 
             # ── URL revisit & action diversity signals ──

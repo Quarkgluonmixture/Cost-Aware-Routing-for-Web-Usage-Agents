@@ -152,9 +152,18 @@ def test_episode_defaults_schema_version_matches_runtime_constant():
 
 def test_som_degrades_without_bbox(tmp_path):
     """Production path: marks present in text but no bbox info → image render
-    cannot draw boxes → degraded_som=True. Uses prepare_observation_for_mode
+    cannot draw boxes → `marked_image is None`. Uses prepare_observation_for_mode
     after apply_som was deleted (A1.4c cleanup, 2026-05-16; was 0-caller dead
-    code emitting a DeprecationWarning that nobody listened to)."""
+    code emitting a DeprecationWarning that nobody listened to).
+
+    /stress A1.4 P0-2 (2026-05-17): the `degraded_som` schema bool field has
+    been DELETED — it overloaded three semantically distinct states
+    (zero-marks / render-fail / phantom inherit) and empirically fired
+    0/6471 in archive. Path A (zero-marks vision-fallback) is now detected
+    aggregator-side via `mark_count == 0`. Path B (PIL render-fail) is
+    only visible via `marked_image is None` after the SoM-mode path; this
+    test asserts that signal directly.
+    """
     obs = P79Observation(
         text="[1] Search textbox\n[2] Submit button",
         image=Image.new("RGB", (200, 100), color="white"),
@@ -163,7 +172,10 @@ def test_som_degrades_without_bbox(tmp_path):
 
     result = prepare_observation_for_mode(obs, "som", tmp_path, step_idx=0)
     assert result.mark_count >= 1
-    assert result.degraded_som is True
+    # Render-fail signal post-A1.4-P0-2: marked_image is None when marks
+    # were extracted but bbox info absent → PIL draw skipped (no exception
+    # path) → marked_image stays None.
+    assert result.marked_image is None
 
 
 def test_phantom_som_strips_image_keeps_text(tmp_path):
@@ -256,6 +268,10 @@ def test_step_schema_validation_required_fields():
         # symmetric with locator_route_meta. Paper §3.5 select_option
         # sub-taxonomy depends on key presence.
         "select_option_meta": None,
+        # B-450 (/stress A1.4 P0-3-B codex OOB, 2026-05-17): select_option
+        # retry-overwrite split, symmetric with locator_route_meta_primary/retry.
+        "select_option_meta_primary": None,
+        "select_option_meta_retry": None,
         "agent_visible_changed": None,
     }
 

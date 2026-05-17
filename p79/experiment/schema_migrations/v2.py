@@ -149,6 +149,13 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     "locator_route_meta_retry": None,
     # B-420 (/stress A1.3 v9, 2026-05-17): symmetric with locator_route_meta.
     "select_option_meta": None,
+    # B-450 (/stress A1.4 P0-3-B codex OOB, 2026-05-17): select_option retry-
+    # overwrite split, symmetric with locator_route_meta_primary/retry (B-440).
+    # Archive rows pre-A1.4-P0-3 lack these → fill with None so aggregators
+    # see consistent shape; B-450-aware aggregator falls back to legacy
+    # `select_option_meta` when `_primary` is None.
+    "select_option_meta_primary": None,
+    "select_option_meta_retry": None,
     # B-284 fix (2026-05-16, A1.8): retire ghost-field status by registering
     # the 5 GLM/retry de-biasing fields in the schema catalog. Old data lacks
     # them → fill_step_defaults backfills None → downstream aggregators see

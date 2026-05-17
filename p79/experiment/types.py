@@ -140,6 +140,18 @@ class StepRecordV2:
     # page_change with no taxonomy attribution. None when step did not
     # invoke select_option.
     select_option_meta: Optional[Dict[str, Any]] = None
+    # B-450 (/stress A1.4 P0-3-B codex OOB, 2026-05-17): select_option_meta
+    # retry-overwrite split, symmetric with locator_route_meta_primary/retry
+    # (B-440). Pre-fix the runner wrote `select_option_meta_primary` to
+    # step_record but the dataclass/defaults/PAPER_GRADE_STEP_OPTIONAL_KEYS
+    # only listed `select_option_meta` — "ghost field" outside the canonical
+    # schema. `fill_step_defaults` did not backfill; archive readers could
+    # not produce per-step primary/retry split for paper §3.5 select_option
+    # sub-taxonomy. Codex Mode B verified by grep: schema 0 / types 0 /
+    # runner 1 mention. Aligns select_option half-landed retry-split with
+    # the locator_route_meta full-landed pair.
+    select_option_meta_primary: Optional[Dict[str, Any]] = None
+    select_option_meta_retry: Optional[Dict[str, Any]] = None
     # B-284 fix (2026-05-16, A1.8): paper §3.5.1 cite these B0 proxy-specific
     # fields for GLM-rescue de-biasing audit. Pre-fix the runner wrote them to
     # JSONL (`runner/main.py:1663-1669`) but they were absent from this dataclass
@@ -295,6 +307,8 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "locator_route_meta_primary",  # B-440 retry-overwrite split
     "locator_route_meta_retry",    # B-440 retry-overwrite split
     "select_option_meta",  # B-420
+    "select_option_meta_primary",  # B-450 retry-overwrite split (symmetric w/ B-440)
+    "select_option_meta_retry",    # B-450 retry-overwrite split (symmetric w/ B-440)
     "agent_visible_changed",
 })
 
