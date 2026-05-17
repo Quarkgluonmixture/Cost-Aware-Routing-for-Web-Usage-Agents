@@ -605,3 +605,51 @@ assert_no_cross_mode_collision() {
     exit 1
   fi
 }
+
+# ---------- 7. Per-RUN_ID watchdog flock (B-907 /stress A2.2 P0-5-B* OOB) ----------
+# acquire_watchdog_lock <run_id> [<label>]
+# release_watchdog_lock
+#
+# B-907 (/stress A2.2 P0-5-B* codex F1 OOB, 2026-05-17): two queue leaves passing
+# the pgrep TOCTOU window simultaneously spawn 2 watchdogs for SAME RUN_ID. Both
+# share the same WD_STATE file + `.tmp` path → mutual overwrite of
+# seen_keys / session_contaminated / error_retry_counts / seen_completions;
+# may double-fire cleanup / post-analysis / gallery / figures. flock acquired on
+# fd 8 (chain fd 9 + leaf-site fd 7 already used per acquire_site_lock).
+#
+# Lock file: `${REPO_DIR}/.locks/watchdog_${run_id}.lock`. Held until script
+# exit (trap release in caller). Auto-released on subshell exit / `exec 8>&-`.
+#
+# Caller pattern:
+#   acquire_watchdog_lock "${RUN_ID}" "queue_baseline" || exit $?
+#   trap "release_watchdog_lock; release_site_lock" EXIT INT TERM
+acquire_watchdog_lock() {
+  local run_id="${1:-}" label="${2:-leaf}"
+  if [[ -z "${run_id}" ]]; then
+    echo "[${label}][error] acquire_watchdog_lock: run_id required" >&2
+    return 1
+  fi
+  local repo_dir="${REPO_DIR:-$(pwd)}"
+  local lock_dir="${repo_dir}/.locks"
+  mkdir -p "${lock_dir}" 2>/dev/null || true
+  local lock_file="${lock_dir}/watchdog_${run_id}.lock"
+  exec 8>"${lock_file}"
+  if ! flock -n 8; then
+    echo "[${label}][FATAL] another watchdog holds lock for run_id=${run_id} (B-907)" >&2
+    echo "[${label}][FATAL] lock file: ${lock_file}" >&2
+    echo "[${label}][FATAL] if stale (prior watchdog crashed), 'rm ${lock_file}' to force-release" >&2
+    exec 8>&-
+    return 78  # rc=78 = lock contention (matches acquire_site_lock convention)
+  fi
+  WATCHDOG_LOCK_FD=8
+  WATCHDOG_LOCK_FILE="${lock_file}"
+  echo "[${label}][lock] acquired ${lock_file} (pid $$, B-907)" >&2
+  return 0
+}
+
+release_watchdog_lock() {
+  if [[ "${WATCHDOG_LOCK_FD:-}" == "8" ]]; then
+    exec 8>&-
+    unset WATCHDOG_LOCK_FD WATCHDOG_LOCK_FILE
+  fi
+}

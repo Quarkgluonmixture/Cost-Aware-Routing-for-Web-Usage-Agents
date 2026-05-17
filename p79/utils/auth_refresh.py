@@ -272,7 +272,17 @@ if _still_on_login or not _positive_ok:
 # Now: write to .tmp + os.replace atomic (POSIX same-FS) + fsync parent dir.
 import os as _atomic_os
 _atomic_target = {str(auth_file)!r}
-_atomic_tmp = _atomic_target + '.tmp'
+# B-908 (/stress A2.2 P0-6-B* codex F2 OOB, 2026-05-17): PID-suffixed tmp path.
+# Pre-fix `.tmp` fixed path raced if 3 concurrent callers (reset gate / runner
+# pre-episode / watchdog auto-refresh) hit the auth file at the same moment:
+# writer A writes _atomic_tmp partially; writer B opens same _atomic_tmp,
+# truncates + overwrites; A's `os.replace` then renames B's partial content
+# as target → next reader sees Playwright JSON parse error → episode marked
+# benchmark_noise → cleaned up by next session wave (silent contamination).
+# PID-suffix ensures each writer owns its own tmp inode; only the canonical
+# os.replace(tmp_pid_A, target) / os.replace(tmp_pid_B, target) race remains,
+# and that race is POSIX-atomic (only one ends as target).
+_atomic_tmp = _atomic_target + '.tmp.' + str(_atomic_os.getpid())
 ctx.storage_state(path=_atomic_tmp)
 _atomic_os.replace(_atomic_tmp, _atomic_target)
 try:

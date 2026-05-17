@@ -210,6 +210,16 @@ WATCHDOG_STATE="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.state.json"
 # AND condition_summary_v2.json present. Prevents init-orphan idle loops.
 RUNNER_PID=$(pgrep -f "run_experiment.py.*${RUN_ID}" | head -1)
 
+# B-907 (/stress A2.2 P0-5-B* codex F1 OOB, 2026-05-17): per-RUN_ID flock
+# closes pgrep-TOCTOU window letting two queue leaves spawn 2 watchdogs same
+# RUN_ID + shared WD_STATE mutual overwrite. Lock on fd 8 (held until script
+# end via existing trap chain). Skip-acquire path: queue_chain.sh leaf already
+# attached; lock contention with another watchdog process → rc=78 FATAL.
+if ! acquire_watchdog_lock "${RUN_ID}" "queue_baseline"; then
+  exit $?
+fi
+# Extend existing release trap (acquire_site_lock set EXIT INT TERM at line 105)
+trap "release_watchdog_lock; release_site_lock" EXIT INT TERM
 if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
   echo "[baseline] watchdog for ${RUN_ID} already running, skipping spawn"
 else

@@ -1223,7 +1223,15 @@ def _save_state(
     # ``{}`` silently (line 548-564), losing ``error_retry_counts`` +
     # ``session_contaminated`` + ``seen_keys`` history. Matches the
     # LoggerV2._fsync_dir pattern per B-198.
-    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    # B-907 (/stress A2.2 P0-5-B* codex F1 OOB, 2026-05-17): PID-suffixed tmp
+    # path. Pre-fix fixed `.tmp` path raced if 2 watchdogs sharing same RUN_ID
+    # (queue leaf flock B-907 now closes TOCTOU at spawn but defense-in-depth
+    # at write level too) write the same `.tmp` interleaved → second writer's
+    # `os.replace` could rename a partially-written tmp from writer A as target
+    # while A still believed it owned the path. PID-suffix ensures each writer
+    # owns its own tmp inode; only the canonical `os.replace(tmp_pid_A, target)`
+    # / `os.replace(tmp_pid_B, target)` race remains (POSIX-atomic ordering).
+    tmp_path = path.with_suffix(path.suffix + f".tmp.{os.getpid()}")
     with open(tmp_path, "w", encoding="utf-8") as _f:
         json.dump(payload, _f, ensure_ascii=False, indent=2)
         _f.flush()
@@ -2077,7 +2085,25 @@ def main() -> int:
         # waits for all conditions, harder to bound generally.
         if args.condition:
             cond_done = (run_dir / args.condition / "condition_summary_v2.json").exists()
-            if cond_done:
+            # B-909 (/stress A2.2 P1-10-B* codex F3 OOB, 2026-05-17): require
+            # `args.condition in seen_completions` before allowing self-exit.
+            # Pre-fix self-exit path triggered as soon as summary file existed +
+            # runner dead — but runner could fsync/rename summary AND exit AFTER
+            # the completion-scan loop iteration that would have called
+            # `_handle_completion()` (which writes COMPLETE ntfy + post-analysis
+            # + gallery + figures + seen_completions persist). watchdog then
+            # self-exited skipping all completion side effects, leaving:
+            #   - no COMPLETE ntfy notification to operator
+            #   - no per-cell post-analysis aggregator fire
+            #   - no gallery / figures regenerated
+            #   - seen_completions never persisted for this condition → next
+            #     watchdog spawn re-detects + duplicate-runs side effects
+            # Now: gate self-exit on completion having been processed.
+            if cond_done and args.condition not in seen_completions:
+                # Summary present but not processed yet — defer self-exit one
+                # more poll iteration so the completion scan loop above can fire.
+                pass
+            elif cond_done:
                 if args.runner_pid is not None:
                     # Path A: explicit runner PID — exit as soon as runner dies.
                     try:

@@ -195,6 +195,13 @@ AGGREGATE_PREFIX="${BASELINE}_3mode"
 # AND condition_summary_v2.json present. Prevents init-orphan idle loops.
 RUNNER_PID=$(pgrep -f "run_experiment.py.*${RUN_ID}" | head -1)
 
+# B-907 (/stress A2.2 P0-5-B* codex F1 OOB, 2026-05-17): per-RUN_ID flock —
+# sibling propagation from queue_baseline.sh. See lib `acquire_watchdog_lock`
+# header for full rationale.
+if ! acquire_watchdog_lock "${RUN_ID}" "queue_phantom_text"; then
+  exit $?
+fi
+trap "release_watchdog_lock; release_site_lock" EXIT INT TERM
 if pgrep -f "experiment_watchdog.*${RUN_ID}" > /dev/null; then
   echo "[phantom_text] watchdog for ${RUN_ID} already running, skipping spawn"
 else
