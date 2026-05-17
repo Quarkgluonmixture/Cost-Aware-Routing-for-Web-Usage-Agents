@@ -4180,3 +4180,82 @@ Phase 2 of `/stress A1.5b` audit — data plane + analysis sibling layer. Pre-fi
 **Cumulative 2026-05-17 sprint**: ~130 paper-grade fixes across 7 /stress scopes (A1.4 / A1.5b Phase 1+2 / A1.20 / A1.21 / A1.22 / A1.25 GRL chunks 1-4) by 4+ concurrent Claude sessions × 3 AI lineages. Unprecedented single-day audit density.
 
 **Next available B-number**: B-577+ (A1.5b Phase 2 reserved range B-548~B-559 NOT consumed by A1.22 per parallel-session boundary discipline).
+
+---
+
+## /stress A1.5 — post-A1.5b Phase 2 follow-on audit (2026-05-17 ~14:00-16:00 BST, B-548~B-555)
+
+`/stress A1.5` 3-AI cross-audit on own A1.5b Phase 2 4-commit batch (`6d98273` + `7832008` + `d8b535a` + `c122cbb`) — before-push milestone-scope adversarial review of own work. 8 findings → 8 fixes (P0×3 + P1×5) across 5 chunks (`7f17cfe` / `4819f20` / `10b8998` / `26f9df6` / `e6cc109` + this docs chunk). User v7.7 triaged Q&A: Q1=path (C) full P0+P1 / Q2=(C) wait full P0+P1 batch then fire / Q3=(A) wait parallel commit then commit. Per `[^parallel-collision]` rule, deferred fix application until A1.22 Chunks 1-3 (B-560~B-576) landed; reserved range B-548~B-559 honored throughout.
+
+### B-548. paper_grade env not propagated by `init_paper_grade_env` helper — Claude F1 + codex Bug Table P0-3 (P0-1-AB* 2-AI OOB) 🛠️ FIXED commit `7f17cfe`
+- **Attack** (Claude initial): "paper_grade env never exported by queue scripts" — claimed entire B-544/B-486/B-340 hard-rail chain dormant.
+- **Codex refinement**: master orchestrator `queue_phase1_paper_grade.sh:79` + `queue_phase1_router_paper_grade.sh:63` DO export `P79_PAPER_GRADE=1`. But `init_paper_grade_env` helper in `scripts/queues/_lib_paper_grade_gates.sh:28-41` (called by leaf queues `queue_baseline.sh:95-97` + `queue_phantom_{som,dom,text,prompt}.sh`) only exports CUDA + VWA + WIKIPEDIA envs, NOT `P79_PAPER_GRADE`. Manual single-cell rerun + watchdog re-spawn paths therefore run in `paper_grade=False` fail-open mode.
+- **Fix**: add `export P79_PAPER_GRADE="${P79_PAPER_GRADE:-1}"` line at end of `init_paper_grade_env`. Default-on with explicit `P79_PAPER_GRADE=0 bash queue_baseline.sh ...` dev opt-out for iteration speed.
+- **Blast Radius pre-fix**: B-544 evaluator hard-raise + B-486 paper_grade diagnostic_controls hard-block + B-340 GLM hard-block all dormant on leaf queues. Manual reruns + watchdog re-spawn ran with fail-open evaluator.
+
+### B-549. Sibling propagation gap — strict loader + `reject_needs_reevaluation=True` across 4 per-episode-summary readers (P0-2-AB* 2-AI OOB) 🛠️ FIXED commit `4819f20`
+- **Attack** (Claude F4 + codex Bug Table P0-1 / P1-1): B-542 strict loader + quarantine filter landed in 2 aggregators (`aggregate_phase1_full_prereg_decision` + `aggregate_phantom_lift`) but **propagation gap** to other paper-grade producers. Original Claude F4 listed 7 unfixed; deeper read narrowed to 4 that actually read per-episode `*_summary_v2.json` and use `success` field. (`aggregate_cross_site` reads condition_summary not per-episode; `aggregate_locator_route_metrics` reads step JSONL; `aggregate_cost_electricity` reads condition_summary — out of scope.)
+- **4 files fixed**: (1) `aggregate_sr_fp_per_mode.py:85` paper §1 SR canonical producer — already used strict loader, added `reject_needs_reevaluation=True` kwarg. (2) `figures/fig0c_drop_one_oracle.py:101` paper figure 0c — switched plain `json.load()` → strict loader + reject. (3) `figures/fig0f_overlap_stacked_bar.py:75` paper figure 0f — same switch. (4) `analyze_reason_diagnostics.py:1909` paper §3 stage-level diagnostics — switched only the summary-path read site, other `_read_json` call sites (L225 task_cfg + L1873 run_meta) retained plain loader.
+- **Blast Radius pre-fix**: 0/5100 quarantined episodes in current archive (empirically verified), but ANY Phase 1a `_run_and_record_episode` exception writes `needs_reevaluation=True` summary → would leak as `success=False` denominator across 4 paper-grade hero/figure producers. Lenient mode + reject_quarantine → loader returns None → caller skips both quarantined AND type-mismatched rows.
+- **Parallel session A1.22 partial coverage**: B-561 fixed `generate_per_task_sr.py` strict-loader switch + B-560 fixed `aggregate_phantom_lift._build_cells(manifest_path=)` carry-leak. Those addressed sibling cases adjacent to but not overlapping my F4 4-file scope.
+
+### B-550. `test_reward_override_requires_real_finish_not_fallback` regression after B-545 mechanism retirement (P0-3-A Claude unique) 🛠️ FIXED commit `7f17cfe`
+- **Attack** (Claude F2 + codex Bug Table P1-5 secondary catch): A1.5b Phase 2 Chunk 2 commit `7832008` claimed "Tests: 20/20 PASS" but only ran `test_som_and_schema.py` + `test_runner_smoke.py` — did NOT scan `tests/test_stress_a1_*_fixes.py` suite. `test_stress_a1_4a_g1_fixes.py:53-78` asserted `_real_finish` guard variable presence (B-165 narrowing era). B-545 retired the entire override block → guard variable deleted → test went red. `pytest tests/` post-B-545: 1 failed / 131 passed. Push-blocker.
+- **Fix**: renamed `test_reward_override_requires_real_finish_not_fallback` → `test_reward_override_mechanism_retired_post_B545`, INVERTED assertion semantics. Now asserts NO `_real_finish` in active code + NO `score = 1.0` override + NO `Reward override` log string + POSITIVE `success = bool(score >= 1.0)` is the canonical line. Test pins B-545 retirement invariant instead of B-165 narrowing.
+- **Blast Radius pre-fix**: pytest red → CI gate blocked, push blocked, paper-grade workflow halted.
+- **Lesson**: after retiring a mechanism via /stress fix, MUST grep for tests asserting that mechanism's presence — not just shape-validate the new state. Future regression net.
+
+### B-551. `EvaluatorUnavailableError` docstring init-time vs evaluate-time conflation (P1-1-AB* 2-AI Claude+codex) 🛠️ FIXED commit `10b8998`
+- **Attack** (Claude F6 + codex Weak claim #1 cross-validation): docstring at `p79/experiment/environment.py:33-37` claimed `_run_and_record_episode` writes `needs_reevaluation=True` summary for BOTH init-time and evaluate-time failures. But init-time failure propagates from `ExperimentRunner.__init__:145` (no try/except wrap) → CLI exits BEFORE any episode loop runs → NO episode artifact exists. Only evaluate-time mode actually quarantines.
+- **Fix**: rewrote docstring distinguishing (a) init-time = process-fatal (B-544 intentional fail-fast) vs (b) evaluate-time = B-486 quarantine summary. Both modes preserved as designed; docstring now accurate to two-mode semantic.
+- **Blast Radius pre-fix**: reviewer reading docstring + finding no init-time forensic artifact → correctly concludes contract was misstated. Reproducibility audit attack vector.
+
+### B-552. raw_action snapshot before validate_action mutation — paper §3 taxonomy 3-layer model (P1-2-AB* 2-AI Claude+codex OOB) 🛠️ FIXED commit `26f9df6`
+- **Attack** (Claude F8 + codex Weak claim #2 cross-validation): `_control_original_action = dict(action)` snapshot at `runner/main.py:1865` runs AFTER `validate_action(action)` already mutated/rescued (e.g. `clik` → `wait`). Paper §3 taxonomy "agent self-emit vs synthetic" was therefore muddled — rescued actions read as agent-emit via `control_intervention.original_action` even though backend never emitted that action.
+- **Fix**: new `_agent_raw_action = dict(action)` snapshot BEFORE `validate_action` at L1843. step_record now records 3-layer model: (a) `raw_action` literal backend emit; (b) `control_intervention.original_action` post-validate + pre-control; (c) `action` post-validate + post-control (executed). Updated `_control_original_action` comment to clarify it's post-validate-pre-control.
+- **Blast Radius pre-fix**: paper §3 cross-baseline rescue rate (B0 235B → B1/B2 4B differential, the B-134 contamination vector) was unrecoverable from JSONL — could not distinguish backend-rescued action from agent-self-emit. Reviewer attack vector.
+
+### B-553. `action_executed` extended from scroll-only to click + type dispatch paths (P1-3-AB* 2-AI Claude+codex OOB sibling propagation) 🛠️ FIXED commit `10b8998`
+- **Attack** (Claude F3 + codex Weak claim #3 cross-validation): A1.5b Phase 2 B-512 introduced `_action_executed` in step_record for scroll branch only. Click + type paths do heavy wrapper normalization (locator_dispatch walk-up vs framework fallback) but `_action_executed` was scroll-only → paper §4.X.6 wrapper-alignment claim auditable for 1 of 5 wrapper action paths.
+- **Fix**: 4 new branch captures in `vwa_wrapper.py`:
+  - click_eid (L335-405): `element_id_locator_route` (Cluster 1 success) / `element_id_framework` (walk-up fail → legacy VWA `create_id_based_action`)
+  - click_coord (L420-432): `coord_mouse_click` (vision-mode direct pixel)
+  - type_coord (L491-525): `coord_locator_route` / `coord_keyboard_fallback`
+  - type_eid (L580-625): `element_id_locator_route` / `element_id_framework` / `noop_invalid_element_id` (B-506 short-circuit)
+- Shape: `{"action_type", "dispatch_path", "fallback": bool}`. `fallback=True` enables paper §3 taxonomy cross-baseline fallback rate via JSONL grep alone. `StepRecordV2.action_executed` docstring extended with full variant table.
+- **Blast Radius pre-fix**: paper §4.X.6 cross-baseline parity claim only auditable for scroll. B0 element_id-locator-route success vs B1/B2 framework-fallback differential (most likely real cross-baseline asymmetry) was invisible from JSONL.
+
+### B-554. B-545 archive cohort sentinel (P1-4-AB* 2-AI Claude+codex OOB) 🛠️ FIXED commit `26f9df6`
+- **Attack** (Claude F5 + codex Weak claim #6 cross-validation): B-545 retired override mechanism. Pre-B-545 archives had `success = evaluator OR (real_finish AND env_reward>0)`; post-B-545 = pure `evaluator >= 1.0`. NO sentinel on summary distinguishes cohorts → aggregators mixing both archives produce silent estimand drift.
+- **Fix**: 2 new EpisodeSummaryV2 fields:
+  - `evaluator_authority_mode: Optional[str]` — enum `{"post_B545_vwa_score_only", None}`; post-B-545 episodes stamp the enum, legacy default None.
+  - `reward_override_applied: Optional[bool]` — post-B-545 always False, legacy None.
+- Schema defaults in `schema_migrations/v2.py` updated. Both summary write sites in `runner/main.py` (L1290 exception-path + L2880 success-path) stamp the new fields.
+- **Blast Radius pre-fix**: top-tier reviewer attack vector — "paper §3 estimand claim 'canonical evaluator success, no post-hoc adjustment' is true only on the cohort that includes this fix; archives aggregating pre-B-545 + post-B-545 data conflate two semantically different success definitions."
+
+### B-555. NEW `aggregate_diagnostic_controls_and_dialogs.py` consumer aggregator (P1-5-ABC* 3-AI overlap OOB) 🛠️ FIXED commit `e6cc109`
+- **Attack** (Claude F7 + codex Bug Table P1-2 + gemini Weak claim #2): A1.5b Phase 2 B-546 + B-547 wired the WRITER for `control_intervention` + `dialog_meta_primary` + `runtime_sleep_primary` fields in step JSONL. But NO downstream aggregator consumed them — paper §3 "diagnostic-exploration disclosure reproducible from JSONL" + §3.5.1 "cross-baseline misclick blast-radius parity" were claims only "human grep" reproducible, not automated-pipeline reproducible. Schema fake relocated from defaults layer (Phase 1 B-497 dead-code) to runtime-writer-no-reader layer.
+- **Fix**: NEW `scripts/analysis/aggregate_diagnostic_controls_and_dialogs.py` (~200 lines). Per-cell tallies: control fire rate + fires_by_type + original_action_distribution + dialog-primary rate + dialog_type_distribution. Outputs JSON + markdown two-table per (site, model, mode). CLI: `--run-dir`, `--out-md`, `--out-json`.
+- Smoke test on `results/visualwebarena/phase1/B2_dom_reddit_20260516/`: 90 steps observed, 0 fires (Phase 1a default `diagnostic_controls.enabled=false`), 0 dialogs (reddit DOM no surface). Aggregator clean markdown.
+- **Blast Radius pre-fix**: paper §3 + §3.5.1 disclosure claim "reproducible from JSONL" not consumer-end auditable — reviewer running standard aggregation pipeline could NOT reproduce diagnostic-controls disclosure or misclick blast-radius table.
+
+**B-numbers consumed (A1.5)**: B-548 + B-549 + B-550 + B-551 + B-552 + B-553 + B-554 + B-555 = 8 IDs claimed from the A1.5b Phase 2 reserved range B-548~B-559.
+
+**Cross-AI agreement summary (A1.5)**:
+- 3-AI overlap (Claude+codex+gemini): 1 finding — B-555 consumer wiring (paper §3 + §3.5.1 evidence reproducibility)
+- 2-AI overlap (Claude+codex): 5 findings — B-548 (queue env), B-549 (sibling propagation), B-551 (docstring), B-552 (raw_action), B-553 (action_executed click/type), B-554 (cohort sentinel)
+- 1-AI unique: Claude B-550 (test regression — codex secondary catch via Bug Table P1-5)
+- Gemini contribution: P2-1 paper §3 prose disclosure debt (deferred — parallel session A1.22 covered evaluator-authority-related disclosure paragraphs in `section3_definition.md` via B-562 + B-567 fix commits)
+
+**Reviewer lesson encoded**:
+1. After retiring a mechanism, grep for tests asserting that mechanism's presence (B-550 regression).
+2. Sibling propagation: when a strict-loader kwarg is added, immediately grep all callers and propagate (B-549).
+3. paper_grade env wiring: leaf queues must inherit the env via the shared helper, not depend on master orchestrator only (B-548).
+4. Snapshot ORDER matters in taxonomy: capture raw before validate, then post-validate, then post-control (B-552).
+5. Schema-fake migration: writer-no-reader is the new dead-code (B-555); always provision consumer aggregator with new schema field.
+
+**Smoke verification (A1.5 5-chunk batch)**:
+- pytest **428 passed, 8 skipped, 0 failed** at every chunk boundary (Chunks 1-5 + this docs chunk). B-550 test re-asserts post-fix; was 1 failed pre-fix.
+- py_compile PASS on all 11 modified files: `scripts/queues/_lib_paper_grade_gates.sh` + `tests/test_stress_a1_4a_g1_fixes.py` + 4 paper-grade aggregators + `p79/experiment/environment.py` + `p79/envs/vwa_wrapper.py` + `p79/experiment/types.py` + `p79/experiment/schema_migrations/v2.py` + `p79/experiment/runner/main.py` + NEW `scripts/analysis/aggregate_diagnostic_controls_and_dialogs.py`.
+
+**Next available B-number**: B-556+ (A1.5b Phase 2 reserved range B-548~B-555 consumed by A1.5; B-556~B-559 still reserved for future A1.5b Phase 2 post-fire defer batch if needed).
