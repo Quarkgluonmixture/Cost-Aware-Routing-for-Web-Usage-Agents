@@ -189,7 +189,7 @@ def _get_adjusted_sr(
 
 
 def _detect_baseline_from_run_dir(run_dir: Path) -> str:
-    """A1.21 P1-2 fix (B-500): infer baseline from run_dir name prefix (B0/B1/B2).
+    """A1.21 P1-2 fix (B-531): infer baseline from run_dir name prefix (B0/B1/B2).
 
     Naming convention: `B0_3mode_classifieds_<date>` / `B1_phantom_som_reddit_<date>` etc.
     Returns 'unknown' if no canonical prefix detected.
@@ -240,7 +240,7 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             )
         rows.append({
             "label": label,
-            "baseline": baseline,  # A1.21 P1-2 (B-500): baseline propagation
+            "baseline": baseline,  # A1.21 P1-2 (B-531): baseline propagation
             "site": site,
             "mode": mode,
             "raw_sr": round(raw_sr, 4),
@@ -384,7 +384,7 @@ def main() -> None:
     # --- cross_site_aggregation.csv ---
     print("[2/4] Writing cross_site_aggregation.csv...")
     sr_col = "adjusted_sr" if use_adjusted else "raw_sr"
-    # A1.21 P1-2 fix (B-500, codex unique OOB): add `baseline` field to all rows so
+    # A1.21 P1-2 fix (B-531, codex unique OOB): add `baseline` field to all rows so
     # B0/B1/B2 don't collide on (site, mode) key. Pre-fix: cross-site tables had no
     # baseline column → reviewer/aggregator couldn't tell whether `reddit/DOM` was
     # B0, B1, or B2; downstream `per_site` lookup via `next(r["mode"]==m)` picked
@@ -435,7 +435,7 @@ def main() -> None:
     # --- cross_site_summary.json ---
     print("[4/4] Writing summary JSON...")
     sites = sorted(set(r["site"] for r in all_rows))
-    # A1.21 P1-2 fix (B-500): per_site now groups by (baseline, site, mode) to prevent
+    # A1.21 P1-2 fix (B-531): per_site now groups by (baseline, site, mode) to prevent
     # B0/B1/B2 row collision. Output is per_site[site][baseline][mode] = {...}.
     per_site: Dict[str, Any] = {}
     baselines = sorted({r.get("baseline", "unknown") for r in all_rows})

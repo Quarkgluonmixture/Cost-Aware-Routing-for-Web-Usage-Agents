@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate run_manifest.yaml for paper-grade promotion correctness.
 
-A1.21 P0-8 fix (B-494, /stress Claude unique 2026-05-17):
+A1.21 P0-8 fix (B-525, /stress Claude unique 2026-05-17):
 
 Pre-fix: paper-grade promotion = user manually edits yaml to add 36 cells (2 sites
 × 3 baselines × 6 modes). No schema validator. No disk-existence check. No canonical
@@ -181,7 +181,7 @@ def validate_manifest(
         errors.append(
             f"[planned-missing] Phase 1a planned cells absent from paper-grade tier: "
             f"{planned_missing}. After A100 launch completes, edit run_manifest.yaml "
-            "to add 6 modes × these (baseline, site) pairs. (A1.21 B-494 P0-8 validator)"
+            "to add 6 modes × these (baseline, site) pairs. (A1.21 B-525 P0-8 validator)"
         )
 
     return errors

@@ -1,6 +1,6 @@
 """Canonical Phase 1a cell enumeration — single source of truth.
 
-A1.21 P0-7 fix (B-495, /stress Claude unique OOB 2026-05-17): pre-fix Phase 1a
+A1.21 P0-7 fix (B-526, /stress Claude unique OOB 2026-05-17): pre-fix Phase 1a
 "6 cells" was scattered across 3 places — `preregistration_decision_test.PHASE_1A_CELLS`
 hardcoded (always 6) / `aggregate_phantom_lift.CELLS` module-import frozen via
 `_build_cells(_GRADE_LIST)` / `lib/run_registry.get_*` live registry call. Different
@@ -61,8 +61,8 @@ def get_phase1a_actual_cells(
     For Phase 1a complete state, returns 36 CellSpec (6 cells × 6 modes).
     For partial state (e.g., B2 not launched), returns subset.
 
-    A1.21 P0-5 (B-493): `manifest_path` propagates to registry.
-    A1.21 P0-8 (B-492): `strict_paper_grade=True` raises on actual_n==0.
+    A1.21 P0-5 (B-524): `manifest_path` propagates to registry.
+    A1.21 P0-8 (B-523): `strict_paper_grade=True` raises on actual_n==0.
     """
     planned_keys = set(PHASE_1A_PLANNED_CELLS)
     cells = get_all_cells(grade_filter=grade_filter, manifest_path=manifest_path,
@@ -94,12 +94,12 @@ def assert_cells_match_planned(
         raise ValueError(
             f"Cell scope mismatch: loaded cells {sorted(extra)} are NOT in Phase 1a "
             f"planned set {sorted(planned)}. Did you load a different scope's CSV? "
-            "(A1.21 P0-7 B-495)"
+            "(A1.21 P0-7 B-526)"
         )
     if require_complete and missing:
         raise ValueError(
             f"Phase 1a partial scope: missing cells {sorted(missing)} from planned "
             f"set {sorted(planned)}. Either run scripts/analysis/generate_per_task_sr.py "
             "to refresh CSV from latest registry OR pass require_complete=False to "
-            "tolerate pre-fire partial state. (A1.21 P0-7 B-495)"
+            "tolerate pre-fire partial state. (A1.21 P0-7 B-526)"
         )

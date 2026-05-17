@@ -1,10 +1,10 @@
 r"""Preregistration decision test — Phase 1a 36-condition / 6-cell H1 / H3 / H2 evaluation.
 
-⚠️ A1.21 RESCOPE 2026-05-17 (P0-2 + P0-3 + P0-9 + P1-7/8/9/10/11 batch, B-478~B-490):
+⚠️ A1.21 RESCOPE 2026-05-17 (P0-2 + P0-3 + P0-9 + P1-7/8/9/10/11 batch, B-513~B-521):
    This script is now a **synthetic test fixture + appendix-sensitivity producer**, NOT
    the canonical paper §1 gate substrate. The canonical full prereg decision (H1+H2(a)
    +H3 axes + I² cap + R1-R5 framing) is now `aggregate_phase1_full_prereg_decision.py`
-   (B-481, A1.21 P0-4). This script retains the synthetic fixture scenarios for CI
+   (B-515, A1.21 P0-4). This script retains the synthetic fixture scenarios for CI
    smoke testing and emits the DL random-effects estimand into an `appendix_dl_sensitivity`
    block as transparency reporting only.
 
@@ -176,7 +176,7 @@ def _paired_bootstrap(cell_tasks: list[dict], statistic_fn, n_resamples: int = 1
     Returns (point_estimate, ci_lo_95, ci_hi_95, bootstrap_se,
              p_percentile_two_sided, p_percentile_one_sided_gt_zero).
 
-    A1.21 P0-6 fix (B-486): added percentile p-values alongside percentile CI for method
+    A1.21 P0-6 fix (B-517): added percentile p-values alongside percentile CI for method
     coherence. Pre-fix returned only (point, ci_lo, ci_hi, se); callers (evaluate_h1
     / evaluate_h3_axis) computed p-value via normal-approx z-score on bootstrap SE —
     mixed method (percentile CI + normal-approx p). Cross-AI 3-AI overlap finding
@@ -225,7 +225,7 @@ class InsufficientCellsError(ValueError):
 def dersimonian_laird_meta(effects: list[float], variances: list[float]) -> dict:
     """Pool effect estimates across cells via DerSimonian-Laird random-effects.
 
-    ⚠️ A1.21 P0-2 (B-478): DEMOTED to appendix-sensitivity reporting. Canonical paper §1
+    ⚠️ A1.21 P0-2 (B-513): DEMOTED to appendix-sensitivity reporting. Canonical paper §1
     H1 PRIMARY gate is FE inverse-variance superiority test (see
     `aggregate_phase1_full_prereg_decision.py` for the canonical full-pipeline).
     This function retained for `appendix_dl_sensitivity` transparency block, NOT for
@@ -306,7 +306,7 @@ except ImportError:  # paper-grade env may or may not have scipy
 def _phi(z: float) -> float:
     """Standard normal CDF.
 
-    A1.21 P1-11 fix (B-489): scipy when available (log-space stable for |z|>6);
+    A1.21 P1-11 fix (B-520): scipy when available (log-space stable for |z|>6);
     erf fallback otherwise + emit warning when |z|>6 to flag numeric saturation.
     Pre-fix: erf saturates at ±1.0 → silent p=0 for |z|>6, doesn't distinguish
     z=6 (p ≈ 1e-9) from z=10 (p ≈ 7.6e-24) — advisor-grade reproducibility hygiene.
@@ -475,7 +475,7 @@ def evaluate_h1(cells_by_id: dict[str, list[dict]], delta_pp: float = 1.0,
         variances_pp.append(se_pp ** 2)
         per_cell_p_values.append(p_pct_2s)  # A1.21 P0-6: percentile p (canonical)
 
-    # A1.21 P0-2 fix (B-478, codex Mode B): retire DL meta from PRIMARY H1 gate.
+    # A1.21 P0-2 fix (B-513, codex Mode B): retire DL meta from PRIMARY H1 gate.
     # Canonical prereg lock is FE inverse-variance pool + one-sided superiority test
     # (single test, NOT 3-test compound). DL meta + magnitude check moved to
     # `appendix_dl_sensitivity` block for transparency reporting only.
@@ -545,7 +545,7 @@ def evaluate_h1(cells_by_id: dict[str, list[dict]], delta_pp: float = 1.0,
         },
         "appendix_dl_sensitivity": {
             "estimand": "DerSimonian-Laird random-effects (appendix sensitivity only)",
-            "note": "A1.21 P0-2 (B-478): retired from H1 PRIMARY gate; reported here "
+            "note": "A1.21 P0-2 (B-513): retired from H1 PRIMARY gate; reported here "
                     "for transparency only. Canonical paper §1 H1 = FE superiority above.",
             "dl_meta": dl_meta_appendix,
         },
@@ -615,7 +615,7 @@ def evaluate_h3_axis(cells_by_id: dict[str, list[dict]], axis_mode_key: str,
         per_cell_p_values.append(p_pct_1s)  # A1.21 P0-6: percentile p (canonical)
         per_cell_ci_excludes_zero.append(per_cell_pass)
 
-    # A1.21 P0-2 fix (B-478): H3 PRIMARY gate FE-only (matches H1 + canonical
+    # A1.21 P0-2 fix (B-513): H3 PRIMARY gate FE-only (matches H1 + canonical
     # `aggregate_phase1_full_prereg_decision.py`); DL moved to appendix sensitivity.
     import numpy as _np
     _effs = _np.array(effects)
@@ -675,7 +675,7 @@ def evaluate_h3_axis(cells_by_id: dict[str, list[dict]], axis_mode_key: str,
         },
         "appendix_dl_sensitivity": {
             "estimand": "DerSimonian-Laird random-effects (appendix sensitivity only)",
-            "note": "A1.21 P0-2 (B-478): retired from H3 PRIMARY gate; reported for transparency.",
+            "note": "A1.21 P0-2 (B-513): retired from H3 PRIMARY gate; reported for transparency.",
             "dl_meta": dl_meta_appendix_h3,
         },
         "transparency_K_h3": {
@@ -693,7 +693,7 @@ def evaluate_h2_cost(cells_by_id: dict[str, list[dict]], cost_margin_pct: float 
                       transparency_K_h2: int | None = None) -> dict:
     """H2(a): per-task median cost ratio cost(P-SoM)/cost(DOM) within ±cost_margin_pct% per cell.
 
-    A1.21 P0-9 fix (B-487, prereg §2 H2(a) prose lock amend 2026-05-17):
+    A1.21 P0-9 fix (B-518, prereg §2 H2(a) prose lock amend 2026-05-17):
     Estimand rewrite — was median(P-SoM costs) / median(DOM costs) (marginal medians,
     paired info ignored), now median over tasks of (cost_psom[t] / cost_dom[t]) per cell.
 
@@ -704,7 +704,7 @@ def evaluate_h2_cost(cells_by_id: dict[str, list[dict]], cost_margin_pct: float 
     vary 10-100×), marginal-median can collapse to a number unrelated to per-task ratio.
     Prereg §2 H2(a) prose lock 2026-05-17 added "per-task median ratio" disambiguation.
 
-    A1.21 P1-7 fix (B-488): 3-state per cell (within_band / falsified / cannot_evaluate).
+    A1.21 P1-7 fix (B-519): 3-state per cell (within_band / falsified / cannot_evaluate).
     Pre-fix: missing cost data → `per_cell_pass: False` → counted as falsification by
     framing rule. Now: distinct state, framing rule uses `n_falsified > 0` (NOT
     `pass_count == total`), missing data does NOT trigger R4 framing degradation.
@@ -804,7 +804,7 @@ def _effective_gate_pass(gate_result: dict, gate_kind: str,
                           heterogeneity_threshold_pct: float) -> tuple[bool, bool, dict]:
     """Determine whether a primary gate passes + report I² heterogeneity status.
 
-    A1.21 P0-3 fix (B-479, codex Mode B OOB): heterogeneity-rescue branch RETIRED.
+    A1.21 P0-3 fix (B-514, codex Mode B OOB): heterogeneity-rescue branch RETIRED.
     Prior code (F3 2026-05-14) rescued failed pooled gate via per-cell consistency
     (≥3 direction-positive AND ≥2 individually sig). This VIOLATED prereg §2 L323
     ("high heterogeneity does NOT block pooling, only caps the hook") + L340-342
@@ -855,7 +855,7 @@ def apply_framing_rule(h1: dict, h2: dict, h3_axis1: dict, h3_axis2: dict,
     any_heterogeneous = h1_het or h3a_het or h3b_het
     heterogeneity_detail = {"h1": h1_det, "h3_axis1": h3a_det, "h3_axis2": h3b_det}
 
-    # A1.21 P0-3 fix (B-479): heterogeneity = CAP-ONLY (R1/R2 → R3), NOT rescue (R5 → R3).
+    # A1.21 P0-3 fix (B-514): heterogeneity = CAP-ONLY (R1/R2 → R3), NOT rescue (R5 → R3).
     # Prereg §2 L323-342: high I² caps framing power but H1 FAIL → R5 always.
     # Prior code (heterogeneity_override branch) rescued failed H1 → prereg violation.
 
@@ -944,14 +944,14 @@ def generate_synthetic_per_task(seed: int = 42, n_tasks_per_cell: int = 200,
         # Capability adjustment. r1_pass is the deliberately-homogeneous happy-path
         # fixture (all 6 cells identical distribution) so it demonstrably routes R1.
         # B1 + B2 both get 0.6× capability multiplier (advisor §138 lock: B2 ≈ B1
-        # matched-capability cross-family control). A1.21 P1-10 fix (B-489): pre-fix
+        # matched-capability cross-family control). A1.21 P1-10 fix (B-520): pre-fix
         # only B1 was scaled → B2 = B0 by accident, violating advisor matched-capability
         # assumption and inducing wrong-shaped heterogeneity in test scenarios.
         if model in ("B1", "B2") and scenario != "r1_pass":
             base_rate = {k: v * 0.6 for k, v in base_rate.items()}
         # Cell-level effect-size variance for heterogeneity test — large bimodal
         # shift so between-cell variance >> within-cell bootstrap SE → I² > 75%.
-        # A1.21 P1-10 sibling fix (B-489): 4-element hardcoded list extended to 6
+        # A1.21 P1-10 sibling fix (B-520): 4-element hardcoded list extended to 6
         # to match Phase 1a 6-cell scope (was IndexError when B2 added).
         if scenario == "heterogeneity_test":
             _cell_shifts = [+0.25, -0.20, +0.25, -0.20, +0.25, -0.20]
@@ -1020,7 +1020,7 @@ def main():
     p.add_argument("--seed", type=int, default=42,
                    help="Combined seed (DEPRECATED — use --data-seed + --bootstrap-seed). "
                         "If --data-seed/--bootstrap-seed not given, falls back to --seed. "
-                        "A1.21 P1-9 fix (B-489): split for reproducibility audit clarity.")
+                        "A1.21 P1-9 fix (B-520): split for reproducibility audit clarity.")
     p.add_argument("--data-seed", type=int, default=None,
                    help="Seed for synthetic data generation (A1.21 P1-9 split from --seed)")
     p.add_argument("--bootstrap-seed", type=int, default=None,
@@ -1099,7 +1099,7 @@ def main():
 
     result = {
         "captured_at": datetime.now(timezone.utc).isoformat(),
-        # A1.21 P2-2 fix (B-490): stale "24-condition / 4-cell" scope updated.
+        # A1.21 P2-2 fix (B-521): stale "24-condition / 4-cell" scope updated.
         # Current Phase 1a scope = 36 baseline + 6 router = 42 conditions / 6 cells statistical.
         # Note: this script is now synthetic-fixture + appendix-DL-sensitivity producer;
         # canonical paper §1 producer is `aggregate_phase1_full_prereg_decision.py`.

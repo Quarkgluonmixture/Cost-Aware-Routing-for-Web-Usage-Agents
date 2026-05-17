@@ -147,7 +147,7 @@ def main() -> None:
             "electricity), so the paper presents both side-by-side, not a single ratio."
         ),
         "electricity_usd_per_kwh": ELECTRICITY_USD_PER_KWH,
-        # A1.21 P1-4 fix (B-501, codex F7): B2 cost class added — was structurally
+        # A1.21 P1-4 fix (B-532, codex F7): B2 cost class added — was structurally
         # absent from reviewer-facing metadata despite being collected (loop on L56-59).
         "cost_classes": {
             "B0": "API_token_dollars (Qwen3-VL-235B-A22B per DashScope pricing)",
@@ -248,7 +248,7 @@ def main() -> None:
             lines.append(f"| {site} | {mode} | {steps_str} | {kwh_str} | {co2_str} | {usd_str} |")
     lines.append("")
 
-    # A1.21 P1-4 fix (B-501, codex F7): B2 cost markdown section added — was
+    # A1.21 P1-4 fix (B-532, codex F7): B2 cost markdown section added — was
     # structurally absent from reviewer-facing report despite data collection.
     lines.append("## B2 — electricity equivalent ($/ep, Gemma3-VL local 4B)\n")
     lines.append(

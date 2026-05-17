@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 r"""Canonical full Phase 1 prereg decision producer — H1 + H2(a) + H3 axes + framing.
 
-Built /stress A1.21 P0-2 + P0-3 + P0-4 + P0-11 (2026-05-17, B-481).
+Built /stress A1.21 P0-2 + P0-3 + P0-4 + P0-11 (2026-05-17, B-515).
 
 `aggregate_phase1_prereg_gate.py` (B-184) is H1-only. `preregistration_decision_test.py`
 covers H1+H2+H3 but uses retired DerSimonian-Laird estimand (A1.21 codex P0-1 catch:
@@ -60,7 +60,7 @@ sys.path.insert(0, str(REPO))
 # (H1-only legacy) and phase1_full_prereg_decision (canonical full).
 from scripts.analysis.aggregate_phantom_lift import (  # noqa: E402
     MIN_EP_FOR_CELL,
-    get_aggregator_cells,  # A1.21 P1-3 (B-499): lazy fn, was frozen CELLS constant
+    get_aggregator_cells,  # A1.21 P1-3 (B-530): lazy fn, was frozen CELLS constant
 )
 from scripts.analysis.aggregate_phase1_prereg_gate import (  # noqa: E402
     _cell_drop_one_theta_se,
@@ -374,7 +374,7 @@ def build_full_decision(cells: List[Dict]) -> Dict:
 
     payload: Dict = {
         "captured_at": datetime.now(timezone.utc).isoformat(),
-        "producer": "aggregate_phase1_full_prereg_decision.py (A1.21 B-481)",
+        "producer": "aggregate_phase1_full_prereg_decision.py (A1.21 B-515)",
         "prereg_section": "preregistration.md §2 H1/H2(a)/H3 + R1-R5 framing rule",
         "estimands": {
             "H1": "FE inverse-variance pool over P-SoM drop-one (6-mode universe), "
@@ -628,7 +628,7 @@ def write_md(payload: Dict, out_md: Path) -> None:
     lines = [
         "# Phase 1 full prereg decision — H1 + H2(a) + H3 axes + framing rule",
         "",
-        "**Producer**: `aggregate_phase1_full_prereg_decision.py` (A1.21 P0-2/P0-3/P0-4/P0-11, B-481).",
+        "**Producer**: `aggregate_phase1_full_prereg_decision.py` (A1.21 P0-2/P0-3/P0-4/P0-11, B-515).",
         "Canonical replacement for the H1-only `phase1_prereg_gate.{csv,json,md}` "
         "(B-184) + retired `preregistration_decision_test.py` (DL-contaminated path retired A1.21).",
         "",
@@ -737,7 +737,7 @@ def main() -> int:
     ap.add_argument("--output-md", default=str(DEFAULT_OUT_MD))
     args = ap.parse_args()
 
-    # A1.21 P1-3 (B-499): lazy fn re-evaluates env var + manifest at call time
+    # A1.21 P1-3 (B-530): lazy fn re-evaluates env var + manifest at call time
     cells_to_use = get_aggregator_cells()
 
     payload = build_full_decision(cells_to_use)
@@ -749,7 +749,7 @@ def main() -> int:
     write_md(payload, Path(args.output_md))
 
     framing = payload.get("framing_rule", {})
-    print(f"[A1.21 B-481] gate_status={payload['gate_status']} "
+    print(f"[A1.21 B-515] gate_status={payload['gate_status']} "
           f"framing={framing.get('rule', '?')} "
           f"k_cells={len(payload['per_cell'])} skipped={len(payload['skipped_cells'])}")
     print(f"        → {args.output_csv}")

@@ -16,7 +16,7 @@ import yaml
 
 
 PAPER_MODES = ["DOM", "SoM", "Vision", "P-text", "P-prompt", "P-SoM"]
-# A1.21 P1-13 fix (B-498): MODE_TO_KEY consolidated here as single source of truth
+# A1.21 P1-13 fix (B-529): MODE_TO_KEY consolidated here as single source of truth
 # (was duplicated in scripts/analysis/generate_per_task_sr.py:62-69 — silent drift risk
 # when new mode added). Maps paper-canonical mode names → CSV column key suffix.
 MODE_TO_KEY = {
@@ -167,12 +167,12 @@ def _iter_manifest_entries(manifest: dict) -> list[dict]:
 def _entry_to_cell(entry: dict, *, strict_paper_grade: bool = False) -> CellSpec:
     """Build CellSpec from manifest entry.
 
-    A1.21 P1-1 + P0-8 fix (B-491 + B-492): paper-grade tier now rejects hardcoded
+    A1.21 P1-1 + P0-8 fix (B-522 + B-523): paper-grade tier now rejects hardcoded
     `expected_n` override (forces canonical `scored_task_count`) AND when
     `strict_paper_grade=True` (i.e., post-Phase-1a promotion), `actual_n == 0` raises
     RuntimeError instead of warning (silent missing-data → false-completeness vector).
     Set via `get_all_cells(..., strict_paper_grade=True)` or directly through
-    `validate_run_manifest.py` (B-494 P0-8 validator).
+    `validate_run_manifest.py` (B-525 P0-8 validator).
     """
     grade = entry.get("grade")
     if grade not in GRADES:
@@ -183,7 +183,7 @@ def _entry_to_cell(entry: dict, *, strict_paper_grade: bool = False) -> CellSpec
         raise ValueError(f"Invalid mode {mode!r} for {entry.get('baseline')}/{entry.get('site')}")
 
     site = str(entry.get("site", ""))
-    # A1.21 P1-1 fix (B-491): paper-grade tier rejects hardcoded expected_n.
+    # A1.21 P1-1 fix (B-522): paper-grade tier rejects hardcoded expected_n.
     # Archived tier preserved backwards-compat (pre-§139.8 234 cls / 210 red / 466 shop).
     raw_expected = entry.get("expected_n")
     if grade in ("paper-grade", "paper-grade-pre-bug") and raw_expected is not None:
@@ -193,7 +193,7 @@ def _entry_to_cell(entry: dict, *, strict_paper_grade: bool = False) -> CellSpec
                 f"Paper-grade entry {entry.get('baseline')}/{site}/{mode} has stale "
                 f"`expected_n: {raw_expected}` (likely copied from archived); canonical "
                 f"post-§139.8 scored_task_count for {site} = {canonical}. Drop the "
-                f"`expected_n:` line from this entry OR set to {canonical} (A1.21 B-491).",
+                f"`expected_n:` line from this entry OR set to {canonical} (A1.21 B-522).",
                 RuntimeWarning, stacklevel=2,
             )
         expected_n = canonical  # Force canonical regardless of yaml override for paper-grade
@@ -217,7 +217,7 @@ def _entry_to_cell(entry: dict, *, strict_paper_grade: bool = False) -> CellSpec
                 f"Paper-grade cell has no episode summaries: {cell.baseline}/{cell.site}/{cell.mode} "
                 f"-> {cell.episodes_dir}. Either run_dir/condition_subdir mismatch (yaml typo) OR "
                 f"Phase 1a launch hasn't fired this cell yet. Run scripts/analysis/validate_run_manifest.py "
-                f"to confirm. (A1.21 B-492 strict_paper_grade=True semantics)"
+                f"to confirm. (A1.21 B-523 strict_paper_grade=True semantics)"
             )
         warnings.warn(
             f"Paper cell has no episode summaries: {cell.baseline}/{cell.site}/{cell.mode} -> {cell.episodes_dir}",
@@ -297,10 +297,10 @@ def get_all_cells(grade_filter: list[Grade] | None = None, *,
     for Appendix-D legacy robustness; ['archived'] / ['in-flight'] for
     sensitivity analyses.
 
-    A1.21 P0-5 fix (B-493): `manifest_path` arg actually propagates to data
+    A1.21 P0-5 fix (B-524): `manifest_path` arg actually propagates to data
     discovery (was provenance theater in `generate_per_task_sr.py:131` —
     CLI defined `--run-manifest` arg but registry still read default).
-    A1.21 P0-8 (B-492): `strict_paper_grade=True` raises on actual_n==0 for
+    A1.21 P0-8 (B-523): `strict_paper_grade=True` raises on actual_n==0 for
     paper-grade cells (validator enforcement entry point).
     """
     grades = DEFAULT_GRADE_FILTER if grade_filter is None else grade_filter
@@ -318,7 +318,7 @@ def get_cells(
 ) -> list[CellSpec]:
     """Filter cells by any combination of fields. Returns sorted list.
 
-    A1.21 P0-5 (B-493): `manifest_path` arg propagates to data discovery.
+    A1.21 P0-5 (B-524): `manifest_path` arg propagates to data discovery.
     """
     baselines = set(_as_list(baseline) or [])
     sites = set(_as_list(site) or [])

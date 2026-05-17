@@ -94,7 +94,7 @@ def get_aggregator_cells(grade_filter: list | None = None,
                           manifest_path: 'Path | None' = None) -> list[dict]:
     """Live registry view (re-evaluates each call).
 
-    A1.21 P1-3 fix (B-499, Claude P2-1 + codex F8 2-AI overlap): CELLS module-level
+    A1.21 P1-3 fix (B-530, Claude P2-1 + codex F8 2-AI overlap): CELLS module-level
     constant frozen at import time. Long-running orchestration (notebooks / cron
     sidecars / multi-aggregator chains) where env var or yaml changes after first
     import don't propagate → silent stale cell selection. Use this fn for lazy

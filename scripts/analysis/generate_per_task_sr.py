@@ -53,11 +53,11 @@ sys.path.insert(0, str(REPO_ROOT))
 from scripts.analysis.lib.run_registry import (  # noqa: E402
     PAPER_MODES,
     PHASE1_ROOT,
-    MODE_TO_KEY,  # A1.21 P1-13 (B-498): canonical shared source — was duplicated here
+    MODE_TO_KEY,  # A1.21 P1-13 (B-529): canonical shared source — was duplicated here
     get_all_cells,
 )
 from scripts.analysis.lib.canonical_cells import (  # noqa: E402
-    SITE_ABBREV,  # A1.21 P0-7 (B-495): canonical shared source
+    SITE_ABBREV,  # A1.21 P0-7 (B-526): canonical shared source
 )
 
 LOGGER = logging.getLogger("generate-per-task-sr")
@@ -66,7 +66,7 @@ LOGGER = logging.getLogger("generate-per-task-sr")
 def load_task_outcomes(condition_dir: Path) -> dict[str, dict[str, Any]]:
     """Read all *_summary_v2.json in episodes/ dir. Returns task_id → {success, cost}.
 
-    A1.21 P0-1 fix (B-496, 3-AI overlap A+B+C): `cost_raw = data.get('total_cost_usd')`
+    A1.21 P0-1 fix (B-527, 3-AI overlap A+B+C): `cost_raw = data.get('total_cost_usd')`
     now uses explicit `is None` check (was `or` short-circuit which dropped valid 0.0
     costs because Python `0.0 or x = x`). Affects: B0 proxy GLM-fallback edge cases
     (rare 0.0 cost) + any transient error episode emitting 0.0.
@@ -133,7 +133,7 @@ def main() -> int:
         default=str(REPO_ROOT / "results/phantom_paper/per_task_sr.csv"),
         help="output per_task_sr.csv path",
     )
-    # A1.21 P1-12 (B-497): --grade accepts list (was single string). Appendix-D
+    # A1.21 P1-12 (B-528): --grade accepts list (was single string). Appendix-D
     # mixed-grade analysis can pass `--grade paper-grade --grade paper-grade-pre-bug`.
     p.add_argument(
         "--grade",
@@ -141,7 +141,7 @@ def main() -> int:
         default=None,
         help="manifest grade filter (paper-grade / paper-grade-pre-bug / archived / in-flight). "
         "Default = paper-grade. Pass repeatedly for multi-grade analysis. "
-        "(A1.21 P1-12 B-497: nargs='append', was single string).",
+        "(A1.21 P1-12 B-528: nargs='append', was single string).",
     )
     p.add_argument("-v", "--verbose", action="store_true")
     args = p.parse_args()
@@ -154,8 +154,8 @@ def main() -> int:
     )
 
     try:
-        # A1.21 P0-5 fix (B-493): pass manifest_path to actually use --run-manifest arg.
-        # P1-12 (B-497): args.grade is now a list.
+        # A1.21 P0-5 fix (B-524): pass manifest_path to actually use --run-manifest arg.
+        # P1-12 (B-528): args.grade is now a list.
         cells = get_all_cells(
             grade_filter=args.grade,
             manifest_path=Path(args.run_manifest),
@@ -168,7 +168,7 @@ def main() -> int:
         LOGGER.error(
             "No %s cells in manifest %s. "
             "Did paper-grade promotion happen? See B-121 in master_bug_catalog. "
-            "Run: scripts/analysis/validate_run_manifest.py --no-disk (A1.21 B-494)",
+            "Run: scripts/analysis/validate_run_manifest.py --no-disk (A1.21 B-525)",
             args.grade,
             args.run_manifest,
         )
@@ -196,7 +196,7 @@ def main() -> int:
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    # A1.21 P0-1 (B-496): cost_unit_basis column for cross-baseline cost-unit transparency
+    # A1.21 P0-1 (B-527): cost_unit_basis column for cross-baseline cost-unit transparency
     fieldnames = (
         ["cell_id", "site", "model", "task_id"]
         + [f"sr_{MODE_TO_KEY[m]}" for m in PAPER_MODES]
@@ -250,7 +250,7 @@ def main() -> int:
     if incomplete_cells:
         LOGGER.warning("incomplete cells (skipped): %s", incomplete_cells)
 
-    # A1.21 P0-5 (B-493): emit manifest provenance sidecar so canonical full producer
+    # A1.21 P0-5 (B-524): emit manifest provenance sidecar so canonical full producer
     # can lock manifest_sha256 + csv_sha256 + grade_filter in audit chain.
     import hashlib
     manifest_path = Path(args.run_manifest)
@@ -266,7 +266,7 @@ def main() -> int:
         "n_complete_cells": len(by_cell) - len(incomplete_cells),
         "n_incomplete_cells": len(incomplete_cells),
         "incomplete_cells": [list(c) for c in incomplete_cells],
-        "producer": "generate_per_task_sr.py (A1.21 B-493 P0-5 manifest_path wired)",
+        "producer": "generate_per_task_sr.py (A1.21 B-524 P0-5 manifest_path wired)",
     }
     sidecar_path.write_text(json.dumps(sidecar, indent=2) + "\n")
     LOGGER.info("provenance sidecar → %s", sidecar_path)
