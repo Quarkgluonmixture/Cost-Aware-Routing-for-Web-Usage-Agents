@@ -406,8 +406,24 @@ def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> 
     if dry_run:
         return True, f"would update: {', '.join(changed_fields)}"
 
+    # B-853 (A1.15b Chunk γ P2-6): atomic frontmatter write. Pre-fix used
+    # direct `write_text()` which is NOT atomic — cron tick crash mid-write
+    # leaves cell .md half-written (invalid YAML). Obsidian Bases YAML parse
+    # silently drops the row → cells.base shows wrong/missing state →
+    # operator/user makes wrong launch decision. Now: write to temp file in
+    # same dir + os.replace() atomic rename (POSIX semantics).
     new_text = "---\n" + serialize_frontmatter(new_fm) + "\n---\n" + body
-    cell_path.write_text(new_text, encoding="utf-8")
+    _tmp_path = cell_path.with_suffix(cell_path.suffix + ".tmp")
+    try:
+        _tmp_path.write_text(new_text, encoding="utf-8")
+        os.replace(_tmp_path, cell_path)
+    except Exception:
+        # Cleanup temp file on any error; preserve original cell content.
+        try:
+            _tmp_path.unlink()
+        except FileNotFoundError:
+            pass
+        raise
     append_changelog(cell_path.name, changed_fields)
     return True, f"updated: {', '.join(changed_fields)}"
 

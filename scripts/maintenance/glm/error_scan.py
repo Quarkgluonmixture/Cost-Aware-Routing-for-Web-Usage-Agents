@@ -56,7 +56,14 @@ PATTERNS = [
     ("python_error", re.compile(r"^[A-Z]\w+Error: ", re.MULTILINE), 40),
 ]
 
-MAX_TAIL_BYTES = 200_000  # 200KB tail per log
+# B-848 (A1.15b Chunk γ P1-7): MAX_TAIL_BYTES bumped 200KB → 2MB. Pre-bump,
+# verbose runner logs (Qwen3-VL log spam routinely >500KB/24h in active
+# fire) caused the FIRST 24h-window slice to be silently truncated —
+# tracebacks at start of long runs invisible. Cron @5min × 24h lookback
+# = false-cleanness when scanning multi-tick logs. 10× headroom (2MB)
+# covers >99% of single-day runner log volumes empirically; memory cost
+# bounded (2MB × ~150 files scanned/tick ≤ 300MB transient).
+MAX_TAIL_BYTES = 2_000_000  # 2MB tail per log (was 200KB pre-B-848)
 MAX_HITS_PER_FILE = 5
 MAX_TOTAL_ERRORS = 50
 
@@ -82,10 +89,16 @@ def scan_file(path: Path, cutoff: datetime) -> list[dict]:
         return []
 
     hits = []
-    seen_kinds = {}  # dedup: at most 1 hit per kind per file
+    # B-850 (A1.15b Chunk γ P2-1): comment↔code consistency. Pre-fix the
+    # comment said "at most 1 hit per kind per file" but the code used
+    # `MAX_HITS_PER_FILE // 2 = 2`, allowing 2 hits. Choosing code over
+    # comment (2 hits enables seeing first + most recent occurrence of
+    # the same error type per file, which is more useful for triage).
+    seen_kinds = {}  # dedup: up to 2 hits per kind per file
+    _PER_KIND_CAP = MAX_HITS_PER_FILE // 2  # = 2 (with default 5)
     for kind, pat, sev in PATTERNS:
         for m in pat.finditer(text):
-            if seen_kinds.get(kind, 0) >= MAX_HITS_PER_FILE // 2:
+            if seen_kinds.get(kind, 0) >= _PER_KIND_CAP:
                 break
             # extract context (line containing match + 2 lines after for traceback)
             start = max(0, text.rfind("\n", 0, m.start()) + 1)

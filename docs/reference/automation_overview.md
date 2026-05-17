@@ -87,7 +87,7 @@ to ntfy topic. Functions invoked:
 |---|---|---|
 | `--report-interval-mins` (e.g. 60min) | post status (raw/adj SR + counts) | no |
 | `--idle-alert-mins` (no new episode for N min) | ntfy priority=high | no |
-| 3 consecutive episodes lacking `link 'Logout'` | `_auto_refresh_auth(site)` Playwright re-login + write `.auth/<site>_state.json` + purge contaminated digests | **yes** |
+| 3 consecutive episodes lacking `link 'Logout'` | `_auto_refresh_auth(site)` Playwright re-login + write `.auth/<site>_state.json` + purge contaminated episode summaries (B-854 2026-05-17: prose updated from "digests" → "episode summaries"; post-A1.15 Chunk a digest pipeline retired) | **yes** |
 | `--notify-completion` (per-condition done) | post-condition analysis + paper figures regen | no |
 | Episode tagged `not_logged_in` / corrupt summary | delete summary file → runner retries | **yes** |
 | Cross-restart contamination tracking | persist state file → resume cleanup | **yes** |
@@ -106,8 +106,8 @@ Defined in `scripts/maintenance/crontab.txt`. Activate with
 |---|---|---|---|
 | `error-scan` | `*/5 min` | Scan `logs/{B*,queue*,watchdog*}.log` + `logs/cron/*.log` for traceback / OOM / NOT_LOGGED_IN / **B-22 magento_redirect_loop** / **B-81h cutlass_kernel_miss** / **sm_121 nvrtc_arch** / **F23 fp_adjust_error** + **disk-free probe (<50GB)** + **tailscale BackendState** | `logs/cron/error_scan.json` → §2.5 |
 | `glm-update-cells` | `*/10 min` | Sync `_status/cells/cell_*.md` frontmatter from `condition_summary_v2.json`. Re-run detect via `last_run_id` change → archive history. PID liveness check (dead PID auto-clear). `cell_changelog.jsonl`. **status active→done flips trigger `make analysis FAST=1` (audit B)** | `logs/cron/cell_changelog.jsonl` |
-| `glm-refresh-playbook-s2` | `15,45 min` | Fast §2 refresh — cron health + dead-links + ntfy fails + §2.5 errors. Skips `make active` subprocess for speed | `PLAYBOOK.md §2` |
-| `glm-refresh-playbook` | `0 */2 hour` | Full §1 narrative + §2 automation board, single GLM call. **3 consecutive fail → ntfy high (audit D)** | `PLAYBOOK.md §1+§2` |
+| ~~`glm-refresh-playbook-s2`~~ | ~~`15,45 min`~~ — **RETIRED 2026-05-13** (crontab.txt comment) | ~~Fast §2 refresh.~~ Manual via `make glm-refresh-playbook --section 2` only. | ~~`PLAYBOOK.md §2`~~ |
+| ~~`glm-refresh-playbook`~~ | ~~`0 */2 hour`~~ — **RETIRED 2026-05-13** (crontab.txt) + Makefile post-hook trim 2026-05-17 (A1.15b B-842, commit `d6dd949`) | ~~Full §1+§2 GLM call.~~ Manual via `make glm-refresh-playbook` only; no cron + no post-hook auto-trigger. PLAYBOOK retire planned. (B-854 doc-drift fix 2026-05-17) | ~~`PLAYBOOK.md §1+§2`~~ |
 | `check-links` | `0 0 * * 0` (weekly Sun) | Scan `docs/` for broken wikilinks + path refs | `logs/cron/dead_links_<date>.log` |
 | `myriad-watcher` | `*/5 min` | SSH chain DGX → quark → Myriad qstat → diff state → ntfy on **NEW/CHG/GONE** events. **3 consecutive SSH failures → ntfy high (F36)**. **GONE event with matching `GONE_HOOKS` prefix → fire `auto_pull_myriad_cell.sh` (audit A)** | `logs/cron/myriad_state.json` + `logs/cron/myriad_watcher.log` |
 

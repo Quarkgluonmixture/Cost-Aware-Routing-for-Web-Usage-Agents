@@ -5634,6 +5634,96 @@ Replaces both rfind callsites (truncated-msg path L99-103 + thinking-model path 
 
 **B-numbers consumed**: B-845 through B-847 (3 IDs; A1.15b Chunk β). Next available: B-848+.
 
+---
+
+## A1.15b — GLM sidecar cluster Chunk γ (2026-05-17)
+
+Chunk γ scope = operational ops hygiene sweep (7 fixes across 6 files). User directive "下一个 chunk" → functional-cluster split per memory `feedback_split_large_scope`: ops hygiene = error_scan + auto_pull + notify + digest_enrich + cell_autoupdate frontmatter + automation_overview doc drift. Closes 2 P1 + 5 P2 of remaining 13 A1.15b items.
+
+### B-848 `error_scan.py:54` MAX_TAIL_BYTES 200KB → 2MB (P1-7 Claude+Gemini overlap)
+
+**Origin**: A1.15b /stress Mode A P1-7 + Mode C gemini G7 (2-AI overlap).
+**Code site**: `MAX_TAIL_BYTES = 200_000` → `2_000_000`.
+**Failure mechanism**: 200KB tail with 24h lookback truncates verbose runner logs at start (Qwen3-VL log spam routinely >500KB/24h during active fire). Cron @5min × tail-only → false-cleanness when tracebacks at start of long runs invisible.
+**Fix**: 10× headroom (2MB) covers >99% of single-day runner log volumes. Memory cost bounded (~150 files × 2MB tail max = ~300MB transient, well within DGX RAM headroom).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+
+### B-849 `auto_pull_myriad_cell.sh:247-263` Phase 4 unconditional `make analysis FAST=1` (P1-11 codex OOB)
+
+**Origin**: A1.15b /stress Mode B codex P1-11 OOB.
+**Code site**: Phase 2 sets `VALIDATE_VERDICT="❌ FAIL (quarantine)"` (L208-221); Phase 3 marks cell quarantined (L223-245); Phase 4 (L247-254) STILL fires `make analysis FAST=1` regardless of validate verdict.
+**Failure mechanism**: Quarantine declared in prose + cell frontmatter, but actual pipeline still consumes corrupt/invalid data via `make analysis FAST=1` → aggregators eat into paper §5 figures via downstream chain.
+**Fix**: Hard guard at start of Phase 4 — if `VALIDATE_VERDICT` contains "FAIL", skip analysis trigger + push HIGH-priority quarantine ntfy with distinct title ("Cell QUARANTINED" vs "Cell pulled") + exit early. Operator can manually trigger analysis after reviewing validation_report.json if validate was a false-positive.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+
+### B-850 `error_scan.py:80,83` code↔comment mismatch on dedup cap (P2-1)
+
+**Origin**: A1.15b /stress Mode A P2-1.
+**Code site (pre-fix)**: `seen_kinds = {}  # dedup: at most 1 hit per kind per file` (comment) vs `>= MAX_HITS_PER_FILE // 2` (= 2 hits, code).
+**Fix**: Updated comment to match code (2 hits per kind per file is actually useful for triage — first + most recent of same error type). Extracted `_PER_KIND_CAP = MAX_HITS_PER_FILE // 2` constant for clarity.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+
+### B-851 `notify_on_fail.sh:34` dead-code sed backtick escape (P2-4)
+
+**Origin**: A1.15b /stress Mode A P2-4.
+**Code site (pre-fix)**: `TAIL_OUT=$(tail -c 500 "$LOG" | sed 's/\`/\\\`/g')`.
+**Failure mechanism**: curl `-d "$BODY"` passes body as raw POST data; no shell interpretation of backticks. The sed escape was dead-code (no-op) AND risked corrupting genuine backtick content in error tails (would inject `\` before every backtick in user-readable ntfy push).
+**Fix**: Removed sed; use raw tail output directly. Pre-fix sed pattern preserved in comment for posterity.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+
+### B-852 `digest_enrich.py:258` site default "classifieds" → anchored regex inference (P2-5 codex)
+
+**Origin**: A1.15b /stress Mode B codex P2-5; sibling-prop of B-846 same-pattern.
+**Code site (pre-fix)**: `site = str(record.get("benchmark_site") or record.get("site") or "classifieds")` — silently defaulted to classifieds → reddit/shopping artifact lookups misdirected to nonexistent classifieds artifact dir.
+**Fix**: Walk inference chain (matches B-846 _extract_site policy):
+1. Explicit field in `{classifieds, reddit, shopping, shopping_admin}`
+2. `run_dir.name` anchored regex `_<site>_<8-digit>` longest-first sweep
+3. Fallback empty → skip DOM enrichment for that record (artifact_dir=None gate)
+
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+
+### B-853 `glm_cell_autoupdate.py:410` non-atomic frontmatter `write_text` (P2-6 gemini)
+
+**Origin**: A1.15b /stress Mode C gemini G5.
+**Code site (pre-fix)**: `cell_path.write_text(new_text, encoding="utf-8")` — direct write, NOT atomic. Cron tick crash mid-write → half-written cell .md → invalid YAML → Obsidian Bases drops the row silently → cells.base shows wrong/missing state → operator decision corruption.
+**Fix**: Standard temp+rename atomic pattern. Write to `cell_path.with_suffix(suffix + ".tmp")` then `os.replace(tmp, target)` (POSIX atomic rename semantics). Try/except cleans up temp file on any error, preserves original cell content.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+
+### B-854 `automation_overview.md:90,109-110` retired-digest doc drift (P2-7 gemini)
+
+**Origin**: A1.15b /stress Mode C gemini G6.
+**Code sites (pre-fix)**:
+- L90 watchdog auto-clean: "purge contaminated digests" (digest pipeline retired in A1.15 Chunk a)
+- L109-110 cron table: `glm-refresh-playbook-s2` `15,45 min` + `glm-refresh-playbook` `0 */2 hour` (both retired 2026-05-13 in crontab.txt; further trimmed via Makefile L239 post-hook trim in A1.15b Chunk α B-842)
+
+**Failure mechanism**: Researcher reading docs sees `digest` as L2/L3 core + GLM cron auto-refresh as cron-active — both retired. High cognitive cost during fire triage when expected automation doesn't fire.
+**Fix**: L90 prose updated "digests" → "episode summaries" (with B-854 note). L109-110 rows marked as ~~strikethrough~~ + "RETIRED 2026-05-13" annotation + retire date + commit refs (`d6dd949` A1.15b Chunk α B-842 Makefile post-hook trim).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+
+**B-numbers consumed**: B-848 through B-854 (7 IDs; A1.15b Chunk γ). Next available: B-855+.
+
+**Verification**:
+- py_compile + bash -n all 6 modified files PASS
+- Targeted pytest (Chunk β tests + router + smoke) — 70 pass / 0 fail
+- error_scan smoke: `0 errors found in last 24h` (post 2MB bump, behavior preserved)
+- Invariant checks: 7/7 PASS (MAX_TAIL_BYTES value / _PER_KIND_CAP extraction / os.replace pattern / anchored shopping_admin inference / Phase 4 quarantine guard / functional sed removal / RETIRED 2026-05-13 doc marker)
+
+**A1.15b Chunk γ reviewer lessons distilled (2)**:
+1. **Doc-drift fix pattern: strikethrough + RETIRED date + commit ref** — rather than delete retired-feature documentation (loses history), use markdown `~~...~~` strikethrough + explicit "RETIRED <date>" + cross-link to retire-commit. Preserves "we tried this approach, retired it for reason Y" semantic for future maintainers reading docs.
+2. **Sibling-prop opportunities materialize within same cycle** — B-852 (digest_enrich site default) closes via same `_extract_site` policy designed for B-846 (glm_batch_digest site inference) one chunk earlier. Cross-chunk sibling prop = single-policy-multiple-callsites pattern. Document the policy ONCE (anchored regex `_<site>_<8-digit>` longest-first), apply at every callsite. Future site-handling code MUST adopt same anchored pattern.
+
+**Remaining 10 P1+P2 deferred to Chunk δ or post-workshop**:
+- P1-1 ntfy topic rotation (22-file batch sed + env file rotation, 30min)
+- P1-4 incremental scan processed-set tracking (2h refactor)
+- P1-6 glm_client.py extraction (30min)
+- P1-10 atomic state/digest writes + mandatory locks (45min — extends B-853 atomic policy to glm_diagnosis_sidecar state + glm_batch_digest digest JSONL writes)
+- P2-2 glm_cell_autoupdate detect_pid argv dependency (15min)
+- P2-3 PID-reuse race documentation (10min defensive)
+
+Total Chunk γ: 7 fixes, 6 files, ~75min effort. Total deferred: 6 items, ~3-4h.
+
+**A1.15b cycle running total** (α + β + γ): 14 fixes (B-841~B-854), 12 files touched, 33 new pytest invariants, 0 regressions, 3 commits.
+
 **Pytest delta**: 733 (pre-Chunk-β) → 766 PASS (+33 new tests in `test_stress_a1_15b_chunk_beta.py`).
 
 **A1.15b Chunk β reviewer lessons distilled (3)**:

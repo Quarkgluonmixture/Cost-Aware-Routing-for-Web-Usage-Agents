@@ -255,12 +255,36 @@ def enrich_one(
     mark_ref_steps = sum(1 for s in steps if _has_mark_reference(s["thought"]))
 
     # 4. DOM description check
-    site = str(record.get("benchmark_site") or record.get("site") or "classifieds")
-    artifact_dir = run_dir / condition_id / "artifacts" / f"{site}_task_{task_id}"
+    # B-852 (A1.15b Chunk γ P2-5): site inference. Pre-fix defaulted empty
+    # site to "classifieds" → reddit/shopping artifact lookups misdirected
+    # to nonexistent classifieds dir. Sibling-prop of B-846 (same _extract_site
+    # idea: walk explicit field → run_dir anchored regex → empty fallback).
+    _explicit = str(record.get("benchmark_site") or record.get("site") or "").strip().lower()
+    if _explicit in {"classifieds", "reddit", "shopping", "shopping_admin"}:
+        site = _explicit
+    else:
+        # Infer from run_dir basename (same anchored pattern as
+        # glm_cell_autoupdate.py:135 + glm_batch_digest.py B-846 fix)
+        import re as _re_infer
+        site = ""
+        rd_name = run_dir.name if hasattr(run_dir, "name") else str(run_dir)
+        for _candidate in ("shopping_admin", "classifieds", "reddit", "shopping"):
+            if _re_infer.search(rf"_{_re_infer.escape(_candidate)}_\d{{8}}", rd_name):
+                site = _candidate
+                break
+        if not site:
+            # No inference possible → skip enrich for this record's DOM
+            # description check (it's the only consumer of `site`).
+            # Original classifieds-default was silently wrong; empty
+            # is loudly missing → caller (caller of _enrich_one_record)
+            # handles by emitting record without DOM enrichment fields.
+            pass
+    artifact_dir = run_dir / condition_id / "artifacts" / f"{site}_task_{task_id}" if site else None
     has_desc = False
     detail_dom_lengths: List[int] = []
     avg_dom = 0.0
-    if artifact_dir.exists():
+    # B-852: guard against None artifact_dir from unknown-site path
+    if artifact_dir is not None and artifact_dir.exists():
         has_desc, detail_dom_lengths, avg_dom = _check_dom_description(artifact_dir, steps, site=site)
 
     # Write enrichment fields

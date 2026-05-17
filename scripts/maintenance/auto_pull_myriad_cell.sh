@@ -244,7 +244,24 @@ if len(parts) >= 3:
     fi
 fi
 
-# Phase 4: trigger make analysis (audit B chain)
+# Phase 4: trigger make analysis (audit B chain).
+# B-849 (A1.15b Chunk γ P1-11): hard-guard against validate-FAIL.
+# Pre-fix, Phase 2 set VALIDATE_VERDICT="❌ FAIL (quarantine)" + Phase 3
+# marked cell md as "quarantined" — but Phase 4 ALWAYS fired `make analysis
+# FAST=1` regardless. Contaminated/corrupt data then ate into paper §5
+# figures via the analysis aggregators. Now: if validate failed → skip
+# analysis trigger entirely + push HIGH-priority quarantine ntfy to
+# distinguish from successful pull. Operator can manually trigger analysis
+# after reviewing if validate was a false-positive.
+if [[ "$VALIDATE_VERDICT" == *"FAIL"* ]]; then
+    echo "Phase 4: SKIPPED — validate-FAIL means quarantine, not analysis-trigger"
+    push_ntfy "Cell QUARANTINED: $JOB_NAME" \
+        "job=$JOB_ID files=$PULLED validate=$VALIDATE_VERDICT — analysis NOT triggered. Review $LOCAL_DIR/validation_report.json then manually trigger if false-positive." \
+        "high"
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] auto_pull QUARANTINED pulled=$PULLED validate=$VALIDATE_VERDICT"
+    exit 0
+fi
+
 if [ "${P79_SKIP_ANALYSIS:-0}" != "1" ]; then
     echo "Phase 4: trigger make analysis FAST=1 (background)"
     nohup bash -c "cd '$REPO' && make analysis FAST=1 > logs/cron/post_pull_analysis_${JOB_ID}.log 2>&1" \
@@ -253,7 +270,7 @@ if [ "${P79_SKIP_ANALYSIS:-0}" != "1" ]; then
     echo "  triggered analysis pipeline in background"
 fi
 
-# Phase 5: notify
+# Phase 5: notify (validate=pass case only; FAIL case already pushed high-priority above)
 SUMMARY_LINE=""
 if [ -f "$LOCAL_DIR/pilot_summary.md" ]; then
     SUMMARY_LINE=$(grep -m1 "Best layer\|Holm\|p_Holm\|Significance" "$LOCAL_DIR/pilot_summary.md" 2>/dev/null | head -1 | tr '|' ' ' | cut -c-120)

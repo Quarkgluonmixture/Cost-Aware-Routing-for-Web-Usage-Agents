@@ -31,7 +31,11 @@ LOG=$(mktemp /tmp/notify_on_fail.XXXXXX)
 RC=$?
 
 if [ "$RC" -ne 0 ]; then
-  TAIL_OUT=$(tail -c 500 "$LOG" | sed 's/`/\\`/g')
+  # B-851 (A1.15b Chunk γ P2-4): backtick escape was dead code. curl `-d`
+  # passes body as POST data without shell interpretation; backticks need
+  # no escaping. Pre-fix `sed 's/\`/\\\`/g'` was no-op + risk of breaking
+  # genuine backtick content. Just use raw tail output.
+  TAIL_OUT=$(tail -c 500 "$LOG")
   BODY="❌ P79 cron failed: $TITLE
 Exit: $RC
 $(date)
