@@ -2474,11 +2474,17 @@ class ExperimentRunner:
             # if missingness is just absence. Now: image_meta always emitted
             # with `pipeline` label (proxy_jpeg_data_url vs hf_processor_pil)
             # + all 5 telemetry fields (None when N/A). Schema fixed.
+            # B-575 (/stress A1.22 P2-18-A Claude, 2026-05-17): map "mock"
+            # backend type to "no_image" so test_runner_smoke + mock-mode
+            # downstream aggregators don't write "unknown" pipeline label
+            # (any aggregator filter `pipeline != "unknown"` would drop
+            # mock data → mock fixture verification silently broken).
             _backend_type = self.cfg.get("backends", {}).get(condition.backend_id, {}).get("type", "unknown")
             _image_pipeline = {
                 "api_proxy": "proxy_jpeg_data_url",
                 "local_qwen": "hf_processor_pil",
                 "local_gemma": "hf_processor_pil",
+                "mock": "no_image",  # B-575: mock smoke fixture rather than unknown
             }.get(_backend_type, "unknown")
             _image_meta_payload: Dict[str, Any] = {
                 "pipeline": _image_pipeline,

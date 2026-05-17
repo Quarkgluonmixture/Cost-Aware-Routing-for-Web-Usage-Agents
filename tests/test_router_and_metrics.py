@@ -54,19 +54,36 @@ def test_wasted_cost_missing_fields():
 
 
 def test_component_breakdown_aggregates_correctly():
+    # B-576 (/stress A1.22 P2-19-B codex, 2026-05-17): breakdown now
+    # includes `obs_prepare_usd` so the 3 cost parts sum to the runner-
+    # emitted `cost_usd.total = model + router_overhead + obs_prepare`.
     steps = [
-        {"cost_usd": {"model": 0.01, "router_overhead": 0.002}, "energy": {"kwh": 0.001}},
-        {"cost_usd": {"model": 0.02, "router_overhead": 0.003}, "energy": {"kwh": 0.002}},
+        {"cost_usd": {"model": 0.01, "router_overhead": 0.002, "obs_prepare": 0.0001}, "energy": {"kwh": 0.001}},
+        {"cost_usd": {"model": 0.02, "router_overhead": 0.003, "obs_prepare": 0.0002}, "energy": {"kwh": 0.002}},
     ]
     bd = compute_component_breakdown(steps)
     assert math.isclose(bd["model_cost_usd"], 0.03, rel_tol=1e-9)
     assert math.isclose(bd["router_overhead_usd"], 0.005, rel_tol=1e-9)
+    assert math.isclose(bd["obs_prepare_usd"], 0.0003, rel_tol=1e-9)
     assert math.isclose(bd["total_energy_kwh"], 0.003, rel_tol=1e-9)
+    # B-576: closure invariant — model + router_overhead + obs_prepare
+    # equals the runner's cost_usd.total sum for these synthetic rows.
+    summed_parts = bd["model_cost_usd"] + bd["router_overhead_usd"] + bd["obs_prepare_usd"]
+    runner_total = sum(
+        s["cost_usd"]["model"] + s["cost_usd"]["router_overhead"] + s["cost_usd"]["obs_prepare"]
+        for s in steps
+    )
+    assert math.isclose(summed_parts, runner_total, rel_tol=1e-9)
 
 
 def test_component_breakdown_empty_steps():
     bd = compute_component_breakdown([])
-    assert bd == {"model_cost_usd": 0.0, "router_overhead_usd": 0.0, "total_energy_kwh": 0.0}
+    assert bd == {
+        "model_cost_usd": 0.0,
+        "router_overhead_usd": 0.0,
+        "obs_prepare_usd": 0.0,
+        "total_energy_kwh": 0.0,
+    }
 
 
 def test_component_breakdown_missing_fields():
@@ -74,6 +91,8 @@ def test_component_breakdown_missing_fields():
     bd = compute_component_breakdown(steps)
     assert math.isclose(bd["model_cost_usd"], 0.01, rel_tol=1e-9)
     assert bd["router_overhead_usd"] == 0.0
+    # B-576: obs_prepare absent → defaults to 0.0
+    assert bd["obs_prepare_usd"] == 0.0
     assert bd["total_energy_kwh"] == 0.0
 
 

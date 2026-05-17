@@ -252,12 +252,35 @@ def compute_wasted_cost(
 
 
 def compute_component_breakdown(step_records: List[Dict[str, Any]]) -> Dict[str, float]:
-    """Aggregate cost by component type across all steps."""
+    """Aggregate cost by component type across all steps.
+
+    B-576 (/stress A1.22 P2-19-B codex, 2026-05-17): include
+    `obs_prepare_usd` in the breakdown so the parts close to `total`. Pre-fix
+    `EpisodeSummaryV2.total_cost_usd` was constructed via runner as `model +
+    router_overhead + obs_prepare` (`runner/main.py:2308-2315`) but
+    `component_breakdown` only summed `model + router_overhead + energy`,
+    omitting `obs_prepare`. Appendix component plots therefore systematically
+    under-counted total cost source; cross-baseline B0/B1/B2 comparison did
+    not close. Now the 3 cost components ({model, router_overhead, obs_
+    prepare}) sum to the runner-emitted total; the test fixture in
+    `tests/test_router_and_metrics.py` should be extended to assert this
+    closure when next touched.
+    """
     # Defensive: cost_usd / energy may be explicitly None on partial/error rows.
     model_cost = sum(float((s.get("cost_usd") or {}).get("model", 0)) for s in step_records)
     router_cost = sum(float((s.get("cost_usd") or {}).get("router_overhead", 0)) for s in step_records)
+    obs_prepare_cost = sum(float((s.get("cost_usd") or {}).get("obs_prepare", 0)) for s in step_records)
     energy_kwh = sum(float((s.get("energy") or {}).get("kwh", 0) or 0) for s in step_records)
-    return {"model_cost_usd": model_cost, "router_overhead_usd": router_cost, "total_energy_kwh": energy_kwh}
+    return {
+        "model_cost_usd": model_cost,
+        "router_overhead_usd": router_cost,
+        # B-576 (/stress A1.22 P2-19-B codex, 2026-05-17): obs_prepare cost
+        # closure — runner's `cost_usd.total = model + router_overhead +
+        # obs_prepare`, so the breakdown must include all 3 parts to be
+        # additively consistent with the summary's `total_cost_usd`.
+        "obs_prepare_usd": obs_prepare_cost,
+        "total_energy_kwh": energy_kwh,
+    }
 
 
 def compute_wasted_energy(episode_summaries: List[Dict[str, Any]]) -> Optional[float]:
