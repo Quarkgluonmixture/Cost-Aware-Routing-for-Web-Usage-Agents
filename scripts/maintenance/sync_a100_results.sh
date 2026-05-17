@@ -43,6 +43,23 @@ DGX_RESULTS="${REPO_ROOT}/results/visualwebarena/phase1/"
 
 mkdir -p "${DGX_RESULTS}"
 
+# B-859 (/stress A1.24 P0-5-AB*, 2026-05-17): single-host flock on sync
+# script to prevent concurrent rsync overlap. A100 sync >15min (slow VPN
+# or large artifacts) → next cron tick fires concurrent rsync → two rsync
+# instances both write same ${DGX_RESULTS} + share /tmp/rsync_a100_last.log
+# + run --delete-after on different file-list snapshots → can delete files
+# the other instance just transferred OR leave partial+mtime mixed state.
+# Per-host operator framing (user is sole A100+DGX operator) eliminates
+# cross-operator drama but NOT cron-self-overlap (cron is automatic).
+mkdir -p "${REPO_ROOT}/.locks"
+SYNC_LOCK="${REPO_ROOT}/.locks/sync_a100_results.lock"
+exec 9>"${SYNC_LOCK}"
+if ! flock -n 9; then
+  echo "[$(date +'%Y-%m-%d %H:%M:%S')] [skip] another sync_a100 instance holds ${SYNC_LOCK}; skipping this tick." >&2
+  exit 0
+fi
+echo "pid=$$ start=$(date +%s)" >&9 || true
+
 ts() { date +'%Y-%m-%d %H:%M:%S'; }
 log() { echo "[$(ts)] $*"; }
 
@@ -74,9 +91,15 @@ fi
 
 # Run rsync with SSH chain. SSH config alias condense-a100 resolves via quark
 # ProxyCommand. ConnectTimeout matters because UCL Cisco VPN can drop.
+#
+# B-859: rsync log path now per-PID (was shared /tmp/rsync_a100_last.log
+# → concurrent instances overwrote each other's diagnostic). Lock above
+# prevents true concurrency, but if lock fails-open on platform without
+# flock, per-PID log keeps forensic separate.
+RSYNC_LOG="/tmp/rsync_a100_last.${$}.log"
 if ! rsync "${RSYNC_OPTS[@]}" \
        -e "ssh -o ConnectTimeout=20 -o ServerAliveInterval=30" \
-       "${A100_HOST}:${A100_RESULTS}" "${DGX_RESULTS}" 2>&1 | tee /tmp/rsync_a100_last.log; then
+       "${A100_HOST}:${A100_RESULTS}" "${DGX_RESULTS}" 2>&1 | tee "${RSYNC_LOG}"; then
   log "✗ rsync failed (SSH chain or A100 unreachable). Retry on next cron run."
   exit 1
 fi
@@ -85,13 +108,42 @@ fi
 SUMMARY_AFTER=$(find "${DGX_RESULTS}" -maxdepth 4 -name "condition_summary_v2.json" 2>/dev/null | sort)
 NEW_SUMMARIES=$(comm -13 <(echo "${SUMMARY_BEFORE}") <(echo "${SUMMARY_AFTER}") | grep -v '^$' || true)
 
-if [[ -z "${NEW_SUMMARIES}" ]]; then
-  log "No new condition_summary_v2.json this cycle. Skipping analysis."
+# B-860 (/stress A1.24 P0-5-AB* sub-b, 2026-05-17): also detect DELETED
+# summaries. Pre-fix: A100 clear_tasks → rsync --delete-after propagates
+# deletion to DGX → NEW_SUMMARIES empty → exit 0 → no analysis refresh →
+# Obsidian cells.base + GLM PLAYBOOK show stale SR from old finalized
+# summary. With cron-vs-manual race window now: deletion event MUST
+# trigger downstream state recompute, same as new-summary event.
+DELETED_SUMMARIES=$(comm -23 <(echo "${SUMMARY_BEFORE}") <(echo "${SUMMARY_AFTER}") | grep -v '^$' || true)
+
+if [[ -n "${DELETED_SUMMARIES}" ]]; then
+  log "Deleted condition_summary_v2.json (propagated from A100 clear_tasks):"
+  echo "${DELETED_SUMMARIES}" | while read -r s; do log "  - ${s}"; done
+  # B-860: log to dedicated jsonl + ntfy high priority. Operator audit trail.
+  mkdir -p "${REPO_ROOT}/logs/cron"
+  DEL_LOG="${REPO_ROOT}/logs/cron/sync_a100_deletions.jsonl"
+  while IFS= read -r del_path; do
+    [[ -z "${del_path}" ]] && continue
+    printf '{"ts":"%s","path":"%s","cron_pid":%s}\n' "$(ts)" "${del_path}" "$$" >> "${DEL_LOG}"
+  done <<< "${DELETED_SUMMARIES}"
+  # ntfy best-effort (single curl, 3s timeout)
+  DEL_COUNT=$(echo "${DELETED_SUMMARIES}" | grep -c . || true)
+  curl -s --max-time 3 \
+    -H "Title: P79 sync_a100 deletion propagated" \
+    -H "Priority: high" \
+    -d "[$(ts)] ${DEL_COUNT} condition_summary_v2.json deleted from DGX mirror (A100 clear_tasks propagation). See logs/cron/sync_a100_deletions.jsonl." \
+    "https://ntfy.sh/p79-claude" >/dev/null 2>&1 || true
+fi
+
+if [[ -z "${NEW_SUMMARIES}" && -z "${DELETED_SUMMARIES}" ]]; then
+  log "No new or deleted condition_summary_v2.json this cycle. Skipping analysis."
   exit 0
 fi
 
-log "New condition_summary_v2.json this cycle:"
-echo "${NEW_SUMMARIES}" | while read -r s; do log "  + ${s}"; done
+if [[ -n "${NEW_SUMMARIES}" ]]; then
+  log "New condition_summary_v2.json this cycle:"
+  echo "${NEW_SUMMARIES}" | while read -r s; do log "  + ${s}"; done
+fi
 
 if [[ "${SKIP_ANALYSIS}" == "1" ]]; then
   log "--no-analysis flag set; skipping analysis trigger."

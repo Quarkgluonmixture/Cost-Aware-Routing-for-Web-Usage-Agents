@@ -250,6 +250,59 @@ def _ntfy_force_alert(run_dir: Path, condition: str, site: str, tasks: List[int]
         pass  # ntfy is best-effort, never blocks deletion
 
 
+def _emit_manual_clear_event(
+    cond_dir: Path,
+    site: str,
+    task_id: int,
+    *,
+    force: bool,
+    dry_run: bool,
+    operator_pid: int,
+    reason: str,
+) -> None:
+    """B-863 (/stress A1.24 P0-8-C*, 2026-05-17): Option K event log entry
+    for manual clear_tasks deletion. Parity with watchdog auto-clean event
+    at experiment_watchdog.py:1697 + :1860 (`event_type="task_auto_cleared"`).
+
+    Pre-fix: clear_tasks deleted episodes silently, leaving zero audit trail
+    in `trajectory_events.jsonl` — reviewer/OSF audit could not verify if a
+    100% SR run was first-pass success vs after N manual cleanups. Watchdog
+    auto-clean emits B-314 + B-384 events; manual path now emits symmetric
+    `event_type="manual_task_cleared"` event.
+
+    Best-effort (T2'=a per B-314 convention) — import / fs failures swallow
+    so deletion path stays robust. `log_trajectory_event_external` itself
+    no-ops silently if `cond_dir` doesn't exist yet.
+
+    `reason` ← env `CLEAR_REASON` (operator-set 2-3 word annotation), default
+    `"unspecified"`. Operator workflow:
+        CLEAR_REASON='login_lost wave' clear_tasks.py --tasks 85-131 ...
+    """
+    try:
+        # NOTE: import here so module-import doesn't pull p79.* (clear_tasks
+        # may be invoked outside venv during recovery). Best-effort guard.
+        from p79.experiment.logger_v2 import log_trajectory_event_external
+        log_trajectory_event_external(
+            condition_dir=cond_dir,
+            event_type="manual_task_cleared",
+            task_index=task_id,
+            metadata={
+                "site": site,
+                "reason": reason,
+                "force": force,
+                "dry_run": dry_run,
+                "operator_pid": operator_pid,
+            },
+        )
+    except Exception as _ev_exc:
+        # Best-effort — print warn but never block deletion.
+        print(
+            f"[clear_tasks][trajectory-event][warn] failed to log "
+            f"manual_task_cleared event for task {task_id}: {_ev_exc}",
+            file=sys.stderr,
+        )
+
+
 def _clean_orphan_artifacts(
     run_dir: Path,
     condition: Optional[str],
@@ -546,8 +599,36 @@ def main() -> int:
             deleted += 1
             if not args.dry_run:
                 print(f"  deleted {prefix}")
+                # B-863 P0-8-C*: Option K event log (parity watchdog auto-clean)
+                _emit_manual_clear_event(
+                    cond_dir=cond_dir,
+                    site=site,
+                    task_id=tid,
+                    force=args.force,
+                    dry_run=False,
+                    operator_pid=os.getpid(),
+                    reason=os.environ.get("CLEAR_REASON", "unspecified"),
+                )
         else:
             skipped += 1
+
+    # B-872 (/stress A1.24 P1-8-C, 2026-05-17): `.cleaning` flag wrapping
+    # digest + cond_summary operations. Pre-fix: digest atomic write
+    # (B-226) + cond_summary unlink were independently atomic but no joint
+    # guarantee — Ctrl+C / crash between them left "digest cleaned ✓ +
+    # cond_summary still Finalized" zombie state → runner skips condition,
+    # aggregator pulls stale-but-task-gone records → inconsistent report.
+    # Flag-file approach: touch `.cleaning` at start, remove at end;
+    # forensic operator can detect interrupted state via `ls .cleaning`.
+    # Future runner resume gate can be enhanced to detect+quarantine in C4
+    # (preflight check_clear_tasks_recovery).
+    _cleaning_flag: Optional[Path] = None
+    if not args.dry_run and deleted > 0:
+        _cleaning_flag = cond_dir / ".cleaning"
+        try:
+            _cleaning_flag.touch(exist_ok=True)
+        except OSError:
+            _cleaning_flag = None  # best-effort; never block cleanup
 
     # --- Clean digest records for deleted tasks ---
     digest_cleaned = 0
@@ -570,7 +651,19 @@ def main() -> int:
                 except Exception:
                     keep.append(line)
                     continue
-                tid = rec.get("task_id", -1)
+                # B-867 (/stress A1.24 P1-4-C*, 2026-05-17): int/string type
+                # coercion for cross-baseline (WA) parity. WebArena (WA)
+                # digest may store task_id as string ("123") while
+                # _parse_task_ids returns int; `tid in task_id_set` then
+                # silently false → digest record never removed → aggregator
+                # later joins stale record with fresh rerun → silent SR
+                # pollution. Coerce both sides to canonical int. Non-int
+                # raw values (rare) fall to -1 sentinel and naturally skip.
+                tid_raw = rec.get("task_id", -1)
+                try:
+                    tid = int(tid_raw)
+                except (TypeError, ValueError):
+                    tid = -1
                 cid = rec.get("condition_id", "")
                 if tid in task_id_set and (not cid or cid == args.condition):
                     removed_here += 1
@@ -632,6 +725,13 @@ def main() -> int:
                     if safe_unlink(cond_summary_path):
                         print(f"  deleted stale condition_summary ({remaining}/{total} episodes remaining)")
                 cond_summary_removed = True
+
+    # B-872 closure: remove .cleaning flag (all critical ops past this point)
+    if _cleaning_flag is not None and _cleaning_flag.exists():
+        try:
+            _cleaning_flag.unlink()
+        except OSError:
+            pass
 
     action = "would delete" if args.dry_run else "deleted"
     parts = [f"{action} {deleted} tasks"]
