@@ -107,6 +107,17 @@ def _file_sha256(path: Path) -> Optional[str]:
     return h.hexdigest()
 
 
+def _prereg_sha() -> Optional[str]:
+    """B-1004 (/stress A2.4a P1-7-A Claude, 2026-05-18): SHA of preregistration.md
+    at runtime. Pre-fix `_self_code_sha` covered script + helper but NOT prereg —
+    prereg amendments (A1.21 P0-9 per-task ratio, P0-10 Agresti-Coull anchor)
+    after code freeze invisible to canonical output. Reviewer T₂ replay couldn't
+    tell which prereg version was binding. Now `provenance.prereg_sha` field
+    completes the audit trail.
+    """
+    return _file_sha256(REPO / "docs/checkpoints/pre_run/preregistration.md")
+
+
 def _self_code_sha() -> str:
     """SHA of this script + the B-184 helper module (covers H1 + FE pool path)."""
     h = hashlib.sha256()
@@ -436,10 +447,23 @@ def build_full_decision(cells: List[Dict]) -> Dict:
         # `aggregate_phantom_lift.py:655-658` universe semantics. Pre-fix
         # axis-only intersection drifted H3 universe vs lift script.
         six_arm_universe = _six_arm_complete_case_universe(per_task)
+        # B-1006 (/stress A2.4a P2-20-B* codex F8 OOB, 2026-05-18): per-axis seed
+        # stratification. Pre-fix both axis1+axis2 called `_h3_axis_per_cell`
+        # with identical `PREREG_SEED=42` → identical bootstrap resample indices →
+        # artificial covariance in axis1/axis2 reported uncertainty (CI bands
+        # share resample noise). Point estimates unchanged; this is uncertainty
+        # hygiene per retired script `preregistration_decision_test.py:449-458`
+        # SHA-derived seed stratification pattern.
+        # Root seed PREREG_SEED preserved in metadata for OSF replay.
+        cell_id = f"{cell['baseline']}_{cell['site']}"
+        axis1_seed = int(hashlib.sha256(
+            f"{cell_id}|axis1|{PREREG_SEED}".encode()).hexdigest()[:8], 16)
+        axis2_seed = int(hashlib.sha256(
+            f"{cell_id}|axis2|{PREREG_SEED}".encode()).hexdigest()[:8], 16)
         h3_axis1 = _h3_axis_per_cell(per_task, "P-text", ref_mode="P-SoM",
-                                      universe=six_arm_universe)
+                                      universe=six_arm_universe, seed=axis1_seed)
         h3_axis2 = _h3_axis_per_cell(per_task, "P-prompt", ref_mode="P-SoM",
-                                      universe=six_arm_universe)
+                                      universe=six_arm_universe, seed=axis2_seed)
         per_cell_data.append({
             "baseline": cell["baseline"],
             "site": cell["site"],
@@ -473,6 +497,19 @@ def build_full_decision(cells: List[Dict]) -> Dict:
         "skipped_cells": skipped,
     }
 
+    # B-1002 (/stress A2.4a P0-1-A* Claude OOB, 2026-05-18): paper-grade strict
+    # k=6 gate. Pre-fix code branched k<2→INSUFFICIENT_DATA, k=2-5→silently pools.
+    # prereg §2 H1 line 68-86 locks "FE pool over 6 planned cells" — silent k<6
+    # pool would let Phase 1a fire emit hero θ_FE on degraded data without paper
+    # §1 prose disclosure (reviewer R3 silent-fallback attack). New 3-state:
+    #   k=0       → INSUFFICIENT_DATA
+    #   1≤k<2     → INSUFFICIENT_DATA (FE needs ≥2)
+    #   2≤k<6 + paper-grade strict → DEGRADED (emit + warn, but distinct status)
+    #   k=6       → 正常 emit
+    # Strict mode enabled via P79_PAPER_GRADE env (default 1 per A2.2 B-548 lib).
+    K_REQUIRED_PAPER_GRADE = 6
+    paper_grade_strict = os.environ.get("P79_PAPER_GRADE", "1") == "1"
+
     # Insufficient data branch
     if not per_cell_data:
         payload["gate_status"] = "INSUFFICIENT_DATA"
@@ -491,13 +528,39 @@ def build_full_decision(cells: List[Dict]) -> Dict:
         )
         return payload
 
+    # B-1002 strict k=6 gate (paper-grade only; dev opt-out via P79_PAPER_GRADE=0)
+    k_actual = len(per_cell_data)
+    if paper_grade_strict and k_actual < K_REQUIRED_PAPER_GRADE:
+        payload["gate_status"] = "DEGRADED"
+        payload["gate_status_reason"] = (
+            f"k_actual={k_actual} < k_required={K_REQUIRED_PAPER_GRADE} planned cells "
+            f"(P79_PAPER_GRADE=1 strict). Missing: {[(s['baseline'], s['site']) for s in skipped]}. "
+            f"FE θ_FE = {fe['theta_FE_pp']:.3f}pp on degraded pool — paper §1 prose MUST "
+            f"disclose degradation per prereg §2 Appendix-E k-degradation protocol (TBD pre-fire)."
+        )
+        payload["k_actual"] = k_actual
+        payload["k_required"] = K_REQUIRED_PAPER_GRADE
+        payload["pooled_h1_fe"] = fe  # still emit for transparency
+        # Continue to emit H2(a) / H3 / framing for transparency, but gate_status
+        # signals DEGRADED so downstream consumers don't substitute into paper §1 silently.
+
     # I² + Q on H1 FE pool (cap-only)
     thetas = np.array([r["theta_pp"] for r in h1_per_cell_list])
     ses = np.array([r["se_pp"] for r in h1_per_cell_list])
-    n_zero_se = int((ses <= 0).sum())
-    if n_zero_se > 0:
-        # A1.19 B-426 floor (also used by _fe_pool → bit-identical FE pool)
-        ses = np.where(ses <= 0, 1.0, ses)
+    # B-1003 (/stress A2.4a P1-5-A* Claude OOB, 2026-05-18): SE floor anchor at
+    # Agresti-Coull bound 0.68pp per prereg §2 H1 line 99 (was literal `<= 0`).
+    # Pre-fix floor fired only on literal zero; SE = 0.05pp from a single-unique-
+    # task bootstrap (degenerate-but-nonzero scenario) didn't trigger floor →
+    # FE weight 1/SE² = 400× hijacks pool, opposite of prereg amendment intent.
+    # Threshold = 0.68pp (Agresti-Coull anchor `√(p_AC × (1-p_AC) / (N+z²))`
+    # at x=0, N=200). Archive empirical median SE 0.98pp ≈ post-floor anchor.
+    SE_FLOOR_THRESHOLD_PP = 0.68
+    SE_FLOOR_REPLACE_PP = 1.0  # prereg §2 H1 lock — replace below-threshold with 1.0pp finite bound
+    n_below_floor = int((ses < SE_FLOOR_THRESHOLD_PP).sum())
+    n_zero_se = int((ses <= 0).sum())  # legacy stat retained for transparency
+    if n_below_floor > 0:
+        # A1.19 B-426 floor + B-1003 threshold-aware (also used by _fe_pool path)
+        ses = np.where(ses < SE_FLOOR_THRESHOLD_PP, SE_FLOOR_REPLACE_PP, ses)
     isq_payload = _compute_q_isq(thetas, ses)
 
     payload["pooled_h1_fe"] = fe
@@ -588,10 +651,15 @@ def build_full_decision(cells: List[Dict]) -> Dict:
     # Apply framing rule with I² cap-only
     h1_pass = fe["gate_passed"]
     h2a_falsified = payload["h2a_summary"]["falsified"]
-    h3a_pass = (payload["h3_axis1_pooled_fe"] is not None
-                and payload["h3_axis1_pooled_fe"]["passed"])
-    h3b_pass = (payload["h3_axis2_pooled_fe"] is not None
-                and payload["h3_axis2_pooled_fe"]["passed"])
+    # B-1001 (/stress A2.4a P0-3-B* codex F1 OOB, 2026-05-18, Phase 4 verified):
+    # `_h3_axis_pooled_fe` returns `(None, skip_dict)` when `n_unique<2` filter
+    # leaves <2 cells; skip_dict is populated (non-None) but DOES NOT contain
+    # `passed` key. Pre-fix `["passed"]` index → KeyError CRASH on Phase 1a
+    # first canonical run if H1 has ≥2 cells but H3 axis has noise-floor
+    # filtered cells. Defensive `.get("passed", False)` lets framing rule treat
+    # skip path as "axis cannot evaluate → does not contribute to R1/R2".
+    h3a_pass = bool(payload.get("h3_axis1_pooled_fe", {}).get("passed", False))
+    h3b_pass = bool(payload.get("h3_axis2_pooled_fe", {}).get("passed", False))
     h1_isq_cap = isq_payload.get("heterogeneity_cap_at_r3", False)
 
     framing = _apply_framing(h1_pass, h2a_falsified, h3a_pass, h3b_pass, h1_isq_cap)
@@ -633,9 +701,15 @@ def write_json(payload: Dict, out_json: Path, *,
                 manifest_path: Optional[Path] = None,
                 input_csv_path: Optional[Path] = None) -> None:
     out_json.parent.mkdir(parents=True, exist_ok=True)
-    # Provenance lock — manifest + code + git SHAs (paper §1 OSF audit chain)
+    # Provenance lock — manifest + code + git + prereg SHAs (paper §1 OSF audit chain)
     payload["provenance"] = {
         "code_sha256": _self_code_sha(),
+        # B-1004 (/stress A2.4a P1-7-A, 2026-05-18): prereg.md SHA closes the
+        # provenance gap. A1.21 amendments (per-task ratio + Agresti-Coull anchor)
+        # post-code-freeze were invisible — now T₂ reviewer can verify prereg
+        # version at run time matches OSF-locked baseline.
+        "prereg_sha256": _prereg_sha(),
+        "prereg_path": "docs/checkpoints/pre_run/preregistration.md",
         "manifest_sha256": _file_sha256(manifest_path) if manifest_path else None,
         "manifest_path": str(manifest_path) if manifest_path else None,
         "input_csv_sha256": _file_sha256(input_csv_path) if input_csv_path else None,
