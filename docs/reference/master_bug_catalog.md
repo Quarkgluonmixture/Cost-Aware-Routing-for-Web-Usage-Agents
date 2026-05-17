@@ -4983,3 +4983,63 @@ risk-accepted.
 4. **codex CLI synthesis failure is now a recurring class** — A1.6b / A1.18-re / A1.7 all hit it; Mode A + Mode C carry the load when this happens. The v7.7 retry budget protocol handled it correctly: 3 retries → FAIL → accept partial.
 
 **Next available B-number**: B-702+ (A1.7 cold-start consumed B-691~B-701; A1.14 Chunk b consumed B-677~B-680; B-681~B-690 unused after rebase).
+
+---
+
+## A1.11 /stress cold-start audit (2026-05-17) — B-717 to B-730 (14 entries; 14 fixed)
+
+Substrate: `p79/{utils/, cli/, logging/}` = 905 LOC / 5 functional files + 1 orphaned 0-byte package (`p79/logging/`). 3-AI cold-start cycle (Mode A Claude 10 / Mode B codex 8 / Mode C gemini 6 v1 + 5 v2 = **17 unique post-dedup**). User decision: Q1=B (全 14 P0+P1) + Q2=B (P0-1 维持) + Q3=B (CUDA dtype + env_snapshot fallback counter; SKIP autograd raise per mechanism暂搁).
+
+**Renumber note**: original reservation was B-703~B-716 but A1.14 Chunk (d) parallel session captured B-703~B-710 mid-audit. Single-pass sed renumber to B-717~B-730 (source/target disjoint) across 7 modified files, source `\b` boundary failed inside `test_b<N>_<...>` identifiers → re-anchored on trailing `_` for second sed pass. Reproduced 2026-05-16 A1.6b parallel-session collision pattern.
+
+| B-### | P | Source | OOB | File:lines | Fix |
+|---|---|---|---|---|---|
+| B-717 | P0 | A+C | * | `p79/utils/auth_refresh.py:180-216, 229` | Subprocess creds read from env (`P79_AUTH_USER`/`PASS`) instead of f-string interpolated into `-c` argv. Pre-fix `ps auxe` on shared multi-user DGX exposed plaintext password during refresh window. **Codex MISSED this** — Claude+Gemini AC overlap (surprising codex blind spot given shell-Python boundary strength). |
+| B-718 | P0 | B | * | `p79/cli/run_experiment.py:1-22` + `p79/cli/analyze_experiment.py:1-19` | `sys.path.insert(0, _REPO_ROOT)` moved BEFORE `from p79.* import`. `analyze_experiment.py` (24 LOC) had ZERO bootstrap. Pre-fix absolute-path invocation (`python3 /full/path/p79/cli/run_experiment.py --help`) died with `ModuleNotFoundError: No module named 'p79'`. **Only codex caught via experimental reproduction** — Claude+Gemini static-read missed. |
+| B-719 | P0 | A+B+C | * | `p79/utils/auth_refresh.py:189` script body | `time.sleep(2)` → Playwright `wait_for_load_state('networkidle', 10000)` + `wait_for_function(url_predicate, 10000)`, both try/except wrapped for SPAs that don't navigate. 3-AI overlap. |
+| B-720 | P1 | A+B+C | * | `p79/utils/auth_refresh.py:229-248` | `env = {**os.environ, ...}` → explicit whitelist `(PATH HOME USER DISPLAY LANG LC_ALL TZ XAUTHORITY DBUS_SESSION_BUS_ADDRESS VWA_REMOTE_HOST)` + prefix passthrough for `PLAYWRIGHT_*` / `VWA_*`. Closes B-214 deferred. 3-AI overlap. |
+| B-721 | P1 | A+C | — | `p79/cli/run_experiment.py:50-58` | env_snapshot fail semantics split by `P79_PAPER_GRADE` env. Paper-grade fire raises `SystemExit(2)` (prereg §7 requires file); dev mode preserves warning-and-continue. |
+| B-722 | P1 | A+C | — | `p79/cli/run_experiment.py:34` | `f"run_{int(time.time())}"` → `f"run_{int(time.time() * 1000)}_{os.getpid()}"`. POSIX-second collision in 24-cond × 3-baseline parallel queue → fixed via ms-precision + PID. |
+| B-723 | P1 | A+C | * | `p79/utils/log_cleanup.py:88,103,120,162,270` | All 4 `unlink()` + 1 `rmtree` got `missing_ok=True` / `ignore_errors=True`. TOCTOU between glob/rglob and removal no longer crashes the entire cleanup sweep. |
+| B-724 | P1 | A+B | * | `p79/utils/log_cleanup.py:23, cleanup_logs(), cleanup_results()` | `LogCleanupConfig.__init__` default `dry_run=True` (was False). `cleanup_logs` + `cleanup_results` add `confirmed: bool = False` kwarg mirroring `cleanup_all` second safety gate; `cleanup_all` propagates `confirmed=`. Pre-fix direct callers silently rmtree'd 90+ day paper-grade evidence. |
+| B-725 | P1 | C | — | `p79/utils/auth_refresh.py:162-170` script body | Per-site positive selector dict (cls/red: `a[href*="logout"]`, shopping: `a[href*="customer/account/logout"]`, shopping_admin: `.admin-user-account-text, a[href*="admin/auth/logout"]`). AND-combined with existing negative check. Failure reason logged distinctly (`still_on_login` vs `no_logout_marker`). Gemini v2 unique. |
+| B-726 | P1 | B | — | `p79/utils/auth_refresh.py:120-128` | `auth_dir.mkdir(parents=True, exist_ok=True)` after Path normalization. OSError → `outcome=dir_not_writable` + return False. Pre-fix cold-start / unmounted `.auth/` collapsed successful login into storage_state write failure. |
+| B-727 | P1 | B | — | `p79/utils/auth_refresh.py:241-252` | `int(AUTH_REFRESH_TIMEOUT)` wrapped in try/except (`ValueError`, `TypeError`) + reject ≤0. Pre-fix typo escaped soft-fail contract → broke watchdog/auth_required_gate retry decision. Returns False + `outcome=misconfig` log. |
+| B-728 | P1 | A | — | `p79/utils/auth_refresh.py:refresh_site_auth` 8 return paths | `outcome=<tag>` log on every return path (8 tags: `ok / cred_wrong / env_missing / playwright_error / playwright_crash / timeout / misconfig / dir_not_writable`). Caller can grep-distinguish failure modes without API change. Bool return preserved (backward compat with 8 callers). |
+| B-729 | P1 | A | * | `tests/test_cli_smoke.py` + `tests/test_a1_11_fixes.py` (NEW) | A1.12 B-674 sibling miss closure — extend test_cli_smoke.py with analyze_experiment 3 tests + 2 absolute-path B-718 reproduce tests. New `tests/test_a1_11_fixes.py` with 12 paper-grade contract tests. **17 net new tests, suite 500 → 530 GREEN** (parallel session adds account). |
+| B-730 | P1 | B+C | * | `p79/utils/torch_cuda_workarounds.py:69-100` | `_cpu_prod_tensor` (a) honours `kwargs.get("dtype", tensor.dtype)` over input tensor dtype (was: unconditional input dtype cast silently violated user's `dtype=` request); (b) increments `torch._p79_nvrtc_prod_fallback_count` per NVRTC-error CPU dispatch for env_snapshot.json pickup. **SKIPPED per Q3=B**: autograd-raise on requires_grad — mechanism暂搁 per advisor 2026-05-14; learned router uses sklearn LR not torch.prod gradient. |
+
+**Verification matrix**:
+- pytest: **530 passed / 9 skipped / 0 failed** in ~38s (17 new tests: 12 in `tests/test_a1_11_fixes.py` + 5 in extended `tests/test_cli_smoke.py`)
+- py_compile: PASS on all 5 modified files
+- absolute-path repro: `python3 /full/path/p79/cli/run_experiment.py --help` now exits 0 (was ModuleNotFoundError)
+- B-### stamps: 21 occurrences of B-717~B-730 across 7 modified files (5 py source + 2 test files)
+
+**Cross-AI agreement matrix**:
+- 3-AI overlap (A+B+C): 3 findings (B-719 sleep race / B-720 env propagation / P2-15 orphaned logging *deferred*)
+- 2-AI overlap (A+C): 5 findings (B-717 cred argv / B-721 env_snapshot / B-722 run_id / B-723 TOCTOU / [P2-15 also])
+- 2-AI overlap (A+B): 1 finding (B-724 cleanup destructive)
+- 2-AI overlap (B+C): 1 finding (B-730 CUDA detach — 3 different angles merged)
+- 1-AI unique B (codex): 4 findings (B-718 CLI bootstrap *high-value OOB* / B-726 auth dir / B-727 AUTH_TIMEOUT / P2-17 asyncio handler *deferred*)
+- 1-AI unique A (Claude): 3 findings (B-728 outcome semantic / B-729 0-test sibling / P2-16 sm arch *deferred*)
+- 1-AI unique C (gemini): 1 finding (B-725 fragile login negative-check)
+- OOB ratio: 10/14 = 71% (P0+P1 fixed only)
+
+**P2 deferred (3 findings)**:
+- P2-15 ABC orphaned `p79/logging/` 0-byte package vs CLAUDE.md L79 "structured logging helpers" claim → defer doc/code reconciliation
+- P2-16 A only `torch_cuda_workarounds.py:32-44` `cap > max_sm` vs `cap NOT IN arch_set` soundness — low blast
+- P2-17 B only `asyncio_workarounds.py:56-65` `_patched_call_exception_handler` short-circuits user-installed handlers — medium effort + medium risk
+
+**Reviewer lessons (A1.11 cold-start)**:
+
+1. **Codex's "actual reproduction" beats static-read for env/subprocess bugs** — B-718 absolute-path `ModuleNotFoundError` only surfaced because codex ran `python3 /tmp/... --help` and got rc=1. Both Claude and Gemini read the file statically + saw `sys.path.insert(...)` present → visual completeness illusion, missed import ORDERING.
+2. **Area-chair design反驳 is Gemini's strength** — B-725 fragile login negative-check is a classic "what if the server does X instead?" attack. Claude + codex were locked into existing semantic ("not on login = success"), Gemini reframed to positive identification.
+3. **Sibling propagation requires cross-audit memory** — B-729 analyze_experiment 0-test is A1.12 B-674 sibling — only Claude caught because Claude carries cross-audit context. Cold-start codex/Gemini cannot infer "you fixed X in previous audit but missed sibling Y".
+4. **3-AI overlap on the WRONG severity is healthy diversification** — B-730 CUDA detach caught by codex + gemini × 2 different angles (dtype / detach / determinism). Claude unique angle (P2-16 sm arch comparison) deferred.
+5. **Q3=B "partial fix with documented skip" is paper-grade pragmatic** — not all 3-way attacks deserve full fix. CUDA autograd raise SKIPPED because mechanism暂搁 + sklearn LR for router. Skip rationale documented in catalog so future reviewer can find.
+6. **`outcome=` log tagging is cheap minimal-API alternative to enum return** — B-728 preserved bool API while restoring failure-mode distinction. 8 tags × 1 log line each is lower blast radius than refactoring 8 callers.
+7. **Cold-start dispatch verification gotchas** — codex v1 first run produced 470KB but never wrote findings file (cut off mid-`nl -ba` file reads, then disowned bash misled harness "completed"). Codex v2 retry with directive prompt succeeded in ~3min. Gemini v1 succeeded immediately to expected path; v2 also succeeded with different angle (NVRTC determinism). **3-AI dispatch needs Tier 1 file-marker monitor on output `.md`, NOT PID-based or disown polling**.
+8. **`disown` background dispatch returns rc=0 immediately misleading harness** — Both the bash-`disown` and the system task notification say "completed exit 0" within seconds when codex actually runs ~5min. Confused user message "太快了，不对". Lesson: structure dispatch with explicit output-file sentinel + size+content gate, not "exit 0 = done".
+9. **Parallel-session B-### collision = A1.6b/A1.18-re/A1.11 recurring pattern** — A1.14 Chunk d landed B-703~B-710 while I drafted A1.11. Single-pass sed renumber + test function names also needs renumber. Lesson: re-grep B-### MAX immediately before EACH catalog append + reserve large buffer (15+).
+
+**B-numbers consumed**: B-717 through B-730 (14 contiguous IDs; A1.11 cold-start range, post A1.14 Chunk d (B-703~B-710) parallel session collision). Next available: B-731+ (assuming no further parallel session collisions).
