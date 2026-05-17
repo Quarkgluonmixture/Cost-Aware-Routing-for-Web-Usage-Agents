@@ -4032,4 +4032,58 @@ submodule).
 
 **Cross-batch cumulative (overnight + morning sprint 2026-05-17)**: A1.25 GRL Chunks 1+2+3+4 (16+6+6+7=**35 fixes mine**) + parallel A1.4 (10) + A1.20 (17) + parallel A1.5b Phase 1 (21) + parallel A1.21 Chunks 1+2 (~30) = **~113 paper-grade fixes** across 6 distinct /stress audit scopes via concurrent multi-Claude + multi-AI-lineage (Claude + codex + gemini) audit pipeline. **A1.25 GRL audit batch CLOSED** — 4 chunks done, ready for cross-chunk synthesis + Phase 1a fire trigger.
 
-**Next available B-number**: B-542+.
+**Next available B-number**: B-548+ (post A1.5b Phase 2 pre-fire batch; B-512 + B-534 + B-542~B-547 consumed below).
+
+---
+
+## A1.5b Phase 2
+
+Phase 2 of `/stress A1.5b` audit — data plane + analysis sibling layer. Pre-fire 3-AI cycle (Mode A Claude + Mode B codex + Mode C gemini) caught 19 unique findings; user-confirmed v7.7 triaged Q&A fix scope = 5 P0 (all) + 3 P1 paper-grade-critical pre-fire (B-543 trajectory filter + B-546 control_intervention write + B-547 dialog/sleep retry split). 11 P1/P2 deferred post-fire (B-548~B-559 reserved).
+
+### B-512. wrapper-normalized `action_executed` step_record field — gemini Mode C F1 unique P0-1-C* OOB 🛠️ FIXED commit `d8b535a`
+- **Attack**: paper §4.X.6 discloses B0 emits `scroll_direction:"down"` enum (via tool-calling schema) vs B1/B2 emit `delta:[dx,dy]` free-form. Reviewer reading `results/visualwebarena/phase1/*/*/episodes/*.jsonl` sees the asymmetry in `step_record["action"]` and (incorrectly) infers execution-layer cross-baseline confound — "you can't claim B0 > B1 capability when B0 uses restricted safer scroll mechanism". Gemini attack reframed: wrapper at `p79/envs/vwa_wrapper.py:395-414` ALREADY normalizes both forms to `create_scroll_action(direction=...)` (paper §67 schema reform), but post-normalize form was never recorded → reviewer can't verify wrapper alignment from disk alone.
+- **Fix**: `types.py:StepRecordV2` + `v2.py:STEP_RECORD_V2_DEFAULTS` + `PAPER_GRADE_STEP_OPTIONAL_KEYS` add `action_executed: Optional[Dict[str, Any]]`. `vwa_wrapper.py` scroll path captures `_action_executed = {"action_type":"scroll","direction":<up|down|noop>}` post-normalize + stamps into `info["action_executed"]`. `runner/main.py` writes `step_record["action_executed"]` + `action_executed_primary` (B-440 retry-overwrite snapshot pattern). Non-scroll actions: action_executed=None → reviewer interprets as "no normalization, action == action_executed".
+
+### B-534. Manifest provenance theater closure — codex Mode B unique P0-2-B* OOB 🛠️ FIXED commit `6d98273`
+- **Attack**: `aggregate_phase1_full_prereg_decision.py:730-748` accepts `--run-manifest` arg + uses it to compute `manifest_sha256` in output JSON provenance block, BUT `cells_to_use = get_aggregator_cells()` does NOT pass manifest_path → data discovery still goes through default registry. Provenance hash is for a manifest that NEVER GOVERNED THE DATA → reviewer audit trail fake.
+- **Fix**: `aggregate_phase1_full_prereg_decision.py:main()` pass `manifest_path=manifest_path` into `get_aggregator_cells(...)`. A1.21 P0-5-B / B-524 / B-530 already plumbed `manifest_path` through `get_cells` → this closes the canonical-first-number producer plug-in for the param trail.
+
+### B-542. Strict loader + paper-grade quarantine filter — codex Mode B + Claude F7 partial overlap P0-3-B* OOB 🛠️ FIXED commit `6d98273`
+- **Attack**: `aggregate_phase1_full_prereg_decision.py:122-160 _load_cell_per_task` uses plain `json.load()` directly (B-283 `load_episode_summary_strict` bypassed). Quarantined episodes (B-486 `needs_reevaluation=True`, crash-before-evaluator) enter H1/H2/H3 universe as `success=False` failures → paper §1 hero / drop-one oracle lift denominator polluted by non-evaluated tasks.
+- **Fix**: `io_utils.py:load_episode_summary_strict` add `reject_needs_reevaluation: bool = False` kwarg; True → strict mode raises ValueError, lenient logs + returns None. `_load_cell_per_task` switches to strict loader with reject_needs_reevaluation=True; `P79_STRICT=0` env opts to lenient diagnostic skip. `aggregate_phantom_lift.py:load()` also passes the new kwarg (B-325 corrupt-row hygiene principle extends to quarantine class).
+
+### B-543. trajectory_covariates aggregator emits `needs_reevaluation` flag — Claude F7 + codex partial P1-1-AB 2-AI overlap 🛠️ FIXED commit `6d98273`
+- **Attack**: `aggregate_trajectory_covariates.py:206-290` emits per-row covariate dict but doesn't propagate `needs_reevaluation` from summary → paper §4 GLMM consumer sees quarantined episode as normal row, can't filter/annotate. Restart 后 rerun 新 row 也不去重旧 row (rerun has different wallclock_start ts).
+- **Fix**: aggregator emits per-row `needs_reevaluation: bool` column from summary; CSV default fieldnames extended for empty-rows code path. Non-destructive (emit, don't filter) preserves transparency reads; paper §4 GLMM consumer decides drop vs annotate.
+
+### B-544. Evaluator paper-grade hard-raise — codex Mode B unique P0-4-B* OOB 🛠️ FIXED commit `7832008`
+- **Attack**: `environment.py:VwaEvaluator.__init__` L123-126 swallows exception when evaluator harness import / API key / BLIP-2 dep broken → `_available=False`; `evaluate()` L175-177 returns `score=0.0,error="evaluator_unavailable"` silently. `NullEvaluator.evaluate()` L63-65 same. Runner `main.py:2675-2686` writes `success=False` summary. `detect_benchmark_noise()` no `evaluator_unavailable` category → A100 evaluator dep crash → entire batch SR silently zeroed as REAL agent failure. Cross-baseline infra-fragility confound.
+- **Fix**: NEW `EvaluatorUnavailableError(RuntimeError)` exception class. `VwaEvaluator.__init__(paper_grade: bool = False)` paper-grade mode raises from try/except. `evaluate()` paper-grade mode raises at `not self._available` top guard. `create_evaluator(env_cfg, *, paper_grade=False)` propagates. `runner/main.py:139` passes `paper_grade=bool(cfg["paper_grade"])`. Init failure halts entire run (constructor raise); runtime evaluate failure → quarantine summary via B-486 hook. Dev mode keeps fail-open for iteration UX.
+
+### B-545. Reward override mechanism retired — Claude F12 + gemini Mode C B-513 cross-validation P0-5-AC 🛠️ FIXED commit `7832008`
+- **Attack**: paper §3/§4 prose claims "canonical evaluator success, no post-hoc adjustment" but `_run_episode:2614-2630` secretly overrode `score=0 → score=1` when agent self-reported `action_type=="finish"` + parse_valid + env_reward>0. Top-tier reviewer attack: estimand schizophrenia between paper §3 prose ↔ code. B-165 (A1.4a) narrowed override conditions for cross-baseline B0-vs-B1/B2 fairness (fallback_finish leak) but the mechanism itself remained as paper §3 false-claim. Cross-AI 2-AI catch (Claude F12 finding + gemini B-513 prose contradiction).
+- **Fix**: deleted the override block entirely. `success = bool(score >= 1.0)` strict evaluator authority. Paper §3.5 disclosure prose update DEFERRED (parallel session has uncommitted `section3_*.md` / `section4_*.md` edits — paper-prose chunk deferred to post-parallel-reconcile per Phase 2 chunked-fix plan).
+
+### B-546. `control_intervention` runtime write path — Claude F2 + codex B-541 cross-validation P1-6-AB 🛠️ FIXED commit `d8b535a`
+- **Attack**: Phase 1 B-497 added `types.py:control_intervention` + `v2.py` default + `PAPER_GRADE_STEP_OPTIONAL_KEYS` but left runtime write as "Phase 2 audit slot deferred". 3 diagnostic controls (`_query_sanitization_control` / `_anti_repeat_control` / `_no_early_finish_control`) fired `diag_notes` strings to logger.info but NEVER wrote to step_record. Codex Mode B empirical spot-check: `grep -c '"control_intervention"' results/visualwebarena/phase1/*/*/episodes/*.jsonl = 0` → schema fake → paper §3 diagnostic-exploration disclosure unsubstantiated.
+- **Fix**: `_run_episode` body snapshot `_control_original_action` before any control fires; capture each `_control_fires.append({"type": <kind>, "reason": <note>})`; write `step_record["control_intervention"] = {"original_action": ..., "fires": [...]}` when fires non-empty, else None. Paper §3 action taxonomy can now distinguish synthetic fallback from agent self-emission via JSONL field alone.
+
+### B-547. dialog_meta + runtime_sleep_ms retry-overwrite split — Claude F3 + codex B-542 cross-validation P1-7-AB 🛠️ FIXED commit `d8b535a`
+- **Attack**: `runner/main.py:2230 + :2408` read `dialog_meta` + `runtime_sleep_ms` directly from POST-retry `next_info`. B-440 sibling propagation gap. Retry path at L2061-2067 overwrites `next_info=retry_info` → primary action's dialog (e.g. confirm box on click delete) + primary's settle-tax silently dropped if baseline_retry_on_no_progress fired. Cross-baseline confound: B0 235B rarely retries → clean trail; B1/B2 4B retries often → biased trail. Paper §3.5.1 misclick blast-radius rate + paper §4 latency `runtime_sleep` column both polluted.
+- **Fix**: snapshot pattern mirror B-440 / B-450. `_primary_dialog_meta` + `_primary_runtime_sleep_ms` captured before retry block. step_record writes `dialog_meta_primary` / `dialog_meta_retry` (legacy `dialog_meta` retains post-retry semantics). `latency_ms` gains `runtime_sleep_primary` / `runtime_sleep_retry` keys. Paper §3.5.1 / §4 latency cross-baseline parity reads primary fields.
+
+**B-numbers consumed (A1.5b Phase 2 pre-fire batch)**: B-512 + B-534 + B-542~B-547 = 8 IDs across 3 chunks (`6d98273`, `7832008`, `d8b535a`).
+
+**Cross-AI agreement (A1.5b Phase 2)**:
+- 2-AI overlap (Claude+codex): B-542 strict loader + B-543 quarantine filter + B-546 control_intervention + B-547 dialog/sleep retry split = 4
+- 2-AI overlap (Claude+gemini): B-545 reward override rip out (Claude F12 + gemini B-513 cross-val) = 1
+- codex unique (analysis/metrics/environment scope): B-534 manifest theater + B-544 evaluator hard-raise = 2 (B-537/538/539 P1 deferred post-fire)
+- gemini unique (paper prose framing): B-512 action_executed schema enrichment (reframed from gemini's wrapper-refactor attack via empirical wrapper-already-aligned spot-check) = 1
+- Claude self-audit downgrade: F5 wallclock_end consumer (gemini defused — paper §4 doesn't claim duration covariate)
+
+**Deferred to post-fire Chunks 5-6** (per user `(1A) wait-fix P0+P1-paper-prose, fire 后处理 P1-substrate` decision):
+- substrate batch (B-548~B-552 reserved): soft signature sibling / aggregator atomic / cost component alias / wasted energy zero / integrity report promote
+- P2 batch (B-553~B-557 reserved): `.stale_<ts>` ns+uniqueness / substring 404 regex anchor / watchdog auto-retry marker check / router history_window guard / mid-episode infra extend / raw_action defensive guard
+- paper §1 hero TBD prose (B-558~B-559 reserved): defer to post-parallel-reconcile (parallel session has uncommitted `section1_intro.md` / `section3_*.md` / `section4_*.md`)
+
+**Next available B-number**: B-548+ (consumed below by post-fire defer batch when fired).
