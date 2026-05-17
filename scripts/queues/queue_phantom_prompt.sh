@@ -86,7 +86,7 @@ else
 fi
 
 mint_run_id "${CFG_NAME}" "${PHASE_DIR}" "phantom_prompt"
-TS_FULL="$(date +%Y%m%d_%H%M%S)"  # retained for runner log naming only
+# B-581 (A1.13 P0-5): RUNNER_LOG uses RUN_ID (0-collision); TS_FULL removed.
 
 RUN_DIR="${PHASE_DIR}/${RUN_ID}"
 echo "[phantom_prompt] config=${CONFIG}"
@@ -107,7 +107,7 @@ else
     echo "[phantom_prompt] RESET_BEFORE=1 but BENCHMARK=wa — WA reset+auth refresh uses different mechanism, skipping"
   fi
 
-  RUNNER_LOG="${LOG_DIR}/${CFG_NAME}_resume_${TS_FULL}.log"
+  RUNNER_LOG="${LOG_DIR}/${RUN_ID}_runner.log"
   echo "[phantom_prompt] launching runner → ${RUNNER_LOG}"
   # codex stress v6 C4: redirect runner stdout/stderr to RUNNER_LOG (was /dev/null).
   # Python logging goes to stderr — /dev/null discarded all phantom runner logs,

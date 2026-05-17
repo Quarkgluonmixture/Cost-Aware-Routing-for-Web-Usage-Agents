@@ -183,16 +183,27 @@ for cmd in "$@"; do
   # New behavior: capture rc explicitly; nonzero rc + no run_id printed → fatal;
   # nonzero rc + run_id printed (idempotent-skip case where queue script already
   # had complete data) → continue (legacy path).
-  set +e
+  #
+  # B-580 (A1.13 P0-4 Claude OOB unique, 2026-05-17): pre-fix `set +e; ...;
+  # set -e` bracket — script top is `set -uo pipefail` (NO -e), so set +e is
+  # no-op and the trailing set -e *activates* errexit for the rest of chain.
+  # Combined with pipefail, `run_id=$(... | grep -oP '...' | tail -1)` would
+  # silently exit on grep-no-match (queue script failure printing no run_id=
+  # line). Explicit FATAL log at "[FATAL] queue script rc=" was UNREACHABLE
+  # dead code. Empirically verified: `set -uo pipefail; set +e; set -e;
+  # x=$(echo nope | grep something | tail -1)` exits script with rc=1.
+  # Fix: no set -e flip; rely on `|| true` defense on grep extracts so the
+  # downstream `[[ -z "${run_id}" ]]` FATAL block runs as designed.
   out=$(FORCE_NEW="${FORCE_NEW:-0}" RESET_BEFORE="${RESET_FLAG}" bash "${SCRIPT_DIR}/${script_name}" \
         ${cmd#${script_name} } 2>&1)
   queue_rc=$?
-  set -e
   echo "$out" | sed 's/^/    /'
 
-  # Extract run_id + condition_id from queue script output
-  run_id=$(echo "$out" | grep -oP 'run_id=\K\S+' | tail -1)
-  cond_id=$(echo "$out" | grep -oP 'condition=\K\S+' | tail -1)
+  # Extract run_id + condition_id from queue script output.
+  # `|| true` defense (B-580 P0-4): without it, grep-no-match + pipefail + -e
+  # would silently exit before reaching the explicit empty-string FATAL below.
+  run_id=$(echo "$out" | grep -oP 'run_id=\K\S+' | tail -1 || true)
+  cond_id=$(echo "$out" | grep -oP 'condition=\K\S+' | tail -1 || true)
 
   # B-301 P1-4: nonzero queue rc + no run_id minted = reset/auth FATAL or
   # arg-parse error. Surface + abort. Nonzero rc + run_id minted = legacy
@@ -218,55 +229,86 @@ for cmd in "$@"; do
 
   wait_for_runner_done "$run_id" "[${idx}/$#] $cmd"
 
-  # ---- C3 completion sentinel (codex stress v6, 2026-05-14; A1.13 P0-3 upgraded 2026-05-16) ----
-  # Runner process gone != success. A mid-run crash also makes pgrep empty.
-  # File-presence alone was insufficient: same-second FORCE_NEW collision, mid-write
-  # SIGKILL, or stale prior-run summary can all pass a `-f` check yet contain
-  # 0-byte / truncated JSON / wrong-condition data. A1.13 P0-3 (3-AI overlap):
-  # validate (a) file non-empty, (b) JSON parsable, (c) condition_id matches,
-  # (d) total_tasks > 0 before accepting cell completion.
-  # B-302 (A1.17 P0-4, codex OOB unique LAUNCH BLOCKER): pre-fix sentinel queried
-  # `total_tasks / num_tasks / scored_task_count` — none exist in actual
-  # condition_summary_v2.json schema (verified empirically 2026-05-16 on 5 sample
-  # summaries: top-level has `episodes: int` and `condition_id`, NOT total_tasks).
-  # Pre-fix every cell completion failed validation → chain aborted after cell 1.
-  # New: use `episodes` field (the canonical count) + compare against expected_n
-  # per site (sources of truth: launch.sh:67-70 SITE_N table); accept ≥90%
-  # completion as valid (allows interrupt+resume partial cells), reject below.
+  # ---- C3 completion sentinel ----
+  # History: codex stress v6 (2026-05-14) introduced JSON validity check; A1.13
+  # (2026-05-16) added condition_id field check + episodes field semantics;
+  # A1.13 fix-scope batch (2026-05-17) hardens 3 ways:
+  #
+  #   B-578 (P0-2 codex F2 + gemini G1 2-AI OOB): site-key lookup. Pre-fix loop
+  #     `classifieds reddit shopping wa_shopping...` substring-match break-first
+  #     made `B0_dom_wa_shopping_<ts>` hit `shopping` (substring) before
+  #     `wa_shopping` → wrong expected_n (466 VWA vs 192 WA). Fix: parse
+  #     benchmark + site STRUCTURALLY from run_id pattern (longer-prefix-first
+  #     OR explicit wa_ prefix check), no substring fallthrough.
+  #
+  #   B-579 (P0-3 Claude OOB): bash `${cond_id!r}` parameter expansion is
+  #     invalid (bash treats `${var@op}` w/ op `r` as bad substitution exit 1).
+  #     Pre-fix python heredoc f-string `expected ${cond_id!r}` would bash-parse
+  #     fail on the cid != cond_id branch. Fix: export EXPECTED_CID env var,
+  #     reference via os.environ in python (no bash `!r` parsing).
+  #
+  #   B-582 (P1-6 codex F5 OOB): pre-fix `ep < expected * 0.9` accepted 90%
+  #     partial cells as paper-grade complete. User directive 2026-05-17
+  #     ("应该百分百 paper grade"): require exact match. `PAPER_GRADE_ALLOW_PARTIAL=1`
+  #     env override for explicit pilot/dirty mode. SITE_EXPECTED_N values
+  #     switched to post-exclusion scored_task_count (cls=224 / red=205 /
+  #     shop=435 per memory `reference_fp_architecture_2026-05-14`); WA stays
+  #     at pre-exclusion since WA has no N/A taxonomy (per prereg).
   declare -A SITE_EXPECTED_N=(
-    [classifieds]=234 [reddit]=210 [shopping]=466
+    [classifieds]=224 [reddit]=205 [shopping]=435
     [wa_shopping]=192 [wa_shopping_admin]=182 [wa_reddit]=106
   )
-  # Extract site from cond_id (formats like `phase1_dom_router_0` won't have site;
-  # but full run_id pattern is e.g. `B0_dom_classifieds_20260516_...`)
+
+  # B-578 P0-2: structural site-key parse, NOT substring loop. Benchmark
+  # determined by `_wa_` substring; site is the token after benchmark prefix.
   expected_n=0
-  for site_key in classifieds reddit shopping wa_shopping wa_shopping_admin wa_reddit; do
-    if [[ "${run_id}" == *"_${site_key}_"* ]]; then
-      expected_n="${SITE_EXPECTED_N[${site_key}]}"; break
-    fi
-  done
+  parsed_site=""
+  if [[ "${run_id}" == *_wa_shopping_admin_* ]]; then parsed_site="wa_shopping_admin"
+  elif [[ "${run_id}" == *_wa_shopping_* ]];        then parsed_site="wa_shopping"
+  elif [[ "${run_id}" == *_wa_reddit_* ]];          then parsed_site="wa_reddit"
+  elif [[ "${run_id}" == *_classifieds_* ]];        then parsed_site="classifieds"
+  elif [[ "${run_id}" == *_reddit_* ]];             then parsed_site="reddit"
+  elif [[ "${run_id}" == *_shopping_* ]];           then parsed_site="shopping"
+  fi
+  if [[ -n "${parsed_site}" ]]; then
+    expected_n="${SITE_EXPECTED_N[${parsed_site}]}"
+  fi
+
+  # B-579 P0-3: export EXPECTED_CID for safe python f-string repr (no bash `!r`).
+  export EXPECTED_CID="${cond_id}"
+  export EXPECTED_N="${expected_n}"
 
   summary_found=""
   for base in results/visualwebarena/phase1 results/webarena/phase1; do
     cand="${REPO_DIR}/${base}/${run_id}/${cond_id}/condition_summary_v2.json"
     if [[ -s "${cand}" ]]; then
-      if python3 -c "
-import json, sys
+      if EXPECTED_CID="${cond_id}" EXPECTED_N="${expected_n}" SUMMARY_PATH="${cand}" python3 -c "
+import json, os, sys
+expected_cid = os.environ.get('EXPECTED_CID', '')
 try:
-    d = json.load(open('${cand}'))
+    expected_n = int(os.environ.get('EXPECTED_N', '0'))
+except ValueError:
+    expected_n = 0
+summary_path = os.environ.get('SUMMARY_PATH', '')
+try:
+    d = json.load(open(summary_path))
 except Exception as e:
     print(f'invalid JSON: {e}', file=sys.stderr); sys.exit(1)
 cid = d.get('condition_id', '')
-if cid and cid != '${cond_id}':
-    print(f'condition_id mismatch: got {cid!r}, expected ${cond_id!r}', file=sys.stderr); sys.exit(2)
-# B-302 (A1.17 P0-4): canonical field is 'episodes' (int count); legacy
-# fallbacks kept for forward-compat if schema ever rev'd.
+# B-579 P0-3: safe f-string repr now that values come via env, not bash heredoc interp.
+if cid and cid != expected_cid:
+    print(f'condition_id mismatch: got {cid!r}, expected {expected_cid!r}', file=sys.stderr); sys.exit(2)
+# Canonical field is 'episodes' (int count); legacy fallbacks kept for forward-compat.
 ep = d.get('episodes', d.get('total_tasks', d.get('num_tasks', d.get('scored_task_count', 0))))
 if not isinstance(ep, int) or ep <= 0:
     print(f'episodes invalid: {ep!r}', file=sys.stderr); sys.exit(3)
-expected = ${expected_n:-0}
-if expected > 0 and ep < expected * 0.9:
-    print(f'partial completion {ep}/{expected} = {ep/expected:.1%} < 90% threshold', file=sys.stderr); sys.exit(4)
+# B-582 P1-6: exact-match by default (user directive 2026-05-17 '应该百分百 paper grade').
+# PAPER_GRADE_ALLOW_PARTIAL=1 env enables explicit pilot/dirty fallback (warn + advance).
+if expected_n > 0 and ep != expected_n:
+    if os.environ.get('PAPER_GRADE_ALLOW_PARTIAL') == '1':
+        print(f'WARN partial cell {ep}/{expected_n} = {100*ep/expected_n:.1f}% (PAPER_GRADE_ALLOW_PARTIAL=1; degraded mode)', file=sys.stderr)
+    else:
+        print(f'FATAL episodes={ep} != expected={expected_n} ({100*ep/expected_n:.1f}%); abort. Set PAPER_GRADE_ALLOW_PARTIAL=1 for explicit dirty/pilot mode.', file=sys.stderr); sys.exit(4)
 sys.exit(0)
 " 2>/tmp/queue_chain_sentinel_err; then
         summary_found="${cand}"; break

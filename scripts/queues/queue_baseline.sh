@@ -118,8 +118,9 @@ else
 fi
 
 mint_run_id "${CFG_NAME}" "${PHASE_DIR}" "baseline"
-# TS_FULL retained for runner log naming (no longer used in RUN_ID since A1.13 P1-2).
-TS_FULL="$(date +%Y%m%d_%H%M%S)"
+# B-581 (A1.13 P0-5 gemini G4 OOB, 2026-05-17): RUNNER_LOG now uses RUN_ID
+# (has PID+RANDOM+nanos suffix) → 0-collision risk when master orchestrator
+# fires 2 chains in same second. Removed redundant TS_FULL recompute.
 
 RUN_DIR="${PHASE_DIR}/${RUN_ID}"
 echo "[baseline] config=${CONFIG}"
@@ -142,7 +143,7 @@ else
     echo "[baseline] RESET_BEFORE=1 but BENCHMARK=wa — WA reset+auth refresh uses different mechanism, skipping"
   fi
 
-  RUNNER_LOG="${LOG_DIR}/${CFG_NAME}_runner_${TS_FULL}.log"
+  RUNNER_LOG="${LOG_DIR}/${RUN_ID}_runner.log"
   echo "[baseline] launching runner → ${RUNNER_LOG}"
   setsid nohup "${PYTHON_BIN}" scripts/run_experiment.py \
     --config "${CONFIG}" \

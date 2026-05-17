@@ -122,10 +122,14 @@ mint_run_id() {
   local log_prefix="${3:-queue}"
   local ts_date ts_full collision_token
   ts_date="$(date +%Y%m%d)"
-  # P1-2 (2026-05-16 A1.13): %N nanoseconds + $$ pid + $RANDOM defeats same-second
-  # collision when master orchestrator fires multiple chains in tight loop.
-  # Format: YYYYMMDD_HHMMSS_PIDxxxx_Rxxxxx (length stable, parsable).
-  collision_token="$$_R${RANDOM}"
+  # B-587 (A1.13 P1-10 Claude, 2026-05-17): now actually using %N nanoseconds
+  # alongside PID + $RANDOM. Pre-fix comment claimed "%N nanoseconds + $$ pid +
+  # $RANDOM defeats same-second collision" but `date +%Y%m%d_%H%M%S` had no
+  # `%N` token → only PID+RANDOM defended (Claude OOB comment-vs-code drift).
+  # Format: YYYYMMDD_HHMMSS_NNNNNNNNN_PIDxxxx_Rxxxxx (~10⁻¹² collision).
+  local nanos
+  nanos="$(date +%N)"
+  collision_token="${nanos}_$$_R${RANDOM}"
   ts_full="$(date +%Y%m%d_%H%M%S)_${collision_token}"
   if [[ "${FORCE_NEW:-0}" == "1" ]]; then
     RUN_ID="${cfg_name}_${ts_full}"
@@ -134,14 +138,40 @@ mint_run_id() {
     local existing
     existing="$(ls -dt "${phase_dir}/${cfg_name}_"[0-9]* 2>/dev/null | head -1 || true)"
     if [[ -n "${existing}" ]]; then
-      RUN_ID="$(basename "${existing}")"
-      echo "[${log_prefix}] resuming existing run_id=${RUN_ID}"
+      # B-588 (A1.13 P1-9 Claude OOB, 2026-05-17): stale-resume fingerprint
+      # check. Pre-fix blindly resumed mtime-newest match even when its
+      # condition_meta.json showed pre-fix schema_version. Now verify v2 schema
+      # before resume; mismatch → fresh timestamp, log "skipping stale".
+      local stale=0
+      local meta
+      for meta in "${existing}"/*/condition_meta.json; do
+        if [[ -f "${meta}" ]]; then
+          if ! grep -q '"schema_version"[[:space:]]*:[[:space:]]*"v2' "${meta}" 2>/dev/null; then
+            stale=1
+            break
+          fi
+        fi
+      done
+      if [[ "${stale}" == "1" ]]; then
+        echo "[${log_prefix}] skipping stale resume candidate $(basename "${existing}") (schema_version != v2); minting fresh run_id"
+        RUN_ID="${cfg_name}_${ts_full}"
+      else
+        RUN_ID="$(basename "${existing}")"
+        echo "[${log_prefix}] resuming existing run_id=${RUN_ID}"
+      fi
     else
       RUN_ID="${cfg_name}_${ts_date}"
       echo "[${log_prefix}] new run_id=${RUN_ID}"
     fi
   fi
+  # B-581 (A1.13 P0-5 gemini G4 OOB, 2026-05-17): export RUN_TS_FULL so callers
+  # don't independently recompute `date +%Y%m%d_%H%M%S` (different second from
+  # mint = log filename collision when master orchestrator fires 2 chains in
+  # same second). Callers should now use ${RUN_ID} directly for RUNNER_LOG
+  # naming (RUN_ID has PID+RANDOM+nanos → 0-collision); RUN_TS_FULL kept for
+  # callers wanting just the date portion of mint.
   export RUN_ID
+  export RUN_TS_FULL="${ts_full}"
 }
 
 # ---------- 5. Reset + auth gate (B-224 hard-fail) ----------

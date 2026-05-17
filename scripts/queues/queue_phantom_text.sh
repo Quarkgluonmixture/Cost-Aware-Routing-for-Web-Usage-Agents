@@ -77,12 +77,19 @@ if [[ ! -f "${CONFIG}" ]]; then
   exit 1
 fi
 
-# condition_id stays as phantom_dom_router_0 for paper-grade compatibility —
-# existing run dirs (B0_phantom_text_*) all contain phase1_phantom_dom_router_0/.
-# Newly-introduced phantom_text YAMLs may declare phantom_text_router_0 instead;
-# in that case the runner reads the condition_id from YAML and this constant is
-# only used for watchdog targeting.
-COND_ID="phase1_phantom_dom_router_0"
+# B-577 (A1.13 P0-1, 2026-05-17): COND_ID canonical sweep. User directive
+# 2026-05-17 (/stress A1.13 fix-scope): "phantom_dom 只应该存在于 archive results
+# 里面,其他地方都应该为 phantom_text". Pre-fix this constant was legacy
+# `phase1_phantom_dom_router_0` for backward-compat with April-2026 historical
+# run-dirs containing legacy subdirs. Post-fix: canonical only. Runner derives
+# from conditions.py:172 `cid = f"phase1_{obs_mode}_router_0"` → for
+# obs_mode="phantom_text" produces `phase1_phantom_text_router_0`. Watchdog
+# `--condition` and chain sentinel both must target canonical or they miss
+# the actual write target (silent watchdog idle alert + sentinel FATAL abort).
+# Historical run-dirs (e.g., B0_phantom_text_classifieds_20260427) keep their
+# legacy `phase1_phantom_dom_router_0/` subdirs as archive evidence;
+# fresh fires write to `phase1_phantom_text_router_0/` per canonical schema.
+COND_ID="phase1_phantom_text_router_0"
 
 PYTHON_BIN="${REPO_DIR}/.venv/bin/python3"
 LOG_DIR="${REPO_DIR}/logs"
@@ -106,29 +113,14 @@ else
   PHASE_DIR="${REPO_DIR}/results/visualwebarena/phase1"
 fi
 
-# Resume detection: phantom_text has a legacy phantom_dom run-dir prefix (pre-rename
-# 2026-05-14) that some live runs still use. Try modern prefix first via mint_run_id;
-# if no match, fall back to manual legacy-prefix glob before letting mint_run_id
-# emit a fresh timestamp. mint_run_id alone handles FORCE_NEW path correctly.
-RUN_PREFIX_LEGACY="${BASELINE}_phantom_dom"
-[[ "${BENCHMARK}" == "wa" ]] && RUN_PREFIX_LEGACY="${RUN_PREFIX_LEGACY}_wa"
-RUN_PREFIX_LEGACY="${RUN_PREFIX_LEGACY}_${SITE}"
-
-if [[ "${FORCE_NEW:-0}" != "1" ]]; then
-  # Legacy glob first (only when not forcing new) — preserves backward-compat for
-  # in-progress runs created before the phantom_dom → phantom_text rename.
-  LEGACY_EXISTING="$(ls -dt "${PHASE_DIR}/${RUN_PREFIX_LEGACY}_"[0-9]* 2>/dev/null | head -1 || true)"
-  if [[ -n "${LEGACY_EXISTING}" ]] && ! ls -dt "${PHASE_DIR}/${CFG_NAME}_"[0-9]* 2>/dev/null | head -1 >/dev/null; then
-    RUN_ID="$(basename "${LEGACY_EXISTING}")"
-    export RUN_ID
-    echo "[phantom_text] resuming legacy phantom_dom run_id=${RUN_ID}"
-  fi
-fi
-# If RUN_ID not already set by legacy resume, use lib helper (handles FORCE_NEW + glob + fresh).
-if [[ -z "${RUN_ID:-}" ]]; then
-  mint_run_id "${CFG_NAME}" "${PHASE_DIR}" "phantom_text"
-fi
-TS_FULL="$(date +%Y%m%d_%H%M%S)"  # retained for runner log naming only
+# B-577 (A1.13 P0-1, 2026-05-17): legacy phantom_dom resume removed. User
+# directive 2026-05-17: phantom_dom artifacts only exist in archive results
+# (historical run-dirs created pre-rename 2026-05-14); they are NOT a valid
+# resume target — the legacy `phase1_phantom_dom_router_0/` subdirs have
+# frozen schema that the post-rename runner cannot extend (different cond_id
+# write path). Force fresh-or-canonical-resume only via mint_run_id.
+mint_run_id "${CFG_NAME}" "${PHASE_DIR}" "phantom_text"
+# B-581 (A1.13 P0-5): RUNNER_LOG uses RUN_ID (0-collision); TS_FULL removed.
 
 RUN_DIR="${PHASE_DIR}/${RUN_ID}"
 echo "[phantom_text] config=${CONFIG}"
@@ -149,7 +141,7 @@ else
     echo "[phantom_text] RESET_BEFORE=1 but BENCHMARK=wa — WA reset+auth refresh uses different mechanism, skipping"
   fi
 
-  RUNNER_LOG="${LOG_DIR}/${CFG_NAME}_resume_${TS_FULL}.log"
+  RUNNER_LOG="${LOG_DIR}/${RUN_ID}_runner.log"
   echo "[phantom_text] launching runner → ${RUNNER_LOG}"
   # codex stress v6 C4: redirect runner stdout/stderr to RUNNER_LOG (was /dev/null).
   # Python logging goes to stderr — /dev/null discarded all phantom runner logs,
