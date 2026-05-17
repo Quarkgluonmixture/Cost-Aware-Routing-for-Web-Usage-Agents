@@ -172,6 +172,8 @@ B0 infra prereq ──┘                                                       
 - [ ] **#11 A100 VM VWA docker bring-up** — ⭐ gates Pass-1 launch
 - [ ] A100 playwright install
 - [ ] **#10 analysis 层 3-model 改造** — gates §D, 不 gate launch
+- [ ] **VWA per-task split configs materialized** — A1.18-re B-577/B-589: 912 gitignored per-task configs (`config_files/vwa/test_{site}/{0..N}.json`) deterministically regenerated via `make vwa-generate-configs` (sets DATASET=visualwebarena + per-site env vars + invokes `external/visualwebarena/scripts/generate_test_data.py`). Required after fresh submodule clone or after `.raw.json` template update. Gates **Pass-1 launch** (without this, runner cannot load tasks).
+- [ ] **`.auth/` re-capture against replayer's local VWA Docker stack** — A1.18-re B-579: pre-§eb5cbd8 archive `.auth/{classifieds,reddit,shopping}_state.json` files contain cookies bound to Tailscale IP `100.95.81.103`. Replayer (incl. A100 self-hosted run) must run `bash scripts/vwa/setup_vwa.sh` to invoke `auto_login.py` against their local stack BEFORE first task launch — else silent cookie-domain mismatch causes all auth-required navigation to fail. Gates **Pass-1 launch** on any host where IP ≠ `100.95.81.103`.
 
 ### B1. Pre-run lock 文档 (= launch gate, 引 `pre_run/` 不复制)
 

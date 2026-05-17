@@ -35,7 +35,7 @@ PYTEST ?= .venv/bin/pytest
         analyze-layer0 analyze-layer1 analyze-layer2 analyze-layer3 analyze-layered \
         aggregate-sr-fp fig12-micro-heatmap aggregate-cost-electricity analyze-mechanism \
         analysis _per_run_all _aggregate _figures _status active \
-        glm-update-cells glm-refresh-playbook check-links
+        glm-update-cells glm-refresh-playbook check-links vwa-generate-configs
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
@@ -146,7 +146,7 @@ pre-launch-check:
 	@test -z "$$(git status --porcelain --untracked-files=all)" || (echo "❌ untracked files present (run: git status --porcelain --untracked-files=all)"; exit 1)
 	@echo "   ✓ clean (no tracked diffs, no untracked files)"
 	@echo "2. VWA submodule SHA matches lock..."
-	@LOCK_SHA="1c3a615308fd9f17c73a9d33a96cf29ec6807d48"; \
+	@LOCK_SHA="2f9b0b47175a1bffa01e13100e3075e212161a89"; \
 	 ACTUAL=$$(git -C external/visualwebarena rev-parse HEAD 2>/dev/null); \
 	 test "$$ACTUAL" = "$$LOCK_SHA" || (echo "❌ VWA SHA mismatch: expected $$LOCK_SHA, got $$ACTUAL"; exit 1); \
 	 echo "   ✓ $$LOCK_SHA"
@@ -557,6 +557,25 @@ error-scan:
 # check-links: scan all docs for broken path-based + wikilink references
 check-links:
 	@.venv/bin/python scripts/maintenance/dead_link_check.py --quiet
+
+# vwa-generate-configs: materialize the 912 per-task split configs from tracked
+# `.raw.json` templates. /stress A1.18-re B-589 P1-10-B (codex 2026-05-17):
+# OSF replayers + fresh-clone setup must run this after `git clone` + `git
+# submodule update --init` because the split files are gitignored derived
+# artifacts. Required env vars (B-577 idempotent rebuild + B-588 byte-stable):
+# DATASET=visualwebarena CLASSIFIEDS REDDIT SHOPPING HOMEPAGE WIKIPEDIA
+.PHONY: vwa-generate-configs
+vwa-generate-configs:
+	@if [ -z "$${DATASET:-}" ]; then export DATASET=visualwebarena; fi; \
+	for v in CLASSIFIEDS REDDIT SHOPPING HOMEPAGE; do \
+	  if [ -z "$$(eval echo \$$$$v)" ]; then \
+	    echo "❌ missing env var: $$v (source scripts/vwa_env_remote.sh or scripts/vwa_env_a100.sh first)"; \
+	    exit 64; \
+	  fi; \
+	done; \
+	cd external/visualwebarena && DATASET=visualwebarena $(MAKE_PYTHON_BIN) python scripts/generate_test_data.py; \
+	echo "✅ VWA per-task configs materialized at external/visualwebarena/config_files/vwa/test_{classifieds,reddit,shopping}/"
+MAKE_PYTHON_BIN ?= .venv/bin/
 
 # launch: one-shot wrapper — auto-create cell note + pre-launch check + nohup queue
 #   Usage: make launch BASELINE=B0 SITE=reddit MODE=phantom_text [RESET=1] [DRY=1]

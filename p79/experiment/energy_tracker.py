@@ -54,12 +54,17 @@ REGION_INTENSITY_G_PER_KWH: Dict[str, float] = {
     "us-west-1": 200.0, "us-west-2": 200.0,
     # Europe
     "eu-west-1": 296.0,   # Ireland
-    "eu-west-2": 257.0,   # UK
+    # /stress A1.18-re (B-601 P2-10-C Gemini, 2026-05-17): UK default updated
+    # from 257 (IEA 2023) to 220 (UK National Grid 2024 average), matching the
+    # `configs/exp_v2_base.yaml` per-config override that was previously called
+    # out as "decorative" in paper §8.7. Paper §8.7 prose now states the live
+    # default is 220 with no "decorative" disclaimer.
+    "eu-west-2": 220.0,   # UK (2024 grid average)
     "eu-west-3": 85.0,    # France (nuclear-heavy)
     "eu-central-1": 385.0,  # Germany
     "eu-north-1": 41.0,   # Sweden
     "eu-south-1": 390.0,  # Italy
-    "germany": 385.0, "france": 85.0, "uk": 257.0,
+    "germany": 385.0, "france": 85.0, "uk": 220.0,
     "sweden": 41.0, "norway": 29.0, "ireland": 296.0,
     "netherlands": 380.0, "spain": 195.0, "poland": 773.0,
     # Asia-Pacific

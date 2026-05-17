@@ -222,11 +222,13 @@ sensitivity check is in §5 Appendix and does not gate the main mechanism claim.
 ## §4.X.11 VWA submodule `p79-patches` branch — full disclosure table
 
 We run paper-grade experiments against a forked VisualWebArena submodule pinned to branch
-`p79-patches`, HEAD `1c3a615308fd9f17c73a9d33a96cf29ec6807d48`. Upstream base is
+`p79-patches`, HEAD `2f9b0b47175a1bffa01e13100e3075e212161a89`. Upstream base is
 `89f5af29305c3d1e9f97ce4421462060a70c9a03` on `main`. The full set of behavioural patches
 between the upstream base and our pinned HEAD is reproduced below for OSF reproducibility
-review and cross-paper comparability. The combined diff has SHA-256
-`f1315dc49a33c4b5e8d7d3958974d26f4e6ad330b15b8ce01a6eb8b80a958b1a`.
+review and cross-paper comparability. Per **B-580 P1-1-AC\*** (2026-05-17 /stress A1.18-re Claude+Gemini OOB), the patch-bundle integrity witness has been migrated from the prior `git diff base..HEAD | sha256sum` recipe (environment-dependent on `diff.algorithm` / `core.autocrlf` / git version) to a **tree-hash chain** of git-canonical commit and tree SHAs (`git rev-list base..HEAD --format=tformat:'%H %T' | sha256sum`), which is byte-deterministic across all git versions and OS environments. The current tree-hash-chain SHA-256 is
+`5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f`.
+
+**Archive vintage disclosure (added 2026-05-17 /stress A1.18-re B-590 P1-11-C Gemini)**: The Phase 1a pre-fix archive (B0/B1 only, collected pre-2026-05-13 on DGX→quark Tailscale stack) was produced under a much earlier submodule HEAD (`f0c835b` or earlier — predating the `eb5cbd8` A1.18 sweep + `c1765ee` / `1c3a615` / `2f9b0b4` A1.25-and-onward sweeps). The canonical paper-grade rerun (post-§139.8 FP architecture + B2 = Gemma3-VL included) runs on A100 self-hosted VWA Docker against the current pinned HEAD `2f9b0b4`. **Paper §1 hero numbers cite ONLY the canonical-rerun-at-`2f9b0b4` data** — archive data is retained as Appendix D "pre-§139.8 contamination reference" only, never folded into §1 4-fold-drop-in claim. Within-rerun comparisons (across modes / baselines / sites on the same A100 stack at the same HEAD) are unaffected by this version-rift; cross-vintage comparison (archive ↔ canonical) is explicitly disclaimed as a confound vector — not used for paper-grade claims.
 
 | Commit (short) | Subject | Behavioural impact | Affected files | Paper §-disclosure |
 |---|---|---|---|---|
@@ -238,27 +240,37 @@ review and cross-paper comparability. The combined diff has SHA-256
 | `eb5cbd8` | /stress A1.18 full sweep (15 findings) | (a) 913 VWA task config files rewritten to canonical `__SHOPPING__` / `__CLASSIFIEDS__` / `__REDDIT__` / `__WIKIPEDIA__` placeholders, closing the private-IP-in-config-data propagation (793-hit baseline reduced to 0 tracked-file hits); (b) `envs.py` chromium launch args env-driven via `VWA_CHROMIUM_LAUNCH_ARGS` (no hardcoded private IP); (c) `processors.py` networkidle wait moved to single shared barrier in `ObservationHandler.get_observation`, removing the asymmetric pre-fix where text observation never waited; (d) `helper_functions.py` softened-assert tightened to log unexpected judge responses to `evaluator_unexpected_response_log.csv` (gitignored); (e) `openai_utils.py` lazy client wrapped in `threading.Lock` with sha256(api_key + base_url) env-fingerprint check; (f) async OpenAI throttlers return `str` directly (caller dict-indexing path normalized); (g) `aexecute_action` signature now includes `obseration_processor` param, CLEAR/UPLOAD branches use truly async primitives; (h) `create_upload_action` sets `ActionTypes.UPLOAD` (was `TYPE`, making the UPLOAD branch unreachable); (i) async `aexecute_mouse_hover` + `aexecute_upload` wrap coords in `float()` (sibling propagation completion); (j) `prepare.sh` adds Windows `py -3` fallback | `browser_env/{actions.py, envs.py, processors.py}`, `evaluation_harness/helper_functions.py`, `llms/providers/openai_utils.py`, `prepare.sh`, `config_files/vwa/test_shopping.json` + 912 gitignored per-task config files | §4.X.5 (viewport stale-doc closure), §3.5 (judge / clear-before-type / observation timing), §4.X.12 (IP propagation closed), this §4.X.11 row |
 | `c1765ee` | /stress A1.25 GRL Chunk 1 (3 fixes) | (a) **B-445** `create_mouse_click_action` truthiness fix at `actions.py:657-672` — pre-fix `if left and top:` rejected legitimate `(0.0, y)` / `(x, 0.0)` boundary clicks → vision-mode coord clicks at viewport edges silently dropped; post-fix `if left is not None and top is not None:` preserves boundary values; (b) **B-446** sync `SELECT_OPTION` at `actions.py:1410-1428` extracts `pw_action_args` / `pw_action_kwargs` from parsed final call and passes forward — pre-fix `parsed_code[-1]["arguments"]` was parsed but discarded → `locator.select_option()` called with no option (silent no-op); (c) **B-447** sync UPLOAD parser+factory at `actions.py:1717` + `:1807` — pre-fix factory used `ActionTypes.TYPE` (UPLOAD branch unreachable) and id-based regex matched `type` not `upload`, so upload was doubly dead | `browser_env/actions.py` | §3.5.3 P79 GRL action-layer disclosure (catalog entries B-445/446/447 in `master_bug_catalog.md`) |
 | `1c3a615` | /stress A1.25 GRL Chunk 4 (4 fixes) | (a) **B-535** `llm_fuzzy_match` polarity inversion at `helper_functions.py:626-634` — pre-fix `if "correct" in response: return 1.0` substring-matched `"incorrect"` / `"partially correct"` / `"not correct"` all as 1.0 (long-standing upstream VWA bug, monkeypatch-verified); post-fix check negative phrases FIRST then positive then fail-closed. Sibling fix for `llm_ua_match` extends negative-first to cover `"not the same"` / `"not same"`. Paper §1 SR no longer systematically inflated by evaluator polarity. **Cross-paper SR comparisons against VWA / WebArena-Verified / PAE are NOT directly comparable** under this fix (those papers use upstream-buggy parser); within-paper paired comparisons (B0/B1/B2, baseline ↔ phantom) remain valid because every cell judged by same `gpt-4o-mini` post-fix; (b) **B-538** async `SELECT_OPTION` mirror sync fix at `actions.py:1593-1597` (sibling-propagation of B-446); (c) **B-539** UPLOAD field decouple from `_keys2ids` encoding at `actions.py:704-728` — pre-fix `text` was key-encoded list of int but `set_files()` expects path str → type-corrupted runtime; post-fix `text` and new `file_path` field hold raw path; also remove `\n` enter-flag suffix at line 1830 (file-chooser has no submit-Enter semantic); (d) **B-540** `VWA_CHROMIUM_LAUNCH_ARGS` use `shlex.split` not `.split()` so quoted multi-word args (e.g. `--host-resolver-rules=MAP host IP`) stay as one argv item | `evaluation_harness/helper_functions.py`, `browser_env/{actions.py, envs.py}` | §3.5 evaluator-patch policy, §3.5.3 P79 GRL action-layer disclosure (catalog entries B-535/538/539/540) |
+| `2f9b0b4` | /stress A1.18-re Chunk 1 (11 fixes) | (a) **B-577** `scripts/generate_test_data.py` idempotency — `rmtree(output_dir)` before regen + emit `generation_manifest.json` with raw_sha256 + per-file SHAs; pre-fix never deleted stale split files → version-rift pollution of task universe on replayer rerun; (b) **B-588** generated JSON byte determinism — explicit `encoding="utf-8" newline="\n"` + `sort_keys=True` + `ensure_ascii=False` + trailing newline (pre-fix locale + Windows-CRLF sensitive); (c) **B-582** UPLOAD `action2create_function` dispatch — uses raw text string (post-B-447 schema) instead of `_id2key` on int-list; backward-compat list path retained for pre-B-447 archive traces (fixes A1.25 GRL Chunk 1 sibling-propagation gap in round-trip serializer); (d) **B-583** `_log_unexpected_judge_response` uses module-level `_AUDIT_LOG_LOCK` (replaces TOCTOU `getattr/setattr` lazy-init that race-windowed concurrent first calls); (e) **B-584** `_throttled_openai_completion_acreate` + `_throttled_openai_chat_completion_acreate` fail-loud (`raise RuntimeError(...) from e`) instead of silent empty-string fallback — per user direction 2026-05-17, surface infrastructure failure rather than mask as model output; (f) **B-585** `retry_with_exponential_backoff` drops `BadRequestError` from retryable (non-transient) + preserves original exception via `raise RuntimeError(...) from e`; (g) **B-586** `ImageObservationProcessor.process` bounded retry — `page.wait_for_load_state("load", timeout=5000)` replaces unbounded `wait_for_event("load")`, `PlaywrightTimeoutError` caught + `meta_data["screenshot_retry_timeout"]` flagged; (h) **B-587** `ObservationHandler.get_observation` records networkidle barrier outcome (`networkidle_ok` / `networkidle_elapsed_ms` / `networkidle_exception_type`) into text/image processor meta_data so upstream runner can mark `needs_reevaluation` on repeated barrier misses; (i) **B-591** `llm_fuzzy_match` + `llm_ua_match` polarity check tightened from `"X" in response` substring to `resp.startswith(...)` exact prefix; (j) **B-596** `create_mouse_hover_action` mirrors B-445 click contract (`is not None` for both coords); (k) **B-598** `prepare.sh resolve_python_argv` emits NUL-separated tokens for proper bash array argv (Windows `py -3` fallback now actually executable) | `evaluation_harness/helper_functions.py`, `llms/providers/openai_utils.py`, `browser_env/{actions.py, processors.py}`, `scripts/generate_test_data.py`, `prepare.sh` | §3.5 evaluator-patch policy + LLM-judge model disclosure (`startswith` tighten, `llm_ua_match` scope-of-patch), §4.X.11 row, §4.X.12 (per-task config idempotency), prereg §7 (SBOM tree-hash chain) |
+
+**Per-task config materialization disclosure (B-578 P0-1-AB Claude+codex OOB, 2026-05-17)**: The 912 per-task config files (`config_files/vwa/test_{classifieds,reddit,shopping}/{0..N}.json`) are gitignored derived artifacts deterministically regenerated from the tracked `config_files/vwa/test_{site}.raw.json` templates via `scripts/generate_test_data.py`. Both source files (templates + script) ARE tracked in the submodule and therefore covered by the SBOM tree-hash chain (3) in prereg §7. OSF replayers materialize them via `make vwa-generate-configs` (sets `DATASET=visualwebarena` + per-site env vars + invokes the generation script). Post-A1.18-re (B-577 + B-588) the generator is **clean-idempotent** (rmtree before regen) and **byte-deterministic** (explicit UTF-8 + LF + sort_keys), with `config_files/generation_manifest.json` (per-template raw_sha256 + first/last split sha256) as the verification artifact. Pre-B-577 the gitignored split was vulnerable to stale-file pollution if a replayer regenerated against a shortened template — addressed by the rmtree-before-regen invariant.
 
 **OSF reproducibility verification commands** (run inside the cloned P79 repo):
 
 ```bash
 cd external/visualwebarena
-git rev-parse HEAD                                 # must match 1c3a615308fd9f17c73a9d33a96cf29ec6807d48
+git rev-parse HEAD                                 # must match 2f9b0b47175a1bffa01e13100e3075e212161a89
 git rev-parse origin/main                          # upstream base; if not present, fetch
-git diff 89f5af29305c3d1e9f97ce4421462060a70c9a03..HEAD | sha256sum
-# must match f1315dc49a33c4b5e8d7d3958974d26f4e6ad330b15b8ce01a6eb8b80a958b1a
+# Tree-hash chain — env-independent SBOM witness (B-580 P1-1-AC* 2026-05-17, replaces
+# legacy `git diff base..HEAD | sha256sum` which was sensitive to local git config):
+git rev-list 89f5af29305c3d1e9f97ce4421462060a70c9a03..HEAD --format=tformat:'%H %T' | sha256sum
+# must match 5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f
 ```
 
 These three hashes are also locked in `docs/checkpoints/pre_run/osf_lock_manifest.md` and
 re-stated in `docs/checkpoints/pre_run/locked_versions.md`; any divergence indicates the
 submodule has drifted from the paper-grade pin.
 
-**Composite commit caveat**: commit `3f9ceca` bundles six logically independent changes
-(letters a–f above). For paper-grade hygiene we are migrating to atomic per-fix commits in
-future submodule edits, and `3f9ceca` retains its multi-fix form only because its content
-has already been used to produce the Phase 1a archive that the paper depends on. The full
-behavioural list (a–f) above closes the disclosure gap that previously omitted (b), (c),
-(d), (e), and (f) from §4.
+**Composite commit caveat**: commits `3f9ceca` (six independent fixes a-f) and `eb5cbd8`
+(ten independent fixes a-j) and `2f9b0b4` (eleven independent fixes a-k, this A1.18-re
+sweep) are all composite. We retain composite form for `3f9ceca` because its content
+already produced the Phase 1a archive disclosed in Appendix D; for `eb5cbd8` because the
+15-finding /stress A1.18 sweep required atomic substrate coverage; for `2f9b0b4` because
+the 25-finding /stress A1.18-re sweep similarly required substrate coverage across
+multiple files for which a single CI/test pass was the verification gate. Subsequent
+single-fix flow is restored at `c1765ee` (B-445/446/447 isolated) and `1c3a615`
+(B-535/538/539/540 isolated). The full behavioural list (a–k for `2f9b0b4`) above closes
+the disclosure gap that bundled-commit format would otherwise hide. **Bundling is
+documented, not concealed (B-592 P2-1-A 2026-05-17 paper §4.X.11 caveat expansion)**.
 
 ---
 
@@ -290,6 +302,22 @@ fire on the A100 host applies the same substitution before launch.
 This is an OSF lock-time disclosure rather than a code fix: the Phase 1a archive cannot be
 re-keyed without re-running, so we document the propagation here and recommend reproducers
 treat the IP as a `VWA_HOST` placeholder.
+
+**`.auth/` runtime artifact disclosure (B-579 P0-2-C\* Gemini OOB, 2026-05-17)**: Playwright
+`storage_state` files at `.auth/{classifieds,reddit,shopping}_state.json` are gitignored
+runtime artifacts captured during agent login. They contain domain-bound cookies tied to
+the Tailscale IP `100.95.81.103` used during pre-§eb5cbd8 archive collection. **Reproducers
+MUST re-capture authentication state against their own VWA Docker stack**; directly using
+repo-provided `.auth/` files on a replayer host triggers silent cookie-domain mismatch in
+Playwright (`storage_state` is bound to the origin from which cookies were issued), causing
+all subsequent navigation to fail authentication despite "successful" auth-file load. The
+re-capture path is: `bash scripts/vwa/setup_vwa.sh` on the replayer host (invokes
+`external/visualwebarena/browser_env/auto_login.py` against the replayer's local VWA
+Docker stack with replayer's `REDDIT` / `SHOPPING` / `CLASSIFIEDS` env vars set). Phase 1a
+B0 prereq in `phase1_plan.md §B0` now lists this re-capture as a launch gate. **The IP-
+contamination claim in §4.X.12 above ("propagation closed") applies to tracked code +
+task configs; `.auth/` runtime artifacts are out of SBOM scope and must be re-captured per
+replayer host.**
 
 ---
 

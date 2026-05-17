@@ -426,9 +426,16 @@ class VWAWrapper:
                 # Accept either normalized [0-1] or pixel coordinates.
                 # Normalize each dimension independently to handle mixed formats
                 # (e.g. [0.26, 330] where x is normalized but y is pixel).
-                if left > 1.0:
+                # /stress A1.18-re (B-600 P2-9-C* Gemini OOB, 2026-05-17):
+                # threshold bumped from > 1.0 to > 1.1 so that a hallucinated
+                # `1.0001` coord (intended as normalized boundary 1.0) is NOT
+                # mis-classified as pixel and divided by 1280, which would have
+                # snapped the click to ~0px (far-left edge). Tolerance band of
+                # 0.1 absorbs typical float rounding while preserving the
+                # pixel-coord heuristic.
+                if left > 1.1:
                     left = left / float(self.viewport_width)
-                if top > 1.0:
+                if top > 1.1:
                     top = top / float(self.viewport_height)
                 # Avoid 0.0 which triggers VWA create_mouse_click_action validation
                 eps = 1e-6
@@ -500,10 +507,11 @@ class VWAWrapper:
             if coord is not None and isinstance(coord, (list, tuple)) and len(coord) == 2:
                 left = float(coord[0])
                 top = float(coord[1])
-                # Normalize each dimension independently (same as click path)
-                if left > 1.0:
+                # /stress A1.18-re (B-600 sibling P2-9-C* Gemini OOB,
+                # 2026-05-17): same threshold bump as click path above.
+                if left > 1.1:
                     left = left / float(self.viewport_width)
-                if top > 1.0:
+                if top > 1.1:
                     top = top / float(self.viewport_height)
                 eps = 1e-6
                 left = max(eps, min(1.0 - eps, left))

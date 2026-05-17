@@ -64,10 +64,27 @@ def _placeholder_mapping() -> Dict[str, str]:
     # Wikipedia ZIM version rewrite — user's Kiwix loads `2025-08`, but VWA raw
     # configs hardcode `2022-05` (§81). Default to the version actually mounted
     # on quark; env override lets future ZIM upgrades change this without code.
+    #
+    # /stress A1.18-re (B-602 P2-11-C* Gemini OOB, 2026-05-17): pre-fix only
+    # mapped the single `2022-05` date string, so if upstream VWA updated its
+    # raw task configs to a different historical ZIM date (e.g. `2024-01`), the
+    # key-based replace silently no-op'd and tasks would point at a missing ZIM
+    # at runtime. Now: (a) expose `WIKIPEDIA_ZIM_LEGACY_VERSIONS` env var as
+    # comma-separated list of all legacy date strings to rewrite (default
+    # covers known VWA upstream dates 2022-05 + 2023-04 + 2024-01); (b) the
+    # rewriter maps every listed legacy version to the current target. Future
+    # VWA upstream merges can extend this list via env var without code edit.
     zim_override = os.environ.get(
         "WIKIPEDIA_ZIM_VERSION", "wikipedia_en_all_maxi_2025-08"
     )
-    mapping["wikipedia_en_all_maxi_2022-05"] = zim_override
+    legacy_versions_csv = os.environ.get(
+        "WIKIPEDIA_ZIM_LEGACY_VERSIONS",
+        "2022-05,2023-04,2024-01",
+    )
+    for legacy_date in (v.strip() for v in legacy_versions_csv.split(",") if v.strip()):
+        legacy_key = f"wikipedia_en_all_maxi_{legacy_date}"
+        if legacy_key != zim_override:  # never self-map
+            mapping[legacy_key] = zim_override
 
     return mapping
 

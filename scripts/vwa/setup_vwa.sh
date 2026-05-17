@@ -274,6 +274,24 @@ main() {
   download_wikipedia_data
   download_classifieds_data
 
+  # /stress A1.18-re (B-599 P2-8-B* codex OOB, 2026-05-17): fail-loud if VWA
+  # per-task split configs are missing. The 912 gitignored per-task config
+  # files (config_files/vwa/test_{site}/{0..N}.json) are derived artifacts and
+  # must be regenerated post-clone via `make vwa-generate-configs`. Pre-fix
+  # "Setup complete" echoed success even when the substrate was incomplete,
+  # producing silent runtime failures during first task launch.
+  SUBMODULE_CFG_DIR="${PROJECT_DIR}/external/visualwebarena/config_files/vwa"
+  if [ ! -d "${SUBMODULE_CFG_DIR}/test_classifieds" ] || \
+     [ ! -d "${SUBMODULE_CFG_DIR}/test_reddit" ] || \
+     [ ! -d "${SUBMODULE_CFG_DIR}/test_shopping" ]; then
+    echo ""
+    echo "⚠️  WARNING: VWA per-task split configs not materialized yet."
+    echo "    Expected at: ${SUBMODULE_CFG_DIR}/test_{classifieds,reddit,shopping}/"
+    echo "    Run: make vwa-generate-configs"
+    echo "    (sets DATASET=visualwebarena + REDDIT/SHOPPING/CLASSIFIEDS env vars + invokes generate_test_data.py)"
+    echo ""
+  fi
+
   echo "Setup complete."
 }
 

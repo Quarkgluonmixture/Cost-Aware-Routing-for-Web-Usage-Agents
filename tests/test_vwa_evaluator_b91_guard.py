@@ -24,8 +24,10 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VWA_SUBMODULE = REPO_ROOT / "external" / "visualwebarena"
 
-# A1.18 lock (memory `reference_vwa_submodule_p79_patches`, 2026-05-16).
-EXPECTED_SUBMODULE_SHA = "1c3a615308fd9f17c73a9d33a96cf29ec6807d48"
+# A1.18-re lock (memory `reference_vwa_submodule_p79_patches`, 2026-05-17,
+# updated post Chunk 1 11-fix sweep). Tree-hash chain SBOM in prereg §7
+# per B-580.
+EXPECTED_SUBMODULE_SHA = "2f9b0b47175a1bffa01e13100e3075e212161a89"
 
 
 @pytest.fixture(autouse=True)

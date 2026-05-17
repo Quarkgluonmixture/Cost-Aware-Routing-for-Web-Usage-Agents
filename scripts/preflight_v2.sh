@@ -358,8 +358,11 @@ check_vwa_submodule_lock() {
   fi
   # /stress A1.18 (2026-05-16): SHA bumped from f0c835b (pre-A1.18 B-91-only)
   # to eb5cbd8 (post-A1.18 full sweep: 15 findings B-254~B-268, see chronicle §159).
+  # Bumped 2026-05-17 to 1c3a615 (A1.25 GRL Chunks 1+4: B-445~B-447 + B-535~B-540).
+  # Bumped 2026-05-17 to 2f9b0b4 (A1.18-re Chunk 1: 11-fix substrate sweep
+  # B-577+B-582~B-588+B-591+B-596+B-598, see chronicle §182).
   # f0c835b remains as the B-91 commit reference but is no longer the pinned HEAD.
-  local expected_sha="1c3a615308fd9f17c73a9d33a96cf29ec6807d48"
+  local expected_sha="2f9b0b47175a1bffa01e13100e3075e212161a89"
   local expected_branch="p79-patches"
   local actual_sha actual_branch
   actual_sha="$(git -C "${vwa_dir}" rev-parse HEAD 2>/dev/null)"
