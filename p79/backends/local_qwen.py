@@ -4,7 +4,8 @@ import logging
 import time
 from typing import Any, Dict, Tuple
 
-from p79.backends.base import BackendStepContext
+from p79.backends.base import BackendError, BackendStepContext
+from p79.backends._shared_stage_prefix import build_stage_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -85,10 +86,13 @@ class LocalQwenBackend:
     def step(self, instruction: str, obs: Any, context: BackendStepContext) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         # B-425 (/stress A1.3 v9 D1, 2026-05-17): heuristic dispatch retired.
         if self.mock_mode:
+            # B-808 (/stress A1.2 cold-start P2-2-AC): removed dead
+            # coordinate_type field (scroll uses delta, not coord). Aligns
+            # with factory.MockBackend / local_gemma / api_proxy mock paths
+            # so cross-baseline mock invariance test signature is canonical.
             action = {
                 "action_type": "scroll",
                 "delta": [0, 0.8],
-                "coordinate_type": "normalized",
                 "thought": "Mock local backend action.",
             }
             return action, {
@@ -108,28 +112,38 @@ class LocalQwenBackend:
 
         assert self._agent is not None
 
-        stage_prefix = ""
-        if context.stage == "planner":
-            stage_prefix = (
-                "[Stage: planner] Based on the task and interaction history, "
-                "identify the immediate sub-goal for this step. Output ONLY a "
-                "short sub-goal description (one sentence), not an action.\n\n"
-            )
-        elif context.stage == "grounder":
-            sub_goal = context.planner_sub_goal or ""
-            stage_prefix = (
-                f"[Stage: grounder] Sub-goal: {sub_goal}\n"
-                "Based on the sub-goal above and the current page state, "
-                "produce a concrete action JSON.\n\n"
-            )
-
-        prompt = f"{stage_prefix}{instruction}"
+        # B-812 (/stress A1.2 cold-start P1-1-A* Claude OOB, 2026-05-17):
+        # stage_prefix now sourced from _shared_stage_prefix.build_stage_prefix
+        # so all three backend wrappers (local_qwen / local_gemma / api_proxy)
+        # share a single byte-identical prefix definition. See module docstring
+        # for paper §3.4 planner/grounder ablation rationale.
+        prompt = f"{build_stage_prefix(context.stage, context.planner_sub_goal)}{instruction}"
         start = time.time()
         action, meta = self._agent.step(prompt, obs, history=context.history, observation_mode=context.observation_mode, reference_images=context.reference_images)
         infer_ms = (time.time() - start) * 1000.0
 
         meta = dict(meta)
-        meta.setdefault("model_calls", 1)
-        meta.setdefault("backend_type", "local_qwen")
+        # B-813 (/stress A1.2 cold-start P0-2-B* codex OOB, 2026-05-17): handle
+        # present-but-None metadata values. `setdefault(k, default)` does NOT
+        # replace an explicit `None` — agent layer returning
+        # ``{"backend_type": None, "model_calls": None, "input_tokens": None,
+        # "output_tokens": None}`` would slip through downstream
+        # `int(meta.get("input_tokens") or 0)` → silent zero-cost record.
+        # Cost-aware paper §1 hero metric depends on non-silent failure here.
+        # Replace present-but-None with default for descriptive fields;
+        # paper_grade=True raises for cost fields (token counts).
+        if meta.get("model_calls") is None:
+            meta["model_calls"] = 1
+        if meta.get("backend_type") is None:
+            meta["backend_type"] = "local_qwen"
+        if bool(self.config.get("paper_grade", False)):
+            for _k in ("input_tokens", "output_tokens"):
+                if meta.get(_k) is None:
+                    raise BackendError(
+                        f"local_qwen step returned meta[{_k!r}]=None under "
+                        f"paper_grade=True — cost telemetry contract violation. "
+                        f"Fix upstream agent or unset paper_grade for smoke "
+                        f"runs (B-813)."
+                    )
         meta["infer_ms"] = infer_ms
         return action, meta

@@ -4,7 +4,8 @@ import logging
 import time
 from typing import Any, Dict, Tuple
 
-from p79.backends.base import BackendStepContext
+from p79.backends.base import BackendError, BackendStepContext
+from p79.backends._shared_stage_prefix import build_stage_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -13,13 +14,18 @@ class LocalGemmaBackend:
     """Backend wrapper for the local Gemma 3 vision-language agent (B2 baseline).
 
     Mirrors ``LocalQwenBackend``'s contract so the runner stays model-agnostic.
-    Two deliberate differences from the Qwen backend:
-      1. loads ``Gemma3VLAgent`` instead of ``Qwen3VLAgent``;
-      2. forwards ``revision`` from the backend config into the agent config,
-         so the loaded model SHA is provable from run metadata. (The Qwen path
-         does not forward it and falls back to a hard-coded default — see codex
-         cross-review,
-         docs/checkpoints/codex_outputs/gemma3vl_integration_crossreview_2026-05-14.md.)
+    The only deliberate difference is loading ``Gemma3VLAgent`` instead of
+    ``Qwen3VLAgent``; both wrappers forward ``revision`` from the backend
+    config into the agent config under B-83 + B-136 strict mode so the loaded
+    model SHA is provable from run metadata.
+
+    B-814 (/stress A1.2 cold-start P1-7-A Claude, 2026-05-17): docstring
+    previously claimed the Qwen path "does not forward revision and falls back
+    to a hard-coded default" citing the 2026-05-14 codex cross-review. That
+    note is OBSOLETE — local_qwen.py:54 explicitly forwards ``revision`` and
+    B-136 strict mode raises ``RuntimeError`` when missing. The stale
+    docstring let a reviewer infer asymmetric SHA pinning between baselines
+    and attack paper §1 cross-family reproducibility defense.
 
     No ``dom_mode``/heuristic branch: Gemma always runs the LLM. B-425
     (/stress A1.3 v9 D1, 2026-05-17) retired the HeuristicDomBackend family
@@ -90,10 +96,11 @@ class LocalGemmaBackend:
         self, instruction: str, obs: Any, context: BackendStepContext
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         if self.mock_mode:
+            # B-808 (/stress A1.2 cold-start P2-2-AC): removed dead
+            # coordinate_type field (see local_qwen.py / factory.py siblings).
             action = {
                 "action_type": "scroll",
                 "delta": [0, 0.8],
-                "coordinate_type": "normalized",
                 "thought": "Mock local Gemma backend action.",
             }
             return action, {
@@ -113,22 +120,8 @@ class LocalGemmaBackend:
 
         assert self._agent is not None
 
-        stage_prefix = ""
-        if context.stage == "planner":
-            stage_prefix = (
-                "[Stage: planner] Based on the task and interaction history, "
-                "identify the immediate sub-goal for this step. Output ONLY a "
-                "short sub-goal description (one sentence), not an action.\n\n"
-            )
-        elif context.stage == "grounder":
-            sub_goal = context.planner_sub_goal or ""
-            stage_prefix = (
-                f"[Stage: grounder] Sub-goal: {sub_goal}\n"
-                "Based on the sub-goal above and the current page state, "
-                "produce a concrete action JSON.\n\n"
-            )
-
-        prompt = f"{stage_prefix}{instruction}"
+        # B-812: shared single-source stage_prefix (see local_qwen.py).
+        prompt = f"{build_stage_prefix(context.stage, context.planner_sub_goal)}{instruction}"
         start = time.time()
         action, meta = self._agent.step(
             prompt,
@@ -140,7 +133,20 @@ class LocalGemmaBackend:
         infer_ms = (time.time() - start) * 1000.0
 
         meta = dict(meta)
-        meta.setdefault("model_calls", 1)
-        meta.setdefault("backend_type", "local_gemma")
+        # B-813 (/stress A1.2 cold-start P0-2-B*): preserve-None defense
+        # mirrored from local_qwen. paper §1 cost telemetry contract.
+        if meta.get("model_calls") is None:
+            meta["model_calls"] = 1
+        if meta.get("backend_type") is None:
+            meta["backend_type"] = "local_gemma"
+        if bool(self.config.get("paper_grade", False)):
+            for _k in ("input_tokens", "output_tokens"):
+                if meta.get(_k) is None:
+                    raise BackendError(
+                        f"local_gemma step returned meta[{_k!r}]=None under "
+                        f"paper_grade=True — cost telemetry contract violation. "
+                        f"Fix upstream agent or unset paper_grade for smoke "
+                        f"runs (B-813)."
+                    )
         meta["infer_ms"] = infer_ms
         return action, meta
