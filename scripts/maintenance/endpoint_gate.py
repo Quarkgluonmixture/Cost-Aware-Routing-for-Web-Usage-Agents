@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
-"""Phase 1a launch gate — parse cls+reddit raw.json, derive endpoints, verify all reachable.
+"""Endpoint reachability gate — parse cls+reddit raw.json, derive endpoints, verify all reachable.
+
+⚠️ NAME / SCOPE CLARIFICATION (B-834 /stress A1.16 cold-start P1-8-B, 2026-05-17):
+   Originally named `phase1a_launch_gate.py` but renamed to `endpoint_gate.py`
+   to truthfully reflect scope. This script ONLY verifies URL reachability.
+   It does NOT check:
+     - env_snapshot.json existence / freshness / schema_version
+     - HF model revision pin / HF_TOKEN gating
+     - VWA submodule SHA / tree-hash chain / dirty state
+     - evaluator_code combined_sha256
+     - reference_images_sha256
+   The full paper-grade provenance gate is enforced by `capture_env_snapshot()`
+   (`snapshot_env.py`) + caller post-call inspect (B-823, `run_experiment.py:64-100`)
+   + `snapshot_has_critical_errors()` helper. An "ENDPOINTS PASS" verdict from
+   this script is not a paper-grade launch authorization — it is an
+   endpoint reachability prereq only.
 
 BUG-1 fix (2026-05-16, codex CodexOnly-1): Phase 1a cls+red task configs
 embed cross-site URLs (cls task 224 → __SHOPPING__, reddit task 45 →
@@ -13,8 +28,8 @@ P79 env substitution, curls each, refuses launch if any returns non-2xx/3xx.
 Mirrors P79 tasks.py:_placeholder_mapping() logic.
 
 Usage:
-    python3 scripts/maintenance/phase1a_launch_gate.py
-    # exit 0 = all endpoints reachable, safe to fire Phase 1a
+    python3 scripts/maintenance/endpoint_gate.py
+    # exit 0 = all endpoints reachable (necessary, NOT sufficient, prereq)
     # exit 2 = some endpoint missing, refuse fire with itemized report
 
 Run automatically by queue_phase1_paper_grade.sh before launch.
@@ -124,7 +139,14 @@ def main() -> int:
         print("Up to 12.2pp silent SR drift vs quark archive if launched.", file=sys.stderr)
         return 2
 
-    print(f"✓ All {len(needed)} required endpoints reachable. Phase 1a fire SAFE.")
+    # B-834 A1.16-re P1-8-B (2026-05-17): "SAFE" was misleading — this gate
+    # only checks endpoint reachability, NOT full provenance prereq. The
+    # actual paper-grade launch authorization comes from `snapshot_has_critical_errors()`
+    # post-call inspect in `run_experiment.py:64-100`.
+    print(f"✓ All {len(needed)} required endpoints reachable. ENDPOINTS PASS")
+    print("  Note: URL reachability prereq only — NOT a full provenance gate.")
+    print("  Full paper-grade authorization: capture_env_snapshot() + snapshot_has_critical_errors()")
+    print("  in `p79/cli/run_experiment.py:64-100` (P79_PAPER_GRADE=1 enforced).")
     return 0
 
 if __name__ == "__main__":

@@ -228,21 +228,74 @@ mint_run_id() {
     existing="$(ls -dt "${phase_dir}/${cfg_name}_"[0-9]* 2>/dev/null | head -1 || true)"
     if [[ -n "${existing}" ]]; then
       # B-641 (A1.13 P1-9 Claude OOB, 2026-05-17): stale-resume fingerprint
-      # check. Pre-fix blindly resumed mtime-newest match even when its
-      # condition_meta.json showed pre-fix schema_version. Now verify v2 schema
-      # before resume; mismatch → fresh timestamp, log "skipping stale".
+      # check — schema_version v2 invariant.
+      # B-836 (A1.16 cold-start P1-10-B*, 2026-05-17): expanded to also check
+      # CONTENT invariants (not just format). Pre-fix: schema_version v2 was a
+      # format-only check; 6-month replay on new git checkout could resume a
+      # run_id whose env_snapshot.json points to stale git commit / stale
+      # HF model revision / stale VWA submodule SHA — half episodes from old
+      # code/model/env, half from new. Now: also verify env_snapshot.json git
+      # commit + VWA submodule_sha + (if present) HF model loaded_revision
+      # match current launch state. Mismatch → fresh timestamp.
       local stale=0
+      local stale_reason=""
       local meta
       for meta in "${existing}"/*/condition_meta.json; do
         if [[ -f "${meta}" ]]; then
           if ! grep -q '"schema_version"[[:space:]]*:[[:space:]]*"v2' "${meta}" 2>/dev/null; then
             stale=1
+            stale_reason="schema_version != v2"
             break
           fi
         fi
       done
+
+      # B-836 P1-10-B*: additional CONTENT checks against env_snapshot.json
+      if [[ "${stale}" == "0" ]]; then
+        local snap
+        snap="$(ls "${existing}"/*/env_snapshot.json 2>/dev/null | head -1)"
+        if [[ -n "${snap}" && -f "${snap}" ]]; then
+          # Current git HEAD
+          local current_git_sha
+          current_git_sha="$(git -C "${REPO_ROOT:-$PWD}" rev-parse HEAD 2>/dev/null || echo "")"
+          # Snapshot-recorded git commit
+          local snap_git_sha
+          snap_git_sha="$(.venv/bin/python3 -c "
+import json,sys
+try:
+    d=json.load(open('${snap}'))
+    print(d.get('git',{}).get('commit',''))
+except Exception:
+    sys.exit(1)
+" 2>/dev/null || echo "")"
+          if [[ -n "${current_git_sha}" && -n "${snap_git_sha}" && "${current_git_sha}" != "${snap_git_sha}" ]]; then
+            stale=1
+            stale_reason="git_commit mismatch (current=${current_git_sha:0:8}, snap=${snap_git_sha:0:8})"
+          fi
+
+          # VWA submodule SHA (paper-grade SBOM consistency)
+          if [[ "${stale}" == "0" ]]; then
+            local current_vwa_sha
+            current_vwa_sha="$(git -C "${REPO_ROOT:-$PWD}/external/visualwebarena" rev-parse HEAD 2>/dev/null || echo "")"
+            local snap_vwa_sha
+            snap_vwa_sha="$(.venv/bin/python3 -c "
+import json,sys
+try:
+    d=json.load(open('${snap}'))
+    print(d.get('vwa_sbom',{}).get('head_sha','') or d.get('vwa_source',{}).get('submodule_sha',''))
+except Exception:
+    sys.exit(1)
+" 2>/dev/null || echo "")"
+            if [[ -n "${current_vwa_sha}" && -n "${snap_vwa_sha}" && "${current_vwa_sha}" != "${snap_vwa_sha}" ]]; then
+              stale=1
+              stale_reason="vwa_submodule mismatch (current=${current_vwa_sha:0:8}, snap=${snap_vwa_sha:0:8})"
+            fi
+          fi
+        fi
+      fi
+
       if [[ "${stale}" == "1" ]]; then
-        echo "[${log_prefix}] skipping stale resume candidate $(basename "${existing}") (schema_version != v2); minting fresh run_id"
+        echo "[${log_prefix}] skipping stale resume candidate $(basename "${existing}") (${stale_reason}); minting fresh run_id"
         RUN_ID="${cfg_name}_${ts_full}"
       else
         RUN_ID="$(basename "${existing}")"

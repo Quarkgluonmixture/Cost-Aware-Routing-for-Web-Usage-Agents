@@ -63,12 +63,45 @@ def main() -> None:
     # env. Paper-grade fire (queue scripts that set `P79_PAPER_GRADE=1`) MUST fail loud —
     # missing env_snapshot.json breaks prereg §7 reproducibility audit. Dev mode keeps
     # warning-and-continue for ergonomics.
+    # B-823 (/stress A1.16 cold-start P0-2-AB* + P0-6-BC* combined, 2026-05-17):
+    # Library-form caller now post-call inspects snap dict for `_critical_error`
+    # / `evaluator_code.incomplete` / `models[m].divergence != "match"` / VWA
+    # SBOM `match_lock=False`. Pre-fix: `capture_env_snapshot()` library-form
+    # call never raised on per-model failure (only `main()` CLI --strict path
+    # exit-1'd), and runner's try/except only caught Python exceptions — gated
+    # model HF_TOKEN absence wrote `_critical_error` to dict but was silently
+    # consumed → paper-grade B2 fire booted with `loaded_revision: null` and
+    # paper §3.5 "HF SHA pinned" claim silently false.
     try:
-        from scripts.provenance.snapshot_env import capture_env_snapshot
+        from scripts.provenance.snapshot_env import (
+            capture_env_snapshot,
+            snapshot_has_critical_errors,
+        )
         runner.output_root.mkdir(parents=True, exist_ok=True)
         snap_path = runner.output_root / "env_snapshot.json"
-        capture_env_snapshot(snap_path, extra={"run_id": cfg["experiment"]["run_id"], "config_path": args.config})
+        snap = capture_env_snapshot(
+            snap_path,
+            extra={"run_id": cfg["experiment"]["run_id"], "config_path": args.config},
+        )
         logging.info("Env snapshot dumped pre-run: %s", snap_path)
+
+        # Post-call dict inspect: B-823 + B-822 enforcement layer.
+        has_critical, reasons = snapshot_has_critical_errors(snap)
+        if has_critical:
+            msg = (
+                "Snapshot critical issues detected: "
+                + "; ".join(reasons)
+            )
+            if os.environ.get("P79_PAPER_GRADE", "0") == "1":
+                logging.error(
+                    "Paper-grade mode (P79_PAPER_GRADE=1) — refusing to run: %s",
+                    msg,
+                )
+                raise SystemExit(2)
+            else:
+                logging.warning("(non-fatal dev mode) %s", msg)
+    except SystemExit:
+        raise
     except Exception as e:
         if os.environ.get("P79_PAPER_GRADE", "0") == "1":
             logging.error(

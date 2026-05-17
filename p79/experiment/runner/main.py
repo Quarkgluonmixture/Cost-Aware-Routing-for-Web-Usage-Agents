@@ -83,12 +83,28 @@ logger = logging.getLogger(__name__)
 
 
 def _seed_global_rng(seed: int) -> None:
-    """B-37: propagate seed to Python/NumPy/torch RNG.
+    """B-37 + B-827 (/stress A1.16 cold-start P1-1-BC*, 2026-05-17): propagate
+    seed to Python/NumPy/torch RNG AND enforce deterministic CUDA flags.
 
     Called at start of each (condition, seed) iteration. Without this, seed=42
     is metadata only — Python random.choice / np.random.shuffle / torch ops
     produce different results across runs. Paper-grade reproducibility claim
     requires this propagation.
+
+    B-827 enforcement (A1.16 cold-start P1-1-BC*):
+    Pre-fix only `random/np/torch.manual_seed` were set. Paper §3.5 + prereg §7
+    line 545 explicitly claim "byte-identical action traces, hidden states, and
+    aggregate SR" — but A100 `nn.Embedding` backward, some `Conv2D`, and scatter
+    ops are non-deterministic without `torch.use_deterministic_algorithms(True)`
+    + `torch.backends.cudnn.deterministic=True` + `CUBLAS_WORKSPACE_CONFIG`.
+    Cross-host hidden-state replay (paper-2 mechanism §5) was already failing
+    silently; paper-1 within-run byte-identical claim equally untrue.
+
+    Strict-vs-warn split:
+      - P79_PAPER_GRADE=1 → `warn_only=False` (RuntimeError on non-deterministic
+        op; surfaces real reproducibility violation rather than masking)
+      - dev mode → `warn_only=True` (logs warning, continues — Phase 1a smoke
+        without paper-grade gate)
     """
     random.seed(seed)
     try:
@@ -101,6 +117,29 @@ def _seed_global_rng(seed: int) -> None:
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
+
+        # B-827 P1-1-BC*: deterministic CUDA flags. Must be set BEFORE any
+        # tensor op runs in this process (CUBLAS_WORKSPACE_CONFIG is read at
+        # first CUBLAS call; deterministic_algorithms is checked per-op).
+        paper_grade = os.environ.get("P79_PAPER_GRADE", "0") == "1"
+        # Set CUBLAS env var first (idempotent — same value on every seed call)
+        os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+        try:
+            torch.use_deterministic_algorithms(True, warn_only=not paper_grade)
+        except Exception as det_err:
+            logger.warning(
+                "torch.use_deterministic_algorithms(warn_only=%s) failed: %s — "
+                "continuing without strict deterministic op gate",
+                not paper_grade,
+                det_err,
+            )
+        try:
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+        except Exception as cudnn_err:
+            logger.warning(
+                "torch.backends.cudnn.deterministic=True failed: %s", cudnn_err
+            )
     except ImportError:
         pass
 

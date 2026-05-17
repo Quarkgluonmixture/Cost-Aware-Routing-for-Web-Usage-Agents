@@ -141,6 +141,69 @@ if [ "$PULLED" -eq 0 ]; then
     exit 2
 fi
 
+# B-830 (/stress A1.16 cold-start P1-4-B*, 2026-05-17): post-pull JSON schema
+# validation. Pre-fix: size-only check (line 125-133) accepted truncated /
+# corrupt JSON / wrong git revision / wrong cell snapshot silently; Phase 4
+# `make analysis FAST=1` then ate the contaminated data into paper §5 figures.
+# Now: each .json file must parse + env_snapshot.json must have schema_version
+# field + condition_summary_v2.json must have schema_version=v2 OR be quarantined.
+echo "Phase 1.5: post-pull JSON schema validation (B-830)"
+JSON_VALIDATION_FAILED=()
+for JSON_FILE in env_snapshot.json run_manifest.json condition_summary_v2.json \
+                 patching_continuation_results.json hidden_states_v2_fixed.provenance.json; do
+    JSON_PATH="$LOCAL_DIR/$JSON_FILE"
+    if [ ! -f "$JSON_PATH" ]; then
+        continue  # missing is OK per existing tolerance
+    fi
+    # Parse JSON; record corruption
+    if ! .venv/bin/python3 -c "import json,sys; json.load(open('$JSON_PATH'))" 2>/dev/null; then
+        JSON_VALIDATION_FAILED+=("$JSON_FILE:corrupt-json")
+        continue
+    fi
+    # Schema-specific minimum-field checks
+    case "$JSON_FILE" in
+        env_snapshot.json)
+            if ! .venv/bin/python3 -c "
+import json,sys
+d=json.load(open('$JSON_PATH'))
+assert d.get('schema_version'), 'missing schema_version'
+assert isinstance(d.get('git'),dict), 'missing git block'
+assert isinstance(d.get('models'),dict), 'missing models block'
+" 2>/dev/null; then
+                JSON_VALIDATION_FAILED+=("$JSON_FILE:schema-fields-missing")
+            fi
+            ;;
+        condition_summary_v2.json)
+            if ! .venv/bin/python3 -c "
+import json,sys
+d=json.load(open('$JSON_PATH'))
+sv=str(d.get('schema_version',''))
+assert sv.startswith('v2'), f'schema_version={sv!r} not v2'
+" 2>/dev/null; then
+                JSON_VALIDATION_FAILED+=("$JSON_FILE:not-schema-v2")
+            fi
+            ;;
+    esac
+done
+
+if [ ${#JSON_VALIDATION_FAILED[@]} -gt 0 ]; then
+    echo "  ⚠️  ${#JSON_VALIDATION_FAILED[@]} JSON file(s) failed schema validation:"
+    for f in "${JSON_VALIDATION_FAILED[@]}"; do
+        echo "    - $f"
+    done
+    if [ "${P79_PAPER_GRADE:-0}" = "1" ]; then
+        push_ntfy "auto_pull JSON-SCHEMA-FAIL: $JOB_NAME" \
+            "job=$JOB_ID — ${#JSON_VALIDATION_FAILED[@]} json file(s) failed schema validation: ${JSON_VALIDATION_FAILED[*]}" \
+            "high"
+        echo "ERROR: P79_PAPER_GRADE=1 + JSON validation failed → abort"
+        exit 3
+    fi
+    # Dev mode: warn but continue (Phase 2 validate_run.py may still pass for condition_summary)
+    echo "  (P79_PAPER_GRADE != 1, continuing with warnings)"
+else
+    echo "  ✓ all pulled JSON files passed schema validation"
+fi
+
 # Phase 2: validate-strict gate (audit C)
 VALIDATE_VERDICT="skipped"
 if [ "${P79_SKIP_VALIDATE:-0}" != "1" ] && [ -f "$LOCAL_DIR/condition_summary_v2.json" ]; then

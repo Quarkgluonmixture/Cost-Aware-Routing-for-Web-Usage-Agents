@@ -242,10 +242,19 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     logger.info(f"Output dir: {out_dir}")
 
-    # Paper-grade provenance: dump env snapshot at run start (Gap 1+3, 笔记 §114)
+    # Paper-grade provenance: dump env snapshot at run start (Gap 1+3, 笔记 §114).
+    # B-831 (/stress A1.16 cold-start P1-5-B*, 2026-05-17): mechanism §5 caller
+    # now also enforces snapshot critical-error gate via `snapshot_has_critical_errors()`
+    # under P79_PAPER_GRADE=1. Pre-fix: snapshot failure (or _critical_error /
+    # divergence / VWA SBOM mismatch) was masked by `logger.warning` only →
+    # paper-2 mechanism §5 cells could produce publishable outputs without
+    # valid provenance. Parity with paper-1 caller (`run_experiment.py:64-100`).
     try:
-        from scripts.provenance.snapshot_env import capture_env_snapshot
-        capture_env_snapshot(
+        from scripts.provenance.snapshot_env import (
+            capture_env_snapshot,
+            snapshot_has_critical_errors,
+        )
+        snap = capture_env_snapshot(
             out_dir / "env_snapshot.json",
             extra={
                 "stage": "stage2b_curated",
@@ -265,8 +274,25 @@ def main():
                 "model_revision": args.model_revision,
             },
         )
+        # B-831 P1-5-B*: post-call inspect for paper-grade gating
+        has_critical, reasons = snapshot_has_critical_errors(snap)
+        if has_critical:
+            msg = "Snapshot critical issues: " + "; ".join(reasons)
+            if os.environ.get("P79_PAPER_GRADE", "0") == "1":
+                logger.error("Paper-grade mode (P79_PAPER_GRADE=1) — refusing to run: %s", msg)
+                raise SystemExit(2)
+            else:
+                logger.warning("(non-fatal dev mode) %s", msg)
+    except SystemExit:
+        raise
     except Exception as e:
-        logger.warning(f"Env snapshot failed (non-fatal): {e}")
+        if os.environ.get("P79_PAPER_GRADE", "0") == "1":
+            logger.error(
+                "Env snapshot FAILED in paper-grade mode (P79_PAPER_GRADE=1) — refusing to run: %s",
+                e,
+            )
+            raise SystemExit(2) from e
+        logger.warning(f"Env snapshot failed (non-fatal, dev mode): {e}")
 
     archived_dir = Path(args.archived_run_dir)
 
