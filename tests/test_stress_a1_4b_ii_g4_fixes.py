@@ -182,3 +182,33 @@ def test_b200_p95_handles_none_and_nan():
     assert p95([float("nan"), 1.0, 2.0, 3.0]) == pytest.approx(2.9, abs=1e-9)
     # All NaN → empty → 0.0
     assert p95([float("nan"), float("nan")]) == 0.0
+
+
+# ─── B-456 ──────────────────────────────────────────────────────────────────
+def test_b456_p95_strict_mode_raises_on_empty():
+    """B-456 (/stress A1.4 P1-8-C gemini OOB, 2026-05-17): opt-in strict mode
+    on empty input raises ValueError so figure renderers / cross-arm
+    aggregators can display "N/A" rather than injecting 0.0 into mean(p95)
+    and falsely advantaging the most-failing arm.
+
+    Default (strict=False) keeps legacy 0.0 contract; explicit strict=True
+    fails loud so callers must handle the catastrophic-empty case.
+    """
+    from p79.experiment.metrics import p95
+
+    # Legacy contract preserved on default strict=False
+    assert p95([]) == 0.0
+    assert p95([None, None]) == 0.0
+    assert p95([float("nan"), float("nan")]) == 0.0
+
+    # strict=True raises on empty / all-None / all-NaN
+    with pytest.raises(ValueError, match=r"empty valid input set"):
+        p95([], strict=True)
+    with pytest.raises(ValueError, match=r"empty valid input set"):
+        p95([None, None], strict=True)
+    with pytest.raises(ValueError, match=r"empty valid input set"):
+        p95([float("nan")], strict=True)
+
+    # strict=True with non-empty valid set works normally (no raise, returns p95)
+    assert p95([1.0, 2.0, 3.0], strict=True) == pytest.approx(2.9, abs=1e-9)
+    assert p95([None, 1.0, 2.0, 3.0], strict=True) == pytest.approx(2.9, abs=1e-9)

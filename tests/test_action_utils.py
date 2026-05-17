@@ -304,3 +304,66 @@ def test_validate_select_option_rejects_non_int_element_id():
         "option_label": "Red",
     })
     assert valid is True
+
+
+def test_undeclared_coord_infers_pixel_not_blind_normalized():
+    """B-452 (/stress A1.4 P1-1-B codex OOB, 2026-05-17): undeclared
+    coordinate_type (caller did not pass) must be inferred from coord
+    values, not blindly stamped as "normalized".
+
+    Pre-B-452 the validator's "auto-add coordinate_type when missing"
+    branch (action_utils.py:299/317/344-345) stamped `"normalized"` for
+    every valid (positive finite) coord including obvious pixel pairs
+    like [100, 200]. The env wrapper at vwa_wrapper.py:352-358 then
+    silently divides by viewport, but the step JSONL audit trail
+    claimed normalized — paper §3 error-taxonomy + cross-baseline
+    coord-failure analysis were mislabeled.
+
+    Post-B-452: `max(x, y) > 1.0` → "pixel"; else → "normalized".
+    """
+    # click with pixel coords + no coordinate_type → infer "pixel"
+    action, valid = validate_action({
+        "action_type": "click", "coordinate": [100, 200],
+    })
+    assert valid is True
+    assert action["coordinate_type"] == "pixel", (
+        f"pixel coord [100, 200] should infer 'pixel', "
+        f"got {action.get('coordinate_type')!r}"
+    )
+
+    # click with normalized coords + no coordinate_type → infer "normalized"
+    action, valid = validate_action({
+        "action_type": "click", "coordinate": [0.5, 0.5],
+    })
+    assert valid is True
+    assert action["coordinate_type"] == "normalized", (
+        f"normalized coord [0.5, 0.5] should infer 'normalized', "
+        f"got {action.get('coordinate_type')!r}"
+    )
+
+    # type with pixel coord + no coordinate_type → infer "pixel"
+    action, valid = validate_action({
+        "action_type": "type", "text": "x", "coordinate": [50, 80],
+    })
+    assert valid is True
+    assert action["coordinate_type"] == "pixel"
+
+    # select_option with pixel coord + no coordinate_type → infer "pixel"
+    action, valid = validate_action({
+        "action_type": "select_option", "coordinate": [30, 40], "option_label": "X",
+    })
+    assert valid is True
+    assert action["coordinate_type"] == "pixel"
+
+    # Explicit declaration is preserved (no inference override).
+    # The declared "pixel" passes _is_valid_coordinate_pair's pixel branch
+    # (x >= 0 and y >= 0), so this is structurally valid even though the
+    # values [0.5, 0.5] look normalized — caller intent wins.
+    action, valid = validate_action({
+        "action_type": "click", "coordinate": [0.5, 0.5],
+        "coordinate_type": "pixel",
+    })
+    assert valid is True
+    assert action["coordinate_type"] == "pixel", (
+        "explicit coordinate_type must not be overridden by inference"
+    )

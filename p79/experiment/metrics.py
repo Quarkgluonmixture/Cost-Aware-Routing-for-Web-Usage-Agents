@@ -118,7 +118,7 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
     return False, None
 
 
-def p95(values: List[float]) -> float:
+def p95(values: List[float], *, strict: bool = False) -> float:
     """Linear-interp P95 (matches numpy default `method="linear"`).
 
     B-200 (/stress A1.4b-ii codex B-ii-6, P2): strict policy on None / NaN.
@@ -126,12 +126,28 @@ def p95(values: List[float]) -> float:
     `p95([NaN, 1, 2])` silently returned 1.9 (NaN ignored by sort but tail
     misleading). Now: filter None + NaN explicitly + return 0.0 on empty
     valid set (matches the existing empty-input contract). Callers that
-    want strict mode should filter upstream + assert no missing values.
+    want strict mode should pass ``strict=True`` (see B-456).
+
+    B-456 (/stress A1.4 P1-8-C gemini OOB, 2026-05-17): opt-in ``strict``
+    mode for figure renderers / cross-arm aggregators that compute
+    ``mean(p95)``. Pre-fix the catastrophic-empty case silently returned
+    ``0.0`` — downstream ``mean`` then dragged the fleet average toward 0,
+    falsely advantaging the most-failing arm. Renderers and per-arm tables
+    should set ``strict=True`` so an empty-input p95 raises a ``ValueError``
+    they can catch + display "N/A" instead of injecting a 0 into the math.
+    Default ``strict=False`` keeps the legacy empty-input contract for the
+    many callers that already disclose "p95=0.0 means catastrophic" inline.
     """
     import math as _math
     valid = [float(v) for v in values
              if v is not None and not (isinstance(v, float) and _math.isnan(v))]
     if not valid:
+        if strict:
+            raise ValueError(
+                "p95 called with empty valid input set (no non-None / non-NaN "
+                "values); set strict=False to receive the legacy 0.0 fallback "
+                "or filter the empty case upstream before calling. B-456."
+            )
         return 0.0
     if len(valid) == 1:
         return valid[0]

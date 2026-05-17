@@ -220,6 +220,38 @@ def _is_valid_coordinate_pair(
     return 0.0 <= x <= 1.0 and 0.0 <= y <= 1.0
 
 
+def _infer_coordinate_type(coord: Any) -> str:
+    """B-452 (/stress A1.4 P1-1-B codex OOB, 2026-05-17): infer the natural
+    coordinate_type for a coord pair when the caller did not declare one.
+
+    Pre-fix the validator stamped any valid (positive finite) coord as
+    ``coordinate_type="normalized"`` even when the values were obviously
+    pixels (e.g. ``[100, 200]``). The env wrapper at
+    ``vwa_wrapper.py:352-358`` then silently divides by viewport when
+    ``max(x,y) > 1.0`` to recover pixel semantics, but the step JSONL
+    audit trail still claimed ``"normalized"`` — paper §3 error-taxonomy
+    aggregator and cross-baseline coord-failure analysis were mislabeled.
+
+    Inference rule (cheap, no env access):
+      - any coord component > 1.0  → ``"pixel"`` (large absolute values
+        cannot be inside [0,1] normalized space)
+      - all components ≤ 1.0       → ``"normalized"`` (canonical default)
+
+    The caller is responsible for already validating the coord shape via
+    ``_is_valid_coordinate_pair``; this helper assumes positive finite
+    floats and just picks a label. Returns the inferred type string.
+    """
+    try:
+        x = float(coord[0])
+        y = float(coord[1])
+    except (TypeError, ValueError, IndexError):
+        # Defensive fallback — should never happen after _is_valid_coordinate_pair.
+        return "normalized"
+    if x > 1.0 or y > 1.0:
+        return "pixel"
+    return "normalized"
+
+
 def _is_valid_delta_pair(delta: Any) -> bool:
     """B-142: scroll delta shape check. 2 finite floats; sign indicates
     direction; magnitude usually 0-1 normalized but pixel deltas are
@@ -297,7 +329,12 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
         if not has_option:
             return {"action_type": "wait"}, False, "invalid_select_option"
         if coord_valid_shape and "coordinate_type" not in action:
-            action["coordinate_type"] = "normalized"
+            # B-452 (/stress A1.4 P1-1-B codex OOB, 2026-05-17): infer the
+            # natural coord type from values rather than blindly stamping
+            # "normalized". Pixel inputs (e.g. [100, 200]) now correctly
+            # label as "pixel"; env wrapper still auto-normalizes downstream
+            # but the audit trail no longer lies.
+            action["coordinate_type"] = _infer_coordinate_type(action["coordinate"])
 
     if action_type == "click":
         coord = action.get("coordinate")
@@ -315,7 +352,12 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
         if not has_id and not coord_valid_shape:
             return {"action_type": "wait"}, False, "invalid_element_id"
         if coord_valid_shape and "coordinate_type" not in action:
-            action["coordinate_type"] = "normalized"
+            # B-452 (/stress A1.4 P1-1-B codex OOB, 2026-05-17): infer the
+            # natural coord type from values rather than blindly stamping
+            # "normalized". Pixel inputs (e.g. [100, 200]) now correctly
+            # label as "pixel"; env wrapper still auto-normalizes downstream
+            # but the audit trail no longer lies.
+            action["coordinate_type"] = _infer_coordinate_type(action["coordinate"])
 
     if action_type == "type":
         action["text"] = str(action.get("text", ""))
@@ -342,7 +384,12 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
         if not has_id and not coord_valid_shape:
             return {"action_type": "wait"}, False, "invalid_element_id"
         if coord_valid_shape and "coordinate_type" not in action:
-            action["coordinate_type"] = "normalized"
+            # B-452 (/stress A1.4 P1-1-B codex OOB, 2026-05-17): infer the
+            # natural coord type from values rather than blindly stamping
+            # "normalized". Pixel inputs (e.g. [100, 200]) now correctly
+            # label as "pixel"; env wrapper still auto-normalizes downstream
+            # but the audit trail no longer lies.
+            action["coordinate_type"] = _infer_coordinate_type(action["coordinate"])
 
     if action_type == "scroll":
         delta = action.get("delta")

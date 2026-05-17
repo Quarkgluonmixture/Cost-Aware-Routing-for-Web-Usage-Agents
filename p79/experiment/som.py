@@ -158,6 +158,22 @@ def _collect_bbox_map(
     _visited: Optional[set] = None,
     _depth: int = 0,
 ) -> None:
+    """Walk a legacy raw-observation dict / list to harvest `(element_id, bbox)`
+    pairs into ``bbox_map``.
+
+    Bbox unit contract (B-454, /stress A1.4 P1-3-A, 2026-05-17): bboxes
+    collected here are **pixel coordinates** as a documented contract — VWA's
+    production path uses ``obs.obs_nodes_info[*].union_bound`` (pixel
+    coordinates from CDP) and bypasses this fallback function entirely. This
+    function is only invoked when ``obs_nodes_info`` is missing (legacy
+    `raw`-only observation wrappers, e.g. custom BrowserGym integrations
+    written before A1.4). The downstream caller, ``_normalize_bbox``, applies
+    a defensive heuristic — values with ``max(|x|, |y|, |x2|, |y2|) <= 1.0``
+    are treated as already-normalized and scaled up by viewport dimensions
+    — but the canonical expectation here is **pixel input**. If a future
+    wrapper provides bboxes in a different unit, document the convention
+    upstream so this fallback does not silently mis-scale.
+    """
     if _depth > _BBOX_TRAVERSAL_MAX_DEPTH:
         logger.debug("_collect_bbox_map depth cap hit (%d) — stopping descent", _depth)
         return
