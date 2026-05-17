@@ -3274,4 +3274,66 @@ Cross-AI value (A1.15-specific): codex unique P0 = **B-385 session auto-clean mi
 
 **Phase 1a fire green-light reaffirmed**: A1.2 substrate post-A1.1+A1.2 batches (3-AI cross-audit). Cross-baseline validator strict (B-406/407/409/412/413); contract symmetric (B-408/410/411); cleanup landed (B-414/415/416). Phase A "永远最 clean paper grade" directive satisfied for §A1.2 scope.
 
-**Next available B-number**: B-417+.
+---
+
+## /stress A1.3 v9 batch — `p79/envs/` env-layer scaffold + D1 heuristic delete (2026-05-17)
+
+A1.3 v9 third-pass audit (after §147 v8 6-fix batch B-156~B-161). Mode A + Mode B + Mode C all 3 cycles + 1 deeper round (heuristic family + scaffold completeness). User decided D1=A delete heuristic + D2 (paper §3 GRL framing) deferred to parallel session.
+
+**3-AI cross-audit landings (initial + deeper)**:
+- Initial Mode B (codex) 8 findings / 5 OOB (15135 bytes), Mode C (gemini) 7 findings + 3 OOB (8038 bytes), Mode A (Claude) 7 findings + 3 OOB.
+- Deeper Mode B (codex) PARTIAL after 2 retries — numeric receipts only (`stress_a1_3_deeper_spotcheck_20260517-003217.txt` 7100 bytes); Mode C (gemini) 7159 bytes 13-item scaffold table + Option B framing; Mode A 22-item enumeration + 0/53924 heuristic empirical.
+- Cross-AI overlap: 0 × 3-AI / 4 × 2-AI A+C / 1 × 2-AI A+B / 12 × 1-AI unique.
+
+### B-425. HeuristicDomBackend family retirement — D1=A user decision 🛠️ FIXED commit `5799fda`
+- **Attack**: 3-AI deeper audit confirmed 0/53924 step rows + 0/119 yaml configs + 0 paper §3 mention. ~150 LOC + 8 tests defending unreachable code paths. A1.2 B-408 enum + B-414 anchored-role fix were defensive engineering on dead code.
+- **Fix**: Deleted `p79/backends/heuristic.py` + `p79/experiment/modules.py` (M1/M2/M3/M4 functions). Removed `_ALLOWED_DOM_MODES` enum + `heuristic_dom` factory branch (replaced with actionable ValueError); removed `dom_mode == heuristic_only` branches in local_qwen/api_proxy; removed local_gemma NotImplementedError raise (B-408 contract symmetry now trivial). Runner M1-M3 calls inlined as simplified baseline-retry generator (M3 module retired; baseline-retry path preserved). Tests: 2 heuristic_dom dispatch tests deleted + 1 retirement-contract test added.
+- **Backward-compat**: `dom_mode` field still accepted in yaml/config (no-op); `first_element_id_by_keyword` + `extract_candidate_query` kept in action_utils.py because `_build_exploration_fallback_action` in helpers.py (anti-repeat + no-early-finish runtime controls) still uses them.
+- **Paper-2 resume cost**: ~1h (git revert + re-test).
+
+### B-418. Locator-route TYPE branch new-tab switch parity — Mode B P1-2 OOB sibling propagation of B-157 🛠️ FIXED commit `5fa579f`
+- **Attack**: `vwa_wrapper.py:418-447` type+Enter branch missing the B-157 click-branch `_num_tabs_before` snapshot + new-tab detect + `bring_to_front()`. Pre-fix: search form Enter + form-submit `target=_blank` opened new tab silently; observation stayed bound to old page → state_change false-no-progress → cross-baseline taxonomy contamination.
+- **Fix**: Mirror click branch tab-switch logic (snapshot before dispatch, detect, switch, stamp `_locator_route_meta["new_tab_switched"]`).
+
+### B-419. `snapshot_form_fields()` error sentinel — Mode B P1-3 OOB 🛠️ FIXED commit `5fa579f`
+- **Attack**: `vwa_wrapper.py:745-753` exception path returned bare `empty: {fields:[]}` indistinguishable from "page has no form fields". state_change.py:111-112 collapsed both cases to `unchanged` → silent navigation-race suppression.
+- **Fix**: Exception path stamps `snapshot_error: "<ExcClass>: <msg>"`; success path also gets `snapshot_error: None` so downstream readers can disambiguate key-missing vs explicit-None.
+
+### B-420. `select_option_meta` env_dispatch_meta — Mode B P1-5 OOB 🛠️ FIXED commit `5fa579f`
+- **Attack**: `vwa_wrapper.py:479-619` bare `except: logger.warning + create_none_action()` swallowed JS exceptions + missing-obs cases + no-match cases. Empirical 195/738 archive rows (action_success=False, page_change=False) were taxonomy-blind.
+- **Fix**: New `_select_option_meta` dict symmetric with `_locator_route_meta`, captures `{action_kind, dispatch_path: element_id|coordinate|missing_obs, success, error}`. Schema field added to `StepRecordV2` + `STEP_RECORD_V2_DEFAULTS` + `PAPER_GRADE_STEP_OPTIONAL_KEYS`. Runner persists at step_record write-out (paper §3.5 select_option sub-taxonomy now audit-able).
+
+### B-421. `locator_route_meta` regression test — Mode A P1-8 🛠️ FIXED commit `5fa579f`
+- **Attack**: `locator_route_meta` archive coverage 0/53924 (pre-B-156 data) — fix could regress without detection (no integration test asserts wire is connected).
+- **Fix**: `tests/test_vwa_wrapper_telemetry.py` NEW — 3 tests monkeypatching fake `_lr_click`/`_lr_type` modules. Asserts `info["locator_route_meta"]` non-None on id-based click + type, None on scroll. No real Playwright needed.
+
+### B-422. Injection threshold harmonize — Mode A P1-11 🛠️ FIXED commit `5fa579f`
+- **Attack**: `vwa_wrapper.py:1049` CSS dropdown inline 150 px / `vwa_wrapper.py:1131` native select inline 100 px — two magic numbers same primitive, no doc trail.
+- **Fix**: Named module-level constants `_INJECT_DISTANCE_CSS_DROPDOWN_PX = 150` + `_INJECT_DISTANCE_NATIVE_SELECT_PX = 100`. Docstring explains why values differ (CSS popup triggers larger; native combobox tightly bound).
+
+### B-423. `_on_dialog` beforeunload accept policy — Mode B P2-1 OOB 🛠️ FIXED commit `5fa579f`
+- **Attack**: `vwa_wrapper.py:757-771` `prompt/beforeunload: dismiss` — beforeunload dismissal = "stay on page" → silent cancel on go_back / form-submit navigation after dirty form edit. Asymmetric vs confirm/alert accept policy.
+- **Fix**: Moved beforeunload from dismiss → accept (paper-grade agents WANT navigation to proceed). Prompt still dismisses (no agent-authored text input).
+
+### B-424. Form snapshot value hash — Mode B P2-2 / closes §147 P2-B5 🛠️ FIXED commit `5fa579f`
+- **Attack**: `_FORM_SNAPSHOT_JS:731` `entry.value.substring(0, 200)` truncates at 200 chars. Codex Mode B empirical: 25/7271 type actions >200 chars (max 807). Long-value suffix edits silently collapsed to "unchanged" → cycle detection breaks.
+- **Fix**: JS adds `value_len` + lightweight `value_djb2` hash; state_change.py `_form_fields_changed` compares the tuple. Legacy snapshots without these keys default to None == None (no-op against archived data).
+
+### B-417. iframe descent in locator dispatch JS resolvers ⏳ DEFER follow-up — Mode B P1-1 OOB
+- **Attack**: `document.elementFromPoint` + `_inject_*` + `_FORM_SNAPSHOT_JS` all top-document only. iframe target elements fall back to bbox-center or vanish.
+- **Defer rationale**: Phase 1a cls+red 0pp empirical impact (旧 sites 非 iframe-heavy); Phase 1b shop + cross-family expansion may need. 2h+ code + cross-origin regression risk → separate commit / future follow-up.
+- **Tracked**: User's parallel GRL session (`docs/checkpoints/stress_grl_audit_2026-05-17.md`).
+
+**B-numbers consumed (A1.3 v9)**: B-417~B-425 (9 contiguous; B-417 reserved-but-deferred).
+
+**Smoke verification**:
+- py_compile PASS: backends/* + envs/* + experiment/runner/main + experiment/state_change + experiment/types + experiment/schema_migrations/v2
+- Tests **417/417 PASS** (was 414 pre-A1.3 v9; +4 new tests this round — 3 from B-421 telemetry regression + 1 schema validation update for B-420)
+
+### Deferred to user's parallel GRL audit session
+
+D2 (Paper §3 GRL framing decision A/B/C) deferred to user's separate session. User had previous advisor sync: bug fixes → future cross-benchmark workshop sub-paper (e.g. agisdk pattern). User identified additional concern: "dropdown 修复 是独立于传统 bug 修复之外的" — `[DROPDOWN OPTIONS]` injection is net-new capability not VWA bug fix. GRL completeness audit running in parallel session.
+
+**Phase 1a fire green-light extended (post-A1.3 v9)**: substrate paper-grade after A1.1 + A1.2 + A1.3 v9 (21+8+9 = 38 fixes B-395~B-425). Heuristic family retired (paper-2 forward stub via git history). env-layer scaffold ON_TARGET telemetry (locator + select_option) now JSONL audit-able. Beforeunload policy symmetric. Form snapshot full-fidelity.
+
+**Next available B-number**: B-426+.
