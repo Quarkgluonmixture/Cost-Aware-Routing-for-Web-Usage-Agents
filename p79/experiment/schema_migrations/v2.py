@@ -83,18 +83,18 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     # post-hoc na_fp / eval_fp filter layer retired (fixed at the source:
     # B-91 evaluator guard + N/A exclusion at load). Archived pre-§139.8
     # summaries may still carry these keys (harmless, unread).
-    # B-462 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17): Option K
+    # B-487 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17): Option K
     # covariate anchors. Legacy summaries lack these → aggregator falls back
     # to filesystem scan (B-389 robustness path); fresh runs stamp via
     # `_run_and_record_episode` entry/exit.
     "wallclock_start": None,
     "wallclock_end": None,
-    # B-461 (/stress A1.5b Phase 1 P0-2-C gemini OOB, 2026-05-17): quarantine
+    # B-486 (/stress A1.5b Phase 1 P0-2-C gemini OOB, 2026-05-17): quarantine
     # flag — exception path sets True → resume gate (`runner/main.py:552-619`)
     # force re-runs instead of accepting summary. Legacy summaries default
     # False (assumed clean unless explicitly flagged).
     "needs_reevaluation": False,
-    # B-460 (/stress A1.5b Phase 1 P0-1-ABC 3-AI overlap, 2026-05-17): resume
+    # B-485 (/stress A1.5b Phase 1 P0-1-ABC 3-AI overlap, 2026-05-17): resume
     # fingerprint (sha256[:16] of cfg.model.revision + backend.revision +
     # max_new_tokens + temperature + paper_grade + observation_mode +
     # transformers_version + prompt_hash). Legacy summaries default None →
@@ -188,7 +188,7 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     "glm_fallback_used": None,
     "glm_fallback_latency_ms": None,
     "glm_original_fail_reason": None,
-    # B-472 (/stress A1.5b Phase 1 P1-9-A, 2026-05-17): control-injected
+    # B-497 (/stress A1.5b Phase 1 P1-9-A, 2026-05-17): control-injected
     # action provenance — None when no control fired; dict when
     # `_anti_repeat_control` / `_no_early_finish_control` replaced the
     # agent's emitted action with a synthetic fallback. See

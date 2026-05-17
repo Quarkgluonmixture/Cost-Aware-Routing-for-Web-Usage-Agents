@@ -1397,7 +1397,7 @@ def main() -> int:
                 for _art in _art_root.iterdir():
                     if not _art.is_dir():
                         continue
-                    # B-463 (/stress A1.5b Phase 1 P0-4-C gemini OOB companion,
+                    # B-488 (/stress A1.5b Phase 1 P0-4-C gemini OOB companion,
                     # 2026-05-17): runner-side `_run_episode` archives prior-
                     # attempt forensic to `<task>.stale_<ts>` siblings when
                     # `.in_progress` marker present (runner-crash recovery
@@ -1420,7 +1420,7 @@ def main() -> int:
             # Orphan steps files (steps JSONL without summary)
             if _ep_root.exists():
                 for _sf in _ep_root.glob("*_steps_v2.jsonl"):
-                    # B-463 companion: skip `<task>.stale_<ts>.jsonl` archives.
+                    # B-488 companion: skip `<task>.stale_<ts>.jsonl` archives.
                     if ".stale_" in _sf.name:
                         continue
                     _summary = _ep_root / _sf.name.replace("_steps_v2.jsonl", "_summary_v2.json")

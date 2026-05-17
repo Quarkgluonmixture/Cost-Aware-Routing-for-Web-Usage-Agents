@@ -362,3 +362,31 @@ drop-one bound. Full prose draft + Supp Table generation deferred to post-fire d
 - 笔记 §95 (FP reform) / §107 (Phase A wave) / §114 (provenance) / §116 (audit) / §116.X user prompts
 - 笔记 §163.3 + §163.4 (Option K trajectory event schema + cross-talk insight 2026-05-16)
 - 笔记 §165 (A1.15 C1 chronicle, planned post-merge)
+
+
+---
+
+## §4.X.18 Artifact filename and diagnostic control disclosures (A1.5b Phase 1, B-494 + B-496)
+
+### `observation_dom.txt` content is mode-conditional (B-494)
+
+Per-step observation artifacts are written to `<run_dir>/<condition_id>/artifacts/<site>_task_<task_id>/step_NNN/observation_dom.txt` regardless of `condition.observation_mode`. The filename is historical (originally added when the runner only supported DOM mode) and content semantics differ by mode:
+
+- **DOM mode**: file contains the full AXTree text (canonical "DOM observation").
+- **SoM mode**: file contains the `[SOM_MARKS]` block (semantically a compressed mark list, not a DOM tree).
+- **Vision mode**: file contains an empty or near-empty observation string (vision mode renders observation through screenshot, not text).
+- **Phantom modes** (`phantom_dom` / `phantom_som` / `phantom_text` / `phantom_prompt`): content depends on the specific phantom variant — see paper §3.5 phantom mode taxonomy.
+
+Readers of `observation_dom.txt` for parsing or replay **must** consult the canonical `condition.observation_mode` field (in `condition_summary_v2.json` and per-step `StepRecordV2.observation_mode`) for the actual content semantics. A mode-aware rename (e.g. `observation_som.txt` / `observation_vision.txt`) is deferred to a future schema-bump release due to ~14 consumer scripts (mechinterp tools / digest pipeline / gallery / watchdog session-health check) currently hardcoding the legacy filename. Cross-link: master_bug_catalog B-494.
+
+### Diagnostic exploration controls use site-uniform thresholds (B-496)
+
+The runner's diagnostic exploration controls (`_no_early_finish_control`, `_anti_repeat_control`; defined in `p79/experiment/runner/helpers.py`) use site-uniform threshold defaults:
+
+- `min_exploration_steps = 5`
+- `min_page_changes = 2`
+- `min_search_attempts = 2`
+
+Different VWA sites have systematically different natural per-step page-change rates (classifieds is form-heavy with high per-click page-changes; reddit is scroll-heavy with low per-click page-changes; shopping is mixed). A site-uniform threshold therefore produces site-correlated control fire rates — classifieds rarely triggers `_no_early_finish_control`; reddit triggers it frequently.
+
+**Paper-grade impact**: paper-grade runs disable these controls (`cfg.diagnostic_controls.enabled = False` is the default). Any analysis citing diagnostic-control fire-rate data across sites (e.g. §6 supporting evidence using diagnostic-mode runs) must disclose this systematic bias. Per-site threshold calibration based on empirical per-site page-change rates is deferred. Cross-link: master_bug_catalog B-496.

@@ -29,7 +29,7 @@ def _parse_seeds(seed_value: Any) -> List[int]:
 def _action_signature(action: Dict[str, Any]) -> str:
     """Compact fingerprint of an action for cycle detection (strict: includes element_id).
 
-    B-479 (/stress A1.5b Phase 1 P2-4-A, 2026-05-17): replace hardcoded 60-char
+    B-504 (/stress A1.5b Phase 1 P2-4-A, 2026-05-17): replace hardcoded 60-char
     text truncation with full-length hash + length suffix to eliminate
     long-prefix-same-suffix-different false positives. Pre-fix two `type`
     actions with text `"long search query truncated at position 60 mark: A"`

@@ -3691,3 +3691,120 @@ submodule).
 **Cross-batch context (last 6h)**: A1.25 GRL Chunk 1 (B-439~B-448, my commit `5d8fc2f`) + parallel A1.4 Chunks 1-4 (B-449~B-458, commits `3a2d204` / `e5af0e7` / `901956d` / `0e7b4a9`) + A1.20 (B-459~B-477, `e4a5428`) + this A1.25 GRL Chunk 2 (B-479~B-484) = **39 paper-grade fixes** across 4 distinct /stress audit scopes in a single overnight session via concurrent multi-Claude + multi-AI-lineage (Claude + codex + gemini) audit pipeline.
 
 **Next available B-number**: B-485+.
+
+---
+
+## A1.5b Phase 1 — `p79/experiment/runner/` control-plane audit (2026-05-17 deep night)
+
+**Scope split rationale**: main.py 2320 LOC triggered `feedback_split_large_scope.md` >1500 LOC single-file rule. A1.5b split into 2 phases:
+- **Phase 1 (THIS audit)**: control plane = `run()` + lifecycle + restart contract + helpers controls + cross-pipeline substrate (`logger_v2.py` + `types.py` + `schema_migrations/v2.py`). main.py L1-984.
+- **Phase 2 (deferred to next /stress slot)**: data plane = `_run_episode` body L984-2320 + io_utils.read_jsonl_dedup full audit + experiment_watchdog race surface.
+
+**3-AI cycle output**: Mode A (Claude self) 11 findings 5 OOB / Mode B (codex `/codex-stress`) 8 findings 4 OOB scheduled +65min for codex 限额 reset @03:24:30, fired @03:24:49 finished @03:27:45 (2 min 56 sec runtime, exit 0) / Mode C (gemini `/gemini-stress`) 8 findings 5 OOB 16.8 sec runtime. **21 unique findings after dedup**: 2 × 3-AI overlap (B-485 resume identity + B-491 staging merge), 2 × 2-AI overlap (B-489 run_meta atomic + B-490 escalation_count), 17 × 1-AI unique (lens-diversity catches).
+
+**User picks (5-decision triage)**: Q1 P0-3=`(C) split` schema + write path now, aggregator sync Phase 2. Q2 P0-2=**(A') quarantine + force re-run** (replaces Gemini naive last-step inference — task-level success ≠ agent self-claim). Q3 P0-4=`(A')` watchdog-aware archive (.in_progress marker presence distinguishes runner-crash from watchdog-clean retry). Q4 P0-1=`(A) minimal critical fields`. Q5 fire timing=`(A) wait-fix-blocker-subset`. Q6 push=`(A) commit-only, wait push`. Bottom-tier auto-default per 推荐 letter.
+
+**Numbering note**: my code commits Chunk 1~5a used B-460~B-480 references; mid-session discovery that parallel /stress A1.20 (B-459~B-477, commit `e4a5428`) + A1.25 GRL Chunk 2 (B-479~B-484, commit `87874f2`) already claimed those IDs forced renumber to B-485~B-505 via sed sweep in Chunk 5b (commit `<TBD>`). Original code comments + commit messages reference old IDs — catalog entries below use canonical post-renumber IDs.
+
+### B-485. `_validate_resume_identity` 6-tuple incomplete (P0-1-ABC 3-AI overlap) 🛠️ FIXED commit `528d81d` + `<rename TBD>`
+- **Attack**: identity tuple (run_id/condition_id/seed/site/task_id/schema_version) caught path identity but missed experiment identity. 3 AI lineages all attacked same surface from different field angles: Claude (model_revision + prompt_hash), codex (backend_id + transformers + paper_grade + observation_mode), gemini (max_steps + max_new_tokens + temperature). Restart with cfg drift silently ingested old summaries into new aggregate; B-169 quarantine fired only on path mismatch.
+- **Fix**: introduce `resume_fingerprint` = sha256[:16] of (cfg.model.revision + backend_revision + max_new_tokens + temperature + paper_grade + observation_mode + max_steps + transformers_version + prompt_hash). Identity gate at `runner/main.py:570-588` compares loaded.get vs current state hash. Legacy summaries return None → mismatch → quarantine (Phase 1a not yet fired on A100, from-scratch fire is the plan).
+
+### B-486. Exception-path EpisodeSummaryV2 success=False hardcode (P0-2-C gemini OOB) 🛠️ FIXED commit `3cd175e` + `<rename TBD>`
+- **Attack**: exception path EpisodeSummaryV2 at L908 硬编码 `success=False` regardless of partial steps. Mid-evaluator crash (DGX OOM / network blip) → recovery summary `success=False` ingested as complete → task never re-evaluated → SR silent under-report. Naive fix (infer success from last step's action_success) is risky overreach — agent emitting stop ≠ task-level evaluator outcome (url_match / program_html / string_match all require evaluator).
+- **Fix**: quarantine-rerun pattern. Exception path sets `needs_reevaluation=True`; resume gate (L675-737) detects → quarantine stale summary + fall through to re-run (B-169 quarantine pattern reused). True evaluator-based success/score only via re-run.
+
+### B-487. Option K covariate substrate missing (P0-3-B codex OOB) 🛠️ FIXED commit `eac0d2b` + `<rename TBD>`
+- **Attack**: `aggregate_trajectory_covariates.py:82-88` (B-389) expects `condition_summary["episode_summaries"]` list + per-episode `wallclock_start` anchor for `is_after_reset` / `prior_event_count` / `had_finalize_race_clear` covariate computation, but runner wrote neither field. Aggregator's `ep_start_dt is None` fallback fired for every episode → paper §4 GLMM covariate-adjusted SR claim had no data substrate. Hidden last-mile gap in §168 Pre-fire 闭环 (Schema → API → 4 Hooks → Merge → Aggregator chain).
+- **Fix**: three-layer schema add: (a) `EpisodeSummaryV2` adds `wallclock_start` + `wallclock_end` Optional[str] (ISO-8601); (b) `_run_and_record_episode` stamps both at entry/exit (success + exception paths); (c) `run()` emits `aggregate["episode_summaries"]` lightweight list (task_id / site / success / score / wallclock_*) + `episode_ids` to condition_summary. Aggregator sync left to Phase 2 audit per user Q1=`(C) split`.
+
+### B-488. `_run_episode` shutil.rmtree wipes B-222-preserved forensic (P0-4-C gemini OOB) 🛠️ FIXED commit `3cd175e` + `<rename TBD>`
+- **Attack**: `_run_episode` entry (L1047-1063) unconditionally `shutil.rmtree(episode_dir) + stale_jsonl.unlink()`. When runner crashes mid-episode the `.in_progress` marker survives, watchdog orphan-cleanup correctly skips (B-222 guard preserves partial state), but next `_run_episode` entry wipes everything anyway → forensic destroyed even when watchdog correctly preserved. Violates preregistration "Restart-resilient trajectory logging" claim. Researched watchdog mechanism (chronicle §168 6-layer auto-clean): differentiation via `.in_progress` presence is key.
+- **Fix**: in-progress-aware archive. If `.in_progress` marker present (runner-crash recovery), rename `episode_dir` + step JSONL to `.stale_<ts>` sibling for forensic. Else (watchdog-clean retry OR fresh task) wipe as before. Companion: `experiment_watchdog.py` skips `.stale_*` from orphan cleanup so preservation isn't defeated 10 min after restart.
+
+### B-489. `_write_run_meta` plain json.dump asymmetric durability (P1-1-AB 2-AI overlap) 🛠️ FIXED commit `528d81d` + `<rename TBD>`
+- **Attack**: `run()` entry first-write `run_meta.json` used plain `open + json.dump`. B-331 lineage (atomic + fsync for `run_summary_v2.json` last-write) + B-198 + B-289 (atomic chain for condition_meta / episode_summary / condition_summary) covered other writers but missed `run_meta`. DGX crash mid-write → truncated JSON → resume + analyze_experiment.py readers fail.
+- **Fix**: replace with `write_run_summary_atomic(self.output_root / "run_meta.json", payload)` (already exported B-331 helper). 1-line patch.
+
+### B-490. `_aggregate_partial_steps` escalation_count hardcoded 0 (P1-2-AC 2-AI overlap) 🛠️ FIXED commit `00df3e4` + `<rename TBD>`
+- **Attack**: pre-fix `escalation_count: 0` with cop-out comment "cannot reconstruct without state context". But `StepRecordV2.observation_mode` is REQUIRED field per `types.py:331` schema; given `condition.observation_mode` (caller knows), escalation = sum(steps where mode != condition.mode) IS computable. Pre-fix DGX-crash-rate × baseline-escalation-rate biased paper §4 router fire-rate headline downward → reviewer attack "your router fire-rate excludes crash-contaminated runs".
+- **Fix**: helper now accepts `condition_observation_mode: Optional[str]` param; recomputes escalation when provided; legacy callers fall back to 0 + WARN log so aggregator distinguishes legacy fallback from true-zero count.
+
+### B-491. Staging merge `target.exists()` drops resume reset events (P1-3-B codex OOB) 🛠️ FIXED commit `00df3e4` + `<rename TBD>`
+- **Attack**: `merge_staging_trajectory_events:246-249` used `if target.exists(): return 0` — too coarse. Resume + RESET scenario: T1 creates target (empty or with reset event); T2 same RUN_ID resume + `RESET_BEFORE=1` → queue gate appends new reset_post_interrupt → runner sees target.exists() → skips merge → new reset discontinuity false-negative in covariate trail (paper §4 covariate analysis sees post-reset episodes as normal).
+- **Fix**: hash-based dedup via new `_event_fingerprint()` helper (sha256[:16] of event_type + wallclock_ts + sorted canonical metadata, excluding merged_from_staging + staging_run_id transients). Idempotent against re-merge, durable against new-event drops.
+
+### B-492. Append-only JSONL first-create lacks parent-dir fsync (P1-4-B codex OOB) 🛠️ FIXED commit `00df3e4` + `<rename TBD>`
+- **Attack**: `write_step` / `log_trajectory_event` / `merge_staging_trajectory_events` fsynced file fd but not parent dir entry on first create. ext4 journal holds dirent up to ~30s after file-fd fsync; DGX SIGKILL in that window → inode has data but dirent unflushed → reboot → step JSONL "evaporates". B-198/B-289 lineage for `os.replace` atomic writes but for append-create code path.
+- **Fix**: capture `existed_pre_write` before open; if False (new file), `_fsync_dir(path.parent)` after first write. Applied to all 3 append-create call sites.
+
+### B-493. Partial recovery read_jsonl_dedup missing summary_path guard (P1-5-B codex OOB) 🛠️ FIXED commit `00df3e4` + `<rename TBD>`
+- **Attack**: B-168 partial recovery in exception path called `read_jsonl_dedup(_jsonl_path)` without `summary_path=` kwarg → B-180 identity guard bypassed. T1 corrupt summary → quarantine + rerun. T2 2nd attempt crashes before step_idx=0 written → exception path reads PRIOR attempt's JSONL → emits error summary with stale cost/steps from prior attempt.
+- **Fix**: pass `summary_path=summary_file` to enable B-180 cross-attempt rejection. `read_jsonl_dedup` returns empty list if identity mismatch → exception path correctly emits zero-step error summary for current attempt.
+
+### B-494. `_save_artifacts` writes "observation_dom.txt" regardless of mode (P1-6-C gemini) 🛠️ DISCLOSURE-ONLY commit `<docs TBD>`
+- **Attack**: artifact file hardcoded `observation_dom.txt` for all modes; in SoM mode content is `[SOM_MARKS]` block; in vision mode content is empty (or near-empty). Mechinterp / replay / gallery readers parsing the file as AXTree DOM get silent semantic drift.
+- **Fix scope decision (user Q1 implicit)**: full file-rename touches 14+ consumers (watchdog session check L277 / digest_enrich / glm_batch_digest / annotate_screenshots / mechanistic scripts) — high blast radius. Disclosure-only fix: paper §3.5 prose adds footnote "observation_dom.txt content is mode-conditional; in SoM mode contains [SOM_MARKS] block, in vision mode near-empty. See StepRecordV2.observation_mode for canonical mode disambiguation." File-rename + consumer propagation deferred to A1.5b **Phase 2** audit slot.
+
+### B-495. Artifacts non-durable (PIL save + plain text write) (P1-7-B codex OOB) 🛠️ FIXED commit `00df3e4` + `<rename TBD>`
+- **Attack**: `_save_artifacts` plain `obs.image.save()` + `open().write()` had no atomicity guarantee. Step JSONL fsync'd with `artifact_paths` pointer, but pointed-to file could be half-written / missing post-crash. Paper §3 / §5 / gallery evidence layer dangling artifact references.
+- **Fix**: extend B-225/B-331 tmp+fsync+replace+dirfsync atomic chain to artifact writes. Both screenshot.png (PIL save → tmp → fsync → rename → parent dir fsync) and observation_dom.txt (open → write → fsync → tmp → replace → parent fsync). Best-effort dir fsync (OSError swallow for NFS/FAT compat).
+
+### B-496. `_no_early_finish_control` site-uniform thresholds (P1-8-A Claude) 🛠️ DISCLOSURE-ONLY commit `<docs TBD>`
+- **Attack**: `helpers.py:240-242` defaults `min_exploration_steps=5 / min_page_changes=2 / min_search_attempts=2` are global, not per-site. cls form-heavy (high page_change rate per click), reddit scroll-heavy (low rate). Same threshold → cls control rarely fires, reddit fires often. **Diagnostic control only** — paper-grade runs have `cfg.diagnostic_controls.enabled=False` default. But if §6 references any diagnostic-control data, cross-site SR comparison receives site-correlated control fire-rate bias.
+- **Fix scope decision (user (B) disclosure-only)**: paper §3 prose adds footnote: "Diagnostic exploration controls (`_no_early_finish_control`, `_anti_repeat_control`) use site-uniform thresholds; cross-site control fire-rate comparisons therefore have site-correlated bias. Paper-grade runs disable these controls (`cfg.diagnostic_controls.enabled=False` default); any §6 analysis citing diagnostic-control data must disclose this systematic bias." Per-site calibration deferred (would require empirical page-change rate measurement per site).
+
+### B-497. Synthetic control-injected action provenance (P1-9-A Claude) 🛠️ SCHEMA-ONLY FIXED commit `73037c7` + `<rename TBD>`
+- **Attack**: `helpers._anti_repeat_control` + `_no_early_finish_control` return `(fallback_action, reason)` — fallback REPLACES agent's emitted action. Pre-fix step record's `action` field carried synthetic fallback indistinguishably from agent emission → paper §3 action taxonomy 把合成 scroll/type 当 agent action emission → taxonomy 静默污染.
+- **Fix**: schema-only — `StepRecordV2.control_intervention: Optional[Dict[str, Any]] = None`. `PAPER_GRADE_STEP_OPTIONAL_KEYS` + `STEP_RECORD_V2_DEFAULTS` sync. Runtime write path (`_run_episode` body L984+ stamps when control fires with `{"type": "anti_repeat" | "no_early_finish", "original_action": dict, "reason": str}`) deferred to **Phase 2** audit slot per B-280 paper-grade catalog discipline. Test fixtures updated.
+
+### B-498. `_run_post_condition_analysis` 300s timeout silent swallow (P1-10-A Claude) 🛠️ FIXED commit `73037c7` + `<rename TBD>`
+- **Attack**: subprocess.run timeout=300 (5 min) was too short for shopping 466-task cross-condition aggregator on contested DGX CPU → silent TimeoutExpired → stale paper aggregate without operator awareness. Reviewer re-plotting would see figure/prose number drift.
+- **Fix**: timeout bumped to 1800s (30 min). On timeout: ntfy push to `NTFY_TOPIC` (best-effort) so operator sees the staleness signal. Cross-link `make analysis` for manual re-aggregation.
+
+### B-499. `_create_latest_symlink` multi-site collision (P1-11-A Claude) 🛠️ FIXED commit `73037c7` + `<rename TBD>`
+- **Attack**: pre-fix multi-site runs fell through to bare `latest` symlink → two concurrent multi-site runs overwrote each other's symlink, readers couldn't tell which was canonical.
+- **Fix**: multi-site uses sorted-joined names `latest_<site1>_<site2>...`; single-site preserved as `latest_<site>`; zero-site warns + skips (config-bug indicator). CLAUDE.md "同 site 单 baseline" rule prevented site-content contamination, but didn't prevent symlink collision — now closed.
+
+### B-500. `run()` body close() leak (P1-12-B codex OOB) 🛠️ FIXED commit `73037c7` + `<rename TBD>`
+- **Attack**: `environment.close()` + `energy_tracker.close()` only fired on normal return. Any fatal exception in condition×seed loop skipped close → leaked Playwright / browser / energy probe state. Queue restart inherited dirty external site / auth / browser context.
+- **Fix**: extract main loop body to `_run_main_loop` private method; `run()` wraps with try/finally. close methods fire on both success and fatal raise. Inner try/except guards close-failure from masking original exception.
+
+### B-501. `_FATAL_ENV_MARKERS` substring match false-positive (P2-1-A Claude) 🛠️ FIXED commit `89cb2bf` + `<rename TBD>`
+- **Attack**: pre-fix `("Sync API inside the asyncio", "asyncio loop", "Event loop is closed")` plain substring match. "asyncio loop" matches benign log "Reusing existing asyncio loop" → kill recoverable run as fatal.
+- **Fix**: replace tuple with `_FATAL_ENV_REGEX` matching specific fatal phrases only (Sync API inside the asyncio / asyncio loop is closed / asyncio loop was destroyed / Event loop is closed). re.search() vs substring.
+
+### B-502. `_cleanup_stale_runs` 5-file threshold edge case (P2-2-A Claude) 🛠️ FIXED commit `89cb2bf` + `<rename TBD>`
+- **Attack**: `file_count > 5` allowed resume-state dirs with exactly 5 files (run_meta + condition_meta + 2 summaries + 1 step jsonl) to be eligible for delete if has_run_meta path-level check was bypassed by manual mv / rename.
+- **Fix**: change threshold to `file_count > 0` — any non-zero file count preserves. Only truly empty trees eligible.
+
+### B-503. Staging merge empty run_id silent no-op (P2-3-A Claude) 🛠️ FIXED commit `89cb2bf` + `<rename TBD>`
+- **Attack**: `if _staging_run_id:` silently skipped merge on empty/blank run_id, defeating preregistration.md Appx A "trajectory_events.jsonl ALWAYS contains reset events" falsifiability. yaml template bug / inherit error → empty run_id → silent loss.
+- **Fix**: paper_grade=True + empty run_id → ValueError (fail-loud); dev mode → WARN log (surface the no-op). Surface this paper-grade config requirement.
+
+### B-504. `_action_signature` 60-char text truncation false-positive (P2-4-A Claude) 🛠️ FIXED commit `89cb2bf` + `<rename TBD>`
+- **Attack**: pre-fix `text[:60]` hardcoded truncation. Two type-actions with identical first-60-char prefix but different suffixes collapsed to same signature → false cycle detected → `_anti_repeat_control` fired spuriously → synthetic action injection.
+- **Fix**: sha256[:10] hash + length suffix (`f"{hash}_{len}"`). Strictly more precise + same compactness. Empty text → empty signature.
+
+### B-505. `_normalize_error_category` no_progress uses page_changed (P2-5-C gemini) 🛠️ FIXED commit `89cb2bf` + `<rename TBD>`
+- **Attack**: pre-fix `not page_changed` polluted by B-09 invisible reasons (form_value_changed / dom_complexity_changed / text_length_changed) that fire on background DOM mutation without user-visible state change. `no_progress` denominator polluted by silent form-edit successes.
+- **Fix**: `_normalize_error_category` accepts optional `agent_visible_changed: Optional[bool] = None`. When provided (StepRecordV2.agent_visible_changed per B-09 fix), use it; legacy callers fall back to page_changed.
+
+**B-numbers consumed (A1.5b Phase 1)**: B-485~B-505 (21 contiguous; gap-fill on B-478 left from A1.25 GRL Chunk 2 not claimed here).
+
+**Renumber sweep (commit `<TBD>`)**: my code commits Chunk 1~5a used B-460~B-480 internal references before mid-session discovery of A1.20 + A1.25 GRL Chunk 2 catalog collision. Sed sweep `for old in {460..480}; do sed -i "s/B-${old}/B-$((old+25))/g" <my files>` applied across 7 touched files (p79/experiment/runner/main.py + helpers.py + logger_v2.py + types.py + schema_migrations/v2.py + scripts/maintenance/experiment_watchdog.py + tests/test_som_and_schema.py). Highest-first sed prevents double-substitution. 20/20 tests PASS post-renumber.
+
+**Smoke verification (A1.5b Phase 1)**:
+- py_compile PASS: all 7 modified Python files
+- Tests **20/20 PASS** at every chunk boundary (Chunk 1 / 2 / 3 / 4a / 4b / 5a) — schema (`test_som_and_schema.py` 13) + runner smoke (`test_runner_smoke.py` 7). Test fixture updates: `control_intervention: None` added to 2 step-record fixtures.
+
+**Deferred to A1.5b Phase 2 (next /stress slot)**:
+- B-494 `_save_artifacts` mode-aware file rename + 14-consumer propagation
+- B-497 `_run_episode` runtime write path for `control_intervention` field (schema slot already prepared this round)
+- Full audit of `_run_episode` body (L984-2320) per scope split
+- Full audit of `io_utils.read_jsonl_dedup` contract surface
+- Full audit of `experiment_watchdog.py` race surface (mid-step intersection)
+
+**Cross-batch context**: A1.20 figures (B-459~B-477, `e4a5428`) + A1.25 GRL Chunk 2 (B-479~B-484, `87874f2`) + **this A1.5b Phase 1 (B-485~B-505)** = 47 paper-grade fixes across 3 distinct /stress audit scopes during 2026-05-17 overnight session.
+
+**Next available B-number**: B-506+.

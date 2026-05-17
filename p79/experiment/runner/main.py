@@ -108,7 +108,7 @@ def _seed_global_rng(seed: int) -> None:
 class ExperimentRunner:
     # Fatal environment errors that corrupt Playwright/asyncio state.
     # When caught, re-raise immediately so the process can exit cleanly.
-    # B-476 (/stress A1.5b Phase 1 P2-1-A, 2026-05-17): replace tuple of
+    # B-501 (/stress A1.5b Phase 1 P2-1-A, 2026-05-17): replace tuple of
     # substring patterns with explicit regex. Pre-fix `"asyncio loop"` as
     # plain substring would false-positive match benign log content like
     # "Reusing existing asyncio loop" → kill recoverable run. Now: explicit
@@ -234,7 +234,7 @@ class ExperimentRunner:
             "conditions": [c.as_dict() for c in self.conditions],
             "task_count": len(self.tasks),
         }
-        # B-464 (/stress A1.5b Phase 1 P1-1-AB 2-AI overlap, 2026-05-17):
+        # B-489 (/stress A1.5b Phase 1 P1-1-AB 2-AI overlap, 2026-05-17):
         # atomic write via shared helper (B-331 lineage). Pre-fix plain
         # `open + json.dump` — sibling-propagation gap from B-331 batch
         # (B-331 added atomic for `run_summary_v2.json` last-write but
@@ -312,7 +312,7 @@ class ExperimentRunner:
                 file_count = sum(1 for _ in run_dir.rglob("*") if _.is_file())
             except OSError:
                 continue
-            # B-477 (/stress A1.5b Phase 1 P2-2-A, 2026-05-17): preserve any
+            # B-502 (/stress A1.5b Phase 1 P2-2-A, 2026-05-17): preserve any
             # non-empty tree. Pre-fix `file_count > 5` threshold allowed dirs
             # with 1-5 files (e.g. resumed run with run_meta + condition_meta
             # + 2 summaries + 1 step jsonl = 5 files exactly) to be deleted
@@ -330,7 +330,7 @@ class ExperimentRunner:
     def _create_latest_symlink(self) -> None:
         """Create a latest_{site} symlink in the phase directory pointing to this run.
 
-        B-474 (/stress A1.5b Phase 1 P1-11-A, 2026-05-17): multi-site runs
+        B-499 (/stress A1.5b Phase 1 P1-11-A, 2026-05-17): multi-site runs
         previously fell through to a no-suffix `latest` symlink — two
         concurrent multi-site runs would overwrite each other's symlink and
         readers couldn't tell which run was "latest". Now: multi-site uses
@@ -341,7 +341,7 @@ class ExperimentRunner:
         sites = self.cfg.get("task", {}).get("include_sites", [])
         if not sites:
             logger.warning(
-                "B-474 _create_latest_symlink: cfg.task.include_sites is empty — "
+                "B-499 _create_latest_symlink: cfg.task.include_sites is empty — "
                 "skipping symlink creation (config bug, no site context to anchor)."
             )
             return
@@ -362,7 +362,7 @@ class ExperimentRunner:
         partial_steps: List[Dict[str, Any]],
         condition_observation_mode: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """B-168 (/stress A1.4a v8 codex B1, 2026-05-16) + B-465 (A1.5b
+        """B-168 (/stress A1.4a v8 codex B1, 2026-05-16) + B-490 (A1.5b
         Phase 1 P1-2-AC, 2026-05-17): aggregate metrics from partial JSONL
         rows so a mid-episode crash doesn't erase the tokens/cost/latency
         already incurred + correctly recompute escalation_count.
@@ -373,7 +373,7 @@ class ExperimentRunner:
         incompatible histories. ``read_jsonl_dedup`` already handles restart
         dedup and corrupt-line skipping; this helper computes the sums.
 
-        B-465 (Claude A1.5b + gemini G3, A+C 2-AI overlap): pre-fix returned
+        B-490 (Claude A1.5b + gemini G3, A+C 2-AI overlap): pre-fix returned
         ``escalation_count: 0`` with cop-out comment "cannot reconstruct
         without state context". But each ``StepRecordV2.observation_mode``
         is a REQUIRED field per ``types.py:331`` schema; given
@@ -423,7 +423,7 @@ class ExperimentRunner:
             if not bool(s.get("page_changed", False))
             and str((s.get("action") or {}).get("action_type", "")).lower() not in ("finish", "stop")
         )
-        # B-465 (/stress A1.5b Phase 1 P1-2-AC, 2026-05-17): recompute
+        # B-490 (/stress A1.5b Phase 1 P1-2-AC, 2026-05-17): recompute
         # escalation_count from partial_steps using condition.observation_mode
         # as router-resting target. step.observation_mode is REQUIRED field
         # per StepRecordV2 schema (types.py:331). If caller didn't pass
@@ -437,7 +437,7 @@ class ExperimentRunner:
             )
         else:
             logger.warning(
-                "B-465 _aggregate_partial_steps called without "
+                "B-490 _aggregate_partial_steps called without "
                 "condition_observation_mode — escalation_count stays 0 (legacy fallback)"
             )
             escalation_count = 0
@@ -555,7 +555,7 @@ class ExperimentRunner:
                 return "invalid_schema"
             return "unknown_failure"
 
-        # B-480 (/stress A1.5b Phase 1 P2-5-C gemini, 2026-05-17): prefer
+        # B-505 (/stress A1.5b Phase 1 P2-5-C gemini, 2026-05-17): prefer
         # agent_visible_changed signal over global page_changed when caller
         # provides it. Pre-fix `not page_changed` was polluted by B-09
         # invisible-change reasons (form_value_changed, dom_complexity_changed,
@@ -577,7 +577,7 @@ class ExperimentRunner:
         cfg: Dict[str, Any],
         condition: ConditionSpec,
     ) -> str:
-        """B-460 (/stress A1.5b Phase 1 P0-1-ABC 3-AI overlap, 2026-05-17):
+        """B-485 (/stress A1.5b Phase 1 P0-1-ABC 3-AI overlap, 2026-05-17):
         compute sha256[:16] resume identity fingerprint.
 
         Pre-fix `_validate_resume_identity` 6-tuple (run_id/condition_id/
@@ -627,7 +627,7 @@ class ExperimentRunner:
         return hashlib.sha256(encoded).hexdigest()[:16]
 
     def run(self) -> Path:
-        # B-475 (/stress A1.5b Phase 1 P1-12-B codex OOB, 2026-05-17):
+        # B-500 (/stress A1.5b Phase 1 P1-12-B codex OOB, 2026-05-17):
         # try/finally guard around the main loop. Pre-fix `environment.close()`
         # + `energy_tracker.close()` only fired on normal return — any fatal
         # exception inside the condition×seed loop leaked browser /
@@ -645,11 +645,11 @@ class ExperimentRunner:
             try:
                 self.environment.close()
             except Exception as _env_close_exc:
-                logger.warning("B-475 environment.close() failed: %s", _env_close_exc)
+                logger.warning("B-500 environment.close() failed: %s", _env_close_exc)
             try:
                 self.energy_tracker.close()
             except Exception as _energy_close_exc:
-                logger.warning("B-475 energy_tracker.close() failed: %s", _energy_close_exc)
+                logger.warning("B-500 energy_tracker.close() failed: %s", _energy_close_exc)
 
     def _run_main_loop(self) -> Path:
         run_condition_metrics: List[Dict[str, Any]] = []
@@ -696,13 +696,13 @@ class ExperimentRunner:
                                 f"staging events into {effective_cid}/trajectory_events.jsonl"
                             )
                     elif bool(self.cfg.get("paper_grade", False)):
-                        # B-478 (/stress A1.5b Phase 1 P2-3-A, 2026-05-17):
+                        # B-503 (/stress A1.5b Phase 1 P2-3-A, 2026-05-17):
                         # paper-grade fail-loud on empty run_id. preregistration.md
                         # Appendix A claims trajectory_events.jsonl ALWAYS contains
                         # reset events — falsifiability requires non-empty run_id
                         # so staging file path is constructable.
                         raise ValueError(
-                            "B-478: cfg.experiment.run_id is empty/blank — "
+                            "B-503: cfg.experiment.run_id is empty/blank — "
                             "paper-grade requires non-empty run_id for trajectory "
                             "events staging merge. preregistration.md Appendix A "
                             "trajectory_events claim falsifiability depends on it."
@@ -710,7 +710,7 @@ class ExperimentRunner:
                     else:
                         # Dev mode: surface the silent no-op as a warning.
                         logger.warning(
-                            "B-478 cfg.experiment.run_id is empty/blank — "
+                            "B-503 cfg.experiment.run_id is empty/blank — "
                             "skipping trajectory events staging merge."
                         )
                 except Exception as _trajectory_merge_exc:
@@ -722,7 +722,7 @@ class ExperimentRunner:
                 episode_summaries: List[Dict[str, Any]] = []
                 backend = self._get_backend(condition.backend_id)
 
-                # B-460 (/stress A1.5b Phase 1 P0-1-ABC, 2026-05-17): compute
+                # B-485 (/stress A1.5b Phase 1 P0-1-ABC, 2026-05-17): compute
                 # resume identity fingerprint once per (condition, seed)
                 # iteration; identity gate compares loaded summary's stored
                 # fingerprint against this current-state hash.
@@ -736,12 +736,12 @@ class ExperimentRunner:
                                 loaded = json.load(f)
 
                             # B-169 (/stress A1.4a v8 codex B2, 2026-05-16) +
-                            # B-460 (/stress A1.5b Phase 1 P0-1-ABC 3-AI
+                            # B-485 (/stress A1.5b Phase 1 P0-1-ABC 3-AI
                             # overlap, 2026-05-17): identity tuple check.
                             # Pre-B-169 the resume gate accepted any file at
                             # the expected path; B-169 added 6-tuple path
                             # identity (run_id/condition_id/seed/site/task_id/
-                            # schema_version); B-460 extends with
+                            # schema_version); B-485 extends with
                             # `resume_fingerprint` (sha256[:16] embedding
                             # cfg.model.revision + backend.revision +
                             # max_new_tokens + temperature + paper_grade +
@@ -783,7 +783,7 @@ class ExperimentRunner:
                                     )
                                 # Fall through to re-run; do NOT continue
                             else:
-                                # B-461 (/stress A1.5b Phase 1 P0-2-C gemini OOB,
+                                # B-486 (/stress A1.5b Phase 1 P0-2-C gemini OOB,
                                 # 2026-05-17): quarantine-rerun gate. Exception-
                                 # path summaries (mid-evaluator crash, partial
                                 # state) set `needs_reevaluation: True`. Pre-fix
@@ -798,7 +798,7 @@ class ExperimentRunner:
                                 # would over-report SR).
                                 if bool(loaded.get("needs_reevaluation", False)):
                                     logger.info(
-                                        "B-461 needs_reevaluation flag detected for "
+                                        "B-486 needs_reevaluation flag detected for "
                                         "site=%s task=%s — re-running episode "
                                         "(prior exception-path summary lacked "
                                         "evaluator score; quarantine + force re-run)",
@@ -816,7 +816,7 @@ class ExperimentRunner:
                                         shutil.move(str(summary_file), str(_quarantine_path))
                                     except OSError as _q_exc:
                                         logger.error(
-                                            "B-461 quarantine move failed for %s: %s — "
+                                            "B-486 quarantine move failed for %s: %s — "
                                             "re-running anyway",
                                             summary_file, _q_exc,
                                         )
@@ -906,7 +906,7 @@ class ExperimentRunner:
                     }
                 )
 
-                # B-462 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17):
+                # B-487 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17):
                 # Option K covariate substrate — emit lightweight episode list
                 # + ids into condition_summary so
                 # `aggregate_trajectory_covariates.py:120-180` (B-389) can
@@ -923,7 +923,7 @@ class ExperimentRunner:
                         "wallclock_start": s.get("wallclock_start"),
                         "wallclock_end": s.get("wallclock_end"),
                         "needs_reevaluation": bool(s.get("needs_reevaluation", False)),
-                        # B-460 propagation: carry fingerprint into the
+                        # B-485 propagation: carry fingerprint into the
                         # condition-summary episode list so post-hoc forensic
                         # readers can audit cfg-state-per-episode without
                         # re-reading every summary file.
@@ -1013,7 +1013,7 @@ class ExperimentRunner:
     def _run_post_condition_analysis(self, condition_id: str) -> None:
         """Run analyze_experiment.py in a subprocess after a condition completes.
 
-        B-473 (/stress A1.5b Phase 1 P1-10-A, 2026-05-17): timeout bumped from
+        B-498 (/stress A1.5b Phase 1 P1-10-A, 2026-05-17): timeout bumped from
         300s (5min) to 1800s (30min). Pre-fix shopping 466-task cross-condition
         aggregator on contested DGX CPU could exceed 5min → silent
         TimeoutExpired → stale paper aggregate. Bump + ntfy on timeout so
@@ -1029,7 +1029,7 @@ class ExperimentRunner:
             return
         cmd = [sys.executable, str(script), "--run_dir", str(self.output_root)]
         try:
-            # B-473: 30-min budget for large shop / multi-condition aggregators.
+            # B-498: 30-min budget for large shop / multi-condition aggregators.
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
             if result.returncode == 0:
                 logging.info("[runner] Post-condition analysis completed for %s", condition_id)
@@ -1040,7 +1040,7 @@ class ExperimentRunner:
                 )
         except subprocess.TimeoutExpired:
             logging.warning(
-                "[runner] B-473 Post-condition analysis TIMED OUT after 1800s for %s — "
+                "[runner] B-498 Post-condition analysis TIMED OUT after 1800s for %s — "
                 "cross-condition aggregate will be stale until next manual `make analysis` run",
                 condition_id,
             )
@@ -1051,7 +1051,7 @@ class ExperimentRunner:
                     _req = urllib.request.Request(
                         f"https://ntfy.sh/{_topic}",
                         data=(
-                            f"P79 B-473: post-condition analyze TIMED OUT for "
+                            f"P79 B-498: post-condition analyze TIMED OUT for "
                             f"{condition_id} after 30min — cross-condition aggregate stale"
                         ).encode("utf-8"),
                         method="POST",
@@ -1089,7 +1089,7 @@ class ExperimentRunner:
         step_dir = episode_dir / f"step_{step_idx:03d}"
         step_dir.mkdir(parents=True, exist_ok=True)
 
-        # B-470 (/stress A1.5b Phase 1 P1-7-B codex OOB, 2026-05-17): atomic
+        # B-495 (/stress A1.5b Phase 1 P1-7-B codex OOB, 2026-05-17): atomic
         # write for artifacts (tmp + fsync + replace + parent_fsync). Pre-fix
         # plain `obs.image.save()` + `open(...).write()` left artifact files
         # with no durability guarantee — step JSONL was fsync'd with
@@ -1171,13 +1171,13 @@ class ExperimentRunner:
             "Running condition=%s seed=%d backend=%s site=%s task=%s",
             effective_cid, current_seed, condition.backend_id, task.site, task.task_id,
         )
-        # B-462 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17): Option K
+        # B-487 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17): Option K
         # covariate anchor. Stamp wallclock_start pre-try so both normal AND
         # exception paths can attach to summary — aggregate_trajectory_covariates
         # (B-389) uses it to time-order reset_post_interrupt events vs episode
         # lifetime (`is_after_reset` / `prior_event_count` covariates).
         _wallclock_start = datetime.now(timezone.utc).isoformat()
-        # B-460 (/stress A1.5b Phase 1 P0-1-ABC, 2026-05-17): compute resume
+        # B-485 (/stress A1.5b Phase 1 P0-1-ABC, 2026-05-17): compute resume
         # fingerprint per episode so summary write carries it for later
         # restart's identity gate. Per-episode compute is OK (microsecond
         # hash work) and avoids passing the value down through the call
@@ -1188,12 +1188,12 @@ class ExperimentRunner:
                 condition, task, backend, condition_logger, condition_dir,
                 effective_cid=effective_cid,
             )
-            # B-462: stamp anchors on success path. _run_episode returns
+            # B-487: stamp anchors on success path. _run_episode returns
             # the dict; we inject Option K covariate substrate fields here
             # so all consumers (write_episode_summary + aggregator) see them.
             summary["wallclock_start"] = _wallclock_start
             summary["wallclock_end"] = datetime.now(timezone.utc).isoformat()
-            # B-460: stamp resume fingerprint for next restart's identity gate.
+            # B-485: stamp resume fingerprint for next restart's identity gate.
             summary["resume_fingerprint"] = _resume_fingerprint
         except BaseException as exc:
             if isinstance(exc, (KeyboardInterrupt, SystemExit)):
@@ -1233,7 +1233,7 @@ class ExperimentRunner:
             try:
                 _jsonl_path = condition_logger.step_log_path(task.site, task.task_id)
                 if _jsonl_path.exists():
-                    # B-468 (/stress A1.5b Phase 1 P1-5-B codex OOB, 2026-05-17):
+                    # B-493 (/stress A1.5b Phase 1 P1-5-B codex OOB, 2026-05-17):
                     # pass `summary_path` to enable B-180 identity guard. Pre-fix
                     # corrupt summary fall-through to rerun read raw JSONL via
                     # plain `read_jsonl_dedup(_jsonl_path)`; if 2nd attempt
@@ -1253,7 +1253,7 @@ class ExperimentRunner:
                     task.site, task.task_id, _read_exc,
                 )
                 _partial_steps = []
-            # B-465 (A1.5b Phase 1 P1-2-AC, 2026-05-17): pass condition's
+            # B-490 (A1.5b Phase 1 P1-2-AC, 2026-05-17): pass condition's
             # observation_mode so escalation_count can be recomputed from
             # partial steps (not hardcoded 0 = silent paper §4 bias).
             _agg = self._aggregate_partial_steps(_partial_steps, condition.observation_mode)
@@ -1287,18 +1287,18 @@ class ExperimentRunner:
                 benchmark_noise_category=noise_cat,
                 artifacts_dir=str(condition_dir),
                 error=str(exc),
-                # B-462 (/stress A1.5b Phase 1 P0-3-B): Option K anchors —
+                # B-487 (/stress A1.5b Phase 1 P0-3-B): Option K anchors —
                 # propagate captured start ts + stamp end-of-attempt ts so
                 # aggregator's time-ordering covariates have data substrate
                 # even on crash path.
                 wallclock_start=_wallclock_start,
                 wallclock_end=datetime.now(timezone.utc).isoformat(),
-                # B-460 (/stress A1.5b Phase 1 P0-1-ABC): stamp resume
+                # B-485 (/stress A1.5b Phase 1 P0-1-ABC): stamp resume
                 # fingerprint so quarantined error summaries also carry
                 # identity invariant (downstream forensic audit may still
                 # want to reason about which cfg-state produced the crash).
                 resume_fingerprint=_resume_fingerprint,
-                # B-461 (/stress A1.5b Phase 1 P0-2-C gemini OOB): flag
+                # B-486 (/stress A1.5b Phase 1 P0-2-C gemini OOB): flag
                 # exception-path summary for resume-gate force re-run.
                 # B-168 partial recovery preserves steps/cost/latency but
                 # evaluator did NOT score (mid-eval crash). Marking this
@@ -1425,7 +1425,7 @@ class ExperimentRunner:
         episode_dir = condition_dir / "artifacts" / f"{task.site}_task_{task.task_id}"
         stale_jsonl = condition_logger.step_log_path(task.site, task.task_id)
 
-        # B-463 (/stress A1.5b Phase 1 P0-4-C gemini OOB, 2026-05-17):
+        # B-488 (/stress A1.5b Phase 1 P0-4-C gemini OOB, 2026-05-17):
         # in-progress-aware archive. Pre-fix unconditional `shutil.rmtree`
         # at entry destroyed B-222 watchdog-preserved forensic — when runner
         # crashes mid-episode the `.in_progress` marker survives, watchdog
@@ -1436,7 +1436,7 @@ class ExperimentRunner:
         # "Restart-resilient trajectory logging" claim. If marker absent
         # (watchdog auto-clean retry path already wiped everything, or fresh
         # task) wipe as before. Watchdog (`experiment_watchdog.py:1397+1413`)
-        # MUST also skip `.stale_*` archives from orphan cleanup (B-463
+        # MUST also skip `.stale_*` archives from orphan cleanup (B-488
         # companion patch).
         _has_in_progress = (
             episode_dir.exists() and (episode_dir / ".in_progress").exists()
@@ -1452,13 +1452,13 @@ class ExperimentRunner:
                     )
                     stale_jsonl.rename(_jsonl_stale)
                 logger.info(
-                    "B-463 archived stale episode forensic for %s task %s → "
+                    "B-488 archived stale episode forensic for %s task %s → "
                     "%s (.in_progress marker present, runner-crash recovery path)",
                     task.site, task.task_id, _stale_archive.name,
                 )
             except OSError as _archive_exc:
                 logger.warning(
-                    "B-463 archive rename FAILED for %s task %s (falling back "
+                    "B-488 archive rename FAILED for %s task %s (falling back "
                     "to wipe so runner can proceed): %s",
                     task.site, task.task_id, _archive_exc,
                 )
@@ -2197,6 +2197,16 @@ class ExperimentRunner:
                     # (B1/B2 have no equivalent). Always emitted; 0 when
                     # no retries fired or for B1/B2 local backends.
                     "total_minus_retry": total_latency_ms - float(meta.get("network_retry_wait_ms") or 0.0),
+                    # B-489 (/stress A1.25 GRL Chunk 3 P1-3-AB, 2026-05-17):
+                    # wrapper-level wait_for_timeout settle-tax accumulator
+                    # (sleep_after_execution * fired_branches per step,
+                    # excludes locator-dispatch internal sleeps). Paper §4
+                    # latency reports both `total` and `total - runtime_sleep`
+                    # so mode-delta is not confounded with settle-tax
+                    # composition (P-SoM 减少 TYPE/SELECT → less settle-tax
+                    # → apparent latency gain partially from runtime, not
+                    # representation efficiency).
+                    "runtime_sleep": float(next_info.get("runtime_sleep_ms", 0) or 0),
                 },
                 tokens={
                     "input": input_tokens,
@@ -2370,7 +2380,7 @@ class ExperimentRunner:
             # post-retry semantics.
             step_record["select_option_meta"] = next_info.get("select_option_meta")
             step_record["select_option_meta_primary"] = _primary_select_option_meta
-            # B-480 (/stress A1.25 GRL Chunk 2 P1-4-B* codex OOB, 2026-05-17):
+            # B-505 (/stress A1.25 GRL Chunk 2 P1-4-B* codex OOB, 2026-05-17):
             # close `select_option_meta_retry` ghost-field hole — schema /
             # dataclass / defaults (B-450) all declared the field but the
             # runner never wrote it. Symmetric to `locator_route_meta_retry`

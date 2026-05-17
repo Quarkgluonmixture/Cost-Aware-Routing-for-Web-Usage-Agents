@@ -273,7 +273,7 @@ def test_step_schema_validation_required_fields():
         "select_option_meta_primary": None,
         "select_option_meta_retry": None,
         "agent_visible_changed": None,
-        # B-472 (/stress A1.5b Phase 1 P1-9-A, 2026-05-17): control-injected
+        # B-497 (/stress A1.5b Phase 1 P1-9-A, 2026-05-17): control-injected
         # action provenance — None when no control fired.
         "control_intervention": None,
     }
@@ -320,7 +320,7 @@ def test_b481_select_option_meta_structured_fields_validator():
             "select_option_meta_primary": None,
             "select_option_meta_retry": None,
             "agent_visible_changed": None,
-            # B-472 (/stress A1.5b Phase 1, 2026-05-17): control_intervention.
+            # B-497 (/stress A1.5b Phase 1, 2026-05-17): control_intervention.
             "control_intervention": None,
         }
         rec[key] = sel_meta_payload
@@ -338,7 +338,7 @@ def test_b481_select_option_meta_structured_fields_validator():
                 "clicked_text": None, "error": None,
             }))
 
-    # Happy path on _retry field (B-480 closure verification)
+    # Happy path on _retry field (B-505 closure verification)
     validate_step_record_v2(_record_with_sel_meta({
         "action_kind": "select_option",
         "success": False, "matched": False,

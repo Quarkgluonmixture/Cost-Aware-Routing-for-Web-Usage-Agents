@@ -173,7 +173,7 @@ class StepRecordV2:
     glm_fallback_used: Optional[bool] = None
     glm_fallback_latency_ms: Optional[float] = None
     glm_original_fail_reason: Optional[str] = None
-    # B-472 (/stress A1.5b Phase 1 P1-9-A, 2026-05-17): control-injected
+    # B-497 (/stress A1.5b Phase 1 P1-9-A, 2026-05-17): control-injected
     # action provenance. helpers.py `_anti_repeat_control` (L207) +
     # `_no_early_finish_control` (L228) return `(fallback_action, reason)`
     # — fallback REPLACES agent's emitted action. Pre-fix step record's
@@ -264,7 +264,7 @@ class EpisodeSummaryV2:
     # evaluator empty-pred guard + N/A task exclusion at load time). `success`
     # is now the canonical paper-grade outcome. Archived pre-§139.8 summaries
     # may still carry these keys on disk (harmless, unread).
-    # B-462 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17): Option K
+    # B-487 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17): Option K
     # covariate substrate — `aggregate_trajectory_covariates.py:82-88` (B-389)
     # 期待 episode-level wallclock anchors to time-order reset_post_interrupt
     # events vs episode lifetime → `is_after_reset` / `prior_event_count`
@@ -275,7 +275,7 @@ class EpisodeSummaryV2:
     # missing → aggregator falls through to filesystem scan (B-389 robustness).
     wallclock_start: Optional[str] = None
     wallclock_end: Optional[str] = None
-    # B-461 (/stress A1.5b Phase 1 P0-2-C gemini OOB, 2026-05-17): exception-
+    # B-486 (/stress A1.5b Phase 1 P0-2-C gemini OOB, 2026-05-17): exception-
     # path EpisodeSummaryV2 may complete summary write without evaluator
     # actually scoring task — `success=False` hardcode is conservative but
     # without a re-evaluation gate the false-negative is final (resume gate
@@ -285,7 +285,7 @@ class EpisodeSummaryV2:
     # inference (which conflates `action_success="stop"` with task-level
     # evaluator outcome; agent self-claim ≠ url_match / program_html / etc).
     needs_reevaluation: bool = False
-    # B-460 (/stress A1.5b Phase 1 P0-1-ABC 3-AI overlap, 2026-05-17):
+    # B-485 (/stress A1.5b Phase 1 P0-1-ABC 3-AI overlap, 2026-05-17):
     # resume fingerprint = sha256[:16] of (cfg.model.revision +
     # cfg.backends[backend_id].revision + max_new_tokens + temperature +
     # paper_grade + observation_mode + transformers_version + prompt_hash).
@@ -355,7 +355,7 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "select_option_meta_primary",  # B-450 retry-overwrite split (symmetric w/ B-440)
     "select_option_meta_retry",    # B-450 retry-overwrite split (symmetric w/ B-440)
     "agent_visible_changed",
-    "control_intervention",  # B-472 control-injected action provenance
+    "control_intervention",  # B-497 control-injected action provenance
 })
 
 
@@ -485,7 +485,7 @@ def validate_step_record_v2(record: Dict[str, Any]) -> None:
                 f"StepRecordV2.{meta_key}.action_kind unexpected value: "
                 f"{meta['action_kind']!r}"
             )
-    # B-480 (/stress A1.25 GRL Chunk 2 P1-4-B*, 2026-05-17): nested validator
+    # B-505 (/stress A1.25 GRL Chunk 2 P1-4-B*, 2026-05-17): nested validator
     # now loops over all three select_option_meta variants (legacy + primary
     # + retry) mirroring the locator_route_meta loop above. Pre-fix only
     # `select_option_meta` got the nested success-bool check — the `_primary`

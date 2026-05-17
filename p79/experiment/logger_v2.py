@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 
 
 def _event_fingerprint(event: Dict[str, Any]) -> str:
-    """B-466 (/stress A1.5b Phase 1 P1-3-B codex OOB, 2026-05-17): canonical
+    """B-491 (/stress A1.5b Phase 1 P1-3-B codex OOB, 2026-05-17): canonical
     fingerprint for trajectory event dedup. sha256[:16] of (event_type +
     wallclock_ts + sorted metadata JSON). Used by
     `merge_staging_trajectory_events` to skip already-merged events on
@@ -92,7 +92,7 @@ class LoggerV2:
     def write_step(self, site: str, task_id: int, record: Dict[str, Any]) -> None:
         path = self.step_log_path(site, task_id)
         path.parent.mkdir(parents=True, exist_ok=True)
-        # B-467 (/stress A1.5b Phase 1 P1-4-B codex OOB, 2026-05-17): fsync
+        # B-492 (/stress A1.5b Phase 1 P1-4-B codex OOB, 2026-05-17): fsync
         # parent dir entry on first-create. File-fd fsync alone does not flush
         # the dirent for a newly-created file — ext4 journal can hold the
         # dirent up to ~30s. DGX SIGKILL between first append + dirent flush
@@ -197,7 +197,7 @@ class LoggerV2:
         }
         path = self.condition_dir / "trajectory_events.jsonl"
         path.parent.mkdir(parents=True, exist_ok=True)
-        # B-467 (/stress A1.5b Phase 1 P1-4-B codex OOB, 2026-05-17): parent-
+        # B-492 (/stress A1.5b Phase 1 P1-4-B codex OOB, 2026-05-17): parent-
         # dir fsync on first-create — see write_step docstring for full
         # rationale (DGX SIGKILL between first append + dirent flush would
         # otherwise evaporate the trajectory event log entirely).
@@ -293,7 +293,7 @@ def merge_staging_trajectory_events(
     if not condition_dir.exists():
         return 0
     target = condition_dir / "trajectory_events.jsonl"
-    # B-466 (/stress A1.5b Phase 1 P1-3-B codex OOB, 2026-05-17): hash-based
+    # B-491 (/stress A1.5b Phase 1 P1-3-B codex OOB, 2026-05-17): hash-based
     # idempotency. Pre-fix `if target.exists(): return 0` dropped staging
     # events on resume+reset scenario: T1 created target (empty or with reset
     # event); T2 same RUN_ID resume + RESET_BEFORE=1 → queue gate appends new
@@ -364,14 +364,14 @@ def merge_staging_trajectory_events(
             "wallclock_ts": preserved_ts,
             "metadata": meta,
         }
-        # B-466 (/stress A1.5b Phase 1 P1-3-B codex OOB, 2026-05-17): skip
+        # B-491 (/stress A1.5b Phase 1 P1-3-B codex OOB, 2026-05-17): skip
         # if fingerprint matches an existing target event (canonical hash
         # excludes merged_from_staging + staging_run_id transients).
         _fp = _event_fingerprint(event)
         if _fp in _existing_fingerprints:
             continue
         _existing_fingerprints.add(_fp)
-        # B-467 (/stress A1.5b Phase 1 P1-4-B codex OOB, 2026-05-17): first-
+        # B-492 (/stress A1.5b Phase 1 P1-4-B codex OOB, 2026-05-17): first-
         # create parent-dir fsync — see write_step / log_trajectory_event for
         # full rationale.
         _existed_pre_write = target.exists()
