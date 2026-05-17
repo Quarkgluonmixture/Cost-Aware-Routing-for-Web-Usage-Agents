@@ -32,9 +32,33 @@ class EpisodeEvalResult:
 # success=False. Dev mode keeps fail-open for iteration speed.
 class EvaluatorUnavailableError(RuntimeError):
     """Raised when VwaEvaluator dependencies are missing / broken AND
-    paper_grade=True. Caller (`_run_and_record_episode`) treats this as
-    a recoverable failure (writes needs_reevaluation=True summary), not
-    as a real `success=False` evaluator outcome."""
+    paper_grade=True.
+
+    Two distinct failure modes with DIFFERENT semantics:
+
+    (a) **init-time failure** (`VwaEvaluator.__init__` import error / missing
+        OpenAI key / evaluator harness path broken). `ExperimentRunner.__init__`
+        at `runner/main.py:145` has NO try/except around `create_evaluator()`
+        — the exception propagates out of the constructor → CLI exits BEFORE
+        any episode loop runs. **No** `needs_reevaluation=True` summary is
+        written (no episode artifact exists yet). This path is **process-fatal**
+        by design: fix env + restart runner (no point continuing with a broken
+        scoring substrate). B-544 commit message intentionally framed init-time
+        as halt-and-fix.
+
+    (b) **evaluate-time failure** (post-init, evaluator dependencies broken
+        when `evaluate()` is actually called). `_run_and_record_episode`
+        (`runner/main.py:1185-1338`) catches inside the per-episode exception
+        handler → writes `needs_reevaluation=True` summary via B-486 quarantine
+        contract → continues the episode loop. The next restart will re-run
+        quarantined episodes via the B-486 resume-gate force-rerun branch
+        (`runner/main.py:818-830`).
+
+    Per /stress A1.5 P1-1-AB* Claude+codex docstring clarification 2026-05-17.
+    Pre-fix docstring claimed case (b) semantics for BOTH modes — case (a) is
+    process-fatal (intentional, see B-544 commit message), not quarantine.
+    Reviewer reading the docstring + finding no init-time `needs_reevaluation`
+    forensic artifact would (correctly) conclude the contract was misstated."""
 
 
 class MockEnvironment:

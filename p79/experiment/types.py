@@ -199,16 +199,35 @@ class StepRecordV2:
     # canonical action form. Pre-fix step_record["action"] carried the
     # agent's RAW emit (B0 `scroll_direction:"down"` enum; B1/B2 `delta:[dx,dy]`
     # free-form pixel) → evidence layer JSONL asymmetric on action vocabulary.
-    # Gemini Mode C attack: "cross-baseline ablation假设 B0/B1/B2 玩 same game,
+    # Gemini Mode C attack: "cross-baseline ablation 假设 B0/B1/B2 玩 same game,
     # action vocabulary 不同 → reviewer 直接 reject capability comparison". Real
     # surface: wrapper at `p79/envs/vwa_wrapper.py:395-414` already normalizes
     # both forms to `create_scroll_action(direction=...)` (execution layer
     # identical since paper §67 schema reform) but the normalized form was
     # never recorded. `action_executed` makes the wrapper-level alignment
-    # visible in step JSONL — reviewer reading JSONL can see "B0 raw emit
-    # scroll_direction:'down' → executed direction='down'" alongside "B1 raw
-    # emit delta:[0,300] → executed direction='down'" and confirm execution
-    # identical. None when wrapper did not emit (mock env, exception path).
+    # visible in step JSONL.
+    #
+    # B-553 (click/type extension, /stress A1.5 P1-3-AB* Claude+codex OOB,
+    # 2026-05-17): extended from scroll-only to click + type dispatch paths.
+    # Shape varies by branch:
+    #   - scroll:      {"action_type": "scroll", "direction": <up|down|noop>}
+    #   - click_eid:   {"action_type": "click", "dispatch_path":
+    #                   "element_id_locator_route" | "element_id_framework",
+    #                   "fallback": bool}
+    #   - click_coord: {"action_type": "click", "dispatch_path":
+    #                   "coord_mouse_click", "fallback": False}
+    #   - type_eid:    {"action_type": "type", "dispatch_path":
+    #                   "element_id_locator_route" | "element_id_framework"
+    #                   | "noop_invalid_element_id", "fallback": bool}
+    #   - type_coord:  {"action_type": "type", "dispatch_path":
+    #                   "coord_locator_route" | "coord_keyboard_fallback",
+    #                   "fallback": bool}
+    # `fallback=True` means the Cluster 1 locator-route walk-up FAILED and
+    # the wrapper fell back to legacy framework path; reviewer can grep
+    # `action_executed.fallback==True` to count cross-baseline fallback
+    # rate (B0 235B rarely falls back; B1/B2 4B more often). None when
+    # wrapper did not emit (mock env, exception path, or non-normalized
+    # action types like back/forward/tab/finish/stop).
     action_executed: Optional[Dict[str, Any]] = None
     # B-563 (/stress A1.22 P0-1-ABC* 3-AI overlap, 2026-05-17): cross-baseline
     # cost-basis declaration. `cost_usd.{input,output,model}` units differ by

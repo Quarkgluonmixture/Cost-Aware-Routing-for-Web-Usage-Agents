@@ -306,8 +306,24 @@ class VWAWrapper:
         # identical since paper §67 schema reform), but the normalized form
         # was never recorded. `action_executed` exposes wrapper-level
         # alignment in step JSONL so reviewer reading evidence layer can
-        # verify execution-layer parity from disk alone. None when no
-        # normalization happened (click/type — baselines emit same shape).
+        # verify execution-layer parity from disk alone.
+        #
+        # B-553 (/stress A1.5 P1-3-AB* Claude+codex OOB, 2026-05-17): extended
+        # from scroll-only (B-512) to click + type dispatch paths. Each
+        # branch sets `_action_executed` with shape
+        # `{"action_type", "dispatch_path", "fallback"}`:
+        #   - click_eid:  element_id_locator_route / element_id_framework
+        #   - click_coord: coord_mouse_click
+        #   - type_coord:  coord_locator_route / coord_keyboard_fallback
+        #   - type_eid:    element_id_locator_route / element_id_framework
+        #                  / noop_invalid_element_id (B-506)
+        #   - scroll:      {action_type, direction} (legacy B-512 shape kept)
+        # `fallback=True` means the Cluster 1 locator-route walk-up FAILED
+        # and the wrapper fell back to legacy framework path (interesting
+        # for paper §3 cross-baseline taxonomy — B0 235B rarely falls back,
+        # B1/B2 4B more often). `None` only when action_type is none of
+        # {click, type, scroll} (e.g. back / forward / tab) — those have
+        # no wrapper-level normalization layer.
         _action_executed: Optional[Dict[str, Any]] = None
 
         if action_type == "click" and "element_id" in action_json:
@@ -364,12 +380,35 @@ class VWAWrapper:
                     # via NONE action — env.step(NONE) just refreshes observation
                     # (now from the new page if a tab was opened).
                     action = create_none_action()
+                    # B-553 (/stress A1.5 P1-3-AB* Claude+codex OOB, 2026-05-17):
+                    # extend `action_executed` from scroll-only (B-512) to click
+                    # dispatch path. Reviewer reading JSONL can now distinguish
+                    # element_id-locator-route success (Cluster 1 path) from
+                    # element_id-framework fallback (legacy VWA `create_id_based
+                    # _action` path) without grepping `locator_route_meta.action
+                    # _kind`. Paper §4.X.6 cross-baseline parity claim now
+                    # auditable for all 3 wrapper-normalized action types.
+                    _action_executed = {
+                        "action_type": "click",
+                        "dispatch_path": "element_id_locator_route",
+                        "fallback": False,
+                    }
                 else:
                     logger.debug(
                         "locator-route click fallback: eid=%s reason=%s",
                         eid, _lr_result.get("error", "")[:80],
                     )
                     action = create_id_based_action(f"click [{eid}]")
+                    # B-553: fallback path — element_id click went through VWA
+                    # framework's `create_id_based_action` after locator-route
+                    # walk-up failed. Reviewer can grep
+                    # `action_executed.fallback==True` to count cross-baseline
+                    # fallback rate (B0 235B rarely; B1/B2 4B more often).
+                    _action_executed = {
+                        "action_type": "click",
+                        "dispatch_path": "element_id_framework",
+                        "fallback": True,
+                    }
             except (TypeError, ValueError):
                 action = None
         elif action_type == "click" and "coordinate" in action_json:
@@ -402,6 +441,15 @@ class VWAWrapper:
                 elif top >= 1.0:
                     top = 1.0 - eps
                 action = create_mouse_click_action(left=left, top=top)
+                # B-553 (/stress A1.5 P1-3-AB* Claude+codex OOB, 2026-05-17):
+                # vision-mode coord-click. No locator dispatch — direct
+                # framework pixel-click. Recorded so reviewer can confirm
+                # vision-mode B0/B1/B2 all take same code path.
+                _action_executed = {
+                    "action_type": "click",
+                    "dispatch_path": "coord_mouse_click",
+                    "fallback": False,
+                }
             else:
                 action = None
         elif action_type == "scroll" and ("delta" in action_json or "scroll_direction" in action_json):
@@ -477,6 +525,14 @@ class VWAWrapper:
                     # locator dispatch already filled + optionally pressed Enter
                     # + slept. Convert to no-op for env.step (refreshes obs).
                     action = create_none_action()
+                    # B-553 (/stress A1.5 P1-3-AB* Claude+codex OOB, 2026-05-17):
+                    # vision-mode coord-type via locator route (Cluster 1 fix —
+                    # bypasses 全选变蓝 §52/§64 risk).
+                    _action_executed = {
+                        "action_type": "type",
+                        "dispatch_path": "coord_locator_route",
+                        "fallback": False,
+                    }
                 else:
                     # Walk-up failed → fall back to legacy direct-click + keyboard.type
                     # path. Preserves prior behavior on edge cases (e.g., coord
@@ -485,6 +541,13 @@ class VWAWrapper:
                         "locator-route coord-type fallback: cx=%s cy=%s reason=%s",
                         _cx_px, _cy_px, _lr_result.get("error", "")[:80],
                     )
+                    # B-553: fallback to direct-click + keyboard.type (with
+                    # is_editable guard against 全选变蓝).
+                    _action_executed = {
+                        "action_type": "type",
+                        "dispatch_path": "coord_keyboard_fallback",
+                        "fallback": True,
+                    }
                     self._env.page.mouse.click(_cx_px, _cy_px)
                     _wait_ms = int(self.sleep_after_execution * 1000)
                     self._env.page.wait_for_timeout(_wait_ms)
@@ -531,6 +594,14 @@ class VWAWrapper:
                     "error": f"invalid_element_id_<=0:{action_json.get('element_id')}",
                 }
                 action = create_none_action()
+                # B-553 (/stress A1.5 P1-3-AB*, 2026-05-17): invalid element_id
+                # short-circuit. Recorded so taxonomy table can count B-506
+                # noop-rescue rate per baseline.
+                _action_executed = {
+                    "action_type": "type",
+                    "dispatch_path": "noop_invalid_element_id",
+                    "fallback": False,
+                }
             else:
                 _type_needs_enter = bool(str(action_json.get("text", "")).endswith("\n"))
                 # B-01 Cluster 1 fix: locator-route TYPE bypasses framework's
@@ -579,12 +650,27 @@ class VWAWrapper:
                     # \n (see locator_dispatch.py:dispatch_id_based_type); avoid
                     # double Enter from post-step keyboard.press at line ~565.
                     _type_needs_enter = False
+                    # B-553 (/stress A1.5 P1-3-AB*, 2026-05-17): element_id
+                    # type via locator route (Cluster 1 fix). Reviewer can
+                    # grep `action_executed.dispatch_path` to verify all
+                    # baselines route DOM/SoM-mode type identically.
+                    _action_executed = {
+                        "action_type": "type",
+                        "dispatch_path": "element_id_locator_route",
+                        "fallback": False,
+                    }
                 else:
                     logger.debug(
                         "locator-route type fallback: eid=%s reason=%s",
                         element_id, _lr_result.get("error", "")[:80],
                     )
                     # Framework will build id-based action below; nothing to do.
+                    # B-553: element_id type fallback — framework path.
+                    _action_executed = {
+                        "action_type": "type",
+                        "dispatch_path": "element_id_framework",
+                        "fallback": True,
+                    }
                     pass
         elif action_type == "back":
             action = create_go_back_action()
@@ -982,12 +1068,11 @@ class VWAWrapper:
             list(self._dialogs_this_step) if self._dialogs_this_step else None
         )
         self._dialogs_this_step.clear()
-        # B-512 (/stress A1.5b Phase 2 P0-1-C gemini OOB, 2026-05-17): wrapper-
-        # normalized canonical action form. None when no normalization happened
-        # (click / type — baselines emit same shape so step_record["action"]
-        # already reflects what executed). Set in the scroll branch above
-        # (currently the only documented action-vocabulary asymmetry per
-        # paper §4.X.6).
+        # B-512 (scroll, /stress A1.5b Phase 2 P0-1-C gemini OOB) + B-553
+        # (click/type extension, /stress A1.5 P1-3-AB*, 2026-05-17):
+        # wrapper-normalized canonical action form including dispatch path.
+        # Set in scroll/click/type branches above; None for back/forward/tab/
+        # finish/stop (no wrapper-level normalization layer).
         info["action_executed"] = _action_executed
         p79_obs = self._to_p79_obs(obs, info)
         self._last_obs_nodes_info = p79_obs.obs_nodes_info
