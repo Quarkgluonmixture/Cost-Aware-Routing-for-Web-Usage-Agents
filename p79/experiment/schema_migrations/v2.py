@@ -94,6 +94,13 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     # force re-runs instead of accepting summary. Legacy summaries default
     # False (assumed clean unless explicitly flagged).
     "needs_reevaluation": False,
+    # B-460 (/stress A1.5b Phase 1 P0-1-ABC 3-AI overlap, 2026-05-17): resume
+    # fingerprint (sha256[:16] of cfg.model.revision + backend.revision +
+    # max_new_tokens + temperature + paper_grade + observation_mode +
+    # transformers_version + prompt_hash). Legacy summaries default None →
+    # identity gate sees `None != current_hash` mismatch → quarantine +
+    # rerun, consistent with paper-grade rerun protocol.
+    "resume_fingerprint": None,
 }
 
 

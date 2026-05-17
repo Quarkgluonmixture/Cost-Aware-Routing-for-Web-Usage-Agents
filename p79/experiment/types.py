@@ -273,6 +273,18 @@ class EpisodeSummaryV2:
     # inference (which conflates `action_success="stop"` with task-level
     # evaluator outcome; agent self-claim ≠ url_match / program_html / etc).
     needs_reevaluation: bool = False
+    # B-460 (/stress A1.5b Phase 1 P0-1-ABC 3-AI overlap, 2026-05-17):
+    # resume fingerprint = sha256[:16] of (cfg.model.revision +
+    # cfg.backends[backend_id].revision + max_new_tokens + temperature +
+    # paper_grade + observation_mode + transformers_version + prompt_hash).
+    # B-169 quarantine 6-tuple (run_id/condition_id/seed/site/task_id/
+    # schema_version) caught path identity but missed *experiment identity*:
+    # restart with changed model SHA / runtime params / prompt template
+    # silently ingested old summaries. Now identity gate compares loaded.
+    # resume_fingerprint vs current state — mismatch → quarantine + rerun.
+    # Pre-fix legacy summaries have `None` → mismatch triggers from-scratch
+    # paper-grade rerun (Phase 1a 还没 fire, no real loss).
+    resume_fingerprint: Optional[str] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)

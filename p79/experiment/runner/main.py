@@ -7,6 +7,7 @@ ExperimentRunner` import path is preserved via `runner/__init__.py`.
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import logging
 import os
@@ -227,8 +228,14 @@ class ExperimentRunner:
             "conditions": [c.as_dict() for c in self.conditions],
             "task_count": len(self.tasks),
         }
-        with open(self.output_root / "run_meta.json", "w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2, ensure_ascii=False)
+        # B-464 (/stress A1.5b Phase 1 P1-1-AB 2-AI overlap, 2026-05-17):
+        # atomic write via shared helper (B-331 lineage). Pre-fix plain
+        # `open + json.dump` — sibling-propagation gap from B-331 batch
+        # (B-331 added atomic for `run_summary_v2.json` last-write but
+        # missed `run_meta.json` first-write). DGX crash mid-write →
+        # truncated JSON → resume + analyze_experiment.py readers fail.
+        from p79.experiment.logger_v2 import write_run_summary_atomic
+        write_run_summary_atomic(self.output_root / "run_meta.json", payload)
 
     def _cleanup_stale_runs(self) -> None:
         """Conservative cleanup for clearly-aborted, empty run dirs only.
@@ -494,6 +501,60 @@ class ExperimentRunner:
             return "no_progress"
         return None
 
+    @staticmethod
+    def _compute_resume_fingerprint(
+        cfg: Dict[str, Any],
+        condition: ConditionSpec,
+    ) -> str:
+        """B-460 (/stress A1.5b Phase 1 P0-1-ABC 3-AI overlap, 2026-05-17):
+        compute sha256[:16] resume identity fingerprint.
+
+        Pre-fix `_validate_resume_identity` 6-tuple (run_id/condition_id/
+        seed/site/task_id/schema_version) was path identity only — didn't
+        catch experiment-identity drift (model SHA changed, prompt template
+        edited, max_new_tokens / temperature mutated, transformers upgraded).
+        3-AI A1.5b audit converged on same finding from 3 angles (Claude:
+        model_revision + prompt_hash; codex: backend_id + transformers +
+        paper_grade + observation_mode; gemini: max_steps + max_new_tokens
+        + temperature).
+
+        Fingerprint embeds the union of those critical fields. Mismatch
+        between current cfg's fingerprint and a loaded summary's stored
+        fingerprint → quarantine + re-run (paper-grade rerun protocol).
+        Legacy summaries lack `resume_fingerprint` → loaded.get returns
+        None → mismatches as expected (Phase 1a 还没 fire; from-scratch
+        rerun is the plan).
+        """
+        backend_id = condition.backend_id
+        backend_cfg = cfg.get("backends", {}).get(backend_id, {}) or {}
+        generation_cfg = backend_cfg.get("generation", {}) or {}
+        components: Dict[str, Any] = {
+            "model_revision": cfg.get("model", {}).get("revision"),
+            "backend_revision": backend_cfg.get("revision"),
+            "max_new_tokens": generation_cfg.get("max_new_tokens"),
+            "temperature": generation_cfg.get("temperature"),
+            "paper_grade": bool(cfg.get("paper_grade", False)),
+            "observation_mode": condition.observation_mode,
+            "max_steps": int(cfg.get("runtime", {}).get("max_steps", 40)),
+        }
+        # transformers version — soft import; absent = best-effort sentinel
+        try:
+            import transformers  # type: ignore[import]
+            components["transformers_version"] = str(getattr(transformers, "__version__", "unknown"))
+        except Exception:
+            components["transformers_version"] = "unavailable"
+        # prompt_hash from canonical VL agent prompts (shared across B0/B1/B2)
+        try:
+            from p79.agents._shared_vl_utils import make_dom_prompt, make_som_prompt
+            prompt_text = make_dom_prompt() + make_som_prompt()
+            components["prompt_hash"] = hashlib.sha256(
+                prompt_text.encode("utf-8")
+            ).hexdigest()[:12]
+        except Exception:
+            components["prompt_hash"] = "unavailable"
+        encoded = json.dumps(components, sort_keys=True, default=str).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()[:16]
+
     def run(self) -> Path:
         self._cleanup_stale_runs()
         self._write_run_meta()
@@ -550,6 +611,12 @@ class ExperimentRunner:
                 episode_summaries: List[Dict[str, Any]] = []
                 backend = self._get_backend(condition.backend_id)
 
+                # B-460 (/stress A1.5b Phase 1 P0-1-ABC, 2026-05-17): compute
+                # resume identity fingerprint once per (condition, seed)
+                # iteration; identity gate compares loaded summary's stored
+                # fingerprint against this current-state hash.
+                _resume_fingerprint = self._compute_resume_fingerprint(self.cfg, condition)
+
                 for task in self.tasks:
                     summary_file = condition_logger.summary_path(task.site, task.task_id)
                     if self.resume and summary_file.exists():
@@ -557,16 +624,20 @@ class ExperimentRunner:
                             with open(summary_file, "r", encoding="utf-8") as f:
                                 loaded = json.load(f)
 
-                            # B-169 (/stress A1.4a v8 codex B2, 2026-05-16):
-                            # identity tuple check. Pre-fix the resume gate
-                            # accepted any file at the expected path — if
-                            # output_root was reused with different
-                            # run_id/seed/site/task_id (manual mv, watchdog
-                            # rename, archived rerun), stale summaries
-                            # silently ingested into the new aggregate. Now
-                            # validate (schema_version, run_id, condition_id,
-                            # seed, benchmark_site, task_id) match expected;
-                            # mismatch → quarantine + re-run.
+                            # B-169 (/stress A1.4a v8 codex B2, 2026-05-16) +
+                            # B-460 (/stress A1.5b Phase 1 P0-1-ABC 3-AI
+                            # overlap, 2026-05-17): identity tuple check.
+                            # Pre-B-169 the resume gate accepted any file at
+                            # the expected path; B-169 added 6-tuple path
+                            # identity (run_id/condition_id/seed/site/task_id/
+                            # schema_version); B-460 extends with
+                            # `resume_fingerprint` (sha256[:16] embedding
+                            # cfg.model.revision + backend.revision +
+                            # max_new_tokens + temperature + paper_grade +
+                            # observation_mode + transformers_version +
+                            # prompt_hash) — restart with cfg drift now
+                            # triggers quarantine + rerun instead of silent
+                            # cross-condition contamination.
                             _expected = {
                                 "schema_version": SCHEMA_VERSION_V2,
                                 "run_id": self.cfg["experiment"]["run_id"],
@@ -574,6 +645,7 @@ class ExperimentRunner:
                                 "seed": current_seed,
                                 "benchmark_site": task.site,
                                 "task_id": task.task_id,
+                                "resume_fingerprint": _resume_fingerprint,
                             }
                             _mismatches = self._validate_resume_identity(loaded, _expected)
                             if _mismatches:
@@ -701,6 +773,11 @@ class ExperimentRunner:
                         "wallclock_start": s.get("wallclock_start"),
                         "wallclock_end": s.get("wallclock_end"),
                         "needs_reevaluation": bool(s.get("needs_reevaluation", False)),
+                        # B-460 propagation: carry fingerprint into the
+                        # condition-summary episode list so post-hoc forensic
+                        # readers can audit cfg-state-per-episode without
+                        # re-reading every summary file.
+                        "resume_fingerprint": s.get("resume_fingerprint"),
                     }
                     for s in episode_summaries
                     if isinstance(s, dict)
@@ -879,6 +956,12 @@ class ExperimentRunner:
         # (B-389) uses it to time-order reset_post_interrupt events vs episode
         # lifetime (`is_after_reset` / `prior_event_count` covariates).
         _wallclock_start = datetime.now(timezone.utc).isoformat()
+        # B-460 (/stress A1.5b Phase 1 P0-1-ABC, 2026-05-17): compute resume
+        # fingerprint per episode so summary write carries it for later
+        # restart's identity gate. Per-episode compute is OK (microsecond
+        # hash work) and avoids passing the value down through the call
+        # chain from run().
+        _resume_fingerprint = self._compute_resume_fingerprint(self.cfg, condition)
         try:
             summary = self._run_episode(
                 condition, task, backend, condition_logger, condition_dir,
@@ -889,6 +972,8 @@ class ExperimentRunner:
             # so all consumers (write_episode_summary + aggregator) see them.
             summary["wallclock_start"] = _wallclock_start
             summary["wallclock_end"] = datetime.now(timezone.utc).isoformat()
+            # B-460: stamp resume fingerprint for next restart's identity gate.
+            summary["resume_fingerprint"] = _resume_fingerprint
         except BaseException as exc:
             if isinstance(exc, (KeyboardInterrupt, SystemExit)):
                 raise
@@ -972,6 +1057,11 @@ class ExperimentRunner:
                 # even on crash path.
                 wallclock_start=_wallclock_start,
                 wallclock_end=datetime.now(timezone.utc).isoformat(),
+                # B-460 (/stress A1.5b Phase 1 P0-1-ABC): stamp resume
+                # fingerprint so quarantined error summaries also carry
+                # identity invariant (downstream forensic audit may still
+                # want to reason about which cfg-state produced the crash).
+                resume_fingerprint=_resume_fingerprint,
             ).as_dict()
             # B-194 (/stress A1.4b-ii codex B-ii-3, P1 OOB): exception-path
             # MUST mirror canonical `compute_wasted_cost(steps, success=False)`
