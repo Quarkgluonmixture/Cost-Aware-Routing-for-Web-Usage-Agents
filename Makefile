@@ -241,6 +241,7 @@ _per_run_all:
 _aggregate:
 	$(MAKE) aggregate-sr-fp
 	$(MAKE) phase1-prereg-gate
+	$(MAKE) phase1-full-prereg-decision
 	$(MAKE) phantom-lift
 	$(MAKE) phantom-meta
 	$(MAKE) routing-auroc
@@ -321,6 +322,13 @@ routing-auroc:
 # appendix-exploratory only (codex B2 catch — different estimand than prereg).
 phase1-prereg-gate:
 	$(PYTHON) scripts/analysis/aggregate_phase1_prereg_gate.py
+
+# A1.21 P0-2 + P0-3 + P0-4 + P0-11 (B-481): canonical full prereg decision artifact
+# (H1 FE + H2(a) per-task ratio + H3 axes FE + I² cap-only + R1-R5 framing rule +
+# manifest/code/csv SHA provenance lock). Replaces retired-DL preregistration_decision_test
+# as the paper §1 framing rule producer.
+phase1-full-prereg-decision:
+	$(PYTHON) scripts/analysis/aggregate_phase1_full_prereg_decision.py
 
 # Phantom routing lift — appendix exploratory (was Section 1/4 paper hook,
 # demoted to appendix per B-184 — different estimand from prereg PRIMARY).

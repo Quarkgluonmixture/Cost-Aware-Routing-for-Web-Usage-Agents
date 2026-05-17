@@ -1,18 +1,35 @@
 r"""Preregistration decision test — Phase 1a 36-condition / 6-cell H1 / H3 / H2 evaluation.
 
-⚠️ RESCOPED 2026-05-15 (B-120 fix per codex Mode B P0-1):
-   - Phase 1a scope: 24-cond / 4-cell (B0+B1 only) → 36-cond / 6-cell (B0+B1+B2)
-   - B2 = Gemma3-VL `google/gemma-3-4b-it` added 2026-05-14 as cross-family
-     matched-capability control vs B1 4B (see preregistration.md Appendix A
-     2026-05-14 entry + 笔记 §142)
-   - k=4 → k=6 propagates to H1/H3/H5/H6 estimand
-   - Decision 3A 2026-05-14 specified FE inverse-variance pooling over the 6
-     planned cells (NOT DerSimonian-Laird). **Note**: current implementation
-     below uses DL random-effects from earlier scaffolding — FE migration is
-     pending advisor review (gemini Mode C P0-2 2026-05-15 challenges
-     Decision 3A back toward RE+Knapp-Hartung; advisor confirmation pending
-     before estimator finalization). Until advisor lock, both DL output and
-     FE-equivalent superiority test are reported for transparency.
+⚠️ A1.21 RESCOPE 2026-05-17 (P0-2 + P0-3 + P0-9 + P1-7/8/9/10/11 batch, B-478~B-490):
+   This script is now a **synthetic test fixture + appendix-sensitivity producer**, NOT
+   the canonical paper §1 gate substrate. The canonical full prereg decision (H1+H2(a)
+   +H3 axes + I² cap + R1-R5 framing) is now `aggregate_phase1_full_prereg_decision.py`
+   (B-481, A1.21 P0-4). This script retains the synthetic fixture scenarios for CI
+   smoke testing and emits the DL random-effects estimand into an `appendix_dl_sensitivity`
+   block as transparency reporting only.
+
+   Changes from prior version (codex Mode B A1.21 catches):
+   - **P0-2**: `evaluate_h1` DL-meta gate path retired — primary verdict now FE superiority
+     only (matches prereg §1 lock L68-86). DL meta kept as `appendix_dl_sensitivity`.
+   - **P0-3**: `_effective_gate_pass` heterogeneity-rescue branch retired — high I² caps
+     framing power R1/R2 → R3 (cap-only, prereg §2 L323) but does NOT rescue failed
+     FE-H1 (prior code violated prereg L340-342 by rescuing R5 → R3 via per-cell rule).
+   - **P0-6**: `_paired_bootstrap` adds `p_percentile_two_sided` for method coherence
+     with percentile CI (was: percentile CI + normal-approx p-value mixed method).
+   - **P0-9**: `evaluate_h2_cost` rewrite per-task median ratio (paired) — prior code
+     computed median-of-marginals (`median(P-SoM costs) / median(DOM costs)`) which is
+     wrong estimand for paper §1 line 9 per-task framing. Prereg §2 H2(a) prose locked
+     2026-05-17 to "per-task median ratio".
+   - **P1-7**: H2(a) 3-state per cell (within / falsified / cannot_evaluate) — framing
+     rule uses `n_falsified > 0` (NOT `pass_count == total` which conflated missing data
+     with falsification).
+   - **P1-8**: `dersimonian_laird_meta` k<2 raises `InsufficientCellsError` (silent 0.0
+     fallback retired — gave wrong R5 diagnosis when root cause was data missing).
+   - **P1-9**: `--data-seed` + `--bootstrap-seed` split (was single `--seed` double-binding).
+   - **P1-10**: synthetic generator B2 capability adjustment fixed (was: only B1 down-scaled
+     so B2 = B0 by accident, violating advisor §138 B2 ≈ B1 matched-capability assumption).
+   - **P1-11**: `_phi` scipy fallback path with overflow warning when |z| > 6.
+   - **P2-2**: stale "Phase 1a 24-condition / 4-cell" output metadata fixed to current scope.
 
 ⚠️ REWRITTEN 2026-05-13 (historical):
    - PRIMARY GATE = pooled DerSimonian-Laird random-effects meta + one-sided superiority
@@ -153,10 +170,21 @@ def _unique_count_per_cell(cell_tasks: list[dict], axis_mode: str, ref_mode: str
 
 
 def _paired_bootstrap(cell_tasks: list[dict], statistic_fn, n_resamples: int = 1000,
-                       seed: int = 42) -> tuple[float, float, float, float]:
+                       seed: int = 42) -> tuple[float, float, float, float, float, float]:
     """1000-resample paired task-level bootstrap.
 
-    Returns (point_estimate, ci_lo_95, ci_hi_95, bootstrap_se).
+    Returns (point_estimate, ci_lo_95, ci_hi_95, bootstrap_se,
+             p_percentile_two_sided, p_percentile_one_sided_gt_zero).
+
+    A1.21 P0-6 fix (B-486): added percentile p-values alongside percentile CI for method
+    coherence. Pre-fix returned only (point, ci_lo, ci_hi, se); callers (evaluate_h1
+    / evaluate_h3_axis) computed p-value via normal-approx z-score on bootstrap SE —
+    mixed method (percentile CI + normal-approx p). Cross-AI 3-AI overlap finding
+    (Claude P0-2 + codex F1 + gemini F5). Bootstrap distribution skew on small-N
+    sparse cells (B2) → percentile CI excludes zero but normal-approx p > 0.05 →
+    conflicting verdict on same H1 cell. Now: callers can use `p_percentile_*` for
+    coherent percentile-based decision.
+
     Resamples task rows with replacement (preserves all modes' SR for that task → paired).
     """
     import random
@@ -171,15 +199,37 @@ def _paired_bootstrap(cell_tasks: list[dict], statistic_fn, n_resamples: int = 1
     ci_lo = boot_vals[int(0.025 * n_resamples)]
     ci_hi = boot_vals[int(0.975 * n_resamples)]
     se = statistics.stdev(boot_vals) if len(boot_vals) > 1 else 0.0
-    return point, ci_lo, ci_hi, se
+    # A1.21 P0-6: percentile p-values
+    # Two-sided p = 2 × min(P(boot ≤ 0), P(boot ≥ 0))
+    p_lo = sum(1 for b in boot_vals if b <= 0) / n_resamples
+    p_hi = sum(1 for b in boot_vals if b >= 0) / n_resamples
+    p_percentile_two_sided = 2.0 * min(p_lo, p_hi)
+    p_percentile_one_sided_gt_zero = p_lo  # P(boot ≤ 0) = P(true effect ≤ 0 | data)
+    return point, ci_lo, ci_hi, se, p_percentile_two_sided, p_percentile_one_sided_gt_zero
 
 
 # ---------------------------------------------------------------------------
 # DerSimonian-Laird random-effects meta-analysis
 # ---------------------------------------------------------------------------
 
+class InsufficientCellsError(ValueError):
+    """A1.21 P1-8: raised when pool requires ≥2 cells but received <2.
+
+    Pre-fix: `dersimonian_laird_meta` silently returned `pooled_effect=0.0` when k<2 →
+    `magnitude_check` FAIL → R5 "paper death" framing → user spend hours debugging
+    statistical setup when root cause was `run_manifest.yaml` had 0 paper-grade entries
+    (A1.21 P0-8). Fail-loud with explicit cause hint.
+    """
+
+
 def dersimonian_laird_meta(effects: list[float], variances: list[float]) -> dict:
     """Pool effect estimates across cells via DerSimonian-Laird random-effects.
+
+    ⚠️ A1.21 P0-2 (B-478): DEMOTED to appendix-sensitivity reporting. Canonical paper §1
+    H1 PRIMARY gate is FE inverse-variance superiority test (see
+    `aggregate_phase1_full_prereg_decision.py` for the canonical full-pipeline).
+    This function retained for `appendix_dl_sensitivity` transparency block, NOT for
+    PRIMARY gating decision.
 
     Args:
         effects: per-cell effect estimates (same scale, e.g., pp or unique-count)
@@ -195,15 +245,19 @@ def dersimonian_laird_meta(effects: list[float], variances: list[float]) -> dict
       4. Random-effects weights w*_i = 1 / (v_i + τ^2)
       5. Pooled θ_RE = Σ(w*_i × θ_i) / Σw*_i; SE_RE = sqrt(1 / Σw*_i)
       6. I^2 = max(0, (Q − (k − 1)) / Q) × 100  (% heterogeneity)
+
+    Raises:
+        InsufficientCellsError: if k < 2 (A1.21 P1-8 — was silent 0.0 fallback)
     """
     k = len(effects)
     if k < 2:
-        return {"pooled_effect": effects[0] if effects else 0.0,
-                "pooled_se": math.sqrt(variances[0]) if variances else 0.0,
-                "pooled_ci_95": [None, None],
-                "Q": None, "I_squared_pct": None, "tau_squared": None,
-                "p_value_two_sided": None, "k": k,
-                "note": "k<2: pooling undefined"}
+        raise InsufficientCellsError(
+            f"DL meta requires ≥2 cells; got {k}. "
+            "Likely cause: `run_manifest.yaml` has 0 paper-grade entries (A1.21 P0-8) "
+            "OR CSV has missing cells. Check `generate_per_task_sr.py` output before "
+            "invoking this script. Synthetic mode (--synthetic) always emits all "
+            f"{len(PHASE_1A_CELLS)} cells."
+        )
 
     w_fe = [1.0 / max(v, 1e-12) for v in variances]
     theta_fe = sum(w * t for w, t in zip(w_fe, effects)) / sum(w_fe)
@@ -242,8 +296,31 @@ def dersimonian_laird_meta(effects: list[float], variances: list[float]) -> dict
     }
 
 
+try:
+    from scipy.stats import norm as _scipy_norm
+    _HAS_SCIPY = True
+except ImportError:  # paper-grade env may or may not have scipy
+    _HAS_SCIPY = False
+
+
 def _phi(z: float) -> float:
-    """Standard normal CDF using erf approximation."""
+    """Standard normal CDF.
+
+    A1.21 P1-11 fix (B-489): scipy when available (log-space stable for |z|>6);
+    erf fallback otherwise + emit warning when |z|>6 to flag numeric saturation.
+    Pre-fix: erf saturates at ±1.0 → silent p=0 for |z|>6, doesn't distinguish
+    z=6 (p ≈ 1e-9) from z=10 (p ≈ 7.6e-24) — advisor-grade reproducibility hygiene.
+    """
+    if _HAS_SCIPY:
+        return float(_scipy_norm.cdf(z))
+    if abs(z) > 6:
+        import warnings as _w
+        _w.warn(
+            f"_phi(z={z:.3f}): erf saturates at |z|>6 (returns silent ±1.0); "
+            "install scipy for log-space stable evaluation. Reported p-value "
+            "may underflow to 0.0; treat as 'p < 1e-9' only.",
+            RuntimeWarning, stacklevel=2,
+        )
     return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
 
 
@@ -373,7 +450,8 @@ def evaluate_h1(cells_by_id: dict[str, list[dict]], delta_pp: float = 1.0,
             int(hashlib.sha256(f"{cell_id}|h1_drop_one".encode()).hexdigest()[:8], 16)
             % 100000
         )
-        point, ci_lo, ci_hi, se = _paired_bootstrap(
+        # A1.21 P0-6 fix: unpack 6 values (was 4); use percentile p-value not normal-approx
+        point, ci_lo, ci_hi, se, p_pct_2s, _p_pct_1s = _paired_bootstrap(
             tasks,
             statistic_fn=lambda t: _drop_one_lift_per_cell(t, drop_mode="sr_psom"),
             seed=cell_seed,
@@ -381,33 +459,71 @@ def evaluate_h1(cells_by_id: dict[str, list[dict]], delta_pp: float = 1.0,
         # Convert to pp
         effect_pp = point * 100.0
         se_pp = se * 100.0
-        # Two-sided p from bootstrap normal approx
+        # A1.21 P0-6: report BOTH percentile p (canonical, method-coherent with percentile CI)
+        # AND normal-approx p (legacy backward-compat for synthetic test fixtures).
         z = effect_pp / max(se_pp, 1e-12)
-        p_cell = 2.0 * (1.0 - _phi(abs(z)))
+        p_normal_approx = 2.0 * (1.0 - _phi(abs(z)))
         per_cell[cell_id] = {
             "drop_one_lift_pp": effect_pp,
             "ci_95_pp": [ci_lo * 100.0, ci_hi * 100.0],
             "se_pp": se_pp,
-            "p_value_two_sided": p_cell,
+            "p_value_two_sided": p_pct_2s,  # A1.21 P0-6: percentile-based (canonical)
+            "p_value_normal_approx_legacy": p_normal_approx,  # legacy z-score (NOT canonical)
             "n_tasks": len(tasks),
         }
         effects_pp.append(effect_pp)
         variances_pp.append(se_pp ** 2)
-        per_cell_p_values.append(p_cell)
+        per_cell_p_values.append(p_pct_2s)  # A1.21 P0-6: percentile p (canonical)
 
-    # PRIMARY: pooled DL meta + magnitude + superiority test
-    meta = dersimonian_laird_meta(effects_pp, variances_pp)
-    superiority = superiority_test(meta["pooled_effect"], meta["pooled_se"],
+    # A1.21 P0-2 fix (B-478, codex Mode B): retire DL meta from PRIMARY H1 gate.
+    # Canonical prereg lock is FE inverse-variance pool + one-sided superiority test
+    # (single test, NOT 3-test compound). DL meta + magnitude check moved to
+    # `appendix_dl_sensitivity` block for transparency reporting only.
+    #
+    # PRIMARY: FE inverse-variance pool + one-sided superiority (matches prereg §1 L68-86)
+    import numpy as _np
+    _thetas = _np.array(effects_pp)
+    _ses = _np.array([math.sqrt(v) for v in variances_pp])
+    # A1.19 B-426 SE floor 1.0pp (Agresti-Coull-style, prereg §2 H1 anchor)
+    _n_zero_se = int((_ses <= 0).sum())
+    if _n_zero_se > 0:
+        _ses = _np.where(_ses <= 0, 1.0, _ses)
+    _w = 1.0 / (_ses ** 2)
+    _theta_fe = float(_np.sum(_w * _thetas) / _np.sum(_w))
+    _se_fe = float(math.sqrt(1.0 / _np.sum(_w)))
+    # A1.21 P0-11 fix: compute I² + Q on FE pool so `_effective_gate_pass` cap can fire.
+    # Higgins & Thompson 2002: Q = Σ w_i (θ_i − θ_FE)², df = k-1, I² = max(0, (Q-df)/Q)·100
+    _k_h1 = len(_thetas)
+    if _k_h1 >= 2:
+        _Q = float(_np.sum(_w * (_thetas - _theta_fe) ** 2))
+        _df = _k_h1 - 1
+        _isq = max(0.0, (_Q - _df) / _Q) * 100.0 if _Q > 0 else 0.0
+    else:
+        _Q, _df, _isq = None, 0, None
+    fe_pool = {
+        "pooled_effect": _theta_fe,
+        "pooled_se": _se_fe,
+        "pooled_ci_95": [_theta_fe - 1.96 * _se_fe, _theta_fe + 1.96 * _se_fe],
+        "k": _k_h1,
+        "n_zero_se_floored_cells": _n_zero_se,
+        # A1.21 P0-11: I² + Q exposed for framing rule cap-only logic
+        "Q": _Q,
+        "Q_df": _df,
+        "I_squared_pct": _isq,
+    }
+    superiority = superiority_test(_theta_fe, _se_fe,
                                      threshold=magnitude_threshold_pp, alpha=alpha)
     # TOST kept for informational reporting (NOT used in H1 gating decision)
-    tost_info = tost_equivalence(meta["pooled_effect"], meta["pooled_se"],
-                                  delta=delta_pp, alpha=alpha)
+    tost_info = tost_equivalence(_theta_fe, _se_fe, delta=delta_pp, alpha=alpha)
 
-    pooled_sig = meta["p_value_two_sided"] is not None and meta["p_value_two_sided"] < alpha
-    magnitude_pass = meta["pooled_effect"] >= magnitude_threshold_pp
-    superiority_pass = superiority["decision"] == "reject_H0_substantively_above_threshold"
+    # A1.21 P0-2: PRIMARY gate = FE superiority decision ONLY (single test, no compound)
+    primary_h1_pass = superiority["decision"] == "reject_H0_substantively_above_threshold"
 
-    primary_h1_pass = pooled_sig and magnitude_pass and superiority_pass
+    # Appendix-DL sensitivity (transparency only, NOT a gate path — A1.21 P0-2)
+    try:
+        dl_meta_appendix = dersimonian_laird_meta(effects_pp, variances_pp)
+    except InsufficientCellsError:
+        dl_meta_appendix = {"k": len(effects_pp), "error": "k<2, DL undefined"}
 
     # TRANSPARENCY: K-of-N Holm
     holm_per_cell = holm_correct(per_cell_p_values, alpha=alpha)
@@ -419,13 +535,19 @@ def evaluate_h1(cells_by_id: dict[str, list[dict]], delta_pp: float = 1.0,
 
     return {
         "primary_gate": {
-            "pooled_meta": meta,
-            "magnitude_check": {"pooled_pp": meta["pooled_effect"],
-                                 "threshold_pp": magnitude_threshold_pp,
-                                 "pass": magnitude_pass},
+            # A1.21 P0-2 fix: pooled_meta is now FE pool (NOT DL); see canonical
+            # `aggregate_phase1_full_prereg_decision.py` for bit-identical FE path.
+            "pooled_meta": fe_pool,
+            "estimand": "FE inverse-variance pool + one-sided superiority test",
             "superiority_test": superiority,
             "tost_informational": tost_info,
             "decision": "PASS" if primary_h1_pass else "FAIL",
+        },
+        "appendix_dl_sensitivity": {
+            "estimand": "DerSimonian-Laird random-effects (appendix sensitivity only)",
+            "note": "A1.21 P0-2 (B-478): retired from H1 PRIMARY gate; reported here "
+                    "for transparency only. Canonical paper §1 H1 = FE superiority above.",
+            "dl_meta": dl_meta_appendix,
         },
         "transparency_K_h1": {
             "K": transparency_K_h1,
@@ -464,7 +586,8 @@ def evaluate_h3_axis(cells_by_id: dict[str, list[dict]], axis_mode_key: str,
             int(hashlib.sha256(f"{cell_id}|h3_{axis_mode_key}".encode()).hexdigest()[:8], 16)
             % 100000
         )
-        count, ci_lo, ci_hi, se = _paired_bootstrap(
+        # A1.21 P0-6: unpack 6 values (was 4); use percentile one-sided p
+        count, ci_lo, ci_hi, se, _p_pct_2s, p_pct_1s = _paired_bootstrap(
             tasks,
             statistic_fn=lambda t: float(_unique_count_per_cell(t, axis_mode_key, ref_mode_key)),
             seed=cell_seed,
@@ -473,14 +596,15 @@ def evaluate_h3_axis(cells_by_id: dict[str, list[dict]], axis_mode_key: str,
         ci_excludes_zero = ci_lo > 0
         count_above_floor = count >= min_unique_count
         per_cell_pass = ci_excludes_zero and count_above_floor
-        # Per-cell p from normal approx on count statistic (testing > 0)
+        # A1.21 P0-6: percentile one-sided p-value (was normal-approx z-score)
         z = count / max(se, 1e-12)
-        p_cell = 1.0 - _phi(z)  # one-sided
+        p_normal_approx = 1.0 - _phi(z)
         per_cell[cell_id] = {
             "unique_count": count,
             "ci_95": [ci_lo, ci_hi],
             "se": se,
-            "p_value_one_sided": p_cell,
+            "p_value_one_sided": p_pct_1s,  # A1.21 P0-6: percentile (canonical)
+            "p_value_normal_approx_legacy": p_normal_approx,
             "ci_excludes_zero": ci_excludes_zero,
             "count_above_min": count_above_floor,
             "per_cell_pass": per_cell_pass,
@@ -488,15 +612,50 @@ def evaluate_h3_axis(cells_by_id: dict[str, list[dict]], axis_mode_key: str,
         }
         effects.append(count)
         variances.append(se ** 2)
-        per_cell_p_values.append(p_cell)
+        per_cell_p_values.append(p_pct_1s)  # A1.21 P0-6: percentile p (canonical)
         per_cell_ci_excludes_zero.append(per_cell_pass)
 
-    # PRIMARY: pooled meta
-    meta = dersimonian_laird_meta(effects, variances)
-    pooled_ci_lo = meta["pooled_ci_95"][0] if meta["pooled_ci_95"][0] is not None else None
-    primary_pass = (meta["p_value_two_sided"] is not None and
-                    meta["p_value_two_sided"] < alpha and
-                    pooled_ci_lo is not None and pooled_ci_lo > 0)
+    # A1.21 P0-2 fix (B-478): H3 PRIMARY gate FE-only (matches H1 + canonical
+    # `aggregate_phase1_full_prereg_decision.py`); DL moved to appendix sensitivity.
+    import numpy as _np
+    _effs = _np.array(effects)
+    _ses_h3 = _np.array([math.sqrt(v) for v in variances])
+    _n_zero_se_h3 = int((_ses_h3 <= 0).sum())
+    if _n_zero_se_h3 > 0:
+        _ses_h3 = _np.where(_ses_h3 <= 0, 1.0, _ses_h3)
+    _w_h3 = 1.0 / (_ses_h3 ** 2)
+    _theta_fe_h3 = float(_np.sum(_w_h3 * _effs) / _np.sum(_w_h3))
+    _se_fe_h3 = float(math.sqrt(1.0 / _np.sum(_w_h3)))
+    _z_h3 = _theta_fe_h3 / max(_se_fe_h3, 1e-12)
+    _p_one_sided_h3 = 1.0 - _phi(_z_h3)
+    # A1.21 P0-11: I² + Q for framing cap fidelity (same as H1)
+    _k_h3 = len(_effs)
+    if _k_h3 >= 2:
+        _Q_h3 = float(_np.sum(_w_h3 * (_effs - _theta_fe_h3) ** 2))
+        _df_h3 = _k_h3 - 1
+        _isq_h3 = max(0.0, (_Q_h3 - _df_h3) / _Q_h3) * 100.0 if _Q_h3 > 0 else 0.0
+    else:
+        _Q_h3, _df_h3, _isq_h3 = None, 0, None
+    meta = {
+        "pooled_effect": _theta_fe_h3,
+        "pooled_se": _se_fe_h3,
+        "pooled_ci_95": [_theta_fe_h3 - 1.96 * _se_fe_h3, _theta_fe_h3 + 1.96 * _se_fe_h3],
+        "p_value_one_sided": _p_one_sided_h3,
+        "p_value_two_sided": 2.0 * (1.0 - _phi(abs(_z_h3))),
+        "k": _k_h3,
+        "n_zero_se_floored_cells": _n_zero_se_h3,
+        "estimand": "FE inverse-variance pool",
+        "Q": _Q_h3,
+        "Q_df": _df_h3,
+        "I_squared_pct": _isq_h3,
+    }
+    pooled_ci_lo = meta["pooled_ci_95"][0]
+    primary_pass = (_p_one_sided_h3 < alpha and pooled_ci_lo > 0)
+    # Appendix DL sensitivity (transparency)
+    try:
+        dl_meta_appendix_h3 = dersimonian_laird_meta(effects, variances)
+    except InsufficientCellsError:
+        dl_meta_appendix_h3 = {"k": len(effects), "error": "k<2, DL undefined"}
 
     # TRANSPARENCY
     holm_per_cell = holm_correct(per_cell_p_values, alpha=alpha)
@@ -510,9 +669,14 @@ def evaluate_h3_axis(cells_by_id: dict[str, list[dict]], axis_mode_key: str,
         "axis_mode": axis_mode_key,
         "ref_mode": ref_mode_key,
         "primary_gate": {
-            "pooled_meta": meta,
-            "ci_excludes_zero": pooled_ci_lo is not None and pooled_ci_lo > 0,
+            "pooled_meta": meta,  # A1.21 P0-2: FE pool (was DL)
+            "ci_excludes_zero": pooled_ci_lo > 0,
             "decision": "PASS" if primary_pass else "FAIL",
+        },
+        "appendix_dl_sensitivity": {
+            "estimand": "DerSimonian-Laird random-effects (appendix sensitivity only)",
+            "note": "A1.21 P0-2 (B-478): retired from H3 PRIMARY gate; reported for transparency.",
+            "dl_meta": dl_meta_appendix_h3,
         },
         "transparency_K_h3": {
             "K": transparency_K_h3,
@@ -527,26 +691,26 @@ def evaluate_h3_axis(cells_by_id: dict[str, list[dict]], axis_mode_key: str,
 
 def evaluate_h2_cost(cells_by_id: dict[str, list[dict]], cost_margin_pct: float = 20.0,
                       transparency_K_h2: int | None = None) -> dict:
-    """H2(a): median cost(P-SoM) within ±cost_margin_pct% of median cost(DOM) per cell.
+    """H2(a): per-task median cost ratio cost(P-SoM)/cost(DOM) within ±cost_margin_pct% per cell.
 
-    H2(a) is a **by-construction property with a falsification check** (preregistration.md
-    §2 H2(a) lock 2026-05-14, decision "3A"; line 120-137 + line 368). Falsification rule
-    per prereg lock: "if **ANY** condition shows median cost ratio > **1.20×** (= margin
-    >20%), the by-construction claim is falsified". This is NOT a K-of-N transparency
-    gate — it is a strict ALL-cells-must-pass falsification check.
+    A1.21 P0-9 fix (B-487, prereg §2 H2(a) prose lock amend 2026-05-17):
+    Estimand rewrite — was median(P-SoM costs) / median(DOM costs) (marginal medians,
+    paired info ignored), now median over tasks of (cost_psom[t] / cost_dom[t]) per cell.
 
-    /stress A1.19 P0-3 (2026-05-17, gemini Mode C OOB framing critique + Claude verify):
-    pre-fix had TWO defects: (a) `cost_margin_pct: float = 10.0` default was 2× stricter
-    than prereg ±20% lock → false-falsification rate inflated when median ratio in
-    1.10-1.20× band; (b) `consistent: pass_count >= transparency_K_h2` (K-of-N) was
-    semantically inverted — prereg explicitly says "if ANY condition violated → falsified"
-    which is the strict-ALL-pass semantics (K-of-N is for H1/H3 transparency counts, not
-    for H2(a) falsification check per line 368). `transparency_K_h2` arg retained for
-    backward-compat with CLI invocations but **ignored** (it has no role in falsification
-    semantics); deprecation warning emitted.
+    Why: paper §1 line 9 "the cost of obtaining this configuration is essentially the
+    cost of the DOM baseline" is a **per-task claim** (each task should cost about the
+    same under P-SoM as DOM). Marginal medians measure cost-distribution-shape — a
+    different claim. When cost variance is heterogeneous across tasks (LLM token counts
+    vary 10-100×), marginal-median can collapse to a number unrelated to per-task ratio.
+    Prereg §2 H2(a) prose lock 2026-05-17 added "per-task median ratio" disambiguation.
+
+    A1.21 P1-7 fix (B-488): 3-state per cell (within_band / falsified / cannot_evaluate).
+    Pre-fix: missing cost data → `per_cell_pass: False` → counted as falsification by
+    framing rule. Now: distinct state, framing rule uses `n_falsified > 0` (NOT
+    `pass_count == total`), missing data does NOT trigger R4 framing degradation.
 
     H2(a) test margin is a RELATIVE PERCENTAGE (e.g., ±20% of DOM cost), distinct from
-    H1 TOST δ which is an SR percentage-point margin (codex probable concern disambig).
+    H1 TOST δ which is an SR percentage-point margin.
     """
     if transparency_K_h2 is not None:
         import warnings as _w
@@ -558,40 +722,75 @@ def evaluate_h2_cost(cells_by_id: dict[str, list[dict]], cost_margin_pct: float 
             DeprecationWarning, stacklevel=2,
         )
     per_cell = {}
-    pass_count = 0
+    n_within = 0
+    n_falsified = 0
+    n_cannot_evaluate = 0
     n_cells_total = len(cells_by_id)
     for cell_id, tasks in cells_by_id.items():
-        cost_dom_vals = [float(t["cost_dom"]) for t in tasks if t["cost_dom"]]
-        cost_psom_vals = [float(t["cost_psom"]) for t in tasks if t["cost_psom"]]
-        if not cost_dom_vals or not cost_psom_vals:
-            per_cell[cell_id] = {"per_cell_pass": False, "reason": "missing cost data"}
+        # A1.21 P0-9: per-task ratio (paired, NOT marginal medians).
+        # A1.21 P0-1: `is not None` check, NOT truthy `or` (avoid 0.0 short-circuit drop).
+        per_task_ratios = []
+        n_dom_zero = 0
+        n_missing = 0
+        for t in tasks:
+            cd_raw = t.get("cost_dom")
+            cp_raw = t.get("cost_psom")
+            if cd_raw is None or cd_raw == "" or cp_raw is None or cp_raw == "":
+                n_missing += 1
+                continue
+            try:
+                cd = float(cd_raw)
+                cp = float(cp_raw)
+            except (TypeError, ValueError):
+                n_missing += 1
+                continue
+            if cd <= 0:
+                n_dom_zero += 1
+                continue
+            per_task_ratios.append(cp / cd)
+        if not per_task_ratios:
+            # A1.21 P1-7: cannot_evaluate state (distinct from falsified)
+            per_cell[cell_id] = {
+                "state": "cannot_evaluate",
+                "reason": f"no valid per-task ratios (n_missing={n_missing}, "
+                          f"n_dom_zero={n_dom_zero})",
+                "per_cell_pass": None,
+            }
+            n_cannot_evaluate += 1
             continue
-        med_dom = statistics.median(cost_dom_vals)
-        med_psom = statistics.median(cost_psom_vals)
-        rel_diff_pct = (med_psom - med_dom) / max(med_dom, 1e-12) * 100.0
+        med_ratio = statistics.median(per_task_ratios)
+        rel_diff_pct = (med_ratio - 1.0) * 100.0
         within_band = abs(rel_diff_pct) <= cost_margin_pct
         per_cell[cell_id] = {
-            "median_cost_dom": med_dom,
-            "median_cost_psom": med_psom,
+            "n_per_task_ratios": len(per_task_ratios),
+            "n_missing": n_missing,
+            "n_dom_zero_skipped": n_dom_zero,
+            "median_per_task_ratio": med_ratio,
             "relative_diff_pct": rel_diff_pct,
             "margin_pct": cost_margin_pct,
+            "state": "within_band" if within_band else "falsified",
             "per_cell_pass": within_band,
         }
         if within_band:
-            pass_count += 1
-    # Prereg strict semantics: ALL cells must pass for H2(a) by-construction to hold.
-    # If any cell falsifies (median ratio > 1.20×), framing degrades to R4 per prereg
-    # line 310.
-    not_falsified = pass_count == n_cells_total
+            n_within += 1
+        else:
+            n_falsified += 1
+    # A1.21 P1-7 fix: framing rule uses `n_falsified > 0` not `pass_count == total`.
+    # Missing data is NOT falsification.
+    not_falsified = (n_falsified == 0)
     return {
         "h2a_cost_equivalence": {
             "N": n_cells_total,
-            "n_cells_pass": pass_count,
-            "n_cells_falsified": n_cells_total - pass_count,
-            "consistent": not_falsified,  # ALL-pass per prereg L131-132 + L368 strict semantics
+            "n_cells_within_band": n_within,
+            "n_cells_falsified": n_falsified,
+            "n_cells_cannot_evaluate": n_cannot_evaluate,
+            # `consistent` = NOT falsified (any cell within +/- margin counts; missing data ignored)
+            "consistent": not_falsified,
+            "n_cells_pass": n_within,  # backward-compat field
             "margin_pct": cost_margin_pct,
-            "semantics": "strict_all_pass_falsification_check",
-            "prereg_anchor": "preregistration.md §2 H2(a) line 120-137 + framing rule R4 line 310",
+            "semantics": "per_task_ratio_strict_no_cell_falsification (P0-9+P1-7 reframe)",
+            "estimand": "per-task median ratio cost(P-SoM)/cost(DOM) (paired)",
+            "prereg_anchor": "preregistration.md §2 H2(a) line 120-145 + 2026-05-17 prose lock amend",
         },
         "per_cell": per_cell,
     }
@@ -603,41 +802,35 @@ def evaluate_h2_cost(cells_by_id: dict[str, list[dict]], cost_margin_pct: float 
 
 def _effective_gate_pass(gate_result: dict, gate_kind: str,
                           heterogeneity_threshold_pct: float) -> tuple[bool, bool, dict]:
-    """Determine whether a primary gate effectively passes, accounting for heterogeneity.
+    """Determine whether a primary gate passes + report I² heterogeneity status.
 
-    F3 fix 2026-05-14 (codex /stress v6 + Round C M3): heterogeneity check now applies
-    to EVERY primary gate (H1, H3 axis-1, H3 axis-2), not just H1. Prior version only
-    checked H1 I² — selective check biased toward R1 framing when H3 axes were
-    heterogeneous but H1 was not.
+    A1.21 P0-3 fix (B-479, codex Mode B OOB): heterogeneity-rescue branch RETIRED.
+    Prior code (F3 2026-05-14) rescued failed pooled gate via per-cell consistency
+    (≥3 direction-positive AND ≥2 individually sig). This VIOLATED prereg §2 L323
+    ("high heterogeneity does NOT block pooling, only caps the hook") + L340-342
+    ("p ≥ 0.05 → H1 FAILS → R5"). Code could rescue R5 → R3 via per-cell rule.
 
-    Returns (passes, heterogeneous, detail):
-      - If pooled meta I² ≤ threshold: passes = pooled primary gate PASS decision.
-      - If pooled meta I² > threshold: do NOT trust pooled gate; passes via per-cell
-        consistency (≥3 of 4 cells direction-positive AND ≥2 individually significant).
+    Post-fix: pooled gate decision is canonical regardless of I². I² serves
+    `apply_framing_rule` as cap-only signal (R1/R2 → R3 when primary passes,
+    NOT to rescue R5). FE pool is pre-registered estimand (Decision 3A 2026-05-14)
+    so per-cell consistency is not a backup mode.
 
-    gate_kind ∈ {"h1", "h3_axis"} selects the per-cell field names.
+    Returns (passes, heterogeneous, detail) where:
+      - passes = pooled primary gate PASS decision (unchanged regardless of I²)
+      - heterogeneous = I² > threshold (used as framing CAP by apply_framing_rule)
+
+    gate_kind ∈ {"h1", "h3_axis"} retained for API compat but not used in decision.
     """
     meta = gate_result.get("primary_gate", {}).get("pooled_meta", {})
-    i_sq = meta.get("I_squared_pct")
-    per_cell = gate_result.get("per_cell", {})
-    n_cells = len(per_cell)
-
-    if i_sq is not None and i_sq > heterogeneity_threshold_pct:
-        # Heterogeneous — pooled gate untrustworthy, use per-cell consistency
-        if gate_kind == "h1":
-            n_pos = sum(1 for c in per_cell.values() if c.get("drop_one_lift_pp", 0.0) > 0)
-            n_sig = sum(1 for c in per_cell.values() if c.get("individually_holm_sig", False))
-        else:  # h3_axis
-            n_pos = sum(1 for c in per_cell.values() if c.get("unique_count", 0.0) > 0)
-            n_sig = sum(1 for c in per_cell.values() if c.get("per_cell_pass", False))
-        passes = (n_pos >= 3 and n_sig >= 2)
-        return passes, True, {
-            "I_squared_pct": i_sq, "n_direction_positive": n_pos,
-            "n_consistent": n_sig, "n_cells": n_cells,
-            "via": "per_cell_consistency (pooled meta I² > threshold)",
-        }
+    i_sq = meta.get("I_squared_pct")  # NB: FE pool doesn't compute I²; canonical
+    # producer computes Q + I² separately. Here we just report what meta carries.
+    heterogeneous = (i_sq is not None and i_sq > heterogeneity_threshold_pct)
     passes = gate_result["primary_gate"]["decision"] == "PASS"
-    return passes, False, {"I_squared_pct": i_sq, "via": "pooled_meta"}
+    return passes, heterogeneous, {
+        "I_squared_pct": i_sq,
+        "via": "pooled_meta (canonical, A1.21 P0-3 per-cell rescue retired)",
+        "_unused_gate_kind": gate_kind,
+    }
 
 
 def apply_framing_rule(h1: dict, h2: dict, h3_axis1: dict, h3_axis2: dict,
@@ -662,47 +855,38 @@ def apply_framing_rule(h1: dict, h2: dict, h3_axis1: dict, h3_axis2: dict,
     any_heterogeneous = h1_het or h3a_het or h3b_het
     heterogeneity_detail = {"h1": h1_det, "h3_axis1": h3a_det, "h3_axis2": h3b_det}
 
-    # Heterogeneity branch: ≥1 primary gate had I² > threshold → pooled 2-axis
-    # structure claim not supported; hook caps at R3 (per-cell consistency).
-    if any_heterogeneous:
-        if h1_pass and h2a_cost_pass:
-            return {
-                "rule": "R3",
-                "framing": "Heterogeneity-conditional R3 — ≥1 primary gate had pooled I² > 75%; "
-                           "per-cell consistency used, pooled 2-axis structure claim not supported",
-                "hook_power": "MODERATE",
-                "heterogeneity_override": True,
-                "heterogeneity_detail": heterogeneity_detail,
-            }
-        return {
-            "rule": "R4_or_R5",
-            "framing": "Heterogeneity override (≥1 gate I² > 75%) AND H1 or H2(a) per-cell "
-                       "consistency fails — paper hook not supported",
-            "hook_power": "WEAK",
-            "heterogeneity_override": True,
-            "heterogeneity_detail": heterogeneity_detail,
-        }
+    # A1.21 P0-3 fix (B-479): heterogeneity = CAP-ONLY (R1/R2 → R3), NOT rescue (R5 → R3).
+    # Prereg §2 L323-342: high I² caps framing power but H1 FAIL → R5 always.
+    # Prior code (heterogeneity_override branch) rescued failed H1 → prereg violation.
 
-    # Normal R1-R5 mapping (all primary gates pooled cleanly, I² ≤ threshold)
-    if h1_pass and h2a_cost_pass and h3a_pass and h3b_pass:
-        return {"rule": "R1", "framing": "Phantom routing space (2-axis empirical structure)",
-                "hook_power": "STRONGEST", "heterogeneity_override": False,
+    # H1 failed → R5 (paper death) regardless of I² or H2(a) or H3 — prereg L340-342
+    if not h1_pass:
+        return {"rule": "R5", "framing": "Paper death scenario — H1 FE superiority failed; pivot needed",
+                "hook_power": "n/a", "heterogeneity_override": False,
                 "heterogeneity_detail": heterogeneity_detail}
-    if h1_pass and h2a_cost_pass and (h3a_pass or h3b_pass):
-        return {"rule": "R2", "framing": "Phantom routing space (single-axis empirical structure)",
-                "hook_power": "MODERATE-STRONG", "heterogeneity_override": False,
-                "heterogeneity_detail": heterogeneity_detail}
-    if h1_pass and h2a_cost_pass and not h3a_pass and not h3b_pass:
-        return {"rule": "R3", "framing": "Phantom-SoM is hidden 4th routing arm (workshop-grade R3)",
-                "hook_power": "MODERATE", "heterogeneity_override": False,
-                "heterogeneity_detail": heterogeneity_detail}
-    if h1_pass and not h2a_cost_pass:
+    # H1 passed but H2(a) falsified → R4
+    if not h2a_cost_pass:
         return {"rule": "R4", "framing": "Phantom-SoM partial drop-in (H2(a) cost equivalence fails)",
                 "hook_power": "WEAK", "heterogeneity_override": False,
                 "heterogeneity_detail": heterogeneity_detail}
-    return {"rule": "R5", "framing": "Paper death scenario — pivot to VWA bug audit OR abandon",
-            "hook_power": "n/a", "heterogeneity_override": False,
-            "heterogeneity_detail": heterogeneity_detail}
+    # H1 passed + H2(a) not falsified — primary R-rule by H3 axes
+    if h3a_pass and h3b_pass:
+        primary = ("R1", "Phantom routing space (2-axis empirical structure)", "STRONGEST")
+    elif h3a_pass or h3b_pass:
+        primary = ("R2", "Phantom routing space (single-axis empirical structure)", "MODERATE-STRONG")
+    else:
+        primary = ("R3", "Phantom-SoM is hidden 4th routing arm (workshop-grade R3)", "MODERATE")
+    # I² cap-only — caps R1/R2 → R3, does NOT change H1 pass decision (prereg L323)
+    if any_heterogeneous and primary[0] in ("R1", "R2"):
+        return {"rule": "R3",
+                "framing": f"Heterogeneity-capped R3 — ≥1 gate I² > 75%; original "
+                           f"rule {primary[0]} capped per prereg §2 L323 (cap-only)",
+                "hook_power": "MODERATE",
+                "heterogeneity_override": True,
+                "heterogeneity_detail": heterogeneity_detail,
+                "original_rule_pre_cap": primary[0]}
+    return {"rule": primary[0], "framing": primary[1], "hook_power": primary[2],
+            "heterogeneity_override": False, "heterogeneity_detail": heterogeneity_detail}
 
 
 # ---------------------------------------------------------------------------
@@ -758,15 +942,20 @@ def generate_synthetic_per_task(seed: int = 42, n_tasks_per_cell: int = 200,
         base_rate = {"sr_dom": 0.30, "sr_som": 0.32, "sr_vision": 0.20,
                      "sr_ptext": 0.31, "sr_pprompt": 0.28, "sr_psom": 0.34}
         # Capability adjustment. r1_pass is the deliberately-homogeneous happy-path
-        # fixture (all 4 cells identical distribution) so it demonstrably routes R1;
-        # the B1 0.6× capability multiplier is applied only to scenarios that are
-        # NOT testing the clean-pooled path (it induces genuine B0/B1 heterogeneity).
-        if model == "B1" and scenario != "r1_pass":
+        # fixture (all 6 cells identical distribution) so it demonstrably routes R1.
+        # B1 + B2 both get 0.6× capability multiplier (advisor §138 lock: B2 ≈ B1
+        # matched-capability cross-family control). A1.21 P1-10 fix (B-489): pre-fix
+        # only B1 was scaled → B2 = B0 by accident, violating advisor matched-capability
+        # assumption and inducing wrong-shaped heterogeneity in test scenarios.
+        if model in ("B1", "B2") and scenario != "r1_pass":
             base_rate = {k: v * 0.6 for k, v in base_rate.items()}
         # Cell-level effect-size variance for heterogeneity test — large bimodal
         # shift so between-cell variance >> within-cell bootstrap SE → I² > 75%.
+        # A1.21 P1-10 sibling fix (B-489): 4-element hardcoded list extended to 6
+        # to match Phase 1a 6-cell scope (was IndexError when B2 added).
         if scenario == "heterogeneity_test":
-            cell_shift = [+0.25, -0.20, +0.25, -0.20][cell_idx]
+            _cell_shifts = [+0.25, -0.20, +0.25, -0.20, +0.25, -0.20]
+            cell_shift = _cell_shifts[cell_idx % len(_cell_shifts)]
             base_rate["sr_psom"] = max(0.0, min(1.0, base_rate["sr_psom"] + cell_shift))
 
         rows = []
@@ -828,7 +1017,14 @@ def main():
                    help="Run smoke test on synthetic 4-cell × 200-task data")
     p.add_argument("--scenario", default="r1_pass",
                    choices=["r1_pass", "r3_pass", "r5_fail", "heterogeneity_test"])
-    p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--seed", type=int, default=42,
+                   help="Combined seed (DEPRECATED — use --data-seed + --bootstrap-seed). "
+                        "If --data-seed/--bootstrap-seed not given, falls back to --seed. "
+                        "A1.21 P1-9 fix (B-489): split for reproducibility audit clarity.")
+    p.add_argument("--data-seed", type=int, default=None,
+                   help="Seed for synthetic data generation (A1.21 P1-9 split from --seed)")
+    p.add_argument("--bootstrap-seed", type=int, default=None,
+                   help="Seed for paired bootstrap resampling (A1.21 P1-9 split from --seed)")
     p.add_argument("--primary-gate", default="drop_one_pooled_meta_TOST",
                    help="Primary gate flavor (informational; method is fixed in this rewrite)")
     p.add_argument("--TOST-delta-pp", type=float, default=1.0,
@@ -857,11 +1053,16 @@ def main():
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
+    # A1.21 P1-9 fix: separate data + bootstrap seeds; fall back to --seed if not given
+    data_seed = args.data_seed if args.data_seed is not None else args.seed
+    bootstrap_seed = args.bootstrap_seed if args.bootstrap_seed is not None else args.seed
+
     # Load data
     if args.synthetic:
-        cells_by_id = generate_synthetic_per_task(seed=args.seed, scenario=args.scenario)
-        input_sha = f"synthetic:{args.scenario}:{args.seed}"
-        logger.info(f"Synthetic mode: {len(cells_by_id)} cells, scenario={args.scenario}")
+        cells_by_id = generate_synthetic_per_task(seed=data_seed, scenario=args.scenario)
+        input_sha = f"synthetic:{args.scenario}:data_seed={data_seed}:bootstrap_seed={bootstrap_seed}"
+        logger.info(f"Synthetic mode: {len(cells_by_id)} cells, scenario={args.scenario}, "
+                    f"data_seed={data_seed}, bootstrap_seed={bootstrap_seed}")
     else:
         if not args.per_task_csv:
             logger.error("Must provide --per-task-csv or --synthetic")
@@ -875,11 +1076,11 @@ def main():
         logger.error(f"Need ≥2 cells for pooled meta; got {len(cells_by_id)}")
         sys.exit(2)
 
-    # Evaluate hypotheses
+    # Evaluate hypotheses (A1.21 P1-9: bootstrap_seed split from data_seed)
     h1 = evaluate_h1(cells_by_id, delta_pp=args.TOST_delta_pp,
                       magnitude_threshold_pp=args.H1_magnitude_pp,
                       alpha=args.alpha, transparency_K_h1=args.transparency_K_h1,
-                      bootstrap_seed=args.seed)
+                      bootstrap_seed=bootstrap_seed)
     h2 = evaluate_h2_cost(cells_by_id, cost_margin_pct=args.H2_cost_margin_pct,
                            transparency_K_h2=args.transparency_K_h2)
     h3_axis1 = evaluate_h3_axis(cells_by_id, axis_mode_key="sr_ptext",
@@ -887,18 +1088,23 @@ def main():
                                   min_unique_count=args.H3_min_unique_count,
                                   alpha=args.alpha,
                                   transparency_K_h3=args.transparency_K_h3,
-                                  bootstrap_seed=args.seed)
+                                  bootstrap_seed=bootstrap_seed)
     h3_axis2 = evaluate_h3_axis(cells_by_id, axis_mode_key="sr_pprompt",
                                   ref_mode_key="sr_psom",
                                   min_unique_count=args.H3_min_unique_count,
                                   alpha=args.alpha,
                                   transparency_K_h3=args.transparency_K_h3,
-                                  bootstrap_seed=args.seed)
+                                  bootstrap_seed=bootstrap_seed)
     framing = apply_framing_rule(h1, h2, h3_axis1, h3_axis2)
 
     result = {
         "captured_at": datetime.now(timezone.utc).isoformat(),
-        "scope": "Phase 1a 24-condition / 4-cell statistical analysis",
+        # A1.21 P2-2 fix (B-490): stale "24-condition / 4-cell" scope updated.
+        # Current Phase 1a scope = 36 baseline + 6 router = 42 conditions / 6 cells statistical.
+        # Note: this script is now synthetic-fixture + appendix-DL-sensitivity producer;
+        # canonical paper §1 producer is `aggregate_phase1_full_prereg_decision.py`.
+        "scope": "Phase 1a 42-condition (36 baseline + 6 router) / 6-cell synthetic test "
+                 "fixture + appendix DL sensitivity producer (A1.21 P2-2 scope update)",
         "n_cells": len(cells_by_id),
         "n_tasks_total": sum(len(t) for t in cells_by_id.values()),
         "cell_ids": list(cells_by_id.keys()),
