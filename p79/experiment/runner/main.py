@@ -1541,40 +1541,112 @@ class ExperimentRunner:
         # The predicted mode replaces condition.observation_mode for THIS
         # episode only; downstream step JSONL records the predicted mode for
         # paper-grade tracking. Fallback to safe_fallback_target on any error.
+        #
+        # B-693 (/stress A1.7 cold-start P0-3-C, 2026-05-17): the pre-fix
+        # block lacked a try/except wrapper. `load_lr_pipeline()` was the
+        # raw call point — a corrupt .pkl / numpy version mismatch / file
+        # permission error would propagate all the way to runner.run() and
+        # nuke the entire Pass-2 router cell (6 conditions × cls + red ×
+        # 3 baselines = 36 condition fires depending on phase1.variant
+        # config). `predict_mode()` itself had an internal try/except for
+        # the model.predict() call (learned_router.py:120) but NOT for
+        # feature extraction failures (load_task_image_field reading
+        # malformed VWA task JSON). Mode C gemini caught this as P0-3
+        # ("LR 运行时分发缺乏防御性异常处理") with the cross-AI defuse:
+        # wrap the entire LR dispatch block; log.error + count fallbacks
+        # so reviewer can audit fallback rate from runner logs per cell.
+        # Single-fire ntfy push on first fallback per condition gives
+        # user real-time alarm without spamming.
         if condition.observation_mode == "learned":
-            from p79.policies.learned_router import (
-                load_lr_pipeline,
-                load_task_image_field,
-                predict_mode,
-            )
-            # Lazy-load LR pickle once per condition (cached on runner attribute)
-            if not hasattr(self, "_lr_router_cache"):
-                self._lr_router_cache = {}
             router_cfg = self.cfg.get("router", {})
-            lr_path = router_cfg.get("lr_model_path", "")
-            if lr_path not in self._lr_router_cache:
-                self._lr_router_cache[lr_path] = load_lr_pipeline(lr_path)
-            lr_pipeline = self._lr_router_cache.get(lr_path)
-
-            # Extract per-task features
-            task_intent = task.raw_task.get("intent", "") if hasattr(task, "raw_task") else ""
-            task_has_image = load_task_image_field(task.config_file)
-            axtree_element_count = (obs.text or "").count("\n") + 1 if obs.text else 0
             safe_fallback = str(router_cfg.get("safe_fallback_target", "phantom_som"))
-            predicted_mode = predict_mode(
-                lr_pipeline,
-                task_intent=task_intent,
-                task_has_image=task_has_image,
-                site=task.site,
-                axtree_element_count=axtree_element_count,
-                fallback_mode=safe_fallback,
-            )
-            logger.info(
-                "[v7 learned router] task=%s/%s site=%s predicted=%s "
-                "(intent_tok=%d, axtree_lines=%d)",
-                task.site, task.task_id, task.site, predicted_mode,
-                len(task_intent.split()), axtree_element_count,
-            )
+            predicted_mode: Optional[str] = None
+            try:
+                from p79.policies.learned_router import (
+                    load_lr_pipeline,
+                    load_task_image_field,
+                    predict_mode,
+                )
+                # Lazy-load LR pickle once per condition (cached on runner attribute)
+                if not hasattr(self, "_lr_router_cache"):
+                    self._lr_router_cache = {}
+                lr_path = router_cfg.get("lr_model_path", "")
+                if lr_path not in self._lr_router_cache:
+                    self._lr_router_cache[lr_path] = load_lr_pipeline(lr_path)
+                lr_pipeline = self._lr_router_cache.get(lr_path)
+
+                # Extract per-task features
+                task_intent = task.raw_task.get("intent", "") if hasattr(task, "raw_task") else ""
+                task_has_image = load_task_image_field(task.config_file)
+                axtree_element_count = (obs.text or "").count("\n") + 1 if obs.text else 0
+                predicted_mode = predict_mode(
+                    lr_pipeline,
+                    task_intent=task_intent,
+                    task_has_image=task_has_image,
+                    site=task.site,
+                    axtree_element_count=axtree_element_count,
+                    fallback_mode=safe_fallback,
+                )
+                # B-696 (/stress A1.7 cold-start P1-6-AC, 2026-05-17): sanity
+                # check that LR didn't predict an out-of-universe mode.
+                # candidate_modes comes from yaml (e.g.
+                # B0_router_learned_classifieds.yaml:35); when present,
+                # any predicted_mode outside it indicates LR training/
+                # deployment mismatch and we must fall back rather than
+                # silently route to an arm the analysis layer can't
+                # reconstruct.
+                candidate_modes = router_cfg.get("candidate_modes", [])
+                if candidate_modes and predicted_mode not in candidate_modes:
+                    logger.warning(
+                        "[v7 learned router] predicted mode=%s NOT in "
+                        "candidate_modes=%s; falling back to %s",
+                        predicted_mode, candidate_modes, safe_fallback,
+                    )
+                    predicted_mode = safe_fallback
+                    self._lr_fallback_count = getattr(self, "_lr_fallback_count", 0) + 1
+                logger.info(
+                    "[v7 learned router] task=%s/%s site=%s predicted=%s "
+                    "(intent_tok=%d, axtree_lines=%d)",
+                    task.site, task.task_id, task.site, predicted_mode,
+                    len(task_intent.split()), axtree_element_count,
+                )
+            except Exception as exc:
+                # B-693: catastrophic LR dispatch failure — fall back without
+                # nuking the cell. log.error surfaces in runner watchdog
+                # scrape. ntfy first-fire alarm gives the user real-time
+                # signal that Pass-2 is degraded (so they can decide
+                # whether to abort manually). _lr_fallback_count is a
+                # runner-attribute metric the analysis layer can read from
+                # run_summary_v2.json to audit fallback rate per condition.
+                self._lr_fallback_count = getattr(self, "_lr_fallback_count", 0) + 1
+                logger.error(
+                    "[v7 learned router] FALLBACK fired for task=%s/%s — "
+                    "exception=%s; using safe_fallback_target=%s; "
+                    "lr_fallback_count_so_far=%d",
+                    task.site, task.task_id, repr(exc), safe_fallback,
+                    self._lr_fallback_count,
+                )
+                if not getattr(self, "_lr_fallback_ntfy_fired", False):
+                    self._lr_fallback_ntfy_fired = True
+                    try:
+                        import os
+                        import urllib.request
+                        topic = os.environ.get("NTFY_TOPIC", "")
+                        if topic:
+                            msg = (
+                                f"[A1.7 B-693] LR fallback fired "
+                                f"condition={condition.condition_id} "
+                                f"task={task.site}/{task.task_id} "
+                                f"exc={repr(exc)[:200]}"
+                            )
+                            urllib.request.urlopen(
+                                f"https://ntfy.sh/{topic}",
+                                data=msg.encode("utf-8"),
+                                timeout=3,
+                            )
+                    except Exception:
+                        pass  # ntfy is best-effort; never let it break the cell
+                predicted_mode = safe_fallback
             # Derive per-task condition with predicted observation_mode. Keep
             # condition_id stable (analysis groups by condition_id, not mode)
             # so per-task mode predictions are recorded via step JSONL

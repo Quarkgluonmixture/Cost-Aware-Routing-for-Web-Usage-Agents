@@ -140,11 +140,26 @@ class RuleBasedRouter:
                     triggers.append("v6_cascade_fallback_latched")
                 else:
                     # Legacy v3/v4/v5: escalate to next more expensive mode
-                    current_idx = (
-                        self.modes.index(state.current_mode)
-                        if state.current_mode in self.modes
-                        else 0
-                    )
+                    # B-697 (/stress A1.7 cold-start P1-8-C, 2026-05-17): raise
+                    # on unlisted current_mode instead of silently falling
+                    # back to modes[0]. Pre-fix `else 0` made any success or
+                    # trigger in a non-listed mode (e.g. vision /
+                    # phantom_prompt — Phase 1a 6-mode universe modes that
+                    # are NOT in the default [dom, som] router.modes list)
+                    # silently jump to modes[0]=dom, breaking the
+                    # monotonicity invariant. Fail-loud forces config
+                    # authors to set router.modes explicitly when routing
+                    # over a non-default mode set (paper-2 router work).
+                    if state.current_mode not in self.modes:
+                        raise ValueError(
+                            f"RuleBasedRouter.modes={self.modes} does not "
+                            f"include current_mode={state.current_mode!r}; "
+                            f"set router.modes explicitly in yaml to cover "
+                            f"the cell's full mode universe (e.g. "
+                            f"router.modes: [dom, som, vision, "
+                            f"phantom_text, phantom_prompt, phantom_som])."
+                        )
+                    current_idx = self.modes.index(state.current_mode)
                     decision = self.modes[min(current_idx + 1, len(self.modes) - 1)]
             elif state.success_streak >= self.deescalation_streak and state.current_mode != self.modes[0]:
                 # De-escalate after sustained success

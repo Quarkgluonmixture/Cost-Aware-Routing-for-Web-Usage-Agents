@@ -148,10 +148,17 @@ def test_b367_default_config_observation_mode_is_6mode():
 # ─── P0-4-B* learned-router skip rule router (smoke) ────────────────────────
 def test_b368_learned_router_metadata_marker_present():
     """conditions.py emits router_variant=v7_learned on learned cells so the
-    runner can branch its routing-skip path."""
+    runner can branch its routing-skip path.
+
+    B-694 (/stress A1.7 cold-start P1-4-A, 2026-05-17): single-site
+    task.include_sites is now required for learned-router emit
+    (condition_id includes the site as a stratification key for cross-
+    cell aggregation). Test fixture updated to set a single site.
+    """
     from p79.experiment.conditions import generate_conditions
     cfg = {
         "experiment": {"phase": "phase1", "benchmark": "vwa"},
+        "task": {"include_sites": ["classifieds"]},
         "variables": {
             "primary": {"observation_mode": ["dom", "som", "vision",
                                               "phantom_som", "phantom_text", "phantom_prompt"]},

@@ -4864,3 +4864,44 @@ risk-accepted.
 **Next available B-number**: B-675+ (A1.12 cold-start consumed B-662~B-674; A1.6b consumed B-650~B-661; A1.13 ladder consumed B-630~B-648 separately).
 
 **Process note — parallel-session B-### collision saga**: Initial reservation 13:14 = B-650~B-657 (catalog max at B-649). Between Chunk 1 commit `472a184` and post-commit catalog re-grep, parallel A1.6b session committed B-650~B-661 (12 entries). Renumbered Chunk 1's 5 fixes to B-662~B-666 via commit `6c4760b` (single-pass sed, 6 files, 10 ins/10 del). Then mid-renumber, accidentally bundled A1.6b's 5 staged in-flight files into commit `4cc9064` (11 files, 1192 ins) — undone via `git reset --soft HEAD~1` per user authorization; A1.6b session restored to staged state to commit independently. Lesson reinforces A1.6a / A1.18-re renumber pattern: re-grep B-### max immediately before EACH catalog append + use `git commit --only` (or `git restore --staged` for not-mine files) to avoid bundling parallel-session work.
+
+---
+
+## /stress A1.7 cold-start fix-batch — `conditions.py` + `configs/exp_v2_*.yaml` (2026-05-17)
+
+**Trigger**: cold-start re-audit of A1.7 ladder slot after 2026-05-16 B-261~B-269 12-fix batch left phase1_plan ticked `[ ]`. User /stress A1.7 invocation found 13 residual gaps (8 Claude unique + 3 gemini unique + 2 overlap; codex Mode B FAIL 3-retry budget exhausted). v7.7 user Q&A: Q1=B (no aliasing shim, Pass-2 not yet fired) + Q2=A (try-except + log/ntfy/fallback_count) + Q3=A (paper-1 is learned router, phase2 routed defer to paper-2). 11 fixes B-691~B-701 (rebased from initial B-680~B-690 due to parallel A1.14 Chunk (b) consuming B-677~B-680 mid-flight).
+
+| Bug | Severity | Source | OOB | File:line | Description |
+|---|---|---|---|---|---|
+| B-691 | P0 | A+C | * | `p79/experiment/conditions.py:10-55, 161-167, 263-278` + `configs/exp_v2_phase2.yaml` + `configs/exp_v2_phase3.yaml` | Module-level `_validate_obs_mode` helper extracted; phase2/3 yaml branches now call gate. yaml fix: `phase2.fixed_condition.observation_mode: "hybrid"→"som"`; `phase3.base_condition.observation_mode: "dom_only"→"dom"`. Closes residual gap from B-263 (retired modes still leaked into non-phase1 yamls). |
+| B-692 | P0 | A | * | `p79/experiment/conditions.py:225-232` | Raise on `obs_mode='learned'` + `emit_baseline` path. Pre-fix yaml setting obs_mode=["learned"] with variant!=router produced `phase1_learned_router_0` baseline cell that runner/main.py:1544 silently routed through LR dispatch — paper §1 "B0 vs router" became "LR vs LR" self-comparison. |
+| B-693 | P0 | C | — | `p79/experiment/runner/main.py:1544-1656` | Wrap LR dispatch in try/except. Pre-fix `load_lr_pipeline()` raw — corrupt pickle / numpy mismatch → episode raise → Pass-2 crash. Now: fallback to `safe_fallback_target`, `_lr_fallback_count` runner metric, ntfy first-fire push, log.error. Gemini Mode C F2. |
+| B-694 | P1 | A | — | `p79/experiment/conditions.py:288-320` | Learned router cid: `phase1_learned_router_{backend_id}_{site_hint}` (was bare constant). Pre-fix cross-cell aggregation collapsed 6 router cells into single bucket. No shim per Q1=B (Pass-2 not fired). Multi-site `include_sites` raises (LR trained per cell). |
+| B-695 | P1 | A | — | `p79/experiment/conditions.py:107-124` | `_load_best_condition_from_phase1` filters `_synthesized=True` rows before ranking. Phase2 "best fixed" no longer biased by partial-data cells. Symmetric with B-179 / B-601 / B-659. |
+| B-696 | P1 | A+C | — | `p79/experiment/conditions.py:308-317` + `p79/experiment/runner/main.py:1602-1612` | (a) metadata `mode_set` reads `phase1.candidate_modes` (yaml field had 0 grep matches pre-fix). (b) runner LR asserts `predicted_mode in candidate_modes`, fallback on violation. Paper §6 Oracle ceiling reconstructable. |
+| B-697 | P1 | C | * | `p79/experiment/router.py:142-159` | RuleBasedRouter escalation raises on `state.current_mode not in self.modes` instead of silent `else 0` fallback. Pre-fix cell starting in vision/phantom_* with default `modes=[dom,som]` snapped to dom on first success — broke mode monotonicity. Gemini Mode C F3. |
+| B-698 | P2 | A | — | `p79/experiment/conditions.py:142-169` | `_default_backend_id` raises on empty backends (no more silent local_4b fallback). Mixed-baseline yaml misconfig (B0 hints + no default_backend) fails at startup. Primarily affects test fixtures bypassing `normalize_config`. |
+| B-699 | P2 | A | — | `configs/exp_v2_phase2.yaml` | Removed dead `som_on: true` field. `conditions.py:236-238` always derives `som_on=(obs_mode=="som")`. Field misled config authors as independent toggle. |
+| B-700 | P2 | A | — | `configs/exp_v2_base.yaml:31-43` | `runtime.max_steps: 40 → 30` aligned with 119 per-condition yaml overrides. Pre-fix base default was dead: any new yaml forgetting override silently inflated cost 33% (40/30). `config.py:259` still falls back to 40 for non-yaml callers. |
+| B-701 | P2 | A | — | `p79/experiment/conditions.py:70-83` | `_module_flags_from_name` ValueError lists valid alias names (DX parity with `_validate_obs_mode`). Pre-fix bare name without hint. |
+
+**Verification matrix**:
+- pytest: **500 passed / 9 skipped / 0 failed in 34.25s** (23 new invariant tests `tests/test_stress_a1_7_fixes.py` + 1 fixture update `tests/test_stress_a1_10_fixes.py::test_b368` for B-694 single-site invariant)
+- py_compile: PASS on `conditions.py` + `runner/main.py` + `router.py`
+- yaml parse: PASS on `exp_v2_base.yaml` + `exp_v2_phase2.yaml` + `exp_v2_phase3.yaml`
+- B-### stamps post-rebase: 21 occurrences of B-691~B-701 across 8 modified files (3 py + 3 yaml + 2 tests)
+
+**Cross-AI agreement matrix**:
+- 2-AI overlap (A+C): B-691, B-696
+- Claude unique: B-692, B-694, B-695, B-698, B-699, B-700, B-701
+- Gemini unique: B-693, B-697
+- 3-AI overlap: 0 (Mode B FAIL — codex CLI v0.130.0 reasoning effort=high consumed token budget on exec/read loops; recurring pattern across /stress A1.18-re / A1.6b / A1.7 sibling sessions)
+- OOB ratio: 8/13 = 62%
+
+**Reviewer lessons**:
+1. **Cold-start audits catch what fix-batch audits miss** — B-263 (2026-05-16) marked dom_only/hybrid retired but left phase2/3 yaml downstream consumers; cold-start cycle caught residuals because Claude+Gemini started without prior fix-history priming.
+2. **Sentinel + dispatch divergence** — B-692's class (yaml sentinel value with runtime dispatch independent of producer's expected gate flags) is structurally recurring; every router-bus dispatch path needs an explicit emit-side guard since consumer doesn't second-check producer intent.
+3. **Dead config detection via 0-grep audit** — `candidate_modes` + `som_on` + `max_steps: 40` all caught by `grep -c <field>` returning 0 in code consumers; cheap pre-fire audit pass.
+4. **codex CLI synthesis failure is now a recurring class** — A1.6b / A1.18-re / A1.7 all hit it; Mode A + Mode C carry the load when this happens. The v7.7 retry budget protocol handled it correctly: 3 retries → FAIL → accept partial.
+
+**Next available B-number**: B-702+ (A1.7 cold-start consumed B-691~B-701; A1.14 Chunk b consumed B-677~B-680; B-681~B-690 unused after rebase).

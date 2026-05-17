@@ -6,7 +6,16 @@ experiment:
 
 variables:
   phase3:
+    # B-691 (/stress A1.7 cold-start P0-1-AC*, 2026-05-17): observation_mode
+    # was "dom_only" (retired by B-263); replaced with "dom" (paper §3
+    # default module-ablation baseline — the canonical "before any module"
+    # arm). Companion B-691 fix in conditions.py:283-309 adds explicit
+    # `_validate_obs_mode` gate so future retired-mode drift fails loud.
+    # Note: `som_on: true` was a dead field (conditions.py:287-288
+    # derives som_on from obs_mode, never reading yaml) but kept here as
+    # `som_on: false` ≡ derived value for documentation clarity — the
+    # actual som_on for "dom" is False, recorded explicitly so config
+    # authors see the (dom, som_on=False) pairing in one place.
     base_condition:
-      som_on: true
-      observation_mode: "dom_only"
+      observation_mode: "dom"
       router_on: true

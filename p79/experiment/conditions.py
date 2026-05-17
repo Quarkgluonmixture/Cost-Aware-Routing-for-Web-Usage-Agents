@@ -7,6 +7,54 @@ from typing import Any, Dict, List, Optional, Tuple
 from p79.experiment.types import ConditionSpec, ModuleFlags
 
 
+# B-691 fix (/stress A1.7 cold-start P0-1-AC*, 2026-05-17): centralized
+# observation_mode validation. Pre-fix the phase1 branch (L80-130) was the
+# ONLY caller of the deprecation gate; phase2 + phase3 branches read
+# obs_mode from yaml and passed straight into ConditionSpec without
+# checking _DEPRECATED_OBS_MODES — so `configs/exp_v2_phase2.yaml`
+# (observation_mode: "hybrid") + `configs/exp_v2_phase3.yaml`
+# (observation_mode: "dom_only") would silently emit retired modes for
+# any future Phase 2/3 fire. Extracting to a module-level helper means
+# all 3 phase branches share one canonical gate.
+_VALID_OBS_MODES = {
+    "dom", "som", "vision",
+    "phantom_som", "phantom_text", "phantom_prompt",
+    "learned",  # v7 sentinel for learned router dispatch (runner main.py:1544)
+}
+_DEPRECATED_OBS_MODES = {
+    "phantom_dom": "phantom_text",  # B-261 (2026-05-16): legacy alias retired
+    "dom_only": None,  # B-263 (2026-05-16): Phase 1 v1 router design, never paper-1
+    "hybrid": None,    # B-263 (2026-05-16): Phase 1 v1 router design, never paper-1
+}
+
+
+def _validate_obs_mode(mode: str, *, context: str = "observation_mode") -> str:
+    """Validate that `mode` is in the canonical paper-1 6-mode universe.
+
+    Raises ValueError on deprecated/retired modes (with replacement hint
+    when available) or unknown modes (with valid-list hint). Returns the
+    mode unchanged on success — callers can use it as a fluent passthrough:
+    `obs_mode = _validate_obs_mode(yaml_value, context="phase2.fixed")`.
+    """
+    if mode in _DEPRECATED_OBS_MODES:
+        replacement = _DEPRECATED_OBS_MODES[mode]
+        hint = (
+            f"use canonical '{replacement}' instead"
+            if replacement
+            else "this mode was retired and has no replacement in paper-1 scope"
+        )
+        raise ValueError(
+            f"{context}='{mode}' is deprecated/retired in conditions.py; {hint}. "
+            f"Valid modes: {sorted(_VALID_OBS_MODES)}"
+        )
+    if mode not in _VALID_OBS_MODES:
+        raise ValueError(
+            f"Unknown {context} '{mode}'. "
+            f"Valid: {sorted(_VALID_OBS_MODES)}"
+        )
+    return mode
+
+
 def _module_flags_from_name(name: str) -> ModuleFlags:
     name = (name or "none").lower()
     if name in ("none", "off", "baseline"):
@@ -19,7 +67,20 @@ def _module_flags_from_name(name: str) -> ModuleFlags:
         return ModuleFlags(m3_failure_trigger_retry=True)
     if name in ("m4", "m4_two_stage", "m4_two_stage_generation_grounding"):
         return ModuleFlags(m4_two_stage_generation_grounding=True)
-    raise ValueError(f"Unknown module name: {name}")
+    # B-701 (/stress A1.7 cold-start P2-13-A, 2026-05-17): list valid options
+    # in the error message for DX parity with `_validate_obs_mode` (L80+).
+    # Pre-fix the error said "Unknown module name: <typed>" without hint —
+    # config authors had to grep code to find aliases.
+    _VALID_MODULE_NAMES = sorted([
+        "none", "off", "baseline",
+        "m1", "m1_dom_select", "m1_dom_select_fallback",
+        "m2", "m2_dom_input", "m2_dom_first_input_fallback",
+        "m3", "m3_retry", "m3_failure_trigger_retry",
+        "m4", "m4_two_stage", "m4_two_stage_generation_grounding",
+    ])
+    raise ValueError(
+        f"Unknown module name: {name}. Valid: {_VALID_MODULE_NAMES}"
+    )
 
 
 def _load_best_condition_from_phase1(path: Path) -> Optional[Tuple[bool, str, str]]:
@@ -40,6 +101,25 @@ def _load_best_condition_from_phase1(path: Path) -> Optional[Tuple[bool, str, st
         payload = json.load(f)
 
     condition_metrics = payload.get("condition_metrics", [])
+    if not condition_metrics:
+        return None
+
+    # B-695 (/stress A1.7 cold-start P1-5-A, 2026-05-17): filter out
+    # partial-data conditions BEFORE ranking. B-179/B-601/B-659 (chronicle
+    # §183+) added `_synthesized=True` markers to condition_summary rows
+    # whose underlying data is incomplete (cell crashed mid-run, archive
+    # corrupt, etc.) and the downstream plot + Pareto paths honor the
+    # flag. But `_load_best_condition_from_phase1` was never wired into
+    # that gate — so phase2 "fixed best" selection could silently pick a
+    # partial-data condition as the canonical fixed reference, biasing
+    # the entire phase2 routed-vs-fixed comparison from the source.
+    # Return None if all metrics are synthesized so the caller falls
+    # back to the manual fixed_condition path (which is properly
+    # validated by `_validate_obs_mode` via B-691).
+    condition_metrics = [
+        cm for cm in condition_metrics
+        if not cm.get("_synthesized", False)
+    ]
     if not condition_metrics:
         return None
 
@@ -64,10 +144,29 @@ def _default_backend_id(cfg: Dict[str, Any]) -> str:
     explicit = backends.get("default_backend")
     if explicit:
         return str(explicit)
-    for k in backends:
-        if k != "default_backend":
-            return k
-    return "local_4b"
+    # B-698 (/stress A1.7 cold-start P2-9-A, 2026-05-17): pre-fix this
+    # function silently fell back to the first non-`default_backend` key
+    # or to the literal string "local_4b" (= B1 local Qwen). If a yaml
+    # forgot to set `backends.default_backend` while leaving the rest of
+    # the fields hinting B0 (cost_api / experiment.name = "B0_*"), runs
+    # would silently pick the wrong backend → run_meta records mixed
+    # baseline state → reviewer audits sees inconsistency. The right
+    # behavior is fail-loud so misconfigurations are caught at startup.
+    # Note: `config.py:236 normalize_config` injects a default for the
+    # standard yaml-merge path (`backends.setdefault("default_backend",
+    # next(iter([...])))`) so this raise only fires when callers bypass
+    # `normalize_config` (e.g. unit tests building bare cfgs) — in that
+    # case the fail-loud catches missing test fixtures.
+    non_default_keys = [k for k in backends if k != "default_backend"]
+    if non_default_keys:
+        return non_default_keys[0]
+    raise ValueError(
+        "cfg.backends has no `default_backend` and no concrete backend "
+        "entries; yaml must explicitly set `backends.default_backend` "
+        "(e.g. 'api_strong' for B0, 'local_4b' for B1, 'local_gemma' "
+        "for B2). The legacy silent fallback to 'local_4b' was retired "
+        "to prevent mixed-baseline run_meta contamination."
+    )
 
 
 def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
@@ -88,11 +187,6 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
         # cross-AI cycle attack vector). Existing archive run_dirs named
         # phase1_phantom_dom_router_0 stay historical; new fires use phantom_text canonical.
         obs_values = [str(x) for x in primary.get("observation_mode", ["dom", "som", "vision"])]
-        _VALID_OBS_MODES = {
-            "dom", "som", "vision",
-            "phantom_som", "phantom_text", "phantom_prompt",
-            "learned",  # v7 sentinel for learned router dispatch (runner main.py:1017)
-        }
         # /stress A1.10 P0-3-A (2026-05-16): paper-1 6-mode canonical universe.
         # DEFAULT_CONFIG in config.py:23 historically shipped 3-mode
         # ["dom","som","vision"] which fell back silently when a yaml did NOT
@@ -106,28 +200,11 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
         # (queue_phase1_paper_grade.sh iterates all 6 modes); we leave
         # generate_conditions permissive so partial fires (e.g. resume one
         # mode) work without configuration gymnastics.
-        _DEPRECATED_OBS_MODES = {
-            "phantom_dom": "phantom_text",  # B-261 (2026-05-16): legacy alias retired
-            "dom_only": None,  # B-263 (2026-05-16): Phase 1 v1 router design, never paper-1
-            "hybrid": None,    # B-263 (2026-05-16): Phase 1 v1 router design, never paper-1
-        }
+        # B-691 (/stress A1.7 cold-start P0-1-AC*, 2026-05-17): validation
+        # delegated to module-level _validate_obs_mode helper (L80+) so
+        # phase2 + phase3 branches can reuse the same gate.
         for _mode in obs_values:
-            if _mode in _DEPRECATED_OBS_MODES:
-                _replacement = _DEPRECATED_OBS_MODES[_mode]
-                _hint = (
-                    f"use canonical '{_replacement}' instead"
-                    if _replacement
-                    else "this mode was retired and has no replacement in paper-1 scope"
-                )
-                raise ValueError(
-                    f"observation_mode '{_mode}' is deprecated/retired in conditions.py; {_hint}. "
-                    f"Valid modes: {sorted(_VALID_OBS_MODES)}"
-                )
-            if _mode not in _VALID_OBS_MODES:
-                raise ValueError(
-                    f"Unknown observation_mode '{_mode}'. "
-                    f"Valid: {sorted(_VALID_OBS_MODES)}"
-                )
+            _validate_obs_mode(_mode, context="phase1.observation_mode")
 
         # Extract model_name from backend config for condition metadata (helps distinguish B0/B1/B2).
         backend_cfg = cfg.get("backends", {}).get(backend_id, {})
@@ -168,6 +245,29 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
 
         for obs_mode in obs_values:
             som_on = obs_mode == "som"
+            # B-692 (/stress A1.7 cold-start P0-2-A*, 2026-05-17): explicit
+            # guard against emitting a "baseline" condition with the LR
+            # sentinel mode. Pre-fix any yaml setting
+            # observation_mode=["learned"] AND variant="both" (or missing
+            # variant default "baseline") would produce a
+            # `phase1_learned_router_0` condition with router_on=False —
+            # but runner/main.py:1544 still triggers LR dispatch when
+            # `condition.observation_mode == "learned"` regardless of
+            # router_on, silently contaminating the "baseline" cell's SR
+            # and cost data with LR-routed predictions. The cross-AI cycle
+            # attack vector (Mode A self-audit + Mode C gemini overlap):
+            # paper §1 hero claim "B0 baseline vs router" becomes "LR vs
+            # LR" self-comparison. Fail-loud forces yaml authors to pick
+            # phase1.variant explicitly when mixing learned with baseline
+            # emit.
+            if emit_baseline and obs_mode == "learned":
+                raise ValueError(
+                    f"observation_mode='learned' is a router-only sentinel; "
+                    f"yaml mistakenly enabled it in the baseline emit pass "
+                    f"(phase1.variant={variant_mode!r}). Set "
+                    f"phase1.variant='router' to emit only the LR-dispatch "
+                    f"condition, or remove 'learned' from observation_mode."
+                )
             if emit_baseline:
                 cid = f"phase1_{obs_mode}_router_0"
                 conditions.append(
@@ -205,20 +305,53 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
         if emit_router and router_kind == "learned":
             # v7 learned-only: 1 router condition per cell (not per-mode); LR picks mode
             # per task at runtime. obs_mode="learned" sentinel signals runner to query LR.
+            #
+            # B-694 (/stress A1.7 cold-start P1-4-A, 2026-05-17): condition_id
+            # now includes backend_id + site context. Pre-fix the id was a
+            # bare constant "phase1_learned_router" — cross-cell aggregation
+            # (analysis.py groups by condition_id) lumped all 6 router
+            # conditions (B0/B1/B2 × cls/red) into a single bucket so
+            # paper §6 router-pass results collapsed to one mean instead
+            # of 6 cell-stratified rows. No backward-compat shim because
+            # Pass-2 router has not fired yet (user confirmed 2026-05-17
+            # /stress A1.7 fix scope decision Q1=B).
+            #
+            # B-696 (/stress A1.7 cold-start P1-6-AC, 2026-05-17): metadata
+            # "mode_set" now reads `phase1.candidate_modes` from yaml
+            # rather than echoing the sentinel `obs_values=["learned"]`.
+            # The yaml field had zero code consumers (grep confirms 0
+            # matches in p79/ + scripts/) — this is the consumer. The LR
+            # actually predicts over the trained label space; the yaml
+            # field encodes that label space so paper §6 Oracle ceiling
+            # / drop-one analysis scripts can reconstruct the choice
+            # space from condition metadata alone.
+            phase1_cfg_local = cfg.get("variables", {}).get("phase1", {})
+            candidate_modes = phase1_cfg_local.get("candidate_modes", obs_values)
+            include_sites = cfg.get("task", {}).get("include_sites", [])
+            if len(include_sites) != 1:
+                raise ValueError(
+                    f"phase1_learned_router condition requires exactly one "
+                    f"site in task.include_sites (got {include_sites!r}); "
+                    f"learned router is trained per-cell so single-site fires "
+                    f"are the only supported launch pattern."
+                )
+            site_hint = str(include_sites[0])
+            cid_learned = f"phase1_learned_router_{backend_id}_{site_hint}"
             conditions.append(
                 ConditionSpec(
-                    condition_id="phase1_learned_router",
+                    condition_id=cid_learned,
                     phase="phase1",
                     backend_id=backend_id,
                     som_on=False,  # LR may pick som per-task; per-condition som_on n/a
                     observation_mode="learned",
                     router_on=True,
                     modules=ModuleFlags(),
-                    label="Phase1 learned router (LR over phantom-augmented mode set)",
+                    label=f"Phase1 learned router ({backend_id}/{site_hint})",
                     metadata={
                         "model_name": model_name,
                         "router_variant": "v7_learned",
-                        "mode_set": obs_values,
+                        "mode_set": list(candidate_modes),
+                        "site": site_hint,
                     },
                 )
             )
@@ -235,6 +368,16 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
         if best is None:
             fixed_hint = phase2_cfg.get("fixed_condition", {})
             obs_mode = str(fixed_hint.get("observation_mode", primary.get("observation_mode", ["som"])[0]))
+            # B-691 (/stress A1.7 cold-start P0-1-AC*, 2026-05-17): validate
+            # phase2 fixed_condition obs_mode against the canonical 6-mode
+            # universe. Pre-fix `exp_v2_phase2.yaml:13` declared
+            # observation_mode="hybrid" (retired in `_DEPRECATED_OBS_MODES`
+            # via B-263) but phase2 branch never called the gate — so a
+            # future phase2 fire would silently emit a retired-mode
+            # condition. Yaml post-fix points to "som" (paper-1 hero arm)
+            # so this gate normally passes; raise here protects against
+            # future config decay.
+            _validate_obs_mode(obs_mode, context="phase2.fixed_condition.observation_mode")
             som_on = obs_mode == "som"
             source_condition_id = "manual_phase2_fixed"
         else:
@@ -285,6 +428,13 @@ def generate_conditions(cfg: Dict[str, Any]) -> List[ConditionSpec]:
         base = phase3_cfg.get("base_condition", {})
 
         base_obs = str(base.get("observation_mode", "dom"))
+        # B-691 (/stress A1.7 cold-start P0-1-AC*, 2026-05-17): validate
+        # phase3 base_condition obs_mode against the canonical 6-mode
+        # universe. Pre-fix `exp_v2_phase3.yaml:11` declared
+        # observation_mode="dom_only" (retired) but phase3 branch never
+        # called the gate. Yaml post-fix points to "dom" (paper §3 default
+        # module-ablation baseline); gate protects against future drift.
+        _validate_obs_mode(base_obs, context="phase3.base_condition.observation_mode")
         base_som = base_obs == "som"
         base_router = bool(base.get("router_on", True))
 

@@ -29,7 +29,18 @@ env:
   sleep_after_execution: 0.5
 
 runtime:
-  max_steps: 40
+  # B-700 (/stress A1.7 cold-start P2-11-A, 2026-05-17): max_steps 40 → 30
+  # aligned with the 119 per-condition yaml overrides (every paper-grade
+  # yaml explicitly sets max_steps: 30 — VWA empirical max-task-budget
+  # for cls/red task length distribution). Pre-fix the base default 40
+  # was DEAD: every existing yaml override; any new yaml forgetting the
+  # override silently inflated cost data 33% (40/30) → broke cross-cell
+  # cost comparisons. Aligning the base default removes the silent
+  # contamination vector. Note: the actual yaml-config-load default still
+  # falls back to 40 in `config.py:259 cfg["runtime"].setdefault(
+  # "max_steps", 40)` for non-yaml callers (e.g. unit-test bare cfgs);
+  # the 30 here is the canonical paper-grade base.
+  max_steps: 30
   resume: true
 
 variables:

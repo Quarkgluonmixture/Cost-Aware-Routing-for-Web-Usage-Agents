@@ -8,6 +8,12 @@ variables:
   phase2:
     # Option A: set this to a completed phase1 run dir to auto-pick best fixed condition
     # best_from_phase1_run_dir: "results/visualwebarena/phase1/run_xxx"
+    # B-691 (/stress A1.7 cold-start P0-1-AC*, 2026-05-17): observation_mode
+    # was "hybrid" (retired by B-263); replaced with "som" (paper-1 hero
+    # arm and the most likely fixed-best when running an actual phase2).
+    # B-699 (/stress A1.7 cold-start P2-10-A, 2026-05-17): removed dead
+    # field `som_on: true` — conditions.py:236-238 derives som_on from
+    # obs_mode, never reading the yaml value. The yaml field misleads
+    # config authors into thinking it's an independent toggle.
     fixed_condition:
-      som_on: true
-      observation_mode: "hybrid"
+      observation_mode: "som"
