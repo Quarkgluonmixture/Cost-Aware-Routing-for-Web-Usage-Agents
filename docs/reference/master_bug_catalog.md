@@ -4262,6 +4262,60 @@ Phase 2 of `/stress A1.5b` audit — data plane + analysis sibling layer. Pre-fi
 
 ---
 
+## A1.14 /stress audit Chunk (d) (2026-05-17) — B-703 to B-710 (8 entries; 8 fixed)
+
+> Chunk (d) lands the final P1+P2 hygiene cleanup batch following Chunks (a)+(b)+(c). All 8 from cross-AI unified bug list — 2 P1 (P1-3 preflight --sites filter codex F4 / P1-4 leaf queue site-lock codex F5 OOB B) + 6 P2 (P2-2 logs timestamps Claude+codex AB / P2-3 curl 3s timeout Claude / P2-4 guard_count brittle Claude / P2-5 Gate 1 TBD narrow Claude / P2-6 pgrep too broad gemini / P2-7 curl -L missing gemini). User: "继续 d" → execute per recommended option. B-numbers B-703~B-710 contiguous; B-684~B-690 + B-691~B-702 already consumed by parallel A1.7 cold-start cycle (chronicle §190, post-rebase).
+
+### B-703. preflight_v2.sh `--sites csv` filter — codex F4 unique 🛠️ FIXED
+- **Source**: codex Mode B F4 unique ("Phase 1a can be blocked by deferred shopping")
+- **Code**: pre-fix `check_site_endpoints` (line 224) always checked all 5 endpoints (shop/red/wiki/cls/homepage). Orchestrator invoked preflight without site filter → unreachable shop blocked Phase 1a cls+red launch.
+- **Attack**: Phase 1b shop deferred to post-workshop submission ("avoid Magento FPC bug surface co-occurring with Phase 1a critical path"). But preflight forced shop reachability check → Magento outage transitively blocked Phase 1a cls+red fire.
+- **Fix**: New `--sites csv` flag + `SITES_FILTER` env var. Empty filter = all sites (back-compat). Orchestrator can pass `--sites classifieds,reddit` for Phase 1a, `--sites shopping` for Phase 1b. `check_site_endpoints` skips non-matching sites with "skipped by --sites filter" PASS message. Static unit test verifies flag parse + filter logic present.
+
+### B-704. _lib_paper_grade_gates.sh `acquire_site_lock` + 4 leaf scripts call it — codex F5 unique OOB B 🛠️ FIXED
+- **Source**: codex Mode B F5 unique OOB ("Leaf queue scripts are not site-safe standalone")
+- **Code**: pre-fix per-(site, benchmark) flock lived ONLY in `queue_chain.sh:142-170` (A1.13 B-646 P1-7). 4 leaf queue scripts (queue_baseline + queue_phantom_{som,text,prompt}) had NO flock at entry. CLAUDE.md hard rule explicitly allows direct leaf invocation: `RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh B0 dom shopping`.
+- **Attack**: Active chain in progress; user manually invokes a leaf script on the same site (e.g., to retry a failed cell) → RESET wipes other's session → 48h paper-grade run contaminated.
+- **Fix**: 2 new lib functions in `_lib_paper_grade_gates.sh`: `acquire_site_lock <site> <benchmark> [<label>]` (uses FD 7, distinct from queue_chain's FD 9; rc=78 on contention) + `release_site_lock`. Parent-held detection via `P79_CHAIN_LOCK_HELD` env (queue_chain exports `"${site}:${benchmark}"` after acquiring its own lock; leaf sees match → silent skip, no double-acquire). queue_chain.sh exports + unsets env appropriately. 4 leaf scripts (queue_baseline + 3 phantom) gain post-`init_paper_grade_env` block: `acquire_site_lock "${SITE}" "${BENCHMARK}" "<scriptname>" || exit $?; trap "release_site_lock" EXIT INT TERM`. 5 pytest tests added: lib exports both functions, 4-parametrized leaf-script-calls-acquire, queue_chain-exports-env.
+
+### B-705. queue_phase1_paper_grade.sh logs+pid timestamps + summary SITE_FILTER conditional — Claude+codex 2-AI AB 🛠️ FIXED
+- **Source**: Claude Mode A F7 (post-launch message hardcoded "Phase 1a") + codex Mode B F8 OOB (Master logs are overwritten on retry)
+- **Code**: pre-fix `launch_chain` wrote to static `logs/queue_phase1_${label}.log` + `.pid` (no timestamp/pid suffix). Re-fire overwrote prior chain's transcript. Post-launch summary at line 396 unconditionally logged "Phase 1a rerun launched (36 conditions, cls + red × B0+B1+B2 × 6 modes)" regardless of SITE_FILTER value.
+- **Attack**: Multi-day paper-grade run, mid-fire issue forces operator to re-fire launch_chain → previous log lost (forensic loss for debugging). Worse: SITE_FILTER=phase1b launched the shop-only chain but post-launch text claimed "Phase 1a cls+red", misleading operators auditing what was actually fired.
+- **Fix**: log+pid filenames now `logs/queue_phase1_${label}_${ts}_${PID}.log` (and .pid); `.latest.log` + `.latest.pid` symlinks updated atomically via `ln -sfn` so `tail -f logs/queue_phase1_cls.latest.log` ergonomics preserved. Post-launch summary switched to `case "$SITE_FILTER"` with proper messages for each mode (all/cls/red/phase1b/other). Static analysis verified.
+
+### B-706. preflight_v2.sh site reachability curl timeout 3s → 10s — Claude unique 🛠️ FIXED
+- **Source**: Claude Mode A F9 (curl 3s timeout)
+- **Code**: pre-fix `preflight_v2.sh:245` `curl -fsS --max-time 3 "${url}"`. 3-second timeout was a tradeoff for fail-fast on dead endpoints.
+- **Attack**: Tailscale cold connection or A100 docker stack first-request can take >3s (empirically 5-8s on cold wake). Pre-fix → false FAIL on legitimate paper-grade infra mid-warm-up.
+- **Fix**: `--max-time 3` → `--max-time 10`. 10s tolerates Tailscale wake + Magento boot delay while still well below user-noticeable fail-loud window (preflight whole-pass runtime <30s typical).
+
+### B-707. preflight_v2.sh `guard_count -lt 2` brittle — Claude unique 🛠️ FIXED
+- **Source**: Claude Mode A F10 (B-91 guard count brittle)
+- **Code**: pre-fix `preflight_v2.sh:385` `guard_count -lt 2` hardcoded. If VWA upstream refactors guard into helper or consolidates the two LLM-judge functions, count would drop and preflight FAIL.
+- **Attack**: Future upstream `helper_functions.py` refactor (variable rename, helper extraction, function consolidation) silently breaks paper-grade gate even though guard semantics preserved.
+- **Fix**: 2 changes: (a) accept alternate guard idiom `if not pred(\.strip\(\))?:` via second grep; `guard_count` is max of v1+v2 patterns; (b) `EXPECTED_B91_GUARDS` env override (default 2). OSF audit can set strict count; future consolidation can drop to 1 via env without editing preflight code. FAIL message shows both pattern counts for diagnostic.
+
+### B-708. queue_phase1_paper_grade.sh Gate 1 TBD detection broadened — Claude unique 🛠️ FIXED
+- **Source**: Claude Mode A F12 (Gate 1 TBD narrow)
+- **Code**: pre-fix `grep -q "K_h1.*TBD\|K_h3.*TBD\|TOST.*TBD"` only matched 3 specific phrase patterns. Empirically preregistration.md body had 2+ other TBDs (line 245 "implementing TBD on land", line 432 "Reproducible split via scripts/analysis/router_split.py (TBD)") that pre-fix gate ignored.
+- **Attack**: paper-grade Phase 1a fire could proceed with un-resolved TBDs elsewhere in prereg → reviewer reading the locked prereg encounters TBD and audit-fails the launch retrospectively.
+- **Fix**: `grep -nE "^[^<].*TBD" | grep -v 'TBD-ALLOW' | grep -q TBD` — catches any TBD outside HTML comments and outside allowlisted lines. Intentional placeholders can be marked `<!-- TBD-ALLOW: <reason> -->` on the line. FAIL message includes `grep -n TBD ...` recovery command.
+
+### B-709. queue_phase1_paper_grade.sh Gate 6 pgrep regex anchor — gemini F5 unique 🛠️ FIXED
+- **Source**: gemini Mode C F5 unique ("Fragile pgrep pattern for active run detection")
+- **Code**: pre-fix `pgrep -f "run_experiment.*--config"` could match any process whose argv contains those 2 strings — including a developer's `vim run_experiment.py` editor or `grep run_experiment --config some.log` viewer.
+- **Attack**: developer-side viewer process triggers Gate 6 FAIL → legitimate paper-grade fire blocked by editor mid-session.
+- **Fix**: regex anchored to actual python process invocations: `(python|\.venv/bin/python3?)[a-zA-Z0-9_./-]* .*run_experiment\.py.*--config`. Matches only python binary + run_experiment.py + --config; rejects viewers/editors.
+
+### B-710. queue_chain.sh `curl -L` flag for ntfy.sh redirect-following — gemini F7 unique 🛠️ FIXED
+- **Source**: gemini Mode C F7 unique ("Silent notification failure on HTTP redirect")
+- **Code**: pre-fix 4 `curl -d "..." "ntfy.sh/${NTFY_TOPIC}"` calls in queue_chain.sh (lines 92, 167, 397, 419). curl defaults DON'T follow HTTP 3xx redirects.
+- **Attack**: ntfy.sh service migration / load balancer change / URL update returns 302 → curl reports success but actual notification never reached the topic → paper-grade operators miss ABORT alerts → silent failure mode.
+- **Fix**: bulk `sed -i 's/^\(\s*\)curl -d /\1curl -L -d /g'` against queue_chain.sh; 4 invocations now `curl -L -d`. Static test verifies count ≥4 + no bare `curl -d ` remaining (regression detection).
+
+---
+
 ## A1.14 /stress audit Chunk (c) (2026-05-17) — B-681 to B-683 (3 entries; 3 fixed)
 
 > Chunk (c) lands the P1 provenance integrity batch following Chunks (a)+(b). All 3 from cross-AI unified bug list: P1-6-B (provenance theater, codex+Claude 2-AI) / P1-7-B* (submodule branch-first rejects detached HEAD, codex unique OOB) / P1-10-A (submodule SHA pin forward-fragile, Claude unique). User: "继续 c" → execute per recommended option.

@@ -79,6 +79,11 @@ mkdir -p "${LOG_DIR}"
 source "${SCRIPT_DIR}/_lib_paper_grade_gates.sh"
 init_paper_grade_env "${REPO_DIR}"
 assert_a100_url_locality
+# B-704 (A1.14 Chunk d P1-4): per-(site, benchmark) flock at leaf entry.
+if ! acquire_site_lock "${SITE}" "${BENCHMARK}" "queue_phantom_som"; then
+  exit $?
+fi
+trap "release_site_lock" EXIT INT TERM
 
 # ---------- B0 PROXY API key 加载 ----------
 if [[ "${BASELINE}" == "B0" ]]; then

@@ -136,9 +136,17 @@ check_gates() {
   local errors=0
 
   log "=== Gate 1: preregistration.md threshold lock ==="
-  if grep -q "K_h1.*TBD\|K_h3.*TBD\|TOST.*TBD" docs/checkpoints/pre_run/preregistration.md 2>/dev/null; then
-    log "  FAIL: preregistration.md still has TBD threshold values."
-    log "        Wait for advisor email reply, then update preregistration.md."
+  # B-708 (/stress A1.14 Chunk d P2-5 Claude unique, 2026-05-17): broaden TBD
+  # detection. Pre-fix narrow grep `K_h1.*TBD|K_h3.*TBD|TOST.*TBD` only matched
+  # 3 specific phrase patterns; preregistration body had 2+ other TBDs (e.g.,
+  # line 245 "implementing TBD on land", line 432 "Reproducible split via
+  # scripts/analysis/router_split.py (TBD)") that pre-fix gate ignored. Paper-grade
+  # principle: ANY TBD in a locked prereg is a draft-state marker. Allowlist via
+  # `<!-- TBD-ALLOW: <reason> -->` HTML comment if intentional.
+  if grep -nE "^[^<].*TBD" docs/checkpoints/pre_run/preregistration.md 2>/dev/null | grep -v 'TBD-ALLOW' | grep -q TBD; then
+    log "  FAIL: preregistration.md still has un-allowlisted TBD markers."
+    log "        Either resolve the TBD or add '<!-- TBD-ALLOW: <reason> -->' on the line for intentional placeholders."
+    log "        Run: grep -n TBD docs/checkpoints/pre_run/preregistration.md    # locate"
     errors=$((errors+1))
   elif ! grep -q "^status: locked" docs/checkpoints/pre_run/preregistration.md 2>/dev/null; then
     # Gate 1b added 2026-05-13 (codex audit HIGH-1): launch_checklist.md
@@ -304,10 +312,15 @@ except Exception as e:
   log "=== Gate 6: No conflicting active runs ==="
   # B-677 (P1-1) set -e safe: pgrep no-match returns 1 + pipefail → pipe rc 1
   # → set -e exit. `|| true` masks empty-match so active=0 path works.
-  active=$(pgrep -f "run_experiment.*--config" 2>/dev/null | wc -l || true)
+  # B-709 (A1.14 Chunk d P2-6 gemini F5, 2026-05-17): regex-anchored pgrep
+  # pattern `python[a-zA-Z0-9_.]*.*run_experiment\.py.*--config` matches only
+  # actual python process invocations of run_experiment.py — not vim/less/grep
+  # viewers happening to have "run_experiment --config" string in their argv.
+  local pgrep_pattern='(python|\.venv/bin/python3?)[a-zA-Z0-9_./-]* .*run_experiment\.py.*--config'
+  active=$(pgrep -fa "${pgrep_pattern}" 2>/dev/null | wc -l || true)
   log "  Active run_experiment processes: $active"
   if [ "$active" -gt 0 ]; then
-    pgrep -af "run_experiment.*--config" 2>/dev/null | sed 's/^/    /' || true
+    pgrep -fa "${pgrep_pattern}" 2>/dev/null | sed 's/^/    /' || true
     if [ "${ALLOW_ACTIVE_RUNS:-0}" == "1" ]; then
       log "  WARN: $active existing run(s) detected but ALLOW_ACTIVE_RUNS=1 — proceeding."
       log "        You are responsible for verifying no same-site B0+B1 collision."
@@ -511,7 +524,16 @@ dry_run() {
 launch_chain() {
   local label=$1
   local builder=$2
-  local logfile="logs/queue_phase1_${label}.log"
+  # B-705 (/stress A1.14 Chunk d P2-2 Claude+codex 2-AI AB, 2026-05-17): log
+  # + pid file names include timestamp + PID for collision-free re-fire. Pre-fix
+  # `logs/queue_phase1_${label}.log` static name → re-fire overwrote previous
+  # chain's transcript (forensic loss for multi-day paper-grade runs). New form
+  # writes timestamped log + `latest` symlink for `tail -f` ergonomics.
+  local ts="$(date +%Y%m%d_%H%M%S)"
+  local logfile="logs/queue_phase1_${label}_${ts}_$$.log"
+  local pidfile="logs/queue_phase1_${label}_${ts}_$$.pid"
+  local logsym="logs/queue_phase1_${label}.latest.log"
+  local pidsym="logs/queue_phase1_${label}.latest.pid"
   mkdir -p logs
 
   # Convert chain commands to space-quoted args
@@ -529,7 +551,10 @@ launch_chain() {
     > "$logfile" 2>&1 &
   local pid=$!
   log "  PID $pid, log $logfile"
-  echo "$pid" > "logs/queue_phase1_${label}.pid"
+  echo "$pid" > "$pidfile"
+  # Refresh `.latest.*` symlinks (force, atomic).
+  ln -sfn "$(basename "$logfile")" "$logsym" 2>/dev/null || true
+  ln -sfn "$(basename "$pidfile")" "$pidsym" 2>/dev/null || true
 }
 
 # ---------------------------------------------------------------------------
@@ -585,10 +610,19 @@ case "$MODE" in
         ;;
       *) fail "Unknown site filter: $SITE_FILTER (expected: all|cls|red|phase1b)" ;;
     esac
+    # B-705 (A1.14 Chunk d P2-2): summary message now reflects actual SITE_FILTER
+    # mode. Pre-fix line always said "Phase 1a rerun (36 conditions...)" even when
+    # SITE_FILTER=phase1b (shop chain only) was active — misleading audit trail.
     log ""
-    log "Phase 1a rerun launched (36 conditions, cls + red × B0+B1+B2 × 6 modes). Monitor:"
-    log "  - PIDs: cat logs/queue_phase1_*.pid"
-    log "  - Logs: tail -f logs/queue_phase1_*.log"
+    case "$SITE_FILTER" in
+      all)     log "Phase 1a rerun launched (36 conditions, cls + red × B0+B1+B2 × 6 modes). Monitor:" ;;
+      cls)     log "Phase 1a cls-only chain launched (18 conditions, B0+B1+B2 × 6 modes). Monitor:" ;;
+      red)     log "Phase 1a red-only chain launched (18 conditions, B0+B1+B2 × 6 modes). Monitor:" ;;
+      phase1b) log "Phase 1b shop chain launched (18 conditions, B0+B1+B2 × 6 modes; main-paper expansion). Monitor:" ;;
+      *)       log "Launch completed for SITE_FILTER=${SITE_FILTER}. Monitor:" ;;
+    esac
+    log "  - PIDs: cat logs/queue_phase1_*.latest.pid"
+    log "  - Logs: tail -f logs/queue_phase1_*.latest.log"
     log "  - Cells: open Obsidian Bases view 'cells.base' (cron 10min refresh)"
     log "  - Active: make active"
     log ""

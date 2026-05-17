@@ -9,6 +9,12 @@ SITE_MODE="${SITE_MODE:-auto}"
 CHECK_DOCKER="${CHECK_DOCKER:-auto}"
 REQUIRE_CUDA="${REQUIRE_CUDA:-0}"
 ALLOW_MISSING_EVALUATOR="${ALLOW_MISSING_EVALUATOR:-0}"
+# B-703 (/stress A1.14 Chunk d P1-3 codex F4, 2026-05-17): `--sites csv` flag
+# lets orchestrator filter site reachability check to actual chain scope. Pre-fix
+# preflight checked all 5 VWA endpoints (shop/red/wiki/cls/homepage) → shop
+# unreachable would block Phase 1a cls+red launch even though shop is Phase 1b
+# deferred. Empty value = all sites (back-compat).
+SITES_FILTER="${SITES_FILTER:-}"
 EXIT_CODE=0
 
 usage() {
@@ -21,6 +27,9 @@ Options:
   --site-mode <mode>   auto|local|remote (default: auto)
   --remote-sites       Equivalent to --site-mode remote
   --local-sites        Equivalent to --site-mode local
+  --sites <csv>        Comma-separated site filter for reachability check
+                       (e.g. classifieds,reddit for Phase 1a; shopping,reddit
+                       for Phase 1b). Empty = all sites (default).
   --skip-docker        Skip docker daemon check
   --check-docker       Force docker daemon check
   --require-cuda       Fail if torch CUDA runtime is unavailable
@@ -51,6 +60,10 @@ while [[ $# -gt 0 ]]; do
     --local-sites)
       SITE_MODE="local"
       shift
+      ;;
+    --sites)
+      SITES_FILTER="${2:-}"
+      shift 2
       ;;
     --skip-docker)
       CHECK_DOCKER="never"
@@ -233,16 +246,32 @@ check_site_endpoints() {
     endpoints+=("shopping_admin:${SHOPPING_ADMIN}")
   fi
 
+  # B-703 (A1.14 Chunk d P1-3): apply --sites csv filter if provided.
+  # Empty filter = check all (back-compat default).
+  local filter_set=""
+  if [[ -n "${SITES_FILTER}" ]]; then
+    filter_set=",${SITES_FILTER},"
+  fi
+
   for item in "${endpoints[@]}"; do
     local name="${item%%:*}"
     local url="${item#*:}"
+
+    # B-703: skip if filter is set and this site isn't in it.
+    if [[ -n "${filter_set}" && "${filter_set}" != *",${name},"* ]]; then
+      pass "${name} endpoint (skipped by --sites filter)"
+      continue
+    fi
 
     if [[ -z "${url}" ]]; then
       fail "${name} endpoint is empty"
       continue
     fi
 
-    if curl -fsS --max-time 3 "${url}" >/dev/null 2>&1; then
+    # B-706 (A1.14 Chunk d P2-3 Claude unique): curl timeout 3s → 10s. Tailscale
+    # cold connection or A100 docker stack first-request can take >3s; pre-fix
+    # 3s caused false FAIL on legitimate paper-grade infra.
+    if curl -fsS --max-time 10 "${url}" >/dev/null 2>&1; then
       pass "${name} endpoint reachable (${url})"
     else
       if [[ "${STRICT_PORTS}" == "1" ]]; then
@@ -407,13 +436,24 @@ check_vwa_submodule_lock() {
   local hf="${vwa_dir}/evaluation_harness/helper_functions.py"
   # B-91 guard form: `if not pred or not pred.strip():` followed by `return 0.0` on next line.
   # Verified upstream form 2026-05-16 (grep at f0c835b: helper_functions.py:589 + :634, 2 occurrences).
-  local guard_count
-  guard_count="$(grep -cP '^\s*if not pred or not pred\.strip\(\):' "${hf}" 2>/dev/null || echo 0)"
-  if [[ "${guard_count}" -lt 2 ]]; then
-    fail "VWA submodule missing B-91 LLM judge guard in ${hf} (expected 2 occurrences, got ${guard_count})"
+  #
+  # B-707 (/stress A1.14 Chunk d P2-4 Claude unique, 2026-05-17): two refinements
+  # to the brittleness vector:
+  #   (a) Accept alternate guard idiom `if not pred:` (without `.strip()`) — upstream
+  #       could refactor the strip check into a helper while keeping early-return.
+  #   (b) `EXPECTED_B91_GUARDS` env override (default 2). OSF audit can set strict
+  #       count; future upstream consolidation can drop to 1 via env without
+  #       editing preflight.
+  local guard_count_v1 guard_count_v2 guard_count
+  guard_count_v1="$(grep -cP '^\s*if not pred or not pred\.strip\(\):' "${hf}" 2>/dev/null || echo 0)"
+  guard_count_v2="$(grep -cP '^\s*if not pred(\.strip\(\))?:' "${hf}" 2>/dev/null || echo 0)"
+  guard_count=$(( guard_count_v1 > guard_count_v2 ? guard_count_v1 : guard_count_v2 ))
+  local expected_b91_guards="${EXPECTED_B91_GUARDS:-2}"
+  if [[ "${guard_count}" -lt "${expected_b91_guards}" ]]; then
+    fail "VWA submodule missing B-91 LLM judge guard in ${hf} (expected ≥${expected_b91_guards} occurrences, got ${guard_count}; v1='if not pred or not pred.strip():'=${guard_count_v1}, v2='if not pred[.strip()]?:'=${guard_count_v2}; set EXPECTED_B91_GUARDS=1 to allow upstream refactor)"
     return
   fi
-  pass "VWA submodule locked at ${expected_branch}@${expected_sha:0:8} (B-91 guard present)"
+  pass "VWA submodule locked at ${expected_branch}@${expected_sha:0:8} (B-91 guard count=${guard_count} ≥ ${expected_b91_guards})"
 }
 
 check_openai_api_key() {

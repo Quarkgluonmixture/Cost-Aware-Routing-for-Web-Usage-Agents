@@ -407,6 +407,115 @@ def test_check_provenance_baseline_helper_present():
     assert "captured_at" in text and "host" in text, "JSON schema check missing"
 
 
+def test_lib_exports_acquire_release_site_lock():
+    """B-704 (/stress A1.14 Chunk d P1-4 codex F5 OOB B): `_lib_paper_grade_gates.sh`
+    must export `acquire_site_lock` + `release_site_lock` so leaf queue scripts
+    can claim per-(site, benchmark) locks at entry, closing the manual-leaf-
+    invocation-during-chain race window (queue_chain's flock was bypassable).
+    """
+    lib_path = REPO_ROOT / "scripts/queues/_lib_paper_grade_gates.sh"
+    cmd = (
+        f'source "{lib_path}" && '
+        f'declare -F acquire_site_lock && declare -F release_site_lock'
+    )
+    proc = subprocess.run(
+        ["bash", "-c", cmd], capture_output=True, text=True, timeout=10,
+    )
+    assert proc.returncode == 0, f"lib source/declare failed: {proc.stderr}"
+    assert "acquire_site_lock" in proc.stdout and "release_site_lock" in proc.stdout, (
+        f"lib must export both acquire_site_lock + release_site_lock; got: {proc.stdout}"
+    )
+
+
+@pytest.mark.parametrize("leaf_script", [
+    "scripts/queues/queue_baseline.sh",
+    "scripts/queues/queue_phantom_som.sh",
+    "scripts/queues/queue_phantom_text.sh",
+    "scripts/queues/queue_phantom_prompt.sh",
+])
+def test_leaf_scripts_call_acquire_site_lock(leaf_script):
+    """B-704: each leaf queue script must invoke `acquire_site_lock` + set
+    `trap release_site_lock`. Pre-fix only queue_chain had flock, leaving
+    manual leaf invocations unprotected (per CLAUDE.md hard rule allowing
+    direct leaf use).
+    """
+    path = REPO_ROOT / leaf_script
+    text = path.read_text(encoding="utf-8")
+    assert "acquire_site_lock" in text, (
+        f"{leaf_script} missing acquire_site_lock call (B-704 regression)"
+    )
+    assert "release_site_lock" in text, (
+        f"{leaf_script} missing release_site_lock trap"
+    )
+    assert "trap" in text, f"{leaf_script} missing trap directive for lock cleanup"
+
+
+def test_queue_chain_exports_chain_lock_held():
+    """B-704: queue_chain.sh must export `P79_CHAIN_LOCK_HELD` after acquiring
+    its FD-9 lock so leaf scripts called under the chain can skip double-acquire
+    (would otherwise FATAL exit since FD-7 lock on same file blocks).
+    """
+    chain = REPO_ROOT / "scripts/queues/queue_chain.sh"
+    text = chain.read_text(encoding="utf-8")
+    assert "P79_CHAIN_LOCK_HELD" in text, (
+        "queue_chain.sh must export P79_CHAIN_LOCK_HELD for leaf-script coordination"
+    )
+    assert 'export P79_CHAIN_LOCK_HELD="${this_site}:${this_benchmark}"' in text, (
+        "queue_chain.sh export must use canonical site:benchmark identity form"
+    )
+
+
+def test_gate1_tbd_detection_broadened():
+    """B-708 (/stress A1.14 Chunk d P2-5 Claude unique): Gate 1 TBD detection
+    must be broad (any TBD in prereg body) with allowlist via HTML comment.
+    Pre-fix narrow grep `K_h1.*TBD|K_h3.*TBD|TOST.*TBD` missed 2+ other TBDs.
+    """
+    orch = REPO_ROOT / "scripts/queues/queue_phase1_paper_grade.sh"
+    text = orch.read_text(encoding="utf-8")
+    # New form must NOT be the pre-fix narrow regex.
+    pre_fix_pattern = r'K_h1.*TBD\\|K_h3.*TBD\\|TOST.*TBD'
+    assert pre_fix_pattern not in text or "TBD-ALLOW" in text, (
+        "B-708 pre-fix narrow TBD grep still active (or TBD-ALLOW allowlist missing)"
+    )
+    assert "TBD-ALLOW" in text, (
+        "B-708 fix must include TBD-ALLOW allowlist mechanism for intentional placeholders"
+    )
+
+
+def test_ntfy_curl_calls_use_dash_L_flag():
+    """B-710 (/stress A1.14 Chunk d P2-7 gemini F7): all `curl ... ntfy.sh/...`
+    calls must include `-L` to follow potential 3xx redirects. Pre-fix curl
+    defaults didn't follow redirects → silent notification loss if ntfy
+    returned 302 (URL change, load balancer migration, etc.).
+    """
+    chain = REPO_ROOT / "scripts/queues/queue_chain.sh"
+    text = chain.read_text(encoding="utf-8")
+    # Look for curl invocations targeting ntfy.sh — every one must have -L flag.
+    # The pattern `curl -L -d` followed by message + ntfy.sh URL on next line.
+    ntfy_curl_count = text.count("curl -L -d")
+    bare_curl_count = text.count("curl -d ")  # without -L; if any → regression
+    assert ntfy_curl_count >= 4, (
+        f"expected ≥4 `curl -L -d` calls in queue_chain.sh (4 ntfy sites), got {ntfy_curl_count}"
+    )
+    assert bare_curl_count == 0, (
+        f"queue_chain.sh has {bare_curl_count} bare `curl -d ` (without -L); regression of B-710"
+    )
+
+
+def test_preflight_sites_filter_flag_present():
+    """B-703 (/stress A1.14 Chunk d P1-3 codex F4): preflight must accept
+    `--sites csv` flag so orchestrator can scope reachability check to actual
+    chain target sites (Phase 1a = cls+red; Phase 1b = shop), avoiding false
+    FAIL when shop is unreachable but Phase 1a doesn't need it.
+    """
+    preflight = REPO_ROOT / "scripts/preflight_v2.sh"
+    text = preflight.read_text(encoding="utf-8")
+    assert "--sites)" in text, "B-703 --sites flag parse case missing"
+    assert "SITES_FILTER" in text, "B-703 SITES_FILTER variable missing"
+    # The filter must be applied in check_site_endpoints (filter loop)
+    assert "filter_set" in text, "B-703 filter logic in check_site_endpoints missing"
+
+
 def test_no_python_smoke_when_bash_missing():
     """Sanity guard: this whole file assumes bash. If bash absent, skip clean."""
     if shutil.which("bash") is None:

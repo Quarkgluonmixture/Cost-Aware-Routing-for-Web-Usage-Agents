@@ -51,6 +51,65 @@ init_paper_grade_env() {
   export P79_PAPER_GRADE="${P79_PAPER_GRADE:-1}"
 }
 
+# ---------- 1b. Per-(site, benchmark) flock — leaf script protection (B-704) ----------
+# acquire_site_lock <site> <benchmark> [<label>]
+# release_site_lock
+#
+# B-704 (/stress A1.14 Chunk d P1-4 codex F5 unique OOB B, 2026-05-17):
+# pre-fix flock lived ONLY in queue_chain.sh (B-646 A1.13 P1-7) which is
+# bypassed when users invoke leaf queue scripts directly (per CLAUDE.md hard
+# rule: `RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh B0 dom shopping`
+# is documented and allowed). During an active chain, a manual rescue leaf
+# invocation on the same site → race → RESET wipes the other's session.
+#
+# Parent-held detection via `P79_CHAIN_LOCK_HELD` env:
+#   - queue_chain.sh exports `P79_CHAIN_LOCK_HELD="${site}:${benchmark}"`
+#     after acquiring its own FD-9 lock.
+#   - Leaf scripts check this var BEFORE attempting their own acquire — if
+#     it matches the leaf's (site, benchmark) → skip (chain holds the lock).
+#   - Manual leaf invocation outside any chain → env var absent → leaf
+#     acquires its own per-process lock.
+#
+# FD 7 used (queue_chain uses FD 9) to avoid collision when a leaf script
+# is hypothetically run inside a chain that DOESN'T export P79_CHAIN_LOCK_HELD
+# (defense-in-depth; current chain always exports).
+acquire_site_lock() {
+  local site="${1:-}" benchmark="${2:-vwa}" label="${3:-leaf}"
+  if [[ -z "${site}" ]]; then
+    echo "[${label}][error] acquire_site_lock: site required" >&2
+    return 1
+  fi
+  # Parent (queue_chain) already holds the lock → skip, no double-acquire.
+  if [[ "${P79_CHAIN_LOCK_HELD:-}" == "${site}:${benchmark}" ]]; then
+    echo "[${label}][lock] parent queue_chain holds ${site}:${benchmark} (skip leaf acquire)" >&2
+    SITE_LOCK_FD=""
+    return 0
+  fi
+  local repo_dir="${REPO_DIR:-$(pwd)}"
+  local lock_dir="${repo_dir}/.locks"
+  mkdir -p "${lock_dir}" 2>/dev/null || true
+  local lock_file="${lock_dir}/p79_${site}_${benchmark}.lock"
+  exec 7>"${lock_file}"
+  if ! flock -n 7; then
+    echo "[${label}][FATAL] another paper-grade process holds lock for site=${site} benchmark=${benchmark}" >&2
+    echo "[${label}][FATAL] lock file: ${lock_file}" >&2
+    echo "[${label}][FATAL] if stale (prior process crashed), 'rm ${lock_file}' to force-release" >&2
+    exec 7>&-
+    return 78  # rc=78 = lock contention (matches reset_wa_sites convention)
+  fi
+  SITE_LOCK_FD=7
+  SITE_LOCK_FILE="${lock_file}"
+  echo "[${label}][lock] acquired ${lock_file} (pid $$)" >&2
+  return 0
+}
+
+release_site_lock() {
+  if [[ "${SITE_LOCK_FD:-}" == "7" ]]; then
+    exec 7>&-
+    unset SITE_LOCK_FD SITE_LOCK_FILE
+  fi
+}
+
 # ---------- 2. A100 URL-locality preflight (Bug 2 fix; B-298 A1.17 P0-1 hardening) ----------
 # assert_a100_url_locality
 #   On A100 self-hosted docker hosts, refuse launch if any site URL is non-local.

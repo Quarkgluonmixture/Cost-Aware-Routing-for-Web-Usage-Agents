@@ -95,6 +95,14 @@ mkdir -p "${LOG_DIR}"
 source "${SCRIPT_DIR}/_lib_paper_grade_gates.sh"
 init_paper_grade_env "${REPO_DIR}"
 assert_a100_url_locality
+# B-704 (A1.14 Chunk d P1-4 codex F5 OOB B, 2026-05-17): per-(site, benchmark)
+# flock at leaf entry. Skips if parent queue_chain holds the lock (via
+# P79_CHAIN_LOCK_HELD env). Manual leaf invocation outside any chain →
+# leaf acquires its own. trap release on EXIT/INT/TERM.
+if ! acquire_site_lock "${SITE}" "${BENCHMARK}" "queue_baseline"; then
+  exit $?
+fi
+trap "release_site_lock" EXIT INT TERM
 
 # ---------- BUG-6 NOTE (2026-05-16 A1.13 audit P1-4-A): vestigial QUARK_TZ removed ----------
 # Pre-2026-05-14: paper-grade fired DGX→quark, container TZ rendering crossed midnight

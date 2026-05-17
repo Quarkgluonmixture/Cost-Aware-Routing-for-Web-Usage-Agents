@@ -89,7 +89,7 @@ wait_for_runner_done() {
       log "  Q2 A decision (A1.13 audit 2026-05-16): abort chain, kill runner, notify user"
       pkill -f "run_experiment.py.*${pattern}" 2>/dev/null || true
       if command -v curl > /dev/null; then
-        curl -d "queue_chain ABORT (${label}): watchdog died after ${elapsed}s; runner killed. Restart after root cause." \
+        curl -L -d "queue_chain ABORT (${label}): watchdog died after ${elapsed}s; runner killed. Restart after root cause." \
           "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
       fi
       exit 1
@@ -164,12 +164,16 @@ for cmd in "$@"; do
       log "  lock file: ${LOCK_FILE}"
       log "  if lock is stale (prior chain crashed), 'rm ${LOCK_FILE}' to force-release before retry"
       if command -v curl > /dev/null; then
-        curl -d "queue_chain ABORT (${this_baseline} ${this_site} ${this_benchmark}): another chain holds site lock; possible double-fire" \
+        curl -L -d "queue_chain ABORT (${this_baseline} ${this_site} ${this_benchmark}): another chain holds site lock; possible double-fire" \
           "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
       fi
       exit 1
     fi
     log "  [lock] acquired ${LOCK_FILE} (held until iteration end)"
+    # B-704 (A1.14 Chunk d P1-4 codex F5 OOB B, 2026-05-17): export site-lock
+    # identity for leaf scripts so they can skip double-acquire when invoked
+    # under this chain (lib `acquire_site_lock` checks this var).
+    export P79_CHAIN_LOCK_HELD="${this_site}:${this_benchmark}"
   fi
   # B-637 (A1.13 P1-1 Claude + gemini G10 2-AI, 2026-05-17): regex anchor.
   # Pre-fix pgrep `_${this_site}_` substring overlap problems:
@@ -403,7 +407,7 @@ sys.exit(0)
     log "                 schema-version mismatch / stale prior-run dir / disk full"
     log "  aborting chain to prevent silent partial-data advancement"
     if command -v curl > /dev/null; then
-      curl -d "queue_chain ABORT: ${run_id}/${cond_id} sentinel validation failed" \
+      curl -L -d "queue_chain ABORT: ${run_id}/${cond_id} sentinel validation failed" \
         "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
     fi
     exit 1
@@ -414,6 +418,8 @@ sys.exit(0)
   # `exec 9>&-` closes fd 9 → kernel releases the advisory lock automatically.
   if [[ -n "${this_site:-}" && -n "${this_benchmark:-}" ]]; then
     exec 9>&-
+    # B-704 (A1.14 Chunk d P1-4): clear leaf-script lock-held marker
+    unset P79_CHAIN_LOCK_HELD
     log "  [lock] released ${LOCK_FILE:-(unset)}"
   fi
 done
@@ -425,6 +431,6 @@ log "=================================================="
 
 # ntfy notify
 if command -v curl > /dev/null; then
-  curl -d "queue_chain done: $# cells (${*})" \
+  curl -L -d "queue_chain done: $# cells (${*})" \
     "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
 fi
