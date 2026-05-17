@@ -29,7 +29,7 @@ from p79.experiment.types import SCHEMA_VERSION_V2
 
 @pytest.fixture
 def chain_snapshot():
-    """B-657 (/stress A1.12 P1-11 B* codex, 2026-05-17): snapshot/restore the
+    """B-666 (/stress A1.12 P1-11 B* codex, 2026-05-17): snapshot/restore the
     private `_CHAIN` + `_REGISTRY` global state around any test that mutates
     them. Pre-fix tests that register temporary migrations relied on a
     try/finally cleanup that, if it failed, left polluted state for ALL
@@ -87,7 +87,7 @@ def test_migrate_downgrade_refused():
 def test_mock_migration_chain(chain_snapshot):
     """Register a temporary v2 → v<sentinel> migration, run it, then clean up.
 
-    B-657 (/stress A1.12 P1-11 B*): each invocation generates a unique
+    B-666 (/stress A1.12 P1-11 B*): each invocation generates a unique
     `vtest<uuid>` sentinel rather than hardcoded "vtest", so two concurrent
     test workers (pytest-xdist) cannot collide on the same temporary version.
     Cleanup is provided by `chain_snapshot` fixture unconditionally; pollution

@@ -1,6 +1,6 @@
 """SHA pin single-source-of-truth invariant — /stress A1.12 P1-6 A (2026-05-17).
 
-B-655 fix. Pre-fix: `EXPECTED_SUBMODULE_SHA` was hardcoded at 4 independent
+B-664 fix. Pre-fix: `EXPECTED_SUBMODULE_SHA` was hardcoded at 4 independent
 sites with no SoT enforcement:
   - tests/test_vwa_evaluator_b91_guard.py:30
   - scripts/preflight_v2.sh: expected_sha variable

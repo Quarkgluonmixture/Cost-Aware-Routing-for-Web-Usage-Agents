@@ -29,7 +29,7 @@ VWA_SUBMODULE = REPO_ROOT / "external" / "visualwebarena"
 # updated post Chunk 1 11-fix sweep). Tree-hash chain SBOM in prereg §7
 # per B-580.
 EXPECTED_SUBMODULE_SHA = "2f9b0b47175a1bffa01e13100e3075e212161a89"
-# B-653 (/stress A1.12 P0-4 C* gemini, 2026-05-17): tree-hash chain is the
+# B-663 (/stress A1.12 P0-4 C* gemini, 2026-05-17): tree-hash chain is the
 # IMMUTABLE witness per prereg §7 — HEAD SHA above is mutable under `git push
 # --force-with-lease`. The tree-hash chain recipe is environment-independent
 # (vs `git diff base..HEAD | sha256sum` which varied on diff.algorithm /
@@ -111,7 +111,7 @@ def test_vwa_submodule_sha_matches_a1_18_lock():
 
 
 def test_vwa_submodule_tree_hash_chain_matches_prereg_witness():
-    """B-653 (P0-4 C* gemini OOB): tree-hash chain is the OSF immutable witness.
+    """B-663 (P0-4 C* gemini OOB): tree-hash chain is the OSF immutable witness.
 
     Pre-fix: `test_vwa_submodule_sha_matches_a1_18_lock` only checks HEAD SHA,
     which prereg §7 explicitly notes is mutable under

@@ -74,7 +74,7 @@ test:
 	@# showing assert location. `pyproject.toml [tool.pytest.ini_options]` now
 	@# sets `--strict-markers -ra -rs` so silent importorskip / typo'd marker
 	@# bugs no longer hide.
-	@# B-652 (/stress A1.12 P0-3 BC, 2026-05-17): fail-loud if `[test]` extras
+	@# B-662 (/stress A1.12 P0-3 BC, 2026-05-17): fail-loud if `[test]` extras
 	@# missing. Pre-fix, fresh-host OSF replayer running `pip install -e . &&
 	@# make test` would see "428 passed / 14 skipped" without realizing 6 paper-
 	@# grade analysis tests silently `pytest.importorskip("pandas")`. Now the
