@@ -75,7 +75,7 @@ assert_a100_url_locality() {
     echo "[preflight] A100 URL-locality gate ACTIVE on host=$(hostname), cwd=$(pwd)" >&2
     local _v
     for _v in CLASSIFIEDS REDDIT SHOPPING WIKIPEDIA HOMEPAGE; do
-      # B-590 (A1.13 P1-8 Claude OOB, 2026-05-17): empty URL no longer silent
+      # B-643 (A1.13 P1-8 Claude OOB, 2026-05-17): empty URL no longer silent
       # passes. Pre-fix `case "${!_v:-}" in *localhost*|*127.0.0.1*|"") ;; *) FATAL` —
       # empty string in the OK set meant `vwa_env_remote.sh` source failure (file
       # missing / syntax error) silently passed gate; runner then attempted
@@ -135,7 +135,7 @@ mint_run_id() {
   local log_prefix="${3:-queue}"
   local ts_date ts_full collision_token
   ts_date="$(date +%Y%m%d)"
-  # B-587 (A1.13 P1-10 Claude, 2026-05-17): now actually using %N nanoseconds
+  # B-640 (A1.13 P1-10 Claude, 2026-05-17): now actually using %N nanoseconds
   # alongside PID + $RANDOM. Pre-fix comment claimed "%N nanoseconds + $$ pid +
   # $RANDOM defeats same-second collision" but `date +%Y%m%d_%H%M%S` had no
   # `%N` token → only PID+RANDOM defended (Claude OOB comment-vs-code drift).
@@ -151,7 +151,7 @@ mint_run_id() {
     local existing
     existing="$(ls -dt "${phase_dir}/${cfg_name}_"[0-9]* 2>/dev/null | head -1 || true)"
     if [[ -n "${existing}" ]]; then
-      # B-588 (A1.13 P1-9 Claude OOB, 2026-05-17): stale-resume fingerprint
+      # B-641 (A1.13 P1-9 Claude OOB, 2026-05-17): stale-resume fingerprint
       # check. Pre-fix blindly resumed mtime-newest match even when its
       # condition_meta.json showed pre-fix schema_version. Now verify v2 schema
       # before resume; mismatch → fresh timestamp, log "skipping stale".
@@ -177,7 +177,7 @@ mint_run_id() {
       echo "[${log_prefix}] new run_id=${RUN_ID}"
     fi
   fi
-  # B-581 (A1.13 P0-5 gemini G4 OOB, 2026-05-17): export RUN_TS_FULL so callers
+  # B-634 (A1.13 P0-5 gemini G4 OOB, 2026-05-17): export RUN_TS_FULL so callers
   # don't independently recompute `date +%Y%m%d_%H%M%S` (different second from
   # mint = log filename collision when master orchestrator fires 2 chains in
   # same second). Callers should now use ${RUN_ID} directly for RUNNER_LOG
@@ -193,7 +193,7 @@ mint_run_id() {
 #   auth_required_gate. Hard-fail on auth gate failure unless AUTH_GATE_BYPASS=1.
 #   Caller responsible for guarding with RESET_BEFORE=1 + BENCHMARK!=wa.
 reset_and_auth_gate() {
-  # B-592 (A1.13 P1-12 gemini G9, 2026-05-17): named args. Pre-fix 5 positional
+  # B-645 (A1.13 P1-12 gemini G9, 2026-05-17): named args. Pre-fix 5 positional
   # args (site, repo, python, log_prefix, reset_label); caller swap-order bugs
   # silently propagated wrong reset_label → trajectory event tags
   # cross-baseline-confused. Post-fix: both forms accepted (named when $1 starts
@@ -230,7 +230,7 @@ reset_and_auth_gate() {
   # shellcheck disable=SC1091
   source "${repo_dir}/scripts/maintenance/reset_vwa_sites.sh"
   echo "[${log_prefix}] RESET_BEFORE=1 → resetting site=${site}..."
-  # B-589 (A1.13 P1-5 codex F8 OOB, 2026-05-17): wrap reset_vwa_sites with
+  # B-642 (A1.13 P1-5 codex F8 OOB, 2026-05-17): wrap reset_vwa_sites with
   # timeout to defend against hangs (reset script SSH stall / Docker compose
   # hang / Tailscale stall). Without timeout, hang at this stage blocks chain
   # with no watchdog yet attached + no runner pid + no ntfy → chain wedged
@@ -245,7 +245,7 @@ reset_and_auth_gate() {
   "
   _reset_rc=$?
   if [[ "${_reset_rc}" -eq 124 ]]; then
-    echo "[${log_prefix}][FATAL] reset_vwa_sites timed out after 120s (B-589)" >&2
+    echo "[${log_prefix}][FATAL] reset_vwa_sites timed out after 120s (B-642)" >&2
     if command -v curl > /dev/null; then
       curl -d "queue ABORT: ${site} reset_vwa_sites timeout 120s; investigate SSH/Docker/Tailscale" \
         "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
@@ -280,7 +280,7 @@ reset_and_auth_gate() {
     # post-reset auth refresh failure now aborts launch. Pre-fix soft-warn
     # let phantom paths start with NOT-LOGGED-IN tasks → step_record contamination.
     echo "[${log_prefix}] gating .auth/${site}_state.json post-reset via auth_required_gate..."
-    # B-589 (A1.13 P1-5, 2026-05-17): wrap auth_required_gate with timeout to
+    # B-642 (A1.13 P1-5, 2026-05-17): wrap auth_required_gate with timeout to
     # defend against Playwright hangs (browser stall / network stall). 60s is
     # generous (typical auth refresh ~5-15s); timeout 124 → treat as auth FAIL
     # (handled by the outer else branch). Re-uses existing FATAL surface so
@@ -303,7 +303,7 @@ except (AuthRefreshFailure, AuthRefreshConfigError) as exc:
       echo "[${log_prefix}][error] post-reset auth gate FAILED — aborting launch to prevent paper-grade contamination." >&2
       echo "[${log_prefix}][error] Fix: (a) VWA_REMOTE_HOST env, (b) .auth/ dir writable, (c) site reachable, (d) VWA_${site^^}_USER/PASS env vars set." >&2
       echo "[${log_prefix}][error] To bypass (paper-grade dirty, watchdog reactive only), set AUTH_GATE_BYPASS=1." >&2
-      # B-586 (A1.13 P1-3 codex F6 + gemini G2 2-AI, 2026-05-17): paper-grade
+      # B-639 (A1.13 P1-3 codex F6 + gemini G2 2-AI, 2026-05-17): paper-grade
       # mode hard-blocks AUTH_GATE_BYPASS. Pre-fix a stray `AUTH_GATE_BYPASS=1`
       # in operator's .bashrc / dev session env could silently dissolve every
       # paper-grade gate with no log surface marking the cell dirty. Two-layer
@@ -320,7 +320,7 @@ except (AuthRefreshFailure, AuthRefreshConfigError) as exc:
       if [[ "${AUTH_GATE_BYPASS:-0}" != "1" ]]; then
         exit 1
       fi
-      # B-586: AUTH_GATE_BYPASS audit log + ntfy alert.
+      # B-639: AUTH_GATE_BYPASS audit log + ntfy alert.
       local _bypass_log="${repo_dir}/logs/paper_grade_bypass_audit.log"
       local _bypass_ts
       _bypass_ts="$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)"
@@ -332,11 +332,11 @@ except (AuthRefreshFailure, AuthRefreshConfigError) as exc:
           "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
       fi
       echo "[${log_prefix}][warn] AUTH_GATE_BYPASS=1 set — proceeding without auth gate; first 1-3 tasks at risk." >&2
-      echo "[${log_prefix}][warn] Audit trail appended to ${_bypass_log} (B-586)." >&2
+      echo "[${log_prefix}][warn] Audit trail appended to ${_bypass_log} (B-639)." >&2
     fi
   else
-    # B-589 (2026-05-17): _reset_rc captured from timeout-wrapped sub-bash above
-    # (was `local rc=$?` pre-B-589 when reset_vwa_sites ran in current shell).
+    # B-642 (2026-05-17): _reset_rc captured from timeout-wrapped sub-bash above
+    # (was `local rc=$?` pre-B-642 when reset_vwa_sites ran in current shell).
     local rc="${_reset_rc}"
     # B-299 (A1.17 P0-3): rc=78 is the "not implemented" sentinel from
     # _reset_vwa_local_shopping stub. Surface specific reason rather than generic

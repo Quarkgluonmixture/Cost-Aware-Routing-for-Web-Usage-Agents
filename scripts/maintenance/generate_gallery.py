@@ -1271,7 +1271,7 @@ def generate_aggregate_gallery(
     # This lets queue scripts share one unified gallery URL per baseline while
     # keeping the legacy `B0_3mode/` / `B1_3mode/` paths the user already
     # bookmarked. Other prefix values (e.g. `B0_phantom`) keep exact match.
-    # B-585 (A1.13 P1-2 Claude + codex F3 2-AI, 2026-05-17): generalize from
+    # B-638 (A1.13 P1-2 Claude + codex F3 2-AI, 2026-05-17): generalize from
     # hardcoded {"B0_3mode", "B1_3mode"} to baseline-prefix detection. Pre-fix
     # `B2_3mode` (Gemma3-VL, advisor-confirmed 2026-05-14) fell to exact match
     # → B2_phantom_* run-dirs orphaned from B2_3mode aggregate gallery → Phase

@@ -140,7 +140,7 @@ for cmd in "$@"; do
     this_benchmark="${cmd_args[3]:-vwa}"    # 4th token (default vwa)
   fi
 
-  # B-593 (A1.13 P1-7 codex F4 OOB, 2026-05-17): per-(site,benchmark) flock
+  # B-646 (A1.13 P1-7 codex F4 OOB, 2026-05-17): per-(site,benchmark) flock
   # acquired before collision check, held for entire iteration (collision check
   # + reset/auth + launch + wait + sentinel). Pre-fix pgrep-based collision
   # detection is TOCTOU — two chains fired in tight window (master orchestrator
@@ -171,7 +171,7 @@ for cmd in "$@"; do
     fi
     log "  [lock] acquired ${LOCK_FILE} (held until iteration end)"
   fi
-  # B-584 (A1.13 P1-1 Claude + gemini G10 2-AI, 2026-05-17): regex anchor.
+  # B-637 (A1.13 P1-1 Claude + gemini G10 2-AI, 2026-05-17): regex anchor.
   # Pre-fix pgrep `_${this_site}_` substring overlap problems:
   #   (a) `_shopping_` substring-matched `_shopping_admin_` → VWA shopping
   #       waited for WA shopping_admin to finish (unrelated docker stack).
@@ -253,7 +253,7 @@ for cmd in "$@"; do
   # nonzero rc + run_id printed (idempotent-skip case where queue script already
   # had complete data) → continue (legacy path).
   #
-  # B-580 (A1.13 P0-4 Claude OOB unique, 2026-05-17): pre-fix `set +e; ...;
+  # B-633 (A1.13 P0-4 Claude OOB unique, 2026-05-17): pre-fix `set +e; ...;
   # set -e` bracket — script top is `set -uo pipefail` (NO -e), so set +e is
   # no-op and the trailing set -e *activates* errexit for the rest of chain.
   # Combined with pipefail, `run_id=$(... | grep -oP '...' | tail -1)` would
@@ -269,7 +269,7 @@ for cmd in "$@"; do
   echo "$out" | sed 's/^/    /'
 
   # Extract run_id + condition_id from queue script output.
-  # `|| true` defense (B-580 P0-4): without it, grep-no-match + pipefail + -e
+  # `|| true` defense (B-633 P0-4): without it, grep-no-match + pipefail + -e
   # would silently exit before reaching the explicit empty-string FATAL below.
   run_id=$(echo "$out" | grep -oP 'run_id=\K\S+' | tail -1 || true)
   cond_id=$(echo "$out" | grep -oP 'condition=\K\S+' | tail -1 || true)
@@ -303,20 +303,20 @@ for cmd in "$@"; do
   # (2026-05-16) added condition_id field check + episodes field semantics;
   # A1.13 fix-scope batch (2026-05-17) hardens 3 ways:
   #
-  #   B-578 (P0-2 codex F2 + gemini G1 2-AI OOB): site-key lookup. Pre-fix loop
+  #   B-631 (P0-2 codex F2 + gemini G1 2-AI OOB): site-key lookup. Pre-fix loop
   #     `classifieds reddit shopping wa_shopping...` substring-match break-first
   #     made `B0_dom_wa_shopping_<ts>` hit `shopping` (substring) before
   #     `wa_shopping` → wrong expected_n (466 VWA vs 192 WA). Fix: parse
   #     benchmark + site STRUCTURALLY from run_id pattern (longer-prefix-first
   #     OR explicit wa_ prefix check), no substring fallthrough.
   #
-  #   B-579 (P0-3 Claude OOB): bash `${cond_id!r}` parameter expansion is
+  #   B-632 (P0-3 Claude OOB): bash `${cond_id!r}` parameter expansion is
   #     invalid (bash treats `${var@op}` w/ op `r` as bad substitution exit 1).
   #     Pre-fix python heredoc f-string `expected ${cond_id!r}` would bash-parse
   #     fail on the cid != cond_id branch. Fix: export EXPECTED_CID env var,
   #     reference via os.environ in python (no bash `!r` parsing).
   #
-  #   B-582 (P1-6 codex F5 OOB): pre-fix `ep < expected * 0.9` accepted 90%
+  #   B-635 (P1-6 codex F5 OOB): pre-fix `ep < expected * 0.9` accepted 90%
   #     partial cells as paper-grade complete. User directive 2026-05-17
   #     ("应该百分百 paper grade"): require exact match. `PAPER_GRADE_ALLOW_PARTIAL=1`
   #     env override for explicit pilot/dirty mode. SITE_EXPECTED_N values
@@ -328,7 +328,7 @@ for cmd in "$@"; do
     [wa_shopping]=192 [wa_shopping_admin]=182 [wa_reddit]=106
   )
 
-  # B-578 P0-2: structural site-key parse, NOT substring loop. Benchmark
+  # B-631 P0-2: structural site-key parse, NOT substring loop. Benchmark
   # determined by `_wa_` substring; site is the token after benchmark prefix.
   expected_n=0
   parsed_site=""
@@ -343,7 +343,7 @@ for cmd in "$@"; do
     expected_n="${SITE_EXPECTED_N[${parsed_site}]}"
   fi
 
-  # B-579 P0-3: export EXPECTED_CID for safe python f-string repr (no bash `!r`).
+  # B-632 P0-3: export EXPECTED_CID for safe python f-string repr (no bash `!r`).
   export EXPECTED_CID="${cond_id}"
   export EXPECTED_N="${expected_n}"
 
@@ -364,14 +364,14 @@ try:
 except Exception as e:
     print(f'invalid JSON: {e}', file=sys.stderr); sys.exit(1)
 cid = d.get('condition_id', '')
-# B-579 P0-3: safe f-string repr now that values come via env, not bash heredoc interp.
+# B-632 P0-3: safe f-string repr now that values come via env, not bash heredoc interp.
 if cid and cid != expected_cid:
     print(f'condition_id mismatch: got {cid!r}, expected {expected_cid!r}', file=sys.stderr); sys.exit(2)
 # Canonical field is 'episodes' (int count); legacy fallbacks kept for forward-compat.
 ep = d.get('episodes', d.get('total_tasks', d.get('num_tasks', d.get('scored_task_count', 0))))
 if not isinstance(ep, int) or ep <= 0:
     print(f'episodes invalid: {ep!r}', file=sys.stderr); sys.exit(3)
-# B-582 P1-6: exact-match by default (user directive 2026-05-17 '应该百分百 paper grade').
+# B-635 P1-6: exact-match by default (user directive 2026-05-17 '应该百分百 paper grade').
 # PAPER_GRADE_ALLOW_PARTIAL=1 env enables explicit pilot/dirty fallback (warn + advance).
 if expected_n > 0 and ep != expected_n:
     if os.environ.get('PAPER_GRADE_ALLOW_PARTIAL') == '1':
@@ -401,7 +401,7 @@ sys.exit(0)
   fi
   log "  ${run_id}: completion sentinel OK (${summary_found})"
 
-  # B-593 (A1.13 P1-7): release per-(site,benchmark) flock for next iteration.
+  # B-646 (A1.13 P1-7): release per-(site,benchmark) flock for next iteration.
   # `exec 9>&-` closes fd 9 → kernel releases the advisory lock automatically.
   if [[ -n "${this_site:-}" && -n "${this_benchmark:-}" ]]; then
     exec 9>&-

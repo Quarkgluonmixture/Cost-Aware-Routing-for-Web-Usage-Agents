@@ -93,7 +93,7 @@ else
 fi
 
 mint_run_id "${CFG_NAME}" "${PHASE_DIR}" "phantom_som"
-# B-581 (A1.13 P0-5): RUNNER_LOG uses RUN_ID (0-collision); TS_FULL removed.
+# B-634 (A1.13 P0-5): RUNNER_LOG uses RUN_ID (0-collision); TS_FULL removed.
 
 RUN_DIR="${PHASE_DIR}/${RUN_ID}"
 echo "[phantom_som] config=${CONFIG}"
@@ -112,8 +112,8 @@ else
   if [[ "${RESET_BEFORE:-0}" == "1" && "${BENCHMARK}" != "wa" ]]; then
     reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "phantom_som" --reset-label "phantom_som_${SITE}"
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
-    # B-594 (A1.13 P1-4-BC fix, 2026-05-17): see queue_baseline.sh equivalent.
-    echo "[phantom_som][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported until reset_wa_sites.sh full impl lands (B-594)." >&2
+    # B-647 (A1.13 P1-4-BC fix, 2026-05-17): see queue_baseline.sh equivalent.
+    echo "[phantom_som][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported until reset_wa_sites.sh full impl lands (B-647)." >&2
     echo "[phantom_som][error] scripts/maintenance/reset_wa_sites.sh is scaffold only; fill per-site bodies + remove this guard for WA paper-grade." >&2
     exit 1
   fi
@@ -142,10 +142,10 @@ fi
 # ---------- watchdog 启动 ----------
 WD_STATE="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.state.json"
 WD_LOG="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.log"
-# B-595 (A1.13 P2-3 gemini G3, 2026-05-17): unified per-baseline aggregate
+# B-648 (A1.13 P2-3 gemini G3, 2026-05-17): unified per-baseline aggregate
 # gallery — all baseline modes share one URL (`B0_3mode/`, `B1_3mode/`,
 # `B2_3mode/`, future `B${n}_3mode/`). gallery script's "baseline alias"
-# semantics (generate_gallery.py:1274-1290 regex `^B[0-9]+_3mode$` post-B-585)
+# semantics (generate_gallery.py:1274-1290 regex `^B[0-9]+_3mode$` post-B-638)
 # expands this to match ALL `B${n}_*` runs (3mode + dom + phantom variants).
 # "3mode" is historical alias only — NOT literal 3-mode-subset restriction.
 AGGREGATE_PREFIX="${BASELINE}_3mode"

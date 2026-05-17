@@ -4262,146 +4262,146 @@ Phase 2 of `/stress A1.5b` audit — data plane + analysis sibling layer. Pre-fi
 
 ---
 
-## A1.13 /stress audit (2026-05-17) — B-577 to B-595 (19 entries; 18 fixed + 1 scaffold)
+## A1.13 /stress audit (2026-05-17) — B-630 to B-648 (19 entries; 18 fixed + 1 scaffold)
 
-> Cross-AI: Mode A Claude 7 findings / 4 OOB + Mode B codex 8 findings / 4 OOB + Mode C gemini 10 findings / 3 OOB = 25 attack vectors collapsed to 19 unique fixes across 5 commit chunks. Scope = 7 scripts (`queue_baseline.sh` + `queue_chain.sh` + `queue_phantom_{som,text,prompt}.sh` + `_lib_paper_grade_gates.sh` + `generate_gallery.py`) + 1 NEW file (`reset_wa_sites.sh` scaffold). User v7.7 triaged Q&A: Q1=phantom_dom archive-only sweep (no alias) / Q2=sentinel 100% exact paper-grade (Option A, NOT 90%) / Q3=wait-all all-fix scope / Q4=WA reset+auth long-term implementation. Per chronicle §181 parallel-session coordination: B-numbers B-577~B-595 grep-verified clean at audit start (catalog max = B-576 post-A1.22 batch). 5 commits: chunk (a) P0 substrate `57756a3` / chunk (b) P1 substrate `f02bef3` / chunk (c) flock `92b4598` / chunk (e) AGGREGATE_PREFIX docs `f2a0948` / chunk (d) WA scaffold `6808c56`.
+> Cross-AI: Mode A Claude 7 findings / 4 OOB + Mode B codex 8 findings / 4 OOB + Mode C gemini 10 findings / 3 OOB = 25 attack vectors collapsed to 19 unique fixes across 5 commit chunks. Scope = 7 scripts (`queue_baseline.sh` + `queue_chain.sh` + `queue_phantom_{som,text,prompt}.sh` + `_lib_paper_grade_gates.sh` + `generate_gallery.py`) + 1 NEW file (`reset_wa_sites.sh` scaffold). User v7.7 triaged Q&A: Q1=phantom_dom archive-only sweep (no alias) / Q2=sentinel 100% exact paper-grade (Option A, NOT 90%) / Q3=wait-all all-fix scope / Q4=WA reset+auth long-term implementation. Per chronicle §181 parallel-session coordination: B-numbers B-630~B-648 grep-verified clean at audit start (catalog max = B-576 post-A1.22 batch). 5 commits: chunk (a) P0 substrate `57756a3` / chunk (b) P1 substrate `f02bef3` / chunk (c) flock `92b4598` / chunk (e) AGGREGATE_PREFIX docs `f2a0948` / chunk (d) WA scaffold `6808c56`.
 
-### B-577. queue_phantom_text.sh COND_ID legacy `phase1_phantom_dom_router_0` — codex F1 unique OOB 🛠️ FIXED commit `57756a3`
+### B-630. queue_phantom_text.sh COND_ID legacy `phase1_phantom_dom_router_0` — codex F1 unique OOB 🛠️ FIXED commit `57756a3`
 - **Source**: Mode B codex F1 (codex unique OOB; Claude+gemini missed)
 - **Code**: `scripts/queues/queue_phantom_text.sh:85` pre-fix `COND_ID="phase1_phantom_dom_router_0"`; runner writes canonical `phase1_phantom_text_router_0` via `conditions.py:172` `cid = f"phase1_{obs_mode}_router_0"` for obs_mode="phantom_text"
 - **Attack**: Fresh phantom_text fire post-rename → watchdog `--condition phase1_phantom_dom_router_0` targets non-existent dir + chain sentinel `${run_dir}/${cond_id}/condition_summary_v2.json` not found → 90% threshold fail → chain abort. Historical April-2026 run-dirs still have legacy subdir as archive evidence; fresh fires diverge.
 - **Fix**: COND_ID canonical sweep + queue_phantom_text.sh:113-126 legacy phantom_dom resume block removed (user directive: phantom_dom is archive-only, not for resume; runner cannot extend frozen-schema subdir). Per `[^phantom-dom-archive-only-2026-05-17]` historical run-dir subdirs preserved as archive evidence.
 
-### B-578. queue_chain.sh SITE_EXPECTED_N substring-loop break-first ordering — codex F2 + gemini G1 2-AI OOB 🛠️ FIXED commit `57756a3`
+### B-631. queue_chain.sh SITE_EXPECTED_N substring-loop break-first ordering — codex F2 + gemini G1 2-AI OOB 🛠️ FIXED commit `57756a3`
 - **Source**: Mode B codex F2 + Mode C gemini G1 (2-AI overlap, highest confidence)
 - **Code**: `queue_chain.sh:236-247` pre-fix `for site_key in classifieds reddit shopping wa_shopping wa_shopping_admin wa_reddit; do if [[ "${run_id}" == *"_${site_key}_"* ]]; then expected_n=...; break; fi; done`
 - **Attack**: Substring break-first → `B0_dom_wa_shopping_<ts>` hits `shopping` substring before `wa_shopping` → `expected_n=466` (VWA shopping) instead of `192` (WA shopping); 41% < 90% → every WA chain abort. Same logic broke wa_reddit (210 instead of 106) and wa_shopping_admin (466 instead of 182).
 - **Fix**: Structural parse with explicit `_wa_shopping_admin_` / `_wa_shopping_` / `_wa_reddit_` checks BEFORE VWA `_classifieds_` / `_reddit_` / `_shopping_`. Empirically verified: `B0_dom_wa_shopping_<ts>` now parses to `wa_shopping` → expected_n=192 (correct).
 
-### B-579. queue_chain.sh `${cond_id!r}` python heredoc bash bad substitution — Claude Mode A unique OOB 🛠️ FIXED commit `57756a3`
+### B-632. queue_chain.sh `${cond_id!r}` python heredoc bash bad substitution — Claude Mode A unique OOB 🛠️ FIXED commit `57756a3`
 - **Source**: Mode A Claude OOB (codex+gemini missed)
 - **Code**: `queue_chain.sh:259-261` pre-fix python heredoc `print(f'condition_id mismatch: got {cid!r}, expected ${cond_id!r}', ...)` — bash treats `${var@op}` form with invalid op `r` as bad substitution exit 1.
 - **Attack**: Only fires on cid != cond_id branch (rare condition_id schema drift) — sentinel python -c receives truncated string → SyntaxError → exit code != 0 → validation fail confusing error. Empirically verified `bash -c 'cond_id=foo; echo "${cond_id!r}"'` → `bad substitution exit=1`.
 - **Fix**: Export `EXPECTED_CID` env var; python references `os.environ.get('EXPECTED_CID')` + safe f-string `{expected_cid!r}` (no bash `!r` parsing).
 
-### B-580. queue_chain.sh `set -e` activation after `set +e` bracket — Claude Mode A unique OOB 🛠️ FIXED commit `57756a3`
+### B-633. queue_chain.sh `set -e` activation after `set +e` bracket — Claude Mode A unique OOB 🛠️ FIXED commit `57756a3`
 - **Source**: Mode A Claude OOB (codex+gemini missed)
 - **Code**: `queue_chain.sh:186-194` pre-fix `set +e; out=$(...); queue_rc=$?; set -e; run_id=$(echo "$out" | grep -oP 'run_id=\K\S+' | tail -1)` — script top `set -uo pipefail` (no -e); set -e at L190 first-activates errexit + pipefail+grep no-match → subshell exits 1 → command sub fails → script silent exit.
 - **Attack**: When queue script printed no `run_id=` line (e.g., reset/auth fail before run_id mint), grep returns 1 → pipefail+set-e silent exit BEFORE reaching explicit FATAL log at L202 `[[ -z "${run_id}" ]]`. Empirical: `set -uo pipefail; set +e; set -e; x=$(echo "no match" | grep -oP "run_id=\K\S+" | tail -1)` → script exits 1 silently.
 - **Fix**: Removed `set +e` / `set -e` flip; rely on `|| true` defense on grep extracts. Explicit empty-string FATAL guard now reachable.
 
-### B-581. queue scripts independent TS_FULL log filename collision — gemini G4 unique 🛠️ FIXED commit `57756a3`
+### B-634. queue scripts independent TS_FULL log filename collision — gemini G4 unique 🛠️ FIXED commit `57756a3`
 - **Source**: Mode C gemini G4 unique
 - **Code**: 4 queue scripts each computed `TS_FULL="$(date +%Y%m%d_%H%M%S)"` independently from mint_run_id call; master orchestrator firing 2 chains in same second → unique RUN_IDs (PID+RANDOM defended) but identical RUNNER_LOG names → setsid nohup `> "${RUNNER_LOG}" 2>&1` truncate-write nukes one log file.
 - **Attack**: Audit trail loss when concurrent fires happen — one runner's log overwritten silently. Reviewer/debug session cannot reconstruct what happened to victim run.
 - **Fix**: Lib `mint_run_id` exports `RUN_TS_FULL`; queue scripts use `${RUN_ID}_runner.log` (RUN_ID has PID+RANDOM+nanos → 0-collision risk by construction). TS_FULL independent computation removed.
 
-### B-582. queue_chain.sh sentinel 90% threshold accept partial cells — codex F5 OOB 🛠️ FIXED commit `57756a3`
+### B-635. queue_chain.sh sentinel 90% threshold accept partial cells — codex F5 OOB 🛠️ FIXED commit `57756a3`
 - **Source**: Mode B codex F5 OOB (user picked Option A from triaged Q3)
 - **Code**: `queue_chain.sh:267-269` pre-fix `if expected > 0 and ep < expected * 0.9: FATAL` — 90% partial pass; `SITE_EXPECTED_N` hardcoded pre-exclusion (234/210/466).
 - **Attack**: Reddit 189/210 (= 90%) passes sentinel + chain advance; paper §1 hero N=205 (post-exclusion) → denominator drift between chain advancement + paper write → reviewer catches partial-cell math.
 - **Fix**: Exact match `ep != expected_n` → FATAL by default; `PAPER_GRADE_ALLOW_PARTIAL=1` env override for explicit pilot/dirty mode (WARN + advance). SITE_EXPECTED_N switched to post-exclusion scored_task_count (cls=224, red=205, shop=435 per `[reference_fp_architecture_2026-05-14]`); WA stays pre-exclusion (no N/A taxonomy per prereg).
 
-### B-583. P2-2-C phantom_dom legacy naming drift — merged into B-577 (user directive sweep)
+### B-636. P2-2-C phantom_dom legacy naming drift — merged into B-630 (user directive sweep)
 
-### B-584. queue_chain.sh pgrep `_${site}_` substring overlap shopping_admin — Claude+gemini G10 2-AI 🛠️ FIXED commit `f02bef3`
+### B-637. queue_chain.sh pgrep `_${site}_` substring overlap shopping_admin — Claude+gemini G10 2-AI 🛠️ FIXED commit `f02bef3`
 - **Source**: Mode A Claude + Mode C gemini G10 (2-AI overlap)
 - **Code**: `queue_chain.sh:144/148/163/167` pre-fix `pgrep -f "run_experiment.*${other_baseline}_.*_${this_site}_"` — `_shopping_` substring matches `_shopping_admin_` + `_${site}_` cross-benchmark substring matches `_wa_${site}_`.
 - **Attack**: VWA shopping chain false-positive blocks for WA shopping_admin (unrelated docker stack); VWA + WA cross-benchmark false-positive infinite wait.
 - **Fix**: Benchmark-aware site pattern `_${site}_[0-9]{8}_` (date-anchored token boundary defeats substring); VWA uses pattern + `grep -v _wa_` exclusion; WA uses explicit `_wa_${site}_[0-9]{8}_`. Helper `_collision_match` encapsulates lookup. Empirically: `_shopping_[0-9]{8}_` correctly anti-matches `_shopping_admin_<date>_`.
 
-### B-585. generate_gallery.py B2_3mode baseline alias missing — Claude+codex F3 2-AI 🛠️ FIXED commit `f02bef3`
+### B-638. generate_gallery.py B2_3mode baseline alias missing — Claude+codex F3 2-AI 🛠️ FIXED commit `f02bef3`
 - **Source**: Mode A Claude + Mode B codex F3 (2-AI overlap)
 - **Code**: `generate_gallery.py:1274` pre-fix `is_baseline_alias = prefix_filter in {"B0_3mode", "B1_3mode"}` excluded B2 (Gemma3-VL, advisor-confirmed 2026-05-14 入 Phase 1a baseline).
 - **Attack**: B2_phantom_* run-dirs fall to exact-match path → orphaned from `B2_3mode/` aggregate gallery → Phase 1a B2 evidence-layer missing in unified gallery navigation.
 - **Fix**: Regex `^(B[0-9]+)_3mode$` match → B0/B1/B2/B3/future baselines all aliased without code change.
 
-### B-586. AUTH_GATE_BYPASS silent dirty-bypass + P79_PAPER_GRADE forbid — codex F6 + gemini G2 2-AI OOB 🛠️ FIXED commit `f02bef3`
+### B-639. AUTH_GATE_BYPASS silent dirty-bypass + P79_PAPER_GRADE forbid — codex F6 + gemini G2 2-AI OOB 🛠️ FIXED commit `f02bef3`
 - **Source**: Mode B codex F6 + Mode C gemini G2 (2-AI overlap OOB)
 - **Code**: `_lib_paper_grade_gates.sh:202-205` pre-fix `if [[ "${AUTH_GATE_BYPASS:-0}" != "1" ]]; then exit 1; fi` — single env var bypass + no audit log + no ntfy alert.
 - **Attack**: Stray `AUTH_GATE_BYPASS=1` in operator `.bashrc` / dev session silently dissolved every paper-grade gate; no log surface for reviewer / advisor / OSF audit-trail to grep.
 - **Fix**: 2-layer defense: (1) `P79_PAPER_GRADE=1 + AUTH_GATE_BYPASS=1` → FATAL (combination forbidden); (2) legitimate bypass writes audit trail to `${repo_dir}/logs/paper_grade_bypass_audit.log` (ts + site + run_id + hostname + user) + ntfy alert. Reviewer/advisor/OSF can grep for the bypass artifact.
 
-### B-587. mint_run_id %N nanoseconds claim vs code drift — Claude Mode A unique 🛠️ FIXED commit `57756a3` (bundled in lib edit)
+### B-640. mint_run_id %N nanoseconds claim vs code drift — Claude Mode A unique 🛠️ FIXED commit `57756a3` (bundled in lib edit)
 - **Source**: Mode A Claude
 - **Code**: `_lib_paper_grade_gates.sh:114-117` pre-fix comment "P1-2: %N nanoseconds + $$ pid + $RANDOM defeats same-second collision" but actual code `date +%Y%m%d_%H%M%S` (no %N); collision_token `$$_R${RANDOM}` only.
 - **Attack**: CODE↔PROSE mismatch — comment promised 10⁻⁹ collision via "nanos + PID + RANDOM"; actual only ~1/32768 via "PID + RANDOM" when same-PID same-second + RANDOM seed collide.
 - **Fix**: Actually use `date +%N` 9-digit nanoseconds in collision_token. Format `YYYYMMDD_HHMMSS_NNNNNNNNN_PIDxxxx_Rxxxxx`. Empirical: 3 same-PID same-second mint calls produce 3 distinct RUN_IDs (nanos+RANDOM differ).
 
-### B-588. mint_run_id ls -dt resume path lacks fingerprint check — Claude Mode A unique OOB 🛠️ FIXED commit `57756a3` (bundled in lib edit)
+### B-641. mint_run_id ls -dt resume path lacks fingerprint check — Claude Mode A unique OOB 🛠️ FIXED commit `57756a3` (bundled in lib edit)
 - **Source**: Mode A Claude OOB
 - **Code**: `_lib_paper_grade_gates.sh:124` pre-fix `existing="$(ls -dt ... | head -1)"` blindly resumed mtime-newest match even if condition_meta.json declared stale schema_version / observation_mode / benchmark mismatched against current CONFIG.
 - **Attack**: Cross-fix-batch stale run-dir blindly resumed (e.g., A1.13 retire-and-rerun cells) → new fix's behavior tested against old data.
 - **Fix**: Check `existing/*/condition_meta.json` schema_version (require v2 canonical); mismatch → log "skipping stale resume candidate" + mint fresh timestamp.
 
-### B-589. reset/auth phase has no timeout — codex F8 OOB 🛠️ FIXED commit `f02bef3`
+### B-642. reset/auth phase has no timeout — codex F8 OOB 🛠️ FIXED commit `f02bef3`
 - **Source**: Mode B codex F8 OOB
 - **Code**: `_lib_paper_grade_gates.sh:155-237` pre-fix `reset_vwa_sites` (sourced bash function) + python auth_required_gate had no timeout wrappers.
 - **Attack**: Reset script SSH stall / Playwright auth browser hang / Tailscale stall blocked launch with no watchdog yet attached + no runner pid + no ntfy → chain wedged invisibly (potentially 12-24h unnoticed on weekend chain runs).
 - **Fix**: Wrap reset_vwa_sites in `timeout 120s bash -c "source ...; reset_vwa_sites ..."` (sub-bash isolation enables timeout on sourced function); wrap python auth_required_gate in `timeout 60s python -c "..."`. Timeout 124 → FATAL surface + ntfy + exit 1. _reset_rc captured from sub-bash for downstream rc-78 not-implemented branch handling.
 
-### B-590. assert_a100_url_locality empty URL silent pass — Claude Mode A unique OOB 🛠️ FIXED commit `f02bef3`
+### B-643. assert_a100_url_locality empty URL silent pass — Claude Mode A unique OOB 🛠️ FIXED commit `f02bef3`
 - **Source**: Mode A Claude OOB
 - **Code**: `_lib_paper_grade_gates.sh:67-69` pre-fix `case "${!_v:-}" in *localhost*|*127.0.0.1*|"") ;; *) FATAL` — empty string in OK set meant `vwa_env_remote.sh` source failure (file missing / shellcheck syntax error) silently passed; runner attempted default fallback URLs (possibly prod via Tailscale).
 - **Attack**: Silent prod URL substitution post-vwa_env_remote.sh failure — paper-grade A100 self-hosted promise violated invisibly.
 - **Fix**: Empty URL = explicit FATAL with diagnostic hint pointing to `vwa_env_remote.sh` source verification.
 
-### B-591. queue scripts watchdog --ntfy-topic hardcoded vs honored env — gemini G5 unique 🛠️ FIXED commit `f02bef3`
+### B-644. queue scripts watchdog --ntfy-topic hardcoded vs honored env — gemini G5 unique 🛠️ FIXED commit `f02bef3`
 - **Source**: Mode C gemini G5 unique
 - **Code**: `queue_baseline.sh:181` + 3 phantom queue scripts hardcoded `--ntfy-topic p79-exp-dgx-spark` to watchdog; `queue_chain.sh:93/287/302` honored `${NTFY_TOPIC:-...}` for chain alerts.
 - **Attack**: Custom NTFY_TOPIC for sub-experiment (e.g., A100 paper-grade fire vs DGX dev fire) only affected chain alerts; watchdog idle/crash/auth alerts all conflated on default topic.
 - **Fix**: All 4 queue scripts updated to `--ntfy-topic "${NTFY_TOPIC:-p79-exp-dgx-spark}"`.
 
-### B-592. reset_and_auth_gate 5 positional args refactor → named args — gemini G9 unique 🛠️ FIXED commit `f02bef3`
+### B-645. reset_and_auth_gate 5 positional args refactor → named args — gemini G9 unique 🛠️ FIXED commit `f02bef3`
 - **Source**: Mode C gemini G9 unique
 - **Code**: `_lib_paper_grade_gates.sh:141-146` pre-fix 5 positional `<site> <repo_dir> <python_bin> <log_prefix> <reset_label>` — caller swap-order bugs silently propagated wrong reset_label → trajectory event tag cross-baseline-confused.
 - **Attack**: Future signature addition (e.g., `--benchmark`) would require simultaneous error-prone updates to 4+ sibling callers; a missed caller would emit wrong reset_label propagating into paper §4 covariate analysis.
 - **Fix**: Both forms accepted (named `--site --repo --python --log-prefix --reset-label` preferred; positional kept for back-compat). 4 callers (queue_baseline + 3 phantom) migrated to named form.
 
-### B-593. queue_chain.sh TOCTOU race in collision check → flock fix — codex F4 OOB 🛠️ FIXED commit `92b4598`
+### B-646. queue_chain.sh TOCTOU race in collision check → flock fix — codex F4 OOB 🛠️ FIXED commit `92b4598`
 - **Source**: Mode B codex F4 OOB
 - **Code**: `queue_chain.sh:142-167` pre-fix pgrep-based collision check + queue script launch had unprotected check-to-launch window — two chains fired in tight time race both see empty pgrep + both reset_and_auth + both launch detached runners → docker user account session race.
 - **Attack**: Single-orchestrator Phase 1a immune; manual concurrent chain fires (user retry / orchestrator double-fire) silent corrupt.
 - **Fix**: Per-(site,benchmark) `flock -n 9` non-blocking acquired at iteration top + held across collision check + reset/auth + queue script launch + wait_for_runner_done + completion sentinel; second concurrent chain → FATAL exit 1 + ntfy alert. Lock auto-released on `exec 9>&-` at iteration end. Per-(site,benchmark) granularity means VWA shopping + WA shopping_admin can run concurrently (separate docker stacks). `.gitignore` updated with `.locks/` entry.
 
-### B-594. WA reset+auth gate scaffold (close P1-4 silent-skip) — codex F7 + gemini G6 2-AI 🛠️ SCAFFOLDED commit `6808c56`
+### B-647. WA reset+auth gate scaffold (close P1-4 silent-skip) — codex F7 + gemini G6 2-AI 🛠️ SCAFFOLDED commit `6808c56`
 - **Source**: Mode B codex F7 + Mode C gemini G6 (2-AI overlap)
 - **Code**: 4 queue scripts pre-fix silently skipped reset_and_auth_gate on `BENCHMARK=wa+RESET_BEFORE=1`; no reset_wa_sites.sh existed.
 - **Attack**: WA paper-grade fires (future Phase 1b shopping/shopping_admin) shipped with stale auth + cart contamination; first 1-3 tasks NOT-LOGGED-IN until watchdog reactive cleanup; cross-mode account contamination within chain.
 - **Fix**: NEW `scripts/maintenance/reset_wa_sites.sh` scaffold (rc=78 "not implemented" sentinel, matches VWA shop stub convention); 4 queue scripts replace silent-skip with explicit FATAL pointing to scaffold + bypass instructions. Full impl roadmap documented in scaffold header (4 steps: confirm WA Docker → per-site reset semantics → extend auth_refresh for `benchmark="wa"` → remove queue-script hard-fail guards). Per user 2026-05-17 fix-scope "长期完整实现 reset_wa_sites.sh" the long-term full impl is in queue but A100 WA Docker state verification deferred to follow-up cycle (auto-classifier blocked production-shell read during audit).
 
-### B-595. AGGREGATE_PREFIX `${BASELINE}_3mode` alias-semantics comment update — gemini G3 unique 🛠️ FIXED commit `f2a0948`
+### B-648. AGGREGATE_PREFIX `${BASELINE}_3mode` alias-semantics comment update — gemini G3 unique 🛠️ FIXED commit `f2a0948`
 - **Source**: Mode C gemini G3 unique (P2 cosmetic)
-- **Code**: 3 phantom queue scripts pre-fix comments "all B0/B1 modes share one URL" — outdated since B-585 broadened gallery alias regex to support B2 + future baselines.
+- **Code**: 3 phantom queue scripts pre-fix comments "all B0/B1 modes share one URL" — outdated since B-638 broadened gallery alias regex to support B2 + future baselines.
 - **Attack**: Future reader/reviewer reads stale comment + concludes B2 phantom runs unsupported → paper §3 reproducibility prose carries ambiguity.
-- **Fix**: Comments updated to reference B-585 regex + clarify "3mode" is historical alias only (NOT literal 3-mode-subset). Pure doc; no behavior change.
+- **Fix**: Comments updated to reference B-638 regex + clarify "3mode" is historical alias only (NOT literal 3-mode-subset). Pure doc; no behavior change.
 
-**B-numbers consumed (A1.13)**: B-577 through B-595 (19 contiguous IDs; 18 fixed + 1 scaffold = B-594). Catalog max at audit start = B-576 (A1.22 batch); grep-before-append verified clean. Per chronicle §181 parallel-session coordination: A1.5/A1.5b reserved range B-548~B-559 NOT touched.
+**B-numbers consumed (A1.13)**: B-630 through B-648 (19 contiguous IDs; 18 fixed + 1 scaffold = B-647). Catalog max at audit start = B-576 (A1.22 batch); grep-before-append verified clean. Per chronicle §181 parallel-session coordination: A1.5/A1.5b reserved range B-548~B-559 NOT touched.
 
 **Cross-AI agreement summary (A1.13)**:
 - 3-AI overlap: 0 (each lineage went complementary as briefed — gemini G1+codex F2 were essentially the same finding on WA SITE_EXPECTED_N → 2-AI overlap counted)
-- 2-AI overlap: 6 findings (B-578 codex+gemini WA site-key / B-584 Claude+gemini pgrep substring / B-585 Claude+codex B2 gallery / B-586 codex+gemini AUTH_GATE_BYPASS / B-594 codex+gemini WA reset / + scope-handoff overlaps)
+- 2-AI overlap: 6 findings (B-631 codex+gemini WA site-key / B-637 Claude+gemini pgrep substring / B-638 Claude+codex B2 gallery / B-639 codex+gemini AUTH_GATE_BYPASS / B-647 codex+gemini WA reset / + scope-handoff overlaps)
 - 1-AI unique:
-  - Claude (Mode A): 5 findings (B-579 `${cond_id!r}` OOB / B-580 set -e OOB / B-587 mint_run_id %N drift / B-588 stale resume OOB / B-590 empty URL silent OOB)
-  - Codex (Mode B): 4 findings (B-577 phantom_text COND_ID legacy OOB / B-582 sentinel 90% OOB / B-589 reset/auth no timeout OOB / B-593 flock TOCTOU OOB)
-  - Gemini (Mode C): 4 findings (B-581 TS_FULL log collision / B-591 ntfy env honor / B-592 named args refactor / B-595 AGGREGATE_PREFIX comment)
+  - Claude (Mode A): 5 findings (B-632 `${cond_id!r}` OOB / B-633 set -e OOB / B-640 mint_run_id %N drift / B-641 stale resume OOB / B-643 empty URL silent OOB)
+  - Codex (Mode B): 4 findings (B-630 phantom_text COND_ID legacy OOB / B-635 sentinel 90% OOB / B-642 reset/auth no timeout OOB / B-646 flock TOCTOU OOB)
+  - Gemini (Mode C): 4 findings (B-634 TS_FULL log collision / B-644 ntfy env honor / B-645 named args refactor / B-648 AGGREGATE_PREFIX comment)
 
 **Reviewer lesson encoded**:
-1. CODE↔PROSE drift in comments: comment promised `%N nanoseconds` but actual `date +%Y%m%d_%H%M%S` had no `%N`; comment-vs-code spot-check catches the lie (B-587).
-2. Bash parameter expansion `${var!r}` is NOT python f-string `!r` repr; bash treats `${var@op}` op `r` as bad substitution → exit 1 (B-579).
-3. `set -e` activation in mid-script gates flips errexit behavior for all subsequent commands — explicit guard logic at later lines becomes dead code (B-580).
-4. Substring-match break-first ordering: longest-prefix-first or structural parse beats substring fallthrough (B-578 + B-584).
-5. Empty string in case statement's "OK" branch silently passes failures (B-590); separate explicit "" branch for fail-loud.
-6. Sibling propagation across 4-queue-script pattern: any new gate / env / arg must propagate to all 5 callers (B-591 + B-592 + B-594).
-7. Silent skip on benchmark-specific branch is paper-grade-fatal: replace with hard-fail until proper gate exists (B-594).
+1. CODE↔PROSE drift in comments: comment promised `%N nanoseconds` but actual `date +%Y%m%d_%H%M%S` had no `%N`; comment-vs-code spot-check catches the lie (B-640).
+2. Bash parameter expansion `${var!r}` is NOT python f-string `!r` repr; bash treats `${var@op}` op `r` as bad substitution → exit 1 (B-632).
+3. `set -e` activation in mid-script gates flips errexit behavior for all subsequent commands — explicit guard logic at later lines becomes dead code (B-633).
+4. Substring-match break-first ordering: longest-prefix-first or structural parse beats substring fallthrough (B-631 + B-637).
+5. Empty string in case statement's "OK" branch silently passes failures (B-643); separate explicit "" branch for fail-loud.
+6. Sibling propagation across 4-queue-script pattern: any new gate / env / arg must propagate to all 5 callers (B-644 + B-645 + B-647).
+7. Silent skip on benchmark-specific branch is paper-grade-fatal: replace with hard-fail until proper gate exists (B-647).
 
 **Smoke verification (A1.13 5-chunk batch)**:
 - pytest: 428 passed, 8 skipped at chunks (a)/(b)/(c)/(e) boundaries; 2 failed at chunk (d) boundary but **unrelated** to A1.13 (VWA submodule SHA drift from parallel session committed test pin without updating EXPECTED_SUBMODULE_SHA constant in `tests/test_stress_a1_4b_ii_g4_fixes.py`).
 - bash -n PASS on all 7 modified shell scripts + new reset_wa_sites.sh scaffold.
-- py_compile PASS on generate_gallery.py (B-585 regex).
+- py_compile PASS on generate_gallery.py (B-638 regex).
 - Empirical smoke: mint_run_id 3-call collision defense (3 unique IDs from same PID same second) / WA site-key parse correctness (wa_shopping_admin → 192 not 466) / sentinel exact-match vs PAPER_GRADE_ALLOW_PARTIAL=1 (FATAL vs WARN-then-advance) / flock 3-chain scenario (acquire / block / release / re-acquire) / reset_wa_sites stub rc=78 for valid sites + rc=2 for unknown / regex anchor correctly rejects substring overlap (`_shopping_[0-9]{8}_` does NOT match `_shopping_admin_<date>_`).
 
-**Next available B-number**: B-596+ (B-577~B-595 consumed by A1.13). A1.5b Phase 2 reserved range B-556~B-559 still untouched.
+**Next available B-number**: B-649+ (B-630~B-648 consumed by A1.13). A1.5b Phase 2 reserved range B-556~B-559 still untouched.
 
 ---
 

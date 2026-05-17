@@ -77,7 +77,7 @@ if [[ ! -f "${CONFIG}" ]]; then
   exit 1
 fi
 
-# B-577 (A1.13 P0-1, 2026-05-17): COND_ID canonical sweep. User directive
+# B-630 (A1.13 P0-1, 2026-05-17): COND_ID canonical sweep. User directive
 # 2026-05-17 (/stress A1.13 fix-scope): "phantom_dom 只应该存在于 archive results
 # 里面,其他地方都应该为 phantom_text". Pre-fix this constant was legacy
 # `phase1_phantom_dom_router_0` for backward-compat with April-2026 historical
@@ -113,14 +113,14 @@ else
   PHASE_DIR="${REPO_DIR}/results/visualwebarena/phase1"
 fi
 
-# B-577 (A1.13 P0-1, 2026-05-17): legacy phantom_dom resume removed. User
+# B-630 (A1.13 P0-1, 2026-05-17): legacy phantom_dom resume removed. User
 # directive 2026-05-17: phantom_dom artifacts only exist in archive results
 # (historical run-dirs created pre-rename 2026-05-14); they are NOT a valid
 # resume target — the legacy `phase1_phantom_dom_router_0/` subdirs have
 # frozen schema that the post-rename runner cannot extend (different cond_id
 # write path). Force fresh-or-canonical-resume only via mint_run_id.
 mint_run_id "${CFG_NAME}" "${PHASE_DIR}" "phantom_text"
-# B-581 (A1.13 P0-5): RUNNER_LOG uses RUN_ID (0-collision); TS_FULL removed.
+# B-634 (A1.13 P0-5): RUNNER_LOG uses RUN_ID (0-collision); TS_FULL removed.
 
 RUN_DIR="${PHASE_DIR}/${RUN_ID}"
 echo "[phantom_text] config=${CONFIG}"
@@ -138,8 +138,8 @@ else
   if [[ "${RESET_BEFORE:-0}" == "1" && "${BENCHMARK}" != "wa" ]]; then
     reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "phantom_text" --reset-label "phantom_text_${SITE}"
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
-    # B-594 (A1.13 P1-4-BC fix, 2026-05-17): see queue_baseline.sh equivalent.
-    echo "[phantom_text][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported until reset_wa_sites.sh full impl lands (B-594)." >&2
+    # B-647 (A1.13 P1-4-BC fix, 2026-05-17): see queue_baseline.sh equivalent.
+    echo "[phantom_text][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported until reset_wa_sites.sh full impl lands (B-647)." >&2
     echo "[phantom_text][error] scripts/maintenance/reset_wa_sites.sh is scaffold only; fill per-site bodies + remove this guard for WA paper-grade." >&2
     exit 1
   fi
@@ -168,9 +168,9 @@ fi
 # ---------- watchdog 启动 ----------
 WD_STATE="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.state.json"
 WD_LOG="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.log"
-# B-595 (A1.13 P2-3 gemini G3, 2026-05-17): unified per-baseline aggregate
+# B-648 (A1.13 P2-3 gemini G3, 2026-05-17): unified per-baseline aggregate
 # gallery — alias to `B${n}_3mode/` URL for ANY baseline (B0/B1/B2/future via
-# regex `^B[0-9]+_3mode$` in generate_gallery.py:1274 post-B-585). "3mode" is
+# regex `^B[0-9]+_3mode$` in generate_gallery.py:1274 post-B-638). "3mode" is
 # historical alias only — NOT literal 3-mode-subset restriction.
 AGGREGATE_PREFIX="${BASELINE}_3mode"
 

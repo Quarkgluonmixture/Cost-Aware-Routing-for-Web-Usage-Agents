@@ -6,7 +6,7 @@
 # R1 framing decision pending advisor sync 2026-05-14; user 2026-05-17 picked
 # "长期完整实现 reset_wa_sites.sh" per /stress A1.13 chunk (d) Q&A.
 #
-# CURRENT STATE (B-594 scaffold, 2026-05-17):
+# CURRENT STATE (B-647 scaffold, 2026-05-17):
 #   - **scaffold only** — per-site reset bodies are NOT implemented yet.
 #   - rc=78 (matches existing VWA `_reset_vwa_local_shopping` "not implemented"
 #     sentinel convention used by `_lib_paper_grade_gates.sh:212`).
@@ -59,11 +59,11 @@ reset_wa_sites() {
       ;;
   esac
 
-  # B-594 scaffold (A1.13 P1-4 chunk d, 2026-05-17): full reset body TBD.
+  # B-647 scaffold (A1.13 P1-4 chunk d, 2026-05-17): full reset body TBD.
   # Returns rc=78 "not implemented" sentinel — `_lib_paper_grade_gates.sh:212`
   # catches this rc + emits site-specific FATAL surface ("Implement reset_wa_${site}
   # body before paper-grade Phase 1b launch.").
-  echo "[reset_wa_sites][error] reset for site=${site} NOT IMPLEMENTED (B-594 scaffold)" >&2
+  echo "[reset_wa_sites][error] reset for site=${site} NOT IMPLEMENTED (B-647 scaffold)" >&2
   echo "[reset_wa_sites][error] WA Docker stack reset semantics + auth_required_gate WA support are pending Phase 1b advisor sync." >&2
   echo "[reset_wa_sites][error] See header comment for full-impl roadmap; fill the per-site case branch below." >&2
   return 78

@@ -86,7 +86,7 @@ else
 fi
 
 mint_run_id "${CFG_NAME}" "${PHASE_DIR}" "phantom_prompt"
-# B-581 (A1.13 P0-5): RUNNER_LOG uses RUN_ID (0-collision); TS_FULL removed.
+# B-634 (A1.13 P0-5): RUNNER_LOG uses RUN_ID (0-collision); TS_FULL removed.
 
 RUN_DIR="${PHASE_DIR}/${RUN_ID}"
 echo "[phantom_prompt] config=${CONFIG}"
@@ -104,8 +104,8 @@ else
   if [[ "${RESET_BEFORE:-0}" == "1" && "${BENCHMARK}" != "wa" ]]; then
     reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "phantom_prompt" --reset-label "phantom_prompt_${SITE}"
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
-    # B-594 (A1.13 P1-4-BC fix, 2026-05-17): see queue_baseline.sh equivalent.
-    echo "[phantom_prompt][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported until reset_wa_sites.sh full impl lands (B-594)." >&2
+    # B-647 (A1.13 P1-4-BC fix, 2026-05-17): see queue_baseline.sh equivalent.
+    echo "[phantom_prompt][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported until reset_wa_sites.sh full impl lands (B-647)." >&2
     echo "[phantom_prompt][error] scripts/maintenance/reset_wa_sites.sh is scaffold only; fill per-site bodies + remove this guard for WA paper-grade." >&2
     exit 1
   fi
@@ -134,9 +134,9 @@ fi
 # ---------- watchdog 启动 ----------
 WD_STATE="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.state.json"
 WD_LOG="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.log"
-# B-595 (A1.13 P2-3 gemini G3, 2026-05-17): unified per-baseline aggregate
+# B-648 (A1.13 P2-3 gemini G3, 2026-05-17): unified per-baseline aggregate
 # gallery — alias to `B${n}_3mode/` URL for ANY baseline (regex `^B[0-9]+_3mode$`
-# in generate_gallery.py post-B-585). "3mode" is historical alias.
+# in generate_gallery.py post-B-638). "3mode" is historical alias.
 AGGREGATE_PREFIX="${BASELINE}_3mode"
 
 # Runner PID for watchdog self-exit — watchdog auto-exits when this PID dies
