@@ -494,9 +494,56 @@ def build_full_decision(cells: List[Dict]) -> Dict:
             "h3_axis2": h3_axis2,
         })
 
+    # B-1017 (/stress A2.4a P0-2-AC* Claude+gemini 2-AI overlap, 2026-05-18):
+    # paper §1 hero substitution table emit at metadata level — appears in
+    # output regardless of gate_status (so reviewer can read substitution map
+    # even when Phase 1a not yet fired, INSUFFICIENT_DATA branch). Filled in
+    # later post-H1-FE-pool with `<INSUFFICIENT_DATA>` if early-return triggers.
+    paper_hero_substitution_table = {
+        "purpose": (
+            "Maps archive-era paper §1 hero numbers (4-mode universe, pre-§139.8) "
+            "to post-Phase-1a-fire 6-mode FE-pool canonical equivalents. Reviewer / "
+            "OSF auditor / paper §1 substitution-checklist consumer: read this field "
+            "post-fire, mechanically swap section1_intro.md hardcoded numbers per row. "
+            "B-1017 closes A2.4a P0-2-AC* 'no binding mechanism for hero substitution' "
+            "attack (fn 13 PRE-FIRE STUB was textual promise pre-B-1017)."
+        ),
+        "section1_intro_md_line_reference": "line 11 hero paragraph + fn 13 [^hero-estimand-scope]",
+        "substitutions": [
+            {"claim_text_archive": "Phantom-SoM contributes 3.33pp incremental oracle on reddit",
+             "archive_value": "3.33pp",
+             "canonical_field": "pooled_h1_fe.theta_FE_pp",
+             "canonical_value_post_fire": "<filled-in-post-FE-pool>",
+             "scope_archive": "4-mode {DOM, SoM, Vision, P-SoM} per-cell drop-one B0 reddit",
+             "scope_canonical": "6-mode FE-pool over 6 planned cells"},
+            {"claim_text_archive": "task-resampling 95% two-sided CI [+0.95, +6.19] reddit",
+             "archive_value": "[+0.95, +6.19]",
+             "canonical_field": "pooled_h1_fe.ci95_lo_pp + .ci95_hi_pp (B-1009 bootstrap percentile)",
+             "canonical_value_post_fire": "<filled-in-post-FE-pool>",
+             "scope_archive": "per-cell paired bootstrap 95% CI B0 reddit",
+             "scope_canonical": "6-mode FE-pool 95% two-sided percentile CI"},
+            {"claim_text_archive": "2.56pp classifieds CI [+0.85, +4.70]",
+             "archive_value": "2.56pp / [+0.85, +4.70]",
+             "canonical_field": "per-cell list filtered by site=classifieds + pooled_h1_fe FE-aggregated",
+             "canonical_value_post_fire": "<see per_cell entries>",
+             "scope_archive": "per-cell drop-one B0 classifieds archive 4-mode",
+             "scope_canonical": "6-mode universe; per-site disagg in §6 forest if site-level claim retained"},
+        ],
+        "substitution_checklist": [
+            "1. Read paper_hero_substitution_table[i].canonical_value_post_fire from this JSON.",
+            "2. If '<INSUFFICIENT_DATA>' / '<filled-in-post-FE-pool>' → Phase 1a not yet fired; do not update §1.",
+            "3. Else: section1_intro.md grep for substitutions[i].archive_value → replace.",
+            "4. Verify CI is 95% TWO-SIDED PERCENTILE BOOTSTRAP (B-1009 method amend post-2026-05-18).",
+            "5. Move archive-era values to Appendix-D as cross-rerun sensitivity (fn 13 promise).",
+            "6. Re-run aggregate_phase1_full_prereg_decision after edit to verify substitution self-consistency.",
+            "7. OSF lock manifest commit references this paper_hero_substitution_table by code_sha + prereg_sha (B-1004).",
+        ],
+    }
+
     payload: Dict = {
         "captured_at": datetime.now(timezone.utc).isoformat(),
         "producer": "aggregate_phase1_full_prereg_decision.py (A1.21 B-515)",
+        "paper_hero_substitution_table": paper_hero_substitution_table,  # B-1017
         "prereg_section": "preregistration.md §2 H1/H2(a)/H3 + R1-R5 framing rule",
         "estimands": {
             "H1": "FE inverse-variance pool over P-SoM drop-one (6-mode universe), "
@@ -594,6 +641,20 @@ def build_full_decision(cells: List[Dict]) -> Dict:
     h2a_cannot_evaluate = [c for c in per_cell_data if c["h2a"] is None]
     # A1.21 P1-7 fix: 3-state per cell (within / falsified / cannot_evaluate),
     # framing rule uses `n_falsified == 0` (NOT `pass_count == total`).
+    # B-1018 (/stress A2.4a P1-15-C gemini F2, 2026-05-18): zero-cost task share
+    # disclosure. Pre-fix `_h2a_per_task_ratio` skipped n_dom_zero tasks (divide-
+    # by-zero) silently — if DOM-failure tasks systematically have cost=0
+    # (e.g., GLM-rescue / proxy edge / DOM early-exit), median ratio computed
+    # only over DOM-SUCCESS subset → survival bias on H2(a) cost-equivalence
+    # claim, paper §1 "cost ≈ DOM" actually proven only for DOM-pass tasks.
+    # Emit per-cell + aggregate n_dom_zero_skipped/n_paired_tasks ratio so
+    # reviewer can quantify survival-bias risk + invoke sensitivity check.
+    n_dom_zero_total = sum((c["h2a"].get("n_dom_zero_skipped", 0) or 0)
+                           for c in per_cell_data if c["h2a"] is not None)
+    n_paired_total = sum((c["h2a"].get("n_paired_tasks", 0) or 0)
+                          for c in per_cell_data if c["h2a"] is not None)
+    dom_zero_ratio = (100.0 * n_dom_zero_total / n_paired_total) if n_paired_total > 0 else None
+
     payload["h2a_summary"] = {
         "n_cells_with_data": len(h2a_per_cell),
         "n_cells_within_band": sum(1 for c in h2a_per_cell if c["per_cell_pass"]),
@@ -606,6 +667,12 @@ def build_full_decision(cells: List[Dict]) -> Dict:
              "relative_diff_pct": c["h2a"]["relative_diff_pct"]}
             for c in h2a_falsified_cells
         ],
+        # B-1018: zero-cost survival-bias disclosure (paper §1 cost ≈ DOM claim
+        # only holds on DOM-pass subset when n_dom_zero is non-trivial)
+        "n_dom_zero_skipped_total": n_dom_zero_total,
+        "n_paired_tasks_total": n_paired_total,
+        "dom_zero_ratio_pct": dom_zero_ratio,
+        "dom_zero_disclosure_required": (dom_zero_ratio is not None and dom_zero_ratio > 5.0),
     }
 
     # H3 axis-1 FE pool
@@ -741,6 +808,17 @@ def build_full_decision(cells: List[Dict]) -> Dict:
             f"H2(a) {'falsified' if h2a_falsified else 'not falsified'}; "
             f"framing rule {framing['rule']}."
         )
+
+    # B-1017 post-FE-pool back-fill: when H1 FE pool succeeded, replace
+    # placeholder `<filled-in-post-FE-pool>` strings with actual numbers.
+    pfe = payload.get("pooled_h1_fe", {})
+    if pfe:
+        sub = payload["paper_hero_substitution_table"]["substitutions"]
+        sub[0]["canonical_value_post_fire"] = f"{pfe.get('theta_FE_pp', '<missing>')}pp"
+        ci_lo = pfe.get("ci95_lo_pp")
+        ci_hi = pfe.get("ci95_hi_pp")
+        if ci_lo is not None and ci_hi is not None:
+            sub[1]["canonical_value_post_fire"] = f"[{ci_lo:+.2f}, {ci_hi:+.2f}]"
 
     return payload
 
