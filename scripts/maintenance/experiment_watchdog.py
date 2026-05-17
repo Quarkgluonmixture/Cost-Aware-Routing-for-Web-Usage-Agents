@@ -1397,6 +1397,15 @@ def main() -> int:
                 for _art in _art_root.iterdir():
                     if not _art.is_dir():
                         continue
+                    # B-463 (/stress A1.5b Phase 1 P0-4-C gemini OOB companion,
+                    # 2026-05-17): runner-side `_run_episode` archives prior-
+                    # attempt forensic to `<task>.stale_<ts>` siblings when
+                    # `.in_progress` marker present (runner-crash recovery
+                    # path). Watchdog MUST NOT auto-clean these archives
+                    # otherwise the preservation is defeated 10 min after
+                    # restart. Skip any dir with `.stale_` in name.
+                    if ".stale_" in _art.name:
+                        continue
                     if (_ep_root / f"{_art.name}_summary_v2.json").exists():
                         continue
                     if _art.stat().st_mtime > _orphan_cutoff:
@@ -1411,6 +1420,9 @@ def main() -> int:
             # Orphan steps files (steps JSONL without summary)
             if _ep_root.exists():
                 for _sf in _ep_root.glob("*_steps_v2.jsonl"):
+                    # B-463 companion: skip `<task>.stale_<ts>.jsonl` archives.
+                    if ".stale_" in _sf.name:
+                        continue
                     _summary = _ep_root / _sf.name.replace("_steps_v2.jsonl", "_summary_v2.json")
                     if _summary.exists():
                         continue

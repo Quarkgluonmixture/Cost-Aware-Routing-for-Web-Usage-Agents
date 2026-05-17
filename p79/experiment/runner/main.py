@@ -672,24 +672,63 @@ class ExperimentRunner:
                                     )
                                 # Fall through to re-run; do NOT continue
                             else:
-                                has_steps = int(loaded.get("steps", 0)) > 0
-                                has_error = bool(loaded.get("error"))
+                                # B-461 (/stress A1.5b Phase 1 P0-2-C gemini OOB,
+                                # 2026-05-17): quarantine-rerun gate. Exception-
+                                # path summaries (mid-evaluator crash, partial
+                                # state) set `needs_reevaluation: True`. Pre-fix
+                                # the resume gate accepted them as complete
+                                # (has_steps=True from B-168 partial recovery →
+                                # ingest into aggregate as success=False) → SR
+                                # silent under-report in noisy environments.
+                                # Now: detect flag → force re-run instead of
+                                # ingest. True evaluator-based success/score
+                                # only via re-run (agent self-claim of stop ≠
+                                # task-level evaluator outcome; conflating both
+                                # would over-report SR).
+                                if bool(loaded.get("needs_reevaluation", False)):
+                                    logger.info(
+                                        "B-461 needs_reevaluation flag detected for "
+                                        "site=%s task=%s — re-running episode "
+                                        "(prior exception-path summary lacked "
+                                        "evaluator score; quarantine + force re-run)",
+                                        task.site, task.task_id,
+                                    )
+                                    # Move stale summary to quarantine for forensic;
+                                    # next attempt will overwrite via normal path.
+                                    _quarantine_dir = condition_logger.episodes_dir / "quarantine"
+                                    _quarantine_dir.mkdir(parents=True, exist_ok=True)
+                                    _quarantine_path = (
+                                        _quarantine_dir
+                                        / f"{summary_file.stem}.needs_reeval.{int(time.time())}.json"
+                                    )
+                                    try:
+                                        shutil.move(str(summary_file), str(_quarantine_path))
+                                    except OSError as _q_exc:
+                                        logger.error(
+                                            "B-461 quarantine move failed for %s: %s — "
+                                            "re-running anyway",
+                                            summary_file, _q_exc,
+                                        )
+                                    # Fall through to re-run; do NOT continue
+                                else:
+                                    has_steps = int(loaded.get("steps", 0)) > 0
+                                    has_error = bool(loaded.get("error"))
 
-                                if has_steps or not has_error:
+                                    if has_steps or not has_error:
+                                        episode_summaries.append(loaded)
+                                        continue
+
+                                    # Zero-step error: skip — watchdog handles all retries
+                                    # with MAX_NOISE_RETRIES / MAX_CODE_BUG_RETRIES limits.
+                                    # Runner's retry pass (line 544) will re-run if watchdog
+                                    # has already deleted the summary.
+                                    logger.info(
+                                        "Skipping zero-step error episode site=%s task=%s (watchdog handles retry): %s",
+                                        task.site, task.task_id,
+                                        str(loaded.get("error", ""))[:120],
+                                    )
                                     episode_summaries.append(loaded)
                                     continue
-
-                                # Zero-step error: skip — watchdog handles all retries
-                                # with MAX_NOISE_RETRIES / MAX_CODE_BUG_RETRIES limits.
-                                # Runner's retry pass (line 544) will re-run if watchdog
-                                # has already deleted the summary.
-                                logger.info(
-                                    "Skipping zero-step error episode site=%s task=%s (watchdog handles retry): %s",
-                                    task.site, task.task_id,
-                                    str(loaded.get("error", ""))[:120],
-                                )
-                                episode_summaries.append(loaded)
-                                continue
                         except Exception:
                             pass  # Corrupted summary — fall through to re-run
 
@@ -1062,6 +1101,14 @@ class ExperimentRunner:
                 # identity invariant (downstream forensic audit may still
                 # want to reason about which cfg-state produced the crash).
                 resume_fingerprint=_resume_fingerprint,
+                # B-461 (/stress A1.5b Phase 1 P0-2-C gemini OOB): flag
+                # exception-path summary for resume-gate force re-run.
+                # B-168 partial recovery preserves steps/cost/latency but
+                # evaluator did NOT score (mid-eval crash). Marking this
+                # flag forces re-run on next restart; without it, resume
+                # gate ingests success=False as "complete" → task never
+                # re-evaluated → SR systematic under-report.
+                needs_reevaluation=True,
             ).as_dict()
             # B-194 (/stress A1.4b-ii codex B-ii-3, P1 OOB): exception-path
             # MUST mirror canonical `compute_wasted_cost(steps, success=False)`
@@ -1179,9 +1226,68 @@ class ExperimentRunner:
                 raise
 
         episode_dir = condition_dir / "artifacts" / f"{task.site}_task_{task.task_id}"
-        if episode_dir.exists():
-            shutil.rmtree(episode_dir)
-            logger.info("Cleared stale artifacts for %s task %s", task.site, task.task_id)
+        stale_jsonl = condition_logger.step_log_path(task.site, task.task_id)
+
+        # B-463 (/stress A1.5b Phase 1 P0-4-C gemini OOB, 2026-05-17):
+        # in-progress-aware archive. Pre-fix unconditional `shutil.rmtree`
+        # at entry destroyed B-222 watchdog-preserved forensic — when runner
+        # crashes mid-episode the `.in_progress` marker survives, watchdog
+        # orphan cleanup correctly skips, but the next `_run_episode` entry
+        # would wipe everything. Now: if marker present (runner-crash recovery
+        # path) archive episode_dir + step JSONL to `.stale_<ts>` sibling
+        # preserving forensic for B-168 partial recovery + paper §3
+        # "Restart-resilient trajectory logging" claim. If marker absent
+        # (watchdog auto-clean retry path already wiped everything, or fresh
+        # task) wipe as before. Watchdog (`experiment_watchdog.py:1397+1413`)
+        # MUST also skip `.stale_*` archives from orphan cleanup (B-463
+        # companion patch).
+        _has_in_progress = (
+            episode_dir.exists() and (episode_dir / ".in_progress").exists()
+        )
+        if _has_in_progress:
+            _ts = int(time.time())
+            _stale_archive = episode_dir.parent / f"{episode_dir.name}.stale_{_ts}"
+            try:
+                episode_dir.rename(_stale_archive)
+                if stale_jsonl.exists():
+                    _jsonl_stale = stale_jsonl.with_name(
+                        stale_jsonl.stem + f".stale_{_ts}" + stale_jsonl.suffix
+                    )
+                    stale_jsonl.rename(_jsonl_stale)
+                logger.info(
+                    "B-463 archived stale episode forensic for %s task %s → "
+                    "%s (.in_progress marker present, runner-crash recovery path)",
+                    task.site, task.task_id, _stale_archive.name,
+                )
+            except OSError as _archive_exc:
+                logger.warning(
+                    "B-463 archive rename FAILED for %s task %s (falling back "
+                    "to wipe so runner can proceed): %s",
+                    task.site, task.task_id, _archive_exc,
+                )
+                if episode_dir.exists():
+                    shutil.rmtree(episode_dir, ignore_errors=True)
+                if stale_jsonl.exists():
+                    try:
+                        stale_jsonl.unlink()
+                    except OSError:
+                        pass
+        else:
+            # Watchdog auto-clean already wiped OR fresh task — original
+            # behavior preserved.
+            if episode_dir.exists():
+                shutil.rmtree(episode_dir)
+                logger.info(
+                    "Cleared stale artifacts for %s task %s",
+                    task.site, task.task_id,
+                )
+            if stale_jsonl.exists():
+                stale_jsonl.unlink()
+                logger.info(
+                    "Cleared stale step JSONL for %s task %s",
+                    task.site, task.task_id,
+                )
+
         episode_dir.mkdir(parents=True, exist_ok=True)
         # B-222 (2026-05-16, A1.5 Item 6): in-progress marker for watchdog
         # orphan-cleanup safety. Watchdog will skip pruning this artifact dir
@@ -1191,12 +1297,6 @@ class ExperimentRunner:
             (episode_dir / ".in_progress").touch()
         except OSError:
             pass  # filesystem ro / mkdir race; runner can still proceed
-
-        # Clear stale JSONL from previous (interrupted) run
-        stale_jsonl = condition_logger.step_log_path(task.site, task.task_id)
-        if stale_jsonl.exists():
-            stale_jsonl.unlink()
-            logger.info("Cleared stale step JSONL for %s task %s", task.site, task.task_id)
 
         obs, info = self.environment.reset(task.config_file)
         current_info = info or {}
