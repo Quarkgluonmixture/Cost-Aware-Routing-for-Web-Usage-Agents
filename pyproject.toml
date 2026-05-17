@@ -81,4 +81,5 @@ addopts = "--strict-markers -ra -rs"
 markers = [
     "local_data: tests that depend on local results/* and run_manifest.yaml (skipped by default in CI; run with `pytest -m local_data`)",
     "external: tests that exercise external systems (VWA browser_env, evaluator_router, live docker); skipped by default",
+    "gpu: tests that exercise real LLM forward pass on GPU (requires `RUN_REALMODEL_SMOKE=1` + CUDA); skipped by default (B-667 A1.12 P0-2 2026-05-17)",
 ]
