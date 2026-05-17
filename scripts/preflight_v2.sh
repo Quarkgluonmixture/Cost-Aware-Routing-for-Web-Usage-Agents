@@ -581,6 +581,43 @@ PY
   pass "B-793 paper-grade evaluator probe PASSED (init-fail surface at preflight, not at fire)"
 }
 
+# B-884 (/stress A1.24 P1-3-B*, 2026-05-17): half-deleted run substrate gate.
+# Pre-fix: clear_tasks crash / ^C between digest cleanup and condition_summary
+# unlink leaves "digest cleaned + cond_summary Finalized + .cleaning marker
+# present" zombie state. Re-fire would resume to half-deleted run + corrupt
+# downstream aggregation. preflight check now scans paper-grade run dirs for
+# (a) `.cleaning` marker files left by interrupted clear_tasks (B-890), and
+# (b) `.in_progress` markers staler than 6 hours (likely orphaned by killed
+# runner). (a) fatal; (b) warn-only (runner may still resume legitimately).
+check_clear_tasks_recovery() {
+  if [[ "${PAPER_GRADE_PREFLIGHT}" != "1" ]]; then
+    return  # only enforce in --paper-grade
+  fi
+  print_check "B-884 clear_tasks recovery substrate (half-deleted state)"
+  local results_root="${PROJECT_DIR}/results/visualwebarena/phase1"
+  if [[ ! -d "${results_root}" ]]; then
+    pass "B-884 no phase1 results dir yet — clean substrate"
+    return
+  fi
+  # (a) .cleaning markers — clear_tasks crash/^C between digest + cond_summary
+  local cleaning_markers
+  cleaning_markers=$(find "${results_root}" -maxdepth 4 -name ".cleaning" -type f 2>/dev/null || true)
+  if [[ -n "${cleaning_markers}" ]]; then
+    echo "${cleaning_markers}" | while IFS= read -r m; do echo "    half-deleted marker: ${m}"; done
+    fail "B-884 found .cleaning marker(s) → clear_tasks was interrupted mid-operation. Re-run clear_tasks to completion OR manually delete the marker after verifying state consistency."
+    return
+  fi
+  # (b) stale .in_progress markers (>6h likely orphaned)
+  local stale_markers
+  stale_markers=$(find "${results_root}" -maxdepth 5 -name ".in_progress" -type f -mmin +360 2>/dev/null || true)
+  if [[ -n "${stale_markers}" ]]; then
+    echo "${stale_markers}" | while IFS= read -r m; do echo "    stale (>6h): ${m}"; done
+    warn "B-884 found stale .in_progress marker(s) >6h old — likely orphaned by killed runner. Manual cleanup recommended (verify no live pid + rm marker)."
+    # Not fatal — runner might restart and reuse; warn only.
+  fi
+  pass "B-884 no half-deleted run substrate detected"
+}
+
 main() {
   echo "=== P79 Preflight v2 ==="
   echo "project_dir=${PROJECT_DIR}"
@@ -604,6 +641,7 @@ main() {
   check_openai_api_key
   check_vwa_evaluator_import
   check_vwa_evaluator_paper_grade  # B-793: skipped unless --paper-grade
+  check_clear_tasks_recovery       # B-884: skipped unless --paper-grade
 
   if (( EXIT_CODE == 0 )); then
     echo "Preflight completed successfully."

@@ -50,11 +50,27 @@
 # Sentinel files:
 #   results/visualwebarena/phase1/<run_id>/<condition_id=phase1_learned_router>/condition_summary_v2.json
 
-set -uo pipefail
+set -euo pipefail
+# B-879 (/stress A1.24 P0-6-B*, 2026-05-17): -e fail-fast added — pre-fix
+# `-uo pipefail` would let partial-error orchestrator pass through to chain
+# launch (e.g. silent typo in build_cls_router_chain), masking failures
+# until cell-level downstream. Baseline orchestrator queue_phase1_paper_grade.sh
+# already uses -euo (default Bash strict mode).
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_DIR}"
+
+# B-879 P0-6-B*: source shared paper-grade gates lib (parity baseline
+# orchestrator). Provides: init_paper_grade_env (loads vwa_env_remote.sh →
+# preflight Gate 4 reachability), acquire_site_lock / release_site_lock,
+# load_proxy_api_key, mint_run_id, reset_and_auth_gate, assert_a100_url_locality,
+# assert_no_cross_mode_collision. Pre-fix: router script had ZERO lib
+# integration → wrong-host launches, missing env wires, no orchestrator
+# flock → Pass-2 fire fragile.
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/_lib_paper_grade_gates.sh"
+init_paper_grade_env "${REPO_DIR}"
 
 # B-395 (/stress A1.1 v8 3-AI overlap P0-1, 2026-05-16): paper_grade env wire.
 # See `queue_phase1_paper_grade.sh` for full rationale — B-340 GLM hard-block
@@ -68,12 +84,54 @@ SITE_FILTER="${2:-all}"
 log() { echo "[router-phase1 $(date '+%H:%M:%S')] $*"; }
 fail() { log "FAIL: $*"; exit 1; }
 
+# B-879 P0-6-B*: A100 host + URL locality enforcement (parity baseline
+# orchestrator queue_phase1_paper_grade.sh:113-128 `require_paper_grade_host`).
+# Pre-fix: router script could fire from DGX dev session → paper hero numbers
+# risk producing from wrong substrate. Override knob: P79_PAPER_GRADE_HOST=1
+# for CI / future approved hosts.
+require_paper_grade_host() {
+  local hn
+  hn="$(hostname 2>/dev/null || true)"
+  if [[ "${P79_PAPER_GRADE_HOST:-0}" == "1" ]]; then
+    log "  paper-grade host: ${hn} (P79_PAPER_GRADE_HOST=1 override)"
+  elif [[ "${hn}" =~ (condense|a100|ubuntu) ]]; then
+    log "  paper-grade host: ${hn} (matched condense|a100|ubuntu)"
+  else
+    fail "Refusing paper-grade Pass-2 router launch on non-A100 host '${hn}'.
+       Phase 1a paper-grade target = Condenser A100 (memory project_paper_grade_target_host).
+       Re-run on a100-jiaming-test (ssh condense-a100), OR set P79_PAPER_GRADE_HOST=1."
+  fi
+  # URL locality — all VWA URLs must point to localhost (A100 self-hosted docker).
+  assert_a100_url_locality
+}
+
 # ---------------------------------------------------------------------------
 # Pre-launch gates
 # ---------------------------------------------------------------------------
 
 check_gates() {
   local errors=0
+
+  # B-879 P0-6-B*: orchestrator flock + host check FIRST (parity baseline
+  # queue_phase1_paper_grade.sh:L580-595). Pre-fix: two concurrent Pass-2
+  # invocations could both pass Gate 6 and both fire chains → bypass
+  # queue_chain.sh per-site flock (which fires AFTER chain start). Now:
+  # orchestrator-level lock closes the race window.
+  ORCH_LOCK_DIR="${REPO_DIR}/.locks"
+  mkdir -p "${ORCH_LOCK_DIR}"
+  ORCH_LOCK="${ORCH_LOCK_DIR}/phase1_router_orchestrator.lock"
+  exec {ORCH_FD}>"${ORCH_LOCK}"
+  if ! flock -n -x "${ORCH_FD}"; then
+    stale_pid="$(cat "${ORCH_LOCK}" 2>/dev/null || echo unknown)"
+    fail "Another paper-grade router orchestrator instance holds ${ORCH_LOCK} (pid ${stale_pid}). Wait for it to complete or kill stale lock holder."
+  fi
+  echo "$$" > "${ORCH_LOCK}"
+  # Lock auto-releases on shell exit (FD closes); trap rm for clean cleanup.
+  trap "rm -f '${ORCH_LOCK}' 2>/dev/null; exec {ORCH_FD}>&-; exit" EXIT INT TERM
+  log "router orchestrator lock acquired: ${ORCH_LOCK} (pid $$)"
+
+  # B-879 P0-6-B*: host + URL locality enforcement BEFORE gates run.
+  require_paper_grade_host
 
   log "=== Gate 1: preregistration.md threshold lock + v7 walk-back ==="
   if ! grep -q "^status: locked" docs/checkpoints/pre_run/preregistration.md 2>/dev/null; then
@@ -182,15 +240,15 @@ check_gates() {
   fi
 
   log "=== Gate 8: No conflicting active runs ==="
+  # B-879 P0-6-B*: removed `ALLOW_ACTIVE_RUNS=1` escape hatch. Pass-2 router
+  # fire is paper-grade scope — any active runner on same site = cross-baseline
+  # contamination per CLAUDE.md hard rule "same site only one baseline at a
+  # time". Was: bypass flag allowed warn-and-proceed; now: hard fail.
   active=$(pgrep -f "run_experiment.*--config" | wc -l)
   if [ "$active" -gt 0 ]; then
     pgrep -af "run_experiment.*--config" | sed 's/^/    /'
-    if [ "${ALLOW_ACTIVE_RUNS:-0}" == "1" ]; then
-      log "  WARN: $active active runs but ALLOW_ACTIVE_RUNS=1 — proceeding."
-    else
-      log "  FAIL: $active active run(s); Pass-2 cannot run parallel to Pass-1 on same site."
-      errors=$((errors+1))
-    fi
+    log "  FAIL: $active active run(s); Pass-2 cannot run parallel to Pass-1 on same site (CLAUDE.md hard rule)."
+    errors=$((errors+1))
   else
     log "  OK"
   fi
@@ -268,7 +326,13 @@ dry_run() {
 launch_chain() {
   local label=$1
   local builder=$2
-  local logfile="logs/queue_phase1_router_${label}.log"
+  # B-879 P0-6-B*: timestamped log filenames (parity baseline orchestrator).
+  # Pre-fix: static `logs/queue_phase1_router_<label>.log` → re-fire would
+  # overwrite forensic. Now: per-invocation timestamp + `.latest.log` symlink
+  # for live tail. Same convention as baseline queue_phase1_paper_grade.sh.
+  local ts; ts="$(date +%Y%m%d_%H%M%S)"
+  local logfile="logs/queue_phase1_router_${label}_${ts}.log"
+  local latest_log="logs/queue_phase1_router_${label}.latest.log"
   mkdir -p logs
 
   local args=()
@@ -281,7 +345,11 @@ launch_chain() {
   FORCE_NEW=1 RESET_BEFORE=1 nohup bash scripts/queues/queue_chain.sh "${args[@]}" \
     > "$logfile" 2>&1 &
   local pid=$!
-  log "  PID $pid, log $logfile"
+  # Update .latest.log symlink for live tail (rm -f tolerant if already-gone)
+  rm -f "$latest_log" 2>/dev/null || true
+  ln -s "$(basename "$logfile")" "$latest_log" 2>/dev/null || true
+  log "  PID $pid, log $logfile (live tail: $latest_log)"
+  echo "$pid" > "logs/queue_phase1_router_${label}_${ts}.pid"
   echo "$pid" > "logs/queue_phase1_router_${label}.pid"
 }
 

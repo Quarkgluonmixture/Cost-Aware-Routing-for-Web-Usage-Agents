@@ -43,7 +43,7 @@ DGX_RESULTS="${REPO_ROOT}/results/visualwebarena/phase1/"
 
 mkdir -p "${DGX_RESULTS}"
 
-# B-859 (/stress A1.24 P0-5-AB*, 2026-05-17): single-host flock on sync
+# B-877 (/stress A1.24 P0-5-AB*, 2026-05-17): single-host flock on sync
 # script to prevent concurrent rsync overlap. A100 sync >15min (slow VPN
 # or large artifacts) → next cron tick fires concurrent rsync → two rsync
 # instances both write same ${DGX_RESULTS} + share /tmp/rsync_a100_last.log
@@ -92,7 +92,7 @@ fi
 # Run rsync with SSH chain. SSH config alias condense-a100 resolves via quark
 # ProxyCommand. ConnectTimeout matters because UCL Cisco VPN can drop.
 #
-# B-859: rsync log path now per-PID (was shared /tmp/rsync_a100_last.log
+# B-877: rsync log path now per-PID (was shared /tmp/rsync_a100_last.log
 # → concurrent instances overwrote each other's diagnostic). Lock above
 # prevents true concurrency, but if lock fails-open on platform without
 # flock, per-PID log keeps forensic separate.
@@ -108,7 +108,7 @@ fi
 SUMMARY_AFTER=$(find "${DGX_RESULTS}" -maxdepth 4 -name "condition_summary_v2.json" 2>/dev/null | sort)
 NEW_SUMMARIES=$(comm -13 <(echo "${SUMMARY_BEFORE}") <(echo "${SUMMARY_AFTER}") | grep -v '^$' || true)
 
-# B-860 (/stress A1.24 P0-5-AB* sub-b, 2026-05-17): also detect DELETED
+# B-878 (/stress A1.24 P0-5-AB* sub-b, 2026-05-17): also detect DELETED
 # summaries. Pre-fix: A100 clear_tasks → rsync --delete-after propagates
 # deletion to DGX → NEW_SUMMARIES empty → exit 0 → no analysis refresh →
 # Obsidian cells.base + GLM PLAYBOOK show stale SR from old finalized
@@ -119,7 +119,7 @@ DELETED_SUMMARIES=$(comm -23 <(echo "${SUMMARY_BEFORE}") <(echo "${SUMMARY_AFTER
 if [[ -n "${DELETED_SUMMARIES}" ]]; then
   log "Deleted condition_summary_v2.json (propagated from A100 clear_tasks):"
   echo "${DELETED_SUMMARIES}" | while read -r s; do log "  - ${s}"; done
-  # B-860: log to dedicated jsonl + ntfy high priority. Operator audit trail.
+  # B-878: log to dedicated jsonl + ntfy high priority. Operator audit trail.
   mkdir -p "${REPO_ROOT}/logs/cron"
   DEL_LOG="${REPO_ROOT}/logs/cron/sync_a100_deletions.jsonl"
   while IFS= read -r del_path; do

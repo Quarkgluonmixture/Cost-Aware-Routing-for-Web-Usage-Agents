@@ -25,7 +25,7 @@ Examples:
     python scripts/maintenance/clear_tasks.py --run-dir results/.../B1_run \
         --condition phase1_som_router_0 --clean-orphan-artifacts
 
-Safety guards (/stress A1.24 B-855~B-871, 2026-05-17):
+Safety guards (/stress A1.24 B-873~B-889, 2026-05-17):
     - `--force` requires `--confirm-run-id <run_id>` matching the target run; rejects
       when (a) any `.in_progress` marker present per-task, (b) live `pgrep -f
       run_experiment.*--config.*<site>` returns active PID, (c) `P79_PAPER_GRADE=1`
@@ -68,13 +68,13 @@ except ImportError:  # pragma: no cover — non-POSIX dev env
 _EXCLUDED_DIRS = {"analysis", "task_configs", "_vwa"}
 
 _VALID_SITES = {"classifieds", "reddit", "shopping"}
-"""B-870 (/stress A1.24 P1-6-A, 2026-05-17): CLAUDE.md hard rule
+"""B-888 (/stress A1.24 P1-6-A, 2026-05-17): CLAUDE.md hard rule
 "VWA 只有 shopping/reddit/classifieds 三站" enforced at entry — typo
 `--site shoping` previously silent no-op + "skipped 0" misled operator into
 re-firing runner over stale episodes."""
 
 
-# B-862 (/stress A1.24 P0-7-C*, 2026-05-17): import canonical safe_unlink /
+# B-880 (/stress A1.24 P0-7-C*, 2026-05-17): import canonical safe_unlink /
 # safe_rmtree + clear_task_files from `p79.experiment.cleanup` shared module.
 # Pre-fix: clear_tasks defined these locally + watchdog L1830-1850 inlined
 # bare shutil.rmtree/unlink → code-path divergence (gemini "structural lie"
@@ -88,17 +88,17 @@ from p79.experiment.cleanup import (
 
 
 def _run_lock_path(run_dir: Path) -> Path:
-    """B-858 (/stress A1.24 P0-4-AB*): per-run advisory lock path.
+    """B-876 (/stress A1.24 P0-4-AB*): per-run advisory lock path.
 
     Uses sha256[:16] of resolved run_dir absolute path so the lock survives
     rename/symlink games. /tmp keeps it host-local (cross-host coordination
-    handled separately at sync_a100 layer, see B-859/B-860)."""
+    handled separately at sync_a100 layer, see B-877/B-878)."""
     run_hash = hashlib.sha256(str(run_dir.resolve()).encode()).hexdigest()[:16]
     return Path(f"/tmp/p79_clear_tasks_{run_hash}.lock")
 
 
 def _acquire_run_lock(run_dir: Path) -> Optional[IO[str]]:
-    """B-858: acquire exclusive flock; return open fd handle (caller closes
+    """B-876: acquire exclusive flock; return open fd handle (caller closes
     on exit, kernel releases lock). Returns None if fcntl unavailable
     (non-POSIX) — caller proceeds at-own-risk with explicit warning."""
     if not _HAS_FCNTL:
@@ -131,7 +131,7 @@ def _acquire_run_lock(run_dir: Path) -> Optional[IO[str]]:
 def _parse_task_ids(spec: str, *, max_task_id: Optional[int] = None) -> List[int]:
     """Parse '85-131' or '80,95,104' or '85-90,95,100-104' into sorted list.
 
-    B-868 (/stress A1.24 P1-5-A, 2026-05-17): sanity guards added —
+    B-886 (/stress A1.24 P1-5-A, 2026-05-17): sanity guards added —
     rejects `lo > hi` (typo `100-99` previously silently produced empty
     range, reported as "skipped 0 (not found)", misleading operator),
     rejects negatives, and caps at `max_task_id` if provided (passed in
@@ -143,7 +143,7 @@ def _parse_task_ids(spec: str, *, max_task_id: Optional[int] = None) -> List[int
         part = part.strip()
         if not part:
             raise ValueError(f"--tasks empty segment in spec {spec!r}")
-        # B-868 edge: leading minus sign (negative task_id) — reject explicitly
+        # B-886 edge: leading minus sign (negative task_id) — reject explicitly
         # before split, since split('-',1) on '-5' yields ('','5') → confusing
         # 'int("")' ValueError trace. P79 task_ids are always non-negative.
         if part.startswith("-"):
@@ -182,7 +182,7 @@ def _parse_task_ids(spec: str, *, max_task_id: Optional[int] = None) -> List[int
 
 
 def _has_active_runner(site: str) -> Optional[List[str]]:
-    """B-855 (/stress A1.24 P0-1-ABC*, 2026-05-17): pgrep for active runner
+    """B-873 (/stress A1.24 P0-1-ABC*, 2026-05-17): pgrep for active runner
     processes on the target site. Returns list of "PID CMDLINE" strings if
     runners active, None if none. Used by --force to reject deletion when
     a runner is mid-flight (pilot wave-1 destruction 2026-04-30 实证 —
@@ -205,7 +205,7 @@ def _has_active_runner(site: str) -> Optional[List[str]]:
 
 
 def _has_in_progress_marker(cond_dir: Path, site: str, task_ids: List[int]) -> List[int]:
-    """B-855 / P0-2 companion: scan per-task `.in_progress` markers under
+    """B-873 / P0-2 companion: scan per-task `.in_progress` markers under
     `artifacts/{site}_task_{tid}/.in_progress`. Returns list of task_ids
     that have an active marker (parity with watchdog L1427/L1444)."""
     art_dir = cond_dir / "artifacts"
@@ -220,7 +220,7 @@ def _has_in_progress_marker(cond_dir: Path, site: str, task_ids: List[int]) -> L
 
 
 def _ntfy_force_alert(run_dir: Path, condition: str, site: str, tasks: List[int]) -> None:
-    """B-855 / P0-1: best-effort ntfy alert on --force invocation.
+    """B-873 / P0-1: best-effort ntfy alert on --force invocation.
     Audit trail substrate (operator visibility for multi-session 误用).
     Topic `p79-claude` is the project default."""
     try:
@@ -241,7 +241,7 @@ def _ntfy_force_alert(run_dir: Path, condition: str, site: str, tasks: List[int]
         pass  # ntfy is best-effort, never blocks deletion
 
 
-# B-862 / B-863: `_emit_manual_clear_event` removed — Option K event log is
+# B-880 / B-881: `_emit_manual_clear_event` removed — Option K event log is
 # now centralized in `p79.experiment.cleanup.clear_task_files` (called below
 # in per-task loop). Single emit-site eliminates fix-one-forget-other drift
 # (lesson: A1.4 B-451 `_shared_vl_utils` 4-consumer drift).
@@ -259,19 +259,19 @@ def _clean_orphan_artifacts(
     belong to an in-progress episode (runner creates artifacts/steps before writing
     the summary).
 
-    B-856 (/stress A1.24 P0-2-AB*, 2026-05-17): mtime cutoff alone is
+    B-874 (/stress A1.24 P0-2-AB*, 2026-05-17): mtime cutoff alone is
     insufficient for long-running B0 episodes (5-15 min wallclock + LLM
     eval). Watchdog has dual-guard (`.in_progress` marker + mtime); clear_tasks
     now matches via `_in_progress_marker_present` per-artifact + per-steps.
 
-    B-857 (/stress A1.24 P0-3-ABC*, 2026-05-17): `.stale_<ts>` archive
+    B-875 (/stress A1.24 P0-3-ABC*, 2026-05-17): `.stale_<ts>` archive
     skip (parity with watchdog L1418 + L1435). Runner-side `_run_episode`
     archives prior-attempt forensic to `<task>.stale_<ts>` siblings when
     `.in_progress` marker present (runner-crash recovery path, B-488).
     Pre-fix clear_tasks orphan mode treated these as deletable orphans →
     forensic loss. Now: skip-by-name like watchdog.
 
-    B-858 (/stress A1.24 P0-4-AB*, 2026-05-17): all deletions wrapped in
+    B-876 (/stress A1.24 P0-4-AB*, 2026-05-17): all deletions wrapped in
     `safe_rmtree` / `safe_unlink` — idempotent vs concurrent watchdog
     orphan-clean race (was: bare `shutil.rmtree` raised FileNotFoundError
     on 2nd cleaner, halted digest cleanup, left half-deleted state).
@@ -302,7 +302,7 @@ def _clean_orphan_artifacts(
             for artifact in sorted(art_dir.iterdir()):
                 if not artifact.is_dir():
                     continue
-                # B-857: skip B-488 forensic archives (no-summary by design)
+                # B-875: skip B-488 forensic archives (no-summary by design)
                 if ".stale_" in artifact.name:
                     skipped_stale_archive += 1
                     continue
@@ -311,7 +311,7 @@ def _clean_orphan_artifacts(
                 if artifact.stat().st_mtime > cutoff:
                     skipped_recent += 1
                     continue
-                # B-856: respect runner .in_progress marker (dual-guard parity
+                # B-874: respect runner .in_progress marker (dual-guard parity
                 # with watchdog L1427-1428)
                 if (artifact / ".in_progress").exists():
                     skipped_in_progress += 1
@@ -327,7 +327,7 @@ def _clean_orphan_artifacts(
         # 2. Orphan steps files (steps JSONL without corresponding summary)
         if ep_dir.exists():
             for steps_file in sorted(ep_dir.glob("*_steps_v2.jsonl")):
-                # B-857: skip <task>.stale_<ts>.jsonl archives (parity watchdog L1435)
+                # B-875: skip <task>.stale_<ts>.jsonl archives (parity watchdog L1435)
                 if ".stale_" in steps_file.name:
                     skipped_stale_archive += 1
                     continue
@@ -338,7 +338,7 @@ def _clean_orphan_artifacts(
                 if steps_file.stat().st_mtime > cutoff:
                     skipped_recent += 1
                     continue
-                # B-856: per-episode .in_progress marker (parity watchdog L1444-1445)
+                # B-874: per-episode .in_progress marker (parity watchdog L1444-1445)
                 ep_stem = steps_file.name.replace("_steps_v2.jsonl", "")
                 if (art_dir / ep_stem / ".in_progress").exists():
                     skipped_in_progress += 1
@@ -354,9 +354,9 @@ def _clean_orphan_artifacts(
     if skipped_recent:
         print(f"  (skipped {skipped_recent} recently-modified item(s) — may be in-progress)")
     if skipped_in_progress:
-        print(f"  (skipped {skipped_in_progress} item(s) with .in_progress marker — B-856 guard)")
+        print(f"  (skipped {skipped_in_progress} item(s) with .in_progress marker — B-874 guard)")
     if skipped_stale_archive:
-        print(f"  (skipped {skipped_stale_archive} .stale_<ts> forensic archive(s) — B-857 guard)")
+        print(f"  (skipped {skipped_stale_archive} .stale_<ts> forensic archive(s) — B-875 guard)")
     return deleted
 
 
@@ -373,9 +373,9 @@ def main() -> int:
     p.add_argument("--force", action="store_true",
                     help="Also delete tasks that may be in-progress (has steps but no summary). "
                          "REQUIRES --confirm-run-id <run_id>; rejects if .in_progress marker present, "
-                         "active runner PID detected, OR P79_PAPER_GRADE=1 env set (B-855).")
+                         "active runner PID detected, OR P79_PAPER_GRADE=1 env set (B-873).")
     p.add_argument("--confirm-run-id", default=None,
-                    help="When --force is used, must equal the run-dir basename (B-855 double-flag).")
+                    help="When --force is used, must equal the run-dir basename (B-873 double-flag).")
     args = p.parse_args()
 
     # Validate: either --tasks or --clean-orphan-artifacts must be provided
@@ -386,7 +386,7 @@ def main() -> int:
     if args.tasks and not args.site:
         p.error("--site is required when using --tasks")
 
-    # B-870 (/stress A1.24 P1-6-A): --site whitelist enforcement.
+    # B-888 (/stress A1.24 P1-6-A): --site whitelist enforcement.
     # CLAUDE.md hard rule "VWA 只有 shopping/reddit/classifieds 三站"
     # previously not enforced at entry script — typo `--site shoping`
     # silently passed → no prefix match → "skipped 0" misled operator.
@@ -398,7 +398,7 @@ def main() -> int:
 
     run_dir = Path(args.run_dir).resolve()
 
-    # B-858 (/stress A1.24 P0-4-AB*): acquire per-run advisory lock BEFORE any
+    # B-876 (/stress A1.24 P0-4-AB*): acquire per-run advisory lock BEFORE any
     # deletion. Held until process exit (kernel releases on fd close). Prevents
     # two concurrent clear_tasks from leaving half-deleted state (digest cleanup
     # in 2nd caller halted by FileNotFoundError on already-removed file).
@@ -425,7 +425,7 @@ def main() -> int:
     art_dir = cond_dir / "artifacts"
     site = args.site
 
-    # B-868 (/stress A1.24 P1-5-A): pass max_task_id cap to _parse_task_ids.
+    # B-886 (/stress A1.24 P1-5-A): pass max_task_id cap to _parse_task_ids.
     # Best-effort scored_task_count lookup; fall back to None if site config
     # missing (legacy archive runs).
     _max_tid: Optional[int] = None
@@ -439,11 +439,11 @@ def main() -> int:
     try:
         task_ids = _parse_task_ids(args.tasks, max_task_id=_max_tid)
     except ValueError as _parse_exc:
-        # B-868: surface clean error (was bare ValueError traceback)
+        # B-886: surface clean error (was bare ValueError traceback)
         print(f"ERROR: {_parse_exc}", file=sys.stderr)
         return 2
 
-    # B-855 (/stress A1.24 P0-1-ABC*): --force hardening cluster.
+    # B-873 (/stress A1.24 P0-1-ABC*): --force hardening cluster.
     # Paper-grade env disables --force entirely.
     if args.force and os.environ.get("P79_PAPER_GRADE", "") == "1":
         print(
@@ -514,7 +514,7 @@ def main() -> int:
                 in_progress_skipped += 1
                 continue
 
-        # B-862 (/stress A1.24 P0-7-C*): per-task deletion now via shared
+        # B-880 (/stress A1.24 P0-7-C*): per-task deletion now via shared
         # `clear_task_files` API (safe_unlink/safe_rmtree + Option K event
         # emission rolled into single call). Dry-run output handled inline
         # because shared API's dry_run=True returns False and skips deletion;
@@ -552,7 +552,7 @@ def main() -> int:
             else:
                 skipped += 1
 
-    # B-872 (/stress A1.24 P1-8-C, 2026-05-17): `.cleaning` flag wrapping
+    # B-890 (/stress A1.24 P1-8-C, 2026-05-17): `.cleaning` flag wrapping
     # digest + cond_summary operations. Pre-fix: digest atomic write
     # (B-226) + cond_summary unlink were independently atomic but no joint
     # guarantee — Ctrl+C / crash between them left "digest cleaned ✓ +
@@ -572,7 +572,7 @@ def main() -> int:
 
     # --- Clean digest records for deleted tasks ---
     #
-    # B-864 (/stress A1.24 P1-1-A* disclose-only, 2026-05-17): digest layer
+    # B-882 (/stress A1.24 P1-1-A* disclose-only, 2026-05-17): digest layer
     # is fully RETIRED — empirical 2026-05-17 scan finds zero digest_*.jsonl
     # files on filesystem + zero `aggregate_*.py` consumers (B-743 retired
     # watchdog write path; aggregators followed). `validate_run.py:920-936`
@@ -602,7 +602,7 @@ def main() -> int:
                 except Exception:
                     keep.append(line)
                     continue
-                # B-867 (/stress A1.24 P1-4-C*, 2026-05-17): int/string type
+                # B-885 (/stress A1.24 P1-4-C*, 2026-05-17): int/string type
                 # coercion for cross-baseline (WA) parity. WebArena (WA)
                 # digest may store task_id as string ("123") while
                 # _parse_task_ids returns int; `tid in task_id_set` then
@@ -655,7 +655,7 @@ def main() -> int:
     # This ensures the watchdog and queue scripts detect the condition as
     # incomplete and re-run the missing tasks + post-analysis.
     #
-    # B-871 (/stress A1.24 P1-7-A, 2026-05-17): glob `*.json` was fragile —
+    # B-889 (/stress A1.24 P1-7-A, 2026-05-17): glob `*.json` was fragile —
     # any future task_configs sibling (e.g. `_manifest.json`, `.skipped.json`)
     # would inflate `total` → `remaining < total` permanently true → infinite
     # re-aggregation loop. Switched to `*_task_*.json` precise pattern matching
@@ -672,12 +672,12 @@ def main() -> int:
                 if args.dry_run:
                     print(f"  [dry-run] rm {cond_summary_path.relative_to(run_dir)}  (stale: {remaining}/{total} episodes)")
                 else:
-                    # B-858: safe_unlink — concurrent watchdog cleanup race-safe.
+                    # B-876: safe_unlink — concurrent watchdog cleanup race-safe.
                     if safe_unlink(cond_summary_path):
                         print(f"  deleted stale condition_summary ({remaining}/{total} episodes remaining)")
                 cond_summary_removed = True
 
-    # B-872 closure: remove .cleaning flag (all critical ops past this point)
+    # B-890 closure: remove .cleaning flag (all critical ops past this point)
     if _cleaning_flag is not None and _cleaning_flag.exists():
         try:
             _cleaning_flag.unlink()
