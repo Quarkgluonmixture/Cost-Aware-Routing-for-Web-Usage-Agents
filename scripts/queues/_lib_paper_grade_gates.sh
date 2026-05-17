@@ -38,6 +38,17 @@ init_paper_grade_env() {
     source "${repo_dir}/scripts/vwa_env_remote.sh"
   fi
   export WIKIPEDIA_ZIM_VERSION="${WIKIPEDIA_ZIM_VERSION:-wikipedia_en_all_maxi_2025-08}"
+  # B-548 (/stress A1.5 P0-1-AB* codex+Claude OOB, 2026-05-17): paper_grade env
+  # propagation to leaf queue scripts. Pre-fix only `queue_phase1_paper_grade.sh`
+  # + `queue_phase1_router_paper_grade.sh` master orchestrators exported
+  # `P79_PAPER_GRADE=1`; leaf queues (`queue_baseline.sh`, `queue_phantom_*.sh`)
+  # only called this helper which did NOT set the env. Manual single-cell
+  # reruns + watchdog re-spawn paths therefore ran in `paper_grade=False`
+  # fail-open mode → B-544 evaluator hard-raise + B-486 paper_grade
+  # diagnostic_controls hard-block + B-340 GLM hard-block all dormant.
+  # Default-on with `${VAR:-1}` allows explicit `P79_PAPER_GRADE=0 bash
+  # scripts/queues/queue_baseline.sh ...` dev opt-out for iteration speed.
+  export P79_PAPER_GRADE="${P79_PAPER_GRADE:-1}"
 }
 
 # ---------- 2. A100 URL-locality preflight (Bug 2 fix; B-298 A1.17 P0-1 hardening) ----------

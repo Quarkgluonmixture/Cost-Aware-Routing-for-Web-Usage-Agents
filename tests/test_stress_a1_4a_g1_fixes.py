@@ -46,35 +46,61 @@ def test_backend_cfg_uses_deepcopy_not_shallow_dict():
 
 
 # ---------------------------------------------------------------------------
-# B-165 — fallback_finish reward override guard (Claude F2 + codex B3 dual)
+# B-165 / B-545 — reward override mechanism RETIRED entirely
 # ---------------------------------------------------------------------------
+# Lineage:
+#   B-165 (A1.4a, commit `a1b04e8`, 2026-05-16): narrowed override conditions
+#     to require parse_valid AND not fallback_finish (`_real_finish` guard)
+#     to close cross-baseline B0-vs-B1/B2 fallback_finish differential.
+#   B-545 (A1.5b Phase 2, commit `7832008`, 2026-05-17): eliminated the
+#     override mechanism entirely. `success = bool(score >= 1.0)` from VWA
+#     evaluator output, no post-hoc adjustment.
+#
+# This test now pins the **B-545 retirement** invariant rather than the
+# B-165 narrowing invariant (the latter is implied by the former). Pre-fix
+# /stress A1.5 P0-3-A (Claude F2, 2026-05-17): test still asserted
+# `_real_finish` GUARD VARIABLE presence after B-545 retired the entire
+# block, so pytest went RED. B-550 inverts the assertions.
 
 
-def test_reward_override_requires_real_finish_not_fallback():
-    """Reward override (score 0→1 when env reward>0) must require a REAL
-    agent finish (parse_valid AND not fallback_finish). Pre-B-165 it only
-    checked action_type==finish, so keyword-rescue fallbacks (B1/B2 frequent,
-    B0 rare) silently triggered SR inflation differentially → paper-grade
-    cross-baseline contamination.
+def test_reward_override_mechanism_retired_post_B545():
+    """B-545 (A1.5b Phase 2, 2026-05-17) retired the reward-override mechanism
+    entirely. `success` derives strictly from `score >= 1.0` where `score` is
+    the VWA evaluator output. Pre-B-545 the runner secretly overrode `score=0`
+    → `score=1` when agent self-reported finish + env_reward>0, contradicting
+    paper §3 estimand claim "canonical evaluator success, no post-hoc
+    adjustment" (top-tier reviewer estimand-schizophrenia attack vector).
+
+    This test pins the post-B-545 invariant: the override block must NOT
+    exist in `runner/main.py`. Companion B-165 narrowing (real-finish guard)
+    is subsumed because the entire mechanism is gone.
     """
     src = (REPO_ROOT / "p79/experiment/runner/main.py").read_text(encoding="utf-8")
-    # Must define _real_finish guard
-    assert "_real_finish" in src, "B-165 missing _real_finish guard variable"
-    # The guard must check both fallback_finish AND parse_valid
-    assert "fallback_finish" in src and "parse_valid" in src, (
-        "B-165 guard must verify both fallback_finish flag and parse_valid"
+    # B-545: the override mechanism is gone. None of its identifying tokens
+    # should appear in active (non-comment) code.
+    code_only = "\n".join(
+        line for line in src.splitlines() if not line.lstrip().startswith("#")
     )
-    # Reward override block must reference _real_finish, not direct action_type check
-    override_idx = src.find("score = 1.0")
-    assert override_idx >= 0
-    # Find the if-condition just before this override (preceding 30 lines)
-    pre_override = src[max(0, override_idx - 1500):override_idx]
-    assert "_real_finish" in pre_override, (
-        "B-165 reward override must use _real_finish guard"
+    # The _real_finish guard variable (B-165 era) must be retired.
+    assert "_real_finish" not in code_only, (
+        "B-545 regression: `_real_finish` guard variable resurrected — "
+        "override mechanism is supposed to be retired entirely, not gated."
     )
-    # Confirm the old loose check pattern is gone from the guard block
-    assert 'step_records[-1].get("action_type", "") in ("finish", "stop")' not in pre_override, (
-        "B-165 regression: old action_type-only check still gates reward override"
+    # The score-override assignment must not appear in active code.
+    assert "score = 1.0" not in code_only, (
+        "B-545 regression: `score = 1.0` override assignment present in "
+        "active code — override mechanism must be removed, not narrowed."
+    )
+    # The logger.warning string used by the old override branch must be gone.
+    assert "Reward override" not in code_only, (
+        "B-545 regression: `Reward override` log string still in active "
+        "code — override mechanism residue."
+    )
+    # Positive contract: success derives from `score >= 1.0` (the canonical
+    # line at `_run_episode` close).
+    assert "success = bool(score >= 1.0)" in code_only, (
+        "B-545 contract: `success = bool(score >= 1.0)` line must be "
+        "the canonical success derivation post-override-retirement."
     )
 
 
