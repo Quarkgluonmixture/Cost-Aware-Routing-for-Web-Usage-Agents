@@ -13,6 +13,18 @@ except Exception:  # pragma: no cover - optional runtime dependency
     np = None
 from PIL import Image
 
+# B-422 (/stress A1.3 v9 Mode A P1-11, 2026-05-17): named injection
+# distance thresholds. Pre-fix `_inject_css_dropdown_options` used 150 px
+# inline and `_inject_select_options` used 100 px inline — same primitive
+# (nearest-AXTree-node match), two magic numbers, no doc trail. Constants
+# now module-level: CSS custom dropdowns have larger triggers (e.g. Reddit
+# sort button) so 150 px tolerance is correct; native combobox lines are
+# tightly bound to the SELECT so 100 px is correct. Renaming makes the
+# intent visible; touching one is now a single-line edit.
+_INJECT_DISTANCE_CSS_DROPDOWN_PX = 150
+_INJECT_DISTANCE_NATIVE_SELECT_PX = 100
+
+
 @dataclass
 class P79Observation:
     text: str
@@ -258,6 +270,10 @@ class VWAWrapper:
         # the runner). Paper §3 evidence layer (locator-route ON_TARGET rate)
         # depends on this telemetry being audit-able from JSONL alone.
         _locator_route_meta: Optional[Dict[str, Any]] = None
+        # B-420 (/stress A1.3 v9 Mode B P1-5 OOB, 2026-05-17): same pattern
+        # for select_option dispatch — separate dict so info contract stays
+        # symmetric with locator_route_meta (action_kind discriminator).
+        _select_option_meta: Optional[Dict[str, Any]] = None
 
         if action_type == "click" and "element_id" in action_json:
             # Prefer element_id click (id-based action via AXTree node)
@@ -432,6 +448,18 @@ class VWAWrapper:
                 # input event WITHOUT global Meta+A. press_enter handled by
                 # text trailing-newline detection.
                 from p79.envs.locator_dispatch import dispatch_id_based_type as _lr_type
+                # B-418 (/stress A1.3 v9 Mode B P1-2 OOB sibling propagation
+                # of B-157, 2026-05-17): snapshot tab count BEFORE dispatch so
+                # press_enter that triggers form submit `target=_blank` /
+                # `window.open` can be followed (mirrors click branch B-157
+                # at lines 284-309). Pre-fix: search form Enter opened new
+                # tab → observation stayed bound to old page → state_change
+                # false-no-progress → cross-baseline taxonomy contamination.
+                _num_tabs_before = 0
+                try:
+                    _num_tabs_before = len(self._env.context.pages)
+                except Exception:
+                    pass
                 _lr_result = _lr_type(
                     self._env.page,
                     self._last_obs_nodes_info,
@@ -444,6 +472,16 @@ class VWAWrapper:
                 _locator_route_meta = dict(_lr_result)
                 _locator_route_meta["action_kind"] = "type"
                 if _lr_result.get("success"):
+                    # B-418: mirror click branch (B-157) new-tab switch logic.
+                    try:
+                        _pages_now = self._env.context.pages
+                        if len(_pages_now) > _num_tabs_before:
+                            _new_page = _pages_now[-1]
+                            _new_page.bring_to_front()
+                            self._env.page = _new_page
+                            _locator_route_meta["new_tab_switched"] = True
+                    except Exception as _e:
+                        logger.warning("locator-route type+Enter new-tab switch failed: %s", _e)
                     action = create_none_action()
                     # Locator dispatch already pressed Enter if text ended with
                     # \n (see locator_dispatch.py:dispatch_id_based_type); avoid
@@ -481,8 +519,25 @@ class VWAWrapper:
                 action_json.get("option_label") or action_json.get("option_value") or ""
             )
             option_index = action_json.get("option_index")
+            # B-420 (/stress A1.3 v9 Mode B P1-5 OOB, 2026-05-17):
+            # select_option dispatch result telemetry. Pre-fix bare
+            # `except: logger.warning + create_none_action()` swallowed
+            # JS exceptions + missing-obs cases + no-match cases under a
+            # single no-op tag. Empirical 195/738 archive rows
+            # (action_success=False, page_change=False) were
+            # taxonomy-blind. New `select_option_meta` mirrors
+            # `locator_route_meta` and gets stamped into info dict so the
+            # runner can persist it into StepRecordV2 (paper §3.5
+            # select_option sub-taxonomy).
+            _select_option_meta: Dict[str, Any] = {
+                "action_kind": "select_option",
+                "dispatch_path": None,  # "element_id" | "coordinate" | "missing_obs"
+                "success": None,
+                "error": None,
+            }
 
             if "element_id" in action_json:
+                _select_option_meta["dispatch_path"] = "element_id"
                 # DOM/SoM 路径：用 obs_nodes_info 像素坐标 + elementFromPoint 定位 SELECT
                 try:
                     eid = int(action_json["element_id"])
@@ -499,6 +554,9 @@ class VWAWrapper:
                             eid,
                         )
                         ub = None
+                        _select_option_meta["dispatch_path"] = "missing_obs"
+                        _select_option_meta["success"] = False
+                        _select_option_meta["error"] = "obs_nodes_info_missing_union_bound"
                     else:
                         ub = node_info["union_bound"]
                     if ub is None:
@@ -557,9 +615,18 @@ class VWAWrapper:
                             [x_px, y_px, option_label, option_index],
                         )
                         self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
+                        # B-420: JS evaluate completed without raise (success
+                        # determination is best-effort — actual option match
+                        # outcome is silently `return;` from JS). Recording
+                        # "dispatched" rather than "matched" since the
+                        # current JS does not surface match-vs-no-match.
+                        _select_option_meta["success"] = True
                 except Exception as _e:
                     logger.warning("select_option (element_id=%s) failed: %s", action_json.get("element_id"), _e)
+                    _select_option_meta["success"] = False
+                    _select_option_meta["error"] = f"{type(_e).__name__}: {str(_e)[:160]}"
             elif "coordinate" in action_json:
+                _select_option_meta["dispatch_path"] = "coordinate"
                 # Vision 路径：通过坐标找元素，用 JS 设置选中值
                 try:
                     coord = action_json["coordinate"]
@@ -614,8 +681,11 @@ class VWAWrapper:
                         [x_px, y_px, option_label],
                     )
                     self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
+                    _select_option_meta["success"] = True
                 except Exception as _e:
                     logger.warning("select_option (coordinate) failed: %s", _e)
+                    _select_option_meta["success"] = False
+                    _select_option_meta["error"] = f"{type(_e).__name__}: {str(_e)[:160]}"
             action = create_none_action()
         elif action_type == "wait":
             action = create_none_action()
@@ -661,6 +731,10 @@ class VWAWrapper:
         # None when the step did not invoke locator-route (scroll, wait,
         # coord-only click, etc.).
         info["locator_route_meta"] = _locator_route_meta
+        # B-420 (/stress A1.3 v9 Mode B P1-5 OOB, 2026-05-17): select_option
+        # dispatch telemetry. None when step did not invoke select_option;
+        # otherwise {action_kind, dispatch_path, success, error}.
+        info["select_option_meta"] = _select_option_meta
         p79_obs = self._to_p79_obs(obs, info)
         self._last_obs_nodes_info = p79_obs.obs_nodes_info
         return p79_obs, float(reward), bool(terminated), bool(truncated), info
@@ -711,7 +785,25 @@ class VWAWrapper:
 
     # ---------- form snapshot ----------
 
+    # B-424 (/stress A1.3 v9 Mode B P2-2 / §147 P2-B5 closure, 2026-05-17):
+    # Augment 200-char prefix with `value_len` + `value_djb2` (lightweight
+    # JS hash). Pre-fix the bare prefix collapsed long-value edits beyond
+    # 200 chars into "unchanged" → state_change false-no-progress on form
+    # tasks with description / comment fields. Empirical archive
+    # (codex Mode B receipts) had 25/7271 type actions >200 chars (max 807).
+    # djb2 is sufficient for "did this value change" check; full SHA1 was
+    # considered but per-step JS hashing overhead matters more for the
+    # form snapshot hot path. Compare `(value_len, value_djb2)` in
+    # state_change._form_fields_changed (separate fix); prefix kept for
+    # human debug visibility.
     _FORM_SNAPSHOT_JS = """() => {
+    const _djb2 = (s) => {
+        let h = 5381;
+        for (let i = 0; i < s.length; i++) {
+            h = ((h << 5) + h) ^ s.charCodeAt(i);
+        }
+        return (h >>> 0).toString(16);
+    };
     const fields = [];
     for (const el of document.querySelectorAll('input, textarea, select')) {
         const entry = {
@@ -728,7 +820,13 @@ class VWAWrapper:
             entry.checked = el.checked;
             entry.value = el.value;
         } else {
-            entry.value = (el.value || '').substring(0, 200);
+            const _full = (el.value || '');
+            entry.value = _full.substring(0, 200);
+            // B-424: full-fidelity change detection without storing the
+            // entire payload — len + djb2 hash captures suffix edits the
+            // 200-char prefix would miss.
+            entry.value_len = _full.length;
+            entry.value_djb2 = _djb2(_full);
         }
         fields.push(entry);
     }
@@ -743,25 +841,64 @@ class VWAWrapper:
 }"""
 
     def snapshot_form_fields(self) -> Dict[str, Any]:
-        """JS snapshot of all form field values + scroll position."""
-        empty: Dict[str, Any] = {"fields": [], "scroll_y": 0, "scroll_x": 0, "scroll_height": 0, "client_height": 0}
+        """JS snapshot of all form field values + scroll position.
+
+        B-419 (/stress A1.3 v9 Mode B P1-3 OOB, 2026-05-17): on exception
+        the snapshot now stamps a `snapshot_error` sentinel so downstream
+        `state_change.py` can distinguish "page genuinely has no fields"
+        from "snapshot JS raised mid-navigation race". Pre-fix the bare
+        empty dict collapsed both cases → `state_change` silently
+        suppressed `form_value_changed` evidence → cross-baseline
+        taxonomy contamination (B0 proxy higher network latency → wider
+        race window → systematic SR bias).
+        """
+        empty: Dict[str, Any] = {
+            "fields": [],
+            "scroll_y": 0,
+            "scroll_x": 0,
+            "scroll_height": 0,
+            "client_height": 0,
+            "snapshot_error": None,
+        }
         if self._env is None or self.dry_run:
             return empty
         try:
-            return self._env.page.evaluate(self._FORM_SNAPSHOT_JS)
-        except Exception:
-            return empty
+            result = self._env.page.evaluate(self._FORM_SNAPSHOT_JS)
+            # Ensure snapshot_error key exists in the success path too so
+            # downstream readers don't KeyError on missing-key vs explicit-
+            # None disambiguation.
+            if isinstance(result, dict) and "snapshot_error" not in result:
+                result["snapshot_error"] = None
+            return result
+        except Exception as _e:
+            # B-419: stamp typed error so state_change.py can flag the race
+            # as a distinct page_change_reasons entry instead of silent
+            # no-progress collapse.
+            err_class = type(_e).__name__
+            err_msg = str(_e)[:160]
+            sentinel = dict(empty)
+            sentinel["snapshot_error"] = f"{err_class}: {err_msg}"
+            return sentinel
 
     # ---------- helpers ----------
 
     def _on_dialog(self, dialog: Any) -> None:
         """Auto-handle browser dialogs.
 
-        - confirm / alert: accept (unblocks delete operations on Classifieds)
-        - prompt / beforeunload: dismiss (safer default)
+        - confirm / alert / beforeunload: accept (unblocks navigation +
+          delete operations on Classifieds)
+        - prompt: dismiss (no agent-supplied text input)
+
+        B-423 (/stress A1.3 v9 Mode B P2-1 OOB, 2026-05-17): beforeunload
+        moved from dismiss → accept. Pre-fix dismissing beforeunload meant
+        "stay on page" — go_back / form-submit navigation after dirty form
+        edit would silently cancel, taxonomy-blind. Most paper-grade
+        agents WANT navigation to proceed; accept is the symmetric choice
+        with confirm/alert. The only dialog type that should still dismiss
+        is `prompt` (agent did not author a text-input response).
         """
         try:
-            if dialog.type in ("confirm", "alert"):
+            if dialog.type in ("confirm", "alert", "beforeunload"):
                 dialog.accept()
                 logger.debug("Dialog auto-accepted: type=%s msg=%r", dialog.type, dialog.message)
             else:
@@ -945,7 +1082,8 @@ class VWAWrapper:
             )
             cx, cy = node_centers[best_eid]
             dist = ((cx - dd['cx']) ** 2 + (cy - dd['cy']) ** 2) ** 0.5
-            if dist > 150:  # sanity: within 150px
+            # B-422: named CSS dropdown threshold (was: inline 150).
+            if dist > _INJECT_DISTANCE_CSS_DROPDOWN_PX:
                 continue
             injections[best_eid] = dd['options']
 
@@ -1028,7 +1166,8 @@ class VWAWrapper:
             # Find the <select> whose center is closest to this combobox node
             best = min(select_data, key=lambda s: (s['cx'] - cx) ** 2 + (s['cy'] - cy) ** 2)
             dist = ((best['cx'] - cx) ** 2 + (best['cy'] - cy) ** 2) ** 0.5
-            if dist > 100 or not best['options']:  # sanity: within 100px
+            # B-422: named native select threshold (was: inline 100).
+            if dist > _INJECT_DISTANCE_NATIVE_SELECT_PX or not best['options']:
                 continue
             indent = len(line) - len(line.lstrip('\t'))
             prefix = '\t' * (indent + 1)

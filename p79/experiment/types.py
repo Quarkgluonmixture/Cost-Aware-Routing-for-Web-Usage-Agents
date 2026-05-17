@@ -115,6 +115,14 @@ class StepRecordV2:
     # action_kind ∈ {click, type, hover, upload, clear}. None when step did
     # not invoke locator-route (e.g. scroll / wait / coord-only click).
     locator_route_meta: Optional[Dict[str, Any]] = None
+    # B-420 (/stress A1.3 v9 Mode B P1-5 OOB, 2026-05-17): select_option env
+    # dispatch telemetry — distinguishes JS-exception / obs_nodes_info-missing
+    # / dispatch-completed cases that previously collapsed under a bare
+    # `logger.warning + create_none_action()` silent no-op. Empirical
+    # 195/738 archive select_option rows had action_success=false + no
+    # page_change with no taxonomy attribution. None when step did not
+    # invoke select_option.
+    select_option_meta: Optional[Dict[str, Any]] = None
     # B-284 fix (2026-05-16, A1.8): paper §3.5.1 cite these B0 proxy-specific
     # fields for GLM-rescue de-biasing audit. Pre-fix the runner wrote them to
     # JSONL (`runner/main.py:1663-1669`) but they were absent from this dataclass
@@ -267,6 +275,7 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "parse_failure_reason",
     "image_meta",
     "locator_route_meta",
+    "select_option_meta",  # B-420
     "agent_visible_changed",
 })
 

@@ -1906,6 +1906,11 @@ class ExperimentRunner:
             # so Phase 1a clean run can be audited for Cluster 1 ON_TARGET rate (paper
             # §3 evidence layer for B-01/02/33 fix).
             step_record["locator_route_meta"] = next_info.get("locator_route_meta")
+            # B-420 (/stress A1.3 v9 Mode B P1-5 OOB, 2026-05-17): persist
+            # select_option dispatch telemetry (None when step did not
+            # invoke select_option; otherwise dict with action_kind /
+            # dispatch_path / success / error).
+            step_record["select_option_meta"] = next_info.get("select_option_meta")
             # Confidence metrics (optional, from logprobs extraction)
             if meta.get("mean_logprob") is not None:
                 step_record["confidence"] = {

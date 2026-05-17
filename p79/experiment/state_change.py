@@ -142,6 +142,16 @@ def _form_fields_changed(before_fields: List[Dict[str, Any]], after_fields: List
             return True
         if bf.get("value") != af.get("value"):
             return True
+        # B-424 (/stress A1.3 v9 Mode B P2-2, 2026-05-17): full-fidelity check
+        # — `value` is the 200-char prefix; suffix edits beyond 200 chars
+        # would silently match. value_len + value_djb2 hash (when present
+        # from the upgraded _FORM_SNAPSHOT_JS) captures the full content.
+        # Legacy snapshots without these keys default to None == None →
+        # this clause is no-op when running against archived data.
+        if bf.get("value_len") != af.get("value_len"):
+            return True
+        if bf.get("value_djb2") != af.get("value_djb2"):
+            return True
         if bf.get("checked") != af.get("checked"):
             return True
         if bf.get("selectedIndex") != af.get("selectedIndex"):

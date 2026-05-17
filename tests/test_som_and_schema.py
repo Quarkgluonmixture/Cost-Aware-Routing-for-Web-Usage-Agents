@@ -247,6 +247,10 @@ def test_step_schema_validation_required_fields():
         "parse_failure_reason": None,
         "image_meta": None,
         "locator_route_meta": None,
+        # B-420 (/stress A1.3 v9, 2026-05-17): select_option dispatch meta
+        # symmetric with locator_route_meta. Paper §3.5 select_option
+        # sub-taxonomy depends on key presence.
+        "select_option_meta": None,
         "agent_visible_changed": None,
     }
 
