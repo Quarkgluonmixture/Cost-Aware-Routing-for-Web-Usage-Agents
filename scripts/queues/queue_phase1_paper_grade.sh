@@ -78,11 +78,47 @@ cd "${REPO_DIR}"
 # B-340 hard-block reachable, (c) B-340 RuntimeError fail-fast at init.
 export P79_PAPER_GRADE=1
 
+# B-673 (/stress A1.14 Chunk a P0-2, Claude+codex 2-AI OOB AB, 2026-05-17):
+# orchestrator must enforce paper-grade target host (A100 self-hosted) BEFORE
+# running gates. Header line 20-26 advertises "A100 SSH connectivity verified"
+# + "VWA stack on chosen host" as required, but `check_gates` pre-fix had ZERO
+# implementation of either — DGX dev session + Tailscale endpoints could pass
+# every gate and produce hero numbers from the wrong substrate.
+#
+# Side-effect closure of P1-8 (Claude unique OOB): sourcing _lib_paper_grade_gates
+# pulls in init_paper_grade_env which loads vwa_env_remote.sh — preflight Gate 4
+# now has DATASET/SHOPPING/REDDIT env populated even from fresh shell.
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/_lib_paper_grade_gates.sh"
+init_paper_grade_env "${REPO_DIR}"
+
 MODE="${1:-dry-run}"
 SITE_FILTER="${2:-all}"
 
 log() { echo "[phase1 $(date '+%H:%M:%S')] $*"; }
 fail() { log "FAIL: $*"; exit 1; }
+
+# B-673: require paper-grade host (A100) before gates run.
+# Override knob: P79_PAPER_GRADE_HOST=1 for CI / future approved hostnames.
+# Locality check uses _lib_paper_grade_gates.sh:assert_a100_url_locality
+# already-loaded above.
+require_paper_grade_host() {
+  local hn
+  hn="$(hostname 2>/dev/null || true)"
+  if [[ "${P79_PAPER_GRADE_HOST:-0}" == "1" ]]; then
+    log "  paper-grade host: ${hn} (P79_PAPER_GRADE_HOST=1 override)"
+  elif [[ "${hn}" =~ (condense|a100|ubuntu) ]]; then
+    log "  paper-grade host: ${hn} (matched condense|a100|ubuntu)"
+  else
+    fail "Refusing paper-grade launch on non-A100 host '${hn}'.
+       Phase 1a paper-grade target = Condenser A100 (memory project_paper_grade_target_host).
+       Re-run on a100-jiaming-test (ssh condense-a100), OR set P79_PAPER_GRADE_HOST=1 explicitly."
+  fi
+  # URL locality — paper-grade target = A100 self-hosted docker, all VWA URLs
+  # must point to localhost (no DGX→quark Tailscale substrate substitution).
+  # Reuses lib helper which fail-loud on any non-local URL.
+  assert_a100_url_locality
+}
 
 # ---------------------------------------------------------------------------
 # Pre-launch gates
@@ -119,7 +155,14 @@ check_gates() {
 
   log "=== Gate 3: VWA snapshot baseline committed ==="
   if ! ls results/provenance/vwa_*.json &>/dev/null; then
-    log "  WARN: No vwa_*.json found. Recommend bash scripts/provenance/snapshot_vwa.sh"
+    # B-676 (/stress A1.14 Chunk a P1-5 Claude+codex 2-AI catch AB,
+    # user Q3 = option A, 2026-05-17): WARN → FAIL. Header line 24-26
+    # lists VWA snapshot as required gate; pre-fix WARN allowed launch
+    # without provenance fingerprint → reviewer reproducibility audit gap.
+    log "  FAIL: No vwa_*.json found in results/provenance/"
+    log "        Run: bash scripts/provenance/snapshot_vwa.sh    # captures docker fingerprint + endpoint state"
+    log "        Then commit the resulting results/provenance/vwa_<host>_baseline.json before paper-grade launch."
+    errors=$((errors+1))
   else
     log "  OK ($(ls results/provenance/vwa_*.json | head -3 | tr '\n' ' '))"
   fi
@@ -192,7 +235,14 @@ check_gates() {
     while IFS= read -r cmd; do
       [ -z "$cmd" ] && continue
       cfg_path="$(config_for_cmd "$cmd")"
-      if [ -n "$cfg_path" ] && [ ! -f "$cfg_path" ]; then
+      # B-672 (A1.14): config_for_cmd's default branch now emits UNKNOWN_SCRIPT:<name>
+      # to fail-loud instead of silent empty echo (pre-fix could silently bypass
+      # this gate for any chain command not in the case statement).
+      if [[ "$cfg_path" == UNKNOWN_SCRIPT:* ]]; then
+        log "  FAIL: $cfg_path — chain command uses unrecognized leaf script (update config_for_cmd in queue_phase1_paper_grade.sh)"
+        log "        command: $cmd"
+        missing_cfg=$((missing_cfg+1))
+      elif [ -n "$cfg_path" ] && [ ! -f "$cfg_path" ]; then
         log "  FAIL: missing config $cfg_path  (for: $cmd)"
         missing_cfg=$((missing_cfg+1))
       fi
@@ -217,21 +267,41 @@ check_gates() {
 
 # Map a chain command to its config file path. Mirrors the CFG_NAME convention
 # in queue_baseline.sh / queue_phantom_*.sh (codex stress v6 C9).
+#
+# B-672 (/stress A1.14 Chunk a P0-1, codex Mode B F2 unique + Claude+gemini 2-AI
+# brittle parse, 2026-05-17): full audit of this function:
+#  1. Phantom-SoM config name typo — pre-fix built `exp_v2_<bl>_phantom_<site>.yaml`
+#     (missing `_som_` infix); actual file is `..._phantom_som_<site>.yaml` per
+#     `queue_phantom_som.sh:61-63` CFG_NAME. Gate 7 then FAILed all 6 P-SoM cells
+#     (B0/B1/B2 × cls/red), launch-blocking Phase 1a (codex Mode B F2 OOB).
+#  2. Unquoted `parts=( $cmd )` word-splitting — relied on chain command tokens
+#     never containing whitespace/glob; future router-mode commands with paths
+#     would silently break. Replaced with `read -r -a parts <<< "$cmd"`
+#     (Claude F8 + Gemini F6 2-AI catch).
+#  3. queue_phantom_dom.sh back-compat — symlink to queue_phantom_text.sh;
+#     explicit case prevents silent fall-through to default empty echo if a
+#     future chain definition mistakenly uses legacy mode value.
+#  4. Default branch: fail loud (return non-empty error marker) so Gate 7
+#     callers can detect "unknown script" vs "missing config" instead of the
+#     pre-fix silent empty skip (which let any future leaf script bypass the
+#     config-existence check).
 config_for_cmd() {
   local cmd="$1"
-  local parts=( $cmd )
+  local -a parts
+  # Safe word splitting (handles future quoted/whitespace arg values).
+  read -r -a parts <<< "$cmd"
   local script="${parts[0]}"
   local baseline="${parts[1]}"
   case "$script" in
     queue_baseline.sh)        # <baseline> <mode> <site>
       echo "configs/exp_v2_${baseline}_${parts[2]}_${parts[3]}.yaml" ;;
     queue_phantom_som.sh)     # <baseline> <site>
-      echo "configs/exp_v2_${baseline}_phantom_${parts[2]}.yaml" ;;
-    queue_phantom_text.sh)    # <baseline> <site>
+      echo "configs/exp_v2_${baseline}_phantom_som_${parts[2]}.yaml" ;;
+    queue_phantom_text.sh|queue_phantom_dom.sh)  # <baseline> <site> (dom = back-compat symlink)
       echo "configs/exp_v2_${baseline}_phantom_text_${parts[2]}.yaml" ;;
     queue_phantom_prompt.sh)  # <baseline> <site>
       echo "configs/exp_v2_${baseline}_phantom_prompt_${parts[2]}.yaml" ;;
-    *) echo "" ;;
+    *) echo "UNKNOWN_SCRIPT:${script}" ;;
   esac
 }
 
@@ -371,6 +441,29 @@ case "$MODE" in
     dry_run
     ;;
   launch)
+    # B-674 (/stress A1.14 Chunk a P0-3, gemini Mode C F1 unique OOB, 2026-05-17):
+    # TOCTOU defense around gate-check + launch — pre-fix two concurrent
+    # orchestrator invocations could both see Gate 6 active=0 and both fire
+    # cls+red chains, bypassing queue_chain.sh per-(site,benchmark) flock
+    # which only fires AFTER chain start. flock at orchestrator level closes
+    # the race window between Gate 6 read and chain spawn.
+    ORCH_LOCK_DIR="${REPO_DIR}/.locks"
+    mkdir -p "${ORCH_LOCK_DIR}"
+    ORCH_LOCK="${ORCH_LOCK_DIR}/phase1_orchestrator.lock"
+    exec {ORCH_FD}>"${ORCH_LOCK}"
+    if ! flock -n -x "${ORCH_FD}"; then
+      stale_pid="$(cat "${ORCH_LOCK}" 2>/dev/null || echo unknown)"
+      fail "Another paper-grade orchestrator instance holds ${ORCH_LOCK} (pid ${stale_pid}). Wait for it to complete or kill stale lock holder."
+    fi
+    echo "$$" > "${ORCH_LOCK}"
+    # Lock auto-releases on shell exit (FD closes); trap rm for clean cleanup.
+    trap "rm -f '${ORCH_LOCK}' 2>/dev/null; exec {ORCH_FD}>&-; exit" EXIT INT TERM
+    log "orchestrator lock acquired: ${ORCH_LOCK} (pid $$)"
+
+    # B-673 (A1.14 P0-2): host + URL locality enforcement BEFORE gates run.
+    # Pre-fix: DGX dev session could pass all gates; paper hero numbers risked
+    # producing from wrong substrate.
+    require_paper_grade_host
     check_gates
     case "$SITE_FILTER" in
       all)

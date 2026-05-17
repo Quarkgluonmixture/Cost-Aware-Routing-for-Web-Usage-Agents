@@ -166,6 +166,92 @@ def test_queue_chain_three_baseline_collision_check_present():
     )
 
 
+def _eval_config_for_cmd(orch_path: Path, cmd_arg: str) -> tuple[int, str, str]:
+    """Helper: extract `config_for_cmd` from orchestrator + exercise it.
+
+    Sources just the function via sed range (avoids triggering the orchestrator's
+    top-level `case "$MODE"` which would run dry_run / check_gates / launch).
+    Returns (rc, stdout, stderr).
+    """
+    bash_cmd = (
+        f'eval "$(sed -n \'/^config_for_cmd()/,/^}}$/p\' "{orch_path}")"; '
+        f'config_for_cmd "{cmd_arg}"'
+    )
+    proc = subprocess.run(
+        ["bash", "-c", bash_cmd], capture_output=True, text=True, timeout=10,
+    )
+    return proc.returncode, proc.stdout.strip(), proc.stderr
+
+
+@pytest.mark.parametrize("baseline,site,expected_filename", [
+    ("B0", "classifieds", "configs/exp_v2_B0_phantom_som_classifieds.yaml"),
+    ("B1", "reddit", "configs/exp_v2_B1_phantom_som_reddit.yaml"),
+    ("B2", "shopping", "configs/exp_v2_B2_phantom_som_shopping.yaml"),
+])
+def test_config_for_cmd_phantom_som_canonical_path(baseline, site, expected_filename):
+    """B-672 (/stress A1.14 P0-1, codex Mode B F2 OOB): orchestrator config_for_cmd
+    must map queue_phantom_som.sh chain command to exp_v2_<bl>_phantom_som_<site>.yaml.
+
+    Pre-fix built `..._phantom_<site>.yaml` (missing `_som_` infix), causing Gate 7
+    to FAIL all 6 P-SoM cells on `launch all` (B0/B1/B2 × cls/red).
+    Launch-blocking. The actual config files (per `queue_phantom_som.sh:61-63`
+    CFG_NAME builder) include the `_som_` infix.
+    """
+    orch = REPO_ROOT / "scripts/queues/queue_phase1_paper_grade.sh"
+    rc, out, err = _eval_config_for_cmd(orch, f"queue_phantom_som.sh {baseline} {site}")
+    assert rc == 0, f"config_for_cmd extraction failed: {err}"
+    assert out == expected_filename, (
+        f"phantom_som config name typo regressed (B-672). "
+        f"Expected {expected_filename}, got {out}"
+    )
+
+
+def test_config_for_cmd_phantom_dom_back_compat_alias():
+    """B-672 (A1.14): queue_phantom_dom.sh is a back-compat symlink to
+    queue_phantom_text.sh; config_for_cmd must map both to the same
+    `phantom_text` config family (canonical mode value per A1.13 B-630).
+    """
+    orch = REPO_ROOT / "scripts/queues/queue_phase1_paper_grade.sh"
+    rc1, text_out, _ = _eval_config_for_cmd(orch, "queue_phantom_text.sh B0 classifieds")
+    rc2, dom_out, _ = _eval_config_for_cmd(orch, "queue_phantom_dom.sh B0 classifieds")
+    assert rc1 == 0 and rc2 == 0
+    assert text_out == dom_out == "configs/exp_v2_B0_phantom_text_classifieds.yaml", (
+        f"phantom_dom/text alias divergence: text={text_out!r}, dom={dom_out!r}"
+    )
+
+
+def test_config_for_cmd_unknown_script_fails_loud():
+    """B-672 (A1.14): config_for_cmd default branch must emit `UNKNOWN_SCRIPT:<name>`
+    so Gate 7 can fail-loud instead of silently skipping config existence check
+    (pre-fix returned empty string → `[ -n "$cfg_path" ]` falsy → silent bypass).
+    """
+    orch = REPO_ROOT / "scripts/queues/queue_phase1_paper_grade.sh"
+    rc, out, err = _eval_config_for_cmd(orch, "queue_made_up.sh B0 classifieds")
+    assert rc == 0, f"config_for_cmd extraction failed: {err}"
+    assert out.startswith("UNKNOWN_SCRIPT:"), (
+        f"default branch must fail-loud with UNKNOWN_SCRIPT marker, got: {out!r}"
+    )
+    assert "queue_made_up.sh" in out, f"error marker must echo the unknown script: {out!r}"
+
+
+def test_config_for_cmd_phantom_som_actual_files_exist():
+    """B-672 sanity: the canonical configs for Phase 1a P-SoM cells must exist
+    on disk. If this fails, either:
+      (a) configs/exp_v2_*_phantom_som_*.yaml files were deleted/renamed (real bug)
+      (b) config_for_cmd output diverged from on-disk reality (B-672 regressed)
+    """
+    expected_files = [
+        f"configs/exp_v2_{bl}_phantom_som_{site}.yaml"
+        for bl in ("B0", "B1", "B2")
+        for site in ("classifieds", "reddit")
+    ]
+    missing = [f for f in expected_files if not (REPO_ROOT / f).exists()]
+    assert not missing, (
+        f"Phase 1a P-SoM config files missing on disk: {missing}. "
+        f"Gate 7 will hard-fail any `launch all` until these exist."
+    )
+
+
 def test_no_python_smoke_when_bash_missing():
     """Sanity guard: this whole file assumes bash. If bash absent, skip clean."""
     if shutil.which("bash") is None:

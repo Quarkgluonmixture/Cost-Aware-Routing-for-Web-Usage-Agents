@@ -347,7 +347,15 @@ for cmd in "$@"; do
   export EXPECTED_CID="${cond_id}"
   export EXPECTED_N="${expected_n}"
 
+  # B-675 (/stress A1.14 Chunk a P0-4, gemini Mode C F3 unique OOB, 2026-05-17):
+  # mktemp per-iteration replaces hardcoded /tmp/queue_chain_sentinel_err. Pre-fix
+  # parallel cls + red queue_chain instances (spawned by `queue_phase1_paper_grade.sh`
+  # launch_chain) raced on the same /tmp file → one chain's FAIL stderr overwrote
+  # by the other's success → debug impossible, audit trail corrupted.
   summary_found=""
+  sentinel_err="$(mktemp -t queue_chain_sentinel.XXXXXX 2>/dev/null || echo /tmp/queue_chain_sentinel_$$_${RANDOM}_err)"
+  # shellcheck disable=SC2064
+  trap "rm -f '${sentinel_err}' 2>/dev/null" RETURN EXIT
   for base in results/visualwebarena/phase1 results/webarena/phase1; do
     cand="${REPO_DIR}/${base}/${run_id}/${cond_id}/condition_summary_v2.json"
     if [[ -s "${cand}" ]]; then
@@ -379,15 +387,16 @@ if expected_n > 0 and ep != expected_n:
     else:
         print(f'FATAL episodes={ep} != expected={expected_n} ({100*ep/expected_n:.1f}%); abort. Set PAPER_GRADE_ALLOW_PARTIAL=1 for explicit dirty/pilot mode.', file=sys.stderr); sys.exit(4)
 sys.exit(0)
-" 2>/tmp/queue_chain_sentinel_err; then
+" 2>"${sentinel_err}"; then
         summary_found="${cand}"; break
       else
-        err="$(cat /tmp/queue_chain_sentinel_err 2>/dev/null || true)"
+        err="$(cat "${sentinel_err}" 2>/dev/null || true)"
         log "  [error] ${cand} present but FAILED validation: ${err}"
         log "  treating as missing summary — paper-grade aborts on invalid content"
       fi
     fi
   done
+  rm -f "${sentinel_err}" 2>/dev/null || true
   if [[ -z "${summary_found}" ]]; then
     log "  [error] ${run_id}/${cond_id} — no valid condition_summary_v2.json"
     log "  failure modes: runner crash mid-write / FORCE_NEW same-second collision /"
