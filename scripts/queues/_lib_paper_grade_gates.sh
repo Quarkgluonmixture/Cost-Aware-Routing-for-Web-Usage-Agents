@@ -382,7 +382,23 @@ reset_and_auth_gate() {
     *) _reset_timeout=120 ;;
   esac
   local _reset_rc
-  timeout "${_reset_timeout}s" bash -c "
+  # B-864 (/stress A1.23 P1-7 AB, 2026-05-17): process-group kill + SIGTERM trap.
+  # Pre-fix `timeout ${N}s bash -c "..."` killed only the sub-bash on timeout;
+  # docker compose / curl-to-reset-endpoint may have daemonized children that
+  # continue asynchronously. Retry semantics then overlap: chain retry → new
+  # reset_and_auth_gate → second `docker compose restart` overlaps the first
+  # still in flight → container undefined intermediate state → site internal
+  # cart / posted-listing silent corrupt → auth_gate still passes → looks
+  # clean but data drift.
+  # Fix: (a) `setsid` puts the bash in its own session/PGID so the kill
+  # propagates to all children; (b) `--kill-after=10s` escalates to SIGKILL
+  # if TERM ignored; (c) inner `trap SIGTERM` best-effort `docker stop` on
+  # the canonical container names to preempt daemonized restart. Residual
+  # gap: docker daemon's own async restart cannot be canceled by `docker stop`
+  # mid-flight — disclosed in paper-2 forward stub.
+  timeout --kill-after=10s --signal=TERM "${_reset_timeout}s" setsid bash -c "
+    trap 'echo \"[reset_and_auth_gate] SIGTERM during reset; attempting docker stop fallback\" >&2; \
+          docker stop reddit-box classifieds_box shopping_box 2>/dev/null || true; exit 1' SIGTERM
     source '${repo_dir}/scripts/maintenance/reset_vwa_sites.sh'
     reset_vwa_sites '${site}' '${reset_label}'
   "
@@ -491,6 +507,62 @@ except (AuthRefreshFailure, AuthRefreshConfigError) as exc:
       echo "[${log_prefix}][error] reset failed (rc=${rc}); aborting to preserve paper-grade integrity." >&2
     fi
     echo "[${log_prefix}][error] To bypass reset (paper-grade dirty), explicitly set RESET_BEFORE=0." >&2
+    exit 1
+  fi
+}
+
+# ---------- 6. Cross-mode collision check (B-858 /stress A1.23 P0-1 ABC* OOB) ----------
+# assert_no_cross_mode_collision <baseline> <site> <benchmark> <run_id> <log_prefix>
+#
+# B-858 (/stress A1.23 P0-1 ABC* OOB, 2026-05-17): defense against standalone-
+# leaf cross-mode race window. Pre-fix leaf script `pgrep -f
+# "run_experiment.py.*${RUN_ID}"` (queue_baseline.sh:139 + 3 phantom siblings)
+# matches by FULL RUN_ID — second manual leaf invocation with DIFFERENT mode
+# (e.g. `bash queue_baseline.sh B0 dom reddit` running + new
+# `bash queue_baseline.sh B0 som reddit`) has different RUN_ID → pgrep doesn't
+# match → reset_and_auth_gate proceeds → wipes site state under existing
+# detached runner. queue_chain.sh:248 _collision_match enforces this at chain
+# layer; B-858 propagates the check to standalone leaf entry point so the
+# CLAUDE.md-documented `RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh
+# B0 dom shopping` pattern is paper-grade safe in isolation.
+#
+# Pattern: pgrep site+baseline+date prefix; exclude current RUN_ID exact match
+# (avoid self-match); for VWA also exclude `_wa_` substring overlap. Non-empty
+# → FATAL with diagnostic + ntfy alert.
+assert_no_cross_mode_collision() {
+  local baseline="${1:?baseline required}"
+  local site="${2:?site required}"
+  local benchmark="${3:?benchmark required}"
+  local run_id="${4:?run_id required}"
+  local log_prefix="${5:-leaf}"
+
+  local site_pattern
+  if [[ "${benchmark}" == "wa" ]]; then
+    site_pattern="_wa_${site}_[0-9]{8}_"
+  else
+    # VWA: anchor `_<site>_<date>_` but filter WA siblings post-match.
+    site_pattern="_${site}_[0-9]{8}_"
+  fi
+
+  local collisions
+  collisions="$(pgrep -af "run_experiment.*_${baseline}_.*${site_pattern}" 2>/dev/null \
+                | grep -v -F "${run_id}" || true)"
+  if [[ "${benchmark}" == "vwa" && -n "${collisions}" ]]; then
+    # Exclude WA siblings captured by `_<site>_` substring overlap.
+    collisions="$(echo "${collisions}" | grep -v "_wa_" || true)"
+  fi
+
+  if [[ -n "${collisions}" ]]; then
+    echo "[${log_prefix}][FATAL] same baseline+site different-mode runner already active:" >&2
+    echo "${collisions}" | sed 's/^/  /' >&2
+    echo "[${log_prefix}][FATAL] paper-grade hard rule: 同 site 单 baseline (cross-mode also forbidden)" >&2
+    echo "[${log_prefix}][FATAL] B-858 (/stress A1.23 P0-1 ABC*): standalone-leaf cross-mode race vector." >&2
+    echo "[${log_prefix}][FATAL] queue_chain.sh:248 _collision_match enforces at chain layer; this propagates to leaf entry." >&2
+    echo "[${log_prefix}][FATAL] options: (a) 'pkill -f \"run_experiment.*_${baseline}_${site}_\"' kill existing; (b) wait for existing run; (c) use queue_chain.sh orchestration." >&2
+    if command -v curl > /dev/null; then
+      curl -L -d "leaf FATAL: ${baseline}/${site} cross-mode collision (B-858 A1.23 P0-1)" \
+        "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
+    fi
     exit 1
   fi
 }

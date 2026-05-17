@@ -134,9 +134,21 @@ echo "[phantom_text] condition=${COND_ID}"
 
 # ---------- 检查 runner 是否已在跑 ----------
 if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
+  # B-867 (/stress A1.23 P1-10 B*, 2026-05-17): dirty-cell backdoor FATAL —
+  # sibling propagation of B-756 (queue_baseline.sh:139-153).
+  if [[ "${P79_PAPER_GRADE:-0}" == "1" && "${RESET_BEFORE:-0}" == "1" ]]; then
+    echo "[phantom_text][FATAL] runner for ${RUN_ID} already running under (P79_PAPER_GRADE=1 + RESET_BEFORE=1)." >&2
+    echo "[phantom_text][FATAL] paper-grade requires fresh post-reset cell; idempotent skip would dissolve the reset gate." >&2
+    echo "[phantom_text][FATAL] options: (a) pkill the existing runner; (b) RESET_BEFORE=0 explicit-resume; (c) P79_PAPER_GRADE=0 dirty/dev." >&2
+    exit 1
+  fi
   echo "[phantom_text] runner for ${RUN_ID} already running, skipping spawn"
   echo "[phantom_text] (RESET_BEFORE skipped — runner already attached to current site state)"
 else
+  # B-858 (/stress A1.23 P0-1 ABC* OOB, 2026-05-17): cross-mode collision check.
+  # See queue_baseline.sh for full rationale.
+  assert_no_cross_mode_collision "${BASELINE}" "${SITE}" "${BENCHMARK}" "${RUN_ID}" "phantom_text"
+
   # ---------- Optional: site reset before launch ----------
   # IMPORTANT: reset AFTER idempotent runner check (race fixed 2026-04-28 §104).
   # A1.13 P0-1 (2026-05-16) propagated B-224 hard-fail via reset_and_auth_gate.

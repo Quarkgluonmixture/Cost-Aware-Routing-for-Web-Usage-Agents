@@ -216,14 +216,66 @@ def _dispatch_gone_hook(jid: str, name: str) -> Optional[str]:
             and full_name[len(prefix):len(prefix) + 1] == "_"
         ):
             try:
+                # B-861 (/stress A1.23 P0-4 AB* OOB, 2026-05-17): fire-and-forget
+                # → fire-and-tracked. Pre-fix `stdout/stderr=DEVNULL` +
+                # `start_new_session=True` left child orphaned with NO failure
+                # visibility — SCP partial / JSON validation / network errors
+                # all silent. Now: redirect to logs/cron/autopull_${jid}.log
+                # + propagate `P79_PAPER_GRADE=1` to child env so
+                # auto_pull_myriad_cell.sh:194-200 JSON schema validation
+                # (B-830) sees paper-grade mode and exit 3 on failure (rather
+                # than dev-mode WARN-and-continue).
+                #
+                # Failure surface: touch `.lock` marker at launch + child
+                # touches `.done` on success. Next cron tick checks for
+                # stale `.lock` without `.done` older than 30 min → ntfy retry
+                # alert (handled in detect_stale_autopull_locks below).
+                logs_cron = REPO / "logs" / "cron"
+                logs_cron.mkdir(parents=True, exist_ok=True)
+                autopull_log = logs_cron / f"autopull_{jid}.log"
+                lock_path = logs_cron / f"autopull_{jid}.lock"
+                done_path = logs_cron / f"autopull_{jid}.done"
+                # B-865 (/stress A1.23 P1-8 AB, 2026-05-17): dedup dispatch via
+                # marker check. Pre-fix `myriad_watcher.py` STATE_FILE
+                # non-atomic write + SSH-chain transient double-probe empty
+                # would re-classify GONE jobs as NEW → next true GONE event
+                # triggered a SECOND `auto_pull` dispatch racing the local
+                # files of the first (parallel SCP → corruption /
+                # condition_summary_v2.json truncated mid-read by analysis
+                # aggregators). Now: check `.done` (clean completion) or
+                # `.lock` (in-flight) before fire — skip if either present.
+                if done_path.exists():
+                    print(
+                        f"[myriad_watcher] B-865 dedup: {jid}/{full_name} "
+                        f"already has .done marker; skip duplicate auto_pull",
+                        file=sys.stderr,
+                    )
+                    return prefix
+                if lock_path.exists():
+                    print(
+                        f"[myriad_watcher] B-865 dedup: {jid}/{full_name} "
+                        f"has in-flight .lock marker; skip duplicate auto_pull "
+                        f"(stale-lock detection runs separately)",
+                        file=sys.stderr,
+                    )
+                    return prefix
+                # Lock marker: record dispatch metadata for stale-detection.
+                lock_path.write_text(
+                    f"jid={jid}\nname={full_name}\nremote_dir={remote_dir}\n"
+                    f"dispatched_at={int(__import__('time').time())}\n"
+                )
+                # Env propagation: ensure child sees P79_PAPER_GRADE=1 even
+                # under bare cron (which doesn't source init_paper_grade_env).
+                child_env = {**os.environ, "P79_PAPER_GRADE": "1"}
                 subprocess.Popen(
                     [
                         "bash", str(AUTO_PULL_SCRIPT),
                         jid, full_name, remote_dir, cell_md,
                     ],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    stdout=open(autopull_log, "a"),
+                    stderr=subprocess.STDOUT,
                     start_new_session=True,
+                    env=child_env,
                 )
                 return prefix
             except OSError as e:
@@ -231,6 +283,35 @@ def _dispatch_gone_hook(jid: str, name: str) -> Optional[str]:
                       file=sys.stderr)
                 return None
     return None
+
+
+def _detect_stale_autopull_locks(stale_threshold_secs: int = 1800) -> list[str]:
+    """B-861 (/stress A1.23 P0-4 AB* OOB, 2026-05-17): scan for stale auto_pull
+    .lock markers without paired .done file → indicates auto_pull never
+    finished (network failure, SCP truncation, exit 2/3, etc.). Returns list
+    of summary strings for ntfy.
+
+    `stale_threshold_secs=1800` (30 min) — typical successful auto_pull is
+    1-5 min. Anything older with no .done is failure.
+    """
+    import time
+    logs_cron = REPO / "logs" / "cron"
+    if not logs_cron.exists():
+        return []
+    now = time.time()
+    stale: list[str] = []
+    for lock_p in logs_cron.glob("autopull_*.lock"):
+        done_p = lock_p.with_suffix(".done")
+        if done_p.exists():
+            continue  # auto_pull finished cleanly; .done writer also removes .lock
+        try:
+            age = now - lock_p.stat().st_mtime
+        except OSError:
+            continue
+        if age >= stale_threshold_secs:
+            jid = lock_p.stem.replace("autopull_", "")
+            stale.append(f"{jid} (age={int(age/60)}min, log={lock_p.with_suffix('.log').name})")
+    return stale
 
 DGX_KEY = os.path.expanduser("~/.ssh/vwa_windows")
 QUARK_USER = "Quark"
@@ -405,7 +486,44 @@ def main() -> int:
         push_ntfy("Myriad state change", "\n".join(body_lines))
 
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(new_state, indent=2))
+    # B-865 (/stress A1.23 P1-8 AB, 2026-05-17): atomic STATE_FILE write.
+    # Pre-fix `write_text` was non-atomic — OOM / SIGKILL / power-loss
+    # between truncate+flush left STATE_FILE truncated → next tick
+    # `_load_state` `except Exception: old_state={}` → all current jobs
+    # classified NEW → previously-GONE cells' hooks PERMANENTLY LOST →
+    # Myriad mech cell data stuck on remote, paper §5 figure regen
+    # fails 5-10 days later. Mirror watchdog _save_state B-223 pattern:
+    # tmp + fsync(file) + os.replace + _fsync_dir(parent).
+    _tmp_state = STATE_FILE.with_suffix(STATE_FILE.suffix + ".tmp")
+    with open(_tmp_state, "w", encoding="utf-8") as _sf:
+        json.dump(new_state, _sf, indent=2)
+        _sf.flush()
+        os.fsync(_sf.fileno())
+    os.replace(_tmp_state, STATE_FILE)
+    try:
+        _dir_fd = os.open(str(STATE_FILE.parent), os.O_RDONLY)
+        try:
+            os.fsync(_dir_fd)
+        finally:
+            os.close(_dir_fd)
+    except OSError:
+        pass
+
+    # B-861 (/stress A1.23 P0-4 AB* OOB, 2026-05-17): stale auto_pull lock
+    # detection. Each cron tick scans logs/cron/autopull_*.lock without
+    # paired .done file; entries older than 30 min → high-priority ntfy.
+    # Closes the "fire-and-forget silent failure" vector for Myriad GONE
+    # auto_pull dispatch.
+    stale_locks = _detect_stale_autopull_locks()
+    if stale_locks:
+        push_ntfy(
+            title="Myriad auto_pull stale (no completion marker)",
+            body="The following auto_pull dispatches launched >30min ago without "
+                 ".done marker — likely failure:\n  " + "\n  ".join(stale_locks) +
+                 "\n\nCheck logs/cron/autopull_<jid>.log for diagnostics; "
+                 "re-dispatch manually if needed.",
+            priority="high",
+        )
     return 0
 
 

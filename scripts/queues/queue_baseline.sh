@@ -155,6 +155,15 @@ if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
   echo "[baseline] runner for ${RUN_ID} already running, skipping spawn"
   echo "[baseline] (RESET_BEFORE skipped — runner already attached to current site state)"
 else
+  # B-858 (/stress A1.23 P0-1 ABC* OOB, 2026-05-17): cross-mode collision check.
+  # The pgrep above matches by FULL RUN_ID; a second manual leaf invocation
+  # with a DIFFERENT mode (same baseline+site) has a different RUN_ID → would
+  # bypass the idempotent skip + run reset_and_auth_gate → site wipe under
+  # existing detached runner. queue_chain.sh:248 enforces this at chain layer;
+  # this propagates to standalone leaf entry (CLAUDE.md documents leaf as
+  # supported, so the check must live here too).
+  assert_no_cross_mode_collision "${BASELINE}" "${SITE}" "${BENCHMARK}" "${RUN_ID}" "baseline"
+
   # ---------- Optional: site reset before launch ----------
   # IMPORTANT: reset is AFTER the idempotent runner check — resetting while
   # a runner is attached destroys site state under it (race condition fixed

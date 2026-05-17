@@ -260,7 +260,29 @@ if _still_on_login or not _positive_ok:
     _reason = 'still_on_login' if _still_on_login else 'no_logout_marker'
     print('LOGIN_FAILED (' + _reason + ') ->', final_url)
     sys.exit(2)
-ctx.storage_state(path={str(auth_file)!r})
+# B-862 (/stress A1.23 P0-5 B* OOB, 2026-05-17): atomic storage_state write.
+# Pre-fix `ctx.storage_state(path={auth_file})` is a SINGLE non-atomic
+# Playwright write. Three concurrent callers exist for the same auth_file:
+#   (a) _lib_paper_grade_gates.sh reset_and_auth_gate at launch
+#   (b) runner/main.py:1493-1495 pre-episode refresh
+#   (c) experiment_watchdog.py:1767-1770 watchdog auto-refresh on session-loss
+# Race: caller (c) writes partial JSON; concurrent caller (a) or (b) opens
+# file to load storage_state → Playwright JSON parse error → auth context
+# fails → episode marked benchmark_noise → cleaned up by next session wave.
+# Now: write to .tmp + os.replace atomic (POSIX same-FS) + fsync parent dir.
+import os as _atomic_os
+_atomic_target = {str(auth_file)!r}
+_atomic_tmp = _atomic_target + '.tmp'
+ctx.storage_state(path=_atomic_tmp)
+_atomic_os.replace(_atomic_tmp, _atomic_target)
+try:
+    _atomic_fd = _atomic_os.open({str(auth_file.parent)!r}, _atomic_os.O_RDONLY)
+    try:
+        _atomic_os.fsync(_atomic_fd)
+    finally:
+        _atomic_os.close(_atomic_fd)
+except OSError:
+    pass  # platform doesn't support dir fsync; not a hard failure
 cm.__exit__(None, None, None)
 print('ok ->', final_url)
 """

@@ -5767,6 +5767,155 @@ Total Chunk δ: 2 fixes, 4 files (1 new + 3 modified), 25 new pytest invariants,
 
 **A1.15b cycle running total** (α+β+γ+δ): 16 fixes (B-841~B-856 contiguous), ~15 unique files, 58 new invariant tests + 70 targeted regression PASS, 0 regressions, 4 commits.
 
+---
+
+## A1.23 /stress concurrency + race contract — 3-AI cross-AI cycle 14-fix B-858~B-871 (2026-05-17 evening)
+
+A1.23 scope = launch × watchdog × cron sidecar interaction (phase1_plan line 128 audit surface). Targets: `queue_chain.sh` / `queue_baseline.sh` / `_lib_paper_grade_gates.sh` / `experiment_watchdog.py` / `auto_pull_myriad_cell.sh` / `myriad_watcher.py` / `glm_cell_autoupdate.py` / `p79/experiment/runner/main.py` / `p79/experiment/runner/helpers.py` / `p79/experiment/logger_v2.py`. Pre-fire audit ahead of Phase 1a 36-cond A100 paper-grade fire.
+
+**3-AI cycle**: Claude Mode A 10 findings 5 OOB (Phase 0 self-audit PASS). codex Mode B 9 findings 6 OOB-tagged (Phase 4 spot-check 3/3 PASS at 386s wallclock). gemini Mode C 7 findings 4 OOB-tagged (retry x1, 248s wallclock, Phase 4 2/3 PASS — `_compute_resume_fingerprint` initially flagged as hallucination but confirmed at runner/main.py:645 via re-grep).
+
+**User fix-scope decision** (2026-05-17 evening): full sweep — all P0 (5) + most P1 (7) + P2 (2) = **14 fixes**. P1-11 GLMM `operator_cross_contamination` covariate **DROPPED** per user: "我没有人为 race-induced contamination". P0-2 Option B runtime singleton lease **DROPPED** in favor of Option A SIGTERM handler only (architectural change deferred per Phase 1a fire timing).
+
+> **NOTE on B-### collision with parallel A1.24 session**: parallel session committed B-858/B-859/B-860/B-862/B-863/B-864/B-867/B-868/B-869/B-870/B-871/B-872 in code attribution (commits `0b9aff6` / `7d18cb2` / `f5cb56f`) BUT did NOT update `master_bug_catalog.md`. A1.23 takes the catalog claim for B-858~B-871; A1.24 catalog entries TBD by parallel session — recommend renumber to B-873+ when filed to avoid collision. Code-level differentiation is via `/stress A1.23` vs `/stress A1.24` attribution in every comment.
+
+### B-858 `_lib_paper_grade_gates.sh:assert_no_cross_mode_collision` + 4 leaf invocations (P0-1 ABC* — 3-AI overlap OOB)
+
+**Origin**: A1.23 /stress 3-AI 3-AI overlap OOB. Claude P1-5-A / codex F1 / gemini B-845.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix race vector**: `queue_baseline.sh:105` `trap "release_site_lock" EXIT INT TERM` releases FD 7 lock when leaf script exits (line ~237) — but runner is detached via `setsid nohup` and lives for hours. During that lock-free window, second manual leaf invocation with DIFFERENT mode (same baseline+site) bypasses the existing `pgrep -f "run_experiment.py.*${RUN_ID}"` check (different RUN_ID = no match), reset_and_auth_gate wipes site state under existing detached runner → cart / session race contamination. CLAUDE.md documents `RESET_BEFORE=1 bash scripts/queues/queue_baseline.sh B0 dom shopping` as supported standalone pattern, so the check must propagate to leaf entry.
+**Fix**: New `assert_no_cross_mode_collision()` helper in `_lib_paper_grade_gates.sh:497-545` — pgrep `run_experiment.*_${baseline}_.*_${site}_[0-9]{8}_` excluding current RUN_ID, with `_wa_` exclusion for VWA paths. Non-empty match → FATAL + ntfy alert. Invoked from 4 leaf scripts: `queue_baseline.sh` + `queue_phantom_som.sh` + `queue_phantom_text.sh` + `queue_phantom_prompt.sh` in the `else` branch (where RUN_ID-specific pgrep didn't match = fresh-launch path).
+**Paper-grade impact**: closes the lock-free race window for standalone leaf invocation. Paper §3 sequential-isolation framing now holds across leaf-standalone + chain-orchestrated entry points uniformly.
+
+### B-859 `runner/main.py:run()` SIGTERM → KeyboardInterrupt handler (P0-2 AB* — Claude+codex 2-AI OOB; Option A only)
+
+**Origin**: A1.23 Claude P0-1-A* + codex F2 "no runtime singleton lease" (codex broader claim subsumed; Option B runtime lease dropped per user Q2=A).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix**: Python default SIGTERM disposition = `SIG_DFL` = immediate process termination; `finally:` block at `runner/main.py:712` (B-500's contract "regardless of exception path") NEVER runs under `queue_chain.sh:102` `pkill -f "run_experiment.py..."` (watchdog-death abort) → `environment.close()` + `energy_tracker.close()` not executed → Playwright browser context + CDP socket + Chromium subprocess leak. B-500's "all exception paths" contract silently voided.
+**Fix**: `signal.signal(SIGTERM, _on_sigterm)` registered in `run()` entrance; handler raises `KeyboardInterrupt("SIGTERM received...")` → Python exception machinery → finally block fires → resources close. `_prev_sigterm` saved + restored in finally for test-friendly cleanup. SIGINT (Ctrl-C) already auto-raises KeyboardInterrupt; SIGKILL / OOM not interceptable (kernel-level — residual disclosed in paper-2 forward stub).
+**Paper-grade impact**: chain-abort path no longer leaks browser state into next iteration. **Subsumes the most common abort path** (watchdog death → pkill); SIGKILL / OOM remain race vectors (residual ~weekly cadence, acceptable per Phase 1a fire timing trade-off).
+
+### B-860 `glm_cell_autoupdate.py:410` + `auto_pull_myriad_cell.sh:228-244` cell frontmatter atomic + flock (P0-3 AB* — Claude+codex 2-AI OOB)
+
+**Origin**: A1.23 Claude P0-2-A* + codex F4 + gemini B-849 (related Obsidian Git contention angle).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix**: Two cron sidecars (cron @10min `glm_cell_autoupdate.py` + GONE-event `auto_pull_myriad_cell.sh`) BOTH write `_status/cells/cell_*.md` with non-atomic `cell_path.write_text(...)` + no flock. Plus Obsidian Git plugin auto-pulls 10min on Windows → 3-way race → YAML torn write OR `<<<<<<< HEAD` conflict markers in YAML frontmatter → `yaml.safe_load` silently fails → cell.md corrupted → 4 Obsidian Bases views (`cells.base` / `status.base` / `codex.base` / `issues.base`) all break. Memory `feedback_doc_separation.md` "_status/ single-source frontmatter" invariant violated.
+**Fix**: (a) `glm_cell_autoupdate.py:410` adds `fcntl.flock(LOCK_EX)` wrapping `tmp.write_text + os.replace + _fsync_dir`. (b) `auto_pull_myriad_cell.sh:228-244` Python heredoc rewritten with same flock+atomic pattern + yaml.safe_dump (B-870). Both call sites use sibling `.lock` file for cross-process exclusion (cell.md itself re-replaced atomically).
+**Paper-grade impact**: `_status/` data layer integrity restored — Obsidian Bases views remain consistent during 24/7 Phase 1a long-run cron contention.
+
+### B-861 `myriad_watcher.py:_dispatch_gone_hook` failure surface + P79_PAPER_GRADE env propagation (P0-4 AB* — Claude+codex 2-AI OOB)
+
+**Origin**: A1.23 Claude P0-3-A* + codex F5 + gemini B-846 (double-probe angle) + gemini B-850 (env propagation angle).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix**: `subprocess.Popen([auto_pull...], stdout/stderr=DEVNULL, start_new_session=True)` = fire-and-forget. No PID tracking + no sentinel + cron doesn't source `init_paper_grade_env` → child shell sees no `P79_PAPER_GRADE=1` → `auto_pull_myriad_cell.sh:194-200` JSON schema validation B-830 falls back to dev mode WARN-and-continue → corrupt JSON silently enters `make analysis FAST=1` → paper §5 mechanism figures regenerate from corrupt hidden_states.npz silently → hero number wrong 5-10 days before human notices.
+**Fix**: 4 steps. (a) `_dispatch_gone_hook` `Popen(..., stdout=open(autopull_log, "a"), stderr=subprocess.STDOUT, env={**os.environ, "P79_PAPER_GRADE": "1"})` — log redirected + env propagated. (b) Lock marker `logs/cron/autopull_${jid}.lock` written at dispatch; child `auto_pull_myriad_cell.sh` writes paired `.done` marker on success + removes `.lock`. (c) `_detect_stale_autopull_locks()` scans for `.lock` without paired `.done` older than 30 min → high-priority ntfy at next watcher tick. (d) `auto_pull_myriad_cell.sh:Phase 4` `make analysis FAST=1` runs FOREGROUND under `P79_PAPER_GRADE=1` (blocking, exit 4 on failure) instead of nohup background → JSON validation failures propagate to auto_pull's exit code → `.done` marker only written on full success.
+**Paper-grade impact**: Myriad mechanism cell GONE events now have FULL failure surface; silent SCP partial / JSON validation FAIL / make analysis FAIL all trigger stale-lock detection + ntfy. Paper §5 evidence chain integrity protected.
+
+### B-862 `auth_refresh.py:263` Playwright `ctx.storage_state(path=...)` atomic wrapper (P0-5 B* — codex unique OOB)
+
+**Origin**: A1.23 codex Mode B F3 unique OOB.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix**: Playwright `ctx.storage_state(path=auth_file)` is a SINGLE non-atomic write call. **3 concurrent callers** write the same `.auth/{site}_state.json` file: (a) `_lib_paper_grade_gates.sh:reset_and_auth_gate` at launch / (b) `runner/main.py:1493-1495` pre-episode refresh / (c) `experiment_watchdog.py:1767-1770` watchdog auto-refresh on session-loss streak. Race: caller (c) writes partial JSON; concurrent caller (a) or (b) loads storage_state mid-write → Playwright JSON parse error → auth context invalid → episode marked `benchmark_noise` → cleaned up by next session wave.
+**Fix**: Inline atomic wrapper inside the Python script string at `auth_refresh.py:263`: write to `.tmp` first → `os.replace(tmp, auth_file)` → fsync parent dir. Uses `_atomic_os` aliased import to avoid namespace conflict with caller's `os`. Best-effort fsync (OSError swallowed for FS without dir-fsync).
+**Paper-grade impact**: closes auth substrate half-state vector. Paper §3 auth substrate contract now race-safe across all 3 concurrent writer paths.
+
+### B-863 `p79/experiment/cleanup.py:deletion_intent_rename` + `purge_pending_deletes` + watchdog integration (P1-6 ABC* — 3-AI overlap OOB)
+
+**Origin**: A1.23 3-AI overlap: Claude P1-4-A* / codex F7 / gemini B-847 (paper-disclosure angle).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD. **User decision Q3=C: code-only fix, paper §3.5/§4.X disclosure prose UNCHANGED.**
+**Pre-fix**: `experiment_watchdog.py:1820-1850` session-cleanup wave + `:1641-1660` retry-path BOTH call `Path.unlink()` + `shutil.rmtree()` on episode artifacts. POSIX `flock(LOCK_EX)` in `logger_v2.write_step` (line 137) provides within-write atomicity but does NOT defend against external `unlink()` from a different process. Race window: runner mid-`write_step` (mkdir+open+flock+write+close) while watchdog unlinks same path → `os.replace(tmp, final)` can "resurrect" just-deleted path → episode in `task_auto_cleared` trajectory event AND aggregator sees fresh JSON → B-385's intersection check flags as race-cleared. **Data substrate is detected post-hoc but NOT preserved** — gemini B-847 framed this as "hero number includes unbacked race-cleared episodes → refutes OSF DOI immutable witness claim".
+**Fix**: 4 components.
+- (1) `p79/experiment/cleanup.py:deletion_intent_rename(path)` — renames file to `<name>.pending_delete.<unix_ts>` instead of immediate unlink. Subsequent path-based writes hit fresh inode (no name collision).
+- (2) `p79/experiment/cleanup.py:purge_pending_deletes(run_dir, older_than_secs=300)` — reaps `.pending_delete.<ts>` markers older than 5 min (paper-grade safety margin against in-flight writes).
+- (3) `clear_task_files(... deletion_intent=False)` parameter — when `True`, uses `deletion_intent_rename` for the 3 artifact paths. Default `False` keeps operator-manual `clear_tasks.py` path immediate-delete semantics.
+- (4) `experiment_watchdog.py` session-wave callsite passes `deletion_intent=True`; retry-path uses `_deletion_intent_rename` directly; main loop calls `_purge_pending_deletes(run_dir, 300)` every tick.
+**Paper-grade impact**: closes race-cleared half-state. Paper §3.5 prose remains unchanged per user — implementation now actually prevents the race rather than detecting it post-hoc.
+
+### B-864 `_lib_paper_grade_gates.sh:reset_and_auth_gate` process-group kill + SIGTERM trap (P1-7 AB — Claude+codex 2-AI)
+
+**Origin**: A1.23 Claude P1-6-A + codex F8.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix**: `timeout "${N}s" bash -c "...reset_vwa_sites..."` kills only the sub-bash on timeout; docker compose / curl-to-reset-endpoint may daemonize children that continue asynchronously. Chain retry triggers second reset → overlaps first still-in-flight → docker container undefined intermediate state → site internal cart / posted-listing silent corrupt → auth_gate still passes → "looks clean but data drift".
+**Fix**: `timeout --kill-after=10s --signal=TERM "${N}s" setsid bash -c "trap 'docker stop reddit-box classifieds_box shopping_box 2>/dev/null; exit 1' SIGTERM; ..."`. `setsid` puts bash in its own PGID so timeout's kill propagates to children; `--kill-after` escalates to SIGKILL if TERM ignored; inner trap attempts best-effort `docker stop` to preempt daemonized restart. Residual gap (docker daemon's own async restart) disclosed in code comments.
+**Paper-grade impact**: reset retry semantics now process-group safe. Eliminates docker undefined-state vector for chain retry path.
+
+### B-865 `myriad_watcher.py:408` STATE_FILE atomic write + `.done` marker GONE dedup (P1-8 AB — Claude+codex 2-AI)
+
+**Origin**: A1.23 Claude P1-7-A + codex F6 + gemini B-846 (double-probe angle).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix**: `STATE_FILE.write_text(json.dumps(...))` non-atomic + `_load_state` `except Exception: old_state={}` silent fallback. OOM / SIGKILL / power-loss between truncate+flush → STATE_FILE truncated → next tick treats current Myriad jobs as all NEW → previously-GONE cells' hooks PERMANENTLY LOST. Plus double-probe SSH-chain transient empty → all jobs reclassified GONE → recover → re-NEW → on real GONE second dispatch → `auto_pull` runs 2× racing same local files.
+**Fix**: (a) Mirror watchdog `_save_state` B-223 pattern: `tmp = .json.tmp; json.dump(...); flush+fsync; os.replace(tmp, STATE_FILE); fsync(parent_dir)`. (b) `_dispatch_gone_hook` dedup check: skip dispatch if `autopull_${jid}.done` (clean completion) OR `autopull_${jid}.lock` (in-flight) already exists. Combined with B-861 stale-lock detection → fail-and-retry vs dedup-and-skip both covered.
+**Paper-grade impact**: Myriad state persistence durable; GONE_HOOKS dispatch idempotent.
+
+### B-866 `runner/main.py:_run_main_loop` mid-run staging trajectory re-merge (P1-9 A — Claude unique)
+
+**Origin**: A1.23 Claude P1-8-A unique.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix**: `runner/main.py:754-766` calls `merge_staging_trajectory_events()` ONCE per condition_dir at creation. If reset gate fires AGAIN mid-run (chain `--no-reset` flag missing + manual abort+retry on same RUN_ID), new `reset_post_interrupt` events land in `logs/trajectory_events_staging/RUN_${RUN_ID}.jsonl` but are never merged into `condition_dir/trajectory_events.jsonl` → paper §4 GLMM `is_after_reset` covariate systematically FALSE-NEGATIVE on mid-run reset windows → covariate adjustment biased.
+**Fix**: Add `_staging_remerge_counter` initialized before `for task in self.tasks:`; increment per task; call `merge_staging_trajectory_events(condition_dir, run_id)` every 10 tasks. Fingerprint dedup (B-491) prevents double-merge so this is idempotent on resumes. Best-effort wrapper logs warning on exception; never blocks runner hot path.
+**Paper-grade impact**: paper §4 GLMM covariate trail completeness for mid-run reset events.
+
+### B-867 `queue_phantom_{som,text,prompt}.sh` dirty-cell backdoor FATAL sibling propagation (P1-10 B* — codex unique OOB sibling)
+
+**Origin**: A1.23 codex F9 unique OOB sibling-propagation.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix**: `queue_baseline.sh:139-153` has B-756 (A1.17 P1-11 C) dirty-cell-backdoor FATAL check under `P79_PAPER_GRADE=1 + RESET_BEFORE=1 + existing RUN_ID`. 3 phantom siblings (`queue_phantom_som.sh` / `queue_phantom_text.sh` / `queue_phantom_prompt.sh`) silently idempotent-skipped same scenario → reset gate dissolved → cell admitted as paper-grade complete via queue_chain completion sentinel without actual fresh post-reset substrate. Classic sibling-drift defect (A1.13 P0-1 / P0-2 lineage).
+**Fix**: Sibling-propagate the B-756 FATAL block to all 3 phantom leaf scripts immediately inside `if pgrep ...; then` branch. Identical logic + diagnostic messages adapted to leaf-prefix.
+**Paper-grade impact**: paper-grade hard rule "P79_PAPER_GRADE=1 + RESET_BEFORE=1 + existing runner = FATAL" now enforced at all 4 leaf entry points uniformly.
+
+### B-868 `_compute_resume_fingerprint` paper_grade env unification (P1-12 C — gemini unique)
+
+**Origin**: A1.23 gemini B-851 unique (originally flagged as hallucinated function name; subsequently confirmed at `runner/main.py:645`).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix**: 2 disagreeing paper_grade sources of truth. (a) `cfg.get("paper_grade", False)` yaml-driven, used at runner/main.py:185 / :202 / :676 / :1459 etc. (b) `os.environ.get("P79_PAPER_GRADE", "0") == "1"` env-driven, used at runner/main.py:124 (deterministic RNG) + queue scripts default-on. Operator running `P79_PAPER_GRADE=0 bash ...` (dirty/dev) while yaml has `paper_grade: true` → fingerprint records `paper_grade=True` but RNG warn-only mode. Resume of that run with `P79_PAPER_GRADE=1` would match fingerprint (both sources True) → resume ingests dirty steps under paper-grade banner.
+**Fix**: `_compute_resume_fingerprint` now embeds 3 fields: `paper_grade_yaml = bool(cfg.get("paper_grade", False))` + `paper_grade_env = (os.environ.get("P79_PAPER_GRADE") == "1")` + `paper_grade = (yaml OR env)` (effective). Mismatch between original-run and resume-run on EITHER source → fingerprint differs → quarantine + rerun.
+**Paper-grade impact**: closes the dirty→clean upgrade silent-ingestion path. Resume identity now anchors on the full paper_grade truth state.
+
+### B-869 `glm_cell_autoupdate.py` + `auto_pull_myriad_cell.sh` `.git/index.lock` precheck (P1-13 C — gemini unique)
+
+**Origin**: A1.23 gemini B-849 (related to B-860 cell frontmatter race; separate angle).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD (merged with B-860).
+**Pre-fix**: Even with B-860 atomic+flock fix in place, cron tick during Obsidian Git plugin auto-pull (10min cadence on Windows side) could observe partial git state OR cause git to inject `<<<<<<< HEAD` conflict markers when merging cron's just-committed cell.md against pulled state.
+**Fix**: Both `glm_cell_autoupdate.py:update_cell` AND `auto_pull_myriad_cell.sh` Phase 3 Python heredoc check `REPO / ".git" / "index.lock"` BEFORE acquiring per-cell flock + AGAIN under the lock (defense against pull starting mid-tick). If present → skip this tick + return `"skip (git index.lock present)"`.
+**Paper-grade impact**: Phase 1a long-run cron × Obsidian Git pull contention eliminated.
+
+### B-870 `auto_pull_myriad_cell.sh:240` `yaml.safe_dump` frontmatter serialization (P2-14 A)
+
+**Origin**: A1.23 Claude P2-9-A.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix**: Ad-hoc Python repr serialization `'\n'.join(f'{k}: {v!r}' ...)` produces single-quoted YAML values which round-trip badly with `:` or control chars (e.g., timestamp `2026-05-09T:` got parsed as YAML sequence).
+**Fix**: Replace with `yaml.safe_dump(fm, allow_unicode=True, sort_keys=False, default_flow_style=False).strip()` — mirrors `glm_cell_autoupdate.py:107` `serialize_frontmatter` canonical pattern.
+**Paper-grade impact**: cell.md frontmatter round-trip stability under edge-case values.
+
+### B-871 `experiment_watchdog.py:_check_session_health` DOM prefix 5000 → 15000 chars (P2-15 A)
+
+**Origin**: A1.23 Claude P2-10-A.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix**: `text = dom_path.read_text(...)[:5000]` missed Postmill reddit dropdown markers when AXTree serializer placed them past byte 5000 (empirical: reddit task DOM 7-10KB; user-menu non-viewport placement → markers at byte 6000+). `_check_session_health` returned None → `session_loss_streak` never incremented → auth-loss 6-layer auto-clean dead on those reddit tasks.
+**Fix**: Prefix raised to `[:15000]` — covers observed reddit DOMs + leaves room for SoM/AXTree growth without scanning entire file (cost ~10ms per task vs ~5ms at 5000).
+**Paper-grade impact**: auth-loss auto-clean now reliable across reddit DOM size variance.
+
+**B-numbers consumed**: B-858 through B-871 (14 IDs; A1.23 cycle). P1-11 GLMM `operator_cross_contamination` covariate DROPPED per user 2026-05-17: "我没有人为 race-induced contamination". Option B runtime singleton lease for P0-2 DROPPED per user Q2=A: SIGTERM handler (Option A) only.
+
+**Pytest delta**: 811 (post-A1.15b-Chunk-δ) → 852 PASS (+41 new tests in `test_stress_a1_23_concurrency_fixes.py`).
+
+**A1.23 reviewer lessons distilled (3)**:
+1. **`flock` is not a mutex against `unlink`** — POSIX advisory `flock(LOCK_EX)` on an open file descriptor blocks concurrent open+lock from peer processes BUT does NOT defend against `os.unlink(path)` from a different process (which only manipulates the directory entry). 3 of 5 P0/P1 race vectors hit this asymmetry (P1-6 watchdog unlink during runner write, P0-3 cell frontmatter cron-vs-cron, P0-5 auth storage state). Deletion-intent rename pattern (rename-then-async-reap) is the correct primitive when "delete a path another process may be writing" is needed.
+2. **`setsid nohup` detached runners + leaf trap = lock-free window** — leaf script's `trap "release_site_lock" EXIT` releases lock at SCRIPT exit, but the detached runner lives hours. Standard "launch-time gate" model breaks at runtime. P0-1 leaf cross-mode check (B-858) is a launch-time gate hardening (no architectural lease change). Long-term: runner-lifetime lease (P0-2 Option B) is the architecturally clean solution, deferred per Phase 1a fire timing.
+3. **Fire-and-forget Popen has zero failure surface** — `subprocess.Popen(stdout=DEVNULL, stderr=DEVNULL, start_new_session=True)` produces a child the parent never tracks. Failure modes (SSH chain partial / JSON validation FAIL / process crash) are completely invisible. Pattern: pair every fire-and-forget with (a) launch-time `.lock` marker + (b) success-path `.done` marker + (c) stale-lock detection at next cron tick. B-861 + B-865 land this pattern for Myriad GONE_HOOKS dispatch.
+
+**Cross-AI agreement summary**:
+- 3-AI overlap: 2 bugs (B-858 leaf race, B-863 watchdog-unlink-race)
+- 2-AI overlap: 5 bugs (B-859/B-860/B-861/B-864/B-865)
+- 1-AI unique: 7 bugs (1 Claude + 4 from codex/gemini specific lineages)
+- gemini Mode C value-add: 2 design-layer attacks Claude+codex 7-day history missed (B-847 paper §3.5 disclosure gap → code-only fix taken; B-848 GLMM covariate confound → dropped per user)
+- codex Mode B value-add: 2 unique sibling-propagation catches (B-862 auth storage state, B-867 phantom dirty-cell)
+
+**Verification matrix**:
+- py_compile + bash -n all 11 modified files PASS
+- New test file `test_stress_a1_23_concurrency_fixes.py`: 41/41 PASS (B-858 helper + 4 leaf invocations + B-859 signal handler + B-860 flock + git-lock + B-861 stale-lock + env propagation + B-862 atomic auth + B-863 deletion-intent helpers + B-864 setsid+kill-after + B-865 atomic state + dedup + B-866 mid-run remerge + B-867 phantom siblings + B-868 paper_grade env + B-871 DOM prefix)
+- Full pytest regression: **852 passed / 10 skipped / 0 failed** (was 811 pre-A1.23; +41 = my new tests, no other-test regression)
+
 **Verification**:
 - py_compile + bash -n all 6 modified files PASS
 - Targeted pytest (Chunk β tests + router + smoke) — 70 pass / 0 fail

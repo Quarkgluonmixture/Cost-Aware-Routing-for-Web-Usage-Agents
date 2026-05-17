@@ -107,9 +107,25 @@ echo "[phantom_som] condition=${COND_ID}"
 
 # ---------- 检查 runner 是否已在跑 ----------
 if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
+  # B-867 (/stress A1.23 P1-10 B*, 2026-05-17): dirty-cell backdoor FATAL —
+  # sibling propagation of B-756 (queue_baseline.sh:139-153). Pre-fix:
+  # phantom_som path silently idempotent-skipped a pre-existing runner even
+  # under (P79_PAPER_GRADE=1 + RESET_BEFORE=1). Reset gate dissolved → cell
+  # admitted as paper-grade complete via queue_chain completion sentinel
+  # without actual fresh-post-reset substrate.
+  if [[ "${P79_PAPER_GRADE:-0}" == "1" && "${RESET_BEFORE:-0}" == "1" ]]; then
+    echo "[phantom_som][FATAL] runner for ${RUN_ID} already running under (P79_PAPER_GRADE=1 + RESET_BEFORE=1)." >&2
+    echo "[phantom_som][FATAL] paper-grade requires fresh post-reset cell; idempotent skip would dissolve the reset gate (dirty cell backdoor)." >&2
+    echo "[phantom_som][FATAL] options: (a) 'pkill -f \"run_experiment.py.*${RUN_ID}\"' then re-run; (b) set RESET_BEFORE=0 to explicit-resume; (c) set P79_PAPER_GRADE=0 for explicit dirty/dev mode." >&2
+    exit 1
+  fi
   echo "[phantom_som] runner for ${RUN_ID} already running, skipping spawn"
   echo "[phantom_som] (RESET_BEFORE skipped — runner already attached to current site state)"
 else
+  # B-858 (/stress A1.23 P0-1 ABC* OOB, 2026-05-17): cross-mode collision check.
+  # See queue_baseline.sh for full rationale — same race vector at phantom leaf.
+  assert_no_cross_mode_collision "${BASELINE}" "${SITE}" "${BENCHMARK}" "${RUN_ID}" "phantom_som"
+
   # ---------- Optional: site reset before launch ----------
   # IMPORTANT: reset is AFTER the idempotent runner check (race fixed 2026-04-28
   # 实验笔记 §104). A1.13 P0-1 (2026-05-16) propagated B-224 hard-fail to phantom:

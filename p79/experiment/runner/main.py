@@ -14,6 +14,7 @@ import os
 import random
 import re
 import shutil
+import signal
 import time
 import urllib.request
 import urllib.error
@@ -667,12 +668,36 @@ class ExperimentRunner:
         backend_id = condition.backend_id
         backend_cfg = cfg.get("backends", {}).get(backend_id, {}) or {}
         generation_cfg = backend_cfg.get("generation", {}) or {}
+        # B-868 (/stress A1.23 P1-12 C, 2026-05-17): paper_grade UNIFICATION.
+        # Pre-fix two sources of truth disagreed:
+        #   (a) `cfg.get("paper_grade", False)` — yaml-driven, used here at 676
+        #       and at line 185, 202, 1459 (env evaluator init + diagnostic
+        #       controls + write_episode_summary fail-loud).
+        #   (b) `os.environ.get("P79_PAPER_GRADE", "0") == "1"` — env-driven,
+        #       used at line 124 (_seed_global_rng deterministic flags) +
+        #       queue scripts default-on.
+        # An operator could `P79_PAPER_GRADE=0 bash ...` (dirty/dev mode)
+        # while the yaml still has `paper_grade: true` → fingerprint records
+        # paper_grade=True but actual deterministic-RNG flags went warn_only.
+        # Resume of that run with `P79_PAPER_GRADE=1` would match the
+        # fingerprint (both yaml + env say True) and ingest the dirty steps
+        # under paper-grade banner.
+        # Fix: take MAX of yaml + env, i.e., paper_grade = True if EITHER
+        # source asserts True. Mismatch between yaml and env in the original
+        # run → fingerprint records True; resume requires env to assert True
+        # too → if operator forgot to set env, fingerprint mismatch → forced
+        # quarantine + rerun.
+        _pg_yaml = bool(cfg.get("paper_grade", False))
+        _pg_env = (os.environ.get("P79_PAPER_GRADE", "0") == "1")
+        _pg_effective = _pg_yaml or _pg_env
         components: Dict[str, Any] = {
             "model_revision": cfg.get("model", {}).get("revision"),
             "backend_revision": backend_cfg.get("revision"),
             "max_new_tokens": generation_cfg.get("max_new_tokens"),
             "temperature": generation_cfg.get("temperature"),
-            "paper_grade": bool(cfg.get("paper_grade", False)),
+            "paper_grade": _pg_effective,
+            "paper_grade_yaml": _pg_yaml,
+            "paper_grade_env": _pg_env,
             "observation_mode": condition.observation_mode,
             "max_steps": int(cfg.get("runtime", {}).get("max_steps", 40)),
         }
@@ -705,6 +730,28 @@ class ExperimentRunner:
         # methods can fire in this method's finally block regardless of
         # exception path. close methods themselves wrapped in inner
         # try/except so close-failure doesn't mask the original exception.
+        #
+        # B-859 (/stress A1.23 P0-2 AB* OOB, 2026-05-17): SIGTERM handler to
+        # honor B-500's finally: contract under OS-level signal abort. Pre-fix
+        # runner had NO signal handlers → Python default SIGTERM disposition =
+        # SIG_DFL = immediate process termination → finally: NEVER runs.
+        # queue_chain.sh:102 `pkill -f "run_experiment.py.*${pattern}"` on
+        # watchdog-death abort path sends default SIGTERM → environment.close()
+        # + energy_tracker.close() NOT executed → Playwright browser + CDP
+        # socket + Chromium subprocess leak → next chain iteration inherits
+        # dirty external state. Now: SIGTERM raises KeyboardInterrupt →
+        # Python exception machinery → finally: block fires → resources close.
+        # SIGINT is already raised as KeyboardInterrupt by Python default.
+        # SIGKILL / OOM cannot be intercepted (kernel-level); residual gap
+        # disclosed in paper §3.5. User decision /stress A1.23 (Q2=A): SIGTERM
+        # handler only; Option B runtime singleton lease dropped for Phase 1a
+        # fire timing (paper-2 forward stub).
+        def _on_sigterm(signum, _frame):  # pragma: no cover — signal-driven
+            raise KeyboardInterrupt(
+                f"SIGTERM received (signal={signum}) — converting for graceful finally (B-859)"
+            )
+        _prev_sigterm = signal.signal(signal.SIGTERM, _on_sigterm)
+
         self._cleanup_stale_runs()
         self._write_run_meta()
         try:
@@ -718,6 +765,14 @@ class ExperimentRunner:
                 self.energy_tracker.close()
             except Exception as _energy_close_exc:
                 logger.warning("B-500 energy_tracker.close() failed: %s", _energy_close_exc)
+            # B-859: restore prior SIGTERM disposition so callers (tests, REPL,
+            # other ExperimentRunner instances in same process) aren't affected
+            # by this run's handler. Best-effort — restoring fails only if
+            # signal module is unavailable (which would have aborted setup).
+            try:
+                signal.signal(signal.SIGTERM, _prev_sigterm)
+            except Exception:
+                pass
 
     def _run_main_loop(self) -> Path:
         run_condition_metrics: List[Dict[str, Any]] = []
@@ -796,7 +851,48 @@ class ExperimentRunner:
                 # fingerprint against this current-state hash.
                 _resume_fingerprint = self._compute_resume_fingerprint(self.cfg, condition)
 
+                # B-866 (/stress A1.23 P1-9 A, 2026-05-17): mid-run staging
+                # re-merge. Pre-fix `merge_staging_trajectory_events` ran
+                # exactly ONCE per condition_dir at line 754-766; if the
+                # reset gate fires AGAIN mid-run (chain `--no-reset` not
+                # passed + manual abort/retry on same RUN_ID), new
+                # `reset_post_interrupt` events land in
+                # `logs/trajectory_events_staging/RUN_${RUN_ID}.jsonl` but
+                # never get merged into `condition_dir/trajectory_events.jsonl`
+                # → paper §4 GLMM `is_after_reset` covariate systematically
+                # FALSE-NEGATIVE on mid-run reset windows → covariate
+                # adjustment biased. Counter-based re-merge every N=10 tasks
+                # picks up any new staging events; fingerprint dedup
+                # (B-491 in `merge_staging_trajectory_events`) prevents
+                # double-merge so this is idempotent on resumes too.
+                _staging_remerge_counter = 0
+
                 for task in self.tasks:
+                    # B-866: mid-run staging re-merge (every 10 tasks).
+                    _staging_remerge_counter += 1
+                    if _staging_remerge_counter % 10 == 0:
+                        try:
+                            from p79.experiment.logger_v2 import merge_staging_trajectory_events as _mid_merge
+                            _staging_run_id_mid = str(self.cfg["experiment"].get("run_id", "")).strip()
+                            if _staging_run_id_mid:
+                                _mid_n = _mid_merge(
+                                    condition_dir=condition_dir,
+                                    run_id=_staging_run_id_mid,
+                                )
+                                if _mid_n:
+                                    print(
+                                        f"[runner][trajectory-events][mid-run] B-866 "
+                                        f"merged {_mid_n} new staging events at "
+                                        f"task {_staging_remerge_counter} of {effective_cid}"
+                                    )
+                        except Exception as _mid_exc:
+                            # Best-effort — fingerprint dedup means worst case is
+                            # we miss one mid-run event for paper §4 covariate;
+                            # never block the runner hot path.
+                            logger.warning(
+                                "B-866 mid-run staging re-merge failed at task %d: %s",
+                                _staging_remerge_counter, _mid_exc,
+                            )
                     summary_file = condition_logger.summary_path(task.site, task.task_id)
                     if self.resume and summary_file.exists():
                         try:

@@ -24,6 +24,7 @@ from __future__ import annotations
 import os
 import shutil
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -54,6 +55,93 @@ def safe_rmtree(path: Path) -> bool:
         return True
     except FileNotFoundError:
         return False
+
+
+def deletion_intent_rename(path: Path) -> Optional[Path]:
+    """B-863 (/stress A1.23 P1-6 ABC*, 2026-05-17): rename for deferred
+    cleanup instead of immediate unlink/rmtree.
+
+    Closes the race window where the runner is mid-`write_step` /
+    `write_episode_summary` while watchdog session-cleanup wave runs an
+    unlink. POSIX `flock(LOCK_EX)` on the file handle provides
+    within-write atomicity but does NOT defend against external
+    `unlink()` from a different process — the renamed inode remains
+    open in the runner's fd, write succeeds, but the path now refers
+    to whatever the runner re-creates with `mkdir(exist_ok=True)`.
+    Result: half-written episode (some steps in orphaned inode,
+    some in re-created inode), aggregator sees ambiguous denominator.
+
+    The deletion-intent rename pattern moves the path aside to a
+    `<name>.pending_delete.<unix_ts>` marker; subsequent path-based
+    writes from the runner hit a fresh inode without name collision.
+    The renamed paths are reaped by `purge_pending_deletes` in a
+    periodic quiet window (5 min default).
+
+    User decision /stress A1.23 (Q3=C): code-only fix; paper §3.5/§4.X
+    disclosure prose is NOT changed (operator confirms no manual
+    cross-contamination workflow; race vector hardened at code level).
+
+    Returns the renamed Path on success, None if source didn't exist or
+    rename failed (cross-device / permissions / OS-specific) — in
+    fallback case immediate unlink/rmtree is attempted so cleanup
+    progresses (degrades to pre-B-863 race surface but functional).
+    """
+    if not path.exists():
+        return None
+    pending_name = f"{path.name}.pending_delete.{int(time.time())}"
+    pending = path.with_name(pending_name)
+    try:
+        path.rename(pending)
+        return pending
+    except OSError as exc:
+        # Cross-device rename can fail (rare on same-FS results/). Fall back
+        # to immediate unlink/rmtree as last resort.
+        try:
+            if path.is_dir():
+                shutil.rmtree(path, ignore_errors=True)
+            else:
+                path.unlink(missing_ok=True)
+        except OSError:
+            pass
+        print(
+            f"[cleanup][B-863][warn] rename failed for {path}, fell back to "
+            f"unlink: {exc}",
+            file=sys.stderr,
+        )
+        return None
+
+
+def purge_pending_deletes(run_dir: Path, older_than_secs: int = 300) -> int:
+    """B-863 (/stress A1.23 P1-6 ABC*, 2026-05-17): reap
+    `.pending_delete.<ts>` markers older than threshold (default 5 min).
+
+    Call periodically from the watchdog main loop. Older threshold = larger
+    paper-grade safety margin against still-in-flight runner writes; 5 min
+    covers typical reset-then-rerun cadence + safety buffer.
+
+    Returns the number of paths reaped.
+    """
+    if not run_dir.exists():
+        return 0
+    now = time.time()
+    n_reaped = 0
+    for p in run_dir.rglob("*.pending_delete.*"):
+        try:
+            ts_str = p.name.rsplit(".pending_delete.", 1)[1]
+            ts = int(ts_str)
+        except (IndexError, ValueError):
+            continue
+        if now - ts < older_than_secs:
+            continue
+        try:
+            if p.is_dir():
+                shutil.rmtree(p, ignore_errors=True)
+            else:
+                p.unlink(missing_ok=True)
+            n_reaped += 1
+        except OSError:
+            continue
+    return n_reaped
 
 
 def _emit_option_k_event(
@@ -94,6 +182,7 @@ def clear_task_files(
     dry_run: bool = False,
     operator_pid: Optional[int] = None,
     extra_metadata: Optional[Dict[str, Any]] = None,
+    deletion_intent: bool = False,
 ) -> bool:
     """Single-source-of-truth task file deletion for P79.
 
@@ -132,12 +221,25 @@ def clear_task_files(
 
     deleted_any = False
     if not dry_run:
-        if summary_file.exists() and safe_unlink(summary_file):
-            deleted_any = True
-        if steps_file.exists() and safe_unlink(steps_file):
-            deleted_any = True
-        if artifact_dir.exists() and safe_rmtree(artifact_dir):
-            deleted_any = True
+        if deletion_intent:
+            # B-863 (/stress A1.23 P1-6 ABC*, 2026-05-17): rename-then-async-
+            # reap. Used by watchdog session-cleanup wave (paper-grade race
+            # vs runner mid-write). Marker reaped by `purge_pending_deletes`
+            # 5 min later.
+            if summary_file.exists() and deletion_intent_rename(summary_file):
+                deleted_any = True
+            if steps_file.exists() and deletion_intent_rename(steps_file):
+                deleted_any = True
+            if artifact_dir.exists() and deletion_intent_rename(artifact_dir):
+                deleted_any = True
+        else:
+            # Immediate deletion (operator-manual clear_tasks.py path).
+            if summary_file.exists() and safe_unlink(summary_file):
+                deleted_any = True
+            if steps_file.exists() and safe_unlink(steps_file):
+                deleted_any = True
+            if artifact_dir.exists() and safe_rmtree(artifact_dir):
+                deleted_any = True
 
     if audit_event and (deleted_any or dry_run):
         metadata: Dict[str, Any] = {

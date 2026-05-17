@@ -102,6 +102,16 @@ def _read_json(path: Path) -> Dict[str, Any]:
         return json.load(f)
 
 
+# B-863 (/stress A1.23 P1-6 ABC*, 2026-05-17): deletion-intent rename
+# primitives now canonicalized in `p79.experiment.cleanup` (next to
+# `clear_task_files` shared API). Import-via-module keeps watchdog auto-clean
+# + clear_tasks.py manual cleanup on the same code path.
+from p79.experiment.cleanup import (
+    deletion_intent_rename as _deletion_intent_rename,
+    purge_pending_deletes as _purge_pending_deletes,
+)
+
+
 
 def _post_ntfy(topic: str, title: str, body: str, priority: str = "default") -> None:
     url = f"https://ntfy.sh/{topic}"
@@ -1640,25 +1650,18 @@ def main() -> int:
                         )
                 if can_retry:
                     error_retry_counts[retry_key] = retries_so_far + 1
-                    # 1. Delete summary JSON
-                    try:
-                        summary_path.unlink()
-                    except OSError:
-                        pass
-                    # 2. Delete steps JSONL
+                    # B-863 (/stress A1.23 P1-6 ABC*, 2026-05-17): deletion-
+                    # intent rename instead of unlink/rmtree. Closes race
+                    # window with runner mid-write. See _deletion_intent_rename
+                    # docstring for full rationale.
+                    # 1. Rename summary JSON to .pending_delete.<ts>
+                    _deletion_intent_rename(summary_path)
+                    # 2. Rename steps JSONL
                     steps_file = summary_path.parent / f"{site}_task_{task_id}_steps_v2.jsonl"
-                    try:
-                        if steps_file.exists():
-                            steps_file.unlink()
-                    except OSError:
-                        pass
-                    # 3. Delete artifacts directory
+                    _deletion_intent_rename(steps_file)
+                    # 3. Rename artifacts directory
                     artifacts_dir = condition_dir / "artifacts" / f"{site}_task_{task_id}"
-                    try:
-                        if artifacts_dir.exists():
-                            shutil.rmtree(artifacts_dir)
-                    except OSError:
-                        pass
+                    _deletion_intent_rename(artifacts_dir)
                     # B-743 (digest retire 2026-05-17): step 4 removed.
                     # Watchdog no longer maintains `digest_*.jsonl` consistency;
                     # operator-facing `glm_batch_digest.py` runs standalone post-fire.
@@ -1847,12 +1850,17 @@ def main() -> int:
                                 # B-384 / B-314 schema for paper §4 GLMM
                                 # `had_auth_clear` covariate.
                                 from p79.experiment.cleanup import clear_task_files
+                                # B-863 (/stress A1.23 P1-6 ABC*, 2026-05-17):
+                                # deletion_intent=True → rename-then-async-reap
+                                # closes race vs runner mid-write. Markers
+                                # purged by purge_pending_deletes 5 min later.
                                 clear_task_files(
                                     condition_dir=cond_dir,
                                     site=csite,
                                     task_id=ctask_id,
                                     event_type="task_auto_cleared",
                                     reason="session_not_logged_in",
+                                    deletion_intent=True,
                                     extra_metadata={
                                         "is_auth_loss": True,
                                         "cleared_in_session_wave": True,
@@ -1908,6 +1916,16 @@ def main() -> int:
 
         # --- 1.5. Prune stale completions (queue may delete condition_summary) ---
         _prune_stale_condition_completions(run_dir, args.condition, seen_completions)
+
+        # --- 1.6. Reap pending-delete markers from deletion-intent rename ---
+        # B-863 (/stress A1.23 P1-6 ABC*, 2026-05-17): session-cleanup wave +
+        # retry-path cleanup use `deletion_intent_rename` to defer actual
+        # deletion 5 min, avoiding race with runner mid-write. This reaper
+        # runs every watchdog tick (cheap rglob) and removes markers older
+        # than the threshold.
+        _n_reaped = _purge_pending_deletes(run_dir, older_than_secs=300)
+        if _n_reaped > 0:
+            print(f"[watchdog][B-863] reaped {_n_reaped} pending-delete markers")
 
         # --- 2. Periodic/manual status report ---
         manual_report_now = force_report_once

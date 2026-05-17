@@ -406,17 +406,58 @@ def update_cell(cell_path: Path, dry_run: bool = False, force: bool = False) -> 
     if dry_run:
         return True, f"would update: {', '.join(changed_fields)}"
 
+    # B-869 (/stress A1.23 P1-13 C, 2026-05-17): .git/index.lock pre-check.
+    # Obsidian Git plugin auto-pulls every 10min on Windows side; if cron
+    # tick lands during git's index update, our write races the merge →
+    # git can inject `<<<<<<< HEAD ... =======` conflict markers into YAML
+    # frontmatter → next parse_frontmatter / yaml.safe_load silently fails
+    # → cell.md permanently corrupt. Skip this tick, retry next cron round.
+    _git_lock = REPO / ".git" / "index.lock"
+    if _git_lock.exists():
+        return False, f"skip (git index.lock present at {_git_lock}; Obsidian Git pull in flight)"
+
     # B-853 (A1.15b Chunk γ P2-6): atomic frontmatter write. Pre-fix used
     # direct `write_text()` which is NOT atomic — cron tick crash mid-write
     # leaves cell .md half-written (invalid YAML). Obsidian Bases YAML parse
     # silently drops the row → cells.base shows wrong/missing state →
     # operator/user makes wrong launch decision. Now: write to temp file in
     # same dir + os.replace() atomic rename (POSIX semantics).
+    #
+    # B-860 (/stress A1.23 P0-3 AB* OOB, 2026-05-17): add `fcntl.flock(LOCK_EX)`
+    # so this cron writer is serialized vs concurrent writers from
+    # `auto_pull_myriad_cell.sh:228-244` (GONE-event-triggered cell quarantine
+    # frontmatter update). Pre-fix B-853 closed within-process torn-write race,
+    # but two separate processes (cron tick + GONE-event auto_pull) could
+    # still race the tmp+rename sequence (tmp file collision, partial
+    # writes visible via inotify by Obsidian). flock on a sibling lockfile
+    # (not the cell.md itself — we re-replace the inode atomically) provides
+    # cross-process mutual exclusion. Plus `_fsync_dir(parent)` ensures
+    # the dir-entry rename hits stable storage (mirror logger_v2 B-198).
+    import fcntl
     new_text = "---\n" + serialize_frontmatter(new_fm) + "\n---\n" + body
     _tmp_path = cell_path.with_suffix(cell_path.suffix + ".tmp")
+    _lock_path = cell_path.with_suffix(cell_path.suffix + ".lock")
     try:
-        _tmp_path.write_text(new_text, encoding="utf-8")
-        os.replace(_tmp_path, cell_path)
+        with open(_lock_path, "w") as _lock_f:
+            fcntl.flock(_lock_f.fileno(), fcntl.LOCK_EX)
+            try:
+                # Re-check .git/index.lock under lock (another writer may have
+                # passed pre-check but git pull races caught it mid-write).
+                if _git_lock.exists():
+                    return False, f"skip (git index.lock appeared mid-tick)"
+                _tmp_path.write_text(new_text, encoding="utf-8")
+                os.replace(_tmp_path, cell_path)
+                # B-860: fsync dir entry so rename hits stable storage.
+                try:
+                    _fd = os.open(str(cell_path.parent), os.O_RDONLY)
+                    try:
+                        os.fsync(_fd)
+                    finally:
+                        os.close(_fd)
+                except OSError:
+                    pass  # platform doesn't support dir fsync; not fatal
+            finally:
+                fcntl.flock(_lock_f.fileno(), fcntl.LOCK_UN)
     except Exception:
         # Cleanup temp file on any error; preserve original cell content.
         try:

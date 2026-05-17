@@ -221,25 +221,77 @@ if [ "${P79_SKIP_VALIDATE:-0}" != "1" ] && [ -f "$LOCAL_DIR/condition_summary_v2
 fi
 
 # Phase 3: cell frontmatter status update + analysis trigger (audit B)
+#
+# B-860 (/stress A1.23 P0-3 AB* OOB, 2026-05-17): atomic write + flock +
+# .git/index.lock check + yaml.safe_dump (B-870). Pre-fix:
+#   (a) `p.write_text(...)` non-atomic — race with glm_cell_autoupdate cron
+#       10min tick → torn YAML frontmatter → parse_frontmatter fail → cell.md
+#       permanently corrupt, all 4 Obsidian Bases views break.
+#   (b) Ad-hoc Python repr serialization — `f'{k}: {v!r}'` produces single-
+#       quoted YAML which round-trips badly with values containing `:` or
+#       control chars (B-870 / P2-14).
+#   (c) Obsidian Git plugin auto-pulls 10min — if pull races our write, git
+#       can inject `<<<<<<< HEAD` conflict markers → silent YAML decode fail.
+# Now: tmp + os.replace + fcntl.flock + _fsync_dir, mirror glm_cell_autoupdate
+# B-860 pattern, plus yaml.safe_dump for proper YAML quoting.
 if [ -n "$CELL_MD" ] && [ -f "$REPO/$CELL_MD" ]; then
     echo "Phase 3: updating cell note $CELL_MD"
     if [[ "$VALIDATE_VERDICT" == *"FAIL"* ]]; then
-        # Add quarantined flag (manual review required before paper-grade promotion)
+        # B-860 + B-869 + B-870 unified atomic frontmatter write.
         .venv/bin/python3 -c "
-import sys, yaml
+import os, sys, fcntl, yaml
 from pathlib import Path
+
+repo = Path('$REPO')
 p = Path('$REPO/$CELL_MD')
-text = p.read_text()
+
+# B-869 .git/index.lock pre-check: skip if Obsidian Git pull in flight.
+git_lock = repo / '.git' / 'index.lock'
+if git_lock.exists():
+    print(f'[B-869] skip cell.md update — git index.lock present at {git_lock}')
+    sys.exit(0)
+
+text = p.read_text(encoding='utf-8')
 parts = text.split('---', 2)
-if len(parts) >= 3:
-    fm = yaml.safe_load(parts[1]) or {}
-    fm['status'] = 'quarantined'
-    fm['quarantine_reason'] = 'validate-strict failed post-pull'
-    fm['quarantine_at'] = '$(date -u +%Y-%m-%dT%H:%M:%SZ)'
-    body = parts[2]
-    new_fm = '\n'.join(f'{k}: {v!r}' if isinstance(v, str) and (':' in v or v == '') else f'{k}: {v}' for k, v in fm.items())
-    p.write_text('---\n' + new_fm + '\n---' + body)
-    print(f'Marked $CELL_MD quarantined')
+if len(parts) < 3:
+    print('cell.md has no frontmatter; skipping')
+    sys.exit(0)
+fm = yaml.safe_load(parts[1]) or {}
+fm['status'] = 'quarantined'
+fm['quarantine_reason'] = 'validate-strict failed post-pull'
+fm['quarantine_at'] = '$(date -u +%Y-%m-%dT%H:%M:%SZ)'
+body = parts[2]
+# B-870 (P2-14): yaml.safe_dump for proper YAML quoting (was ad-hoc repr).
+new_fm = yaml.safe_dump(fm, allow_unicode=True, sort_keys=False, default_flow_style=False).strip()
+new_text = '---\n' + new_fm + '\n---' + body
+
+# B-860 atomic + flock: serialize vs glm_cell_autoupdate cron writes.
+tmp = p.with_suffix(p.suffix + '.tmp')
+lock_path = p.with_suffix(p.suffix + '.lock')
+try:
+    with open(lock_path, 'w') as lock_f:
+        fcntl.flock(lock_f.fileno(), fcntl.LOCK_EX)
+        try:
+            if git_lock.exists():
+                print(f'[B-869] skip cell.md update — git index.lock appeared mid-tick')
+                sys.exit(0)
+            tmp.write_text(new_text, encoding='utf-8')
+            os.replace(tmp, p)
+            try:
+                _fd = os.open(str(p.parent), os.O_RDONLY)
+                try:
+                    os.fsync(_fd)
+                finally:
+                    os.close(_fd)
+            except OSError:
+                pass
+        finally:
+            fcntl.flock(lock_f.fileno(), fcntl.LOCK_UN)
+    print(f'Marked $CELL_MD quarantined (atomic write + flock + safe_dump)')
+except Exception as exc:
+    try: tmp.unlink()
+    except FileNotFoundError: pass
+    raise
 " 2>&1 || echo "  (cell md update failed, skip)"
     fi
 fi
@@ -263,11 +315,29 @@ if [[ "$VALIDATE_VERDICT" == *"FAIL"* ]]; then
 fi
 
 if [ "${P79_SKIP_ANALYSIS:-0}" != "1" ]; then
-    echo "Phase 4: trigger make analysis FAST=1 (background)"
-    nohup bash -c "cd '$REPO' && make analysis FAST=1 > logs/cron/post_pull_analysis_${JOB_ID}.log 2>&1" \
-        >/dev/null 2>&1 &
-    disown
-    echo "  triggered analysis pipeline in background"
+    # B-861 (/stress A1.23 P0-4 AB* OOB, 2026-05-17): under P79_PAPER_GRADE=1
+    # run `make analysis FAST=1` foreground so JSON validation exit codes
+    # propagate to auto_pull's exit code → myriad_watcher's .done marker
+    # only written when full pipeline completes cleanly. Dev mode keeps
+    # nohup-background semantics for iteration speed.
+    if [ "${P79_PAPER_GRADE:-0}" = "1" ]; then
+        echo "Phase 4: foreground make analysis FAST=1 (P79_PAPER_GRADE=1)"
+        if ! bash -c "cd '$REPO' && make analysis FAST=1" \
+              > "$REPO/logs/cron/post_pull_analysis_${JOB_ID}.log" 2>&1; then
+            echo "ERROR: make analysis FAST=1 failed under paper-grade mode"
+            push_ntfy "auto_pull ANALYSIS-FAIL: $JOB_NAME" \
+                "job=$JOB_ID — make analysis FAST=1 failed (paper-grade mode, check logs/cron/post_pull_analysis_${JOB_ID}.log)" \
+                "high"
+            exit 4
+        fi
+        echo "  ✓ analysis pipeline completed (paper-grade foreground)"
+    else
+        echo "Phase 4: trigger make analysis FAST=1 (background, P79_PAPER_GRADE!=1)"
+        nohup bash -c "cd '$REPO' && make analysis FAST=1 > logs/cron/post_pull_analysis_${JOB_ID}.log 2>&1" \
+            >/dev/null 2>&1 &
+        disown
+        echo "  triggered analysis pipeline in background"
+    fi
 fi
 
 # Phase 5: notify (validate=pass case only; FAIL case already pushed high-priority above)
@@ -278,6 +348,17 @@ fi
 push_ntfy "Cell pulled: $JOB_NAME" \
     "job=$JOB_ID files=$PULLED validate=$VALIDATE_VERDICT $SUMMARY_LINE" \
     "default"
+
+# B-861 (/stress A1.23 P0-4 AB* OOB, 2026-05-17): touch .done marker so
+# myriad_watcher's stale-lock detection (_detect_stale_autopull_locks) knows
+# this dispatch finished cleanly. Also remove the .lock marker. The pair
+# (.lock present + .done absent + age > 30min) is the failure signal.
+LOCK_PATH="$REPO/logs/cron/autopull_${JOB_ID}.lock"
+DONE_PATH="$REPO/logs/cron/autopull_${JOB_ID}.done"
+if [ -f "$LOCK_PATH" ]; then
+    date -u +%Y-%m-%dT%H:%M:%SZ > "$DONE_PATH"
+    rm -f "$LOCK_PATH"
+fi
 
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] auto_pull DONE pulled=$PULLED validate=$VALIDATE_VERDICT"
 exit 0
