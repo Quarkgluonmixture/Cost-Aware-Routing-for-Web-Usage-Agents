@@ -23,6 +23,7 @@ def load_episode_summary_strict(
     path: Path,
     *,
     mode: StrictMode = "strict",
+    reject_needs_reevaluation: bool = False,
 ) -> Optional[Dict[str, Any]]:
     """Load an episode summary JSON with paper-grade type-safety enforcement.
 
@@ -31,12 +32,23 @@ def load_episode_summary_strict(
         mode: "strict" raises on type mismatch (default for paper aggregators);
               "lenient" logs warning + returns None (for diagnostic tools that
               want to survey all archives without crashing).
+        reject_needs_reevaluation: B-542 (/stress A1.5b Phase 2 P0-3-B codex
+            OOB, 2026-05-17). When True, treat a payload with
+            `needs_reevaluation=True` (B-486 quarantine flag) as load failure
+            — strict mode raises ValueError; lenient logs + returns None.
+            Canonical paper-grade aggregators producing the first-published
+            SR / oracle-lift numbers MUST set this True so quarantined episodes
+            (crash before evaluator scored) do NOT enter the H1/H2/H3 universe
+            as `success=False` failures. Default False preserves legacy
+            consumer semantics where quarantined rows are tolerated as
+            transparency input.
 
     Returns:
         dict on success, None on lenient-mode soft failure.
 
     Raises:
-        ValueError in strict mode on type mismatch.
+        ValueError in strict mode on type mismatch or quarantined episode
+            (when reject_needs_reevaluation=True).
         FileNotFoundError if `path` does not exist.
 
     Paper-grade contract: callers consuming `success` for SR / lift computation
@@ -65,6 +77,21 @@ def load_episode_summary_strict(
         if mode == "strict":
             raise ValueError(msg)
         logger.warning("B-283 load_episode_summary_strict[lenient] %s", msg)
+        return None
+    # B-542: paper-grade quarantine filter. Quarantined episodes (B-486) have
+    # `needs_reevaluation=True` and represent crash-before-evaluator state;
+    # their `success=False` is bookkeeping, not a real evaluator outcome.
+    # Treating them as failures inflates the denominator with non-evaluated
+    # tasks → paper §1 hero / H1/H2/H3 universe pollution.
+    if reject_needs_reevaluation and bool(payload.get("needs_reevaluation", False)):
+        msg = (
+            f"B-542 quarantined episode (needs_reevaluation=True) rejected by "
+            f"paper-grade aggregator at {path}: task_id={payload.get('task_id')!r}, "
+            f"error={str(payload.get('error', ''))[:120]!r}"
+        )
+        if mode == "strict":
+            raise ValueError(msg)
+        logger.warning("B-542 load_episode_summary_strict[lenient] %s", msg)
         return None
     return payload
 

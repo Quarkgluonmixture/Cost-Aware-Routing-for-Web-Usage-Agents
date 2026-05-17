@@ -42,6 +42,7 @@ import csv
 import hashlib
 import json
 import math
+import os
 import statistics
 import subprocess
 import sys
@@ -125,8 +126,23 @@ def _load_cell_per_task(cell: Dict) -> Dict[str, Dict[str, Dict]]:
     A1.21 P0-1 fix: `cost_raw = data.get('total_cost_usd')` 用 `is None` 检查
     避免 `or` short-circuit drop valid 0.0. Same fix in `generate_per_task_sr.py`.
 
+    B-542 (/stress A1.5b Phase 2 P0-3-B codex OOB, 2026-05-17): paper-grade
+    canonical first-number producer was bypassing `load_episode_summary_strict`
+    (B-283) AND not rejecting B-486 quarantined episodes — quarantined rows
+    entered H1/H2/H3 universe as failed denominator. Now strict + reject
+    needs_reevaluation. Pre-fix audit trail: if any current archive row has
+    quarantined state, this raises in strict mode → CI gate catches archive
+    pollution before paper-grade aggregation. Use P79_STRICT=0 env to opt
+    into lenient diagnostic mode (skip rather than raise).
+
     Returns: dict[mode] -> dict[task_id_str] -> {"success": float|None, "cost": float|None}
     """
+    from p79.experiment.io_utils import load_episode_summary_strict
+
+    # Same env opt-out as `aggregate_phantom_lift.load()` for symmetry (B-325).
+    _strict_env = os.environ.get("P79_STRICT", "1").lower()
+    _strict_mode = "lenient" if _strict_env in ("0", "false", "no") else "strict"
+
     by_mode: Dict[str, Dict[str, Dict]] = {}
     for mode, ep_dir in cell["modes"].items():
         outcomes: Dict[str, Dict] = {}
@@ -135,14 +151,31 @@ def _load_cell_per_task(cell: Dict) -> Dict[str, Dict[str, Dict]]:
             continue
         for summary_path in sorted(ep_dir.glob("*_summary_v2.json")):
             try:
-                with summary_path.open() as f:
-                    data = json.load(f)
-            except (json.JSONDecodeError, OSError):
+                # B-542: strict loader + reject_needs_reevaluation=True for
+                # canonical paper-grade producer. Type-safe bool/int/str at
+                # the boundary + paper-grade quarantine filter at the
+                # boundary (was post-hoc nowhere → quarantined episodes
+                # silently counted as `success=False` failures).
+                data = load_episode_summary_strict(
+                    summary_path,
+                    mode=_strict_mode,
+                    reject_needs_reevaluation=True,
+                )
+            except ValueError:
+                # Strict-mode rejection (corrupt JSON, type mismatch, or
+                # quarantined episode). Skip rather than crash the entire
+                # cell — `validate_run_manifest.py` (B-525 / B-494) is the
+                # canonical CI gate for archive cleanliness audit.
+                continue
+            except (OSError, FileNotFoundError):
+                continue
+            if data is None:
+                # Lenient-mode soft failure (logger.warning already emitted).
                 continue
             tid = data.get("task_id")
             if tid is None:
                 continue
-            success_raw = data.get("success")
+            success_raw = data.get("success")  # bool (strict loader guaranteed)
             # P0-1 fix: `is None` check, NOT truthy `or` short-circuit
             cost_raw = data.get("total_cost_usd")
             if cost_raw is None:
@@ -737,12 +770,22 @@ def main() -> int:
     ap.add_argument("--output-md", default=str(DEFAULT_OUT_MD))
     args = ap.parse_args()
 
-    # A1.21 P1-3 (B-530): lazy fn re-evaluates env var + manifest at call time
-    cells_to_use = get_aggregator_cells()
-
-    payload = build_full_decision(cells_to_use)
+    # B-534 (/stress A1.5b Phase 2 P0-2-B codex OOB, 2026-05-17): manifest
+    # propagation closure. Pre-fix `--run-manifest` only fed `write_json()`
+    # provenance hash → consumer thought "data discovery via this manifest"
+    # but cells_to_use was loaded from default registry → JSON file hash
+    # was for a manifest that NEVER GOVERNED THE DATA. Now pass manifest_path
+    # through `get_aggregator_cells(manifest_path=...)` so the provenance
+    # SHA in the output is computed against the SAME manifest that drove
+    # data discovery. A1.21 P0-5-B / B-524 / B-530 already added
+    # `manifest_path` to `get_cells` + `get_aggregator_cells` → this is
+    # the canonical-first-number producer plug-in for the param trail.
     manifest_path = (Path(args.run_manifest) if args.run_manifest
                      else REPO / "results/phantom_paper/run_manifest.yaml")
+    # A1.21 P1-3 (B-530): lazy fn re-evaluates env var + manifest at call time
+    cells_to_use = get_aggregator_cells(manifest_path=manifest_path)
+
+    payload = build_full_decision(cells_to_use)
 
     write_csv(payload, Path(args.output_csv))
     write_json(payload, Path(args.output_json), manifest_path=manifest_path)

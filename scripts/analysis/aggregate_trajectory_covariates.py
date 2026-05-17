@@ -275,6 +275,15 @@ def compute_episode_covariates(
         else:
             prior_event_count = 0
 
+        # B-543 (/stress A1.5b Phase 2 P1-1-AB, 2026-05-17): per-row
+        # quarantine flag propagation. Paper §4 GLMM consumer can then
+        # filter or annotate B-486 quarantined episodes (crash before
+        # evaluator scored) so they do not pollute the covariate-adjusted
+        # SR estimate as "observed failures". Default behavior of this
+        # aggregator is non-destructive (emit the flag, let consumer
+        # decide) so transparency-only reads still see all rows.
+        needs_reev = bool(ep_summary.get("needs_reevaluation", False))
+
         rows.append({
             "condition_id": condition_id,
             "site": site,
@@ -287,6 +296,10 @@ def compute_episode_covariates(
             "prior_event_count": prior_event_count,
             "n_task_events": len(task_events),
             "ep_wallclock_start": ep_start,
+            # B-543: quarantine flag; paper §4 GLMM consumer filters or
+            # annotates. Legacy rows pre-B-486 default False (no quarantine
+            # state recorded → assume normal episode).
+            "needs_reevaluation": needs_reev,
         })
 
     return rows
@@ -313,6 +326,9 @@ def emit_covariates(condition_dir: Path) -> Tuple[int, Path, Path]:
             "is_after_reset", "had_auth_clear", "had_finalize_race_clear",
             "cleared_in_session_wave", "session_wave_size",
             "prior_event_count", "n_task_events", "ep_wallclock_start",
+            # B-543 (/stress A1.5b Phase 2 P1-1-AB): quarantine flag column
+            # so empty-rows code path still emits the canonical schema.
+            "needs_reevaluation",
         ]
     with open(csv_path, "w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)

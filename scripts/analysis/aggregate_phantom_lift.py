@@ -141,9 +141,25 @@ def load(d: Path) -> tuple[set[int], set[int]]:
             continue
         tid = int(m.group(1))
         try:
-            rec = load_episode_summary_strict(p, mode=_strict_mode)
+            # B-542 (/stress A1.5b Phase 2 P0-3-B codex OOB, 2026-05-17): paper-
+            # grade aggregator MUST reject B-486 quarantined episodes
+            # (needs_reevaluation=True). Pre-fix: load_episode_summary_strict
+            # accepted quarantined rows (only checked type-safety) → drop-one
+            # oracle denominator included crash-before-evaluator episodes as
+            # `success=False` failures → paper §1 hero "Phantom-SoM +3.33pp
+            # reddit drop-one oracle lift" silently inflated denominator with
+            # non-evaluated tasks. Same B-325 corrupt-row hygiene principle.
+            rec = load_episode_summary_strict(
+                p,
+                mode=_strict_mode,
+                reject_needs_reevaluation=True,
+            )
         except ValueError:
             # B-325: corrupt → exclude from BOTH observed and success.
+            # B-542: quarantined episode (needs_reevaluation=True) also rejected
+            # in strict mode (raises ValueError) → counted as "missing data",
+            # NOT "observed failure". Same exclusion semantics keeps drop-one
+            # oracle denominator clean.
             # Pre-fix the `o.add(tid)` ran BEFORE the load attempt → corrupt
             # task counted as observed failure (drop-one denominator pollution).
             n_corrupt += 1
