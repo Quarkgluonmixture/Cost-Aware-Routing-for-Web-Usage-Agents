@@ -25,6 +25,22 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO"
 
+# B-904 (/stress A2.2 P0-3-A* OOB, 2026-05-17): source paper-grade lib. Pre-fix
+# launch.sh was the ONLY user-facing manual entry skipping `_lib_paper_grade_gates.sh`,
+# leaving init_paper_grade_env (P79_PAPER_GRADE=1 default) + acquire_site_lock
+# + cross-mode collision API all dormant on `make launch` / manual rescue path.
+# Defense stack (B-548/B-754/B-755/B-756/B-639) bypassed entirely under
+# `P79_ALLOW_NO_RESET=1 bash launch.sh ...` workflow.
+# Note: `assert_a100_url_locality` deliberately NOT called here — that gate is
+# already enforced inside the downstream queue script (queue_baseline.sh:97 +
+# queue_phantom_*.sh:84) where it fails fast just before actual fire. Calling it
+# here would break DGX dev-session DRY-run + sanity-check workflows (cwd != A100,
+# Tailscale URLs not local). Operators firing paper-grade fire still hit the gate
+# via the queue leaf, no defense gap.
+# shellcheck disable=SC1091
+source "$REPO/scripts/queues/_lib_paper_grade_gates.sh"
+init_paper_grade_env "$REPO"
+
 if [ "$#" -lt 3 ]; then
   echo "Usage: $0 BASELINE SITE MODE [TARGET_SECTION] [PRIORITY]" >&2
   # B-305 (A1.17 P2-2): help text updated to reflect 3-baseline reality
@@ -133,21 +149,55 @@ if [ "$FORCE_NO_CHECK" != "1" ]; then
   if [ "$DRY" = "1" ]; then
     echo "  (DRY — deterministic checks skipped)"
   else
-    # Rule #1 — Same-site single baseline (3-way collision, paper-grade hard rule)
+    # B-903 (/stress A2.2 P0-2-A* OOB, 2026-05-17): site-collision check uses lib
+    # API instead of inline `pgrep -f "_${OTHER}_.*_${SITE}_"`. Pre-fix substring
+    # pattern missed `_[0-9]{8}_` date anchor → False-Positive BLOCK on
+    # `B0_dom_wa_shopping_admin_<date>_` when user `bash launch.sh B1 dom shopping`
+    # (substring match `_shopping_`); reverse direction False-Negative MISS for
+    # `bash launch.sh B0 dom wa_shopping` vs running B1 VWA shopping (pattern
+    # `B1_.*_wa_shopping_` not matching VWA `_dom_shopping_<date>_` line). Lib
+    # `assert_no_cross_mode_collision` (B-858) + queue_chain.sh:208 (B-637) both
+    # already use anchored `_${site}_[0-9]{8}_` + WA exclusion; this propagates
+    # to user-facing manual entry.
+    # The lib helper is structured as same-baseline + cross-mode check; for the
+    # launch.sh "cross-baseline" semantics we wrap a loop over 2 other baselines.
+    _BENCHMARK="vwa"
+    [[ "$SITE" == wa_* ]] && _BENCHMARK="wa"
+    _SITE_FOR_LIB="$SITE"
+    [[ "$_BENCHMARK" == "wa" ]] && _SITE_FOR_LIB="${SITE#wa_}"
     for OTHER in B0 B1 B2; do
       [ "$OTHER" = "$BASELINE" ] && continue
-      if pgrep -f "run_experiment.*${OTHER}_.*_${SITE}_" >/dev/null 2>&1; then
-        echo "❌ BLOCK: ${OTHER} already running on site=${SITE} (paper-grade hard rule §106)" >&2
+      # Fake RUN_ID for the lib helper's self-exclusion — pattern `_OTHER_*` won't match
+      # since RUN_ID we pass has `BASELINE` prefix.
+      _FAKE_RID="${BASELINE}_launch_sentinel_$$"
+      # Call lib with OTHER baseline + same site → returns rc=1 (FATAL via exit 1)
+      # if OTHER is running on same (site, benchmark). Use subshell to capture exit.
+      if ( assert_no_cross_mode_collision "$OTHER" "$_SITE_FOR_LIB" "$_BENCHMARK" "$_FAKE_RID" "launch_collision_check" ) >/dev/null 2>&1; then
+        : # no collision
+      else
+        echo "❌ BLOCK: ${OTHER} already running on site=${SITE} benchmark=${_BENCHMARK} (paper-grade hard rule §106)" >&2
         echo "  shared docker container + user account → cross-contamination" >&2
+        echo "  (date-anchored detection via lib assert_no_cross_mode_collision, B-903 propagation)" >&2
         exit 2
       fi
     done
 
-    # Rule #2 — RESET_BEFORE for paper-grade (allow override via env)
-    if [ "$RESET" != "1" ] && [ "${P79_ALLOW_NO_RESET:-0}" != "1" ]; then
-      echo "❌ BLOCK: RESET=0 + paper-grade default" >&2
-      echo "  set P79_ALLOW_NO_RESET=1 for dev rerun (NOT paper-grade)" >&2
-      exit 2
+    # B-904 (P0-3-A* cont): RESET gate now uses P79_PAPER_GRADE env naming
+    # (set by init_paper_grade_env above, default 1). Pre-fix `P79_ALLOW_NO_RESET`
+    # was orphan naming not honored by lib hard-blocks (B-639/B-754). Now: under
+    # P79_PAPER_GRADE=1 (default) RESET=0 explicit FATAL; under P79_PAPER_GRADE=0
+    # (dev opt-out) RESET=0 allowed. Legacy P79_ALLOW_NO_RESET=1 still honored as
+    # back-compat shim that implies P79_PAPER_GRADE=0 (warns operator).
+    if [ "$RESET" != "1" ]; then
+      if [ "${P79_ALLOW_NO_RESET:-0}" = "1" ]; then
+        echo "[launch][warn] P79_ALLOW_NO_RESET=1 legacy shim active; treating as P79_PAPER_GRADE=0 dev opt-out (B-904)." >&2
+        export P79_PAPER_GRADE=0
+      fi
+      if [ "${P79_PAPER_GRADE:-1}" = "1" ]; then
+        echo "❌ BLOCK: RESET=0 + P79_PAPER_GRADE=1 (paper-grade default)" >&2
+        echo "  set P79_PAPER_GRADE=0 for dev rerun (NOT paper-grade)" >&2
+        exit 2
+      fi
     fi
 
     # Rule #5 — config ↔ site benchmark match (was glm-unique catch)
@@ -194,13 +244,20 @@ PID=$!
 disown
 echo "✓ Launched PID=$PID"
 
-# Post-launch hook: fire PLAYBOOK §1+§2 refresh in background so the new run
-# shows up immediately (don't wait for next 2h cron tick). Best-effort, never
-# blocks launch on GLM API hiccup.
-nohup bash -c "sleep 30 && cd '$REPO' && make glm-update-cells APPLY=1 && make glm-refresh-playbook APPLY=1" \
+# B-906 (/stress A2.2 P1-8-AB, 2026-05-17): post-launch GLM PLAYBOOK refresh hook
+# delay 30s → 300s. Pre-fix 30s fires while reddit reset_and_auth_gate is in the
+# postmill cold-start polling window (60 iters × 3s = up to 180s postmill warm-up
+# per `reset_vwa_sites.sh::_reset_vwa_local_reddit`) + 15s settle + 60s auth gate
+# = up to 255s before runner spawn. GLM cron at 30s sees no runner pid → cell
+# frontmatter writes "pending with no pid" 5min false-active window. Manual rescue
+# / master orchestrator may misread "idle" and trigger same-site collision.
+# 300s covers reddit worst-case. Option C sentinel infra (lib `logs/launching/`
+# per-iteration JSON write + active_processes recognition) reserved for Tier 3
+# (B-912+) — see 笔记 §208.
+nohup bash -c "sleep 300 && cd '$REPO' && make glm-update-cells APPLY=1 && make glm-refresh-playbook APPLY=1" \
   >> logs/cron/glm_playbook.log 2>&1 < /dev/null &
 disown
-echo "✓ Triggered PLAYBOOK refresh in background (30s delay for cell autodetect)"
+echo "✓ Triggered PLAYBOOK refresh in background (300s delay; covers reddit cold-start worst-case 255s, B-906)"
 echo ""
 echo "Monitor:"
 echo "  tail -f $LOG"

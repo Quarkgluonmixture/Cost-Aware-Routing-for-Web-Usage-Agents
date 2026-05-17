@@ -186,6 +186,13 @@ for cmd in "$@"; do
     # identity for leaf scripts so they can skip double-acquire when invoked
     # under this chain (lib `acquire_site_lock` checks this var).
     export P79_CHAIN_LOCK_HELD="${this_site}:${this_benchmark}"
+    # B-905 (/stress A2.2 P0-4-A* OOB, 2026-05-17): export chain PID so leaf
+    # `acquire_site_lock` can verify chain process is alive + still holds the
+    # advertised lock fd (defends against stale env-bypass leak — debug shell
+    # leftover `export P79_CHAIN_LOCK_HELD=...` 不删 case). lib reads this PID
+    # then `kill -0` + `readlink /proc/${pid}/fd/9` to confirm chain still holds
+    # fd 9 pointing at expected lock file before granting leaf skip-acquire.
+    export P79_CHAIN_PID=$$
   fi
   # B-637 (A1.13 P1-1 Claude + gemini G10 2-AI, 2026-05-17): regex anchor.
   # Pre-fix pgrep `_${this_site}_` substring overlap problems:
@@ -452,6 +459,9 @@ sys.exit(0)
     exec 9>&-
     # B-704 (A1.14 Chunk d P1-4): clear leaf-script lock-held marker
     unset P79_CHAIN_LOCK_HELD
+    # B-905 (/stress A2.2 P0-4-A* OOB, 2026-05-17): paired unset of chain PID
+    # marker to prevent stale leak into subsequent iterations / cron / debug shell.
+    unset P79_CHAIN_PID
     log "  [lock] released ${LOCK_FILE:-(unset)}"
   fi
 done

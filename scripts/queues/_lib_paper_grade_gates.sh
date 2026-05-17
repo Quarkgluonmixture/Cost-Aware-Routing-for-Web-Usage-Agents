@@ -87,9 +87,48 @@ acquire_site_lock() {
     echo "[${label}][error] acquire_site_lock: site required" >&2
     return 1
   fi
-  # Parent (queue_chain) already holds the lock → skip, no double-acquire.
+  # B-905 (/stress A2.2 P0-4-A* OOB, 2026-05-17): env-bypass shortcut hardened
+  # with fd-level verification. Pre-fix `P79_CHAIN_LOCK_HELD` env string match
+  # alone allowed stale env leak (debug session / wrapper / cron leftover →
+  # `export P79_CHAIN_LOCK_HELD=cls:vwa` 不删) → leaf bypass flock without
+  # actually-held chain lock → two manual leaf invocations sharing the stale
+  # env both skip → silent race (CLAUDE.md hard rule §106 violation silent).
+  # Defense: env match + verify chain PID alive (kill -0) + verify chain's
+  # fd 9 actually points to the expected per-site lock file (/proc readlink).
+  # Stale env (chain dead OR chain fd 9 not pointing here) → FATAL with audit
+  # surface, lock leak shows up as visible problem instead of silent race.
+  #
+  # Why this isn't pure-kernel-only (Option C as originally framed): Linux flock
+  # treats two open file descriptions on the same file as INDEPENDENT lock holders;
+  # same-process LOCK_EX|LOCK_NB on a second fd fails just like cross-process
+  # contention. Pure deletion of the shortcut would break chain→leaf delegation
+  # (subshell inherits fd 9 but opens its own fd 7 → second EX conflicts with
+  # parent chain's first EX). Therefore we keep the shortcut but harden with
+  # fs-level verification — the "stale env" attack is closed, re-entrance preserved.
   if [[ "${P79_CHAIN_LOCK_HELD:-}" == "${site}:${benchmark}" ]]; then
-    echo "[${label}][lock] parent queue_chain holds ${site}:${benchmark} (skip leaf acquire)" >&2
+    local _chain_pid="${P79_CHAIN_PID:-}"
+    if [[ -z "${_chain_pid}" ]]; then
+      echo "[${label}][FATAL] P79_CHAIN_LOCK_HELD set but P79_CHAIN_PID missing — env-bypass refused (B-905)" >&2
+      echo "[${label}][FATAL]   This indicates stale env leak. Unset P79_CHAIN_LOCK_HELD or re-launch via queue_chain.sh." >&2
+      return 1
+    fi
+    if ! kill -0 "${_chain_pid}" 2>/dev/null; then
+      echo "[${label}][FATAL] P79_CHAIN_LOCK_HELD set but chain PID=${_chain_pid} not alive — env-bypass refused (B-905 stale-env leak)" >&2
+      echo "[${label}][FATAL]   Unset P79_CHAIN_LOCK_HELD + P79_CHAIN_PID and re-launch fresh." >&2
+      return 1
+    fi
+    # Verify chain still holds fd 9 pointing at expected lock file
+    local _expected_lock="${REPO_DIR:-$(pwd)}/.locks/p79_${site}_${benchmark}.lock"
+    local _chain_fd9_target=""
+    if [[ -L "/proc/${_chain_pid}/fd/9" ]]; then
+      _chain_fd9_target="$(readlink "/proc/${_chain_pid}/fd/9" 2>/dev/null || true)"
+    fi
+    if [[ "${_chain_fd9_target}" != "${_expected_lock}" ]]; then
+      echo "[${label}][FATAL] P79_CHAIN_LOCK_HELD/${_chain_pid} but /proc/${_chain_pid}/fd/9 = ${_chain_fd9_target:-<unset>}, expected ${_expected_lock} (B-905 stale-env leak)" >&2
+      echo "[${label}][FATAL]   Chain process alive but no longer holds expected lock fd. Unset env vars + re-launch." >&2
+      return 1
+    fi
+    echo "[${label}][lock] parent queue_chain pid=${_chain_pid} verified holds ${site}:${benchmark} (skip leaf acquire, B-905)" >&2
     SITE_LOCK_FD=""
     return 0
   fi
