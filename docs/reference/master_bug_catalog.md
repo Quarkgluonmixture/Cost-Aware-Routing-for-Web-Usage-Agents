@@ -3858,4 +3858,122 @@ submodule).
 
 **Cross-batch context (last 8h overnight + morning)**: A1.25 GRL Chunk 1 (B-439~B-448, `5d8fc2f`) + parallel A1.4 Chunks 1-4 (B-449~B-458) + A1.20 (B-459~B-477, `e4a5428`) + A1.25 GRL Chunk 2 (B-479~B-484, `87874f2`) + parallel A1.5b Phase 1 (B-485~B-505, `19bda49` 等) + this A1.25 GRL Chunk 3 (B-506~B-511) = **53 paper-grade fixes** across 5 distinct /stress audit scopes during 2026-05-17 overnight+morning sprint via concurrent multi-Claude + multi-AI-lineage (Claude + codex + gemini) audit pipeline.
 
-**Next available B-number**: B-512+.
+**Next available B-number**: B-512+ (consumed below by A1.21).
+
+---
+
+## /stress A1.21 — `scripts/analysis/preregistration_decision_test.py` + `lib/run_registry.py` + `results/phantom_paper/run_manifest.yaml` (2026-05-17 morning, B-513~B-533)
+
+**Scope (pre-fire, 10 artifacts)**: paper §1 hero gate substrate audit — decision test + registry + run_manifest paper-grade promotion lock + canonical full producer + bridge CSV + cross-site/cost aggregators.
+
+**3-AI cycle output**:
+- Mode A (Claude self) — 14 findings, 5 OOB (estimand-mismatch family)
+- Mode B (codex `/codex-stress` reproducibility-systems-engineer) — 10 findings, 4 OOB (retired-DL still wired / no canonical R1-R5 artifact / hetero rescue prereg violation / --run-manifest provenance theater)
+- Mode C (gemini `/gemini-stress` paper-§1-hero defense reviewer) — 8 findings, 3 OOB (B0 cost telemetry vacuous / SE floor de-weighting attack on A1.19 B-426 / 4-vs-6 mode cannibalization / I² missing in canonical producer)
+- 29 unique findings after dedup; 11 P0 + 15 P1 + 3 P2; 5 fixes deferred (P0-10 SE floor user-decided option A retain + prose expand; P1-6 4-vs-6 re-aggregate post-data; P1-14/P1-15 off-scope; P2-1/P2-2/P2-3 defer)
+
+**Numbering note**: original commits (`18fd8b7` Chunk 1 + `c4c033d` Chunk 2) referenced B-478~B-502; mid-session discovery that parallel sessions A1.25 GRL Chunk 2 (B-479~B-484) + A1.5b runner (B-485~B-505) + A1.25 GRL Chunk 3 (B-506~B-511) already claimed those IDs forced renumber to canonical B-513~B-533 via sed sweep in `5b08d79`. Original commit messages reference old IDs; catalog entries below use canonical post-renumber IDs.
+
+### B-513. `preregistration_decision_test.evaluate_h1` DL meta + magnitude + superiority 3-test compound retired (P0-2-B codex OOB) 🛠️ FIXED commit `18fd8b7` (orig as B-478, sed renumber `5b08d79`)
+- **Bug**: prereg §1 L68-86 locks SINGLE FE inverse-variance superiority test; code computed DL random-effects two-sided + magnitude check + superiority, primary_h1_pass = AND of 3 → reviewer running advertised decision script gets DIFFERENT H1 verdict than canonical B-184 `aggregate_phase1_prereg_gate.py`. Prereg ↔ code lock direct breach.
+- **Fix**: evaluate_h1 replaced 3-test compound with FE pool + superiority only (matches B-184 path bit-identically); DL meta moved to `appendix_dl_sensitivity` JSON block for transparency. evaluate_h3_axis same retire (FE-only).
+- **Blast**: paper §1 hero H1 verdict reproducibility — OSF audit reviewer ran `preregistration_decision_test.py` → got DIFFERENT answer than `aggregate_phase1_prereg_gate.py` → "which is your hero gate?" instant reject.
+
+### B-514. `_effective_gate_pass` + `apply_framing_rule` heterogeneity-rescue branch retired (P0-3-B codex OOB) 🛠️ FIXED commit `18fd8b7` (orig as B-479)
+- **Bug**: when I² > 75%, `_effective_gate_pass` rescued failed pooled gate via per-cell consistency rule (`n_pos >= 3 AND n_sig >= 2`), then `apply_framing_rule` `heterogeneity_override` branch rescued R5 → R3. Prereg §2 L323 explicitly: "high I² does NOT block pooling, only caps the hook" + L340-342: "p ≥ 0.05 → H1 FAILS → R5". Code violated prereg by reviving failed FE-H1.
+- **Fix**: `_effective_gate_pass` returns (pooled_pass unchanged, heterogeneous flag). `apply_framing_rule` rewrites: failed H1 → R5 always (regardless of I²); passed H1 + I² > 75% caps R1/R2 → R3 only (NOT rescue). Synthetic het scenario now correctly returns R3 cap-only (I²=94%, R1 capped) instead of "rescued" R3.
+- **Blast**: prereg compliance — reviewer audit "你的 prereg lock 说 I²>75% only caps framing 不 rescue H1, 但 code 把 failed H1 rescue 了 — paper-grade?" prereg violation cite-able.
+
+### B-515. NEW `aggregate_phase1_full_prereg_decision.py` canonical full R1-R5 artifact (P0-4-B codex OOB) 🛠️ FIXED commit `18fd8b7` (orig as B-481)
+- **Bug**: `make analysis` ran B-184 H1-only producer + retired-DL decision_test (P0-2 contaminated) — NO canonical full H1+H2(a)+H3+framing artifact. Paper §1 framing rule decision (R1-R5) source was the retired-DL script; once retired (P0-2), the canonical full pipeline didn't exist.
+- **Fix**: new file (760 LOC) reuses B-184 `_fe_pool` + `_norm_cdf` + `_cell_drop_one_theta_se` for H1 (bit-identical) + per-task cost ratio H2(a) (B-518) + H3 axis-1/2 FE pool + I² cap-only (B-522 in this batch covers I² in decision_test; canonical full has its own `_compute_q_isq`) + framing rule R1-R5. Emits single JSON with `code_sha256` + `manifest_sha256` + `csv_sha256` + `git_commit_sha` provenance. Makefile target `phase1-full-prereg-decision` added to `_aggregate` chain.
+- **Blast**: paper §1 framing reproducibility + OSF audit — single canonical artifact for entire H1-H3+R1-R5 decision, eliminates "which script answers this?" reviewer attack.
+
+### B-516. `dersimonian_laird_meta` k<2 → InsufficientCellsError (P1-8 Claude) 🛠️ FIXED commit `18fd8b7` (orig as B-485)
+- **Bug**: k=0 silently returned `pooled_effect=0.0` → magnitude_check FAIL → R5 "paper death" framing diagnosis when root cause was yaml 0 paper-grade entries (B-525 territory). User spent hours debugging stats setup when root cause was data missing.
+- **Fix**: `dersimonian_laird_meta` k<2 raises `InsufficientCellsError` with explicit cause hint ("Likely cause: run_manifest.yaml has 0 paper-grade entries OR CSV has missing cells").
+
+### B-517. `_paired_bootstrap` returns percentile p-values alongside percentile CI (P0-6-ABC 3-AI overlap) 🛠️ FIXED commit `18fd8b7` (orig as B-486)
+- **Bug**: bootstrap returned 4-tuple (point, ci_lo, ci_hi, se); callers used `z = effect/se; p = 2*(1-Φ(|z|))` (normal-approx). Mixed method: percentile CI + normal-approx p-value. In sparse cells (B2 small N) / skewed bootstrap distribution → conflicting verdict (CI excludes 0 but p > 0.05).
+- **Fix**: 6-tuple return (added `p_percentile_two_sided` + `p_percentile_one_sided_gt_zero`). evaluate_h1 + evaluate_h3_axis read percentile p as canonical; normal-approx kept as `p_value_normal_approx_legacy` field for backward-compat.
+
+### B-518. `evaluate_h2_cost` per-task cost ratio (paired) — was median-of-marginals (P0-9-A Claude OOB + prereg §2 prose lock amend) 🛠️ FIXED commit `18fd8b7` (orig as B-487)
+- **Bug**: code computed `median(P-SoM costs) / median(DOM costs)` — marginal medians ignoring paired structure. Paper §1 line 9 "the cost of obtaining this configuration is essentially the cost of the DOM baseline" is per-task claim → estimand should be `median over tasks of (cost_psom[t] / cost_dom[t])`. Prereg §2 L138 "median cost ratio" was ambiguous prose.
+- **Fix**: rewrite `evaluate_h2_cost` per-task ratio with paired iteration; prereg §2 H2(a) prose lock amendment 2026-05-17 explicit "per-task median ratio".
+
+### B-519. `evaluate_h2_cost` 3-state per cell (within/falsified/cannot_evaluate) (P1-7 Claude) 🛠️ FIXED commit `18fd8b7` (orig as B-488)
+- **Bug**: missing cost data set `per_cell_pass: False` → framing rule counted as falsification → R4 framing degraded. Distinct from "data violates margin" cell.
+- **Fix**: per cell now reports `state ∈ {within_band, falsified, cannot_evaluate}` + `n_cells_falsified` vs `n_cells_cannot_evaluate`. Framing rule uses `n_falsified > 0` (NOT `pass_count == total`). Missing data does NOT trigger R4.
+
+### B-520. Synthetic generator B2 capability + cell_shift extend + seed split + scipy fallback batch (P1-9/P1-10/P1-11 Claude) 🛠️ FIXED commit `18fd8b7` (orig as B-489)
+- **B2 capability** (P1-10): pre-fix `if model == "B1"` only — B2 = B0 by accident, violating advisor §138 B2 ≈ B1 matched-capability lock. Fix: `if model in ("B1", "B2")`.
+- **Het cell_shift** (P1-10 sibling): hardcoded 4-element list `[+0.25, -0.20, +0.25, -0.20]` IndexError on 6 cells. Fix: extended to 6, modulo-wrap defensive.
+- **Seed split** (P1-9): `--data-seed` + `--bootstrap-seed` separate CLI args (was single `--seed` double-binding). Default 42 fallback. Smoke: `--data-seed 42 --bootstrap-seed 43 vs 44` → θ_FE 4.11 vs 4.14 (data fixed, bootstrap varies as designed).
+- **_phi scipy fallback** (P1-11): `scipy.stats.norm.cdf` when available (log-space stable for |z|>6); erf + RuntimeWarning fallback otherwise.
+
+### B-521. Stale "Phase 1a 24-condition / 4-cell" output metadata scope fix (P2-2 codex) 🛠️ FIXED commit `18fd8b7` (orig as B-490)
+- **Bug**: result JSON `scope` field still said pre-B2 scope.
+- **Fix**: "Phase 1a 42-condition (36 baseline + 6 router) / 6-cell synthetic test fixture + appendix DL sensitivity producer". Script role disclosed.
+
+### B-522. `_entry_to_cell` paper-grade `expected_n` enforce canonical (P1-1-AB 2-AI overlap) 🛠️ FIXED commit `c4c033d` (orig as B-491)
+- **Bug**: yaml entry value priority masked canonical `scored_task_count` (post-§139.8 cls 224 / red 205 / shop 435). Paper-grade promotion copy-paste from archived (pre-§139.8 234/210/466) → `is_complete` permanently False → silent PARTIAL_DATA.
+- **Fix**: paper-grade tier rejects hardcoded expected_n (warns + forces canonical); archived tier preserved backwards-compat. Validator (B-525) checks consistency.
+
+### B-523. `_entry_to_cell` + `get_all_cells` strict_paper_grade arg (P0-8 partial Claude) 🛠️ FIXED commit `c4c033d` (orig as B-492)
+- **Bug**: paper-grade actual_n == 0 was RuntimeWarning only — silent missing data → false completeness. Pre-fix only warning, validator entry point missing.
+- **Fix**: `strict_paper_grade=True` arg raises RuntimeError (explicit error path for validator). Default behavior unchanged (warning only) for non-strict callers.
+
+### B-524. `get_all_cells` + `get_cells` manifest_path arg propagation (P0-5-B codex OOB) 🛠️ FIXED commit `c4c033d` (orig as B-493)
+- **Bug**: `generate_per_task_sr.py:131` `cells = get_all_cells(grade_filter=[args.grade])` did NOT pass manifest path. `--run-manifest` CLI defined but didn't control data discovery → registry default read. OSF replay "show me reproduction with locked manifest" → script ignores supplied path.
+- **Fix**: `manifest_path` kwarg added to `get_all_cells` + `get_cells` + `_all_cells_unfiltered`; bridge generate_per_task_sr passes through; CSV sidecar emits `manifest_sha256` provenance link.
+
+### B-525. NEW `scripts/analysis/validate_run_manifest.py` paper-grade promotion validator (P0-8 Claude) 🛠️ FIXED commit `c4c033d` (orig as B-494)
+- **Bug**: paper-grade promotion = user manually edits yaml to add 36 cells (2 sites × 3 baselines × 6 modes). No schema validator. No disk check. No `expected_n` canonical enforcement. Human typo `phantom_dom_router_0` (archived alias) vs canonical `phantom_text_router_0` → silent drop cell → paper §1 hero pool k=5 vs prereg k=6.
+- **Fix**: validator with 7 checks (a-g): paper-mode completeness / expected_n canonical / disk existence / episode count ≥ 50 / section ↔ grade alignment / duplicate detection / planned cells presence. CLI: `--strict` (CI fail-fast) / `--no-disk` (faster). Makefile `validate-run-manifest` target. Smoke: surfaces 22 errors on current pre-fire state (correctly diagnoses expected pre-fire missing + 2026-05-04 BULK ARCHIVE section/grade drift).
+
+### B-526. NEW `scripts/analysis/lib/canonical_cells.py` single-source PHASE_1A_PLANNED_CELLS + SITE_ABBREV (P0-7-A Claude OOB) 🛠️ FIXED commit `c4c033d` (orig as B-495)
+- **Bug**: triple-source-of-truth for "Phase 1a 6 cells": `PHASE_1A_CELLS` hardcoded in decision_test (always 6) / `aggregate_phantom_lift.CELLS` module-frozen at import / `lib/run_registry.get_*` live registry. Different process state → different cell count. No cross-validation, no fail-loud on Phase 1a partial-data state.
+- **Fix**: new lib module = THE canonical source. `PHASE_1A_PLANNED_CELLS` constant + `SITE_ABBREV` mapping + `get_phase1a_actual_cells()` live getter + `assert_cells_match_planned()` fail-loud cross-validator. Bridge generate_per_task_sr now imports SITE_ABBREV from canonical.
+
+### B-527. `generate_per_task_sr.py` cost integrity (0.0 short-circuit + cost_unit_basis column) (P0-1-ABC 3-AI overlap) 🛠️ FIXED commit `c4c033d` (orig as B-496)
+- **Bug 1**: `cost_raw = data.get("total_cost_usd") or data.get("total_model_cost_usd")` — Python `0.0 or x = x`, 0.0 cost falsy → fallback to wrong key. Affects B0 GLM-fallback edge cases + transient error episodes.
+- **Bug 2** (gemini OOB): B0 (proxy) `total_cost_usd` = API USD margin; B1+B2 (local) `total_cost_usd` = electricity-derived USD. Same column, different unit basis ~1000× scale → reviewer R5 "cost-DOM ratio 是 token-cost 还是 wall-cost?" cross-baseline aggregate mixes units.
+- **Fix 1**: `cost_raw = data.get("total_cost_usd"); if cost_raw is None: cost_raw = data.get(...)` explicit None check.
+- **Fix 2**: `cost_unit_basis` column added to per-task CSV ("api_usd" / "electricity_usd_derived" / "unknown"); cross-baseline stratification disclosure for paper §1 hero cost claim. Helper `cost_unit_basis_for(baseline)` in generate_per_task_sr.
+
+### B-528. `generate_per_task_sr.py` --grade nargs+ list (P1-12 Claude) 🛠️ FIXED commit `c4c033d` (orig as B-497)
+- **Bug**: CLI single string `--grade paper-grade`; `get_all_cells` supports list but CLI doesn't. Appendix-D mixed `paper-grade + paper-grade-pre-bug` analysis needs 2 calls + manual merge.
+- **Fix**: `action='append'`, repeatable: `--grade paper-grade --grade paper-grade-pre-bug`. Default `["paper-grade"]`.
+
+### B-529. MODE_TO_KEY consolidated to `lib/run_registry.py` (P1-13 Claude) 🛠️ FIXED commit `c4c033d` (orig as B-498)
+- **Bug**: MODE_TO_KEY dict duplicated in `generate_per_task_sr.py:62-69` + de facto in `canonical_mode()` reverse logic — new mode added (e.g., P-vision Phase 2 router) → silent KeyError if one side updated.
+- **Fix**: canonical dict in `run_registry.MODE_TO_KEY`; generate_per_task_sr imports.
+
+### B-530. `aggregate_phantom_lift.get_aggregator_cells()` lazy fn (P1-3-AB 2-AI overlap) 🛠️ FIXED commit `c4c033d` (orig as B-499)
+- **Bug**: `CELLS = _build_cells(_GRADE_LIST)` module-import-time evaluation. `P79_AGGREGATOR_GRADE` env var change post-import not reflected. Notebooks / cron sidecars / multi-aggregator chains silently use stale grade selection.
+- **Fix**: `get_aggregator_cells()` lazy fn re-reads env var + grade filter at call time. CELLS module-level constant retained for backwards-compat. `aggregate_phase1_full_prereg_decision.py` switched to lazy fn.
+
+### B-531. `aggregate_cross_site.py` baseline collapse fix (P1-2-B codex OOB) 🛠️ FIXED commit `c4c033d` (orig as B-500)
+- **Bug**: `aggregation_rows` emitted `{"site", "mode", ...}` keys without `baseline` — B0/B1/B2 collided on (site, mode) key. `per_site` lookup via `next(r["mode"]==m)` picked first match → silent baseline misattribution. Reviewer "is reddit/DOM here B0, B1, or B2?" cannot determine.
+- **Fix**: `_detect_baseline_from_run_dir()` helper (parses B0/B1/B2 from run_dir name prefix per project convention); `baseline` field added to all rows; `per_site[site][baseline][mode]` triple-grouped lookup; per-baseline outputs disambiguated.
+
+### B-532. `aggregate_cost_electricity.py` B2 cost markdown + cost_classes JSON (P1-4 codex F7) 🛠️ FIXED commit `c4c033d` (orig as B-501)
+- **Bug**: cost_classes JSON dict had only `B0` + `B1` keys; markdown report had only `## B0` + `## B1` sections. B2 data was collected (loop at L56-59 included B2) but structurally absent from reviewer-facing report. A1.20 B-461 sibling propagation.
+- **Fix**: B2 cost class entry added (electricity_equivalent, same deployment class as B1 per advisor §138); markdown `## B2 — electricity equivalent ($/ep, Gemma3-VL local 4B)` section added with site × mode table.
+
+### B-533. OSF lock manifest scope row 36 → 42 align (P1-5 codex F10) 🛠️ FIXED commit `c4c033d` (orig as B-502)
+- **Bug**: `osf_lock_manifest.md:60` "**36 conditions**" + L16 + L21 referenced 36-condition scope, but `preregistration.md:438` says "**42 conditions** = 36 baseline + 6 router" (scope expansion 2026-05-16 via A1.7 B-264+B-267 cross-AI cycle for H10 router parity). DOI lock prose mismatched preregistration since 2026-05-16. Reviewer provenance check fail.
+- **Fix**: 3 OSF lock manifest lines updated (L16, L21, L60) "**42 conditions** = Pass-1 baseline 36 + Pass-2 learned router 6"; explicit prereg §4 L438 reference + A1.7 B-264+B-267 origin.
+
+**Cross-batch context (last ~10h overnight + morning)**: A1.25 GRL Chunk 1 (B-439~B-448) + A1.4 Chunks 1-4 (B-449~B-458) + A1.20 (B-459~B-477) + A1.25 GRL Chunk 2 (B-479~B-484) + A1.5b Phase 1 (B-485~B-505) + A1.25 GRL Chunk 3 (B-506~B-511) + **this A1.21** (B-513~B-533) = **~74 paper-grade fixes** across 6 distinct /stress audit scopes during 2026-05-17 overnight+morning sprint via concurrent multi-Claude + multi-AI-lineage (Claude + codex + gemini) audit pipeline.
+
+**Deferred to next session / advisor / post-data**:
+- P0-10 SE floor de-weighting (Gemini attack on A1.19 B-426) — user-confirmed option A: retain 1.0pp floor + prereg §2 H1 prose expand + sensitivity table. Prose work in Chunk 3 of this batch; sensitivity table deferred to dedicated script slot.
+- P1-6 4-vs-6-mode universe re-aggregation — post-Phase 1a data fire, paper §1 prose footnote `^hero-estimand-scope` (A1.20 B-467) → real number
+- P1-14 P-prompt parse_valid telemetry (off A1.21 scope, P-prompt isolation surface)
+- P1-15 B0 GLM rescue disclosure (known B-86, paper §8 limitations round)
+- P2-1 yaml section/grade mismatch (validator surfaces it; cosmetic for current archived state)
+- P2-2 stale "24-condition" output (subsumed by B-521 fix; mention retained)
+- P2-3 `_norm_cdf` duplicated 2 files (shared lib candidate; defer cosmetic)
+
+**Next available B-number**: B-534+.
