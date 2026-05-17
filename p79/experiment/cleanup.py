@@ -1,4 +1,4 @@
-"""B-862 (/stress A1.24 P0-7-C*, 2026-05-17): shared `clear_task_files` API.
+"""B-880 (/stress A1.24 P0-7-C*, 2026-05-17): shared `clear_task_files` API.
 
 Pre-fix: clear_tasks.py and experiment_watchdog.py independently called
 `shutil.rmtree` + `Path.unlink` on the same file set (summary JSON, steps
@@ -30,7 +30,7 @@ from typing import Any, Dict, Optional
 
 
 def safe_unlink(path: Path) -> bool:
-    """B-858 (/stress A1.24 P0-4-AB*): idempotent unlink that tolerates
+    """B-876 (/stress A1.24 P0-4-AB*): idempotent unlink that tolerates
     concurrent watchdog cleanup race. Returns True if file was deleted by
     THIS caller, False if path already gone (FileNotFoundError caught) OR
     didn't exist pre-call.
@@ -47,7 +47,7 @@ def safe_unlink(path: Path) -> bool:
 
 
 def safe_rmtree(path: Path) -> bool:
-    """B-858 (/stress A1.24 P0-4-AB*): idempotent rmtree companion to
+    """B-876 (/stress A1.24 P0-4-AB*): idempotent rmtree companion to
     `safe_unlink`. Returns True if this caller did the deletion, False if
     path already gone."""
     try:

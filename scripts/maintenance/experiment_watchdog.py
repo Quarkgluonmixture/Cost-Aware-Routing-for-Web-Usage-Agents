@@ -1837,7 +1837,7 @@ def main() -> int:
                             # to maintain `digest_*.jsonl` consistency (digest pipeline
                             # retired from watchdog auto-call path).
                             for (cond_id, cond_dir, ctask_id, csite, ckey) in contaminated:
-                                # B-862 (/stress A1.24 P0-7-C*, 2026-05-17):
+                                # B-880 (/stress A1.24 P0-7-C*, 2026-05-17):
                                 # call shared `clear_task_files` API (same
                                 # function clear_tasks.py uses) — single
                                 # source of truth for file deletion + Option K
