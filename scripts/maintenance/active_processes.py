@@ -267,26 +267,58 @@ def fmt_eta(remaining: int, throughput_per_h: float | None) -> str:
 
 
 def build_cells(procs: list[Proc]) -> list[Cell]:
+    """B-911 (/stress A2.2 P1-12-B codex F6, 2026-05-17): multi-PID collision
+    detection. Pre-fix `c.runner = r` / `c.watchdog = w` OVERWROTE any prior
+    Proc for the same run_id — operator viewing `make active` saw only the
+    last-iterated PID even when 2 runners or 2 watchdogs raced on the same
+    RUN_ID (which is the most dangerous multi-session collision state).
+    Combined with the watchdog flock B-907 the actual race is now closed at
+    the kernel layer, but `make active` still serves as the operator-visible
+    audit signal — if a duplicate ever does slip through (e.g. operator
+    `rm .locks/watchdog_${RUN_ID}.lock` force-release + manual retry), the
+    operator should SEE it in the table, not have it silently collapsed.
+
+    Records duplicate count + appends DUPLICATE-RUNNER / DUPLICATE-WATCHDOG
+    flag while keeping `c.runner` / `c.watchdog` as the most-recent Proc
+    (back-compat: existing render paths still read `c.runner.pid` etc).
+    """
     runners = [p for p in procs if p.role == "runner"]
     watchdogs = [p for p in procs if p.role == "watchdog"]
 
     cells: dict[str, Cell] = {}
+    runner_counts: dict[str, int] = {}
+    runner_pids: dict[str, list[int]] = {}
     for r in runners:
         if not r.run_id:
             continue
         c = cells.setdefault(r.run_id, Cell(run_id=r.run_id))
+        runner_counts[r.run_id] = runner_counts.get(r.run_id, 0) + 1
+        runner_pids.setdefault(r.run_id, []).append(r.pid)
         c.runner = r
         c.run_dir = find_run_dir(r.run_id)
 
+    watchdog_counts: dict[str, int] = {}
+    watchdog_pids: dict[str, list[int]] = {}
     for w in watchdogs:
         if not w.run_id:
             continue
         c = cells.setdefault(w.run_id, Cell(run_id=w.run_id))
+        watchdog_counts[w.run_id] = watchdog_counts.get(w.run_id, 0) + 1
+        watchdog_pids.setdefault(w.run_id, []).append(w.pid)
         c.watchdog = w
         if c.run_dir is None and w.run_dir is not None:
             c.run_dir = w.run_dir
         if not c.condition and w.condition:
             c.condition = w.condition
+
+    # B-911: append DUPLICATE flags for any run_id with > 1 runner or watchdog.
+    for run_id, c in cells.items():
+        if runner_counts.get(run_id, 0) > 1:
+            pids = ",".join(str(p) for p in runner_pids[run_id])
+            c.flags.append(f"DUPLICATE-RUNNER(n={runner_counts[run_id]}, pids={pids})")
+        if watchdog_counts.get(run_id, 0) > 1:
+            pids = ",".join(str(p) for p in watchdog_pids[run_id])
+            c.flags.append(f"DUPLICATE-WATCHDOG(n={watchdog_counts[run_id]}, pids={pids})")
 
     for c in cells.values():
         # Stale watchdog detection (dir gone or renamed)

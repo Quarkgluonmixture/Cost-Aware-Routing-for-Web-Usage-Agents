@@ -206,13 +206,41 @@ def find_matching_runs(baseline: str, site: str, mode: str, benchmark: str = "vw
 
 
 def latest_match(matches: list[dict]) -> Optional[dict]:
-    """Pick the most-recent match. Prefer finalized (has summary) over in-flight
-    when both exist for same run_id; otherwise pick by recency (mtime of summary
-    or cond_dir for in-flight).
+    """Pick the most-recent match.
+
+    B-910 (/stress A2.2 P1-11-B* codex F5 OOB, 2026-05-17): in-flight re-run
+    prefer when mtime newer than finalized. Pre-fix sort key was
+    `(1, summary_mtime)` always-beats `(0, cond_dir_mtime)` regardless of
+    actual mtime ordering — so after a cell finalized and operator immediately
+    re-fired a new in-flight run, the OLD finalized summary kept winning the
+    latest_match() until the new run finalized. The frontmatter window
+    `status=done, pid=None` persisted through the very window most likely to
+    trigger same-site collision detection failure (manual rescue / master
+    orchestrator both see "done, no pid" and may attempt new launches).
+
+    New rule: prefer in-flight run when its cond_dir mtime is strictly newer
+    than the latest finalized summary mtime — that's the "operator just
+    re-fired" signal. Otherwise keep original finalized-prefer ordering.
+
+    Combined with B-905 P79_CHAIN_PID env-bypass hardening + B-907 watchdog
+    flock + B-906 GLM hook sleep 300 covers reddit cold-start: the re-run
+    detection window is now correct at the GLM cron read layer too.
     """
     if not matches:
         return None
 
+    finalized = [m for m in matches if m.get("summary_path")]
+    inflight = [m for m in matches if not m.get("summary_path")]
+
+    if finalized and inflight:
+        latest_final_mtime = max(m["summary_path"].stat().st_mtime for m in finalized)
+        latest_inflight = max(inflight, key=lambda m: m["cond_dir"].stat().st_mtime)
+        latest_inflight_mtime = latest_inflight["cond_dir"].stat().st_mtime
+        if latest_inflight_mtime > latest_final_mtime:
+            # Operator just re-fired — prefer the in-flight match (B-910).
+            return latest_inflight
+
+    # Legacy behavior: finalized-prefer + mtime fallback.
     def sort_key(m: dict):
         if m["summary_path"]:
             return (1, m["summary_path"].stat().st_mtime)
