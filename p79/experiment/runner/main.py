@@ -108,10 +108,16 @@ def _seed_global_rng(seed: int) -> None:
 class ExperimentRunner:
     # Fatal environment errors that corrupt Playwright/asyncio state.
     # When caught, re-raise immediately so the process can exit cleanly.
-    _FATAL_ENV_MARKERS = (
-        "Sync API inside the asyncio",
-        "asyncio loop",
-        "Event loop is closed",
+    # B-476 (/stress A1.5b Phase 1 P2-1-A, 2026-05-17): replace tuple of
+    # substring patterns with explicit regex. Pre-fix `"asyncio loop"` as
+    # plain substring would false-positive match benign log content like
+    # "Reusing existing asyncio loop" → kill recoverable run. Now: explicit
+    # phrases known to indicate fatal state.
+    _FATAL_ENV_REGEX = re.compile(
+        r"Sync API inside the asyncio|"
+        r"asyncio loop is closed|"
+        r"asyncio loop was destroyed|"
+        r"Event loop is closed"
     )
 
     def __init__(self, cfg: Dict[str, Any]):
@@ -306,8 +312,14 @@ class ExperimentRunner:
                 file_count = sum(1 for _ in run_dir.rglob("*") if _.is_file())
             except OSError:
                 continue
-            # Only remove tiny/empty trees to avoid deleting meaningful runs.
-            if file_count > 5:
+            # B-477 (/stress A1.5b Phase 1 P2-2-A, 2026-05-17): preserve any
+            # non-empty tree. Pre-fix `file_count > 5` threshold allowed dirs
+            # with 1-5 files (e.g. resumed run with run_meta + condition_meta
+            # + 2 summaries + 1 step jsonl = 5 files exactly) to be deleted
+            # if has_run_meta check was bypassed by manual mv / rename. Now:
+            # any non-zero file count → preserve. Only truly empty trees
+            # become eligible.
+            if file_count > 0:
                 continue
             logger.info("Cleaning stale empty run dir (files=%d, age>1h): %s", file_count, run_dir)
             try:
@@ -475,6 +487,7 @@ class ExperimentRunner:
         action_success: bool,
         page_changed: bool,
         env_error: Optional[str] = None,
+        agent_visible_changed: Optional[bool] = None,
     ) -> Optional[str]:
         """B-167 (/stress A1.4a v8 Claude F3 expanded scope, 2026-05-16):
         expanded from 5 categories to 10 + unknown_failure bucket.
@@ -542,7 +555,20 @@ class ExperimentRunner:
                 return "invalid_schema"
             return "unknown_failure"
 
-        if not action_success and not page_changed:
+        # B-480 (/stress A1.5b Phase 1 P2-5-C gemini, 2026-05-17): prefer
+        # agent_visible_changed signal over global page_changed when caller
+        # provides it. Pre-fix `not page_changed` was polluted by B-09
+        # invisible-change reasons (form_value_changed, dom_complexity_changed,
+        # text_length_changed) that fire on background DOM mutation without
+        # any user-visible state change. `no_progress` denominator was thus
+        # diluted by silent successful form-edits. Now: when caller passes
+        # agent_visible_changed (StepRecordV2.agent_visible_changed field per
+        # B-09 fix), use it; legacy callers fall back to page_changed.
+        _visible_changed = (
+            agent_visible_changed if agent_visible_changed is not None
+            else page_changed
+        )
+        if not action_success and not _visible_changed:
             return "no_progress"
         return None
 
@@ -658,7 +684,7 @@ class ExperimentRunner:
                 # surfaces a warning but does not abort the runner.
                 try:
                     from p79.experiment.logger_v2 import merge_staging_trajectory_events
-                    _staging_run_id = str(self.cfg["experiment"].get("run_id", ""))
+                    _staging_run_id = str(self.cfg["experiment"].get("run_id", "")).strip()
                     if _staging_run_id:
                         _merged = merge_staging_trajectory_events(
                             condition_dir=condition_dir,
@@ -669,6 +695,24 @@ class ExperimentRunner:
                                 f"[runner][trajectory-events] merged {_merged} "
                                 f"staging events into {effective_cid}/trajectory_events.jsonl"
                             )
+                    elif bool(self.cfg.get("paper_grade", False)):
+                        # B-478 (/stress A1.5b Phase 1 P2-3-A, 2026-05-17):
+                        # paper-grade fail-loud on empty run_id. preregistration.md
+                        # Appendix A claims trajectory_events.jsonl ALWAYS contains
+                        # reset events — falsifiability requires non-empty run_id
+                        # so staging file path is constructable.
+                        raise ValueError(
+                            "B-478: cfg.experiment.run_id is empty/blank — "
+                            "paper-grade requires non-empty run_id for trajectory "
+                            "events staging merge. preregistration.md Appendix A "
+                            "trajectory_events claim falsifiability depends on it."
+                        )
+                    else:
+                        # Dev mode: surface the silent no-op as a warning.
+                        logger.warning(
+                            "B-478 cfg.experiment.run_id is empty/blank — "
+                            "skipping trajectory events staging merge."
+                        )
                 except Exception as _trajectory_merge_exc:
                     print(
                         f"[runner][trajectory-events][warn] staging merge "
@@ -1155,7 +1199,7 @@ class ExperimentRunner:
             if isinstance(exc, (KeyboardInterrupt, SystemExit)):
                 raise
             exc_str = str(exc)
-            if any(marker in exc_str for marker in self._FATAL_ENV_MARKERS):
+            if self._FATAL_ENV_REGEX.search(exc_str):
                 logger.error(
                     "Fatal environment error at site=%s task=%s — "
                     "stopping run to allow clean restart: %s",

@@ -27,16 +27,34 @@ def _parse_seeds(seed_value: Any) -> List[int]:
 
 
 def _action_signature(action: Dict[str, Any]) -> str:
-    """Compact fingerprint of an action for cycle detection (strict: includes element_id)."""
+    """Compact fingerprint of an action for cycle detection (strict: includes element_id).
+
+    B-479 (/stress A1.5b Phase 1 P2-4-A, 2026-05-17): replace hardcoded 60-char
+    text truncation with full-length hash + length suffix to eliminate
+    long-prefix-same-suffix-different false positives. Pre-fix two `type`
+    actions with text `"long search query truncated at position 60 mark: A"`
+    vs `"...: B"` (both 60 chars) collapsed to the same prefix → false cycle
+    detected → `_anti_repeat_control` fired spuriously → synthetic action
+    injection. Edge case probability low (min_reps=3 protects), but the
+    hash+length signature is strictly more precise + same compactness.
+    """
+    import hashlib
     atype = str(action.get("action_type", "")).lower()
     eid = action.get("element_id", "")
-    text = str(action.get("text", ""))[:60]
+    text_full = str(action.get("text", ""))
+    if text_full:
+        text_sig = (
+            hashlib.sha256(text_full.encode("utf-8")).hexdigest()[:10]
+            + f"_{len(text_full)}"
+        )
+    else:
+        text_sig = ""
     coord = action.get("coordinate", "")
     delta = action.get("delta", "")
     # tab_focus: include page_number so switching between different tabs is not
     # mistakenly treated as a cycle (e.g. 1→0→1 differs from 1→1→1).
     page_num = action.get("page_number", "") if atype == "tab_focus" else ""
-    return f"{atype}|eid={eid}|t={text}|c={coord}|d={delta}|pn={page_num}"
+    return f"{atype}|eid={eid}|t={text_sig}|c={coord}|d={delta}|pn={page_num}"
 
 
 def _action_signature_soft(action: Dict[str, Any]) -> str:
