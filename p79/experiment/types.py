@@ -115,6 +115,23 @@ class StepRecordV2:
     # action_kind ∈ {click, type, hover, upload, clear}. None when step did
     # not invoke locator-route (e.g. scroll / wait / coord-only click).
     locator_route_meta: Optional[Dict[str, Any]] = None
+    # B-440 (/stress A1.25 P0-2-B* codex OOB, 2026-05-17): primary action's
+    # locator-route dispatch telemetry, captured BEFORE the baseline retry
+    # block in runner/main.py:1518-1611 can overwrite `next_info`. Pre-fix
+    # the retry's `next_info` replaced the primary's → step_record.locator_
+    # route_meta only ever showed retry meta (or None if retry was scroll/
+    # wait), silently DELETING the walk-fail evidence layer for every step
+    # that triggered baseline_retry_on_no_progress. Cross-baseline asymmetry
+    # impact: B0/B1/Gemma3-VL have different retry-trigger rates → biased
+    # ON_TARGET denominator. Post-fix: runner snapshots primary meta into
+    # this field; the existing `locator_route_meta` retains "value at step
+    # write time" semantics (= primary if no retry, else retry) for backward
+    # compat with archive aggregators.
+    locator_route_meta_primary: Optional[Dict[str, Any]] = None
+    # B-440 companion field: retry's locator-route dispatch telemetry, None
+    # when baseline_retry_on_no_progress did not fire. Aggregators can sum
+    # retry hit rate per (site, model, mode) without re-scanning step JSONL.
+    locator_route_meta_retry: Optional[Dict[str, Any]] = None
     # B-420 (/stress A1.3 v9 Mode B P1-5 OOB, 2026-05-17): select_option env
     # dispatch telemetry — distinguishes JS-exception / obs_nodes_info-missing
     # / dispatch-completed cases that previously collapsed under a bare
@@ -275,6 +292,8 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "parse_failure_reason",
     "image_meta",
     "locator_route_meta",
+    "locator_route_meta_primary",  # B-440 retry-overwrite split
+    "locator_route_meta_retry",    # B-440 retry-overwrite split
     "select_option_meta",  # B-420
     "agent_visible_changed",
 })
@@ -371,6 +390,53 @@ def validate_step_record_v2(record: Dict[str, Any]) -> None:
             f"StepRecordV2 missing paper-grade critical optional keys (value may be None): "
             f"{missing_critical}. Paper §3 evidence-layer contract requires presence."
         )
+    # B-444 (/stress A1.25 P1-8-B* codex OOB, 2026-05-17): nested telemetry
+    # semantics validator. Pre-fix `locator_route_meta={}` or
+    # `{"success": "false"}` (string instead of bool) passed silently —
+    # downstream denominator logic later treated malformed records as
+    # falsey/truthy depending on implementation, exactly the silent
+    # pipeline corruption codex Mode B flagged. Fail-loud at write boundary.
+    for meta_key in ("locator_route_meta", "locator_route_meta_primary",
+                     "locator_route_meta_retry"):
+        meta = record.get(meta_key)
+        if meta is None:
+            continue
+        if not isinstance(meta, dict):
+            raise ValueError(
+                f"StepRecordV2.{meta_key} expected dict-or-None, got {type(meta).__name__}={meta!r}"
+            )
+        # Empty dict is suspicious (real dispatch always populates fields)
+        # but legacy archive rows may have {} — accept but require at least
+        # the success key when non-empty.
+        if meta and "success" not in meta:
+            raise ValueError(
+                f"StepRecordV2.{meta_key} non-empty dict missing 'success' key: {meta!r}"
+            )
+        if "success" in meta and not isinstance(meta["success"], (bool, type(None))):
+            raise ValueError(
+                f"StepRecordV2.{meta_key}.success expected bool-or-None, got "
+                f"{type(meta['success']).__name__}={meta['success']!r}"
+            )
+        if "action_kind" in meta and meta["action_kind"] not in {
+            "click", "type", "type_coord", "hover", "upload", "clear",
+            "select_option", None
+        }:
+            raise ValueError(
+                f"StepRecordV2.{meta_key}.action_kind unexpected value: "
+                f"{meta['action_kind']!r}"
+            )
+    sel_meta = record.get("select_option_meta")
+    if sel_meta is not None:
+        if not isinstance(sel_meta, dict):
+            raise ValueError(
+                f"StepRecordV2.select_option_meta expected dict-or-None, got "
+                f"{type(sel_meta).__name__}={sel_meta!r}"
+            )
+        if "success" in sel_meta and not isinstance(sel_meta["success"], (bool, type(None))):
+            raise ValueError(
+                f"StepRecordV2.select_option_meta.success expected bool-or-None, got "
+                f"{type(sel_meta['success']).__name__}={sel_meta['success']!r}"
+            )
     # B-338: nested cost_usd key validation.
     cost = record.get("cost_usd", {})
     if isinstance(cost, dict):

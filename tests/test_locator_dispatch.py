@@ -9,12 +9,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
+# B-439 (/stress A1.25 P0-4-AC* OOB, 2026-05-17): hover/clear/upload imports
+# removed alongside function deletion — production code never invoked these,
+# tests were the only callsite. Workshop sub-paper scope honestly = click+type.
 from p79.envs.locator_dispatch import (
     dispatch_id_based_click,
-    dispatch_id_based_clear,
-    dispatch_id_based_hover,
     dispatch_id_based_type,
-    dispatch_id_based_upload,
 )
 
 
@@ -64,16 +64,7 @@ def test_type_walk_fail_distinct_category():
     assert r["error"] == "walk_fail:no_input_within_walk"
 
 
-def test_hover_walk_fail_distinct_category():
-    page, handle, _ = _make_page(handle_returns_element=False)
-    r = dispatch_id_based_hover(page, _NODES, 42)
-    assert r["error"] == "walk_fail:no_hover_target_within_walk"
-
-
-def test_upload_walk_fail_distinct_category():
-    page, handle, _ = _make_page(handle_returns_element=False)
-    r = dispatch_id_based_upload(page, _NODES, 42, "/tmp/x.txt")
-    assert r["error"] == "walk_fail:no_file_input_within_walk"
+# B-439: hover/upload walk-fail tests retired (functions deleted as dead code)
 
 
 # ---------------------------------------------------------------------------
@@ -116,27 +107,7 @@ def test_type_disposes_on_fill_raise():
     elem.dispose.assert_called()
 
 
-def test_hover_disposes_on_hover_raise():
-    page, handle, elem = _make_page(handle_returns_element=True, click_raises=True)
-    dispatch_id_based_hover(page, _NODES, 42)
-    handle.dispose.assert_called()
-    elem.dispose.assert_called()
-
-
-def test_upload_disposes_on_set_files_raise():
-    page, handle, elem = _make_page(handle_returns_element=True, click_raises=True)
-    dispatch_id_based_upload(page, _NODES, 42, "/tmp/x.txt")
-    handle.dispose.assert_called()
-    elem.dispose.assert_called()
-
-
-def test_clear_routes_through_type_and_disposes():
-    """clear() is a thin wrapper around type(text='') — dispose still works."""
-    page, handle, elem = _make_page(handle_returns_element=True)
-    r = dispatch_id_based_clear(page, _NODES, 42)
-    assert r["success"] is True
-    handle.dispose.assert_called()
-    elem.dispose.assert_called()
+# B-439: hover/upload/clear dispose tests retired (functions deleted as dead code)
 
 
 # ---------------------------------------------------------------------------
@@ -170,7 +141,9 @@ def test_walk_up_max_depth_is_named_constant():
 
     assert isinstance(WALK_UP_MAX_DEPTH, int)
     assert WALK_UP_MAX_DEPTH == 6  # current value; change requires audit
-    # Interpolated into all three resolvers
+    # B-439: _JS_RESOLVE_UPLOAD kept in module (still imported below for shadow-DOM
+    # test coverage) but the dispatch_id_based_upload function deleted. The JS
+    # constant remains in case future workshop-sub-paper expansion wires upload.
     from p79.envs.locator_dispatch import _JS_RESOLVE_INPUT, _JS_RESOLVE_UPLOAD
     for js_name, js in [("CLICK", _JS_RESOLVE_CLICK), ("INPUT", _JS_RESOLVE_INPUT), ("UPLOAD", _JS_RESOLVE_UPLOAD)]:
         assert f"i < {WALK_UP_MAX_DEPTH}" in js, f"{js_name} resolver missing depth constant"

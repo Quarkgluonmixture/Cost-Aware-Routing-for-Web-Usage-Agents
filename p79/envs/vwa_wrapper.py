@@ -391,10 +391,16 @@ class VWAWrapper:
                     action = create_scroll_action(direction=direction)
         elif action_type == "type" and "text" in action_json and "element_id" not in action_json:
             # Type without element_id (vision mode): click coordinate first to focus, then keyboard type.
-            # IMPORTANT: Use direct page.mouse.click() instead of env.step(click_action).
-            # VWA's env.step() captures observations via CDP DOMSnapshot after each action,
-            # which causes the focused INPUT element to lose focus (focus resets to BODY).
-            # By clicking directly, we preserve focus for the subsequent keyboard.type().
+            # B-442 (/stress A1.25 P0-3-AC* OOB, 2026-05-17): vision-mode TYPE
+            # focus-click was previously DIRECT `page.mouse.click(px, py)` —
+            # exact B-01 bbox-pattern that locator-route was meant to retire
+            # (DOM/SoM mode already got walk-up via `dispatch_id_based_type`;
+            # vision was the cross-mode hole). Now routes through
+            # `dispatch_coord_based_type` which walks up via _JS_RESOLVE_INPUT
+            # to find the actionable INPUT/TEXTAREA/contenteditable ancestor,
+            # then fills via `locator.fill()` (no global Meta+A, no 全选变蓝).
+            # Fallback to original direct-click + keyboard.type path if
+            # walk-up fails (preserves backward-compat on edge cases).
             coord = action_json.get("coordinate")
             if coord is not None and isinstance(coord, (list, tuple)) and len(coord) == 2:
                 left = float(coord[0])
@@ -407,30 +413,50 @@ class VWAWrapper:
                 eps = 1e-6
                 left = max(eps, min(1.0 - eps, left))
                 top = max(eps, min(1.0 - eps, top))
-                self._env.page.mouse.click(
-                    left * self.viewport_width,
-                    top * self.viewport_height,
+                _cx_px = left * self.viewport_width
+                _cy_px = top * self.viewport_height
+                from p79.envs.locator_dispatch import dispatch_coord_based_type as _lr_coord_type
+                _lr_result = _lr_coord_type(
+                    self._env.page,
+                    _cx_px,
+                    _cy_px,
+                    str(action_json["text"]),
+                    sleep_after_ms=int(self.sleep_after_execution * 1000),
                 )
-                self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
-                # Select-all + delete to clear existing field content, but ONLY when the
-                # click actually focused an editable element.  Applying Control+a to a
-                # non-input element selects the entire page (blue highlight) and then
-                # Backspace does nothing useful — this was the root cause of the
-                # "full-page blue-select" artifact in Vision mode (task_3 step_7, etc.).
-                try:
-                    is_editable = self._env.page.evaluate(
-                        "() => { const el = document.activeElement; "
-                        "return el != null && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable); }"
+                # B-156/B-440 telemetry: stamp into info via _locator_route_meta
+                _locator_route_meta = dict(_lr_result)
+                _locator_route_meta["action_kind"] = "type_coord"
+                if _lr_result.get("success"):
+                    # locator dispatch already filled + optionally pressed Enter
+                    # + slept. Convert to no-op for env.step (refreshes obs).
+                    action = create_none_action()
+                else:
+                    # Walk-up failed → fall back to legacy direct-click + keyboard.type
+                    # path. Preserves prior behavior on edge cases (e.g., coord
+                    # falls outside any input/textarea/contenteditable element).
+                    logger.debug(
+                        "locator-route coord-type fallback: cx=%s cy=%s reason=%s",
+                        _cx_px, _cy_px, _lr_result.get("error", "")[:80],
                     )
-                except Exception:
-                    # Click may have triggered a navigation, destroying the
-                    # execution context.  Safe to skip the clear – the field
-                    # is gone anyway.
-                    is_editable = False
-                if is_editable:
-                    self._env.page.keyboard.press("Control+a")
-                    self._env.page.keyboard.press("Backspace")
-            action = create_keyboard_type_action(action_json["text"])
+                    self._env.page.mouse.click(_cx_px, _cy_px)
+                    self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
+                    # is_editable guard kept for the fallback path only (B-01
+                    # Control+a-on-page-body guard against 全选变蓝). When the
+                    # locator-route walk-up succeeded above, this code path is
+                    # skipped entirely (action=NONE).
+                    try:
+                        is_editable = self._env.page.evaluate(
+                            "() => { const el = document.activeElement; "
+                            "return el != null && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable); }"
+                        )
+                    except Exception:
+                        is_editable = False
+                    if is_editable:
+                        self._env.page.keyboard.press("Control+a")
+                        self._env.page.keyboard.press("Backspace")
+                    action = create_keyboard_type_action(action_json["text"])
+            else:
+                action = create_keyboard_type_action(action_json["text"])
         elif action_type == "type" and "text" in action_json and "element_id" in action_json:
             # Treat invalid/zero element_id as keyboard typing fallback
             try:

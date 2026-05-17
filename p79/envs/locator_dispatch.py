@@ -108,8 +108,16 @@ _JS_RESOLVE_CLICK = f"""([cx, cy]) => {{
         const role = el.getAttribute('role');
         if (role && ACTIONABLE_ROLES.indexOf(role) !== -1) return el;
         if (el.tagName === 'INPUT' && (el.type === 'submit' || el.type === 'button' ||
-            el.type === 'checkbox' || el.type === 'radio')) return el;
+            el.type === 'checkbox' || el.type === 'radio' ||
+            el.type === 'image' || el.type === 'reset')) return el;
+        // B-443 (/stress A1.25 P1-6-A Claude, 2026-05-17): added INPUT
+        // type=image (image submit button, common in Magento/shopping sprites)
+        // and type=reset (form reset). Pre-fix both fell through to walk-fail
+        // → framework bbox-center fallback = silent B-33 regression on those
+        // specific clicks (Shopping "Add to Cart" image-submit pattern).
         if (el.tagName === 'SUMMARY') return el;  // <details>/<summary>
+        if (el.tagName === 'AREA' && el.href) return el;  // <map>/<area> image map
+        if (el.isContentEditable) return el;  // [contenteditable] divs
         // B-161: traverse out of shadow roots when walking up (parentElement
         // stops at shadow-root boundary; need ``getRootNode().host`` to escape).
         const next = el.parentElement || (el.getRootNode && el.getRootNode().host) || null;
@@ -270,83 +278,55 @@ def dispatch_id_based_type(
         _dispose_all(as_element, handle)
 
 
-def dispatch_id_based_hover(
+# B-439 (/stress A1.25 P0-4-AC* OOB, 2026-05-17): hover/clear/upload locator-route
+# dispatch functions DELETED as dead code. Grep verified zero production callsites
+# in `p79/envs/vwa_wrapper.py` or anywhere in `p79/` — only `tests/test_locator_
+# dispatch.py` exercised them. Production hover/clear/upload action_types (zero
+# observed in `results/visualwebarena/phase1/*/step_*.jsonl`) fall through to VWA
+# framework dispatch via `_json_to_id_action_str` → `create_id_based_action`.
+# Workshop sub-paper "VWA upstream bug fix" framing now honestly scoped to
+# click+type only. Paper §3 disclosure updated separately (P0-5).
+
+
+def dispatch_coord_based_type(
     page: Any,
-    obs_nodes_info: Optional[Dict[str, Any]],
-    element_id: int,
+    cx: float,
+    cy: float,
+    text: str,
     *,
     sleep_after_ms: int = 0,
+    press_enter: bool = False,
 ) -> Dict[str, Any]:
-    """Locator-route HOVER for id-based action."""
-    node_info = (obs_nodes_info or {}).get(str(element_id))
-    if not node_info or "union_bound" not in node_info:
-        return {"success": False, "fallback_used": True, "target_tag": None,
-                "error": "obs_nodes_info missing union_bound"}
-    center = _bbox_center(node_info["union_bound"])
-    if center is None:
-        return {"success": False, "fallback_used": True, "target_tag": None,
-                "error": "invalid union_bound shape"}
-    cx, cy = center
+    """Locator-route TYPE for COORDINATE-based action (vision-mode focus-click).
+
+    B-442 (/stress A1.25 P0-3-AC* OOB, 2026-05-17): closes the cross-mode
+    asymmetry where DOM/SoM mode TYPE got locator walk-up (B-01 fix) but
+    vision-mode TYPE used direct ``page.mouse.click(px, py)`` (vwa_wrapper.py
+    pre-fix line 394-397) — still B-01-prone bbox-pattern. The Control+a
+    ``is_editable`` guard at vwa_wrapper.py:405-413 only prevented the visible
+    全选变蓝 symptom; the focus-落空 root cause persisted in vision mode.
+
+    Reuses ``_JS_RESOLVE_INPUT`` (already accounts for shadow-DOM pierce per
+    B-161 and 6-level walk-up depth) — vision-mode TYPE now gets the same
+    walk-up coverage as id-based TYPE. ``cx``/``cy`` are pixel coordinates
+    (caller is responsible for coord normalization → pixel conversion).
+    """
     handle = None
     as_element = None
+    fill_text = text
+    if fill_text.endswith("\n"):
+        fill_text = fill_text[:-1]
+        press_enter = True
     try:
-        handle = page.evaluate_handle(_JS_RESOLVE_CLICK, [cx, cy])
+        handle = page.evaluate_handle(_JS_RESOLVE_INPUT, [cx, cy])
         as_element = handle.as_element() if handle is not None else None
         if as_element is None:
             return {"success": False, "fallback_used": True, "target_tag": None,
-                    "error": "walk_fail:no_hover_target_within_walk"}
+                    "error": "walk_fail:no_input_within_walk"}
         target_tag = as_element.evaluate("el => el.tagName")
-        as_element.hover(timeout=5000)
-        if sleep_after_ms > 0:
-            page.wait_for_timeout(int(sleep_after_ms))
-        return {"success": True, "fallback_used": False, "target_tag": str(target_tag), "error": None}
-    except Exception as e:
-        return {"success": False, "fallback_used": True, "target_tag": None,
-                "error": f"{type(e).__name__}: {str(e)[:160]}"}
-    finally:
-        _dispose_all(as_element, handle)
-
-
-def dispatch_id_based_clear(
-    page: Any,
-    obs_nodes_info: Optional[Dict[str, Any]],
-    element_id: int,
-    *,
-    sleep_after_ms: int = 0,
-) -> Dict[str, Any]:
-    """Locator-route CLEAR — fill input with empty string."""
-    return dispatch_id_based_type(page, obs_nodes_info, element_id, "",
-                                   sleep_after_ms=sleep_after_ms, press_enter=False)
-
-
-def dispatch_id_based_upload(
-    page: Any,
-    obs_nodes_info: Optional[Dict[str, Any]],
-    element_id: int,
-    file_path: str,
-    *,
-    sleep_after_ms: int = 0,
-) -> Dict[str, Any]:
-    """Locator-route UPLOAD — find file input ancestor + set_input_files()."""
-    node_info = (obs_nodes_info or {}).get(str(element_id))
-    if not node_info or "union_bound" not in node_info:
-        return {"success": False, "fallback_used": True, "target_tag": None,
-                "error": "obs_nodes_info missing union_bound"}
-    center = _bbox_center(node_info["union_bound"])
-    if center is None:
-        return {"success": False, "fallback_used": True, "target_tag": None,
-                "error": "invalid union_bound shape"}
-    cx, cy = center
-    handle = None
-    as_element = None
-    try:
-        handle = page.evaluate_handle(_JS_RESOLVE_UPLOAD, [cx, cy])
-        as_element = handle.as_element() if handle is not None else None
-        if as_element is None:
-            return {"success": False, "fallback_used": True, "target_tag": None,
-                    "error": "walk_fail:no_file_input_within_walk"}
-        target_tag = as_element.evaluate("el => el.tagName")
-        as_element.set_input_files(file_path, timeout=5000)
+        as_element.fill(fill_text, timeout=5000)
+        if press_enter:
+            as_element.press("Enter", timeout=5000)
         if sleep_after_ms > 0:
             page.wait_for_timeout(int(sleep_after_ms))
         return {"success": True, "fallback_used": False, "target_tag": str(target_tag), "error": None}

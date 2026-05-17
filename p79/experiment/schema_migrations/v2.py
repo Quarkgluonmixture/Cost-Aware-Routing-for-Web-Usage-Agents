@@ -140,6 +140,13 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     # and old-data-missing-field. Old data gets False (archive lineage flag).
     "image_meta_recorded": False,
     "locator_route_meta": None,
+    # B-440 (/stress A1.25 P0-2-B* codex OOB, 2026-05-17): retry-overwrite
+    # split (primary + retry). Archive rows pre-A1.25 lack these → fill with
+    # None so aggregators see consistent shape; B-440-aware aggregator
+    # (e.g. aggregate_locator_route_metrics.py) falls back to legacy
+    # `locator_route_meta` when `_primary` is None.
+    "locator_route_meta_primary": None,
+    "locator_route_meta_retry": None,
     # B-420 (/stress A1.3 v9, 2026-05-17): symmetric with locator_route_meta.
     "select_option_meta": None,
     # B-284 fix (2026-05-16, A1.8): retire ghost-field status by registering

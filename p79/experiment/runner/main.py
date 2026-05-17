@@ -1447,6 +1447,20 @@ class ExperimentRunner:
             env_step_start = time.time()
             next_obs, reward, terminated, truncated, next_info = self.environment.step(action)
             env_step_ms = (time.time() - env_step_start) * 1000.0
+            # B-440 (/stress A1.25 P0-2-B* codex OOB, 2026-05-17): snapshot
+            # primary action's locator-route + select_option meta BEFORE the
+            # baseline retry block can overwrite `next_info`. Without this,
+            # any step that triggered baseline_retry_on_no_progress had its
+            # primary dispatch evidence silently deleted from the step
+            # record. Paper §3 ON_TARGET denominator was biased; cross-
+            # baseline asymmetry contaminated by per-baseline retry-trigger
+            # rate. Companion fields written into step_record below.
+            _primary_locator_route_meta = (
+                next_info.get("locator_route_meta") if isinstance(next_info, dict) else None
+            )
+            _primary_select_option_meta = (
+                next_info.get("select_option_meta") if isinstance(next_info, dict) else None
+            )
 
             action_type_lower = str(action.get("action_type", "")).lower()
             if self.state_change_cfg.get("form_snapshot_enabled", True):
@@ -1905,12 +1919,26 @@ class ExperimentRunner:
             # click); otherwise {success, fallback_used, target_tag, error, action_kind}
             # so Phase 1a clean run can be audited for Cluster 1 ON_TARGET rate (paper
             # §3 evidence layer for B-01/02/33 fix).
+            # B-440 (/stress A1.25 P0-2-B* codex OOB, 2026-05-17): split into
+            # `_primary` + `_retry` to close the retry-overwrite hole. The
+            # backward-compat `locator_route_meta` field keeps "value at step
+            # write time" semantics — equals primary when no retry, else equals
+            # the retry's meta (existing aggregator behavior preserved). The
+            # `_primary` field is the canonical evidence layer for paper §3.
             step_record["locator_route_meta"] = next_info.get("locator_route_meta")
+            step_record["locator_route_meta_primary"] = _primary_locator_route_meta
+            step_record["locator_route_meta_retry"] = (
+                next_info.get("locator_route_meta") if retry_was_applied else None
+            )
             # B-420 (/stress A1.3 v9 Mode B P1-5 OOB, 2026-05-17): persist
             # select_option dispatch telemetry (None when step did not
             # invoke select_option; otherwise dict with action_kind /
             # dispatch_path / success / error).
+            # B-440 companion: same retry-overwrite hole closure for select_option.
+            # Primary captures pre-retry state; backward-compat field retains
+            # post-retry semantics.
             step_record["select_option_meta"] = next_info.get("select_option_meta")
+            step_record["select_option_meta_primary"] = _primary_select_option_meta
             # Confidence metrics (optional, from logprobs extraction)
             if meta.get("mean_logprob") is not None:
                 step_record["confidence"] = {
@@ -2242,6 +2270,22 @@ class ExperimentRunner:
         # aggregation can report `trajectory_incomplete_rate` as a transparency
         # metric (paper §3.5). Always emitted to keep schema invariant.
         episode_summary["trajectory_incomplete"] = trajectory_incomplete
+
+        # B-441 (/stress A1.25 P0-6-B* codex OOB, 2026-05-17): image_encode_error
+        # per-episode count. Schema declared this field at A1.1 (B-403) for
+        # cross-baseline (B0 proxy JPEG vs B1/B2 HF processor) symmetric
+        # exclusion in aggregators. Pre-fix the runner never stamped the
+        # field → downstream `scripts/analysis/aggregate_sr_fp_per_mode.py:
+        # 112-116` defaulted missing → 0 → every episode looked "clean" →
+        # cross-baseline filter was structurally fake. Codex Mode B B4 catch:
+        # paper §3 image_meta-based filtering claim was unsupported by data
+        # layer. Aggregator can now drop infra-failed episodes OR annotate
+        # disclosure column without re-scanning step JSONL.
+        episode_summary["image_encode_error_step_count"] = sum(
+            1 for _s in step_records
+            if isinstance(_s.get("image_meta"), dict)
+            and _s["image_meta"].get("image_encode_error") is not None
+        )
 
         # B-167 (/stress A1.4a v8 Claude F3 expanded scope, 2026-05-16):
         # unknown_failure_reasons Counter exposes any failure_reason that

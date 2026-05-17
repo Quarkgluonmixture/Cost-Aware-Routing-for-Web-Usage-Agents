@@ -3414,4 +3414,65 @@ D2 (Paper §3 GRL framing decision A/B/C) deferred to user's separate session. U
 
 **Phase 1a fire green-light extended (post-A1.19)**: substrate paper-grade after A1.1+A1.2+A1.3 v9+A1.19 = 51 fixes (B-395~B-438, 5 deferred: B-417 + A1.19 P1-2/10/11/12). Analysis pipeline paper-§1-hero gate cleansed of OSF-lock blockers; appendix exploratory file (`aggregate_phantom_lift`) explicitly demoted in md prose. Remaining advisor blockers unchanged: B-262 GLM channel migration, B-130 FE/RE estimand, B-369 schema v2.2 retry, + new A1.19 advisor batch (P0-1 prereg amend SE floor protocol formal sign-off + P0-3 cost_margin amend if applicable).
 
-**Next available B-number**: B-439+.
+**Next available B-number**: B-449+ (consumed below by A1.25 GRL Chunk 1).
+
+---
+
+## A1.25 GRL (Generated Runtime Layer) audit — Chunk 1 batch (2026-05-17 deep night)
+
+User-invoked /stress on full GRL surface (P79 runtime 容错层 on top of VWA upstream `89f5af2`); 15 user-listed items + 6 net-new discovered (hover/clear/upload locator routes DEAD CODE / CSS dropdown asymmetry / min_free_vram OOM gate / get_all_tab_titles helper). 5-chunk decomposition tracker: `docs/checkpoints/stress_grl_audit_2026-05-17.md`. Chunk 1 (locator_dispatch + action routing) 3-AI cycle:
+- **Mode A (Claude)**: 10 findings / 6 OOB
+- **Mode B (codex, /codex-stress)**: 8 findings / 5 OOB / PASS Phase 1+2+3 (caught retry-overwrite primary telemetry deletion — `runner/main.py:1567`)
+- **Mode C (gemini, /gemini-stress)**: 7 findings / 3 OOB / PASS Phase 1+2+3 (caught 94.4% hero number missing from paper §3 prose entirely)
+
+**Unified bug list**: 25 findings (4-overlap 3-AI, 3 overlap 2-AI, 18 unique). User confirmed Q1=A scope: 全 P0 (8) + low-risk P1 (P1-6/P1-8) + Q5=B (Phase 1a launches AFTER all 4 chunks complete). B-numbers B-439-448 below.
+
+### B-439. hover/clear/upload locator-route dispatch DEAD CODE — Claude+Gemini overlap P0 OOB 🛠️ FIXED commit `<TBD>`
+- **Attack**: `dispatch_id_based_hover/clear/upload` defined in `p79/envs/locator_dispatch.py` but ZERO production callsites (grep verified). Tests imported them but production never invoked. Production hover/clear/upload action_types absent from results JSONL. Paper §3 / handoff implicitly claiming locator-route covers 5 action types was 60% paperware.
+- **Fix**: Delete 3 functions + delete 5 test cases + retain `_JS_RESOLVE_UPLOAD` JS constant (substrate for future workshop sub-paper expansion); paper §3.5.2 disclose "locator-route applied to click + type only".
+
+### B-440. Retry overwrites primary locator telemetry — codex Mode B P0-2 OOB 🛠️ FIXED commit `<TBD>`
+- **Attack**: `runner/main.py:1567` retry path `next_info = retry_info` overwrote primary action's `_locator_route_meta`. Step_record only ever showed retry meta (or None). Cross-baseline B0/B1/Gemma3-VL retry-trigger rate asymmetry → biased paper §3 ON_TARGET denominator. Codex Mode B unique catch — Claude+Gemini didn't read runner/main.py.
+- **Fix**: `types.py` add `locator_route_meta_primary` + `locator_route_meta_retry` to StepRecordV2 + PAPER_GRADE_STEP_OPTIONAL_KEYS; `runner/main.py:1448` snapshot primary meta BEFORE retry block; write both fields. Legacy `locator_route_meta` field retains "value at step write time" semantics for archive backward-compat. `schema_migrations/v2.py STEP_RECORD_V2_DEFAULTS` adds None defaults for both.
+
+### B-441. `image_encode_error_step_count` never stamped — codex Mode B P0-6 OOB 🛠️ FIXED commit `<TBD>`
+- **Attack**: A1.1 B-403 schema declared the field for cross-baseline (B0 proxy JPEG vs B1/B2 HF) symmetric exclusion. Runner never stamped it → downstream `aggregate_sr_fp_per_mode.py:112-116` defaulted missing → 0 → every episode looked "clean" → filter was structurally fake. Paper §3 image_meta-based cross-baseline filtering claim unsupported by data layer.
+- **Fix**: `runner/main.py:2272+` (post-trajectory_incomplete stamp) add `episode_summary["image_encode_error_step_count"] = sum(...)` over step_records where `image_meta.image_encode_error is not None`.
+
+### B-442. Vision-mode TYPE focus-click bypasses locator walk-up — Claude+Gemini overlap P0 OOB 🛠️ FIXED commit `<TBD>`
+- **Attack**: `vwa_wrapper.py:376-417` used direct `page.mouse.click(px, py)` — exact B-01 bbox-pattern. DOM/SoM mode TYPE got walk-up (94.4% → >80% fix); vision-mode TYPE remained B-01-prone. `is_editable` Control+a guard at :405-413 prevented 全选变蓝 symptom but not focus-落空 root cause. Cross-mode unfair execution; paper §4 cross-mode SR comparison + phantom routing space 4-fold drop-in property contaminated.
+- **Fix**: Add `dispatch_coord_based_type` in `locator_dispatch.py` (walk-up via `_JS_RESOLVE_INPUT` from pixel coord, reuses B-161 shadow DOM pierce + 6-level walk-up); `vwa_wrapper.py:376-417` route through new function; legacy direct-click + keyboard.type path retained as walk-fail fallback (preserves backward-compat on edge cases).
+
+### B-443. INPUT type=image / reset / area / contenteditable missing — Claude P1-6 🛠️ FIXED commit `<TBD>`
+- **Attack**: `locator_dispatch.py:110-112` `_JS_RESOLVE_CLICK` ARIA accept list omitted `<input type=image>` (Magento Add-to-Cart sprite), `<input type=reset>` (form reset), `<area>` (image map), `[contenteditable]` divs. Walk-fail → bbox-center fallback = silent B-33 regression on those specific clicks.
+- **Fix**: Extend `_JS_RESOLVE_CLICK` accept list to include `el.type === 'image' || el.type === 'reset'`, `el.tagName === 'AREA' && el.href`, `el.isContentEditable`.
+
+### B-444. Validator shallow nested telemetry semantics — codex Mode B P1-8 OOB 🛠️ FIXED commit `<TBD>`
+- **Attack**: `validate_step_record_v2` checked key presence only. `locator_route_meta = {}` or `{"success": "false"}` (string instead of bool) passed silently → downstream denominator logic treated malformed records as falsey/truthy depending on implementation = silent pipeline corruption.
+- **Fix**: `types.py validate_step_record_v2` add nested semantic checks for `locator_route_meta*` + `select_option_meta`: success must be bool-or-None, action_kind must be enum value, dict-or-None type shape enforced. Fail-loud at write boundary.
+
+### B-445. Coord `(0, 0)` / `(0, 0.5)` framework asymmetric bug — codex Mode B P1-9 OOB 🛠️ FIXED commit `<TBD>` (submodule)
+- **Attack**: `external/visualwebarena/browser_env/actions.py:651-672` `create_mouse_click_action` used `if left and top:` truthiness test. `(0, 0)` reclassified to id-based CLICK without id (downstream error); `(0, 0.5)` raised ValueError. Mode-asymmetric framework bug: vision/coord agents can legitimately emit boundary coords.
+- **Fix**: Replace truthiness with explicit `is not None` comparison; both branches updated symmetrically.
+
+### B-446. SELECT_OPTION upstream drops selected args — codex Mode B P0-7 🛠️ FIXED commit `<TBD>` (submodule)
+- **Attack**: `external/visualwebarena/browser_env/actions.py:1398-1402` parsed `parsed_code[-1]["arguments"]` then discarded → upstream `execute_playwright_select_option` called `locator.select_option()` with empty defaults → chosen option never applied. Combined with P79 `_select_option_meta.success=True` recording "dispatched" not "matched" (B-420), paper §3.5 select_option sub-taxonomy completely unreliable.
+- **Fix**: Extract `_so_args` + `_so_kwargs` from `parsed_code[-1]["arguments"]` / `["keywords"]` and pass to `execute_playwright_select_option(locator_code, page, pw_action_args=_so_args, pw_action_kwargs=_so_kwargs)`.
+
+### B-447. UPLOAD upstream parser doubly broken — codex Mode B P0-8 OOB 🛠️ FIXED commit `<TBD>` (submodule)
+- **Attack**: `external/visualwebarena/browser_env/actions.py:1690` `create_upload_action(pw_code=playwright_code)` missing required `text` arg → TypeError. `actions.py:1774-1776` id-based upload regex literally `r"type ?\[(\d+)\] ?..."` not `r"upload ?..."`. Both branches dead. Combined with P79 B-439 (no production dispatch wiring) = triply-dead action family.
+- **Fix**: (a) playwright-code branch: extract text via `re.search(r'upload\((?:"|\')(.+?)(?:"|\')\)', playwright_code)`; (b) id-based regex anchor change `type` → `upload`; (c) error message refined.
+
+### B-448. `aggregate_locator_route_metrics.py` new aggregator — Claude+Codex Mode B P0-1+P1-7 🛠️ FIXED commit `<TBD>`
+- **Attack**: Paper §3 evidence layer for B-01/02/33 walk-up fix had NO aggregator path. `rg locator_route_meta p79/experiment/metrics.py scripts/analysis` returned nothing. Step JSONL had data but no condition-level rollup → "field-存在主义". Paper §3 ON_TARGET rate structurally unproducible from current scripts.
+- **Fix**: New `scripts/analysis/aggregate_locator_route_metrics.py` reads dedup'd step JSONL, emits per (site, model, mode) counts: invoked / walk_success / walk_fail / retry_overwritten / walk_success_rate. B-440-aware (prefers `_primary` field, falls back to legacy `locator_route_meta` for archive). Paper §3.5.2 hero number table placeholder added; populated post-Phase-1a clean-rerun.
+
+**B-numbers consumed (A1.25 Chunk 1)**: B-439~B-448 (10 contiguous, all FIXED).
+
+**Smoke verification (A1.25 Chunk 1)**:
+- py_compile PASS: locator_dispatch + vwa_wrapper + types + runner/main + schema_migrations/v2 + aggregate_locator_route_metrics + external/visualwebarena/browser_env/actions
+- Tests **401/401 PASS** (8 skipped intentional; fixture update for B-440 split fields closed pre-existing failure noted in A1.19 chronicle)
+
+**Chunks 2-4 pending**: per Q5=B (wait-fix-all) Phase 1a launches AFTER all 4 chunks audited + fixed. Tracker: `docs/checkpoints/stress_grl_audit_2026-05-17.md`.
+
+**Next available B-number**: B-449+.

@@ -247,6 +247,11 @@ def test_step_schema_validation_required_fields():
         "parse_failure_reason": None,
         "image_meta": None,
         "locator_route_meta": None,
+        # B-440 (/stress A1.25 P0-2-B* codex OOB, 2026-05-17): retry-overwrite
+        # split fields — primary captured before retry block; retry populated
+        # only when baseline_retry_on_no_progress fired.
+        "locator_route_meta_primary": None,
+        "locator_route_meta_retry": None,
         # B-420 (/stress A1.3 v9, 2026-05-17): select_option dispatch meta
         # symmetric with locator_route_meta. Paper §3.5 select_option
         # sub-taxonomy depends on key presence.
