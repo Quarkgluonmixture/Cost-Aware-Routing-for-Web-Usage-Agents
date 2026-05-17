@@ -6,7 +6,6 @@ import logging
 import os
 import re
 import time
-import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -22,77 +21,84 @@ logger = logging.getLogger(__name__)
 _DEFAULT_TIMEOUT = 120
 
 # ---------------------------------------------------------------------------
-# Tool-calling schema — forces structured output via the API's tool_use
-# mechanism, completely eliminating parse_error from free-form text.
-# Enabled via config: model.use_tool_calling = true
+# Tool-calling schema — OpenAI-format tool def for the AWS proxy (hybrid shim).
+# Proxy probe 2026-05-17 (`docs/checkpoints/probes/proxy_capability_v2_223704.json`)
+# confirmed: endpoint accepts OpenAI-style tools `{type:"function", function:
+# {name, parameters}}` + returns top-level `body["tool_calls"][0].function.
+# arguments` (NOT Anthropic-style `content[].tool_use` block, NOT OpenAI-
+# style `choices[0].message.tool_calls`). `thought` added to required so
+# tool args carry reasoning for `_format_history` parity with B1/B2.
 # ---------------------------------------------------------------------------
 _WEB_ACTION_TOOL = {
-    "name": "web_action",
-    "description": (
-        "Execute a web navigation action on the current page. "
-        "Call this tool with your chosen action for every step."
-    ),
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "thought": {
-                "type": "string",
-                "description": "Brief reasoning about what to do next and why.",
+    "type": "function",
+    "function": {
+        "name": "web_action",
+        "description": (
+            "Execute a web navigation action on the current page. "
+            "Call this tool with your chosen action for every step."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "thought": {
+                    "type": "string",
+                    "description": "Brief reasoning about what to do next and why.",
+                },
+                "confidence": {
+                    "type": "number",
+                    "description": "Confidence 0.0-1.0 that this action is correct.",
+                },
+                "action_type": {
+                    "type": "string",
+                    "enum": [
+                        "click", "type", "scroll", "wait", "back",
+                        "forward", "finish", "select_option", "tab_focus",
+                    ],
+                    "description": "The type of action to perform.",
+                },
+                "element_id": {
+                    "type": "integer",
+                    "description": "Element ID from Accessibility Tree or SOM marks.",
+                },
+                "coordinate": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "description": "Normalized [x, y] coordinates (0.0-1.0).",
+                },
+                "text": {
+                    "type": "string",
+                    "description": "Text to type (for type action). Append \\n to submit.",
+                },
+                "scroll_direction": {
+                    "type": "string",
+                    "enum": ["up", "down"],
+                    "description": "Scroll direction: 'down' to reveal content below, 'up' to reveal content above.",
+                },
+                "option_label": {
+                    "type": "string",
+                    "description": "Visible option text for select_option.",
+                },
+                "option_value": {
+                    "type": "string",
+                    "description": "Option value for select_option.",
+                },
+                "option_index": {
+                    "type": "integer",
+                    "description": "Option index for select_option.",
+                },
+                "answer": {
+                    "type": "string",
+                    "description": "Answer for finish action.",
+                },
+                "page_number": {
+                    "type": "integer",
+                    "description": "Tab number for tab_focus.",
+                },
             },
-            "confidence": {
-                "type": "number",
-                "description": "Confidence 0.0-1.0 that this action is correct.",
-            },
-            "action_type": {
-                "type": "string",
-                "enum": [
-                    "click", "type", "scroll", "wait", "back",
-                    "forward", "finish", "select_option", "tab_focus",
-                ],
-                "description": "The type of action to perform.",
-            },
-            "element_id": {
-                "type": "integer",
-                "description": "Element ID from Accessibility Tree or SOM marks.",
-            },
-            "coordinate": {
-                "type": "array",
-                "items": {"type": "number"},
-                "minItems": 2,
-                "maxItems": 2,
-                "description": "Normalized [x, y] coordinates (0.0-1.0).",
-            },
-            "text": {
-                "type": "string",
-                "description": "Text to type (for type action). Append \\n to submit.",
-            },
-            "scroll_direction": {
-                "type": "string",
-                "enum": ["up", "down"],
-                "description": "Scroll direction: 'down' to reveal content below, 'up' to reveal content above.",
-            },
-            "option_label": {
-                "type": "string",
-                "description": "Visible option text for select_option.",
-            },
-            "option_value": {
-                "type": "string",
-                "description": "Option value for select_option.",
-            },
-            "option_index": {
-                "type": "integer",
-                "description": "Option index for select_option.",
-            },
-            "answer": {
-                "type": "string",
-                "description": "Answer for finish action.",
-            },
-            "page_number": {
-                "type": "integer",
-                "description": "Tab number for tab_focus.",
-            },
+            "required": ["action_type", "thought"],
         },
-        "required": ["action_type"],
     },
 }
 
@@ -143,48 +149,20 @@ class ProxyApiAgent:
         self.timeout = model_cfg.get("timeout", _DEFAULT_TIMEOUT)
         self._use_tool_calling = model_cfg.get("use_tool_calling", False)
 
-        # GLM fallback for parse-error recovery (Solution B).
-        # Reads .auth/glm (3-line file: endpoint, model, api_key).
-        # Cost is NOT counted in experiment metrics — purely scaffold overhead.
-        #
-        # ⚠️ DEPRECATED — MARKED FOR FULL RETIRE (B-145, /stress A1.2 v8, 2026-05-16).
-        # Cross-baseline cost-fairness violation: B1/B2 have no equivalent
-        # recovery model, so enabling GLM gives B0 a unique "free retry" that
-        # invalidates paper §1 cost-fair comparison. Default is now
-        # ``use_glm_fallback: false`` (configs/exp_v2_base.yaml:160). This block
-        # is preserved only as a fallback during the transition window pending
-        # advisor sync on the Qwen official API channel (which exposes
-        # tool_choice and removes the parse-error root cause). Once that lands,
-        # delete this entire ``_glm_config`` / ``_call_glm_extract`` / Solution-B
-        # codepath; the corresponding config key in exp_v2_base.yaml is removed
-        # simultaneously.
-        self._glm_config: Optional[Dict[str, str]] = None
-        glm_cfg_path = model_cfg.get("glm_config", ".auth/glm")
+        # B-991~B-993 (/stress A1.2-followup, 2026-05-17): GLM fallback fully
+        # retired. AWS proxy probe 2026-05-17 (`probes/proxy_capability_v2_
+        # 223704.json`) confirmed native OpenAI-format tool_choice + logprobs
+        # support, so parse-error rescue via GLM-5.1 is no longer needed.
+        # Step record fields `glm_fallback_*` are preserved as schema v2
+        # zombie fields (always None) to keep archive read paths valid; v3
+        # migration deferred. `use_glm_fallback` config key is accepted but
+        # hard-rejected if true (defense against stale yaml).
         if model_cfg.get("use_glm_fallback", False):
-            import warnings
-            warnings.warn(
-                "GLM fallback (Solution B) is deprecated and marked for retire; "
-                "enabling it violates paper §1 cross-baseline cost-fairness. Set "
-                "use_glm_fallback: false (now the default) for any paper-grade run.",
-                DeprecationWarning,
-                stacklevel=2,
+            raise RuntimeError(
+                "use_glm_fallback=true is no longer supported (B-991 retire). "
+                "AWS proxy supports native tool_choice; set use_tool_calling=true "
+                "and use_glm_fallback=false."
             )
-            # B-340 (/stress A1.9 Mode C F4 defense-in-depth, 2026-05-16):
-            # paper-grade mode hard-blocks GLM fallback enable (defense
-            # against config drift / accidental yaml override). The
-            # DeprecationWarning above is easy to miss in noisy log; this
-            # explicit raise makes any paper-grade run with GLM enabled
-            # fail at construction rather than silently corrupting cost-
-            # fairness mid-fire. Set `paper_grade: false` for dev/legacy.
-            if config.get("paper_grade", False):
-                raise RuntimeError(
-                    "use_glm_fallback=true is forbidden in paper-grade mode "
-                    "(B-340). GLM fallback gives B0 an asymmetric 'free parse-"
-                    "error rescue' service that B1/B2 do not have → "
-                    "violates cross-baseline cost-fairness in paper §1. "
-                    "Set `use_glm_fallback: false` or `paper_grade: false`."
-                )
-            self._glm_config = self._load_glm_config(glm_cfg_path)
 
         self._system_prompts = self._get_system_prompts()
 
@@ -197,129 +175,73 @@ class ProxyApiAgent:
             for mode in self._system_prompts:
                 self._system_prompts[mode] = self._system_prompts[mode].replace(_old, _new)
 
-    # ---- GLM fallback (Solution B) ----
+    # ---- GLM fallback fully retired 2026-05-17 (B-991 migration); methods
+    # `_load_glm_config` + `_call_glm_extract` deleted. Step record schema
+    # v2 fields `glm_fallback_*` preserved as None (zombie) for archive
+    # read-path compatibility.
+
+    # ---- B0 confidence extraction from proxy logprobs ----
 
     @staticmethod
-    def _load_glm_config(cfg_path: str) -> Optional[Dict[str, str]]:
-        """Load GLM config from a 3-line file: endpoint, model, api_key."""
-        p = Path(cfg_path)
-        if not p.exists():
-            logger.warning("GLM config %s not found; GLM fallback disabled.", cfg_path)
-            return None
-        lines = [
-            ln.strip()
-            for ln in p.read_text(encoding="utf-8").splitlines()
-            if ln.strip() and not ln.strip().startswith("#")
-        ]
-        if len(lines) < 3:
-            logger.warning("GLM config %s needs 3 lines (endpoint/model/key); got %d. Disabled.", cfg_path, len(lines))
-            return None
-        cfg = {"endpoint": lines[0], "model": lines[1], "api_key": lines[2]}
-        logger.info("GLM fallback enabled: model=%s", cfg["model"])
-        return cfg
+    def _compute_confidence_from_proxy_logprobs(
+        logprobs_content: Optional[List[Dict[str, Any]]],
+    ) -> Dict[str, Optional[float]]:
+        """Compute B0 confidence metrics from AWS proxy top-level logprobs.
 
-    def _call_glm_extract(self, raw_output: str) -> Optional[Dict[str, Any]]:
-        """Ask GLM to extract a JSON action from raw model output.
+        Proxy shape: `body["logprobs"]["content"][i] = {"token", "logprob",
+        "top_logprobs": [{"token", "logprob"}, ...]}` (OpenAI-style with
+        `top_logprobs=2`). Returns 6-field dict aligned with
+        `_shared_vl_utils.compute_confidence` schema (B1/B2 path) for
+        cross-baseline runner consumption — entropy fields are None because
+        full-vocab entropy is not recoverable from top-2 truncation.
 
-        Returns validated action dict on success, None on failure.
-        This is a scaffold-level format repair — cost is NOT experiment cost.
+        Empirical proxy shape: see `docs/checkpoints/probes/
+        proxy_capability_v2_223704.json` V4/V5.
         """
-        if not self._glm_config:
-            return None
-
-        # Truncate to avoid sending huge payloads for a simple extraction task.
-        truncated = raw_output[:4000]
-        extract_prompt = (
-            "Extract or infer the intended web navigation action from the following agent output.\n"
-            "The output may be valid JSON, malformed JSON, or natural language describing the intended action.\n\n"
-            "Rules:\n"
-            '- Output a single JSON object with "action_type" (one of: click, type, scroll, wait, back, '
-            "forward, finish, select_option, tab_focus).\n"
-            "- Include relevant fields: element_id, coordinate, text, scroll_direction (up/down), "
-            "option_label, answer, thought.\n"
-            "- If the output contains JSON (possibly malformed), extract and fix it.\n"
-            "- If the output is natural language, infer the action from the described intent.\n"
-            '- For finish/stop actions, extract the answer from context (do NOT leave answer as "").\n'
-            "- Output ONLY the JSON object. No explanation, no markdown.\n\n"
-            "Examples:\n"
-            'Input: "I need to click on the submit button which is element 42"\n'
-            'Output: {"action_type": "click", "element_id": 42, "thought": "click submit button"}\n\n'
-            'Input: "Let me scroll down to see more results on this page"\n'
-            'Output: {"action_type": "scroll", "scroll_direction": "down", "thought": "scroll to see more results"}\n\n'
-            'Input: "The answer to the question is $25.99, I should finish now"\n'
-            'Output: {"action_type": "finish", "answer": "$25.99", "thought": "found the answer"}\n\n'
-            f"Agent output:\n{truncated}"
-        )
-
-        messages = [
-            {"role": "system", "content": "You extract or infer structured JSON actions from agent output. Output ONLY valid JSON."},
-            {"role": "user", "content": extract_prompt},
-        ]
-        payload = json.dumps({
-            "model": self._glm_config["model"],
-            "messages": messages,
-            "temperature": 0.0,
-            # GLM-5.1 is a thinking model: reasoning_content consumes most of the
-            # token budget.  512 causes content truncation for complex outputs.
-            "max_tokens": 2048,
-        }).encode("utf-8")
-
-        ep = self._glm_config["endpoint"].rstrip("/")
-        urls = [f"{ep}/chat/completions", ep] if not ep.endswith("/chat/completions") else [ep]
-
-        for url in urls:
-            req = urllib.request.Request(
-                url,
-                data=payload,
-                method="POST",
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {self._glm_config['api_key']}",
-                },
-            )
-            try:
-                with urllib.request.urlopen(req, timeout=60) as resp:
-                    data = json.loads(resp.read().decode("utf-8"))
-                choices = data.get("choices") or []
-                if not choices:
-                    continue
-                import re as _re
-
-                msg_obj = (choices[0].get("message") or {})
-                text = msg_obj.get("content") or ""
-                if not text.strip():
-                    # Thinking model: try reasoning_content
-                    text = msg_obj.get("reasoning_content") or ""
-                text = text.strip()
-                # Strip markdown code fence
-                if text.startswith("```"):
-                    text = text.strip("`")
-                    if text.lower().startswith("json"):
-                        text = text[4:].strip()
-                try:
-                    parsed = json.loads(text)
-                except json.JSONDecodeError:
-                    # Thinking model may embed JSON inside reasoning prose;
-                    # try regex extraction as last resort.
-                    # First try: allow nested braces (for coordinate arrays etc.)
-                    m = _re.search(r"\{[^{}]*\"action_type\"[^}]*\}", text)
-                    if not m:
-                        # Second try: non-greedy match from action_type to end
-                        m = _re.search(r"\{.*?\"action_type\".*?\}", text, _re.DOTALL)
-                    if m:
-                        parsed = json.loads(m.group())
-                    else:
-                        raise
-                action, is_valid = validate_action(parsed)
-                if is_valid:
-                    logger.info("GLM fallback extracted action: %s", action.get("action_type"))
-                    return action
-                logger.warning("GLM fallback returned invalid action: %s", parsed)
-                return None
-            except Exception as exc:
-                logger.warning("GLM fallback call failed (%s): %s", url, exc)
+        empty = {
+            "mean_logprob": None, "min_logprob": None,
+            "mean_margin": None, "min_margin": None,
+            "mean_entropy": None, "max_entropy": None,
+        }
+        if not logprobs_content or not isinstance(logprobs_content, list):
+            return empty
+        logprobs_list: List[float] = []
+        margins_list: List[float] = []
+        for entry in logprobs_content:
+            if not isinstance(entry, dict):
                 continue
-        return None
+            chosen = entry.get("logprob")
+            if chosen is None:
+                continue
+            try:
+                logprobs_list.append(float(chosen))
+            except (TypeError, ValueError):
+                continue
+            top = entry.get("top_logprobs") or []
+            if isinstance(top, list) and len(top) >= 2:
+                try:
+                    margin = float(top[0].get("logprob")) - float(top[1].get("logprob"))
+                    margins_list.append(margin)
+                except (TypeError, ValueError, AttributeError):
+                    pass
+        if not logprobs_list:
+            return empty
+        n = len(logprobs_list)
+        out: Dict[str, Optional[float]] = {
+            "mean_logprob": sum(logprobs_list) / n,
+            "min_logprob": min(logprobs_list),
+            # Entropy fields intentionally None: top-2 truncation cannot
+            # recover full-vocab entropy (B-991 F1 / codex Mode B, 2026-05-17).
+            "mean_entropy": None,
+            "max_entropy": None,
+        }
+        if margins_list:
+            out["mean_margin"] = sum(margins_list) / len(margins_list)
+            out["min_margin"] = min(margins_list)
+        else:
+            out["mean_margin"] = None
+            out["min_margin"] = None
+        return out
 
     # ---- system prompts (per observation mode) ----
 
@@ -560,8 +482,21 @@ class ProxyApiAgent:
 
         if self._use_tool_calling:
             payload["tools"] = [_WEB_ACTION_TOOL]
-            # Force the model to call web_action — guarantees structured output.
-            payload["tool_choice"] = {"type": "tool", "name": "web_action"}
+            # B-991 (Q1=A 推荐, 2026-05-17): tool_choice="auto" — model self-
+            # decides call-vs-free-text. Forced tool_choice would impose
+            # grammar-constrained decoding (alternative tokens masked) →
+            # mean_logprob systematically inflated vs B1/B2 free decoding →
+            # §C router cross-baseline confidence feature contamination.
+            # "auto" preserves logprob symmetry; if N=30 pilot emit_rate <95%
+            # this falls back to "forced" + paper §3.5 disclose constrained
+            # asymmetry (parking lot §8 Q1 option B).
+            payload["tool_choice"] = "auto"
+            # Logprobs for cross-baseline confidence feature parity with
+            # B1/B2 _compute_confidence (mean/min logprob + mean/min margin;
+            # entropy fields None per top-2 truncation, see
+            # _compute_confidence_from_proxy_logprobs).
+            payload["logprobs"] = True
+            payload["top_logprobs"] = 2
 
         if self._api_format == "openai":
             headers = {
@@ -669,8 +604,44 @@ class ProxyApiAgent:
         fail_reason: Optional[str] = None
         reasoning_text: Optional[str] = reasoning_text_openai
 
+        # B-991 (2026-05-17): AWS proxy hybrid shape — top-level `tool_calls`
+        # field (NOT inside `content[]` Anthropic block, NOT inside
+        # `choices[0].message` OpenAI). Probe v2 confirmed `body[tool_calls]
+        # [0].function.{name, arguments}` shape; `arguments` is a JSON string.
+        # Try this first when use_tool_calling is enabled; fall through to
+        # legacy Anthropic content-block parsing or Path-2 text parse on miss.
+        proxy_tool_calls = resp_json.get("tool_calls") if isinstance(resp_json, dict) else None
+        if (
+            self._use_tool_calling
+            and isinstance(proxy_tool_calls, list)
+            and proxy_tool_calls
+        ):
+            first_call = proxy_tool_calls[0] or {}
+            fn_block = first_call.get("function") if isinstance(first_call, dict) else None
+            if isinstance(fn_block, dict) and fn_block.get("name") == "web_action":
+                args_str = fn_block.get("arguments") or ""
+                try:
+                    tool_input = json.loads(args_str) if isinstance(args_str, str) else args_str
+                except json.JSONDecodeError:
+                    tool_input = None
+                    fail_reason = "tool_arguments_json_decode"
+                    logger.warning("Proxy tool_calls.arguments JSON decode failed; fallback to text parse.")
+                if isinstance(tool_input, dict):
+                    if not tool_input.get("thought") and isinstance(raw_content, str) and raw_content:
+                        tool_input["thought"] = raw_content.strip()[:500]
+                    action, valid = validate_action(tool_input)
+                    output_text = json.dumps(tool_input, ensure_ascii=False)
+                    if valid:
+                        _action_pt, _valid_pt, _fail_pt = parse_action_text(output_text)
+                        fail_reason = _fail_pt if _valid_pt else None
+                        logger.info("Proxy tool_calls parsed: %s", action.get("action_type"))
+                    else:
+                        fail_reason = "invalid_tool_input"
+                        logger.warning("Proxy tool_calls validate_action invalid, falling back to text parse.")
+                        action = None
+
         # Path 1: tool_use extraction (when enabled).
-        if self._use_tool_calling and isinstance(raw_content, list):
+        if action is None and self._use_tool_calling and isinstance(raw_content, list):
             text_parts: List[str] = []
             tool_input: Optional[Dict[str, Any]] = None
             for block in raw_content:
@@ -739,22 +710,14 @@ class ProxyApiAgent:
                 output_text = str(raw_content)
             action, valid, fail_reason = parse_action_text(output_text)
 
-        # Path 3: GLM extraction fallback — only when parse failed.
+        # Path 3 GLM extraction fallback RETIRED 2026-05-17 (B-991). Proxy
+        # native tool_calling + free-text path together cover parse-error
+        # surface without cross-baseline cost-fairness violation. Step
+        # record fields preserved as None for schema v2 zombie compat.
         glm_fallback_used = False
         glm_fallback_attempted = False
         glm_fallback_ms = 0.0
         glm_original_fail_reason: Optional[str] = None
-        if not valid and self._glm_config:
-            glm_fallback_attempted = True
-            glm_original_fail_reason = fail_reason  # remember what failed
-            _t0 = time.monotonic()
-            glm_action = self._call_glm_extract(output_text)
-            glm_fallback_ms = (time.monotonic() - _t0) * 1000
-            if glm_action is not None:
-                action = glm_action
-                valid = True
-                fail_reason = None  # clear so runner doesn't mis-categorize
-                glm_fallback_used = True
 
         # Convert semantic scroll_direction → delta for environment compatibility.
         if action.get("action_type") == "scroll" and "scroll_direction" in action:
@@ -773,6 +736,19 @@ class ProxyApiAgent:
 
         usage = resp_json.get("usage") or {}
         metadata = resp_json.get("metadata") or {}
+
+        # B-991 (2026-05-17): extract logprob-derived confidence fields from
+        # proxy top-level `logprobs.content` (when `logprobs=True` in payload).
+        # 4 of 6 fields populate (mean/min logprob + mean/min margin); entropy
+        # fields remain None per top-2 truncation. See
+        # `_compute_confidence_from_proxy_logprobs` docstring.
+        _proxy_logprobs_content = None
+        if isinstance(resp_json, dict):
+            _lp = resp_json.get("logprobs")
+            if isinstance(_lp, dict):
+                _proxy_logprobs_content = _lp.get("content")
+        _confidence = self._compute_confidence_from_proxy_logprobs(_proxy_logprobs_content)
+
         meta = {
             "raw_output": output_text,
             "valid": valid,
@@ -846,6 +822,10 @@ class ProxyApiAgent:
             # comparison (B1/B2 have no network retry equivalent).
             "network_retry_count": _retry_count if _retry_count else None,
             "network_retry_wait_ms": _retry_wait_ms_total if _retry_count else None,
+            # B-991 (2026-05-17): logprob-derived confidence for cross-baseline
+            # §C router input parity with B1/B2 _compute_confidence. Entropy
+            # fields None per top-2 truncation (full-vocab unobservable).
+            **_confidence,
         }
 
         return action, meta

@@ -65,18 +65,20 @@ def test_glm_fallback_default_disabled_in_base_yaml():
     )
 
 
-def test_proxy_agent_emits_deprecation_when_glm_fallback_enabled(tmp_path, monkeypatch):
-    """Enabling GLM fallback should fire a ``DeprecationWarning`` at agent
-    construction so any accidental flip is visible in CI / logs."""
-    import warnings
-
-    # Mock the proxy agent dependencies that require live model loading
-    # by directly inspecting the source for the warnings.warn call.
+def test_proxy_agent_raises_on_glm_fallback_enabled():
+    """B-991 (2026-05-17): GLM fallback fully retired. Enabling
+    ``use_glm_fallback: true`` MUST raise RuntimeError at construction
+    (no more DeprecationWarning path — the legacy code is deleted).
+    AWS proxy now supports native tool_calling so parse-error rescue
+    is unnecessary."""
     src = (REPO_ROOT / "p79/agents/proxy_api_agent.py").read_text(encoding="utf-8")
-    assert "DeprecationWarning" in src, "GLM fallback enabling path missing DeprecationWarning"
-    assert "MARKED FOR FULL RETIRE" in src, (
-        "Deprecation banner missing 'MARKED FOR FULL RETIRE' marker; "
-        "this is the cross-link for the upcoming Qwen official API channel migration."
+    # Source contract: explicit raise on use_glm_fallback=true
+    assert "use_glm_fallback=true is no longer supported" in src, (
+        "B-991 retire contract missing — agent must reject use_glm_fallback=true."
+    )
+    # The legacy GLM call method must be deleted
+    assert "_call_glm_extract" not in src or "RETIRED" in src, (
+        "Legacy _call_glm_extract should be deleted (B-991 retire)."
     )
 
 

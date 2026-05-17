@@ -172,15 +172,18 @@ backends:
     max_image_payload_bytes: 5242880
     dom_mode: "llm"
     mock_mode: false
-    # Plan A: tool_use — disabled (proxy does not forward tools/tool_choice to Bedrock)
-    use_tool_calling: false
-    # B-145 (/stress A1.2 v8, 2026-05-16): GLM-5.1 fallback DISABLED by default.
-    # Plan B path was a paper-grade cross-baseline cost-fairness violation
-    # (B1/B2 have no equivalent recovery model, so B0 alone got "free" parse-error
-    # retries on a second model). The fallback module is marked for full retire
-    # pending advisor sync on the Qwen official API channel (which exposes
-    # tool_choice and removes the parse-error root cause). Set explicitly per-yaml
-    # ONLY when investigating proxy parse-rate; never enable for paper-grade runs.
+    # B-991 (2026-05-17): native tool_choice enabled. AWS proxy probe v2
+    # (`docs/checkpoints/probes/proxy_capability_v2_223704.json`) confirmed
+    # OpenAI-format tool_calling support + top-level `tool_calls` response
+    # shape + logprobs (top-2). tool_choice="auto" (per Q1=A) preserves
+    # logprob symmetry with B1/B2 free decoding; pilot N=30 expected
+    # emit_rate ≥95%.
+    use_tool_calling: true
+    # GLM fallback fully retired 2026-05-17 (B-991): construction raises
+    # RuntimeError when `use_glm_fallback: true`. Keep this key at `false`
+    # for any paper-grade run; the legacy `_call_glm_extract` code is
+    # deleted. `glm_config` key still parsed for back-compat with old
+    # yamls but ignored.
     use_glm_fallback: false
     glm_config: ".auth/glm"
 

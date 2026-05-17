@@ -57,25 +57,13 @@ def test_b145_proxy_agent_emits_deprecation_warning_at_runtime(monkeypatch):
         # warning path to run; the hard-raise path is separately tested below).
         "paper_grade": False,
     }
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        try:
-            ProxyApiAgent(config)
-        except Exception:
-            # `_load_glm_config` may raise on bogus path AFTER warning fired —
-            # the warning is what we're testing, not the load completion.
-            pass
-        relevant = [w for w in caught if issubclass(w.category, DeprecationWarning)]
-        assert relevant, (
-            "B-145 GLM fallback DeprecationWarning did NOT fire at runtime. "
-            "Source-grep test would still pass — this catches the real regression. "
-            f"All warnings caught: {[(w.category.__name__, str(w.message)[:60]) for w in caught]}"
-        )
-        msg = str(relevant[0].message)
-        assert "GLM fallback" in msg, f"Warning message drift: {msg!r}"
-        assert "deprecated" in msg.lower() or "retire" in msg.lower(), (
-            f"Warning missing 'deprecated'/'retire' keyword: {msg!r}"
-        )
+    # B-991 (2026-05-17): retire-in-progress upgraded to retire-complete.
+    # GLM fallback now raises RuntimeError unconditionally (was: warn then
+    # try-and-fail). DeprecationWarning path deleted along with
+    # `_call_glm_extract` body — AWS proxy native tool_calling makes
+    # rescue obsolete.
+    with pytest.raises(RuntimeError, match=r"use_glm_fallback=true is no longer supported|B-991"):
+        ProxyApiAgent(config)
 
 
 def test_b340_paper_grade_mode_hard_blocks_glm_fallback(monkeypatch):
@@ -96,7 +84,11 @@ def test_b340_paper_grade_mode_hard_blocks_glm_fallback(monkeypatch):
         },
         "paper_grade": True,
     }
-    with pytest.raises(RuntimeError, match=r"paper-grade|B-340|cost-fairness"):
+    # B-991 (2026-05-17): B-340 paper-grade hard-raise upgraded to
+    # unconditional retire — agent rejects use_glm_fallback=true regardless
+    # of paper_grade. Test still verifies RuntimeError fires at construction
+    # under paper_grade=true (the original B-340 contract).
+    with pytest.raises(RuntimeError, match=r"use_glm_fallback=true is no longer supported|B-991|paper-grade|B-340"):
         ProxyApiAgent(config)
 
 
