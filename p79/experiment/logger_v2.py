@@ -1,10 +1,41 @@
 from __future__ import annotations
 
 import datetime
+import hashlib
 import json
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+
+def _event_fingerprint(event: Dict[str, Any]) -> str:
+    """B-466 (/stress A1.5b Phase 1 P1-3-B codex OOB, 2026-05-17): canonical
+    fingerprint for trajectory event dedup. sha256[:16] of (event_type +
+    wallclock_ts + sorted metadata JSON). Used by
+    `merge_staging_trajectory_events` to skip already-merged events on
+    resume+reset scenario.
+
+    Excludes top-level transient fields injected at merge time
+    (`merged_from_staging`, `staging_run_id`) so the fingerprint is stable
+    across merge ↔ staging round-trips.
+    """
+    metadata = event.get("metadata") or {}
+    if isinstance(metadata, dict):
+        # Strip merge-time transient fields for canonical hash
+        canonical_meta = {
+            k: v for k, v in metadata.items()
+            if k not in {"merged_from_staging", "staging_run_id"}
+        }
+        meta_str = json.dumps(canonical_meta, sort_keys=True, default=str)
+    else:
+        meta_str = str(metadata)
+    components = (
+        f"{event.get('event_type', '')}|"
+        f"{event.get('wallclock_ts', '')}|"
+        f"{event.get('task_index', '')}|"
+        f"{meta_str}"
+    )
+    return hashlib.sha256(components.encode("utf-8")).hexdigest()[:16]
 
 
 def _fsync_dir(directory: Path) -> None:
@@ -61,10 +92,21 @@ class LoggerV2:
     def write_step(self, site: str, task_id: int, record: Dict[str, Any]) -> None:
         path = self.step_log_path(site, task_id)
         path.parent.mkdir(parents=True, exist_ok=True)
+        # B-467 (/stress A1.5b Phase 1 P1-4-B codex OOB, 2026-05-17): fsync
+        # parent dir entry on first-create. File-fd fsync alone does not flush
+        # the dirent for a newly-created file — ext4 journal can hold the
+        # dirent up to ~30s. DGX SIGKILL between first append + dirent flush
+        # → reboot sees inode with data but no dirent → step JSONL "evaporates".
+        # B-198/B-289 lineage (parent dir fsync after os.replace atomic write)
+        # but for append-create code path. Best-effort: cheap (~10ms) only on
+        # first-create; idempotent on subsequent appends.
+        _existed_pre_write = path.exists()
         with open(path, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
             f.flush()
             os.fsync(f.fileno())
+        if not _existed_pre_write:
+            _fsync_dir(path.parent)
 
     def write_episode_summary(self, site: str, task_id: int, summary: Dict[str, Any]) -> None:
         path = self.summary_path(site, task_id)
@@ -155,10 +197,17 @@ class LoggerV2:
         }
         path = self.condition_dir / "trajectory_events.jsonl"
         path.parent.mkdir(parents=True, exist_ok=True)
+        # B-467 (/stress A1.5b Phase 1 P1-4-B codex OOB, 2026-05-17): parent-
+        # dir fsync on first-create — see write_step docstring for full
+        # rationale (DGX SIGKILL between first append + dirent flush would
+        # otherwise evaporate the trajectory event log entirely).
+        _existed_pre_write = path.exists()
         with open(path, "a", encoding="utf-8") as f:
             f.write(json.dumps(event, ensure_ascii=False) + "\n")
             f.flush()
             os.fsync(f.fileno())
+        if not _existed_pre_write:
+            _fsync_dir(path.parent)
 
 
 # B-313 module-level helper for shell-side / out-of-band callers (reset gate
@@ -244,9 +293,33 @@ def merge_staging_trajectory_events(
     if not condition_dir.exists():
         return 0
     target = condition_dir / "trajectory_events.jsonl"
+    # B-466 (/stress A1.5b Phase 1 P1-3-B codex OOB, 2026-05-17): hash-based
+    # idempotency. Pre-fix `if target.exists(): return 0` dropped staging
+    # events on resume+reset scenario: T1 created target (empty or with reset
+    # event); T2 same RUN_ID resume + RESET_BEFORE=1 → queue gate appends new
+    # reset_post_interrupt to staging → runner sees target.exists() → skips
+    # merge → new reset discontinuity false-negative in covariate trail
+    # (paper §4 covariate analysis sees post-reset episodes as normal).
+    # Now compute fingerprint of existing target events; on merge skip any
+    # staging event whose fingerprint matches → idempotent against legitimate
+    # re-merge, durable against new-event drops.
+    _existing_fingerprints: set = set()
     if target.exists():
-        # Resume case: preserve existing events, skip pickup.
-        return 0
+        try:
+            with open(target, "r", encoding="utf-8") as _tf:
+                for _line in _tf:
+                    _line = _line.strip()
+                    if not _line:
+                        continue
+                    try:
+                        _ev = json.loads(_line)
+                    except json.JSONDecodeError:
+                        continue
+                    _fp = _event_fingerprint(_ev)
+                    _existing_fingerprints.add(_fp)
+        except OSError:
+            # Defensive: cannot read existing → treat as empty (allow merge).
+            _existing_fingerprints = set()
     if repo_root is None:
         # Auto-detect: condition_dir = <repo_root>/results/<bench>/<phase>/<run>/<cond>
         # so repo_root = condition_dir.parents[4]
@@ -291,9 +364,22 @@ def merge_staging_trajectory_events(
             "wallclock_ts": preserved_ts,
             "metadata": meta,
         }
+        # B-466 (/stress A1.5b Phase 1 P1-3-B codex OOB, 2026-05-17): skip
+        # if fingerprint matches an existing target event (canonical hash
+        # excludes merged_from_staging + staging_run_id transients).
+        _fp = _event_fingerprint(event)
+        if _fp in _existing_fingerprints:
+            continue
+        _existing_fingerprints.add(_fp)
+        # B-467 (/stress A1.5b Phase 1 P1-4-B codex OOB, 2026-05-17): first-
+        # create parent-dir fsync — see write_step / log_trajectory_event for
+        # full rationale.
+        _existed_pre_write = target.exists()
         with open(target, "a", encoding="utf-8") as f:
             f.write(json.dumps(event, ensure_ascii=False) + "\n")
             f.flush()
             os.fsync(f.fileno())
+        if not _existed_pre_write:
+            _fsync_dir(target.parent)
         merged += 1
     return merged

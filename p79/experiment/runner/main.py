@@ -332,16 +332,31 @@ class ExperimentRunner:
             logger.warning("Failed to create latest symlink %s: %s", latest_link, exc)
 
     @staticmethod
-    def _aggregate_partial_steps(partial_steps: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """B-168 (/stress A1.4a v8 codex B1, 2026-05-16): aggregate metrics
-        from partial JSONL rows so a mid-episode crash doesn't erase the
-        tokens/cost/latency already incurred.
+    def _aggregate_partial_steps(
+        partial_steps: List[Dict[str, Any]],
+        condition_observation_mode: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """B-168 (/stress A1.4a v8 codex B1, 2026-05-16) + B-465 (A1.5b
+        Phase 1 P1-2-AC, 2026-05-17): aggregate metrics from partial JSONL
+        rows so a mid-episode crash doesn't erase the tokens/cost/latency
+        already incurred + correctly recompute escalation_count.
 
         Pre-B-168 the runner ``except`` path emitted ``steps=0, total_tokens=0,
         total_cost=0`` even after 12 step JSONL rows were already on disk,
         creating a JSONL-vs-summary divergence: same episode wrote two
         incompatible histories. ``read_jsonl_dedup`` already handles restart
         dedup and corrupt-line skipping; this helper computes the sums.
+
+        B-465 (Claude A1.5b + gemini G3, A+C 2-AI overlap): pre-fix returned
+        ``escalation_count: 0`` with cop-out comment "cannot reconstruct
+        without state context". But each ``StepRecordV2.observation_mode``
+        is a REQUIRED field per ``types.py:331`` schema; given
+        ``condition.observation_mode`` (caller passes it) we can recompute
+        escalation = sum(steps where mode != condition.mode). Pre-fix
+        DGX-crash-rate × baseline-escalation-rate biased paper §4 router
+        fire-rate headline downward — reviewer attack vector "your router
+        fire-rate excludes crash-contaminated runs".
+
         Returns a dict of {steps, retries, total_tokens, total_*_cost_usd,
         total_latency_ms, p95_step_latency_ms, escalation_count, ...}.
         """
@@ -382,8 +397,24 @@ class ExperimentRunner:
             if not bool(s.get("page_changed", False))
             and str((s.get("action") or {}).get("action_type", "")).lower() not in ("finish", "stop")
         )
-        # escalation_count: count router decisions that differ from
-        # condition.observation_mode. Without router_on we set 0.
+        # B-465 (/stress A1.5b Phase 1 P1-2-AC, 2026-05-17): recompute
+        # escalation_count from partial_steps using condition.observation_mode
+        # as router-resting target. step.observation_mode is REQUIRED field
+        # per StepRecordV2 schema (types.py:331). If caller didn't pass
+        # condition_observation_mode (legacy callers), fall back to 0 with
+        # WARN log so downstream paper §4 aggregator can distinguish from a
+        # true-zero count.
+        if condition_observation_mode is not None:
+            escalation_count = sum(
+                1 for s in partial_steps
+                if str(s.get("observation_mode", "")) != condition_observation_mode
+            )
+        else:
+            logger.warning(
+                "B-465 _aggregate_partial_steps called without "
+                "condition_observation_mode — escalation_count stays 0 (legacy fallback)"
+            )
+            escalation_count = 0
         return {
             "steps": n,
             "retries": retries,
@@ -396,7 +427,7 @@ class ExperimentRunner:
             "total_cost_usd": total_cost,
             "total_router_overhead_cost_usd": total_router_overhead_cost,
             "total_router_overhead_ms": total_router_overhead_ms,
-            "escalation_count": 0,  # cannot reconstruct without state context
+            "escalation_count": escalation_count,
         }
 
     @staticmethod
@@ -952,17 +983,62 @@ class ExperimentRunner:
         step_dir = episode_dir / f"step_{step_idx:03d}"
         step_dir.mkdir(parents=True, exist_ok=True)
 
-        screenshot_path = None
+        # B-470 (/stress A1.5b Phase 1 P1-7-B codex OOB, 2026-05-17): atomic
+        # write for artifacts (tmp + fsync + replace + parent_fsync). Pre-fix
+        # plain `obs.image.save()` + `open(...).write()` left artifact files
+        # with no durability guarantee — step JSONL was fsync'd with
+        # `artifact_paths` pointer, but the pointed-to file could be
+        # half-written / missing post-crash. Result: paper §3 / §5 / gallery
+        # evidence layer has dangling artifact references. B-225/B-331
+        # atomicity chain extends here (last missing layer).
+        screenshot_path: Optional[str] = None
         if getattr(obs, "image", None) is not None:
-            screenshot_path = str(step_dir / "screenshot.png")
+            _screenshot_target = step_dir / "screenshot.png"
+            _screenshot_tmp = step_dir / "screenshot.png.tmp"
             try:
-                obs.image.save(screenshot_path)
+                obs.image.save(str(_screenshot_tmp))
+                # fsync the file via low-level handle, then atomic rename
+                _fd = os.open(str(_screenshot_tmp), os.O_RDONLY)
+                try:
+                    os.fsync(_fd)
+                finally:
+                    os.close(_fd)
+                os.replace(str(_screenshot_tmp), str(_screenshot_target))
+                # fsync parent dir entry per B-198
+                try:
+                    _pfd = os.open(str(step_dir), os.O_RDONLY)
+                    try:
+                        os.fsync(_pfd)
+                    finally:
+                        os.close(_pfd)
+                except OSError:
+                    pass  # dir fsync best-effort on NFS/FAT
+                screenshot_path = str(_screenshot_target)
             except Exception:
+                # Best-effort cleanup of leftover tmp
+                try:
+                    if _screenshot_tmp.exists():
+                        _screenshot_tmp.unlink()
+                except OSError:
+                    pass
                 screenshot_path = None
 
-        dom_path = str(step_dir / "observation_dom.txt")
-        with open(dom_path, "w", encoding="utf-8") as f:
+        _dom_target = step_dir / "observation_dom.txt"
+        _dom_tmp = step_dir / "observation_dom.txt.tmp"
+        with open(_dom_tmp, "w", encoding="utf-8") as f:
             f.write(obs.text or "")
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(str(_dom_tmp), str(_dom_target))
+        try:
+            _pfd = os.open(str(step_dir), os.O_RDONLY)
+            try:
+                os.fsync(_pfd)
+            finally:
+                os.close(_pfd)
+        except OSError:
+            pass  # dir fsync best-effort
+        dom_path = str(_dom_target)
 
         return {
             "screenshot": screenshot_path,
@@ -1051,7 +1127,19 @@ class ExperimentRunner:
             try:
                 _jsonl_path = condition_logger.step_log_path(task.site, task.task_id)
                 if _jsonl_path.exists():
-                    _partial_steps = read_jsonl_dedup(_jsonl_path)
+                    # B-468 (/stress A1.5b Phase 1 P1-5-B codex OOB, 2026-05-17):
+                    # pass `summary_path` to enable B-180 identity guard. Pre-fix
+                    # corrupt summary fall-through to rerun read raw JSONL via
+                    # plain `read_jsonl_dedup(_jsonl_path)`; if 2nd attempt
+                    # crashed before step_idx=0 was written, exception path
+                    # would read prior-attempt's JSONL and emit error summary
+                    # with stale cost/steps from prior attempt. B-180 guard
+                    # (io_utils.py:131-178) rejects segments whose identity
+                    # doesn't match the summary path → returns empty list, so
+                    # exception path correctly emits zero-step error summary
+                    # for this attempt instead of cross-attempt contamination.
+                    _summary_path = condition_logger.summary_path(task.site, task.task_id)
+                    _partial_steps = read_jsonl_dedup(_jsonl_path, summary_path=_summary_path)
             except Exception as _read_exc:
                 logger.warning(
                     "B-168 partial-JSONL read failed for site=%s task=%s: %s — "
@@ -1059,7 +1147,10 @@ class ExperimentRunner:
                     task.site, task.task_id, _read_exc,
                 )
                 _partial_steps = []
-            _agg = self._aggregate_partial_steps(_partial_steps)
+            # B-465 (A1.5b Phase 1 P1-2-AC, 2026-05-17): pass condition's
+            # observation_mode so escalation_count can be recomputed from
+            # partial steps (not hardcoded 0 = silent paper §4 bias).
+            _agg = self._aggregate_partial_steps(_partial_steps, condition.observation_mode)
 
             summary = EpisodeSummaryV2(
                 schema_version=SCHEMA_VERSION_V2,
