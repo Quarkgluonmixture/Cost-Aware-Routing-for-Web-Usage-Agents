@@ -138,7 +138,10 @@ else
   if [[ "${RESET_BEFORE:-0}" == "1" && "${BENCHMARK}" != "wa" ]]; then
     reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "phantom_text" --reset-label "phantom_text_${SITE}"
   elif [[ "${RESET_BEFORE:-0}" == "1" ]]; then
-    echo "[phantom_text] RESET_BEFORE=1 but BENCHMARK=wa — WA reset+auth refresh uses different mechanism, skipping"
+    # B-594 (A1.13 P1-4-BC fix, 2026-05-17): see queue_baseline.sh equivalent.
+    echo "[phantom_text][error] BENCHMARK=wa + RESET_BEFORE=1 unsupported until reset_wa_sites.sh full impl lands (B-594)." >&2
+    echo "[phantom_text][error] scripts/maintenance/reset_wa_sites.sh is scaffold only; fill per-site bodies + remove this guard for WA paper-grade." >&2
+    exit 1
   fi
 
   RUNNER_LOG="${LOG_DIR}/${RUN_ID}_runner.log"
