@@ -79,11 +79,11 @@ def _mock_cfg(tmp_path: Path) -> dict:
             "local_4b": {
                 "type": "local_qwen",
                 "mock_mode": True,
-                # B-408 (/stress A1.2 v8 Mode A+B+C P1-1 3-AI overlap OOB,
-                # 2026-05-16): canonical "heuristic_only" (was: "heuristic"
-                # → silently no-op on B0/B1 because backends only matched
-                # the full string). Factory now enforces enum at dispatch.
-                "dom_mode": "heuristic_only",
+                # B-425 (/stress A1.3 v9 D1, 2026-05-17): HeuristicDomBackend
+                # retired (0/53924 paper-grade usage). Smoke runs through the
+                # LLM dispatch path (mock_mode covers offline test); `dom_mode`
+                # field preserved for yaml backward-compat as no-op.
+                "dom_mode": "llm",
             },
         },
         "baselines": {"run_b0": False},

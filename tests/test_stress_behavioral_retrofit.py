@@ -201,8 +201,8 @@ def test_b144_runner_backend_cache_keys_by_seed_at_runtime(tmp_path):
         "state_change": {"similarity_threshold": 0.95},
         "backends": {
             "default_backend": "local_4b",
-            # B-408 (/stress A1.2): canonical "heuristic_only" enum
-            "local_4b": {"type": "local_qwen", "mock_mode": True, "dom_mode": "heuristic_only"},
+            # B-425 (/stress A1.3 v9 D1, 2026-05-17): heuristic family retired
+            "local_4b": {"type": "local_qwen", "mock_mode": True, "dom_mode": "llm"},
         },
         "baselines": {"run_b0": False},
     }

@@ -21,30 +21,16 @@ class LocalGemmaBackend:
          cross-review,
          docs/checkpoints/codex_outputs/gemma3vl_integration_crossreview_2026-05-14.md.)
 
-    No ``dom_mode``/heuristic branch: Gemma always runs the LLM. B-408
-    fail-loud below converts the previous silent-no-op into an explicit
-    raise if a config requests ``heuristic_only`` for the B2 backend.
+    No ``dom_mode``/heuristic branch: Gemma always runs the LLM. B-425
+    (/stress A1.3 v9 D1, 2026-05-17) retired the HeuristicDomBackend family
+    entirely, so the prior B-408 NotImplementedError raise is no longer
+    necessary — `dom_mode` is now a no-op config field across all backends.
     """
 
     def __init__(self, backend_id: str, config: Dict[str, Any]):
         self.backend_id = backend_id
         self.config = config
         self.mock_mode = bool(config.get("mock_mode", False))
-        # B-408 (/stress A1.2 v8 Mode A+B+C P1-1 3-AI overlap OOB, 2026-05-16):
-        # B2 does not implement the heuristic_dom fallback path. Pre-fix
-        # `dom_mode: heuristic_only` on a B2 yaml would silently fall through
-        # to the LLM (mismatching B0/B1 behavior that actually run the
-        # heuristic). Fail loud at init so configs cannot accidentally
-        # diverge cross-baseline.
-        _dom_mode = config.get("dom_mode", "llm")
-        if _dom_mode != "llm":
-            raise NotImplementedError(
-                f"LocalGemmaBackend (B2) only supports dom_mode='llm', got "
-                f"dom_mode={_dom_mode!r} (backend_id={backend_id}). Cross-"
-                f"baseline contract: B2 has no HeuristicDomBackend wrapper. "
-                f"If you need heuristic-only DOM ablation, use B0 or B1, OR "
-                f"add the heuristic branch + tests + paper §3.5 disclosure."
-            )
         self._agent = None
 
         # B-410 (/stress A1.2 v8 Mode A P1-3, 2026-05-16): yaml temperature /

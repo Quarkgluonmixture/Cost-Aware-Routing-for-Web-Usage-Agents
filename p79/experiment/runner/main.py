@@ -42,7 +42,10 @@ from p79.experiment.metrics import (
     p95,
     select_token_cost_cfg,
 )
-from p79.experiment.modules import apply_secondary_modules, m3_retry_action, should_trigger_m3_retry
+# B-425 (/stress A1.3 v9 D1, 2026-05-17): p79/experiment/modules.py retired
+# (M1/M2 select+input fallback + M3 retry + M4 two-stage 都 0/53924 archive
+# usage). condition.modules.as_dict() still preserved on the schema for
+# backward compat; runner just no longer dispatches the M1-M3 helpers.
 from p79.experiment.router import RouterState, RuleBasedRouter
 from p79.experiment.som import prepare_observation_for_mode
 from p79.experiment.state_change import build_page_state, detect_page_state_change, is_agent_visible_change
@@ -1376,7 +1379,11 @@ class ExperimentRunner:
             # a dedicated failure_reason so failure taxonomy can distinguish
             # agent-side invalid from runner-rescued no-ops.
             action, runner_valid_post_backend = validate_action(action)
-            action = apply_secondary_modules(action, obs.text or "", condition.modules.as_dict())
+            # B-425: apply_secondary_modules (M1/M2) call retired — 0/53924
+            # archive rows had m1_dom_select_fallback or m2_dom_first_input
+            # set to True (codex Mode B numeric receipts). The functions are
+            # restorable from git history when paper-2 module ablation
+            # resumes.
             if bool(self.diagnostic_controls.get("enabled", False)):
                 diag_notes: List[str] = []
                 query_cfg = self.diagnostic_controls.get("query_sanitization", {}) or {}
@@ -1501,29 +1508,55 @@ class ExperimentRunner:
             # block, so values >1 do NOT enable multiple consecutive retries.
             # If multi-retry is needed, the block at line ~1177 must become a loop.
             retry_limit = int(self.cfg.get("router", {}).get("thresholds", {}).get("retry_limit", 1))
-            trigger_m3_retry = should_trigger_m3_retry(
-                action_success=action_success,
-                page_changed=page_changed,
-                retry_count=retry_count,
-                retry_limit=retry_limit,
-                module_flags=condition.modules.as_dict(),
-            )
-            # Baseline robustness: if click/type made no progress, run one internal retry
-            # even when optional M3 module is disabled.
+            # B-425 (/stress A1.3 v9 D1, 2026-05-17): M3 module retired (0/53924
+            # archive rows had m3_failure_trigger_retry True). The baseline
+            # retry-on-no-progress path is paper-grade preserved; trigger
+            # condition simplified accordingly.
             baseline_retry_on_no_progress = bool(
                 self.cfg.get("runtime", {}).get("baseline_retry_on_no_progress", False)
             )
             trigger_baseline_retry = (
                 baseline_retry_on_no_progress
-                and (not trigger_m3_retry)
+                and (not action_success)
                 and (not page_changed)
                 and action_type_lower in ("click", "type")
                 and retry_count < retry_limit
             )
             retry_was_applied = False
             retry_action_type_str: Optional[str] = None
-            if trigger_m3_retry or trigger_baseline_retry:
-                retry_action = m3_retry_action(failed_action=action, obs_text=obs.text or "")
+            if trigger_baseline_retry:
+                # B-425: inline retry action generator (was: m3_retry_action in
+                # p79/experiment/modules.py, file deleted).
+                _failed_type = action_type_lower
+                if _failed_type == "click":
+                    retry_action = {
+                        "action_type": "scroll",
+                        "delta": [0, 0.5],
+                        "coordinate_type": "normalized",
+                        "thought": "Baseline retry: click failed, scroll down to reveal target.",
+                    }
+                elif _failed_type == "type":
+                    _eid = first_element_id_by_keyword(
+                        obs.text or "", ("textbox", "input", "search", "edit")
+                    )
+                    if _eid is not None:
+                        retry_action = {
+                            "action_type": "click",
+                            "element_id": int(_eid),
+                            "thought": "Baseline retry: type failed, click input field to focus.",
+                        }
+                    else:
+                        retry_action = {
+                            "action_type": "scroll",
+                            "delta": [0, 0.3],
+                            "coordinate_type": "normalized",
+                            "thought": "Baseline retry: type failed, no input found, scroll to reveal.",
+                        }
+                else:
+                    retry_action = {
+                        "action_type": "wait",
+                        "thought": "Baseline retry: brief wait.",
+                    }
                 # Common bookkeeping (always incremented regardless of retry outcome)
                 retry_count += 1
                 retry_total += 1
@@ -1570,9 +1603,9 @@ class ExperimentRunner:
                     page_changed = bool(retry_reasons)
                     action_success = retry_success
                     if retry_reasons:
-                        retry_tag = (
-                            "m3_retry_applied" if trigger_m3_retry else "baseline_no_progress_retry_applied"
-                        )
+                        # B-425: M3 retry tag dropped (M3 module retired); only
+                        # baseline retry path remains.
+                        retry_tag = "baseline_no_progress_retry_applied"
                         page_change_reasons = list(dict.fromkeys(list(retry_reasons) + [retry_tag]))
                     else:
                         page_change_reasons = []

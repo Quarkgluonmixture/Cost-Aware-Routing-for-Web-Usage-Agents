@@ -2,6 +2,12 @@
 
 These tests guard the factory backend-dispatch contract so any future
 regression surfaces as a CI failure instead of a silent paper-grade drift.
+
+B-425 (/stress A1.3 v9 D1, 2026-05-17): HeuristicDomBackend retired —
+the two `heuristic_dom`-dispatch tests below were deleted. The factory
+now raises a paper-grade-clear ValueError for any stale config still
+requesting heuristic_dom; the replacement test below verifies the
+retirement contract.
 """
 
 from __future__ import annotations
@@ -9,7 +15,6 @@ from __future__ import annotations
 import pytest
 
 from p79.backends.factory import MockBackend, create_backend
-from p79.backends.heuristic import HeuristicDomBackend
 
 
 def test_factory_requires_explicit_type_key():
@@ -27,33 +32,18 @@ def test_factory_dispatches_unknown_type_explicitly():
         create_backend("bogus", {"type": "nonexistent_backend"})
 
 
-def test_heuristic_dom_dispatch_flows_config_through():
-    """F3: HeuristicDomBackend dispatched via factory MUST receive the cfg.
+def test_heuristic_dom_retirement_surfaces_explicit_error():
+    """B-425: heuristic_dom retirement contract — raise actionable error.
 
-    Previously factory.py did `b = HeuristicDomBackend(); b.backend_id = bid`
-    which silently dropped the whole cfg dict — any future config-driven
-    behavior (mock_mode, etc.) would be ignored.
+    Pre-B-425 the factory dispatched to HeuristicDomBackend(backend_id, cfg).
+    HeuristicDomBackend had 0/53924 paper-grade usage (codex Mode B numeric
+    receipts), so the entire family was retired. Any stale yaml / test that
+    still requests heuristic_dom must surface as a clear error (not a silent
+    KeyError or AttributeError downstream).
     """
-    cfg = {"type": "heuristic_dom", "mock_mode": False, "marker": "test-sentinel-42"}
-    backend = create_backend("hd_test", cfg)
-    assert isinstance(backend, HeuristicDomBackend)
-    assert backend.backend_id == "hd_test"
-    assert backend.config == cfg, "cfg must flow through, not be dropped"
-    assert backend.config.get("marker") == "test-sentinel-42"
-
-
-def test_heuristic_dom_no_class_level_backend_id_default():
-    """F6: backend_id must come from the instance, not a class attribute.
-
-    Two instances with different backend_ids should not share state via
-    the class-level default that the previous implementation had at line 12.
-    """
-    a = HeuristicDomBackend(backend_id="alpha", config={})
-    b = HeuristicDomBackend(backend_id="beta", config={})
-    assert a.backend_id == "alpha"
-    assert b.backend_id == "beta"
-    # Confirm there's no shared class attr leaking
-    assert "backend_id" in a.__dict__
+    cfg = {"type": "heuristic_dom", "mock_mode": False}
+    with pytest.raises(ValueError, match=r"heuristic_dom.*retired"):
+        create_backend("hd_test", cfg)
 
 
 def test_mock_backends_agree_on_scroll_delta():

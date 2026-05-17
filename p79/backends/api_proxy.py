@@ -6,7 +6,8 @@ import time
 from typing import Any, Dict, Tuple
 
 from p79.backends.base import BackendStepContext
-from p79.backends.heuristic import HeuristicDomBackend
+
+# B-425 (/stress A1.3 v9 D1, 2026-05-17): HeuristicDomBackend retired.
 
 
 # B-148 (/stress A1.2 v8 gemini C4, 2026-05-16): allowlist of env-var names the
@@ -40,8 +41,8 @@ class ApiProxyBackend:
         self.backend_id = backend_id
         self.config = config
         self.mock_mode = bool(config.get("mock_mode", False))
-        self.dom_mode = config.get("dom_mode", "llm")
-        self._heuristic = HeuristicDomBackend()
+        # B-425 (/stress A1.3 v9 D1, 2026-05-17): HeuristicDomBackend retired;
+        # `dom_mode` field accepted but no longer dispatched (yaml backward-compat).
         self._agent = None
 
         if not self.mock_mode:
@@ -96,9 +97,7 @@ class ApiProxyBackend:
             self._agent = ProxyApiAgent(agent_cfg)
 
     def step(self, instruction: str, obs: Any, context: BackendStepContext) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        if context.observation_mode == "dom" and self.dom_mode == "heuristic_only":
-            return self._heuristic.step(instruction, obs, context)
-
+        # B-425 (/stress A1.3 v9 D1, 2026-05-17): heuristic dispatch retired.
         if self.mock_mode:
             # B-149 (/stress A1.2 v8 Claude A3 + gemini C5, 2026-05-16):
             # mock action aligned with local_qwen / local_gemma / MockBackend

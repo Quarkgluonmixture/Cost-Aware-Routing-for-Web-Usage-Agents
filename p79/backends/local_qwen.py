@@ -5,7 +5,6 @@ import time
 from typing import Any, Dict, Tuple
 
 from p79.backends.base import BackendStepContext
-from p79.backends.heuristic import HeuristicDomBackend
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +14,9 @@ class LocalQwenBackend:
         self.backend_id = backend_id
         self.config = config
         self.mock_mode = bool(config.get("mock_mode", False))
-        self.dom_mode = config.get("dom_mode", "llm")
-        self._heuristic = HeuristicDomBackend()
+        # B-425 (/stress A1.3 v9 D1, 2026-05-17): HeuristicDomBackend retired.
+        # The `dom_mode` field is preserved in config schema for backward
+        # compat with the 41 paper-grade yamls but no longer dispatched.
         self._agent = None
 
         # B-410 (/stress A1.2 v8 Mode A P1-3, 2026-05-16): yaml temperature /
@@ -83,9 +83,7 @@ class LocalQwenBackend:
             self._agent = Qwen3VLAgent(agent_cfg)
 
     def step(self, instruction: str, obs: Any, context: BackendStepContext) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        if context.observation_mode == "dom" and self.dom_mode == "heuristic_only":
-            return self._heuristic.step(instruction, obs, context)
-
+        # B-425 (/stress A1.3 v9 D1, 2026-05-17): heuristic dispatch retired.
         if self.mock_mode:
             action = {
                 "action_type": "scroll",

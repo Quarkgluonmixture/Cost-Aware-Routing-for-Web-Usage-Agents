@@ -96,14 +96,16 @@ def test_runner_and_analysis_end_to_end_with_mock_env(tmp_path):
             "local_4b": {
                 "type": "local_qwen",
                 "mock_mode": True,
-                # B-408 (/stress A1.2): canonical "heuristic_only" enum
-                "dom_mode": "heuristic_only",
+                # B-425 (/stress A1.3 v9 D1, 2026-05-17): heuristic family
+                # retired. `dom_mode` field preserved as yaml-backward-compat
+                # no-op; mock_mode handles the offline integration path.
+                "dom_mode": "llm",
             },
             "api_strong": {
                 "type": "api_proxy",
                 "mock_mode": True,
-                # B-408 (/stress A1.2): canonical "heuristic_only" enum
-                "dom_mode": "heuristic_only",
+                # B-425: same retirement (see above).
+                "dom_mode": "llm",
             },
         },
         # B-269 fix (2026-05-16, A1.7): baselines.run_b0=True retired for phase1.

@@ -2,19 +2,19 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from p79.backends.heuristic import HeuristicDomBackend
 from p79.backends.local_qwen import LocalQwenBackend
 
 
-# B-408 (/stress A1.2 v8 Mode A+B+C P1-1 3-AI overlap OOB, 2026-05-16):
-# canonical enum for `dom_mode`. Pre-fix three drift sources:
-#   1. tests/test_runner_smoke.py:80 uses `dom_mode:"heuristic"` (no _only)
-#   2. p79/backends/{api_proxy,local_qwen}.py recognise only "heuristic_only"
-#   3. p79/backends/local_gemma.py has no dom_mode branch at all
-# → same primitive 3 different semantics across B0/B1/B2 → smoke / router /
-# ablation results cross-baseline inconsistent. Now the factory rejects any
-# value outside this enum at init time so config typos surface immediately.
-_ALLOWED_DOM_MODES = frozenset({"llm", "heuristic_only"})
+# B-425 (/stress A1.3 v9 D1, 2026-05-17): HeuristicDomBackend family retired.
+# Prior `_ALLOWED_DOM_MODES = {"llm", "heuristic_only"}` enum + B-408 cross-
+# baseline drift guard removed because 3-AI deeper audit (Mode A archive grep
+# + codex Mode B numeric receipts + gemini Mode C framing) confirmed 0/53924
+# step rows + 0/119 yaml configs ever exercised the heuristic dispatch. The
+# `dom_mode` config field is preserved for backward-compat with the 41
+# paper-grade yamls that explicitly set `dom_mode: "llm"`, but the value is
+# now a no-op (LocalQwenBackend / ApiProxyBackend no longer read it). Future
+# paper-2 module-ablation work can revive HeuristicDomBackend from git
+# history; the per-baseline backend wrappers will then need to opt back in.
 
 
 class MockBackend:
@@ -62,20 +62,7 @@ def create_backend(backend_id: str, cfg: Dict[str, Any]):
             f"Backend cfg missing required 'type' field (backend_id={backend_id}). "
             f"Explicit dispatch only — see configs/exp_v2_base.yaml for examples."
         )
-    # B-408 (P1-1): validate dom_mode enum at dispatch time. heuristic_dom +
-    # mock + future backend variants skip this since they don't honor
-    # dom_mode. Local_gemma raises NotImplementedError on heuristic_only at
-    # construct time (see local_gemma.py B-408 fix).
     backend_type = cfg["type"]
-    if backend_type in {"local_qwen", "local_gemma", "api_proxy"}:
-        _dom_mode = cfg.get("dom_mode", "llm")
-        if _dom_mode not in _ALLOWED_DOM_MODES:
-            raise ValueError(
-                f"Backend cfg dom_mode={_dom_mode!r} not in allowed set "
-                f"{sorted(_ALLOWED_DOM_MODES)} (backend_id={backend_id}). "
-                f"Common drift: yaml/tests use 'heuristic' but code expects "
-                f"'heuristic_only'. Fix the config or use 'llm'."
-            )
     if backend_type == "local_qwen":
         return LocalQwenBackend(backend_id, cfg)
     if backend_type == "local_gemma":
@@ -84,10 +71,15 @@ def create_backend(backend_id: str, cfg: Dict[str, Any]):
     if backend_type == "api_proxy":
         from p79.backends.api_proxy import ApiProxyBackend
         return ApiProxyBackend(backend_id, cfg)
-    if backend_type == "heuristic_dom":
-        # /stress A1.2 F3: pass cfg through normally (was: HeuristicDomBackend()
-        # + post-construct backend_id = backend_id, which silently dropped cfg).
-        return HeuristicDomBackend(backend_id, cfg)
     if backend_type == "mock":
         return MockBackend(backend_id, cfg)
+    # B-425: `heuristic_dom` retired alongside HeuristicDomBackend. Raise an
+    # explicit error so any stale yaml / test still requesting it surfaces.
+    if backend_type == "heuristic_dom":
+        raise ValueError(
+            f"Backend type 'heuristic_dom' was retired 2026-05-17 (B-425, "
+            f"/stress A1.3 v9 D1). HeuristicDomBackend had 0/53924 paper-grade "
+            f"usage; resurrect from git history when paper-2 module ablation "
+            f"resumes. (backend_id={backend_id})"
+        )
     raise ValueError(f"Unsupported backend type: {backend_type} (backend_id={backend_id})")
