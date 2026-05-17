@@ -170,8 +170,6 @@ else
     --ntfy-topic "${NTFY_TOPIC:-p79-exp-dgx-spark}" \
     --state-file "${WD_STATE}" \
     --aggregate-prefix "${AGGREGATE_PREFIX}" \
-    --glm-config .auth/glm \
-    --digest-dir "${RUN_DIR}/analysis/digest" \
     ${RUNNER_PID:+--runner-pid "${RUNNER_PID}"} \
     >> "${WD_LOG}" 2>&1 < /dev/null &
   disown

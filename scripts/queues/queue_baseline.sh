@@ -137,6 +137,21 @@ echo "[baseline] condition=${COND_ID}"
 
 # ---------- 检查 runner 是否已在跑 ----------
 if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
+  # B-743 (/stress A1.17 cold-start P1-11 C, 2026-05-17): "Dirty Cell Backdoor"
+  # FATAL under paper-grade. Pre-fix: a manually-launched runner without RESET
+  # could be picked up here, RESET_BEFORE silently skipped, and `queue_chain` would
+  # accept the dirty cell as "paper-grade complete" via the completion sentinel.
+  # Gemini area-chair attack: protocol prioritized non-interruption over initial-state
+  # integrity. Now: under (P79_PAPER_GRADE=1 AND RESET_BEFORE=1) the contradiction is
+  # explicit — operator wanted reset but reset will be skipped → hard fail. Dev mode
+  # (P79_PAPER_GRADE=0) keeps idempotent skip; legitimate resume (RESET_BEFORE=0 +
+  # pre-existing runner) still works under PG=1.
+  if [[ "${P79_PAPER_GRADE:-0}" == "1" && "${RESET_BEFORE:-0}" == "1" ]]; then
+    echo "[baseline][FATAL] runner for ${RUN_ID} already running under (P79_PAPER_GRADE=1 + RESET_BEFORE=1)." >&2
+    echo "[baseline][FATAL] paper-grade requires fresh post-reset cell; idempotent skip would dissolve the reset gate (dirty cell backdoor)." >&2
+    echo "[baseline][FATAL] options: (a) 'pkill -f \"run_experiment.py.*${RUN_ID}\"' then re-run; (b) set RESET_BEFORE=0 to explicit-resume the pre-existing runner; (c) set P79_PAPER_GRADE=0 for explicit dirty/dev mode." >&2
+    exit 1
+  fi
   echo "[baseline] runner for ${RUN_ID} already running, skipping spawn"
   echo "[baseline] (RESET_BEFORE skipped — runner already attached to current site state)"
 else
@@ -181,7 +196,6 @@ fi
 # ---------- 启动 watchdog (idempotent) ----------
 WATCHDOG_LOG="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.log"
 WATCHDOG_STATE="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.state.json"
-WATCHDOG_DIGEST="${RUN_DIR}/analysis/digest"
 
 # Runner PID for watchdog self-exit — watchdog auto-exits when this PID dies
 # AND condition_summary_v2.json present. Prevents init-orphan idle loops.
@@ -199,8 +213,6 @@ else
     --ntfy-topic "${NTFY_TOPIC:-p79-exp-dgx-spark}" \
     --state-file "${WATCHDOG_STATE}" \
     --aggregate-prefix "${BASELINE}_3mode" \
-    --glm-config .auth/glm \
-    --digest-dir "${WATCHDOG_DIGEST}" \
     ${RUNNER_PID:+--runner-pid "${RUNNER_PID}"} \
     > "${WATCHDOG_LOG}" 2>&1 < /dev/null &
   disown

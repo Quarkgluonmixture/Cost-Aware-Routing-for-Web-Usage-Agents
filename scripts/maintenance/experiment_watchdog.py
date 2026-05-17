@@ -185,91 +185,22 @@ def _auto_refresh_auth(site: str, *, benchmark: str = "") -> bool:
     return ok
 
 
-def _purge_digest_records(digest_dir: Path, condition_id: str, task_id: int, obs_mode: str) -> int:
-    """Remove records matching (condition_id, task_id) from digest_{obs_mode}.jsonl.
-
-    Returns number of records removed. Thin wrapper around the batch primitive
-    for single-key removal (retry path B-314).
-    """
-    return _purge_digest_records_batch(digest_dir, obs_mode, {(condition_id, task_id)})
-
-
-def _purge_digest_records_batch(
-    digest_dir: Path,
-    obs_mode: str,
-    keys_to_remove: Set[Tuple[str, int]],
-) -> int:
-    """Batch-remove records matching ANY (condition_id, task_id) in keys_to_remove.
-
-    B-392 (A1.15 C3 P1-4, 2026-05-16): batch + fsync upgrade.
-
-    Pre-fix `_purge_digest_records` was called in a loop during session-restore
-    mass cleanup (`session_contaminated[site].pop()` wave, watchdog L1494-1525
-    @B-384) — each call read+filter+rewrite the WHOLE digest_*.jsonl file.
-    For 100-task session-loss waves on a multi-MB digest file → O(N·M) I/O
-    = death-spiral hang during recovery (gemini OOB finding A1.15). Also
-    pre-fix the rename via `tmp_file.replace(digest_file)` skipped fsync,
-    diverging from `_save_state` (L979-993) which has tmp+fsync+replace+dirsync
-    — durability sibling inconsistency.
-
-    Batch version reads once, filters by set membership, writes once,
-    fsync+replace+dirsync. Idempotent: if `keys_to_remove` is empty or no
-    records match, returns 0 without touching disk.
-    """
-    if not digest_dir.exists() or not keys_to_remove:
-        return 0
-    digest_file = digest_dir / f"digest_{obs_mode}.jsonl"
-    if not digest_file.exists():
-        return 0
-    try:
-        lines = digest_file.read_text(encoding="utf-8").splitlines()
-        keep: List[str] = []
-        removed = 0
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                rec = json.loads(line)
-                cid = rec.get("condition_id", "")
-                tid = rec.get("task_id")
-                # Match if (cid, tid) in keys_to_remove OR (no cid AND tid match)
-                # for legacy records w/o condition_id (P2-6).
-                matched = False
-                if isinstance(tid, int):
-                    if (cid, tid) in keys_to_remove:
-                        matched = True
-                    elif not cid:
-                        # legacy record: match if any key has this tid
-                        if any(t == tid for (_, t) in keys_to_remove):
-                            matched = True
-                if matched:
-                    removed += 1
-                    continue
-            except Exception:
-                pass
-            keep.append(line)
-        if removed:
-            tmp_file = digest_file.with_suffix(".jsonl.tmp")
-            # B-392 fsync upgrade: mirror _save_state L979-993 atomic-with-fsync.
-            with open(tmp_file, "w", encoding="utf-8") as _f:
-                _f.write("\n".join(keep) + ("\n" if keep else ""))
-                _f.flush()
-                os.fsync(_f.fileno())
-            os.replace(tmp_file, digest_file)
-            # fsync directory entry so the rename hits stable storage.
-            try:
-                _dir_fd = os.open(str(digest_dir), os.O_RDONLY)
-                try:
-                    os.fsync(_dir_fd)
-                finally:
-                    os.close(_dir_fd)
-            except OSError:
-                pass
-        return removed
-    except Exception as exc:
-        print(f"[watchdog][warn] purge_digest_batch keys={len(keys_to_remove)} mode={obs_mode}: {exc}")
-        return 0
+# B-743 (/stress A1.15 cold-start, 2026-05-17): digest pipeline retired from
+# watchdog auto-call path. Operator-facing `glm_batch_digest.py` +
+# `analyze_reason_diagnostics.py` remain standalone (invocable via `make reason-diag`)
+# but watchdog NO LONGER triggers them in periodic status or post-condition cycle.
+# Reasons: (a) closes 4 deferred bugs (P0-1 phantom-mode digest coverage gap,
+# P0-4 count-based vs key-coverage verify, P2-2 legacy task_id collision, B-86
+# advisor-pending GLM asymmetry); (b) paper §1/§4 hero claim does not depend on
+# `digest_*.jsonl` (paper §4 evidence chain = trajectory_events.jsonl + Option K
+# aggregator at `scripts/analysis/aggregate_trajectory_covariates.py`, independent
+# of digest pipeline); (c) simplifies watchdog substrate -~800 LOC, makes §4.X
+# disclosure honest (4-layer auto-clean + 2 implicit, not "6-layer").
+# Removed functions: _purge_digest_records / _purge_digest_records_batch
+# (this block), _check_digest_completions (below), _run_auto_digest (below),
+# _count_failed_episodes_by_mode (below), _DIGEST_MODES + _get_active_digest_modes
+# (below). Removed state: seen_digest_completions. Removed argparse:
+# --glm-config / --digest-dir.
 
 
 def _check_session_health(condition_dir: Path, site: str, task_id: int) -> Optional[bool]:
@@ -405,42 +336,8 @@ _ANALYSIS_MARKERS = {
     "confidence_calibration": "analysis/signals/combined/confidence_summary.json",
 }
 
-# Digest modes to track (matches digest_{mode}.jsonl naming)
-#
-# B-391 (A1.15 C3 P1-1, 2026-05-16): runtime-derived from condition_meta.json
-# rather than hardcoded tuple. Pre-fix: only ("dom", "som", "vision") tracked,
-# missing Phase 1a phantom modes ("phantom_text", "phantom_prompt",
-# "phantom_som") → paper §4 failure taxonomy systematically biased away from
-# paper §1 novelty modes. The hardcoded tuple is kept as the OSClass/Magento
-# baseline fallback; runtime helper extends it.
-_DIGEST_MODES = ("dom", "som", "vision")
-
-
-def _get_active_digest_modes(
-    run_dir: Path,
-    condition_filter: Optional[str],
-    condition_mode_cache: Dict[str, str],
-) -> Tuple[str, ...]:
-    """Return tuple of observation_modes seen across this run's conditions.
-
-    B-391: derives modes from each condition_meta.json["observation_mode"] so
-    phantom modes (P-text / P-prompt / P-SoM) are tracked in addition to the
-    three baseline modes. Falls back to `_DIGEST_MODES` if no condition_meta
-    files are readable yet (early in run lifecycle).
-    """
-    modes: Set[str] = set()
-    if condition_filter:
-        cond_dirs = [run_dir / condition_filter]
-    else:
-        cond_dirs = [
-            p for p in run_dir.iterdir()
-            if p.is_dir() and p.name not in _EXCLUDED_DIRS
-        ]
-    for cdir in cond_dirs:
-        modes.add(_get_observation_mode(cdir, condition_mode_cache))
-    if not modes:
-        return _DIGEST_MODES
-    return tuple(sorted(modes))
+# B-743 (digest retire): `_DIGEST_MODES` + `_get_active_digest_modes` removed.
+# Digest pipeline no longer auto-triggered by watchdog. See header rationale.
 
 
 def _check_analysis_outputs(
@@ -464,63 +361,8 @@ def _check_analysis_outputs(
     return new_outputs
 
 
-def _count_failed_episodes_by_mode(
-    all_records: List[EpisodeRecord],
-    completed_conditions: Set[str],
-) -> Dict[str, int]:
-    """Count failed episodes per observation mode across completed conditions."""
-    counts: Dict[str, int] = defaultdict(int)
-    for r in all_records:
-        if r.condition_id in completed_conditions and not r.success:
-            counts[r.observation_mode] += 1
-    return dict(counts)
-
-
-def _check_digest_completions(
-    digest_dir: Path,
-    all_records: List[EpisodeRecord],
-    completed_conditions: Set[str],
-    seen_digest_completions: Set[str],
-) -> List[Tuple[str, int, int]]:
-    """Check if digest JSONL has covered all failed episodes for each mode.
-
-    Returns list of (mode, digested_count, expected_count) for newly complete modes.
-    """
-    if not digest_dir.exists():
-        return []
-    expected_by_mode = _count_failed_episodes_by_mode(all_records, completed_conditions)
-    if not expected_by_mode:
-        return []
-
-    newly_complete: List[Tuple[str, int, int]] = []
-    for mode in _DIGEST_MODES:
-        if mode in seen_digest_completions:
-            continue
-        expected = expected_by_mode.get(mode, 0)
-        if expected == 0:
-            continue
-        digest_file = digest_dir / f"digest_{mode}.jsonl"
-        if not digest_file.exists():
-            continue
-        try:
-            # Count unique (condition_id, task_id) pairs to tolerate duplicate lines
-            seen_pairs: set = set()
-            for line in digest_file.open(encoding="utf-8"):
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    obj = json.loads(line)
-                    seen_pairs.add((str(obj.get("condition_id", "")), obj.get("task_id")))
-                except Exception:
-                    pass
-            digested = len(seen_pairs)
-        except Exception:
-            continue
-        if digested >= expected:
-            seen_digest_completions.add(mode)
-            newly_complete.append((mode, digested, expected))
-    return newly_complete
+# B-743 (digest retire): `_count_failed_episodes_by_mode` + `_check_digest_completions`
+# removed. Digest pipeline no longer auto-triggered. See header rationale.
 
 
 # ---------------------------------------------------------------------------
@@ -1119,7 +961,6 @@ def _save_state(
     seen_keys: Set[str],
     seen_completions: Set[str],
     seen_analysis: Dict[str, float],
-    seen_digest_completions: Optional[Set[str]] = None,
     reported_keys: Optional[Set[str]] = None,
     error_retry_counts: Optional[Dict[str, int]] = None,
     *,
@@ -1128,6 +969,8 @@ def _save_state(
     session_auto_refresh_attempted: Optional[Dict[str, bool]] = None,
     session_contaminated: Optional[Dict[str, list]] = None,
 ) -> None:
+    # B-743 (digest retire 2026-05-17): `seen_digest_completions` parameter removed.
+    # State schema now omits this key entirely; old state files harmlessly ignore.
     """Persist watchdog state. §97 audit added session_* fields so they survive
     watchdog restarts (was: lost on restart → missed cleanup of contaminated
     NOT-LOGGED-IN episodes)."""
@@ -1148,7 +991,7 @@ def _save_state(
         "seen_keys": sorted(seen_keys),
         "seen_completions": sorted(seen_completions),
         "seen_analysis": seen_analysis,
-        "seen_digest_completions": sorted(seen_digest_completions or set()),
+        # B-743 (digest retire 2026-05-17): `seen_digest_completions` field removed.
         "reported_keys": sorted(reported_keys or set()),
         "error_retry_counts": error_retry_counts or {},
         # §97 audit: session-loss tracking persisted.
@@ -1182,71 +1025,11 @@ def _save_state(
         pass  # platform doesn't support dir fsync; not a hard failure
 
 
-# ---------------------------------------------------------------------------
-# Auto-digest: update reason CSV + run batch digest
-# ---------------------------------------------------------------------------
-
-def _run_auto_digest(run_dir: Path, glm_config: Path, digest_dir: Path, site: Optional[str] = None) -> Optional[str]:
-    """Run reason diagnostics → batch digest pipeline. Returns status string or None on skip."""
-    # B-391 (A1.15 C3 P1-1, 2026-05-16): scripts_dir was `Path(__file__).parent`
-    # = `scripts/maintenance/`, but `diag_script = scripts_dir / "analysis" / ...`
-    # resolves to non-existent `scripts/maintenance/analysis/...` → silent
-    # return None on every cycle → digest pipeline NEVER ran from watchdog
-    # for the entire Phase 1a wall. Mirror L532 `_run_post_condition_analysis`
-    # which correctly uses `.parent.parent` (= `scripts/`). Sibling
-    # propagation defect from §99 reorg (笔記 §99 maintenance/ split out).
-    scripts_dir = Path(__file__).resolve().parent.parent
-    python = sys.executable
-
-    # 1. Update reason diagnostics CSV
-    diag_script = scripts_dir / "analysis" / "analyze_reason_diagnostics.py"
-    if not diag_script.exists():
-        return None
-    try:
-        r = subprocess.run(
-            [python, str(diag_script), "--run-dir", str(run_dir), "--skip-similarity"],
-            capture_output=True, text=True, timeout=120,
-        )
-        if r.returncode != 0:
-            print(f"[watchdog][DIGEST] reason diagnostics failed: {r.stderr[-300:]}")
-            return "diagnostics_failed"
-    except subprocess.TimeoutExpired:
-        print("[watchdog][DIGEST] reason diagnostics timed out")
-        return "diagnostics_timeout"
-
-    # 2. Run batch digest (auto-resumes, writes to digest_dir/digest_{mode}.jsonl)
-    # B-391 (cont): glm_batch_digest.py lives at scripts/maintenance/glm/
-    # after the 2026-05-02 sidecar reorg (笔记 §99). Pre-fix scripts_dir/
-    # glm_batch_digest.py resolved (post-B-391 scripts_dir fix) to
-    # scripts/glm_batch_digest.py = nonexistent. Use the explicit subdir.
-    digest_script = scripts_dir / "maintenance" / "glm" / "glm_batch_digest.py"
-    if not digest_script.exists() or not glm_config.exists():
-        return None
-    try:
-        cmd = [python, str(digest_script),
-             "--run-dir", str(run_dir),
-             "--output", str(digest_dir),
-             "--glm-config", str(glm_config),
-             "--max-images", "5",
-             "--delay-secs", "3.0"]
-        if site:
-            cmd += ["--site", site]
-        r = subprocess.run(
-            cmd,
-            capture_output=True, text=True, timeout=600,
-        )
-        # Extract last few lines for status
-        out_lines = (r.stdout or "").strip().splitlines()
-        tail = "\n".join(out_lines[-3:]) if out_lines else ""
-        if r.returncode == 0:
-            print(f"[watchdog][DIGEST] completed:\n  {tail}")
-            return tail
-        else:
-            print(f"[watchdog][DIGEST] digest failed: {r.stderr[-300:]}")
-            return "digest_failed"
-    except subprocess.TimeoutExpired:
-        print("[watchdog][DIGEST] digest timed out (10min)")
-        return "digest_timeout"
+# B-743 (digest retire): `_run_auto_digest` removed. Digest pipeline no longer
+# auto-triggered by watchdog periodic-status cycle. Operator can run reason
+# diagnostics manually via `make reason-diag RUN=<run_dir>`; GLM batch digest
+# (paper-grade contamination via B-86 GLM asymmetry) available as standalone at
+# `scripts/maintenance/glm/glm_batch_digest.py` but NOT auto-invoked.
 
 
 # ---------------------------------------------------------------------------
@@ -1265,10 +1048,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="Alert if no new episode for N minutes (default: 20)")
     p.add_argument("--ntfy-topic", default=None, help="ntfy topic for push notifications")
     p.add_argument("--state-file", default=None, help="State file for persistence across restarts")
-    p.add_argument("--glm-config", default=None, type=Path,
-                    help="GLM config file for auto-digest (omit to disable)")
-    p.add_argument("--digest-dir", default=None, type=Path,
-                    help="Digest output directory (default: <run-dir>/analysis/digest/)")
+    # B-743 (digest retire 2026-05-17): `--glm-config` + `--digest-dir` removed.
+    # Watchdog no longer auto-triggers GLM batch digest. Operator can invoke
+    # `scripts/maintenance/glm/glm_batch_digest.py` standalone if needed.
+    # Queue scripts (B-744) updated to no longer pass these flags.
     p.add_argument(
         "--notify-completion",
         action="store_true",
@@ -1318,7 +1101,8 @@ def main() -> int:
     seen_keys: Set[str] = set(saved.get("seen_keys", []))
     seen_completions: Set[str] = set(saved.get("seen_completions", []))
     seen_analysis: Dict[str, float] = saved.get("seen_analysis", {})
-    seen_digest_completions: Set[str] = set(saved.get("seen_digest_completions", []))
+    # B-743 (digest retire): `seen_digest_completions` removed from state schema.
+    # Legacy state files harmless — extra key in JSON is ignored on read.
     reported_keys: Set[str] = set(saved.get("reported_keys", []))
     error_retry_counts: Dict[str, int] = saved.get("error_retry_counts", {})
 
@@ -1470,10 +1254,11 @@ def main() -> int:
 
     # Closure that captures current session state — every _save_state caller
     # in this function should use this instead so session_* fields persist.
+    # B-743 (digest retire): `seen_digest_completions` removed from save signature.
     def _persist_state() -> None:
         _save_state(
             state_file, seen_keys, seen_completions, seen_analysis,
-            seen_digest_completions, reported_keys, error_retry_counts,
+            reported_keys, error_retry_counts,
             session_loss_streak=dict(session_loss_streak),
             session_alerted=dict(session_alerted),
             session_auto_refresh_attempted=dict(session_auto_refresh_attempted),
@@ -1608,14 +1393,13 @@ def main() -> int:
                             shutil.rmtree(artifacts_dir)
                     except OSError:
                         pass
-                    # 4. Clean digest records (keep data consistent with deleted episode)
-                    _digest_dir = args.digest_dir or (run_dir / "analysis" / "digest")
-                    purged = _purge_digest_records(_digest_dir, condition_id, task_id, obs_mode)
+                    # B-743 (digest retire 2026-05-17): step 4 removed.
+                    # Watchdog no longer maintains `digest_*.jsonl` consistency;
+                    # operator-facing `glm_batch_digest.py` runs standalone post-fire.
                     max_for_type = MAX_NOISE_RETRIES if is_noise else MAX_CODE_BUG_RETRIES
                     print(
                         f"[watchdog][AUTO-RETRY] deleted error episode: "
                         f"task {task_id} ({reason}) retry {retries_so_far + 1}/{max_for_type}"
-                        + (f" (+{purged} digest records)" if purged else "")
                     )
                     auto_retry_batch.append(
                         f"task {task_id} ({reason}) retry {retries_so_far + 1}/{max_for_type}"
@@ -1657,7 +1441,8 @@ def main() -> int:
                                 "is_noise": is_noise,
                                 "is_auth_loss": bool(reason.startswith("error(session") or reason.startswith("error(auth")),
                                 "cleared_in_session_wave": False,  # B-384 distinguishes from session-wave path
-                                "purged_digest_records": purged,
+                                # B-743 (digest retire 2026-05-17): `purged_digest_records`
+                                # field removed — watchdog no longer maintains digest_*.jsonl.
                             },
                         )
                     except Exception as _trajectory_log_exc:
@@ -1716,10 +1501,49 @@ def main() -> int:
                         session_auto_refresh_attempted[site] = True
                         print(f"[watchdog][SESSION] attempting auto-refresh for {site}...")
                         _bm = "webarena" if any(p == "webarena" for p in run_dir.parts) else ""
-                        if _auto_refresh_auth(site, benchmark=_bm):
+                        refresh_ok = _auto_refresh_auth(site, benchmark=_bm)
+                        if refresh_ok:
                             print(f"[watchdog][SESSION] {site} auth refreshed — next tasks will use new cookies")
                         else:
                             print(f"[watchdog][SESSION][warn] {site} auto-refresh failed — manual intervention needed")
+                        # B-742 (/stress A1.15 cold-start P1-2-B codex OOB, 2026-05-17):
+                        # Option K Hook E — emit `auth_refresh_no_clear` trajectory event so
+                        # paper §4 GLMM covariate trail sees the auth-refresh perturbation
+                        # layer between session-loss and login-restored. Pre-fix: schema at
+                        # `p79/experiment/logger_v2.py:191` declared the event_type but watchdog
+                        # NEVER emitted it → §4.X.13 disclosure claim "trajectory events record
+                        # all auto-clean / auto-refresh / reset events" was code-only on the
+                        # other two; auth-refresh was a zombie schema field. Now refresh attempt
+                        # (success or fail) emits cell-level event so consumer can model
+                        # the refresh as a discrete perturbation between the contamination
+                        # wave start and login-restored cleanup. condition_dir captured from
+                        # current task's summary path; if site has tasks across multiple
+                        # condition_dirs, emit to the FIRST contaminated entry's dir
+                        # (refresh is site-level not cond-level — analyst pivots via site
+                        # metadata in aggregator).
+                        try:
+                            from p79.experiment.logger_v2 import log_trajectory_event_external
+                            _refresh_dir = condition_dir
+                            if session_contaminated.get(site):
+                                _refresh_dir = session_contaminated[site][0][1]
+                            log_trajectory_event_external(
+                                condition_dir=_refresh_dir,
+                                event_type="auth_refresh_no_clear",
+                                task_index=None,  # cell-level event
+                                metadata={
+                                    "site": site,
+                                    "outcome": "ok" if refresh_ok else "failed",
+                                    "streak": streak,
+                                    "benchmark": _bm or "vwa",
+                                    "contaminated_count": len(session_contaminated.get(site, [])),
+                                },
+                            )
+                        except Exception as _refresh_log_exc:
+                            # B-742 best-effort (T2'=a per §163.3): non-fatal trajectory log.
+                            print(
+                                f"[watchdog][trajectory-event][warn] failed to log "
+                                f"auth_refresh_no_clear event for site {site}: {_refresh_log_exc}"
+                            )
                 elif session_ok is True:
                     was_streak = session_loss_streak[site]
                     if was_streak > 0:
@@ -1730,17 +1554,12 @@ def main() -> int:
                         # Auto-clean all contaminated episodes from this loss wave
                         contaminated = session_contaminated.pop(site, [])
                         if contaminated:
-                            _ddir = run_dir / "analysis" / "digest"
                             cleaned = 0
                             wave_size = len(contaminated)
-                            # B-392 (A1.15 C3 P1-4): batch digest purge.
-                            # Collect (cond_id, task_id) keys per obs_mode and
-                            # run ONE purge per mode after the destructive-op
-                            # loop. Pre-fix called `_purge_digest_records` per
-                            # task → O(N·M) I/O on multi-MB digest files →
-                            # watchdog hangs minutes during session-restore
-                            # mass cleanup. See _purge_digest_records_batch.
-                            _purge_keys_by_mode: Dict[str, Set[Tuple[str, int]]] = defaultdict(set)
+                            # B-743 (digest retire 2026-05-17): per-mode digest purge
+                            # collection removed — session-wave cleanup no longer needs
+                            # to maintain `digest_*.jsonl` consistency (digest pipeline
+                            # retired from watchdog auto-call path).
                             for (cond_id, cond_dir, ctask_id, csite, ckey) in contaminated:
                                 # Delete episode files
                                 for p in [
@@ -1756,9 +1575,6 @@ def main() -> int:
                                     if cart.exists(): shutil.rmtree(cart)
                                 except OSError:
                                     pass
-                                # Collect digest purge key (deferred to batch below)
-                                cmode = _get_observation_mode(cond_dir, condition_mode_cache)
-                                _purge_keys_by_mode[cmode].add((cond_id, ctask_id))
                                 # Remove from in-memory tracking
                                 all_records[:] = [
                                     r for r in all_records
@@ -1800,18 +1616,7 @@ def main() -> int:
                                         f"to log session-cleanup event for task "
                                         f"{ctask_id}: {_trajectory_log_exc}"
                                     )
-                            # B-392 batch digest purge: one read+filter+rewrite
-                            # per obs_mode (instead of N inside the loop).
-                            _purge_total = 0
-                            for _pmode, _pkeys in _purge_keys_by_mode.items():
-                                _r = _purge_digest_records_batch(_ddir, _pmode, _pkeys)
-                                _purge_total += _r
-                            if _purge_total:
-                                print(
-                                    f"[watchdog][SESSION] {site} batch-purged "
-                                    f"{_purge_total} digest record(s) across "
-                                    f"{len(_purge_keys_by_mode)} mode(s)"
-                                )
+                            # B-743 (digest retire 2026-05-17): batch digest purge removed.
                             print(f"[watchdog][SESSION] {site} auto-cleaned {cleaned} NOT-LOGGED-IN episodes")
                             _persist_state()
                             if args.ntfy_topic:
@@ -1863,23 +1668,9 @@ def main() -> int:
             elif manual_report_now:
                 print(f"[watchdog][REPORT]\nrun_id={run_id}\n(manual) 当前无运行中 condition")
 
-            # Auto-digest: update reason CSV + run batch digest
-            digest_status = None
-            if args.glm_config:
-                digest_dir = args.digest_dir or (run_dir / "analysis" / "digest")
-                # Infer site: pass --site only when all episodes belong to a single site
-                sites = {r.site for r in all_records}
-                digest_site = sites.pop() if len(sites) == 1 else None
-                digest_status = _run_auto_digest(run_dir, args.glm_config, digest_dir, site=digest_site)
-
-                # Check if digest is newly complete for any mode
-                newly_done = _check_digest_completions(
-                    digest_dir, all_records, seen_completions, seen_digest_completions,
-                )
-                for mode, digested, expected in newly_done:
-                    info = f"[{mode}] digest 完成: {digested}/{expected}"
-                    print(f"[watchdog][DIGEST] {info}")
-                    _persist_state()
+            # B-743 (digest retire 2026-05-17): auto-digest block removed.
+            # Watchdog no longer triggers `_run_auto_digest` or
+            # `_check_digest_completions` in periodic status cycle.
 
             # Auto-annotate screenshots then regenerate gallery HTML
             annotate_status = _annotate_screenshots(run_dir, args.condition)
@@ -1923,11 +1714,8 @@ def main() -> int:
                         parts.extend(task_lines)
 
                 # Pipeline status
+                # B-743 (digest retire 2026-05-17): `digest:` line removed.
                 pipeline = []
-                if digest_status is not None:
-                    # Take last meaningful line only
-                    digest_short = (digest_status.strip().splitlines() or [""])[-1][:80]
-                    pipeline.append(f"digest: {digest_short}")
                 pipeline.append(f"annotate: {annotate_status.strip().splitlines()[-1][:80]}")
                 pipeline.append(f"gallery: {gallery_status}")
                 if analysis_names:

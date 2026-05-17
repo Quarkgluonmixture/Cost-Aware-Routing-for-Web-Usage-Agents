@@ -5102,3 +5102,52 @@ Substrate: `p79/experiment/{types.py, io_utils.py, logger_v2.py, schema_migratio
 7. **Phase 0 self-audit catches self-misclaims** — Mode A initially filed F5 (DEFAULTS ↔ dataclass drift) as P1 finding but reflection check via `.venv/bin/python3 -c "import dataclasses; ..."` showed zero current drift → self-demoted. Phase 0 specificity check (numeric/structural claims must spot-check) prevents propagating own mental-model hypothesis into final bug list.
 
 **B-numbers consumed**: B-731 through B-740 (10 contiguous IDs; A1.8 cold-start range, post 5th parallel-session collision rebase). Next available: B-741+.
+
+---
+
+## A1.15 /stress cold-start audit Chunk (a) (2026-05-17) — B-741 to B-743 (3 entries; 3 fixed)
+
+**Scope**: pre-fire cold-start re-audit of `scripts/maintenance/experiment_watchdog.py` (2064 LOC) + `scripts/maintenance/restart_watchdog.sh` + `scripts/maintenance/trigger_watchdog_status.sh` + `scripts/analysis/aggregate_trajectory_covariates.py`. Previous A1.15 audit (2026-05-16 §168, B-384~B-394, 11 fixes including Option K critical path closure) → cold-start re-audit catches what 7+ cycles missed.
+
+**Cross-AI dispatch**: Mode A (Claude) 7 findings, 3 OOB + v7.5 length spot-check (A3 5000-byte DOM cap downgraded after empirical reddit DOM marker @ byte 563); Mode B (codex) 8 findings, 5 OOB, all empirically verified including synthetic data spot-check for digest count-based bug; Mode C (gemini) RETRY x1 (Gemini wrote to repo-root `A1.15_findings.md` instead of stdout path) 9 findings final, 4 OOB, 2 false-positive (re-attacked already-CLOSED bugs B-389/B-391). Total 24 attack vectors → 16 unique fixes after dedup. 0 three-way overlap, 3 two-way overlap (P0-1-AB phantom-mode digest gap + P1-1-AC --reset-state amnesia + P1-8-AC ps|awk DGX shared host).
+
+**User v7.7 triaged Q&A** (4 top-tier user-decision + 12 bottom-tier auto-default):
+- **Q1=A** P1-3 code fix (改 `_classify_episode` 用 error string substring 分桶,真正实现 disclosure 声明的 5-class noise dispatch) — accept retroactive data-behavior change with disclosure
+- **Q2 → 6-layer protocol claim resolution** deferred to Chunk (c)
+- **Q3 → pgrep self-match fix path B** (preserve fallback path with safe assume-no-runner default) — 不强制 --runner-pid required
+- **Q4 → digest 全退役 (Option α)** — strategic high-leverage decision: paper §1/§4 hero claim 不依赖 digest_*.jsonl,paper §4 evidence chain = trajectory_events.jsonl + Option K aggregator (independent pipeline)。退役 close 5 项 (P0-1 phantom mode coverage + P0-4 key-coverage verify + P2-2 task_id collision + B-86 GLM asymmetry advisor blocker + simplifies "6-layer claim" to honest 4-layer)
+
+**Q4 user reminder**: "phase 1 plan 里 option K 也有残留" — confirmed: 4 residue 点 = A1.15 main entry historical marker (line 97) + A1.23 deferred concurrency contract test (line 117) + **A1.17 Chunk 2 deferred ⏸** (line 128, 6 P1 fixes + Option K Hook 收尾 ~11h investment) + P1-5-B advisor sync (line 129, Tier 2 D/E/F-codex alternatives)。本次 Chunk (a) 只补 A1.15 cold-start scope 的 Option K Hook E (`auth_refresh_no_clear`),A1.17 Chunk 2 仍 ⏸ deferred。
+
+**Chunk (a) lands 3 fixes** (8 P0/P1 + 5 P2 deferred to Chunks (b)/(c)/backlog):
+
+| B-# | Severity | Source | OOB | File / function | Bug + fix |
+|---|---|---|---|---|---|
+| B-741 | P0 | B (codex F4) | * | `aggregate_trajectory_covariates.py:_parse_ts` | **Option K aggregator datetime crash** — post-A1.19 P1-5-A* fix returned mixed aware/naive datetimes (only Z-suffix → aware via `+00:00` normalize; bare naive ISO returned naive). V3 empirically verified `TypeError: can't compare offset-naive and offset-aware datetimes` on cross-record cmp at L221-223 / L270-273. Effect: Option K aggregator **crashes** on any mixed-format trajectory event input → paper §4 GLMM **cannot run** = Tier 1 Pre-fire 闭环 broken. Fix: always normalize parsed datetime to aware UTC via `dt.replace(tzinfo=timezone.utc)` when `tzinfo is None`. Treats naive as UTC consistent with runner `wallclock_start` convention at `p79/experiment/runner/main.py:1208`. 5 invariant tests added (aware preserve / naive normalize / Z-suffix normalize / mixed cmp no crash / unparseable graceful None). |
+| B-742 | P1 | B (codex F5) | * | `experiment_watchdog.py:1715-1722` + `logger_v2.py:191` schema | **Option K Hook E (`auth_refresh_no_clear`) zombie schema** — `logger_v2.py:191` schema declares `auth_refresh_no_clear` event_type (per §163.3 spec) but watchdog NEVER emits it. V4 grep confirmed 1 hit (schema comment only). Effect: §4.X.13 disclosure claim "trajectory events record all auto-clean / auto-refresh / reset events" was code-only on the other two; auth-refresh middle layer completely **invisible to paper §4 GLMM covariate trail** → analyst sees clean post-refresh task as model recovery rather than refresh-induced perturbation. Fix: emit cell-level (`task_index=None`) `auth_refresh_no_clear` event after `_auto_refresh_auth` returns (success or fail), metadata = `{site, outcome, streak, benchmark, contaminated_count}`. Best-effort (T2'=a per §163.3): wrapped in try/except so trajectory log failure is non-fatal. 2 schema/emit invariant tests added. |
+| B-743 | P0/P1 | User Q4 strategic | — | `experiment_watchdog.py` (digest pipeline) + 6 queue scripts | **digest pipeline 全退役 from watchdog auto-call path** — Removed: `_run_auto_digest` (subprocess to `glm_batch_digest.py` + `analyze_reason_diagnostics.py`) / `_check_digest_completions` (count-based not key-coverage = P0-4 codex F3) / `_purge_digest_records` + `_purge_digest_records_batch` (retry path + session-wave / B-392 historical) / `_count_failed_episodes_by_mode` / `_DIGEST_MODES` constant + `_get_active_digest_modes` (P0-1 phantom mode coverage gap = AB cross-catch) / argparse `--glm-config` + `--digest-dir` / state field `seen_digest_completions`. Queue scripts (6 files: queue_baseline / queue_phantom_{som,text,prompt,dom} / queue_router_learned) bulk `sed` removed `--glm-config .auth/glm \` + `--digest-dir "${WATCHDOG_DIGEST}" \` lines + dead `WATCHDOG_DIGEST=...` definitions. **Preserved**: `analyze_reason_diagnostics.py` (no GLM, `make reason-diag` operator target uses it; cross-rep analysis depends on its CSV output) + `glm_batch_digest.py` (standalone operator manual tool for debug;但 watchdog auto-trigger 退役)。Effect: closes 5 项 — P0-1 / P0-4 / P2-2 / B-86 GLM asymmetry advisor blocker / "6-layer claim" honesty (现在 4-layer + 2 implicit)。Watchdog substrate -~400 LOC; pytest 566→585 green (+19 invariant tests for Chunk (a) including 6 parametrized queue-script-no-flags assertion). |
+
+### A1.15 Cold-start Chunk (a) sibling-propagation check
+
+- **digest module-level constants**: 4 hits (`_DIGEST_MODES`) — all in `experiment_watchdog.py`, all removed in B-743.
+- **`--glm-config` + `--digest-dir` flag pass**: 12 hits across 6 queue scripts (queue_baseline / queue_phantom_{som,text,prompt,dom} / queue_router_learned) — all removed via bulk sed (B-744 sibling-prop closure).
+- **`auth_refresh_no_clear`**: now 1 emit site (watchdog L1715-1722 emit) + 1 schema declaration (logger_v2.py:191) — pre-B-742 was 0 emit / 1 schema (zombie).
+- **`log_trajectory_event_external` import**: 3 sites in watchdog (retry path B-314 + session-wave B-384 + auth-refresh B-742) — all 3 use same try/except pattern; consistent.
+- **No remaining `digest_*.jsonl` writers from watchdog**: confirmed via grep. Standalone scripts (`glm_batch_digest.py`) preserved untouched.
+
+### A1.15 Cold-start Chunk (a) Smoke + Verification
+
+- ✅ py_compile: `experiment_watchdog.py` + `aggregate_trajectory_covariates.py` PASS
+- ✅ bash -n: all 6 queue scripts PASS
+- ✅ Empirical aggregator smoke: aware+offset / naive / Z-suffix all compare without TypeError (B-741 fix verified end-to-end)
+- ✅ pytest: **585 passed / 9 skipped / 0 failed** (was 566 → +19 new invariant tests)
+- ✅ Cross-AI verification: codex F3 digest count-based bug VALIDATED via synthetic data spot-check `[('dom', 1, 1)]` returned on wrong cond_id (= retire is right call); codex F4 datetime crash VALIDATED via REPL TypeError reproduction
+- ⏸ B-744 reserved for queue scripts cleanup (already done as part of B-743 sibling propagation, no separate B-# needed)
+
+### A1.15 Cold-start Chunk (a) Pending
+
+- **Chunk (b)** ~2h: P0-2 pgrep self-match fix (preferred Path B per Q3) + P1-1 --reset-state amnesia + P1-3 retry classification code fix (Q1=A) + P1-9 SIGUSR1 fail-loud
+- **Chunk (c)** ~1.5h: P1-4 §4.X.13 "2-3s" prose fix + P1-5 6-layer claim → 4-layer-explicit + 2-implicit honesty (Q2 deferred) + master_bug_catalog A1.15 cold-start full summary + chronicle §193
+- **Deferred to A1.15b or P2 backlog**: P1-6 figure regen / P1-7 restart_watchdog dropped flags / P1-8 DGX shared host pgrep / all P2 (5 items)
+
+**B-numbers consumed**: B-741 through B-743 (3 contiguous IDs; A1.15 cold-start Chunk (a) range). Next available: B-744+.

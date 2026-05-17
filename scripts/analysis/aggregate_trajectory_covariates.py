@@ -35,7 +35,7 @@ import argparse
 import csv
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -89,7 +89,7 @@ def _episode_start_ts(summary: Dict[str, Any]) -> Optional[str]:
 
 
 def _parse_ts(ts: Any) -> Optional[datetime]:
-    """Parse ISO-8601 timestamp string to datetime; return None on missing/bad input.
+    """Parse ISO-8601 timestamp string to **timezone-aware UTC** datetime.
 
     /stress A1.19 P1-5-A* (2026-05-17, Claude OOB): pre-fix used `str(ts) < ep_start`
     lexicographic string comparison. Works only iff both sides are well-formed ISO-8601
@@ -97,6 +97,18 @@ def _parse_ts(ts: Any) -> Optional[datetime]:
     mixed-format drift → `is_after_reset` / `prior_event_count` covariates wrong → paper
     §4 GLMM covariate-adjusted SR estimate biased. Now explicit ISO-8601 datetime parse
     with entry guard (returns None for unparseable, NOT crash — but logs to stderr).
+
+    B-741 (/stress A1.15 cold-start P0-3-B codex OOB, 2026-05-17): post-A1.19 fix still
+    returned **mixed aware/naive** datetimes — only inputs with explicit tzinfo (e.g.
+    trailing `Z` normalized to `+00:00`) came back aware; naive inputs (e.g.
+    `2026-05-17T12:00:00`) came back naive. Downstream comparisons at L221-223 / L270-273
+    then **crashed with TypeError** `can't compare offset-naive and offset-aware datetimes`
+    whenever **any single** episode-summary or trajectory-event ts lacked tzinfo (verified
+    via Python REPL spot-check). Effect: whole Option K covariate aggregation crashes on
+    mixed-format input → paper §4 GLMM **cannot run** = Tier 1 Pre-fire 闭环 broken.
+    Fix: always normalize to aware UTC — if tzinfo is None, attach `timezone.utc`. Treats
+    naive inputs as UTC (consistent with runner's `wallclock_start` emission convention
+    at `p79/experiment/runner/main.py:1208`).
     """
     if not ts:
         return None
@@ -108,13 +120,18 @@ def _parse_ts(ts: Any) -> Optional[datetime]:
     if s.endswith("Z"):
         s = s[:-1] + "+00:00"
     try:
-        return datetime.fromisoformat(s)
+        dt = datetime.fromisoformat(s)
     except (ValueError, TypeError):
         # Log once to stderr but don't crash — covariates degrade gracefully
         # (downstream sees None → treats as "no prior info", which is correct
         # behavior for unparseable timestamp rather than wrong-direction flip).
         print(f"[trajectory-covariates] WARN: cannot parse ts={ts!r} (not ISO-8601)", file=sys.stderr)
         return None
+    # B-741: always return aware UTC so cross-record comparisons (L221-223 / L270-273)
+    # never crash on mixed naive/aware input.
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
 def compute_episode_covariates(

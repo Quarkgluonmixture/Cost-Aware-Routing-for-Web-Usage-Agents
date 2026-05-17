@@ -217,7 +217,6 @@ fi
 # ---------- 启动 watchdog (idempotent) ----------
 WATCHDOG_LOG="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.log"
 WATCHDOG_STATE="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.state.json"
-WATCHDOG_DIGEST="${RUN_DIR}/analysis/digest"
 
 RUNNER_PID=$(pgrep -f "run_experiment.py.*${RUN_ID}" | head -1)
 
@@ -233,8 +232,6 @@ else
     --ntfy-topic p79-exp-dgx-spark \
     --state-file "${WATCHDOG_STATE}" \
     --aggregate-prefix "${BASELINE}_router_learned" \
-    --glm-config .auth/glm \
-    --digest-dir "${WATCHDOG_DIGEST}" \
     ${RUNNER_PID:+--runner-pid "${RUNNER_PID}"} \
     > "${WATCHDOG_LOG}" 2>&1 < /dev/null &
   disown
