@@ -38,6 +38,14 @@ init_paper_grade_env() {
     source "${repo_dir}/scripts/vwa_env_remote.sh"
   fi
   export WIKIPEDIA_ZIM_VERSION="${WIKIPEDIA_ZIM_VERSION:-wikipedia_en_all_maxi_2025-08}"
+  # B-753 (/stress A1.17 cold-start P1-10 cont (init env P79_VWA_TZ default; reset_vwa_sites.sh:163 same fix) C* OOB, 2026-05-17): unified TZ env.
+  # Pre-fix `start_vwa_docker.sh:247` used `${QUARK_TZ:-Europe/London}` while
+  # `reset_vwa_sites.sh:110` used `${VWA_REDDIT_TZ:-${QUARK_TZ:-...}}` — different
+  # first-layer env name → reddit container TZ could drift across reset (e.g.
+  # operator sets VWA_REDDIT_TZ=UTC mid-session but not QUARK_TZ). Now both
+  # consult P79_VWA_TZ first via single canonical default (Europe/London matches
+  # historical Phase 1 paper-grade fires).
+  export P79_VWA_TZ="${P79_VWA_TZ:-Europe/London}"
   # B-548 (/stress A1.5 P0-1-AB* codex+Claude OOB, 2026-05-17): paper_grade env
   # propagation to leaf queue scripts. Pre-fix only `queue_phase1_paper_grade.sh`
   # + `queue_phase1_router_paper_grade.sh` master orchestrators exported
@@ -126,12 +134,21 @@ release_site_lock() {
 #   On DGX dev sessions ($(hostname) = spark-9ea3, cwd = /home/jiaming/...)
 #   none of (a)-(d) match → check harmlessly skips, no behavior change.
 assert_a100_url_locality() {
-  if [[ "$(hostname)" == *a100* ]] \
-     || [[ "$(hostname)" == *condense* ]] \
-     || [[ "${P79_PAPER_GRADE_HOST:-0}" == "1" ]] \
-     || [[ "$(pwd)" == *workspace/p79* ]] \
-     || [[ -d /home/ubuntu/workspace/p79 ]]; then
-    echo "[preflight] A100 URL-locality gate ACTIVE on host=$(hostname), cwd=$(pwd)" >&2
+  # B-755 (/stress A1.17 cold-start P1-12 AC* OOB, 2026-05-17): predicate logic
+  # inverted via P79_PAPER_GRADE coupling. Pre-fix OR-chain whitelist was brittle:
+  # CWD `*workspace/p79*` does NOT match the actual repo dir
+  # `Cost-Aware-Routing-for-Web-Usage-Agents/`; hostname VM rename → gate silently
+  # skipped on all DGX dev sessions AND on any A100 VM with non-canonical name.
+  # New logic: under `P79_PAPER_GRADE=1` (default-on via init_paper_grade_env),
+  # locality is ALWAYS enforced. DGX dev with Tailscale URLs must explicitly opt
+  # out: `P79_PAPER_GRADE=0 bash scripts/queues/queue_baseline.sh ...`. Q14=A
+  # (default invert) matches user decision /stress A1.17 2026-05-17.
+  if [[ "${P79_PAPER_GRADE:-0}" != "1" ]]; then
+    # Dev mode (P79_PAPER_GRADE=0) — operator explicitly opted out; no gate.
+    return 0
+  fi
+  if true; then
+    echo "[preflight] A100 URL-locality gate ACTIVE (P79_PAPER_GRADE=1) host=$(hostname), cwd=$(pwd)" >&2
     local _v
     for _v in CLASSIFIEDS REDDIT SHOPPING WIKIPEDIA HOMEPAGE; do
       # B-643 (A1.13 P1-8 Claude OOB, 2026-05-17): empty URL no longer silent
@@ -297,14 +314,28 @@ reset_and_auth_gate() {
   # abort gate with explicit FATAL surface so operator knows where it stuck.
   # reset_vwa_sites invoked in sub-bash since `timeout` operates on processes;
   # the sourced function is re-sourced in the sub-bash for isolation.
+  # B-745 (/stress A1.17 cold-start P0-2 B* OOB, 2026-05-17): site-aware timeout.
+  # Pre-fix hard 120s killed valid reddit reset whose own warm-up contract is up
+  # to 180s (`_reset_vwa_local_reddit` polls 60 iters × 3s = 180s for HTTP 200
+  # after postmill cold-start). Outer 120s < callee 180s = false-abort on healthy
+  # cold container. Now: reddit gets 240s, classifieds 60s (curl <1s + ~12s sentinel
+  # SQL + ~1s cleanup), shopping/all keeps 120s default. Empirically reddit needs
+  # ~60-120s warm, occasional 130-160s; 240s is generous + matches callee 180s + 60s
+  # buffer.
+  local _reset_timeout
+  case "${site}" in
+    reddit) _reset_timeout=240 ;;
+    classifieds) _reset_timeout=120 ;;
+    *) _reset_timeout=120 ;;
+  esac
   local _reset_rc
-  timeout 120s bash -c "
+  timeout "${_reset_timeout}s" bash -c "
     source '${repo_dir}/scripts/maintenance/reset_vwa_sites.sh'
     reset_vwa_sites '${site}' '${reset_label}'
   "
   _reset_rc=$?
   if [[ "${_reset_rc}" -eq 124 ]]; then
-    echo "[${log_prefix}][FATAL] reset_vwa_sites timed out after 120s (B-642)" >&2
+    echo "[${log_prefix}][FATAL] reset_vwa_sites timed out after ${_reset_timeout}s (B-745 site-aware)" >&2
     if command -v curl > /dev/null; then
       curl -d "queue ABORT: ${site} reset_vwa_sites timeout 120s; investigate SSH/Docker/Tailscale" \
         "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true

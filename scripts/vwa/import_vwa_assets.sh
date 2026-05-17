@@ -78,7 +78,22 @@ done
 SHOPPING_TAR="${IMPORTS_DIR}/shopping_final_0712.tar"
 REDDIT_TAR="${IMPORTS_DIR}/postmill-populated-exposed-withimg.tar"
 WIKI_ZIM_SRC="${IMPORTS_DIR}/wikipedia_en_all_maxi_2025-08.zim"
-CLASSIFIEDS_TAR="${IMPORTS_DIR}/classifieds_docker_compose.tar.gz"
+# B-750 (/stress A1.17 cold-start P1-7 B, 2026-05-17): dual-format detect for
+# classifieds archive. Pre-fix hardcoded `.tar.gz`, but setup_vwa.sh produces
+# `.zip` (archive.org canonical) — airgap recovery path was dead-on-arrival
+# (`[FAIL] Missing classifieds compose tar.gz`). Auto-detect: prefer .zip (matches
+# producer), fallback .tar.gz (legacy). _extract_classifieds_archive handles both.
+CLASSIFIEDS_ARCHIVE=""
+for _cand in "${IMPORTS_DIR}/classifieds_docker_compose.zip" \
+             "${IMPORTS_DIR}/classifieds_docker_compose.tar.gz"; do
+  if [[ -f "${_cand}" ]]; then
+    CLASSIFIEDS_ARCHIVE="${_cand}"
+    break
+  fi
+done
+# Keep CLASSIFIEDS_TAR pointing to the .tar.gz path for error message clarity
+# when neither archive is present (operator sees expected .zip OR .tar.gz path).
+CLASSIFIEDS_TAR="${CLASSIFIEDS_ARCHIVE:-${IMPORTS_DIR}/classifieds_docker_compose.{zip|tar.gz}}"
 WIKI_ZIM_DST="${ENV_DIR}/data/wikipedia_en_all_maxi_2025-08.zim"
 
 check_file() {
@@ -126,10 +141,33 @@ import_assets() {
 
   echo "== Installing wikipedia ZIM =="
   mkdir -p "${ENV_DIR}/data"
-  cp -f "${WIKI_ZIM_SRC}" "${WIKI_ZIM_DST}"
+  # B-759 (/stress A1.17 cold-start P1-16 ABC, 2026-05-17): atomic .tmp publish
+  # to avoid kiwix-serve reading half-copied ZIM (start_vwa_docker.sh:257 wget
+  # check only watches wget process, not cp — concurrent kiwix start can race).
+  local _tmp_zim="${WIKI_ZIM_DST}.tmp.$$"
+  cp -f "${WIKI_ZIM_SRC}" "${_tmp_zim}"
+  mv -f "${_tmp_zim}" "${WIKI_ZIM_DST}"
 
   echo "== Extracting classifieds compose =="
-  tar -xzf "${CLASSIFIEDS_TAR}" -C "${ENV_DIR}"
+  # B-750 cont (P1-7): dual-format support. Detect archive type from filename
+  # suffix; .zip → unzip, .tar.gz → tar -xzf.
+  if [[ -z "${CLASSIFIEDS_ARCHIVE}" ]]; then
+    echo "[FAIL] no classifieds archive found in ${IMPORTS_DIR} (expected .zip or .tar.gz)" >&2
+    return 1
+  fi
+  case "${CLASSIFIEDS_ARCHIVE}" in
+    *.zip)
+      command -v unzip >/dev/null 2>&1 || { echo "[FAIL] unzip not installed; required for .zip archive" >&2; return 1; }
+      unzip -o -q "${CLASSIFIEDS_ARCHIVE}" -d "${ENV_DIR}"
+      ;;
+    *.tar.gz|*.tgz)
+      tar -xzf "${CLASSIFIEDS_ARCHIVE}" -C "${ENV_DIR}"
+      ;;
+    *)
+      echo "[FAIL] unknown classifieds archive format: ${CLASSIFIEDS_ARCHIVE}" >&2
+      return 1
+      ;;
+  esac
 
   if [[ ! -d "${ENV_DIR}/classifieds_docker_compose" ]]; then
     echo "[FAIL] classifieds_docker_compose was not created under ${ENV_DIR}" >&2

@@ -180,7 +180,9 @@ start_shopping() {
       container_name="vwa-shopping"
       local port_args="-p 7770:80"
       (( want_admin == 1 )) && port_args="${port_args} -p 7780:80"
-      docker run --name "${container_name}" -e TZ="${QUARK_TZ:-Europe/London}" ${port_args} -d shopping_final_0712 >/dev/null
+      # B-753 (/stress A1.17 cold-start P1-10 C* OOB, 2026-05-17): P79_VWA_TZ first;
+      # legacy QUARK_TZ as fallback for transition. See init_paper_grade_env.
+      docker run --name "${container_name}" -e TZ="${P79_VWA_TZ:-${QUARK_TZ:-Europe/London}}" ${port_args} -d shopping_final_0712 >/dev/null
     fi
     sleep 10
   fi
@@ -188,10 +190,15 @@ start_shopping() {
   # Silently swallowing failures was masking patch-not-applied bugs → image-baked
   # metis URL stays active → BUG-4 hang cascade for Phase 1b shop.
   docker exec "${container_name}" /var/www/magento2/bin/magento setup:store-config:set --base-url="http://${HOSTNAME_VALUE}:7770" >/dev/null 2>&1
-  docker exec "${container_name}" mysql -u magentouser -pMyPassword magentodb -e "UPDATE core_config_data SET value='http://${HOSTNAME_VALUE}:7770/' WHERE path IN ('web/unsecure/base_url', 'web/secure/base_url');" >/dev/null 2>&1
+  # B-747 (/stress A1.17 cold-start P1-4 AB* OOB, 2026-05-17, B-717 sibling):
+  # MYSQL_PWD env replaces `-pMyPassword` argv. `docker exec -e MYSQL_PWD ...`
+  # propagates env into container; mysql client reads MYSQL_PWD via libmysqlclient.
+  # `ps auxe` on A100 VM (UCL Condense multi-user surface) no longer leaks
+  # plaintext Magento DB password.
+  docker exec -e MYSQL_PWD=MyPassword "${container_name}" mysql -u magentouser magentodb -e "UPDATE core_config_data SET value='http://${HOSTNAME_VALUE}:7770/' WHERE path IN ('web/unsecure/base_url', 'web/secure/base_url');" >/dev/null 2>&1
   # Verify DB-side base_url actually patched (config:set caches stale via app/etc; SQL UPDATE is authoritative)
   local actual_url
-  actual_url=$(docker exec "${container_name}" mysql -u magentouser -pMyPassword magentodb -sN -e \
+  actual_url=$(docker exec -e MYSQL_PWD=MyPassword "${container_name}" mysql -u magentouser magentodb -sN -e \
                "SELECT value FROM core_config_data WHERE path='web/unsecure/base_url';" 2>/dev/null || echo "?")
   if [[ "${actual_url}" != "http://${HOSTNAME_VALUE}:7770/" ]]; then
     echo "[START] ✗ Magento base_url patch FAILED: got '${actual_url}' want 'http://${HOSTNAME_VALUE}:7770/'" >&2
@@ -219,11 +226,21 @@ start_shopping() {
       sleep 10
       continue
     fi
-    # Count rows NOT in "Ready" state
-    local non_ready
-    non_ready=$(echo "${idx_status}" | grep -E ":" | grep -vE "Ready|^$" | wc -l)
-    if (( non_ready == 0 )); then
-      echo "[START] Magento indexer all Ready after $((poll_i*10))s"
+    # B-748 (/stress A1.17 cold-start P1-5+18 B* OOB, 2026-05-17): awk replaces
+    # pipefail-fragile pipeline. Pre-fix `grep -E ":" | grep -vE "Ready|^$" | wc -l`
+    # had TWO bugs: (a) under `set -euo pipefail`, all-Ready success path → `grep -vE`
+    # rc=1 → pipefail propagated → assignment failed → script EXITED on healthy
+    # success path (verified by codex shell reproduction); (b) idx_status empty
+    # (mysqld restart at instant of query) → `wc -l` = 0 → false "all Ready" → break
+    # early while indexer still building → first search-autocomplete tasks return
+    # empty results → silent SR contamination. awk single-process: NF guard rejects
+    # empty lines (handles bug b); no pipefail trap (handles bug a). Stable on both
+    # paths.
+    local total_rows non_ready
+    total_rows=$(echo "${idx_status}" | awk -F: '/:/ && NF {n++} END {print n+0}')
+    non_ready=$(echo "${idx_status}" | awk -F: '/:/ && NF && $2 !~ /Ready/ {n++} END {print n+0}')
+    if (( total_rows > 0 && non_ready == 0 )); then
+      echo "[START] Magento indexer all Ready after $((poll_i*10))s (${total_rows} indexers)"
       break
     fi
     sleep 10
@@ -244,7 +261,8 @@ start_reddit() {
     if [[ -n "${container_name}" ]]; then
       docker start "${container_name}" >/dev/null 2>&1
     else
-      docker run --name vwa-reddit -e TZ="${QUARK_TZ:-Europe/London}" -p 9999:80 -d postmill-populated-exposed-withimg >/dev/null
+      # B-753 (/stress A1.17 cold-start P1-10 C* OOB, 2026-05-17): P79_VWA_TZ first.
+      docker run --name vwa-reddit -e TZ="${P79_VWA_TZ:-${QUARK_TZ:-Europe/London}}" -p 9999:80 -d postmill-populated-exposed-withimg >/dev/null
     fi
   fi
 }
@@ -283,7 +301,8 @@ start_wikipedia() {
           extra_mounts="--volume=${symdir}:${symdir}:ro"
         fi
       fi
-      docker run -d --name vwa-wikipedia -e TZ="${QUARK_TZ:-Europe/London}" --volume="${ENV_DIR}/data/:/data" ${extra_mounts} -p 8888:80 ghcr.io/kiwix/kiwix-serve:3.3.0 wikipedia_en_all_maxi_2025-08.zim >/dev/null
+      # B-753 (/stress A1.17 cold-start P1-10 C* OOB, 2026-05-17): P79_VWA_TZ first.
+      docker run -d --name vwa-wikipedia -e TZ="${P79_VWA_TZ:-${QUARK_TZ:-Europe/London}}" --volume="${ENV_DIR}/data/:/data" ${extra_mounts} -p 8888:80 ghcr.io/kiwix/kiwix-serve:3.3.0 wikipedia_en_all_maxi_2025-08.zim >/dev/null
     fi
   fi
 }
@@ -291,7 +310,15 @@ start_wikipedia() {
 start_classifieds() {
   echo "[START] classifieds (http://${HOSTNAME_VALUE}:9980)"
   local classifieds_running=0
-  if docker ps --format '{{.Names}}' | grep -q '^classifieds$'; then
+  # B-752 (/stress A1.17 cold-start P1-15 A, 2026-05-17): broader regex matches
+  # both compose v1 (`classifieds_db_1`) and compose v2 (`classifieds-app-1`) +
+  # legacy bare `classifieds`. Pre-fix `^classifieds$` matched only the app
+  # container if it was named bare (uncommon under compose); when project_name=
+  # classifieds compose names app `classifieds-app-1` → grep miss → classifieds_running=0
+  # → fall into `docker compose up --build` + DB seed retry → SEEDING ON ALREADY-
+  # POPULATED DB = silent wipe + reseed = paper-grade data destruction on 2nd
+  # invoke. Broader detect prevents accidental re-seed.
+  if docker ps --format '{{.Names}}' | grep -qE '^classifieds(-app-1|_app_1|_db_1|-db-1|$)'; then
     classifieds_running=1
     echo "classifieds already running; reconfiguring compose hostname"
   fi
@@ -302,8 +329,22 @@ start_classifieds() {
     return 1
   fi
 
-  sed -i "s|<your-server-hostname>|${HOSTNAME_VALUE}|g" "${compose_dir}/docker-compose.yml"
-  sed -i -E "s|CLASSIFIEDS=http://[^:]+:9980/|CLASSIFIEDS=http://${HOSTNAME_VALUE}:9980/|g" "${compose_dir}/docker-compose.yml"
+  # B-751 (/stress A1.17 cold-start P1-8 AB* OOB, 2026-05-17): template render
+  # pattern replaces in-place sed. Pre-fix `sed -i "s|<your-server-hostname>|...|g"`
+  # was non-idempotent on HOSTNAME_VALUE change — first run replaces placeholder
+  # with host A; second run with host B can't find placeholder (already gone),
+  # only the `CLASSIFIEDS=http://[^:]+:9980/` regex catches host A. Pristine
+  # template + cp-then-sed ensures any HOSTNAME_VALUE rewrites cleanly.
+  local compose_yml="${compose_dir}/docker-compose.yml"
+  local compose_template="${compose_dir}/docker-compose.yml.template"
+  if [[ ! -f "${compose_template}" ]]; then
+    # First-time migration: save current as template (assumes pristine on first run).
+    cp "${compose_yml}" "${compose_template}"
+    echo "[START] cls compose: saved pristine template at ${compose_template} (B-751 first-time migration)"
+  fi
+  cp -f "${compose_template}" "${compose_yml}"
+  sed -i "s|<your-server-hostname>|${HOSTNAME_VALUE}|g" "${compose_yml}"
+  sed -i -E "s|CLASSIFIEDS=http://[^:]+:9980/|CLASSIFIEDS=http://${HOSTNAME_VALUE}:9980/|g" "${compose_yml}"
   (cd "${compose_dir}" && docker compose up --build -d)
   if (( classifieds_running == 0 )); then
     sleep 15
@@ -315,7 +356,10 @@ start_classifieds() {
     # leaving cls site broken.
     local seed_rc=0 seed_retry
     for seed_retry in 1 2 3; do
-      docker exec classifieds_db mysql -u root -ppassword osclass \
+      # B-747 cont (P1-4 sibling): MYSQL_PWD env injection (cls DB seed path,
+      # 3rd callsite). Same vulnerability class as start_shopping mysql calls;
+      # `ps auxe` audit no longer reveals root password.
+      docker exec -e MYSQL_PWD=password classifieds_db mysql -u root osclass \
         -e 'source docker-entrypoint-initdb.d/osclass_craigslist.sql' >/dev/null 2>&1
       seed_rc=$?
       if (( seed_rc == 0 )); then
@@ -334,8 +378,20 @@ start_classifieds() {
 
 start_homepage() {
   echo "[START] homepage (http://${HOSTNAME_VALUE}:4399)"
-  perl -pi -e "s|<your-server-hostname>|${HOSTNAME_VALUE}|g" "${ENV_DIR}/webarena-homepage/templates/index.html"
-  perl -pi -e "s|localhost:9980|${HOSTNAME_VALUE}:9980|g; s|localhost:7770|${HOSTNAME_VALUE}:7770|g; s|localhost:9999|${HOSTNAME_VALUE}:9999|g; s|localhost:8888|${HOSTNAME_VALUE}:8888|g" "${ENV_DIR}/webarena-homepage/templates/index.html"
+  # B-751 cont (P1-8 AB* OOB): template render pattern for homepage. Pre-fix
+  # `perl -pi -e` was idempotent on FIRST hostname change (replace placeholder
+  # → host A) but BROKEN on HOSTNAME_VALUE change to host B — only `<your-server-
+  # hostname>` and `localhost:*` matched, NOT old `host_A:*`. Migrating to
+  # template + cp + render ensures clean re-render on any HOSTNAME change.
+  local _homepage_html="${ENV_DIR}/webarena-homepage/templates/index.html"
+  local _homepage_template="${ENV_DIR}/webarena-homepage/templates/index.html.template"
+  if [[ ! -f "${_homepage_template}" ]]; then
+    cp "${_homepage_html}" "${_homepage_template}"
+    echo "[START] homepage: saved pristine template at ${_homepage_template} (B-751 first-time migration)"
+  fi
+  cp -f "${_homepage_template}" "${_homepage_html}"
+  perl -pi -e "s|<your-server-hostname>|${HOSTNAME_VALUE}|g" "${_homepage_html}"
+  perl -pi -e "s|localhost:9980|${HOSTNAME_VALUE}:9980|g; s|localhost:7770|${HOSTNAME_VALUE}:7770|g; s|localhost:9999|${HOSTNAME_VALUE}:9999|g; s|localhost:8888|${HOSTNAME_VALUE}:8888|g" "${_homepage_html}"
 
   if pgrep -f 'flask run.*4399' >/dev/null 2>&1; then
     echo "homepage already running"

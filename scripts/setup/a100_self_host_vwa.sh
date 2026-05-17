@@ -117,7 +117,15 @@ log "Free disk: ${AVAIL_GB} GB"
 # margin. FATAL on shortage (was WARN-and-continue) because partial wget + docker
 # load mid-fail leaves corrupted images that crash containers at runtime — paper-grade
 # integrity demands fail-fast.
-REQ_GB=250
+#
+# B-760 (/stress A1.17 cold-start P1-17 AC*, 2026-05-17): bumped 250 → 350GB.
+# Gemini 'Physical Impossibility' attack: raw 216GB + docker `tar xz` extraction
+# peak ~70GB (per-layer decompression buffer for 68GB shopping image) = 286GB.
+# Pre-fix 250 was below the working set — `docker load shopping_final_0712.tar`
+# would hit "No space left on device" mid-extraction, leaving corrupt image layers
+# requiring full reset + re-download. 350GB = 286 working set + 64GB safety margin
+# (covers concurrent reset/run state on a single-disk A100 VM).
+REQ_GB=350
 if [ "${AVAIL_GB}" -lt "${REQ_GB}" ]; then
   log "FATAL: Free disk ${AVAIL_GB} GB < required ${REQ_GB} GB for full VWA stack"
   log "       (shopping 68 + reddit 53 + wikipedia 95 + cls 0.025 + ~30 docker overhead)"

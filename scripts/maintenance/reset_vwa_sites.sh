@@ -24,7 +24,12 @@
 
 VWA_RESET_MODE="${VWA_RESET_MODE:-auto}"
 VWA_RESET_SSH_KEY="${VWA_RESET_SSH_KEY:-${HOME}/.ssh/vwa_windows}"
-VWA_RESET_SSH_HOST="${VWA_RESET_SSH_HOST:?VWA_RESET_SSH_HOST must be set (e.g., quark@YOUR_HOST_IP); see scripts/vwa_env_remote.sh}"
+# B-744 (/stress A1.17 cold-start P0-1 AB* OOB, 2026-05-17): `:?` removed at
+# source time. Pre-fix `${VWA_RESET_SSH_HOST:?...}` forced every source path
+# (including A100 self-host local mode where SSH host is irrelevant) to set
+# this env or `set -euo pipefail` would kill the chain at line 27. Validation
+# now lives in the remote branch (line ~210) where the env is actually used.
+VWA_RESET_SSH_HOST="${VWA_RESET_SSH_HOST:-}"
 VWA_RESET_SCRIPT="${VWA_RESET_SCRIPT:-C:\\vwa\\reset_vwa.ps1}"
 VWA_RESET_ENABLE="${VWA_RESET_ENABLE:-1}"
 
@@ -40,7 +45,21 @@ VWA_RESET_ENABLE="${VWA_RESET_ENABLE:-1}"
 # 3-5pp drift (gemini estimate) / 0.2-0.8pp bounded (codex on require_reset subset).
 _reset_vwa_local_classifieds() {
     local label="$1"
-    local token="${CLASSIFIEDS_RESET_TOKEN:-4b61655535e7ed388f0d40a93600254c}"
+    # B-757 (/stress A1.17 cold-start P1-14 A, 2026-05-17): token from env or
+    # .auth/cls_reset_token (gitignored). Hardcoded literal removed —
+    # committed-in-source secrets fail OSF audit. Migration (1-time): operator
+    # writes existing token to .auth/cls_reset_token, then `git rm -f` any
+    # historical occurrences via `git filter-repo`.
+    local token="${CLASSIFIEDS_RESET_TOKEN:-}"
+    local _repo_root
+    _repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    if [[ -z "${token}" && -f "${_repo_root}/.auth/cls_reset_token" ]]; then
+        token="$(cat "${_repo_root}/.auth/cls_reset_token" 2>/dev/null | tr -d '[:space:]')"
+    fi
+    if [[ -z "${token}" ]]; then
+        echo "[${label}][reset_vwa][local] CLASSIFIEDS_RESET_TOKEN missing (env or .auth/cls_reset_token); aborting cls reset" >&2
+        return 1
+    fi
     local code
     code=$(curl -sS -o /dev/null --max-time 60 -w "%{http_code}" \
            -X POST -d "token=${token}" \
@@ -49,24 +68,41 @@ _reset_vwa_local_classifieds() {
         echo "[${label}][reset_vwa][local] classifieds HTTP FAIL (http=${code})" >&2
         return 1
     fi
-    # Multi-table mutation sentinel (B-307 A1.17 P1-1, 3-AI overlap A+B+C OOB):
-    # pre-fix queried only `oc_t_item_comment` — narrow; OSClass reset endpoint
-    # regression could clear comments but leave `oc_t_item` (listings),
-    # `oc_t_user` (added users), `oc_t_item_meta` (modified metadata) → sentinel
-    # passes while ablation surface remains contaminated. P79 cls task mix includes
-    # search-listing / post-listing / user-profile types, which would see prior
-    # episode's residual state (3-5pp drift per gemini estimate, 0.2-0.8pp bounded
-    # per codex on require_reset subset). Now verify 3 highest-mutation-surface
-    # tables; failure on any → reset rejected.
-    local comments_count items_count user_count
-    comments_count=$(docker exec classifieds_db mysql -uroot -ppassword osclass -sN -e \
+    # B-746 (/stress A1.17 cold-start P0-3 C* OOB, 2026-05-17, Q2=D'):
+    # gemini "sentinel theater" attack — pre-fix only checked 3 tables; OSClass
+    # has dozens. Two-layer defense:
+    #   (a) Sentinel scope expanded 3→5 tables (added oc_t_alerts user-subscriptions
+    #       + oc_t_latest_searches search-history). Full DROP+seed restore (gemini
+    #       Option A) deferred to A1.17b — needs OSClass install-state flag verify +
+    #       app-cache/session interaction test (笔记 §194 risk analysis 1-3).
+    #   (b) App-layer hygiene: clear PHP filesystem cache + session files. This is
+    #       'whichever-path-chosen' belt-and-suspenders — even if sentinel passes,
+    #       stale PHP cache/session can leak prior-episode state through app layer
+    #       (clean DB ≠ clean app). Failures are non-fatal logged (cleanup is
+    #       best-effort hardening, not paper-grade gate).
+    #
+    # B-747 (/stress A1.17 cold-start P1-4 AB* OOB, 2026-05-17, B-717 sibling):
+    # MYSQL_PWD env injection replaces `-ppassword` argv on all 5 mysql calls.
+    # `docker exec -e MYSQL_PWD ...` propagates env into container; mysql client
+    # reads MYSQL_PWD via libmysqlclient. `ps auxe` on A100 VM no longer leaks
+    # plaintext password (UCL Condense VM admin/sidecar surface).
+    local comments_count items_count user_count alerts_count searches_count
+    comments_count=$(docker exec -e MYSQL_PWD=password classifieds_db mysql -uroot osclass -sN -e \
             "SELECT COUNT(*) FROM oc_t_item_comment WHERE b_active=1;" 2>/dev/null || echo "?")
-    items_count=$(docker exec classifieds_db mysql -uroot -ppassword osclass -sN -e \
+    items_count=$(docker exec -e MYSQL_PWD=password classifieds_db mysql -uroot osclass -sN -e \
             "SELECT COUNT(*) FROM oc_t_item WHERE b_active=1 AND fk_i_user_id > 0;" 2>/dev/null || echo "?")
     # Exclude seed/admin users (`s_username IN ('admin','user_seed')` etc. — keep
     # broad exclusion via `b_active=1 AND s_username NOT LIKE '%admin%'`).
-    user_count=$(docker exec classifieds_db mysql -uroot -ppassword osclass -sN -e \
+    user_count=$(docker exec -e MYSQL_PWD=password classifieds_db mysql -uroot osclass -sN -e \
             "SELECT COUNT(*) FROM oc_t_user WHERE b_active=1 AND s_username NOT LIKE '%admin%';" 2>/dev/null || echo "?")
+    # B-746a: 2 new sentinel tables (gemini "sentinel theater" defuse, scope D' = 5 tables).
+    # oc_t_alerts = user subscriptions (search alerts); oc_t_latest_searches = recent
+    # search history. Both mutate per-episode via user actions; both invisible to
+    # the 3-table pre-fix sentinel.
+    alerts_count=$(docker exec -e MYSQL_PWD=password classifieds_db mysql -uroot osclass -sN -e \
+            "SELECT COUNT(*) FROM oc_t_alerts;" 2>/dev/null || echo "?")
+    searches_count=$(docker exec -e MYSQL_PWD=password classifieds_db mysql -uroot osclass -sN -e \
+            "SELECT COUNT(*) FROM oc_t_latest_searches;" 2>/dev/null || echo "?")
 
     # Each table independently asserted; report all failures in one pass.
     local failed=0
@@ -86,11 +122,28 @@ _reset_vwa_local_classifieds() {
         echo "[${label}][reset_vwa][local] cls sentinel FAIL: oc_t_user non-admin count=${user_count} > 20 (seed expected ~5-10)" >&2
         failed=1
     fi
+    # B-746a: new sentinels — both should be 0 post-reset (no seed alerts/searches).
+    if [[ "${alerts_count}" != "0" ]]; then
+        echo "[${label}][reset_vwa][local] cls sentinel FAIL: oc_t_alerts=${alerts_count} (expected 0)" >&2
+        failed=1
+    fi
+    if [[ "${searches_count}" != "0" ]]; then
+        echo "[${label}][reset_vwa][local] cls sentinel FAIL: oc_t_latest_searches=${searches_count} (expected 0)" >&2
+        failed=1
+    fi
     if (( failed == 1 )); then
-        echo "[${label}][reset_vwa][local] classifieds reset SQL incomplete (multi-table sentinel rejected)" >&2
+        echo "[${label}][reset_vwa][local] classifieds reset SQL incomplete (5-table sentinel rejected)" >&2
         return 1
     fi
-    echo "[${label}][reset_vwa][local] classifieds OK (http=200, multi-table sentinel verified: comments=${comments_count}, items=${items_count}, users=${user_count})"
+    # B-746b: PHP app-layer hygiene — file cache + session cleanup.
+    # OSClass caches: oc-content/cache/ (template + data caches), oc-content/runtime/
+    # (compiled templates + plugins). Session: PHP default tmpfs + custom session
+    # paths. Container name 'classifieds' = OSClass app (compose project default).
+    # Non-fatal: file-system cleanup is best-effort defense-in-depth; sentinel
+    # already verified DB clean.
+    docker exec classifieds sh -c 'rm -rf /usr/src/myapp/oc-content/cache/* /usr/src/myapp/oc-content/runtime/* 2>/dev/null; find /tmp -maxdepth 2 -name "sess_*" -delete 2>/dev/null; find /usr/src/myapp/oc-content -maxdepth 3 -name "sessions" -type d -exec sh -c "rm -rf \"\$1\"/*" _ {} \; 2>/dev/null; exit 0' 2>/dev/null || \
+        echo "[${label}][reset_vwa][local] WARN: cls PHP cache/session cleanup non-fatal failure (DB sentinel already PASSed)" >&2
+    echo "[${label}][reset_vwa][local] classifieds OK (http=200, 5-table sentinel: comments=${comments_count}, items=${items_count}, users=${user_count}, alerts=${alerts_count}, searches=${searches_count}; PHP cache+session cleared)"
     return 0
 }
 
@@ -107,8 +160,15 @@ _reset_vwa_local_reddit() {
     # types in reddit) saw different system time before vs after reset → systematic
     # noise in ablation. VWA_REDDIT_TZ env override defaulting to Europe/London
     # (was QUARK_TZ legacy name; harmless on A100 self-host but rename improves clarity).
+    # B-753 (/stress A1.17 cold-start P1-10 C* OOB, 2026-05-17): P79_VWA_TZ unified
+    # var (was VWA_REDDIT_TZ vs QUARK_TZ asymmetry with start_vwa_docker.sh:247).
+    # Pre-fix reset-time TZ env name differed from initial-start TZ env → reddit
+    # container could see different TZ across reset → "posts from today" relative-
+    # time tasks saw systematic ablation noise. init_paper_grade_env exports
+    # P79_VWA_TZ=Europe/London default; legacy VWA_REDDIT_TZ / QUARK_TZ kept as
+    # fallback for transition.
     if ! docker run -d --name vwa-reddit \
-            -e TZ="${VWA_REDDIT_TZ:-${QUARK_TZ:-Europe/London}}" \
+            -e TZ="${P79_VWA_TZ:-${VWA_REDDIT_TZ:-${QUARK_TZ:-Europe/London}}}" \
             -p 9999:80 postmill-populated-exposed-withimg >/dev/null; then
         echo "[${label}][reset_vwa][local] reddit docker run FAILED" >&2
         return 1
@@ -201,6 +261,12 @@ reset_vwa_sites() {
     # Remote mode: DGX→quark→Windows PowerShell (original path)
     if [[ ! -f "${VWA_RESET_SSH_KEY}" ]]; then
         echo "[${label}][reset_vwa] WARNING: SSH 私钥不存在: ${VWA_RESET_SSH_KEY}，跳过 reset"
+        return 1
+    fi
+    # B-744 (cont): remote-mode-specific SSH host validation (moved from source-
+    # time `:?` per A100 local-mode unblock).
+    if [[ -z "${VWA_RESET_SSH_HOST:-}" ]]; then
+        echo "[${label}][reset_vwa] FATAL: remote mode requires VWA_RESET_SSH_HOST (e.g., quark@YOUR_HOST_IP); see scripts/vwa_env_remote.sh" >&2
         return 1
     fi
 

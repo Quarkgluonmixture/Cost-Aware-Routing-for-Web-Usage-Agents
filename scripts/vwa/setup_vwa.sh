@@ -172,6 +172,51 @@ hf_hub_download(repo_id='${repo_id}', filename='${filename}', repo_type='dataset
 PY
 }
 
+# B-759 (/stress A1.17 cold-start P1-16 ABC, 2026-05-17): asset publish hardening.
+# 3-AI overlap on 3 angles: (A) `rm -f tar` after `docker load` rm'd even on failure
+# → 68GB / 53GB re-download required on transient docker error; (B codex) no
+# `*.tmp` atomic publish + concurrent setup processes can `docker load` a half-
+# written tar; (C gemini) no SHA256 verification → mirror silent update / bit-flip
+# undetectable, paper §3 byte-equivalence claim attackable. Fix: download to
+# `*.tmp.$$`, sha256-verify against `docs/reference/vwa_assets_manifest.json`
+# (when populated), `docker load` from tmp, rm tmp ONLY on success. Single-tenant
+# A100 → concurrent-setup flock deferred to A1.17b (low blast on current host).
+_verify_sha256() {
+  local file_path="$1" asset_key="$2"
+  local manifest="${PROJECT_DIR}/docs/reference/vwa_assets_manifest.json"
+  if [[ ! -f "${manifest}" ]]; then
+    echo "  [B-759][WARN] no manifest at ${manifest} — skipping sha256 verify (paper §3 reproducibility audit cannot certify byte-equivalence)"
+    return 0
+  fi
+  local expected_sha
+  # Tolerate jq absence on minimal A100 VM via python3 fallback.
+  if command -v jq >/dev/null 2>&1; then
+    expected_sha=$(jq -r ".assets[\"${asset_key}\"].sha256 // empty" "${manifest}" 2>/dev/null)
+  else
+    expected_sha=$("${PYTHON_BIN}" -c "
+import json, sys
+try:
+    d = json.load(open('${manifest}'))
+    print(d.get('assets', {}).get('${asset_key}', {}).get('sha256', ''))
+except Exception:
+    pass
+" 2>/dev/null)
+  fi
+  if [[ -z "${expected_sha}" ]]; then
+    echo "  [B-759][WARN] manifest exists but no sha256 for asset_key=${asset_key} — skipping verify"
+    return 0
+  fi
+  echo "  [B-759] sha256 verify ${asset_key} against manifest..."
+  local actual_sha
+  actual_sha=$(sha256sum "${file_path}" | awk '{print $1}')
+  if [[ "${actual_sha}" != "${expected_sha}" ]]; then
+    echo "  [B-759][FATAL] sha256 mismatch ${asset_key}: got ${actual_sha}, expected ${expected_sha}" >&2
+    return 1
+  fi
+  echo "  [B-759] sha256 OK ${asset_key}"
+  return 0
+}
+
 download_shopping_image() {
   if ! contains_dataset "shopping"; then
     return 0
@@ -189,10 +234,19 @@ download_shopping_image() {
   # verified 2026-05-14). Use the CMU mirror from environment_docker/README.md
   # (~68GB; wget -c resumes a partial download).
   echo "Downloading shopping image (CMU mirror, ~68GB)..."
-  wget -c --tries=3 -O shopping_final_0712.tar \
+  local _tmp_tar="shopping_final_0712.tar.tmp.$$"
+  wget -c --tries=3 -O "${_tmp_tar}" \
     "http://metis.lti.cs.cmu.edu/webarena-images/shopping_final_0712.tar"
-  docker load < shopping_final_0712.tar
-  rm -f shopping_final_0712.tar
+  if ! _verify_sha256 "${_tmp_tar}" "shopping_final_0712.tar"; then
+    echo "[B-759] preserving ${_tmp_tar} for inspection" >&2
+    return 1
+  fi
+  if docker load < "${_tmp_tar}"; then
+    rm -f "${_tmp_tar}"
+  else
+    echo "[B-759] docker load FAILED; preserving ${_tmp_tar} for retry (avoids 68GB re-download)" >&2
+    return 1
+  fi
 }
 
 download_forum_image() {
@@ -210,10 +264,19 @@ download_forum_image() {
 
   # HF dataset webarena/Reddit no longer exists — CMU mirror (~53GB).
   echo "Downloading forum image (CMU mirror, ~53GB)..."
-  wget -c --tries=3 -O postmill-populated-exposed-withimg.tar \
+  local _tmp_tar="postmill-populated-exposed-withimg.tar.tmp.$$"
+  wget -c --tries=3 -O "${_tmp_tar}" \
     "http://metis.lti.cs.cmu.edu/webarena-images/postmill-populated-exposed-withimg.tar"
-  docker load < postmill-populated-exposed-withimg.tar
-  rm -f postmill-populated-exposed-withimg.tar
+  if ! _verify_sha256 "${_tmp_tar}" "postmill-populated-exposed-withimg.tar"; then
+    echo "[B-759] preserving ${_tmp_tar} for inspection" >&2
+    return 1
+  fi
+  if docker load < "${_tmp_tar}"; then
+    rm -f "${_tmp_tar}"
+  else
+    echo "[B-759] docker load FAILED; preserving ${_tmp_tar} for retry (avoids 53GB re-download)" >&2
+    return 1
+  fi
 }
 
 download_wikipedia_data() {
@@ -232,9 +295,19 @@ download_wikipedia_data() {
   fi
 
   # CMU metis only mirrors 2022-05; pull 2025-08 from kiwix.org canonical.
+  # B-759 (P1-16): atomic .tmp publish + sha256 verify (gemini F7 - "Mirror Trust
+  # Fallacy"). Pre-fix downloaded direct to final filename → kiwix-serve could
+  # read mid-download (start_vwa_docker.sh:257 wget-running check helps but only
+  # if scripts coordinate, which they don't always).
   echo "Downloading Wikipedia ZIM 2025-08 (kiwix.org, ~95GB)..."
-  wget -c --tries=3 -O "${wiki_file}" \
+  local _tmp_zim="${wiki_file}.tmp.$$"
+  wget -c --tries=3 -O "${_tmp_zim}" \
     "https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_maxi_2025-08.zim"
+  if ! _verify_sha256 "${_tmp_zim}" "wikipedia_en_all_maxi_2025-08.zim"; then
+    echo "[B-759] preserving ${_tmp_zim} for inspection" >&2
+    return 1
+  fi
+  mv -f "${_tmp_zim}" "${wiki_file}"
 }
 
 download_classifieds_data() {
@@ -249,11 +322,21 @@ download_classifieds_data() {
 
   # HF dataset webarena/Classifieds no longer exists — archive.org hosts
   # classifieds_docker_compose.zip (a .zip, not .tar.gz; ~25MB).
+  # B-759 (P1-16): atomic .tmp + sha256 verify pattern.
   echo "Downloading classifieds dataset (archive.org, ~25MB)..."
-  wget -c --tries=3 -O classifieds_docker_compose.zip \
+  local _tmp_zip="classifieds_docker_compose.zip.tmp.$$"
+  wget -c --tries=3 -O "${_tmp_zip}" \
     "https://archive.org/download/classifieds_docker_compose/classifieds_docker_compose.zip"
-  unzip -o -q classifieds_docker_compose.zip -d "${ENV_DIR}"
-  rm -f classifieds_docker_compose.zip
+  if ! _verify_sha256 "${_tmp_zip}" "classifieds_docker_compose.zip"; then
+    echo "[B-759] preserving ${_tmp_zip} for inspection" >&2
+    return 1
+  fi
+  if unzip -o -q "${_tmp_zip}" -d "${ENV_DIR}"; then
+    rm -f "${_tmp_zip}"
+  else
+    echo "[B-759] unzip FAILED; preserving ${_tmp_zip}" >&2
+    return 1
+  fi
 }
 
 main() {
@@ -274,22 +357,28 @@ main() {
   download_wikipedia_data
   download_classifieds_data
 
-  # /stress A1.18-re (B-626 P2-8-B* codex OOB, 2026-05-17): fail-loud if VWA
-  # per-task split configs are missing. The 912 gitignored per-task config
-  # files (config_files/vwa/test_{site}/{0..N}.json) are derived artifacts and
-  # must be regenerated post-clone via `make vwa-generate-configs`. Pre-fix
-  # "Setup complete" echoed success even when the substrate was incomplete,
-  # producing silent runtime failures during first task launch.
+  # B-749 (/stress A1.17 cold-start P1-6 B, 2026-05-17): substrate-missing FATAL.
+  # Pre-fix B-626 added the warning (good intent — codex caught it again A1.17),
+  # but kept `echo "Setup complete." + return 0` → A100 runbook operator saw
+  # green setup → queued runner → first task failed reading 912 missing config
+  # files → chain slot wasted, misdiagnosed as runner bug. Now: missing split
+  # configs HARD FAIL (exit 1). Operator escape: `SETUP_ALLOW_MISSING_SPLIT_CONFIGS=1`
+  # for asset-only setup flows.
   SUBMODULE_CFG_DIR="${PROJECT_DIR}/external/visualwebarena/config_files/vwa"
   if [ ! -d "${SUBMODULE_CFG_DIR}/test_classifieds" ] || \
      [ ! -d "${SUBMODULE_CFG_DIR}/test_reddit" ] || \
      [ ! -d "${SUBMODULE_CFG_DIR}/test_shopping" ]; then
     echo ""
-    echo "⚠️  WARNING: VWA per-task split configs not materialized yet."
+    echo "✗ FATAL: VWA per-task split configs not materialized."
     echo "    Expected at: ${SUBMODULE_CFG_DIR}/test_{classifieds,reddit,shopping}/"
     echo "    Run: make vwa-generate-configs"
     echo "    (sets DATASET=visualwebarena + REDDIT/SHOPPING/CLASSIFIEDS env vars + invokes generate_test_data.py)"
+    echo "    Override (asset-only setup): SETUP_ALLOW_MISSING_SPLIT_CONFIGS=1 bash scripts/vwa/setup_vwa.sh"
     echo ""
+    if [[ "${SETUP_ALLOW_MISSING_SPLIT_CONFIGS:-0}" != "1" ]]; then
+      exit 1
+    fi
+    echo "  (SETUP_ALLOW_MISSING_SPLIT_CONFIGS=1; continuing setup despite missing configs)"
   fi
 
   echo "Setup complete."

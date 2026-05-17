@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "vwa_assets_manifest.json",
+  "_doc_provenance": "/stress A1.17 cold-start B-759 P1-16 ABC (2026-05-17). 3-AI overlap attack: asset download/import has no lock + no checksum + no atomic publish → paper §3 byte-equivalence reproducibility claim attackable. This manifest is the canonical fingerprint of the 4 VWA artifacts the project depends on. Operator populates sha256 fields ONCE on quark Windows docker stack (where Phase 1 paper-grade data was generated), then scripts/vwa/setup_vwa.sh + scripts/vwa/import_vwa_assets.sh use _verify_sha256 helper to assert byte-equivalence on any re-build (A100 self-host / airgap rebuild / mirror drift detection).",
+  "_populate_procedure": [
+    "1. On quark Windows side (where Phase 1 paper-grade was fired): sha256sum the 4 artifacts:",
+    "   - C:\\path\\to\\shopping_final_0712.tar",
+    "   - C:\\path\\to\\postmill-populated-exposed-withimg.tar",
+    "   - C:\\path\\to\\wikipedia_en_all_maxi_2025-08.zim",
+    "   - C:\\path\\to\\classifieds_docker_compose.zip",
+    "2. Copy 4 sha256 hex strings into the `assets.*.sha256` fields below.",
+    "3. Commit this file (gitignored .auth/ is NOT used — manifest is public reference).",
+    "4. _verify_sha256 helper auto-skips with WARN when sha256 empty; populates assertion when present.",
+    "5. Reviewer/OSF auditor can verify A100 self-host matches Phase 1 quark by running scripts/vwa/setup_vwa.sh and observing [B-759] sha256 OK lines."
+  ],
+  "_warning": "Empty sha256 values are intentional scaffolding — populate post-A1.17 fix-sprint via the procedure above. Until populated, byte-equivalence verification is DISABLED (with WARN log line); paper §3 reproducibility claim must remain qualified.",
+  "version": 1,
+  "last_populated_at": null,
+  "last_populated_by": null,
+  "assets": {
+    "shopping_final_0712.tar": {
+      "source": "http://metis.lti.cs.cmu.edu/webarena-images/shopping_final_0712.tar",
+      "size_bytes_approx": 73000000000,
+      "size_gb_approx": 68,
+      "sha256": "",
+      "notes": "Magento 2 + DB seeded image. CMU mirror (HF webarena/Shopping deprecated 2026-05-14)."
+    },
+    "postmill-populated-exposed-withimg.tar": {
+      "source": "http://metis.lti.cs.cmu.edu/webarena-images/postmill-populated-exposed-withimg.tar",
+      "size_bytes_approx": 56900000000,
+      "size_gb_approx": 53,
+      "sha256": "",
+      "notes": "Postmill reddit-clone with seeded forum data. CMU mirror."
+    },
+    "wikipedia_en_all_maxi_2025-08.zim": {
+      "source": "https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_maxi_2025-08.zim",
+      "size_bytes_approx": 102000000000,
+      "size_gb_approx": 95,
+      "sha256": "",
+      "notes": "Wikipedia EN full ZIM (2025-08 version, NOT VWA upstream 2022-05 — P79 queue scripts hardcode WIKIPEDIA_ZIM_VERSION=2025-08 per 笔记 §81). Kiwix.org provides .sha256 sidecar — alternative to manifest is online verify against that endpoint (Q4 option C deferred A1.17b)."
+    },
+    "classifieds_docker_compose.zip": {
+      "source": "https://archive.org/download/classifieds_docker_compose/classifieds_docker_compose.zip",
+      "size_bytes_approx": 26214400,
+      "size_gb_approx": 0.025,
+      "sha256": "",
+      "notes": "OSClass + MySQL classifieds compose. archive.org mirror (HF webarena/Classifieds deprecated 2026-05-14). .zip format (NOT .tar.gz — import_vwa_assets.sh:78-101 B-750 dual-format detect handles legacy .tar.gz fallback)."
+    }
+  }
+}

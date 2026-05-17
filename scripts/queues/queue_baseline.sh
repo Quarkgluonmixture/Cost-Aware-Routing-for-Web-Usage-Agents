@@ -137,7 +137,7 @@ echo "[baseline] condition=${COND_ID}"
 
 # ---------- 检查 runner 是否已在跑 ----------
 if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
-  # B-743 (/stress A1.17 cold-start P1-11 C, 2026-05-17): "Dirty Cell Backdoor"
+  # B-756 (/stress A1.17 cold-start P1-11 C, 2026-05-17): "Dirty Cell Backdoor"
   # FATAL under paper-grade. Pre-fix: a manually-launched runner without RESET
   # could be picked up here, RESET_BEFORE silently skipped, and `queue_chain` would
   # accept the dirty cell as "paper-grade complete" via the completion sentinel.

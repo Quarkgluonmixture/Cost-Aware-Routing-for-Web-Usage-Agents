@@ -49,6 +49,18 @@ cd "${REPO_DIR}"
 
 log() { echo "[chain $(date '+%H:%M:%S')] $*"; }
 
+# B-754 (/stress A1.17 cold-start P1-9 B* OOB, 2026-05-17): source paper-grade
+# lib + init env. Pre-fix queue_chain.sh did NOT source `_lib_paper_grade_gates.sh`
+# → `init_paper_grade_env` not called → `P79_PAPER_GRADE` env not set by default
+# → chain-level sentinel ran in paper-grade-unknown mode → PAPER_GRADE_ALLOW_PARTIAL=1
+# bypass had no symmetric hard-block (unlike AUTH_GATE_BYPASS which IS hard-blocked
+# under PG=1). One stray operator-shell env var could downgrade exact-N sentinel
+# to WARN-and-continue. Now: init_paper_grade_env runs at chain start → PG=1 by
+# default → ALLOW_PARTIAL bypass forbidden by python sentinel below (B-754 cont).
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/_lib_paper_grade_gates.sh"
+init_paper_grade_env "${REPO_DIR}"
+
 # ---------- arg parsing ----------
 RESET_FLAG=1
 if [[ "${1:-}" == "--no-reset" ]]; then
@@ -345,6 +357,16 @@ for cmd in "$@"; do
   fi
   if [[ -n "${parsed_site}" ]]; then
     expected_n="${SITE_EXPECTED_N[${parsed_site}]}"
+  else
+    # B-758 (/stress A1.17 cold-start P1-13 C, 2026-05-17): FATAL on parse fail.
+    # Pre-fix `parsed_site=""` → `expected_n=0` → python sentinel `if expected_n > 0`
+    # branch never fires → episode-count check silently bypassed → a 1-task crash
+    # cell could be admitted as paper-grade complete. Operator using `cls` shorthand
+    # in run_id (vs full `classifieds`) was the gemini-flagged trigger. Now hard fail.
+    log "  [FATAL] cannot derive site from run_id=${run_id} — no known site token matched"
+    log "  paper-grade run_id must contain one of: classifieds / reddit / shopping / wa_shopping_admin / wa_shopping / wa_reddit"
+    log "  fix: re-launch via canonical queue script (mint_run_id always inserts canonical site name)"
+    exit 1
   fi
 
   # B-632 P0-3: export EXPECTED_CID for safe python f-string repr (no bash `!r`).
@@ -386,10 +408,20 @@ if not isinstance(ep, int) or ep <= 0:
 # B-635 P1-6: exact-match by default (user directive 2026-05-17 '应该百分百 paper grade').
 # PAPER_GRADE_ALLOW_PARTIAL=1 env enables explicit pilot/dirty fallback (warn + advance).
 if expected_n > 0 and ep != expected_n:
-    if os.environ.get('PAPER_GRADE_ALLOW_PARTIAL') == '1':
-        print(f'WARN partial cell {ep}/{expected_n} = {100*ep/expected_n:.1f}% (PAPER_GRADE_ALLOW_PARTIAL=1; degraded mode)', file=sys.stderr)
+    # B-754 (/stress A1.17 cold-start P1-9 B* OOB, 2026-05-17): under
+    # P79_PAPER_GRADE=1 the PAPER_GRADE_ALLOW_PARTIAL bypass is FORBIDDEN —
+    # mirrors AUTH_GATE_BYPASS hard-block (_lib_paper_grade_gates.sh:374-380).
+    # Pre-fix one stray operator-shell `export PAPER_GRADE_ALLOW_PARTIAL=1` could
+    # downgrade exact-N to WARN and admit 223/224 partial cell as complete.
+    # Now: bypass only allowed when operator explicitly sets P79_PAPER_GRADE=0.
+    _is_pg = os.environ.get('P79_PAPER_GRADE', '0') == '1'
+    _is_bypass = os.environ.get('PAPER_GRADE_ALLOW_PARTIAL') == '1'
+    if _is_pg and _is_bypass:
+        print(f'FATAL PAPER_GRADE_ALLOW_PARTIAL=1 is FORBIDDEN under P79_PAPER_GRADE=1 — paper-grade requires exact episode count (B-754). Unset PAPER_GRADE_ALLOW_PARTIAL or unset P79_PAPER_GRADE (dirty/dev mode).', file=sys.stderr); sys.exit(5)
+    if _is_bypass:
+        print(f'WARN partial cell {ep}/{expected_n} = {100*ep/expected_n:.1f}% (PAPER_GRADE_ALLOW_PARTIAL=1; degraded mode; P79_PAPER_GRADE=0)', file=sys.stderr)
     else:
-        print(f'FATAL episodes={ep} != expected={expected_n} ({100*ep/expected_n:.1f}%); abort. Set PAPER_GRADE_ALLOW_PARTIAL=1 for explicit dirty/pilot mode.', file=sys.stderr); sys.exit(4)
+        print(f'FATAL episodes={ep} != expected={expected_n} ({100*ep/expected_n:.1f}%); abort. Set PAPER_GRADE_ALLOW_PARTIAL=1 + P79_PAPER_GRADE=0 for explicit dirty/pilot mode.', file=sys.stderr); sys.exit(4)
 sys.exit(0)
 " 2>"${sentinel_err}"; then
         summary_found="${cand}"; break
