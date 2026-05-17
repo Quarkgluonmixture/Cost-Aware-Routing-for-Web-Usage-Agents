@@ -640,6 +640,14 @@ def build_full_decision(cells: List[Dict]) -> Dict:
             "n_zero_se_floored_cells": zero_se,
         }, None
 
+    # B-1007 (/stress A2.4a P1-10-B* codex F2 OOB, 2026-05-18): Holm m=2 across
+    # {axis1, axis2} H3 sub-family for the legacy p-value transparency channel.
+    # Note: canonical CI-based gate (B-949) is CLOSED-FORM decision rule, NOT
+    # p-family — no FWER correction technically required for the `passed` field.
+    # But the legacy `passed_p_one_sided_legacy` transparency p-value should
+    # carry Holm m=2 so reviewer demanding FWER (m=2 H3 sub-family per prereg
+    # §3 family rules) finds the correction emitted. Compute Holm AFTER both
+    # axes pool, attach `passed_p_holm_m2` field to each axis result.
     h3a_result, h3a_skip = _h3_axis_pooled_fe(h3a_per_cell, "axis1")
     payload["h3_axis1_pooled_fe"] = h3a_result if h3a_result is not None else h3a_skip
 
@@ -647,6 +655,29 @@ def build_full_decision(cells: List[Dict]) -> Dict:
     h3b_per_cell = [c["h3_axis2"] for c in per_cell_data if c["h3_axis2"] is not None]
     h3b_result, h3b_skip = _h3_axis_pooled_fe(h3b_per_cell, "axis2")
     payload["h3_axis2_pooled_fe"] = h3b_result if h3b_result is not None else h3b_skip
+
+    # B-1007 Holm m=2 correction across H3 axis-1 + axis-2 transparency p-values.
+    # Sorted ascending: smallest p compared against α/m, next against α/(m-1).
+    # Closed-form CI gate (B-949) is independent and already canonical.
+    h3_p_pairs = []
+    if h3a_result is not None and "p_one_sided" in h3a_result:
+        h3_p_pairs.append(("axis1", h3a_result["p_one_sided"], h3a_result))
+    if h3b_result is not None and "p_one_sided" in h3b_result:
+        h3_p_pairs.append(("axis2", h3b_result["p_one_sided"], h3b_result))
+    h3_p_pairs.sort(key=lambda x: x[1])
+    m = len(h3_p_pairs)
+    for rank, (axis_name, p_raw, result_dict) in enumerate(h3_p_pairs):
+        # Holm step-down: p_holm = min(1, max(over rejected so far) of p_raw * (m - rank))
+        # Simple form for m=2: p_holm[0] = p_raw[0]*2, p_holm[1] = max(p_holm[0], p_raw[1]*1)
+        p_holm = min(1.0, p_raw * (m - rank))
+        if rank > 0:
+            p_holm = max(p_holm, h3_p_pairs[rank - 1][2].get("p_holm_m2_legacy", 0.0))
+        result_dict["p_holm_m2_legacy"] = p_holm
+        result_dict["passed_p_holm_m2_legacy"] = bool(p_holm < ALPHA)
+        result_dict["family_correction_note"] = (
+            "Canonical gate is CI_lower_bound > 0 (closed-form, no p-family). "
+            "Holm m=2 applied to legacy p-value for transparency only (B-1007)."
+        )
 
     # Apply framing rule with I² cap-only
     h1_pass = fe["gate_passed"]
