@@ -6102,7 +6102,32 @@ This is **the first §A2 design-layer audit** — pivot from §A1 code-layer (A1
 | B-910 | P1 | B | * | `scripts/maintenance/glm/glm_cell_autoupdate.py:208-250` | **GLM `latest_match()` re-run window correctness.** Pre-fix sort key `(1, summary_mtime)` ALWAYS beat `(0, cond_dir_mtime)` regardless of actual mtime → cell finalized + operator immediately re-fire new in-flight run → old finalized summary kept winning latest_match() until new run finalized. The frontmatter window `status=done, pid=None` persisted through exactly the window most likely to trigger same-site collision detection failure (manual rescue / master orchestrator both see "done, no pid" and may attempt new launches). New: when in-flight cond_dir mtime > latest finalized summary mtime → prefer in-flight (signals operator just re-fired). Otherwise legacy finalized-prefer ordering. |
 | B-911 | P1 | B | | `scripts/maintenance/active_processes.py:269-330` | **`build_cells()` multi-PID collision detection.** Pre-fix `c.runner = r` / `c.watchdog = w` OVERWROTE any prior Proc for same run_id — operator viewing `make active` saw only last-iterated PID even when 2 runners or 2 watchdogs raced same RUN_ID (most dangerous multi-session collision state). Watchdog flock B-907 now closes the actual race at kernel layer, but `make active` is operator-visible audit signal — if a duplicate slips (e.g. `rm .locks/watchdog_${RUN_ID}.lock` force-release + manual retry), operator should SEE it in table not have it silently collapsed. Records `runner_counts` + `runner_pids` map; appends `DUPLICATE-RUNNER(n=N, pids=...)` / `DUPLICATE-WATCHDOG(n=N, pids=...)` flag; keeps `c.runner` / `c.watchdog` as most-recent Proc for back-compat with existing render. |
 
-### Tier 4 reserved (B-916~B-918, paper §3+§8 prose depth) — pending commit
+### Tier 4 landed (B-916~B-918, paper §3+§8 prose depth)
+
+| ID | Sev | Source | OOB | File:Line | One-liner |
+|---|---|---|---|---|---|
+| B-916 | P1 | C | * | `paper_drafts/section3_definition.md:149` + `section8_limitations.md:15` | **Cross-family alignment / IT / training-data structural disclosure.** Added §3.5.1 \paragraph "Cross-family alignment / IT / training-data structural differences" enumerating 3 lineage axes that confound B1-vs-B2 SR delta beyond 4B parameter parity: (i) chat template (Qwen3 ChatML vs Gemma3 IT template); (ii) IT data composition opacity; (iii) alignment protocol (Qwen3 published RLHF+DPO vs Gemma3 partial disclosure). Plus §8 \paragraph "Cross-family bounded-comparison structural list" combining 4 structural axes (chat template × IT data × tokenizer × vision encoder) into a single reviewer-facing bounded-comparison disclaimer: "4B parameter-parity robustness check, not a controlled-capability ceiling". |
+| B-917 | P1 | C | * | `paper_drafts/section3_definition.md:151` | **Tokenizer compression-rate asymmetry on `[SOM_MARKS]` flat text.** Added §3.5.1 \paragraph: Qwen3 BPE (151,936 vocab, web/code-friendly) vs Gemma3 SentencePiece (262,144 vocab, word-level entries) tokenize `[N] role 'label'` differently. Phase 1a `input_text_tokens` per step captures empirically; cross-baseline aggregation uses within-baseline `Δtokens(mode) / tokens(DOM)`, not absolute subtraction. Falsification anchor `cost(P-SoM)/cost(DOM) ≤ 1.20×` operates **per-baseline** — Gemma side cost-ratio violation does not falsify Qwen side. |
+| B-918 | P1 | C | * | `paper_drafts/section3_definition.md:153` + `section8_limitations.md:15` | **Vision encoder resolution + patching strategy asymmetry.** Added §3.5.1 \paragraph: B1 native Qwen ViT (dynamic resolution + variable patch count) vs B2 SigLIP (fixed 896×896 + 256-token-per-image budget); 3 implications for VWA screenshots: (a) resolution rescaling pipeline difference; (b) patch-grid geometry difference; (c) vision-token budget 256 fixed vs 1024+ scaling. On classifieds (visually rich product detail) a B2-vs-B1 SR delta cannot be attributed to LLM reasoning alone — vision encoder is co-determined variable. §8 \paragraph (combined with B-916/B-917) makes architectural mechanism behind 4B-parity-not-matched-capability disclaimer concrete. |
+
+### Deferred to next session (1 P2)
+
+- **P2-18-B***: `experiment_watchdog.py` `os.kill(pid, 0)` PID-reuse race acceptance (codex F7, low probability, daemon long-run + high process churn only)
+
+### A2.2 closure summary
+
+**B-### consumed**: B-901 through B-918 (18 IDs) across 4 Tiers + 4 commits:
+- Tier 1 (`675dfe8`, 2 fixes): B-901 + B-902 — paper_planning §15+§22 sweep + GLM rescue retire prose + §1 framing降级
+- Tier 2 (`8de7a04`, 4 fixes): B-903~B-906 — launch.sh sibling drift + skip lib + env-bypass + GLM hook timing
+- Tier 3a (`13f6b71`, 3 fixes): B-907~B-909 — watchdog flock + auth tmp PID-suffix + self-exit gate
+- Tier 3b (`a2c1e2d`, 2 fixes): B-910 + B-911 — GLM mtime + make active multi-PID
+- Tier 4 (this commit): B-916~B-918 — paper §3+§8 cross-family bounded-comparison depth
+
+**Concurrent-session boundary preserved**: zero touch on `p79/agents/proxy_api_agent.py` + `p79/backends/api_proxy.py` + `_WEB_ACTION_TOOL` tool schema + logprobs payload + `scripts/analysis/*` (another session's B0 proxy migration + A2.3a probes). Pre-commit `git status --short` cross-checked each tier; B-### range (901-918) does not collide with parallel session's allocation.
+
+**Phase 1a fire green-light**: BLOCKED resolved post-Tier 3a (P0 race vectors closed); paper prose lock complete post-Tier 4. User Q1=A wait-fix-all decision honored — Phase 1a fire 现可启动. Phase 1b shopping launch silent-abort defended at lib (B-1xx future Phase 1b implementation 在 `_reset_vwa_local_shopping` body 完成前 hard-fail via `reset_and_auth_gate` rc=78).
+
+**Next /stress candidate** (优先级递降): A2.4a (evidence-claim coupling) → A2.6a (Phase 1a scope) → A2.3b/c (advisor-dep) → A2.7 (confound register) → A2.8 (prereg lock) → A2.9 (reporting/ethics) → A2.5 (operationalization).
 
 ### Tier 4 reserved (B-916~B-920, paper §3+§8 prose depth) — pending commit
 
