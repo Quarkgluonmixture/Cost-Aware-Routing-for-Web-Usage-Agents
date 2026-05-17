@@ -95,7 +95,7 @@ cm = sync_playwright()
 playwright = cm.__enter__()
 # /stress A1.18 P0-2 (2026-05-16): chromium launch args env-driven; reproducers
 # set VWA_CHROMIUM_LAUNCH_ARGS to override DNS for their own VWA Docker host.
-# /stress A1.18-re (B-597 P2-6-B* codex OOB, 2026-05-17): use shlex.split so
+# /stress A1.18-re (B-624 P2-6-B* codex OOB, 2026-05-17): use shlex.split so
 # quoted multi-word args (e.g. `--host-resolver-rules="MAP host IP"`) stay as
 # one argv token — mirror submodule B-540 fix in envs.py. Pre-fix `.split()`
 # would have shattered the quoted resolver rule across multiple argv items,

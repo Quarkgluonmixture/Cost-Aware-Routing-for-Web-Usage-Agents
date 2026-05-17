@@ -54,7 +54,7 @@ REGION_INTENSITY_G_PER_KWH: Dict[str, float] = {
     "us-west-1": 200.0, "us-west-2": 200.0,
     # Europe
     "eu-west-1": 296.0,   # Ireland
-    # /stress A1.18-re (B-601 P2-10-C Gemini, 2026-05-17): UK default updated
+    # /stress A1.18-re (B-628 P2-10-C Gemini, 2026-05-17): UK default updated
     # from 257 (IEA 2023) to 220 (UK National Grid 2024 average), matching the
     # `configs/exp_v2_base.yaml` per-config override that was previously called
     # out as "decorative" in paper §8.7. Paper §8.7 prose now states the live

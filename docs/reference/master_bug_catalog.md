@@ -4482,3 +4482,157 @@ Phase 2 of `/stress A1.5b` audit — data plane + analysis sibling layer. Pre-fi
 - B-number rename PASS: 26 hits on B-596..B-603, 0 hits on B-577..B-584 across all 5 modified files.
 
 **Next available B-number**: B-604+ (A1.6a consumed B-596~B-603; A1.5b Phase 2 reserved range B-556~B-559 still untouched).
+
+---
+
+## /stress A1.18-re — 25 unique findings → 26 fixes (2026-05-17)
+
+Re-audit of A1.18 substrate (VWA submodule `p79-patches` evaluator + helper_functions + actions + envs + processors + openai_utils + scripts/generate_test_data + prepare.sh) after parallel A1.25 GRL Chunks 1+4 mutated 3 of the touched files (B-445~B-447 + B-535~B-540) since the original A1.18 sweep (`eb5cbd8` 2026-05-16). 3-AI cross-stress: Claude Mode A (reproducibility-engineer scope) + codex Mode B (reproducibility-systems persona on generate_test_data / openai_utils / actions / processors / envs) + gemini Mode C (NeurIPS area-chair scope on paper §3.5 / §4.X.11 / §4.X.12 / prereg §7 / §8.2 / §8.3).
+
+**Cross-AI agreement**: 0 three-AI overlap; 3 two-AI overlap (P0-1-AB Claude+Codex / P1-1-AC* Claude+Gemini / P1-2-AC Claude+Gemini); 22 one-AI unique catches. Each lineage contributed structural-diversity catches the others missed — Codex caught generate_test_data.py NOT-idempotent (Claude only flagged disclosure), Gemini caught `.auth/` runtime IP leak (Claude+Codex both missed), Claude caught TOCTOU + llm_ua_match scope-awareness.
+
+**User decision 2026-05-17**: Q1=A wait-fix-all P0+P1 then fire Phase 1a; Q2=A fail-loud OpenAI failure; Q3=A paper §1 hero numbers cite ONLY canonical-rerun-at-`2f9b0b4` data (archive不用 explicitly stated); Q4=A wait-batch all paper-prose into single push; Q5=A wait-fix-all P0+P1; Q6~Q27=all auto-default `(A)`.
+
+**B-number renumber drama**: initially reserved B-577~B-602 (grep showed B-576 max at 13:04). Between Chunk 1 + Chunk 2 commits, parallel A1.13 ladder Chunks d+e committed B-594/B-595 (took B-577~B-595 catalog range); then parallel A1.6a committed B-596~B-603 (consumed next 8 slots). Final canonical range = **B-604~B-629** (delta +27 from initial reservation). Submodule commit `2f9b0b4` body + main repo Chunk 2 commit `73ef077` body retain pre-rename B-577~B-602 references as git-history artifacts; canonical catalog mapping below disambiguates. Code+prose+memory all use canonical B-604~B-629.
+
+### B-604. generate_test_data.py NOT idempotent — never deletes stale split files 🛠️ FIXED (submodule `2f9b0b4`)
+- **Source**: codex Mode B F1 P0 (unique catch deepening Claude P0-1 disclosure attack)
+- **Fix**: `scripts/generate_test_data.py:49-62` adds `shutil.rmtree(output_dir, ignore_errors=True)` before `os.makedirs(exist_ok=True)`; final `assert len(data) == len(per_file_hashes)`; emits `config_files/generation_manifest.json` with `raw_sha256` + first/last split sha256 per template.
+- **Pre-rename**: B-577 in submodule commit `2f9b0b4` body.
+
+### B-605. paper §4.X.11 generation-chain disclosure missing — 912 gitignored files "appear" unverifiable 🛠️ FIXED (commit `73ef077`)
+- **Source**: Claude Mode A F1 P0 OOB + codex Mode B F1 deepening
+- **Fix**: `section4_limitations_disclosure.md` `eb5cbd8` row appended explicit disclosure paragraph "per-task split files are gitignored derived artifacts deterministically regenerated from tracked `.raw.json` template via `scripts/generate_test_data.py` (both source files covered by SBOM tree-hash chain); OSF replayers materialize via `make vwa-generate-configs`". Prereg §7 step 4 added complementary lock.
+- **Pre-rename**: B-578.
+
+### B-606. paper §4.X.12 `.auth/` runtime artifact IP leak 🛠️ DOC-DISCLOSED (commit `73ef077`)
+- **Source**: gemini Mode C Finding 2 P0 OOB unique catch
+- **Fix**: `section4_limitations_disclosure.md` §4.X.12 appended paragraph stating `.auth/{site}_state.json` files contain domain-bound cookies tied to Tailscale `100.95.81.103`; replayers MUST re-capture via `bash scripts/vwa/setup_vwa.sh` against their own VWA Docker stack before first task launch. `phase1_plan.md §B0` added re-capture as Pass-1 launch prereq.
+- **Pre-rename**: B-579.
+
+### B-607. SBOM patch-bundle hash recipe env-dependent (`git diff | sha256sum`) 🛠️ FIXED (commit `73ef077`)
+- **Source**: Claude Mode A F3 P1 OOB + gemini Mode C Finding 3 P1 OOB (2-AI overlap)
+- **Fix**: prereg §7 (3) + paper §4.X.11 verification block + memory file: migrated from `git diff base..HEAD | sha256sum` to tree-hash chain `git rev-list base..HEAD --format=tformat:'%H %T' | sha256sum`. New witness `5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f`. Tree-hash chain uses git canonical object SHAs (env-independent across `diff.algorithm` / `core.autocrlf` / git version).
+- **Pre-rename**: B-580.
+
+### B-608. paper §3.5 cost claim "≈ 10× cheaper" actual 50-66× — factual 6× error 🛠️ FIXED (commit `73ef077`)
+- **Source**: Claude Mode A F4 P1 + gemini Mode C Finding 1 P1 (2-AI overlap)
+- **Fix**: `section3_definition.md:121` "≈ 10× cheaper" → "≈ 50× cheaper" with empirical pricing (input $0.15 vs $10, output $0.60 vs $30 per 1M tokens, OpenAI 2026-05). Cost-Aware Routing paper now factually consistent with cost reporting.
+- **Pre-rename**: B-581.
+
+### B-609. UPLOAD action `action2create_function` broke schema post-B-447 — round-trip serializer applied `_id2key` on raw string 🛠️ FIXED (submodule `2f9b0b4`)
+- **Source**: codex Mode B F6 P1 (A1.25 GRL Chunk 1 sibling-propagation gap)
+- **Fix**: `external/visualwebarena/browser_env/actions.py:265-280` UPLOAD branch uses raw `action["text"]` directly when str (post-B-447); backward-compat list path retained when `isinstance(raw_text, list)` for pre-B-447 archive action traces.
+- **Pre-rename**: B-582.
+
+### B-610. `_log_unexpected_judge_response` TOCTOU lock-init race 🛠️ FIXED (submodule `2f9b0b4`)
+- **Source**: Claude Mode A F2 P1 OOB
+- **Fix**: `external/visualwebarena/evaluation_harness/helper_functions.py:1-13` module-level `_AUDIT_LOG_LOCK = threading.Lock()` replaces in-function `getattr/setattr` TOCTOU race-windowed lazy-init. Pre-fix two concurrent first-call threads created fresh `Lock()` instances each.
+- **Pre-rename**: B-583.
+
+### B-611. async OpenAI throttlers silent empty-string fallback on APIError 🛠️ FIXED (submodule `2f9b0b4`)
+- **Source**: codex Mode B F4 P1
+- **Fix**: `external/visualwebarena/llms/providers/openai_utils.py:121-145` + `:223-249` `_throttled_openai_completion_acreate` + `_throttled_openai_chat_completion_acreate` `raise RuntimeError(f"...failed after 3 attempts") from last_error` instead of `return ""`. Per user direction Q2=A 2026-05-17 fail-loud — surface infrastructure failure rather than mask as model output.
+- **Pre-rename**: B-584.
+
+### B-612. retry_with_exponential_backoff retries BadRequestError (non-transient) + raises bare Exception 🛠️ FIXED (submodule `2f9b0b4`)
+- **Source**: codex Mode B F5 P1
+- **Fix**: `openai_utils.py:55-101` `errors` tuple drops `openai.BadRequestError` (it's almost always invalid payload / context-window overflow / unsupported model — non-transient); after max retries `raise RuntimeError(...) from e` preserving cause chain + last error type + message for forensic.
+- **Pre-rename**: B-585.
+
+### B-613. ImageObservationProcessor screenshot fallback unbounded `wait_for_event("load")` hang 🛠️ FIXED (submodule `2f9b0b4`)
+- **Source**: codex Mode B F7 P1
+- **Fix**: `external/visualwebarena/browser_env/processors.py:1142-1180` `except Exception as primary_err` then `page.wait_for_load_state("load", timeout=5000)` (replaces unbounded `wait_for_event("load")`); `PlaywrightTimeoutError` caught explicitly + `meta_data["screenshot_primary_error"]` + `meta_data["screenshot_retry_timeout"]` recorded.
+- **Pre-rename**: B-586.
+
+### B-614. networkidle barrier silent timeout — no observability for high-latency page misses 🛠️ FIXED (submodule `2f9b0b4`)
+- **Source**: codex Mode B F8 P1
+- **Fix**: `external/visualwebarena/browser_env/processors.py:1271-1302` `ObservationHandler.get_observation` records `networkidle_ok` / `networkidle_elapsed_ms` / `networkidle_exception_type` into both text + image processor `meta_data` so upstream runner can mark `needs_reevaluation` on repeated barrier misses. Pre-fix `except Exception: pass` silently absorbed timeouts on Magento / reddit slow pages.
+- **Pre-rename**: B-587.
+
+### B-615. generate_test_data.py JSON byte determinism — OS/locale-dependent output 🛠️ FIXED (submodule `2f9b0b4`)
+- **Source**: codex Mode B F2 P1
+- **Fix**: `scripts/generate_test_data.py:52-92` explicit `encoding="utf-8"`, `newline="\n"`, `ensure_ascii=False`, `sort_keys=True`, trailing newline; `generation_manifest.json` includes per-file sha256. Pre-fix Linux vs Windows CRLF + locale defaults produced different artifact hashes for same task semantics.
+- **Pre-rename**: B-588.
+
+### B-616. Makefile `vwa-generate-configs` target missing — replayer setup incomplete 🛠️ FIXED (commit `73ef077`)
+- **Source**: codex Mode B F3 P1
+- **Fix**: `Makefile` adds `vwa-generate-configs` target that validates `DATASET` + per-site env vars (`CLASSIFIEDS REDDIT SHOPPING HOMEPAGE`) present, then invokes `external/visualwebarena/scripts/generate_test_data.py`. `phase1_plan.md §B0` added as Pass-1 launch prereq after fresh submodule init.
+- **Pre-rename**: B-589.
+
+### B-617. paper §4.X.11 Phase 1a archive vs current HEAD vintage rift undisclosed 🛠️ DOC-DISCLOSED (commit `73ef077`)
+- **Source**: gemini Mode C Finding 4 P1
+- **Fix**: `section4_limitations_disclosure.md` §4.X.11 prepended "Archive vintage disclosure" paragraph stating Phase 1a pre-fix archive (`f0c835b` or earlier) is incompatible with canonical-rerun-at-`2f9b0b4` data; paper §1 hero numbers cite ONLY canonical-rerun-at-`2f9b0b4`, archive demoted to Appendix D reference only. User direction Q3=A 2026-05-17 explicit ("archive 数据都不用").
+- **Pre-rename**: B-590.
+
+### B-618. llm_fuzzy_match + llm_ua_match polarity check substring leak on borderline responses 🛠️ FIXED (submodule `2f9b0b4`)
+- **Source**: Claude Mode A F5 P1
+- **Fix**: `external/visualwebarena/evaluation_harness/helper_functions.py:625-640` + `:715-735` `resp = response.strip()` then `resp.startswith(("incorrect", "partially correct", "not correct"))` exact prefix; replaces `if "X" in response` substring match. Defeats "the correctness of this answer is unclear" verbose response false-positive 1.0 score.
+- **Pre-rename**: B-591.
+
+### B-619. paper §4.X.11 Composite-commit caveat incomplete — only flagged 3f9ceca, not eb5cbd8 or 2f9b0b4 🛠️ DOC-FIXED (commit `73ef077`)
+- **Source**: Claude Mode A F6 P2
+- **Fix**: `section4_limitations_disclosure.md` Composite caveat expanded to acknowledge `eb5cbd8` (10 fixes) + `2f9b0b4` (11 fixes) also composite; bundling documented (NOT concealed) per Goodhart-resistance principle. Subsequent single-fix flow noted at `c1765ee` (3 fixes) + `1c3a615` (4 fixes).
+- **Pre-rename**: B-592.
+
+### B-620. paper §3.5 `OPENAI_EVAL_MODEL` priority chain undocumented 🛠️ DOC-FIXED (commit `73ef077`)
+- **Source**: Claude Mode A F7 P2
+- **Fix**: `section3_definition.md:121` adds "Priority: `VWA_EVAL_MODEL` overrides `OPENAI_EVAL_MODEL`; default `gpt-4o-mini` if both unset" with `helper_functions.py:604-607` + `:705-708` cite. Replayer setting both env vars now aware of override semantics.
+- **Pre-rename**: B-593.
+
+### B-621. paper §3.5 `llm_ua_match` scope-awareness — patch is paper-grade dead code in P79 workflow 🛠️ DOC-FIXED (commit `73ef077`)
+- **Source**: Claude Mode A F8 P2 Honest gap OOB
+- **Fix**: `section3_definition.md:121` adds "The `llm_ua_match` patch is defense-in-depth for upstream-reproducer fidelity; P79 paper-grade runs exclude N/A tasks at task-load (`exclude_na_tasks: true`), so `llm_ua_match` is never invoked along the canonical paper-grade pipeline. Disclosed for SBOM transparency, not as load-bearing for §4 SR claim."
+- **Pre-rename**: B-594.
+
+### B-622. memory `reference_vwa_submodule_p79_patches.md` STALE — HEAD pin `eb5cbd8` but actual `1c3a615` 🛠️ FIXED (commit `73ef077`)
+- **Source**: Claude Mode A F9 P2
+- **Fix**: Memory file refreshed to current HEAD `2f9b0b4` (post-A1.18-re Chunk 1) + tree-hash recipe + 9-commit chronological table + A1.18-re Chunk 1 11-fix summary block. Operational hygiene gap closed; future Claude/codex/gemini sessions load correct substrate state.
+- **Pre-rename**: B-595.
+
+### B-623. create_mouse_hover_action sibling-propagation gap — accepts `None` coord while click rejects 🛠️ FIXED (submodule `2f9b0b4`)
+- **Source**: codex Mode B F9 P2
+- **Fix**: `external/visualwebarena/browser_env/actions.py:539-560` mirror B-445 click `is not None` contract — both `left` AND `top` required, else `raise ValueError`. Boundary `(0, 0)` remains valid; half-coord `(None, 0.5)` no longer silently produces `np.float32(NaN)` deferred-failure runtime crash.
+- **Pre-rename**: B-596.
+
+### B-624. retry_b1_single_task.sh uses `.split()` not `shlex.split` — B-540 sibling-propagation gap 🛠️ FIXED (commit `73ef077`)
+- **Source**: codex Mode B F10 P2 OOB
+- **Fix**: `scripts/maintenance/retry_b1_single_task.sh:96-104` embedded python uses `shlex.split`; mirrors submodule envs.py B-540 fix. Quoted multi-word `--host-resolver-rules="MAP host IP"` now preserved as single argv token in debug script.
+- **Pre-rename**: B-597.
+
+### B-625. prepare.sh `py -3` Windows fallback non-executable (string vs argv) 🛠️ FIXED (submodule `2f9b0b4`)
+- **Source**: codex Mode B F11 P2 OOB
+- **Fix**: `external/visualwebarena/prepare.sh:10-50` `resolve_python_argv` emits NUL-separated argv tokens via `printf '%s\0'`; caller builds `PY_ARGV` bash array via `while IFS= read -r -d ''` then invokes `"${PY_ARGV[@]}"`. Pre-fix returned `"py -3"` string + `"${PY}"` quoted as single argv → Windows fallback fail on exact host class it advertised.
+- **Pre-rename**: B-598.
+
+### B-626. setup_vwa.sh "Setup complete" success-echo when split configs missing 🛠️ FIXED (commit `73ef077`)
+- **Source**: codex Mode B F12 P2 OOB
+- **Fix**: `scripts/vwa/setup_vwa.sh:259-296` adds warning if `config_files/vwa/test_{classifieds,reddit,shopping}/` directories absent, instructs replayer to run `make vwa-generate-configs`. Pre-fix fresh-clone setup succeeded silently with gitignored split missing → first task launch failed mysteriously.
+- **Pre-rename**: B-599.
+
+### B-627. p79/envs/vwa_wrapper.py coord-format threshold `> 1.0` too tight — hallucinated `1.0001` mis-classified as pixel 🛠️ FIXED (commit `73ef077`)
+- **Source**: gemini Mode C Finding 5 P2 OOB
+- **Fix**: `p79/envs/vwa_wrapper.py:429-432` + `:504-507` threshold bumped `> 1.0` → `> 1.1`. Hallucinated `1.0001` coord (intended as normalized boundary 1.0) no longer mis-classified as pixel and divided by viewport_width (1280), preventing click-shoots-to-far-left edge case. Tolerance band of 0.1 absorbs typical float rounding while preserving pixel-coord heuristic.
+- **Pre-rename**: B-600.
+
+### B-628. paper §8.7 carbon intensity 257 "decorative" — UK code default ≠ per-config override (220) 🛠️ FIXED (commit `73ef077`)
+- **Source**: gemini Mode C Finding 6 P2
+- **Fix**: `p79/experiment/energy_tracker.py:62 + :68` UK default updated `257` (IEA 2023) → `220` (UK National Grid 2024 avg); paper §8.7 prose removes "decorative" framing — code default now matches per-config override at `configs/exp_v2_base.yaml`.
+- **Pre-rename**: B-601.
+
+### B-629. p79/experiment/tasks.py Wikipedia ZIM placeholder hardcoded `2022-05` — brittle on VWA upstream date update 🛠️ FIXED (commit `73ef077`)
+- **Source**: gemini Mode C Finding 7 P2 OOB
+- **Fix**: `p79/experiment/tasks.py:67-92` exposes `WIKIPEDIA_ZIM_LEGACY_VERSIONS` env var (default covers known VWA upstream dates `2022-05,2023-04,2024-01`); rewriter iterates over comma-separated list to map every listed legacy version to current target. Future VWA upstream merges extend via env without code edit.
+- **Pre-rename**: B-602.
+
+**B-numbers consumed**: B-604 through B-629 (26 contiguous IDs).
+
+**Smoke verification (A1.18-re full sweep)**:
+- pytest **428 passed, 8 skipped** post all 26 fixes + SBOM SHA pin sync.
+- py_compile PASS on 8 modified .py files (3 submodule + 3 p79 + + 1 scripts/maintenance test embedded + 1 generate_test_data).
+- bash -n PASS on 3 modified .sh files.
+- B-number rename PASS: 0 stale B-577~B-603 references across all 13 modified files; canonical B-604~B-629 throughout.
+
+**Next available B-number**: B-630+ (A1.18-re consumed B-604~B-629; A1.13 ladder + A1.5b Phase 2 reserved ranges not affected).
+
+**Renumber drama** (chronicle §182): initially reserved B-577~B-602 (grep showed B-576 max at audit start 13:04). Between Chunk 1 + Chunk 2 commits, parallel A1.13 ladder Chunks d+e committed B-594/B-595; then parallel A1.6a committed B-596~B-603 mid-Chunk-2; final canonical = B-604~B-629 (delta +27 from initial reservation). Pre-rename references in submodule commit body `2f9b0b4` + main repo Chunk 2 body `73ef077` retained as git-history artifacts; chronicle §182 includes full mapping table. Lesson reinforces audit pattern from A1.6a: re-grep B-### max immediately before EACH catalog append, not just at session start.

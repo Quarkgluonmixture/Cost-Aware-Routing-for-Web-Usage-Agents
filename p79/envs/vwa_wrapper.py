@@ -426,7 +426,7 @@ class VWAWrapper:
                 # Accept either normalized [0-1] or pixel coordinates.
                 # Normalize each dimension independently to handle mixed formats
                 # (e.g. [0.26, 330] where x is normalized but y is pixel).
-                # /stress A1.18-re (B-600 P2-9-C* Gemini OOB, 2026-05-17):
+                # /stress A1.18-re (B-627 P2-9-C* Gemini OOB, 2026-05-17):
                 # threshold bumped from > 1.0 to > 1.1 so that a hallucinated
                 # `1.0001` coord (intended as normalized boundary 1.0) is NOT
                 # mis-classified as pixel and divided by 1280, which would have
@@ -507,7 +507,7 @@ class VWAWrapper:
             if coord is not None and isinstance(coord, (list, tuple)) and len(coord) == 2:
                 left = float(coord[0])
                 top = float(coord[1])
-                # /stress A1.18-re (B-600 sibling P2-9-C* Gemini OOB,
+                # /stress A1.18-re (B-627 sibling P2-9-C* Gemini OOB,
                 # 2026-05-17): same threshold bump as click path above.
                 if left > 1.1:
                     left = left / float(self.viewport_width)

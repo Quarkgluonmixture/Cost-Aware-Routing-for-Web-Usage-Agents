@@ -65,7 +65,7 @@ def _placeholder_mapping() -> Dict[str, str]:
     # configs hardcode `2022-05` (§81). Default to the version actually mounted
     # on quark; env override lets future ZIM upgrades change this without code.
     #
-    # /stress A1.18-re (B-602 P2-11-C* Gemini OOB, 2026-05-17): pre-fix only
+    # /stress A1.18-re (B-629 P2-11-C* Gemini OOB, 2026-05-17): pre-fix only
     # mapped the single `2022-05` date string, so if upstream VWA updated its
     # raw task configs to a different historical ZIM date (e.g. `2024-01`), the
     # key-based replace silently no-op'd and tasks would point at a missing ZIM

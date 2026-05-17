@@ -274,7 +274,7 @@ main() {
   download_wikipedia_data
   download_classifieds_data
 
-  # /stress A1.18-re (B-599 P2-8-B* codex OOB, 2026-05-17): fail-loud if VWA
+  # /stress A1.18-re (B-626 P2-8-B* codex OOB, 2026-05-17): fail-loud if VWA
   # per-task split configs are missing. The 912 gitignored per-task config
   # files (config_files/vwa/test_{site}/{0..N}.json) are derived artifacts and
   # must be regenerated post-clone via `make vwa-generate-configs`. Pre-fix

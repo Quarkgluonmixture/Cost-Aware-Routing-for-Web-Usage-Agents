@@ -559,10 +559,10 @@ check-links:
 	@.venv/bin/python scripts/maintenance/dead_link_check.py --quiet
 
 # vwa-generate-configs: materialize the 912 per-task split configs from tracked
-# `.raw.json` templates. /stress A1.18-re B-589 P1-10-B (codex 2026-05-17):
+# `.raw.json` templates. /stress A1.18-re B-616 P1-10-B (codex 2026-05-17):
 # OSF replayers + fresh-clone setup must run this after `git clone` + `git
 # submodule update --init` because the split files are gitignored derived
-# artifacts. Required env vars (B-577 idempotent rebuild + B-588 byte-stable):
+# artifacts. Required env vars (B-604 idempotent rebuild + B-615 byte-stable):
 # DATASET=visualwebarena CLASSIFIEDS REDDIT SHOPPING HOMEPAGE WIKIPEDIA
 .PHONY: vwa-generate-configs
 vwa-generate-configs:
