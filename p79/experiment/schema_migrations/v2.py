@@ -200,6 +200,14 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     # agent's emitted action with a synthetic fallback. See
     # `types.py:control_intervention` for full schema.
     "control_intervention": None,
+    # B-512 (/stress A1.5b Phase 2 P0-1-C gemini OOB, 2026-05-17): wrapper-
+    # normalized canonical action form (post-`create_scroll_action(direction=)`
+    # etc.). Pre-fix `step_record["action"]` was agent's raw emit → cross-
+    # baseline evidence layer asymmetric (B0 enum vs B1/B2 free-form delta).
+    # Now both raw + normalized recorded → reviewer can verify execution-
+    # layer alignment from JSONL alone. None when wrapper did not emit
+    # (mock env, exception path).
+    "action_executed": None,
 }
 
 

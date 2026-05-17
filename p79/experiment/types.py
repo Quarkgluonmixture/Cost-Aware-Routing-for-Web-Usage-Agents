@@ -192,10 +192,24 @@ class StepRecordV2:
     # an agent-emitted action; paper §3 action taxonomy 把合成 scroll/type
     # 当 agent emission → taxonomy 静默污染. None when no control fired;
     # {"type": "anti_repeat"|"no_early_finish", "original_action": dict,
-    # "reason": str} when fired. Runtime write path = Phase 2 audit slot
-    # (`_run_episode` body L984+), this dataclass + defaults catalog
-    # schema-only land first per B-280 paper-grade catalog discipline.
+    # "reason": str} when fired. Runtime write path landed at B-546
+    # (/stress A1.5b Phase 2 P1-6-AB Claude F2 + codex B-541 cross-val).
     control_intervention: Optional[Dict[str, Any]] = None
+    # B-512 (/stress A1.5b Phase 2 P0-1-C gemini OOB, 2026-05-17): post-wrapper
+    # canonical action form. Pre-fix step_record["action"] carried the
+    # agent's RAW emit (B0 `scroll_direction:"down"` enum; B1/B2 `delta:[dx,dy]`
+    # free-form pixel) → evidence layer JSONL asymmetric on action vocabulary.
+    # Gemini Mode C attack: "cross-baseline ablation假设 B0/B1/B2 玩 same game,
+    # action vocabulary 不同 → reviewer 直接 reject capability comparison". Real
+    # surface: wrapper at `p79/envs/vwa_wrapper.py:395-414` already normalizes
+    # both forms to `create_scroll_action(direction=...)` (execution layer
+    # identical since paper §67 schema reform) but the normalized form was
+    # never recorded. `action_executed` makes the wrapper-level alignment
+    # visible in step JSONL — reviewer reading JSONL can see "B0 raw emit
+    # scroll_direction:'down' → executed direction='down'" alongside "B1 raw
+    # emit delta:[0,300] → executed direction='down'" and confirm execution
+    # identical. None when wrapper did not emit (mock env, exception path).
+    action_executed: Optional[Dict[str, Any]] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -368,6 +382,7 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "agent_visible_changed",
     "control_intervention",  # B-497 control-injected action provenance
     "dialog_meta",  # B-488 browser dialog telemetry (misclick blast radius evidence layer)
+    "action_executed",  # B-512 wrapper-normalized canonical action form
 })
 
 

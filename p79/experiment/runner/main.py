@@ -1845,6 +1845,25 @@ class ExperimentRunner:
             # set to True (codex Mode B numeric receipts). The functions are
             # restorable from git history when paper-2 module ablation
             # resumes.
+            # B-546 (/stress A1.5b Phase 2 P1-6-AB Claude F2 + codex B-541
+            # cross-validation, 2026-05-17): control_intervention write path.
+            # Pre-fix `_anti_repeat_control` / `_no_early_finish_control` /
+            # `_query_sanitization_control` fired `diag_notes` strings to
+            # logger.info but NEVER wrote to step_record. Phase 1 B-497
+            # added the schema (`types.py:control_intervention` +
+            # `STEP_RECORD_V2_DEFAULTS`) + PAPER_GRADE_STEP_OPTIONAL_KEYS
+            # but left runtime path as "Phase 2 audit slot". codex Mode B
+            # empirical spot-check verified: corrupted-archive grep over
+            # `results/visualwebarena/phase1/*/*/episodes/*.jsonl` found
+            # `hits=0` for `control_intervention`. Schema fake → paper §3
+            # disclosure unsubstantiated.
+            # Snapshot the agent's pre-control action so step_record can
+            # carry both forms: `action` (post-control, what executed) +
+            # `control_intervention.original_action` (pre-control, agent
+            # self-emitted). When controls fire, taxonomy can distinguish
+            # synthetic fallback from agent emission per paper §3.
+            _control_original_action = dict(action) if isinstance(action, dict) else None
+            _control_fires: List[Dict[str, Any]] = []
             if bool(self.diagnostic_controls.get("enabled", False)):
                 diag_notes: List[str] = []
                 query_cfg = self.diagnostic_controls.get("query_sanitization", {}) or {}
@@ -1855,6 +1874,7 @@ class ExperimentRunner:
                     action, note = _query_sanitization_control(action, query_cfg)
                     if note:
                         diag_notes.append(note)
+                        _control_fires.append({"type": "query_sanitization", "reason": note})
                 if bool(anti_repeat_cfg.get("enabled", False)):
                     action, note = _anti_repeat_control(
                         action=action,
@@ -1866,6 +1886,7 @@ class ExperimentRunner:
                     )
                     if note:
                         diag_notes.append(note)
+                        _control_fires.append({"type": "anti_repeat", "reason": note})
                 if bool(no_early_finish_cfg.get("enabled", False)):
                     action, note = _no_early_finish_control(
                         action=action,
@@ -1877,6 +1898,7 @@ class ExperimentRunner:
                     )
                     if note:
                         diag_notes.append(note)
+                        _control_fires.append({"type": "no_early_finish", "reason": note})
                 # B-134: same bool-save pattern after diagnostic-controls
                 # mutation. If diagnostic controls mutate to an invalid
                 # action, the runner-rescue must be visible in failure
@@ -1921,6 +1943,33 @@ class ExperimentRunner:
             )
             _primary_select_option_meta = (
                 next_info.get("select_option_meta") if isinstance(next_info, dict) else None
+            )
+            # B-547 (/stress A1.5b Phase 2 P1-7-AB Claude F3 + codex B-542
+            # cross-validation, 2026-05-17): same retry-overwrite hole closure
+            # for `dialog_meta` (B-509 misclick blast-radius evidence) and
+            # `runtime_sleep_ms` (B-510 wrapper-level settle-tax). Pre-fix:
+            # primary action triggered a confirm dialog (e.g. click delete)
+            # but retry was scroll (no dialog) → primary's dialog signal
+            # silently dropped from JSONL. Cross-baseline confound: B0 235B
+            # rarely fires baseline_retry → cleaner dialog/sleep trail;
+            # B1/B2 4B frequently fires retry → systematically biased trail.
+            # Snapshot primary now; step_record below writes primary +
+            # retry + backward-compat (read post-retry) for paper §3.5.1.
+            _primary_dialog_meta = (
+                next_info.get("dialog_meta") if isinstance(next_info, dict) else None
+            )
+            _primary_runtime_sleep_ms = (
+                int(next_info.get("runtime_sleep_ms", 0) or 0)
+                if isinstance(next_info, dict) else 0
+            )
+            # B-512 (/stress A1.5b Phase 2 P0-1-C gemini OOB, 2026-05-17):
+            # wrapper-normalized action form snapshot. Same retry-overwrite
+            # caution — retry's action_executed (if retry was scroll) would
+            # overwrite primary's. Currently retry actions are scroll/click/
+            # wait so action_executed is only set on scroll-retry paths;
+            # snapshot for symmetry with B-440/B-547 hole-closure pattern.
+            _primary_action_executed = (
+                next_info.get("action_executed") if isinstance(next_info, dict) else None
             )
 
             action_type_lower = str(action.get("action_type", "")).lower()
@@ -2235,7 +2284,18 @@ class ExperimentRunner:
                     # composition (P-SoM 减少 TYPE/SELECT → less settle-tax
                     # → apparent latency gain partially from runtime, not
                     # representation efficiency).
+                    # B-547 (/stress A1.5b Phase 2 P1-7-AB): backward-compat
+                    # field reads post-retry; `runtime_sleep_primary` /
+                    # `runtime_sleep_retry` (below at step_record extras
+                    # block) preserves primary-vs-retry split per B-440
+                    # hole-closure pattern. Paper §4 latency consumer can
+                    # choose pure-primary view for cross-baseline parity.
                     "runtime_sleep": float(next_info.get("runtime_sleep_ms", 0) or 0),
+                    "runtime_sleep_primary": float(_primary_runtime_sleep_ms),
+                    "runtime_sleep_retry": (
+                        float(next_info.get("runtime_sleep_ms", 0) or 0)
+                        if retry_was_applied else 0.0
+                    ),
                 },
                 tokens={
                     "input": input_tokens,
@@ -2413,7 +2473,42 @@ class ExperimentRunner:
             # dialog telemetry — per-step list of dialog events (None when
             # no dialog fired). Paper §3.5.1 misclick blast-radius evidence
             # layer. Wrapper drains its accumulator into info at end of step.
+            # B-547 (/stress A1.5b Phase 2 P1-7-AB Claude F3 + codex B-542):
+            # primary/retry split (mirror B-440/B-450 pattern). Backward-
+            # compat `dialog_meta` field retains post-retry semantics; new
+            # `dialog_meta_primary` is the canonical evidence layer for
+            # paper §3.5.1 cross-baseline misclick blast-radius rate.
             step_record["dialog_meta"] = next_info.get("dialog_meta")
+            step_record["dialog_meta_primary"] = _primary_dialog_meta
+            step_record["dialog_meta_retry"] = (
+                next_info.get("dialog_meta") if retry_was_applied else None
+            )
+            # B-512 (/stress A1.5b Phase 2 P0-1-C gemini OOB): wrapper-
+            # normalized canonical action form. Reads from `next_info` so
+            # if retry fired and overwrote, post-retry's normalized form is
+            # captured backward-compat; `_primary_action_executed` snapshot
+            # preserves primary's normalized form for paper §4.X.6 audit.
+            # Pre-fix step_record["action"] was agent's raw emit only →
+            # cross-baseline action-vocab asymmetry (B0 enum vs B1/B2 delta)
+            # visible in JSONL; now wrapper-level execution-layer alignment
+            # also auditable from disk alone.
+            step_record["action_executed"] = next_info.get("action_executed")
+            step_record["action_executed_primary"] = _primary_action_executed
+            # B-546 (/stress A1.5b Phase 2 P1-6-AB Claude F2 + codex B-541):
+            # control_intervention write path. None when no control fired or
+            # diagnostic_controls.enabled=False (Phase 1a default). Dict
+            # carries `original_action` (pre-control agent self-emit) +
+            # `fires` (list of {type, reason} per control fired in order).
+            # Phase 1 B-497 declared schema; Phase 2 makes it visible in
+            # JSONL so paper §3 diagnostic-exploration disclosure is
+            # reproducible from disk.
+            step_record["control_intervention"] = (
+                {
+                    "original_action": _control_original_action,
+                    "fires": _control_fires,
+                }
+                if _control_fires else None
+            )
             # B-505 (/stress A1.25 GRL Chunk 2 P1-4-B* codex OOB, 2026-05-17):
             # close `select_option_meta_retry` ghost-field hole — schema /
             # dataclass / defaults (B-450) all declared the field but the

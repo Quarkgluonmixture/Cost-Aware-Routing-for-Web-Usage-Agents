@@ -297,6 +297,18 @@ class VWAWrapper:
         # excluded (they're inside dispatch helper); this counter covers only
         # wait_for_timeout calls in step() itself. Stamped into info at end.
         _runtime_sleep_ms = 0
+        # B-512 (/stress A1.5b Phase 2 P0-1-C gemini OOB, 2026-05-17): wrapper-
+        # normalized canonical action form. Pre-fix step_record["action"]
+        # carried the agent's RAW emit (B0 enum `scroll_direction:"down"` vs
+        # B1/B2 free-form `delta:[dx,dy]`) → cross-baseline evidence layer
+        # asymmetry on action vocabulary. The wrapper at L395-414 already
+        # collapses both to `create_scroll_action(direction=...)` (execution
+        # identical since paper §67 schema reform), but the normalized form
+        # was never recorded. `action_executed` exposes wrapper-level
+        # alignment in step JSONL so reviewer reading evidence layer can
+        # verify execution-layer parity from disk alone. None when no
+        # normalization happened (click/type — baselines emit same shape).
+        _action_executed: Optional[Dict[str, Any]] = None
 
         if action_type == "click" and "element_id" in action_json:
             # Prefer element_id click (id-based action via AXTree node)
@@ -397,6 +409,10 @@ class VWAWrapper:
                 # Semantic scroll direction (from tool-calling schema).
                 direction = "down" if action_json["scroll_direction"] == "down" else "up"
                 action = create_scroll_action(direction=direction)
+                # B-512: B0 already emits canonical enum; record post-normalize
+                # form identically so paper §4 disclosure can show B0/B1/B2
+                # parity at execution layer.
+                _action_executed = {"action_type": "scroll", "direction": direction}
             else:
                 delta = action_json["delta"]
                 if isinstance(delta, (list, tuple)) and len(delta) >= 2:
@@ -409,9 +425,17 @@ class VWAWrapper:
                 # it into a "down" scroll (which would inflate scroll_down stats).
                 if dy == 0:
                     action = create_none_action()
+                    # B-512: explicit "noop" so reviewer can see dy=0
+                    # collapsed (rare but legit edge case).
+                    _action_executed = {"action_type": "scroll", "direction": "noop"}
                 else:
                     direction = "down" if dy > 0 else "up"
                     action = create_scroll_action(direction=direction)
+                    # B-512: B1/B2 raw `delta:[dx,dy]` collapsed to enum form
+                    # (the gemini-flagged paper §4.X.6 asymmetry). Recording
+                    # the post-normalize form here makes wrapper-level
+                    # alignment auditable from step JSONL.
+                    _action_executed = {"action_type": "scroll", "direction": direction}
         elif action_type == "type" and "text" in action_json and "element_id" not in action_json:
             # Type without element_id (vision mode): click coordinate first to focus, then keyboard type.
             # B-442 (/stress A1.25 P0-3-AC* OOB, 2026-05-17): vision-mode TYPE
@@ -958,6 +982,13 @@ class VWAWrapper:
             list(self._dialogs_this_step) if self._dialogs_this_step else None
         )
         self._dialogs_this_step.clear()
+        # B-512 (/stress A1.5b Phase 2 P0-1-C gemini OOB, 2026-05-17): wrapper-
+        # normalized canonical action form. None when no normalization happened
+        # (click / type — baselines emit same shape so step_record["action"]
+        # already reflects what executed). Set in the scroll branch above
+        # (currently the only documented action-vocabulary asymmetry per
+        # paper §4.X.6).
+        info["action_executed"] = _action_executed
         p79_obs = self._to_p79_obs(obs, info)
         self._last_obs_nodes_info = p79_obs.obs_nodes_info
         return p79_obs, float(reward), bool(terminated), bool(truncated), info
