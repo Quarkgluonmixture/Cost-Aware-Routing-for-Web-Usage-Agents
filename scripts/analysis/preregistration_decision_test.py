@@ -365,7 +365,14 @@ def evaluate_h1(cells_by_id: dict[str, list[dict]], delta_pp: float = 1.0,
         # F7 fix 2026-05-14 (codex /stress v6): per-call seed stratification so
         # each (cell, statistic) bootstrap draws an independent resample sequence.
         # Prior shared seed=42 made same-cell H1/H3 bootstrap CIs correlated.
-        cell_seed = bootstrap_seed + (hash((cell_id, "h1_drop_one")) % 100000)
+        # /stress A1.19 P1-1-B* (2026-05-17, codex Mode B OOB reproducibility):
+        # swap `hash()` → `hashlib.sha256()` so per-cell seed is process-stable
+        # (PYTHONHASHSEED no longer affects bootstrap stream). Pre-fix empirically
+        # produced pooled_effect 4.22569 vs 4.23549 across runs with same --seed 42.
+        cell_seed = bootstrap_seed + (
+            int(hashlib.sha256(f"{cell_id}|h1_drop_one".encode()).hexdigest()[:8], 16)
+            % 100000
+        )
         point, ci_lo, ci_hi, se = _paired_bootstrap(
             tasks,
             statistic_fn=lambda t: _drop_one_lift_per_cell(t, drop_mode="sr_psom"),
@@ -452,7 +459,11 @@ def evaluate_h3_axis(cells_by_id: dict[str, list[dict]], axis_mode_key: str,
         # Statistic: count of tasks where axis solved but ref did not, normalized by task count
         # (using count as the statistic per prereg H3 wording)
         # F7 fix 2026-05-14: per-call seed stratification (see evaluate_h1).
-        cell_seed = bootstrap_seed + (hash((cell_id, f"h3_{axis_mode_key}")) % 100000)
+        # /stress A1.19 P1-1-B* (2026-05-17): hashlib.sha256 swap for reproducibility (see evaluate_h1).
+        cell_seed = bootstrap_seed + (
+            int(hashlib.sha256(f"{cell_id}|h3_{axis_mode_key}".encode()).hexdigest()[:8], 16)
+            % 100000
+        )
         count, ci_lo, ci_hi, se = _paired_bootstrap(
             tasks,
             statistic_fn=lambda t: float(_unique_count_per_cell(t, axis_mode_key, ref_mode_key)),
@@ -514,16 +525,41 @@ def evaluate_h3_axis(cells_by_id: dict[str, list[dict]], axis_mode_key: str,
     }
 
 
-def evaluate_h2_cost(cells_by_id: dict[str, list[dict]], cost_margin_pct: float = 10.0,
-                      transparency_K_h2: int = 3) -> dict:
-    """H2(a): median cost(P-SoM) within ±cost_margin_pct% of median cost(DOM) per cell,
-    replicated in ≥ transparency_K_h2 of N cells.
+def evaluate_h2_cost(cells_by_id: dict[str, list[dict]], cost_margin_pct: float = 20.0,
+                      transparency_K_h2: int | None = None) -> dict:
+    """H2(a): median cost(P-SoM) within ±cost_margin_pct% of median cost(DOM) per cell.
 
-    H2(a) test margin is a RELATIVE PERCENTAGE (e.g., ±10% of DOM cost), distinct from
+    H2(a) is a **by-construction property with a falsification check** (preregistration.md
+    §2 H2(a) lock 2026-05-14, decision "3A"; line 120-137 + line 368). Falsification rule
+    per prereg lock: "if **ANY** condition shows median cost ratio > **1.20×** (= margin
+    >20%), the by-construction claim is falsified". This is NOT a K-of-N transparency
+    gate — it is a strict ALL-cells-must-pass falsification check.
+
+    /stress A1.19 P0-3 (2026-05-17, gemini Mode C OOB framing critique + Claude verify):
+    pre-fix had TWO defects: (a) `cost_margin_pct: float = 10.0` default was 2× stricter
+    than prereg ±20% lock → false-falsification rate inflated when median ratio in
+    1.10-1.20× band; (b) `consistent: pass_count >= transparency_K_h2` (K-of-N) was
+    semantically inverted — prereg explicitly says "if ANY condition violated → falsified"
+    which is the strict-ALL-pass semantics (K-of-N is for H1/H3 transparency counts, not
+    for H2(a) falsification check per line 368). `transparency_K_h2` arg retained for
+    backward-compat with CLI invocations but **ignored** (it has no role in falsification
+    semantics); deprecation warning emitted.
+
+    H2(a) test margin is a RELATIVE PERCENTAGE (e.g., ±20% of DOM cost), distinct from
     H1 TOST δ which is an SR percentage-point margin (codex probable concern disambig).
     """
+    if transparency_K_h2 is not None:
+        import warnings as _w
+        _w.warn(
+            "evaluate_h2_cost: `transparency_K_h2` arg is DEPRECATED and ignored "
+            "(/stress A1.19 P0-3 2026-05-17 — prereg lock 2026-05-14 H2(a) is strict "
+            "ALL-cells-pass falsification check, not K-of-N transparency). "
+            "Remove the arg; falsification = ALL cells within band.",
+            DeprecationWarning, stacklevel=2,
+        )
     per_cell = {}
     pass_count = 0
+    n_cells_total = len(cells_by_id)
     for cell_id, tasks in cells_by_id.items():
         cost_dom_vals = [float(t["cost_dom"]) for t in tasks if t["cost_dom"]]
         cost_psom_vals = [float(t["cost_psom"]) for t in tasks if t["cost_psom"]]
@@ -543,13 +579,19 @@ def evaluate_h2_cost(cells_by_id: dict[str, list[dict]], cost_margin_pct: float 
         }
         if within_band:
             pass_count += 1
+    # Prereg strict semantics: ALL cells must pass for H2(a) by-construction to hold.
+    # If any cell falsifies (median ratio > 1.20×), framing degrades to R4 per prereg
+    # line 310.
+    not_falsified = pass_count == n_cells_total
     return {
         "h2a_cost_equivalence": {
-            "K": transparency_K_h2,
-            "N": len(cells_by_id),
+            "N": n_cells_total,
             "n_cells_pass": pass_count,
-            "consistent": pass_count >= transparency_K_h2,
+            "n_cells_falsified": n_cells_total - pass_count,
+            "consistent": not_falsified,  # ALL-pass per prereg L131-132 + L368 strict semantics
             "margin_pct": cost_margin_pct,
+            "semantics": "strict_all_pass_falsification_check",
+            "prereg_anchor": "preregistration.md §2 H2(a) line 120-137 + framing rule R4 line 310",
         },
         "per_cell": per_cell,
     }
@@ -793,16 +835,22 @@ def main():
                    help="TOST equivalence margin in SR pp (default 1.0 per prereg lock)")
     p.add_argument("--H1-magnitude-pp", type=float, default=1.0,
                    help="H1 pooled magnitude threshold (default 1.0pp per prereg lock)")
-    p.add_argument("--H2-cost-margin-pct", type=float, default=10.0,
-                   help="H2(a) cost equivalence margin in % (default 10%% per prereg lock)")
+    p.add_argument("--H2-cost-margin-pct", type=float, default=20.0,
+                   help="H2(a) cost equivalence margin in %% (default 20%% per prereg lock "
+                        "L120-137: 1.20× median cost ratio = +20%% relative). "
+                        "/stress A1.19 P0-3 (2026-05-17): default fixed 10.0→20.0 to "
+                        "match prereg lock. ANY cell exceeding margin → falsified.")
     p.add_argument("--H3-min-unique-count", type=int, default=2,
                    help="H3 per-cell unique-count noise floor (default 2 tasks)")
     p.add_argument("--transparency-K_h1", type=int, default=3,
                    help="K_h1 transparency ratio cells count (default 3 of 4)")
     p.add_argument("--transparency-K_h3", type=int, default=3,
                    help="K_h3 transparency ratio cells count per axis (default 3 of 4)")
-    p.add_argument("--transparency-K_h2", type=int, default=3,
-                   help="H2 transparency cells count (default 3 of 4)")
+    p.add_argument("--transparency-K_h2", type=int, default=None,
+                   help="DEPRECATED (/stress A1.19 P0-3 2026-05-17): H2(a) is strict "
+                        "ALL-cells-pass falsification check per prereg L131-132 + L368, "
+                        "not K-of-N transparency. Arg retained for backward-compat with "
+                        "older CLI invocations but ignored; emits DeprecationWarning.")
     p.add_argument("--alpha", type=float, default=0.05)
     p.add_argument("--out", default="-", help="Output JSON path (- = stdout)")
     args = p.parse_args()

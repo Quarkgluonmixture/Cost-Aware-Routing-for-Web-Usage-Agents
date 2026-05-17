@@ -86,6 +86,14 @@ is z = (θ_FE − 1.0) / SE_FE. **Why FE Wald is sound at k=6 here**: each per-c
 combination of 6 approximately-normal estimates → approximately normal. The k=4
 fragility of the *prior* design came from τ² estimation, which is now absent (the prior wording referencing "k=4" is retained as historical justification — the FE argument applies at any k including k=6).
 
+**Degenerate-cell SE floor protocol (locked 2026-05-17 per /stress A1.19 P0-1, gemini Mode C OOB + Claude data-grounded analysis)**:
+when a cell's paired bootstrap SE_i = 0 exactly (occurs when the drop-one diff vector
+is identically constant across all bootstrap resamples — i.e., P-SoM neither uniquely
+adds nor uniquely removes any task in the cell), the cell would otherwise receive
+w_i = 1/0 = ∞ weight in the FE pool, hijacking θ_FE. We apply an **Agresti-Coull-style
+finite lower-bound floor** of `SE_floor = 1.0pp` (i.e., w_i = 1pp⁻²) to such cells.
+Rationale: (a) **data-anchored** to archive P-SoM drop-one cells (`results/phantom_paper/meta_phantom_lift.md` archive 2026-05-09: B0 cls SE=0.981pp, B0 red SE=1.096pp, B1 cls SE=0.766pp → archive median SE ≈ 0.98pp ≈ 1.0pp at N≈200-234 paired tasks with baseline SR 10-22%; archive showed zero degenerate cells in 3-cell observation); (b) **conservative** — assigns the degenerate cell a weight no larger than a normally-informative cell, so the FE pool is not dominated by a zero-information observation; (c) **fixed-cells design fidelity** — the cell stays in the FE pool (preserving "all 6 planned cells contribute to θ_FE" estimand integrity per §2 decision "3A") rather than being excluded; (d) **transparently reported** — the `aggregate_phase1_prereg_gate.py` output emits `n_zero_se_floored_cells` for each FE pool decision, and paper §6 prose must disclose this count if > 0. **Implementation**: `aggregate_phase1_prereg_gate.py:185-187` (B-184 producer). **Pre-registered prior to Phase 1a data lock; no post-hoc tuning of floor value permitted**.
+
 **Heterogeneity (reported descriptively, NOT in the estimator)**: Cochran's Q, I²,
 and a DerSimonian-Laird τ² estimate are computed and reported for transparency
 ("are the 6 cells consistent?"), and a random-effects pooled estimate is shown as

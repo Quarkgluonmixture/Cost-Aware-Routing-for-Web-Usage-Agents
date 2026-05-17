@@ -661,18 +661,49 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         "lift_4pdom_vs_3_pp":   (round(sr_4_pdom - sr_3, 4) if sr_4_pdom is not None else None),
         "lift_4pdom_vs_3_ci95_lo_pp": maybe_round(ci_lo_pdom),
         "lift_4pdom_vs_3_ci95_hi_pp": maybe_round(ci_hi_pdom),
-        "lift_4psom_vs_3_pp":   round(sr_4_psom - sr_3, 4),
+        # /stress A1.19 P0-4 (2026-05-17, codex Mode B P0-1-B* OOB): mixed-universe
+        # lift bug fix. Pre-fix: `sr_4_psom - sr_3` used u_psom numerator (sr_4_psom
+        # over u_psom L461) minus common=universe_5 baseline (sr_3 over n=universe_5
+        # L470) → point estimate and CI (which uses u_psom both sides L477) referred
+        # to different task universes → row math inconsistent. Fix: per-comparison
+        # universe consistent — use sr_3_psom_only (over u_psom L460), sr_3_pprompt_only
+        # (over u_pprompt L534), sr_3_u6 (over universe_6 L556) so each lift's point
+        # estimate matches its CI denominator. F07 audit fix 2026-05-09 was supposed
+        # to address this but only fixed CI side; point estimate computation slipped
+        # through. universe_label_* columns added for downstream estimand disambig.
+        "lift_4psom_vs_3_pp":   round(sr_4_psom - sr_3_psom_only, 4),
         "lift_4psom_vs_3_ci95_lo_pp": round(ci_lo_psom, 4),
         "lift_4psom_vs_3_ci95_hi_pp": round(ci_hi_psom, 4),
-        "lift_4pprompt_vs_3_pp": (round(sr_4_pprompt - sr_3, 4) if sr_4_pprompt is not None else None),
+        "lift_4psom_vs_3_universe": "universe_psom_only (DOM∩SoM∩Vision∩P-SoM)",
+        "lift_4psom_vs_3_n_universe": len(u_psom),
+        "lift_4pprompt_vs_3_pp": (
+            round(sr_4_pprompt - sr_3_pprompt_only, 4) if sr_4_pprompt is not None else None
+        ),
         "lift_4pprompt_vs_3_ci95_lo_pp": maybe_round(ci_lo_pprompt),
         "lift_4pprompt_vs_3_ci95_hi_pp": maybe_round(ci_hi_pprompt),
-        "lift_6_vs_3_pp": (round(sr_6 - sr_3, 4) if sr_6 is not None else None),
+        "lift_4pprompt_vs_3_universe": (
+            "universe_pprompt_only (DOM∩SoM∩Vision∩P-prompt)" if has_pprompt else None
+        ),
+        "lift_4pprompt_vs_3_n_universe": (len(u_pprompt) if has_pprompt else None),
+        "lift_6_vs_3_pp": (round(sr_6 - sr_3_u6, 4) if sr_6 is not None else None),
         "lift_6_vs_3_ci95_lo_pp": maybe_round(ci_lo_6),
         "lift_6_vs_3_ci95_hi_pp": maybe_round(ci_hi_6),
-        "lift_6_vs_5_pp": (round(sr_6 - sr_5, 4) if (sr_6 is not None and sr_5 is not None) else None),
+        "lift_6_vs_3_universe": (
+            "universe_6 (DOM∩SoM∩Vision∩P-text∩P-SoM∩P-prompt)"
+            if (has_pdom and has_pprompt) else None
+        ),
+        "lift_6_vs_3_n_universe": (len(universe_6) if (has_pdom and has_pprompt) else None),
+        "lift_6_vs_5_pp": (
+            round(sr_6 - sr_5_u6, 4)
+            if (sr_6 is not None and has_pdom and has_pprompt) else None
+        ),
         "lift_6_vs_5_ci95_lo_pp": maybe_round(ci_lo_6v5),
         "lift_6_vs_5_ci95_hi_pp": maybe_round(ci_hi_6v5),
+        "lift_6_vs_5_universe": (
+            "universe_6 (incremental P-prompt over 5-mode oracle on 6-arm complete-case)"
+            if (has_pdom and has_pprompt) else None
+        ),
+        "lift_6_vs_5_n_universe": (len(universe_6) if (has_pdom and has_pprompt) else None),
         # Effect sizes (Cohen's h on oracle proportions)
         "cohen_h_5_vs_3":     maybe_round(h_5_vs_3),
         "cohen_h_5_vs_3_label": (cohen_h_label(h_5_vs_3) if h_5_vs_3 is not None else None),
@@ -919,7 +950,16 @@ def main() -> int:
     n_secondary = sum(1 for r in rows for arm in ("4pdom", "4psom", "4pprompt")
                       if r.get(f"mcnemar_{arm}_vs_3_p") is not None)
     lines = [
-        "# Phantom routing lift — paper Section 1/4 hook evidence",
+        "# Phantom routing lift — APPENDIX EXPLORATORY (3→5-mode oracle lift estimand)",
+        "",
+        "> ⚠️ **/stress A1.19 P1-9-B (2026-05-17, codex Mode B): NOT paper §1 hero.**",
+        "> The canonical paper §1 H1 PRIMARY gate (per `preregistration.md` lock 2026-05-14 + B-184)",
+        "> is **P-SoM drop-one fixed-effects superiority test against δ=1.0pp**, computed by",
+        "> `aggregate_phase1_prereg_gate.py` → `results/phantom_paper/phase1_prereg_gate.{csv,json,md}`.",
+        "> THIS file (`phantom_lift.{csv,md}`) computes the **legacy 3→5-mode oracle lift**",
+        "> (add P-text + P-SoM TO 3-mode baseline), a fundamentally different estimand.",
+        "> Per B-184 demotion, this file is **appendix sensitivity only** — do NOT cite",
+        "> from paper §1 hero prose. Cite `phase1_prereg_gate.md` for §1 hero.",
         "",
         "Routing lift = (X-mode oracle ceiling) - (3-mode oracle ceiling), where",
         "3-mode = DOM ∪ SoM ∪ Vision (baseline). 95% CI from 1000-resample",
@@ -927,32 +967,47 @@ def main() -> int:
         "large 0.5-0.8). Wilcoxon paired (binary, equiv to sign test). McNemar",
         "exact 1-sided (H1: extra mode adds tasks).",
         "",
-        "## Comparison family declaration (pre-registered, 2026-05-03 framework)",
+        "## Comparison family declaration (legacy 2026-05-03 framework, appendix-only)",
         "",
-        "**Hero/Structural/Exploratory hierarchy** (per `EVIDENCE_LAYER_AUDIT.md` §2):",
+        "**Hierarchy (LEGACY APPENDIX framing; canonical paper-grade family is in `phase1_prereg_gate.md`)**:",
         "",
-        f"- **PRIMARY family — H1 (Hero deployment claim, P-SoM)**: m = {n_cells_primary} (3→5-mode lift, one per cell).",
-        "  Sub-claim H1(ii) per-cell P-SoM Holm-sig is the gating test for paper hook.",
+        f"- **APPENDIX legacy exploratory family — H1-LEGACY (3→5 add-to-3-mode lift)**: m = {n_cells_primary}.",
+        "  Different estimand from paper §1 hero (which is P-SoM drop-one over 6-mode universe).",
+        "  Reported as appendix sensitivity — NOT a paper-claim gate per B-184 demotion 2026-05-16.",
         f"- **STRUCTURAL family — H3 (Phantom space 2-axis empirical evidence)**: per axis, m = N_cells.",
         "  axis 1 = P-text ∖ P-SoM unique-count; axis 2 = P-prompt ∖ P-SoM unique-count.",
-        "  Lower threshold than PRIMARY (structural claim is weaker than deployment).",
         f"- **EXPLORATORY family — H4 (P-text/P-prompt drop-one magnitudes)**: m = {n_secondary}.",
-        "  Holm/BH q reported for transparency; **NOT used for paper claim gating**.",
-        "  Paper §4 prose must explicitly mark these as exploratory analyses.",
+        "  Holm/BH q reported for transparency; NOT used for paper claim gating.",
         "- **TERTIARY (post-hoc, uncorrected)**: 6-mode oracle vs 3 / vs 5.",
         "",
+        "## ⚠️ Superiority vs Equivalence (TOST) cognitive-conflict warning (/stress A1.19 P1-13-C)",
+        "",
+        "> **Two distinct tests reported in this table against the same δ=1.0pp boundary**:",
+        "> ",
+        "> 1. **Holm-corrected McNemar one-sided p (sig ✅)** = Superiority test: H0: θ ≤ 0",
+        "> vs H1: θ > 0 (phantom adds tasks). Small p ⇒ effect significantly **above zero**.",
+        "> Paper-grade hero in `phase1_prereg_gate.md` uses H0: θ_FE ≤ +1.0pp (δ as the *substantive-effect*",
+        "> threshold), but THIS legacy file tests vs zero — see column header.",
+        "> ",
+        "> 2. **TOST p** = Equivalence test: H0: |θ| ≥ 1.0pp vs H1: |θ| < 1.0pp (no substantive effect).",
+        "> Small TOST p ⇒ effect **bounded within ±1pp** (i.e., equivalent to zero within margin).",
+        "> ",
+        "> The two tests probe **disjoint hypotheses**: superiority asks 'is it big enough?';",
+        "> equivalence asks 'is it small enough?'. Same δ=1.0pp value used for both is",
+        "> intentional (mirror H1 substantive-effect threshold) but a reviewer reading this",
+        "> table without context may confuse them. Always reference each test's row label.",
+        "",
         "Adjustment methods:",
-        "- **Holm** (Holm 1979) — step-down FWER control, gating PRIMARY + STRUCTURAL.",
+        "- **Holm** (Holm 1979) — step-down FWER control, legacy gating PRIMARY + STRUCTURAL.",
         "- **BH q** (Benjamini-Hochberg 1995) — FDR control, informational.",
-        "- **Bonf** — Bonferroni FWER (PRIMARY only, conservative reference).",
+        "- **Bonf** — Bonferroni FWER (legacy PRIMARY only, conservative reference).",
         "- **TOST p** — Two One-Sided Test for equivalence at δ=1.0pp (commit-locked).",
         "  TOST p = max(p_lower, p_upper); p < α ⇒ equivalence ACCEPTED (effect bounded",
-        "  within ±δ). This is the separate 'lift bounded' test — NOT the H1(ii) primary",
-        "  gate, which uses one-sided superiority per 2026-05-13 preregistration revision.",
+        "  within ±δ).",
         "",
         "Primary p-value going through correction: **McNemar exact one-sided**",
-        "(directly maps to H1: phantom adds tasks). Wilcoxon two-sided is reported",
-        "uncorrected as secondary cross-check.",
+        "(directly maps to H1-LEGACY: phantom adds tasks vs zero). Wilcoxon two-sided",
+        "is reported uncorrected as secondary cross-check.",
         "",
         "## Routing lift summary (5-mode vs 3-mode + each single phantom)",
         "",

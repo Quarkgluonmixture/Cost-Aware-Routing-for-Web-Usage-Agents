@@ -320,8 +320,15 @@ def main() -> None:
     )
     parser.add_argument("--b1-label", default="B1", help="Label for plot titles")
     parser.add_argument(
+        "--use-legacy-adjusted", action="store_true",
+        help="OPT-IN for legacy adjusted_sr (post-§139.8 RETIRED, archive Appendix D "
+             "sensitivity only). Default = raw `success` is canonical (paper-grade). "
+             "/stress A1.19 P0-2 (2026-05-17, 3-AI overlap Claude+Codex+Gemini): "
+             "flipped semantics from --no-adjusted to enforce §139.8 retirement spec.",
+    )
+    parser.add_argument(
         "--no-adjusted", action="store_true",
-        help="Do not attempt to use adjusted SR (stubs only have raw data anyway)",
+        help="DEPRECATED — no-op (raw is now default; use --use-legacy-adjusted to opt into archive).",
     )
     args = parser.parse_args()
 
@@ -338,7 +345,10 @@ def main() -> None:
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    use_adjusted = not args.no_adjusted
+    # /stress A1.19 P0-2 (2026-05-17): default = raw `success` canonical (§139.8 retire);
+    # legacy adjusted only via explicit opt-in. `--no-adjusted` retained as no-op for
+    # backward-compat with existing Makefile invocations.
+    use_adjusted = args.use_legacy_adjusted
 
     # --- Collect rows ---
     print("[1/4] Loading condition summaries...")

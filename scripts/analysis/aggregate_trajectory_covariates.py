@@ -35,6 +35,7 @@ import argparse
 import csv
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -85,6 +86,35 @@ def _episode_start_ts(summary: Dict[str, Any]) -> Optional[str]:
         if key in summary and summary[key]:
             return str(summary[key])
     return None
+
+
+def _parse_ts(ts: Any) -> Optional[datetime]:
+    """Parse ISO-8601 timestamp string to datetime; return None on missing/bad input.
+
+    /stress A1.19 P1-5-A* (2026-05-17, Claude OOB): pre-fix used `str(ts) < ep_start`
+    lexicographic string comparison. Works only iff both sides are well-formed ISO-8601
+    with identical timezone formatting; silently flips with epoch-float / Z-suffix /
+    mixed-format drift → `is_after_reset` / `prior_event_count` covariates wrong → paper
+    §4 GLMM covariate-adjusted SR estimate biased. Now explicit ISO-8601 datetime parse
+    with entry guard (returns None for unparseable, NOT crash — but logs to stderr).
+    """
+    if not ts:
+        return None
+    s = str(ts).strip()
+    if not s:
+        return None
+    # Handle trailing 'Z' (some sources emit UTC indicator) — fromisoformat ≥ 3.11
+    # supports it directly, but for ≤ 3.10 compat we strip and let it default-localtime.
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        return datetime.fromisoformat(s)
+    except (ValueError, TypeError):
+        # Log once to stderr but don't crash — covariates degrade gracefully
+        # (downstream sees None → treats as "no prior info", which is correct
+        # behavior for unparseable timestamp rather than wrong-direction flip).
+        print(f"[trajectory-covariates] WARN: cannot parse ts={ts!r} (not ISO-8601)", file=sys.stderr)
+        return None
 
 
 def compute_episode_covariates(
@@ -183,13 +213,17 @@ def compute_episode_covariates(
 
         # is_after_reset: any reset_post_interrupt happened before ep start ts.
         # If ep_start ts unavailable, conservatively True if ANY reset event present.
+        # /stress A1.19 P1-5-A*: explicit datetime parse (was string lexicographic).
+        ep_start_dt = _parse_ts(ep_start)
         if reset_events:
-            if ep_start:
+            if ep_start_dt is not None:
                 is_after_reset = any(
-                    str(rev.get("wallclock_ts", "")) < ep_start
+                    (rev_dt := _parse_ts(rev.get("wallclock_ts"))) is not None
+                    and rev_dt < ep_start_dt
                     for rev in reset_events
                 )
             else:
+                # ep_start unparseable → conservatively True (matches pre-fix semantics)
                 is_after_reset = True
         else:
             is_after_reset = False
@@ -231,10 +265,12 @@ def compute_episode_covariates(
                     break
 
         # prior_event_count: events occurring before this episode (by ts).
-        if ep_start:
+        # /stress A1.19 P1-5-A*: explicit datetime parse (was string lexicographic).
+        if ep_start_dt is not None:
             prior_event_count = sum(
                 1 for ev in trajectory_events
-                if str(ev.get("wallclock_ts", "")) < ep_start
+                if (ev_dt := _parse_ts(ev.get("wallclock_ts"))) is not None
+                and ev_dt < ep_start_dt
             )
         else:
             prior_event_count = 0

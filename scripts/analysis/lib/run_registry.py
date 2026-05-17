@@ -20,6 +20,14 @@ LEGACY_MODE_ALIAS = {
     "dom": "DOM",
     "som": "SoM",
     "vision": "Vision",
+    # /stress A1.19 P1-6-A (2026-05-17, Claude): `phantom_dom` and `phantom_text` BOTH
+    # map to canonical P-text → silent merge risk if a manifest contains both for the
+    # same (baseline, site) at the same grade tier. Mitigation: (a) B-261 retired
+    # `phantom_dom` obs_mode from all new YAML configs (2026-05-16), so paper-grade
+    # entries should never use `phantom_dom`; (b) `_all_cells_unfiltered` now detects
+    # the silent-merge case and raises explicitly (see post-canonicalization dup check
+    # below). Archive runs still use `phase1_phantom_dom_router_0/` dirs, hence the
+    # alias is retained for backward-compat in the `archived` grade tier only.
     "phantom_dom": "P-text",
     "phantom_text": "P-text",
     "phantom_prompt": "P-prompt",
@@ -187,11 +195,42 @@ def _all_cells_unfiltered(path: Path | None = None) -> list[CellSpec]:
     manifest = load_manifest(path)
     cells = [_entry_to_cell(entry) for entry in _iter_manifest_entries(manifest)]
     seen: set[tuple[str, str, str, Grade]] = set()
+    # /stress A1.19 P1-6-A (2026-05-17): also track (baseline, site, mode) -> set[grade]
+    # to detect LEGACY_MODE_ALIAS silent-merge across grade tiers within the SAME canonical
+    # mode. Pre-fix: archive `phantom_dom` (alias→P-text) + paper-grade `phantom_text`
+    # (alias→P-text) for same (baseline, site) silently collapsed to single dict key in
+    # downstream `get_cells(mode="P-text")` queries. Now explicit cross-grade-tier
+    # collision raises so user must explicitly resolve via archived-vs-paper-grade pick.
+    cross_tier: dict[tuple[str, str, str], list[Grade]] = {}
     for cell in cells:
         key = (cell.baseline, cell.site, cell.mode, cell.grade)
         if key in seen and cell.grade != "archived":
             raise ValueError(f"Duplicate manifest cell: {cell.baseline}/{cell.site}/{cell.mode}/{cell.grade}")
         seen.add(key)
+        ck = (cell.baseline, cell.site, cell.mode)
+        cross_tier.setdefault(ck, []).append(cell.grade)
+    for ck, grades in cross_tier.items():
+        # Cross-tier alias collision: same canonical (baseline, site, mode) has BOTH a
+        # paper-grade entry AND an archived entry — this is normally fine (archive +
+        # paper-grade can coexist) BUT if both came from different LEGACY_MODE_ALIAS
+        # source strings collapsing to the same canonical mode, downstream callers may
+        # accidentally merge. Surface a warning so user can audit run_manifest.yaml.
+        if "paper-grade" in grades and "archived" in grades:
+            # Look up the source mode strings to detect collapsing alias chains.
+            sources = sorted({
+                entry.get("mode", "")
+                for entry in _iter_manifest_entries(manifest)
+                if entry.get("baseline") == ck[0] and entry.get("site") == ck[1]
+                and canonical_mode(str(entry.get("mode", ""))) == ck[2]
+            })
+            if len(sources) > 1:
+                warnings.warn(
+                    f"LEGACY_MODE_ALIAS silent-merge risk: {ck[0]}/{ck[1]}/{ck[2]} has "
+                    f"multiple source modes {sources} mapping to same canonical key "
+                    f"across grade tiers {grades}. Audit run_manifest.yaml to ensure "
+                    f"`archived` and `paper-grade` entries are intentionally distinct.",
+                    RuntimeWarning, stacklevel=2,
+                )
     return sorted(cells, key=_sort_key)
 
 

@@ -162,6 +162,69 @@ def i_squared_label(I2: float) -> str:
     return "considerable"
 
 
+def hartung_knapp_sidik_jonkman(thetas: list, ses: list, tau2: float
+                                 ) -> Optional[dict]:
+    """Hartung-Knapp-Sidik-Jonkman (HKSJ) adjustment to DL random-effects pooling.
+
+    /stress A1.19 P1-3-B* (2026-05-17, codex Mode B OOB): DL-Wald is anti-conservative
+    at k=6 (per IntHout et al. 2014 / Veroniki et al. 2016 — DL τ² downward-biased at
+    k<10, RE Wald CI false-positive rate inflated). HKSJ replaces Wald z + 1.96 with
+    t_{k-1, 0.975} on Hartung's variance estimator, giving nominal coverage at small k.
+
+    Returns dict with theta_re (same as DL) + se_hk + ci_lo_hk + ci_hi_hk + t_stat +
+    p_one_sided_hk, OR None if insufficient cells.
+
+    Per IntHout et al. 2014 formulation:
+      w*_i = 1 / (se_i² + τ²)                  -- DL random-effects weights
+      θ_RE  = Σ(w*_i · θ_i) / Σw*_i             -- pooled point (same as DL)
+      q_HK  = Σ(w*_i · (θ_i - θ_RE)²) / (k - 1) -- Hartung's residual-variance estimator
+      se_HK = sqrt(q_HK / Σw*_i)                -- HK pooled SE
+      CI    = θ_RE ± t_{k-1, 0.975} · se_HK     -- t-distribution CI
+
+    Note: q_HK / Σw*_i = se_DL² × q_HK × Σw*_i (algebra check); equivalently,
+    se_HK = se_DL · sqrt(q_HK · Σw*_i) where the multiplier ≥ 1 is the HK correction.
+    """
+    paired = [(t, s) for t, s in zip(thetas, ses) if t is not None and s is not None and s > 0]
+    k = len(paired)
+    if k < 2:
+        return None
+    arr_t = np.array([t for t, _ in paired])
+    arr_s = np.array([s for _, s in paired])
+    variances = arr_s ** 2
+    w_star = 1.0 / (variances + tau2 + 1e-12)
+    sum_w_star = float(np.sum(w_star))
+    theta_re = float(np.sum(w_star * arr_t) / sum_w_star)
+    q_hk = float(np.sum(w_star * (arr_t - theta_re) ** 2) / (k - 1))
+    se_hk = float(math.sqrt(q_hk / sum_w_star))
+    # t_{k-1, 0.975} via scipy if available; otherwise hard-coded table for k=2..10
+    if HAS_SCIPY:
+        t_crit = float(sp_stats.t.ppf(0.975, df=k - 1))
+    else:
+        # Approximation table (two-sided 0.975 quantile of Student-t):
+        t_table = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571,
+                   6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228}
+        t_crit = t_table.get(k - 1, 1.96)  # large-k → Wald approx
+    ci_lo_hk = theta_re - t_crit * se_hk
+    ci_hi_hk = theta_re + t_crit * se_hk
+    # One-sided test H1: θ > 0 via t-statistic on k-1 df
+    t_stat = theta_re / se_hk if se_hk > 0 else None
+    if HAS_SCIPY and t_stat is not None:
+        p_one_sided_hk = float(1.0 - sp_stats.t.cdf(t_stat, df=k - 1))
+    else:
+        p_one_sided_hk = None
+    return {
+        "k": k,
+        "theta_re": theta_re,
+        "se_hk": se_hk,
+        "ci_lo_hk": ci_lo_hk,
+        "ci_hi_hk": ci_hi_hk,
+        "t_stat": t_stat,
+        "t_crit": t_crit,
+        "df": k - 1,
+        "p_one_sided_hk": p_one_sided_hk,
+    }
+
+
 # F08 audit fix 2026-05-09: B8 preregistration lock requires N_common >= 10
 # per cell for inclusion in random-effects meta. Cells below floor are
 # excluded with reason logged. See `preregistration.md §4` row "Heterogeneity
@@ -363,6 +426,48 @@ def main() -> int:
             f"{_fmt(r['p_Q'])} | {p_re_holm_str} | {sig} |"
         )
 
+    # /stress A1.19 P1-3-B* (2026-05-17): Hartung-Knapp-Sidik-Jonkman row alongside
+    # the DL-Wald row above. At k=6 (Phase 1a) the DL-Wald CI is anti-conservative
+    # per IntHout et al. 2014; HKSJ uses t_{k-1, 0.975} on Hartung's residual-variance
+    # estimator and gives nominal coverage. Decision-grade RE inference at k≤10 should
+    # cite HKSJ; DL-Wald is retained above for backward-compat with archive prose.
+    lines += [
+        "",
+        "## HKSJ adjustment (decision-grade RE inference at k≤10)",
+        "",
+        "Hartung-Knapp-Sidik-Jonkman (IntHout et al. 2014, BMC Med Res Method 14:25) ",
+        "replaces Wald z + 1.96 with t_{k−1, 0.975} on Hartung's residual-variance ",
+        "estimator. At Phase 1a k=6 cells, DL-Wald above is anti-conservative ",
+        "(false-positive rate inflated; Veroniki et al. 2016). Cite HKSJ row for ",
+        "decision-grade RE inference; DL-Wald row is appendix backward-compat only.",
+        "",
+        "| Arm | k | θ_RE (pp) | 95% CI (HK) | SE_HK | t-stat (df=k-1) | p (HK, 1-sided) | sig (α=.05) |",
+        "|---|---:|---:|---|---:|---:|---:|:---:|",
+    ]
+    for code, _arm_label, _family in ARMS:
+        cells = arm_per_cell.get(code, [])
+        if not cells:
+            continue
+        meta = next((r for r in meta_rows if r["arm_code"] == code), None)
+        if meta is None:
+            continue
+        hk = hartung_knapp_sidik_jonkman(
+            [c["theta"] for c in cells],
+            [c["se"] for c in cells],
+            meta["tau2"],
+        )
+        if hk is None:
+            continue
+        sig_hk = "✅" if (hk["p_one_sided_hk"] is not None and hk["p_one_sided_hk"] < 0.05) else "❌"
+        lines.append(
+            f"| {meta['arm_label']} | {hk['k']} | "
+            f"+{hk['theta_re']:.2f} | "
+            f"[{hk['ci_lo_hk']:.2f}, {hk['ci_hi_hk']:.2f}] | "
+            f"{hk['se_hk']:.3f} | "
+            f"{_fmt(hk['t_stat'], '.2f')} | "
+            f"{_fmt(hk['p_one_sided_hk'])} | {sig_hk} |"
+        )
+
     lines += [
         "",
         "## Per-cell forest data (input to meta-pool)",
@@ -397,9 +502,14 @@ def main() -> int:
         "- **Pre-registered family gating**: PRIMARY arm gated by Holm within m=1",
         "  test (no correction needed). SECONDARY arms gated by Holm within m=3",
         "  pooled tests. TERTIARY uncorrected (exploratory).",
+        "- **DL-Wald is legacy descriptive** (/stress A1.19 P1-3-B*, 2026-05-17): ",
+        "  Wald z+1.96 CI on DL pooled estimate is anti-conservative at k≤10 ",
+        "  (IntHout et al. 2014; Veroniki et al. 2016 τ² downward bias at k<10). ",
+        "  **Cite HKSJ row above for decision-grade RE inference**; DL-Wald row is ",
+        "  retained for backward-compat with archive prose.",
         "- **Heterogeneity caveat**: with k < 5 cells the τ² estimate has wide",
         "  uncertainty; I² benchmarks should be read as suggestive. Re-evaluate",
-        "  after 14-cell rerun completes (k ≈ 8 per arm expected).",
+        "  after Phase 1a 6-cell rerun completes (k = 6 per arm expected).",
         "- **Random-effect vs fixed-effect**: when I² < 25%, FE and RE estimates",
         "  converge; large I² (> 50%) means cell-specific effects matter and only",
         "  RE pooled estimate is meaningful for paper claim.",

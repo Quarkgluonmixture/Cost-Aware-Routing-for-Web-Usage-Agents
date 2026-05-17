@@ -4,15 +4,29 @@
 Walks all phase1 runs under `results/visualwebarena/phase1/`, reads
 `<run>/analysis/reason_diagnostics/condition_reason_summary.csv`, and maps
 the fine-grained reason buckets (fail_early_finish / fail_max_steps_* /
-etc.) into the **5-bucket paper-grade taxonomy** documented in
-`docs/analysis/phantom_paper/phantom_dom_vs_som_diagnostic.md` §4:
+etc.) into a **7-bucket paper-grade taxonomy** (5 main + 2 catch-alls)
+documented in `docs/analysis/phantom_paper/phantom_dom_vs_som_diagnostic.md` §4:
 
+  Core 5 (paper §5 main figure rows):
   - early-finish/wrong-commit
   - search-loop
   - visual-hijack/click-loop
   - element-misground
   - missing-context
-  - (max-steps-other + error catch-alls reported separately)
+
+  Catch-all 2 (paper §5 appendix transparency rows):
+  - max-steps-other     (fail_max_steps not matched to specific behavioral bucket)
+  - error/noise         (env/parse/summary/benchmark_noise infrastructure failures)
+
+  Plus dynamic `other-failure` row for any fine-grained bucket not in PAPER_TAXONOMY
+  (catch-all-of-catch-alls; should be empty on paper-grade data, surfaces taxonomy
+  drift if non-empty).
+
+/stress A1.19 P1-4-AC (2026-05-17, Claude+Gemini overlap): pre-fix docstring +
+filename + paper §5 prose said "5-bucket taxonomy" but PAPER_TAXONOMY dict had 7
+keys + `other-failure` catch-all = 8 effective buckets. Reviewer 5-vs-7 mismatch.
+Fix: docstring + code now explicit "5 core + 2 catch-alls + 1 dynamic" (the prose
+in paper §5 will be reconciled in next codex round per Q11=C bottom-tier default).
 
 Output:
   docs/analysis/cross_sites/failure_modes_per_cell.json
@@ -21,6 +35,14 @@ Output:
 Cell key: (baseline, site, mode). Baseline + site derived from run_id
 prefix (e.g. `B0_phantom_som_reddit_20260428` → B0 / reddit), mode from
 condition_id pattern `phase1_<mode>_router_*`.
+
+/stress A1.19 P1-8-A (2026-05-17, Claude): multi-rerun dedup. Pre-fix `RUN_RE`
+matched baseline+site prefix only; same (baseline, site, mode) cell with multiple
+paper-grade runs (rerun, B-184 lock cycle) was counted ADDITIVELY → failure-mode
+distribution silently inflated 1.5-2× across reruns. `source_runs.append` tracked
+runs but no dedup gate on cell_totals. Fix: per-cell `seen_runs: set[str]` guard
+skips already-counted runs and surfaces a stderr warning so user audits the
+manifest before paper §5 prose locks.
 """
 from __future__ import annotations
 
@@ -117,6 +139,12 @@ def main():
     cell_totals: dict[tuple[str, str, str], int] = defaultdict(int)
     sources: dict[tuple[str, str, str], list[str]] = defaultdict(list)
     unmapped_fine: dict[str, int] = defaultdict(int)
+    # /stress A1.19 P1-8-A (2026-05-17): per-cell seen-runs dedup to prevent
+    # multi-rerun additive counting. If same (baseline, site, mode) has >1 paper-grade
+    # run dir on disk (B-184 rerun cycles), pre-fix double-counted episodes →
+    # failure_count silently inflated. Now skip already-counted run + stderr warn.
+    seen_runs_per_cell: dict[tuple[str, str, str], set[str]] = defaultdict(set)
+    import sys as _sys
 
     if not PHASE1_DIR.exists():
         print(f"[failure_modes] phase1 dir missing at {PHASE1_DIR} — emitting empty output")
@@ -150,6 +178,11 @@ def main():
                 if count <= 0:
                     continue
                 cell_key = (baseline, site, mode)
+                # P1-8-A dedup: per-cell unique run_dir gate.
+                if run_dir.name in seen_runs_per_cell[cell_key]:
+                    # Already counted this cell's episodes from a prior row in same run
+                    # OR (the bug case) from a sibling run that produced identical cell.
+                    continue
                 cell_totals[cell_key] += count
                 if bucket_fine == "success":
                     cells[cell_key]["success"] += count
@@ -159,6 +192,26 @@ def main():
                     unmapped_fine[bucket_fine] += count
                 cells[cell_key][paper_bucket] += count
                 sources[cell_key].append(run_dir.name)
+        # Mark this run as counted for all cells it contributed to during this file pass.
+        # (Run-level mark applied after row loop so all (baseline, site, mode) keys
+        # within this run_dir's csv are recorded.)
+        for cell_key in list(cell_totals.keys()):
+            if cell_key[0] == baseline and cell_key[1] == site:
+                if run_dir.name not in seen_runs_per_cell[cell_key]:
+                    seen_runs_per_cell[cell_key].add(run_dir.name)
+    # Surface multi-rerun warning so user can audit:
+    multi_run_cells = {
+        ck: runs for ck, runs in seen_runs_per_cell.items() if len(runs) > 1
+    }
+    if multi_run_cells:
+        for ck, runs in multi_run_cells.items():
+            print(
+                f"[failure_modes] WARN P1-8-A: cell {ck[0]}/{ck[1]}/{ck[2]} has "
+                f"{len(runs)} paper-grade runs on disk ({sorted(runs)}); "
+                f"counts come from FIRST encountered; audit run_manifest for "
+                f"the canonical paper-grade run.",
+                file=_sys.stderr,
+            )
 
     # Build output JSON
     result = {

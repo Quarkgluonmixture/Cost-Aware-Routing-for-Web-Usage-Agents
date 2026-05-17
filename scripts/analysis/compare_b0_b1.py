@@ -318,8 +318,15 @@ def main() -> None:
         help="Output directory (default: results/visualwebarena/phase1/b0_vs_b1/)",
     )
     parser.add_argument(
+        "--use-legacy-adjusted", action="store_true",
+        help="OPT-IN for legacy adjusted_sr (post-§139.8 RETIRED, archive Appendix D "
+             "sensitivity only). Default = raw `success` is canonical (paper-grade). "
+             "/stress A1.19 P0-2 (2026-05-17, codex Mode B P1-6-B sibling propagation): "
+             "flipped semantics from --no-adjusted to enforce §139.8 retirement spec.",
+    )
+    parser.add_argument(
         "--no-adjusted", action="store_true",
-        help="Use raw SR instead of adjusted SR",
+        help="DEPRECATED — no-op (raw is now default; use --use-legacy-adjusted to opt into archive).",
     )
     args = parser.parse_args()
 
@@ -337,7 +344,9 @@ def main() -> None:
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    use_adjusted = not args.no_adjusted
+    # /stress A1.19 P0-2 (2026-05-17): default = raw `success` canonical (§139.8 retire);
+    # legacy adjusted only via explicit opt-in. `--no-adjusted` retained as no-op.
+    use_adjusted = args.use_legacy_adjusted
     site = args.site
 
     # --- Load data ---

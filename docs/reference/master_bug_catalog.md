@@ -3336,4 +3336,82 @@ D2 (Paper §3 GRL framing decision A/B/C) deferred to user's separate session. U
 
 **Phase 1a fire green-light extended (post-A1.3 v9)**: substrate paper-grade after A1.1 + A1.2 + A1.3 v9 (21+8+9 = 38 fixes B-395~B-425). Heuristic family retired (paper-2 forward stub via git history). env-layer scaffold ON_TARGET telemetry (locator + select_option) now JSONL audit-able. Beforeunload policy symmetric. Form snapshot full-fidelity.
 
-**Next available B-number**: B-426+.
+**Next available B-number**: B-426+ (consumed below by A1.19).
+
+## A1.19 `scripts/analysis/aggregate_*.py` — pre-fire 分析管线 3-AI cycle (2026-05-17 01:00 deep night)
+
+13-fix batch (4 P0 + 9 P1) from cross-AI Mode A + Mode B (codex stats methodologist) + Mode C (gemini prose/design-layer). Chronicle entry §172. Scope `phase1_plan.md` §A1.19. All P0 cleared as paper-§1-hero / OSF-lock blockers; 4 P1 deferred (P1-2 / P1-10 / P1-11 / P1-12 per Q&A bottom-tier auto-default).
+
+### B-426. SE=0 floor 1.0pp 未在 prereg 声明 — Mode A+C P0 2-AI overlap 🛠️ FIXED commit `<pending>`
+- **Attack**: `aggregate_phase1_prereg_gate.py:185-187` silent `ses = np.where(ses <= 0, 1.0, ses)` floor. Paper §1 PRIMARY gate verdict 实质 depends on 1.0pp const but prereg.md H1 spec 无 disclosure → reviewer "estimand drift / preregistration breach" 攻击 + OSF lock blocking.
+- **Data-grounded design**: 查 archive `results/phantom_paper/meta_phantom_lift.md` 2026-05-09 archive 3 P-SoM cells SE: B0 cls 0.981pp / B0 red 1.096pp / B1 cls 0.766pp → median ≈ 0.98pp ≈ 1.0pp at N≈200-234, p≈10-22%. 1.0pp 实际 empirically-calibrated, 不是 arbitrary. Const 优于 N-aware (后者 cells 不同 floor 引入 noise).
+- **Fix**: `preregistration.md §2 H1` 加 "Degenerate-cell SE floor protocol" 段, Agresti-Coull-style finite floor 命名, archive median 锚定, "no post-hoc tuning permitted post-data-lock"。`aggregate_phase1_prereg_gate.py:185-187` 加 comment cite prereg。Implementation invariant: only applies when bootstrap SE_i = 0 exactly; `n_zero_se_floored_cells` emitted in payload。
+
+### B-427. `use_adjusted` default 走 §139.8 retired adjusted_sr — A+B+C P0 3-AI overlap 🛠️ FIXED commit `<pending>`
+- **Attack**: `aggregate_cross_site.py:341` + `compare_b0_b1.py:340` 默认 `use_adjusted = not args.no_adjusted` = True → `make analysis` 默认 invoke 都走 retired adjusted_sr path; §139.8 (2026-05-16) 已 retire 整 post-hoc layer. Codex P1-6-B sibling propagation 把 Claude F2 扩到 `compare_b0_b1.py`. Gemini C2 reframe 为 "preregistration breach".
+- **Fix**: 两 scripts 加 `--use-legacy-adjusted` explicit opt-in (default False), `--no-adjusted` retained as DEPRECATED no-op for Makefile backward-compat. `use_adjusted = args.use_legacy_adjusted` 直接 binding.
+
+### B-428. `evaluate_h2_cost` double bug: margin 10→20 + K-of-N→ALL — Mode C P0 OOB framing critique 🛠️ FIXED commit `<pending>`
+- **Attack (reframed)**: gemini Mode C 原 claim `aggregate_phase1_prereg_gate.py` 缺 Cost Falsification check. Verify: 该 file 是 H1-only PRIMARY gate, framing decision (R1-R5) 在 `preregistration_decision_test.py`. **真 bug 在 preregistration_decision_test.py**: (a) `evaluate_h2_cost(cost_margin_pct: float = 10.0)` L517 + CLI default L796 = 10.0% vs prereg L131-132 lock 20.0% (1.20× ratio) → margin 2× 严格于 prereg → false-falsification rate 膨胀 when median ratio 1.10-1.20×; (b) `consistent: pass_count >= transparency_K_h2` L551 (K-of-N) vs prereg L131-132 + L368 "if ANY condition violated → falsified" 严格 ALL-pass semantics → K-of-N 错把 H1/H3 transparency 移植到 H2(a) falsification.
+- **Fix**: `cost_margin_pct` default 10.0 → 20.0; `transparency_K_h2` arg DeprecationWarning + ignored; `consistent` 改为 `pass_count == n_cells_total`; new fields `n_cells_falsified` + `semantics: "strict_all_pass_falsification_check"` + `prereg_anchor`。CLI `--H2-cost-margin-pct` default fixed. Smoke test confirms strict_all_pass semantics on synthetic r1_pass scenario.
+
+### B-429. `aggregate_phantom_lift.py:664-670` mixed-universe lift — Mode B P0 OOB 🛠️ FIXED commit `<pending>`
+- **Attack**: P-SoM CI 用 `u_psom` over `(in_3_psom, in_4_psom)` (L457-482), 但 exported lift `sr_4_psom - sr_3` (L664) where `sr_3` over `common = universe_5` (L470). Point estimate 跟 CI 不同 denominator → 同行 "+P-SoM lift [CI]" mathematically inconsistent. 同 bug P-prompt L667 + 6-vs-3 L670 + 6-vs-5 L673. F07 audit 2026-05-09 仅 fix CI side, point estimate 滑过.
+- **Fix**: rewrite 4 lift formulas to use per-comparison universe — `sr_4_psom - sr_3_psom_only` (over u_psom), `sr_4_pprompt - sr_3_pprompt_only` (over u_pprompt), `sr_6 - sr_3_u6` (over universe_6), `sr_6 - sr_5_u6` (over universe_6). 加 `*_universe` + `*_n_universe` columns 明示 per-row estimand. Appendix exploratory only — paper §1 hero gate `aggregate_phase1_prereg_gate.py` 不受影响.
+
+### B-430. `preregistration_decision_test.py:368,455` Python `hash()` non-deterministic — Mode B P1 OOB reproducibility 🛠️ FIXED commit `<pending>`
+- **Attack**: `cell_seed = bootstrap_seed + (hash((cell_id, "h1_drop_one")) % 100000)` 用 Python built-in `hash()`. `PYTHONHASHSEED` 影响 per-cell bootstrap stream → 同 `--seed 42` 跑 2 次 produces 4.22569 vs 4.23549 (codex empirical verify during audit run). OSF artifact byte-reproduce 失败.
+- **Fix**: swap `hash((cell_id, X))` → `int(hashlib.sha256(f"{cell_id}|X".encode()).hexdigest()[:8], 16) % 100000`. `hashlib` already imported at L89. Smoke retest confirms byte-reproducible (4.276338513017495 == 4.276338513017495 same-seed runs).
+
+### B-431. `aggregate_phantom_meta.py` Hartung-Knapp-Sidik-Jonkman row missing — Mode B P1 OOB 🛠️ FIXED commit `<pending>`
+- **Attack**: DL random-effects pool uses Wald z + 1.96 CI (`preregistration_decision_test.py:221-227` canonical). At k=6 (Phase 1a) DL-Wald anti-conservative per IntHout et al. 2014 (false-positive rate inflated) + Veroniki et al. 2016 (DL τ² downward-biased at k<10). Decision-grade RE inference at k≤10 should use Hartung-Knapp `t_{k-1}` on Hartung's residual-variance estimator.
+- **Fix**: new `hartung_knapp_sidik_jonkman()` function in `aggregate_phantom_meta.py`; emits HKSJ section in md output table after DL-Wald table; DL-Wald row marked "legacy descriptive only — cite HKSJ for decision-grade". scipy.stats.t when available + hard-coded t-table fallback for k=2..10. Smoke on archive 3-cell: θ_RE=2.33pp, SE_HK=0.46pp, t=5.03, p_one_sided=0.019 sig (CI wider than DL due to t_crit=4.30 at k=3).
+
+### B-432. `aggregate_failure_modes.py` "5-bucket" docstring vs 7-bucket code — Mode A+C P1 2-AI overlap 🛠️ FIXED commit `<pending>`
+- **Attack**: docstring + filename + paper §5 prose 说 "5-bucket paper taxonomy" 但 PAPER_TAXONOMY 字典 has 7 keys (5 core + max-steps-other + error/noise) + `other-failure` catch-all = 8 effective. Reviewer 5-vs-7 一眼对账 catch → "撰写粗糙感", 削弱 §5 mechanism support credibility.
+- **Fix**: docstring 改 "7-bucket paper-grade taxonomy (5 core + 2 catch-alls) + 1 dynamic". Code 不变 (per Q9=a recommend — 保留 7 buckets, info richer; paper §5 prose reconcile 留 codex round per Q11=C).
+
+### B-433. `aggregate_trajectory_covariates.py:186-194` 字符串-ts lexicographic comparison fragile — Mode A P1 OOB 🛠️ FIXED commit `<pending>`
+- **Attack**: `str(rev.get("wallclock_ts","")) < ep_start` 假设 ISO-8601 well-formed 双侧 + identical TZ format. Format drift (epoch float / Z-suffix / TZ format) silently flip `is_after_reset` direction → paper §4 GLMM covariate-adjusted SR estimate biased. B-389 schema 没强制 ISO-8601.
+- **Fix**: new `_parse_ts()` helper with `datetime.fromisoformat()` + Z-suffix normalization; entry-guard prints stderr WARN + returns None for unparseable (covariates degrade to "no prior info" — correct fallback rather than wrong-direction flip). Replace both call sites L186-194 + L234-238.
+
+### B-434. `lib/run_registry.py` LEGACY_MODE_ALIAS 双映射 silent merge — Mode A P1 🛠️ FIXED commit `<pending>`
+- **Attack**: `phantom_dom→P-text` AND `phantom_text→P-text` 同 P-text canonical. If run_manifest.yaml 同时有 archive `phase1_phantom_dom_router_0/` (alias→P-text) + paper-grade `phantom_text_router_0/` (alias→P-text) for same (baseline, site), `get_cells(mode='P-text')` silent merge 两个 different conditions.
+- **Fix**: `_all_cells_unfiltered` 加 cross-tier alias-collision detection. 每 (baseline, site, canonical_mode) 跨 grade tier 若 has BOTH `paper-grade` + `archived` AND source mode strings 不同 → `warnings.warn(RuntimeWarning)` 提示 audit manifest. LEGACY_MODE_ALIAS 保留 (archive backward-compat needed).
+
+### B-435. `aggregate_routing_auroc.py:91-96` cond_dirs first-match silent mislabel — Mode A P1 🛠️ FIXED commit `<pending>`
+- **Attack**: `mode = cond_dirs[0].name.replace(...)` first-match. Multi-condition runs (e.g., 3-mode runs with DOM+SoM+Vision conditions) silently mislabeled with only first condition's mode, AUROC 数字 attribution drift.
+- **Fix**: if `len(cond_dirs) > 1` → explicit skip + stderr message asking user to re-run `analyze_confidence_calibration.py` for per-condition `cross_mode_auroc.csv`. Single-condition runs unchanged path.
+
+### B-436. `aggregate_failure_modes.py` multi-rerun additive counting — Mode A P1 🛠️ FIXED commit `<pending>`
+- **Attack**: `RUN_RE` 只 baseline+site prefix. Same (baseline, site, mode) cell 跨 multiple paper-grade run dirs (B-184 rerun cycles) → cell_totals additively counted → failure_count silently inflated 1.5-2×. `source_runs.append` tracked runs 但无 dedup gate.
+- **Fix**: per-cell `seen_runs_per_cell: dict[tuple, set[str]]` guard. 已 counted 的 run 直接 skip. Run-level mark applied after row loop. Multi-run detection 末端 stderr WARN 列 cells + count + 建议 audit run_manifest.
+
+### B-437. `aggregate_phantom_lift.py:953,965-966,975-986` 过时 "PRIMARY family — H1 Hero" wording — Mode B P1 🛠️ FIXED commit `<pending>`
+- **Attack**: 文件 B-184 demoted 为 appendix exploratory but output md prose 还说 "PRIMARY family — H1 (Hero deployment claim, P-SoM)" + "Section 1/4 hook". Reviewer 看 `phantom_lift.md` 误以为是 paper §1 hero source → "estimand drift between prereg gate (P-SoM drop-one) and appendix (3→5 oracle lift)".
+- **Fix**: md prose rewrite: title 改 "APPENDIX EXPLORATORY", 加 prominent ⚠️ 顶部 warning 引用 `phase1_prereg_gate.md` as canonical; "PRIMARY family" 全改 "APPENDIX legacy exploratory family"; "Section 1/4 hook" → "Appendix sensitivity, see phase1_prereg_gate.md for §1 hero".
+
+### B-438. Superiority test δ=1.0pp + TOST δ=1.0pp 同表 cognitive conflict — Mode C P1 🛠️ FIXED commit `<pending>`
+- **Attack**: `aggregate_phantom_lift.py` md output 表格同时报告 Holm-McNemar superiority p (sig ✅) + TOST equivalence p. 同 δ=1.0pp 既作 superiority 门槛 (H0: θ ≤ 0 vs H1: θ > 0) 又作 equivalence boundary (H0: |θ| ≥ 1 vs H1: |θ| < 1). 统计 reviewer cognitive conflict — superiority/equivalence 反向 hypotheses 同表混报.
+- **Fix**: md output 表格前加 strong warning block 显式 disambiguate 两个 test 的 hypothesis: superiority asks "is it big enough?", equivalence asks "is it small enough?". 注明 disjoint hypotheses + reviewer 必须 reference each test's row label.
+
+**B-numbers consumed (A1.19)**: B-426~B-438 (13 contiguous, all FIXED).
+
+**Smoke verification (A1.19)**:
+- py_compile PASS: `aggregate_phase1_prereg_gate.py / aggregate_cross_site.py / compare_b0_b1.py / preregistration_decision_test.py / aggregate_phantom_lift.py / aggregate_phantom_meta.py / aggregate_trajectory_covariates.py / aggregate_routing_auroc.py / aggregate_failure_modes.py / lib/run_registry.py`
+- Reproducibility retest (B-430): same `--seed 42` produces byte-identical pooled_effect 4.276338513017495 (was 4.22569 vs 4.23549 pre-fix)
+- P0-3 smoke (B-428): synthetic r1_pass scenario emits `consistent=true` with new strict ALL-pass semantics + margin=20.0pp; framing rule returns R1
+- HKSJ smoke (B-431): archive 3-cell P-SoM CI [0.34, 4.33] vs DL-Wald [1.30, 3.37] — HKSJ wider as expected at k=3
+- Tests **413/414 PASS** (1 pre-existing failure NOT caused by A1.19 — confirmed via git-stash test isolation; failure source is parallel GRL audit `stress_grl_audit_2026-05-17.md` adding `PAPER_GRADE_STEP_OPTIONAL_KEYS` validation without test-fixture sync)
+
+### Deferred A1.19 P1 (per Q&A bottom-tier auto-default)
+- **P1-2 DL meta SE direct storage** (`aggregate_phantom_meta.py:191-193` + `preregistration_decision_test.py:208,219`) — defer needs advisor batch + cross-script schema bump
+- **P1-10 `axis_effect_size.py` hard-coded archive paths + B2 empty** — defer per advisor 2026-05-14 "mechanism 暂搁" paper-2 scope
+- **P1-11 drop-one vs 3→5 lift terminology drift** (`section1_intro.md` prose) — defer codex round
+- **P1-12 P-prompt baseline exclusion in prereg** — defer advisor confirm + Phase 1a data land
+
+**A1.19 follow-up tracker**: P0-3 reframed bug discovery (`evaluate_h2_cost` margin 10→20 + K-of-N→ALL) means historical synthetic smoke runs of `preregistration_decision_test.py` pre-2026-05-17 used **2× stricter margin** → if any analysis cited "consistent: true" with margin=10%, re-run with corrected default. Negligible if no paper prose cites synthetic smoke output, but check codex round artifacts.
+
+**Phase 1a fire green-light extended (post-A1.19)**: substrate paper-grade after A1.1+A1.2+A1.3 v9+A1.19 = 51 fixes (B-395~B-438, 5 deferred: B-417 + A1.19 P1-2/10/11/12). Analysis pipeline paper-§1-hero gate cleansed of OSF-lock blockers; appendix exploratory file (`aggregate_phantom_lift`) explicitly demoted in md prose. Remaining advisor blockers unchanged: B-262 GLM channel migration, B-130 FE/RE estimand, B-369 schema v2.2 retry, + new A1.19 advisor batch (P0-1 prereg amend SE floor protocol formal sign-off + P0-3 cost_margin amend if applicable).
+
+**Next available B-number**: B-439+.

@@ -175,16 +175,17 @@ def _fe_pool(per_cell: List[Dict]) -> Optional[Dict]:
         return None
     thetas = np.array([r["theta_pp"] for r in per_cell])
     ses = np.array([r["se_pp"] for r in per_cell])
-    # v6 fix (P0-9, codex pre-fire #10 + gemini #9): zero-SE floor 1e-9 lets degenerate cells
-    # (no P-SoM-only tasks or all-same-outcome) hijack the FE pool with near-infinite weight.
-    # Replace with Agresti-Coull-style principled adjustment for binary paired proportions:
-    # treat SE=0 cells as low-information rather than infinite-information; concretely we
-    # apply a min-SE floor of 1pp (~ minimum detectable difference for N=200 binary outcome
-    # at observed 10-20% SR baseline), so a degenerate cell contributes 1/(1pp)^2 weight,
-    # comparable to a normally-informative cell rather than dominating.
+    # /stress A1.19 P0-1 (2026-05-17, gemini Mode C OOB + Claude data-grounded analysis):
+    # SE_floor = 1.0pp is now PRE-REGISTERED disclosed in preregistration.md §2 H1
+    # "Degenerate-cell SE floor protocol" paragraph (Agresti-Coull-style finite lower
+    # bound). Data-anchored to archive 2026-05-09 P-SoM cells (median SE 0.98pp at
+    # N≈200-234, p≈10-22%); no post-hoc floor tuning permitted post-data-lock.
+    # Implementation invariant: only applies when bootstrap SE_i = 0 exactly (degenerate
+    # cell where drop-one diff vector is identically constant under all resamples);
+    # `n_zero_se_floored_cells` is emitted in payload for paper §6 disclosure.
     n_zero_se = int((ses <= 0).sum())
     if n_zero_se > 0:
-        ses = np.where(ses <= 0, 1.0, ses)  # 1.0 pp floor — paper §6 prose discloses
+        ses = np.where(ses <= 0, 1.0, ses)  # 1.0 pp floor — see prereg.md §2 H1
     w = 1.0 / (ses ** 2)
     theta_fe = float(np.sum(w * thetas) / np.sum(w))
     se_fe = float(math.sqrt(1.0 / np.sum(w)))

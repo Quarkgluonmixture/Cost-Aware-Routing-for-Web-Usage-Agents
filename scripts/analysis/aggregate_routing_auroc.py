@@ -88,10 +88,26 @@ def main() -> int:
             if df.empty:
                 continue
         elif single_path.exists():
-            # Single-condition (e.g. phantom) runs — derive mode from condition dir name
+            # Single-condition (e.g. phantom) runs — derive mode from condition dir name.
+            # /stress A1.19 P1-7-A (2026-05-17, Claude): pre-fix used `cond_dirs[0].name`
+            # first-match, silently mislabeling multi-condition runs (e.g., 3-mode runs
+            # with DOM + SoM + Vision conditions) with only the first condition's mode.
+            # Now: if exactly 1 condition, label correctly; if 0 or >1, fail-loud-skip
+            # because single_path AUROC is run-level and can't be attributed to a single
+            # mode without ambiguity.
             cond_dirs = [d for d in run_dir.glob("phase1_*") if d.is_dir()]
             if not cond_dirs:
                 print(f"  [skip] {run_dir.name}: no condition dir")
+                continue
+            if len(cond_dirs) > 1:
+                names = [d.name for d in cond_dirs]
+                print(
+                    f"  [skip] {run_dir.name}: single-path AUROC ambiguous — run "
+                    f"contains {len(cond_dirs)} conditions {names}; cannot attribute "
+                    f"`auroc_all_metrics.csv` to a unique mode without per-condition "
+                    f"breakdown. Re-run analyze_confidence_calibration.py to emit "
+                    f"per-condition `cross_mode_auroc.csv` instead."
+                )
                 continue
             mode = cond_dirs[0].name.replace("phase1_", "").replace("_router_0", "")
             df = pd.read_csv(single_path).rename(columns={"metric": "signal"})
