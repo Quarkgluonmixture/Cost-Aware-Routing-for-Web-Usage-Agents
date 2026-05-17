@@ -263,9 +263,16 @@ def test_api_proxy_mock_action_aligned_with_local_mocks_scroll():
     """Cross-baseline mock parity: api_proxy mock_mode must emit
     ``scroll [0, 0.8]`` like local_qwen / local_gemma / MockBackend. Pre-fix
     api_proxy emitted ``click element_id=1`` — tests asserting mock parity
-    silently failed only on the proxy path."""
+    silently failed only on the proxy path.
+
+    B-808 (/stress A1.2 cold-start P2-2-AC, 2026-05-17): removed dead
+    ``coordinate_type`` field from mock — scroll uses ``delta``, not
+    ``coordinate``. Updated this test to match the new canonical mock
+    signature.
+    """
     src = (REPO_ROOT / "p79/backends/api_proxy.py").read_text(encoding="utf-8")
-    # The mock_mode block must contain scroll + delta + coordinate_type
+    # The mock_mode block must contain scroll + delta (canonical scroll
+    # action shape — no coordinate_type which is a dead field for scroll).
     mock_block = re.search(
         r"if\s+self\.mock_mode:\s*\n(?:.*\n){0,30}?\s*return\s+action,",
         src,
@@ -276,7 +283,11 @@ def test_api_proxy_mock_action_aligned_with_local_mocks_scroll():
         "api_proxy mock should emit scroll action (was click)"
     )
     assert '"delta": [0, 0.8]' in block
-    assert '"coordinate_type": "normalized"' in block
+    # B-808: coordinate_type was a dead field on scroll (scroll uses delta).
+    # Updated mock signature does NOT include coordinate_type.
+    assert '"coordinate_type"' not in block, (
+        "P2-2-AC: coordinate_type is dead on scroll mock — should have been removed"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -327,10 +338,24 @@ def test_pyproject_pillow_pinned_for_resampling_enum():
 
 def test_image_utils_asserts_pil_version_at_import():
     """image_utils must guard against a manually-overridden PIL by asserting
-    version at import time. Defense-in-depth alongside the pyproject pin."""
+    version at import time. Defense-in-depth alongside the pyproject pin.
+
+    B-819 (/stress A1.2 cold-start codex F4 honest-gap, 2026-05-17): replaced
+    bare ``assert`` with explicit ``raise RuntimeError`` so ``python -O``
+    cannot strip the lower-bound guard. Upper bound warns rather than raises
+    until dev env catches up to the pyproject pin (currently Pillow 12.1.1
+    is installed, pyproject says ``<12.0``).
+    """
     src = (REPO_ROOT / "p79/backends/image_utils.py").read_text(encoding="utf-8")
     assert "_PIL_VERSION_PARTS" in src, (
         "image_utils.py missing PIL version sentinel — see B-155"
     )
     assert "PIL.__version__" in src
-    assert ">= (10, 0)" in src or ">=(10, 0)" in src
+    # B-819: lower bound MUST raise (not assert) so python -O cannot strip.
+    assert "< (10, 0)" in src or "<(10, 0)" in src, (
+        "B-819: lower bound guard must use explicit raise on < (10, 0) — "
+        "not bare assert which python -O strips"
+    )
+    assert "raise RuntimeError" in src, (
+        "B-819: lower bound enforced via explicit raise, not assert"
+    )
