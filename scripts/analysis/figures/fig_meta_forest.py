@@ -39,17 +39,30 @@ OUT = ROOT / "results/phantom_paper/figures/fig_meta_forest.png"
 # Reordered 2026-05-03: P-SoM HERO first; P-text/P-prompt as STRUCTURAL ABLATION arms
 # (per `EVIDENCE_LAYER_AUDIT.md` §2 Hero+Structural+Framing-rule pre-registration).
 ARMS = [
-    ("4psom",    "4psom_vs_3",    "P-SoM drop-in",    "#b279a2", "HERO"),
-    ("4pdom",    "4pdom_vs_3",    "P-text drop-in",   "#9e6da8", "ABLATION"),
-    ("4pprompt", "4pprompt_vs_3", "P-prompt drop-in", "#9467bd", "ABLATION"),
+    ("4psom",    "4psom_vs_3",    "P-SoM drop-in",    "#b279a2", "APPENDIX_EXPLORATORY"),
+    ("4pdom",    "4pdom_vs_3",    "P-text drop-in",   "#9e6da8", "APPENDIX_EXPLORATORY"),
+    ("4pprompt", "4pprompt_vs_3", "P-prompt drop-in", "#9467bd", "APPENDIX_EXPLORATORY"),
 ]
 
+# /stress A1.20 P0-4-AC (2026-05-17, A1.19 B-437 figure-layer propagation gap):
+# the 3→5-mode lift estimand (`4psom_vs_3` etc.) was demoted to APPENDIX exploratory
+# per A1.19 B-184/B-437 (aggregate_phantom_lift.md prose rewrite). Figure label here
+# was still "DEPLOYMENT HERO (H1, gating)" — stale. True paper §1 H1 PRIMARY is
+# `aggregate_phase1_prereg_gate.{csv,json,md}` (P-SoM drop-one over 6-mode universe
+# FE inverse-variance pool; per preregistration.md §2 H1 decision "3A" 2026-05-14).
+# All 3 arms in THIS figure are appendix-only.
 ROLE_BADGE = {
-    "HERO":     "DEPLOYMENT HERO (H1, gating)",
-    "ABLATION": "STRUCTURAL ABLATION (H4 exploratory; H3 axis evidence)",
+    "APPENDIX_EXPLORATORY": "APPENDIX exploratory (3→5-mode legacy lift; cf. phase1_prereg_gate.{csv,md} for H1 PRIMARY)",
+    # Legacy compat keys retained so any code path inadvertently passing old key
+    # gets graceful behavior rather than KeyError; both deprecate alongside A1.19.
+    "HERO":     "APPENDIX exploratory (legacy HERO label; see A1.19 B-437)",
+    "ABLATION": "APPENDIX exploratory (legacy ABLATION label; see A1.19 B-437)",
 }
 ROLE_DIAMOND_STYLE = {
-    "HERO":     dict(facecolor="#000000", edgecolor="#000000", linewidth=1.2, alpha=1.0),
+    # Same diamond style across all 3 arms (no HERO emphasis anymore).
+    "APPENDIX_EXPLORATORY": dict(facecolor="#cccccc", edgecolor="#444444",
+                                  linewidth=1.0, alpha=0.7),
+    "HERO":     dict(facecolor="#cccccc", edgecolor="#444444", linewidth=1.0, alpha=0.7),
     "ABLATION": dict(facecolor="#cccccc", edgecolor="#444444", linewidth=1.0, alpha=0.7),
 }
 
@@ -131,7 +144,7 @@ def draw_arm_panel(ax: plt.Axes, arm_csv_prefix: str, meta_arm_code: str,
         ax.scatter(c["theta"], cell_y[i], marker="s", s=size,
                    facecolor=color, edgecolor="#222222", linewidth=0.8, zorder=3)
 
-    # Pooled diamond — HERO = filled black; ABLATION = gray outlined
+    # Pooled diamond — APPENDIX_EXPLORATORY all gray-outlined (A1.20 P0-4 fix)
     if meta:
         re_y = y_positions[-1]
         re_theta = float(meta["theta_re"])
@@ -139,12 +152,36 @@ def draw_arm_panel(ax: plt.Axes, arm_csv_prefix: str, meta_arm_code: str,
         re_ci_hi = float(meta["ci_hi"])
         diamond_x = [re_ci_lo, re_theta, re_ci_hi, re_theta]
         diamond_y = [re_y, re_y - 0.28, re_y, re_y + 0.28]
-        style = ROLE_DIAMOND_STYLE[role]
+        style = ROLE_DIAMOND_STYLE.get(role, ROLE_DIAMOND_STYLE["APPENDIX_EXPLORATORY"])
         ax.fill(diamond_x, diamond_y, **style, zorder=4)
-        # Outline only for ABLATION (already drawn by fill, but emphasize edge)
-        if role == "ABLATION":
-            ax.plot(diamond_x + [diamond_x[0]], diamond_y + [diamond_y[0]],
-                    color=style["edgecolor"], linewidth=style["linewidth"], zorder=4)
+        ax.plot(diamond_x + [diamond_x[0]], diamond_y + [diamond_y[0]],
+                color=style["edgecolor"], linewidth=style["linewidth"], zorder=4)
+        # /stress A1.20 P0-1-AC* (2026-05-17, A1.19 B-431 figure-layer fill):
+        # HKSJ diamond now renders alongside DL-Wald iff CSV has the HKSJ columns
+        # (aggregate_phantom_meta.py emits hk_theta_re / hk_ci_lo / hk_ci_hi cols
+        # per same /stress fix). HKSJ is decision-grade at k≤10 (IntHout 2014);
+        # DL-Wald shown for backward-compat with archive prose. Render HKSJ as a
+        # smaller open diamond above DL-Wald row + dotted line so visual diff is
+        # explicit.
+        hk_theta = meta.get("hk_theta_re")
+        hk_ci_lo = meta.get("hk_ci_lo")
+        hk_ci_hi = meta.get("hk_ci_hi")
+        if hk_theta not in (None, "") and hk_ci_lo not in (None, "") and hk_ci_hi not in (None, ""):
+            hk_y = re_y - 0.55  # slight offset above DL-Wald diamond
+            hk_theta_f = float(hk_theta)
+            hk_ci_lo_f = float(hk_ci_lo)
+            hk_ci_hi_f = float(hk_ci_hi)
+            hk_dx = [hk_ci_lo_f, hk_theta_f, hk_ci_hi_f, hk_theta_f]
+            hk_dy = [hk_y, hk_y - 0.18, hk_y, hk_y + 0.18]
+            ax.fill(hk_dx, hk_dy, facecolor="white", edgecolor="#000000",
+                    linewidth=1.4, alpha=0.9, zorder=5)
+            ax.plot(hk_dx + [hk_dx[0]], hk_dy + [hk_dy[0]],
+                    color="#000000", linewidth=1.4, zorder=5)
+            ax.text(hk_ci_hi_f + 0.15, hk_y,
+                    f"  HKSJ {hk_theta_f:+.2f}pp [{hk_ci_lo_f:.2f},{hk_ci_hi_f:.2f}] "
+                    f"(decision-grade at k≤10 per IntHout 2014)",
+                    va="center", fontsize=7.5, color="#000000",
+                    fontstyle="italic")
         # Pooled summary line at zero
         ax.axhline(re_y - 0.65, color="#cccccc", linewidth=0.5, linestyle=":")
 
@@ -183,16 +220,11 @@ def draw_arm_panel(ax: plt.Axes, arm_csv_prefix: str, meta_arm_code: str,
                 f"I²={I2:.0f}%  Q({df})={Q:.2f} p={p_Q_str}  {holm_str}",
                 va="center", fontsize=8.0, color="#222222", fontweight="bold")
 
-    # Title with role badge
-    title_color = "#000000" if role == "HERO" else color
-    title_weight = "bold"
-    ax.set_title(f"{label}  —  {ROLE_BADGE[role]}", fontsize=11,
-                 fontweight=title_weight, color=title_color)
-    # HERO panel gets a stronger frame to emphasize epistemic priority
-    if role == "HERO":
-        for spine in ax.spines.values():
-            spine.set_linewidth(2.0)
-            spine.set_color("#000000")
+    # Title with role badge. /stress A1.20 P0-4 (2026-05-17): no HERO frame
+    # anymore — all 3 arms are APPENDIX exploratory per A1.19 B-437 demote.
+    badge_text = ROLE_BADGE.get(role, ROLE_BADGE["APPENDIX_EXPLORATORY"])
+    ax.set_title(f"{label}  —  {badge_text}", fontsize=11,
+                 fontweight="bold", color=color)
     ax.grid(axis="x", color="#dddddd", linewidth=0.6, zorder=0)
     ax.set_axisbelow(True)
 
@@ -232,18 +264,23 @@ def main() -> None:
             ax.set_xlim(x_min, x_max)
 
     fig.suptitle(
-        "Meta-analytic forest — Hero (P-SoM, gating) vs Structural Ablation (P-text/P-prompt, exploratory)",
+        "Meta-analytic forest — APPENDIX exploratory (3→5-mode legacy lift; "
+        "see `phase1_prereg_gate.{csv,md}` for paper §1 H1 PRIMARY hero)",
         fontsize=12.5, fontweight="bold",
     )
     fig.text(
         0.5, 0.025,
+        "/stress A1.20 P0-4-AC (2026-05-17, A1.19 B-437 figure-layer propagation gap closed): "
+        "the 3→5-mode lift estimand was demoted to APPENDIX exploratory per A1.19 B-184/B-437. "
+        "True paper §1 H1 PRIMARY = P-SoM drop-one over 6-mode universe FE inverse-variance pool "
+        "(producer: `aggregate_phase1_prereg_gate.py`, output: `phase1_prereg_gate.{csv,md}`). "
         "Per-cell square sized by random-effect weight; horizontal line = 95% bootstrap CI. "
-        "**Filled black diamond** (top panel) = HERO pooled estimate (P-SoM, paper hook gating). "
-        "**Gray outlined diamond** (lower 2 panels) = STRUCTURAL ABLATION pooled estimate (P-text / "
-        "P-prompt, exploratory; H4 magnitude not paper-claim gating; H3 axis evidence in separate Venn fig). "
+        "**Gray diamond** = DerSimonian-Laird Wald RE pool (legacy descriptive only). "
+        "**White outlined diamond** (when present) = Hartung-Knapp-Sidik-Jonkman adjustment "
+        "(decision-grade at k≤10 per IntHout et al. 2014; A1.19 B-431). "
         "I² = % variation due to between-cell heterogeneity (low/mod/subs/cons per Higgins-Thompson). "
         f"Gray band = TOST equivalence margin ±{TOST_DELTA_PP}pp.",
-        ha="center", fontsize=8.5, color="#555555",
+        ha="center", fontsize=8.0, color="#555555",
     )
     fig.tight_layout(rect=(0, 0.06, 1, 0.94))
     fig.savefig(OUT, bbox_inches="tight")

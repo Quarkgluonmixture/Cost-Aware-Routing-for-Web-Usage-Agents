@@ -212,23 +212,37 @@ def print_verbose(values: dict[tuple[str, str], dict[str, dict[str, float | None
             )
 
 
-def draw_panel(ax: plt.Axes, row_idx: int, metric: str, values: dict[str, dict[str, float | None]]) -> None:
+def draw_panel(ax: plt.Axes, row_idx: int, metric: str, values: dict[str, dict[str, float | None]],
+               row_ymax: float | None = None) -> None:
+    """/stress A1.20 P1-8-B* (2026-05-17, codex Mode B OOB):
+    - Pre-fix: `None → height 0` + per-panel auto-scale → hatched zero-height bars
+      look like near-zero mechanism rate. Now: masked bars (height=NaN-equivalent
+      → set_visible(False)); explicit "n/a (not observed)" text per-x-tick to
+      distinguish "no effect" vs "not observed".
+    - row_ymax parameter (passed from main loop) sets metric-level y-limit shared
+      across baselines, replacing per-panel auto-scale.
+    """
     metric_values = [values.get(mode, {}).get(metric) for mode in MODES]
-    heights = [0 if value is None else value for value in metric_values]
+    # Masked: render bars only for observed cells; absent cells get explicit "n/a"
+    # text annotation instead of zero-height hatched bar (misleads as near-zero).
     x = np.arange(len(MODES))
+    heights = [(value if value is not None else 0.0) for value in metric_values]
     bars = ax.bar(x, heights, color=[COLORS[mode] for mode in MODES], width=0.68)
     for bar, mode, value in zip(bars, MODES, metric_values):
         if value is None:
-            bar.set_alpha(0.18)
-            bar.set_hatch("//")
+            # P1-8-B fix: hide bar entirely + place explicit "n/a (not observed)"
+            # text in the bar slot. Pre-fix zero-height hatched bar read as
+            # "observed-near-zero" which is qualitatively different.
+            bar.set_visible(False)
             ax.text(
                 bar.get_x() + bar.get_width() / 2,
-                0.2,
-                "n/a",
+                ax.get_ylim()[1] * 0.05 if row_ymax is None else row_ymax * 0.05,
+                "n/a\n(not\nobserved)",
                 ha="center",
                 va="bottom",
-                fontsize=7.0,
-                color="#666666",
+                fontsize=6.5,
+                color="#888888",
+                style="italic",
             )
             continue
         label = f"{value:.1f}" if "Self" not in metric else f"{value:.2f}"
@@ -245,8 +259,13 @@ def draw_panel(ax: plt.Axes, row_idx: int, metric: str, values: dict[str, dict[s
     ax.set_xticks(x, MODES, rotation=0, fontsize=7.0)
     ax.grid(axis="y", color="#dddddd", linewidth=0.8)
     ax.set_axisbelow(True)
-    ymax = max([v for v in metric_values if v is not None] or [1])
-    ax.set_ylim(0, ymax * (1.28 if "Self" not in metric else 1.45) + (1.0 if "Self" not in metric else 0.05))
+    # P1-8-B fix: metric-level fixed y-limit (passed by main loop) replaces
+    # per-panel auto-scale → cross-baseline visual comparable.
+    if row_ymax is not None and row_ymax > 0:
+        ax.set_ylim(0, row_ymax)
+    else:
+        ymax = max([v for v in metric_values if v is not None] or [1])
+        ax.set_ylim(0, ymax * (1.28 if "Self" not in metric else 1.45) + (1.0 if "Self" not in metric else 0.05))
     if metric == "Search-loop %":
         ax.set_ylabel("Percent")
     elif metric == "Self-correction / ep":

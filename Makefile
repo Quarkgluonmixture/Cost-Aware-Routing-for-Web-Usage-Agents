@@ -261,7 +261,12 @@ _figures:
 	$(PYTHON) scripts/analysis/figures/fig0c_drop_one_oracle.py
 	$(PYTHON) scripts/analysis/figures/fig0c_phantom_lift_bars.py
 	$(PYTHON) scripts/analysis/figures/fig0d_taskpool_jaccard.py
-	$(PYTHON) scripts/analysis/figures/fig0e_category_mode_heatmap.py
+	# /stress A1.20 P0-5-B* / Q3=B (2026-05-17): fig0e_category_mode_heatmap deferred —
+	# reads codex_audit_*.json with NO live producer in Makefile (only archived copies
+	# under docs/archive/analysis_pre_2026-05-15/). Reproducibility broken on clean
+	# rerun. Re-enable when aggregate_category_mode.py producer is built + advisor
+	# confirms category taxonomy (paper §1 category claim deferred until then).
+	# $(PYTHON) scripts/analysis/figures/fig0e_category_mode_heatmap.py
 	$(PYTHON) scripts/analysis/figures/fig0f_overlap_stacked_bar.py
 	$(PYTHON) scripts/analysis/figures/fig0g_routing_auroc_heatmap.py
 	$(PYTHON) scripts/analysis/figures/fig1ab_cascade_diamond.py

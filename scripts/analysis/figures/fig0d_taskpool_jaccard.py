@@ -21,9 +21,11 @@ from matplotlib.colors import LinearSegmentedColormap
 
 try:
     from scripts.analysis.lib.run_registry import get_cells
+    from scripts.analysis.figures.lib.panels import paper_grade_panels
 except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
     sys.path.append(str(Path(__file__).resolve().parents[3]))
     from scripts.analysis.lib.run_registry import get_cells
+    from scripts.analysis.figures.lib.panels import paper_grade_panels
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -41,19 +43,17 @@ COLORS = {
 MODE_ORDER = ["DOM", "P-text", "P-prompt", "P-SoM", "SoM", "Vision"]
 
 
-def _panel(key: str, title: str, baseline: str, site: str, expected: int) -> dict:
-    return {
-        "key": key,
-        "title": title,
-        "expected": expected,
-        "modes": {cell.mode: cell.episodes_dir for cell in get_cells(baseline=baseline, site=site)},
-    }
-
+# /stress A1.20 P0-3-ABC* + P1-1-AB (2026-05-17): PANELS from shared lib helper
+# (was: hardcoded B0+B1, stale N=234/210). Now B0+B1+B2 + canonical N=224/205.
 PANELS = [
-    _panel("b0_cls", "B0 classifieds", "B0", "classifieds", 234),
-    _panel("b0_red", "B0 reddit", "B0", "reddit", 210),
-    _panel("b1_cls", "B1 classifieds", "B1", "classifieds", 234),
-    _panel("b1_red", "B1 reddit", "B1", "reddit", 210),
+    {
+        "key": s.key,
+        "title": s.title,
+        "expected": s.expected_n,
+        "modes": dict(s.modes),
+        "is_placeholder": s.is_placeholder,
+    }
+    for s in paper_grade_panels()
 ]
 
 
@@ -79,7 +79,8 @@ def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
             print(f"[warn] duplicate summary ignored in count: {path}", file=sys.stderr)
             continue
         observed.add(tid)
-        if bool(record.get("success", False)):  # §139.8: adjusted_success retired
+        # /stress A1.20 P1-2-AB (2026-05-17, B-283 sibling): strict `is True`.
+        if record.get("success") is True:
             successes.add(tid)
     return successes, observed
 
@@ -110,6 +111,17 @@ def panel_sets(panel: dict) -> tuple[dict[str, set[int]], dict[str, set[int]], d
 
 
 def draw_panel(ax: plt.Axes, panel: dict, cmap) -> None:
+    # /stress A1.20 P0-3: placeholder cells (B2 pre-Phase-1a-fire) render "pending"
+    # tile rather than silent skip.
+    if panel.get("is_placeholder") or not panel["modes"]:
+        ax.text(0.5, 0.5,
+                f"{panel['title']}\n\n(pending Phase 1a)\nN={panel['expected']}",
+                ha="center", va="center", transform=ax.transAxes,
+                fontsize=10, color="#888888", style="italic")
+        ax.set_title(panel["title"], fontsize=11, fontweight="bold")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        return None
     sets, obs, observed_counts, panel_modes = panel_sets(panel)
     expected = panel["expected"]
     n_modes = len(panel_modes)
@@ -173,13 +185,27 @@ def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 10, "figure.dpi": 150})
     cmap = LinearSegmentedColormap.from_list("overlap", ["#b91c1c", "#fef2f2", "#dbeafe", "#1d4ed8"])
-    fig, axes = plt.subplots(1, 4, figsize=(22.0, 5.8), constrained_layout=True)
+    # /stress A1.20 P0-3: layout = (n_panels // n_cols)×n_cols, grows with B2.
+    n_panels = len(PANELS)
+    n_cols = min(3, n_panels)
+    n_rows = (n_panels + n_cols - 1) // n_cols
+    fig, axes = plt.subplots(n_rows, n_cols,
+                             figsize=(7.0 * n_cols, 5.8 * n_rows),
+                             constrained_layout=True)
+    axes_flat = axes.flat if hasattr(axes, "flat") else [axes]
     image = None
-    for ax, panel in zip(axes.flat, PANELS):
-        image = draw_panel(ax, panel, cmap)
+    for ax, panel in zip(axes_flat, PANELS):
+        result = draw_panel(ax, panel, cmap)
+        if result is not None:
+            image = result
+    for extra in list(axes_flat)[n_panels:]:
+        extra.set_visible(False)
     if image is not None:
-        cbar = fig.colorbar(image, ax=axes.ravel().tolist(), shrink=0.82, pad=0.03)
-        cbar.set_label("Jaccard overlap of adjusted-success task pools")
+        cbar = fig.colorbar(image,
+                            ax=(axes.ravel().tolist() if hasattr(axes, "ravel") else [axes]),
+                            shrink=0.82, pad=0.03)
+        # /stress A1.20 P2-2-A (2026-05-17): canonical `success` per §139.8 retire.
+        cbar.set_label("Jaccard overlap of success task pools (canonical, post-§139.8)")
     fig.suptitle("5-Mode Outcome Overlap: Task-Pool Jaccard Matrix", fontsize=15, fontweight="bold")
     fig.text(
         0.5,

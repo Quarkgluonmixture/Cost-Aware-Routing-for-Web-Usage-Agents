@@ -80,8 +80,17 @@ def main() -> None:
         ci_lo_6_lift = _to_float(r.get("lift_6_vs_3_ci95_lo_pp"))
         ci_hi_6_lift = _to_float(r.get("lift_6_vs_3_ci95_hi_pp"))
 
-        ci_lo_psom = sr3 + ci_lo_psom_lift
-        ci_hi_psom = sr3 + ci_hi_psom_lift
+        # /stress A1.20 P0-2-A* (2026-05-17, A1.19 B-429 figure-layer fill):
+        # use per-comparison universe baseline for CI rendering. A1.19 B-429 fix
+        # added `lift_4psom_vs_3_pp` = `sr_4_psom - sr_3_psom_only` (over u_psom).
+        # Bar height is `sr_psom` (over u_psom). CI must be rooted at same baseline
+        # universe — derive `sr_3_psom_only = sr_psom - lift_4psom_vs_3_pp` to
+        # back-compute baseline-of-comparison and root CI bars to it. Pre-fix:
+        # `sr3 + ci_lo_psom_lift` mixed universe_5 baseline (sr3) with u_psom lift.
+        lift_psom_pp = _to_float(r.get("lift_4psom_vs_3_pp")) or 0.0
+        sr3_psom_universe = sr_psom - lift_psom_pp
+        ci_lo_psom = sr3_psom_universe + ci_lo_psom_lift
+        ci_hi_psom = sr3_psom_universe + ci_hi_psom_lift
 
         # Build sr_vals; pdom / pprompt / 5-mode / 6-mode may be None (pending)
         sr_pdom_plot = 0.0 if sr_pdom is None else sr_pdom

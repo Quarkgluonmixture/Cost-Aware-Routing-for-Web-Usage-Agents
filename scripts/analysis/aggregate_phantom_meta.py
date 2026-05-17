@@ -300,6 +300,28 @@ def main() -> int:
         )
         if meta is None:
             continue
+        # /stress A1.20 P0-1-AC* (2026-05-17, A1.19 B-431 figure-layer propagation gap):
+        # HKSJ columns added to CSV schema so fig_meta_forest.py can read decision-grade
+        # RE inference (was: HKSJ in MD only → figure reads CSV → no HKSJ → stale DL-Wald
+        # diamond rendered as decision-grade despite anti-conservative at k≤10).
+        hk = hartung_knapp_sidik_jonkman(
+            [c["theta"] for c in cells],
+            [c["se"] for c in cells],
+            meta["tau2"],
+        )
+        hk_csv = {}
+        if hk is not None:
+            hk_csv = {
+                "hk_theta_re": round(hk["theta_re"], 6),
+                "hk_se_hk": round(hk["se_hk"], 6),
+                "hk_ci_lo": round(hk["ci_lo_hk"], 6),
+                "hk_ci_hi": round(hk["ci_hi_hk"], 6),
+                "hk_t_stat": (round(hk["t_stat"], 6) if hk["t_stat"] is not None else None),
+                "hk_t_crit": round(hk["t_crit"], 6),
+                "hk_df": hk["df"],
+                "hk_p_one_sided": (round(hk["p_one_sided_hk"], 6)
+                                   if hk["p_one_sided_hk"] is not None else None),
+            }
         meta_rows.append({
             "arm_code": code,
             "arm_label": label,
@@ -312,6 +334,7 @@ def main() -> int:
             ) or "none",
             **{k: round(v, 6) if isinstance(v, float) else v
                for k, v in meta.items() if k != "k"},
+            **hk_csv,
         })
 
     # CSV

@@ -26,9 +26,11 @@ import numpy as np
 
 try:
     from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+    from scripts.analysis.figures.lib.panels import paper_grade_panels
 except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
     sys.path.append(str(Path(__file__).resolve().parents[3]))
     from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+    from scripts.analysis.figures.lib.panels import paper_grade_panels
 
 ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT / "results/phantom_paper/figures/fig0c_drop_one_oracle.png"
@@ -52,39 +54,33 @@ MODE_LABELS = {
 }
 
 
-def _mode_dirs(baseline: str, site: str) -> dict[str, Path]:
-    # F40 audit fix 2026-05-09: respect P79_AGGREGATOR_GRADE so legacy
-    # archived cells produce sensitivity figures.
-    import os as _os
-    env_grade = _os.environ.get("P79_AGGREGATOR_GRADE", "")
-    grade_filter = [g.strip() for g in env_grade.split(",") if g.strip()] or None
-    return {cell.mode: cell.episodes_dir for cell in get_cells(baseline=baseline, site=site, grade=grade_filter)}
+def _spec_to_legacy_panel(spec) -> dict:
+    """Convert PanelSpec to legacy `_panel` dict shape used by draw_panel.
 
-
-def _panel(key: str, title: str, baseline: str, site: str, expected: int) -> dict:
+    /stress A1.20 P0-3-ABC* + P1-1-AB (2026-05-17, 3-AI overlap): replaces
+    hardcoded `PANELS = [_panel(..., 234), _panel(..., 210)]` (B0+B1 only,
+    stale N=234/210) with `paper_grade_panels()` from lib/panels.py — pulls
+    B0/B1/B2 + canonical N=224/205 from run_registry + scored_task_count.
+    """
     return {
-        "key": key,
-        "title": title,
-        "expected": expected,
-        "modes": _mode_dirs(baseline, site),
+        "key": spec.key,
+        "title": spec.title,
+        "expected": spec.expected_n,
+        "modes": dict(spec.modes),
+        "is_placeholder": spec.is_placeholder,
     }
+
 
 # Drop-one oracle uses union/intersection over the **common observed** task
 # universe per panel (so a partial in-flight run doesn't artificially shrink
-# other modes' unique-task counts). Set "common_universe": True (default) to
-# restrict to intersection across modes; partial Phantom rows annotated with
-# their N/expected coverage.
-PANELS = [
-    _panel("b0_cls", "B0 classifieds", "B0", "classifieds", 234),
-    _panel("b0_red", "B0 reddit", "B0", "reddit", 210),
-    _panel("b1_cls", "B1 classifieds", "B1", "classifieds", 234),
-    _panel("b1_red", "B1 reddit", "B1", "reddit", 210),
-]
+# other modes' unique-task counts).
+PANELS = [_spec_to_legacy_panel(s) for s in paper_grade_panels()]
 
-SECTION103_LOSS = {
-    "b0_cls": {"DOM": 2.14, "SoM": 7.69, "Vision": 3.85, "P-SoM": 1.71},
-    "b0_red": {"DOM": 1.43, "SoM": 2.86, "Vision": 1.90, "P-SoM": 2.38},
-}
+# /stress A1.20 P1-4-A (2026-05-17): SECTION103_LOSS drift-detection dict deleted.
+# Pre-fix: hardcoded B0 cls/red only, stale numbers (B0 cls=1.71 vs intro hero 3.33);
+# drift mechanism stale + B1/B2 blind. Drift detection now lives in aggregator-level
+# `validate_run.py` + post-flight QA. Figure-internal sanity check retired (redundant).
+SECTION103_LOSS = {}
 
 
 def task_id(path: Path) -> int:
@@ -106,7 +102,11 @@ def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
             record = json.load(f)
         tid = task_id(path)
         observed.add(tid)
-        if bool(record.get("success", False)):  # §139.8: adjusted_success retired
+        # /stress A1.20 P1-2-AB (2026-05-17, B-283 sibling propagation): strict
+        # `is True` instead of `bool(record.get(...))`. JSON string "false" is
+        # Python truthy under bool() → SR silently inflated. `success` field
+        # must be strict bool per post-§139.8 canonical (B-283 strict loader).
+        if record.get("success") is True:
             successes.add(tid)
     return successes, observed
 
@@ -204,12 +204,28 @@ def bootstrap_drop_one_ci(
 
 
 def draw_panel(ax: plt.Axes, panel: dict, csv_rows: list[dict]) -> None:
+    # /stress A1.20 P0-3 (2026-05-17): placeholder cells (e.g., B2 pre-Phase-1a-fire)
+    # render explicit "pending" tile rather than silent skip.
+    if panel.get("is_placeholder") or not panel["modes"]:
+        ax.text(0.5, 0.5,
+                f"{panel['title']}\n\n(pending Phase 1a paper-grade fire)\n"
+                f"N expected = {panel['expected']}",
+                ha="center", va="center", transform=ax.transAxes,
+                fontsize=10, color="#888888", style="italic",
+                bbox={"boxstyle": "round,pad=0.4", "facecolor": "#f9f9f9",
+                      "edgecolor": "#cccccc"})
+        ax.set_title(panel["title"], fontsize=10.5, fontweight="bold")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        return
     sets_r, obs, common, partial_modes_set = load_panel_sets(panel)
     # Drop-one denominator = N_common across complete (non-partial) modes.
     n_common = len(common) if common else panel["expected"]
     losses = drop_one_losses(sets_r, n_common)
     cis = bootstrap_drop_one_ci(sets_r, n_common)
     partial_modes = sorted(partial_modes_set)
+    # P1-4-A: SECTION103_LOSS now empty (deleted retired drift dict); loop preserved
+    # as no-op for future drift-detection re-injection if needed.
     if panel["key"] in SECTION103_LOSS:
         for mode, verified in SECTION103_LOSS[panel["key"]].items():
             if mode in losses and abs(losses[mode] - verified) > 0.25:
@@ -280,22 +296,39 @@ def main() -> None:
     import csv as _csv
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 10, "figure.dpi": 150})
-    fig, axes = plt.subplots(2, 2, figsize=(13.0, 8.6), sharey=True)
+    # /stress A1.20 P0-3: layout grows automatically with N panels (3 baselines
+    # × 2 sites = 6 panels for Phase 1a, 2×4 grid). lib/panels.PanelSpec drives.
+    n_panels = len(PANELS)
+    n_cols = 2
+    n_rows = (n_panels + n_cols - 1) // n_cols
+    fig, axes = plt.subplots(n_rows, n_cols,
+                             figsize=(13.0, max(4.3, 4.3 * n_rows)), sharey=True)
+    axes_flat = axes.flat if hasattr(axes, "flat") else [axes]
     csv_rows: list[dict] = []
-    for ax, panel in zip(axes.flat, PANELS):
+    for ax, panel in zip(axes_flat, PANELS):
         draw_panel(ax, panel, csv_rows)
-    for ax in axes[:, 0]:
-        ax.set_ylabel("Oracle loss when arm is removed (pp, 95% bootstrap CI)")
+    # Hide unused subplot if odd panel count.
+    for extra in list(axes_flat)[n_panels:]:
+        extra.set_visible(False)
+    for row in (axes if n_rows > 1 else [axes]):
+        if hasattr(row, "__iter__"):
+            row[0].set_ylabel("Oracle loss when arm is removed (pp, 95% bootstrap CI)")
+        else:
+            row.set_ylabel("Oracle loss when arm is removed (pp, 95% bootstrap CI)")
     fig.suptitle("Drop-One Oracle: Incremental Routing Value (up to 6-mode, 95% bootstrap CI, n=1000)", fontsize=13.5, fontweight="bold")
     fig.text(
         0.5,
         0.025,
         "Higher bars = representation solves tasks not recovered by the other plotted arms. "
-        "P-SoM = Phantom-SoM, P-text = AXTree+DOM-prompt+no-image, P-prompt = AXTree+SoM-prompt+no-image. "
+        "P-SoM = Phantom-SoM, P-text = AXTree+DOM-prompt+no per-step screenshot, P-prompt = AXTree+SoM-prompt+no per-step screenshot. "
         "† = partial / common-universe subset (B0 reddit P-prompt run live; "
-        "B1 phantom_som chain in flight). N=common observed across all modes per panel. CI from 1000-resample bootstrap.",
+        "B1 phantom_som chain in flight). **N=common observed across all 6 modes per panel** "
+        "(denominator value shown in each panel title; pp lifts are expressed as percentages "
+        "of THIS panel's N_common, not against site's expected_n) — /stress A1.20 P1-9-C (2026-05-17). "
+        "Canonical N per site from scored_task_count post-§139.8: cls=224 / red=205. "
+        "CI from 1000-resample bootstrap.",
         ha="center",
-        fontsize=8.0,
+        fontsize=7.5,
         color="#555555",
     )
     fig.tight_layout(rect=(0, 0.06, 1, 0.93))

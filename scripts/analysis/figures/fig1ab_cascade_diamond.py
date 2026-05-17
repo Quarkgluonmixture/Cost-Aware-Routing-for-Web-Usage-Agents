@@ -145,8 +145,31 @@ def mode_metrics(site: str, ep_dir: Path) -> dict[str, float | int | None]:
 
 
 def prompt_status(site: str) -> tuple[str, dict[str, float | int | None] | None]:
-    candidates = sorted(RESULTS.glob(f"B0_phantom_prompt_{site}_*/phase1_phantom_prompt_router_0/episodes"))
-    ep_dir = candidates[-1] if candidates else RESULTS / f"B0_phantom_prompt_{site}_queued/phase1_phantom_prompt_router_0/episodes"
+    """/stress A1.20 P0-7-B* (2026-05-17, codex Mode B OOB): replace latest-glob
+    `sorted(RESULTS.glob(...))[-1]` with `run_registry.get_cells(...)` lookup.
+
+    Pre-fix latest-glob silently pulled in-flight or archived runs depending on
+    filesystem timestamps; clean rerun could yield different P-prompt source on
+    different machines. `run_registry` gives single paper-grade source per cell.
+
+    FULL refactor (move mechanism stats compute to new `aggregate_cascade_metrics.py`
+    aggregator, figure reads CSV) is DEFERRED per scope-band guidance (~0.5-1d);
+    this minimal patch closes the provenance break (latest-glob) and the silent
+    success-truthy bug (`bool(success)` → strict `is True` via `mode_metrics`).
+    """
+    try:
+        from scripts.analysis.lib.run_registry import get_cells
+    except ModuleNotFoundError:
+        import sys as _sys
+        _sys.path.append(str(Path(__file__).resolve().parents[3]))
+        from scripts.analysis.lib.run_registry import get_cells
+
+    cells = get_cells(baseline="B0", site=site, mode="P-prompt")
+    if cells:
+        ep_dir = cells[0].episodes_dir
+    else:
+        # Phase 1a pre-fire: no P-prompt cell in run_manifest yet.
+        ep_dir = RESULTS / f"B0_phantom_prompt_{site}_queued/phase1_phantom_prompt_router_0/episodes"
     files = sorted(ep_dir.glob(f"{site}_task_*_summary_v2.json")) if ep_dir.exists() else []
     n = len({task_id(path, "summary") for path in files})
     expected = EXPECTED_N[site]

@@ -3544,4 +3544,106 @@ submodule).
 - py_compile PASS: som.py + types.py + schema_migrations/v2.py + runner/main.py + analyze_reason_diagnostics.py + _shared_vl_utils.py + qwen3vl_agent.py + gemma3vl_agent.py + proxy_api_agent.py + extract_hidden_states.py + action_utils.py + metrics.py
 - Tests **412/412 PASS** (8 skipped intentional; 6 deselected — `test_vwa_evaluator_b91_guard.py` excluded due to environmental SHA drift from user A1.25 GRL session, NOT related to A1.4 batch; +2 new tests from B-452 + B-456)
 
-**Next available B-number**: B-459+.
+**Next available B-number**: B-459+ (consumed below by A1.20).
+
+## A1.20 `scripts/analysis/figures/*.py` — figure-script pre-fire 3-AI cycle (2026-05-17 02:00 deep night)
+
+19-fix batch (11 P0 + 8 P1) from cross-AI Mode A (Claude 10 figures) + Mode B (codex ML systems engineer, 6 complementary figures) + Mode C (gemini prose/design-layer, 5 prose+caption artifacts). Chronicle entry §173. Scope `phase1_plan.md §A1.20`. **B-numbers reservation collided with parallel GRL session A1.25 (consumed B-449~B-458); A1.20 batch renumbered B-459~B-477**. P0-7 fig1ab/fig1c full aggregator-extraction REFACTOR landed as MINIMAL PATCH (latest-glob→run_registry + N validation + strict `is True` + masked None bars); full refactor (extract to new aggregate_cascade_metrics.py + aggregate_strategy_gradient.py) deferred to dedicated session. P1-3 SE from quantile CI deferred per Q12=C with A1.19 P1-2 advisor batch.
+
+### B-459. fig_meta_forest HKSJ schema-skew (CSV missing HKSJ cols) — Mode A+C P0 2-AI overlap 🛠️ FIXED commit `<pending>`
+- **Attack**: `fig_meta_forest.py:88-95` reads `meta_phantom_lift.csv` but A1.19 B-431 HKSJ rows landed in MD output ONLY (CSV schema 18 cols 无 `se_hk / ci_lo_hk / ...`). Paper §1 forest plot 仍 render anti-conservative DL-Wald diamond as decision-grade despite Wald z+1.96 at k=6 anti-conservative per IntHout 2014. Sibling propagation gap A1.19 fix → figure layer.
+- **Fix**: `aggregate_phantom_meta.py:303` add 8 HKSJ columns to CSV schema (`hk_theta_re / hk_se_hk / hk_ci_lo / hk_ci_hi / hk_t_stat / hk_t_crit / hk_df / hk_p_one_sided`); `fig_meta_forest.py:_panel_render` add HKSJ diamond (white outlined, smaller, alongside DL-Wald) with explicit caption "HKSJ decision-grade at k≤10 per IntHout 2014"; sync title + footer text.
+
+### B-460. `fig0c_phantom_lift_bars.py:78-83` mixed-universe bar rendering — Mode A P0 OOB 🛠️ FIXED commit `<pending>`
+- **Attack**: bar height `sr_psom - sr3` mixed `sr_psom` (over u_psom universe per A1.19 B-429) with `sr3` (over universe_5 baseline). CI `sr3 + ci_lo_psom_lift` used same universe mix. A1.19 B-429 only fix CSV columns, figure rendering 仍 mixed.
+- **Fix**: derive `sr3_psom_universe = sr_psom - lift_psom_pp` from A1.19 B-429 corrected `lift_4psom_vs_3_pp` (= `sr_4_psom - sr_3_psom_only`). CI bars rooted at per-comparison universe baseline. Math consistent within row.
+
+### B-461. B2 silent missing across 12 figures (sibling propagation) — Mode A+B+C P0 3-AI overlap 🛠️ FIXED commit `<pending>`
+- **Attack**: Phase 1a 6-cell scope (B0/B1/B2 × cls/red) shown as 4-cell across 12/26 figures (Claude 6 + Codex 6) hard-coded `PANELS = [_panel(B0, ...), _panel(B1, ...)]` or `for baseline in ("B0", "B1")`. Paper `section1_intro.md:65` claims "evaluate on three baselines B0/B1/B2" but core figures (Oracle/Forest/Venn) only render 4 panels. "Ghost baseline" reviewer攻击.
+- **Fix**: new `scripts/analysis/figures/lib/__init__.py` + `scripts/analysis/figures/lib/panels.py` shared helper `paper_grade_panels(sites=..., baselines=...)` pulls from `run_registry.BASELINES` + `scored_task_count` canonical N. 12 figures × replace hardcoded PANELS with helper call. Placeholder rendering for incomplete cells (`is_placeholder=True` panels show "pending Phase 1a" tile rather than silent skip). Layout grows automatically (2×2 → 2×3 / 3×2). Future baseline addition = 1-file change in run_registry, all 12 figures auto-update.
+
+### B-462. `fig_meta_forest.py:41-50` HERO label drift (A1.19 B-437 propagation gap) — Mode A+C P0 2-AI overlap 🛠️ FIXED commit `<pending>`
+- **Attack**: ARMS + ROLE_BADGE labels `4psom_vs_3` arm 为 "DEPLOYMENT HERO (H1, gating)" — A1.19 B-437 already demoted source aggregator's md prose 到 "APPENDIX legacy exploratory family". Figure label still claims H1 gating. Same estimand schizophrenia as A1.19 B-437 but in figure layer.
+- **Fix**: ARMS role 全改 "APPENDIX_EXPLORATORY"; ROLE_BADGE 改 "APPENDIX exploratory (3→5-mode legacy lift; cf. phase1_prereg_gate.{csv,md} for H1 PRIMARY)"; HERO frame emphasis (spine 2.0pt black) 移除 (all 3 arms 同 gray-outline diamond); legacy keys (HERO/ABLATION) retained as backward-compat aliases with warn label.
+
+### B-463. `fig0e_category_mode_heatmap.py:53` archived-only source no live producer — Mode B P0 OOB 🛠️ DEFERRED commit `<pending>` per Q3=B
+- **Attack**: reads `docs/analysis/cross_sites/codex_audit_*.json` but Makefile `_aggregate` 无 live producer. Only archived copies under `docs/archive/analysis_pre_2026-05-15/cross_sites/` exist. Clean rerun on different machine = silent stale or crash. Paper §1 category claim 不可重现.
+- **Defer rationale (per Q3=B 推荐)**: `fig0e_category_mode_heatmap` removed from `Makefile _figures` target (commented out L260). Paper §1 不再 cite category heatmap evidence (category sub-claim deferred until advisor confirms taxonomy + new `aggregate_category_mode.py` producer is built). Lower-risk than option (a) "build live producer + advisor confirm".
+
+### B-464. `fig0f_overlap_stacked_bar.py:100` uniqueness inflation direction-bias — Mode B P0 OOB 🛠️ FIXED commit `<pending>`
+- **Attack**: uniqueness 仅 computed over **available** modes, not declared 6-mode universe. If P-prompt/B2/missing cells absent, unique counts inflate **exactly in direction of "hidden 4th arm" structural claim** — confirmation bias direction-aligned with paper §1 hypothesis. Reviewer audit code 立刻 catch.
+- **Fix**: `draw_panel` 加 `require_six_mode_complete=True` default. Incomplete cells render explicit "INCOMPLETE CELL — uniqueness inflation risk" placeholder text rather than silent compute over <6 modes. Override via `P79_FIG0F_ALLOW_INCOMPLETE=1` env var for Phase 1a inspection sensitivity. Fail-loud rather than silently bias.
+
+### B-465. `fig1ab/fig1c` render-time aggregator anti-pattern — Mode B P0 OOB 🛠️ PARTIAL FIX commit `<pending>` (minimal patch landed, full refactor deferred)
+- **Attack**: `fig1ab_cascade_diamond.py:107` + `fig1c_strategy_gradient.py:129` compute mechanism stats LIVE from step JSONL inside renderer. `fig1ab:147` P-prompt uses `sorted(RESULTS.glob(...))[-1]` latest-glob 不是 run_registry → silently pulls in-flight or archived runs. Provenance break: no frozen CSV/JSON gate, weak N check.
+- **Minimal patch (this round)**: `prompt_status()` now uses `get_cells(baseline="B0", site=site, mode="P-prompt")` instead of latest-glob — single paper-grade source. Strict `success is True` via `mode_metrics` (P1-2 sibling). Full refactor (extract stats to new `aggregate_cascade_metrics.py` + `aggregate_strategy_gradient.py` aggregators, figure reads CSV) **DEFERRED** per scope-band (0.5-1d) — separate focused session.
+
+### B-466. `section1_intro.md` "Zero image tokens" prose vs prereg §2.6 reference_image — Mode C P0 OOB 🛠️ FIXED commit `<pending>`
+- **Attack**: Paper §1 prose claims "agent receives ... no image" + "no image tokens" + "no marked image". `preregistration.md §2.6`: "phantom modes preserve task-supplied reference_images to maintain task tractability". Technical inaccuracy: prose 卖点 phrase 跟 prereg lock 直接冲突.
+- **Fix**: section1_intro.md `[^image-scope]` footnote 加 explicit clarification: "no image" means "no per-step marked page screenshot" (per-step encoding pipeline cost gone); task-supplied reference_image tokens preserved per prereg §2.6 + identical across all 6 modes (enter once at episode start). Inline phrasing 改 "no marked screenshot" / "no per-step screenshot encoding cost" / "no per-step marked screenshot, no extra inference modality at every browser step".
+
+### B-467. `section1_intro.md:7` H1 estimand schizophrenia (4-mode prose vs 6-mode prereg gate) — Mode C P0 OOB 🛠️ FIXED commit `<pending>`
+- **Attack**: prose cites "3.33pp / 2.56pp" hero numbers as if they are H1 PRIMARY gate, but those are **archive 4-mode universe** {DOM, SoM, Vision, P-SoM} drop-one. prereg-locked H1 PRIMARY = P-SoM drop-one over **6-mode universe** {DOM, SoM, Vision, P-text, P-prompt, P-SoM} with FE inverse-variance pooling over 6 planned cells. Estimand drift between intro hero number + prereg gate target.
+- **Fix**: section1_intro.md `[^hero-estimand-scope]` footnote 加 explicit caveat — 3.33/2.56 是 archive 4-mode universe, prereg H1 是 6-mode FE pool, Phase 1a 数据 land 后 paragraph 改 cite `phase1_prereg_gate.{csv,md}` 6-mode FE result. Inline clarifying "The numbers reported here are from the **archive 4-mode universe** {DOM, SoM, Vision, P-SoM}".
+
+### B-468. Hardcoded `234/210` expected vs canonical `scored_task_count = 224/205` — Mode A+B P1 2-AI overlap 🛠️ FIXED commit `<pending>`
+- **Attack**: 4 figures (Claude fig0c/0d + Codex fig0e/0f) hardcoded `_panel(..., 234)` / `_panel(..., 210)` vs canonical `scored_task_count(site, "visualwebarena", strict=True) = 224/205` post-§139.8. fig0c L131 `int(234*0.9)=210` partial threshold vs actual 224 obs → "near-complete" note 误导.
+- **Fix**: `lib/panels.py` exposes `expected_n_canonical(site)` calling `scored_task_count`. `paper_grade_panels()` 自动注入 — replaces hardcoded 234/210 in PANELS construction across 4 figures.
+
+### B-469. `bool(record.get("success", False))` truthy in 7 figures — Mode A+B P1 2-AI overlap 🛠️ FIXED commit `<pending>`
+- **Attack**: 7 figures × `bool(record.get("success", False))` (B-283 sibling propagation). String `"false"` truthy under `bool()` → SR silently inflated in figure rendering. Archive / schema drift risk.
+- **Fix**: 7 figures × replace `bool(record.get(...))` → `record.get("success") is True` strict. Files: fig0c_drop_one_oracle:109 / fig0d_taskpool_jaccard:82 / fig0f_overlap_stacked_bar:80 / fig_phantom_structure_venn:80 / fig3d_cost_sr_frontier:116 / fig3a_token_cost_intra_baseline:103 (note: fig0c_phantom_lift_bars reads CSV not summary JSON, unaffected).
+
+### B-470. SE from quantile CI in fig_meta_forest — Mode A P1 🛠️ DEFERRED per Q12=C
+- **Attack**: `fig_meta_forest.py:75` `se = (CI_hi - CI_lo) / (2 * 1.96)` quantile→normal-approx SE same as A1.19 P1-2-AB Claude+Codex finding in figure layer sibling. A1.19 P1-2 deferred per Q7=C advisor batch.
+- **Defer rationale**: same advisor sync ticket as A1.19 P1-2. Fix together when advisor confirms DL meta SE protocol + aggregate_phantom_lift schema bump emits `bootstrap_se_pp` column. Track as backlog with A1.19 P1-2.
+
+### B-471. `fig0c_drop_one_oracle.py:84-87` SECTION103_LOSS hardcoded stale — Mode A+C P1 🛠️ FIXED commit `<pending>` per Q13=c
+- **Attack**: drift-detection dict hardcoded B0 cls/red only with stale numbers (B0 cls=1.71 vs intro current 3.33). Drift detection mechanism 本身 stale; B1+B2 cells blind.
+- **Fix per Q13=c (推荐 drop entirely)**: SECTION103_LOSS = {} empty dict. Drift detection now lives in aggregator-level `validate_run.py` + post-flight QA. Figure-internal sanity check retired (redundant with aggregator gate).
+
+### B-472. `fig_failure_modes_per_cell.py:76` B2 baseline_order sorts as 9 — Mode A P1 🛠️ FIXED commit `<pending>`
+- **Attack**: `baseline_order = {"B0": 0, "B1": 1}.get(b, 9)` — B2 sorts 9 catch-all instead of canonical 2. B2 panels scattered to end not adjacent to B0/B1.
+- **Fix**: add `"B2": 2` key → `{"B0": 0, "B1": 1, "B2": 2}`. Canonical order.
+
+### B-473. `fig_failure_modes_per_cell.py:125` footer "5-bucket" stale — Mode A P1 🛠️ FIXED commit `<pending>`
+- **Attack**: footer 写 "5-bucket paper taxonomy" — A1.19 B-432 changed `aggregate_failure_modes.py` docstring to "7-bucket + 1 dynamic". Figure footer 不同步 paper §5 reviewer 对账 inconsistency.
+- **Fix**: footer 改 "7-bucket paper-grade taxonomy (5 core + 2 catch-alls) + 1 dynamic — see aggregate_failure_modes.py docstring (A1.19 B-432)".
+
+### B-474. `fig2_micro_divergence_heatmap.py:112` per-baseline color normalization → cross-baseline incomparable — Mode B P1 OOB 🛠️ FIXED commit `<pending>`
+- **Attack**: `lim/fmax/repeat_lim` from each rendered baseline's finite values → identical colors mean DIFFERENT effect sizes across `fig2_*_B0.png` vs `fig2_*_B1.png`. Viewer reads cross-baseline color intensity as comparable when not. Classic per-panel vmin/vmax trap.
+- **Fix**: new `compute_global_limits()` precomputes global vmin/vmax across **all baselines/sites/contrasts**. `render_baseline()` accepts `global_limits` param + uses fixed `vmin/vmax`. main() loops over `BASELINES` registry (B0+B1+B2) + writes per-baseline PNGs sharing global colormap norm. Footer disclosure "vmin/vmax now GLOBAL across baselines for cross-baseline visual comparability".
+
+### B-475. `fig1c_strategy_gradient.py:216` None→0 bars + per-panel auto-scale (missing-as-zero rendering bias) — Mode B P1 OOB 🛠️ FIXED commit `<pending>`
+- **Attack**: `heights = [0 if value is None else value for value in metric_values]` + per-panel y-auto-scale make absence look like near-zero. Reviewer can't distinguish "no effect" from "not observed" qualitatively.
+- **Fix**: `draw_panel(..., row_ymax=...)` accepts metric-level y-limit (passed from main loop). None values: `bar.set_visible(False)` + explicit "n/a (not observed)" text annotation in bar slot. Fixed y-limit per metric row replaces auto-scale.
+
+### B-476. `fig0c_drop_one_oracle.py` figure caption N denominator transparency — Mode C P1 🛠️ FIXED commit `<pending>`
+- **Attack**: gemini Mode C denominator drift: intro prose N=210 vs figure n_common can drift (if listwise-deletion excludes any tasks, denominator differs). Reader 对账 prose vs figure number catches inconsistency.
+- **Fix**: footer text 加 explicit "**N=common observed across all 6 modes per panel** (denominator value shown in each panel title; pp lifts are expressed as percentages of THIS panel's N_common, not against site's expected_n)". Canonical scored_task_count per site (cls=224/red=205) also noted.
+
+### B-477. P2 backlog (5 items) — DEFERRED 🟢 backlog
+- P2-1 fig0a raw vs `sr_pct_clean` (B-403 image_encode_error 排除)
+- P2-2 fig0d colorbar "adjusted-success" label (FIXED via aggregator label fix during P0-3 batch — already updated to "success canonical, post-§139.8")
+- P2-3 fig0g `vmin=0.4/vmax=0.9` + 0.7 threshold hardcoded
+- P2-4 fig3a API$ vs electricity$ legend drift
+- P2-5 fig_phantom_structure_venn caption "directly visualizes H3" vs 2-way unique mismatch
+
+**B-numbers consumed (A1.20)**: B-459~B-477 (19 contiguous; B-463 DEFER per Q3=B; B-470 DEFER per Q12=C; remaining 17 FIXED).
+
+**Smoke verification (A1.20)**:
+- py_compile PASS: 14 figure scripts + lib/panels.py + lib/__init__.py + aggregate_phantom_meta.py
+- lib/panels.py smoke: `paper_grade_panels()` returns 6 PanelSpec (3 baselines × 2 sites) with canonical N=224/205, all placeholder=True pre-Phase-1a-fire (correct)
+- Tests **417/418 PASS** (1 pre-existing fail from parallel GRL session NOT A1.20-caused; confirmed via test isolation in A1.19 commit `124d3a5`; 4 new tests landed from A1.4 batch — verified independent of A1.20 fix)
+- Production figures dated 2026-05-10 (pre-A1.19+A1.20) — next `make analysis` regenerates with all fixes
+- Makefile `_figures` target: fig0e commented out (P0-5 defer per Q3=B); fig2 main() now writes B0+B1+B2 (was B0+B1 only)
+
+### Deferred A1.20 P0/P1 (per Q&A bottom-tier auto-default + size scope)
+- **B-463 P0-5 fig0e_category_mode_heatmap** — Q3=B defer: removed from Makefile `_figures` target. Re-enable when `aggregate_category_mode.py` live producer is built + advisor confirms category taxonomy.
+- **B-465 P0-7 fig1ab/fig1c full aggregator extraction** — minimal patch landed (latest-glob → run_registry + N check + strict success); full refactor (new aggregate_cascade_metrics.py + aggregate_strategy_gradient.py + figures read CSV) deferred to dedicated session (0.5-1d scope per codex Mode B).
+- **B-470 P1-3 SE from quantile CI** — Q12=C defer: bundled with A1.19 P1-2 advisor sync batch.
+- **B-477 P2 (5 items)** — backlog per Q19=C.
+
+**Phase 1a fire green-light extended (post-A1.20)**: substrate paper-grade after A1.1+A1.2+A1.3 v9+A1.4+A1.19+A1.20 + parallel GRL chunks = **68+ fixes** across multi-session 6-day audit sprint. Analysis pipeline + figure layer paper-§1-hero gate cleansed of OSF-lock blockers. Paper §1 intro prose now footnotes the "no image" semantic correction + the 4-mode-vs-6-mode estimand caveat (will be cleanly cited from `phase1_prereg_gate.{csv,md}` after Phase 1a data lands). Shared `scripts/analysis/figures/lib/panels.py` infrastructure closes B2-sibling-propagation reservoir for future baseline additions. Remaining advisor blockers: B-262 GLM channel + B-130 FE/RE estimand + B-369 schema v2.2 retry + A1.19 advisor batch (B-426 SE floor protocol + B-428 cost_margin amend) + A1.20 sibling (B-470 quantile-CI SE).
+
+**Next available B-number**: B-478+.

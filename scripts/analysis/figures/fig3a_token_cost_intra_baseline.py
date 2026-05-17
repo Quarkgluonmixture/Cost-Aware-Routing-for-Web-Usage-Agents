@@ -26,10 +26,10 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 try:
-    from scripts.analysis.lib.run_registry import get_cells
+    from scripts.analysis.lib.run_registry import BASELINES, get_cells
 except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
     sys.path.append(str(Path(__file__).resolve().parents[3]))
-    from scripts.analysis.lib.run_registry import get_cells
+    from scripts.analysis.lib.run_registry import BASELINES, get_cells
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -58,9 +58,11 @@ class Cell:
     n: int
 
 
+# /stress A1.20 P0-3-ABC* (2026-05-17): drive from BASELINES registry (B0+B1+B2)
+# instead of hardcoded ("B0", "B1") — auto-propagates new baselines.
 SPECS = [
     (cell.baseline, cell.site, cell.mode, cell.run_dir / cell.condition_subdir, cell.expected_n)
-    for baseline in ("B0", "B1")
+    for baseline in BASELINES
     for site in ("classifieds", "reddit")
     for cell in get_cells(baseline=baseline, site=site)
 ]
@@ -79,6 +81,8 @@ def load_cell(baseline: str, site: str, mode: str, cond_dir: Path, expected_n: i
         print(f"[warn] missing {summary_path}", file=sys.stderr)
         return None
     summary = json.loads(summary_path.read_text())
+    # /stress A1.20 P0-3 + A1.19 (2026-05-17): B0=API$ / B1+B2=electricity$ per
+    # aggregate_cost_electricity classification (A1.19 cost classes update).
     if baseline == "B0":
         cost = summary.get("avg_total_cost_usd")
     else:
@@ -100,7 +104,8 @@ def load_cell(baseline: str, site: str, mode: str, cond_dir: Path, expected_n: i
             continue
         seen.add(tid)
         rec = json.loads(path.read_text())
-        succ += bool(rec.get("success", False))  # §139.8: adjusted_success retired
+        # /stress A1.20 P1-2-AB (2026-05-17, B-283 sibling): strict `is True`.
+        succ += int(rec.get("success") is True)
     n = len(seen)
     if n < expected_n * 0.9:
         print(f"[warn] {baseline} {site} {mode}: partial n={n}/{expected_n}", file=sys.stderr)

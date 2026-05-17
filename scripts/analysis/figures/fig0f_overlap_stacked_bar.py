@@ -22,9 +22,11 @@ from matplotlib.patches import Patch
 
 try:
     from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+    from scripts.analysis.figures.lib.panels import paper_grade_panels
 except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
     sys.path.append(str(Path(__file__).resolve().parents[3]))
     from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+    from scripts.analysis.figures.lib.panels import paper_grade_panels
 
 ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT / "results/phantom_paper/figures/fig0f_overlap_stacked_bar.png"
@@ -42,19 +44,16 @@ COLORS = {
 DEPTH_ALPHA = {1: 1.0, 2: 0.75, 3: 0.60, 4: 0.45, 5: 0.30, 6: 0.20}
 
 
-def _panel(key: str, title: str, baseline: str, site: str, expected: int) -> dict:
-    return {
-        "key": key,
-        "title": title,
-        "expected": expected,
-        "modes": {cell.mode: cell.episodes_dir for cell in get_cells(baseline=baseline, site=site)},
-    }
-
+# /stress A1.20 P0-3-ABC* + P1-1-AB (2026-05-17): PANELS from shared lib helper.
 PANELS = [
-    _panel("B0 cls", "B0 classifieds", "B0", "classifieds", 234),
-    _panel("B0 red", "B0 reddit", "B0", "reddit", 210),
-    _panel("B1 cls", "B1 classifieds", "B1", "classifieds", 234),
-    _panel("B1 red", "B1 reddit", "B1", "reddit", 210),
+    {
+        "key": s.key,
+        "title": s.title,
+        "expected": s.expected_n,
+        "modes": dict(s.modes),
+        "is_placeholder": s.is_placeholder,
+    }
+    for s in paper_grade_panels()
 ]
 
 
@@ -77,7 +76,8 @@ def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
             record = json.load(f)
         tid = task_id(path)
         observed.add(tid)
-        if bool(record.get("success", False)):  # §139.8: adjusted_success retired
+        # /stress A1.20 P1-2-AB (2026-05-17, B-283 sibling): strict `is True`.
+        if record.get("success") is True:
             successes.add(tid)
     return successes, observed
 
@@ -109,9 +109,47 @@ def text_color(alpha: float) -> str:
     return "white" if alpha >= 0.7 else "#222222"
 
 
-def draw_panel(ax: plt.Axes, panel: dict) -> None:
+def draw_panel(ax: plt.Axes, panel: dict, require_six_mode_complete: bool = True) -> None:
+    """Render per-cell stacked-bar overlap depth.
+
+    /stress A1.20 P0-6-B* (2026-05-17, codex Mode B OOB): when `require_six_mode_complete=True`
+    (DEFAULT, paper-grade safe), cells missing any of the 6 paper modes render an
+    explicit "incomplete — uniqueness inflation risk" placeholder rather than silently
+    computing depth over available modes. Pre-fix: "unique=1" meant unique-among-loaded-
+    modes (k modes), NOT unique-among-6-mode-universe → if P-prompt / B2 / etc. are
+    absent, unique counts inflate **exactly in direction of "hidden 4th arm" structural
+    claim** (confirmation bias direction-aligned with paper §1 hypothesis). Now: gate
+    rejects incomplete cells from inference; sensitivity sweep (override flag) for
+    Phase 1a partial data inspection.
+
+    Override via `P79_FIG0F_ALLOW_INCOMPLETE=1` env var (Phase 1a inspection mode).
+    """
+    import os as _os
+    env_allow = _os.environ.get("P79_FIG0F_ALLOW_INCOMPLETE", "0") in ("1", "true", "yes")
     sets, observed_counts = panel_data(panel)
     available_modes = list(panel["modes"])
+    six_required = {"DOM", "SoM", "Vision", "P-text", "P-prompt", "P-SoM"}
+    missing_modes = sorted(six_required - set(available_modes))
+    if missing_modes and require_six_mode_complete and not env_allow:
+        # Paper-grade gate: refuse to render uniqueness on incomplete cell.
+        ax.text(
+            0.5, 0.5,
+            f"INCOMPLETE CELL — uniqueness inflation risk\n\n"
+            f"Missing modes: {', '.join(missing_modes)}\n\n"
+            f"per /stress A1.20 P0-6: 'unique=N' over <6-mode universe is\n"
+            f"biased toward 'hidden 4th arm' structural claim.\n\n"
+            f"Re-render after Phase 1a 6-mode data lands, or set\n"
+            f"P79_FIG0F_ALLOW_INCOMPLETE=1 for inspection sensitivity.",
+            ha="center", va="center", transform=ax.transAxes,
+            fontsize=8.5, color="#a93226", style="italic",
+            bbox={"boxstyle": "round,pad=0.6", "facecolor": "#fdf2f2",
+                  "edgecolor": "#a93226", "linewidth": 1.2},
+        )
+        ax.set_title(f"{panel['title']} — INCOMPLETE", fontsize=11,
+                     fontweight="bold", color="#a93226")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        return
     k = len(available_modes)
     max_depth = max(5, k)
     totals = {mode: len(sets.get(mode, set())) for mode in MODE_ORDER if mode in sets}
@@ -206,9 +244,20 @@ def draw_panel(ax: plt.Axes, panel: dict) -> None:
 def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 9.5, "figure.dpi": 150})
-    fig, axes = plt.subplots(2, 2, figsize=(13.5, 9.5), sharey=False)
-    for ax, panel in zip(axes.flat, PANELS):
+    # /stress A1.20 P0-3: layout grows with panel count.
+    n_panels = len(PANELS)
+    n_cols = min(2, n_panels)
+    n_rows = (n_panels + n_cols - 1) // n_cols
+    fig, axes = plt.subplots(n_rows, n_cols,
+                             figsize=(13.5, 4.75 * n_rows), sharey=False)
+    axes_flat = axes.flat if hasattr(axes, "flat") else [axes]
+    for ax, panel in zip(axes_flat, PANELS):
+        # Placeholder placeholders already handled inside draw_panel via
+        # require_six_mode_complete gate (P0-6). is_placeholder cells will
+        # render the gate's "incomplete cell" text.
         draw_panel(ax, panel)
+    for extra in list(axes_flat)[n_panels:]:
+        extra.set_visible(False)
 
     depth_handles = [
         Patch(facecolor=to_rgba("#555555", DEPTH_ALPHA[depth]), edgecolor="#555555", label=f"depth={depth}")

@@ -34,19 +34,21 @@ except ImportError:  # pragma: no cover
     sys.exit("matplotlib_venn not installed; pip install matplotlib_venn")
 
 try:
-    from scripts.analysis.lib.run_registry import get_cells
+    from scripts.analysis.lib.run_registry import get_cells, BASELINES
+    from scripts.analysis.figures.lib.panels import paper_grade_panels
 except ModuleNotFoundError:  # pragma: no cover
     sys.path.append(str(Path(__file__).resolve().parents[3]))
-    from scripts.analysis.lib.run_registry import get_cells
+    from scripts.analysis.lib.run_registry import get_cells, BASELINES
+    from scripts.analysis.figures.lib.panels import paper_grade_panels
 
 ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT / "results/phantom_paper/figures/fig_phantom_structure_venn.png"
 
+# /stress A1.20 P0-3-ABC* (2026-05-17): drive panel list from run_registry +
+# scored_task_count canonical N (was: hardcoded 4 B0+B1 tuples).
 PANELS = [
-    ("B0", "classifieds", "B0 classifieds"),
-    ("B0", "reddit",      "B0 reddit"),
-    ("B1", "classifieds", "B1 classifieds"),
-    ("B1", "reddit",      "B1 reddit"),
+    (s.baseline, s.site, s.title)
+    for s in paper_grade_panels()
 ]
 
 # Phantom arm colors aligned with `fig0c_drop_one_oracle.py`
@@ -77,7 +79,8 @@ def load_success_set(ep_dir: Path) -> tuple[set[int], set[int]]:
             continue
         tid = task_id(path)
         obs.add(tid)
-        if bool(rec.get("success", False)):  # §139.8: adjusted_success retired
+        # /stress A1.20 P1-2-AB (2026-05-17, B-283 sibling): strict `is True`.
+        if rec.get("success") is True:
             succ.add(tid)
     return succ, obs
 
@@ -167,9 +170,16 @@ def draw_panel(ax: plt.Axes, baseline: str, site: str, title: str) -> None:
 def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 10, "figure.dpi": 150})
-    fig, axes = plt.subplots(2, 2, figsize=(13.5, 11.0))
-    for ax, (baseline, site, title) in zip(axes.flat, PANELS):
+    # /stress A1.20 P0-3: layout grows with panel count (3 baselines × 2 sites = 6).
+    n_panels = len(PANELS)
+    n_cols = min(2, n_panels)
+    n_rows = (n_panels + n_cols - 1) // n_cols
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(13.5, 5.5 * n_rows))
+    axes_flat = axes.flat if hasattr(axes, "flat") else [axes]
+    for ax, (baseline, site, title) in zip(axes_flat, PANELS):
         draw_panel(ax, baseline, site, title)
+    for extra in list(axes_flat)[n_panels:]:
+        extra.set_visible(False)
 
     fig.suptitle(
         "Phantom space 2-axis empirical structure — task-set overlap "

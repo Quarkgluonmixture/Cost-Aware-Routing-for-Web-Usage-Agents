@@ -29,10 +29,10 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 try:
-    from scripts.analysis.lib.run_registry import get_cells
+    from scripts.analysis.lib.run_registry import BASELINES, get_cells
 except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
     sys.path.append(str(Path(__file__).resolve().parents[3]))
-    from scripts.analysis.lib.run_registry import get_cells
+    from scripts.analysis.lib.run_registry import BASELINES, get_cells
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -48,7 +48,9 @@ MODE_COLORS = {
     "P-prompt": "#9467bd",
 }
 MODE_DISPLAY = {"P-SoM": "P-SoM", "P-prompt": "P-prompt", "P-text": "P-text"}
-MODEL_MARKERS = {"B0": "o", "B1": "s"}
+# /stress A1.20 P0-3-ABC* (2026-05-17): add B2 (Gemma3-VL 2026-05-14) marker.
+# Was: hardcoded {"B0": "o", "B1": "s"} — B2 silent missing from cost-SR frontier.
+MODEL_MARKERS = {"B0": "o", "B1": "s", "B2": "D"}
 
 
 @dataclass(frozen=True)
@@ -71,9 +73,11 @@ class Point:
     cost: float
 
 
+# /stress A1.20 P0-3-ABC*: use BASELINES registry (B0+B1+B2) instead of hardcoded
+# ("B0", "B1"). New baselines auto-propagate.
 SPECS = [
     ConditionSpec(cell.baseline, cell.site, cell.mode, cell.run_dir / cell.condition_subdir, cell.expected_n)
-    for baseline in ("B0", "B1")
+    for baseline in BASELINES
     for site in ("classifieds", "reddit")
     for cell in get_cells(baseline=baseline, site=site)
 ]
@@ -113,7 +117,8 @@ def episode_adj_sr(condition_dir: Path) -> tuple[float, int]:
             continue
         seen.add(tid)
         rec = json.loads(path.read_text())
-        succ += bool(rec.get("success", False))  # §139.8: adjusted_success retired
+        # /stress A1.20 P1-2-AB (2026-05-17, B-283 sibling): strict `is True`.
+        succ += int(rec.get("success") is True)
     n = len(seen)
     return (100.0 * succ / n if n else 0.0, n)
 

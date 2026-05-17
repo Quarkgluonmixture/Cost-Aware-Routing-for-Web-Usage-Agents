@@ -68,12 +68,15 @@ def main():
         return
 
     # Sort: baseline → site → mode (canonical order)
+    # /stress A1.20 P1-5-A (2026-05-17, Claude): add B2:2 (Gemma3-VL 2026-05-14)
+    # canonical baseline order. Pre-fix `.get(b, 9)` sorted B2 as 9 catch-all →
+    # B2 panels scattered to end instead of being adjacent to B0/B1.
     def cell_sort_key(name: str):
         parts = name.split("/")
         if len(parts) != 3:
             return (9, 9, 9)
         b, s, m = parts
-        baseline_order = {"B0": 0, "B1": 1}.get(b, 9)
+        baseline_order = {"B0": 0, "B1": 1, "B2": 2}.get(b, 9)
         site_order = {"classifieds": 0, "reddit": 1, "shopping": 2}.get(s, 9)
         mode_order = MODE_ORDER.index(m) if m in MODE_ORDER else 9
         return (baseline_order, site_order, mode_order)
@@ -122,7 +125,8 @@ def main():
     ax.legend(loc="lower right", fontsize=8, framealpha=0.9, ncol=2)
     ax.grid(True, axis="x", alpha=0.3)
     fig.text(0.01, 0.005,
-             f"Source: {SRC.relative_to(ROOT)}  |  5-bucket paper taxonomy from aggregate_failure_modes.py",
+             f"Source: {SRC.relative_to(ROOT)}  |  7-bucket paper-grade taxonomy "
+             f"(5 core + 2 catch-alls) + 1 dynamic, see aggregate_failure_modes.py docstring (A1.19 B-432)",
              fontsize=6.5, color="gray")
     fig.tight_layout()
     fig.savefig(OUT, dpi=150, bbox_inches="tight")
