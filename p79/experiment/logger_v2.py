@@ -7,6 +7,30 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+# B-736 fix (/stress A1.8 cold-start P1-2-A* Claude OOB, 2026-05-17): POSIX
+# advisory file lock for concurrent-append paths (`write_step` +
+# `log_trajectory_event` + `merge_staging_trajectory_events`). Pre-fix two
+# callers (in-process runner + out-of-band reset gate bash via
+# `log_trajectory_event_external` + watchdog python) could write to the same
+# JSONL concurrently — kernel-level append atomicity (`O_APPEND`) is only
+# guaranteed for writes ≤ `PIPE_BUF` (4096 bytes on Linux). Serialized
+# trajectory event JSON lines with `metadata` containing wave_task lists /
+# purged_digest_records can easily exceed 4KB → torn writes → corrupt JSONL
+# → dedup can't see it, aggregator `prior_event_count` miscounts → paper §4
+# Option K covariate analysis silently wrong.
+#
+# Cross-platform: `fcntl` is POSIX-only (Linux + macOS). Windows would need
+# `msvcrt.locking`. Phase 1a target is DGX Spark (Linux aarch64) +
+# Condenser A100 VM (Linux) — fcntl is the right primitive. Imported lazily
+# in a try/except so non-POSIX dev environments don't hard-fail at module
+# import.
+try:
+    import fcntl  # POSIX advisory locks (DGX Spark + Condenser A100 paper-grade hosts)
+    _HAS_FCNTL = True
+except ImportError:  # pragma: no cover — non-POSIX
+    fcntl = None  # type: ignore[assignment]
+    _HAS_FCNTL = False
+
 
 def _event_fingerprint(event: Dict[str, Any]) -> str:
     """B-491 (/stress A1.5b Phase 1 P1-3-B codex OOB, 2026-05-17): canonical
@@ -100,11 +124,25 @@ class LoggerV2:
         # B-198/B-289 lineage (parent dir fsync after os.replace atomic write)
         # but for append-create code path. Best-effort: cheap (~10ms) only on
         # first-create; idempotent on subsequent appends.
+        #
+        # B-736 fix (/stress A1.8 cold-start P1-2-A* Claude OOB, 2026-05-17):
+        # `fcntl.flock(LOCK_EX)` for the duration of the write. Long step
+        # records with embedded screenshot/DOM artifact references can exceed
+        # PIPE_BUF=4096 — POSIX append atomicity is NOT guaranteed beyond
+        # that bound. Watchdog auto-clean retry path could race with the
+        # primary runner on the same step file → torn writes → corrupt
+        # JSONL line silently consumed by aggregators.
         _existed_pre_write = path.exists()
         with open(path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
-            f.flush()
-            os.fsync(f.fileno())
+            if _HAS_FCNTL:
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            try:
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+                f.flush()
+                os.fsync(f.fileno())
+            finally:
+                if _HAS_FCNTL:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
         if not _existed_pre_write:
             _fsync_dir(path.parent)
 
@@ -201,11 +239,25 @@ class LoggerV2:
         # dir fsync on first-create — see write_step docstring for full
         # rationale (DGX SIGKILL between first append + dirent flush would
         # otherwise evaporate the trajectory event log entirely).
+        #
+        # B-736 fix (/stress A1.8 cold-start P1-2-A* Claude OOB, 2026-05-17):
+        # `fcntl.flock(LOCK_EX)` — this is the highest-risk append path because
+        # 2 callers concurrently write (in-process runner via this method,
+        # AND out-of-band reset gate / watchdog via
+        # `log_trajectory_event_external` which constructs a fresh LoggerV2 to
+        # reach this same path). `metadata` payload (wave_task_index list,
+        # purged_digest_records dict, etc.) routinely exceeds PIPE_BUF=4096.
         _existed_pre_write = path.exists()
         with open(path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(event, ensure_ascii=False) + "\n")
-            f.flush()
-            os.fsync(f.fileno())
+            if _HAS_FCNTL:
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            try:
+                f.write(json.dumps(event, ensure_ascii=False) + "\n")
+                f.flush()
+                os.fsync(f.fileno())
+            finally:
+                if _HAS_FCNTL:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
         if not _existed_pre_write:
             _fsync_dir(path.parent)
 
@@ -374,11 +426,23 @@ def merge_staging_trajectory_events(
         # B-492 (/stress A1.5b Phase 1 P1-4-B codex OOB, 2026-05-17): first-
         # create parent-dir fsync — see write_step / log_trajectory_event for
         # full rationale.
+        #
+        # B-736 fix (/stress A1.8 cold-start P1-2-A* Claude OOB, 2026-05-17):
+        # `fcntl.flock(LOCK_EX)` — merge races with concurrent
+        # `log_trajectory_event` calls on the same target path (resume +
+        # ongoing runner) are possible. Lock here is symmetric with the
+        # in-process logger path.
         _existed_pre_write = target.exists()
         with open(target, "a", encoding="utf-8") as f:
-            f.write(json.dumps(event, ensure_ascii=False) + "\n")
-            f.flush()
-            os.fsync(f.fileno())
+            if _HAS_FCNTL:
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            try:
+                f.write(json.dumps(event, ensure_ascii=False) + "\n")
+                f.flush()
+                os.fsync(f.fileno())
+            finally:
+                if _HAS_FCNTL:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
         if not _existed_pre_write:
             _fsync_dir(target.parent)
         merged += 1

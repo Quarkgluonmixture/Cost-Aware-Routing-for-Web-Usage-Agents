@@ -68,6 +68,18 @@ def _valid_episode_summary():
         "escalation_count": 0, "trigger_distribution": {},
         "benchmark_noise": False, "benchmark_noise_category": None,
         "artifacts_dir": "",
+        # B-732 fix (/stress A1.8 cold-start P0-2-C* Gemini OOB, 2026-05-17):
+        # PAPER_GRADE_EPISODE_OPTIONAL_KEYS — all 7 sentinels required at
+        # write boundary. User directive 2026-05-17 cold-start: "archive
+        # 不进 paper scope" → no backward-compat hook; fresh fixtures stamp
+        # the full sentinel set with neutral default values.
+        "evaluator_authority_mode": None,
+        "reward_override_applied": None,
+        "wallclock_start": None,
+        "wallclock_end": None,
+        "resume_fingerprint": None,
+        "needs_reevaluation": False,
+        "trajectory_incomplete": False,
     }
 
 

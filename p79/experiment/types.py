@@ -545,6 +545,134 @@ _STEP_FIELD_TYPES: Dict[str, tuple] = {
 }
 
 
+# B-740 fix (/stress A1.8 cold-start P1-6-C* Gemini OOB, 2026-05-17): import-time
+# invariant that `_STEP_FIELD_TYPES` stays synced with auto-derived
+# `REQUIRED_STEP_FIELDS_V2`. Pre-fix: B-281 derived REQUIRED from the dataclass
+# (auto-sync) but `_STEP_FIELD_TYPES` was hand-maintained → adding a required
+# dataclass field would auto-update REQUIRED but silently leave the new field
+# with NO type check. Gemini Mode C attack: "schema 全覆盖虚假安全感". Now any
+# drift fails loudly at module import (caller can't proceed without fixing).
+_STEP_FIELD_TYPES_KEYS = frozenset(_STEP_FIELD_TYPES.keys())
+assert _STEP_FIELD_TYPES_KEYS == REQUIRED_STEP_FIELDS_V2, (
+    "B-740 invariant: _STEP_FIELD_TYPES drift detected. "
+    f"In TYPES not in REQUIRED: {_STEP_FIELD_TYPES_KEYS - REQUIRED_STEP_FIELDS_V2}; "
+    f"In REQUIRED not in TYPES: {REQUIRED_STEP_FIELDS_V2 - _STEP_FIELD_TYPES_KEYS}. "
+    "Adding a required field to StepRecordV2 dataclass requires a matching entry in _STEP_FIELD_TYPES."
+)
+del _STEP_FIELD_TYPES_KEYS  # don't pollute module namespace
+
+
+# B-731 fix (/stress A1.8 cold-start P0-1-AC* 2-AI OOB, 2026-05-17): paper-grade
+# critical OPTIONAL field VALUE-type contract. Pre-fix `validate_step_record_v2`
+# only enforced KEY presence on PAPER_GRADE_STEP_OPTIONAL_KEYS (B-280); VALUE
+# could be any type (string `"false"` truthy attack, the B-283 attack vector
+# extended to step-level paper-grade optionals). Now: any present key with a
+# non-conforming VALUE type raises ValueError at write boundary. None is always
+# accepted (semantic: "not measured this step"). Cold-start Claude F2 + Gemini
+# C2 dual-catch. Empirical smoke confirmed pre-fix accepted `parse_valid="false"`
+# (string) and 5+ siblings — sibling propagation of B-283 fix that B-280 closed
+# the KEY-presence half but left VALUE-type half open.
+_STEP_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
+    "parse_valid": (bool, type(None)),
+    "parse_failure_reason": (str, type(None)),
+    "image_meta": (dict, type(None)),
+    "image_meta_recorded": (bool,),
+    "locator_route_meta": (dict, type(None)),
+    "locator_route_meta_primary": (dict, type(None)),
+    "locator_route_meta_retry": (dict, type(None)),
+    "select_option_meta": (dict, type(None)),
+    "select_option_meta_primary": (dict, type(None)),
+    "select_option_meta_retry": (dict, type(None)),
+    "agent_visible_changed": (bool, type(None)),
+    "control_intervention": (dict, type(None)),
+    "dialog_meta": (list, type(None)),
+    "action_executed": (dict, type(None)),
+    "fallback_finish": (bool, type(None)),
+    "element_bbox": (list, type(None)),
+    "cost_unit_basis": (str, type(None)),
+    "cost_total_mixed_unit_warn": (bool, type(None)),
+    "network_retry_count": (int, type(None)),
+    "network_retry_wait_ms": (int, float, type(None)),
+}
+
+
+# B-732 fix (/stress A1.8 cold-start P0-2-C* Gemini OOB, 2026-05-17): paper-
+# grade critical Episode-level OPTIONAL keys. Pre-fix `validate_episode_summary_
+# v2` had no equivalent of `PAPER_GRADE_STEP_OPTIONAL_KEYS` — runner exception
+# path could silently drop `evaluator_authority_mode` (B-554) and `reward_
+# override_applied` (B-554) → `fill_defaults` backfills to None → aggregator
+# sees new data as "pre-B-545 legacy cohort" → A1.5b cohort isolation defense
+# silently bypassed. User directive 2026-05-17 cold-start: "archive 不进 paper
+# scope" → full 7-field enforce (no archive backward-compat hook). Fresh
+# Pass-1+Pass-2 paper-grade runs MUST stamp all 7 sentinels.
+PAPER_GRADE_EPISODE_OPTIONAL_KEYS = frozenset({
+    # B-545 / B-554 archive cohort isolation sentinels
+    "evaluator_authority_mode",
+    "reward_override_applied",
+    # B-487 Option K covariate anchors (paper §4 GLMM substrate)
+    "wallclock_start",
+    "wallclock_end",
+    # B-485 resume identity gate (paper-grade rerun protocol)
+    "resume_fingerprint",
+    # B-486 quarantine flag (crash-before-evaluator distinguishing)
+    "needs_reevaluation",
+    # B-193 paper §3.5 transparency telemetry
+    "trajectory_incomplete",
+})
+
+
+# B-732 companion + B-739 fix (/stress A1.8 cold-start P1-5-A Claude, 2026-05-17):
+# per-field VALUE-type contract for Episode summary, both REQUIRED and OPTIONAL.
+# Pre-fix `validate_episode_summary_v2` only type-checked 4 fields (success /
+# score / steps / task_id); 30+ other fields including cost/latency/energy hero
+# fields were pass-through. Cross-baseline paper §1 cost claim defensibility
+# depends on these all being numeric — string-coercion attack on
+# `total_cost_usd` etc. would slip past. Now: full type map covering the
+# numeric hero fields + B-732 sentinels.
+_EPISODE_FIELD_TYPES: Dict[str, tuple] = {
+    # core typed hero fields
+    "schema_version": (str,),
+    "run_id": (str,),
+    "condition_id": (str,),
+    "benchmark": (str,),
+    "benchmark_site": (str,),
+    "task_id": (int,),
+    "seed": (int,),
+    "steps": (int,),
+    "retries": (int,),
+    "no_op_rate": (int, float),
+    "page_unchanged_rate": (int, float),
+    "total_latency_ms": (int, float),
+    "p95_step_latency_ms": (int, float),
+    "total_tokens": (int,),
+    "total_model_cost_usd": (int, float),
+    "total_cost_usd": (int, float),
+    "total_router_overhead_cost_usd": (int, float),
+    "total_router_overhead_ms": (int, float),
+    "total_energy_kwh": (int, float, type(None)),
+    "total_co2e_kg": (int, float, type(None)),
+    "escalation_count": (int,),
+    "trigger_distribution": (dict,),
+    "benchmark_noise": (bool,),
+    "benchmark_noise_category": (str, type(None)),
+    "artifacts_dir": (str,),
+}
+
+
+# Optional-field VALUE-types for Episode summary (B-732 companion). Sentinels +
+# transparency telemetry covered. None is semantic "not measured / archive
+# row".
+_EPISODE_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
+    "evaluator_authority_mode": (str, type(None)),
+    "reward_override_applied": (bool, type(None)),
+    "wallclock_start": (str, type(None)),
+    "wallclock_end": (str, type(None)),
+    "resume_fingerprint": (str, type(None)),
+    "needs_reevaluation": (bool,),
+    "trajectory_incomplete": (bool,),
+}
+
+
 def _validate_required_and_version(
     record: Dict[str, Any], required: frozenset, label: str
 ) -> None:
@@ -601,6 +729,28 @@ def validate_step_record_v2(record: Dict[str, Any]) -> None:
         raise ValueError(
             f"StepRecordV2 missing paper-grade critical optional keys (value may be None): "
             f"{missing_critical}. Paper §3 evidence-layer contract requires presence."
+        )
+    # B-731 fix (/stress A1.8 cold-start P0-1-AC* 2-AI OOB, 2026-05-17): VALUE-type
+    # check on paper-grade critical optionals. Pre-fix only KEY-presence enforced;
+    # string `"false"` for `parse_valid` / `agent_visible_changed` / `fallback_finish`
+    # would silently pass → downstream `bool(row.get(...))` truthy-cast → SR / FP
+    # rate inflated. Empirical smoke (Claude F2) confirmed 6+ sibling fields
+    # accepted poisoned types pre-fix. None always accepted (semantic: not
+    # measured this step).
+    bad_optional_types = []
+    for fname, expected in _STEP_OPTIONAL_FIELD_TYPES.items():
+        if fname not in record:
+            continue  # presence check already enforced above
+        val = record[fname]
+        if not isinstance(val, expected):
+            bad_optional_types.append(
+                f"{fname}: expected {tuple(t.__name__ for t in expected)}, "
+                f"got {type(val).__name__}={val!r}"
+            )
+    if bad_optional_types:
+        raise ValueError(
+            f"StepRecordV2 paper-grade optional field VALUE type mismatch on "
+            f"{len(bad_optional_types)} field(s): " + "; ".join(bad_optional_types)
         )
     # B-444 (/stress A1.25 P1-8-B* codex OOB, 2026-05-17): nested telemetry
     # semantics validator. Pre-fix `locator_route_meta={}` or
@@ -692,27 +842,121 @@ def validate_step_record_v2(record: Dict[str, Any]) -> None:
 
 
 def validate_episode_summary_v2(record: Dict[str, Any]) -> None:
-    """Paper-grade episode summary validator (B-285 fix 2026-05-16, A1.8).
+    """Paper-grade episode summary validator (B-285 fix 2026-05-16, A1.8;
+    extended /stress A1.8 cold-start B-732/B-735/B-739, 2026-05-17).
 
     Mirrors `validate_step_record_v2`. Required-field set derived from
-    `EpisodeSummaryV2` dataclass. Spot-checks the 3 paper §1 hero fields
-    (`success` is bool, `score` is float, `steps` is int) explicitly — these
-    are the type-coercion attack surface flagged by codex Mode B F3 (B-283).
+    `EpisodeSummaryV2` dataclass.
+
+    Checks (in order):
+      1. REQUIRED fields (derived from dataclass) present + `schema_version`
+         matches `SCHEMA_VERSION_V2`.
+      2. **Hero fields explicit type-check** (B-285 + B-735 cold-start):
+         `success` must be bool (NOT bool-subclass-of-int loophole; the existing
+         B-285 check is correct). `score` must be int|float **excluding bool**
+         (B-735 fix: pre-fix `isinstance(True, (int, float)) == True` admitted
+         `score=True` truthy bypass; Gemini Mode C C1 cold-start OOB attack).
+         `steps`/`task_id` must be int.
+      3. **All REQUIRED fields container-shape type-check** (B-739 cold-start):
+         `_EPISODE_FIELD_TYPES` covers cost/latency/energy/escalation hero
+         fields. Pre-fix only 4/40+ fields were checked → string-coercion
+         attack on `total_cost_usd` etc. slipped past validator.
+      4. **`PAPER_GRADE_EPISODE_OPTIONAL_KEYS` presence** (B-732 cold-start):
+         B-545 cohort isolation sentinels (`evaluator_authority_mode`,
+         `reward_override_applied`) + Option K covariate anchors
+         (`wallclock_start`, `wallclock_end`) + resume identity gate
+         (`resume_fingerprint`) + quarantine flag (`needs_reevaluation`) +
+         transparency (`trajectory_incomplete`) MUST be present at write
+         boundary (value may be None except `needs_reevaluation`/
+         `trajectory_incomplete` which default False per dataclass). User
+         directive 2026-05-17: "archive 不进 paper scope" → no backward-compat
+         hook; fresh Pass-1+Pass-2 paper-grade runs MUST stamp all 7.
+      5. **VALUE-type on each optional key** (B-732 companion): if present,
+         the value must match `_EPISODE_OPTIONAL_FIELD_TYPES` (string `"false"`
+         for `reward_override_applied` would otherwise be truthy-cast).
+
+    Raises:
+        ValueError on any contract violation. Runner write boundary expected
+        to fail-loud rather than recover.
     """
     _validate_required_and_version(record, REQUIRED_EPISODE_FIELDS_V2, "EpisodeSummaryV2")
     bad_types = []
+    # Hero field explicit checks (B-285 + B-735 cold-start).
     if not isinstance(record.get("success"), bool):
         bad_types.append(f"success: expected bool, got {type(record.get('success')).__name__}={record.get('success')!r}")
-    if not isinstance(record.get("score"), (int, float)):
-        bad_types.append(f"score: expected int|float, got {type(record.get('score')).__name__}")
-    if not isinstance(record.get("steps"), int):
-        bad_types.append(f"steps: expected int, got {type(record.get('steps')).__name__}")
-    if not isinstance(record.get("task_id"), int):
-        bad_types.append(f"task_id: expected int, got {type(record.get('task_id')).__name__}")
+    # B-735 fix: exclude bool from score's int|float acceptance. Pre-fix
+    # `isinstance(True, (int, float)) == True` because bool subclasses int;
+    # `score=True` (Python literal) would silently pass → JSONL `{"score": true}`
+    # → downstream strong-type Rust/Go consumer crash OR weak-type `mean()`
+    # silently treats True → 1.0.
+    score_val = record.get("score")
+    if isinstance(score_val, bool) or not isinstance(score_val, (int, float)):
+        bad_types.append(
+            f"score: expected int|float (NOT bool), "
+            f"got {type(score_val).__name__}={score_val!r}"
+        )
+    if not isinstance(record.get("steps"), int) or isinstance(record.get("steps"), bool):
+        bad_types.append(f"steps: expected int (NOT bool), got {type(record.get('steps')).__name__}")
+    if not isinstance(record.get("task_id"), int) or isinstance(record.get("task_id"), bool):
+        bad_types.append(f"task_id: expected int (NOT bool), got {type(record.get('task_id')).__name__}")
+    # B-739 cold-start: full REQUIRED type-shape check via _EPISODE_FIELD_TYPES.
+    # Hero fields above are checked twice (once by name, once by map) — that's
+    # OK; the explicit checks have richer error messages, the map ensures no
+    # field falls through unchecked.
+    for fname, expected in _EPISODE_FIELD_TYPES.items():
+        if fname in {"success", "score", "steps", "task_id"}:
+            continue  # already explicitly checked above
+        if fname not in record:
+            continue  # REQUIRED missing already caught by _validate_required_and_version
+        val = record[fname]
+        # Exclude bool from int|float acceptance for numeric hero fields
+        # (B-735 lineage: bool subclasses int).
+        if expected == (int, float) or expected == (int, float, type(None)):
+            if isinstance(val, bool):
+                bad_types.append(
+                    f"{fname}: expected {tuple(t.__name__ for t in expected)} "
+                    f"(NOT bool), got bool={val!r}"
+                )
+                continue
+        if not isinstance(val, expected):
+            bad_types.append(
+                f"{fname}: expected {tuple(t.__name__ for t in expected)}, "
+                f"got {type(val).__name__}={val!r}"
+            )
     if bad_types:
         raise ValueError(
             f"EpisodeSummaryV2 type mismatch on {len(bad_types)} field(s): "
             + "; ".join(bad_types)
+        )
+    # B-732 cold-start: PAPER_GRADE_EPISODE_OPTIONAL_KEYS presence enforcement.
+    # B-545 cohort isolation sentinels + Option K covariate anchors MUST be
+    # present at write boundary even if value is None (consistent with
+    # PAPER_GRADE_STEP_OPTIONAL_KEYS pattern).
+    missing_critical = sorted(PAPER_GRADE_EPISODE_OPTIONAL_KEYS - set(record.keys()))
+    if missing_critical:
+        raise ValueError(
+            f"EpisodeSummaryV2 missing paper-grade critical optional keys "
+            f"(value may be None for sentinel fields; bool default False for "
+            f"transparency fields): {missing_critical}. B-545 cohort isolation "
+            f"+ Option K covariate + resume identity gate require presence at "
+            f"write boundary."
+        )
+    # B-732 companion: VALUE-type check on each present optional key. Catches
+    # string `"false"` truthy-cast attack on B-545 sentinels.
+    bad_optional_types = []
+    for fname, expected in _EPISODE_OPTIONAL_FIELD_TYPES.items():
+        if fname not in record:
+            continue
+        val = record[fname]
+        if not isinstance(val, expected):
+            bad_optional_types.append(
+                f"{fname}: expected {tuple(t.__name__ for t in expected)}, "
+                f"got {type(val).__name__}={val!r}"
+            )
+    if bad_optional_types:
+        raise ValueError(
+            f"EpisodeSummaryV2 paper-grade optional VALUE type mismatch on "
+            f"{len(bad_optional_types)} field(s): " + "; ".join(bad_optional_types)
         )
 
 
