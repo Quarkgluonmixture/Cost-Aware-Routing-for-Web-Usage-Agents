@@ -152,6 +152,17 @@ class StepRecordV2:
     # the locator_route_meta full-landed pair.
     select_option_meta_primary: Optional[Dict[str, Any]] = None
     select_option_meta_retry: Optional[Dict[str, Any]] = None
+    # B-488 (/stress A1.25 GRL Chunk 3 P1-2-BC* gemini + codex dual OOB,
+    # 2026-05-17): per-step browser dialog events (confirm / alert /
+    # beforeunload accepted; prompt dismissed). None when no dialog fired
+    # during the step (most common); else a list of payloads. Paper §3.5.1
+    # cross-baseline misclick blast-radius evidence layer — VWA shared-
+    # account architecture (cls Blake / red Marvels) makes wrong delete /
+    # submit cross-task contaminating; cross-baseline misclick rate
+    # differs → asymmetric SR contamination via state-mutation
+    # amplification. Reviewer can now grep `dialog_meta` per (site, model,
+    # mode) to compute dialog_acceptance_rate.
+    dialog_meta: Optional[List[Dict[str, Any]]] = None
     # B-284 fix (2026-05-16, A1.8): paper §3.5.1 cite these B0 proxy-specific
     # fields for GLM-rescue de-biasing audit. Pre-fix the runner wrote them to
     # JSONL (`runner/main.py:1663-1669`) but they were absent from this dataclass
@@ -356,6 +367,7 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "select_option_meta_retry",    # B-450 retry-overwrite split (symmetric w/ B-440)
     "agent_visible_changed",
     "control_intervention",  # B-497 control-injected action provenance
+    "dialog_meta",  # B-488 browser dialog telemetry (misclick blast radius evidence layer)
 })
 
 

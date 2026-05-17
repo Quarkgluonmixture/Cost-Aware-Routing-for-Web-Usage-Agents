@@ -174,6 +174,12 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     # `select_option_meta` when `_primary` is None.
     "select_option_meta_primary": None,
     "select_option_meta_retry": None,
+    # B-488 (/stress A1.25 GRL Chunk 3 P1-2-BC*, 2026-05-17): browser dialog
+    # telemetry (per-step list of confirm/alert/beforeunload/prompt events).
+    # Archive rows pre-B-488 lack the field → backfill None so aggregators
+    # treat absence as "no dialog observed" (which is the safe interpretation
+    # — pre-B-488 dialogs were handled but not recorded).
+    "dialog_meta": None,
     # B-284 fix (2026-05-16, A1.8): retire ghost-field status by registering
     # the 5 GLM/retry de-biasing fields in the schema catalog. Old data lacks
     # them → fill_step_defaults backfills None → downstream aggregators see

@@ -276,6 +276,9 @@ def test_step_schema_validation_required_fields():
         # B-497 (/stress A1.5b Phase 1 P1-9-A, 2026-05-17): control-injected
         # action provenance — None when no control fired.
         "control_intervention": None,
+        # B-509 (/stress A1.25 GRL Chunk 3 P1-2-BC*, 2026-05-17): browser
+        # dialog telemetry — None when no dialog fired during the step.
+        "dialog_meta": None,
     }
 
     validate_step_record_v2(record)
@@ -322,6 +325,8 @@ def test_b481_select_option_meta_structured_fields_validator():
             "agent_visible_changed": None,
             # B-497 (/stress A1.5b Phase 1, 2026-05-17): control_intervention.
             "control_intervention": None,
+            # B-509 (/stress A1.25 GRL Chunk 3, 2026-05-17): dialog_meta.
+            "dialog_meta": None,
         }
         rec[key] = sel_meta_payload
         return rec

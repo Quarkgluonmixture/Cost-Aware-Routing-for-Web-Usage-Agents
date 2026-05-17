@@ -141,6 +141,27 @@ class ExperimentRunner:
         self.state_change_cfg = cfg.get("state_change", {})
         self.energy_tracker = LightweightEnergyTracker(cfg.get("metrics", {}).get("energy", {}))
         self.diagnostic_controls = cfg.get("diagnostic_controls", {}) or {}
+        # B-486 (/stress A1.25 GRL Chunk 3 P0-2-C* gemini OOB, 2026-05-17):
+        # paper_grade hard-block on diagnostic action controls (mirror B-340
+        # GLM fallback hard-block pattern). Pre-fix `_anti_repeat_control` +
+        # `_no_early_finish_control` could force search/scroll if agent
+        # loops or finishes early; Phase 1a configs set
+        # `diagnostic_controls.enabled: false` but any debug run accidentally
+        # toggling would mix Runner-guided "rescue" successes with agent
+        # autonomy → entire trajectory autonomy claim breaks under
+        # peer review even on a single fire. Paper §3.5.1 also disclosed
+        # post-A1.25 Chunk 3 (B-486 prose). Closes reviewer-attack vector
+        # "code exists, why not disclose / why allow at all in paper-grade".
+        if bool(cfg.get("paper_grade", False)) and bool(self.diagnostic_controls.get("enabled", False)):
+            raise RuntimeError(
+                "paper_grade=True forbids diagnostic_controls.enabled=True "
+                "(anti_repeat + no_early_finish would force Runner-guided "
+                "action injection — Paper §1 trajectory autonomy claim "
+                "becomes unverifiable). Set diagnostic_controls.enabled: "
+                "false in this run's yaml, or remove paper_grade from the "
+                "queue script if this is intentionally a diagnostic run. "
+                "See B-486 disclosure in paper §3.5.1."
+            )
 
         # B-144 (/stress A1.2 v8 codex B1, 2026-05-16): cache key is
         # ``(backend_id, seed)`` — previously a single ``backend_id`` key froze
@@ -2380,6 +2401,11 @@ class ExperimentRunner:
             # post-retry semantics.
             step_record["select_option_meta"] = next_info.get("select_option_meta")
             step_record["select_option_meta_primary"] = _primary_select_option_meta
+            # B-488 (/stress A1.25 GRL Chunk 3 P1-2-BC*, 2026-05-17): browser
+            # dialog telemetry — per-step list of dialog events (None when
+            # no dialog fired). Paper §3.5.1 misclick blast-radius evidence
+            # layer. Wrapper drains its accumulator into info at end of step.
+            step_record["dialog_meta"] = next_info.get("dialog_meta")
             # B-505 (/stress A1.25 GRL Chunk 2 P1-4-B* codex OOB, 2026-05-17):
             # close `select_option_meta_retry` ghost-field hole — schema /
             # dataclass / defaults (B-450) all declared the field but the

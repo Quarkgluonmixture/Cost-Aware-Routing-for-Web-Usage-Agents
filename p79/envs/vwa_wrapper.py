@@ -112,6 +112,12 @@ class VWAWrapper:
         self._env = None  # lazy init
         # 保存上一次 obs 的 obs_nodes_info，供 select_option element_id 路径使用
         self._last_obs_nodes_info: Optional[Dict[str, Any]] = None
+        # B-509 (/stress A1.25 GRL Chunk 3 P1-2-BC*, 2026-05-17): per-step
+        # dialog event accumulator. `_on_dialog` appends each accepted/
+        # dismissed dialog; step() drains + clears at end + stamps into
+        # info["dialog_meta"]. Playwright sync API runs dialog handler on
+        # main thread (same as step()), so no lock needed.
+        self._dialogs_this_step: list = []
         # B-158 (/stress A1.3 v8 codex P1-B2, 2026-05-16): dialog handler is
         # now registered at the BrowserContext level (auto-fires for every
         # new Page in the context) instead of per-Page. Previously the
@@ -282,6 +288,15 @@ class VWAWrapper:
         # for select_option dispatch — separate dict so info contract stays
         # symmetric with locator_route_meta (action_kind discriminator).
         _select_option_meta: Optional[Dict[str, Any]] = None
+        # B-510 (/stress A1.25 GRL Chunk 3 P1-3-AB, 2026-05-17): per-step
+        # runtime settle-tax accumulator. Pre-fix `sleep_after_execution=0.5`
+        # entered `latency_ms.total` per action mix (more TYPE/SELECT → more
+        # settle-tax) — paper §4 phantom latency hero number could partially
+        # attribute mode-delta to runtime-wait composition, not pure
+        # model/representation efficiency. Locator-dispatch internal sleeps
+        # excluded (they're inside dispatch helper); this counter covers only
+        # wait_for_timeout calls in step() itself. Stamped into info at end.
+        _runtime_sleep_ms = 0
 
         if action_type == "click" and "element_id" in action_json:
             # Prefer element_id click (id-based action via AXTree node)
@@ -447,7 +462,9 @@ class VWAWrapper:
                         _cx_px, _cy_px, _lr_result.get("error", "")[:80],
                     )
                     self._env.page.mouse.click(_cx_px, _cy_px)
-                    self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
+                    _wait_ms = int(self.sleep_after_execution * 1000)
+                    self._env.page.wait_for_timeout(_wait_ms)
+                    _runtime_sleep_ms += _wait_ms  # B-510
                     # is_editable guard kept for the fallback path only (B-01
                     # Control+a-on-page-body guard against 全选变蓝). When the
                     # locator-route walk-up succeeded above, this code path is
@@ -466,13 +483,30 @@ class VWAWrapper:
             else:
                 action = create_keyboard_type_action(action_json["text"])
         elif action_type == "type" and "text" in action_json and "element_id" in action_json:
-            # Treat invalid/zero element_id as keyboard typing fallback
+            # B-506 (/stress A1.25 GRL Chunk 3 P0-1-B*, 2026-05-17): defense-
+            # in-depth removal of the legacy `<=0` → keyboard fallback path.
+            # Pre-fix model emitting sentinel `0` / `-1` had `parse_valid=true`
+            # at the validator (B-506 fix at action_utils.py:308/342/367 now
+            # also rejects this), and runtime here typed into whoever has focus
+            # (silent typing-into-wrong-element). Post-fix: invalid element_id
+            # → explicit no-op + locator_route_meta error tag, mirror of the
+            # validator-side fix so any direct caller of vwa_wrapper.step()
+            # that bypasses the validator gets the same fail-loud contract.
             try:
                 element_id = int(action_json.get("element_id"))
             except (TypeError, ValueError):
                 element_id = None
             if element_id is None or element_id <= 0:
-                action = create_keyboard_type_action(action_json["text"])
+                logger.warning(
+                    "type action with invalid element_id=%s — no-op (B-506 fix)",
+                    action_json.get("element_id"),
+                )
+                _locator_route_meta = {
+                    "action_kind": "type",
+                    "success": False,
+                    "error": f"invalid_element_id_<=0:{action_json.get('element_id')}",
+                }
+                action = create_none_action()
             else:
                 _type_needs_enter = bool(str(action_json.get("text", "")).endswith("\n"))
                 # B-01 Cluster 1 fix: locator-route TYPE bypasses framework's
@@ -625,12 +659,31 @@ class VWAWrapper:
                                 const beforeOpt = el.options[el.selectedIndex];
                                 const beforeText = beforeOpt ? beforeOpt.text.trim() : null;
                                 if (idx !== null) {
+                                    // B-511 (/stress A1.25 GRL Chunk 3 P1-4-B*,
+                                    // 2026-05-17): bounds check before
+                                    // selectedIndex assignment. Pre-fix idx=999
+                                    // silently set selectedIndex=999 (clamped
+                                    // by browser but `afterOpt` undefined) and
+                                    // returned matched=true — false-positive
+                                    // ON_OPTION pollution.
+                                    if (idx < 0 || idx >= el.options.length) {
+                                        return {matched: false, match_stage: 'none', target_type: 'select',
+                                                selected_text_before: beforeText, selected_text_after: beforeText,
+                                                clicked_text: null,
+                                                error: 'index_out_of_bounds:' + idx + '/' + el.options.length};
+                                    }
                                     el.selectedIndex = idx;
                                     el.dispatchEvent(new Event('change', {bubbles: true}));
                                     const afterOpt = el.options[el.selectedIndex];
+                                    if (!afterOpt) {
+                                        return {matched: false, match_stage: 'none', target_type: 'select',
+                                                selected_text_before: beforeText, selected_text_after: beforeText,
+                                                clicked_text: null,
+                                                error: 'index_dispatch_no_after_option'};
+                                    }
                                     return {matched: true, match_stage: 'index', target_type: 'select',
                                             selected_text_before: beforeText,
-                                            selected_text_after: afterOpt ? afterOpt.text.trim() : null,
+                                            selected_text_after: afterOpt.text.trim(),
                                             clicked_text: null, error: null};
                                 }
                                 const cands = Array.from(el.options).map(o => ({text: o.text.trim(), value: o.value, el: o}));
@@ -689,7 +742,9 @@ class VWAWrapper:
                         }""",
                             [x_px, y_px, option_label, option_index],
                         )
-                        self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
+                        _wait_ms = int(self.sleep_after_execution * 1000)
+                        self._env.page.wait_for_timeout(_wait_ms)
+                        _runtime_sleep_ms += _wait_ms  # B-510
                         # B-481: populate from structured JS result. `success`
                         # now means "matched and dispatched", not "JS didn't
                         # throw". Reviewer / aggregator can audit fuzzy-tier
@@ -723,13 +778,41 @@ class VWAWrapper:
                     x_px = x_norm * self.viewport_width if x_norm <= 1.0 else x_norm
                     y_px = y_norm * self.viewport_height if y_norm <= 1.0 else y_norm
                     # B-481: structured JS return mirrors element_id path above.
+                    # B-511 (/stress A1.25 GRL Chunk 3 P1-4-B*, 2026-05-17):
+                    # coord path now accepts `idx` arg symmetric with
+                    # element_id path. Pre-fix coord path dropped
+                    # `option_index` entirely — vision-mode index-dispatch
+                    # was impossible. Now: same `[x,y,label,idx]` payload,
+                    # same bounds + after-opt checks before matched=true.
                     _js_result = self._env.page.evaluate(
-                        _FUZZY_MATCH_JS + """([x, y, label]) => {
+                        _FUZZY_MATCH_JS + """([x, y, label, idx]) => {
                             // 1. Native <select> path
                             const el = document.elementFromPoint(x, y);
                             if (el && el.tagName === 'SELECT') {
                                 const beforeOpt = el.options[el.selectedIndex];
                                 const beforeText = beforeOpt ? beforeOpt.text.trim() : null;
+                                if (idx !== null) {
+                                    // B-511: bounds + after-opt check (symmetric with element_id path)
+                                    if (idx < 0 || idx >= el.options.length) {
+                                        return {matched: false, match_stage: 'none', target_type: 'select',
+                                                selected_text_before: beforeText, selected_text_after: beforeText,
+                                                clicked_text: null,
+                                                error: 'index_out_of_bounds:' + idx + '/' + el.options.length};
+                                    }
+                                    el.selectedIndex = idx;
+                                    el.dispatchEvent(new Event('change', {bubbles: true}));
+                                    const afterOpt = el.options[el.selectedIndex];
+                                    if (!afterOpt) {
+                                        return {matched: false, match_stage: 'none', target_type: 'select',
+                                                selected_text_before: beforeText, selected_text_after: beforeText,
+                                                clicked_text: null,
+                                                error: 'index_dispatch_no_after_option'};
+                                    }
+                                    return {matched: true, match_stage: 'index', target_type: 'select',
+                                            selected_text_before: beforeText,
+                                            selected_text_after: afterOpt.text.trim(),
+                                            clicked_text: null, error: null};
+                                }
                                 const cands = Array.from(el.options).map(o => ({text: o.text.trim(), value: o.value, el: o}));
                                 const result = _fuzzyFind(cands, label);
                                 if (result && result.match) {
@@ -781,9 +864,12 @@ class VWAWrapper:
                                     selected_text_before: null, selected_text_after: null,
                                     clicked_text: null, error: 'no_match_in_css_menus'};
                         }""",
-                        [x_px, y_px, option_label],
+                        # B-511: pass option_index symmetric with element_id path
+                        [x_px, y_px, option_label, option_index],
                     )
-                    self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
+                    _wait_ms = int(self.sleep_after_execution * 1000)
+                    self._env.page.wait_for_timeout(_wait_ms)
+                    _runtime_sleep_ms += _wait_ms  # B-510
                     # B-481: populate from structured JS result (same as element_id path).
                     if isinstance(_js_result, dict):
                         _select_option_meta["matched"] = bool(_js_result.get("matched"))
@@ -835,7 +921,9 @@ class VWAWrapper:
         if _type_needs_enter and self._env is not None:
             try:
                 self._env.page.keyboard.press("Enter")
-                self._env.page.wait_for_timeout(int(self.sleep_after_execution * 1000))
+                _wait_ms = int(self.sleep_after_execution * 1000)
+                self._env.page.wait_for_timeout(_wait_ms)
+                _runtime_sleep_ms += _wait_ms  # B-510
                 re_obs, _, _, _, re_info = self._env.step(create_none_action())
                 obs, info = re_obs, re_info
             except Exception as _e:
@@ -853,6 +941,23 @@ class VWAWrapper:
         # dispatch telemetry. None when step did not invoke select_option;
         # otherwise {action_kind, dispatch_path, success, error}.
         info["select_option_meta"] = _select_option_meta
+        # B-510 (/stress A1.25 GRL Chunk 3 P1-3-AB, 2026-05-17): per-step
+        # runtime settle-tax (wrapper-level wait_for_timeout sum, excluding
+        # locator-dispatch internal sleeps). Runner stamps into
+        # step_record.latency_ms["runtime_sleep"] so paper §4 can report
+        # both `total` and `total - runtime_sleep` columns to disentangle
+        # mode-delta from runtime-wait composition.
+        info["runtime_sleep_ms"] = _runtime_sleep_ms
+        # B-509 (/stress A1.25 GRL Chunk 3 P1-2-BC*, 2026-05-17): drain
+        # the dialog accumulator + stamp into info. None when no dialog
+        # fired during this step (most common case); else a list of
+        # {type, message, accepted} payloads. Runner stamps into
+        # step_record.dialog_meta for paper §3.5.1 misclick-blast-radius
+        # evidence layer.
+        info["dialog_meta"] = (
+            list(self._dialogs_this_step) if self._dialogs_this_step else None
+        )
+        self._dialogs_this_step.clear()
         p79_obs = self._to_p79_obs(obs, info)
         self._last_obs_nodes_info = p79_obs.obs_nodes_info
         return p79_obs, float(reward), bool(terminated), bool(truncated), info
@@ -1014,16 +1119,40 @@ class VWAWrapper:
         agents WANT navigation to proceed; accept is the symmetric choice
         with confirm/alert. The only dialog type that should still dismiss
         is `prompt` (agent did not author a text-input response).
+
+        B-509 (/stress A1.25 GRL Chunk 3 P1-2-BC* gemini + codex dual catch,
+        2026-05-17): every dialog event is recorded into the per-step
+        accumulator `_dialogs_this_step` so step_record carries
+        `dialog_meta = [{type, message, accepted}, ...]`. Pre-fix dialogs
+        were handled silently — reviewer cannot distinguish "agent
+        intended destructive action" from "agent misclick that GRL
+        amplified into destructive site mutation". VWA shared-account
+        architecture (cls Blake / red Marvels) means misclick blast
+        radius is cross-task; cross-baseline misclick rate differs →
+        asymmetric SR contamination via state-mutation amplification.
         """
+        accepted = False
         try:
             if dialog.type in ("confirm", "alert", "beforeunload"):
                 dialog.accept()
+                accepted = True
                 logger.debug("Dialog auto-accepted: type=%s msg=%r", dialog.type, dialog.message)
             else:
                 dialog.dismiss()
                 logger.debug("Dialog dismissed: type=%s msg=%r", dialog.type, dialog.message)
         except Exception as _e:
             logger.warning("Dialog handler error: %s", _e)
+        # B-509: record into per-step accumulator (drained at step() end + emit to info)
+        try:
+            self._dialogs_this_step.append({
+                "type": str(dialog.type) if hasattr(dialog, "type") else "unknown",
+                "message": (str(dialog.message)[:200]
+                            if hasattr(dialog, "message") and dialog.message else None),
+                "accepted": accepted,
+            })
+        except Exception:
+            # Never let telemetry recording mask the actual dialog handling.
+            pass
 
     def _json_to_id_action_str(self, a: Dict[str, Any]) -> str:
         t = (a.get("action_type") or "").lower().strip()

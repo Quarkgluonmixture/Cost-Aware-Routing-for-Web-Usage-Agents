@@ -3807,4 +3807,55 @@ submodule).
 
 **Cross-batch context**: A1.20 figures (B-459~B-477, `e4a5428`) + A1.25 GRL Chunk 2 (B-479~B-484, `87874f2`) + **this A1.5b Phase 1 (B-485~B-505)** = 47 paper-grade fixes across 3 distinct /stress audit scopes during 2026-05-17 overnight session.
 
-**Next available B-number**: B-506+.
+**Next available B-number**: B-506+ (consumed below by A1.25 GRL Chunk 3).
+
+---
+
+## A1.25 GRL (Generated Runtime Layer) audit — Chunk 3 batch (action policy + safety primitive + cross-baseline asymmetry, 2026-05-17 morning)
+
+**Scope**: `p79/envs/vwa_wrapper.py` action policy region + `p79/backends/action_utils.py` validator + `p79/experiment/runner/main.py` (paper_grade hard-block init + dialog_meta + runtime_sleep_ms stamps) + `p79/experiment/types.py` (dialog_meta field) + `p79/experiment/schema_migrations/v2.py` (dialog_meta default) + `docs/checkpoints/paper_drafts/section3_definition.md` §3.5.1 (3 disclosure paragraphs B-507/508/509) + `tests/test_som_and_schema.py` fixture sync.
+
+**3-AI cycle**: Mode A (Claude pre-read) PASS · Mode B (codex `/codex-stress`) PASS @10:08 (6min, 333K tokens, 8637 bytes, 6 findings 3 OOB) · Mode C (gemini `/gemini-stress`) PASS @10:08 (5.5min, 7188 bytes, 6 findings 4 OOB). Aggregated 10 unique findings (2 dropped per Mode B calibration: ~~Item 15 extract_candidate_query dormant~~ + ~~N5 vram not surfaced~~). User triage (Q1=a strict reject, Q2=a disclose + hard-block, Q3=user-override-OVERRIDE coord dual-format is intentional design not contract violation → P1-1 reduces to §3.5.1 disclosure-only no code change, Q4=a continue per Q2=Soften, Q5-Q14 全 auto-default) → 6 fixes launch-blocking land now (3 P1 deferred to Phase 1b prep per Q2=Soften).
+
+### B-506. element_id ≤ 0 silently keyboard-typing into focused element — codex Chunk 3 Mode B F1 P0-1-B* OOB 🛠️ FIXED commit `<TBD>`
+- **Attack**: `p79/backends/action_utils.py:342/367` validator `isinstance(int)` accepted `0` and `-1` (common LLM sentinel emissions); `vwa_wrapper.py:468-475` for `element_id<=0` called `create_keyboard_type_action` → typed into whoever has focus. Cross-baseline B0/B1/B2 emit sentinels differently → asymmetric typing-residue contamination cross-step. Paper §3.5 action primitive evidence-layer hole.
+- **Fix**: validator strict reject `element_id is int AND > 0` for click/type/select_option; wrapper fallback path replaced with no-op + locator_route_meta error tag (mirror validator-side fix for any direct vwa_wrapper.step() caller bypass).
+
+### B-507. paper_grade hard-block on diagnostic action controls (anti_repeat + no_early_finish disclosure) — gemini Chunk 3 Mode C F1 P0-2-C* OOB 🛠️ FIXED commit `<TBD>`
+- **Attack**: `runner/helpers.py:225-285` `_anti_repeat_control` + `_no_early_finish_control` force search/scroll on agent loop / early-finish. Phase 1a configs `enabled: false` but未 §3.5.1 disclose → latent contamination if accidentally enabled (one Debug run mixes runner-guided "rescue" with autonomy → entire trajectory autonomy claim breaks under peer review). Mode C unique — Mode A + Mode B both missed runner-side helper functions.
+- **Fix**: runner __init__ hard-block: paper_grade=True AND diagnostic_controls.enabled=True → RuntimeError (mirror B-340 GLM fallback pattern). Paper §3.5.1 disclosure paragraph "Diagnostic action controls — exploration-rescue heuristics" added with explicit "Phase 1a default off + grep audit instruction zero matches expected".
+
+### B-508. Coordinate dual-format support — paper §3.5.1 disclosure-only (user reframe of P1-1) — Mode A + Mode B F3 + Mode C F3 3-AI overlap (downgraded per user) 🛠️ FIXED commit `<TBD>`
+- **Attack (initial)**: Mode B F3 framed as `coordinate_type` audit field decoupled from wrapper runtime (value-heuristic `if v>1.0: v/=viewport_dim`) → "contract violation". Mode A + Mode C cross-baseline asymmetry 2.3× B0/B1 (B-406) noted UNDISCLOSED.
+- **User Q3 reframing** (2026-05-17, "我记得坐标是现在支持归一化和非归一化, 都是通过函数判断的"): dual-format support is intentional design via value-based heuristic, not contract violation. Drop "wrapper-as-authoritative" refactor. Disclosure-only.
+- **Fix**: paper §3.5.1 new paragraph "Coordinate dual-format support (B-508 disclosure)" — documents intentional dual-format wrapper heuristic + B-406 cross-baseline asymmetry numbers (B0 15.6% / B1 35.3%) + framing as "model-internal coordinate-format preferences, not runtime fairness issue". No code change.
+
+### B-509. Browser dialog telemetry — gemini Mode C F2 + codex Mode B F5 dual P1-2-BC* OOB 🛠️ FIXED commit `<TBD>`
+- **Attack**: `vwa_wrapper.py:_on_dialog` auto-accepts confirm/alert/beforeunload + dismisses prompt — NO `dialog_meta` telemetry in step_record. Reviewer cannot distinguish "agent intended destructive action" from "agent misclick → GRL auto-amplified destructive site mutation". VWA shared-account architecture (cls Blake / red Marvels) makes blast radius cross-task; cross-baseline misclick rate differs → asymmetric SR contamination via state-mutation amplification.
+- **Fix**: per-step `_dialogs_this_step: list` accumulator on wrapper; `_on_dialog` appends `{type, message:200char, accepted}`; step() drains + clears at end + stamps into `info["dialog_meta"]`. Runner stamps into `step_record.dialog_meta`. Schema field + PAPER_GRADE_STEP_OPTIONAL_KEYS + schema_migrations defaults all added. Paper §3.5.1 disclosure paragraph "Browser dialog telemetry (B-509 disclosure)" added. Aggregator `aggregate_dialog_acceptance.py` queued for Phase 1b prep.
+
+### B-510. `runtime_sleep_ms` field for sleep_after_execution latency tax composition — Mode A + codex Mode B F4 P1-3-AB 2-AI overlap 🛠️ FIXED commit `<TBD>`
+- **Attack**: `sleep_after_execution=0.5` constant enters `latency_ms.total` per action mix (more TYPE/SELECT → more settle-tax). P-SoM reduces TYPE/SELECT → latency gain partially attributable to runtime-wait composition, not pure model/representation efficiency. Paper §4 phantom latency hero number contamination.
+- **Fix**: per-step `_runtime_sleep_ms` accumulator on wrapper.step() sums all `wait_for_timeout` settle calls (excludes locator-dispatch internal sleeps). Stamped via `info["runtime_sleep_ms"]` → runner writes into `step_record.latency_ms["runtime_sleep"]`. Paper §4 latency table reports both `total` and `total - runtime_sleep` columns to disentangle mode-delta from settle-tax composition. Backward-compat additive field; pre-A1.25 archive rows lack the field (would read as 0).
+
+### B-511. select_option.option_index bounds check + coord path symmetric extension — codex Chunk 3 Mode B F2 P1-4-B* OOB 🛠️ FIXED commit `<TBD>`
+- **Attack**: `action_utils.py:325-330` validator `option_index=999` returned `valid=True` (no bounds check); `vwa_wrapper.py:627-634` JS `el.selectedIndex=999` returned `matched=true, match_stage='index'` even with no `afterOpt`. Coord path completely dropped `option_index` arg — vision-mode index dispatch impossible. Mirror of B-481 sibling I didn't audit in Chunk 2.
+- **Fix**: JS element_id + coord paths both wrap `el.selectedIndex = idx` with bounds check `if (idx < 0 || idx >= el.options.length) return {matched:false, error:'index_out_of_bounds:N/M'}` + `if (!afterOpt) return {matched:false, error:'index_dispatch_no_after_option'}`. Coord path Python evaluate now passes `option_index` arg symmetric with element_id path.
+
+**B-numbers consumed (A1.25 GRL Chunk 3)**: B-506~B-511 (6 contiguous).
+
+**🚨 Cross-session inline-reference collision disclosure**:
+- vwa_wrapper.py + action_utils.py + tests/test_som_and_schema.py inline references **post-sed at canonical IDs B-506~B-511** (sed-renumbered to avoid collision with parallel session's A1.5b Phase 1 B-485~B-505 catalog entries).
+- runner/main.py + types.py + schema_migrations/v2.py + section3_definition.md inline references **still mistakenly tagged at draft IDs B-485~B-490** due to mid-session race with parallel A1.5b Phase 1 same range. **Canonical IDs in this catalog are B-506~B-511**.
+- Cross-reference mapping: draft B-485↔canonical B-506 (element_id strict reject), draft B-486↔canonical B-507 (anti_repeat hard-block), draft B-487↔canonical B-508 (coord disclosure), draft B-488↔canonical B-509 (dialog_meta), draft B-489↔canonical B-510 (runtime_sleep_ms), draft B-490↔canonical B-511 (option_index bounds).
+- Defer cross-session inline-reference cleanup to dedicated batch (sed sweep + per-Edit on shared files). Code searchers should grep for both draft + canonical IDs until cleanup lands.
+
+**Smoke verification (A1.25 GRL Chunk 3)**:
+- py_compile PASS: vwa_wrapper.py + action_utils.py + runner/main.py + types.py + schema_migrations/v2.py + tests/test_som_and_schema.py
+- Tests **415/415 PASS** (8 skipped intentional; 6 deselected; +2 from parallel A1.5b new fixtures, zero regression on Chunk 3). Test fixture updated with `dialog_meta: None` field in 2 step-record fixtures.
+
+**Deferred to Phase 1b prep window (per user Q2=Soften)**: P2-1-C* DOM/Vision dispatch fallback asymmetry + P2-2-B start-URL health-check fail-open + P2-3-C* auto-tab-switch framing in §3.5.2 + P2-4-A is_editable guard symmetric (cohort with B-01 cluster).
+
+**Cross-batch context (last 8h overnight + morning)**: A1.25 GRL Chunk 1 (B-439~B-448, `5d8fc2f`) + parallel A1.4 Chunks 1-4 (B-449~B-458) + A1.20 (B-459~B-477, `e4a5428`) + A1.25 GRL Chunk 2 (B-479~B-484, `87874f2`) + parallel A1.5b Phase 1 (B-485~B-505, `19bda49` 等) + this A1.25 GRL Chunk 3 (B-506~B-511) = **53 paper-grade fixes** across 5 distinct /stress audit scopes during 2026-05-17 overnight+morning sprint via concurrent multi-Claude + multi-AI-lineage (Claude + codex + gemini) audit pipeline.
+
+**Next available B-number**: B-512+.

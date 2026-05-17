@@ -305,7 +305,15 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
     action["action_type"] = action_type
 
     if action_type == "select_option":
-        has_id = "element_id" in action and isinstance(action.get("element_id"), int)
+        # B-506 (/stress A1.25 GRL Chunk 3 P0-1-B* codex OOB, 2026-05-17):
+        # element_id must be `int > 0`. Pre-fix `isinstance(int)` alone
+        # accepted `0` and `-1` (common LLM sentinel emissions) as valid
+        # targets; wrapper's legacy keyboard-fallback then typed into
+        # focused element silently, producing `parse_valid=true` records
+        # with no actual element_id-based dispatch. Closes paper §3
+        # action-primitive evidence-layer hole.
+        _eid = action.get("element_id")
+        has_id = isinstance(_eid, int) and _eid > 0
         coord = action.get("coordinate")
         coord_present = coord is not None
         # B-406: pass declared coordinate_type into validator so normalized
@@ -339,7 +347,8 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
     if action_type == "click":
         coord = action.get("coordinate")
         elem_id = action.get("element_id")
-        has_id = elem_id is not None and isinstance(elem_id, int)
+        # B-506 (/stress A1.25 GRL Chunk 3 P0-1-B*): element_id must be int > 0.
+        has_id = isinstance(elem_id, int) and elem_id > 0
         coord_present = coord is not None
         coord_ctype = action.get("coordinate_type")
         coord_valid_shape = coord_present and _is_valid_coordinate_pair(
@@ -364,7 +373,8 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
         # Vision mode may supply a coordinate to indicate which input field to target.
         coord = action.get("coordinate")
         elem_id = action.get("element_id")
-        has_id = elem_id is not None and isinstance(elem_id, int)
+        # B-506 (/stress A1.25 GRL Chunk 3 P0-1-B*): element_id must be int > 0.
+        has_id = isinstance(elem_id, int) and elem_id > 0
         coord_ctype = action.get("coordinate_type")
         coord_valid_shape = coord is not None and _is_valid_coordinate_pair(
             coord, coordinate_type=coord_ctype
