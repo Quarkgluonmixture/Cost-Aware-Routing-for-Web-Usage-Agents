@@ -4635,4 +4635,166 @@ Re-audit of A1.18 substrate (VWA submodule `p79-patches` evaluator + helper_func
 
 **Next available B-number**: B-630+ (A1.18-re consumed B-604~B-629; A1.13 ladder + A1.5b Phase 2 reserved ranges not affected).
 
+---
+
+## /stress A1.6b — `p79/experiment/analysis.py` Pareto + decision-test + analyze_run body half (2026-05-17 ~14:00-16:30 BST)
+
+**Scope**: `p79/experiment/analysis.py` lines 900-2012 (1112 LOC, post-FP-architecture half). Cold-start 3-AI cycle (Claude self / codex Mode B / gemini Mode C). Coverage: Pareto frontier strict-< drops ties, `_compute_statistical_tests` bootstrap CI + McNemar + Wilcoxon + Holm-Bonferroni, decision-test prose↔code mismatch (TOST + SR-Wilcoxon + wilcoxon_skipped.csv missing), `_plot_phase1` cross-baseline mean mixing, heatmap multi-site collision + cmap caption fraud, `_analyze_per_site` denominator drift, stale-archive gate half-door (ep_df + step_df bypass).
+
+**Cross-AI runtime**: Claude Phase 0 ~25 min (9 findings, 3 OOB) · codex Mode B 2 min runtime (6997B output, 6 findings, 5 OOB) · gemini Mode C 3.3s runtime (6501B output, 5 findings, 3 OOB).
+
+**16 unique findings** triaged by user 2026-05-17 → user picked **code-side + 全推荐** → 12 P0+P1 in scope (4 P2 deferred to next session).
+
+### B-650. `_plot_phase1` heatmap caption claimed `gray=N/A` but `imshow(cmap="RdYlGn", vmin=0)` rendered missing tasks as dark red 🛠️ FIXED
+- **Source**: Claude F1 P0 OOB + codex F5 P1 OOB + gemini F2 P1 NON-OOB (3-AI overlap)
+- **Fix**: `p79/experiment/analysis.py:1691-1709` use `np.ma.masked_invalid` + `cmap.set_bad("#cccccc")` so N/A tasks truly render gray; caption ↔ visual rendering now match. Paper-grade Phase 1 per-task heatmap (paper §3 figure candidate) no longer visual-fraud.
+- **Pre-rename**: P0-1-ABC*
+
+### B-651. Holm-Bonferroni family `(test, metric)` GLOBAL → over-correction within-cell paper-headline tests 🛠️ FIXED
+- **Source**: Claude F3 P1 + gemini F1 P0 OOB (2-AI overlap)
+- **Fix**: `p79/experiment/analysis.py:1119-1152` family key extended to `(test, metric, cell_key)` where cell_key encodes (site, baseline_pair). Intra-cell mode comparisons get m=15 (6 modes → C(6,2)) independent of cross-baseline within-site (m=36) and unknown legacy bucket. Pre-fix m up to 132 (cls/red × C(12,2)) over-corrected paper-headline tests ~10×.
+- **Pre-rename**: P0-2-AC*
+
+### B-652. B-601 stale-archive schema-version gate was half-door — `_collect_episode_summaries` + `_collect_step_records` had no gate 🛠️ FIXED
+- **Source**: codex F1 P0 OOB (codex unique)
+- **Fix**: `p79/experiment/analysis.py:194-242` (`_collect_episode_summaries` adds `_is_post_fp_retirement_archive` check) + `:391-432` (`_collect_step_records` peeks parent summary before reading JSONL). Both honor `P79_ANALYZE_ALLOW_STALE_ARCHIVE=1` env opt-out parallel to B-601. codex spot-check: 5064 pre-§139.8 episode summaries on disk would have flowed into `statistical_tests.csv` / `per_site_metrics.csv` / `episode_metrics.csv` despite B-601 condition-level gate.
+- **Pre-rename**: P0-3-B*
+
+### B-653. `section3_definition.md:115` prose claimed TOST + SR-Wilcoxon + `wilcoxon_skipped.csv`; code had none 🛠️ FIXED (code-side per user 2026-05-17)
+- **Source**: codex F2 P0 OOB (codex unique)
+- **Fix**: `p79/experiment/analysis.py:1058-1115` add `_bootstrap_tost_paired_success` (δ=1.0pp per prereg §4 lock) + paired SR-Wilcoxon (signed-rank on per-task success diffs) per condition pair. `_compute_statistical_tests` now emits `tost_equivalence` + `wilcoxon_sr_paired_success` JSON sections + `wilcoxon_skipped.csv` for degenerate cases. Paper §3.6 prose ↔ artifact provenance restored.
+- **Pre-rename**: P0-4-B*
+
+### B-654. `_analyze_per_site` SR denominator drift — used observed-n instead of paper §1 hero `scored_task_count` 🛠️ FIXED
+- **Source**: Claude F9 P2 + gemini F3 P1 OOB (2-AI overlap, gemini stronger angle)
+- **Fix**: `p79/experiment/analysis.py:1404-1450` double-column emission (`success_rate_observed` for transparency + `success_rate_scored_set` matching paper §1 Hero) + `n_episodes_observed` + `scored_set_n` + `n_success` + `estimand_note` field. Parallel B-597 bootstrap CI estimand disclosure.
+- **Pre-rename**: P1-1-AC*
+
+### B-655. Paper §3.5 prose claimed paired bootstrap; code computed per-condition single-arm percentile bootstrap (B=10000) 🛠️ FIXED (code-side per user 2026-05-17)
+- **Source**: codex F3 P1 OOB (codex unique)
+- **Fix**: `p79/experiment/analysis.py:1058-1078 + 1213-1239` add `_paired_lift_bootstrap_ci` per condition pair emitting `bootstrap_paired_lift[pair_key]` JSON section with `lift_mean` + `lift_ci_lower_95` + `lift_ci_upper_95` + estimand disclosure. Per-condition single-arm CI (B-597) retained for transparency; per-pair paired same-task lift CI now matches paper §3.5 prose claim.
+- **Pre-rename**: P1-2-B*
+
+### B-656. `_plot_phase1` heatmap pivot `index="task_id"` collided across sites (cls task_id 0-209 overlaps red 0-209) 🛠️ FIXED
+- **Source**: codex F4 P1 OOB (codex unique)
+- **Fix**: `p79/experiment/analysis.py:1672-1726` refactored to per-site separate heatmap (`phase1_success_heatmap_<site>.png`). Within each site, top-80 sort by `sum(axis=1)` (success-sum) preserved; no cross-site row contamination. `_legacy` fallback when `benchmark_site` column absent (pre-multi-site Phase 1 archives).
+- **Pre-rename**: P1-3-B*
+
+### B-657. `_plot_phase1` SR bar cross-baseline mean mixing (B0+B1+Gemma3 abstracted away) 🛠️ FIXED
+- **Source**: gemini F4 P2 OOB (gemini unique)
+- **Fix**: `p79/experiment/analysis.py:1611-1668` refactored from single bar per mode to grouped bar (x=mode, each mode N adjacent bars by baseline detected from `backend_id`). Baseline label mapping: `api_strong` → B0 / `local_qwen*` → B1 / `local_gemma*` → B2. B-179 partial-cell hatch logic preserved per (mode, baseline) cell. Paper §3 representation screening figure now shows capability×mode interaction directly.
+- **Pre-rename**: P1-4-C*
+
+### B-658. Bootstrap CI rng shared across `cond_ids` loop → run-to-run reproducibility weaker than paper §3.5 "seed 42" claim 🛠️ FIXED
+- **Source**: Claude F2 P1 OOB (Claude unique)
+- **Fix**: `p79/experiment/analysis.py:1046-1086` moved `rng = np.random.default_rng(...)` initialization INSIDE the cond_ids loop with `SeedSequence([42, hash(cid) & 0xFFFFFFFF])` per condition. Glob-order / FS-mount independence. Test `test_b658_per_condition_rng_order_independent` proves CI numbers unchanged when cond_ids list reversed.
+- **Pre-rename**: P1-5-A*
+
+### B-659. `_analyze_condition` rendered full plot bundle on `_synthesized=True` partial-cell rows (as few as 5 episodes) without partial cue 🛠️ FIXED
+- **Source**: Claude F4 P1 OOB (Claude unique)
+- **Fix**: `p79/experiment/analysis.py:1538-1574` in `analyze_run` per-condition loop, check `synth_lookup[cid]` before `_analyze_condition` call → if `_synthesized=True`, skip plot rendering + write stub `session_summary.json` with `partial=True` + `skip_reason` field. Symmetric with B-179 `_plot_phase1` hatch + B-601 Pareto exclude. Render returns once cell completes (canonical condition_summary_v2.json).
+- **Pre-rename**: P1-6-A*
+
+### B-660. `_compute_pareto_front` strict-`<` dropped tied points; `section3_definition.md:115` claimed ties preserved 🛠️ FIXED (code-side per user 2026-05-17)
+- **Source**: codex F6 P1 NON-OOB + gemini F5 P2 OOB (2-AI overlap)
+- **Fix**: `p79/experiment/analysis.py:112-149` algorithm changed to track `(best_min, last_max)` pair; point joins frontier if strict minimize improvement OR true tie on BOTH axes with last accepted point. Same-cost lower-maximize (dominated) points still correctly skipped. Test `test_b660_pareto_preserves_true_ties` covers tied case; `test_b660_pareto_drops_dominated_same_cost` covers dominance preservation.
+- **Pre-rename**: P1-7-BC
+
+### B-661. `_plot_phase2.fixed.iloc[0]` silently picked arbitrary row on non-unique condition_id match 🛠️ FIXED
+- **Source**: Claude F6 P1 (Claude unique)
+- **Fix**: `p79/experiment/analysis.py:1996-2010` `len(fixed) > 1` / `len(routed) > 1` paper-grade fail-loud `ValueError` with diagnostic. Test `test_b661_phase2_fixed_best_non_unique_raises` covers the 2-row violation case.
+- **Pre-rename**: P1-8-A
+
+**B-numbers consumed**: B-650 through B-661 (12 contiguous IDs).
+
+**Smoke verification (A1.6b full sweep)**:
+- pytest **436 passed, 8 skipped** post all 12 fixes + 10 new A1.6b invariant tests (`tests/test_stress_a1_6b_fixes.py`).
+- py_compile PASS on `p79/experiment/analysis.py` (2174 LOC, +162 LOC vs pre-A1.6b).
+- All 12 fix stamps verified via grep `B-65[0-9]\|B-66[01]`.
+
+**3-AI agreement matrix**:
+- 3-AI overlap (ABC*): 1 (B-650 cmap caption mismatch, highest confidence)
+- 2-AI overlap (AC* + BC): 3 (B-651 Holm family AC*, B-654 SR denominator AC*, B-660 Pareto ties BC)
+- 1-AI unique: 8 (B-652 / B-653 / B-655 / B-656 codex×4; B-657 gemini; B-658 / B-659 / B-661 Claude×3)
+
+**Reviewer lessons encoded (cross-cutting)**:
+1. **Half-door schema-version gate**: B-601 was condition-only; episode/step data path bypassed → ALL collector entry points must honor same gate (B-652).
+2. **Holm family-design tied to scientific question**: `(test, metric)` GLOBAL bucket includes nonsense cross-cell pairs → m over-correction by ~10×. Cell-scope `(test, metric, cell_key)` matches paper-headline question (B-651).
+3. **Caption-claim ↔ rendering layer mismatch**: `gray=N/A` in colorbar label is paper-grade promise; rendered image must match. matplotlib `set_bad` / `set_under` mandatory for any vmin-clipped fillna sentinel (B-650).
+4. **Prose ↔ code provenance**: Decision-test artifact location matters. Either implement what prose claims (code-side fix, B-653 + B-655) or update prose to point at actual sibling implementation (prose-side fix). User chose code-side this round.
+5. **rng state leakage across loop iterations**: Single global rng + sequential consumption = glob-order coupling. Per-iteration `SeedSequence([fixed, key_hash])` is the standard fix (B-658).
+6. **Partial-cell visual cues must propagate downstream**: B-179 hatch on `_plot_phase1` was 1 of N downstream artifacts; `_analyze_condition` rendered full bundle without cue (B-659). Each render path needs its own partial-cell check.
+7. **Cross-baseline mean abstraction**: `cond_df.groupby(mode).mean()` is the wrong default when capability×mode interaction is the scientific question. Grouped bar by (mode, baseline) is paper-grade primitive (B-657).
+
+**Next available B-number**: B-662+ (A1.6b consumed B-650~B-661; A1.13 ladder consumed B-630~B-648 separately).
+
 **Renumber drama** (chronicle §182): initially reserved B-577~B-602 (grep showed B-576 max at audit start 13:04). Between Chunk 1 + Chunk 2 commits, parallel A1.13 ladder Chunks d+e committed B-594/B-595; then parallel A1.6a committed B-596~B-603 mid-Chunk-2; final canonical = B-604~B-629 (delta +27 from initial reservation). Pre-rename references in submodule commit body `2f9b0b4` + main repo Chunk 2 body `73ef077` retained as git-history artifacts; chronicle §182 includes full mapping table. Lesson reinforces audit pattern from A1.6a: re-grep B-### max immediately before EACH catalog append, not just at session start.
+
+## /stress A1.12 cold-start — `tests/` directory as paper-grade reproducibility substrate (8 fixes, 2026-05-17 evening)
+
+Cold-start re-audit (per user "/stress A1.12 cold-start 不 reference") of the
+`tests/` directory after the original A1.12 sweep (2026-05-16; B-342~B-358 + 
+B-650's prior incarnation) had landed `--strict-markers -ra -rs` + `[test]`
+extras aggregate + 16 baseline test additions. This round is the **substrate
+hostile re-attack**: 3-AI cross-stress on 8 critical test files + 4 grep
+probes uncovered 5 P0 + 10 P1 + 3 P2 paper-grade gaps. User Q1=B
+("全 8 个 P0+P1 quick-win 都 fix") + Q3=C ("不 disclose 假定 reviewer 不深
+读") authorized 8 fixes; P0-1 source-grep theater dropped per Q3=C
+risk-accepted.
+
+### B-662. `make test` / README extras gate — `pip install -e ".[test]"` not enforced, README claimed "81 测试" (actual 436) 🛠️ FIXED
+- **Source**: codex F1 P0 OOB + gemini F1 P0 OOB (BC 2-AI overlap)
+- **Fix**: `Makefile:77-86` `make test` prepended with `@$(PYTHON) -c 'import pandas, matplotlib, scipy' || (echo "ERROR: '[test]' extras missing"; exit 2)`. `README.md:23-26` added `pip install -e ".[test]"` install hint with "OSF replayer 推荐" note. `README.md:41` count corrected `81 测试` → `436 测试 (含 8 个 external/local_data env-gated skip)`. Pre-fix fresh-host OSF replayer running `pip install -e . && make test` would silently skip 6 `pytest.importorskip("pandas")` tests showing "428 passed / 14 skipped"; reviewer would think they reproduced. Now fail-loud exit 2 + install hint before pytest collection.
+
+### B-663. `test_vwa_evaluator_b91_guard.py` only verified mutable HEAD SHA, missing immutable tree-hash chain witness per prereg §7 🛠️ FIXED
+- **Source**: gemini F2 P0 OOB (C* gemini unique)
+- **Fix**: `tests/test_vwa_evaluator_b91_guard.py:21+27-30` added `EXPECTED_TREE_HASH_CHAIN = "5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f"` + `UPSTREAM_BASE_SHA` constants. New `test_vwa_submodule_tree_hash_chain_matches_prereg_witness` runs `git rev-list <upstream-base>..HEAD --format=tformat:'%H %T' | sha256` and asserts equality. Recipe is env-independent (B-607 prereg §7 contract: HEAD SHA mutable under `git push --force-with-lease`; tree-hash chain uses git's content-addressable %H+%T which is byte-deterministic across git versions/OS). OSF replayer can now detect force-push branch history rewrites that HEAD SHA pin alone misses.
+
+### B-664. SHA pin hardcoded at 4 independent sites with no single-source-of-truth → 3 bump sprints 2026-05-17 each manually synced 4 places 🛠️ FIXED
+- **Source**: Claude F3 P0 OOB (A* claude unique)
+- **Fix**: New file `tests/test_sha_pin_consistency.py` (94 LOC, 4 tests) verifies `EXPECTED_SUBMODULE_SHA` literal at 4 sites stay in sync: `tests/test_vwa_evaluator_b91_guard.py:30` + `scripts/preflight_v2.sh:365` (expected_sha=) + `Makefile:149` (LOCK_SHA=) + `docs/checkpoints/pre_run/preregistration.md:564` (rev-parse HEAD); plus 4th test cross-checks all 4 vs actual `git -C external/visualwebarena rev-parse HEAD`. Pre-fix 2026-05-17 sprint bumped SHA 3× (eb5cbd8 → 1c3a615 → 2f9b0b4) each requiring manual 4-site sync — any miss = OSF contract drift. Drift now CI RED.
+
+### B-665. `test_stress_a1_9_fixes.py:117-122/150-153` `try/except ImportError → pytest.skip(...)` masked refactor as misleading "missing data" skip 🛠️ FIXED
+- **Source**: Claude F5 P1 OOB (A* claude unique)
+- **Fix**: `tests/test_stress_a1_9_fixes.py:115` hoisted `from scripts.analysis.aggregate_phantom_lift import load as _phantom_lift_load` to module level. Pre-fix local `try/except` converted any `aggregate_phantom_lift` refactor/rename into a silent skip with reason `"requires runtime configs: {exc}"` (looks like missing data, actually broken import). 3 paper-grade regression tests (B-325/B-335/B-336) were silently un-running. Now refactor → file collection error → CI RED.
+
+### B-666. `tests/test_schema_migrations.py:66-110` `if "vtest" in _CHAIN: pytest.skip` masked global state pollution; cleanup was try/finally fragile 🛠️ FIXED
+- **Source**: codex F2 P1 OOB (B* codex unique)
+- **Fix**: `tests/test_schema_migrations.py:30-46` added `chain_snapshot` pytest fixture that snapshots `_CHAIN` + `_REGISTRY` at entry and unconditionally restores at teardown (works even if test raised). `test_mock_migration_chain` rewritten to use `chain_snapshot` + uuid-based unique sentinels (`vtest_<uuid8>` instead of hardcoded `vtest`) so pytest-xdist parallel workers can't collide. Pollution at entry now `pytest.fail` (loud) not `pytest.skip` (silent escape hatch).
+
+### B-667. `test_runner_smoke.py` is mock-mock loop (env+backend both mock) — paper-grade prod path 0 smoke coverage 🛠️ FIXED
+- **Source**: Claude F2 P0 OOB + codex F3 P1 (AB* 2-AI overlap)
+- **Fix**: New file `tests/test_runner_smoke_realprompt.py` (~130 LOC) env-gated `RUN_REALMODEL_SMOKE=1` + `@pytest.mark.gpu` (added to pyproject markers registry). 1 task × 1 step real Qwen3VL forward pass + mock env (no docker required). Asserts 4 prod-path contracts: step_record_v2 schema validity + action dict well-formed + tokens > 0 + latency_ms < 60s. Companion to existing mock-mock smoke (which validates only schema field existence + page_unchanged_rate formula). Paper-grade A100 host MUST run pre-Phase-1a-fire to catch Qwen3VLAgent / action_utils / metrics regressions.
+
+### B-668. `p79/policies/learned_router.py` 134 LOC / 0 test files importing — paper §6 router runtime claim 0 test coverage 🛠️ FIXED
+- **Source**: Claude F8 P1 + codex F4 P0 (AB 2-AI overlap)
+- **Fix**: New file `tests/test_learned_router_runtime.py` (~200 LOC, 17 tests). Covers `extract_task_features` (8-column shape lock + column order contract for site_cls/has_image/color/search/compare/nav/intent_tok/axtree_count + empty/None intent handling) + `load_lr_pipeline` (missing file + corrupt pickle + valid roundtrip via pickled dict) + `predict_mode` (None pipeline + exception in pipeline + custom fallback + np.array prediction str-cast) + `load_task_image_field` (6 image-field shapes: None / "None" / "" / list / missing key / corrupt JSON / missing file) + regex bank sanity (COLOR_RE / SEARCH_RE / COMPARE_RE / NAV_RE positive + nav negative). Pre-fix the entire learned-router predictor was 0-test-coverage; feature column drift / pickle fallback regression / site one-hot bug would silent surface only in Pass-2 router fire.
+
+### B-669. `p79/cli/run_experiment.py` 64 LOC / 0 test files — queue scripts hardcode CLI flags, regression = silent mass-fail on `make launch` 🛠️ FIXED
+- **Source**: Claude F8 P1 + codex F4 P0 (AB 2-AI overlap; same finding as B-668 separately scoped)
+- **Fix**: New file `tests/test_cli_smoke.py` (~60 LOC, 4 tests). Subprocess-fires `python -m p79.cli.run_experiment --help` → asserts exit 0 + `usage:` marker present + all canonical flags `--config` `--run_id` `--phase` `--max_steps` `--log_path` appear in help; separate test asserts missing `--config` exits non-zero (required=True contract); separate test asserts module importable without invoking main. Pre-fix queue scripts (`queue_baseline.sh` / `queue_phantom_*.sh` / `queue_chain.sh`) hardcode these flag names; any rename = silent paper-grade launch breakage at first cron sidecar fire.
+
+**B-numbers consumed**: B-662 through B-669 (8 contiguous IDs; A1.12 cold-start range, post A1.6b's B-650~B-661 + A1.13 ladder's B-630~B-648).
+
+**Smoke verification (A1.12 cold-start full sweep)**:
+- pytest **467 passed, 9 skipped** post all 8 fixes + 24 new A1.12 tests (1 tree-hash + 4 SHA SoT + 17 learned-router + 4 cli + 1 real-LLM env-gated skip).
+- py_compile PASS on all 6 modified + 3 new test files.
+- All 8 fix stamps verified via grep `B-66[2-9]`.
+
+**3-AI agreement matrix (cold-start)**:
+- 3-AI overlap (ABC*): 0 (healthy diversification on cold-start)
+- 2-AI overlap (AB*, AB, BC): 4 (B-662 BC `make test`, B-667 AB* mock-mock, B-668 AB learned router 0 test, B-669 AB cli 0 test)
+- 1-AI unique: 4 (B-663 C* gemini tree-hash; B-664 A* claude SHA SoT; B-665 A* claude try/except; B-666 B* codex schema global)
+
+**Reviewer lessons encoded (cross-cutting, cold-start)**:
+1. **Mock-mock smoke ≠ prod-path smoke**: `env.type=mock` + `backends.mock_mode=True` end-to-end validates only schema field presence + formulas, not actual LLM forward pass / action parser / cost computation. Paper §1 hero claims need real-LLM env-gated smoke (B-667).
+2. **HEAD SHA is mutable witness, tree-hash chain is immutable**: prereg §7 explicitly notes `git push --force-with-lease` can rewrite HEAD; tree-hash chain over commit-tree pairs is the byte-deterministic OSF lock witness. Tests must verify BOTH (B-663).
+3. **Multi-site hardcoded constants need SoT enforcement**: SHA pin at 4 sites (test + preflight + Makefile + prereg) without cross-check = silent drift; test that grep-parses all 4 sites + git HEAD is the contract (B-664).
+4. **try/except → pytest.skip = silent regression masquerade**: import errors via `try/except ImportError → pytest.skip` look identical to "missing data" skips in `-rs` summary — refactor renames silently uncover. Hoist to module level: import error = file collection error = CI RED (B-665).
+5. **Global state mutation tests need snapshot/restore fixture**: `try/finally` cleanup is fragile across exceptions; pytest fixture with unconditional teardown is canonical. Hardcoded sentinels = pytest-xdist worker collision risk → uuid-based unique sentinels (B-666).
+6. **Theory module 0-test ≠ unimportant module**: `learned_router` + `cli/run_experiment` carry paper §6 router claim + queue-script contract; their 0-test status was implicit "phase-deferred" not "untestable". Pure-function + subprocess-smoke tests are cheap (4-5h batch for both) and prevent paper-grade silent regressions (B-668, B-669).
+7. **Source-grep theater DEFERRED per Q3=C**: 128 source-grep assertions across 14 stress files (retrofit ratio 3.9%) acknowledged as silent gap; user explicitly accepted risk ("不 disclose 假定 reviewer 不深读"). Lint mark + Makefile deselect path tracked for future sprint when user picks differently.
+
+**Next available B-number**: B-670+ (A1.12 cold-start consumed B-662~B-669; A1.6b consumed B-650~B-661; A1.13 ladder consumed B-630~B-648 separately).
+
+**Process note — parallel-session B-### collision saga**: Initial reservation 13:14 = B-650~B-657 (catalog max at B-649). Between Chunk 1 commit `472a184` and post-commit catalog re-grep, parallel A1.6b session committed B-650~B-661 (12 entries). Renumbered Chunk 1's 5 fixes to B-662~B-666 via commit `6c4760b` (single-pass sed, 6 files, 10 ins/10 del). Then mid-renumber, accidentally bundled A1.6b's 5 staged in-flight files into commit `4cc9064` (11 files, 1192 ins) — undone via `git reset --soft HEAD~1` per user authorization; A1.6b session restored to staged state to commit independently. Lesson reinforces A1.6a / A1.18-re renumber pattern: re-grep B-### max immediately before EACH catalog append + use `git commit --only` (or `git restore --staged` for not-mine files) to avoid bundling parallel-session work.
