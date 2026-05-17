@@ -110,3 +110,6 @@ docs/checkpoints/codex_outputs/
 docs/checkpoints/gemini_prompts/
 docs/checkpoints/gemini_outputs/
 docs/checkpoints/process/
+
+# A1.13 B-593 (P1-7): per-site:benchmark chain locks (flock TOCTOU defense)
+.locks/

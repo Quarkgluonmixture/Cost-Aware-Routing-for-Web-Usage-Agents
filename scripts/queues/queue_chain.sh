@@ -139,6 +139,38 @@ for cmd in "$@"; do
     this_site="${cmd_args[2]:-}"            # 3rd token (script bash site)
     this_benchmark="${cmd_args[3]:-vwa}"    # 4th token (default vwa)
   fi
+
+  # B-593 (A1.13 P1-7 codex F4 OOB, 2026-05-17): per-(site,benchmark) flock
+  # acquired before collision check, held for entire iteration (collision check
+  # + reset/auth + launch + wait + sentinel). Pre-fix pgrep-based collision
+  # detection is TOCTOU — two chains fired in tight window (master orchestrator
+  # + manual retry, or 2 manual chains) both see empty pgrep, both reset_and_auth,
+  # both launch runner attached to same docker user account → session race +
+  # cross-mode contamination. flock-nb defends:
+  #   • single chain: acquires + holds → other chains see lock + FATAL exit;
+  #   • lock is per (site, benchmark) so VWA shopping + WA shopping_admin can
+  #     run concurrently (no docker container collision);
+  #   • lock auto-releases when fd 9 closes (at end of iteration `exec 9>&-` or
+  #     subshell exit).
+  # Stale lock handling: rm `${LOCK_DIR}/p79_${site}_${benchmark}.lock` to
+  # force-release (lock file is empty marker; presence + flock state matter).
+  if [[ -n "${this_site}" && -n "${this_benchmark}" ]]; then
+    LOCK_DIR="${REPO_DIR}/.locks"
+    mkdir -p "${LOCK_DIR}" 2>/dev/null || true
+    LOCK_FILE="${LOCK_DIR}/p79_${this_site}_${this_benchmark}.lock"
+    exec 9>"${LOCK_FILE}"
+    if ! flock -n 9; then
+      log "  [FATAL] another paper-grade chain holds lock for site=${this_site} benchmark=${this_benchmark}"
+      log "  lock file: ${LOCK_FILE}"
+      log "  if lock is stale (prior chain crashed), 'rm ${LOCK_FILE}' to force-release before retry"
+      if command -v curl > /dev/null; then
+        curl -d "queue_chain ABORT (${this_baseline} ${this_site} ${this_benchmark}): another chain holds site lock; possible double-fire" \
+          "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
+      fi
+      exit 1
+    fi
+    log "  [lock] acquired ${LOCK_FILE} (held until iteration end)"
+  fi
   # B-584 (A1.13 P1-1 Claude + gemini G10 2-AI, 2026-05-17): regex anchor.
   # Pre-fix pgrep `_${this_site}_` substring overlap problems:
   #   (a) `_shopping_` substring-matched `_shopping_admin_` → VWA shopping
@@ -368,6 +400,13 @@ sys.exit(0)
     exit 1
   fi
   log "  ${run_id}: completion sentinel OK (${summary_found})"
+
+  # B-593 (A1.13 P1-7): release per-(site,benchmark) flock for next iteration.
+  # `exec 9>&-` closes fd 9 → kernel releases the advisory lock automatically.
+  if [[ -n "${this_site:-}" && -n "${this_benchmark:-}" ]]; then
+    exec 9>&-
+    log "  [lock] released ${LOCK_FILE:-(unset)}"
+  fi
 done
 
 log ""
