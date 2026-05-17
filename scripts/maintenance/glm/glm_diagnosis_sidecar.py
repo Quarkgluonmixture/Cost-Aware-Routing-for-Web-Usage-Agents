@@ -33,142 +33,20 @@ def _read_json(path: Path) -> Dict[str, Any]:
         return json.load(f)
 
 
-def _load_glm_config(cfg_path: Path) -> Dict[str, str]:
-    lines: List[str] = []
-    for raw in cfg_path.read_text(encoding="utf-8").splitlines():
-        t = raw.strip()
-        if not t or t.startswith("#"):
-            continue
-        lines.append(t)
-    if len(lines) < 3:
-        raise ValueError(f"GLM config invalid: need 3 lines (endpoint/model/api_key), got {len(lines)}")
-    return {"endpoint": lines[0], "model": lines[1], "api_key": lines[2]}
-
-
-def _candidate_glm_urls(endpoint: str) -> List[str]:
-    ep = endpoint.rstrip("/")
-    if ep.endswith("/chat/completions"):
-        return [ep]
-    return [f"{ep}/chat/completions"]
-
-
-def _is_vision_model(model: str) -> bool:
-    m = model.lower()
-    return "4v" in m or "4.6v" in m or "5v" in m
-
-
-def _extract_balanced_json(text: str) -> Optional[str]:
-    """Extract first balanced JSON object substring from `text`.
-
-    Walks forward from first `{` tracking brace depth + string state,
-    returns substring `text[start:end+1]` covering the outermost matched
-    `{...}` pair. Returns None if no balanced object found.
-
-    B-847 (A1.15b Chunk β P1-9): replaces `rfind("{") / rfind("}")`
-    extraction in `_call_glm_chat`. The rfind approach returned the
-    INNERMOST brace pair which silently corrupts nested JSON: for
-    `{"failure_diagnosis":[{...}, {...}]}` it returned only the LAST
-    inner `{...}` losing the wrapper key + all but one list element.
-    Codex Mode B P1-9 OOB catch.
-
-    Implementation notes:
-    - Tracks `in_string` state via `"` (with backslash-escape handling)
-      so braces inside strings don't shift depth.
-    - First `{` outside any string = start. Matching `}` closing depth
-      to zero = end.
-    - Greedy (returns OUTERMOST balanced object first found).
-    """
-    start = text.find("{")
-    if start < 0:
-        return None
-    depth = 0
-    in_string = False
-    escape = False
-    for i in range(start, len(text)):
-        c = text[i]
-        if escape:
-            escape = False
-            continue
-        if in_string:
-            if c == "\\":
-                escape = True
-            elif c == '"':
-                in_string = False
-            continue
-        if c == '"':
-            in_string = True
-        elif c == "{":
-            depth += 1
-        elif c == "}":
-            depth -= 1
-            if depth == 0:
-                return text[start : i + 1]
-    return None
-
-
-def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, Any]], timeout_s: int = 120) -> str:
-    payload_variants = [
-        {
-            "model": glmm["model"],
-            "messages": list(messages),
-            "temperature": 0.1,
-            "max_tokens": 16384 if _is_vision_model(glmm["model"]) else 131072,
-        },
-    ]
-    last_err: Optional[Exception] = None
-    for url in _candidate_glm_urls(glmm["endpoint"]):
-        for payload in payload_variants:
-            body = json.dumps(payload).encode("utf-8")
-            req = urllib.request.Request(
-                url,
-                data=body,
-                method="POST",
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {glmm['api_key']}",
-                },
-            )
-            try:
-                with urllib.request.urlopen(req, timeout=timeout_s) as resp:
-                    data = json.loads(resp.read().decode("utf-8"))
-                choices = data.get("choices") or []
-                if choices:
-                    choice = choices[0]
-                    msg_obj = choice.get("message") or {}
-                    finish = choice.get("finish_reason", "")
-                    msg = msg_obj.get("content")
-                    reasoning = msg_obj.get("reasoning_content")
-                    # Thinking models: content may be truncated when
-                    # finish_reason=length because reasoning consumed
-                    # the token budget.  Prefer reasoning if content
-                    # looks like an incomplete JSON.
-                    if isinstance(msg, str) and msg.strip():
-                        if finish == "length" and isinstance(reasoning, str) and reasoning.strip():
-                            # content truncated — try reasoning first.
-                            # B-847 (Chunk β P1-9): outermost balanced JSON
-                            # instead of rfind() which mangled nested keys.
-                            balanced = _extract_balanced_json(reasoning)
-                            if balanced is not None:
-                                return balanced
-                        return msg.strip()
-                    # GLM thinking models (e.g. glm-4.6) may put the answer in
-                    # reasoning_content with content="" or missing.
-                    if isinstance(reasoning, str) and reasoning.strip():
-                        # B-847 (Chunk β P1-9): outermost balanced JSON
-                        # extraction (was rfind, which broke nested).
-                        balanced = _extract_balanced_json(reasoning)
-                        if balanced is not None:
-                            return balanced
-                        # Otherwise return the full reasoning text
-                        return reasoning.strip()
-                text = data.get("output_text") or data.get("text")
-                if isinstance(text, str) and text.strip():
-                    return text.strip()
-                # If response lacks assistant visible text, treat as failed variant.
-                last_err = RuntimeError("response has no assistant content")
-            except Exception as e:  # noqa: BLE001
-                last_err = e
-    raise RuntimeError(f"GLM request failed: {last_err}")
+# B-855 (A1.15b Chunk δ P1-6): GLM client helpers extracted to
+# `glm_client.py` to break tight coupling. `glm_playbook_refresh.py:37`
+# + `glm_batch_digest.py:38-53` previously imported these 5 helpers
+# from this 1996-LOC sidecar module just to call the GLM API. Now they
+# import directly from glm_client.py (~200 LOC). Re-exported here for
+# in-module use + back-compat (existing code reads
+# `glm_diagnosis_sidecar._call_glm_chat` attribute).
+from glm_client import (  # noqa: E402
+    _call_glm_chat,
+    _candidate_glm_urls,
+    _extract_balanced_json,
+    _is_vision_model,
+    _load_glm_config,
+)
 
 
 def _post_ntfy(
@@ -198,21 +76,62 @@ def _post_ntfy(
 
 
 def _load_state(path: Optional[Path]) -> Dict[str, Any]:
+    """Load JSON state from disk. Fail-loud on corruption (B-856).
+
+    B-856 (A1.15b Chunk δ P1-10): Pre-fix returned `{}` silently on
+    corruption — contaminated-episode tracking + GLM-trigger counters
+    silently lost across cron ticks, causing duplicate digest emission +
+    skip-correct-episodes. Matches A1.15 B-393 fail-loud pattern for
+    `experiment_watchdog._load_state` corruption.
+
+    Now: raise RuntimeError on JSON decode failure so operator notices
+    + repairs / re-initializes. Missing file (path doesn't exist) still
+    returns `{}` (legitimate first-run state).
+    """
     if not path or not path.exists():
         return {}
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
+    except json.JSONDecodeError as e:
+        raise RuntimeError(
+            f"GLM sidecar state corrupt: {path} (JSON decode failed at line {e.lineno} "
+            f"col {e.colno}: {e.msg!r}). Manual repair required — inspect + delete "
+            f"or restore from backup."
+        ) from e
 
 
 def _save_state(path: Optional[Path], state: Dict[str, Any]) -> None:
+    """Atomic JSON state write via temp+rename (B-856).
+
+    B-856 (A1.15b Chunk δ P1-10): Pre-fix used direct
+    `path.write_text(...)` which is NOT atomic — cron tick crash
+    mid-write left half-written state JSON → `_load_state` next tick
+    raised (post-B-856) or returned `{}` (pre-B-856) silently losing
+    GLM trigger counters + contaminated-episode tracking. Standard
+    POSIX atomic pattern: write to temp file in same dir + os.replace().
+    Extends B-853 (glm_cell_autoupdate atomic frontmatter) pattern.
+    """
     if not path:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     state = dict(state)
     state["updated_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    _tmp = path.with_suffix(path.suffix + ".tmp")
+    try:
+        _tmp.write_text(
+            json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        # os.replace is atomic on POSIX (same filesystem). path lives in
+        # logs/cron/ same as _tmp so always satisfies same-fs constraint.
+        import os as _os
+        _os.replace(_tmp, path)
+    except Exception:
+        # Cleanup tmp on any error; preserves prior state on disk.
+        try:
+            _tmp.unlink()
+        except FileNotFoundError:
+            pass
+        raise
 
 
 def _iter_episode_summary_paths(run_dir: Path, condition: Optional[str]) -> List[Path]:

@@ -35,9 +35,26 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 # ---------------------------------------------------------------------------
-# Import helpers from glm_diagnosis_sidecar.py via importlib
+# Imports: GLM client helpers + sidecar-specific helpers
 # ---------------------------------------------------------------------------
-_SIDECAR_PATH = Path(__file__).parent / "glm_diagnosis_sidecar.py"
+# B-855 (A1.15b Chunk δ P1-6): GLM client helpers moved to glm_client.py.
+# Pre-fix used importlib boilerplate to pull these from
+# glm_diagnosis_sidecar — paid full module load (1996 LOC) just for 3
+# GLM API helpers. Now: direct `from glm_client import` for the 3 GLM
+# helpers; importlib still used for sidecar-specific helpers (episode
+# artifact / SoM marks / case evidence) which legitimately belong in
+# diagnosis_sidecar.
+import sys as _sys
+_GLM_DIR = Path(__file__).parent
+if str(_GLM_DIR) not in _sys.path:
+    _sys.path.insert(0, str(_GLM_DIR))
+from glm_client import (  # noqa: E402
+    _call_glm_chat,
+    _candidate_glm_urls,
+    _load_glm_config,
+)
+
+_SIDECAR_PATH = _GLM_DIR / "glm_diagnosis_sidecar.py"
 
 def _load_sidecar():
     spec = importlib.util.spec_from_file_location("glm_sidecar", _SIDECAR_PATH)
@@ -47,10 +64,7 @@ def _load_sidecar():
 
 sidecar = _load_sidecar()
 
-# Re-export frequently used helpers
-_load_glm_config = sidecar._load_glm_config
-_call_glm_chat = sidecar._call_glm_chat
-_candidate_glm_urls = sidecar._candidate_glm_urls
+# Re-export sidecar-specific helpers (diagnosis-domain logic stays in sidecar)
 _fallback_episode_diagnosis = sidecar._fallback_episode_diagnosis
 _find_episode_artifact_dir = sidecar._find_episode_artifact_dir
 _load_som_marks_steps = sidecar._load_som_marks_steps
@@ -1135,10 +1149,39 @@ def _load_done_keys(output_dir: Path) -> Set[Tuple[str, int]]:
 
 
 def _append_jsonl(output_path: Path, record: Dict[str, Any]) -> None:
-    """Append one JSON record to the output JSONL file."""
+    """Append one JSON record to the output JSONL file.
+
+    B-856 (A1.15b Chunk δ P1-10): Mandatory exclusive file lock via
+    fcntl.flock(LOCK_EX). Pre-fix had no lock — two concurrent operator
+    runs (e.g. `glm_batch_digest.py` re-run while a previous run still
+    finishing) both computed `done_keys` once at startup, then BOTH
+    appended records for the same (condition_id, task_id) → duplicate
+    JSONL rows → downstream count-based aggregators double-counted +
+    paper §3 phantom-mode failure narratives potentially doubled.
+
+    Optional fcntl was only used when `--state-file` was passed
+    (separate codepath); the general digest append path was
+    unprotected. Now: every `_append_jsonl` acquires LOCK_EX on the
+    output file before write, releases on file close. Blocks until
+    lock acquired (waits for concurrent writer); blast-radius is
+    serialized appends on single host (acceptable cost).
+    """
+    import fcntl as _fcntl  # local import keeps stdlib top-level minimal
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("a", encoding="utf-8") as f:
+        try:
+            _fcntl.flock(f.fileno(), _fcntl.LOCK_EX)
+        except OSError as _lock_err:
+            # Filesystem doesn't support flock (rare — e.g. NFS edge case).
+            # Fail-loud: paper-grade concurrency safety is required; refuse
+            # to write rather than silently allow duplicate rows.
+            raise RuntimeError(
+                f"flock(LOCK_EX) failed on {output_path}: {_lock_err}. "
+                f"Mandatory lock for digest append; check filesystem "
+                f"supports advisory locks."
+            ) from _lock_err
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        # Lock released on context-manager close.
 
 
 # ---------------------------------------------------------------------------

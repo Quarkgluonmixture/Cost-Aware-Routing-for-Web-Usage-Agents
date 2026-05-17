@@ -34,7 +34,12 @@ CRON_LOG_DIR = REPO / "logs/cron"
 CHANGELOG = CRON_LOG_DIR / "cell_changelog.jsonl"
 
 sys.path.insert(0, str(REPO / "scripts/maintenance/glm"))
-from glm_diagnosis_sidecar import _load_glm_config, _call_glm_chat  # noqa: E402
+# B-855 (A1.15b Chunk δ P1-6): import from glm_client directly. Pre-fix
+# imported from glm_diagnosis_sidecar (1996 LOC) just to call the GLM API
+# — paid for the entire module load. Now: import from glm_client (~200
+# LOC) directly. Decouples playbook refresh from diagnosis sidecar
+# refactors.
+from glm_client import _load_glm_config, _call_glm_chat  # noqa: E402
 
 GLM_CFG_PATH = REPO / ".auth/glm"
 

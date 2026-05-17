@@ -5702,6 +5702,71 @@ Chunk γ scope = operational ops hygiene sweep (7 fixes across 6 files). User di
 
 **B-numbers consumed**: B-848 through B-854 (7 IDs; A1.15b Chunk γ). Next available: B-855+.
 
+---
+
+## A1.15b — GLM sidecar cluster Chunk δ (2026-05-17)
+
+Chunk δ scope = GLM substrate refactor + concurrency hardening cluster (2 fixes). User "下一个 chunk" 4th in sequence (α→β→γ→δ same evening). Functional cluster = code structure (P1-6 extraction) + concurrency safety (P1-10 atomic+locks). 3 files modified + 1 new module + 1 test file.
+
+### B-855 `scripts/maintenance/glm/glm_client.py` — extract GLM API client from glm_diagnosis_sidecar (P1-6)
+
+**Origin**: A1.15b /stress Mode A P1-6 (Claude unique).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Pre-fix coupling**:
+- `glm_playbook_refresh.py:37` `from glm_diagnosis_sidecar import _load_glm_config, _call_glm_chat` — imports 2 helpers from 1996 LOC module just to call GLM API
+- `glm_batch_digest.py:38-53` importlib.spec_from_file_location boilerplate to pull same helpers
+- Coupling rationale per memory `feedback_split_large_scope` "central abstractions over distributed conditionals when 3+ sites need same logic" extension
+
+**Fix**: New module `glm_client.py` (~200 LOC, stdlib-only) owns:
+- `load_glm_config(path)` — parse 3-line `.auth/glm`
+- `is_vision_model(model)` — heuristic for 4v/4.6v/5v variants
+- `candidate_glm_urls(endpoint)` — endpoint URL normalization
+- `call_glm_chat(cfg, messages, timeout_s=120)` — POST /chat/completions with thinking-model `reasoning_content` fallback
+- `extract_balanced_json(text)` — B-847 balanced-brace JSON extraction
+
+Public unprefixed names + back-compat `_underscored` aliases. Caller updates:
+- `glm_diagnosis_sidecar.py:60-185` — 5 helper definitions deleted, replaced with `from glm_client import` 5 names (re-export for `sidecar.X` attribute access still works)
+- `glm_playbook_refresh.py:37` — `from glm_diagnosis_sidecar import` → `from glm_client import`
+- `glm_batch_digest.py:38-53` — drops importlib boilerplate for 3 GLM helpers; sidecar import retained for other domain-specific helpers (`_fallback_episode_diagnosis`, `_find_episode_artifact_dir`, etc.)
+
+**Verification**: `tests/test_stress_a1_15b_chunk_delta.py` 17 invariants — 5 public + 5 back-compat alias existence / load_glm_config 3-line parsing + raise-on-short / is_vision_model 6-case parametrized / candidate_urls 3-case / extract_balanced_json 5-case (B-847 logic survives extraction) / sidecar re-exports / playbook_refresh import-path check / batch_digest import-path check.
+
+**Paper-grade impact**: structural — decouples glm_playbook_refresh from diagnosis_sidecar refactors. Future GLM API changes localized to glm_client.
+
+### B-856 atomic state writes + fail-loud load_state + mandatory digest flock (P1-10)
+
+**Origin**: A1.15b /stress Mode B codex P1-10 OOB.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Code sites + fixes**:
+
+1. **`glm_diagnosis_sidecar.py:_save_state` (L209-216)** — pre-fix direct `write_text()` was non-atomic; cron crash mid-write left half-written JSON. Fix: temp file in same dir + `os.replace()` atomic rename (POSIX). Cleans up `.tmp` on any error (preserves prior state on disk). Extends B-853 atomic frontmatter pattern from Chunk γ.
+
+2. **`glm_diagnosis_sidecar.py:_load_state` (L200-206)** — pre-fix silent `return {}` on corruption → contaminated-episode tracking + GLM trigger counters silently lost across cron ticks. Fix: raise `RuntimeError` on `json.JSONDecodeError` with line/col + manual-repair instruction. Missing-file path (legitimate first-run) still returns `{}`. Matches A1.15 B-393 fail-loud pattern for experiment_watchdog._load_state corruption.
+
+3. **`glm_batch_digest.py:_append_jsonl` (L1137-1141)** — pre-fix no file lock; two concurrent operator runs (e.g. re-run while previous still finishing) BOTH computed `done_keys` once at startup, then BOTH appended for same (condition_id, task_id) → duplicate JSONL rows → downstream count-based aggregators double-counted → paper §3 phantom mode failure narrative magnitudes potentially doubled. Fix: mandatory `fcntl.flock(LOCK_EX)` before write; blocks until lock acquired; serialized appends on single host (acceptable cost). Fail-loud OSError if filesystem doesn't support advisory locks (rare NFS edge cases).
+
+**Verification**: `tests/test_stress_a1_15b_chunk_delta.py` 8 invariants — atomic save (no .tmp leftover) / repeated-write idempotent / missing-file empty return / corrupt-file RuntimeError / save+load roundtrip / mandatory LOCK_EX present in source.
+
+**Paper-grade impact**: operator concurrency safety. Critical when paper-grade re-fire involves multiple manual `glm_batch_digest.py` invocations (post-fire analysis batches).
+
+**B-numbers consumed**: B-855 + B-856 (2 IDs; A1.15b Chunk δ). Next available: B-857+.
+
+**Pytest delta**: 766 (post-Chunk-γ) → 791 PASS (+25 new in `test_stress_a1_15b_chunk_delta.py`).
+
+**A1.15b Chunk δ reviewer lessons distilled (2)**:
+1. **Cross-chunk pattern reuse via extension** — B-853 (Chunk γ glm_cell_autoupdate atomic frontmatter) → B-856 (Chunk δ glm_diagnosis_sidecar state + glm_batch_digest JSONL) is the same temp+rename atomic pattern applied to 3 callsites across 3 files. Each cycle that adds atomic-write at one site should immediately grep `write_text\|open.*"w"\|open.*"a"` across sibling files for next-iter sweep targets. Future spec: P79 has a "non-atomic-write" sibling-prop policy when atomic-write is added.
+2. **Module extraction with back-compat alias preserves zero-downtime refactor** — B-855 created `glm_client.py` but kept `_underscored` aliases AND re-exports from `glm_diagnosis_sidecar.py` for existing callers. Net effect: 3 callers update imports, but historical callers (CI / one-off operator scripts / archived diff tests) still resolve back-compat names. Standard pattern: extract → re-export → update primary callers → leave aliases for ≥1 release cycle → remove aliases in major version bump.
+
+**Remaining 4 deferred to Chunk ε or post-workshop**:
+- P1-1 ntfy topic rotation (22-file batch sed + env file, 30min)
+- P1-4 incremental scan processed-set tracking (2h refactor with invariants)
+- P2-2 glm_cell_autoupdate detect_pid argv dependency (15min)
+- P2-3 PID-reuse race documentation (10min defensive)
+
+Total Chunk δ: 2 fixes, 4 files (1 new + 3 modified), 25 new pytest invariants, ~75min effort.
+
+**A1.15b cycle running total** (α+β+γ+δ): 16 fixes (B-841~B-856 contiguous), ~15 unique files, 58 new invariant tests + 70 targeted regression PASS, 0 regressions, 4 commits.
+
 **Verification**:
 - py_compile + bash -n all 6 modified files PASS
 - Targeted pytest (Chunk β tests + router + smoke) — 70 pass / 0 fail
