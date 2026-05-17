@@ -208,6 +208,20 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     # layer alignment from JSONL alone. None when wrapper did not emit
     # (mock env, exception path).
     "action_executed": None,
+    # B-563/B-564/B-565 (/stress A1.22 P0-1/4/5 batch, 2026-05-17): cross-
+    # baseline contract sealing. `cost_unit_basis` enum {"api_usd",
+    # "electricity_usd_derived", "unknown"} declares the currency of
+    # `cost_usd.{input,output,model}` for the baseline that produced this
+    # row — aggregators MUST stratify before pooling. `cost_total_mixed
+    # _unit_warn` flags B0 rows where `cost_usd.total` mixes API USD with
+    # local-scaffold USD (router_overhead + obs_prepare) in a single
+    # number. `element_bbox` was a runner-stamped ghost field; now
+    # canonical schema (B-564). Pre-A1.22 archive rows lack these → fill
+    # None; downstream `cost_unit_basis is None` ⟹ "archived lineage,
+    # basis unknown" disposition.
+    "cost_unit_basis": None,
+    "cost_total_mixed_unit_warn": None,
+    "element_bbox": None,
 }
 
 

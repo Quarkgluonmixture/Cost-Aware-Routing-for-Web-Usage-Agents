@@ -210,6 +210,58 @@ class StepRecordV2:
     # emit delta:[0,300] → executed direction='down'" and confirm execution
     # identical. None when wrapper did not emit (mock env, exception path).
     action_executed: Optional[Dict[str, Any]] = None
+    # B-563 (/stress A1.22 P0-1-ABC* 3-AI overlap, 2026-05-17): cross-baseline
+    # cost-basis declaration. `cost_usd.{input,output,model}` units differ by
+    # baseline: B0 reports commercial-API USD margin (provider margin + network
+    # egress + infrastructure overhead, `configs/exp_v2_B0_*.yaml:cost_api`
+    # input_cost_per_1k=0.001 output=0.005); B1+B2 (local) report
+    # electricity-derived USD (`avg_total_energy_kwh × electricity_rate`, no
+    # margin). Pre-fix any aggregator pooling `cost_usd.total` across baselines
+    # mixed API-USD with electricity-USD (unit collision ~1000×) — paper §1
+    # "4-fold drop-in property" hero claim was unit-collision artifact, not
+    # scientific property. A1.21 P0-7 / B-527 added `cost_unit_basis_for(baseline)`
+    # to `generate_per_task_sr.py` but the basis lived only as a CSV column,
+    # never reaching `aggregate_phase1_full_prereg_decision.py` canonical
+    # producer or 2 other `aggregate_*.py` cost consumers. Adding the basis
+    # at the step_record schema layer makes the unit visible at the JSONL
+    # boundary — cross-baseline aggregators MUST stratify (or assert single
+    # basis) before pooling cost. Enum:
+    #   - "api_usd"                  — B0 commercial proxy (Bedrock margin)
+    #   - "electricity_usd_derived"  — B1/B2 local (energy × rate)
+    #   - "unknown"                  — mock backend or unrecognized type
+    # `validate_step_record_v2` requires the key be present (value may be None
+    # for archived rows). NeurIPS area chair defuse: paper §1 cost claim
+    # rewritten as "average of within-baseline normalized cost ratios"
+    # (Gemini Mode C F1 5-paragraph attack defuse), and any future cross-
+    # baseline absolute cost number must cite this basis explicitly.
+    cost_unit_basis: Optional[str] = None
+    # B-564 (/stress A1.22 P0-5-A* Claude OOB, 2026-05-17): close `element_bbox`
+    # ghost-field hole. Pre-fix `runner/main.py:2451` stamped step_record[
+    # "element_bbox"] = [...] when `obs.obs_nodes_info` provided a union_bound
+    # for the target element, but the field was absent from this dataclass +
+    # `STEP_RECORD_V2_DEFAULTS` + `validate_step_record_v2` ⟶ A1.8 "schema
+    # = source of truth" contract (B-280/B-281) partial leak. Reviewer
+    # grepping dataclass for `element_bbox` finds nothing; grepping JSONL
+    # finds rows where the field exists. Now declared canonical at the
+    # schema layer; runner write site (B-564 companion) keeps existing
+    # behavior (only present when bbox was extractable from obs_nodes_info).
+    # Type: 4-float list `[x, y, w, h]` (pixel coords, viewport-frame).
+    # None when step did not produce a click target (no element_id, or
+    # element_id not in obs_nodes_info union_bound).
+    element_bbox: Optional[List[float]] = None
+    # B-565 (/stress A1.22 P0-2-C* Gemini OOB, 2026-05-17): cross-baseline
+    # mixed-unit ADD warn flag. Pre-fix `runner/main.py:2240-2247
+    # cost_usd.total = token_cost.total + router_overhead + obs_prepare` for
+    # B0 adds API-USD (token cost) + electricity-USD (router + obs_prepare
+    # scaffold) into one number ⟶ mathematically incoherent even before
+    # cross-baseline pooling. Set True when (`cost_unit_basis != "electricity
+    # _usd_derived"` AND (`cost_usd.router_overhead != 0` OR `cost_usd.obs_prepare
+    # != 0`)) — i.e. B0 row with non-zero local scaffold cost. Aggregators
+    # can detect and either re-derive total from `cost_usd.model` alone OR
+    # disclose the warn flag count per cell. False for B1/B2 (single basis)
+    # and for B0 rows where local scaffold cost happens to be 0 (router off,
+    # zero-cost obs_prepare). None for archived pre-A1.22 rows.
+    cost_total_mixed_unit_warn: Optional[bool] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -383,6 +435,22 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "control_intervention",  # B-497 control-injected action provenance
     "dialog_meta",  # B-488 browser dialog telemetry (misclick blast radius evidence layer)
     "action_executed",  # B-512 wrapper-normalized canonical action form
+    # B-566 (/stress A1.22 P0-5-A* + P0-1-ABC* + P0-2-C* cross-baseline
+    # contract sealing, 2026-05-17): close cross-baseline ghost-field
+    # cluster — `fallback_finish` was IN dataclass + DEFAULTS but missed
+    # validator KEY-presence enforcement (silent omission allowed);
+    # `element_bbox` was previously a pure ghost (now declared by B-564);
+    # `cost_unit_basis` (B-563) declares the unit of `cost_usd.{input,
+    # output,model}` per baseline so aggregators MUST stratify before
+    # pooling; `cost_total_mixed_unit_warn` (B-565) flags B0 rows where
+    # `cost_usd.total` was constructed as a mixed-unit ADD (API USD +
+    # local-scaffold USD) so consumers detect single-row incoherence
+    # before any cross-baseline pooling. Validator now requires KEY
+    # presence (value may be None for archived rows).
+    "fallback_finish",
+    "element_bbox",
+    "cost_unit_basis",
+    "cost_total_mixed_unit_warn",
 })
 
 

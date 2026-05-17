@@ -43,6 +43,7 @@ import argparse
 import csv
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -76,12 +77,35 @@ def load_task_outcomes(condition_dir: Path) -> dict[str, dict[str, Any]]:
     if not episodes_dir.is_dir():
         LOGGER.warning("no episodes dir under %s", condition_dir)
         return outcomes
+    # B-561 (/stress A1.22 P0-7-B* codex carry-leak closure, 2026-05-17):
+    # switch the per-task SR loader to `load_episode_summary_strict` so
+    # quarantined episodes (B-486 `needs_reevaluation=True`) and
+    # type-coerced `"success": "false"` strings are caught at the
+    # producer boundary rather than silently entering paper §1
+    # H1 / H2(a) / H3 universe as `success=None`. A1.5b Phase 2 B-542
+    # closed this exact pattern in
+    # `aggregate_phase1_full_prereg_decision._load_cell_per_task` +
+    # `aggregate_phantom_lift.load`, but missed the third canonical
+    # producer here. Default `reject_needs_reevaluation=False` because
+    # this loader feeds the per-task SR CSV (a transparency artifact
+    # whose denominator differs from a paper-grade pool); strict-mode
+    # opt-in via `P79_STRICT=1` env. `mode="lenient"` keeps behavior
+    # compatible with archived runs that miss `schema_version`.
+    from p79.experiment.io_utils import load_episode_summary_strict
+    _strict_mode = "strict" if os.environ.get("P79_STRICT", "") == "1" else "lenient"
     for summary_path in episodes_dir.glob("*_summary_v2.json"):
         try:
-            with summary_path.open() as f:
-                data = json.load(f)
+            data = load_episode_summary_strict(
+                summary_path,
+                mode=_strict_mode,
+                reject_needs_reevaluation=False,
+            )
         except Exception as e:
             LOGGER.warning("skip %s: %s", summary_path, e)
+            continue
+        if data is None:
+            # B-561: lenient mode returns None for malformed rows; treat
+            # as skipped (matches pre-fix `Exception → continue` flow).
             continue
         task_id = data.get("task_id")
         if task_id is None:

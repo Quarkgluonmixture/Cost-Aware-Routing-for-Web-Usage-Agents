@@ -2297,14 +2297,46 @@ class ExperimentRunner:
                         if retry_was_applied else 0.0
                     ),
                 },
+                # B-562 (/stress A1.22 P0-4-A* Claude OOB, 2026-05-17):
+                # preserve None semantics for B0 input_text / input_image
+                # tokens. Pre-fix `int(meta.get("input_text_tokens", 0))`
+                # cast B0's missing key (proxy `usage.input_tokens` does
+                # not break down by modality) to literal 0 ⟶ every B0
+                # JSONL row read "input=2400, input_text=0, input_image=0"
+                # which is a silent positive lie: cross-baseline paper §1
+                # cost-per-modality sum would average B0's 0 with B1+B2
+                # real ints, biasing the pool toward 0 (B0 = zero-variance
+                # artifact). Matches B-401 latency split semantic (None,
+                # not 0, for "backend cannot expose"). Aggregators that
+                # care about token breakdown must None-safe sum (drop NaN
+                # explicitly, not pandas implicit). Default None semantics
+                # match `latency_ms.preprocessing/generate` (`runner/main.py
+                # :2259-2268`).
                 tokens={
                     "input": input_tokens,
-                    "input_text": int(meta.get("input_text_tokens", 0)),
-                    "input_image": int(meta.get("input_image_tokens", 0)),
+                    "input_text": (
+                        int(meta["input_text_tokens"])
+                        if meta.get("input_text_tokens") is not None
+                        else None
+                    ),
+                    "input_image": (
+                        int(meta["input_image_tokens"])
+                        if meta.get("input_image_tokens") is not None
+                        else None
+                    ),
                     "output": output_tokens,
                     "total": token_total,
                     "thinking": meta.get("thinking_tokens"),
                 },
+                # B-565 (/stress A1.22 P0-2-C* Gemini OOB, 2026-05-17):
+                # `cost_usd.total = model + router_overhead + obs_prepare`
+                # is preserved for backward compat with existing aggregators
+                # but is mathematically incoherent on B0 when local scaffold
+                # cost is non-zero (API USD + local-amortized USD). The
+                # `cost_total_mixed_unit_warn` companion field (stamped
+                # below at step_record write block) flags such rows so
+                # consumers can either re-derive `total` from `model` alone
+                # under api_usd basis, or disclose the warn count per cell.
                 cost_usd={
                     "input": token_cost["input"],
                     "output": token_cost["output"],
@@ -2349,6 +2381,37 @@ class ExperimentRunner:
             step_record["fallback_finish"] = fallback_finish
             step_record["retry_action_applied"] = retry_was_applied
             step_record["retry_action_type"] = retry_action_type_str
+            # B-563/B-565 (/stress A1.22 P0-1-ABC* + P0-2-C*, 2026-05-17):
+            # cross-baseline cost-basis disambiguation. `_cost_unit_basis`
+            # mirrors `_image_pipeline` pattern (~30 lines below) — single
+            # backend-type → enum mapping so cross-baseline aggregators
+            # can stratify before pooling `cost_usd.{input,output,model}`.
+            # Pre-A1.22 archive rows lack the field → fill_step_defaults
+            # backfills None ("archived lineage, basis unknown"). The
+            # `cost_total_mixed_unit_warn` flag fires on B0 rows where the
+            # `cost_usd.total` sum mixes API-USD (token cost) with
+            # local-scaffold USD (router_overhead + obs_prepare). False
+            # for B1/B2 (single-basis local) and for B0 rows where local
+            # scaffold cost happens to be 0 (router off, zero-cost obs).
+            _backend_type_for_cost = self.cfg.get("backends", {}).get(
+                condition.backend_id, {}
+            ).get("type", "unknown")
+            _cost_unit_basis_map = {
+                "api_proxy": "api_usd",
+                "local_qwen": "electricity_usd_derived",
+                "local_gemma": "electricity_usd_derived",
+                "mock": "unknown",  # mock backends emit zero cost
+            }
+            step_record["cost_unit_basis"] = _cost_unit_basis_map.get(
+                _backend_type_for_cost, "unknown",
+            )
+            step_record["cost_total_mixed_unit_warn"] = bool(
+                step_record["cost_unit_basis"] == "api_usd"
+                and (
+                    float(router_overhead_cost or 0) > 0
+                    or float(obs_prepare_cost or 0) > 0
+                )
+            )
             # GLM fallback tracking (§67 Plan B)
             # B-398 (/stress A1.1 v8 Mode A+B P0-3 overlap, 2026-05-16):
             # persist ALL attempted-fallback steps, not only the succeeded
@@ -2545,6 +2608,16 @@ class ExperimentRunner:
                     step_record["confidence"]["verbalized"] = verbalized_conf
 
             # Element bounding box for annotation overlay (from obs_nodes_info)
+            # B-564 (/stress A1.22 P0-5-A* Claude OOB, 2026-05-17): always
+            # initialize the key (value None when no bbox extractable) so
+            # `validate_step_record_v2` PAPER_GRADE_STEP_OPTIONAL_KEYS
+            # presence check passes. Pre-fix the key was conditionally
+            # absent on steps without `obs_nodes_info` ⟹ reviewer grep of
+            # JSONL for `element_bbox` had to handle KeyError vs None as
+            # two paths. Now: None ≡ "no bbox extractable this step" (no
+            # element_id, no obs_nodes_info, or no union_bound), list ≡
+            # bbox present. Single canonical absence path.
+            step_record["element_bbox"] = None
             eid = action.get("element_id")
             if eid is not None and hasattr(obs, "obs_nodes_info") and obs.obs_nodes_info:
                 node_info = obs.obs_nodes_info.get(str(eid))

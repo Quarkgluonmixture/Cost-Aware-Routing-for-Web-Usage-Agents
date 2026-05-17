@@ -60,17 +60,36 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 # Cell registry: (baseline, site, expected_N, run_paths_per_mode)
-def _build_cells(grade_filter: list | None = None) -> list[dict]:
+def _build_cells(grade_filter: list | None = None,
+                 manifest_path: 'Path | None' = None) -> list[dict]:
     """Build aggregator cell list. F01 audit: respects grade_filter
     (default = `paper-grade` only). Pass a list to override (e.g. for
-    legacy `archived` data in Appendix-D sensitivity figure)."""
+    legacy `archived` data in Appendix-D sensitivity figure).
+
+    B-560 (/stress A1.22 P0-6-B* codex carry-leak closure, 2026-05-17):
+    `manifest_path` is now threaded through to `get_cells(...)` so the
+    cells loaded match the manifest the caller actually specified. A1.21
+    P0-4 + A1.5b Phase 2 B-534 plumbed `manifest_path` through
+    `aggregate_phase1_full_prereg_decision.py:main()` and `get_cells`,
+    but `_build_cells(grade_filter)` here still discarded the arg —
+    `get_aggregator_cells(..., manifest_path=Path)` looked correct from
+    outside but silently fell back to the default registry inside. The
+    JSON provenance hash would point at the user's chosen manifest while
+    the pooled H1/H2/H3 statistics came from the default — exactly the
+    "artifact self-evidence vs statistical truth" split codex Mode B
+    flagged at /stress A1.22 (Finding F1)."""
     # Pull baseline list from the central registry so B2 (and any future
     # baseline) flows through automatically without touching this file.
     from scripts.analysis.lib.run_registry import BASELINES as _BASELINES
     out: list[dict] = []
     for baseline in _BASELINES:
         for site in ("classifieds", "reddit"):
-            specs = get_cells(baseline=baseline, site=site, grade=grade_filter)
+            # B-560: forward manifest_path so the registry sees the same
+            # source the caller specified at the CLI/orchestration layer.
+            specs = get_cells(
+                baseline=baseline, site=site,
+                grade=grade_filter, manifest_path=manifest_path,
+            )
             if not specs:
                 continue
             out.append({
@@ -103,12 +122,19 @@ def get_aggregator_cells(grade_filter: list | None = None,
     Caller migration: replace `from aggregate_phantom_lift import CELLS` with
     `from aggregate_phantom_lift import get_aggregator_cells; cells = get_aggregator_cells()`
     when re-evaluation matters (paper-grade audit reproducibility).
+
+    B-560 (/stress A1.22 P0-6-B* codex carry-leak closure, 2026-05-17):
+    `manifest_path` now forwarded into `_build_cells(...)`. Pre-fix this
+    function accepted `manifest_path` only to satisfy the call signature
+    but dropped it before reaching `get_cells`, producing the
+    "provenance theater" failure mode where the output JSON's
+    `manifest_sha256` referenced a manifest that never gated discovery.
     """
     if grade_filter is None:
         # Honor env var override at call time (was frozen at module import pre-fix)
         env_override = os.environ.get("P79_AGGREGATOR_GRADE", "")
         grade_filter = [g.strip() for g in env_override.split(",") if g.strip()] or None
-    return _build_cells(grade_filter)
+    return _build_cells(grade_filter, manifest_path=manifest_path)
 
 MIN_EP_FOR_CELL = 50  # skip cells where any present mode has < 50 ep (too partial)
 
