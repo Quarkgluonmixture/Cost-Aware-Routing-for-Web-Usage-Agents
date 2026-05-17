@@ -152,28 +152,81 @@ check_gates() {
     log "  OK"
   fi
 
-  log "=== Gate 2: env_snapshot baseline committed ==="
-  if ! ls results/provenance/env_*_baseline.json &>/dev/null; then
-    log "  FAIL: No env_*_baseline.json found in results/provenance/"
-    log "        Run: python3 scripts/provenance/snapshot_env.py results/provenance/env_<host>_baseline.json"
-    errors=$((errors+1))
-  else
-    log "  OK ($(ls results/provenance/env_*_baseline.json | head -3 | tr '\n' ' '))"
-  fi
+  # B-681 (/stress A1.14 Chunk c P1-6 Claude+codex 2-AI AB, 2026-05-17):
+  # "committed" means git-tracked AND clean, not just file-exists. Pre-fix
+  # Gate 2+Gate 3 only `ls -d` the path → untracked / dirty / wrong-host
+  # provenance all passed → OSF reviewer running paper-grade re-fire would
+  # produce different fingerprint than the committed baseline. 3-layer check:
+  #   (a) `ls` file exists
+  #   (b) `git ls-files --error-unmatch` file is tracked (catches new untracked)
+  #   (c) `git diff --quiet HEAD --` file matches committed content (catches dirty)
+  #   (d) JSON schema: `captured_at` + `host` fields present + `errors` array empty
+  _check_provenance_baseline() {
+    local label="$1" pattern="$2" snapshot_cmd="$3"
+    log "=== ${label} ==="
+    local files=()
+    while IFS= read -r f; do [[ -n "$f" ]] && files+=("$f"); done < <(ls $pattern 2>/dev/null || true)
+    if [[ ${#files[@]} -eq 0 ]]; then
+      log "  FAIL: No matching file found ($pattern)"
+      log "        Run: ${snapshot_cmd}"
+      errors=$((errors+1))
+      return
+    fi
+    local fail_this=0
+    for f in "${files[@]}"; do
+      # (b) git tracked
+      if ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+        log "  FAIL: $f exists on disk but NOT git-tracked (untracked provenance ≠ reproducibility evidence)"
+        log "        Run: git add $f && git commit -m 'provenance: capture baseline for paper-grade Phase 1a'"
+        fail_this=$((fail_this+1)); continue
+      fi
+      # (c) clean (no uncommitted diff vs HEAD)
+      if ! git diff --quiet HEAD -- "$f" 2>/dev/null; then
+        log "  FAIL: $f is git-tracked but has uncommitted diff vs HEAD (dirty content invalidates fingerprint)"
+        log "        Run: git diff -- $f    # inspect changes"
+        log "        Then: git add $f && git commit -m 'provenance: refresh baseline'"
+        fail_this=$((fail_this+1)); continue
+      fi
+      # (d) JSON schema sanity — captured_at + host required; errors should be empty array.
+      local schema_check
+      schema_check=$(.venv/bin/python3 -c "
+import json, sys
+try:
+    d = json.load(open('$f'))
+except Exception as e:
+    print(f'json_parse:{e}'); sys.exit(1)
+missing = [k for k in ('captured_at', 'host') if k not in d]
+if missing:
+    print(f'missing_fields:{missing}'); sys.exit(1)
+errs = d.get('errors', [])
+if isinstance(errs, list) and errs:
+    # truncate to 2 errors for log brevity
+    print(f'has_errors:{errs[:2]}'); sys.exit(1)
+print(f'OK:host={d[\"host\"]},at={d[\"captured_at\"]}')
+" 2>/dev/null || echo "schema_check_failed")
+      if [[ "${schema_check}" != OK:* ]]; then
+        log "  FAIL: $f schema check: ${schema_check}"
+        log "        Re-run snapshot to refresh: ${snapshot_cmd}"
+        fail_this=$((fail_this+1)); continue
+      fi
+      log "  ✓ $f  (${schema_check#OK:})"
+    done
+    if [[ $fail_this -gt 0 ]]; then
+      errors=$((errors+1))
+    fi
+  }
 
-  log "=== Gate 3: VWA snapshot baseline committed ==="
-  if ! ls results/provenance/vwa_*.json &>/dev/null; then
-    # B-676 (/stress A1.14 Chunk a P1-5 Claude+codex 2-AI catch AB,
-    # user Q3 = option A, 2026-05-17): WARN → FAIL. Header line 24-26
-    # lists VWA snapshot as required gate; pre-fix WARN allowed launch
-    # without provenance fingerprint → reviewer reproducibility audit gap.
-    log "  FAIL: No vwa_*.json found in results/provenance/"
-    log "        Run: bash scripts/provenance/snapshot_vwa.sh    # captures docker fingerprint + endpoint state"
-    log "        Then commit the resulting results/provenance/vwa_<host>_baseline.json before paper-grade launch."
-    errors=$((errors+1))
-  else
-    log "  OK ($(ls results/provenance/vwa_*.json | head -3 | tr '\n' ' '))"
-  fi
+  _check_provenance_baseline \
+    "Gate 2: env_snapshot baseline committed" \
+    "results/provenance/env_*_baseline.json" \
+    "python3 scripts/provenance/snapshot_env.py results/provenance/env_<host>_baseline.json"
+
+  # B-676 (A1.14 Chunk a P1-5) Gate 3 WARN→FAIL still in effect; helper now
+  # adds git-tracked + clean + schema validation per B-681.
+  _check_provenance_baseline \
+    "Gate 3: VWA snapshot baseline committed" \
+    "results/provenance/vwa_*.json" \
+    "bash scripts/provenance/snapshot_vwa.sh    # captures docker fingerprint + endpoint state"
 
   # Gate 4 — BLOCKING (codex stress v6 C2): preflight exit code now captured.
   # Strict ports for actual paper-grade fire (--no-strict-ports dropped).

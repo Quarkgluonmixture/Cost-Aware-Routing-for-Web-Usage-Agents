@@ -4262,6 +4262,30 @@ Phase 2 of `/stress A1.5b` audit — data plane + analysis sibling layer. Pre-fi
 
 ---
 
+## A1.14 /stress audit Chunk (c) (2026-05-17) — B-681 to B-683 (3 entries; 3 fixed)
+
+> Chunk (c) lands the P1 provenance integrity batch following Chunks (a)+(b). All 3 from cross-AI unified bug list: P1-6-B (provenance theater, codex+Claude 2-AI) / P1-7-B* (submodule branch-first rejects detached HEAD, codex unique OOB) / P1-10-A (submodule SHA pin forward-fragile, Claude unique). User: "继续 c" → execute per recommended option.
+
+### B-681. queue_phase1_paper_grade.sh provenance gates check existence not git status — codex F6 + Claude F6 2-AI AB 🛠️ FIXED
+- **Source**: codex Mode B F6 ("Provenance 'committed' gates are theater") + Claude Mode A F6 (Gate 3 WARN inconsistency, already partially fixed by B-676)
+- **Code**: pre-fix Gate 2 + Gate 3 in `queue_phase1_paper_grade.sh:155-180` only ran `ls results/provenance/*_baseline.json &>/dev/null` — file existence ≠ "committed". Untracked, dirty, wrong-host, or stale-content provenance all passed.
+- **Attack**: Reviewer running paper-grade re-fire via OSF would produce different env/VWA fingerprint than committed baseline. Provenance audit is exactly what reviewers check first; pre-fix gates = paper-grade theater.
+- **Fix**: New `_check_provenance_baseline()` helper function bundling 4 layers: (1) `ls $pattern` file exists; (2) `git ls-files --error-unmatch "$f"` file is git-tracked (catches new-untracked); (3) `git diff --quiet HEAD -- "$f"` file matches committed content (catches dirty); (4) JSON schema check via inline python (`captured_at` + `host` fields present, `errors` array empty). Helper called twice for Gate 2 (env baseline) + Gate 3 (VWA baseline). FAIL messages include actionable git/snapshot commands. Static unit test verifies all 4 layers present in orchestrator code (`test_check_provenance_baseline_helper_present`).
+
+### B-682. preflight_v2.sh `check_vwa_submodule_lock` branch-first rejects detached HEAD — codex F7 unique OOB B 🛠️ FIXED
+- **Source**: codex Mode B F7 unique OOB ("Submodule lock rejects reproducible detached checkouts")
+- **Code**: pre-fix `preflight_v2.sh:367-377` checked `actual_branch != expected_branch` FIRST → FAIL → return; then `actual_sha != expected_sha` second.
+- **Attack**: OSF reviewer cloning the submodule pin via `git checkout <SHA>` (canonical reproducibility workflow) lands in **detached HEAD** with `git rev-parse --abbrev-ref HEAD` = `HEAD` (not `p79-patches`). Pre-fix preflight FAILed even at correct SHA. Branch is mutable social metadata; SHA is the immutable evidence.
+- **Fix**: SHA check moved to top of the comparison block. Branch check demoted to WARN-only (unless mismatch + branch=`HEAD` → silent pass, the canonical OSF case). Comment cites B-682 source attribution. Static unit test verifies SHA-comparison block appears before branch-mismatch warn in function body (`test_check_vwa_submodule_lock_sha_first_order`).
+
+### B-683. preflight_v2.sh `check_vwa_submodule_lock` SHA pin forward-fragile — Claude unique 🛠️ FIXED
+- **Source**: Claude Mode A F3 (down-graded from P0 OOB → P1; pin currently in sync but design weakness)
+- **Code**: pre-fix `preflight_v2.sh:365` `expected_sha="2f9b0b47175..."` hard-coded; any submodule HEAD advance required manual SHA bump in this file + Makefile + paper §4.X.5 + paper §3 + tests + locked_versions.md + osf_lock_manifest.md (7 lock files per memory `reference_vwa_submodule_p79_patches`).
+- **Attack**: Parallel session work on submodule (e.g., A1.18-re Chunk 2 / A1.25 GRL extension) advances HEAD; until SOMEONE bumps the SHA pin in all 7 lock files, preflight FAILs paper-grade fire even though new HEAD includes the pinned commit as ancestor.
+- **Fix**: `git merge-base --is-ancestor "${expected_sha}" HEAD` ancestor fallback. If actual SHA mismatches but `expected_sha` is ancestor of actual → WARN "advanced past pin, ancestor verified — reproducibility intact" + pass. If NOT ancestor → hard FAIL "forward-sync fallback rejected — paper-grade pin lost" (could indicate force-push or branch reset). `EXPECTED_SHA_STRICT=1` env reverts to exact-match for OSF audit runs requiring bit-exact reproduction. Static unit test verifies `merge-base --is-ancestor` and `EXPECTED_SHA_STRICT` both present (`test_check_vwa_submodule_lock_ancestor_fallback_present`).
+
+---
+
 ## A1.14 /stress audit Chunk (b) (2026-05-17) — B-677 to B-680 (4 entries; 4 fixed)
 
 > Chunk (b) lands the P1 paper-grade quality batch following Chunk (a) launch-substrate unblock. All 4 from cross-AI unified bug list: P1-1-AC (set -e, 2-AI Claude+gemini) / P1-2-B* (model load smoke fake, codex unique OOB) / P1-9-A* (OPENAI placeholder, Claude unique OOB) / P1-11-C* (STRICT_PORTS implicit, gemini unique OOB). User: "继续 b" → Chunk (b) executes 4 fixes per recommended option (Q4-Q22 bottom-tier auto-default reserve).

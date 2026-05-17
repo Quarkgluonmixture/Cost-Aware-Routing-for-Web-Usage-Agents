@@ -322,6 +322,91 @@ def test_check_openai_api_key_short_key_fails():
     assert "RC=1" in stdout
 
 
+def test_check_vwa_submodule_lock_sha_first_order():
+    """B-682 (/stress A1.14 Chunk c P1-7 codex F7 unique OOB): preflight
+    `check_vwa_submodule_lock` must check SHA before branch (SHA is immutable
+    evidence; branch is social metadata). Pre-fix checked branch first → rejected
+    detached-HEAD checkouts at correct SHA (the canonical OSF reproducibility
+    workflow). Static check verifies the SHA-comparison block comes before the
+    branch-mismatch warn in the function body.
+    """
+    preflight = REPO_ROOT / "scripts/preflight_v2.sh"
+    text = preflight.read_text(encoding="utf-8")
+    sha_block_start = text.find('"${actual_sha}" != "${expected_sha}"')
+    branch_warn = text.find('"${actual_branch}" != "${expected_branch}" && "${actual_branch}" != "HEAD"')
+    assert sha_block_start > 0, "SHA comparison missing from check_vwa_submodule_lock"
+    assert branch_warn > 0, "branch mismatch + HEAD-allowance comparison missing"
+    assert sha_block_start < branch_warn, (
+        f"SHA check must come BEFORE branch check (B-682 SHA-first order). "
+        f"SHA pos={sha_block_start}, branch pos={branch_warn}"
+    )
+
+
+def test_check_vwa_submodule_lock_ancestor_fallback_present():
+    """B-683 (/stress A1.14 Chunk c P1-10 Claude unique): preflight must allow
+    forward-sync via `git merge-base --is-ancestor` fallback. Without this,
+    every submodule advance requires manual SHA bump in preflight_v2.sh.
+    `EXPECTED_SHA_STRICT=1` env reverts to exact-match for OSF strict mode.
+    """
+    preflight = REPO_ROOT / "scripts/preflight_v2.sh"
+    text = preflight.read_text(encoding="utf-8")
+    assert "merge-base --is-ancestor" in text, (
+        "B-683 ancestor fallback missing — `git merge-base --is-ancestor expected_sha HEAD` "
+        "must be in check_vwa_submodule_lock"
+    )
+    assert "EXPECTED_SHA_STRICT" in text, (
+        "B-683 strict-mode override missing — `EXPECTED_SHA_STRICT=1` should revert to "
+        "exact-match for OSF audit runs"
+    )
+
+
+def test_check_vwa_submodule_lock_smoke_current_state():
+    """B-682/B-683 smoke: current external/visualwebarena state should pass
+    check_vwa_submodule_lock under set -u (no unset-var error).
+    Validates the function runs end-to-end without bash syntax issues.
+    """
+    preflight = REPO_ROOT / "scripts/preflight_v2.sh"
+    vwa = REPO_ROOT / "external/visualwebarena"
+    if not vwa.exists() or not (vwa / ".git").exists():
+        pytest.skip("VWA submodule not initialized")
+    bash_cmd = f'''
+set -u
+PROJECT_DIR="{REPO_ROOT}"
+ALLOW_MISSING_EVALUATOR=0
+EXIT_CODE=0
+pass() {{ echo "[PASS] $1"; }}
+fail() {{ echo "[FAIL] $1"; EXIT_CODE=1; }}
+warn() {{ echo "[WARN] $1"; }}
+print_check() {{ echo "[$1] $2"; }}
+source <(sed -n "/^check_vwa_submodule_lock()/,/^}}$/p" "{preflight}")
+check_vwa_submodule_lock
+echo "RC=$EXIT_CODE"
+'''
+    proc = subprocess.run(
+        ["bash", "-c", bash_cmd], capture_output=True, text=True, timeout=15,
+    )
+    # Either PASS (exact match), or WARN (ancestor fallback) — both acceptable.
+    # FAIL means SHA doesn't match AND isn't an ancestor; that's a real regression.
+    assert "RC=0" in proc.stdout, (
+        f"check_vwa_submodule_lock failed under current submodule state:\n"
+        f"STDOUT: {proc.stdout}\nSTDERR: {proc.stderr}"
+    )
+
+
+def test_check_provenance_baseline_helper_present():
+    """B-681 (/stress A1.14 Chunk c P1-6 Claude+codex 2-AI AB): orchestrator
+    provenance gates must check git-tracked + clean + schema, not just file-exists.
+    `_check_provenance_baseline` helper consolidates the 4-layer check.
+    """
+    orch = REPO_ROOT / "scripts/queues/queue_phase1_paper_grade.sh"
+    text = orch.read_text(encoding="utf-8")
+    assert "_check_provenance_baseline" in text, "B-681 helper function missing"
+    # Verify the 4 layers are wired in the helper:
+    assert "git ls-files --error-unmatch" in text, "git-tracked check missing"
+    assert "git diff --quiet HEAD" in text, "clean-vs-HEAD check missing"
+    assert "captured_at" in text and "host" in text, "JSON schema check missing"
+
+
 def test_no_python_smoke_when_bash_missing():
     """Sanity guard: this whole file assumes bash. If bash absent, skip clean."""
     if shutil.which("bash") is None:

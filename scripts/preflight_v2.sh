@@ -367,13 +367,39 @@ check_vwa_submodule_lock() {
   local actual_sha actual_branch
   actual_sha="$(git -C "${vwa_dir}" rev-parse HEAD 2>/dev/null)"
   actual_branch="$(git -C "${vwa_dir}" rev-parse --abbrev-ref HEAD 2>/dev/null)"
-  if [[ "${actual_branch}" != "${expected_branch}" ]]; then
-    fail "VWA submodule on wrong branch: ${actual_branch} (expected ${expected_branch})"
-    return
-  fi
+  # B-682 (/stress A1.14 Chunk c P1-7 codex F7 unique OOB B, 2026-05-17):
+  # SHA-first check; branch mismatch becomes WARN not FAIL. Pre-fix order
+  # (branch first, then SHA) rejected reproducible detached-HEAD checkouts
+  # at correct SHA — OSF reviewer cloning the submodule pin via
+  # `git checkout <sha>` (canonical reproducibility workflow) would land
+  # in detached HEAD with branch=`HEAD` and preflight FAILed. SHA is the
+  # immutable evidence; branch is social metadata.
+  #
+  # B-683 (/stress A1.14 Chunk c P1-10 Claude unique, 2026-05-17): ancestor
+  # fallback. Pre-fix hard-coded SHA required manual bump every submodule
+  # advance; parallel session work on submodule (A1.18-re Chunk 2 / A1.25
+  # GRL extension) would falsely FAIL even though the new HEAD contains
+  # `expected_sha` as ancestor. `git merge-base --is-ancestor` allows
+  # forward sync while guaranteeing the pinned commit's code is reachable.
+  # `EXPECTED_SHA_STRICT=1` env reverts to exact-match for OSF-mode runs.
   if [[ "${actual_sha}" != "${expected_sha}" ]]; then
-    fail "VWA submodule SHA mismatch: ${actual_sha} (expected ${expected_sha} / B-91 fix)"
-    return
+    if [[ "${EXPECTED_SHA_STRICT:-0}" == "1" ]]; then
+      fail "VWA submodule SHA strict-mismatch: ${actual_sha} (expected exact ${expected_sha}; EXPECTED_SHA_STRICT=1 set)"
+      return
+    fi
+    # Forward-sync ancestor fallback — actual HEAD must contain expected_sha as ancestor.
+    if git -C "${vwa_dir}" merge-base --is-ancestor "${expected_sha}" HEAD 2>/dev/null; then
+      warn "VWA submodule advanced past pin: actual ${actual_sha:0:8}, expected ${expected_sha:0:8} (ancestor verified — pinned code reachable, reproducibility intact)"
+    else
+      fail "VWA submodule SHA mismatch + NOT ancestor: actual ${actual_sha}, expected ${expected_sha} (forward-sync fallback rejected — paper-grade pin lost)"
+      return
+    fi
+  fi
+  # Branch is social metadata. Detached HEAD at correct SHA = canonical OSF
+  # reproducibility checkout (silent pass). Other branches at correct SHA/ancestor
+  # = WARN (likely working branch, not paper-grade FAIL).
+  if [[ "${actual_branch}" != "${expected_branch}" && "${actual_branch}" != "HEAD" ]]; then
+    warn "VWA submodule on branch '${actual_branch}' (expected '${expected_branch}'); SHA matches/ancestor so reproducibility intact"
   fi
   # Inline grep confirms the B-91 guard code body is actually present (not just
   # an empty file or refactor that dropped the guard); the SHA pin already
