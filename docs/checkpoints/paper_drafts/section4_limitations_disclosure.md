@@ -222,11 +222,11 @@ sensitivity check is in §5 Appendix and does not gate the main mechanism claim.
 ## §4.X.11 VWA submodule `p79-patches` branch — full disclosure table
 
 We run paper-grade experiments against a forked VisualWebArena submodule pinned to branch
-`p79-patches`, HEAD `eb5cbd8932ee2362eedd1010fce7c5f8f0ceaf42`. Upstream base is
+`p79-patches`, HEAD `1c3a615308fd9f17c73a9d33a96cf29ec6807d48`. Upstream base is
 `89f5af29305c3d1e9f97ce4421462060a70c9a03` on `main`. The full set of behavioural patches
 between the upstream base and our pinned HEAD is reproduced below for OSF reproducibility
 review and cross-paper comparability. The combined diff has SHA-256
-`9c562a3ab0234a7d50f81acc883d7d533f1c6bdf35f660b80a91c97813bc1be4`.
+`f1315dc49a33c4b5e8d7d3958974d26f4e6ad330b15b8ce01a6eb8b80a958b1a`.
 
 | Commit (short) | Subject | Behavioural impact | Affected files | Paper §-disclosure |
 |---|---|---|---|---|
@@ -236,15 +236,17 @@ review and cross-paper comparability. The combined diff has SHA-256
 | `832f037` | `.gitignore` runtime data | Wikipedia ZIM dump and classifieds compose state excluded from git tracking; data fetched separately per host | `.gitignore` only | none required (no behavioural impact on agent / evaluator) |
 | `f0c835b` | B-91 empty-prediction guard | `llm_fuzzy_match` / `llm_ua_match` return `0.0` deterministically on empty / whitespace-only `pred`; closes the dominant FP source for string_match and N/A tasks. Match-after-LLM-judge logic tightened in `eb5cbd8` to also log unexpected judge responses for audit | `evaluation_harness/helper_functions.py` | §3.5 (FP source-level fix); see also `reference_fp_architecture_2026-05-14.md` |
 | `eb5cbd8` | /stress A1.18 full sweep (15 findings) | (a) 913 VWA task config files rewritten to canonical `__SHOPPING__` / `__CLASSIFIEDS__` / `__REDDIT__` / `__WIKIPEDIA__` placeholders, closing the private-IP-in-config-data propagation (793-hit baseline reduced to 0 tracked-file hits); (b) `envs.py` chromium launch args env-driven via `VWA_CHROMIUM_LAUNCH_ARGS` (no hardcoded private IP); (c) `processors.py` networkidle wait moved to single shared barrier in `ObservationHandler.get_observation`, removing the asymmetric pre-fix where text observation never waited; (d) `helper_functions.py` softened-assert tightened to log unexpected judge responses to `evaluator_unexpected_response_log.csv` (gitignored); (e) `openai_utils.py` lazy client wrapped in `threading.Lock` with sha256(api_key + base_url) env-fingerprint check; (f) async OpenAI throttlers return `str` directly (caller dict-indexing path normalized); (g) `aexecute_action` signature now includes `obseration_processor` param, CLEAR/UPLOAD branches use truly async primitives; (h) `create_upload_action` sets `ActionTypes.UPLOAD` (was `TYPE`, making the UPLOAD branch unreachable); (i) async `aexecute_mouse_hover` + `aexecute_upload` wrap coords in `float()` (sibling propagation completion); (j) `prepare.sh` adds Windows `py -3` fallback | `browser_env/{actions.py, envs.py, processors.py}`, `evaluation_harness/helper_functions.py`, `llms/providers/openai_utils.py`, `prepare.sh`, `config_files/vwa/test_shopping.json` + 912 gitignored per-task config files | §4.X.5 (viewport stale-doc closure), §3.5 (judge / clear-before-type / observation timing), §4.X.12 (IP propagation closed), this §4.X.11 row |
+| `c1765ee` | /stress A1.25 GRL Chunk 1 (3 fixes) | (a) **B-445** `create_mouse_click_action` truthiness fix at `actions.py:657-672` — pre-fix `if left and top:` rejected legitimate `(0.0, y)` / `(x, 0.0)` boundary clicks → vision-mode coord clicks at viewport edges silently dropped; post-fix `if left is not None and top is not None:` preserves boundary values; (b) **B-446** sync `SELECT_OPTION` at `actions.py:1410-1428` extracts `pw_action_args` / `pw_action_kwargs` from parsed final call and passes forward — pre-fix `parsed_code[-1]["arguments"]` was parsed but discarded → `locator.select_option()` called with no option (silent no-op); (c) **B-447** sync UPLOAD parser+factory at `actions.py:1717` + `:1807` — pre-fix factory used `ActionTypes.TYPE` (UPLOAD branch unreachable) and id-based regex matched `type` not `upload`, so upload was doubly dead | `browser_env/actions.py` | §3.5.3 P79 GRL action-layer disclosure (catalog entries B-445/446/447 in `master_bug_catalog.md`) |
+| `1c3a615` | /stress A1.25 GRL Chunk 4 (4 fixes) | (a) **B-535** `llm_fuzzy_match` polarity inversion at `helper_functions.py:626-634` — pre-fix `if "correct" in response: return 1.0` substring-matched `"incorrect"` / `"partially correct"` / `"not correct"` all as 1.0 (long-standing upstream VWA bug, monkeypatch-verified); post-fix check negative phrases FIRST then positive then fail-closed. Sibling fix for `llm_ua_match` extends negative-first to cover `"not the same"` / `"not same"`. Paper §1 SR no longer systematically inflated by evaluator polarity. **Cross-paper SR comparisons against VWA / WebArena-Verified / PAE are NOT directly comparable** under this fix (those papers use upstream-buggy parser); within-paper paired comparisons (B0/B1/B2, baseline ↔ phantom) remain valid because every cell judged by same `gpt-4o-mini` post-fix; (b) **B-538** async `SELECT_OPTION` mirror sync fix at `actions.py:1593-1597` (sibling-propagation of B-446); (c) **B-539** UPLOAD field decouple from `_keys2ids` encoding at `actions.py:704-728` — pre-fix `text` was key-encoded list of int but `set_files()` expects path str → type-corrupted runtime; post-fix `text` and new `file_path` field hold raw path; also remove `\n` enter-flag suffix at line 1830 (file-chooser has no submit-Enter semantic); (d) **B-540** `VWA_CHROMIUM_LAUNCH_ARGS` use `shlex.split` not `.split()` so quoted multi-word args (e.g. `--host-resolver-rules=MAP host IP`) stay as one argv item | `evaluation_harness/helper_functions.py`, `browser_env/{actions.py, envs.py}` | §3.5 evaluator-patch policy, §3.5.3 P79 GRL action-layer disclosure (catalog entries B-535/538/539/540) |
 
 **OSF reproducibility verification commands** (run inside the cloned P79 repo):
 
 ```bash
 cd external/visualwebarena
-git rev-parse HEAD                                 # must match eb5cbd8932ee2362eedd1010fce7c5f8f0ceaf42
+git rev-parse HEAD                                 # must match 1c3a615308fd9f17c73a9d33a96cf29ec6807d48
 git rev-parse origin/main                          # upstream base; if not present, fetch
 git diff 89f5af29305c3d1e9f97ce4421462060a70c9a03..HEAD | sha256sum
-# must match 9c562a3ab0234a7d50f81acc883d7d533f1c6bdf35f660b80a91c97813bc1be4
+# must match f1315dc49a33c4b5e8d7d3958974d26f4e6ad330b15b8ce01a6eb8b80a958b1a
 ```
 
 These three hashes are also locked in `docs/checkpoints/pre_run/osf_lock_manifest.md` and

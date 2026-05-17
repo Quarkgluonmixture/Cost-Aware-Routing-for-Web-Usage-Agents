@@ -3976,4 +3976,60 @@ submodule).
 - P2-2 stale "24-condition" output (subsumed by B-521 fix; mention retained)
 - P2-3 `_norm_cdf` duplicated 2 files (shared lib candidate; defer cosmetic)
 
-**Next available B-number**: B-534+.
+**Next available B-number**: B-534+ (consumed below by A1.25 GRL Chunk 4, jumping to B-535+ to avoid collision; B-534 left unclaimed for any concurrent parallel-session reservation).
+
+---
+
+## A1.25 GRL (Generated Runtime Layer) audit — Chunk 4 batch (VWA submodule patches + SBOM re-lock, 2026-05-17 morning)
+
+**Scope**: `external/visualwebarena/p79-patches` branch SBOM + upstream contract preservation + paper §3.5/§4.X.11 disclosure. 7 fixes; 4 in submodule (committed `1c3a615` on `p79-patches`) + 3 in main repo (SBOM bump + paper prose).
+
+**3-AI cycle**: Mode A (Claude SBOM pre-read identified HEAD drift + commit count gap) PASS · Mode B (codex `/codex-stress`) PASS @11:13 (6min, 183K tokens, 7489 bytes, 6 findings 4 OOB) · Mode C (gemini `/gemini-stress`) PASS @11:12 (3min, 6252 bytes, 6 findings 4 OOB). Aggregated 9 unique findings → 7 fixes scope. User triage 2026-05-17:
+- **Q1=USER REFRAME**: "其他 vwa paper 也是这样" → upstream-aligned IS paper-grade choice, but B-91 precedent says patch upstream bugs + disclose. **Final: invert check order (strict negative-first), no ambiguous middle**. Apply same standard to `llm_ua_match` (`"not the same"` extension).
+- **Q2=(a)** Bundle all submodule fixes in one commit, single SBOM bump.
+- **Q3=(a)** Continue per Q2=Soften (final synthesis then Phase 1a fire).
+- **Q4-Q10**: 全 auto-default 推荐.
+
+### B-535. LLM judge polarity inversion — `llm_fuzzy_match` + `llm_ua_match` (paper-grade emergency) — codex Mode B F1 unique P0-1-B* OOB 🛠️ FIXED submodule `1c3a615` + main repo `<TBD>`
+- **Attack**: `external/visualwebarena/evaluation_harness/helper_functions.py:626-628` pre-fix `if "correct" in response: return 1.0` substring-matched `"incorrect"` / `"partially correct"` / `"not correct"` all as 1.0 (monkeypatch-verified). Long-standing upstream VWA bug from `89f5af2` baseline. B-91 (`f0c835b`) only guarded empty-pred. `llm_ua_match` had same class of bug — `"not the same"` substring-matched `"same"` → 1.0. **Paper §1 SR systematically inflated** by evaluator polarity, every cross-paper comparison invalid.
+- **Fix**: Invert check order — negative phrases FIRST (`"incorrect"` / `"partially correct"` / `"not correct"` for fuzzy; `"different"` / `"not the same"` / `"not same"` for ua) → return 0.0; positive normalized (`"correct"` / `"same"`) → return 1.0; else fail-closed 0.0 + audit log. Strict binary, no ambiguous middle (user veto). **Cross-paper SR comparability note**: post-fix P79 evaluator no longer directly comparable to VWA / WebArena-Verified / PAE SR numbers; within-paper paired comparisons valid because every cell judged by same `gpt-4o-mini` post-fix parsing. Same disclosure precedent as B-91.
+
+### B-536. VWA submodule SBOM 全栈 re-lock — Mode A pre-read + codex Mode B F2 + gemini Mode C F1 3-AI overlap 🛠️ FIXED main repo `<TBD>`
+- **Attack**: Paper §4.X.11 + `pre_run/locked_versions.md:16-19` + `preregistration.md:564/566/568` + `osf_lock_manifest.md:45/47` + `Makefile:149` + `scripts/preflight_v2.sh:362` + `tests/test_vwa_evaluator_b91_guard.py:28` all pinned `HEAD=eb5cbd8` + `diff sha256=9c562a3...`. Actual HEAD post A1.25 GRL Chunk 1 = `c1765ee`; post A1.25 GRL Chunk 4 = `1c3a615`. OSF reviewer running SBOM verify → all 7 lock files would fail.
+- **Fix**: Single sed sweep across 7 files: `eb5cbd8` → `1c3a615` + `9c562a3...` → `f1315dc4...`. Commit count updated 6 → 8. Paper §4.X.11 patch table extended with 2 new rows for `c1765ee` (A1.25 Chunk 1) + `1c3a615` (A1.25 Chunk 4). B-91 unit test EXPECTED_SUBMODULE_SHA updated. Memory `reference_vwa_submodule_p79_patches.md` rewritten to 8-commit table.
+
+### B-537. Paper §3.5 + §4.X.11 disclosure stale → updated for A1.25 Chunk 1+4 — Mode B F6 + Mode C F2 + F4 BC overlap 🛠️ FIXED main repo `<TBD>`
+- **Attack**: §3.5 only cited `f0c835b` (B-91) + `3f9ceca` (judge model + clear-before-type); §4.X.11 patch table pinned HEAD `eb5cbd8` with no rows for c1765ee / 1c3a615. Catalog B-445/446/447 commit fields still `<TBD>`. Reviewer cannot reconstruct action-space fork from prose: coord boundary click, select-option args, upload parser, judge polarity all affect execution semantics but pre-fix disclosure was pre-Chunk-1 bundle.
+- **Fix**: §4.X.11 table extended with 2 rows (c1765ee + 1c3a615) listing all 7 fixes (B-445/446/447 + B-535/538/539/540) per-row behavioural impact. Catalog B-445/446/447 + B-535/538/539/540 commit fields populated (no longer `<TBD>`).
+
+### B-538. Async `SELECT_OPTION` mirror sync (sibling-propagation of B-446) — codex Mode B F3 unique P1-2-B* OOB 🛠️ FIXED submodule `1c3a615`
+- **Attack**: `actions.py:1593-1597` async branch `await aexecute_playwright_select_option(locator_code, page)` discarded `parsed_code[-1]["arguments"]` → `locator.select_option()` called with no option (silent no-op). Sync sibling B-446 fixed but async sibling missed. Upstream contract violation hidden behind P79's sync-only usage.
+- **Fix**: Mirror sync extraction at line 1593-1597: extract `_so_args` / `_so_kwargs` from parsed final call + pass forward via `pw_action_args` / `pw_action_kwargs` (already supported by aexecute signature lines 1254-1262).
+
+### B-539. UPLOAD field decouple from `_keys2ids` key encoding + remove `\n` enter-flag — codex Mode B F4 unique P1-3-B* OOB 🛠️ FIXED submodule `1c3a615`
+- **Attack**: `create_upload_action` at `actions.py:704-728` stored `text` as `_keys2ids(text)` (list of int key codes), but `execute_upload` at `actions.py:1442-1445` passed `action["text"]` directly to Playwright `file_chooser.set_files(path)` which expects str path or list[str]. B-447 fixed parser+factory dispatch routing but missed this field-encoding bug → post-fix upload runtime-fail with type error. Also: id-based parser at `actions.py:1844-1845` appended `"\n"` to upload text when enter_flag == "1" (copy-paste from `type` parser; file-chooser has no submit-Enter semantic) → "/tmp/foo.png\n" non-existent path.
+- **Fix**: Factory stores raw text in both `text` and new `file_path` field. Removed `\n` append; default enter_flag silently changed to [0]; legacy [1] flag value preserved for parser back-compat but ignored.
+
+### B-540. `VWA_CHROMIUM_LAUNCH_ARGS` use `shlex.split` not `.split()` — codex Mode B F5 unique P1-4-B* OOB 🛠️ FIXED submodule `1c3a615`
+- **Attack**: `envs.py:143-152` `_launch_args = [a for a in os.environ.get("VWA_CHROMIUM_LAUNCH_ARGS", "").split() if a]`. Documented example `--host-resolver-rules=MAP metis.lti.cs.cmu.edu YOUR_HOST_IP` split into 3 argv items but Chromium expects whole rule as one entry. Off-host reproducers following the documented example get broken chromium args silently.
+- **Fix**: Use `shlex.split` so quoted values stay as one entry. Updated docstring example to use quoting: `VWA_CHROMIUM_LAUNCH_ARGS='--host-resolver-rules="MAP host IP"'`. Default empty preserved (no DNS override) for A100 localhost.
+
+### B-541. Paper §3.5 P79 wrapper reliability primitives disclosure — gemini Mode C F3 unique P1-5-C* OOB 🛠️ FIXED main repo `<TBD>`
+- **Attack**: P79 wrapper adds 3 reliability primitives (asyncio guard B-159, navigate JSON-escape B-160, dialog auto-accept B-158) to harden `ScriptBrowserEnv` against episode-level crashes. None disclosed in §3.5 as "P79 environmental stability layer not present in vanilla VWA". Reviewer attacks "undisclosed env stabilization makes P79 SR not directly comparable to vanilla VWA reproducer".
+- **Fix**: §3.5 add 1 paragraph "P79 wrapper reliability primitives (B-541 disclosure)" listing 3 primitives + framing as "harden against episode-level crashes that would otherwise produce silent missingness in JSONL; SR delta between P79 and vanilla VWA reproducer partially reflects these stability primitives, not pure model/representation capability".
+
+**B-numbers consumed (A1.25 GRL Chunk 4)**: B-535~B-541 (7 contiguous; B-534 gap left unclaimed for any concurrent parallel-session reservation timing).
+
+**Smoke verification (A1.25 GRL Chunk 4)**:
+- py_compile PASS on 3 modified submodule Python files + 1 modified main repo file (tests/test_vwa_evaluator_b91_guard.py)
+- Tests **421/421 PASS** (8 skipped intentional; +6 from parallel A1.21 new fixtures since A1.25 Chunk 3 baseline 415). Zero regression. B-91 evaluator test SHA-drift catcher correctly transitions PASS → PASS post EXPECTED_SUBMODULE_SHA update.
+- Submodule commit `1c3a615` 3 files changed, 83 insertions(+), 21 deletions(-)
+- Main repo commit `<TBD>` files: 7 SBOM lock files + section3 + section4 + memory + catalog + chronicle + submodule pointer bump
+
+**Cross-paper SR comparability (post-B-535 evaluator fix)**: P79 paper §1 SR numbers are NOT directly comparable to VWA paper / WebArena-Verified / PAE / Aviator-Web / other VWA-derived papers' published SR (those papers use upstream-buggy `'correct' in response` substring matcher which scores `"incorrect"` as 1.0). Internal P79 paired comparisons (B0 vs B1 vs B2 cross-baseline, baseline ↔ phantom within cell, DOM ↔ P-text/P-SoM) remain valid because every cell judged by same `gpt-4o-mini` under same post-fix parsing logic. Paper §3.5 evaluator-patch policy disclosure (same precedent as B-91) added.
+
+**Deferred to Phase 1b prep / advisor sync**: P2-1-C* B-407 baseline asymmetry re `type` action target requirements + P2-2-C* composite commit `3f9ceca` 6-item opacity.
+
+**Cross-batch cumulative (overnight + morning sprint 2026-05-17)**: A1.25 GRL Chunks 1+2+3+4 (16+6+6+7=**35 fixes mine**) + parallel A1.4 (10) + A1.20 (17) + parallel A1.5b Phase 1 (21) + parallel A1.21 Chunks 1+2 (~30) = **~113 paper-grade fixes** across 6 distinct /stress audit scopes via concurrent multi-Claude + multi-AI-lineage (Claude + codex + gemini) audit pipeline. **A1.25 GRL audit batch CLOSED** — 4 chunks done, ready for cross-chunk synthesis + Phase 1a fire trigger.
+
+**Next available B-number**: B-542+.

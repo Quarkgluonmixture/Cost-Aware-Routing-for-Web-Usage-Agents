@@ -25,7 +25,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 VWA_SUBMODULE = REPO_ROOT / "external" / "visualwebarena"
 
 # A1.18 lock (memory `reference_vwa_submodule_p79_patches`, 2026-05-16).
-EXPECTED_SUBMODULE_SHA = "eb5cbd8932ee2362eedd1010fce7c5f8f0ceaf42"
+EXPECTED_SUBMODULE_SHA = "1c3a615308fd9f17c73a9d33a96cf29ec6807d48"
 
 
 @pytest.fixture(autouse=True)

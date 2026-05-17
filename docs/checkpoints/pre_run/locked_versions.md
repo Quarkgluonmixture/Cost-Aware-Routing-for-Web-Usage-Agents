@@ -13,10 +13,10 @@
 
 | Component | Pin | Source |
 |---|---|---|
-| **VWA submodule SHA** | **`eb5cbd8932ee2362eedd1010fce7c5f8f0ceaf42`** (branch `p79-patches`, /stress A1.18 full sweep) | `git -C external/visualwebarena rev-parse HEAD` (locked 2026-05-16 post-A1.18; supersedes 2026-05-15 lock `f0c835b` after A1.18 P0/P1 sweep) |
+| **VWA submodule SHA** | **`1c3a615308fd9f17c73a9d33a96cf29ec6807d48`** (branch `p79-patches`, /stress A1.25 GRL Chunks 1+4) | `git -C external/visualwebarena rev-parse HEAD` (re-locked 2026-05-17 post-A1.25 GRL Chunks 1+4; supersedes 2026-05-16 A1.18 lock at `eb5cbd8`) |
 | **Upstream base SHA** | **`89f5af29305c3d1e9f97ce4421462060a70c9a03`** (on upstream `main`) | `git -C external/visualwebarena rev-parse origin/main` after fetch (locked 2026-05-16, /stress A1.18 P0-6) |
-| **`p79-patches` ↔ upstream diff SHA-256** | **`9c562a3ab0234a7d50f81acc883d7d533f1c6bdf35f660b80a91c97813bc1be4`** | `git -C external/visualwebarena diff 89f5af29305c3d1e9f97ce4421462060a70c9a03..HEAD \| sha256sum` (locked 2026-05-16 post-A1.18; covers all 6 branch commits below) |
-| **Branch commit list** | `e9c63b7` (networkidle pre-screenshot, superseded by `eb5cbd8` single-barrier fix) · `3f9ceca` (composite runtime patches: viewport ratio fix + Tailscale routing + NumPy 2.0 compat + `VWA_EVAL_MODEL` env var + lazy OpenAI client init + `Meta+A` clear-before-type extension) · `16b60d7` (setup script + WA non-visual task configs + VWA shopping pool) · `832f037` (`.gitignore` runtime data) · `f0c835b` (B-91 empty-pred LLM-judge guard) · `eb5cbd8` (/stress A1.18 full sweep — 913 task config IP→placeholder, envs.py env-driven launch args, networkidle single-barrier, tightened assert+log, lazy OpenAI lock+env-hash, async response-shape normalize, aexecute_action signature fix, create_upload_action UPLOAD enum, async float() cast, prepare.sh Windows fallback) | `git -C external/visualwebarena log --reverse --format="%h %s" 89f5af2..HEAD` |
+| **`p79-patches` ↔ upstream diff SHA-256** | **`f1315dc49a33c4b5e8d7d3958974d26f4e6ad330b15b8ce01a6eb8b80a958b1a`** | `git -C external/visualwebarena diff 89f5af29305c3d1e9f97ce4421462060a70c9a03..HEAD \| sha256sum` (re-locked 2026-05-17 post-A1.25 GRL Chunks 1+4; covers all 8 branch commits below) |
+| **Branch commit list** | `e9c63b7` (networkidle pre-screenshot, superseded by `eb5cbd8` single-barrier fix) · `3f9ceca` (composite runtime patches: viewport ratio fix + Tailscale routing + NumPy 2.0 compat + `VWA_EVAL_MODEL` env var + lazy OpenAI client init + `Meta+A` clear-before-type extension) · `16b60d7` (setup script + WA non-visual task configs + VWA shopping pool) · `832f037` (`.gitignore` runtime data) · `f0c835b` (B-91 empty-pred LLM-judge guard) · `eb5cbd8` (/stress A1.18 full sweep — 913 task config IP→placeholder, envs.py env-driven launch args, networkidle single-barrier, tightened assert+log, lazy OpenAI lock+env-hash, async response-shape normalize, aexecute_action signature fix, create_upload_action UPLOAD enum, async float() cast, prepare.sh Windows fallback) · `c1765ee` (/stress A1.25 GRL Chunk 1 — B-445 create_mouse_click truthiness fix, B-446 sync SELECT_OPTION args forward, B-447 sync UPLOAD parser+factory) · `1c3a615` (/stress A1.25 GRL Chunk 4 — B-535 llm_fuzzy_match + llm_ua_match polarity inversion, B-538 async SELECT_OPTION sibling, B-539 UPLOAD field decouple from key encoding + remove \n enter-flag, B-540 shlex.split VWA_CHROMIUM_LAUNCH_ARGS) | `git -C external/visualwebarena log --reverse --format="%h %s" 89f5af2..HEAD` |
 | Repo URL | https://github.com/web-arena-x/visualwebarena | Submodule URL in `.gitmodules` |
 | WebArena upstream | (not used in this paper, scoped out per audit F3 / preregistration §7) | — |
 
@@ -160,7 +160,7 @@ make verify-version-locks
 ```
 
 This will:
-1. Check `git -C external/visualwebarena rev-parse HEAD` matches `eb5cbd8932ee2362eedd1010fce7c5f8f0ceaf42` (branch `p79-patches`)
+1. Check `git -C external/visualwebarena rev-parse HEAD` matches `1c3a615308fd9f17c73a9d33a96cf29ec6807d48` (branch `p79-patches`)
 2. Hash each per-site task pool and compare to entries above
 3. Check `pip show playwright` is `1.58.0`
 4. Check `~/.cache/ms-playwright/chromium-1208/` exists
@@ -190,6 +190,6 @@ When a pin changes (intentional upgrade or unavoidable drift):
   for pre-2026-05-15 archive reference only. New Hardware/Host substrate section added above. #11
   A100 VM VWA Docker bring-up gates canonical launch.
 - **2026-05-15 (B-117 fix per codex Mode B P0-2)**: VWA submodule SHA pin updated from `832f037e`
-  → `eb5cbd8932ee2362eedd1010fce7c5f8f0ceaf42` (branch `p79-patches`) to reflect B-91 source-level
+  → `1c3a615308fd9f17c73a9d33a96cf29ec6807d48` (branch `p79-patches`) to reflect B-91 source-level
   FP guard. `make pre-launch-check` no longer fails when verifying against the actual submodule HEAD.
   Old `832f037e` retained in changelog as pre-B-91 reference.

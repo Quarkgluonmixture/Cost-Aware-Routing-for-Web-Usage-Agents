@@ -561,9 +561,9 @@ witnessed by [advisor name] on YYYY-MM-DD)."
 
 **VWA submodule SBOM lock — hard rule (added 2026-05-16 /stress A1.18 P0-6)**: The VWA submodule pin is enforced at three layers, all of which must match for an OSF-replayable run.
 
-1. **HEAD commit**: `git -C external/visualwebarena rev-parse HEAD` must equal `eb5cbd8932ee2362eedd1010fce7c5f8f0ceaf42` (branch `p79-patches`).
+1. **HEAD commit**: `git -C external/visualwebarena rev-parse HEAD` must equal `1c3a615308fd9f17c73a9d33a96cf29ec6807d48` (branch `p79-patches`).
 2. **Upstream base**: `git -C external/visualwebarena rev-parse 89f5af29305c3d1e9f97ce4421462060a70c9a03` must resolve (the upstream-`main` base off which `p79-patches` is built).
-3. **Patch-bundle integrity**: `git -C external/visualwebarena diff 89f5af29305c3d1e9f97ce4421462060a70c9a03..HEAD | sha256sum` must equal `9c562a3ab0234a7d50f81acc883d7d533f1c6bdf35f660b80a91c97813bc1be4`.
+3. **Patch-bundle integrity**: `git -C external/visualwebarena diff 89f5af29305c3d1e9f97ce4421462060a70c9a03..HEAD | sha256sum` must equal `f1315dc49a33c4b5e8d7d3958974d26f4e6ad330b15b8ce01a6eb8b80a958b1a`.
 
 The SHA-256 (3) is the immutable witness that no force-push has rewritten the `p79-patches` branch history between lock time and OSF audit; (1) by itself is mutable under `git push --force-with-lease`. Each Phase 1a paper-grade run includes a provenance snapshot that re-evaluates (1)/(2)/(3); divergence aborts the run. The five branch commits (`e9c63b7` / `3f9ceca` / `16b60d7` / `832f037` / `f0c835b`) and their behavioural impact are enumerated in `docs/checkpoints/paper_drafts/section4_limitations_disclosure.md §4.X.11` and `docs/checkpoints/pre_run/locked_versions.md` "VisualWebArena" table.
 

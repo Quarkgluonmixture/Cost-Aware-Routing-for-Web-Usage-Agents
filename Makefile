@@ -146,7 +146,7 @@ pre-launch-check:
 	@test -z "$$(git status --porcelain --untracked-files=all)" || (echo "❌ untracked files present (run: git status --porcelain --untracked-files=all)"; exit 1)
 	@echo "   ✓ clean (no tracked diffs, no untracked files)"
 	@echo "2. VWA submodule SHA matches lock..."
-	@LOCK_SHA="eb5cbd8932ee2362eedd1010fce7c5f8f0ceaf42"; \
+	@LOCK_SHA="1c3a615308fd9f17c73a9d33a96cf29ec6807d48"; \
 	 ACTUAL=$$(git -C external/visualwebarena rev-parse HEAD 2>/dev/null); \
 	 test "$$ACTUAL" = "$$LOCK_SHA" || (echo "❌ VWA SHA mismatch: expected $$LOCK_SHA, got $$ACTUAL"; exit 1); \
 	 echo "   ✓ $$LOCK_SHA"
