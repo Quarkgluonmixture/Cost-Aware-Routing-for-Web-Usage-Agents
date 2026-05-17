@@ -371,12 +371,35 @@ def write_md(payload: Dict, out_md: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
+    # B-1014 (/stress A2.4a P1-12-B codex F4, 2026-05-18): manifest_path parity
+    # with canonical full producer. Pre-fix B-184 legacy main() had no
+    # `--run-manifest` arg → B-184 artifact JSON could diverge from canonical
+    # `aggregate_phase1_full_prereg_decision.py` post-fire even though kernel
+    # was bit-identical (different cells_to_use under different env/manifest).
+    # Now propagates manifest_path through `get_aggregator_cells(manifest_path=)`
+    # — same as canonical (A1.21 P0-5 B-524 + B-530 lazy fn).
+    ap.add_argument("--run-manifest", default=None,
+                    help="Path to run_manifest.yaml (default: registry default). "
+                         "B-1014 propagates to get_aggregator_cells for cross-producer "
+                         "cells_to_use consistency.")
     ap.add_argument("--output-csv", default=str(DEFAULT_OUT_CSV))
     ap.add_argument("--output-json", default=str(DEFAULT_OUT_JSON))
     ap.add_argument("--output-md", default=str(DEFAULT_OUT_MD))
     args = ap.parse_args()
 
-    payload = build_gate(CELLS)
+    # B-1014: lazy fn re-evaluates env var + manifest at call time (mirror
+    # canonical full producer pattern). Falls back to module-level frozen CELLS
+    # if get_aggregator_cells unavailable.
+    try:
+        from scripts.analysis.lib.run_registry import get_aggregator_cells as _get
+        manifest_path = (Path(args.run_manifest) if args.run_manifest
+                         else REPO / "results/phantom_paper/run_manifest.yaml")
+        cells_to_use = _get(manifest_path=manifest_path)
+    except Exception:
+        # Back-compat: legacy frozen CELLS path
+        cells_to_use = CELLS
+
+    payload = build_gate(cells_to_use)
 
     write_csv(payload, Path(args.output_csv))
     write_json(payload, Path(args.output_json))

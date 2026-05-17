@@ -261,10 +261,17 @@ def _six_arm_complete_case_universe(per_task: Dict[str, Dict[str, Dict]]) -> Opt
 
     Returns sorted list of task_ids where ALL 6 modes (DOM/SoM/Vision/P-text/
     P-prompt/P-SoM) ran and have a non-None `success` value. This matches
-    `aggregate_phantom_lift.py:655-658` `common` semantics. Pre-fix
-    `_h3_axis_per_cell` used `axis ∩ ref` (only 2 modes) — different universe
-    than `aggregate_phantom_lift.py`, allowing tasks where DOM/SoM/Vision or
-    other phantom axes were missing to inflate H3 unique-contribution counts.
+    `aggregate_phantom_lift.py:797-810` `universe_6` semantics (corrected from
+    earlier comment citing :655-658 which was the 5-arm region; per Mode B
+    A2.4a F3 P1-11 OOB B-1013 disclosure).
+
+    B-1013 (/stress A2.4a P1-11-B* codex F3 OOB, 2026-05-18): task_id type
+    assertion — pre-fix relied on string equality of task_id but lift script
+    keys task ids from filenames as `int` (per `aggregate_phantom_lift.py:164-200`),
+    while this script keys from summary `task_id` which may be str OR int
+    depending on loader. Now: assert task_id type is int (post-load) OR
+    string convertible to int; mixed types → fail-loud with diagnostic for
+    operator. Defends against silent universe drift on str-vs-int comparison.
     """
     six_modes = ("DOM", "SoM", "Vision", "P-text", "P-prompt", "P-SoM")
     mode_keysets = []
@@ -275,6 +282,20 @@ def _six_arm_complete_case_universe(per_task: Dict[str, Dict[str, Dict]]) -> Opt
         mode_keysets.append({t for t, rec in mp.items()
                               if rec.get("success") is not None})
     common = set.intersection(*mode_keysets) if mode_keysets else set()
+    # B-1013: task_id type assertion (defends Mode B F3 attack vector). Detect
+    # if loader produced mixed-type task_ids (e.g., some int, some "001" str).
+    # Mixed types make set intersection silently smaller (str("1") != int(1)) →
+    # universe drift vs lift script. Fail-loud diagnostic.
+    if common:
+        sample = next(iter(common))
+        types_seen = {type(t).__name__ for t in common}
+        if len(types_seen) > 1:
+            raise TypeError(
+                f"_six_arm_complete_case_universe task_id type mismatch: "
+                f"observed types {sorted(types_seen)} in common set (sample={sample!r}). "
+                f"Loader must produce uniform task_id type (int recommended per "
+                f"aggregate_phantom_lift.py:164-200 convention). B-1013 fail-loud."
+            )
     return sorted(common)
 
 
@@ -938,6 +959,21 @@ def main() -> int:
                      else REPO / "results/phantom_paper/run_manifest.yaml")
     # A1.21 P1-3 (B-530): lazy fn re-evaluates env var + manifest at call time
     cells_to_use = get_aggregator_cells(manifest_path=manifest_path)
+
+    # B-1015 (/stress A2.4a P1-14-B codex F7, 2026-05-18): structural enforcement
+    # of canonical_cells planned scope. Pre-fix lib/canonical_cells.py exposed
+    # `assert_cells_match_planned()` (A1.21 B-526) but no producer actually
+    # called it → triple-source-of-truth still leaked (preregistration_decision_test
+    # hardcoded PHASE_1A_CELLS / aggregate_phantom_lift frozen CELLS / canonical
+    # via registry could diverge silently). Now canonical full producer calls
+    # the helper; require_complete=False (pre-fire partial state tolerated, but
+    # extra/unknown cells raise — closes "wrong scope CSV loaded" attack).
+    try:
+        from scripts.analysis.lib.canonical_cells import assert_cells_match_planned, cell_id_for
+        loaded_ids = [cell_id_for(c["site"], c["baseline"]) for c in cells_to_use]
+        assert_cells_match_planned(loaded_ids, require_complete=False)
+    except ImportError:
+        pass  # canonical_cells.py not present in legacy paths; B-526 require_complete still defends
 
     payload = build_full_decision(cells_to_use)
 

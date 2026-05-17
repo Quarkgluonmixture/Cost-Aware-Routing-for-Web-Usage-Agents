@@ -325,7 +325,7 @@ def _phi(z: float) -> float:
 
 
 # ---------------------------------------------------------------------------
-# TOST equivalence test
+# Superiority test (TOST equivalence retired 2026-05-17 per B-957 + B-1051)
 # ---------------------------------------------------------------------------
 
 def superiority_test(pooled_effect: float, pooled_se: float, threshold: float,
@@ -343,11 +343,6 @@ def superiority_test(pooled_effect: float, pooled_se: float, threshold: float,
         alpha: one-sided significance level (default 0.05)
 
     Returns dict with: z, p_one_sided, threshold, decision.
-
-    Note: This replaces prior TOST-rejection logic which had ambiguous semantic
-    direction ("TOST equivalence rejected" could mean either equivalence-demonstrated
-    OR equivalence-not-demonstrated). One-sided superiority is the unambiguous test
-    for "effect substantively exceeds threshold".
     """
     z = (pooled_effect - threshold) / max(pooled_se, 1e-12)
     p_one_sided = 1.0 - _phi(z)
@@ -362,33 +357,13 @@ def superiority_test(pooled_effect: float, pooled_se: float, threshold: float,
     }
 
 
-def tost_equivalence(pooled_effect: float, pooled_se: float, delta: float,
-                      alpha: float = 0.05) -> dict:
-    """Two one-sided tests for equivalence (Schuirmann 1987).
-
-    Tests H0: |θ| ≥ δ (effect non-equivalent) vs H1: |θ| < δ (effect equivalent).
-    Both one-sided tests must reject H0 to demonstrate equivalence.
-
-    Used in P79 paper-1 as **informational only** (reported alongside H1 superiority
-    test, NOT used for H1 PRIMARY gating per 2026-05-13 prereg revision).
-    """
-    t_lo = (pooled_effect - (-delta)) / max(pooled_se, 1e-12)  # tests θ > -δ
-    t_hi = ((+delta) - pooled_effect) / max(pooled_se, 1e-12)  # tests θ < +δ
-    p_lo = 1.0 - _phi(t_lo)
-    p_hi = 1.0 - _phi(t_hi)
-    max_p = max(p_lo, p_hi)
-    equivalence_demonstrated = (p_lo < alpha) and (p_hi < alpha)
-    return {
-        "delta": delta,
-        "alpha_per_side": alpha,
-        "pooled_effect": pooled_effect,
-        "pooled_se": pooled_se,
-        "p_lower_bound_test": p_lo,
-        "p_upper_bound_test": p_hi,
-        "max_p_value": max_p,
-        "equivalence_demonstrated": equivalence_demonstrated,
-        "decision": "equivalence_demonstrated" if equivalence_demonstrated else "equivalence_not_demonstrated",
-    }
+# B-1051 (/stress A2.3c Mode B P0-1-B* sibling-propagation sweep 2026-05-18):
+# tost_equivalence() function DELETED here per B-957 TOST framework retirement
+# (see scripts/analysis/power_analysis.py L137-148 tombstone for rationale).
+# Mode A A2.3a retired TOST in power_analysis.py + prereg §2.4/§3/§4 but missed
+# this sibling — Mode B A2.3c caught it via 7-site sibling propagation gap.
+# If a future paper revives equivalence testing at a feasible δ (3-6pp per
+# empirical δ-scan), reintroduce with explicit δ_TOST distinct from δ_H1.
 
 
 # ---------------------------------------------------------------------------
@@ -513,8 +488,9 @@ def evaluate_h1(cells_by_id: dict[str, list[dict]], delta_pp: float = 1.0,
     }
     superiority = superiority_test(_theta_fe, _se_fe,
                                      threshold=magnitude_threshold_pp, alpha=alpha)
-    # TOST kept for informational reporting (NOT used in H1 gating decision)
-    tost_info = tost_equivalence(_theta_fe, _se_fe, delta=delta_pp, alpha=alpha)
+    # B-1051 (/stress A2.3c Mode B P0-1-B*, 2026-05-18): tost_info compute
+    # REMOVED per B-957 TOST framework retirement. Previously emitted
+    # tost_informational alongside superiority; now superiority is sole test.
 
     # A1.21 P0-2: PRIMARY gate = FE superiority decision ONLY (single test, no compound)
     primary_h1_pass = superiority["decision"] == "reject_H0_substantively_above_threshold"
@@ -537,10 +513,11 @@ def evaluate_h1(cells_by_id: dict[str, list[dict]], delta_pp: float = 1.0,
         "primary_gate": {
             # A1.21 P0-2 fix: pooled_meta is now FE pool (NOT DL); see canonical
             # `aggregate_phase1_full_prereg_decision.py` for bit-identical FE path.
+            # B-1051 (/stress A2.3c Mode B P0-1-B*, 2026-05-18): `tost_informational`
+            # field REMOVED per B-957 TOST framework retirement.
             "pooled_meta": fe_pool,
             "estimand": "FE inverse-variance pool + one-sided superiority test",
             "superiority_test": superiority,
-            "tost_informational": tost_info,
             "decision": "PASS" if primary_h1_pass else "FAIL",
         },
         "appendix_dl_sensitivity": {
@@ -1011,6 +988,19 @@ def generate_synthetic_per_task(seed: int = 42, n_tasks_per_cell: int = 200,
 
 def main():
     p = argparse.ArgumentParser()
+    # B-1012 (/stress A2.4a P1-13-B* codex F5, 2026-05-18): retired-script
+    # hard-retire guard. Pre-fix this script still evaluated real CSV H1/H2/H3
+    # via main()'s --per-task-csv path AND emitted stale `pooled_DerSimonian_Laird_meta`
+    # label (line 1114), competing with canonical `aggregate_phase1_full_prereg_decision.py`
+    # B-515 as shadow gate. Now: real-data run requires `--i-understand-retired` flag;
+    # synthetic + appendix-DL-sensitivity paths remain allowed without flag.
+    p.add_argument("--i-understand-retired", action="store_true",
+                   help="REQUIRED for --per-task-csv real-data run (B-1012 /stress A2.4a P1-13-B*). "
+                        "This script is RETIRED — canonical paper §1 gate is "
+                        "`aggregate_phase1_full_prereg_decision.py` (A1.21 B-515). "
+                        "If you want real-data H1+H2(a)+H3+R1-R5 verdict, use canonical. "
+                        "This flag bypasses the hard-retire guard for synthetic test or "
+                        "explicit appendix-DL-sensitivity sensitivity sweep.")
     p.add_argument("--per-task-csv",
                    help="Per-task CSV path (cell_id, site, model, task_id, sr_*, cost_*)")
     p.add_argument("--synthetic", action="store_true",
@@ -1025,10 +1015,13 @@ def main():
                    help="Seed for synthetic data generation (A1.21 P1-9 split from --seed)")
     p.add_argument("--bootstrap-seed", type=int, default=None,
                    help="Seed for paired bootstrap resampling (A1.21 P1-9 split from --seed)")
-    p.add_argument("--primary-gate", default="drop_one_pooled_meta_TOST",
-                   help="Primary gate flavor (informational; method is fixed in this rewrite)")
+    p.add_argument("--primary-gate", default="FE_superiority",
+                   help="Primary gate flavor (informational; method is fixed in this rewrite, "
+                        "B-1051 default updated from drop_one_pooled_meta_TOST post-B-957 retire)")
     p.add_argument("--TOST-delta-pp", type=float, default=1.0,
-                   help="TOST equivalence margin in SR pp (default 1.0 per prereg lock)")
+                   help="DEPRECATED (B-1051 /stress A2.3c Mode B P0-1-B* 2026-05-18): TOST "
+                        "framework retired per B-957; arg retained for backward-compat with "
+                        "older CLI invocations but ignored, emits DeprecationWarning")
     p.add_argument("--H1-magnitude-pp", type=float, default=1.0,
                    help="H1 pooled magnitude threshold (default 1.0pp per prereg lock)")
     p.add_argument("--H2-cost-margin-pct", type=float, default=20.0,
@@ -1052,6 +1045,28 @@ def main():
     args = p.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+
+    # B-1012 (/stress A2.4a P1-13-B*, 2026-05-18): hard-retire guard for real-data run.
+    # Pre-fix `--per-task-csv` real-data path produced a JSON with stale
+    # `pooled_DerSimonian_Laird_meta` label (line 1114) competing with canonical
+    # `aggregate_phase1_full_prereg_decision.py` (B-515) — shadow gate vulnerability.
+    # Synthetic + appendix-DL-sensitivity paths are still allowed without flag.
+    if args.per_task_csv and not args.synthetic and not args.i_understand_retired:
+        logger.error(
+            "Real-data run via --per-task-csv requires --i-understand-retired flag. "
+            "This script is RETIRED per A1.21 B-513/B-514; canonical paper §1 gate is "
+            "`scripts/analysis/aggregate_phase1_full_prereg_decision.py` (B-515). "
+            "If you need H1+H2(a)+H3+R1-R5 verdict on real data, switch to canonical. "
+            "If you specifically need DL random-effects appendix sensitivity, pass "
+            "--i-understand-retired to acknowledge."
+        )
+        sys.exit(2)
+    if args.i_understand_retired and args.per_task_csv:
+        logger.warning(
+            "RETIRED-SCRIPT REAL-DATA MODE: this output is appendix-DL-sensitivity only, "
+            "NOT the canonical paper §1 gate. Canonical is `aggregate_phase1_full_prereg_decision.py`. "
+            "Stale `pooled_DerSimonian_Laird_meta` label in output is intentional (DL-RE sensitivity)."
+        )
 
     # A1.21 P1-9 fix: separate data + bootstrap seeds; fall back to --seed if not given
     data_seed = args.data_seed if args.data_seed is not None else args.seed
@@ -1077,7 +1092,16 @@ def main():
         sys.exit(2)
 
     # Evaluate hypotheses (A1.21 P1-9: bootstrap_seed split from data_seed)
-    h1 = evaluate_h1(cells_by_id, delta_pp=args.TOST_delta_pp,
+    # B-1051 (/stress A2.3c Mode B P0-1-B*, 2026-05-18): TOST_delta_pp deprecated
+    # post-B-957 retire; emit warning if user passed non-default value.
+    if args.TOST_delta_pp != 1.0:
+        import warnings
+        warnings.warn(
+            f"--TOST-delta-pp={args.TOST_delta_pp} ignored (TOST framework retired "
+            "per B-957 /stress A2.3a + B-1051 /stress A2.3c sibling sweep). H1 uses "
+            "magnitude_threshold_pp from --H1-magnitude-pp.",
+            DeprecationWarning, stacklevel=2)
+    h1 = evaluate_h1(cells_by_id, delta_pp=args.H1_magnitude_pp,
                       magnitude_threshold_pp=args.H1_magnitude_pp,
                       alpha=args.alpha, transparency_K_h1=args.transparency_K_h1,
                       bootstrap_seed=bootstrap_seed)
@@ -1110,8 +1134,10 @@ def main():
         "cell_ids": list(cells_by_id.keys()),
         "input_data_sha256": input_sha,
         "thresholds": {
-            "primary_gate_method": "pooled_DerSimonian_Laird_meta + one_sided_superiority + magnitude (TOST informational)",
-            "TOST_delta_pp": args.TOST_delta_pp,
+            # B-1051 (/stress A2.3c Mode B P0-1-B*, 2026-05-18): primary_gate_method
+            # string + TOST_delta_pp field updated post-B-957 TOST retire.
+            "primary_gate_method": "FE_inverse_variance_pool + one_sided_superiority (TOST retired B-957)",
+            "TOST_delta_pp_DEPRECATED": args.TOST_delta_pp,
             "H1_magnitude_pp": args.H1_magnitude_pp,
             "H2_cost_margin_pct": args.H2_cost_margin_pct,
             "H3_min_unique_count": args.H3_min_unique_count,
@@ -1148,8 +1174,8 @@ def main():
         logger.info(f"Result → {out_path}")
         logger.info(f"Framing rule: {framing['rule']} — {framing['framing']} (hook power: {framing['hook_power']})")
         logger.info(f"  H1: {h1['primary_gate']['decision']} (pooled drop-one {h1['primary_gate']['pooled_meta']['pooled_effect']:.2f}pp, "
-                    f"superiority p={h1['primary_gate']['superiority_test']['p_one_sided']:.4f}, "
-                    f"TOST equiv {h1['primary_gate']['tost_informational']['decision']})")
+                    f"superiority p={h1['primary_gate']['superiority_test']['p_one_sided']:.4f}; "
+                    f"TOST informational retired per B-957/B-1051)")
         logger.info(f"  H2: {'PASS' if h2['h2a_cost_equivalence']['consistent'] else 'FAIL'} "
                     f"({h2['h2a_cost_equivalence']['n_cells_pass']}/{h2['h2a_cost_equivalence']['N']} cells within ±{args.H2_cost_margin_pct}% cost)")
         logger.info(f"  H3 axis-1 (P-text): {h3_axis1['primary_gate']['decision']} "
