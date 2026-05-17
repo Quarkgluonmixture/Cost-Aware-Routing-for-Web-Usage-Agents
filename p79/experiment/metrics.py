@@ -1,8 +1,32 @@
 from __future__ import annotations
 
+import math
 import statistics
 from collections import Counter
 from typing import Any, Dict, List, Optional, Tuple
+
+
+# B-782 (/stress A1.9 cold-start P0-1-AB* Claude+codex OOB, 2026-05-17):
+# numeric hero fields that flow into paper §1 / §3 / §4 aggregates. Strict
+# entry guard rejects bool/string/non-finite drift via _assert_strict_aggregator_types.
+# Pre-fix B-322 only covered outcome bools (success / benchmark_noise / score);
+# numeric hero fields were unguarded → `{"steps": True, "total_cost_usd": "1e309"}`
+# silently passed `_avg(key)` (line 401-402 `float(x.get(key, 0.0))`) producing
+# `avg_total_cost_usd=inf, cost_efficiency_ratio=nan`. rederive_episode_summary.py
+# bypasses `load_episode_summary_strict` → no upstream defense; aggregator must
+# enforce.
+_HERO_NUMERIC_FIELDS = frozenset({
+    "steps", "retries",
+    "total_cost_usd", "total_model_cost_usd", "total_router_overhead_cost_usd",
+    "total_obs_prepare_cost_usd", "total_input_cost_usd", "total_output_cost_usd",
+    "total_latency_ms", "p95_step_latency_ms",
+    "total_energy_kwh", "total_co2e_kg",
+    "no_op_rate", "page_unchanged_rate",
+    "wasted_cost_usd", "wasted_energy_kwh",
+    "escalation_count",
+    "busy_wait_total_ms",
+    "checklist_completion_rate",
+})
 
 
 def compute_token_cost(
@@ -78,7 +102,22 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
         return True, "api_infra"
     if any(k in msg for k in ("captcha", "anti-bot", "blocked", "forbidden", "access denied")):
         return True, "anti_bot_or_blocked"
-    if any(k in msg for k in ("geo-restricted", "not available in your region", "location")):
+    # B-786 (/stress A1.9 cold-start P1-1-AB* Claude+codex OOB, 2026-05-17):
+    # removed bare `"location"` from geo-restriction keyword set. Pre-fix
+    # any error containing `"location"` substring (e.g. `"element location
+    # not found"`, `"locator resolved to hidden element location"`,
+    # `"window.location is not defined"`) was classified as `geo_restricted`
+    # → paper §3.4 noise taxonomy mis-categorized agent runtime errors as
+    # deployment / site issues; clean_success_rate denominator wrongly
+    # excluded real agent failures. Anchored phrases only: "not available
+    # in your region", "geo-restricted", "location restriction" (semantic
+    # geo restriction phrase, not bare location substring).
+    if any(k in msg for k in (
+        "geo-restricted",
+        "not available in your region",
+        "location restriction",
+        "vpn detected",
+    )):
         return True, "geo_restricted"
     if any(k in msg for k in ("timeout", "timed out", "deadline exceeded")):
         return True, "timeout"
@@ -311,7 +350,11 @@ def _compute_cost_efficiency_ratio(episode_summaries: List[Dict[str, Any]]) -> O
     return cost_on_success / total_cost
 
 
-def _assert_strict_aggregator_types(episode_summaries: List[Dict[str, Any]]) -> None:
+def _assert_strict_aggregator_types(
+    episode_summaries: List[Dict[str, Any]],
+    *,
+    allow_quarantined: bool = False,
+) -> None:
     """B-322 (/stress A1.9 Mode A F3 + Mode B F5 OOB, 2026-05-16): aggregator
     entry strict-type-check on hero fields. A1.8 B-283 fixed string-truthy at
     `load_episode_summary_strict()`, but `aggregate_condition_metrics` was
@@ -321,8 +364,43 @@ def _assert_strict_aggregator_types(episode_summaries: List[Dict[str, Any]]) -> 
     future schema regression (`"success": "false"` literal string,
     `"benchmark_noise": "True"`, `"score": "0.0"`) raises here rather than
     silently inflating paper §1 hero SR via Python's `bool('false') = True`.
+
+    B-782 (/stress A1.9 cold-start P0-1-AB* Claude+codex OOB, 2026-05-17):
+    extended to numeric hero fields. Pre-fix only outcome bools + score were
+    type-checked; `_HERO_NUMERIC_FIELDS` (steps / total_cost_usd / latency /
+    energy etc.) were unguarded → bool-as-int + string-coercion + inf/nan
+    poisoned aggregates. Now per-field: `isinstance(v, (int, float)) and not
+    isinstance(v, bool) and math.isfinite(v)`. `bool` excluded explicitly
+    (bool is int subclass in Python).
+
+    B-784 (/stress A1.9 cold-start P0-3-B* codex OOB, 2026-05-17): reject
+    quarantined episodes (`needs_reevaluation=True`) by default. Pre-fix
+    `aggregate_condition_metrics` accepted quarantined episodes silently;
+    runner live aggregate + rederive bypass `load_episode_summary_strict`
+    (which has `reject_needs_reevaluation=True` defense) → quarantined
+    episodes counted as `success=False` in live `condition_summary_v2.json`,
+    diverging from canonical `analysis.py` denominator post-fact. Forensic
+    appendix may opt-in via `allow_quarantined=True`.
     """
     for idx, ep in enumerate(episode_summaries):
+        # B-784: quarantine rejection (default-on; forensic appendix opt-in).
+        nrv = ep.get("needs_reevaluation")
+        if not allow_quarantined and nrv is True:
+            raise ValueError(
+                f"aggregate_condition_metrics episode[{idx}]: "
+                f"needs_reevaluation=True (B-486 quarantine flag). "
+                "Live aggregator / rederive must NOT count quarantined "
+                "episodes as paper-grade outcomes — denominator would "
+                "diverge from canonical analysis.py. Pass "
+                "allow_quarantined=True only for forensic appendix paths."
+            )
+        if nrv is not None and not isinstance(nrv, bool):
+            raise ValueError(
+                f"aggregate_condition_metrics episode[{idx}]: "
+                f"needs_reevaluation type mismatch — got "
+                f"{type(nrv).__name__!s} (value={nrv!r}), expected bool/None."
+            )
+
         if "success" in ep and not isinstance(ep["success"], bool):
             raise ValueError(
                 f"aggregate_condition_metrics episode[{idx}]: success type "
@@ -337,15 +415,64 @@ def _assert_strict_aggregator_types(episode_summaries: List[Dict[str, Any]]) -> 
                 f"(value={ep['benchmark_noise']!r}), expected bool."
             )
         score = ep.get("score")
-        if score is not None and not isinstance(score, (int, float)):
-            raise ValueError(
-                f"aggregate_condition_metrics episode[{idx}]: score type "
-                f"mismatch — got {type(score).__name__!s} (value={score!r}), "
-                "expected int/float."
-            )
+        if score is not None:
+            if isinstance(score, bool) or not isinstance(score, (int, float)):
+                raise ValueError(
+                    f"aggregate_condition_metrics episode[{idx}]: score type "
+                    f"mismatch — got {type(score).__name__!s} (value={score!r}), "
+                    "expected int/float (bool excluded — bool is int subclass)."
+                )
+            if not math.isfinite(float(score)):
+                raise ValueError(
+                    f"aggregate_condition_metrics episode[{idx}]: score "
+                    f"non-finite (value={score!r}); inf/nan would poison "
+                    "downstream `success_rate / cost_efficiency_ratio`."
+                )
+
+        # B-782: numeric hero field strict check.
+        for field in _HERO_NUMERIC_FIELDS:
+            if field not in ep:
+                continue
+            v = ep[field]
+            if v is None:
+                # Tri-state field (e.g. total_energy_kwh None on energy-disabled
+                # path) allowed; downstream aggregator skips Nones explicitly.
+                continue
+            if isinstance(v, bool):
+                raise ValueError(
+                    f"aggregate_condition_metrics episode[{idx}]: {field} "
+                    f"type mismatch — got bool (value={v!r}), expected "
+                    "int/float. bool-as-int is Python's int subclass "
+                    "(`isinstance(True, int) == True`) → JSON literal "
+                    "`true/false` would coerce silently to 1/0 and pollute "
+                    "paper §1 / §3 aggregates."
+                )
+            if not isinstance(v, (int, float)):
+                raise ValueError(
+                    f"aggregate_condition_metrics episode[{idx}]: {field} "
+                    f"type mismatch — got {type(v).__name__!s} (value={v!r}), "
+                    "expected int/float."
+                )
+            if not math.isfinite(float(v)):
+                raise ValueError(
+                    f"aggregate_condition_metrics episode[{idx}]: {field} "
+                    f"non-finite (value={v!r}). inf/nan would poison "
+                    f"`avg_{field}` + `cost_efficiency_ratio` downstream."
+                )
 
 
-def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict[str, Any]:
+def aggregate_condition_metrics(
+    episode_summaries: List[Dict[str, Any]],
+    *,
+    allow_quarantined: bool = False,
+) -> Dict[str, Any]:
+    """B-784 (/stress A1.9 cold-start P0-3-B*, 2026-05-17): `allow_quarantined`
+    parameter (default False) routes quarantined episodes (`needs_reevaluation=True`)
+    to a hard-fail at entry guard. Runner live aggregate (`runner/main.py:924`)
+    + rederive (`scripts/maintenance/rederive_episode_summary.py:280`) +
+    canonical analysis (`p79/experiment/analysis.py:278`) all pass default
+    False; only forensic appendix paths should opt in.
+    """
     if not episode_summaries:
         return {
             "episodes": 0,
@@ -393,7 +520,8 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
         }
 
     # B-322 (/stress A1.9): defense-in-depth strict-type-check on entry.
-    _assert_strict_aggregator_types(episode_summaries)
+    # B-784 (cold-start): thread `allow_quarantined` to entry guard.
+    _assert_strict_aggregator_types(episode_summaries, allow_quarantined=allow_quarantined)
 
     success_rate = sum(1 for x in episode_summaries if x.get("success")) / len(episode_summaries)
     step_latencies = [float(x.get("p95_step_latency_ms", 0.0)) for x in episode_summaries]
@@ -436,6 +564,31 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
     # Energy completeness aggregation (RU-5 / §97 audit).
     energy_partial_count = sum(
         1 for x in episode_summaries if bool(x.get("energy_partial", False))
+    )
+
+    # B-788 (/stress A1.9 cold-start P1-4-B* codex OOB, 2026-05-17):
+    # step-level `energy_window_partial=True` (B-321 strict-window flag)
+    # was stamped on individual step records but NEVER propagated to
+    # episode/condition telemetry. EnergyTracker emits
+    # `window_sample_count < 2` flag at step boundary; runner's per-episode
+    # `energy_partial` only checks `kwh is None`, so `sample_count=1`
+    # pynvml estimates passed silently → paper §3 energy comparison mixed
+    # high-quality and low-density samples without operator visibility.
+    # Now: episode summary is expected to surface
+    # `energy_window_partial_step_count` and `min_window_sample_count` (see
+    # runner B-788 partner change). Condition aggregator emits rate +
+    # quantile for paper §3 disclosure.
+    energy_window_partial_step_counts = [
+        int(x.get("energy_window_partial_step_count", 0) or 0)
+        for x in episode_summaries
+    ]
+    min_window_sample_counts = [
+        int(x.get("min_window_sample_count", 0) or 0)
+        for x in episode_summaries
+        if x.get("min_window_sample_count") is not None
+    ]
+    energy_window_partial_episode_count = sum(
+        1 for n in energy_window_partial_step_counts if n > 0
     )
 
     # B-193 (/stress A1.4b-ii codex B-ii-2, P1 OOB): aggregate the 3 paper §3.5
@@ -577,6 +730,17 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             1 for x in episode_summaries
             if not bool(x.get("benchmark_noise", False))
         ),
+        # B-798 (/stress A1.9 cold-start P2-5-C* gemini OOB, 2026-05-17):
+        # clean SR small-n warning flag. When `clean_episode_count` is a small
+        # fraction of total episodes, `clean_success_rate` becomes statistically
+        # unstable (extreme: 99 noise + 1 clean success → clean_SR=100% misleading).
+        # Flag emitted so paper §3.4 disclosure can warn / hide the metric.
+        # Threshold = clean / total < 0.5 (more than half noise → unstable).
+        "clean_n_too_low": (
+            (sum(1 for x in episode_summaries if not bool(x.get("benchmark_noise", False)))
+             / len(episode_summaries)) < 0.5
+            if episode_summaries else False
+        ),
         # B-199 (/stress A1.4b-ii gemini v1 G3): per-cell category distribution.
         # Pre-fix the 10-category breakdown produced by `detect_benchmark_noise`
         # was flattened to a single rate, losing site-specific infrastructure
@@ -587,6 +751,21 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             for x in episode_summaries
             if x.get("benchmark_noise") and x.get("benchmark_noise_category")
         )),
+        # B-788 (/stress A1.9 cold-start P1-4-B*, 2026-05-17): energy window
+        # density telemetry — fraction of episodes with at least one
+        # `energy_window_partial` step (B-321 strict-window flag).
+        "energy_window_partial_episode_count": energy_window_partial_episode_count,
+        "energy_window_partial_episode_rate": (
+            float(energy_window_partial_episode_count) / len(episode_summaries)
+            if episode_summaries else 0.0
+        ),
+        "min_window_sample_count_p5": (
+            float(statistics.quantiles(min_window_sample_counts, n=20)[0])
+            if len(min_window_sample_counts) >= 20 else (
+                float(min(min_window_sample_counts))
+                if min_window_sample_counts else None
+            )
+        ),
         "wasted_energy_kwh": compute_wasted_energy(episode_summaries),
         "avg_wasted_cost_usd": float(statistics.mean(
             [float(x.get("wasted_cost_usd", 0.0)) for x in episode_summaries]

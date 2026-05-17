@@ -124,6 +124,11 @@ class VwaEvaluator:
         self._evaluator_router = None
         self._captioning_fn = None
         self._captioning_fn_ready = False  # lazy-load guard
+        # B-797 (/stress A1.9 cold-start P2-4-C, 2026-05-17): BLIP-2 device
+        # telemetry. Recorded at lazy-load time; None = not loaded yet, "cuda"
+        # / "cpu" = loaded device. Surfaced into per-episode `evaluator_blip2_device`
+        # so paper §3.5 audit can detect silent CPU fallback cross-baseline.
+        self._blip2_device: Optional[str] = None
         try:
             import sys
 
@@ -185,10 +190,27 @@ class VwaEvaluator:
         Waits until enough GPU VRAM is free before loading on CUDA,
         so it doesn't compete with the main inference model.
         Falls back to CPU only if CUDA is unavailable.
+
+        B-785 (/stress A1.9 cold-start P0-4-B* codex OOB, 2026-05-17):
+        paper-grade mode = fail-loud on lazy-load failure. Pre-fix the
+        `except Exception` branch unconditionally swallowed transformers /
+        VRAM / dtype errors and continued with `captioning_fn=None` → any
+        page_image_query task would silently score 0.0 across the entire
+        run. This is a sibling path to B-544 init-time fail-loud: init
+        was guarded but lazy load wasn't. Now `_paper_grade=True` raises
+        `EvaluatorUnavailableError`; dev mode keeps the legacy
+        captioning_fn=None (fail-open) for iteration speed.
+
+        B-797 (/stress A1.9 cold-start P2-4-C gemini, 2026-05-17): also
+        stamp `self._blip2_device` so the per-episode summary can record
+        whether BLIP-2 ran on GPU or fell back to CPU — silent CPU
+        fallback was a cross-baseline latency confound vector that had no
+        forensic trail prior to this telemetry.
         """
         if self._captioning_fn_ready:
             return
         self._captioning_fn_ready = True
+        _device = None
         try:
             import torch  # type: ignore
             from evaluation_harness.image_utils import get_captioning_fn  # type: ignore
@@ -218,6 +240,7 @@ class VwaEvaluator:
                 _device, _dtype = "cpu", torch.float32
 
             self._captioning_fn = get_captioning_fn(_device, _dtype)
+            self._blip2_device = _device  # B-797 telemetry
             logger.info("BLIP-2 captioning model loaded on %s", _device)
         except Exception as exc:
             logger.warning(
@@ -225,6 +248,16 @@ class VwaEvaluator:
                 exc,
             )
             self._captioning_fn = None
+            self._blip2_device = None  # B-797 telemetry
+            # B-785: paper-grade mode raises so caller treats the failure
+            # as infra (B-486 quarantine semantics), not a real agent score=0.
+            if self._paper_grade:
+                raise EvaluatorUnavailableError(
+                    f"paper-grade BLIP-2 lazy-load FAILED: {exc!r}. "
+                    "page_image_query tasks would silently score 0.0 across "
+                    "the run (cross-baseline VLM evaluator-fragility confound). "
+                    "Fix transformers / VRAM / dtype + restart runner. See B-785."
+                ) from exc
 
     def evaluate(self, trajectory: List[Any], config_file: str, env: Any) -> EpisodeEvalResult:
         if not self._available or self._evaluator_router is None:
@@ -325,7 +358,32 @@ class VwaEvaluator:
                                 logger.warning("Failed to open fresh page: %s", page_exc)
                         time.sleep(5)
                         continue
+                    # B-783 (/stress A1.9 cold-start P0-2-AB* Claude+codex OOB,
+                    # 2026-05-17): paper-grade mode = fail-loud on
+                    # mid-evaluator-call exception. Pre-fix B-544 init-time
+                    # raise was only half of the contract; ordinary evaluator
+                    # crashes (Playwright timeout, OpenAI 503, helper_function
+                    # exception) still returned score=0+error → silent agent
+                    # failure → runner stamped success=False → paper §1 SR
+                    # absorbed evaluator infra failure as real agent error.
+                    # Cross-baseline confound: B0 (proxy API, long trajectories)
+                    # > B1/B2 (local) on evaluator nav-error trigger rate, so
+                    # mid-call exceptions are baseline-asymmetric.
+                    if self._paper_grade:
+                        raise EvaluatorUnavailableError(
+                            f"paper-grade evaluator mid-call EXCEPTION: {exc!r}. "
+                            f"All {max_eval_retries} retries exhausted; falling "
+                            "back to score=0.0 would absorb evaluator infra "
+                            "failure as agent error. Caller must treat as "
+                            "needs_reevaluation=True (B-486 quarantine). "
+                            f"err={str(exc).splitlines()[0][:200] if str(exc) else 'unknown'}"
+                        ) from exc
                     return EpisodeEvalResult(score=0.0, error=f"evaluator_error:{exc}")
+            # B-783: same paper-grade fail-loud for the loop-exit no-retry path.
+            if self._paper_grade and last_exc is not None:
+                raise EvaluatorUnavailableError(
+                    f"paper-grade evaluator loop-exit no retry: {last_exc!r}"
+                ) from last_exc
             return EpisodeEvalResult(score=0.0, error=f"evaluator_error:{last_exc}")
         finally:
             if fresh_page is not None:

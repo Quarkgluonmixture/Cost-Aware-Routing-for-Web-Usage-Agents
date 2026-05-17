@@ -9,6 +9,17 @@ SITE_MODE="${SITE_MODE:-auto}"
 CHECK_DOCKER="${CHECK_DOCKER:-auto}"
 REQUIRE_CUDA="${REQUIRE_CUDA:-0}"
 ALLOW_MISSING_EVALUATOR="${ALLOW_MISSING_EVALUATOR:-0}"
+# B-793 (/stress A1.9 cold-start P1-9 root-cause fix, 2026-05-17): paper-grade
+# evaluator probe — actually instantiates `VwaEvaluator(paper_grade=True)` to
+# catch B-544 init-time fail-loud BEFORE a 36-condition batch launches. Pre-fix
+# preflight only checked `evaluator_router` import; runtime init failure
+# (OpenAI key flicker, transformers cache lock, evaluation_harness path race)
+# crashed the batch on condition #1, losing 35 conditions of wallclock. Now:
+# `--paper-grade` flag opts in; queue scripts (queue_baseline.sh /
+# queue_chain.sh / queue_phase1_paper_grade.sh) MUST pass --paper-grade when
+# `cfg.paper_grade=True` so init failures surface at preflight (10s) rather
+# than batch start (hours-into-fire).
+PAPER_GRADE_PREFLIGHT="${PAPER_GRADE_PREFLIGHT:-0}"
 # B-703 (/stress A1.14 Chunk d P1-3 codex F4, 2026-05-17): `--sites csv` flag
 # lets orchestrator filter site reachability check to actual chain scope. Pre-fix
 # preflight checked all 5 VWA endpoints (shop/red/wiki/cls/homepage) → shop
@@ -35,6 +46,10 @@ Options:
   --require-cuda       Fail if torch CUDA runtime is unavailable
   --allow-missing-evaluator
                       Downgrade evaluator import failures to WARN
+  --paper-grade       Run B-793 paper-grade evaluator probe — actually
+                      instantiates VwaEvaluator(paper_grade=True) to catch
+                      B-544 init-time fail-loud BEFORE batch launch. Queue
+                      scripts MUST pass this flag for paper-grade runs.
   -h, --help           Show this help
 USAGE
 }
@@ -79,6 +94,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --allow-missing-evaluator)
       ALLOW_MISSING_EVALUATOR=1
+      shift
+      ;;
+    --paper-grade)
+      PAPER_GRADE_PREFLIGHT=1
       shift
       ;;
     -h|--help)
@@ -516,6 +535,52 @@ PY
   pass "VWA evaluator import is available"
 }
 
+# B-793 (/stress A1.9 cold-start P1-9 root-cause fix, 2026-05-17): paper-grade
+# evaluator probe. Runs `create_evaluator(env_cfg, paper_grade=True)` in a
+# subprocess so init-time `EvaluatorUnavailableError` (OpenAI key broken,
+# transformers cache lock, evaluation_harness path race) surfaces here
+# instead of crashing the 36-condition batch on its first condition.
+#
+# Why subprocess (not in-line eval): create_evaluator touches global env state
+# (OPENAI_API_KEY, sys.path append) — subprocess isolates side-effects from
+# the preflight Python interpreter.
+check_vwa_evaluator_paper_grade() {
+  if [[ "${PAPER_GRADE_PREFLIGHT}" != "1" ]]; then
+    return  # not requested; skip silently
+  fi
+  if [[ -z "${PYTHON_BIN:-}" ]]; then
+    fail "B-793 paper-grade probe needs Python (not found)"
+    return
+  fi
+
+  local py_output
+  if ! py_output="$(${PYTHON_BIN} - <<'PY' 2>&1
+import sys
+try:
+    from p79.experiment.environment import create_evaluator, EvaluatorUnavailableError
+    e = create_evaluator(
+        {"type": "vwa", "benchmark": "visualwebarena"},
+        paper_grade=True,
+    )
+    # Inspect _available — paper_grade=True should have raised if init was
+    # broken; reach this only on success. e is unused otherwise.
+    del e
+    print("ok")
+except EvaluatorUnavailableError as exc:
+    print(f"PAPER_GRADE_INIT_BROKEN: {exc!r}")
+    sys.exit(2)
+except Exception as exc:
+    print(f"UNEXPECTED_PROBE_ERROR: {type(exc).__name__}: {exc!r}")
+    sys.exit(3)
+PY
+)"; then
+    fail "B-793 paper-grade evaluator probe FAILED (${py_output})"
+    fail "  → 36-condition batch would crash on condition #1; fix env before fire."
+    return
+  fi
+  pass "B-793 paper-grade evaluator probe PASSED (init-fail surface at preflight, not at fire)"
+}
+
 main() {
   echo "=== P79 Preflight v2 ==="
   echo "project_dir=${PROJECT_DIR}"
@@ -538,6 +603,7 @@ main() {
   check_vwa_submodule_lock
   check_openai_api_key
   check_vwa_evaluator_import
+  check_vwa_evaluator_paper_grade  # B-793: skipped unless --paper-grade
 
   if (( EXIT_CODE == 0 )); then
     echo "Preflight completed successfully."

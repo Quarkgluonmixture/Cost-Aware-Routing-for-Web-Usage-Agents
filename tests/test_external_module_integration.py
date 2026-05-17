@@ -62,6 +62,11 @@ def test_lightweight_energy_tracker_fixed_power():
             "enabled": True,
             "fixed_power_watts": 100.0,
             "carbon_intensity_g_per_kwh": 500.0,
+            # B-794 (/stress A1.9 cold-start P2-1-A, 2026-05-17): explicit
+            # `hardware_profile` now required when enabled=True (sibling of
+            # B-320 UNKNOWN-key fail-loud). Test uses `m2` as opt-in.
+            "hardware_profile": "m2",
+            "use_pynvml": False,  # avoid loading pynvml in unit test
         }
     )
     energy = tracker.estimate_step(duration_seconds=10.0)

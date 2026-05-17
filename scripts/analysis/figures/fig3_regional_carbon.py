@@ -260,11 +260,15 @@ def main() -> None:
         fontsize=15,
         fontweight="bold",
     )
+    # B-790 (/stress A1.9 cold-start P1-6-B codex, 2026-05-17): caption N
+    # values dynamic from `_SITE_N` canonical (224 / 205 post-§139.8 `exclude_na_tasks`),
+    # was hardcoded `234/210` (pre-N/A-exclusion legacy). Body axis labels
+    # used `_SITE_N` since A1.20 fix but caption text was missed.
     fig.text(
         0.5,
         0.02,
-        "Energy from B1 (Qwen3-VL-4B) NVML measurement on cls (N=234) / red (N=210). "
-        "Per-region intensity from IEA 2023 / ElectricityMaps. Phantom-SoM/P-text/P-prompt pending B1 re-run; expected to be comparable or lower than DOM. "
+        f"Energy from B1 (Qwen3-VL-4B) NVML measurement on cls (N={_SITE_N['classifieds']}) / red (N={_SITE_N['reddit']}). "
+        "Per-region intensity from IEA 2023 / ElectricityMaps. "
         "B0 (Qwen3-VL-235B via proxy API) energy is not directly observable on local hardware; B1 measurement serves as a lower-bound reference for representation-driven carbon sensitivity.",
         ha="center",
         fontsize=7.8,

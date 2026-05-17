@@ -1355,9 +1355,18 @@ class ExperimentRunner:
             # if available (else 0.0; energy not always populated on crash).
             summary["wasted_cost_usd"] = float(_agg.get("total_cost_usd", 0.0))
             summary["wasted_energy_kwh"] = 0.0
+            # B-789 (/stress A1.9 cold-start P1-5-B* codex OOB, 2026-05-17):
+            # exception-path component breakdown must include `obs_prepare_usd`
+            # to match the normal path (B-576) and the runner's
+            # `total_cost_usd = model + router_overhead + obs_prepare` invariant.
+            # Pre-fix manual dict here only had model/router/energy → cross-baseline
+            # component plots on failed/quarantine cohorts (paper §3.6) systematically
+            # under-counted obs_prepare overhead, breaking schema closure with the
+            # normal-path output of `compute_component_breakdown`.
             summary["component_breakdown"] = {
                 "model_cost_usd": _agg["total_model_cost_usd"],
                 "router_overhead_usd": _agg["total_router_overhead_cost_usd"],
+                "obs_prepare_usd": float(_agg.get("total_obs_prepare_cost_usd", 0.0)),
                 "total_energy_kwh": 0.0,
             }
             # B-166 propagation: error summaries also flagged incomplete
@@ -3048,6 +3057,32 @@ class ExperimentRunner:
         episode_summary["energy_partial"] = bool(
             step_records and len(energy_vals) < len(step_records)
         )
+        # B-788 (/stress A1.9 cold-start P1-4-B* codex OOB, 2026-05-17):
+        # surface step-level `energy_window_partial` (B-321 strict-window flag)
+        # to episode + condition aggregator. Pre-fix flag stamped at step
+        # boundary by EnergyTracker but never aggregated → paper §3 energy
+        # comparison mixed high-quality and low-density samples.
+        _energy_partial_steps = sum(
+            1 for s in step_records
+            if isinstance(s.get("energy"), dict)
+            and bool(s["energy"].get("energy_window_partial", False))
+        )
+        episode_summary["energy_window_partial_step_count"] = _energy_partial_steps
+        _window_counts = [
+            int(s["energy"].get("window_sample_count", 0) or 0)
+            for s in step_records
+            if isinstance(s.get("energy"), dict)
+            and s["energy"].get("source") == "pynvml"
+        ]
+        episode_summary["min_window_sample_count"] = (
+            min(_window_counts) if _window_counts else None
+        )
+        # B-797 (/stress A1.9 cold-start P2-4-C gemini, 2026-05-17): BLIP-2
+        # device telemetry — surface evaluator-side captioning device (cuda /
+        # cpu / None) into episode summary for cross-baseline latency audit.
+        # `self.evaluator` is `VwaEvaluator` (or NullEvaluator with no attr).
+        _blip2_dev = getattr(self.evaluator, "_blip2_device", None)
+        episode_summary["evaluator_blip2_device"] = _blip2_dev
         # Input/output cost breakdown for fine-grained cost analysis
         episode_summary["total_input_cost_usd"] = sum(
             float(s["cost_usd"].get("input", 0.0)) for s in step_records

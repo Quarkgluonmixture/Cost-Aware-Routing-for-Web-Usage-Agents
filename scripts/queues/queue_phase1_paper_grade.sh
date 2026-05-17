@@ -249,7 +249,13 @@ print(f'OK:host={d[\"host\"]},at={d[\"captured_at\"]}')
     # set -e since the failing $(...) substitution would exit the script
     # before line `preflight_rc=$?`.
     preflight_rc=0
-    preflight_out=$(STRICT_PORTS=1 bash scripts/preflight_v2.sh --strict-ports 2>&1) || preflight_rc=$?
+    # B-793 (/stress A1.9 cold-start P1-9 root-cause fix, 2026-05-17):
+    # `--paper-grade` instructs preflight to actually instantiate
+    # `VwaEvaluator(paper_grade=True)`. Pre-fix B-544 init-time fail-loud
+    # only surfaced AT batch launch (condition #1 crash → 35 conditions of
+    # wallclock lost). Now: surface init failures here (10s probe) rather
+    # than mid-fire.
+    preflight_out=$(STRICT_PORTS=1 bash scripts/preflight_v2.sh --strict-ports --paper-grade 2>&1) || preflight_rc=$?
     echo "$preflight_out" | tail -8 | sed 's/^/    /'
     if [ "$preflight_rc" -ne 0 ]; then
       log "  FAIL: preflight_v2.sh exited rc=$preflight_rc — paper-grade fire requires all preflight checks pass"

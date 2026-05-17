@@ -159,7 +159,9 @@ check_gates() {
 
   log "=== Gate 6: VWA reachability ==="
   if [ -f scripts/preflight_v2.sh ]; then
-    preflight_out=$(bash scripts/preflight_v2.sh 2>&1)
+    # B-793 (/stress A1.9 cold-start P1-9): --paper-grade flag for evaluator
+    # init probe — surface B-544 init-fail at preflight not at batch start.
+    preflight_out=$(bash scripts/preflight_v2.sh --paper-grade 2>&1)
     preflight_rc=$?
     echo "$preflight_out" | tail -8 | sed 's/^/    /'
     if [ "$preflight_rc" -ne 0 ]; then

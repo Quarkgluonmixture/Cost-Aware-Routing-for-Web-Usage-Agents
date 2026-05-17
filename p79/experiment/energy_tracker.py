@@ -226,6 +226,21 @@ class EnergyEstimate:
         }
 
 
+# B-796 (/stress A1.9 cold-start P2-3-C* gemini OOB, 2026-05-17): CPU arch
+# telemetry — RAPL only supports x86 (Intel/AMD); aarch64 (Grace CPU on DGX
+# Spark) silently returns None → cross-arch baselines have asymmetric kWh
+# (B1 on aarch64 misses CPU power, B0 on x86 includes it). Now: stamp
+# cpu_arch + rapl_available in step record so paper §3.5 cross-baseline
+# audit can detect arch confound.
+def _detect_cpu_arch() -> str:
+    """Return platform.machine() lowercase; 'unknown' on failure."""
+    try:
+        import platform
+        return str(platform.machine() or "unknown").lower()
+    except Exception:
+        return "unknown"
+
+
 # ---------------------------------------------------------------------------
 # LightweightEnergyTracker
 # ---------------------------------------------------------------------------
@@ -251,13 +266,25 @@ class LightweightEnergyTracker:
         self.kwh_per_step = energy_cfg.get("kwh_per_step")
         self.co2e_kg_per_kwh = energy_cfg.get("co2e_kg_per_kwh")
         self.fixed_power_watts = energy_cfg.get("fixed_power_watts")
-        self.hardware_profile = str(energy_cfg.get("hardware_profile", "m2"))
+        # B-794 (/stress A1.9 cold-start P2-1-A sibling, 2026-05-17): also
+        # fail-loud when `hardware_profile` is MISSING in yaml (not just
+        # unknown). Pre-fix B-320 only raised on UNKNOWN key — MISSING key
+        # silently landed on `"m2"` default (a valid HARDWARE_PROFILES entry
+        # → wouldn't trigger B-320 raise) → 22W laptop profile for paper-grade
+        # fire (300W A100). Now: paper_grade-on must explicitly set
+        # `hardware_profile`; `m2` becomes opt-in via explicit yaml.
+        _hw_raw = energy_cfg.get("hardware_profile")
+        if self.enabled and _hw_raw is None:
+            raise ValueError(
+                "hardware_profile MISSING from energy config (B-794). "
+                "B-320 covered UNKNOWN keys but not MISSING (which falls to "
+                "'m2' laptop = 22W, vs A100 300W = 14× under-quote on "
+                "paper-grade fire). Set `metrics.energy.hardware_profile` "
+                "explicitly in yaml (paper-grade canonical = a100_pcie_40gb)."
+            )
+        self.hardware_profile = str(_hw_raw or "m2")
         # B-320 (/stress A1.9 Mode A F1 + Mode C #2 OOB, 2026-05-16): fail-loud
-        # on unknown hardware_profile when energy is enabled. Pre-fix the
-        # `.get(key, HARDWARE_PROFILES["m2"])` fallback path in
-        # `_estimate_power_watts` silently coerced any unknown key to m2
-        # laptop profile (22W vs A100 300W → ~14× energy under-quote). A
-        # mis-typed yaml key would land in production undetected.
+        # on unknown hardware_profile when energy is enabled.
         if self.enabled and self.hardware_profile not in HARDWARE_PROFILES:
             raise ValueError(
                 f"hardware_profile={self.hardware_profile!r} not in "
@@ -285,6 +312,22 @@ class LightweightEnergyTracker:
 
         intensity_g = energy_cfg.get("carbon_intensity_g_per_kwh")
         if intensity_g is None:
+            # B-787 (/stress A1.9 cold-start P1-2-AB Claude+codex sibling-class
+            # to B-320 hardware fail-loud, 2026-05-17): fail-loud on UNKNOWN
+            # region key. Pre-fix `REGION_INTENSITY_G_PER_KWH.get(self.region,
+            # REGION_INTENSITY_G_PER_KWH["world"])` silently coerced any
+            # mis-typed region to world average (475 g/kWh) — paper §3 carbon
+            # claim configured intent (UK 220) vs reported (world 475) could
+            # diverge 2.2× without operator visibility. Now: yaml typo raises.
+            # Explicit `region: "world"` still allowed (passes the key check).
+            if self.enabled and self.region not in REGION_INTENSITY_G_PER_KWH:
+                raise ValueError(
+                    f"region={self.region!r} not in REGION_INTENSITY_G_PER_KWH "
+                    f"(known keys: {sorted(REGION_INTENSITY_G_PER_KWH.keys())}). "
+                    "Either set carbon_intensity_g_per_kwh explicitly in yaml "
+                    "or fix the region key. Silent fallback to 'world' "
+                    "(475 g/kWh) is paper-grade-broken."
+                )
             intensity_g = REGION_INTENSITY_G_PER_KWH.get(
                 self.region, REGION_INTENSITY_G_PER_KWH["world"]
             )
@@ -483,6 +526,12 @@ class LightweightEnergyTracker:
         out["window_sample_count"] = int(sample_count)
         out["energy_window_partial"] = bool(
             source == "pynvml" and sample_count < 2
+        )
+        # B-796 (/stress A1.9 cold-start P2-3-C*, 2026-05-17): cpu arch +
+        # rapl-availability telemetry for cross-baseline audit.
+        out["cpu_arch"] = _detect_cpu_arch()
+        out["cpu_rapl_available"] = bool(
+            self._rapl_reader is not None and self._rapl_reader.available
         )
         return out
 
