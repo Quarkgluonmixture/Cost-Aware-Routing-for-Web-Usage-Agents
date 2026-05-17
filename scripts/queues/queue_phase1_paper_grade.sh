@@ -62,7 +62,15 @@
 # Sentinel files (used by chain to detect completion):
 #   results/visualwebarena/phase1/<run_id>/<condition_id>/condition_summary_v2.json
 
-set -uo pipefail
+# B-677 (/stress A1.14 Chunk b P1-1 Claude+gemini 2-AI AC, 2026-05-17):
+# `set -euo pipefail` (was `set -uo pipefail`) for fail-fast on uncaught errors.
+# Pre-fix: `mkdir -p logs` / `echo "$pid" > pidfile` / unexpected nohup spawn
+# failures silently swallowed; script could print "OK" while child failed.
+# Sibling drift: 5/7 leaf queue scripts already use `set -euo pipefail`; only
+# orchestrator + queue_chain were `-uo`. Defensive `|| true` / `|| rc=$?`
+# wrappers added per check_gates command that legitimately tolerates non-zero
+# exit (preflight rc capture / Gate 6 pgrep no-match / Gate 5 CUDA probe).
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -169,10 +177,18 @@ check_gates() {
 
   # Gate 4 — BLOCKING (codex stress v6 C2): preflight exit code now captured.
   # Strict ports for actual paper-grade fire (--no-strict-ports dropped).
+  # B-680 (A1.14 Chunk b P1-11 gemini F4 unique OOB C, 2026-05-17): explicit
+  # `STRICT_PORTS=1` export + `--strict-ports` flag — no longer relies on
+  # preflight_v2.sh's internal default. Defense-in-depth against future
+  # dev-convenience default flip.
   log "=== Gate 4: VWA reachability ==="
   if [ -f scripts/preflight_v2.sh ]; then
-    preflight_out=$(bash scripts/preflight_v2.sh 2>&1)
-    preflight_rc=$?
+    # B-677 (P1-1): set -e safe rc capture via `|| preflight_rc=$?`. Pre-fix
+    # `preflight_rc=$?` after `preflight_out=$(...)` was unreachable under
+    # set -e since the failing $(...) substitution would exit the script
+    # before line `preflight_rc=$?`.
+    preflight_rc=0
+    preflight_out=$(STRICT_PORTS=1 bash scripts/preflight_v2.sh --strict-ports 2>&1) || preflight_rc=$?
     echo "$preflight_out" | tail -8 | sed 's/^/    /'
     if [ "$preflight_rc" -ne 0 ]; then
       log "  FAIL: preflight_v2.sh exited rc=$preflight_rc — paper-grade fire requires all preflight checks pass"
@@ -186,13 +202,42 @@ check_gates() {
   fi
 
   # Gate 5 — BLOCKING (codex stress v6 C2 sibling): CUDA availability now gates launch.
+  # B-678 (A1.14 Chunk b P1-2 codex F3 unique OOB B, 2026-05-17): real model
+  # load smoke replaces title-only "GPU + model load smoke" theater. Pre-fix
+  # only `torch.cuda.is_available()` ran — Qwen/Gemma HF cache miss /
+  # transformers parse failure / revision-pin drift surfaced only at first
+  # cell launch ~24-48h into Phase 1a wallclock burn. `AutoConfig.from_pretrained
+  # local_files_only=True` validates cache presence + revision parsability
+  # WITHOUT allocating VRAM (no full weight load); revisions pinned per
+  # `configs/exp_v2_base.yaml:103+138` (Qwen=ebb281e... / Gemma=093f9f3...).
   log "=== Gate 5: GPU + model load smoke ==="
   if command -v .venv/bin/python3 &>/dev/null; then
-    cuda_ok=$(.venv/bin/python3 -c "import torch; print('YES' if torch.cuda.is_available() else 'NO')" 2>/dev/null)
+    cuda_ok=$(.venv/bin/python3 -c "import torch; print('YES' if torch.cuda.is_available() else 'NO')" 2>/dev/null || echo "ERROR")
     if [ "$cuda_ok" = "YES" ]; then
-      log "  OK ($(.venv/bin/python3 -c "import torch; print(torch.cuda.get_device_name(0))" 2>/dev/null))"
+      gpu_name=$(.venv/bin/python3 -c "import torch; print(torch.cuda.get_device_name(0))" 2>/dev/null || echo "unknown")
+      log "  CUDA OK (${gpu_name})"
+      # B-678: actual model config load (no VRAM, validates HF cache + parse).
+      model_smoke=$(.venv/bin/python3 -c "
+import warnings; warnings.filterwarnings('ignore')
+try:
+    from transformers import AutoConfig
+    AutoConfig.from_pretrained('Qwen/Qwen3-VL-4B-Instruct', revision='ebb281ec70b05090aa6165b016eac8ec08e71b17', local_files_only=True)
+    AutoConfig.from_pretrained('google/gemma-3-4b-it', revision='093f9f388b31de276ce2de164bdc2081324b9767', local_files_only=True)
+    print('YES')
+except Exception as e:
+    msg = str(e).replace('\n', ' ')[:200]
+    print(f'NO:{msg}')
+" 2>/dev/null || echo "NO:python-failed")
+      if [ "$model_smoke" = "YES" ]; then
+        log "  Model load OK (Qwen3-VL-4B@ebb281e + Gemma3-VL@093f9f3 configs in HF cache, revisions pinned)"
+      else
+        log "  FAIL: model load smoke failed: $model_smoke"
+        log "        Cause: HF cache miss / revision drift / transformers parse error"
+        log "        Run: HF_HUB_OFFLINE=0 .venv/bin/python3 -c \"from transformers import AutoConfig; AutoConfig.from_pretrained('Qwen/Qwen3-VL-4B-Instruct', revision='ebb281ec70b05090aa6165b016eac8ec08e71b17')\""
+        errors=$((errors+1))
+      fi
     else
-      log "  FAIL: CUDA not available — paper-grade B1 local inference requires GPU"
+      log "  FAIL: CUDA not available — paper-grade B1/B2 local inference requires GPU"
       errors=$((errors+1))
     fi
   else
@@ -204,10 +249,12 @@ check_gates() {
   # RESET_BEFORE=1 in launch_chain would reset site state under any active
   # same-site runner. Set ALLOW_ACTIVE_RUNS=1 only after verifying no collision.
   log "=== Gate 6: No conflicting active runs ==="
-  active=$(pgrep -f "run_experiment.*--config" | wc -l)
+  # B-677 (P1-1) set -e safe: pgrep no-match returns 1 + pipefail → pipe rc 1
+  # → set -e exit. `|| true` masks empty-match so active=0 path works.
+  active=$(pgrep -f "run_experiment.*--config" 2>/dev/null | wc -l || true)
   log "  Active run_experiment processes: $active"
   if [ "$active" -gt 0 ]; then
-    pgrep -af "run_experiment.*--config" | sed 's/^/    /'
+    pgrep -af "run_experiment.*--config" 2>/dev/null | sed 's/^/    /' || true
     if [ "${ALLOW_ACTIVE_RUNS:-0}" == "1" ]; then
       log "  WARN: $active existing run(s) detected but ALLOW_ACTIVE_RUNS=1 — proceeding."
       log "        You are responsible for verifying no same-site B0+B1 collision."

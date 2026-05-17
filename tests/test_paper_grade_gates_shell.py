@@ -252,6 +252,76 @@ def test_config_for_cmd_phantom_som_actual_files_exist():
     )
 
 
+def _eval_check_openai_api_key(preflight_path: Path, env_key: str | None) -> tuple[int, str, str]:
+    """Helper: extract `check_openai_api_key` from preflight + exercise it.
+
+    Uses pass()/fail() shims to capture function semantics without exiting the
+    test process; mirrors the orchestrator's expectation that fail() = log + rc=1.
+    Returns (matched_fail_count, fail_message, all_stderr).
+    """
+    bash_cmd = (
+        f'source <(sed -n "/^check_openai_api_key()/,/^}}$/p" "{preflight_path}"); '
+        f'EXIT_CODE=0; '
+        f'pass() {{ echo "[PASS] $1"; }}; '
+        f'fail() {{ echo "[FAIL] $1"; EXIT_CODE=1; }}; '
+        f'check_openai_api_key; '
+        f'echo "RC=$EXIT_CODE"'
+    )
+    env = {**os.environ}
+    if env_key is None:
+        env.pop("OPENAI_API_KEY", None)
+        env["OPENAI_API_KEY"] = ""
+    else:
+        env["OPENAI_API_KEY"] = env_key
+    proc = subprocess.run(
+        ["bash", "-c", bash_cmd], capture_output=True, text=True, timeout=10,
+        env=env,
+    )
+    return proc.returncode, proc.stdout, proc.stderr
+
+
+def test_check_openai_api_key_unset_fails():
+    """B-679 (/stress A1.14 Chunk b P1-9, Claude unique OOB): preflight must fail
+    if OPENAI_API_KEY is unset — paper-grade VWA LLM judge calls OpenAI for N/A
+    task evaluation (helper_functions.py:613+707). Pre-fix DUMMY_P79_PRECHECK
+    placeholder masked this requirement; runtime crashed at first N/A task.
+    """
+    preflight = REPO_ROOT / "scripts/preflight_v2.sh"
+    rc, stdout, _ = _eval_check_openai_api_key(preflight, env_key="")
+    assert "[FAIL]" in stdout, f"unset OPENAI_API_KEY must fail, got: {stdout!r}"
+    assert "OPENAI_API_KEY not set" in stdout
+    assert "RC=1" in stdout, f"failure must set EXIT_CODE=1: {stdout!r}"
+
+
+def test_check_openai_api_key_dummy_placeholder_fails():
+    """B-679: DUMMY placeholder must be detected and rejected."""
+    preflight = REPO_ROOT / "scripts/preflight_v2.sh"
+    rc, stdout, _ = _eval_check_openai_api_key(preflight, env_key="DUMMY_P79_PRECHECK")
+    assert "[FAIL]" in stdout, f"DUMMY placeholder must fail: {stdout!r}"
+    assert "placeholder" in stdout
+    assert "RC=1" in stdout
+
+
+def test_check_openai_api_key_realistic_passes():
+    """B-679: a real-looking key (≥20 chars, no DUMMY/PLACEHOLDER) passes."""
+    preflight = REPO_ROOT / "scripts/preflight_v2.sh"
+    # Synthetic key — NOT a real OpenAI key, just shaped like one for shape-check.
+    rc, stdout, _ = _eval_check_openai_api_key(
+        preflight, env_key="sk-proj-test_only_paper_grade_smoke_NOT_REAL_KEY_1234567890"
+    )
+    assert "[PASS]" in stdout, f"real-shape key must pass: {stdout!r}"
+    assert "RC=0" in stdout, f"PASS path must keep EXIT_CODE=0: {stdout!r}"
+
+
+def test_check_openai_api_key_short_key_fails():
+    """B-679: keys <20 chars (e.g., truncated copy-paste) flagged suspicious."""
+    preflight = REPO_ROOT / "scripts/preflight_v2.sh"
+    rc, stdout, _ = _eval_check_openai_api_key(preflight, env_key="sk-short")
+    assert "[FAIL]" in stdout, f"short key must fail: {stdout!r}"
+    assert "suspiciously short" in stdout
+    assert "RC=1" in stdout
+
+
 def test_no_python_smoke_when_bash_missing():
     """Sanity guard: this whole file assumes bash. If bash absent, skip clean."""
     if shutil.which("bash") is None:

@@ -390,6 +390,31 @@ check_vwa_submodule_lock() {
   pass "VWA submodule locked at ${expected_branch}@${expected_sha:0:8} (B-91 guard present)"
 }
 
+check_openai_api_key() {
+  # B-679 (/stress A1.14 Chunk b P1-9 Claude unique OOB A, 2026-05-17):
+  # paper-grade VWA evaluator runs LLM judge for N/A tasks via OpenAI API
+  # (`external/visualwebarena/evaluation_harness/helper_functions.py:613+707`
+  # call `generate_from_openai_chat_completion`). Pre-fix preflight `setdefault
+  # OPENAI_API_KEY=DUMMY_P79_PRECHECK` only ensured evaluator IMPORT works;
+  # the DUMMY placeholder masked the runtime requirement → paper-grade run
+  # started, then crashed at first N/A task evaluation when real OpenAI call
+  # rejected the dummy key. This explicit check fails preflight if the key
+  # is unset OR contains DUMMY/PLACEHOLDER substring.
+  if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+    fail "OPENAI_API_KEY not set — paper-grade VWA LLM judge (helper_functions.py:613/707) will crash at first N/A task evaluation. Source ~/.openai_api_key (or .env) before launch."
+    return
+  fi
+  if [[ "${OPENAI_API_KEY}" == *DUMMY* || "${OPENAI_API_KEY}" == *PLACEHOLDER* ]]; then
+    fail "OPENAI_API_KEY is a placeholder ('${OPENAI_API_KEY:0:24}...') — paper-grade run requires real API key for VWA LLM judge"
+    return
+  fi
+  if [[ "${#OPENAI_API_KEY}" -lt 20 ]]; then
+    fail "OPENAI_API_KEY suspiciously short (${#OPENAI_API_KEY} chars; real sk-* keys are ≥48 chars) — verify it's the real key"
+    return
+  fi
+  pass "OPENAI_API_KEY set (${#OPENAI_API_KEY} chars, real-looking)"
+}
+
 check_vwa_evaluator_import() {
   if [[ -z "${PYTHON_BIN:-}" ]]; then
     fail "Skipping evaluator import check because no Python was found"
@@ -445,6 +470,7 @@ main() {
   check_playwright_browser
   check_torch_cuda
   check_vwa_submodule_lock
+  check_openai_api_key
   check_vwa_evaluator_import
 
   if (( EXIT_CODE == 0 )); then

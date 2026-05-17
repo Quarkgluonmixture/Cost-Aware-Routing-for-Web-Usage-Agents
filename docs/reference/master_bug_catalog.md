@@ -4262,6 +4262,36 @@ Phase 2 of `/stress A1.5b` audit — data plane + analysis sibling layer. Pre-fi
 
 ---
 
+## A1.14 /stress audit Chunk (b) (2026-05-17) — B-677 to B-680 (4 entries; 4 fixed)
+
+> Chunk (b) lands the P1 paper-grade quality batch following Chunk (a) launch-substrate unblock. All 4 from cross-AI unified bug list: P1-1-AC (set -e, 2-AI Claude+gemini) / P1-2-B* (model load smoke fake, codex unique OOB) / P1-9-A* (OPENAI placeholder, Claude unique OOB) / P1-11-C* (STRICT_PORTS implicit, gemini unique OOB). User: "继续 b" → Chunk (b) executes 4 fixes per recommended option (Q4-Q22 bottom-tier auto-default reserve).
+
+### B-677. queue_phase1_paper_grade.sh missing `set -e` + sibling drift — Claude+gemini 2-AI AC 🛠️ FIXED
+- **Source**: Claude Mode A F1 + gemini Mode C F2 (2-AI overlap)
+- **Code**: pre-fix `queue_phase1_paper_grade.sh:65` `set -uo pipefail` (missing `-e`). Sibling drift: 5/7 leaf queue scripts (`queue_baseline.sh:36` + `queue_phantom_{som,dom,text,prompt}.sh`) all `set -euo pipefail`; only orchestrator + `queue_chain.sh:44` were `-uo`.
+- **Attack**: mkdir / echo to pid-file / unexpected nohup spawn failures silently swallowed; orchestrator prints "OK" while child setup failed. mid-script bug appearing in launch_chain (e.g., `${args[@]}` empty due to builder failure) cascades to nohup'd queue_chain → log file written but PID file missing → user can't monitor.
+- **Fix**: `set -uo pipefail` → `set -euo pipefail` + 3 defensive `|| true` / `|| preflight_rc=$?` patterns in `check_gates()` (Gate 4 preflight rc capture, Gate 5 CUDA probe + GPU name fetch, Gate 6 pgrep no-match). Critical: `preflight_out=$(...) || preflight_rc=$?` avoids set -e exit BEFORE rc capture line. Pattern follows A1.13 B-633 lesson "errexit policy at script top once" — no mid-script flips. Validated by orchestrator dry-run smoke from fresh shell.
+
+### B-678. queue_phase1_paper_grade.sh Gate 5 "model load smoke" was title-only — codex F3 unique OOB B 🛠️ FIXED
+- **Source**: codex Mode B F3 unique OOB ("'model load smoke' does not load a model")
+- **Code**: pre-fix `queue_phase1_paper_grade.sh:147-150` Gate 5 named "GPU + model load smoke" but only ran `torch.cuda.is_available()`. No `from_pretrained` / `AutoConfig` / HF cache probe.
+- **Attack**: B1 (Qwen3-VL-4B) / B2 (Gemma3-VL) HF cache miss / revision drift / transformers parse failure surfaced only at FIRST cell launch (~24-48h into Phase 1a wallclock burn after B0 cells finish). User would burn A100 GPU slot + lose 1+ day debugging "why did B1 fail to load".
+- **Fix**: Gate 5 extended with `AutoConfig.from_pretrained(..., local_files_only=True)` for both `Qwen/Qwen3-VL-4B-Instruct@ebb281ec...` + `google/gemma-3-4b-it@093f9f38...` (revisions sourced from `configs/exp_v2_base.yaml:103+138`). `AutoConfig` validates HF cache presence + transformers can parse model class WITHOUT loading weights (no VRAM allocation). FAIL message includes specific cause hints + recovery command. CUDA-not-available short-circuits before model probe (no point checking model load if GPU absent). Errors output truncated to 200 chars to prevent log flood.
+
+### B-679. preflight_v2.sh OPENAI_API_KEY DUMMY placeholder masking — Claude unique OOB A 🛠️ FIXED
+- **Source**: Claude Mode A F4 unique OOB (`os.environ.setdefault("OPENAI_API_KEY", "DUMMY_P79_PRECHECK")` masking late-failure)
+- **Code**: pre-fix `preflight_v2.sh:411` `os.environ.setdefault("OPENAI_API_KEY", "DUMMY_P79_PRECHECK")` only ensured VWA evaluator IMPORT works under preflight. No runtime-style check. VWA LLM judge per `external/visualwebarena/evaluation_harness/helper_functions.py:613+707` calls `generate_from_openai_chat_completion` at N/A task evaluation — needs REAL key.
+- **Attack**: User launches paper-grade run with OPENAI_API_KEY unset (or value=`DUMMY_*` from .env scaffold) → preflight passes (DUMMY suffices for import) → run starts → first N/A task evaluation hits OpenAI rejection (401 Invalid key) → episode marked task-load failure (N/A excluded per fp_architecture 2026-05-14, but evaluation error pollutes the run record) → debug requires backtracking through episode JSONL to find the rejection.
+- **Fix**: New `check_openai_api_key()` function (wired into `main()` between `check_vwa_submodule_lock` and `check_vwa_evaluator_import`). 3 fail paths: (a) key unset/empty → "OPENAI_API_KEY not set — paper-grade VWA LLM judge will crash..."; (b) key contains `DUMMY` or `PLACEHOLDER` substring → placeholder rejection; (c) key shorter than 20 chars → "suspiciously short, verify it's the real key". Pass path validates length + reports char count. 4 pytest tests added: unset / DUMMY placeholder / realistic shape / short key (each verifies both stdout message and shell EXIT_CODE).
+
+### B-680. queue_phase1_paper_grade.sh Gate 4 implicit STRICT_PORTS — gemini F4 unique OOB C 🛠️ FIXED
+- **Source**: gemini Mode C F4 unique OOB (implicit dependency on preflight script's default configuration)
+- **Code**: pre-fix `queue_phase1_paper_grade.sh:131` `preflight_out=$(bash scripts/preflight_v2.sh 2>&1)` — orchestrator does NOT export `STRICT_PORTS=1` or pass `--strict-ports` flag. Relies on `preflight_v2.sh:7` default `STRICT_PORTS="${STRICT_PORTS:-1}"`.
+- **Attack**: Future preflight refactor changes default (e.g., for dev convenience `STRICT_PORTS=0`) → orchestrator silently runs paper-grade fire in non-strict mode → unreachable shop endpoint becomes WARN not FAIL → fire launches against partially-up VWA stack → paper §3 reproducibility claim "all 3 sites verified pre-launch" false. Configuration should be controller-explicit, not implicit from callee.
+- **Fix**: `preflight_out=$(STRICT_PORTS=1 bash scripts/preflight_v2.sh --strict-ports 2>&1) || preflight_rc=$?` — explicit env export + flag (defense-in-depth, redundant by design). Comment cites B-680 + gemini source attribution. Set -e safe via `|| preflight_rc=$?` (B-677 dependency).
+
+---
+
 ## A1.14 /stress audit Chunk (a) (2026-05-17) — B-672 to B-676 (5 entries; 5 fixed)
 
 > Cross-AI: Mode A Claude 12 findings / 6 OOB + Mode B codex 8 findings / 4 OOB + Mode C gemini 7 findings / 3 OOB (retry x1: first attempt `NumericalClassifierStrategy` API error → success with `-m gemini-2.5-pro`) = 22 unique findings (4 P0 / 11 P1 / 7 P2). Scope = `queue_phase1_paper_grade.sh` (orchestrator) + `scripts/preflight_v2.sh` (pre-launch gates) + sibling propagation set (`queue_chain.sh` + leaf queue scripts). User v7.7 triaged Q&A: Q1=audit 整 `config_for_cmd` function (depth not speed) / Q2=full /tmp scan in queue_chain (default A; turned out to be single-point) / Q3=VWA snapshot Gate 3 WARN→FAIL with snapshot instruction in error message (Option A). Chunk (a) lands the **4 P0 + 1 batched P1** (=5 fixes); Chunk (b) (P1 batch) / Chunk (c) (provenance integrity) / Chunk (d) (P2 batch) deferred to follow-on commits per scope split.
