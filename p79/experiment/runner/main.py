@@ -136,7 +136,15 @@ class ExperimentRunner:
         env_cfg = dict(cfg.get("env", {}))
         env_cfg.setdefault("benchmark", cfg["experiment"]["benchmark"])
         self.environment = create_environment(env_cfg)
-        self.evaluator = create_evaluator(env_cfg)
+        # B-544 (/stress A1.5b Phase 2 P0-4-B codex OOB, 2026-05-17): paper_grade
+        # propagation so VwaEvaluator fail-loud on dep failure. Pre-fix evaluator
+        # silently returned score=0 → entire batch SR zeroed under infra failure
+        # (cross-baseline infra-fragility confound); now paper_grade=True raises
+        # EvaluatorUnavailableError → caller writes needs_reevaluation=True
+        # summary (B-486 quarantine semantics).
+        self.evaluator = create_evaluator(
+            env_cfg, paper_grade=bool(cfg.get("paper_grade", False)),
+        )
         self.checklist_cfg = cfg.get("checklist", {})
         self.state_change_cfg = cfg.get("state_change", {})
         self.energy_tracker = LightweightEnergyTracker(cfg.get("metrics", {}).get("energy", {}))
@@ -2598,37 +2606,30 @@ class ExperimentRunner:
         eval_result = self.evaluator.evaluate(trajectory=trajectory, config_file=task.config_file, env=self.environment)
         score = float(eval_result.score)
 
-        # Override only when the agent issued a finish/stop and VWA reward
-        # agrees — never override after cycle early-stop (agent did not finish).
+        # B-545 (/stress A1.5b Phase 2 P0-5-AC Claude F12 + gemini B-513
+        # cross-validation, 2026-05-17): RETIRED reward-override block.
+        # Pre-fix paper §3/§4 prose claimed "canonical evaluator success,
+        # no post-hoc adjustment" but main.py L2614-2630 secretly overrode
+        # `score=0 → score=1` when agent self-reported `action_type=="finish"`
+        # + parse_valid + env_reward>0. Cross-AI 2-AI catch (Claude F12 +
+        # gemini B-513 cross-val): the override is exactly the kind of
+        # estimand schizophrenia top-tier reviewers attack — "you claim
+        # raw evaluator authority but secretly bake agent self-report into
+        # SR; paper §3 estimand definition is a false claim".
         #
-        # B-165 (/stress A1.4a v8 Claude F2 + codex B3 dual-catch, 2026-05-16):
-        # fallback_finish guard. Previously the keyword-rescue 'finish' (where
-        # backend parsed gibberish output to action_type='finish' via keyword
-        # scan, recorded as fallback_finish=True + parse_valid=False) ALSO
-        # triggered reward override because action_type literally == 'finish'.
-        # Paper-grade cross-baseline contamination: B0 235B rarely needs
-        # keyword rescue, B1/B2 4B frequently does → B1/B2 SR systematically
-        # inflated by fallback_finish-driven reward override differential.
-        # Now requires a REAL agent finish (parse_valid AND not fallback).
-        _last = step_records[-1] if step_records else {}
-        _real_finish = (
-            str(_last.get("action_type", "")).lower() in ("finish", "stop")
-            and not bool(_last.get("fallback_finish", False))
-            and bool(_last.get("parse_valid", True))
-        )
-        if (
-            score == 0.0
-            and step_records
-            and _last.get("reward", 0.0) > 0
-            and not cycle_early_stop
-            and _real_finish
-        ):
-            score = 1.0
-            logger.warning(
-                "Reward override: evaluator=0 overridden to 1.0 (env reward>0, agent finished) site=%s task=%s",
-                task.site, task.task_id,
-            )
-
+        # B-165 (A1.4a) had already restricted the override to real-finish
+        # (excluding fallback_finish + parse_invalid) to close the
+        # cross-baseline B0-vs-B1/B2 differential. Phase 2 reframes:
+        # rather than narrow override conditions further, eliminate the
+        # mechanism. `success` is now strictly `score >= 1.0` from the
+        # VWA evaluator output, full stop.
+        #
+        # Disclosure: paper §3.5 "evaluator authority" disclosure paragraph
+        # to be updated to (a) state pure evaluator authority post-B-545
+        # and (b) historical note that B-165 + B-545 retired the override
+        # mechanism in two stages. Disclosure prose is DEFERRED to next
+        # paper round (parallel session has uncommitted `section3_*.md` /
+        # `section4_*.md` edits — touching here would collide).
         success = bool(score >= 1.0)
 
         total_latency = sum(float(s["latency_ms"].get("total", 0.0)) for s in step_records)

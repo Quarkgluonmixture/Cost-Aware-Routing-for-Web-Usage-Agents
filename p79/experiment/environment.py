@@ -21,6 +21,22 @@ class EpisodeEvalResult:
     error: Optional[str] = None
 
 
+# B-544 (/stress A1.5b Phase 2 P0-4-B codex OOB, 2026-05-17): paper-grade
+# evaluator unavailability is a fatal infra failure, NOT silent agent failure.
+# Pre-fix `VwaEvaluator.__init__` swallowed the import error + `evaluate()`
+# returned `score=0.0,error="evaluator_unavailable"` → entire batch SR
+# silently zeroed when evaluator harness / API key / BLIP-2 dep broken on
+# A100. Cross-baseline infra-fragility confound. Now: paper_grade=True
+# raises this exception so the runner exception path (B-486 hooks) flags
+# the episode as needs_reevaluation=True instead of falsely scoring
+# success=False. Dev mode keeps fail-open for iteration speed.
+class EvaluatorUnavailableError(RuntimeError):
+    """Raised when VwaEvaluator dependencies are missing / broken AND
+    paper_grade=True. Caller (`_run_and_record_episode`) treats this as
+    a recoverable failure (writes needs_reevaluation=True summary), not
+    as a real `success=False` evaluator outcome."""
+
+
 class MockEnvironment:
     def __init__(self, viewport_width: int = 1280, viewport_height: int = 720):
         self.viewport_width = viewport_width
@@ -74,7 +90,12 @@ class VwaEvaluator:
     # Must be well under the watchdog idle timeout (35 min = 2100 s).
     _BLIP2_MAX_WAIT_S: int = 10 * 60  # 10 minutes
 
-    def __init__(self):
+    def __init__(self, paper_grade: bool = False):
+        # B-544 (/stress A1.5b Phase 2 P0-4-B): paper-grade mode raises on
+        # any evaluator dep failure (import / API key / module path) so the
+        # runner can flag the episode for re-evaluation rather than
+        # silently scoring `success=False` against missing infra.
+        self._paper_grade = paper_grade
         self._available = False
         self._evaluator_router = None
         self._captioning_fn = None
@@ -124,6 +145,15 @@ class VwaEvaluator:
             logger.warning("VwaEvaluator init failed (eval scores will be 0): %s", exc)
             self._available = False
             self._evaluator_router = None
+            # B-544: paper-grade mode = fail-loud. Dev mode = fail-open for
+            # iteration speed (matches pre-fix legacy behaviour).
+            if self._paper_grade:
+                raise EvaluatorUnavailableError(
+                    f"paper-grade evaluator init FAILED: {exc!r}. "
+                    "VWA evaluator harness / OpenAI key / module path is broken; "
+                    "scoring would silently zero entire batch SR (cross-baseline "
+                    "infra-fragility confound). Fix env + restart runner."
+                ) from exc
 
     def _ensure_captioning_fn(self) -> None:
         """Lazy-load BLIP-2 on first page_image_query task.
@@ -174,6 +204,16 @@ class VwaEvaluator:
 
     def evaluate(self, trajectory: List[Any], config_file: str, env: Any) -> EpisodeEvalResult:
         if not self._available or self._evaluator_router is None:
+            # B-544: paper-grade mode raises so caller treats the episode
+            # as needs_reevaluation=True (B-486 quarantine semantics).
+            # Dev mode returns score=0 to preserve legacy iteration UX.
+            if self._paper_grade:
+                raise EvaluatorUnavailableError(
+                    "paper-grade evaluator unavailable at evaluate() time "
+                    f"(self._available={self._available}, router={self._evaluator_router!r}); "
+                    "would have silently scored 0.0 — caller must treat as "
+                    "infra failure, not real agent outcome."
+                )
             return EpisodeEvalResult(score=0.0, error="evaluator_unavailable")
 
         # Lazy-load BLIP-2 only when the task actually needs it.
@@ -297,7 +337,11 @@ def create_environment(env_cfg: Dict[str, Any]):
     )
 
 
-def create_evaluator(env_cfg: Dict[str, Any]):
+def create_evaluator(env_cfg: Dict[str, Any], *, paper_grade: bool = False):
+    # B-544 (/stress A1.5b Phase 2 P0-4-B): paper_grade flag propagation so
+    # VwaEvaluator fail-loud when the harness / API key / dep is broken.
+    # Runner (`main.py:139`) reads `paper_grade` from top-level cfg and
+    # passes through.
     if str(env_cfg.get("type", "vwa")).lower() == "mock":
         return NullEvaluator()
-    return VwaEvaluator()
+    return VwaEvaluator(paper_grade=paper_grade)
