@@ -252,6 +252,27 @@ class EpisodeSummaryV2:
     # evaluator empty-pred guard + N/A task exclusion at load time). `success`
     # is now the canonical paper-grade outcome. Archived pre-§139.8 summaries
     # may still carry these keys on disk (harmless, unread).
+    # B-462 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17): Option K
+    # covariate substrate — `aggregate_trajectory_covariates.py:82-88` (B-389)
+    # 期待 episode-level wallclock anchors to time-order reset_post_interrupt
+    # events vs episode lifetime → `is_after_reset` / `prior_event_count`
+    # covariates 才有数据 substrate. Pre-fix runner 不 stamp 任何 timestamp 到
+    # summary, aggregator `ep_start_dt is None` fallback fires for every
+    # episode → covariates 失效 across the board. ISO-8601 string per A1.19
+    # P1-5-A* explicit-parse contract. Both Optional[str] — legacy summary
+    # missing → aggregator falls through to filesystem scan (B-389 robustness).
+    wallclock_start: Optional[str] = None
+    wallclock_end: Optional[str] = None
+    # B-461 (/stress A1.5b Phase 1 P0-2-C gemini OOB, 2026-05-17): exception-
+    # path EpisodeSummaryV2 may complete summary write without evaluator
+    # actually scoring task — `success=False` hardcode is conservative but
+    # without a re-evaluation gate the false-negative is final (resume gate
+    # accepts summary, skips re-run). Set True in exception path; resume
+    # gate (`runner/main.py:552-619`) detects → force re-run instead of
+    # skip. Quarantine-rerun pattern preferred over naive last-step success
+    # inference (which conflates `action_success="stop"` with task-level
+    # evaluator outcome; agent self-claim ≠ url_match / program_html / etc).
+    needs_reevaluation: bool = False
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)

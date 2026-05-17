@@ -17,6 +17,7 @@ import time
 import urllib.request
 import urllib.error
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -683,6 +684,33 @@ class ExperimentRunner:
                     }
                 )
 
+                # B-462 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17):
+                # Option K covariate substrate — emit lightweight episode list
+                # + ids into condition_summary so
+                # `aggregate_trajectory_covariates.py:120-180` (B-389) can
+                # correlate trajectory_events vs per-episode wallclock instead
+                # of falling back to filesystem scan (which loses the
+                # condition-authoritative episode set used for finalize-race
+                # detection at B-385's aggregator intersection).
+                aggregate["episode_summaries"] = [
+                    {
+                        "task_id": int(s.get("task_id", -1)),
+                        "benchmark_site": str(s.get("benchmark_site", "")),
+                        "success": bool(s.get("success", False)),
+                        "score": float(s.get("score", 0.0)),
+                        "wallclock_start": s.get("wallclock_start"),
+                        "wallclock_end": s.get("wallclock_end"),
+                        "needs_reevaluation": bool(s.get("needs_reevaluation", False)),
+                    }
+                    for s in episode_summaries
+                    if isinstance(s, dict)
+                ]
+                aggregate["episode_ids"] = [
+                    int(s.get("task_id", -1))
+                    for s in episode_summaries
+                    if isinstance(s, dict) and s.get("task_id") is not None
+                ]
+
                 condition_logger.write_condition_summary(aggregate)
                 run_condition_metrics.append(aggregate)
 
@@ -845,11 +873,22 @@ class ExperimentRunner:
             "Running condition=%s seed=%d backend=%s site=%s task=%s",
             effective_cid, current_seed, condition.backend_id, task.site, task.task_id,
         )
+        # B-462 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17): Option K
+        # covariate anchor. Stamp wallclock_start pre-try so both normal AND
+        # exception paths can attach to summary — aggregate_trajectory_covariates
+        # (B-389) uses it to time-order reset_post_interrupt events vs episode
+        # lifetime (`is_after_reset` / `prior_event_count` covariates).
+        _wallclock_start = datetime.now(timezone.utc).isoformat()
         try:
             summary = self._run_episode(
                 condition, task, backend, condition_logger, condition_dir,
                 effective_cid=effective_cid,
             )
+            # B-462: stamp anchors on success path. _run_episode returns
+            # the dict; we inject Option K covariate substrate fields here
+            # so all consumers (write_episode_summary + aggregator) see them.
+            summary["wallclock_start"] = _wallclock_start
+            summary["wallclock_end"] = datetime.now(timezone.utc).isoformat()
         except BaseException as exc:
             if isinstance(exc, (KeyboardInterrupt, SystemExit)):
                 raise
@@ -927,6 +966,12 @@ class ExperimentRunner:
                 benchmark_noise_category=noise_cat,
                 artifacts_dir=str(condition_dir),
                 error=str(exc),
+                # B-462 (/stress A1.5b Phase 1 P0-3-B): Option K anchors —
+                # propagate captured start ts + stamp end-of-attempt ts so
+                # aggregator's time-ordering covariates have data substrate
+                # even on crash path.
+                wallclock_start=_wallclock_start,
+                wallclock_end=datetime.now(timezone.utc).isoformat(),
             ).as_dict()
             # B-194 (/stress A1.4b-ii codex B-ii-3, P1 OOB): exception-path
             # MUST mirror canonical `compute_wasted_cost(steps, success=False)`

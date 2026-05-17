@@ -16,6 +16,17 @@ For project state at any time (active runs, today's blockers, GLM-managed live s
 
 Master bug catalog (cross-AI shared taxonomy + B-number reservation): `docs/reference/master_bug_catalog.md`.
 
+## Current fire state (refresh per invocation)
+
+**Phase 1a has NOT yet fired on the Condenser A100 paper-grade target host as of 2026-05-17.** Paper §1 SR / paper §4 covariate-adjusted claims / any hero number in prose are **NOT yet pinned to published values** — the Phase 1a output will *be* the first published number, not a revision of an existing one.
+
+**Implication for /gemini-stress audit framing**:
+- Treat A1.x audit findings as **pre-fire correctness fixes** by default. Do NOT frame fixes as "post-publication SR revision blockers" or "preregistration violations causing reviewer attack on already-public number" unless explicit prose with a fixed SR number can be cited.
+- Falsifiability claims (e.g. "preregistration ALWAYS contains reset events" / "byte-identical reproducibility") remain valid attack surfaces — but the consequence is *failed first publication*, not *post-hoc revision*.
+- "Distance to top-tier" / "submission-today probability" should assume current paper-prose-stub state, not assume already-public state. Probability numbers should reflect "if this fix doesn't land, paper §1 *will* publish broken; if this fix lands, paper §1 publishes correct".
+
+Fire-state authoritative source: `docs/checkpoints/phase1_plan.md` + `docs/checkpoints/PLAYBOOK.md` §1-§2 (GLM-managed live status). If those say Phase 1a `[x]` fired, override above with their content.
+
 ## Gemini-specific tools
 
 - You have `--yolo` full-shell access when invoked with `gemini --yolo -p "<prompt>"`. Use Bash freely for file reads, `wc -c`, grep, etc. Don't ask permission for read-only ops.

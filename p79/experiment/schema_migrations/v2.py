@@ -83,6 +83,17 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     # post-hoc na_fp / eval_fp filter layer retired (fixed at the source:
     # B-91 evaluator guard + N/A exclusion at load). Archived pre-§139.8
     # summaries may still carry these keys (harmless, unread).
+    # B-462 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17): Option K
+    # covariate anchors. Legacy summaries lack these → aggregator falls back
+    # to filesystem scan (B-389 robustness path); fresh runs stamp via
+    # `_run_and_record_episode` entry/exit.
+    "wallclock_start": None,
+    "wallclock_end": None,
+    # B-461 (/stress A1.5b Phase 1 P0-2-C gemini OOB, 2026-05-17): quarantine
+    # flag — exception path sets True → resume gate (`runner/main.py:552-619`)
+    # force re-runs instead of accepting summary. Legacy summaries default
+    # False (assumed clean unless explicitly flagged).
+    "needs_reevaluation": False,
 }
 
 
