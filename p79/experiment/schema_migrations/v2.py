@@ -188,6 +188,12 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     "glm_fallback_used": None,
     "glm_fallback_latency_ms": None,
     "glm_original_fail_reason": None,
+    # B-472 (/stress A1.5b Phase 1 P1-9-A, 2026-05-17): control-injected
+    # action provenance — None when no control fired; dict when
+    # `_anti_repeat_control` / `_no_early_finish_control` replaced the
+    # agent's emitted action with a synthetic fallback. See
+    # `types.py:control_intervention` for full schema.
+    "control_intervention": None,
 }
 
 

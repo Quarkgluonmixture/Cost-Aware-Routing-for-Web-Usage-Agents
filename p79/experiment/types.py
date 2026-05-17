@@ -173,6 +173,18 @@ class StepRecordV2:
     glm_fallback_used: Optional[bool] = None
     glm_fallback_latency_ms: Optional[float] = None
     glm_original_fail_reason: Optional[str] = None
+    # B-472 (/stress A1.5b Phase 1 P1-9-A, 2026-05-17): control-injected
+    # action provenance. helpers.py `_anti_repeat_control` (L207) +
+    # `_no_early_finish_control` (L228) return `(fallback_action, reason)`
+    # — fallback REPLACES agent's emitted action. Pre-fix step record's
+    # `action` field carried the synthetic fallback indistinguishably from
+    # an agent-emitted action; paper §3 action taxonomy 把合成 scroll/type
+    # 当 agent emission → taxonomy 静默污染. None when no control fired;
+    # {"type": "anti_repeat"|"no_early_finish", "original_action": dict,
+    # "reason": str} when fired. Runtime write path = Phase 2 audit slot
+    # (`_run_episode` body L984+), this dataclass + defaults catalog
+    # schema-only land first per B-280 paper-grade catalog discipline.
+    control_intervention: Optional[Dict[str, Any]] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -343,6 +355,7 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "select_option_meta_primary",  # B-450 retry-overwrite split (symmetric w/ B-440)
     "select_option_meta_retry",    # B-450 retry-overwrite split (symmetric w/ B-440)
     "agent_visible_changed",
+    "control_intervention",  # B-472 control-injected action provenance
 })
 
 

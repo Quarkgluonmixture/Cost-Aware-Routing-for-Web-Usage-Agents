@@ -273,6 +273,9 @@ def test_step_schema_validation_required_fields():
         "select_option_meta_primary": None,
         "select_option_meta_retry": None,
         "agent_visible_changed": None,
+        # B-472 (/stress A1.5b Phase 1 P1-9-A, 2026-05-17): control-injected
+        # action provenance — None when no control fired.
+        "control_intervention": None,
     }
 
     validate_step_record_v2(record)
@@ -317,6 +320,8 @@ def test_b481_select_option_meta_structured_fields_validator():
             "select_option_meta_primary": None,
             "select_option_meta_retry": None,
             "agent_visible_changed": None,
+            # B-472 (/stress A1.5b Phase 1, 2026-05-17): control_intervention.
+            "control_intervention": None,
         }
         rec[key] = sel_meta_payload
         return rec

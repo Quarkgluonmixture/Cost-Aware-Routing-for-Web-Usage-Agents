@@ -316,13 +316,27 @@ class ExperimentRunner:
                 logger.warning("Failed to remove stale run dir %s: %s", run_dir, exc)
 
     def _create_latest_symlink(self) -> None:
-        """Create a latest_{site} symlink in the phase directory pointing to this run."""
+        """Create a latest_{site} symlink in the phase directory pointing to this run.
+
+        B-474 (/stress A1.5b Phase 1 P1-11-A, 2026-05-17): multi-site runs
+        previously fell through to a no-suffix `latest` symlink — two
+        concurrent multi-site runs would overwrite each other's symlink and
+        readers couldn't tell which run was "latest". Now: multi-site uses
+        sorted-joined site names (e.g. `latest_classifieds_reddit`), single-
+        site preserved as `latest_{site}`. Zero-site raises explicitly
+        (config bug, surface fast).
+        """
         sites = self.cfg.get("task", {}).get("include_sites", [])
+        if not sites:
+            logger.warning(
+                "B-474 _create_latest_symlink: cfg.task.include_sites is empty — "
+                "skipping symlink creation (config bug, no site context to anchor)."
+            )
+            return
         if len(sites) == 1:
-            site = sites[0]
+            link_name = f"latest_{sites[0]}"
         else:
-            site = None
-        link_name = f"latest_{site}" if site else "latest"
+            link_name = "latest_" + "_".join(sorted(str(s) for s in sites))
         latest_link = self.output_root.parent / link_name
         try:
             latest_link.unlink(missing_ok=True)
@@ -587,9 +601,31 @@ class ExperimentRunner:
         return hashlib.sha256(encoded).hexdigest()[:16]
 
     def run(self) -> Path:
+        # B-475 (/stress A1.5b Phase 1 P1-12-B codex OOB, 2026-05-17):
+        # try/finally guard around the main loop. Pre-fix `environment.close()`
+        # + `energy_tracker.close()` only fired on normal return — any fatal
+        # exception inside the condition×seed loop leaked browser /
+        # Playwright / energy probe state. Queue restart then inherited
+        # dirty external site state (cart / auth / browser context). The
+        # main loop body is extracted to `_run_main_loop` so the close
+        # methods can fire in this method's finally block regardless of
+        # exception path. close methods themselves wrapped in inner
+        # try/except so close-failure doesn't mask the original exception.
         self._cleanup_stale_runs()
         self._write_run_meta()
+        try:
+            return self._run_main_loop()
+        finally:
+            try:
+                self.environment.close()
+            except Exception as _env_close_exc:
+                logger.warning("B-475 environment.close() failed: %s", _env_close_exc)
+            try:
+                self.energy_tracker.close()
+            except Exception as _energy_close_exc:
+                logger.warning("B-475 energy_tracker.close() failed: %s", _energy_close_exc)
 
+    def _run_main_loop(self) -> Path:
         run_condition_metrics: List[Dict[str, Any]] = []
 
         for condition in self.conditions:
@@ -928,12 +964,17 @@ class ExperimentRunner:
         )
 
         self._create_latest_symlink()
-        self.environment.close()
-        self.energy_tracker.close()
         return self.output_root
 
     def _run_post_condition_analysis(self, condition_id: str) -> None:
-        """Run analyze_experiment.py in a subprocess after a condition completes."""
+        """Run analyze_experiment.py in a subprocess after a condition completes.
+
+        B-473 (/stress A1.5b Phase 1 P1-10-A, 2026-05-17): timeout bumped from
+        300s (5min) to 1800s (30min). Pre-fix shopping 466-task cross-condition
+        aggregator on contested DGX CPU could exceed 5min → silent
+        TimeoutExpired → stale paper aggregate. Bump + ntfy on timeout so
+        operator sees the staleness.
+        """
         import subprocess
         import sys
         # __file__ = p79/experiment/runner/main.py → parents[3] = repo root.
@@ -944,7 +985,8 @@ class ExperimentRunner:
             return
         cmd = [sys.executable, str(script), "--run_dir", str(self.output_root)]
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            # B-473: 30-min budget for large shop / multi-condition aggregators.
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
             if result.returncode == 0:
                 logging.info("[runner] Post-condition analysis completed for %s", condition_id)
             else:
@@ -953,7 +995,27 @@ class ExperimentRunner:
                     result.returncode, condition_id, result.stderr[-500:] if result.stderr else "",
                 )
         except subprocess.TimeoutExpired:
-            logging.warning("[runner] Post-condition analysis timed out for %s", condition_id)
+            logging.warning(
+                "[runner] B-473 Post-condition analysis TIMED OUT after 1800s for %s — "
+                "cross-condition aggregate will be stale until next manual `make analysis` run",
+                condition_id,
+            )
+            # Best-effort ntfy push so operator sees the staleness; absent topic = no-op
+            _topic = os.environ.get("NTFY_TOPIC", "").strip()
+            if _topic:
+                try:
+                    _req = urllib.request.Request(
+                        f"https://ntfy.sh/{_topic}",
+                        data=(
+                            f"P79 B-473: post-condition analyze TIMED OUT for "
+                            f"{condition_id} after 30min — cross-condition aggregate stale"
+                        ).encode("utf-8"),
+                        method="POST",
+                        headers={"Title": f"P79 timeout {condition_id}", "Priority": "high"},
+                    )
+                    urllib.request.urlopen(_req, timeout=15).close()
+                except Exception:
+                    pass  # best-effort, do not abort runner
         except Exception as exc:
             logging.warning("[runner] Post-condition analysis failed for %s: %s", condition_id, exc)
 
