@@ -107,7 +107,16 @@ def aggregate_cell(baseline: str, site: str, mode: str, ep_dir: Path) -> dict[st
     # Post-strict: every row has `success: bool`. The defensive `== True` keeps
     # the intent crystal clear (paper §1 hero number rides on this line).
     n_success = sum(1 for row in rows.values() if row.get("success") is True)
-    expected_n = scored_task_count(site, "visualwebarena")
+    # B-598 (/stress A1.6a P0-3-AB Claude + codex overlap, 2026-05-17):
+    # paper §1 SR canonical producer MUST pass `strict=True`. Pre-fix
+    # `scored_task_count(site, "visualwebarena")` defaulted strict=False
+    # → missing config silently returned 0 → `complete = expected_n > 0 ...`
+    # short-circuited to False even when n_total had full N data → cell
+    # silently demoted to incomplete, paper §1 hero "N cells" miscounted.
+    # All other paper-grade callers (active_processes / axis1 / fig3 /
+    # run_registry / mechanism_per_task) already use strict=True; this
+    # was the lone holdout post-§139.8.
+    expected_n = scored_task_count(site, "visualwebarena", strict=True)
     complete = expected_n > 0 and n_total >= expected_n
 
     # B-403 (/stress A1.1 v8 Mode B P1-9, 2026-05-16): image_encode_error
@@ -134,6 +143,30 @@ def aggregate_cell(baseline: str, site: str, mode: str, ep_dir: Path) -> dict[st
     n_clean = len(clean_rows)
     n_success_clean = sum(1 for row in clean_rows if row.get("success") is True)
 
+    # B-600 (/stress A1.6a P1-2-AC Claude+codex overlap, 2026-05-17):
+    # infra-noise transparency appendix. `benchmark_noise=True` flags
+    # api_rate_limit / playwright_crash / docker_service_error / etc —
+    # DIFFERENT semantic from N/A FP (§139.8 upstream-fixed) AND from
+    # image_encode_error (B-403 cross-baseline parity). Paper §1 hero
+    # = raw `sr_pct` (Q2 user decision 2026-05-17 + §139.8 alignment);
+    # `sr_pct_infra_clean` exposes residual infra-noise sensitivity for
+    # paper §3 transparency appendix. Gap (`sr_pct` − `sr_pct_infra_clean`)
+    # should be small when watchdog auto-clean protocol is healthy; large
+    # gap = forensic flag for infra instability that re-run should
+    # clean up.
+    n_infra_noise = sum(
+        1 for row in rows.values()
+        if bool(row.get("benchmark_noise", False))
+    )
+    infra_clean_rows = [
+        row for row in rows.values()
+        if not bool(row.get("benchmark_noise", False))
+    ]
+    n_infra_clean = len(infra_clean_rows)
+    n_success_infra_clean = sum(
+        1 for row in infra_clean_rows if row.get("success") is True
+    )
+
     return {
         "baseline": baseline,
         "site": site,
@@ -150,6 +183,12 @@ def aggregate_cell(baseline: str, site: str, mode: str, ep_dir: Path) -> dict[st
         "n_clean": n_clean,
         "n_success_clean": n_success_clean,
         "sr_pct_clean": round(pct(n_success_clean, n_clean), 6),
+        # B-600 (A1.6a P1-2-AC): benchmark_noise infra-clean transparency
+        "n_infra_noise_episodes": n_infra_noise,
+        "infra_noise_episode_rate": round(pct(n_infra_noise, n_total), 6),
+        "n_infra_clean": n_infra_clean,
+        "n_success_infra_clean": n_success_infra_clean,
+        "sr_pct_infra_clean": round(pct(n_success_infra_clean, n_infra_clean), 6),
         "source_dir": str(ep_dir.relative_to(ROOT)),
     }
 

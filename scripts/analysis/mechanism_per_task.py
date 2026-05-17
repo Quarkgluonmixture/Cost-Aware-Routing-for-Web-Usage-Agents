@@ -250,7 +250,13 @@ def load_mode_tasks(site: str, mode: str, ep_dir: Path) -> dict[int, dict[str, A
             "click_target_count": len(click_targets),
             "action_counts": dict(action_counts),
             "action_fracs": action_fracs,
-            "adjusted_success": summary_success(summary_path),
+            # B-602 (/stress A1.6a P1-4-A* Claude OOB, 2026-05-17): renamed
+            # internal dict key `adjusted_success` → `success`. §139.8 retired
+            # the post-hoc `compute_adjusted_success` layer; carrying the alias
+            # key here let a reviewer grep `adjusted_success` and conclude
+            # the retirement was incomplete. Internal dict, no JSON output
+            # impact — paper §3 / §5 retirement audit trail clean now.
+            "success": summary_success(summary_path),
         }
     return tasks
 
@@ -343,8 +349,8 @@ def summarize_boundary_contrast(
     common = sorted(set(left) & set(right))
     rows: list[dict[str, Any]] = []
     for tid in common:
-        left_success = left[tid]["adjusted_success"]
-        right_success = right[tid]["adjusted_success"]
+        left_success = left[tid]["success"]
+        right_success = right[tid]["success"]
         if left_success is None or right_success is None or left_success == right_success:
             continue
         fds = first_divergent_step(left[tid]["url_trajectory"], right[tid]["url_trajectory"])

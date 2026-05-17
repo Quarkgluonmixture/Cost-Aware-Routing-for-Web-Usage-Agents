@@ -534,15 +534,29 @@ def aggregate_condition_metrics(episode_summaries: List[Dict[str, Any]]) -> Dict
             float(statistics.mean(checklist_failed_flags)) if checklist_failed_flags else None
         ),
         "benchmark_noise_rate": float(statistics.mean(benchmark_noise_flags)),
-        # B-327 (/stress A1.9 Mode C F3 OOB, 2026-05-16): clean_success_rate
-        # = SR over episodes excluding benchmark_noise=True (api_rate_limit /
+        # B-327 (/stress A1.9 Mode C F3 OOB, 2026-05-16) + B-600 (/stress A1.6a
+        # P1-2-AC estimand decision, 2026-05-17): clean_success_rate =
+        # SR over episodes excluding benchmark_noise=True (api_rate_limit /
         # auth_expired / playwright_crash / docker_service_error etc).
-        # `success_rate` (raw) conflates "agent capability" with "infrastructure
-        # stability" — reddit api_rate_limit抖动 → mid-pp SR moves look like
-        # real Phantom gains. Paper §1 hero should report clean_SR;
-        # appendix discloses raw_SR for transparency. Returns None if all
-        # episodes are noise (denominator=0) so prose can show "N/A — all
-        # episodes were infra noise" rather than fake-zero.
+        #
+        # ESTIMAND DECISION (Q2=(A), user directive 2026-05-17 + §139.8
+        # alignment): Paper §1 hero reports **raw `success_rate`** —
+        # `success` is canonical post-§139.8 (no adjusted SR), and the FP
+        # framework is upstream-fixed (B-91 LLM judge `pred=""` guard +
+        # `exclude_na_tasks: true` default). `clean_success_rate` is
+        # **transparency appendix only** — it surfaces residual infra
+        # noise (which is a different semantic from N/A FP / eval FP)
+        # for paper §3 audit, NOT for §1 hero claim. Pre-Q2 the B-327
+        # comment read "Paper §1 hero should report clean_SR" — that
+        # framing was retracted because (a) §139.8 retired post-hoc
+        # filtering as a class, and (b) watchdog auto-clean protocol
+        # (`reference_watchdog_protocol.md`) cleans infra-noise episodes
+        # forward via re-run, so clean vs raw SR delta should be small
+        # for paper-grade fire (Phase 1a rerun = canonical).
+        #
+        # Returns None if all episodes are noise (denominator=0) so prose
+        # can show "N/A — all episodes were infra noise" rather than
+        # fake-zero.
         "clean_success_rate": (
             float(
                 sum(

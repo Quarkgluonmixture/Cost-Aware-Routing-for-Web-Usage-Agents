@@ -70,13 +70,19 @@ def test_b196_integrity_report_emitted_by_analyze_run(tmp_path):
         "avg_wasted_cost_usd": 0.0, "avg_wasted_energy_kwh": 0.0,
         "cost_efficiency_ratio": 0.0,
     }))
-    # one valid summary + one corrupt JSONL row in steps
+    # one valid summary + one corrupt JSONL row in steps.
+    # B-599 (/stress A1.6a, 2026-05-17): `_collect_step_records` now passes
+    # `strict_identity=True` to `read_jsonl_dedup` (B-571 paper-grade
+    # fail-loud). The test scenario has 2 valid JSONL rows (1 corrupt
+    # dropped) so summary.steps must equal 2 to satisfy identity check;
+    # the B-196 corrupt-line integrity report logging is orthogonal and
+    # still emits.
     (eps / "1_summary_v2.json").write_text(json.dumps({
         "schema_version": "2.0", "run_id": "r1",
         "condition_id": "phase1_dom_router_0",
         "benchmark": "vwa", "benchmark_site": "classifieds",
         "task_id": 1, "seed": 42, "success": True, "score": 1.0,
-        "steps": 1, "retries": 0, "no_op_rate": 0.0, "page_unchanged_rate": 0.0,
+        "steps": 2, "retries": 0, "no_op_rate": 0.0, "page_unchanged_rate": 0.0,
         "total_latency_ms": 100.0, "p95_step_latency_ms": 100.0,
         "total_tokens": 0, "total_model_cost_usd": 0.0, "total_cost_usd": 0.0,
         "total_router_overhead_cost_usd": 0.0, "total_router_overhead_ms": 0.0,

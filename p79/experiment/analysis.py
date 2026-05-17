@@ -165,14 +165,24 @@ def _collect_episode_summaries(run_dir: Path) -> List[Dict[str, Any]]:
     # pd.to_numeric) all now operate on already-validated bool source.
     from p79.experiment.io_utils import load_episode_summary_strict
     rows: List[Dict[str, Any]] = []
+    # B-596 (/stress A1.6a P0-1-ABC* 3-AI overlap OOB, 2026-05-17):
+    # strict-loader 三层 contract fully wired. Pre-fix used
+    # `mode="lenient"` without `reject_needs_reevaluation=True` AND
+    # fell back to raw `json.load(f)` on any Exception → B-322 bool-type
+    # guard + B-542 quarantine reject both silently bypassed
+    # (`"success": "false"` Python-truthy AND B-486 quarantined episodes
+    # with `needs_reevaluation=True` entered analysis as `success=False`
+    # — bookkeeping, not real evaluator outcome). The Exception fallback
+    # had no defensible failure mode: lenient mode already returns None
+    # for JSONDecodeError + type-mismatch; the remaining Exception
+    # surface is race-condition FileNotFoundError, which now propagates
+    # correctly (path deleted mid-iterate IS abnormal, fail-loud is
+    # right). Pairs with `aggregate_condition_metrics` entry strict-type
+    # check for defense-in-depth.
     for summary_path in run_dir.glob("*/episodes/*_summary_v2.json"):
-        try:
-            raw = load_episode_summary_strict(summary_path, mode="lenient")
-        except Exception:
-            # Fallback to raw json for legacy/partial summaries (lenient mode
-            # already handles corrupt; this catches unexpected loader errors).
-            with open(summary_path, "r", encoding="utf-8") as f:
-                raw = json.load(f)
+        raw = load_episode_summary_strict(
+            summary_path, mode="lenient", reject_needs_reevaluation=True,
+        )
         if raw is None:
             continue
         rows.append(fill_defaults(raw, EPISODE_SUMMARY_V2_DEFAULTS))
@@ -231,15 +241,96 @@ def _synthesize_condition_summary(
     return payload
 
 
-def _collect_condition_summaries(run_dir: Path) -> List[Dict[str, Any]]:
+# B-601 (/stress A1.6a P1-3-BC codex+gemini overlap + user Q3=(B) gate,
+# 2026-05-17): pre-§139.8 archives carry retired post-hoc FP fields
+# (`adjusted_success` / `fp_reason` / `raw_success` / `is_na_reference`).
+# Phase 1 rerun is canonical (user directive 2026-05-17 "archive 全不可信 →
+# Phase 1 rerun"). Loading stale archive silently into the analysis
+# pipeline = paper-grade contamination vector. Hard gate: refuse archive
+# containing any retired field; user opt-in via env `P79_ANALYZE_ALLOW_STALE_ARCHIVE=1`
+# for legacy-archive triage only.
+_RETIRED_POST_HOC_FP_FIELDS = (
+    "adjusted_success",
+    "fp_reason",
+    "raw_success",
+    "is_na_reference",
+    "adjusted_reason_bucket",
+)
+
+
+def _is_post_fp_retirement_archive(data: Dict[str, Any]) -> bool:
+    """True if condition_summary_v2.json contains NO retired post-hoc FP fields.
+
+    B-601 gate: §139.8 retired the post-hoc filtering layer (B-91 upstream
+    LLM-judge guard + `exclude_na_tasks: true` load-time exclude replace
+    `compute_adjusted_success`). Canonical post-§139.8 archive has only
+    `success` (no override). Any presence of retired fields = pre-§139.8
+    archive = REFUSE unless user explicitly opts in.
+    """
+    return not any(k in data for k in _RETIRED_POST_HOC_FP_FIELDS)
+
+
+def _collect_condition_summaries(
+    run_dir: Path, *, allow_stale_archive: Optional[bool] = None,
+) -> List[Dict[str, Any]]:
+    """Collect per-condition rows. Gates stale archives by default (B-601).
+
+    Args:
+        run_dir: analysis target directory.
+        allow_stale_archive: if True, bypass §139.8 retired-field gate
+            (legacy archive triage only). If None, reads
+            `P79_ANALYZE_ALLOW_STALE_ARCHIVE` env (default off).
+    """
+    import os
+
+    if allow_stale_archive is None:
+        allow_stale_archive = os.environ.get(
+            "P79_ANALYZE_ALLOW_STALE_ARCHIVE", ""
+        ) == "1"
+
     rows: List[Dict[str, Any]] = []
     seen_conds: set = set()
+    refused_rows: List[Dict[str, Any]] = []  # B-601 audit
     # 1. Completed conditions (have condition_summary_v2.json)
     for summary_path in run_dir.glob("*/condition_summary_v2.json"):
         with open(summary_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-            rows.append(data)
-            seen_conds.add(summary_path.parent.name)
+        # B-601 schema-version gate (Q3=(B), 2026-05-17 user directive).
+        if not _is_post_fp_retirement_archive(data):
+            offending = [k for k in _RETIRED_POST_HOC_FP_FIELDS if k in data]
+            if not allow_stale_archive:
+                logger.warning(
+                    "B-601 REFUSED stale archive (pre-§139.8 fields %s) at %s; "
+                    "set P79_ANALYZE_ALLOW_STALE_ARCHIVE=1 to bypass (legacy "
+                    "triage only — Phase 1 rerun is canonical).",
+                    offending, summary_path,
+                )
+                refused_rows.append({
+                    "summary_path": str(summary_path),
+                    "retired_fields_found": ",".join(offending),
+                    "schema_version": str(data.get("schema_version")),
+                })
+                seen_conds.add(summary_path.parent.name)  # don't synthesize fallback
+                continue
+            else:
+                logger.warning(
+                    "B-601 ALLOWED stale archive (P79_ANALYZE_ALLOW_STALE_ARCHIVE=1) "
+                    "with retired fields %s at %s — paper-grade not safe.",
+                    offending, summary_path,
+                )
+        rows.append(data)
+        seen_conds.add(summary_path.parent.name)
+
+    # B-601 emit refused-archive audit alongside the analysis dir.
+    if refused_rows:
+        try:
+            import pandas as pd  # type: ignore
+            (run_dir / "analysis").mkdir(parents=True, exist_ok=True)
+            pd.DataFrame(refused_rows).to_csv(
+                run_dir / "analysis" / "archive_refused_b582.csv", index=False,
+            )
+        except Exception as exc:
+            logger.warning("B-601 failed to write archive_refused audit: %s", exc)
 
     # 2. In-progress conditions (have condition_meta.json but no summary)
     for meta_path in run_dir.glob("*/condition_meta.json"):
@@ -272,10 +363,22 @@ def _collect_step_records(run_dir: Path) -> List[Dict[str, Any]]:
     # established by `runner/main.py::_run_and_record_episode`; the
     # identity check warns (does not raise) on mismatch so analysis can
     # still proceed but audit can see restart-crash divergence.
+    #
+    # B-599 (/stress A1.6a P1-1-BC codex+gemini overlap, 2026-05-17):
+    # `strict_identity=True` enforces B-571 (/stress A1.22) paper-grade
+    # fail-loud contract. Pre-fix called `read_jsonl_dedup` with the
+    # default `strict_identity=False` (io_utils.py:163), so restart-crash
+    # tail mismatch was a warning only — step-level cost / latency /
+    # trigger / checklist / state-change diagnostics could be computed
+    # from a different attempt than the authoritative summary. Paper-
+    # grade analysis call sites MUST fail-loud; opt out via env
+    # `P79_STRICT_READ_JSONL=0` for legacy-archive triage only.
     rows: List[Dict[str, Any]] = []
     for step_path in run_dir.glob("*/episodes/*_steps_v2.jsonl"):
         summary_path = step_path.with_name(step_path.name.replace("_steps_v2.jsonl", "_summary_v2.json"))
-        rows.extend(read_jsonl_dedup(step_path, summary_path=summary_path))
+        rows.extend(read_jsonl_dedup(
+            step_path, summary_path=summary_path, strict_identity=True,
+        ))
     return rows
 
 
@@ -560,6 +663,40 @@ def _plot_trigger_distribution(cond_df, plots_dir: Path, tables_dir: Path, phase
         plt.close(fig)
 
 
+def _emit_benchmark_noise_report(ep_df, tables_dir: Path) -> None:
+    """Write `benchmark_noise_report.csv` with per-category counts.
+
+    B-600 (/stress A1.6a P1-2-AC Claude+codex overlap, 2026-05-17):
+    extracted from duplicated logic at `_analyze_condition` (per-condition
+    path) + `analyze_run` (overview path) — pre-fix two copies could
+    silently drift under maintenance. Single source. Always writes the
+    CSV (empty-frame if no noise rows) so downstream readers can
+    distinguish "no noise data column" from "noise data column present
+    but empty". `benchmark_noise` is infra-noise (api_rate_limit /
+    playwright_crash etc), NOT N/A FP / eval FP (those are §139.8
+    upstream-fixed); see `metrics.py::clean_success_rate` docstring for
+    the estimand framework — this report is paper §3 transparency
+    appendix only.
+    """
+    import pandas as pd  # type: ignore
+
+    if ep_df is None or ep_df.empty or "benchmark_noise" not in ep_df.columns:
+        pd.DataFrame(columns=["benchmark_noise_category", "count"]).to_csv(
+            tables_dir / "benchmark_noise_report.csv", index=False,
+        )
+        return
+    noise_df = ep_df[ep_df["benchmark_noise"] == True]  # noqa: E712
+    if noise_df.empty:
+        pd.DataFrame(columns=["benchmark_noise_category", "count"]).to_csv(
+            tables_dir / "benchmark_noise_report.csv", index=False,
+        )
+        return
+    noise_counts = (
+        noise_df.groupby("benchmark_noise_category").size().reset_index(name="count")
+    )
+    noise_counts.to_csv(tables_dir / "benchmark_noise_report.csv", index=False)
+
+
 def _analyze_condition(
     cond_id: str,
     cond_dir: Path,
@@ -594,36 +731,22 @@ def _analyze_condition(
     if not step_df.empty:
         step_df.to_csv(tables_dir / "step_metrics.csv", index=False)
 
-    # Noise report
-    if not ep_df.empty:
-        if "benchmark_noise" in ep_df.columns:
-            noise_df = ep_df[ep_df["benchmark_noise"] == True]  # noqa: E712
-        else:
-            noise_df = pd.DataFrame()
-        if not noise_df.empty:
-            noise_counts = noise_df.groupby("benchmark_noise_category").size().reset_index(name="count")
-            noise_counts.to_csv(tables_dir / "benchmark_noise_report.csv", index=False)
+    # B-600: noise report via single source helper (DRY).
+    _emit_benchmark_noise_report(ep_df, tables_dir)
 
     if ep_df.empty:
         return
 
-    # --- Cumulative success rate curve ---
-    if "success" in ep_df.columns and "task_id" in ep_df.columns:
-        sr_df = ep_df[["task_id", "success"]].copy()
-        sr_df["success"] = pd.to_numeric(sr_df["success"], errors="coerce").fillna(0)
-        sr_df = sr_df.sort_values("task_id")
-        sr_df["cumulative_success_rate"] = sr_df["success"].expanding().mean()
-        sr_df.to_csv(tables_dir / "cumulative_success_rate.csv", index=False)
-        fig, ax = plt.subplots(figsize=(8, 4))
-        ax.plot(sr_df["task_id"], sr_df["cumulative_success_rate"])
-        ax.set_xlabel("Task ID")
-        ax.set_ylabel("Cumulative Success Rate")
-        ax.set_ylim(0, 1)
-        ax.set_title(f"Success Rate — {cond_id}")
-        ax.grid(alpha=0.3)
-        fig.tight_layout()
-        fig.savefig(plots_dir / "cumulative_success_rate.png")
-        plt.close(fig)
+    # B-603 (/stress A1.6a P1-5-A* Claude OOB, Q4=Delete user directive
+    # 2026-05-17): cumulative success rate plot deleted. Pre-fix:
+    # `sort_values("task_id")` + `expanding().mean()` produced what looked
+    # like a "learning curve" but was actually cumulative SR ordered by
+    # VWA-assigned task_id (arbitrary source-file index, NOT
+    # chronological / completion-time / difficulty order). Reader / advisor
+    # / reviewer misread risk: "agent learns over the run". Plot was not
+    # consumed by paper §3 figures. Deleted entirely rather than caption-
+    # disclosure (which would still leave the misleading shape in
+    # `cumulative_success_rate.png` outputs).
 
     # --- Step count distribution ---
     if "steps" in ep_df.columns:
@@ -902,6 +1025,22 @@ def _compute_statistical_tests(
     # ("All bootstrap CIs use task-level resampling with B=10000 and
     # analysis RNG seed 42; scripts/analysis/aggregate_phantom_lift.py +
     # aggregate_phantom_meta.py share the same default seed.").
+    #
+    # B-597 (/stress A1.6a P0-2-C* gemini OOB, Q1=A user picked
+    # caption-disclosure 2026-05-17): bootstrap denominator is
+    # `len(successes)` (observed-N), NOT the paper §1 Hero Table
+    # scored-set denominator `scored_task_count(site)`. Phase 1 rerun
+    # canonical (cells run to completion) so submission-final figures
+    # have `n_episodes == scored_set_n` and the two estimands converge,
+    # but in-progress / partial cells the bootstrap CI is conditional-
+    # on-observed (narrower than scored-set pessimistic CI). Paper §3.5
+    # prose must disclose: "Bootstrap CIs use task-level resampling
+    # over observed episodes; Hero SR denominator is scored_task_count
+    # (cls 224 / red 205 / shop 435 post-§139.8 N/A exclude). At
+    # submission, observed-N == scored-set-N; in-progress CIs are
+    # conditional-on-observed and should not be quoted as final."
+    # `bootstrap_ci[cid].estimand` field exposes the basis for
+    # downstream auditors.
     rng = np.random.default_rng(42)
     n_boot = 10_000
 
@@ -915,11 +1054,31 @@ def _compute_statistical_tests(
         boot_means = [rng.choice(successes, size=len(successes), replace=True).mean() for _ in range(n_boot)]
         ci_lo = float(np.percentile(boot_means, 2.5))
         ci_hi = float(np.percentile(boot_means, 97.5))
+        # B-597: best-effort scored-set N lookup for auditor cross-check.
+        scored_set_n: Optional[int] = None
+        if "benchmark_site" in sub.columns and "benchmark" in sub.columns:
+            try:
+                site_val = str(sub["benchmark_site"].iloc[0])
+                bench_val = str(sub["benchmark"].iloc[0])
+                scored_set_n = scored_task_count(site_val, bench_val, strict=False)
+            except Exception:
+                scored_set_n = None
         results["bootstrap_ci"][cid] = {
             "success_rate": float(successes.mean()),
             "ci_lower_95": ci_lo,
             "ci_upper_95": ci_hi,
             "n_episodes": int(len(successes)),
+            # B-597: paper §3.5 estimand disclosure.
+            "estimand": "conditional_on_observed_n",
+            "scored_set_n_hero_table": scored_set_n,
+            "estimand_note": (
+                "Bootstrap CI denominator = observed n_episodes. "
+                "Paper §1 Hero SR denominator = scored_task_count (cls 224 / red 205 / "
+                "shop 435 post-§139.8 N/A exclude, B-91 upstream guard). "
+                "At Phase 1 rerun completion n_episodes == scored_set_n_hero_table and "
+                "the two estimands converge; in-progress CIs are conditional-on-observed "
+                "and MUST NOT be quoted as final paper §3.5 numbers."
+            ),
         }
         flat_rows.append({
             "comparison": cid,
@@ -1352,18 +1511,8 @@ def analyze_run(run_dir: str) -> Path:
     if not step_df.empty:
         step_df.to_csv(ov_tables / "step_metrics.csv", index=False)
 
-    if not ep_df.empty:
-        if "benchmark_noise" in ep_df.columns:
-            noise_df = ep_df[ep_df["benchmark_noise"] == True]  # noqa: E712
-        else:
-            noise_df = pd.DataFrame()
-        if not noise_df.empty:
-            noise_counts = noise_df.groupby("benchmark_noise_category").size().reset_index(name="count")
-            noise_counts.to_csv(ov_tables / "benchmark_noise_report.csv", index=False)
-        else:
-            pd.DataFrame(columns=["benchmark_noise_category", "count"]).to_csv(
-                ov_tables / "benchmark_noise_report.csv", index=False
-            )
+    # B-600: noise report via single source helper (DRY).
+    _emit_benchmark_noise_report(ep_df, ov_tables)
 
     # Enrich cond_df with avg_total_tokens from episode data (not stored in condition_summary_v2)
     if not cond_df.empty and not ep_df.empty and "total_tokens" in ep_df.columns and "condition_id" in ep_df.columns:
@@ -1597,7 +1746,28 @@ def _plot_phase2(cond_df, plots_dir: Path, tables_dir: Path, reports_dir: Path) 
     import matplotlib.pyplot as plt  # type: ignore
     import pandas as pd  # type: ignore
 
+    # B-601 (/stress A1.6a P1-3-BC gemini F6, 2026-05-17): exclude
+    # `_synthesized=True` partial-data rows from Pareto front computation.
+    # Pre-fix: in-progress conditions with 5/224 episodes occasionally hit
+    # 100% SR and grabbed Pareto front vertices, hiding the real B0/B1
+    # trend behind high-variance partial points. Now: opt-in via env
+    # `P79_PARETO_ALLOW_PARTIAL=1` for live-monitoring dashboards; default
+    # paper-grade plotting drops them.
+    import os
     work_df = cond_df.copy()
+    if (
+        "_synthesized" in work_df.columns
+        and os.environ.get("P79_PARETO_ALLOW_PARTIAL", "") != "1"
+    ):
+        n_before = len(work_df)
+        work_df = work_df[work_df["_synthesized"] != True].copy()  # noqa: E712
+        n_after = len(work_df)
+        if n_after < n_before:
+            logger.info(
+                "B-601 Pareto excluded %d synthesized partial-condition row(s); "
+                "set P79_PARETO_ALLOW_PARTIAL=1 to include for live monitoring.",
+                n_before - n_after,
+            )
     if "avg_total_model_cost_usd" not in work_df.columns:
         if {"avg_total_cost_usd", "avg_router_overhead_cost_usd"}.issubset(work_df.columns):
             work_df["avg_total_model_cost_usd"] = (
