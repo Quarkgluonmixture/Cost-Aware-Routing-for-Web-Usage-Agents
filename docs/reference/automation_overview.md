@@ -92,9 +92,7 @@ to ntfy topic. Functions invoked:
 | Episode tagged `not_logged_in` / corrupt summary | delete summary file → runner retries | **yes** |
 | Cross-restart contamination tracking | persist state file → resume cleanup | **yes** |
 
-**6-layer protocol** (笔记 §95 + §107): detect → alert → refresh → cleanup
-→ resume → verify. State file `--state-file` survives watchdog restarts so
-contaminated-episode tracking is not lost on signal/SIGTERM.
+**6-layer Cross-Component Auto-Clean Pipeline** (笔记 §95 + §107; reframed B-766 A1.15 cold-start 2026-05-17): detect → alert → refresh → cleanup → resume → verify. Layers 1-4 + 6 are watchdog-side explicit code (`experiment_watchdog.py:275-318` + `:1700-1816`); **layer 5 (resume) is runner-side explicit code** (`p79/experiment/runner/main.py:762 if self.resume and summary_file.exists()` — runner re-runs task when watchdog deletes its `summary_v2.json`). Layer 6 (verify) re-uses layer 1 code on next task's step_000 DOM check, so verify is delayed (not immediate-after-refresh) but explicit. Edge cases (layer 5 runner-already-exited / layer 6 no-next-task) disclosed in paper §4.X.15 with post-data Supp Table S-layer56-edge planned. State file `--state-file` survives watchdog restarts so contaminated-episode tracking is not lost on signal/SIGTERM (B-393 + B-762 `--recover-and-quarantine` partial-state recovery).
 
 ---
 

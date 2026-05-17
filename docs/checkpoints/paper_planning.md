@@ -1616,26 +1616,25 @@ Key first-paper considerations:
 > 这部分内容 paper 写时可作为 supplementary "paper-grade execution discipline"
 > 引用; 也是 reviewer 信任度的 evidence。
 
-### 6-layer Defense in Depth (per `experiment_watchdog.py`)
+### 6-layer Cross-Component Auto-Clean Pipeline (B-766 Option E re-attribution, 2026-05-17)
 
-```
-1. Detection: per-task DOM session check (5000 char window, _check_session_health)
-   - Site-specific tab guard (cross-site task skip)
-   - Logout / Sign In link regex
-2. Alert: streak ≥3 → ntfy notification + ALERT log
-3. Refresh: real Playwright sign-in subprocess (auth_refresh.py)
-   - Per-site account credentials
-   - host-resolver-rules MAP metis → IP (legacy)
-   - Verify post-login URL ≠ login_path before storage_state write
-4. Cleanup: delete contaminated episodes (auto-clean on login restored)
-   - Delete summary_v2.json + steps_v2.jsonl
-   - rmtree artifacts/{site}_task_{tid}/
-   - Purge digest records
-   - Remove from seen_keys
-5. Resume: runner re-run with fresh logged-in storage_state
-6. Verify: post-cleanup mtime + DOM check (paper-grade integrity audit)
-   - State file persists across watchdog restart
-```
+**Honest framing** (post-A1.15 cold-start audit): the 6-layer pipeline is **distributed across two components** (watchdog + runner), not entirely watchdog-internal. Layers 1-4 + 6 are watchdog-side explicit code; layer 5 (resume) is runner-side explicit code (`p79/experiment/runner/main.py:762 if self.resume and summary_file.exists()`). Layer 6 (verify) is delayed — runs on next task's step_000 DOM check, not immediately after refresh action. This cross-component layout means each layer has a specific code site (paper §3 reproducibility OK) but introduces edge cases bound in Supp Table S-layer56-edge (post-data).
+
+| Layer | Action | Code Site (file:line) | Layer-Internal Test / Invariant |
+|---|---|---|---|
+| **1. Detect** | Per-task step_000 DOM regex (per-site dispatch via `_SITE_AUTH_REGEX`) | `experiment_watchdog.py:275-318 _check_session_health` | B-387 reddit DOM 5/5 + per-site regex tuple (cls/red/shop/admin/fallback) |
+| **2. Alert** | streak ≥ 3 → urgent ntfy + `[watchdog][SESSION] ALERT` log | `experiment_watchdog.py:1700-1713` | smoke verified; B-742 ntfy emit path covered |
+| **3. Refresh** | Playwright re-login subprocess via `p79/utils/auth_refresh.py` (per-site credentials + post-login URL guard) | `experiment_watchdog.py:1715-1722 _auto_refresh_auth` → `p79/utils/auth_refresh.py:refresh_site_auth` | B-211/B-225 (no inline credential fallback); B-742 emits `auth_refresh_no_clear` Option K event for paper §4 GLMM covariate |
+| **4. Cleanup** | Delete contaminated `episodes/<site>_task_<id>_summary_v2.json` + `steps_v2.jsonl` + `rmtree artifacts/<site>_task_<id>/`; remove from `seen_keys` / `all_records` | `experiment_watchdog.py:1731-1816` session-wave cleanup; `experiment_watchdog.py:1610-1620` retry-path cleanup | B-384 emits `task_auto_cleared` Option K event with `is_auth_loss` + `cleared_in_session_wave` metadata (B-743 retired `_purge_digest_records` step) |
+| **5. Resume** (cross-component) | Runner re-pickup: detect missing `<task>_summary_v2.json` on next loop iteration, re-run task with current `.auth/<site>_state.json` | `p79/experiment/runner/main.py:130 self.resume` + `:762 if self.resume and summary_file.exists()` (resume gate skips if summary exists; missing → re-runs) | A1.5b Phase 1 B-485 resume fingerprint sha256[:16] identity check prevents stale-resume mismatch |
+| **6. Verify** (cross-component, delayed) | Next task's step_000 DOM check repeats Layer 1 logic; refresh success ⇔ `_check_session_health` returns True on subsequent task | `experiment_watchdog.py:275-318 _check_session_health` (same code as Layer 1, fires on every subsequent task) | invariant: streak goes to 0 within ≤ 1 task after refresh; otherwise re-alert + re-refresh triggers |
+
+**Edge case disclosures** (Supp Table S-layer56-edge planned post-data, paper §4.X.15):
+
+- **Layer 5 edge (runner-already-exited)**: if condition's runner finalize precedes watchdog cleanup wave (e.g., last-N tasks contaminated, runner exits before watchdog 30s poll detects), deleted episodes never re-run → SR denominator loss = `scored_task_count - actual_summaries_count` per condition. Bounded post-data via `aggregate_phase1_full_prereg_decision.py` audit comparing `scored_task_count` (canonical) vs actual scored episode count.
+- **Layer 6 edge (no-next-task-arrives)**: verify is delayed to next task's step_000 DOM check; if condition ends without subsequent task (cleanup wave at task N=condition_end), Layer 6 never fires → refresh false-positive undetected. Bounded post-data via `aggregate_trajectory_covariates.py` covariate audit comparing `auth_refresh_no_clear.outcome=ok` events against subsequent-task `is_after_reset=True` covariate (gap = unverified refresh count).
+
+**Why this framing matters**: "6-layer Defense in Depth" claim is preserved (all 6 have explicit code), and the cross-component layout is disclosed transparently (reviewer can verify each layer's code site directly). Layer 5+6 edge cases are paper-§4 disclosed limitations rather than hidden gaps; Supp Table S-layer56-edge will provide empirical bounds post-Phase-1a-data-land.
 
 ### Magento history (3 复发 + final fix)
 

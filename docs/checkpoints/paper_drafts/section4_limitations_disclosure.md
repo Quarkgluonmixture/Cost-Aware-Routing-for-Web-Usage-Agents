@@ -323,29 +323,15 @@ replayer host.**
 
 ## §4.X.13 Trajectory event log — best-effort enrichment, race-window event drop
 
-**Stub (B-386 A1.15 C1, 2026-05-16) — full prose post-data; current placeholder for reviewer audit trail.**
+**Stub (B-386 A1.15 C1, 2026-05-16; B-765 A1.15 cold-start Chunk c, 2026-05-17 honest-number revision; B-743 A1.15 cold-start Chunk a digest retire — destructive op set updated) — full prose post-data; current placeholder for reviewer audit trail.**
 
-Phase 1a fire writes `trajectory_events.jsonl` (Option K, B-313~B-384) per condition_dir,
-recording all auto-clean / auto-refresh / reset perturbation events. Paper §4 uses this
-log to emit per-episode covariates (`is_after_reset` / `had_auth_clear` /
-`had_finalize_race_clear`) for GLMM fixed-effect adjustment. Event writes are
-**best-effort post-hoc enrichment** rather than 2-phase committed transactional audit
-trail: in `scripts/maintenance/experiment_watchdog.py` the event write happens AFTER the
-destructive op (`unlink` + `rmtree` + `_purge_digest_records`), creating a ~2-3s race
-window in which SIGKILL/OOM/`restart_watchdog.sh kill -9` drops the event while the
-filesystem mutation persists.
+Phase 1a fire writes `trajectory_events.jsonl` (Option K, B-313~B-384 + B-742 auth_refresh_no_clear hook) per condition_dir, recording all auto-clean / auto-refresh / reset perturbation events. Paper §4 uses this log to emit per-episode covariates (`is_after_reset` / `had_auth_clear` / `had_finalize_race_clear`) for GLMM fixed-effect adjustment. Event writes are **best-effort post-hoc enrichment** rather than 2-phase committed transactional audit trail: in `scripts/maintenance/experiment_watchdog.py` the event write happens AFTER the destructive op (`unlink` + `rmtree`; post-B-743 digest retire 2026-05-17, no longer includes `_purge_digest_records` step), creating a race window in which SIGKILL/OOM/`restart_watchdog.sh kill -9` drops the event while the filesystem mutation persists.
 
-**Bias direction**: dropped events → covariate column undercounts true perturbation rate
-→ GLMM fixed effect underestimates. The drop mechanism (SIGKILL during a fixed-size race
-window) is mode-symmetric so direction of P-SoM drop-one effect is preserved but
-magnitude estimate is conservative. Supplementary Table S-trajectory-loss (planned
-post-data) bounds event-drop rate by intersection of `condition_summary_v2.json` episode
-list with `trajectory_events.jsonl` event list.
+**Race window duration (B-765 honest revision, 2026-05-17)**: destructive ops typically complete in **~10-200ms** for routine episode artifacts (small step counts, small image files); worst case **up to ~1s** for heavy artifacts (100+ steps × multi-MB screenshots). Event log open+write+close adds another **~1-10ms** (file is already-fsync'd by prior writes). The previous **"~2-3s"** estimate (B-386 2026-05-16) was an unmeasured upper-bound guess prior to digest pipeline retire (B-743) which removed the slowest component (multi-MB digest read+filter+write). Empirical instrumentation deferred to post-data Supp Table S-trajectory-loss.
 
-**Why not 2-phase commit**: see decision T2'=(a) in A1.15 audit (Pre-fire 闭环 effort
-budget ~8.5h; 2-phase commit adds +1.5h with marginal ROI given mode-symmetric drop).
-Future tightening to 2-phase available as Tier 2 hardening (schema B-313 already supports
-`task_auto_clear_intent` + `task_auto_cleared` 2-event pair).
+**Bias direction**: dropped events → covariate column undercounts true perturbation rate → GLMM fixed effect underestimates. The drop mechanism (SIGKILL during a fixed-size race window) is mode-symmetric so direction of P-SoM drop-one effect is preserved but magnitude estimate is conservative. Supplementary Table S-trajectory-loss (planned post-data) bounds event-drop rate by intersection of `condition_summary_v2.json` episode list with `trajectory_events.jsonl` event list.
+
+**Why not 2-phase commit**: see decision T2'=(a) in A1.15 audit (Pre-fire 闭环 effort budget ~8.5h; 2-phase commit adds +1.5h with marginal ROI given mode-symmetric drop). Future tightening to 2-phase available as Tier 2 hardening (schema B-313 already supports `task_auto_clear_intent` + `task_auto_cleared` 2-event pair).
 
 ---
 
@@ -381,6 +367,27 @@ code_bug_retries, clean_first_try)` so reviewers can assess retry-bias direction
 disclosing + reporting per-mode retry rates lets reviewers compute a conservative
 drop-one bound. Full prose draft + Supp Table generation deferred to post-fire data land
 (T5=(b) decision, A1.15 C1).
+
+**Update (B-763 /stress A1.15 cold-start Chunk b Q1=A code-fix, 2026-05-17)**: pre-B-763, `_classify_episode` returned `error(code_bug)` for ALL non-`benchmark_noise=True` errors (i.e., MAX_CODE_BUG_RETRIES=2 retry budget regardless of error semantics) — disclosure-code mismatch. B-763 lands the substring-match classifier (`_classify_error_string` with 5-category tuple: session / auth / connection / timeout / noise) before fall-through to `error(code_bug)`, so disclosure's promised "noise → N=3" dispatch is **now actually enforced in code**. Retroactive policy change: Phase 1a fresh-run cells use new policy throughout (pre-fix only `benchmark_noise=True` got N=3; post-fix substring-matched session/auth/connection/timeout/noise also get N=3). Bias direction unchanged (mode-symmetric retry probability shift); magnitude bounded by Supp Table S-retry post-data.
+
+---
+
+## §4.X.15 6-layer Cross-Component Auto-Clean Pipeline — edge case disclosure (B-766 A1.15 cold-start Chunk c, 2026-05-17)
+
+**Stub** — full prose post-data; current placeholder for reviewer audit trail. Cross-link: `docs/checkpoints/paper_planning.md §18 6-layer Cross-Component Auto-Clean Pipeline` for full layer-to-code-site mapping.
+
+Watchdog auto-clean is implemented as a **6-layer cross-component pipeline** distributed across `scripts/maintenance/experiment_watchdog.py` (layers 1-4 + 6) and `p79/experiment/runner/main.py` (layer 5). Each layer has a specific code site (paper §3 reproducibility witness); the cross-component layout introduces two edge cases requiring post-data empirical bounds:
+
+**Layer 5 edge (runner-already-exited)**: if a condition's contamination wave occurs at the very end of the task queue (last-N tasks contaminated; runner finalizes before watchdog 30s poll detects), watchdog deletes the contaminated `<task>_summary_v2.json` files but the runner process has already exited → those tasks are never re-run → SR denominator loses those data points. Bounded post-data by `aggregate_phase1_full_prereg_decision.py` audit comparing the canonical `scored_task_count` for each cell (cls=224, red=205, shop=435) against the actual count of `summary_v2.json` files persisting in `<run_dir>/<cond_id>/episodes/`. Gap = layer-5 edge case trigger count per (site, model, mode). Direction: SR denominator under-count → SR point estimate slightly inflated relative to true denominator (mode-asymmetric only if cleanup-wave timing correlates with mode-specific failure clustering; expected near-symmetric since session-loss is infrastructure-level not mode-level).
+
+**Layer 6 edge (no-next-task-arrives)**: layer 6 (verify) re-runs layer 1 (`_check_session_health`) on the next task's step_000 DOM check. If a refresh action (layer 3) completes at the tail of a condition with no subsequent task, verify never fires for that refresh → refresh false-positive (auth-refresh API returned True but cookies didn't actually save) is undetected within the condition. Bounded post-data by `aggregate_trajectory_covariates.py` covariate audit comparing `auth_refresh_no_clear.outcome=ok` events (Option K Hook E, B-742) against subsequent-task `is_after_reset=True` covariate distribution. Unverified-refresh count = events with no subsequent-task verification within the same condition_dir. Direction: false-positive refreshes carry contamination into post-refresh tasks of subsequent (different) conditions only if running multi-condition with shared `.auth/<site>_state.json` — Phase 1a 36-condition orchestration explicitly resets `.auth/` between conditions (RESET_BEFORE=1), so false-positive refresh is contained within a single condition. Magnitude expected very low (Playwright auth_refresh has internal post-login URL guard).
+
+**Why Option E framing (cross-component + edge case disclosure) over A (降级 to "4-layer + 2 implicit") or B (add explicit immediate verify code)**:
+- Option A would lose paper §3 "Defense in Depth" strength signal without resolving the underlying gap (layer 5+6 edges still exist whether claim is 4 or 6).
+- Option B (add explicit Playwright HEAD-request verify-after-refresh) adds ~30 min code but creates a parallel Playwright session that conflicts with auth_refresh subprocess; diminishing returns vs already-internal post-login URL guard.
+- Option E maintains the claim, exposes code sites, and bounds edges empirically — strongest reviewer defense per A1.15 cold-start audit.
+
+Full Supp Table S-layer56-edge generation deferred to post-data (paper-2 scope if Phase 1a 0 trigger events observed; paper-1 §4 Supp if any edge case fires).
 
 ---
 

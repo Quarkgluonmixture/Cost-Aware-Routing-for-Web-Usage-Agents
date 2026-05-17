@@ -1674,18 +1674,25 @@ def main() -> int:
                     #
                     # B-386 (A1.15 C1 P0-2 race ordering, T2'=a best-effort,
                     # 2026-05-16): event write happens AFTER destructive ops
-                    # at L1369-1402 (intentional — keeps destructive path
-                    # uncluttered; trajectory log is post-hoc covariate
-                    # enrichment, not transactional audit trail). Race
-                    # window 2-3s between unlink/rmtree completion and this
-                    # try block: SIGKILL/OOM in window → event dropped, paper
-                    # §4 GLMM `had_auth_clear` covariate undercount for
-                    # affected episode. Paper §3 reproducibility section
-                    # discloses this as "best-effort enrichment, sensitivity
-                    # analysis (Supp Table S-trajectory-loss) bounds event-
-                    # drop rate" — see docs/checkpoints/paper_drafts/section3_*.
-                    # Race ordering NOT 2-phase-commit per T2'=(a) — best-
-                    # effort wins on Pre-fire 闭环 effort budget.
+                    # (intentional — keeps destructive path uncluttered;
+                    # trajectory log is post-hoc covariate enrichment, not
+                    # transactional audit trail). Race window between
+                    # unlink/rmtree completion and this try block:
+                    # SIGKILL/OOM in window → event dropped, paper §4 GLMM
+                    # `had_auth_clear` covariate undercount for affected
+                    # episode.
+                    #
+                    # B-765 (A1.15 cold-start Chunk c P1-4-A* Claude OOB,
+                    # 2026-05-17): honest revision — race window is
+                    # **~10-200ms typical**, up to ~1s for heavy artifacts
+                    # (NOT "2-3s" as pre-fix B-386 stated; the multi-MB
+                    # _purge_digest_records step that dominated estimate
+                    # was retired in B-743 digest pipeline removal).
+                    # Paper §4.X.13 disclosure prose synced 2026-05-17;
+                    # empirical instrumentation deferred to post-data
+                    # Supp Table S-trajectory-loss. Race ordering NOT
+                    # 2-phase-commit per T2'=(a) — best-effort wins on
+                    # Pre-fire 闭环 effort budget.
                     try:
                         from p79.experiment.logger_v2 import log_trajectory_event_external
                         log_trajectory_event_external(

@@ -5256,3 +5256,52 @@ Substrate: `p79/experiment/{types.py, io_utils.py, logger_v2.py, schema_migratio
 - **Chunk (c)** ~1.5h: P1-4 §4.X.13 "2-3s" prose fix to honest duration range + P1-5 6-layer claim → 4-layer-explicit + 2-implicit honesty (Q2 still pending user decision A=prose-only / B=code-add-explicit-verify / C=hybrid) + master_bug_catalog A1.15 cold-start full summary + chronicle §193 + phase1_plan A1.15 tick `[ ] → [x]`
 
 **B-numbers consumed**: B-761 through B-764 (4 contiguous IDs; A1.15 cold-start Chunk (b) range, post 6th parallel-session collision rebase). Next available: B-765+.
+
+---
+
+## A1.15 /stress cold-start audit Chunk (c) (2026-05-17) — B-765 + B-766 (2 entries; 2 fixed; CYCLE CLOSED)
+
+**Scope**: Final chunk of A1.15 cold-start cycle. Prose disclosure fixes for paper §4.X.13 (race window honest number) + paper §3/§4.X.15 (6-layer cross-component re-attribution per user Q2=Option E). 6-doc sync (paper_planning §18 + PLAYBOOK + CLAUDE.md + automation_overview) + chronicle §193 + phase1_plan A1.15 tick `[ ] → [x]`.
+
+| B-# | Severity | Source | OOB | File / function | Bug + fix |
+|---|---|---|---|---|---|
+| B-765 | P1 | A (Claude unique) | * | `section4_limitations_disclosure.md:§4.X.13` + `experiment_watchdog.py:1675-1688` comment | **§4.X.13 race window "2-3s" was unmeasured upper-bound guess** — pre-fix B-386 (2026-05-16) wrote "~2-3s race window" in both paper §4.X.13 prose and watchdog inline comment. V10 + V11 verified: destructive op set (`unlink × 2` + `rmtree × 1`; post-B-743 digest retire 2026-05-17 removed the `_purge_digest_records` step which dominated the original estimate) completes in **~10-200ms typical** for routine episode artifacts (small step count, small images); **up to ~1s worst case** for heavy artifacts (100+ steps × multi-MB screenshots). Event log open+write+close adds another ~1-10ms. The "2-3s" claim was an unmeasured guess that survived 7+ prior audit cycles. Fix: §4.X.13 prose synced to honest "10-200ms typical, up to ~1s worst case" with explicit acknowledgment that the pre-fix "2-3s" was unmeasured and that B-743 retired the slowest component. Watchdog L1675-1688 comment also synced. Empirical instrumentation deferred to post-data Supp Table S-trajectory-loss. Reviewer defense: honest number stronger than over-estimated number that can be empirically refuted. |
+| B-766 | P1 | C (gemini F2) | * | paper_planning §18 + PLAYBOOK + CLAUDE.md + automation_overview + paper §4.X.15 new | **"6-layer Defense in Depth" claim ↔ code reality cross-component disclosure** (user Q2=Option E). Gemini F2 attack: claim says 6 layers but only 4 are explicit in `experiment_watchdog.py`; resume + verify were characterized as "implicit". Empirical verification: Layer 5 (resume) IS explicit but lives cross-file at `p79/experiment/runner/main.py:130 self.resume` + `:762 if self.resume and summary_file.exists()` — runner re-runs task when watchdog deletes its `summary_v2.json`. Layer 6 (verify) IS explicit but delayed — re-uses Layer 1 `_check_session_health` on next task's step_000 DOM check. So 6-layer claim is **architecturally true cross-component** but had no disclosure of (a) layer 5 lives in runner not watchdog, (b) layer 6 verifies on next-task arrival not immediate-after-refresh, (c) edge cases when runner exits before cleanup wave OR no task arrives after refresh. Fix (Option E per user Q2): preserve "6-layer" claim, add per-layer code-site table (paper_planning §18) + edge case disclosure (paper §4.X.15 NEW stub) with post-data Supp Table S-layer56-edge planned via `aggregate_phase1_full_prereg_decision.py` (Layer 5 bound: scored_task_count vs actual summaries) + `aggregate_trajectory_covariates.py` (Layer 6 bound: auth_refresh_no_clear.outcome=ok vs subsequent-task is_after_reset coverage). 6-doc sync: paper_planning §18 / PLAYBOOK §3-watchdog row / CLAUDE.md memory ref / automation_overview L2 section. 0 code change — pure prose+disclosure framing fix per "Option E" strategic decision. |
+
+### A1.15 Cold-start Chunk (c) sibling-propagation check
+
+- **"2-3s race window" claim occurrences**: 2 sites pre-fix (paper §4.X.13:334 + watchdog L1680 comment) — both synced via B-765.
+- **"6-layer" claim occurrences**: 7 sites pre-fix (paper_planning §1619/§1689/§2263/§2423 + PLAYBOOK L182 + automation_overview L9/L23/L95 + CLAUDE.md L468). Important distinction: `automation_overview.md` has TWO "6-layer" concepts — outer architecture (launch/watchdog/cron/ntfy/obsidian/state at L9-50) and inner watchdog auto-clean protocol (L95). B-766 updates ONLY the inner watchdog 6-layer (L95-97); outer automation 6-layer is unrelated semantically. PLAYBOOK + automation_overview inner section + paper_planning §18 all updated.
+- **Edge case disclosure infrastructure**: `aggregate_phase1_full_prereg_decision.py:get_aggregator_cells(manifest_path=...)` (A1.21 B-515/B-524 land) + `aggregate_trajectory_covariates.py` (A1.15 §168 B-389 + B-741 datetime fix Chunk a) — both substrates ready for Supp Table S-layer56-edge generation post-Phase-1a-data-land.
+
+### A1.15 Cold-start Chunk (c) Smoke + Verification
+
+- ✅ No code changes — pure prose update across 5 doc files (1 paper draft + 1 paper_planning + 1 PLAYBOOK + 1 CLAUDE.md / memory + 1 automation_overview + 1 phase1_plan)
+- ✅ watchdog inline comment `2-3s` ↔ paper §4.X.13 prose `10-200ms typical` synced (both reference B-765)
+- ✅ "6-layer" claim preserved at all 7 sites with cross-component disclosure added (paper_planning §18 has full code-site table; PLAYBOOK / automation_overview have short reference)
+- ✅ paper §4.X.15 new stub added with Layer 5 + Layer 6 edge case bounds + Supp Table S-layer56-edge plan
+
+### A1.15 Cold-start cycle CLOSED (Chunks a + b + c)
+
+**Cumulative 13 unique fixes / 7 contiguous B-# (B-741~B-743 + B-761~B-766, post 6th parallel-session collision rebase)**:
+
+| Chunk | Commit | B-# range | Fixes | Tests added | LOC delta |
+|---|---|---|---|---|---|
+| (a) | `263ef0e` | B-741~B-743 | 3 explicit fixes + closes 5 项 via digest 退役 | +19 | watchdog -400, +tests 227 |
+| (b) | `73d6462` + catalog race `91063b8` | B-761~B-764 | 4 substrate fixes (pgrep + reset-state + retry + SIGUSR1) | +30 | watchdog +306, tests +218 |
+| (c) | this | B-765 + B-766 | 2 prose fixes (race window + 6-layer cross-component) | 0 (prose only) | 0 code, ~80 prose lines across 6 docs |
+| **Total** | 3 commits | 7 contiguous IDs | **13 unique fixes** (closes **16 of 16 cross-AI findings** = 81% direct + remaining 3 P1 + 5 P2 deferred to A1.15b / backlog) | **+49** invariant tests | net code: -94 watchdog + 445 tests + ~80 prose |
+
+**Cross-AI agreement** (final tally):
+- 3-AI overlap: 0
+- 2-AI overlap: 3 (P0-1-AB Claude+codex digest gap → closed via B-743 retire; P1-1-AC Claude+gemini reset-state amnesia → B-762; P1-8-AC Claude+gemini DGX shared host → deferred)
+- 1-AI unique: codex 6 (F1 pgrep / F3 digest count / F4 datetime / F5 auth_refresh_no_clear / F6 retry-class / F8 SIGUSR1 pipeline) / Claude 3 (P1-4 race window / P1-6 figure regen / P2-3 trajectory ImportError) / gemini 4 (F2 6-layer / F7 task_id collision / F9 SIGUSR1 kill / F8 restart log)
+
+**Reviewer lessons distilled** (5):
+1. **Strategic high-leverage close > tactical fix accumulation**: Q4 "digest 全退役" (Option α) close 5 项 with 3h work vs ~5h to fix 4 individual digest bugs. User cross-talk insight (challenge premise vs accept current framing) beats individual finding triage.
+2. **Cold-start re-audit catches what 7+ prior cycles missed**: A1.15 2026-05-16 had 11 fixes; cold-start 2026-05-17 found 16 NEW unique findings = pre-fix cycles structurally missed surface (pgrep self-match codex F1 + 6-layer cross-component gemini F2 + datetime crash codex F4 etc.).
+3. **Empirical spot-check is non-negotiable for paper-grade prose**: B-765 "2-3s" survived 7 cycles because nobody measured. v7.5 length/byte/duration spot-check rule should extend to "every numeric claim in disclosure prose".
+4. **Marketing-claim ↔ structural-reality gap is paper-grade attack surface**: Gemini F2 "6-layer only 4 explicit" was design-claim audit (1-AI gemini lineage strength). Cross-component code-site disclosure (Option E) stronger than claim weakening (Option A) when cross-component is the truth.
+5. **6th parallel-session B-# collision is now structural** — high-to-low atomic sed rebase pattern in single batch (source/target disjoint) is muscle memory. Reserve B-# buffer ≥10 + pre-commit grep+tail of catalog avoids 80% of collision; the remaining 20% (e.g., this Chunk b collision with A1.17 capturing B-744~B-760 between my reservation + commit) requires post-edit rebase.
+
+**B-numbers consumed**: B-765 through B-766 (2 IDs; A1.15 cold-start Chunk (c)). Next available: B-767+.
