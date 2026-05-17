@@ -22,6 +22,8 @@ git submodule update --init --recursive
 # 安装
 pip install -e .                    # 最小依赖
 pip install -e ".[analysis,dev]"    # 全功能（含 scipy/pandas/matplotlib）
+pip install -e ".[test]"            # OSF replayer 推荐 — `make test` 需要 pandas/matplotlib/scipy
+                                    # 否则 6 个 analysis-path test 静默 `pytest.importorskip` skip (B-652)
 
 # 环境预检（CUDA + VWA 站点 + 认证）
 bash scripts/preflight_v2.sh
@@ -36,7 +38,7 @@ make compare B0=<b0_run> B1=<b1_run> SITE=classifieds    # B0 vs B1 对比
 # 底层命令
 python3 scripts/run_experiment.py --config configs/exp_v2_B0_dom_classifieds.yaml   # per-condition yaml (master phase1.yaml retired B-232 2026-05-16)
 python3 scripts/analysis/analyze_experiment.py --run_dir results/visualwebarena/phase1/<RUN_ID>
-pytest tests/                                      # 81 测试
+pytest tests/                                      # 436 测试 (含 8 个 external/local_data env-gated skip — B-652)
 ```
 
 ## 文档分层（4-doc separation of concerns）

@@ -111,16 +111,19 @@ def test_b327_clean_success_rate_none_when_all_noise():
 
 
 # ─── B-325 phantom_lift strict-by-default + corrupt exclusion ──────────────
+# B-656 (/stress A1.12 P1-8 A* claude, 2026-05-17): hoisted to module level —
+# pre-fix the local `try/except → pytest.skip(f"...requires runtime configs")`
+# converted any rename/refactor of aggregate_phantom_lift into silent skip,
+# masking 3 paper-grade regression tests (B-325 / B-335 / B-336). If this
+# import ever fails the entire file collection-errors (CI RED), which is
+# what we want — not a misleading "skipped" reason.
+from scripts.analysis.aggregate_phantom_lift import load as _phantom_lift_load
+
+
 def test_b325_phantom_lift_strict_default_raises_on_corrupt(tmp_path, monkeypatch):
     """B-325: corrupt JSON in summary dir must raise by default + be excluded
     from BOTH observed and success sets."""
-    try:
-        from scripts.analysis.aggregate_phantom_lift import load
-    except (FileNotFoundError, ImportError) as exc:
-        # Module-load requires task config files which may not be present in
-        # all CI environments — the strict-default behavior is locked by the
-        # source-code edit; this test is for paper-grade runs only.
-        pytest.skip(f"aggregate_phantom_lift import requires runtime configs: {exc}")
+    load = _phantom_lift_load
     # Remove any P79_STRICT env override so strict-by-default fires.
     monkeypatch.delenv("P79_STRICT", raising=False)
     # 1 valid + 1 corrupt
@@ -147,10 +150,7 @@ def test_b325_phantom_lift_strict_default_raises_on_corrupt(tmp_path, monkeypatc
 def test_b325_phantom_lift_lenient_override_keeps_legacy_behavior(tmp_path, monkeypatch):
     """B-325: P79_STRICT=0 opts into lenient mode; corrupt EXCLUDED from
     observed instead of pollution (still better than legacy)."""
-    try:
-        from scripts.analysis.aggregate_phantom_lift import load
-    except (FileNotFoundError, ImportError) as exc:
-        pytest.skip(f"aggregate_phantom_lift import requires runtime configs: {exc}")
+    load = _phantom_lift_load  # B-656: module-level import (no try/except)
     monkeypatch.setenv("P79_STRICT", "0")
     (tmp_path / "task_1_summary_v2.json").write_text(json.dumps({
         "schema_version": "2.0", "run_id": "r", "condition_id": "c",

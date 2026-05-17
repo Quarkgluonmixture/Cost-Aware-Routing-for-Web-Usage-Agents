@@ -13,6 +13,8 @@ This file registers a mock migration v2 → vtest and verifies:
 """
 from __future__ import annotations
 
+import uuid
+
 import pytest
 
 from p79.experiment.schema_migrations import (
@@ -23,6 +25,25 @@ from p79.experiment.schema_migrations import (
     register,
 )
 from p79.experiment.types import SCHEMA_VERSION_V2
+
+
+@pytest.fixture
+def chain_snapshot():
+    """B-657 (/stress A1.12 P1-11 B* codex, 2026-05-17): snapshot/restore the
+    private `_CHAIN` + `_REGISTRY` global state around any test that mutates
+    them. Pre-fix tests that register temporary migrations relied on a
+    try/finally cleanup that, if it failed, left polluted state for ALL
+    downstream tests — and the test then `pytest.skip`'d on detected pollution
+    (silent escape hatch). Now: pollution at entry = pytest.fail (loud), and
+    teardown unconditionally restores the snapshot.
+    """
+    chain_backup = list(_CHAIN)
+    registry_backup = dict(_REGISTRY)
+    yield
+    # Unconditional teardown: even if test raised, restore canonical state.
+    _CHAIN[:] = chain_backup
+    _REGISTRY.clear()
+    _REGISTRY.update(registry_backup)
 
 
 def test_schema_version_v2_aligned_with_chain():
@@ -63,48 +84,54 @@ def test_migrate_downgrade_refused():
     pass
 
 
-def test_mock_migration_chain():
-    """Register a temporary v2 → vtest migration, run it, then clean up."""
-    if "vtest" in _CHAIN:
-        pytest.skip("vtest already registered (test artifact)")
+def test_mock_migration_chain(chain_snapshot):
+    """Register a temporary v2 → v<sentinel> migration, run it, then clean up.
 
-    @register("2.0", "vtest")
-    def _v2_to_vtest(rec: dict) -> dict:
+    B-657 (/stress A1.12 P1-11 B*): each invocation generates a unique
+    `vtest<uuid>` sentinel rather than hardcoded "vtest", so two concurrent
+    test workers (pytest-xdist) cannot collide on the same temporary version.
+    Cleanup is provided by `chain_snapshot` fixture unconditionally; pollution
+    at entry is now `pytest.fail` (loud), not `pytest.skip` (silent escape).
+    """
+    sentinel = f"vtest_{uuid.uuid4().hex[:8]}"
+    unreachable = f"vunreachable_{uuid.uuid4().hex[:8]}"
+    ghost = f"vghost_{uuid.uuid4().hex[:8]}"
+    if sentinel in _CHAIN or unreachable in _CHAIN or ghost in _CHAIN:
+        # Should be impossible with uuid randomness; if it triggers, an earlier
+        # test leaked state AND collided with our random sentinel — fail loud
+        # so the leak is investigated, do NOT silently skip.
+        pytest.fail(
+            f"global _CHAIN polluted on test entry: {sentinel!r}/"
+            f"{unreachable!r}/{ghost!r} already present in {_CHAIN}. "
+            f"Earlier test failed to restore state — chain_snapshot fixture missing?"
+        )
+
+    @register("2.0", sentinel)
+    def _v2_to_sentinel(rec: dict) -> dict:
         rec["mock_new_field"] = rec.get("mock_new_field", "filled-by-migration")
         return rec
 
-    try:
-        # Forward migration succeeds.
-        rec = {"schema_version": "2.0", "x": 1}
-        out = migrate(rec, "2.0", "vtest")
-        assert out["schema_version"] == "vtest"
-        assert out["mock_new_field"] == "filled-by-migration"
-        assert "mock_new_field" not in rec, "input must not be mutated (deepcopy)"
+    # Forward migration succeeds.
+    rec = {"schema_version": "2.0", "x": 1}
+    out = migrate(rec, "2.0", sentinel)
+    assert out["schema_version"] == sentinel
+    assert out["mock_new_field"] == "filled-by-migration"
+    assert "mock_new_field" not in rec, "input must not be mutated (deepcopy)"
 
-        # B-191 idempotency: applying twice yields same result.
-        out2 = migrate(out, "vtest", "vtest")
-        assert out2 == out
+    # B-191 idempotency: applying twice yields same result.
+    out2 = migrate(out, sentinel, sentinel)
+    assert out2 == out
 
-        # Downgrade refused.
-        with pytest.raises(ValueError, match="Downgrade not supported"):
-            migrate(out, "vtest", "2.0")
+    # Downgrade refused.
+    with pytest.raises(ValueError, match="Downgrade not supported"):
+        migrate(out, sentinel, "2.0")
 
-        # No-migration-registered path also raises.
-        @register("2.0", "vunreachable")
-        def _stub(rec: dict) -> dict:
-            return rec
-        # Insert a chain hole: vtest → vunreachable without registered fn
-        _CHAIN.append("vghost")
-        try:
-            with pytest.raises(ValueError, match="No migration registered"):
-                migrate({"schema_version": "2.0"}, "vtest", "vghost")
-        finally:
-            _CHAIN.remove("vghost")
-    finally:
-        # Cleanup: remove the mock migration so it doesn't pollute other tests
-        _REGISTRY.pop(("2.0", "vtest"), None)
-        _REGISTRY.pop(("2.0", "vunreachable"), None)
-        if "vtest" in _CHAIN:
-            _CHAIN.remove("vtest")
-        if "vunreachable" in _CHAIN:
-            _CHAIN.remove("vunreachable")
+    # No-migration-registered path also raises.
+    @register("2.0", unreachable)
+    def _stub(rec: dict) -> dict:
+        return rec
+    # Insert a chain hole: sentinel → ghost without registered fn
+    _CHAIN.append(ghost)
+    with pytest.raises(ValueError, match="No migration registered"):
+        migrate({"schema_version": "2.0"}, sentinel, ghost)
+    # chain_snapshot teardown handles all cleanup unconditionally

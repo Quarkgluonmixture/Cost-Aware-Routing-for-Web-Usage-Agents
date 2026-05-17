@@ -15,6 +15,7 @@ silent submodule reset can't bypass the contract.
 """
 from __future__ import annotations
 
+import hashlib
 import subprocess
 import sys
 from pathlib import Path
@@ -28,6 +29,14 @@ VWA_SUBMODULE = REPO_ROOT / "external" / "visualwebarena"
 # updated post Chunk 1 11-fix sweep). Tree-hash chain SBOM in prereg §7
 # per B-580.
 EXPECTED_SUBMODULE_SHA = "2f9b0b47175a1bffa01e13100e3075e212161a89"
+# B-653 (/stress A1.12 P0-4 C* gemini, 2026-05-17): tree-hash chain is the
+# IMMUTABLE witness per prereg §7 — HEAD SHA above is mutable under `git push
+# --force-with-lease`. The tree-hash chain recipe is environment-independent
+# (vs `git diff base..HEAD | sha256sum` which varied on diff.algorithm /
+# core.autocrlf / git version). Recipe:
+#   git rev-list <upstream-base>..HEAD --format=tformat:'%H %T' | sha256sum
+UPSTREAM_BASE_SHA = "89f5af29305c3d1e9f97ce4421462060a70c9a03"
+EXPECTED_TREE_HASH_CHAIN = "5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f"
 
 
 @pytest.fixture(autouse=True)
@@ -98,6 +107,42 @@ def test_vwa_submodule_sha_matches_a1_18_lock():
         f"If this is an intentional bump, update EXPECTED_SUBMODULE_SHA in this file "
         f"+ Makefile LOCK_SHA + scripts/preflight_v2.sh expected_sha + "
         f"memory `reference_vwa_submodule_p79_patches`."
+    )
+
+
+def test_vwa_submodule_tree_hash_chain_matches_prereg_witness():
+    """B-653 (P0-4 C* gemini OOB): tree-hash chain is the OSF immutable witness.
+
+    Pre-fix: `test_vwa_submodule_sha_matches_a1_18_lock` only checks HEAD SHA,
+    which prereg §7 explicitly notes is mutable under
+    `git push --force-with-lease`. The tree-hash chain over the commit history
+    from upstream-base to HEAD is byte-deterministic across git versions / OS
+    environments because it uses git's content-addressable object IDs (%H + %T).
+
+    OSF replayer must independently re-derive this hash to verify the
+    `p79-patches` branch history hasn't been rewritten between lock time and
+    audit time. Hardcoding it in the test mirrors prereg §7's contract.
+    """
+    if not (VWA_SUBMODULE / ".git").exists() and not (VWA_SUBMODULE / ".git").is_file():
+        pytest.skip("VWA submodule not initialized (git submodule update --init)")
+    cmd = [
+        "git", "-C", str(VWA_SUBMODULE), "rev-list",
+        f"{UPSTREAM_BASE_SHA}..HEAD",
+        "--format=tformat:%H %T",
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+    assert proc.returncode == 0, (
+        f"git rev-list failed (upstream-base {UPSTREAM_BASE_SHA} may be unreachable): "
+        f"{proc.stderr}"
+    )
+    actual = hashlib.sha256(proc.stdout.encode("utf-8")).hexdigest()
+    assert actual == EXPECTED_TREE_HASH_CHAIN, (
+        f"VWA tree-hash chain mismatch:\n"
+        f"  expected: {EXPECTED_TREE_HASH_CHAIN}\n"
+        f"  actual:   {actual}\n"
+        f"If this is an intentional submodule bump, update EXPECTED_TREE_HASH_CHAIN "
+        f"in this file + preregistration.md §7 witness + memory file. "
+        f"Otherwise the p79-patches branch history was rewritten — OSF contract broken."
     )
 
 
