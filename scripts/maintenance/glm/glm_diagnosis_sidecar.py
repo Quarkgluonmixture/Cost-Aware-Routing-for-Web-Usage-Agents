@@ -57,6 +57,55 @@ def _is_vision_model(model: str) -> bool:
     return "4v" in m or "4.6v" in m or "5v" in m
 
 
+def _extract_balanced_json(text: str) -> Optional[str]:
+    """Extract first balanced JSON object substring from `text`.
+
+    Walks forward from first `{` tracking brace depth + string state,
+    returns substring `text[start:end+1]` covering the outermost matched
+    `{...}` pair. Returns None if no balanced object found.
+
+    B-847 (A1.15b Chunk β P1-9): replaces `rfind("{") / rfind("}")`
+    extraction in `_call_glm_chat`. The rfind approach returned the
+    INNERMOST brace pair which silently corrupts nested JSON: for
+    `{"failure_diagnosis":[{...}, {...}]}` it returned only the LAST
+    inner `{...}` losing the wrapper key + all but one list element.
+    Codex Mode B P1-9 OOB catch.
+
+    Implementation notes:
+    - Tracks `in_string` state via `"` (with backslash-escape handling)
+      so braces inside strings don't shift depth.
+    - First `{` outside any string = start. Matching `}` closing depth
+      to zero = end.
+    - Greedy (returns OUTERMOST balanced object first found).
+    """
+    start = text.find("{")
+    if start < 0:
+        return None
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(start, len(text)):
+        c = text[i]
+        if escape:
+            escape = False
+            continue
+        if in_string:
+            if c == "\\":
+                escape = True
+            elif c == '"':
+                in_string = False
+            continue
+        if c == '"':
+            in_string = True
+        elif c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
+    return None
+
+
 def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, Any]], timeout_s: int = 120) -> str:
     payload_variants = [
         {
@@ -95,20 +144,21 @@ def _call_glm_chat(glmm: Dict[str, str], messages: Sequence[Dict[str, Any]], tim
                     # looks like an incomplete JSON.
                     if isinstance(msg, str) and msg.strip():
                         if finish == "length" and isinstance(reasoning, str) and reasoning.strip():
-                            # content truncated — try reasoning first
-                            r_start = reasoning.rfind("{")
-                            r_end = reasoning.rfind("}")
-                            if r_start >= 0 and r_end > r_start:
-                                return reasoning[r_start : r_end + 1]
+                            # content truncated — try reasoning first.
+                            # B-847 (Chunk β P1-9): outermost balanced JSON
+                            # instead of rfind() which mangled nested keys.
+                            balanced = _extract_balanced_json(reasoning)
+                            if balanced is not None:
+                                return balanced
                         return msg.strip()
                     # GLM thinking models (e.g. glm-4.6) may put the answer in
                     # reasoning_content with content="" or missing.
                     if isinstance(reasoning, str) and reasoning.strip():
-                        # Try to extract JSON block first
-                        r_start = reasoning.rfind("{")
-                        r_end = reasoning.rfind("}")
-                        if r_start >= 0 and r_end > r_start:
-                            return reasoning[r_start : r_end + 1]
+                        # B-847 (Chunk β P1-9): outermost balanced JSON
+                        # extraction (was rfind, which broke nested).
+                        balanced = _extract_balanced_json(reasoning)
+                        if balanced is not None:
+                            return balanced
                         # Otherwise return the full reasoning text
                         return reasoning.strip()
                 text = data.get("output_text") or data.get("text")
@@ -987,7 +1037,13 @@ def _glm_episode_diagnosis(
                 _ep_dir = _find_episode_artifact_dir(run_dir, _cond_id, _task_id)
                 if _ep_dir is not None:
                     _som_marks = _load_som_marks_steps(_ep_dir, _key_steps)
-                    if str(case.get("observation_mode", "")) == "som":
+                    # B-845 (Chunk β P1-2): phantom_som shares SoM image
+                    # surface (annotated screenshots when present) — load
+                    # via same path as canonical SoM. Pre-fix `== "som"`
+                    # exact-match excluded phantom_som from SoM image
+                    # loading even when annotated screenshots existed.
+                    _obs_mode = str(case.get("observation_mode", "") or "").strip().lower()
+                    if _obs_mode in ("som", "phantom_som"):
                         for _s in _key_steps:
                             _b64 = _load_som_image_b64(_ep_dir, _s)
                             if _b64:

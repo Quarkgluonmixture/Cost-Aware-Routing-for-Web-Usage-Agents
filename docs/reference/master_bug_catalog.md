@@ -5550,6 +5550,108 @@ Chunk α scope = 3 P0 + 1 bonus P1 (B-841~B-844). P0-2/P1-2~P1-11/P2 deferred to
 
 **B-numbers consumed**: B-841 through B-844 (4 IDs; A1.15b Chunk α). Next available: B-845+.
 
+---
+
+## A1.15b — GLM sidecar cluster Chunk β (2026-05-17)
+
+Chunk β scope = paper §3 GLM digest quality cluster (3 fixes). Targets `glm_batch_digest.py` + `glm_diagnosis_sidecar.py`. User directive "下一个 chunk" → defaults: functional-cluster split per memory `feedback_split_large_scope` (single cluster, 2 files, ~2h). Closes 3 of 17 deferred P1 from A1.15b /stress unified bug list.
+
+### B-845 `glm_batch_digest.py` + `glm_diagnosis_sidecar.py` — phantom modes blind in GLM digest dispatch
+
+**Origin**: A1.15b /stress Mode B codex P1-2 OOB unique catch.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD (Chunk β).
+**Code sites (pre-fix)**:
+- `glm_batch_digest.py:537-543` `_get_system_prompt` — exact `== "dom|som|vision"` branch
+- `glm_batch_digest.py:619` failed_indices vision branch
+- `glm_batch_digest.py:641,648,656` `_glm_digest_one` SoM/Vision/DOM image-load branch
+- `glm_batch_digest.py:943-952` mode-specific record fields
+- `glm_diagnosis_sidecar.py:990` SoM image load exact `== "som"` branch
+
+**Failure mechanism**: 4 phantom modes (`phantom_som`, `phantom_dom`, `phantom_text`, `phantom_prompt`) all fell through to base prompt + no mode-specific fields + no annotated screenshot loading. Phase 1a 6-mode grid → 50% of conditions get generic GLM digest. Paper §3 phantom 4-fold drop-in hero claim has GLM failure narratives that EXCLUDE phantom-half data → operator/reviewer reads digests + sees only canonical-side narrative → fairness comparison broken.
+
+**Fix**: Centralize phantom→canonical mapping in `_normalize_obs_mode(raw) -> str`:
+- `phantom_som → som` (shares SoM-text + image surface when annotated avail)
+- `phantom_dom/text → dom` (AXTree flat-list format, no annotated image)
+- `phantom_prompt → dom` (SoM prompt + AXTree text, no SoM image)
+
+Justification per memory `project_phantom_space_axes_format_not_information`: phantom space axes are format × decision-style, NOT info richness. `[SOM_MARKS]` = flattened AXTree (1.00× chars). So canonical mapping = surface-similarity (image + text format), not information depth.
+
+Original `obs_mode` preserved in case record for downstream paper §3 phantom-vs-canonical analysis; only the DIGEST decision branches use `canonical_mode`. Site `glm_diagnosis_sidecar.py:990` also fixed to load SoM images for `phantom_som` (was excluded).
+
+**Verification**: `tests/test_stress_a1_15b_chunk_beta.py` 12 parametrized cases for `_normalize_obs_mode`.
+
+**Paper-grade impact**: paper §3 phantom-vs-canonical fairness for GLM-narrated failure modes. Operator decisions during re-fire based on phantom-half GLM digests now informative.
+
+### B-846 `glm_batch_digest.py:255 + 957-962` — reference image path `parents[2]` + `_extract_site` always empty
+
+**Origin**: A1.15b /stress Mode B codex P1-3 OOB unique catch (with Phase 4 spot-check confirmed via `Path(__file__).parents[2]` resolves to nonexistent `scripts/external/visualwebarena`).
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Code sites (pre-fix)**:
+- `glm_batch_digest.py:255` `Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena"` → `scripts/external/visualwebarena` (PATH DOES NOT EXIST)
+- `glm_batch_digest.py:957-962` `_extract_site` always returns `""` regardless of case content
+
+**Failure mechanism**: `_load_reference_images_b64` is gated by `if not site: return []` AND looks up VWA task JSON via wrong path. Double-dead: even if caller passes a site explicitly, the path resolution fails. From live sidecar (which calls `_extract_site` → empty), site is never set, so reference images NEVER load. Paper §3 prose claims "DOM mode uses task reference images for visual-match diagnosis" — this is FALSIFIED in current code path. Reviewer reading code + paper would flag prose↔code mismatch.
+
+**Fix**:
+1. `glm_batch_digest.py:255` change `parent.parent.parent` → `parents[3]` (parents[3] of `scripts/maintenance/glm/glm_batch_digest.py` = repo root). Verified via test: `repo / external / visualwebarena` exists; `parents[2] / external / visualwebarena` does NOT exist.
+2. `glm_batch_digest.py:_extract_site` walks inference chain:
+   - `case["site"]` if explicitly `{classifieds, reddit, shopping, shopping_admin}`
+   - `case["run_dir"]` anchored `_<site>_<8-digit>` regex matching (same anchored pattern as `glm_cell_autoupdate.py:135` to avoid shopping/shopping_admin substring collision; longest-first sweep `shopping_admin → classifieds → reddit → shopping`)
+   - Fallback `""` only when all inference fails
+
+**Verification**: `tests/test_stress_a1_15b_chunk_beta.py` 12 cases for `_extract_site` + 1 path-resolution check + 1 anti-collision check (`shopping_admin ≠ shopping`).
+
+**Paper-grade impact**: paper §3 reference-image-diagnosis prose accuracy. Closes reviewer prose↔code mismatch attack.
+
+### B-847 `glm_diagnosis_sidecar.py:99-100,108-109` — `rfind` slices INNERMOST brace pair, corrupts nested GLM JSON
+
+**Origin**: A1.15b /stress Mode B codex P1-9 OOB unique catch.
+**Status**: 🛠️ **FIXED** 2026-05-17 commit TBD.
+**Code site (pre-fix)**:
+```python
+# truncated message + reasoning fallback
+r_start = reasoning.rfind("{")
+r_end = reasoning.rfind("}")
+if r_start >= 0 and r_end > r_start:
+    return reasoning[r_start : r_end + 1]
+```
+
+**Failure mechanism**: GLM thinking models (glm-4.6, glm-5.1) put structured output in `reasoning_content` when `finish_reason="length"` or content truncated. For nested JSON outputs like `{"failure_diagnosis":[{...}, {...}], "root_cause":"X"}`, `rfind` returns the LAST `{` (start of last inner element) + LAST `}` (end of outer wrapper). Result: malformed JSON (mid-array slice) → `json.loads` fails downstream → retry burns → GLM_FAILED noise in digest output.
+
+**Fix**: Add `_extract_balanced_json(text) -> Optional[str]` helper:
+- Walks forward from first `{` tracking brace depth
+- Tracks `in_string` state — braces inside `"..."` don't shift depth
+- Handles `\"` escape correctly
+- Returns substring covering OUTERMOST matched `{...}` (greedy)
+- Returns `None` if no balanced object found
+
+Replaces both rfind callsites (truncated-msg path L99-103 + thinking-model path L108-113).
+
+**Verification**: `tests/test_stress_a1_15b_chunk_beta.py` 10 invariant cases:
+- Simple flat / nested-outer-wins / string-with-braces / escaped-quote / unbalanced / no-braces / empty / multiple-top-level / realistic-GLM-markdown-fence
+
+**Paper-grade impact**: GLM digest retry efficiency + downstream JSON parse reliability. Affects paper §5 mechanism prose if any narrative cites GLM-categorized failure modes (currently cited as fallback bucket counts, not specific GLM categories — but boundary).
+
+**B-numbers consumed**: B-845 through B-847 (3 IDs; A1.15b Chunk β). Next available: B-848+.
+
+**Pytest delta**: 733 (pre-Chunk-β) → 766 PASS (+33 new tests in `test_stress_a1_15b_chunk_beta.py`).
+
+**A1.15b Chunk β reviewer lessons distilled (3)**:
+1. **Codex OOB attacks land on prose↔code claim mismatch** — B-846 (paper §3 reference-image-claim falsified by parents[2] + empty site) is exactly the prose-vs-code class that codex Mode B systematically catches. Same pattern as B-822 / B-824 / B-838 in A1.16 cold-start (paper-§N-claim-without-code-backing). Cross-AI scope split (Claude = methodology / codex = code-audit + prose-claim) is paying off in real findings.
+2. **rfind / lstrip / partition string-tools accumulate latent corruption** — `rfind("{")` looks innocent until nested data flows through. A1.15b finds 3 such cases in the GLM substrate (this B-847 + sibling potential in batch_digest paths). Future pattern: any string-based JSON / token extraction should use balanced-brace OR proper parser, never rfind-based slicing.
+3. **Phantom mode central normalize defers from per-conditional fix** — B-845 alternative was 9 per-conditional substitutions (each `obs_mode == "som"` → `obs_mode in ("som", "phantom_som")`). User implicit "single helper" preference confirmed by past A1.15 / A1.16 cycles. `_normalize_obs_mode` central function = 5 LOC vs 9-line distributed change. Memory `feedback_split_large_scope` rule: prefer central abstractions over distributed conditionals when 3+ sites need same logic.
+
+**Deferred to Chunk γ+ (remaining 14 P1+P2)**:
+- P1-1 ntfy topic rotation (22-file batch sed + env file)
+- P1-4 incremental scan processed-set tracking (~2h refactor)
+- P1-6 glm_client.py extraction (30min)
+- P1-7 200KB → 2MB tail bump (5min)
+- P1-10 atomic state/digest writes + mandatory locks (45min)
+- P1-11 auto_pull skip analysis on validate-fail (10min)
+- 7 P2 items (~30min total)
+
+Total Chunk β: 3 fixes + 33 tests, ~90min. Total deferred: 13 items.
+
 **A1.15b Chunk α reviewer lessons distilled (3)**:
 1. **Cross-cycle sibling-prop check requires deeper scope than original retire batch** — A1.15 Chunk a swept 6 queue scripts for `--glm-config`/`--digest-dir` flag strip but missed `restart_watchdog.sh`. The propagation matrix should be wider (any script that REBUILDS watchdog argv, not just CALLS watchdog). Future flag-retire patterns: `grep -lE '(--glm-config|--digest-dir|--retired-flag)' scripts/` then `--glm-config` ALSO check rebuild patterns `new_args+=(--<flag>)` in shell scripts.
 2. **User cost-saving decisions propagate through multiple code paths** — crontab.txt 2026-05-13 removal of `glm-refresh-playbook` cron was 1 of 3 paths firing it. Hidden paths: Makefile post-hook (B-842) + indirect chain via sync_a100/cell_autoupdate → make analysis → post-hook. **Single-point fix is rarely sufficient** when burning resource (GLM tokens) is the side-effect; full grep of `<retired-target>` across Makefile + scripts + sub-scripts required.

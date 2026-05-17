@@ -249,10 +249,25 @@ def _load_annotated_screenshot_b64(episode_dir: Path, step_idx: int) -> Optional
 
 
 def _load_reference_images_b64(site: Optional[str], task_id: int) -> List[str]:
-    """Load task reference images from VWA task JSON, return list of base64 strings."""
+    """Load task reference images from VWA task JSON, return list of base64 strings.
+
+    B-846 (A1.15b Chunk β P1-3): Pre-fix this resolved to
+    `Path(__file__).parent.parent.parent / "external" / "visualwebarena"`
+    which expands to `scripts/external/visualwebarena` (path nonexistent),
+    not repo-root `external/visualwebarena` (path exists). Codex Mode B
+    spot-check confirmed `parents[2]` resolves wrong, `parents[3]` resolves
+    correct. Paper §3 prose claims GLM uses task reference images for
+    visual-match diagnosis ← falsified by current code path: site is also
+    always "" from _extract_site live-sidecar (see B-846 sibling fix
+    below), so reference image lookup never fires regardless of path.
+
+    Fix: use `parents[3]` (resolves to repo root since this file is at
+    `scripts/maintenance/glm/glm_batch_digest.py`, parents[3] = repo).
+    Paired with `_extract_site` fix to actually pass a site name.
+    """
     if not site:
         return []
-    vwa_root = Path(__file__).resolve().parent.parent.parent / "external" / "visualwebarena"
+    vwa_root = Path(__file__).resolve().parents[3] / "external" / "visualwebarena"
     # Try both test_{site}.json and test_{site}.raw.json
     for fname in [f"test_{site}.raw.json", f"test_{site}.json"]:
         cfg_path = vwa_root / "config_files" / "vwa" / fname
@@ -532,13 +547,56 @@ V6) 参考 payload 中的 action_execution_summary 字段（若存在）判断�
 """
 
 
+# B-845 (A1.15b Chunk β P1-2): phantom mode central normalize. Pre-fix,
+# `_get_system_prompt` / mode-specific fields write / SoM-image-load all
+# only branched on `obs_mode in {dom, som, vision}`. Phantom modes
+# (`phantom_som`, `phantom_dom`, `phantom_text`, `phantom_prompt`) all
+# fell through to the base prompt + no mode-specific fields + no
+# annotated screenshots. Codex Mode B audit confirmed via disk CSV
+# spot-check that archived obs_mode values include phantom_*. On a 36-
+# condition Phase 1a, half the conditions get generic GLM diagnosis →
+# paper §3 phantom hero claim's failure narratives are noise.
+#
+# Fix: normalize phantom_* into canonical {dom, som, vision} digest
+# bucket. `phantom_som` shares SoM-text format (marks + image when
+# present) → som-like. `phantom_dom`/`phantom_text` use AXTree text
+# stripped of hierarchy → dom-like (no annotated image). `phantom_prompt`
+# uses SoM prompt with AXTree text → dom-like (no SoM image). See
+# memory `project_phantom_space_axes_format_not_information` for the
+# format/info axis discussion that justifies this mapping.
+_PHANTOM_TO_CANONICAL = {
+    "phantom_som": "som",     # SoM text + image (when annotated avail)
+    "phantom_dom": "dom",     # AXTree flat-list, no image
+    "phantom_text": "dom",    # AXTree flat-list, no image
+    "phantom_prompt": "dom",  # SoM-prompt + AXTree text, no image
+}
+
+
+def _normalize_obs_mode(obs_mode: str) -> str:
+    """Normalize raw obs_mode to canonical {dom, som, vision} digest bucket.
+
+    Phantom modes get mapped to the diagnostic family that shares the
+    SAME observation surface (text format + image presence), so GLM
+    digest prompts + mode-specific fields apply consistently across
+    canonical+phantom siblings. Original obs_mode is preserved in the
+    case record for downstream (paper §3 phantom-vs-canonical analysis);
+    only the DIGEST decision branches use the canonical mode.
+    """
+    m = str(obs_mode or "").strip().lower()
+    return _PHANTOM_TO_CANONICAL.get(m, m)
+
+
 def _get_system_prompt(obs_mode: str) -> str:
-    """Return the appropriate system prompt based on observation mode."""
-    if obs_mode == "dom":
+    """Return the appropriate system prompt based on observation mode.
+
+    Phantom modes are normalized via `_normalize_obs_mode` before dispatch.
+    """
+    canonical = _normalize_obs_mode(obs_mode)
+    if canonical == "dom":
         return _DIGEST_SYSTEM_PROMPT_BASE + _DIGEST_DOM_ADDENDUM
-    if obs_mode == "som":
+    if canonical == "som":
         return _DIGEST_SYSTEM_PROMPT_BASE + _DIGEST_SOM_ADDENDUM
-    if obs_mode == "vision":
+    if canonical == "vision":
         return _DIGEST_SYSTEM_PROMPT_BASE + _DIGEST_VISION_ADDENDUM
     return _DIGEST_SYSTEM_PROMPT_BASE
 
@@ -608,6 +666,11 @@ def _glm_digest_one(
 
     fallback = _fallback_episode_diagnosis(case)
 
+    # B-845 (Chunk β P1-2): canonical mode for digest branching;
+    # phantom_som/dom/text/prompt mapped here. Original obs_mode preserved
+    # in case record for downstream paper §3 phantom-vs-canonical analysis.
+    canonical_mode = _normalize_obs_mode(obs_mode)
+
     # Compute action_execution_summary for all modes
     action_summary: Optional[Dict[str, Any]] = None
     failed_indices: Optional[List[int]] = None
@@ -616,7 +679,7 @@ def _glm_digest_one(
         try:
             action_summary = _compute_action_execution_summary(step_jsonl)
             # Vision mode: use failed steps for key_steps selection
-            if obs_mode == "vision":
+            if canonical_mode == "vision":
                 failed_indices = action_summary.get("failed_step_indices")
         except Exception as e:
             print(f"[batch-digest] WARNING: action summary failed task_id={task_id}: {e}")
@@ -638,22 +701,25 @@ def _glm_digest_one(
             if dom:
                 dom_snippets[idx] = dom
 
-        if obs_mode == "som":
+        if canonical_mode == "som":
             # SoM mode: use annotated SoM screenshots + SoM marks text
+            # phantom_som also lands here per _PHANTOM_TO_CANONICAL.
             som_marks = _load_som_marks_steps(ep_dir, key_steps)
             for idx in key_steps[:max_images]:
                 b64 = _load_som_image_b64(ep_dir, idx)
                 if b64:
                     images_b64[idx] = b64
-        elif obs_mode == "vision":
+        elif canonical_mode == "vision":
             # Vision mode: use annotated screenshots (with crosshair + banner)
             for idx in key_steps[:max_images]:
                 b64 = _load_annotated_screenshot_b64(ep_dir, idx)
                 if b64:
                     images_b64[idx] = b64
         # dom mode: no step screenshots, but load task reference images
-        # so GLM can see what visual task the agent was supposed to match
-        if obs_mode == "dom":
+        # so GLM can see what visual task the agent was supposed to match.
+        # phantom_dom/text/prompt also land here per _PHANTOM_TO_CANONICAL
+        # — they share the no-annotated-image surface with canonical DOM.
+        if canonical_mode == "dom":
             ref_imgs = _load_reference_images_b64(site, task_id)
             for ri, b64 in enumerate(ref_imgs):
                 # Use negative indices to distinguish from step screenshots
@@ -938,16 +1004,19 @@ def _build_digest_record(
     if vision_models:
         record["_vision_model_used"] = glmm_use.get("model", "")
 
-    # Mode-specific fields
+    # Mode-specific fields. B-845 (Chunk β P1-2): branch on canonical
+    # mode to include phantom_* under their parent family. Original
+    # obs_mode kept in record["observation_mode"] for downstream analysis.
     obs_mode = str(case.get("observation_mode", "") or "").strip().lower()
-    if obs_mode == "dom":
+    canonical_mode = _normalize_obs_mode(obs_mode)
+    if canonical_mode == "dom":
         record["dom_element_id_issue"] = str(parsed.get("dom_element_id_issue", "") or "").strip() or "否"
         record["dom_failure_type"] = str(parsed.get("dom_failure_type", "") or "").strip() or "不适用"
-    elif obs_mode == "som":
+    elif canonical_mode == "som":
         record["som_visual_used"] = str(parsed.get("som_visual_used", "") or "").strip() or "否"
         record["som_mark_occlusion"] = str(parsed.get("som_mark_occlusion", "") or "").strip() or "不适用"
         record["som_failure_type"] = str(parsed.get("som_failure_type", "") or "").strip() or "不适用"
-    elif obs_mode == "vision":
+    elif canonical_mode == "vision":
         record["vision_coordinate_issue"] = str(parsed.get("vision_coordinate_issue", "") or "").strip() or "否"
         record["vision_failure_type"] = str(parsed.get("vision_failure_type", "") or "").strip() or "不适用"
 
@@ -955,10 +1024,39 @@ def _build_digest_record(
 
 
 def _extract_site(case: Dict[str, Any]) -> str:
-    """Extract site name from condition_id or other fields."""
-    cid = str(case.get("condition_id", "") or "")
-    # condition_id pattern: phase1_<mode>_router_0
-    # site is usually in the run_dir name, not condition. Fall back to empty.
+    """Extract site name from `run_dir` field or fallback heuristics.
+
+    B-846 (A1.15b Chunk β P1-3): Pre-fix always returned `""` which made
+    `_load_reference_images_b64` always early-exit at `if not site`.
+    Combined with parents[2] path bug, DOM visual-match diagnosis path
+    was double-dead (wrong path + no site).
+
+    Fix: walk known fields where site can be inferred:
+      1. case["site"] if explicitly set (caller may pass)
+      2. case["run_dir"] basename matches `_<site>_<8-digit>` pattern
+         (same anchored pattern as glm_cell_autoupdate.py:135)
+      3. condition_id has no site segment (e.g. `phase1_dom_router_0`);
+         fall back to "" only when none of the above matches.
+
+    Returns canonical site name in {classifieds, reddit, shopping,
+    shopping_admin} or "" if not inferable. Caller must handle "" by
+    skipping reference-image load (current behavior preserved).
+    """
+    explicit = str(case.get("site", "") or "").strip().lower()
+    if explicit in {"classifieds", "reddit", "shopping", "shopping_admin"}:
+        return explicit
+    run_dir = str(case.get("run_dir", "") or "")
+    if run_dir:
+        # Match the same anchored pattern as glm_cell_autoupdate.py:135
+        # `_<site>_<8-digit>` to avoid shopping/shopping_admin substring
+        # collision. Order longest-first per longest-prefix-match policy.
+        import re as _re
+        for site in ("shopping_admin", "classifieds", "reddit", "shopping"):
+            if _re.search(rf"_{_re.escape(site)}_\d{{8}}", run_dir):
+                return site
+    # condition_id pattern: phase1_<mode>_router_0 has no site segment;
+    # cannot extract from there. Falls through to "" → reference image
+    # load early-exits (preserved fallback behavior).
     return ""
 
 
