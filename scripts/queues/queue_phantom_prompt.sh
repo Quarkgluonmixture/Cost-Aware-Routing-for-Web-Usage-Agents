@@ -131,7 +131,9 @@ fi
 # ---------- watchdog 启动 ----------
 WD_STATE="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.state.json"
 WD_LOG="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.log"
-# Unified per-baseline aggregate gallery — all B0/B1 modes share one URL.
+# B-595 (A1.13 P2-3 gemini G3, 2026-05-17): unified per-baseline aggregate
+# gallery — alias to `B${n}_3mode/` URL for ANY baseline (regex `^B[0-9]+_3mode$`
+# in generate_gallery.py post-B-585). "3mode" is historical alias.
 AGGREGATE_PREFIX="${BASELINE}_3mode"
 
 # Runner PID for watchdog self-exit — watchdog auto-exits when this PID dies
