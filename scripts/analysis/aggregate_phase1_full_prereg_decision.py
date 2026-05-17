@@ -245,13 +245,42 @@ def _h2a_per_task_ratio(per_task: Dict[str, Dict[str, Dict]]) -> Optional[Dict]:
     }
 
 
+def _six_arm_complete_case_universe(per_task: Dict[str, Dict[str, Dict]]) -> Optional[list]:
+    """B-948 (/stress A2.3a P0-6-B*, 2026-05-17): six-arm complete-case task universe.
+
+    Returns sorted list of task_ids where ALL 6 modes (DOM/SoM/Vision/P-text/
+    P-prompt/P-SoM) ran and have a non-None `success` value. This matches
+    `aggregate_phantom_lift.py:655-658` `common` semantics. Pre-fix
+    `_h3_axis_per_cell` used `axis ∩ ref` (only 2 modes) — different universe
+    than `aggregate_phantom_lift.py`, allowing tasks where DOM/SoM/Vision or
+    other phantom axes were missing to inflate H3 unique-contribution counts.
+    """
+    six_modes = ("DOM", "SoM", "Vision", "P-text", "P-prompt", "P-SoM")
+    mode_keysets = []
+    for m in six_modes:
+        mp = per_task.get(m, {})
+        if not mp:
+            return None  # any missing mode → six-arm universe undefined
+        mode_keysets.append({t for t, rec in mp.items()
+                              if rec.get("success") is not None})
+    common = set.intersection(*mode_keysets) if mode_keysets else set()
+    return sorted(common)
+
+
 def _h3_axis_per_cell(per_task: Dict[str, Dict[str, Dict]], axis_mode: str,
                        ref_mode: str = "P-SoM", *,
+                       universe: Optional[list] = None,
                        B: int = PREREG_B, seed: int = PREREG_SEED) -> Optional[Dict]:
     """H3 axis test: count tasks where axis_mode solved AND ref_mode did NOT.
 
     axis_mode = "P-text" (axis-1) or "P-prompt" (axis-2).
     Per-cell unique-count statistic + paired bootstrap SE → FE pool input.
+
+    B-948 (/stress A2.3a P0-6-B*, 2026-05-17): accepts `universe` param —
+    the six-arm complete-case task list from `_six_arm_complete_case_universe`.
+    If None, falls back to legacy `axis ∩ ref` for backward compatibility,
+    but the CANONICAL caller (`compute_full_decision`) now passes the
+    six-arm universe matching `aggregate_phantom_lift.py:655-658`.
 
     Returns None if either mode missing or below MIN_EP_FOR_CELL.
     """
@@ -259,7 +288,12 @@ def _h3_axis_per_cell(per_task: Dict[str, Dict[str, Dict]], axis_mode: str,
     ref = per_task.get(ref_mode, {})
     if not axis or not ref:
         return None
-    common = sorted(set(axis.keys()) & set(ref.keys()))
+    if universe is not None:
+        # B-948: use six-arm complete-case universe (canonical, matches lift script)
+        common = sorted(set(universe) & set(axis.keys()) & set(ref.keys()))
+    else:
+        # Legacy axis-only universe (kept for backward compat)
+        common = sorted(set(axis.keys()) & set(ref.keys()))
     if len(common) < MIN_EP_FOR_CELL:
         return None
     axis_solved = np.array(
@@ -289,6 +323,9 @@ def _h3_axis_per_cell(per_task: Dict[str, Dict[str, Dict]], axis_mode: str,
         "axis_mode": axis_mode,
         "ref_mode": ref_mode,
         "n_tasks": n,
+        # B-948: emit universe label so reviewers can verify which task
+        # universe H3 was computed on (six-arm vs axis-only).
+        "universe_label": "six_arm_complete_case" if universe is not None else "axis_intersection_legacy",
         "unique_count_pp": count_pp,
         "n_unique": int(unique.sum()),
         "se_pp": se_pp,
@@ -394,8 +431,15 @@ def build_full_decision(cells: List[Dict]) -> Dict:
             continue
         per_task = _load_cell_per_task(cell)
         h2a = _h2a_per_task_ratio(per_task)
-        h3_axis1 = _h3_axis_per_cell(per_task, "P-text", ref_mode="P-SoM")
-        h3_axis2 = _h3_axis_per_cell(per_task, "P-prompt", ref_mode="P-SoM")
+        # B-948 (/stress A2.3a P0-6-B*, 2026-05-17): compute six-arm complete-
+        # case universe ONCE per cell + pass to both axis tests → matches
+        # `aggregate_phantom_lift.py:655-658` universe semantics. Pre-fix
+        # axis-only intersection drifted H3 universe vs lift script.
+        six_arm_universe = _six_arm_complete_case_universe(per_task)
+        h3_axis1 = _h3_axis_per_cell(per_task, "P-text", ref_mode="P-SoM",
+                                      universe=six_arm_universe)
+        h3_axis2 = _h3_axis_per_cell(per_task, "P-prompt", ref_mode="P-SoM",
+                                      universe=six_arm_universe)
         per_cell_data.append({
             "baseline": cell["baseline"],
             "site": cell["site"],
@@ -482,59 +526,64 @@ def build_full_decision(cells: List[Dict]) -> Dict:
 
     # H3 axis-1 FE pool
     h3a_per_cell = [c["h3_axis1"] for c in per_cell_data if c["h3_axis1"] is not None]
-    if len(h3a_per_cell) >= 2:
-        h3a_thetas = np.array([r["unique_count_pp"] for r in h3a_per_cell])
-        h3a_ses = np.array([r["se_pp"] for r in h3a_per_cell])
-        h3a_zero_se = int((h3a_ses <= 0).sum())
-        if h3a_zero_se > 0:
-            h3a_ses = np.where(h3a_ses <= 0, 1.0, h3a_ses)
-        h3a_w = 1.0 / (h3a_ses ** 2)
-        h3a_theta_fe = float(np.sum(h3a_w * h3a_thetas) / np.sum(h3a_w))
-        h3a_se_fe = float(math.sqrt(1.0 / np.sum(h3a_w)))
-        h3a_z = h3a_theta_fe / max(h3a_se_fe, 1e-12)
-        h3a_p = 1.0 - _norm_cdf(h3a_z)  # one-sided H0: pooled count ≤ 0
-        payload["h3_axis1_pooled_fe"] = {
-            "k_cells": len(h3a_per_cell),
-            "theta_FE_pp": h3a_theta_fe,
-            "se_FE_pp": h3a_se_fe,
-            "ci95_FE_lo_pp": h3a_theta_fe - 1.96 * h3a_se_fe,
-            "ci95_FE_hi_pp": h3a_theta_fe + 1.96 * h3a_se_fe,
-            "z_one_sided": h3a_z,
-            "p_one_sided": h3a_p,
+    # B-949 (/stress A2.3a P0-7-B, 2026-05-17): H3 gate threshold reform —
+    # pre-fix used `p_one_sided < α` (z > 1.645 at α=0.05) but prereg
+    # `preregistration.md:163` writes gate as "FE CI excludes 0" (z > 1.96
+    # = 95% CI lower > 0). The two are NOT equivalent: one-sided p<0.05 is
+    # easier to pass than CI-excludes-0. Per-cell `n_unique=1` floor from
+    # `preregistration.md:165` ("≥ 2 tasks per cell") was also unenforced —
+    # noise-floor cells slipped into FE pool. Fix: gate on CI-lower-bound > 0
+    # (matches prereg prose) AND skip per-cell n_unique<2 cells from FE pool
+    # input + emit `noise_floor_cells_skipped` for transparency.
+    H3_MIN_UNIQUE_TASKS = 2  # per prereg L165
+
+    def _h3_axis_pooled_fe(per_cell_list, axis_name):
+        # Skip per-cell n_unique < 2 (sampling noise floor)
+        filtered = [r for r in per_cell_list if r.get("n_unique", 0) >= H3_MIN_UNIQUE_TASKS]
+        n_noise_skipped = len(per_cell_list) - len(filtered)
+        if len(filtered) < 2:
+            return None, {"n_noise_skipped": n_noise_skipped, "k_after_filter": len(filtered)}
+        thetas = np.array([r["unique_count_pp"] for r in filtered])
+        ses = np.array([r["se_pp"] for r in filtered])
+        zero_se = int((ses <= 0).sum())
+        if zero_se > 0:
+            ses = np.where(ses <= 0, 1.0, ses)
+        w = 1.0 / (ses ** 2)
+        theta_fe = float(np.sum(w * thetas) / np.sum(w))
+        se_fe = float(math.sqrt(1.0 / np.sum(w)))
+        ci_lo = theta_fe - 1.96 * se_fe
+        ci_hi = theta_fe + 1.96 * se_fe
+        z = theta_fe / max(se_fe, 1e-12)
+        p_one_sided = 1.0 - _norm_cdf(z)
+        # B-949: gate = CI excludes 0 (matches prereg §2 H3 prose L163), NOT
+        # one-sided p<α. Both quantities reported for transparency.
+        passed_ci = bool(ci_lo > 0.0)
+        passed_p_legacy = bool(p_one_sided < ALPHA)
+        return {
+            "k_cells": len(filtered),
+            "k_cells_input": len(per_cell_list),
+            "n_noise_floor_cells_skipped": n_noise_skipped,
+            "noise_floor_threshold_unique_tasks": H3_MIN_UNIQUE_TASKS,
+            "theta_FE_pp": theta_fe,
+            "se_FE_pp": se_fe,
+            "ci95_FE_lo_pp": ci_lo,
+            "ci95_FE_hi_pp": ci_hi,
+            "z_one_sided": z,
+            "p_one_sided": p_one_sided,
             "alpha": ALPHA,
-            "passed": bool(h3a_p < ALPHA),
-            "n_zero_se_floored_cells": h3a_zero_se,
-        }
-    else:
-        payload["h3_axis1_pooled_fe"] = None
+            "gate_rule": "CI_lower_bound > 0  (per prereg §2 H3 L163)",
+            "passed": passed_ci,  # B-949: CI-based gate (canonical)
+            "passed_p_one_sided_legacy": passed_p_legacy,  # transparency only
+            "n_zero_se_floored_cells": zero_se,
+        }, None
+
+    h3a_result, h3a_skip = _h3_axis_pooled_fe(h3a_per_cell, "axis1")
+    payload["h3_axis1_pooled_fe"] = h3a_result if h3a_result is not None else h3a_skip
 
     # H3 axis-2 FE pool
     h3b_per_cell = [c["h3_axis2"] for c in per_cell_data if c["h3_axis2"] is not None]
-    if len(h3b_per_cell) >= 2:
-        h3b_thetas = np.array([r["unique_count_pp"] for r in h3b_per_cell])
-        h3b_ses = np.array([r["se_pp"] for r in h3b_per_cell])
-        h3b_zero_se = int((h3b_ses <= 0).sum())
-        if h3b_zero_se > 0:
-            h3b_ses = np.where(h3b_ses <= 0, 1.0, h3b_ses)
-        h3b_w = 1.0 / (h3b_ses ** 2)
-        h3b_theta_fe = float(np.sum(h3b_w * h3b_thetas) / np.sum(h3b_w))
-        h3b_se_fe = float(math.sqrt(1.0 / np.sum(h3b_w)))
-        h3b_z = h3b_theta_fe / max(h3b_se_fe, 1e-12)
-        h3b_p = 1.0 - _norm_cdf(h3b_z)
-        payload["h3_axis2_pooled_fe"] = {
-            "k_cells": len(h3b_per_cell),
-            "theta_FE_pp": h3b_theta_fe,
-            "se_FE_pp": h3b_se_fe,
-            "ci95_FE_lo_pp": h3b_theta_fe - 1.96 * h3b_se_fe,
-            "ci95_FE_hi_pp": h3b_theta_fe + 1.96 * h3b_se_fe,
-            "z_one_sided": h3b_z,
-            "p_one_sided": h3b_p,
-            "alpha": ALPHA,
-            "passed": bool(h3b_p < ALPHA),
-            "n_zero_se_floored_cells": h3b_zero_se,
-        }
-    else:
-        payload["h3_axis2_pooled_fe"] = None
+    h3b_result, h3b_skip = _h3_axis_pooled_fe(h3b_per_cell, "axis2")
+    payload["h3_axis2_pooled_fe"] = h3b_result if h3b_result is not None else h3b_skip
 
     # Apply framing rule with I² cap-only
     h1_pass = fe["gate_passed"]

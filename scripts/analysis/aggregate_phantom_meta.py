@@ -337,6 +337,27 @@ def main() -> int:
             **hk_csv,
         })
 
+    # B-947 (/stress A2.3a P0-5-B*, 2026-05-17): stamp family_scope +
+    # gating_status onto rows BEFORE CSV write — pre-fix annotation was at
+    # L437-438 AFTER CSV write at L341-345, so CSV consumers (fig_meta_forest,
+    # downstream pipelines) only saw `family=PRIMARY` without the
+    # APPENDIX_RE_SENSITIVITY disambiguation. The DL/HKSJ RE estimates were
+    # machine-readable as paper-grade decision-grade despite the MD prose at
+    # L379-385 saying appendix-only. This is the artifact contract bug Mode B
+    # F1 surfaced — provenance theater. Fix: annotate at construction time so
+    # both CSV writer (L341) and MD writer (L443+) see the same row.
+    family_scope_map = {
+        "PRIMARY":   ("APPENDIX_RE_SENSITIVITY_m1", "appendix-only"),
+        "SECONDARY": ("APPENDIX_RE_SENSITIVITY_m3", "appendix-only"),
+        "TERTIARY":  ("APPENDIX_RE_SENSITIVITY_m2", "exploratory"),
+    }
+    for r in meta_rows:
+        f_scope, gating = family_scope_map.get(
+            r["family"], (f"UNKNOWN_FAMILY_{r['family']}", "—")
+        )
+        r["family_scope"] = f_scope
+        r["gating_status"] = gating
+
     # CSV
     with out.open("w", newline="") as f:
         if meta_rows:
@@ -415,27 +436,16 @@ def main() -> int:
             return "—"
         return f"{v:{spec}}"
 
-    # B-182: family_scope + gating_status are derived from the family label
-    # already attached to each meta_row. PRIMARY family in this RE script is
-    # appendix sensitivity, not a paper gate — the paper PRIMARY (FE
-    # superiority) lives in `phase1_prereg_gate.csv` (currently MISSING per
-    # B-185 follow-up issue).
-    family_scope_map = {
-        "PRIMARY":   ("APPENDIX_RE_SENSITIVITY_m1", "appendix-only"),
-        "SECONDARY": ("APPENDIX_RE_SENSITIVITY_m3", "appendix-only"),
-        "TERTIARY":  ("APPENDIX_RE_SENSITIVITY_m2", "exploratory"),
-    }
+    # B-947 (/stress A2.3a P0-5-B*, 2026-05-17): family_scope + gating_status
+    # are now stamped onto rows BEFORE CSV write at L339-355 (was L437-438
+    # AFTER CSV write — see fix comment there). MD section here just READS the
+    # already-annotated fields.
     for r in meta_rows:
         sig = "✅" if (r.get("p_re_holm") is not None and r["p_re_holm"] < 0.05) else "❌"
         i2_lab = i_squared_label(r["I2"]) if r["k_cells"] > 1 else "n/a (k=1)"
         p_re_holm_str = _fmt(r.get("p_re_holm")) if r["k_cells"] >= 1 else "—"
-        f_scope, gating = family_scope_map.get(
-            r["family"], (f"UNKNOWN_FAMILY_{r['family']}", "—")
-        )
-        # B-182: stamp family_scope + gating_status onto the row so downstream
-        # CSV / JSON consumers also see the disambiguation.
-        r["family_scope"] = f_scope
-        r["gating_status"] = gating
+        f_scope = r["family_scope"]
+        gating = r["gating_status"]
         lines.append(
             f"| {r['family']} | {f_scope} | {gating} | {r['arm_label']} | {r['k_cells']} | "
             f"+{r['theta_re']:.2f}pp | "
