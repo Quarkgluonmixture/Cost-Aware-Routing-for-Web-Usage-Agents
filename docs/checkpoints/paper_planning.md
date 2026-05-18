@@ -1181,7 +1181,7 @@ Round 4 (保底):
 
 ## §8 Router Design (single learned classifier, v7 walk-back locked)
 
-> **v7 walk-back (2026-05-16) + B-1003 /stress A2.5 P1-10-A trim (2026-05-18)**: Paper-1 §6 = **single learned router** with Pareto non-dominance H10 gate (Q4=A K-of-6 PRIMARY + APPENDIX FE pool). Rule-based router + cascade composition + first-step trigger DEFERRED to paper-2 per `phase1_plan §C2` + `preregistration §2 H9/H11 paper-2 stub`. Archive simulation P1 rule-based decision-tree was empirically degenerate (`dom_size_threshold=12000` fires on <0.14% of steps under cleaned-AXTree regime); cascade composition adds engineering complexity without paper-grade lift evidence.
+> **v7 walk-back (2026-05-16) + B-1003 /stress A2.5 P1-10-A trim (2026-05-18) + B-1550 /stress A2.8 P0-2-AB* H10 estimand refinement (2026-05-18 deep-night)**: Paper-1 §6 = **single learned router** with H10 gate = **two-layer operational deployment criterion** (per-cell paired-bootstrap 95% Pareto non-dominance + fixed-cell criterion across 6 cells; FE inverse-variance pool retained as Appendix-D sensitivity per H1-mirror estimand parallelism — supersedes prior "Q4=A K-of-6 descriptive PRIMARY + APPENDIX FE pool" framing per /stress A2.8 user-confirmed prose surgery; see prereg §H10 L209). Rule-based router + cascade composition + first-step trigger DEFERRED to paper-2 per `phase1_plan §C2` + `preregistration §2 H9/H11 paper-2 stub`. Archive simulation P1 rule-based decision-tree was empirically degenerate (`dom_size_threshold=12000` fires on <0.14% of steps under cleaned-AXTree regime); cascade composition adds engineering complexity without paper-grade lift evidence.
 
 ### 4 key design decisions (paper-1 §6 scope)
 
