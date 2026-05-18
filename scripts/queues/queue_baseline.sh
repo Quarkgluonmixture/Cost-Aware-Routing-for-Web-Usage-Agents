@@ -186,14 +186,19 @@ else
 
   RUNNER_LOG="${LOG_DIR}/${RUN_ID}_runner.log"
   echo "[baseline] launching runner → ${RUNNER_LOG}"
-  # B-1664 (/stress A2.11 P2-1-A 2026-05-18, user Q11=A): disable GCP Compute
-  # Engine metadata probe. google-auth library transitively imported via
-  # huggingface_hub probes GCE metadata server (~3s × 3 retries = ~9s startup
-  # delay + 3 WARN log lines that mask real errors). A100 VM is NOT on GCP →
-  # probe always fails. NO_GCE_CHECK=true short-circuits at google-auth level;
-  # GCE_METADATA_HOST=disabled.invalid prevents IP-based fallback probe.
-  export NO_GCE_CHECK=true
-  export GCE_METADATA_HOST=disabled.invalid
+  # B-1664-fu1 (Smoke 6 post-mortem 2026-05-18, replaces original B-1664):
+  # original B-1664 set NO_GCE_CHECK=true (NOT a real google-auth env var; bogus)
+  # + GCE_METADATA_HOST=disabled.invalid (sets _METADATA_ROOT path-only). But the
+  # GCE residency probe is `ping()` in google/auth/compute_engine/_metadata.py,
+  # which uses `_METADATA_IP_ROOT` derived from `GCE_METADATA_IP` (default
+  # 169.254.169.254). Empirical Smoke 6 (B0_dom_classifieds_20260518 17:02:24-30):
+  # still 3-retry × 3s = 9s startup waste despite original env. Correct fix:
+  # GCE_METADATA_IP=127.0.0.1 → ping target unreachable on loopback → instant
+  # ECONNREFUSED; GCE_METADATA_TIMEOUT=1 → each retry 1s (verified 0.28s real).
+  # 9s startup waste × 36 Pass-1 conditions ≈ 5.4 min saved + log noise cleared.
+  export GCE_METADATA_IP=127.0.0.1
+  export GCE_METADATA_TIMEOUT=1
+  export GCE_METADATA_HOST=disabled.invalid  # retain (defense-in-depth, blocks path-based fallback)
   setsid nohup "${PYTHON_BIN}" scripts/run_experiment.py \
     --config "${CONFIG}" \
     --run_id "${RUN_ID}" \
