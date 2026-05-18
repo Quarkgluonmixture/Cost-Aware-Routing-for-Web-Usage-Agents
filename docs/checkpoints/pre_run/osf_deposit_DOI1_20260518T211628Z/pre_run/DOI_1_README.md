@@ -5,7 +5,7 @@ captured_at: 2026-05-18T21:16:28Z  # pre-launch witness capture UTC (zero A100 r
 captured_tier: pre-outcome-creation  # tier 1 strictest per B-1675 capture_doi1_witness.sh — all canonical-pattern counts = 0 + any_files_in_run_dirs = 0 (no Fire-3 run_dir even exists at capture moment; substrate genuinely empty)
 witness_capture_strategy: pre-launch  # captured BEFORE Fire-3 launch invocation rather than between gates-pass and runner-spawn, to side-step the ~5-15 sec runner-startup window that writes first *_steps_v2.jsonl intermediate
 artifact_existence_check: artifact_existence_check_doi1_canonical_20260518T211628Z.txt  # in this same pre_run/ dir alongside this README
-artifact_existence_check_sha256: 011fa4c07d76798a57070d9aea8b1653ca50dfe432b9c4dee689b96ee9cc6691
+artifact_existence_check_sha256: 6056b905e25b0880e613eeb43a091f3281e107073736608755331185ffcadbe3  # full-file SHA-256 (matches MANIFEST_SHA256.txt; verifiable via standard `sha256sum`). Witness file's internal line 44 self-doc cites 011fa4c07d76798a57070d9aea8b1653ca50dfe432b9c4dee689b96ee9cc6691 = content-only SHA-256 (file bytes excluding self-doc epilogue line 44 itself; chicken-and-egg — including the SHA inside the file changes the SHA). See §"Witness file hash convention" below.
 git_head: 590ad12f9cea69bcb06fb0e12d1e09837ac257da  # master HEAD at pre-launch witness capture; descendant of canonical_substance_lock_sha
 canonical_substance_lock_sha: 72b93c939526fb0b9a733013852bd90136d601aa  # substance-lock post Q3=A doctrine fix + B-### renumber
 canonical_substance_lock_tag: preregistration-locked-q3a  # at 72b93c9 above
@@ -28,7 +28,7 @@ fire3_attempt3_partial_archived: results/visualwebarena/phase1/_archive_pre_fire
 >
 > **Witness capture strategy = pre-launch** (per B-1751-fu / Fire-3 attempt #4 strategy). The 4 prior attempts (smoke 6 + attempts #1-#3) all had operational issues:
 >   - Attempt #1 (20:53:06Z): preflight FAIL on NLTK `find("tokenizers/punkt_tab")` path-resolution bug (NLTK 3.9+) — Fire-3 didn't launch
->   - Attempt #2 (20:59:34Z): preflight FAIL on Gate 1 un-allowlisted `<TBD>` marker in prereg frontmatter — Fire-3 didn't launch
+>   - Attempt #2 (20:59:34Z): preflight FAIL on Gate 1 un-allowlisted TBD-placeholder marker in prereg frontmatter — Fire-3 didn't launch
 >   - Attempt #3 (21:03:35Z): preflight ALL PASS + Fire-3 launched + B0 dom classifieds task 0 ran ~2 min + canonical witness captured at 21:06:50Z BUT landed at tier 2 (pre-outcome-inspection — `summary=0, condition=0, steps=1`) because witness capture happened ~2 min after runner started writing first step jsonl. Attempt killed + partial run_dir archived for audit trail (no contamination of Fire-3 outcome data because run_dir is in `_archive_pre_fire3/`).
 >   - Attempt #4 (THIS witness + imminent launch): pre-launch witness capture at zero A100 state → tier 1 strict. Fire-3 launch follows immediately after this README + witness commit + tag.
 >
@@ -40,7 +40,7 @@ fire3_attempt3_partial_archived: results/visualwebarena/phase1/_archive_pre_fire
 Current canonical substance-lock anchor:
   Git SHA       : 72b93c939526fb0b9a733013852bd90136d601aa
   Git tag       : preregistration-locked-q3a   (annotated, at 72b93c9)
-  Lock time UTC : 2026-05-18T11:30:00Z (substance) + Fire-3 PID-alive UTC (empirical witness, TBD)
+  Lock time UTC : 2026-05-18T11:30:00Z (substance) + 2026-05-18T21:16:28Z (empirical witness, pre-launch capture at zero A100 run_dir state — strategy revision attempt #4 per B-1751-fu, NOT post-PID-alive)
   Cite as       : "OSF preregistration registered at Git tag preregistration-locked-q3a (SHA 72b93c9),
                    substance-locked 2026-05-18T11:30Z per Q3=A doctrine fix wave B-1750~B-1759"
 
@@ -71,15 +71,21 @@ transient run-directory files; the corrected canonical-pattern scan after cleanu
 zero canonical outcome-bearing artifacts. Fire-2 outputs are excluded from DOI 1 and from
 canonical Phase 1a analysis.
 
-The **canonical DOI 1 witness** is **TBD pending Fire-3 launch**. It will be captured at
-Fire-3 PID-alive moment (post-NLTK-substrate-fix, **before creation or inspection of any
-Fire-3 outcome-bearing artifact**) via the regression-tested capture script
-`scripts/maintenance/capture_doi1_witness.sh` (B-1675; canonical patterns hardcoded with
-schema citation; `tests/test_doi1_witness_pattern.py` 9 cases PASS). The interim
-corrected scan at `artifact_existence_check_doi1_interim_20260518T144258Z.txt` (SHA-256
+The **canonical DOI 1 witness** was **captured at 2026-05-18T21:16:28Z** via the
+regression-tested capture script `scripts/maintenance/capture_doi1_witness.sh` (B-1675;
+canonical patterns hardcoded with schema citation; `tests/test_doi1_witness_pattern.py`
+9 cases PASS). Per the attempt-#4 strategy revision (B-1751-fu), capture happened
+**pre-launch** at zero A100 run_dir state — **before Fire-3 launch invocation** rather
+than between gates-pass and runner-spawn, side-stepping the ~5-15 sec runner-startup
+window that writes the first `*_steps_v2.jsonl` intermediate (attempt #3 evidence:
+canonical witness at 21:06:50Z landed at tier 2 with `steps=1` already present
+because witness was taken ~2 min after runner started). Tier 1 strict (canonical-pattern
+counts all 0 + `any_files_in_run_dirs = 0`) is empirically demonstrated; see canonical
+witness section below for full counts. The interim corrected scan at
+`artifact_existence_check_doi1_interim_20260518T144258Z.txt` (SHA-256
 `7563f0d55b651b604746ef0498fba3439ad7d7e130af97f0adda55e2bc7f1bf8`) documents the
-post-fire-2-cleanup, pre-fire-3 substrate state and serves as audit-trail bridge between
-retraction and canonical capture — it is **not** the DOI 1 anchor either.
+post-fire-2-cleanup, pre-fire-3 substrate state and served as audit-trail bridge
+between retraction and canonical capture — it is **not** the DOI 1 anchor.
 
 Full retraction audit trail: `master_bug_catalog.md ## /stress witness pattern bug
 retraction` (B-1670~B-1679) + `实验笔记.md §231` + git tag `retraction/osf-doi1-witness-59c60c4`.
@@ -111,24 +117,65 @@ capture time**; verified empirically by `capture_doi1_witness.sh` known-positive
 (B-1675 P1-4) which detects schema-mismatch (target=0 AND any-files>0 = abort) and
 auto-downgrades the tier label if outcomes already exist.
 
-## Canonical Fire-3 witness (TBD — pending capture)
+## Canonical Fire-3 witness (CAPTURED 2026-05-18T21:16:28Z — tier 1 strict)
 
 ```
-file:              <TBD — artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt>
-SHA-256:           <TBD>
-captured_utc:      <TBD>
-Fire-3 PID alive:  <TBD>
+file:              artifact_existence_check_doi1_canonical_20260518T211628Z.txt
+SHA-256 (full-file): 6056b905e25b0880e613eeb43a091f3281e107073736608755331185ffcadbe3
+SHA-256 (content-only, excluding self-doc line 44): 011fa4c07d76798a57070d9aea8b1653ca50dfe432b9c4dee689b96ee9cc6691
+captured_utc:      2026-05-18T21:16:28Z
+host:              a100-jiaming-test
+uptime-since:      2026-05-16 00:44:06
+witness strategy:  pre-launch (Fire-3 not yet invoked; A100 substrate at zero run_dir state)
 canonical patterns (per p79/experiment/logger_v2.py:111+114 + analysis.py:209):
-  episode_summary_v2 count:   <TBD — gate: must be 0 for pre-canonical-outcome-creation tier>
-  condition_summary_v2 count: <TBD — must be 0>
-  steps_v2 count:             <TBD — must be 0>
-  aggregate csv count (post fire-3 start): <TBD — must be 0>
-known-positive probe:
-  any-files in fire-3 run dirs at capture: <TBD>
+  episode_summary_v2 count:   0  ✓ tier 1 gate satisfied
+  condition_summary_v2 count: 0  ✓
+  steps_v2 count:             0  ✓
+  run-dir matching pattern (results/visualwebarena/phase1/B?_*_2026*): no matches — substrate genuinely empty
+known-positive probe (B-1675 P1-4 schema-mismatch detection):
+  any_json_in_run_dirs:        0
+  any_files_in_run_dirs:       0  ✓ tier 1 strictest (no scaffold-only false-positive)
+provenance at capture:
+  Git HEAD:                    590ad12f9cea69bcb06fb0e12d1e09837ac257da
+  preregistration-locked tag SHA (legacy, script artifact): 99f72f4e8cc10b90cd4408fde07ce69482ea474b
+  VWA submodule HEAD:          ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927
+STATUS:            pre-outcome-creation (canonical patterns return 0, any-files = 0 = strictest tier)
 ```
 
-**Do not submit OSF DOI 1 with these fields TBD.** Capture script will populate them at
-Fire-3 PID-alive moment; this README's DRAFT marker drops once filled.
+**Status**: ✅ All fields filled per canonical capture 2026-05-18T21:16:28Z.
+The DRAFT marker has dropped. Witness file is byte-immutable; MANIFEST_SHA256.txt
+hash is the canonical verifiable hash. See §"Witness file hash convention" below for
+disambiguation of the two SHAs.
+
+## Witness file hash convention
+
+The witness file (`artifact_existence_check_doi1_canonical_20260518T211628Z.txt`) has
+**two legitimate SHA-256 values** that both appear in this README and the audit trail:
+
+| Hash | What it covers | Purpose | Verifiable how |
+|---|---|---|---|
+| `6056b905e25b0880e613eeb43a091f3281e107073736608755331185ffcadbe3` | **Full file** (all 44 lines including self-doc epilogue) | **MANIFEST + OSF deposit verification** — standard, reviewer-checkable | `sha256sum artifact_existence_check_doi1_canonical_20260518T211628Z.txt` |
+| `011fa4c07d76798a57070d9aea8b1653ca50dfe432b9c4dee689b96ee9cc6691` | **Content-only** (lines 1-43, excluding self-doc epilogue line 44 itself) | **Self-documenting capture-script attestation** — recorded inside the file at line 44 | `head -43 <file> \| sha256sum` |
+
+**Why both exist**: line 44 of the witness file is a self-referential SHA-256 attestation
+(per `capture_doi1_witness.sh` B-1675 design). Including a file's own SHA inside the file
+is mathematically a chicken-and-egg problem (the SHA changes when you include it), so the
+capture script writes the **content-only hash** (hash of lines 1-43, before the self-doc
+line is added) and labels it inside the witness. The line 44 prose `(full file including
+this line's SHA reference)` is **slightly misleading** — the value `011fa4c0...` is
+actually the **pre-line-44** content hash, not the full-file hash. This was a
+capture-script wording bug, not a content tampering — the hash value itself is
+mathematically correct as the content-only hash.
+
+**Canonical for OSF verification**: use `6056b905...` (full-file hash). It matches
+MANIFEST_SHA256.txt and any reviewer can verify with standard `sha256sum`. The
+content-only hash `011fa4c0...` is retained for audit-trail continuity (it's documented
+inside the witness file and was originally written into this README before the
+disambiguation was understood).
+
+The witness file itself is **byte-immutable** — its content (including the historically
+inaccurate line 44 prose) is preserved verbatim to maintain capture-time integrity. Any
+post-capture modification of the witness file would invalidate the witness chain.
 
 ## Interim corrected scan (post-fire-2-cleanup, pre-fire-3 — audit-trail bridge only)
 
@@ -238,8 +285,7 @@ form — it appears in the bundle only as a retraction audit-trail artifact.
 
 ## Cross-link to DOI 2
 
-**DOI 2 — Phase 1a reproducibility bundle**: `<to-be-assigned post Pass-1 +
-Pass-2 + analysis-frozen + paper-finalized>`.
+**DOI 2 — Phase 1a reproducibility bundle**: `<to-be-assigned post Pass-1 + Pass-2 + analysis-frozen + paper-finalized>` # TBD-ALLOW: DOI 2 mints separately ~2-3 weeks post-fire per two-DOI doctrine; will explicitly `cited_by` this DOI 1.
 
 DOI 2's README will cite and cross-link this DOI 1 (immutable forward reference; exact
 OSF metadata field-name depends on platform support, but the README prose explicitly
@@ -272,10 +318,10 @@ See `osf_lock_manifest.md §2.1` for the full SHA-locked artifact table.
 | `topvenue_constraints.md` | Submission venue analysis (EMNLP / workshop) | `ef609a3` |
 | `pre_rerun_audit_walkthrough_2026-05-18.md` | §A2 cascade closure operational walkthrough | `ef609a3` |
 | `reeval_audit_protocol.md` | FP architecture canonical state post-§139.8 | `ef609a3` |
-| `env_snapshot.json` | A100 substrate snapshot at Fire-3 epoch | **TBD captured at Fire-3 launch** |
+| `env_snapshot.json` | A100 substrate snapshot at Fire-3 epoch | **N/A for DOI 1** — pre-launch witness strategy (attempt #4) captures zero-state empirical witness instead of post-launch substrate snapshot; full A100 environment snapshot deferred to DOI 2 reproducibility bundle (post-Pass-1 + Pass-2 data landing) |
 | `paper_drafts/section{1..8}_*.md` @ `ef609a3` | **Frozen pre-outcome state** — archive placeholder numbers per scope disclaimer above | `ef609a3` |
 | `paper_drafts/paper.bib` @ `ef609a3` | Bibliography frozen pre-outcome | `ef609a3` |
-| **`artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt`** | **🟢 CANONICAL DOI 1 EMPIRICAL WITNESS** (capture pending Fire-3 launch via `capture_doi1_witness.sh`) | **TBD** |
+| **`artifact_existence_check_doi1_canonical_20260518T211628Z.txt`** | **🟢 CANONICAL DOI 1 EMPIRICAL WITNESS** (captured 2026-05-18T21:16:28Z via `capture_doi1_witness.sh` pre-launch strategy; full-file SHA-256 `6056b905e25b0880e613eeb43a091f3281e107073736608755331185ffcadbe3` verifiable via MANIFEST_SHA256.txt) | git HEAD `590ad12` at capture |
 | `artifact_existence_check_doi1_interim_20260518T144258Z.txt` | Audit-trail bridge — post-Fire-2-cleanup pre-Fire-3 scan (NOT the DOI 1 anchor) | `e2c1782` |
 | `retracted/artifact_existence_check_doi1_20260518T135722Z_VOID_RETRACTION_ONLY.txt` | **🚫 VOIDED** — retained for retraction audit trail only; NOT used as DOI 1 anchor or empirical witness | `e2c1782` (VOID header in retraction commit) |
 | `DOI_1_README.md` | This file (scope disclaimer + ordering doctrine + cross-link slot) | post-retraction |

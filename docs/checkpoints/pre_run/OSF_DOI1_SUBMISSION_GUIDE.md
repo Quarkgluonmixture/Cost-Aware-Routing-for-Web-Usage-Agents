@@ -267,7 +267,7 @@ cd /home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents
 
 # Also promote git tag preregistration-doi1-witnessed → preregistration-doi1-minted-<DOI>:
 git tag -a preregistration-doi1-minted-osf-<DOI-suffix> 5edac3b \
-  -m "OSF DOI 1 minted at OSF GUID <GUID> + DOI 10.17605/OSF.IO/<XXXXX>; submission timestamp <UTC>; witness file artifact_existence_check_doi1_canonical_20260518T211628Z.txt SHA-256 011fa4c07d76798a57070d9aea8b1653ca50dfe432b9c4dee689b96ee9cc6691"
+  -m "OSF DOI 1 minted at OSF GUID <GUID> + DOI 10.17605/OSF.IO/<XXXXX>; submission timestamp <UTC>; witness file artifact_existence_check_doi1_canonical_20260518T211628Z.txt SHA-256 6056b905e25b0880e613eeb43a091f3281e107073736608755331185ffcadbe3"
 
 git add docs/checkpoints/pre_run/
 git commit -m "post(OSF DOI 1 minted): backfill TBD fields with DOI + GUID + submission UTC
@@ -281,7 +281,7 @@ Cite in paper as:
   OSF preregistration 10.17605/OSF.IO/<XXXXX>, submitted <UTC>,
   pre-canonical-outcome-creation witness for Fire-3 (empirical zero-state
   check per artifact_existence_check_doi1_canonical_20260518T211628Z.txt
-  SHA-256 011fa4c07d76798a57070d9aea8b1653ca50dfe432b9c4dee689b96ee9cc6691);
+  SHA-256 6056b905e25b0880e613eeb43a091f3281e107073736608755331185ffcadbe3);
   registered Git tag preregistration-doi1-minted-osf-<XXXXX> at SHA 5edac3b."
 git push origin master
 git push origin preregistration-doi1-minted-osf-<XXXXX>
