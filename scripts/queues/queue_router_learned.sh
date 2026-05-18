@@ -70,8 +70,20 @@ if [[ "${REQUIRE_LR_RUNTIME:-1}" == "1" ]]; then
   fi
 fi
 
-# Condition id: phase1_learned_router (single per cell, NOT per-mode)
-COND_ID="phase1_learned_router"
+# Condition id: phase1_learned_router_<backend_id>_<site> (single per cell, NOT per-mode)
+# A2.8 P0-5-B* B-1557 (/stress 2026-05-18 codex Mode B unique OOB): COND_ID must
+# match runner-generated condition_id pattern at p79/experiment/conditions.py:339-356
+# (`f"phase1_learned_router_{backend_id}_{site_hint}"`), otherwise watchdog monitors
+# wrong cond dir while runner writes to new cond dir → silent monitoring gap +
+# per-condition cleanup targets the wrong directory + paper-grade invariant broken.
+# backend_id mapping (must match each YAML's `backends.default_backend`):
+case "${BASELINE}" in
+  B0) BACKEND_ID="api_strong" ;;     # configs/exp_v2_B0_router_learned_*.yaml backends.default_backend
+  B1) BACKEND_ID="local_4b" ;;       # configs/exp_v2_B1_router_learned_*.yaml backends.default_backend
+  B2) BACKEND_ID="local_gemma" ;;    # configs/exp_v2_B2_router_learned_*.yaml backends.default_backend
+  *) echo "[router][error] Unknown BASELINE=${BASELINE}; expected B0|B1|B2" >&2; exit 1 ;;
+esac
+COND_ID="phase1_learned_router_${BACKEND_ID}_${SITE}"
 
 PYTHON_BIN="${REPO_DIR}/.venv/bin/python3"
 LOG_DIR="${REPO_DIR}/logs"

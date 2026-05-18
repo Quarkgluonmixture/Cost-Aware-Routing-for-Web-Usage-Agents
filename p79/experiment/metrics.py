@@ -619,6 +619,38 @@ def aggregate_condition_metrics(
                     unknown_failure_aggregated[str(k)] += int(v)
                 except Exception:
                     continue
+
+    # B-1559 (/stress A2.8 P0-6-B* codex Mode B unique OOB, 2026-05-18): roll up
+    # `cost_unit_basis` + `cost_total_mixed_unit_warn` from episode summaries to
+    # condition level. Pre-fix, the step-level schema declared these fields
+    # (`p79/experiment/types.py:256` + `:283` per A1.22 P0-1-ABC* B-563/B-565
+    # cross-baseline contract sealing 2026-05-17), runner stamped them on step
+    # records (`runner/main.py:2701-2716`), but `aggregate_condition_metrics()`
+    # did NOT roll them up to the condition payload. `aggregate_cross_site.py:242-
+    # 270+L424-437` then read `cond.get("cost_unit_basis", "unknown")` from
+    # `condition_summary_v2.json` and wrote `"unknown"` for every paper-grade row
+    # → reviewer cannot stratify B0 `api_usd` (~$0.005/1K tok) vs B1/B2
+    # `electricity_usd_derived` (~$0.0000005/1K tok, 1000× scale gap) from the
+    # advertised artifact. Paper §1 "cost ≈ DOM" claim is within-baseline ratio
+    # by construction, but absent the basis at condition layer the within-baseline
+    # stratification contract is structurally unverifiable from JSONL alone.
+    # Modal rollup is the safe default; mixed-basis condition (rare — would
+    # indicate a runner-write bug) surfaces via `cost_unit_basis_mixed` flag.
+    _cost_basis_values = [
+        ep.get("cost_unit_basis") for ep in episode_summaries
+        if ep.get("cost_unit_basis")
+    ]
+    if _cost_basis_values:
+        _cost_basis_counts = Counter(_cost_basis_values)
+        _cost_basis_modal = _cost_basis_counts.most_common(1)[0][0]
+        _cost_basis_mixed = len(_cost_basis_counts) > 1
+    else:
+        _cost_basis_modal = None
+        _cost_basis_mixed = False
+    _mixed_unit_warn_count = sum(
+        1 for ep in episode_summaries if ep.get("cost_total_mixed_unit_warn")
+    )
+
     return {
         "episodes": len(episode_summaries),
         "success_rate": success_rate,
@@ -820,4 +852,16 @@ def aggregate_condition_metrics(
             if episode_summaries else 0.0
         ),
         "unknown_failure_reason_distribution": dict(unknown_failure_aggregated),
+        # B-1559 (/stress A2.8 P0-6-B* codex Mode B unique OOB, 2026-05-18):
+        # cost_unit_basis rollup from episode summaries (modal value) +
+        # mixed-basis detection flag + mixed_unit_warn aggregate count.
+        # Consumed by aggregate_cross_site.py for paper-grade cost-basis
+        # stratification (B0 api_usd vs B1/B2 electricity_usd_derived).
+        "cost_unit_basis": _cost_basis_modal,
+        "cost_unit_basis_mixed": _cost_basis_mixed,
+        "cost_total_mixed_unit_warn_count": _mixed_unit_warn_count,
+        "cost_total_mixed_unit_warn_rate": (
+            float(_mixed_unit_warn_count) / len(episode_summaries)
+            if episode_summaries else 0.0
+        ),
     }

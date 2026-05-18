@@ -47,8 +47,12 @@
 #   red chain (3 conditions): B0 (~3.5h) → B1 (~7h) → B2 (~7h) = 17.5h ≈ 0.7 days
 #   Total Pass-2 wallclock with 2 parallel chains = ~1 day
 #
-# Sentinel files:
-#   results/visualwebarena/phase1/<run_id>/<condition_id=phase1_learned_router>/condition_summary_v2.json
+# Sentinel files (A2.8 P0-5-B* B-1557 cond_id alignment 2026-05-18; pre-fix doc cited
+# legacy static "phase1_learned_router" but runner emits per-cell + per-backend pattern):
+#   results/visualwebarena/phase1/<run_id>/phase1_learned_router_{backend_id}_{site}/condition_summary_v2.json
+#   backend_id = "api_strong" (B0) | "local_4b" (B1) | "local_gemma" (B2)
+#   site       = "classifieds" | "reddit"
+# Producer: p79/experiment/conditions.py:339-356 (single source of truth).
 
 set -euo pipefail
 # B-879 (/stress A1.24 P0-6-B*, 2026-05-17): -e fail-fast added — pre-fix
@@ -171,26 +175,52 @@ check_gates() {
     log "  OK (LR dispatch found in runner)"
   fi
 
-  log "=== Gate 4: LR model artifacts ==="
-  local missing_lr=0
+  log "=== Gate 4: LR fold-aware artifact bundle (A2.8 P0-4-AB* B-1558) ==="
+  # A2.8 P0-4-AB* B-1558 (/stress 2026-05-18 codex Mode B + Claude Mode A 2-AI OOB):
+  # Pre-A2.8 gate checked only legacy single-pickle path (`{baseline}_{site}_lr.pkl`)
+  # which does NOT exercise the fold-aware artifact runtime path. Paper-grade Pass-2
+  # router fire requires 5 LR fold pickles + 5 TF-IDF vectorizers + 5 selected_idx
+  # masks + 1 fold_assignment + 1 cell_meta per cell × 6 cells = 102 paths total.
+  # Gate now checks the fold-aware bundle; legacy single-pickle remains a back-compat
+  # smoke artifact (verified separately if present, but NOT a paper-grade gate).
+  local missing_fold=0
+  local missing_legacy=0
+  local n_folds=5  # train_l1_router.py N_FOLDS_OUTER constant
   for baseline in B0 B1 B2; do
     for site in classifieds reddit; do
-      lr_path="results/phantom_paper/l1_router/${baseline}_${site}_lr.pkl"
-      if [[ ! -f "$lr_path" ]]; then
-        log "  Missing: $lr_path"
-        missing_lr=$((missing_lr+1))
-      fi
+      cell_id="${baseline}_${site}"
+      # Per-cell fold-aware bundle (15 path checks per cell × 6 cells = 90 paths)
+      for k in 0 1 2 3 4; do
+        for suffix in "_lr_fold${k}.pkl" "_vectorizer_fold${k}.pkl"; do
+          path="results/phantom_paper/l1_router/${cell_id}${suffix}"
+          [[ ! -f "$path" ]] && { log "  Missing fold-aware: $path"; missing_fold=$((missing_fold+1)); }
+        done
+        sidx_path="results/phantom_paper/l1_router/selected_idx_fold${k}.json"
+        [[ ! -f "$sidx_path" ]] && { log "  Missing fold-aware: $sidx_path"; missing_fold=$((missing_fold+1)); }
+      done
+      # Per-cell meta (2 paths per cell × 6 cells = 12 paths)
+      for suffix in "_fold_assignment.json" "_lr_meta.json"; do
+        path="results/phantom_paper/l1_router/${cell_id}${suffix}"
+        [[ ! -f "$path" ]] && { log "  Missing fold-aware: $path"; missing_fold=$((missing_fold+1)); }
+      done
+      # Legacy single-pickle back-compat smoke (NOT paper-grade gate; informational)
+      legacy_path="results/phantom_paper/l1_router/${cell_id}_lr.pkl"
+      [[ ! -f "$legacy_path" ]] && missing_legacy=$((missing_legacy+1))
     done
   done
-  if [ "$missing_lr" -gt 0 ]; then
-    log "  WARN: $missing_lr/6 LR models missing."
-    log "        Run scripts/analysis/train_l1_router.py per cell post-Pass-1."
+  if [ "$missing_fold" -gt 0 ]; then
+    log "  FAIL: $missing_fold/102 fold-aware artifact paths missing."
+    log "        Run scripts/analysis/extract_50_features.py + train_l1_router_with_mi.py"
+    log "        + train_l1_router.py per cell post-Pass-1 (A2.5 Chunk A+B substrate)."
     if [ "${ALLOW_NO_LR_MODEL:-0}" != "1" ]; then
-      log "  FAIL: Set ALLOW_NO_LR_MODEL=1 to bypass for scaffolding."
+      log "  FAIL: Set ALLOW_NO_LR_MODEL=1 to bypass for scaffolding (paper-grade fire BLOCKED)."
       errors=$((errors+1))
     fi
   else
-    log "  OK (all 6 LR models present)"
+    log "  OK (all 102 fold-aware artifact paths present for 6 cells × 17 paths/cell)"
+  fi
+  if [ "$missing_legacy" -gt 0 ]; then
+    log "  INFO: $missing_legacy/6 legacy single-pickle smoke artifacts missing (NOT a paper-grade gate)."
   fi
 
   log "=== Gate 5: env_snapshot + VWA snapshot ==="

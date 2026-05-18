@@ -26,7 +26,10 @@ variables:
 router:
   enabled: true
   kind: "learned"
-  lr_model_path: "results/phantom_paper/l1_router/B1_classifieds_lr.pkl"
+  # A2.8 P0-4-AB* B-1556: fold-aware artifact wiring REQUIRED (see B0 cls YAML for full rationale).
+  cell_id: "B1_classifieds"
+  artifacts_dir: "results/phantom_paper/l1_router"
+  lr_model_path: "results/phantom_paper/l1_router/B1_classifieds_lr.pkl"  # legacy back-compat
   safe_fallback_target: "phantom_som"
   latch_after_fallback: false
 

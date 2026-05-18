@@ -38,8 +38,21 @@ router:
   # v7 learned router config (no cascade L2 — paper-2 deferred)
   enabled: true
   kind: "learned"
-  # LR train artifact (must exist before Pass-2 launch); generated post-Pass-1
-  # from per-cell oracle labels via scripts/analysis/train_l1_router.py (✅ artifact exists 2026-05-16).
+  # A2.8 P0-4-AB* B-1556 (/stress 2026-05-18 cross-AI A+B 2-AI overlap OOB):
+  # fold-aware artifact wiring REQUIRED. Runner `predict_mode_fold_aware(cell_id,
+  # task_id, artifacts_dir, ...)` reads `{artifacts_dir}/{cell_id}_fold_assignment.json`
+  # to lookup task fold k, then loads `{cell_id}_lr_fold{k}.pkl` + `vectorizer_fold{k}.pkl`
+  # + `selected_idx_fold{k}.json` + `{cell_id}_lr_meta.json` (per-cell τ_{C,k}).
+  # Without `cell_id`/`artifacts_dir`, runner reads `_fold_assignment.json` (empty
+  # cell_id prefix) → task lookup fails → every task fallback to `safe_fallback_target`
+  # → Pass-2 silently degenerates to all-phantom_som while logged as
+  # `phase1_learned_router_*` condition. Paper §6 H10 verdict would then test the
+  # fallback policy not the fold-aware LR.
+  cell_id: "B0_classifieds"
+  artifacts_dir: "results/phantom_paper/l1_router"
+  # Legacy single-pickle path retained for back-compat smoke only; paper-grade
+  # runtime uses the fold-aware artifact bundle above (5 fold pickles + 5 vectorizers
+  # + 5 selected_idx + 1 fold_assignment + 1 cell_meta = 17 paths per cell).
   lr_model_path: "results/phantom_paper/l1_router/B0_classifieds_lr.pkl"
   # Safe fallback if LR predicts mode not in observed cell archive (e.g.
   # phantom_prompt on cls); paper §6 reports invalid predictions separately.
