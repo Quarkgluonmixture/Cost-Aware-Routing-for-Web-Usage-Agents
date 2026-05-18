@@ -460,6 +460,9 @@ class ExperimentRunner:
                 "steps": 0, "retries": 0,
                 "no_op_rate": 0.0, "page_unchanged_rate": 0.0,
                 "total_latency_ms": 0.0, "p95_step_latency_ms": 0.0,
+                # B-1600 (/stress 深入审 Mode A P0-1-A*, 2026-05-18): empty-partial
+                # default mirrors `total_latency_ms` shape for consumer parity.
+                "total_latency_minus_retry_ms": 0.0,
                 "total_tokens": 0, "total_model_cost_usd": 0.0,
                 "total_cost_usd": 0.0,
                 "total_router_overhead_cost_usd": 0.0,
@@ -470,6 +473,13 @@ class ExperimentRunner:
         n = len(partial_steps)
         step_latencies = [float(s.get("latency_ms", {}).get("total", 0.0)) for s in partial_steps]
         total_latency = sum(step_latencies)
+        # B-1600 (/stress 深入审 Mode A P0-1-A*, 2026-05-18): retry-adjusted
+        # partial rollup mirrors success-path rollup at L3136-3145; falls back
+        # to `total` when step record lacks `total_minus_retry`.
+        total_latency_minus_retry_partial = sum(
+            float(s.get("latency_ms", {}).get("total_minus_retry", s.get("latency_ms", {}).get("total", 0.0)))
+            for s in partial_steps
+        )
         total_tokens = sum(int(s.get("tokens", {}).get("total", 0)) for s in partial_steps)
         total_model_cost = sum(float(s.get("cost_usd", {}).get("model", 0.0)) for s in partial_steps)
         total_router_overhead_cost = sum(
@@ -516,6 +526,7 @@ class ExperimentRunner:
             "no_op_rate": (no_op_count / n) if n else 0.0,
             "page_unchanged_rate": (unchanged_count / n) if n else 0.0,
             "total_latency_ms": total_latency,
+            "total_latency_minus_retry_ms": total_latency_minus_retry_partial,
             "p95_step_latency_ms": _p95(step_latencies),
             "total_tokens": total_tokens,
             "total_model_cost_usd": total_model_cost,
@@ -1437,6 +1448,7 @@ class ExperimentRunner:
                 no_op_rate=_agg["no_op_rate"],
                 page_unchanged_rate=_agg["page_unchanged_rate"],
                 total_latency_ms=_agg["total_latency_ms"],
+                total_latency_minus_retry_ms=_agg["total_latency_minus_retry_ms"],
                 p95_step_latency_ms=_agg["p95_step_latency_ms"],
                 total_tokens=_agg["total_tokens"],
                 total_model_cost_usd=_agg["total_model_cost_usd"],
@@ -3134,6 +3146,16 @@ class ExperimentRunner:
         success = bool(score >= 1.0)
 
         total_latency = sum(float(s["latency_ms"].get("total", 0.0)) for s in step_records)
+        # B-1600 (/stress 深入审 Mode A P0-1-A*, 2026-05-18): retry-adjusted
+        # episode rollup. B0 step records have `latency_ms.total_minus_retry =
+        # total - network_retry_wait_ms`; B1/B2 have `total_minus_retry = total`
+        # (meta.network_retry_wait_ms is None → 0.0 fallback per L2579). Falls
+        # back to `total` if `total_minus_retry` absent for backward compat
+        # with legacy step records (pre-B-143/B-1600).
+        total_latency_minus_retry = sum(
+            float(s["latency_ms"].get("total_minus_retry", s["latency_ms"].get("total", 0.0)))
+            for s in step_records
+        )
         step_latencies = [float(s["latency_ms"].get("total", 0.0)) for s in step_records]
         total_tokens = sum(int(s["tokens"].get("total", 0)) for s in step_records)
         total_model_cost = sum(
@@ -3191,6 +3213,7 @@ class ExperimentRunner:
             no_op_rate=(no_op_count / len(step_records) if step_records else 0.0),
             page_unchanged_rate=(unchanged_count / len(step_records) if step_records else 0.0),
             total_latency_ms=total_latency,
+            total_latency_minus_retry_ms=total_latency_minus_retry,
             p95_step_latency_ms=p95(step_latencies),
             total_tokens=total_tokens,
             total_model_cost_usd=total_model_cost,

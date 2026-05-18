@@ -338,6 +338,18 @@ class EpisodeSummaryV2:
     wasted_cost_usd: float = 0.0
     wasted_energy_kwh: float = 0.0
     component_breakdown: Optional[Dict[str, float]] = None
+    # B-1600 (/stress 深入审 Mode A P0-1-A*, 2026-05-18): retry-adjusted total
+    # latency canonical estimand rollup. Sum of step-level
+    # `latency.total_minus_retry` (B0 = total - network_retry_wait_ms; B1/B2 =
+    # total since meta.network_retry_wait_ms is None). Schema field was added
+    # at A2.7 Chunk 4 (B-1410) + metrics.py rollup _avg + aggregator carry,
+    # but runner write path was deferred — A2.7-followup §B sweep tracked as
+    # B-1410-fu. Without this write step, paper §1 retry-adjusted canonical
+    # latency claim (per memory `project_cost_latency_canonical_estimand`
+    # 2026-05-18 user-locked 3-axis estimand + paper §3.5.1 disclosure) has
+    # no data substrate post-Pass-1 fire — Pass-1 succeeds structurally but
+    # produces zero rollup data.
+    total_latency_minus_retry_ms: Optional[float] = None
     total_input_cost_usd: float = 0.0
     total_output_cost_usd: float = 0.0
     total_obs_prepare_cost_usd: float = 0.0
@@ -643,6 +655,8 @@ _EPISODE_FIELD_TYPES: Dict[str, tuple] = {
     "no_op_rate": (int, float),
     "page_unchanged_rate": (int, float),
     "total_latency_ms": (int, float),
+    # B-1600 (/stress 深入审 Mode A P0-1-A*, 2026-05-18): rollup-write companion
+    "total_latency_minus_retry_ms": (int, float, type(None)),
     "p95_step_latency_ms": (int, float),
     "total_tokens": (int,),
     "total_model_cost_usd": (int, float),
