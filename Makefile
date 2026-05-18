@@ -156,7 +156,7 @@ pre-launch-check:
 	@test -z "$$(git status --porcelain --untracked-files=all)" || (echo "❌ untracked files present (run: git status --porcelain --untracked-files=all)"; exit 1)
 	@echo "   ✓ clean (no tracked diffs, no untracked files)"
 	@echo "2. VWA submodule SHA matches lock..."
-	@LOCK_SHA="2f9b0b47175a1bffa01e13100e3075e212161a89"; \
+	@LOCK_SHA="f883a116da89c2acc3a7530e48bb8d70a5f4571d"; \
 	 ACTUAL=$$(git -C external/visualwebarena rev-parse HEAD 2>/dev/null); \
 	 test "$$ACTUAL" = "$$LOCK_SHA" || (echo "❌ VWA SHA mismatch: expected $$LOCK_SHA, got $$ACTUAL"; exit 1); \
 	 echo "   ✓ $$LOCK_SHA"
@@ -227,12 +227,12 @@ pre-release-check:
 	   git grep -nE "100\\.95\\.81\\.103" -- ':!docs/reference/' ':!docs/checkpoints/' 2>/dev/null | head -5)
 	@echo "   ✓ Tailscale IP scoped to docs/reference + docs/checkpoints"
 	@echo "4. VWA submodule clean (no force-push tampering)..."
-	@LOCK_SHA="2f9b0b47175a1bffa01e13100e3075e212161a89"; \
+	@LOCK_SHA="f883a116da89c2acc3a7530e48bb8d70a5f4571d"; \
 	 ACTUAL=$$(git -C external/visualwebarena rev-parse HEAD 2>/dev/null); \
 	 test "$$ACTUAL" = "$$LOCK_SHA" || (echo "❌ VWA SHA $$ACTUAL ≠ lock $$LOCK_SHA"; exit 1); \
 	 echo "   ✓ HEAD $$LOCK_SHA"
 	@echo "5. VWA submodule tree-hash chain matches lock (SBOM contract)..."
-	@LOCK_CHAIN="5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f"; \
+	@LOCK_CHAIN="142bb1b6f18b37fbb12c1c2e84f91929d70a1f605560adcf2ddb0325248a7d46"; \
 	 BASE="89f5af29305c3d1e9f97ce4421462060a70c9a03"; \
 	 ACTUAL_CHAIN=$$(git -C external/visualwebarena rev-list $$BASE..HEAD --format=tformat:'%H %T' 2>/dev/null | sha256sum | awk '{print $$1}'); \
 	 test "$$ACTUAL_CHAIN" = "$$LOCK_CHAIN" || (echo "❌ VWA tree-hash chain $$ACTUAL_CHAIN ≠ lock $$LOCK_CHAIN (per prereg §7 L626-L630)"; exit 1); \

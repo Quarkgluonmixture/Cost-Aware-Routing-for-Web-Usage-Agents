@@ -53,7 +53,7 @@
 - [x] `p79/` (agent + experiment + analysis modules)
 - [x] `configs/exp_v2_*.yaml` (locked seed=42 + per-site configs)
 - [x] `pyproject.toml` (dep declarations)
-- [x] `external/visualwebarena/` submodule SHA pinned (`p79-patches` branch HEAD **`2f9b0b47175a1bffa01e13100e3075e212161a89`**; includes B-91 LLM-judge polarity fix `f0c835b` + post-fix commits chain `eb5cbd8` / `c1765ee` / `1c3a615` / `2f9b0b4`; see `preregistration.md §7 L626-L630` for full 9-commit tree-hash chain SBOM with sha256 `5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f`; B-1503 /stress A2.9 P0-6-AB 2026-05-18 — propagated from stale `f0c835b`)
+- [x] `external/visualwebarena/` submodule SHA pinned (`p79-patches` branch HEAD **`f883a116da89c2acc3a7530e48bb8d70a5f4571d`**; includes B-91 LLM-judge polarity fix `f0c835b` + post-fix commits chain `eb5cbd8` / `c1765ee` / `1c3a615` / `2f9b0b4` / **`f883a11`** (10th + latest, fire-event lock 2026-05-18 — .gitignore typo correction + untrack test_shopping.json; zero substantive content change); see `preregistration.md §7 L626-L630` for full 10-commit tree-hash chain SBOM with sha256 `142bb1b6f18b37fbb12c1c2e84f91929d70a1f605560adcf2ddb0325248a7d46`; B-1503 /stress A2.9 P0-6-AB 2026-05-18 — propagated from stale `f0c835b`)
 - [x] `docs/checkpoints/pre_run/` (preregistration + locked versions + audit + cards)
 - [x] `docs/checkpoints/paper_drafts/` (camera-ready prose — paper-1 only; section5_mechanism.md is paper-2 working draft, NOT released in paper-1 DOI)
 - [ ] ~~`results/mechanistic/archive_subset_b1_{cls,reddit}/`~~ **EXCLUDED from paper-1 release (B-132 fix per pre_run/ residual audit 2026-05-15 evening)** — mechanism §5 deferred to paper-2 per advisor 2026-05-14; archive mirage subsets will not be re-cited in paper-1. User will re-run mechanism with new data for paper-2 own release (option α 2026-05-15)
@@ -89,7 +89,7 @@ Will run:
 | Date | Reviewer | Result | Issues found |
 |---|---|---|---|
 | 2026-05-09 | Claude (Opus 4.7) | Initial checklist creation | n/a |
-| 2026-05-18 | Claude (Opus 4.7) /stress A2.9 P0-7-ABC* — B-1512 | **PASS** (5-step `make pre-release-check`: credential pattern / .env+.auth+vwa_env exclusion / Tailscale IP scoped / VWA HEAD `2f9b0b47175a1bffa01e13100e3075e212161a89` matches lock / tree-hash chain `5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f` matches lock) | 0 critical hits; VWA reset token in `scripts/vwa_env*.sh` recognised as upstream design constant (excluded); README.md 4× `100.95.81.103` references already documented in `docs/reference/COMPUTE_INFRASTRUCTURE.md` |
+| 2026-05-18 | Claude (Opus 4.7) /stress A2.9 P0-7-ABC* — B-1512 | **PASS** (5-step `make pre-release-check`: credential pattern / .env+.auth+vwa_env exclusion / Tailscale IP scoped / VWA HEAD `f883a116da89c2acc3a7530e48bb8d70a5f4571d` matches lock / tree-hash chain `142bb1b6f18b37fbb12c1c2e84f91929d70a1f605560adcf2ddb0325248a7d46` matches lock) | 0 critical hits; VWA reset token in `scripts/vwa_env*.sh` recognised as upstream design constant (excluded); README.md 4× `100.95.81.103` references already documented in `docs/reference/COMPUTE_INFRASTRUCTURE.md` |
 | (to be filled) | Author (manual review pre-submission) | TBD | TBD |
 | (to be filled) | Pre-OSF-deposit | TBD | TBD |
 
