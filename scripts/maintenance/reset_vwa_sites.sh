@@ -89,24 +89,42 @@ _reset_vwa_local_classifieds() {
     local comments_count items_count user_count alerts_count searches_count
     comments_count=$(docker exec -e MYSQL_PWD=password classifieds_db mysql -uroot osclass -sN -e \
             "SELECT COUNT(*) FROM oc_t_item_comment WHERE b_active=1;" 2>/dev/null || echo "?")
-    # B-1571 / B-1572 / B-1573 (/stress A1.24 P0-1-ABC + P0-2-B* + P0-3-C*, 2026-05-18):
-    # canonical seed item ID set assertion replaces `fk_i_user_id > 0` filter.
-    # Evidence: external/visualwebarena/environment_docker/classifieds_docker_compose/
-    # mysql/classifieds_restore.sql:53-65 INSERTs exactly 12 active baseline items
-    # (pk_i_id 84143..84154, all fk_i_user_id=1). Three failures of the pre-fix
-    # filter that this replaces:
-    #   (a) P0-1-ABC: pre-fix always FAILed (12 seed items > 0).
-    #   (b) P0-2-B* (codex OOB): user_id=1 IS Blake Sullivan (env_config.py:91 →
-    #       `blake.sullivan@gmail.com` = the actual cls experiment login account).
-    #       Any "u.s_username NOT IN ('1','admin')" or "fk_i_user_id != 1" workaround
-    #       would have SILENTLY HIDDEN experiments-as-blake-sullivan contamination —
-    #       worse than the original false-FAIL because it produces false-PASS on
-    #       contaminated state. The canonical seed ID set captures ALL such cases.
-    #   (c) P0-3-C* (gemini OOB): OSClass guest posts have fk_i_user_id IS NULL
-    #       OR = 0; pre-fix `> 0` filter completely missed them → silent false-PASS
-    #       on guest-posted contamination. NOT IN (canonical) catches them too.
+    # B-1571 / B-1572 / B-1573 / B-1576 (/stress A1.24 P0-1-ABC + P0-2-B* + P0-3-C*
+    # + B-1576 follow-up hot-fix 2026-05-18 ~13:00 BST): MAX-seed-pk_i_id boundary
+    # assertion replaces both the original `fk_i_user_id > 0` filter AND the initial
+    # B-1571 canonical-12-ID-set assertion. Empirical evidence from live cls DB
+    # post-fresh-reset on A100 condense (2026-05-18):
+    #
+    #   docker exec classifieds_db mysql -e 'SELECT MIN(pk_i_id), MAX(pk_i_id),
+    #     COUNT(*) FROM oc_t_item WHERE b_active=1;'
+    #   → 1 | 84154 | 84149   (84149 active seed items spanning pk_i_id 1..84154)
+    #
+    # The initial B-1571 fix wrongly restricted "canonical seed" to the 12 IDs
+    # (84143..84154) from classifieds_restore.sql:53-65 — codex F2 OOB attack relied
+    # on `grep -c '^(841[0-9][0-9],1,' classifieds_restore.sql = 12` which only
+    # matched fk_i_user_id=1 INSERT lines (Blake Sullivan's 12 listings). The
+    # remaining ~84137 seed items live in the sibling osclass_craigslist.sql with
+    # fk_i_user_id=0 (system-seeded guest posts). Initial B-1571 fix would have
+    # false-FAILed against the full seed image (84137 items "outside the 12-ID
+    # canonical set"). B-1576 corrects the scope: use the MAX(pk_i_id) post-reset
+    # as the boundary; experiment-posted items auto-increment to pk_i_id >= 84155.
+    #
+    # Three failures the unified fix still catches (B-1571/B-1572/B-1573 OOB
+    # attacks remain defused):
+    #   (a) P0-1-ABC: 84149 seed items now PASS (all ≤ 84154); pre-fix always FAILed.
+    #   (b) P0-2-B* (codex F2 OOB): blake.sullivan (user_id=1) experiment posts
+    #       still caught — their pk_i_id auto-increments past 84154 regardless of
+    #       which user posted them. JOIN-on-username approach would have silently
+    #       hidden them; pk_i_id > MAX_SEED catches all post-seed inserts.
+    #   (c) P0-3-C* (gemini F3 OOB): guest posts (fk_i_user_id NULL/0) still caught
+    #       — they too get auto-increment pk_i_id past 84154.
+    #
+    # Defense in depth: OR with dt_pub_date > 2024-01-01 catches edge case where
+    # AUTO_INCREMENT might be manually reset (e.g. by ALTER TABLE) and an experiment
+    # post overwrites a deactivated seed pk_i_id. All seed items have dt_pub_date
+    # in 2023-09 to 2023-11 (verified live).
     items_count=$(docker exec -e MYSQL_PWD=password classifieds_db mysql -uroot osclass -sN -e \
-            "SELECT COUNT(*) FROM oc_t_item WHERE b_active=1 AND pk_i_id NOT IN (84143,84144,84145,84146,84147,84148,84149,84150,84151,84152,84153,84154);" 2>/dev/null || echo "?")
+            "SELECT COUNT(*) FROM oc_t_item WHERE b_active=1 AND (pk_i_id > 84154 OR dt_pub_date > '2024-01-01');" 2>/dev/null || echo "?")
     # Exclude seed/admin users (`s_username IN ('admin','user_seed')` etc. — keep
     # broad exclusion via `b_active=1 AND s_username NOT LIKE '%admin%'`).
     user_count=$(docker exec -e MYSQL_PWD=password classifieds_db mysql -uroot osclass -sN -e \
@@ -127,7 +145,7 @@ _reset_vwa_local_classifieds() {
         failed=1
     fi
     if [[ "${items_count}" != "0" ]]; then
-        echo "[${label}][reset_vwa][local] cls sentinel FAIL: oc_t_item (outside canonical seed set pk_i_id 84143..84154) = ${items_count} (expected 0)" >&2
+        echo "[${label}][reset_vwa][local] cls sentinel FAIL: oc_t_item (pk_i_id > 84154 OR dt_pub_date > '2024-01-01') = ${items_count} (expected 0 — experiment-posted contamination)" >&2
         failed=1
     fi
     # User table: VWA classifieds seeds a fixed set of seed users; reset should
@@ -159,7 +177,7 @@ _reset_vwa_local_classifieds() {
     # already verified DB clean.
     docker exec classifieds sh -c 'rm -rf /usr/src/myapp/oc-content/cache/* /usr/src/myapp/oc-content/runtime/* 2>/dev/null; find /tmp -maxdepth 2 -name "sess_*" -delete 2>/dev/null; find /usr/src/myapp/oc-content -maxdepth 3 -name "sessions" -type d -exec sh -c "rm -rf \"\$1\"/*" _ {} \; 2>/dev/null; exit 0' 2>/dev/null || \
         echo "[${label}][reset_vwa][local] WARN: cls PHP cache/session cleanup non-fatal failure (DB sentinel already PASSed)" >&2
-    echo "[${label}][reset_vwa][local] classifieds OK (http=200, 5-table sentinel: comments=${comments_count}, items_contam=${items_count}, users=${user_count}, alerts=${alerts_count}, searches=${searches_count}; canonical seed pk_i_id 84143..84154 preserved; PHP cache+session cleared)"
+    echo "[${label}][reset_vwa][local] classifieds OK (http=200, 5-table sentinel: comments=${comments_count}, items_contam=${items_count}, users=${user_count}, alerts=${alerts_count}, searches=${searches_count}; canonical seed pk_i_id ≤ 84154 + dt_pub_date ≤ 2023-11-16 preserved; PHP cache+session cleared)"
     return 0
 }
 
