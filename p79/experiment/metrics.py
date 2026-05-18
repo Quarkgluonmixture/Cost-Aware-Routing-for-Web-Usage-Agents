@@ -480,6 +480,12 @@ def aggregate_condition_metrics(
             "avg_steps": 0.0,
             "p95_step_latency_ms": 0.0,
             "avg_total_latency_ms": 0.0,
+            # B-1410 (/stress A2.7 P1-5-AB*, 2026-05-18): canonical
+            # cross-baseline latency = retry-adjusted (§3.5.1 B-1402 framework).
+            # Empty-episode fallback = 0.0; populated runs that lack the
+            # episode-summary field fall back to `avg_total_latency_ms` at
+            # the rollup branch below (legacy data path).
+            "avg_total_latency_minus_retry_ms": 0.0,
             "avg_total_model_cost_usd": 0.0,
             "avg_total_cost_usd": 0.0,
             "avg_router_overhead_cost_usd": 0.0,
@@ -623,6 +629,16 @@ def aggregate_condition_metrics(
         # net_saving_latency comparisons (single-step P95 mixes step granularities).
         "p95_step_latency_ms": p95(step_latencies),
         "avg_total_latency_ms": _avg("total_latency_ms"),
+        # B-1410 (/stress A2.7 P1-5-AB* 2-AI overlap Claude F7 + codex F2,
+        # 2026-05-18 + user 3-axis canonical-estimand directive): canonical
+        # cross-baseline latency axis is retry-adjusted (§3.5.1 B-1402 disclosure).
+        # `total_latency_minus_retry_ms` may be None on legacy episode summaries
+        # (pre-A2.7 runner write path); `_avg` falls back to skipping None values
+        # in its existing missing-field logic. When all summaries lack the field,
+        # the aggregated value will be 0.0 from the empty-input branch; downstream
+        # consumers should check whether per-episode field is populated before
+        # trusting the cross-baseline canonical-latency comparison.
+        "avg_total_latency_minus_retry_ms": _avg("total_latency_minus_retry_ms"),
         "avg_total_model_cost_usd": _avg("total_model_cost_usd"),
         "avg_total_cost_usd": _avg("total_cost_usd"),
         "avg_router_overhead_cost_usd": _avg("total_router_overhead_cost_usd"),

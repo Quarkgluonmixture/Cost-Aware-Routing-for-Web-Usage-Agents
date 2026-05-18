@@ -284,6 +284,16 @@ class Qwen3VLAgent:
 
         # Count image tokens (expanded from vision patches by the processor)
         image_token_count = int((inputs.input_ids == self.processor.image_token_id).sum().item())
+        # B-1411 (/stress A2.7 P2-13-A Claude Mode A, 2026-05-18): record which
+        # image-token counting method was used so cross-baseline audits can
+        # detect silent transformers-version drift between exact-id-match and
+        # any future fallback path. B2 (gemma3vl_agent.py:269) already records
+        # this field via "exact_id_match" vs "estimate_256_per_image" enum;
+        # B1 sibling-propagation gap pre-A2.7 — Qwen3-VL only had the exact
+        # path so no forensic trail existed if a future transformers update
+        # changed `processor.image_token_id` semantics. Always "exact_id_match"
+        # for Qwen3-VL current implementation.
+        image_token_count_method = "exact_id_match"
 
         # Generate. Default raised from 256 → 4096 (§45 alignment): 256 is
         # below typical thought+JSON envelope (~400-1500 tok), causing silent
@@ -354,6 +364,10 @@ class Qwen3VLAgent:
             # MUST symmetric-exclude steps with image_encode_error > 0 for
             # paper-grade cross-baseline SR comparability.
             "image_encode_error": _image_encode_error_count if _image_encode_error_count else None,
+            # B-1411 (/stress A2.7 P2-13-A): image_token_count_method audit
+            # trail for cross-baseline B1/B2 parity. See L286 comment for
+            # full rationale.
+            "image_token_count_method": image_token_count_method,
             **confidence_metrics,
         }
 

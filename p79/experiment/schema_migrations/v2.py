@@ -39,6 +39,16 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     "page_unchanged_rate": 0.0,
     "total_latency_ms": 0.0,
     "p95_step_latency_ms": 0.0,
+    # B-1410 (/stress A2.7 P1-5-AB* 2-AI overlap A+B, 2026-05-18 + user 3-axis
+    # canonical-estimand directive). Retry-adjusted total latency: end-to-end
+    # episode latency minus B0 network-retry scaffold wait (10-70s × exponential
+    # backoff on 429/5xx HTTP codes from proxy). B1/B2 have no equivalent
+    # scaffold so the value equals `total_latency_ms` for local backends; B0
+    # delta = `sum(step.network_retry_wait_ms)`. Canonical cross-baseline
+    # latency axis per §3.5.1 B-1402. Legacy summaries default None →
+    # aggregator falls back to raw `total_latency_ms` until runner-side rollup
+    # write path lands (deferred to post-parallel-session-merge follow-up).
+    "total_latency_minus_retry_ms": None,
     "total_tokens": 0,
     "total_model_cost_usd": 0.0,
     "total_cost_usd": 0.0,

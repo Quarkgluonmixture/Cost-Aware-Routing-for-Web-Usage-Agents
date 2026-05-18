@@ -547,6 +547,89 @@ def _capture_reference_images_sha(
     }
 
 
+def _capture_api_proxy_provider_info(
+    repo_root: Path,
+    errors: list[str],
+) -> dict[str, Any]:
+    """B-1412 (/stress A2.7 P1-10-B codex Mode B, 2026-05-18): B0 proxy
+    provider provenance capture.
+
+    `_capture_model_revisions` covers HF-hosted local models (B1 Qwen3-VL-4B +
+    B2 Gemma3-VL-4B) — for each it pins HF cache SHA + registry SHA + drift
+    status. B0 (proxy `qwen.qwen3-vl-235b-a22b` via AWS API Gateway) was a TODO
+    in `p79/experiment/runner/main.py:266-278` because the proxy does not expose
+    an immutable provider-side SHA the way HuggingFace does.
+
+    This function captures the operator-side commitment artifact: endpoint URL,
+    model alias, payload-schema fingerprint, request-time env (X-Api-Key
+    sentinel for opt-in disclosure but NOT the actual key), and link to the
+    most-recent proxy capability probe artifact (paper-grade pre-fire smoke).
+    Together with `_capture_judge_env`, these record what was on the operator
+    side at fire time — even though OpenAI / AWS Bedrock provider sides do not
+    expose immutable per-fire SHAs, the operator-side record is the
+    reproducibility-evidence artifact that the paper §3 disclosure requires.
+
+    Paper §3 should disclose: "B0 model alias = `<endpoint>` / `<model_id>`;
+    provider-side immutable SHA unavailable; captured request schema + capability
+    probe fingerprint as audit substrate."
+    """
+    result: dict[str, Any] = {
+        "endpoint": os.environ.get("PROXY_API_ENDPOINT", ""),
+        "model_alias": "qwen.qwen3-vl-235b-a22b",
+        "api_key_env_var": "PROXY_API_KEY",
+        "api_key_present": bool(os.environ.get("PROXY_API_KEY", "").strip()),
+        # B-991 (2026-05-17): paper-grade B0 uses OpenAI-style `tools` schema +
+        # `tool_choice="auto"` + `logprobs=True, top_logprobs=2` against AWS-
+        # proxy Anthropic-style URL. Documents the wire-protocol schema for
+        # reviewer replay.
+        "request_schema_version": "B-991-aws-hybrid-openai-tools-with-anthropic-url",
+        "schema_features": [
+            "tools=OpenAI-format",
+            "tool_choice=auto",
+            "logprobs=True",
+            "top_logprobs=2",
+        ],
+        # NOTE: provider build / response-model-id / Bedrock snapshot SHA all
+        # unavailable through the AWS API Gateway proxy. Operator-side env-var
+        # + capability probe is the commitment artifact.
+        "provider_immutable_sha_available": False,
+        "provider_immutable_sha_disclosure": (
+            "AWS API Gateway proxy → Bedrock does not expose model-side "
+            "immutable SHA via current response headers. Operator-side env "
+            "+ capability probe fingerprint serves as commitment artifact."
+        ),
+    }
+
+    # Capability probe — link to most recent probe artifact under
+    # `docs/checkpoints/probes/`. Probe records empirical proxy capability
+    # contract at the time of fire (paper-grade pre-fire substrate).
+    try:
+        probe_dir = repo_root / "docs" / "checkpoints" / "probes"
+        if probe_dir.exists():
+            probes = sorted(
+                probe_dir.glob("proxy_capability_v2_*.json"),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True,
+            )
+            if probes:
+                latest = probes[0]
+                result["latest_capability_probe_path"] = str(latest.relative_to(repo_root))
+                # File mtime as additional ordering signal
+                result["latest_capability_probe_mtime"] = int(latest.stat().st_mtime)
+                # sha256 of probe artifact for tamper-evident audit
+                with open(latest, "rb") as f:
+                    result["latest_capability_probe_sha256"] = hashlib.sha256(
+                        f.read()
+                    ).hexdigest()
+            else:
+                result["latest_capability_probe_path"] = None
+    except Exception as e:
+        errors.append(f"api_proxy_provider:probe_link: {type(e).__name__}: {e}")
+        result["latest_capability_probe_path"] = None
+
+    return result
+
+
 def _capture_judge_env(errors: list[str]) -> dict[str, Any]:
     """B-833 (A1.16 cold-start P1-7-C*, 2026-05-17): capture LLM-judge env vars.
 
@@ -692,6 +775,12 @@ def capture_env_snapshot(
     models = models or DEFAULT_MODELS
     gated_models = gated_models or DEFAULT_GATED_MODELS
     snap["models"] = _capture_model_revisions(models, gated_models, errors)
+
+    # B-1412 (/stress A2.7 P1-10-B codex Mode B, 2026-05-18): B0 proxy
+    # provider snapshot — operator-side commitment artifact for the
+    # closed-source provider model alias (`qwen.qwen3-vl-235b-a22b`) where
+    # immutable provider SHA is not exposed via the AWS API Gateway proxy.
+    snap["api_proxy_provider"] = _capture_api_proxy_provider_info(repo_root, errors)
 
     # Evaluator code SHA (B-240 + B-242 A1.16 + B-828 + B-838 A1.16-re):
     # scope expanded from 7 → 17 files; generation_manifest included.

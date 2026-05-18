@@ -270,6 +270,15 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             "cost_unit_basis": _basis if isinstance(_basis, str) else "unknown",
             "avg_steps": round(float(cond.get("avg_steps", 0.0)), 2),
             "avg_total_energy_kwh": cond.get("avg_total_energy_kwh"),
+            # B-1410 (/stress A2.7 P1-5-AB* 2-AI overlap A+B, 2026-05-18):
+            # canonical cross-baseline latency = retry-adjusted per §3.5.1
+            # B-1402 framework. Both `avg_total_latency_ms` (raw, sensitivity)
+            # and `avg_total_latency_minus_retry_ms` (canonical) carried so
+            # downstream plot/table scripts can pick either as primary +
+            # the other as sensitivity column. `None` until the runner
+            # episode-summary rollup write path lands post-parallel-merge.
+            "avg_total_latency_ms": cond.get("avg_total_latency_ms"),
+            "avg_total_latency_minus_retry_ms": cond.get("avg_total_latency_minus_retry_ms"),
             "episodes": int(cond.get("episodes", 0)),
             "is_stub": is_stub,
         })
@@ -427,6 +436,10 @@ def main() -> None:
             "cost_unit_basis": r.get("cost_unit_basis", "unknown"),
             "avg_steps": r["avg_steps"],
             "avg_total_energy_kwh": r.get("avg_total_energy_kwh"),
+            # B-1410 (/stress A2.7 P1-5-AB*): canonical = retry-adjusted; raw
+            # latency carried as sensitivity column per §3.5.1 B-1402 estimand.
+            "avg_total_latency_ms": r.get("avg_total_latency_ms"),
+            "avg_total_latency_minus_retry_ms": r.get("avg_total_latency_minus_retry_ms"),
             "episodes": r["episodes"],
             "is_stub": r["is_stub"],
         })
