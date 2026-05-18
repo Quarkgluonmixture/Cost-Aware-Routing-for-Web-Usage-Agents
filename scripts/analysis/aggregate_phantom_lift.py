@@ -442,56 +442,14 @@ def bootstrap_unique_count_ci(in_a: np.ndarray, in_b: np.ndarray,
     return observed, float(np.quantile(counts, alpha)), float(np.quantile(counts, 1 - alpha))
 
 
-def bootstrap_tost_equivalence_p(in_a: np.ndarray, in_b: np.ndarray,
-                                  delta_pp: float = 1.0, B: int = 1000, seed: int = 42
-                                  ) -> Optional[float]:
-    """Bootstrap TOST (Two One-Sided Tests) p-value for **equivalence** test.
-
-    H0: |true lift| >= δ          (effect is meaningful in either direction)
-    H1: |true lift| < δ           (effect equivalent to zero within margin)
-
-    Two one-sided tests:
-      H0_lower:  lift <= -δ  → reject if bootstrap dist mostly above -δ
-                              p_lower = P(boot_lift <= -δ); small p_lower
-                              ⇒ evidence rejects "effect <= -δ"
-      H0_upper:  lift >= +δ  → reject if bootstrap dist mostly below +δ
-                              p_upper = P(boot_lift >= +δ); small p_upper
-                              ⇒ evidence rejects "effect >= +δ"
-
-    TOST p = max(p_lower, p_upper).
-    **If max(p_lower, p_upper) < α, equivalence is ACCEPTED** — both
-    one-sided tests reject, so the effect is bounded inside (-δ, +δ).
-
-    F03 audit fix 2026-05-09: δ default = 1.0pp (was 0.5). Matches
-    `preregistration.md §4` lock "TOST equivalence margin δ = 1.0pp".
-
-    F04 audit fix 2026-05-09: renamed from `bootstrap_tost_p`; clarified
-    docstring (previous wording said "equivalence rejected when max < α"
-    which inverts the conclusion). Strong positive lift gives p_upper≈1
-    correctly (effect is outside +δ equivalence margin), so equivalence
-    is correctly NOT accepted.
-
-    For the **nonzero / one-sided directional** test (the phantom-lift
-    hypothesis "lift > 0"), use `bootstrap_one_sided_nonzero_p()` below.
-    """
-    if len(in_a) != len(in_b):
-        return None
-    n = len(in_a)
-    if n == 0:
-        return None
-    rng = np.random.default_rng(seed)
-    lifts = np.empty(B)
-    for b in range(B):
-        idx = rng.integers(0, n, size=n)
-        lifts[b] = 100 * (int(in_b[idx].sum()) - int(in_a[idx].sum())) / n
-    p_lower = float(np.mean(lifts <= -delta_pp))
-    p_upper = float(np.mean(lifts >= delta_pp))
-    return max(p_lower, p_upper)
-
-
-# F04 audit fix 2026-05-09: alias preserves backward-compat callers; new
-# code should use the renamed `bootstrap_tost_equivalence_p()`.
-bootstrap_tost_p = bootstrap_tost_equivalence_p
+# B-1051 (/stress A2.3c Mode B P0-1-B* sibling-propagation sweep 2026-05-18):
+# bootstrap_tost_equivalence_p() + bootstrap_tost_p alias DELETED here per B-957
+# TOST framework retirement (see scripts/analysis/power_analysis.py L137-148
+# tombstone for retirement rationale). Mode A A2.3a Chunk 1+2 retired TOST in
+# power_analysis.py but missed this sibling — Mode B A2.3c P0-1-B* caught the
+# 7-site sibling propagation gap (this file + preregistration_decision_test.py +
+# p79/experiment/analysis.py). All `tost_p_*` variable assignments + CSV columns
+# tost_*_vs_*_p removed downstream in same commit.
 
 
 def bootstrap_one_sided_nonzero_p(in_a: np.ndarray, in_b: np.ndarray,
@@ -665,7 +623,6 @@ def analyze_cell(cell: dict) -> Optional[dict]:
     h_4psom_vs_3 = cohen_h(sr_4_psom / 100, sr_3_psom_only / 100)
     wstat_psom, wp_psom = wilcoxon_signed_rank(in_3_psom, in_4_psom)
     mc_p_psom = mcnemar_exact_one_sided(in_3_psom, in_4_psom)
-    tost_p_psom = bootstrap_tost_p(in_3_psom, in_4_psom)
 
     psom_adds = succ_r["P-SoM"] - union_3
 
@@ -684,8 +641,6 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         wstat_pdom, wp_pdom = wilcoxon_signed_rank(in_3, in_4_pdom)
         mc_p_5 = mcnemar_exact_one_sided(in_3, in_5)
         mc_p_pdom = mcnemar_exact_one_sided(in_3, in_4_pdom)
-        tost_p_5 = bootstrap_tost_p(in_3, in_5)
-        tost_p_pdom = bootstrap_tost_p(in_3, in_4_pdom)
         pdom_adds = succ_r["P-text"] - union_3
         both_add = pdom_adds & psom_adds
         pdom_only = pdom_adds - psom_adds
@@ -703,7 +658,6 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         h_4pdom_vs_3 = None
         wp_5 = wp_pdom = None
         mc_p_5 = mc_p_pdom = None
-        tost_p_5 = tost_p_pdom = None
         pdom_adds = both_add = pdom_only = set()
         psom_only = psom_adds  # no overlap with absent P-text
         jaccard = None
@@ -727,7 +681,6 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         h_4pprompt_vs_3 = cohen_h(sr_4_pprompt / 100, sr_3_pprompt_only / 100)
         wstat_pprompt, wp_pprompt = wilcoxon_signed_rank(in_3_pprompt, in_4_pprompt)
         mc_p_pprompt = mcnemar_exact_one_sided(in_3_pprompt, in_4_pprompt)
-        tost_p_pprompt = bootstrap_tost_p(in_3_pprompt, in_4_pprompt)
         pprompt_adds = succ_r["P-prompt"] - union_3
         if has_pdom:
             # F07 audit fix 2026-05-09: 6-mode oracle and 6-vs-5
@@ -754,29 +707,24 @@ def analyze_cell(cell: dict) -> Optional[dict]:
             _, wp_6v5 = wilcoxon_signed_rank(in_5_u6, in_6)
             mc_p_6 = mcnemar_exact_one_sided(in_3_u6, in_6)
             mc_p_6v5 = mcnemar_exact_one_sided(in_5_u6, in_6)
-            tost_p_6 = bootstrap_tost_p(in_3_u6, in_6)
-            tost_p_6v5 = bootstrap_tost_p(in_5_u6, in_6)
         else:
             sr_6 = None
             ci_lo_6 = ci_hi_6 = ci_lo_6v5 = ci_hi_6v5 = None
             h_6_vs_3 = h_6_vs_5 = None
             wp_6 = wp_6v5 = None
             mc_p_6 = mc_p_6v5 = None
-            tost_p_6 = tost_p_6v5 = None
     else:
         sr_4_pprompt = None
         ci_lo_pprompt = ci_hi_pprompt = None
         h_4pprompt_vs_3 = None
         wp_pprompt = None
         mc_p_pprompt = None
-        tost_p_pprompt = None
         pprompt_adds = set()
         sr_6 = None
         ci_lo_6 = ci_hi_6 = ci_lo_6v5 = ci_hi_6v5 = None
         h_6_vs_3 = h_6_vs_5 = None
         wp_6 = wp_6v5 = None
         mc_p_6 = mc_p_6v5 = None
-        tost_p_6 = tost_p_6v5 = None
 
     # H3 structural test: phantom space 2-axis empirical validation.
     # For each axis, bootstrap CI on |arm ∖ P-SoM| unique-count + McNemar exact
@@ -918,16 +866,11 @@ def analyze_cell(cell: dict) -> Optional[dict]:
         "mcnemar_4pprompt_vs_3_p": mc_p_pprompt,
         "mcnemar_6_vs_3_p": mc_p_6,
         "mcnemar_6_vs_5_p": mc_p_6v5,
-        # TOST equivalence p (bootstrap, δ=1.0pp per preregistration.md §4 lock;
-        # max(p_lower, p_upper) < α ⇒ equivalence ACCEPTED, effect bounded within ±δ).
-        # NOTE: this is the separate "lift bounded" test, NOT the H1(ii) primary
-        # gate (H1(ii) uses one-sided superiority per 2026-05-13 prereg revision).
-        "tost_5_vs_3_p":      tost_p_5,
-        "tost_4pdom_vs_3_p":  tost_p_pdom,
-        "tost_4psom_vs_3_p":  tost_p_psom,
-        "tost_4pprompt_vs_3_p": tost_p_pprompt,
-        "tost_6_vs_3_p":      tost_p_6,
-        "tost_6_vs_5_p":      tost_p_6v5,
+        # B-1051 (/stress A2.3c Mode B P0-1-B*, 2026-05-18): TOST CSV columns
+        # `tost_5_vs_3_p` / `tost_4pdom_vs_3_p` / `tost_4psom_vs_3_p` /
+        # `tost_4pprompt_vs_3_p` / `tost_6_vs_3_p` / `tost_6_vs_5_p` REMOVED per
+        # B-957 TOST framework retirement (see power_analysis.py L137-148).
+        # Downstream readers must NOT expect these columns post-retirement.
         # Family-adjusted p / q (filled by main() post-collection; see §family decl)
         "mcnemar_5_vs_3_p_holm":     None,
         "mcnemar_5_vs_3_q_bh":       None,
@@ -1279,30 +1222,20 @@ def main() -> int:
         "  Holm/BH q reported for transparency; NOT used for paper claim gating.",
         "- **TERTIARY (post-hoc, uncorrected)**: 6-mode oracle vs 3 / vs 5.",
         "",
-        "## ⚠️ Superiority vs Equivalence (TOST) cognitive-conflict warning (/stress A1.19 P1-13-C)",
+        "## TOST framework retired 2026-05-17 (B-957 /stress A2.3a P1-1; B-1051 /stress A2.3c Mode B P0-1-B* sibling sweep 2026-05-18)",
         "",
-        "> **Two distinct tests reported in this table against the same δ=1.0pp boundary**:",
-        "> ",
-        "> 1. **Holm-corrected McNemar one-sided p (sig ✅)** = Superiority test: H0: θ ≤ 0",
-        "> vs H1: θ > 0 (phantom adds tasks). Small p ⇒ effect significantly **above zero**.",
-        "> Paper-grade hero in `phase1_prereg_gate.md` uses H0: θ_FE ≤ +1.0pp (δ as the *substantive-effect*",
-        "> threshold), but THIS legacy file tests vs zero — see column header.",
-        "> ",
-        "> 2. **TOST p** = Equivalence test: H0: |θ| ≥ 1.0pp vs H1: |θ| < 1.0pp (no substantive effect).",
-        "> Small TOST p ⇒ effect **bounded within ±1pp** (i.e., equivalent to zero within margin).",
-        "> ",
-        "> The two tests probe **disjoint hypotheses**: superiority asks 'is it big enough?';",
-        "> equivalence asks 'is it small enough?'. Same δ=1.0pp value used for both is",
-        "> intentional (mirror H1 substantive-effect threshold) but a reviewer reading this",
-        "> table without context may confuse them. Always reference each test's row label.",
+        "> Prior \"TOST equivalence δ=1.0pp\" columns/warnings REMOVED. δ=1.0pp was the H1",
+        "> superiority floor inadvertently re-used as TOST equivalence margin — empirical",
+        "> δ-scan in `docs/analysis/cross_sites/power_analysis.md` shows all 6 archive arms",
+        "> < 50% TOST power at δ=1pp; observed |θ| > δ for all arms makes equivalence",
+        "> mathematically impossible to declare. H2(a) cost-equivalence already uses",
+        "> `median cost ratio > 1.20×` falsification (not TOST). See power_analysis.py",
+        "> L137-148 tombstone for full retirement rationale.",
         "",
-        "Adjustment methods:",
+        "Adjustment methods (post-TOST retirement):",
         "- **Holm** (Holm 1979) — step-down FWER control, legacy gating PRIMARY + STRUCTURAL.",
         "- **BH q** (Benjamini-Hochberg 1995) — FDR control, informational.",
         "- **Bonf** — Bonferroni FWER (legacy PRIMARY only, conservative reference).",
-        "- **TOST p** — Two One-Sided Test for equivalence at δ=1.0pp (commit-locked).",
-        "  TOST p = max(p_lower, p_upper); p < α ⇒ equivalence ACCEPTED (effect bounded",
-        "  within ±δ).",
         "",
         "Primary p-value going through correction: **McNemar exact one-sided**",
         "(directly maps to H1-LEGACY: phantom adds tasks vs zero). Wilcoxon two-sided",
@@ -1310,8 +1243,8 @@ def main() -> int:
         "",
         "## Routing lift summary (5-mode vs 3-mode + each single phantom)",
         "",
-        "| Baseline | Site | N | 3→5-mode lift | 95% CI | Cohen's h | Wilcoxon p | McNemar p | Holm p | BH q | Bonf p | TOST p | sig (Holm 0.05) |",
-        "|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|:---:|",
+        "| Baseline | Site | N | 3→5-mode lift | 95% CI | Cohen's h | Wilcoxon p | McNemar p | Holm p | BH q | Bonf p | sig (Holm 0.05) |",
+        "|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|:---:|",
     ]
     def _fmt(p):
         return f"{p:.4f}" if p is not None else "—"
@@ -1337,7 +1270,7 @@ def main() -> int:
             f"{_fmt(r.get('mcnemar_5_vs_3_p_holm'))} | "
             f"{_fmt(r.get('mcnemar_5_vs_3_q_bh'))} | "
             f"{_fmt(r.get('mcnemar_5_vs_3_p_bonf'))} | "
-            f"{_fmt(r.get('tost_5_vs_3_p'))} | {sig} |"
+            f"{sig} |"
         )
 
     lines += [
@@ -1373,27 +1306,17 @@ def main() -> int:
             f"{pprompt_cell} | {pprompt_ci} | {pprompt_h} |"
         )
 
-    # ── Secondary family: per-arm drop-one adjusted p / TOST ──
+    # ── Secondary family: per-arm drop-one adjusted p (TOST RETIRED B-1051) ──
     lines += [
         "",
         "## Per-arm drop-one — multiple-comparison adjusted (SECONDARY family)",
         "",
         f"Holm-Bonferroni step-down across m = {n_secondary} tests (cells × 3 arms).",
-        "BH q-value is FDR-adjusted (informational). TOST p tests equivalence at",
-        "δ=1.0pp (preregistration.md §4 lock); max(p_lower, p_upper) < α ⇒ equivalence",
-        "ACCEPTED (effect bounded within ±δ). Separate from H1(ii) superiority gate.",
+        "BH q-value is FDR-adjusted (informational). TOST equivalence columns REMOVED",
+        "per B-1051 (TOST framework retirement, see power_analysis.py L137-148).",
         "",
-        # B-175 (/stress A1.4b-i codex B4): column header "TOST sig" placed next
-        # to "sig (Holm 0.05)" invited inversion misreading ("TOST sig=✓ means
-        # positive lift" is WRONG — it means equivalence accepted = bounded near
-        # zero, the OPPOSITE of lift significance). Rename + footnote-style hint
-        # to make the semantic explicit.
-        "| Baseline | Site | Arm | Lift | 95% CI | McNemar p | Holm p | BH q | TOST p | sig_lift (Holm 0.05) | equiv_within_1pp (TOST 0.05) |",
-        "|---|---|---|---:|---|---:|---:|---:|---:|:---:|:---:|",
-        "",
-        "_Note: `equiv_within_1pp ✅` means the effect is statistically bounded near zero;"
-        " it is NOT evidence of positive lift. `sig_lift ✅` and `equiv_within_1pp ✅` can"
-        " coexist only for the smallest effects within the ±δ band — they are not opposites._",
+        "| Baseline | Site | Arm | Lift | 95% CI | McNemar p | Holm p | BH q | sig_lift (Holm 0.05) |",
+        "|---|---|---|---:|---|---:|---:|---:|:---:|",
         "",
     ]
     arm_meta = [
@@ -1405,10 +1328,11 @@ def main() -> int:
         for code, label, lift_prefix in arm_meta:
             lift_pp = r.get(f"{lift_prefix}_pp")
             if lift_pp is None:
-                # 11 cols total: baseline + site + arm + lift + 7 metric cols
+                # 9 cols total: baseline + site + arm + lift + 5 metric cols
+                # (B-1051: was 11 cols with TOST p + equiv_within_1pp; TOST retired)
                 lines.append(
                     f"| {r['baseline']} | {r['site']} | {label} | n/a | "
-                    + " | ".join(["—"] * 7) + " |"
+                    + " | ".join(["—"] * 5) + " |"
                 )
                 continue
             ci_lo = r.get(f"{lift_prefix}_ci95_lo_pp")
@@ -1416,14 +1340,12 @@ def main() -> int:
             mp = r.get(f"mcnemar_{code}_vs_3_p")
             holm = r.get(f"mcnemar_{code}_vs_3_p_holm")
             bh = r.get(f"mcnemar_{code}_vs_3_q_bh")
-            tost = r.get(f"tost_{code}_vs_3_p")
             sig_holm = "✅" if (holm is not None and holm < 0.05) else "❌"
-            sig_tost = "✅" if (tost is not None and tost < 0.05) else "❌"
             lines.append(
                 f"| {r['baseline']} | {r['site']} | {label} | "
                 f"+{lift_pp:.2f}pp | [{ci_lo:.2f}, {ci_hi:.2f}] | "
-                f"{_fmt(mp)} | {_fmt(holm)} | {_fmt(bh)} | {_fmt(tost)} | "
-                f"{sig_holm} | {sig_tost} |"
+                f"{_fmt(mp)} | {_fmt(holm)} | {_fmt(bh)} | "
+                f"{sig_holm} |"
             )
 
     # ── H3 STRUCTURAL family: 2-axis empirical evidence ──

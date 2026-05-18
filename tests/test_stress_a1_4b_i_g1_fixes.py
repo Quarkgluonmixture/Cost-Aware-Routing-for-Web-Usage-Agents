@@ -174,16 +174,22 @@ def test_b174_analyze_run_emits_parse_failures_csv(tmp_path):
     assert "trigger_distribution" in str(pf_df["context"].iloc[0])
 
 
-# ─── B-175 ──────────────────────────────────────────────────────────────────
-def test_b175_phantom_lift_column_renamed():
+# ─── B-175 (post-B-1051 TOST retire 2026-05-18) ────────────────────────────
+def test_b175_phantom_lift_column_post_tost_retire():
+    """B-1051 (/stress A2.3c Mode B P0-1-B*): TOST equivalence columns REMOVED
+    per B-957 TOST framework retirement. Original B-175 prose disambiguation
+    is moot post-retirement — only Holm sig column remains."""
     src = _read(PHANTOM_LIFT_PY)
-    # Old confusing pair gone
+    # Pre-B-175 confusing pair already gone (legacy assertion preserved).
     assert "| sig (Holm 0.05) | TOST sig (0.05) |" not in src
-    # New explicit pair present
+    # Post-B-1051 contract: Holm sig column still present, TOST columns absent.
     assert "sig_lift (Holm 0.05)" in src
-    assert "equiv_within_1pp (TOST 0.05)" in src
-    # Footnote disambiguating present
-    assert "is NOT evidence of positive lift" in src
+    assert "equiv_within_1pp (TOST 0.05)" not in src, (
+        "B-1051: equiv_within_1pp column MUST be absent post-B-957 TOST retire"
+    )
+    assert "is NOT evidence of positive lift" not in src, (
+        "B-1051: B-175 disambiguation footnote moot post-TOST retire"
+    )
 
 
 # ─── B-176 ──────────────────────────────────────────────────────────────────
