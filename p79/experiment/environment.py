@@ -297,12 +297,25 @@ class VwaEvaluator:
             return EpisodeEvalResult(score=0.0, error="evaluator_unavailable")
 
         # Lazy-load BLIP-2 only when the task actually needs it.
+        # B-1701 (/stress A2.12 P0-2-B* OOB codex unique, 2026-05-18, user Q5=A):
+        # narrow `except Exception: pass` → only swallow config-read errors
+        # (FileNotFoundError / JSONDecodeError / KeyError) AND explicitly
+        # re-raise EvaluatorUnavailableError from `_ensure_captioning_fn()`.
+        # Pre-fix the broad except swallowed paper-grade B-785 fail-loud
+        # (`raise EvaluatorUnavailableError` from BLIP-2 lazy-load failure at
+        # `:277-285`) → captioning_fn stayed None → page_image_query tasks
+        # silently scored 0.0 (paper §1 SR subset under-quote, cross-baseline
+        # VLM-evaluator-fragility confound). Now: config-read errors still
+        # swallowed (caller falls back to default eval_types); BLIP-2 lazy-load
+        # exception (which is paper-grade infra-fail) propagates.
         try:
             with open(config_file) as _f:
                 _eval_types = json.load(_f)["eval"]["eval_types"]
             if "page_image_query" in _eval_types:
                 self._ensure_captioning_fn()
-        except Exception:
+        except EvaluatorUnavailableError:
+            raise
+        except (FileNotFoundError, json.JSONDecodeError, KeyError):
             pass
 
         # B-329 (/stress A1.9 Mode A F6 OOB, 2026-05-16): skip fresh_page
