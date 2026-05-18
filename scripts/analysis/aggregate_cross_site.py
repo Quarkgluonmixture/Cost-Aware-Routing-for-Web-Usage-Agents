@@ -279,6 +279,20 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             # episode-summary rollup write path lands post-parallel-merge.
             "avg_total_latency_ms": cond.get("avg_total_latency_ms"),
             "avg_total_latency_minus_retry_ms": cond.get("avg_total_latency_minus_retry_ms"),
+            # B-1669 (/stress A2.11 P0-4-C 2026-05-18, user Q6=A): canonical
+            # latency now ALSO subtracts VWA env busy_wait (page settle / cold
+            # cache stalls, e.g., 99s busy:1 wait per p79/experiment/runner/
+            # main.py:2122). Pre-fix `avg_total_latency_minus_retry_ms` only
+            # subtracted B0 proxy retry scaffold (B-1402 A2.7) → 2026-05-18
+            # red 99s busy-wait × 8 stalls inflated cross-cell latency. Paper
+            # §1 latency table uses `avg_total_latency_canonical_ms` as
+            # primary; raw + minus_retry retained as sensitivity columns.
+            # canonical = raw - retry - busy_wait = minus_retry - busy_wait
+            "avg_busy_wait_total_ms": cond.get("avg_busy_wait_total_ms"),
+            "avg_total_latency_canonical_ms": (
+                (cond.get("avg_total_latency_minus_retry_ms") or 0)
+                - (cond.get("avg_busy_wait_total_ms") or 0)
+            ) if cond.get("avg_total_latency_minus_retry_ms") is not None else None,
             "episodes": int(cond.get("episodes", 0)),
             "is_stub": is_stub,
         })

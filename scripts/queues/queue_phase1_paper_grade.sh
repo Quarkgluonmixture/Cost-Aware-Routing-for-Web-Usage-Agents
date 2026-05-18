@@ -595,6 +595,62 @@ launch_chain() {
 }
 
 # ---------------------------------------------------------------------------
+# B-1683 (/stress A2.11 P1-3-B* user Q4=C+B 2026-05-18): Phase 1a 42/42
+# manifest gate. Pass-1 (baseline) = 36; Pass-2 (learned router) = 6;
+# Phase 1a closed = 42/42. Pre-fix this orchestrator's `launch` fired 36
+# only + log msg "Phase 1a rerun launched" → operator easily assumes
+# Phase 1a complete at 36. Now: post-launch manifest check + new `status`
+# mode for at-a-glance count + `launch-pass2` stub pointing to separate
+# router orchestrator (LR training pipeline gates Pass-2; defer 1-script
+# command split until LR pipeline lands).
+check_phase1a_manifest_42() {
+  local manifest="${REPO_DIR}/results/phantom_paper/run_manifest.yaml"
+  if [[ ! -f "${manifest}" ]]; then
+    log "  [warn] manifest not found: ${manifest}"
+    return
+  fi
+  local counts pass1 pass2
+  counts=$("${REPO_DIR}/.venv/bin/python3" - <<PY 2>/dev/null
+import sys, yaml
+try:
+    with open("${manifest}") as f:
+        m = yaml.safe_load(f) or {}
+except Exception:
+    print("0 0"); sys.exit(0)
+cells = m.get("cells") or []
+modes_pass1 = {"DOM","SoM","Vision","P-text","P-prompt","P-SoM"}
+pass1 = sum(1 for c in cells if c.get("grade") == "paper-grade" and c.get("mode") in modes_pass1)
+pass2 = sum(1 for c in cells if c.get("grade") == "paper-grade" and c.get("mode") == "learned")
+print(f"{pass1} {pass2}")
+PY
+)
+  pass1="${counts%% *}"
+  pass2="${counts##* }"
+  pass1="${pass1:-0}"
+  pass2="${pass2:-0}"
+  local total=$((pass1 + pass2))
+  log "==================================================================="
+  log "  Phase 1a Manifest Gate (B-1683 user Q4=C 2026-05-18):"
+  log "  Pass-1 (baseline modes): ${pass1}/36 paper-grade cells"
+  log "  Pass-2 (learned router): ${pass2}/6 paper-grade cells"
+  log "  TOTAL:                   ${total}/42 (Phase 1a complete = 42/42)"
+  if (( total < 42 )); then
+    log "  STATUS: INCOMPLETE — Phase 1a NOT closed"
+    if (( pass1 >= 36 && pass2 < 6 )); then
+      log "  → Pass-1 done but Pass-2 NOT FIRED. Next:"
+      log "    bash scripts/queues/queue_phase1_router_paper_grade.sh"
+      log "    (DO NOT declare Phase 1a complete until 42/42)"
+    elif (( pass1 < 36 )); then
+      log "  → Pass-1 ${pass1}/36 — operator must complete Pass-1 conditions"
+      log "    (run: bash scripts/queues/queue_phase1_paper_grade.sh launch)"
+    fi
+  else
+    log "  STATUS: COMPLETE — Phase 1a 42/42 cells closed ✓"
+  fi
+  log "==================================================================="
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -602,7 +658,31 @@ case "$MODE" in
   dry-run)
     dry_run
     ;;
-  launch)
+  status)
+    # B-1683 Q4-C: 42/42 manifest gate diagnostic. Use this to verify
+    # Phase 1a completeness state before declaring done.
+    check_phase1a_manifest_42
+    ;;
+  launch-pass2)
+    # B-1683 Q4-B 2026-05-18: Pass-2 router fire stub. Full impl in
+    # separate orchestrator `queue_phase1_router_paper_grade.sh` (depends
+    # on LR training pipeline running post-Pass-1; see paper §6 H10
+    # operational-gate framework + docs/checkpoints/phase1_plan.md §C).
+    log "Pass-2 (learned router) fire — delegated to separate orchestrator:"
+    log "  bash ${SCRIPT_DIR}/queue_phase1_router_paper_grade.sh"
+    log ""
+    log "Reason: Pass-2 requires LR training pipeline (post-Pass-1 outcomes →"
+    log "  oracle label matrix → entropy defer gate → fold assignments →"
+    log "  per-cell LR heads + artifact smoke test). Bundling Pass-1+Pass-2"
+    log "  in one orchestrator would auto-handoff before LR training completes."
+    if [[ ! -f "${SCRIPT_DIR}/queue_phase1_router_paper_grade.sh" ]]; then
+      log ""
+      log "  [warn] queue_phase1_router_paper_grade.sh not present yet —"
+      log "  Pass-2 orchestrator pending LR training pipeline land."
+    fi
+    fail "Pass-2 fire delegated; this orchestrator is Pass-1 only."
+    ;;
+  launch|launch-pass1)
     # B-674 (/stress A1.14 Chunk a P0-3, gemini Mode C F1 unique OOB, 2026-05-17):
     # TOCTOU defense around gate-check + launch — pre-fix two concurrent
     # orchestrator invocations could both see Gate 6 active=0 and both fire
@@ -683,13 +763,22 @@ case "$MODE" in
     # mode. Pre-fix line always said "Phase 1a rerun (36 conditions...)" even when
     # SITE_FILTER=phase1b (shop chain only) was active — misleading audit trail.
     log ""
+    # B-1683 user Q4=C 2026-05-18: launch messages now name Pass-1 explicitly +
+    # remind operator Phase 1a needs Pass-2 router fire too (42 total cells).
     case "$SITE_FILTER" in
-      all)     log "Phase 1a rerun launched (36 conditions, cls + red × B0+B1+B2 × 6 modes). Monitor:" ;;
-      cls)     log "Phase 1a cls-only chain launched (18 conditions, B0+B1+B2 × 6 modes). Monitor:" ;;
-      red)     log "Phase 1a red-only chain launched (18 conditions, B0+B1+B2 × 6 modes). Monitor:" ;;
+      all)     log "Phase 1a Pass-1 launched (36/42 conditions, cls + red × B0+B1+B2 × 6 modes). Pass-2 router (6 cells) requires SEPARATE fire via queue_phase1_router_paper_grade.sh after Pass-1 done. Monitor:" ;;
+      cls)     log "Phase 1a Pass-1 cls-only chain launched (18 conditions, B0+B1+B2 × 6 modes). Monitor:" ;;
+      red)     log "Phase 1a Pass-1 red-only chain launched (18 conditions, B0+B1+B2 × 6 modes). Monitor:" ;;
       phase1b) log "Phase 1b shop chain launched (18 conditions, B0+B1+B2 × 6 modes; main-paper expansion). Monitor:" ;;
       *)       log "Launch completed for SITE_FILTER=${SITE_FILTER}. Monitor:" ;;
     esac
+    log ""
+    # B-1683 Q4-C: post-launch manifest gate check — surfaces Phase 1a status
+    # so operator sees "this fire is Pass-1 only; Pass-2 needs separate launch"
+    # before terminal scroll. Re-run via `bash queue_phase1_paper_grade.sh status`
+    # at any time to recheck (cells flip paper-grade as runs complete + manifest
+    # updates land).
+    check_phase1a_manifest_42
     log "  - PIDs: cat logs/queue_phase1_*.latest.pid"
     log "  - Logs: tail -f logs/queue_phase1_*.latest.log"
     log "  - Cells: open Obsidian Bases view 'cells.base' (cron 10min refresh)"
