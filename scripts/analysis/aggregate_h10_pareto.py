@@ -1,16 +1,31 @@
 #!/usr/bin/env python3
-"""H10 Pareto non-dominance verdict producer (B-1002, /stress A2.5 Chunk C).
+"""H10 Pareto non-dominance operational deployment gate producer (B-1002, /stress A2.5 Chunk C;
+/stress A2.8 prose alignment B-1550~B-1552 2026-05-18).
 
 Reads Pass-1 baseline outcomes + Pass-2 learned-router outcomes per cell, computes:
 
-PRIMARY (Q4=A): K-of-6 descriptive — per-cell paired bootstrap on (Cost, SR),
-                Pareto non-dominance check vs 5 single-mode baselines, count cells passing.
-APPENDIX SENSITIVITY: continuous θ_i = SR_router_i - max_m SR_baseline_m_i  (subject to
-                Cost_baseline_m_i ≤ Cost_router_i Pareto feasibility) + FE inverse-variance
-                pool over 6 cells (mirrors H1 §2.5 estimand structure).
+OPERATIONAL DEPLOYMENT GATE (locked 2026-05-18 per /stress A2.8 P0-2-AB* + P0-3-A* +
+P0-1-A* user-directive resolution — supersedes prior "PRIMARY (Q4=A) K-of-6 descriptive"
+framing that contradicted preregistration §2.4 K-of-N transparency-only doctrine):
+    Two-layer criterion. Cell-level (statistical): per cell, paired bootstrap (B=1000,
+    seed=42) on (Cost, SR); cell passes if router Pareto non-dominated vs 5 single-mode
+    baselines in >=95% bootstrap replicates. Grid-level (operational robustness): H10
+    deployable iff >=5 of 6 pre-registered cells pass cell-level. The 5/6 threshold is
+    a fixed-cell operational deployment criterion, NOT a binomial significance test
+    (no across-cells alpha, no Type-I/II coupling). See preregistration.md §H10
+    OPERATIONAL DEPLOYMENT GATE for the full two-layer specification.
 
-Site-asymmetric viability finding (preregistration §C5): per-cell breakdown reported
-even when pooled FE null — paper §6 main narrative is site-conditional behavior.
+APPENDIX-D SENSITIVITY: continuous θ_i = SR_router_i - max_m SR_baseline_m_i  (subject to
+                Cost_baseline_m_i ≤ Cost_router_i Pareto feasibility) + FE inverse-variance
+                pool over 6 cells (mirrors H1 §2.5 estimand structure). FE pool is a
+                transparency row, NOT the operational gate.
+
+Site-asymmetric viability is a pre-hoc theoretical prediction (preregistration §H10
+hypothesis prose — NOT archive-simulation-derived per /stress A2.8 P0-3-A* archive-
+deletion-from-prereg-justification 2026-05-18): visual-rich classifieds cells expected
+to pass cell-level via task-conditional routing benefit; text-dominated reddit cells
+expected to collapse toward always_phantom_som baseline. Phase 1a clean-rerun is the
+falsification test.
 
 Output:
   results/phantom_paper/h10_pareto_verdict.csv  # per-cell tabular
@@ -54,7 +69,10 @@ ROUTER_CONDITION_PATTERN = "phase1_learned_router_"  # cond_id prefix for Pass-2
 BOOTSTRAP_N = 1000
 BOOTSTRAP_SEED = 42
 PARETO_NON_DOMINANCE_THRESHOLD = 0.95  # 95% paired bootstrap support per cell
-DELTA_PP = 1.0  # H1-mirror δ for cells (preregistration §625 + line 212 K-of-6 spec)
+DELTA_PP = 1.0  # H1-mirror δ for Appendix-D FE pool sensitivity row only (NOT the
+# operational deployment gate). The operational gate uses cell-level paired-bootstrap
+# Pareto non-dominance + grid-level >=5/6 robustness criterion, neither of which uses
+# delta_pp as a threshold. See preregistration.md §H10 OPERATIONAL DEPLOYMENT GATE.
 SCHEMA_VERSION = "2026-05-18-a2.5-chunk-c-h10"
 
 
@@ -484,39 +502,60 @@ def run_h10_verdict(cells: Optional[list[tuple[str, str]]] = None) -> dict[str, 
         rec = analyze_cell(baseline, site)
         per_cell_results[rec["cell_id"]] = rec
 
-    # K-of-6 PRIMARY descriptive verdict (Q4=A)
+    # Operational deployment gate (two-layer: cell-level + grid-level)
+    # /stress A2.8 B-1551 — renamed from "K-of-6 PRIMARY descriptive verdict (Q4=A)"
+    # to "operational_deployment_gate" per user-directive operational-gate-not-significance-test reframing.
     ok_cells = [r for r in per_cell_results.values() if r["status"] == "ok"]
     k_pass = sum(1 for r in ok_cells if r["passes"])
     n_total = len(ok_cells)
-    primary_verdict = {
-        "estimand": "K-of-6 descriptive paired bootstrap Pareto non-dominance",
+    operational_gate = {
+        "estimand": (
+            "Two-layer operational deployment gate (preregistration §H10 OPERATIONAL "
+            "DEPLOYMENT GATE locked 2026-05-18): cell-level statistical = per-cell "
+            "paired bootstrap (B=1000, seed=42) on (Cost, SR), cell passes if router "
+            "Pareto non-dominated vs 5 single-mode baselines in >=95% bootstrap "
+            "replicates; grid-level operational robustness = H10 deployable iff "
+            ">=5 of 6 pre-registered cells pass cell-level. The 5/6 threshold is a "
+            "fixed-cell operational deployment criterion for the engineering "
+            "deployability claim, NOT a binomial significance test over a population "
+            "of cells (no across-cells alpha, no Type-I/II coupling)."
+        ),
         "n_cells_with_data": n_total,
-        "k_cells_passing": k_pass,
+        "k_cells_passing_cell_level": k_pass,
         "k_of_n_string": f"{k_pass}/{n_total}",
-        "h0_reject_threshold": ">= 5/6 cells pass at 95% paired bootstrap",
-        "h0_rejected": (k_pass >= 5 and n_total >= 6),
+        "deployment_threshold": ">= 5/6 cells pass cell-level (operational robustness criterion)",
+        "operational_gate_passed": (k_pass >= 5 and n_total >= 6),
     }
 
-    # APPENDIX SENSITIVITY: FE inverse-variance pool over θ_i
+    # APPENDIX-D SENSITIVITY: FE inverse-variance pool over θ_i (transparency, NOT gating)
     thetas = [r["theta_mean_pp"] for r in ok_cells]
     ses = [r["theta_se_pp"] for r in ok_cells]
     fe_pool = fe_inverse_variance_pool(thetas, ses)
     fe_pool["estimand"] = (
         "Continuous θ_i = SR_router - max-feasible-baseline-SR per cell, "
-        "FE inverse-variance pool over 6 cells (APPENDIX SENSITIVITY only; "
-        "PRIMARY is K-of-6 per Q4=A 2026-05-18 lock)."
+        "FE inverse-variance pool over 6 cells (Appendix-D sensitivity row, "
+        "H1-mirror estimand parallelism — NOT the operational deployment gate; "
+        "operational gate is the two-layer cell-level + grid-level criterion above)."
     )
 
     return {
         "schema_version": SCHEMA_VERSION,
-        "primary_k_of_n": primary_verdict,
+        # NOTE: legacy key "primary_k_of_n" retained as alias for downstream consumers
+        # (paper §6 figure scripts, OSF artifact replay); new canonical key is
+        # "operational_deployment_gate". /stress A2.8 B-1551 transitional schema.
+        "operational_deployment_gate": operational_gate,
+        "primary_k_of_n": operational_gate,  # legacy alias (A2.8 B-1551 transitional)
         "appendix_fe_pool": fe_pool,
         "per_cell": per_cell_results,
-        "note_site_asymmetric": (
-            "Site-asymmetric viability per preregistration §C5: cls visual-rich cells "
-            "expected positive lift, red text-dominated cells expected collapse to "
-            "always_phantom_som baseline. K-of-6 PRIMARY preserves this narrative "
-            "(per Q4=A descriptive over FE-pool null)."
+        "note_site_asymmetric_pre_hoc_hypothesis": (
+            "Site-asymmetric viability is a pre-hoc theoretical prediction "
+            "(preregistration §H10 hypothesis prose — NOT archive-simulation-derived "
+            "per /stress A2.8 P0-3-A* archive-deletion-from-prereg-justification "
+            "2026-05-18): visual-rich classifieds cells (3 cells x B0/B1/B2) "
+            "hypothesized to pass cell-level via task-conditional routing benefit; "
+            "text-dominated reddit cells (3 cells x B0/B1/B2) hypothesized to collapse "
+            "toward always_phantom_som baseline. Phase 1a clean-rerun is the "
+            "falsification test of this hypothesis."
         ),
     }
 
@@ -556,13 +595,18 @@ def write_outputs(verdict: dict[str, Any], out_dir: Path) -> None:
     md = ["# H10 Pareto Non-Dominance Verdict (paper §6 source)", ""]
     md.append(f"Schema: `{verdict['schema_version']}`")
     md.append("")
-    md.append("## Primary verdict (Q4=A: K-of-6 descriptive)")
-    pv = verdict["primary_k_of_n"]
-    md.append(f"- {pv['k_of_n_string']} cells pass per-cell paired bootstrap Pareto non-dominance")
-    md.append(f"- H0 reject threshold: {pv['h0_reject_threshold']}")
-    md.append(f"- **H0 rejected**: {pv['h0_rejected']}")
+    md.append("## Operational deployment gate verdict (two-layer: cell-level + grid-level)")
     md.append("")
-    md.append("## Appendix sensitivity: FE inverse-variance pool")
+    md.append("> /stress A2.8 B-1551 reframing 2026-05-18: K-of-6 is a fixed-cell operational")
+    md.append("> deployment criterion, NOT a binomial significance test. The 5/6 threshold is")
+    md.append("> an engineering deployability margin, not an alpha=0.05 cells-population test.")
+    md.append("")
+    pv = verdict.get("operational_deployment_gate", verdict["primary_k_of_n"])
+    md.append(f"- Cells passing cell-level (>=95% paired-bootstrap Pareto non-dominance): {pv['k_of_n_string']}")
+    md.append(f"- Grid-level deployment threshold: {pv['deployment_threshold']}")
+    md.append(f"- **Operational deployment gate passed**: {pv['operational_gate_passed']}")
+    md.append("")
+    md.append("## Appendix-D sensitivity: FE inverse-variance pool (transparency row, NOT gating)")
     fp = verdict["appendix_fe_pool"]
     if not np.isnan(fp.get("theta_pool_pp", float("nan"))):
         md.append(
