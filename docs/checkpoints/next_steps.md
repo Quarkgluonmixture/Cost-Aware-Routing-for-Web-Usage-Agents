@@ -11,7 +11,7 @@ updated: 2026-05-18
 > - Real-time active runs / GPU → `make active` CLI
 > - Cell snapshot (active 跑中 / pending / done) → `cells.base`
 > - Paper section progress → `status.base`
-> - 过去 chronicle → [[实验笔记]] (latest §140)
+> - 过去 chronicle → [[实验笔记]] (latest §233 Fire-3 LIVE 2026-05-18 evening)
 > - Strategy / theory → [[paper_planning]]
 > - **Phase 1 执行计划 + audit checklist** → [[phase1_plan]] ⭐ canonical
 > - Advisor sync prep → [[issue_advisor_sync_2026-05-14]] + [[followup]]
@@ -26,12 +26,13 @@ updated: 2026-05-18
 
 **Paper hook**: → [[paper_planning#§1]] (canonical, phantom routing space 3 arms / 4-fold drop-in)
 
-> [!todo] Top forward actions (priority order, **2026-05-18 update** — 所有 prep / audit / smoke 已闭环, Phase 1a fire 等 user signal)
-> 1. **Phase 1a Pass-1 fire ⭐⭐⭐** — `queue_phase1_paper_grade.sh launch` on A100, 36 conditions / 6 cells × ~1-2 周 wallclock. **当前 = 等 user `fire` signal**. 详 [[phase1_plan]] §B-baseline + [[osf_deposit_package_manifest_2026-05-18]] fire event sequence.
-> 2. **Pass-2 learned router (6 conditions) sequential post-Pass-1** ⭐⭐ — 详 [[phase1_plan]] §B-router + [[phase1_plan]] §C router operationalization. ~3-7 天 fire wallclock.
-> 3. **OSF DOI 1 mint at Fire-3 launch ⭐⭐⭐ + DOI 2 post-Pass-1+Pass-2+analysis-frozen ⭐⭐** — Two-DOI split locked 2026-05-18 ~14:00 UTC + retraction wave ~14:45 UTC per /stress doctrine restoration (B-1650~B-1655) + witness pattern bug retraction (B-1670~B-1679, restores 2026-05-05 §F.1 pre-data DOI ordering): **DOI 1 = pre-canonical-outcome-creation witness for Fire-3** (capture moment = post-NLTK-fix + smoke-validated + fire-3 PID alive, 5 min before any episode-summary creation; OSF submission timestamp = cryptographic anchor, DOI string auto-assigned 48h via admin approval per help.osf.io/article/330). Fire-2 = aborted substrate test (NLTK punkt → B-486 evaluator failure → SIGTERM); its prior witness retracted per B-1670 pattern bug. Interim corrected scan landed [[artifact_existence_check_doi1_interim_20260518T144258Z]] documents post-fire-2-cleanup, pre-fire-3 state (all-zero corrected-pattern grep). **DOI 2 = reproducibility bundle** (mint trigger: Pass-1+Pass-2 complete + analysis scripts frozen + paper §1-§8 finalized; ~2-3 weeks post-fire-3). 详 [[osf_lock_manifest]] §3a (DOI 1 at fire-3) + §3b (DOI 2 post-data) + [[DOI_1_README]].
-> 4. **R-tier 决策 (R1/R3/R5)** post-data — workshop submission (workshop_R1 = H1+H2(a) only per prereg §2.7 bifurcation) vs Phase 1b shop expansion timing. 详 [[paper_planning]] §16.0 multi-submission matrix.
-> 5. **独立 bug 研究 paper** (Track B B-91 LLM judge polarity standalone workshop note, R5 fallback per prereg §2 R5 row) — optional, 详 §11.
+> [!todo] Top forward actions (priority order, **2026-05-18 evening update** — Fire-3 LIVE, OSF DOI 1 submission pending user manual sign-off + UI submit)
+> 1. **🔥 Fire-3 LIVE — Phase 1a Pass-1 running on A100** ⭐⭐⭐ (status, NOT action) — launched attempt #6 at 2026-05-18T21:27:28Z post 5-attempt saga (NLTK find() bug + Gate 1 TBD-ALLOW + post-launch witness tier 2 + 2 stale-lock/orphan-runner relaunches per [[实验笔记]] §233). Active runner: `B0_dom_classifieds_20260518_212838_723280241_199081_R19740`. Queue PIDs: 198459 (queue_phase1) → 199036 (cls queue_chain). Wallclock ~1-2 周 cls→red sequential. Witness anchor: tag `preregistration-doi1-witnessed-20260518T211628Z` @ commit `5edac3b` (tier 1 pre-canonical-outcome-creation, all counts 0 at capture). Monitor: `make active` / `cells.base` (cron 10min) / `logs/queue_phase1_*.latest.log`.
+> 2. **OSF DOI 1 submission ⭐⭐⭐** — user manual action, **NOT auto-fillable** while Fire-3 runs in background. Steps: (a) sign 2 manual rows in [[release_redaction_checklist]] sign-off log (author manual review pre-submission + pre-OSF-deposit final signature); (b) commit + push sign-off; (c) navigate to https://osf.io/registries/ + create new pre-registration linked to GitHub tag URL `https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents/tree/preregistration-doi1-witnessed-20260518T211628Z`; (d) upload full bundle `docs/checkpoints/pre_run/osf_deposit_DOI1_20260518T211628Z/` (29 files + MANIFEST_SHA256.txt + paper_drafts/ + pre_run/ + retracted/); (e) **submission timestamp = cryptographic anchor** (DOI string auto-assigned 0-48h per help.osf.io/article/330); (f) post-DOI backfill [[osf_lock_manifest]] §2 TBD cells with DOI string + GUID。
+> 3. **Pass-2 learned router (6 conditions) sequential post-Pass-1** ⭐⭐ — fire trigger: `queue_phase1_router_paper_grade.sh` on A100 after Pass-1 complete (`bash scripts/queues/queue_phase1_paper_grade.sh status` shows 36/36 cells). ~3-5 天 wallclock. 详 [[phase1_plan]] §B-router + §C router operationalization. **Substrate gap**: B-1671 launch-pass2 currently raises delegation message until LR training pipeline lands (depends on Pass-1 outcomes for LR feature extraction).
+> 4. **DOI 2 reproducibility bundle ⭐⭐** — mint trigger = Pass-1 + Pass-2 complete + analysis scripts frozen + paper §1-§8 finalized (~2-3 周 post Fire-3 start). Bundle includes: 42 condition_summary_v2.json + episode summaries + steps JSONL + aggregate CSV + figures + analysis scripts + finalized paper drafts。DOI 2 README explicit `cited_by DOI 1`。详 [[osf_lock_manifest]] §3b 8-step workflow.
+> 5. **R-tier 决策 (R1/R3/R5)** post-data — workshop submission (workshop_R1 = H1+H2(a) only per prereg §2.7 bifurcation) vs Phase 1b shop expansion timing. 详 [[paper_planning]] §16.0 multi-submission matrix.
+> 6. **独立 bug 研究 paper** (Track B B-91 LLM judge polarity standalone workshop note, R5 fallback per prereg §2 R5 row) — optional, 详 §11.
 >
 > **重大变化 lineage (sticky chronology)**:
 > - 2026-05-14 收口: mechanism (§5/§0a) 整个暂搁; Gemma3-VL 入 baseline; 学生 focus = experiment execution.
@@ -39,6 +40,8 @@ updated: 2026-05-18
 > - 2026-05-16 v7 walk-back: Phase 1a expanded 36 → 42 conditions (Pass-1 baseline 36 + Pass-2 learned router 6).
 > - **2026-05-18 §A2 14/14 closed**: A2.1+A2.2+A2.3a/b/c/d+A2.4a/b+A2.5+A2.6a/b/c+A2.7+A2.8+A2.9+A2.10 全 closed via cross-AI /stress 3-AI cycles. Phase 1a fire substrate-ready.
 > - **2026-05-18 B-1570 doctrine shift**: advisor email = optional post-fire collateral, NOT fire/lock blocker. OSF DOI replaces advisor email as primary witness function.
+> - **2026-05-18 evening Q3=A doctrine fix wave** (commits 7925f71→72b93c9→79daf91 + B-1750~B-1759): 8 doctrine drift bugs in OSF DOI 1 deposit + 2 topvenue residue + 7 staging cleanup issues all closed. Substance-lock at `preregistration-locked-q3a` @ 72b93c9.
+> - **2026-05-18 evening Fire-3 LIVE 🔥** (attempt #6 @ 21:27:28Z, commit `5edac3b`, tag `preregistration-doi1-witnessed-20260518T211628Z`): tier 1 pre-launch witness strategy supersedes 5-min post-PID-alive window; cls→red sequential chain running on A100。详 [[实验笔记]] §233.
 
 ---
 
