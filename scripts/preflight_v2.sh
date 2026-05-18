@@ -123,8 +123,8 @@ if [[ "${CHECK_DOCKER}" != "auto" ]] && [[ "${CHECK_DOCKER}" != "always" ]] && [
 fi
 
 print_check() {
-  local level="$1"
-  local msg="$2"
+  local level="${1:-INFO}"
+  local msg="${2:-}"
   echo "[${level}] ${msg}"
 }
 
