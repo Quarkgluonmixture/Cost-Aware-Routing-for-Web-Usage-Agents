@@ -176,6 +176,20 @@ def refresh_site_auth(
     # URL-change negative check (`_still_on_login`) is sole signal for reddit —
     # postmill wrong-creds → stays on /login with error → `_still_on_login=True`
     # → caught.
+    # B-1594 (/stress A1.24 post-fire P1-14-A defer-with-rationale, 2026-05-18):
+    # Claude Mode A speculated "if postmill ever redirects to homepage with flash
+    # instead of staying on /login, _still_on_login passes spuriously". Re-audit
+    # of the urlparse logic shows the existing path+qs check is robust:
+    #   wrong-creds → final URL `/login?errors=1` → _final_path=`/login` ==
+    #   _login_path_norm=`/login` AND all(login_qs.items()) over empty dict → True
+    #   → _still_on_login=True → caught.
+    # The speculative attack lacked empirical evidence; postmill's known wrong-
+    # creds behavior is to stay on `/login` with `?errors=N` (verified by
+    # gemini-stress equivalent path-equal + qs-subset semantics A1.24 §226).
+    # Stronger positive marker (postmill profile-link `a[href^="/user/"]:not(...)`
+    # or JS-evaluate dropdown expand) deferred to follow-up only if a live wrong-
+    # creds-redirects-to-homepage case is empirically observed. Defense surface
+    # currently sufficient.
     _positive_selectors = {
         "classifieds":    'a[href*="logout"]',
         "reddit":         '',  # B-1577: postmill JS-dropdown — rely on URL change

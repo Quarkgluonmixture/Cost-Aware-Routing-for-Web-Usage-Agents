@@ -650,6 +650,19 @@ class ProxyApiAgent:
         valid = False
         fail_reason: Optional[str] = None
         reasoning_text: Optional[str] = reasoning_text_openai
+        # B-1588 (/stress A1.24 post-fire P1-8-B codex Mode B F6 OOB, 2026-05-18):
+        # per-step tool-call emission audit. `tool_calling` bool config alone
+        # doesn't tell us whether the proxy actually emitted a `tool_calls`
+        # block — text-parse fallback can masquerade as structured emission if
+        # the free text happens to parse valid JSON. Paper §3 B0 substrate
+        # claim ("native tool calling via AWS proxy hybrid shim per B-991")
+        # requires per-step evidence. Three tracker fields, surfaced via meta:
+        #   tool_call_emitted: bool — proxy actually returned tool_calls list?
+        #   tool_call_parse_path: str — "tool_calls" / "text_json" / "fallback_regex"
+        #   tool_call_fallback_reason: Optional[str] — why fallback if it happened
+        _tool_call_emitted: bool = False
+        _tool_call_parse_path: str = "text_json"  # default; overridden if tool_calls path taken
+        _tool_call_fallback_reason: Optional[str] = None
 
         # B-991 (2026-05-17): AWS proxy hybrid shape — top-level `tool_calls`
         # field (NOT inside `content[]` Anthropic block, NOT inside
@@ -658,6 +671,9 @@ class ProxyApiAgent:
         # Try this first when use_tool_calling is enabled; fall through to
         # legacy Anthropic content-block parsing or Path-2 text parse on miss.
         proxy_tool_calls = resp_json.get("tool_calls") if isinstance(resp_json, dict) else None
+        # B-1588: capture emission intent regardless of parse-success outcome.
+        if isinstance(proxy_tool_calls, list) and proxy_tool_calls:
+            _tool_call_emitted = True
         if (
             self._use_tool_calling
             and isinstance(proxy_tool_calls, list)
@@ -672,6 +688,8 @@ class ProxyApiAgent:
                 except json.JSONDecodeError:
                     tool_input = None
                     fail_reason = "tool_arguments_json_decode"
+                    # B-1588: emission JSON malformed → text-parse fallback.
+                    _tool_call_fallback_reason = "tool_arguments_json_decode"
                     logger.warning("Proxy tool_calls.arguments JSON decode failed; fallback to text parse.")
                 if isinstance(tool_input, dict):
                     if not tool_input.get("thought") and isinstance(raw_content, str) and raw_content:
@@ -681,9 +699,13 @@ class ProxyApiAgent:
                     if valid:
                         _action_pt, _valid_pt, _fail_pt = parse_action_text(output_text)
                         fail_reason = _fail_pt if _valid_pt else None
+                        # B-1588: native tool-call path succeeded — record provenance.
+                        _tool_call_parse_path = "tool_calls"
                         logger.info("Proxy tool_calls parsed: %s", action.get("action_type"))
                     else:
                         fail_reason = "invalid_tool_input"
+                        # B-1588: emission attempted but validate_action rejected → fallback.
+                        _tool_call_fallback_reason = "invalid_tool_input"
                         logger.warning("Proxy tool_calls validate_action invalid, falling back to text parse.")
                         action = None
 
@@ -856,6 +878,18 @@ class ProxyApiAgent:
             "reasoning_content": reasoning_text,
             "enable_thinking": False,
             "tool_calling": self._use_tool_calling,
+            # B-1588 (/stress A1.24 post-fire P1-8-B codex Mode B F6 OOB, 2026-05-18):
+            # per-step tool-call emission audit fields. `tool_calling` (bool config)
+            # alone cannot prove the proxy emitted native tool_calls — text-parse
+            # fallback can masquerade as structured emission. These 3 fields
+            # surface the actual parse path per step so paper §3 substrate claim
+            # ("B-991 native tool calling via AWS proxy hybrid shim") gains
+            # per-step empirical backing. Downstream aggregator can compute
+            # `tool_call_emit_rate = mean(tool_call_emitted)` per condition and
+            # paper-grade gate at e.g. ≥0.95 to admit B0 evidence layer.
+            "tool_call_emitted": _tool_call_emitted,
+            "tool_call_parse_path": _tool_call_parse_path,
+            "tool_call_fallback_reason": _tool_call_fallback_reason,
             # B-1103 (/stress A2.3b P0-4-B*, 2026-05-18): non-paper-grade
             # dev-run signal for missing proxy logprobs. Paper-grade raises
             # at extraction point; dev runs persist this for downstream

@@ -328,8 +328,25 @@ def _classify_error_string(err_str: str) -> Optional[str]:
 
     Match is case-insensitive substring. Earlier categories take precedence
     (e.g. "auth_expired" → session, not auth).
+
+    B-1582 (/stress A1.24 post-fire P0-2-B codex Mode B F2, 2026-05-18):
+    special-case deterministic substrate / code bug signatures (e.g.
+    `VWAWrapper.reset() detected an active asyncio loop` per B-159/B-1581
+    history) BEFORE the noise category loop. The "playwright" substring in
+    `_NOISE_ERROR_SUBSTRINGS["noise"]` would otherwise misclassify the active-
+    asyncio-loop fatal as noise → MAX_NOISE_RETRIES=3 retry → 3-fold
+    contamination amplification. Returning None falls through caller to
+    `error(code_bug)` (MAX_CODE_BUG_RETRIES=2) — still retried but bounded
+    + classified honestly as substrate bug for paper §4 GLMM covariates.
     """
     s = err_str.lower()
+    # Code-bug fatal signatures — surface honestly, do NOT classify as noise.
+    if any(sub in s for sub in (
+        "vwawrapper.reset() detected an active asyncio loop",
+        "vwawrapper.reset",
+        "detected an active asyncio loop",
+    )):
+        return None  # caller routes to error(code_bug) bounded-retry path
     for cat, substrs in _NOISE_ERROR_SUBSTRINGS:
         if any(sub in s for sub in substrs):
             return cat
@@ -1823,7 +1840,55 @@ def main() -> int:
                         session_auto_refresh_attempted[site] = True
                         print(f"[watchdog][SESSION] attempting auto-refresh for {site}...")
                         _bm = "webarena" if any(p == "webarena" for p in run_dir.parts) else ""
-                        refresh_ok = _auto_refresh_auth(site, benchmark=_bm)
+                        # B-1584 (/stress A1.24 post-fire P0-4-AC 2-AI overlap, 2026-05-18):
+                        # wrap _auto_refresh_auth in try/except + SIGTERM runner on raise.
+                        # Pre-fix under P79_PAPER_GRADE=1, `auth_required_gate` raises
+                        # AuthRefreshFailure → propagates out of main() → watchdog process
+                        # dies. But the RUNNER (separate process via setsid nohup) does
+                        # NOT know watchdog died → continues with stale auth → up to ~60s
+                        # of NOT-LOGGED-IN episodes accumulate before queue_chain.sh:98
+                        # 60s-poll detects dead watchdog + pkills runner. Defense gap:
+                        # ~1-2 contaminated episodes land in run_dir + watchdog can't
+                        # auto-clean (already dead). Now: catch AuthRefreshFailure first,
+                        # SIGTERM runner to halt immediately, alert via ntfy, then re-raise
+                        # so watchdog still exits (paper-grade fail-loud) but runner halts
+                        # synchronously rather than 60s asynchronously.
+                        try:
+                            refresh_ok = _auto_refresh_auth(site, benchmark=_bm)
+                        except Exception as _auth_exc:
+                            print(
+                                f"[watchdog][SESSION][FATAL] {site} auth gate raised "
+                                f"({type(_auth_exc).__name__}: {_auth_exc}); SIGTERM runner "
+                                f"+ alert, then propagating (B-1584 P0-4-AC)"
+                            )
+                            if getattr(args, "runner_pid", None):
+                                try:
+                                    os.kill(args.runner_pid, signal.SIGTERM)
+                                    print(
+                                        f"[watchdog][SESSION][FATAL] SIGTERM sent to "
+                                        f"runner pid={args.runner_pid}"
+                                    )
+                                except ProcessLookupError:
+                                    print(f"[watchdog][SESSION] runner pid={args.runner_pid} already dead")
+                                except (PermissionError, OSError) as _sig_exc:
+                                    print(
+                                        f"[watchdog][SESSION][warn] SIGTERM runner "
+                                        f"pid={args.runner_pid} failed: {_sig_exc}"
+                                    )
+                            if args.ntfy_topic:
+                                try:
+                                    _post_ntfy(
+                                        args.ntfy_topic,
+                                        f"P79 AUTH FATAL [{site}]",
+                                        f"run_id={run_id}\n"
+                                        f"auth_required_gate failed under P79_PAPER_GRADE=1\n"
+                                        f"watchdog SIGTERMed runner; chain will detect on next poll\n"
+                                        f"reason: {_auth_exc}",
+                                        priority="urgent",
+                                    )
+                                except Exception as _ntfy_exc:
+                                    print(f"[watchdog][SESSION][warn] ntfy alert failed: {_ntfy_exc}")
+                            raise
                         if refresh_ok:
                             print(f"[watchdog][SESSION] {site} auth refreshed — next tasks will use new cookies")
                         else:

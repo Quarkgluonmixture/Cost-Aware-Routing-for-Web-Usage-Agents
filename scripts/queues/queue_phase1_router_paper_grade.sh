@@ -135,21 +135,35 @@ check_gates() {
     log "  OK (status=locked + v7 amendment present)"
   fi
 
-  log "=== Gate 2: Pass-1 baseline completion ==="
-  # Heuristic: Pass-1 baseline runs leave per-cell condition_summary_v2.json.
-  # We require at least 6 baseline runs done (6 cells × 1 sentinel each is too tight
-  # given per-mode conditions; check at least one per-cell run done).
-  local baseline_done=0
+  log "=== Gate 2: Pass-1 baseline completion (36-mode exact, B-1587) ==="
+  # B-1587 (/stress A1.24 post-fire P1-7-B codex Mode B F5 OOB, 2026-05-18):
+  # gate strengthened from cell-coverage heuristic (6/6 cells × at-least-one
+  # mode summary) to mode-exact (6 cells × 6 modes = 36 condition summaries).
+  # Pre-fix glob accepted ANY mode summary per cell → LR router could train on
+  # partial Pass-1 oracle labels (e.g. cls B0 has dom done but no som/vision/
+  # phantom_*) → silent class-balance / feature-coverage contamination of H10
+  # PRIMARY estimand. Phantom queue scripts use canonical `phase1_<MODE>_router_0`
+  # condition_id (dom/som/vision + phantom_text/phantom_som/phantom_prompt) so
+  # one glob covers all 6 modes per cell.
+  local baseline_done=0          # full-cell count (6/6 modes complete)
+  local total_mode_summaries=0   # global tally across all cells × modes
+  local cell_status=""           # diagnostic string for log
   for baseline in B0 B1 B2; do
     for site in classifieds reddit; do
-      if ls results/visualwebarena/phase1/${baseline}_*_${site}_*/phase1_*_router_0/condition_summary_v2.json &>/dev/null 2>&1; then
-        baseline_done=$((baseline_done+1))
+      local cell_mode_count
+      cell_mode_count=$(ls -d results/visualwebarena/phase1/${baseline}_*_${site}_*/phase1_*_router_0/condition_summary_v2.json 2>/dev/null | wc -l)
+      total_mode_summaries=$((total_mode_summaries + cell_mode_count))
+      if [ "$cell_mode_count" -ge 6 ]; then
+        baseline_done=$((baseline_done + 1))
       fi
+      cell_status="${cell_status}${baseline}_${site}=${cell_mode_count}/6 "
     done
   done
-  if [ "$baseline_done" -lt 6 ]; then
-    log "  WARN: Only $baseline_done/6 cells have Pass-1 baseline summaries on disk."
-    log "        Pass-2 router train fold needs Pass-1 per-task oracle labels."
+  log "  cell coverage: ${cell_status}"
+  log "  total mode summaries: ${total_mode_summaries}/36"
+  if [ "$baseline_done" -lt 6 ] || [ "$total_mode_summaries" -lt 36 ]; then
+    log "  WARN: ${baseline_done}/6 cells fully complete, ${total_mode_summaries}/36 total mode summaries."
+    log "        Pass-2 router train fold needs Pass-1 per-task oracle labels across ALL 6 modes per cell."
     # B-1644 (/stress A2.10 P1-7-A 2026-05-18): paper-grade parity with B-879
     # P0-6-B* ALLOW_ACTIVE_RUNS removal. Pass-2 router fire is paper-grade
     # scope; training Pass-2 LR on partial Pass-1 oracle labels = underspecified
@@ -157,9 +171,9 @@ check_gates() {
     # estimand. Bypass HARD-BLOCKED when P79_PAPER_GRADE=1 (the standing env
     # mode for queue_phase1_router_paper_grade.sh per L83 export above).
     if [ "${P79_PAPER_GRADE:-0}" = "1" ]; then
-      log "  FAIL: ALLOW_PARTIAL_BASELINE bypass DISALLOWED in paper-grade scope"
+      log "  FAIL: ALLOW_PARTIAL_BASELINE bypass DISALLOWED in paper-grade scope (B-1587)"
       log "        (mirrors B-879 P0-6-B* ALLOW_ACTIVE_RUNS removal pattern)."
-      log "        Wait for Pass-1 baseline completion before Pass-2 fire."
+      log "        Wait for ALL 36 Pass-1 mode summaries before Pass-2 fire."
       errors=$((errors+1))
     elif [ "${ALLOW_PARTIAL_BASELINE:-0}" != "1" ]; then
       log "  FAIL: Set ALLOW_PARTIAL_BASELINE=1 to bypass (router LR will train on partial data)."
@@ -168,7 +182,7 @@ check_gates() {
       log "  WARN bypass: ALLOW_PARTIAL_BASELINE=1 — proceeding with partial baseline."
     fi
   else
-    log "  OK ($baseline_done/6 cells with baseline summaries)"
+    log "  OK ($baseline_done/6 cells × 6 modes = $total_mode_summaries/36 mode summaries complete)"
   fi
 
   log "=== Gate 3: LR runtime integration in runner ==="
@@ -316,7 +330,13 @@ check_gates() {
   # fire is paper-grade scope — any active runner on same site = cross-baseline
   # contamination per CLAUDE.md hard rule "same site only one baseline at a
   # time". Was: bypass flag allowed warn-and-proceed; now: hard fail.
-  active=$(pgrep -f "run_experiment.*--config" | wc -l)
+  # B-1586 (/stress A1.24 post-fire P1-6-B, 2026-05-18): `|| true` + anchored
+  # pgrep pattern mirroring baseline B-677 + B-709 fix. Pre-fix
+  # `pgrep -f "run_experiment.*--config" | wc -l` no-match → pipefail exit
+  # under `set -euo pipefail` → clean-host (zero active runs) Pass-2 launch
+  # self-aborted at gate before any real failure. Sibling-propagation gap
+  # codex Mode B F4 caught.
+  active=$(pgrep -fa "(python|\.venv/bin/python3?)[a-zA-Z0-9_./-]* .*run_experiment\.py.*--config" 2>/dev/null | wc -l || true)
   if [ "$active" -gt 0 ]; then
     pgrep -af "run_experiment.*--config" | sed 's/^/    /'
     log "  FAIL: $active active run(s); Pass-2 cannot run parallel to Pass-1 on same site (CLAUDE.md hard rule)."

@@ -573,8 +573,44 @@ def _capture_api_proxy_provider_info(
     provider-side immutable SHA unavailable; captured request schema + capability
     probe fingerprint as audit substrate."
     """
+    # B-1589 (/stress A1.24 post-fire P1-9-B codex Mode B F7 OOB, 2026-05-18):
+    # endpoint source-of-truth fix. Pre-fix `os.environ.get("PROXY_API_ENDPOINT",
+    # "")` captured ONLY the env override, but `proxy_api_agent.py:130` actually
+    # reads `model_cfg.get("base_url") or os.getenv("PROXY_API_ENDPOINT")` —
+    # yaml config-level `base_url` takes priority over env. Per-run provenance
+    # could therefore record `endpoint=""` while B0 actually used
+    # `configs/exp_v2_base.yaml` base_url — weakening paper §3 reproducibility
+    # appendix. Now: read canonical `configs/exp_v2_base.yaml` (relative to
+    # repo_root) + extract B0 base_url + record BOTH yaml-side + env-side so
+    # audit can verify which path was effective.
+    _env_endpoint = os.environ.get("PROXY_API_ENDPOINT", "")
+    _config_endpoint = ""
+    _config_endpoint_source = "env_only"
+    try:
+        _cfg_path = repo_root / "configs" / "exp_v2_base.yaml"
+        if _cfg_path.is_file():
+            import yaml as _yaml  # local import — avoid hard dep when config absent
+            with open(_cfg_path, "r", encoding="utf-8") as _cf:
+                _cfg = _yaml.safe_load(_cf) or {}
+            # Two possible yaml locations (backend-key vs models-key conventions).
+            _b0_block = (
+                ((_cfg.get("backends") or {}).get("api_strong") or {})
+                or ((_cfg.get("models") or {}).get("b0") or {})
+            )
+            _cfg_base_url = _b0_block.get("base_url") if isinstance(_b0_block, dict) else None
+            if _cfg_base_url:
+                _config_endpoint = str(_cfg_base_url)
+                _config_endpoint_source = "yaml_base_url"
+    except Exception as _ep_exc:
+        # Best-effort — never crash provenance capture on yaml parse error.
+        _config_endpoint = ""
+        _config_endpoint_source = f"yaml_error:{type(_ep_exc).__name__}"
+    _effective_endpoint = _config_endpoint or _env_endpoint
     result: dict[str, Any] = {
-        "endpoint": os.environ.get("PROXY_API_ENDPOINT", ""),
+        "endpoint": _effective_endpoint,
+        "endpoint_source": _config_endpoint_source,
+        "endpoint_env_value": _env_endpoint,        # what PROXY_API_ENDPOINT env says
+        "endpoint_config_value": _config_endpoint,  # what yaml base_url says
         "model_alias": "qwen.qwen3-vl-235b-a22b",
         "api_key_env_var": "PROXY_API_KEY",
         "api_key_present": bool(os.environ.get("PROXY_API_KEY", "").strip()),

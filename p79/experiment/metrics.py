@@ -121,6 +121,23 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
         return True, "geo_restricted"
     if any(k in msg for k in ("timeout", "timed out", "deadline exceeded")):
         return True, "timeout"
+    # B-1582 (/stress A1.24 post-fire P0-2-B codex Mode B F2, 2026-05-18):
+    # special-case deterministic code-bug signatures BEFORE generic
+    # `playwright` substring match. Pre-fix: `VWAWrapper.reset() detected an
+    # active asyncio loop` (B-159 hard-fail emit; B-1581 defensive reinstall
+    # supersedes the hard-fail but the historical error string still surfaces
+    # in tail-end fallback paths OR future-task regression) substring-matched
+    # `playwright` → benchmark_noise → MAX_NOISE_RETRIES=3 retry → each task
+    # burned 3× zero-step retries, 3-fold contamination amplification.
+    # Empirical fire-day cls B0 dom: 369 fatal warnings + 123 zero-step false
+    # episodes before P0-1 hard-halt. NOT benchmark noise — code/substrate
+    # bug that MUST surface loudly so runner classifies as fatal_env.
+    if any(k in msg for k in (
+        "vwawrapper.reset() detected an active asyncio loop",
+        "vwawrapper.reset",
+        "detected an active asyncio loop",
+    )):
+        return False, ""  # NOT noise — runner treats as code_bug → fatal_env
     if any(k in msg for k in (
         "playwright", "browser has been closed", "target closed",
         "page closed", "context closed", "frame was detached",

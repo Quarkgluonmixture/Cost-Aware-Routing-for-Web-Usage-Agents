@@ -142,7 +142,13 @@ for cmd in "$@"; do
   # ONE baseline (of B0 / B1 / B2) may run on a site at a time. Generalised
   # from the original B0-vs-B1-only check — with Gemma3-VL (B2) the pairwise
   # single-"other_baseline" logic silently missed the third baseline.
-  cmd_args=( ${cmd} )
+  # B-1590 (/stress A1.24 post-fire P1-10-ABC* 3-AI overlap, 2026-05-18):
+  # use `read -r -a` instead of unquoted command substitution. Pre-fix
+  # `cmd_args=( ${cmd} )` relied on chain command tokens never containing
+  # whitespace/glob; sibling-propagation gap from B-672 fix to `config_for_cmd`
+  # in `queue_phase1_paper_grade.sh:442`. 3-AI overlap (A Claude F3 + B codex
+  # F9 + C gemini F3).
+  read -r -a cmd_args <<< "$cmd"
   this_baseline="${cmd_args[1]:-}"  # B0 / B1 / B2
   if [[ "${script_name}" == queue_baseline.sh ]]; then
     this_site="${cmd_args[3]:-}"            # 4th token (script bash mode site)

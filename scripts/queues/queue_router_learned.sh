@@ -188,32 +188,17 @@ if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
   echo "[router] runner for ${RUN_ID} already running, skipping spawn"
 else
   # ---------- Optional: site reset before launch ----------
+  # B-1585 (/stress A1.24 post-fire P1-5-B codex Mode B F3, 2026-05-18):
+  # Pass-2 router leaf inherits the same hard-fail reset+auth contract as
+  # baseline + phantom leaves via `reset_and_auth_gate` lib helper. Pre-fix
+  # inline soft `refresh_site_auth` + warn-and-continue allowed post-reset
+  # auth failure to advance to runner spawn → NOT-LOGGED-IN task=0 →
+  # paper-grade contamination identical to B-1575 watchdog hypocrisy.
+  # Lib helper enforces B-224 hard-fail + B-639 P79_PAPER_GRADE=1 bypass
+  # block + B-745 site-aware timeout + B-864 SIGTERM trap (now with B-1583
+  # corrected container names).
   if [[ "${RESET_BEFORE:-0}" == "1" ]]; then
-    if [[ -f "${REPO_DIR}/scripts/maintenance/reset_vwa_sites.sh" ]]; then
-      # shellcheck disable=SC1091
-      source "${REPO_DIR}/scripts/maintenance/reset_vwa_sites.sh"
-      echo "[router] RESET_BEFORE=1 → resetting site=${SITE}..."
-      if reset_vwa_sites "${SITE}" "router_learned_${SITE}"; then
-        echo "[router] reset OK; sleeping 15s for site to settle..."
-        sleep 15
-        echo "[router] refreshing .auth/${SITE}_state.json post-reset..."
-        if "${PYTHON_BIN}" -c "
-import sys
-sys.path.insert(0, '${REPO_DIR}')
-from pathlib import Path
-from p79.utils.auth_refresh import refresh_site_auth
-sys.exit(0 if refresh_site_auth('${SITE}', Path('${REPO_DIR}/.auth')) else 1)
-" 2>&1; then
-          echo "[router] auth refresh OK — runner task=0 will be LOGGED IN"
-        else
-          echo "[router][warn] post-reset auth refresh failed; watchdog will retry reactively" >&2
-        fi
-      else
-        rc=$?
-        echo "[router][error] reset failed (rc=${rc}); aborting." >&2
-        exit 1
-      fi
-    fi
+    reset_and_auth_gate --site "${SITE}" --repo "${REPO_DIR}" --python "${PYTHON_BIN}" --log-prefix "router_learned" --reset-label "router_learned_${SITE}"
   fi
 
   RUNNER_LOG="${LOG_DIR}/${CFG_NAME}_runner_${TS_FULL}.log"

@@ -41,12 +41,21 @@ export VWA_SHOPPING_ADMIN_USER="admin"
 export VWA_SHOPPING_ADMIN_PASS="REPLACE_WITH_VWA_PASSWORD"
 
 # B-1578 (/stress A1.24 hot follow-up, 2026-05-18): auto-source ~/.api_keys.env
-# (operator-managed, host-local) for HF_TOKEN + OPENAI_API_KEY. Required by
+# (operator-managed, host-local) for HF_TOKEN + B0 proxy key. Required by
 # snapshot_env.py paper-grade Phase 0 check for gated HF models (e.g.
 # google/gemma-3-4b-it). Without these, P79_PAPER_GRADE=1 refuses to run with
 # "FATAL: paper-baseline model(s) failed SHA capture: gated_no_token".
-# Operator setup: `cat > ~/.api_keys.env` with two exports:
-#   export HF_TOKEN="hf_..."           # huggingface.co/settings/tokens (read access)
-#   export OPENAI_API_KEY="sk-..."     # or ANTHROPIC_API_KEY / PROXY_API_KEY per backend
+#
+# B-1595 (/stress A1.24 post-fire P1-15-A*, 2026-05-18): key priority corrected.
+# Pre-fix listed `OPENAI_API_KEY` as default, with PROXY_API_KEY as "or" option.
+# P79 B0 baseline substrate is AWS proxy (`proxy_api_agent.py`); .auth/qwen_api
+# `rp_` key is the canonical PROXY_API_KEY source (via `load_proxy_api_key` lib
+# helper). OPENAI_API_KEY is for evaluator LLM judge ONLY (VWA `ua_match` task
+# class). Misleading default could lead operator to populate OPENAI_API_KEY but
+# leave PROXY_API_KEY unset → B0 init FATAL with no obvious diagnostic.
+# Operator setup: `cat > ~/.api_keys.env` with three exports:
+#   export HF_TOKEN="hf_..."              # huggingface.co/settings/tokens (gated models)
+#   export PROXY_API_KEY="rp_..."         # B0 AWS proxy (priority; .auth/qwen_api fallback)
+#   export OPENAI_API_KEY="sk-..."        # evaluator LLM judge ONLY (NOT B0 substrate)
 # Then `chmod 600 ~/.api_keys.env`.
 [ -f "$HOME/.api_keys.env" ] && source "$HOME/.api_keys.env"

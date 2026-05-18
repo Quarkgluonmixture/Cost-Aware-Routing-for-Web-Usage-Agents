@@ -313,11 +313,17 @@ mint_run_id() {
       # B-836 (A1.16 cold-start P1-10-B*, 2026-05-17): expanded to also check
       # CONTENT invariants (not just format). Pre-fix: schema_version v2 was a
       # format-only check; 6-month replay on new git checkout could resume a
-      # run_id whose env_snapshot.json points to stale git commit / stale
-      # HF model revision / stale VWA submodule SHA — half episodes from old
-      # code/model/env, half from new. Now: also verify env_snapshot.json git
-      # commit + VWA submodule_sha + (if present) HF model loaded_revision
-      # match current launch state. Mismatch → fresh timestamp.
+      # run_id whose env_snapshot.json points to stale git commit / stale VWA
+      # submodule SHA — half episodes from old code/env, half from new. Now:
+      # verify env_snapshot.json git commit + VWA submodule_sha match current
+      # launch state. Mismatch → fresh timestamp.
+      # B-1593 (/stress A1.24 post-fire P1-13-A*, 2026-05-18): HF model
+      # loaded_revision check claim retracted from this docstring — HF
+      # revisions are pinned at config-level (`exp_v2_base.yaml:103+138`
+      # Qwen3-VL `ebb281e...` + Gemma3-VL `093f9f3...`); stale resume cannot
+      # drift HF model. The pre-fix "(if present) HF model loaded_revision
+      # match" claim was 2-week comment-code drift vapor (no implementing
+      # branch existed at L335+). Claude Mode A solo OOB catch.
       local stale=0
       local stale_reason=""
       local meta
@@ -486,9 +492,16 @@ reset_and_auth_gate() {
   # the canonical container names to preempt daemonized restart. Residual
   # gap: docker daemon's own async restart cannot be canceled by `docker stop`
   # mid-flight — disclosed in paper-2 forward stub.
+  # B-1583 (/stress A1.24 post-fire P0-3-AC*, 2026-05-18): container names
+  # corrected to match actual `reset_vwa_sites.sh` creates (`vwa-reddit` /
+  # `classifieds` / `classifieds_db` / `vwa-shopping` / `vwa-wikipedia` per
+  # `docker ps` live verify), NOT pre-fix `reddit-box/classifieds_box/
+  # shopping_box` which were silent no-ops (`2>/dev/null || true` masked
+  # the no-match). Pre-fix B-864 SIGTERM defense was cosmetic. 2-AI overlap
+  # AC (Claude Mode A F1 + gemini Mode C F1).
   timeout --kill-after=10s --signal=TERM "${_reset_timeout}s" setsid bash -c "
     trap 'echo \"[reset_and_auth_gate] SIGTERM during reset; attempting docker stop fallback\" >&2; \
-          docker stop reddit-box classifieds_box shopping_box 2>/dev/null || true; exit 1' SIGTERM
+          docker stop vwa-reddit classifieds classifieds_db vwa-shopping vwa-wikipedia 2>/dev/null || true; exit 1' SIGTERM
     source '${repo_dir}/scripts/maintenance/reset_vwa_sites.sh'
     reset_vwa_sites '${site}' '${reset_label}'
   "
