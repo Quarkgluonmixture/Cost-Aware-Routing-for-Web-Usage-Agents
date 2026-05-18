@@ -73,6 +73,49 @@ Model API costs (B0 proxy access to Qwen3-VL-235B-A22B) were covered by lab
 research budget. No external industry funding, no consulting relationships
 with model providers, no equity in benchmark / agent-framework companies.
 
+## LLM Use Disclosure (NeurIPS 2025 Policy)
+
+> **B-1507 /stress A2.9 P0-2-ABC* 2026-05-18 — 3-AI overlap OOB** (Claude
+> Mode A F12 + codex Mode B F1 + gemini Mode C G2). Per NeurIPS 2025 Paper
+> Checklist Q16 (new LLM Use Disclosure Policy, distinct from co-authorship
+> rules); see `pre_run/neurips_checklist.md` Q16 for the canonical answer.
+
+Large language models (LLMs) were used in this work as engineering and
+quality-assurance assistants. The authors disclose the scope of LLM use
+explicitly per the NeurIPS 2025 LLM Use Disclosure Policy:
+
+| LLM | Role |
+|---|---|
+| **Claude Code (Anthropic)** | Primary code review, debugging, audit. Used iteratively across the codebase via the `claude code` CLI session; assists with refactoring, test authoring, bug investigation, and prose drafting. Exhibits the 3-lineage `/stress` Mode A audit role (canonical "self-audit" inside the active session). |
+| **codex CLI (OpenAI)** | Independent code audit cross-check (the `/codex-stress` Mode B reproducibility-auditor role); separate session with no shared context with Claude; reads the artifact set independently and reports findings. |
+| **gemini CLI (Google)** | Independent broad-reviewer audit + literature pointer (the `/gemini-stress` Mode C broad-reviewer role); third-lineage cross-check distinct from Claude and codex; literature DR runs via Gemini Deep Research separately (`docs/literature/`). |
+| **Gemini Deep Research** | Literature search + secondary-source corroboration for `docs/literature/` 6/6 cells per `paper_planning.md §lit-anchors`. |
+
+**Scope boundary**: LLMs were used for (a) code review + bug-finding, (b)
+prose drafting + editing in paper sections, (c) literature search, (d)
+independent cross-audit of methodology + claims integrity. **LLMs were
+NOT used for**: making final scientific decisions, framing hypotheses (H1–H10
+or R1–R5 rule), selecting statistical methods, interpreting empirical
+results, or assigning epistemic weight to findings — all of these are
+human-author decisions.
+
+**Authorship**: No LLM is listed as a co-author. The authors verified all
+generated content and accept full responsibility for any errors introduced
+by LLM assistance. Where LLM-produced findings led to code or paper changes,
+those changes were reviewed and committed by human authors with attribution
+visible in commit messages (e.g., the `B-XXX /stress AN.M Pn-i-X*`
+attribution suffix that appears throughout the paper and pre_run/ documents
+identifies the audit cycle that surfaced the change; the human author
+adjudicated the change). The full record of LLM-surfaced findings retained
+vs. discarded is auditable via the project chronicle (`docs/checkpoints/实验笔记.md`)
+and the bug catalog (`docs/reference/master_bug_catalog.md`).
+
+**Per NeurIPS 2025 policy** exemption boundary: writing/editing/formatting
+not affecting core methodology is exempt; this paper's LLM use **partially
+exceeds** that boundary (audit findings led to landed code edits + claim
+adjustments). The above disclosure is provided to bring the use within
+policy compliance.
+
 ## Institutional Review / IRB
 
 This work uses **synthetic web environments only** (VisualWebArena classifieds /
