@@ -152,29 +152,33 @@ class VWAWrapper:
         # Workaround: playwright sync API raises if an asyncio event loop is
         # running on this thread. This can happen after VWA program_html
         # evaluators or HuggingFace hub (both use asyncio/httpx).
-        # Use get_running_loop() — it only returns a loop if one is *actively*
-        # running, unlike get_event_loop() which returns closed/idle loops too.
-        # B-159 (/stress A1.3 v8 codex P1-B3, 2026-05-16): if a loop is
-        # actively running we now fail loud with an actionable error message
-        # instead of falling through into VWA's ``sync_playwright().__enter__()``
-        # and getting a cryptic "Sync API inside the asyncio loop" RuntimeError
-        # mid-init. Phase 1a callers (queue scripts → run_experiment.py) never
-        # have an active loop; this guard mostly catches pytest-asyncio /
-        # notebook / service-runner contexts that should isolate via subprocess.
+        #
+        # B-1581 (/stress A1.24 fire-day hot follow-up, 2026-05-18): replaces
+        # B-159 (2026-05-16) hard-fail with defensive unconditional reinstall.
+        # Empirical Phase 1a fire today (B0 dom cls): 110 tasks burned with
+        # 324 B-159 errors in <5 min because VWA submodule
+        # `external/visualwebarena/browser_env/async_envs.py:114/121/160` uses
+        # `asyncio.run()` per-step which leaves a stale event-loop binding
+        # thread-local after each call. B-159 hard-fail then refused every
+        # post-task-0 reset → fire-blocker. B-159 comment claimed "Phase 1a
+        # callers never have an active loop" — empirically false under
+        # multi-task production fire (the guard was prose-validated only,
+        # 2-week gap to first real multi-task fire). Defensive replacement:
+        # install a fresh loop unconditionally — the new loop shadows any
+        # stale binding, get_running_loop() in Playwright sync layer then
+        # raises (clean state from sync API's perspective).
         import asyncio as _asyncio
         try:
-            _asyncio.get_running_loop()
-        except RuntimeError:
-            # No running loop — install a fresh one for Playwright sync API.
-            _asyncio.set_event_loop(_asyncio.new_event_loop())
-        else:
-            raise RuntimeError(
-                "VWAWrapper._lazy_init() detected an active asyncio loop on this "
-                "thread; Playwright sync API will fail. Run the wrapper in a "
-                "subprocess (or a thread without a running loop) — e.g. "
-                "pytest-asyncio / notebook / service-runner contexts must isolate. "
-                "See p79/envs/vwa_wrapper.py:_lazy_init for the upstream root cause."
+            _stale = _asyncio.get_running_loop()
+            logger.warning(
+                "B-1581 (_lazy_init): stale asyncio loop bound to thread (likely "
+                "from VWA browser_env/async_envs asyncio.run leak); reinstalling "
+                "fresh loop. Stale=%r closed=%s",
+                _stale, _stale.is_closed(),
             )
+        except RuntimeError:
+            pass  # Clean state — no stale loop
+        _asyncio.set_event_loop(_asyncio.new_event_loop())
 
         from browser_env import ScriptBrowserEnv  # provided by (Visual)WebArena package
 
@@ -197,20 +201,24 @@ class VWAWrapper:
 
         # Re-apply asyncio event loop reset before every _env.reset().
         # _lazy_init() only runs it on first init, but VWA program_html evaluators
-        # (httpx/asyncio) can leave a stale loop that causes Playwright sync API to
-        # raise "Sync API inside the asyncio loop" on subsequent resets.
-        # B-159: same fail-loud contract as _lazy_init — if a loop is running we
-        # cannot safely proceed.
+        # (httpx/asyncio) AND VWA browser_env/async_envs.py (step/reset/close use
+        # asyncio.run) can leave a stale loop binding across episode boundaries.
+        # B-1581 (/stress A1.24 fire-day hot follow-up, 2026-05-18): same
+        # defensive replacement as _lazy_init (see block comment there). Replaces
+        # B-159 hard-fail which was prose-validated only and broke multi-task
+        # production fire (324 errors in 110 burned tasks during cls B0 dom).
         import asyncio as _asyncio
         try:
-            _asyncio.get_running_loop()
-        except RuntimeError:
-            _asyncio.set_event_loop(_asyncio.new_event_loop())
-        else:
-            raise RuntimeError(
-                "VWAWrapper.reset() detected an active asyncio loop; Playwright "
-                "sync API will fail. See B-159 in _lazy_init for context."
+            _stale = _asyncio.get_running_loop()
+            logger.warning(
+                "B-1581 (reset): stale asyncio loop bound to thread (likely from "
+                "prior episode's VWA browser_env/async_envs asyncio.run); "
+                "reinstalling fresh loop. Stale=%r closed=%s",
+                _stale, _stale.is_closed(),
             )
+        except RuntimeError:
+            pass  # Clean state — no stale loop
+        _asyncio.set_event_loop(_asyncio.new_event_loop())
 
         try:
             obs, info = self._env.reset(options={"config_file": config_file})
