@@ -90,8 +90,17 @@ Will run:
 |---|---|---|---|
 | 2026-05-09 | Claude (Opus 4.7) | Initial checklist creation | n/a |
 | 2026-05-18 | Claude (Opus 4.7) /stress A2.9 P0-7-ABC* — B-1512 | **PASS** (5-step `make pre-release-check`: credential pattern / .env+.auth+vwa_env exclusion / Tailscale IP scoped / VWA HEAD `ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927` matches lock / tree-hash chain `752caebdc6bd84761b2f308331f21241a9b4a28de65b46ff0007ef27d8c72778` matches lock) | 0 critical hits; VWA reset token in `scripts/vwa_env*.sh` recognised as upstream design constant (excluded); README.md 4× `100.95.81.103` references already documented in `docs/reference/COMPUTE_INFRASTRUCTURE.md` |
-| (to be filled) | Author (manual review pre-submission) | TBD | TBD |
-| (to be filled) | Pre-OSF-deposit | TBD | TBD |
+
+### Pending author manual sign-offs (block OSF DOI 1 submission — author action required, NOT auto-fillable)
+
+Both rows below MUST be filled by the human author before OSF DOI 1 submission. They are NOT gated by Fire-3 PID-alive (which only blocks the canonical empirical witness capture, separate concern), but they ARE gated by author manual review of the deposit bundle.
+
+| Date (to fill at sign-off) | Reviewer | Result | What this gate covers |
+|---|---|---|---|
+| `<to be filled at author sign-off; deferred to immediately before OSF submission>` | Author (Jiaming) — manual pre-submission review | `<PASS/CONDITIONAL/FAIL>` | Browse `docs/checkpoints/paper_drafts/` for any `TODO_REDACT` (per §"Manual review steps" item 1); diff deposit tarball vs working tree (item 2); cold-clone smoke (item 3); episode-JSON random spot-check (item 4). All 4 items pass = sign here. |
+| `<to be filled at OSF submission moment>` | Pre-OSF-deposit gate (Author final signature) | `<PASS/FAIL>` | Confirm: (a) deposit dir matches MANIFEST_SHA256.txt byte-for-byte / (b) all `<TBD>` fields in DOI_1_README + osf_lock_manifest are filled with Fire-3 canonical witness data / (c) deposit name + canonical anchor (commit 72b93c9 + tag preregistration-locked-q3a) cross-cited consistently / (d) NO mention of legacy ef609a3 / 88521b9e / preregistration-locked (untagged) as if they were the current anchor anywhere in deposit prose. Sign here at OSF UI submission moment. |
+
+**Why these can't be auto-filled**: signing on behalf of the author = false authority + breaks paper-grade audit-trail. Both gates are explicit user manual actions, deliberately not automatable. Pre-submission this checklist should be reviewed end-to-end and both rows filled with `PASS` (or specific issues) before clicking OSF "Submit" UI button.
 
 ## References
 

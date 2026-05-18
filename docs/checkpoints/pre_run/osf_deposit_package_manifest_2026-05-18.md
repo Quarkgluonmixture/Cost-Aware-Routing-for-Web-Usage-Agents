@@ -37,7 +37,7 @@
 
 | Artifact | Path | Status | Notes |
 |---|---|---|---|
-| `preregistration.md` (locked) | `docs/checkpoints/pre_run/preregistration.md` | ⏸ frontmatter `status: draft` — flip to `locked` at fire event | Contains §1-§7 + Appendix A decision log + §6 §(a) 14 commit decisions |
+| `preregistration.md` (locked) | `docs/checkpoints/pre_run/preregistration.md` | ✅ substance-locked 2026-05-18T11:30Z (status: locked + prereg_registered_git_sha 88521b9e historical, current canonical anchor commit c741c3a/72b93c9 + tag preregistration-locked-q3a; no further "flip" needed at Fire-3 — only canonical empirical witness capture per B-1700~B-1709 Q3=A doctrine alignment) | Contains §1-§7 + Appendix A decision log + §6 §(a) 14 commit decisions |
 | `osf_lock_manifest.md` | `docs/checkpoints/pre_run/osf_lock_manifest.md` | ✅ §1-§2 + §3 8-step + §4 post-lock change discipline | Backfill `<TBD>` cells post-mint with Git SHA + DOI |
 | `locked_versions.md` | `docs/checkpoints/pre_run/locked_versions.md` | ✅ VWA SHA **`ac33d2f...`** (11th-commit fire-event lock 2026-05-18 — `f883a11` untrack test_shopping.json + `ac33d2f` complement .gitignore typo correction + generation_manifest.json; same logical fix split across 2 commits due to staging oversight; zero substantive content change; supersedes pre-fix `2f9b0b4` at A2.9 prep stage) + B1 HF `ebb281e...` + **B2 HF `093f9f3...` locked 2026-05-18 B-1603** + Playwright 1.58.0 + Chromium revision 1208 | All pins current |
 | `model_card.md` | `docs/checkpoints/pre_run/model_card.md` | ✅ B0/B1/B2 cards aligned + B2 HF SHA filled per B-1603 | Mitchell et al. 2019 format |
@@ -89,32 +89,41 @@
 
 ## Pre-fire OSF deposit ready-state
 
-**Pre-fire NOW (deterministic, my DGX-side)**:
-- ✅ All `pre_run/` docs ready + walkthroughs written
+**Pre-fire NOW (deterministic, DGX-side; substance-lock landed in advance per Q3=A doctrine)**:
+- ✅ All `pre_run/` docs ready + walkthroughs written + substance-lock landed at commit c741c3a/72b93c9 + tag `preregistration-locked-q3a` (2026-05-18T11:30Z)
 - ✅ `paper_drafts/` section 1-8 + paper.bib current
-- ⏭ `paper_drafts_locked/` snapshot at fire event
-- ⏭ Git tag `preregistration-locked` at fire event
-- ⏭ `env_snapshot_a100_lock.json` + `vwa_a100_lock.json` at fire event (immediate pre-`launch` commit)
+- ✅ A100 pre-fire substrate verified: B-1427 probe (B0 proxy production path) PASS + B-1428 snapshot (env + VWA SBOM match_lock=True) PASS + NLTK punkt word_tokenize PASS + mechanism §5 archive restored + smoke residual archived
+- ⏭ `env_snapshot_a100_lock.json` + `vwa_a100_lock.json` at Fire-3 PID-alive (single capture window, NOT pre-fire snapshot)
 
-**Fire event (~1 min total deterministic)**:
-1. `cd /home/jiaming/workspace/Cost-Aware-Routing-for-Web-Usage-Agents`
-2. `cp -r docs/checkpoints/paper_drafts docs/checkpoints/paper_drafts_locked`
-3. `ssh condense-a100 'cd ~/workspace/p79 && python scripts/provenance/snapshot_env.py results/provenance/env_a100_lock.json && bash scripts/provenance/snapshot_vwa.sh results/provenance/vwa_a100_lock.json'`
-4. Pull artifacts back / commit on DGX side
-5. Flip `preregistration.md` frontmatter `status: draft → locked` + fill `registered_at` + `registered_git_sha`
-6. `git commit + git tag -a preregistration-locked -m "Phase 1a Pass-1 launch <date+sha>" + git push --tags`
-7. **Fire**: `ssh condense-a100 'cd ~/workspace/p79 && setsid nohup bash scripts/queues/queue_phase1_paper_grade.sh launch > logs/phase1a_pass1_$(date +%Y%m%d_%H%M%S).log 2>&1 < /dev/null &'`
-8. Setup watchdog + done-monitor
+**Fire-3 launch + DOI 1 canonical witness capture (single atomic 5-min window per B-1650 doctrine restoration; OSF submission immediately follows, NOT after Pass-1 data complete)**:
 
-**Post-Phase-1a-Pass-1-data-complete (you, ~30 min user-side via OSF UI)**:
-1. Visit `https://osf.io/registries/`
-2. Create new OSF preregistration linked to GitHub tag URL `https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents/tree/preregistration-locked`
-3. Upload `docs/checkpoints/pre_run/*.md` bundle (all 15 docs listed in §1 above) + `paper_drafts_locked/section1-8 + paper.bib` + `results/provenance/env_a100_lock.json` + `vwa_a100_lock.json`
-4. Mint DOI (OSF assigns ~1 min after click)
-5. Backfill `osf_lock_manifest.md §2` `<TBD>` cells with the assigned DOI + record in `paper_planning.md §19 decision log`
-6. Commit + push as final lock proof
+1. **Launch on A100**: `ssh condense-a100 'cd ~/workspace/p79 && RESET_BEFORE=1 setsid nohup bash scripts/queues/queue_phase1_paper_grade.sh launch > logs/phase1a_pass1_$(date +%Y%m%d_%H%M%S).log 2>&1 < /dev/null &'`. Capture Fire-3 PID.
 
-**(Optional)** advisor email send (per advisor email draft `advisor_sync/advisor_email_draft_2026-05-18.md`) — pre-fire / at-fire / post-fire all paper-grade equivalent per B-1570 doctrine.
+2. **Within 5 min of PID-alive + BEFORE first `<site>_task_<N>_summary_v2.json` creation on disk**: capture canonical empirical witness via `bash scripts/maintenance/capture_doi1_witness.sh` on A100 (B-1675 regression-tested 9-case script). Output = `docs/checkpoints/pre_run/osf_deposit_DOI1_<NEW-TS>/pre_run/artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt` with all canonical-pattern counts (summary_v2 / steps_v2 / condition_summary_v2 / aggregate CSV) = 0 + Git HEAD SHA + tag SHA + capture UTC.
+
+3. **Verify counts all zero** (sanity check the witness script output; non-zero count means we missed the 5-min window and the witness anchor is invalid).
+
+4. **At same A100 capture moment**: `python scripts/provenance/snapshot_env.py --strict results/provenance/env_a100_fire3_lock.json && bash scripts/provenance/snapshot_vwa.sh results/provenance/vwa_a100_fire3_lock.json` (single launch snapshot, NOT separate from Fire-3 PID).
+
+5. **Pull artifacts from A100 → DGX**, regenerate canonical `DOI_1_README.md` filling all TBD fields (file name + SHA-256 + captured UTC + Fire-3 PID + 4 canonical counts + known-positive probe), regenerate deposit `MANIFEST_SHA256.txt`.
+
+6. **Commit + push** the canonical witness + filled README + new manifest. Tag `preregistration-doi1-witnessed-<fire3-UTC-TS>` on the witness commit.
+
+7. **OSF DOI 1 submission (you, ~15 min user-side via OSF UI; happens within hours of Fire-3 launch, NOT after Pass-1 data complete)**:
+   - Visit `https://osf.io/registries/`
+   - Create new OSF preregistration linked to GitHub tag URL `https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents/tree/preregistration-doi1-witnessed-<fire3-UTC-TS>`
+   - Upload `docs/checkpoints/pre_run/osf_deposit_DOI1_<NEW-TS>/` bundle in full (paper_drafts/ + pre_run/ + MANIFEST_SHA256.txt + retracted/...VOID_RETRACTION_ONLY.txt for forensic transparency)
+   - **OSF submission timestamp = the cryptographic anchor** for DOI 1 (DOI string assignment auto-occurs 0-48h later per help.osf.io/article/330; submission timestamp is what reviewers cite as pre-canonical-outcome-creation evidence, NOT the DOI assignment timestamp)
+   - Backfill `osf_lock_manifest.md §2` `<TBD>` cells with the OSF GUID + assigned DOI string post-approval + record in `paper_planning.md §19 decision log`
+
+8. Setup watchdog + done-monitor for Pass-1 + Pass-2 fire (~1-2 weeks Pass-1 + 3-5 days Pass-2 wallclock; this happens AFTER OSF DOI 1 is already submitted, NOT before).
+
+**Post-Phase-1a-Pass-1+Pass-2+analysis-frozen (DOI 2 reproducibility bundle, ~2-3 weeks post Fire-3)**:
+- DOI 2 has its own deposit dir (NEW timestamp) + DOI_2_README explicit `cited_by DOI 1`
+- DOI 2 bundle includes: 42 condition_summary_v2.json + episode summaries + steps JSONL + aggregate CSV + figures + analysis scripts + finalized paper §1-§8 + paper.bib
+- Mint trigger = Pass-1 + Pass-2 complete + analysis scripts frozen + paper finalized; per `osf_lock_manifest.md §3b` 8-step workflow
+
+**(Optional)** advisor email send (per advisor email draft `advisor_sync/advisor_email_draft_2026-05-18.md`) — pre-fire / at-fire / post-fire all paper-grade equivalent per B-1570 doctrine; OSF DOI 1 supersedes advisor email as cryptographic external witness per B-1650 doctrine restoration.
 
 ---
 

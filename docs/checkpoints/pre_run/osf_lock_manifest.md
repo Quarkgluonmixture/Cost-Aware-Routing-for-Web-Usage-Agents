@@ -6,17 +6,29 @@ moment of OSF preregistration DOI minting. Substance-lock decisions
 are RESOLVED via §A2 14/16 audit cascade closure 2026-05-18 (B-1265 /stress A2.6a P0-6-B* 2026-05-18 + B-1550 /stress A2.8 P0-2-AB* 2026-05-18 operational-gate reframing — supersedes stale "K_h1 / K_h3 / TOST δ thresholds" phrasing + stale "advisor email reply gates lock" phrasing per B-1570 /stress A2.8 followup doctrine-shift propagation 2026-05-18; original pre-2026-05-14 framework had advisor email as primary lock gate but 2026-05-14 sync 收口 reclassified student scope to "experiment execution; prose advisor-side", and §A2 audit cascade self-decision substitutes advisor pre-lock email per 实验笔记 §209 "Advisor sync triage: 0 项真需要 advisor pre-sync"). This checklist
 drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision log + `osf_lock_manifest.md §3`; ADVISOR_SYNC.md retired 2026-05-15, commit `f64bc9d`, replaced by `_status/issues/issue_advisor_sync_2026-05-14.md` frontmatter + Bases view).
 
-**Status**: 🟡 Draft — fields populate at lock moment.
+**Status**: 🟢 **Substance-locked since 2026-05-18T11:30Z** at canonical anchor (see below). Fields with `<TBD>` populate at Fire-3 PID-alive empirical witness capture (5-min window pre-first-episode-summary). **No "draft → locked" flip** — substance lock already landed; Fire-3 only adds canonical empirical witness + OSF public timestamp.
+
+**Canonical DOI 1 substance-lock anchor (single-source-of-truth for all OSF-facing docs)**:
+```
+Current canonical:
+  Git SHA       : 72b93c939526fb0b9a733013852bd90136d601aa   (master HEAD post Q3=A doctrine fix + B-### renumber)
+  Git tag       : preregistration-locked-q3a                 (annotated, at 72b93c9)
+
+Legacy anchors retained for audit trail ONLY (NOT for citation by OSF DOI 1):
+  Git SHA       : ef609a3863adc9b3698789b96a1ee9f709e1c832   (pre-doctrine-fix substance lock; superseded by Q3=A wave)
+  Git tag       : preregistration-locked                     (legacy, at ef609a3; retained on origin for git-history continuity)
+  Frontmatter   : 88521b9e254955ab156dc8115da826f171ef5990   (earlier prereg `prereg_registered_git_sha` field value pre-doctrine-fix)
+```
 
 **Two-DOI split (locked 2026-05-18 ~14:00 UTC per /stress doctrine restoration B-1650~B-1655 — restores original 2026-05-05 advisor sync §F.1 outcome decision "学生 lean DOI 时间戳 < data unblinding 时间戳", which had drifted into stale "post-Pass-1-data-complete" single-DOI framing between B-1570 doctrine shift (2026-05-18 ~09:30 UTC, advisor-email-retire) and this correction)**:
 
-- **DOI 1 — Pre-canonical-outcome-creation witness for Fire-3** (mint blocker quadruple: zero Phase 1a outcome artifacts at submission time + B2 HF SHA pinned + preregistration substance-locked + NLTK punkt evaluator-substrate fix landed + Fire-3 PID-alive).
-  - ✅ B2 SHA `093f9f388b31de276ce2de164bdc2081324b9767` locked 2026-05-18 per /stress 深入审 Mode A B-1603 + A100-side `probe_b0_production_path.py` + `snapshot_env.py` self-verification (phase1_plan §B1 items 7+8 + B-1427+B-1428).
-  - ✅ preregistration substance-locked 2026-05-18T11:30Z (Git tag `preregistration-locked` at SHA `ef609a3863adc9b3698789b96a1ee9f709e1c832`).
-  - ⚠️ **Fire-2-era empirical witness RETRACTED** 2026-05-18 ~14:45 UTC per /stress B-1670~B-1679 pattern bug catch (`*_summary.json` should be `*_summary_v2.json` per canonical schema; void file `artifact_existence_check_doi1_20260518T135722Z.txt` retains VOID retraction header for forensic audit).
-  - ✅ interim corrected scan landed (`artifact_existence_check_doi1_interim_20260518T144258Z.txt`, SHA-256 `7563f0d55b651b604746ef0498fba3439ad7d7e130af97f0adda55e2bc7f1bf8`, post-fire-2-cleanup pre-fire-3, all-zero canonical-pattern counts).
-  - ⏳ NLTK punkt evaluator substrate fix pending (parallel session); Fire-3 launch contingent.
-  - ⏳ canonical DOI 1 witness (`artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt`) pending Fire-3 PID-alive capture.
+- **DOI 1 — Pre-canonical-outcome-creation witness for Fire-3** (mint blocker quintuple, status post Q3=A doctrine fix + A100 pre-fire verification 2026-05-18 evening):
+  - ✅ B2 SHA `093f9f388b31de276ce2de164bdc2081324b9767` locked + A100-side verified (`probe_b0_production_path.py` GATE PASS + `snapshot_env.py --strict` vwa.match_lock=True; phase1_plan §B1 items 7+8 = B-1427 + B-1428).
+  - ✅ preregistration substance-locked 2026-05-18T11:30Z at canonical anchor above (current `72b93c9` + tag `preregistration-locked-q3a`; legacy `ef609a3` + tag `preregistration-locked` retained for audit trail only per Q3=A doctrine wave B-1700~B-1709, renumbered to B-1750~B-1759 at 72b93c9).
+  - ⚠️ **Fire-2-era empirical witness RETRACTED** 2026-05-18 ~14:45 UTC per /stress B-1670~B-1679 pattern bug catch (`*_summary.json` should be `*_summary_v2.json` per canonical schema; void file relocated to `retracted/artifact_existence_check_doi1_20260518T135722Z_VOID_RETRACTION_ONLY.txt` subdir per Q3=A cleanup — not co-located with canonical witness chain to avoid path-level ambiguity).
+  - ✅ interim corrected scan landed (`artifact_existence_check_doi1_interim_20260518T144258Z.txt` at root level, SHA-256 `7563f0d55b651b604746ef0498fba3439ad7d7e130af97f0adda55e2bc7f1bf8`, post-fire-2-cleanup pre-fire-3, all-zero canonical-pattern counts).
+  - ✅ NLTK punkt evaluator substrate verified on A100 fire host (`word_tokenize` end-to-end PASS 2026-05-18 evening; B-486 Fire-2 RC resolved).
+  - ⏳ canonical DOI 1 witness (`artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt`) pending Fire-3 PID-alive capture via `scripts/maintenance/capture_doi1_witness.sh` (B-1675 regression-tested 9-case script).
   - → **DOI 1 MINTABLE AT FIRE-3 LAUNCH** (5-min capture window post-PID-alive, pre-first-episode-summary). See §3a for 8-step workflow.
 
 - **DOI 2 — Phase 1a reproducibility bundle** (mint blocker quadruple: Pass-1 baseline 36 conditions complete + Pass-2 learned router 6 conditions complete + analysis scripts frozen + paper §1-§8 finalized).
@@ -128,9 +140,9 @@ GPU compute capability / hostname / nvidia-smi output.
 
 ### §3a Eight-step DOI 1 workflow — Pre-outcome-creation witness (MINTABLE NOW 2026-05-18)
 
-Mint blocker triple: ✅ zero Phase 1a outcome artifacts at submission time (UTC 2026-05-18T13:57:22Z empirical check per `artifact_existence_check_doi1_20260518T135722Z.txt`) + ✅ B2 HF SHA `093f9f388b31de276ce2de164bdc2081324b9767` pinned + ✅ preregistration substance-locked (Git tag `preregistration-locked` at SHA `ef609a3863adc9b3698789b96a1ee9f709e1c832`, status: locked 2026-05-18T11:30Z per A2.8 cascade closure).
+Mint blocker triple: ✅ zero Phase 1a outcome artifacts at submission time (UTC 2026-05-18T13:57:22Z empirical check per `retracted/artifact_existence_check_doi1_20260518T135722Z_VOID_RETRACTION_ONLY.txt`) + ✅ B2 HF SHA `093f9f388b31de276ce2de164bdc2081324b9767` pinned + ✅ preregistration substance-locked (Git tag `preregistration-locked` at SHA `ef609a3863adc9b3698789b96a1ee9f709e1c832`, status: locked 2026-05-18T11:30Z per A2.8 cascade closure).
 
-1. **(operator)** Verify outcome-artifact-zero check still PASSES (re-run `artifact_existence_check` SSH probe to A100; if any episode_summary_v2.json has landed since `artifact_existence_check_doi1_20260518T135722Z.txt` capture, downgrade DOI 1 wording from `pre-outcome-creation` → `pre-outcome-inspection` and update `DOI_1_README.md` empirical status table accordingly)
+1. **(operator)** Verify outcome-artifact-zero check still PASSES (re-run `artifact_existence_check` SSH probe to A100; if any episode_summary_v2.json has landed since `retracted/artifact_existence_check_doi1_20260518T135722Z_VOID_RETRACTION_ONLY.txt` capture, downgrade DOI 1 wording from `pre-outcome-creation` → `pre-outcome-inspection` and update `DOI_1_README.md` empirical status table accordingly)
 2. **(operator)** Stage DOI 1 bundle: copy/symlink all `docs/checkpoints/pre_run/*.md` + `paper_drafts/section{1..8}_*.md @ ef609a3` + `paper_drafts/paper.bib @ ef609a3` + `env_snapshot.json` (A100 pre-fire) + `DOI_1_README.md` + `artifact_existence_check_doi1_<UTC-TS>.txt` into `docs/checkpoints/pre_run/osf_deposit_DOI1_<UTC-TS>/` (frozen-at-`ef609a3` snapshot folder, git committable)
 3. **(operator)** Verify Git tag `preregistration-locked` is pushed to GitHub `origin/master` (DOI 1 OSF page will cite the GitHub tag URL https://github.com/<user>/<repo>/tree/preregistration-locked); commit + push if local-only
 4. **(operator at OSF.io)** Create new OSF project: title `Phase 1a Pre-outcome Analysis Lock — phantom-SoM pre-registration witness`; tags: pre-registration, hypothesis-lock, analysis-plan-lock, pre-outcome-witness, OSF DOI 1

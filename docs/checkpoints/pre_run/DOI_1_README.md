@@ -1,27 +1,48 @@
 ---
 type: osf-registration-readme
-status: pre-submission-draft
-captured_at: 2026-05-18T13:57:22Z
-artifact_existence_check: artifact_existence_check_doi1_20260518T135722Z.txt
-git_head: 1d73e5c34cf266ad5a7ed9ec10a79cc34e3dcbca
-preregistration_locked_sha: ef609a3863adc9b3698789b96a1ee9f709e1c832
-preregistration_locked_tag: preregistration-locked
+status: pre-submission-staging  # substance-locked, canonical empirical witness pending Fire-3
+captured_at: <to-be-recorded at Fire-3 canonical witness capture moment>
+artifact_existence_check: <to-be-filled with `artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt` at Fire-3 PID-alive capture>
+git_head: <to-be-recorded at Fire-3 launch commit; will be a descendant of canonical_substance_lock_sha>
+canonical_substance_lock_sha: 72b93c939526fb0b9a733013852bd90136d601aa  # current substance-lock post Q3=A doctrine fix + B-### renumber
+canonical_substance_lock_tag: preregistration-locked-q3a  # at 72b93c9 above
+legacy_substance_lock_sha: ef609a3863adc9b3698789b96a1ee9f709e1c832  # audit-trail only, NOT for OSF citation — superseded by Q3=A wave 2026-05-18 evening
+legacy_substance_lock_tag: preregistration-locked  # at ef609a3 above, retained on origin for git-history continuity only
 osf_doi: <to-be-assigned post-OSF-public-registration-approval>
 osf_guid: <to-be-assigned at submission>
 osf_submitted_at_utc: <to-be-recorded at submission>
+fire2_void_witness: retracted/artifact_existence_check_doi1_20260518T135722Z_VOID_RETRACTION_ONLY.txt  # forensic-only, NOT part of canonical witness chain
+fire2_interim_corrected_scan: artifact_existence_check_doi1_interim_20260518T144258Z.txt  # post-fire-2-cleanup audit-trail bridge, NOT DOI 1 anchor
 ---
 
-# 🟡 DRAFT — DOI 1 README pending Fire-3 canonical witness capture
+# 🟡 STAGING — DOI 1 README pending Fire-3 canonical empirical witness capture
 
-> **STATUS**: This README is **pre-submission draft**. The canonical Fire-3 witness file is **TBD** (will be captured within 5 min of Fire-3 PID-alive via `scripts/maintenance/capture_doi1_witness.sh`). Once captured + counts + SHA-256 fill in, this DRAFT marker drops and the document becomes the final DOI 1 README for OSF upload.
+> **STATUS**: This README is the **pre-submission staging package**. Substance lock is already in place (commit `72b93c9` + tag `preregistration-locked-q3a`, landed 2026-05-18T11:30Z); the remaining `<TBD>` frontmatter fields populate at Fire-3 PID-alive empirical witness capture (5-min window pre-first-episode-summary).
 >
-> **DO NOT submit OSF registration with this DRAFT** — Fire-3 canonical witness must precede submission.
+> **DO NOT submit OSF registration with this STAGING package** — Fire-3 canonical empirical witness must precede submission. After capture + count-verify, regenerate this README + bundle MANIFEST_SHA256, then submit.
+
+## Canonical DOI 1 anchor (single-source-of-truth — cite this block for all OSF-facing claims)
+
+```
+Current canonical substance-lock anchor:
+  Git SHA       : 72b93c939526fb0b9a733013852bd90136d601aa
+  Git tag       : preregistration-locked-q3a   (annotated, at 72b93c9)
+  Lock time UTC : 2026-05-18T11:30:00Z (substance) + Fire-3 PID-alive UTC (empirical witness, TBD)
+  Cite as       : "OSF preregistration registered at Git tag preregistration-locked-q3a (SHA 72b93c9),
+                   substance-locked 2026-05-18T11:30Z per Q3=A doctrine fix wave B-1750~B-1759"
+
+Legacy anchors retained for audit trail ONLY (NOT for OSF citation):
+  Git SHA       : ef609a3863adc9b3698789b96a1ee9f709e1c832    (pre-doctrine-fix; superseded)
+  Git tag       : preregistration-locked                        (legacy, at ef609a3)
+  Frontmatter   : 88521b9e254955ab156dc8115da826f171ef5990    (earlier prereg `prereg_registered_git_sha` value)
+  These remain on origin for git-history continuity but should NOT be referenced as the DOI 1 anchor.
+```
 
 # DOI 1 — Phase 1a Pre-canonical-outcome Witness for Fire-3 (phantom-SoM pre-registration)
 
 ## 🚫 Retraction notice — original Fire-2-era witness VOIDED 2026-05-18 ~14:45 UTC
 
-A previous Fire-2-era witness file (`artifact_existence_check_doi1_20260518T135722Z.txt`,
+A previous Fire-2-era witness file (`retracted/artifact_existence_check_doi1_20260518T135722Z_VOID_RETRACTION_ONLY.txt`,
 SHA-256 `e0e591f5b19c0248d4a7274cf8b19e54dbcc01706c859bfcbc2530e84de047d6`) is **VOIDED**
 and **retained only as a retraction artifact**. It is **not** used as the DOI 1 timestamp
 anchor or empirical zero-outcome witness.
@@ -198,7 +219,7 @@ in OSF metadata); registered Git tag `preregistration-locked` at SHA
 ef609a3 + post-retraction commits 59c60c4 + dd5335b + 5c8968a.
 ```
 
-**Voided Fire-2-era witness** (`artifact_existence_check_doi1_20260518T135722Z.txt`,
+**Voided Fire-2-era witness** (`retracted/artifact_existence_check_doi1_20260518T135722Z_VOID_RETRACTION_ONLY.txt`,
 SHA-256 `e0e591f5...`) is **not cited as empirical witness** in any DOI 1 citation
 form — it appears in the bundle only as a retraction audit-trail artifact.
 
@@ -243,7 +264,7 @@ See `osf_lock_manifest.md §2.1` for the full SHA-locked artifact table.
 | `paper_drafts/paper.bib` @ `ef609a3` | Bibliography frozen pre-outcome | `ef609a3` |
 | **`artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt`** | **🟢 CANONICAL DOI 1 EMPIRICAL WITNESS** (capture pending Fire-3 launch via `capture_doi1_witness.sh`) | **TBD** |
 | `artifact_existence_check_doi1_interim_20260518T144258Z.txt` | Audit-trail bridge — post-Fire-2-cleanup pre-Fire-3 scan (NOT the DOI 1 anchor) | `e2c1782` |
-| `artifact_existence_check_doi1_20260518T135722Z.txt` | **🚫 VOIDED** — retained for retraction audit trail only; NOT used as DOI 1 anchor or empirical witness | `e2c1782` (VOID header in retraction commit) |
+| `retracted/artifact_existence_check_doi1_20260518T135722Z_VOID_RETRACTION_ONLY.txt` | **🚫 VOIDED** — retained for retraction audit trail only; NOT used as DOI 1 anchor or empirical witness | `e2c1782` (VOID header in retraction commit) |
 | `DOI_1_README.md` | This file (scope disclaimer + ordering doctrine + cross-link slot) | post-retraction |
 
 ## Doctrine restoration provenance
@@ -287,7 +308,7 @@ If you are a paper-1 reviewer or independent replicator reading this DOI 1:
    (file path filled in at Fire-3 launch) for the 3-tier zero check + SHA-256
    self-doc + Git HEAD + preregistration-locked tag SHA + canonical schema
    citation. **Do NOT cite** the voided Fire-2-era witness
-   `artifact_existence_check_doi1_20260518T135722Z.txt` — that file is retained
+   `retracted/artifact_existence_check_doi1_20260518T135722Z_VOID_RETRACTION_ONLY.txt` — that file is retained
    only for retraction audit-trail, marked with VOID header per B-1670 pattern
    bug retraction (see `master_bug_catalog.md ## /stress witness pattern bug
    retraction` for full context).

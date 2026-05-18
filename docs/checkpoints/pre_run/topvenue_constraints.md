@@ -4,18 +4,18 @@
 > Generated: 2026-05-09
 > Sources surveyed: 36 papers/standards across 8 categories
 
-## TL;DR scoreboard
+## TL;DR scoreboard (updated 2026-05-18 evening per Q3=A doctrine wave B-1750~B-1759 + DOI 1 staging cleanup audit)
 
-- ✓ Done: 50 constraints (post-2026-05-09: G6 + G7 cell E + 2x2; B2 bootstrap policy lock; A14 + F3 reproducibility / external-validity scope; H2 negative-results registry; F7 + H3 ethics/license/COI/misuse-safety; G5 post-hoc layer disclosure; D8 + H5 section1 intro rewrite; B6 + B7 + B8 pre-spec policy lock; A5 + F8 version pinning; A11 + A12 + A13 release cards; G9 token alignment; G8 sparse-mechanism heterogeneity; C10 pre-launch + validate-strict Make targets; G1 §5.1 method box codex-delegated)
-- ⚠️ Partial: 26 constraints
+- ✓ Done: 51 constraints (post-2026-05-09: G6 + G7 cell E + 2x2; B2 bootstrap policy lock; A14 + F3 reproducibility / external-validity scope; H2 negative-results registry; F7 + H3 ethics/license/COI/misuse-safety; G5 post-hoc layer disclosure; D8 + H5 section1 intro rewrite; B6 + B7 + B8 pre-spec policy lock; A5 + F8 version pinning; A11 + A12 + A13 release cards; G9 token alignment; G8 sparse-mechanism heterogeneity; C10 pre-launch + validate-strict Make targets; G1 §5.1 method box codex-delegated; **A1 substance-locked 2026-05-18T11:30Z at commit 72b93c9 + tag preregistration-locked-q3a — OSF DOI 1 external witness staging package ready, mint blocked only on Fire-3 PID-alive empirical witness capture per B-1675 script, NOT on advisor email or any other lock gate per B-1650 doctrine restoration**)
+- ⚠️ Partial: 25 constraints
 - ❌ Missing: 2 constraints
 - Total: 78 constraints across 8 categories
 
-## Top 10 highest-leverage gaps (ranked)
+## Top 10 highest-leverage gaps (ranked, updated 2026-05-18 evening)
 
 | # | Constraint | Severity | Cost to fix |
 |---|---|---|---|
-| 1 | A1 preregistration is still draft: no advisor witness, git tag, or OSF DOI | High | 0.5 day |
+| ~~1~~ | ~~A1 preregistration is still draft: no advisor witness, git tag, or OSF DOI~~ | ✓ substance-locked 2026-05-18T11:30Z (commit 72b93c9 + tag preregistration-locked-q3a per Q3=A doctrine wave B-1750~B-1759); OSF DOI 1 external witness blocked only on Fire-3 PID-alive empirical witness capture (5-min window, B-1675 script ready) | — |
 | 2 | A2 final replication package lacks a step-by-step README and public release policy | High | 1 day |
 | 3 | B5 inter-rater reliability for FP and failure-mode labels not run | High | 1 day |
 | 4 | C3 site-state reset/snapshot gate is still TBD despite stateful web tasks | High | 1 day |
