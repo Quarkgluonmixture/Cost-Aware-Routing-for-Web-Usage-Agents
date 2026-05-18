@@ -6896,3 +6896,39 @@ ON pending (a) A100 re-probe `match_lock=True` verification (local probe confirm
 ON pending (a) push approval for ~17 commits ahead of `origin/master` (11 pre-A2.10 from earlier today + 4 A2.10 Chunks + 1 renumber + 1 this Chunk 4 closure). Pass-1 fire requires push → A100 pull → `make vwa-generate-configs` → smoke test → fire. Pass-2 fire additionally requires LR training pipeline run post-Pass-1 completion to generate 52 fold-aware artifacts (currently 0/52 on disk — operational substrate gap per A2.10 unified bug list P0-2-A, NOT a code bug but operational dependency).
 
 **§A2 设计层 thirteenth and FINAL item DONE** post A2.10 (A2.1 + A2.2 + A2.3a/b/c/d + A2.4a/b + A2.5 + A2.6a/b/c + A2.7 + A2.8 + A2.9 + A2.10 = **14 of 14 §A2 items CLOSED**). 全部 §A2 design-layer audit cascade closed today 2026-05-18.
+
+
+## /stress A1.24 — Mode A+B+C cross-AI 2 root cause audit + 5 fixes (2026-05-18 ~12:00-12:30 BST, B-1571~B-1575)
+
+> Phase 1a fire third attempt aborted at queue chain Gate stage:
+>   - cls: `[reset_vwa][local] cls sentinel FAIL: oc_t_item (user-posted) = 12 (expected 0)`
+>   - red: `[baseline][gate][FATAL] VWA credentials for 'reddit' missing — set both VWA_REDDIT_USER and VWA_REDDIT_PASS`
+>
+> Diagnose-first chosen. Claude Mode A solo proposed (a) `s_username NOT IN ('1', 'admin')` JOIN fix for sentinel + (b) `~/.api_keys.env` location for missing env vars. **Cross-AI Mode B (codex) + Mode C (gemini) chained at user direction** — codex F2 OOB attack invalidated Claude's own JOIN fix because user_id=1 = blake.sullivan@gmail.com = the actual cls experiment login account per `external/visualwebarena/browser_env/env_config.py:91` + `classifieds_restore.sql:45`; gemini F3 OOB caught orthogonal guest-posting blindspot (`fk_i_user_id NULL OR 0`); codex F3 corrected location-fix to `scripts/vwa_env_remote.sh` (queue hot path only sources this per `_lib_paper_grade_gates.sh:36-38`).
+>
+> 7 unified bug list findings (3 P0 cls-sentinel-merged + 2 P0 auth-env-vars + 2 P1 paper-grade-defense). 4 OOB (57% rate): codex F2 + gemini F3 + codex F3 + codex F4.
+
+| ID | Severity | Discovered by | Description / Fix |
+|---|---|---|---|
+| B-1571 | P0 ABC | 3-AI overlap | `scripts/maintenance/reset_vwa_sites.sh:93` sentinel `SELECT COUNT(*) FROM oc_t_item WHERE b_active=1 AND fk_i_user_id > 0 = 0` expectation wrong. `classifieds_restore.sql:53-65` INSERTs 12 baseline items (pk_i_id 84143..84154, fk_i_user_id=1) post-reset by canonical seed → sentinel **永远 fail** on standard `osclass_seed:latest` image. Pre-fix queue would 100% reject reset gate on fresh VWA stack. Resolution: sentinel SQL replaced with `pk_i_id NOT IN (84143..84154)` canonical seed ID set assertion (covers B-1571 + B-1572 + B-1573 in one query). |
+| B-1572 | P0 OOB B* (codex F2) | codex unique | Claude's Mode A solo proposed fix `WHERE u.s_username NOT IN ('1','admin')` JOIN would systematically hide experiment-as-blake-sullivan contamination because `env_config.py:91` declares `"username": "blake.sullivan@gmail.com"` (the cls login account per CLAUDE.md `cls blake.sullivan`) AND `classifieds_restore.sql:45` seeds user_id=1 with that same email. Experiment posts as the canonical seed account would carry fk_i_user_id=1 and be silently excluded → **false-PASS** worse than the pre-fix false-FAIL. Resolution: per codex defuse — `pk_i_id NOT IN (canonical seed ID set)` catches the case (any post-experiment pk_i_id outside 84143..84154 = contamination regardless of user_id). |
+| B-1573 | P0 OOB C* (gemini F3) | gemini unique | OSClass allows guest posting where `oc_t_item.fk_i_user_id` is `NULL` or `0`. Pre-fix sentinel `> 0` filter completely missed guest-posted contamination — silent **false-PASS**. Resolution: canonical seed-ID-set assertion catches NULL/0 too (any pk_i_id outside seed set, regardless of fk_i_user_id, = contamination). Single SQL rewrite closes B-1571 + B-1572 + B-1573 simultaneously. |
+| B-1574 | P0 BC (codex F3 + gemini F2) | 2-AI overlap | Auth env vars (`VWA_CLASSIFIEDS_USER` / `VWA_CLASSIFIEDS_PASS` / `VWA_REDDIT_USER` / `VWA_REDDIT_PASS`) absent from canonical template `scripts/vwa_env_remote.sh.example` (500B, `grep -c VWA_.*_USER = 0`) AND `scripts/vwa_env.sh` (300B, same). Plus Claude's Mode A solo proposed `~/.api_keys.env` for the missing exports — codex F3 verified queue hot path `_lib_paper_grade_gates.sh:36-38` only sources `scripts/vwa_env_remote.sh` (gitignored runtime file), NOT `~/.api_keys.env`. Resolution: append 4 Phase 1a + 4 Phase 1b VWA_*_USER/PASS exports to `vwa_env_remote.sh.example` (with `REPLACE_WITH_VWA_PASSWORD` placeholder); append commented Phase 1a/1b stubs to `vwa_env.sh`. User then SSH A100 + manually populates real password values into the gitignored `scripts/vwa_env_remote.sh` (canonical hot-path location). |
+| B-1575 | P1 OOB B* (codex F4) | codex unique | `experiment_watchdog.py:166-197 _auto_refresh_auth` calls `refresh_site_auth` (soft-fail, returns False + prints `[warn]`); `auth_refresh.py:394-397` docstring explicitly lists watchdog as a paper-grade hard-fail callsite. Implementation hypocritical vs declared contract → mid-run session-loss waves degrade to silent warn → NOT-LOGGED-IN episodes contaminate `condition_summary_v2.json`. Resolution: under `P79_PAPER_GRADE=1` env, watchdog now invokes `auth_required_gate` which raises `AuthRefreshFailure` on persistent failure, propagating up + breaking the silent-warn loop. Non-paper-grade mode preserves prior soft-fail behavior (backward-compat for dev sessions). |
+
+**7 findings raw, 4 OOB (57%)**: matches /stress SKILL spot-check scope ≥1 OOB requirement (exceeded for cross-AI cross-validation depth). Mode A + Mode B (codex `--sandbox danger-full-access`) + Mode C (gemini `--yolo -p`) all dispatched in parallel from a shared bilingual prompt at `docs/checkpoints/codex_prompts/a1_24_diagnosis_audit_2026-05-18.md`.
+
+**Verified Phase 0/4 self-audit**:
+- B-1571: bash-verified `grep -oE '^\(841[0-9][0-9],' classifieds_restore.sql | sort -u | wc -l = 12` (exact ID set 84143..84154 confirmed)
+- B-1572: grep-verified `env_config.py:91 "username": "blake.sullivan@gmail.com"` + `classifieds_restore.sql:45 user_id=1 Blake Sullivan email match`
+- B-1573: OSClass schema property (gemini high confidence, NULL/0 fk_i_user_id branch for guest posts)
+- B-1574: bash-verified `grep -c "VWA_.*_USER" scripts/vwa_env_remote.sh.example = 0` + `wc -c scripts/vwa_env_remote.sh = 514` + `grep VWA_.*_USER scripts/vwa_env_remote.sh = 0`
+- B-1575: `.venv/bin/python3 -m py_compile scripts/maintenance/experiment_watchdog.py` + `p79/utils/auth_refresh.py` both PASS
+
+**Cross-AI cycle saved a paper-grade error**: Mode A solo's `s_username NOT IN ('1','admin')` JOIN fix would have produced silent false-PASS on experiment-as-blake-sullivan contamination — a strictly worse failure mode than the pre-fix false-FAIL because false-PASS contaminates downstream SR data invisibly. Mode B chain caught it via `env_config.py:91` cross-reference Mode A had missed. This is the v7.3 hard-constraint working as designed: Claude must present unified bug list BEFORE applying fixes, so user can mandate Mode B/C chain when Mode A solo is insufficient.
+
+**Closed via single commit**: `<hash>` (this section + 5 file edits + experiment笔记 §226 chronicle).
+
+### Phase 1a fire green-light status post A1.24
+
+ON pending (a) push approval — A1.24 5 commits ahead of `origin/master` (this commit + 17 already-pending A2.10 + 深入审 + A2.6c commits from earlier today); (b) **user action required on A100**: SSH `a100-jiaming-test` + append 4 `export VWA_*_USER/PASS=...` lines (with actual VWA passwords) to `scripts/vwa_env_remote.sh` (gitignored, A100-local file). Pass-1 fire then: push → A100 pull → `source scripts/vwa_env_remote.sh` (or queue script auto-sources it) → re-fire queue chain.

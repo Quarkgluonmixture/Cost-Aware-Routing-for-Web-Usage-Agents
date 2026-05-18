@@ -178,7 +178,11 @@ def _auto_refresh_auth(site: str, *, benchmark: str = "") -> bool:
     storage state, contaminates downstream episodes).
     """
     try:
-        from p79.utils.auth_refresh import refresh_site_auth
+        from p79.utils.auth_refresh import (
+            refresh_site_auth,
+            auth_required_gate,
+            AuthRefreshFailure,
+        )
     except ImportError as exc:
         print(
             f"[watchdog][SESSION][FATAL] cannot import p79.utils.auth_refresh: {exc}. "
@@ -189,6 +193,29 @@ def _auto_refresh_auth(site: str, *, benchmark: str = "") -> bool:
         return False
     repo_dir = Path(__file__).resolve().parent.parent.parent
     auth_dir = repo_dir / ".auth"
+    # B-1575 (/stress A1.24 P1-6-B* OOB codex, 2026-05-18): paper-grade hard-fail
+    # propagation. Pre-fix: refresh_site_auth() returns False → watchdog prints
+    # "[warn] auto-refresh failed" and keeps looping. But auth_refresh.py:394-397
+    # docstring states "Use at paper-grade gate points where stale session
+    # contamination is unacceptable: ... watchdog reactive launch" — implementation
+    # was hypocritical (soft-fail vs declared hard-fail contract). Under
+    # P79_PAPER_GRADE=1 the watchdog now invokes auth_required_gate which raises
+    # AuthRefreshFailure on persistent failure, propagating to caller and breaking
+    # the silent-warn loop (mid-run session-loss waves that would otherwise produce
+    # NOT-LOGGED-IN episodes contaminating condition_summary_v2.json).
+    paper_grade = os.environ.get("P79_PAPER_GRADE", "0") == "1"
+    if paper_grade:
+        try:
+            auth_required_gate(site, auth_dir, benchmark=benchmark)
+            print(f"[watchdog][SESSION] {site} auth auto-refreshed (paper-grade hard-fail gate)")
+            return True
+        except AuthRefreshFailure as exc:
+            print(
+                f"[watchdog][SESSION][FATAL] {site} auth_required_gate FAILED under "
+                f"P79_PAPER_GRADE=1 — NOT continuing with stale session "
+                f"(paper-grade contamination prevention). Reason: {exc}"
+            )
+            raise
     ok = refresh_site_auth(site, auth_dir, benchmark=benchmark)
     if ok:
         print(f"[watchdog][SESSION] {site} auth auto-refreshed")

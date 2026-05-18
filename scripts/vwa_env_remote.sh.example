@@ -1,5 +1,20 @@
 #!/usr/bin/env bash
-# Copy to scripts/vwa_env_remote.sh and replace VWA_REMOTE_HOST.
+# Copy to scripts/vwa_env_remote.sh and replace VWA_REMOTE_HOST + populate
+# VWA_<SITE>_USER / VWA_<SITE>_PASS values from your VWA secrets.
+#
+# B-1574 (/stress A1.24 P0-5-BC + P1-7-C, 2026-05-18): VWA_*_USER/PASS env
+# vars are REQUIRED by p79/utils/auth_refresh.py:46-51 _ACCOUNT_ENV_KEYS for
+# auth_required_gate() to function. Pre-fix this template was incomplete and
+# operators had to reverse-engineer the names from code comments.
+#
+# Canonical login identities per
+# external/visualwebarena/browser_env/env_config.py:91 and CLAUDE.md memory:
+#   classifieds    → blake.sullivan@gmail.com
+#   reddit         → MarvelsGrantMan136
+#   shopping       → emma.lopez@gmail.com         (Phase 1b)
+#   shopping_admin → admin                        (Phase 1b)
+# Passwords ship with the VWA Docker images — see VWA upstream README or
+# `external/visualwebarena/environment_docker/.env`.
 
 export DATASET=visualwebarena
 
@@ -12,3 +27,15 @@ export SHOPPING="http://${VWA_REMOTE_HOST}:7770"
 export REDDIT="http://${VWA_REMOTE_HOST}:9999"
 export WIKIPEDIA="http://${VWA_REMOTE_HOST}:8888"
 export HOMEPAGE="http://${VWA_REMOTE_HOST}:4399"
+
+# Phase 1a (cls + reddit) — REQUIRED
+export VWA_CLASSIFIEDS_USER="blake.sullivan@gmail.com"
+export VWA_CLASSIFIEDS_PASS="REPLACE_WITH_VWA_PASSWORD"
+export VWA_REDDIT_USER="MarvelsGrantMan136"
+export VWA_REDDIT_PASS="REPLACE_WITH_VWA_PASSWORD"
+
+# Phase 1b (shopping + shopping_admin) — required when launching shop conditions
+export VWA_SHOPPING_USER="emma.lopez@gmail.com"
+export VWA_SHOPPING_PASS="REPLACE_WITH_VWA_PASSWORD"
+export VWA_SHOPPING_ADMIN_USER="admin"
+export VWA_SHOPPING_ADMIN_PASS="REPLACE_WITH_VWA_PASSWORD"
