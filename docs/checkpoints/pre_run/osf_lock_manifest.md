@@ -80,11 +80,11 @@ GPU compute capability / hostname / nvidia-smi output.
 
 | Layer | Mechanism | Status |
 |---|---|---|
-| **Git** | `git tag prereg-h10-locked` on master at `5f8c63a` (A2.8 Chunk 4 closure 2026-05-18) → promoted to `preregistration-locked` post-Phase-1a-fire-data-complete + ~~post-A100-B2-SHA-pin~~ ✅ B2 SHA `093f9f388b31de276ce2de164bdc2081324b9767` landed 2026-05-18 (B-1603 /stress 深入审 Mode A) | ✅ Layer 1 partial (prereg-h10-locked locked; B2 SHA ✅ landed; preregistration-locked pending Phase 1a fire data) |
+| **Git** | `git tag prereg-h10-locked` on master at `5f8c63a` (A2.8 Chunk 4 closure 2026-05-18) → promoted to `preregistration-locked` post-Phase-1a-fire-data-complete + ~~post-A100-B2-SHA-pin~~ ✅ B2 SHA `093f9f388b31de276ce2de164bdc2081324b9767` landed 2026-05-18 (B-1623 /stress 深入审 Mode A) | ✅ Layer 1 partial (prereg-h10-locked locked; B2 SHA ✅ landed; preregistration-locked pending Phase 1a fire data) |
 | **§A2 audit cascade refs** (was "Advisor email" pre-2026-05-14 sync 收口 — reclassified 2026-05-18 per B-1570 doctrine-shift propagation) | §A2 14/16 audit cascade Git SHA refs at master HEAD substantively close all 14 commit decisions via per-decision B-### audit-trail (master_bug_catalog ## A2.1~A2.9 + 实验笔记 §200-§221); advisor batch sign-off retained as optional post-fire collateral (email PDF to `docs/reference/advisor_email_<date>.pdf` + Gmail message-id captured if/when advisor signs) | ✅ Layer 2 substantively complete via §A2 cascade (formal advisor batch sign-off optional post-fire) |
 | **OSF** | OSF preregistration page DOI: `<TBD>` (e.g., `10.17605/OSF.IO/XXXXX`) — mintable post-Phase-1a-fire-data-complete | ⏸ Layer 3 pending Phase 1a Pass-1 baseline data |
 
-### §2.5 Reusable patch artifacts — cross-submission provenance witness (B-1604 /stress A2.6c P1-8-B* codex Mode B reproducibility-auditor unique OOB 2026-05-18)
+### §2.5 Reusable patch artifacts — cross-submission provenance witness (B-1624 /stress A2.6c P1-8-B* codex Mode B reproducibility-auditor unique OOB 2026-05-18)
 
 > **Driver**: codex Mode B unique OOB caught that `paper_planning.md §16.0` Multi-submission matrix CLAIMS reused-artifact non-overlap across Paper-1 Workshop / Paper-1 Main / Track A / Track B submissions, but OSF manifest didn't expose the underlying patch families as separate witnesses. `grep -Ec 'B-440|B-448|B-91|B-535|Workshop A|Track A|Track B|cross-paper FP|reused artifacts' osf_lock_manifest.md` returned 0 pre-fix. Without explicit OSF provenance, external replicators couldn't verify workshop artifact subset ≠ paper-1 artifact subset, defeating the salami-slicing-defense audit trail at the OSF layer.
 
@@ -107,7 +107,7 @@ GPU compute capability / hostname / nvidia-smi output.
 
 ## §3 Eight-step DOI workflow (post Phase 1a fire data lock; advisor batch sign-off optional)
 
-> **Doctrine-shift note (/stress A2.8 followup B-1570 2026-05-18)**: pre-fix header said "post advisor email reply" but post-2026-05-14 sync 收口 + §A2 14/16 audit cascade closure, advisor email reply is **no longer the gating event for OSF DOI mint**. The new gating event is **Phase 1a Pass-1 baseline data complete + ~~A100 B2 HF SHA pin landed~~ ✅ B2 SHA locked 2026-05-18 (B-1603 /stress 深入审 Mode A: `093f9f388b31de276ce2de164bdc2081324b9767`)**. Remaining gate item is now Phase 1a Pass-1 fire data. Step 1 reclassified as optional collateral; advisor batch sign-off can land before OR after OSF DOI mint as audit-trail reproducibility completeness.
+> **Doctrine-shift note (/stress A2.8 followup B-1570 2026-05-18)**: pre-fix header said "post advisor email reply" but post-2026-05-14 sync 收口 + §A2 14/16 audit cascade closure, advisor email reply is **no longer the gating event for OSF DOI mint**. The new gating event is **Phase 1a Pass-1 baseline data complete + ~~A100 B2 HF SHA pin landed~~ ✅ B2 SHA locked 2026-05-18 (B-1623 /stress 深入审 Mode A: `093f9f388b31de276ce2de164bdc2081324b9767`)**. Remaining gate item is now Phase 1a Pass-1 fire data. Step 1 reclassified as optional collateral; advisor batch sign-off can land before OR after OSF DOI mint as audit-trail reproducibility completeness.
 
 1. **(optional, post-fire collateral)** Save advisor batch sign-off email PDF + extract Gmail message-id if/when advisor signs (NOT blocking OSF DOI mint per B-1570 doctrine shift; §A2 14/16 audit cascade Git SHA refs at master HEAD already substantively close all 14 commit decisions)
 2. **Update `preregistration.md`** with confirmed thresholds + decision log entry
