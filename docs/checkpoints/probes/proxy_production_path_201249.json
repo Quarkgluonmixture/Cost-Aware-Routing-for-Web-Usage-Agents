@@ -1,0 +1,351 @@
+{
+  "timestamp": "2026-05-18T20:12:49",
+  "purpose": "B-1104 /stress A2.3b P0-3-B* production-path probe: replays saved proxy responses through ProxyApiAgent.step + dispatchability check. Replaces API-emission Q1=A gate.",
+  "replay_source": "docs/checkpoints/probes/proxy_full_stack_225749.json",
+  "n_replays": 30,
+  "code_provenance": {
+    "proxy_api_agent_sha": "ca6e155a05f228e99c282a0e7976509bc6ef6005",
+    "action_utils_sha": "63f4c4ad48af8ffbaa973c74a19e6c1e1aa6ac67",
+    "tool_schema_md5": "33a2d09a64f1bb2e"
+  },
+  "stats": {
+    "agent_valid_rate": 1.0,
+    "action_dispatchable_rate": 1.0,
+    "confidence_present_rate": 1.0,
+    "list_coerce_rate": 1.0,
+    "exception_rate": 0.0,
+    "q1_a_revised_gate": "PASS"
+  },
+  "results": [
+    {
+      "replay_idx": 0,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 1,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 2,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 3,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 4,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 5,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 6,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 7,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 8,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 9,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 10,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 11,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 12,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 13,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 14,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 15,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 16,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 17,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 18,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 19,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 20,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 21,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 22,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 23,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 24,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 25,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 26,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 27,
+      "agent_valid": true,
+      "action_type": "select_option",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "select_option",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 28,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    },
+    {
+      "replay_idx": 29,
+      "agent_valid": true,
+      "action_type": "click",
+      "element_id_coerced_from_list": true,
+      "dispatchable": true,
+      "dispatch_path": "click_eid",
+      "failure_reason": null,
+      "confidence_present": true,
+      "confidence_error": null
+    }
+  ]
+}
