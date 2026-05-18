@@ -7,7 +7,7 @@ are RESOLVED via §A2 14/16 audit cascade closure 2026-05-18 (B-1265 /stress A2.
 drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision log + `osf_lock_manifest.md §3`; ADVISOR_SYNC.md retired 2026-05-15, commit `f64bc9d`, replaced by `_status/issues/issue_advisor_sync_2026-05-14.md` frontmatter + Bases view).
 
 **Status**: 🟡 Draft — fields populate at lock moment.
-**Lock blocker**: ⏳ **Phase 1a Pass-1 baseline data complete + A100 B2 HF SHA pin + A100-side `probe_b0_production_path.py` + `snapshot_env.py` self-verification** (per phase1_plan §B1 items 7+8 + B-1427+B-1428). **Advisor email reply RECLASSIFIED 2026-05-18 per /stress A2.8 followup B-1570 as optional post-fire collateral** (was hard gate pre-2026-05-14 sync 收口; current doctrine: §A2 14/16 audit cascade substantively closes all 14 commit decisions, advisor batch sign-off retained as optional reproducibility audit-trail completeness for OSF DOI mint).
+**Lock blocker**: ⏳ **Phase 1a Pass-1 baseline data complete + ~~A100 B2 HF SHA pin~~ ✅ B2 SHA `093f9f388b31de276ce2de164bdc2081324b9767` locked 2026-05-18 per /stress 深入审 Mode A B-1603 + A100-side `probe_b0_production_path.py` + `snapshot_env.py` self-verification** (per phase1_plan §B1 items 7+8 + B-1427+B-1428). **Advisor email reply RECLASSIFIED 2026-05-18 per /stress A2.8 followup B-1570 as optional post-fire collateral** (was hard gate pre-2026-05-14 sync 收口; current doctrine: §A2 14/16 audit cascade substantively closes all 14 commit decisions, advisor batch sign-off retained as optional reproducibility audit-trail completeness for OSF DOI mint).
 
 ---
 
@@ -80,7 +80,7 @@ GPU compute capability / hostname / nvidia-smi output.
 
 | Layer | Mechanism | Status |
 |---|---|---|
-| **Git** | `git tag prereg-h10-locked` on master at `5f8c63a` (A2.8 Chunk 4 closure 2026-05-18) → promoted to `preregistration-locked` post-Phase-1a-fire-data-complete + post-A100-B2-SHA-pin | ✅ Layer 1 partial (prereg-h10-locked locked; preregistration-locked pending Phase 1a + A100 B2 SHA) |
+| **Git** | `git tag prereg-h10-locked` on master at `5f8c63a` (A2.8 Chunk 4 closure 2026-05-18) → promoted to `preregistration-locked` post-Phase-1a-fire-data-complete + ~~post-A100-B2-SHA-pin~~ ✅ B2 SHA `093f9f388b31de276ce2de164bdc2081324b9767` landed 2026-05-18 (B-1603 /stress 深入审 Mode A) | ✅ Layer 1 partial (prereg-h10-locked locked; B2 SHA ✅ landed; preregistration-locked pending Phase 1a fire data) |
 | **§A2 audit cascade refs** (was "Advisor email" pre-2026-05-14 sync 收口 — reclassified 2026-05-18 per B-1570 doctrine-shift propagation) | §A2 14/16 audit cascade Git SHA refs at master HEAD substantively close all 14 commit decisions via per-decision B-### audit-trail (master_bug_catalog ## A2.1~A2.9 + 实验笔记 §200-§221); advisor batch sign-off retained as optional post-fire collateral (email PDF to `docs/reference/advisor_email_<date>.pdf` + Gmail message-id captured if/when advisor signs) | ✅ Layer 2 substantively complete via §A2 cascade (formal advisor batch sign-off optional post-fire) |
 | **OSF** | OSF preregistration page DOI: `<TBD>` (e.g., `10.17605/OSF.IO/XXXXX`) — mintable post-Phase-1a-fire-data-complete | ⏸ Layer 3 pending Phase 1a Pass-1 baseline data |
 
@@ -88,7 +88,7 @@ GPU compute capability / hostname / nvidia-smi output.
 
 ## §3 Eight-step DOI workflow (post Phase 1a fire data lock; advisor batch sign-off optional)
 
-> **Doctrine-shift note (/stress A2.8 followup B-1570 2026-05-18)**: pre-fix header said "post advisor email reply" but post-2026-05-14 sync 收口 + §A2 14/16 audit cascade closure, advisor email reply is **no longer the gating event for OSF DOI mint**. The new gating event is **Phase 1a Pass-1 baseline data complete + A100 B2 HF SHA pin landed**. Step 1 reclassified as optional collateral; advisor batch sign-off can land before OR after OSF DOI mint as audit-trail reproducibility completeness.
+> **Doctrine-shift note (/stress A2.8 followup B-1570 2026-05-18)**: pre-fix header said "post advisor email reply" but post-2026-05-14 sync 收口 + §A2 14/16 audit cascade closure, advisor email reply is **no longer the gating event for OSF DOI mint**. The new gating event is **Phase 1a Pass-1 baseline data complete + ~~A100 B2 HF SHA pin landed~~ ✅ B2 SHA locked 2026-05-18 (B-1603 /stress 深入审 Mode A: `093f9f388b31de276ce2de164bdc2081324b9767`)**. Remaining gate item is now Phase 1a Pass-1 fire data. Step 1 reclassified as optional collateral; advisor batch sign-off can land before OR after OSF DOI mint as audit-trail reproducibility completeness.
 
 1. **(optional, post-fire collateral)** Save advisor batch sign-off email PDF + extract Gmail message-id if/when advisor signs (NOT blocking OSF DOI mint per B-1570 doctrine shift; §A2 14/16 audit cascade Git SHA refs at master HEAD already substantively close all 14 commit decisions)
 2. **Update `preregistration.md`** with confirmed thresholds + decision log entry

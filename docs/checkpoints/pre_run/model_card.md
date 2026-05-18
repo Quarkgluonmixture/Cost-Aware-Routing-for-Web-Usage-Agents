@@ -103,7 +103,7 @@ local, added 2026-05-14 as a cross-family robustness-check (4B parity) control v
 |---|---|
 | Provider | Google (Gemma team) |
 | Model name | `google/gemma-3-4b-it` |
-| HuggingFace revision SHA | ⏳ **pending lock** (pin at A100 bring-up time, matching B1 protocol; recorded into `env_snapshot.json`; preregistration §7 reproducibility tier reported as "**Reproducible after HF SHA lock**" — B-1504 /stress A2.9 P1-6-B* 2026-05-18 — submission gated on SHA fill) |
+| HuggingFace revision SHA | **`093f9f388b31de276ce2de164bdc2081324b9767`** (locked 2026-05-18 per /stress 深入审 Mode A B-1603 — captured at A100 bring-up post-`hf download` snapshot verification: 8.1G blobs, 14 files, 0 `.incomplete`; matches B1 protocol; recorded into `env_snapshot.json`; preregistration §7 reproducibility tier promoted from "Reproducible after HF SHA lock" → "**byte-identical**" upon this fill per B-1504 /stress A2.9 P1-6-B* doctrine) |
 | Architecture | Dense decoder-only transformer (4B params) + vision encoder (multimodal) |
 | Modality | Multimodal text + image |
 | Access | **Open weights** — fully reproducible, replicators download from HuggingFace |
@@ -129,7 +129,7 @@ local, added 2026-05-14 as a cross-family robustness-check (4B parity) control v
 
 ### Limitations
 
-- **HF SHA pin pending** — lock at A100 bring-up time per phase1_plan §B0 #11 prereq
+- ~~**HF SHA pin pending** — lock at A100 bring-up time per phase1_plan §B0 #11 prereq~~ **RESOLVED 2026-05-18 per /stress 深入审 Mode A B-1603**: SHA `093f9f388b31de276ce2de164bdc2081324b9767` locked from A100 `hf download` snapshot verification
 - **Smaller model**: SR is expected lower than B0; failure mode patterns TBD (Phantom-SoM cross-family hold rate is one of the empirical questions)
 - **No system role** (paper-grade convention) — same as B0/B1
 - **Mechanism §5 paper-2 deferred per advisor 2026-05-14** — section5_mechanism.md remains paper-2 working draft, mechanism extension to B2 future work
@@ -143,7 +143,7 @@ local, added 2026-05-14 as a cross-family robustness-check (4B parity) control v
 | Dimension | B0 (API) | B1 (local) | B2 (local, added 2026-05-14) |
 |---|---|---|---|
 | Open weights | ❌ | ✓ | ✓ |
-| Reproducibility | Verifiable from traces | **Byte-identical** | **Byte-identical** (pending HF SHA pin) |
+| Reproducibility | Verifiable from traces | **Byte-identical** | **Byte-identical** (SHA `093f9f388b31de276ce2de164bdc2081324b9767` locked 2026-05-18 per B-1603) |
 | Mechanism analysis (paper-2 scope) | Not possible (closed) | Stage 2 patching available | Stage 2 future work (open weights enable) |
 | SR (typical) | Higher | Lower | TBD (cross-family control) |
 | Cost per episode | $0.01-0.10 | ~free (local compute) | ~free (local compute) |

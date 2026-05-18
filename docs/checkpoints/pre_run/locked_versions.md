@@ -89,7 +89,7 @@ B0 episodes (audit F2 sensitivity) detects upstream model drift.
 
 | Component | Pin |
 |---|---|
-| **HF revision SHA** | ⏳ **pending lock** (matching B1 protocol — pin at A100 bring-up time, recorded into env_snapshot.json; reproducibility tier reported as "**Reproducible after HF SHA lock**" NOT "byte-identical" per B-1504 /stress A2.9 P1-6-B* 2026-05-18 — internal contradiction "byte-identical + pending SHA" resolved by tier-downgrade wording until SHA fills) |
+| **HF revision SHA** | **`093f9f388b31de276ce2de164bdc2081324b9767`** (locked 2026-05-18 per /stress 深入审 Mode A B-1603 — captured at A100 bring-up post-HF-download verification; matches B1 protocol; recorded into env_snapshot.json; reproducibility tier promoted from "Reproducible after HF SHA lock" → "**byte-identical**" upon this fill per B-1504 /stress A2.9 P1-6-B* doctrine) |
 | HF model name | `google/gemma-3-4b-it` |
 | Dtype | `torch.bfloat16` (fits A100-PCIE-40GB unquantized) |
 | Decoding | greedy (`do_sample=False`), `max_new_tokens` per task |
@@ -97,8 +97,11 @@ B0 episodes (audit F2 sensitivity) detects upstream model drift.
 | Capability rationale | 4B params parity with B1 (4B Qwen3-VL); cross-family control (Google Gemma vs Alibaba Qwen lineage) at matched scale; advisor discussion 2026-05-14 (see `preregistration.md` Appendix A 2026-05-14 entry + 笔记 §138 + §142) |
 
 Recorded automatically per run via `snapshot_env.py` → `env_snapshot.json`
-`extra.hf_model_revision_pinned`. HF SHA lock pending #11 A100 VM VWA
-Docker bring-up + first B2 smoke run.
+`extra.hf_model_revision_pinned`. **HF SHA locked 2026-05-18 (B-1603 /stress
+深入审 Mode A): `093f9f388b31de276ce2de164bdc2081324b9767`** captured at
+A100 bring-up post-`hf download` verification (`du -sh
+~/.cache/huggingface/hub/models--google--gemma-3-4b-it/blobs/` = 8.1G,
+14 file snapshots, 0 .incomplete); first B2 smoke run pending §B0 B-1425.
 
 ## Python / library substrate
 
@@ -185,6 +188,12 @@ When a pin changes (intentional upgrade or unavoidable drift):
 - **2026-05-14**: B2 = Gemma3-VL `google/gemma-3-4b-it` added as 3rd baseline (matched-capability
   cross-family control vs B1 4B). HF SHA pin pending A100 bring-up; preregistration §4 cell scope
   expanded from 24 cond / 4 cells → 36 cond / 6 cells.
+- **2026-05-18**: B2 HF SHA pinned to `093f9f388b31de276ce2de164bdc2081324b9767`
+  (locked per /stress 深入审 Mode A B-1603 — captured from A100 `hf download`
+  snapshot verification at A100 bring-up: 8.1G blobs, 14 file snapshots, 0
+  `.incomplete`). Closes B-1424 phase1_plan §B0 + B-1504 /stress A2.9 P1-6-B*
+  reproducibility-tier upgrade to byte-identical for B2. Companion edits in
+  `model_card.md` L106+L132+L146 + `osf_lock_manifest.md §3 L83+L91`.
 - **2026-05-15**: Canonical paper-grade rerun host migrated DGX Spark → A100 Condenser VM
   `a100-jiaming-test` (A100-PCIE-40GB, self-hosted VWA Docker). DGX→quark Tailscale stack retained
   for pre-2026-05-15 archive reference only. New Hardware/Host substrate section added above. #11
