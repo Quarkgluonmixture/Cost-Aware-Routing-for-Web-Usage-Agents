@@ -6439,7 +6439,7 @@ All 14 P0+P1 paper-grade gate-artifact integrity attacks closed. A2.3c was a swe
 - **P1-9-AC closed-by-overlap** with B-1208 — same disclosure paragraph addresses both measurement-mechanism heterogeneity AND 4-of-6 field choice (entropy=None per top-2 truncation).
 - Tests 61/61 PASS.
 
-### Chunk 4 — closure (this entry + 笔记 §213 + phase1_plan tick + push wait)
+### Chunk 4 — closure (this entry + 笔记 §214 + phase1_plan tick + push wait)
 
 ### Cross-AI value summary
 
