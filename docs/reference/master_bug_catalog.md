@@ -6454,3 +6454,74 @@ All 14 P0+P1 paper-grade gate-artifact integrity attacks closed. A2.3c was a swe
 All fire-blocker P0 resolved: B-1201 validator coerce + B-1203 logprob fail-loud + B-1204 production-execution probe substitute Q1=A gate. Local production-path probe replay PASS (agent_valid=1.0 / dispatchable=1.0 / confidence_present=1.0). **User action required before fire**: re-run `scripts/maintenance/probe_b0_production_path.py` from A100 paper-grade target host against current code state (`63f4c4a` Chunk 1 + `206a357` Chunk 2 + `08cdbf0` Chunk 3) to verify the local replay matches A100 production behavior. Once A100 re-probe PASS confirmed, Phase 1a B0 fire is ready.
 
 **Deferred to backlog (P1-1-B* real screenshot probe / P1-3-C* top_logprobs=20 test / P1-7-B V6 JSON parse / P1-8-B V7 auto+logprobs variant)**: P1 lowest-leverage items; require image artifacts OR A100 single probe call. Reservation B-1212~B-1219 buffer for follow-up.
+
+## A2.3d — Statistical design / meta method (/stress A2.3d Mode A+B+C cycle 2026-05-18 ~01:38-02:30 BST, B-1301~B-1311 reserved)
+
+> Audit target: DerSimonian-Laird vs REML + Hartung-Knapp at k=6 cells; small-k DL bias; per-site FE alternative. Prereg §3 substrate. Pre-fire scope.
+>
+> Re-slotted 2026-05-18 from former A2.3b slot (B0 proxy migration took A2.3b at deep-night). 3-AI cycle Mode A (Claude scope canonical producer + B-184 + §1/§8 + paper_planning §3 decision log) + Mode B (codex scope appendix DL/HKSJ legacy + retired fixture + sibling-script propagation) + Mode C (gemini scope prereg §2 H1 + §3 multi-test family + power_analysis k=6 projection + lit-cite alignment).
+
+### Verification status
+
+A (Claude self) Phase 0 4/4 PASS (scope pre-fire ✓ / artifacts 10 cited 10/10 ✓ / findings 12 ≥7 ✓ / OOB 3 ≥3 ✓ / specificity file:line+numbers ✓) / B (codex) 690s wallclock PASS — output via apply_patch overwritten by `-o` closing-message, recovered from trace.log (41248B 9 findings 5 OOB Phase 4 4/4 verified) / C (gemini clean wrapper) 420s wallclock PASS (gemini CLI inference 26.5s, output 12682B, 7 findings 3 OOB, Phase 4 3/3 verified). 22 unified findings (Claude=12, codex=9, gemini=7), de-dup to ~17 unique post-overlap merge.
+
+### Bug table (B-### consumed, 4-commit chain)
+
+| Bug | Sev | Source | OOB | File:line | Description |
+|---|---|---|---|---|---|
+| B-1301 | P0 | A∩B | * | `aggregate_phase1_full_prereg_decision.py:_pool_bootstrap_percentile_p` (new) + `aggregate_phase1_prereg_gate.py:149-160` (boot_pp expose) | **3-AI overlap OOB headline catch — B-1009 bootstrap percentile primary gate was prose-only**. Prereg §2 H1 L85 promised "primary bootstrap percentile p over 1000 paired-bootstrap pool replicates" but commit `1fb9d7a` only edited prereg+§1 prose + canonical B-1007 H3 Holm m=2 — no paired-bootstrap pool replicate code path. Canonical producer line 857 read `h1_pass = fe["gate_passed"]` (normal-Z Wald). Phase 1a fire would emit `phase1_full_prereg_decision.json` with normal-Z primary despite prereg-locked bootstrap percentile promise → OSF audit-trail mismatch + reviewer-cannot-reproduce. Fix: add `_pool_bootstrap_percentile_p()` to canonical (Davidson-MacKinnon 2000 / Hall 1992 standard paired-bootstrap pool); substrate exposes per-cell `boot_pp` float32 array (was discarded); canonical switches to bootstrap percentile primary gate; CSV gets 3 new columns; MD output reorganized Primary (bootstrap) + Transparency (normal-Z). |
+| B-1302 | P1 | A∩C | (sibling) | `aggregate_phase1_full_prereg_decision.py:_h3_axis_per_cell` + `_h3_axis_pooled_fe` | H3 axes sibling-fix of B-1301: emit `boot_pp` from `_h3_axis_per_cell`; `_h3_axis_pooled_fe` computes bootstrap percentile CI; gate switches to `ci95_lo_pp_bootstrap > 0` (primary, replaces B-949 Wald `ci_lo > 0`). Wald CI retained as `passed_wald_ci_legacy` transparency. Sibling consistency H1 ↔ H3 closes Claude F6 P1-6-AC. |
+| B-1303 | P1 | A | * | `preregistration.md §2 H1 L85` | Operational semantics lock for "paired-bootstrap pool replicates" — prose-undefined pre-B-1303. Locks: (1) per-cell θ_i_b sourced from cached `boot_pp` arrays, (2) **fixed point-estimate IV weights** (NOT per-iter re-estimated weights) per Davidson-MacKinnon 2000 / Hall 1992 standard, (3) per-iter pool θ_FE_b = Σ(w_i · θ_i_b) / Σw_i, (4) `p_bootstrap = (1/B) · |{b : θ_FE_b ≤ theta_null_pp}|`, (5) percentile 95% two-sided CI. Closes Claude F4 P1-13-B*. |
+| B-1304 | P1 | A∩B | * | `docs/checkpoints/probes/b1009_b1301_smoke_2026-05-18.json` (new) | B-1009 smoke-check provenance artifact. Pre-B-1304 prereg L85 quoted "percentile p=0.0000, normal-Z p=5e-06 — bit-identical decision direction" but codex Mode B F2 OOB caught the `5e-06` was from `meta_phantom_lift.csv:4 p_re_one_sided` (RE Wald p at H0:θ=0 under DL random-effects), NOT FE bootstrap percentile at H0:θ=+1.0pp — wrong null. Corrected B-1304 synthetic 3-cell archive-like smoke at θ≈2.4pp/SE≈0.5pp: bootstrap percentile p=0.0000 vs normal-Z p=0.0041 at H0=1.0pp (apples-to-apples). Closes codex F2 P1-4-B*. |
+| B-1305 | P0 | A | * | `Makefile:262` | DL meta retirement half-retired pre-fix: `_aggregate` target chained `$(MAKE) phantom-meta` → `make analysis` invoked DL/HKSJ every run. Removed from `_aggregate`; added `phantom-meta-appendix` Make alias with explicit echo line "[appendix-only — B-1305] DL/HKSJ random-effects sensitivity (NOT primary gate per prereg decision 3A)". |
+| B-1306 | P0 | A | * | `aggregate_phantom_meta.py:1-33` module docstring | Producer docstring rewrite — pre-fix L20-26 argued "Phantom-SoM's site/capability-modulated framing is itself an RE assumption — assuming FE would contradict the paper hook" (direct contradiction with prereg decision 3A FE primary 2026-05-14). Post-fix docstring: (a) "APPENDIX-ONLY sensitivity" header per B-1305/B-1016, (b) decision 3A "estimand-first design" rationale (6 cells = decision family, not population sample → FE principled regardless of heterogeneity), (c) cites Veroniki 2016 / IntHout 2014 / Röver-Knapp-Friede 2015 only as evidence DL-Wald is fragile at small k (NOT recommendations for FE substitution per B-1308 cite-disambiguation), (d) acknowledges codex Mode B F6 CI-to-Wald-SE conversion caveat. |
+| B-1307 | P1 | A | (fig caption) | `scripts/analysis/figures/fig_meta_forest.py:1-32` | Figure caption frame retire — `fig_meta_forest.py` docstring + module header relabeled "Paper §8 Appendix-D sensitivity figure" with explicit warning "paper §1 hero forest must use FE pool from `phase1_full_prereg_decision.{csv,json}` (B-1301 bootstrap percentile primary gate) — NOT the DL/HKSJ pooled diamond rendered here". Minimal diff; figure data-source switch deferred to paper-2 prose round. |
+| B-1308 | P1 | A∩B∩C | * (3-AI) | `preregistration.md:67-68` | **3-AI overlap OOB methodologist catch — Veroniki/IntHout cite-conclusion drift**. Pre-fix wording implied lit endorses FE substitution at small k. Both papers actually recommend HKSJ-adjusted RE (IntHout 2014 introduced HKSJ for k≤10; Veroniki 2016 recommends REML/Paule-Mandel). Post-fix prose: (a) "NOT invoked here as a recommendation for FE substitution — those papers actually recommend HKSJ-adjusted random-effects at small k", (b) FE defended on **design grounds** (decision 3A: 6 cells = complete pre-registered decision family, NOT population sample), (c) lit cited only to justify appendix-only DL/HKSJ output status, (d) HKSJ reported as Appendix-D-bis sensitivity per std small-k recommendation while primary FE diverges deliberately. |
+| B-1309 | P1 | B | * (codex unique) | `preregistration.md Appendix D-bis` (new) | Modified-Knapp-Hartung non-shrink-guarded HKSJ Appendix sensitivity row per Röver-Knapp-Friede 2015 §4. Method: `SE_HKSJ_mod = max(SE_HKSJ, SE_RE)` non-shrink rule. Archive 3-cell P-SoM hero smoke: `se_re=0.529, se_hksj_unmodified=0.466` (12% shrinkage caught by codex Mode B F5 OOB), `se_hksj_modified=0.529` (non-shrink restores RE Wald SE). Modified-HK at H0=0 strongly rejects (t=4.42, df=2); at H0=1.0pp marginal (t=2.53, df=2, k=6 Phase 1a expected to strengthen). Qualitative direction agrees with FE primary. Closes codex F5 + Q4(A) per user "double A" decision. |
+| B-1310 | P1 | A∩C | * (2-AI) | `preregistration.md:397-401` + `section8_limitations.md` new \paragraph | H1+H10 PRIMARY family joint Type I = `1 − (1 − 0.05)² ≈ 0.0975` disclosed explicitly per Lakens 2017 + Wasserstein-Lazar 2016 guidance on m=1-family-wise reporting. Defense for not collapsing under single Holm budget: (i) H1+H10 gate distinct paper contributions (§1 hero + §6 router), (ii) asymmetric blast radius of false discovery, (iii) split-by-design widely accepted at top-tier venues per Bender & Lange 2001 + Cox-style sequential-decision frameworks. Closes Claude F7 + gemini F2 (P1-7-AC 2-AI overlap OOB). |
+| B-1311 | P1 | C | * (gemini unique) | `section1_intro.md:13` (post parallel-session footnote rearrangement L11→L13) | §1 prose pooled-vs-per-cell disambiguation per gemini Mode C unique OOB. Pre-fix: "the prereg-locked H1 superiority gate is a one-sided test against δ=1.0pp at α=0.05, reported as a separate per-cell p-value column in §4" implied 6 per-cell p-tests (multiple-testing surface confusion). Prereg locks single pooled FE bootstrap percentile gate. Post-fix: "single one-sided fixed-effects pooled bootstrap percentile test against δ=1.0pp at α=0.05 over the 6 planned (site, model) cells per prereg §2 H1 decision 3A — NOT a family of per-cell tests; §4 reports per-cell drop-one + bootstrap CI as a transparency table accompanying the single pooled gate decision". Closes gemini F7 unique catch. |
+
+### Cross-AI value split
+
+| Agreement | Count | Findings |
+|---|---|---|
+| 3-AI overlap (highest confidence) | 2 | B-1301 (P0-1 B-1009 bootstrap percentile prose-only — A:F1∩B:F1, C:F5/F7 indirect) + B-1308 (P1-3 Veroniki/IntHout cite-drift — A:F3∩B:F7∩C:F1) |
+| 2-AI overlap | 5 | B-1302 (P1-6 H3 sibling — A∩C), B-1304 (P1-4 smoke wrong-null — A∩B), B-1305 (P0-2 DL retire — A∩C secondary via fig consumer), B-1310 (P1-7 H1+H10 FWER — A∩C), + Power B2 extrapolation (A∩C, deferred P1-10) |
+| 1-AI Claude unique (4) | 4 | B-1303 (operational semantics lock), P0-2 sibling-prop nuances, P1-8 per-site framing (deferred), P1-11 §1 pooled (overlapped with gemini F7 / B-1311 final attribution) |
+| 1-AI codex unique (5, all OOB) | 5 | B-1304 (smoke wrong-null catch), B-1309 (unmodified-HKSJ shrink-below-SE_RE), B-1307 (CI-to-Wald-SE conversion, prose only deferred), P2-16 sensitivity_loo_meta primary leak (deferred), P2-17 preregistration_decision_test stale docstring (deferred) |
+| 1-AI gemini unique (1) | 1 | B-1311 (§1 prose pooled-vs-per-cell disambiguation) |
+
+### Phase 4 spot-check (claim-realness verification)
+
+- **Mode B codex** (sample N=4 of 9): F2 `meta_phantom_lift.csv:4` row 4psom_vs_3 `p_re_one_sided=5e-06, se_re=0.528832, theta_re=2.335535` verified at H0=θ=0 RE Wald (not FE bootstrap percentile at H0=+1.0pp) ✓ / F5 `aggregate_phantom_meta.py:197-198` `q_hk` + `se_hk` HKSJ implementation verified ✓ / F6 `aggregate_phantom_meta.py:254` `se = (ci_hi - ci_lo) / (2 * 1.96)` CI-to-Wald-SE conversion verified ✓ / F8 `sensitivity_loo_meta.py:292-301` "primary detection is the random-effects meta" + "primary phantom-lift estimates survive" verified ✓ — 0 hallucinations
+- **Mode C gemini** (sample N=3 of 7): F1 `preregistration.md:67-68` Veroniki/IntHout cite verified at line 67 ✓ / F2 `preregistration.md:397-401` "H1+H10 separate m=1 families with no across-family Holm" verified at line 401 ✓ / F7 `section1_intro.md:11` (later L13 post-parallel-edits) "per-cell p-value column in §4" verified ✓ — 0 hallucinations
+
+### Phase 1a fire green-light: ON post A2.3d
+
+All P0 OOB resolved (P0-1 bootstrap percentile code path + P0-2 DL pipeline retire). 4 P1 prose-grade closures landed (cite-drift + FWER disclosure + §1 pooled clarification + HKSJ Appendix sensitivity). 9 P1+P2 deferred per user "double A" Q1+Q4 + 推荐 auto-default reserve on Q2 partial-retire + Q3 wait-fix-all + bottom-tier sweep. Critical-path next: user A100 re-probe verification (per A2.3b closure) + advisor sync on §A2.3a/b/c/d numbers before prereg lock. Push pending per `feedback_git_push_requires_confirm` memory.
+
+### Deferred backlog (B-1312~B-1320 buffer)
+
+- **P1-5-AC** IV-weight estimation uncertainty disclaim (need Hartung-Knapp-adjusted SE_FE Appendix row)
+- **P1-8-A** per-site 2-stage meta alternative (need code path for per-site FE pool over 3 model cells × 2 sites)
+- **P1-9-AC** heterogeneity-cap 75% threshold value justification (Higgins-Thompson descriptive benchmark vs decision-theoretic)
+- **P1-10-AC** k=6 power projection B2 SE sensitivity row (`power_analysis.md` update)
+- **P1-12-AC** "4-5 of 6" descriptive benchmark prose rewrite (soft-threshold-shop avenue closure)
+- **P1-15-B** `aggregate_phantom_meta.py:254` CI-to-Wald-SE conversion docstring note
+- **P2-16-B** `sensitivity_loo_meta.py:292-301` "DL primary" claim retire (paper-2 scope)
+- **P2-17-B** `preregistration_decision_test.py:34+406-408` stale docstring (paper-2 scope)
+
+### Codex output-path failure mode documented
+
+codex agentic apply_patch wrote 326-line audit body to `a23d_FINAL_2026-05-18_013835.md` then codex `-o` flag wrote final assistant message ("Done. I saved the audit to..." 198B) overwriting the patch content. This is the empirical failure mode documented in `.claude/skills/codex-stress/SKILL.md` "stdout truncation when stdin EOF or block-buffering causes mid-stream cutoff" but in apply_patch+`-o` interaction form. Recovery: `awk '/^\+\+\+ b\/docs\/checkpoints\/codex_outputs\/a23d.*\.md/, /^codex$/' trace.log | sed 's/^\+//'` → restored FINAL.md to 41248B. Future dispatch: write codex audit to different path than `-o` target, OR use apply_patch + skip `-o`.
+
+### Wallclock arithmetic gotcha (bash `$((END - START))` in `run_in_background: true`)
+
+`WALL=$((END - START))` inside `run_in_background: true` BASH tool reported `WALL=1779065173s` (= END Unix timestamp, not difference) — START variable was lost in the harness wrapper context between background dispatch + post-wait arithmetic. Both Mode B + C exited code 2 from arithmetic failure despite substantive PASS output. Phase 3 runtime sanity verified via file mtime + dispatch log lookback rather than `.dispatch.meta wallclock_sec` line. Future dispatch: capture START to .meta BEFORE backgrounding (so harness can re-read), OR use `time` builtin redirected to .meta.
+
+### Commit chain (4 commits)
+
+- `5fa8f7c` Tier 1 — B-1301~B-1304 (P0-1 bootstrap percentile code + sibling H3 + prereg L85 ops lock + smoke artifact)
+- `7265fde` Tier 2 — B-1305~B-1307 (P0-2 DL partial retire 4-layer: Makefile + docstring + figure caption)
+- `924c7b8` Tier 3 — B-1308~B-1311 (P1-3 Veroniki/IntHout cite + P1-7 H1+H10 FWER + P1-11 §1 pooled + P1-9 HKSJ Appendix)
+- This commit — closure (chronicle §215 + ## A2.3d catalog + phase1_plan §A2.3d [x] tick)
