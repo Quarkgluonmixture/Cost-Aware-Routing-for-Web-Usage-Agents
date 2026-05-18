@@ -150,7 +150,18 @@ check_gates() {
   if [ "$baseline_done" -lt 6 ]; then
     log "  WARN: Only $baseline_done/6 cells have Pass-1 baseline summaries on disk."
     log "        Pass-2 router train fold needs Pass-1 per-task oracle labels."
-    if [ "${ALLOW_PARTIAL_BASELINE:-0}" != "1" ]; then
+    # B-1604 (/stress A2.10 P1-7-A 2026-05-18): paper-grade parity with B-879
+    # P0-6-B* ALLOW_ACTIVE_RUNS removal. Pass-2 router fire is paper-grade
+    # scope; training Pass-2 LR on partial Pass-1 oracle labels = underspecified
+    # class balance + feature coverage = silent contamination of H10 PRIMARY
+    # estimand. Bypass HARD-BLOCKED when P79_PAPER_GRADE=1 (the standing env
+    # mode for queue_phase1_router_paper_grade.sh per L83 export above).
+    if [ "${P79_PAPER_GRADE:-0}" = "1" ]; then
+      log "  FAIL: ALLOW_PARTIAL_BASELINE bypass DISALLOWED in paper-grade scope"
+      log "        (mirrors B-879 P0-6-B* ALLOW_ACTIVE_RUNS removal pattern)."
+      log "        Wait for Pass-1 baseline completion before Pass-2 fire."
+      errors=$((errors+1))
+    elif [ "${ALLOW_PARTIAL_BASELINE:-0}" != "1" ]; then
       log "  FAIL: Set ALLOW_PARTIAL_BASELINE=1 to bypass (router LR will train on partial data)."
       errors=$((errors+1))
     else
@@ -175,41 +186,62 @@ check_gates() {
     log "  OK (LR dispatch found in runner)"
   fi
 
-  log "=== Gate 4: LR fold-aware artifact bundle (A2.8 P0-4-AB* B-1558) ==="
-  # A2.8 P0-4-AB* B-1558 (/stress 2026-05-18 codex Mode B + Claude Mode A 2-AI OOB):
-  # Pre-A2.8 gate checked only legacy single-pickle path (`{baseline}_{site}_lr.pkl`)
-  # which does NOT exercise the fold-aware artifact runtime path. Paper-grade Pass-2
-  # router fire requires 5 LR fold pickles + 5 TF-IDF vectorizers + 5 selected_idx
-  # masks + 1 fold_assignment + 1 cell_meta per cell × 6 cells = 102 paths total.
-  # Gate now checks the fold-aware bundle; legacy single-pickle remains a back-compat
-  # smoke artifact (verified separately if present, but NOT a paper-grade gate).
+  log "=== Gate 4: LR fold-aware artifact bundle (A2.8 P0-4-AB* B-1558 + A2.10 P0-3-B B-1602) ==="
+  # A2.8 P0-4-AB* B-1558 (/stress 2026-05-18): pre-A2.8 gate checked only legacy
+  # single-pickle path. Now: gate exercises fold-aware artifact runtime path.
+  #
+  # A2.10 P0-3-B B-1602 (/stress 2026-05-18 Claude Mode A solo, user Q4=B): vectorizer
+  # naming corrected. Pre-fix gate expected `{cell_id}_vectorizer_fold{k}.pkl` (per-cell
+  # convention) but loader `learned_router.py:load_vectorizer_fold` AND trainer
+  # `train_l1_router_with_mi.py:354` both write/read `vectorizer_fold{k}.pkl` (shared
+  # across cells, per fold). Gate-vs-runtime contract drift: trainer wrote shared name,
+  # loader read shared name, but gate expected per-cell name → gate would always FAIL
+  # on a correctly-trained bundle, forcing `ALLOW_NO_LR_MODEL=1` bypass and masking
+  # the real artifact contract. Per user-confirmed final E'' router design 2026-05-18:
+  # vectorizer + selected_idx are SHARED fold-local across cells (fit on pooled
+  # train-fold tasks from all 6 cells) — one vocab + one MI-top-18 mask per fold.
+  # Only LR heads + fold_assignment + cell_meta are per-cell. Correct path count:
+  #   - 10 shared-fold-local (5 folds × 2: vectorizer_fold{k}.pkl + selected_idx_fold{k}.json)
+  #   - 12 per-cell meta (6 cells × 2: {cell_id}_fold_assignment.json + {cell_id}_lr_meta.json)
+  #   - 30 per-cell × per-fold LR (6 cells × 5: {cell_id}_lr_fold{k}.pkl)
+  #   = 52 paths total (NOT 102 as pre-fix gate falsely claimed)
   local missing_fold=0
   local missing_legacy=0
-  local n_folds=5  # train_l1_router.py N_FOLDS_OUTER constant
+  local total_expected=0
+
+  # Shared-across-cells fold-local feature machinery (10 paths)
+  for k in 0 1 2 3 4; do
+    for fn in "vectorizer_fold${k}.pkl" "selected_idx_fold${k}.json"; do
+      path="results/phantom_paper/l1_router/${fn}"
+      total_expected=$((total_expected+1))
+      [[ ! -f "$path" ]] && { log "  Missing shared-fold: $path"; missing_fold=$((missing_fold+1)); }
+    done
+  done
+
+  # Per-cell artifacts (12 meta + 30 LR-heads = 42 paths)
   for baseline in B0 B1 B2; do
     for site in classifieds reddit; do
       cell_id="${baseline}_${site}"
-      # Per-cell fold-aware bundle (15 path checks per cell × 6 cells = 90 paths)
-      for k in 0 1 2 3 4; do
-        for suffix in "_lr_fold${k}.pkl" "_vectorizer_fold${k}.pkl"; do
-          path="results/phantom_paper/l1_router/${cell_id}${suffix}"
-          [[ ! -f "$path" ]] && { log "  Missing fold-aware: $path"; missing_fold=$((missing_fold+1)); }
-        done
-        sidx_path="results/phantom_paper/l1_router/selected_idx_fold${k}.json"
-        [[ ! -f "$sidx_path" ]] && { log "  Missing fold-aware: $sidx_path"; missing_fold=$((missing_fold+1)); }
-      done
-      # Per-cell meta (2 paths per cell × 6 cells = 12 paths)
+      # Per-cell meta (2 per cell)
       for suffix in "_fold_assignment.json" "_lr_meta.json"; do
         path="results/phantom_paper/l1_router/${cell_id}${suffix}"
-        [[ ! -f "$path" ]] && { log "  Missing fold-aware: $path"; missing_fold=$((missing_fold+1)); }
+        total_expected=$((total_expected+1))
+        [[ ! -f "$path" ]] && { log "  Missing per-cell meta: $path"; missing_fold=$((missing_fold+1)); }
+      done
+      # Per-cell × per-fold LR head (5 per cell)
+      for k in 0 1 2 3 4; do
+        path="results/phantom_paper/l1_router/${cell_id}_lr_fold${k}.pkl"
+        total_expected=$((total_expected+1))
+        [[ ! -f "$path" ]] && { log "  Missing per-cell LR: $path"; missing_fold=$((missing_fold+1)); }
       done
       # Legacy single-pickle back-compat smoke (NOT paper-grade gate; informational)
       legacy_path="results/phantom_paper/l1_router/${cell_id}_lr.pkl"
       [[ ! -f "$legacy_path" ]] && missing_legacy=$((missing_legacy+1))
     done
   done
+
   if [ "$missing_fold" -gt 0 ]; then
-    log "  FAIL: $missing_fold/102 fold-aware artifact paths missing."
+    log "  FAIL: ${missing_fold}/${total_expected} fold-aware artifact paths missing."
     log "        Run scripts/analysis/extract_50_features.py + train_l1_router_with_mi.py"
     log "        + train_l1_router.py per cell post-Pass-1 (A2.5 Chunk A+B substrate)."
     if [ "${ALLOW_NO_LR_MODEL:-0}" != "1" ]; then
@@ -217,7 +249,31 @@ check_gates() {
       errors=$((errors+1))
     fi
   else
-    log "  OK (all 102 fold-aware artifact paths present for 6 cells × 17 paths/cell)"
+    log "  OK (all ${total_expected} fold-aware paths present: 10 shared-fold + 12 per-cell meta + 30 per-cell LR-heads)"
+    # B-1603 (/stress A2.10 P1-5-A 2026-05-18): when existence check passes,
+    # run Python validate-each-pickle preflight — catches corrupt pickle /
+    # numpy version mismatch / sklearn version drift / partial-write at gate
+    # time rather than at first runtime task (where it would fall through
+    # to LearnedRouterArtifactError per B-1600, killing the cell loudly but
+    # late). Existence check alone is overconfident — paths exist ≠ pickle
+    # loadable. ~5-10s preflight cost; catches the corruption failure mode
+    # invisible to `-f` check. See `scripts/queues/_lib_lr_artifact_validate.py`.
+    local validate_script="${REPO_DIR}/scripts/queues/_lib_lr_artifact_validate.py"
+    if [ -f "$validate_script" ]; then
+      log "  Running validate-each-pickle preflight..."
+      if .venv/bin/python3 "$validate_script" 2>&1 | sed 's/^/    /'; then
+        log "  OK (all artifacts load cleanly via runtime path)"
+      else
+        log "  FAIL: artifact validate-each-pickle preflight FAILED"
+        if [ "${ALLOW_CORRUPT_LR_ARTIFACT:-0}" != "1" ]; then
+          errors=$((errors+1))
+        else
+          log "  WARN bypass: ALLOW_CORRUPT_LR_ARTIFACT=1 — proceeding (paper-grade BLOCKED)"
+        fi
+      fi
+    else
+      log "  WARN: validate-each-pickle preflight script not found at $validate_script — skipped"
+    fi
   fi
   if [ "$missing_legacy" -gt 0 ]; then
     log "  INFO: $missing_legacy/6 legacy single-pickle smoke artifacts missing (NOT a paper-grade gate)."

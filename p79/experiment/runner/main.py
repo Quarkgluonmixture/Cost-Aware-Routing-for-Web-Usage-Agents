@@ -850,6 +850,17 @@ class ExperimentRunner:
                 condition_dir = self.output_root / effective_cid
                 condition_dir.mkdir(parents=True, exist_ok=True)
                 condition_logger = LoggerV2(condition_dir)
+
+                # B-1605 (/stress A2.10 P1-6-A 2026-05-18): reset learned-router
+                # diag state per (condition, seed) so cumulative `_lr_*` counters
+                # don't leak across cells. Pre-fix `self._lr_fallback_count` was
+                # initialized lazily on first fallback and never reset; in a
+                # multi-condition runner.run() invocation, the second cell's
+                # `learned_router_diag` would carry the prior cell's count.
+                self._lr_dispatch_count = 0
+                self._lr_fallback_count = 0
+                self._lr_fallback_ntfy_fired = False
+                self._lr_router_cache = {}  # cell-scoped artifact cache
                 cond_meta = condition.as_dict()
                 cond_meta["condition_id"] = effective_cid
                 cond_meta["seed"] = current_seed
@@ -1129,6 +1140,41 @@ class ExperimentRunner:
                         "module_flags": condition.modules.as_dict(),
                     }
                 )
+
+                # B-1605 (/stress A2.10 P1-6-A 2026-05-18): surface learned-router
+                # diagnostic block when observation_mode=="learned" so paper §6
+                # H10 transparency disclosure can cite per-cell signal-strength
+                # fallback rate. Only emitted for learned-mode conditions; absent
+                # for baseline modes (DOM / SoM / Vision / P-text / P-prompt /
+                # P-SoM) where the LR dispatch path is never invoked. The
+                # `fallback_rate` denominator counts EVERY dispatch attempt
+                # (including those that succeed); `fallback_count` is the subset
+                # that fell back via candidate_modes filter / max_prob ≤ τ /
+                # feature-extraction exception. Infrastructure-level failures
+                # (LearnedRouterArtifactError per B-1600) do NOT reach this
+                # accounting — they kill the cell run loudly before write.
+                if condition.observation_mode == "learned":
+                    dispatch_count = int(getattr(self, "_lr_dispatch_count", 0))
+                    fallback_count = int(getattr(self, "_lr_fallback_count", 0))
+                    fallback_rate = (
+                        float(fallback_count / dispatch_count)
+                        if dispatch_count > 0 else None
+                    )
+                    aggregate["learned_router_diag"] = {
+                        "dispatch_count": dispatch_count,
+                        "fallback_count": fallback_count,
+                        "fallback_rate": fallback_rate,
+                        "fallback_kind_note": (
+                            "Signal-strength fallback only "
+                            "(max_prob ≤ tau / candidate_modes filter / "
+                            "non-infrastructure runtime exception). "
+                            "Infrastructure-level failures "
+                            "(LearnedRouterArtifactError) propagate and kill "
+                            "the cell run; they are NOT counted here. "
+                            "Per /stress A2.10 P0-3-B + P1-6-A user-mandate "
+                            "hard-fail 2026-05-18."
+                        ),
+                    }
 
                 # B-487 (/stress A1.5b Phase 1 P0-3-B codex OOB, 2026-05-17):
                 # Option K covariate substrate — emit lightweight episode list
@@ -1768,6 +1814,16 @@ class ExperimentRunner:
             # For each task, lookup the fold that held it out at training,
             # apply fold-k vectorizer + selected_idx + LR + τ_{C,k} threshold.
             # See p79/policies/learned_router.py:predict_mode_fold_aware.
+            #
+            # B-1605 (/stress A2.10 P1-6-A 2026-05-18): infrastructure-level
+            # errors (missing artifact / corrupt pickle / dim mismatch / no
+            # fold_assignment entry) now raise LearnedRouterArtifactError per
+            # B-1600 hard-fail mandate; this wrapper PROPAGATES that error
+            # (no silent phantom_som fallback for infrastructure failures).
+            # Only task-level signal-strength fallback (max_prob ≤ τ +
+            # candidate_modes filter) stays silent + counted.
+            from p79.policies.learned_router import LearnedRouterArtifactError
+
             router_cfg = self.cfg.get("router", {})
             safe_fallback = str(router_cfg.get("safe_fallback_target", "phantom_som"))
             cell_id = str(router_cfg.get("cell_id", ""))
@@ -1775,8 +1831,28 @@ class ExperimentRunner:
                 "artifacts_dir", "results/phantom_paper/l1_router"
             )
             candidate_modes = router_cfg.get("candidate_modes", [])
+
+            # B-1605: hard-fail at config-validation time before any dispatch.
+            # Empty cell_id → all artifact filenames missing prefix → silent
+            # fallback to phantom_som per pre-B-1600 behavior.
+            if not cell_id:
+                raise LearnedRouterArtifactError(
+                    "[learned router] router.cell_id config field is empty — "
+                    "Pass-2 paper-grade fire requires explicit per-cell config "
+                    "(e.g. cell_id: \"B0_classifieds\" in "
+                    "configs/exp_v2_<baseline>_router_learned_<site>.yaml). "
+                    "Hard-fail per /stress A2.10 P0-3-B / P1-6-A user-mandate "
+                    "2026-05-18 (NO silent phantom_som fallback for "
+                    "infrastructure errors)."
+                )
+
             predicted_mode: Optional[str] = safe_fallback
             fold_diag: dict = {"fallback_fired": False, "fallback_reason": "not_dispatched"}
+
+            # Increment dispatch counter (every attempt counts, regardless of
+            # signal-strength outcome). Pairs with `_lr_fallback_count` for
+            # per-cell `learned_router_diag.fallback_rate` disclosure.
+            self._lr_dispatch_count = getattr(self, "_lr_dispatch_count", 0) + 1
 
             try:
                 from p79.policies.learned_router import (
@@ -1784,9 +1860,6 @@ class ExperimentRunner:
                     load_task_image_field,
                     predict_mode_fold_aware,
                 )
-                # Lazy cell-scoped artifact cache on runner attribute
-                if not hasattr(self, "_lr_router_cache"):
-                    self._lr_router_cache = {}
 
                 # Extract task-config features
                 task_intent = (
@@ -1828,7 +1901,9 @@ class ExperimentRunner:
                     fallback_mode=safe_fallback,
                 )
 
-                # B-696 (preserved from pre-Chunk-C) candidate_modes sanity check
+                # B-696 (preserved from pre-Chunk-C) candidate_modes sanity check.
+                # This is a runtime filter (not infrastructure), so silent-
+                # fallback-with-counter is the correct semantic.
                 if candidate_modes and predicted_mode not in candidate_modes:
                     logger.warning(
                         "[learned router Chunk C] predicted mode=%s NOT in "
@@ -1857,14 +1932,42 @@ class ExperimentRunner:
                     fold_diag.get("fallback_fired"),
                     fold_diag.get("fallback_reason"),
                 )
+            except LearnedRouterArtifactError:
+                # B-1605 (/stress A2.10 P1-6-A 2026-05-18): re-raise
+                # infrastructure-level errors per user-mandate hard-fail.
+                # NO silent phantom_som fallback for missing/corrupt artifact —
+                # the entire cell run dies loudly so user diagnoses immediately
+                # rather than at §6 aggregator weeks later.
+                if not getattr(self, "_lr_fallback_ntfy_fired", False):
+                    self._lr_fallback_ntfy_fired = True
+                    try:
+                        import os
+                        import urllib.request
+                        topic = os.environ.get("NTFY_TOPIC", "")
+                        if topic:
+                            msg = (
+                                f"[A2.10 LR HARD-FAIL] LearnedRouterArtifactError "
+                                f"condition={condition.condition_id} "
+                                f"task={task.site}/{task.task_id} cell={cell_id}"
+                            )
+                            urllib.request.urlopen(
+                                f"https://ntfy.sh/{topic}",
+                                data=msg.encode("utf-8"),
+                                timeout=3,
+                            )
+                    except Exception:
+                        pass  # ntfy is best-effort; never let it break the cell
+                raise
             except Exception as exc:
-                # Catastrophic dispatch failure — fallback safely + ntfy alert
+                # Non-infrastructure runtime exception (e.g., feature extraction
+                # failed on malformed task config). Silent fallback retained per
+                # B-693 robustness; counted for transparency.
                 self._lr_fallback_count = (
                     getattr(self, "_lr_fallback_count", 0) + 1
                 )
                 logger.error(
-                    "[learned router Chunk C] FALLBACK fired for task=%s/%s — "
-                    "exception=%s; using safe_fallback=%s; "
+                    "[learned router Chunk C] non-infrastructure fallback "
+                    "for task=%s/%s — exception=%s; using safe_fallback=%s; "
                     "lr_fallback_count_so_far=%d",
                     task.site, task.task_id, repr(exc), safe_fallback,
                     self._lr_fallback_count,

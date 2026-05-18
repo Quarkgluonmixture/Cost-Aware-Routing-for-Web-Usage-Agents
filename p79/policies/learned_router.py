@@ -247,6 +247,21 @@ def build_runtime_feature_vector(
 # ── Top-level predictor entry (used by runner) ─────────────────────────────────
 
 
+class LearnedRouterArtifactError(RuntimeError):
+    """Infrastructure-level error in learned router substrate (missing artifact,
+    corrupt pickle, dim mismatch, missing fold_assignment entry). Must NOT be
+    silenced into SAFE_FALLBACK_MODE — that contaminates the H10 PRIMARY estimand
+    (router operating point ≡ phantom_som operating point = trivial null circular).
+
+    B-1600 (/stress A2.10 P0-3-B + user-mandate hard-fail 2026-05-18):
+    user-directed "silent fallback is H10 最大风险之一" — only task-level
+    signal-strength fallback (max_prob ≤ τ) stays silent + counted; all
+    infrastructure-level paths raise this RuntimeError so the cell loop dies
+    loudly + reviewer / user sees the failure immediately rather than days
+    later when paper §6 aggregator notices all predictions = phantom_som.
+    """
+
+
 def predict_mode_fold_aware(
     cell_id: str,
     task_id: int,
@@ -266,8 +281,23 @@ def predict_mode_fold_aware(
             "pipelines": {k: Pipeline, ...},
         }
 
+    Fold-local feature machinery is **shared across cells** (per user-confirmed
+    final E'' design /stress A2.10 P0-3-B 2026-05-18): `vectorizer_fold{k}.pkl`
+    and `selected_idx_fold{k}.json` are NOT prefixed by cell_id — one vocab +
+    one selected-idx mask per fold, fit on the pooled train-fold tasks across
+    all 6 cells. Only `{cell_id}_lr_fold{k}.pkl` is per-cell (one LR head per
+    (cell, fold) on the shared 18-dim representation).
+
     Returns (predicted_mode, diagnostic_dict) where diagnostic_dict contains
     fold_k_used, tau_used, max_prob, fallback_fired flags for paper-grade audit.
+
+    Raises:
+        LearnedRouterArtifactError on infrastructure-level failures
+        (missing fold_assignment entry / missing artifact files / corrupt
+        pickle / feature vector dim mismatch / pipeline.predict_proba exception).
+        Task-level signal-strength fallback (max_prob ≤ τ) does NOT raise;
+        it returns `fallback_mode` with `diag["fallback_fired"] = True` so
+        the runner can count it as a legitimate signal-strength fallback.
     """
     diag = {
         "cell_id": cell_id,
@@ -291,15 +321,21 @@ def predict_mode_fold_aware(
     cell_cache = cache[cell_id]
 
     # Resolve fold for this task
+    # B-1600 hard-fail: task_id missing from fold_assignment is an infrastructure
+    # error (training pipeline didn't include this task), not a signal-strength
+    # fallback. Raising kills the cell run so user diagnoses immediately.
     fold_k = cell_cache["fold_assignment"].get(int(task_id))
     if fold_k is None:
-        diag["fallback_fired"] = True
-        diag["fallback_reason"] = "task_id_not_in_fold_assignment"
-        logger.warning(
-            "[learned_router] task_id=%s not in fold_assignment for cell=%s; fallback to %s",
-            task_id, cell_id, fallback_mode,
+        msg = (
+            f"[learned_router] task_id={task_id} not in fold_assignment for "
+            f"cell={cell_id}; fold_assignment must include every Pass-2 task. "
+            f"Hard-fail per /stress A2.10 P0-3-B user-mandate (NO silent "
+            f"phantom_som fallback for infrastructure errors). "
+            f"Fix: re-run scripts/analysis/extract_50_features.py + "
+            f"train_l1_router_with_mi.py to regenerate fold_assignment.json."
         )
-        return fallback_mode, diag
+        logger.error(msg)
+        raise LearnedRouterArtifactError(msg)
     diag["fold_k_used"] = fold_k
 
     # Lazy-load fold artifacts
@@ -316,26 +352,36 @@ def predict_mode_fold_aware(
     vectorizer = cell_cache["vectorizers"][fold_k]
     selected_mask = cell_cache["selected_masks"][fold_k]
     pipeline = cell_cache["pipelines"][fold_k]
+    # B-1600 hard-fail: missing fold artifact = infrastructure error.
     if vectorizer is None or selected_mask is None or pipeline is None:
-        diag["fallback_fired"] = True
-        diag["fallback_reason"] = "missing_fold_artifact"
-        logger.error(
-            "[learned_router] cell=%s fold_k=%s missing artifact "
-            "(vec=%s, mask=%s, pipe=%s); fallback to %s",
-            cell_id, fold_k,
-            vectorizer is not None, selected_mask is not None, pipeline is not None,
-            fallback_mode,
+        msg = (
+            f"[learned_router] cell={cell_id} fold_k={fold_k} missing artifact "
+            f"(vec={vectorizer is not None}, mask={selected_mask is not None}, "
+            f"pipe={pipeline is not None}). "
+            f"Expected paths: {artifacts_dir}/vectorizer_fold{fold_k}.pkl + "
+            f"{artifacts_dir}/selected_idx_fold{fold_k}.json + "
+            f"{artifacts_dir}/{cell_id}_lr_fold{fold_k}.pkl. "
+            f"Hard-fail per /stress A2.10 P0-3-B user-mandate (NO silent "
+            f"phantom_som fallback for infrastructure errors)."
         )
-        return fallback_mode, diag
+        logger.error(msg)
+        raise LearnedRouterArtifactError(msg)
 
     # Build runtime feature vector
+    # B-1600 hard-fail: feature vector dim mismatch = vocabulary inconsistency
+    # between trained vectorizer + selected_idx, infrastructure-level corruption.
     try:
         x = build_runtime_feature_vector(raw_features, vectorizer, selected_mask)
     except ValueError as e:
-        diag["fallback_fired"] = True
-        diag["fallback_reason"] = f"feature_vector_build_failed: {e}"
-        logger.error("[learned_router] feature build failed: %s", e)
-        return fallback_mode, diag
+        msg = (
+            f"[learned_router] feature vector build failed (cell={cell_id} "
+            f"fold_k={fold_k}): {e}. "
+            f"Indicates Stage 2/3 vocab consistency violation between "
+            f"vectorizer_fold{fold_k}.pkl + selected_idx_fold{fold_k}.json. "
+            f"Hard-fail per /stress A2.10 P0-3-B user-mandate."
+        )
+        logger.error(msg)
+        raise LearnedRouterArtifactError(msg) from e
 
     # Resolve τ for this fold
     thresholds_per_fold = cell_cache["cell_meta"].get("thresholds_per_fold", {})
@@ -343,24 +389,35 @@ def predict_mode_fold_aware(
     diag["tau_used"] = float(tau)
 
     # Predict + cost-weighted decision rule (B-998)
+    # B-1600: pipeline.predict_proba exception is infrastructure-level (numpy
+    # version mismatch / sklearn version drift / pickle compat); hard-fail.
+    # max_prob ≤ τ is LEGITIMATE signal-strength fallback (per H10 cost-
+    # weighted decision rule design B-998); stays silent + counter.
     try:
         probs = pipeline.predict_proba(x.reshape(1, -1))[0]
-        max_prob = float(probs.max())
-        argmax_idx = int(probs.argmax())
-        argmax_mode = str(pipeline.classes_[argmax_idx])
-        diag["max_prob"] = max_prob
-        diag["argmax_mode"] = argmax_mode
-
-        if max_prob > tau:
-            return argmax_mode, diag
-        else:
-            diag["fallback_fired"] = True
-            diag["fallback_reason"] = f"max_prob={max_prob:.3f} <= tau={tau:.3f}"
-            return fallback_mode, diag
     except Exception as e:
+        msg = (
+            f"[learned_router] pipeline.predict_proba failed (cell={cell_id} "
+            f"fold_k={fold_k}): {e}. Indicates sklearn / numpy version mismatch "
+            f"or corrupt pickle. Hard-fail per /stress A2.10 P0-3-B user-mandate."
+        )
+        logger.error(msg)
+        raise LearnedRouterArtifactError(msg) from e
+
+    max_prob = float(probs.max())
+    argmax_idx = int(probs.argmax())
+    argmax_mode = str(pipeline.classes_[argmax_idx])
+    diag["max_prob"] = max_prob
+    diag["argmax_mode"] = argmax_mode
+
+    if max_prob > tau:
+        return argmax_mode, diag
+    else:
+        # B-1600 retained silent: this is the H10 cost-weighted decision rule's
+        # legitimate signal-strength fallback per B-998. Counted as fallback in
+        # diag so per-cell fallback rate can be disclosed (B-1601 P1-6 surface).
         diag["fallback_fired"] = True
-        diag["fallback_reason"] = f"predict_failed: {e}"
-        logger.error("[learned_router] predict failed: %s", e)
+        diag["fallback_reason"] = f"max_prob={max_prob:.3f} <= tau={tau:.3f}"
         return fallback_mode, diag
 
 
