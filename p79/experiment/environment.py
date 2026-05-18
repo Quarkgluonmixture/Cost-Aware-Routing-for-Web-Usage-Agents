@@ -101,7 +101,30 @@ class MockEnvironment:
 
 
 class NullEvaluator:
+    """Mock-env evaluator stub. Returns score=0 with error="evaluator_unavailable".
+
+    B-1407 (/stress A2.7 P1-7-A* Claude Mode A OOB, 2026-05-18): paper_grade=True
+    callers MUST raise instead of silently scoring 0 — mock env under paper-grade
+    flag is a misconfiguration (paper-grade orchestrator gates require env.type=vwa
+    with localhost VWA URLs, NOT env.type=mock). Defense-in-depth pair with B-544
+    fail-loud at VwaEvaluator init: even if mock env slips past the orchestrator
+    Gate 4 (e.g., debug script + paper_grade=True yaml partial override), the
+    last-line guard at this layer prevents silent cross-baseline SR=0 contamination.
+    """
+
+    def __init__(self, paper_grade: bool = False):
+        self._paper_grade = paper_grade
+
     def evaluate(self, *args, **kwargs) -> EpisodeEvalResult:
+        if self._paper_grade:
+            raise EvaluatorUnavailableError(
+                "NullEvaluator invoked under paper_grade=True — mock env under "
+                "paper-grade flag is a misconfiguration. Mock env produces no real "
+                "agent trajectory and would silently zero entire batch SR (cross-"
+                "baseline infra-fragility confound). Set env.type=vwa for paper-"
+                "grade runs OR clear paper_grade flag for dev-mode iteration. See "
+                "B-1407 /stress A2.7 P1-7-A*."
+            )
         return EpisodeEvalResult(score=0.0, error="evaluator_unavailable")
 
 
@@ -424,6 +447,23 @@ def create_evaluator(env_cfg: Dict[str, Any], *, paper_grade: bool = False):
     # VwaEvaluator fail-loud when the harness / API key / dep is broken.
     # Runner (`main.py:139`) reads `paper_grade` from top-level cfg and
     # passes through.
+    #
+    # B-1407 (/stress A2.7 P1-7-A* Claude Mode A OOB, 2026-05-18): defense-in-
+    # depth — even if env.type=mock slips into a paper-grade yaml (e.g.,
+    # partial override + skipped base merge), construct-time RuntimeError
+    # surfaces before any episode runs, preventing silent batch SR=0.
+    # Orchestrator paper-grade gate 4 already requires env.type=vwa, but this
+    # last-line guard catches misconfigured debug scripts + ad-hoc CLI yaml
+    # paths that bypass the orchestrator.
     if str(env_cfg.get("type", "vwa")).lower() == "mock":
-        return NullEvaluator()
+        if paper_grade:
+            raise RuntimeError(
+                "paper_grade=True with env.type=mock is a misconfiguration. "
+                "Mock env produces no real agent trajectory; paper-grade runs "
+                "MUST use env.type=vwa (with localhost VWA URLs for the A100 "
+                "self-hosted docker stack). Set env.type=vwa OR clear "
+                "paper_grade=False for dev-mode mock iteration. See "
+                "B-1407 /stress A2.7 P1-7-A*."
+            )
+        return NullEvaluator(paper_grade=paper_grade)
     return VwaEvaluator(paper_grade=paper_grade)

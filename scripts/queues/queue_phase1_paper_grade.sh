@@ -107,26 +107,11 @@ log() { echo "[phase1 $(date '+%H:%M:%S')] $*"; }
 fail() { log "FAIL: $*"; exit 1; }
 
 # B-673: require paper-grade host (A100) before gates run.
-# Override knob: P79_PAPER_GRADE_HOST=1 for CI / future approved hostnames.
-# Locality check uses _lib_paper_grade_gates.sh:assert_a100_url_locality
-# already-loaded above.
-require_paper_grade_host() {
-  local hn
-  hn="$(hostname 2>/dev/null || true)"
-  if [[ "${P79_PAPER_GRADE_HOST:-0}" == "1" ]]; then
-    log "  paper-grade host: ${hn} (P79_PAPER_GRADE_HOST=1 override)"
-  elif [[ "${hn}" =~ (condense|a100|ubuntu) ]]; then
-    log "  paper-grade host: ${hn} (matched condense|a100|ubuntu)"
-  else
-    fail "Refusing paper-grade launch on non-A100 host '${hn}'.
-       Phase 1a paper-grade target = Condenser A100 (memory project_paper_grade_target_host).
-       Re-run on a100-jiaming-test (ssh condense-a100), OR set P79_PAPER_GRADE_HOST=1 explicitly."
-  fi
-  # URL locality — paper-grade target = A100 self-hosted docker, all VWA URLs
-  # must point to localhost (no DGX→quark Tailscale substrate substitution).
-  # Reuses lib helper which fail-loud on any non-local URL.
-  assert_a100_url_locality
-}
+# B-1406 (/stress A2.7 P1-4-AB* 2026-05-18): local definition retired,
+# canonical `require_paper_grade_host` lives in `_lib_paper_grade_gates.sh`
+# (already sourced above at L100). Mode A F1 + Mode B F5 caught the sibling-
+# propagation regex permissive match + duplicate-def attack vectors.
+# Override knob: `P79_PAPER_GRADE_HOST=1` for CI / future approved hostnames.
 
 # ---------------------------------------------------------------------------
 # Pre-launch gates

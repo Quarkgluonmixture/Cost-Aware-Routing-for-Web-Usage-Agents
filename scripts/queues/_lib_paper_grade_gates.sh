@@ -157,6 +157,48 @@ release_site_lock() {
   fi
 }
 
+# ---------- 1b. A100 hostname gate (B-1406 sibling-propagation consolidation) ----------
+# require_paper_grade_host
+#   Single canonical paper-grade hostname gate. Pre-fix this function was
+#   inlined in 3 separate queue scripts (queue_phase1_paper_grade.sh:113,
+#   queue_phase1_router_paper_grade.sh:92, queue_router_learned.sh:97-106
+#   with a different older predicate) — Mode A F1 caught the regex permissive
+#   match `(condense|a100|ubuntu)` substring; Mode B F5 caught the sibling
+#   propagation gap. Consolidating to lib eliminates both attack vectors.
+#
+#   B-1406 (/stress A2.7 P1-4-AB* 2-AI overlap, Claude Mode A F1 + codex Mode B F5,
+#   2026-05-18): canonical hostname allowlist with anchored regex. Pre-fix
+#   `(condense|a100|ubuntu)` substring matched generic `ubuntu-server`,
+#   `lubuntu-dev`, `a100something`, etc. Post-fix anchored regex requires
+#   exact match against:
+#     - `condense-a100.*` (canonical Condenser A100 VM family)
+#     - `a100-jiaming.*` (current paper-grade target VM `a100-jiaming-test`)
+#     - `ubuntu` (generic but EXACT match only — common cloud VM default)
+#   Override via `P79_PAPER_GRADE_HOST=1` for explicit opt-in on CI / future
+#   approved hostnames not matching the allowlist.
+#
+#   Function MUST be called inside a queue script that defines `log` and `fail`
+#   shell functions (orchestrator + router_paper_grade + router_learned all do).
+require_paper_grade_host() {
+  local hn
+  hn="$(hostname 2>/dev/null || true)"
+  if [[ "${P79_PAPER_GRADE_HOST:-0}" == "1" ]]; then
+    log "  paper-grade host: ${hn} (P79_PAPER_GRADE_HOST=1 override)"
+  elif [[ "${hn}" =~ ^(condense-a100.*|a100-jiaming.*|ubuntu)$ ]]; then
+    log "  paper-grade host: ${hn} (allowlist match: condense-a100*/a100-jiaming*/ubuntu)"
+  else
+    fail "Refusing paper-grade launch on non-A100 host '${hn}'.
+       Phase 1a paper-grade target = Condenser A100 (memory project_paper_grade_target_host).
+       Re-run on a100-jiaming-test (ssh condense-a100), OR set P79_PAPER_GRADE_HOST=1 explicitly.
+       Allowlist: condense-a100*, a100-jiaming*, ubuntu (exact). Substring-permissive
+       pre-A2.7 regex (condense|a100|ubuntu) retired (Mode A F1 + Mode B F5 OOB)."
+  fi
+  # URL locality — paper-grade target = A100 self-hosted docker, all VWA URLs
+  # must point to localhost (no DGX→quark Tailscale substrate substitution).
+  # Reuses lib helper which fail-loud on any non-local URL.
+  assert_a100_url_locality
+}
+
 # ---------- 2. A100 URL-locality preflight (Bug 2 fix; B-298 A1.17 P0-1 hardening) ----------
 # assert_a100_url_locality
 #   On A100 self-hosted docker hosts, refuse launch if any site URL is non-local.

@@ -238,6 +238,19 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
                 f"(do NOT cite in paper §1/§3 — `raw_sr` is canonical)",
                 file=sys.stderr,
             )
+        # B-1409 (/stress A2.7 P1-8-B* codex Mode B OOB, 2026-05-18): propagate
+        # `cost_unit_basis` from condition_summary so downstream aggregation +
+        # plotting can stratify before pooling. Pre-fix this aggregator wrote
+        # `avg_cost_usd` from `avg_total_cost_usd` with no basis tag — B0 (api_usd)
+        # and B1/B2 (electricity_usd_derived) rows were silently put into the
+        # same column. Per paper §3.5.1 footnote `cost-basis-cross-baseline`
+        # the cross-baseline cost is always reported as per-baseline ratios
+        # under a single basis, never as cross-baseline pooled absolute USD.
+        # `cost_unit_basis` is computed at runner step_record stamp (B-563
+        # /stress A1.22 P0-4-A* + B-564 /stress A1.22 P0-5-A*); condition-level
+        # rollup is the modal basis across the condition's steps (set at
+        # `aggregate_condition_metrics`).
+        _basis = cond.get("cost_unit_basis")
         rows.append({
             "label": label,
             "baseline": baseline,  # A1.21 P1-2 (B-531): baseline propagation
@@ -250,6 +263,11 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             # legacy artifacts no longer need to round-trip.
             "adjusted_sr": round(adj_sr, 4) if adj_sr is not None else None,
             "avg_cost_usd": round(float(cond.get("avg_total_cost_usd", 0.0)), 6),
+            # B-1409: carry basis tag so downstream cross-baseline pooling
+            # is stratify-able. Aggregators / figure scripts that pool across
+            # baselines MUST partition rows by `cost_unit_basis` before
+            # computing any pooled mean / table cell.
+            "cost_unit_basis": _basis if isinstance(_basis, str) else "unknown",
             "avg_steps": round(float(cond.get("avg_steps", 0.0)), 2),
             "avg_total_energy_kwh": cond.get("avg_total_energy_kwh"),
             "episodes": int(cond.get("episodes", 0)),
@@ -402,6 +420,11 @@ def main() -> None:
             "adjusted_sr": r.get("adjusted_sr"),
             "sr_used": round(float(sr_val), 4) if sr_val is not None else None,
             "avg_cost_usd": r["avg_cost_usd"],
+            # B-1409 (/stress A2.7 P1-8-B*): carry cost_unit_basis into the
+            # cross-site CSV so reviewers see per-row basis tag. Stratify
+            # before pooling across baselines (B0=api_usd ≠ B1/B2=
+            # electricity_usd_derived; mixing produces ~1000× unit-collision).
+            "cost_unit_basis": r.get("cost_unit_basis", "unknown"),
             "avg_steps": r["avg_steps"],
             "avg_total_energy_kwh": r.get("avg_total_energy_kwh"),
             "episodes": r["episodes"],
@@ -422,15 +445,40 @@ def main() -> None:
         out_path=out_dir / "cross_site_sr_comparison.png",
     )
 
+    # B-1409 (/stress A2.7 P1-8-B*): the cross-site cost plot pools rows across
+    # baselines (B0+B1+B2) at single y-axis. When cost_unit_basis mixes api_usd
+    # (B0) with electricity_usd_derived (B1/B2), the plot is a unit-collision
+    # artifact, NOT a scientific cost number. Detect the mix here and downgrade
+    # the plot to per-basis subplots (one per basis) OR label the y-axis with
+    # the mixed-basis warning if all rows happen to share a basis.
+    _bases = sorted({r.get("cost_unit_basis", "unknown") for r in aggregation_rows})
+    _bases = [b for b in _bases if b not in ("unknown", "")]
+    _mixed_basis = len(_bases) > 1
+    _basis_label = "MIXED BASIS — DO NOT POOL" if _mixed_basis else (_bases[0] if _bases else "unknown")
     _plot_grouped_bar(
         data=aggregation_rows,
         x_key="site",
         group_key="mode",
         value_key="avg_cost_usd",
-        title=f"{args.b1_label} Phase 1 — Avg Cost (USD) by Site × Mode",
-        ylabel="Avg Cost per Episode (USD)",
+        title=(
+            f"{args.b1_label} Phase 1 — Avg Cost (USD) by Site × Mode  "
+            f"[cost_unit_basis = {_basis_label}]"
+        ),
+        ylabel=(
+            f"Avg Cost per Episode (USD)  ⚠ basis = {_basis_label}"
+            if _mixed_basis
+            else f"Avg Cost per Episode (USD, basis = {_basis_label})"
+        ),
         out_path=out_dir / "cross_site_cost_comparison.png",
     )
+    if _mixed_basis:
+        print(
+            "[B-1409 cost-basis stratification WARNING] cross_site_cost_comparison.png "
+            f"pools rows across {len(_bases)} distinct cost_unit_basis values: {_bases}. "
+            "The output PNG/CSV labels the mixed basis explicitly, but reviewers "
+            "consuming the cross-site cost figure MUST stratify by basis before any "
+            "scientific comparison. See paper §3.5.1 + B-1409 /stress A2.7 P1-8-B*."
+        )
 
     # --- cross_site_summary.json ---
     print("[4/4] Writing summary JSON...")

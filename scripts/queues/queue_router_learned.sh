@@ -94,16 +94,24 @@ export WIKIPEDIA_ZIM_VERSION="${WIKIPEDIA_ZIM_VERSION:-wikipedia_en_all_maxi_202
 # ---------- TZ ALIGN (BUG-6 fix, mirror queue_baseline) ----------
 export QUARK_TZ="${QUARK_TZ:-Europe/London}"
 
-# ---------- BUG-2 preflight: assert all site URLs are local on A100 ----------
-if [[ "$(hostname)" == *condense* ]] || [[ -d /home/ubuntu/workspace/p79 ]]; then
-  for _v in CLASSIFIEDS REDDIT SHOPPING WIKIPEDIA; do
-    case "${!_v:-}" in
-      *localhost*|*127.0.0.1*|"") ;;
-      *) echo "✗ FATAL preflight: \$${_v}=${!_v} not local on A100 host; refusing launch" >&2; exit 2 ;;
-    esac
-  done
-  unset _v
-fi
+# ---------- BUG-2 preflight: A100 paper-grade host + URL-locality enforcement ----------
+# B-1406 (/stress A2.7 P1-4-AB* 2-AI overlap, Claude Mode A F1 + codex Mode B F5,
+# 2026-05-18): canonical paper-grade host + URL-locality gate now lives in
+# `_lib_paper_grade_gates.sh::require_paper_grade_host` (which itself calls
+# `assert_a100_url_locality`). Pre-fix this script's hand-rolled
+# `*condense* || -d /home/ubuntu/workspace/p79` predicate (a) missed
+# `a100-jiaming-test` canonical hostname (no "condense" substring), (b) silently
+# passed on empty URL (B-643 fixed in lib version), (c) accepted empty string in
+# OK set, (d) diverged from orchestrator + Pass-2 router scripts. Sourcing the
+# lib + calling `require_paper_grade_host` consolidates to single canonical
+# implementation; orchestrator + Pass-2 router scripts use the same code path.
+# Define `log` + `fail` if missing (queue_router_learned.sh doesn't always have
+# them in scope before this gate fires).
+log() { echo "[router_learned $(date '+%H:%M:%S')] $*"; }
+fail() { log "FAIL: $*"; exit 1; }
+source "${REPO_DIR}/scripts/queues/_lib_paper_grade_gates.sh"
+init_paper_grade_env "${REPO_DIR}"
+require_paper_grade_host
 
 # ---------- B0 PROXY API key 加载 ----------
 if [[ "${BASELINE}" == "B0" ]]; then

@@ -195,7 +195,15 @@ DEFAULT_GATED_MODELS = [
 # --reverse --format="%H %T" 89f5af2..HEAD | sha256sum`.
 VWA_LOCKED_HEAD_SHA = "2f9b0b47175a1bffa01e13100e3075e212161a89"
 VWA_LOCKED_UPSTREAM_BASE = "89f5af29305c3d1e9f97ce4421462060a70c9a03"
-VWA_LOCKED_TREE_HASH_CHAIN = "3e88135198bcee988a5e14469637ffd286842e7cb5dae758d3ae5ccb4320cd8a"
+# NOTE B-1400 (A2.7 P0-1-B*, 2026-05-18): chain UNCHANGED — `5c6c5f6...` was
+# computed at the A1.18-re Chunk 1 land for the 9-commit chain ending at
+# `2f9b0b4`, NOT for the 8-commit chain ending at `1c3a615`. Earlier verification
+# confused recipe `git log --reverse | sha256sum` (chronological) with the
+# canonical recipe at L451-459 `git rev-list base..HEAD --format=tformat:%H %T |
+# sha256sum` (reverse-chronological). The HEAD constant was stale; the chain
+# constant was already correct. Empirical re-derivation 2026-05-18:
+# `git rev-list 89f5af2..2f9b0b4 --format=tformat:'%H %T' | sha256sum` = 5c6c5f6...
+VWA_LOCKED_TREE_HASH_CHAIN = "5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f"
 
 # B-824 (A1.16 cold-start P0-3-AC*): reference image hash root. Per
 # `glm_batch_digest._load_reference_images_b64` discovery 2026-05-17, VWA
@@ -748,7 +756,46 @@ def capture_env_snapshot(
     snap["extra"] = extra_merged
     snap["errors"] = errors
 
-    out_path.write_text(json.dumps(snap, indent=2))
+    # B-1408 (/stress A2.7 P1-9-B* codex Mode B OOB, 2026-05-18): atomic write +
+    # fsync + readback. Pre-fix `out_path.write_text(json.dumps(snap, indent=2))`
+    # was non-atomic — crash / NFS hiccup / power loss mid-write produced
+    # truncated provenance JSON, but runner did not re-read to validate. Most
+    # paper-grade-critical JSON in the repo (logger_v2 write_run_summary_atomic
+    # at L99-108 + L149-158 + L163-172; experiment_watchdog state at L1234-1248)
+    # already uses tmp + fsync + os.replace; this file was the sibling-propagation
+    # gap. Atomic temp-write + readback also validates JSON integrity before
+    # paper-grade run proceeds (truncated JSON would fail json.loads readback).
+    _payload = json.dumps(snap, indent=2)
+    _tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
+    with open(_tmp_path, "w", encoding="utf-8") as _f:
+        _f.write(_payload)
+        _f.flush()
+        try:
+            os.fsync(_f.fileno())
+        except OSError:
+            pass
+    os.replace(_tmp_path, out_path)
+    # fsync directory entry so the rename hits stable storage
+    try:
+        _dir_fd = os.open(str(out_path.parent), os.O_RDONLY)
+        try:
+            os.fsync(_dir_fd)
+        finally:
+            os.close(_dir_fd)
+    except OSError:
+        pass
+    # Readback validation — paper-grade provenance MUST be JSON-parseable;
+    # truncated JSON from interrupted write would raise here BEFORE the
+    # caller's _critical_error inspection logic (B-239) fires on stale data.
+    try:
+        with open(out_path, "r", encoding="utf-8") as _rf:
+            json.load(_rf)
+    except (OSError, json.JSONDecodeError) as _readback_exc:
+        raise RuntimeError(
+            f"snapshot_env atomic write readback FAILED for {out_path}: "
+            f"{_readback_exc!r}. JSON-parseable manifest is a paper-grade "
+            f"reproducibility precondition. See B-1408 /stress A2.7 P1-9-B*."
+        ) from _readback_exc
 
     # B-239 P1-1 hard-fail (CLI mode only): any `_critical_error` in models →
     # exit nonzero. Library-form caller (`p79/cli/run_experiment.py`) handles
