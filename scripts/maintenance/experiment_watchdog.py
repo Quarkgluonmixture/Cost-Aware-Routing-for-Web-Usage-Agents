@@ -109,6 +109,8 @@ def _read_json(path: Path) -> Dict[str, Any]:
 from p79.experiment.cleanup import (
     deletion_intent_rename as _deletion_intent_rename,
     purge_pending_deletes as _purge_pending_deletes,
+    safe_rmtree as _safe_rmtree,
+    safe_unlink as _safe_unlink,
 )
 
 
@@ -1452,8 +1454,15 @@ def main() -> int:
                     # if present, episode is mid-flight even if mtime suggests stale.
                     if (_art / ".in_progress").exists():
                         continue
-                    shutil.rmtree(_art)
-                    _orphan_count += 1
+                    # B-1413 (/stress A2.7 P2-16-B codex Mode B, 2026-05-18):
+                    # route through shared `safe_rmtree` (cleanup.py:49) for
+                    # idempotency against concurrent watchdog/clear_tasks race
+                    # + structural-parity with clear_tasks.py orphan path.
+                    # Pre-fix bare `shutil.rmtree(_art)` raised FileNotFoundError
+                    # on 2nd cleaner of same artifact → watchdog loop crashed
+                    # mid-cycle.
+                    if _safe_rmtree(_art):
+                        _orphan_count += 1
             # Orphan steps files (steps JSONL without summary)
             if _ep_root.exists():
                 for _sf in _ep_root.glob("*_steps_v2.jsonl"):
@@ -1469,8 +1478,10 @@ def main() -> int:
                     _ep_stem = _sf.name.replace("_steps_v2.jsonl", "")
                     if (_cdir / "artifacts" / _ep_stem / ".in_progress").exists():
                         continue
-                    _sf.unlink()
-                    _orphan_count += 1
+                    # B-1413 (/stress A2.7 P2-16-B): same race-safety as above
+                    # via `safe_unlink` (cleanup.py:32) instead of bare unlink.
+                    if _safe_unlink(_sf):
+                        _orphan_count += 1
         if _orphan_count:
             print(f"[watchdog] Pruned {_orphan_count} orphan item(s) (artifact dirs / steps files without summary)")
 

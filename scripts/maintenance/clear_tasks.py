@@ -407,6 +407,27 @@ def main() -> int:
 
     # --- Orphan artifact cleanup mode ---
     if args.clean_orphan_artifacts:
+        # B-1414 (/stress A2.7 P2-15-A Claude Mode A, 2026-05-18): paper-grade
+        # mid-fire defense — orphan cleanup is the watchdog auto-clean path's
+        # job, NOT a manual operator action under P79_PAPER_GRADE=1. Pre-fix
+        # `--clean-orphan-artifacts` could be invoked mid-fire and would delete
+        # B-488 forensic substrate or pre-quarantine artifacts without paper-
+        # grade context. Same symmetric guard as `--force` at L448 above
+        # (paper-grade env disables destructive cleanup). Override via
+        # explicit P79_PAPER_GRADE=0 env opt-out, NOT recommended during fire.
+        if os.environ.get("P79_PAPER_GRADE", "") == "1" and not args.dry_run:
+            print(
+                "ERROR: --clean-orphan-artifacts REJECTED — P79_PAPER_GRADE=1 env "
+                "set. Watchdog auto-clean is the paper-grade-correct orphan-cleanup "
+                "path (it respects .in_progress markers + .stale_<ts> forensic "
+                "archives + ntfy alerts on destructive ops). Manual orphan cleanup "
+                "during fire risks destroying B-488 forensic substrate or pre-"
+                "quarantine artifacts. Run with --dry-run to preview, or unset "
+                "P79_PAPER_GRADE explicitly if you really intend to clean under "
+                "paper-grade context. See B-1414 /stress A2.7 P2-15-A.",
+                file=sys.stderr,
+            )
+            return 3
         orphans_deleted = _clean_orphan_artifacts(run_dir, args.condition, args.dry_run)
         action = "would delete" if args.dry_run else "deleted"
         print(f"\nDone: {action} {orphans_deleted} orphan artifact dir(s)")
