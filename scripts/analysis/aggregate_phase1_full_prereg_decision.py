@@ -49,7 +49,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -402,6 +402,74 @@ def _compute_q_isq(thetas: np.ndarray, ses: np.ndarray) -> Dict:
 
 
 # ---------------------------------------------------------------------------
+# Holm-Bonferroni per-cell transparency counts (B-1054 /stress A2.3c P0-4-AB)
+# ---------------------------------------------------------------------------
+
+def _holm_per_cell_transparency(per_cell_theta_se: List[Tuple[float, float]],
+                                alpha: float = 0.05) -> Dict:
+    """B-1054 (/stress A2.3c Mode A F1 + Mode B B5, 2026-05-18): port
+    `individually_holm_sig` transparency count from `preregistration_decision_test.py:507-560`
+    to canonical producer. Pre-fix the canonical paper-grade gate artifact
+    `phase1_prereg_gate.{csv,md}` did NOT emit the per-cell Holm-significance
+    counts promised by prereg §3 line 408 + §4 line 446 + line 468:
+
+      \"For H1 and for each H3 axis, report the count of cells (out of 6)
+       whose per-cell bootstrap CI excludes 0, and the count individually
+       Holm-significant.\"
+
+    Only synthetic test fixture had this — canonical gate artifact was
+    silent on the prereg-promised transparency row. Reviewer would diff
+    paper §4 line 468 promise against artifact CSV and find nothing.
+
+    Algorithm:
+      1. Per-cell p_one_sided = 1 − Φ(θ_i / SE_i) (H0: θ_i ≤ 0)
+      2. Apply Holm-Bonferroni step-down across N cells (m = N)
+      3. Cell rejected at Holm-α=0.05 if p_holm_i < α
+      4. Count rejected as n_individually_holm_sig
+
+    Returns: {N, n_individually_holm_sig, alpha, per_cell_p_raw, per_cell_p_holm,
+              per_cell_rejected, note}
+    """
+    n = len(per_cell_theta_se)
+    if n == 0:
+        return {"N": 0, "n_individually_holm_sig": 0, "alpha": alpha,
+                "per_cell_p_raw": [], "per_cell_p_holm": [], "per_cell_rejected": [],
+                "note": "n=0, no cells"}
+    # Per-cell one-sided p value (H0: θ ≤ 0; positive lift in tail)
+    p_raw_list = []
+    for theta, se in per_cell_theta_se:
+        if se is None or se <= 0:
+            p_raw_list.append(1.0)  # degenerate cell, can't reject
+            continue
+        z = theta / se
+        # 1 − Φ(z) one-sided upper tail
+        p_one_sided = 1.0 - 0.5 * (1.0 + math.erf(z / math.sqrt(2)))
+        p_raw_list.append(float(p_one_sided))
+    # Holm-Bonferroni step-down (Holm 1979 original)
+    indexed = sorted(enumerate(p_raw_list), key=lambda x: x[1])
+    p_holm_list = [None] * n
+    rejected_list = [False] * n
+    prev_adj = 0.0
+    for rank, (orig_idx, p) in enumerate(indexed):
+        adj = (n - rank) * p
+        adj = max(adj, prev_adj)
+        adj = min(adj, 1.0)
+        p_holm_list[orig_idx] = adj
+        rejected_list[orig_idx] = bool(adj < alpha)
+        prev_adj = adj
+    n_individually_holm_sig = sum(1 for r in rejected_list if r)
+    return {
+        "N": n,
+        "n_individually_holm_sig": n_individually_holm_sig,
+        "alpha": alpha,
+        "per_cell_p_raw": [round(p, 6) for p in p_raw_list],
+        "per_cell_p_holm": [round(p, 6) if p is not None else None for p in p_holm_list],
+        "per_cell_rejected": rejected_list,
+        "note": "Transparency count per prereg §3 line 408 + §4 line 468 (NOT a gate; primary H1/H3 gates are FE pooled superiority/CI-excludes-0 per §2.5/§2 H3)",
+    }
+
+
+# ---------------------------------------------------------------------------
 # Framing rule R1-R5 (with I² cap-only, NOT rescue)
 # ---------------------------------------------------------------------------
 
@@ -634,6 +702,12 @@ def build_full_decision(cells: List[Dict]) -> Dict:
     payload["pooled_h1_fe"] = fe
     payload["h1_heterogeneity"] = isq_payload
 
+    # B-1054 (/stress A2.3c Mode A F1 + Mode B B5, 2026-05-18): per-cell
+    # Holm-significance transparency count for H1 (prereg §3 line 408 + §4
+    # line 446 + line 468 promise). Uses post-floor SE per B-1003 / B-426.
+    h1_per_cell_theta_se = [(float(t), float(s)) for t, s in zip(thetas, ses)]
+    payload["transparency_H1"] = _holm_per_cell_transparency(h1_per_cell_theta_se, alpha=ALPHA)
+
     # H2(a) falsification check — ANY cell falsified → R4
     h2a_per_cell = [c["h2a"] for c in per_cell_data if c["h2a"] is not None]
     h2a_falsified_cells = [c for c in per_cell_data
@@ -739,10 +813,22 @@ def build_full_decision(cells: List[Dict]) -> Dict:
     h3a_result, h3a_skip = _h3_axis_pooled_fe(h3a_per_cell, "axis1")
     payload["h3_axis1_pooled_fe"] = h3a_result if h3a_result is not None else h3a_skip
 
+    # B-1054 (/stress A2.3c Mode A F1 + Mode B B5, 2026-05-18): per-cell
+    # Holm-significance transparency count for H3 axis-1 (prereg §3 line 408 +
+    # §4 line 446 + line 468 promise — H3 axes parity with H1).
+    h3a_theta_se = [(float(c.get("unique_count_pp") or 0.0), float(c.get("se_pp") or 0.0))
+                    for c in h3a_per_cell if c.get("se_pp") is not None]
+    payload["transparency_H3_axis1"] = _holm_per_cell_transparency(h3a_theta_se, alpha=ALPHA)
+
     # H3 axis-2 FE pool
     h3b_per_cell = [c["h3_axis2"] for c in per_cell_data if c["h3_axis2"] is not None]
     h3b_result, h3b_skip = _h3_axis_pooled_fe(h3b_per_cell, "axis2")
     payload["h3_axis2_pooled_fe"] = h3b_result if h3b_result is not None else h3b_skip
+
+    # B-1054 H3 axis-2 transparency count (parity with H1 + axis-1)
+    h3b_theta_se = [(float(c.get("unique_count_pp") or 0.0), float(c.get("se_pp") or 0.0))
+                    for c in h3b_per_cell if c.get("se_pp") is not None]
+    payload["transparency_H3_axis2"] = _holm_per_cell_transparency(h3b_theta_se, alpha=ALPHA)
 
     # B-1007 Holm m=2 correction across H3 axis-1 + axis-2 transparency p-values.
     # Sorted ascending: smallest p compared against α/m, next against α/(m-1).
@@ -851,14 +937,23 @@ def write_json(payload: Dict, out_json: Path, *,
 
 
 def write_csv(payload: Dict, out_csv: Path) -> None:
-    """Per-cell × 6 + pooled FE summary rows."""
+    """Per-cell × 6 + pooled FE summary rows.
+
+    B-1054 (/stress A2.3c Mode A F1 + Mode B B5, 2026-05-18): added
+    `n_h1_holm_sig`, `n_h3a_holm_sig`, `n_h3b_holm_sig` transparency
+    columns per prereg §3 line 408 + §4 line 446 + line 468 promise.
+    Per-cell rows have empty (cell-level not aggregate); pooled row has
+    counts. Reviewer can now diff prereg promise against CSV without
+    opening JSON.
+    """
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         "row_type,baseline,site,k_cells,n_tasks,"
         "h1_theta_pp,h1_se_pp,h1_ci_lo_pp,h1_ci_hi_pp,h1_p_one_sided,"
         "h2a_median_ratio,h2a_rel_diff_pct,h2a_within_band,"
         "h3a_unique_count_pp,h3a_se_pp,h3b_unique_count_pp,h3b_se_pp,"
-        "i_squared_pct,framing_rule,gate_status",
+        "i_squared_pct,framing_rule,gate_status,"
+        "n_h1_holm_sig,n_h3a_holm_sig,n_h3b_holm_sig",
     ]
     gs = payload.get("gate_status", "UNKNOWN")
     framing_rule = payload.get("framing_rule", {}).get("rule", "")
@@ -882,6 +977,7 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
             _f(h3a.get("unique_count_pp")), _f(h3a.get("se_pp")),
             _f(h3b.get("unique_count_pp")), _f(h3b.get("se_pp")),
             "", "", gs,
+            "", "", "",  # B-1054 n_holm_sig fields aggregate; cell-level empty
         ]
         lines.append(",".join(cell_line_parts))
     fe = payload.get("pooled_h1_fe")
@@ -889,6 +985,10 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
         h2a_sum = payload.get("h2a_summary", {})
         h3a_fe = payload.get("h3_axis1_pooled_fe") or {}
         h3b_fe = payload.get("h3_axis2_pooled_fe") or {}
+        # B-1054 transparency Holm-sig counts (prereg §3+§4 promise emission)
+        n_h1 = payload.get("transparency_H1", {}).get("n_individually_holm_sig", "")
+        n_h3a = payload.get("transparency_H3_axis1", {}).get("n_individually_holm_sig", "")
+        n_h3b = payload.get("transparency_H3_axis2", {}).get("n_individually_holm_sig", "")
         lines.append(
             f"pooled,,,{fe.get('k_cells', '')},,"
             f"{fe.get('theta_FE_pp', 0):.4f},{fe.get('se_FE_pp', 0):.4f},"
@@ -897,7 +997,8 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
             f",,{'true' if not h2a_sum.get('falsified', False) else 'false'},"
             f"{h3a_fe.get('theta_FE_pp', 0):.4f},{h3a_fe.get('se_FE_pp', 0):.4f},"
             f"{h3b_fe.get('theta_FE_pp', 0):.4f},{h3b_fe.get('se_FE_pp', 0):.4f},"
-            f"{isq_str},{framing_rule},{gs}"
+            f"{isq_str},{framing_rule},{gs},"
+            f"{n_h1},{n_h3a},{n_h3b}"
         )
     out_csv.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -988,8 +1089,16 @@ def write_md(payload: Dict, out_md: Path) -> None:
             f"- **θ_FE = +{h3_fe['theta_FE_pp']:.3f}pp** (SE = {h3_fe['se_FE_pp']:.3f}pp)",
             f"- **95% CI**: [{h3_fe['ci95_FE_lo_pp']:.3f}, {h3_fe['ci95_FE_hi_pp']:.3f}]pp",
             f"- **z** = θ_FE / SE_FE = **{h3_fe['z_one_sided']:.3f}**",
-            f"- **p_one_sided** = 1 − Φ(z) = **{h3_fe['p_one_sided']:.4f}**",
-            f"- **Gate (p < α={h3_fe['alpha']})**: {sig}",
+            f"- **p_one_sided** = 1 − Φ(z) = **{h3_fe['p_one_sided']:.4f}** (transparency only — gate uses CI not p)",
+            # B-1055 (/stress A2.3c Mode B P1-9-B*, 2026-05-18): MD writer
+            # mislabel fix. Pre-fix wrote "Gate (p < α=...)" but B-949 H3 gate
+            # refactor (/stress A2.3a) changed gate semantics to
+            # `passed = ci_lo > 0.0` (CI excludes 0, per prereg §2 H3 line
+            # 163 "FE CI excludes 0"). MD writer was stale — code computed
+            # CI gate, prose said p-threshold gate. Same artifact internal
+            # contradiction. Reviewer attack: "code switched gate semantics
+            # from p<α to CI-excludes-0, prose still says p<α".
+            f"- **Gate (CI lower > 0)**: {sig}",
             "",
         ]
 

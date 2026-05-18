@@ -358,6 +358,32 @@ def main() -> int:
         r["family_scope"] = f_scope
         r["gating_status"] = gating
 
+    # B-1053 (/stress A2.3c Mode B P0-3-B*, 2026-05-18): Apply Holm-Bonferroni
+    # WITHIN each family BEFORE CSV write — pre-fix Holm was computed at L426-444
+    # AFTER CSV write at L361-366, so machine-readable CSV consumers got
+    # `p_re_one_sided` raw without the family-corrected `p_re_holm`. Markdown
+    # writer at L455+ had the corrected value (since it ran later), but CSV
+    # users were silently uncorrected. Mode B catch: prereg §4 line 442 "Sig
+    # threshold: Holm α=0.05 within respective family" promises FWER control
+    # in the artifact, machine consumer breach. Fix: compute Holm here so both
+    # CSV writer + MD writer see the same `p_re_holm` field.
+    by_family: dict = {}
+    for r in meta_rows:
+        by_family.setdefault(r["family"], []).append(r)
+    for family, family_rows in by_family.items():
+        ps = [r.get("p_re_one_sided") for r in family_rows]
+        indexed = [(i, p) for i, p in enumerate(ps) if p is not None]
+        indexed.sort(key=lambda x: x[1])
+        m = len(indexed)
+        adj = [None] * len(ps)
+        prev = 0.0
+        for k, (i, p) in enumerate(indexed):
+            a = min(1.0, max(prev, p * (m - k)))
+            adj[i] = a
+            prev = a
+        for r, a in zip(family_rows, adj):
+            r["p_re_holm"] = round(a, 6) if a is not None else None
+
     # CSV
     with out.open("w", newline="") as f:
         if meta_rows:
@@ -423,25 +449,11 @@ def main() -> int:
         "|---|---|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---:|",
     ]
 
-    # Apply Holm-Bonferroni within each family for the meta-pooled p-value
-    # (1-sided z test on RE estimate)
-    by_family: dict = {}
-    for r in meta_rows:
-        by_family.setdefault(r["family"], []).append(r)
-    for family, family_rows in by_family.items():
-        ps = [r.get("p_re_one_sided") for r in family_rows]
-        # Holm-Bonferroni step-down
-        indexed = [(i, p) for i, p in enumerate(ps) if p is not None]
-        indexed.sort(key=lambda x: x[1])
-        m = len(indexed)
-        adj = [None] * len(ps)
-        prev = 0.0
-        for k, (i, p) in enumerate(indexed):
-            a = min(1.0, max(prev, p * (m - k)))
-            adj[i] = a
-            prev = a
-        for r, a in zip(family_rows, adj):
-            r["p_re_holm"] = round(a, 6) if a is not None else None
+    # B-1053 (/stress A2.3c Mode B P0-3-B*, 2026-05-18): Holm-Bonferroni
+    # WITHIN each family is now computed BEFORE CSV write at L362-388 above.
+    # This block is removed (was previously at L426-444 after CSV write).
+    # MD writer below reads the same `p_re_holm` field that CSV consumers
+    # now also see — single source of family-corrected p value.
 
     def _fmt(v, spec=".4f"):
         if v is None:
