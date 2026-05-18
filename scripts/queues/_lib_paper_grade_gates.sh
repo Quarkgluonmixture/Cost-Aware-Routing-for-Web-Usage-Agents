@@ -334,7 +334,16 @@ mint_run_id() {
       # B-836 P1-10-B*: additional CONTENT checks against env_snapshot.json
       if [[ "${stale}" == "0" ]]; then
         local snap
-        snap="$(ls "${existing}"/*/env_snapshot.json 2>/dev/null | head -1)"
+        # B-1579 (/stress A1.24 hot follow-up, 2026-05-18): `|| true` guard against
+        # `set -euo pipefail` exit when no env_snapshot.json exists at the
+        # `${existing}/*/env_snapshot.json` path. Trigger condition: previous run
+        # crashed pre-condition-init (env_snapshot was written at run_dir root, not
+        # in a subdir) OR was cleaned up. Pre-fix bash -x trace: `+ snap=` →
+        # immediate trap fire → silent exit 2 → smoke false-FAIL with no error
+        # message. Now empty `snap` falls through to "no content check" branch
+        # (gracefully skips stale-by-snap check; schema_version check above still
+        # runs if any condition_meta.json exists).
+        snap="$(ls "${existing}"/*/env_snapshot.json 2>/dev/null | head -1 || true)"
         if [[ -n "${snap}" && -f "${snap}" ]]; then
           # Current git HEAD
           local current_git_sha

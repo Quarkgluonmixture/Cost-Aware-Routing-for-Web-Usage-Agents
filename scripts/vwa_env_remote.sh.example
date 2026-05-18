@@ -39,3 +39,14 @@ export VWA_SHOPPING_USER="emma.lopez@gmail.com"
 export VWA_SHOPPING_PASS="REPLACE_WITH_VWA_PASSWORD"
 export VWA_SHOPPING_ADMIN_USER="admin"
 export VWA_SHOPPING_ADMIN_PASS="REPLACE_WITH_VWA_PASSWORD"
+
+# B-1578 (/stress A1.24 hot follow-up, 2026-05-18): auto-source ~/.api_keys.env
+# (operator-managed, host-local) for HF_TOKEN + OPENAI_API_KEY. Required by
+# snapshot_env.py paper-grade Phase 0 check for gated HF models (e.g.
+# google/gemma-3-4b-it). Without these, P79_PAPER_GRADE=1 refuses to run with
+# "FATAL: paper-baseline model(s) failed SHA capture: gated_no_token".
+# Operator setup: `cat > ~/.api_keys.env` with two exports:
+#   export HF_TOKEN="hf_..."           # huggingface.co/settings/tokens (read access)
+#   export OPENAI_API_KEY="sk-..."     # or ANTHROPIC_API_KEY / PROXY_API_KEY per backend
+# Then `chmod 600 ~/.api_keys.env`.
+[ -f "$HOME/.api_keys.env" ] && source "$HOME/.api_keys.env"
