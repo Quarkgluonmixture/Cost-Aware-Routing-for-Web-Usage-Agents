@@ -1,24 +1,31 @@
 #!/usr/bin/env python3
-"""Train L1 learned router per cell from Pass-1 baseline data.
+"""Stage 3: Per-cell × per-fold LR trainer with inner-CV threshold tuning.
 
-Phase 1a v7 Pass-2 prerequisite. Reads Pass-1 (`router_on=False`) baseline
-per-task outcomes for a (baseline, site) cell, derives per-task oracle-best
-mode label, trains LR with balanced class weight + in-fold StandardScaler
-Pipeline, dumps pickle to `results/phantom_paper/l1_router/<baseline>_<site>_lr.pkl`.
+A2.5 Chunk B (B-994 + B-995 + B-997 + B-998 fix integrated; /stress 2026-05-18).
 
-Feature schema MUST match `p79/policies/learned_router.py:extract_task_features`
-(8-dim: site / has_image / 4 intent regex / intent_tok_count / axtree_elements).
+REFACTORED to consume Chunk A artifacts (raw_features_phase1a.npz + 5 vectorizer
+pickles + 5 selected_idx JSON + 6 fold_assignment JSON). Replaces the prior in-sample
+single-pickle-per-cell trainer with the (E''') design:
+  - per-cell × per-fold LR training (30 pickles total = 6 cells × 5 folds)
+  - StandardScaler INSIDE Pipeline (GPT-relay Point 4: scaler fits on train fold only)
+  - class_weight=None (B-995 fix: drop "balanced" reweighting that produced 15× minority
+    hallucination)
+  - min_class_n_train rule (B-995 fix: drop classes with <N_MIN_CLASS train-fold samples)
+  - Inner-CV τ tuning over candidate set [0.3, 0.4, 0.5, 0.6, 0.7] per (cell, fold)
+    using inner StratifiedKFold (B-998 (b) GPT-relay Point 5 fix — τ tuned on train-fold
+    inner-CV, never on outer holdout)
+  - Per-(cell, fold) τ* dict stored in <cell_id>_lr_meta.json
+
+Output (additional to Chunk A artifacts):
+  <cell_id>_lr_fold{k}.pkl    × 30  # Pipeline pickles
+  <cell_id>_lr_meta.json      × 6   # per-cell summary + thresholds_per_fold dict
 
 Usage:
-    # Train one cell
-    python3 scripts/analysis/train_l1_router.py --baseline B0 --site classifieds
-
-    # Train all 6 Phase 1a cells
+    # Train all 6 cells × 5 folds (requires Chunk A artifacts present)
     python3 scripts/analysis/train_l1_router.py --all
 
-    # Override Pass-1 run discovery
-    python3 scripts/analysis/train_l1_router.py --baseline B0 --site classifieds \\
-        --pass1-run-glob 'results/visualwebarena/phase1/B0_*_classifieds_*'
+    # Train one cell × all folds
+    python3 scripts/analysis/train_l1_router.py --baseline B0 --site classifieds
 """
 from __future__ import annotations
 
@@ -28,266 +35,444 @@ import pickle
 import sys
 from collections import Counter
 from pathlib import Path
+from typing import Any, Optional
 
 import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 REPO = Path(__file__).resolve().parents[2]
-PHASE1_ROOT = REPO / "results/visualwebarena/phase1"
-VWA_CONFIG = REPO / "external/visualwebarena/config_files/vwa"
 OUT_DIR = REPO / "results/phantom_paper/l1_router"
 
-MODES = ["dom", "som", "vision", "phantom_text", "phantom_prompt", "phantom_som"]
-
+# Cells in Phase 1a (B0/B1/B2 × cls/red).
 CELLS = [
     ("B0", "classifieds"), ("B0", "reddit"),
     ("B1", "classifieds"), ("B1", "reddit"),
     ("B2", "classifieds"), ("B2", "reddit"),
 ]
 
+# Hyperparameters locked at Chunk B (pre-fire per /stress A2.5).
+N_FOLDS_OUTER = 5
+N_FOLDS_INNER = 5
+INNER_CV_SEED = 42
+N_MIN_CLASS_TRAIN = 10  # B-995 fix: classes with fewer train samples → drop or merge
+LR_MAX_ITER = 2000
+LR_C = 1.0  # default L2 strength; tunable later via inner-CV if needed
+TAU_CANDIDATES = [0.3, 0.4, 0.5, 0.6, 0.7]
+SAFE_FALLBACK_MODE = "phantom_som"
+SCHEMA_VERSION = "2026-05-18-a2.5-chunk-b-stage3"
 
-def find_pass1_runs(baseline: str, site: str, run_glob: str | None = None) -> list[Path]:
-    """Discover Pass-1 baseline run directories for this (baseline, site) cell.
 
-    Default heuristic: directory name starts with `<baseline>_` and contains
-    `_<site>_`. Excludes directories with `router_learned_` suffix (Pass-2).
-    """
-    if run_glob:
-        return sorted(Path(REPO).glob(run_glob))
-    candidates = []
-    for d in PHASE1_ROOT.glob(f"{baseline}_*_{site}_*"):
-        if not d.is_dir():
+def load_chunk_a_artifacts(out_dir: Path) -> dict[str, Any]:
+    """Load Stage 1 raw features + Stage 2 vectorizers + selectors + fold assignments."""
+    raw_npz = out_dir / "raw_features_phase1a.npz"
+    raw_meta = out_dir / "raw_features_phase1a.json"
+    stage2_summary = out_dir / "stage2_summary.json"
+    if not raw_npz.exists():
+        raise FileNotFoundError(f"Stage 1 artifact missing: {raw_npz}")
+    if not stage2_summary.exists():
+        raise FileNotFoundError(f"Stage 2 summary missing: {stage2_summary}")
+
+    raw = np.load(raw_npz, allow_pickle=True)
+    meta = json.loads(raw_meta.read_text())
+    summary = json.loads(stage2_summary.read_text())
+
+    if summary.get("status") == "no_data_yet":
+        return {"status": "no_data_yet", "summary": summary}
+
+    # Load 5 vectorizers + 5 selectors
+    vectorizers = {}
+    selectors = {}
+    for k in range(N_FOLDS_OUTER):
+        vec_path = out_dir / f"vectorizer_fold{k}.pkl"
+        sel_path = out_dir / f"selected_idx_fold{k}.json"
+        if not vec_path.exists() or not sel_path.exists():
+            raise FileNotFoundError(f"Stage 2 fold {k} artifact missing")
+        with vec_path.open("rb") as f:
+            vectorizers[k] = pickle.load(f)
+        selectors[k] = json.loads(sel_path.read_text())
+
+    # Load per-cell fold assignments
+    fold_assignments = {}
+    for cell_id in meta.get("cells_in_pool", []):
+        fa_path = out_dir / f"{cell_id}_fold_assignment.json"
+        if not fa_path.exists():
             continue
-        if "router_learned" in d.name:
-            continue
-        candidates.append(d)
-    return sorted(candidates)
-
-
-def collect_per_task_outcomes(run_dirs: list[Path], site: str) -> dict[int, dict[str, bool]]:
-    """Collect per-task per-mode success from condition_summary_v2.json across runs.
-
-    Returns: {task_id: {mode: success_bool}}.
-    """
-    matrix: dict[int, dict[str, bool]] = {}
-    for run_dir in run_dirs:
-        for cond_dir in run_dir.iterdir():
-            if not cond_dir.is_dir():
-                continue
-            # cond_dir like phase1_dom_router_0 / phase1_phantom_som_router_0
-            cond_id = cond_dir.name
-            if cond_id == "phase1_learned_router":
-                continue  # skip Pass-2 router conditions
-            # Extract mode from condition_id (phase1_<mode>_router_0)
-            parts = cond_id.split("_")
-            if len(parts) < 3 or parts[0] != "phase1":
-                continue
-            mode_tokens = parts[1:-2]
-            mode = "_".join(mode_tokens)
-            # Normalize legacy "phantom_dom" → "phantom_text" (CLAUDE.md note)
-            if mode == "phantom_dom":
-                mode = "phantom_text"
-            if mode not in MODES:
-                continue
-            ep_dir = cond_dir / "episodes"
-            if not ep_dir.is_dir():
-                continue
-            for summary_f in ep_dir.glob(f"{site}_task_*_summary_v2.json"):
-                try:
-                    rec = json.loads(summary_f.read_text())
-                except json.JSONDecodeError:
-                    continue
-                tid = int(rec["task_id"])
-                success = bool(rec.get("success", False))
-                matrix.setdefault(tid, {})[mode] = success
-    return matrix
-
-
-def extract_features_per_task(
-    task_ids: list[int],
-    site: str,
-    pass1_run_dir: Path,
-) -> dict[int, dict]:
-    """Read task config (intent / image) + step-0 state_digest (axtree_element_count)
-    to build feature dict per task.
-
-    `pass1_run_dir` is used to locate step-0 JSONL for axtree_element_count;
-    we use the DOM condition's step-0 (mode-agnostic page).
-    """
-    feats: dict[int, dict] = {}
-    # Pick first dom condition for step-0 features (any baseline mode would do —
-    # entry-page DOM is mode-agnostic per p1_archive_simulation.py:78-95).
-    dom_cond_dir = pass1_run_dir / "phase1_dom_router_0"
-    if not dom_cond_dir.is_dir():
-        # Try any condition that's available
-        cands = [d for d in pass1_run_dir.iterdir() if d.is_dir() and d.name.startswith("phase1_")]
-        if not cands:
-            return feats
-        dom_cond_dir = cands[0]
-    ep_dir = dom_cond_dir / "episodes"
-    for tid in task_ids:
-        cfg_file = VWA_CONFIG / f"test_{site}" / f"{tid}.json"
-        steps_file = ep_dir / f"{site}_task_{tid}_steps_v2.jsonl"
-        if not cfg_file.exists():
-            continue
-        try:
-            cfg = json.loads(cfg_file.read_text())
-        except json.JSONDecodeError:
-            continue
-        intent = cfg.get("intent", "")
-        has_image = cfg.get("image") not in (None, "None", "", [])
-        # Read step-0 axtree count from steps JSONL
-        axtree_element_count = 0
-        if steps_file.exists():
-            try:
-                with steps_file.open() as f:
-                    step0 = json.loads(f.readline())
-                sd = step0.get("state_digest", {})
-                axtree_element_count = int(sd.get("dom_complexity", 0))
-            except (json.JSONDecodeError, OSError):
-                pass
-        feats[tid] = {
-            "intent": intent,
-            "has_image": has_image,
-            "intent_tok_count": len(intent.split()),
-            "axtree_element_count": axtree_element_count,
+        fa = json.loads(fa_path.read_text())
+        fold_assignments[cell_id] = {
+            int(tid): fk for tid, fk in fa["fold_assignment"].items()
         }
-    return feats
 
-
-def derive_oracle_label(outcomes: dict[str, bool]) -> str:
-    """Pick oracle-best mode per task.
-
-    Tie-break: MODES priority order (dom > som > vision > phantom_text >
-    phantom_prompt > phantom_som). Matches l1_archive_simulation.py:63-69.
-
-    If no mode succeeded, label = "dom" (majority-class fallback, mirrors archive sim).
-    """
-    for m in MODES:
-        if outcomes.get(m, False):
-            return m
-    return "dom"
-
-
-def build_design_matrix(
-    matrix: dict[int, dict[str, bool]],
-    features: dict[int, dict],
-    site: str,
-) -> tuple[np.ndarray, np.ndarray, list[int]]:
-    """Build (X 8-dim, y_label, task_ids) for LR training.
-
-    Feature columns match p79/policies/learned_router.py:65-89.
-    """
-    from p79.policies.learned_router import (
-        COLOR_RE, SEARCH_RE, COMPARE_RE, NAV_RE,
-    )
-    rows = []
-    labels = []
-    task_ids = []
-    for tid in sorted(matrix.keys()):
-        if tid not in features:
-            continue
-        feat = features[tid]
-        intent = feat["intent"]
-        row = [
-            1.0 if site == "classifieds" else 0.0,
-            1.0 if feat["has_image"] else 0.0,
-            1.0 if COLOR_RE.search(intent) else 0.0,
-            1.0 if SEARCH_RE.search(intent) else 0.0,
-            1.0 if COMPARE_RE.search(intent) else 0.0,
-            1.0 if NAV_RE.search(intent) else 0.0,
-            float(feat["intent_tok_count"]),
-            float(feat["axtree_element_count"]),
-        ]
-        rows.append(row)
-        labels.append(derive_oracle_label(matrix[tid]))
-        task_ids.append(tid)
-    return np.array(rows, dtype=float), np.array(labels), task_ids
-
-
-def train_and_dump(baseline: str, site: str, run_glob: str | None = None) -> dict:
-    """Train LR for one (baseline, site) cell + dump pickle.
-
-    Returns metadata dict with train stats.
-    """
-    runs = find_pass1_runs(baseline, site, run_glob)
-    if not runs:
-        return {"error": f"no Pass-1 runs found for {baseline} {site}"}
-    print(f"[{baseline} {site}] Found {len(runs)} Pass-1 run dir(s)")
-    for r in runs:
-        print(f"  - {r.name}")
-
-    # Collect outcomes across all run dirs
-    matrix = {}
-    for r in runs:
-        sub = collect_per_task_outcomes([r], site)
-        for tid, modes in sub.items():
-            matrix.setdefault(tid, {}).update(modes)
-    if not matrix:
-        return {"error": f"no episode summaries found for {baseline} {site}"}
-    print(f"[{baseline} {site}] Collected {len(matrix)} tasks with outcomes")
-
-    # Extract features (use first run dir for step-0 features)
-    features = extract_features_per_task(list(matrix.keys()), site, runs[0])
-    print(f"[{baseline} {site}] Extracted features for {len(features)} tasks")
-
-    # Build design matrix
-    X, y, task_ids = build_design_matrix(matrix, features, site)
-    if len(X) == 0:
-        return {"error": f"empty design matrix after intersection for {baseline} {site}"}
-    label_dist = dict(Counter(y))
-    print(f"[{baseline} {site}] Design matrix: X.shape={X.shape}, labels={label_dist}")
-
-    # Train LR Pipeline with in-fold StandardScaler
-    preprocessor = ColumnTransformer(
-        transformers=[("scale_numeric", StandardScaler(), [6, 7])],
-        remainder="passthrough",
-    )
-    pipeline = Pipeline([
-        ("preprocess", preprocessor),
-        ("clf", LogisticRegression(
-            max_iter=2000,
-            class_weight="balanced",
-            solver="lbfgs",
-        )),
-    ])
-    pipeline.fit(X, y)
-
-    # Predictions distribution sanity (in-sample, just for transparency)
-    in_sample_preds = pipeline.predict(X)
-    pred_dist = dict(Counter(in_sample_preds))
-    print(f"[{baseline} {site}] In-sample prediction dist: {pred_dist}")
-
-    # Dump pickle
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = OUT_DIR / f"{baseline}_{site}_lr.pkl"
-    with out_path.open("wb") as f:
-        pickle.dump(pipeline, f)
-    print(f"[{baseline} {site}] Wrote: {out_path}")
-
-    # Also write companion metadata JSON for paper-grade provenance
-    meta = {
-        "baseline": baseline,
-        "site": site,
-        "n_tasks": len(X),
-        "pass1_run_dirs": [r.name for r in runs],
-        "label_distribution": {str(k): int(v) for k, v in label_dist.items()},
-        "in_sample_pred_distribution": {str(k): int(v) for k, v in pred_dist.items()},
-        "feature_columns": [
-            "site_cls", "has_image",
-            "color_intent", "search_intent", "compare_intent", "nav_intent",
-            "intent_tok_count", "axtree_element_count",
-        ],
-        "modes_in_label_set": list(MODES),
-        "class_weight": "balanced",
-        "scaler_columns": [6, 7],
+    return {
+        "status": "ok",
+        "X_numeric": raw["X_numeric"],
+        "X_binary": raw["X_binary"],
+        "labels": raw["labels"],
+        "task_ids": raw["task_ids"],
+        "cell_ids": raw["cell_ids"],
+        "intents": list(raw["intents"]),
+        "meta": meta,
+        "vectorizers": vectorizers,
+        "selectors": selectors,
+        "fold_assignments": fold_assignments,
     }
-    meta_path = OUT_DIR / f"{baseline}_{site}_lr_meta.json"
-    meta_path.write_text(json.dumps(meta, indent=2))
-    return {"path": str(out_path), "meta": meta}
+
+
+def build_design_matrix_for_indices(
+    indices: np.ndarray,
+    intents: list[str],
+    X_numeric: np.ndarray,
+    X_binary: np.ndarray,
+    vectorizer: Any,
+    selected_idx_mask: np.ndarray,
+) -> np.ndarray:
+    """Transform raw features → 50-dim design matrix → apply selected_idx mask → 18-dim X.
+
+    Used for both train fold (build → fit pipeline) and holdout fold (build → predict).
+    """
+    sub_intents = [intents[i] for i in indices]
+    X_tfidf = vectorizer.transform(sub_intents).toarray()
+    X_full = np.hstack([X_tfidf, X_numeric[indices], X_binary[indices]])
+    # selected_idx_mask is a 50-dim bool over (tfidf + numeric + binary). Apply it.
+    # Note: TF-IDF dim may be < 30 if vocab smaller. Pad mask if needed.
+    n_tfidf_actual = X_tfidf.shape[1]
+    expected_total = len(selected_idx_mask)
+    if X_full.shape[1] != expected_total:
+        # Mask was built with a different number of TF-IDF cols. Align:
+        # the JSON's selected_mask reflects vocab size at Stage 2 fit. For runtime
+        # consistency, this should always match. If mismatched, fail loud.
+        raise ValueError(
+            f"Design matrix has {X_full.shape[1]} cols, selected_mask expects "
+            f"{expected_total}. Stage 2 vocab vs Stage 3 transform mismatch."
+        )
+    return X_full[:, selected_idx_mask]
+
+
+def apply_min_class_filter(
+    train_labels: np.ndarray,
+    train_indices: np.ndarray,
+    min_n: int = N_MIN_CLASS_TRAIN,
+) -> tuple[np.ndarray, np.ndarray, dict[str, int]]:
+    """B-995 fix: drop training samples whose class has < min_n samples in train fold.
+
+    Returns (kept_labels, kept_indices, dropped_class_counts).
+    """
+    counts = Counter(train_labels.tolist())
+    rare_classes = {c for c, n in counts.items() if n < min_n}
+    if not rare_classes:
+        return train_labels, train_indices, {}
+    keep_mask = np.array([lbl not in rare_classes for lbl in train_labels])
+    dropped_counts = {c: counts[c] for c in rare_classes}
+    return train_labels[keep_mask], train_indices[keep_mask], dropped_counts
+
+
+def tune_threshold_inner_cv(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    cell_id: str,
+    fold_k: int,
+    candidates: list[float] = TAU_CANDIDATES,
+    n_inner_folds: int = N_FOLDS_INNER,
+    seed: int = INNER_CV_SEED,
+) -> dict[str, Any]:
+    """Inner-CV τ tuning on train fold ONLY (GPT-relay Point 5 fix).
+
+    For each candidate τ, train inner pipeline on inner-train, evaluate cost-weighted
+    decision on inner-holdout, score = mean accuracy (= SR if labels are oracle-best
+    mode and we route to the predicted mode).
+
+    Returns dict with chosen tau, per-tau scores, n_inner_folds_used.
+    """
+    label_counts = Counter(y_train.tolist())
+    n_classes = len(label_counts)
+    rare_for_inner = {c for c, n in label_counts.items() if n < n_inner_folds}
+
+    if n_classes < 2:
+        # Single-class train → τ irrelevant; predict_proba is degenerate
+        return {
+            "chosen_tau": candidates[len(candidates) // 2],
+            "per_tau_score": {str(t): float("nan") for t in candidates},
+            "n_inner_folds_used": 0,
+            "reason": "single_class_train_set",
+        }
+
+    # For stratification, merge rare classes for split only
+    if rare_for_inner:
+        strat = np.array(["__rare__" if c in rare_for_inner else c for c in y_train])
+    else:
+        strat = y_train
+
+    inner_seed = seed + fold_k * 100  # per-(cell, fold) deterministic
+    try:
+        inner_skf = StratifiedKFold(
+            n_splits=n_inner_folds, shuffle=True, random_state=inner_seed
+        )
+        splits = list(inner_skf.split(X_train, strat))
+    except ValueError:
+        # Fallback: not enough samples per class for inner-CV
+        return {
+            "chosen_tau": candidates[len(candidates) // 2],
+            "per_tau_score": {str(t): float("nan") for t in candidates},
+            "n_inner_folds_used": 0,
+            "reason": "inner_cv_split_failed",
+        }
+
+    per_tau_scores: dict[float, list[float]] = {t: [] for t in candidates}
+    for inner_train_idx, inner_holdout_idx in splits:
+        inner_X_train = X_train[inner_train_idx]
+        inner_y_train = y_train[inner_train_idx]
+        inner_X_holdout = X_train[inner_holdout_idx]
+        inner_y_holdout = y_train[inner_holdout_idx]
+
+        # B-995 filter inner-train too (only apply to inner-train, evaluate on full holdout)
+        ity, iti, _ = apply_min_class_filter(
+            inner_y_train, inner_train_idx, min_n=2  # tighter for inner-CV
+        )
+        if len(set(ity)) < 2:
+            continue
+        # Refit inner_X_train using the filtered indices (relative to inner_train_idx)
+        keep_relative = np.isin(inner_train_idx, iti)
+        inner_X_train_filtered = inner_X_train[keep_relative]
+        inner_y_train_filtered = ity
+
+        pipeline = Pipeline(
+            [
+                ("scaler", StandardScaler()),
+                (
+                    "clf",
+                    LogisticRegression(
+                        class_weight=None,
+                        max_iter=LR_MAX_ITER,
+                        C=LR_C,
+                        solver="lbfgs",
+                    ),
+                ),
+            ]
+        )
+        try:
+            pipeline.fit(inner_X_train_filtered, inner_y_train_filtered)
+        except ValueError:
+            continue
+
+        probs = pipeline.predict_proba(inner_X_holdout)
+        max_probs = probs.max(axis=1)
+        pred_modes = pipeline.classes_[probs.argmax(axis=1)]
+
+        for tau in candidates:
+            # Cost-weighted decision rule: route to pred_mode if max_prob > τ else fallback
+            decided_modes = np.where(max_probs > tau, pred_modes, SAFE_FALLBACK_MODE)
+            # Score = SR proxy = fraction where decided_mode == oracle-best (label)
+            # This is the "route picks the right mode" rate on inner-holdout.
+            sr = float((decided_modes == inner_y_holdout).mean())
+            per_tau_scores[tau].append(sr)
+
+    # Aggregate per-tau scores
+    per_tau_mean: dict[float, float] = {}
+    for tau, scores in per_tau_scores.items():
+        per_tau_mean[tau] = float(np.mean(scores)) if scores else float("nan")
+
+    # Pick τ* maximizing mean SR; tie-break = higher τ (more conservative routing)
+    valid = {t: s for t, s in per_tau_mean.items() if not np.isnan(s)}
+    if not valid:
+        chosen = candidates[len(candidates) // 2]
+        reason = "all_inner_folds_failed"
+    else:
+        max_score = max(valid.values())
+        # Highest τ among those tied at max (more conservative = prefer fallback)
+        best_taus = [t for t, s in valid.items() if abs(s - max_score) < 1e-9]
+        chosen = max(best_taus)
+        reason = "ok"
+
+    return {
+        "chosen_tau": float(chosen),
+        "per_tau_score": {str(t): per_tau_mean[t] for t in candidates},
+        "n_inner_folds_used": len([s for tau in candidates for s in per_tau_scores[tau]])
+        // max(1, len(candidates)),
+        "reason": reason,
+    }
+
+
+def train_one_cell_one_fold(
+    cell_id: str,
+    fold_k: int,
+    artifacts: dict[str, Any],
+    out_dir: Path,
+) -> dict[str, Any]:
+    """Train a single Pipeline for (cell_id, fold_k) and dump pickle + return summary."""
+    X_numeric = artifacts["X_numeric"]
+    X_binary = artifacts["X_binary"]
+    labels = artifacts["labels"]
+    task_ids = artifacts["task_ids"]
+    cell_ids = artifacts["cell_ids"]
+    intents = artifacts["intents"]
+    vectorizer = artifacts["vectorizers"][fold_k]
+    selector_payload = artifacts["selectors"][fold_k]
+    selected_mask = np.array(selector_payload["selected_mask"], dtype=bool)
+    fold_assignments = artifacts["fold_assignments"]
+
+    fa = fold_assignments.get(cell_id, {})
+    if not fa:
+        return {"status": "no_fold_assignment", "cell_id": cell_id, "fold_k": fold_k}
+
+    # Cell-scoped indices in pooled arrays:
+    cell_mask = cell_ids == cell_id
+    cell_indices = np.where(cell_mask)[0]
+    cell_task_ids = task_ids[cell_indices]
+    cell_labels = labels[cell_indices]
+
+    # Partition cell_indices into train (fold != fold_k) vs holdout (fold == fold_k)
+    train_local_idx, holdout_local_idx = [], []
+    for local_i, tid in enumerate(cell_task_ids):
+        if fa.get(int(tid)) == fold_k:
+            holdout_local_idx.append(local_i)
+        else:
+            train_local_idx.append(local_i)
+    train_local_idx = np.array(train_local_idx, dtype=int)
+    holdout_local_idx = np.array(holdout_local_idx, dtype=int)
+
+    train_global_idx = cell_indices[train_local_idx]
+    holdout_global_idx = cell_indices[holdout_local_idx]
+    y_train = cell_labels[train_local_idx]
+    y_holdout = cell_labels[holdout_local_idx]
+
+    # B-995 min-class filter on train fold
+    y_train_filtered, train_kept_global_idx, dropped_classes = apply_min_class_filter(
+        y_train, train_global_idx, min_n=N_MIN_CLASS_TRAIN
+    )
+
+    if len(y_train_filtered) < 2 or len(set(y_train_filtered)) < 2:
+        return {
+            "status": "insufficient_train_data",
+            "cell_id": cell_id,
+            "fold_k": fold_k,
+            "n_train_total": len(y_train),
+            "n_train_kept": len(y_train_filtered),
+            "n_classes_remaining": len(set(y_train_filtered)),
+            "dropped_classes": dropped_classes,
+        }
+
+    # Build design matrices
+    X_train_full = build_design_matrix_for_indices(
+        train_kept_global_idx, intents, X_numeric, X_binary, vectorizer, selected_mask
+    )
+    X_holdout_full = build_design_matrix_for_indices(
+        holdout_global_idx, intents, X_numeric, X_binary, vectorizer, selected_mask
+    )
+
+    # Inner-CV τ tuning on train fold ONLY
+    tau_result = tune_threshold_inner_cv(
+        X_train_full, y_train_filtered, cell_id, fold_k
+    )
+    tau_star = tau_result["chosen_tau"]
+
+    # Refit pipeline on full filtered train
+    pipeline = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            (
+                "clf",
+                LogisticRegression(
+                    class_weight=None,
+                    max_iter=LR_MAX_ITER,
+                    C=LR_C,
+                    solver="lbfgs",
+                ),
+            ),
+        ]
+    )
+    pipeline.fit(X_train_full, y_train_filtered)
+
+    # In-fold holdout evaluation (for transparency; this is the H10 evaluation point)
+    holdout_probs = pipeline.predict_proba(X_holdout_full)
+    holdout_max_probs = holdout_probs.max(axis=1)
+    holdout_argmax_modes = pipeline.classes_[holdout_probs.argmax(axis=1)]
+    holdout_decided_modes = np.where(
+        holdout_max_probs > tau_star, holdout_argmax_modes, SAFE_FALLBACK_MODE
+    )
+    # Holdout SR = fraction where decided mode == oracle-best label
+    holdout_sr = float((holdout_decided_modes == y_holdout).mean()) if len(y_holdout) else float("nan")
+    holdout_fallback_rate = float((holdout_max_probs <= tau_star).mean()) if len(holdout_max_probs) else float("nan")
+
+    # Dump pipeline pickle
+    pickle_path = out_dir / f"{cell_id}_lr_fold{fold_k}.pkl"
+    with pickle_path.open("wb") as f:
+        pickle.dump(pipeline, f)
+
+    return {
+        "status": "ok",
+        "cell_id": cell_id,
+        "fold_k": fold_k,
+        "n_train_total": int(len(y_train)),
+        "n_train_kept": int(len(y_train_filtered)),
+        "dropped_classes": dropped_classes,
+        "train_label_distribution": dict(Counter(y_train_filtered.tolist())),
+        "n_holdout": int(len(y_holdout)),
+        "holdout_label_distribution": dict(Counter(y_holdout.tolist())),
+        "chosen_tau": tau_star,
+        "tau_tuning_per_score": tau_result["per_tau_score"],
+        "tau_tuning_reason": tau_result["reason"],
+        "tau_tuning_n_inner_folds": tau_result["n_inner_folds_used"],
+        "holdout_sr": holdout_sr,
+        "holdout_fallback_rate": holdout_fallback_rate,
+        "holdout_modes_predicted": dict(Counter(holdout_decided_modes.tolist())),
+        "pickle_path": pickle_path.name,
+    }
+
+
+def train_one_cell(
+    cell_id: str, artifacts: dict[str, Any], out_dir: Path
+) -> dict[str, Any]:
+    """Train all 5 folds for one cell + dump cell meta JSON."""
+    print(f"\n=== Training cell {cell_id} ===")
+    per_fold = {}
+    for fold_k in range(N_FOLDS_OUTER):
+        rec = train_one_cell_one_fold(cell_id, fold_k, artifacts, out_dir)
+        per_fold[fold_k] = rec
+        print(
+            f"  fold {fold_k}: status={rec['status']}, "
+            f"n_train_kept={rec.get('n_train_kept', 'N/A')}, "
+            f"τ={rec.get('chosen_tau', 'N/A')}, "
+            f"holdout_sr={rec.get('holdout_sr', 'N/A')}"
+        )
+
+    # Aggregate cell meta
+    thresholds_per_fold = {
+        fk: rec["chosen_tau"] for fk, rec in per_fold.items() if rec["status"] == "ok"
+    }
+    holdout_srs = [
+        rec["holdout_sr"] for rec in per_fold.values()
+        if rec["status"] == "ok" and not np.isnan(rec.get("holdout_sr", float("nan")))
+    ]
+    cell_meta = {
+        "schema_version": SCHEMA_VERSION,
+        "cell_id": cell_id,
+        "n_folds": N_FOLDS_OUTER,
+        "thresholds_per_fold": thresholds_per_fold,
+        "min_class_n_train": N_MIN_CLASS_TRAIN,
+        "tau_candidates": TAU_CANDIDATES,
+        "lr_c": LR_C,
+        "lr_max_iter": LR_MAX_ITER,
+        "class_weight": None,
+        "safe_fallback_mode": SAFE_FALLBACK_MODE,
+        "per_fold_records": {str(fk): rec for fk, rec in per_fold.items()},
+        "holdout_sr_per_fold_mean": float(np.mean(holdout_srs)) if holdout_srs else float("nan"),
+        "holdout_sr_per_fold_values": holdout_srs,
+        "note_design": (
+            "Q1=C + (E''') design — within-cell 5-fold CV deployment with inner-CV τ "
+            "tuning (b). Pipeline has internal StandardScaler (GPT-relay Point 4). "
+            "class_weight=None (B-995 fix vs 'balanced' minority hallucination). "
+            "Cell-constant features (site, capability_tier) implicit via runtime "
+            "pickle selection per (baseline, site)."
+        ),
+    }
+
+    meta_path = out_dir / f"{cell_id}_lr_meta.json"
+    meta_path.write_text(json.dumps(cell_meta, indent=2, default=str))
+    print(f"  Wrote: {meta_path.name} (thresholds_per_fold: {thresholds_per_fold})")
+    return cell_meta
 
 
 def main() -> int:
@@ -295,38 +480,60 @@ def main() -> int:
     ap.add_argument("--baseline", help="B0 | B1 | B2 (omit if --all)")
     ap.add_argument("--site", help="classifieds | reddit (omit if --all)")
     ap.add_argument("--all", action="store_true", help="train all 6 Phase 1a cells")
-    ap.add_argument("--pass1-run-glob", default=None,
-                    help="Override Pass-1 run discovery glob (per single-cell)")
+    ap.add_argument(
+        "--out-dir",
+        default=str(OUT_DIR),
+        help="Directory containing Chunk A artifacts + receiving Chunk B pickles",
+    )
     args = ap.parse_args()
 
+    out_dir = Path(args.out_dir)
+    artifacts = load_chunk_a_artifacts(out_dir)
+    if artifacts.get("status") == "no_data_yet":
+        print(
+            "⚠️  Chunk A artifacts indicate no_data_yet — Stage 3 cannot train without "
+            "Pass-1 outcomes. Run extract_50_features.py + train_l1_router_with_mi.py "
+            "after Phase 1a Pass-1 lands."
+        )
+        return 0
+
+    cells_in_pool = artifacts["meta"].get("cells_in_pool", [])
     if args.all:
-        targets = CELLS
+        targets = cells_in_pool
     elif args.baseline and args.site:
-        targets = [(args.baseline, args.site)]
+        cell_id = f"{args.baseline}_{args.site}"
+        targets = [cell_id] if cell_id in cells_in_pool else []
     else:
         ap.error("Either --all or (--baseline + --site) required")
 
-    results = {}
-    n_ok = 0
-    n_fail = 0
-    for baseline, site in targets:
-        print(f"\n=== Training {baseline} × {site} ===")
-        try:
-            res = train_and_dump(baseline, site, args.pass1_run_glob)
-            results[f"{baseline}_{site}"] = res
-            if "error" in res:
-                n_fail += 1
-                print(f"[{baseline} {site}] FAIL: {res['error']}")
-            else:
-                n_ok += 1
-        except Exception as e:
-            n_fail += 1
-            results[f"{baseline}_{site}"] = {"error": str(e)}
-            print(f"[{baseline} {site}] EXCEPTION: {e}")
+    if not targets:
+        print(f"⚠️  No matching cells in pool. Available: {cells_in_pool}")
+        return 1
 
-    print(f"\n=== Summary: {n_ok}/{n_ok + n_fail} cells trained ===")
-    if n_fail > 0:
-        print(f"  {n_fail} cell(s) failed; check Pass-1 run completion")
+    print(f"Training {len(targets)} cell(s): {targets}")
+    summary = {
+        "schema_version": SCHEMA_VERSION,
+        "n_cells_trained": 0,
+        "n_cells_failed": 0,
+        "per_cell": {},
+    }
+    for cell_id in targets:
+        try:
+            cell_meta = train_one_cell(cell_id, artifacts, out_dir)
+            summary["per_cell"][cell_id] = cell_meta
+            summary["n_cells_trained"] += 1
+        except Exception as exc:
+            print(f"  ✗ {cell_id} FAILED: {exc}")
+            summary["per_cell"][cell_id] = {"error": str(exc)}
+            summary["n_cells_failed"] += 1
+
+    summary_path = out_dir / "stage3_summary.json"
+    summary_path.write_text(json.dumps(summary, indent=2, default=str))
+    print(f"\nWrote: {summary_path}")
+    print(
+        f"\n=== Summary: {summary['n_cells_trained']}/{len(targets)} cells trained ==="
+    )
+    if summary["n_cells_failed"] > 0:
         return 1
     return 0
 
