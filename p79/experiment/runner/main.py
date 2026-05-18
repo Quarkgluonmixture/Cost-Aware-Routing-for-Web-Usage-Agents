@@ -83,7 +83,36 @@ from p79.experiment.runner.helpers import (
 logger = logging.getLogger(__name__)
 
 
-def _seed_global_rng(seed: int) -> None:
+def _compute_effective_paper_grade(cfg: Optional[Dict[str, Any]] = None) -> bool:
+    """B-1602 (/stress 深入审 Mode A P1-3-A*, 2026-05-18): canonical
+    paper_grade effective-bool source for the WHOLE runner.
+
+    Pre-existing B-868 unification (/stress A1.23, 2026-05-17) created MAX-of
+    (yaml ∨ env) logic at `_compute_resume_fingerprint` (L692-694) so resume
+    fingerprint always records the strictest interpretation. BUT the sibling
+    consumer `_seed_global_rng` (deterministic CUDA flags, L125 pre-fix) read
+    `P79_PAPER_GRADE` env-only — yaml-only paper_grade users got LAX
+    `torch.use_deterministic_algorithms(warn_only=True)` while evaluator
+    + diagnostic_controls + backend_cfg propagation all went STRICT. Paper
+    §3.5 "byte-identical hidden states" claim silently breaks under that
+    misconfig. B-868's own comment block at L688-690 describes the exact bug
+    but fix only touched fingerprint side.
+
+    Now: canonical helper used by both `_seed_global_rng` AND
+    `_compute_resume_fingerprint` so all paper_grade consumers share one
+    source of truth.
+
+    Returns True if EITHER (a) `cfg["paper_grade"]` truthy OR (b)
+    `P79_PAPER_GRADE` env truthy ("1" / "true" / "yes" / "on" / case-insens).
+    `cfg=None` (e.g., legacy callers without cfg context) → env-only.
+    """
+    _pg_env_raw = os.environ.get("P79_PAPER_GRADE", "").strip().lower()
+    _pg_env = _pg_env_raw in ("1", "true", "yes", "on")
+    _pg_yaml = bool((cfg or {}).get("paper_grade", False)) if cfg else False
+    return _pg_yaml or _pg_env
+
+
+def _seed_global_rng(seed: int, paper_grade_effective: Optional[bool] = None) -> None:
     """B-37 + B-827 (/stress A1.16 cold-start P1-1-BC*, 2026-05-17): propagate
     seed to Python/NumPy/torch RNG AND enforce deterministic CUDA flags.
 
@@ -122,7 +151,16 @@ def _seed_global_rng(seed: int) -> None:
         # B-827 P1-1-BC*: deterministic CUDA flags. Must be set BEFORE any
         # tensor op runs in this process (CUBLAS_WORKSPACE_CONFIG is read at
         # first CUBLAS call; deterministic_algorithms is checked per-op).
-        paper_grade = os.environ.get("P79_PAPER_GRADE", "0") == "1"
+        # B-1602 (/stress 深入审 Mode A P1-3-A*, 2026-05-18): accept the
+        # caller-resolved paper_grade_effective bool (yaml ∨ env unified via
+        # `_compute_effective_paper_grade`). Pre-B-1602 this line read
+        # env-only — yaml-true + env-false misconfig got LAX warn_only=True
+        # silently breaking paper §3.5 reproducibility. Legacy callers
+        # without paper_grade_effective fall back to env-only via the helper.
+        if paper_grade_effective is None:
+            paper_grade = _compute_effective_paper_grade(cfg=None)
+        else:
+            paper_grade = bool(paper_grade_effective)
         # Set CUBLAS env var first (idempotent — same value on every seed call)
         os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
         try:
@@ -794,7 +832,18 @@ class ExperimentRunner:
                 # B-37 fix: propagate seed to Python/NumPy/torch RNG so seed=42 is
                 # actually deterministic, not just metadata. Per (condition, seed)
                 # pair so each condition gets fresh RNG state from the same seed.
-                _seed_global_rng(current_seed)
+                # B-1602 (/stress 深入审 Mode A P1-3-A*, 2026-05-18): pass
+                # caller-resolved paper_grade_effective so deterministic CUDA
+                # flags strict-vs-warn split honors yaml ∨ env (mirror B-868
+                # fingerprint unification at L741). Pre-B-1602 the function
+                # read env-only — yaml-true + env-false misconfig silently
+                # broke paper §3.5 "byte-identical hidden states" claim while
+                # evaluator + diagnostic_controls + backend_cfg propagation
+                # all went STRICT.
+                _seed_global_rng(
+                    current_seed,
+                    paper_grade_effective=_compute_effective_paper_grade(self.cfg),
+                )
                 seed_suffix = f"_seed{current_seed}" if len(self.seeds) > 1 else ""
                 effective_cid = f"{condition.condition_id}{seed_suffix}"
 
