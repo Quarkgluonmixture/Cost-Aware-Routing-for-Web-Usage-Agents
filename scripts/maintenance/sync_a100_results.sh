@@ -38,8 +38,37 @@ for arg in "$@"; do
 done
 
 A100_HOST="condense-a100"
-A100_RESULTS="/mnt/scratch/results/visualwebarena/phase1/"
+# B-1754 (2026-05-19 morning, Fire-3 LIVE follow-up): source corrected from
+# stale `/mnt/scratch/results/...` (last A100-side mirror update 2026-05-15~16,
+# B2_3mode + _archive_smoke_20260515 only — pre-dates Fire-3 attempt #6 LIVE
+# 21:27Z 2026-05-18) → live `/home/ubuntu/workspace/p79/results/...` where
+# Fire-3 R19740 + queue_phase1_paper_grade.sh writes. Pre-fix cron synced
+# stale /mnt/scratch so DGX mirror never saw R19740 fresh data → quark:8765
+# Gallery view always 3+ days behind. Post-fix: 15-min auto-refresh from
+# live LIVE Fire-3 source.
+A100_RESULTS="/home/ubuntu/workspace/p79/results/visualwebarena/phase1/"
 DGX_RESULTS="${REPO_ROOT}/results/visualwebarena/phase1/"
+
+# B-1755 (2026-05-19 morning, Fire-3 LIVE follow-up + user gallery URL ask):
+# additional top-level result dirs that watchdog auto-refreshes via the
+# 5-step GALLERY pipeline (per_run + aggregate + combined + unified +
+# phase1_paper_grade per experiment_watchdog.py:_regenerate_aggregate_gallery).
+# Pre-fix cron only synced visualwebarena/phase1/ subtree → top-level
+# results/phase1_paper_grade/ + results/B0_3mode/ + results/B0_unified/
+# (all watchdog outputs) never reached DGX → quark:8765 mirror could not
+# serve them → user had no aggregated Phase 1 paper-grade gallery URL.
+# Post-fix: same 15-min cron syncs these too (separate rsync per dir, no
+# --delete-after on top-level — defensive, watchdog regen can re-create
+# from A100 anyway).
+A100_TOPLEVEL_DIRS=(
+  "phase1_paper_grade"  # 5th GALLERY step output (cross-baseline aggregate)
+  "B0_3mode"            # 4th GALLERY step output (combined VWA+WA per baseline)
+  "B1_3mode"
+  "B2_3mode"
+  "B0_unified"          # 5th-deprecated GALLERY step output (per-baseline unified)
+  "B1_unified"
+  "B2_unified"
+)
 
 mkdir -p "${DGX_RESULTS}"
 
@@ -103,6 +132,32 @@ if ! rsync "${RSYNC_OPTS[@]}" \
   log "✗ rsync failed (SSH chain or A100 unreachable). Retry on next cron run."
   exit 1
 fi
+
+# B-1755 (2026-05-19 morning): rsync top-level watchdog-output dirs too.
+# Separate rsync per dir for fault isolation (one dir's failure doesn't
+# abort the others). NO --delete on top-level (defensive: watchdog regen
+# can re-create from A100 source, but locally-cached gallery.html should
+# not be silently nuked if A100 source dir doesn't exist yet for a given
+# baseline).
+DGX_RESULTS_ROOT="${REPO_ROOT}/results/"
+A100_RESULTS_ROOT="/home/ubuntu/workspace/p79/results/"
+for d in "${A100_TOPLEVEL_DIRS[@]}"; do
+  src="${A100_RESULTS_ROOT}${d}/"
+  dst="${DGX_RESULTS_ROOT}${d}/"
+  mkdir -p "${dst}"
+  if ssh -o ConnectTimeout=10 "${A100_HOST}" "test -d ${src}" 2>/dev/null; then
+    log "rsync top-level ${A100_HOST}:${src} → ${dst}"
+    if ! rsync -az --partial --append-verify --info=stats1 -L \
+           -e "ssh -o ConnectTimeout=20 -o ServerAliveInterval=30" \
+           "${A100_HOST}:${src}" "${dst}" 2>&1 | tee -a "${RSYNC_LOG}"; then
+      log "  ✗ top-level rsync ${d} failed (non-fatal; continuing)"
+    else
+      log "  ✓ ${d} synced"
+    fi
+  else
+    log "  - skipping ${d} (not on A100 yet — watchdog generates lazily)"
+  fi
+done
 
 # Post-sync: detect new condition_summary_v2.json
 SUMMARY_AFTER=$(find "${DGX_RESULTS}" -maxdepth 4 -name "condition_summary_v2.json" 2>/dev/null | sort)
