@@ -548,14 +548,42 @@ check_nltk_resources() {
   local py_output
   if ! py_output="$(${PYTHON_BIN} - <<'PY' 2>&1
 import sys
+import os
 try:
-    from nltk.tokenize import sent_tokenize
-    # Smoke test — matches runtime usage path in evaluation_harness.
+    from nltk.tokenize import sent_tokenize, word_tokenize
+    # Smoke test — matches runtime usage path in evaluation_harness:
+    # helper_functions.py uses word_tokenize via llm_fuzzy_match + llm_ua_match;
+    # external libs may also call sent_tokenize. Both paths exercise punkt
+    # + punkt_tab internally for NLTK 3.9+; if either tokenizer call works,
+    # the runtime data is present (B-1660 fix preserved; canonical check).
     _ = sent_tokenize("Hello world. This is a test.")
-    # Also verify punkt_tab (NLTK 3.9+ split punkt → punkt + punkt_tab).
+    _ = word_tokenize("Hello world. This is a test.")
+    # Direct filesystem check on the punkt_tab dir as defense-in-depth.
+    # NOTE (B-1751 2026-05-18 fire-day relaunch): `nltk.data.find("tokenizers/punkt_tab")`
+    # has a path-resolution bug at NLTK 3.9+ where the lookup tries
+    # `<nltk_data>/tokenizers/punkt/PY3_tab/` (concatenating "_tab" onto
+    # the punkt subdir instead of treating punkt_tab as a sibling).
+    # Even when `nltk.download("punkt_tab")` succeeds and the dir is on
+    # disk, `find()` raises OSError. We side-step this by checking the
+    # directory directly + by relying on sent_tokenize + word_tokenize
+    # actually running (which is the runtime path).
     from nltk.data import find as _nltk_find
-    _nltk_find("tokenizers/punkt")
-    _nltk_find("tokenizers/punkt_tab")
+    _nltk_find("tokenizers/punkt")  # this one resolves cleanly at NLTK 3.9+
+    # Filesystem check for punkt_tab (avoids the find() path-resolution bug)
+    punkt_tab_dirs = [
+        os.path.expanduser("~/nltk_data/tokenizers/punkt_tab"),
+        "/usr/share/nltk_data/tokenizers/punkt_tab",
+        "/usr/local/share/nltk_data/tokenizers/punkt_tab",
+        "/usr/lib/nltk_data/tokenizers/punkt_tab",
+        "/usr/local/lib/nltk_data/tokenizers/punkt_tab",
+    ]
+    if not any(os.path.isdir(p) for p in punkt_tab_dirs):
+        # punkt_tab not on any standard NLTK data path. sent_tokenize
+        # + word_tokenize already succeeded above so the tokenizer works
+        # in the current environment, but downstream code paths that
+        # explicitly require punkt_tab on disk may break — flag as
+        # warning, not hard fail.
+        print(f"PUNKT_TAB_DIR_MISSING_ON_DISK_BUT_TOKENIZERS_WORK")
     print("ok")
 except LookupError as exc:
     print(f"NLTK_DATA_MISSING: {exc!r}")
@@ -570,7 +598,7 @@ PY
     fail "  → 2026-05-18 fire-day root cause: silent preflight pass → first task evaluator crash"
     return
   fi
-  pass "NLTK resources available (sent_tokenize smoke + punkt/punkt_tab found)"
+  pass "NLTK resources available (sent_tokenize + word_tokenize smoke PASS + punkt found; punkt_tab on-disk check side-steps NLTK 3.9+ find() path-resolution bug per B-1751)"
 }
 
 check_openai_api_key() {
