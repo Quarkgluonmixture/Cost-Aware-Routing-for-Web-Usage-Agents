@@ -26,11 +26,20 @@ from p79.backends.image_utils import DEFAULT_MAX_IMAGE_PAYLOAD_BYTES, encode_ima
 # proxy endpoint + API key → sync exponential backoff on 429/5xx tail latency
 # amplification. Non-blocking acquire + sleep-retry up to PROXY_LOCK_MAX_WAIT
 # secs; on timeout, proceed without lock + log warning (degrade-not-block).
+#
+# B-1700 (/stress A2.12 P0-1-B* OOB codex unique, 2026-05-18, user Q2=A):
+# `paper_grade=True` flips contract to FAIL-CLOSED — timeout → raise
+# RuntimeError instead of degrade-to-unlocked. Pre-fix the warning-then-
+# proceed semantics defeated the lock's purpose at the very moment serialization
+# matters (contention window where another holder ran >60s with retries/backoff).
+# Dev mode keeps degrade-not-block for iteration UX.
 @contextmanager
-def _proxy_global_lock(api_key: str, max_wait_secs: int = 60):
+def _proxy_global_lock(api_key: str, max_wait_secs: int = 60, paper_grade: bool = False):
     """File-based semaphore on /tmp/p79_proxy_<hash>.lock — serializes B0 proxy
     requests across all runners on same host. Yields True if lock acquired,
-    False on timeout (proceed without serialization)."""
+    False on timeout in dev mode. In paper_grade mode raises RuntimeError on
+    timeout (B-1700 fail-closed contract — caller cannot proceed unsynchronized
+    under paper-grade contention)."""
     lock_path = Path(tempfile.gettempdir()) / f"p79_proxy_{hashlib.sha1(api_key.encode()).hexdigest()[:8]}.lock"
     lock_fd = None
     try:
@@ -44,8 +53,21 @@ def _proxy_global_lock(api_key: str, max_wait_secs: int = 60):
                 break
             except OSError:
                 if time.time() - _start >= max_wait_secs:
+                    if paper_grade:
+                        try:
+                            os.close(lock_fd)
+                        except OSError:
+                            pass
+                        lock_fd = None
+                        raise RuntimeError(
+                            f"B-1700 (paper_grade): proxy global lock {lock_path} "
+                            f"acquire timeout {max_wait_secs}s — refusing to proceed "
+                            f"unsynchronized (cls+red parallel B0 contention would "
+                            f"pollute latency canonical). Check for stale runner / "
+                            f"lock-holder PID / set PHASE1A_PARALLEL=0 for sequential."
+                        )
                     logging.getLogger(__name__).warning(
-                        "B-1668: proxy global lock %s acquire timeout %ds — proceeding without",
+                        "B-1668: proxy global lock %s acquire timeout %ds — proceeding without (dev mode)",
                         lock_path, max_wait_secs,
                     )
                     try:
@@ -639,9 +661,13 @@ class ProxyApiAgent:
         # B-1668 (/stress A2.11 P1-2-B*C 2026-05-18, user Q8=A): file-based
         # global semaphore around B0 proxy retry loop. Other process holding
         # lock waits up to 60s; on timeout proceed without serialization
-        # (degrade-not-block). Lock released in finally after loop exit
-        # (success / max retries / exception).
-        _proxy_lock_ctx = _proxy_global_lock(self.api_key)
+        # (degrade-not-block in dev / raise in paper-grade per B-1700).
+        # B-1700 (/stress A2.12 P0-1-B* OOB codex, 2026-05-18, user Q2=A):
+        # paper-grade mode flips contract to FAIL-CLOSED (raise instead of
+        # degrade) so cls+red parallel B0 contention can never produce
+        # unsynchronized proxy traffic under paper-grade. Lock released in
+        # finally after loop exit (success / max retries / exception / raise).
+        _proxy_lock_ctx = _proxy_global_lock(self.api_key, paper_grade=self._paper_grade)
         _proxy_lock_ctx.__enter__()
         try:
             for _attempt in range(_max_retries + 1):
