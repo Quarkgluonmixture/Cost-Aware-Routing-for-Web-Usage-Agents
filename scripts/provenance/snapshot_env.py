@@ -179,11 +179,23 @@ DEFAULT_GATED_MODELS = [
 ]
 
 # B-822 (A1.16 cold-start P0-1-ABC*, 2026-05-17): VWA SBOM tree-hash chain lock.
-# Values mirror locked_versions.md:48-50 / preregistration.md:562-568.
+# Values mirror locked_versions.md / preregistration.md §7.
 # Recompute mismatch under P79_PAPER_GRADE=1 raises SystemExit (via caller post-call inspect).
-VWA_LOCKED_HEAD_SHA = "1c3a615308fd9f17c73a9d33a96cf29ec6807d48"
+#
+# B-1400 (/stress A2.7 P0-1-B* codex Mode B OOB, 2026-05-18): bumped to A1.18-re
+# Chunk 1 substrate `2f9b0b4` (was A1.25 GRL Chunk 4 `1c3a615`). Pre-fix split-
+# brain: `preflight_v2.sh:413` already pinned `2f9b0b4` post-A1.18-re Chunk 2
+# main-repo sweep, but this snapshot constant + locked_versions.md table were
+# missed in the sibling-propagation pass (笔记 §11760 enumerated Makefile +
+# preflight + paper §4.X.11 + prereg but not snapshot_env or locked_versions
+# header row). Result: orchestrator Gate 2/3/4 passed under `2f9b0b4` HEAD
+# while runner provenance capture raised `_critical_error` under
+# `P79_PAPER_GRADE=1` → launch-path death at first cell. Tree-hash chain
+# recomputed for new 9-commit chain via `git -C external/visualwebarena log
+# --reverse --format="%H %T" 89f5af2..HEAD | sha256sum`.
+VWA_LOCKED_HEAD_SHA = "2f9b0b47175a1bffa01e13100e3075e212161a89"
 VWA_LOCKED_UPSTREAM_BASE = "89f5af29305c3d1e9f97ce4421462060a70c9a03"
-VWA_LOCKED_TREE_HASH_CHAIN = "5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f"
+VWA_LOCKED_TREE_HASH_CHAIN = "3e88135198bcee988a5e14469637ffd286842e7cb5dae758d3ae5ccb4320cd8a"
 
 # B-824 (A1.16 cold-start P0-3-AC*): reference image hash root. Per
 # `glm_batch_digest._load_reference_images_b64` discovery 2026-05-17, VWA
