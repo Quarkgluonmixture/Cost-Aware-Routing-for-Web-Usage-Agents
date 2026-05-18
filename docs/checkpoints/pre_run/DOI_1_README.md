@@ -11,37 +11,83 @@ osf_guid: <to-be-assigned at submission>
 osf_submitted_at_utc: <to-be-recorded at submission>
 ---
 
-# DOI 1 — Phase 1a Pre-outcome Analysis Lock (phantom-SoM pre-registration witness)
+# DOI 1 — Phase 1a Pre-canonical-outcome-creation Witness for Fire-3 (phantom-SoM pre-registration)
+
+## 🚫 Retraction notice — original Fire-2-era witness VOIDED 2026-05-18 ~14:45 UTC
+
+A previous Fire-2-era witness file (`artifact_existence_check_doi1_20260518T135722Z.txt`,
+SHA-256 `e0e591f5b19c0248d4a7274cf8b19e54dbcc01706c859bfcbc2530e84de047d6`) was retracted
+because its outcome-artifact capture pattern was incorrect (`episodes/*_summary.json` /
+`*_steps.jsonl` instead of canonical `episodes/<site>_task_<N>_summary_v2.json` /
+`<site>_task_<N>_steps_v2.jsonl` per `p79/experiment/logger_v2.py:111` + `analysis.py:209`).
+
+Fire-2 is treated as an **aborted substrate test** (NLTK punkt missing → B-486 evaluator
+failure → SIGTERM at UTC 14:04; watchdog auto-retry cleanup at UTC 14:06). Fire-2 is NOT
+used as the canonical Phase 1a outcome source.
+
+The **canonical DOI 1 witness** in this bundle was captured **at Fire-3 launch** (post-
+NLTK-substrate-fix, after Fire-3 PID-alive but **before creation or inspection of any
+Fire-3 outcome-bearing artifact**). The interim corrected scan at
+`artifact_existence_check_doi1_interim_20260518T144258Z.txt` (SHA-256
+`7563f0d55b651b604746ef0498fba3439ad7d7e130af97f0adda55e2bc7f1bf8`) documents the
+post-fire-2-cleanup, pre-fire-3 substrate state and serves as audit-trail bridge between
+retraction and canonical capture.
+
+Full retraction audit trail: `master_bug_catalog.md ## /stress witness pattern bug
+retraction` (B-1656~B-1665) + `实验笔记.md §231` + git tag `retraction/osf-doi1-witness-59c60c4`.
+
+---
 
 ## Purpose
 
-This OSF public registration is a **pre-outcome-creation witness** for the
-Phase 1a phantom-SoM phenomenon paper (paper-1, EMNLP / workshop target). It
-deposits the pre-registration document + analysis plan + locked code state at
-a public-ledger timestamp that **precedes the existence of any Phase 1a Pass-1
-outcome artifact** on the experimental host.
+This OSF public registration is a **pre-canonical-outcome-creation witness** for the
+**canonical Fire-3 Phase 1a run** of the phantom-SoM phenomenon paper (paper-1, EMNLP /
+workshop target). It deposits the pre-registration document + analysis plan + locked code
+state at a public-ledger timestamp that **precedes the creation or inspection of any
+Fire-3 outcome-bearing artifact** on the experimental host.
 
-## Empirical pre-outcome-creation status
+Wording precision: "pre-canonical-outcome-creation" rather than "pre-outcome-creation"
+acknowledges that Fire-2 (substrate test) produced + cleaned up partial outputs
+between 13:28-14:06 UTC. The DOI 1 timestamp anchors to **Fire-3 = canonical paper-grade
+run**, NOT to "no outcomes have ever existed in repo history" (which would be false).
 
-UTC 2026-05-18T13:57:22Z ground-truth on A100 host `a100-jiaming-test`
-(10.134.51.2, A100-PCIE-40GB) — captured in companion file
-`artifact_existence_check_doi1_20260518T135722Z.txt`:
+## Empirical pre-canonical-outcome-creation status (canonical capture pending Fire-3)
 
-| Outcome tier | Count | Implication |
+**Canonical witness placeholder** — to be captured at Fire-3 PID-alive moment with
+canonical schema patterns (per `p79/experiment/logger_v2.py:111` + `analysis.py:209`):
+
+| Outcome tier | Canonical pattern | Count (canonical witness, TBD) |
 |---|---|---|
-| `episodes/*_summary.json` (per-episode, earliest tier) | **0** | No per-task end signal |
-| `condition_summary_v2.json` (condition-level) | **0** | No condition aggregation |
-| `episodes/*_steps.jsonl` (step-level intermediate) | **0** | No step data persisted |
-| `results/phantom_paper/*.csv` new post-fire-start | **0** | No new aggregates |
+| Per-episode outcome (earliest tier) | `episodes/<site>_task_<N>_summary_v2.json` | pending fire-3 launch |
+| Condition-level outcome | `condition_summary_v2.json` | pending fire-3 launch |
+| Step-level intermediate | `episodes/<site>_task_<N>_steps_v2.jsonl` | pending fire-3 launch |
+| Aggregate outputs since fire-3 start | `results/phantom_paper/*.csv` | pending fire-3 launch |
+
+The canonical witness will be captured at `artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt`
+within 5 min of fire-3 PID-alive + before any episode_summary_v2.json creation.
+
+## Interim corrected scan (post-fire-2-cleanup, pre-fire-3)
+
+UTC 2026-05-18T14:42:58Z scan with canonical schema patterns — documented in
+`artifact_existence_check_doi1_interim_20260518T144258Z.txt` (SHA-256
+`7563f0d55b651b604746ef0498fba3439ad7d7e130af97f0adda55e2bc7f1bf8`):
+
+| Outcome tier | Canonical pattern | Count (interim) |
+|---|---|---|
+| Per-episode outcome | `episodes/<site>_task_<N>_summary_v2.json` | **0** (fire-2 cleaned at 14:06 UTC) |
+| Condition-level outcome | `condition_summary_v2.json` | **0** |
+| Step-level intermediate | `episodes/<site>_task_<N>_steps_v2.jsonl` | **0** |
+| Run-dir liveness (any files) | known-positive probe | **0** files in fire-2 run dirs |
+
+The interim scan documents the substrate state between fire-2 cleanup and fire-3 launch.
+It is NOT the DOI 1 anchor — its purpose is to bridge the retraction of the buggy
+fire-2-era witness and the capture of the canonical fire-3 witness, providing audit-trail
+continuity for reviewers.
 
 Pre-existing `fig0c_drop_one_bootstrap_ci.csv` (mtime 2026-05-18T13:25:14Z UTC,
-99 bytes, **headers-only with 0 data rows**, **3 minutes BEFORE fire start at
+99 bytes, **headers-only with 0 data rows**, **3 minutes BEFORE Fire-2 start at
 13:28:06Z**) is verified as **archive analysis pipeline scaffolding**, NOT
 Phase 1a outcome.
-
-**Conclusion**: pre-outcome-creation (strongest tier of pre-OSF-witness
-temporal ordering). DOI 1 timestamp precedes any Phase 1a Pass-1 outcome
-artifact creation.
 
 ## Scope disclaimer (paper-grade hygiene — MANDATORY READING for OSF replicators)
 

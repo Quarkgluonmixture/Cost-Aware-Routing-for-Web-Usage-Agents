@@ -7020,3 +7020,61 @@ Triggered by A1.24 fire-day catastrophe (B-1581 + §228 chronicle): user request
 **Lesson sedimented**: doctrine drift between two adjacent /stress cycles (B-1570 retire advisor email gate → B-1650 restore §F.1 pre-data DOI ordering) shows that **single-doctrine-shift commits without explicit-cross-reference to all related ordering invariants leave silent drift**. Future propagation discipline: any framework-level commit must enumerate all related ordering invariants and explicitly retire / preserve / re-anchor each. The B-1570 commit message retired advisor-email-as-lock-gate but did NOT explicitly re-anchor the §F.1 pre-data DOI ordering (which depended on advisor-email-as-gate framing for its operational anchor) — silent semantic dependency created drift.
 
 ---
+
+## /stress witness pattern bug retraction wave — B-1656~B-1665 (2026-05-18 ~14:30-15:00 UTC, Mode A+B+C cross-AI)
+
+> **Trigger**: User invoked `/stress 这个bug` post-§230 doctrine restoration commit (`59c60c4`, pushed). Self-audit + Mode B codex + Mode C gemini cycle caught a paper-grade integrity bug in the witness file I had just committed at `artifact_existence_check_doi1_20260518T135722Z.txt`.
+>
+> **Bug**: witness grep patterns `episodes/*_summary.json` + `episodes/*_steps.jsonl` (no `_v2` suffix) don't match canonical schema `episodes/<site>_task_<N>_summary_v2.json` + `<site>_task_<N>_steps_v2.jsonl` per `p79/experiment/logger_v2.py:111` + `analysis.py:209`. At capture time UTC 13:57:22Z, fire-2 was active and tasks 0-3 had completed (runner log 13:38:44Z = task 4 in progress); pattern returned 0 = methodological false-negative.
+>
+> **User fix-scope (Q1A Q2A-modified Q3A Q4A)**: 2-stage retraction. Stage 1 (this commit) = retract + interim corrected scan + push immediately. Stage 2 (post-fire-3 PID-alive) = canonical fire-3 witness capture.
+
+| ID | Severity | Source | Description / Fix |
+|---|---|---|---|
+| B-1656 | P0 OOB (ABC*) | 3-AI overlap | Schema mismatch witness pattern bug — `*_summary.json` + `*_steps.jsonl` should be `*_summary_v2.json` + `*_steps_v2.jsonl` per `logger_v2.py:111` + `analysis.py:209`. Retraction: VOID header on `artifact_existence_check_doi1_20260518T135722Z.txt` preserves forensic content; NEW `artifact_existence_check_doi1_interim_20260518T144258Z.txt` (SHA-256 `7563f0d5...`) captures post-fire-2-cleanup pre-fire-3 substrate with corrected patterns + known-positive probe; canonical DOI 1 witness deferred to fire-3 PID-alive moment per Q1A. |
+| B-1657 | P0 OOB (AC*) | Claude+Gemini | Commit `59c60c4` at `origin/master` retains immutable false claim in commit message + git history. Resolution: corrective commit (this) + annotated retraction tag `git tag -a retraction/osf-doi1-witness-59c60c4 -m "superseded by <fix-SHA>; suffixless episode patterns invalid per B-1656"` + push. No force-push (memory rule). |
+| B-1658 | P1 OOB (C*) | Gemini Reviewer-3 unique | **"Dark Window" timing attack** — Fire-2 active 13:28-14:04 UTC, witness captured 13:57:22Z = 30-min window where outcomes were physically being created. Even with pattern fixed, reviewer attacks "you had 30 min to observe initial results + tweak prereg + clean up + re-record clean witness". Resolution: P1-3 推荐 — `DOI_1_README.md` adds Fire-2 Substrate Test Disclosure section explicit that fire-2 was NLTK-punkt-substrate-failure aborted test (B-486 evaluator → SIGTERM); fire-2 partial outputs never inspected for paper-grade decisions; cleanup procedural not selective. Gemini "proactive disclosure beats concealment". |
+| B-1659 | P1 (AC) | Claude+Gemini | **Temporal anchor failure** — DOI 1 supposed to witness pre-outcome-creation for canonical paper-grade run = Fire-3 (post-NLTK-fix), but original witness captured during Fire-2. Resolution (user Q2A-modified): keep "pre-outcome-creation" strength + precise term `pre-canonical-outcome-creation for Fire-3`. NOT Gemini's "Pre-Pass1-rerun-witness" downgrade — preserves prereg defense strength while honest about Fire-2. |
+| B-1660 | P1 OOB (B*) | Codex unique | **Staged DOI 1 bundle has propagated bug** — `docs/checkpoints/pre_run/osf_deposit_DOI1_20260518T135722Z/pre_run/{artifact_existence_check,DOI_1_README,osf_lock_manifest,preregistration}.md` copies preserve wrong schema strings. Uploading staged folder to OSF = contaminated bundle. Resolution: `rm -rf docs/checkpoints/pre_run/osf_deposit_DOI1_20260518T135722Z/` (gitignored verify) + re-cp from corrected sources OR delete + Stage 2 regen at fire-3 capture moment. |
+| B-1661 | P1 (AB) | Claude+Codex | **No reusable witness-capture script + no regression test** — one-shot bash heredoc reproduces pattern bug on next witness. Resolution: P1-6 推荐 (codex B-WIT-1) — Stage 2 commit writes `scripts/maintenance/capture_doi1_witness.sh` (canonical patterns hardcoded + cited as comments + known-positive grep + SHA-256 self-doc + bundle regen) + `tests/test_doi1_witness_pattern.py` mirroring `test_io_utils_strict_load.py:48` pattern (create temp `*_summary_v2.json` + assert script returns count=N). DEFERRED to Stage 2 commit (script first used at canonical capture). |
+| B-1662 | P1 OOB (AC*) | Claude+Gemini | **DOI_1_README "Scope disclaimer" coverage asymmetric** — disclaims paper draft archive numbers but NOT witness file methodology. Asymmetric coverage = reviewer attack vector. Resolution: P1-7 推荐 — added "Witness file methodology disclaimer" section citing canonical schema source in `logger_v2.py:111` + `analysis.py:209` + reference Stage 2 capture script + B-1656 lessons. |
+| B-1663 | P2 (B) | Codex | `osf_deposit_package_manifest_2026-05-18.md:3-7` framed OSF mint as post-fire/post-data — pre-correction doctrine residue (predates B-1650 two-DOI doctrine restoration). Resolution: purpose section rewritten with explicit two-DOI workflow timing reference (DOI 1 at Fire-3 launch + DOI 2 post Pass-1+Pass-2+analysis-frozen+paper-final). |
+| B-1664 | P2 (A) | Claude | 实验笔记 §230 correction #2 prose ironically uses wrong `episodes/*_summary.json` pattern in describing the very pattern bug (meta-recursive). Resolution: §231 explicit acknowledgement + chronicle correction. |
+| B-1665 | P2 OOB (C*) | Gemini | **Doctrine drift process gap** — B-1570 retired advisor email gate (~09:30 UTC) without explicit re-anchor of §F.1 pre-data DOI ordering invariant; 4.5h drift until B-1650 correction at ~14:00 UTC. Pattern bug retraction wave (this) within 1h of B-1650 = compressed drift cycle. Resolution: add to `paper_planning.md §20 meta workflow` pre-commit checklist for doctrine-shift commits — enumerate ALL related ordering invariants + explicitly retire/preserve/re-anchor each. (P2 because process-tier improvement, not direct paper-grade gate.) |
+
+**Cross-AI verification summary**: A (Claude self) PASS · B (codex `/codex-stress` 5362 bytes, ~2 min wallclock) PASS · C (gemini `/gemini-stress` 4407 bytes, ~1 min wallclock) PASS. Phase 1-4 sanity all passed; Phase 4 spot-check 2-of-3 codex claims verified (logger_v2.py:111 + analysis.py:209). All findings ground-truth-verified against codebase canonical schema source.
+
+**Cross-AI agreement bands**:
+- **3-AI overlap (ABC*)**: 1 finding (B-1656 pattern bug, highest confidence)
+- **2-AI overlap**: 3 findings (B-1657 git-history AC* / B-1659 temporal anchor AC / B-1661 regression-safety AB / B-1662 disclaimer asymmetry AC*)
+- **1-AI unique**: 3 findings — gemini OOB 2 (B-1658 Dark Window + B-1665 doctrine drift process) + codex OOB 1 (B-1660 staged bundle) + codex 1 (B-1663 stale framing) + Claude 1 (B-1664 meta-recursive)
+
+**11 file actions in this Stage 1 retraction commit**:
+1. `artifact_existence_check_doi1_20260518T135722Z.txt` — VOID retraction header prepended (B-1656)
+2. NEW `artifact_existence_check_doi1_interim_20260518T144258Z.txt` (B-1656; SHA-256 `7563f0d55b651b604746ef0498fba3439ad7d7e130af97f0adda55e2bc7f1bf8`)
+3. `DOI_1_README.md` — retraction notice + terminology + empirical status table replacement + Fire-2 disclosure + witness methodology disclaimer (B-1656/B-1658/B-1659/B-1662)
+4. `osf_lock_manifest.md §1` — DOI 1 mintability `NOW` → `AT FIRE-3 LAUNCH` + retracted-witness disclosure (B-1656/B-1659)
+5. `osf_lock_manifest.md §2.4 Layer 3` — terminology + canonical witness pending fire-3 + interim audit-trail bridge (B-1659)
+6. `osf_lock_manifest.md §3b step 2` — DOI 2 bundle list pattern fix + canonical schema citation (B-1656)
+7. `preregistration.md frontmatter L9 + osf_doi_1_* key` — terminology + retracted-witness disclosure (B-1656/B-1659)
+8. `preregistration.md §6(b) Bundle` — DOI 2 bundle pattern fix (B-1656)
+9. `next_steps.md L32 item #3` — terminology + fire-3-launch capture moment (B-1656/B-1659)
+10. `osf_deposit_package_manifest_2026-05-18.md` — purpose section two-DOI workflow timing update (B-1663)
+11. `master_bug_catalog.md` — this `## /stress witness pattern bug retraction` section (B-1655)
+12. `实验笔记.md §231` — retraction chronicle + cross-AI cycle findings + Stage 1/2 plan (B-1655)
+
+**Plus**: staged DOI 1 bundle regen (rm + re-cp from corrected sources) + git annotated retraction tag `retraction/osf-doi1-witness-59c60c4` pointing at parent commit + push immediately per Q4A.
+
+**Stage 2 deferred items** (to next commit at fire-3 PID-alive):
+- B-1661 reusable capture script + regression test
+- B-1660 final staged bundle regen with canonical fire-3 witness
+- canonical witness file `artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt`
+- bundle regen for OSF upload
+
+**Lesson sedimented**:
+1. **Memory-as-defense doctrine empirically fails under time pressure** — [[feedback-spotcheck-length-claims]] memory existed; Claude read it at session start; still made the bug. Future structural mitigation: /stress Phase 0 self-audit gain explicit "any numeric/count claim must verify canonical schema source in codebase BEFORE writing claim" check.
+2. **Cross-AI catches reviewer-3 attacks self-audit misses** — Gemini "Dark Window" + temporal-anchor attacks are pure reviewer-skeptical framing only prose-audit lineage catches. Default-include reviewer-3 lens for time-ordering decisions.
+3. **Doctrine drift between adjacent cycles invisible without invariant enumeration** — B-1570 → B-1650 → B-1656 drift chain. Pre-commit checklist for doctrine-shift commits + framework-level commits.
+4. **Retraction discipline = corrective commit + annotated tag + push, no force-push** — codex B-WIT-3 protocol. GitHub history retains bugged commit (immutable) but audit-trail structurally complete via annotated tag superseding.
+
+---

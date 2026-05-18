@@ -1,17 +1,30 @@
 # OSF Deposit Package Manifest — Phase 1a Pass-1 launch event 2026-05-18
 
-> **Purpose**: Pre-fire collection of artifacts ready for OSF DOI mint
-> (Step 7 of `osf_lock_manifest.md §3` 8-step workflow). Per B-1570
-> doctrine shift 2026-05-18, OSF DOI mint is POST-Phase-1a-fire-data-complete;
-> this manifest pre-stages the artifact bundle so the post-fire mint
-> event is a 30-minute "upload + click mint" operation, not a scramble.
+> **Purpose**: Pre-fire collection of artifacts ready for OSF DOI mint.
+>
+> **Updated 2026-05-18 ~14:45 UTC per /stress B-1656~B-1665 witness pattern bug
+> retraction wave** (restores 2026-05-05 §F.1 + propagates B-1650~B-1655 two-DOI
+> doctrine restoration): OSF DOI is now **two-DOI split** per `osf_lock_manifest.md §3a/§3b`:
+>
+> - **DOI 1 (pre-canonical-outcome-creation witness for Fire-3)**: minted at Fire-3
+>   launch moment (5 min before any episode-summary creation), captures cryptographic
+>   pre-outcome anchor for the canonical Phase 1a run. **NOT post-Pass-1-data-complete**
+>   (pre-correction doctrine drift superseded per B-1650). Bundle = pre-run/*.md docs
+>   + paper_drafts/section{1..8} @ ef609a3-or-fire3-HEAD + env_snapshot.json (A100,
+>   fire-3 epoch) + DOI_1_README.md + artifact_existence_check_doi1_canonical_<fire3-UTC>.txt.
+>
+> - **DOI 2 (Phase 1a reproducibility bundle)**: minted post Pass-1 + Pass-2 +
+>   analysis-scripts-frozen + paper §1-§8 finalized (~2-3 weeks post-fire-3). Bundle =
+>   42 condition_summary_v2.json + episodes/*_summary_v2.json + episodes/*_steps_v2.jsonl
+>   + results/phantom_paper/*.csv + figures + frozen analysis scripts + finalized paper
+>   + DOI_2_README.md (mandatory `cited_by: DOI 1`).
 >
 > **Workflow timing**:
-> - **Pre-fire (this manifest)**: artifacts pre-collected + verified
-> - **At Phase 1a Pass-1 launch**: git tag `preregistration-locked` created;
->   fire-time Git SHA captured into this manifest
-> - **Post-Phase-1a-Pass-1-data-complete**: user uploads bundle to OSF +
->   mints DOI + backfills `osf_lock_manifest.md §2` `<TBD>` cells
+> - **Pre-fire-3 (this manifest)**: artifacts pre-collected + verified
+> - **At Fire-3 launch + PID-alive**: 5-min canonical witness capture + git tag
+>   `preregistration-doi1-witnessed-<DOI>` post-DOI-assignment; commit + push
+> - **Post-Pass-1+Pass-2+analysis-frozen+paper-final**: DOI 2 deposit uploaded
+>   to OSF + DOI 2 minted + backfills `osf_lock_manifest.md §2` `<TBD>` cells
 >
 > **Status**: 🟢 Pre-fire bundle ready 2026-05-18 (subject to fire-time
 > Git SHA + paper_drafts snapshot copy at fire event).
