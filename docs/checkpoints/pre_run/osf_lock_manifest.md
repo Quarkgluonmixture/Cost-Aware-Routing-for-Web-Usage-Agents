@@ -2,7 +2,8 @@
 
 **Purpose**: Codify the artefacts whose SHA-256 / git ref get frozen at the
 moment of OSF preregistration DOI minting. Once advisor's email reply arrives
-(post 5/5 sync) confirming K_h1 / K_h3 / TOST δ thresholds, this checklist
+(post 5/5 sync) confirming **H1 FE superiority δ=1.0pp / H3 axis-1+axis-2 gates / H10 Pareto non-dominance / K-of-N transparency-only (no thresholds) / TOST retired per /stress A2.3c B-1051**
+(B-1265 /stress A2.6a P0-6-B* 2026-05-18 — supersedes stale "K_h1 / K_h3 / TOST δ thresholds" phrasing that contradicted `preregistration.md §2.4 + §2 H1 + §3` TOST retirement 2026-05-17 + K-of-N transparency-only 2026-05-13 reclassification), this checklist
 drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision log + `osf_lock_manifest.md §3`; ADVISOR_SYNC.md retired 2026-05-15, commit `f64bc9d`, replaced by `_status/issues/issue_advisor_sync_2026-05-14.md` frontmatter + Bases view).
 
 **Status**: 🟡 Draft — fields populate at lock moment.
@@ -12,9 +13,8 @@ drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision
 
 ## §1 Pre-lock checklist (everything must be done before OSF DOI mint)
 
-- [ ] Advisor email reply received (K_h1=0.75 transparency / K_h3=0.67 transparency /
-      TOST δ=1.0pp SR-margin / Phase 1a 42-condition 6-cell scope (36 baseline + 6 router; A1.21 P1-5 align 2026-05-17) confirmed
-      OR alternative noted)
+- [ ] Advisor email reply received (**H1 FE superiority δ=1.0pp** / **H3 axis-1+axis-2 gates** / **H10 Pareto non-dominance** / **K-of-N transparency-only (no thresholds; ratio K_h1/K_h3 fake-precision argument)** / **TOST retired** per /stress A2.3c B-1051 2026-05-17 + B-957 2026-05-17 / Phase 1a **42-condition 6-cell scope (36 Pass-1 baseline + 6 Pass-2 learned router; A1.21 P1-5 align 2026-05-17)** confirmed
+      OR alternative noted) — **Updated 2026-05-18 per /stress A2.6a B-1265 P0-6-B*** — supersedes stale "K_h1=0.75 transparency / K_h3=0.67 transparency / TOST δ=1.0pp SR-margin" phrasing that contradicted `preregistration.md §2.4 + §2 H1 + §3` TOST retirement 2026-05-17 + K-of-N transparency-only 2026-05-13 reclassification.
 - [ ] `preregistration.md` final text edit committed + pushed (incl. 2026-05-13
       codex stress audit propagation: K-of-N transparency-only + 24/4 scope +
       drop-one H1 formula + outcome-independent smoke gate + Appendix A 2026-05-13)
@@ -59,10 +59,10 @@ drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision
 | H3 PRIMARY gate axis-2 (P-prompt \ P-SoM) | Same as axis-1 | ⏳ pending | Requires P-prompt mode (re-included 2026-05-13) |
 | K-of-N transparency count (NOT a gate, NO threshold) | Report n of 6 cells with per-cell CI > 0 + n individually Holm-sig, for H1 + each H3 axis (decision "3A" 2026-05-14: K_h1=0.75 / K_h3=0.67 ratios retired — at both N=4 and N=6 the ratios are indistinguishable, ⌈0.75×6⌉=⌈0.67×6⌉=5; fake precision) | ⏳ pending | Reclassified gate → transparency 2026-05-13 (power analysis dysfunction at <7pp effects); cell count expanded 4 → 6 per B2 addition 2026-05-14. Reported alongside pooled FE meta as per-cell consistency check; no decision rule. |
 | ~~K_h3 transparency ratio~~ (RETIRED — folded into K-of-N transparency count row above) | — | — | Retired 2026-05-14 (same fake-precision argument as K_h1 at both N=4 and N=6) |
-| H1(ii) superiority threshold δ (SR-margin) — also TOST informational margin | 1.0pp | ⏳ pending | SR percentage-point margin for H1(ii) one-sided superiority test (primary) + TOST equivalence informational secondary; distinct from H2(a) cost ±10% relative margin |
+| H1 superiority threshold δ (SR-margin) | 1.0pp | ⏳ pending | SR percentage-point margin for H1 one-sided FE superiority test (primary; m=1 single test per §3); distinct from H2(a) cost ±10% relative margin. **Updated 2026-05-18 per /stress A2.6a B-1265 P0-6-B*** — supersedes stale "H1(ii) ... — also TOST informational margin" phrasing that referenced retired TOST framework per `preregistration.md §2.4` TOST retirement 2026-05-17 (B-957 + B-1051 sibling-propagation sweep). |
 | Cell scope (Phase 1a operational) | **42 conditions** = **Pass-1 baseline 36** (2 sites × 3 models × 6 modes) + **Pass-2 learned router 6** (2 sites × 3 models × 1 router cond/cell, `obs_mode="learned"` sentinel) | ⏳ pending | A1.21 P1-5 fix 2026-05-17 (B-533, codex F10): aligned with prereg §4 L438 "42 conditions" scope expansion 2026-05-16 (B-264+B-267 /stress A1.7 cross-AI cycle for §2 H10 Pass-2 router parity with gating-hypothesis registration). Replaces prior "36 operational" entry which was Pass-1-only and mismatched preregistration since 2026-05-16 |
 | Cell scope (Phase 1a statistical) | **6 cells** = (site, model) tuples: (cls, B0), (cls, B1), (cls, B2), (red, B0), (red, B1), (red, B2) | ⏳ pending | One drop-one number per cell; pooled FE meta input (decision "3A" 2026-05-14, FE not DL); k=4 → k=6 per B2 addition 2026-05-14 |
-| Cell scope (Phase 1b deferred) | +12 conditions = shop × B0+B1 × 6 modes | ⏳ pending | Main-paper expansion lever; not part of Phase 1a workshop submission |
+| Cell scope (Phase 1b deferred) | **+21 conditions** = shop × {B0, B1, B2} × (6 baseline + 1 learned router). N_cells statistical becomes 9 (= 3 sites × 3 models) when Phase 1b lands. | ⏳ pending | Main-paper expansion lever; not part of Phase 1a workshop submission. **Updated 2026-05-18 per /stress A2.6a B-1263 P0-4-B*** — supersedes stale "+12 conditions = shop × B0+B1 × 6 modes" phrasing (which omitted B2 and Pass-2 learned router); consolidates with `preregistration.md §4 N_conditions Phase 1b row + Cell inclusion Phase 1b row` + `phase1_plan.md:42` to single +21 source. |
 
 ### 2.3 Environment fingerprints (per-machine snapshots)
 
