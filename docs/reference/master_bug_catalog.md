@@ -6308,3 +6308,32 @@ Initial code edits used B-895~B-897 → would collide with parallel §207 A2.1 (
 **Concurrent-session boundary preserved**: parallel A2.3a + B0 proxy migration follow-up landed B-947~B-993 same time window. File scope disjoint.
 
 **Phase 1a fire green-light: ON**. P0-3-B* H3 KeyError CRASH was only true blocker; defensive `.get()` resolves. A2.2 + A2.4a prerequisites both met. Q1=A wait-fix-all honored.
+
+## A2.4b — Cross-axis (site+model) evidence-claim coupling — /stress A2.4b Mode A+C cycle (2026-05-18 ~01:00 BST)
+
+8 fixes B-1103~B-1110 paper §1 L27 stale-claim retraction + scroll-vocab cross-baseline alignment via prompt unify。Mode B (codex) SKIPPED smoke fail env `ZSH_VERSION`, Mode A + C only。详见 实验笔记 §212。
+
+### Chunk α (code, ~1.5h) — scroll-vocab cross-baseline prompt unify + B0 conversion removal
+
+- **B-1110 [P0-OOB, Claude+gemini AC*]** `p79/agents/_shared_vl_utils.py:117/188/301` + `p79/agents/proxy_api_agent.py:722-726` + `p79/experiment/runner/main.py:2989` — fully symmetric JSONL scroll-action emission across baselines。B1/B2 prompt template `delta:[dx,dy]` → `scroll_direction:"up"|"down"` enum;B0 proxy agent scroll_direction→delta legacy conversion 删除;runner alternation detection 先读 canonical scroll_direction (delta as backward-compat fallback)。Phase 4 deep claim-realness 实证 execution-layer 已 byte-symmetric: vwa_wrapper B-512 + VWA upstream `execute_scroll(direction)` 用 fixed `±window.innerHeight` magnitude。pytest 61 pass / 0 regression。
+
+### Chunk β (prose, ~2h) — paper §1 L27 stale-claim retraction + supporting prose patches
+
+- **B-1103 [Q1, user direction]** `pre_run/preregistration.md:600` §7 reproducibility scope — B2 non-replication consequence inline disclaimer。`scope statement IS the falsification rule` (NOT R3 cap, NOT post-hoc rationalization)。Per user "我相信我的现象 NO B2 fallback" + literature triple-anchor (Mirage Asadi 2026 + Scaffold Vu Balloccu 2026 + Sclar 2024 cross-family validated)。
+- **B-1104 [P1-OOB, gemini C]** `pre_run/preregistration.md:462` §4 N_cells Phase 1b row — ±2pp R3→R1 upgrade threshold empirical anchor。2× median archive per-cell paired-bootstrap SE 0.766-1.096pp on cls/red P-SoM → 1.92pp ≈ 2.0pp。预 register 边界 (not post-hoc tunable)。
+- **B-1105+B-1106 [P0+P1, gemini C]** `paper_drafts/section1_intro.md:21` 跨-site asymmetry sentence — P0-3 causal "make layout and appearance important" → correlation "correlates with denser visual product-listing layouts"; P1-8 hedge "is itself informative" → boundary-mapping "we use this asymmetry to empirically map the boundary conditions"。N=2 sites alternative explanations explicit disclose (site-baseline variance, page DOM size, task complexity, marketplace listing-length, task-type distribution)。
+- **B-1107 [P0, NEW critical Phase 4 deep claim-realness]** `paper_drafts/section1_intro.md:27` scroll-vocab disclosure paragraph rewrite — supersedes B-333/B-902 stale "B1/B2 execution-layer advantage" framing。3 evidence layers: proxy_api_agent.py:74 B0 tool schema + _shared_vl_utils.py post-Chunk-α B1/B2 prompt template + vwa_wrapper.py:462-493 B-512 collapse + VWA upstream actions.py:936 `execute_scroll(direction)` fixed `±window.innerHeight` executor。Cross-baseline execution-layer **byte-symmetric**。`feedback_spotcheck_length_claims.md` 2026-05-16 rule precedent (mental-model ≠ artifact-grep)。
+- **B-1108 [P1, Claude+gemini AC]** `paper_drafts/section1_intro.md:11` task-type within-site cross-axis acknowledgment — unique-pass set 7 reddit + 6 cls tasks 跨 task-type stability cross-ref §4.X heatmap analysis 防 single-anomalous-task-cluster artifact。
+- **B-1109 [P0-OOB, Claude+gemini AC*]** `paper_drafts/section8_limitations.md:3` §8.1 explicit N=3 underdetermined-ness admission — at N=3, deployment-tier (B0 API vs B1/B2 local) + family (Qwen B0/B1 vs Gemma B2) 2 orthogonal axes 不能 mathematically isolate;需 4th matched-corner baseline (e.g., Qwen-via-API at 4B or Gemma-via-API)。B0-vs-B1 gaps scope 为 deployment-tier differences (not capability-scaling effects); B1-vs-B2 gaps scope 为 4B-parity cross-family robustness checks (not family-universality)。
+
+### Chunk γ (closure)
+
+- phase1_plan §A2.4b `[ ]` → `[x]` (line 155 tick)
+- master_bug_catalog ## A2.4b section (this entry)
+- 实验笔记 §212 chronicle append
+
+### Phase 4 hallucination log (per v7.8 trust modulation)
+
+- **C-F1** cite `section8_limitations.md:38` — actual file 34 lines OOB; quote "joint deployment-class × capability-scale" 实际在 `section1_intro.md:27` (wrong file). Attack valid (overlaps Mode A F2)
+- **C-F2** cite `preregistration.md:590` — actual L601 off-by-11. Quote verbatim correct. Cite minor drift
+- Rate: 2/7 = 29% (within v7.8 lineage idiosyncrasy <5/7 corruption threshold); NO whole-audit retry per spec
