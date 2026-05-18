@@ -29,6 +29,7 @@ showing top-3 signals per (baseline, site, mode).
 from __future__ import annotations
 
 import argparse
+import math
 import re
 from pathlib import Path
 
@@ -129,12 +130,85 @@ def main() -> int:
         "baseline", "site", "mode", "signal", "signal_type",
         "AUROC", "AUROC_ci_lower", "AUROC_ci_upper", "n", "run_id",
     ]]
+
+    # B-1056 (/stress A2.3c Mode A F5 + Mode B B4, 2026-05-18): per-(mode, signal)
+    # AUROC family-corrected multiplicity emission. Pre-fix file emitted only
+    # AUROC + CI; prereg §3 line 423 + §4 line 424 promise "Holm-corrected
+    # within mode" + "BH q-value reported for transparency". Producer never
+    # emitted p-values, making Holm/BH mathematically impossible to apply
+    # downstream → prereg promise vapor.
+    #
+    # Approach (Hanley-McNeil 1982 standard for AUROC null testing):
+    #   1. SE_AUROC ≈ (CI_upper - CI_lower) / (2 × 1.96) [normal-approx from CI]
+    #   2. Z = (AUROC - 0.5) / SE_AUROC [H0: AUROC ≤ 0.5 = random]
+    #   3. p_one_sided = 1 - Φ(Z) [upper-tail]
+    #   4. Holm within each (baseline, site, mode) group (per prereg §4 line 423)
+    #   5. BH-FDR across full exploratory family (per prereg §4 line 424)
+    #
+    # Mode B P0-5-B catch: AUROC family had NO p-values to correct at all;
+    # this addition enables the prereg-promised multiplicity transparency.
+
+    def _phi(z):
+        return 0.5 * (1.0 + math.erf(z / math.sqrt(2)))
+
+    def _derive_p_one_sided(row):
+        auroc = row.get("AUROC")
+        ci_lo = row.get("AUROC_ci_lower")
+        ci_hi = row.get("AUROC_ci_upper")
+        if pd.isna(auroc) or pd.isna(ci_lo) or pd.isna(ci_hi):
+            return None
+        se = (ci_hi - ci_lo) / (2 * 1.96)
+        if se <= 0:
+            return 1.0 if auroc <= 0.5 else 0.0  # degenerate
+        z = (auroc - 0.5) / se
+        return float(1.0 - _phi(z))
+
+    full["p_one_sided"] = full.apply(_derive_p_one_sided, axis=1)
+
+    def _holm_within(group):
+        # Holm-Bonferroni step-down per prereg §4 line 423 (within mode)
+        ps = group["p_one_sided"].tolist()
+        n = len(ps)
+        if n == 0:
+            return group.assign(p_holm=None, holm_m=0)
+        indexed = sorted(((i, p) for i, p in enumerate(ps) if p is not None), key=lambda x: x[1])
+        p_holm = [None] * n
+        prev_adj = 0.0
+        for rank, (orig_idx, p) in enumerate(indexed):
+            adj = min(1.0, max(prev_adj, p * (n - rank)))
+            p_holm[orig_idx] = adj
+            prev_adj = adj
+        return group.assign(p_holm=p_holm, holm_m=n)
+
+    full = full.groupby(["baseline", "site", "mode"], group_keys=False).apply(_holm_within)
+
+    # BH-FDR across full exploratory family (per prereg §4 line 424)
+    # Benjamini-Hochberg 1995: for ranks i=1..N sorted by p ascending,
+    # q_i = min over k>=i of (p_k * N / k); enforce monotone non-decreasing
+    valid_ps = [(i, p) for i, p in enumerate(full["p_one_sided"].tolist()) if p is not None]
+    valid_ps.sort(key=lambda x: x[1])
+    n_bh = len(valid_ps)
+    q_bh_list = [None] * len(full)
+    if n_bh > 0:
+        # Compute raw BH q from highest rank down (enforce monotone)
+        running_min = 1.0
+        for rev_rank in range(n_bh - 1, -1, -1):
+            orig_idx, p = valid_ps[rev_rank]
+            q_raw = p * n_bh / (rev_rank + 1)
+            running_min = min(running_min, q_raw)
+            q_bh_list[orig_idx] = min(1.0, running_min)
+    full["q_bh"] = q_bh_list
+    full["bh_family_N"] = n_bh
+
     full = full.sort_values(["baseline", "site", "mode", "AUROC"], ascending=[True, True, True, False])
 
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
+    # B-1056 ensures CSV includes p_one_sided, p_holm, holm_m, q_bh, bh_family_N
+    # columns (added above). Downstream readers can now diff prereg §4 line
+    # 423-424 promise against artifact CSV + find Holm/BH q-values per-row.
     full.to_csv(out, index=False)
-    print(f"wrote {out} ({len(full)} rows)")
+    print(f"wrote {out} ({len(full)} rows; B-1056 p_one_sided + p_holm + q_bh emitted)")
 
     # Markdown top-3 per (baseline, site, mode)
     md = out.with_suffix(".md")
