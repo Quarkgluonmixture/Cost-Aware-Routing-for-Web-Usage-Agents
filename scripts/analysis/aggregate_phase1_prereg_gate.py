@@ -154,6 +154,15 @@ def _cell_drop_one_theta_se(
         "se_pp": se_pp,
         "ci95_lo_pp": ci_lo,
         "ci95_hi_pp": ci_hi,
+        # B-1301 (/stress A2.3d P0-1-AB*, 2026-05-18): expose the 1000-rep paired
+        # bootstrap distribution so the canonical producer can compute the
+        # prereg-locked bootstrap percentile FE pool p-value (B-1009 amend).
+        # Pre-fix this array was discarded after se_pp/ci derivation; the B-1009
+        # amendment promised `P(θ_FE* ≤ 1.0pp)` over 1000 paired-bootstrap pool
+        # replicates but never had the per-cell substrate to pool. Returning the
+        # B-length float32 vector lets `aggregate_phase1_full_prereg_decision`
+        # IV-weight per-iteration θ_i_b → θ_FE_b distribution.
+        "boot_pp": boot_thetas.astype(np.float32),
         "oracle_6_pp": 100.0 * len(oracle_6) / n,
         "oracle_5_no_psom_pp": 100.0 * len(oracle_5_no_psom) / n,
         "n_psom_only": int(diff.sum()),

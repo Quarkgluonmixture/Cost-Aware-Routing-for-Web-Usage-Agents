@@ -1,0 +1,57 @@
+{
+  "marker": "B-1009 bootstrap-percentile prereg-promise + B-1301 implementation smoke artifact",
+  "scope": "synthetic 3-cell archive-like recreation (B0 cls + B0 red + B1 cls signal strength)",
+  "purpose": "Closes prereg \u00a72 H1 L85 smoke-check reproducibility gap. The B-1009 amendment quoted 'percentile p=0.0000, normal-Z p=5e-06 bit-identical decision' but lacked a reproducible code artifact. /stress A2.3d B-1301 implements canonical bootstrap percentile path; this artifact demonstrates the path executes + produces sane values at archive-strength signal.",
+  "synth_cells": [
+    {
+      "baseline": "B0",
+      "n_tasks": 234,
+      "theta_pp": 2.619332055822326,
+      "se_pp": 0.9792159381796757
+    },
+    {
+      "baseline": "B0",
+      "n_tasks": 210,
+      "theta_pp": 2.0779198609740717,
+      "se_pp": 1.0971998149501632
+    },
+    {
+      "baseline": "B1",
+      "n_tasks": 234,
+      "theta_pp": 2.4044923452081384,
+      "se_pp": 0.7572597964485969
+    }
+  ],
+  "bootstrap_percentile_gate_result": {
+    "k_cells": 3,
+    "B_replicates": 1000,
+    "theta_null_pp": 1.0,
+    "alpha": 0.05,
+    "p_one_sided_bootstrap": 0.0,
+    "ci95_lo_pp_bootstrap": 1.400575466051217,
+    "ci95_hi_pp_bootstrap": 3.464812708726842,
+    "theta_fe_bootstrap_median_pp": 2.388238335825281,
+    "gate_passed_bootstrap": true,
+    "n_below_se_floor": 0,
+    "se_floor_threshold_pp": 0.68,
+    "se_floor_replace_pp": 1.0
+  },
+  "normal_z_transparency": {
+    "theta_FE_point_pp": 2.3914395678875926,
+    "se_FE_point_pp": 0.5257753430437451,
+    "z_one_sided": 2.646452684206272,
+    "p_one_sided_normal_approx": 0.004067044180886992
+  },
+  "decision_direction_agreement": {
+    "p_bootstrap_lt_alpha": true,
+    "p_normal_lt_alpha": true,
+    "agree": true,
+    "delta_p_bootstrap_minus_normal": -0.004067044180886992,
+    "interpretation": "At archive-strength signal (\u03b8\u22482.4pp, SE\u22480.5pp), bootstrap percentile and normal-Z agree on decision direction (both reject H0: \u03b8_FE \u2264 1.0pp at \u03b1=0.05). The prereg L85 rationale for bootstrap percentile (boundary p\u22480.045-0.055 cases) is not tested by archive signal; this smoke check validates the implementation path execution + sanity-checks decision-direction at strong-signal regime only."
+  },
+  "method_reference": "Davidson & MacKinnon (2000) / Hall (1992) paired-bootstrap pool",
+  "prereg_witness": "preregistration.md \u00a72 H1 L85 B-1009 amendment (2026-05-18)",
+  "code_witness": "scripts/analysis/aggregate_phase1_full_prereg_decision.py _pool_bootstrap_percentile_p() B-1301",
+  "execution_seed": 42,
+  "B_replicates": 1000
+}

@@ -364,6 +364,99 @@ def _h3_axis_per_cell(per_task: Dict[str, Dict[str, Dict]], axis_mode: str,
         "ci95_lo_pp": ci_lo,
         "ci95_hi_pp": ci_hi,
         "p_percentile_one_sided": p_percentile_one_sided,
+        # B-1302 (/stress A2.3d P1-6-AC sibling of P0-1, 2026-05-18): expose the
+        # per-cell bootstrap distribution so the H3 axis FE pool can compute the
+        # B-1009 sibling bootstrap-percentile CI gate (H3 prereg §2 H3(i)/(ii)
+        # gate = "FE CI excludes 0", consistent with H1 P0-1 fix).
+        "boot_pp": boot.astype(np.float32),
+    }
+
+
+# ---------------------------------------------------------------------------
+# B-1009 paired-bootstrap pool replicate percentile p-value
+# (B-1301 /stress A2.3d P0-1-AB*, 2026-05-18 — implementation companion to
+# preregistration.md §2 H1 line 85 amendment which had been prose-only)
+# ---------------------------------------------------------------------------
+
+def _pool_bootstrap_percentile_p(per_cell_with_boot: List[Dict], *,
+                                  theta_null_pp: float = 1.0,
+                                  alpha: float = 0.05) -> Optional[Dict]:
+    """Paired-bootstrap pool replicate FE percentile p-value.
+
+    Implements the prereg-locked B-1009 primary gate (preregistration.md §2 H1
+    line 85): one-sided bootstrap percentile p = `P(θ_FE* ≤ theta_null_pp)`
+    over the per-cell bootstrap replicates pooled with IV weights.
+
+    Operational semantics (B-1303 prereg L85 operational lock):
+      - per-cell paired bootstrap replicates θ_i_b are reused from
+        `_cell_drop_one_theta_se`'s cached `boot_pp` array (B=1000, seed=42 per
+        B-176 + per-axis SHA seed per B-1006); NOT re-resampled here
+      - per-cell IV weights `w_i = 1 / SE_i²` use the *point-estimate* SE_i
+        from each cell's bootstrap std (subject to B-1003 Agresti-Coull
+        threshold + B-426 floor); weights are held fixed across the B pool
+        iterations (Davidson & MacKinnon 2000 / Hall 1992 standard paired
+        bootstrap pool: bootstrap captures cell-level signal variability under
+        fixed precision weighting; per-iter SE re-estimation would require
+        nested 1M-resample inner loop with marginal accuracy gain at k=6)
+      - per iter b: θ_FE_b = Σ(w_i · θ_i_b) / Σw_i ; pooled bootstrap
+        distribution is the k-vector × B array stacked + IV-pooled
+      - p_one_sided_bootstrap = (1/B) · |{b : θ_FE_b ≤ theta_null_pp}|
+      - bootstrap percentile 95% two-sided CI = [q_0.025(θ_FE*), q_0.975(θ_FE*)]
+
+    Why this implementation matches B-1009 amendment intent (codex Mode B F1 +
+    Claude Mode A F1 OOB 2026-05-18 /stress A2.3d catch): pre-fix the canonical
+    producer gated H1 on `p_one_sided = 1 - Φ(z)` (normal-Z Wald against
+    δ=1.0pp) while prereg L85 promised bootstrap percentile. This left the
+    prose↔code gap that broke OSF audit-trail reproducibility — Phase 1a fire
+    would emit normal-Z primary in artifact JSON despite prereg-promised
+    bootstrap percentile. This function closes the gap by computing both
+    quantities (bootstrap percentile primary + normal-Z transparency
+    transparency_p_one_sided_normal_approx via existing `_fe_pool`).
+    """
+    k = len(per_cell_with_boot)
+    if k < 2:
+        return None
+    # Stack per-cell bootstrap replicate matrix: shape (k, B)
+    boot_matrix = np.array([np.asarray(c["boot_pp"], dtype=np.float64)
+                             for c in per_cell_with_boot])
+    if boot_matrix.shape[0] != k:
+        return None
+    B_count = boot_matrix.shape[1]
+    # Per-cell point-estimate SE (post B-1003 threshold-aware floor)
+    ses = np.array([float(c["se_pp"]) for c in per_cell_with_boot])
+    SE_FLOOR_THRESHOLD_PP = 0.68
+    SE_FLOOR_REPLACE_PP = 1.0
+    n_below_floor = int((ses < SE_FLOOR_THRESHOLD_PP).sum())
+    if n_below_floor > 0:
+        ses = np.where(ses < SE_FLOOR_THRESHOLD_PP, SE_FLOOR_REPLACE_PP, ses)
+    w = 1.0 / (ses ** 2)
+    sum_w = float(np.sum(w))
+    # IV-weighted pool per iter b: θ_FE_b = Σ(w_i · θ_i_b) / Σw_i
+    theta_fe_boot = (w[:, None] * boot_matrix).sum(axis=0) / sum_w
+    p_one_sided_bootstrap = float((theta_fe_boot <= theta_null_pp).mean())
+    ci95_lo_pp_bootstrap = float(np.quantile(theta_fe_boot, 0.025))
+    ci95_hi_pp_bootstrap = float(np.quantile(theta_fe_boot, 0.975))
+    # Bootstrap-distribution median (point estimate for symmetric reporting)
+    theta_fe_bootstrap_median_pp = float(np.median(theta_fe_boot))
+    return {
+        "k_cells": k,
+        "B_replicates": int(B_count),
+        "theta_null_pp": theta_null_pp,
+        "alpha": alpha,
+        "p_one_sided_bootstrap": p_one_sided_bootstrap,
+        "ci95_lo_pp_bootstrap": ci95_lo_pp_bootstrap,
+        "ci95_hi_pp_bootstrap": ci95_hi_pp_bootstrap,
+        "theta_fe_bootstrap_median_pp": theta_fe_bootstrap_median_pp,
+        "gate_passed_bootstrap": bool(p_one_sided_bootstrap < alpha),
+        "n_below_se_floor": n_below_floor,
+        "se_floor_threshold_pp": SE_FLOOR_THRESHOLD_PP,
+        "se_floor_replace_pp": SE_FLOOR_REPLACE_PP,
+        "method_note": (
+            "Davidson-MacKinnon 2000 / Hall 1992 paired-bootstrap pool: "
+            "fixed point-estimate IV weights × per-cell bootstrap θ_i_b → "
+            "pooled θ_FE_b distribution; one-sided percentile p at H0: "
+            "θ_FE ≤ theta_null_pp; bootstrap percentile two-sided 95% CI."
+        ),
     }
 
 
@@ -702,6 +795,21 @@ def build_full_decision(cells: List[Dict]) -> Dict:
     payload["pooled_h1_fe"] = fe
     payload["h1_heterogeneity"] = isq_payload
 
+    # B-1301 (/stress A2.3d P0-1-AB* 3-AI overlap OOB, 2026-05-18): compute the
+    # B-1009 prereg-locked primary bootstrap percentile FE pool p-value via
+    # `_pool_bootstrap_percentile_p` over per-cell bootstrap distributions now
+    # exposed by `_cell_drop_one_theta_se` (B-1301 substrate fix). Pre-fix
+    # `fe["gate_passed"]` was the primary gate but computed off normal-Z Wald
+    # p_one_sided despite prereg L85 amend promising bootstrap percentile; this
+    # left the prose↔code gap that broke OSF audit-trail reproducibility.
+    # Both p-values now emit: `pooled_h1_bootstrap.p_one_sided_bootstrap`
+    # (PRIMARY, drives `h1_pass`) + `pooled_h1_fe.p_one_sided` (legacy normal-Z,
+    # retained as transparency channel per amendment).
+    pooled_h1_bootstrap = _pool_bootstrap_percentile_p(
+        h1_per_cell_list, theta_null_pp=DELTA_PP, alpha=ALPHA,
+    )
+    payload["pooled_h1_bootstrap"] = pooled_h1_bootstrap
+
     # B-1054 (/stress A2.3c Mode A F1 + Mode B B5, 2026-05-18): per-cell
     # Holm-significance transparency count for H1 (prereg §3 line 408 + §4
     # line 446 + line 468 promise). Uses post-floor SE per B-1003 / B-426.
@@ -784,6 +892,20 @@ def build_full_decision(cells: List[Dict]) -> Dict:
         # one-sided p<α. Both quantities reported for transparency.
         passed_ci = bool(ci_lo > 0.0)
         passed_p_legacy = bool(p_one_sided < ALPHA)
+        # B-1302 (/stress A2.3d P1-6-AC sibling of P0-1, 2026-05-18): bootstrap
+        # percentile CI gate for H3 axes — matches H1 B-1009 amend semantics.
+        # Pre-fix CI was Wald `theta_FE ± 1.96 · SE_FE`; now also emit bootstrap
+        # percentile CI from per-cell `boot_pp` arrays exposed by B-1302
+        # substrate fix in `_h3_axis_per_cell`. CI gate (canonical per B-949)
+        # switches to bootstrap percentile CI lower bound > 0; Wald CI retained
+        # as legacy transparency.
+        boot_payload = _pool_bootstrap_percentile_p(
+            filtered, theta_null_pp=0.0, alpha=ALPHA,
+        )
+        passed_ci_bootstrap = (
+            bool(boot_payload.get("ci95_lo_pp_bootstrap", 0.0) > 0.0)
+            if boot_payload is not None else False
+        )
         return {
             "k_cells": len(filtered),
             "k_cells_input": len(per_cell_list),
@@ -793,12 +915,18 @@ def build_full_decision(cells: List[Dict]) -> Dict:
             "se_FE_pp": se_fe,
             "ci95_FE_lo_pp": ci_lo,
             "ci95_FE_hi_pp": ci_hi,
+            # B-1302: bootstrap percentile CI fields (primary CI gate)
+            "ci95_lo_pp_bootstrap": (boot_payload or {}).get("ci95_lo_pp_bootstrap"),
+            "ci95_hi_pp_bootstrap": (boot_payload or {}).get("ci95_hi_pp_bootstrap"),
+            "p_one_sided_bootstrap": (boot_payload or {}).get("p_one_sided_bootstrap"),
+            "theta_fe_bootstrap_median_pp": (boot_payload or {}).get("theta_fe_bootstrap_median_pp"),
             "z_one_sided": z,
-            "p_one_sided": p_one_sided,
+            "p_one_sided": p_one_sided,  # transparency normal-Z (legacy B-949 row)
             "alpha": ALPHA,
-            "gate_rule": "CI_lower_bound > 0  (per prereg §2 H3 L163)",
-            "passed": passed_ci,  # B-949: CI-based gate (canonical)
-            "passed_p_one_sided_legacy": passed_p_legacy,  # transparency only
+            "gate_rule": "bootstrap_percentile_CI_lower_bound > 0  (B-1302 primary; legacy Wald CI retained as transparency)",
+            "passed": passed_ci_bootstrap,  # B-1302: bootstrap percentile gate (primary)
+            "passed_wald_ci_legacy": passed_ci,  # B-949 Wald CI now legacy transparency
+            "passed_p_one_sided_legacy": passed_p_legacy,  # normal-Z legacy transparency
             "n_zero_se_floored_cells": zero_se,
         }, None
 
@@ -854,7 +982,24 @@ def build_full_decision(cells: List[Dict]) -> Dict:
         )
 
     # Apply framing rule with I² cap-only
-    h1_pass = fe["gate_passed"]
+    # B-1301 (/stress A2.3d P0-1-AB* 3-AI overlap OOB, 2026-05-18): primary H1
+    # gate switched from normal-Z `fe["gate_passed"]` to bootstrap percentile
+    # `pooled_h1_bootstrap["gate_passed_bootstrap"]` per prereg §2 H1 L85
+    # B-1009 amendment. `fe["gate_passed"]` retained as legacy transparency
+    # column ONLY (do NOT use for downstream decisions). Defensive `.get` lets
+    # `_pool_bootstrap_percentile_p` return None at k<2 propagate to h1_pass=False
+    # without KeyError CRASH (mirrors B-1001 H3 defensive pattern).
+    if pooled_h1_bootstrap is not None:
+        h1_pass = bool(pooled_h1_bootstrap.get("gate_passed_bootstrap", False))
+        h1_primary_p = pooled_h1_bootstrap.get("p_one_sided_bootstrap")
+        h1_primary_p_method = "bootstrap_percentile_B1000"
+    else:
+        h1_pass = False
+        h1_primary_p = None
+        h1_primary_p_method = "INSUFFICIENT_DATA"
+    payload["h1_primary_gate_method"] = h1_primary_p_method
+    payload["h1_primary_p_one_sided"] = h1_primary_p
+    payload["h1_transparency_p_one_sided_normal_approx"] = fe.get("p_one_sided")
     h2a_falsified = payload["h2a_summary"]["falsified"]
     # B-1001 (/stress A2.4a P0-3-B* codex F1 OOB, 2026-05-18, Phase 4 verified):
     # `_h3_axis_pooled_fe` returns `(None, skip_dict)` when `n_unique<2` filter
@@ -879,8 +1024,14 @@ def build_full_decision(cells: List[Dict]) -> Dict:
         )
     elif h1_pass and not h2a_falsified:
         payload["gate_status"] = "PASS"
+        # B-1301: gate status reports bootstrap percentile p (primary) +
+        # parenthetical normal-Z transparency p; normal-Z retained for
+        # reviewer reproducibility but does NOT drive gate decision.
+        p_boot_str = (f"{h1_primary_p:.4f}" if h1_primary_p is not None else "n/a")
+        p_normz_str = (f"{fe.get('p_one_sided', 0.0):.4f}" if fe.get("p_one_sided") is not None else "n/a")
         payload["gate_status_reason"] = (
-            f"H1 FE superiority θ={fe['theta_FE_pp']:.3f}pp p={fe['p_one_sided']:.4f}; "
+            f"H1 FE bootstrap-percentile p={p_boot_str} (transparency normal-Z p={p_normz_str}) "
+            f"on θ_FE={fe['theta_FE_pp']:.3f}pp; "
             f"H2(a) {payload['h2a_summary']['n_cells_within_band']}/"
             f"{payload['h2a_summary']['n_cells_with_data']} within band; "
             f"H3 axis-1 {'PASS' if h3a_pass else 'FAIL'}, axis-2 {'PASS' if h3b_pass else 'FAIL'}; "
@@ -947,9 +1098,13 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
     opening JSON.
     """
     out_csv.parent.mkdir(parents=True, exist_ok=True)
+    # B-1301 (/stress A2.3d P0-1-AB*, 2026-05-18): add bootstrap percentile
+    # primary p + percentile CI columns; existing `h1_p_one_sided` retained as
+    # legacy normal-Z transparency column.
     lines = [
         "row_type,baseline,site,k_cells,n_tasks,"
         "h1_theta_pp,h1_se_pp,h1_ci_lo_pp,h1_ci_hi_pp,h1_p_one_sided,"
+        "h1_p_one_sided_bootstrap,h1_ci_lo_pp_bootstrap,h1_ci_hi_pp_bootstrap,"
         "h2a_median_ratio,h2a_rel_diff_pct,h2a_within_band,"
         "h3a_unique_count_pp,h3a_se_pp,h3b_unique_count_pp,h3b_se_pp,"
         "i_squared_pct,framing_rule,gate_status,"
@@ -972,6 +1127,7 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
             _f(h1.get("theta_pp")), _f(h1.get("se_pp")),
             _f(h1.get("ci95_lo_pp")), _f(h1.get("ci95_hi_pp")),
             "",  # H1 per-cell p not directly emitted (FE pool gives pooled p)
+            "", "", "",  # B-1301: bootstrap percentile fields are pool-level only
             _f(h2a.get("median_ratio")), _f(h2a.get("relative_diff_pct")),
             str(h2a.get("per_cell_pass", "")),
             _f(h3a.get("unique_count_pp")), _f(h3a.get("se_pp")),
@@ -989,11 +1145,17 @@ def write_csv(payload: Dict, out_csv: Path) -> None:
         n_h1 = payload.get("transparency_H1", {}).get("n_individually_holm_sig", "")
         n_h3a = payload.get("transparency_H3_axis1", {}).get("n_individually_holm_sig", "")
         n_h3b = payload.get("transparency_H3_axis2", {}).get("n_individually_holm_sig", "")
+        # B-1301: bootstrap percentile pool emit (primary), normal-Z transparency
+        pooled_boot = payload.get("pooled_h1_bootstrap") or {}
+        p_boot = pooled_boot.get("p_one_sided_bootstrap")
+        ci_lo_boot = pooled_boot.get("ci95_lo_pp_bootstrap")
+        ci_hi_boot = pooled_boot.get("ci95_hi_pp_bootstrap")
         lines.append(
             f"pooled,,,{fe.get('k_cells', '')},,"
             f"{fe.get('theta_FE_pp', 0):.4f},{fe.get('se_FE_pp', 0):.4f},"
             f"{fe.get('ci95_FE_lo_pp', 0):.4f},{fe.get('ci95_FE_hi_pp', 0):.4f},"
             f"{fe.get('p_one_sided', 0):.6f},"
+            f"{_f(p_boot) or ''},{_f(ci_lo_boot) or ''},{_f(ci_hi_boot) or ''},"
             f",,{'true' if not h2a_sum.get('falsified', False) else 'false'},"
             f"{h3a_fe.get('theta_FE_pp', 0):.4f},{h3a_fe.get('se_FE_pp', 0):.4f},"
             f"{h3b_fe.get('theta_FE_pp', 0):.4f},{h3b_fe.get('se_FE_pp', 0):.4f},"
@@ -1032,14 +1194,46 @@ def write_md(payload: Dict, out_md: Path) -> None:
         "",
     ]
     if fe is not None:
-        sig = "✅ **PASSED**" if fe["gate_passed"] else "❌ **NOT YET**"
+        # B-1301 (/stress A2.3d P0-1-AB*, 2026-05-18): MD primary section now
+        # reads bootstrap percentile (PRIMARY per prereg L85 B-1009 amend);
+        # normal-Z section retained as TRANSPARENCY ONLY.
+        pooled_boot = payload.get("pooled_h1_bootstrap")
+        primary_sig = (
+            "✅ **PASSED**" if (pooled_boot is not None and pooled_boot.get("gate_passed_bootstrap"))
+            else ("❌ **NOT YET**" if pooled_boot is not None else "⚠️ **INSUFFICIENT_DATA**")
+        )
         lines += [
-            f"- **k = {fe['k_cells']}** cells",
-            f"- **θ_FE = +{fe['theta_FE_pp']:.3f}pp** (SE = {fe['se_FE_pp']:.3f}pp)",
-            f"- **95% CI**: [{fe['ci95_FE_lo_pp']:.3f}, {fe['ci95_FE_hi_pp']:.3f}]pp",
+            f"- **k = {fe['k_cells']}** cells (point-estimate weights)",
+            f"- **θ_FE point estimate = +{fe['theta_FE_pp']:.3f}pp** (SE = {fe['se_FE_pp']:.3f}pp, point IV weights)",
+        ]
+        if pooled_boot is not None:
+            lines += [
+                "",
+                "### Primary gate — bootstrap percentile FE pool (B-1009 amend, B-1301 code)",
+                "",
+                f"- **θ_FE bootstrap-distribution median = +{pooled_boot['theta_fe_bootstrap_median_pp']:.3f}pp**",
+                f"- **95% two-sided percentile CI**: "
+                f"[{pooled_boot['ci95_lo_pp_bootstrap']:.3f}, {pooled_boot['ci95_hi_pp_bootstrap']:.3f}]pp",
+                f"- **p_one_sided_bootstrap** = P(θ_FE\\* ≤ {pooled_boot['theta_null_pp']}pp) over B={pooled_boot['B_replicates']} "
+                f"paired-bootstrap pool replicates = **{pooled_boot['p_one_sided_bootstrap']:.4f}**",
+                f"- **Gate (p_bootstrap < α={pooled_boot['alpha']})**: {primary_sig}",
+                f"- _Method: {pooled_boot['method_note']}_",
+            ]
+            if pooled_boot.get("n_below_se_floor", 0) > 0:
+                lines.append(
+                    f"- ⚠️ **SE floor fired** (B-1003 Agresti-Coull threshold < "
+                    f"{pooled_boot['se_floor_threshold_pp']}pp → replaced with "
+                    f"{pooled_boot['se_floor_replace_pp']}pp): "
+                    f"{pooled_boot['n_below_se_floor']} cell(s)"
+                )
+        lines += [
+            "",
+            "### Transparency channel — legacy normal-Z Wald (NOT the gate)",
+            "",
+            f"- **95% Wald CI**: [{fe['ci95_FE_lo_pp']:.3f}, {fe['ci95_FE_hi_pp']:.3f}]pp",
             f"- **z** = (θ_FE − {fe['delta_pp']}) / SE_FE = **{fe['z_one_sided']:.3f}**",
-            f"- **p_one_sided** = 1 − Φ(z) = **{fe['p_one_sided']:.4f}**",
-            f"- **Gate (p < α={fe['alpha']})**: {sig}",
+            f"- **p_one_sided_normal_approx** = 1 − Φ(z) = **{fe['p_one_sided']:.4f}** "
+            f"(NOT primary gate per B-1009 amendment; report-only)",
         ]
         if fe.get("n_zero_se_floored_cells", 0) > 0:
             lines.append(f"- ⚠️ **SE floor fired**: {fe['n_zero_se_floored_cells']} cell(s) with bootstrap SE=0 "
