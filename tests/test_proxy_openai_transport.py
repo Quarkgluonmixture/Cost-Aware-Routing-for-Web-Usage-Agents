@@ -113,11 +113,13 @@ def test_f1_success_path_top_level_tool_calls(_proxy_agent, monkeypatch):
 
 
 def test_f2_malformed_arguments_falls_back_to_text_parse(_proxy_agent, monkeypatch):
-    """F2: function.arguments is not valid JSON → falls back to text parse
-    path (Path-2). No crash. fail_reason should reflect the JSON decode
-    failure or the text-parse outcome."""
+    """F2: function.arguments is not valid JSON + content="" (production
+    shape per B-1109 /stress A2.3b P1-2-A* — proxy returns empty content
+    when tool_calls field is present). Falls back to text parse on empty
+    raw_content → default wait action with failure_reason audit trail.
+    No crash, no GLM rescue path."""
     response = {
-        "content": '{"action_type": "wait"}',  # fallback content is a valid wait action
+        "content": "",  # B-1109: production shape — proxy emits content="" with tool_calls
         "tool_calls": [
             {
                 "id": "chatcmpl-tool-bad",
@@ -140,15 +142,22 @@ def test_f2_malformed_arguments_falls_back_to_text_parse(_proxy_agent, monkeypat
         history=[],
         observation_mode="dom",
     )
-    # Action should be a dict (text parse fallback or final wait default).
+    # Production failure mode: empty content + bad args → graceful wait
+    # with failure_reason audit trail (parse_failed OR tool_arguments_json_decode).
     assert isinstance(action, dict)
-    assert "action_type" in action
-    # GLM fallback fields preserved as zombie schema keys; existing
-    # serialization is `attempted ? value : None` → both None when never
-    # attempted (B-991 retire). The KEY presence is the contract; value
-    # equality is None.
-    assert meta["glm_fallback_used"] is False  # bool literal, hardcoded
-    assert meta["glm_fallback_attempted"] is None  # serialized None when not attempted
+    assert action.get("action_type") == "wait", (
+        f"empty content + bad args should fall to wait; got {action}"
+    )
+    assert meta["valid"] is False
+    assert meta["failure_reason"] is not None  # audit trail populated
+    # GLM fallback zombie keys preserved per B-991 retire + B-1111 uniform-None
+    # (/stress A2.3b P1-6-A 2026-05-18): all 4 keys serialize None uniformly
+    # post-fix; pre-fix `used=False vs attempted=None` was semantic confusion
+    # ("never tried" vs "never relevant" both mean GLM module non-existent).
+    assert meta["glm_fallback_used"] is None  # B-1111 uniform-None zombie
+    assert meta["glm_fallback_attempted"] is None
+    assert meta["glm_fallback_latency_ms"] is None
+    assert meta["glm_original_fail_reason"] is None
 
 
 def test_f3_missing_logprobs_fills_none(_proxy_agent, monkeypatch):

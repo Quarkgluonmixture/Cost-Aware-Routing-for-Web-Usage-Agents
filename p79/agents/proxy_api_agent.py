@@ -725,9 +725,18 @@ class ProxyApiAgent:
         # native tool_calling + free-text path together cover parse-error
         # surface without cross-baseline cost-fairness violation. Step
         # record fields preserved as None for schema v2 zombie compat.
-        glm_fallback_used = False
-        glm_fallback_attempted = False
-        glm_fallback_ms = 0.0
+        # B-1111 (/stress A2.3b P1-6-A, 2026-05-18): uniform-None zombie
+        # serialization. Pre-fix `glm_fallback_used = False` (bool) +
+        # `glm_fallback_attempted = None` (None) inconsistent — archive
+        # aggregator + paper §3.5 disclosure table mixed `False=never tried`
+        # with `attempted=None=never relevant`. Both semantically equal
+        # "GLM module non-existent post-B-991"; emit None uniformly so
+        # downstream readers cannot confuse "tried-but-failed" with
+        # "never-relevant". Schema v3 will drop the keys entirely (paper-2
+        # prep); v2 zombie kept for archive read-path back-compat.
+        glm_fallback_used = None
+        glm_fallback_attempted = None
+        glm_fallback_ms = None
         glm_original_fail_reason: Optional[str] = None
 
         # /stress A2.4b Chunk α (2026-05-18): B0 scroll_direction→delta conversion
