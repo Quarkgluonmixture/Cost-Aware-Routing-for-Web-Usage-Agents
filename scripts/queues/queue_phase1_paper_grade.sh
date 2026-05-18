@@ -106,6 +106,43 @@ SITE_FILTER="${2:-all}"
 log() { echo "[phase1 $(date '+%H:%M:%S')] $*"; }
 fail() { log "FAIL: $*"; exit 1; }
 
+# B-1604 (/stress 深入审 Mode A P1-7-A, 2026-05-18): cold-start warmup
+# preflight. Empirical 2026-05-18 A100 probe: VWA classifieds cold-curl
+# `index.php?page=login` = 9.96s (PHP-FPM worker spin-up + Postgres pool
+# init + Magento FPC TTL); warm-curl after 3 sequential = 0.085-0.113s
+# (~117× speedup). VWA shopping cold = 14.68s (Magento heavier), warm
+# = 0.103-0.130s. If docker stack restarted mid-Pass-1 (or fresh
+# `vwa_reset.sh` fires between conditions), head-of-chain task playwright
+# `wait_until=load` 30s budget could trip on next cold path → silent
+# 1-2 task crashes attributed to "agent / proxy failure" instead of
+# infra fragility. Warm 3 sites × 3 curls/site = 9 cheap requests before
+# any condition launches; total wallclock < 30s.
+#
+# WARMUP_SKIP=1 env opt-out: dev/debug runs where VWA stack just
+# launched OR operator wants to test the cold-path failure mode itself.
+warmup_vwa_sites() {
+  if [ "${WARMUP_SKIP:-0}" = "1" ]; then
+    log "  WARMUP_SKIP=1 — skipping VWA cold-start warmup"
+    return 0
+  fi
+  log "=== Warmup: VWA cold-start defuse (cls / red / shop × 3 curls each) ==="
+  local CLS_URL="${CLASSIFIEDS:-http://localhost:9980}/index.php?page=login"
+  local RED_URL="${REDDIT:-http://localhost:9999}/"
+  local SHOP_URL="${SHOPPING:-http://localhost:7770}/"
+  local site url i code time_total
+  for site_url_pair in "cls:${CLS_URL}" "red:${RED_URL}" "shop:${SHOP_URL}"; do
+    site="${site_url_pair%%:*}"
+    url="${site_url_pair#*:}"
+    for i in 1 2 3; do
+      # `--max-time 30` mirrors playwright wait_until=load budget; emit
+      # latency for cold-vs-warm contrast in launch log.
+      code_time=$(curl -sS -o /dev/null --max-time 30 -w "%{http_code} %{time_total}" "$url" 2>&1 || echo "FAIL FAIL")
+      log "  warmup ${site} curl${i}: HTTP ${code_time%% *} time=${code_time##* }s"
+    done
+  done
+  log "  warmup done"
+}
+
 # B-673: require paper-grade host (A100) before gates run.
 # B-1406 (/stress A2.7 P1-4-AB* 2026-05-18): local definition retired,
 # canonical `require_paper_grade_host` lives in `_lib_paper_grade_gates.sh`
@@ -220,6 +257,15 @@ print(f'OK:host={d[\"host\"]},at={d[\"captured_at\"]}')
     "Gate 3: VWA snapshot baseline committed" \
     "results/provenance/vwa_*.json" \
     "bash scripts/provenance/snapshot_vwa.sh    # captures docker fingerprint + endpoint state"
+
+  # B-1604 (/stress 深入审 Mode A P1-7-A, 2026-05-18): warm VWA sites BEFORE
+  # Gate 4 preflight so playwright endpoint probes don't trip on cold PHP-FPM
+  # worker spin-up (empirical: cls cold 9.96s vs warm 0.085s; shop cold
+  # 14.68s vs warm 0.13s). Without this, Gate 4 preflight (10s playwright
+  # probe) could itself become the cold-start victim → false-positive FAIL
+  # at gate level + 35-condition wallclock loss to mis-attributed retry.
+  # WARMUP_SKIP=1 env opt-out for dev/debug.
+  warmup_vwa_sites
 
   # Gate 4 — BLOCKING (codex stress v6 C2): preflight exit code now captured.
   # Strict ports for actual paper-grade fire (--no-strict-ports dropped).
