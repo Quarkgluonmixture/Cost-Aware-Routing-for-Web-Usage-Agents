@@ -6587,3 +6587,65 @@ Phase 4 verdict: Mode B PASS (4/4 exact citations); Mode C PASS-WITH-CAVEAT (4/4
 **Critical-path next**: advisor sync on §A2.7 cross-baseline confound register + §A2.8 prereg lock + §A2.9 reporting/ethics + §A2.10 prose↔code claim integrity. Push pending per `feedback_git_push_requires_confirm` memory.
 
 详 实验笔记 §216 + 4 commits chain (`3ade9b6` + `4c0733f` + `b32f20f` + `13fab93`) + this Chunk 4 closure.
+
+---
+
+## A2.6b — Phantom 概念域 external validity (/stress A2.6b Mode A+B+C cycle 2026-05-18 ~01:48-02:50 BST, B-1280~B-1296 reserved)
+
+### Context
+
+`/stress A2.6b` (phantom 概念域 external validity audit, advisor-blocking pre-launch gate per phase1_plan §A2 sequence). 3-AI cross-stress cycle Mode A (Claude self) + Mode B (codex statistical methodologist on §6/router/aggregator code) + Mode C (gemini external-validity / R5 reviewer attack specialist on prose+framing). 22 distinct findings: Claude 9 (4 OOB) / codex 9 (4 OOB) / gemini 7 (3 OOB); cross-AI orthogonal yield 16 unique-lineage + 3 2-AI overlaps. **Highest cross-AI orthogonal ROI** since A2.2 — codex caught entire router-substrate estimand drift class (super-population language in §6 spec / RE meta docstring self-contradiction / capability_tier spec-impl gap / LOCO spec-vs-runtime / R1 vs R3 concept-domain inconsistency) invisible to prose-only audit.
+
+### User Q&A (v7.7 triaged) — hybrid decisions logged
+
+- **Q1 = hybrid (third option synthesizing A+B)**: cross-family claim-tier gate — preserve prereg §7 finite-population FE pool over 6 cells (B2 in pool per decision 3A) + add B2-outcome-gated cross-family R-tier downgrade rule. B2 fail → R-tier downgrades one step + paper cannot claim cross-family robustness, but phantom space construct + Qwen-validated deployment claim survive (NOT R5 trigger). Qwen 2-cell H1 fail → R5 (load-bearing anchor).
+- **Q2 = (A) DELETE capability_tier**: per-cell trained router → capability_tier feature in-cell constant → no task-level decision boundary signal.
+- **Q3 = (A) §6 prose deferred** to router data land (status stub hedge `✅` → `⏳`).
+- **Q4/Q5 default**: wait-fix-all paper prose then fire + default-wait push.
+
+### 17 fixes B-1280~B-1296 (Chunks 1-4)
+
+**Chunk 1** (paper_planning + §1 prose hero scope hardening):
+- B-1280 P0-1-AC*: §1 footnote [^scaffolding-class-scope] + §3.2 paragraph + §8.1 broaden — phantom-space construct scope = SoM-style scaffolded multimodal web agents.
+- B-1281 P1-9-AC: §1 L3 opening aligned with §8.1 scope.
+- B-1282 P0-2-AC*: §1 L13 + §3.2 new paragraph — `[SOM_MARKS]` regex depends on VWA `[N] role 'label'` convention.
+- B-1283 P0-4-C*: §1 L11 unique-pass count scope-restrict.
+- B-1284 P0-3-AC* + user Q1 hybrid: §1 last paragraph + prereg §2.5 step 8 + paper_planning §5 R-rule — cross-family claim-tier gate.
+- B-1288 P1-12-B: paper_planning §5 R5 + code R5 verdict — R5 falsifies P-SoM deployment-arm only.
+- B-1289 P1-13-B: paper_planning §5 R3 row — phantom routing space construct preserved.
+- B-1292 P1-14-A: §1 L27 "Qwen+Gemma" → fine-grained "Qwen-lineage 2-cell + Gemma-lineage 1-cell".
+- B-1293 P1-15-A*: §1 L25 inline qualifier (task-structure routing prediction VWA-bounded).
+- B-1295 P1-17-C: §1 L21 "correlates with" → "directionally consistent with the hypothesis that".
+
+**Chunk 2** (§2.5 + §3.2 prose): B-1290 P1-10-AC §2.5 positioning scope-restrict.
+
+**Chunk 3** (§8 + prereg amend): B-1294 P1-16-A* §8 new §8.8 cube-concept generalizability speculation; B-1296 P2-19-A §8.8 WA falsifiable prediction.
+
+**Chunk 4** (router code + docstring): B-1285 P1-5-B* proposals_v7.md H10 finite-cell language; B-1286 P1-8-B* LOCO Appendix-sensitivity not primary; B-1287 P1-11-B section6_routing.md status hedge + scope guard mandate; B-1291 P1-7-B* DELETE capability_tier (user Q2=A).
+
+### Skipped (already addressed by parallel session)
+
+- **B-1306 (codex F2 P1-6-B*) `aggregate_phantom_meta.py:20-25` "FE contradicts hook" docstring** — already fixed by concurrent A2.3d Tier 3 commit `924c7b8` (docstring retraction per /stress A2.3d P0-2-A*). Codex F2 catch landed via parallel audit; not double-applied. Confirms cross-AI overlap on shared substrate.
+
+### Deferred next session (P2 polish)
+
+- P2-18-A §1 L13 vision-encoder cost-magnitude footnote (B2 SigLIP 256 fixed vs B1 dynamic 1024+)
+- P2-20-B AUROC Markdown summary scope guard (CSV has Holm/BH, MD doesn't propagate)
+- P2-21-B paper_planning §5 "Final scope" ~90 cells WA stale
+- P2-22-C §1 L13 cross-link §8 tokenizer caveat
+
+### Multi-session collision protocol observations (catalog entry)
+
+- Concurrent A2.6a session (commit 3ade9b6 + 924c7b8) accidentally captured my §1 prose fixes (B-1281 / B-1280 / B-1282 / B-1283 / B-1284 / B-1292 / B-1293 / B-1295 markers) into their commits via `git add -A` style. **B-### markers preserved in prose are canonical audit trail; commit subject misattribution is acceptable per §213 protocol.**
+- Concurrent A2.3d session committed `aggregate_phantom_meta.py:20-25` "FE contradicts hook" docstring fix at B-1306 — my A2.6b would have duplicated. Cross-AI cross-audit redundancy is a feature.
+- Phase 4 spot-checks 8/8 (codex 5/5 + gemini 3/3 content) ALL REAL — no fabrications across 14 findings sampled. Gemini line-cite drift ~3-13 lines per A1.9 pattern.
+
+### Commit chain (5 commits)
+
+- `966c0a4` Chunk 1 — B-1284 + B-1288 + B-1289 (paper_planning R-rule claim-tier gate + R3 phantom-space preservation + R5 framing; §1 prose fixes landed via concurrent 3ade9b6 + 924c7b8)
+- `848d660` Chunk 2 — B-1290 + B-1282 (§2.5 positioning scope-restrict + §3.2 scaffolding-class + VWA AXTree dependency disclosure)
+- `ec423cf` Chunk 3 — B-1280 (§8.1 broaden) + B-1284 prereg §2.5 + B-1294 §8.8 cube-concept + B-1296 WA falsifiable
+- `d64a097` Chunk 4 — B-1285 + B-1286 + B-1287 + B-1288 + B-1291 (router code + docstring; B-1306 skipped per parallel A2.3d concurrent fix)
+- This commit — closure (chronicle §217 + ## A2.6b catalog + phase1_plan §A2.6b [x] tick separate commit)
+
+**Phase 1a fire green-light**: ON — all 4 P0 + 13 P1 fixes landed; cross-family claim-tier gate prereg-locked; phantom-space construct scope explicitly disclosed; deployment-portability claim VWA-AXTree-equivalent scoped. 0 fire blockers remain on A2.6b scope (P2 polish defer to next session per recommend).
