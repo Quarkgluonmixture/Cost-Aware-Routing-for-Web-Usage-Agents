@@ -6,8 +6,9 @@ last_revised: 2026-05-18
 draft_author: Jiaming
 registered_at: 2026-05-18T11:30:00Z
 registered_git_sha: 88521b9e254955ab156dc8115da826f171ef5990
-witnessed_by: Git tag `preregistration-locked` (commit SHA 88521b9...) + OSF DOI <to-be-assigned post-Phase-1a-Pass-1-data-complete per osf_lock_manifest §3 Step 7-8>; advisor email = optional post-fire collateral per B-1570 doctrine 2026-05-18 (Email 1 informal FYI to Maria + Zekun, no formal witness ask per OSF-DOI-replaces-advisor-witness reasoning).
-osf_doi: <pending paper submission stage>
+witnessed_by: Git tag `preregistration-locked` at commit SHA `ef609a3863adc9b3698789b96a1ee9f709e1c832` (substance-lock 2026-05-18T11:30Z) + OSF DOI 1 pre-outcome-creation witness `<to-be-assigned at OSF public registration approval, default auto-approve 48h post-submission per help.osf.io/article/330; submission timestamp = cryptographic anchor per osf_lock_manifest §3a 8-step workflow>` + OSF DOI 2 reproducibility bundle `<to-be-assigned post Pass-1+Pass-2+analysis-frozen+paper-finalized per osf_lock_manifest §3b 8-step workflow, cited_by DOI 1>`; advisor email = optional post-fire collateral per B-1570 doctrine 2026-05-18 (informal FYI to Maria + Zekun, no formal witness ask — OSF DOI 1 supersedes advisor email as cryptographic external witness per B-1650~B-1655 two-DOI doctrine restoration 2026-05-18 ~14:00 UTC).
+osf_doi_1_pre_outcome_witness: <to-be-assigned at OSF admin approval, default 48h post-submission; submission UTC timestamp = cryptographic pre-outcome-creation anchor; empirical artifact-zero check per artifact_existence_check_doi1_20260518T135722Z.txt>
+osf_doi_2_reproducibility_bundle: <to-be-assigned post Pass-1+Pass-2+analysis-frozen+paper-finalized; DOI 2 README explicit cited_by DOI 1>
 data_lock_until: <pending Phase 1a 42-condition rerun completion = Pass-1 baseline 36 (cls+red × B0+B1+B2 × 6 modes) + Pass-2 learned router 6 (cls+red × B0+B1+B2 × 1 learned-router cond/cell) on A100 self-host Docker; updated 2026-05-18 per /stress A2.6a B-1264 P0-5-B* sweep — supersedes stale 36-condition phrasing per scope_revision_2026_05_16 expansion>
 scope_revision_2026_05_13: cls+red × B0+B1 × 6 modes = 24 operational conditions across 4 statistical cells; shop deferred to Phase 1b main paper; K-of-N reclassified gate → transparency-only; smoke-gate stopping rule replaced (outcome-independent)
 scope_revision_2026_05_14: B2 = Gemma3-VL `google/gemma-3-4b-it` added as 3rd baseline (cross-family robustness check at 4B-parameter parity vs B1 4B); Phase 1a expanded cls+red × B0+B1+B2 × 6 modes = 36 operational conditions across 6 statistical cells; per-cell power numbers at k=6 ✅ empirically derived per /stress A2.3a B-941~B-958 2026-05-17 (FE-pool projected 97-100% across all 3 phantom sibling axes; see §2.4 closed)
@@ -608,15 +609,32 @@ report the mid-layer pattern under that holdout.
 3. Git commit this file.
 4. Advisor sends single-line confirmation email: "I witness pre-registration of phantom-SoM gating hypotheses (H1-H3) and the 9 lock decisions as of <git SHA> <date>." Email archived in `.witness/preregistration_witness.eml` (gitignored, local-only).
 
-### (b) External witness — OSF DOI (optional, paper-time)
+### (b) External witness — OSF DOIs (two-DOI split per B-1650~B-1655 doctrine restoration 2026-05-18 ~14:00 UTC; supersedes prior "single OSF DOI optional, paper-time" fallback wording)
 
-Approximately 1 week before paper submission. The detailed 8-step DOI workflow +
-artifact-freeze registry is in **`osf_lock_manifest.md` §3** — not re-listed here to
-avoid drift. Summary: upload the locked `preregistration.md` + companion docs, mint
-the OSF DOI, paper §1 footnote cites "Gating hypotheses (H1-H3 + H9-H10) pre-registered prior
-to the Phase 1a **42-condition rerun (36 Pass-1 baseline + 6 Pass-2 learned router)**
-(OSF DOI X.YYYY/osf.io/zzzz, Git SHA abc123,
-witnessed by [advisor name] on YYYY-MM-DD)." — Updated 2026-05-18 per /stress A2.6a B-1264 P0-5-B*.
+> **Doctrine-shift note (B-1650 2026-05-18 ~14:00 UTC)**: pre-correction §6 (b) framed the OSF DOI as a single fallback witness "optional, paper-time" (~1 week before paper submission), aligned with the deprecated `osf_lock_manifest.md §3` single-workflow framing. This correction restores the original 2026-05-05 advisor sync §F.1 outcome decision ("学生 lean DOI 时间戳 < data unblinding 时间戳让 audit trail ordering 明确" — pre-data DOI upload) as the operational anchor for the pre-registration witness ordering invariant. The OSF DOI is now split into two cryptographic witnesses:
+
+**DOI 1 — Pre-outcome-creation witness** (MANDATORY paper-1 external witness; mint TODAY 2026-05-18 per §3a):
+
+- **Purpose**: Public-ledger cryptographic timestamp that the 14 commit decisions + H1/H2/H3/H10 gating hypotheses + analysis plan were committed **before any Phase 1a outcome artifact existed** on the experimental host.
+- **Empirical mint condition**: zero Phase 1a outcome artifacts at OSF submission time (UTC 2026-05-18T13:57:22Z check PASSED — see `docs/checkpoints/pre_run/artifact_existence_check_doi1_20260518T135722Z.txt`: episode_summary_count=0, condition_summary_count=0, steps_jsonl_count=0).
+- **Bundle**: `preregistration.md` + `osf_lock_manifest.md` + `locked_versions.md` + `model_card.md` + `dataset_card.md` + `ethics_license_coi_statements.md` + `evaluator_change_protocol.md` + `compute_cost_carbon_table.md` + `neurips_checklist.md` + `negative_results_registry.md` (frozen pre-outcome) + `release_redaction_checklist.md` + `topvenue_constraints.md` + `pre_rerun_audit_walkthrough_2026-05-18.md` + `reeval_audit_protocol.md` + `env_snapshot.json` (A100 pre-fire) + `paper_drafts/section{1..8}_*.md @ ef609a3` (frozen) + `paper_drafts/paper.bib @ ef609a3` + `DOI_1_README.md` (mandatory scope disclaimer per /stress correction #3: archive placeholder numbers in paper drafts ≠ Phase 1a outcome evidence) + `artifact_existence_check_doi1_<UTC-TS>.txt`.
+- **OSF approval-lag operational ordering** (per help.osf.io/article/330): OSF submission timestamp = cryptographic anchor (immutable from moment of submission); DOI string `10.17605/OSF.IO/XXXXX` auto-assigned 0-48h post-submission via admin approval.
+- **Cross-link**: DOI 2's README will explicitly `cited_by` DOI 1 (immutable forward reference); DOI 1 carries a forward-only slot for DOI 2 placeholder per OSF immutable-registration semantics (no anachronistic reverse reference).
+
+**DOI 2 — Phase 1a reproducibility bundle** (paper-1 reproducibility deposit; mint trigger post Pass-1+Pass-2+analysis-frozen+paper-final, ~2-3 weeks post fire per §3b):
+
+- **Purpose**: Public reproducibility deposit of the full 42-condition outcome + analysis pipeline + final paper prose, allowing any third party to reproduce the paper-1 claims from a single OSF deposit + the GitHub commit tag.
+- **Bundle**: 42 × `condition_summary_v2.json` + `episodes/*_summary.json` + `episodes/*_steps.jsonl` + `results/phantom_paper/*.csv` (aggregate outputs) + `results/phantom_paper/figures/*.png` (paper figures) + frozen analysis scripts + finalized paper drafts + `run_registry/*.json` + `analysis_walkthrough.md` + `DOI_2_README.md` (with mandatory `cited_by: DOI 1`).
+
+### Paper §1 / §4 / Appendix D citation forms (post DOI assignment)
+
+**Interim (0-48h post DOI 1 submission, pre-approval)**:
+> "Gating hypotheses (H1-H3 + H10) pre-registered prior to the Phase 1a 42-condition rerun (36 Pass-1 baseline + 6 Pass-2 learned router; OSF registration GUID osf.io/xxxxx, submitted 2026-05-18T<HH:MM:SS>Z UTC, pre-outcome-creation witness per empirical 3-tier artifact-zero check; DOI <pending OSF admin approval>; Git tag preregistration-locked at SHA ef609a3); paper-1 reproducibility deposit minted at OSF DOI 2 <pending Pass-1+Pass-2 complete>."
+
+**Final (post DOI 1 + DOI 2 assignment)**:
+> "Gating hypotheses (H1-H3 + H10) pre-registered prior to the Phase 1a 42-condition rerun (36 Pass-1 baseline + 6 Pass-2 learned router; OSF DOI 1 10.17605/OSF.IO/XXXXX, submitted 2026-05-18T<HH:MM:SS>Z UTC, pre-outcome-creation witness; Git tag preregistration-locked at SHA ef609a3). Paper-1 reproducibility deposit at OSF DOI 2 10.17605/OSF.IO/YYYYY (cited_by DOI 1)."
+
+— Updated 2026-05-18 per B-1650~B-1655 two-DOI doctrine restoration (supersedes prior B-1264 P0-5-B* /stress A2.6a 2026-05-17 single-DOI framing wording).
 
 ---
 

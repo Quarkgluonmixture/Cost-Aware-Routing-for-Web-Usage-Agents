@@ -7,7 +7,20 @@ are RESOLVED via §A2 14/16 audit cascade closure 2026-05-18 (B-1265 /stress A2.
 drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision log + `osf_lock_manifest.md §3`; ADVISOR_SYNC.md retired 2026-05-15, commit `f64bc9d`, replaced by `_status/issues/issue_advisor_sync_2026-05-14.md` frontmatter + Bases view).
 
 **Status**: 🟡 Draft — fields populate at lock moment.
-**Lock blocker**: ⏳ **Phase 1a Pass-1 baseline data complete + ~~A100 B2 HF SHA pin~~ ✅ B2 SHA `093f9f388b31de276ce2de164bdc2081324b9767` locked 2026-05-18 per /stress 深入审 Mode A B-1603 + A100-side `probe_b0_production_path.py` + `snapshot_env.py` self-verification** (per phase1_plan §B1 items 7+8 + B-1427+B-1428). **Advisor email reply RECLASSIFIED 2026-05-18 per /stress A2.8 followup B-1570 as optional post-fire collateral** (was hard gate pre-2026-05-14 sync 收口; current doctrine: §A2 14/16 audit cascade substantively closes all 14 commit decisions, advisor batch sign-off retained as optional reproducibility audit-trail completeness for OSF DOI mint).
+
+**Two-DOI split (locked 2026-05-18 ~14:00 UTC per /stress doctrine restoration B-1650~B-1655 — restores original 2026-05-05 advisor sync §F.1 outcome decision "学生 lean DOI 时间戳 < data unblinding 时间戳", which had drifted into stale "post-Pass-1-data-complete" single-DOI framing between B-1570 doctrine shift (2026-05-18 ~09:30 UTC, advisor-email-retire) and this correction)**:
+
+- **DOI 1 — Pre-outcome-creation witness** (mint blocker triple: zero Phase 1a outcome artifacts at submission time + B2 HF SHA pinned + preregistration substance-locked).
+  - ✅ B2 SHA `093f9f388b31de276ce2de164bdc2081324b9767` locked 2026-05-18 per /stress 深入审 Mode A B-1603 + A100-side `probe_b0_production_path.py` + `snapshot_env.py` self-verification (phase1_plan §B1 items 7+8 + B-1427+B-1428).
+  - ✅ preregistration substance-locked 2026-05-18T11:30Z (Git tag `preregistration-locked` at SHA `ef609a3863adc9b3698789b96a1ee9f709e1c832`).
+  - ✅ empirical pre-outcome-creation check PASS at UTC 2026-05-18T13:57:22Z per `artifact_existence_check_doi1_20260518T135722Z.txt` (episode_summary_count=0, condition_summary_count=0, steps_jsonl_count=0).
+  - → **DOI 1 MINTABLE NOW**. See §3a for 8-step workflow.
+
+- **DOI 2 — Phase 1a reproducibility bundle** (mint blocker quadruple: Pass-1 baseline 36 conditions complete + Pass-2 learned router 6 conditions complete + analysis scripts frozen + paper §1-§8 finalized).
+  - ⏳ pending Pass-1 + Pass-2 + analysis-frozen + paper-final (~2-3 weeks post Phase 1a fire start 2026-05-18T13:28:06Z).
+  - DOI 2 README will explicitly cite_by DOI 1 (immutable forward reference; bidirectional reference defeats OSF immutable-registration semantics). See §3b for 8-step workflow.
+
+**Advisor email reply RECLASSIFIED 2026-05-18 per /stress A2.8 followup B-1570 as optional post-fire collateral** (was hard gate pre-2026-05-14 sync 收口; current doctrine: §A2 14/16 audit cascade substantively closes all 14 commit decisions, advisor batch sign-off retained as optional reproducibility audit-trail completeness for OSF DOI mint). OSF DOI 1 supersedes advisor email as cryptographic external witness (public registry + immutable timestamp + content hash + machine-verifiable, strict superset over private + human-attested + non-cryptographic email per OSF help.osf.io/article/330).
 
 ---
 
@@ -76,13 +89,14 @@ Each `env_snapshot.json` captures: torch / transformers / Python / git commit /
 HuggingFace model revision SHA (Qwen3-VL-4B + Llama-3.2-Vision if used) /
 GPU compute capability / hostname / nvidia-smi output.
 
-### 2.4 Witness chain (3-layer paper-grade; doctrine shift 2026-05-18 per /stress A2.8 followup B-1570)
+### 2.4 Witness chain (4-layer paper-grade; doctrine shift 2026-05-18 per /stress A2.8 followup B-1570 + B-1650~B-1655 two-DOI doctrine restoration 2026-05-18 ~14:00 UTC)
 
 | Layer | Mechanism | Status |
 |---|---|---|
-| **Git** | `git tag prereg-h10-locked` on master at `5f8c63a` (A2.8 Chunk 4 closure 2026-05-18) → promoted to `preregistration-locked` post-Phase-1a-fire-data-complete + ~~post-A100-B2-SHA-pin~~ ✅ B2 SHA `093f9f388b31de276ce2de164bdc2081324b9767` landed 2026-05-18 (B-1623 /stress 深入审 Mode A) | ✅ Layer 1 partial (prereg-h10-locked locked; B2 SHA ✅ landed; preregistration-locked pending Phase 1a fire data) |
-| **§A2 audit cascade refs** (was "Advisor email" pre-2026-05-14 sync 收口 — reclassified 2026-05-18 per B-1570 doctrine-shift propagation) | §A2 14/16 audit cascade Git SHA refs at master HEAD substantively close all 14 commit decisions via per-decision B-### audit-trail (master_bug_catalog ## A2.1~A2.9 + 实验笔记 §200-§221); advisor batch sign-off retained as optional post-fire collateral (email PDF to `docs/reference/advisor_email_<date>.pdf` + Gmail message-id captured if/when advisor signs) | ✅ Layer 2 substantively complete via §A2 cascade (formal advisor batch sign-off optional post-fire) |
-| **OSF** | OSF preregistration page DOI: `<TBD>` (e.g., `10.17605/OSF.IO/XXXXX`) — mintable post-Phase-1a-fire-data-complete | ⏸ Layer 3 pending Phase 1a Pass-1 baseline data |
+| **Git** | `git tag preregistration-locked` on master at `ef609a3863adc9b3698789b96a1ee9f709e1c832` (substance-lock 2026-05-18T11:30Z per A2.8 Chunk 4 closure + frontmatter `status: locked`); promoted to `preregistration-doi1-witnessed-<DOI>` post DOI 1 assignment | ✅ Layer 1 substance-locked (preregistration-locked tag landed; B2 SHA `093f9f388b31de276ce2de164bdc2081324b9767` ✅ landed per B-1603 /stress 深入审 Mode A); DOI-1-witnessed promotion pending DOI 1 assignment |
+| **§A2 audit cascade refs** (was "Advisor email" pre-2026-05-14 sync 收口 — reclassified 2026-05-18 per B-1570 doctrine-shift propagation) | §A2 14/16 audit cascade Git SHA refs at master HEAD substantively close all 14 commit decisions via per-decision B-### audit-trail (master_bug_catalog ## A2.1~A2.9 + 实验笔记 §200-§221); advisor batch sign-off retained as optional post-fire collateral | ✅ Layer 2 substantively complete via §A2 cascade (formal advisor batch sign-off optional post-fire) |
+| **OSF DOI 1 — Pre-outcome-creation witness** (paper-1 cryptographic external witness; supersedes advisor email per B-1570 + B-1650) | OSF public registration submitted **at empirical pre-outcome-creation moment** (UTC 2026-05-18T13:57:22Z artifact-zero check per `artifact_existence_check_doi1_20260518T135722Z.txt`); submission timestamp = cryptographic anchor; DOI string auto-assigned 0-48h post-submission via OSF admin approval (default per help.osf.io/article/330). Bundle = preregistration.md + osf_lock_manifest.md + locked_versions.md + model/dataset/ethics/evaluator/compute/neurips/negative-results/release-redaction/topvenue + env_snapshot.json + paper_drafts (frozen pre-outcome) + DOI_1_README.md + artifact_existence_check witness | ⏳ Layer 3 ALL DOI 1 BLOCKERS CLEARED 2026-05-18; MINTABLE NOW per §3a 8-step workflow |
+| **OSF DOI 2 — Phase 1a reproducibility bundle** (paper-1 reproducibility deposit; cited_by DOI 1) | OSF deposit minted post-Pass-1+Pass-2+analysis-frozen+paper-final (~2-3 weeks post Phase 1a fire 2026-05-18T13:28:06Z). Bundle = 42 condition_summary_v2.json + per-episode summary + steps JSONLs + aggregate outputs + figures + frozen analysis scripts + paper drafts post-data finalized + DOI_2_README.md with mandatory `cited_by` field referencing DOI 1 | ⏸ Layer 4 pending Pass-1 + Pass-2 + analysis-frozen + paper-final per §3b 8-step workflow |
 
 ### §2.5 Reusable patch artifacts — cross-submission provenance witness (B-1624 /stress A2.6c P1-8-B* codex Mode B reproducibility-auditor unique OOB 2026-05-18)
 
@@ -105,27 +119,51 @@ GPU compute capability / hostname / nvidia-smi output.
 
 ---
 
-## §3 Eight-step DOI workflow (post Phase 1a fire data lock; advisor batch sign-off optional)
+## §3 OSF DOI workflows — two-DOI split (B-1650~B-1655 doctrine restoration 2026-05-18 ~14:00 UTC)
 
-> **Doctrine-shift note (/stress A2.8 followup B-1570 2026-05-18)**: pre-fix header said "post advisor email reply" but post-2026-05-14 sync 收口 + §A2 14/16 audit cascade closure, advisor email reply is **no longer the gating event for OSF DOI mint**. The new gating event is **Phase 1a Pass-1 baseline data complete + ~~A100 B2 HF SHA pin landed~~ ✅ B2 SHA locked 2026-05-18 (B-1623 /stress 深入审 Mode A: `093f9f388b31de276ce2de164bdc2081324b9767`)**. Remaining gate item is now Phase 1a Pass-1 fire data. Step 1 reclassified as optional collateral; advisor batch sign-off can land before OR after OSF DOI mint as audit-trail reproducibility completeness.
+> **Doctrine-shift note (/stress doctrine restoration B-1650~B-1655 2026-05-18 ~14:00 UTC, supersedes B-1570 single-DOI "post Pass-1 data complete" framing that drifted from 2026-05-05 advisor sync §F.1 outcome decision)**: pre-correction §3 was a single 8-step workflow gated on Phase 1a Pass-1 baseline data complete (B-1570 doctrine retired advisor email gate; this correction restores the §F.1 pre-data DOI ordering invariant — DOI public-ledger timestamp must precede outcome unblinding, NOT lag it). Pre-correction §3 is now SPLIT into §3a (DOI 1 pre-outcome-creation witness, MINTABLE TODAY 2026-05-18) + §3b (DOI 2 reproducibility bundle, mint post Pass-1+Pass-2+analysis-frozen+paper-final). Step 1 advisor batch sign-off remains optional collateral; can land before OR after EITHER DOI mint as audit-trail reproducibility completeness.
 
-1. **(optional, post-fire collateral)** Save advisor batch sign-off email PDF + extract Gmail message-id if/when advisor signs (NOT blocking OSF DOI mint per B-1570 doctrine shift; §A2 14/16 audit cascade Git SHA refs at master HEAD already substantively close all 14 commit decisions)
-2. **Update `preregistration.md`** with confirmed thresholds + decision log entry
-3. **Run `python3 scripts/provenance/snapshot_env.py`** on **A100 (paper-1 canonical, mandatory)** + DGX (archive reference) + Myriad (optional cross-arch),
-   commit results under `results/provenance/env_lock_<host>.json` (B-132 2026-05-15: A100 is canonical, DGX is archive-only per §7 Infrastructure migration note)
-4. **Run `bash scripts/provenance/snapshot_vwa.sh`** on each VWA-bearing host,
-   commit results
-5. **Snapshot paper drafts** → `cp -r paper_drafts paper_drafts_locked` + commit
-6. **Tag git** → `git tag -a preregistration-locked -m "OSF DOI mint $(date)"`
-   + `git push origin preregistration-locked`
-7. **Mint OSF DOI** at https://osf.io/registries/ — link OSF page to the tagged
-   commit URL on GitHub (https://github.com/<user>/<repo>/tree/preregistration-locked)
-8. **Backfill this manifest** — populate all `<TBD>` cells with actual SHAs +
-   timestamps + DOI; commit as final lock proof
+### §3a Eight-step DOI 1 workflow — Pre-outcome-creation witness (MINTABLE NOW 2026-05-18)
 
-After Step 8, **no edits permitted** to any file referenced in §2 except via
-new commits explicitly noted as "post-lock amendment" in `paper_planning.md` §19
-decision log + paper §3 disclosure paragraph.
+Mint blocker triple: ✅ zero Phase 1a outcome artifacts at submission time (UTC 2026-05-18T13:57:22Z empirical check per `artifact_existence_check_doi1_20260518T135722Z.txt`) + ✅ B2 HF SHA `093f9f388b31de276ce2de164bdc2081324b9767` pinned + ✅ preregistration substance-locked (Git tag `preregistration-locked` at SHA `ef609a3863adc9b3698789b96a1ee9f709e1c832`, status: locked 2026-05-18T11:30Z per A2.8 cascade closure).
+
+1. **(operator)** Verify outcome-artifact-zero check still PASSES (re-run `artifact_existence_check` SSH probe to A100; if any episode_summary_v2.json has landed since `artifact_existence_check_doi1_20260518T135722Z.txt` capture, downgrade DOI 1 wording from `pre-outcome-creation` → `pre-outcome-inspection` and update `DOI_1_README.md` empirical status table accordingly)
+2. **(operator)** Stage DOI 1 bundle: copy/symlink all `docs/checkpoints/pre_run/*.md` + `paper_drafts/section{1..8}_*.md @ ef609a3` + `paper_drafts/paper.bib @ ef609a3` + `env_snapshot.json` (A100 pre-fire) + `DOI_1_README.md` + `artifact_existence_check_doi1_<UTC-TS>.txt` into `docs/checkpoints/pre_run/osf_deposit_DOI1_<UTC-TS>/` (frozen-at-`ef609a3` snapshot folder, git committable)
+3. **(operator)** Verify Git tag `preregistration-locked` is pushed to GitHub `origin/master` (DOI 1 OSF page will cite the GitHub tag URL https://github.com/<user>/<repo>/tree/preregistration-locked); commit + push if local-only
+4. **(operator at OSF.io)** Create new OSF project: title `Phase 1a Pre-outcome Analysis Lock — phantom-SoM pre-registration witness`; tags: pre-registration, hypothesis-lock, analysis-plan-lock, pre-outcome-witness, OSF DOI 1
+5. **(operator at OSF.io)** Upload DOI 1 bundle from staging folder; verify all files present per `DOI_1_README.md` "Bundle contents" table
+6. **(operator at OSF.io)** Submit public registration — captures submission UTC timestamp as cryptographic pre-outcome-creation anchor; record `osf_submitted_at_utc` + `osf_guid` in `preregistration.md` frontmatter + `DOI_1_README.md` frontmatter
+7. **(0-48h auto, OR manual approve)** OSF admin approval → DOI string assigned (`10.17605/OSF.IO/XXXXX`); record `osf_doi_1_pre_outcome_witness` in `preregistration.md` frontmatter + `DOI_1_README.md` frontmatter
+8. **(operator)** Backfill: paper §1 + §4 + Appendix D footnotes cite DOI 1; Git tag promote `preregistration-locked` → `preregistration-doi1-witnessed-<DOI>` + push; commit `doctrine(osf-witness): DOI 1 minted — <DOI>` as final pre-outcome-creation lock proof
+
+After Step 8, **no edits permitted** to any file referenced in §2 / §2.1 / §2.4 Layer 3 except via new commits explicitly noted as "post-lock amendment" in `paper_planning.md` §19 decision log + paper §3 disclosure paragraph.
+
+### §3b Eight-step DOI 2 workflow — Phase 1a reproducibility bundle (mint trigger: Pass-1 + Pass-2 + analysis-frozen + paper-final, ~2-3 weeks post fire)
+
+Mint blocker quadruple: ⏳ Pass-1 baseline 36 conditions complete (all 36 `condition_summary_v2.json` present per `make active` cell snapshot) + ⏳ Pass-2 learned router 6 conditions complete (all 6 `obs_mode="learned"` sentinel conditions present) + ⏳ analysis scripts frozen at commit SHA (`scripts/analysis/aggregate_phantom_lift.py` + `scripts/analysis/figures/*.py` SHA-locked) + ⏳ paper §1-§8 finalized post-codex round.
+
+1. **(operator)** Verify ALL 4 mint blockers PASS: re-run `artifact_existence_check` SSH probe to A100 with `episode_summary_count + condition_summary_count` expected = 42 + per-cell aggregates present + paper drafts post-codex-round signed off
+2. **(operator)** Stage DOI 2 bundle: copy all 42 `condition_summary_v2.json` + `episodes/*_summary.json` + `episodes/*_steps.jsonl` + `results/phantom_paper/*.csv` + `results/phantom_paper/figures/*.png` + frozen analysis scripts + final paper drafts + `run_registry/*.json` + `analysis_walkthrough.md` + `DOI_2_README.md` (with mandatory `cited_by: DOI 1`) into `docs/checkpoints/pre_run/osf_deposit_DOI2_<UTC-TS>/` folder
+3. **(operator)** Git commit + tag `phase-1a-data-complete` at HEAD; push to GitHub `origin/master`
+4. **(operator at OSF.io)** Create new OSF project: title `Phase 1a Reproducibility Bundle — phantom-SoM full outcome + analysis + paper deposit`; tags: reproducibility, data-deposit, OSF DOI 2; **explicit `cited_by` reference to DOI 1** (forward-only cross-link per OSF immutable-registration semantics)
+5. **(operator at OSF.io)** Upload DOI 2 bundle from staging folder
+6. **(operator at OSF.io)** Submit public registration — DOI 2 submission UTC timestamp is post-data (NOT pre-outcome-creation; this DOI's role is reproducibility, not pre-reg)
+7. **(0-48h auto, OR manual approve)** OSF admin approval → DOI 2 string assigned
+8. **(operator)** Backfill: paper §1 + §4 + Appendix D footnotes cite BOTH DOI 1 (pre-reg) + DOI 2 (reproducibility); Git tag promote `phase-1a-data-complete` → `phase-1a-doi2-deposited-<DOI>` + push; commit `doctrine(osf-witness): DOI 2 minted — <DOI>` as final reproducibility deposit proof
+
+After Step 8, the full paper-1 cryptographic witness chain is complete (Git tag + §A2 cascade + DOI 1 pre-outcome + DOI 2 reproducibility), and any paper version is replayable from `git checkout phase-1a-doi2-deposited-<DOI>` + DOI 2 OSF bundle.
+
+### §3c OSF approval-lag operational note (B-1650 OSF help.osf.io/article/330 reference)
+
+OSF public registration uses a 2-stage approval model:
+- **Stage A — Submission** (operator action): captures cryptographic submission UTC timestamp as the witness anchor; registration content immutable from this moment forward
+- **Stage B — Admin approval** (default auto 48h, OR manual project admin click): assigns DOI string `10.17605/OSF.IO/XXXXX` to the registration
+
+Paper §4 / Appendix D citation form depends on stage:
+- **Interim (pre-approval, 0-48h post-submission)**: `OSF registration GUID osf.io/xxxxx, submitted YYYY-MM-DDTHH:MM:SSZ UTC, pre-outcome-creation witness; DOI <pending OSF admin approval, default auto-approve 48h>.`
+- **Final (post-approval)**: `OSF DOI 10.17605/OSF.IO/XXXXX, submitted YYYY-MM-DDTHH:MM:SSZ UTC, pre-outcome-creation witness (empirical artifact-zero check at submission); registered Git tag preregistration-locked at SHA <ef609a3>.`
+
+The DOI string is a convenience for citation; the cryptographic anchor is the OSF submission UTC timestamp on the immutable registration page — verifiable by any third party visiting osf.io/xxxxx, before AND after DOI assignment.
 
 ---
 

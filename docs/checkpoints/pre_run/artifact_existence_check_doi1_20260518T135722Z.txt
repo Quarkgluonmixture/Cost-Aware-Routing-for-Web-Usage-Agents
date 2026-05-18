@@ -1,0 +1,32 @@
+=== Phase 1a outcome artifact existence check (DOI 1 pre-outcome-creation witness) ===
+
+Captured-at-UTC: 2026-05-18T13:58:07Z
+A100-host: a100-jiaming-test (10.134.51.2, A100-PCIE-40GB)
+A100-uptime-since: 2026-05-16 00:44:06
+Fire-started-UTC: 2026-05-18T13:28:06Z (per run_id _132806 suffix)
+
+--- (1) Per-episode outcome (earliest tier — episodes/*_summary.json) ---
+episode_summary_count: 0
+
+--- (2) Condition-level outcome (condition_summary_v2.json) ---
+condition_summary_count: 0
+
+--- (3) Step-level intermediate (episodes/*_steps.jsonl) ---
+steps_jsonl_count: 0
+
+--- (4) New aggregate outputs since fire start ---
+phantom_paper_new_csv_post_fire: 0
+
+--- (5) Pre-existing scaffolds (archive — NOT Phase 1a outcome) ---
+  results/phantom_paper/fig0c_drop_one_bootstrap_ci.csv: mtime=2026-05-18 13:25:14.969694272 +0000 size=99 bytes
+  fig0c CSV head (header-only, no data rows):
+    panel,site_baseline,mode,drop_one_loss_pp,ci95_low_pp,ci95_high_pp,n_common,n_expected,is_partial
+  1 results/phantom_paper/fig0c_drop_one_bootstrap_ci.csv
+
+--- (6) Conclusion ---
+STATUS: pre-outcome-creation (strongest tier) — NO Phase 1a Pass-1 outcome of any tier exists at submission time
+
+--- (7) Provenance ---
+Git HEAD: 1d73e5c34cf266ad5a7ed9ec10a79cc34e3dcbca
+preregistration-locked tag: 99f72f4e8cc10b90cd4408fde07ce69482ea474b
+VWA submodule HEAD: ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927
