@@ -189,10 +189,23 @@ def test_b654_per_site_emits_scored_set_denominator(tmp_path):
                 "n_episodes_observed", "scored_set_n", "n_success",
                 "estimand_note"):
         assert col in df.columns, f"B-654 missing column: {col}"
-    # observed denominator = 5, success_rate_observed = 3/5 = 0.6.
+    # B-1599 (/stress A2.10 P2-8-A 2026-05-18): replace hardcoded N=5 with
+    # computed expectation from ep_df fixture, so fixture changes don't
+    # silently break this test. observed denominator = N tasks per
+    # (cond_id × site); success_rate_observed = (task_id % 2 == 0).mean().
     for _, row in df.iterrows():
-        assert row["n_episodes_observed"] == 5
-        assert abs(row["success_rate_observed"] - 0.6) < 1e-9
+        cond_rows = ep_df[
+            (ep_df["condition_id"] == row["condition_id"])
+            & (ep_df["benchmark_site"] == row["benchmark_site"])
+        ]
+        expected_n = len(cond_rows)
+        expected_sr = float(cond_rows["success"].mean())
+        assert row["n_episodes_observed"] == expected_n, (
+            f"expected n_episodes_observed={expected_n}, got {row['n_episodes_observed']}"
+        )
+        assert abs(row["success_rate_observed"] - expected_sr) < 1e-9, (
+            f"expected SR={expected_sr}, got {row['success_rate_observed']}"
+        )
 
 
 # ─── B-650 ──────────────────────────────────────────────────────────────────

@@ -112,29 +112,56 @@ def scored_task_count(
 def _compute_pareto_front(points: List[Dict[str, float]], maximize: str, minimize: str) -> List[int]:
     """Return indices of Pareto-optimal points (maximize one axis, minimize another).
 
-    Sweep order: by `maximize` desc, then `minimize` asc. A point joins the
-    front only when its `minimize` is strictly less than the running best —
-    `<=` would let dominated points (same minimize, lower maximize) sneak in.
+    Standard Pareto dominance: point j dominates point i iff
+        max_j >= max_i  AND  min_j <= min_i  AND  (max_j > max_i  OR  min_j < min_i)
+    (i.e., j is no worse on both axes AND strictly better on at least one).
+    A point is on the Pareto front iff NO other point dominates it.
 
-    B-173 (/stress A1.4b-i Claude A8 + gemini C5): when two conditions have
-    EXACTLY equal `maximize` AND equal `minimize`, the sort-order winner is
-    kept and the tied loser is dropped (because `<` is strict). The standard
-    Pareto definition would include both (neither dominates the other). For
-    paper figures, this means: if 2 conditions share the same SR and the same
-    cost (rare at observed N>=24 cells but possible after rounding), only one
-    point is plotted on the front. Callers (paper figure captions) should
-    disclose "ties broken by sort order".
+    Ties preserved: if A and B have EXACTLY equal `maximize` AND EXACTLY equal
+    `minimize`, neither dominates the other (neither has a strict-better axis),
+    so BOTH are on the Pareto front. This matches the standard Pareto definition
+    used in optimization theory + economics + multi-objective ML.
+
+    B-1598 (/stress A2.10 P1-4-A* 2026-05-18) — restored B-660 tie preservation
+    contract over B-173 strict-< doctrine drift. Pre-fix `_compute_pareto_front`
+    used a single-sweep strict-< heuristic ("sort by maximize desc + minimize
+    asc, accept only when minimize is strictly less than running best") which
+    SILENTLY DROPPED tied points (e.g., two configurations with identical SR
+    and identical cost — neither dominates the other, both should be on the
+    front, but strict-< sweep kept only the sort-order winner). The B-660
+    regression test `test_b660_pareto_preserves_true_ties` was added 2026-05-17
+    to encode the standard Pareto contract but the production code at L134
+    still used B-173 strict-<; pytest FAILED in production (verified via
+    /stress A2.10 P1-4-A* bash check 2026-05-18) without a CI catching it.
+    This fix uses explicit O(N²) dominance check (correct semantics, no
+    sort-order dependency), which is fine at typical N<30 for paper figures.
+
+    B-173 historical note: the original strict-< sweep was introduced in
+    A1.4b-i (Claude A8 + gemini C5) as a "ties broken by sort order"
+    convention with caller-side caption disclosure; that disclosure was
+    never honored anywhere in paper drafts. A2.10 P1-4-A* retires the
+    convention in favor of standard Pareto semantics + figure callers
+    must visualize tied non-dominated arms (e.g., overlapping markers with
+    side-by-side annotation in the Pareto figure rather than dropping one).
     """
-    indexed = list(enumerate(points))
-    indexed.sort(key=lambda x: (-x[1].get(maximize, 0.0), x[1].get(minimize, 0.0)))
+    n = len(points)
     pareto_indices: List[int] = []
-    best_min = float("inf")
-    for idx, pt in indexed:
-        val = pt.get(minimize, float("inf"))
-        if val < best_min:
-            pareto_indices.append(idx)
-            best_min = val
-    pareto_indices.sort(key=lambda i: points[i].get(minimize, 0.0))
+    for i in range(n):
+        max_i = points[i].get(maximize, 0.0)
+        min_i = points[i].get(minimize, float("inf"))
+        dominated = False
+        for j in range(n):
+            if i == j:
+                continue
+            max_j = points[j].get(maximize, 0.0)
+            min_j = points[j].get(minimize, float("inf"))
+            # j dominates i iff: j no worse on both axes AND strictly better on at least one
+            if max_j >= max_i and min_j <= min_i and (max_j > max_i or min_j < min_i):
+                dominated = True
+                break
+        if not dominated:
+            pareto_indices.append(i)
+    pareto_indices.sort(key=lambda k: points[k].get(minimize, 0.0))
     return pareto_indices
 
 
@@ -1503,11 +1530,57 @@ def _analyze_per_site(
     if "condition_id" not in ep_df.columns:
         return
 
+    # B-654 (/stress A2.10 Chunk 2 follow-up, P2-8 verification surfaced
+    # B-654 column-emission gap 2026-05-18): per-site CSV must carry both
+    # estimand columns — `success_rate_observed` (denominator = N tasks
+    # actually run in this condition × site, i.e. `n_episodes_observed`)
+    # AND `success_rate_scored_set` (denominator = `scored_task_count(site)`,
+    # the §139.8 scored set size after N/A exclusion). The two estimands
+    # converge at Phase 1a rerun completion when n_episodes_observed equals
+    # scored_set_n; reporting both columns surfaces the gap during partial
+    # / in-progress runs and lets paper §4 cite the canonical scored-set
+    # estimand without ambiguity. Pre-fix `_analyze_per_site` emitted only
+    # `n_episodes` + `success_rate` (single-column heuristic) so paper-grade
+    # callers couldn't tell which estimand was reported.
+    # `benchmark` column derivation: most rows carry `benchmark` field via
+    # episode summary v2 (visualwebarena | webarena); fall back to first
+    # observed value or "visualwebarena" default.
     agg_parts: List[Dict[str, Any]] = []
     for (cid, site), grp in ep_df.groupby(["condition_id", "benchmark_site"]):
-        row: Dict[str, Any] = {"condition_id": cid, "benchmark_site": site, "n_episodes": len(grp)}
+        n_episodes_observed = len(grp)
+        bench_val = "visualwebarena"
+        if "benchmark" in grp.columns:
+            bench_series = grp["benchmark"].dropna()
+            if not bench_series.empty:
+                bench_val = str(bench_series.iloc[0])
+        row: Dict[str, Any] = {
+            "condition_id": cid,
+            "benchmark_site": site,
+            "n_episodes": n_episodes_observed,  # legacy alias, kept for backward-compat
+            "n_episodes_observed": n_episodes_observed,
+        }
         if "success" in grp.columns:
-            row["success_rate"] = float(pd.to_numeric(grp["success"], errors="coerce").fillna(0).mean())
+            success_numeric = pd.to_numeric(grp["success"], errors="coerce").fillna(0)
+            n_success = int(success_numeric.sum())
+            sr_observed = float(success_numeric.mean()) if n_episodes_observed > 0 else 0.0
+            row["success_rate"] = sr_observed  # legacy alias
+            row["success_rate_observed"] = sr_observed
+            row["n_success"] = n_success
+            # Scored-set denominator (post-§139.8 N/A exclusion).
+            try:
+                scored_n = scored_task_count(str(site), bench_val, strict=False)
+            except Exception:
+                scored_n = 0
+            row["scored_set_n"] = scored_n if scored_n > 0 else None
+            row["success_rate_scored_set"] = (
+                float(n_success / scored_n) if scored_n and scored_n > 0 else None
+            )
+            row["estimand_note"] = (
+                "success_rate_observed denominator=n_episodes_observed (in-progress); "
+                "success_rate_scored_set denominator=scored_task_count(site) "
+                "(post-§139.8 N/A exclusion, canonical paper-§4 estimand). "
+                "Two estimands converge when n_episodes_observed == scored_set_n."
+            )
         if "steps" in grp.columns:
             row["avg_steps"] = float(pd.to_numeric(grp["steps"], errors="coerce").mean())
         if "total_cost_usd" in grp.columns:
