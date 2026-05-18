@@ -28,10 +28,10 @@ except ModuleNotFoundError:  # pragma: no cover
     raise
 
 try:
-    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+    from scripts.analysis.lib.run_registry import BASELINES, PAPER_MODES, get_cells
 except ModuleNotFoundError:  # pragma: no cover
     sys.path.append(str(Path(__file__).resolve().parents[3]))
-    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+    from scripts.analysis.lib.run_registry import BASELINES, PAPER_MODES, get_cells
 
 ROOT = Path(__file__).resolve().parents[3]
 IN_JSON = ROOT / "docs/analysis/cross_sites/axis1_microbehavior.json"
@@ -44,11 +44,12 @@ PAIR_SPECS = [
     ("axis_1_text_alt", "P-prompt↔P-SoM", "axis 1", "#4c78a8"),
     ("compound_dom_to_psom", "DOM↔P-SoM", "compound", "#9467bd"),
 ]
+# 3-model deep-update 2026-05-18: PANELS dynamic from BASELINES registry
+# (was 4 hardcoded pre-B2 Gemma3-VL inclusion 2026-05-14).
 PANELS = [
-    ("B0", "classifieds", "B0 cls"),
-    ("B0", "reddit", "B0 red"),
-    ("B1", "classifieds", "B1 cls"),
-    ("B1", "reddit", "B1 red"),
+    (baseline, site, f"{baseline} {'cls' if site == 'classifieds' else 'red'}")
+    for baseline in BASELINES
+    for site in ("classifieds", "reddit")
 ]
 
 
@@ -96,7 +97,11 @@ def main() -> None:
     data = load_json()
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 9.5, "figure.dpi": 150})
-    fig, axes = plt.subplots(2, 2, figsize=(13.5, 9.5), sharey=True)
+    # 3-model deep-update 2026-05-18: (n_baselines, 2 sites) grid.
+    n_baselines = len(BASELINES)
+    fig, axes = plt.subplots(n_baselines, 2, figsize=(13.5, max(6.0, 4.0 * n_baselines)), sharey=True)
+    if n_baselines == 1:
+        axes = axes.reshape(1, -1)
     for ax, (baseline, site, title) in zip(axes.ravel(), PANELS):
         draw_panel(ax, data, baseline, site, title)
     fig.suptitle("Micro 2d — first-action divergence across axis-control pairs", fontsize=14, fontweight="bold")

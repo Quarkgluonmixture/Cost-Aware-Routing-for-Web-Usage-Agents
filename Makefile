@@ -124,7 +124,9 @@ compare:
 	@test -n "$(B0)" || (echo "ERROR: B0=<b0_run_dir> required"; exit 1)
 	@test -n "$(B1)" || (echo "ERROR: B1=<b1_run_dir> required"; exit 1)
 	@test -n "$(SITE)" || (echo "ERROR: SITE=<site> required"; exit 1)
-	$(PYTHON) scripts/analysis/compare_b0_b1.py --b0-run-dir $(B0) --b1-run-dir $(B1) --site $(SITE)
+	# 3-model deep-update 2026-05-18: B2 (Gemma3-VL) optional → 3-way comparison.
+	$(PYTHON) scripts/analysis/compare_b0_b1.py --b0-run-dir $(B0) --b1-run-dir $(B1) \
+		$(if $(B2),--b2-run-dir $(B2),) --site $(SITE)
 
 # ---- Maintenance ----
 clean-tasks:
@@ -496,16 +498,23 @@ analyze-paper analyze-layered:
 analyze-paper-per-run:
 	$(MAKE) _per_run_all
 
-# B0 vs B1 site comparison — runs compare_b0_b1.py for each (B0_run, B1_run)
-# pair on cls + red. Outputs to results/visualwebarena/phase1/b0_vs_b1_<site>/.
-B0_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; print(get_cell('B0','classifieds','DOM').run_dir)")
-B0_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; print(get_cell('B0','reddit','DOM').run_dir)")
-B1_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; print(get_cell('B1','classifieds','DOM').run_dir)")
-B1_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; print(get_cell('B1','reddit','DOM').run_dir)")
+# Cross-baseline site comparison — runs compare_b0_b1.py for each (B0,B1[,B2]) DOM
+# run set on cls + red. Outputs to results/visualwebarena/phase1/b0_vs_b1[_vs_b2]_<site>/.
+# 3-model deep-update 2026-05-18: B2_RUN_CLS/RED resolved from registry; returns
+# empty string when cell missing → compare auto-falls through to legacy 2-way mode.
+B0_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; c=get_cell('B0','classifieds','DOM'); print(c.run_dir if c else '')")
+B0_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; c=get_cell('B0','reddit','DOM'); print(c.run_dir if c else '')")
+B1_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; c=get_cell('B1','classifieds','DOM'); print(c.run_dir if c else '')")
+B1_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; c=get_cell('B1','reddit','DOM'); print(c.run_dir if c else '')")
+B2_RUN_CLS ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; c=get_cell('B2','classifieds','DOM'); print(c.run_dir if c else '')")
+B2_RUN_RED ?= $(shell $(PYTHON) -c "from scripts.analysis.lib.run_registry import get_cell; c=get_cell('B2','reddit','DOM'); print(c.run_dir if c else '')")
 
-compare-b0-b1-all:
-	@$(MAKE) --no-print-directory compare B0=$(B0_RUN_CLS) B1=$(B1_RUN_CLS) SITE=classifieds || true
-	@$(MAKE) --no-print-directory compare B0=$(B0_RUN_RED) B1=$(B1_RUN_RED) SITE=reddit || true
+# Legacy target retained for back-compat; alias to compare-baselines-all.
+compare-b0-b1-all: compare-baselines-all
+
+compare-baselines-all:
+	@$(MAKE) --no-print-directory compare B0=$(B0_RUN_CLS) B1=$(B1_RUN_CLS) B2=$(B2_RUN_CLS) SITE=classifieds || true
+	@$(MAKE) --no-print-directory compare B0=$(B0_RUN_RED) B1=$(B1_RUN_RED) B2=$(B2_RUN_RED) SITE=reddit || true
 
 # Paper-grade snapshot — one-shot "everything after new data":
 #   1. per-run pipeline (rederive + reason-diag + cross-rep + confidence) on

@@ -141,17 +141,21 @@ def draw_panel(ax: plt.Axes, site: str, points: list[Point], cost_table: dict) -
         ax.scatter(p.cost, p.adj_sr, s=160, marker=MODEL_MARKERS[p.model],
                    color=MODE_COLORS[p.mode], edgecolor="#222222", linewidth=1.2, zorder=3)
 
-    # Cluster labels (B0 / B1) instead of per-cell labels
-    b0_costs = [p.cost for p in site_points if p.model == "B0"]
-    b1_costs = [p.cost for p in site_points if p.model == "B1"]
-    if b0_costs:
-        b0_x = sum(b0_costs) / len(b0_costs)
-        ax.text(b0_x, max(p.adj_sr for p in site_points if p.model == "B0") + 3.5,
-                "B0 (API token $)", ha="center", fontsize=10, fontweight="bold", color="#222222")
-    if b1_costs:
-        b1_x = sum(b1_costs) / len(b1_costs)
-        ax.text(b1_x, max(p.adj_sr for p in site_points if p.model == "B1") + 3.5,
-                "B1 (electricity $)", ha="center", fontsize=10, fontweight="bold", color="#222222")
+    # 3-model deep-update 2026-05-18: per-baseline cluster labels iterate BASELINES
+    # (was hardcoded B0+B1 only). B0=API$, B1/B2=electricity$ (both 4B local class).
+    CLUSTER_LABELS = {
+        "B0": "B0 (API token $)",
+        "B1": "B1 (electricity $)",
+        "B2": "B2 (electricity $)",
+    }
+    for model in BASELINES:
+        m_points = [p for p in site_points if p.model == model]
+        if not m_points:
+            continue
+        m_x = sum(p.cost for p in m_points) / len(m_points)
+        m_y = max(p.adj_sr for p in m_points) + 3.5
+        ax.text(m_x, m_y, CLUSTER_LABELS.get(model, model),
+                ha="center", fontsize=10, fontweight="bold", color="#222222")
 
     # Deployment-class gap annotation (the headline message of fig3d)
     ratios = cost_table.get("deployment_class_ratios", {}).get(site, {})
@@ -227,12 +231,14 @@ def main() -> None:
     fig.legend(handles=mode_handles + model_handles, loc="upper center",
                bbox_to_anchor=(0.5, 0.05), ncol=6, frameon=False, fontsize=10)
 
-    fig.suptitle("Deployment-Class Cost Gap: B0 (API) vs B1 (local electricity)",
+    # 3-model deep-update 2026-05-18: titles describe B0 vs (B1+B2 same electricity
+    # class — both 4B local; cross-family contrast handled in fig0a/fig0c).
+    fig.suptitle("Deployment-Class Cost Gap: B0 (API) vs B1+B2 (local electricity)",
                  fontsize=14, fontweight="bold")
     fig.text(
         0.5, 0.94,
-        r"Different cost classes — B0 reports API token \$, B1 reports electricity-equivalent \$ "
-        r"($0.12/kWh UK industrial). Not directly ratio-comparable.",
+        r"Different cost classes — B0 reports API token \$, B1 (Qwen3-VL-4B) + B2 (Gemma3-VL) "
+        r"report electricity-equivalent \$ ($0.12/kWh UK industrial). Not directly ratio-comparable.",
         ha="center", fontsize=9, color="#555555",
     )
     fig.text(

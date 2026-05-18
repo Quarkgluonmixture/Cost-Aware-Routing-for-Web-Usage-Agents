@@ -209,6 +209,24 @@ in_flight:
     expected_n: 234
     grade: archived
     notes: "Tier 2 chain; pre-Phase-A data, will be discarded after rerun"
+  # 3-model deep-update 2026-05-18: B2 (Gemma3-VL) DOM pilot runs from
+  # 2026-05-16 (3 ep each, SR=0%). grade: in-flight so aggregators see them
+  # but don't count toward paper-grade pool. Will be promoted to paper-grade
+  # cells block once Phase 1a Pass-1 fires the full 224/205-ep runs.
+  - baseline: B2
+    site: classifieds
+    mode: DOM
+    run_dir: B2_dom_classifieds_20260516
+    condition_subdir: phase1_dom_router_0
+    grade: in-flight
+    notes: "3-ep pilot; Phase 1a Pass-1 fire pending (user 'fire' trigger 2026-05-18)"
+  - baseline: B2
+    site: reddit
+    mode: DOM
+    run_dir: B2_dom_reddit_20260516
+    condition_subdir: phase1_dom_router_0
+    grade: in-flight
+    notes: "3-ep pilot; Phase 1a Pass-1 fire pending (user 'fire' trigger 2026-05-18)"
 
 archived:
   - baseline: B0

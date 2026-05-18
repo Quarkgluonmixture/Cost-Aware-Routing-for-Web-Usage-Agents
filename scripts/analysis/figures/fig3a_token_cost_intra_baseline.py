@@ -200,8 +200,15 @@ def main() -> None:
         return
 
     plt.rcParams.update({"font.size": 9.5, "figure.dpi": 150})
-    fig, axes = plt.subplots(1, 4, figsize=(22, 6))
-    panel_specs = [("B0", "classifieds"), ("B0", "reddit"), ("B1", "classifieds"), ("B1", "reddit")]
+    # 3-model deep-update 2026-05-18: panel_specs + figsize scale with
+    # BASELINES × sites. Was hardcoded (1, 4) panels with explicit B0/B1 list.
+    # Empty (baseline, site) cells render with [data pending] annotation per
+    # draw_panel graceful-skip; figure 1×(n_baselines × 2 sites).
+    panel_specs = [(b, s) for b in BASELINES for s in ("classifieds", "reddit")]
+    n_panels = len(panel_specs)
+    fig, axes = plt.subplots(1, n_panels, figsize=(5.5 * n_panels, 6))
+    if n_panels == 1:
+        axes = [axes]
     for ax, (baseline, site) in zip(axes, panel_specs):
         draw_panel(ax, baseline, site, cells)
 
@@ -214,10 +221,13 @@ def main() -> None:
     fig.legend(handles=legend_handles, loc="upper center", ncol=6, frameon=False, fontsize=9.5,
                bbox_to_anchor=(0.5, 1.04))
 
-    fig.suptitle("Intra-baseline cost vs adjusted SR (B0 API$ / B1 electricity$)",
+    # 3-model deep-update 2026-05-18: title + footer describe class for each baseline
+    # so B2 (also electricity-equivalent like B1 — both 4B local deployment) is named.
+    fig.suptitle("Intra-baseline cost vs adjusted SR (B0 API$ / B1+B2 electricity$)",
                  fontsize=13, fontweight="bold", y=1.06)
     fig.text(0.5, -0.02,
-             "B0 = API token \\$. B1 = electricity-equivalent (\\$0.12/kWh UK industrial). Per-panel Pareto only.",
+             "B0 = API token \\$. B1 (Qwen3-VL-4B) + B2 (Gemma3-VL) = electricity-equivalent "
+             "(\\$0.12/kWh UK industrial). Per-panel Pareto only.",
              ha="center", fontsize=8.5, color="#666666")
     fig.tight_layout(rect=(0, 0, 1, 1))
     OUT.parent.mkdir(parents=True, exist_ok=True)

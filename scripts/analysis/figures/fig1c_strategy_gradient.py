@@ -27,10 +27,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 try:
-    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+    from scripts.analysis.lib.run_registry import BASELINES, PAPER_MODES, get_cells
 except ModuleNotFoundError:  # pragma: no cover - supports direct script execution.
     sys.path.append(str(Path(__file__).resolve().parents[3]))
-    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+    from scripts.analysis.lib.run_registry import BASELINES, PAPER_MODES, get_cells
 
 ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT / "results/phantom_paper/figures/fig1c_strategy_gradient.png"
@@ -88,18 +88,21 @@ REDDIT_VERIFIED = {
     },
 }
 
+# 3-model deep-update 2026-05-18: drive baselines from BASELINES registry
+# (was hardcoded ("B0","B1") pre-B2 Gemma3-VL inclusion 2026-05-14).
+# Empty cells (no Phase 1a data yet for B2) → all-mode n/a hatched bars per
+# draw_panel graceful-skip path; figure scales to 3×2=6 rows automatically.
 STEP_DIRS: dict[str, dict[str, dict[str, Path]]] = {
     baseline: {
         site: {cell.mode: cell.episodes_dir for cell in get_cells(baseline=baseline, site=site)}
         for site in ("reddit", "classifieds")
     }
-    for baseline in ("B0", "B1")
+    for baseline in BASELINES
 }
 ROW_SPECS = [
-    ("B0", "reddit", "B0 Reddit"),
-    ("B0", "classifieds", "B0 Classifieds"),
-    ("B1", "reddit", "B1 Reddit"),
-    ("B1", "classifieds", "B1 Classifieds"),
+    (baseline, site, f"{baseline} {'Reddit' if site == 'reddit' else 'Classifieds'}")
+    for baseline in BASELINES
+    for site in ("reddit", "classifieds")
 ]
 SEARCH_MARKERS = {"reddit": ("/search",), "classifieds": ("page=search", "/search")}
 
@@ -277,7 +280,12 @@ def main() -> None:
     print_verbose(values)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 8.5, "figure.dpi": 150})
-    fig, axes = plt.subplots(4, 4, figsize=(15, 13.5))
+    n_rows = len(ROW_SPECS)
+    # 3-model deep-update 2026-05-18: figsize scales with row count
+    # (4 rows pre-B2 = 13.5in; 6 rows post-B2 = 18.0in @ 3in/row).
+    fig, axes = plt.subplots(n_rows, 4, figsize=(15, max(9.0, 3.0 * n_rows + 1.5)))
+    if n_rows == 1:  # subplots returns 1D when nrows=1; normalize
+        axes = axes.reshape(1, -1)
 
     for row, (baseline, site, _label) in enumerate(ROW_SPECS):
         site_metrics = values[(baseline, site)]
@@ -285,20 +293,22 @@ def main() -> None:
             draw_panel(axes[row, col], row, metric, site_metrics)
 
     # Row labels (left side)
-    n_rows = len(ROW_SPECS)
     for idx, (_baseline, _site, label) in enumerate(ROW_SPECS):
         # Y position at vertical center of each row in figure coords
         y = 1.0 - (idx + 0.5) / n_rows * 0.85 - 0.04
         fig.text(0.012, y, label, rotation=90, va="center", ha="center", fontsize=11, fontweight="bold")
 
-    fig.suptitle("Strategy Gradient: Representation Changes Exploration Shape (B0 + B1)", fontsize=13, fontweight="bold")
+    fig.suptitle(
+        f"Strategy Gradient: Representation Changes Exploration Shape ({' + '.join(BASELINES)})",
+        fontsize=13, fontweight="bold",
+    )
     fig.text(
         0.5,
         0.012,
-        "All rows live-computed from step JSONL (B0 5-mode + B1 partial). "
-        "B1 cls includes P-SoM; B1 reddit phantom modes pending (n/a hatched). "
-        "OSClass search detection uses 'page=search' / '/search' and measures search-page coverage; "
-        "cross-site comparison invalid for the search-loop column.",
+        "All rows live-computed from step JSONL. Empty cells = Phase 1a data pending "
+        "(n/a hatched). OSClass search detection uses 'page=search' / '/search' and "
+        "measures search-page coverage; cross-site comparison invalid for the "
+        "search-loop column.",
         ha="center",
         fontsize=7.5,
         color="#555555",

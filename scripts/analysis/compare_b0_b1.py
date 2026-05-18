@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
 """Per-run diagnostic; not part of the 4-dimension evidence framework.
 
-B0 vs B1 Phase 1 comparison script.
+Cross-baseline Phase 1 comparison script (B0 vs B1 vs B2).
 
-Reads condition_summary_v2.json from B0 (235B API model) and B1 (4B local model)
-run directories and computes SR / cost / Mirage Effect comparisons.
+3-model deep-update 2026-05-18: B2 (Gemma3-VL, google/gemma-3-4b-it, cross-family
+4B local) added to scope alongside B0 (Qwen3-VL-235B API) + B1 (Qwen3-VL-4B local).
+B2 input optional — when absent, script falls back to legacy B0 vs B1 mode.
+
+Reads condition_summary_v2.json from each provided run directory and computes
+SR / cost / Mirage Effect comparisons.
 
 Usage:
     python3 scripts/analysis/compare_b0_b1.py \\
         --b0-run-dir results/visualwebarena/phase1/<b0_classifieds_run> \\
         --b1-run-dir results/visualwebarena/phase1/<b1_classifieds_run> \\
+        [--b2-run-dir results/visualwebarena/phase1/<b2_classifieds_run>] \\
         [--site classifieds] \\
-        [--output-dir results/visualwebarena/phase1/b0_vs_b1/] \\
-        [--no-adjusted]
+        [--output-dir results/visualwebarena/phase1/b0_vs_b1_vs_b2/] \\
+        [--use-legacy-adjusted]
 """
 
 from __future__ import annotations
@@ -150,14 +155,17 @@ def _effective_sr(cond: Dict[str, Any], use_adjusted: bool) -> float:
 # ---------------------------------------------------------------------------
 
 def build_comparison_rows(
-    b0_conds: Dict[str, Dict],
-    b1_conds: Dict[str, Dict],
+    baseline_conds: Dict[str, Dict[str, Dict]],
     use_adjusted: bool,
 ) -> List[Dict[str, Any]]:
-    """Build B0_vs_B1_comparison.csv rows."""
+    """Build cross-baseline comparison CSV rows.
+
+    3-model deep-update 2026-05-18: was 2-baseline hardcoded; now iterates
+    arbitrary `baseline_conds` mapping {label → {mode → cond}}.
+    """
     rows = []
-    all_modes = sorted(set(list(b0_conds.keys()) + list(b1_conds.keys())))
-    for model_label, cond_map in [("B0", b0_conds), ("B1", b1_conds)]:
+    all_modes = sorted({mode for conds in baseline_conds.values() for mode in conds.keys()})
+    for model_label, cond_map in baseline_conds.items():
         for mode in all_modes:
             cond = cond_map.get(mode)
             if cond is None:
@@ -186,13 +194,12 @@ def build_comparison_rows(
 
 
 def build_mirage_rows(
-    b0_conds: Dict[str, Dict],
-    b1_conds: Dict[str, Dict],
+    baseline_conds: Dict[str, Dict[str, Dict]],
     use_adjusted: bool,
 ) -> List[Dict[str, Any]]:
-    """Build B0_vs_B1_mirage_effect.csv rows (SoM - DOM gap per model)."""
+    """Build per-baseline SoM−DOM gap rows (Mirage Effect diagnostic)."""
     rows = []
-    for model_label, cond_map in [("B0", b0_conds), ("B1", b1_conds)]:
+    for model_label, cond_map in baseline_conds.items():
         som_cond = cond_map.get("som")
         dom_cond = cond_map.get("dom")
         if som_cond is None or dom_cond is None:
@@ -218,19 +225,24 @@ def build_mirage_rows(
 
 def _plot_comparison(
     comparison_rows: List[Dict[str, Any]],
+    models: List[str],
     site: str,
     label: str,
     use_adjusted: bool,
     out_path: Path,
 ) -> None:
-    """Grouped bar chart: models × modes for SR and cost (dual axis)."""
+    """Grouped bar chart: models × modes for SR and cost (dual axis).
+
+    3-model deep-update 2026-05-18: `models` is now an arg (was hardcoded
+    ["B0","B1"]); offset math reworked for N-baseline even spacing.
+    """
     if not HAS_MPL or not HAS_NP:
         return
 
-    models = ["B0", "B1"]
     modes = MODES
     n_modes = len(modes)
-    width = 0.35
+    n_models = len(models)
+    width = min(0.35, 0.85 / max(n_models, 1))
     x = np.arange(n_modes)
 
     sr_by_model: Dict[str, List[float]] = {}
@@ -248,7 +260,7 @@ def _plot_comparison(
     ax2 = ax1.twinx()
 
     for i, mdl in enumerate(models):
-        offset = (i - 0.5) * width
+        offset = (i - (n_models - 1) / 2) * width
         ax1.bar(x + offset, sr_by_model[mdl], width, label=f"{mdl} {sr_label}", alpha=0.8)
         ax2.plot(
             x + offset, cost_by_model[mdl], "D--",
@@ -259,7 +271,7 @@ def _plot_comparison(
     ax1.set_xticklabels(modes, fontsize=11)
     ax1.set_ylabel(sr_label, color="tab:blue")
     ax2.set_ylabel("Avg Cost (USD)", color="tab:orange")
-    ax1.set_title(f"{label} B0 vs B1 — {site} Phase 1")
+    ax1.set_title(f"{label} {' vs '.join(models)} — {site} Phase 1")
     ax1.set_ylim(0, max(0.4, ax1.get_ylim()[1]))
 
     lines1, labels1 = ax1.get_legend_handles_labels()
@@ -308,14 +320,20 @@ def _plot_mirage_effect(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Compare B0 (235B API) vs B1 (4B local) Phase 1 results"
+        description="Compare Phase 1 results across baselines (B0/B1/B2)"
     )
-    parser.add_argument("--b0-run-dir", required=True, help="B0 run directory")
-    parser.add_argument("--b1-run-dir", required=True, help="B1 run directory")
+    parser.add_argument("--b0-run-dir", required=True, help="B0 (Qwen3-VL-235B API) run directory")
+    parser.add_argument("--b1-run-dir", required=True, help="B1 (Qwen3-VL-4B local) run directory")
+    parser.add_argument(
+        "--b2-run-dir", default=None,
+        help="B2 (Gemma3-VL, optional) run directory. When omitted, script "
+             "operates in legacy B0 vs B1 mode for back-compat.",
+    )
     parser.add_argument("--site", default="classifieds", help="Site name (default: classifieds)")
     parser.add_argument(
         "--output-dir", default=None,
-        help="Output directory (default: results/visualwebarena/phase1/b0_vs_b1/)",
+        help="Output directory (default: results/visualwebarena/phase1/<combo>/ "
+             "where <combo> = b0_vs_b1 or b0_vs_b1_vs_b2 depending on inputs)",
     )
     parser.add_argument(
         "--use-legacy-adjusted", action="store_true",
@@ -330,17 +348,19 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    b0_run = Path(args.b0_run_dir)
-    b1_run = Path(args.b1_run_dir)
-    for rd in [b0_run, b1_run]:
+    # 3-model deep-update 2026-05-18: build label→run_dir dict; B2 optional.
+    baseline_runs: Dict[str, Path] = {"B0": Path(args.b0_run_dir), "B1": Path(args.b1_run_dir)}
+    if args.b2_run_dir:
+        baseline_runs["B2"] = Path(args.b2_run_dir)
+    for label, rd in baseline_runs.items():
         if not rd.is_dir():
-            print(f"[ERROR] Not a directory: {rd}")
+            print(f"[ERROR] {label} not a directory: {rd}")
             sys.exit(1)
 
-    out_dir = (
-        Path(args.output_dir)
-        if args.output_dir
-        else Path("results/visualwebarena/phase1/b0_vs_b1")
+    # Output dir naming: legacy b0_vs_b1 when 2-baseline; b0_vs_b1_vs_b2 when 3.
+    default_combo = "_vs_".join(b.lower() for b in baseline_runs.keys())
+    out_dir = Path(args.output_dir) if args.output_dir else Path(
+        f"results/visualwebarena/phase1/{default_combo}"
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -351,53 +371,49 @@ def main() -> None:
 
     # --- Load data ---
     print("[1/4] Loading condition summaries...")
-    b0_conds = load_conditions(b0_run, "B0")
-    b1_conds = load_conditions(b1_run, "B1")
+    baseline_conds: Dict[str, Dict[str, Dict[str, Any]]] = {
+        label: load_conditions(rd, label) for label, rd in baseline_runs.items()
+    }
 
-    b0_modes = sorted(b0_conds.keys())
-    b1_modes = sorted(b1_conds.keys())
-    print(f"  B0 modes: {b0_modes}")
-    print(f"  B1 modes: {b1_modes}")
-
-    for model_label, conds in [("B0", b0_conds), ("B1", b1_conds)]:
+    for label, conds in baseline_conds.items():
+        print(f"  {label} modes: {sorted(conds.keys())}")
         for mode, cond in conds.items():
             if cond.get("_stub"):
                 sr = cond.get("success_rate")
                 adj = _get_adjusted_sr(cond)
-                print(f"  [STUB] {model_label} {mode}: raw={sr:.3f} adj={adj}")
+                print(f"  [STUB] {label} {mode}: raw={sr:.3f} adj={adj}")
 
     # --- Build tables ---
     print("[2/4] Building comparison tables...")
-    comparison_rows = build_comparison_rows(b0_conds, b1_conds, use_adjusted)
-    mirage_rows = build_mirage_rows(b0_conds, b1_conds, use_adjusted)
+    comparison_rows = build_comparison_rows(baseline_conds, use_adjusted)
+    mirage_rows = build_mirage_rows(baseline_conds, use_adjusted)
 
-    _save_csv(comparison_rows, out_dir / "B0_vs_B1_comparison.csv")
-    _save_csv(mirage_rows, out_dir / "B0_vs_B1_mirage_effect.csv")
+    combo_prefix = "_vs_".join(baseline_runs.keys())
+    _save_csv(comparison_rows, out_dir / f"{combo_prefix}_comparison.csv")
+    _save_csv(mirage_rows, out_dir / f"{combo_prefix}_mirage_effect.csv")
 
     # --- Plots ---
     print("[3/4] Generating plots...")
     _plot_comparison(
-        comparison_rows, site=site, label=f"Phase1 {site}",
+        comparison_rows, models=list(baseline_runs.keys()),
+        site=site, label=f"Phase1 {site}",
         use_adjusted=use_adjusted,
-        out_path=out_dir / "B0_vs_B1_comparison.png",
+        out_path=out_dir / f"{combo_prefix}_comparison.png",
     )
     _plot_mirage_effect(
         mirage_rows, site=site, label=f"Phase1 {site}",
-        out_path=out_dir / "B0_vs_B1_mirage_effect.png",
+        out_path=out_dir / f"{combo_prefix}_mirage_effect.png",
     )
 
     # --- Summary JSON ---
     print("[4/4] Writing summary JSON...")
-    sr_label = "adjusted_sr" if use_adjusted else "raw_sr"
     summary: Dict[str, Any] = {
         "site": site,
         "use_adjusted_sr": use_adjusted,
-        "b0_run_dir": str(b0_run),
-        "b1_run_dir": str(b1_run),
-        "b0_modes": b0_modes,
-        "b1_modes": b1_modes,
+        "baseline_runs": {label: str(rd) for label, rd in baseline_runs.items()},
+        "modes_per_baseline": {label: sorted(c.keys()) for label, c in baseline_conds.items()},
         "comparison": {
-            model_label: {
+            label: {
                 cr["mode"]: {
                     "sr_used": cr.get("sr_used"),
                     "raw_sr": cr.get("raw_sr"),
@@ -405,9 +421,9 @@ def main() -> None:
                     "avg_cost_usd": cr.get("avg_cost_usd"),
                     "avg_steps": cr.get("avg_steps"),
                 }
-                for cr in comparison_rows if cr["model"] == model_label
+                for cr in comparison_rows if cr["model"] == label
             }
-            for model_label in ["B0", "B1"]
+            for label in baseline_runs.keys()
         },
         "mirage_effect": {
             mr["model"]: {
@@ -419,7 +435,8 @@ def main() -> None:
         },
         "outputs": [f.name for f in sorted(out_dir.iterdir()) if f.is_file()],
     }
-    _write_json(summary, out_dir / "b0_vs_b1_summary.json")
+    summary_name = f"{combo_prefix.lower()}_summary.json"
+    _write_json(summary, out_dir / summary_name)
 
     print(f"\nDone! Outputs in: {out_dir}")
     for f in sorted(out_dir.iterdir()):

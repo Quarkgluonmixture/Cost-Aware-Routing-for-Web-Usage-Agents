@@ -29,10 +29,10 @@ except ModuleNotFoundError:  # pragma: no cover
     raise
 
 try:
-    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+    from scripts.analysis.lib.run_registry import BASELINES, PAPER_MODES, get_cells
 except ModuleNotFoundError:  # pragma: no cover
     sys.path.append(str(Path(__file__).resolve().parents[3]))
-    from scripts.analysis.lib.run_registry import PAPER_MODES, get_cells
+    from scripts.analysis.lib.run_registry import BASELINES, PAPER_MODES, get_cells
 
 ROOT = Path(__file__).resolve().parents[3]
 IN_JSON = ROOT / "docs/analysis/cross_sites/axis1_microbehavior.json"
@@ -43,7 +43,10 @@ AXES = [
     ("axis_2_prompt", "axis 2\nP-text→P-SoM"),
     ("compound_dom_to_psom", "compound\nDOM→P-SoM"),
 ]
-BASELINE_COLORS = {"B0": "#4c78a8", "B1": "#9467bd"}
+# 3-model deep-update 2026-05-18: B2 color = #17becf (matplotlib tab cyan,
+# distinct from B0 blue / B1 purple, and from MODE_COLORS Vision green
+# #54a24b to avoid visual collision with baseline column).
+BASELINE_COLORS = {"B0": "#4c78a8", "B1": "#9467bd", "B2": "#17becf"}
 
 
 def load_json() -> dict[str, Any]:
@@ -113,18 +116,24 @@ def interpretation(value: float) -> str:
 
 def main() -> None:
     data = load_json()
+    # 3-model deep-update 2026-05-18: iterate BASELINES registry (was hardcoded
+    # ("B0","B1")). For missing baseline (e.g., B2 pre-Phase-1a-fire), ratio_for
+    # warns + returns None → bar renders as N/A hatched per existing graceful-skip.
     ratios = {
         baseline: [ratio_for(data, baseline, contrast) for contrast, _label in AXES]
-        for baseline in ("B0", "B1")
+        for baseline in BASELINES
     }
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.size": 9.5, "figure.dpi": 150})
     fig, ax = plt.subplots(figsize=(10.5, 6.4))
     x = np.arange(len(AXES))
-    width = 0.34
-    offsets = {"B0": -width / 2, "B1": width / 2}
-    for baseline in ("B0", "B1"):
+    # 3-model deep-update 2026-05-18: bar width + offsets computed for N baselines
+    # so 2→3→N expansion stays evenly spaced without touching layout each time.
+    n_b = len(BASELINES)
+    width = min(0.34, 0.85 / max(n_b, 1))
+    offsets = {b: (i - (n_b - 1) / 2) * width for i, b in enumerate(BASELINES)}
+    for baseline in BASELINES:
         values = [0.0 if v is None else v for v in ratios[baseline]]
         bars = ax.bar(x + offsets[baseline], values, width=width, label=baseline, color=BASELINE_COLORS[baseline], edgecolor="white", linewidth=0.8)
         for bar, value in zip(bars, ratios[baseline]):
