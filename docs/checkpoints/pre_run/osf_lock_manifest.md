@@ -84,6 +84,25 @@ GPU compute capability / hostname / nvidia-smi output.
 | **§A2 audit cascade refs** (was "Advisor email" pre-2026-05-14 sync 收口 — reclassified 2026-05-18 per B-1570 doctrine-shift propagation) | §A2 14/16 audit cascade Git SHA refs at master HEAD substantively close all 14 commit decisions via per-decision B-### audit-trail (master_bug_catalog ## A2.1~A2.9 + 实验笔记 §200-§221); advisor batch sign-off retained as optional post-fire collateral (email PDF to `docs/reference/advisor_email_<date>.pdf` + Gmail message-id captured if/when advisor signs) | ✅ Layer 2 substantively complete via §A2 cascade (formal advisor batch sign-off optional post-fire) |
 | **OSF** | OSF preregistration page DOI: `<TBD>` (e.g., `10.17605/OSF.IO/XXXXX`) — mintable post-Phase-1a-fire-data-complete | ⏸ Layer 3 pending Phase 1a Pass-1 baseline data |
 
+### §2.5 Reusable patch artifacts — cross-submission provenance witness (B-1604 /stress A2.6c P1-8-B* codex Mode B reproducibility-auditor unique OOB 2026-05-18)
+
+> **Driver**: codex Mode B unique OOB caught that `paper_planning.md §16.0` Multi-submission matrix CLAIMS reused-artifact non-overlap across Paper-1 Workshop / Paper-1 Main / Track A / Track B submissions, but OSF manifest didn't expose the underlying patch families as separate witnesses. `grep -Ec 'B-440|B-448|B-91|B-535|Workshop A|Track A|Track B|cross-paper FP|reused artifacts' osf_lock_manifest.md` returned 0 pre-fix. Without explicit OSF provenance, external replicators couldn't verify workshop artifact subset ≠ paper-1 artifact subset, defeating the salami-slicing-defense audit trail at the OSF layer.
+
+| Patch family | Code path | Commit SHA | Diff hash | Paper-1 Workshop | Paper-1 Main | Track A Workshop | Track B Workshop |
+|---|---|---|---|:---:|:---:|:---:|:---:|
+| **B-440 + B-448 GRL walk-up click ON_TARGET grounding** | `external/visualwebarena/browser_env/actions.py` (walk-up click implementation) + `p79/envs/vwa_wrapper.py` (wrapper integration) | `<TBD lock at OSF mint>` | `<TBD>` | ✗ (not reused) | ✓ (paper-1 §3.5.2 GRL evidence subset) | ✓ (workshop A hero — cross-benchmark methodology evaluation) | ✗ (not reused) |
+| **B-91 LLM-judge polarity fix** | VWA submodule `external/visualwebarena/p79-patches` branch `eb5cbd8` + `evaluation_harness/helper_functions.py:612-613` source patch | `eb5cbd8` (VWA submodule HEAD) | tree-hash chain `5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f` (per prereg §7 SBOM lock) | ✓ (paper-1 §8.2 disclosure subset) | ✓ (paper-1 §8.2 disclosure subset) | ✗ (not reused) | ✓ (workshop B hero — cross-paper FP family taxonomy + B-91 remediation protocol) |
+| **B-535 N/A task-load exclusion** | `p79/experiment/tasks.py` (`exclude_na_tasks: true` default) + `configs/exp_v2_base.yaml` | `<TBD lock at OSF mint>` | `<TBD>` | ✓ (paper-1 §8.2 disclosure subset) | ✓ (paper-1 §8.2 disclosure subset) | ✗ (not reused) | ✓ (workshop B disclosure — part of FP architecture restructure narrative subset) |
+
+**Eligibility verdict per submission**:
+
+- **Paper-1 Workshop** (workshop_R1 = H1 + H2(a) only) reuses: B-91 + B-535 (as §8.2 LLM-judge disclosure subset). Phase 1a-only data (cls + red 6 cells); excludes Phase 1b shop expansion + H10 router substrate.
+- **Paper-1 Main** reuses: ALL — full paper-1 substrate including B-440 + B-448 (§3.5.2 GRL evidence) + B-91 + B-535 (§8.2 LLM-judge disclosure) + Phase 1b shop + H10 learned router + B-1284 cross-family claim-tier gate B2-outcome evidence.
+- **Track A Workshop** reuses: B-440 + B-448 only (workshop hero = cross-benchmark methodology evaluation of GRL walk-up click ON_TARGET grounding); NOT B-91 or B-535; NOT phantom-space hero / cost-aware routing / P-SoM drop-in.
+- **Track B Workshop** reuses: B-91 + B-535 only (workshop hero = cross-paper evaluator FP family taxonomy + B-91 remediation protocol); NOT B-440 or B-448; NOT phantom-space hero / cost-aware routing / P-SoM drop-in.
+
+**OSF audit verifiability**: an external replicator can verify each submission's claimed patch-artifact subset by checking out the corresponding git commit SHA + verifying the patch family code path + comparing against the submission's §1 prose non-overlap paragraph. The "Eligibility per submission" column above is the contractual audit trail for the salami-slicing defense.
+
 ---
 
 ## §3 Eight-step DOI workflow (post Phase 1a fire data lock; advisor batch sign-off optional)
