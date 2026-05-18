@@ -1,12 +1,12 @@
 ---
 type: preregistration
-status: draft
+status: locked
 created: 2026-05-03
-last_revised: 2026-05-13
+last_revised: 2026-05-18
 draft_author: Jiaming
-registered_at: <pending advisor sync lock>
-registered_git_sha: <pending lock>
-witnessed_by: <pending advisor sync>
+registered_at: 2026-05-18T11:30:00Z
+registered_git_sha: 88521b9e254955ab156dc8115da826f171ef5990
+witnessed_by: Git tag `preregistration-locked` (commit SHA 88521b9...) + OSF DOI <to-be-assigned post-Phase-1a-Pass-1-data-complete per osf_lock_manifest §3 Step 7-8>; advisor email = optional post-fire collateral per B-1570 doctrine 2026-05-18 (Email 1 informal FYI to Maria + Zekun, no formal witness ask per OSF-DOI-replaces-advisor-witness reasoning).
 osf_doi: <pending paper submission stage>
 data_lock_until: <pending Phase 1a 42-condition rerun completion = Pass-1 baseline 36 (cls+red × B0+B1+B2 × 6 modes) + Pass-2 learned router 6 (cls+red × B0+B1+B2 × 1 learned-router cond/cell) on A100 self-host Docker; updated 2026-05-18 per /stress A2.6a B-1264 P0-5-B* sweep — supersedes stale 36-condition phrasing per scope_revision_2026_05_16 expansion>
 scope_revision_2026_05_13: cls+red × B0+B1 × 6 modes = 24 operational conditions across 4 statistical cells; shop deferred to Phase 1b main paper; K-of-N reclassified gate → transparency-only; smoke-gate stopping rule replaced (outcome-independent)
