@@ -62,9 +62,9 @@ empirical falsification check per cell (>1.20× cost ratio threshold per
 component tiers) + `pre_run/locked_versions.md` (HF SHA / submodule SHA /
 seed=42 / decoding params) + `pre_run/osf_lock_manifest.md` (8-step OSF DOI
 workflow + artifact freeze registry) + `phase1_plan.md` (canonical execution
-protocol). VWA submodule HEAD `f883a116da89c2acc3a7530e48bb8d70a5f4571d`
+protocol). VWA submodule HEAD `ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927`
 pinned via 3-layer SBOM (HEAD commit + upstream base + tree-hash chain
-sha256 `142bb1b6f18b37fbb12c1c2e84f91929d70a1f605560adcf2ddb0325248a7d46`
+sha256 `752caebdc6bd84761b2f308331f21241a9b4a28de65b46ff0007ef27d8c72778`
 per prereg §7 L626-L630). Per-task config materialization via
 `make vwa-generate-configs` (byte-deterministic per B-604+B-615).
 

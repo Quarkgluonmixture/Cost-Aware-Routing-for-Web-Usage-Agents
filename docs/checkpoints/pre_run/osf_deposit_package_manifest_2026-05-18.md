@@ -26,7 +26,7 @@
 |---|---|---|---|
 | `preregistration.md` (locked) | `docs/checkpoints/pre_run/preregistration.md` | ⏸ frontmatter `status: draft` — flip to `locked` at fire event | Contains §1-§7 + Appendix A decision log + §6 §(a) 14 commit decisions |
 | `osf_lock_manifest.md` | `docs/checkpoints/pre_run/osf_lock_manifest.md` | ✅ §1-§2 + §3 8-step + §4 post-lock change discipline | Backfill `<TBD>` cells post-mint with Git SHA + DOI |
-| `locked_versions.md` | `docs/checkpoints/pre_run/locked_versions.md` | ✅ VWA SHA **`f883a11...`** (10th-commit fire-event lock 2026-05-18 — .gitignore typo correction + untrack test_shopping.json; zero substantive content change; supersedes pre-fix `2f9b0b4` at A2.9 prep stage) + B1 HF `ebb281e...` + **B2 HF `093f9f3...` locked 2026-05-18 B-1603** + Playwright 1.58.0 + Chromium revision 1208 | All pins current |
+| `locked_versions.md` | `docs/checkpoints/pre_run/locked_versions.md` | ✅ VWA SHA **`ac33d2f...`** (11th-commit fire-event lock 2026-05-18 — `f883a11` untrack test_shopping.json + `ac33d2f` complement .gitignore typo correction + generation_manifest.json; same logical fix split across 2 commits due to staging oversight; zero substantive content change; supersedes pre-fix `2f9b0b4` at A2.9 prep stage) + B1 HF `ebb281e...` + **B2 HF `093f9f3...` locked 2026-05-18 B-1603** + Playwright 1.58.0 + Chromium revision 1208 | All pins current |
 | `model_card.md` | `docs/checkpoints/pre_run/model_card.md` | ✅ B0/B1/B2 cards aligned + B2 HF SHA filled per B-1603 | Mitchell et al. 2019 format |
 | `dataset_card.md` | `docs/checkpoints/pre_run/dataset_card.md` | ✅ 3-baseline scope + cls/red/shop task pool hashes | Per audit A12 |
 | `evaluator_change_protocol.md` | `docs/checkpoints/pre_run/evaluator_change_protocol.md` | ✅ Protocol A 4-tier T0/T1/T2/T3 classification | — |
@@ -47,7 +47,7 @@
 | `paper_drafts_locked/` | `docs/checkpoints/paper_drafts_locked/` | `cp -r paper_drafts paper_drafts_locked` AT git tag event (pre-fire snapshot of paper §1-§8 prose) |
 | Git tag `preregistration-locked` | `git tag -a preregistration-locked -m "OSF DOI mint <date> Phase 1a Pass-1 launch fire-event Git SHA <SHA>"` | At fire event; commit Git SHA captured |
 | `git push origin preregistration-locked` | — | Immediately after tag |
-| Submodule pin verification | VWA `external/visualwebarena` HEAD `f883a116da89c2acc3a7530e48bb8d70a5f4571d` + tree-hash chain `142bb1b6f18b37fbb12c1c2e84f91929d70a1f605560adcf2ddb0325248a7d46` | Captured in `env_snapshot_a100_lock.json` (Step 3) |
+| Submodule pin verification | VWA `external/visualwebarena` HEAD `ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927` + tree-hash chain `752caebdc6bd84761b2f308331f21241a9b4a28de65b46ff0007ef27d8c72778` | Captured in `env_snapshot_a100_lock.json` (Step 3) |
 
 ### 3. Provenance snapshots (per Step 3 + Step 4)
 
@@ -69,7 +69,7 @@
 | Patch family | Code path | Commit SHA |
 |---|---|---|
 | B-440 + B-448 GRL walk-up click | `external/visualwebarena/browser_env/actions.py` + `p79/envs/vwa_wrapper.py` | TBD at OSF mint event (relevant for Track A workshop; paper-1 §3.5.2 GRL evidence subset) |
-| B-91 LLM-judge polarity fix | VWA submodule `external/visualwebarena/p79-patches` branch `eb5cbd8` + `evaluation_harness/helper_functions.py:612-613` | Embedded in submodule HEAD `f883a11` (10-commit chain ending at fire-event lock 2026-05-18; `f0c835b` original B-91 commit preserved as 5th in chain); tree-hash chain `142bb1b6...` matches lock |
+| B-91 LLM-judge polarity fix | VWA submodule `external/visualwebarena/p79-patches` branch `eb5cbd8` + `evaluation_harness/helper_functions.py:612-613` | Embedded in submodule HEAD `ac33d2f` (11-commit chain ending at fire-event lock 2026-05-18; `f0c835b` original B-91 commit preserved as 5th in chain; `f883a11` + `ac33d2f` 10th + 11th .gitignore symmetry restore); tree-hash chain `752caebd...` matches lock |
 | B-535 N/A task-load exclusion | `p79/experiment/tasks.py` + `configs/exp_v2_base.yaml` | TBD at OSF mint event (relevant for Track B workshop; paper-1 §8.2 disclosure subset) |
 
 ---

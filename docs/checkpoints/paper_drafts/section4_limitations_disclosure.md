@@ -222,11 +222,11 @@ sensitivity check is in §5 Appendix and does not gate the main mechanism claim.
 ## §4.X.11 VWA submodule `p79-patches` branch — full disclosure table
 
 We run paper-grade experiments against a forked VisualWebArena submodule pinned to branch
-`p79-patches`, HEAD `f883a116da89c2acc3a7530e48bb8d70a5f4571d`. Upstream base is
+`p79-patches`, HEAD `ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927`. Upstream base is
 `89f5af29305c3d1e9f97ce4421462060a70c9a03` on `main`. The full set of behavioural patches
 between the upstream base and our pinned HEAD is reproduced below for OSF reproducibility
 review and cross-paper comparability. Per **B-607 P1-1-AC\*** (2026-05-17 /stress A1.18-re Claude+Gemini OOB), the patch-bundle integrity witness has been migrated from the prior `git diff base..HEAD | sha256sum` recipe (environment-dependent on `diff.algorithm` / `core.autocrlf` / git version) to a **tree-hash chain** of git-canonical commit and tree SHAs (`git rev-list base..HEAD --format=tformat:'%H %T' | sha256sum`), which is byte-deterministic across all git versions and OS environments. The current tree-hash-chain SHA-256 is
-`142bb1b6f18b37fbb12c1c2e84f91929d70a1f605560adcf2ddb0325248a7d46`.
+`752caebdc6bd84761b2f308331f21241a9b4a28de65b46ff0007ef27d8c72778`.
 
 **Archive vintage disclosure (added 2026-05-17 /stress A1.18-re B-617 P1-11-C Gemini)**: The Phase 1a pre-fix archive (B0/B1 only, collected pre-2026-05-13 on DGX→quark Tailscale stack) was produced under a much earlier submodule HEAD (`f0c835b` or earlier — predating the `eb5cbd8` A1.18 sweep + `c1765ee` / `1c3a615` / `2f9b0b4` A1.25-and-onward sweeps). The canonical paper-grade rerun (post-§139.8 FP architecture + B2 = Gemma3-VL included) runs on A100 self-hosted VWA Docker against the current pinned HEAD `2f9b0b4`. **Paper §1 hero numbers cite ONLY the canonical-rerun-at-`2f9b0b4` data** — archive data is retained as Appendix D "pre-§139.8 contamination reference" only, never folded into §1 4-fold-drop-in claim. Within-rerun comparisons (across modes / baselines / sites on the same A100 stack at the same HEAD) are unaffected by this version-rift; cross-vintage comparison (archive ↔ canonical) is explicitly disclaimed as a confound vector — not used for paper-grade claims.
 
@@ -248,12 +248,12 @@ review and cross-paper comparability. Per **B-607 P1-1-AC\*** (2026-05-17 /stres
 
 ```bash
 cd external/visualwebarena
-git rev-parse HEAD                                 # must match f883a116da89c2acc3a7530e48bb8d70a5f4571d
+git rev-parse HEAD                                 # must match ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927
 git rev-parse origin/main                          # upstream base; if not present, fetch
 # Tree-hash chain — env-independent SBOM witness (B-607 P1-1-AC* 2026-05-17, replaces
 # legacy `git diff base..HEAD | sha256sum` which was sensitive to local git config):
 git rev-list 89f5af29305c3d1e9f97ce4421462060a70c9a03..HEAD --format=tformat:'%H %T' | sha256sum
-# must match 142bb1b6f18b37fbb12c1c2e84f91929d70a1f605560adcf2ddb0325248a7d46
+# must match 752caebdc6bd84761b2f308331f21241a9b4a28de65b46ff0007ef27d8c72778
 ```
 
 These three hashes are also locked in `docs/checkpoints/pre_run/osf_lock_manifest.md` and

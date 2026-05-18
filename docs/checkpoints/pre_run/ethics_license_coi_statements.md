@@ -185,7 +185,7 @@ arguments are not a license to deploy without domain-specific safety eval.
 See `preregistration.md §7` for the full reproducibility scope statement
 covering paper-1 component tiers (B1 byte-identical / B2 reproducible after
 HF SHA lock (per B-1504 below) / B0 verifiable from traces / VWA env A100
-self-host / Evaluator p79-patches **HEAD `f883a116da89c2acc3a7530e48bb8d70a5f4571d`**
+self-host / Evaluator p79-patches **HEAD `ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927`**
 (includes B-91 LLM-judge polarity fix `f0c835b` + post-fix commits chain;
 see `preregistration.md §7 L626-L630` for the full 9-commit tree-hash chain
 SBOM; B-1503 /stress A2.9 P0-6-AB 2026-05-18 — sweep from stale `f0c835b`).
