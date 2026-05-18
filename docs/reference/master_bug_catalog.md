@@ -6525,3 +6525,65 @@ codex agentic apply_patch wrote 326-line audit body to `a23d_FINAL_2026-05-18_01
 - `7265fde` Tier 2 — B-1305~B-1307 (P0-2 DL partial retire 4-layer: Makefile + docstring + figure caption)
 - `924c7b8` Tier 3 — B-1308~B-1311 (P1-3 Veroniki/IntHout cite + P1-7 H1+H10 FWER + P1-11 §1 pooled + P1-9 HKSJ Appendix)
 - This commit — closure (chronicle §215 + ## A2.3d catalog + phase1_plan §A2.3d [x] tick)
+
+## A2.6a — Scope / external validity — Phase 1a={cls+red} R3 framing risk + Phase 1b shop deferral + WA absent + workshop sub-paper Track A/B 切分 — /stress A2.6a Mode A+B+C cycle (2026-05-18 ~01:50-02:30 BST, B-1260~B-1276 reserved, 16 active B-1260/61/62/63/64/65/66/67/68/69/70/71/72/73/74 + B-1275/76 buffer)
+
+3-AI design-layer audit on Scope / external validity surface. 17 unified findings: 8 P0 + 8 P1 + 1 P2. Cross-AI overlap = 1 3-AI (P1-9-ABC* workshop matrix) + 2 2-AI (P0-1-AC* + P0-2-AB*) + 14 unique = **82% unique findings** (highest cross-AI ROI in §A2 history). Mode B codex 222s wallclock 8 findings 4 OOB / Mode C gemini 219s wallclock 5 findings 2 OOB PASS-WITH-CAVEAT (line-offset 13-19 lines per A1.9 pattern, quoted prose 100% real).
+
+User v7.7 Q&A: Q1=A wait-fix-all + Q2=A wait push + Q3=A cross-site exploratory + **Q4=C-modified (E'')** task-held-out 5-fold within fixed cells = H10 primary (NOT LOCO primary as F4 recommended — LOCO conflicts with per-cell LR-head architecture + not a true distributional held-out) + Q5=A no out-of-pop commit + Q6=A R3 abandons Zoom 2-4 framework + Q7=A workshop vs main bifurcate + Q8-23 auto-default 推荐.
+
+### Fix table (B-1260~B-1276)
+
+**P0 fixes (8 — Chunks 1+2+3)**:
+- **B-1260 P0-1-AC*** (Claude+gemini OOB 2-AI overlap) — `section1_intro.md L21` cross-site asymmetry downgraded from implicit hero → "boundary-mapping exploratory observation" + new `[^framing-rule-scope]` footnote citing prereg §2:312-316 within-cell scope + §5 Exploratory family + §7 cross-benchmark future work. Defuses R3 cross-site generalization reviewer attack (R1-R5 framing rule doesn't gate cross-site claim).
+- **B-1261 P0-2-AB*** (Claude+codex OOB 2-AI overlap) — `section1_intro.md L25` + `preregistration.md §4` + `phase1_plan.md §C2` router CV protocol = **E'' (task-held-out 5-fold within fixed cells + per-cell LR head + fold-local TF-IDF/MI top-18)** as H10 primary; LOCO 6-fold cross-cell = Appendix sensitivity. Supersedes prior "5-fold site-stratified" prose vs prereg "LOSO TBD" vs phase1_plan "5-fold + LOCO" 3-doc drift. User Q4=C-modified (NOT F4-recommended LOCO primary) per per-cell LR-head architecture compatibility. Supersedes 2026-05-16 Q4 LOCO-primary user decision.
+- **B-1262 P0-3-AB** (Claude+codex) — `section1_intro.md L25` + paper §6 prose explicit commit "within-population number; cross-population OOD = future via Phase 1b shop post-workshop fire". Phase 1b shop = sole genuine distributional held-out test the Phase 1a six-cell design cannot self-supply.
+- **B-1263 P0-4-B*** (codex unique OOB) — Phase 1b count drift `prereg.md §4 (+18)` / `phase1_plan.md:42 (+21)` / `osf_lock_manifest.md (+12 stale B0+B1 only)` 3-doc consolidation → **+21 single source** = shop × {B0, B1, B2} × (6 baseline + 1 learned router). Phase 1b mirrors Phase 1a 2-pass protocol.
+- **B-1264 P0-5-B*** (codex unique OOB) — `preregistration.md` 36→42 sweep 4 locations: data_lock_until (L11) + status banner (L22) + (6) witness commit list (L538) + OSF DOI footnote (L557-558). DOI scope L24 already 42 (correct); scope_revision_2026_05_14 historical 36 retained for audit trail.
+- **B-1265 P0-6-B*** (codex unique OOB) — `osf_lock_manifest.md` §1 + §1 + §2.2 + Cell scope Phase 1b row update align to current prereg state. Retired K_h1/K_h3/TOST δ from advisor email checklist + Purpose + H1 δ row. Replaces with "H1 FE superiority δ=1.0pp + H3 axis gates + H10 Pareto + K transparency-only + TOST retired per A2.3c B-1051 / A2.3a B-957 2026-05-17".
+- **B-1266 P0-7-C*** (gemini unique OOB) — `preregistration.md §2 R3 row` rewrites "Phantom-SoM is an efficient heuristic routing arm; 3-axis cube + Zoom 2-4 are R1-conditional NOT retained under R3" + `paper_planning.md §2 Zoom 1` reframed from "deductive argument / Approach 2 deductive proof of completeness" → "architectural constraint on input partition" with explicit non-additivity disclaimer. Defuses gemini broad-reviewer dual-claim incompatibility attack: paper §2 sells full Zoom 1-4 hierarchy as framework-tier contribution while R3 fallback retreated to Zoom-1-only.
+- **B-1267 P0-8-C*** (gemini unique OOB) — `preregistration.md` NEW §2.7 Submission scope mapping subsection inserted after §2.6 before §3. Explicit bifurcation: `workshop_R1 = H1 + H2(a) ONLY (NOT H3 structural)` vs `main_R1 = H1 + H2(a) + H3(i) + H3(ii) + H10 over Phase 1a + Phase 1b 9-cell`. Workshop reports H3 transparently but NOT gating workshop_R1. Defuses dual-submission novelty trap (workshop cannibalizing main paper expansion).
+
+**P1 fixes (7 — Chunks 1+3, P1-15-C deferred)**:
+- **B-1268 P1-9-ABC*** (Claude+codex+gemini 3-AI overlap) — `paper_planning.md §16.0 NEW Multi-submission scope matrix` subsection. Per-row fields = (title, venue, deadline, authorship, R-rule scope, reused artifacts, novel claim NOT in paper-1, non-overlap paragraph, cross-citation plan, R5 fallback role) for paper-1 main + Track A workshop (GRL walk-up click ON_TARGET methodology) + Track B workshop (LLM-judge polarity FP family taxonomy). Bibliographic discipline gate.
+- **B-1269 P1-11-A** (Claude unique) — `preregistration.md §2 R5 row` rewrites paper-death pivot scope: "Track B workshop submission (B-91 LLM judge polarity bug standalone) as concrete fallback; main paper-1 abandoned; Track A NOT pre-registered as R5 fallback (fires conditionally if Phase 1a outcome ≥ R2); NO other pivot pre-registered — explicit commit-before-data per §1 epistemic structure".
+- **B-1270 P1-12-A** (Claude unique) — `section8_limitations.md L3` retract "VisualWebArena plus WA-mini-style task structure" → "VisualWebArena's three task sites (cls/red/shop); WebArena cross-benchmark validation explicit future work per `preregistration.md §7`". Defuses reviewer scope-laundering attack.
+- **B-1271 P1-13-B** (codex unique) — `paper_planning.md §14` split into §14.1 Workshop Phase 1a defense + §14.2 Main paper post-Phase-1b defense. Rows tagged `[Workshop]` / `[Main]` / `[Both]`. Sample-size + Single-benchmark rows reworked: workshop cannot pre-rebut with future 6-site/WA data.
+- **B-1272 P1-14-B** (codex unique) — `paper_planning.md §15` Prior Work Comparison Table "Ours" column split into "Workshop Phase 1a (submitted scope: 2 VWA sites)" vs "Main paper planned (3 VWA sites + Phase 1b shop + WA appendix optional future)". Cross-site validation row supersedes prior "6 sites (VWA+WA) ⭐" overclaim.
+- **B-1273 P1-16-C** (gemini unique) — `paper_planning.md §2 Zoom 1` reframed deductive argument → architectural constraint on input partition + explicit non-additivity disclaimer. Combined with B-1266 P0-7 paper_planning edit.
+- **B-1274 P2-17-B** (codex unique) — `phase1_plan.md §C2 last bullet` sequential 2-pass written defense paragraph: same A100 host + same Docker images (SBOM-locked) + reset-before each Pass-2 router cond + site-state fingerprint + < 24h typical / < 72h worst-case temporal lag. Defuses "Pass-2 sees later temporal environment" reviewer attack.
+
+**P1 deferred** (Q17=C per user — defer to advisor sync):
+- **P1-15-C** (gemini unique) — N=3 underdeterminedness disclosure in `section8_limitations.md L4-9` is "honest disclosure of incomplete experimental design" but does not excuse rejection at NeurIPS/ICLR. Strategic decision deferred: either (a) run 4th matched-corner baseline (Qwen-via-API at 4B scale + API budget) or (b) drastically downgrade cross-baseline claims from hero narrative. Defer to advisor sync — current B-1236 disclosure honest but not curative.
+
+### Commit chain (4 chunks)
+
+- `3ade9b6` Chunk 1 — Paper §1 + §8 prose strategic framing (B-1260 + B-1261 + B-1262 + B-1270 + B-1273)
+- `4c0733f` Chunk 2 — preregistration.md + osf_lock_manifest.md strategic framing + count consolidation (B-1263 + B-1264 + B-1265 + B-1266 + B-1267 + B-1269)
+- `b32f20f` Chunk 3a — paper_planning.md §14 + §15 + §16 workshop/main bifurcation matrices (B-1268 + B-1271 + B-1272)
+- `13fab93` Chunk 3b — phase1_plan.md §C2 + §C3 + §C5 E'' router CV primary + sequential 2-pass defense (B-1261 + B-1274)
+- This commit — Chunk 4 closure (catalog ## A2.6a + chronicle §216 + phase1_plan §A2.6a [x] tick)
+
+### Cross-AI verification record
+
+- **Mode A (Claude self)** PASS: Phase 0 self-audit 4-check all ✓ (scope=milestone, 8 findings ≥5, 3 OOB ≥2, file:line specificity); 8 findings filed
+- **Mode B (codex `/codex-stress`)** 222s wallclock PASS: Phase 1+2+3+4 all PASS, persona=reproducibility-auditor, 8 findings 4 OOB; Phase 4 spot-check 4/4 sampled file:line citations verbatim verified (P0-1 Phase 1b count drift +18/+21/+12 verified; P0-2 witness 36 vs DOI 42 verified; P0-3 OSF manifest K/TOST stale verified; P0-5 router CV unresolved verified)
+- **Mode C (gemini `/gemini-stress`)** 219s wallclock PASS-WITH-CAVEAT: Phase 1+2+3 PASS, Phase 4 4/4 sampled quoted prose 100% real in source BUT file:line numbers systematically off by 13-19 lines (matches A1.9 memory gemini line-offset idiosyncrasy pattern). 5 findings 2 OOB; persona=broad-reviewer; attacks principled valid, fix work requires grep-verify line numbers before applying.
+
+### Phase 4 spot-check (v7.8 mandatory)
+
+Sample N=max(2, ceil(0.3 × 13)) = 4 prioritized P0+OOB findings:
+- Codex P0-1 Phase 1b count drift `prereg L446 +18 / prereg L460 +18 / phase1_plan L42 +21 / phase1_plan L331 +21 / osf L65 +12 stale B0+B1 only` — all 5 citations VERIFIED REAL ✓
+- Codex P0-2 witness 36 vs DOI 42 — prereg L11 + L22 + L538 + L557-558 all "36-condition" + L24 "42 operational conditions" — VERIFIED REAL ✓
+- Gemini F1 paper_planning L60 + prereg L299 cite — semantically REAL (verbatim quote "paper-level framework contributions" at L45/L1726/L2165; "Phantom-SoM is hidden 4th routing arm" at L314) but cited lines off by 15-17; attack principled valid ✓
+- Gemini F2 prereg L438-439 + L447 cite — semantically REAL (verbatim "Workshop-targeted (cls + red only)" at L458; "Main paper §1 hook upgrade R3 → R1" at L460) but cited lines off by 13-20; attack principled valid ✓
+
+Phase 4 verdict: Mode B PASS (4/4 exact citations); Mode C PASS-WITH-CAVEAT (4/4 semantic citations real but line# off by 13-19). No fabricated content; gemini line-offset idiosyncrasy preserved per A1.9 memory.
+
+### Phase 1a fire green-light status
+
+**ON** post A2.6a Chunk 4 closure. All 8 P0 OOB resolved (none blocks Pass-1 baseline launch; P0-2 + P0-3 only block Pass-2 router lock; P0-7 + P0-8 are paper-prose framing). 7 P1 closed. 1 P1 + 1 P2 deferred per user 推荐 sweep without blocking Pass-1. Phase 1b shop fire required for B-1262 router held-out commit; post-workshop deferred per `paper_planning §16 cascade plan`.
+
+**Critical-path next**: advisor sync on §A2.7 cross-baseline confound register + §A2.8 prereg lock + §A2.9 reporting/ethics + §A2.10 prose↔code claim integrity. Push pending per `feedback_git_push_requires_confirm` memory.
+
+详 实验笔记 §216 + 4 commits chain (`3ade9b6` + `4c0733f` + `b32f20f` + `13fab93`) + this Chunk 4 closure.
