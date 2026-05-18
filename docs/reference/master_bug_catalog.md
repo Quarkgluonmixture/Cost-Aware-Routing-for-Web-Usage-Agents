@@ -6240,3 +6240,71 @@ Initial code edits used B-895~B-897 → would collide with parallel §207 A2.1 (
 ### Phase 1a fire impact
 
 ✓ Substrate ready post B-991~B-993. `use_tool_calling: true` default + Q1=A pilot PASS + transport tests freeze contract. Cross-baseline confidence feature for §C router: B0 fills 4/6 fields (entropy None per top-2 truncation, disclosed in docstring); B1/B2 fill all 6 via HF `_compute_confidence`.
+
+---
+
+## /stress A2.4a evidence-claim coupling within-axis (2026-05-18 ~00:45 BST, B-1001~B-1020)
+
+> Full chronicle: 笔记 §211. 3-AI cycle 22 findings (Claude=7, codex=8, gemini=7), 16 unique OOB, 2 cross-AI 2-AI overlaps (P0-2-AC* substitution + P1-8-AB* meta sibling). Phase 4 spot-check: Mode B 3/3 sampled REAL bugs verified; Mode C PASS-WITH-CAVEAT (Gemini line# offset per A1.9 memory, verbatim quotes match). User pivots: (1) 修全部 20 fixes; (2) P0-4-C downgrade per archive empirical I²=0% on hero arm; (3) B2 trust mechanism literature triple-anchor, no carve-out fallback; (4) advisor sync 0 项 pre-required.
+
+### Tier 1 landed (B-1001~B-1006, canonical producer hardening, commit `0133c0b`)
+
+| ID | Sev | Source | OOB | File:Line | One-liner |
+|---|---|---|---|---|---|
+| B-1001 | P0 | B | * | `aggregate_phase1_full_prereg_decision.py:705-714` | H3 KeyError CRASH defensive `.get("passed", False)` — pre-fix Phase-1a fire would crash on noise-floor-filtered H3 axis (Phase 4 verified). |
+| B-1002 | P0 | A | * | `aggregate_phase1_full_prereg_decision.py:534-549` | k=6 strict gate `P79_PAPER_GRADE=1` default → 2≤k<6 emits `gate_status=DEGRADED` + `missing_cells` + reason mandating prose disclosure. |
+| B-1003 | P1 | A | * | `aggregate_phase1_full_prereg_decision.py:560-569` | SE floor Agresti-Coull 0.68pp threshold (was literal `<= 0`); n_below_floor + n_zero_se emit. |
+| B-1004 | P1 | A | | `aggregate_phase1_full_prereg_decision.py:_prereg_sha + write_json` | `provenance.prereg_sha256` closes OSF audit trail (was missing post-A1.21 amend). |
+| B-1005 | P1 | A | | `section1_intro.md:17 fn 13` | fn 13 cite legacy B-184 → canonical B-515 producer; clarifies legacy consumed via shared import. |
+| B-1006 | P2 | B | * | `aggregate_phase1_full_prereg_decision.py:_h3_axis_per_cell` | Per-axis SHA-derived bootstrap seed stratification — closes axis1/axis2 CI band covariance. |
+
+### Tier 2 landed (B-1007~B-1011, statistical methodology, commit `1fb9d7a`)
+
+| ID | Sev | Source | OOB | File:Line | One-liner |
+|---|---|---|---|---|---|
+| B-1007 | P1 | B | * | `aggregate_phase1_full_prereg_decision.py:680-705` | H3 Holm m=2 across axis-1+axis-2 legacy p-value transparency (canonical CI gate closed-form, unaffected). |
+| B-1008 | P1 | C | * | `section1_intro.md:11` | §1 hero "95% CI" → "95% two-sided CI" + one-sided H1 gate disambiguation. |
+| B-1009 | P1 | C | * | `preregistration.md §2 H1 + §3 step 4` | Primary p-value Z→bootstrap percentile commit; Z retained as transparency col. Archive smoke: bit-identical decision. |
+| B-1010 | P1 | C | | `preregistration.md Appendix D` | I² threshold sensitivity sweep {50%, 75%, 90%}; archive 3-cell P-SoM anchor I²=0%. |
+| B-1011 | P1 (downgraded from P0) | C | * | combined w/ B-1010 + 笔记 §211.2 | P0-4-C R5 fragility downgrade per archive empirical I²=0% on hero arm; Appendix-D defensive. |
+
+### Tier 3 landed (B-1012~B-1016, retired-script + sibling, commit `85225f5`)
+
+| ID | Sev | Source | OOB | File:Line | One-liner |
+|---|---|---|---|---|---|
+| B-1012 | P1 | B | * | `preregistration_decision_test.py:main` | `--i-understand-retired` hard-retire guard kills shadow gate (was emitting stale `pooled_DerSimonian_Laird_meta` label). |
+| B-1013 | P1 | B | * | `aggregate_phase1_full_prereg_decision.py:_six_arm_complete_case_universe` | task_id type assertion (defends mixed str/int silent universe drift) + docstring line cite fix `:655-658` (5-arm)→`:797-810` (6-arm). |
+| B-1014 | P1 | B | | `aggregate_phase1_prereg_gate.py:main` | B-184 legacy `--run-manifest` arg + `get_aggregator_cells` propagation parity with canonical. |
+| B-1015 | P1 | B | | `aggregate_phase1_full_prereg_decision.py:main:961-967` | `assert_cells_match_planned` structural enforce after `get_aggregator_cells` (require_complete=False). |
+| B-1016 | P1 | A∩B | * (2-AI) | `aggregate_phantom_meta.py:374-389` | MD warning header APPENDIX-ONLY + cites canonical + flags universe semantics difference (B-948 vs B8 n_common). |
+
+### Tier 4 landed (B-1017~B-1020, prose + framing, commit `08880d6`)
+
+| ID | Sev | Source | OOB | File:Line | One-liner |
+|---|---|---|---|---|---|
+| B-1017 | P0 | A∩C | * (2-AI) | `aggregate_phase1_full_prereg_decision.py:497-540` | `paper_hero_substitution_table` canonical JSON emit (archive→canonical_field map + checklist) closes fn 13 PRE-FIRE STUB textual promise 0-binding. |
+| B-1018 | P1 | C | | `aggregate_phase1_full_prereg_decision.py:h2a_summary:606-625` | Zero-cost survival-bias disclosure (`n_dom_zero_skipped_total / dom_zero_ratio_pct / disclosure_required` flag at >5%). |
+| B-1019 | P1 | A | * | `section1_intro.md:23` | §1 paragraph 2 Macro 22.7%→10.8% / FP 6.25pp/2.08pp → §5 behavioral; §1 hero cite gate-tested only (16 sub-cell closure). |
+| B-1020 | P1 | C | | `section8_limitations.md:15` | §8 B2 trust commit "no fallback path" + literature triple-anchor cite; counters gemini F7 B2 cliff attack via bounded-comparison existing 4 lineage axes. |
+
+### Phase 0 self-audit (Mode A Claude)
+
+- Scope: milestone (5-7 artifacts) ✓
+- Artifacts: 7 declared, all cited ✓
+- Findings: 7 (target 5) ✓
+- OOB: 6 (target 2) ✓
+- Specificity: all findings file:line + verbatim quote ✓
+
+### Verification status
+
+- Mode A (Claude) PASS — Phase 0 4/4 ✓
+- Mode B (codex stats-methodologist persona) PASS — 193s, 8 findings 4 OOB, Phase 4 3/3 sampled REAL bugs verified (F1 H3 KeyError + F3 lift line drift + F5 stale DL label)
+- Mode C (gemini broad-reviewer persona) PASS-WITH-CAVEAT — 254s, 7 findings 3 explicit OOB, Phase 4 line# offset per A1.9 memory but verbatim quotes match; 0 fabricated content
+
+### A2.4a closure summary
+
+**B-### consumed**: 20 IDs (B-1001~B-1020). **Reserved buffer**: B-994~B-1000. Next available: B-1021+.
+
+**Concurrent-session boundary preserved**: parallel A2.3a + B0 proxy migration follow-up landed B-947~B-993 same time window. File scope disjoint.
+
+**Phase 1a fire green-light: ON**. P0-3-B* H3 KeyError CRASH was only true blocker; defensive `.get()` resolves. A2.2 + A2.4a prerequisites both met. Q1=A wait-fix-all honored.
