@@ -1179,30 +1179,45 @@ Round 4 (保底):
 
 ---
 
-## §8 Router Design (Tier 1+2)
+## §8 Router Design (single learned classifier, v7 walk-back locked)
 
-### 5 个关键设计决策点 (each requires ablation)
+> **v7 walk-back (2026-05-16) + B-1003 /stress A2.5 P1-10-A trim (2026-05-18)**: Paper-1 §6 = **single learned router** with Pareto non-dominance H10 gate (Q4=A K-of-6 PRIMARY + APPENDIX FE pool). Rule-based router + cascade composition + first-step trigger DEFERRED to paper-2 per `phase1_plan §C2` + `preregistration §2 H9/H11 paper-2 stub`. Archive simulation P1 rule-based decision-tree was empirically degenerate (`dom_size_threshold=12000` fires on <0.14% of steps under cleaned-AXTree regime); cascade composition adds engineering complexity without paper-grade lift evidence.
 
-| 维度 | 选项 | 难点 |
+### 4 key design decisions (paper-1 §6 scope)
+
+| 维度 | 选项 (paper-1 lock) | 难点 / mitigation |
 |---|---|---|
-| **Feature** | task NLP / browser state / step-1 trigger / capability / audit cat | audit cat 是 leak; small data overfit |
-| **Target** | max SR / SR-per-cost / Pareto / budget-constrained | multi-obj weight 选 |
-| **Granularity** | task-level / step-level / confidence-triggered | step-level 重跑 2x cost |
-| **Cascade** | 单 router / B1→B0 escalation / rule+ML hybrid | escalation 实验代价大 |
-| **Baseline** | random / best-single-mode / oracle / rule-based | best-single-mode 是 hardest baseline |
+| **Feature** | 53-feature pool (30 TF-IDF + 5 numeric + 15 binary); fold-local pooled MI top-18 per fold; cell-constant (site/capability_tier) EXCLUDED from per-cell LR | small data overfit → fold-local MI on N≈1124 pool stable; B-995 min_class_n=10 filter prevents minority hallucination |
+| **Target** | Pareto non-dominance on (Cost, SR), K-of-6 PRIMARY (Q4=A 2026-05-18) + APPENDIX FE inverse-variance pool (mirror H1 estimand) | site-asymmetric ±2/-4pp pattern preserved by K-of-6 primary; FE pool null reported as sensitivity |
+| **Granularity** | task-level (static features only); step-level trigger DEFERRED paper-2 | task-level routes once per episode; runtime cost = 1× LR predict_proba (~10ms) |
+| **Baseline** | oracle-ceiling / always-best-single-mode / always-cheapest / decision-stump / per-task-lookup ∞-capacity reductio (B-1006 intelligent-baseline ladder) + random Tier-0a/0b/0c | per-task-lookup bounds 18-feature LR generalization headroom from above (R5 reviewer-defense) |
 
-### Realistic timeline (paper 真正最值钱的工作量)
+### Cascade + escalation (DEFERRED paper-2)
+
+The following design space is **out of paper-1 scope** per v7 walk-back:
+
+- ~~Tier 2 first-step trigger / cascade composition~~ → paper-2 advanced router
+- ~~Rule+ML hybrid~~ → paper-2 (P1 archive sim showed P1 v3 thresholds degenerate)
+- ~~B1→B0 escalation~~ → paper-2 (cross-baseline cascade adds API budget complexity)
+- ~~Confidence-threshold step-level switching~~ → paper-2 (step-level routing 2× cost)
+
+### Paper-1 §6 timeline (post-data, codex round expected ~4-6h)
 
 ```
-Tier 1 (task-level oracle): ~5-7 天
-  ├─ Feature engineering (task NLP + browser meta): 2-3 天
-  ├─ Train/eval split + baseline 对比:               1-2 天
-  └─ Ablation (各 feature 组的 contribution):         1-2 天
+Stage 1+2+3 substrate (A2.5 Chunks A+B+C, 2026-05-18 landed):
+  ├─ extract_50_features.py + train_l1_router_with_mi.py (Stage 1+2): ✓ Chunk A
+  ├─ train_l1_router.py (Stage 3 LR + (b) τ inner-CV):              ✓ Chunk B
+  └─ learned_router.py + aggregate_h10_pareto.py:                    ✓ Chunk C
 
-Tier 2 (first-step trigger / cascade): ~7-10 天
-  ├─ 重新跑 step-1 切换实验:                         3-4 天
-  ├─ Confidence threshold tuning:                  1-2 天
-  └─ Cascade ablation:                             2-3 天
+Phase 1a Pass-1 fire + Pass-2 fire (gated):
+  ├─ Pass-1 baseline 36 conditions × cls+red × 3 baselines: ~5-7 days A100
+  ├─ Pass-2 router 6 conditions sequential:                 ~3-5 days A100
+  └─ aggregate_h10_pareto.py emit verdict + figure:         ~4-6h analysis
+
+Paper §6 prose finalization (codex round):
+  ├─ Fill TBD placeholders in section6_router.md v0 with measured numbers
+  ├─ Generate per-cell Pareto scatter figure (matplotlib)
+  └─ Site-asymmetric viability narrative writeup
 
 Total: ~3-4 周
 ```

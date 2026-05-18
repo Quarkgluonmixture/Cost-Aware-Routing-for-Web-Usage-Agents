@@ -208,9 +208,13 @@ P2 learned classifier spec is locked in `docs/checkpoints/router/proposals_v6.md
 
 **Estimand (v6)**: same Pareto-non-dominance structure as H9.
 
-**H10 PRIMARY GATE (v6)**: pooled non-dominance test
-    H0: R_P2 dominated by at least one baseline in pooled population at α=0.05.
-    Reject H0 if ≥ 5/6 cells pass paired bootstrap non-dominance at 95%.
+**H10 PRIMARY GATE (Q4=A locked 2026-05-18, B-999 /stress A2.5 P0-6-B*)**: K-of-6 descriptive paired bootstrap Pareto non-dominance.
+    Per cell: paired bootstrap (B=1000, seed=42) on (Cost, SR); cell passes if router non-dominated in ≥95% of bootstrap replicates.
+    H0: R_P2 dominated by at least one baseline in ≥2 cells.
+    Reject H0 if ≥ 5/6 cells pass paired bootstrap non-dominance.
+    Producer: `scripts/analysis/aggregate_h10_pareto.py` (A2.5 Chunk C, B-1002).
+
+> **Q4=A K-of-6 PRIMARY rationale** (locked 2026-05-18 per archive evidence + preregistration §C5 site-asymmetric viability lock): archive simulation pattern showed cls +2pp / red -3.95pp (Variant B balanced LR, 50-pair stratified CV) — FE inverse-variance pool over 6 cells would average to ~-1pp pooled with 95% CI crossing 0 (null), masking site-asymmetric viability narrative that IS the paper §6 main finding per `preregistration §C5` lock. K-of-6 descriptive preserves cell-level pattern. **FE inverse-variance pool retained as APPENDIX SENSITIVITY** (§625 entry below) for H1-mirror estimand parallelism; appendix is not gating.
 
 **H10 DEFER-condition** (revised 2026-05-16 evening per user-caught methodology critique — Option C): if **Phase 1a fresh-data** label-distribution diagnostic, computed per cell on train folds of the locked 5-fold CV (§354), shows per-cell label entropy H = -Σ p log p < log(2) (i.e., labels collapse to ≤ 2 modes per cell) on any cell, H10 is downgraded to deferred paper-2 disclosure; paper §6 single-route with H9 only. **The DEFER rule is pre-data-locked**; the DEFER trigger evaluation happens on Phase 1a fresh data post-launch (NOT on pre-Phase-1a archive — archive is a correlated-population sanity check only, not independent test substrate, per §C reframe 2026-05-16 evening; see `docs/checkpoints/router/proposals_v4.md` §A methodology critique).
 

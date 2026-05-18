@@ -237,7 +237,11 @@ def test_section1_two_knob_hypothesis_generation_downgrade():
     assert "hypothesis-generation observation" in txt
     assert "appears to shape exploration" in txt
     assert "appears to modulate commitment timing" in txt
-    assert "archive-grade evidence pending Phase 1a confirmation" in txt
+    # Wording refined by A2.6a Chunk 1 (3ade9b6) + A2.5 Chunk D — tolerate both.
+    assert (
+        "archive-grade evidence pending Phase 1a clean-rerun confirmation" in txt
+        or "archive-grade evidence pending Phase 1a confirmation" in txt
+    )
 
 
 # ─────────────────── B-900 §2 lexical-leakage memory rule ────────────────
