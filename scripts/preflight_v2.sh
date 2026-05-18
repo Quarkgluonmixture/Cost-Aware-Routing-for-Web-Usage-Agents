@@ -464,8 +464,12 @@ check_vwa_submodule_lock() {
   #       count; future upstream consolidation can drop to 1 via env without
   #       editing preflight.
   local guard_count_v1 guard_count_v2 guard_count
-  guard_count_v1="$(grep -cP '^\s*if not pred or not pred\.strip\(\):' "${hf}" 2>/dev/null || echo 0)"
-  guard_count_v2="$(grep -cP '^\s*if not pred(\.strip\(\))?:' "${hf}" 2>/dev/null || echo 0)"
+  # Fire-event fix 2026-05-18: `grep -cP ... || echo 0` returned multi-line "0\n0"
+  # when grep exited non-zero (0 matches) — broke arithmetic `(( ... ))` at L469
+  # with "0: syntax error in expression (error token is "0")". Replace with
+  # explicit exit-code handling so $guard_count_v* is always a single integer.
+  guard_count_v1=$(grep -cP '^\s*if not pred or not pred\.strip\(\):' "${hf}" 2>/dev/null) || guard_count_v1=0
+  guard_count_v2=$(grep -cP '^\s*if not pred(\.strip\(\))?:' "${hf}" 2>/dev/null) || guard_count_v2=0
   guard_count=$(( guard_count_v1 > guard_count_v2 ? guard_count_v1 : guard_count_v2 ))
   local expected_b91_guards="${EXPECTED_B91_GUARDS:-2}"
   if [[ "${guard_count}" -lt "${expected_b91_guards}" ]]; then
