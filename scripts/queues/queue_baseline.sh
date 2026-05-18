@@ -186,6 +186,14 @@ else
 
   RUNNER_LOG="${LOG_DIR}/${RUN_ID}_runner.log"
   echo "[baseline] launching runner → ${RUNNER_LOG}"
+  # B-1664 (/stress A2.11 P2-1-A 2026-05-18, user Q11=A): disable GCP Compute
+  # Engine metadata probe. google-auth library transitively imported via
+  # huggingface_hub probes GCE metadata server (~3s × 3 retries = ~9s startup
+  # delay + 3 WARN log lines that mask real errors). A100 VM is NOT on GCP →
+  # probe always fails. NO_GCE_CHECK=true short-circuits at google-auth level;
+  # GCE_METADATA_HOST=disabled.invalid prevents IP-based fallback probe.
+  export NO_GCE_CHECK=true
+  export GCE_METADATA_HOST=disabled.invalid
   setsid nohup "${PYTHON_BIN}" scripts/run_experiment.py \
     --config "${CONFIG}" \
     --run_id "${RUN_ID}" \

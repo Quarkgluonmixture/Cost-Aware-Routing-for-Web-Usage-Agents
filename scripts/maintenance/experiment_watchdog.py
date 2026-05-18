@@ -1315,6 +1315,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help="Push status report every N minutes (default: 30)")
     p.add_argument("--idle-alert-mins", type=int, default=20,
                     help="Alert if no new episode for N minutes (default: 20)")
+    p.add_argument("--step-stale-mins", type=int, default=10,
+                    help="B-1667 (/stress A2.11 P1-1 2026-05-18): alert if step "
+                         "JSONL mtime stale >N minutes. Catches in-flight stalls "
+                         "the summary-only signal misses (e.g., 2026-05-18 fire "
+                         "red task 0 stuck 28 min in 99s busy-wait loop). Default: 10.")
     p.add_argument("--ntfy-topic", default=None, help="ntfy topic for push notifications")
     p.add_argument("--state-file", default=None, help="State file for persistence across restarts")
     # B-743 (digest retire 2026-05-17): `--glm-config` + `--digest-dir` removed.
@@ -2112,18 +2117,62 @@ def main() -> int:
             last_report_ts = now
 
         # --- 3. Idle alert ---
+        # B-1667 (/stress A2.11 P1-1-A*B 2026-05-18 user Q7=A): episode-level
+        # idle (no new summary) OR step-level stall (no new step JSONL write
+        # for >step_stale_secs). Pre-fix only checked episode-level → first-
+        # episode hang inside task 0 (e.g., 2026-05-18 13:28:06 fire: red
+        # task 0 stuck 28 min in 99s busy-wait loop) waited full 30min idle
+        # alert threshold + couldn't distinguish "runner stuck mid-episode"
+        # from "runner died". Step-mtime signal fires earlier + tags state.
         if not new_paths:
             idle_elapsed = now - last_new_episode_ts
-            if idle_elapsed >= idle_alert_secs and not idle_alerted:
+            step_stale_secs = max(60, args.step_stale_mins * 60)
+            _last_step_mtime = 0.0
+            try:
+                if args.condition:
+                    _cond_dirs = [run_dir / args.condition]
+                else:
+                    _cond_dirs = [d for d in run_dir.iterdir()
+                                  if d.is_dir() and d.name not in _EXCLUDED_DIRS]
+                for _cd in _cond_dirs:
+                    _episodes_dir = _cd / "episodes"
+                    if not _episodes_dir.exists():
+                        continue
+                    for _jsonl in _episodes_dir.glob("*_steps_v2.jsonl"):
+                        try:
+                            _m = _jsonl.stat().st_mtime
+                            if _m > _last_step_mtime:
+                                _last_step_mtime = _m
+                        except OSError:
+                            pass
+            except OSError:
+                pass
+            step_age = (now - _last_step_mtime) if _last_step_mtime > 0 else 0.0
+            episode_stall = idle_elapsed >= idle_alert_secs
+            step_stall = (_last_step_mtime > 0 and step_age >= step_stale_secs)
+
+            if (episode_stall or step_stall) and not idle_alerted:
                 idle_mins = int(idle_elapsed / 60)
+                step_age_mins = int(step_age / 60) if _last_step_mtime > 0 else -1
                 report = _build_status_report(all_records, condition_mode_cache, seen_completions, run_id) or ""
+                if step_stall and not episode_stall:
+                    signal_tag = "STEP STALL"
+                elif episode_stall and step_stall:
+                    signal_tag = "EPISODE IDLE + STEP STALL"
+                else:
+                    signal_tag = "EPISODE IDLE"
+                step_age_str = (
+                    f"step JSONL {step_age_mins} 分钟无更新 (阈值={args.step_stale_mins}min)"
+                    if step_age_mins >= 0 else "step JSONL N/A"
+                )
                 idle_body = (
-                    f"已 {idle_mins} 分钟无新 episode（阈值={args.idle_alert_mins}min）\n\n"
+                    f"[{signal_tag}] 已 {idle_mins} 分钟无新 episode "
+                    f"(阈值={args.idle_alert_mins}min); {step_age_str}\n\n"
                     f"{report}"
                 ).strip()
                 print(f"[watchdog][IDLE] {idle_body}")
                 if args.ntfy_topic:
-                    _post_ntfy(args.ntfy_topic, f"P79 IDLE {idle_mins}min", idle_body, priority="high")
+                    _post_ntfy(args.ntfy_topic, f"P79 IDLE {idle_mins}min [{signal_tag}]", idle_body, priority="high")
                 idle_alerted = True
 
         # --- 4. Condition completion ---

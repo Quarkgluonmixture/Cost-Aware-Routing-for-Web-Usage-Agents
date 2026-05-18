@@ -479,6 +479,57 @@ check_vwa_submodule_lock() {
   pass "VWA submodule locked at ${expected_branch}@${expected_sha:0:8} (B-91 guard count=${guard_count} ≥ ${expected_b91_guards})"
 }
 
+check_docker_container_warmth() {
+  # B-1666 (/stress A2.11 P1-4-A* OOB 2026-05-18, user Q9=A): docker container
+  # warmth check. Pre-fix check_site_endpoints only verified port reachable —
+  # vwa-reddit container Up 43 min on 2026-05-18 13:28:06 fire (cold cache from
+  # B-159 crash restart) passed curl check but actual page render took 99s due
+  # to cold postgres index + empty redis cache + postmill N+1 query on first
+  # forum render. New check queries docker container uptime; warns if <30 min
+  # (cold cache likely; suggest warmup loop before paper-grade fire).
+  if [[ "${RESOLVED_SITE_MODE}" != "local" ]]; then
+    return  # remote sites — no local docker to inspect
+  fi
+  if ! command -v docker >/dev/null 2>&1; then
+    warn "docker not available; skipping container warmth check"
+    return
+  fi
+  local sites_to_check
+  if [[ -z "${SITES_FILTER}" ]]; then
+    sites_to_check="classifieds reddit"
+  else
+    sites_to_check="$(echo "${SITES_FILTER}" | tr ',' ' ')"
+  fi
+  for site in ${sites_to_check}; do
+    local container=""
+    case "${site}" in
+      classifieds) container="classifieds" ;;
+      reddit) container="vwa-reddit" ;;
+      shopping) container="vwa-shopping" ;;
+      *) continue ;;
+    esac
+    if ! docker inspect "${container}" >/dev/null 2>&1; then
+      warn "${container} container not found; skipping warmth check for ${site}"
+      continue
+    fi
+    local started_at started_epoch now_epoch uptime_secs uptime_min
+    started_at="$(docker inspect "${container}" --format '{{.State.StartedAt}}' 2>/dev/null)"
+    if [[ -z "${started_at}" ]]; then
+      warn "${container}: cannot read StartedAt; skipping uptime check"
+      continue
+    fi
+    started_epoch="$(date -d "${started_at}" +%s 2>/dev/null || echo 0)"
+    now_epoch="$(date +%s)"
+    uptime_secs=$(( now_epoch - started_epoch ))
+    uptime_min=$(( uptime_secs / 60 ))
+    if (( uptime_min < 30 )); then
+      warn "${container} (${site}): uptime ${uptime_min}min < 30min cold cache threshold — paper-grade fire 第一个 task 可能 cold-start (99s busy-wait risk); consider warmup loop"
+    else
+      pass "${container} (${site}): uptime ${uptime_min}min (warm)"
+    fi
+  done
+}
+
 check_nltk_resources() {
   # B-1660 (/stress A2.11 P0-1-A* OOB, 2026-05-18): NLTK punkt/punkt_tab data
   # required by VWA evaluation_harness LLM judge string_match path (sent_tokenize
@@ -681,6 +732,7 @@ main() {
   fi
 
   check_site_endpoints
+  check_docker_container_warmth  # B-1666 P1-4 (2026-05-18): cold-cache risk before paper-grade fire
   check_python_modules
   check_playwright_browser
   check_torch_cuda

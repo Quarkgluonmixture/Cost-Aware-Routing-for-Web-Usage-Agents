@@ -91,6 +91,14 @@ wait_for_runner_done() {
   local pattern="$1"
   local label="$2"
   local elapsed=0
+  # B-1665 (/stress A2.11 P1-5-A 2026-05-18, user Q10=A): max wallclock per
+  # condition (default 4h). Pre-fix chain-level had no upper bound — combined
+  # with watchdog idle-alert blind spot (P1-1) + 99s busy-wait loop (P0-2 root),
+  # a stuck condition could waste compute overnight before user manual kill.
+  # 4h covers full 224-task cls condition at ~30s/task avg (~2h) + 2× headroom.
+  # Override via MAX_CONDITION_HOURS env (e.g., MAX_CONDITION_HOURS=12 for
+  # slow site / extra-large mode chain).
+  local max_condition_secs=$(( ${MAX_CONDITION_HOURS:-4} * 3600 ))
   while pgrep -f "run_experiment.py.*${pattern}" > /dev/null; do
     sleep 60
     elapsed=$((elapsed + 60))
@@ -106,8 +114,21 @@ wait_for_runner_done() {
       fi
       exit 1
     fi
+    # B-1665 P1-5: max wallclock guard
+    if (( elapsed >= max_condition_secs )); then
+      log "  [FATAL] ${label}: max condition wallclock exceeded (${elapsed}s ≥ ${max_condition_secs}s = ${MAX_CONDITION_HOURS:-4}h)"
+      log "  paper-grade fail-fast: condition stuck longer than budget — likely busy-wait loop / proxy hang / cold cache"
+      log "  killing runner + watchdog; condition will be marked incomplete by sentinel below"
+      pkill -f "run_experiment.py.*${pattern}" 2>/dev/null || true
+      pkill -f "experiment_watchdog.*${pattern}" 2>/dev/null || true
+      if command -v curl > /dev/null; then
+        curl -L -d "queue_chain ABORT (${label}): condition exceeded ${MAX_CONDITION_HOURS:-4}h max wallclock; runner+watchdog killed. Investigate stuck state." \
+          "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
+      fi
+      exit 1
+    fi
     if (( elapsed % 1800 == 0 )); then
-      log "  ${label}: still running (${elapsed}s elapsed; watchdog alive)..."
+      log "  ${label}: still running (${elapsed}s / ${max_condition_secs}s max; watchdog alive)..."
       pgrep -af "run_experiment.py.*${pattern}" | head -1 | sed 's/^/    /'
     fi
   done

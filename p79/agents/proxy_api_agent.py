@@ -1,11 +1,15 @@
 """ProxyApiAgent — calls a custom proxy API (Anthropic Messages style)."""
 
 import base64
+import fcntl
+import hashlib
 import json
 import logging
 import os
 import re
+import tempfile
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -14,6 +18,51 @@ from PIL import Image
 
 from p79.backends.action_utils import parse_action_text, validate_action
 from p79.backends.image_utils import DEFAULT_MAX_IMAGE_PAYLOAD_BYTES, encode_image_data_url
+
+
+# B-1668 (/stress A2.11 P1-2-B*C 2026-05-18, user Q8=A): cross-process file lock
+# for B0 AWS proxy. Defends against simultaneous fire from cls + red chains
+# (default sequential post-P0-5 B-1663, but accidents possible) hammering same
+# proxy endpoint + API key → sync exponential backoff on 429/5xx tail latency
+# amplification. Non-blocking acquire + sleep-retry up to PROXY_LOCK_MAX_WAIT
+# secs; on timeout, proceed without lock + log warning (degrade-not-block).
+@contextmanager
+def _proxy_global_lock(api_key: str, max_wait_secs: int = 60):
+    """File-based semaphore on /tmp/p79_proxy_<hash>.lock — serializes B0 proxy
+    requests across all runners on same host. Yields True if lock acquired,
+    False on timeout (proceed without serialization)."""
+    lock_path = Path(tempfile.gettempdir()) / f"p79_proxy_{hashlib.sha1(api_key.encode()).hexdigest()[:8]}.lock"
+    lock_fd = None
+    try:
+        lock_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        _start = time.time()
+        acquired = False
+        while True:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                acquired = True
+                break
+            except OSError:
+                if time.time() - _start >= max_wait_secs:
+                    logging.getLogger(__name__).warning(
+                        "B-1668: proxy global lock %s acquire timeout %ds — proceeding without",
+                        lock_path, max_wait_secs,
+                    )
+                    try:
+                        os.close(lock_fd)
+                    except OSError:
+                        pass
+                    lock_fd = None
+                    break
+                time.sleep(0.5)
+        yield acquired
+    finally:
+        if lock_fd is not None:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                os.close(lock_fd)
+            except OSError:
+                pass
 
 logger = logging.getLogger(__name__)
 
@@ -587,44 +636,54 @@ class ProxyApiAgent:
         # the actual no-scaffold cost was 30s — retry-frequent sites were
         # systematically inflated.
         resp = None
-        for _attempt in range(_max_retries + 1):
-            _attempt_start = time.time()
-            try:
-                resp = requests.post(
-                    self.endpoint,
-                    json=payload,
-                    headers=headers,
-                    timeout=self.timeout,
-                )
-            except (requests.Timeout, requests.ConnectionError) as net_exc:
+        # B-1668 (/stress A2.11 P1-2-B*C 2026-05-18, user Q8=A): file-based
+        # global semaphore around B0 proxy retry loop. Other process holding
+        # lock waits up to 60s; on timeout proceed without serialization
+        # (degrade-not-block). Lock released in finally after loop exit
+        # (success / max retries / exception).
+        _proxy_lock_ctx = _proxy_global_lock(self.api_key)
+        _proxy_lock_ctx.__enter__()
+        try:
+            for _attempt in range(_max_retries + 1):
+                _attempt_start = time.time()
+                try:
+                    resp = requests.post(
+                        self.endpoint,
+                        json=payload,
+                        headers=headers,
+                        timeout=self.timeout,
+                    )
+                except (requests.Timeout, requests.ConnectionError) as net_exc:
+                    _attempt_elapsed_ms = (time.time() - _attempt_start) * 1000.0
+                    if _attempt == _max_retries:
+                        raise
+                    wait = _backoff * (2 ** _attempt)
+                    logger.warning(
+                        "API network error %s (attempt %d/%d, %.0fms), retrying in %ds...",
+                        net_exc, _attempt + 1, _max_retries, _attempt_elapsed_ms, wait,
+                    )
+                    _retry_count += 1
+                    # B-399: charge failed-attempt elapsed + sleep to scaffold.
+                    _retry_wait_ms_total += _attempt_elapsed_ms + wait * 1000.0
+                    time.sleep(wait)
+                    continue
                 _attempt_elapsed_ms = (time.time() - _attempt_start) * 1000.0
-                if _attempt == _max_retries:
-                    raise
+                if resp.status_code not in _retryable_codes or _attempt == _max_retries:
+                    # Success path (or last-attempt 5xx that we surface up):
+                    # this attempt's elapsed is the LEGITIMATE network cost,
+                    # NOT scaffold. Do not accumulate.
+                    break
                 wait = _backoff * (2 ** _attempt)
                 logger.warning(
-                    "API network error %s (attempt %d/%d, %.0fms), retrying in %ds...",
-                    net_exc, _attempt + 1, _max_retries, _attempt_elapsed_ms, wait,
+                    "API %s (attempt %d/%d, %.0fms), retrying in %ds...",
+                    resp.status_code, _attempt + 1, _max_retries, _attempt_elapsed_ms, wait,
                 )
                 _retry_count += 1
-                # B-399: charge failed-attempt elapsed + sleep to scaffold.
+                # B-399: failed-status attempt (will be retried) → scaffold cost.
                 _retry_wait_ms_total += _attempt_elapsed_ms + wait * 1000.0
                 time.sleep(wait)
-                continue
-            _attempt_elapsed_ms = (time.time() - _attempt_start) * 1000.0
-            if resp.status_code not in _retryable_codes or _attempt == _max_retries:
-                # Success path (or last-attempt 5xx that we surface up):
-                # this attempt's elapsed is the LEGITIMATE network cost,
-                # NOT scaffold. Do not accumulate.
-                break
-            wait = _backoff * (2 ** _attempt)
-            logger.warning(
-                "API %s (attempt %d/%d, %.0fms), retrying in %ds...",
-                resp.status_code, _attempt + 1, _max_retries, _attempt_elapsed_ms, wait,
-            )
-            _retry_count += 1
-            # B-399: failed-status attempt (will be retried) → scaffold cost.
-            _retry_wait_ms_total += _attempt_elapsed_ms + wait * 1000.0
-            time.sleep(wait)
+        finally:
+            _proxy_lock_ctx.__exit__(None, None, None)
         assert resp is not None, "API request failed: resp is None after all retries"
         resp.raise_for_status()
         try:
