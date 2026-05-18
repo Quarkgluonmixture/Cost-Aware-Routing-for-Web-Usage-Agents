@@ -1,0 +1,98 @@
+=== OSF DOI 1 Submission Receipt ===
+
+Witnessed substance lock anchor: preregistration-locked-q3a @ 72b93c9
+Witnessed empirical anchor:      preregistration-doi1-witnessed-20260518T211628Z @ 5edac3b
+Post-DOI-mint promoted anchor:   preregistration-doi1-minted-osf-9QCWU @ 5edac3b
+Pre-submission deposit bundle:   docs/checkpoints/pre_run/osf_deposit_DOI1_20260518T211628Z/
+Pre-submission MANIFEST:         29/29 byte-level verified clean
+                                 (latest sign-off commit: 50be2ff)
+
+=== OSF Registration ===
+
+Submitted by:         Jiaming Wei
+Submitted at UTC:     2026-05-18T23:10:06Z  (precise; from OSF API date_registered)
+                      (UI display "May 19, 2026, 12:10 AM" was BST = UTC+1)
+OSF Registration GUID: 9qcwu     (URL: https://osf.io/9qcwu)
+OSF Parent Project GUID: kv9sf   (URL: https://osf.io/kv9sf)
+Registration Type:    OSF Preregistration (OSF Standard Pre-Data Collection)
+Status:               ✅ ARCHIVED + DOI MINTED (instant; no 48h wait)
+License:              CC-By Attribution 4.0 International
+OSF DOI:              10.17605/OSF.IO/9QCWU  ✅
+
+=== Canonical witness file ===
+
+artifact_existence_check_doi1_canonical_20260518T211628Z.txt
+  Full-file SHA-256:    6056b905e25b0880e613eeb43a091f3281e107073736608755331185ffcadbe3
+  Content-only SHA-256: 011fa4c07d76798a57070d9aea8b1653ca50dfe432b9c4dee689b96ee9cc6691
+  Captured UTC:         2026-05-18T21:16:28Z
+  Strategy:             pre-launch attempt #4 (per B-1751-fu)
+  Tier:                 1 strictest (canonical-pattern counts = 0,
+                        any_files_in_run_dirs = 0; no Fire-3 run_dir at capture)
+
+=== Timing anchors ===
+
+Substance lock UTC:         2026-05-18T11:30:00Z   (preregistration substance frozen)
+Empirical witness UTC:      2026-05-18T21:16:28Z   (zero-state cryptographic capture)
+Author sign-off Row A UTC:  2026-05-18T22:52Z      (manual pre-submission review PASS)
+Author sign-off Row B UTC:  2026-05-18T22:51Z      (pre-OSF-deposit gate PASS)
+Sign-off commit UTC:        ~2026-05-18T22:53Z     (commit 50be2ff landed local)
+Sign-off push to GitHub:    ~2026-05-18T22:54Z     (push to origin/master)
+OSF UI navigation:          ~2026-05-18T22:55-23:09Z (title + description + GitHub
+                                                       tag link + bundle upload)
+OSF submission UTC:         2026-05-18T23:10:06Z   (Submit clicked; archived immediately)
+OSF DOI mint UTC:           2026-05-18T23:10:06Z   (instant — no 48h wait)
+DOI 2 deposit (DOI 2 mint): <pending ~2-3 weeks post Pass-1 + Pass-2 + analysis-frozen
+                             + paper-finalized; will explicitly cited_by 9qcwu>
+
+=== Chronology note (important) ===
+
+OSF submission UTC (23:10:06Z) is 1h54min AFTER canonical witness capture (21:16:28Z).
+During those ~2 hours: Fire-3 launched and started producing outcome data. The
+"pre-canonical-outcome-creation" claim is therefore anchored at the witness file's
+recorded counts (= 0 at 21:16:28Z), NOT at OSF submission moment. The OSF DOI
+cryptographically attests that the witness file (with full-file SHA 6056b905...)
+existed in this zero-state when OSF submission archived it at 23:10:06Z.
+
+Witness file is byte-immutable (verified by both SHA-256 hashes appearing in
+MANIFEST_SHA256.txt and inside the file's self-doc line 44).
+
+=== Cite-as (canonical, post-DOI) ===
+
+  OSF preregistration 10.17605/OSF.IO/9QCWU (Registration GUID 9qcwu, parent project
+  kv9sf), submitted 2026-05-18T23:10:06Z UTC, pre-canonical-outcome-creation witness
+  for Fire-3 (empirical zero-state per `artifact_existence_check_doi1_canonical_
+  20260518T211628Z.txt` full-file SHA-256
+  6056b905e25b0880e613eeb43a091f3281e107073736608755331185ffcadbe3 captured pre-launch
+  at 2026-05-18T21:16:28Z); registered Git tag preregistration-doi1-witnessed-
+  20260518T211628Z + post-mint promoted tag preregistration-doi1-minted-osf-9QCWU,
+  both at SHA 5edac3b on master.
+
+=== Notes ===
+
+(1) Archiving completed instantly. OSF Standard Preregistration apparently bypassed
+    the 48h auto-approval window in this case (possibly because the OSF Standard
+    Pre-Data Collection schema is fully self-attested + no moderation flag triggered).
+    Per help.osf.io/article/330, 48h is the maximum wait; instant approval is normal
+    for well-formed bundles.
+
+(2) DOI 1 OSF Registration GUID `9qcwu` is the canonical OSF citation for paper §3
+    prereg references. Parent project GUID `kv9sf` holds the deposit files but is NOT
+    the citation anchor; the registration (9qcwu) is.
+
+(3) Deposit dir on local disk (`docs/checkpoints/pre_run/osf_deposit_DOI1_
+    20260518T211628Z/`) is now FROZEN — reflects what was uploaded to OSF at
+    23:10:06Z. Do NOT modify deposit contents post-mint. Live files (DOI_1_README.md,
+    preregistration.md, osf_lock_manifest.md, this receipt) can be backfilled with
+    post-DOI data per standard preregistration evolution doctrine.
+
+(4) Backfills landed in this commit:
+    - DOI_1_README.md frontmatter: osf_doi / osf_guid / osf_submitted_at_utc filled
+    - preregistration.md frontmatter: osf_doi_1_pre_canonical_outcome_witness filled
+    - osf_lock_manifest.md §2: Git anchor row + OSF DOI 1 row updated to ✅ MINTED
+
+(5) Git tag preregistration-doi1-minted-osf-9QCWU created at commit 5edac3b (same
+    anchor as witness tag; post-mint name promotion per §3a step 8). Tag annotation
+    cites DOI + submission UTC + canonical witness SHA + content-only witness SHA.
+
+(6) DOI 2 reproducibility bundle deposits separately ~2-3 weeks post-fire with
+    explicit `cited_by` reference to DOI 1 (this 9qcwu / 10.17605/OSF.IO/9QCWU).
