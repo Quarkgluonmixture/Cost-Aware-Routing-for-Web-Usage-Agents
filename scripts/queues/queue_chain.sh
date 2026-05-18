@@ -87,6 +87,31 @@ fi
 # watchdog death — paper-grade > compute reclaim. User triggers manual restart
 # after addressing watchdog root cause (typical: ntfy curl SIGPIPE, OOM, glm
 # config bug, NPE on bad state JSON).
+# B-1702 (/stress A2.12 P0-3-B* OOB codex unique, 2026-05-18, user Q3=A):
+# kill runner process GROUP (not parent PID) so playwright browser / node
+# helper / blip2 worker / chrome sandbox subprocesses ALL die. Pre-fix
+# `pkill -f run_experiment.py.*PATTERN` matched python process only — orphans
+# persisted, polluted next condition's reset / held docker sockets / hung
+# auth. Sequence: TERM PG → 5s grace → KILL PG. Caller passes the same
+# pattern as before (we look up PGID from runner PID).
+_kill_runner_pgroup() {
+  local pattern="$1"
+  local runner_pid runner_pgid
+  runner_pid=$(pgrep -f "run_experiment.py.*${pattern}" 2>/dev/null | head -1)
+  if [[ -n "${runner_pid}" ]]; then
+    runner_pgid=$(ps -o pgid= -p "${runner_pid}" 2>/dev/null | tr -d ' ')
+    if [[ -n "${runner_pgid}" ]]; then
+      log "  [B-1702] killing runner PGID=${runner_pgid} (pid=${runner_pid}): TERM → 5s → KILL"
+      kill -- "-${runner_pgid}" 2>/dev/null || true
+      sleep 5
+      kill -KILL -- "-${runner_pgid}" 2>/dev/null || true
+    else
+      # Fallback to original parent-pid kill if PGID lookup fails
+      pkill -f "run_experiment.py.*${pattern}" 2>/dev/null || true
+    fi
+  fi
+}
+
 wait_for_runner_done() {
   local pattern="$1"
   local label="$2"
@@ -106,10 +131,10 @@ wait_for_runner_done() {
     if ! pgrep -f "experiment_watchdog.*${pattern}" > /dev/null; then
       log "  [FATAL] ${label}: watchdog died mid-run (runner still alive after ${elapsed}s)"
       log "  paper-grade contamination risk: no reactive auth refresh + no auto-clean + no idle alert"
-      log "  Q2 A decision (A1.13 audit 2026-05-16): abort chain, kill runner, notify user"
-      pkill -f "run_experiment.py.*${pattern}" 2>/dev/null || true
+      log "  Q2 A decision (A1.13 audit 2026-05-16): abort chain, kill runner PGID, notify user"
+      _kill_runner_pgroup "${pattern}"  # B-1702: kill whole runner PG, not just parent PID
       if command -v curl > /dev/null; then
-        curl -L -d "queue_chain ABORT (${label}): watchdog died after ${elapsed}s; runner killed. Restart after root cause." \
+        curl -L -d "queue_chain ABORT (${label}): watchdog died after ${elapsed}s; runner PG killed. Restart after root cause." \
           "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
       fi
       exit 1
@@ -118,11 +143,11 @@ wait_for_runner_done() {
     if (( elapsed >= max_condition_secs )); then
       log "  [FATAL] ${label}: max condition wallclock exceeded (${elapsed}s ≥ ${max_condition_secs}s = ${MAX_CONDITION_HOURS:-4}h)"
       log "  paper-grade fail-fast: condition stuck longer than budget — likely busy-wait loop / proxy hang / cold cache"
-      log "  killing runner + watchdog; condition will be marked incomplete by sentinel below"
-      pkill -f "run_experiment.py.*${pattern}" 2>/dev/null || true
+      log "  killing runner PGID + watchdog; condition will be marked incomplete by sentinel below"
+      _kill_runner_pgroup "${pattern}"  # B-1702: kill whole runner PG (chrome/playwright/node)
       pkill -f "experiment_watchdog.*${pattern}" 2>/dev/null || true
       if command -v curl > /dev/null; then
-        curl -L -d "queue_chain ABORT (${label}): condition exceeded ${MAX_CONDITION_HOURS:-4}h max wallclock; runner+watchdog killed. Investigate stuck state." \
+        curl -L -d "queue_chain ABORT (${label}): condition exceeded ${MAX_CONDITION_HOURS:-4}h max wallclock; runner PG + watchdog killed. Investigate stuck state." \
           "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
       fi
       exit 1

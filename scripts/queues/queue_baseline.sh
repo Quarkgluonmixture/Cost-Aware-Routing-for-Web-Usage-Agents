@@ -218,6 +218,17 @@ WATCHDOG_STATE="${LOG_DIR}/exp_watchdog_${RUN_ID}_v2.state.json"
 # AND condition_summary_v2.json present. Prevents init-orphan idle loops.
 RUNNER_PID=$(pgrep -f "run_experiment.py.*${RUN_ID}" | head -1)
 
+# B-1702 (/stress A2.12 P0-3-B* OOB codex unique, 2026-05-18, user Q3=A):
+# capture RUNNER process group ID. setsid above makes the runner its own
+# process group leader (PGID = runner_pid in nominal case, but `ps -o pgid=`
+# is robust to fork/exec chain). Watchdog reads PGID via os.getpgid() at
+# SIGTERM time; we record here for chain-level cleanup + audit-trail.
+RUNNER_PGID=""
+if [[ -n "${RUNNER_PID}" ]]; then
+  RUNNER_PGID="$(ps -o pgid= -p "${RUNNER_PID}" 2>/dev/null | tr -d ' ')"
+  echo "[baseline] runner pid=${RUNNER_PID} PGID=${RUNNER_PGID:-unknown} (B-1702 process-group SIGTERM ready)"
+fi
+
 # B-907 (/stress A2.2 P0-5-B* codex F1 OOB, 2026-05-17): per-RUN_ID flock
 # closes pgrep-TOCTOU window letting two queue leaves spawn 2 watchdogs same
 # RUN_ID + shared WD_STATE mutual overwrite. Lock on fd 8 (held until script

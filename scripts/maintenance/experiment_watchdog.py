@@ -1867,18 +1867,37 @@ def main() -> int:
                                 f"+ alert, then propagating (B-1584 P0-4-AC)"
                             )
                             if getattr(args, "runner_pid", None):
+                                # B-1702 (/stress A2.12 P0-3-B* OOB codex unique, 2026-05-18,
+                                # user Q3=A): SIGTERM process GROUP (not parent PID) so
+                                # playwright browser / node helper / blip2 worker subprocesses
+                                # ALL die. Pre-fix os.kill(pid, SIGTERM) only killed python
+                                # runner — orphans persisted, could invalidate next condition's
+                                # auth / hold docker sockets / pollute reset state. Sequence:
+                                # TERM PG → 5s grace → KILL PG (if any survive).
                                 try:
-                                    os.kill(args.runner_pid, signal.SIGTERM)
+                                    _runner_pgid = os.getpgid(args.runner_pid)
+                                    os.killpg(_runner_pgid, signal.SIGTERM)
                                     print(
                                         f"[watchdog][SESSION][FATAL] SIGTERM sent to "
-                                        f"runner pid={args.runner_pid}"
+                                        f"runner PGID={_runner_pgid} (pid={args.runner_pid}); "
+                                        f"5s grace then SIGKILL"
                                     )
+                                    time.sleep(5)
+                                    try:
+                                        os.killpg(_runner_pgid, signal.SIGKILL)
+                                        print(
+                                            f"[watchdog][SESSION][FATAL] SIGKILL sent to "
+                                            f"runner PGID={_runner_pgid} (survivors cleared)"
+                                        )
+                                    except ProcessLookupError:
+                                        # PG already empty — clean death after SIGTERM
+                                        pass
                                 except ProcessLookupError:
                                     print(f"[watchdog][SESSION] runner pid={args.runner_pid} already dead")
                                 except (PermissionError, OSError) as _sig_exc:
                                     print(
                                         f"[watchdog][SESSION][warn] SIGTERM runner "
-                                        f"pid={args.runner_pid} failed: {_sig_exc}"
+                                        f"PGID(pid={args.runner_pid}) failed: {_sig_exc}"
                                     )
                             if args.ntfy_topic:
                                 try:
