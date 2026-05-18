@@ -41,14 +41,14 @@ Net: **paper-1 contribution shape sharper**, paper-2 contribution shape thicker 
 ```
 task arrives
     ↓
-[L_learned] Multinomial Logistic Regression
-    features (8):
+[L_learned] Multinomial Logistic Regression — per-cell trained head (one (B, S) → one Pipeline)
+    features (8): NOTE — `capability_tier` deleted per /stress A2.6b Q2=A user decision 2026-05-18 (B-1291 P1-7-B* spec-honest delete). Rationale: per-cell trained router → capability_tier feature is constant within each cell (B0_cls cell has only B0; B0_red has only B0; etc.), contributes no task-level decision boundary signal; at best becomes intercept noise, at worst wastes an MI top-18 feature slot. Runtime + trainer feature vectors (`p79/policies/learned_router.py:73-94` + `scripts/analysis/train_l1_router.py:279-287`) never included capability_tier — spec is now aligned with implementation. Cross-cell capability comparison is folded into the H10 per-cell + cross-cell LOCO sensitivity protocol.
       - site (one-hot cls / red / shop)
-      - capability_tier (one-hot B0 235B / B1 4B / B2 4B-cross-family)
       - has_reference_image (bool)
       - intent_color_regex (bool)
       - intent_compare_regex (bool)
       - intent_search_regex (bool)
+      - intent_nav_regex (bool)
       - intent_token_count (z-scored in-fold)
       - axtree_element_count (z-scored in-fold, from step-0 state_digest.dom_complexity)
     target: oracle_best_mode (multinomial 6-class with balanced class_weight)
@@ -69,9 +69,9 @@ Test whether **R_learned traces a (Cost, SR) point not Pareto-dominated** by any
     Per-cell paired bootstrap (1000 resample): compute fraction of bootstrap samples where R_learned non-dominated. Cell passes if ≥ 95%.
     Pooled FE across 6 cells: report fraction of cells passing + meta-pooled Pareto frontier with cell-stratified (Cost, SR) confidence regions.
 
-**H10 PRIMARY GATE**: pooled non-dominance test
-    H0: R_learned dominated by at least one baseline in pooled population at α=0.05.
-    Reject H0 if ≥ 5/6 cells pass paired bootstrap non-dominance at 95%.
+**H10 PRIMARY GATE**: pooled non-dominance test (finite-population estimand — mirror H1 decision 3A 2026-05-14)
+    H0: R_learned dominated by at least one baseline **over the 6 planned Phase 1a (site, model) cells** under FE inverse-variance pooling at α=0.05 (B-1285 /stress A2.6b P1-5-B* 2026-05-18 — "pooled population" was super-population language; the cells are the design, not a sample from a hypothetical population, so the estimand is finite-design just like H1 decision 3A — `pre_run/preregistration.md §2 H1` + `aggregate_phase1_full_prereg_decision.py:616-624`).
+    Reject H0 if ≥ 5/6 cells pass paired bootstrap non-dominance at 95% AND pooled FE point is non-dominated.
 
 **Latency dominance secondary check**: for each cell where R_learned passes (Cost, SR) Pareto non-dominance, verify latency_learned_i ≤ 1.10 × min_m latency_m_i (best-single-mode latency × 1.10 ceiling).
 
@@ -122,7 +122,7 @@ Outputs: paper §6 H10 Pareto non-dominance evidence + per-cell L predictions + 
 
 **Within-cell**: 5-fold site-stratified CV (preregistration §354 unchanged) on per-cell task distribution. Train LR on 4 folds, predict on 1; record predicted mode per task.
 
-**Cross-cell (LOCO — Leave-One-Cell-Out)**: train LR on 5 cells (~1000 tasks), test on 6th cell (~200 tasks); repeat 6 times. Reports cross-cell generalization with paired bootstrap CI. **This is the paper §6 main number source** per Q4 user decision 2026-05-16.
+**Cross-cell (LOCO — Leave-One-Cell-Out) — Appendix-D sensitivity, NOT H10 primary (B-1286 /stress A2.6b P1-8-B* 2026-05-18 — spec ↔ runtime resolution)**: train LR on 5 cells (~1000 tasks), test on 6th cell (~200 tasks); repeat 6 times. Reports cross-cell generalization with paired bootstrap CI as **Appendix-D sensitivity diagnostic, NOT paper §6 main number source**. Rationale: the canonical runtime architecture (per-cell trained LR heads loaded by `configs/exp_v2_B0_router_learned_classifieds.yaml:37-46` etc. + `p79/experiment/conditions.py:331-336` ValueError "learned router is trained per-cell so single-site fires are the only supported launch pattern") is per-cell — LOCO conflicts with this architecture because each cell's LR head needs its own training data and LOCO would substitute a different LR head architecture. LOCO is also not a true out-of-distribution test (it leaves out 1 of 6 site×model cells from the same Phase 1a task pool, not a different benchmark or task family). The genuine cross-population test is Phase 1b shop fire (per `pre_run/preregistration.md §7`) — committed as future work, not pre-rebuttable on Phase 1a. The Q4 user decision 2026-05-16 "LOCO main number" was superseded by Q4 user decision 2026-05-18 (per per-cell LR-head architecture compatibility per A2.6a B-1261 P0-2-AB*).
 
 **Archive sim (development sanity, not paper-grade)**: repeated stratified 5-fold × 10 repeats (50 train-test pairs) on archive cls+red B0 — supplementary table only, not main §6 claim.
 

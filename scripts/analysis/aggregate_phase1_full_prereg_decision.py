@@ -575,10 +575,18 @@ def _apply_framing(h1_pass: bool, h2a_falsified: bool,
     failed H1 (prereg L323 + L340-342). Per-cell consistency substitution
     (which the retired decision_test had) is RETIRED.
     """
-    # H1 failed → R5 (paper death) regardless of I² or H2(a) or H3
+    # H1 failed → R5 regardless of I² or H2(a) or H3
+    # B-1288 /stress A2.6b P1-12-B 2026-05-18: R5 framing precise scope — falsifies
+    # P-SoM deployment-arm superiority over the 6-cell design ONLY; does NOT
+    # falsify phantom concept space existence or P-text/P-prompt structural
+    # ablation evidence. Cross-link: paper_planning.md §5 R5 row + preregistration.md
+    # §2.5 step 8 cross-family claim-tier gate (Qwen anchor is load-bearing).
     if not h1_pass:
         return {"rule": "R5",
-                "framing": "Paper death scenario — H1 FE superiority failed; pivot needed",
+                "framing": "Qwen anchor fail scenario — H1 FE superiority failed over 6-cell "
+                           "design (falsifies P-SoM deployment-arm superiority claim, NOT phantom "
+                           "concept space existence or P-text/P-prompt structural ablation "
+                           "evidence). Pivot decision deferred to advisor sync at fail time.",
                 "hook_power": "n/a",
                 "heterogeneity_override": False}
     # H1 passed but H2(a) falsified → R4
