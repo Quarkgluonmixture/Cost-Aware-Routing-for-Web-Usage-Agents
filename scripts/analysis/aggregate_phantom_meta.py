@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
-"""[Outcome supporting] Cross-cell meta-analysis — random-effect pooled drop-one
-+ heterogeneity (I², τ², Cochran's Q).
+"""[APPENDIX-ONLY sensitivity] Cross-cell meta-analysis — DerSimonian-Laird
+random-effects + HKSJ + heterogeneity (I², τ², Cochran's Q).
+
+⚠️ **PRODUCER STATUS (B-1305 /stress A2.3d P0-2-A* 2026-05-18, B-1306 docstring
+retraction)**: This producer is **APPENDIX-ONLY** per prereg §2 H1 decision 3A
+(2026-05-14). The canonical paper-grade gate is fixed-effects inverse-variance
+pool with bootstrap percentile primary p-value, implemented in
+`aggregate_phase1_full_prereg_decision.py` (B-515 A1.21 + B-1009 amend +
+B-1301 implementation). This DL/HKSJ output is RESERVED for paper §8
+Appendix-D sensitivity reporting only — NOT to be substituted as paper §1
+primary gate.
 
 Reads `results/phantom_paper/phantom_lift.csv` (T0a-augmented). For each phantom
 arm and oracle comparison, pools per-cell estimates using DerSimonian-Laird
@@ -8,28 +17,40 @@ arm and oracle comparison, pools per-cell estimates using DerSimonian-Laird
 
     SE_i ≈ (CI_hi - CI_lo) / (2 × 1.96)
 
-(Standard normal approximation for symmetric bootstrap CIs; valid when N per
-cell is moderate, which holds for N=210-234.)
+(Caveat per /stress A2.3d codex Mode B F6: this inverts percentile bootstrap CI
+into symmetric Wald SE, discarding skew/boundedness. Bootstrap-replicate SD
+would be more honest but is not stored in `phantom_lift.csv`; appendix-only
+status mitigates the discrepancy — primary gate uses bootstrap percentile path
+directly via `_pool_bootstrap_percentile_p`.)
 
 Outputs:
-- `results/phantom_paper/meta_phantom_lift.csv` (per-arm meta-row)
-- `results/phantom_paper/meta_phantom_lift.md`  (paper-ready table)
+- `results/phantom_paper/meta_phantom_lift.csv` (per-arm sensitivity row)
+- `results/phantom_paper/meta_phantom_lift.md`  (paper §8 Appendix-D table)
 
-T0c of `docs/reference/EVIDENCE_LAYER_AUDIT.md` action queue.
+T0c of `docs/reference/EVIDENCE_LAYER_AUDIT.md` action queue — now scoped to
+Appendix sensitivity tier.
 
-Why random-effect (RE) over fixed-effect (FE):
-- FE assumes single true effect across cells (only sampling variability).
-- RE allows true effect heterogeneity across cells (site / model / capability).
-- Phantom-SoM's "site-modulated + capability-modulated" framing (paper §7) is
-  itself an RE assumption — assuming FE would contradict the paper hook.
-- Paired with I² heterogeneity statistic, RE quantifies how much variation is
-  between-cell (true differences) vs within-cell (sampling).
+**Method choice rationale (B-1306 retraction of earlier FE-contradicts-hook
+claim, /stress A2.3d P0-2-A*)**: This producer was originally drafted with a
+pre-decision-3A rationale arguing "Phantom-SoM's site-modulated + capability-
+modulated framing is itself an RE assumption — assuming FE would contradict
+the paper hook". That argument was **superseded 2026-05-14 by prereg decision
+3A "estimand-first design": the 6 cells (site × model) are the complete
+pre-registered decision family, NOT a random sample from a hypothetical
+population**. Under the design-based fixed-cell estimand, the average over
+exactly these 6 cells (FE) is the principled estimator regardless of
+heterogeneity; RE/HKSJ remains valuable as Appendix sensitivity but is not
+the primary gate. Veroniki et al. 2016 + IntHout et al. 2014 + Röver/Knapp/
+Friede 2015 are cited in the prereg only as evidence that DL-Wald is fragile
+at small k (which justifies appendix-only status), NOT as recommendations for
+FE substitution; the FE choice is defended on design grounds, not on small-k
+methodology lit per /stress A2.3d 3-AI overlap F3/F7/C1 OOB.
 
-Heterogeneity benchmarks (Higgins & Thompson 2002):
+Heterogeneity benchmarks (Higgins & Thompson 2002, reported for transparency):
   I² < 25% — low heterogeneity (cells consistent)
   25-50%  — moderate
   50-75%  — substantial
-  > 75%   — considerable (strong cell-specific effects)
+  > 75%   — considerable; per prereg §2 H1 framing rule, caps hook at R3
 """
 from __future__ import annotations
 

@@ -254,12 +254,23 @@ _per_run_all:
 	done
 
 # Cross-condition aggregators (depends on per-run output)
+# B-1305 (/stress A2.3d P0-2-A* Claude OOB, 2026-05-18): phantom-meta (DL/HKSJ
+# random-effects) is APPENDIX-ONLY per prereg §2 H1 decision 3A 2026-05-14 (FE
+# primary, no τ²); it is NOT in the default analysis pipeline because Phase 1a
+# canonical figures consume `phase1_full_prereg_decision.{csv,json,md}` (B-1301
+# bootstrap percentile primary) + the legacy `phantom_meta` output is reserved
+# for paper §8 Appendix-D sensitivity reporting only. Invoke explicitly via
+# `make phantom-meta-appendix` when generating appendix sensitivity tables.
+# Pre-B-1305 the target was chained here unconditionally; resulting
+# `meta_phantom_lift.{csv,md}` was the load-bearing data source for
+# `fig_meta_forest.py` despite producer docstring saying "FE would contradict
+# the paper hook" (Makefile-level inclusion + producer-docstring stance =
+# internal contradiction with prereg decision 3A FE primary).
 _aggregate:
 	$(MAKE) aggregate-sr-fp
 	$(MAKE) phase1-prereg-gate
 	$(MAKE) phase1-full-prereg-decision
 	$(MAKE) phantom-lift
-	$(MAKE) phantom-meta
 	$(MAKE) routing-auroc
 	$(MAKE) aggregate-cross-site
 	$(MAKE) summary-collect
@@ -358,9 +369,16 @@ validate-run-manifest:
 phantom-lift:
 	$(PYTHON) scripts/analysis/aggregate_phantom_lift.py
 
-# Cross-cell meta-analysis (DerSimonian-Laird random-effect, T0c)
-# Requires phantom-lift output; produces meta_phantom_lift.{md,csv}
-phantom-meta:
+# Cross-cell meta-analysis (DerSimonian-Laird random-effect + HKSJ, T0c)
+# B-1305 (/stress A2.3d P0-2-A*, 2026-05-18): retained for APPENDIX-ONLY
+# sensitivity reporting per prereg §2 H1 decision 3A (FE primary, no τ², 2026-05-14).
+# NOT chained from `_aggregate` (default `make analysis`) — canonical Phase 1a
+# figures consume `phase1_full_prereg_decision.{csv,json,md}` (bootstrap
+# percentile primary). Invoke explicitly when generating paper §8 Appendix-D
+# sensitivity tables. The `phantom-meta-appendix` alias is the canonical entry
+# point post-B-1305; `phantom-meta` legacy target retained as bareword alias.
+phantom-meta phantom-meta-appendix:
+	@echo "[appendix-only — B-1305] DL/HKSJ random-effects sensitivity (NOT primary gate per prereg decision 3A)"
 	$(PYTHON) scripts/analysis/aggregate_phantom_meta.py
 
 # ---- Layered analysis (paper_planning §3 framework, paper-grade B0 only) ----

@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
-"""[Outcome supporting] Meta-analytic forest plot — per-arm pooled estimate
-+ I² + Q + per-cell weight squares.
+"""[Paper §8 Appendix-D sensitivity figure] Meta-analytic forest plot — DL/HKSJ
+per-arm pooled estimate + I² + Q + per-cell weight squares.
 
-Reads `results/phantom_paper/meta_phantom_lift.csv` (T0c output) +
-`results/phantom_paper/phantom_lift.csv` (T0a output, for per-cell rows).
-Renders 3 panels (P-text / P-SoM / P-prompt) with classical forest convention:
+⚠️ **FIGURE STATUS (B-1307 /stress A2.3d P0-2-A*, 2026-05-18)**: This figure is
+**APPENDIX-D SENSITIVITY** per prereg §2 H1 decision 3A (FE primary, no τ²).
+The paper §1 hero forest plot must use fixed-effects pool from
+`phase1_full_prereg_decision.{csv,json}` (B-1301 bootstrap percentile primary
+gate) — NOT the DL/HKSJ pooled diamond rendered here. This figure is reserved
+for paper §8 Appendix-D heterogeneity sensitivity reporting only.
+
+Reads `results/phantom_paper/meta_phantom_lift.csv` (DL/HKSJ appendix-only
+producer per B-1016 MD-warning header) + `results/phantom_paper/phantom_lift.csv`
+(T0a output, for per-cell rows). Renders 3 panels (P-text / P-SoM / P-prompt)
+with classical forest convention:
 
 - Per-cell row: square sized by RE weight (% of pooled), horizontal 95% CI line
 - Pooled row at bottom: diamond (center = pooled estimate, width = pooled 95% CI)
 - I² + Q + p_Q + τ² annotation in panel
 - Vertical line at lift = 0 (null)
-- TOST equivalence band shaded ±0.5pp
 
-Output: `results/phantom_paper/figures/fig_meta_forest.png`
+Output: `results/phantom_paper/figures/fig_meta_forest.png` (Appendix-D figure)
 
-T0d of `docs/reference/EVIDENCE_LAYER_AUDIT.md` action queue.
+T0d of `docs/reference/EVIDENCE_LAYER_AUDIT.md` action queue — now scoped to
+Appendix sensitivity tier.
 
 Difference from `fig_forest_drop_one.py` (T0b): this adds the meta-pooled
 diamond + heterogeneity statistics + weight-sized squares (classical forest
