@@ -1113,6 +1113,9 @@ def _regenerate_aggregate_gallery(
     _regenerate_combined_gallery(phase_dir, prefix, self_run_dir=self_run_dir)
     # And refresh the per-baseline unified gallery (3mode + phantom)
     _regenerate_unified_gallery(phase_dir, prefix, self_run_dir=self_run_dir)
+    # And refresh the Phase 1 paper-grade全集 gallery (all B0/B1/B2 × all sites × all modes,
+    # paper-grade only — auto-excludes _archive_* subdirs per generate_gallery.py glob)
+    _regenerate_phase1_paper_grade_gallery(phase_dir, self_run_dir=self_run_dir)
 
 
 def _build_extra_run_args(prefix: str, self_run_dir: Optional[Path]) -> List[str]:
@@ -1215,6 +1218,74 @@ def _regenerate_unified_gallery(
             print(f"[watchdog][GALLERY] unified failed: {r.stderr[-200:]}")
     except Exception as exc:
         print(f"[watchdog][GALLERY] unified error: {exc}")
+
+
+def _regenerate_phase1_paper_grade_gallery(
+    phase_dir: Path, self_run_dir: Optional[Path] = None,
+) -> None:
+    """Refresh the Phase 1 paper-grade全集 gallery (5th GALLERY step, post Q3=A 2026-05-18 evening user request).
+
+    Unlike _regenerate_aggregate (single-baseline-prefix scope) +
+    _regenerate_combined (VWA+WA per prefix) + _regenerate_unified
+    (per-baseline 3mode+phantom), this function aggregates ALL Phase 1
+    paper-grade conditions across all 3 baselines (B0/B1/B2) × all sites
+    (cls/red/[shop deferred]) × all 6 modes (DOM/SoM/Vision/P-text/
+    P-prompt/P-SoM) into a single gallery under
+    `results/phase1_paper_grade/gallery.html`.
+
+    Auto-excludes `_archive_*` subdirs per generate_gallery.py's run-dir
+    glob (verified empirically 2026-05-18 evening: phase-dir mode found
+    only B0_dom_classifieds_..._R19740 active run, skipped _archive_pre_fire3/).
+
+    Used by Fire-3 + future paper-grade fires to give the user a single
+    top-level URL/file for browsing all Phase 1 paper-grade episodes
+    without needing to manually compose per-condition gallery paths.
+    """
+    try:
+        results_root = phase_dir.parent.parent  # results/
+        phase_name = phase_dir.name  # phase1
+        vwa_phase = results_root / "visualwebarena" / phase_name
+        wa_phase = results_root / "webarena" / phase_name
+        phase_dirs = [str(d) for d in (vwa_phase, wa_phase) if d.is_dir()]
+        if not phase_dirs:
+            return  # No benchmark dirs found
+
+        # Cover all 3 baselines × known prefix family (3mode + phantom variants).
+        # Per generate_gallery.py:1407 `baseline_aliases`, prefix `B<N>_3mode`
+        # auto-expands to ALL `B<N>_*` runs of that baseline (including B<N>_dom,
+        # B<N>_som, B<N>_vision, B<N>_phantom_text, B<N>_phantom_som,
+        # B<N>_phantom_prompt). So passing all 3 baseline aliases captures
+        # the full paper-grade matrix.
+        all_baseline_prefixes = ["B0_3mode", "B1_3mode", "B2_3mode"]
+        output_dir = results_root / "phase1_paper_grade"
+
+        # Forward self_run_dir if its name doesn't start with any of the
+        # baseline-alias prefixes (rare — most run_dir names start with
+        # B<N>_<mode>_<site>_... which baseline_aliases handles).
+        extra_args: List[str] = []
+        if self_run_dir and not any(
+            self_run_dir.name.startswith(f"{b}_") for b in ("B0", "B1", "B2")
+        ):
+            extra_args = ["--extra-run-dir", str(self_run_dir)]
+
+        cmd = [
+            sys.executable,
+            str(Path(__file__).resolve().parent / "generate_gallery.py"),
+            "--phase-dirs", *phase_dirs,
+            "--prefix", *all_baseline_prefixes,
+            "--output-dir", str(output_dir),
+            *extra_args,
+        ]
+        # Longer timeout (360s) than other gallery refreshers because this
+        # one scans the most run dirs (up to 42 conditions × ~234 tasks
+        # each post-Pass-1 = ~10K episode HTML rows).
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=360)
+        if r.returncode == 0:
+            print(f"[watchdog][GALLERY] phase1 paper-grade refreshed: {output_dir / 'gallery.html'}")
+        else:
+            print(f"[watchdog][GALLERY] phase1 paper-grade failed: {r.stderr[-200:]}")
+    except Exception as exc:
+        print(f"[watchdog][GALLERY] phase1 paper-grade error: {exc}")
 
 
 def _save_state(

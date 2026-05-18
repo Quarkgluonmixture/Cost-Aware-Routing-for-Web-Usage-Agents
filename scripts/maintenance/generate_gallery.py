@@ -253,7 +253,13 @@ _KNOWN_SITE_ORDER = {
     "wa:reddit": 22,
 }
 _RUN_FAMILY_RE = re.compile(
-    r"^(?P<prefix>.+)_(?P<site>classifieds|reddit|shopping_admin|shopping|wikipedia)_(?P<stamp>\d{8}(?:_\d{6})?)$"
+    # B-1752 (2026-05-18 evening, Fire-3 attempt #6 watchdog phase1-paper-grade
+    # gallery integration): extended stamp pattern to optionally match the
+    # `_<entropy>_<pid>_R<rand>` suffix introduced by later queue-baseline fixes
+    # (e.g. B0_dom_classifieds_20260518_212838_723280241_199081_R19740). Old
+    # naming `B0_3mode_classifieds_20260413` still matches because the new
+    # suffix is wrapped in non-capturing optional group.
+    r"^(?P<prefix>.+)_(?P<site>classifieds|reddit|shopping_admin|shopping|wikipedia)_(?P<stamp>\d{8}(?:_\d{6})?(?:_\d+_\d+_R\d+)?)$"
 )
 
 
@@ -1404,7 +1410,15 @@ def generate_combined_gallery(
     # Baseline-alias semantics (mirrors generate_aggregate_gallery): when prefix
     # is `B0_3mode` / `B1_3mode`, expand to ALL runs of that baseline (3mode +
     # dom + phantom + phantom_text) so the unified URL aggregates everything.
-    baseline_aliases = {p for p in prefix_filters if p in {"B0_3mode", "B1_3mode"}}
+    # B-1753 (2026-05-18 evening, post Gemma B2 2026-05-14 addition): include
+    # B2_3mode in baseline_aliases set so B2 paper-grade Gemma runs participate
+    # in cross-baseline gallery aggregation. Pre-fix this set was hardcoded to
+    # {B0_3mode, B1_3mode} when Phase 1a was Qwen-only (B0+B1, k=4 cells); B2
+    # added 2026-05-14 expanded scope to k=6 cells but baseline_aliases set
+    # was not updated. Empirical: phase1_paper_grade gallery test with --prefix
+    # B0_3mode B1_3mode B2_3mode found 0 runs because B2_3mode filtered out
+    # at this line then `baseline_labels` derived set lacks "B2" → B2 runs never match.
+    baseline_aliases = {p for p in prefix_filters if p in {"B0_3mode", "B1_3mode", "B2_3mode"}}
     baseline_labels = {p.split("_", 1)[0] for p in baseline_aliases}
     for phase_dir in phase_dirs:
         if not phase_dir.is_dir():
