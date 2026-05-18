@@ -6337,3 +6337,120 @@ Initial code edits used B-895~B-897 → would collide with parallel §207 A2.1 (
 - **C-F1** cite `section8_limitations.md:38` — actual file 34 lines OOB; quote "joint deployment-class × capability-scale" 实际在 `section1_intro.md:27` (wrong file). Attack valid (overlaps Mode A F2)
 - **C-F2** cite `preregistration.md:590` — actual L601 off-by-11. Quote verbatim correct. Cite minor drift
 - Rate: 2/7 = 29% (within v7.8 lineage idiosyncrasy <5/7 corruption threshold); NO whole-audit retry per spec
+
+## A2.3c — multi-test correction + TOST retirement sibling sweep — /stress A2.3c Mode A+B+C cycle (2026-05-18 ~01:00-02:00 BST, B-1051~B-1064 reserved)
+
+14 paper-grade fixes across 5 commit chunks closing prereg §3+§4 multi-test correction promise gaps + sibling-propagation of B-957 TOST framework retirement. 3-AI cross-AI cycle: Mode A Claude self (7 findings 5 OOB), Mode B codex 255s (7 findings 3 OOB + 3/3 P0+OOB Phase 4 PASS), Mode C gemini 86s (6 findings 3 OOB + 5/6 Phase 4 PASS + 1 mischaracterization F6 osf_lock_manifest already-correct discarded).
+
+### Chunk 1 — TOST sibling-propagation sweep (B-1051 / 2 commits 891d6fb + b72a3e7)
+
+- **B-1051 [P0-OOB, Mode B code-side catch]** B-957 retirement (/stress A2.3a) sibling-propagation gap. My A2.3a only deleted `tost_paired_binary()` in `scripts/analysis/power_analysis.py` + prereg §2.4/§3 H7(iii)/§4. 7-site live TOST code STILL emitting:
+  - `scripts/analysis/aggregate_phantom_lift.py:445` `bootstrap_tost_equivalence_p()` def + `:494` alias `bootstrap_tost_p` + L668/687/688/730/757/758 calls + L920-930 CSV columns + L1225-1247 MD cognitive-conflict warning + L1334 secondary family table TOST col
+  - `scripts/analysis/preregistration_decision_test.py:365` `tost_equivalence()` + L517 call + L72-73 CLI `--TOST-delta-pp` + L1113 method string + L1152 logger
+  - `p79/experiment/analysis.py:1170` `_bootstrap_tost_paired_success()` + L1390-1413 emission + `results["tost_equivalence"]` + `success_tost_eq_delta1pp` flat_row
+
+  Fix: delete all 7 sites, replace with retirement tombstones referencing `power_analysis.py:137-148` master tombstone. 2 test files updated to post-retirement contract:
+  - `tests/test_stress_a1_6b_fixes.py::test_b653_*` flipped: asserts `tost_equivalence` MUST NOT exist; bootstrap_paired_lift assertion preserved
+  - `tests/test_stress_a1_4b_i_g1_fixes.py::test_b175_*` flipped: asserts `equiv_within_1pp` + disambiguation footnote NOT in src
+
+  Commit 1a (891d6fb) committed 2 of 3 sites (aggregate_phantom_lift + preregistration_decision_test, latter absorbed into parallel A2.4a Tier 3 85225f5). Commit 1b (b72a3e7) committed 3rd site via surgical `git diff | python hunk-split` extraction (working tree had 654 other lines from concurrent session B-171/B-651-661 WIP — split mine 2 hunks from concurrent 17 hunks, apply mine only, restore concurrent post-commit).
+
+### Chunk 2 — Canonical producer + queue + meta CSV + H3 MD (B-1052~B-1055 / commit 4fba717)
+
+- **B-1052 [P0-2-B*]** `scripts/queues/queue_phase1_paper_grade.sh:641-647` post-completion handoff replaced retired-flag `preregistration_decision_test.py --TOST-delta-pp 1.0 --transparency-K_h1 4 --transparency-K_h3 4` with `make analysis` + `make phase1-full-prereg-decision` (canonical producer A1.21 B-515). Pre-fix operator following queue stdout would generate retired-flag-flavor artifact = lineage 分叉.
+- **B-1053 [P0-3-B*]** `scripts/analysis/aggregate_phantom_meta.py:361-366` CSV write moved AFTER Holm computation (was BEFORE — Markdown reader saw family-corrected p_re_holm, machine CSV reader saw raw p_re_one_sided only). Prereg §4 line 442 "Sig threshold: Holm α=0.05 within respective family" FWER promise machine-readable; was vapor. Single source of family-corrected p value now.
+- **B-1054 [P0-4-AB, Mode A F1 + Mode B B5 2-AI overlap]** `scripts/analysis/aggregate_phase1_full_prereg_decision.py` canonical producer ported `compute_individually_holm_significant()` from synthetic test fixture `preregistration_decision_test.py:507-560` (B-518). New helper `_holm_per_cell_transparency()` at L408 invoked 3× (H1 + H3 axis-1 + H3 axis-2). CSV columns added: `n_h1_holm_sig` / `n_h3a_holm_sig` / `n_h3b_holm_sig` per prereg §3 line 408 + §4 line 446 + §4 line 468 三次 promised transparency count — only test fixture had implementation, canonical paper-grade gate artifact silent. Reviewer would diff §4 line 468 promise against `phase1_prereg_gate.csv` + find nothing. Fixed.
+- **B-1055 [P1-9-B*]** `scripts/analysis/aggregate_phase1_full_prereg_decision.py:992` H3 MD writer mislabel fix. B-949 (/stress A2.3a) changed H3 gate semantics `p_one_sided < α` → `passed = ci_lo > 0.0` (CI excludes 0) in code path, MD writer stale prose "Gate (p < α=...)". Reviewer: "code switched gate semantics, prose still says p<α". MD now "Gate (CI lower > 0)"; p_one_sided kept as transparency line.
+
+### Chunk 3 — AUROC null + Holm-within-mode + BH-FDR-cross-family (B-1056 / commit 4e05ebc)
+
+- **B-1056 [P0-5-B, extends Mode A F5 BH-FDR vapor]** `scripts/analysis/aggregate_routing_auroc.py` per-(mode, signal) AUROC family-corrected multiplicity emission. Pre-fix file emitted only AUROC + CI — no p-values to family-correct. Prereg §3 line 423 + §4 line 424 promised "Holm-corrected within mode" + "BH q-value reported for transparency"; mathematically impossible to apply downstream because producer didn't emit p-values. Implementation (user Q2=2A DeLong/Hanley-McNeil 1982):
+  1. SE_AUROC ≈ (CI_upper - CI_lower) / (2 × 1.96) normal-approx
+  2. Z = (AUROC - 0.5) / SE_AUROC [H0: AUROC ≤ 0.5]
+  3. p_one_sided = 1 - Φ(Z)
+  4. Holm step-down WITHIN each (baseline, site, mode) group (prereg §4 L423)
+  5. BH-FDR across full exploratory family (prereg §4 L424)
+  
+  New CSV columns: `p_one_sided` / `p_holm` / `holm_m` / `q_bh` / `bh_family_N`.
+
+### Chunk 4 — Prereg prose sweep (B-1057~B-1062 / commit bc2db1d)
+
+- **B-1057 [P0-6, Mode A F2 + Mode C F2 2-AI overlap OOB]** `preregistration.md:401-413` STRUCTURAL family across-axes m count clarified. Pre-fix §3 line 404 "Holm-Bonferroni step-down per axis sub-family" at m=1 per axis = identity (trivial); across-axes R-rule (R1=both pass / R2=one / R3=neither) combines verdicts NOT p-values, undeclared. Reviewer methodologist attack: "STRUCTURAL family Holm-corrected 在哪?". Fix: explicit R-rule combines-verdicts semantics + R1 conjunction Type I = α₁·α₂ = 0.0025 more conservative; split-by-design (each axis = separate scientific claim) NOT split-to-pass FWER gerrymander.
+- **B-1058 [P0-8, Mode A F6 OOB]** `preregistration.md:395-403` H10 paper-1 router PRIMARY family bullet added to §3 enumeration. Pre-fix §3 lists 5 families; H10 paper-1 §6 contribution missing entirely. Reviewer locks gate via §3 + finds no H10 framework. Fix: H10 added under PRIMARY as separate m=1 single test (FE Pareto non-dominance, α=0.05).
+- **B-1059 [P1-10, Mode A F3 OOB]** `preregistration.md:12-15` frontmatter `scope_revision_2026_05_17` + `_2026_05_18` keys added. Pre-fix line 12 stale "24 conditions / 4 cells" vs body §4 line 461 "42 conditions" = OSF lock manifest pull cites wrong scope. Retain 2026-05-13 for chronological audit trail; new keys are post-A2.3c canonical reference.
+- **B-1060 [P1-11, Mode C F3 OOB]** `preregistration.md:618` Appendix A K-of-N audit trail pre-data language reinforced. Pre-fix ambiguous "based on codex stress + power analysis showing dysfunction" could be misread "we looked at archive K-of-N pass/fail outcome and moved goalposts" = R3 attack. Fix: explicit pre-data a priori power-analysis basis (per-cell power ~0.30 at observed 1-3pp; K=3-of-4 gate <10% pooled detection) + "statistical dysfunction is the basis, NOT archive pilot K-of-N inspection".
+- **B-1061 [P1-12, Mode A F7 OOB]** `preregistration.md:412-419` ROUTER family H7/H8 §3 detail compressed 8 lines → 1. Pre-fix present-tense detail despite §2 line 269 banner "DEFERRED, NOT PART OF THIS DOI CLAIM (logical Appendix B)" = framing contradiction. Reader confusion "DEFERRED but elaborated more than PRIMARY". Fix: collapse to single line + Appendix B forward stub.
+- **B-1062 [P1-13, Mode A F4 + Mode C F4 2-AI overlap]** `preregistration.md:610` Appendix A 2026-05-03 TOST entry inline-annotated retirement. Pre-fix 2026-05-03 lock entry was 18 lines above retirement annotation = chronological audit trail confusion (reviewer reads 2026-05-03 in isolation, doesn't see retirement). Fix: inline ~~strikethrough~~ + retirement-rationale 1-paragraph in same row.
+
+### Chunk 5 — Paper §1 + §4 prose post-TOST-retire (B-1063~B-1064 / commit dab4a21)
+
+- **B-1063 [P0-7, Mode C F1 unique OOB]** `paper_drafts/section1_intro.md:11` "competitive parity" → "comparable performance within sampling error". Pre-fix Mode C catch: TOST framework retired 2026-05-17 (B-957) + 2026-05-18 (B-1051 sibling sweep). Section §1 hero prose still framed head-to-head reddit single-mode contrast as "competitive parity" — strong equivalence-claim conclusion based only on superiority CI [-0.95, +7.62] crossing zero (= non-rejection of null). Classic "absence of evidence as evidence of absence" overclaim that R3 stats-methodologist reviewer would attack first-read. Downgrade + TOST-retirement footnote disclosure keeps hero number 3.33pp/2.56pp drop-one oracle intact.
+- **B-1064 [P1-14, Mode C F5 unique OOB]** `paper_drafts/section4_empirical_findings.md:63` "seven tasks" narrative-gating firewall. Pre-fix prose described "Phantom-SoM contributes a concrete reddit-only set of seven tasks ... The overlap view supports the same conclusion" — implicitly using discrete task counts as a consistency-claim support. K-of-N retirement 2026-05-14 (Decision 3A) said per-cell counts are TRANSPARENCY-ONLY, NOT decision rules. Firewall: parenthetical "Descriptive illustration of unique coverage — NOT a K-of-N consistency claim" + cross-link to prereg §4 K-of-N retire.
+
+### Chunk 6 — closure (this entry + 笔记 §213 + phase1_plan tick + push wait)
+
+### Cross-AI value summary
+
+- **2-AI overlap (3 findings)**: B-1054 (Mode A + Mode B canonical producer transparency CSV gap) / B-1057 (Mode A + Mode C STRUCTURAL across-axes FWER) / B-1062 (Mode A + Mode C TOST 2026-05-03 inline annotation)
+- **1-AI Claude unique (2)**: B-1058 H10 §3 family missing / B-1061 H7-H8 §3 stranded detail
+- **1-AI codex unique (5, biggest catch round)**: **B-1051 TOST zombie 7-site sibling propagation** (the MVP — caught what Claude A2.3a retirement missed) + B-1052 queue handoff + B-1053 meta CSV write order + B-1055 H3 MD label + B-1056 AUROC no p-values
+- **1-AI gemini unique (3)**: B-1060 K-of-N audit trail pre-data language / B-1063 absence-as-parity §1 / B-1064 §4 benchmark creep firewall
+- **Phase 4 hallucination**: Mode C F6 osf_lock_manifest mischaracterization (manifest line 14 IS already 42/6, F6 attack premise FALSE) — 1/6 = lineage idiosyncrasy threshold (<5/7 audit-corruption); discarded, no retry
+
+### Concurrent-session collision protocol (multi-session lesson)
+
+Detected 5+ concurrent Claude sessions running A2.3b/A2.4a/A2.4b cycles (B-1001~B-1110 range) + B-171/B-651-661 WIP. p79/experiment/analysis.py had 670 line uncommitted diff (14 mine + 656 concurrent); needed surgical `git diff | python hunk-split` extraction for clean Chunk 1b. User Q (B option) confirmed surgical not stash. Pattern catalogued for future stress sessions: when concurrent session detected via `ps auxf | grep claude` 5+ entries + .lock markers + mtime newer than expected, use hunk-split before commit on shared analysis.py.
+
+### Phase 1a fire green-light: ON
+
+All 14 P0+P1 paper-grade gate-artifact integrity attacks closed. A2.3c was a sweep-class follow-up to A2.3a TOST retire — closed sibling-propagation gap + canonical producer transparency promise + AUROC multiplicity vapor + §3 H10 missing + 6 prereg coherence + 2 paper prose downgrades. Phase 1a fire blocker count: 0 (was 8 P0 + 6 P1).
+
+---
+
+## A2.3b — B0 proxy migration post-fire-audit — /stress A2.3b Mode A+B+C cycle (2026-05-18 ~00:30-02:00 BST, B-1201~B-1211)
+
+**Trigger**: B-991~B-993 B0 proxy migration code/probe/docs landed 2026-05-17 deep-night WITHOUT a hostile stress audit (chunk A code commit `e7546f7` → chunk D issue closure `6b43370` 4-commit chain). User invoked `/stress 2.3b` 2026-05-18 ~00:35 BST to close the audit-before-fire gap. 3-AI cycle Mode A (Claude scope: agent + tests + validator) + Mode B (codex scope: probe scripts + runner integration) + Mode C (gemini scope: paper §1/§3.5/§8 prose vs code reality) cross-validated, 22 unified findings, 9 OOB = 41%. User v7.7 triaged Q&A (Q1=A wait-fix-all + Q2=A validator coerce + **Q3 P0-2-B*→P1-disclosure downgrade after §C router per-cell architecture insight** + Q4-Q5 all 推荐).
+
+**Key catch**: Probe `proxy_full_stack_225749.json` declared `schema_valid_rate=1.0` but model 30/30 emit `element_id: [37]` (1-element list) — `.venv repl` empirical re-run shows current strict-int validator REJECTS. Phase 1a B0 fire on chunk A code would have produced 0% SR contamination (every step → wait fallback × ~30 steps/episode × 6 cells × ~445 tasks = ~$14-25 fire waste + 0 evidence layer). The Q1=A pilot gate decision was based on stale validator state vs production code state.
+
+**B-### renumber**: parallel session A2.4b consumed B-1103~B-1110 mid-flight; renumbered my B-1101~B-1111 → **B-1201~B-1211** via sed across 7 files. Concurrent-session collision protocol from A2.3c (B-1051 lessons) applied — renumber + verify tests + verify probe.
+
+### Chunk 1 — fire-blocker P0 (B-1201~B-1204, commit `63f4c4a`)
+
+- **B-1201 [P0-1-AC* 2-AI OOB, Claude + Gemini overlap]** `p79/backends/action_utils.py:429` 1-element strict-int list coerce mirroring B-572 digit-string path. `validate_action_detailed` now accepts `element_id: [37]` and coerces to int 37 with `len==1` strict guard (multi-element `[37, 38]` still rejects). Provenance flag `element_id_coerced_from_list` for paper §3.5 disclosure. Production-path replay confirms `list_coerce_rate=1.0` post-fix (30/30 probe records); pre-fix would have been agent_valid_rate=0.0.
+- **B-1202 [P1-4-A Claude]** `p79/agents/proxy_api_agent.py:150` init-time `paper_grade=true + use_tool_calling=false → RuntimeError`. Post-B-991 GLM rescue physically deleted; misconfigured yaml (e.g. partial override skipping base merge) now surfaces at construction NOT mid-fire on cell N at episode K.
+- **B-1203 [P0-4-B* codex Mode B OOB]** `p79/agents/proxy_api_agent.py:778` step-time fail-loud on missing `body.logprobs.content` when `paper_grade=true AND use_tool_calling=true`. Provider drift / proxy quota mode / response shape change can erase logprobs without HTTP fail → §C confidence analysis silent partial data loss. Non-paper-grade dev runs persist `meta["confidence_error"]="missing_proxy_logprobs"` for audit.
+- **B-1204 [P0-3-B* codex Mode B OOB]** NEW `scripts/maintenance/probe_b0_production_path.py` replaces API-emission Q1=A gate with production-execution gate. Replays saved proxy responses through full `ProxyApiAgent.step + dispatchability check` pipeline (not just `validate_action(parsed)` on raw HTTP). Gate: `agent_valid_rate ≥ 0.95 AND action_dispatchable_rate ≥ 0.95 AND confidence_present_rate ≥ 0.95`. Code-state provenance via git SHA + tool schema md5 hash.
+- Tests F6/F6b/F7/F7b/F8 — list coerce success + multi-element reject + paper-grade missing-logprobs raise + dev-run confidence_error persist + paper-grade no-tool-calling init raise. Tests 60/60 PASS.
+
+### Chunk 2 — paper-grade defense P0 (B-1205~B-1207, commit `206a357`)
+
+- **B-1205 [P0-5-A Claude OOB]** `_compute_confidence_from_proxy_logprobs:220-275` assert `top_logprobs[0].token == chosen_token`; skip margin (NOT logprob) + `log.warning` once on mismatch. At T=0 greedy preregistration the assumption is by construction; guards against (a) future T>0 sampling ablation (preregistration §7 future scope) (b) provider drift in `top_logprobs` ordering not API-spec-locked. B1/B2 symmetric assumption holds in `_shared_vl_utils:393` (torch.topk sorted + do_sample=False).
+- **B-1206 [P0-6-B codex Mode B]** `docs/checkpoints/pre_run/model_card.md:51` rewrite stale GLM rescue paragraph per B-991 physical retire. Pre-fix model_card cited `_call_glm_extract` (deleted) + `use_glm_fallback: true` (now raises). Phase 1a clean substrate disclosure: native AWS proxy `tool_choice="auto"` + B-1201 list coerce + B-1203 fail-loud; archive-era ~1.49% rescue rate historical only; deployment-stack confounder still disclosed but **GLM-specific component retired**.
+- **B-1207 [P0-7-C* gemini Mode C OOB]** NEW `section8_limitations.md §8.3` paragraph pre-registers cross-mode within-baseline cost-cancel sensitivity rule: `|Δoutput_tokens| < 5%` → maintain "cost ≈ DOM"; 5-10% → footnote sensitivity range; >10% → revise §1 hero to "cost within ±N% of DOM". Eliminates post-hoc rationalization vector for Mirage-Effect-elicited longer P-SoM thought bodies. Cites section3 §3.5.1 per-mode token decomposition table populated post-fire.
+- F9 test — margin skipped when top[0]≠chosen + chosen logprob still averaged. Tests 11/11 PASS.
+
+### Chunk 3 — paper-grade quality P1 (B-1208~B-1211, commit `08cdbf0`)
+
+- **B-1208 [P0-2-B* downgrade → P1-disclosure, codex Mode B OOB → user insight downgrade]** `section3_definition.md §3.5.1` new paragraph documenting B0 logprob measurement-mechanism heterogeneity (envelope-token universe under `tool_choice="auto"` vs B1/B2 free-JSON tokens — same field name, **different random variable**) + per-cell within-baseline router architecture cancels envelope-token contribution as constant per-cell offset. User insight 2026-05-18 surfaced scope clarification: `phase1_plan.md §B-router L222+L258+L261` confirms 5-fold site-stratified CV within-cell, NOT cross-baseline pooled features → heterogeneity is paper §3.5 transparency requirement NOT statistical validity gate. Reviewer guard against perplexity-cross-tokenizer invalidity pattern in cross-backend feature aggregation.
+- **B-1209 [P1-2-A* Claude OOB]** `tests/test_proxy_openai_transport.py:120` F2 test mock `content='{"action_type":"wait"}'` → `content=""` (production shape per B-991 probe — proxy emits empty content when tool_calls field present). Pre-fix F2 passed spuriously via fallback wait-action embedded in mock; production real malformed-args + empty-content scenario silent-wait audit trail now verified.
+- **B-1210 [P1-5-A Claude]** `proxy_api_agent.py:690` DELETED 50 LOC legacy Path-1 Anthropic `content[].tool_use` block parser. Probe v2 confirmed AWS proxy returns `body.content` as STRING, never list-of-blocks → branch dead code. Replaced with defensive contract `assert not isinstance(raw_content, list)` — fail-loud signal for future non-AWS proxy provider drift (re-introduce parser, NOT silently fall through to text parse).
+- **B-1211 [P1-6-A Claude]** `proxy_api_agent.py:728` zombie GLM keys uniform-None. Pre-fix `glm_fallback_used=False` (bool) inconsistent with `attempted=None` (None) — archive aggregator + paper §3.5 disclosure table would mix "False=never tried" with "attempted=None=never relevant"; both semantically equal "GLM module non-existent" post-B-991. Emit None uniformly. Schema v3 will drop keys entirely (paper-2 prep). F2 assertion updated `is False → is None`.
+- **P1-9-AC closed-by-overlap** with B-1208 — same disclosure paragraph addresses both measurement-mechanism heterogeneity AND 4-of-6 field choice (entropy=None per top-2 truncation).
+- Tests 61/61 PASS.
+
+### Chunk 4 — closure (this entry + 笔记 §213 + phase1_plan tick + push wait)
+
+### Cross-AI value summary
+
+- **3-AI overlap (1 finding)**: B-1201 element_id list schema violation (Claude `.venv repl` empirical + codex P0-3 production-execution gate insight + gemini G1 probe artifact attack)
+- **2-AI overlap (1)**: B-1206 / G2 model_card stale GLM ↔ §3.5 dead prose (codex Mode B + gemini Mode C overlap)
+- **1-AI Claude unique (4)**: B-1202 paper_grade init guard / B-1205 margin assertion / B-1209 F2 mock shape / B-1210 Path-1 dead code / B-1211 zombie None
+- **1-AI codex unique (3, biggest paper-grade catch)**: **B-1203 logprob silent loss fail-loud** + **B-1204 Q1=A API-emission-not-production-execution gate** + **P0-2-B* B0≠B1/B2 random variable** (the deepest mechinterp-implementer insight; downgraded P1 post-user-architecture-clarification but the analytical attack stands)
+- **1-AI gemini unique (2 OOB)**: **B-1207 per-mode output_tokens sensitivity to §1 cost cancel framing** + **G6 top_logprobs=20 self-inflicted blindspot** (deferred — A100 30s probe call to test)
+
+### Phase 1a fire green-light: ON (subject to A100 re-probe verification)
+
+All fire-blocker P0 resolved: B-1201 validator coerce + B-1203 logprob fail-loud + B-1204 production-execution probe substitute Q1=A gate. Local production-path probe replay PASS (agent_valid=1.0 / dispatchable=1.0 / confidence_present=1.0). **User action required before fire**: re-run `scripts/maintenance/probe_b0_production_path.py` from A100 paper-grade target host against current code state (`63f4c4a` Chunk 1 + `206a357` Chunk 2 + `08cdbf0` Chunk 3) to verify the local replay matches A100 production behavior. Once A100 re-probe PASS confirmed, Phase 1a B0 fire is ready.
+
+**Deferred to backlog (P1-1-B* real screenshot probe / P1-3-C* top_logprobs=20 test / P1-7-B V6 JSON parse / P1-8-B V7 auto+logprobs variant)**: P1 lowest-leverage items; require image artifacts OR A100 single probe call. Reservation B-1212~B-1219 buffer for follow-up.
