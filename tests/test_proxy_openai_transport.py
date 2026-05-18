@@ -418,6 +418,56 @@ def test_f7b_dev_run_missing_logprobs_persists_confidence_error(_proxy_agent, mo
 
 # B-1102 (/stress A2.3b P1-4-A, 2026-05-18): paper-grade B0 MUST set
 # use_tool_calling=true post-B-991 (GLM rescue deleted).
+# B-1105 (/stress A2.3b P0-5-A OOB, 2026-05-18): margin assertion when
+# top[0] != chosen token (provider drift OR T>0 sampling).
+def test_f9_margin_skipped_when_top_zero_not_chosen(_proxy_agent, monkeypatch):
+    """F9: When top_logprobs[0].token != chosen entry.token (e.g. proxy
+    drift returns top_logprobs sorted differently OR future T>0 sampling
+    picks mid-list), margin computation must SKIP that token (not silently
+    compute bogus margin from non-chosen alternatives)."""
+    logprobs_content = [
+        {  # tok 1: top[0]=chosen → margin valid
+            "token": "click",
+            "logprob": -0.10,
+            "top_logprobs": [
+                {"token": "click", "logprob": -0.10},
+                {"token": "type", "logprob": -2.50},
+            ],
+        },
+        {  # tok 2: top[0] != chosen → margin skipped (B-1105)
+            "token": "select_option",
+            "logprob": -1.50,
+            "top_logprobs": [
+                {"token": "click", "logprob": -0.05},  # chosen NOT top[0]
+                {"token": "type", "logprob": -3.00},
+            ],
+        },
+    ]
+    response = {
+        "content": "",
+        "tool_calls": [{
+            "id": "id9", "type": "function",
+            "function": {"name": "web_action", "arguments": json.dumps({
+                "action_type": "click", "element_id": 2, "thought": "go",
+            })},
+        }],
+        "model": "qwen.qwen3-vl-235b-a22b",
+        "usage": {"inputTokens": 100, "outputTokens": 2, "cost": 0.0003},
+        "metadata": {},
+        "logprobs": {"content": logprobs_content},
+    }
+    _patch_requests_post(monkeypatch, response)
+    action, meta = _proxy_agent.step(
+        instruction="test", obs=_mock_obs(), history=[], observation_mode="dom",
+    )
+    # mean_logprob averages BOTH chosen logprobs (-0.10 and -1.50) — chosen
+    # logprob always recorded regardless of top[0] match.
+    assert meta["mean_logprob"] == pytest.approx((-0.10 + -1.50) / 2, abs=1e-6)
+    # margin SKIPS tok 2 (top[0]!=chosen) so margins_list only has tok1's 2.40
+    assert meta["mean_margin"] == pytest.approx(2.40, abs=1e-6)
+    assert meta["min_margin"] == pytest.approx(2.40, abs=1e-6)
+
+
 def test_f8_paper_grade_without_tool_calling_raises_at_init(monkeypatch):
     """F8: paper_grade=True + use_tool_calling=False (or unset) → init
     RuntimeError. Misconfigured yaml surfaces at construction, NOT

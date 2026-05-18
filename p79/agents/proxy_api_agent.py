@@ -241,6 +241,31 @@ class ProxyApiAgent:
                 continue
             top = entry.get("top_logprobs") or []
             if isinstance(top, list) and len(top) >= 2:
+                # B-1105 (/stress A2.3b P0-5-A OOB, 2026-05-18): assert
+                # top[0] is the chosen token before computing margin. At
+                # T=0 greedy decoding (current paper-grade preregistration
+                # lock) the chosen token IS argmax = top[0] by
+                # construction. BUT (a) OpenAI top_logprobs spec does NOT
+                # mandate top[0]==chosen ordering — provider drift could
+                # return chosen at any list position; (b) future T>0
+                # sampling ablation (preregistration §7 future scope)
+                # would break the assumption silently. Without this
+                # guard, `top[0].logprob - top[1].logprob` computes "two
+                # arbitrary non-chosen alternatives" → margin signal
+                # silently corrupted → §C router cross-mode confidence
+                # feature meaningless. Skip margin (NOT logprob) on
+                # mismatch + warn once. Symmetric assumption holds in B1/
+                # B2 `_shared_vl_utils.compute_confidence:393` (top2 from
+                # torch.topk(log_softmax) is sorted by construction, and
+                # do_sample=False means chosen=argmax=top2[0]).
+                chosen_token = entry.get("token")
+                if chosen_token is not None and top[0].get("token") != chosen_token:
+                    logger.warning(
+                        "Proxy logprob top[0]=%r != chosen=%r; skipping margin "
+                        "for this token (B-1105). Provider drift OR T>0 ablation?",
+                        top[0].get("token"), chosen_token,
+                    )
+                    continue
                 try:
                     margin = float(top[0].get("logprob")) - float(top[1].get("logprob"))
                     margins_list.append(margin)
