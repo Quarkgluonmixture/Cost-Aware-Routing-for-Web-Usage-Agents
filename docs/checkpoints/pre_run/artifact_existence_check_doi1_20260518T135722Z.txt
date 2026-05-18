@@ -1,5 +1,5 @@
 ========================================================================================
-🚫 VOID — RETRACTED 2026-05-18 ~14:45 UTC per /stress audit B-1656 pattern bug catch
+🚫 VOID — RETRACTED 2026-05-18 ~14:45 UTC per /stress audit B-1670 pattern bug catch
 ========================================================================================
 
 This witness file is INVALID due to a capture-pattern bug. Do NOT use as DOI 1 anchor.
@@ -22,7 +22,7 @@ Superseded by:
     docs/checkpoints/pre_run/artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt
 
 Audit trail:
-  - master_bug_catalog.md `## /stress witness pattern bug retraction` (B-1656~B-1665)
+  - master_bug_catalog.md `## /stress witness pattern bug retraction` (B-1670~B-1679)
   - 实验笔记.md §231 (retraction chronicle)
   - Git tag retraction/osf-doi1-witness-59c60c4 (annotated)
 

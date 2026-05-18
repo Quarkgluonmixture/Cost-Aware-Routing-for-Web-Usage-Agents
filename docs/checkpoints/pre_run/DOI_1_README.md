@@ -34,7 +34,7 @@ post-fire-2-cleanup, pre-fire-3 substrate state and serves as audit-trail bridge
 retraction and canonical capture.
 
 Full retraction audit trail: `master_bug_catalog.md ## /stress witness pattern bug
-retraction` (B-1656~B-1665) + `实验笔记.md §231` + git tag `retraction/osf-doi1-witness-59c60c4`.
+retraction` (B-1670~B-1679) + `实验笔记.md §231` + git tag `retraction/osf-doi1-witness-59c60c4`.
 
 ---
 

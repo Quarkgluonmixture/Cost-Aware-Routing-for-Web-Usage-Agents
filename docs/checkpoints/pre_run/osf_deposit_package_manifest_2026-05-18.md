@@ -2,7 +2,7 @@
 
 > **Purpose**: Pre-fire collection of artifacts ready for OSF DOI mint.
 >
-> **Updated 2026-05-18 ~14:45 UTC per /stress B-1656~B-1665 witness pattern bug
+> **Updated 2026-05-18 ~14:45 UTC per /stress B-1670~B-1679 witness pattern bug
 > retraction wave** (restores 2026-05-05 §F.1 + propagates B-1650~B-1655 two-DOI
 > doctrine restoration): OSF DOI is now **two-DOI split** per `osf_lock_manifest.md §3a/§3b`:
 >

@@ -60,7 +60,7 @@ VWA submodule HEAD: ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927
 
 ## Cross-reference
 
-- Retracted witness: docs/checkpoints/pre_run/artifact_existence_check_doi1_20260518T135722Z.txt (B-1656 pattern bug)
+- Retracted witness: docs/checkpoints/pre_run/artifact_existence_check_doi1_20260518T135722Z.txt (B-1670 pattern bug)
 - DOI 1 main witness: docs/checkpoints/pre_run/artifact_existence_check_doi1_canonical_<TBD>.txt (pending fire-3 launch)
-- Catalog entry: docs/reference/master_bug_catalog.md ## /stress witness pattern bug retraction (B-1656~B-1665)
+- Catalog entry: docs/reference/master_bug_catalog.md ## /stress witness pattern bug retraction (B-1670~B-1679)
 - Chronicle: docs/checkpoints/实验笔记.md §231
