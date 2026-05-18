@@ -254,22 +254,27 @@ B0 infra prereq ──┘                                                       
 - ❌ ~~Rule-based router (route by task attribute) — 缩到 paper-2 cascade router scope~~ (v7 walk-back)
 - ❌ ~~Cascade L1 + L2 (cycle + phantom-verbose) — 缩到 paper-2~~ (v7 walk-back)
 
-### C2. Learned classifier (paper-1 §6 sole router)
+### C2. Learned classifier (paper-1 §6 sole router) — **E'' protocol primary per B-1261 /stress A2.6a P0-2-AB* 2026-05-18**
 
-- [ ] Feature extraction: 8-dim (site one-hot, capability_tier one-hot B0/B1/B2, has_reference_image, intent_color_regex, intent_compare_regex, intent_search_regex, intent_token_count, axtree_element_count from step-0)
-- [ ] 5-fold site-stratified CV split (within-cell, seed=42 per preregistration §354)
-- [ ] LR training: multinomial 6-class, balanced class_weight, in-fold StandardScaler on numeric features (per `l1_archive_simulation.py:117-129` Pipeline pattern, P1-11 fix)
-- [ ] **LOCO (Leave-One-Cell-Out) cross-cell validation**: train on 5 cells (~1000 tasks), test on 6th cell (~200 tasks), repeat 6 times — paper §6 main number source per Q4 user decision 2026-05-16
+> **CV protocol revision 2026-05-18 (supersedes 2026-05-16 LOCO-primary decision)**: per user A2.6a Q4=C-modified, the **paper §6 H10 PRIMARY** CV protocol is now **E'' = task-held-out 5-fold within fixed cells + per-cell LR head + fold-local TF-IDF/MI top-18**. LOCO 6-fold demoted to Appendix sensitivity. Rationale: LOCO conflicts with per-cell LR-head architecture (each cell needs its own LR head trained on its own data) AND LOCO is not a true distributional held-out (cells share Phase 1a task pool; Phase 1b shop fire provides the genuine out-of-population test per B-1262 /stress A2.6a P0-3-AB).
+
+- [ ] Feature extraction: **53-feature matrix** (TF-IDF task-instruction features + presence of reference image, intent keyword regexes (color/compare/search), AXTree element count from step-0, capability_tier one-hot B0/B1/B2, site one-hot, intent_token_count, runtime-derivable signals) — superset of prior 8-dim per E'' richer feature pool
+- [ ] **E'' Step 0 (per-cell split)**: For each cell C, create stratified 5-fold split using oracle labels (assign train_C_k / holdout_C_k indices only; do NOT fit feature machinery yet) — seed=42 per preregistration §354
+- [ ] **E'' Per-fold k** (k=1..5): pool train indices `pool_idx_k = union over all 6 cells of train_C_k`; fit fold-local **TF-IDF vectorizer_k** + **mutual-info selector_k = SelectKBest(mutual_info_classif, k=18)** on `pool_idx_k` only (no holdout leak); save `vectorizer_fold{k}.pkl` + `selected_idx_fold{k}.json`
+- [ ] **E'' Per-cell-per-fold LR head**: For each cell C × fold k, train `LR_{C,k}` on `train_C_k` using `selected_idx_fold{k}` features; save `<cell>_lr_fold{k}.pkl`. multinomial 6-class, balanced class_weight, in-fold StandardScaler on numeric features (per `l1_archive_simulation.py:117-129` Pipeline pattern, P1-11 fix)
+- [ ] **E'' runtime prediction**: For task T in cell C: `k = fold_assignment_C[T]`; load `vectorizer_k` + `selected_idx_k` + `LR_{C,k}`; build features for T using fold-k feature machinery; predict probs; apply pre-locked or train-only cost decision; route mode
+- [ ] **LOCO (Leave-One-Cell-Out) cross-cell validation as APPENDIX SENSITIVITY**: train on 5 cells (~1000 tasks), test on 6th cell (~200 tasks), repeat 6 times — **NOT paper §6 main number** per B-1261 /stress A2.6a Q4=C-modified user decision 2026-05-18 (supersedes 2026-05-16 LOCO-primary Q4 user decision; LOCO conflicts with E'' per-cell LR-head architecture + not a true distributional held-out at N=6 cells sharing same Phase 1a task pool — Phase 1b shop = sole genuine out-of-population test per B-1262)
 - [ ] Pareto non-dominance H10 paired bootstrap on (Cost, SR) per cell vs 5 single-mode baselines from §B-baseline
 - [ ] Latency dominance secondary check (router latency ≤ 1.10 × best-single-mode latency per cell)
 - [ ] Random baseline comparison: Tier-0a uniform / Tier-0b train-fold-frequency-weighted / Tier-0c top-3-modes-per-cell uniform (paper §6 disclosure rows, not gating)
+- [ ] **Sequential 2-pass written defense paragraph (B-1274 /stress A2.6a P2-17-B 2026-05-18)**: add reviewer-facing prose to §B or §C completion narrative covering Pass-1 → Pass-2 temporal-drift / site-state parity: same A100 host + same Docker images (SBOM-locked per `preregistration.md §7` 3-layer recipe) + reset-before each Pass-2 router condition (per `phase1_plan.md:55/237-242` operational discipline) + site-state fingerprint before/after each cell + no cross-day content drift in self-hosted VWA stack. Pass-2 temporal lag vs Pass-1 baseline: < 24h typical, < 72h worst case. Defuses "Pass-2 router sees later temporal environment vs single-mode baselines" reviewer attack vector.
 
 ### C3. Archive sim development sanity (supplementary, NOT paper-grade)
 
 - [ ] `scripts/analysis/l1_archive_simulation.py` repeated stratified 5-fold × 10 repeats (Q4 fix landed 2026-05-16)
 - Archive cls Variant B: 17.84% [16.30, 19.42] (+2.02pp vs always_phantom_som 15.81%) — robust 50-pair estimate
 - Archive red Variant B: 10.33% [9.05, 11.67] (-3.95pp vs always_phantom_som 14.29%) — collapsed to majority on text-dominated cell
-- 用途: development sanity check only; paper §6 main number 等 Phase 1a LOCO
+- 用途: development sanity check only; paper §6 main number 等 Phase 1a E'' task-held-out 5-fold within fixed cells per §C2 protocol revision 2026-05-18 (B-1261 /stress A2.6a P0-2-AB* — supersedes 2026-05-16 "等 Phase 1a LOCO" phrasing per Q4 user decision A2.6a)
 
 ### C4. 未来扩展 (paper-2 forward stub)
 
@@ -279,7 +284,7 @@ B0 infra prereq ──┘                                                       
 
 ### C5. 完成判定 (paper-1 §6 lock)
 
-- [ ] Learned router LOCO 6-fold + within-cell 5-fold × 10 repeats reported
+- [ ] Learned router **E'' task-held-out 5-fold within fixed cells (paper §6 main per B-1261 /stress A2.6a P0-2-AB* Q4=C-modified 2026-05-18)** + LOCO 6-fold cross-cell as Appendix sensitivity reported (supersedes prior "LOCO 6-fold + within-cell 5-fold × 10 repeats" Q4-2026-05-16 phrasing)
 - [ ] H10 Pareto non-dominance verdict (cells pass / total cells)
 - [ ] Site-asymmetric viability empirical finding written up (paper §6 main narrative — cls visual-rich vs red text-dominated routing behavior contrast) — **⚠️ pre/post-hoc framing status 必须在 A2.8 prereg lock 中明确**: archive sim 2026-05-16 pre-fire 已知 cls Variant B +2.02pp / red -3.95pp → 此 narrative 是 H10 之内 pre-registered subhypothesis (confirmatory) 还是 post-hoc descriptive (exploratory)? Reviewer R3 经典攻击点, prereg.md 必须二选一并 Git/OSF witness lock
 - [ ] 输出 → paper §6 routing section + Pareto scatter figure (per-cell with 95% confidence regions)
