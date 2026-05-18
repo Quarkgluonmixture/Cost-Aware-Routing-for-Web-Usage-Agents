@@ -1,38 +1,25 @@
 ---
 type: osf-registration-readme
-status: pre-submission-witnessed  # tier 1 pre-canonical-outcome-creation witness captured 2026-05-18T21:16:28Z; ready for OSF submission pending user manual sign-off rows
-captured_at: 2026-05-18T21:16:28Z  # pre-launch witness capture UTC (zero A100 run_dir state)
-captured_tier: pre-outcome-creation  # tier 1 strictest per B-1675 capture_doi1_witness.sh — all canonical-pattern counts = 0 + any_files_in_run_dirs = 0 (no Fire-3 run_dir even exists at capture moment; substrate genuinely empty)
-witness_capture_strategy: pre-launch  # captured BEFORE Fire-3 launch invocation rather than between gates-pass and runner-spawn, to side-step the ~5-15 sec runner-startup window that writes first *_steps_v2.jsonl intermediate
-artifact_existence_check: artifact_existence_check_doi1_canonical_20260518T211628Z.txt  # in this same pre_run/ dir alongside this README
-artifact_existence_check_sha256: 011fa4c07d76798a57070d9aea8b1653ca50dfe432b9c4dee689b96ee9cc6691
-git_head: 590ad12f9cea69bcb06fb0e12d1e09837ac257da  # master HEAD at pre-launch witness capture; descendant of canonical_substance_lock_sha
-canonical_substance_lock_sha: 72b93c939526fb0b9a733013852bd90136d601aa  # substance-lock post Q3=A doctrine fix + B-### renumber
+status: pre-submission-staging  # substance-locked, canonical empirical witness pending Fire-3
+captured_at: <to-be-recorded at Fire-3 canonical witness capture moment>
+artifact_existence_check: <to-be-filled with `artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt` at Fire-3 PID-alive capture>
+git_head: <to-be-recorded at Fire-3 launch commit; will be a descendant of canonical_substance_lock_sha>
+canonical_substance_lock_sha: 72b93c939526fb0b9a733013852bd90136d601aa  # current substance-lock post Q3=A doctrine fix + B-### renumber
 canonical_substance_lock_tag: preregistration-locked-q3a  # at 72b93c9 above
 legacy_substance_lock_sha: ef609a3863adc9b3698789b96a1ee9f709e1c832  # audit-trail only, NOT for OSF citation — superseded by Q3=A wave 2026-05-18 evening
-legacy_substance_lock_tag: preregistration-locked  # at ef609a3 above, retained on origin for git-history continuity only; witness file's Provenance section shows this legacy tag SHA (99f72f4e) as a script artifact, NOT as the canonical anchor — the canonical anchor is `preregistration-locked-q3a` at 72b93c9 documented in this README body
-fire3_launch_planned_ts_utc: 2026-05-18T~21:17-21:18Z  # Fire-3 launch will fire IMMEDIATELY after this README + witness commit lands, ~1-2 min after witness capture
-fire3_run_dir_pattern: results/visualwebarena/phase1/B?_*_20260518_21*  # cls/red chain run_dirs will be created post-launch
-osf_doi: <to-be-assigned post-OSF-public-registration-approval>  # TBD-ALLOW: assigned by OSF admin auto-approval ~48h post-submission per help.osf.io/article/330
-osf_guid: <to-be-assigned at submission>  # TBD-ALLOW: assigned at OSF submission moment by OSF UI
-osf_submitted_at_utc: <to-be-recorded at submission>  # TBD-ALLOW: timestamp = the cryptographic external anchor (paired with Git tag preregistration-doi1-witnessed-20260518T211628Z below)
-osf_witness_tag: preregistration-doi1-witnessed-20260518T211628Z  # tagged at master HEAD on the witness-commit (one commit on top of canonical_substance_lock_sha lineage)
+legacy_substance_lock_tag: preregistration-locked  # at ef609a3 above, retained on origin for git-history continuity only
+osf_doi: <to-be-assigned post-OSF-public-registration-approval>
+osf_guid: <to-be-assigned at submission>
+osf_submitted_at_utc: <to-be-recorded at submission>
 fire2_void_witness: retracted/artifact_existence_check_doi1_20260518T135722Z_VOID_RETRACTION_ONLY.txt  # forensic-only, NOT part of canonical witness chain
-fire2_interim_corrected_scan: artifact_existence_check_doi1_interim_20260518T144258Z.txt  # post-fire-2-cleanup audit-trail bridge, NOT DOI 1 anchor (now superseded by canonical_20260518T211628Z)
-fire3_attempt3_partial_archived: results/visualwebarena/phase1/_archive_pre_fire3/B0_attempt3_killed_partial_20260518_2105/  # killed Fire-3 attempt #3 partial run_dir; archived for audit trail, NOT part of DOI 1 outcome data
+fire2_interim_corrected_scan: artifact_existence_check_doi1_interim_20260518T144258Z.txt  # post-fire-2-cleanup audit-trail bridge, NOT DOI 1 anchor
 ---
 
-# 🟢 WITNESSED — DOI 1 README ready for OSF submission pending user manual sign-off
+# 🟡 STAGING — DOI 1 README pending Fire-3 canonical empirical witness capture
 
-> **STATUS**: **Tier 1 pre-canonical-outcome-creation witness captured 2026-05-18T21:16:28Z** at zero A100 run_dir state — all canonical-pattern counts are 0 + any_files_in_run_dirs = 0 (no Fire-3 run_dir even exists at capture moment; substrate genuinely empty). This is the strictest possible DOI 1 empirical anchor.
+> **STATUS**: This README is the **pre-submission staging package**. Substance lock is already in place (commit `72b93c9` + tag `preregistration-locked-q3a`, landed 2026-05-18T11:30Z); the remaining `<TBD>` frontmatter fields populate at Fire-3 PID-alive empirical witness capture (5-min window pre-first-episode-summary).
 >
-> **Witness capture strategy = pre-launch** (per B-1751-fu / Fire-3 attempt #4 strategy). The 4 prior attempts (smoke 6 + attempts #1-#3) all had operational issues:
->   - Attempt #1 (20:53:06Z): preflight FAIL on NLTK `find("tokenizers/punkt_tab")` path-resolution bug (NLTK 3.9+) — Fire-3 didn't launch
->   - Attempt #2 (20:59:34Z): preflight FAIL on Gate 1 un-allowlisted `<TBD>` marker in prereg frontmatter — Fire-3 didn't launch
->   - Attempt #3 (21:03:35Z): preflight ALL PASS + Fire-3 launched + B0 dom classifieds task 0 ran ~2 min + canonical witness captured at 21:06:50Z BUT landed at tier 2 (pre-outcome-inspection — `summary=0, condition=0, steps=1`) because witness capture happened ~2 min after runner started writing first step jsonl. Attempt killed + partial run_dir archived for audit trail (no contamination of Fire-3 outcome data because run_dir is in `_archive_pre_fire3/`).
->   - Attempt #4 (THIS witness + imminent launch): pre-launch witness capture at zero A100 state → tier 1 strict. Fire-3 launch follows immediately after this README + witness commit + tag.
->
-> **READY for OSF submission** — pending only: (a) user manual sign-off rows in `release_redaction_checklist.md` (2 explicit rows blocking submission, NOT auto-fillable); (b) user click on OSF UI submit button. Submission timestamp = the cryptographic external anchor.
+> **DO NOT submit OSF registration with this STAGING package** — Fire-3 canonical empirical witness must precede submission. After capture + count-verify, regenerate this README + bundle MANIFEST_SHA256, then submit.
 
 ## Canonical DOI 1 anchor (single-source-of-truth — cite this block for all OSF-facing claims)
 
