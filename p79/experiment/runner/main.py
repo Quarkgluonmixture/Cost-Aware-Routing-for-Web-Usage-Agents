@@ -851,7 +851,7 @@ class ExperimentRunner:
                 condition_dir.mkdir(parents=True, exist_ok=True)
                 condition_logger = LoggerV2(condition_dir)
 
-                # B-1605 (/stress A2.10 P1-6-A 2026-05-18): reset learned-router
+                # B-1645 (/stress A2.10 P1-6-A 2026-05-18): reset learned-router
                 # diag state per (condition, seed) so cumulative `_lr_*` counters
                 # don't leak across cells. Pre-fix `self._lr_fallback_count` was
                 # initialized lazily on first fallback and never reset; in a
@@ -1141,7 +1141,7 @@ class ExperimentRunner:
                     }
                 )
 
-                # B-1605 (/stress A2.10 P1-6-A 2026-05-18): surface learned-router
+                # B-1645 (/stress A2.10 P1-6-A 2026-05-18): surface learned-router
                 # diagnostic block when observation_mode=="learned" so paper §6
                 # H10 transparency disclosure can cite per-cell signal-strength
                 # fallback rate. Only emitted for learned-mode conditions; absent
@@ -1151,7 +1151,7 @@ class ExperimentRunner:
                 # (including those that succeed); `fallback_count` is the subset
                 # that fell back via candidate_modes filter / max_prob ≤ τ /
                 # feature-extraction exception. Infrastructure-level failures
-                # (LearnedRouterArtifactError per B-1600) do NOT reach this
+                # (LearnedRouterArtifactError per B-1640) do NOT reach this
                 # accounting — they kill the cell run loudly before write.
                 if condition.observation_mode == "learned":
                     dispatch_count = int(getattr(self, "_lr_dispatch_count", 0))
@@ -1815,10 +1815,10 @@ class ExperimentRunner:
             # apply fold-k vectorizer + selected_idx + LR + τ_{C,k} threshold.
             # See p79/policies/learned_router.py:predict_mode_fold_aware.
             #
-            # B-1605 (/stress A2.10 P1-6-A 2026-05-18): infrastructure-level
+            # B-1645 (/stress A2.10 P1-6-A 2026-05-18): infrastructure-level
             # errors (missing artifact / corrupt pickle / dim mismatch / no
             # fold_assignment entry) now raise LearnedRouterArtifactError per
-            # B-1600 hard-fail mandate; this wrapper PROPAGATES that error
+            # B-1640 hard-fail mandate; this wrapper PROPAGATES that error
             # (no silent phantom_som fallback for infrastructure failures).
             # Only task-level signal-strength fallback (max_prob ≤ τ +
             # candidate_modes filter) stays silent + counted.
@@ -1832,9 +1832,9 @@ class ExperimentRunner:
             )
             candidate_modes = router_cfg.get("candidate_modes", [])
 
-            # B-1605: hard-fail at config-validation time before any dispatch.
+            # B-1645: hard-fail at config-validation time before any dispatch.
             # Empty cell_id → all artifact filenames missing prefix → silent
-            # fallback to phantom_som per pre-B-1600 behavior.
+            # fallback to phantom_som per pre-B-1640 behavior.
             if not cell_id:
                 raise LearnedRouterArtifactError(
                     "[learned router] router.cell_id config field is empty — "
@@ -1933,7 +1933,7 @@ class ExperimentRunner:
                     fold_diag.get("fallback_reason"),
                 )
             except LearnedRouterArtifactError:
-                # B-1605 (/stress A2.10 P1-6-A 2026-05-18): re-raise
+                # B-1645 (/stress A2.10 P1-6-A 2026-05-18): re-raise
                 # infrastructure-level errors per user-mandate hard-fail.
                 # NO silent phantom_som fallback for missing/corrupt artifact —
                 # the entire cell run dies loudly so user diagnoses immediately

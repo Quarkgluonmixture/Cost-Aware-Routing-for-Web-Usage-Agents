@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LR artifact validate-each-pickle preflight (B-1603 /stress A2.10 P1-5-A 2026-05-18).
+"""LR artifact validate-each-pickle preflight (B-1643 /stress A2.10 P1-5-A 2026-05-18).
 
 Called by `queue_phase1_router_paper_grade.sh` Gate 4 AFTER existence check passes.
 Loads every fold-aware artifact via the runtime loader path (not raw `pickle.load()`)

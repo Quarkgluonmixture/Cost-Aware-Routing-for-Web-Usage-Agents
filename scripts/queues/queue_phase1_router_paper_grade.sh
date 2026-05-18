@@ -150,7 +150,7 @@ check_gates() {
   if [ "$baseline_done" -lt 6 ]; then
     log "  WARN: Only $baseline_done/6 cells have Pass-1 baseline summaries on disk."
     log "        Pass-2 router train fold needs Pass-1 per-task oracle labels."
-    # B-1604 (/stress A2.10 P1-7-A 2026-05-18): paper-grade parity with B-879
+    # B-1644 (/stress A2.10 P1-7-A 2026-05-18): paper-grade parity with B-879
     # P0-6-B* ALLOW_ACTIVE_RUNS removal. Pass-2 router fire is paper-grade
     # scope; training Pass-2 LR on partial Pass-1 oracle labels = underspecified
     # class balance + feature coverage = silent contamination of H10 PRIMARY
@@ -186,11 +186,11 @@ check_gates() {
     log "  OK (LR dispatch found in runner)"
   fi
 
-  log "=== Gate 4: LR fold-aware artifact bundle (A2.8 P0-4-AB* B-1558 + A2.10 P0-3-B B-1602) ==="
+  log "=== Gate 4: LR fold-aware artifact bundle (A2.8 P0-4-AB* B-1558 + A2.10 P0-3-B B-1642) ==="
   # A2.8 P0-4-AB* B-1558 (/stress 2026-05-18): pre-A2.8 gate checked only legacy
   # single-pickle path. Now: gate exercises fold-aware artifact runtime path.
   #
-  # A2.10 P0-3-B B-1602 (/stress 2026-05-18 Claude Mode A solo, user Q4=B): vectorizer
+  # A2.10 P0-3-B B-1642 (/stress 2026-05-18 Claude Mode A solo, user Q4=B): vectorizer
   # naming corrected. Pre-fix gate expected `{cell_id}_vectorizer_fold{k}.pkl` (per-cell
   # convention) but loader `learned_router.py:load_vectorizer_fold` AND trainer
   # `train_l1_router_with_mi.py:354` both write/read `vectorizer_fold{k}.pkl` (shared
@@ -250,11 +250,11 @@ check_gates() {
     fi
   else
     log "  OK (all ${total_expected} fold-aware paths present: 10 shared-fold + 12 per-cell meta + 30 per-cell LR-heads)"
-    # B-1603 (/stress A2.10 P1-5-A 2026-05-18): when existence check passes,
+    # B-1643 (/stress A2.10 P1-5-A 2026-05-18): when existence check passes,
     # run Python validate-each-pickle preflight — catches corrupt pickle /
     # numpy version mismatch / sklearn version drift / partial-write at gate
     # time rather than at first runtime task (where it would fall through
-    # to LearnedRouterArtifactError per B-1600, killing the cell loudly but
+    # to LearnedRouterArtifactError per B-1640, killing the cell loudly but
     # late). Existence check alone is overconfident — paths exist ≠ pickle
     # loadable. ~5-10s preflight cost; catches the corruption failure mode
     # invisible to `-f` check. See `scripts/queues/_lib_lr_artifact_validate.py`.

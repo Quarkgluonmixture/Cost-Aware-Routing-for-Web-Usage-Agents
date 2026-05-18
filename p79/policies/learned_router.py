@@ -253,7 +253,7 @@ class LearnedRouterArtifactError(RuntimeError):
     silenced into SAFE_FALLBACK_MODE — that contaminates the H10 PRIMARY estimand
     (router operating point ≡ phantom_som operating point = trivial null circular).
 
-    B-1600 (/stress A2.10 P0-3-B + user-mandate hard-fail 2026-05-18):
+    B-1640 (/stress A2.10 P0-3-B + user-mandate hard-fail 2026-05-18):
     user-directed "silent fallback is H10 最大风险之一" — only task-level
     signal-strength fallback (max_prob ≤ τ) stays silent + counted; all
     infrastructure-level paths raise this RuntimeError so the cell loop dies
@@ -321,7 +321,7 @@ def predict_mode_fold_aware(
     cell_cache = cache[cell_id]
 
     # Resolve fold for this task
-    # B-1600 hard-fail: task_id missing from fold_assignment is an infrastructure
+    # B-1640 hard-fail: task_id missing from fold_assignment is an infrastructure
     # error (training pipeline didn't include this task), not a signal-strength
     # fallback. Raising kills the cell run so user diagnoses immediately.
     fold_k = cell_cache["fold_assignment"].get(int(task_id))
@@ -352,7 +352,7 @@ def predict_mode_fold_aware(
     vectorizer = cell_cache["vectorizers"][fold_k]
     selected_mask = cell_cache["selected_masks"][fold_k]
     pipeline = cell_cache["pipelines"][fold_k]
-    # B-1600 hard-fail: missing fold artifact = infrastructure error.
+    # B-1640 hard-fail: missing fold artifact = infrastructure error.
     if vectorizer is None or selected_mask is None or pipeline is None:
         msg = (
             f"[learned_router] cell={cell_id} fold_k={fold_k} missing artifact "
@@ -368,7 +368,7 @@ def predict_mode_fold_aware(
         raise LearnedRouterArtifactError(msg)
 
     # Build runtime feature vector
-    # B-1600 hard-fail: feature vector dim mismatch = vocabulary inconsistency
+    # B-1640 hard-fail: feature vector dim mismatch = vocabulary inconsistency
     # between trained vectorizer + selected_idx, infrastructure-level corruption.
     try:
         x = build_runtime_feature_vector(raw_features, vectorizer, selected_mask)
@@ -389,7 +389,7 @@ def predict_mode_fold_aware(
     diag["tau_used"] = float(tau)
 
     # Predict + cost-weighted decision rule (B-998)
-    # B-1600: pipeline.predict_proba exception is infrastructure-level (numpy
+    # B-1640: pipeline.predict_proba exception is infrastructure-level (numpy
     # version mismatch / sklearn version drift / pickle compat); hard-fail.
     # max_prob ≤ τ is LEGITIMATE signal-strength fallback (per H10 cost-
     # weighted decision rule design B-998); stays silent + counter.
@@ -413,9 +413,9 @@ def predict_mode_fold_aware(
     if max_prob > tau:
         return argmax_mode, diag
     else:
-        # B-1600 retained silent: this is the H10 cost-weighted decision rule's
+        # B-1640 retained silent: this is the H10 cost-weighted decision rule's
         # legitimate signal-strength fallback per B-998. Counted as fallback in
-        # diag so per-cell fallback rate can be disclosed (B-1601 P1-6 surface).
+        # diag so per-cell fallback rate can be disclosed (B-1641 P1-6 surface).
         diag["fallback_fired"] = True
         diag["fallback_reason"] = f"max_prob={max_prob:.3f} <= tau={tau:.3f}"
         return fallback_mode, diag
