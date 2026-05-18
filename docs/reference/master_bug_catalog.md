@@ -1803,11 +1803,11 @@ phase1_plan A1.4 拆 3 chunks (A1.4a orchestrator / A1.4b data plane / A1.4c aux
 
 **Pattern (cross §142-§149)**: orchestrator audit blast radius significantly higher than backends/envs/agents because `p79/experiment/runner/` is the paper §3 evidence-layer trunk. 3-AI + user Q&A 4 layers needed for full coverage: Claude finds silent attribution + fallback override; codex finds reproducibility-layer (JSONL/summary divergence, schema drift, shallow copy, identity check); gemini finds design-layer (cost-aware framing, control-flow contracts); user finds design intent (dissolves AI-misread "bugs"). Single-AI audit would have missed >50% of actionable findings.
 
-**A1.4a fully closed**. A1.4b-i (analysis.py canonical paper §3 producer, 1557 LOC) covered next; see §150 below.
+**A1.4a fully closed**. A1.4b-i (analysis.py canonical paper §3 producer, 1557 LOC) covered next; see §150a below.
 
 ---
 
-### §150 /stress A1.4b-i — `p79/experiment/analysis.py` paper §3 canonical (2026-05-16)
+### §150a /stress A1.4b-i — `p79/experiment/analysis.py` paper §3 canonical (2026-05-16)
 
 - **B-170** McNemar/Wilcoxon merge key cross-site collision 🛠️ **FIXED commit `60e6ce5`** (Claude A1, OOB) — `p79/experiment/analysis.py:851-853` `merge(df_a, df_b, on="task_id")` cross-paired tasks across cls/red/shop because empirical task_id ranges all overlap [0,209] (verified via `wc -l` + `python -c json.load` over `test_*.raw.json`). Fix: `on=["benchmark_site", "task_id"]` when site column present; spot-check unit test verifies 2×2 site×task → 4 rows (broken) → 2 rows (fixed).
 - **B-171** "(adjusted)" stale prose remnant 🛠️ **FIXED commit `60e6ce5`** (Claude A5 + gemini C1, cross-AI) — 4 plot titles in `analysis.py:545, 1267, 1300, 1346` said "(adjusted)" but §139.8 retired the post-hoc adjustment layer. Replacement: "(N/A excluded at task-load)". `_plot_phase1` headline also gets "partial conditions hatched (//)" suffix when B-179 hatched-bar branch fires.
@@ -1824,13 +1824,13 @@ phase1_plan A1.4 拆 3 chunks (A1.4a orchestrator / A1.4b data plane / A1.4c aux
 - **B-182** Holm family scope labels in `aggregate_phantom_meta` 🛠️ **FIXED commit `3f83a52`** (codex B3) — `aggregate_phantom_meta.py:287` table header now has `family_scope` (APPENDIX_RE_SENSITIVITY_m{1,2,3}) + `gating_status` (appendix-only / exploratory) columns. Pre-fix prose "Pre-registered family gating" with Holm over SECONDARY pooled tests (m=3) contradicted `preregistration.md:292-320` PRIMARY family m=1 (FE superiority, paper PRIMARY actually lives in B-184 missing `phase1_prereg_gate.csv`). Disclosure paragraph added: RE meta in this script is appendix sensitivity, paper gate is elsewhere.
 - **B-183** Per-episode P95 latency figure caption disclosure 🛠️ **FIXED commit `3f83a52`** (Claude A7 half-defused) — `_analyze_condition:604-617` "Latency Distribution" histogram caption pre-fix did not disclose that each x-axis value is per-episode P95 (NOT per-step). `metrics.py:344-347` docstring already explained this but figure was opaque. Fix: caption now reads "Per-episode P95 step latency (s) (NOT per-step distribution)" + title prefixed "Per-episode P95 Latency Distribution".
 
-#### §150 NEW ARTIFACTS — partial close (B-184 landed; B-185/B-186 still deferred)
+#### §150a NEW ARTIFACTS — partial close (B-184 landed; B-185/B-186 still deferred)
 
 - **B-184** `phase1_prereg_gate.{csv,json,md}` 🛠️ **FIXED** (codex B2, P0 OOB) — canonical FE drop-one over 6 cells + one-sided z superiority test. New producer `scripts/analysis/aggregate_phase1_prereg_gate.py` implements prereg §1 H1 PRIMARY (line 68-86 lock): per-cell drop-one θ_i with paired B=1000 bootstrap SE (seed=42 per B-176), FE pool `w_i=1/SE_i²` → `θ_FE = Σw_iθ_i/Σw_i`, `SE_FE = sqrt(1/Σw_i)`, one-sided `z = (θ_FE − 1.0) / SE_FE`, reject H0 when `p_one_sided < 0.05`. Emits 3 files (CSV per-cell + pooled / JSON metadata / Markdown paper-citable table). Wired into Makefile `_aggregate` chain (runs BEFORE `phantom-lift`); `phantom-lift` retained as appendix-exploratory. Pre-data behavior: `gate_status="INSUFFICIENT_DATA"` (no cell has all 6 modes yet, Phase 1a rerun in flight); producer gracefully degrades, does not block `make analysis`. 17 unit tests verify: ϕ_CDF accuracy / per-task drop-one indicator (oracle_6 ⊇ oracle_5_no_psom invariant) / bootstrap determinism with seed pin / SE scales with √n / FE pool arithmetic at equal weights → mean / inverse-variance weighting pulls toward low-SE cell / z=0 at θ_FE=δ → p=0.5 not pass / k=1 returns None / partial-data status / writers round-trip.
 - **B-185** `claim_manifest.json` ⏳ **DEFER** (codex B8, P1, 0.5-1 day scope) — paper-claim → producer + input SHA mapping; depends on B-184. Same issue file.
 - **B-186** `hero_metrics.json` ⏳ **DEFER** (gemini C3, P1, 0.5 day scope) — single JSON collecting 4-fold drop-in property (a)cost (b)latency (c)AUROC (d)drop-one for P-SoM. All 4 metrics already produced but scattered. Same issue file.
 
-#### §150 audit status (2026-05-16 Commit G1-G4 batch)
+#### §150a audit status (2026-05-16 Commit G1-G4 batch)
 
 | Tag | Count | Notes |
 |---|---|---|
@@ -1847,7 +1847,7 @@ phase1_plan A1.4 拆 3 chunks (A1.4a orchestrator / A1.4b data plane / A1.4c aux
 
 **A1.4b-i scope confirmed (split-large-scope rule)**: total = 2463 LOC / 7 files in `p79/experiment/` data plane. Split into A1.4b-i (analysis.py 1557 LOC standalone, paper §3 critical) + A1.4b-ii (logger_v2 / io_utils / types / metrics / schema_migrations, 906 LOC). A1.4b-i fully closed; A1.4b-ii queued. A1.4c (auxiliary modules) also queued.
 
-**Pattern (cross §142-§150)**: paper §3 evidence-layer canonical producer (`analysis.py`) blast radius higher than orchestrator core because every paper figure / table / prose claim flows through here. Cross-AI value compounded: 3 AIs caught 17 unique findings vs single-AI ≤9. Codex reproducibility-auditor persona empirically high-value for stats/analysis scripts (caught 8 vs 5 from Claude). Gemini broad-reviewer persona high-value for paper ↔ code mismatch (caught C1 prose drift that I had not surfaced as paper-grade). User Q&A continues to be necessary 4th layer (saved ~6-9h on B-184/B-185/B-186 by punting from "fix now" to "issue tracker").
+**Pattern (cross §142-§150a)**: paper §3 evidence-layer canonical producer (`analysis.py`) blast radius higher than orchestrator core because every paper figure / table / prose claim flows through here. Cross-AI value compounded: 3 AIs caught 17 unique findings vs single-AI ≤9. Codex reproducibility-auditor persona empirically high-value for stats/analysis scripts (caught 8 vs 5 from Claude). Gemini broad-reviewer persona high-value for paper ↔ code mismatch (caught C1 prose drift that I had not surfaced as paper-grade). User Q&A continues to be necessary 4th layer (saved ~6-9h on B-184/B-185/B-186 by punting from "fix now" to "issue tracker").
 
 **Next available B-number**: ~~B-187+~~ — superseded by §152 below (B-187 ~ B-200 landed).
 
@@ -6694,3 +6694,69 @@ Phase 4 verdict: Mode B PASS (4/4 exact citations); Mode C PASS-WITH-CAVEAT (4/4
 **§A2 设计层 tenth item DONE** post A2.7 (counting A2.1 + A2.2 + A2.3a + A2.3b + A2.3c + A2.3d + A2.4a + A2.4b + A2.6a + A2.6b + A2.7). A2.5 + A2.8 + A2.6c remaining.
 
 **Phase 1a fire green-light**: ON — both P0 fire-blockers fixed (VWA lock unified, paper §1 router prose aligned); all 11 P1 fixes landed; substrate is paper-grade clean. Phase 1a fire ready upon (a) A100 re-probe verification + (b) explicit user push approval per `feedback_git_push_requires_confirm` memory. Total test pass count: 62/62 own (4 chunks × pytest runs) + parallel session test infrastructure intact.
+
+## A2.9 — Reporting + Ethics + Cross-AI methodology disclosure — /stress A2.9 Mode A+B+C cycle (2026-05-18 ~06:00-08:00 BST, B-1500~B-1512 reserved)
+
+3-AI cycle: Mode A (Claude) 15 findings 6 OOB / Mode B (codex `/codex-stress` v0.130, 199s wallclock, 2.07 MB output bloat = session log dump but structured 10-finding section at L7873-7970) PASS Phase 1+2+3+4 (7 sampled 6 PASS + 1 ⚠️ gemini-side caveat) / Mode C (gemini `/gemini-stress`, 417s, 12.7 KB) PASS-WITH-CAVEAT Phase 4 (G2 number "44" hallucinated — actual broader-regex grep section4_limitations_disclosure.md = 27 per project rule `feedback_spotcheck_length_claims`; directional claim "many cross-AI citations" remains valid per Phase 4 v7.8 per-finding hallucination triage, 1/7 below the 5/7 audit-corruption retry threshold). 16 unique bug clusters unified; 3-AI overlap 6 (37.5%) / 2-AI overlap 7 / 1-AI unique 3; OOB rate 11/16 = 68.75%.
+
+User clarifications 2026-05-18 retracted 3 fixes: P0-3 paper §10 cross-AI methodology section (full workflow description not needed — "不需要描述 /stress workflow" per user directive 1) + P0-8 process replicas git-track (dependent on P0-3 retracted) + P1-3 per-AI hallucination rate table (workflow-detail equivalent, dependent on P0-3 retracted). P0-2 LLM Use Disclosure retained but as SHORT acknowledgement form (~90-120 words) per NeurIPS 2025 LLM Use Policy compliance — NOT workflow description. User Q4=B "先 close A2.9 全部 fix 后 fire" (Phase 1a sequential, NOT parallel with A2.9 closure).
+
+**Fix wave** (13 fixes B-1500~B-1512 across 3 chunks):
+
+🔴 P0 (6 fixes):
+- **B-1500 P2-1-A unique** (Claude Mode A F14): `ethics_license_coi_statements.md:9-11` License paragraph — VWA + WA explicit "MIT" cite (was "consistent with VWA + WA licensing" ambiguous; `external/visualwebarena/LICENSE:1` MIT verified empirically).
+- **B-1501 P1-1-ABC*** (3-AI overlap OOB — Claude F6 + codex F8 + gemini G5): `ethics_license_coi_statements.md` License section new "Release license matrix" sub-block — P79 MIT / VWA MIT / WA MIT / Qwen3-VL Apache 2.0 / **Gemma3-VL Gemma Terms of Use (gated, prohibits weight redistribution)** / OpenAI judge ToS. Replicator compliance checklist + scope boundary for downstream legal liability.
+- **B-1502 P0-5-ABC*** (3-AI overlap — Claude F4 + codex F3 + gemini G7): cross-doc count drift 36→42 sweep 4 locations (`ethics_license_coi_statements.md:96` benchmark-gaming row + `negative_results_registry.md:41,50,56` C1 + paper-action §5 + Future-entries trigger). Propagation from prereg B-1264 P0-5-B* 2026-05-18 A2.6a.
+- **B-1503 P0-6-AB** (2-AI overlap — Claude F5 + codex F4): VWA SHA `f0c835b` → `2f9b0b47175a1bffa01e13100e3075e212161a89` sweep 2 locations (`release_redaction_checklist.md:56` + `ethics_license_coi_statements.md:117-118`). Cross-ref prereg §7 L626-L630 9-commit tree-hash chain SBOM sha256 `5c6c5f6...`.
+- **B-1506 P0-1-AC*** (2-AI overlap OOB — Claude F1 + gemini G1): NEW `docs/checkpoints/pre_run/neurips_checklist.md` Q1-Q16 yes/no/justify NeurIPS 2025 Paper Checklist standard. 15 stardard questions + Q16 LLM Use Disclosure (2025-new). Each Q cites file:line / §pointer artifact. Supersedes ad-hoc `topvenue_constraints.md` (78 ✓/⚠️/❌ internal format ≠ paper-time submission format).
+- **B-1507 P0-2-ABC*** (3-AI overlap OOB — Claude F12 + codex F1 + gemini G2): `ethics_license_coi_statements.md` new §"LLM Use Disclosure (NeurIPS 2025 Policy)" — short acknowledgement form per user directive (NOT workflow description). 4 LLM lineages disclosed (Claude Code + codex CLI + gemini CLI + Gemini Deep Research) with scope statement: used for code review + prose + audit; NOT used for hypothesis framing / R1-R5 calls / result interpretation; no co-authorship; chronicle + bug catalog audit trail.
+- **B-1508 P0-4-AB** (2-AI overlap — Claude F3 + codex F6): `section8_limitations.md §8.7` new paragraph "Aggregate compute / cost / sustainability table" framework + NEW `pre_run/compute_cost_carbon_table.md` skeleton with 15-column per-cell row schema; numerical fill post-Phase-1a-fire via `aggregate_phase1_full_prereg_decision.py` new output target. NeurIPS Q12 (Compute Resources) compliance.
+- **B-1512 P0-7-ABC*** (3-AI overlap OOB — Claude F11+F15 + codex F5 + gemini G9): Makefile new `pre-release-check` target wired per `release_redaction_checklist.md:66` was "planned" never implemented. 5-step recipe (credential pattern check + .env/.auth/vwa_env exclusion + Tailscale IP scoped + VWA HEAD SHA lock match + VWA tree-hash chain SBOM match). Run verified all PASS post-implementation; sign-off row 2026-05-18 added.
+
+🟠 P1 (6 fixes):
+- **B-1504 P1-6-B* unique** (codex F9 OOB): B2 "byte-identical (pending HF SHA pin)" internal contradiction sweep 3 docs (`preregistration.md:608` + `locked_versions.md:92` + `model_card.md:106`) → "Reproducible after HF SHA lock" (submission gated on SHA fill).
+- **B-1505 P1-7-C unique** (gemini G8): `section8_limitations.md §8.7` new "Cross-baseline cost unit-basis collision warning" paragraph — B0 commercial API USD vs B1+B2 electricity-derived USD ~1000× scale diff; cite `cost_unit_basis` enum (B-563 A1.22) + per-task CSV column (B-527 A1.21); within-baseline cross-mode is principled.
+- **B-1509 P1-2-ABC** (3-AI overlap — Claude F7 + codex F7 + gemini G6): `section8_limitations.md §8.7` new "LLM evaluator API cost (third-party paid compute)" paragraph — VWA gpt-4o-mini judge ~150K-250K API calls aggregate; ~$10-$80 USD band estimate at OpenAI 2026-05 pricing; per-cell `judge_usd` column in compute table.
+- **B-1510 P1-5-AC** (2-AI overlap — Claude F10 + gemini G3): `section8_limitations.md §8.7` new "Carbon range reporting under PUE band" paragraph — Strubell 2019-compliant [PUE 1.0 lower-bound, 1.5 upper-bound] range bracket; single-value reporting superseded.
+- **B-1511 P1-4-AC** (2-AI overlap — Claude F9 + gemini G10): `section8_limitations.md §8.7` new "Compute-fleet 3-tier hours attribution" paragraph — per-host (A100 canonical / Myriad cross-arch / DGX archive) GPU-hours separation; avoids cross-machine power-variation confound.
+
+🟡 P2 (1 fix):
+- (B-1500 P2-1-A counted with P0 list above; only 1 in fix wave).
+
+**Retracted per user directive 2026-05-18 (3 fixes)**:
+- P0-3 paper §10 "Cross-AI Audit Methodology" appendix (full workflow description) — RETRACT per user "不需要描述 /stress workflow".
+- P0-8 process replicas (`docs/checkpoints/process/{stress,codex_stress,gemini_stress}_skill_replica.md`) git-track via `.gitignore` exception — RETRACT (dependent on P0-3 paper §10 needing to cite replicas; without §10, no urgency).
+- P1-3 per-AI hallucination rate table — RETRACT (workflow-detail equivalent; if §10 cross-AI methodology retracted, hallucination rate table is the same class of removed disclosure).
+
+**Chunked landing**:
+- Chunk 1 (commit `910c0bf`, 7 files, B-1500~B-1505): doc-prose sweep — ethics + redaction + negative_results + prereg + locked_versions + model_card + section8 §8.7 cost basis warning. 6 fixes ~1.5h.
+- Chunk 2 (commit `7594d79`, 4 files, B-1506~B-1511): NeurIPS Q1-Q16 checklist NEW + LLM Use Disclosure NEW section + §8.7 4 paragraphs (aggregate compute table + LLM judge cost + 3-tier breakout + PUE ±range) + NEW compute_cost_carbon_table.md skeleton. 6 fixes ~3h.
+- Chunk 3 (this closure commit, B-1512 + closure docs): Makefile pre-release-check target + sign-off row + catalog ## A2.9 + chronicle §220 + phase1_plan §A2.9 [x] tick. 1 fix + closure ~1h.
+
+**Phase 4 spot-check** (v7.8 mandatory): 7 samples selected (priority P0+OOB), 6 PASS empirically verified via grep/sed/Makefile `make -n`:
+- B F2 `.gitignore:112` ✓ (codex cited 104-112, actual L112 — within ±10 line tolerance)
+- B F4 ethics:117-118 `f0c835b` ✓ (exact L117-L118)
+- B F5 `make -n pre-release-check` no rule ✓ (verified pre-fix)
+- B F9 prereg:608 B2 byte-identical ✓ (exact L608)
+- B F3 negative_results_registry:41/50/56 ✓ (3 lines)
+- B F8 model_card:109 Gemma Terms of Use ✓ (exact L109)
+- ⚠️ C G2 §4-limitations claimed 44 cross-AI grep hits — actual broader-regex `grep -cE "B-[0-9]{3,4}|/stress|cross-AI|gemini|codex|Mode [ABC]|claude" section4_limitations_disclosure.md` = **27** (not 44). Number off 17 (37% inflated) = gemini historical "hallucinates numbers" class per `/gemini-stress` skill self-disclaimer. **Directional claim "many cross-AI citations" remains valid** (27 >> 0). Per Phase 4 v7.8 per-finding triage: ⚠️ tag only, no whole-audit retry (1/7 hallucination < 5/7 audit-corruption threshold).
+
+**Cross-AI agreement matrix**:
+- 3-AI overlap (ABC*): 6 — B-1501 + B-1502 + B-1507 + B-1509 + B-1512 + (one more cluster: P0-3 cross-AI methodology RETRACTED but had ABC* convergence pre-retract)
+- 2-AI overlap: 7 (P0-1 AC / P0-4 AB / P0-6 AB / P1-3 AB RETRACTED / P1-4 AC / P1-5 AC / P0-8 AB RETRACTED)
+- 1-AI unique: 3 (P1-6 B* / P1-7 C / P2-1 A)
+- OOB rate: 11/16 = 68.75% (high)
+
+**Lineage value-prop**:
+- Claude Mode A: structurally inventory-grep (35+ cross-AI citation count, 4 stale propagation locations, 9-section ethics doc no LLM disclosure) — code-read + cross-file consistency angle
+- codex Mode B: reproducibility-auditor (gitignore L112 process replicas + `make -n pre-release-check` no rule + B2 byte-identical + pending SHA contradiction caught) — Make/git ls-files / docs-system audit angle; clear top-class structured 10-finding output (199s wallclock)
+- gemini Mode C: broad-reviewer (NeurIPS 2025 Q1-Q15 checklist absence + LLM Use Policy desk-reject + Strubell PUE range + Gemma license collision + 3-host attribution + cost basis collision) — venue-policy + cross-paper standard angle; 6/10 OOB rate
+
+**Concurrent-session boundary**: 4 parallel sessions simultaneously editing prereg.md at A2.9 audit time — Chunk 1 ran clean; Chunk 2 prereg.md edit blocked by 1 parallel collision (§150 → §150b parallel touch), recovered via fresh re-read + retry. Other parallel work (A2.5+A2.6b+A2.7+A2.8 partial sessions) consumed B-### B-941~B-1414, A2.9 reserves B-1500~B-1512 (well above collision-free envelope).
+
+**Cross-link**: 实验笔记 §220 chronicle + phase1_plan §A2.9 [x] tick (this closure commit) + new artifacts `pre_run/neurips_checklist.md` + `pre_run/compute_cost_carbon_table.md` (skeleton) + Makefile `pre-release-check` target wired.
+
+**§A2 设计层 eleventh item DONE** post A2.9 (A2.1 + A2.2 + A2.3a + A2.3b + A2.3c + A2.3d + A2.4a + A2.4b + A2.5 + A2.6a + A2.6b + A2.7 + A2.9 = 12 of 13 §A2 design-layer items now CLOSED; remaining = A2.8 + A2.10 + possibly A2.6c).
+
+**Phase 1a fire green-light**: ON post A2.9 closure. User Q4=B sequential — close A2.9 全部 fix 先 (now done) → fire Phase 1a Pass-1 baseline next (subject to user push approval + A100 re-probe verification per `feedback_git_push_requires_confirm` memory rule).

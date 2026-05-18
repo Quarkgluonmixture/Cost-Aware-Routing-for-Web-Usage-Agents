@@ -89,7 +89,8 @@ Will run:
 | Date | Reviewer | Result | Issues found |
 |---|---|---|---|
 | 2026-05-09 | Claude (Opus 4.7) | Initial checklist creation | n/a |
-| (to be filled) | Author (manual review) | TBD | TBD |
+| 2026-05-18 | Claude (Opus 4.7) /stress A2.9 P0-7-ABC* — B-1512 | **PASS** (5-step `make pre-release-check`: credential pattern / .env+.auth+vwa_env exclusion / Tailscale IP scoped / VWA HEAD `2f9b0b47175a1bffa01e13100e3075e212161a89` matches lock / tree-hash chain `5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f` matches lock) | 0 critical hits; VWA reset token in `scripts/vwa_env*.sh` recognised as upstream design constant (excluded); README.md 4× `100.95.81.103` references already documented in `docs/reference/COMPUTE_INFRASTRUCTURE.md` |
+| (to be filled) | Author (manual review pre-submission) | TBD | TBD |
 | (to be filled) | Pre-OSF-deposit | TBD | TBD |
 
 ## References

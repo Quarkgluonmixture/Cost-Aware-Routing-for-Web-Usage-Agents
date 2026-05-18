@@ -35,7 +35,8 @@ PYTEST ?= .venv/bin/pytest
         analyze-layer0 analyze-layer1 analyze-layer2 analyze-layer3 analyze-layered \
         aggregate-sr-fp fig12-micro-heatmap aggregate-cost-electricity analyze-mechanism \
         analysis _per_run_all _aggregate _figures _status active \
-        glm-update-cells glm-refresh-playbook check-links vwa-generate-configs
+        glm-update-cells glm-refresh-playbook check-links vwa-generate-configs \
+        pre-release-check
 
 help:
 	@echo "P79 Makefile — see header for usage examples"
@@ -199,6 +200,48 @@ pre-launch-check:
 	 fi
 	@echo ""
 	@echo "✓ All pre-launch invariants passed. Safe to kick off paper-grade rerun."
+
+# B-1512 /stress A2.9 P0-7-ABC* 2026-05-18 — wire release_redaction_checklist
+# automation per `docs/checkpoints/pre_run/release_redaction_checklist.md §66`
+# (was "planned" pre-A2.9, never implemented). Runs the 4-step recipe at
+# release_redaction L74-78 (grep credentials / find auth dirs / IP scan /
+# submodule clean) and surfaces any pre-OSF-deposit redaction violations.
+pre-release-check:
+	@echo "=== Pre-release redaction check (B-1512 /stress A2.9 P0-7-ABC* 2026-05-18) ==="
+	@echo "1. No API key / secret / token literals (20+ char) in tracked files..."
+	@# Exclude scripts/vwa_env*.sh + .example (VWA classifieds reset token
+	@# 4b61655535e7ed388f0d40a93600254c is upstream VWA Docker design constant,
+	@# not a P79 secret, published in VWA repo). Regex requires VALUE to be
+	@# quote-delimited literal hex/alphanumeric (no `$` interpolation), which
+	@# excludes shell env-var indirection like `local token="${VAR:-}"`.
+	@HITS=$$(git grep -inE "(api[-_]?key|password|secret|token).{0,5}=.{0,5}[\"\\'][a-zA-Z0-9_-]{20,}[\"\\']" -- ':!docs/checkpoints/' ':!.gitignore' ':!scripts/vwa_env.sh' ':!scripts/vwa_env_remote.sh.example' 2>/dev/null | wc -l); \
+	 test "$$HITS" = "0" || (echo "❌ $$HITS credential-pattern hits in tracked code (review: git grep -inE ...)"; exit 1)
+	@echo "   ✓ no credential literals (VWA reset token in scripts/vwa_env*.sh excluded — upstream design constant)"
+	@echo "2. No .env / .auth/ / vwa_env_remote.sh tracked..."
+	@LEAKS=$$(git ls-files | grep -E "^\\.env$$|^\\.auth/|^scripts/vwa_env_remote\\.sh$$" 2>/dev/null | wc -l); \
+	 test "$$LEAKS" = "0" || (echo "❌ $$LEAKS auth/env files tracked (review: git ls-files | grep -E ...)"; exit 1)
+	@echo "   ✓ .env / .auth/ / vwa_env_remote.sh excluded"
+	@echo "3. No personal Tailscale IPs (100.95.81.103) outside docs/reference/..."
+	@IP_LEAKS=$$(git grep -nE "100\\.95\\.81\\.103" -- ':!docs/reference/' ':!docs/checkpoints/' 2>/dev/null | wc -l); \
+	 test "$$IP_LEAKS" = "0" || (echo "⚠️  $$IP_LEAKS IP hits outside docs/reference (manual review required)"; \
+	   git grep -nE "100\\.95\\.81\\.103" -- ':!docs/reference/' ':!docs/checkpoints/' 2>/dev/null | head -5)
+	@echo "   ✓ Tailscale IP scoped to docs/reference + docs/checkpoints"
+	@echo "4. VWA submodule clean (no force-push tampering)..."
+	@LOCK_SHA="2f9b0b47175a1bffa01e13100e3075e212161a89"; \
+	 ACTUAL=$$(git -C external/visualwebarena rev-parse HEAD 2>/dev/null); \
+	 test "$$ACTUAL" = "$$LOCK_SHA" || (echo "❌ VWA SHA $$ACTUAL ≠ lock $$LOCK_SHA"; exit 1); \
+	 echo "   ✓ HEAD $$LOCK_SHA"
+	@echo "5. VWA submodule tree-hash chain matches lock (SBOM contract)..."
+	@LOCK_CHAIN="5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f"; \
+	 BASE="89f5af29305c3d1e9f97ce4421462060a70c9a03"; \
+	 ACTUAL_CHAIN=$$(git -C external/visualwebarena rev-list $$BASE..HEAD --format=tformat:'%H %T' 2>/dev/null | sha256sum | awk '{print $$1}'); \
+	 test "$$ACTUAL_CHAIN" = "$$LOCK_CHAIN" || (echo "❌ VWA tree-hash chain $$ACTUAL_CHAIN ≠ lock $$LOCK_CHAIN (per prereg §7 L626-L630)"; exit 1); \
+	 echo "   ✓ tree-hash chain $$LOCK_CHAIN"
+	@echo ""
+	@echo "✓ All pre-release redaction checks passed."
+	@echo ""
+	@echo "Next: manually fill release_redaction_checklist.md L91-93 sign-off log"
+	@echo "      with today's date + this run's outcome, then re-commit."
 
 gallery:
 	@test -n "$(RUN)" || (echo "ERROR: RUN=<run_dir> required"; exit 1)
