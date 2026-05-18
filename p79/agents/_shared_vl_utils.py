@@ -114,8 +114,8 @@ Action Schema:
    - Use for native <select> dropdowns (shown as "combobox" in the Accessibility Tree) and for custom dropdowns/menus annotated with [DROPDOWN OPTIONS] under their trigger element.
    - Clicking a combobox or [DROPDOWN OPTIONS]-annotated trigger does NOT open the menu — use select_option instead so the value is set directly.
    - option_label must match the visible option text exactly.
-3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
-   - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
+3. Scroll: {"action_type": "scroll", "scroll_direction": "up" | "down"}
+   - Use "down" to view content below the current viewport; "up" to view content above. Each scroll moves by one viewport height.
 4. Wait: {"action_type": "wait"}
 5. Back: {"action_type": "back"} — WARNING: Do NOT use on the first/homepage.
 6. Forward: {"action_type": "forward"}
@@ -185,8 +185,8 @@ Action Schema:
    - Use for native <select> dropdowns (shown as "combobox" in the SOM_MARKS list) and for custom dropdowns/menus annotated with [DROPDOWN OPTIONS] under their trigger mark.
    - Clicking a combobox or [DROPDOWN OPTIONS]-annotated trigger does NOT open the menu — use select_option instead so the value is set directly.
    - option_label must match the visible option text exactly.
-4. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
-   - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
+4. Scroll: {"action_type": "scroll", "scroll_direction": "up" | "down"}
+   - Use "down" to view content below the current viewport; "up" to view content above. Each scroll moves by one viewport height.
 5. Wait: {"action_type": "wait"}
 6. Back: {"action_type": "back"} — WARNING: Do NOT use on the first/homepage.
 7. Forward: {"action_type": "forward"}
@@ -298,8 +298,8 @@ Action Schema:
    - Use for native <select> dropdowns and custom dropdowns/menus visible in the screenshot.
    - Clicking a dropdown does NOT open it — use select_option to set the value directly.
    - option_label must match the visible option text exactly.
-3. Scroll: {"action_type": "scroll", "delta": [dx, dy], "coordinate_type": "normalized"}
-   - dy>0 scrolls DOWN, dy<0 scrolls UP. Use scroll up when the target is above the current view.
+3. Scroll: {"action_type": "scroll", "scroll_direction": "up" | "down"}
+   - Use "down" to view content below the current viewport; "up" to view content above. Each scroll moves by one viewport height.
 4. Wait: {"action_type": "wait"}
 5. Back: {"action_type": "back"} — WARNING: Do NOT use on the first/homepage.
 6. Forward: {"action_type": "forward"}

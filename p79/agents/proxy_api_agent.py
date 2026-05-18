@@ -687,60 +687,24 @@ class ProxyApiAgent:
                         logger.warning("Proxy tool_calls validate_action invalid, falling back to text parse.")
                         action = None
 
-        # Path 1: tool_use extraction (when enabled).
-        if action is None and self._use_tool_calling and isinstance(raw_content, list):
-            text_parts: List[str] = []
-            tool_input: Optional[Dict[str, Any]] = None
-            for block in raw_content:
-                if not isinstance(block, dict):
-                    continue
-                if block.get("type") == "tool_use" and block.get("name") == "web_action":
-                    tool_input = block.get("input", {})
-                elif block.get("type") == "text":
-                    text_parts.append(block.get("text", ""))
-
-            reasoning_text = "\n".join(text_parts).strip() or None
-
-            if tool_input is not None:
-                # Inject thought from text blocks if not already provided.
-                if not tool_input.get("thought") and reasoning_text:
-                    tool_input["thought"] = reasoning_text[:500]
-                # B-570 (/stress A1.22 P1-12-A Claude OOB, 2026-05-17): re-route
-                # Path-1 success through `parse_action_text(json.dumps(...))`
-                # so the success path produces the **same** failure-mode
-                # taxonomy as B1/B2 (`parse_action_text` 10+ classes vs the
-                # legacy `validate_action` single "invalid_tool_input" string).
-                # Pre-fix: when use_tool_calling activates, paper §3.5
-                # parse_failure_reason distribution showed B0 1 class /
-                # B1+B2 10+ classes — cross-baseline granularity
-                # asymmetric ⟹ reviewer cannot compare parse_valid rate
-                # apples-to-apples. Post-fix: dual-validate (validate_action
-                # for schema integrity + parse_action_text for taxonomy),
-                # the strict-schema `validate_action` decides Path-1 vs
-                # Path-2 routing while `parse_action_text` produces the
-                # canonical fail_reason used by §3.5 disclosure.
-                # `use_tool_calling` default `false` keeps Path-2 active
-                # on current paper-grade fire; this fix activates when
-                # advisor sync 2026-05-14 decides Qwen official API
-                # `tool_choice` channel.
-                action, valid = validate_action(tool_input)
-                output_text = json.dumps(tool_input, ensure_ascii=False)
-                if valid:
-                    # Cross-validate via parse_action_text so fail_reason
-                    # taxonomy matches B1/B2 even on the success path.
-                    _action_pt, _valid_pt, _fail_pt = parse_action_text(
-                        output_text
-                    )
-                    # Path-1 trusts validate_action for routing (it has
-                    # tool-schema awareness Path-2 lacks); parse_action_text
-                    # output is consulted only for the canonical fail_reason
-                    # taxonomy when both agree the input is parseable.
-                    fail_reason = _fail_pt if _valid_pt else None
-                    logger.info("Tool-use parsed: %s", action.get("action_type"))
-                else:
-                    fail_reason = "invalid_tool_input"
-                    logger.warning("Tool-use input invalid, falling back to text parse.")
-                    action = None  # trigger fallback below
+        # B-1110 (/stress A2.3b P1-5-A, 2026-05-18): legacy Path-1 Anthropic
+        # `content[].tool_use` block parser DELETED. AWS proxy probe v2
+        # (`docs/checkpoints/probes/proxy_capability_v2_223704.json`)
+        # empirically confirmed: proxy returns `body["content"]` as STRING
+        # (not list-of-blocks Anthropic style) — list-content path was
+        # 50 LOC dead code never fired in production. The current active
+        # tool-call parser is the top-level `body["tool_calls"]` branch
+        # at L613 (B-991 native AWS proxy hybrid shim). If a future
+        # provider drift returns list-shaped content with embedded
+        # `tool_use` blocks, the contract assertion below will fail-loud
+        # — signal to re-introduce the parser, NOT silently fall through
+        # to Path-2 text parse that would lose the structured tool_use
+        # input.
+        assert not isinstance(raw_content, list), (
+            "proxy returned list-shaped content; AWS proxy contract expects "
+            "string (B-991 + B-1110). Re-introduce Anthropic content-block "
+            "parser if a non-AWS proxy provider is being used."
+        )
 
         # Path 2: text parsing fallback (original logic).
         if action is None:

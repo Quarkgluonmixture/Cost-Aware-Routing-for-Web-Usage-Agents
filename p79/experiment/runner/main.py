@@ -2985,11 +2985,19 @@ class ExperimentRunner:
 
             # --- scroll alternation detection ---
             if is_scroll:
-                delta_y = 0.0
-                raw_delta = action.get("delta")
-                if isinstance(raw_delta, (list, tuple)) and len(raw_delta) >= 2:
-                    delta_y = float(raw_delta[1])
-                direction = "down" if delta_y >= 0 else "up"
+                # /stress A2.4b Chunk α (2026-05-18): prefer canonical
+                # `scroll_direction` enum (post-prompt-unification all baselines
+                # emit `up`/`down` directly). Archive runs pre-unification still
+                # carry `delta` — read as fallback so backward-compat preserved.
+                sd = action.get("scroll_direction")
+                if sd in {"up", "down"}:
+                    direction = sd
+                else:
+                    delta_y = 0.0
+                    raw_delta = action.get("delta")
+                    if isinstance(raw_delta, (list, tuple)) and len(raw_delta) >= 2:
+                        delta_y = float(raw_delta[1])
+                    direction = "down" if delta_y >= 0 else "up"
                 scroll_direction_history.append(direction)
                 ALT_THRESHOLD = 6
                 if len(scroll_direction_history) >= ALT_THRESHOLD:
