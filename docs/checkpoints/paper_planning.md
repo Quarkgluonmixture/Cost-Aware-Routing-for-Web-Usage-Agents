@@ -1469,12 +1469,16 @@ ef29add  drop-in deployment punchline
 
 ## §14 Reviewer Attack Anticipation + Pre-Rebuttal
 
-顶刊投稿 reviewer 常见攻击 + 我们的 response (paper integrity hardening):
+> **Scope bifurcation note (B-1271 /stress A2.6a P1-13-B 2026-05-18 — supersedes prior unified table that overclaimed Phase 1b+WA future data as Phase 1a pre-rebuttal)**: this register is split into **§14.1 Workshop Phase 1a defense** (cls + red + 3 baselines + 6 modes — current Phase 1a fire scope) and **§14.2 Main paper post-Phase-1b defense** (covers + shop + WA appendix — future data). Rows tagged `[Workshop]` / `[Main]` / `[Both]` per scope; rows marked `[Main]` are NOT available as pre-rebuttal for workshop submission. See `preregistration.md §2.7 Submission scope mapping` for the bifurcation contract.
 
-| Attack | Likely Reviewer Concern | Our Response | Evidence |
-|---|---|---|---|
-| **Sample size too small** | "VWA cls 234 + red 210 = 444 task, single benchmark" | Final scope = 6 sites × 3 models × 5 modes ≈ 1390 task per condition. Cross-site (cls + red + shopping × VWA + WA), cross-model (Qwen 235B + Qwen 4B + Gemma3-VL 4B per §138 advisor 2026-05-14) | §5 Final scope; §3.1 B0 5-mode SR table |
-| **Single benchmark family** | "VWA only, no Mind2Web/WebVoyager validation" | + WA (Postmill / Magento / shopping_admin) cross-stack validation. Mind2Web out of scope per advisor align (Plan B) | §7 generalization + paper §6 |
+### §14.1 Workshop Phase 1a defense (current scope — cls + red × 3 baselines × 6 modes)
+
+顶刊投稿 reviewer 常见攻击 + 我们的 response (paper integrity hardening) — workshop scope only:
+
+| Attack | Likely Reviewer Concern | Our Response | Evidence | Scope |
+|---|---|---|---|---|
+| **Sample size too small** | "VWA cls 234 + red 210 = 444 task, single benchmark" | **[Workshop]** Phase 1a workshop scope = cls 234 + red 210 = 444 tasks × 3 baselines × 6 modes × **42 conditions / 6 cells** (H1 FE pool over 6 well-powered cells per `preregistration.md §2.4` k=6 power table 97-100% at observed archive effect +2.34pp). NOT a pre-rebuttal for full main-paper external-validity claim. | `preregistration.md §2.4` power table k=6 + §6 per-cell forest mandated; §3.1 B0 5-mode SR table | [Workshop] |
+| **Single benchmark family** | "VWA only, no Mind2Web/WebVoyager validation" | **[Main only]** WA (Postmill / Magento / shopping_admin) cross-stack validation is Phase 1b+ scope per `preregistration.md §7` external validity. **Workshop submission cannot pre-rebut this attack with delivered data** (WA explicit future work per prereg §7). Workshop response: scope-honest disclosure under §8.1 "VisualWebArena's three task sites; WebArena cross-benchmark validation explicit future work" (B-1270 /stress A2.6a 2026-05-18). | §7 generalization (main paper future) | [Main] |
 | **Single model family (Qwen)** | "Effect Qwen-specific?" | B2 = Gemma3-VL `google/gemma-3-4b-it` (4B-parity cross-family) per advisor 2026-05-14 §138 (0 API cost, local A100). B0 (235B) + B1 (4B) shows capability-dependent shift (+50/+33pp cross-site, §101.九 lazy minimization); B2 4B-parity test cross-family robustness | §2 capability layer + cross_site_pattern_consolidation.md |
 | **Phantom is just a degraded SoM** | "Why not collapse to DOM if no image?" | Theory C (codex 5821387) verifies prompt knob: cls P-text = Phantom-SoM SR 14.53% but Jaccard 0.447 (task pool 显著 disjoint). Same SR ≠ same routing pool | paper §5; codex `5821387` |
 | **Effect size small (drop-one 1.7-3.3pp)** | "Statistically marginal" | (i) Pre-registered Hero (P-SoM) requires pooled magnitude ≥ 1.0pp + TOST equivalence at δ=1.0pp rejected. (ii) P-text/P-prompt are framed as **structural ablation evidence** (low-threshold non-overlap proves phantom space is multi-region 2D), NOT as deployment routing arms — so deployment magnitude bar doesn't apply to them. (iii) Holm-Bonferroni multi-comparison correction applied per pre-registered family. | §1 paper hook (data-conditional R1-R5) + `preregistration.md` H1+H3 + `phantom_lift.md` Holm/TOST cols |
@@ -1489,8 +1493,19 @@ ef29add  drop-in deployment punchline
 
 **Pre-rebuttal strategy**:
 - Section 4-5 prose 写时 inline cite this table (proactive defense)
-- Section 7 Generalization 必须 explicit address WA + Claude (跨 stack + 跨 model)
+- Section 7 Generalization 必须 explicit address WA + Claude (跨 stack + 跨 model) — **[Main paper post-Phase-1b only]**, NOT pre-rebuttable for workshop submission per B-1271 /stress A2.6a 2026-05-18 scope bifurcation
 - Section 8 Discussion 4.4 limitations 提前 acknowledge known weaknesses
+
+### §14.2 Main paper post-Phase-1b defense (future scope — + shop × 3 baselines + WA appendix)
+
+Pre-rebuttals citing future data (Phase 1b shop fire post-workshop submission + optional WA appendix in main paper). **NOT available for workshop submission pre-rebuttal — workshop scope strictly limited to Phase 1a delivered data per `preregistration.md §2.7` bifurcation**.
+
+| Attack | Likely Reviewer Concern | Main Paper Response (Post-Phase-1b) | Required Future Data |
+|---|---|---|---|
+| **Sample size scaling** | "Phase 1a 444 tasks × 2 sites still narrow" | Main paper expansion = + shop 466 tasks × 3 baselines × (6 modes + 1 learned router) = +21 conditions / 9 statistical cells total (`preregistration.md §4 Phase 1b row` B-1263 2026-05-18). | Phase 1b shop fire complete |
+| **Cross-benchmark** | "VWA only — does it transfer to WebArena?" | WA appendix sub-pilot (WA cls + red + shopping_admin ~480 tasks) at main paper time per `preregistration.md §7`. | WA pilot fire (estimated post-Phase-1b) |
+| **Router out-of-distribution** | "Router trained on cls+red — does it transfer to shop?" | Phase 1b shop = router held-out distributional test per B-1262 /stress A2.6a 2026-05-18 router evaluation scope commit. | Phase 1b shop + router prediction on held-out shop tasks |
+| **Cross-site asymmetry universality** | "N=2 sites can't establish 'where' phantom-space helps" | Phase 1b shop = third site point providing structured falsification of cls-vs-red asymmetry narrative; if shop replicates cls-pattern → R3→R1 upgrade per `preregistration.md §4 Phase 1b row` ±2pp tolerance (B-1231 /stress A2.4b). | Phase 1b shop fire + per-site forest comparison |
 
 ---
 
@@ -1503,7 +1518,7 @@ paper Section 2 必备 explicit table (review 加分项):
 | **Marks-text isolation** | ❌ bundled with image | ❌ bundled | ❌ bundled | n/a | n/a | ✅ Phantom-SoM ⭐ |
 | **Routing arms** | 1 (single SoM) | 1 (per mode) | 1 (single SoM) | 1 (text prune) | model-level routing | **5-mode** (DOM/SoM/Vision/Phantom-SoM/P-text) ⭐ |
 | **Cost-aware Pareto** | ❌ | ❌ | ❌ | ✅ token cost | ✅ model cost | ✅ **multi-metric** (cost+latency+carbon) ⭐ |
-| **Cross-site validation** | 4 task domains | 3 sites (cls+red+shop) | 1 site | 2 sites | n/a | **6 sites** (VWA+WA) ⭐ |
+| **Cross-site validation** | 4 task domains | 3 sites (cls+red+shop) | 1 site | 2 sites | n/a | **Workshop Phase 1a: 2 VWA sites** (cls+red); **Main paper planned: 3 VWA sites** (+ shop, Phase 1b post-workshop); WA appendix optional future per prereg §7 (B-1272 /stress A2.6a P1-14-B 2026-05-18 — supersedes prior "**6 sites** (VWA+WA) ⭐" overclaim that conflated Phase 1a delivered + Phase 1b future + WA appendix as if all delivered) |
 | **Cross-model** | 4 models (multimodal) | 6 models (api+local) | 4 models | 1-2 | many (text-only LLM) | 3 models (Qwen 235B + Qwen 4B + Gemma 4B-it) per §138 advisor 2026-05-14 |
 | **Mechanism analysis** | ❌ effect-only | ❌ partial | ❌ baseline | partial (text size effect) | ❌ effect-only | ❌ deferred to follow-up paper per advisor scope-flip §138.3 2026-05-14 |
 | **Drop-in deployment** | ❌ | ❌ | ❌ | partial | partial | ✅ **4-fold property** (cost/latency/signal/oracle) ⭐ |
@@ -1518,6 +1533,25 @@ paper Section 2 必备 explicit table (review 加分项):
 ---
 
 ## §16 Authorship + Advisor Roles + First-Paper Strategy
+
+### §16.0 Multi-submission scope matrix (B-1268 /stress A2.6a P1-9-ABC* 2026-05-18)
+
+> **3-AI overlap finding** (Claude F6+F7 + codex P1-4 + gemini overlap): paper-1 main + Track A workshop + Track B workshop share GRL/evaluator evidence surface but `paper_planning.md` until A2.6a lacked a **per-submission novelty / authorship / reused-artifacts / non-overlap matrix**. Workshop chair / NeurIPS AC salami-slicing attack vector closed by the explicit matrix below.
+
+| Field | **Paper-1 Main (NeurIPS/ICLR/ICML cascade)** | **Track A Workshop (methodology)** | **Track B Workshop (evaluation systems)** |
+|---|---|---|---|
+| **Title (working)** | Cost-Aware Routing for Web Usage Agents on the Phantom Routing Space | GRL walk-up click ON_TARGET grounding — methodology evaluation in dense UIs | VWA LLM-judge polarity FP family taxonomy — a cross-paper evaluator audit |
+| **Venue cascade** | NeurIPS 2027 → ICLR → ICML → EMNLP main → MLSys → TMLR | NeurIPS workshop OR EMNLP workshop OR ICML workshop (TBD with advisor) | NeurIPS D&B track OR ICLR workshop OR EMNLP workshop |
+| **Target deadline** | Per §7 Investment Cascade Plan | Post Phase 1a fire (R≥R2 conditional) | Post Phase 1a fire (NOT R5-conditional; can fire independently of paper-1 framing rule) |
+| **Authorship order** | jiaming, Zekun, Maria | jiaming, Maria (Zekun optional per industry overlap) | jiaming, Maria (Zekun optional) |
+| **R-rule scope** | main_R1 = H1 + H2(a) + H3(i) + H3(ii) + H10 over Phase 1a + Phase 1b 9-cell (per `preregistration.md §2.7`) | NOT framing-rule-gated — independent contribution: GRL walk-up click ON_TARGET grounding evaluation methodology | NOT framing-rule-gated — independent contribution: cross-paper evaluator FP family taxonomy + B-91 patch protocol |
+| **Reused artifacts (from paper-1 codebase)** | All — full paper-1 substrate | B-440 + B-448 GRL walk-up click fix family; paper-1 §3.5.2 GRL evidence layer subset (NOT the phantom-space hero claim, NOT the cost-aware routing claim) | B-91 + B-535 LLM-judge polarity fix (VWA submodule `p79-patches` branch + `helper_functions.py:612-613` source patch) + N/A task exclusion at task-load (paper-1 §8.2 disclosure subset, NOT the FP-architecture restructure narrative) |
+| **Novel claim NOT in paper-1** | n/a (paper-1 is the main novelty container) | **Cross-benchmark validation** of walk-up click ON_TARGET grounding methodology — paper-1 §3.5.2 discloses fix-as-limitation; workshop A reframes as systematic methodology evaluation (e.g., test grounding evaluation on Mind2Web / WA / Mind2Web 2 in addition to VWA) | **Cross-paper FP family taxonomy** — paper-1 §8.2 discloses B-91 fix as one instance; workshop B contextualizes as broader family (PAE ~50% FP, WebArena-Verified, WONDERBREAD) + remediation protocol applicable to multiple benchmarks |
+| **Non-overlap paragraph (required per submission)** | Workshop A submitted as separate methodology-evaluation work; Workshop B submitted as separate evaluation-systems work. Both cite paper-1 as forthcoming. | Track A workshop draft must NOT claim phantom-space hero, cost-aware routing hero, or P-SoM 4-fold drop-in as workshop contribution — those belong to paper-1. Workshop A's hero = "cross-benchmark methodology evaluation of GRL walk-up click ON_TARGET grounding" with empirical sub-pilot on Mind2Web. | Track B workshop draft must NOT claim phantom-space hero or P-SoM 4-fold drop-in as workshop contribution. Workshop B's hero = "cross-paper evaluator FP family taxonomy + B-91 remediation protocol" with cross-paper FP rate audit. |
+| **Cross-citation plan** | Paper-1 §1 cites Workshop A + Workshop B as forthcoming workshop sub-papers (1-line each). | Workshop A §1 cites paper-1 as forthcoming main paper. | Workshop B §1 cites paper-1 as forthcoming main paper. |
+| **R5 (paper-death) fallback role** | n/a (paper-1 is the host) | **Track A NOT pre-registered as R5 fallback** (per `preregistration.md §2 R5 row` B-1269 /stress A2.6a 2026-05-18) — Track A only fires conditionally if Phase 1a outcome ≥ R2 (R3 fallback can still publish Track A if its methodology evaluation is independent of phantom-space claims). | **Track B IS the R5 pivot** (per `preregistration.md §2 R5 row` B-1269 /stress A2.6a 2026-05-18) — if Phase 1a H1 fails → main paper-1 abandoned → Track B fires as evaluation-systems workshop note. |
+
+**Bibliographic discipline gate**: workshop submission must explicitly cite the paper-1 forthcoming with the §2.7 bifurcation contract, and workshop drafts undergo a final A2.6a re-audit pass before submission to verify per-submission novel-claim non-overlap. The matrix above is the **authoritative source** — each workshop submission's §1 prose references this matrix's "Non-overlap paragraph" cell verbatim.
 
 ### 毕设 paper authorship plan (TBD with advisor align meeting #1)
 
