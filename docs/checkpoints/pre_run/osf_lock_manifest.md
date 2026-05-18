@@ -64,13 +64,13 @@ Legacy anchors retained for audit trail ONLY (NOT for citation by OSF DOI 1):
 
 | Artefact | Path | Git ref @ lock | Captured |
 |---|---|---|---|
-| Repository HEAD | `master` branch | `<TBD>` | TBD |
-| Pre-registration text | `docs/checkpoints/pre_run/preregistration.md` | `<TBD commit-SHA>` | TBD |
-| Run manifest YAML | `results/phantom_paper/run_manifest.yaml` | `<TBD commit-SHA>` | TBD |
-| Paper drafts (locked snapshot) | `docs/checkpoints/paper_drafts_locked/` | `<TBD commit-SHA>` | TBD |
-| Bibliography (57 entries) | `docs/checkpoints/paper_drafts/paper.bib` | `<TBD commit-SHA>` | TBD |
-| Power analysis script (B-954 /stress A2.3a P1-7-B 2026-05-17) | `scripts/analysis/power_analysis.py` | `<TBD commit-SHA — after A2.3a fix landed>` | TBD |
-| Power analysis output (B-954) | `docs/analysis/cross_sites/power_analysis.md` | `<TBD commit-SHA>` | TBD; generated via `.venv/bin/python3 scripts/analysis/power_analysis.py --baseline-sr 0.10 --output docs/analysis/cross_sites/power_analysis.md` (one-sided z_α=1.645 per prereg §2.5 default) |
+| Repository HEAD | `master` branch | `50be2ffc37d75da0d5b18ec30f6829c90c1e90c7` (sign-off commit, pushed 2026-05-18T22:54Z; was master HEAD at OSF mint moment) | 2026-05-18T23:10:06Z UTC (OSF submission timestamp = canonical lock-at-mint moment) |
+| Pre-registration text | `docs/checkpoints/pre_run/preregistration.md` | last-touch pre-mint `590ad12f9cea69bcb06fb0e12d1e09837ac257da` (2026-05-18T22:03Z); blob SHA at `50be2ff` = `3586a2d66adc...` | 2026-05-18T23:10:06Z UTC |
+| Run manifest YAML | `results/phantom_paper/run_manifest.yaml` | last-touch `7a53bd9` (2026-05-18T11:53Z); blob SHA at `50be2ff` = `97181d44935d...` | 2026-05-18T23:10:06Z UTC |
+| Paper drafts (locked snapshot) | `docs/checkpoints/paper_drafts_locked/` | last-touch `797b456` (2026-05-18T11:20Z); tree SHA at `50be2ff` = `e3d400f9ca29d88278f99be5d14d7a738f23c5e0` | 2026-05-18T23:10:06Z UTC |
+| Bibliography (57 entries) | `docs/checkpoints/paper_drafts/paper.bib` | last-touch `be07296` (2026-05-12T21:19Z); blob SHA at `50be2ff` = `e7388d92c193...` | 2026-05-18T23:10:06Z UTC |
+| Power analysis script (B-954 /stress A2.3a P1-7-B 2026-05-17) | `scripts/analysis/power_analysis.py` | last-touch `ee93b98` (2026-05-18T00:11Z, post A2.3a fix landed); blob SHA at `50be2ff` = `207ad97ae5a7...` | 2026-05-18T23:10:06Z UTC |
+| Power analysis output (B-954) | `docs/analysis/cross_sites/power_analysis.md` | last-touch `ee93b98` (2026-05-18T00:11Z); blob SHA at `50be2ff` = `1fbbe7cfdcd0...` | 2026-05-18T23:10:06Z UTC; regenerable via `.venv/bin/python3 scripts/analysis/power_analysis.py --baseline-sr 0.10 --output docs/analysis/cross_sites/power_analysis.md` (one-sided z_α=1.645 per prereg §2.5 default) |
 | FE-pool empirical SE source (B-954) | `results/phantom_paper/meta_phantom_lift.csv` (`4psom_vs_3` row: `theta_fe=2.336`, `se_fe=0.529`, k_cells=3) | `<regenerable via aggregate_phantom_meta.py; gitignored but reproducible from condition_summary_v2.json>` | empirical SE_FE = 0.529pp at k=3 archive ground truth for power section §2.4 |
 | **VWA submodule HEAD** | `external/visualwebarena` (branch `p79-patches`) | `1c3a615308fd9f17c73a9d33a96cf29ec6807d48` | re-locked 2026-05-17 (/stress A1.25 GRL Chunks 1+4 — supersedes 2026-05-16 A1.18 lock at `eb5cbd8`) |
 | **VWA upstream base** | `external/visualwebarena` (upstream `main`) | `89f5af29305c3d1e9f97ce4421462060a70c9a03` | locked 2026-05-16 |
@@ -119,9 +119,9 @@ GPU compute capability / hostname / nvidia-smi output.
 
 | Patch family | Code path | Commit SHA | Diff hash | Paper-1 Workshop | Paper-1 Main | Track A Workshop | Track B Workshop |
 |---|---|---|---|:---:|:---:|:---:|:---:|
-| **B-440 + B-448 GRL walk-up click ON_TARGET grounding** | `external/visualwebarena/browser_env/actions.py` (walk-up click implementation) + `p79/envs/vwa_wrapper.py` (wrapper integration) | `<TBD lock at OSF mint>` | `<TBD>` | ✗ (not reused) | ✓ (paper-1 §3.5.2 GRL evidence subset) | ✓ (workshop A hero — cross-benchmark methodology evaluation) | ✗ (not reused) |
+| **B-440 + B-448 GRL walk-up click ON_TARGET grounding** | `external/visualwebarena/browser_env/actions.py` (walk-up click implementation, VWA submodule) + `p79/envs/vwa_wrapper.py` (wrapper integration) | VWA submodule `2f9b0b47175a1bffa01e13100e3075e212161a89` (last-touch `actions.py` 2026-05-17T13:52Z) + p79 `5494e6822198b66fccb46a0362772e6e109f7df2` (last-touch `vwa_wrapper.py` 2026-05-18T15:49Z); locked at OSF mint master HEAD `50be2ffc37d75da0d5b18ec30f6829c90c1e90c7` (2026-05-18T23:10:06Z UTC) | blob SHAs at OSF mint: `actions.py` = `b01f56ca51e3fc61afff83c5fd8aac9b380c6c9f` (VWA submodule) + `vwa_wrapper.py` = `73b8ff548d99896cbb91f8fc2e17b59e23a18144` (p79) | ✗ (not reused) | ✓ (paper-1 §3.5.2 GRL evidence subset) | ✓ (workshop A hero — cross-benchmark methodology evaluation) | ✗ (not reused) |
 | **B-91 LLM-judge polarity fix** | VWA submodule `external/visualwebarena/p79-patches` branch `eb5cbd8` + `evaluation_harness/helper_functions.py:612-613` source patch | `eb5cbd8` (VWA submodule HEAD) | tree-hash chain `752caebdc6bd84761b2f308331f21241a9b4a28de65b46ff0007ef27d8c72778` (per prereg §7 SBOM lock) | ✓ (paper-1 §8.2 disclosure subset) | ✓ (paper-1 §8.2 disclosure subset) | ✗ (not reused) | ✓ (workshop B hero — cross-paper FP family taxonomy + B-91 remediation protocol) |
-| **B-535 N/A task-load exclusion** | `p79/experiment/tasks.py` (`exclude_na_tasks: true` default) + `configs/exp_v2_base.yaml` | `<TBD lock at OSF mint>` | `<TBD>` | ✓ (paper-1 §8.2 disclosure subset) | ✓ (paper-1 §8.2 disclosure subset) | ✗ (not reused) | ✓ (workshop B disclosure — part of FP architecture restructure narrative subset) |
+| **B-535 N/A task-load exclusion** | `p79/experiment/tasks.py` (`exclude_na_tasks: true` default) + `configs/exp_v2_base.yaml` | p79 `32d15697e80d55c4cb2ffeacc4a1238496163763` (last-touch `tasks.py` 2026-05-17T14:16Z) + configs `e7546f7b7129bdcd56f97e9cca89c09e68417f95` (last-touch `exp_v2_base.yaml` 2026-05-18T00:07Z); locked at OSF mint master HEAD `50be2ffc37d75da0d5b18ec30f6829c90c1e90c7` (2026-05-18T23:10:06Z UTC) | blob SHAs at OSF mint: `tasks.py` = `e970af3f5bcf7736ce7d2300274f4bf9d97d0d16` + `exp_v2_base.yaml` = `dbb4a81c865264eda315f95e4eb60f86daa80199` | ✓ (paper-1 §8.2 disclosure subset) | ✓ (paper-1 §8.2 disclosure subset) | ✗ (not reused) | ✓ (workshop B disclosure — part of FP architecture restructure narrative subset) |
 
 **Eligibility verdict per submission**:
 
