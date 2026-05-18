@@ -1,0 +1,802 @@
+{
+  "captured_at": "2026-05-18T10:21:48.390474+00:00",
+  "host": "a100-jiaming-test",
+  "platform": "Linux-5.15.0-177-generic-x86_64-with-glibc2.35",
+  "python_version": "3.10.12",
+  "schema_version": "2026-05-17-a1.16-re",
+  "torch": {
+    "version": "2.11.0+cu128",
+    "cuda": "12.8",
+    "device_count": 1,
+    "compute_caps": [
+      [
+        8,
+        0
+      ]
+    ],
+    "device_names": [
+      "NVIDIA A100-PCIE-40GB"
+    ]
+  },
+  "libraries": {
+    "transformers": "5.8.1",
+    "qwen_vl_utils": "unknown",
+    "huggingface_hub": "1.14.0",
+    "numpy": "1.25.2",
+    "scikit_learn": null
+  },
+  "models": {
+    "Qwen/Qwen3-VL-4B-Instruct": {
+      "loaded_revision": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+      "cache_latest_revision": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+      "registry_head": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+      "loaded_from_cache": true,
+      "loaded_source": "cache",
+      "divergence": "match",
+      "_field_semantics": {
+        "loaded_revision": "filesystem-mtime-most-recent cached revision (NOT runtime-loaded). Alias: cache_latest_revision.",
+        "registry_head": "HF main-branch HEAD at snapshot time (NOT at runner-load time).",
+        "divergence_definitions": {
+          "match": "cache_latest == registry_head",
+          "runner_used_stale_cache": "cache_latest != registry_head (HF main rolled forward, or runner used pinned older SHA)",
+          "registry_unavailable": "cache hit but HF API unreachable at snapshot time",
+          "no_local_cache": "registry hit but no local cache (runner hasn't loaded this model yet)",
+          "unknown": "both cache and registry unavailable"
+        }
+      }
+    },
+    "google/gemma-3-4b-it": {
+      "loaded_revision": null,
+      "cache_latest_revision": null,
+      "registry_head": null,
+      "loaded_from_cache": false,
+      "divergence": "gated_no_token",
+      "_critical_error": "hf:google/gemma-3-4b-it: GATED model + HF_TOKEN unset. Set HF_TOKEN=hf_xxx (with accepted ToS) or remove from DEFAULT_GATED_MODELS.",
+      "_field_semantics": {
+        "loaded_revision": "filesystem-mtime-most-recent cached revision (NOT runtime-loaded). Alias: cache_latest_revision.",
+        "registry_head": "HF main-branch HEAD at snapshot time (NOT at runner-load time)."
+      }
+    }
+  },
+  "api_proxy_provider": {
+    "endpoint": "",
+    "model_alias": "qwen.qwen3-vl-235b-a22b",
+    "api_key_env_var": "PROXY_API_KEY",
+    "api_key_present": false,
+    "request_schema_version": "B-991-aws-hybrid-openai-tools-with-anthropic-url",
+    "schema_features": [
+      "tools=OpenAI-format",
+      "tool_choice=auto",
+      "logprobs=True",
+      "top_logprobs=2"
+    ],
+    "provider_immutable_sha_available": false,
+    "provider_immutable_sha_disclosure": "AWS API Gateway proxy \u2192 Bedrock does not expose model-side immutable SHA via current response headers. Operator-side env + capability probe fingerprint serves as commitment artifact.",
+    "latest_capability_probe_path": "docs/checkpoints/probes/proxy_capability_v2_223704.json",
+    "latest_capability_probe_mtime": 1779088207,
+    "latest_capability_probe_sha256": "738cb7d88e75cc71802bb2bb81d3a63bd68d74433df2b934764a8d672071487a"
+  },
+  "evaluator_code": {
+    "combined_sha256": "0b52ccd2aab6a71c230978f94fc8a2aaac195394dd49494b375302c872090793",
+    "per_file": {
+      "configs/_deprecated/exp_v2_B0_3mode_classifieds.yaml": {
+        "sha256": "ca0bd1d96fe759894413b621873447636836176243af3e81d39918e781e60ee8",
+        "size": 1385
+      },
+      "configs/_deprecated/exp_v2_B0_3mode_reddit.yaml": {
+        "sha256": "14258886eeceb7f7a4e84284bce23ce5ac533561cae86cbb2e913f1be658b9d9",
+        "size": 975
+      },
+      "configs/_deprecated/exp_v2_B0_3mode_shopping.yaml": {
+        "sha256": "bcb4282c992db5336d89beaea82b008944f8ba13ebb40aa0210995a16877ffaa",
+        "size": 981
+      },
+      "configs/_deprecated/exp_v2_B0_3mode_wa_reddit.yaml": {
+        "sha256": "2860e0e524295ce22777324789af5594ff4cfec175674919958c134ba1b80e7f",
+        "size": 1080
+      },
+      "configs/_deprecated/exp_v2_B0_3mode_wa_shopping.yaml": {
+        "sha256": "0f67a614c4c4c14d383914134caa644f7ef0e7b6ce0e4ec08dec8ce095c1927d",
+        "size": 1162
+      },
+      "configs/_deprecated/exp_v2_B0_3mode_wa_shopping_admin.yaml": {
+        "sha256": "2b903eb906a5a29916ae1b67b715c83d151b5a180c6c5be93a1f90da6b3c7988",
+        "size": 1198
+      },
+      "configs/_deprecated/exp_v2_qwen3vl4b_B1_baseline.yaml": {
+        "sha256": "93f49fe956672272a7b8ef69a26f8c6b65eefafea92e233775b93a64ea04c20b",
+        "size": 386
+      },
+      "configs/_deprecated/exp_v2_qwen3vl4b_B1_wa_baseline.yaml": {
+        "sha256": "c7d490e89a020b999f768dd569272cd4b954dcb3e39799d09f24a9290f6b521d",
+        "size": 580
+      },
+      "configs/exp_v2_B0_dom_classifieds.yaml": {
+        "sha256": "58359e4fbe6e77f43a4d4ab3f0e18f47e1f5e7582b1f62335acf542ebf1d2d1a",
+        "size": 1189
+      },
+      "configs/exp_v2_B0_dom_reddit.yaml": {
+        "sha256": "c4d72145b0193d4bfc783f497d3a22157fd07dea48be0a5007fccdeae782e112",
+        "size": 1174
+      },
+      "configs/exp_v2_B0_dom_shopping.yaml": {
+        "sha256": "104bb7cb6be2d443b96cb3c7cc1d92374c5cafc15a4a0ac64c889d42dc31379d",
+        "size": 1390
+      },
+      "configs/exp_v2_B0_dom_shopping_swatch_sanity.yaml": {
+        "sha256": "ef1705ef35fef93838616b7aad0b36c3d06540120266553f1a4c2f89e450238d",
+        "size": 1237
+      },
+      "configs/exp_v2_B0_dom_wa_reddit.yaml": {
+        "sha256": "60ac24ea0df5fb3817fa3ce1307bd9de8aa6cbc932c928b9d36800418b32577d",
+        "size": 1148
+      },
+      "configs/exp_v2_B0_dom_wa_shopping.yaml": {
+        "sha256": "c590a34b4d6d8ff46709dfb080d5cf0514de50b40d60e003f0ece887ad4992f3",
+        "size": 1158
+      },
+      "configs/exp_v2_B0_dom_wa_shopping_admin.yaml": {
+        "sha256": "c2e284c25962af9e1c29ad3c1b6a53f5b5774e1488a87c7805d6ef26a8a24049",
+        "size": 1188
+      },
+      "configs/exp_v2_B0_phantom_prompt_classifieds.yaml": {
+        "sha256": "ab25eda13b0f69dbfcfceb7dae1cff85ff7997ff470c1b305dd4c8b41f7e7013",
+        "size": 1233
+      },
+      "configs/exp_v2_B0_phantom_prompt_reddit.yaml": {
+        "sha256": "be2997c4f312d9b000b5e80d72bfd17023f462c158e6392381e13c607ab68fb7",
+        "size": 1151
+      },
+      "configs/exp_v2_B0_phantom_prompt_shopping.yaml": {
+        "sha256": "b561cf82dd0d8dd6c1f238cb81544be751beeb29f384d4cd88675c4364472bb0",
+        "size": 1106
+      },
+      "configs/exp_v2_B0_phantom_prompt_wa_reddit.yaml": {
+        "sha256": "af07217218367451cd40cb2bbae1ff5304b408c370abea4582d0be833f929990",
+        "size": 1181
+      },
+      "configs/exp_v2_B0_phantom_prompt_wa_shopping.yaml": {
+        "sha256": "9b5cfe0b3c92634477c5fa2b572b3090ab72753942b571b17b8e5cd9b68d5ad7",
+        "size": 1191
+      },
+      "configs/exp_v2_B0_phantom_prompt_wa_shopping_admin.yaml": {
+        "sha256": "1e9a1dfe3ed15bd1f1db75372fcd4d4c3ca94caf3c1b20e1a0e93fc6acf35a9f",
+        "size": 1221
+      },
+      "configs/exp_v2_B0_phantom_som_classifieds.yaml": {
+        "sha256": "d62ca222f9878d8c74ec45e5e234f9b3dab661396bdf7f5966997470e70676f5",
+        "size": 1083
+      },
+      "configs/exp_v2_B0_phantom_som_reddit.yaml": {
+        "sha256": "db7f90991ecc7deb85a82aa51f17f667a02141cef5aa87fd357b61a0f9fe90b0",
+        "size": 1063
+      },
+      "configs/exp_v2_B0_phantom_som_shopping.yaml": {
+        "sha256": "bab3fa5963dc175911acba6a42de0c3bc887b03f21fc37c78711c986462b5e68",
+        "size": 988
+      },
+      "configs/exp_v2_B0_phantom_som_wa_reddit.yaml": {
+        "sha256": "fa9438ca881e26836a9eb9b373694f5f67fd23c92d8d93e11d4374a69e3a09b5",
+        "size": 1104
+      },
+      "configs/exp_v2_B0_phantom_som_wa_shopping.yaml": {
+        "sha256": "0e0e579b6a3f8374bcbc08b6863b42c7c0ace51e4792d2065631042e878ecd4c",
+        "size": 1028
+      },
+      "configs/exp_v2_B0_phantom_som_wa_shopping_admin.yaml": {
+        "sha256": "7e2bd3fb6b9a5b30485b07d559390d9a506fff52dbb61212f2eedf148ca9a7e4",
+        "size": 1058
+      },
+      "configs/exp_v2_B0_phantom_text_classifieds.yaml": {
+        "sha256": "acbcc69d4d90c1e21b854c87832b3f847b622f917fcd19c89adc54ef27a71e68",
+        "size": 1096
+      },
+      "configs/exp_v2_B0_phantom_text_reddit.yaml": {
+        "sha256": "39eed9048cec2ec22289ed67ee902c3d6a1ff09d17f23c83fb78c378e5b1667a",
+        "size": 1077
+      },
+      "configs/exp_v2_B0_phantom_text_shopping.yaml": {
+        "sha256": "860f27fe2c01525b1dff9fff765d1c9287547d79b27b9a040c22cd54af126b0b",
+        "size": 969
+      },
+      "configs/exp_v2_B0_phantom_text_wa_reddit.yaml": {
+        "sha256": "9c89293383febbf302278e11b1ed9f62b10a20cf36e83003ea342b7aa0bffaa9",
+        "size": 1115
+      },
+      "configs/exp_v2_B0_phantom_text_wa_shopping.yaml": {
+        "sha256": "bd6409bc2c6544cf57eff4865d635569abbd73a1f2559a0a2f3c100f7625872f",
+        "size": 1039
+      },
+      "configs/exp_v2_B0_phantom_text_wa_shopping_admin.yaml": {
+        "sha256": "aeccc0e232707c9c6bbead84795f2ec3d80b1c4fb4f568df865f6e6744ea480d",
+        "size": 1069
+      },
+      "configs/exp_v2_B0_router_learned_classifieds.yaml": {
+        "sha256": "643a82faf41193ce8975fdc6a98cf3e15d5990ea256831fb82bb6fafca1c2ed2",
+        "size": 3448
+      },
+      "configs/exp_v2_B0_router_learned_reddit.yaml": {
+        "sha256": "24c9febaf9df2f14500f84f3ec6b4f1db74c58c4397dbc81c7e432bb38099f19",
+        "size": 1603
+      },
+      "configs/exp_v2_B0_som_classifieds.yaml": {
+        "sha256": "5bf8ce5630933b7c3bfc26357fc33afb700e5be8fdbd223da53dd877708fc501",
+        "size": 1189
+      },
+      "configs/exp_v2_B0_som_reddit.yaml": {
+        "sha256": "050d8d4a33ce8cd6b16cd9c7a3d50bd1d742a1347fe83378cda27566e86d8808",
+        "size": 1174
+      },
+      "configs/exp_v2_B0_som_shopping.yaml": {
+        "sha256": "d539bf4c593842e3bcf27346bf7d38d7df439a153d1b9ae448609d23294df3de",
+        "size": 1390
+      },
+      "configs/exp_v2_B0_som_wa_reddit.yaml": {
+        "sha256": "e14e61e8292375fa8cf2d3433d7b0f7cbe32145a458b03ddcd9e146ca3f866a7",
+        "size": 1148
+      },
+      "configs/exp_v2_B0_som_wa_shopping.yaml": {
+        "sha256": "d16ecc9e1774774b814fda79062ea55b2a3e06fc692373b681488862b7ec8fb7",
+        "size": 1158
+      },
+      "configs/exp_v2_B0_som_wa_shopping_admin.yaml": {
+        "sha256": "478eac16b5f147d35f358dfd91381c74cd99cd2a745a9557449564fc540fc9f1",
+        "size": 1188
+      },
+      "configs/exp_v2_B0_vision_classifieds.yaml": {
+        "sha256": "92dacb4f1f26fa14013135631d553488887ee6111efd47414f5806cd9457f2fa",
+        "size": 1198
+      },
+      "configs/exp_v2_B0_vision_reddit.yaml": {
+        "sha256": "b285b444a4aaf638b4c927646b15c9b7e56860e3bf5adbed061e68d2898c13f6",
+        "size": 1183
+      },
+      "configs/exp_v2_B0_vision_shopping.yaml": {
+        "sha256": "e42bea479d4c09b7f224354fbd4d5b022a8653de0637668eac95fb547333385e",
+        "size": 1411
+      },
+      "configs/exp_v2_B0_vision_wa_reddit.yaml": {
+        "sha256": "44aa2e3c54e14bb8a8d33b4257a58962a9f487a081ee2cb1932f827c3a79d641",
+        "size": 1157
+      },
+      "configs/exp_v2_B0_vision_wa_shopping.yaml": {
+        "sha256": "c384a7fbfac75febcc5f6f8771b06f367b43f5c937412f18858d8ce96caae07d",
+        "size": 1167
+      },
+      "configs/exp_v2_B0_vision_wa_shopping_admin.yaml": {
+        "sha256": "fb90c69b5e20cd5a37eb30c20032de87f3533d75fc41ac7e0df98b99b06365e9",
+        "size": 1197
+      },
+      "configs/exp_v2_B1_dom_classifieds.yaml": {
+        "sha256": "1b018c75fbe10f49873685d4dcb2daf5aa996c934fa9e69838a5db75c1b8d12e",
+        "size": 733
+      },
+      "configs/exp_v2_B1_dom_reddit.yaml": {
+        "sha256": "e6f42a4069ace7e7a88503a81606945990b0a2a775261afe8c6c903ae89f50f9",
+        "size": 718
+      },
+      "configs/exp_v2_B1_dom_shopping.yaml": {
+        "sha256": "7824b43e6f0fe646440fe73746eb88eb90a0967bdbf21859be82566537f40764",
+        "size": 445
+      },
+      "configs/exp_v2_B1_dom_wa_reddit.yaml": {
+        "sha256": "4ead9d0526c06cd8c362de3da45e5877660d3c128bcbfb8c423b840caf5c3232",
+        "size": 692
+      },
+      "configs/exp_v2_B1_dom_wa_shopping.yaml": {
+        "sha256": "d28486a978f457ea1122353b4c873fd4c0093010666dfe7e6f96eca6c7b6e016",
+        "size": 602
+      },
+      "configs/exp_v2_B1_dom_wa_shopping_admin.yaml": {
+        "sha256": "0e44c0b779189d67ea645391446fcd48403fddd327a3456f05de70879bd83c80",
+        "size": 632
+      },
+      "configs/exp_v2_B1_phantom_prompt_classifieds.yaml": {
+        "sha256": "2082455bfbe5fd88f0e07fe0d5985b597e748649d233878e5df1b4a1e51c4253",
+        "size": 826
+      },
+      "configs/exp_v2_B1_phantom_prompt_reddit.yaml": {
+        "sha256": "68ea9555902475966ac520aa4c3edbdd43e44241e9ea7cf9985d1fe9b1c06648",
+        "size": 704
+      },
+      "configs/exp_v2_B1_phantom_prompt_shopping.yaml": {
+        "sha256": "a772146ade0068cd6a9c23f3cf647529d6dcd44cdb44422353575616c18fff0e",
+        "size": 507
+      },
+      "configs/exp_v2_B1_phantom_prompt_wa_reddit.yaml": {
+        "sha256": "69600b7ee50f764cee162e3136da999877050159fdcf057d971607087957c372",
+        "size": 725
+      },
+      "configs/exp_v2_B1_phantom_prompt_wa_shopping.yaml": {
+        "sha256": "b4708eeea651349504f4ab263c790be1fa5d4f00ef32549c11d7b376090ffa9f",
+        "size": 635
+      },
+      "configs/exp_v2_B1_phantom_prompt_wa_shopping_admin.yaml": {
+        "sha256": "7f7cf187653607d2e72e46e15792880cdaf930bbd4e2290445a4c21d2629ccc7",
+        "size": 665
+      },
+      "configs/exp_v2_B1_phantom_som_classifieds.yaml": {
+        "sha256": "1834929acc389528327360d1c739aa8b2badd3c95041b78beb370b68a516a095",
+        "size": 647
+      },
+      "configs/exp_v2_B1_phantom_som_reddit.yaml": {
+        "sha256": "78bbce8cbaacdfbb4480f1044941043ca0b7f02df3ce27b94fec25525e42b4b3",
+        "size": 632
+      },
+      "configs/exp_v2_B1_phantom_som_shopping.yaml": {
+        "sha256": "b9532b6a09d332fe44782f61381f13b698c3983adafe4106f873142d9082d1c7",
+        "size": 425
+      },
+      "configs/exp_v2_B1_phantom_som_wa_reddit.yaml": {
+        "sha256": "73b4547a8cd287474622b3748e85dc71f21ac6368a75dd543a3a8834ab862a40",
+        "size": 606
+      },
+      "configs/exp_v2_B1_phantom_som_wa_shopping.yaml": {
+        "sha256": "f1eda9ba44fae1a4776d79001416f4b9b13adad519c1364aa75630a7976ffc77",
+        "size": 518
+      },
+      "configs/exp_v2_B1_phantom_som_wa_shopping_admin.yaml": {
+        "sha256": "01da64f6118c544176e3a541650209a1b6afa72f53fdbfb4c01e2ad72d224773",
+        "size": 554
+      },
+      "configs/exp_v2_B1_phantom_text_classifieds.yaml": {
+        "sha256": "e988db38cc8891a9a767369b6bdf4aa1f345386c44b2fa4ba0a7e3f5f072d36f",
+        "size": 863
+      },
+      "configs/exp_v2_B1_phantom_text_reddit.yaml": {
+        "sha256": "a6a6f52d02ecb77e645432edb896c7a900956f9ff87424ab4e6d4530dd2747a9",
+        "size": 650
+      },
+      "configs/exp_v2_B1_phantom_text_shopping.yaml": {
+        "sha256": "eea8a89e325d233bde51b63715f90474bdb1de80ec86fccc9e2e149695fa4c17",
+        "size": 498
+      },
+      "configs/exp_v2_B1_phantom_text_wa_reddit.yaml": {
+        "sha256": "a8484272c43e4b417b7609f9001dfbd867f986bff3cc12bed1da1237da1acd0e",
+        "size": 656
+      },
+      "configs/exp_v2_B1_phantom_text_wa_shopping.yaml": {
+        "sha256": "cb0ab5038941b85f116b344242d1e0177d8e9b4aabc3bba839825cdcf3517b82",
+        "size": 568
+      },
+      "configs/exp_v2_B1_phantom_text_wa_shopping_admin.yaml": {
+        "sha256": "b5a48aaa9a525f31f93d253a347105049768910b55dd612d50e0fcc21f3b9bc8",
+        "size": 604
+      },
+      "configs/exp_v2_B1_router_learned_classifieds.yaml": {
+        "sha256": "192d8bfb9b76111e379c7ae119acc298e1ebcbc3a524a0b2902122b8a7bb424c",
+        "size": 1134
+      },
+      "configs/exp_v2_B1_router_learned_reddit.yaml": {
+        "sha256": "77d268615cdfff962c14ad34eb702ac84c69eab1d9f06fe4853a02a043bb0d99",
+        "size": 1109
+      },
+      "configs/exp_v2_B1_som_classifieds.yaml": {
+        "sha256": "bcb8cd7031c2ef2c2cd59f5d729b481eda8c07ab2c60e8bb744fb18cc2ce6057",
+        "size": 733
+      },
+      "configs/exp_v2_B1_som_reddit.yaml": {
+        "sha256": "84e41924aab7ac91334da31d43f8bda952167b573665a219635ea6cc523e387e",
+        "size": 718
+      },
+      "configs/exp_v2_B1_som_shopping.yaml": {
+        "sha256": "f07e3ee2db8efb88a6c77abd15aeab72642acfd667ac891eae0fad9a1cf090f5",
+        "size": 445
+      },
+      "configs/exp_v2_B1_som_wa_reddit.yaml": {
+        "sha256": "da5b7dd72c920766f21f9366553db3c87dd6a19909a35d2ac2720bca567f8b55",
+        "size": 692
+      },
+      "configs/exp_v2_B1_som_wa_shopping.yaml": {
+        "sha256": "97df914f297a8e9d42229ab13804a3ad8d837bc9ea5f45e74ba33c8836da0498",
+        "size": 602
+      },
+      "configs/exp_v2_B1_som_wa_shopping_admin.yaml": {
+        "sha256": "c538fd91b83092c55bada250bdb5a88b94486990f86d5ced0c86068616ce1986",
+        "size": 632
+      },
+      "configs/exp_v2_B1_vision_classifieds.yaml": {
+        "sha256": "9ef58a4cdaffb6676d63426c3c87d9cda277fded34067f24a12c6187b2bb6615",
+        "size": 742
+      },
+      "configs/exp_v2_B1_vision_reddit.yaml": {
+        "sha256": "647a7f9c7b57d1308f263d7489d958cdf5b2637b848e21d9535e126b7da31c6b",
+        "size": 727
+      },
+      "configs/exp_v2_B1_vision_shopping.yaml": {
+        "sha256": "6c40aff2def6714db1e01afe53b1afdc3a413a9c1dee7fdd4527eef952a611b8",
+        "size": 454
+      },
+      "configs/exp_v2_B1_vision_wa_reddit.yaml": {
+        "sha256": "50b065effd407499be7b6554eb3a9097ee3523fa29e7c31a8eaa2fbc1423c22e",
+        "size": 701
+      },
+      "configs/exp_v2_B1_vision_wa_shopping.yaml": {
+        "sha256": "0d5ef9fe5a60d4bf467e3fe9f68fa25a12ca0f64bef903b2736e56877b376ef1",
+        "size": 611
+      },
+      "configs/exp_v2_B1_vision_wa_shopping_admin.yaml": {
+        "sha256": "cf6640b01143201cc2c9a95160e98ff2ee590213d4a09e8917ebebc2ad79333d",
+        "size": 641
+      },
+      "configs/exp_v2_B2_dom_classifieds.yaml": {
+        "sha256": "36338828e973fa733011194c15a329826e8fb8ff8ff2e634c61bac5b090a8f4b",
+        "size": 765
+      },
+      "configs/exp_v2_B2_dom_reddit.yaml": {
+        "sha256": "b7e74885bf4ccdf358939b03182c529794614c7b7722e06d270a51f944f15ac6",
+        "size": 750
+      },
+      "configs/exp_v2_B2_dom_shopping.yaml": {
+        "sha256": "25af4b7c3fd3ccf02d097f85dd6e23f61d90982ebda549d31593d232da87deba",
+        "size": 704
+      },
+      "configs/exp_v2_B2_dom_wa_reddit.yaml": {
+        "sha256": "dc31f40ecca035edc191a7a229ab83cf72dc2bf3d840b42f8d3c97091a6c73e4",
+        "size": 698
+      },
+      "configs/exp_v2_B2_dom_wa_shopping.yaml": {
+        "sha256": "0896133075657f1d95d9214a923b006e6e91a8be5f60bcce61394f8102e54d0f",
+        "size": 608
+      },
+      "configs/exp_v2_B2_dom_wa_shopping_admin.yaml": {
+        "sha256": "3130f4a2b1bed89c5596332f665a156d7fd6e14d24a3ebac57979943dde508c4",
+        "size": 638
+      },
+      "configs/exp_v2_B2_phantom_prompt_classifieds.yaml": {
+        "sha256": "780181ca2b42479215a981703da5e8ccc97ad91c9e76f7feec663dfda7666b38",
+        "size": 820
+      },
+      "configs/exp_v2_B2_phantom_prompt_reddit.yaml": {
+        "sha256": "424fc1c664ed767741b4db05b68d85ead0259a676747c9ea4852c94a9e89081c",
+        "size": 805
+      },
+      "configs/exp_v2_B2_phantom_prompt_shopping.yaml": {
+        "sha256": "356c9e6f6a54e0734a119711b3db375c8aab304eac8ff463c231eb2db55c3f8c",
+        "size": 737
+      },
+      "configs/exp_v2_B2_phantom_prompt_wa_reddit.yaml": {
+        "sha256": "6c767b4d90fad4c6b94f3111a104d1c9e82d478d707c900bfc31a4359e0c63c9",
+        "size": 731
+      },
+      "configs/exp_v2_B2_phantom_prompt_wa_shopping.yaml": {
+        "sha256": "4f7e293ce6792898ce6b9d567bd820d7baa8b55913980f782b0fccb93f3cd801",
+        "size": 641
+      },
+      "configs/exp_v2_B2_phantom_prompt_wa_shopping_admin.yaml": {
+        "sha256": "20b26e7d0f075184bfed0f8108903dc962e6dcc7b733980105f906f733b2fde1",
+        "size": 671
+      },
+      "configs/exp_v2_B2_phantom_som_classifieds.yaml": {
+        "sha256": "55d86f5d733a7b5774a22e70a42d38db1a99098335495a9d8fd18485e478dcf9",
+        "size": 793
+      },
+      "configs/exp_v2_B2_phantom_som_reddit.yaml": {
+        "sha256": "0a1bb209b1bbcb970d450c6547dbbdc9408f89fda73f7cd06dbd8774ab1dd5c2",
+        "size": 778
+      },
+      "configs/exp_v2_B2_phantom_som_shopping.yaml": {
+        "sha256": "eb80cc4a933959bb32a9edd2a099145806cfafed66548d1ac8569218c78a51ef",
+        "size": 724
+      },
+      "configs/exp_v2_B2_phantom_som_wa_reddit.yaml": {
+        "sha256": "a0badfbfe0db35aacfedec1734152a2ad250168f21f1ff794d6714c96a286b61",
+        "size": 689
+      },
+      "configs/exp_v2_B2_phantom_som_wa_shopping.yaml": {
+        "sha256": "fae15a8f0a3bafdc56460b61237cd380ef91a48bdcd457bddadd93b2d9d5ccdd",
+        "size": 601
+      },
+      "configs/exp_v2_B2_phantom_som_wa_shopping_admin.yaml": {
+        "sha256": "84e650a9e355669eb3d8871e1f9ce44d44f6a9b2a5e11825a37f05e747d53407",
+        "size": 659
+      },
+      "configs/exp_v2_B2_phantom_text_classifieds.yaml": {
+        "sha256": "61f3f7cc250efc186873ac539c6666f409740aff1b599c10c6be59b7c1014db6",
+        "size": 737
+      },
+      "configs/exp_v2_B2_phantom_text_reddit.yaml": {
+        "sha256": "a5d6ad64d5c25fd29ccef9322b8981157195c30b3d55496cc458ac11c145d244",
+        "size": 722
+      },
+      "configs/exp_v2_B2_phantom_text_shopping.yaml": {
+        "sha256": "e6df6b2edfd7b9adae2b53ce5a2c54b641e62d484546ce7b5d51e2e7ba8b3774",
+        "size": 780
+      },
+      "configs/exp_v2_B2_phantom_text_wa_reddit.yaml": {
+        "sha256": "7b42d5ce9489d8454b788a17552e56d458d2dbcfb3557597bd3bec0d14cf08a2",
+        "size": 654
+      },
+      "configs/exp_v2_B2_phantom_text_wa_shopping.yaml": {
+        "sha256": "c329048c2e82ae8300965548b86af3aa811016d4291d6c6dafe9b14b0237397d",
+        "size": 566
+      },
+      "configs/exp_v2_B2_phantom_text_wa_shopping_admin.yaml": {
+        "sha256": "77e71c448ed0f310785cad522720201c5eee7bcfc912babd3d8b017058888edf",
+        "size": 624
+      },
+      "configs/exp_v2_B2_router_learned_classifieds.yaml": {
+        "sha256": "e0b25d63f50fce573beaf7815d314ce9386b66fad0ce3b128a41ac46509e984c",
+        "size": 1502
+      },
+      "configs/exp_v2_B2_router_learned_reddit.yaml": {
+        "sha256": "7629daf9d2c98f9b479ac3b4d9fb0cddf3444f9a15f8c3f936c2dc1288d6522d",
+        "size": 1461
+      },
+      "configs/exp_v2_B2_som_classifieds.yaml": {
+        "sha256": "c1aa5b83736e6855cc4b2b7032f6dde3735ca82985407a6da426415d8efec3fc",
+        "size": 765
+      },
+      "configs/exp_v2_B2_som_reddit.yaml": {
+        "sha256": "e1aa9eae7beeeecbc1bd7464b0497584b2b1ca0fc7822ef02a51055c982c1f93",
+        "size": 750
+      },
+      "configs/exp_v2_B2_som_shopping.yaml": {
+        "sha256": "51abdcb00e61ba5800c155cd42b0316ece1c4c4f402409f24ee4f6178a3bc095",
+        "size": 704
+      },
+      "configs/exp_v2_B2_som_wa_reddit.yaml": {
+        "sha256": "a7d05e2dd80efe018e6f72b1c3731ee06f9950140c0eb76be1676aa9948be765",
+        "size": 698
+      },
+      "configs/exp_v2_B2_som_wa_shopping.yaml": {
+        "sha256": "50f525dce338ceddc78b3fa39b358367c06b598a4f1a1e6be2f49412e36f3c72",
+        "size": 608
+      },
+      "configs/exp_v2_B2_som_wa_shopping_admin.yaml": {
+        "sha256": "4f43d189c2623c26337962fa5d198672163b9183a79cc6fa60ff15822205f606",
+        "size": 638
+      },
+      "configs/exp_v2_B2_vision_classifieds.yaml": {
+        "sha256": "6b891409940a20b06b839f19dda4877651157589a1f034db1b48b9b1835a60c2",
+        "size": 780
+      },
+      "configs/exp_v2_B2_vision_reddit.yaml": {
+        "sha256": "c7f3be0fb4a8c2881579ea4cf21fb0ae563e75d7efec88626c6c72a1b6bf62b1",
+        "size": 765
+      },
+      "configs/exp_v2_B2_vision_shopping.yaml": {
+        "sha256": "81393e009aee29b1dcaf9a16079884896a8aca6ff04d97fd931e1f82032ce651",
+        "size": 713
+      },
+      "configs/exp_v2_B2_vision_wa_reddit.yaml": {
+        "sha256": "81fd4128ccc501f8db89304cab1538494f9415c00c6f36c465335498b50c1b20",
+        "size": 707
+      },
+      "configs/exp_v2_B2_vision_wa_shopping.yaml": {
+        "sha256": "39fdcecbbf4aada092810ecdec0aaab3c70aa48f911ccb6290583fc8cbe26441",
+        "size": 617
+      },
+      "configs/exp_v2_B2_vision_wa_shopping_admin.yaml": {
+        "sha256": "d57515674a5d076a7a1691224f73a39f3dd6a6e0c06503c0eced6355001198c1",
+        "size": 647
+      },
+      "configs/exp_v2_base.yaml": {
+        "sha256": "0edf744820b26e49d3ffdb2f4929b1d0d7b9156c3a77cd4f726eef36dd8b7dfd",
+        "size": 8105
+      },
+      "configs/exp_v2_phase2.yaml": {
+        "sha256": "6aa7d355fef669ad3cc8670fcc9238f479a0fb6b0e1cbb579501b3793fe06a95",
+        "size": 805
+      },
+      "configs/exp_v2_phase3.yaml": {
+        "sha256": "00b4dcc35edcf2a96dc53443510721db88d194dfc82a515cefb5d6b5fbbf8a8a",
+        "size": 882
+      },
+      "configs/exp_v2_wa_base.yaml": {
+        "sha256": "d1fab82af7cc4806b2a846b5a1ba037b2bbaebb84432bb7fab5c911043aaccee",
+        "size": 815
+      },
+      "external/visualwebarena/browser_env/actions.py": {
+        "sha256": "3d5d9eb10b66d475dcd68fe49fcec0d8109be9c8e4331d11aa25cba2b09cb451",
+        "size": 71906
+      },
+      "external/visualwebarena/browser_env/processors.py": {
+        "sha256": "6c426672525d7b508f2370d2738941853d0d5aa102e9a9990b3f1dee322c90e5",
+        "size": 54596
+      },
+      "external/visualwebarena/config_files/generation_manifest.json": {
+        "sha256": "12d040f4dd90908347fbd89e4a26e3cb89713f7dc09b8f552ce65e5cc57d9f5d",
+        "size": 1613
+      },
+      "external/visualwebarena/evaluation_harness/evaluators.py": {
+        "sha256": "00419191831d8a4d5260b7e742b964992acb95c4846864f46b7017ef8ca89f34",
+        "size": 24229
+      },
+      "external/visualwebarena/evaluation_harness/helper_functions.py": {
+        "sha256": "610ef88ec9e94215e42dd31ac25dd022a44b6f3c023ef86f428b48b35102cefa",
+        "size": 24623
+      },
+      "p79/agents/gemma3vl_agent.py": {
+        "sha256": "8331bce66d78a3ddacd2733e2b843a4a1b274cf175d277b6d73e4027148759ac",
+        "size": 15701
+      },
+      "p79/agents/proxy_api_agent.py": {
+        "sha256": "d9fa3620f4e6c71ab22731558eaf9b555084a032ac3f87637ac2490092e530c1",
+        "size": 47424
+      },
+      "p79/agents/qwen3vl_agent.py": {
+        "sha256": "518f78c57eec4feb0e09e7dbcd1d2ba1734ffec26891a58d5780d4dc8e05a0c6",
+        "size": 18198
+      },
+      "p79/backends/api_proxy.py": {
+        "sha256": "0bd0b57ec77fab72d52c9c5822fc8b13a8255a04b429eef82d5f4a0669547843",
+        "size": 12861
+      },
+      "p79/backends/local_gemma.py": {
+        "sha256": "8b6a6708cb45c1bc5715529a515a0b04e2d36fba371a3b94aea1082bba750c46",
+        "size": 7129
+      },
+      "p79/backends/local_qwen.py": {
+        "sha256": "5da32e80228ec0ffbd4a9d2500861bb1436281efb2d339620838e6b6373d9847",
+        "size": 7792
+      },
+      "p79/experiment/analysis.py": {
+        "sha256": "a94ed602c58bccadfe10d232c2298f2f088e78410750ce69a095aa7a3effbcff",
+        "size": 109539
+      },
+      "p79/experiment/environment.py": {
+        "sha256": "9a2dc9c293e14c260b971c589921a2e42a50de6e6a85a355632efc93a23029d5",
+        "size": 24149
+      },
+      "p79/experiment/metrics.py": {
+        "sha256": "9ec7409232868eb61dc7aa1e36e9c0e5c9ce6ef20db539419b373011b0911864",
+        "size": 44033
+      },
+      "p79/experiment/tasks.py": {
+        "sha256": "f6d93086112171ab6f11ed3b484fce3ba2da4698053863a39997fb44405324a6",
+        "size": 7471
+      },
+      "p79/utils/auth_refresh.py": {
+        "sha256": "1994b4d6701f97c80ac7737e7f93440da6661b68a274f68b316974b4bd3d2f06",
+        "size": 20600
+      }
+    },
+    "files_count": 143,
+    "schema_version": "2026-05-17-a1.16-re-canonical-v3"
+  },
+  "vwa_sbom": {
+    "locked_head_sha": "ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927",
+    "locked_upstream_base": "89f5af29305c3d1e9f97ce4421462060a70c9a03",
+    "locked_chain_sha256": "752caebdc6bd84761b2f308331f21241a9b4a28de65b46ff0007ef27d8c72778",
+    "head_sha": "ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927",
+    "upstream_base_sha": "89f5af29305c3d1e9f97ce4421462060a70c9a03",
+    "tree_hash_chain_sha256": "752caebdc6bd84761b2f308331f21241a9b4a28de65b46ff0007ef27d8c72778",
+    "head_match": true,
+    "base_match": true,
+    "chain_match": true,
+    "match_lock": true
+  },
+  "reference_images_sha256": {
+    "combined_sha256": "3df83c3e09a1c9bf42545dc5f62f9ba3ad686c9465345c9c53c2f06d1783d3e5",
+    "files_count": 45,
+    "per_file": {
+      "external/visualwebarena/coco_images/000000000285.jpg": "f3a2974ce3686332609124c70e3e6a2e3aca43fccf1cd1bd7c5c03820977f57d",
+      "external/visualwebarena/coco_images/000000022371.jpg": "7023b465285e7fcc25c9272a9b24efc5df076ad982513ff6dec4c3c7842e734e",
+      "external/visualwebarena/coco_images/000000023781.jpg": "085b1c7f25bf1d149b6dff82dfdb0a83fbf6e875c01d5d374070eb582aada80e",
+      "external/visualwebarena/coco_images/000000024567.jpg": "44891e1a27e3a262a3d879fa27d2749b31ca71d648f800952f4dccc248bc3743",
+      "external/visualwebarena/coco_images/000000029675.jpg": "59647741cd07304fd4ef6309bf4707c6abf96bc8e654ce632be41f590e5cf65d",
+      "external/visualwebarena/coco_images/000000029984.jpg": "1c1ea8336e8c0e5baa9e6ebd7c732aa49b7b30e411fd9cd97fcc3ded654777a3",
+      "external/visualwebarena/coco_images/000000039551.jpg": "4c84a652af01f02005d2116c351bdadcb1b82445c2fae9cd47adaccf6470a136",
+      "external/visualwebarena/coco_images/000000048153.jpg": "b83b9e68be063e9049ed73374e3c52ef6d401fa3bcefc38d8c49c9ac82a64d49",
+      "external/visualwebarena/coco_images/000000048396.jpg": "7bcd2860143837c1dd81c63236d02526e832ba83f181162f101f232dff0b35f4",
+      "external/visualwebarena/coco_images/000000048924.jpg": "7e4db164281de37dafa6d3a4e861f6777d0202661e92d11fb2b739e39fa8c391",
+      "external/visualwebarena/coco_images/000000050331.jpg": "2b2f516489343749b236c3c834831dfb82bad6fe053585717a0dd53964f234c4",
+      "external/visualwebarena/coco_images/000000058539.jpg": "217377804c1aa61a53a209a38c5951b38de33d50d612a0ab299b3ff8912cde10",
+      "external/visualwebarena/coco_images/000000058705.jpg": "8daf36eb8c1d557221bc85ea0cfdb2e8a83747f26e0c91b1f939d50f4713697b",
+      "external/visualwebarena/coco_images/000000060899.jpg": "57c62f60ea71b9d40d33fa94635153fc02b1eec74b167324e874ee2ffb12ecab",
+      "external/visualwebarena/coco_images/000000064574.jpg": "77b300df5857acb1211c25f346b7ee3ed01541052e797a6af7e7a57a3f9f488d",
+      "external/visualwebarena/coco_images/000000064718.jpg": "23311e201fadb5ba2bd9a0d6cac209b1f91ce946362ef7100ba47993b2822ff4",
+      "external/visualwebarena/coco_images/000000066771.jpg": "82e0b9ed0511a74ebef3dabcb3fbe37e9d9b7dc5a6fa41eec60f1817ce2374ff",
+      "external/visualwebarena/coco_images/000000084477.jpg": "182bab08d6173f7d044f291b2493833dcd7ce61f54bd83e0ecfc2e58b22e33b2",
+      "external/visualwebarena/coco_images/000000097278.jpg": "dd79077cea11398cd456ee48f7f1124265881a75eb3459c1f527681d1d859590",
+      "external/visualwebarena/coco_images/000000102805.jpg": "66e6c4530c4a84e97b77bf32227f5f7dfebb1c22accb0e7fa5dbd009308a8c0a",
+      "external/visualwebarena/coco_images/000000136772.jpg": "242886836ee682d105fdfac293c7eaf234c99d557a4ec7426c533fc6a66952fe",
+      "external/visualwebarena/coco_images/000000161032.jpg": "8c57b1f9042b59d09a82cfea238c0f11bca7ed54ad57a52c5a24b7b59c7b556e",
+      "external/visualwebarena/coco_images/000000162415.jpg": "e94ae20141f20ad6223071cff58cef36ab31fb0013fa741c1b69f5c0e77004b8",
+      "external/visualwebarena/coco_images/000000163257.jpg": "9504f1c6b744bac92a9072750b9b27e223e707798ef1a6e14afdbd867113e9c0",
+      "external/visualwebarena/coco_images/000000163682.jpg": "ae6c017e2766e46fc7f2177f023c6696c3fc6cc1978c0f4c6544e8e25ad956e0",
+      "external/visualwebarena/coco_images/000000166768.jpg": "40c8b4f9a15f7687b871d3f69964597530b678aaece1fbe4be4a9603d5f6f216",
+      "external/visualwebarena/coco_images/000000167240.jpg": "91454081895eea6698362d6494abe9dd6edc433b208a7d53d18eeedf73ac3d80",
+      "external/visualwebarena/coco_images/000000167353.jpg": "8e6737773e7548e3fc299c7dc5e255b5997c0b05e08423f016b277719e8232a0",
+      "external/visualwebarena/coco_images/000000172595.jpg": "faa06206531e26d29bed2d1ecca535d5496a017e1e88a7329f19bf4a5574a83b",
+      "external/visualwebarena/coco_images/000000173008.jpg": "57e4391ce5b3b06e3b778342e9c4272a9a4a93e9fbb8ab8270f4d0c4dfd3e5c5",
+      "external/visualwebarena/coco_images/000000175443.jpg": "a4de35a8792c8a53681720f87baa92ab42d8e2e78894a17c764209f65b58a868",
+      "external/visualwebarena/coco_images/000000176232.jpg": "82d3a0296919bc33cacde6f3e3052106eb8ddfbee3d679effdf9313e32819a93",
+      "external/visualwebarena/coco_images/000000286708.jpg": "a7b888fd1076cc9816e78e96ecb94e7a346e740d578af0dcbc037319944c1bc3",
+      "external/visualwebarena/coco_images/000000324258.jpg": "6fb95a96ea95a740c2f9f576ac6b2011dea99104c9c99dda09779e40485d3c4f",
+      "external/visualwebarena/coco_images/000000324715.jpg": "3a349cbfd1cbe87b1f826d5b9da8bebf1e09bc23b12cd3dffd4e87263194f05b",
+      "external/visualwebarena/coco_images/000000327601.jpg": "758f92fcfe44c865eae2d8905cfff482a838255c037a3e2bb3b7c6cc5d53d64a",
+      "external/visualwebarena/coco_images/000000329041.jpg": "e7b699bba23d6e61b6e921c247d483e37e9d42cd3f18b1555490ad1b8a666f62",
+      "external/visualwebarena/coco_images/000000348012.jpg": "7b693d91d6a6565e8957be70cf50804c36d5ddd2f921c7505bb0e2d16594697f",
+      "external/visualwebarena/coco_images/000000399655.jpg": "29729500f1a82f409942df5fce7686bb30d8989020ebbe06904edbfdb313384d",
+      "external/visualwebarena/coco_images/000000415238.jpg": "d35dac662f828ab1b671f9acafaea3f1cc1992e231811806119fe3a063896471",
+      "external/visualwebarena/coco_images/000000433515.jpg": "46c6114bb103fc4f27736d206fd053f285f08ee92afeb02665a207c2b4e1e944",
+      "external/visualwebarena/coco_images/000000440507.jpg": "a92c7e1e6b6da7c415792275882c60ee02fe291458f27539b49250b987880eef",
+      "external/visualwebarena/coco_images/000000444275.jpg": "648979bae81b4d37a64c118c666ad9f382f581ee8d62ee6b8b2295458484a0d4",
+      "external/visualwebarena/coco_images/000000513484.jpg": "91f9c79736b62b292068765ea9171208a16eb92dff6488725671203c5fc1cdf6",
+      "external/visualwebarena/coco_images/000000515982.jpg": "fc2c2dd08b842a266f42c430ef39628e5e9f6638ff90fe860242a5569ec2922a"
+    },
+    "roots": [
+      "external/visualwebarena/coco_images"
+    ],
+    "schema_version": "2026-05-17-a1.16-re-canonical-v1"
+  },
+  "judge_env": {
+    "VWA_EVAL_MODEL": null,
+    "OPENAI_EVAL_MODEL": null,
+    "OPENAI_API_BASE": null,
+    "OPENAI_API_VERSION": null,
+    "VWA_EVAL_TEMPERATURE": null
+  },
+  "pip_freeze_lock": "accelerate==1.13.0\naiohappyeyeballs==2.6.1\naiohttp==3.8.5\naiolimiter==1.1.0\naiosignal==1.3.1\nannotated-doc==0.0.4\nannotated-types==0.5.0\nanyio==3.7.1\nappnope==0.1.3\nasttokens==2.4.0\nasync-timeout==4.0.3\nattrs==23.1.0\nav==17.0.1\nbackcall==0.2.0\nbeartype==0.12.0\nbeautifulsoup4==4.14.3\nbitsandbytes==0.49.2\nblinker==1.9.0\ncachetools==5.5.2\ncertifi==2023.7.22\ncfgv==3.4.0\ncharset-normalizer==3.2.0\nclick==8.3.3\ncloudpickle==2.2.1\ncmake==4.3.2\ncomm==0.1.4\ncontourpy==1.1.1\ncuda-bindings==12.9.4\ncuda-pathfinder==1.2.2\ncuda-toolkit==12.8.1\ncycler==0.12.1\ndatasets==4.8.5\ndebugpy==1.8.0\ndecorator==5.1.1\ndill==0.3.7\ndistlib==0.3.7\ndistro==1.9.0\nevaluate==0.4.6\nexceptiongroup==1.1.3\nexecnet==2.0.2\nexecuting==2.0.0\nFarama-Notifications==0.0.4\nfastjsonschema==2.18.1\nfilelock==3.12.2\nFlask==3.1.3\nfonttools==4.43.1\nfrozenlist==1.4.0\nfsspec==2023.6.0\ngoogle-api-core==2.15.0\ngoogle-auth==2.26.1\ngoogle-cloud-aiplatform==1.38.1\ngoogle-cloud-bigquery==3.14.1\ngoogle-cloud-core==2.4.1\ngoogle-cloud-resource-manager==1.11.0\ngoogle-cloud-storage==2.14.0\ngoogle-crc32c==1.5.0\ngoogle-resumable-media==2.7.0\ngoogleapis-common-protos==1.62.0\ngradio_client==0.5.2\ngreenlet==3.5.0\ngrpc-google-iam-v1==0.13.0\ngrpcio==1.74.0\ngrpcio-status==1.63.0rc1\ngymnasium==0.29.1\nh11==0.14.0\nhf-xet==1.5.0\nhttpcore==0.18.0\nhttpx==0.25.0\nhuggingface_hub==1.14.0\nidentify==2.5.30\nidna==3.4\nImageIO==2.37.3\niniconfig==2.0.0\nipykernel==6.25.2\nipython==8.16.1\nitsdangerous==2.2.0\njedi==0.19.1\nJinja2==3.1.2\njiter==0.14.0\njoblib==1.3.2\njsonschema==4.19.1\njsonschema-specifications==2023.7.1\njupyter_client==8.4.0\njupyter_core==5.4.0\nkiwisolver==1.4.5\nlazy-loader==0.5\nlit==18.1.8\nmarkdown-it-py==4.2.0\nMarkupSafe==2.1.3\nmatplotlib==3.8.0\nmatplotlib-inline==0.1.6\nmdurl==0.1.2\nmpmath==1.3.0\nmultidict==6.0.4\nmultiprocess==0.70.15\nmypy==0.991\nmypy-extensions==1.0.0\nnbclient==0.6.8\nnbformat==5.9.2\nnbmake==1.4.6\nnest-asyncio==1.5.8\nnetworkx==3.1\nnltk==3.8.1\nnodeenv==1.8.0\nnumpy==1.25.2\nnvidia-cublas-cu12==12.8.4.1\nnvidia-cuda-cupti-cu12==12.8.90\nnvidia-cuda-nvrtc-cu12==12.8.93\nnvidia-cuda-runtime-cu12==12.8.90\nnvidia-cudnn-cu12==9.19.0.56\nnvidia-cufft-cu12==11.3.3.83\nnvidia-cufile-cu12==1.13.1.3\nnvidia-curand-cu12==10.3.9.90\nnvidia-cusolver-cu12==11.7.3.90\nnvidia-cusparse-cu12==12.5.8.93\nnvidia-cusparselt-cu12==0.7.1\nnvidia-nccl-cu12==2.28.9\nnvidia-nvjitlink-cu12==12.8.93\nnvidia-nvshmem-cu12==3.4.5\nnvidia-nvtx-cu12==12.8.90\nopenai==1.3.5\nopencv-python==4.8.1.78\n-e git+https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents.git@797b45628df3adce000fd52b5b45a21e893cc925#egg=p79\npackaging==23.1\npandas==2.0.3\nparso==0.8.3\npexpect==4.8.0\npickleshare==0.7.5\npillow==12.1.1\npip==26.1.1\nplatformdirs==3.11.0\nplaywright==1.58.0\npluggy==1.3.0\npre-commit==3.0.1\nprompt-toolkit==3.0.39\npropcache==0.5.2\nproto-plus==1.27.1\nprotobuf==4.24.3\npsutil==5.9.5\nptyprocess==0.7.0\npure-eval==0.2.2\npy==1.11.0\npyarrow==24.0.0\npyasn1==0.6.3\npyasn1_modules==0.4.2\npydantic==2.4.2\npydantic_core==2.10.1\npyee==13.0.1\nPygments==2.16.1\npyparsing==3.1.1\npytest==7.1.2\npytest-asyncio==0.21.1\npytest-xdist==3.3.1\npython-dateutil==2.8.2\npytz==2023.3\nPyYAML==6.0.1\npyzmq==25.1.1\nqwen-vl-utils==0.0.14\nreferencing==0.30.2\nregex==2026.5.9\nrequests==2.34.2\nresponses==0.18.0\nrich==15.0.0\nrpds-py==0.10.6\nrsa==4.9.1\nsafetensors==0.7.0\nscikit-image==0.22.0\nscipy==1.15.3\nsentencepiece==0.1.99\nsetuptools==70.2.0\nshapely==2.1.2\nshellingham==1.5.4\nsix==1.16.0\nsniffio==1.3.0\nsoupsieve==2.5\nstack-data==0.6.3\nsympy==1.14.0\ntext-generation==0.6.1\ntifffile==2025.5.10\ntiktoken==0.4.0\ntokenizers==0.22.2\ntomli==2.0.1\ntorch==2.11.0+cu128\ntorchaudio==2.11.0+cu128\ntorchvision==0.26.0+cu128\ntornado==6.3.3\ntqdm==4.67.3\ntraitlets==5.11.2\ntransformers==5.8.1\ntriton==3.6.0\ntyper==0.25.1\ntypes-requests==2.31.0.10\ntypes-tqdm==4.66.0.1\ntyping-inspection==0.4.2\ntyping_extensions==4.15.0\ntzdata==2023.3\nurllib3==2.0.4\nvirtualenv==20.24.5\nwcwidth==0.2.8\n-e git+https://github.com/Quarkgluonmixture/visualwebarena.git@ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927#egg=webarena&subdirectory=../../../external/visualwebarena\nwebsockets==11.0.3\nWerkzeug==3.1.8\nwheel==0.45.1\nxxhash==3.3.0\nyarl==1.9.2",
+  "git": {
+    "commit": "797b45628df3adce000fd52b5b45a21e893cc925",
+    "branch": "master",
+    "dirty": true,
+    "status": " D results/mechanistic/archive_subset_b1_cls/README.md\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_1/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_1/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_1/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_1/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_10/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_10/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_10/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_10/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_108/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_108/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_108/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_108/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_109/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_109/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_109/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_109/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_116/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_116/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_116/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_116/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_122/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_122/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_122/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_122/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_123/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_123/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_123/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_123/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_130/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_130/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_130/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_130/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_151/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_151/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_152/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_152/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_155/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_155/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_155/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_155/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_156/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_156/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_156/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_156/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_157/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_157/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_157/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_157/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_159/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_159/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_160/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_160/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_160/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_160/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_161/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_161/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_161/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_161/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_181/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_181/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_181/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_181/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_188/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_188/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_19/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_19/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_19/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_19/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_191/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_191/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_191/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_191/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_20/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_20/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_20/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_20/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_200/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_200/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_200/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_200/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_211/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_211/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_211/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_211/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_214/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_214/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_214/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_214/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_215/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_215/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_227/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_227/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_227/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_227/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_228/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_228/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_228/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_228/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_32/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_32/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_32/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_32/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_33/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_33/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_33/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_33/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_37/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_37/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_37/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_37/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_4/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_4/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_4/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_4/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_40/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_40/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_40/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_40/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_60/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_60/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_60/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_60/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_61/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_61/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_61/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_61/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_69/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_69/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_73/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_73/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_82/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_82/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_82/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_82/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_9/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_9/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_9/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_9/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_99/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_99/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_99/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_cls/classifieds_task_99/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_cls/manifest.json\n D results/mechanistic/archive_subset_b1_reddit/README.md\n D results/mechanistic/archive_subset_b1_reddit/manifest.json\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_100/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_100/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_100/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_100/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_103/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_103/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_106/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_106/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_106/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_106/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_107/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_107/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_107/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_107/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_111/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_111/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_111/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_111/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_112/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_112/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_112/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_112/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_113/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_113/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_113/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_113/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_115/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_115/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_115/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_115/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_116/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_116/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_116/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_116/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_117/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_117/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_117/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_117/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_119/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_119/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_119/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_119/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_122/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_122/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_122/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_122/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_123/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_123/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_123/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_123/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_124/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_124/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_125/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_125/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_132/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_132/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_132/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_132/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_133/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_133/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_133/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_133/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_135/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_135/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_135/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_135/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_136/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_136/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_136/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_136/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_137/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_137/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_137/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_137/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_142/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_142/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_142/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_142/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_145/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_145/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_145/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_145/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_147/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_147/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_147/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_147/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_148/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_148/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_148/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_148/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_151/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_151/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_154/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_154/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_154/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_154/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_156/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_156/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_158/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_158/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_158/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_158/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_162/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_162/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_162/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_162/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_164/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_164/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_164/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_164/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_165/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_165/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_165/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_165/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_166/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_166/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_166/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_166/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_167/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_167/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_167/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_167/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_168/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_168/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_172/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_172/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_172/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_172/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_173/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_173/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_173/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_173/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_174/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_174/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_176/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_176/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_176/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_176/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_177/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_177/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_177/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_177/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_179/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_179/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_179/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_179/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_18/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_18/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_18/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_18/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_180/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_180/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_180/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_180/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_181/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_181/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_181/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_181/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_182/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_182/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_182/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_182/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_183/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_183/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_183/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_183/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_185/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_185/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_185/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_185/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_186/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_186/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_186/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_186/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_188/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_188/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_188/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_188/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_189/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_189/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_189/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_189/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_190/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_190/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_190/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_190/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_194/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_194/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_194/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_194/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_195/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_195/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_195/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_195/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_197/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_197/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_197/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_197/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_199/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_199/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_199/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_199/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_2/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_2/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_2/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_2/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_200/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_200/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_207/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_207/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_207/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_207/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_208/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_208/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_208/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_208/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_24/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_24/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_24/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_24/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_26/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_26/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_26/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_26/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_28/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_28/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_28/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_28/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_29/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_29/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_29/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_29/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_32/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_32/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_32/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_32/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_35/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_35/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_35/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_35/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_37/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_37/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_37/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_37/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_39/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_39/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_39/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_39/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_4/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_4/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_4/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_4/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_41/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_41/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_41/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_41/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_42/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_42/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_42/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_42/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_43/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_43/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_43/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_43/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_47/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_47/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_49/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_49/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_49/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_49/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_50/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_50/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_50/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_50/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_53/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_53/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_53/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_53/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_56/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_56/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_56/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_56/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_59/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_59/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_59/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_59/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_6/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_6/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_6/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_6/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_62/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_62/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_62/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_62/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_63/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_63/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_63/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_63/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_65/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_65/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_65/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_65/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_67/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_67/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_67/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_67/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_72/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_72/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_73/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_73/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_73/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_73/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_74/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_74/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_74/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_74/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_77/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_77/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_77/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_77/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_78/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_78/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_78/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_78/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_79/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_79/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_79/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_79/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_8/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_8/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_8/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_8/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_80/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_80/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_81/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_81/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_81/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_81/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_83/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_83/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_93/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_93/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_96/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_96/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_96/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_96/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_98/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_98/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_98/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_98/step_005/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_99/step_002/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_99/step_002/screenshot_annotated.png\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_99/step_005/observation_dom.txt\n D results/mechanistic/archive_subset_b1_reddit/reddit_task_99/step_005/screenshot_annotated.png\n D results/mechanistic/curate_mirage_b1_classifieds/candidates.md\n D results/mechanistic/curate_mirage_b1_reddit/candidates.jsonl\n D results/mechanistic/curate_mirage_b1_reddit/candidates.md\n D results/provenance/env_dgx_baseline.json\n D results/provenance/preregistration_smoke_h1_fail.json\n D results/provenance/preregistration_smoke_h1_pass.json\n D results/provenance/preregistration_smoke_tost_pass.json\n D results/provenance/vwa_dgx_via_quark.json\n?? docs/checkpoints/probes/proxy_production_path_071552.json\n?? docs/checkpoints/provenance_snapshots/\n?? results/provenance/env_a100_lock.json\n?? results/provenance/vwa_a100_lock.json\n"
+  },
+  "nvidia_smi": [
+    "NVIDIA A100-PCIE-40GB, 580.126.20, 40960 MiB, 8.0"
+  ],
+  "extra": {
+    "reference_images_sha256": {
+      "combined_sha256": "3df83c3e09a1c9bf42545dc5f62f9ba3ad686c9465345c9c53c2f06d1783d3e5",
+      "files_count": 45,
+      "per_file": {
+        "external/visualwebarena/coco_images/000000000285.jpg": "f3a2974ce3686332609124c70e3e6a2e3aca43fccf1cd1bd7c5c03820977f57d",
+        "external/visualwebarena/coco_images/000000022371.jpg": "7023b465285e7fcc25c9272a9b24efc5df076ad982513ff6dec4c3c7842e734e",
+        "external/visualwebarena/coco_images/000000023781.jpg": "085b1c7f25bf1d149b6dff82dfdb0a83fbf6e875c01d5d374070eb582aada80e",
+        "external/visualwebarena/coco_images/000000024567.jpg": "44891e1a27e3a262a3d879fa27d2749b31ca71d648f800952f4dccc248bc3743",
+        "external/visualwebarena/coco_images/000000029675.jpg": "59647741cd07304fd4ef6309bf4707c6abf96bc8e654ce632be41f590e5cf65d",
+        "external/visualwebarena/coco_images/000000029984.jpg": "1c1ea8336e8c0e5baa9e6ebd7c732aa49b7b30e411fd9cd97fcc3ded654777a3",
+        "external/visualwebarena/coco_images/000000039551.jpg": "4c84a652af01f02005d2116c351bdadcb1b82445c2fae9cd47adaccf6470a136",
+        "external/visualwebarena/coco_images/000000048153.jpg": "b83b9e68be063e9049ed73374e3c52ef6d401fa3bcefc38d8c49c9ac82a64d49",
+        "external/visualwebarena/coco_images/000000048396.jpg": "7bcd2860143837c1dd81c63236d02526e832ba83f181162f101f232dff0b35f4",
+        "external/visualwebarena/coco_images/000000048924.jpg": "7e4db164281de37dafa6d3a4e861f6777d0202661e92d11fb2b739e39fa8c391",
+        "external/visualwebarena/coco_images/000000050331.jpg": "2b2f516489343749b236c3c834831dfb82bad6fe053585717a0dd53964f234c4",
+        "external/visualwebarena/coco_images/000000058539.jpg": "217377804c1aa61a53a209a38c5951b38de33d50d612a0ab299b3ff8912cde10",
+        "external/visualwebarena/coco_images/000000058705.jpg": "8daf36eb8c1d557221bc85ea0cfdb2e8a83747f26e0c91b1f939d50f4713697b",
+        "external/visualwebarena/coco_images/000000060899.jpg": "57c62f60ea71b9d40d33fa94635153fc02b1eec74b167324e874ee2ffb12ecab",
+        "external/visualwebarena/coco_images/000000064574.jpg": "77b300df5857acb1211c25f346b7ee3ed01541052e797a6af7e7a57a3f9f488d",
+        "external/visualwebarena/coco_images/000000064718.jpg": "23311e201fadb5ba2bd9a0d6cac209b1f91ce946362ef7100ba47993b2822ff4",
+        "external/visualwebarena/coco_images/000000066771.jpg": "82e0b9ed0511a74ebef3dabcb3fbe37e9d9b7dc5a6fa41eec60f1817ce2374ff",
+        "external/visualwebarena/coco_images/000000084477.jpg": "182bab08d6173f7d044f291b2493833dcd7ce61f54bd83e0ecfc2e58b22e33b2",
+        "external/visualwebarena/coco_images/000000097278.jpg": "dd79077cea11398cd456ee48f7f1124265881a75eb3459c1f527681d1d859590",
+        "external/visualwebarena/coco_images/000000102805.jpg": "66e6c4530c4a84e97b77bf32227f5f7dfebb1c22accb0e7fa5dbd009308a8c0a",
+        "external/visualwebarena/coco_images/000000136772.jpg": "242886836ee682d105fdfac293c7eaf234c99d557a4ec7426c533fc6a66952fe",
+        "external/visualwebarena/coco_images/000000161032.jpg": "8c57b1f9042b59d09a82cfea238c0f11bca7ed54ad57a52c5a24b7b59c7b556e",
+        "external/visualwebarena/coco_images/000000162415.jpg": "e94ae20141f20ad6223071cff58cef36ab31fb0013fa741c1b69f5c0e77004b8",
+        "external/visualwebarena/coco_images/000000163257.jpg": "9504f1c6b744bac92a9072750b9b27e223e707798ef1a6e14afdbd867113e9c0",
+        "external/visualwebarena/coco_images/000000163682.jpg": "ae6c017e2766e46fc7f2177f023c6696c3fc6cc1978c0f4c6544e8e25ad956e0",
+        "external/visualwebarena/coco_images/000000166768.jpg": "40c8b4f9a15f7687b871d3f69964597530b678aaece1fbe4be4a9603d5f6f216",
+        "external/visualwebarena/coco_images/000000167240.jpg": "91454081895eea6698362d6494abe9dd6edc433b208a7d53d18eeedf73ac3d80",
+        "external/visualwebarena/coco_images/000000167353.jpg": "8e6737773e7548e3fc299c7dc5e255b5997c0b05e08423f016b277719e8232a0",
+        "external/visualwebarena/coco_images/000000172595.jpg": "faa06206531e26d29bed2d1ecca535d5496a017e1e88a7329f19bf4a5574a83b",
+        "external/visualwebarena/coco_images/000000173008.jpg": "57e4391ce5b3b06e3b778342e9c4272a9a4a93e9fbb8ab8270f4d0c4dfd3e5c5",
+        "external/visualwebarena/coco_images/000000175443.jpg": "a4de35a8792c8a53681720f87baa92ab42d8e2e78894a17c764209f65b58a868",
+        "external/visualwebarena/coco_images/000000176232.jpg": "82d3a0296919bc33cacde6f3e3052106eb8ddfbee3d679effdf9313e32819a93",
+        "external/visualwebarena/coco_images/000000286708.jpg": "a7b888fd1076cc9816e78e96ecb94e7a346e740d578af0dcbc037319944c1bc3",
+        "external/visualwebarena/coco_images/000000324258.jpg": "6fb95a96ea95a740c2f9f576ac6b2011dea99104c9c99dda09779e40485d3c4f",
+        "external/visualwebarena/coco_images/000000324715.jpg": "3a349cbfd1cbe87b1f826d5b9da8bebf1e09bc23b12cd3dffd4e87263194f05b",
+        "external/visualwebarena/coco_images/000000327601.jpg": "758f92fcfe44c865eae2d8905cfff482a838255c037a3e2bb3b7c6cc5d53d64a",
+        "external/visualwebarena/coco_images/000000329041.jpg": "e7b699bba23d6e61b6e921c247d483e37e9d42cd3f18b1555490ad1b8a666f62",
+        "external/visualwebarena/coco_images/000000348012.jpg": "7b693d91d6a6565e8957be70cf50804c36d5ddd2f921c7505bb0e2d16594697f",
+        "external/visualwebarena/coco_images/000000399655.jpg": "29729500f1a82f409942df5fce7686bb30d8989020ebbe06904edbfdb313384d",
+        "external/visualwebarena/coco_images/000000415238.jpg": "d35dac662f828ab1b671f9acafaea3f1cc1992e231811806119fe3a063896471",
+        "external/visualwebarena/coco_images/000000433515.jpg": "46c6114bb103fc4f27736d206fd053f285f08ee92afeb02665a207c2b4e1e944",
+        "external/visualwebarena/coco_images/000000440507.jpg": "a92c7e1e6b6da7c415792275882c60ee02fe291458f27539b49250b987880eef",
+        "external/visualwebarena/coco_images/000000444275.jpg": "648979bae81b4d37a64c118c666ad9f382f581ee8d62ee6b8b2295458484a0d4",
+        "external/visualwebarena/coco_images/000000513484.jpg": "91f9c79736b62b292068765ea9171208a16eb92dff6488725671203c5fc1cdf6",
+        "external/visualwebarena/coco_images/000000515982.jpg": "fc2c2dd08b842a266f42c430ef39628e5e9f6638ff90fe860242a5569ec2922a"
+      },
+      "roots": [
+        "external/visualwebarena/coco_images"
+      ],
+      "schema_version": "2026-05-17-a1.16-re-canonical-v1"
+    }
+  },
+  "errors": [
+    "hf:google/gemma-3-4b-it: GATED model + HF_TOKEN unset. Set HF_TOKEN=hf_xxx (with accepted ToS) or remove from DEFAULT_GATED_MODELS."
+  ]
+}

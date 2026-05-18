@@ -1,0 +1,158 @@
+{
+  "captured_at": "2026-05-18T10:21:21.684128+00:00",
+  "host": "a100-jiaming-test",
+  "vwa_host_for_probe": "localhost",
+  "ports": {
+    "classifieds": 9980,
+    "reddit": 9999,
+    "shopping": 7770
+  },
+  "probe_paths": {
+    "classifieds": "/robots.txt",
+    "reddit": "/robots.txt",
+    "shopping": "/robots.txt"
+  },
+  "paper_grade_mode": true,
+  "schema_version": "2026-05-17-a1.16-re",
+  "docker_engine_version": "29.1.3",
+  "containers": [
+    {
+      "name": "vwa-reddit",
+      "image": "postmill-populated-exposed-withimg",
+      "container_id": "f778b149930e",
+      "repo_digests": [
+        "postmill-populated-exposed-withimg@sha256:0a0c002b4dd089db8a22064886cb31f89d5ac493d90f6c41074639d56c6f4fbe"
+      ],
+      "image_id_full": "sha256:0a0c002b4dd089db8a22064886cb31f89d5ac493d90f6c41074639d56c6f4fbe",
+      "status": "Up 2 days",
+      "is_running": true
+    },
+    {
+      "name": "vwa-wikipedia",
+      "image": "ghcr.io/kiwix/kiwix-serve:3.3.0",
+      "container_id": "0a217a68dfb9",
+      "repo_digests": [
+        "ghcr.io/kiwix/kiwix-serve@sha256:889f08dcbfe94b44a506060632618d671ea0d8ce4aed8a2878e0a24890984374"
+      ],
+      "image_id_full": "sha256:889f08dcbfe94b44a506060632618d671ea0d8ce4aed8a2878e0a24890984374",
+      "status": "Up 2 days",
+      "is_running": true
+    },
+    {
+      "name": "vwa-shopping",
+      "image": "shopping_final_0712",
+      "container_id": "c80989e750d8",
+      "repo_digests": [
+        "shopping_final_0712@sha256:ccff8c1772be884313edad94136d2a4048020300a0fc169781c50a02aa8bd206"
+      ],
+      "image_id_full": "sha256:ccff8c1772be884313edad94136d2a4048020300a0fc169781c50a02aa8bd206",
+      "status": "Up 2 days",
+      "is_running": true
+    },
+    {
+      "name": "classifieds",
+      "image": "jykoh/classifieds:latest",
+      "container_id": "274f01fc0d4e",
+      "repo_digests": [
+        "jykoh/classifieds@sha256:a2a794da92f62a8d7ffd02314e4fab40ba6c7fc08f568371608f88f0ef605e43"
+      ],
+      "image_id_full": "sha256:a2a794da92f62a8d7ffd02314e4fab40ba6c7fc08f568371608f88f0ef605e43",
+      "status": "Up 2 days",
+      "is_running": true
+    },
+    {
+      "name": "classifieds_db",
+      "image": "mysql:8.1",
+      "container_id": "ece0a35de473",
+      "repo_digests": [
+        "mysql@sha256:f61944ff3f2961363a4d22913b2ac581523273679d7e14dd26e8db8c9f571a7e"
+      ],
+      "image_id_full": "sha256:f61944ff3f2961363a4d22913b2ac581523273679d7e14dd26e8db8c9f571a7e",
+      "status": "Up 2 days",
+      "is_running": true
+    }
+  ],
+  "running_container_count": 5,
+  "stopped_container_count": 0,
+  "sites": {
+    "classifieds": {
+      "url": "http://localhost:9980/robots.txt",
+      "probe_kind": "static-asset",
+      "http_status": "200",
+      "content_type": "text/plain; charset=UTF-8",
+      "probe_sanity_ok": true,
+      "headers_first_line": "HTTP/1.1 200 OK",
+      "body_sha256": "7fda982ca6f544eb42dad13d23128890e0a00323fda687fd2ac157f0c0a9f3bb",
+      "body_length": 273
+    },
+    "reddit": {
+      "url": "http://localhost:9999/robots.txt",
+      "probe_kind": "static-asset",
+      "http_status": "200",
+      "content_type": "text/plain",
+      "probe_sanity_ok": true,
+      "headers_first_line": "HTTP/1.1 200 OK",
+      "body_sha256": null,
+      "body_length": 0
+    },
+    "shopping": {
+      "url": "http://localhost:7770/robots.txt",
+      "probe_kind": "static-asset",
+      "http_status": "200",
+      "content_type": "text/plain;charset=UTF-8",
+      "probe_sanity_ok": true,
+      "headers_first_line": "HTTP/1.1 200 OK",
+      "body_sha256": null,
+      "body_length": 0
+    }
+  },
+  "probe_sanity_all_ok": true,
+  "vwa_source": {
+    "submodule_sha": "ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927",
+    "submodule_branch": "HEAD",
+    "submodule_dirty": false,
+    "submodule_dirty_files": [],
+    "dockerfile_combined_sha256": "82d021af3138a63c52e6482634b6b932fe59365240fcca43c7d8c8712d135baa",
+    "dockerfile_files": [
+      {
+        "path": "environment_docker/classifieds_docker_compose/docker-compose.yml",
+        "sha256": "78b8f02bc0c58b877b45f526d4c58857b7c7ad6142fc302295820a34fa5cb671",
+        "size": 549
+      }
+    ]
+  },
+  "images_inventory": [
+    {
+      "repo_tag": "alpine:latest",
+      "image_id": "5b10f432ef3d",
+      "size": "13.1MB"
+    },
+    {
+      "repo_tag": "jykoh/classifieds:latest",
+      "image_id": "a2a794da92f6",
+      "size": "155GB"
+    },
+    {
+      "repo_tag": "mysql:8.1",
+      "image_id": "f61944ff3f29",
+      "size": "795MB"
+    },
+    {
+      "repo_tag": "shopping_final_0712:latest",
+      "image_id": "ccff8c1772be",
+      "size": "141GB"
+    },
+    {
+      "repo_tag": "postmill-populated-exposed-withimg:latest",
+      "image_id": "0a0c002b4dd0",
+      "size": "107GB"
+    },
+    {
+      "repo_tag": "ghcr.io/kiwix/kiwix-serve:3.3.0",
+      "image_id": "889f08dcbfe9",
+      "size": "102MB"
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}
