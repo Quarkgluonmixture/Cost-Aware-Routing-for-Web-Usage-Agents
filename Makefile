@@ -323,6 +323,19 @@ _aggregate:
 	$(PYTHON) scripts/analysis/axis1_microbehavior.py
 	$(PYTHON) scripts/analysis/aggregate_failure_modes.py
 	$(MAKE) compare-b0-b1-all
+	$(MAKE) h10-pareto-verdict  # /stress A2.8 P1-13-B B-1560 — paper §6 H10 producer
+
+# H10 operational deployment gate (paper §6 producer; A2.8 P1-13-B B-1560 added
+# to default analysis pipeline 2026-05-18). Skips cleanly with informational log
+# when Pass-2 router data absent (pre-fire state) — does NOT fail the pipeline.
+h10-pareto-verdict:
+	@if ls results/visualwebarena/phase1/*_router_learned_*/phase1_learned_router_*_*/condition_summary_v2.json &>/dev/null; then \
+		echo "[h10-pareto-verdict] Pass-2 router data found, running aggregator..."; \
+		$(PYTHON) scripts/analysis/aggregate_h10_pareto.py --all || \
+			echo "[h10-pareto-verdict] WARN: aggregator failed (non-fatal in _aggregate)"; \
+	else \
+		echo "[h10-pareto-verdict] INFO: no Pass-2 router data yet (pre-fire); skipping H10 verdict"; \
+	fi
 
 # All figures (depends on aggregator output)
 _figures:

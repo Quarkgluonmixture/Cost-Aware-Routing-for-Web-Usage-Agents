@@ -246,10 +246,16 @@ Mirror H1 §2.5 rationale: δ ≈ 2 tasks in per-cell N=234 (cls), matches per-c
 
 #### Witness commits (router family)
 
-- v3 design doc: `docs/checkpoints/router/proposals_v3.md`
+> **Update 2026-05-18 (/stress A2.8 P1-19-A B-1561)**: witness chain extended from v3-only to v3 → v7 full design-document lineage. Pre-fix, only v3 + v3-stress traces were listed in this section, but §H10 prose references v6 (estimand source per L207) + v7 walk-back (paper-2 deferral of H9/H11 per L173 + L175) without corresponding witness rows — OSF audit-trail gap for paper-1 PRIMARY gate. Now: v3 → v7 full chain witnessed below; each version supersedes the prior, with reformulation history readable from this index.
+
+- v3 design doc (initial paper-1 router family): `docs/checkpoints/router/proposals_v3.md`
+- v4 design doc (Option C methodology fix — archive not prereg substrate): `docs/checkpoints/router/proposals_v4.md` (§A archive-not-substrate critique referenced from §H10 DEFER condition)
+- v5 design doc (rule + learned router hybrid exploration): `docs/checkpoints/router/proposals_v5.md`
+- v6 design doc (Pareto-non-dominance reformulation, H9 + H10 + H11 triple): `docs/checkpoints/router/proposals_v6.md` — **canonical H10 estimand source per §H10 L207**; cross-AI stress: `docs/checkpoints/codex_outputs/router_v5_FINAL_2026-05-16_105153.md` (v5→v6 codex round) + `docs/checkpoints/codex_outputs/router_v5_FINAL_prefire_2026-05-16_110112.md` (v6 prefire round)
+- v7 design doc (paper-1 walk-back to single learned router H10 PRIMARY; H9 + H11 → paper-2): `docs/checkpoints/router/proposals_v7.md` — **operational H10 spec per §H10 L173 + L175 v7 amendments**
 - v2 → v3 cross-AI stress trace: `docs/checkpoints/router/stress_mode_a_2026-05-16.md` + `docs/checkpoints/codex_outputs/router_design_FINAL_2026-05-16_084921.md` + `docs/checkpoints/gemini_outputs/router_design_2026-05-16_084921.md`
-- Archive sanity-check (correlated-population pre-fire confidence, NOT preregistration lock substrate per §C reframe 2026-05-16 evening): `scripts/analysis/router_archive_diagnostic.py` + `docs/checkpoints/router/archive_diagnostic_2026-05-16.md`
-- User-caught OOB findings (P0-8 task.category audit leak / P0-9 M1 hijack triaxis / P0-10 has_ref_image P1 redesign): [[实验笔记]] §150b router design chronicle (landed)
+- Archive sanity-check (correlated-population pre-fire confidence, NOT preregistration lock substrate per §C reframe 2026-05-16 evening + /stress A2.8 P0-3-A* archive-deletion-from-prereg-justification 2026-05-18): `scripts/analysis/router_archive_diagnostic.py` + `docs/checkpoints/router/archive_diagnostic_2026-05-16.md` + `docs/checkpoints/router/l1_archive_simulation_2026-05-16.md`
+- User-caught OOB findings (P0-8 task.category audit leak / P0-9 M1 hijack triaxis / P0-10 has_ref_image P1 redesign): [[实验笔记]] §150b router design chronicle (landed); /stress A2.8 P0-2-AB* operational-gate-reframing 2026-05-18: [[实验笔记]] §220 (this audit closure)
 
 ### EXPLORATORY family (reported with corrections, NOT gating)
 
