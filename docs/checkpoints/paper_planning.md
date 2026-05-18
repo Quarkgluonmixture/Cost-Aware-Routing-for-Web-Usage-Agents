@@ -126,25 +126,34 @@ SoM       ([SOM_MARKS] flat + SoM prompt + 有图)        ← highest text+image
 
 Paper Section 3 footnote 用此 defense reviewer "why 5+1 not 8" + "why is P-prompt not mismatched-redundant"。
 
-### Zoom 1 (architectural completeness): Approach 2 deductive argument
+### Zoom 1 (architectural constraint on input partition): two-axis coverage under the image-off boundary
 
-**Paper §2 framework completeness 不依赖 finite data verification, 而是 architectural deductive argument**:
+**Reframed B-1273 /stress A2.6a P1-16-C 2026-05-18** — supersedes prior "Approach 2 deductive argument" / "deductive proof of completeness" framing (gemini Mode C broad-reviewer attack: deductive-proof framing in empirical ML is a category error because LLMs do not respect deductive input-partitioning and prompt × observation text interactions are highly non-linear).
+
+**Paper §2 framework's axis-level coverage is asserted as an architectural constraint on the input partition under the image-off boundary, NOT as a deductive proof of input-output exhaustiveness**:
 
 ```
 PREMISE 1: Phantom space comparison 锁 image=✗ (axis 3 fixed)
-PREMISE 2: Agent's input 只剩 (prompt 文本) + (obs 文本) 两个 component
+PREMISE 2: Agent's input 只剩 (prompt 文本) + (obs 文本) 两个 manipulable textual component
 PREMISE 3: 4 phantom corners 仅 vary 这两个 input component:
             corner ∈ {(b,1)=DOM, (b,2)=P-text, (a-with-c,1)=P-prompt, (a-with-c,2)=P-SoM}
 PREMISE 4: LLM 是 deterministic forward function on input tokens
             (T=0 + greedy decoding 假设, Phase A 后真; 但 B0 proxy 仅 decision-level
              convergent, 见 §107.1)
-CONCLUSION: 任何 differential 机制 必由 input 差异 trigger
-            → 必 attributable to (prompt change) 或 (text change) 或两者
-            → M1 (prompt-axis activation) 和 M2 (text-axis activation) 是 exhaustive
-            → phantom space 内**没有 hidden 3rd axis** (by construction)
+CONSTRAINT IMPLICATION: 任何 differential output 必由 这两个 input dimension 的 textual change trigger
+            → M1 (prompt-axis activation) 和 M2 (text-axis activation) **cover the two
+              manipulable input axes within the image-off boundary**
+            → phantom space 内**没有 hidden 3rd manipulable input axis** (by input-partition
+              construction)
+            NOTE (B-1273): This is an axis-coverage statement on the input partition,
+            NOT a claim that M1 and M2 are non-interacting or that their effects sum
+            linearly. LLM forward computation can exhibit substantial non-linear
+            interaction terms between prompt and observation text; the empirical 2x2
+            ablation in §5 (B0 reddit + B1 reddit) characterises the interaction pattern,
+            but the axis-coverage claim does NOT depend on additive separability.
 ```
 
-**关键性质**: 这是 **deductive argument**, 不是 inductive evidence。即使以后跑 100 个 phantom corners, 也不能反驳 — 因为只要 phantom corners 仍只 vary 这两个 input dimension, M1+M2 仍是 exhaustive。
+**关键性质**: 这是 **architectural axis-coverage statement on the input partition**, 不是 deductive proof of input-output exhaustiveness 也不是 inductive evidence。即使以后跑 100 个 phantom corners, axis-coverage 仍由 image-off boundary 限定 — 只要 phantom corners 仍只 vary 这两个 input dimension, M1+M2 axis 范围 cover input partition;non-linear interaction effects between M1 and M2 are NOT excluded by this statement and are reported empirically in §5 2x2 ablation (B-1273 /stress A2.6a P1-16-C 2026-05-18 — reviewer-defense addition explicit non-additivity disclaimer)。
 
 **Caveat**: Architectural argument 给 axis-level 完备性, 不给 axis 内部 sub-mechanism 完备性 (M1 内部是 Mirage Effect / Scaffold Effect / Cross-modal flow 哪个 dominate 仍需 lit + empirical 区分 — 这归属 Zoom 2/3/4)。
 
