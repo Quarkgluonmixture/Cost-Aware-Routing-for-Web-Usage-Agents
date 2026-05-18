@@ -89,7 +89,7 @@ B0 episodes (audit F2 sensitivity) detects upstream model drift.
 
 | Component | Pin |
 |---|---|
-| **HF revision SHA** | ⏳ **pending lock** (matching B1 protocol — pin at A100 bring-up time, recorded into env_snapshot.json) |
+| **HF revision SHA** | ⏳ **pending lock** (matching B1 protocol — pin at A100 bring-up time, recorded into env_snapshot.json; reproducibility tier reported as "**Reproducible after HF SHA lock**" NOT "byte-identical" per B-1504 /stress A2.9 P1-6-B* 2026-05-18 — internal contradiction "byte-identical + pending SHA" resolved by tier-downgrade wording until SHA fills) |
 | HF model name | `google/gemma-3-4b-it` |
 | Dtype | `torch.bfloat16` (fits A100-PCIE-40GB unquantized) |
 | Decoding | greedy (`do_sample=False`), `max_new_tokens` per task |

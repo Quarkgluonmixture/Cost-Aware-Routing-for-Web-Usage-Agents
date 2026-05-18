@@ -53,7 +53,7 @@
 - [x] `p79/` (agent + experiment + analysis modules)
 - [x] `configs/exp_v2_*.yaml` (locked seed=42 + per-site configs)
 - [x] `pyproject.toml` (dep declarations)
-- [x] `external/visualwebarena/` submodule SHA pinned (`p79-patches` branch `f0c835b` post-B-91)
+- [x] `external/visualwebarena/` submodule SHA pinned (`p79-patches` branch HEAD **`2f9b0b47175a1bffa01e13100e3075e212161a89`**; includes B-91 LLM-judge polarity fix `f0c835b` + post-fix commits chain `eb5cbd8` / `c1765ee` / `1c3a615` / `2f9b0b4`; see `preregistration.md §7 L626-L630` for full 9-commit tree-hash chain SBOM with sha256 `5c6c5f625f44ca1b2155b9cad280b5aecb3e6939cf0599540fcef0900028fb0f`; B-1503 /stress A2.9 P0-6-AB 2026-05-18 — propagated from stale `f0c835b`)
 - [x] `docs/checkpoints/pre_run/` (preregistration + locked versions + audit + cards)
 - [x] `docs/checkpoints/paper_drafts/` (camera-ready prose — paper-1 only; section5_mechanism.md is paper-2 working draft, NOT released in paper-1 DOI)
 - [ ] ~~`results/mechanistic/archive_subset_b1_{cls,reddit}/`~~ **EXCLUDED from paper-1 release (B-132 fix per pre_run/ residual audit 2026-05-15 evening)** — mechanism §5 deferred to paper-2 per advisor 2026-05-14; archive mirage subsets will not be re-cited in paper-1. User will re-run mechanism with new data for paper-2 own release (option α 2026-05-15)

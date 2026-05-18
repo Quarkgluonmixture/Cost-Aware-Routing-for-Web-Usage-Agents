@@ -7,8 +7,10 @@
 ## License + Code Release
 
 The agent code (`p79/`), experiment runner, and analysis scripts are released
-under the **MIT License**, consistent with VisualWebArena (Koh et al. 2024)
-and WebArena (Zhou et al. 2024) licensing. The released artifact includes:
+under the **MIT License** (B-1500 /stress A2.9 P2-1-A 2026-05-18 — explicit
+license-type cite previously implicit), consistent with VisualWebArena (Koh
+et al. 2024 — MIT, see `external/visualwebarena/LICENSE`) and WebArena
+(Zhou et al. 2024 — MIT) licensing. The released artifact includes:
 
 - All experiment scripts at the locked git commit SHA
 - Configuration YAMLs with seed=42 and inference parameters (3 baselines:
@@ -32,6 +34,29 @@ The released artifact does **not** include:
 - Site authentication state (`.auth/` — gitignored)
 - Raw model weights for Qwen3-VL-4B (HuggingFace revision SHA pinned in
   `env_snapshot.json`; replicators download from HF)
+
+### Release license matrix (B-1501 /stress A2.9 P1-1-ABC* 2026-05-18 — 3-AI overlap OOB)
+
+The artifact is a multi-license bundle; "MIT" applies only to P79's own
+contributions. Downstream replicators must accept each upstream component's
+license separately:
+
+| Component | License | Downstream implication |
+|---|---|---|
+| P79 agent code (`p79/`) + scripts + configs | **MIT** | Free use, modify, redistribute |
+| VWA submodule (`external/visualwebarena/`) | **MIT** (Koh et al. 2024, `external/visualwebarena/LICENSE`) | Same as P79 |
+| `p79-patches` branch (our VWA modifications) | **MIT** (derived from VWA MIT base) | Same as P79 |
+| **B1 Qwen3-VL-4B-Instruct weights** | **Apache 2.0** (Alibaba Qwen lineage, HF model card) | Free use, modify, redistribute |
+| **B2 Gemma3-VL `google/gemma-3-4b-it` weights** | **Gemma Terms of Use** (gated repo, requires acceptance via HuggingFace login + EULA click-through; **prohibits weight redistribution**; restricts derivative model release per Gemma Acceptable Use Policy) | Replicator must independently accept Gemma Terms; we do NOT redistribute weights; HF SHA pin only |
+| **B0 Qwen3-VL-235B-A22B (via AWS proxy)** | **Apache 2.0** (Qwen lineage) + **proxy ToS** (AWS API Gateway-fronted Bedrock; commercial-tier access via lab budget) | Replicator needs separate proxy API credential + ToS acceptance |
+| **VWA LLM judge `gpt-4o-mini`** | **OpenAI Terms of Use** (commercial API, `helper_functions.py:611-615`, `VWA_EVAL_MODEL` env default) | Replicator needs separate OpenAI API key; paid third-party compute (see §8.7 cost paragraph) |
+
+**Replicator compliance checklist**: clone P79 + accept VWA MIT (transitive) +
+download Qwen3-VL-4B from HF (Apache 2.0) + accept Gemma Terms via HF gated-repo
+flow before downloading B2 weights + provision separate OpenAI API key for
+evaluator + (optional) provision proxy API key for B0 replay. Failure to accept
+any upstream component license is the replicator's compliance burden, not
+P79's MIT release.
 
 ## Conflict of Interest
 
@@ -93,10 +118,12 @@ web-agent research has known dual-use risks worth disclosing:
 3. **Web-agent benchmark contamination risk**: Cheap inference-time routing
    could accelerate gaming of public benchmarks (VWA / WA / Mind2Web /
    AgentBench leaderboards). We disclose this risk; our paper does not
-   benchmark-game (we report all 36 conditions / 6 statistical cells per
-   locked preregistration — Phase 1a B0+B1+B2 × cls+red × 6 modes — not
-   cherry-picked), but readers building on our work should be aware that
-   benchmark selection bias is a documented hazard in this space.
+   benchmark-game (we report all **42 conditions** (Pass-1 baseline 36 +
+   Pass-2 learned router 6) **/ 6 statistical cells** per locked preregistration
+   — Phase 1a B0+B1+B2 × cls+red × 6 modes + 1 learned-router cond/cell —
+   not cherry-picked; B-1502 /stress A2.9 P0-5-ABC* 2026-05-18 — sweep
+   propagation from prereg B-1264), but readers building on our work should
+   be aware that benchmark selection bias is a documented hazard in this space.
 
 4. **Cross-bench generalization not yet established**: Mechanism claims are
    scoped to Qwen-family VWA per `preregistration.md §7`. Deploying our
@@ -113,13 +140,17 @@ arguments are not a license to deploy without domain-specific safety eval.
 ## Provenance + Reproducibility (audit A14 cross-reference)
 
 See `preregistration.md §7` for the full reproducibility scope statement
-covering paper-1 component tiers (B1 byte-identical / B2 byte-identical /
-B0 verifiable from traces / VWA env A100 self-host / Evaluator p79-patches
-f0c835b). Paper §5 mechanism analysis (Stage 2 activation patching, layer
-probes, logit lens) is **paper-2 scope** per advisor 2026-05-14 — paper-1
-OSF DOI does NOT cover mechanism §5 reproducibility; paper-2 will mint
-its own DOI for fresh mirage curation + Stage 2 outputs (B-132 per
-pre_run/ residual audit 2026-05-15).
+covering paper-1 component tiers (B1 byte-identical / B2 reproducible after
+HF SHA lock (per B-1504 below) / B0 verifiable from traces / VWA env A100
+self-host / Evaluator p79-patches **HEAD `2f9b0b47175a1bffa01e13100e3075e212161a89`**
+(includes B-91 LLM-judge polarity fix `f0c835b` + post-fix commits chain;
+see `preregistration.md §7 L626-L630` for the full 9-commit tree-hash chain
+SBOM; B-1503 /stress A2.9 P0-6-AB 2026-05-18 — sweep from stale `f0c835b`).
+Paper §5 mechanism analysis (Stage 2 activation patching, layer probes,
+logit lens) is **paper-2 scope** per advisor 2026-05-14 — paper-1 OSF DOI
+does NOT cover mechanism §5 reproducibility; paper-2 will mint its own DOI
+for fresh mirage curation + Stage 2 outputs (B-132 per pre_run/ residual
+audit 2026-05-15).
 
 ## References
 

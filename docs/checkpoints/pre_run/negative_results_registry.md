@@ -38,7 +38,7 @@ report data-confirmed framings as well as data-broken ones):
 
 | # | Date | Original framing | Confirmed by | Paper action |
 |---|---|---|---|---|
-| C1 | 2026-04-26 | Phantom-SoM 4-fold drop-in property (cost ≈ DOM / latency ~50% / signal AUROC ≥ baseline / drop-one 1.7-3.8pp) | B0 reddit Phase A archived data + drop-one sig | Paper hook §1 (provisional pending Phase 1a 36-condition / 6-cell rerun on A100 self-host Docker — scope expanded from 16/24-cond → 36-cond per B2 addition 2026-05-14 + host migration 2026-05-15) |
+| C1 | 2026-04-26 | Phantom-SoM 4-fold drop-in property (cost ≈ DOM / latency ~50% / signal AUROC ≥ baseline / drop-one 1.7-3.8pp) | B0 reddit Phase A archived data + drop-one sig | Paper hook §1 (provisional pending Phase 1a **42-condition** (Pass-1 baseline 36 + Pass-2 learned router 6) / 6-cell rerun on A100 self-host Docker — scope expanded from 16/24-cond → 36-cond per B2 addition 2026-05-14 + host migration 2026-05-15 → 42-cond per B-264+B-267 /stress A1.7 H10 Pass-2 inclusion 2026-05-16; B-1502 /stress A2.9 P0-5-ABC* 2026-05-18 sweep) |
 | C2 | 2026-05-09 | Mid-layer L11-L17 mechanism Holm-significant disruption | 4 cells: A (Holm L17 p=0.011), B (Holm L11+L17), D (Holm L11+L17 p=0.006/0.008) — 3/4 cells Holm-confirmed | **Paper-2 evidence (deferred per advisor 2026-05-14)** — Section 5 mechanism moved to paper-2 working draft; paper-1 retains only behavioural two-knob account (text-representation × prompt-family) |
 
 ## Paper § action items derived from this registry
@@ -47,13 +47,13 @@ report data-confirmed framings as well as data-broken ones):
 2. **Paper §2 Background**: confirm M1/M2 2x2 framework + Evidence/Explanation 双层 + Zoom 1-4. Retract earlier 8-corner cube / 6-corner / (a)(c) decomposition / Three-Layer / Approach 1-2 framings (entries #3-#7). (Already done in `paper_planning.md §2` reframe; final prose confirms.)
 3. **Paper §5 Mechanism**: cite 24-task aggregate L17, NOT §111 task-0 single-case (entry #10). Show forward+reverse symmetry from 4-cell 2x2 (entry #11). Cite cell E random-injection control specificity ratio (entry #12).
 4. **Paper §8 Discussion**: SteerMoE-style probe is future work, not self-conducted (entry #9).
-5. **Paper hook (§1)**: phantom routing space (3 arms) — retracted from "4th arm" (entry #2). State "provisional pending Phase 1a 36-condition / 6-cell rerun" until R1-R5 framing rules (preregistration.md §2) trigger.
+5. **Paper hook (§1)**: phantom routing space (3 arms) — retracted from "4th arm" (entry #2). State "provisional pending Phase 1a **42-condition** (Pass-1 baseline 36 + Pass-2 learned router 6) / 6-cell rerun" until R1-R5 framing rules (preregistration.md §2) trigger.
 
 ## Future entries (placeholder)
 
 When framings shift in upcoming work, append below. Common triggers:
 
-- Phase 1a 36-condition / 6-cell rerun outcome inconsistent with archived data → entry for "phase A pre-fix data was over-optimistic" (audit F1)
+- Phase 1a **42-condition** (Pass-1 baseline 36 + Pass-2 learned router 6) / 6-cell rerun outcome inconsistent with archived data → entry for "phase A pre-fix data was over-optimistic" (audit F1)
 - Cells F/G reddit cross-site shows null mid-layer disruption → entry for "phantom mechanism is cls-specific, not universal" + paper §5 scope reduction
 - Advisor sync 5/X feedback retracts a hypothesis → entry for "H_X retracted per advisor"
 - Reviewer pre-print feedback identifies a new failed assumption
