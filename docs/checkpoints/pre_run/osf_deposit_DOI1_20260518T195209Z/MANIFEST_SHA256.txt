@@ -19,7 +19,7 @@
 19	b127cae94945b07822b04ca47803659e11771ae5a4f7f5eb71adedf4e4a70b4c  ./pre_run/neurips_checklist.md
 20	4c6c2cef703c64b17896d81aef9158f6a29d8755f9e29bafeef8f7e48ec17129  ./pre_run/osf_deposit_package_manifest_2026-05-18.md
 21	c5ccf6b125c9e5f81e662856966063c690e7d1aed4442d931d40226d02f462e6  ./pre_run/osf_lock_manifest.md
-22	b4720a7c8ac6944b11202028a741d7f9ea5bdc219a689e54478077844ca611bf  ./pre_run/preregistration.md
+22	aa3cfb228a035d7dce7c163808807aebad1857add85e20e0b3189fc685073dc4  ./pre_run/preregistration.md
 23	c6e2cfa97732c6d9242f00a64a668fd14ac682c4da2ac8abab7c0b241f7cbcd2  ./pre_run/pre_rerun_audit.md
 24	23f329b9be2a150c1f49809bd8373b7205cb3d4d1515618aeaa615b7f4a355cb  ./pre_run/pre_rerun_audit_walkthrough_2026-05-18.md
 25	68603a5262c13731e99f77aac92fcca825629875bf0c1db98cbc97ea01edf9ec  ./pre_run/reeval_audit_protocol.md
