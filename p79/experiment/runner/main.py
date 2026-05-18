@@ -1702,70 +1702,108 @@ class ExperimentRunner:
         # Single-fire ntfy push on first fallback per condition gives
         # user real-time alarm without spamming.
         if condition.observation_mode == "learned":
+            # ── A2.5 Chunk C: fold-aware learned router dispatch ──
+            # Q1=C + (E''') + (b) design: within-cell 5-fold CV deployment.
+            # For each task, lookup the fold that held it out at training,
+            # apply fold-k vectorizer + selected_idx + LR + τ_{C,k} threshold.
+            # See p79/policies/learned_router.py:predict_mode_fold_aware.
             router_cfg = self.cfg.get("router", {})
             safe_fallback = str(router_cfg.get("safe_fallback_target", "phantom_som"))
-            predicted_mode: Optional[str] = None
+            cell_id = str(router_cfg.get("cell_id", ""))
+            artifacts_dir = router_cfg.get(
+                "artifacts_dir", "results/phantom_paper/l1_router"
+            )
+            candidate_modes = router_cfg.get("candidate_modes", [])
+            predicted_mode: Optional[str] = safe_fallback
+            fold_diag: dict = {"fallback_fired": False, "fallback_reason": "not_dispatched"}
+
             try:
                 from p79.policies.learned_router import (
-                    load_lr_pipeline,
+                    extract_raw_features,
                     load_task_image_field,
-                    predict_mode,
+                    predict_mode_fold_aware,
                 )
-                # Lazy-load LR pickle once per condition (cached on runner attribute)
+                # Lazy cell-scoped artifact cache on runner attribute
                 if not hasattr(self, "_lr_router_cache"):
                     self._lr_router_cache = {}
-                lr_path = router_cfg.get("lr_model_path", "")
-                if lr_path not in self._lr_router_cache:
-                    self._lr_router_cache[lr_path] = load_lr_pipeline(lr_path)
-                lr_pipeline = self._lr_router_cache.get(lr_path)
 
-                # Extract per-task features
-                task_intent = task.raw_task.get("intent", "") if hasattr(task, "raw_task") else ""
+                # Extract task-config features
+                task_intent = (
+                    task.raw_task.get("intent", "")
+                    if hasattr(task, "raw_task") else ""
+                )
                 task_has_image = load_task_image_field(task.config_file)
-                axtree_element_count = (obs.text or "").count("\n") + 1 if obs.text else 0
-                predicted_mode = predict_mode(
-                    lr_pipeline,
-                    task_intent=task_intent,
-                    task_has_image=task_has_image,
-                    site=task.site,
-                    axtree_element_count=axtree_element_count,
+                reasoning_difficulty = 0
+                try:
+                    with open(task.config_file) as _cfg_f:
+                        _cfg = json.load(_cfg_f)
+                        reasoning_difficulty = int(
+                            _cfg.get("reasoning_difficulty", 0) or 0
+                        )
+                except Exception:
+                    pass
+
+                # Step-0 obs features (mode-agnostic DOM-style at env.reset return)
+                dom_complexity = (obs.text or "").count("\n") + 1 if obs.text else 0
+                text_length = len(obs.text) if obs.text else 0
+                # Token count estimate (no tokenizer access at this dispatch point)
+                tokens_input_text = text_length // 4
+
+                raw_features = extract_raw_features(
+                    intent=task_intent,
+                    has_reference_image=task_has_image,
+                    dom_complexity=dom_complexity,
+                    text_length=text_length,
+                    tokens_input_text=tokens_input_text,
+                    reasoning_difficulty=reasoning_difficulty,
+                )
+
+                predicted_mode, fold_diag = predict_mode_fold_aware(
+                    cell_id=cell_id,
+                    task_id=task.task_id,
+                    artifacts_dir=artifacts_dir,
+                    cache=self._lr_router_cache,
+                    raw_features=raw_features,
                     fallback_mode=safe_fallback,
                 )
-                # B-696 (/stress A1.7 cold-start P1-6-AC, 2026-05-17): sanity
-                # check that LR didn't predict an out-of-universe mode.
-                # candidate_modes comes from yaml (e.g.
-                # B0_router_learned_classifieds.yaml:35); when present,
-                # any predicted_mode outside it indicates LR training/
-                # deployment mismatch and we must fall back rather than
-                # silently route to an arm the analysis layer can't
-                # reconstruct.
-                candidate_modes = router_cfg.get("candidate_modes", [])
+
+                # B-696 (preserved from pre-Chunk-C) candidate_modes sanity check
                 if candidate_modes and predicted_mode not in candidate_modes:
                     logger.warning(
-                        "[v7 learned router] predicted mode=%s NOT in "
+                        "[learned router Chunk C] predicted mode=%s NOT in "
                         "candidate_modes=%s; falling back to %s",
                         predicted_mode, candidate_modes, safe_fallback,
                     )
                     predicted_mode = safe_fallback
-                    self._lr_fallback_count = getattr(self, "_lr_fallback_count", 0) + 1
+                    fold_diag["candidate_modes_filter_fired"] = True
+                    self._lr_fallback_count = (
+                        getattr(self, "_lr_fallback_count", 0) + 1
+                    )
+
+                if fold_diag.get("fallback_fired"):
+                    self._lr_fallback_count = (
+                        getattr(self, "_lr_fallback_count", 0) + 1
+                    )
+
                 logger.info(
-                    "[v7 learned router] task=%s/%s site=%s predicted=%s "
-                    "(intent_tok=%d, axtree_lines=%d)",
-                    task.site, task.task_id, task.site, predicted_mode,
-                    len(task_intent.split()), axtree_element_count,
+                    "[learned router Chunk C] cell=%s task_id=%s fold_k=%s "
+                    "tau=%s max_prob=%s predicted=%s fallback_fired=%s reason=%s",
+                    cell_id, task.task_id,
+                    fold_diag.get("fold_k_used"),
+                    fold_diag.get("tau_used"),
+                    fold_diag.get("max_prob"),
+                    predicted_mode,
+                    fold_diag.get("fallback_fired"),
+                    fold_diag.get("fallback_reason"),
                 )
             except Exception as exc:
-                # B-693: catastrophic LR dispatch failure — fall back without
-                # nuking the cell. log.error surfaces in runner watchdog
-                # scrape. ntfy first-fire alarm gives the user real-time
-                # signal that Pass-2 is degraded (so they can decide
-                # whether to abort manually). _lr_fallback_count is a
-                # runner-attribute metric the analysis layer can read from
-                # run_summary_v2.json to audit fallback rate per condition.
-                self._lr_fallback_count = getattr(self, "_lr_fallback_count", 0) + 1
+                # Catastrophic dispatch failure — fallback safely + ntfy alert
+                self._lr_fallback_count = (
+                    getattr(self, "_lr_fallback_count", 0) + 1
+                )
                 logger.error(
-                    "[v7 learned router] FALLBACK fired for task=%s/%s — "
-                    "exception=%s; using safe_fallback_target=%s; "
+                    "[learned router Chunk C] FALLBACK fired for task=%s/%s — "
+                    "exception=%s; using safe_fallback=%s; "
                     "lr_fallback_count_so_far=%d",
                     task.site, task.task_id, repr(exc), safe_fallback,
                     self._lr_fallback_count,
@@ -1778,7 +1816,7 @@ class ExperimentRunner:
                         topic = os.environ.get("NTFY_TOPIC", "")
                         if topic:
                             msg = (
-                                f"[A1.7 B-693] LR fallback fired "
+                                f"[A2.5 Chunk C] LR fallback fired "
                                 f"condition={condition.condition_id} "
                                 f"task={task.site}/{task.task_id} "
                                 f"exc={repr(exc)[:200]}"

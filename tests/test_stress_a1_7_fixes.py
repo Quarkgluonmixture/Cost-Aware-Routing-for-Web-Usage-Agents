@@ -159,18 +159,25 @@ def test_b682_runner_main_has_try_except_around_lr_dispatch():
     src = (REPO_ROOT / "p79" / "experiment" / "runner" / "main.py").read_text()
     # Locate the LR dispatch comment block
     assert 'if condition.observation_mode == "learned":' in src
-    # The fix wraps the imports + lazy-load + predict_mode inside try/except
-    # We look for the canonical pattern landed in B-693.
-    assert "B-693" in src
+    # The fix wraps the imports + lazy-load + predict_mode inside try/except.
+    # Originally B-693 fix at A1.7. Post-A2.5 Chunk C refactor: load_lr_pipeline
+    # replaced by predict_mode_fold_aware (fold-aware multi-pickle architecture),
+    # but B-682 invariant (try/except around LR dispatch) remains valid.
     assert "_lr_fallback_count" in src
     assert "safe_fallback_target" in src
-    # Confirm try/except actually wraps load_lr_pipeline (the catastrophic path).
+    # Confirm try/except actually wraps the LR dispatch (the catastrophic path).
     learned_idx = src.index('if condition.observation_mode == "learned":')
     try_idx = src.index("try:", learned_idx)
     except_idx = src.index("except Exception as exc:", try_idx)
-    load_idx = src.index("load_lr_pipeline", learned_idx)
+    # Post-Chunk-C: predict_mode_fold_aware is the dispatch fn; pre-Chunk-C: load_lr_pipeline.
+    # Use trailing "(" to match call site, not comment references.
+    if "predict_mode_fold_aware(" in src:
+        dispatch_fn = "predict_mode_fold_aware("
+    else:
+        dispatch_fn = "load_lr_pipeline("
+    load_idx = src.index(dispatch_fn, learned_idx)
     assert try_idx < load_idx < except_idx, (
-        "load_lr_pipeline must be inside the try block, not outside"
+        f"{dispatch_fn} must be inside the try block, not outside"
     )
 
 
