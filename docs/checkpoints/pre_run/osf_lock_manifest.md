@@ -1,20 +1,19 @@
 # OSF DOI Lock Manifest — Paper §3 / Appendix D
 
 **Purpose**: Codify the artefacts whose SHA-256 / git ref get frozen at the
-moment of OSF preregistration DOI minting. Once advisor's email reply arrives
-(post 5/5 sync) confirming **H1 FE superiority δ=1.0pp / H3 axis-1+axis-2 gates / H10 Pareto non-dominance / K-of-N transparency-only (no thresholds) / TOST retired per /stress A2.3c B-1051**
-(B-1265 /stress A2.6a P0-6-B* 2026-05-18 — supersedes stale "K_h1 / K_h3 / TOST δ thresholds" phrasing that contradicted `preregistration.md §2.4 + §2 H1 + §3` TOST retirement 2026-05-17 + K-of-N transparency-only 2026-05-13 reclassification), this checklist
+moment of OSF preregistration DOI minting. Substance-lock decisions
+(**H1 FE superiority δ=1.0pp / H3 axis-1+axis-2 gates / H10 two-layer operational deployment gate / K-of-N transparency-only (no thresholds) / TOST retired per /stress A2.3c B-1051**)
+are RESOLVED via §A2 14/16 audit cascade closure 2026-05-18 (B-1265 /stress A2.6a P0-6-B* 2026-05-18 + B-1550 /stress A2.8 P0-2-AB* 2026-05-18 operational-gate reframing — supersedes stale "K_h1 / K_h3 / TOST δ thresholds" phrasing + stale "advisor email reply gates lock" phrasing per B-1570 /stress A2.8 followup doctrine-shift propagation 2026-05-18; original pre-2026-05-14 framework had advisor email as primary lock gate but 2026-05-14 sync 收口 reclassified student scope to "experiment execution; prose advisor-side", and §A2 audit cascade self-decision substitutes advisor pre-lock email per 实验笔记 §209 "Advisor sync triage: 0 项真需要 advisor pre-sync"). This checklist
 drives the 8-step DOI workflow (笔记 §110 + `paper_planning.md §19` decision log + `osf_lock_manifest.md §3`; ADVISOR_SYNC.md retired 2026-05-15, commit `f64bc9d`, replaced by `_status/issues/issue_advisor_sync_2026-05-14.md` frontmatter + Bases view).
 
 **Status**: 🟡 Draft — fields populate at lock moment.
-**Lock blocker**: ⏳ advisor email reply (Q1-Q11 in `advisor_sync_5_5_followup.md`)
+**Lock blocker**: ⏳ **Phase 1a Pass-1 baseline data complete + A100 B2 HF SHA pin + A100-side `probe_b0_production_path.py` + `snapshot_env.py` self-verification** (per phase1_plan §B1 items 7+8 + B-1427+B-1428). **Advisor email reply RECLASSIFIED 2026-05-18 per /stress A2.8 followup B-1570 as optional post-fire collateral** (was hard gate pre-2026-05-14 sync 收口; current doctrine: §A2 14/16 audit cascade substantively closes all 14 commit decisions, advisor batch sign-off retained as optional reproducibility audit-trail completeness for OSF DOI mint).
 
 ---
 
 ## §1 Pre-lock checklist (everything must be done before OSF DOI mint)
 
-- [ ] Advisor email reply received (**H1 FE superiority δ=1.0pp** / **H3 axis-1+axis-2 gates** / **H10 Pareto non-dominance** / **K-of-N transparency-only (no thresholds; ratio K_h1/K_h3 fake-precision argument)** / **TOST retired** per /stress A2.3c B-1051 2026-05-17 + B-957 2026-05-17 / Phase 1a **42-condition 6-cell scope (36 Pass-1 baseline + 6 Pass-2 learned router; A1.21 P1-5 align 2026-05-17)** confirmed
-      OR alternative noted) — **Updated 2026-05-18 per /stress A2.6a B-1265 P0-6-B*** — supersedes stale "K_h1=0.75 transparency / K_h3=0.67 transparency / TOST δ=1.0pp SR-margin" phrasing that contradicted `preregistration.md §2.4 + §2 H1 + §3` TOST retirement 2026-05-17 + K-of-N transparency-only 2026-05-13 reclassification.
+- [x] **Substance-lock RESOLVED via §A2 14/16 audit cascade** (B-1570 /stress A2.8 followup 2026-05-18 doctrine-shift propagation — replaces pre-2026-05-14 "Advisor email reply received" hard-gate language; advisor batch sign-off now optional post-fire collateral): all 14 commit decisions substance-locked via Git SHA + audit-trail refs (master_bug_catalog ## A2.1~## A2.9 + 实验笔记 §200-§221). Specifically: **H1 FE superiority δ=1.0pp + bootstrap percentile primary gate** ✅ /stress A2.3a B-941~B-958 + A2.4a B-1009 + A2.3d B-1301 / **H3 axis-1+axis-2 FE gates** ✅ A2.3c B-1057 / **H10 two-layer operational deployment gate** (cell-level 95% paired-bootstrap + grid-level ≥5/6 fixed-cell operational robustness criterion, NOT binomial significance test) ✅ A2.8 B-1550 / **K-of-N transparency-only retired-as-gate** (fake-precision ⌈0.75×6⌉=⌈0.67×6⌉=5 argument) ✅ §2.4 + §H1 / **TOST framework retired** ✅ A2.3a B-957 + A2.3c B-1051 / **Phase 1a 42-condition 6-cell scope** (36 Pass-1 baseline + 6 Pass-2 learned router) ✅ A2.6a B-1264 sweep. Advisor email batch sign-off retained as optional post-fire collateral per §6 §(a) reframe 2026-05-18.
 - [ ] `preregistration.md` final text edit committed + pushed (incl. 2026-05-13
       codex stress audit propagation: K-of-N transparency-only + 24/4 scope +
       drop-one H1 formula + outcome-independent smoke gate + Appendix A 2026-05-13)
@@ -77,19 +76,21 @@ Each `env_snapshot.json` captures: torch / transformers / Python / git commit /
 HuggingFace model revision SHA (Qwen3-VL-4B + Llama-3.2-Vision if used) /
 GPU compute capability / hostname / nvidia-smi output.
 
-### 2.4 Witness chain (3-layer paper-grade)
+### 2.4 Witness chain (3-layer paper-grade; doctrine shift 2026-05-18 per /stress A2.8 followup B-1570)
 
 | Layer | Mechanism | Status |
 |---|---|---|
-| **Git** | `git tag preregistration-locked` on master at OSF DOI mint commit | TBD |
-| **Email** | Advisor reply email PDF saved to `docs/reference/advisor_email_<date>.pdf` (Gmail message-id recorded in this manifest) | TBD |
-| **OSF** | OSF preregistration page DOI: `<TBD>` (e.g., `10.17605/OSF.IO/XXXXX`) | TBD |
+| **Git** | `git tag prereg-h10-locked` on master at `5f8c63a` (A2.8 Chunk 4 closure 2026-05-18) → promoted to `preregistration-locked` post-Phase-1a-fire-data-complete + post-A100-B2-SHA-pin | ✅ Layer 1 partial (prereg-h10-locked locked; preregistration-locked pending Phase 1a + A100 B2 SHA) |
+| **§A2 audit cascade refs** (was "Advisor email" pre-2026-05-14 sync 收口 — reclassified 2026-05-18 per B-1570 doctrine-shift propagation) | §A2 14/16 audit cascade Git SHA refs at master HEAD substantively close all 14 commit decisions via per-decision B-### audit-trail (master_bug_catalog ## A2.1~A2.9 + 实验笔记 §200-§221); advisor batch sign-off retained as optional post-fire collateral (email PDF to `docs/reference/advisor_email_<date>.pdf` + Gmail message-id captured if/when advisor signs) | ✅ Layer 2 substantively complete via §A2 cascade (formal advisor batch sign-off optional post-fire) |
+| **OSF** | OSF preregistration page DOI: `<TBD>` (e.g., `10.17605/OSF.IO/XXXXX`) — mintable post-Phase-1a-fire-data-complete | ⏸ Layer 3 pending Phase 1a Pass-1 baseline data |
 
 ---
 
-## §3 Eight-step DOI workflow (post advisor email reply)
+## §3 Eight-step DOI workflow (post Phase 1a fire data lock; advisor batch sign-off optional)
 
-1. **Receive advisor reply** → save email PDF + extract Gmail message-id
+> **Doctrine-shift note (/stress A2.8 followup B-1570 2026-05-18)**: pre-fix header said "post advisor email reply" but post-2026-05-14 sync 收口 + §A2 14/16 audit cascade closure, advisor email reply is **no longer the gating event for OSF DOI mint**. The new gating event is **Phase 1a Pass-1 baseline data complete + A100 B2 HF SHA pin landed**. Step 1 reclassified as optional collateral; advisor batch sign-off can land before OR after OSF DOI mint as audit-trail reproducibility completeness.
+
+1. **(optional, post-fire collateral)** Save advisor batch sign-off email PDF + extract Gmail message-id if/when advisor signs (NOT blocking OSF DOI mint per B-1570 doctrine shift; §A2 14/16 audit cascade Git SHA refs at master HEAD already substantively close all 14 commit decisions)
 2. **Update `preregistration.md`** with confirmed thresholds + decision log entry
 3. **Run `python3 scripts/provenance/snapshot_env.py`** on **A100 (paper-1 canonical, mandatory)** + DGX (archive reference) + Myriad (optional cross-arch),
    commit results under `results/provenance/env_lock_<host>.json` (B-132 2026-05-15: A100 is canonical, DGX is archive-only per §7 Infrastructure migration note)
