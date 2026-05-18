@@ -146,12 +146,69 @@ def collect_per_task_outcomes_with_metrics(
                 latency = rec.get("total_latency_ms")
                 if latency is None:
                     latency = (rec.get("latency_ms") or {}).get("total", 0.0)
+                # B-1601 (/stress 深入审 Mode A P0-2-A*, 2026-05-18): capture
+                # `cost_unit_basis` per-episode for downstream cell-level
+                # homogeneity check + cross-cell FE-pool basis-mix detection.
+                # Pre-fix: this script entirely missed the cost_unit_basis
+                # propagation that A2.7 B-1409 wired into
+                # `aggregate_cross_site.py` — sibling-script propagation gap.
+                # B0 cells = "api_usd" (proxy `usage.cost`), B1/B2 cells =
+                # "electricity_usd_derived" (NVML wallclock × $/kWh); 1000×
+                # scale gap. Within-cell legacy "unknown" rows would silently
+                # corrupt per-cell paired-bootstrap cost-feasibility filter
+                # (`b_cost <= r_cost`); cross-cell appendix FE-pool of any
+                # cost-derived statistic would mix bases.
+                cost_unit_basis = rec.get("cost_unit_basis", "unknown")
                 matrix.setdefault(tid, {})[mode] = {
                     "success": int(success),
                     "cost_usd": float(cost or 0.0),
                     "latency_ms": float(latency or 0.0),
+                    "cost_unit_basis": str(cost_unit_basis) if cost_unit_basis else "unknown",
                 }
     return matrix
+
+
+def _compute_modal_basis(
+    outcomes: dict[int, dict[str, dict[str, Any]]],
+) -> dict[str, Any]:
+    """B-1601 (/stress 深入审 Mode A P0-2-A*, 2026-05-18): compute modal
+    `cost_unit_basis` across all (task, mode) entries in a per-cell outcome
+    matrix + flag heterogeneity. Returns:
+
+        {modal_basis: str, basis_counts: {basis: int}, homogeneous: bool,
+         minority_rows: int, total_rows: int}
+
+    `homogeneous=False` when minority basis count > 0 (any non-modal record).
+    Within-cell `cost_unit_basis` mixing breaks per-cell paired-bootstrap
+    cost-feasibility filter at borderline tasks — under paper_grade gate this
+    should fail-loud, but under default behaviour we surface the diagnostic
+    and let the caller decide.
+    """
+    basis_counts: dict[str, int] = {}
+    total = 0
+    for _tid, modes in outcomes.items():
+        for _mode, m in modes.items():
+            basis = m.get("cost_unit_basis", "unknown")
+            basis_counts[basis] = basis_counts.get(basis, 0) + 1
+            total += 1
+    if not basis_counts:
+        return {
+            "modal_basis": "unknown",
+            "basis_counts": {},
+            "homogeneous": True,
+            "minority_rows": 0,
+            "total_rows": 0,
+        }
+    # Modal = highest-count basis; ties broken alphabetically deterministic
+    modal_basis = max(basis_counts.items(), key=lambda kv: (kv[1], -ord(kv[0][0]) if kv[0] else 0))[0]
+    minority_rows = total - basis_counts.get(modal_basis, 0)
+    return {
+        "modal_basis": modal_basis,
+        "basis_counts": basis_counts,
+        "homogeneous": minority_rows == 0,
+        "minority_rows": minority_rows,
+        "total_rows": total,
+    }
 
 
 def aggregate_arm_metrics(
@@ -368,6 +425,21 @@ def analyze_cell(baseline: str, site: str) -> dict[str, Any]:
     print(f"  Pass-1 tasks with outcomes: {len(pass1_outcomes)}")
     print(f"  Pass-2 tasks with outcomes: {len(pass2_outcomes)}")
 
+    # B-1601 (/stress 深入审 Mode A P0-2-A*, 2026-05-18): per-cell modal
+    # cost_unit_basis + within-cell homogeneity diagnostic. Within-cell
+    # mixed basis (e.g., paper-grade rerun episodes pooled with legacy
+    # "unknown" archive episodes) silently breaks paired-bootstrap cost
+    # feasibility filter `b_cost <= r_cost` at borderline tasks. Diagnostic
+    # surfaces basis_counts so caller can decide whether to (a) re-filter
+    # archive rows, (b) flip P79_PAPER_GRADE=1 hard-fail, or (c) accept
+    # the warning row for non-paper-grade development runs.
+    cell_basis = _compute_modal_basis({**pass1_outcomes, **pass2_outcomes})
+    print(
+        f"  cell_cost_unit_basis: modal={cell_basis['modal_basis']} "
+        f"homogeneous={cell_basis['homogeneous']} "
+        f"counts={cell_basis['basis_counts']}"
+    )
+
     # Extract router metrics: Pass-2 has a single condition "phase1_learned_router_<N>"
     # Look for the "learned" mode key (sentinel; actual routed mode varies per task)
     router_success: list[int] = []
@@ -491,6 +563,10 @@ def analyze_cell(baseline: str, site: str) -> dict[str, Any]:
         "passes": pareto["passes"],
         "theta_mean_pp": pareto["theta_mean_pp"],
         "theta_se_pp": pareto["theta_se_pp"],
+        # B-1601 (/stress 深入审 Mode A P0-2-A*, 2026-05-18): cell-level
+        # cost_unit_basis diagnostic for downstream cross-cell pool homogeneity
+        # check in run_h10_verdict (paper §6 Appendix-D FE-pool transparency).
+        "cell_cost_unit_basis": cell_basis,
     }
 
 
@@ -537,6 +613,51 @@ def run_h10_verdict(cells: Optional[list[tuple[str, str]]] = None) -> dict[str, 
         "H1-mirror estimand parallelism — NOT the operational deployment gate; "
         "operational gate is the two-layer cell-level + grid-level criterion above)."
     )
+
+    # B-1601 (/stress 深入审 Mode A P0-2-A*, 2026-05-18): cross-cell
+    # cost_unit_basis homogeneity diagnostic on FE pool. θ_i is a SR delta
+    # (pp, dimensionless) so basis-mixing does NOT directly corrupt pool
+    # arithmetic, BUT (a) each θ_i's `max_feasible_baseline_SR` calculation
+    # used per-cell cost-feasibility filter `b_cost <= r_cost` whose ordering
+    # depends on basis-consistent cost magnitudes — within-cell unknown-row
+    # mix is the actual risk vector, (b) any downstream paper §6 prose
+    # quoting "average router cost across cells" would silently mix
+    # api_usd ($0.005/1K tok) with electricity_usd_derived ($0.0000005/1K tok)
+    # at ~1000× scale gap. Emit warning fields so paper §6 figure script +
+    # OSF artifact replay can stratify.
+    cell_basis_summary: dict[str, Any] = {
+        "per_cell": {
+            r["cell_id"]: r.get("cell_cost_unit_basis", {})
+            for r in ok_cells
+        },
+        "cells_with_homogeneous_basis": sum(
+            1 for r in ok_cells
+            if r.get("cell_cost_unit_basis", {}).get("homogeneous", True)
+        ),
+        "cells_with_mixed_basis": sum(
+            1 for r in ok_cells
+            if not r.get("cell_cost_unit_basis", {}).get("homogeneous", True)
+        ),
+        "modal_bases_distinct": sorted({
+            r.get("cell_cost_unit_basis", {}).get("modal_basis", "unknown")
+            for r in ok_cells
+        }),
+    }
+    cell_basis_summary["pool_basis_homogeneous"] = (
+        len([b for b in cell_basis_summary["modal_bases_distinct"] if b != "unknown"]) <= 1
+    )
+    if not cell_basis_summary["pool_basis_homogeneous"]:
+        cell_basis_summary["pool_warning"] = (
+            "FE pool aggregates θ_i (SR delta, pp) across cells with mixed "
+            "cost_unit_basis: " + ", ".join(cell_basis_summary["modal_bases_distinct"])
+            + ". θ_i pooling is SR-based and dimensionally sound, BUT any "
+            "downstream paper §6 prose / figure quoting absolute or pooled "
+            "cost (USD) across these cells MUST stratify by basis or it "
+            "produces a unit-collision artifact (api_usd vs "
+            "electricity_usd_derived = ~1000× scale gap). Reference: "
+            "section1_intro.md [^cost-basis-cross-baseline] footnote."
+        )
+    fe_pool["cell_cost_unit_basis_summary"] = cell_basis_summary
 
     return {
         "schema_version": SCHEMA_VERSION,
