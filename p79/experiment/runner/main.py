@@ -1469,6 +1469,27 @@ class ExperimentRunner:
             if isinstance(exc, (KeyboardInterrupt, SystemExit)):
                 raise
             exc_str = str(exc)
+            # B-1662 (/stress A2.11 P0-3-BC 2026-05-18, user Q2=A): evaluator
+            # infrastructure unavailable = fail-fast condition abort, NOT write
+            # needs_reevaluation=True summary to canonical episodes dir. Pre-fix
+            # B-486 quarantine path wrote half-failed summary that downstream
+            # metrics aggregator hard-fails on, but only AFTER condition runs to
+            # completion = hours wasted before operator sees env bug. Plus
+            # canonical dir gets polluted with quarantine summaries that next
+            # attempt must clean. Now: env infra error → immediate raise →
+            # condition aborts → operator fixes env (NLTK download / OpenAI
+            # key / VWA submodule) + re-fires from clean state. Empirical
+            # 2026-05-18 13:28:06 fire: cls runner burned 4 tasks on missing
+            # NLTK punkt; with this guard, runner would abort at task 0.
+            from p79.experiment.environment import EvaluatorUnavailableError
+            if isinstance(exc, EvaluatorUnavailableError):
+                logger.error(
+                    "Evaluator infrastructure unavailable at site=%s task=%s — "
+                    "ABORTING condition (do NOT write needs_reevaluation summary; "
+                    "operator must fix env + re-fire from clean state): %s",
+                    task.site, task.task_id, exc,
+                )
+                raise
             if self._FATAL_ENV_REGEX.search(exc_str):
                 logger.error(
                     "Fatal environment error at site=%s task=%s — "

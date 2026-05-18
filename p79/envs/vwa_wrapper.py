@@ -153,29 +153,33 @@ class VWAWrapper:
         # running on this thread. This can happen after VWA program_html
         # evaluators or HuggingFace hub (both use asyncio/httpx).
         #
-        # B-1581 (/stress A1.24 fire-day hot follow-up, 2026-05-18): replaces
-        # B-159 (2026-05-16) hard-fail with defensive unconditional reinstall.
-        # Empirical Phase 1a fire today (B0 dom cls): 110 tasks burned with
-        # 324 B-159 errors in <5 min because VWA submodule
-        # `external/visualwebarena/browser_env/async_envs.py:114/121/160` uses
-        # `asyncio.run()` per-step which leaves a stale event-loop binding
-        # thread-local after each call. B-159 hard-fail then refused every
-        # post-task-0 reset → fire-blocker. B-159 comment claimed "Phase 1a
-        # callers never have an active loop" — empirically false under
-        # multi-task production fire (the guard was prose-validated only,
-        # 2-week gap to first real multi-task fire). Defensive replacement:
-        # install a fresh loop unconditionally — the new loop shadows any
-        # stale binding, get_running_loop() in Playwright sync layer then
-        # raises (clean state from sync API's perspective).
+        # B-1581 v2 (/stress A2.11 P0-2-A*B 2026-05-18, user Q1=A): replaces
+        # B-1581 v1 (today fire-day hot fix) unconditional new_event_loop
+        # band-aid with proper resource lifecycle. v1 left stale loops + their
+        # Playwright resources (websocket connections, Frame instances) bound
+        # in browser process — suspected root cause of red 99s busy-wait at
+        # 2026-05-18 13:28:06 fire (orphaned websocket jamming page settle
+        # channel). v2 explicitly close()s stale loop on detection. In
+        # _lazy_init() there's no env yet (about to create), so loop-only
+        # cleanup is sufficient; reset() path handles env force-rebuild.
         import asyncio as _asyncio
         try:
             _stale = _asyncio.get_running_loop()
             logger.warning(
-                "B-1581 (_lazy_init): stale asyncio loop bound to thread (likely "
-                "from VWA browser_env/async_envs asyncio.run leak); reinstalling "
-                "fresh loop. Stale=%r closed=%s",
+                "B-1581 v2 (_lazy_init): stale asyncio loop bound to thread "
+                "(likely from VWA browser_env/async_envs asyncio.run leak); "
+                "closing stale loop + installing fresh. Stale=%r closed=%s",
                 _stale, _stale.is_closed(),
             )
+            try:
+                if not _stale.is_closed():
+                    _stale.close()
+                    logger.info("B-1581 v2 (_lazy_init): stale loop closed")
+            except Exception:
+                logger.warning(
+                    "B-1581 v2 (_lazy_init): failed to close stale loop",
+                    exc_info=True,
+                )
         except RuntimeError:
             pass  # Clean state — no stale loop
         _asyncio.set_event_loop(_asyncio.new_event_loop())
@@ -196,29 +200,62 @@ class VWAWrapper:
             dummy_img = Image.new('RGB', (self.viewport_width, self.viewport_height), color='black')
             return P79Observation(text="[DRY_RUN]", image=dummy_img), {"dry_run": True}
 
-        self._lazy_init()
-        assert self._env is not None
-
-        # Re-apply asyncio event loop reset before every _env.reset().
-        # _lazy_init() only runs it on first init, but VWA program_html evaluators
-        # (httpx/asyncio) AND VWA browser_env/async_envs.py (step/reset/close use
-        # asyncio.run) can leave a stale loop binding across episode boundaries.
-        # B-1581 (/stress A1.24 fire-day hot follow-up, 2026-05-18): same
-        # defensive replacement as _lazy_init (see block comment there). Replaces
-        # B-159 hard-fail which was prose-validated only and broke multi-task
-        # production fire (324 errors in 110 burned tasks during cls B0 dom).
+        # B-1581 v2 (/stress A2.11 P0-2-A*B 2026-05-18, user Q1=A): MUST run
+        # BEFORE self._lazy_init() so env=None propagates to force-rebuild.
+        # On stale loop detect: close stale env (releases Playwright websocket
+        # refs to old loop) → close stale loop → self._env = None → install
+        # fresh loop. lazy_init below then rebuilds ScriptBrowserEnv from clean
+        # state. Pre-fix v1 only swapped the loop binding while keeping the
+        # existing env's references to old-loop resources alive — empirical
+        # red 99s busy-wait suspected to be orphaned websocket jamming page
+        # settle. Cost amortization: stale detection rare (only after prior
+        # asyncio.run leak from VWA browser_env/async_envs); per-reset
+        # detection cost negligible.
         import asyncio as _asyncio
+        _stale_loop = None
         try:
-            _stale = _asyncio.get_running_loop()
+            _stale_loop = _asyncio.get_running_loop()
             logger.warning(
-                "B-1581 (reset): stale asyncio loop bound to thread (likely from "
-                "prior episode's VWA browser_env/async_envs asyncio.run); "
-                "reinstalling fresh loop. Stale=%r closed=%s",
-                _stale, _stale.is_closed(),
+                "B-1581 v2 (reset): stale asyncio loop bound to thread (likely "
+                "from prior episode's VWA browser_env/async_envs asyncio.run); "
+                "forcing env+loop close + ScriptBrowserEnv rebuild. "
+                "Stale=%r closed=%s",
+                _stale_loop, _stale_loop.is_closed(),
             )
         except RuntimeError:
-            pass  # Clean state — no stale loop
+            pass  # Clean state — no stale loop, keep env
+
+        if _stale_loop is not None:
+            # Close stale env first — releases Playwright resource refs to old loop
+            if self._env is not None:
+                try:
+                    self._env.close()
+                    logger.info(
+                        "B-1581 v2 (reset): closed stale env (forcing lazy_init rebuild)"
+                    )
+                except Exception:
+                    logger.warning(
+                        "B-1581 v2 (reset): failed to close stale env",
+                        exc_info=True,
+                    )
+                self._env = None
+            # Close stale loop
+            try:
+                if not _stale_loop.is_closed():
+                    _stale_loop.close()
+                    logger.info("B-1581 v2 (reset): closed stale loop")
+            except Exception:
+                logger.warning(
+                    "B-1581 v2 (reset): failed to close stale loop",
+                    exc_info=True,
+                )
+
+        # Always install fresh loop (covers both stale-rebuild and clean-state)
         _asyncio.set_event_loop(_asyncio.new_event_loop())
+
+        # lazy_init rebuilds env if force-closed above; no-op if env survived
+        self._lazy_init()
+        assert self._env is not None
 
         try:
             obs, info = self._env.reset(options={"config_file": config_file})

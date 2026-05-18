@@ -479,6 +479,49 @@ check_vwa_submodule_lock() {
   pass "VWA submodule locked at ${expected_branch}@${expected_sha:0:8} (B-91 guard count=${guard_count} ≥ ${expected_b91_guards})"
 }
 
+check_nltk_resources() {
+  # B-1660 (/stress A2.11 P0-1-A* OOB, 2026-05-18): NLTK punkt/punkt_tab data
+  # required by VWA evaluation_harness LLM judge string_match path (sent_tokenize
+  # via helper_functions.py). Pre-fix preflight only checked evaluator IMPORT
+  # (check_vwa_evaluator_import) + paper-grade INIT probe (B-793
+  # check_vwa_evaluator_paper_grade); neither invokes sent_tokenize at preflight
+  # time, so missing NLTK data silently passes preflight and crashes at first
+  # task evaluation as EvaluatorUnavailableError → LookupError("Resource punkt
+  # not found"). Empirical 2026-05-18 13:28:06 Phase 1a fire: cls runner 4/4
+  # tasks all evaluator-fail → entire condition paper-grade contaminated. Fix:
+  # actually call sent_tokenize at preflight + verify punkt + punkt_tab paths.
+  if [[ -z "${PYTHON_BIN:-}" ]]; then
+    fail "Skipping NLTK check because no Python was found"
+    return
+  fi
+  local py_output
+  if ! py_output="$(${PYTHON_BIN} - <<'PY' 2>&1
+import sys
+try:
+    from nltk.tokenize import sent_tokenize
+    # Smoke test — matches runtime usage path in evaluation_harness.
+    _ = sent_tokenize("Hello world. This is a test.")
+    # Also verify punkt_tab (NLTK 3.9+ split punkt → punkt + punkt_tab).
+    from nltk.data import find as _nltk_find
+    _nltk_find("tokenizers/punkt")
+    _nltk_find("tokenizers/punkt_tab")
+    print("ok")
+except LookupError as exc:
+    print(f"NLTK_DATA_MISSING: {exc!r}")
+    sys.exit(2)
+except Exception as exc:
+    print(f"UNEXPECTED: {type(exc).__name__}: {exc!r}")
+    sys.exit(3)
+PY
+)"; then
+    fail "NLTK punkt/punkt_tab missing (${py_output})"
+    fail "  → fix: ${PYTHON_BIN} -c \"import nltk; nltk.download('punkt'); nltk.download('punkt_tab')\""
+    fail "  → 2026-05-18 fire-day root cause: silent preflight pass → first task evaluator crash"
+    return
+  fi
+  pass "NLTK resources available (sent_tokenize smoke + punkt/punkt_tab found)"
+}
+
 check_openai_api_key() {
   # B-679 (/stress A1.14 Chunk b P1-9 Claude unique OOB A, 2026-05-17):
   # paper-grade VWA evaluator runs LLM judge for N/A tasks via OpenAI API
@@ -642,6 +685,7 @@ main() {
   check_playwright_browser
   check_torch_cuda
   check_vwa_submodule_lock
+  check_nltk_resources  # B-1660 (/stress A2.11 P0-1-A* 2026-05-18): catches NLTK missing pre-fire
   check_openai_api_key
   check_vwa_evaluator_import
   check_vwa_evaluator_paper_grade  # B-793: skipped unless --paper-grade

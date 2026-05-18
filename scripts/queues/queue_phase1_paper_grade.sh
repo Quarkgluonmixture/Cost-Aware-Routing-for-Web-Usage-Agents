@@ -630,8 +630,40 @@ case "$MODE" in
     case "$SITE_FILTER" in
       all)
         # Default = Phase 1a (cls + red only). Phase 1b shop requires explicit launch.
-        launch_chain "cls" build_cls_chain
-        launch_chain "red" build_red_chain
+        # B-1663 (/stress A2.11 P0-5-A*C 2026-05-18, user Q3=A): paper-grade fire
+        # SEQUENTIAL by default — cls + red 同时 fire 共享 A100 docker bridge +
+        # Postgres/Redis underlay + B0 AWS proxy quota. Empirical 2026-05-18
+        # 13:28:06 fire saw red 99s busy-wait + B-1581 asyncio race (cross-site
+        # contention suspected root cause). Sequential ~2× wallclock but cross-cell
+        # latency canonical clean. PHASE1A_PARALLEL=1 opt-in dev mode (NOT paper-
+        # grade per CLAUDE.md hard rule #3).
+        if [[ "${PHASE1A_PARALLEL:-0}" != "1" ]]; then
+          log "Sequential paper-grade fire (B-1663): cls → red after cls completion."
+          launch_chain "cls" build_cls_chain
+          _cls_pid_file="logs/queue_phase1_cls.latest.pid"
+          if [[ ! -f "$_cls_pid_file" ]]; then
+            fail "cls pid file missing: $_cls_pid_file — launch_chain failed?"
+          fi
+          _cls_pid=$(cat "$_cls_pid_file")
+          log "Waiting for cls chain pid=${_cls_pid} to complete (max 24h)..."
+          _wait_elapsed=0
+          while kill -0 "$_cls_pid" 2>/dev/null && (( _wait_elapsed < 86400 )); do
+            sleep 60
+            _wait_elapsed=$((_wait_elapsed + 60))
+            if (( _wait_elapsed % 1800 == 0 )); then
+              log "  cls chain pid=${_cls_pid} still running (${_wait_elapsed}s elapsed)"
+            fi
+          done
+          if kill -0 "$_cls_pid" 2>/dev/null; then
+            fail "cls chain pid=${_cls_pid} alive after 24h max-wait — investigate manually"
+          fi
+          log "cls chain pid=${_cls_pid} done; launching red chain"
+          launch_chain "red" build_red_chain
+        else
+          log "PHASE1A_PARALLEL=1 set — DEV MODE parallel fire (NOT paper-grade per CLAUDE.md hard rule #3)"
+          launch_chain "cls" build_cls_chain
+          launch_chain "red" build_red_chain
+        fi
         ;;
       cls)  launch_chain "cls" build_cls_chain ;;
       red)  launch_chain "red" build_red_chain ;;
