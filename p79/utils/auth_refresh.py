@@ -161,9 +161,24 @@ def refresh_site_auth(
 
     # B-725 (/stress A1.11 P1-9 C, 2026-05-17): per-site positive login-success
     # selector. AND-combined with negative login-page check below.
+    # B-1577 (/stress A1.24 follow-up, 2026-05-18): reddit positive selector
+    # cleared because postmill renders the logout link INSIDE a JS-driven user
+    # dropdown — `a[href*="logout"]` is not visible in the initial DOM
+    # post-login. Empirical evidence (A100 live test post-bc54e25 + f909ee6 deploy):
+    # `auth_refresh: reddit outcome=cred_wrong ... LOGIN_FAILED (no_logout_marker)
+    # -> http://localhost:9999/` — final URL is the postmill homepage NOT /login,
+    # i.e. login DID succeed but B-725 positive-marker AND-gate produced false
+    # negative on a working flow. Per `_auto_refresh_auth` docstring at
+    # experiment_watchdog.py:166-197 + watchdog `_SITE_AUTH_REGEX["reddit"]`
+    # comment block: "Postmill (reddit): NO explicit `link 'Logout'`. Logged-in
+    # detection uses the user-dropdown menu options string". A Playwright-
+    # compatible substitute would need JS-driven dropdown expansion. For now the
+    # URL-change negative check (`_still_on_login`) is sole signal for reddit —
+    # postmill wrong-creds → stays on /login with error → `_still_on_login=True`
+    # → caught.
     _positive_selectors = {
         "classifieds":    'a[href*="logout"]',
-        "reddit":         'a[href*="logout"]',
+        "reddit":         '',  # B-1577: postmill JS-dropdown — rely on URL change
         "shopping":       'a[href*="customer/account/logout"]',
         "shopping_admin": '.admin-user-account-text, a[href*="admin/auth/logout"]',
     }
