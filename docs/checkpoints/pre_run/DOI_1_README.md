@@ -11,27 +11,41 @@ osf_guid: <to-be-assigned at submission>
 osf_submitted_at_utc: <to-be-recorded at submission>
 ---
 
-# DOI 1 — Phase 1a Pre-canonical-outcome-creation Witness for Fire-3 (phantom-SoM pre-registration)
+# 🟡 DRAFT — DOI 1 README pending Fire-3 canonical witness capture
+
+> **STATUS**: This README is **pre-submission draft**. The canonical Fire-3 witness file is **TBD** (will be captured within 5 min of Fire-3 PID-alive via `scripts/maintenance/capture_doi1_witness.sh`). Once captured + counts + SHA-256 fill in, this DRAFT marker drops and the document becomes the final DOI 1 README for OSF upload.
+>
+> **DO NOT submit OSF registration with this DRAFT** — Fire-3 canonical witness must precede submission.
+
+# DOI 1 — Phase 1a Pre-canonical-outcome Witness for Fire-3 (phantom-SoM pre-registration)
 
 ## 🚫 Retraction notice — original Fire-2-era witness VOIDED 2026-05-18 ~14:45 UTC
 
 A previous Fire-2-era witness file (`artifact_existence_check_doi1_20260518T135722Z.txt`,
-SHA-256 `e0e591f5b19c0248d4a7274cf8b19e54dbcc01706c859bfcbc2530e84de047d6`) was retracted
-because its outcome-artifact capture pattern was incorrect (`episodes/*_summary.json` /
-`*_steps.jsonl` instead of canonical `episodes/<site>_task_<N>_summary_v2.json` /
-`<site>_task_<N>_steps_v2.jsonl` per `p79/experiment/logger_v2.py:111` + `analysis.py:209`).
+SHA-256 `e0e591f5b19c0248d4a7274cf8b19e54dbcc01706c859bfcbc2530e84de047d6`) is **VOIDED**
+and **retained only as a retraction artifact**. It is **not** used as the DOI 1 timestamp
+anchor or empirical zero-outcome witness.
 
-Fire-2 is treated as an **aborted substrate test** (NLTK punkt missing → B-486 evaluator
-failure → SIGTERM at UTC 14:04; watchdog auto-retry cleanup at UTC 14:06). Fire-2 is NOT
-used as the canonical Phase 1a outcome source.
+Reason for retraction: outcome-artifact capture pattern was incorrect
+(`episodes/*_summary.json` / `*_steps.jsonl` instead of canonical
+`episodes/<site>_task_<N>_summary_v2.json` / `<site>_task_<N>_steps_v2.jsonl` per
+`p79/experiment/logger_v2.py:111+114` + `analysis.py:209`).
 
-The **canonical DOI 1 witness** in this bundle was captured **at Fire-3 launch** (post-
-NLTK-substrate-fix, after Fire-3 PID-alive but **before creation or inspection of any
-Fire-3 outcome-bearing artifact**). The interim corrected scan at
-`artifact_existence_check_doi1_interim_20260518T144258Z.txt` (SHA-256
+Fire-2 was an **aborted substrate test** (NLTK punkt missing → B-486 evaluator failure →
+SIGTERM at UTC 14:04; watchdog auto-retry cleanup at UTC 14:06). It may have produced
+transient run-directory files; the corrected canonical-pattern scan after cleanup found
+zero canonical outcome-bearing artifacts. Fire-2 outputs are excluded from DOI 1 and from
+canonical Phase 1a analysis.
+
+The **canonical DOI 1 witness** is **TBD pending Fire-3 launch**. It will be captured at
+Fire-3 PID-alive moment (post-NLTK-substrate-fix, **before creation or inspection of any
+Fire-3 outcome-bearing artifact**) via the regression-tested capture script
+`scripts/maintenance/capture_doi1_witness.sh` (B-1675; canonical patterns hardcoded with
+schema citation; `tests/test_doi1_witness_pattern.py` 9 cases PASS). The interim
+corrected scan at `artifact_existence_check_doi1_interim_20260518T144258Z.txt` (SHA-256
 `7563f0d55b651b604746ef0498fba3439ad7d7e130af97f0adda55e2bc7f1bf8`) documents the
 post-fire-2-cleanup, pre-fire-3 substrate state and serves as audit-trail bridge between
-retraction and canonical capture.
+retraction and canonical capture — it is **not** the DOI 1 anchor either.
 
 Full retraction audit trail: `master_bug_catalog.md ## /stress witness pattern bug
 retraction` (B-1670~B-1679) + `实验笔记.md §231` + git tag `retraction/osf-doi1-witness-59c60c4`.
@@ -40,33 +54,49 @@ retraction` (B-1670~B-1679) + `实验笔记.md §231` + git tag `retraction/osf-
 
 ## Purpose
 
-This OSF public registration is a **pre-canonical-outcome-creation witness** for the
-**canonical Fire-3 Phase 1a run** of the phantom-SoM phenomenon paper (paper-1, EMNLP /
-workshop target). It deposits the pre-registration document + analysis plan + locked code
-state at a public-ledger timestamp that **precedes the creation or inspection of any
-Fire-3 outcome-bearing artifact** on the experimental host.
+This OSF public registration is a **pre-canonical-outcome witness** for the **canonical
+Fire-3 Phase 1a run** of the phantom-SoM phenomenon paper (paper-1, EMNLP / workshop
+target). It deposits the pre-registration document + analysis plan + locked code state
+at a **public timestamp** that **precedes creation or inspection of any Fire-3 outcome-
+bearing artifact** on the experimental host.
 
-Wording precision: "pre-canonical-outcome-creation" rather than "pre-outcome-creation"
-acknowledges that Fire-2 (substrate test) produced + cleaned up partial outputs
-between 13:28-14:06 UTC. The DOI 1 timestamp anchors to **Fire-3 = canonical paper-grade
-run**, NOT to "no outcomes have ever existed in repo history" (which would be false).
+**Wording precision**: the title says "pre-canonical-outcome" (not the stronger
+"pre-canonical-outcome-creation") until the canonical witness is captured + verified.
+Once captured with all canonical-pattern counts zero, the claim strengthens to
+**pre-canonical-outcome-creation** and the title updates accordingly. If any canonical
+pattern returns nonzero at capture time, the claim tier downgrades automatically per the
+capture script's tier-detection logic (pre-canonical-outcome-creation → pre-outcome-
+inspection → pre-analysis).
 
-## Empirical pre-canonical-outcome-creation status (canonical capture pending Fire-3)
+Fire-2 history is acknowledged: it was an aborted substrate test, NOT a canonical run.
+DOI 1 timestamp anchors to **Fire-3 = canonical paper-grade run**, NOT to "no outcomes
+have ever existed in repo history" (which would be false).
 
-**Canonical witness placeholder** — to be captured at Fire-3 PID-alive moment with
-canonical schema patterns (per `p79/experiment/logger_v2.py:111` + `analysis.py:209`):
+**This wording claim is conditional on the canonical witness counts being zero at
+capture time**; verified empirically by `capture_doi1_witness.sh` known-positive probe
+(B-1675 P1-4) which detects schema-mismatch (target=0 AND any-files>0 = abort) and
+auto-downgrades the tier label if outcomes already exist.
 
-| Outcome tier | Canonical pattern | Count (canonical witness, TBD) |
-|---|---|---|
-| Per-episode outcome (earliest tier) | `episodes/<site>_task_<N>_summary_v2.json` | pending fire-3 launch |
-| Condition-level outcome | `condition_summary_v2.json` | pending fire-3 launch |
-| Step-level intermediate | `episodes/<site>_task_<N>_steps_v2.jsonl` | pending fire-3 launch |
-| Aggregate outputs since fire-3 start | `results/phantom_paper/*.csv` | pending fire-3 launch |
+## Canonical Fire-3 witness (TBD — pending capture)
 
-The canonical witness will be captured at `artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt`
-within 5 min of fire-3 PID-alive + before any episode_summary_v2.json creation.
+```
+file:              <TBD — artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt>
+SHA-256:           <TBD>
+captured_utc:      <TBD>
+Fire-3 PID alive:  <TBD>
+canonical patterns (per p79/experiment/logger_v2.py:111+114 + analysis.py:209):
+  episode_summary_v2 count:   <TBD — gate: must be 0 for pre-canonical-outcome-creation tier>
+  condition_summary_v2 count: <TBD — must be 0>
+  steps_v2 count:             <TBD — must be 0>
+  aggregate csv count (post fire-3 start): <TBD — must be 0>
+known-positive probe:
+  any-files in fire-3 run dirs at capture: <TBD>
+```
 
-## Interim corrected scan (post-fire-2-cleanup, pre-fire-3)
+**Do not submit OSF DOI 1 with these fields TBD.** Capture script will populate them at
+Fire-3 PID-alive moment; this README's DRAFT marker drops once filled.
+
+## Interim corrected scan (post-fire-2-cleanup, pre-fire-3 — audit-trail bridge only)
 
 UTC 2026-05-18T14:42:58Z scan with canonical schema patterns — documented in
 `artifact_existence_check_doi1_interim_20260518T144258Z.txt` (SHA-256
@@ -74,14 +104,14 @@ UTC 2026-05-18T14:42:58Z scan with canonical schema patterns — documented in
 
 | Outcome tier | Canonical pattern | Count (interim) |
 |---|---|---|
-| Per-episode outcome | `episodes/<site>_task_<N>_summary_v2.json` | **0** (fire-2 cleaned at 14:06 UTC) |
+| Per-episode outcome | `episodes/<site>_task_<N>_summary_v2.json` | **0** (Fire-2 cleaned at 14:06 UTC) |
 | Condition-level outcome | `condition_summary_v2.json` | **0** |
 | Step-level intermediate | `episodes/<site>_task_<N>_steps_v2.jsonl` | **0** |
-| Run-dir liveness (any files) | known-positive probe | **0** files in fire-2 run dirs |
+| Run-dir liveness check | No Fire-2 run directories or canonical output files remaining after cleanup | **0** files |
 
-The interim scan documents the substrate state between fire-2 cleanup and fire-3 launch.
-It is NOT the DOI 1 anchor — its purpose is to bridge the retraction of the buggy
-fire-2-era witness and the capture of the canonical fire-3 witness, providing audit-trail
+The interim scan documents substrate state between Fire-2 cleanup and Fire-3 launch. It
+is **NOT** the DOI 1 anchor — its purpose is to bridge the retraction of the buggy
+Fire-2-era witness and the capture of the canonical Fire-3 witness, providing audit-trail
 continuity for reviewers.
 
 Pre-existing `fig0c_drop_one_bootstrap_ci.csv` (mtime 2026-05-18T13:25:14Z UTC,
@@ -106,9 +136,17 @@ Numbers appearing in bundled `paper_drafts/section*.md` are EITHER:
 (b) **Design notes / theoretical anchors** — derived from prior literature
     or pre-fire pilot.
 
-They are **NOT** Phase 1a Pass-1 clean-run evidence. The clean-run outcome
-data, final analysis, and finalized paper prose will be deposited separately
-in **DOI 2** (mint trigger = Pass-1 + Pass-2 + analysis frozen + paper §1-§8
+They are **NOT** Phase 1a Pass-1 clean-run evidence.
+
+**These placeholder numbers are not used to choose or revise the Phase 1a primary
+decision rules in this registration.** The H1 / H2(a) / H3 / H10 gating thresholds
+(δ=1.0pp, FE-pool inverse-variance estimand, α=0.05 one-sided, m=1 single test, K-of-N
+transparency-only) were locked **before** Phase 1a fire and are immutable post-OSF
+submission; archive pilot signals informed the power analysis (§2.4) but did not
+calibrate the decision rules themselves.
+
+The clean-run outcome data, final analysis, and finalized paper prose will be deposited
+separately in **DOI 2** (mint trigger = Pass-1 + Pass-2 + analysis frozen + paper §1-§8
 finalized; see `osf_lock_manifest.md §3b`).
 
 ## OSF operational ordering
@@ -116,73 +154,97 @@ finalized; see `osf_lock_manifest.md §3b`).
 Per OSF help docs (https://help.osf.io/article/330-welcome-to-registrations
 + https://help.osf.io/article/626-simplifying-the-preregistration-process):
 
-1. **OSF Registration submission** = pre-outcome-creation timestamp anchor.
-   The OSF page records the submission datetime as the cryptographic witness
-   moment. This is the immutable evidence that the pre-registration was
-   committed before outcome data existed.
+1. **OSF Registration submission = public timestamp witness**. The OSF
+   registration metadata records the submission / registration timestamp
+   as the **public timestamp witness** for the pre-registration. Per OSF
+   docs, if administrator does not act, registration auto-approves at ~48h
+   and the "registered" date is tied to the submission date; once public,
+   registration content is immutable. This timestamp — NOT the later
+   DOI-string assignment moment — is what anchors the preregistration
+   timing claim.
 
-2. **OSF Admin approval** = DOI string assignment. Default auto-approval at
-   ~48h post-submission; can be manually approved sooner by the project
-   admin (the user). Registration content is immutable once public.
+2. **Bundled SHA-256 manifest provides content-level integrity**. The
+   `MANIFEST_SHA256.txt` in the deposit bundle (auto-generated by the
+   capture script `--bundle-regen` flag) lists SHA-256 hashes for every
+   bundled file, enabling any third party to verify content-identical
+   replication of the deposit at the registration moment.
 
-3. **DOI string** = `10.17605/OSF.IO/XXXXX` once approved. Cite alongside
-   the submission timestamp.
+3. **OSF admin approval → DOI string assignment**. After approval (manual
+   or 48h auto), OSF assigns the DOI string `10.17605/OSF.IO/XXXXX`. The
+   preregistration timing claim **does not depend on DOI-string availability**
+   — it depends on the submission/registered timestamp recorded in OSF
+   metadata at submission.
 
-### Citation forms
+### Citation forms (canonical Fire-3 witness must exist before submission)
 
-**Before DOI assignment (interim, 0-48h post-submission)**:
+**Before DOI assignment (interim, 0-48h post-submission, but post-canonical-witness-capture)**:
 
 ```
-OSF registration GUID osf.io/xxxxx, submitted 2026-05-18T<HH:MM:SS>Z UTC,
-pre-outcome-creation witness (empirical 3-tier artifact-zero check at
-submission time per artifact_existence_check_doi1_20260518T135722Z.txt);
-DOI <pending OSF admin approval, default auto-approve 48h>.
+OSF registration GUID osf.io/xxxxx, submitted <Fire-3-launch UTC>,
+pre-canonical-outcome witness for Fire-3 (empirical canonical-pattern
+zero-count probe at submission time per artifact_existence_check_doi1_canonical_
+<fire3-UTC-TS>.txt, SHA-256 <fire3-witness-SHA>); DOI <pending OSF admin
+approval, default auto-approve 48h>.
 ```
 
 **After DOI assignment (final, post-approval)**:
 
 ```
-OSF DOI 10.17605/OSF.IO/XXXXX, submitted 2026-05-18T<HH:MM:SS>Z UTC,
-pre-outcome-creation witness; registered Git tag `preregistration-locked`
-at SHA ef609a3.
+OSF DOI 10.17605/OSF.IO/XXXXX, submitted <Fire-3-launch UTC>,
+pre-canonical-outcome witness for Fire-3 (registration approved at OSF;
+DOI-string assignment timestamp may differ from submission/registered
+timestamp — preregistration timing claim relies on the latter, recorded
+in OSF metadata); registered Git tag `preregistration-locked` at SHA
+ef609a3 + post-retraction commits 59c60c4 + dd5335b + 5c8968a.
 ```
+
+**Voided Fire-2-era witness** (`artifact_existence_check_doi1_20260518T135722Z.txt`,
+SHA-256 `e0e591f5...`) is **not cited as empirical witness** in any DOI 1 citation
+form — it appears in the bundle only as a retraction audit-trail artifact.
 
 ## Cross-link to DOI 2
 
 **DOI 2 — Phase 1a reproducibility bundle**: `<to-be-assigned post Pass-1 +
 Pass-2 + analysis-frozen + paper-finalized>`.
 
-DOI 2's README will explicitly `cited_by` this DOI 1 (immutable forward
-reference). This DOI 1 README does **NOT** mention a specific DOI 2 string
-because DOI 1 is locked pre-DOI-2 — bidirectional references would be
-anachronistic and would defeat OSF's immutable-registration semantics.
+DOI 2's README will cite and cross-link this DOI 1 (immutable forward reference; exact
+OSF metadata field-name depends on platform support, but the README prose explicitly
+references the DOI 1 string and OSF GUID). This DOI 1 README does **NOT** mention a
+specific DOI 2 string because DOI 1 is locked pre-DOI-2 — bidirectional references would
+be anachronistic and would defeat OSF's immutable-registration semantics.
 
-## Bundle contents (frozen at Git SHA `ef609a3`)
+## Bundle contents
 
-See `osf_lock_manifest.md §2.1` for the full SHA-locked artifact table. Key
-files in this DOI 1 deposit:
+Core preregistration substance frozen at Git SHA `ef609a3` (`preregistration-locked`
+tag, substance-lock 2026-05-18T11:30Z). DOI_1_README + witness files + retraction-wave
+doc updates were added in post-retraction commits `59c60c4` (doctrine restoration
+B-1650~B-1655) + `e2c1782` + `dd5335b` (witness pattern bug retraction wave
+B-1670~B-1679) + `5c8968a` (Stage 2 capture script + regression test B-1675).
+See `osf_lock_manifest.md §2.1` for the full SHA-locked artifact table.
 
-| File | Role |
-|---|---|
-| `preregistration.md` | 14 commit decisions + H1/H2/H3/H10 gating, status: substance-locked 2026-05-18 per §A2 14/16 audit cascade |
-| `osf_lock_manifest.md` | This directory's lock manifest, with §3a DOI 1 + §3b DOI 2 workflow split |
-| `locked_versions.md` | B0 proxy endpoint + B1 HF SHA `ebb281ec70b05090aa6165b016eac8ec08e71b17` + B2 HF SHA `093f9f388b31de276ce2de164bdc2081324b9767` + VWA submodule HEAD `ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927` + tree-hash chain `752caebdc6bd84761b2f308331f21241a9b4a28de65b46ff0007ef27d8c72778` |
-| `model_card.md` | Cross-baseline architecture + decoding + capability scope |
-| `dataset_card.md` | VWA classifieds + reddit task counts + N/A exclusion protocol |
-| `ethics_license_coi_statements.md` | Holistic AI industry COI + license attribution |
-| `evaluator_change_protocol.md` | T0-T3 evaluator-change tier classification |
-| `compute_cost_carbon_table.md` | A100 GPU-hour estimates per condition |
-| `neurips_checklist.md` | Submission integrity checklist |
-| `negative_results_registry.md` | Pre-outcome state of negative-results commitment |
-| `release_redaction_checklist.md` | Public-release scope per §7 reproducibility |
-| `topvenue_constraints.md` | Submission venue analysis (EMNLP / workshop) |
-| `pre_rerun_audit_walkthrough_2026-05-18.md` | §A2 cascade closure operational walkthrough |
-| `reeval_audit_protocol.md` | FP architecture canonical state post-§139.8 |
-| `env_snapshot.json` | A100 pre-fire snapshot per A2.7 B-1408 atomic write |
-| `paper_drafts/section{1..8}_*.md` @ `ef609a3` | **Frozen pre-outcome state** — archive placeholder numbers per scope disclaimer above |
-| `paper_drafts/paper.bib` @ `ef609a3` | Bibliography frozen pre-outcome |
-| `artifact_existence_check_doi1_20260518T135722Z.txt` | **Empirical pre-outcome-creation witness** (3-tier artifact zero check + SHA256 self-verification) |
-| `DOI_1_README.md` | This file (scope disclaimer + ordering doctrine + cross-link slot) |
+| File | Role | Git SHA |
+|---|---|---|
+| `preregistration.md` | 14 commit decisions + H1/H2/H3/H10 gating, status: substance-locked 2026-05-18 per §A2 14/16 audit cascade | post-retraction (current HEAD) |
+| `osf_lock_manifest.md` | Lock manifest, §3a DOI 1 + §3b DOI 2 workflow split | post-retraction |
+| `locked_versions.md` | B0 proxy + B1 HF `ebb281e...` + B2 HF `093f9f3...` + VWA submodule `ac33d2f...` + tree-hash chain `752caeb...` | `ef609a3` |
+| `model_card.md` | Cross-baseline architecture + decoding + capability scope | `ef609a3` |
+| `dataset_card.md` | VWA classifieds + reddit task counts + N/A exclusion protocol | `ef609a3` |
+| `ethics_license_coi_statements.md` | Holistic AI industry COI + license attribution | `ef609a3` |
+| `evaluator_change_protocol.md` | T0-T3 evaluator-change tier classification | `ef609a3` |
+| `compute_cost_carbon_table.md` | A100 GPU-hour estimates per condition | `ef609a3` |
+| `neurips_checklist.md` | Submission integrity checklist | `ef609a3` |
+| `negative_results_registry.md` | Pre-outcome state of negative-results commitment | `ef609a3` |
+| `release_redaction_checklist.md` | Public-release scope per §7 reproducibility | `ef609a3` |
+| `topvenue_constraints.md` | Submission venue analysis (EMNLP / workshop) | `ef609a3` |
+| `pre_rerun_audit_walkthrough_2026-05-18.md` | §A2 cascade closure operational walkthrough | `ef609a3` |
+| `reeval_audit_protocol.md` | FP architecture canonical state post-§139.8 | `ef609a3` |
+| `env_snapshot.json` | A100 substrate snapshot at Fire-3 epoch | **TBD captured at Fire-3 launch** |
+| `paper_drafts/section{1..8}_*.md` @ `ef609a3` | **Frozen pre-outcome state** — archive placeholder numbers per scope disclaimer above | `ef609a3` |
+| `paper_drafts/paper.bib` @ `ef609a3` | Bibliography frozen pre-outcome | `ef609a3` |
+| **`artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt`** | **🟢 CANONICAL DOI 1 EMPIRICAL WITNESS** (capture pending Fire-3 launch via `capture_doi1_witness.sh`) | **TBD** |
+| `artifact_existence_check_doi1_interim_20260518T144258Z.txt` | Audit-trail bridge — post-Fire-2-cleanup pre-Fire-3 scan (NOT the DOI 1 anchor) | `e2c1782` |
+| `artifact_existence_check_doi1_20260518T135722Z.txt` | **🚫 VOIDED** — retained for retraction audit trail only; NOT used as DOI 1 anchor or empirical witness | `e2c1782` (VOID header in retraction commit) |
+| `DOI_1_README.md` | This file (scope disclaimer + ordering doctrine + cross-link slot) | post-retraction |
 
 ## Doctrine restoration provenance
 
@@ -210,16 +272,35 @@ email as lock gate) and current correction (2026-05-18 ~14:00 UTC).
 
 If you are a paper-1 reviewer or independent replicator reading this DOI 1:
 
-1. **The pre-registration timestamp is the OSF submission datetime** —
-   verifiable on the OSF page metadata, NOT the DOI assignment datetime
-   (which can lag 0-48h).
+1. **The pre-registration timestamp is the OSF submission/registered datetime** —
+   verifiable on the OSF registration metadata page. The DOI-string assignment
+   timestamp may lag 0-48h post-submission via OSF admin approval, but **the
+   preregistration timing claim relies on the submission/registered timestamp,
+   NOT DOI-string availability**. Bundled `MANIFEST_SHA256.txt` provides
+   content-level integrity.
 2. **Numbers in paper drafts are NOT Phase 1a evidence** — see scope
-   disclaimer above. Phase 1a clean-run evidence is in DOI 2.
-3. **The empirical pre-outcome-creation claim is auditable** — see
-   `artifact_existence_check_doi1_20260518T135722Z.txt` for the 3-tier
-   zero check + SHA256 + Git HEAD + preregistration-locked tag SHA at
-   submission time.
-4. **The git substrate is verifiable** — checkout
-   `git tag preregistration-locked` (= SHA `ef609a3`) to reproduce the
-   pre-outcome code state exactly. All bundled files are tree-hash-chained
-   per `preregistration.md §7` VWA submodule SBOM lock recipe.
+   disclaimer above. Phase 1a clean-run evidence is in DOI 2. The H1/H2(a)/H3/H10
+   decision rules were locked **before** Phase 1a fire; archive placeholder
+   numbers informed power analysis but did not calibrate the gates.
+3. **The empirical pre-canonical-outcome claim is auditable via the canonical
+   Fire-3 witness file** — see `artifact_existence_check_doi1_canonical_<fire3-UTC-TS>.txt`
+   (file path filled in at Fire-3 launch) for the 3-tier zero check + SHA-256
+   self-doc + Git HEAD + preregistration-locked tag SHA + canonical schema
+   citation. **Do NOT cite** the voided Fire-2-era witness
+   `artifact_existence_check_doi1_20260518T135722Z.txt` — that file is retained
+   only for retraction audit-trail, marked with VOID header per B-1670 pattern
+   bug retraction (see `master_bug_catalog.md ## /stress witness pattern bug
+   retraction` for full context).
+4. **The git substrate is verifiable** — checkout `git tag preregistration-locked`
+   (= SHA `ef609a3`) to reproduce the substance-locked code state exactly. Post-
+   retraction commits 59c60c4 (doctrine restoration) + e2c1782 + dd5335b
+   (witness retraction wave) + 5c8968a (Stage 2 capture script) are linear
+   children on `master`; `git tag retraction/osf-doi1-witness-59c60c4` is an
+   annotated retraction tag pointing at the original buggy doctrine commit. All
+   bundled files are tree-hash-chained per `preregistration.md §7` VWA submodule
+   SBOM lock recipe.
+5. **No force-push doctrine** — GitHub history preserves the Fire-2-era buggy
+   commit `59c60c4` and its referenced witness file as immutable audit-trail
+   evidence. The annotated retraction tag `retraction/osf-doi1-witness-59c60c4`
+   marks this commit as superseded; the canonical Fire-3 witness in this DOI 1
+   bundle is the definitive empirical anchor.
