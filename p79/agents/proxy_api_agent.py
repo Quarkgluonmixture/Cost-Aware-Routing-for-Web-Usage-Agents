@@ -148,6 +148,11 @@ class ProxyApiAgent:
 
         self.timeout = model_cfg.get("timeout", _DEFAULT_TIMEOUT)
         self._use_tool_calling = model_cfg.get("use_tool_calling", False)
+        # B-1102 (/stress A2.3b P1-4-A, 2026-05-18): read top-level
+        # `paper_grade` flag so init-time + step-time invariant guards can
+        # fail-loud on paper-grade contract violations (vs silently
+        # degrading dev runs). See B-340 paper-grade hard-block precedent.
+        self._paper_grade = bool(config.get("paper_grade", False))
 
         # B-991~B-993 (/stress A1.2-followup, 2026-05-17): GLM fallback fully
         # retired. AWS proxy probe 2026-05-17 (`probes/proxy_capability_v2_
@@ -162,6 +167,23 @@ class ProxyApiAgent:
                 "use_glm_fallback=true is no longer supported (B-991 retire). "
                 "AWS proxy supports native tool_choice; set use_tool_calling=true "
                 "and use_glm_fallback=false."
+            )
+
+        # B-1102 (/stress A2.3b P1-4-A, 2026-05-18): paper-grade B0 MUST
+        # use native tool_calling. Post-B-991 GLM rescue is physically
+        # deleted, so a paper-grade run with `use_tool_calling=false`
+        # falls through to Path-2 text-parse-only mode (~30% parse_error
+        # historically) with no rescue → cross-baseline silent
+        # contamination. Fail-loud at init so misconfigured yamls (e.g.
+        # partial override skipping base merge) surface immediately, NOT
+        # mid-fire on cell N at episode K.
+        if self._paper_grade and not self._use_tool_calling:
+            raise RuntimeError(
+                "paper-grade B0 requires use_tool_calling=true post-B-991 "
+                "(GLM rescue physically deleted; Path-2 text-parse-only "
+                "mode would cause silent cross-baseline contamination). "
+                "Set backends.api_strong.use_tool_calling: true OR clear "
+                "the paper_grade flag for dev runs."
             )
 
         self._system_prompts = self._get_system_prompts()
@@ -719,11 +741,16 @@ class ProxyApiAgent:
         glm_fallback_ms = 0.0
         glm_original_fail_reason: Optional[str] = None
 
-        # Convert semantic scroll_direction → delta for environment compatibility.
-        if action.get("action_type") == "scroll" and "scroll_direction" in action:
-            sd = action.pop("scroll_direction")
-            action["delta"] = [0, 0.8] if sd == "down" else [0, -0.8]
-            action.setdefault("coordinate_type", "normalized")
+        # /stress A2.4b Chunk α (2026-05-18): B0 scroll_direction→delta conversion
+        # deleted for cross-baseline JSONL symmetry. Pre-removal asymmetry: B0
+        # step_record.action recorded `delta:[0, ±0.8]`, B1/B2 recorded raw `delta`
+        # canonicalized to `scroll_direction` at validator (action_utils.py:575-591).
+        # vwa_wrapper L462-493 (B-512 2026-05-17) collapses both forms to
+        # `create_scroll_action(direction=...)` and VWA upstream `execute_scroll`
+        # (external/visualwebarena/browser_env/actions.py:936) executes at fixed
+        # `±window.innerHeight` magnitude — magnitude info in delta was always
+        # discarded at execution. Removing conversion lets B0 RAW emit
+        # `scroll_direction` survive to step JSONL, identical schema across baselines.
 
         # Auto-append newline for search queries.
         if action.get("action_type") == "type":
@@ -747,6 +774,30 @@ class ProxyApiAgent:
             _lp = resp_json.get("logprobs")
             if isinstance(_lp, dict):
                 _proxy_logprobs_content = _lp.get("content")
+
+        # B-1103 (/stress A2.3b P0-4-B* codex OOB, 2026-05-18): fail-loud
+        # when paper-grade B0 advertises logprob-derived confidence but
+        # proxy silently omits it. Provider drift / proxy quota mode /
+        # response shape change can erase `body.logprobs.content` without
+        # failing the HTTP request — SR/cost data finishes clean but §C
+        # confidence analysis silently has missing/incomplete B0 coverage.
+        # Without this guard, Phase 1a substrate ships and reviewer asks
+        # "why advertised at launch but not invariant?" — paper-grade
+        # contract violation surfaces only at OSF audit.
+        # Non-paper-grade dev runs: persist `confidence_error` for audit
+        # but proceed (preserves existing F3 behavior).
+        _confidence_error: Optional[str] = None
+        if self._use_tool_calling and not _proxy_logprobs_content:
+            if self._paper_grade:
+                raise RuntimeError(
+                    "B0 paper-grade run requires body.logprobs.content "
+                    "(use_tool_calling=True advertises logprob-derived "
+                    "confidence). Proxy response missing logprobs — "
+                    "check provider drift / quota mode / response shape "
+                    "change. B-1103 /stress A2.3b P0-4-B*."
+                )
+            _confidence_error = "missing_proxy_logprobs"
+
         _confidence = self._compute_confidence_from_proxy_logprobs(_proxy_logprobs_content)
 
         meta = {
@@ -807,6 +858,11 @@ class ProxyApiAgent:
             "reasoning_content": reasoning_text,
             "enable_thinking": False,
             "tool_calling": self._use_tool_calling,
+            # B-1103 (/stress A2.3b P0-4-B*, 2026-05-18): non-paper-grade
+            # dev-run signal for missing proxy logprobs. Paper-grade raises
+            # at extraction point; dev runs persist this for downstream
+            # audit (e.g. analyze_confidence_calibration coverage report).
+            "confidence_error": _confidence_error,
             # GLM fallback tracking (cost NOT in model_cost — scaffold overhead only).
             "glm_fallback_used": glm_fallback_used,
             "glm_fallback_attempted": glm_fallback_attempted if glm_fallback_attempted else None,

@@ -426,6 +426,26 @@ def validate_action_detailed(action: Dict[str, Any]) -> Tuple[Dict[str, Any], bo
             except (ValueError, TypeError):
                 pass  # leave raw; per-action validator will reject
 
+    # B-1101 (/stress A2.3b P0-1-AC* OOB, 2026-05-18): 1-element-list
+    # coerce for B0 tool_calling. AWS Bedrock proxy does NOT enforce tools
+    # schema on output — model self-decides emission format under
+    # `tool_choice="auto"`. Empirical probe `docs/checkpoints/probes/
+    # proxy_full_stack_225749.json` shows 30/30 runs emit
+    # `"element_id": [37]` (1-element int list) instead of integer 37,
+    # despite `_WEB_ACTION_TOOL.parameters.properties.element_id.type =
+    # "integer"`. Pre-fix `validate_action_detailed` rejected list-typed
+    # _eid via `_is_strict_int([37]) = False` → Path-2 text parse on
+    # empty content → 30 wait/episode contamination → 0% SR. Coerce
+    # strict-int 1-element list → int with explicit `len==1` guard
+    # (reject 2-element `[37, 38]` to surface as `invalid_element_id`
+    # rather than silent first-element pick). Mirror digit-string coerce
+    # above (B-572) for paper-grade audit symmetry.
+    if isinstance(_eid_raw, list) and len(_eid_raw) == 1 and _is_strict_int(_eid_raw[0]):
+        action["element_id"] = _eid_raw[0]
+        # Provenance flag so paper §3.5 parse_valid disclosure can report
+        # "B0 element_id coerced from 1-element list" count per cell.
+        action.setdefault("element_id_coerced_from_list", True)
+
     if action_type == "select_option":
         # B-506 (/stress A1.25 GRL Chunk 3 P0-1-B* codex OOB, 2026-05-17):
         # element_id must be `int > 0`. Pre-fix `isinstance(int)` alone

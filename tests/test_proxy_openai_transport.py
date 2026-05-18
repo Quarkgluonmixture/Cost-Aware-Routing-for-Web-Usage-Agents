@@ -262,3 +262,177 @@ def test_f5_legacy_anthropic_text_only_response(_proxy_agent, monkeypatch):
     # No tool_calls means meta.tool_calling stays True (config flag), but
     # the actual route was Path-2.
     assert meta["valid"] is True
+
+
+# B-1101 (/stress A2.3b P0-1-AC* OOB, 2026-05-18): proxy tool_calling
+# empirical model emits `element_id: [37]` (1-element int list) under
+# `tool_choice="auto"` despite schema declaring `type=integer`. AWS
+# Bedrock proxy does NOT enforce tools schema on output. Pre-fix
+# validate_action rejected list-typed _eid → Path-2 text parse on empty
+# content → 30 wait/episode contamination. Coerce 1-element strict-int
+# list → int with explicit `len==1` guard.
+def test_f6_element_id_list_coerce_succeeds(_proxy_agent, monkeypatch):
+    """F6: Model emits `element_id: [37]` (1-element int list) — validator
+    coerces to int 37, action passes validation, dispatched correctly."""
+    response = {
+        "content": "",
+        "tool_calls": [
+            {
+                "id": "id6", "type": "function",
+                "function": {
+                    "name": "web_action",
+                    "arguments": json.dumps({
+                        "action_type": "click",
+                        "element_id": [37],  # list — model empirical emission
+                        "thought": "click the kayak listing",
+                    }),
+                },
+            }
+        ],
+        "model": "qwen.qwen3-vl-235b-a22b",
+        "usage": {"inputTokens": 100, "outputTokens": 20, "cost": 0.0003},
+        "metadata": {},
+        "logprobs": {"content": [{"token": "click", "logprob": -0.1,
+                                   "top_logprobs": [{"token": "click", "logprob": -0.1},
+                                                    {"token": "type", "logprob": -2.5}]}]},
+    }
+    _patch_requests_post(monkeypatch, response)
+    action, meta = _proxy_agent.step(
+        instruction="test", obs=_mock_obs(), history=[], observation_mode="dom",
+    )
+    assert action.get("action_type") == "click", f"action_type drift: {action}"
+    assert action.get("element_id") == 37, (
+        f"1-element list [37] should coerce to int 37; got {action.get('element_id')!r}"
+    )
+    assert action.get("element_id_coerced_from_list") is True
+    assert meta["valid"] is True
+
+
+def test_f6b_element_id_multi_element_list_rejected(_proxy_agent, monkeypatch):
+    """F6b: Multi-element list `[37, 38]` MUST reject (don't silent-pick
+    first); otherwise model multi-target emit silently dispatches to
+    arbitrary first id. Strict `len==1` guard."""
+    response = {
+        "content": "",
+        "tool_calls": [
+            {
+                "id": "id6b", "type": "function",
+                "function": {
+                    "name": "web_action",
+                    "arguments": json.dumps({
+                        "action_type": "click",
+                        "element_id": [37, 38],  # 2-element list — ambiguous
+                        "thought": "click",
+                    }),
+                },
+            }
+        ],
+        "model": "qwen.qwen3-vl-235b-a22b",
+        "usage": {"inputTokens": 100, "outputTokens": 20, "cost": 0.0003},
+        "metadata": {},
+        "logprobs": {"content": [{"token": "x", "logprob": -0.1, "top_logprobs": [
+            {"token": "x", "logprob": -0.1}, {"token": "y", "logprob": -2.0}]}]},
+    }
+    _patch_requests_post(monkeypatch, response)
+    action, meta = _proxy_agent.step(
+        instruction="test", obs=_mock_obs(), history=[], observation_mode="dom",
+    )
+    # Multi-element list does NOT coerce; validator rejects → wait fallback.
+    assert action.get("action_type") == "wait", (
+        f"multi-element [37,38] should reject and fall back to wait; got {action}"
+    )
+    assert "element_id_coerced_from_list" not in action
+
+
+# B-1103 (/stress A2.3b P0-4-B* codex OOB, 2026-05-18): paper-grade B0
+# missing-logprobs must fail-loud (advertised at launch but not invariant
+# would survive otherwise).
+def test_f7_paper_grade_missing_logprobs_raises(monkeypatch, tmp_path):
+    """F7: paper_grade=True + use_tool_calling=True + proxy response
+    missing `logprobs.content` → RuntimeError. Provider drift / quota
+    mode change MUST surface, not silently produce zero-confidence rows."""
+    monkeypatch.setenv("PROXY_API_KEY", "rp_test_dummy")
+    from p79.agents.proxy_api_agent import ProxyApiAgent
+
+    config = {
+        "model": {
+            "api_name": "qwen.qwen3-vl-235b-a22b",
+            "base_url": "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke",
+            "use_tool_calling": True,
+        },
+        "agent": {"image_max_size": 256},
+        "paper_grade": True,  # paper-grade run — fail-loud invariant
+    }
+    agent = ProxyApiAgent(config)
+    response = {
+        "content": "",
+        "tool_calls": [
+            {
+                "id": "id7", "type": "function",
+                "function": {
+                    "name": "web_action",
+                    "arguments": json.dumps({
+                        "action_type": "click", "element_id": 2, "thought": "go",
+                    }),
+                },
+            }
+        ],
+        "model": "qwen.qwen3-vl-235b-a22b",
+        "usage": {"inputTokens": 100, "outputTokens": 20, "cost": 0.0003},
+        "metadata": {},
+        # NO logprobs key — provider drift simulation
+    }
+    _patch_requests_post(monkeypatch, response)
+    with pytest.raises(RuntimeError, match=r"missing logprobs|B-1103"):
+        agent.step(instruction="test", obs=_mock_obs(), history=[], observation_mode="dom")
+
+
+def test_f7b_dev_run_missing_logprobs_persists_confidence_error(_proxy_agent, monkeypatch):
+    """F7b: Non-paper-grade dev run + missing logprobs → no raise; persist
+    `meta["confidence_error"] = "missing_proxy_logprobs"` for audit."""
+    response = {
+        "content": "",
+        "tool_calls": [
+            {
+                "id": "id7b", "type": "function",
+                "function": {
+                    "name": "web_action",
+                    "arguments": json.dumps({
+                        "action_type": "click", "element_id": 2, "thought": "go",
+                    }),
+                },
+            }
+        ],
+        "model": "qwen.qwen3-vl-235b-a22b",
+        "usage": {"inputTokens": 100, "outputTokens": 20, "cost": 0.0003},
+        "metadata": {},
+        # NO logprobs — dev run, no raise
+    }
+    _patch_requests_post(monkeypatch, response)
+    action, meta = _proxy_agent.step(
+        instruction="test", obs=_mock_obs(), history=[], observation_mode="dom",
+    )
+    assert meta.get("confidence_error") == "missing_proxy_logprobs"
+    assert action.get("action_type") == "click"
+
+
+# B-1102 (/stress A2.3b P1-4-A, 2026-05-18): paper-grade B0 MUST set
+# use_tool_calling=true post-B-991 (GLM rescue deleted).
+def test_f8_paper_grade_without_tool_calling_raises_at_init(monkeypatch):
+    """F8: paper_grade=True + use_tool_calling=False (or unset) → init
+    RuntimeError. Misconfigured yaml surfaces at construction, NOT
+    mid-fire after burning cell N tasks."""
+    monkeypatch.setenv("PROXY_API_KEY", "rp_test_dummy")
+    from p79.agents.proxy_api_agent import ProxyApiAgent
+
+    config = {
+        "model": {
+            "api_name": "qwen.qwen3-vl-235b-a22b",
+            "base_url": "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke",
+            "use_tool_calling": False,  # mis-config
+        },
+        "agent": {"image_max_size": 256},
+        "paper_grade": True,
+    }
+    with pytest.raises(RuntimeError, match=r"paper-grade B0 requires use_tool_calling=true|B-1102"):
+        ProxyApiAgent(config)
