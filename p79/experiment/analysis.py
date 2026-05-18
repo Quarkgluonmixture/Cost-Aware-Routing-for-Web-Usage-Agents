@@ -1020,6 +1020,97 @@ def _compute_statistical_tests(
     results: Dict[str, Any] = {"bootstrap_ci": {}, "mcnemar": {}, "wilcoxon": {}, "notes": []}
     flat_rows: List[Dict[str, Any]] = []
 
+    # B-651 (/stress A1.6b P0-2-AC* claude+gemini overlap OOB, 2026-05-17,
+    # user Q2=(A) cell-scope): pre-fix Holm-Bonferroni family was
+    # `(test, metric)` GLOBAL across all cross-condition pairs in run_dir
+    # → m up to 132 for Phase 1a (cls/red × {B0,B1} × C(6,2) intra + cross-
+    # baseline same-site). Within-cell paper-headline tests over-corrected
+    # ~10×. Now: family key = `(test, metric, site, baseline_pair)` so each
+    # cell's intra-mode comparison gets m=15 (6 modes → C(6,2)) and cross-
+    # baseline within-site gets m=36 in its own Holm sub-family. Cross-site
+    # pairs already excluded at merge() level (different benchmark_site
+    # keys → empty merge).
+    #
+    # Site / baseline lookups are best-effort from ep_df; falls back to
+    # `unknown` if columns missing (legacy archives). Holm m on `unknown`
+    # bucket is bounded by glob-order collisions, audit-visible in
+    # statistical_tests.json holm_corrected.families.
+    if "benchmark_site" in ep_df.columns:
+        site_by_cid = ep_df.groupby("condition_id")["benchmark_site"].first().to_dict()
+    else:
+        site_by_cid = {}
+    if "backend_id" in ep_df.columns:
+        backend_by_cid = ep_df.groupby("condition_id")["backend_id"].first().to_dict()
+    else:
+        backend_by_cid = {}
+
+    # B-655 + B-653 helpers (/stress A1.6b P1-2-B* + P0-4-B* code-side
+    # implementation, 2026-05-17, user 全推荐 code-side):
+    #
+    # B-655 paired bootstrap CI on SR lift = mean(b - a) on shared task_id
+    # episodes. Pre-fix `bootstrap_ci[cid]` was per-condition single-arm
+    # observed-n CI (NOT paired) but paper §3.5 prose claimed paired same-
+    # task bootstrap. Now: per-pair paired bootstrap on success diffs is
+    # emitted alongside the existing per-condition single-arm CI; readers
+    # can match the prose-paired-lift claim to the actual artifact.
+    #
+    # B-1051 (/stress A2.3c Mode B P0-1-B* sibling-propagation sweep 2026-05-18):
+    # B-653 TOST equivalence δ=1.0pp emission RETIRED per B-957 TOST framework
+    # retirement (see scripts/analysis/power_analysis.py L137-148 tombstone).
+    # `_bootstrap_tost_paired_success()` function + `results["tost_equivalence"]`
+    # emission + `success_tost_eq_delta1pp` flat_row REMOVED. Prose-listed
+    # three-test bundle (McNemar + SR-Wilcoxon + TOST) now two-test (McNemar
+    # + SR-Wilcoxon). `wilcoxon_skipped.csv` retained for degenerate cases.
+    def _paired_lift_bootstrap_ci(
+        a_succ_arr: Any, b_succ_arr: Any, B: int = 10_000, seed: int = 42,
+    ) -> Optional[Dict[str, float]]:
+        """Paired bootstrap CI for SR lift = mean(b - a) on shared task_id."""
+        if a_succ_arr is None or b_succ_arr is None:
+            return None
+        n = len(a_succ_arr)
+        if n == 0 or len(b_succ_arr) != n:
+            return None
+        diffs = (b_succ_arr.astype(int) - a_succ_arr.astype(int)).astype(float)
+        rng_local = np.random.default_rng(np.random.SeedSequence([42, seed]))
+        boot = np.empty(B)
+        for r in range(B):
+            idx = rng_local.integers(0, n, size=n)
+            boot[r] = float(diffs[idx].mean())
+        return {
+            "lift_mean": float(diffs.mean()),
+            "lift_ci_lower_95": float(np.percentile(boot, 2.5)),
+            "lift_ci_upper_95": float(np.percentile(boot, 97.5)),
+            "n_paired": int(n),
+        }
+
+    # B-1051 (/stress A2.3c Mode B P0-1-B*, 2026-05-18): _bootstrap_tost_paired_success
+    # function DELETED per B-957 TOST framework retirement. See B-653 comment
+    # block above for retirement rationale + power_analysis.py L137-148 tombstone.
+
+    # B-653 wilcoxon_skipped audit collector — emitted to tables_dir at end.
+    wilcoxon_skipped: List[Dict[str, Any]] = []
+
+    def _cell_key(cid_a: str, cid_b: str) -> str:
+        """Return Holm sub-family identifier for a pair.
+
+        - Same site + same baseline → `intra_<site>_<baseline>` (paper-headline)
+        - Same site + cross baseline → `crossbaseline_<site>_<b1>x<b2>`
+        - Cross site (shouldn't reach Holm, defensive) → `crosssite_<a>x<b>`
+        - Missing site/baseline → `unknown`
+        """
+        sa = site_by_cid.get(cid_a, "unknown_site")
+        sb = site_by_cid.get(cid_b, "unknown_site")
+        ba = str(backend_by_cid.get(cid_a, "unknown_b"))
+        bb = str(backend_by_cid.get(cid_b, "unknown_b"))
+        if "unknown" in (sa, sb) or "unknown_b" in (ba, bb):
+            return "unknown"
+        if sa != sb:
+            return f"crosssite_{sa}x{sb}"
+        if ba == bb:
+            return f"intra_{sa}_{ba}"
+        bps = "x".join(sorted([ba, bb]))
+        return f"crossbaseline_{sa}_{bps}"
+
     # B-176 (/stress A1.4b-i codex B9): bootstrap RNG seed pinned to 42 +
     # B=10_000 for run-to-run reproducibility. Paper §3.5 should disclose
     # ("All bootstrap CIs use task-level resampling with B=10000 and
@@ -1147,9 +1238,104 @@ def _compute_statistical_tests(
                             "significant_05": p_val < 0.05,
                             "ci_lower": None,
                             "ci_upper": None,
+                            "cell_key": cell_key,  # B-651 Holm sub-family
                         })
                     except Exception as exc:
                         results["notes"].append(f"McNemar failed for {pair_key}: {exc}")
+
+                # B-655 + B-653 (post-B-1051 /stress A2.3c retire): paired bootstrap
+                # CI on SR lift + SR-Wilcoxon (signed-rank on per-task success
+                # diffs). TOST equivalence δ=1.0pp REMOVED per B-957/B-1051 TOST
+                # retirement. Both ops operate on same paired
+                # `merged["success_a"], merged["success_b"]` rows.
+                if {"success_a", "success_b"}.issubset(merged.columns):
+                    a_succ = pd.to_numeric(merged["success_a"], errors="coerce").fillna(0).astype(int).values
+                    b_succ = pd.to_numeric(merged["success_b"], errors="coerce").fillna(0).astype(int).values
+                    pair_seed = hash(pair_key) & 0xFFFFFFFF
+
+                    # B-655 paired bootstrap CI on SR lift.
+                    lift_ci = _paired_lift_bootstrap_ci(a_succ, b_succ, seed=pair_seed)
+                    if lift_ci is not None:
+                        results.setdefault("bootstrap_paired_lift", {})[pair_key] = {
+                            **lift_ci,
+                            "estimand": "paired_same_task_lift_b_minus_a",
+                            "estimand_note": (
+                                "Paired bootstrap on per-task success diffs (B=10000, "
+                                "rng=SeedSequence([42, hash(pair_key)])). Paper §3.5 prose "
+                                "now matches implementation: per-pair paired same-task lift "
+                                "CI lives here; per-condition single-arm CI lives in "
+                                "`bootstrap_ci[cid]`. B-655 disclosure."
+                            ),
+                        }
+                        flat_rows.append({
+                            "comparison": pair_key,
+                            "metric": "success_paired_lift",
+                            "test": "bootstrap_paired_ci",
+                            "statistic": lift_ci["lift_mean"],
+                            "p_value": None,
+                            "significant_05": None,
+                            "ci_lower": lift_ci["lift_ci_lower_95"],
+                            "ci_upper": lift_ci["lift_ci_upper_95"],
+                            "cell_key": cell_key,
+                        })
+
+                    # B-1051 (/stress A2.3c Mode B P0-1-B*, 2026-05-18): TOST
+                    # equivalence δ=1.0pp paired-bootstrap compute + emission
+                    # REMOVED per B-957 TOST framework retirement. Previously
+                    # emitted `results["tost_equivalence"][pair_key]` +
+                    # `success_tost_eq_delta1pp` flat_row; both gone.
+
+                    # B-653 SR-Wilcoxon (signed-rank on per-task success diffs).
+                    # Stats-equivalent to McNemar on binary outcomes; included
+                    # so prose-listed two-test bundle (McNemar + SR-Wilcoxon,
+                    # post-B-1051 TOST retire) maps to artifact columns.
+                    # Degenerate cases (all zero diffs OR scipy raises) →
+                    # wilcoxon_skipped.csv.
+                    diffs = (b_succ - a_succ).astype(float)
+                    nonzero_diffs = diffs[diffs != 0]
+                    if len(nonzero_diffs) >= 1:
+                        try:
+                            sr_wres = scipy_stats.wilcoxon(
+                                nonzero_diffs, alternative="two-sided", zero_method="zsplit",
+                            )
+                            sr_p = float(sr_wres.pvalue)
+                            sr_stat = float(sr_wres.statistic)
+                            results.setdefault("wilcoxon_sr_paired_success", {})[pair_key] = {
+                                "statistic": sr_stat,
+                                "p_value": sr_p,
+                                "significant_05": sr_p < 0.05,
+                                "n_nonzero_diffs": int(len(nonzero_diffs)),
+                                "n_paired": int(len(diffs)),
+                                "note": "SR-Wilcoxon on per-task binary success diffs; "
+                                        "stats-equivalent to McNemar paired on success. B-653.",
+                            }
+                            flat_rows.append({
+                                "comparison": pair_key,
+                                "metric": "success",
+                                "test": "wilcoxon_signed_rank_paired",
+                                "statistic": sr_stat,
+                                "p_value": sr_p,
+                                "significant_05": sr_p < 0.05,
+                                "ci_lower": None,
+                                "ci_upper": None,
+                                "cell_key": cell_key,
+                            })
+                        except Exception as exc:
+                            wilcoxon_skipped.append({
+                                "pair_key": pair_key,
+                                "metric": "success_sr_wilcoxon",
+                                "reason": f"scipy_wilcoxon_failed: {exc}",
+                                "n_nonzero_diffs": int(len(nonzero_diffs)),
+                                "n_paired": int(len(diffs)),
+                            })
+                    else:
+                        wilcoxon_skipped.append({
+                            "pair_key": pair_key,
+                            "metric": "success_sr_wilcoxon",
+                            "reason": "all_zero_diffs_degenerate",
+                            "n_nonzero_diffs": 0,
+                            "n_paired": int(len(diffs)),
+                        })
 
                 # Wilcoxon for cost and latency
                 for metric, col_a, col_b in [
