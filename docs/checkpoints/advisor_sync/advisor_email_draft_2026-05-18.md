@@ -1,136 +1,115 @@
-# Advisor Pre-Registration Witness Email — Draft 2026-05-18
+# Email 1 — Phase 1a Fire Notification (informal FYI) — Draft 2026-05-18
 
-> **Status**: Courtesy notification (optional post-fire collateral per
-> /stress A2.8 followup B-1570 doctrine shift 2026-05-18 — advisor email
-> reply is **no longer the gating event** for Phase 1a Pass-1 launch nor
-> for OSF DOI mint per `osf_lock_manifest.md §3` updated header). The 14
-> commit decisions in `preregistration.md §6 §(a)` are substance-locked
-> via §A2 audit cascade Git refs (each lock decision cross-references a
-> B-### audit fix landed in master with commit SHA).
+> **2-email logic clarification 2026-05-18**: 这是 **唯一的** advisor email,**不是 formal witness 邮件**。`Email 2` (formal pre-registration witness reply ask) 在 OSF DOI mint planning 之后已**冗余** — OSF DOI 是 cryptographically stronger external witness (public registry + immutable timestamp + content hash + machine-verifiable),strictly supersedes advisor email witness (per `preregistration.md §6 §(b)` external witness layer + B-1570 doctrine 2026-05-18 codification). 这封 Email 1 仅做 supervision loop courtesy + collegial FYI,**不 ask** witness 回复。Advisor 若自愿回 "good luck",截图归档锦上添花,但 paper-grade integrity 完全靠 Git tag + OSF DOI 双 layer。
 >
-> **Why send anyway**: completeness of OSF DOI mint reproducibility
-> audit-trail; advisor signature populates `witnessed_by` field in
-> `preregistration.md` frontmatter at OSF DOI mint time (paper §6 §(b)
-> external witness layer).
->
-> **Action**: review email below + send to advisor at your convenience.
-> If advisor replies → save as `.witness/preregistration_witness.eml`
-> (gitignored, local-only) + paste advisor sign-off date into
-> `osf_lock_manifest.md §1` and `preregistration.md` frontmatter
-> `witnessed_by:` field at OSF DOI mint time.
+> **Recipients**: Maria (primary advisor) + Zekun (co-supervisor)
+> **Tone**: informal, light technical (FYI, not action-required)
+> **Send timing**: 同 fire event (i.e., I send fire signal → Claude execute fire sequence → I send this email)
+> **Reply expected**: none required;casual "good luck" 也 OK
 
 ---
 
-## Email body (suggested)
+## Subject
 
-**Subject**: P79 — Phantom-SoM Pre-Registration Witness Request (paper-1 Phase 1a Pass-1 launch 2026-05-18)
+`P79 phantom-SoM — Phase 1a Pass-1 baseline 实验启动 FYI`
 
-Dear [Advisor Name],
+## Body
 
-I am about to fire the Phase 1a Pass-1 baseline rerun for paper-1 ("Cost-Aware
-Routing for Web Usage Agents", aka phantom-SoM hero hypothesis) on the
-UCL Condense A100 self-hosted VWA Docker stack. Per our 2026-05-14 sync
-("advisor sign-off is optional collateral for paper-1; student focus =
-experiment execution"), I am sending this as courtesy notification —
-the pre-registration is substance-locked via Git refs at master HEAD
-already, so a reply is not required to unblock the launch. I want to
-flag it nonetheless so you can review pre-fire if you wish.
+Hi Maria + Zekun,
 
-**Pre-registration commitment (locked at Git SHA `<FIRE_TIME_GIT_SHA>`)**:
+Just a quick FYI — I'm firing the Phase 1a Pass-1 baseline rerun for the P79
+phantom-SoM paper today (2026-05-18). Thought you'd want to know it's
+underway since it's the first paper-grade experiment for paper-1.
 
-The 14 commit decisions in `docs/checkpoints/pre_run/preregistration.md
-§6 §(a)` are locked in as of master HEAD. Summary:
+**What's running**:
 
-1. **Estimand** = fixed-effects average over 6 planned (site, model) cells
-   per decision "3A" 2026-05-14; expanded to k=6 cells with B2 addition
-   2026-05-14. No τ²/REML — 6 cells = study design not population sample.
-2. **K-of-N** = pure transparency count, NO threshold (2026-05-14).
-3. **δ** = 1.0pp for H1 one-sided fixed-effects superiority test.
-4. **Cell inclusion**: Phase 1a = cls + red × B0+B1+B2 × 6 modes; Phase 1b
-   shop deferred to post-workshop expansion.
-5. **Witness mechanism**: Git + advisor email (optional collateral) + OSF DOI.
-6. **N_conditions** = 42 operational (36 baseline + 6 H10 learned router).
-7. **Smoke-gate** = outcome-independent (no SR-based restart).
-8. **Router H7/H8** = paper-2 forward stub; paper-1 H10 estimand locked
-   2026-05-18 per A2.8 B-1550 (two-layer operational deployment criterion).
-9. **Train/test split** = paper-2 router scope (5-fold site-stratified CV vs LOSO).
-10. **B2 baseline** = Gemma3-VL `google/gemma-3-4b-it` (4B parity, cross-family
-    robustness check; HF SHA `093f9f388b31de276ce2de164bdc2081324b9767`
-    locked 2026-05-18 per B-1603).
-11. **Host migration** = A100 Condenser canonical, DGX archive-only post 2026-05-15.
-12. **Paper-1 router scope flip** = router promoted paper-2→paper-1 per advisor 2026-05-14.
-13. **Mechanism §5 paper-2 deferral** = patching/probes/SAE deferred entirely to paper-2.
-14. **Power re-derivation at k=6** = closed empirically per /stress A2.3a
-    B-941~B-958 2026-05-17 (FE-pool projected 97-100% across H1 + H3(i) + H3(ii)).
+- Two VWA sites (classifieds + reddit); shop deferred to Phase 1b post-workshop
+- Three baselines:
+  - **B0** Qwen3-VL-235B-A22B (via HolisticAI proxy API)
+  - **B1** Qwen3-VL-4B (local on UCL Condense A100)
+  - **B2** Gemma3-VL `google/gemma-3-4b-it` (local, added per our 2026-05-14
+    sync as cross-family 4B-parity robustness check vs B1)
+- Six observation modes per cell: DOM / SoM / Vision / phantom-text /
+  phantom-prompt / phantom-SoM
+- 36 conditions total (= 2 sites × 3 baselines × 6 modes); learned-router
+  Pass-2 (6 conditions) runs sequentially after Pass-1 completes
+- **Estimated wallclock**: ~1-2 weeks on the A100 (sequential per-site to
+  avoid shared-account collision across baselines)
 
-**H-list locked**: H1 + H2(a) + H3(i)/(ii) + H10 (primary gating), with
-H5/H6 post-hoc disclosure + H7/H8 paper-2 deferred + H9/H11 paper-2 deferred
-per v7 amendment 2026-05-16.
+**Where it's running**:
 
-**§A2 audit cascade closure** (16 design-layer audits, 12+ closed 2026-05-18):
-A2.1 + A2.2 + A2.3a/b/c/d + A2.4a/b + A2.5 + A2.6a/b + A2.7 + A2.8 + A2.9 closed;
-A2.6c + A2.10 in flight (Submission-ready scope, NOT launch gate).
-Cross-AI audit substrate (Claude + codex + gemini /stress) used as
-methodology-quality check; 2026-05-18 NeurIPS 2025 LLM Use Disclosure
-documented in `pre_run/ethics_license_coi_statements.md §"LLM Use Disclosure"`.
+- UCL Condense A100 VM (`a100-jiaming-test`, A100-PCIE-40GB dedicated allocation)
+  with VWA Docker stack self-hosted on the VM (canonical paper-grade host
+  per our 2026-05-15 migration from DGX→quark→Tailscale stack)
 
-**Fire plan**:
+**Pre-fire prep that landed** (since 2026-05-14 sync):
 
-- Phase 1a Pass-1 baseline (36 conditions) sequential per-site via
-  `queue_phase1_paper_grade.sh launch`
-- A100 wallclock estimate: 1-2 weeks
-- Pass-2 learned router (6 conditions) launched sequentially after Pass-1
-  data lands
-- Phase 1b shopping expansion (21 conditions) deferred to post-workshop main paper
+- Cross-AI audit cascade closure — used `/stress` workflow (Claude + codex CLI
+  + Gemini CLI as three independent reviewers) for 14/14 §A2 design-layer
+  audits (research question framing / comparison design / power & sample /
+  evidence-claim coupling / router operationalization / external validity /
+  confound register / preregistration / reporting & ethics / prose↔code
+  integrity); all closed with substantive fixes per `master_bug_catalog.md`
+  + `实验笔记 §200-§224`. This was the bulk of my work post our sync.
+- Pre-registration is locked at Git tag `preregistration-locked`
+  (commit SHA `<FILL_AT_FIRE_TIME>` 2026-05-18). Covers 14 commit decisions
+  in `preregistration.md §6 §(a)` — FE-pool estimand over 6 cells (decision
+  "3A"), δ=1.0pp threshold, K-of-N transparency-only, smoke-gate rules,
+  3-axis cost-latency canonical estimand (cost = raw billed / latency =
+  retry-adjusted / raw-latency = sensitivity), B2 cross-family claim-tier
+  gate, etc.
 
-If you have any concern about substance of the 14 commit decisions or the
-hypothesis-tier gates, please reply pre-fire or within reasonable window
-post-fire and I will mark a v2 preregistration document per Protocol A §4
-post-lock change discipline. Otherwise no reply is required for the
-internal-witness chain.
+**OSF DOI**: minting ~1-2 weeks after Pass-1 baseline data completes
+(per `osf_lock_manifest.md §3` 8-step workflow). DOI will be the
+permanent external witness for the pre-registration; the local Git tag
+covers interim period.
 
-**A one-line confirmation reply** (if you choose to provide it) suffices:
-"I witness the P79 phantom-SoM pre-registration of gating hypotheses
-H1-H3 + H10 and the 14 lock decisions as of Git SHA `<FIRE_TIME_GIT_SHA>`
-on 2026-05-18." — I will archive this in `.witness/preregistration_witness.eml`
-(gitignored, local-only) for OSF DOI mint reproducibility audit trail
-completeness.
+**Paper writing**: following our 2026-05-14 directive ("paper writing
+交给 advisor, student focus = experiment execution"), I held paper §1-§8
+prose finalization for post-data. Codex prose round queued.
 
-**OSF DOI mint timeline**: Phase 1a Pass-1 baseline data complete →
-OSF page upload (`preregistration.md` + `paper_drafts_locked/` snapshot +
-locked artifact bundle per `osf_lock_manifest.md §3` 8-step workflow) →
-DOI assignment → backfill into `osf_lock_manifest.md §2` <TBD> cells.
-Expected ~1 week post-Pass-1-complete.
+**No action required** — this is purely FYI. I'll send a follow-up
+when Pass-1 baseline data completes (around 2026-06-01 ± a few days,
+depending on per-cell wallclock).
 
-Best regards,
+Best,
 Jiaming
 
+P.S. If anything in the methodology / scope / framing reads off and
+you want me to course-correct mid-flight, please let me know. The
+fire is paused-able at any cell boundary if there's an integrity
+concern.
+
 ---
 
-## Email metadata
+## Send checklist
 
-| Field | Value |
-|---|---|
-| To | `<advisor email>` |
-| Cc | `<lab pre-submission audit cc>` (optional) |
-| Subject | P79 — Phantom-SoM Pre-Registration Witness Request (paper-1 Phase 1a Pass-1 launch 2026-05-18) |
-| Send date | 2026-05-18 (pre-fire) OR within 24h post-fire (courtesy) |
-| Reply expected | optional — not blocking |
-| Archive location post-reply | `.witness/preregistration_witness.eml` (gitignored, local) |
+- [ ] Replace `<FILL_AT_FIRE_TIME>` with actual Git SHA from `preregistration-locked` tag (Claude will paste the exact SHA into chat at fire event)
+- [ ] Verify Maria + Zekun email addresses
+- [ ] Send via standard email client
+- [ ] (optional) Save sent copy to `.witness/email1_fire_notification_2026-05-18.sent.eml` for record (gitignored, local-only)
+- [ ] (optional, only if advisor replies with substantive note) Save reply to `.witness/email1_fire_notification_2026-05-18.reply.eml` (gitignored)
 
-## Cross-references in this email
+## Cross-references
 
-- `docs/checkpoints/pre_run/preregistration.md` §6 §(a) — 14 commit decisions canonical
-- `docs/checkpoints/pre_run/osf_lock_manifest.md` §3 — 8-step DOI workflow + B-1570 doctrine shift
-- `docs/checkpoints/_status/issues/issue_advisor_sync_2026-05-14.md` — sync 收口 record
-- `docs/checkpoints/实验笔记.md` §200-§221 — §A2 audit cascade chronicle
-- `docs/reference/master_bug_catalog.md ## A2.x` sections — per-audit fix tables
-- Git tag `preregistration-locked` (created post-prep at Phase 1a fire start)
+- `osf_lock_manifest.md §3` — 8-step DOI workflow (B-1570 updated 2026-05-18)
+- `preregistration.md §6` — Internal witness (Git refs) + External witness (OSF DOI) two-layer
+- `osf_deposit_package_manifest_2026-05-18.md` — Bundle pre-staged for OSF deposit
+- 实验笔记 §200-§224 — Cross-AI audit cascade chronicle
+- `_status/issues/issue_advisor_sync_2026-05-14.md` — 2026-05-14 sync 收口 record
 
-## Note on send timing
+## Email 2 retirement note
 
-Per current doctrine, advisor email can be sent (a) pre-fire as substance
-notification, (b) at-fire-start with Git SHA reference, or (c) post-fire
-within ~24h as audit-trail collateral. Substance is identical across the
-three options. Recommendation: send (b) at-fire-start so the Git SHA in
-the email body matches the immutable Git tag created at fire start.
+Prior version of this draft contained a formal pre-registration witness
+section requesting a 1-line confirmation reply ("I witness pre-registration
+of phantom-SoM gating hypotheses (H1-H3 + H10) and the 14 lock decisions
+as of Git SHA <SHA> on <date>"). That section was **retired 2026-05-18**
+per user analysis: with OSF DOI mint planned (~1-2 weeks post-Pass-1-data),
+the advisor email witness is structurally redundant. The OSF DOI is a
+cryptographically stronger witness (public + immutable + content-hashed
++ machine-verifiable) than advisor email (private + human-attested +
+non-cryptographic). `witnessed_by:` field in `preregistration.md`
+frontmatter will be populated with "Git tag `preregistration-locked` +
+OSF DOI <to-be-assigned>" at OSF mint event, replacing the original
+"witnessed_by: <advisor name>" plan. Per B-1570 doctrine 2026-05-18,
+advisor email is now strictly optional collateral.

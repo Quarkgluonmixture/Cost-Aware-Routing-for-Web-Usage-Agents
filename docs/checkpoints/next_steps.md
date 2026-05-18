@@ -1,7 +1,7 @@
 ---
 type: action-ledger
 status: rolling
-updated: 2026-05-15
+updated: 2026-05-18
 ---
 
 # Next Steps — Forward Action Ledger
@@ -26,13 +26,19 @@ updated: 2026-05-15
 
 **Paper hook**: → [[paper_planning#§1]] (canonical, phantom routing space 3 arms / 4-fold drop-in)
 
-> [!todo] Top forward actions (priority order, 2026-05-14 收口 — advisor discussion done; mechanism 暂搁; router 升 Phase 1 核心)
-> 1. **审查 bug + pipeline (两层 stress)** ⭐⭐⭐ — §A1 实现层 + §A2 设计层 audit, clean run 前置. 详 [[phase1_plan]] §A1+§A2.
-> 2. **cls + red baseline 干净 clean run** ⭐⭐⭐ — 3 模型 (B0/B1/B2=Gemma3-VL) = **36 conditions / 6 cells**. Gemma3-VL pipeline 已 land ([[实验笔记]] §140). 详 [[phase1_plan]] §B.
-> 3. **同步做 router (双路线)** ⭐⭐⭐ — (a) rule-based 按 task 属性区分; (b) learned classifier routing. 从 paper-2 deferred 升为 Phase 1 核心. 详 [[phase1_plan]] §C + §5.
-> 4. **独立 bug 研究 paper** ⭐ — cross-benchmark bug 聚合研究 (e.g. agisdk), 可单独投 workshop. 详 §11.
+> [!todo] Top forward actions (priority order, **2026-05-18 update** — 所有 prep / audit / smoke 已闭环, Phase 1a fire 等 user signal)
+> 1. **Phase 1a Pass-1 fire ⭐⭐⭐** — `queue_phase1_paper_grade.sh launch` on A100, 36 conditions / 6 cells × ~1-2 周 wallclock. **当前 = 等 user `fire` signal**. 详 [[phase1_plan]] §B-baseline + [[osf_deposit_package_manifest_2026-05-18]] fire event sequence.
+> 2. **Pass-2 learned router (6 conditions) sequential post-Pass-1** ⭐⭐ — 详 [[phase1_plan]] §B-router + [[phase1_plan]] §C router operationalization. ~3-7 天 fire wallclock.
+> 3. **OSF DOI mint post-Pass-1-data-complete** ⭐⭐ — 8-step workflow, ~30 min user-side + DOI 分配 1-24h, 详 [[osf_lock_manifest]] §3 (B-1570 doctrine 2026-05-18).
+> 4. **R-tier 决策 (R1/R3/R5)** post-data — workshop submission (workshop_R1 = H1+H2(a) only per prereg §2.7 bifurcation) vs Phase 1b shop expansion timing. 详 [[paper_planning]] §16.0 multi-submission matrix.
+> 5. **独立 bug 研究 paper** (Track B B-91 LLM judge polarity standalone workshop note, R5 fallback per prereg §2 R5 row) — optional, 详 §11.
 >
-> **重大变化 (2026-05-14 收口, 见 [[实验笔记]] §138)**: mechanism (§5/§0a) 整个暂搁; Gemma3-VL 正式入 baseline; venue cascade = EMNLP (5/25) → workshop → NeurIPS. 学长: 论文写作交 advisor, 学生 focus = experiment execution.
+> **重大变化 lineage (sticky chronology)**:
+> - 2026-05-14 收口: mechanism (§5/§0a) 整个暂搁; Gemma3-VL 入 baseline; 学生 focus = experiment execution.
+> - 2026-05-15 host migration: paper-grade canonical run on A100 self-host VWA Docker (NOT DGX→quark Tailscale).
+> - 2026-05-16 v7 walk-back: Phase 1a expanded 36 → 42 conditions (Pass-1 baseline 36 + Pass-2 learned router 6).
+> - **2026-05-18 §A2 14/14 closed**: A2.1+A2.2+A2.3a/b/c/d+A2.4a/b+A2.5+A2.6a/b/c+A2.7+A2.8+A2.9+A2.10 全 closed via cross-AI /stress 3-AI cycles. Phase 1a fire substrate-ready.
+> - **2026-05-18 B-1570 doctrine shift**: advisor email = optional post-fire collateral, NOT fire/lock blocker. OSF DOI replaces advisor email as primary witness function.
 
 ---
 
@@ -59,38 +65,72 @@ v2 NPZ re-extraction done. Pipeline audit + 5 paper-grade fix commits.
 
 ## §1 Phase 1a paper-grade rerun → [[phase1_plan]]
 
-**Scope** (2026-05-14 advisor 收口, [[实验笔记]] §138): **36 conditions / 6 cells** = (cls + red) × {B0, B1, B2 = Gemma3-VL} × 6 modes。旧 24/4 已废 (B2 入 baseline)。
-**Phase 1b** (post-workshop deferred) = + shop × 3 × 6 = 18 cond, feeds R3 → R1 / Option D framing decision。
+**Scope** (2026-05-16 v7 walk-back final, [[实验笔记]] §200-§224): **42 operational conditions / 6 statistical cells** = Pass-1 baseline 36 (cls + red × {B0, B1, B2 = Gemma3-VL} × 6 modes) + Pass-2 learned router 6 (cls + red × {B0,B1,B2} × 1 learned-router cond/cell, `obs_mode="learned"` sentinel)。旧 24/4 + 36-only 已废 (H10 router Pass-2 inclusion per B-264+B-267 /stress A1.7 2026-05-16)。
+**Phase 1b** (post-workshop deferred) = + shop × 3 × (6 baseline + 1 learned router) = 21 cond, feeds R3 → R1 main paper expansion 决策。
 
-**Terminology hard rule**: "condition" = 1 (site, model, mode) launch unit; "cell" = 1 (site, model) stratification unit. **不要混用**。
+**Terminology hard rule**: "condition" = 1 (site, model, mode-or-router) launch unit; "cell" = 1 (site, model) stratification unit. **不要混用**。
 
 **Canonical 执行 checklist + critical path + milestones + pre-launch gates + post-completion**: → [[phase1_plan]] §0 + §A + §B + §E
 
-**当前 launch 主 blockers (snapshot)**:
-- ⏳ #11 A100 VM VWA docker bring-up (gates launch, [[phase1_plan]] §B0)
-- ⏳ #10 analysis 层 3-model 改造 (gates §D 不 gate launch)
-- ⏳ `preregistration.md` status `draft → locked` (gates §B1, 待 advisor)
-- ⏳ B-86 GLM parse fallback scaffold (B0-only paper-grade disclosure or fix, 待学长)
+**当前 launch 主 blockers (snapshot 2026-05-18 post §A2 14/14 + prep)**:
+- ✅ **#11 A100 VM VWA docker bring-up** — DONE 2026-05-13 (cls 9980 / red 9999 / shop 7770 / wiki 8888 all UP)
+- ✅ **A100 substrate sync** — DONE 2026-05-18 (HEAD `c86fc9e`, VWA submodule `2f9b0b4`, per-task configs 910, B0 probe 5-gate PASS, VWA SBOM 4-match, Gemma Tier 1+2 + 13 invariant tests)
+- ✅ **§A2 design-layer audit cascade** — 14/14 CLOSED via cross-AI /stress (A2.1-A2.10)
+- ✅ **3 launch smokes** — B-1430 paper_grade (44/44 pytest) + §C LR feature step-0 (StepRecordV2 schema) + B-1425 Gemma Tier 3 (13 invariant tests + 4 DRY=1 wire combos)
+- ✅ **Prep artifacts** — advisor email draft (Email 1 FYI only, Email 2 retired per OSF doctrine) + 2 audit walkthroughs + OSF deposit manifest committed `fa1f824`
+- ⏳ **`preregistration.md` status `draft → locked`** — flip at fire event (1-min Edit + commit + git tag `preregistration-locked` + push --tags); substance fully RESOLVED per §A2 14/14 cascade; advisor email = optional FYI not blocker per B-1570
+- ⏳ **`paper_drafts_locked/` snapshot** — `cp -r paper_drafts paper_drafts_locked` at fire event (1 sec)
+- ⏳ **A100 final provenance snapshot** — `snapshot_env.py results/provenance/env_a100_lock.json` + `snapshot_vwa.sh results/provenance/vwa_a100_lock.json` at fire event (30 sec SSH)
+- ⏭ **`queue_phase1_paper_grade.sh launch` ⭐ THE FIRE** — etc user `fire` signal
+- ⏳ **#10 analysis 层 3-model 改造** (gates §D 不 gate launch; post-fire OK)
 
-**Post-data-lands doc updates** (笔记 §133.6): §4 P-prompt column / §1 hero numbers / §8 limitations "two sites + Phase 1b deferred" + model name fix "Qwen3-VL-235B" / paper.bib DL+Higgins refs / §6§7 section files.
+**Fire event sequence (~6 min wallclock, my execute + 1 user push ack)**:
+1. `cp -r docs/checkpoints/paper_drafts docs/checkpoints/paper_drafts_locked` (1s)
+2. SSH A100 → `snapshot_env.py` + `snapshot_vwa.sh` (30s)
+3. Pull artifacts back to DGX + commit (10s)
+4. Flip prereg frontmatter `status: draft → locked` + fill `registered_at` + `registered_git_sha` (10s)
+5. `git commit -am "lock(prereg): Phase 1a Pass-1 fire-event lock + provenance snapshot"` (5s)
+6. `git tag -a preregistration-locked -m "Phase 1a Pass-1 launch — $(date) + Git SHA <SHA>"` (1s)
+7. `git push origin master + git push --tags` — needs user `push ok` ack per `feedback_git_push_requires_confirm` (~5s wait + 5s push)
+8. SSH A100 → `setsid nohup bash scripts/queues/queue_phase1_paper_grade.sh launch &` (30s setup)
+9. Watchdog Tier-1 file marker monitor + ntfy push notification setup (~5 min)
+
+**Post-data-lands doc updates** (post Pass-1 baseline 完成): §4 P-prompt column / §1 hero numbers (phantom 4-fold drop-in actual numbers) / §8 limitations final / `compute_cost_carbon_table.md` numerical fill via aggregator / per-cell `validate_run.py --strict` / `make analysis` full pipeline.
 
 ---
 
-## §2 OSF DOI 8-step lock workflow (post advisor sync)
+## §2 OSF DOI 8-step lock workflow (B-1570 doctrine 2026-05-18)
 
-**Trigger**: Advisor 确认 K_h1 / K_h3 / TOST δ + DL meta 方法 (REML+HK vs DL).
+**Trigger** (B-1570 update 2026-05-18, [[实验笔记 §220]] + `osf_lock_manifest.md §3` updated header):
+- **Old**: "post advisor email reply" (deprecated; advisor email batch sign-off was originally required gate)
+- **NEW**: "post Phase 1a Pass-1 baseline data complete" — advisor email reply 现 optional collateral, NOT gating event per `preregistration.md §6 §(a)` updated doctrine.
 
-**8 steps** (详 [[osf_lock_manifest]]):
-1. Save advisor confirmation → `docs/reference/advisor_email_<date>.pdf` (或 sync notes)
-2. Update `preregistration.md` (replace `TBD` with confirmed numbers; propagate TOST→superiority 已在 §133 T1 完成)
-3. `python3 scripts/provenance/snapshot_env.py` on DGX + Myriad
-4. `bash scripts/provenance/snapshot_vwa.sh` on each VWA host
-5. `cp -r paper_drafts paper_drafts_locked` + commit
-6. `git tag -a preregistration-locked` + push
-7. Mint OSF DOI at https://osf.io/registries/ (link GitHub tag URL)
-8. Backfill `osf_lock_manifest.md` with SHAs + DOI + timestamp
+**Why doctrine shifted**: §A2 audit cascade (14/14 closed) substantively locked the 14 commit decisions via Git SHA refs at master HEAD; advisor sync 2026-05-14 directive ("student focus = experiment execution") shifted advisor's witness role from formal pre-data lock to post-fact OSF DOI mint completeness collateral. OSF DOI (public + immutable + cryptographic) is strictly stronger witness than advisor email (private + human-attested + non-cryptographic) → OSF DOI replaces advisor email's witness function.
 
-**Artifacts ready**: ✅ `env_dgx_baseline.json` / `vwa_dgx_via_quark.json` / `osf_lock_manifest.md` / provenance scripts / `preregistration_decision_test.py` (smoke 4 scenarios route correct, §133.5) / HF revision pin `ebb281ec...` in `exp_v2_base.yaml` (§134 C8).
+**8 steps** (详 [[osf_lock_manifest]] §3):
+1. **(optional, post-fire collateral)** Save advisor batch sign-off email PDF if/when advisor signs — NOT blocking per B-1570 doctrine
+2. **Update `preregistration.md`** with confirmed thresholds + decision log entry
+3. **Run `python3 scripts/provenance/snapshot_env.py`** on **A100 (paper-1 canonical)** + DGX (archive) + Myriad (optional)
+4. **Run `bash scripts/provenance/snapshot_vwa.sh`** on each VWA-bearing host
+5. **Snapshot paper drafts** → `cp -r paper_drafts paper_drafts_locked` + commit
+6. **Tag git** → `git tag -a preregistration-locked` + push --tags
+7. **Mint OSF DOI** at https://osf.io/registries/ — link OSF page to GitHub tag URL
+8. **Backfill `osf_lock_manifest.md`** with SHAs + timestamps + DOI
+
+**Steps 1-6 happen at fire event** (per §1 fire event sequence). **Steps 7-8 happen post-Pass-1-data-complete** (~30 min user-side via OSF UI + ~1-24h DOI 分配).
+
+**Artifacts ready** (2026-05-18 fully pre-staged per [[osf_deposit_package_manifest_2026-05-18]]):
+✅ 15 `pre_run/*.md` docs (preregistration + osf_lock_manifest + locked_versions + model_card + dataset_card + evaluator_change_protocol + reeval_audit_protocol + pre_rerun_audit + negative_results_registry + ethics_license_coi_statements + **NEW neurips_checklist + compute_cost_carbon_table** + release_redaction_checklist + topvenue_constraints + 2 walkthrough artifacts)
+✅ `paper_drafts/section1-8 + paper.bib` (snapshot to `paper_drafts_locked/` at fire event)
+✅ A100 snapshot scripts ready + previous A100 SBOM probe 2026-05-18 PASS (head + base + chain + lock all True)
+✅ Reusable patch artifact provenance (B-440/B-91/B-535 per `osf_lock_manifest.md §2.5`)
+
+### Advisor email logic (2026-05-18 clarified) — **2 emails 简化为 1**
+
+| Email | 目的 | 是否需要 |
+|---|---|---|
+| **Email 1** — informal FYI to Maria + Zekun ("P79 实验启动了") | Supervision loop courtesy + collegial information flow | ✅ YES (send at fire event with Git SHA filled in) — see [[advisor_email_draft_2026-05-18]] |
+| **Email 2** — formal pre-registration witness reply ask (advisor "I witness ... 14 lock decisions as of Git SHA <SHA>" 1-line reply) | OSF mint 前的 interim witness (pre-OSF era convention) | ❌ NO — **retired per B-1570 doctrine 2026-05-18**: OSF DOI (cryptographic public witness) supersedes advisor email witness function. `witnessed_by:` field in prereg frontmatter populated as "Git tag `preregistration-locked` + OSF DOI <to-be-assigned>" at OSF mint, replacing original "advisor name" plan |
 
 ---
 
