@@ -766,3 +766,47 @@ The canonical R-rule is determined by the 75% threshold (prereg-locked). The 50%
 **Reviewer methodologist response**: this Appendix-D-bis closes "you didn't read Veroniki / IntHout / Hartung-Knapp" attack by (i) explicitly reporting HKSJ-adjusted RE as the standard small-k methodology lit recommends, (ii) acknowledging the divergence: "we report HKSJ Appendix-D-bis sensitivity because Veroniki / IntHout recommend it for small-k inference; primary FE gate diverges from this recommendation because our estimand is design-based fixed-cell (decision 3A), not population-mean", (iii) using the modified-Knapp-Hartung non-shrink guard (Röver-Knapp-Friede 2015) to forestall codex Mode B F5 OOB attack on unmodified HKSJ SE shrinkage.
 
 **Implementation**: existing `aggregate_phantom_meta.py` (now appendix-only per B-1305) already emits `hk_*` columns to `meta_phantom_lift.csv`; the modified-Knapp-Hartung `max(se_hksj, se_re)` transform is a post-processing step in paper §8 Appendix-D-bis table writer (B-1309 stub; full implementation deferred to post-Phase-1a-fire paper §8 Appendix render). Archive empirical anchor in this Appendix-D-bis paragraph above suffices for prereg-lock-time reproducibility.
+
+
+## Appendix E — Post-DOI 1 Operational Hardening (additive disclosure, P0-1-ABC* + P0-8-C* /stress Phase 0 2026-05-19)
+
+**Status**: Additive disclosure ONLY. **Does NOT alter primary hypotheses (H1, H2(a), H3, H10), decision rules (§2.5 FE pooled bootstrap percentile gate), N_conditions (42 = 36 Pass-1 + 6 Pass-2), nor any pre-registered estimand.** OSF DOI 1 (`10.17605/OSF.IO/9QCWU`, minted 2026-05-18T23:10:06Z UTC, anchor commit `5edac3b`) remains the substantive lock; this Appendix is a forward-disclosure addition under standard empirical-disclosure practice.
+
+**Trigger**: Fire-3 cls B0 DOM task 75 hit `EvaluatorUnavailableError` (B-486 quarantine path, `environment.py:285-422`) 2026-05-19 00:53 BST after agent emitted 30 steps. Master `queue_phase1_paper_grade.sh` `kill -0` poll loop did NOT read child chain's exit code → cls abort silently launched red B0 DOM chain (P0-2-B* SMOKING GUN). Red hit 4h max wallclock 04:57 BST. Operational hardening commits `04e1d9b` + `8d2a327` landed 2026-05-19 evening; Phase 0 3-AI /stress (Mode A Claude + Mode B codex + Mode C gemini) produced 18 unified findings.
+
+**Two disclosure additions** below extend §3 (procedure) and §4 (Limitations) at the Appendix-tier (Sensitivity column) framing per /stress A2.6a workshop-vs-main bifurcation lock (workshop_R1 = H1+H2(a) only; main_R1 = + H3+H10).
+
+### E.1 — B-486 quarantine event rate (Appendix sensitivity column)
+
+**Definition**: per-cell `quarantine_rate = quarantined_episodes / scored_task_count` where `quarantined_episodes` = episodes whose runner aborted via `EvaluatorUnavailableError` (Playwright timeout / API 503 / dep exception, all post-3-retry exhaustion) and wrote `summary.needs_reevaluation=True`. Per `environment.py:285-422` B-486 quarantine path, these episodes do NOT receive a canonical `success / score` value; runner aborts BEFORE writing the episode_summary_v2.json (paper-grade integrity gate). For Phase 1a re-fire (post-hardening commits 04e1d9b + 8d2a327), watchdog auto-retry respects `needs_reevaluation=True` (P1-10-B fix) — quarantined tasks require manual operator review + explicit re-fire (B-486 integrity contract), so `quarantine_rate` reflects infra-event rate not silent re-rolls.
+
+**Reporting**: per-cell `quarantine_rate` is an Appendix-tier Sensitivity column (NOT included in primary H1 / H2(a) / H3 / H10 decision substrate). Cross-baseline asymmetry is expected (B0 AWS proxy slow steps may trigger Playwright timeout more than B1/B2 local at high task count) — disclosed in §4 Limitations as scaffold-effect asymmetry vector. Phase 1a re-fire post-hardening will measure this rate per cell; archive Fire-3 partial data (cls 75 episodes incl. 1 quarantine task 75) NOT used for canonical claims (Fire-3 dead before sentinel write).
+
+**Reviewer attack defused**: "B0 proxy network triggers quarantine more often than B1/B2 local → silent denominator shrink → inflated SR" — addressed by (a) `quarantine_rate` formal Appendix column, (b) B-486 paper-grade fail-loud preserves quarantine evidence (no silent re-roll), (c) cross-baseline asymmetric disclosure in §4 Limitations.
+
+### E.2 — Runner intervention rate (Appendix sensitivity column)
+
+**Definition**: per-cell `runner_intervention_rate = runner_intervention_step_count / total_step_count` where `runner_intervention_step_count` = step records with `intervention_type IS NOT NULL` (post-Phase 2 telemetry stamping per `runner/main.py:2939-2954` + Schema additions in commit `8d2a327`). Sub-attribution: `about_blank_recovery_rate` = subset where `intervention_type == "about_blank_recovery"`.
+
+**Pre-fix attribution gap** (P0-1-ABC* 3-AI overlap OOB): pre-Phase 1 hardening, runner's `navigate_to(task.start_url)` after about:blank detection was silently appended to `page_change_reasons` list → `page_changed=True` → paper §3 step semantics conflated runner intervention with agent action progress. Aggregator (`scripts/analysis/about_blank_frequency.py`) measured FREQUENCY but not ATTRIBUTION. Post-hardening: `runner/main.py:2483-2491` decouples (about:blank NO LONGER appended to page_change_reasons); step record stamps `intervention_type` + `counted_as_agent_action=False`; episode-level rollup `runner_intervention_count` + `about_blank_recovery_count`.
+
+**Reporting**: per-cell `runner_intervention_rate` + `about_blank_recovery_rate` as Appendix Sensitivity columns. `page_changed_minus_intervention_rate` = total `page_changed` steps minus runner-intervention steps, exposing agent-only page-change rate for cross-baseline comparison. Aggregator (`about_blank_frequency.py` P1-11-B* extension) emits 7 new attribution columns: `runner_intervention_step`, `agent_progress_legacy_step` (pre-fix archived rows), `agent_progress_url_only_step`, `agent_progress_explicit_step`, `page_changed_step`, `page_changed_minus_intervention_step`, `agent_visible_changed_step`.
+
+**Reviewer attack defused**: "page_changed conflates agent action + framework scaffolding" — addressed by (a) Phase 1 decouple (runner intervention NOT in page_change_reasons), (b) Phase 2 explicit per-step attribution telemetry, (c) Aggregator attribution columns, (d) §4 Limitations paragraph disclosing pre-fix archive aggregation cohort distinction.
+
+**Scope**: Both E.1 + E.2 are **forward** disclosures applicable to Phase 1a re-fire (post-hardening). Archive Fire-3 partial data (75 cls episodes pre-abort) NOT used for canonical paper §1 / §3 claims. Pre-Phase 2 archive rows (any prior /stress audit cohort) lack the explicit `intervention_type` field; aggregator falls back to legacy `page_change_reasons` parsing → `agent_progress_legacy_step` column flag distinguishes cohorts. Mixed pre/post-Phase 2 archive aggregation MUST stratify by `intervention_type IS NULL` vs `intervention_type IS NOT NULL` (sibling pattern to B-554 evaluator_authority_mode archive cohort isolation).
+
+### E.3 — Witness chain extension
+
+Phase 0 /stress audit artifacts witnessed alongside DOI 1 anchor:
+- `docs/checkpoints/codex_prompts/phase0_recovery_audit_2026-05-19_164931.md`
+- `docs/checkpoints/codex_outputs/phase0_recovery_audit_2026-05-19_164931.md`
+- `docs/checkpoints/gemini_prompts/phase0_recovery_audit_2026-05-19_164931.md`
+- `docs/checkpoints/gemini_outputs/phase0_recovery_audit_2026-05-19_164931.md`
+
+Operational hardening commits:
+- `04e1d9b` — Phase 1 operational hardening (11 P0+P1 fixes)
+- `8d2a327` — Phase 2 additive telemetry + schema (24 new fields + sync invariant test)
+- `(this commit)` — Phase 3 docs + chronicle + Appendix E
+
+No OSF DOI 1 amendment is required (per Gemini Mode C honest gap: operational hardening + standard empirical disclosure does NOT trigger preregistration hypothesis amendment). DOI 1 anchor commit `5edac3b` lock remains canonical; this Appendix is forward-additive disclosure under prereg §6 OSF workflow.

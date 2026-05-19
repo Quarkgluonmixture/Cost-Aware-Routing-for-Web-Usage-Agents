@@ -7078,3 +7078,59 @@ Triggered by A1.24 fire-day catastrophe (B-1581 + §228 chronicle): user request
 4. **Retraction discipline = corrective commit + annotated tag + push, no force-push** — codex B-WIT-3 protocol. GitHub history retains bugged commit (immutable) but audit-trail structurally complete via annotated tag superseding.
 
 ---
+
+## Phase 0 /stress Fire-3 recovery + paper-grade hardening — 3-AI unified bug list (2026-05-19, 18 findings; commits `04e1d9b` Phase 1 + `8d2a327` Phase 2 + Phase 3 docs)
+
+**Trigger**: Fire-3 cls B0 DOM aborted 2026-05-19 00:53 BST via B-486 quarantine on task 75 (`page.goto` eval timeout 30s × 3 → EvaluatorUnavailableError → runner abort). Master `queue_phase1_paper_grade.sh` `kill -0` did NOT read child chain exit code → cls abort silently launched red B0 DOM at 00:54 → red hit 4h wallclock 04:57. Initial F1 hypothesis (VWA submodule `async_envs.py asyncio.run()` leak) RETRACTED via call-path audit (P79 never imports `AsyncScriptBrowserEnv`) + empirical Probe A (B1 task 75 isolated, 0 timeout) + Probe B (B1 tasks 70-75 prefix, 0 timeout across 4× 30-step episodes). 3-AI /stress (Mode A Claude + Mode B codex + Mode C gemini) on operational hardening surface produced 18 unified findings; user `accept all 推荐` → Phase 1 + Phase 2 + Phase 3 landed.
+
+**P0 fixes** (re-fire blockers):
+
+| ID | Description | File:Line | Commit |
+|---|---|---|---|
+| **P0-1-ABC*** | about:blank recovery NO longer credited as agent progress; explicit attribution telemetry | `p79/experiment/runner/main.py:2483-2491` + step record fields | 04e1d9b + 8d2a327 |
+| **P0-2-B* SMOKING GUN** | Master `queue_phase1_paper_grade.sh` `launch_chain` writes done-sentinel; master reads sentinel rc not just `kill -0` liveness — Fire-3 cls→red cascade now structurally prevented | `scripts/queues/queue_phase1_paper_grade.sh:561-595 + 738-768` | 04e1d9b |
+| **P0-3-B** | Pass-2 router orchestrator default sequential cls→red with sentinel-based wait | `scripts/queues/queue_phase1_router_paper_grade.sh:489-540` | 04e1d9b |
+| **P0-4-B** | Pass-2 completion gate enumerates 6 canonical mode condition_ids (not glob count) | `scripts/queues/queue_phase1_router_paper_grade.sh:148-187` | 04e1d9b |
+| **P0-5-B*** | `queue_router_learned.sh` leaf ports site lock + dirty-cell + cross-mode collision from baseline siblings | `scripts/queues/queue_router_learned.sh:127-138 + 187-220` | 04e1d9b |
+| **P0-6-AC** | `paper_grade=True × baseline_retry_on_no_progress=True` hard-fail sibling pattern to diagnostic_controls | `p79/experiment/runner/main.py:248-268` | 04e1d9b |
+| **P0-7-A** | `paper_grade=True × VWA_RESET_ENABLE!=1` hard-fail (silent reset bypass closure) | `scripts/maintenance/reset_vwa_sites.sh:247-263` | 04e1d9b |
+| **P0-8-C*** | Preregistration Appendix E forward disclosure — quarantine_rate + runner_intervention_rate Sensitivity columns | `docs/checkpoints/pre_run/preregistration.md` Appendix E | Phase 3 (this commit) |
+
+**P1 fixes** (paper-grade quality):
+
+| ID | Description | File:Line | Commit |
+|---|---|---|---|
+| **P1-9-AC*** | B-329 program_html escape narrow except (silent disable closure on transient config-read fail) | `p79/experiment/environment.py:331-345` | 04e1d9b |
+| **P1-10-B** | Watchdog auto-retry honors `needs_reevaluation` field (B-486 quarantine evidence preservation) | `scripts/maintenance/experiment_watchdog.py:1789-1815` | 04e1d9b |
+| **P1-11-B*** | `about_blank_frequency.py` 7 attribution columns; respects Phase 2 `intervention_type` first then legacy reasons fallback | `scripts/analysis/about_blank_frequency.py` | 8d2a327 |
+| **P1-13-B** | `--reset-state` renames to `.discarded.<ts>` + emits `state_reset_discarded` event inline (amnesia trap closure) | `scripts/maintenance/experiment_watchdog.py:1442-1462` | 04e1d9b |
+| **P1-14-B** | Schema 4-place sync invariant test (dataclass + v2 defaults + type map + paper_grade keys) | `tests/test_schema_4place_sync.py` (7 invariants) | 8d2a327 |
+| **P1-15-AC** | B1 substrate ≠ B0 75-task scale epistemic gap disclosed in paper §4 Limitations | `docs/checkpoints/paper_drafts/section4_limitations_disclosure.md` | Phase 3 (this commit) |
+| **P1-16-AC** | `queue_chain.sh` baseline-aware wallclock: B0 8h / B1/B2 4h | `scripts/queues/queue_chain.sh:126-156` | 04e1d9b |
+| **P1-17-C*** | Phase 2 schema: 24 new fields (4 step intervention + 20 episode attempt-lineage + footprint) framed as Appendix Sensitivity columns | `p79/experiment/types.py` + `schema_migrations/v2.py` | 8d2a327 |
+
+**P1-12-B*** (Router artifact contract orchestrator-vs-leaf split) and **P2-18-A*** (`VWA_CHROMIUM_LAUNCH_ARGS` localhost guard sibling-propagation gap) deferred — P1-12 to Phase 1b prep (router infrastructure timing), P2-18 untriggered sleeping mine.
+
+**Phase 2 schema additions** (commit `8d2a327`):
+- Step-level (4 new): `intervention_type` / `counted_as_agent_action` / `intervention_from_url` / `intervention_recovery_url`
+- Episode-level rollup (2 new): `runner_intervention_count` / `about_blank_recovery_count`
+- Attempt-lineage (10 new, all None until infra lands): `attempt_id` / `attempt_index` / `is_retry_attempt` / `retry_trigger` / `previous_attempt_error` / `previous_attempt_effective_mutation_count` / `substrate_restored_from_checkpoint` / `checkpoint_id` / `checkpoint_hash_before` / `checkpoint_hash_after_restore`
+- Footprint (8 new, defaults 0/None): `effective_mutating_action_count` / `destructive_action_count` / `cart_mutation_count` / `submit_create_count` / `delete_remove_count` / `cycle_mutating_action_count` / `repeated_same_mutating_action_count` / `footprint_risk_score`
+
+**Constraints respected** (user directive):
+- `async_envs.py` NOT patched (P79 only imports `ScriptBrowserEnv` sync; F1 RCA retracted)
+- Primary benchmark NOT changed to per-task reset (sequential stateful protocol preserved)
+- NO auto-early-stop on footprint telemetry (Sensitivity-only)
+- Primary hypotheses + prereg decision rules unchanged (gemini honest gap: operational hardening is standard empirical disclosure, no DOI 1 amendment required)
+
+**Cross-AI Phase 0 verification**: Mode B PASS (4.8 min, 9 findings 4 OOB, Phase 4 3/3 spot-check). Mode C PASS (6.7 min, 7 findings 5 OOB, Phase 4 3/3 spot-check incl. `grep -c "quarantine" preregistration.md = 0` empirical anchor). Cross-AI agreement: 3-AI overlap = 1 (about:blank credit P0-1-ABC*); 2-AI overlap = 4; 1-AI codex unique = 9 (orchestrator + watchdog + schema layer Claude did not see); 1-AI gemini unique = 2 (paper-prose framing).
+
+**Audit artifacts**:
+- `docs/checkpoints/codex_prompts/phase0_recovery_audit_2026-05-19_164931.md`
+- `docs/checkpoints/codex_outputs/phase0_recovery_audit_2026-05-19_164931.md`
+- `docs/checkpoints/gemini_prompts/phase0_recovery_audit_2026-05-19_164931.md`
+- `docs/checkpoints/gemini_outputs/phase0_recovery_audit_2026-05-19_164931.md`
+
+**Chronicle cross-link**: 实验笔记 §237 (full Phase 0→1→2→3 narrative with timeline + retract trail).
+
+---
