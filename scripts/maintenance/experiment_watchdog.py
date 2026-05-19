@@ -30,6 +30,59 @@ from pathlib import Path
 # Fire-4 RCA Wave 2 M6: repo root for quarantine_registry.py subprocess call.
 # __file__ = scripts/maintenance/experiment_watchdog.py → 3 .parent levels up.
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
+# Fire-4 RCA Wave 2c M11: VWA health telemetry cadence (every N episodes).
+# User decision 2026-05-19: "every 30 episodes or fixed time interval";
+# log/alert rather than aggressive false-positive abort. Override via env
+# VWA_HEALTH_INTERVAL to disable (set to 0) or tune frequency.
+_VWA_HEALTH_INTERVAL = int(os.environ.get("VWA_HEALTH_INTERVAL", "30"))
+
+
+def _run_vwa_health_check(run_id: str, ntfy_topic: Optional[str] = None) -> None:
+    """Fire-4 RCA Wave 2c M11 — fire-and-forget health telemetry sidecar.
+
+    Calls scripts/maintenance/check_vwa_health.sh as subprocess. Best-effort:
+    failures are logged but do NOT abort the watchdog. The shell script
+    itself never exits non-zero on threshold breach (observability, not
+    enforcement) — only on missing curl binary etc.
+
+    Output goes to logs/health/<run_id>_health.jsonl. ntfy alerts emitted
+    by the shell script when disk_pct >= threshold or curl latency >=
+    threshold; this hook does NOT post its own ntfy.
+    """
+    script = _REPO_ROOT / "scripts" / "maintenance" / "check_vwa_health.sh"
+    if not script.exists():
+        return  # silently skip if script not deployed
+    env = dict(os.environ)
+    env["RUN_ID"] = run_id
+    if ntfy_topic:
+        env["NTFY_TOPIC"] = ntfy_topic
+    try:
+        # 30s wall budget covers worst-case 3× curl × 10s timeout each.
+        # check_vwa_health.sh writes JSONL itself; we capture stdout for log
+        # parity but discard (the JSONL is the canonical telemetry).
+        _result = subprocess.run(
+            ["bash", str(script)],
+            capture_output=True, text=True, timeout=35, env=env,
+        )
+        if _result.returncode == 0:
+            print(
+                f"[watchdog][HEALTH-TELEMETRY] M11 health check OK "
+                f"(every {_VWA_HEALTH_INTERVAL} episodes); "
+                f"log: logs/health/{run_id}_health.jsonl"
+            )
+        else:
+            print(
+                f"[watchdog][HEALTH-TELEMETRY] WARN check_vwa_health.sh "
+                f"rc={_result.returncode}: {_result.stderr[:200]}"
+            )
+    except subprocess.TimeoutExpired:
+        print(
+            "[watchdog][HEALTH-TELEMETRY] WARN check_vwa_health.sh "
+            "timed out after 35s (substrate may be degraded)"
+        )
+    except Exception as exc:
+        print(f"[watchdog][HEALTH-TELEMETRY] WARN unexpected exception: {exc}")
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 SUMMARY_RE = re.compile(r"^(?P<site>.+)_task_(?P<task_id>\d+)_summary_v2\.json$")
@@ -1980,6 +2033,17 @@ def main() -> int:
                 )
                 all_records.append(rec)
                 seen_keys.add(key)
+
+                # Fire-4 RCA Wave 2c M11 (/stress 3-AI 2026-05-19): in-flight
+                # VWA health telemetry every N episodes. User decision: "every
+                # 30 episodes or fixed time interval; log/alert rather than
+                # aggressive false-positive abort." Hypothesis under test:
+                # task-X timeouts may correlate with 3h-old docker drift
+                # (gemini A1-7 OOB). VWA_HEALTH_INTERVAL env overrides cadence;
+                # 0 disables. Hook fires only on FIRST detection of a new
+                # episode-summary (NOT on bootstrap from state file).
+                if _VWA_HEALTH_INTERVAL > 0 and (len(seen_keys) % _VWA_HEALTH_INTERVAL == 0):
+                    _run_vwa_health_check(run_id, ntfy_topic=args.ntfy_topic)
 
                 # --- Session health check ---
                 session_ok = _check_session_health(condition_dir, site, task_id)
