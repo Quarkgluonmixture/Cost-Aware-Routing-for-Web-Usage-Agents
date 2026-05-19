@@ -158,3 +158,30 @@ def test_phase2_intervention_fields_present():
         assert f in PAPER_GRADE_EPISODE_OPTIONAL_KEYS, (
             f"P0-1-ABC* intervention episode field missing in PAPER_GRADE_EPISODE_OPTIONAL_KEYS: {f}"
         )
+
+
+def test_wave2_m5_timeout_taxonomy_fields_present():
+    """Fire-4 RCA Wave 2 M5 timeout taxonomy fields land 4-place sync.
+
+    User A1=b decision 2026-05-19: backward-compatible additive schema.
+    `unverified_timeout_event=None / timeout_callsite=None / verified_substrate_noise=None`
+    by default (non-timeout episodes); populated bool/string by
+    `classify_timeout()` when runner exception path catches a timeout.
+    """
+    episode_dc = _dataclass_field_names(EpisodeSummaryV2)
+    episode_defaults = set(EPISODE_SUMMARY_V2_DEFAULTS.keys())
+
+    m5_episode_fields = {
+        "unverified_timeout_event",
+        "timeout_callsite",
+        "verified_substrate_noise",
+    }
+    for f in m5_episode_fields:
+        assert f in episode_dc, f"M5 timeout taxonomy field missing in EpisodeSummaryV2 dataclass: {f}"
+        assert f in episode_defaults, f"M5 timeout taxonomy field missing in v2 defaults: {f}"
+        assert f in _EPISODE_OPTIONAL_FIELD_TYPES, (
+            f"M5 timeout taxonomy field missing in _EPISODE_OPTIONAL_FIELD_TYPES: {f}"
+        )
+        assert f in PAPER_GRADE_EPISODE_OPTIONAL_KEYS, (
+            f"M5 timeout taxonomy field missing in PAPER_GRADE_EPISODE_OPTIONAL_KEYS: {f}"
+        )

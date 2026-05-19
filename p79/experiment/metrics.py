@@ -78,6 +78,59 @@ def compute_router_overhead_cost(router_overhead_ms: float, router_cfg: Dict[str
 # empirically across episode summaries).
 
 
+def classify_timeout(error_message: Optional[str]) -> Tuple[bool, Optional[str]]:
+    """Classify timeout error by Playwright callsite (Fire-4 RCA Wave 2 M5).
+
+    Returns ``(is_timeout, callsite)`` where ``is_timeout`` is True if the
+    error message contains a timeout substring AND ``callsite`` is the
+    inferred Playwright callsite. Used by the runner's exception path to
+    stamp ``unverified_timeout_event=True, timeout_callsite=<callsite>``
+    on the episode summary so future manual review can promote to
+    ``verified_substrate_noise=True`` (legitimate substrate noise) OR
+    leave the timeout in the agent-failure denominator (counted in SR).
+
+    Decoupled from ``detect_benchmark_noise()`` so the broader benchmark
+    noise taxonomy (api_rate_limit / auth_expired / api_infra /
+    anti_bot / geo_restricted) is untouched — only timeouts get the
+    "downgrade to unverified" treatment per user A1=b decision 2026-05-19.
+
+    Callsite buckets (ordered most-specific → least):
+      * ``agent_observation``  — Page.screenshot timeout (DOM/SoM capture)
+      * ``agent_navigation``   — Page.goto timeout (URL load)
+      * ``agent_action``       — Page.click/fill/type/hover/select_option
+      * ``network``            — ECONNREFUSED / connection reset (substrate)
+      * ``agent_playwright_other`` — Other Playwright timeout (rare)
+      * ``unknown``            — Timeout substring but no callsite pattern
+
+    EvaluatorUnavailableError path is NOT covered here — those re-raise
+    at runner/main.py:1505 BEFORE summary write, so the exception path
+    that calls classify_timeout() is exclusively agent-context.
+    """
+    if not error_message:
+        return False, None
+    msg = error_message.lower()
+    has_timeout = any(k in msg for k in ("timeout", "timed out", "deadline exceeded"))
+    if not has_timeout:
+        return False, None
+    if "page.screenshot" in msg:
+        return True, "agent_observation"
+    if "page.goto" in msg:
+        return True, "agent_navigation"
+    if any(k in msg for k in (
+        "page.click", "page.fill", "page.type", "page.hover",
+        "page.select_option", "page.evaluate", "locator.",
+    )):
+        return True, "agent_action"
+    if any(k in msg for k in (
+        "econnrefused", "connection refused", "connection reset",
+        "name not resolved", "enotfound",
+    )):
+        return True, "network"
+    if "playwright" in msg:
+        return True, "agent_playwright_other"
+    return True, "unknown"
+
+
 def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional[str]]:
     if not error_message:
         return False, None
@@ -119,8 +172,21 @@ def detect_benchmark_noise(error_message: Optional[str]) -> Tuple[bool, Optional
         "vpn detected",
     )):
         return True, "geo_restricted"
+    # Fire-4 RCA Wave 2 M5 (/stress 3-AI 2026-05-19, user A1=b decision):
+    # timeout downgrade — pre-fix any timeout substring auto-tagged
+    # `benchmark_noise=True, category="timeout"` → silently excluded from
+    # `benchmark_noise_rate` transparency metric → reviewer cherry-picking
+    # lever (was Fire-4 task 75 auto-classified noise; could've been
+    # agent-induced DOM deadlock). Post-fix: timeout substring detection
+    # moved to `classify_timeout()` helper which returns callsite;
+    # `detect_benchmark_noise` returns (False, None) for timeouts; runner
+    # exception path stamps `unverified_timeout_event=True, timeout_callsite=...`
+    # so future manual review can promote to `verified_substrate_noise=True`
+    # (real noise) OR leave as agent-induced failure (counted in denominator).
+    # Backward compat per user A1=b: `benchmark_noise=False` for timeouts
+    # (no archive break); new unverified_timeout fields fill in additively.
     if any(k in msg for k in ("timeout", "timed out", "deadline exceeded")):
-        return True, "timeout"
+        return False, None
     # B-1582 (/stress A1.24 post-fire P0-2-B codex Mode B F2, 2026-05-18):
     # special-case deterministic code-bug signatures BEFORE generic
     # `playwright` substring match. Pre-fix: `VWAWrapper.reset() detected an

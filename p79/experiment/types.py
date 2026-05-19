@@ -344,6 +344,19 @@ class EpisodeSummaryV2:
     benchmark_noise: bool
     benchmark_noise_category: Optional[str]
     artifacts_dir: str
+    # Fire-4 RCA Wave 2 M5 (/stress 3-AI 2026-05-19, user A1=b decision):
+    # timeout taxonomy — pre-fix any Page.screenshot/Page.goto timeout was
+    # auto-classified `benchmark_noise=True, category="timeout"` (silently
+    # excluded from clean SR transparency metric). Post-fix: timeout-substring
+    # detection moved to `classify_timeout()` (metrics.py); runner exception
+    # path now stamps these 3 fields additively while keeping
+    # `benchmark_noise=False` (backward compat for archive readers).
+    # Future manual review tooling (Wave 4 / Phase 2 follow-up) promotes
+    # `verified_substrate_noise=True` to declare real substrate noise;
+    # until then unverified_timeout_event stays in agent-failure denominator.
+    unverified_timeout_event: Optional[bool] = None
+    timeout_callsite: Optional[str] = None
+    verified_substrate_noise: Optional[bool] = None
     state_change_reason_distribution: Dict[str, int] = field(default_factory=dict)
     checklist_completion_rate: Optional[float] = None
     checklist_failed_items: Optional[int] = None
@@ -719,6 +732,12 @@ PAPER_GRADE_EPISODE_OPTIONAL_KEYS = frozenset({
     # row distinguishing). Paper §3 disclosure Appendix column.
     "runner_intervention_count",
     "about_blank_recovery_count",
+    # Fire-4 RCA Wave 2 M5 timeout taxonomy (always stamped on paper-grade
+    # episodes; None for non-timeout episodes, populated bool/string when
+    # `classify_timeout()` detects timeout in the exception-path error msg).
+    "unverified_timeout_event",
+    "timeout_callsite",
+    "verified_substrate_noise",
 })
 
 
@@ -776,6 +795,10 @@ _EPISODE_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     # P0-1-ABC* + P1-11-B* Phase 2 telemetry (runner intervention rollup).
     "runner_intervention_count": (int,),
     "about_blank_recovery_count": (int,),
+    # Fire-4 RCA Wave 2 M5 timeout taxonomy fields (bool/string/None).
+    "unverified_timeout_event": (bool, type(None)),
+    "timeout_callsite": (str, type(None)),
+    "verified_substrate_noise": (bool, type(None)),
     # P1-17-C* Phase 2 attempt-lineage (Sensitivity-only column; all None
     # until checkpoint-restore infrastructure lands).
     "attempt_id": (str, type(None)),

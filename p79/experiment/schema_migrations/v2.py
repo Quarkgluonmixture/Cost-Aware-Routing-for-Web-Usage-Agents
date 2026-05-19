@@ -60,6 +60,11 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     "trigger_distribution": {},
     "benchmark_noise": False,
     "benchmark_noise_category": None,
+    # Fire-4 RCA Wave 2 M5 timeout taxonomy defaults (additive — populated
+    # by runner exception path when classify_timeout() detects timeout).
+    "unverified_timeout_event": None,
+    "timeout_callsite": None,
+    "verified_substrate_noise": None,
     "artifacts_dir": "",
     # --- additions (optional, default-filled) ---
     "state_change_reason_distribution": {},  # original v2

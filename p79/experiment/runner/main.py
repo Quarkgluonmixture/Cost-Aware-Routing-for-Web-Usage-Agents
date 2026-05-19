@@ -45,6 +45,7 @@ from p79.experiment.metrics import (
     compute_token_cost,
     compute_wasted_cost,
     detect_benchmark_noise,
+    classify_timeout,
     net_saving,
     p95,
     select_token_cost_cfg,
@@ -1625,6 +1626,18 @@ class ExperimentRunner:
                 exc_info=True,
             )
             noise, noise_cat = detect_benchmark_noise(str(exc))
+            # Fire-4 RCA Wave 2 M5 (/stress 3-AI 2026-05-19, user A1=b):
+            # classify timeout separately so the summary distinguishes
+            # "unverified timeout pending manual review" (M5 callsite
+            # taxonomy: agent_observation / agent_navigation / agent_action /
+            # network / agent_playwright_other / unknown) from auto-tagged
+            # benchmark noise (api_rate_limit / auth_expired / api_infra /
+            # anti_bot / geo_restricted). Pre-Wave-2: any timeout substring
+            # set `benchmark_noise=True, category="timeout"` → silently
+            # excluded from clean SR transparency metric → reviewer
+            # cherry-picking lever (Fire-4 task 75 auto-noise classification
+            # could've masked agent-induced DOM deadlock).
+            _is_timeout, _timeout_callsite = classify_timeout(str(exc))
 
             # B-168 (/stress A1.4a v8 codex B1, 2026-05-16): partial-step
             # crash recovery. Try to read any JSONL rows already written
@@ -1691,6 +1704,15 @@ class ExperimentRunner:
                 trigger_distribution={},
                 benchmark_noise=noise,
                 benchmark_noise_category=noise_cat,
+                # Fire-4 RCA Wave 2 M5 timeout taxonomy fields. Defaults None
+                # for non-timeout episodes; bool/string when classify_timeout
+                # detects timeout. verified_substrate_noise stays None until
+                # manual review tooling (Wave 4 / Phase 2 follow-up) flips
+                # to True (legitimate substrate) — until then the episode
+                # stays in agent-failure denominator (counted in SR).
+                unverified_timeout_event=_is_timeout,
+                timeout_callsite=_timeout_callsite,
+                verified_substrate_noise=None,
                 artifacts_dir=str(condition_dir),
                 error=str(exc),
                 # B-487 (/stress A1.5b Phase 1 P0-3-B): Option K anchors —
@@ -3532,6 +3554,14 @@ class ExperimentRunner:
             checklist_failed_items = int(latest_checklist_status.get("failed", 0) or 0)
 
         noise, noise_category = detect_benchmark_noise(eval_result.error)
+        # Fire-4 RCA Wave 2 M5 (mirror of exception-path stamping): runner
+        # success path also passes eval_result.error through both noise
+        # taxonomies. eval_result.error is typically empty/None on success;
+        # populated when the evaluator returned a non-fatal error message
+        # that didn't trigger EvaluatorUnavailableError (e.g., partial
+        # eval failure). classify_timeout handles None gracefully (returns
+        # False, None) so this is safe on the happy path.
+        _is_timeout, _timeout_callsite = classify_timeout(eval_result.error)
 
         episode_summary = EpisodeSummaryV2(
             schema_version=SCHEMA_VERSION_V2,
@@ -3561,6 +3591,10 @@ class ExperimentRunner:
             trigger_distribution=dict(trigger_distribution),
             benchmark_noise=noise,
             benchmark_noise_category=noise_category,
+            # Fire-4 RCA Wave 2 M5 timeout taxonomy fields (success path).
+            unverified_timeout_event=_is_timeout,
+            timeout_callsite=_timeout_callsite,
+            verified_substrate_noise=None,
             artifacts_dir=str(episode_dir),
             state_change_reason_distribution=dict(state_change_reason_distribution),
             checklist_completion_rate=checklist_completion_rate,
