@@ -31,7 +31,11 @@ from p79.experiment.checklist_module import ChecklistManagerLite
 from p79.experiment.conditions import generate_conditions
 from p79.experiment.config import resolve_output_root
 from p79.experiment.energy_tracker import LightweightEnergyTracker
-from p79.experiment.environment import create_environment, create_evaluator
+from p79.experiment.environment import (
+    create_environment,
+    create_evaluator,
+    PaperGradeAbortError,
+)
 from p79.experiment.io_utils import read_jsonl_dedup
 from p79.experiment.logger_v2 import LoggerV2
 from p79.experiment.metrics import (
@@ -935,6 +939,15 @@ class ExperimentRunner:
                     )
 
                 episode_summaries: List[Dict[str, Any]] = []
+                # Fire-4 RCA Wave 1 M1: paper-grade strict fail-closed tracking.
+                # On first PaperGradeAbortError caught from the task loop below,
+                # these state vars are set so the aggregator + condition_summary
+                # write know they need allow_quarantined=True + abort fields,
+                # then the loop's outer scope re-raises to exit non-zero rc.
+                _condition_aborted: bool = False
+                _aborted_at_task: Optional[int] = None
+                _abort_reason: Optional[str] = None
+                _abort_message: Optional[str] = None
                 backend = self._get_backend(condition.backend_id)
 
                 # B-485 (/stress A1.5b Phase 1 P0-1-ABC, 2026-05-17): compute
@@ -1099,15 +1112,35 @@ class ExperimentRunner:
                         except Exception:
                             pass  # Corrupted summary — fall through to re-run
 
-                    summary = self._run_and_record_episode(
-                        condition, task, backend, condition_logger,
-                        condition_dir, effective_cid, current_seed,
-                    )
-                    episode_summaries.append(summary)
+                    # Fire-4 RCA Wave 1 M1: catch PaperGradeAbortError so we
+                    # can write condition_summary with abort fields BEFORE
+                    # re-raising for process exit. Break exits this loop
+                    # (`for task in self.tasks:`); the seed/condition loops
+                    # above are exited via the outer re-raise after write.
+                    try:
+                        summary = self._run_and_record_episode(
+                            condition, task, backend, condition_logger,
+                            condition_dir, effective_cid, current_seed,
+                        )
+                        episode_summaries.append(summary)
+                    except PaperGradeAbortError as _abort_exc:
+                        logger.error(
+                            "PaperGradeAbortError caught at site=%s task=%s — "
+                            "aborting condition for paper-grade fail-closed: %s",
+                            task.site, task.task_id, _abort_exc,
+                        )
+                        _condition_aborted = True
+                        _aborted_at_task = int(task.task_id) if task.task_id is not None else None
+                        _abort_reason = "quarantine"
+                        _abort_message = str(_abort_exc)
+                        break
 
                 # ── Retry pass: re-run tasks whose summaries were deleted ──
                 # (e.g. by watchdog auto-cleanup of benchmark noise errors)
-                retry_tasks = [
+                # Fire-4 RCA Wave 1 M1: skip retry pass when condition aborted
+                # — we are in fail-closed mode, do NOT attempt re-runs on a
+                # potentially-compromised substrate.
+                retry_tasks = [] if _condition_aborted else [
                     t for t in self.tasks
                     if not condition_logger.summary_path(t.site, t.task_id).exists()
                 ]
@@ -1125,10 +1158,26 @@ class ExperimentRunner:
                     ]
                     retry_ok, retry_fail = [], []
                     for task in retry_tasks:
-                        summary = self._run_and_record_episode(
-                            condition, task, backend, condition_logger,
-                            condition_dir, effective_cid, current_seed,
-                        )
+                        # Fire-4 RCA Wave 1 M1: same fail-closed gate on retry
+                        # pass — if a re-run produces a quarantine summary,
+                        # abort identically (paper-grade does not retry on
+                        # potentially-compromised substrate twice).
+                        try:
+                            summary = self._run_and_record_episode(
+                                condition, task, backend, condition_logger,
+                                condition_dir, effective_cid, current_seed,
+                            )
+                        except PaperGradeAbortError as _abort_exc:
+                            logger.error(
+                                "PaperGradeAbortError caught in retry pass at "
+                                "site=%s task=%s — aborting condition: %s",
+                                task.site, task.task_id, _abort_exc,
+                            )
+                            _condition_aborted = True
+                            _aborted_at_task = int(task.task_id) if task.task_id is not None else None
+                            _abort_reason = "quarantine_in_retry_pass"
+                            _abort_message = str(_abort_exc)
+                            break
                         episode_summaries.append(summary)
                         if summary.get("error"):
                             retry_fail.append(task.task_id)
@@ -1148,7 +1197,20 @@ class ExperimentRunner:
                         effective_cid, retry_task_ids, retry_ok, retry_fail,
                     )
 
-                aggregate = aggregate_condition_metrics(episode_summaries)
+                # Fire-4 RCA Wave 1 M1: aggregator must accept quarantined
+                # episodes when the condition was aborted by paper-grade
+                # fail-closed (`needs_reevaluation=True` in last episode is
+                # the abort trigger itself, so default `allow_quarantined=False`
+                # would raise inside aggregate). For non-aborted conditions
+                # the strict default preserves B-784 quarantine rejection
+                # invariant (live aggregate must not silently count
+                # quarantined episodes as paper-grade outcomes).
+                if _condition_aborted:
+                    aggregate = aggregate_condition_metrics(
+                        episode_summaries, allow_quarantined=True
+                    )
+                else:
+                    aggregate = aggregate_condition_metrics(episode_summaries)
                 aggregate.update(
                     {
                         "condition_id": effective_cid,
@@ -1161,6 +1223,20 @@ class ExperimentRunner:
                         "module_flags": condition.modules.as_dict(),
                     }
                 )
+                # Fire-4 RCA Wave 1 M1: stamp abort fields on condition_summary
+                # so forensic + chain orchestration can distinguish "aborted by
+                # paper-grade quarantine gate" from "completed all tasks" /
+                # "killed by wallclock" / "killed by SIGTERM". Empty/None when
+                # condition completed normally.
+                aggregate["condition_aborted"] = _condition_aborted
+                aggregate["aborted_at_task"] = _aborted_at_task
+                aggregate["abort_reason"] = _abort_reason
+                aggregate["abort_message"] = _abort_message
+                if _condition_aborted:
+                    # Episode count gives chain operator the "burned 0 tasks
+                    # after first quarantine" claim that Fire-4 violated
+                    # (burned 26 tasks). Always 1 in correct fail-closed flow.
+                    aggregate["aborted_summary_count"] = len(episode_summaries)
 
                 # B-1645 (/stress A2.10 P1-6-A 2026-05-18): surface learned-router
                 # diagnostic block when observation_mode=="learned" so paper §6
@@ -1233,7 +1309,24 @@ class ExperimentRunner:
                 run_condition_metrics.append(aggregate)
 
                 # Auto-run analysis after each condition completes
-                self._run_post_condition_analysis(effective_cid)
+                # Fire-4 RCA Wave 1 M1: skip post-condition analysis on abort
+                # — partial data + needs_reevaluation episode would break
+                # rederive / cross_rep diagnostics; defer to manual re-fire.
+                if not _condition_aborted:
+                    self._run_post_condition_analysis(effective_cid)
+
+                # Fire-4 RCA Wave 1 M1: re-raise PaperGradeAbortError now that
+                # condition_summary has been written with abort fields.
+                # Process exits non-zero rc → queue_chain rc≠0 → master
+                # P0-2-B sentinel halt → red chain NOT launched. Forensic
+                # evidence (aborted episode summary + condition summary with
+                # aborted_at_task) preserved on disk for operator triage.
+                if _condition_aborted:
+                    raise PaperGradeAbortError(
+                        _abort_message or
+                        f"condition aborted at task={_aborted_at_task} "
+                        f"(reason={_abort_reason}); see condition_summary.json"
+                    )
 
         assumptions = {
             "som_fallback": "degrade_to_text_som_with_flag",
@@ -1687,6 +1780,35 @@ class ExperimentRunner:
             task.site, task.task_id, summary.get("success"), summary.get("steps"),
             str(summary.get("error", ""))[:100] or "none",
         )
+        # Fire-4 RCA Wave 1 M1 (/stress 3-AI Fire-4 RCA 2026-05-19, A+B+C overlap):
+        # paper-grade strict fail-closed on first quarantine event. Pre-fix R1
+        # P1-10-B "preserve" semantic was pure tagging — Fire-4 task 75
+        # quarantined at 20:48 but runner burned 26 more tasks (76-101) until
+        # 4h wallclock kill at 21:46. Now: first `needs_reevaluation=True`
+        # summary written under paper_grade=True triggers PaperGradeAbortError
+        # → outer task-loop catch writes condition_summary with
+        # `condition_aborted=True, aborted_at_task=N, abort_reason="quarantine"`
+        # + re-raises so process exits non-zero rc → chain sentinel rc≠0 →
+        # master P0-2-B halt. User core complaint "并没有在 75 的时候自动暂停"
+        # answered by this gate. Couples with M5 (timeout_callsite taxonomy,
+        # Wave 2) to also flag agent-step Page.screenshot timeouts as
+        # quarantine — Wave 1 alone catches B-486 evaluator-path quarantines
+        # AND the existing exception-path `needs_reevaluation=True` set at
+        # the EpisodeSummaryV2 constructor (line 1605, B-486).
+        paper_grade = bool(self.cfg.get("paper_grade", False))
+        if paper_grade and bool(summary.get("needs_reevaluation", False)):
+            from p79.experiment.environment import PaperGradeAbortError
+            raise PaperGradeAbortError(
+                f"first quarantine event under paper_grade=True at "
+                f"site={task.site} task={task.task_id} condition={effective_cid}: "
+                f"summary carries needs_reevaluation=True "
+                f"(error={str(summary.get('error', ''))[:200]!r}). "
+                f"Condition aborts to prevent burning compute on potentially-"
+                f"compromised substrate. Operator: investigate task, classify "
+                f"(agent-induced / benchmark / substrate / evaluator / transient), "
+                f"add to quarantine_registry.jsonl (Wave 2 M6 investigation gate, "
+                f"NOT auto skip-list), then manually re-fire after substrate fix."
+            )
         return summary
 
     def _run_episode(

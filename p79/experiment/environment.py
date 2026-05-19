@@ -61,6 +61,44 @@ class EvaluatorUnavailableError(RuntimeError):
     forensic artifact would (correctly) conclude the contract was misstated."""
 
 
+class PaperGradeAbortError(RuntimeError):
+    """Raised when paper-grade mode catches the FIRST quarantine event
+    (`needs_reevaluation=True` summary written) to enforce strict fail-closed
+    condition abort — closes the Fire-4 RCA gap where R1 P1-10-B "preserve"
+    semantic was pure tagging without runtime enforcement.
+
+    **Trigger**: `_run_and_record_episode` writes a quarantined summary
+    (B-486 path → `needs_reevaluation=True`) AND `cfg.paper_grade=True` →
+    immediately after `write_episode_summary` succeeds, this exception is
+    raised so the condition aborts rather than burning compute on
+    potentially-compromised substrate.
+
+    **Empirical motivation**: Fire-4 cls B0 dom 2026-05-19 — task 75
+    Page.screenshot timeout at 20:48 wrote `needs_reevaluation=True`
+    summary; runner CONTINUED tasks 76-101 (26 more tasks) until 4h
+    wallclock kill at 21:46 (which itself only fired because the
+    P1-16-AC `_B0_` regex regression denied B0 its 16h budget).
+    Watchdog emitted `QUARANTINE-PRESERVED` + `PERSISTENT-ERROR` ntfy
+    at 21:49 but had no abort authority. User core complaint: "并没有
+    在 75 的时候自动暂停" — answered by this gate.
+
+    **Contract**:
+    - paper_grade=True + first `needs_reevaluation=True` → raise from
+      runner; outer task-loop catch writes condition_summary with
+      `condition_aborted=True, aborted_at_task=N, abort_reason="quarantine"`
+      + re-raises so process exits non-zero rc, chain sentinel rc≠0 →
+      master halt (P0-2-B sentinel-wait already in place).
+    - paper_grade=False (dev mode) → no abort; legacy record-and-continue
+      preserved for iteration speed.
+
+    **Cross-AI overlap (3-AI confirmation)**: A Claude F1 / B codex F1 /
+    C gemini A1-1 — highest-confidence Fire-4 RCA finding.
+
+    Per /stress 3-AI Fire-4 RCA Wave 1 fix 2026-05-19. Bug catalog entry
+    Fire-4 RCA Wave 1 M1 (depends on R1 B-486 quarantine substrate +
+    R1 P1-10-B watchdog respect)."""
+
+
 class MockEnvironment:
     def __init__(self, viewport_width: int = 1280, viewport_height: int = 720):
         self.viewport_width = viewport_width

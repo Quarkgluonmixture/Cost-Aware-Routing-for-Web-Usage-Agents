@@ -401,6 +401,19 @@ def _assert_strict_aggregator_types(
     """
     for idx, ep in enumerate(episode_summaries):
         # B-784: quarantine rejection (default-on; forensic appendix opt-in).
+        #
+        # Fire-4 RCA Wave 1 M2 (/stress 3-AI 2026-05-19, codex F2 unique catch):
+        # This raise is now DEFENSE-IN-DEPTH only — primary fail-closed
+        # enforcement moved upstream to `_run_and_record_episode` (Wave 1 M1,
+        # `runner/main.py`). Pre-fix Fire-4 path: runner wrote quarantined
+        # summary → continued task loop → aggregator finally raised here AT
+        # CONDITION END (after burning 26 more tasks). Post-fix path: M1
+        # raises PaperGradeAbortError immediately after `write_episode_summary`
+        # → task loop breaks → aggregator runs with `allow_quarantined=True`
+        # on the single quarantined-episode list + writes condition_summary
+        # with `condition_aborted=True`. This B-784 raise should be UNREACHABLE
+        # under paper_grade=True; if it fires here, M1 gate was bypassed.
+        # Treat as paper-grade pipeline invariant violation, not normal event.
         nrv = ep.get("needs_reevaluation")
         if not allow_quarantined and nrv is True:
             raise ValueError(
@@ -409,7 +422,10 @@ def _assert_strict_aggregator_types(
                 "Live aggregator / rederive must NOT count quarantined "
                 "episodes as paper-grade outcomes — denominator would "
                 "diverge from canonical analysis.py. Pass "
-                "allow_quarantined=True only for forensic appendix paths."
+                "allow_quarantined=True only for forensic appendix paths. "
+                "Defense-in-depth: M1 PaperGradeAbortError gate at "
+                "runner/main.py should have aborted upstream — this raise "
+                "indicates the M1 gate was bypassed."
             )
         if nrv is not None and not isinstance(nrv, bool):
             raise ValueError(

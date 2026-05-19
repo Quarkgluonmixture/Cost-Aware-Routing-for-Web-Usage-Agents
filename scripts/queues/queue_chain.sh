@@ -125,15 +125,24 @@ wait_for_runner_done() {
   # slow site / extra-large mode chain).
   #
   # P1-16-AC (/stress Phase 0 unified bug list 2026-05-19, Claude+Gemini 2-AI):
-  # baseline-aware wallclock — B0 (AWS proxy, ~24 s/step latency) needs 8h
-  # budget per condition (empirical Fire-3 red B0 DOM: 14 episode / 4h = 17
-  # min/ep killed by 4h budget). B1/B2 (local 4B/Gemma-3-4B, ~2-5 s/step)
-  # retain 4h. Operational tuning only — does NOT change max_steps, prompt,
-  # evaluator, task set, or reset boundary. Override via MAX_CONDITION_HOURS_B0
-  # or MAX_CONDITION_HOURS (latter applies only to non-B0).
+  # baseline-aware wallclock — B0 (AWS proxy, ~24 s/step latency) needs
+  # substantially more budget per condition. B1/B2 (local 4B/Gemma-3-4B,
+  # ~2-5 s/step) retain 4h. Operational tuning only — does NOT change
+  # max_steps, prompt, evaluator, task set, or reset boundary. Override via
+  # MAX_CONDITION_HOURS_B0 or MAX_CONDITION_HOURS (latter applies only to non-B0).
+  #
+  # Fire-4 RCA Wave 1 (/stress 3-AI audit 2026-05-19):
+  #   • Bug: regex `=~ _B0_` FAILED on `B0_dom_classifieds_...` run_id (no
+  #     leading underscore → fell through to 4h default). Fix: `(^|_)B0_`
+  #     anchors at start-of-string OR underscore boundary.
+  #   • Budget: empirical Fire-4 cls B0 DOM = 142.11s/summary × 234 tasks =
+  #     33,253s = 9.24h. 1.5× safety = ~14h; 2× safety = ~18.5h. Chose 16h
+  #     (between safety levels) so condition-level kill prevents runaway
+  #     deadlocks, not normal slow B0 runs. Real deadlocks caught by
+  #     watchdog idle-alert (30 min), not by tight wallclock cap.
   local _baseline_hours
-  if [[ "${pattern}" =~ _B0_ ]]; then
-    _baseline_hours="${MAX_CONDITION_HOURS_B0:-8}"
+  if [[ "${pattern}" =~ (^|_)B0_ ]]; then
+    _baseline_hours="${MAX_CONDITION_HOURS_B0:-16}"
   else
     _baseline_hours="${MAX_CONDITION_HOURS:-4}"
   fi
