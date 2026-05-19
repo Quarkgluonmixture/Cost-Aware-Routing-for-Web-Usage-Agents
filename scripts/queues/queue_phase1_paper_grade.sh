@@ -405,6 +405,39 @@ except Exception as e:
     log "  OK (all chain configs present)"
   fi
 
+  # Fire-4 RCA Wave 2 M6 (/stress 3-AI 2026-05-19): Gate 8 cross-fire
+  # quarantine registry investigation gate. Halts if any task has >=1
+  # unclassified quarantine event in docs/checkpoints/quarantine_registry.jsonl.
+  # User decision 2026-05-19: investigation gate, NOT auto-skip — operator
+  # must Wave 4 M7 reproduce + classify before the next fire can proceed.
+  # cls 234 tasks + red 210 tasks (Phase 1a scope); shop deferred to Phase 1b.
+  log "=== Gate 8: cross-fire quarantine registry investigation gate (Wave 2 M6) ==="
+  if [ -f scripts/maintenance/quarantine_registry.py ]; then
+    # Source the helper lib if not already loaded. Gates lib defines
+    # assert_quarantine_gate which calls the registry CLI.
+    if ! declare -f assert_quarantine_gate > /dev/null 2>&1; then
+      # shellcheck disable=SC1091
+      source scripts/queues/_lib_paper_grade_gates.sh
+    fi
+    g8_rc=0
+    assert_quarantine_gate classifieds "0-233" 1 || g8_rc=$?
+    if [ "$g8_rc" -ne 0 ]; then
+      log "  FAIL: cls quarantine registry gate HALT (rc=$g8_rc)"
+      errors=$((errors+1))
+    fi
+    g8_rc=0
+    assert_quarantine_gate reddit "0-209" 1 || g8_rc=$?
+    if [ "$g8_rc" -ne 0 ]; then
+      log "  FAIL: red quarantine registry gate HALT (rc=$g8_rc)"
+      errors=$((errors+1))
+    fi
+    if [ "$errors" -eq 0 ]; then
+      log "  OK (no unclassified quarantine events for cls 0-233 or red 0-209)"
+    fi
+  else
+    log "  WARN: scripts/maintenance/quarantine_registry.py not deployed — Gate 8 SKIPPED"
+  fi
+
   if [ "$errors" -gt 0 ]; then
     fail "$errors gate(s) failed; abort. Fix and re-run."
   fi

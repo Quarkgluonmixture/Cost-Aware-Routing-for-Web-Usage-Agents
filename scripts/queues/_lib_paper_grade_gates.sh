@@ -799,3 +799,59 @@ release_watchdog_lock() {
     unset WATCHDOG_LOCK_FD WATCHDOG_LOCK_FILE
   fi
 }
+
+# ============================== Gate G8 ==============================
+# Fire-4 RCA Wave 2 M6 (/stress 3-AI 2026-05-19): cross-fire quarantine
+# registry investigation gate. Pre-fix Fire-3 task 75 quarantined +
+# Fire-4 task 75 re-quarantined (same URL id=84148), no infrastructure
+# to halt Fire-5 from blindly rediscovering. Post-fix: registry at
+# `docs/checkpoints/quarantine_registry.jsonl` tracks per-task
+# quarantine + classification events; if any task has >= threshold
+# unclassified quarantine events, Gate G8 halts the fire with
+# "investigation required, NOT auto-skip" per user decision 2026-05-19.
+#
+# Usage: assert_quarantine_gate <site> <tasks_spec> [halt_threshold]
+#   <site>: classifieds | reddit | shopping
+#   <tasks_spec>: '0-233' or '1,3,5' or '75' (passed to registry CLI)
+#   [halt_threshold]: default 1; env QUARANTINE_HALT_THRESHOLD overrides
+#
+# Exit: 0 ok, 1 halt (registry CLI's own exit code propagated).
+assert_quarantine_gate() {
+  local site="${1:?site required}"
+  local tasks_spec="${2:?tasks_spec required (e.g., '0-233')}"
+  local halt_threshold="${3:-1}"
+
+  # Locate repo root via this file's path (one level up from scripts/queues/).
+  local _lib_path="${BASH_SOURCE[0]}"
+  local repo_root
+  repo_root="$(cd "$(dirname "${_lib_path}")/../.." && pwd)"
+  local registry_cli="${repo_root}/scripts/maintenance/quarantine_registry.py"
+
+  if [[ ! -f "${registry_cli}" ]]; then
+    echo "[gate_G8] WARN quarantine_registry.py not found at ${registry_cli} — skipping G8 (registry not deployed)" >&2
+    return 0
+  fi
+
+  # Prefer .venv python3 if available, else system python3.
+  local py_bin="python3"
+  if [[ -x "${repo_root}/.venv/bin/python3" ]]; then
+    py_bin="${repo_root}/.venv/bin/python3"
+  fi
+
+  echo "[gate_G8] preflight quarantine registry check: site=${site} tasks=${tasks_spec} threshold=${halt_threshold}" >&2
+  if "${py_bin}" "${registry_cli}" preflight --site "${site}" --tasks "${tasks_spec}" --halt-threshold "${halt_threshold}"; then
+    echo "[gate_G8] OK" >&2
+    return 0
+  else
+    local _rc=$?
+    echo "[gate_G8] FATAL: investigation required for site=${site}. Operator must:" >&2
+    echo "[gate_G8]   1. Reproduce flagged task(s) via Wave 4 M7 (Playwright/manual)." >&2
+    echo "[gate_G8]   2. Classify via: ${py_bin} ${registry_cli} classify --site=${site} --task-id=<N> --as=<class> --rationale=<...>" >&2
+    echo "[gate_G8]   3. Then re-run preflight to confirm gate clears." >&2
+    if command -v curl > /dev/null; then
+      curl -L -d "Gate G8 HALT: site=${site} has unclassified quarantine events; Fire-5 BLOCKED until investigation (Wave 4 M7) completes." \
+        "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
+    fi
+    return "${_rc}"
+  fi
+}

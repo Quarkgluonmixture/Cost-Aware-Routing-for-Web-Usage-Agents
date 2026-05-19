@@ -26,6 +26,10 @@ import urllib.request
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
+
+# Fire-4 RCA Wave 2 M6: repo root for quarantine_registry.py subprocess call.
+# __file__ = scripts/maintenance/experiment_watchdog.py → 3 .parent levels up.
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 SUMMARY_RE = re.compile(r"^(?P<site>.+)_task_(?P<task_id>\d+)_summary_v2\.json$")
@@ -1811,6 +1815,50 @@ def main() -> int:
                             f"run_id={run_id}\n{condition_id} task {task_id}\n"
                             f"{reason} + needs_reevaluation=True — manual review (P1-10-B preserved)",
                             priority="high",
+                        )
+                    # Fire-4 RCA Wave 2 M6 (/stress 3-AI 2026-05-19): also append
+                    # to cross-fire quarantine registry. Best-effort — failure
+                    # to write registry should NOT abort the watchdog (already
+                    # M1 has done the abort upstream; this is forensic).
+                    try:
+                        site = str(summary.get("benchmark_site") or "unknown")
+                        url = (summary.get("task_metadata") or {}).get("start_url")
+                        error_msg = str(summary.get("error") or "")[:500]
+                        callsite = summary.get("timeout_callsite")
+                        # Use subprocess call to keep watchdog deps minimal +
+                        # to make the audit trail visible in subprocess logs.
+                        # Best-effort: 5s timeout, errors logged but swallowed.
+                        registry_args = [
+                            "python3", str(_REPO_ROOT / "scripts" / "maintenance" / "quarantine_registry.py"),
+                            "append",
+                            "--site", site,
+                            "--task-id", str(task_id),
+                            "--run-id", str(run_id),
+                            "--error-class", str(reason),
+                            "--error-message", error_msg,
+                        ]
+                        if url:
+                            registry_args.extend(["--url", str(url)])
+                        if callsite:
+                            registry_args.extend(["--callsite", str(callsite)])
+                        import subprocess
+                        _result = subprocess.run(
+                            registry_args, capture_output=True, text=True, timeout=5
+                        )
+                        if _result.returncode == 0:
+                            print(
+                                f"[watchdog][QUARANTINE-REGISTRY] appended event for "
+                                f"({site}, task={task_id}) → Wave 2 M6 cross-fire memory"
+                            )
+                        else:
+                            print(
+                                f"[watchdog][QUARANTINE-REGISTRY] WARN append failed "
+                                f"(rc={_result.returncode}): {_result.stderr[:200]}"
+                            )
+                    except Exception as _reg_exc:
+                        print(
+                            f"[watchdog][QUARANTINE-REGISTRY] WARN best-effort append "
+                            f"raised (continuing): {_reg_exc}"
                         )
                 is_noise = reason.startswith("error(") and reason != "error(evaluator)" and reason != "error(code_bug)"
                 can_retry = (
