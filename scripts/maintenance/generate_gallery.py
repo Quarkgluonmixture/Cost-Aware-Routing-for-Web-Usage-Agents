@@ -323,16 +323,26 @@ def _build_groups(
     episodes: List[Dict[str, Any]],
     condition_labels: Dict[str, Dict[str, str]],
 ) -> List[Dict[str, Any]]:
-    """Group episodes by (site, condition) and compute per-group stats."""
+    """Group episodes by (site, baseline, condition) and compute per-group stats.
+
+    Baseline added 2026-05-19 — phase1_paper_grade gallery merges B0/B1/B2 runs
+    sharing the same condition_id (e.g. phase1_dom_router_0); without baseline
+    in the key all three collapse into one row, hiding which baseline an
+    episode belongs to.
+    """
     group_map: Dict[tuple, Dict[str, Any]] = OrderedDict()
     for ep in episodes:
-        key = (ep["site"], ep["condition"])
+        baseline = ep.get("baseline", "")
+        key = (ep["site"], baseline, ep["condition"])
         if key not in group_map:
             cl = condition_labels.get(ep["condition"], {})
+            base_label = cl.get("label", ep["condition"])
+            display_label = f"[{baseline}] {base_label}" if baseline else base_label
             group_map[key] = {
                 "site": ep["site"],
+                "baseline": baseline,
                 "condition": ep["condition"],
-                "condition_label": cl.get("label", ep["condition"]),
+                "condition_label": display_label,
                 "observation_mode": cl.get("observation_mode", "unknown"),
                 "episodes": [],
             }
@@ -593,9 +603,15 @@ def _collect_episodes(
                 reason_key = f"{cond_dir.name}__{raw_site}_task_{task_id}"
                 reason_info = reason_rows.get(reason_key, {})
 
+                # Baseline label from run_id prefix (B0/B1/B2/...). Required so
+                # phase1_paper_grade multi-baseline gallery groups episodes per
+                # baseline; otherwise B0+B1+B2 same condition_id collapse together.
+                _bl_match = re.match(r"^(B[0-9]+)_", source_run_dir.name)
+                baseline = _bl_match.group(1) if _bl_match else ""
                 episodes.append({
                     "key": ep_key,
                     "run_id": source_run_dir.name,
+                    "baseline": baseline,
                     "condition": cond_dir.name,
                     "site": site,
                     "task_id": task_id,
@@ -617,6 +633,7 @@ def _collect_episodes(
         key=lambda e: (
             _KNOWN_SITE_ORDER.get(e["site"], 999),
             e["condition"],
+            e.get("baseline", ""),
             e["task_id"],
             e["run_id"],
         )

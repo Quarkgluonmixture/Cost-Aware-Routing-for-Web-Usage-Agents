@@ -158,6 +158,7 @@ From §133 codex Round C + §134 /stress v6:
 | 🟡 R1 | Preflight v2 extension (B0 XOR B1 conflict / archive_subset checks) | 45 min | partially done §134 |
 | 🟡 R4 | Stage 2B `--resume` flag for reboot recovery | 10 min | independent |
 | 🟡 R6 | `check_evaluator_consistency.py` (Gate 7 evaluator_code_sha == lock-time SHA) | 30 min | OSF lock prep |
+| 🟡 **B-1760** | **DOM mode `screenshot.png` regression — `obs.image=None` for accessibility_tree across 91/91 step records on Fire-3 cls B0 DOM.** Archive 2026-05-15 had it; logic byte-identical archive↔HEAD; runtime instrument needed. Trigger: post cls B0 SoM cell land (~5 days, SoM has its own screenshot path so isolates accessibility_tree regression). Acceptance: re-fire smoke6 / 10-task pilot before paper-grade re-fire, verify `screenshot.png` per step + `annotate_screenshots.py` produces `screenshot_annotated.png`. Paper §3 evidence layer NOT blocked (DOM trajectory `observation_dom.txt` + schema-v2 canonical fields all present); screenshot is audit-layer only. See §236.3 chronicle for full diagnostic trail. | 2 h | deferred — post cls B0 SoM land |
 | 🟢 N1 | Bonferroni / Holm correction paper §3 paragraph | 10 min | paper write phase |
 | 🟢 N3 | Phantom variant FP rules | 1 h | post Phase 1a rerun |
 
