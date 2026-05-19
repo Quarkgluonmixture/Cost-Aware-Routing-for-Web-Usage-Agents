@@ -881,4 +881,33 @@ def aggregate_condition_metrics(
             float(_mixed_unit_warn_count) / len(episode_summaries)
             if episode_summaries else 0.0
         ),
+        # R2-P1-9-B (/stress Phase 0 post-fix Mode B codex F5, 2026-05-19):
+        # condition-level rollup of Phase 2 runner-intervention telemetry.
+        # Pre-fix Phase 2 schema (commit 8d2a327) added runner_intervention_
+        # count + about_blank_recovery_count to EpisodeSummaryV2 + runner
+        # stamping, but aggregate_condition_metrics did NOT sum them →
+        # condition_summary_v2.json lacked per-cell Appendix E.2 columns →
+        # paper aggregation required second bespoke scanner via
+        # about_blank_frequency.py. Post-fix: per-cell rollup + step-
+        # normalized rate columns. Legacy archive episodes (pre-Phase 2)
+        # default 0 via fill_defaults; aggregate sums legacy + post-fix
+        # uniformly. Total step denominator from `episode["steps"]` sum.
+        "runner_intervention_count_total": sum(
+            int(ep.get("runner_intervention_count", 0) or 0)
+            for ep in episode_summaries
+        ),
+        "about_blank_recovery_count_total": sum(
+            int(ep.get("about_blank_recovery_count", 0) or 0)
+            for ep in episode_summaries
+        ),
+        "runner_intervention_step_rate": (
+            float(sum(int(ep.get("runner_intervention_count", 0) or 0) for ep in episode_summaries))
+            / max(1, sum(int(ep.get("steps", 0) or 0) for ep in episode_summaries))
+            if episode_summaries else 0.0
+        ),
+        "about_blank_recovery_step_rate": (
+            float(sum(int(ep.get("about_blank_recovery_count", 0) or 0) for ep in episode_summaries))
+            / max(1, sum(int(ep.get("steps", 0) or 0) for ep in episode_summaries))
+            if episode_summaries else 0.0
+        ),
     }

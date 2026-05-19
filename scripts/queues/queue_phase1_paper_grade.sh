@@ -786,8 +786,19 @@ case "$MODE" in
           launch_chain "red" build_red_chain
         fi
         ;;
-      cls)  launch_chain "cls" build_cls_chain ;;
-      red)  launch_chain "red" build_red_chain ;;
+      cls)
+        # R2-P0-1-B* (/stress Phase 0 post-fix Mode B codex F1 OOB, 2026-05-19):
+        # single-site launch refuses if another site chain is alive — closes
+        # the cross-site contention class that the "launch all" sentinel-wait
+        # (P0-2-B*) closed for sequential default. PHASE1A_PARALLEL=1 dev
+        # opt-in preserved.
+        assert_no_other_site_chain_running "cls" "queue_phase1"
+        launch_chain "cls" build_cls_chain
+        ;;
+      red)
+        assert_no_other_site_chain_running "red" "queue_phase1"
+        launch_chain "red" build_red_chain
+        ;;
       shop)
         log "WARN: 'launch shop' requested directly. shop is Phase 1b (main-paper expansion)."
         log "      Default Phase 1a does NOT include shop. Proceeding only if you confirm."

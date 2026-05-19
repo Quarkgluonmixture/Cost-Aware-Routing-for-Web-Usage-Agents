@@ -647,23 +647,105 @@ assert_no_cross_mode_collision() {
     site_pattern="_${site}_[0-9]{8}_"
   fi
 
-  local collisions
-  collisions="$(pgrep -af "run_experiment.*_${baseline}_.*${site_pattern}" 2>/dev/null \
-                | grep -v -F "${run_id}" || true)"
-  if [[ "${benchmark}" == "vwa" && -n "${collisions}" ]]; then
-    # Exclude WA siblings captured by `_<site>_` substring overlap.
-    collisions="$(echo "${collisions}" | grep -v "_wa_" || true)"
+  # R2-P0-2-B* (/stress Phase 0 post-fix Mode B codex F2 OOB, 2026-05-19):
+  # pre-fix `_${baseline}_` filter only matches same-baseline runners. Cross-
+  # baseline collision (e.g., B0 cls running + manual leaf B1 cls) bypassed
+  # this check → reaches reset_and_auth_gate → wipes session under B0's
+  # live runner. Post-fix: TWO-PASS check. Pass 1 (same-baseline cross-mode,
+  # existing B-858 semantic, FATAL). Pass 2 (cross-baseline same-site,
+  # NEW R2-P0-2-B*, FATAL).
+  local site_collisions
+  site_collisions="$(pgrep -af "run_experiment.*${site_pattern}" 2>/dev/null \
+                     | grep -v -F "${run_id}" || true)"
+  if [[ "${benchmark}" == "vwa" && -n "${site_collisions}" ]]; then
+    site_collisions="$(echo "${site_collisions}" | grep -v "_wa_" || true)"
+  fi
+  if [[ -n "${site_collisions}" ]]; then
+    # Discriminate same-baseline vs cross-baseline within site_collisions.
+    local same_baseline_collisions
+    same_baseline_collisions="$(echo "${site_collisions}" | grep -E "_${baseline}_" || true)"
+    local cross_baseline_collisions
+    cross_baseline_collisions="$(echo "${site_collisions}" | grep -v -E "_${baseline}_" || true)"
+
+    if [[ -n "${same_baseline_collisions}" ]]; then
+      echo "[${log_prefix}][FATAL] same baseline+site different-mode runner already active:" >&2
+      echo "${same_baseline_collisions}" | sed 's/^/  /' >&2
+      echo "[${log_prefix}][FATAL] paper-grade hard rule: 同 site 单 baseline (cross-mode also forbidden)" >&2
+      echo "[${log_prefix}][FATAL] B-858 (/stress A1.23 P0-1 ABC*): standalone-leaf cross-mode race vector." >&2
+      echo "[${log_prefix}][FATAL] options: (a) 'pkill -f \"run_experiment.*_${baseline}_${site}_\"' kill existing; (b) wait for existing run; (c) use queue_chain.sh orchestration." >&2
+      if command -v curl > /dev/null; then
+        curl -L -d "leaf FATAL: ${baseline}/${site} cross-mode collision (B-858 A1.23 P0-1)" \
+          "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
+      fi
+      exit 1
+    fi
+    if [[ -n "${cross_baseline_collisions}" ]]; then
+      echo "[${log_prefix}][FATAL] cross-baseline same-site runner already active (R2-P0-2-B* /stress Phase 0 post-fix 2026-05-19):" >&2
+      echo "${cross_baseline_collisions}" | sed 's/^/  /' >&2
+      echo "[${log_prefix}][FATAL] paper-grade hard rule: 同 site 同时只能跑一个 baseline (B0 XOR B1 XOR B2)" >&2
+      echo "[${log_prefix}][FATAL] CLAUDE.md hard rule #1: shared docker container + same user account → cross-pollination" >&2
+      echo "[${log_prefix}][FATAL] options: (a) wait for existing run to complete; (b) 'pkill -f run_experiment.*_${site}_' (DESTRUCTIVE); (c) queue_chain.sh orchestration with cls/red/shop sequencing" >&2
+      if command -v curl > /dev/null; then
+        curl -L -d "leaf FATAL: ${baseline}/${site} cross-baseline collision (R2-P0-2-B*)" \
+          "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
+      fi
+      exit 1
+    fi
+  fi
+}
+
+# ---------- 6b. Host-chain single-site refusal (R2-P0-1-B* /stress Phase 0 post-fix Mode B codex F1 OOB) ----------
+# assert_no_other_site_chain_running <self_site> <log_prefix>
+#
+# R2-P0-1-B* (/stress Phase 0 post-fix Mode B codex F1 OOB, 2026-05-19): pre-fix
+# `queue_phase1_paper_grade.sh launch all` correctly sequenced cls→red via
+# sentinel-based wait (P0-2-B*), BUT single-site filters `launch cls` / `launch
+# red` returned immediately after spawning detached chains. Operator could then
+# run `launch red` while `launch cls` was active → recreates cross-site
+# contention class (Fire-3 cls+red parallel = same failure mode pre-fix).
+# Post-fix: refuse single-site launch if another site chain is alive,
+# unless explicit `PHASE1A_PARALLEL=1` dev opt-in.
+#
+# Detection: pgrep -f "queue_phase1_(cls|red|shop)_<TS>_<PID>.pid"
+# OR active runner with different `_<other-site>_<date>_` pattern.
+assert_no_other_site_chain_running() {
+  local self_site="${1:?self_site required}"  # cls | red | shop
+  local log_prefix="${2:-leaf}"
+
+  # PHASE1A_PARALLEL=1 dev opt-in skips check
+  if [[ "${PHASE1A_PARALLEL:-0}" == "1" ]]; then
+    echo "[${log_prefix}][lock] PHASE1A_PARALLEL=1 — host-chain check SKIPPED (dev mode)" >&2
+    return 0
   fi
 
-  if [[ -n "${collisions}" ]]; then
-    echo "[${log_prefix}][FATAL] same baseline+site different-mode runner already active:" >&2
-    echo "${collisions}" | sed 's/^/  /' >&2
-    echo "[${log_prefix}][FATAL] paper-grade hard rule: 同 site 单 baseline (cross-mode also forbidden)" >&2
-    echo "[${log_prefix}][FATAL] B-858 (/stress A1.23 P0-1 ABC*): standalone-leaf cross-mode race vector." >&2
-    echo "[${log_prefix}][FATAL] queue_chain.sh:248 _collision_match enforces at chain layer; this propagates to leaf entry." >&2
-    echo "[${log_prefix}][FATAL] options: (a) 'pkill -f \"run_experiment.*_${baseline}_${site}_\"' kill existing; (b) wait for existing run; (c) use queue_chain.sh orchestration." >&2
+  local other_chains=""
+  for site in cls red shop; do
+    [[ "${site}" == "${self_site}" ]] && continue
+    # Check active runner for that site
+    local runner_match
+    # For cls site filter look for run_experiment.*_classifieds_ pattern;
+    # for red look for run_experiment.*_reddit_; for shop look for run_experiment.*_shopping_.
+    local site_run_pattern=""
+    case "${site}" in
+      cls) site_run_pattern="run_experiment.*_classifieds_[0-9]{8}_" ;;
+      red) site_run_pattern="run_experiment.*_reddit_[0-9]{8}_" ;;
+      shop) site_run_pattern="run_experiment.*_shopping_[0-9]{8}_" ;;
+    esac
+    if [[ -n "${site_run_pattern}" ]]; then
+      runner_match="$(pgrep -af "${site_run_pattern}" 2>/dev/null | grep -v "_wa_" || true)"
+      if [[ -n "${runner_match}" ]]; then
+        other_chains="${other_chains}\n[${site}]\n${runner_match}"
+      fi
+    fi
+  done
+
+  if [[ -n "${other_chains}" ]]; then
+    echo "[${log_prefix}][FATAL] another site chain active — single-site launch refused (R2-P0-1-B*):" >&2
+    printf "%b\n" "${other_chains}" | sed 's/^/  /' >&2
+    echo "[${log_prefix}][FATAL] paper-grade hard rule #3: 同物理 host 同时只能跑一条 site chain (cls XOR red XOR shop)" >&2
+    echo "[${log_prefix}][FATAL] options: (a) wait for existing chain to complete; (b) PHASE1A_PARALLEL=1 for dev opt-in (NOT paper-grade); (c) use 'launch all' for sequential cls→red orchestration" >&2
     if command -v curl > /dev/null; then
-      curl -L -d "leaf FATAL: ${baseline}/${site} cross-mode collision (B-858 A1.23 P0-1)" \
+      curl -L -d "leaf FATAL: single-site ${self_site} launch refused (R2-P0-1-B* host-chain in progress)" \
         "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
     fi
     exit 1

@@ -335,11 +335,18 @@ check_gates() {
   if [ -f scripts/preflight_v2.sh ]; then
     # B-793 (/stress A1.9 cold-start P1-9): --paper-grade flag for evaluator
     # init probe — surface B-544 init-fail at preflight not at batch start.
-    preflight_out=$(bash scripts/preflight_v2.sh --paper-grade 2>&1)
-    preflight_rc=$?
+    #
+    # R2-P1-7-B* (/stress Phase 0 post-fix Mode B codex F4 OOB, 2026-05-19):
+    # parity with Pass-1 baseline orchestrator preflight pattern
+    # (queue_phase1_paper_grade.sh:289). Pre-fix Pass-2 router missed
+    # (a) `STRICT_PORTS=1 --strict-ports` defense-in-depth (Gate 4 hardening
+    # B-680), (b) `|| preflight_rc=$?` set -e safety. Post-fix: explicit
+    # parity so Pass-2 router preflight has same hardening as Pass-1 baseline.
+    preflight_rc=0
+    preflight_out=$(STRICT_PORTS=1 bash scripts/preflight_v2.sh --strict-ports --paper-grade 2>&1) || preflight_rc=$?
     echo "$preflight_out" | tail -8 | sed 's/^/    /'
     if [ "$preflight_rc" -ne 0 ]; then
-      log "  FAIL: preflight rc=$preflight_rc"
+      log "  FAIL: preflight rc=$preflight_rc — paper-grade Pass-2 fire requires all checks pass"
       errors=$((errors+1))
     else
       log "  OK"
@@ -552,8 +559,18 @@ case "$MODE" in
           launch_chain "red" build_red_router_chain
         fi
         ;;
-      cls)  launch_chain "cls" build_cls_router_chain ;;
-      red)  launch_chain "red" build_red_router_chain ;;
+      cls)
+        # R2-P0-1-B* (/stress Phase 0 post-fix Mode B codex F1 OOB, 2026-05-19):
+        # Pass-2 router single-site launch refuses if another site chain alive
+        # (parity with Pass-1 baseline orchestrator). PHASE1A_PARALLEL=1
+        # dev opt-in preserved via lib helper internal check.
+        assert_no_other_site_chain_running "cls" "queue_phase1_router"
+        launch_chain "cls" build_cls_router_chain
+        ;;
+      red)
+        assert_no_other_site_chain_running "red" "queue_phase1_router"
+        launch_chain "red" build_red_router_chain
+        ;;
       *) fail "Unknown site filter: $SITE_FILTER (expected: all|cls|red)" ;;
     esac
     log ""
