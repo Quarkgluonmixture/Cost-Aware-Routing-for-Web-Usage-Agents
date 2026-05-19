@@ -7134,3 +7134,56 @@ Triggered by A1.24 fire-day catastrophe (B-1581 + §228 chronicle): user request
 **Chronicle cross-link**: 实验笔记 §237 (full Phase 0→1→2→3 narrative with timeline + retract trail).
 
 ---
+
+## Phase 0 R2 — Mode B+C regression catches 9 push-blockers on Round-1 diff (2026-05-19 evening BST, commit `492acb0` + push origin/master)
+
+**Trigger**: Per user directive "After implementation, run /stress again on the diff before asking me to push", Mode B (codex) + Mode C (gemini) /stress dispatched on Phase 1+2+3 diff (commits `04e1d9b` + `8d2a327` + `a3e611a`). Both lineages independently declared "push-blocker exists" — 9 unified findings (4 P0 + 5 P1) closed in commit `492acb0` before push. 2 P2 follow-ups recorded in `next_steps.md` deferred bucket.
+
+**P0 fixes** (push-blockers):
+
+| ID | Source | Description | File:Line |
+|---|---|---|---|
+| **R2-P0-1-B*** | codex F1 OOB | Single-site `launch cls/red` paths bypass sequential rule (sentinel-wait only `case all`) → operator `launch cls && launch red` recreates Fire-3 contention class | New lib helper `assert_no_other_site_chain_running` in `_lib_paper_grade_gates.sh` + applied at `queue_phase1_paper_grade.sh` + `queue_phase1_router_paper_grade.sh` cls/red cases |
+| **R2-P0-2-B*** | codex F2 OOB | `assert_no_cross_mode_collision` same-baseline-only filter; cross-baseline same-site (B0 cls + manual leaf B1 cls) passed check → reset wipes session | TWO-PASS extension in `_lib_paper_grade_gates.sh:650-694` — Pass 1 same-baseline (B-858), Pass 2 cross-baseline (NEW R2) |
+| **R2-P0-3-C*** | gemini F2 OOB | Appendix E "Does NOT alter decision rules" empirically FALSE — about:blank decouple changes `no_progress` early-termination heuristic | `preregistration.md` Appendix E header now acknowledges step-level heuristic refinement |
+| **R2-P0-4-C*** | gemini F1 OOB | Appendix E.1 `quarantine_rate` lacks pre-registered invalidation threshold → post-hoc cherry-picking lever | Pre-registered thresholds: > 5% per cell flagged, > 20% per cell excluded from primary FE gate |
+
+**P1 fixes** (paper-grade quality):
+
+| ID | Source | Description | File:Line |
+|---|---|---|---|
+| R2-P1-5-B* | codex F3 OOB | EvaluatorUnavailableError at `runner/main.py:1505` re-raises BEFORE summary write → no `needs_reevaluation=True` field on disk for Fire-3 actual class | `preregistration.md` Appendix E.1 + `paper §4` correct evidence path: chain-level done-sentinel rc + runner log artifacts |
+| R2-P1-6-C* | gemini F3 OOB | Terminal state of repeatedly-quarantined tasks undefined → operator discretion controls denominator | `preregistration.md` Appendix E.1: 3 manual re-fires fail → `success=False, score=0.0, needs_reevaluation_terminal=True` + INCLUDED in `scored_task_count` |
+| R2-P1-7-B* | codex F4 OOB | Pass-2 router preflight lacks Pass-1 hardening (`STRICT_PORTS=1 --strict-ports + \|\| preflight_rc=$?`) | `queue_phase1_router_paper_grade.sh:338-346` adopts Pass-1 baseline preflight pattern verbatim |
+| R2-P1-8-C | gemini F4 | `paper §4` claims "B-554-style cohort stratification" but `about_blank_frequency.py` does column-level split not row-level | `section4_limitations_disclosure.md` corrected: "differs from B-554 evaluator_authority_mode cohort isolation, which separates rows by archive epoch" |
+| R2-P1-9-B | codex F5 | `aggregate_condition_metrics` doesn't sum Phase 2 fields → Appendix E.2 claim incomplete | `metrics.py:884+` adds 4 rollup columns: `runner_intervention_count_total`, `about_blank_recovery_count_total`, step-normalized rates |
+
+**P2 deferred** (in `next_steps.md` 🟢):
+- R2-P2-10-C: Appendix E.3 temporal "witnessed alongside" → "post-DOI-1 forward disclosures" (5 min, gemini F5)
+- R2-P2-11-B: schema 4-place sync test enumeration for 18 remaining Phase 2 fields (15 min, codex F6)
+
+**Cross-AI Phase 4 verification**:
+- Mode B codex: 5.35 min, 6 findings (4 OOB), Phase 4 spot-check 3/3 cited file:line PASS
+- Mode C gemini: 5.30 min, 5 findings (3 OOB), Phase 4 spot-check 3/3 PASS
+
+**Cross-AI ROI lesson (paper-grade defense-in-depth empirical proof)**:
+- Mode A self-audit (on Round-1 diff) found 5 small issues, **0 push-blockers**
+- Mode B+C cross-AI cross-read (cold-read on diff) found **9 push-blockers, 100% Mode A missed**
+- Same-lineage fix-attempt self-review fundamentally cannot escape framing/code blind spots. Cross-AI required.
+- For future fix-waves: **default multi-round /stress on fix-attempt diffs** (~15 min Mode B+C cost dwarfed by cost of pushing fix-attempt-failed wave with 9 push-blockers).
+
+**Audit artifacts**:
+- `docs/checkpoints/codex_prompts/phase0_postfix_regression_2026-05-19_181035.md`
+- `docs/checkpoints/codex_outputs/phase0_postfix_regression_2026-05-19_181035.md`
+- `docs/checkpoints/gemini_prompts/phase0_postfix_regression_2026-05-19_181035.md`
+- `docs/checkpoints/gemini_outputs/phase0_postfix_regression_2026-05-19_181035.md`
+
+**Verification**:
+- py_compile + bash -n PASS on 4 edited files (metrics.py + 3 .sh)
+- 14/14 tests pass (test_runner_smoke 7 + test_schema_4place_sync 7)
+
+**Push state**: `git push origin master` returned `be60217..492acb0 master -> master` 2026-05-19 evening BST. 6 commits pushed. Fire-4 cold re-fire ready (pending user trigger).
+
+**Chronicle cross-link**: 实验笔记 §238 (R2 audit timeline + 9 push-blockers detail + cross-AI ROI lesson + Fire-4 pre-fire checklist).
+
+---
