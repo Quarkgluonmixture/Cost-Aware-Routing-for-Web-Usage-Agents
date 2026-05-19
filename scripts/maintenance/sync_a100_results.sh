@@ -141,6 +141,19 @@ fi
 # baseline).
 DGX_RESULTS_ROOT="${REPO_ROOT}/results/"
 A100_RESULTS_ROOT="/home/ubuntu/workspace/p79/results/"
+# B-1761 (2026-05-19): exclude VWA submodule build/docs artifacts pulled in
+# via `-L` symlink-deref on A100's `_vwa → external/visualwebarena/`. The
+# `environment_docker/` subtree alone is ~32 GB (docker build context) and
+# is NOT needed by gallery rendering (gallery only needs `coco_images/` +
+# `config_files/` for intent images + task configs, ~15 MB total). Pre-fix
+# the foreground sync test PID 2368843 spent ~43 min pulling 32 GB of docker
+# context to DGX. `--delete-excluded` prunes the locally-cached 32 GB
+# on next sync since they now match exclude patterns.
+TOPLEVEL_EXCLUDES=(
+  --exclude='_vwa/environment_docker/'
+  --exclude='_vwa/docs/'
+  --delete-excluded
+)
 for d in "${A100_TOPLEVEL_DIRS[@]}"; do
   src="${A100_RESULTS_ROOT}${d}/"
   dst="${DGX_RESULTS_ROOT}${d}/"
@@ -148,6 +161,7 @@ for d in "${A100_TOPLEVEL_DIRS[@]}"; do
   if ssh -o ConnectTimeout=10 "${A100_HOST}" "test -d ${src}" 2>/dev/null; then
     log "rsync top-level ${A100_HOST}:${src} → ${dst}"
     if ! rsync -az --partial --append-verify --info=stats1 -L \
+           "${TOPLEVEL_EXCLUDES[@]}" \
            -e "ssh -o ConnectTimeout=20 -o ServerAliveInterval=30" \
            "${A100_HOST}:${src}" "${dst}" 2>&1 | tee -a "${RSYNC_LOG}"; then
       log "  ✗ top-level rsync ${d} failed (non-fatal; continuing)"
