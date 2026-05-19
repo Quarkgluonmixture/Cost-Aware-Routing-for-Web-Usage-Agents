@@ -334,8 +334,22 @@ class VwaEvaluator:
                 _cfg = json.load(_ef)
             _eval_types_for_retry = _cfg.get("eval", {}).get("eval_types", [])
             _is_program_html_task = "program_html" in _eval_types_for_retry
-        except Exception:
-            pass
+        # P1-9-AC* (/stress Phase 0 unified bug list 2026-05-19, Claude+Gemini
+        # 2-AI overlap OOB): pre-fix bare `except Exception: pass` silently
+        # disabled B-329 program_html escape hatch on any transient config-read
+        # failure (fs hiccup / inode race) → fresh_page retry runs on real
+        # program_html task → DOM state lost → eval false-negative OR fail-loud
+        # at B-783 path. Fire-3 task 75 "All 3 retries exhausted" symptom
+        # consistent with this silent disable. Narrow to expected config-read
+        # exceptions; unexpected OSError / asyncio / IO failures propagate to
+        # outer eval-phase handler.
+        except (FileNotFoundError, json.JSONDecodeError, KeyError) as _b329_exc:
+            logger.warning(
+                "B-329 program_html detection failed for %s: %s — fresh_page "
+                "retry path will activate (eval false-negative risk if task IS "
+                "program_html). Investigate config-file path / fs state.",
+                config_file, _b329_exc,
+            )
 
         max_eval_retries = 3
         page = env._env.page  # noqa: SLF001 - VWA evaluator requires underlying page

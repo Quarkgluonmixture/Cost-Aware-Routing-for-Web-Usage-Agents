@@ -123,7 +123,21 @@ wait_for_runner_done() {
   # 4h covers full 224-task cls condition at ~30s/task avg (~2h) + 2× headroom.
   # Override via MAX_CONDITION_HOURS env (e.g., MAX_CONDITION_HOURS=12 for
   # slow site / extra-large mode chain).
-  local max_condition_secs=$(( ${MAX_CONDITION_HOURS:-4} * 3600 ))
+  #
+  # P1-16-AC (/stress Phase 0 unified bug list 2026-05-19, Claude+Gemini 2-AI):
+  # baseline-aware wallclock — B0 (AWS proxy, ~24 s/step latency) needs 8h
+  # budget per condition (empirical Fire-3 red B0 DOM: 14 episode / 4h = 17
+  # min/ep killed by 4h budget). B1/B2 (local 4B/Gemma-3-4B, ~2-5 s/step)
+  # retain 4h. Operational tuning only — does NOT change max_steps, prompt,
+  # evaluator, task set, or reset boundary. Override via MAX_CONDITION_HOURS_B0
+  # or MAX_CONDITION_HOURS (latter applies only to non-B0).
+  local _baseline_hours
+  if [[ "${pattern}" =~ _B0_ ]]; then
+    _baseline_hours="${MAX_CONDITION_HOURS_B0:-8}"
+  else
+    _baseline_hours="${MAX_CONDITION_HOURS:-4}"
+  fi
+  local max_condition_secs=$(( _baseline_hours * 3600 ))
   while pgrep -f "run_experiment.py.*${pattern}" > /dev/null; do
     sleep 60
     elapsed=$((elapsed + 60))
@@ -139,15 +153,15 @@ wait_for_runner_done() {
       fi
       exit 1
     fi
-    # B-1665 P1-5: max wallclock guard
+    # B-1665 P1-5: max wallclock guard (baseline-aware per P1-16-AC).
     if (( elapsed >= max_condition_secs )); then
-      log "  [FATAL] ${label}: max condition wallclock exceeded (${elapsed}s ≥ ${max_condition_secs}s = ${MAX_CONDITION_HOURS:-4}h)"
+      log "  [FATAL] ${label}: max condition wallclock exceeded (${elapsed}s ≥ ${max_condition_secs}s = ${_baseline_hours}h, baseline-aware per P1-16-AC)"
       log "  paper-grade fail-fast: condition stuck longer than budget — likely busy-wait loop / proxy hang / cold cache"
       log "  killing runner PGID + watchdog; condition will be marked incomplete by sentinel below"
       _kill_runner_pgroup "${pattern}"  # B-1702: kill whole runner PG (chrome/playwright/node)
       pkill -f "experiment_watchdog.*${pattern}" 2>/dev/null || true
       if command -v curl > /dev/null; then
-        curl -L -d "queue_chain ABORT (${label}): condition exceeded ${MAX_CONDITION_HOURS:-4}h max wallclock; runner PG + watchdog killed. Investigate stuck state." \
+        curl -L -d "queue_chain ABORT (${label}): condition exceeded ${_baseline_hours}h max wallclock; runner PG + watchdog killed. Investigate stuck state." \
           "ntfy.sh/${NTFY_TOPIC:-p79-exp-dgx-spark}" 2>/dev/null || true
       fi
       exit 1

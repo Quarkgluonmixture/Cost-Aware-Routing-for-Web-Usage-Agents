@@ -124,6 +124,18 @@ fail() { log "FAIL: $*"; exit 1; }
 source "${REPO_DIR}/scripts/queues/_lib_paper_grade_gates.sh"
 init_paper_grade_env "${REPO_DIR}"
 require_paper_grade_host
+# P0-5-B* (/stress Phase 0 unified bug list 2026-05-19, codex unique OOB
+# sibling-propagation gap): per-(site, benchmark) flock — port from
+# queue_baseline.sh:102-105 + queue_phantom_*.sh siblings. Pre-fix Pass-2
+# leaf bypassed site lock → manual leaf invocation during active baseline
+# chain on same site → race → RESET wipes session state under detached
+# runner. queue_chain.sh enforces at chain layer (P79_CHAIN_LOCK_HELD env)
+# but documented manual leaf usage (per CLAUDE.md "leaf is supported entry")
+# remained a bypass surface.
+if ! acquire_site_lock "${SITE}" "vwa" "router_learned"; then
+  exit $?
+fi
+trap "release_site_lock" EXIT INT TERM
 
 # ---------- B0 PROXY API key 加载 ----------
 if [[ "${BASELINE}" == "B0" ]]; then
@@ -185,8 +197,34 @@ echo "[router] lr_model=${LR_MODEL_PATH}"
 
 # ---------- 检查 runner 是否已在跑 ----------
 if pgrep -f "run_experiment.py.*${RUN_ID}" > /dev/null; then
+  # P0-5-B* (/stress Phase 0 unified bug list 2026-05-19, codex unique OOB):
+  # port B-756 "Dirty Cell Backdoor" hard-fail from queue_baseline.sh:149-154
+  # + phantom siblings. Pre-fix Pass-2 leaf: a manually-launched runner
+  # without RESET could be picked up here (idempotent skip), RESET_BEFORE
+  # silently skipped, queue_chain accepts "dirty cell" as paper-grade
+  # complete via sentinel. Gemini area-chair attack: protocol prioritized
+  # non-interruption over initial-state integrity. Now: under (PG=1 AND
+  # RESET_BEFORE=1) the contradiction is explicit → hard fail.
+  if [[ "${P79_PAPER_GRADE:-0}" == "1" && "${RESET_BEFORE:-0}" == "1" ]]; then
+    echo "[router_learned][FATAL] runner for ${RUN_ID} already running under (P79_PAPER_GRADE=1 + RESET_BEFORE=1)." >&2
+    echo "[router_learned][FATAL] paper-grade requires fresh post-reset cell; idempotent skip would dissolve the reset gate (dirty cell backdoor)." >&2
+    echo "[router_learned][FATAL] options: (a) 'pkill -f \"run_experiment.py.*${RUN_ID}\"' then re-run; (b) RESET_BEFORE=0 to explicit-resume; (c) P79_PAPER_GRADE=0 for explicit dirty/dev." >&2
+    exit 1
+  fi
   echo "[router] runner for ${RUN_ID} already running, skipping spawn"
+  echo "[router] (RESET_BEFORE skipped — runner already attached to current site state)"
 else
+  # P0-5-B* (/stress Phase 0 unified bug list 2026-05-19, codex unique OOB):
+  # port B-858 cross-mode collision check from queue_baseline.sh:165 +
+  # phantom siblings. Pre-fix Pass-2 leaf: pgrep above matches by FULL
+  # RUN_ID; a second manual leaf invocation with DIFFERENT mode (same
+  # baseline+site, e.g. baseline B0 dom cls already running, then user
+  # invokes router B0 cls) → different RUN_ID → bypass idempotent skip
+  # + run reset_and_auth_gate → site wipe under detached baseline runner.
+  # queue_chain.sh:248 _collision_match enforces at chain layer; this
+  # propagates to standalone leaf entry per CLAUDE.md hard rule.
+  assert_no_cross_mode_collision "${BASELINE}" "${SITE}" "vwa" "${RUN_ID}" "router_learned"
+
   # ---------- Optional: site reset before launch ----------
   # B-1585 (/stress A1.24 post-fire P1-5-B codex Mode B F3, 2026-05-18):
   # Pass-2 router leaf inherits the same hard-fail reset+auth contract as

@@ -1440,8 +1440,31 @@ def main() -> int:
     state_file = Path(args.state_file).resolve() if args.state_file else None
 
     if getattr(args, "reset_state", False) and state_file and state_file.exists():
-        state_file.unlink()
-        print(f"[watchdog] --reset-state: cleared {state_file}")
+        # P1-13-B (/stress Phase 0 unified bug list 2026-05-19, codex unique):
+        # pre-fix bare `state_file.unlink()` here BEFORE `_load_state`
+        # invocation → `_load_state` sees no file → returns {} → corrupt/
+        # discard event path at L671 unreachable. Operator-intent reset event
+        # `state_reset_discarded` never emits → paper §3.X.6 covariate audit
+        # trail incomplete silently. Post-fix: rename to .discarded.<ts> +
+        # emit event inline (parity with B-762 corrupt-state recovery emit).
+        import datetime as _dt
+        _discard_ts = _dt.datetime.now(_dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        _backup_path = state_file.with_name(f"{state_file.name}.discarded.{_discard_ts}")
+        state_file.rename(_backup_path)
+        print(
+            f"[watchdog] --reset-state: renamed {state_file} → {_backup_path} "
+            f"(P1-13-B: rename+event preserves covariate audit trail; "
+            f"pre-existing session_contaminated + error_retry_counts LOST)"
+        )
+        try:
+            _emit_state_reset_event(
+                run_dir=run_dir,
+                mode="reset_state_discard_preboot",
+                backup_path=_backup_path,
+                recovered_keys=[],
+            )
+        except Exception as _e_evt:
+            print(f"[watchdog][warn] --reset-state event emit failed: {_e_evt}")
 
     # Load persisted state (B-393: fail-closed on corrupt state unless
     # --reset-state). At this point a clean unlink has already happened above
@@ -1763,10 +1786,37 @@ def main() -> int:
                 condition_completed = (condition_dir / "condition_summary_v2.json").exists()
                 retry_key = f"{condition_id}/{site}_task_{task_id}"
                 retries_so_far = error_retry_counts.get(retry_key, 0)
+                # P1-10-B (/stress Phase 0 unified bug list 2026-05-19, codex
+                # unique): B-486 quarantine writes `needs_reevaluation=True`
+                # in episode summary on EvaluatorUnavailableError. Pre-fix
+                # auto-retry filter checked ONLY `reason != "error(evaluator)"`
+                # string match; if a future runner emits a non-"evaluator"
+                # reason that ALSO carries `needs_reevaluation=True` (e.g.
+                # paper §3.X.6 attempt-lineage reasons), watchdog would
+                # silently delete the quarantine evidence + retry. Post-fix:
+                # honor the structured `needs_reevaluation` field; True
+                # disables retry regardless of reason string. Preserves
+                # B-486 quarantine evidence + ntfy operator for manual review.
+                quarantine_flagged = bool(summary.get("needs_reevaluation", False))
+                if quarantine_flagged:
+                    print(
+                        f"[watchdog][QUARANTINE-PRESERVED] task {task_id} "
+                        f"({reason}) carries needs_reevaluation=True; "
+                        f"auto-retry SUPPRESSED (P1-10-B). Manual review required."
+                    )
+                    if args.ntfy_topic:
+                        _post_ntfy(
+                            args.ntfy_topic,
+                            f"P79 QUARANTINE task {task_id}",
+                            f"run_id={run_id}\n{condition_id} task {task_id}\n"
+                            f"{reason} + needs_reevaluation=True — manual review (P1-10-B preserved)",
+                            priority="high",
+                        )
                 is_noise = reason.startswith("error(") and reason != "error(evaluator)" and reason != "error(code_bug)"
                 can_retry = (
                     reason.startswith("error(")
                     and reason != "error(evaluator)"
+                    and not quarantine_flagged  # P1-10-B: respect needs_reevaluation field
                     and not condition_completed
                     and (
                         (reason == "error(code_bug)" and retries_so_far < MAX_CODE_BUG_RETRIES)

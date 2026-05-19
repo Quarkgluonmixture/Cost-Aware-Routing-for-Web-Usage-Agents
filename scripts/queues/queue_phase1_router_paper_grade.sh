@@ -145,13 +145,43 @@ check_gates() {
   # PRIMARY estimand. Phantom queue scripts use canonical `phase1_<MODE>_router_0`
   # condition_id (dom/som/vision + phantom_text/phantom_som/phantom_prompt) so
   # one glob covers all 6 modes per cell.
-  local baseline_done=0          # full-cell count (6/6 modes complete)
+  local baseline_done=0          # full-cell count (6/6 distinct canonical modes)
   local total_mode_summaries=0   # global tally across all cells × modes
   local cell_status=""           # diagnostic string for log
+  # P0-4-B (/stress Phase 0 unified bug list 2026-05-19, codex unique): pre-fix
+  # `ls -d ...*/condition_summary_v2.json | wc -l` counted DUPLICATE re-fires +
+  # archive stale runs, not 6 distinct canonical modes. Archive 2 stale dom
+  # runs + 1 som run → count=3 but mode coverage = {dom, som} only → LR oracle
+  # trained on partial mode coverage → paper §6 H10 Pareto silently invalid.
+  # Post-fix: enumerate 6 canonical mode condition_ids per cell, count exact
+  # distinct-mode matches (each mode must have ≥1 paper-grade summary).
+  # Canonical mode → condition_id mapping (per `conditions.py` + queue scripts):
+  #   dom         → phase1_dom_router_0
+  #   som         → phase1_som_router_0
+  #   vision      → phase1_vision_router_0
+  #   phantom_text  → phase1_phantom_text_router_0  (P-text)
+  #   phantom_prompt → phase1_phantom_prompt_router_0 (P-prompt)
+  #   phantom_som  → phase1_phantom_som_router_0   (P-SoM)
+  local _canonical_cond_ids=(
+    "phase1_dom_router_0"
+    "phase1_som_router_0"
+    "phase1_vision_router_0"
+    "phase1_phantom_text_router_0"
+    "phase1_phantom_prompt_router_0"
+    "phase1_phantom_som_router_0"
+  )
   for baseline in B0 B1 B2; do
     for site in classifieds reddit; do
-      local cell_mode_count
-      cell_mode_count=$(ls -d results/visualwebarena/phase1/${baseline}_*_${site}_*/phase1_*_router_0/condition_summary_v2.json 2>/dev/null | wc -l)
+      local cell_mode_count=0
+      local cell_modes_present=""
+      for cond_id in "${_canonical_cond_ids[@]}"; do
+        # Glob expands to 0..N run dirs containing this condition_id's summary.
+        # Each canonical mode counts once IF ≥1 paper-grade summary exists.
+        if compgen -G "results/visualwebarena/phase1/${baseline}_*_${site}_*/${cond_id}/condition_summary_v2.json" > /dev/null 2>&1; then
+          cell_mode_count=$((cell_mode_count + 1))
+          cell_modes_present="${cell_modes_present}${cond_id##phase1_},"
+        fi
+      done
       total_mode_summaries=$((total_mode_summaries + cell_mode_count))
       if [ "$cell_mode_count" -ge 6 ]; then
         baseline_done=$((baseline_done + 1))
@@ -425,6 +455,13 @@ launch_chain() {
   local ts; ts="$(date +%Y%m%d_%H%M%S)"
   local logfile="logs/queue_phase1_router_${label}_${ts}.log"
   local latest_log="logs/queue_phase1_router_${label}.latest.log"
+  # P0-2-B* (/stress Phase 0 unified bug list 2026-05-19): done-sentinel parity
+  # with baseline orchestrator (`queue_phase1_paper_grade.sh:launch_chain`).
+  # Inner queue_chain.sh exit code is captured + written to .done file so
+  # cls→red sequential cascade reads sentinel for actual rc, not `kill -0`
+  # liveness alone. See Fire-3 cascade Fire-3 2026-05-19 00:53/00:54 RCA.
+  local donefile="logs/queue_phase1_router_${label}_${ts}.done"
+  local latest_done="logs/queue_phase1_router_${label}.latest.done"
   mkdir -p logs
 
   local args=()
@@ -434,12 +471,19 @@ launch_chain() {
   done < <($builder)
 
   log "Launching $label router chain (${#args[@]} cells) → $logfile"
-  FORCE_NEW=1 RESET_BEFORE=1 nohup bash scripts/queues/queue_chain.sh "${args[@]}" \
-    > "$logfile" 2>&1 &
+  # P0-2-B* sentinel wrapper (parity baseline orchestrator).
+  FORCE_NEW=1 RESET_BEFORE=1 nohup bash -c "
+    bash scripts/queues/queue_chain.sh \"\$@\"
+    _rc=\$?
+    printf 'rc=%d ts=%s label=%s pid=%d\n' \"\$_rc\" \"\$(date -u +%FT%TZ)\" '$label' \"\$\$\" > '$donefile'
+    exit \$_rc
+  " _ "${args[@]}" > "$logfile" 2>&1 &
   local pid=$!
-  # Update .latest.log symlink for live tail (rm -f tolerant if already-gone)
+  # Update .latest.log + .latest.done symlinks for live tail + sentinel read.
   rm -f "$latest_log" 2>/dev/null || true
   ln -s "$(basename "$logfile")" "$latest_log" 2>/dev/null || true
+  rm -f "$latest_done" 2>/dev/null || true
+  ln -s "$(basename "$donefile")" "$latest_done" 2>/dev/null || true
   log "  PID $pid, log $logfile (live tail: $latest_log)"
   echo "$pid" > "logs/queue_phase1_router_${label}_${ts}.pid"
   echo "$pid" > "logs/queue_phase1_router_${label}.pid"
@@ -457,8 +501,56 @@ case "$MODE" in
     check_gates
     case "$SITE_FILTER" in
       all)
-        launch_chain "cls" build_cls_router_chain
-        launch_chain "red" build_red_router_chain
+        # P0-3-B (/stress Phase 0 unified bug list 2026-05-19, codex unique):
+        # Pre-fix Pass-2 router default fired cls+red PARALLEL. Violates
+        # CLAUDE.md hard rule #3 "paper-grade fire 同物理 host 同时只能跑一条
+        # site chain (cls XOR red XOR shop)" — Pass-1 already sequential via
+        # baseline orchestrator (B-1663) to avoid A100 docker bridge +
+        # Postgres + Redis + B0 proxy quota contention. Pass-2 router fire
+        # has same substrate contention surface; default must also be
+        # sequential. PHASE1A_PARALLEL=1 opt-in dev mode preserved (NOT
+        # paper-grade).
+        if [[ "${PHASE1A_PARALLEL:-0}" != "1" ]]; then
+          log "Sequential paper-grade Pass-2 (P0-3-B): cls → red after cls completion."
+          launch_chain "cls" build_cls_router_chain
+          _cls_pid_file="logs/queue_phase1_router_cls.pid"
+          if [[ ! -f "$_cls_pid_file" ]]; then
+            fail "Pass-2 cls pid file missing: $_cls_pid_file — launch_chain failed?"
+          fi
+          _cls_pid=$(cat "$_cls_pid_file")
+          # P0-2-B* sentinel-based wait (parity baseline orchestrator).
+          log "Waiting for Pass-2 cls router chain pid=${_cls_pid} (max 8h, smaller than baseline 24h since router cells are 1 condition each)..."
+          _wait_elapsed=0
+          while kill -0 "$_cls_pid" 2>/dev/null && (( _wait_elapsed < 28800 )); do
+            sleep 60
+            _wait_elapsed=$((_wait_elapsed + 60))
+            if (( _wait_elapsed % 1800 == 0 )); then
+              log "  Pass-2 cls chain pid=${_cls_pid} still running (${_wait_elapsed}s elapsed)"
+            fi
+          done
+          if kill -0 "$_cls_pid" 2>/dev/null; then
+            fail "Pass-2 cls chain pid=${_cls_pid} alive after 8h max-wait — investigate manually"
+          fi
+          sleep 2
+          _cls_done_sentinel="logs/queue_phase1_router_cls.latest.done"
+          _cls_rc=1
+          if [[ -f "$_cls_done_sentinel" ]]; then
+            _cls_rc=$(grep -oE 'rc=-?[0-9]+' "$_cls_done_sentinel" | head -1 | cut -d= -f2)
+            _cls_rc="${_cls_rc:-1}"
+            log "  Pass-2 cls chain done sentinel: $(cat "$_cls_done_sentinel" 2>/dev/null | head -1)"
+          else
+            log "  Pass-2 cls chain done sentinel ABSENT — treating as rc=1"
+          fi
+          if (( _cls_rc != 0 )); then
+            fail "Pass-2 cls chain pid=${_cls_pid} exited rc=${_cls_rc} — paper-grade cascade halt (P0-2-B* + P0-3-B): NOT launching red Pass-2 chain. Investigate cls failure; manually re-fire after fix."
+          fi
+          log "Pass-2 cls chain pid=${_cls_pid} done rc=${_cls_rc}; launching red Pass-2 chain"
+          launch_chain "red" build_red_router_chain
+        else
+          log "PHASE1A_PARALLEL=1 set — DEV MODE Pass-2 parallel fire (NOT paper-grade per CLAUDE.md hard rule #3)"
+          launch_chain "cls" build_cls_router_chain
+          launch_chain "red" build_red_router_chain
+        fi
         ;;
       cls)  launch_chain "cls" build_cls_router_chain ;;
       red)  launch_chain "red" build_red_router_chain ;;

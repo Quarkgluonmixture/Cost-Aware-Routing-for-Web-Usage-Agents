@@ -248,6 +248,27 @@ class ExperimentRunner:
                 "queue script if this is intentionally a diagnostic run. "
                 "See B-486 disclosure in paper §3.5.1."
             )
+        # P0-6-AC (/stress Phase 0 unified bug list 2026-05-19, Claude+Gemini
+        # 2-AI overlap): sibling pattern to diagnostic_controls hard-fail above.
+        # `baseline_retry_on_no_progress=True` injects runner-side scroll/refresh
+        # action after agent's failed click/type — same trajectory-autonomy
+        # contamination as diagnostic_controls. Default False but a yaml
+        # override / dev-iteration residue → paper-grade fire silently corrupted.
+        # Cross-baseline asymmetry: B1 (faster steps, more attempts) triggers
+        # no_progress more than B0 (slow steps) → asymmetric retry-injection
+        # rate. Paper §3 cross-baseline step semantics requires this fail-closed.
+        if bool(cfg.get("paper_grade", False)) and bool(
+            cfg.get("runtime", {}).get("baseline_retry_on_no_progress", False)
+        ):
+            raise RuntimeError(
+                "paper_grade=True forbids baseline_retry_on_no_progress=True "
+                "(runner-side scroll/refresh injection after agent failed "
+                "click/type — same trajectory autonomy violation as "
+                "diagnostic_controls.enabled=True). Set "
+                "runtime.baseline_retry_on_no_progress: false in this run's "
+                "yaml, or remove paper_grade from the queue script for "
+                "intentionally diagnostic runs. See B-486 disclosure path."
+            )
 
         # B-144 (/stress A1.2 v8 codex B1, 2026-05-16): cache key is
         # ``(backend_id, seed)`` — previously a single ``backend_id`` key froze
@@ -2486,8 +2507,17 @@ class ExperimentRunner:
                 action_type=str(action.get("action_type", "")).upper(),
                 similarity_threshold=similarity_threshold,
             )
-            if about_blank_recovered:
-                page_change_reasons.append("about_blank_recovery")
+            # P0-1-ABC* (/stress Phase 0 unified bug list 2026-05-19, 3-AI overlap):
+            # about:blank recovery is a RUNNER intervention (navigate_to(start_url)),
+            # NOT agent action. Pre-fix append "about_blank_recovery" to
+            # page_change_reasons → page_changed=True silently credits runner's
+            # navigation as agent progress, polluting paper §3 step semantics
+            # (no_progress denominator, action_success terminate path,
+            # baseline_retry trigger gate, paper §1/§3 SR-step aggregate).
+            # Post-fix: page_changed boolean reflects AGENT action only;
+            # about_blank_recovery tracked separately as runner intervention.
+            # Phase 2 telemetry adds step-level intervention_type + episode-level
+            # runner_intervention_count + about_blank_recovery_count.
             page_changed = bool(page_change_reasons)
             # Do not use reward as action-success evidence: evaluator rewards can be noisy
             # and may mask real no-progress execution failures.

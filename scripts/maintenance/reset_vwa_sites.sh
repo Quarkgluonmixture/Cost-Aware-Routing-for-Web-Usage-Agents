@@ -245,7 +245,18 @@ reset_vwa_sites() {
     local label="${2:-reset}"
 
     if [[ "${VWA_RESET_ENABLE}" != "1" ]]; then
-        echo "[${label}][reset_vwa] VWA_RESET_ENABLE=0，跳过 reset（site=${site}）"
+        # P0-7-A (/stress Phase 0 unified bug list 2026-05-19, Claude unique):
+        # paper-grade fire requires site reset (CLAUDE.md hard rule #2). Pre-fix
+        # operator residual `VWA_RESET_ENABLE=0` from dev session + paper-grade
+        # launch (RESET_BEFORE=1) → silent reset SKIP → runner starts on
+        # contaminated cart/listings substrate. Now: under P79_PAPER_GRADE=1,
+        # VWA_RESET_ENABLE != 1 is fail-closed; dev mode unaffected.
+        if [[ "${P79_PAPER_GRADE:-0}" == "1" ]]; then
+            echo "[${label}][reset_vwa][FATAL] VWA_RESET_ENABLE=${VWA_RESET_ENABLE} under P79_PAPER_GRADE=1 — paper-grade requires reset enabled (CLAUDE.md hard rule #2 跑实验必须 reset 站点)" >&2
+            echo "[${label}][reset_vwa][FATAL] options: (a) export VWA_RESET_ENABLE=1; (b) unset P79_PAPER_GRADE for dev mode; (c) clear residual env from prior dev session" >&2
+            return 1
+        fi
+        echo "[${label}][reset_vwa] VWA_RESET_ENABLE=0，跳过 reset（dev mode, site=${site}）"
         return 0
     fi
 

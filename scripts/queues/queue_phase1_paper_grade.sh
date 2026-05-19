@@ -569,8 +569,17 @@ launch_chain() {
   local ts="$(date +%Y%m%d_%H%M%S)"
   local logfile="logs/queue_phase1_${label}_${ts}_$$.log"
   local pidfile="logs/queue_phase1_${label}_${ts}_$$.pid"
+  # P0-2-B* (/stress Phase 0 unified bug list 2026-05-19, codex unique OOB
+  # SMOKING GUN): done sentinel writes `rc=N ts=...` on inner queue_chain.sh
+  # exit. Master orchestrator reads sentinel rc after PID dies to decide
+  # cls→red cascade safety. Pre-fix `kill -0` poll detected "alive vs dead"
+  # but not exit code → cls chain B-486 quarantine exit 1 was silently
+  # interpreted as "done" → red auto-started (Fire-3 2026-05-19 00:53→00:54
+  # empirical signature).
+  local donefile="logs/queue_phase1_${label}_${ts}_$$.done"
   local logsym="logs/queue_phase1_${label}.latest.log"
   local pidsym="logs/queue_phase1_${label}.latest.pid"
+  local donesym="logs/queue_phase1_${label}.latest.done"
   mkdir -p logs
 
   # Convert chain commands to space-quoted args
@@ -584,14 +593,22 @@ launch_chain() {
   # FORCE_NEW=1: paper-grade fresh rerun — each cell gets a timestamped run_id,
   # never resumes a pre-fix archived dir (codex stress v6 C1, 2026-05-14).
   # RESET_BEFORE=1: each condition resets site state for fair ablation.
-  FORCE_NEW=1 RESET_BEFORE=1 nohup bash scripts/queues/queue_chain.sh "${args[@]}" \
-    > "$logfile" 2>&1 &
+  # P0-2-B* sentinel wrapper: subshell captures inner rc → writes donefile
+  # before exit. `--` separates bash -c invocation flags from positional args.
+  FORCE_NEW=1 RESET_BEFORE=1 nohup bash -c "
+    bash scripts/queues/queue_chain.sh \"\$@\"
+    _rc=\$?
+    printf 'rc=%d ts=%s label=%s pid=%d\n' \"\$_rc\" \"\$(date -u +%FT%TZ)\" '$label' \"\$\$\" > '$donefile'
+    exit \$_rc
+  " _ "${args[@]}" > "$logfile" 2>&1 &
   local pid=$!
   log "  PID $pid, log $logfile"
   echo "$pid" > "$pidfile"
-  # Refresh `.latest.*` symlinks (force, atomic).
+  # Refresh `.latest.*` symlinks (force, atomic). Donesym target may not exist
+  # yet (subshell still running); symlink resolves once sentinel lands on exit.
   ln -sfn "$(basename "$logfile")" "$logsym" 2>/dev/null || true
   ln -sfn "$(basename "$pidfile")" "$pidsym" 2>/dev/null || true
+  ln -sfn "$(basename "$donefile")" "$donesym" 2>/dev/null || true
 }
 
 # ---------------------------------------------------------------------------
@@ -725,6 +742,14 @@ case "$MODE" in
             fail "cls pid file missing: $_cls_pid_file — launch_chain failed?"
           fi
           _cls_pid=$(cat "$_cls_pid_file")
+          # P0-2-B* (/stress Phase 0 unified bug list 2026-05-19, codex unique
+          # OOB SMOKING GUN): pre-fix `kill -0` poll detected "process alive vs
+          # dead" but NOT exit code. cls chain exit 1 (B-486 quarantine /
+          # B-1665 wallclock / fatal preflight) was silently interpreted as
+          # "done" → red auto-started. Fire-3 2026-05-19 00:53→00:54 cascade
+          # was this exact pattern. Post-fix: poll-loop preserved as runaway
+          # watchdog (24h max), then read done sentinel for actual rc; non-zero
+          # → fail (NOT launch red).
           log "Waiting for cls chain pid=${_cls_pid} to complete (max 24h)..."
           _wait_elapsed=0
           while kill -0 "$_cls_pid" 2>/dev/null && (( _wait_elapsed < 86400 )); do
@@ -737,7 +762,23 @@ case "$MODE" in
           if kill -0 "$_cls_pid" 2>/dev/null; then
             fail "cls chain pid=${_cls_pid} alive after 24h max-wait — investigate manually"
           fi
-          log "cls chain pid=${_cls_pid} done; launching red chain"
+          # P0-2-B* sentinel read: launch_chain wraps queue_chain.sh in a
+          # subshell that writes `rc=N ts=...` to `.latest.done` BEFORE exit.
+          # Brief sleep tolerates subshell-exit/sentinel-write race window.
+          sleep 2
+          _cls_done_sentinel="logs/queue_phase1_cls.latest.done"
+          _cls_rc=1
+          if [[ -f "$_cls_done_sentinel" ]]; then
+            _cls_rc=$(grep -oE 'rc=-?[0-9]+' "$_cls_done_sentinel" | head -1 | cut -d= -f2)
+            _cls_rc="${_cls_rc:-1}"
+            log "  cls chain done sentinel: $(cat "$_cls_done_sentinel" 2>/dev/null | head -1)"
+          else
+            log "  cls chain done sentinel ABSENT at $_cls_done_sentinel — treating as rc=1 (chain crashed/killed without exit-handler running)"
+          fi
+          if (( _cls_rc != 0 )); then
+            fail "cls chain pid=${_cls_pid} exited rc=${_cls_rc} — paper-grade cascade halt (P0-2-B*): NOT launching red. Investigate cls failure; manually re-fire after fix. Fire-3 2026-05-19 00:53/00:54 cascade was this exact pattern."
+          fi
+          log "cls chain pid=${_cls_pid} done rc=${_cls_rc}; launching red chain"
           launch_chain "red" build_red_chain
         else
           log "PHASE1A_PARALLEL=1 set — DEV MODE parallel fire (NOT paper-grade per CLAUDE.md hard rule #3)"
