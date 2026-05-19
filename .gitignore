@@ -91,6 +91,7 @@ docs/checkpoints/PLAYBOOK.md
 # sr_raw/last_run_id/pid/history). Manual semantic fields (blocker/eta/
 # priority) edited on DGX via VSCode Remote-SSH; Windows is read-only viewer.
 docs/checkpoints/_status/cells/*.md
+docs/checkpoints/_status/cells/*.lock
 
 # Weekly reports + dashboard React app — local advisor-share + dev workspace,
 # not paper-grade artifacts. Heavy churn (npm, generated HTML), and the source
@@ -114,3 +115,12 @@ docs/checkpoints/process/
 
 # A1.13 B-646 (P1-7): per-site:benchmark chain locks (flock TOCTOU defense)
 .locks/
+
+# One-off /stress audit probe artifacts (kept on disk for local replay; the
+# tracked siblings in probes/ are chronicle-pointed and stay versioned).
+docs/checkpoints/probes/proxy_production_path_012506.json
+docs/checkpoints/probes/q3_h10_delta_semantic_result.json
+docs/checkpoints/probes/q3_h10_delta_semantic_test.py
+
+# OSF deposit cron writes PID sidecar per timestamped deposit dir; ephemeral.
+docs/checkpoints/pre_run/**/.dispatch.meta
