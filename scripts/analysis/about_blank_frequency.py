@@ -42,7 +42,20 @@ from p79.experiment.io_utils import read_jsonl_dedup
 
 
 def _is_about_blank_step(step: Dict[str, Any]) -> bool:
-    """True iff this step triggered the about:blank recovery branch."""
+    """True iff this step triggered the about:blank recovery branch.
+
+    Detection priority (P1-11-B* /stress Phase 0 2026-05-19, codex unique OOB):
+    1. Phase 2 telemetry: step_record["intervention_type"] == "about_blank_recovery"
+       (post-fix Phase 2 explicit attribution).
+    2. Legacy page_change_reasons containing "about_blank_recovery" (pre-fix
+       Phase 1 about:blank decouple — archived rows before P0-1-ABC* fix).
+    3. state_digest.url_after starting with "about:blank" (raw URL signal, no
+       runner intervention metadata).
+    """
+    # P1-11-B* Phase 2 explicit attribution (preferred path post-decouple)
+    if step.get("intervention_type") == "about_blank_recovery":
+        return True
+    # Legacy path (pre-P0-1-ABC* decouple — archived JSONL rows)
     reasons = step.get("page_change_reasons", []) or []
     if isinstance(reasons, list) and "about_blank_recovery" in reasons:
         return True
@@ -51,6 +64,34 @@ def _is_about_blank_step(step: Dict[str, Any]) -> bool:
     if url_after.startswith("about:blank"):
         return True
     return False
+
+
+def _classify_about_blank_attribution(step: Dict[str, Any]) -> str:
+    """P1-11-B* (/stress Phase 0 2026-05-19, codex unique OOB extension):
+    aggregator attribution column for runner vs agent disambiguation.
+
+    Returns:
+        "runner_intervention" — Phase 2 telemetry confirms `counted_as_agent_action=False`
+            (post-fix runner-only navigation, NOT credited as agent progress).
+        "agent_progress_legacy" — pre-fix archived row where about_blank_recovery was
+            silently appended to page_change_reasons AND page_changed=True (mixed
+            agent/runner attribution — paper §3 sensitivity column data).
+        "agent_progress_url_only" — raw url_after starts with about:blank but no
+            explicit intervention metadata (lowest-confidence attribution).
+        "not_about_blank" — fallback for non-about_blank steps.
+    """
+    if step.get("intervention_type") == "about_blank_recovery":
+        # Phase 2 explicit attribution: respect counted_as_agent_action flag
+        return "runner_intervention" if step.get("counted_as_agent_action") is False else "agent_progress_explicit"
+    reasons = step.get("page_change_reasons", []) or []
+    if isinstance(reasons, list) and "about_blank_recovery" in reasons:
+        # Pre-fix legacy row — credit silently went to agent (page_changed=True)
+        return "agent_progress_legacy"
+    state_digest = step.get("state_digest", {}) or {}
+    url_after = str(state_digest.get("url_after", "") or "")
+    if url_after.startswith("about:blank"):
+        return "agent_progress_url_only"
+    return "not_about_blank"
 
 
 def _infer_mode_baseline(condition_id: str) -> Dict[str, str]:
@@ -107,10 +148,26 @@ def scan_run_dir(run_dir: Path) -> List[Dict[str, Any]]:
         if not episodes_dir.is_dir():
             continue
 
-        # Aggregate per-condition counters (across all tasks)
-        # We sub-aggregate by site (from JSONL benchmark_site field, more
-        # robust than parsing config_meta)
-        per_site: Dict[str, Dict[str, int]] = defaultdict(lambda: {"total": 0, "ab": 0})
+        # Aggregate per-condition counters (across all tasks).
+        # P1-11-B* (/stress Phase 0 2026-05-19): added attribution columns —
+        # `runner_intervention_step` (Phase 2 explicit), `agent_progress_legacy`
+        # (pre-fix archived rows), `agent_progress_url_only` (raw URL signal,
+        # no metadata). Paper §3 disclosure can stratify cross-baseline
+        # intervention rate using these columns. Also added
+        # `page_changed_minus_intervention` = page_changed steps with runner
+        # intervention SUBTRACTED, so paper §3 SR-step semantics can compute
+        # "agent-action-only page-change rate" separate from total page_changed.
+        per_site: Dict[str, Dict[str, int]] = defaultdict(lambda: {
+            "total": 0,
+            "ab": 0,
+            "runner_intervention": 0,
+            "agent_progress_legacy": 0,
+            "agent_progress_url_only": 0,
+            "agent_progress_explicit": 0,
+            "page_changed": 0,
+            "page_changed_minus_intervention": 0,
+            "agent_visible_changed": 0,
+        })
 
         for jsonl in episodes_dir.glob("*_steps_v2.jsonl"):
             try:
@@ -121,8 +178,22 @@ def scan_run_dir(run_dir: Path) -> List[Dict[str, Any]]:
             for row in rows:
                 site = str(row.get("benchmark_site", "unknown"))
                 per_site[site]["total"] += 1
-                if _is_about_blank_step(row):
+                ab = _is_about_blank_step(row)
+                attribution = _classify_about_blank_attribution(row)
+                if ab:
                     per_site[site]["ab"] += 1
+                if attribution != "not_about_blank":
+                    per_site[site][attribution] = per_site[site].get(attribution, 0) + 1
+                # page_changed attribution: total + minus_intervention
+                pc = bool(row.get("page_changed", False))
+                if pc:
+                    per_site[site]["page_changed"] += 1
+                    # Subtract runner intervention from page_changed to recover
+                    # agent-only page-change rate.
+                    if attribution != "runner_intervention":
+                        per_site[site]["page_changed_minus_intervention"] += 1
+                if bool(row.get("agent_visible_changed", False)):
+                    per_site[site]["agent_visible_changed"] += 1
 
         cond_meta = _infer_mode_baseline(condition_id)
         for site, counts in per_site.items():
@@ -137,6 +208,17 @@ def scan_run_dir(run_dir: Path) -> List[Dict[str, Any]]:
                 "total_steps": total,
                 "about_blank_steps": ab,
                 "about_blank_rate_pct": (100.0 * ab / total) if total else 0.0,
+                # P1-11-B* attribution columns (paper §3 disclosure)
+                "runner_intervention_step": counts.get("runner_intervention", 0),
+                "agent_progress_legacy_step": counts.get("agent_progress_legacy", 0),
+                "agent_progress_url_only_step": counts.get("agent_progress_url_only", 0),
+                "agent_progress_explicit_step": counts.get("agent_progress_explicit", 0),
+                "page_changed_step": counts.get("page_changed", 0),
+                "page_changed_minus_intervention_step": counts.get("page_changed_minus_intervention", 0),
+                "agent_visible_changed_step": counts.get("agent_visible_changed", 0),
+                "runner_intervention_rate_pct": (
+                    100.0 * counts.get("runner_intervention", 0) / total if total else 0.0
+                ),
             })
 
     return results

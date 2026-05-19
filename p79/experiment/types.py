@@ -293,6 +293,23 @@ class StepRecordV2:
     # 0-cast that would suggest "retried 0 times" vs "no retry concept").
     network_retry_count: Optional[int] = None
     network_retry_wait_ms: Optional[float] = None
+    # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 unified bug list 2026-05-19,
+    # 3-AI overlap OOB): about:blank recovery runner-intervention attribution.
+    # Decouples runner navigate_to(start_url) from agent action progress
+    # (paper §3 cross-baseline step semantics). Runner stamps these step-level
+    # fields when intervention fires; None on normal agent steps.
+    # Schema:
+    #   intervention_type: "about_blank_recovery" | future intervention types
+    #   counted_as_agent_action: False for runner-injected nav; True for
+    #     genuine agent actions (legacy default = None = "not applicable")
+    #   intervention_from_url: page URL BEFORE intervention (about:blank)
+    #   intervention_recovery_url: target URL AFTER navigate_to (task.start_url)
+    # Aggregator (about_blank_frequency.py P1-11-B*) reads these to produce
+    # paper §3 disclosure column `runner_intervention_step_rate` per cell.
+    intervention_type: Optional[str] = None
+    counted_as_agent_action: Optional[bool] = None
+    intervention_from_url: Optional[str] = None
+    intervention_recovery_url: Optional[str] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -435,6 +452,58 @@ class EpisodeSummaryV2:
     # otherwise).
     evaluator_authority_mode: Optional[str] = None
     reward_override_applied: Optional[bool] = None
+    # P0-1-ABC* + P1-11-B* Phase 2 telemetry (/stress Phase 0 2026-05-19, 3-AI):
+    # runner-intervention rollup. Pre-fix paper §3 step semantics silently mixed
+    # agent action progress + runner navigate_to(start_url) under page_changed=True.
+    # Post-fix: runner stamps explicit per-episode counts so aggregator can
+    # produce paper-grade disclosure column without re-scanning step JSONL.
+    runner_intervention_count: int = 0
+    about_blank_recovery_count: int = 0
+    # P1-17-C* Phase 2 attempt-lineage telemetry (/stress Phase 0 2026-05-19,
+    # Gemini OOB framing): paper §3 cross-baseline attempt-lineage covariate
+    # substrate. Pre-fix B-486 quarantine + watchdog retry chain had no row-
+    # level lineage — aggregator could not distinguish "primary attempt" vs
+    # "Nth retry attempt after quarantine". All None until checkpoint-restore
+    # infrastructure lands; field reservation closes the schema gap so future
+    # paper-2 retry-lineage aggregator (P1-17-C* Sensitivity column) does NOT
+    # require a v3 schema bump.
+    attempt_id: Optional[str] = None
+    attempt_index: Optional[int] = None
+    is_retry_attempt: Optional[bool] = None
+    retry_trigger: Optional[str] = None
+    previous_attempt_error: Optional[str] = None
+    previous_attempt_effective_mutation_count: Optional[int] = None
+    substrate_restored_from_checkpoint: Optional[bool] = None
+    checkpoint_id: Optional[str] = None
+    checkpoint_hash_before: Optional[str] = None
+    checkpoint_hash_after_restore: Optional[str] = None
+    # P1-17-C* + Gemini F3 footprint telemetry: Appendix sensitivity column
+    # quantifying agent's site-state-mutation rate per episode. Reviewer-3
+    # transparency on cross-baseline scaffold-effects asymmetry (B0 proxy slow
+    # steps → fewer mutating attempts vs B1 local fast steps). Counts:
+    #   effective_mutating_action_count: action_success AND page_changed AND
+    #     action_type ∈ {type, click_submit, select_option, key_enter, ...}
+    #   destructive_action_count: subset of effective_mutating where target
+    #     element text matches `delete|remove|cancel|reset` patterns
+    #   cart_mutation_count: subset where URL/state references cart (shopping)
+    #   submit_create_count: subset where button text matches `submit|post|create`
+    #   delete_remove_count: subset of destructive matching `delete|remove`
+    #   cycle_mutating_action_count: mutating actions WITHIN cycle-detected
+    #     sequence (paper §3 diagnostic-only cycle detection)
+    #   repeated_same_mutating_action_count: same mutating action repeated ≥3×
+    #   footprint_risk_score: aggregator-computed 0..1 normalized score
+    # Default 0 (no field zero-OR-not-measured ambiguity per B-291 pattern);
+    # runner stamps at episode-end rollup using step-record action_executed.
+    # Defer to follow-up since runner aggregation requires action heuristic
+    # spec lock; field reservation closes schema gap.
+    effective_mutating_action_count: int = 0
+    destructive_action_count: int = 0
+    cart_mutation_count: int = 0
+    submit_create_count: int = 0
+    delete_remove_count: int = 0
+    cycle_mutating_action_count: int = 0
+    repeated_same_mutating_action_count: int = 0
+    footprint_risk_score: Optional[float] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -520,6 +589,16 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     # has no retry concept, not "0 retries").
     "network_retry_count",
     "network_retry_wait_ms",
+    # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 2026-05-19, 3-AI overlap OOB):
+    # about:blank recovery intervention attribution at step-level. Runner stamps
+    # None on normal agent steps, intervention_type="about_blank_recovery" +
+    # counted_as_agent_action=False + intervention_from_url + intervention_
+    # recovery_url on runner-intervention steps. Paper §3 disclosure column
+    # `runner_intervention_step_rate` per cell depends on these fields.
+    "intervention_type",
+    "counted_as_agent_action",
+    "intervention_from_url",
+    "intervention_recovery_url",
 })
 
 
@@ -605,6 +684,11 @@ _STEP_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     "cost_total_mixed_unit_warn": (bool, type(None)),
     "network_retry_count": (int, type(None)),
     "network_retry_wait_ms": (int, float, type(None)),
+    # P0-1-ABC* Phase 2 telemetry (about:blank intervention attribution).
+    "intervention_type": (str, type(None)),
+    "counted_as_agent_action": (bool, type(None)),
+    "intervention_from_url": (str, type(None)),
+    "intervention_recovery_url": (str, type(None)),
 }
 
 
@@ -630,6 +714,11 @@ PAPER_GRADE_EPISODE_OPTIONAL_KEYS = frozenset({
     "needs_reevaluation",
     # B-193 paper §3.5 transparency telemetry
     "trajectory_incomplete",
+    # P0-1-ABC* + P1-11-B* Phase 2 telemetry (runner intervention rollup).
+    # Defaults 0 (always stamped — additive int field, no None for archive
+    # row distinguishing). Paper §3 disclosure Appendix column.
+    "runner_intervention_count",
+    "about_blank_recovery_count",
 })
 
 
@@ -684,6 +773,30 @@ _EPISODE_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     "resume_fingerprint": (str, type(None)),
     "needs_reevaluation": (bool,),
     "trajectory_incomplete": (bool,),
+    # P0-1-ABC* + P1-11-B* Phase 2 telemetry (runner intervention rollup).
+    "runner_intervention_count": (int,),
+    "about_blank_recovery_count": (int,),
+    # P1-17-C* Phase 2 attempt-lineage (Sensitivity-only column; all None
+    # until checkpoint-restore infrastructure lands).
+    "attempt_id": (str, type(None)),
+    "attempt_index": (int, type(None)),
+    "is_retry_attempt": (bool, type(None)),
+    "retry_trigger": (str, type(None)),
+    "previous_attempt_error": (str, type(None)),
+    "previous_attempt_effective_mutation_count": (int, type(None)),
+    "substrate_restored_from_checkpoint": (bool, type(None)),
+    "checkpoint_id": (str, type(None)),
+    "checkpoint_hash_before": (str, type(None)),
+    "checkpoint_hash_after_restore": (str, type(None)),
+    # P1-17-C* + Gemini F3 footprint telemetry (Sensitivity column).
+    "effective_mutating_action_count": (int,),
+    "destructive_action_count": (int,),
+    "cart_mutation_count": (int,),
+    "submit_create_count": (int,),
+    "delete_remove_count": (int,),
+    "cycle_mutating_action_count": (int,),
+    "repeated_same_mutating_action_count": (int,),
+    "footprint_risk_score": (int, float, type(None)),
 }
 
 

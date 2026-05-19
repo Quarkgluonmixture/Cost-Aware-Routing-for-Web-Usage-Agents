@@ -2938,6 +2938,16 @@ class ExperimentRunner:
             # honest "baseline does not retry" not 0-cast "retried 0 times").
             step_record["network_retry_count"] = meta.get("network_retry_count")
             step_record["network_retry_wait_ms"] = meta.get("network_retry_wait_ms")
+            # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 2026-05-19, 3-AI):
+            # about:blank recovery intervention attribution. Stamp non-None
+            # values only when runner intervention fired this step;
+            # legacy None on normal agent steps (already default from
+            # StepRecordV2 dataclass).
+            if about_blank_recovered:
+                step_record["intervention_type"] = "about_blank_recovery"
+                step_record["counted_as_agent_action"] = False
+                step_record["intervention_from_url"] = state_before.get("url") or ""
+                step_record["intervention_recovery_url"] = task.raw_task.get("start_url", "")
             # GLM fallback tracking (§67 Plan B)
             # B-398 (/stress A1.1 v8 Mode A+B P0-3 overlap, 2026-05-16):
             # persist ALL attempted-fallback steps, not only the succeeded
@@ -3526,6 +3536,30 @@ class ExperimentRunner:
             if isinstance(_s.get("image_meta"), dict)
             and _s["image_meta"].get("image_encode_error") is not None
         )
+
+        # P0-1-ABC* + P1-11-B* Phase 2 telemetry (/stress Phase 0 2026-05-19,
+        # 3-AI overlap OOB): runner-intervention rollup. Counts step-records
+        # where intervention_type is set (about:blank recovery + future
+        # intervention types). Paper §3 disclosure Appendix column
+        # `runner_intervention_step_rate = runner_intervention_count / steps`
+        # per cell — cross-baseline asymmetric scaffold-effect transparency.
+        episode_summary["runner_intervention_count"] = sum(
+            1 for _s in step_records if _s.get("intervention_type") is not None
+        )
+        episode_summary["about_blank_recovery_count"] = sum(
+            1 for _s in step_records
+            if _s.get("intervention_type") == "about_blank_recovery"
+        )
+        # P1-17-C* Phase 2 attempt-lineage: defer runner stamping until
+        # checkpoint-restore infrastructure lands. Field reservation via
+        # EpisodeSummaryV2 dataclass defaults (all None); paper §3.X.6
+        # covariate trail consumer reads None as "primary attempt, no
+        # restore" semantic. v2.py defaults already backfill.
+        # P1-17-C* + Gemini F3 footprint telemetry: aggregator-side compute
+        # deferred to paper-2 round (requires action_executed dispatch-path
+        # heuristic spec lock). Field reservation via EpisodeSummaryV2
+        # dataclass defaults (count 0, score None). Stamp here when heuristic
+        # spec is locked; for now defaults pass through.
 
         # B-167 (/stress A1.4a v8 Claude F3 expanded scope, 2026-05-16):
         # unknown_failure_reasons Counter exposes any failure_reason that

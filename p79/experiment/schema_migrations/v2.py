@@ -122,6 +122,33 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     # `types.py:EpisodeSummaryV2` for full docstring.
     "evaluator_authority_mode": None,
     "reward_override_applied": None,
+    # P0-1-ABC* + P1-11-B* Phase 2 telemetry (/stress Phase 0 2026-05-19,
+    # 3-AI overlap OOB): runner-intervention rollup. Always stamped ≥0.
+    "runner_intervention_count": 0,
+    "about_blank_recovery_count": 0,
+    # P1-17-C* Phase 2 attempt-lineage (all None until checkpoint-restore
+    # infrastructure lands; field reservation closes v2→v3 schema gap).
+    "attempt_id": None,
+    "attempt_index": None,
+    "is_retry_attempt": None,
+    "retry_trigger": None,
+    "previous_attempt_error": None,
+    "previous_attempt_effective_mutation_count": None,
+    "substrate_restored_from_checkpoint": None,
+    "checkpoint_id": None,
+    "checkpoint_hash_before": None,
+    "checkpoint_hash_after_restore": None,
+    # P1-17-C* + Gemini F3 footprint telemetry (Appendix sensitivity column).
+    # Default 0 for count fields; None for normalized score until aggregator
+    # computes downstream.
+    "effective_mutating_action_count": 0,
+    "destructive_action_count": 0,
+    "cart_mutation_count": 0,
+    "submit_create_count": 0,
+    "delete_remove_count": 0,
+    "cycle_mutating_action_count": 0,
+    "repeated_same_mutating_action_count": 0,
+    "footprint_risk_score": None,
 }
 
 
@@ -249,6 +276,13 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     # B1/B2 always None even post-fix; B0 0 when no retries this step.
     "network_retry_count": None,
     "network_retry_wait_ms": None,
+    # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 2026-05-19, 3-AI overlap
+    # OOB): about:blank recovery intervention attribution. None on normal
+    # agent steps; runner stamps non-None on intervention steps.
+    "intervention_type": None,
+    "counted_as_agent_action": None,
+    "intervention_from_url": None,
+    "intervention_recovery_url": None,
 }
 
 
