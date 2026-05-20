@@ -1055,6 +1055,12 @@ def _classify_reason(
         return "fail_env_error"
     if final_error_category == "parse_error":
         return "fail_parse_error"
+    # P1-5 (/stress accounting audit 2026-05-21): off-site goto blocked by the
+    # VWA-origin whitelist (B-1782). A direct error_category → reason_bucket map
+    # (like parse_error) so the new policy-blocked failure mode reaches the paper
+    # §5 taxonomy instead of falling through to fail_max_steps / other-failure.
+    if final_error_category == "policy_blocked_offsite":
+        return "fail_policy_blocked_offsite"
 
     if _is_finish(final_action_type):
         if early_finish:

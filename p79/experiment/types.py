@@ -345,10 +345,14 @@ class StepRecordV2:
     #     True for genuine actions AND policy-blocked goto (agent spent its turn);
     #     False for injected waits (recovery events, not the agent's turn). This is
     #     the one place it diverges from valid_agent_action (goto: valid=F/consumes=T).
-    #   counts_as_runner_iteration: True iff the step ran a model call (safety-budget
-    #     denominator). Always True for persisted steps — free busy-waits skip the
-    #     LLM call and never persist a step_record; field documents intent + future-
-    #     proofs a no-model persisted step.
+    #   counts_as_runner_iteration: per-step DIAGNOSTIC record only — True iff the
+    #     step ran a model call. NOT consumed by any rollup (P2-2 /stress audit
+    #     2026-05-21, codex Mode B): `model_call_attempt_count = len(step_records)`
+    #     and `runner_iteration_count = len(step_records) + busy_wait_free_steps`
+    #     are the CANONICAL iteration counts; this flag is kept for per-step
+    #     transparency + to future-proof a no-model persisted step, but readers MUST
+    #     NOT treat it as the rollup source of truth (it is always True today since
+    #     free busy-waits never persist a step_record).
     # All None on legacy/archive rows (pre-Protocol-Reset) — backward-compat.
     valid_agent_action: Optional[bool] = None
     consumes_agent_action_budget: Optional[bool] = None

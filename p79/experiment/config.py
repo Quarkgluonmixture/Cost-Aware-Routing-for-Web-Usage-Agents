@@ -293,6 +293,13 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
         "max_model_attempts",
         int(cfg["runtime"]["max_agent_actions"]) + int(cfg["runtime"]["max_total_parse_errors"]) + 10,
     )
+    # P2-5 (/stress accounting audit 2026-05-21): guard against an explicit yaml
+    # override setting max_model_attempts BELOW the primary budget + parse cap,
+    # which would let the safety ceiling truncate an episode before the agent has
+    # spent its action budget (silent capability under-measurement). Clamp up.
+    _budget_floor = int(cfg["runtime"]["max_agent_actions"]) + int(cfg["runtime"]["max_total_parse_errors"])
+    if int(cfg["runtime"]["max_model_attempts"]) < _budget_floor:
+        cfg["runtime"]["max_model_attempts"] = _budget_floor
 
     cfg.setdefault("checklist", {})
     cfg["checklist"].setdefault("enabled", False)

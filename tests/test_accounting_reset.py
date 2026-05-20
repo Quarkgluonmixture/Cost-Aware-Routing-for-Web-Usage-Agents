@@ -235,3 +235,100 @@ def test_accounting_fields_land_in_runner_output(tmp_path):
     # a clean mock run has no parse errors → agent_action == valid_action
     assert s["parse_error_injected_wait_count"] == 0
     assert s["agent_action_step_count"] == s["valid_action_step_count"]
+
+
+# ─── /stress accounting audit 2026-05-21 regression tests (codex Mode B catches) ─
+def test_p2_1_three_column_cost_model_none_no_crash():
+    """P2-1: explicit `model: None` (migrated/default-filled row) must fall back to
+    input+output, not crash float(None). codex Mode B reproduced the TypeError."""
+    r = compute_three_column_cost(
+        [{"cost_usd": {"model": None, "input": 0.4, "output": 0.6}, "valid_agent_action": True}]
+    )
+    assert r["total_billed_cost_usd"] == pytest.approx(1.0)
+    assert r["canonical_action_cost_usd"] == pytest.approx(1.0)
+    # input/output also None → 0.0, no crash
+    r2 = compute_three_column_cost(
+        [{"cost_usd": {"model": None, "input": None, "output": None}, "valid_agent_action": False}]
+    )
+    assert r2["total_billed_cost_usd"] == pytest.approx(0.0)
+
+
+def _min_episode(**overrides):
+    from p79.experiment.types import SCHEMA_VERSION_V2
+    from p79.experiment.schema_migrations.v2 import EPISODE_SUMMARY_V2_DEFAULTS
+    base = dict(EPISODE_SUMMARY_V2_DEFAULTS)
+    base.update({
+        "schema_version": SCHEMA_VERSION_V2, "run_id": "r", "condition_id": "c",
+        "benchmark": "vwa", "benchmark_site": "classifieds", "task_id": 1, "seed": 1,
+        "success": True, "score": 1.0, "steps": 1, "retries": 0,
+        "no_op_rate": 0.0, "page_unchanged_rate": 0.0, "total_latency_ms": 1.0,
+        "p95_step_latency_ms": 1.0, "total_tokens": 1, "total_model_cost_usd": 1.0,
+        "total_cost_usd": 1.0, "total_router_overhead_cost_usd": 0.0,
+        "total_router_overhead_ms": 0.0, "total_energy_kwh": None, "total_co2e_kg": None,
+        "escalation_count": 0, "trigger_distribution": {}, "benchmark_noise": False,
+        "benchmark_noise_category": None, "artifacts_dir": "x",
+        # require_present=True aggregator fields (B-1410 / B-1669) must be populated
+        # or aggregate_condition_metrics fails-loud on mixed-vintage.
+        "total_latency_minus_retry_ms": 1.0, "busy_wait_total_ms": 0.0,
+    })
+    base.update(overrides)
+    return base
+
+
+def test_p1_4_strict_guard_rejects_inf_in_new_cost_field():
+    """P1-4: new §1 cost columns must be in the aggregator strict numeric guard so
+    string/inf poisoning ("1e309"→inf) cannot reach paper §1. codex reproduced."""
+    from p79.experiment.metrics import aggregate_condition_metrics
+    with pytest.raises(ValueError, match="total_billed_cost_usd.*non-finite"):
+        aggregate_condition_metrics([_min_episode(total_billed_cost_usd=float("inf"))])
+    # None stays allowed (legacy vintage tri-state)
+    aggregate_condition_metrics([_min_episode(total_billed_cost_usd=None,
+                                              canonical_action_cost_usd=None,
+                                              protocol_wasted_cost_usd=None)])
+
+
+def test_p1_3_cost_coverage_partial_flag_on_mixed_cohort():
+    """P1-3: a cohort where SOME episodes populate cost cols and others don't (None)
+    must flag cost_coverage_partial=True (mixed-vintage red flag)."""
+    from p79.experiment.metrics import aggregate_condition_metrics
+    eps = [
+        _min_episode(total_billed_cost_usd=1.0, canonical_action_cost_usd=1.0, protocol_wasted_cost_usd=0.0),
+        _min_episode(total_billed_cost_usd=None, canonical_action_cost_usd=None, protocol_wasted_cost_usd=None),
+    ]
+    m = aggregate_condition_metrics(eps)
+    assert m["cost_coverage_partial"] is True
+    assert m["cost_column_coverage_count"] == 1
+    assert m["cost_column_coverage_rate"] == pytest.approx(0.5)
+
+
+def test_p1_1_partial_steps_rollup_recomputes_accounting():
+    """P1-1: exception-path partial rollup must recompute the 5 counters + 3 cost
+    from partial step flags (not emit steps>0 with counters=0/cost=None)."""
+    from p79.experiment.runner import ExperimentRunner
+    partial = [
+        {"observation_mode": "dom", "valid_agent_action": True, "consumes_agent_action_budget": True,
+         "cost_usd": {"model": 1.0}, "latency_ms": {"total": 10.0}, "tokens": {"total": 5},
+         "action": {"action_type": "click"}, "action_success": True, "page_changed": True, "retry_count": 0},
+        {"observation_mode": "dom", "valid_agent_action": False, "consumes_agent_action_budget": False,
+         "cost_usd": {"model": 0.5}, "latency_ms": {"total": 8.0}, "tokens": {"total": 3},
+         "action": {"action_type": "wait"}, "action_success": False, "page_changed": False, "retry_count": 0},
+    ]
+    agg = ExperimentRunner._aggregate_partial_steps(partial, "dom")
+    assert agg["agent_action_step_count"] == 1
+    assert agg["valid_action_step_count"] == 1
+    assert agg["model_call_attempt_count"] == 2
+    assert agg["parse_error_injected_wait_count"] == 1
+    # additive invariant on the partial rollup
+    assert agg["canonical_action_cost_usd"] + agg["protocol_wasted_cost_usd"] == pytest.approx(
+        agg["total_billed_cost_usd"]
+    )
+    assert agg["canonical_action_cost_usd"] == pytest.approx(1.0)  # only valid step
+
+
+def test_p2_5_max_model_attempts_clamped_above_budget_floor():
+    """P2-5: an explicit low max_model_attempts override must be clamped to ≥
+    max_agent_actions + max_total_parse_errors (else safety cuts before budget)."""
+    from p79.experiment.config import normalize_config
+    rt = normalize_config({"runtime": {"max_steps": 30, "max_model_attempts": 5}})["runtime"]
+    assert rt["max_model_attempts"] >= rt["max_agent_actions"] + rt["max_total_parse_errors"]
+    assert rt["max_model_attempts"] == 35  # 30 + 5 clamp floor

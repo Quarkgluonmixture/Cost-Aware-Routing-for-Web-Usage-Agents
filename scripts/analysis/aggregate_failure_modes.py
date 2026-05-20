@@ -79,6 +79,11 @@ PAPER_TAXONOMY = {
         "fail_parse_error",
         "fail_summary_error",
         "fail_benchmark_noise",
+        # P1-5 (/stress accounting audit 2026-05-21, B-1782): off-site goto blocked
+        # by the VWA-origin whitelist — a model-emitted off-policy action, sibling
+        # of parse_error (protocol failure). Member of existing bucket → no 5+2
+        # taxonomy-count drift.
+        "fail_policy_blocked_offsite",
     },
 }
 

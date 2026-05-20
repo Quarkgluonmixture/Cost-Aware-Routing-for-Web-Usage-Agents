@@ -7308,8 +7308,22 @@ Implements the locked 12-point canonical decision §244 (NOT a /stress-discovere
 
 **Files**: `types.py` (3 step flags + 8 episode fields × {dataclass, PAPER_GRADE_*_OPTIONAL_KEYS, _*_OPTIONAL_FIELD_TYPES}) · `schema_migrations/v2.py` (DEFAULTS) · `config.py` (4 budget knobs) · `runner/main.py` (__init__ budget reads + two-budget loop + classification + step flags + episode rollup) · `metrics.py` (`classify_step_accounting` + `compute_three_column_cost` + `_avg_or_none` + 8 condition-avg fields) · `aggregate_cross_site.py` (per-cell carry). Full suite **1192 passed / 10 skipped / 0 failed**.
 
-**Disclosure debt (#74 docs)**: paper §3.5 must disclose (a) the two-budget accounting + safety caps as a P79-GRL reliability layer (upstream has no parse-error caps); (b) the three-column cost estimand (canonical = paper §1 numerator); (c) off-site goto VWA-domain constraint (B-1782 resolution). Pre-reset data has these fields = None/0 (non-canonical per §244 #2, archive-only).
+**Disclosure debt (#74 docs)**: paper §3.5 must disclose (a) the two-budget accounting + safety caps as a P79-GRL reliability layer (upstream has no parse-error caps); (b) the three-column cost estimand — **§1 PRIMARY = `total_billed_cost` (Q1=A, /stress audit 2026-05-21); `canonical` + `protocol_wasted` = §4 efficiency decomposition**; (c) off-site goto VWA-domain constraint (B-1782 resolution); (d) parse-cap sensitivity (cap 5→10) + `parse_error_rate` / `model_call_attempt` reporting to defuse the gemini "free-look / canonical-flatters-B0" attack. Pre-reset data has these fields = None/0 (non-canonical per §244 #2, archive-only).
 
-**Chronicle cross-link**: 实验笔记 §248.
+**Chronicle cross-link**: 实验笔记 §248 (+ §249 /stress audit).
+
+---
+
+## Protocol Reset accounting — /stress cross-AI audit (3-AI A+B+C) → B-1786 (2026-05-21)
+
+Pre-fire /stress on the §244 accounting (B-1784/B-1785) + action-set (#76). 3-AI: Claude Mode A (8 findings) + codex Mode B (PASS 264s, **4 real code bugs Claude missed**, Phase 4 3/3 + 1 reproduced TypeError) + gemini Mode C (PASS 46s, **estimand challenge to §244**, Phase 4 2/2). Net: §244 core mechanism (two-budget = upstream agent-budget alignment) **survived**; one framing choice overturned (canonical-as-§1-hero → total_billed-as-§1) + 4 aggregation/robustness bugs fixed. User scope: Q1=A (keep §244 code, §1 framing → total_billed primary, single-budget → advisor, NOT this round) / Q2=A (fix P1 before Fire-6) / Q3=A (goto stays two-budget + disclose).
+
+| ID | Source | What it fixes | Fix |
+|---|---|---|---|
+| **B-1786** (/stress audit 2026-05-21, A+B+C) | 3-AI pre-fire | **P1-1** exception-path rollup omitted 5 counters + 3 cost → crash episode silent counter drift (steps>0, counters=0, cost=None). **P1-2** published `cross_site_aggregation.csv` + `cross_site_summary.json` DROPPED the 8 new fields → paper §1 estimand unauditable from artifact (carry existed only in intermediate list). **P1-3** `_avg_or_none` mixed-cohort silent bias (codex reproduced avg=1.0). **P1-4** new §1 cost fields absent from `_HERO_NUMERIC_FIELDS` strict guard → "1e309"→inf poisoning reopened (codex reproduced). **P1-5** `policy_blocked_offsite` had no reason_bucket→PAPER_TAXONOMY path → invisible in paper §5. **P1-6** cost_unit_basis "MIXED BASIS" label but still plotted one y-axis. **P2-1** `compute_three_column_cost` crashed on `model:None` (codex reproduced TypeError). **P2-4** resume_fingerprint missing budget knobs. **P2-5** max_model_attempts explicit-override footgun. **P2-2** counts_as_runner_iteration dead flag. | P1-1 `_aggregate_partial_steps` recompute counters + `compute_three_column_cost`. P1-2 `aggregation_rows` + `per_site` carry 8 fields + coverage + parse_error_rate (§1 primary = total_billed). P1-3 `_avg_or_none` + `cost_column_coverage_count/rate` + `cost_coverage_partial` flag. P1-4 8 fields → `_HERO_NUMERIC_FIELDS` (None tri-state OK). P1-5 `analyze_reason_diagnostics` policy_blocked_offsite→`fail_policy_blocked_offsite`→PAPER_TAXONOMY error/noise. P1-6 suppress absolute cost plot on mixed basis + plot total_billed when single-basis. P2-1 `_model_cost` None→input+output fallback. P2-4 fingerprint += 4 budget knobs. P2-5 clamp max_model_attempts ≥ budget+cap. P2-2 mark counts_as_runner_iteration record-only (rollup uses len()). +parse_error_rate §4 field. tests/test_accounting_reset.py +5 regression (now 22). Full suite **1197 passed / 0 failed**. |
+
+**P1-7 (differential censoring, gemini Mode C)** + the §244 estimand challenge (P0-1) → NOT code: paper §3.5 disclosure + parse-cap sensitivity sweep (#74 docs); single-budget question → advisor (not blocking Fire-6).
+
+**Chronicle cross-link**: 实验笔记 §249.
 
 ---

@@ -26,6 +26,16 @@ _HERO_NUMERIC_FIELDS = frozenset({
     "escalation_count",
     "busy_wait_total_ms",
     "checklist_completion_rate",
+    # P1-4 (/stress accounting audit 2026-05-21, codex Mode B OOB): the Protocol
+    # Reset two-budget counters + three-column cost are paper §1 estimand inputs
+    # but were absent from the strict guard → string/inf poisoning ("1e309"→inf)
+    # reopened for the new §1 cost. None is allowed (the 3 cost cols are
+    # Optional legacy-vintage) — the loop above skips None at line ~594; when a
+    # value IS present it must be finite numeric.
+    "agent_action_step_count", "valid_action_step_count",
+    "model_call_attempt_count", "runner_iteration_count",
+    "parse_error_injected_wait_count",
+    "total_billed_cost_usd", "canonical_action_cost_usd", "protocol_wasted_cost_usd",
 })
 
 
@@ -451,8 +461,15 @@ def compute_three_column_cost(step_records: List[Dict[str, Any]]) -> Dict[str, f
     stratify by `cost_unit_basis` before pooling.
     """
     def _model_cost(s: Dict[str, Any]) -> float:
+        # P2-1 (/stress accounting audit 2026-05-21, codex Mode B): treat an
+        # explicit `model: None` like a missing key (fall back to input+output);
+        # `dict.get("model", fb)` only returns `fb` when the KEY is absent, so a
+        # migrated/default-filled row with `model=None` crashed `float(None)`.
         c = s.get("cost_usd") or {}
-        return float(c.get("model", float(c.get("input", 0.0)) + float(c.get("output", 0.0))))
+        m = c.get("model")
+        if m is None:
+            m = float(c.get("input") or 0.0) + float(c.get("output") or 0.0)
+        return float(m)
 
     billed = sum(_model_cost(s) for s in step_records)
     canonical = sum(_model_cost(s) for s in step_records if s.get("valid_agent_action") is True)
@@ -655,6 +672,10 @@ def aggregate_condition_metrics(
             "avg_total_billed_cost_usd": None,
             "avg_canonical_action_cost_usd": None,
             "avg_protocol_wasted_cost_usd": None,
+            "cost_column_coverage_count": 0,
+            "cost_column_coverage_rate": 0.0,
+            "cost_coverage_partial": False,
+            "parse_error_rate": 0.0,
             "avg_router_overhead_cost_usd": 0.0,
             "avg_router_overhead_ms": 0.0,
             "avg_obs_prepare_cost_usd": 0.0,
@@ -741,6 +762,15 @@ def aggregate_condition_metrics(
         vals = [float(x[key]) for x in episode_summaries if key in x and x[key] is not None]
         return float(statistics.mean(vals)) if vals else None
 
+    # P1-3 (/stress accounting audit 2026-05-21): cost-column coverage + parse-rate
+    # denominators. canonical_action_cost_usd is the representative co-stamped cost
+    # column (runner stamps all 3 together or none).
+    _cost_coverage_count = sum(
+        1 for x in episode_summaries if x.get("canonical_action_cost_usd") is not None
+    )
+    _total_model_calls = sum(
+        int(x.get("model_call_attempt_count") or 0) for x in episode_summaries
+    )
     energy_vals = [x.get("total_energy_kwh") for x in episode_summaries if x.get("total_energy_kwh") is not None]
     co2_vals = [x.get("total_co2e_kg") for x in episode_summaries if x.get("total_co2e_kg") is not None]
     checklist_completion_vals = [
@@ -919,6 +949,27 @@ def aggregate_condition_metrics(
         "avg_total_billed_cost_usd": _avg_or_none("total_billed_cost_usd"),
         "avg_canonical_action_cost_usd": _avg_or_none("canonical_action_cost_usd"),
         "avg_protocol_wasted_cost_usd": _avg_or_none("protocol_wasted_cost_usd"),
+        # P1-3 (/stress accounting audit 2026-05-21, codex Mode B + gemini Mode C):
+        # cost-column coverage transparency. `_avg_or_none` silently averages over
+        # the populated subset, so a mixed-vintage cohort would report a biased mean
+        # if missingness correlates with difficulty. Emit coverage so downstream
+        # (cross-site / paper §1) can None-guard or fail-loud. `cost_coverage_partial`
+        # = True iff SOME but not ALL episodes populate the 3 (co-stamped) cost cols
+        # — a red flag that pre-reset + post-reset episodes were mixed (§244 #2 says
+        # they must not be; resume_fingerprint B-485 should quarantine, this is the
+        # belt-and-suspenders detector).
+        "cost_column_coverage_count": _cost_coverage_count,
+        "cost_column_coverage_rate": (
+            _cost_coverage_count / len(episode_summaries) if episode_summaries else 0.0
+        ),
+        "cost_coverage_partial": bool(0 < _cost_coverage_count < len(episode_summaries)),
+        # parse_error_rate (§4 disclosure, user directive 2026-05-21): proper rate
+        # = Σ injected-wait sinks / Σ model calls across the cell (NOT mean-of-ratios).
+        # Exposes the free-look surface gemini Mode C flagged (B0 parse-error tolerance).
+        "parse_error_rate": (
+            (sum(int(x.get("parse_error_injected_wait_count") or 0) for x in episode_summaries)
+             / _total_model_calls) if _total_model_calls > 0 else 0.0
+        ),
         "avg_router_overhead_cost_usd": _avg("total_router_overhead_cost_usd"),
         # End-to-end router overhead per episode (ms). Reported for diagnostics
         # only — net_saving_latency does NOT subtract this (already in routed total).

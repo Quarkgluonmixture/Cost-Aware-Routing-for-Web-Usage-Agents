@@ -320,8 +320,12 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             # accounting + three-column cost per cell. Cost columns are already
             # None-guarded upstream (metrics._avg_or_none → None on legacy vintage
             # = "cannot compute"); carried directly. Cross-baseline pooling MUST
-            # stratify by `cost_unit_basis` (B0 API-USD vs B1/B2 local) — same rule
-            # as `avg_cost_usd` above. Paper §1 cost estimand = canonical_action.
+            # stratify by `cost_unit_basis` (B0 API-USD vs B1/B2 local).
+            # /stress accounting audit 2026-05-21 (Q1=A): paper §1 PRIMARY cost =
+            # `total_billed` (honest "what you pay", hardest to attack);
+            # `canonical` + `protocol_wasted` are §4 efficiency decomposition.
+            # `parse_error_rate` + `model_call_attempt` exposed to defuse the
+            # gemini Mode C "canonical-only flatters B0 / free-look" attack.
             "avg_agent_action_step_count": cond.get("avg_agent_action_step_count"),
             "avg_valid_action_step_count": cond.get("avg_valid_action_step_count"),
             "avg_model_call_attempt_count": cond.get("avg_model_call_attempt_count"),
@@ -330,6 +334,11 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             "avg_total_billed_cost_usd": cond.get("avg_total_billed_cost_usd"),
             "avg_canonical_action_cost_usd": cond.get("avg_canonical_action_cost_usd"),
             "avg_protocol_wasted_cost_usd": cond.get("avg_protocol_wasted_cost_usd"),
+            # P1-3 coverage transparency + P1-7/§4 parse-error-rate (audit 2026-05-21)
+            "cost_column_coverage_count": cond.get("cost_column_coverage_count"),
+            "cost_column_coverage_rate": cond.get("cost_column_coverage_rate"),
+            "cost_coverage_partial": cond.get("cost_coverage_partial"),
+            "parse_error_rate": cond.get("parse_error_rate"),
             "episodes": int(cond.get("episodes", 0)),
             "is_stub": is_stub,
         })
@@ -491,6 +500,23 @@ def main() -> None:
             # latency carried as sensitivity column per §3.5.1 B-1402 estimand.
             "avg_total_latency_ms": r.get("avg_total_latency_ms"),
             "avg_total_latency_minus_retry_ms": r.get("avg_total_latency_minus_retry_ms"),
+            # P1-2 (/stress accounting audit 2026-05-21, codex Mode B): the Protocol
+            # Reset two-budget counters + three-column cost were carried per-cell in
+            # `all_rows` but DROPPED here → never reached the published CSV, so the
+            # paper §1 cost estimand was unauditable from the artifact. §1 PRIMARY
+            # cost = `avg_total_billed_cost_usd` (Q1=A); canonical + wasted = §4.
+            "avg_total_billed_cost_usd": r.get("avg_total_billed_cost_usd"),
+            "avg_canonical_action_cost_usd": r.get("avg_canonical_action_cost_usd"),
+            "avg_protocol_wasted_cost_usd": r.get("avg_protocol_wasted_cost_usd"),
+            "avg_agent_action_step_count": r.get("avg_agent_action_step_count"),
+            "avg_valid_action_step_count": r.get("avg_valid_action_step_count"),
+            "avg_model_call_attempt_count": r.get("avg_model_call_attempt_count"),
+            "avg_runner_iteration_count": r.get("avg_runner_iteration_count"),
+            "avg_parse_error_injected_wait_count": r.get("avg_parse_error_injected_wait_count"),
+            "parse_error_rate": r.get("parse_error_rate"),
+            "cost_column_coverage_count": r.get("cost_column_coverage_count"),
+            "cost_column_coverage_rate": r.get("cost_column_coverage_rate"),
+            "cost_coverage_partial": r.get("cost_coverage_partial"),
             "episodes": r["episodes"],
             "is_stub": r["is_stub"],
         })
@@ -518,30 +544,38 @@ def main() -> None:
     _bases = sorted({r.get("cost_unit_basis", "unknown") for r in aggregation_rows})
     _bases = [b for b in _bases if b not in ("unknown", "")]
     _mixed_basis = len(_bases) > 1
-    _basis_label = "MIXED BASIS — DO NOT POOL" if _mixed_basis else (_bases[0] if _bases else "unknown")
-    _plot_grouped_bar(
-        data=aggregation_rows,
-        x_key="site",
-        group_key="mode",
-        value_key="avg_cost_usd",
-        title=(
-            f"{args.b1_label} Phase 1 — Avg Cost (USD) by Site × Mode  "
-            f"[cost_unit_basis = {_basis_label}]"
-        ),
-        ylabel=(
-            f"Avg Cost per Episode (USD)  ⚠ basis = {_basis_label}"
-            if _mixed_basis
-            else f"Avg Cost per Episode (USD, basis = {_basis_label})"
-        ),
-        out_path=out_dir / "cross_site_cost_comparison.png",
-    )
+    _basis_label = _bases[0] if (_bases and not _mixed_basis) else "unknown"
+    # P1-6 (/stress accounting audit 2026-05-21, codex Mode B): a "MIXED BASIS"
+    # *label* is not stratification — pooling B0 API-USD with B1/B2 electricity-
+    # derived USD on one y-axis is a unit-collision artifact (~1000×) regardless
+    # of the warning text. SUPPRESS the absolute-cost plot when bases mix (emit a
+    # message + the per-basis breakdown is recoverable from the CSV which carries
+    # cost_unit_basis per row). Single-basis runs plot normally.
     if _mixed_basis:
         print(
-            "[B-1409 cost-basis stratification WARNING] cross_site_cost_comparison.png "
-            f"pools rows across {len(_bases)} distinct cost_unit_basis values: {_bases}. "
-            "The output PNG/CSV labels the mixed basis explicitly, but reviewers "
-            "consuming the cross-site cost figure MUST stratify by basis before any "
-            "scientific comparison. See paper §3.5.1 + B-1409 /stress A2.7 P1-8-B*."
+            "[P1-6 cost-basis stratification] SUPPRESSED cross_site_cost_comparison.png "
+            f"— rows span {len(_bases)} distinct cost_unit_basis values: {_bases}. "
+            "An absolute-cost plot pooling these is a unit-collision artifact (B0 "
+            "api_usd vs B1/B2 electricity_usd_derived). Stratify by basis from "
+            "cross_site_aggregation.csv (per-row cost_unit_basis) before any cost "
+            "figure. See paper §3.5.1 + B-1409 + /stress audit 2026-05-21 P1-6."
+        )
+    else:
+        _plot_grouped_bar(
+            data=aggregation_rows,
+            x_key="site",
+            group_key="mode",
+            # Q1=A: §1 primary cost = total_billed; fall back to legacy avg_cost_usd
+            # only if total_billed absent (legacy vintage).
+            value_key="avg_total_billed_cost_usd" if any(
+                r.get("avg_total_billed_cost_usd") is not None for r in aggregation_rows
+            ) else "avg_cost_usd",
+            title=(
+                f"{args.b1_label} Phase 1 — Avg Billed Cost (USD) by Site × Mode  "
+                f"[cost_unit_basis = {_basis_label}]"
+            ),
+            ylabel=f"Avg Billed Cost per Episode (USD, basis = {_basis_label})",
+            out_path=out_dir / "cross_site_cost_comparison.png",
         )
 
     # --- cross_site_summary.json ---
@@ -564,6 +598,16 @@ def main() -> None:
                     "adjusted_sr": next((r.get("adjusted_sr") for r in baseline_rows if r["mode"] == m), None),
                     "avg_cost_usd": next((r["avg_cost_usd"] for r in baseline_rows if r["mode"] == m), None),
                     "avg_steps": next((r["avg_steps"] for r in baseline_rows if r["mode"] == m), None),
+                    # P1-2 (/stress accounting audit 2026-05-21): Protocol Reset
+                    # estimand in the published JSON. §1 primary = total_billed (Q1=A).
+                    "avg_total_billed_cost_usd": next((r.get("avg_total_billed_cost_usd") for r in baseline_rows if r["mode"] == m), None),
+                    "avg_canonical_action_cost_usd": next((r.get("avg_canonical_action_cost_usd") for r in baseline_rows if r["mode"] == m), None),
+                    "avg_protocol_wasted_cost_usd": next((r.get("avg_protocol_wasted_cost_usd") for r in baseline_rows if r["mode"] == m), None),
+                    "avg_valid_action_step_count": next((r.get("avg_valid_action_step_count") for r in baseline_rows if r["mode"] == m), None),
+                    "avg_model_call_attempt_count": next((r.get("avg_model_call_attempt_count") for r in baseline_rows if r["mode"] == m), None),
+                    "parse_error_rate": next((r.get("parse_error_rate") for r in baseline_rows if r["mode"] == m), None),
+                    "cost_unit_basis": next((r.get("cost_unit_basis") for r in baseline_rows if r["mode"] == m), None),
+                    "cost_coverage_partial": next((r.get("cost_coverage_partial") for r in baseline_rows if r["mode"] == m), None),
                 }
                 for m in MODES
                 if any(r["mode"] == m for r in baseline_rows)

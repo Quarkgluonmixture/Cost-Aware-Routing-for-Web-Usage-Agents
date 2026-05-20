@@ -580,6 +580,17 @@ class ExperimentRunner:
                 "total_router_overhead_cost_usd": 0.0,
                 "total_router_overhead_ms": 0.0,
                 "escalation_count": 0,
+                # P1-1 (/stress accounting audit 2026-05-21): two-budget counters +
+                # three-column cost for the crashed-before-any-step case (0 steps ⇒
+                # 0 cost is the honest value, mirrors compute_three_column_cost([])).
+                "agent_action_step_count": 0,
+                "valid_action_step_count": 0,
+                "model_call_attempt_count": 0,
+                "runner_iteration_count": 0,
+                "parse_error_injected_wait_count": 0,
+                "total_billed_cost_usd": 0.0,
+                "canonical_action_cost_usd": 0.0,
+                "protocol_wasted_cost_usd": 0.0,
             }
         from p79.experiment.metrics import p95 as _p95
         n = len(partial_steps)
@@ -632,6 +643,20 @@ class ExperimentRunner:
                 "condition_observation_mode — escalation_count stays 0 (legacy fallback)"
             )
             escalation_count = 0
+        # P1-1 (/stress accounting audit 2026-05-21, codex Mode B): recompute the
+        # Protocol Reset two-budget counters + three-column cost from partial step
+        # flags so a mid-episode crash does NOT emit steps>0 / total_model_cost>0
+        # alongside counters=0 / cost=None (silent counter drift on the exact
+        # failure path the audit cares about). runner_iteration_count = n here
+        # (busy-waits aren't persisted as JSONL steps so the partial reader cannot
+        # recover them; n is the recoverable floor).
+        partial_agent_action = sum(1 for s in partial_steps if s.get("consumes_agent_action_budget") is True)
+        partial_valid_action = sum(1 for s in partial_steps if s.get("valid_agent_action") is True)
+        partial_parse_error_sink = sum(
+            1 for s in partial_steps
+            if s.get("valid_agent_action") is False and s.get("consumes_agent_action_budget") is False
+        )
+        partial_3col = compute_three_column_cost(partial_steps)
         return {
             "steps": n,
             "retries": retries,
@@ -646,6 +671,14 @@ class ExperimentRunner:
             "total_router_overhead_cost_usd": total_router_overhead_cost,
             "total_router_overhead_ms": total_router_overhead_ms,
             "escalation_count": escalation_count,
+            "agent_action_step_count": partial_agent_action,
+            "valid_action_step_count": partial_valid_action,
+            "model_call_attempt_count": n,
+            "runner_iteration_count": n,
+            "parse_error_injected_wait_count": partial_parse_error_sink,
+            "total_billed_cost_usd": partial_3col["total_billed_cost_usd"],
+            "canonical_action_cost_usd": partial_3col["canonical_action_cost_usd"],
+            "protocol_wasted_cost_usd": partial_3col["protocol_wasted_cost_usd"],
         }
 
     @staticmethod
@@ -823,6 +856,15 @@ class ExperimentRunner:
             "paper_grade_env": _pg_env,
             "observation_mode": condition.observation_mode,
             "max_steps": int(cfg.get("runtime", {}).get("max_steps", 40)),
+            # P2-4 (/stress accounting audit 2026-05-21): Protocol Reset two-budget
+            # knobs are experiment-identity-affecting (changing the agent-action
+            # budget or parse caps = a different experiment). max_steps alone did
+            # NOT capture an explicit max_agent_actions override that diverges from
+            # max_steps → stale-resume could mix episodes run under different budgets.
+            "max_agent_actions": int(cfg.get("runtime", {}).get("max_agent_actions", cfg.get("runtime", {}).get("max_steps", 40))),
+            "max_model_attempts": cfg.get("runtime", {}).get("max_model_attempts"),
+            "max_consecutive_parse_errors": cfg.get("runtime", {}).get("max_consecutive_parse_errors"),
+            "max_total_parse_errors": cfg.get("runtime", {}).get("max_total_parse_errors"),
         }
         # transformers version — soft import; absent = best-effort sentinel
         try:
@@ -1749,6 +1791,17 @@ class ExperimentRunner:
                 total_energy_kwh=None,
                 total_co2e_kg=None,
                 escalation_count=_agg["escalation_count"],
+                # P1-1 (/stress accounting audit 2026-05-21, codex Mode B): two-budget
+                # counters + three-column cost on the exception path so a crash episode
+                # carries consistent accounting (not steps>0 with counters=0/cost=None).
+                agent_action_step_count=_agg["agent_action_step_count"],
+                valid_action_step_count=_agg["valid_action_step_count"],
+                model_call_attempt_count=_agg["model_call_attempt_count"],
+                runner_iteration_count=_agg["runner_iteration_count"],
+                parse_error_injected_wait_count=_agg["parse_error_injected_wait_count"],
+                total_billed_cost_usd=_agg["total_billed_cost_usd"],
+                canonical_action_cost_usd=_agg["canonical_action_cost_usd"],
+                protocol_wasted_cost_usd=_agg["protocol_wasted_cost_usd"],
                 trigger_distribution={},
                 benchmark_noise=noise,
                 benchmark_noise_category=noise_cat,
