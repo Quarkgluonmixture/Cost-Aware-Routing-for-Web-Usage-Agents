@@ -7263,3 +7263,34 @@ rc=1  → Fire-6 cls launch HALTS until task 4 + task 75 matched-temporal-contex
 **Chronicle cross-link**: 实验笔记 §241.
 
 ---
+
+## /stress GRL boundary audit — "reliability not policy" sweep (2026-05-20, B-1776~B-178x)
+
+User-framed audit: GRL ("Generic Reliability Layer") is the contribution layer
+(evaluator isolation / timeout recovery / Gate 8 registry / fail-closed
+quarantine / telemetry+provenance+SBOM / VWA evaluator fixes / wrapper primitives
+/ backend serialization adapters) bounded by **"make execution reliable, NOT
+change task policy"** — GRL may not silently change the SR denominator, swap the
+agent's action, let diagnostic replay leak into a canonical fire, or write
+telemetry that analysis never consumes. 3-AI: Claude Mode A + codex Mode B
+(PASS, Phase 4 3/3 real). Verdict: core (eval/wrapper/submodule/fail-closed)
+holds the boundary; 2 P0 + 4 P1 cross it. User gated Fire-6 on the 2 P0
+(Q1=A HOLD-and-fix-both; Q2=A watchdog no denominator surgery; Q3/Q4/Q5=A).
+
+| Bug | Catch | Diagnosis | Fix |
+|---|---|---|---|
+| **B-1776** P0-1 (Claude+codex, Chunk A) | /stress A+B 2-AI overlap | No `paper_grade XOR diagnostic_replay` guard (siblings exist for `diagnostic_controls.enabled` + `baseline_retry_on_no_progress`). A leaked `P79_DIAGNOSTIC_REPLAY=1` → canonical fire silently routes to `results/diagnostic_replay/` + every episode `sr_excluded=True` + M1 abort suppressed (`runner/main.py:1844 and not self.diagnostic_replay`) → zero-canonical-data + no fail-closed guard, operator unaware. | `f7bc44f` (Chunk A): runner `__init__` fail-loud at TOP (before any setup) if `paper_grade and diagnostic_replay`; `queue_phase1_paper_grade.sh` mirror env reject after `export P79_PAPER_GRADE=1`. tests/test_grl_audit_2026_05_20 (2). |
+| **B-1777** P0-2 (codex Mode B OOB, Chunk A) | /stress Mode B | `experiment_watchdog.py` auto-clean deletes+retries `error(code_bug)`/`error(noise)` episodes (`_deletion_intent_rename` + "treat as never happened") NOT gated on paper_grade → denominator surgery: a failed attempt erased + replaced by a later success; mode/site/backend-correlated (B0 proxy transient errors > B1/B2 local) → asymmetric SR inflation. Challenges the standing "auto-clean = paper-grade 100% pure" framing (memory `reference_watchdog_protocol`). | `f7bc44f`: extracted decision to module-level pure `_can_auto_retry` with INVARIANT `paper_grade ⇒ False`; PAPER-GRADE-PRESERVED branch (preserve + alert; runner M1 + Gate 8 hold halt authority). auto-clean stays for dev. tests (4 invariant). **Memory `reference_watchdog_protocol` framing to update.** |
+| **B-1778** P1-3 (codex Mode B OOB, Chunk B) | /stress Mode B | `proxy_api_agent.py:823` — under paper_grade an EMITTED-but-invalid B0 tool_call (malformed args OR validate_action reject → `action=None`) silently fell through to Path-2 text parse, which could execute a DIFFERENT action from `content` → changes B0 action provenance + masks the tool-call failure rate (cross-baseline asymmetry: B0=native tool_calls per B-991, B1/B2=text JSON). | `dbb1bda` (Chunk B): paper_grade emitted-invalid → protocol failure (invalid no-op, valid=False), NO text fallback; dev keeps lenient fallback. New 4-place step fields `action_source`/`tool_call_valid`/`text_fallback_used` + persists the B-1588 emission trio (was meta-only, dropped at JSONL boundary). tests/test_proxy_openai_transport (3). |
+| **B-1779** P1-2 (Claude Mode A OOB, Chunk B) | /stress Mode A | `quarantine_registry.py` resolution `classified_via` was a flat constant `matched_temporal_context_diagnostic_replay` the gate tautologically checked, applied to BOTH profiles. The screenshot class CANNOT be matched-temporal-reproduced (code self-admits "load-dependent timeout cannot be forced in a small replay") → label overclaimed evidence (OSF/prereg honesty). Prior audit B-1770~B-1773 hardened commit/episode binding but missed label honesty. | `dbb1bda`: per-profile `_profile_resolution_via` — eval_goto keeps `matched_temporal_context_diagnostic_replay`, screenshot requires `architectural_containment_c1b`; `is_error_class_resolved` rejects the old mislabel (the exact registry state for cls-75) → forces honest re-resolution. tests/test_c3a_resolution (3). |
+| **B-1780** P1-1 (Claude Mode A OOB, Chunk C — pending) | /stress Mode A, **B-1773 follow-up** | B-1773 added `screenshot_timeout_recovered`/`_count` fields "so paper §4 can disclose + exclude the ~+30s latency" but only added the TELEMETRY — ZERO aggregators consume the count, and `total_minus_retry` (`runner/main.py:2979`) subtracts only `network_retry_wait_ms`, NOT the recovered +30s. §4:246 claims "latency comparability preserved" but the mechanism is unwired (write-only field). Also no per-cell `screenshot_timeout_recovered_rate` sensitivity column (asymmetric vs B-486 `quarantine_rate` rigor). | Chunk C (pending, Q3=A): two-layer latency (raw vs canonical-excl-recovered-artifact-timeout) + recovered_ms field + rate sensitivity column + §4 prose. |
+| **B-1781** P1-4 (codex Mode B, Chunk D — pending) | /stress Mode B (measured) | `locked_versions.md:18` p79-patches↔upstream diff SHA-256 = `20921a57…` but `git diff 89f5af2..HEAD \| sha256sum` measures `894e5afa…` (stale) — B-1774 synced the tree-chain across 6 locations but the diff-SHA witness was NOT in that set, and no gate enforces it → provenance theater. | Chunk D (pending, Q5/auto-default A): retire the stale diff-SHA row OR re-lock it; tree-chain stays the sole enforced witness. |
+
+**Note**: P2-1 (eval-context classification inspected-not-empirically-verified) / P2-2 (C3a auto-resolution erodes "investigation gate, NOT auto skip-list") / P2-3 (screenshot fields not in `PAPER_GRADE_*_OPTIONAL_KEYS` — compounds B-1780 write-only) / P2-4 (`_lib_paper_grade_gates.sh:856` shared G8 helper fail-OPEN on missing registry) → Chunk D, B-1782+.
+
+**Cross-doc**: this audit isolates the SAME GRL-layer as the workshop subpaper (`workshop_subpaper_plan.md` Track A walk-up locator dispatch + Track B judge polarity) — the boundary findings here strengthen that paper's "GRL is a clean reliability layer" foundation against the exact reviewer attack. **cls-75 screenshot resolution** (catalog above line "task 75 evidence-resolved … producer-bound to 4009506") is INVALIDATED by B-1779 relabel until re-resolved with `architectural_containment_c1b`. **A100-side operator step** (the evidence episode lives in gitignored `results/diagnostic_replay/` on the A100 paper-grade host, NOT on the DGX dev session): post-B-1779 the `quarantine_registry.py resolve` CLI auto-writes the honest screenshot label, so the operator re-runs the same resolve command (or re-fires the diagnostic replay) before Fire-6. Fire-6 is HELD (Q1=A) so no urgency.
+
+**Commits**: `f7bc44f` (Chunk A: B-1776+B-1777) · `dbb1bda` (Chunk B: B-1778+B-1779). Chunks C+D pending.
+**Chronicle cross-link**: 实验笔记 §242 (pending).
+
+---
