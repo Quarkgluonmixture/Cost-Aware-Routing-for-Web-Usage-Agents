@@ -5,6 +5,7 @@ import logging
 import os
 import importlib.util
 import time
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -19,6 +20,19 @@ from p79.envs.vwa_wrapper import P79Observation, VWAWrapper
 class EpisodeEvalResult:
     score: float
     error: Optional[str] = None
+    # Fire-6 RCA Stage C1 (/stress 2026-05-20, user-approved L2 program_html
+    # isolation + timeout instrumentation). Evaluator-context provenance so
+    # paper §3.5 can disclose which episodes used isolated-evaluator-context
+    # navigation vs agent-page navigation, and forensic can correlate
+    # eval Page.goto latency / timeout with the 3-fire stateful-edit pattern.
+    #   eval_context_mode ∈ {agent_page, isolated_program_html_context,
+    #                        no_browser_required}
+    eval_context_mode: Optional[str] = None
+    eval_isolated_context_used: Optional[bool] = None
+    eval_goto_latency_ms: Optional[float] = None
+    eval_goto_timeout: Optional[bool] = None
+    eval_source_agent_url: Optional[str] = None
+    eval_target_url: Optional[str] = None
 
 
 # B-544 (/stress A1.5b Phase 2 P0-4-B codex OOB, 2026-05-17): paper-grade
@@ -320,6 +334,128 @@ class VwaEvaluator:
                     "Fix transformers / VRAM / dtype + restart runner. See B-785."
                 ) from exc
 
+    @staticmethod
+    def _dump_eval_timeout_forensic(
+        *,
+        config_file: str,
+        eval_context_mode: str,
+        eval_isolated_context_used: bool,
+        eval_source_agent_url: Optional[str],
+        eval_target_url: Optional[str],
+        attempt: int,
+        exc: Exception,
+    ) -> None:
+        """Fire-6 RCA Stage C1b: capture mid-eval timeout forensic so even if
+        the C1 isolation fix does not fully eliminate the 3-fire pattern, the
+        next timeout has hard mid-fire evidence (A100 load + context mode +
+        URLs + error). Best-effort: never raises (forensic must not mask the
+        original eval exception). Writes one JSON per timeout to
+        logs/eval_timeout_forensic/.
+        """
+        try:
+            import os
+            import platform
+            from pathlib import Path as _Path
+
+            repo_root = _Path(__file__).resolve().parent.parent.parent
+            out_dir = repo_root / "logs" / "eval_timeout_forensic"
+            out_dir.mkdir(parents=True, exist_ok=True)
+
+            # Derive task id from config_file name (e.g. .../test_classifieds/4.json)
+            task_stem = _Path(config_file).stem
+            ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+            loadavg = None
+            try:
+                loadavg = os.getloadavg()  # (1m, 5m, 15m)
+            except (OSError, AttributeError):
+                pass
+
+            forensic = {
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "config_file": str(config_file),
+                "task_stem": task_stem,
+                "hostname": platform.node(),
+                "eval_context_mode": eval_context_mode,
+                "eval_isolated_context_used": eval_isolated_context_used,
+                "eval_source_agent_url": eval_source_agent_url,
+                "eval_target_url": eval_target_url,
+                "attempt": attempt,
+                "loadavg_1m_5m_15m": loadavg,
+                "error_class": type(exc).__name__,
+                "error_head": str(exc).splitlines()[0][:300] if str(exc) else "",
+            }
+            out_path = out_dir / f"eval_timeout_{task_stem}_{ts}.json"
+            with out_path.open("w", encoding="utf-8") as f:
+                json.dump(forensic, f, indent=2, ensure_ascii=False)
+            logger.warning(
+                "Eval timeout forensic (C1b) captured → %s (mode=%s isolated=%s loadavg_1m=%s)",
+                out_path, eval_context_mode, eval_isolated_context_used,
+                loadavg[0] if loadavg else "n/a",
+            )
+        except Exception as _forensic_exc:
+            logger.warning(
+                "Eval timeout forensic (C1b) capture failed (non-fatal): %s",
+                _forensic_exc,
+            )
+
+    @staticmethod
+    def _classify_eval_context(config_file: str) -> tuple[str, Optional[str]]:
+        """Fire-6 RCA Stage C1 (/stress 2026-05-20, user-approved): determine
+        whether a task's eval can run in an isolated evaluator browser context
+        (fresh page.goto to explicit target URL) vs MUST reuse the agent's page.
+
+        Returns ``(eval_context_mode, first_program_html_target_url)``.
+
+        eval_context_mode:
+          * ``isolated_program_html_context`` — program_html with explicit
+            target URLs only (no `__last_url__` / `"last"` / `func`-url). The
+            VWA evaluator (`evaluators.py:368`) does `page.goto(target_url)`
+            and reads from the server-rendered page — agent DOM is discarded
+            by the goto, so a fresh isolated page is semantically identical
+            AND avoids the runner-context cumulative-state hang (3-fire
+            Fire-3/4/5 pattern: edit-form → public Page.goto 30s timeout).
+            Inspection 2026-05-20: 232/234 cls + ~136 red program_html tasks
+            qualify (incl task 4 + task 75).
+          * ``agent_page`` — needs the agent's live page: url_match (reads
+            `page.url`), OR program_html with `__last_url__` / `"last"` /
+            `func`-url target (URL derives from agent's final navigation).
+            Inspection: 2 cls + ~16 red program_html tasks + all url_match.
+          * ``no_browser_required`` — string_match / ua_match (answer-based,
+            no browser navigation).
+
+        Detection is fail-safe: any config-read error → ``agent_page``
+        (conservative — never isolate when unsure).
+        """
+        try:
+            with open(config_file) as _f:
+                cfg = json.load(_f)
+        except (FileNotFoundError, json.JSONDecodeError, KeyError, OSError):
+            return "agent_page", None
+        eval_block = cfg.get("eval", {}) or {}
+        eval_types = eval_block.get("eval_types", []) or []
+        if "program_html" not in eval_types:
+            # url_match needs live page.url; string_match/ua_match no browser.
+            if "url_match" in eval_types:
+                return "agent_page", None
+            return "no_browser_required", None
+        # program_html present — isolate ONLY if every target uses an explicit
+        # URL (no agent-page dependency).
+        targets = eval_block.get("program_html", []) or []
+        first_target_url: Optional[str] = None
+        for t in targets:
+            url = str(t.get("url", "") or "")
+            if first_target_url is None and url:
+                first_target_url = url
+            if url == "last" or "__last_url__" in url or url.startswith("func"):
+                # Any agent-page-dependent target forces agent_page for the
+                # whole eval (EvaluatorComb runs all targets on one page).
+                return "agent_page", first_target_url
+        # url_match alongside program_html also needs agent page.
+        if "url_match" in eval_types:
+            return "agent_page", first_target_url
+        return "isolated_program_html_context", first_target_url
+
     def evaluate(self, trajectory: List[Any], config_file: str, env: Any) -> EpisodeEvalResult:
         if not self._available or self._evaluator_router is None:
             # B-544: paper-grade mode raises so caller treats the episode
@@ -391,19 +527,74 @@ class VwaEvaluator:
 
         max_eval_retries = 3
         page = env._env.page  # noqa: SLF001 - VWA evaluator requires underlying page
-        eval_page = page  # first attempt uses agent's page
+
+        # Fire-6 RCA Stage C1 (/stress 2026-05-20, user-approved L2 isolation):
+        # determine eval context mode + proactively use an isolated fresh page
+        # for program_html-safe tasks. Root cause (Z reproduce 2026-05-20):
+        # agent's runner page accumulates 25-min cumulative state (heavy
+        # edit-form DOM + A100 concurrent load) → evaluator `page.goto(target)`
+        # hangs 30s × 3 → EvaluatorUnavailableError (Fire-3/4/5 task 75/4).
+        # Z proved a FRESH page does the same goto in 639ms. So for tasks whose
+        # program_html targets are explicit URLs (agent DOM discarded by goto
+        # anyway), run the eval on a fresh page from the SAME context (shared
+        # auth cookies, clean page state). This SUPERSEDES B-329's
+        # skip-fresh-retry (which mistakenly assumed program_html needs agent
+        # DOM — inspection 2026-05-20 confirmed evaluators.py:368 navigates away).
+        eval_context_mode, eval_target_url = self._classify_eval_context(config_file)
+        eval_source_agent_url: Optional[str] = None
+        try:
+            eval_source_agent_url = page.url
+        except Exception:
+            eval_source_agent_url = None
+        eval_isolated_context_used = False
+        eval_goto_latency_ms: Optional[float] = None
+        eval_goto_timeout = False
+
+        eval_page = page  # default: agent's page
         fresh_page = None  # track fresh page for cleanup
+        if eval_context_mode == "isolated_program_html_context":
+            try:
+                fresh_page = page.context.new_page()
+                eval_page = fresh_page
+                eval_isolated_context_used = True
+                logger.info(
+                    "Eval isolation (C1): program_html-safe task → isolated "
+                    "fresh page (agent_url=%s target=%s)",
+                    str(eval_source_agent_url)[:80], str(eval_target_url)[:80],
+                )
+            except Exception as _iso_exc:
+                # Fail-safe: if fresh page creation fails, fall back to agent
+                # page (degrades to pre-C1 behavior, no worse).
+                logger.warning(
+                    "Eval isolation (C1) fresh-page creation failed, falling "
+                    "back to agent page: %s", _iso_exc,
+                )
+                eval_context_mode = "agent_page"
+                eval_page = page
+
+        def _eval_metadata() -> Dict[str, Any]:
+            return {
+                "eval_context_mode": eval_context_mode,
+                "eval_isolated_context_used": eval_isolated_context_used,
+                "eval_goto_latency_ms": eval_goto_latency_ms,
+                "eval_goto_timeout": eval_goto_timeout,
+                "eval_source_agent_url": eval_source_agent_url,
+                "eval_target_url": eval_target_url,
+            }
+
         last_exc: Optional[Exception] = None
         try:
             for attempt in range(max_eval_retries):
                 try:
                     evaluator = self._evaluator_router(config_file, captioning_fn=self._captioning_fn)
+                    _goto_t0 = time.monotonic()
                     score = evaluator(
                         trajectory=trajectory,
                         config_file=config_file,
                         page=eval_page,
                     )
-                    return EpisodeEvalResult(score=float(score), error=None)
+                    eval_goto_latency_ms = (time.monotonic() - _goto_t0) * 1000.0
+                    return EpisodeEvalResult(score=float(score), error=None, **_eval_metadata())
                 except Exception as exc:  # pragma: no cover - depends on external environment
                     last_exc = exc
                     err_lower = str(exc).lower()
@@ -411,15 +602,29 @@ class VwaEvaluator:
                         "net::err_", "navigation failed", "timed out",
                         "target closed", "page closed",
                     ))
+                    # Fire-6 RCA Stage C1: flag timeout for forensic + metadata.
+                    if any(k in err_lower for k in ("timeout", "timed out", "deadline exceeded")):
+                        eval_goto_timeout = True
+                        self._dump_eval_timeout_forensic(
+                            config_file=config_file,
+                            eval_context_mode=eval_context_mode,
+                            eval_isolated_context_used=eval_isolated_context_used,
+                            eval_source_agent_url=eval_source_agent_url,
+                            eval_target_url=eval_target_url,
+                            attempt=attempt,
+                            exc=exc,
+                        )
                     if is_nav_error and attempt < max_eval_retries - 1:
-                        if _is_program_html_task:
-                            # B-329: do NOT swap to fresh_page for program_html
-                            # — DOM state would be lost. Bail out as
-                            # evaluator_error so paper §1 SR analyzer can
-                            # exclude (denominator-side) rather than counting
-                            # as false agent failure.
+                        if _is_program_html_task and not eval_isolated_context_used:
+                            # B-329 (legacy, agent_page program_html only): do NOT
+                            # swap to fresh_page — DOM state would be lost. Bail
+                            # out as evaluator_error. NOTE: with C1 isolation,
+                            # program_html-safe tasks already run on a fresh page
+                            # from the START (eval_isolated_context_used=True), so
+                            # this branch only fires for agent-page-dependent
+                            # program_html (`__last_url__` / `"last"` / func-url).
                             logger.warning(
-                                "Evaluator nav error on program_html task; "
+                                "Evaluator nav error on agent-page program_html task; "
                                 "skipping retry (B-329) to avoid DOM-state "
                                 "loss on fresh_page. err=%s",
                                 str(exc).split('\n')[0][:120],
@@ -427,6 +632,7 @@ class VwaEvaluator:
                             return EpisodeEvalResult(
                                 score=0.0,
                                 error=f"evaluator_nav_error_program_html:{exc}",
+                                **_eval_metadata(),
                             )
                         logger.warning(
                             "Evaluator navigation error (attempt %d/%d), retrying with fresh page in 5s: %s",
@@ -466,13 +672,13 @@ class VwaEvaluator:
                             "needs_reevaluation=True (B-486 quarantine). "
                             f"err={str(exc).splitlines()[0][:200] if str(exc) else 'unknown'}"
                         ) from exc
-                    return EpisodeEvalResult(score=0.0, error=f"evaluator_error:{exc}")
+                    return EpisodeEvalResult(score=0.0, error=f"evaluator_error:{exc}", **_eval_metadata())
             # B-783: same paper-grade fail-loud for the loop-exit no-retry path.
             if self._paper_grade and last_exc is not None:
                 raise EvaluatorUnavailableError(
                     f"paper-grade evaluator loop-exit no retry: {last_exc!r}"
                 ) from last_exc
-            return EpisodeEvalResult(score=0.0, error=f"evaluator_error:{last_exc}")
+            return EpisodeEvalResult(score=0.0, error=f"evaluator_error:{last_exc}", **_eval_metadata())
         finally:
             if fresh_page is not None:
                 try:

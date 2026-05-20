@@ -65,6 +65,13 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     "unverified_timeout_event": None,
     "timeout_callsite": None,
     "verified_substrate_noise": None,
+    # Fire-6 RCA Stage C1 evaluator-context provenance defaults.
+    "eval_context_mode": None,
+    "eval_isolated_context_used": None,
+    "eval_goto_latency_ms": None,
+    "eval_goto_timeout": None,
+    "eval_source_agent_url": None,
+    "eval_target_url": None,
     "artifacts_dir": "",
     # --- additions (optional, default-filled) ---
     "state_change_reason_distribution": {},  # original v2

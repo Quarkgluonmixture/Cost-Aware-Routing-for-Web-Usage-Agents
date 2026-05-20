@@ -45,7 +45,13 @@ from p79.experiment.metrics import (
 
 
 def _valid_episode() -> Dict[str, Any]:
-    return {
+    # Fire-6 RCA Stage C1 fixture-drift fix (2026-05-20): derive from
+    # EPISODE_SUMMARY_V2_DEFAULTS so aggregate_condition_metrics gets
+    # total_latency_minus_retry_ms (e20c6ef _avg require_present) + future
+    # schema additions without manual hardcoded-dict drift.
+    from p79.experiment.schema_migrations.v2 import EPISODE_SUMMARY_V2_DEFAULTS
+    base = dict(EPISODE_SUMMARY_V2_DEFAULTS)
+    base.update({
         "success": True, "benchmark_noise": False, "score": 1.0,
         "steps": 5, "retries": 0,
         "total_cost_usd": 0.001, "total_model_cost_usd": 0.001,
@@ -53,13 +59,16 @@ def _valid_episode() -> Dict[str, Any]:
         "total_router_overhead_ms": 0.0,
         "total_obs_prepare_cost_usd": 0.0,
         "total_input_cost_usd": 0.0, "total_output_cost_usd": 0.0,
-        "total_latency_ms": 1234.5, "p95_step_latency_ms": 300.0,
+        "total_latency_ms": 1234.5,
+        "total_latency_minus_retry_ms": 1234.5,
+        "p95_step_latency_ms": 300.0,
         "total_energy_kwh": None, "total_co2e_kg": None,
         "no_op_rate": 0.0, "page_unchanged_rate": 0.0,
         "escalation_count": 0, "trigger_distribution": {},
         "state_change_reason_distribution": {},
         "wasted_cost_usd": 0.0, "wasted_energy_kwh": 0.0,
-    }
+    })
+    return base
 
 
 # ---------------------------------------------------------------------------

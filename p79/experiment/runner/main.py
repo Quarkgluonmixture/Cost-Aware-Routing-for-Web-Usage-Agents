@@ -3609,6 +3609,15 @@ class ExperimentRunner:
             # of override explicit in JSONL (vs missing-field ambiguity).
             evaluator_authority_mode="post_B545_vwa_score_only",
             reward_override_applied=False,
+            # Fire-6 RCA Stage C1 (/stress 2026-05-20): evaluator-context
+            # provenance stamped from eval_result. getattr fallback to None
+            # keeps NullEvaluator / dev-mode / pre-C1 paths schema-valid.
+            eval_context_mode=getattr(eval_result, "eval_context_mode", None),
+            eval_isolated_context_used=getattr(eval_result, "eval_isolated_context_used", None),
+            eval_goto_latency_ms=getattr(eval_result, "eval_goto_latency_ms", None),
+            eval_goto_timeout=getattr(eval_result, "eval_goto_timeout", None),
+            eval_source_agent_url=getattr(eval_result, "eval_source_agent_url", None),
+            eval_target_url=getattr(eval_result, "eval_target_url", None),
         ).as_dict()
 
         # Enrich with wasted cost and component breakdown for cost-aware analysis

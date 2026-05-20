@@ -293,6 +293,12 @@ def test_step_schema_validation_required_fields():
         "fallback_finish": None,
         "network_retry_count": None,
         "network_retry_wait_ms": None,
+        # Phase 2 intervention telemetry (commit 8d2a327) — validator requires
+        # KEY presence; value None when no runner intervention fired this step.
+        "intervention_type": None,
+        "counted_as_agent_action": None,
+        "intervention_from_url": None,
+        "intervention_recovery_url": None,
     }
 
     validate_step_record_v2(record)
@@ -350,6 +356,11 @@ def test_b481_select_option_meta_structured_fields_validator():
             "fallback_finish": None,
             "network_retry_count": None,
             "network_retry_wait_ms": None,
+            # Phase 2 intervention telemetry (commit 8d2a327) — KEY presence required.
+            "intervention_type": None,
+            "counted_as_agent_action": None,
+            "intervention_from_url": None,
+            "intervention_recovery_url": None,
         }
         rec[key] = sel_meta_payload
         return rec

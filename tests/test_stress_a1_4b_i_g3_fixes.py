@@ -49,6 +49,7 @@ def test_b179_synth_carries_canonical_schema():
             "total_obs_prepare_cost_usd": 0.01,
             "total_input_cost_usd": 0.02, "total_output_cost_usd": 0.02,
             "total_router_overhead_ms": 0.0, "total_latency_ms": 1000.0,
+            "total_latency_minus_retry_ms": 1000.0,
             "total_energy_kwh": None, "total_co2e_kg": None,
             "p95_step_latency_ms": 100.0, "retries": 0,
             "no_op_rate": 0.0, "page_unchanged_rate": 0.0,

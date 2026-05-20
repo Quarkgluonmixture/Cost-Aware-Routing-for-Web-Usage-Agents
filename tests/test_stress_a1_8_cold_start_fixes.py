@@ -118,8 +118,16 @@ def test_b731_step_record_optional_none_accepted():
 
 # ─── B-732 episode summary optional keys ────────────────────────────────────
 def _minimal_valid_episode_summary() -> Dict[str, Any]:
+    # Fire-6 RCA Stage C1 fixture-drift fix (2026-05-20): derive from
+    # EPISODE_SUMMARY_V2_DEFAULTS so this fixture auto-syncs with future
+    # schema additions (Phase 2 intervention + M5 timeout taxonomy + C1
+    # eval-context provenance + e20c6ef total_latency_minus_retry_ms all
+    # land via defaults — no manual hardcoded-dict drift). Override only the
+    # test-specific identity + outcome values.
     from p79.experiment.types import SCHEMA_VERSION_V2
-    return {
+    from p79.experiment.schema_migrations.v2 import EPISODE_SUMMARY_V2_DEFAULTS
+    base = dict(EPISODE_SUMMARY_V2_DEFAULTS)
+    base.update({
         "schema_version": SCHEMA_VERSION_V2,
         "run_id": "r1", "condition_id": "c1", "benchmark": "vwa",
         "benchmark_site": "classifieds", "task_id": 1, "seed": 42,
@@ -140,7 +148,8 @@ def _minimal_valid_episode_summary() -> Dict[str, Any]:
         "resume_fingerprint": "deadbeefcafef00d",
         "needs_reevaluation": False,
         "trajectory_incomplete": False,
-    }
+    })
+    return base
 
 
 def test_b732_valid_episode_summary_with_all_sentinels_passes():

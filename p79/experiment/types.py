@@ -357,6 +357,16 @@ class EpisodeSummaryV2:
     unverified_timeout_event: Optional[bool] = None
     timeout_callsite: Optional[str] = None
     verified_substrate_noise: Optional[bool] = None
+    # Fire-6 RCA Stage C1 (/stress 2026-05-20): evaluator-context provenance.
+    # eval_context_mode ∈ {agent_page, isolated_program_html_context,
+    # no_browser_required}. Paper §3.5 discloses isolated-eval-context usage;
+    # forensic correlates eval Page.goto latency/timeout with 3-fire pattern.
+    eval_context_mode: Optional[str] = None
+    eval_isolated_context_used: Optional[bool] = None
+    eval_goto_latency_ms: Optional[float] = None
+    eval_goto_timeout: Optional[bool] = None
+    eval_source_agent_url: Optional[str] = None
+    eval_target_url: Optional[str] = None
     state_change_reason_distribution: Dict[str, int] = field(default_factory=dict)
     checklist_completion_rate: Optional[float] = None
     checklist_failed_items: Optional[int] = None
@@ -738,6 +748,14 @@ PAPER_GRADE_EPISODE_OPTIONAL_KEYS = frozenset({
     "unverified_timeout_event",
     "timeout_callsite",
     "verified_substrate_noise",
+    # Fire-6 RCA Stage C1 evaluator-context provenance (always stamped on
+    # paper-grade episodes; None on dev/mock or pre-C1 archive rows).
+    "eval_context_mode",
+    "eval_isolated_context_used",
+    "eval_goto_latency_ms",
+    "eval_goto_timeout",
+    "eval_source_agent_url",
+    "eval_target_url",
 })
 
 
@@ -798,6 +816,13 @@ _EPISODE_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     # Fire-4 RCA Wave 2 M5 timeout taxonomy fields (bool/string/None).
     "unverified_timeout_event": (bool, type(None)),
     "timeout_callsite": (str, type(None)),
+    # Fire-6 RCA Stage C1 evaluator-context provenance fields.
+    "eval_context_mode": (str, type(None)),
+    "eval_isolated_context_used": (bool, type(None)),
+    "eval_goto_latency_ms": (int, float, type(None)),
+    "eval_goto_timeout": (bool, type(None)),
+    "eval_source_agent_url": (str, type(None)),
+    "eval_target_url": (str, type(None)),
     "verified_substrate_noise": (bool, type(None)),
     # P1-17-C* Phase 2 attempt-lineage (Sensitivity-only column; all None
     # until checkpoint-restore infrastructure lands).
