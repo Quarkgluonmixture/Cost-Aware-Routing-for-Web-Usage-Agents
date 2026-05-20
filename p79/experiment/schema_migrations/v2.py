@@ -167,6 +167,16 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     "cycle_mutating_action_count": 0,
     "repeated_same_mutating_action_count": 0,
     "footprint_risk_score": None,
+    # Protocol Reset #6/#7/#8 (§244, 2026-05-20): two-budget counters (legacy=0)
+    # + three-column cost (legacy=None, cannot recompute pre-reset vintage).
+    "agent_action_step_count": 0,
+    "valid_action_step_count": 0,
+    "model_call_attempt_count": 0,
+    "runner_iteration_count": 0,
+    "parse_error_injected_wait_count": 0,
+    "total_billed_cost_usd": None,
+    "canonical_action_cost_usd": None,
+    "protocol_wasted_cost_usd": None,
 }
 
 
@@ -311,6 +321,11 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     "intervention_recovery_url": None,
     "screenshot_timeout_recovered": False,  # Fire-6 C1b /stress P1-5
     "screenshot_timeout_recovered_ms": 0.0,  # Fire-6 C1b /stress B-1780 (Q3=A)
+    # Protocol Reset #6/#7 (§244, 2026-05-20): two-budget accounting flags.
+    # None on legacy rows; runner stamps bool on every post-reset step.
+    "valid_agent_action": None,
+    "consumes_agent_action_budget": None,
+    "counts_as_runner_iteration": None,
 }
 
 

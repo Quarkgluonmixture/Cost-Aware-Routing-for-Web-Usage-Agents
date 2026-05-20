@@ -40,8 +40,10 @@ from p79.experiment.io_utils import read_jsonl_dedup
 from p79.experiment.logger_v2 import LoggerV2
 from p79.experiment.metrics import (
     aggregate_condition_metrics,
+    classify_step_accounting,
     compute_component_breakdown,
     compute_router_overhead_cost,
+    compute_three_column_cost,
     compute_token_cost,
     compute_wasted_cost,
     detect_benchmark_noise,
@@ -234,6 +236,19 @@ class ExperimentRunner:
         self.seeds = _parse_seeds(cfg["experiment"]["seed"])
         self.seed = self.seeds[0]
         self.max_steps = int(cfg.get("runtime", {}).get("max_steps", 40))
+        # Protocol Reset #7 (§244 canonical, 2026-05-20): two-budget accounting.
+        # PRIMARY budget = max_agent_actions (only valid, budget-consuming steps;
+        # restores upstream "30 agent decisions" semantics). Inherits max_steps so
+        # existing per-condition yamls (max_steps: 30) need no edit. SAFETY budget
+        # bounds runaway episodes: max_model_attempts caps total LLM calls; the
+        # parse-error caps terminate when the agent cannot produce usable actions.
+        _rt = cfg.get("runtime", {})
+        self.max_agent_actions = int(_rt.get("max_agent_actions", self.max_steps))
+        self.max_total_parse_errors = int(_rt.get("max_total_parse_errors", 5))
+        self.max_consecutive_parse_errors = int(_rt.get("max_consecutive_parse_errors", 3))
+        self.max_model_attempts = int(
+            _rt.get("max_model_attempts", self.max_agent_actions + self.max_total_parse_errors + 10)
+        )
         self.resume = bool(cfg.get("runtime", {}).get("resume", True))
 
         self.conditions = generate_conditions(cfg)
@@ -2348,7 +2363,21 @@ class ExperimentRunner:
         # Track total wall time spent in free busy-page waits (RU-4): these
         # don't consume a step but still count toward end-to-end episode time.
         busy_wait_total_ms = 0.0
-        while step_idx < self.max_steps:
+        # Protocol Reset #6/#7 (§244 canonical, 2026-05-20): two-budget loop
+        # counters. PRIMARY = agent_action_count (only valid/consuming steps);
+        # SAFETY = step_idx (model-call ceiling) + parse-error caps. step_idx
+        # counts persisted steps (= model calls; busy-waits `continue` without
+        # incrementing), so `step_idx < max_model_attempts` bounds LLM calls.
+        agent_action_count = 0
+        valid_action_count = 0
+        consecutive_parse_errors = 0
+        total_parse_errors = 0
+        while (
+            agent_action_count < self.max_agent_actions
+            and step_idx < self.max_model_attempts
+            and consecutive_parse_errors < self.max_consecutive_parse_errors
+            and total_parse_errors < self.max_total_parse_errors
+        ):
             step_start = time.time()
             # B-321 (/stress A1.9 Mode A F2 OOB, 2026-05-16): capture monotonic
             # step boundary so EnergyTracker can strictly bound pynvml sample
@@ -2911,6 +2940,33 @@ class ExperimentRunner:
                 env_error=None,
             )
 
+            # Protocol Reset #6/#7 (§244 canonical, 2026-05-20): two-budget
+            # classification (see metrics.classify_step_accounting for the rule).
+            _goto_blocked = (safe_next_info.get("goto_meta") or {}).get("allowed") is False
+            if _goto_blocked:
+                # B-1782: off-site goto refused by the VWA-origin whitelist →
+                # explicit policy category, not generic no_progress/invalid_action.
+                error_category = "policy_blocked_offsite"
+            _acct = classify_step_accounting(
+                parse_valid=parse_valid,
+                action_type=action_type_lower,
+                goto_blocked=_goto_blocked,
+            )
+            valid_agent_action = _acct["valid_agent_action"]
+            consumes_agent_action_budget = _acct["consumes_agent_action_budget"]
+            counts_as_runner_iteration = _acct["counts_as_runner_iteration"]
+            if consumes_agent_action_budget:
+                agent_action_count += 1
+            if valid_agent_action:
+                valid_action_count += 1
+            if _acct["is_injected_wait_sink"]:
+                total_parse_errors += 1
+                consecutive_parse_errors += 1
+            else:
+                # Genuine action OR policy-blocked goto = agent produced parseable
+                # output → reset the consecutive-unparseable safety streak.
+                consecutive_parse_errors = 0
+
             total_latency_ms = (time.time() - step_start) * 1000.0
             # B-321: pass step_start_monotonic for strict pynvml sample window.
             energy = self.energy_tracker.estimate_step(
@@ -3101,6 +3157,10 @@ class ExperimentRunner:
             step_record["obs_url"] = state_after.get("url")
             # Optional parser/debug fields (non-required schema extras).
             step_record["parse_valid"] = parse_valid
+            # Protocol Reset #6/#7 (§244, 2026-05-20): two-budget accounting flags.
+            step_record["valid_agent_action"] = valid_agent_action
+            step_record["consumes_agent_action_budget"] = consumes_agent_action_budget
+            step_record["counts_as_runner_iteration"] = counts_as_runner_iteration
             step_record["parse_failure_reason"] = (
                 str(failure_reason) if failure_reason is not None else None
             )
@@ -3733,6 +3793,24 @@ class ExperimentRunner:
         episode_summary["component_breakdown"] = breakdown
         # Track how many free busy-page waits were issued (not counted as steps)
         episode_summary["busy_wait_free_steps"] = total_busy_waits
+        # Protocol Reset #6/#7/#8 (§244 canonical, 2026-05-20): two-budget
+        # accounting rollup + three-column cost. Counters: agent_action = budget-
+        # consuming steps (max_agent_actions denominator); valid_action = genuine
+        # parse-valid decisions (excludes policy-blocked goto); model_call_attempt
+        # = persisted steps (= LLM calls); runner_iteration = + free busy-waits;
+        # parse_error_injected_wait = unparseable/structural sinks (safety numerator).
+        episode_summary["agent_action_step_count"] = agent_action_count
+        episode_summary["valid_action_step_count"] = valid_action_count
+        episode_summary["model_call_attempt_count"] = len(step_records)
+        episode_summary["runner_iteration_count"] = len(step_records) + total_busy_waits
+        episode_summary["parse_error_injected_wait_count"] = total_parse_errors
+        # Three-column cost (#8, see metrics.compute_three_column_cost). billed =
+        # Σ all model cost; canonical = Σ valid_agent_action cost; wasted = residual
+        # (parse-error + policy-blocked + recovery). canonical + wasted ≡ billed.
+        _3col = compute_three_column_cost(step_records)
+        episode_summary["total_billed_cost_usd"] = _3col["total_billed_cost_usd"]
+        episode_summary["canonical_action_cost_usd"] = _3col["canonical_action_cost_usd"]
+        episode_summary["protocol_wasted_cost_usd"] = _3col["protocol_wasted_cost_usd"]
         # Fire-6 C1b /stress P1-5: episode rollup of recovered Page.screenshot
         # timeouts (dom-mode). Paper §4 disclosure + latency-confound count.
         episode_summary["screenshot_timeout_recovered_count"] = sum(

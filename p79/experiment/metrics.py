@@ -405,6 +405,64 @@ def compute_component_breakdown(step_records: List[Dict[str, Any]]) -> Dict[str,
     }
 
 
+def classify_step_accounting(
+    *,
+    parse_valid: bool,
+    action_type: str,
+    goto_blocked: bool,
+) -> Dict[str, bool]:
+    """Protocol Reset #6/#7 (§244 canonical, 2026-05-20): classify a step for
+    two-budget accounting.
+
+    Restores upstream agent-action-budget semantics. WAIT is never a canonical
+    agent action — `action_utils.validate_action_detailed` rescues every parse /
+    structural failure to a `{"action_type": "wait"}` sink, so any wait is an
+    internal recovery event, not the agent's decision. A policy-blocked off-site
+    goto (B-1782, action-set restore #76 follow-up) parsed cleanly but targets a
+    non-VWA origin the runner refuses to execute: it is NOT a valid action yet it
+    still spends the agent's turn (consumes the budget). Everything else parse-
+    valid is a genuine decision (including finish/stop).
+
+    Returns the 3 persisted step flags plus the derived `is_injected_wait_sink`
+    (a step that neither was valid NOR consumed budget = a recovery wait that
+    feeds the parse-error safety caps).
+    """
+    is_wait = (str(action_type).lower() == "wait")
+    valid = bool(parse_valid and not is_wait and not goto_blocked)
+    consumes = bool(valid or goto_blocked)
+    return {
+        "valid_agent_action": valid,
+        "consumes_agent_action_budget": consumes,
+        "counts_as_runner_iteration": True,
+        "is_injected_wait_sink": (not valid) and (not consumes),
+    }
+
+
+def compute_three_column_cost(step_records: List[Dict[str, Any]]) -> Dict[str, float]:
+    """Protocol Reset #8 (§244 canonical, 2026-05-20): three-column cost split.
+
+    billed = Σ all step model cost (every billed LLM call, incl. parse-error +
+    policy-blocked + injected-wait recovery); canonical = Σ model cost of
+    `valid_agent_action=True` steps only (the cost of productive agent decisions,
+    paper §1 cost-estimand numerator); wasted = residual. The additive invariant
+    ``canonical + wasted == billed`` holds by construction (the clamp only guards
+    float underflow). All three share the per-episode `cost_unit_basis` (B0
+    API-USD vs B1/B2 local-scaffold USD) — the cross-baseline aggregator MUST
+    stratify by `cost_unit_basis` before pooling.
+    """
+    def _model_cost(s: Dict[str, Any]) -> float:
+        c = s.get("cost_usd") or {}
+        return float(c.get("model", float(c.get("input", 0.0)) + float(c.get("output", 0.0))))
+
+    billed = sum(_model_cost(s) for s in step_records)
+    canonical = sum(_model_cost(s) for s in step_records if s.get("valid_agent_action") is True)
+    return {
+        "total_billed_cost_usd": billed,
+        "canonical_action_cost_usd": canonical,
+        "protocol_wasted_cost_usd": max(0.0, billed - canonical),
+    }
+
+
 def compute_wasted_energy(episode_summaries: List[Dict[str, Any]]) -> Optional[float]:
     """Total kWh spent on unsuccessful episodes (failed or hit max_steps).
 
@@ -587,6 +645,16 @@ def aggregate_condition_metrics(
             "avg_total_latency_minus_retry_ms": 0.0,
             "avg_total_model_cost_usd": 0.0,
             "avg_total_cost_usd": 0.0,
+            # Protocol Reset #6/#7/#8 (§244, 2026-05-20): empty-episode fallback.
+            # Counters 0.0; cost columns None (mirrors _avg_or_none on empty).
+            "avg_agent_action_step_count": 0.0,
+            "avg_valid_action_step_count": 0.0,
+            "avg_model_call_attempt_count": 0.0,
+            "avg_runner_iteration_count": 0.0,
+            "avg_parse_error_injected_wait_count": 0.0,
+            "avg_total_billed_cost_usd": None,
+            "avg_canonical_action_cost_usd": None,
+            "avg_protocol_wasted_cost_usd": None,
             "avg_router_overhead_cost_usd": 0.0,
             "avg_router_overhead_ms": 0.0,
             "avg_obs_prepare_cost_usd": 0.0,
@@ -663,6 +731,15 @@ def aggregate_condition_metrics(
                 [float(x.get(key, 0.0)) for x in episode_summaries]
             ))
         return float(statistics.mean(vals))
+
+    def _avg_or_none(key: str):
+        """Protocol Reset #8 (§244, 2026-05-20): mean over populated episodes, or
+        None when no episode populates the field. Mirrors the energy-avg pattern
+        — preserves the Optional[float] "legacy vintage cannot compute" semantic
+        through to the cross-site canonical-cost None-guard (vs `_avg` which
+        silent-zeros an all-legacy cohort, masking the cannot-compute case)."""
+        vals = [float(x[key]) for x in episode_summaries if key in x and x[key] is not None]
+        return float(statistics.mean(vals)) if vals else None
 
     energy_vals = [x.get("total_energy_kwh") for x in episode_summaries if x.get("total_energy_kwh") is not None]
     co2_vals = [x.get("total_co2e_kg") for x in episode_summaries if x.get("total_co2e_kg") is not None]
@@ -829,6 +906,19 @@ def aggregate_condition_metrics(
         ),
         "avg_total_model_cost_usd": _avg("total_model_cost_usd"),
         "avg_total_cost_usd": _avg("total_cost_usd"),
+        # Protocol Reset #6/#7/#8 (§244 canonical, 2026-05-20): two-budget
+        # accounting per-cell rollup. Counters always-int (plain _avg). The three
+        # cost columns use _avg_or_none so an all-legacy cohort yields None
+        # ("cannot compute") rather than a silent 0.0 — the cross-site aggregator
+        # None-guards on these for the paper §1 canonical-cost estimand.
+        "avg_agent_action_step_count": _avg("agent_action_step_count"),
+        "avg_valid_action_step_count": _avg("valid_action_step_count"),
+        "avg_model_call_attempt_count": _avg("model_call_attempt_count"),
+        "avg_runner_iteration_count": _avg("runner_iteration_count"),
+        "avg_parse_error_injected_wait_count": _avg("parse_error_injected_wait_count"),
+        "avg_total_billed_cost_usd": _avg_or_none("total_billed_cost_usd"),
+        "avg_canonical_action_cost_usd": _avg_or_none("canonical_action_cost_usd"),
+        "avg_protocol_wasted_cost_usd": _avg_or_none("protocol_wasted_cost_usd"),
         "avg_router_overhead_cost_usd": _avg("total_router_overhead_cost_usd"),
         # End-to-end router overhead per episode (ms). Reported for diagnostics
         # only — net_saving_latency does NOT subtract this (already in routed total).

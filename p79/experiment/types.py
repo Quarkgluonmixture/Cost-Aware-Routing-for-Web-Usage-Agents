@@ -334,6 +334,25 @@ class StepRecordV2:
     # env_step_ms) so canonical latency can EXCLUDE the dom artifact-only infra
     # wait. 0.0 when not recovered.
     screenshot_timeout_recovered_ms: float = 0.0
+    # Protocol Reset #6/#7 (§244 canonical, 2026-05-20): two-budget accounting.
+    # Restores upstream agent-action-budget semantics — a runner-injected WAIT
+    # (parse-fail sink / busy-page settle) is an internal recovery event, NOT a
+    # canonical agent decision, so it must not consume the 30 agent-action budget.
+    #   valid_agent_action: True only for a genuine parse-valid agent decision.
+    #     False for injected wait, parse-error sink, AND policy-blocked off-site
+    #     goto (B-1782 — not a permitted VWA action, even though it parsed).
+    #   consumes_agent_action_budget: True iff the step decrements max_agent_actions.
+    #     True for genuine actions AND policy-blocked goto (agent spent its turn);
+    #     False for injected waits (recovery events, not the agent's turn). This is
+    #     the one place it diverges from valid_agent_action (goto: valid=F/consumes=T).
+    #   counts_as_runner_iteration: True iff the step ran a model call (safety-budget
+    #     denominator). Always True for persisted steps — free busy-waits skip the
+    #     LLM call and never persist a step_record; field documents intent + future-
+    #     proofs a no-model persisted step.
+    # All None on legacy/archive rows (pre-Protocol-Reset) — backward-compat.
+    valid_agent_action: Optional[bool] = None
+    consumes_agent_action_budget: Optional[bool] = None
+    counts_as_runner_iteration: Optional[bool] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -573,6 +592,35 @@ class EpisodeSummaryV2:
     cycle_mutating_action_count: int = 0
     repeated_same_mutating_action_count: int = 0
     footprint_risk_score: Optional[float] = None
+    # Protocol Reset #6/#7/#8 (§244 canonical, 2026-05-20): two-budget accounting
+    # rollup + three-column cost. Counters always stamped (≥0, archive=0/untracked):
+    #   agent_action_step_count: steps that consumed the agent-action budget
+    #     (consumes_agent_action_budget=True) — the max_agent_actions=30 denominator.
+    #   valid_action_step_count: steps with a genuine parse-valid agent decision
+    #     (valid_agent_action=True) — excludes policy-blocked goto + injected waits.
+    #   model_call_attempt_count: number of LLM invocations (== len(step_records);
+    #     each persisted step is one model call, parse-error sinks included).
+    #   runner_iteration_count: total while-loop spins incl. free busy-waits that
+    #     skipped the model (= len(step_records) + busy_wait_free_steps).
+    #   parse_error_injected_wait_count: steps that fell to the WAIT sink because
+    #     the response could not be parsed (safety-budget numerator).
+    agent_action_step_count: int = 0
+    valid_action_step_count: int = 0
+    model_call_attempt_count: int = 0
+    runner_iteration_count: int = 0
+    parse_error_injected_wait_count: int = 0
+    # Three-column cost (§244 #8). Additive invariant: canonical + wasted ≡ billed.
+    #   total_billed_cost_usd: Σ all step model cost (every billed LLM call, incl.
+    #     parse-error + policy-blocked + injected-wait recovery).
+    #   canonical_action_cost_usd: Σ model cost of valid_agent_action=True steps only
+    #     (the cost of productive agent decisions — paper §1 cost estimand numerator).
+    #   protocol_wasted_cost_usd: total_billed − canonical_action (parse-error +
+    #     policy-blocked + recovery overhead, billed but not a canonical action).
+    # Optional[float]=None mirrors total_latency_canonical_ms — None = legacy vintage
+    # cannot compute; aggregator None-guards before pooling.
+    total_billed_cost_usd: Optional[float] = None
+    canonical_action_cost_usd: Optional[float] = None
+    protocol_wasted_cost_usd: Optional[float] = None
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -682,6 +730,12 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     "counted_as_agent_action",
     "intervention_from_url",
     "intervention_recovery_url",
+    # Protocol Reset #6/#7 (§244, 2026-05-20): two-budget accounting flags.
+    # Runner stamps all three on every step; KEY-presence enforced so a reviewer
+    # grepping JSONL finds them on every paper-grade row (None ≡ legacy/archive).
+    "valid_agent_action",
+    "consumes_agent_action_budget",
+    "counts_as_runner_iteration",
 })
 
 
@@ -785,6 +839,10 @@ _STEP_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     # (runner always stamps bool/float, but validator-key-presence allows None).
     "screenshot_timeout_recovered": (bool, type(None)),
     "screenshot_timeout_recovered_ms": (int, float, type(None)),
+    # Protocol Reset #6/#7 (§244, 2026-05-20): two-budget accounting flags.
+    "valid_agent_action": (bool, type(None)),
+    "consumes_agent_action_budget": (bool, type(None)),
+    "counts_as_runner_iteration": (bool, type(None)),
 }
 
 
@@ -839,6 +897,17 @@ PAPER_GRADE_EPISODE_OPTIONAL_KEYS = frozenset({
     # every episode; canonical fires = False, --diagnostic-replay = True).
     "diagnostic_replay",
     "sr_excluded",
+    # Protocol Reset #6/#7/#8 (§244, 2026-05-20): two-budget accounting rollup
+    # (always-int counters, default 0) + three-column cost (Optional float, None
+    # = legacy vintage cannot compute). Fresh paper-grade runs MUST stamp all 8.
+    "agent_action_step_count",
+    "valid_action_step_count",
+    "model_call_attempt_count",
+    "runner_iteration_count",
+    "parse_error_injected_wait_count",
+    "total_billed_cost_usd",
+    "canonical_action_cost_usd",
+    "protocol_wasted_cost_usd",
 })
 
 
@@ -937,6 +1006,16 @@ _EPISODE_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     "cycle_mutating_action_count": (int,),
     "repeated_same_mutating_action_count": (int,),
     "footprint_risk_score": (int, float, type(None)),
+    # Protocol Reset #6/#7/#8 (§244, 2026-05-20): two-budget counters (always int)
+    # + three-column cost (Optional float, None = legacy vintage).
+    "agent_action_step_count": (int,),
+    "valid_action_step_count": (int,),
+    "model_call_attempt_count": (int,),
+    "runner_iteration_count": (int,),
+    "parse_error_injected_wait_count": (int,),
+    "total_billed_cost_usd": (int, float, type(None)),
+    "canonical_action_cost_usd": (int, float, type(None)),
+    "protocol_wasted_cost_usd": (int, float, type(None)),
 }
 
 

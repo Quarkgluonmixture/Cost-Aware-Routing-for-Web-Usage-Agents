@@ -275,6 +275,24 @@ def normalize_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
     cfg["runtime"].setdefault("resume", True)
     cfg["runtime"].setdefault("busy_wait_limit", 5)
     cfg["runtime"].setdefault("baseline_retry_on_no_progress", False)
+    # Protocol Reset #7 (§244 canonical, 2026-05-20): two-budget accounting.
+    # `max_agent_actions` is the PRIMARY budget (only valid, budget-consuming
+    # steps decrement it — restores upstream "30 agent decisions" semantics).
+    # It defaults to `max_steps` so existing per-condition yamls (max_steps: 30)
+    # inherit the right budget with zero yaml churn; `max_steps` itself is now
+    # only a resume-fingerprint / telemetry input, no longer the loop cap.
+    # The safety budget bounds runaway episodes (all-parse-error / pathological
+    # loops): `max_model_attempts` caps total LLM calls; the parse-error caps
+    # terminate when the agent cannot produce parseable actions. `max_model_
+    # attempts` derives from the budget so it scales if max_agent_actions changes
+    # and can never cut before the primary budget is exhausted.
+    cfg["runtime"].setdefault("max_agent_actions", cfg["runtime"]["max_steps"])
+    cfg["runtime"].setdefault("max_consecutive_parse_errors", 3)
+    cfg["runtime"].setdefault("max_total_parse_errors", 5)
+    cfg["runtime"].setdefault(
+        "max_model_attempts",
+        int(cfg["runtime"]["max_agent_actions"]) + int(cfg["runtime"]["max_total_parse_errors"]) + 10,
+    )
 
     cfg.setdefault("checklist", {})
     cfg["checklist"].setdefault("enabled", False)

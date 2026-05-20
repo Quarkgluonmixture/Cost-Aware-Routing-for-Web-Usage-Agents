@@ -316,6 +316,20 @@ def aggregate_run_dir(run_dir: Path, site: str, label: str) -> List[Dict[str, An
             ),
             "avg_screenshot_timeout_recovered_total_ms": cond.get("avg_screenshot_timeout_recovered_total_ms"),
             "screenshot_timeout_recovered_episode_rate": cond.get("screenshot_timeout_recovered_episode_rate"),
+            # Protocol Reset #6/#7/#8 (§244 canonical, 2026-05-20): two-budget
+            # accounting + three-column cost per cell. Cost columns are already
+            # None-guarded upstream (metrics._avg_or_none → None on legacy vintage
+            # = "cannot compute"); carried directly. Cross-baseline pooling MUST
+            # stratify by `cost_unit_basis` (B0 API-USD vs B1/B2 local) — same rule
+            # as `avg_cost_usd` above. Paper §1 cost estimand = canonical_action.
+            "avg_agent_action_step_count": cond.get("avg_agent_action_step_count"),
+            "avg_valid_action_step_count": cond.get("avg_valid_action_step_count"),
+            "avg_model_call_attempt_count": cond.get("avg_model_call_attempt_count"),
+            "avg_runner_iteration_count": cond.get("avg_runner_iteration_count"),
+            "avg_parse_error_injected_wait_count": cond.get("avg_parse_error_injected_wait_count"),
+            "avg_total_billed_cost_usd": cond.get("avg_total_billed_cost_usd"),
+            "avg_canonical_action_cost_usd": cond.get("avg_canonical_action_cost_usd"),
+            "avg_protocol_wasted_cost_usd": cond.get("avg_protocol_wasted_cost_usd"),
             "episodes": int(cond.get("episodes", 0)),
             "is_stub": is_stub,
         })
