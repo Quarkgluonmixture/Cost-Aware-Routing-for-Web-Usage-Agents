@@ -293,6 +293,18 @@ class StepRecordV2:
     # 0-cast that would suggest "retried 0 times" vs "no retry concept").
     network_retry_count: Optional[int] = None
     network_retry_wait_ms: Optional[float] = None
+    # P1-3-B (/stress GRL audit 2026-05-20, user Q4=A): B0 action provenance.
+    # action_source ∈ {tool_call, text_json, fallback, invalid}; tool_call_valid
+    # = True/False if a native tool_call was emitted, None otherwise;
+    # text_fallback_used = Path-2 text parse ran. tool_call_emitted/parse_path/
+    # fallback_reason = the B-1588 emission-audit trio (now persisted, was
+    # meta-only). All None for B1/B2 (text-JSON backend, no tool-call channel).
+    action_source: Optional[str] = None
+    tool_call_valid: Optional[bool] = None
+    text_fallback_used: Optional[bool] = None
+    tool_call_emitted: Optional[bool] = None
+    tool_call_parse_path: Optional[str] = None
+    tool_call_fallback_reason: Optional[str] = None
     # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 unified bug list 2026-05-19,
     # 3-AI overlap OOB): about:blank recovery runner-intervention attribution.
     # Decouples runner navigate_to(start_url) from agent action progress
@@ -634,6 +646,15 @@ PAPER_GRADE_STEP_OPTIONAL_KEYS = frozenset({
     # has no retry concept, not "0 retries").
     "network_retry_count",
     "network_retry_wait_ms",
+    # P1-3-B (/stress GRL audit 2026-05-20, user Q4=A): B0 action provenance —
+    # KEY-presence enforced so reviewer grepping JSONL finds action_source on
+    # every paper-grade row (None ≡ B1/B2 text-JSON backend, no tool-call channel).
+    "action_source",
+    "tool_call_valid",
+    "text_fallback_used",
+    "tool_call_emitted",
+    "tool_call_parse_path",
+    "tool_call_fallback_reason",
     # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 2026-05-19, 3-AI overlap OOB):
     # about:blank recovery intervention attribution at step-level. Runner stamps
     # None on normal agent steps, intervention_type="about_blank_recovery" +
@@ -729,6 +750,13 @@ _STEP_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     "cost_total_mixed_unit_warn": (bool, type(None)),
     "network_retry_count": (int, type(None)),
     "network_retry_wait_ms": (int, float, type(None)),
+    # P1-3-B (/stress GRL audit 2026-05-20, user Q4=A): B0 action provenance types.
+    "action_source": (str, type(None)),
+    "tool_call_valid": (bool, type(None)),
+    "text_fallback_used": (bool, type(None)),
+    "tool_call_emitted": (bool, type(None)),
+    "tool_call_parse_path": (str, type(None)),
+    "tool_call_fallback_reason": (str, type(None)),
     # P0-1-ABC* Phase 2 telemetry (about:blank intervention attribution).
     "intervention_type": (str, type(None)),
     "counted_as_agent_action": (bool, type(None)),

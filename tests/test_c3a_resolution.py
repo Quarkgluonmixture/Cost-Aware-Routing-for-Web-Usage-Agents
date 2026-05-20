@@ -91,6 +91,49 @@ def test_screenshot_resolution_accepted_with_c1b(reg, tmp_path):
     assert ok
 
 
+# ── P1-2 (Q5=A): honest per-profile classified_via label ─────────────────────
+def test_p1_2_screenshot_resolution_labeled_architectural_containment(reg, tmp_path):
+    """Q5=A: a screenshot resolution must be labeled architectural_containment_c1b,
+    NOT matched_temporal_context — the load-dependent Page.screenshot timeout
+    cannot be reproduced in a small replay, so the resolution is C1b containment,
+    not a temporal reproduction (OSF/prereg honesty)."""
+    ep = _episode(tmp_path, "clean.json", producer=C1B)
+    ev = qr.append_resolution(site="classifieds", task_id=75, error_class=SCREENSHOT_EC,
+                              resolved_by_commit=C1B, episode_summary_path=ep,
+                              resolved_by="test", rationale="C1b architectural")
+    assert ev["classified_via"] == "architectural_containment_c1b"
+    assert ev["classified_via"] != qr.RESOLUTION_REQUIRED_VIA
+
+
+def test_p1_2_eval_goto_keeps_matched_temporal_label(reg, tmp_path):
+    """eval_goto IS a matched-temporal-context reproduction (C1 isolation under
+    real A100 load) → keeps that honest label, distinct from screenshot."""
+    ep = _episode(tmp_path, "good.json")
+    ev = qr.append_resolution(site="classifieds", task_id=75, error_class=EVAL_GOTO_EC,
+                              resolved_by_commit=FLOOR, episode_summary_path=ep,
+                              resolved_by="test", rationale="C1 isolated eval")
+    assert ev["classified_via"] == "matched_temporal_context_diagnostic_replay"
+
+
+def test_p1_2_mislabeled_screenshot_resolution_rejected(reg, tmp_path):
+    """The pre-fix flat-constant label on a screenshot resolution is now REJECTED
+    (exact registry state the audit caught for cls-75) — forces re-resolution
+    with the honest architectural_containment_c1b label."""
+    _quarantine_two_classes(reg)
+    ep = _episode(tmp_path, "clean.json", producer=C1B)
+    qr._append_event({
+        "event_type": "resolution", "ts": "2026-05-20T13:00:00+00:00",
+        "site": "classifieds", "task_id": 75, "error_class": SCREENSHOT_EC,
+        "evidence_profile": "screenshot",
+        "classified_via": "matched_temporal_context_diagnostic_replay",  # OLD mislabel
+        "resolved_by_commit": C1B, "episode_summary_path": ep,
+        "resolved_by": "legacy", "rationale": "mislabeled pre-Q5A",
+    })
+    ok, reason = qr.is_error_class_resolved("classifieds", 75, SCREENSHOT_EC)
+    assert ok is False
+    assert "classified_via" in reason
+
+
 # ── P0-2: screenshot evidence must be produced AT C1b ────────────────────────
 def test_p0_2_screenshot_rejects_pre_c1b_producer(reg, tmp_path):
     # episode produced at 9d46134 (C2, PRE-C1b) → screenshot resolution rejected

@@ -3147,6 +3147,23 @@ class ExperimentRunner:
             # honest "baseline does not retry" not 0-cast "retried 0 times").
             step_record["network_retry_count"] = meta.get("network_retry_count")
             step_record["network_retry_wait_ms"] = meta.get("network_retry_wait_ms")
+            # P1-3-B (/stress GRL audit 2026-05-20, user Q4=A): persist B0 action
+            # provenance as discrete step fields (action-channel analogue of the
+            # network_retry block above). action_source ∈ {tool_call, text_json,
+            # fallback, invalid}; tool_call_valid (None if no emit);
+            # text_fallback_used. Under paper_grade an emitted-but-invalid
+            # tool_call → action_source="invalid" + valid=False, NO text fallback
+            # (no silent action swap). Also persists the B-1588 emission-audit
+            # trio (tool_call_emitted / parse_path / fallback_reason) that was
+            # previously meta-only + dropped at the JSONL boundary, so paper
+            # §3.5.1 cross-baseline action-channel disclosure + tool_call_emit_rate
+            # gate are reproducible from disk. B1/B2 None (text-JSON backend).
+            step_record["action_source"] = meta.get("action_source")
+            step_record["tool_call_valid"] = meta.get("tool_call_valid")
+            step_record["text_fallback_used"] = meta.get("text_fallback_used")
+            step_record["tool_call_emitted"] = meta.get("tool_call_emitted")
+            step_record["tool_call_parse_path"] = meta.get("tool_call_parse_path")
+            step_record["tool_call_fallback_reason"] = meta.get("tool_call_fallback_reason")
             # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 2026-05-19, 3-AI):
             # about:blank recovery intervention attribution. Stamp non-None
             # values only when runner intervention fired this step;

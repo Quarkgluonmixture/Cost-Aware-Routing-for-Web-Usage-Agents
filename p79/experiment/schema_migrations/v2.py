@@ -292,6 +292,14 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     # B1/B2 always None even post-fix; B0 0 when no retries this step.
     "network_retry_count": None,
     "network_retry_wait_ms": None,
+    # P1-3-B (/stress GRL audit 2026-05-20, user Q4=A): B0 action provenance.
+    # Archive rows (pre-2026-05-20) lack these → fill None. B1/B2 always None.
+    "action_source": None,
+    "tool_call_valid": None,
+    "text_fallback_used": None,
+    "tool_call_emitted": None,
+    "tool_call_parse_path": None,
+    "tool_call_fallback_reason": None,
     # P0-1-ABC* Phase 2 telemetry (/stress Phase 0 2026-05-19, 3-AI overlap
     # OOB): about:blank recovery intervention attribution. None on normal
     # agent steps; runner stamps non-None on intervention steps.

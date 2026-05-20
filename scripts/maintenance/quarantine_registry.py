@@ -92,7 +92,25 @@ DIAG_OVERRIDE_MAX_TASKS = 25
 # which contains C1 eval isolation) OR a descendant — AND an ancestor of HEAD
 # (the fix is actually present in the running code). Verified via git merge-base.
 RESOLUTION_COMMIT_FLOOR = "e9875cc"
+# P1-2-A (/stress GRL audit 2026-05-20, user Q5=A): per-profile resolution
+# provenance label. The eval-goto class IS resolved by a matched-temporal-context
+# diagnostic replay (C1 isolation reproduced under real A100 load → no goto
+# timeout). The screenshot class is NOT — by construction the load-dependent
+# Page.screenshot timeout cannot be forced in a small replay (see
+# `_error_class_evidence_profile` screenshot branch), so its resolution is
+# ARCHITECTURAL CONTAINMENT (C1b makes the timeout non-fatal in dom mode), not a
+# temporal reproduction. Labeling both `matched_temporal_context` overclaimed the
+# screenshot evidence (OSF / prereg honesty). Each profile now requires its own
+# honest `classified_via`; the gate enforces the profile-specific value.
 RESOLUTION_REQUIRED_VIA = "matched_temporal_context_diagnostic_replay"
+SCREENSHOT_RESOLUTION_VIA = "architectural_containment_c1b"
+
+
+def _profile_resolution_via(profile: str) -> str:
+    """P1-2-A: honest per-profile `classified_via` (Q5=A). screenshot =
+    architectural containment (C1b non-fatal recovery); everything else (eval_goto)
+    = matched-temporal-context diagnostic replay."""
+    return SCREENSHOT_RESOLUTION_VIA if profile == "screenshot" else RESOLUTION_REQUIRED_VIA
 # Fire-6 C3a /stress P0-2 (2026-05-20): the screenshot-timeout class has NO
 # self-evidencing episode field (unlike eval-goto's eval_context_mode=isolated),
 # so its evidence episode MUST be produced AT C1b (a211ec5) or later — verified
@@ -409,7 +427,9 @@ def append_resolution(
         "task_id": int(task_id),
         "error_class": error_class,
         "evidence_profile": profile,
-        "classified_via": RESOLUTION_REQUIRED_VIA,
+        # P1-2-A (Q5=A): honest per-profile label (screenshot = architectural
+        # containment, eval_goto = matched-temporal-context). NOT a flat constant.
+        "classified_via": _profile_resolution_via(profile),
         "resolved_by_commit": resolved_by_commit,
         "episode_summary_path": str(ep_path),
         "evidence_snapshot": {
@@ -454,8 +474,13 @@ def is_error_class_resolved(site: str, task_id: int, error_class: str) -> Tuple[
     if not cands:
         return False, f"no resolution event for error_class {error_class!r}"
     res = max(cands, key=lambda e: e.get("ts", ""))
-    if res.get("classified_via") != RESOLUTION_REQUIRED_VIA:
-        return False, f"resolution classified_via != {RESOLUTION_REQUIRED_VIA}"
+    # P1-2-A (Q5=A): enforce the honest per-profile label. A screenshot-class
+    # resolution mislabeled `matched_temporal_context_diagnostic_replay` (the
+    # pre-fix flat constant) is now REJECTED — it must carry
+    # `architectural_containment_c1b`. Forces re-resolution with the honest label.
+    _required_via = _profile_resolution_via(profile)
+    if res.get("classified_via") != _required_via:
+        return False, f"resolution classified_via != {_required_via} (profile={profile})"
     commit_ok, commit_reason = _git_commit_in_lock_range(
         res.get("resolved_by_commit", ""), floor=_profile_resolved_commit_floor(profile),
     )

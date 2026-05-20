@@ -248,6 +248,80 @@ def test_f4_top2_logprobs_fills_4_of_6_fields(_proxy_agent, monkeypatch):
     assert meta["max_entropy"] is None, "entropy not recoverable from top-2"
 
 
+# ── P1-3-B (/stress GRL audit 2026-05-20, Q4=A): B0 action provenance ────────
+_P13_LOGPROBS = {"content": [
+    {"token": "x", "logprob": -0.1,
+     "top_logprobs": [{"token": "x", "logprob": -0.1}, {"token": "y", "logprob": -2.0}]},
+]}
+
+
+def test_p1_3_paper_grade_invalid_tool_call_no_text_fallback(monkeypatch, tmp_path):
+    """P1-3-B (Q4=A): paper-grade B0 with an EMITTED-but-invalid tool_call must
+    NOT silently text-parse a DIFFERENT action (action provenance integrity +
+    cross-baseline tool-call failure-rate honesty). Records action_source=
+    'invalid' + valid=False; the content's (different) scroll action never runs."""
+    monkeypatch.setenv("PROXY_API_KEY", "rp_test_dummy")
+    from p79.agents.proxy_api_agent import ProxyApiAgent
+    agent = ProxyApiAgent({
+        "model": {"api_name": "qwen.qwen3-vl-235b-a22b",
+                  "base_url": "https://i5xpracyci.execute-api.eu-west-2.amazonaws.com/model-api/invoke",
+                  "use_tool_calling": True},
+        "agent": {"image_max_size": 256}, "paper_grade": True,
+    })
+    response = {
+        # content carries a DIFFERENT valid action — the silent-swap risk vector.
+        "content": json.dumps({"action_type": "scroll", "scroll_direction": "down", "thought": "x"}),
+        "tool_calls": [{"id": "bad", "type": "function",
+                        "function": {"name": "web_action", "arguments": "{not valid json}"}}],
+        "model": "qwen.qwen3-vl-235b-a22b",
+        "usage": {"inputTokens": 100, "outputTokens": 10, "cost": 0.0002},
+        "metadata": {}, "logprobs": _P13_LOGPROBS,
+    }
+    _patch_requests_post(monkeypatch, response)
+    action, meta = agent.step(instruction="t", obs=_mock_obs(), history=[], observation_mode="dom")
+    assert action.get("action_type") != "scroll", "must NOT execute content's different action"
+    assert meta["action_source"] == "invalid"
+    assert meta["valid"] is False
+    assert meta["tool_call_valid"] is False
+    assert meta["text_fallback_used"] is False
+
+
+def test_p1_3_dev_mode_invalid_tool_call_still_text_falls_back(_proxy_agent, monkeypatch):
+    """Contrast: non-paper-grade (dev) keeps the lenient fallback — the same
+    invalid tool_call DOES text-parse the content action (action_source=
+    'fallback'). Confirms the fix is scoped to paper_grade only."""
+    response = {
+        "content": json.dumps({"action_type": "scroll", "scroll_direction": "down", "thought": "x"}),
+        "tool_calls": [{"id": "bad", "type": "function",
+                        "function": {"name": "web_action", "arguments": "{not valid json}"}}],
+        "model": "qwen.qwen3-vl-235b-a22b",
+        "usage": {"inputTokens": 100, "outputTokens": 10, "cost": 0.0002}, "metadata": {},
+    }
+    _patch_requests_post(monkeypatch, response)
+    action, meta = _proxy_agent.step(instruction="t", obs=_mock_obs(), history=[], observation_mode="dom")
+    assert action.get("action_type") == "scroll", "dev mode text-parses the content action"
+    assert meta["action_source"] == "fallback"
+    assert meta["text_fallback_used"] is True
+
+
+def test_p1_3_valid_tool_call_action_source(_proxy_agent, monkeypatch):
+    """Valid native tool_call → action_source='tool_call', tool_call_valid=True,
+    no text fallback."""
+    response = {
+        "content": "",
+        "tool_calls": [{"id": "ok", "type": "function",
+                        "function": {"name": "web_action",
+                                     "arguments": json.dumps({"action_type": "click", "element_id": 2, "thought": "go"})}}],
+        "model": "qwen.qwen3-vl-235b-a22b",
+        "usage": {"inputTokens": 100, "outputTokens": 10, "cost": 0.0002}, "metadata": {},
+    }
+    _patch_requests_post(monkeypatch, response)
+    action, meta = _proxy_agent.step(instruction="t", obs=_mock_obs(), history=[], observation_mode="dom")
+    assert meta["action_source"] == "tool_call"
+    assert meta["tool_call_valid"] is True
+    assert meta["text_fallback_used"] is False
+
+
 def test_f5_legacy_anthropic_text_only_response(_proxy_agent, monkeypatch):
     """F5: Provider drift / proxy regression returns Anthropic-style
     free-text response (no `tool_calls` field, just `content` string). Agent

@@ -600,15 +600,21 @@ class ProxyApiAgent:
 
         if self._use_tool_calling:
             payload["tools"] = [_WEB_ACTION_TOOL]
-            # B-991 (Q1=A 推荐, 2026-05-17): tool_choice="auto" — model self-
-            # decides call-vs-free-text. Forced tool_choice would impose
-            # grammar-constrained decoding (alternative tokens masked) →
-            # mean_logprob systematically inflated vs B1/B2 free decoding →
-            # §C router cross-baseline confidence feature contamination.
-            # "auto" preserves logprob symmetry; if N=30 pilot emit_rate <95%
-            # this falls back to "forced" + paper §3.5 disclose constrained
-            # asymmetry (parking lot §8 Q1 option B).
-            payload["tool_choice"] = "auto"
+            # tool_choice="required" (NOT "auto"). B-991 (2026-05-17) chose
+            # "auto" to preserve logprob symmetry, but Fire-6 RCA (2026-05-20)
+            # found "auto" emits tool_calls 0% under the real dom system prompt:
+            # its "Output ONLY valid JSON. No markdown blocks, no explanations."
+            # (B-451 byte-identical contract, required by B1/B2 text-parse)
+            # suppresses tool calling → 31% parse_error → injected-wait spirals
+            # (masked pre-B-991 by GLM rescue, exposed when B-991 retired it).
+            # probe (2026-05-20): emit 0%→100% with "required" (OpenAI string;
+            # {type:function} object proxy-ignored, Anthropic {type:tool}/{any}
+            # → HTTP 400), valid≈95%, logprobs intact. No system-prompt change
+            # needed (sidesteps the byte-identical contract). Logprob-symmetry
+            # worry deferred to Pass-2 router (§C): Pass-1 baseline does not
+            # consume logprobs; paper §3.5 discloses B0 grammar-constrained vs
+            # B1/B2 free decoding.
+            payload["tool_choice"] = "required"
             # Logprobs for cross-baseline confidence feature parity with
             # B1/B2 _compute_confidence (mean/min logprob + mean/min margin;
             # entropy fields None per top-2 truncation, see
@@ -748,6 +754,13 @@ class ProxyApiAgent:
         _tool_call_emitted: bool = False
         _tool_call_parse_path: str = "text_json"  # default; overridden if tool_calls path taken
         _tool_call_fallback_reason: Optional[str] = None
+        # P1-3-B (/stress GRL audit 2026-05-20, user Q4=A): explicit action-
+        # provenance trackers. text_fallback_used = Path-2 text parse ran;
+        # tool_call_valid = the emitted tool_call validated (None if no emit);
+        # action_source ∈ {tool_call, text_json, fallback, invalid} surfaced via
+        # meta so paper §3.5.1 cross-baseline action-channel disclosure is
+        # reproducible from disk (B0 native tool_calls vs B1/B2 text JSON).
+        _text_fallback_used: bool = False
 
         # B-991 (2026-05-17): AWS proxy hybrid shape — top-level `tool_calls`
         # field (NOT inside `content[]` Anthropic block, NOT inside
@@ -813,7 +826,39 @@ class ProxyApiAgent:
             "parser if a non-AWS proxy provider is being used."
         )
 
-        # Path 2: text parsing fallback (original logic).
+        # P1-3-B (/stress GRL audit 2026-05-20, user Q4=A): paper-grade B0 must
+        # NOT let an EMITTED-but-invalid tool_call silently fall through to a
+        # text-parsed DIFFERENT action. That changes B0 action provenance + masks
+        # the tool-call failure rate — cross-baseline asymmetry (B0 = native
+        # tool_calls per B-991; B1/B2 = text JSON), so silent recovery would make
+        # B0's effective parse-success look better than it is. Record an emitted-
+        # but-invalid tool_call as a protocol failure (invalid no-op, valid=False)
+        # and SKIP Path-2; the runner re-validates (B-134) + records
+        # parse_valid=False (failed step). Dev / non-paper-grade keeps the lenient
+        # text fallback below. Covers BOTH invalid emission paths above
+        # (tool_arguments_json_decode → tool_input=None; invalid_tool_input →
+        # validate_action rejected → action=None).
+        _tool_call_emitted_invalid = (
+            self._use_tool_calling
+            and _tool_call_emitted
+            and action is None
+            and _tool_call_fallback_reason is not None
+        )
+        if self._paper_grade and _tool_call_emitted_invalid:
+            _thought = raw_content.strip()[:500] if isinstance(raw_content, str) else ""
+            action = {"action_type": "none", "thought": _thought}
+            valid = False
+            _tool_call_parse_path = "invalid_tool_call_protocol_failure"
+            if fail_reason is None:
+                fail_reason = _tool_call_fallback_reason or "invalid_tool_input"
+            logger.warning(
+                "Proxy paper_grade: tool_call emitted but invalid (%s) — recorded "
+                "as protocol failure (invalid no-op), NO text-parse fallback "
+                "(P1-3-B).", fail_reason,
+            )
+
+        # Path 2: text parsing fallback (original logic; dev / non-paper-grade,
+        # or paper-grade with NO tool_call emitted at all).
         if action is None:
             if isinstance(raw_content, str):
                 output_text = raw_content
@@ -827,6 +872,7 @@ class ProxyApiAgent:
             else:
                 output_text = str(raw_content)
             action, valid, fail_reason = parse_action_text(output_text)
+            _text_fallback_used = True
 
         # Path 3 GLM extraction fallback RETIRED 2026-05-17 (B-991). Proxy
         # native tool_calling + free-text path together cover parse-error
@@ -905,6 +951,23 @@ class ProxyApiAgent:
 
         _confidence = self._compute_confidence_from_proxy_logprobs(_proxy_logprobs_content)
 
+        # P1-3-B (/stress GRL audit 2026-05-20, user Q4=A): derive explicit
+        # action provenance for paper §3.5.1 cross-baseline disclosure.
+        if _tool_call_parse_path == "tool_calls":
+            _action_source = "tool_call"
+        elif _tool_call_parse_path == "invalid_tool_call_protocol_failure":
+            _action_source = "invalid"
+        elif _text_fallback_used and _tool_call_emitted:
+            _action_source = "fallback"  # dev: emitted-but-invalid → text recovered
+        else:
+            _action_source = "text_json"
+        # tool_call_valid: True if a native tool_call validated, False if emitted-
+        # but-invalid, None if no tool_call was emitted (text-only path).
+        if not _tool_call_emitted:
+            _tool_call_valid: Optional[bool] = None
+        else:
+            _tool_call_valid = (_tool_call_parse_path == "tool_calls")
+
         meta = {
             "raw_output": output_text,
             "valid": valid,
@@ -975,6 +1038,14 @@ class ProxyApiAgent:
             "tool_call_emitted": _tool_call_emitted,
             "tool_call_parse_path": _tool_call_parse_path,
             "tool_call_fallback_reason": _tool_call_fallback_reason,
+            # P1-3-B (/stress GRL audit 2026-05-20, user Q4=A): explicit action
+            # provenance. action_source ∈ {tool_call, text_json, fallback,
+            # invalid}; tool_call_valid (None if no emit); text_fallback_used.
+            # Under paper_grade an emitted-but-invalid tool_call → action_source
+            # "invalid" + valid=False + NO text fallback (no silent action swap).
+            "action_source": _action_source,
+            "tool_call_valid": _tool_call_valid,
+            "text_fallback_used": _text_fallback_used,
             # B-1103 (/stress A2.3b P0-4-B*, 2026-05-18): non-paper-grade
             # dev-run signal for missing proxy logprobs. Paper-grade raises
             # at extraction point; dev runs persist this for downstream
