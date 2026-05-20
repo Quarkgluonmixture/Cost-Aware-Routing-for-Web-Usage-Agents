@@ -109,9 +109,12 @@ def test_b196_integrity_report_emitted_by_analyze_run(tmp_path):
 # ─── B-197 ──────────────────────────────────────────────────────────────────
 def test_b197_cost_efficiency_none_when_no_cost():
     from p79.experiment.metrics import aggregate_condition_metrics
+    from conftest import complete_episode_summary
+    # Fire-6 RCA Stage C1 fixture-drift fix (2026-05-20): derive from DEFAULTS
+    # so canonical require_present metrics populate (see conftest helper).
     eps_zero_cost = [
-        {"success": True, "total_cost_usd": 0.0},
-        {"success": False, "total_cost_usd": 0.0},
+        complete_episode_summary(success=True, total_cost_usd=0.0),
+        complete_episode_summary(success=False, total_cost_usd=0.0),
     ]
     out = aggregate_condition_metrics(eps_zero_cost)
     assert out["cost_efficiency_ratio"] is None
@@ -119,9 +122,10 @@ def test_b197_cost_efficiency_none_when_no_cost():
 
 def test_b197_cost_efficiency_correct_when_data_present():
     from p79.experiment.metrics import aggregate_condition_metrics
+    from conftest import complete_episode_summary
     eps = [
-        {"success": True, "total_cost_usd": 0.10},
-        {"success": False, "total_cost_usd": 0.30},
+        complete_episode_summary(success=True, total_cost_usd=0.10),
+        complete_episode_summary(success=False, total_cost_usd=0.30),
     ]
     out = aggregate_condition_metrics(eps)
     # cost_on_success / total = 0.10 / 0.40 = 0.25
@@ -163,11 +167,12 @@ def test_b199_detect_benchmark_noise_classifies_new_categories():
 
 def test_b199_noise_category_distribution_emitted():
     from p79.experiment.metrics import aggregate_condition_metrics
+    from conftest import complete_episode_summary
     eps = [
-        {"success": False, "benchmark_noise": True, "benchmark_noise_category": "api_rate_limit"},
-        {"success": False, "benchmark_noise": True, "benchmark_noise_category": "timeout"},
-        {"success": False, "benchmark_noise": True, "benchmark_noise_category": "api_rate_limit"},
-        {"success": True, "benchmark_noise": False, "benchmark_noise_category": None},
+        complete_episode_summary(success=False, benchmark_noise=True, benchmark_noise_category="api_rate_limit"),
+        complete_episode_summary(success=False, benchmark_noise=True, benchmark_noise_category="timeout"),
+        complete_episode_summary(success=False, benchmark_noise=True, benchmark_noise_category="api_rate_limit"),
+        complete_episode_summary(success=True, benchmark_noise=False, benchmark_noise_category=None),
     ]
     out = aggregate_condition_metrics(eps)
     assert out["benchmark_noise_category_distribution"] == {

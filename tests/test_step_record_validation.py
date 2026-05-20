@@ -52,35 +52,19 @@ def _valid_step_record():
 
 
 def _valid_episode_summary():
-    return {
-        "schema_version": SCHEMA_VERSION_V2,
-        "run_id": "run_x", "condition_id": "c1",
-        "benchmark": "vwa", "benchmark_site": "cls",
-        "task_id": 0, "seed": 42,
-        "success": False, "score": 0.0, "steps": 0, "retries": 0,
-        "no_op_rate": 0.0, "page_unchanged_rate": 0.0,
-        "total_latency_ms": 0.0, "p95_step_latency_ms": 0.0,
-        "total_tokens": 0, "total_model_cost_usd": 0.0,
-        "total_cost_usd": 0.0,
-        "total_router_overhead_cost_usd": 0.0,
-        "total_router_overhead_ms": 0.0,
-        "total_energy_kwh": None, "total_co2e_kg": None,
-        "escalation_count": 0, "trigger_distribution": {},
-        "benchmark_noise": False, "benchmark_noise_category": None,
-        "artifacts_dir": "",
-        # B-732 fix (/stress A1.8 cold-start P0-2-C* Gemini OOB, 2026-05-17):
-        # PAPER_GRADE_EPISODE_OPTIONAL_KEYS — all 7 sentinels required at
-        # write boundary. User directive 2026-05-17 cold-start: "archive
-        # 不进 paper scope" → no backward-compat hook; fresh fixtures stamp
-        # the full sentinel set with neutral default values.
-        "evaluator_authority_mode": None,
-        "reward_override_applied": None,
-        "wallclock_start": None,
-        "wallclock_end": None,
-        "resume_fingerprint": None,
-        "needs_reevaluation": False,
-        "trajectory_incomplete": False,
-    }
+    # Fire-6 RCA Stage C1 fixture-drift fix (2026-05-20): derive from
+    # EPISODE_SUMMARY_V2_DEFAULTS via the shared conftest helper so the full
+    # PAPER_GRADE_EPISODE_OPTIONAL_KEYS set (B-732 7 sentinels + eval-context
+    # provenance + M5 timeout taxonomy + Phase-2 intervention rollup +
+    # diagnostic_replay / sr_excluded) auto-populates instead of drifting
+    # against a hardcoded field list.
+    from conftest import complete_episode_summary
+    return complete_episode_summary(
+        run_id="run_x", condition_id="c1",
+        benchmark="vwa", benchmark_site="cls",
+        task_id=0, seed=42,
+        success=False, score=0.0, steps=0,
+    )
 
 
 def _valid_run_summary():

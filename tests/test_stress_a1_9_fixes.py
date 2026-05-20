@@ -75,9 +75,12 @@ def test_b322_aggregator_rejects_string_score():
 
 def test_b322_aggregator_accepts_valid_types():
     from p79.experiment.metrics import aggregate_condition_metrics
+    from conftest import complete_episode_summary
+    # Fire-6 RCA Stage C1 fixture-drift fix (2026-05-20): derive from DEFAULTS
+    # so canonical require_present metrics populate (see conftest helper).
     eps = [
-        {"success": True, "benchmark_noise": False, "score": 1.0},
-        {"success": False, "benchmark_noise": False, "score": 0.0},
+        complete_episode_summary(success=True, benchmark_noise=False, score=1.0),
+        complete_episode_summary(success=False, benchmark_noise=False, score=0.0),
     ]
     out = aggregate_condition_metrics(eps)
     assert out["success_rate"] == 0.5
@@ -86,11 +89,12 @@ def test_b322_aggregator_accepts_valid_types():
 # ─── B-327 clean_success_rate emission ──────────────────────────────────────
 def test_b327_clean_success_rate_excludes_noise():
     from p79.experiment.metrics import aggregate_condition_metrics
+    from conftest import complete_episode_summary
     eps = [
-        {"success": True, "benchmark_noise": False},
-        {"success": True, "benchmark_noise": False},
-        {"success": False, "benchmark_noise": True},   # noise → excluded
-        {"success": False, "benchmark_noise": True},   # noise → excluded
+        complete_episode_summary(success=True, benchmark_noise=False),
+        complete_episode_summary(success=True, benchmark_noise=False),
+        complete_episode_summary(success=False, benchmark_noise=True),   # noise → excluded
+        complete_episode_summary(success=False, benchmark_noise=True),   # noise → excluded
     ]
     out = aggregate_condition_metrics(eps)
     # raw SR = 2/4 = 0.5; clean SR over non-noise (2 episodes, both succeed) = 1.0
@@ -101,9 +105,10 @@ def test_b327_clean_success_rate_excludes_noise():
 
 def test_b327_clean_success_rate_none_when_all_noise():
     from p79.experiment.metrics import aggregate_condition_metrics
+    from conftest import complete_episode_summary
     eps = [
-        {"success": False, "benchmark_noise": True},
-        {"success": False, "benchmark_noise": True},
+        complete_episode_summary(success=False, benchmark_noise=True),
+        complete_episode_summary(success=False, benchmark_noise=True),
     ]
     out = aggregate_condition_metrics(eps)
     assert out["clean_success_rate"] is None

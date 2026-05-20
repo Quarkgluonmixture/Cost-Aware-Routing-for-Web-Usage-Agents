@@ -48,34 +48,22 @@ def test_b740_step_field_types_drift_invariant_passes_on_import():
 # ─── B-731 step record optional value types ─────────────────────────────────
 def _minimal_valid_step_record() -> Dict[str, Any]:
     """Baseline record that passes validate_step_record_v2 — used to perturb
-    one field at a time for poisoned-input tests."""
-    from p79.experiment.types import SCHEMA_VERSION_V2
-    return {
-        "schema_version": SCHEMA_VERSION_V2,
-        "run_id": "r1", "condition_id": "c1", "benchmark": "vwa",
-        "benchmark_site": "classifieds", "task_id": 1, "seed": 42,
-        "step_idx": 0, "som": {}, "observation_mode": "dom",
-        "router": {}, "module_flags": {}, "action_type": "click",
-        "action": {}, "action_success": True, "page_changed": True,
-        "latency_ms": {}, "tokens": {},
-        "cost_usd": {"input": 0.0, "output": 0.0, "model": 0.0,
-                     "router_overhead": 0.0, "total": 0.0},
-        "energy": {}, "retry_count": 0, "error_category": None,
-        "artifact_paths": {}, "reward": 0.0, "done": False,
-        "parse_valid": True, "parse_failure_reason": None,
-        "image_meta": None, "image_meta_recorded": False,
-        "locator_route_meta": None,
-        "locator_route_meta_primary": None,
-        "locator_route_meta_retry": None,
-        "select_option_meta": None,
-        "select_option_meta_primary": None,
-        "select_option_meta_retry": None,
-        "agent_visible_changed": True, "control_intervention": None,
-        "dialog_meta": None, "action_executed": None,
-        "fallback_finish": False, "element_bbox": None,
-        "cost_unit_basis": None, "cost_total_mixed_unit_warn": False,
-        "network_retry_count": None, "network_retry_wait_ms": None,
-    }
+    one field at a time for poisoned-input tests.
+
+    Fire-6 RCA Stage C1 fixture-drift fix (2026-05-20): derive from
+    STEP_RECORD_V2_DEFAULTS via the shared conftest helper so the 4 Phase-2
+    intervention keys (intervention_type / counted_as_agent_action /
+    intervention_from_url / intervention_recovery_url, commit 8d2a327) and any
+    future PAPER_GRADE_STEP_OPTIONAL_KEYS auto-populate instead of drifting
+    against a hardcoded field list."""
+    from conftest import complete_step_record
+    return complete_step_record(
+        run_id="r1", condition_id="c1", benchmark="vwa",
+        benchmark_site="classifieds", task_id=1,
+        observation_mode="dom", action_type="click",
+        action_success=True, page_changed=True,
+        parse_valid=True, agent_visible_changed=True, fallback_finish=False,
+    )
 
 
 def test_b731_valid_step_record_passes():

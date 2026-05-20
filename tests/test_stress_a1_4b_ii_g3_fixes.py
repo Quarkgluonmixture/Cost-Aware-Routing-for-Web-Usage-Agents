@@ -36,19 +36,27 @@ def test_b193_schema_migrations_v2_defaults_include_telemetry():
 
 def test_b193_aggregate_condition_metrics_emits_rates():
     from p79.experiment.metrics import aggregate_condition_metrics
+    from conftest import complete_episode_summary
+    # Fire-6 RCA Stage C1 fixture-drift fix (2026-05-20): derive episodes from
+    # EPISODE_SUMMARY_V2_DEFAULTS so canonical require_present metrics
+    # (total_latency_minus_retry_ms / busy_wait_total_ms) are populated and
+    # aggregate_condition_metrics does not fail-loud per /stress P0-C3-E.
     eps = [
         # Episode 1: trajectory_incomplete=True, partial_recovery=5, unknown={"foo":1}
-        {"success": False, "trajectory_incomplete": True,
-         "partial_recovery_step_count": 5,
-         "unknown_failure_reasons": {"foo": 1}},
+        complete_episode_summary(
+            success=False, trajectory_incomplete=True,
+            partial_recovery_step_count=5,
+            unknown_failure_reasons={"foo": 1}),
         # Episode 2: incomplete=False, recovery=0
-        {"success": True, "trajectory_incomplete": False,
-         "partial_recovery_step_count": 0,
-         "unknown_failure_reasons": {}},
+        complete_episode_summary(
+            success=True, trajectory_incomplete=False,
+            partial_recovery_step_count=0,
+            unknown_failure_reasons={}),
         # Episode 3: incomplete=True, recovery=3, unknown={"foo":2, "bar":1}
-        {"success": False, "trajectory_incomplete": True,
-         "partial_recovery_step_count": 3,
-         "unknown_failure_reasons": {"foo": 2, "bar": 1}},
+        complete_episode_summary(
+            success=False, trajectory_incomplete=True,
+            partial_recovery_step_count=3,
+            unknown_failure_reasons={"foo": 2, "bar": 1}),
     ]
     out = aggregate_condition_metrics(eps)
     assert out["trajectory_incomplete_episode_count"] == 2
