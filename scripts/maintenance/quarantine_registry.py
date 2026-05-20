@@ -82,6 +82,18 @@ VALID_CLASSIFICATIONS = (
 # QUARANTINE_DIAGNOSTIC_REPLAY env var alone can never bypass canonical Gate 8.
 DIAG_OVERRIDE_MAX_TASKS = 25
 
+# Fire-6 RCA Stage C3a (/stress 2026-05-20): evidence-gated cross-fire-recurrence
+# resolution. A recurrent task's Gate 8 Rule 2 block clears ONLY when EVERY
+# distinct quarantine error_class has its OWN evidence-gated `resolution` event
+# (the eval-goto C1 resolution must NOT clear the screenshot-timeout class — user
+# directive 2026-05-20). All checks are fail-closed.
+#
+# resolved_by_commit floor: the fix must be `e9875cc` (C2 classification commit,
+# which contains C1 eval isolation) OR a descendant — AND an ancestor of HEAD
+# (the fix is actually present in the running code). Verified via git merge-base.
+RESOLUTION_COMMIT_FLOOR = "e9875cc"
+RESOLUTION_REQUIRED_VIA = "matched_temporal_context_diagnostic_replay"
+
 
 def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -207,6 +219,205 @@ def latest_classification(site: str, task_id: int) -> Optional[Dict[str, Any]]:
     return max(classif, key=lambda e: e.get("ts", ""))
 
 
+# ===================== Fire-6 C3a: evidence-gated resolution =====================
+
+
+def _git_commit_in_lock_range(commit: str, repo_root: Path = REPO_ROOT) -> Tuple[bool, str]:
+    """Verify RESOLUTION_COMMIT_FLOOR ⪯ commit ⪯ HEAD (fail-closed).
+
+    The fix a resolution references must be (a) at least as new as the floor
+    (`e9875cc`, which contains C1 eval isolation) AND (b) actually present in the
+    running code (an ancestor of HEAD). Git's content-addressable ancestry means
+    a hand-written resolution cannot claim a fix absent from the deployed tree.
+    """
+    import subprocess
+    if not commit:
+        return False, "empty resolved_by_commit"
+
+    def _is_ancestor(a: str, b: str) -> Optional[bool]:
+        try:
+            rc = subprocess.run(
+                ["git", "-C", str(repo_root), "merge-base", "--is-ancestor", a, b],
+                capture_output=True, timeout=15,
+            ).returncode
+        except Exception:
+            return None
+        if rc == 0:
+            return True
+        if rc == 1:
+            return False
+        return None  # 128 = bad object / not a commit
+
+    floor_ok = _is_ancestor(RESOLUTION_COMMIT_FLOOR, commit)
+    if floor_ok is None:
+        return False, f"git cannot evaluate {RESOLUTION_COMMIT_FLOOR}..{commit} (bad object / no git)"
+    if not floor_ok:
+        return False, f"resolved_by_commit {commit} is not {RESOLUTION_COMMIT_FLOOR}-or-descendant"
+    head_ok = _is_ancestor(commit, "HEAD")
+    if head_ok is None:
+        return False, f"git cannot evaluate {commit}..HEAD"
+    if not head_ok:
+        return False, f"resolved_by_commit {commit} not ancestor of HEAD (fix not in running code)"
+    return True, "ok"
+
+
+def _error_class_evidence_profile(error_class: Optional[str]) -> str:
+    """Map a quarantine error_class to its resolution evidence profile.
+
+    eval_goto  — EvaluatorUnavailableError / Page.goto timeout → C1 eval isolation;
+                 episode-verified (eval_context_mode=isolated + eval_goto_timeout=False).
+    screenshot — Page.screenshot timeout → C1b non-fatal recovery; architectural
+                 (resolved_by_commit must carry C1b + a clean diagnostic episode;
+                 the load-dependent timeout cannot be forced in a small replay).
+    unknown    — anything else → fail-closed (cannot resolve).
+    """
+    ec = (error_class or "").lower()
+    if "page.goto" in ec or "evaluatorunavailable" in ec:
+        return "eval_goto"
+    if "page.screenshot" in ec:
+        return "screenshot"
+    return "unknown"
+
+
+def _verify_resolution_episode(ep: Dict[str, Any], profile: str) -> Tuple[bool, str]:
+    """Verify a diagnostic-replay episode meets the evidence conditions for the
+    given error_class profile (fail-closed)."""
+    if ep.get("diagnostic_replay") is not True:
+        return False, "episode diagnostic_replay != True"
+    if ep.get("sr_excluded") is not True:
+        return False, "episode sr_excluded != True"
+    if ep.get("needs_reevaluation") is not False:
+        return False, "episode needs_reevaluation != False"
+    if profile == "eval_goto":
+        if ep.get("eval_context_mode") != "isolated_program_html_context":
+            return False, "eval_context_mode != isolated_program_html_context"
+        if ep.get("eval_goto_timeout") is not False:
+            return False, "eval_goto_timeout != False"
+        return True, "ok (eval_goto: isolated eval + no goto timeout)"
+    if profile == "screenshot":
+        return True, "ok (screenshot: clean episode + C1b architectural fix via commit)"
+    return False, f"unknown error_class profile {profile!r}"
+
+
+def append_resolution(
+    *,
+    site: str,
+    task_id: int,
+    error_class: str,
+    resolved_by_commit: str,
+    episode_summary_path: str,
+    resolved_by: str,
+    rationale: str,
+) -> Dict[str, Any]:
+    """Append an evidence-gated resolution event (verified at write).
+
+    Refuses (ValueError) unless the profile is known, the episode satisfies the
+    profile's evidence conditions, the episode task_id matches, and
+    resolved_by_commit is e9875cc-or-descendant AND ancestor-of-HEAD. The gate
+    (`is_error_class_resolved`) RE-verifies at preflight — two fail-closed checks.
+    """
+    profile = _error_class_evidence_profile(error_class)
+    if profile == "unknown":
+        raise ValueError(f"no evidence profile for error_class {error_class!r}")
+    ep_path = Path(episode_summary_path)
+    if not ep_path.exists():
+        raise ValueError(f"episode summary not found: {ep_path}")
+    ep = json.loads(ep_path.read_text(encoding="utf-8"))
+    if int(ep.get("task_id", -1)) != int(task_id):
+        raise ValueError(f"episode task_id={ep.get('task_id')} != resolution task_id={task_id}")
+    ok, reason = _verify_resolution_episode(ep, profile)
+    if not ok:
+        raise ValueError(f"episode evidence rejected ({profile}): {reason}")
+    commit_ok, commit_reason = _git_commit_in_lock_range(resolved_by_commit)
+    if not commit_ok:
+        raise ValueError(f"resolved_by_commit rejected: {commit_reason}")
+    event = {
+        "event_type": "resolution",
+        "ts": _iso_now(),
+        "site": site,
+        "task_id": int(task_id),
+        "error_class": error_class,
+        "evidence_profile": profile,
+        "classified_via": RESOLUTION_REQUIRED_VIA,
+        "resolved_by_commit": resolved_by_commit,
+        "episode_summary_path": str(ep_path),
+        "evidence_snapshot": {
+            "diagnostic_replay": ep.get("diagnostic_replay"),
+            "sr_excluded": ep.get("sr_excluded"),
+            "needs_reevaluation": ep.get("needs_reevaluation"),
+            "eval_context_mode": ep.get("eval_context_mode"),
+            "eval_goto_timeout": ep.get("eval_goto_timeout"),
+            "success": ep.get("success"),
+        },
+        "resolved_by": resolved_by,
+        "rationale": rationale,
+    }
+    _append_event(event)
+    return event
+
+
+def _resolution_events(site: str, task_id: int) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for ev in _read_events():
+        if ev.get("event_type") != "resolution":
+            continue
+        if ev.get("site") != site or int(ev.get("task_id", -1)) != int(task_id):
+            continue
+        out.append(ev)
+    return out
+
+
+def is_error_class_resolved(site: str, task_id: int, error_class: str) -> Tuple[bool, str]:
+    """Is THIS (site, task, error_class) evidence-gated-resolved? Most-recent
+    matching resolution wins and is RE-verified (episode re-read + git ancestry)
+    so a hand-edited registry cannot bypass the gate. Returns (resolved, reason).
+    """
+    profile = _error_class_evidence_profile(error_class)
+    if profile == "unknown":
+        return False, f"unknown error_class profile for {error_class!r}"
+    cands = [
+        e for e in _resolution_events(site, task_id)
+        if (e.get("error_class") or "").lower() == (error_class or "").lower()
+    ]
+    if not cands:
+        return False, f"no resolution event for error_class {error_class!r}"
+    res = max(cands, key=lambda e: e.get("ts", ""))
+    if res.get("classified_via") != RESOLUTION_REQUIRED_VIA:
+        return False, f"resolution classified_via != {RESOLUTION_REQUIRED_VIA}"
+    commit_ok, commit_reason = _git_commit_in_lock_range(res.get("resolved_by_commit", ""))
+    if not commit_ok:
+        return False, f"resolved_by_commit re-check failed: {commit_reason}"
+    ep_path = Path(res.get("episode_summary_path", ""))
+    if not ep_path.exists():
+        return False, f"resolution episode missing at preflight: {ep_path}"
+    try:
+        ep = json.loads(ep_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return False, f"resolution episode unreadable: {exc}"
+    ok, reason = _verify_resolution_episode(ep, profile)
+    if not ok:
+        return False, f"episode re-verify failed ({profile}): {reason}"
+    return True, f"resolved ({profile}) by {str(res.get('resolved_by_commit'))[:7]}"
+
+
+def is_recurrence_resolved(site: str, task_id: int) -> Tuple[bool, List[str]]:
+    """Are ALL distinct recurrence error_classes resolved? A task clears Rule 2
+    ONLY when every distinct error_class across its quarantine fires has its own
+    valid evidence-gated resolution (per-error-class — eval-goto resolution does
+    NOT clear the screenshot-timeout class). Returns (all_resolved, unresolved).
+    """
+    quar, _ = _task_events(site, task_id)
+    error_classes = sorted({q.get("error_class") for q in quar if q.get("error_class")})
+    if not error_classes:
+        return False, ["no error_class on quarantine events"]
+    unresolved: List[str] = []
+    for ec in error_classes:
+        ok, reason = is_error_class_resolved(site, task_id, ec)
+        if not ok:
+            unresolved.append(f"{ec!r}: {reason}")
+    return (not unresolved), unresolved
+
+
 def detect_recurrent_failures(
     site: str,
     min_fires: int = 2,
@@ -310,8 +521,18 @@ def preflight_check(
                     b["error_classes_across_fires"] = r["error_classes"]
                     break
             continue
+        # Fire-6 C3a (/stress 2026-05-20): evidence-gated resolution clears the
+        # Rule 2 cross-fire-recurrence block when EVERY distinct error_class has
+        # its own valid resolution (per-error-class; re-verified episode + git
+        # ancestry). This does NOT clear Rule 1 (unclassified count) — a task
+        # blocked by Rule 1 above never reaches here. Fail-closed: any unresolved
+        # class keeps the halt.
+        _resolved, _unresolved = is_recurrence_resolved(site, r["task_id"])
+        if _resolved:
+            continue
         # not blocked by Rule 1, but recurrent across ≥ min_recurrent_fires
-        # fires — halt for matched-temporal-context investigation
+        # fires AND not evidence-gated-resolved — halt for matched-temporal-
+        # context investigation
         quar, _ = _task_events(site, r["task_id"])
         blocking.append({
             "site": site,
@@ -357,6 +578,25 @@ def _cmd_classify(args: argparse.Namespace) -> int:
         rationale=args.rationale,
         classified_via=args.classified_via,
     )
+    print(json.dumps(ev, ensure_ascii=False))
+    return 0
+
+
+def _cmd_resolve(args: argparse.Namespace) -> int:
+    """Fire-6 C3a: append an evidence-gated resolution (verified at write)."""
+    try:
+        ev = append_resolution(
+            site=args.site,
+            task_id=args.task_id,
+            error_class=args.error_class,
+            resolved_by_commit=args.resolved_by_commit,
+            episode_summary_path=args.episode_summary,
+            resolved_by=args.resolved_by,
+            rationale=args.rationale,
+        )
+    except ValueError as exc:
+        print(f"[resolve] REFUSED (fail-closed): {exc}", file=sys.stderr)
+        return 1
     print(json.dumps(ev, ensure_ascii=False))
     return 0
 
@@ -562,6 +802,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     p_cls.add_argument("--classified-via", default=None,
                        help="e.g., playwright_manual_reproduce / agent_replay / docker_inspection")
     p_cls.set_defaults(func=_cmd_classify)
+
+    # Fire-6 C3a: evidence-gated resolution (clears Gate 8 Rule 2 per error_class).
+    p_res = sub.add_parser("resolve", help="Append evidence-gated resolution (Fire-6 C3a) — clears Rule 2 for one error_class")
+    p_res.add_argument("--site", required=True)
+    p_res.add_argument("--task-id", type=int, required=True)
+    p_res.add_argument("--error-class", required=True,
+                       help="exact quarantine error_class string this resolution addresses")
+    p_res.add_argument("--episode-summary", required=True,
+                       help="path to the matched-temporal-context diagnostic-replay episode summary JSON")
+    p_res.add_argument("--resolved-by-commit", required=True,
+                       help=f"fix commit; must be {RESOLUTION_COMMIT_FLOOR}-or-descendant AND ancestor of HEAD")
+    p_res.add_argument("--resolved-by", default="operator")
+    p_res.add_argument("--rationale", required=True)
+    p_res.set_defaults(func=_cmd_resolve)
 
     p_qry = sub.add_parser("query", help="Query events for a (site, task_id)")
     p_qry.add_argument("--site", required=True)
