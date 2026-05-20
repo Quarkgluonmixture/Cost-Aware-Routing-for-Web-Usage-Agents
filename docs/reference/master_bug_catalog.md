@@ -7240,3 +7240,26 @@ rc=1  → Fire-6 cls launch HALTS until task 4 + task 75 matched-temporal-contex
 **Chronicle cross-link**: 实验笔记 §239 (deep audit timeline + split-session method + 50-finding cross-track + Fire-6 blocker subset + user P0-overload reframing lesson).
 
 ---
+
+## Fire-6 RCA Stage C — eval-isolation verified + screenshot-recovery + evidence-gated Gate 8 resolution (2026-05-20, B-1768~B-1775)
+
+3-fire pattern (Fire-3/4 cls task 75, Fire-5 cls task 4) root-caused, fixed, and verified on A100 matched-temporal-context. Arc: **C1** eval isolation (`3c767a2`) → **C2** diagnostic proof → **C3a** evidence-gated resolution (`77c3e94`) → **/stress** (Mode A Claude + Mode B codex) → P0/P1 hardening (`38c3ede`) → **C1b** screenshot non-fatal (`a211ec5`, submodule `2c15d66`) → **C2-prime** at C1b → Gate 8 Rule 2 clears.
+
+| Bug | Catch | Diagnosis | Fix |
+|---|---|---|---|
+| **B-1768** | Fire-3/4/5 RCA | eval `program_html` `Page.goto(item_url)` reused the agent's cumulative-state runner page on heavy edit forms (154KB DOM / 2582 inline `<option>`) → 30s timeout → `EvaluatorUnavailableError` → condition abort. Path Z (authed MCP) proved a fresh page does the same goto in 639ms → failure depends on runner-context cumulative state. | **C1** (`3c767a2`): `environment.py` classify eval-context → program_html-safe tasks eval on a fresh `page.context.new_page()`. Verified C2 (task 75 success, 10.4s) + C2-prime (isolated, no timeout) on A100. |
+| **B-1769** | C2-prime error-class audit | task 75 had a SECOND recurrence class: Fire-4 `Page.screenshot Timeout 30000ms` @ `agent_observation` (artifact screenshot on the heavy DOM page) — C1 eval isolation does NOT touch the agent's screenshot path. | **C1b** (`a211ec5`): submodule `async_envs.astep` returns blank ndarray + `info['screenshot_timeout_recovered']=True` (mode-agnostic); `VWAWrapper._gate_screenshot_timeout` single mode-gate — dom (artifact-only) → non-fatal; som/vision/phantom_*/None → re-raise. |
+| **B-1770** P0-1 (codex) | /stress Mode B | `is_error_class_resolved` re-read the episode at preflight but never re-checked `task_id`/`site` (only write-time did) → a hand-edited registry could point at another task's clean episode. | `38c3ede`: re-check episode task_id/site at preflight. |
+| **B-1771** P0-2 (Claude+codex) | /stress A+B | screenshot-class resolution had NO producing-commit binding → a PRE-C1b clean episode would "evidence" the C1b fix. | `38c3ede`: `SCREENSHOT_RESOLUTION_COMMIT_FLOOR=a211ec5`; screenshot profile verifies episode producer commit (env_snapshot `git.commit`) ≥ C1b. eval-goto stays self-evidenced by `eval_context_mode=isolated`. |
+| **B-1772** P1-3 (codex) | /stress Mode B | `_git_commit_in_lock_range` accepted mutable refs (`HEAD`/`master`) → preflight resolves the moving ref, not the reviewed object. | `38c3ede`: require 7-40 hex + `git rev-parse --verify <sha>^{commit}`; reject symbolic; per-profile floor. |
+| **B-1773** P1-5 | /stress A+B | C1b recovery silent (only a wrapper log) → no audit trail of recovered dom screenshot timeouts + their ~+30s latency. | `38c3ede`: `screenshot_timeout_recovered` step field + `screenshot_timeout_recovered_count` episode rollup (4-place schema; runner stamps from info). |
+| **B-1774** | C2-prime A100 sync | submodule commit `2c15d66` (C1b) committed locally but NEVER pushed → main repo pointed at an unfetchable submodule commit (breaks fresh clone / A100 / OSF replay). Also `test_sha_pin_consistency` + `b91_guard` `EXPECTED_SUBMODULE_SHA`/`EXPECTED_TREE_HASH_CHAIN` = 5th/6th SBOM pin location missed in re-lock. | push submodule p79-patches → fork; `38c3ede` updates the 2 test consts. SBOM `ac33d2f→2c15d66` / chain `752caeb→2696d0a` synced across all 6 locations (snapshot_env / preflight_v2 / Makefile×2 / prereg§7 / locked_versions / section4 + 2 test consts); `test_sha_pin_consistency` caught the miss. |
+| **B-1775** | C2-prime reset hang | cls reset 120s budget too tight for the 84k-item OSClass DB restore under load (reddit's is 240s) → C2-prime reset killed at 120s. | `4009506`: `VWA_RESET_TIMEOUT` env override; C2-prime re-ran at 360s → reset completed. |
+
+**Note**: C3a (`77c3e94`) the evidence-gated resolution *mechanism* itself is a feature, not a bug — its /stress-caught defects are B-1770~B-1773.
+
+**Verification**: full suite **1118 passed / 0 failed**; Gate 8 cls 0-233 + reddit 0-209 both clear (task 75 evidence-resolved: eval-goto self-evidenced + screenshot producer-bound to `4009506`); SBOM internally consistent (actual HEAD = pin, chain recomputes).
+**Commits**: `3c767a2` (C1) · `a211ec5` (C1b + SBOM re-lock) · `77c3e94` (C3a) · `38c3ede` (P0/P1) · `4009506` (reset knob) · `9a698a3` (task-75 resolutions) + submodule `2c15d66` pushed to fork.
+**Chronicle cross-link**: 实验笔记 §241.
+
+---
