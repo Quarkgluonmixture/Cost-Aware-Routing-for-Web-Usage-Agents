@@ -719,12 +719,32 @@ assert_no_other_site_chain_running() {
   fi
 
   local other_chains=""
+  # /stress 2026-05-20 P0-A4-A: pgrep-only detects ACTIVE runner. Chain bash
+  # spawns runner at T~45s+ post-orchestrator-exit (reset_and_auth_gate ~15-30s
+  # + watchdog spawn ~3s + runner cold-start). During the 30-90s preparation
+  # window the chain is live but pgrep returns empty → second `launch <other>`
+  # could pass this check, then BOTH chains fire parallel (recreates Fire-3
+  # contention class). Add pidfile check: `logs/queue_phase1_<label>.latest.pid`
+  # symlink is written at L619 of queue_phase1_paper_grade.sh BEFORE detached
+  # subshell spawn → kill -0 catches chain bash in prep window.
+  local _gates_lib_dir
+  _gates_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  local pidfile_dir="${_gates_lib_dir}/logs"
   for site in cls red shop; do
     [[ "${site}" == "${self_site}" ]] && continue
-    # Check active runner for that site
+
+    # Pidfile check first (closes 30-90s chain bash prep race window)
+    local pidfile="${pidfile_dir}/queue_phase1_${site}.latest.pid"
+    if [[ -f "${pidfile}" ]]; then
+      local chain_pid
+      chain_pid="$(cat "${pidfile}" 2>/dev/null | tr -d '[:space:]')"
+      if [[ -n "${chain_pid}" ]] && kill -0 "${chain_pid}" 2>/dev/null; then
+        other_chains="${other_chains}\n[${site} chain-prep] pidfile=${pidfile} pid=${chain_pid} (alive — possibly in preparation phase before runner spawn)"
+      fi
+    fi
+
+    # Runner pgrep check (existing — catches active runner phase)
     local runner_match
-    # For cls site filter look for run_experiment.*_classifieds_ pattern;
-    # for red look for run_experiment.*_reddit_; for shop look for run_experiment.*_shopping_.
     local site_run_pattern=""
     case "${site}" in
       cls) site_run_pattern="run_experiment.*_classifieds_[0-9]{8}_" ;;
@@ -734,7 +754,7 @@ assert_no_other_site_chain_running() {
     if [[ -n "${site_run_pattern}" ]]; then
       runner_match="$(pgrep -af "${site_run_pattern}" 2>/dev/null | grep -v "_wa_" || true)"
       if [[ -n "${runner_match}" ]]; then
-        other_chains="${other_chains}\n[${site}]\n${runner_match}"
+        other_chains="${other_chains}\n[${site} runner-active]\n${runner_match}"
       fi
     fi
   done
