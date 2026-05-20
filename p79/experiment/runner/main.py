@@ -3284,6 +3284,12 @@ class ExperimentRunner:
             # also auditable from disk alone.
             step_record["action_executed"] = next_info.get("action_executed")
             step_record["action_executed_primary"] = _primary_action_executed
+            # Fire-6 C1b /stress P1-5: stamp recovered Page.screenshot timeout
+            # (dom-mode blank placeholder) so paper §4 can disclose recovered-
+            # timeout steps + exclude their ~+30s wait from canonical latency.
+            step_record["screenshot_timeout_recovered"] = bool(
+                next_info.get("screenshot_timeout_recovered")
+            ) if isinstance(next_info, dict) else False
             # B-552 (/stress A1.5 P1-2-AB* Claude+codex OOB, 2026-05-17):
             # agent's RAW pre-validate action emit. Paper §3 taxonomy 3-layer
             # model (raw_action / control_intervention.original_action /
@@ -3672,6 +3678,11 @@ class ExperimentRunner:
         episode_summary["component_breakdown"] = breakdown
         # Track how many free busy-page waits were issued (not counted as steps)
         episode_summary["busy_wait_free_steps"] = total_busy_waits
+        # Fire-6 C1b /stress P1-5: episode rollup of recovered Page.screenshot
+        # timeouts (dom-mode). Paper §4 disclosure + latency-confound count.
+        episode_summary["screenshot_timeout_recovered_count"] = sum(
+            1 for s in step_records if s.get("screenshot_timeout_recovered")
+        )
         # Total wall time spent in busy-wait stalls (RU-4): not counted in
         # total_latency_ms (which sums step_records latencies), exposed
         # separately so end-to-end episode time = total_latency_ms + busy_wait_total_ms.

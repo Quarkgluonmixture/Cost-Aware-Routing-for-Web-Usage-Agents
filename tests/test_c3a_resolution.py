@@ -33,14 +33,26 @@ def reg(tmp_path, monkeypatch):
     return r
 
 
-def _episode(tmp_path, name, **over):
+def _episode(tmp_path, name, producer=None, **over):
+    """Write a diagnostic episode summary. If producer is given, place it under a
+    run dir with an env_snapshot.json carrying git.commit=producer (so the P0-2
+    screenshot producer-commit check can resolve it)."""
     base = {
-        "task_id": 75, "diagnostic_replay": True, "sr_excluded": True,
+        "task_id": 75, "benchmark_site": "classifieds",
+        "diagnostic_replay": True, "sr_excluded": True,
         "needs_reevaluation": False, "eval_context_mode": "isolated_program_html_context",
         "eval_goto_timeout": False, "success": True,
     }
     base.update(over)
-    p = tmp_path / name
+    if producer is not None:
+        run_root = tmp_path / f"run_{name.replace('.', '_')}"
+        ep_dir = run_root / "cond" / "episodes"
+        ep_dir.mkdir(parents=True, exist_ok=True)
+        (run_root / "env_snapshot.json").write_text(
+            json.dumps({"git": {"commit": producer}}))
+        p = ep_dir / name
+    else:
+        p = tmp_path / name
     p.write_text(json.dumps(base))
     return str(p)
 
@@ -71,12 +83,60 @@ def test_eval_goto_resolution_accepted(reg, tmp_path):
 
 
 def test_screenshot_resolution_accepted_with_c1b(reg, tmp_path):
-    ep = _episode(tmp_path, "clean.json")
+    ep = _episode(tmp_path, "clean.json", producer=C1B)  # episode produced AT C1b
     qr.append_resolution(site="classifieds", task_id=75, error_class=SCREENSHOT_EC,
                          resolved_by_commit=C1B, episode_summary_path=ep,
                          resolved_by="test", rationale="C1b architectural")
     ok, _ = qr.is_error_class_resolved("classifieds", 75, SCREENSHOT_EC)
     assert ok
+
+
+# ── P0-2: screenshot evidence must be produced AT C1b ────────────────────────
+def test_p0_2_screenshot_rejects_pre_c1b_producer(reg, tmp_path):
+    # episode produced at 9d46134 (C2, PRE-C1b) → screenshot resolution rejected
+    ep = _episode(tmp_path, "prec1b.json", producer="9d46134")
+    with pytest.raises(ValueError, match="producer|C1b-or-descendant"):
+        qr.append_resolution(site="classifieds", task_id=75, error_class=SCREENSHOT_EC,
+                             resolved_by_commit=C1B, episode_summary_path=ep,
+                             resolved_by="test", rationale="pre-C1b episode")
+
+
+def test_p0_2_screenshot_rejects_missing_env_snapshot(reg, tmp_path):
+    # bare episode (no env_snapshot.json) → no producer commit → rejected
+    ep = _episode(tmp_path, "noenv.json")  # producer=None
+    with pytest.raises(ValueError, match="producer"):
+        qr.append_resolution(site="classifieds", task_id=75, error_class=SCREENSHOT_EC,
+                             resolved_by_commit=C1B, episode_summary_path=ep,
+                             resolved_by="test", rationale="no env_snapshot")
+
+
+# ── P1-3: reject mutable/symbolic refs ───────────────────────────────────────
+@pytest.mark.parametrize("ref", ["HEAD", "master", "main", "origin/master"])
+def test_p1_3_rejects_mutable_ref(reg, tmp_path, ref):
+    ep = _episode(tmp_path, "g.json")
+    with pytest.raises(ValueError, match="hex SHA|symbolic|mutable"):
+        qr.append_resolution(site="classifieds", task_id=75, error_class=EVAL_GOTO_EC,
+                             resolved_by_commit=ref, episode_summary_path=ep,
+                             resolved_by="test", rationale="mutable ref")
+
+
+# ── P0-1: preflight rejects a resolution pointing at another task's episode ───
+def test_p0_1_preflight_rejects_wrong_task_episode(reg, tmp_path):
+    _quarantine_two_classes(reg)
+    # hand-write a resolution (bypassing append_resolution's write check) that
+    # points at a task-4 clean episode — preflight re-check must reject it.
+    wrong_ep = _episode(tmp_path, "task4.json", task_id=4)
+    qr._append_event({
+        "event_type": "resolution", "ts": "2026-05-20T10:00:00+00:00",
+        "site": "classifieds", "task_id": 75, "error_class": EVAL_GOTO_EC,
+        "evidence_profile": "eval_goto",
+        "classified_via": qr.RESOLUTION_REQUIRED_VIA,
+        "resolved_by_commit": FLOOR, "episode_summary_path": wrong_ep,
+        "resolved_by": "attacker", "rationale": "wrong-task episode",
+    })
+    ok, reason = qr.is_error_class_resolved("classifieds", 75, EVAL_GOTO_EC)
+    assert ok is False
+    assert "task_id" in reason
 
 
 def test_eval_goto_rejected_if_timeout_true(reg, tmp_path):
@@ -154,7 +214,8 @@ def test_both_classes_resolved_clears_recurrence(reg, tmp_path):
                          resolved_by_commit=FLOOR, episode_summary_path=_episode(tmp_path, "eg.json"),
                          resolved_by="test", rationale="eval-goto")
     qr.append_resolution(site="classifieds", task_id=75, error_class=SCREENSHOT_EC,
-                         resolved_by_commit=C1B, episode_summary_path=_episode(tmp_path, "ss.json"),
+                         resolved_by_commit=C1B,
+                         episode_summary_path=_episode(tmp_path, "ss.json", producer=C1B),
                          resolved_by="test", rationale="screenshot")
     resolved, unresolved = qr.is_recurrence_resolved("classifieds", 75)
     assert resolved is True, unresolved
@@ -174,7 +235,8 @@ def test_preflight_halts_until_both_resolved(reg, tmp_path):
     assert halt is True
     # both resolved → CLEARS
     qr.append_resolution(site="classifieds", task_id=75, error_class=SCREENSHOT_EC,
-                         resolved_by_commit=C1B, episode_summary_path=_episode(tmp_path, "ss.json"),
+                         resolved_by_commit=C1B,
+                         episode_summary_path=_episode(tmp_path, "ss.json", producer=C1B),
                          resolved_by="test", rationale="ss")
     halt, blocking = qr.preflight_check("classifieds", [75])
     assert halt is False, blocking

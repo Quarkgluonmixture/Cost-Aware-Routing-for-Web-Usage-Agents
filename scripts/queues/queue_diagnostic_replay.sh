@@ -77,6 +77,15 @@ export QUARANTINE_DIAGNOSTIC_REPLAY=1
 # fail-closed env (env_snapshot strictness etc.). C1 isolation + forensics are
 # unconditional, so fidelity is preserved without paper-grade gating.
 export P79_PAPER_GRADE=0
+# Reset target = A100 self-hosted docker reached via the DGX→A100 SSH
+# port-forward (localhost:9980). The diagnostic wrapper ALWAYS targets this
+# topology, so force the local HTTP reset endpoint
+# (localhost:9980/index.php?page=reset) rather than reset_vwa_sites.sh's auto
+# mode, which on DGX (quark SSH key present, hostname not a100/condense)
+# resolves to the vestigial DGX→quark `remote` path and fails on missing
+# VWA_RESET_SSH_HOST. Canonical fires force local via P79_PAPER_GRADE_HOST=1;
+# we make it explicit here.
+export VWA_RESET_MODE="${VWA_RESET_MODE:-local}"
 
 # ---------- shared paper-grade lib (env init + A100 locality + reset/auth) ----------
 # shellcheck disable=SC1091

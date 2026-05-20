@@ -310,6 +310,13 @@ class StepRecordV2:
     counted_as_agent_action: Optional[bool] = None
     intervention_from_url: Optional[str] = None
     intervention_recovery_url: Optional[str] = None
+    # Fire-6 RCA Stage C1b /stress P1-5 (2026-05-20): True when this step's
+    # observation was built after a Page.screenshot timeout was recovered to a
+    # blank placeholder (dom mode only — see VWAWrapper._gate_screenshot_timeout).
+    # Default False (always present via STEP_RECORD_V2_DEFAULTS). NOT a paper-
+    # grade-required key (telemetry, not a hero field). Enables paper §4
+    # disclosure of recovered-timeout steps + their +~30s latency exclusion.
+    screenshot_timeout_recovered: bool = False
 
     def as_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -377,6 +384,11 @@ class EpisodeSummaryV2:
     # (mirrors needs_reevaluation / trajectory_incomplete): canonical = False.
     diagnostic_replay: bool = False
     sr_excluded: bool = False
+    # Fire-6 RCA Stage C1b /stress P1-5 (2026-05-20): count of steps whose
+    # observation was built after a recovered Page.screenshot timeout (dom-mode
+    # blank placeholder). Default 0 (always present). Paper §4 disclosure of
+    # recovered-timeout frequency + latency-confound flag (each ≈ +30s).
+    screenshot_timeout_recovered_count: int = 0
     state_change_reason_distribution: Dict[str, int] = field(default_factory=dict)
     checklist_completion_rate: Optional[float] = None
     checklist_failed_items: Optional[int] = None
@@ -722,6 +734,8 @@ _STEP_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     "counted_as_agent_action": (bool, type(None)),
     "intervention_from_url": (str, type(None)),
     "intervention_recovery_url": (str, type(None)),
+    # Fire-6 C1b /stress P1-5 (always-bool telemetry).
+    "screenshot_timeout_recovered": (bool,),
 }
 
 
@@ -840,6 +854,8 @@ _EPISODE_OPTIONAL_FIELD_TYPES: Dict[str, tuple] = {
     # Fire-6 RCA Stage C2 diagnostic-replay provenance (always-bool).
     "diagnostic_replay": (bool,),
     "sr_excluded": (bool,),
+    # Fire-6 C1b /stress P1-5 (always-int telemetry rollup).
+    "screenshot_timeout_recovered_count": (int,),
     "verified_substrate_noise": (bool, type(None)),
     # P1-17-C* Phase 2 attempt-lineage (Sensitivity-only column; all None
     # until checkpoint-restore infrastructure lands).

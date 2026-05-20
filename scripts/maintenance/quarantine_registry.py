@@ -93,6 +93,13 @@ DIAG_OVERRIDE_MAX_TASKS = 25
 # (the fix is actually present in the running code). Verified via git merge-base.
 RESOLUTION_COMMIT_FLOOR = "e9875cc"
 RESOLUTION_REQUIRED_VIA = "matched_temporal_context_diagnostic_replay"
+# Fire-6 C3a /stress P0-2 (2026-05-20): the screenshot-timeout class has NO
+# self-evidencing episode field (unlike eval-goto's eval_context_mode=isolated),
+# so its evidence episode MUST be produced AT C1b (a211ec5) or later — verified
+# against the run's env_snapshot.json `git.commit` (producer commit). Both the
+# resolution's resolved_by_commit AND the episode producer must be a211ec5-or-
+# descendant for the screenshot profile.
+SCREENSHOT_RESOLUTION_COMMIT_FLOOR = "a211ec5"
 
 
 def _iso_now() -> str:
@@ -222,43 +229,88 @@ def latest_classification(site: str, task_id: int) -> Optional[Dict[str, Any]]:
 # ===================== Fire-6 C3a: evidence-gated resolution =====================
 
 
-def _git_commit_in_lock_range(commit: str, repo_root: Path = REPO_ROOT) -> Tuple[bool, str]:
-    """Verify RESOLUTION_COMMIT_FLOOR ⪯ commit ⪯ HEAD (fail-closed).
+def _git_commit_in_lock_range(
+    commit: str,
+    repo_root: Path = REPO_ROOT,
+    floor: str = RESOLUTION_COMMIT_FLOOR,
+) -> Tuple[bool, str]:
+    """Verify floor ⪯ commit ⪯ HEAD (fail-closed).
 
-    The fix a resolution references must be (a) at least as new as the floor
-    (`e9875cc`, which contains C1 eval isolation) AND (b) actually present in the
-    running code (an ancestor of HEAD). Git's content-addressable ancestry means
-    a hand-written resolution cannot claim a fix absent from the deployed tree.
+    The commit must be (a) an IMMUTABLE hex SHA — /stress P1-3 (2026-05-20):
+    symbolic/mutable refs (`HEAD`, `master`, branch/tag names) are rejected
+    because a moving ref resolves to a different object at preflight than at the
+    reviewed write time; (b) at least as new as `floor`; AND (c) an ancestor of
+    HEAD (the fix is actually present in the running code). Git's content-
+    addressable ancestry means a hand-written resolution cannot claim a fix
+    absent from the deployed tree.
     """
+    import re
     import subprocess
-    if not commit:
-        return False, "empty resolved_by_commit"
+    c = (commit or "").strip().lower()
+    if not c:
+        return False, "empty commit"
+    # P1-3: reject symbolic/mutable refs — require 7-40 hex (short or full SHA).
+    if not re.fullmatch(r"[0-9a-f]{7,40}", c):
+        return False, f"commit {commit!r} not a 7-40 hex SHA (symbolic/mutable refs rejected)"
 
-    def _is_ancestor(a: str, b: str) -> Optional[bool]:
+    def _git(args: List[str]) -> Optional[subprocess.CompletedProcess]:
         try:
-            rc = subprocess.run(
-                ["git", "-C", str(repo_root), "merge-base", "--is-ancestor", a, b],
-                capture_output=True, timeout=15,
-            ).returncode
+            return subprocess.run(
+                ["git", "-C", str(repo_root)] + args,
+                capture_output=True, text=True, timeout=15,
+            )
         except Exception:
             return None
-        if rc == 0:
+
+    # Resolve to a full commit object — rejects non-existent / non-commit / refs.
+    rp = _git(["rev-parse", "--verify", f"{c}^{{commit}}"])
+    if rp is None:
+        return False, "git unavailable"
+    if rp.returncode != 0:
+        return False, f"commit {commit!r} not a resolvable commit object"
+    resolved = rp.stdout.strip()
+
+    def _is_ancestor(a: str, b: str) -> Optional[bool]:
+        r = _git(["merge-base", "--is-ancestor", a, b])
+        if r is None:
+            return None
+        if r.returncode == 0:
             return True
-        if rc == 1:
+        if r.returncode == 1:
             return False
         return None  # 128 = bad object / not a commit
 
-    floor_ok = _is_ancestor(RESOLUTION_COMMIT_FLOOR, commit)
+    floor_ok = _is_ancestor(floor, resolved)
     if floor_ok is None:
-        return False, f"git cannot evaluate {RESOLUTION_COMMIT_FLOOR}..{commit} (bad object / no git)"
+        return False, f"git cannot evaluate {floor}..{resolved[:7]}"
     if not floor_ok:
-        return False, f"resolved_by_commit {commit} is not {RESOLUTION_COMMIT_FLOOR}-or-descendant"
-    head_ok = _is_ancestor(commit, "HEAD")
+        return False, f"commit {resolved[:7]} is not {floor}-or-descendant"
+    head_ok = _is_ancestor(resolved, "HEAD")
     if head_ok is None:
-        return False, f"git cannot evaluate {commit}..HEAD"
+        return False, f"git cannot evaluate {resolved[:7]}..HEAD"
     if not head_ok:
-        return False, f"resolved_by_commit {commit} not ancestor of HEAD (fix not in running code)"
+        return False, f"commit {resolved[:7]} not ancestor of HEAD (not in running code)"
     return True, "ok"
+
+
+def _profile_resolved_commit_floor(profile: str) -> str:
+    """Per-profile resolved_by_commit floor (P0-2): screenshot requires C1b."""
+    return SCREENSHOT_RESOLUTION_COMMIT_FLOOR if profile == "screenshot" else RESOLUTION_COMMIT_FLOOR
+
+
+def _episode_producer_commit(ep_path: Path) -> Optional[str]:
+    """Walk up from the episode summary to the run's env_snapshot.json and return
+    its `git.commit` (the commit the episode was PRODUCED at). None if not found.
+    Used by the screenshot profile (P0-2) to bind the evidence episode to C1b."""
+    for anc in [ep_path.parent, *ep_path.parents]:
+        snap = anc / "env_snapshot.json"
+        if snap.exists():
+            try:
+                d = json.loads(snap.read_text(encoding="utf-8"))
+            except Exception:
+                return None
+            return (d.get("git") or {}).get("commit")
+    return None
 
 
 def _error_class_evidence_profile(error_class: Optional[str]) -> str:
@@ -279,7 +331,9 @@ def _error_class_evidence_profile(error_class: Optional[str]) -> str:
     return "unknown"
 
 
-def _verify_resolution_episode(ep: Dict[str, Any], profile: str) -> Tuple[bool, str]:
+def _verify_resolution_episode(
+    ep: Dict[str, Any], profile: str, ep_path: Path,
+) -> Tuple[bool, str]:
     """Verify a diagnostic-replay episode meets the evidence conditions for the
     given error_class profile (fail-closed)."""
     if ep.get("diagnostic_replay") is not True:
@@ -289,13 +343,28 @@ def _verify_resolution_episode(ep: Dict[str, Any], profile: str) -> Tuple[bool, 
     if ep.get("needs_reevaluation") is not False:
         return False, "episode needs_reevaluation != False"
     if profile == "eval_goto":
+        # Self-evidencing: eval_context_mode=isolated_program_html_context is a C1
+        # artifact (only stamped when C1 isolation ran), so the episode field
+        # itself proves C1 was active — no separate producer-commit check needed.
         if ep.get("eval_context_mode") != "isolated_program_html_context":
             return False, "eval_context_mode != isolated_program_html_context"
         if ep.get("eval_goto_timeout") is not False:
             return False, "eval_goto_timeout != False"
         return True, "ok (eval_goto: isolated eval + no goto timeout)"
     if profile == "screenshot":
-        return True, "ok (screenshot: clean episode + C1b architectural fix via commit)"
+        # P0-2: the screenshot class has NO self-evidencing field, so bind the
+        # evidence episode to its PRODUCER commit — it must be produced at C1b
+        # (a211ec5) or later, else a pre-C1b clean run would falsely "evidence"
+        # the C1b fix. Producer commit read from the run's env_snapshot.json.
+        producer = _episode_producer_commit(ep_path)
+        if not producer:
+            return False, "screenshot: no producer commit (env_snapshot.json git.commit missing)"
+        ok, reason = _git_commit_in_lock_range(
+            producer, floor=SCREENSHOT_RESOLUTION_COMMIT_FLOOR,
+        )
+        if not ok:
+            return False, f"screenshot: episode producer commit not C1b-or-descendant ({reason})"
+        return True, f"ok (screenshot: clean episode produced at C1b+ {producer[:7]})"
     return False, f"unknown error_class profile {profile!r}"
 
 
@@ -325,10 +394,12 @@ def append_resolution(
     ep = json.loads(ep_path.read_text(encoding="utf-8"))
     if int(ep.get("task_id", -1)) != int(task_id):
         raise ValueError(f"episode task_id={ep.get('task_id')} != resolution task_id={task_id}")
-    ok, reason = _verify_resolution_episode(ep, profile)
+    ok, reason = _verify_resolution_episode(ep, profile, ep_path)
     if not ok:
         raise ValueError(f"episode evidence rejected ({profile}): {reason}")
-    commit_ok, commit_reason = _git_commit_in_lock_range(resolved_by_commit)
+    commit_ok, commit_reason = _git_commit_in_lock_range(
+        resolved_by_commit, floor=_profile_resolved_commit_floor(profile),
+    )
     if not commit_ok:
         raise ValueError(f"resolved_by_commit rejected: {commit_reason}")
     event = {
@@ -348,6 +419,7 @@ def append_resolution(
             "eval_context_mode": ep.get("eval_context_mode"),
             "eval_goto_timeout": ep.get("eval_goto_timeout"),
             "success": ep.get("success"),
+            "producer_commit": _episode_producer_commit(ep_path),
         },
         "resolved_by": resolved_by,
         "rationale": rationale,
@@ -384,7 +456,9 @@ def is_error_class_resolved(site: str, task_id: int, error_class: str) -> Tuple[
     res = max(cands, key=lambda e: e.get("ts", ""))
     if res.get("classified_via") != RESOLUTION_REQUIRED_VIA:
         return False, f"resolution classified_via != {RESOLUTION_REQUIRED_VIA}"
-    commit_ok, commit_reason = _git_commit_in_lock_range(res.get("resolved_by_commit", ""))
+    commit_ok, commit_reason = _git_commit_in_lock_range(
+        res.get("resolved_by_commit", ""), floor=_profile_resolved_commit_floor(profile),
+    )
     if not commit_ok:
         return False, f"resolved_by_commit re-check failed: {commit_reason}"
     ep_path = Path(res.get("episode_summary_path", ""))
@@ -394,7 +468,16 @@ def is_error_class_resolved(site: str, task_id: int, error_class: str) -> Tuple[
         ep = json.loads(ep_path.read_text(encoding="utf-8"))
     except Exception as exc:
         return False, f"resolution episode unreadable: {exc}"
-    ok, reason = _verify_resolution_episode(ep, profile)
+    # P0-1 (/stress 2026-05-20): re-check episode task_id/site at preflight.
+    # append_resolution checks at write, but a hand-edited registry could point
+    # episode_summary_path at ANOTHER task's clean episode — re-verify here so the
+    # evidence episode actually belongs to this (site, task).
+    if int(ep.get("task_id", -1)) != int(task_id):
+        return False, f"episode task_id={ep.get('task_id')} != resolution task_id={task_id}"
+    ep_site = str(ep.get("benchmark_site") or ep.get("site") or "")
+    if ep_site and site and ep_site not in site and site not in ep_site:
+        return False, f"episode site={ep_site!r} != resolution site={site!r}"
+    ok, reason = _verify_resolution_episode(ep, profile, ep_path)
     if not ok:
         return False, f"episode re-verify failed ({profile}): {reason}"
     return True, f"resolved ({profile}) by {str(res.get('resolved_by_commit'))[:7]}"

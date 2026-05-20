@@ -75,6 +75,7 @@ EPISODE_SUMMARY_V2_DEFAULTS: Dict[str, Any] = {
     # Fire-6 RCA Stage C2 diagnostic-replay provenance (canonical = False).
     "diagnostic_replay": False,
     "sr_excluded": False,
+    "screenshot_timeout_recovered_count": 0,  # Fire-6 C1b /stress P1-5
     "artifacts_dir": "",
     # --- additions (optional, default-filled) ---
     "state_change_reason_distribution": {},  # original v2
@@ -298,6 +299,7 @@ STEP_RECORD_V2_DEFAULTS: Dict[str, Any] = {
     "counted_as_agent_action": None,
     "intervention_from_url": None,
     "intervention_recovery_url": None,
+    "screenshot_timeout_recovered": False,  # Fire-6 C1b /stress P1-5
 }
 
 

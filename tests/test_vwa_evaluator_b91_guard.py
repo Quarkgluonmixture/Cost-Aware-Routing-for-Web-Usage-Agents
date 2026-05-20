@@ -28,7 +28,7 @@ VWA_SUBMODULE = REPO_ROOT / "external" / "visualwebarena"
 # A1.18-re lock (memory `reference_vwa_submodule_p79_patches`, 2026-05-17,
 # updated post Chunk 1 11-fix sweep). Tree-hash chain SBOM in prereg §7
 # per B-580.
-EXPECTED_SUBMODULE_SHA = "ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927"
+EXPECTED_SUBMODULE_SHA = "2c15d66d120f8498633ae65057aa50a34b3e93e0"  # Fire-6 C1b re-lock (was ac33d2f)
 # B-663 (/stress A1.12 P0-4 C* gemini, 2026-05-17): tree-hash chain is the
 # IMMUTABLE witness per prereg §7 — HEAD SHA above is mutable under `git push
 # --force-with-lease`. The tree-hash chain recipe is environment-independent
@@ -36,7 +36,7 @@ EXPECTED_SUBMODULE_SHA = "ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927"
 # core.autocrlf / git version). Recipe:
 #   git rev-list <upstream-base>..HEAD --format=tformat:'%H %T' | sha256sum
 UPSTREAM_BASE_SHA = "89f5af29305c3d1e9f97ce4421462060a70c9a03"
-EXPECTED_TREE_HASH_CHAIN = "752caebdc6bd84761b2f308331f21241a9b4a28de65b46ff0007ef27d8c72778"
+EXPECTED_TREE_HASH_CHAIN = "2696d0a61e2f70536f247ebb225f51c262b657d8b8b7b407f8581b75757a8bae"  # Fire-6 C1b re-lock (was 752caeb)
 
 
 @pytest.fixture(autouse=True)
