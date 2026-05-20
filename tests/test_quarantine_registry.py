@@ -211,6 +211,42 @@ class TestPreflightCheck:
         assert sorted(rec_75["run_ids"]) == ["r3", "r4", "r5"]
 
 
+class TestRecurrenceDedupInvariant:
+    """Z-session decision A invariant (2026-05-20): recurrence MUST count unique
+    fire events (run_ids), NOT raw registry rows. Confirmatory classification
+    entries (e.g. Z empirical retier + parallel-session revised_tier on the
+    same task) must NOT inflate the cross-fire recurrence count.
+    """
+
+    def test_classification_rows_do_not_inflate_recurrence(self, isolated_registry):
+        # 2 distinct fires quarantine task 75
+        qr.append_quarantine(site="classifieds", task_id=75, run_id="fire3")
+        qr.append_quarantine(site="classifieds", task_id=75, run_id="fire4")
+        # Pile on 6 classification rows (mirror Z retier + parallel revised_tier)
+        for via in ("transient_drift", "transient_drift"):
+            qr.append_classification(site="classifieds", task_id=75,
+                                     classification=via, classified_by="a", rationale="x")
+        for _ in range(4):
+            qr.append_classification(site="classifieds", task_id=75,
+                                     classification="unreproducible_in_isolation",
+                                     classified_by="b", rationale="confirmatory")
+        rec = qr.detect_recurrent_failures("classifieds", min_fires=2)
+        rec_75 = next(r for r in rec if r["task_id"] == 75)
+        # 8 total rows (2 quarantine + 6 classification) but fire_count MUST be 2
+        assert rec_75["fire_count"] == 2, "classification rows must NOT inflate recurrence"
+        assert sorted(rec_75["run_ids"]) == ["fire3", "fire4"]
+
+    def test_duplicate_fire_rows_deduped(self, isolated_registry):
+        # Same fire writes 3 quarantine rows for same task (e.g. retry within fire)
+        for _ in range(3):
+            qr.append_quarantine(site="classifieds", task_id=75, run_id="fire3")
+        qr.append_quarantine(site="classifieds", task_id=75, run_id="fire4")
+        rec = qr.detect_recurrent_failures("classifieds", min_fires=2)
+        rec_75 = next(r for r in rec if r["task_id"] == 75)
+        # 4 raw quarantine rows but only 2 unique fires
+        assert rec_75["fire_count"] == 2, "same-fire duplicate rows must dedup by run_id"
+
+
 class TestLatestClassification:
     def test_none_when_no_classifications(self, isolated_registry):
         assert qr.latest_classification("classifieds", 75) is None
