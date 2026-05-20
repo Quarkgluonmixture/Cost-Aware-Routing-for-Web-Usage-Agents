@@ -108,6 +108,13 @@ class VWAWrapper:
         self.sleep_after_execution = sleep_after_execution
         self.dry_run = dry_run
         self.benchmark = benchmark
+        # Fire-6 RCA Stage C1b (/stress 2026-05-20): per-condition observation
+        # mode, set by the runner before each condition. The single mode-gating
+        # chokepoint for the submodule's screenshot-timeout recovery: dom =
+        # screenshot is artifact-only → blank recovery is non-fatal; any other
+        # mode = screenshot may be decision-input → re-raise (fatal, as before).
+        # None (default) is treated as decision-input (fail-safe = fatal).
+        self.observation_mode: Optional[str] = None
 
         self._env = None  # lazy init
         # 保存上一次 obs 的 obs_nodes_info，供 select_option element_id 路径使用
@@ -298,6 +305,38 @@ class VWAWrapper:
             return [(p.url, p.title()) for p in pages]
         except Exception:
             return []
+
+    def _gate_screenshot_timeout(self, info: Dict[str, Any]) -> None:
+        """Fire-6 RCA Stage C1b (/stress 2026-05-20): dom-only screenshot-timeout
+        fatality gate — the SINGLE mode-gating chokepoint.
+
+        async_envs.astep recovers a Page.screenshot timeout to a blank
+        placeholder + ``info['screenshot_timeout_recovered']=True``, mode-
+        agnostically. Fatality is decided HERE by observation_mode:
+          - ``dom``: screenshot is artifact-only (agent decides on AXTree; the
+            blank is discarded by prepare_observation_for_mode) → non-fatal,
+            log + continue.
+          - any other mode (som / vision / phantom_* / None): screenshot may be
+            decision-input → restore the original FATAL behavior by raising a
+            Page.screenshot Timeout (classify_timeout() tags agent_observation →
+            runner quarantines). None is fail-safe-fatal. This preserves paper-
+            grade integrity: a decision-input mode never silently consumes a
+            blank image.
+        """
+        if not info.get("screenshot_timeout_recovered"):
+            return
+        if self.observation_mode == "dom":
+            logger.warning(
+                "C1b: Page.screenshot timeout recovered to blank placeholder "
+                "(observation_mode=dom, artifact-only) — episode continues non-fatal."
+            )
+            return
+        self.close()
+        raise TimeoutError(
+            "Page.screenshot Timeout 30000ms — C1b non-fatal recovery applies to "
+            f"dom mode only; observation_mode={self.observation_mode!r} is "
+            "(potential) decision-input, restoring fatal behavior."
+        )
 
     def step(self, action_json: Dict[str, Any]) -> Tuple[P79Observation, float, bool, bool, Dict[str, Any]]:
         if self.dry_run:
@@ -1092,6 +1131,10 @@ class VWAWrapper:
             except Exception as _e:
                 logger.warning("Post-type Enter press failed: %s", _e)
 
+        # Fire-6 RCA Stage C1b: mode-gate the submodule screenshot-timeout
+        # recovery (info["screenshot_timeout_recovered"]) on the final info.
+        self._gate_screenshot_timeout(info)
+
         if action_type in ("finish", "stop"):
             terminated = True
         info["raw_action"] = action  # Expose the raw VWA action for trajectory recording
@@ -1148,6 +1191,8 @@ class VWAWrapper:
         import json as _json
         action = create_playwright_action(f"page.goto({_json.dumps(url)})")
         obs, reward, terminated, truncated, info = self._env.step(action)
+        # Fire-6 RCA Stage C1b: mode-gate screenshot-timeout recovery here too.
+        self._gate_screenshot_timeout(info)
         p79_obs = self._to_p79_obs(obs, info)
         self._last_obs_nodes_info = p79_obs.obs_nodes_info
         return p79_obs, float(reward), bool(terminated), bool(truncated), info

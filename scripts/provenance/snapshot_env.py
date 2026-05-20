@@ -193,7 +193,10 @@ DEFAULT_GATED_MODELS = [
 # `P79_PAPER_GRADE=1` → launch-path death at first cell. Tree-hash chain
 # recomputed for new 9-commit chain via `git -C external/visualwebarena log
 # --reverse --format="%H %T" 89f5af2..HEAD | sha256sum`.
-VWA_LOCKED_HEAD_SHA = "ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927"
+# Fire-6 RCA Stage C1b (2026-05-20): re-locked ac33d2f → 2c15d66 after the
+# screenshot-timeout non-fatal recovery patch (12th p79-patches commit). 12-commit
+# tree-hash chain recomputed via the canonical recipe below.
+VWA_LOCKED_HEAD_SHA = "2c15d66d120f8498633ae65057aa50a34b3e93e0"
 VWA_LOCKED_UPSTREAM_BASE = "89f5af29305c3d1e9f97ce4421462060a70c9a03"
 # NOTE B-1400 (A2.7 P0-1-B*, 2026-05-18): chain UNCHANGED — `5c6c5f6...` was
 # computed at the A1.18-re Chunk 1 land for the 9-commit chain ending at
@@ -203,7 +206,7 @@ VWA_LOCKED_UPSTREAM_BASE = "89f5af29305c3d1e9f97ce4421462060a70c9a03"
 # sha256sum` (reverse-chronological). The HEAD constant was stale; the chain
 # constant was already correct. Empirical re-derivation 2026-05-18:
 # `git rev-list 89f5af2..2f9b0b4 --format=tformat:'%H %T' | sha256sum` = 5c6c5f6...
-VWA_LOCKED_TREE_HASH_CHAIN = "752caebdc6bd84761b2f308331f21241a9b4a28de65b46ff0007ef27d8c72778"
+VWA_LOCKED_TREE_HASH_CHAIN = "2696d0a61e2f70536f247ebb225f51c262b657d8b8b7b407f8581b75757a8bae"
 
 # B-824 (A1.16 cold-start P0-3-AC*): reference image hash root. Per
 # `glm_batch_digest._load_reference_images_b64` discovery 2026-05-17, VWA

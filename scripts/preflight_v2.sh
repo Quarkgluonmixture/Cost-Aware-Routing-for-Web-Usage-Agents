@@ -410,7 +410,9 @@ check_vwa_submodule_lock() {
   # Bumped 2026-05-17 to 2f9b0b4 (A1.18-re Chunk 1: 11-fix substrate sweep
   # B-604+B-609~B-615+B-618+B-623+B-625, see chronicle §182).
   # f0c835b remains as the B-91 commit reference but is no longer the pinned HEAD.
-  local expected_sha="ac33d2fcd9cec2fcbeddd56d0fa3da58b4c7e927"
+  # Bumped 2026-05-20 to 2c15d66 (Fire-6 RCA Stage C1b: screenshot-timeout
+  # non-fatal recovery in async_envs.astep, 12th p79-patches commit).
+  local expected_sha="2c15d66d120f8498633ae65057aa50a34b3e93e0"
   local expected_branch="p79-patches"
   local actual_sha actual_branch
   actual_sha="$(git -C "${vwa_dir}" rev-parse HEAD 2>/dev/null)"

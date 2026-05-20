@@ -1996,6 +1996,15 @@ class ExperimentRunner:
         obs, info = self.environment.reset(task.config_file)
         current_info = info or {}
 
+        # Fire-6 RCA Stage C1b (/stress 2026-05-20): episode-start default for
+        # the screenshot-timeout fatality gate (VwaWrapper._gate_screenshot_timeout).
+        # condition.observation_mode covers all FIXED modes (dom→non-fatal blank
+        # recovery; som/vision/phantom_*→fatal) + the wait/reset paths. For
+        # router_on / learned the per-step refinement below overrides to the
+        # effective decision_mode. setattr-guarded for MockEnv (no attr in tests).
+        if hasattr(self.environment, "observation_mode"):
+            self.environment.observation_mode = condition.observation_mode
+
         # ── v7 learned router runtime dispatch (paper-1 §6 LR predictor) ─
         # When condition.observation_mode == "learned" (sentinel from
         # conditions.py v7 phase1.router_kind=learned), load the trained LR
@@ -2585,6 +2594,13 @@ class ExperimentRunner:
                 router_state.dom_complexity_history = router_state.dom_complexity_history[-self.router.history_window:]
                 router_state.text_length_history = router_state.text_length_history[-self.router.history_window:]
 
+            # Fire-6 RCA Stage C1b: refine the screenshot-timeout fatality gate
+            # to the EFFECTIVE per-step mode (decision_mode = predicted mode for
+            # learned, escalated mode for rule-based router, else condition mode)
+            # so the dom-only non-fatal recovery tracks the actual mode the
+            # observation built by this env.step() will be consumed as.
+            if hasattr(self.environment, "observation_mode"):
+                self.environment.observation_mode = decision_mode
             env_step_start = time.time()
             next_obs, reward, terminated, truncated, next_info = self.environment.step(action)
             env_step_ms = (time.time() - env_step_start) * 1000.0
