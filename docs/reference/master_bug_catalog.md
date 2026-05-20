@@ -7293,6 +7293,6 @@ holds the boundary; 2 P0 + 4 P1 cross it. User gated Fire-6 on the 2 P0
 **Cross-doc**: this audit isolates the SAME GRL-layer as the workshop subpaper (`workshop_subpaper_plan.md` Track A walk-up locator dispatch + Track B judge polarity) — the boundary findings here strengthen that paper's "GRL is a clean reliability layer" foundation against the exact reviewer attack. **cls-75 screenshot resolution** (catalog above line "task 75 evidence-resolved … producer-bound to 4009506") is INVALIDATED by B-1779 relabel until re-resolved with `architectural_containment_c1b`. **A100-side operator step** (the evidence episode lives in gitignored `results/diagnostic_replay/` on the A100 paper-grade host, NOT on the DGX dev session): post-B-1779 the `quarantine_registry.py resolve` CLI auto-writes the honest screenshot label, so the operator re-runs the same resolve command (or re-fires the diagnostic replay) before Fire-6. Fire-6 is HELD (Q1=A) so no urgency.
 
 **Commits**: `f7bc44f` (Chunk A: B-1776+B-1777) · `dbb1bda` (Chunk B: B-1778+B-1779) · `e38d128` (catalog) · `526db4b` (Chunk C: B-1780 + P2-3) · Chunk D (B-1781 + B-1783 + P2-1/2/4, this commit). B-1782 flagged to action-set-restore workstream (NOT a GRL chunk). Full suite **1162 passed / 0 failed**; P2-1 verifier cls 29/29 + red 71/71 PASS.
-**Chronicle cross-link**: 实验笔记 §242 (pending).
+**Chronicle cross-link**: 实验笔记 §247 (GRL boundary audit; §242-246 are the parallel Protocol Reset / action-set / vLLM workstreams).
 
 ---
