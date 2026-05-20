@@ -7187,3 +7187,56 @@ Triggered by A1.24 fire-day catastrophe (B-1581 + §228 chronicle): user request
 **Chronicle cross-link**: 实验笔记 §238 (R2 audit timeline + 9 push-blockers detail + cross-AI ROI lesson + Fire-4 pre-fire checklist).
 
 ---
+
+## /stress deep repo audit — 6-lineage cross-track Fire-6 blocker subset (2026-05-20 ~01:00-02:30 BST, B-1762~B-1767, Mode A only)
+
+**Trigger**: User invoked `/stress` for deep repo audit, Mode A only (explicit "claude only" — skip codex Mode B + gemini Mode C). Parallelized via split-session: 1 hub session (Fire-4 RCA Wave 1-4 + OSF DOI 1 drift) + 5 split sessions (Track A queue/launch · Track B runner/agent · Track C phantom/VWA · Track D stats/prereg · Track E paper/canonical). Cross-track unified bug list = **50 findings, 25 OOB, 18 P0** (`docs/checkpoints/audit_tracks/UNIFIED_BUG_LIST_2026-05-20.md`). User reframed P0-overload → 3-tier (Fire-6 blocker / paper blocker / Phase 1b blocker) + directive "你就做 fire blocker". This entry = the **Fire-6 blocker subset only** (6 fixes, 3 commits); paper/stats/SBOM/Phase-1b deferred per user split.
+
+**Empirical anchor (registry state at audit time)**: Fire-3 cls task 75 + Fire-4 cls task 75 + Fire-5 cls task 4 — 3 fires, 3 quarantine, same error class `EvaluatorUnavailableError (Page.goto Timeout 30000ms)` / `Page.screenshot Timeout 30000ms` at `agent_navigation`/`agent_observation` callsites, different task IDs (75 vs 4). Cross-fire substrate-degradation pattern (not random task-specific). Fire-5 aborted via Wave 1 M1 PaperGradeAbortError at task 4 ~14 min in.
+
+**P0 fixes** (Fire-6 launch blockers):
+
+| ID | Source | Description | File:Line |
+|---|---|---|---|
+| **B-1762** P0-A5-A | Track A F3 | Gate 8 quarantine_registry.py missing = silent SKIPPED (not FATAL) → new-deploy / cron-sync-lag / submodule-skew opens silent quarantine-bypass window, contradicts Phase-A always-clean | `queue_phase1_paper_grade.sh:437-444` `WARN: ... SKIPPED` → `FAIL: ... REQUIRED` + `errors=$((errors+1))`, mirror Gate 4 (preflight_v2.sh missing) fail-closed |
+| **B-1763** P0-A1-Hub | Hub OOB | Wave 4 M7 `transient_drift` classification temporally non-matched — reproduce was fresh-chromium isolated context 30h+ post-event, doesn't prove mid-fire cumulative-load substrate health | `quarantine_registry.py:61-72` VALID_CLASSIFICATIONS adds `unreproducible_in_isolation` enum + `quarantine_registry.jsonl` 2 reclassify events (task 75 Fire-3+Fire-4 `transient_drift` → `unreproducible_in_isolation`, latest-by-ts supersedes) |
+| **B-1764** P0-A2-Hub | Hub OOB | `preflight_check` Rule-1-only (unclassified count) — classification unilaterally unblocks; same-task cross-fire recurrence (Fire-3+Fire-4 task 75) NOT detected once classified | `quarantine_registry.py:201-329` NEW `detect_recurrent_failures(site, min_fires=2)` + preflight Rule 2 (cross_fire_recurrence halts independent of classification) + env `QUARANTINE_MIN_RECURRENT_FIRES` + CLI dual-rule display + matched-temporal-context reproduce hint |
+| **B-1765** P0-A4-A | Track A F1 OOB | `assert_no_other_site_chain_running` pgrep-only misses 30-90s chain-bash prep window (ORCH_LOCK released, runner not yet spawned) → second `launch <other-site>` passes check → both chains parallel → Fire-3 contention class | `_lib_paper_grade_gates.sh:721-755` add pidfile check `logs/queue_phase1_{cls,red,shop}.latest.pid` + `kill -0` catches chain bash in prep window (sibling defense to R2-P0-1-B* orchestrator-layer fix) |
+| **B-1766** P0-C3-E | Track E F2 OOB | `metrics.py:_avg` `x.get(key, 0.0)` silent-zero on missing field → paper §1 cross-baseline canonical latency contaminated under mixed-vintage (archive lacks B-1410/B-1669 fields) → silent 0 flattens B0-retry vs B1/B2-no-retry gap | `metrics.py:634-664` `_avg(key, *, require_present=False)` fail-loud kwarg; `:802-808` avg_total_latency_minus_retry_ms + `:974-980` avg_busy_wait_total_ms use require_present=True (raise ValueError on legacy-vintage instead of silent-0) |
+
+**P1 fix** (paper-grade quality, sibling of P0-C3 — bundled same commit):
+
+| ID | Source | Description | File:Line |
+|---|---|---|---|
+| **B-1767** P1-14-E | Track E F3 OOB | `aggregate_cross_site.py` `(mr or 0) - (bw or 0)` short-circuit treats None ≡ 0.0 → canonical_ms = minus_retry - 0 (no busy_wait subtraction) OR 0 - busy_wait (negative latency) in paper §1 | `aggregate_cross_site.py:282-303` explicit None-check `None if mr is None or bw is None else float(mr) - float(bw)` (None propagates, downstream handles explicitly) |
+
+**Fix #6 — Watchdog orphan cleanup (verify-only, no code change)**: Per memory `feedback_kill_watchdog_alongside_runner` + `feedback_pkill_pattern_specificity`. Confirmed `queue_chain.sh:171,537` pkill pattern `experiment_watchdog.*${run_id}` is run_id-specific (no self-match / no generic cross-host kill); `_kill_runner_pgroup:97` uses PGID-based kill (B-1702). Single `experiment_watchdog.py` script (no `_v2`/`_backup` siblings). **Already covered by Fire-5 RCA Wave 5 (`6a0f464` sentinel-validation abort kills orphan watchdog)** landed by main session concurrently — this audit's verify confirms Wave 5 contract met.
+
+**Smoke-test proof** (preflight CLI on current registry, post-fix):
+```
+[preflight G8 HALT] site=classifieds: 2 blocked — unclassified-rule:1, cross-fire-recurrence-rule:1
+  • task 4 [unclassified]: 1 fire (Fire-5 EvaluatorUnavailableError Page.goto)
+  • task 75 [cross_fire_recurrence]: 2 fires across 2 error classes (Page.goto + Page.screenshot)
+rc=1  → Fire-6 cls launch HALTS until task 4 + task 75 matched-temporal-context reproduce + classify
+```
+`_avg('total_latency_minus_retry_ms')` on legacy episode → ValueError (silent-zero refused).
+
+**Phase 4 self-audit (Mode A solo, v7.8)**: 11/11 sampled cross-track P0+OOB findings spot-checked against runtime artifacts — 0 hallucinations remaining post 2 self-caught mirror-image file:line fabrications (Hub-H6 `metrics.py:405` → real `:480` caught by Track B B3; Track E F1 `analysis.py:1428-1432` = Holm-Bonferroni code self-reported). Cross-track verification (no codex/gemini) caught Claude's own file:line drift — same-lineage cross-read still has value when split across cold sessions.
+
+**Verification**:
+- py_compile PASS: metrics.py + quarantine_registry.py + aggregate_cross_site.py
+- bash -n PASS: queue_phase1_paper_grade.sh + _lib_paper_grade_gates.sh
+- **100/100 regression** (test_quarantine_registry 15 incl. 2 new Rule-2 tests + test_router_and_metrics 30 with 5 fixture backfill + test_runner_smoke + test_paper_grade_gates_shell + test_queue_chain_wallclock)
+
+**Commits** (3, NOT pushed — awaiting user confirm per `feedback_git_push_requires_confirm`):
+- `0f39304` quarantine registry rule expansion + Gate 8 fail-closed (B-1762+B-1763+B-1764)
+- `315dda7` close chain-prep race window (B-1765)
+- `e20c6ef` close silent zero-injection in canonical latency (B-1766+B-1767)
+
+**Deferred (NOT in fire-blocker subset, per user 3-tier)**:
+- **Paper blocker**: P0-B1 (§8.6 self-claim §1/§6 prose unchanged) / P0-B2 (analysis.py:1428-1432 mis-cite) / P0-B3 (§1↔§4 N=234/210 vs 224/205 arithmetic) / P0-B4 (meta_phantom_lift.csv path) / P0-D1 (bootstrap pool cite) / P0-D2 (H10 5/6 K-of-N) / P0-D3 (SE floor anchor) / P0-D4 (power 97% archive) / P0-D5 (Wave 1-2 T3 evaluator change) / P0-E1 (SBOM 3-doc split-brain)
+- **Phase 1b blocker**: P0-F1 (shop B0 17.16h > 16h budget)
+
+**Chronicle cross-link**: 实验笔记 §239 (deep audit timeline + split-session method + 50-finding cross-track + Fire-6 blocker subset + user P0-overload reframing lesson).
+
+---
