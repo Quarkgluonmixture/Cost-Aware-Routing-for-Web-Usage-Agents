@@ -1,0 +1,17 @@
+Protocol Reset Amendment 01 pre-fire witness
+
+OSF project: https://osf.io/kv9sf/
+Parent DOI 1: https://doi.org/10.17605/OSF.IO/9QCWU
+Git tag: prereg-amendment-01-protocol-reset-20260521
+Amendment commit SHA: e1f86f419aa3012254d50d783cd5577735a10a16
+Commit timestamp (UTC): 2026-05-20T23:45:42Z
+Tag created (UTC): 2026-05-20T23:45:52Z
+Pushed to origin/master with tags (UTC): 2026-05-20T23:45-23:55Z (immediately after tag)
+Repo: https://github.com/Quarkgluonmixture/Cost-Aware-Routing-for-Web-Usage-Agents
+
+Witness primitive = the amendment commit SHA above (content-addressed, tamper-evident;
+the commit timestamp is hashed into the SHA). The git tag is an immovable named pointer
+to it. This OSF upload is the external visibility layer on top of the Git witness.
+
+Fire-6 canonical data creation must occur AFTER this witness.
+Amendment file: docs/prereg_amendments/AMENDMENT_01_PROTOCOL_RESET_20260521.md
